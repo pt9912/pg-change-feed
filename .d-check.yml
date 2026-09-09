@@ -47,9 +47,10 @@ matrix:
     supersede-fields: [Supersedes, Status]
   # Grandfather: immutable Alt-ADRs, deren Fitness-/Folgepflicht-Zeiger auf
   # eine inzwischen abgelöste ADR zeigt (ADR-0039:121 → ADR-0036, seit
-  # ADR-0041) — in-place-Korrektur einer Accepted-ADR ist verboten
-  # (AGENTS.md §3.5); die Nachfolge-Kette trägt der ADR-Index.
-  exempt-paths: ["docs/plan/adr/0039-*.md"]
+  # ADR-0041; ADR-0041:47 → ADR-0039, seit ADR-0042) — in-place-Korrektur
+  # einer Accepted-ADR ist verboten (AGENTS.md §3.5); die Nachfolge-Kette
+  # trägt der ADR-Index.
+  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md"]
 versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in

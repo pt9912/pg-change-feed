@@ -1,6 +1,6 @@
 # ADR-0039: Paketstruktur-Detaillierung (Go)
 
-**Status:** Accepted — Supersedes [`ADR-0038`](0038-implementierungssprache-go.md)
+**Status:** Superseded by [`ADR-0042`](0042-transport-typen-am-port.md)
 **Datum:** 2026-09-09
 
 **Autor:** pt9912
@@ -144,6 +144,7 @@ Entscheidung, keine erneute Prüfung dieser.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-09 | Accepted — Supersedes ADR-0038 (Detaillierung aus Paketstruktur-Ideen, Hexagon-Referenz-Stil) | — |
+| 2026-09-09 | Superseded durch ADR-0042 (Transport-Typen am Port: Definitions-Stelle geschärft, Typ-Aliase am Use Case); die übrigen Struktur-Regeln bleiben unverändert verbindlich | [ADR-0042](0042-transport-typen-am-port.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

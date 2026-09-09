@@ -49,6 +49,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0036 | Architekturprüfung in CI (→ ADR-0041) | Superseded | 2026-09-09 | [0036-architekturpruefung-ci.md](0036-architekturpruefung-ci.md) |
 | ADR-0037 | Implementierungsreihenfolge | Accepted | 2026-09-09 | [0037-implementierungsreihenfolge.md](0037-implementierungsreihenfolge.md) |
 | ADR-0038 | Implementierungssprache Go (→ ADR-0039) | Superseded | 2026-09-09 | [0038-implementierungssprache-go.md](0038-implementierungssprache-go.md) |
-| ADR-0039 | Paketstruktur-Detaillierung (Go) | Accepted | 2026-09-09 | [0039-paketstruktur-detaillierung-go.md](0039-paketstruktur-detaillierung-go.md) |
+| ADR-0039 | Paketstruktur-Detaillierung (Go) (→ ADR-0042) | Superseded | 2026-09-09 | [0039-paketstruktur-detaillierung-go.md](0039-paketstruktur-detaillierung-go.md) |
 | ADR-0040 | ClockPort (Zeit als Outbound Port) | Accepted | 2026-09-09 | [0040-clockport.md](0040-clockport.md) |
 | ADR-0041 | a-check als Maschinenform der Architektur-Prüfung | Accepted | 2026-09-09 | [0041-a-check-maschinenform-architekturpruefung.md](0041-a-check-maschinenform-architekturpruefung.md) |
+| ADR-0042 | Transport-Typen am Port | Accepted | 2026-09-09 | [0042-transport-typen-am-port.md](0042-transport-typen-am-port.md) |
