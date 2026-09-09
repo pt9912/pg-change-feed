@@ -1,6 +1,8 @@
 // Package queries trägt die SQL-Texte des PostgresChangeStoreAdapters
-// (`ADR-0039`): die Tabellennamen nach `SPEC-001` stehen hier und nirgends
-// sonst im Adapter; die Zeilen-Übersetzung trägt der Mapper.
+// (Paketstruktur je `ADR-0042`, der die Struktur-Regeln des abgelösten
+// `ADR-0039` als Rest fortgilt): die Tabellennamen nach `SPEC-001` stehen
+// hier und nirgends sonst im Adapter; die Zeilen-Übersetzung trägt der
+// Mapper.
 package queries
 
 // InsertTransaction persistiert eine Quelltransaktion. Die

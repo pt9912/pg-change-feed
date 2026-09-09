@@ -3,8 +3,9 @@
 # (ADR-0030). Beide Images sind per Digest gepinnt (Modul 14); der Pin der
 # Datenbank stammt aus `docker manifest inspect postgres:18-alpine` (amd64).
 # Die DB-Daten bleiben im Container (kein Volume in den Arbeitsbaum); der
-# Testcontainer wird in jedem Ausgang abgeräumt, das Modul-Cache-Volume
-# bleibt als Vorbereitung für netzlose `make test`-Läufe bestehen.
+# Testcontainer und das Docker-Netz werden in jedem Ausgang abgeräumt, das
+# Modul-Cache-Volume bleibt als Vorbereitung für netzlose `make test`-Läufe
+# bestehen.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -21,6 +22,7 @@ docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NET
 
 cleanup() {
   docker rm -f "$PG_CONTAINER" >/dev/null 2>&1 || true
+  docker network rm "$NETWORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 

@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -406,5 +407,53 @@ func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 	}
 	if got := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE commit_position = 100"); got != 1 {
 		t.Fatalf("Transaktions-Zeilen nach dem Lesen = %d, wollen 1", got)
+	}
+}
+
+// Treiber-Fehler tragen die Klasse `storage` (`outbound.ErrStorage`,
+// `SPEC-008`, `ADR-0023`); Application und Betrieb klassifizieren über
+// errors.Is und kennen keinen Treibertyp. Die technische Ursache bleibt
+// über errors.Is hinter der Klasse lesbar.
+
+// Ein Persistenzfehler (hier: Fremdschlüssel-Verstoß gegen die nicht
+// registrierte Schema-Version) trägt die Klasse `storage` und die
+// Treiber-Ursache in derselben Meldung.
+func TestPersistCarriesStorageClass(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	tx, err := model.NewOpenTransaction("t-fk", testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	change, err := model.NewChange("c-fk", "t-fk", testTableMain, 1, model.OperationInsert, nil, []byte(`{"n":1}`), "sv-fehlt")
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	if err := tx.AppendChange(change); err != nil {
+		t.Fatalf("AppendChange: %v", err)
+	}
+	position, err := model.NewSourcePosition(testSource, 100)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	err = store.PersistTransaction(context.Background(), tx)
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrStorage)
+	}
+	if !strings.Contains(err.Error(), "SQLSTATE") {
+		t.Fatalf("Meldung = %q, wollen die Treiber-Ursache hinter der Klasse", err.Error())
+	}
+}
+
+// Eine nicht erreichbare Instanz meldet der Aufbau als Fehler der Klasse
+// `storage`; der Test braucht keine Datenbank (Port 1 verwirft lokal).
+func TestNewCarriesStorageClass(t *testing.T) {
+	_, err := postgresstorage.New(context.Background(), "postgres://cdc:cdc@127.0.0.1:1/cdc_test?sslmode=disable")
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrStorage)
 	}
 }

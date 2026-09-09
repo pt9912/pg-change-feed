@@ -46,6 +46,14 @@ var (
 	// (`LH-FA-REA-003` Negative: expliziter Fehlerpfad statt Normierung;
 	// unbegrenzt liest der Aufruf über ein nicht gesetztes Limit).
 	ErrNonPositiveLimit = stderrors.New("Lese-Limit ist kleiner als 1")
+
+	// ErrStorage trägt die Fehlerklasse `storage` des Store (`SPEC-008`,
+	// `ADR-0023`): ein Persistenzfehler im ChangeStore endet ohne
+	// Source-ACK (`LH-QA-REL-001.a`); Application und Betrieb lesen die
+	// Klasse über errors.Is und kennen keinen Treibertyp. Der Adapter
+	// wickelt seine Treiber-Fehler in dieses Sentinel; die technische
+	// Ursache bleibt über `errors.Is` lesbar.
+	ErrStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im ChangeStore")
 )
 
 // Validate prüft die Bereichs- und Limit-Grenzen der Abfrage. Positionen
@@ -89,6 +97,11 @@ func (q ChangeQuery) Validate() error {
 // erneut persistiert werden, wenn ein Crash zwischen Persistenz und ACK
 // sie wiederholt; die Deduplizierungsbasis trägt die interne
 // Transaktions-ID (`SPEC-001`, `cdc.transaction`).
+//
+// Der Port trägt die Fehlerklassen-Grenze (`ADR-0023`): Treiber-Fehler
+// gehen an der Adapter-Grenze in die Klassen des Pflichtenhefts; dieser
+// Port führt die Klasse `storage` als `ErrStorage`. Application und
+// Betrieb klassifizieren über `errors.Is`, nicht über den Treiber.
 type ChangeStorePort interface {
 	// PersistTransaction persistiert eine committed Quelltransaktion
 	// dauerhaft — mit interner ID, Commit-Position und Changes in

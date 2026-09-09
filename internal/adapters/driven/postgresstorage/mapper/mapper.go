@@ -1,7 +1,9 @@
 // Package mapper trägt die Zeilen-Übersetzung des PostgresChangeStore-
-// Adapters (`ADR-0039`): die Row-Typen sind die Zeilenabbilder der
-// `SPEC-001`/`SPEC-002`-Tabellen, die Funktionen übersetzen sie gegen das
-// Domänenmodell — PostgreSQL-Berührungen bleiben im Adapter (`ADR-0032`).
+// Adapters (Paketstruktur je `ADR-0042`, der die Struktur-Regeln des
+// abgelösten `ADR-0039` als Rest fortgilt): die Row-Typen sind die
+// Zeilenabbilder der `SPEC-001`/`SPEC-002`-Tabellen, die Funktionen
+// übersetzen sie gegen das Domänenmodell — PostgreSQL-Berührungen bleiben
+// im Adapter (`ADR-0032`).
 package mapper
 
 import (
@@ -85,13 +87,11 @@ func JSONImage(raw []byte) any {
 // ToPosition trägt die Quellposition aus einer `cdc.transaction`-Zeile
 // (`SPEC-003`): Quelle und Commit-Position; die Spalte trägt bigint, ihre
 // CHECK-Kante hält sie positiv, der Wert passt damit in den
-// Domänen-Offset.
+// Domänen-Offset — die Bereichs-Grenze des Schreibpfads liegt allein in
+// NewTransactionRow.
 func ToPosition(source string, commitPosition int64) (model.SourcePosition, error) {
 	if commitPosition < 1 {
 		return model.SourcePosition{}, domainerrors.ErrInvalidPosition
-	}
-	if uint64(commitPosition) > math.MaxInt64 {
-		return model.SourcePosition{}, ErrPositionOutOfRange
 	}
 	return model.NewSourcePosition(model.SourceID(source), uint64(commitPosition))
 }
