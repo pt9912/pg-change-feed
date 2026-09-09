@@ -40,6 +40,13 @@ func (f *fakeStore) PersistTransaction(ctx context.Context, transaction *model.C
 	return nil
 }
 
+// ReadChanges trägt die Lesefähigkeit am Port (`ADR-0009`); der Fake
+// implementiert sie ohne Stand — der Capture-Pfad liest nicht, die reale
+// Lesefähigkeit trägt der Adapter-Test gegen PostgreSQL.
+func (f *fakeStore) ReadChanges(ctx context.Context, query outbound.ChangeQuery) ([]outbound.ChangeRecord, error) {
+	return nil, stderrors.New("Fake-Store trägt nur die Persist-Seite")
+}
+
 type fakeAck struct {
 	events *[]string
 	ackErr error

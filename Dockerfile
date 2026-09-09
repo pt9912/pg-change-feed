@@ -4,9 +4,9 @@
 # `make image` in harness/image-hash.txt (Beleg, kein Wiederholungs-Schlüssel).
 # Base-Image-Update = bewusster Commit, der nur die Digest-Zeile anhebt.
 
-# go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; solange keine
-# externen Dependencies eingehen, bleibt go.sum leer und der deps-Layer
-# verifiziert eine leere Modulliste (`go mod download`/`go mod verify`).
+# go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; die
+# PostgreSQL-Abhängigkeit (pgx/v5, rein Go, CGO-frei) trägt der deps-Layer
+# per `go mod download`/`go mod verify` aus dem gepinnten Stand.
 
 # --- deps: gepinnte Base, Lock-File vor dem Code (Layer-Cache greift) ---
 FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS deps
