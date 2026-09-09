@@ -14,7 +14,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
-# --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus (ADR-0038) ---
+# --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus (ADR-0039, fortgeltend) ---
 FROM deps AS build
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \

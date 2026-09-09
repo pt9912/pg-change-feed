@@ -1,0 +1,6 @@
+# Laufzustand, kein Bestand (Modul 14, Besitz-Regel):
+# - .tmp/: Commit-Message-Dateien des Implementer-Workflows (git commit -F)
+# - image-hash.raw: transientes Zwischenprodukt des make image-Laufs
+#   (--metadata-file); der Beleg ist das finale harness/image-hash.txt
+.tmp/
+harness/image-hash.raw

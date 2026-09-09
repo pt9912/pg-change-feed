@@ -113,6 +113,9 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` | update | `# include a-check.mk` aktivieren (Aktivierungsbedingung dieses Slice erfüllt) |
 | `a-check.mk`, `.a-check.yml` | update | Prüfen, ob die Deklaration gegen den entstehenden Baum hält (Schichten-Globs) |
 | `harness/README.md` | update | `make a-check` von *Nicht behauptet* in die Sensors-/Werkzeuge-Tabelle ziehen |
+| `Makefile` (image-Rezept) | update | *Plan-Nachzug (nachgezogen vor der Closure):* der erste Lauf griff beim Extrahieren des Image-Digests den ersten `sha256:`-Treffer der Metadaten-Datei — das ist der **Base-Digest**, nicht der Digest des gebauten Images. Fix: Extraktion liest den `containerimage.digest`-Key (Implementer-Commit f932022) |
+| `Dockerfile` (Kommentar) | update | *Plan-Nachzug:* deps-Layer-Kommentar (leeres `go.mod`/`go.sum` bleibt verifiziert); CGO-Anker von [`ADR-0038`](../../adr) (superseded) auf [`ADR-0039`](../../adr) gezogen |
+| `harness/image-hash.txt` | neu | Beleg-Artefakt (Modul 14): trägt den Digest des gebauten Images; getrackt, kein Gate darauf (benannte Grenze, s. Review F-7) |
 
 ## 4. Trigger
 
