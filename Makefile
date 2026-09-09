@@ -15,9 +15,8 @@ include harness/mk/*.mk
 
 # Architektur-Gate (a-check) — eingebunden seit dem ersten Binary im Baum
 # (cmd/pg-change-feed); das Fragment trägt den gepinnten Release-Digest,
-# Pin-Hebung = bewusster Commit (a-check.mk). Das Ziel hängt NICHT an
-# GATE_CHECKS: es läuft als eigener Aufruf (`make a-check`), nicht im
-# `make gates`-Bündel.
+# Pin-Hebung = bewusster Commit (a-check.mk). a-check hängt an GATE_CHECKS
+# (ADR-0041) und läuft damit im `make gates`-Bündel mit.
 include a-check.mk
 
 .PHONY: image
