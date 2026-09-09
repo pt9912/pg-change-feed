@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
@@ -38,15 +39,24 @@ const (
 // fakeCapture nimmt die Commands des Streams auf und meldet die
 // Commit-Position als bestätigt — die Stand-in-Application des
 // Adapter-Tests; die Persist-before-ACK-Ordnung am realen Treiber trägt
-// der Verdrahtungs-Test in der Composition-Root.
+// der Verdrahtungs-Test in der Composition-Root. Mit ackFirstOnly
+// bestätigt der Stand-in nur die erste Transaktion — die
+// Keepalive-Position-Regel (F-3) trägt der Test darüber: die bestätigte
+// Position bleibt hinter dem Empfangsstand zurück.
 type fakeCapture struct {
-	commands chan *inbound.CaptureCommand
+	commands     chan *inbound.CaptureCommand
+	ackFirstOnly bool
+	acked        bool
 }
 
 // Capture nimmt ein Command auf und meldet die Commit-Position als
-// bestätigt.
+// bestätigt — im ackFirstOnly-Modus nur für die erste Transaktion.
 func (f *fakeCapture) Capture(_ context.Context, command inbound.CaptureCommand) (inbound.CaptureResult, error) {
 	f.commands <- &command
+	if f.ackFirstOnly && f.acked {
+		return inbound.CaptureResult{}, nil
+	}
+	f.acked = true
 	position, _ := command.Transaction.CommitPosition()
 	return inbound.CaptureResult{Acknowledged: position}, nil
 }
@@ -78,8 +88,11 @@ type testEnv struct {
 }
 
 // newTestEnv setzt Quelle, Tabellen und Publication je Test auf; der
-// Slot wird mit dem Stream-Adapter angelegt. Der Cleanup stoppt den
-// Laufkontext vor dem Slot-Rückbau — ein belegter Slot droppt nicht.
+// Slot wird mit dem Stream-Adapter angelegt. Die Publication trägt
+// genau die Test-Tabellen — parallel laufende Test-Pakete teilen denselben
+// Container, eine FOR ALL TABLES-Publication ließe jedes Test-Paket die
+// Changes der anderen sehen. Der Cleanup stoppt den Laufkontext vor dem
+// Slot-Rückbau — ein belegter Slot droppt nicht.
 func newTestEnv(t *testing.T, name string) *testEnv {
 	t.Helper()
 	pool, ctx := newPool(t)
@@ -93,7 +106,7 @@ func newTestEnv(t *testing.T, name string) *testEnv {
 	for _, statement := range []string{
 		fmt.Sprintf("CREATE TABLE %s (id int PRIMARY KEY, name text)", testFeed),
 		fmt.Sprintf("CREATE TABLE %s (id int PRIMARY KEY)", testOther),
-		fmt.Sprintf("CREATE PUBLICATION %s FOR ALL TABLES", env.publication),
+		fmt.Sprintf("CREATE PUBLICATION %s FOR TABLE %s, %s", env.publication, testFeed, testOther),
 	} {
 		if _, err := pool.Exec(ctx, statement); err != nil {
 			t.Fatalf("Test-Umgebung: %v", err)
@@ -123,10 +136,14 @@ func newTestEnv(t *testing.T, name string) *testEnv {
 }
 
 // startStream legt den Stream-Adapter an und läuft im Hintergrund; der
-// Test liest über das Command-Feld.
-func startStream(t *testing.T, env *testEnv, capturePort inbound.CaptureInboundPort) *receive.Stream {
+// Test liest über das Command-Feld, der zweite Ausgang trägt das
+// Lauf-Ende (F-4: der Restart wartet auf das Verbindungs-Ende).
+func startStream(t *testing.T, env *testEnv, capturePort inbound.CaptureInboundPort) (*receive.Stream, <-chan error) {
 	t.Helper()
-	stream, err := receive.NewStream(env.ctx, receive.Config{
+	runDone := make(chan error, 1)
+	runCtx, cancel := context.WithCancel(env.ctx)
+	t.Cleanup(cancel)
+	stream, err := receive.NewStream(runCtx, receive.Config{
 		DSN:         env.pool.Config().ConnString(),
 		Source:      testSource,
 		Publication: env.publication,
@@ -140,9 +157,9 @@ func startStream(t *testing.T, env *testEnv, capturePort inbound.CaptureInboundP
 		t.Fatalf("NewStream: %v", err)
 	}
 	go func() {
-		_ = stream.Run(env.ctx)
+		runDone <- stream.Run(runCtx)
 	}()
-	return stream
+	return stream, runDone
 }
 
 // awaitCommand liest das nächste Command mit Test-Zeitgrenze.
@@ -177,7 +194,7 @@ func TestStreamTranslatesRealChanges(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "changes")
 	commands := make(chan *inbound.CaptureCommand, 32)
-	startStream(t, env, &fakeCapture{commands: commands})
+	_, _ = startStream(t, env, &fakeCapture{commands: commands})
 
 	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Alpha')"); err != nil {
 		t.Fatalf("INSERT: %v", err)
@@ -280,12 +297,15 @@ func TestStreamOpenTransactionNotConsumable(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "visibility")
 	commands := make(chan *inbound.CaptureCommand, 32)
-	startStream(t, env, &fakeCapture{commands: commands})
+	_, _ = startStream(t, env, &fakeCapture{commands: commands})
 
 	sourceTx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatalf("Quelltransaktion: %v", err)
 	}
+	// Der Rollback-Grenze: ein Test-Abbruch vor dem Commit gibt die
+	// Pool-Verbindung wieder frei (pgx-Tx lebt über den Test-Ausgang hinaus).
+	t.Cleanup(func() { _ = sourceTx.Rollback(context.Background()) })
 	if _, err := sourceTx.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Offen')"); err != nil {
 		t.Fatalf("INSERT: %v", err)
 	}
@@ -336,5 +356,195 @@ func TestStreamTruncateUnsupported(t *testing.T) {
 		}
 	case <-time.After(15 * time.Second):
 		t.Fatalf("TRUNCATE endete nicht als Stream-Fehler")
+	}
+}
+
+// readConfirmedFlush trägt den confirmed_flush_lsn-Stand eines Slots
+// (pg_replication_slots) als Offset.
+func readConfirmedFlush(t *testing.T, pool *pgxpool.Pool, slot string) uint64 {
+	t.Helper()
+	values, err := pool.Query(context.Background(),
+		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = $1", slot)
+	if err != nil {
+		t.Fatalf("Slot-Stand: %v", err)
+	}
+	defer values.Close()
+	if !values.Next() {
+		t.Fatalf("Slot %q fehlt", slot)
+	}
+	var confirmed string
+	if err := values.Scan(&confirmed); err != nil {
+		t.Fatalf("Slot-Stand lesen: %v", err)
+	}
+	lsn, err := pglogrepl.ParseLSN(confirmed)
+	if err != nil {
+		t.Fatalf("confirmed_flush_lsn %q: %v", confirmed, err)
+	}
+	return uint64(lsn)
+}
+
+// TestStreamKeepaliveReportsAcknowledgedPosition trägt die
+// Keepalive-Position-Regel am realen Pfad (`LH-QA-REL-001.a`): die
+// Keepalive-Antwort meldet ausschließlich die vom Capture-Ergebnis
+// bestätigte Position — confirmed_flush_lsn rückt auf sie und läuft nie
+// über sie hinaus, obwohl der Stream weiteren WAL-Stand empfangen hat.
+// Der Testcontainer trägt wal_sender_timeout=2s: der Walsender verlangt
+// die Antwort nach der Hälfte der Zeit, die Keepalive-Antwort trägt
+// lastAcked.
+func TestStreamKeepaliveReportsAcknowledgedPosition(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "keepalive")
+	commands := make(chan *inbound.CaptureCommand, 32)
+	startStream(t, env, &fakeCapture{commands: commands, ackFirstOnly: true})
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Bestätigt')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	first := awaitCommand(t, commands, 15*time.Second)
+	ackedPosition, committed := first.Transaction.CommitPosition()
+	if !committed {
+		t.Fatalf("bestätigte Transaktion ohne Commit-Position")
+	}
+
+	// Weitere WAL-Ereignisse laufen ein und werden empfangen, aber nicht
+	// bestätigt: die zweite Transaktion läuft über die nicht aktivierte
+	// Tabelle (leere Transaktion), die dritte über die aktivierte. Der
+	// Empfangsstand liegt damit hinter der bestätigten Position.
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testOther+" (id) VALUES (9)"); err != nil {
+		t.Fatalf("INSERT andere Tabelle: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Unbestätigt')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	awaitCommand(t, commands, 15*time.Second)
+	unacked := awaitCommand(t, commands, 15*time.Second)
+	unackedPosition, committed := unacked.Transaction.CommitPosition()
+	if !committed || unackedPosition.Offset <= ackedPosition.Offset {
+		t.Fatalf("Empfangsstand läuft nicht hinter der bestätigten Position")
+	}
+
+	// Die Keepalive-Antwort trägt die bestätigte Position: der
+	// confirmed_flush_lsn rückt auf sie und nie über sie hinaus — eine
+	// Antwort mit dem Empfangsstand (Mutation) würde confirmed_flush_lsn
+	// über die bestätigte Position schieben.
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		confirmed := readConfirmedFlush(t, pool, env.slot)
+		if confirmed > ackedPosition.Offset {
+			t.Fatalf("confirmed_flush_lsn %x läuft über die bestätigte Position %x hinaus", confirmed, ackedPosition.Offset)
+		}
+		if confirmed == ackedPosition.Offset {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("confirmed_flush_lsn erreicht die bestätigte Position nicht (%x != %x)", confirmed, ackedPosition.Offset)
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+}
+
+// TestStreamRestartsOnExistingSlot trägt den bestehende-Slot-Zweig am
+// realen Pfad (`ADR-0012`): der Stream endet, weitere Changes entstehen,
+// der Restart legt denselben Slot wieder auf — `ensureSlot` liest den
+// Slot-Bestand (`confirmed_flush_lsn`) statt still neu anzulegen, und
+// der Stream setzt dort fort; die wiederholte Lieferung bestätigter
+// Transaktionen ist der At-Least-Once-Fall (`ADR-0011`, `ADR-0012`).
+func TestStreamRestartsOnExistingSlot(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "restart")
+
+	ctx1, cancel1 := context.WithCancel(ctx)
+	defer cancel1()
+	commands1 := make(chan *inbound.CaptureCommand, 32)
+	stream1, err := receive.NewStream(ctx1, receive.Config{
+		DSN:         env.pool.Config().ConnString(),
+		Source:      testSource,
+		Publication: env.publication,
+		Slot:        env.slot,
+		Tables: map[string]mapper.TableBinding{
+			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
+		},
+		Capture: &fakeCapture{commands: commands1},
+	})
+	if err != nil {
+		t.Fatalf("NewStream (erster Lauf): %v", err)
+	}
+	runDone1 := make(chan error, 1)
+	go func() { runDone1 <- stream1.Run(ctx1) }()
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Erste')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	firstCommand := awaitCommand(t, commands1, 15*time.Second)
+	firstPosition, committed := firstCommand.Transaction.CommitPosition()
+	if !committed {
+		t.Fatalf("erste Transaktion ohne Commit-Position")
+	}
+
+	// Der erste Lauf endet regulär; die Verbindung schließt, der Slot
+	// bleibt mit seinem Bestand zurück.
+	cancel1()
+	select {
+	case err := <-runDone1:
+		if err != nil {
+			t.Fatalf("erster Lauf: %v", err)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatalf("erster Lauf endet nicht")
+	}
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Zweite')"); err != nil {
+		t.Fatalf("INSERT nach Stream-Ende: %v", err)
+	}
+
+	commands2 := make(chan *inbound.CaptureCommand, 32)
+	ctx2, cancel2 := context.WithCancel(ctx)
+	t.Cleanup(cancel2)
+	stream2, err := receive.NewStream(ctx2, receive.Config{
+		DSN:         env.pool.Config().ConnString(),
+		Source:      testSource,
+		Publication: env.publication,
+		Slot:        env.slot,
+		Tables: map[string]mapper.TableBinding{
+			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
+		},
+		Capture: &fakeCapture{commands: commands2},
+	})
+	if err != nil {
+		t.Fatalf("NewStream (Restart): %v", err)
+	}
+	runDone2 := make(chan error, 1)
+	go func() { runDone2 <- stream2.Run(ctx2) }()
+
+	// Der Restart liefert die Change nach dem Stream-Ende; die
+	// bestätigte Transaktion kann als Wiederholung erneut kommen
+	// (At-Least-Once, `ADR-0012`).
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		command := awaitCommand(t, commands2, time.Until(deadline))
+		position, committed := command.Transaction.CommitPosition()
+		if !committed {
+			t.Fatalf("Transaktion ohne Commit-Position")
+		}
+		changes, err := command.Transaction.Changes()
+		if err != nil {
+			t.Fatalf("Changes: %v", err)
+		}
+		if len(changes) == 1 && string(changes[0].NewImage) == `{"id":"2","name":"Zweite"}` {
+			if position.Offset <= firstPosition.Offset {
+				t.Fatalf("Restart-Position %x läuft nicht hinter der ersten Position %x", position.Offset, firstPosition.Offset)
+			}
+			return
+		}
+		if len(changes) == 1 && string(changes[0].NewImage) == `{"id":"1","name":"Erste"}` {
+			// Wiederholung der bestätigten Transaktion: der
+			// At-Least-Once-Fall, die Deduplizierung trägt der
+			// Store (`ADR-0011`).
+			if position.Offset != firstPosition.Offset {
+				t.Fatalf("Wiederholte Transaktion trägt andere Position %x (erste %x)", position.Offset, firstPosition.Offset)
+			}
+			continue
+		}
+		t.Fatalf("unerwartete Transaktion: %+v", changes)
 	}
 }

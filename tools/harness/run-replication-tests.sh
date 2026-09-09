@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # run-replication-tests — Replication-Stream-Tests gegen reale PostgreSQL
 # mit Publication und Logical Replication Slot im Testcontainer (ADR-0030).
+# wal_sender_timeout=2000 zieht die Keepalive-Antwort-Pflicht auf etwa eine
+# Sekunde — der Keepalive-Beleg (LH-QA-REL-001.a) braucht den Antwort-Zug
+# in Test-Zeitspanne; der Default (60s) läge jenseits der Testgrenze.
 # Beide Images sind per Digest gepinnt (Modul 14); der Pin der Datenbank
 # stammt aus `docker manifest inspect postgres:18-alpine` (amd64). Die
 # Instanz startet mit wal_level=logical — der Logical-Replication-Slot
@@ -32,7 +35,7 @@ docker rm -f "$PG_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$PG_CONTAINER" \
   --network "$NETWORK" \
   -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
-  "$PG_TEST_IMAGE" -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10 >/dev/null
+  "$PG_TEST_IMAGE" -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10 -c wal_sender_timeout=2000 >/dev/null
 
 ready=0
 for _ in $(seq 1 60); do

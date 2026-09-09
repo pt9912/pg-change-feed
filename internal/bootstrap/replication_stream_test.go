@@ -54,7 +54,7 @@ func TestRealPersistBeforeAck(t *testing.T) {
 	slot := "slot_pgc_test_wire"
 	for _, statement := range []string{
 		fmt.Sprintf("CREATE TABLE %s (id int PRIMARY KEY, name text)", wireFeed),
-		fmt.Sprintf("CREATE PUBLICATION %s FOR ALL TABLES", publication),
+		fmt.Sprintf("CREATE PUBLICATION %s FOR TABLE %s", publication, wireFeed),
 	} {
 		if _, err := pool.Exec(ctx, statement); err != nil {
 			t.Fatalf("Test-Umgebung: %v", err)
@@ -145,26 +145,84 @@ func TestRealPersistBeforeAck(t *testing.T) {
 
 	// Die bestätigte Position trägt confirmed_flush_lsn; sie kann die
 	// letzte Commit-Position nicht unterschreiten — der ACK lief erst
-	// nach der Persistenz (`LH-QA-REL-001.a`).
-	values, err := pool.Query(ctx,
-		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = $1", slot)
-	if err != nil {
-		t.Fatalf("Slot-Stand: %v", err)
-	}
-	defer values.Close()
-	if !values.Next() {
-		t.Fatalf("Slot %q fehlt", slot)
-	}
+	// nach der Persistenz (`LH-QA-REL-001.a`). Der Slot-Stand trägt den
+	// Feedback-Zug asynchron; der Test pollt mit Zeitgrenze.
 	var confirmed string
-	if err := values.Scan(&confirmed); err != nil {
-		t.Fatalf("Slot-Stand lesen: %v", err)
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		values, err := pool.Query(ctx,
+			"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = $1", slot)
+		if err != nil {
+			t.Fatalf("Slot-Stand: %v", err)
+		}
+		if !values.Next() {
+			values.Close()
+			t.Fatalf("Slot %q fehlt", slot)
+		}
+		if err := values.Scan(&confirmed); err != nil {
+			values.Close()
+			t.Fatalf("Slot-Stand lesen: %v", err)
+		}
+		values.Close()
+		confirmedLSN, err := pglogrepl.ParseLSN(confirmed)
+		if err != nil {
+			t.Fatalf("confirmed_flush_lsn %q: %v", confirmed, err)
+		}
+		if uint64(confirmedLSN) >= lastPosition.Offset {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("confirmed_flush_lsn %x unterschreitet die bestätigte Position %x", uint64(confirmedLSN), lastPosition.Offset)
+		}
+		time.Sleep(200 * time.Millisecond)
 	}
-	confirmedLSN, err := pglogrepl.ParseLSN(confirmed)
+
+	// Der Standby-Status-Aufruf des ACK-Adapters trägt die Position
+	// direkt: der Test bestätigt eine Position über dem aktuellen
+	// Slot-Stand — nur der ACK-Aufruf kann confirmed_flush_lsn dorthin
+	// schieben, weil jede bisherige Bestätigung (Capture-Ergebnis und
+	// Keepalive-Antwort) hinter dem gelesenen Stand liegt. Die
+	// synthetische Position trägt kein persistiertes Change-Guthaben —
+	// sie belegt den Transport-Zug, nicht die Persistenz-Ordnung.
+	beforeLSN, err := pglogrepl.ParseLSN(confirmed)
 	if err != nil {
 		t.Fatalf("confirmed_flush_lsn %q: %v", confirmed, err)
 	}
-	if uint64(confirmedLSN) < lastPosition.Offset {
-		t.Fatalf("confirmed_flush_lsn %x unterschreitet die bestätigte Position %x", uint64(confirmedLSN), lastPosition.Offset)
+	position, err := model.NewSourcePosition(wireSource, uint64(beforeLSN)+0x10000)
+	if err != nil {
+		t.Fatalf("Bestätigungs-Position: %v", err)
+	}
+	if err := ack.Acknowledge(ctx, position); err != nil {
+		t.Fatalf("Acknowledge: %v", err)
+	}
+	ackDeadline := time.Now().Add(15 * time.Second)
+	for {
+		values, err := pool.Query(ctx,
+			"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = $1", slot)
+		if err != nil {
+			t.Fatalf("Slot-Stand: %v", err)
+		}
+		if !values.Next() {
+			values.Close()
+			t.Fatalf("Slot %q fehlt", slot)
+		}
+		var confirmedAfter string
+		if err := values.Scan(&confirmedAfter); err != nil {
+			values.Close()
+			t.Fatalf("Slot-Stand lesen: %v", err)
+		}
+		values.Close()
+		afterLSN, err := pglogrepl.ParseLSN(confirmedAfter)
+		if err != nil {
+			t.Fatalf("confirmed_flush_lsn %q: %v", confirmedAfter, err)
+		}
+		if uint64(afterLSN) >= position.Offset {
+			return
+		}
+		if time.Now().After(ackDeadline) {
+			t.Fatalf("confirmed_flush_lsn %x trägt die bestätigte Position %x nicht", uint64(afterLSN), position.Offset)
+		}
+		time.Sleep(200 * time.Millisecond)
 	}
 }
 
