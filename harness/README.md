@@ -124,18 +124,16 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 
 | Target | Tut was | Bindung |
 |---|---|---|
-| `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` — baut ab dem ersten `src/`-Slice, wenn `go.mod`/`go.sum` existieren | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
+| `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
 | `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
+| `make a-check` | prüft die Hexagon-Schichten-Edges aus `.a-check.yml` gegen den Go-Baum — netzlos, read-only; läuft als eigener Aufruf, nicht im `make gates`-Bündel | kein Gate, [`ADR-0036`](../docs/plan/adr/README.md) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |
 
 **Aktueller Lauf-Status:** CI-Badge bzw. lokal `make help` / `make gates`.
 **Rote Gates:** Begründung im verlinkten `CO-<NNN>` (siehe Bindung-Spalte), Modul 7.
-**Nicht behauptet** (geplant): `make a-check` (Architektur-Gate; aktiviert mit
-der ersten Go-Quelle im Baum — `cmd/` oder `internal/`,
-[`ADR-0036`](../docs/plan/adr/README.md); Fragment `a-check.mk` +
-`.a-check.yml` stehen bereit), `make image-cve` (CVE-Scan des gebauten
+**Nicht behauptet** (geplant): `make image-cve` (CVE-Scan des gebauten
 Images, advisory; ab dem ersten `make image`-Lauf).
 
 <!-- Domänenspezifische Gates ergänzen, je nach Repo-Klasse: -->
