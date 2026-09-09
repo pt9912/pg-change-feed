@@ -29,7 +29,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
   Status `Superseded`: [`ADR-0036`](../plan/adr)/[`ADR-0038`](../plan/adr)
 - `spec/lastenheft.md` ([`LH-FA-DAT-001..004`](../../spec/lastenheft.md), CAP-004/005/006/008,
   CON-003/004, RET-003/004, REA-004, SCH-005), `spec/pflichtenheft.md`
-  (SPEC-001..004, 008), Commit-Messagen der Range
+  ([`SPEC-001`](../../spec/pflichtenheft.md)..004, 008), Commit-Messagen der Range
 - `AGENTS.md` §3/§5; `harness/conventions.md` (MR-000); `harness/sensors/
   a-check.md` (Grenze 3), `.a-check.yml`
 - Stand-alone-Prüfung je Commit: `git worktree` host-seitig (Arbeitsbaum
@@ -64,7 +64,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
   „unerreichbar" trägt nur für die Konstruktor-Pfade, nicht für den Typ.
   Zum Vergleich getragen: Regel 2 (Advance), Regel 6 (AppendChange), Regel 7
   (NewChange) sind echte Konstruktor-/Methoden-Zwänge. Siehe auch die
-  ADR-0029-Deckung-Tabelle unten.
+  [`ADR-0029`](../plan/adr)-Deckung-Tabelle unten.
 - `verifizierbar`: ja — mechanisch: `Changes()` an offener Transaktion
   nicht leer; `AllowsDeletion(age, true)` ohne Consumer-Beleg
 - `klasse`: Invarianten-Träger behauptet, nicht getragen
@@ -97,8 +97,8 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 - `quelle`: `AGENTS.md` §5 („Struktur-IDs (`SPEC-<NNN>`, `ARC-<NNN>`) …
   gehören nicht in die Commit-Message") · Negativbefund-Präzedenz
   `review-slice-001.md` (dort als eingehalten vermerkt)
-- `pfad`: Commit `247d188` (Subject: „… (ARC-001, ADR-0029)") · Commit
-  `f737a0a` (ID-Zeile: „ADR-0040 ADR-0039 ARC-004")
+- `pfad`: Commit `247d188` (Subject: „… ([`ARC-001`](../../spec/architecture.md), [`ADR-0029`](../plan/adr))") · Commit
+  `f737a0a` (ID-Zeile: „[`ADR-0040`](../plan/adr) [`ADR-0039`](../plan/adr) [`ARC-004`](../../spec/architecture.md)")
 - `befund`: Zwei der drei Commits tragen `ARC-*`-Kennungen in der Message;
   `ARC-*` adressiert innerhalb der Spec (Sicht-Stratum) und ist laut
   `AGENTS.md` §5 der Commit-Message vorbehalten — LH-/ADR-Bezug ja,
@@ -217,7 +217,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 
 | Regel | Inhalt | Träger im Diff |
 |---|---|---|
-| 1 | Persist-before-ACK | **kein Typ-Träger** — kein Source-ACK-Typ im Modell-Satz; plausible Verlagerung in den Use Case (Persist-Sequenz, [`LH-QA-REL-001.a`](../../spec/pflichtenheft.md)), aber ADR-0029 sagt „erzwungen im Domain Core" — als Grenze benennen, siehe F-1-Umfeld |
+| 1 | Persist-before-ACK | **kein Typ-Träger** — kein Source-ACK-Typ im Modell-Satz; plausible Verlagerung in den Use Case (Persist-Sequenz, [`LH-QA-REL-001.a`](../../spec/pflichtenheft.md)), aber [`ADR-0029`](../plan/adr) sagt „erzwungen im Domain Core" — als Grenze benennen, siehe F-1-Umfeld |
 | 2 | Consumer-ACK nur vorwärts | getragen — `ConsumerPosition.Advance` (`consumer.go:66-79`), idempotente Wiederholung erlaubt ([`LH-FA-CON-004`](../../spec/lastenheft.md)) |
 | 3 | Offene Transaktion nicht konsumierbar | **nur behauptet** — F-1 |
 | 4 | Rollbacks erzeugen keine committed Changes | implizit getragen — kein Weg zu `committed` außer `Commit`; kein Rollback-Pfad im Modell |
