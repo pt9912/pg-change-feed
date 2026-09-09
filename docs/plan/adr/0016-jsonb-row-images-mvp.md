@@ -24,7 +24,7 @@ die MVP-Grenze hinaus wurde es nicht bewertet.
 ## Entscheidung
 
 `old_data` und `new_data` werden im MVP als `jsonb` gespeichert
-(SPEC-002). Nach Benchmarks wird die Entscheidung überprüft.
+([`SPEC-002`](../../../spec/pflichtenheft.md)). Nach Benchmarks wird die Entscheidung überprüft.
 
 ## Verglichene Alternativen
 
@@ -54,7 +54,7 @@ Bedingung — oder ausdrücklich *permanent*. Ohne Trigger gilt die Entscheidung
 unbefristet weiter, auch wenn ihre Voraussetzung weg ist (Baseline-Regelwerk
 `modul-04-adrs.md` §Kernidee (Modul 4)).
 
-Die ersten abgeschlossenen Benchmark-Läufe auf den Stufen aus SPEC-014
+Die ersten abgeschlossenen Benchmark-Läufe auf den Stufen aus [`SPEC-014`](../../../spec/pflichtenheft.md)
 (`LOAD_TIERS`) liegen vor — beobachtbar am Vorliegen der Benchmark-Ergebnisse,
 nicht an einem Datum.
 

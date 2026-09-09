@@ -9,7 +9,7 @@
 **Bezug:** [`LH-FA-SST-001`](../../../spec/lastenheft.md)
 
 **Schärft:** [§1 Komponenten-Übersicht](../../../spec/architecture.md)
-(ARC-001 bis ARC-011)
+([`ARC-001`](../../../spec/architecture.md) bis [`ARC-011`](../../../spec/architecture.md))
 
 **Regeln:** Baseline-Regelwerk `modul-04-adrs.md`
 §Ziel-Form: ADR (MADR).

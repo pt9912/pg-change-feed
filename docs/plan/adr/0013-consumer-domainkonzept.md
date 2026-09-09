@@ -18,7 +18,7 @@
 
 ## Kontext
 
-Mehrere unabhängige Consumer (LH-FA-CON-001) brauchen persistierte,
+Mehrere unabhängige Consumer ([`LH-FA-CON-001`](../../../spec/lastenheft.md)) brauchen persistierte,
 voneinander getrennte Positionen. Wie Lesen und Bestätigen zusammenwirken,
 entscheidet darüber, ob Consumer-Positionen eine Fachbedeutung bekommen oder
 technische Nebensache bleiben.
@@ -38,9 +38,9 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — Positionen nur im Consumer (Client-Seite) | Kein Serverzustand | Positionsverlust bei Client-Verlust; Retention kann nicht auf Positionen bauen (LH-FA-RET-004 bricht) |
-| B — Eine globale Leseposition für alle Consumer | Minimaler Zustand | Consumer blockieren sich gegenseitig; LH-FA-CON-002 (Unabhängigkeit) bricht |
-| **C — Benannte Consumer mit unabhängigen persistierten Positionen im Core** | Retention, Lag-Metriken und Neustart-Fortsetzung (LH-FA-CON-005) haben einen Fachbegriff; Regeln sind Invarianten | Zustandsverwaltung (ConsumerStatePort) ist eigene Pflicht |
+| A — Positionen nur im Consumer (Client-Seite) | Kein Serverzustand | Positionsverlust bei Client-Verlust; Retention kann nicht auf Positionen bauen ([`LH-FA-RET-004`](../../../spec/lastenheft.md) bricht) |
+| B — Eine globale Leseposition für alle Consumer | Minimaler Zustand | Consumer blockieren sich gegenseitig; [`LH-FA-CON-002`](../../../spec/lastenheft.md) (Unabhängigkeit) bricht |
+| **C — Benannte Consumer mit unabhängigen persistierten Positionen im Core** | Retention, Lag-Metriken und Neustart-Fortsetzung ([`LH-FA-CON-005`](../../../spec/lastenheft.md)) haben einen Fachbegriff; Regeln sind Invarianten | Zustandsverwaltung (ConsumerStatePort) ist eigene Pflicht |
 
 ## Konsequenzen
 
@@ -49,8 +49,8 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 - Negativ: Der administrative Reset braucht eine bewusste, protokollierte
   Sonderoperation — er darf nicht als ACK-Tarnhaupt durchkommen.
 - Folgepflicht: Consumer-Fortschritt je benanntem Consumer ist
-  Persistenzpflicht (LH-FA-CON-003); Entfernen von Consumern ist
-  administrativ (LH-FA-CON-006).
+  Persistenzpflicht ([`LH-FA-CON-003`](../../../spec/lastenheft.md)); Entfernen von Consumern ist
+  administrativ ([`LH-FA-CON-006`](../../../spec/lastenheft.md)).
 
 ## Re-Evaluierungs-Trigger
 

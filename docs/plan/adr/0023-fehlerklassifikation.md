@@ -19,7 +19,7 @@
 Die Adapter melden technisch sehr unterschiedliche Fehler
 (Bibliotheks-Exceptions, Protokollfehler, Datenbankfehler). Application
 und Betrieb brauchen eine stabile Klassifikation, um Wiederholung, Abort
-und Sichtbarkeit strategisch zu entscheiden (LH-QA-REL-003), ohne
+und Sichtbarkeit strategisch zu entscheiden ([`LH-QA-REL-003`](../../../spec/lastenheft.md)), ohne
 Bibliotheksdetails zu kennen.
 
 ## Entscheidung
@@ -56,7 +56,7 @@ unbefristet weiter, auch wenn ihre Voraussetzung weg ist (Baseline-Regelwerk
 `modul-04-adrs.md` §Kernidee (Modul 4)).
 
 permanent — die Kategorien sind die Vertragsschnittstelle zwischen
-Adaptern und Application (SPEC-008).
+Adaptern und Application ([`SPEC-008`](../../../spec/pflichtenheft.md)).
 
 ## Geschichte
 

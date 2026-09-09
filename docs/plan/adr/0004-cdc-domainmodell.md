@@ -47,7 +47,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 ## Konsequenzen
 
 - Positiv: Domain-Invarianten (ADR-0029) sind an eigenen Typen prüfbar;
-  `cdc.change` (SPEC-002) und `SourcePosition` (SPEC-003) sind die
+  `cdc.change` ([`SPEC-002`](../../../spec/pflichtenheft.md)) und `SourcePosition` ([`SPEC-003`](../../../spec/pflichtenheft.md)) sind die
   verbindlichen Abbilder.
 - Negativ: Zwei Modellschichten — Nachricht und Domänenobjekt — müssen
   gepflegt und gegen Drift gehalten werden.

@@ -29,9 +29,10 @@ Welche Harnesskonvention wird adoptiert? Stand und Datum festhalten,
 damit spätere Adaptionen einen Bezugspunkt haben.
 -->
 
-- **Konvention:** <Name, z. B. "AI-Harness-Kurs", interner Standard, Industrie-Norm>
-- **Stand:** <Version/Tag des adoptierten Standes, z. B. "v5.13.1">
-- **Datum der Adoption:** <Datum>
+- **Konvention:** AI-Harness-Kurs (Baseline-Regelwerk, als Release-Asset
+  vendored unter `.harness/baseline/`)
+- **Stand:** v6.5.0
+- **Datum der Adoption:** 2026-09-09
 
 <!--
 Der Stand ist eine VERSION, kein Datum: Er ist der Bezugspunkt, gegen den ein

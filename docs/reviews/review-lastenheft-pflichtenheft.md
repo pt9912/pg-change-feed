@@ -41,10 +41,10 @@ in 5a6f8ea)
 - `quelle`: `spec/lastenheft.md` §1 *MVP-Schnitt* („Er umfasst die Anforderungen
   mit der Kennzeichnung **MVP: ja**") gegen die Mapping-Tabelle ebenda
 - `pfad`: `spec/lastenheft.md:108-116` (sowie `:256`, `:701`, `:1038`)
-- `befund`: LH-FA-RET-001 trägt `**MVP: ja.**` (Zeile 701), fehlt aber im
+- `befund`: [`LH-FA-RET-001`](../../spec/lastenheft.md) trägt `**MVP: ja.**` (Zeile 701), fehlt aber im
   MVP-Abnahme-Mapping. Umgekehrt verweisen die Mapping-Zeilen 4 und 6 auf
-  LH-QA-REL-001 und LH-FA-CFG-006, die keinen MVP-Marker tragen
-  (LH-QA-POR-003, Zeile 7, ist als einziger QA-Eintrag markiert und gemappt).
+  [`LH-QA-REL-001`](../../spec/lastenheft.md) und [`LH-FA-CFG-006`](../../spec/lastenheft.md), die keinen MVP-Marker tragen
+  ([`LH-QA-POR-003`](../../spec/lastenheft.md), Zeile 7, ist als einziger QA-Eintrag markiert und gemappt).
 - `verifizierbar`: ja — Mengenvergleich {Anforderungen mit MVP-Marker} gegen
   {im Mapping referenzierte IDs} ist mechanisch prüfbar
 - `klasse`: MVP-Kennzeichnung und Abnahme-Mapping inkonsistent
@@ -70,11 +70,11 @@ in 5a6f8ea)
 
 - `kategorie`: MEDIUM
 - `quelle`: Maintainability — Vertragskonsistenz innerhalb des Lastenhefts
-- `pfad`: `spec/lastenheft.md:1192-1203` gegen `:746-748` (LH-FA-RET-004),
-  `:792-794` (LH-FA-SCH-001), `:1123 ff.` (LH-QA-OPS-001 ff.)
+- `pfad`: `spec/lastenheft.md:1192-1203` gegen `:746-748` ([`LH-FA-RET-004`](../../spec/lastenheft.md)),
+  `:792-794` ([`LH-FA-SCH-001`](../../spec/lastenheft.md)), `:1123 ff.` ([`LH-QA-OPS-001`](../../spec/lastenheft.md) ff.)
 - `befund`: Die „zukünftigen Erweiterungen — bewusst nicht im ersten Stand"
-  listen „Erweiterte Retention (LH-FA-RET-004)", „Schema Evolution
-  (LH-FA-SCH-001 ff.)" und „Produktionsreife Observability (LH-QA-OPS-001
+  listen „Erweiterte Retention ([`LH-FA-RET-004`](../../spec/lastenheft.md))", „Schema Evolution
+  ([`LH-FA-SCH-001`](../../spec/lastenheft.md) ff.)" und „Produktionsreife Observability ([`LH-QA-OPS-001`](../../spec/lastenheft.md)
   ff.)" — während die referenzierten Anforderungen bindend formuliert sind
   („müssen"/„soll") und an der Anforderung selbst keine Zurückstellung tragen.
   Nur die Consumer-Zeile trägt die tragfähige Lesart („Fähigkeit ist
@@ -86,14 +86,14 @@ in 5a6f8ea)
 ### F-4 — Drei Lastenheft-Delegationen ans Pflichtenheft unerfüllt
 
 - `kategorie`: MEDIUM
-- `quelle`: LH-QA-PER-002, LH-QA-PER-004, LH-QA-POR-001
+- `quelle`: [`LH-QA-PER-002`](../../spec/lastenheft.md), [`LH-QA-PER-004`](../../spec/lastenheft.md), [`LH-QA-POR-001`](../../spec/lastenheft.md)
 - `pfad`: `spec/lastenheft.md:1079-1080`, `:1092-1093`, `:1158-1159` gegen
   `spec/pflichtenheft.md:248` und `:238-240`
 - `befund`: Das Lastenheft legt dreimal fest, etwas werde „in
   `spec/pflichtenheft.md` festgelegt". Im Pflichtenheft stehen zu
-  LH-QA-POR-001 nur „konkrete Versionen noch festzulegen" (SPEC-010), zu
-  LH-QA-PER-004 nur „Warn- und Fehlerschwellen … sind konfigurierbar" (keine
-  festgelegten Werte), und zu LH-QA-PER-002 (Volumina) fehlt jede Stelle.
+  [`LH-QA-POR-001`](../../spec/lastenheft.md) nur „konkrete Versionen noch festzulegen" ([`SPEC-010`](../../spec/pflichtenheft.md)), zu
+  [`LH-QA-PER-004`](../../spec/lastenheft.md) nur „Warn- und Fehlerschwellen … sind konfigurierbar" (keine
+  festgelegten Werte), und zu [`LH-QA-PER-002`](../../spec/lastenheft.md) (Volumina) fehlt jede Stelle.
 - `verifizierbar`: ja — Textvergleich der delegierten Stellen
 - `klasse`: Lastenheft-Delegation ohne Entsprechung im Pflichtenheft
 
@@ -107,12 +107,12 @@ in 5a6f8ea)
 - `pfad`: `spec/lastenheft.md:234`, `:269`, `:337`, `:355`, `:373`, `:419-422`,
   `:616`, `:876-882`, `:950`, `:1014-1015` (u. a.)
 - `befund`: Mehrere Anforderungen tragen `—` statt eines Pfades (z. B.
-  LH-FA-CFG-004 Negative, LH-FA-CFG-006 Negative, LH-FA-CAP-004/005/006
-  Negative, LH-FA-CON-001 Negative, LH-FA-SST-005 Boundary/Negative), obwohl
+  [`LH-FA-CFG-004`](../../spec/lastenheft.md) Negative, [`LH-FA-CFG-006`](../../spec/lastenheft.md) Negative, [`LH-FA-CAP-004`](../../spec/lastenheft.md)/005/006
+  Negative, [`LH-FA-CON-001`](../../spec/lastenheft.md) Negative, [`LH-FA-SST-005`](../../spec/lastenheft.md) Boundary/Negative), obwohl
   die Abschnittsregel drei Pfade fordert — eine Regel, wann `—` zulässig ist,
   fehlt. Zudem sind dutzende Kriterien als „Given …, then …" ohne When-Teil
-  formuliert (z. B. LH-FA-DAT-001 Happy/Boundary, LH-FA-ADM-001 Happy/Boundary,
-  LH-FA-SST-001 Happy/Boundary).
+  formuliert (z. B. [`LH-FA-DAT-001`](../../spec/lastenheft.md) Happy/Boundary, [`LH-FA-ADM-001`](../../spec/lastenheft.md) Happy/Boundary,
+  [`LH-FA-SST-001`](../../spec/lastenheft.md) Happy/Boundary).
 - `verifizierbar`: ja — formal gegen die Kriterien-Form prüfbar
 - `klasse`: GWT-Pfad unvollständig oder leer
 
@@ -137,7 +137,7 @@ in 5a6f8ea)
 - `quelle`: Maintainability
 - `pfad`: `spec/pflichtenheft.md:248`
 - `befund`: Die Vertrag-Datei-Spalte verweist auf `spec/architecture.md`
-  („Schnittstelle zur Quelle, LH-FA-SST-001") — diese Datei ist aktuell die
+  („Schnittstelle zur Quelle, [`LH-FA-SST-001`](../../spec/lastenheft.md)") — diese Datei ist aktuell die
   leere Ziel-Form-Vorlage (Platzhalter, `ARC-007` = `<…>`); der Zeiger löst
   inhaltlich nicht auf.
 - `verifizierbar`: ja — Dateiinhalt gegen Zeiger prüfbar
@@ -160,7 +160,7 @@ in 5a6f8ea)
 ### F-9 — LH-QA-OPS-003 „Consumer-Positionen" nur als Lag-Metrik abgedeckt
 
 - `kategorie`: INFO
-- `quelle`: LH-QA-OPS-003
+- `quelle`: [`LH-QA-OPS-003`](../../spec/lastenheft.md)
 - `pfad`: `spec/pflichtenheft.md:233`
 - `befund`: Die Metrik-Tabelle bildet Consumer-Positionen ausschließlich als
   `cdc_consumer_lag` („Rückstand je Consumer") ab; eine direkte
@@ -195,7 +195,7 @@ in 5a6f8ea)
 - geprüft, ohne Befund: **ID-Schema Lastenheft** — `LH-FA-<BEREICH>-<NNN>` /
   `LH-QA-<BEREICH>-<NN>` durchgängig, keine Lücke, keine Doppelvergabe,
   keine Wieder-verwendung
-- geprüft, ohne Befund: **SPEC-Zählung Pflichtenheft** — SPEC-001…011
+- geprüft, ohne Befund: **SPEC-Zählung Pflichtenheft** — [`SPEC-001`](../../spec/pflichtenheft.md)…011
   fortlaufend je Datei, jede Struktur/Festlegung in §2–§6 trägt eine ID
 - geprüft, ohne Befund: **Decken-Regel beider Historien** — kein ADR-, Slice-,
   Carveout- oder Welle-Verweis in irgendeiner Spalte

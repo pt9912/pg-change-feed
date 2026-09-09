@@ -1,0 +1,64 @@
+# Doku-Referenz-Gate — emittiert von ai-harness-init (Adopter-Baseline).
+# Startgeruest: `d-check --print-config`. Waechst mit den Artefakten.
+scan:
+  roots: ["."]
+  # .harness/**: tool-interne Ablage (vendored Baseline, Sprachskelett) —
+  # keine Adopter-Doku, vom Doc-Gate ausgenommen.
+  ignore: ["**/*.template.md", ".tmp/**", ".harness/**"]
+modules: [links, anchors, ids, matrix, versions]
+ids:
+  # Kennungs-Linkpflicht (id-unlinked): nackte Kennungen muessen auf ihr
+  # Definitions-Dokument verlinken. Je Stratum ein Muster; das .a-Muster
+  # (Verfeinerungen, definiert im Pflichtenheft) steht vor dem Basis-
+  # Muster, damit "LH-QA-REL-001.a" nicht als Lastenheft-ID matcht.
+  patterns:
+    - {regex: 'LH-(FA|QA)-[A-Z]{3}-\d{3}\.[a-z]', target: spec/pflichtenheft.md}
+    - {regex: 'LH-(FA|QA)-[A-Z]{3}-\d{3}', target: spec/lastenheft.md}
+    - {regex: 'SPEC-\d{3}', target: spec/pflichtenheft.md}
+    - {regex: 'ARC-\d{3}', target: spec/architecture.md}
+    - {regex: 'ADR-\d{4}', target: docs/plan/adr/}
+matrix:
+  # Referenz-Richtung (SDP) mechanisch — spec/ und docs/plan/ existieren.
+  # Decken-Regel: kein Spec-Stratum nennt eine ADR oder einen Slice,
+  # kein ADR nennt einen Slice. Innerhalb der Spec ist `direction:
+  # no-downward` bewusst NICHT gesetzt: die Messmethoden des Lastenhefts
+  # delegieren vertraglich an Pflichtenheft-Festlegungen (LH-QA-POR-001,
+  # LH-QA-PER-002, LH-QA-PER-004 → SPEC-012/013/014); die Within-Spec-
+  # Ordnung (Vertrag > Technik > Sicht) bleibt Review-Pruefpflicht.
+  classes:
+    - name: spec
+      paths: [spec/lastenheft.md, spec/pflichtenheft.md, spec/architecture.md]
+    - name: adr
+      paths: ["docs/plan/adr/[0-9]*.md"]
+      token: 'ADR-\d{4}'
+    - name: slice
+      paths: ["docs/plan/planning/**/slice-*.md"]
+      token: 'slice-\d{3}'
+  rules:
+    - {from: spec, to: adr, allow: false}
+    - {from: spec, to: slice, allow: false}
+    - {from: adr, to: slice, allow: false}
+  status: {forbidden: [superseded, deprecated]}
+versions:
+  # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
+  # traegt deren Version im Pfad; der adoptierte Stand steht einmal in
+  # conventions.md §Baseline, alle abweichenden Pins sind ein Befund.
+  pin-pattern: '\.harness/baseline/(v\d+\.\d+\.\d+)/'
+  current-from: harness/conventions.md#baseline
+  exempt-paths: ["harness/conventions/done/**"]
+vcs:
+  # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
+  # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range
+  # unveraendert — Eintraege werden nie ueberschrieben.
+  paths: ["harness/conventions/**/MR-[0-9]*.md"]
+  immutable-when: '^- \*\*Datum:\*\*'
+# codepaths: aktivieren, sobald alle in Doku referenzierten Pfade existieren
+# (z. B. nennt spec/architecture.md den Roadmap-Pfad, der erst mit der
+# ersten Welle angelegt wird) — sonst behaupteter, aber roter Gate
+# (Modul 13, LH-QA-01).
+#
+# reviews: aktivieren, sobald der erste Slice nach docs/plan/planning/done/
+# wandert (done-dir ist der Aktivierungs-Schalter).
+# reviews:
+#   done-dir: docs/plan/planning/done
+#   reviews-dir: docs/reviews

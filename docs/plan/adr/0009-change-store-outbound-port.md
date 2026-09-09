@@ -19,7 +19,7 @@
 
 ## Kontext
 
-Persistenz ist die Kernwirkung des Systems (LH-FA-RET-001): Changes müssen
+Persistenz ist die Kernwirkung des Systems ([`LH-FA-RET-001`](../../../spec/lastenheft.md)): Changes müssen
 dauerhaft gespeichert und wieder lesbar sein. Die Technik dahinter — welche
 Datenbank, welches Schema — soll nicht in die Application sickern.
 

@@ -53,11 +53,11 @@ konsumierbare Quelltransaktionen am CaptureInboundPort.
 
 BEGIN, COMMIT und relevante Streaming-Grenzen werden berücksichtigt:
 
-- Offene Transaktionen sind nicht konsumierbar (LH-FA-CAP-006).
-- Rollbacks erzeugen keine committed Changes (LH-FA-CAP-007).
+- Offene Transaktionen sind nicht konsumierbar ([`LH-FA-CAP-006`](lastenheft.md)).
+- Rollbacks erzeugen keine committed Changes ([`LH-FA-CAP-007`](lastenheft.md)).
 - Jede persistierte Quelltransaktion besitzt eine interne ID und
   Commit-Position; Changes besitzen eine eindeutige Sequenz innerhalb der
-  Transaktion (LH-FA-CAP-004, LH-FA-DAT-004).
+  Transaktion ([`LH-FA-CAP-004`](lastenheft.md), [`LH-FA-DAT-004`](lastenheft.md)).
 - Große Transaktionen dürfen nicht unbegrenzt im RAM gehalten werden;
   der TransactionBufferPort (SPEC-005) ermöglicht Spooling.
 
@@ -67,7 +67,7 @@ BEGIN, COMMIT und relevante Streaming-Grenzen werden berücksichtigt:
 Tabelle; aktualisierte Publication/Slot-Verwaltung.
 
 1. Replica Identity prüfen. `REPLICA IDENTITY FULL` kann für vollständige
-   alte Werte erforderlich sein (LH-FA-CAP-008), wird aber **nicht
+   alte Werte erforderlich sein ([`LH-FA-CAP-008`](lastenheft.md)), wird aber **nicht
    ungefragt** aktiviert.
 2. Publication und Logical Replication Slot verwalten; als Output Plugin
    wird `pgoutput` verwendet.
@@ -83,7 +83,7 @@ Ergebnismenge.
 
 Sortierung nach (Commit-Position der Quelltransaktion, Transaktions-ID,
 Sequenz innerhalb der Transaktion) — bei identischer Eingabe ist die
-Reihenfolge damit stabil (LH-FA-REA-004, LH-FA-REA-003). Changes können
+Reihenfolge damit stabil ([`LH-FA-REA-004`](lastenheft.md), [`LH-FA-REA-003`](lastenheft.md)). Changes können
 ab einer SourcePosition bzw. innerhalb eines Positionsbereichs gelesen
 werden; Lesen verändert gespeicherte Positionen nicht.
 
@@ -96,9 +96,9 @@ Bereinigungsmenge.
    Changes, die aktive Consumer benötigen, dürfen nicht automatisch
    gelöscht werden.
 2. Zeitbasierte Mindestaufbewahrung ist zusätzlich konfigurierbar
-   (LH-FA-RET-003).
+   ([`LH-FA-RET-003`](lastenheft.md)).
 3. Langsame Consumer, die die Safe Watermark blockieren, sind sichtbar
-   (LH-FA-RET-005).
+   ([`LH-FA-RET-005`](lastenheft.md)).
 
 Retention ist eine Domain Policy; sie liegt nicht in einem Adapter.
 
@@ -109,9 +109,9 @@ TableSchema-/SchemaVersion-Modell (SPEC-004) oder sichtbarer Fehler.
 
 Relation Metadata wird in technologieunabhängige
 TableSchema-/SchemaVersion-Modelle übersetzt; jeder Change referenziert
-eine Schema-Version (LH-FA-SCH-005). Nicht sicher interpretierbare
+eine Schema-Version ([`LH-FA-SCH-005`](lastenheft.md)). Nicht sicher interpretierbare
 Schemaänderungen führen zu einem sichtbaren Fehler (Fehlerklasse `schema`,
-§4) statt stiller Fehlinterpretation (LH-FA-SCH-004).
+§4) statt stiller Fehlinterpretation ([`LH-FA-SCH-004`](lastenheft.md)).
 
 ---
 
@@ -152,7 +152,7 @@ Vorgesehene Tabellen:
 ```
 
 Im MVP werden `old_data` und `new_data` als `jsonb` gespeichert (Row
-Images; Verfügbarkeit je Operationstyp siehe LH-FA-CAP-008).
+Images; Verfügbarkeit je Operationstyp siehe [`LH-FA-CAP-008`](lastenheft.md)).
 
 ### SPEC-003 — SourcePosition
 
@@ -169,7 +169,7 @@ PostgreSQL-Adapter mappt die PostgreSQL-LSN darauf:
 ### SPEC-004 — TableSchema / SchemaVersion
 
 Technologieunabhängige Modelle für Relation Metadata; jeder Change
-referenziert eine Schema-Version (LH-FA-SCH-005). Die Übersetzung
+referenziert eine Schema-Version ([`LH-FA-SCH-005`](lastenheft.md)). Die Übersetzung
 erfolgt in LH-FA-SCH-004.a.
 
 ### SPEC-005 — TransactionBuffer
@@ -193,8 +193,8 @@ eine ADR nur den ganzen Abschnitt nennen.
 | `SPEC-006` | `CDC_SCHEMA` | `cdc` | Standard-Schema-Name für alle CDC-Objekte (§2, SPEC-001) |
 | `SPEC-007` | `HEALTH_STATES` | `healthy`, `degraded`, `unhealthy` | Health-Zustände; Readiness zeigt, ob die Instanz ihre Betriebsrolle erfüllen kann |
 | `SPEC-012` | `PG_MAJOR_VERSIONS` | 17, 18 | Vorschlagsregel: die zwei neuesten aktiven Major-Versionen (Stand 2026-09-09; PostgreSQL 19 unmittelbar vor Release — Aufnahme als spätere Ausweitung) |
-| `SPEC-013` | `CDC_LAG_THRESHOLDS` | Messziel p95 ≤ 1 s · Warnschwelle > 5 s · Fehlerschwelle > 60 s | Initialwerte für Commit → CDC-Verfügbarkeit (LH-QA-PER-004, Metrik `cdc_capture_lag`); über ADR schärfbar |
-| `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung (LH-QA-PER-002): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
+| `SPEC-013` | `CDC_LAG_THRESHOLDS` | Messziel p95 ≤ 1 s · Warnschwelle > 5 s · Fehlerschwelle > 60 s | Initialwerte für Commit → CDC-Verfügbarkeit ([`LH-QA-PER-004`](lastenheft.md), Metrik `cdc_capture_lag`); über ADR schärfbar |
+| `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung ([`LH-QA-PER-002`](lastenheft.md)): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
 
 ---
 
@@ -214,7 +214,7 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 | `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen |
 | `SPEC-008` | `storage` | Persistenzfehler im ChangeStore | **Kein Source-ACK** (LH-QA-REL-001.a) |
 | `SPEC-008` | `replication` | Replication-Stream/Slot-Störung | Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte Fortsetzung |
-| `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach LH-QA-REL-002 |
+| `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach [`LH-QA-REL-002`](lastenheft.md) |
 
 Keine Credentials in Logs.
 
@@ -224,7 +224,7 @@ Keine Credentials in Logs.
 
 Regeln dieser Sektion: verbindliche Felder der Betriebsschnittstelle
 (vorgesehen: Prometheus/OpenTelemetry-Adapter). Inhalt deckt
-LH-QA-OPS-003 ab.
+[`LH-QA-OPS-003`](lastenheft.md) ab.
 
 | ID | Metrik | Inhalt | Quelle |
 |---|---|---|---|
@@ -232,9 +232,9 @@ LH-QA-OPS-003 ab.
 | `SPEC-009` | `cdc_changes_pending` | ausstehende/unbestätigte Changes | ChangeStore |
 | `SPEC-009` | `cdc_transactions_total` | persistierte Transaktionen | ChangeStore |
 | `SPEC-009` | `cdc_errors_total{class}` | Fehler je Klasse (§4) | Application |
-| `SPEC-009` | `cdc_capture_lag` | Abstand Quelländerung → CDC-Verfügbarkeit (LH-FA-ADM-004) | Capture |
-| `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer (LH-FA-ADM-005) | ConsumerState |
-| `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh (LH-QA-OPS-003) | ConsumerState |
+| `SPEC-009` | `cdc_capture_lag` | Abstand Quelländerung → CDC-Verfügbarkeit ([`LH-FA-ADM-004`](lastenheft.md)) | Capture |
+| `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer ([`LH-FA-ADM-005`](lastenheft.md)) | ConsumerState |
+| `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh ([`LH-QA-OPS-003`](lastenheft.md)) | ConsumerState |
 | `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand | Replication Stream |
 | `SPEC-009` | `cdc_storage_bytes` | Speicherverbrauch der CDC-Daten | ChangeStore |
 | `SPEC-009` | `cdc_oldest_change_age` | Alter des ältesten aufbewahrten Changes | ChangeStore |
@@ -249,7 +249,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 
 | ID | System | Version | Vertrag-Datei |
 |---|---|---|---|
-| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | PostgreSQL 17 und 18 (SPEC-012, LH-QA-POR-001) | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
+| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | PostgreSQL 17 und 18 (SPEC-012, [`LH-QA-POR-001`](lastenheft.md)) | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
 
 ---

@@ -45,11 +45,11 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 ## Konsequenzen
 
 - Positiv: Der Capture-Kern läuft auf jeder unterstützten Instanz ohne
-  DDL- oder Extension-Eingriff (passend zu LH-FA-CFG-006).
+  DDL- oder Extension-Eingriff (passend zu [`LH-FA-CFG-006`](../../../spec/lastenheft.md)).
 - Negativ: Der Adapter trägt die `pgoutput`-Dekodierung samt
   Protokollversionen; das ist bewusstes Adapterdetail (ADR-0032).
 - Folgepflicht: Protokollversionen je unterstützter Major-Version prüfen
-  (SPEC-012, LH-QA-POR-001).
+  ([`SPEC-012`](../../../spec/pflichtenheft.md), [`LH-QA-POR-001`](../../../spec/lastenheft.md)).
 
 ## Re-Evaluierungs-Trigger
 

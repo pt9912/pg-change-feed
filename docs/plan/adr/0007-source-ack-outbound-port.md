@@ -19,7 +19,7 @@
 ## Kontext
 
 Die WAL-Bestätigung ist die gefährlichste Nebennhandlung des Capture-Pfads:
-Wer zu früh bestätigt, verliert still Changes (LH-QA-REL-001). Die
+Wer zu früh bestätigt, verliert still Changes ([`LH-QA-REL-001`](../../../spec/lastenheft.md)). Die
 Entscheidung, wann bestätigt wird, darf deshalb nicht beim Adapter liegen,
 der denselben Stream liest.
 

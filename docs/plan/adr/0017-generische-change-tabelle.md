@@ -18,7 +18,7 @@
 
 Aktivierbare Tabellen haben unterschiedliche Schemata; der Store muss
 Changes einheitlich persistieren, lesen und der Retention unterwerfen —
-ohne dass die Aktivierung einer Tabelle (LH-FA-CFG-001) zu einem
+ohne dass die Aktivierung einer Tabelle ([`LH-FA-CFG-001`](../../../spec/lastenheft.md)) zu einem
 Schemaeingriff am CDC-Speicher wird.
 
 ## Entscheidung
@@ -43,7 +43,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 ## Konsequenzen
 
 - Positiv: Aktivierung ist eine Metadaten-Operation, kein Schemaeingriff;
-  Lesen (LH-FA-REA-006) und Retention laufen über einen Pfad.
+  Lesen ([`LH-FA-REA-006`](../../../spec/lastenheft.md)) und Retention laufen über einen Pfad.
 - Negativ: physische Datenlokalität je Quelle erst über spätere
   Partitionierung/Views adressierbar.
 - Folgepflicht: tabellenspezifische Views als spätere Ergänzung möglich.
@@ -56,7 +56,7 @@ unbefristet weiter, auch wenn ihre Voraussetzung weg ist (Baseline-Regelwerk
 `modul-04-adrs.md` §Kernidee (Modul 4)).
 
 permanent — der generische Vertrag trägt die Aktivierbarkeit je Tabelle
-(LH-FA-CFG-001) unabhängig von konkreten Volumina.
+([`LH-FA-CFG-001`](../../../spec/lastenheft.md)) unabhängig von konkreten Volumina.
 
 ## Geschichte
 

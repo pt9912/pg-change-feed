@@ -22,8 +22,8 @@ Consumer-Positionen, Mindestaufbewahrungszeiten und der
 Safe-Watermark-Logik zusammen — fachliche Regeln über dem gespeicherten
 Datenbestand. Läge diese Entscheidung im Storage-Adapter oder außerhalb
 des Systems, würde Löschwissen an die Speichertechnik gekoppelt bzw.
-verließe das System; die Sicherheit der Retention (LH-FA-RET-004,
-LH-FA-RET-005) wäre nicht mehr domänentestbar.
+verließe das System; die Sicherheit der Retention ([`LH-FA-RET-004`](../../../spec/lastenheft.md),
+[`LH-FA-RET-005`](../../../spec/lastenheft.md)) wäre nicht mehr domänentestbar.
 
 ## Entscheidung
 
@@ -49,7 +49,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
   bleibt austauschbar.
 - Negativ: jede Bereinigung läuft über Port und Adapter (Indirektion).
 - Folgepflicht: RunRetentionUseCase unter den Inbound Use Cases; blockierende
-  Consumer sind sichtbar zu melden (LH-FA-RET-005).
+  Consumer sind sichtbar zu melden ([`LH-FA-RET-005`](../../../spec/lastenheft.md)).
 
 ## Re-Evaluierungs-Trigger
 

@@ -17,7 +17,7 @@
 ## Kontext
 
 Das Lastenheft fordert nur, dass eine spätere HTTP-/gRPC-API möglich ist,
-ohne das interne CDC-Modell grundlegend zu verändern (LH-FA-SST-005).
+ohne das interne CDC-Modell grundlegend zu verändern ([`LH-FA-SST-005`](../../../spec/lastenheft.md)).
 Ein konkreter API-Consumer-Bedarf liegt zum Entscheidungszeitpunkt nicht
 vor.
 
@@ -35,9 +35,9 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — HTTP/gRPC ab MVP | API-Consumer werden früh bedient | MVP-Wachstum ohne beobachtbaren Bedarf; LH-FA-SST-005 fordert keine API |
-| B — HTTP/gRPC nie | geringste Komplexität | schließt die von LH-FA-SST-005 geforderte Erweiterungsfähigkeit aus |
-| **C — HTTP/gRPC optional, später** | MVP fokussiert; Architektur lädt die Erweiterung (ARC-005-Liste offen) | API-Anfragen müssen auf einen späteren Stand warten |
+| A — HTTP/gRPC ab MVP | API-Consumer werden früh bedient | MVP-Wachstum ohne beobachtbaren Bedarf; [`LH-FA-SST-005`](../../../spec/lastenheft.md) fordert keine API |
+| B — HTTP/gRPC nie | geringste Komplexität | schließt die von [`LH-FA-SST-005`](../../../spec/lastenheft.md) geforderte Erweiterungsfähigkeit aus |
+| **C — HTTP/gRPC optional, später** | MVP fokussiert; Architektur lädt die Erweiterung ([`ARC-005`](../../../spec/architecture.md)-Liste offen) | API-Anfragen müssen auf einen späteren Stand warten |
 
 ## Konsequenzen
 

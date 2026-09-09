@@ -20,7 +20,7 @@
 ## Kontext
 
 Das Lastenheft fordert maschinenlesbare Metriken und strukturiertes
-Logging (LH-QA-OPS-003, LH-QA-OPS-004). Die Domain soll davon frei
+Logging ([`LH-QA-OPS-003`](../../../spec/lastenheft.md), [`LH-QA-OPS-004`](../../../spec/lastenheft.md)). Die Domain soll davon frei
 bleiben — sie kennt weder Logging- noch Metrics-Frameworks —, während
 Betriebsinformationen trotzdem aus allen Schichten ankommen müssen.
 
@@ -40,7 +40,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 |---|---|---|
 | A — Logging-/Metrics-Frameworks direkt in der Domain | bequem, keine Weiterleitung | Domain abhängig von Telemetrie-Technik; verletzt §2 der Architektur-Sicht; Testaufwand steigt |
 | B — globale Telemetrie-Singletons | kein Port nötig | versteckte Abhängigkeit; Verdrahtung und Testdoubles intransparent |
-| **C — Ports + Driven Adapters** | Domain pur testbar; Telemetrie-Backend austauschbar (ARC-011) | Weiterleitung der Betriebsereignisse muss explizit verdrahtet werden |
+| **C — Ports + Driven Adapters** | Domain pur testbar; Telemetrie-Backend austauschbar ([`ARC-011`](../../../spec/architecture.md)) | Weiterleitung der Betriebsereignisse muss explizit verdrahtet werden |
 
 ## Konsequenzen
 

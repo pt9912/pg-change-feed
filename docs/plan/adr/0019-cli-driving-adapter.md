@@ -17,7 +17,7 @@
 ## Kontext
 
 Das Lastenheft fordert eine CLI für Installation, Diagnose und
-Administration (LH-FA-SST-003). Offen ist, ob die CLI einen eigenen
+Administration ([`LH-FA-SST-003`](../../../spec/lastenheft.md)). Offen ist, ob die CLI einen eigenen
 Datenzugriffsweg erhält oder wie jeder andere Kanal über die Inbound
 Use Cases läuft.
 
@@ -35,13 +35,13 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 | Option | Pro | Contra |
 |---|---|---|
 | A — CLI mit eigenem Direktdatenzugriff | schnell gebaut, weniger Indirektion | zweite Logikquelle; Drift gegenüber SQL- und Stream-Kanal; Diagnoseaussagen können auseinanderlaufen |
-| B — keine CLI | keine Adapter-Arbeit | verletzt LH-FA-SST-003 |
+| B — keine CLI | keine Adapter-Arbeit | verletzt [`LH-FA-SST-003`](../../../spec/lastenheft.md) |
 | **C — CLI über dieselben Inbound Ports** | alle Kanäle gleichwertig; Diagnose und Administration über eine Logikquelle | CLI darf Ports nicht abkürzen (Disziplin im Adapter) |
 
 ## Konsequenzen
 
 - Positiv: einheitliche Semantik über alle Kanäle; CLI-Ausgaben und
-  Statusabfragen (LH-FA-ADM-002 ff.) sind vergleichbar.
+  Statusabfragen ([`LH-FA-ADM-002`](../../../spec/lastenheft.md) ff.) sind vergleichbar.
 - Negativ: CLI-Features sind auf die Use-Case-Formen beschränkt.
 - Folgepflicht: —
 

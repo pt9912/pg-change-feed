@@ -21,7 +21,7 @@
 Der Replication Stream liefert Relation Metadata, die sich über die Zeit
 ändern. Changes, die unter älteren Schemata erfasst wurden, müssen
 weiterhin lesbar bleiben; eine stille Fehlinterpretation ist nach
-LH-FA-SCH-004 unzulässig. Der Core braucht daher eine
+[`LH-FA-SCH-004`](../../../spec/lastenheft.md) unzulässig. Der Core braucht daher eine
 technologieunabhängige Repräsentation der Schemata.
 
 ## Entscheidung
@@ -40,7 +40,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 | Option | Pro | Contra |
 |---|---|---|
 | A — Relation Metadata 1:1 als Rohdaten durchreichen | kein Übersetzungsaufwand | PostgreSQL-Details sickern in den Core; keine stabile historische Interpretation |
-| B — Schemata beim Lesen on-the-fly am aktuellen Stand auflösen | keine Versionshaltung | ältere Changes werden am aktuellen Schema interpretiert — genau die stille Fehlinterpretation, die LH-FA-SCH-004 ausschließt |
+| B — Schemata beim Lesen on-the-fly am aktuellen Stand auflösen | keine Versionshaltung | ältere Changes werden am aktuellen Schema interpretiert — genau die stille Fehlinterpretation, die [`LH-FA-SCH-004`](../../../spec/lastenheft.md) ausschließt |
 | **C — TableSchema-/SchemaVersion-Modelle je Change** | historisch stabile Interpretation; inkompatible Änderungen erkennbar meldbar | Versionshaltung und Übersetzungsaufwand |
 
 ## Konsequenzen
@@ -49,7 +49,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
   interpretierbar; inkompatible Typänderungen werden sichtbar gemeldet.
 - Negativ: Mehraufwand für Übersetzung und Versionsverwaltung.
 - Folgepflicht: SchemaStorePort als Outbound Port; Fehlerklasse `schema`
-  (SPEC-008) für nicht sicher interpretierbare Änderungen.
+  ([`SPEC-008`](../../../spec/pflichtenheft.md)) für nicht sicher interpretierbare Änderungen.
 
 ## Re-Evaluierungs-Trigger
 

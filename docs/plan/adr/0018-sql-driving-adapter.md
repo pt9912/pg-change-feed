@@ -18,7 +18,7 @@
 ## Kontext
 
 Lastenheft und Pflichtenheft fordern SQL-basierte Administration und
-Kernlesezugriffe (LH-FA-ADM-001, LH-FA-SST-002). Die Frage ist, ob die
+Kernlesezugriffe ([`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-FA-SST-002`](../../../spec/lastenheft.md)). Die Frage ist, ob die
 Logik dieser Zugriffe in SQL selbst liegt oder SQL nur als Eintrittspunkt
 in dieselben Use Cases dient wie andere Kanäle.
 
@@ -37,8 +37,8 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 | Option | Pro | Contra |
 |---|---|---|
 | A — Logik in PL/pgSQL-Funktionen | nah am Datenbestand, keine Indirektion | Duplikat der Domänenlogik in einer zweiten Sprache; nicht domänentestbar; Wartung an zwei Orten |
-| B — keinen SQL-Zugriff anbieten | keine Adapter-Arbeit | verletzt LH-FA-SST-002 und LH-FA-ADM-001 |
-| **C — SQL als Driving Adapter** | alle Kanäle gleichberechtigt über dieselben Ports; eine Logikquelle | SQL-Adapter-Schicht muss gepflegt und berechtigbar sein (LH-QA-SEC-002) |
+| B — keinen SQL-Zugriff anbieten | keine Adapter-Arbeit | verletzt [`LH-FA-SST-002`](../../../spec/lastenheft.md) und [`LH-FA-ADM-001`](../../../spec/lastenheft.md) |
+| **C — SQL als Driving Adapter** | alle Kanäle gleichberechtigt über dieselben Ports; eine Logikquelle | SQL-Adapter-Schicht muss gepflegt und berechtigbar sein ([`LH-QA-SEC-002`](../../../spec/lastenheft.md)) |
 
 ## Konsequenzen
 
@@ -46,7 +46,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
   einzige Logikquelle.
 - Negativ: View-/Funktions-Schicht darf keine eigene Regeln entwickeln.
 - Folgepflicht: getrennte Berechtigbarkeit von Administration und Lesezugriff
-  (LH-QA-SEC-002) in der Objektanlage berücksichtigen.
+  ([`LH-QA-SEC-002`](../../../spec/lastenheft.md)) in der Objektanlage berücksichtigen.
 
 ## Re-Evaluierungs-Trigger
 

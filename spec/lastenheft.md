@@ -162,7 +162,7 @@ Traceability-Muster (Beispiel):
 
     LH-FA-CAP-002
           |
-          +-- LH-FA-CAP-002.a / SPEC-<NNN>   (Verfeinerung/Festlegung, Pflichtenheft)
+          +-- [`LH-FA-CAP-002.a`](pflichtenheft.md) / SPEC-<NNN>   (Verfeinerung/Festlegung, Pflichtenheft)
           +-- ARC-<NNN>                       (Architektur-Sicht)
           +-- ADR-<NNNN>                      (Entscheidung)
 
@@ -998,7 +998,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Das System soll von kleinen Datenbanken bis zu
   kontinuierlichen Änderungsvolumina skalieren können.
 - **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina sind in
-  `spec/pflichtenheft.md` §3 festgelegt (SPEC-014).
+  `spec/pflichtenheft.md` §3 festgelegt ([`SPEC-014`](pflichtenheft.md)).
 
 ### LH-QA-PER-003 — Batch-Verarbeitung
 
@@ -1012,7 +1012,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
   gering sein und über Benchmarks bewertet werden.
 - **Messmethode:** Benchmark über LH-FA-ADM-004 (messbarer Abstand);
   Schwellen-Initialwerte sind in `spec/pflichtenheft.md` §3 festgelegt
-  (SPEC-013).
+  ([`SPEC-013`](pflichtenheft.md)).
 
 ### LH-QA-SEC-001 — Least-Privilege
 
@@ -1078,7 +1078,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Mehrere aktiv unterstützte PostgreSQL-Major-Versionen
   sollen unterstützt werden.
 - **Messmethode:** Testumgebung je unterstützter Version; konkrete Versionen
-  sind in `spec/pflichtenheft.md` §3 festgelegt (SPEC-012).
+  sind in `spec/pflichtenheft.md` §3 festgelegt ([`SPEC-012`](pflichtenheft.md)).
 
 ### LH-QA-POR-002 — Primäre Zielplattform Linux
 

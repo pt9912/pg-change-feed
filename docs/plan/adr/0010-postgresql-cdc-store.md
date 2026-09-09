@@ -38,13 +38,13 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 | Option | Pro | Contra |
 |---|---|---|
 | A — Kafka als CDC-Store | Hoher Durchsatz, eingebaute Retention über Consumer-Gruppen | Proprietäre Infrastruktur im Grundbetrieb; widerspricht LH-ZIE-004 und der Systemgrenze (kein Message Broker) |
-| B — RabbitMQ als CDC-Store | Weit verbreitet | Queue-Semantik statt positionsbasiertem Lesen; Verbrauch löscht History (LH-FA-REA-005 leidet) |
-| C — Dedizierte CDC-Datenbank / dateibasierter Store | Keine Abhängigkeit vom Quellsystem | Neue Betriebswelt für die Zielgruppe; Persistenz-Garantien (LH-QA-REL-001) selbst zu bauen |
-| **D — PostgreSQL als CDC-Store** | Transaktional, vorhandene Betriebskompetenz, SQL-Lesen frei (LH-FA-SST-002); dieselbe Technik wie die Quelle | Store und Quelle teilen sich eine Technik — Kapazitätsplanung muss beide Rollen sehen |
+| B — RabbitMQ als CDC-Store | Weit verbreitet | Queue-Semantik statt positionsbasiertem Lesen; Verbrauch löscht History ([`LH-FA-REA-005`](../../../spec/lastenheft.md) leidet) |
+| C — Dedizierte CDC-Datenbank / dateibasierter Store | Keine Abhängigkeit vom Quellsystem | Neue Betriebswelt für die Zielgruppe; Persistenz-Garantien ([`LH-QA-REL-001`](../../../spec/lastenheft.md)) selbst zu bauen |
+| **D — PostgreSQL als CDC-Store** | Transaktional, vorhandene Betriebskompetenz, SQL-Lesen frei ([`LH-FA-SST-002`](../../../spec/lastenheft.md)); dieselbe Technik wie die Quelle | Store und Quelle teilen sich eine Technik — Kapazitätsplanung muss beide Rollen sehen |
 
 ## Konsequenzen
 
-- Positiv: Deployment bleibt eine Technik; das CDC-Schema (SPEC-001) nutzt
+- Positiv: Deployment bleibt eine Technik; das CDC-Schema ([`SPEC-001`](../../../spec/pflichtenheft.md)) nutzt
   PostgreSQL-Mittel (z. B. `jsonb`) direkt.
 - Negativ: Quell- und Store-Instanz können sich gegenseitig belasten;
   Trennung der Instanzen ist Betriebsempfehlung.
@@ -59,7 +59,7 @@ unbefristet weiter, auch wenn ihre Voraussetzung weg ist (Baseline-Regelwerk
 `modul-04-adrs.md` §Kernidee (Modul 4)).
 
 Neue Consumer-Klasse mit Speicheranforderungen, die das CDC-Schema
-(SPEC-001) nicht abbilden kann — erkennbar am Beobachtungs-Register, wenn
+([`SPEC-001`](../../../spec/pflichtenheft.md)) nicht abbilden kann — erkennbar am Beobachtungs-Register, wenn
 Retentions- oder Mengen-Beobachtungen dreimal die PostgreSQL-Grenze treffen.
 
 ## Geschichte

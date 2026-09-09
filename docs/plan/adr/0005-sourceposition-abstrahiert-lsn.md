@@ -18,7 +18,7 @@
 ## Kontext
 
 Positionen sind die zentrale Adresse des Systems: Lesen, ACK und Retention
-arbeiten alle mit ihnen (LH-FA-DAT-004). PostgreSQL kennt dafür den LSN.
+arbeiten alle mit ihnen ([`LH-FA-DAT-004`](../../../spec/lastenheft.md)). PostgreSQL kennt dafür den LSN.
 Würde der LSN-Typ direkt im Core leben, wäre die Abhängigkeitsregel
 (ADR-0002) an der wichtigsten Stelle verletzt.
 
@@ -38,16 +38,16 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 | Option | Pro | Contra |
 |---|---|---|
 | A — LSN-Typ direkt im Core | Kein Mapping, exakte Typen | PostgreSQL-Typen durchziehen Consumer, Store und Retention; ADR-0002 bricht an der heißen Stelle |
-| B — Generischer String als Position | Trivial portabel | Keine Ordnung, keine Typsicherheit; Sortierung (LH-FA-REA-004) wäre String-Vergleich |
+| B — Generischer String als Position | Trivial portabel | Keine Ordnung, keine Typsicherheit; Sortierung ([`LH-FA-REA-004`](../../../spec/lastenheft.md)) wäre String-Vergleich |
 | **C — Eigenes `SourcePosition`-Modell mit Adapter-Mapping** | Ordnung und Typ im Core, LSN bleibt Adapterdetail | Mapping- und Vergleichslogik doppelt gepflegt (Adapter und Core) |
 
 ## Konsequenzen
 
-- Positiv: Sortierbarkeit und Eindeutigkeit der Position (LH-FA-DAT-004)
+- Positiv: Sortierbarkeit und Eindeutigkeit der Position ([`LH-FA-DAT-004`](../../../spec/lastenheft.md))
   sind Domänen-Eigenschaft; ein Quellwechsel berührt nur den Adapter.
 - Negativ: Der Adapter muss jede LSN-Feinheit sauber abbilden; ein
   Verlust bei der Abbildung gefährdet die Eindeutigkeit.
-- Folgepflicht: `SourcePosition` ist als SPEC-003 verbindlich festgehalten.
+- Folgepflicht: `SourcePosition` ist als [`SPEC-003`](../../../spec/pflichtenheft.md) verbindlich festgehalten.
 
 ## Re-Evaluierungs-Trigger
 

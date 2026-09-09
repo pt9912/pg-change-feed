@@ -42,7 +42,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 ## Konsequenzen
 
 - Positiv: Speicherverbrauch ist kontrollierbar; die Spool-Technik ist
-  kein Core-Thema (SPEC-005).
+  kein Core-Thema ([`SPEC-005`](../../../spec/pflichtenheft.md)).
 - Negativ: die Schwellwerte zwischen RAM-Haltung und Spool brauchen
   Konfiguration und Erklärung.
 - Folgepflicht: Implementierungs-ADR (ADR-0022); Test mit großer

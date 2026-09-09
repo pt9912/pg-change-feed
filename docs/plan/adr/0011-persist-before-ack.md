@@ -19,7 +19,7 @@
 ## Kontext
 
 Die Quelle wartet auf Bestätigungen: Bestätigt der Capture-Pfad zu früh und
-stürzt danach ab, sind Changes still verloren (LH-QA-REL-001). Zu späte
+stürzt danach ab, sind Changes still verloren ([`LH-QA-REL-001`](../../../spec/lastenheft.md)). Zu späte
 Bestätigung kostet dagegen nur Wiederholung. Die beiden Fehlerklassen sind
 nicht gleich schwer — das legt die Ordnung fest.
 
@@ -45,13 +45,13 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — Sofortiges ACK (Throughput zuerst) | Höchster Durchsatz, geringster WAL-Rückstand | Crash nach ACK, vor Persistenz: stille Datenlücke — verletzt LH-QA-REL-001 direkt |
+| A — Sofortiges ACK (Throughput zuerst) | Höchster Durchsatz, geringster WAL-Rückstand | Crash nach ACK, vor Persistenz: stille Datenlücke — verletzt [`LH-QA-REL-001`](../../../spec/lastenheft.md) direkt |
 | B — Periodisches Sammel-ACK | Weniger ACK-Verkehr | Zeitfenster für Verlust bleibt; Grenze „welche Changes sind sicher?" wird unbestimmt |
 | **C — Persist-before-ACK** | Keine stille Lücke möglich; Restrisiko ist doppelt verarbeitete, deduplizierbare Changes | Mehr Write-Ahead-Rückstand; Durchsatz hängt am Speicher-Commit |
 
 ## Konsequenzen
 
-- Positiv: Neustart setzt ohne Datenlücke fort (LH-FA-RET-001); der
+- Positiv: Neustart setzt ohne Datenlücke fort ([`LH-FA-RET-001`](../../../spec/lastenheft.md)); der
   kritische Test „Crash nach Persistenz vor ACK erzeugt keine Lücke" ist
   direkt aus der Invariante ableitbar.
 - Negativ: Idempotente Persistenz (Deduplizierung wiederholter WAL-Daten)
@@ -66,7 +66,7 @@ Bedingung — oder ausdrücklich *permanent*. Ohne Trigger gilt die Entscheidung
 unbefristet weiter, auch wenn ihre Voraussetzung weg ist (Baseline-Regelwerk
 `modul-04-adrs.md` §Kernidee (Modul 4)).
 
-permanent — die Invariante trägt die Vertragszusage LH-QA-REL-001.
+permanent — die Invariante trägt die Vertragszusage [`LH-QA-REL-001`](../../../spec/lastenheft.md).
 
 ## Geschichte
 

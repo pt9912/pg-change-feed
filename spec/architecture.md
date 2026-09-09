@@ -196,6 +196,6 @@ sequenceDiagram
 | Unerwarteter interner Fehler | Klasse `internal`; kontrollierter Neustart und Fortsetzung aus persistierten Zuständen | strukturiert mit Klassen-Feld |
 
 Die Fehlerklassen sind die sieben stabilen Kategorien aus dem Pflichtenheft
-(SPEC-008); Adapter übersetzen technische Fehler in diese Kategorien,
+([`SPEC-008`](pflichtenheft.md)); Adapter übersetzen technische Fehler in diese Kategorien,
 entscheiden aber nicht über Wiederholung — das liegt in der Application.
 Logs enthalten keine Credentials.
