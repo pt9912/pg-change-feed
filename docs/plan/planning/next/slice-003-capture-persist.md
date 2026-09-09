@@ -26,7 +26,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [`ARC-003`](../../../../spec/architecture.md),
 [`ARC-004`](../../../../spec/architecture.md)
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912 (Implementer-Rolle, Agent-Lauf).
 
 **Autor:** pt9912. **Datum:** 2026-09-09.
 
