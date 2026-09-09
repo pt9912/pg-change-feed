@@ -17,7 +17,7 @@ dessen Hochschalt-Trigger: die Maschinenprüfung der §2-Constraints wird real)
 (Bootstrap entsteht als Paket) · [architecture.md §1](../../../../spec/architecture.md)
 (Komponenten-Übersicht)
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912 (Implementer-Rolle, Agent-Lauf).
 
 **Autor:** pt9912. **Datum:** 2026-09-09.
 
