@@ -185,12 +185,12 @@ Halluzinierte Gates sind die häufigste Form von Harness-Lüge
 
 | Target | Zweck |
 |---|---|
-| `<make-target>` | <…> |
-| `<make-target>` | <…> |
-| `<make-target>` | <…> |
-| `<make-target>` | <…> |
-| `make gates` | alle inneren Gates (mandatory vor PR) |
-| `<make-target>` | CI-äquivalent (gates + zusätzliche) |
+| `make baseline-verify` | vendored Baseline unverändert (Integrität + Vollständigkeit) |
+| `make docs-check` | kaputte Referenzen in der Markdown-Doku (d-check) |
+| `make a-check` | Hexagon-Schichten-Edges gegen `.a-check.yml` |
+| `make gates` | alle inneren Gates (mandatory vor PR), Nachweis-Stempel zuletzt |
+| `make image` | baut das OCI-Image, Image-Hash-Beleg (kein Gate) |
+| `make image-stale` | advisory: Base-Image-Drift (kein Gate, braucht Netz) |
 | `<make-target>` | volle Closure (vor Welle-Merge) |
 
 Diese Tabelle **listet auf**; definiert wird hier nichts. Die *Bindung* eines

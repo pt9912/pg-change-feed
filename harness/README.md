@@ -110,23 +110,18 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 
 | Target | Vertrag | Bindung |
 |---|---|---|
-| `<make-target>` | <was prüft es> | — |
-| `<make-target>` | <…> | — |
-| `<make-target>` | <…> | ADR-<NNNN> |
-| `<make-target>` | <…>, bootstrap-aware | Schwelle X %, M<n> → Y % |
-| `<make-target>` | <…> | bootstrap via `CO-<NNN>` bis <Slice/Welle> |
-| `make gates` | alle inneren Gates | — |
-| `<make-target>` | gates + extras | — |
+| `make baseline-verify` | verifiziert die vendored Baseline netzlos (Integrität + Vollständigkeit gegen `SHA256SUMS`) | [`harness/sensors/baseline-verify.md`](sensors/baseline-verify.md) |
+| `make docs-check` | kaputte Referenzen in der Markdown-Doku (links, anchors, ids, matrix, versions, structure) | [`harness/sensors/docs-check.md`](sensors/docs-check.md) |
+| `make a-check` | prüft die Hexagon-Schichten-Edges aus `.a-check.yml` gegen den Go-Baum — netzlos, read-only, digest-gepinntes Release-Image | [`ADR-0041`](../docs/plan/adr/0041-a-check-maschinenform-architekturpruefung.md) · [`harness/sensors/a-check.md`](sensors/a-check.md) |
+| `make gates` | alle inneren Gates (baseline-verify, docs-check, a-check), Nachweis-Stempel zuletzt | — |
 | `<make-target>` | volle Closure | Image-Hash `sha256:…` (Modul 14) |
-| `make <gate-mit-grenze>` | <…>; Grenze und Ausgänge in der verlinkten Datei | ADR-<NNNN> |
 
 **Werkzeuge — genannt, weil der Lauf sie braucht, aber kein Gate:**
 
 | Target | Tut was | Bindung |
 |---|---|---|
 | `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
-| `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
-| `make a-check` | prüft die Hexagon-Schichten-Edges aus `.a-check.yml` gegen den Go-Baum — netzlos, read-only; läuft als eigener Aufruf, nicht im `make gates`-Bündel | kein Gate, [`ADR-0036`](../docs/plan/adr/README.md) |
+| `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags, plus Existenz des nächsten Major-Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |

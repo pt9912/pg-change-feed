@@ -1,6 +1,6 @@
 # ADR-0036: Architekturprüfung in CI
 
-**Status:** Proposed
+**Status:** Superseded by [`ADR-0041`](0041-a-check-maschinenform-architekturpruefung.md)
 
 **Datum:** 2026-09-09
 
@@ -74,6 +74,7 @@ Welle-Closure (Trigger-Audit).
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-09 | Proposed (überführt aus dem Architektur-Entwurf `architecture-decision-records.md`) | — |
+| 2026-09-09 | Superseded durch ADR-0041 (a-check als Maschinenform der Architektur-Prüfung; die depguard-Benennung ist ersetzt, die benannten Regeln gelten fort) | [ADR-0041](0041-a-check-maschinenform-architekturpruefung.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
