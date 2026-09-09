@@ -90,7 +90,6 @@ const (
 // (`LH-FA-CAP-008` Boundary). Old trägt den alten Tupel-Stand nur, wenn
 // die Quelle ihn gesendet hat (Replica Identity `O` bzw. Schlüssel `K`).
 type Change struct {
-	XID       uint32
 	Relation  *Relation
 	Operation Operation
 	Old       []*string

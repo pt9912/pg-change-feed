@@ -275,6 +275,9 @@ func (s *Stream) Run(ctx context.Context) error {
 		}
 		switch message := rawMessage.(type) {
 		case *pgproto3.CopyData:
+			if len(message.Data) == 0 {
+				return fmt.Errorf("%w: leeres CopyData", ErrReplication)
+			}
 			switch message.Data[0] {
 			case pglogrepl.XLogDataByteID:
 				xlogData, err := pglogrepl.ParseXLogData(message.Data[1:])

@@ -66,7 +66,6 @@ func TestConsumeFullTransaction(t *testing.T) {
 		t.Fatalf("Begin: command=%v err=%v", command, err)
 	}
 	if _, err := assembler.Consume(decode.Change{
-		XID:       42,
 		Relation:  relationEvent,
 		Operation: decode.OpInsert,
 		New:       []*string{pointer("1"), pointer("Wert")},
@@ -74,7 +73,6 @@ func TestConsumeFullTransaction(t *testing.T) {
 		t.Fatalf("Insert: %v", err)
 	}
 	if _, err := assembler.Consume(decode.Change{
-		XID:       42,
 		Relation:  &decode.Relation{Schema: "public", Name: "other", Columns: []decode.Column{{Name: "id", Key: true}}},
 		Operation: decode.OpInsert,
 		New:       []*string{pointer("9")},
@@ -82,7 +80,6 @@ func TestConsumeFullTransaction(t *testing.T) {
 		t.Fatalf("Insert an nicht aktivierter Tabelle: %v", err)
 	}
 	if _, err := assembler.Consume(decode.Change{
-		XID:       42,
 		Relation:  relationEvent,
 		Operation: decode.OpUpdate,
 		Old:       []*string{pointer("1"), nil},
@@ -91,7 +88,6 @@ func TestConsumeFullTransaction(t *testing.T) {
 		t.Fatalf("Update: %v", err)
 	}
 	if _, err := assembler.Consume(decode.Change{
-		XID:       42,
 		Relation:  relationEvent,
 		Operation: decode.OpDelete,
 		Old:       []*string{pointer("2"), nil},
@@ -194,6 +190,19 @@ func TestConsumeTruncate(t *testing.T) {
 	}
 }
 
+// TestConsumeBeginWithoutCommit trägt den Doppel-BEGIN als sichtbaren
+// Fehler: ein zweites BEGIN überschreibt die offene Transaktion nicht
+// still (F-8-Klasse, `LH-QA-REL-001.a` Fehlermodi).
+func TestConsumeBeginWithoutCommit(t *testing.T) {
+	assembler := newAssembler(t, testTables())
+	if _, err := assembler.Consume(decode.Begin{XID: 42}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	if _, err := assembler.Consume(decode.Begin{XID: 43}); !stderrors.Is(err, mapper.ErrBeginWithoutCommit) {
+		t.Fatalf("Zweites BEGIN: %v", err)
+	}
+}
+
 // TestNewAssemblerLimits trägt die Konfigurationsgrenzen: leere Quelle
 // und Bindungen ohne Kennungen enden über den Domänen-Fehler
 // (`ADR-0029`).
@@ -218,7 +227,7 @@ func TestConsumeTwoTransactions(t *testing.T) {
 		if _, err := assembler.Consume(decode.Begin{XID: xid}); err != nil {
 			t.Fatalf("Begin %d: %v", xid, err)
 		}
-		if _, err := assembler.Consume(decode.Change{XID: xid, Relation: relationEvent, Operation: decode.OpInsert, New: []*string{pointer("1")}}); err != nil {
+		if _, err := assembler.Consume(decode.Change{Relation: relationEvent, Operation: decode.OpInsert, New: []*string{pointer("1")}}); err != nil {
 			t.Fatalf("Insert %d: %v", xid, err)
 		}
 		command, err := assembler.Consume(decode.Commit{CommitLSN: uint64(xid) * 100})

@@ -37,6 +37,14 @@ var ErrChangeWithoutBegin = errors.New("Fehlerklasse replication: Änderung ohne
 // ohne zugehöriges BEGIN.
 var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne offene Quelltransaktion")
 
+// ErrBeginWithoutCommit trägt denselben Vertragsverstoß für ein BEGIN bei
+// bereits offener Transaktion: ein zweites BEGIN überschreibt die offene
+// Transaktion samt ihrer gesammelten Changes nicht still — der Stream
+// serialisiert die Quelltransaktionen (`ADR-0021`, Proposed); ein
+// Doppel-BEGIN ist eine Störung der Stream-Ordnung und endet sichtbar
+// (`LH-QA-REL-001.a` Fehlermodi, `SPEC-008` Klasse `replication`).
+var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während offener Quelltransaktion")
+
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle (`SPEC-001`): die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
@@ -91,6 +99,9 @@ func NewAssembler(source model.SourceID, tables map[string]TableBinding) (*Assem
 func (a *Assembler) Consume(event decode.Event) (*inbound.CaptureCommand, error) {
 	switch event := event.(type) {
 	case decode.Begin:
+		if a.open != nil {
+			return nil, ErrBeginWithoutCommit
+		}
 		tx, err := model.NewOpenTransaction(model.TransactionID(strconv.FormatUint(uint64(event.XID), 10)), a.source)
 		if err != nil {
 			return nil, err
