@@ -113,7 +113,10 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 			return storageFailure(err)
 		}
 	}
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return storageFailure(err)
+	}
+	return nil
 }
 
 // ReadChanges liest persistierte Changes über die `SPEC-001`-Tabellen;

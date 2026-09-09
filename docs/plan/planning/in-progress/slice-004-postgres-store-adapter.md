@@ -86,8 +86,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       *Beleg: review-slice-004.md.*
-- [x] Doku-Update — **entfällt**: kein öffentlicher Vertrag berührt (nur
-      `internal/**`); die begründete Aussage trägt der Bericht.
+- [x] Doku-Update — getragen: die Werkzeuge-Zeilen (`make test`,
+      `make test-store`, `make mod-download`) und der pgx-Layer-Hinweis
+      im Dockerfile-Kopf sind über den Verifier-Lauf bestätigt
+      (`harness/README.md`, Dockerfile). *Korrektur (V-3): die
+      Erst-Begründung „nur `internal/**`" trug nicht — die Range ändert
+      die Doku-Bestände.*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.

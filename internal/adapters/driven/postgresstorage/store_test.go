@@ -457,3 +457,31 @@ func TestNewCarriesStorageClass(t *testing.T) {
 		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrStorage)
 	}
 }
+
+// Auch der Commit-Ausgang des Store-Commits trägt die Klasse `storage`.
+// Der Test erzwingt einen Fehler am Commit-Zeitpunkt über eine
+// deferrable-UNIQUE-Kante, die die Instanz erst beim COMMIT prüft — die
+// Zeilen-Execs der zweiten Transaktion sind zu dem Zeitpunkt abgeschlossen
+// (ON CONFLICT greift nicht, sie zielt auf die Transaktions-Kennung), nur
+// der COMMIT schlägt fehl.
+func TestPersistCarriesStorageClassOnCommitFailure(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	if _, err := pool.Exec(context.Background(),
+		"ALTER TABLE cdc.transaction ADD CONSTRAINT test_commit_fails UNIQUE (source_id) DEFERRABLE INITIALLY DEFERRED"); err != nil {
+		t.Fatalf("Test-Constraint: %v", err)
+	}
+	if err := store.PersistTransaction(context.Background(),
+		committedTransaction(t, "t-commit-1", 100, 1, testTableMain, testSchemaMain)); err != nil {
+		t.Fatalf("erste PersistTransaction: %v", err)
+	}
+
+	err := store.PersistTransaction(context.Background(),
+		committedTransaction(t, "t-commit-2", 200, 1, testTableMain, testSchemaMain))
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrStorage)
+	}
+	if !strings.Contains(err.Error(), "test_commit_fails") {
+		t.Fatalf("Meldung = %q, wollen die Commit-Ursache hinter der Klasse", err.Error())
+	}
+}
