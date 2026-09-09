@@ -76,25 +76,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `go.mod`/`go.sum` existieren; ein minimales `cmd/pg-change-feed`-Binary
+- [x] `go.mod`/`go.sum` existieren; ein minimales `cmd/pg-change-feed`-Binary
       baut (`go build`, CGO aus) und antwortet auf ein `--version`-Flag mit
       beobachtbarem Beleg — Teil-Beleg zu [`LH-QA-POR-003`](../../../../spec/lastenheft.md).
-- [ ] `make image` baut das OCI-Image; `harness/image-hash.txt` trägt den
+      *Beleg: `docker run --rm ghcr.io/pt9912/pg-change-feed:dev --version` →
+      `pg-change-feed 0.1.0-bootstrap` (verify-slice-001.md).*
+- [x] `make image` baut das OCI-Image; `harness/image-hash.txt` trägt den
       Digest — Teil-Beleg zu [`LH-QA-OPS-001`](../../../../spec/lastenheft.md).
-- [ ] `a-check`-Include in `Makefile` aktiviert und `make a-check` grün
-      (aktivierte `.a-check.yml`-Fassung).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      *Beleg: Digest am HEAD `sha256:3e8a106c…` (`be405e4`), Build
+      deterministisch (zwei Rebuilds, verify-slice-001.md).*
+- [x] `a-check`-Include in `Makefile` aktiviert und `make a-check` grün
+      (aktivierte `.a-check.yml`-Fassung). *Beleg: im Gate-Bündel seit
+      [`ADR-0041`](../../../../docs/plan/adr/README.md) (a-check.mk,
+      GATE_CHECKS += a-check).*
+- [x] `make gates` grün. *Beleg: baseline-verify OK (54 Dateien), d-check
+      73 Dateien/0 Befunde, a-check im Bündel 0 Befunde
+      (verify-slice-001.md, selbst gefahrene Sensoren).*
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt ist (hier:
+      *Beleg: review-slice-001.md (HIGH 0 · MEDIUM 3 · LOW 3 · INFO 3,
+      alle behoben oder als Grenze benannt).*
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt ist (hier:
       `harness/README.md` — `make image`-Zeile auf [`ADR-0039`](../../../../docs/plan/adr/README.md)
       umziehen, `make a-check` aus *Nicht behauptet* in die Werkzeuge-Tabelle).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      *Beleg: getragen; `make a-check` ist inzwischen Gate ([ADR-0041](../../../../docs/plan/adr/README.md)).*
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7)*
+- [x] Reconciliation-Register — **entfällt**: Repos ohne
+      Brownfield-Bootstrap haben die Datei nicht.
+- [x] Beobachtungs-Register fortgeschrieben — `BEO-PGC/a-check-null-abdeckung/`
+      mit `evidence/slice-001.md` (Zähler 1×); keine weitere Beobachtung
+      angefallen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (siehe §7).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) — im
+      Wellen-Betrieb von der Welle-1-Closure geprüft (auch für diesen
+      Slice).
 
 ## 3. Plan (vor Code)
 
@@ -116,6 +132,13 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` (image-Rezept) | update | *Plan-Nachzug (nachgezogen vor der Closure):* der erste Lauf griff beim Extrahieren des Image-Digests den ersten `sha256:`-Treffer der Metadaten-Datei — das ist der **Base-Digest**, nicht der Digest des gebauten Images. Fix: Extraktion liest den `containerimage.digest`-Key (Implementer-Commit f932022) |
 | `Dockerfile` (Kommentar) | update | *Plan-Nachzug:* deps-Layer-Kommentar (leeres `go.mod`/`go.sum` bleibt verifiziert); CGO-Anker von [`ADR-0038`](../../adr) (superseded) auf [`ADR-0039`](../../adr) gezogen |
 | `harness/image-hash.txt` | neu | Beleg-Artefakt (Modul 14): trägt den Digest des gebauten Images; getrackt, kein Gate darauf (benannte Grenze, s. Review F-7) |
+| `a-check.mk` | update | *Plan-Nachzug (V-2):* `GATE_CHECKS += a-check` — Verkabelung ins Gate-Bündel ([`ADR-0041`](../../../../docs/plan/adr/README.md)) |
+| `.gitignore` | neu | *Plan-Nachzug (V-2):* `.tmp/` + `harness/image-hash.raw` ignoriert (Review F-5) |
+| `tools/harness/image-stale.sh` | update | *Plan-Nachzug (V-2):* Major-Drift-Erkennung ergänzt (golang:1.27-alpine existiert, MAJOR-DRIFT gemeldet) |
+| `harness/sensors/*.md` | neu | *Plan-Nachzug (V-2):* Sensor-Dateien nach gate.template.md ([`ADR-0041`](../../adr)-Zug) |
+| `docs/reviews/review-report.template.md` | neu | *Plan-Nachzug (V-2):* aus der vendored Referenz-Form wiederhergestellt (Review F-8) |
+| `harness/image-hash.txt` (erneuert) | update | *Plan-Nachzug (V-1):* Beleg am HEAD erneuert (`be405e4`) — der committete Beleg trug den f932022-Digest, der Zeilenenden-Fix (F-6) änderte den Build-Kontext ohne Re-Build |
+| `cmd/pg-change-feed/main.go`, `go.mod` | update | *Plan-Nachzug (V-2):* Datei-Ende-Zeilenumbrüche (Review F-6) |
 
 ## 4. Trigger
 
@@ -186,18 +209,36 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die Rollen-Sequenz mit Übergabe-Artefakten
+  (Architect-Review vor dem `next`-Übergang; Review/Verifier in frischem
+  Kontext mit selbst gefahrenen Belegen); die Docker-only-Kette ohne
+  Host-Toolchain (Belege über stdout, Arbeitsbaum read-only); der Build ist
+  deterministisch (zwei Rebuilds, identischer Digest — verify-slice-001.md).
+- **Was ging anders als geplant:** der image-hash-Beleg driftete vom HEAD
+  (V-1) — die benannte Grenze „kein Abgleich-Sensor" (Review F-7) war
+  erstmals wirksam; `a-check` war vor [`ADR-0041`](../../../../docs/plan/adr/README.md)
+  außerhalb des Gate-Bündels (Review F-1) — gelöst durch die Folge-ADR;
+  der image-hash-Extraktion-Defekt (erster Lauf griff den Base-Digest,
+  Implementer-Commit f932022) war ein Plan-Defekt, nachgezogen in §3.
+- **Steering-Loop-Eintrag:** geschärfte Regel: *Beleg-Artefakte mit
+  Baum-Kopplung (`harness/image-hash.txt`) gelten am HEAD — ein Zug, der
+  Build-Kontext-Dateien ändert, erneuert den Beleg vor seiner Closure
+  (Re-Build + Commit), sonst trägt er einen Vorgangs-Beleg*
+  — liegt in `harness/README.md` (Werkzeuge-Zeile `make image`) · seit
+  slice-001. *(Zählerstand: 1×; kein `BEO`-Auslöser, Erstverkörperung.)*
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/a-check-null-abdeckung/`
+  neu angelegt, Beleg `evidence/slice-001.md` — Zähler steht damit bei 1×.
+- **Folge-Slices:** slice-002 (Domänenkern) und slice-003
+  (Capture-Persist-Pfad) — Dateien in `open/`, welle-1.
+- **Risiken aus §6:** Risiko 1 (a-check-Hinweise/Glob-Lücken) → **weiter
+  offen**, trägt im Register `BEO-PGC/a-check-null-abdeckung` (bewertet,
+  wenn die Layer-Globs echten Content matchen, slice-002/003); Risiko 2
+  (minimales Binary als leerer Gate gelesen) → **entfallen** (das
+  `--version`-Flag ist der beobachtbare Beleg; `make image` + `a-check`
+  sind die tragenden Lieferungen).
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-1-Closure delegiert
+  (Anker · Folge-Slice · Register — geprüft bei der Closure von welle-1,
+  auch für diesen Slice).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -120,7 +120,7 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 
 | Target | Tut was | Bindung |
 |---|---|---|
-| `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
+| `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` — der Beleg gilt am HEAD: ein Zug, der Build-Kontext-Dateien ändert, erneuert ihn vor seiner Closure (Re-Build + Commit) | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
 | `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags, plus Existenz des nächsten Major-Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
@@ -129,7 +129,9 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 **Aktueller Lauf-Status:** CI-Badge bzw. lokal `make help` / `make gates`.
 **Rote Gates:** Begründung im verlinkten `CO-<NNN>` (siehe Bindung-Spalte), Modul 7.
 **Nicht behauptet** (geplant): `make image-cve` (CVE-Scan des gebauten
-Images, advisory; ab dem ersten `make image`-Lauf).
+Images, advisory) — die Aktivierungsbedingung ist seit slice-001 eingetreten
+(der erste `make image`-Lauf läuft grün); das Target ist noch nicht
+implementiert, bis dahin bleibt der Scan unausgesprochen.
 
 <!-- Domänenspezifische Gates ergänzen, je nach Repo-Klasse: -->
 
