@@ -40,8 +40,8 @@ var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne of
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle (`SPEC-001`): die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
-// Schema-Version liegt in diesem Slice statisch bei der Konfiguration;
-// die Relation-Metadaten-Übersetzung der Schema-Evolution trägt
+// Schema-Version liegt statisch bei der Konfiguration; die
+// Relation-Metadaten-Übersetzung der Schema-Evolution trägt
 // LH-FA-SCH-004.a über den Metadata-Pfad.
 type TableBinding struct {
 	TableID       model.SourceTableID

@@ -53,9 +53,9 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // mit ihren Port-Kennungen. Der Capture-Port wird vor dem Lauf
 // verdrahtet (BindCapture) — der ACK-Adapter braucht die Verbindung
 // (`ADR-0007`), die `NewStream` erst aufbaut. Die Tabellen-Kennungen
-// und die Schema-Versionen liegen in diesem Slice bei der
-// Konfiguration; die Schema-Evolution trägt sie über den
-// Metadata-Pfad.
+// und die Schema-Versionen liegen bei der Konfiguration; die
+// Schema-Evolution trägt sie über den Metadata-Pfad
+// (LH-FA-SCH-004.a).
 type Config struct {
 	DSN         string
 	Source      model.SourceID
