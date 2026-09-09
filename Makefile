@@ -47,6 +47,9 @@ test: ## Unit-Tests im gepinnten Toolchain-Container (netzlos)
 test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 	@bash tools/harness/run-store-tests.sh
 
+test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publication/Slot (wal_level=logical, gepinnt)
+	@bash tools/harness/run-replication-tests.sh
+
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
 # CDC-Schema-Form; SQL wird erzeugt, Rollouts laufen mit Pflicht-Report und
