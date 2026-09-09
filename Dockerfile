@@ -4,9 +4,9 @@
 # `make image` in harness/image-hash.txt (Beleg, kein Wiederholungs-Schlüssel).
 # Base-Image-Update = bewusster Commit, der nur die Digest-Zeile anhebt.
 
-# Bedingung: go.mod/go.sum entstehen mit dem ersten Implementierungs-Slice
-# (ADR-0037, Schritt 1 Domain); bis dahin baut dieses Dockerfile nicht —
-# ein behaupteter, aber leerer Gate wäre einer, der nichts baut (AGENTS.md §4).
+# go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; solange keine
+# externen Dependencies eingehen, bleibt go.sum leer und der deps-Layer
+# verifiziert eine leere Modulliste (`go mod download`/`go mod verify`).
 
 # --- deps: gepinnte Base, Lock-File vor dem Code (Layer-Cache greift) ---
 FROM golang:1.26-alpine@sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628 AS deps
