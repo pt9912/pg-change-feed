@@ -122,7 +122,7 @@ sie gilt für jeden Lauf.
 
 | MR | Titel | Geltungsbereich | Ersetzt-Baseline-Regel |
 |---|---|---|---|
-| MR-001 <a id="mr-001"></a> | [Technik-Dokument heißt Pflichtenheft](MR-001-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-source-precedence.md` §Spec-Straten (Rang-2-Datei-Name) |
+| MR-001 <a id="mr-001"></a> | [Technik-Dokument heißt Pflichtenheft](conventions/MR-001-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-source-precedence.md` §Spec-Straten (Rang-2-Datei-Name) |
 
 ### Aufgelöste Adaptionen
 
