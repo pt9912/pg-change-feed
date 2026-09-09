@@ -14,7 +14,7 @@ import (
 )
 
 // CaptureCommand und CaptureResult sind die Transport-Typen des Capture
-// Use Cases (`ADR-0039`). Ihre Definition liegt am Inbound-Port — der Port
+// Use Cases (`ADR-0042`). Ihre Definition liegt am Inbound-Port — der Port
 // trägt seinen Vertrag einschließlich der Transport-Typen, Ports
 // referenzieren nur die Domain —; die Use-Case-Adressen sind Aliase
 // desselben Typs.
