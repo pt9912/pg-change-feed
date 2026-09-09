@@ -118,6 +118,17 @@ structure:
         - name: Substituierbarkeit
           cell-min-chars: 10
           cell-max-chars: 200
+#  — Fünfte Regel, aktivieren mit der ERSTEN Closure nach done/:
+#  Vorher meldet sie section-missing (Null Kandidaten), dauerhaft rot —
+#  ein behaupteter, aber leerer Gate (Modul 13). Der Ausloeser ist
+#  beobachtbar: erstes Vorkommen von docs/plan/planning/done/slice-*.md.
+#  - files: "docs/plan/planning/done/slice-*.md"
+#    section: "## 9. Closure-Notiz"
+#    non-empty: true
+#    max-open-tasks: 0
+#    require-pattern: "Lern"
+#    hint: "Closure-Notiz je Slice: Lerneintrag, keine offenen Aufgaben; Ausgaenge je Risiko im Slice-Plan."
+#
 # codepaths: aktivieren, sobald alle in Doku referenzierten Pfade existieren
 # (z. B. nennt spec/architecture.md den Roadmap-Pfad, der erst mit der
 # ersten Welle angelegt wird) — sonst behaupteter, aber roter Gate
