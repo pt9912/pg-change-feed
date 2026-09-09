@@ -193,6 +193,15 @@ eine ADR nur den ganzen Abschnitt nennen.
 | `SPEC-006` | `CDC_SCHEMA` | `cdc` | Standard-Schema-Name für alle CDC-Objekte (§2, SPEC-001) |
 | `SPEC-007` | `HEALTH_STATES` | `healthy`, `degraded`, `unhealthy` | Health-Zustände; Readiness zeigt, ob die Instanz ihre Betriebsrolle erfüllen kann |
 
+Offene Festlegungen — Delegationen aus dem Lastenheft, bewusst noch nicht
+gesetzt, jede mit ihrem Schlusspunkt:
+
+| Gegenstand | Referenz | Schlusspunkt |
+|---|---|---|
+| PostgreSQL-Major-Versionen | LH-QA-POR-001 (SPEC-010) | Festlegung bis zur MVP-Abnahme; Vorschlagsregel: die zwei neuesten aktiven Major-Versionen |
+| Latenz-Schwellen-Initialwerte | LH-QA-PER-004 | Festlegung mit dem Benchmark-Design vor der MVP-Abnahme |
+| Skalierungs-Volumina | LH-QA-PER-002 | Festlegung mit dem Benchmark-Design vor der MVP-Abnahme |
+
 ---
 
 ## 4. Fehler-Codes und Logging-Felder
@@ -231,6 +240,7 @@ LH-QA-OPS-003 ab.
 | `SPEC-009` | `cdc_errors_total{class}` | Fehler je Klasse (§4) | Application |
 | `SPEC-009` | `cdc_capture_lag` | Abstand Quelländerung → CDC-Verfügbarkeit (LH-FA-ADM-004) | Capture |
 | `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer (LH-FA-ADM-005) | ConsumerState |
+| `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh (LH-QA-OPS-003) | ConsumerState |
 | `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand | Replication Stream |
 | `SPEC-009` | `cdc_storage_bytes` | Speicherverbrauch der CDC-Daten | ChangeStore |
 | `SPEC-009` | `cdc_oldest_change_age` | Alter des ältesten aufbewahrten Changes | ChangeStore |
@@ -245,7 +255,7 @@ werden überwacht.
 
 | ID | System | Version | Vertrag-Datei |
 |---|---|---|---|
-| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | mehrere aktive Major-Versionen (LH-QA-POR-001); konkrete Versionen noch festzulegen | `spec/architecture.md` (Schnittstelle zur Quelle, LH-FA-SST-001) |
+| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | mehrere aktive Major-Versionen (LH-QA-POR-001); konkrete Versionen: offene Festlegung, §3 | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
 
 ---
@@ -258,4 +268,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 
 | Datum | Änderung |
 |---|---|
-| 2026-09-09 | Initial — Technik-Inhalt aus Pflichtenheft v0.2 überführt (Algorithmen, CDC-Schema, Fehlerklassen, Metriken, externe Verträge) |
+| 2026-09-09 | Initial — Technik-Inhalt überführt aus dem zurückgezogenen Pflichtenheft-Entwurf (Git: angelegt in c70ee1c, zurückgezogen in 5a6f8ea); Algorithmen, CDC-Schema, Fehlerklassen, Metriken, externe Verträge |

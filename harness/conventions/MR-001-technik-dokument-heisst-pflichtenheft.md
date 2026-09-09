@@ -19,6 +19,7 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   laut Baseline fest; nur Datei-Name und Dokument-Titel ändern sich.
 - **Begründung:** V-Modell-Terminologie — das Pflichtenheft ist das
   Antwort-Dokument des Auftragnehmers auf das Lastenheft; genau diese Rolle
-  hat das Technik-Stratum hier. Damit konsistent mit dem `PH-*`-Muster der
-  Traceability im Lastenheft (§3), das den Spiegel-Pflichtenheft-ID vorsieht.
+  hat das Technik-Stratum hier. Das Traceability-Muster des Lastenhefts
+  (§3) adressiert die Verfeinerungen dieses Dokuments als `LH-*.<a>` bzw.
+  `SPEC-*`.
 - **Auflösungs-Trigger:** permanent.

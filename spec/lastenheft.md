@@ -110,7 +110,7 @@ Anforderungen mit der Kennzeichnung **MVP: ja**. Abnahmekriterien des MVP
 | INSERT, UPDATE und DELETE werden Ende-zu-Ende erfasst und gelesen | LH-FA-CAP-001 … 003, LH-FA-REA-002 |
 | Die logische Reihenfolge ist korrekt | LH-FA-CAP-004, LH-FA-REA-004 |
 | Rollback-Änderungen werden nicht ausgeliefert | LH-FA-CAP-007 |
-| Ein Neustart verliert keine dauerhaft erfassten CDC-Daten | LH-QA-REL-001 |
+| Ein Neustart verliert keine dauerhaft erfassten CDC-Daten | LH-FA-RET-001, LH-QA-REL-001 |
 | Aufbewahrte Changes können erneut gelesen werden | LH-FA-REA-005 |
 | Die Quellanwendung benötigt keine CDC-spezifischen SQL-Anpassungen | LH-FA-CFG-006 |
 | Die vollständige Testumgebung ist automatisiert und reproduzierbar | LH-QA-POR-003 |
@@ -150,17 +150,21 @@ ist im ganzen Repo dasselbe und taucht in Make-Target-Kommentaren, ADRs und
 Commits wieder auf (Baseline-Regelwerk `grundlagen-source-precedence.md`
 §ID-Schema als Klammer). Jede Anforderung trägt drei Pfade — Happy ·
 Boundary · Negative — plus Out-of-Scope (Baseline-Regelwerk
-`modul-03-spec.md` §Ziel-Form: Akzeptanzkriterium). Eine Anforderung, deren
-Bedarf ersatzlos entfällt, wird **nicht gelöscht**, sondern trägt den
-Vermerk *zurückgezogen* im Titel; die Nummer bleibt vergeben.
+`modul-03-spec.md` §Ziel-Form: Akzeptanzkriterium). Ein Pfad trägt `—`,
+wenn er für die Anforderung keine eigene Aussage trägt und das Verhalten
+bereits durch einen anderen Pfad oder eine andere Anforderung bindend
+definiert ist; `—` ist dann eine Verlagerung der Aussage, kein Verzicht.
+Eine Anforderung, deren Bedarf ersatzlos entfällt, wird **nicht gelöscht**,
+sondern trägt den Vermerk *zurückgezogen* im Titel; die Nummer bleibt
+vergeben.
 
 Traceability-Muster (Beispiel):
 
     LH-FA-CAP-002
           |
-          +-- PH-FA-CAP-002
-          +-- ADR/ARC-CAP-002
-          +-- TST-CAP-002
+          +-- LH-FA-CAP-002.a / SPEC-<NNN>   (Verfeinerung/Festlegung, Pflichtenheft)
+          +-- ARC-<NNN>                       (Architektur-Sicht)
+          +-- ADR-<NNNN>                      (Entscheidung)
 
 Kennungen werden nach Veröffentlichung nicht wiederverwendet. Die exakten
 technischen Namen von Objekten (Schema, Funktionen, Views) werden von
@@ -256,7 +260,7 @@ Ergänzung ohne Neuanforderung ist nicht vorgesehen.
 ### LH-FA-CFG-006 — Keine Anwendungscode-Anpassung
 
 **Beschreibung:** Das Aktivieren von CDC darf keine Änderungen am
-Anwendungscode der Quellanwendung erfordern.
+Anwendungscode der Quellanwendung erfordern. **MVP: ja.**
 
 **Akzeptanzkriterien:**
 
@@ -296,11 +300,9 @@ von LH-QA-PER-001, nicht dieser Anforderung.
 
 - **Happy Path:** Given CDC ist für `t` aktiviert, when eine Zeile in `t`
   geändert wird, dann entsteht ein erfasster Change vom Typ UPDATE.
-- **Boundary:** Given ein UPDATE ändert keinen Zeilenwert (Zuweisung des
-  identischen Wertes), dann ist das Erfassungsverhalten definiert
+- **Boundary:** Given CDC ist für `t` aktiviert, when ein UPDATE einen Zeilenwert zuweist, ohne ihn zu ändern (Zuweisung des identischen Wertes), then ist das Erfassungsverhalten definiert
   (dokumentiert, ob ein Change entsteht).
-- **Negative:** Given die Quelltransaktion wird zurückgerollt, dann ist der
-  UPDATE-Change nicht als committed enthalten (LH-FA-CAP-007).
+- **Negative:** Given eine Quelltransaktion erzeugte einen UPDATE-Change, when sie zurückgerollt wird, then ist der Change nicht als committed enthalten (LH-FA-CAP-007).
 
 **Out-of-Scope:** —
 
@@ -315,8 +317,7 @@ von LH-QA-PER-001, nicht dieser Anforderung.
 - **Boundary:** Given mehrere Zeilen werden in einem Statement gelöscht,
   when die Transaktion committet, dann ist jede gelöschte Zeile als
   eigener Change erfasst.
-- **Negative:** Given die Quelltransaktion wird zurückgerollt, dann ist der
-  DELETE-Change nicht als committed enthalten (LH-FA-CAP-007).
+- **Negative:** Given eine Quelltransaktion erzeugte einen DELETE-Change, when sie zurückgerollt wird, then ist der Change nicht als committed enthalten (LH-FA-CAP-007).
 
 **Out-of-Scope:** TRUNCATE ist ausdrücklich nicht gefordert (siehe
 Out-of-Scope-Punkte, Abschnitt 5).
@@ -367,8 +368,7 @@ erfolgreich abgeschlossen wurde.
 - **Happy Path:** Given eine offene Quelltransaktion erzeugte Changes,
   when ein regulärer Consumer liest, dann sind diese Changes nicht
   enthalten, solange die Transaktion nicht committed hat.
-- **Boundary:** Given die Transaktion committed während ein Consumer
-  liest, dann ist das Verhalten definiert (der Commit ist spätestens beim
+- **Boundary:** Given ein Consumer liest, when die Quelltransaktion genau in diesem Moment committed, then ist das Verhalten definiert (der Commit ist spätestens beim
   nächsten Lesevorgang sichtbar).
 - **Negative:** —
 
@@ -401,12 +401,9 @@ vorherige und neue Werte bereitgestellt werden.
 - **Happy Path:** Given ein UPDATE committet, when der Change gelesen
   wird, dann sind vorheriger und neuer Zeilenstand (soweit für die
   konfigurierte Erfassung relevant, LH-FA-DAT-005) abrufbar.
-- **Boundary:** Given ein INSERT bzw. DELETE, dann ist der vorherige bzw.
-  neue Wert entsprechend nicht vorhanden (die Abwesenheit ist definiert,
+- **Boundary:** Given ein INSERT bzw. DELETE wird committed, when der Change gelesen wird, then ist der vorherige bzw. neue Wert entsprechend nicht vorhanden (die Abwesenheit ist definiert,
   nicht ein Fehler).
-- **Negative:** Given die Quelle kann einen Wert nicht zuverlässig
-  liefern (z. B. nach Typänderung ohne Anpassung, LH-FA-SCH-004), dann ist
-  dies erkennbar, nicht still gefälscht.
+- **Negative:** Given die Quelle kann einen Wert nicht zuverlässig liefern (z. B. nach Typänderung ohne Anpassung, LH-FA-SCH-004), when der Change gelesen wird, then ist dies erkennbar, nicht still gefälscht.
 
 **Out-of-Scope:** —
 
@@ -416,10 +413,8 @@ vorherige und neue Werte bereitgestellt werden.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given zwei erfasste Changes, then tragen sie
-  unterscheidbare Identifikatoren.
-- **Boundary:** Given derselbe Datensatz wird zweimal nacheinander
-  identisch geändert, dann entstehen zwei unterscheidbare Changes.
+- **Happy Path:** Given zwei erfasste Changes, when ihre Identifikatoren verglichen werden, then sind sie unterscheidbar.
+- **Boundary:** Given derselbe Datensatz, when er zweimal nacheinander identisch geändert wird, then entstehen zwei unterscheidbare Changes.
 - **Negative:** —
 
 **Out-of-Scope:** Die konkrete Form des Identifikators (z. B. LSN-basiert)
@@ -431,10 +426,8 @@ wird im Pflichtenheft festgelegt.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein erfasster Change, then ist die Quelltabelle
-  (Schema und Tabelle) eindeutig erkennbar.
-- **Boundary:** Given zwei gleichnamige Tabellen in verschiedenen Schemata
-  sind aktiviert, then sind ihre Changes unterscheidbar zugeordnet.
+- **Happy Path:** Given ein erfasster Change, when er gelesen wird, then ist die Quelltabelle (Schema und Tabelle) eindeutig erkennbar.
+- **Boundary:** Given zwei gleichnamige Tabellen in verschiedenen Schemata sind aktiviert, when ihre Changes gelesen werden, then sind sie unterscheidbar zugeordnet.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -446,10 +439,8 @@ DELETE unterscheiden.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein jeweils committed erfasster Change, dann ist
-  der Typ INSERT, UPDATE oder DELETE ablesbar.
-- **Boundary:** Given weitere Operationstypen der Quelle (z. B. TRUNCATE),
-  dann ist das Verhalten definiert (dokumentiert, ob und wie sie erfasst
+- **Happy Path:** Given ein jeweils committed erfasster Change, when er gelesen wird, then ist der Typ INSERT, UPDATE oder DELETE ablesbar.
+- **Boundary:** Given die Quelle führt einen weiteren Operationstyp aus (z. B. TRUNCATE), when die Änderung die Erfassung erreicht, then ist das Verhalten definiert (dokumentiert, ob und wie sie erfasst
   werden).
 - **Negative:** —
 
@@ -463,12 +454,8 @@ werden können. **MVP: ja.**
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given zwei committed Changes, dann lassen sich ihre
-  Positionen ordnen; die Ordnung entspricht der logischen Reihenfolge
-  (LH-FA-CAP-004).
-- **Boundary:** Given mehrere Changes derselben Transaktion, dann tragen
-  sie eine Position, die ihre Reihenfolge innerhalb der Transaktion
-  erhält.
+- **Happy Path:** Given zwei committed Changes, when ihre Positionen verglichen werden, then lässt sich die Ordnung bestimmen; sie entspricht der logischen Reihenfolge (LH-FA-CAP-004).
+- **Boundary:** Given mehrere Changes derselben Transaktion, when ihre Positionen verglichen werden, then erhält sich ihre Reihenfolge innerhalb der Transaktion.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -480,13 +467,9 @@ Datenwerte müssen bereitgestellt werden.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given CDC ist ohne Spaltenausschluss aktiviert, then
-  enthalten Changes alle Zeilenwerte, die die Quelle zuverlässig liefert.
-- **Boundary:** Given ein Spaltenausschluss ist konfiguriert (perspektivisch,
-  LH-FA-CFG-005), dann enthalten Changes die Werte der nicht
-  ausgeschlossenen Spalten.
-- **Negative:** Given ein Wert ist nicht lieferbar, dann ist seine
-  Abwesenheit erkennbar, nicht mit einem Platzhalter überdeckt.
+- **Happy Path:** Given CDC ist ohne Spaltenausschluss aktiviert, when ein Change gelesen wird, then enthält er alle Zeilenwerte, die die Quelle zuverlässig liefert.
+- **Boundary:** Given ein Spaltenausschluss ist konfiguriert (perspektivisch, LH-FA-CFG-005), when ein Change gelesen wird, then enthält er die Werte der nicht ausgeschlossenen Spalten.
+- **Negative:** Given ein Wert ist nicht lieferbar, when der Change gelesen wird, then ist seine Abwesenheit erkennbar, nicht mit einem Platzhalter überdeckt.
 
 **Out-of-Scope:** —
 
@@ -497,11 +480,8 @@ sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine künftige Version ergänzt Metadaten, dann
-  verlieren bestehende gespeicherte Changes dadurch nicht ihre
-  Lesbarkeit.
-- **Boundary:** Given ein Change ohne die neuen Metadaten, dann liest sich
-  dieser weiter (Erweiterung ist abwärtskompatibel).
+- **Happy Path:** Given eine künftige Version ergänzt Metadaten, when bestehende gespeicherte Changes gelesen werden, then behalten sie ihre Lesbarkeit.
+- **Boundary:** Given ein Change ohne die neuen Metadaten, when er gelesen wird, then liest er sich unverändert weiter (Erweiterung ist abwärtskompatibel).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -516,10 +496,8 @@ werden können.
 - **Happy Path:** Given committed Changes mit Positionen `p1 < p2 < p3`,
   when der Bereich `[p1, p2)` abgefragt wird, dann wird genau der Change an
   `p1` zurückgegeben, nicht der an `p2`.
-- **Boundary:** Given ein leerer Bereich (keine Changes zwischen den
-  Grenzen), dann wird eine leere Menge zurückgegeben.
-- **Negative:** Given die Endposition liegt vor der Startposition, dann
-  folgt ein definierter leerer Bereich oder ein expliziter Fehlerpfad
+- **Boundary:** Given ein leerer Bereich (keine Changes zwischen den Grenzen), when er abgefragt wird, then wird eine leere Menge zurückgegeben.
+- **Negative:** Given die Endposition liegt vor der Startposition, when der Bereich abgefragt wird, then folgt ein definierter leerer Bereich oder ein expliziter Fehlerpfad
   (dokumentiert, nicht unbestimmt).
 
 **Out-of-Scope:** —
@@ -534,8 +512,7 @@ werden können. **MVP: ja.**
 - **Happy Path:** Given ein Consumer kennt die zuletzt verarbeitete
   Position `p`, when er ab `p` liest, dann erhält er ausschließlich Changes
   nach `p`.
-- **Boundary:** Given `p` liegt nach dem letzten vorhandenen Change, dann
-  wird eine leere Menge zurückgegeben.
+- **Boundary:** Given `p` liegt nach dem letzten vorhandenen Change, when ab `p` gelesen wird, then wird eine leere Menge zurückgegeben.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -549,10 +526,8 @@ werden können.
 
 - **Happy Path:** Given mehr verfügbare Changes als das Limit `n`, when
   gelesen wird, dann werden höchstens `n` Changes zurückgegeben.
-- **Boundary:** Given weniger verfügbare Changes als `n`, dann werden alle
-  verfügbaren zurückgegeben.
-- **Negative:** Given ein nicht plausibles Limit (z. B. negativ), dann
-  folgt ein expliziter Fehlerpfad oder eine dokumentierte Normierung.
+- **Boundary:** Given weniger verfügbare Changes als `n`, when mit dem Limit `n` gelesen wird, then werden alle verfügbaren zurückgegeben.
+- **Negative:** Given ein nicht plausibles Limit (z. B. negativ), when mit diesem Limit gelesen wird, then folgt ein expliziter Fehlerpfad oder eine dokumentierte Normierung.
 
 **Out-of-Scope:** —
 
@@ -563,10 +538,8 @@ sein. **MVP: ja.**
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given dieselbe Abfrage zweimal bei unverändertem
-  Datenstand, dann sind beide Ergebnisreihenfolgen identisch.
-- **Boundary:** Given mehrere Changes innerhalb derselben Positionsgrenze,
-  dann ist auch die interne Reihenfolge stabil definiert.
+- **Happy Path:** Given dieselbe Abfrage bei unverändertem Datenstand, when sie zweimal ausgeführt wird, then sind beide Ergebnisreihenfolgen identisch.
+- **Boundary:** Given mehrere Changes innerhalb derselben Positionsgrenze, when der Bereich abgefragt wird, then ist auch die interne Reihenfolge stabil definiert.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -581,8 +554,7 @@ Aufbewahrungszeit erneut gelesen werden können. **MVP: ja.**
 - **Happy Path:** Given ein Change wurde bereits gelesen und ist innerhalb
   der Aufbewahrungszeit, when er erneut ab derselben Position angefragt
   wird, dann wird er erneut zurückgegeben.
-- **Boundary:** Given die Aufbewahrungszeit ist abgelaufen und der Change
-  wurde bereinigt, dann wird er nicht mehr zurückgegeben (kein
+- **Boundary:** Given die Aufbewahrungszeit ist abgelaufen und der Change wurde bereinigt, when er erneut angefragt wird, then wird er nicht mehr zurückgegeben (kein
   Fehlverhalten des Systems).
 - **Negative:** —
 
@@ -596,8 +568,7 @@ Aufbewahrungszeit erneut gelesen werden können. **MVP: ja.**
 
 - **Happy Path:** Given Changes aus `t1` und `t2`, when nach `t1` gefiltert
   wird, dann werden nur Changes aus `t1` zurückgegeben.
-- **Boundary:** Given der Filter trifft keine erfassten Changes, dann wird
-  eine leere Menge zurückgegeben.
+- **Boundary:** Given der Filter trifft keine erfassten Changes, when danach gefiltert wird, then wird eine leere Menge zurückgegeben.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -624,11 +595,8 @@ voneinander verarbeiten können.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given Consumer `c1` und `c2` lesen denselben
-  Änderungsbereich, dann beflussen ihre Lese- und Bestätigungsvorgänge
-  einander nicht.
-- **Boundary:** Given `c1` bestätigt Position `p`, dann bleibt die
-  gelesene Position von `c2` unverändert.
+- **Happy Path:** Given Consumer `c1` und `c2`, when beide denselben Änderungsbereich lesen und bestätigen, then beflussen ihre Vorgänge einander nicht.
+- **Boundary:** Given `c1` bestätigt Position `p`, when `c2` anschließend liest, then bleibt die gelesene Position von `c2` unverändert.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -642,8 +610,7 @@ Consumer gespeichert werden können.
 
 - **Happy Path:** Given Consumer `c` bestätigt Position `p`, when `c`
   danach seine gespeicherte Position abfragt, dann erhält er `p`.
-- **Boundary:** Given `c` bestätigt erneut, dann wird die gespeicherte
-  Position auf den neueren Wert fortgeschrieben.
+- **Boundary:** Given `c` hat bereits eine Position bestätigt, when `c` erneut bestätigt, then wird die gespeicherte Position auf den neueren Wert fortgeschrieben.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -658,8 +625,7 @@ bestätigen können.
 - **Happy Path:** Given `c` hat Changes bis Position `p` erfolgreich
   verarbeitet, when `c` `p` bestätigt, dann gilt `p` als verarbeitete
   Position von `c` (LH-FA-CON-003).
-- **Boundary:** Given eine Bestätigung wiederholt sich für dieselbe
-  Position, dann ist das Ergebnis definiert (idempotentes Verhalten).
+- **Boundary:** Given `c` bestätigt Position `p`, when die Bestätigung für dieselbe Position wiederholt wird, then ist das Ergebnis definiert (idempotentes Verhalten).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -673,8 +639,7 @@ bestätigten Position fortsetzen können.
 
 - **Happy Path:** Given `c` bestätigte `p` und startet neu, when `c` seine
   Position abfragt, dann erhält er `p` und setzt dort fort.
-- **Boundary:** Given `c` hatte nie bestätigt, dann startet `c` an einer
-  definierten Anfangsposition (dokumentiert).
+- **Boundary:** Given `c` hatte nie bestätigt, when `c` seine Position abfragt, then startet `c` an einer definierten Anfangsposition (dokumentiert).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -688,8 +653,7 @@ bestätigten Position fortsetzen können.
 - **Happy Path:** Given Consumer `c` existiert, when `c` administrativ
   entfernt wird, dann führt `c` keine Rolle mehr in der Retention
   (LH-FA-RET-004).
-- **Boundary:** Given `c` hatte eine gespeicherte Position, dann ist deren
-  Verhalten bei Entfernung definiert (dokumentiert, ob sie entfernt wird).
+- **Boundary:** Given `c` hatte eine gespeicherte Position, when `c` entfernt wird, then ist deren Verhalten definiert (dokumentiert, ob sie entfernt wird).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -705,9 +669,7 @@ Ein Neustart darf bereits dauerhaft gespeicherte Änderungen nicht verlieren.
 - **Happy Path:** Given Changes wurden als dauerhaft gespeichert
   ausgewiesen, when das System kontrolliert neu startet, dann sind dieselben
   Changes weiterhin lesbar (LH-QA-REL-001, LH-QA-REL-002).
-- **Boundary:** Given ein Change ist erfasst, aber die Quelltransaktion
-  noch offen, dann gilt dessen Persistenz-Aussage erst nach Commit
-  (LH-FA-CAP-006).
+- **Boundary:** Given ein Change ist erfasst, aber die Quelltransaktion noch offen, when die Persistenz des Changes geprüft wird, then gilt die Aussage erst nach Commit (LH-FA-CAP-006).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -720,10 +682,8 @@ Ein Neustart darf bereits dauerhaft gespeicherte Änderungen nicht verlieren.
 
 - **Happy Path:** Given eine konfigurierte Aufbewahrungsregel, when die
   Bereinigung läuft, dann richtet sie sich nach dieser Regel.
-- **Boundary:** Given die Konfiguration wird geändert, dann gilt die neue
-  Regel für nachfolgende Bereinigungsläufe.
-- **Negative:** Given eine nicht gültige Konfiguration, dann folgt ein
-  expliziter Fehlerpfad, keine stille Übernahme.
+- **Boundary:** Given eine geltende Aufbewahrungs-Konfiguration, when sie geändert wird, then gilt die neue Regel für nachfolgende Bereinigungsläufe.
+- **Negative:** Given eine nicht gültige Konfiguration, when sie gesetzt wird, then folgt ein expliziter Fehlerpfad, keine stille Übernahme.
 
 **Out-of-Scope:** —
 
@@ -735,8 +695,7 @@ Ein Neustart darf bereits dauerhaft gespeicherte Änderungen nicht verlieren.
 
 - **Happy Path:** Given eine Aufbewahrungszeit von `d`, when ein Change
   älter als `d` ist, dann kann er bereinigt werden.
-- **Boundary:** Given ein Change ist exakt `d` alt, dann ist definiert, ob
-  er bereits bereinigt werden darf.
+- **Boundary:** Given ein Change ist exakt `d` alt, when die Bereinigung läuft, then ist definiert, ob er bereits bereinigt werden darf.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -752,8 +711,7 @@ bestätigt haben.
 - **Happy Path:** Given Consumer-basierte Retention ist aktiv und `c1`
   hat `p` noch nicht bestätigt, when die Bereinigung läuft, dann werden
   Changes ab `p` nicht entfernt.
-- **Boundary:** Given alle relevanten Consumer haben `p` bestätigt, dann
-  dürfen Changes bis `p` gemäß Konfiguration entfernt werden.
+- **Boundary:** Given alle relevanten Consumer haben `p` bestätigt, when die Bereinigung läuft, then dürfen Changes bis `p` gemäß Konfiguration entfernt werden.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -765,10 +723,8 @@ erkennbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given `c1` blockiert die Bereinigung, dann ist erkennbar,
-  welcher Consumer blockiert und bis zu welcher Position.
-- **Boundary:** Given mehrere blockierende Consumer, dann sind alle einzeln
-  erkennbar.
+- **Happy Path:** Given `c1` blockiert die Bereinigung, when der Zustand beobachtet wird, then ist erkennbar, welcher Consumer blockiert und bis zu welcher Position.
+- **Boundary:** Given mehrere blockierende Consumer, when der Zustand beobachtet wird, then sind alle einzeln erkennbar.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -780,11 +736,8 @@ betrieblich kontrollierbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given wachsende CDC-Daten, dann ist der Verbrauch
-  beobachtbar (LH-QA-OPS-003).
-- **Boundary:** Given die Retention kann ein Wachstum nicht begrenzen
-  (z. B. wegen blockierender Consumer), dann ist dieser Zustand erkennbar
-  (LH-FA-RET-005).
+- **Happy Path:** Given wachsende CDC-Daten, when der Verbrauch beobachtet wird, then ist er über die Metriken ablesbar (LH-QA-OPS-003).
+- **Boundary:** Given die Retention kann ein Wachstum nicht begrenzen (z. B. wegen blockierender Consumer), when dieser Zustand eintritt, then ist er erkennbar (LH-FA-RET-005).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -796,10 +749,8 @@ werden.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine aktivierte Tabelle erhält eine neue Spalte,
-  dann ist die Änderung für das System erkennbar.
-- **Boundary:** Given eine nicht CDC-relevante Änderung (z. B. Index), dann
-  ist definiert, dass sie keine CDC-Reaktion auslöst.
+- **Happy Path:** Given eine aktivierte Tabelle, when sie eine neue Spalte erhält, then ist die Änderung für das System erkennbar.
+- **Boundary:** Given eine nicht CDC-relevante Änderung (z. B. Index), when sie ausgeführt wird, then ist definiert, dass sie keine CDC-Reaktion auslöst.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -811,11 +762,9 @@ und für Consumer nachvollziehbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine Spalte wurde hinzugefügt, then ist das
-  Verhalten der Changes bezüglich der neuen Spalte definiert
+- **Happy Path:** Given eine Spalte wurde hinzugefügt, when die fortan erfassten Changes gelesen werden, then ist das Verhalten bezüglich der neuen Spalte definiert
   (z. B. Abwesenheit in älteren Changes ist erklärbar).
-- **Boundary:** Given ältere Changes vor der Schemaänderung, dann sind sie
-  unverändert lesbar.
+- **Boundary:** Given ältere Changes vor der Schemaänderung, when sie gelesen werden, then sind sie unverändert lesbar.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -826,10 +775,8 @@ und für Consumer nachvollziehbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine erfasste Spalte wurde entfernt, dann ist das
-  Verhalten künftiger Changes definiert (dokumentiert).
-- **Boundary:** Given ältere Changes, dann ist definiert, ob und in welcher
-  Form ihre historischen Werte lesbar bleiben.
+- **Happy Path:** Given eine erfasste Spalte wurde entfernt, when künftige Changes erfasst werden, then ist ihr Verhalten definiert (dokumentiert).
+- **Boundary:** Given ältere Changes, when sie gelesen werden, then ist definiert, ob und in welcher Form ihre historischen Werte lesbar bleiben.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -841,13 +788,9 @@ eine stille Fehlinterpretation ist nicht zulässig.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine kompatible Typänderung, dann wird die Erfassung
-  fortgesetzt.
-- **Boundary:** Given eine Typänderung, deren Kompatibilität die Quelle
-  zuverlässig nicht beurteilen kann, dann ist das definierte Verhalten
-  dokumentiert.
-- **Negative:** Given eine inkompatible Typänderung, dann ist sie erkennbar
-  gemeldet; die Daten werden nicht still fehlinterpretiert.
+- **Happy Path:** Given eine kompatible Typänderung, when sie ausgeführt wird, then wird die Erfassung fortgesetzt.
+- **Boundary:** Given eine Typänderung, deren Kompatibilität die Quelle zuverlässig nicht beurteilen kann, when sie eintritt, then ist das definierte Verhalten dokumentiert.
+- **Negative:** Given eine inkompatible Typänderung, when sie eintritt, then ist sie erkennbar gemeldet; die Daten werden nicht still fehlinterpretiert.
 
 **Out-of-Scope:** —
 
@@ -858,10 +801,8 @@ können.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine erkannte Schemaänderung, dann kann sie einer
-  Version zugeordnet werden.
-- **Boundary:** Given zwei Changes vor und nach einer Schemaänderung, dann
-  lassen sich ihre Schema-Versionen unterscheiden.
+- **Happy Path:** Given eine erkannte Schemaänderung, when sie persistiert wird, then kann sie einer Version zugeordnet werden.
+- **Boundary:** Given zwei Changes vor und nach einer Schemaänderung, when ihre Schema-Versionen gelesen werden, then lassen sie sich unterscheiden.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -873,11 +814,8 @@ verfügbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein berechtigter Administrator, then kann er
-  Aktivierung, Deaktivierung, Statusabfrage und Consumer-Verwaltung über
-  SQL ausführen.
-- **Boundary:** Given die administrativen Objekte, dann ist ihre
-  Namensgebung frei (die Anforderung schreibt Konzepte, keine Namen fest;
+- **Happy Path:** Given ein berechtigter Administrator, when er die administrativen Funktionen aufruft, then kann er Aktivierung, Deaktivierung, Statusabfrage und Consumer-Verwaltung über SQL ausführen.
+- **Boundary:** Given die administrativen Objekte, when sie benannt werden, then ist die Namensgebung frei (die Anforderung schreibt Konzepte, keine Namen fest;
   Beispiele: `SELECT cdc.enable_table(...)`, `SELECT cdc.disable_table(...)`,
   `SELECT * FROM cdc.tables`, `SELECT * FROM cdc.consumers`).
 - **Negative:** —
@@ -892,8 +830,7 @@ verfügbar sein.
 
 - **Happy Path:** Given ein betriebsbereites System, when der Status
   abgefragt wird, dann wird der aktuelle Betriebszustand gemeldet.
-- **Boundary:** Given ein System in einem Fehlerzustand, dann ist das auch
-  über den Status erkennbar (LH-FA-ADM-003).
+- **Boundary:** Given ein System in einem Fehlerzustand, when der Status abgefragt wird, then ist das auch über den Status erkennbar (LH-FA-ADM-003).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -904,10 +841,8 @@ verfügbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein Fehlerzustand (z. B. Erfassung kann nicht
-  fortsetzen), dann ist er erkennbar und unterscheidbar von normalem Betrieb
-  (LH-QA-REL-003).
-- **Boundary:** Given der Fehlerzustand endet, dann ist das auch erkennbar.
+- **Happy Path:** Given ein Fehlerzustand (z. B. Erfassung kann nicht fortsetzen), when er eintritt, then ist er erkennbar und unterscheidbar von normalem Betrieb (LH-QA-REL-003).
+- **Boundary:** Given der Fehlerzustand endet, when der Zustand beobachtet wird, then ist das auch erkennbar.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -919,10 +854,8 @@ Quelländerung und CDC-Verfügbarkeit muss messbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine committed Quelländerung, dann lässt sich ihr
-  Abstand zur CDC-Verfügbarkeit bestimmen.
-- **Boundary:** Given der Abstand wächst, dann ist das über die Messung
-  beobachtbar (LH-QA-OPS-003).
+- **Happy Path:** Given eine committed Quelländerung, when ihr Abstand zur CDC-Verfügbarkeit gemessen wird, then lässt er sich bestimmen.
+- **Boundary:** Given der Abstand wächst, when die Messung gelesen wird, then ist das beobachtbar (LH-QA-OPS-003).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -933,9 +866,8 @@ Quelländerung und CDC-Verfügbarkeit muss messbar sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given unbestätigte Changes jenseits der bestätigten
-  Position eines Consumers, dann ist der Rückstand erkennbar.
-- **Boundary:** Given kein Rückstand, dann zeigt die Messung das auch.
+- **Happy Path:** Given unbestätigte Changes jenseits der bestätigten Position eines Consumers, when der Rückstand gemessen wird, then ist er erkennbar.
+- **Boundary:** Given kein Rückstand, when die Messung gelesen wird, then zeigt sie das auch.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -947,11 +879,8 @@ PostgreSQL-Quelle bestehen.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine unterstützte PostgreSQL-Version, dann erfolgt
-  die Erfassung über eine dokumentierte, definierte Schnittstelle zur
-  Quelle.
-- **Boundary:** Given mehrere unterstützte PostgreSQL-Versionen
-  (LH-QA-POR-001), dann ist je Version die Schnittstelle definiert.
+- **Happy Path:** Given eine unterstützte PostgreSQL-Version, when die Erfassung betrieben wird, then erfolgt sie über eine dokumentierte, definierte Schnittstelle zur Quelle.
+- **Boundary:** Given mehrere unterstützte PostgreSQL-Versionen (LH-QA-POR-001), when die Erfassung je Version betrieben wird, then ist die Schnittstelle je Version definiert.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -963,10 +892,8 @@ SQL möglich sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein berechtigter Nutzer, dann kann er Konfiguration,
-  Status und Kernlesezugriffe über SQL ausführen.
-- **Boundary:** Given der SQL-Zugriff, dann sind die Objekte dokumentiert
-  (der Name bleibt frei, siehe LH-FA-ADM-001).
+- **Happy Path:** Given ein berechtigter Nutzer, when er Konfiguration, Status oder Kernlesezugriffe ausführt, then geschieht das über SQL.
+- **Boundary:** Given der SQL-Zugriff, when die beteiligten Objekte gesucht werden, then sind sie dokumentiert (der Name bleibt frei, siehe LH-FA-ADM-001).
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -978,10 +905,8 @@ unterstützen können.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given eine Installation, dann kann Installation, Diagnose
-  und Administration über eine CLI erfolgen.
-- **Boundary:** Given die CLI, dann deckt sie mindestens die
-  Status-/Diagnoseabfragen ab, die LH-FA-ADM-002 … 005 nennen.
+- **Happy Path:** Given eine Installation, when Installation, Diagnose oder Administration durchgeführt wird, then kann das über eine CLI erfolgen.
+- **Boundary:** Given die CLI, when ihre Abdeckung geprüft wird, then deckt sie mindestens die Status-/Diagnoseabfragen ab, die LH-FA-ADM-002 … 005 nennen.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -993,10 +918,8 @@ möglich sein.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein Monitoring-System, dann kann es die
-  Betriebsschnittstelle abfragen (Inhalt: LH-QA-OPS-003).
-- **Boundary:** Given die Schnittstelle, dann ist ihr Format
-  maschinenlesbar.
+- **Happy Path:** Given ein Monitoring-System, when es die Betriebsschnittstelle abfragt, then erhält es die Betriebsinformationen (Inhalt: LH-QA-OPS-003).
+- **Boundary:** Given die Schnittstelle, when sie abgefragt wird, then ist ihr Format maschinenlesbar.
 - **Negative:** —
 
 **Out-of-Scope:** —
@@ -1008,9 +931,7 @@ ermöglichen, ohne das interne CDC-Modell grundlegend zu verändern.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given das CDC-Modell, then lassen sich seine Lese- und
-  Verwaltungsfähigkeiten über eine andere Zugriffsschicht anbieten, ohne
-  das Modell umzubauen.
+- **Happy Path:** Given das CDC-Modell, when eine andere Zugriffsschicht (z. B. HTTP-/gRPC-API) aufgesetzt wird, then lassen sich seine Lese- und Verwaltungsfähigkeiten anbieten, ohne das Modell umzubauen.
 - **Boundary:** —
 - **Negative:** —
 
@@ -1038,7 +959,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 ### LH-QA-REL-001 — Keine stillen Datenverluste
 
 - **Anforderung:** Erkannte und bestätigte Quelländerungen dürfen nicht
-  still verloren gehen.
+  still verloren gehen. **MVP: ja.**
 - **Messmethode:** Automatisierter Neustart- und Wiederholungstest der
   Erfassungs- und Lesepfade (Bestandteil des MVP-Integrations-tests,
   Abschnitt 1).
@@ -1076,8 +997,9 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 
 - **Anforderung:** Das System soll von kleinen Datenbanken bis zu
   kontinuierlichen Änderungsvolumina skalieren können.
-- **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina werden
-  in `spec/pflichtenheft.md` festgelegt.
+- **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina sind
+  in `spec/pflichtenheft.md` als offene Festlegung bis zur MVP-Abnahme
+  vermerkt.
 
 ### LH-QA-PER-003 — Batch-Verarbeitung
 
@@ -1089,8 +1011,9 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 
 - **Anforderung:** Die Latenz zwischen Commit und CDC-Verfügbarkeit soll
   gering sein und über Benchmarks bewertet werden.
-- **Messmethode:** Benchmark über LH-FA-ADM-004 (messbarer Abstand); Schwellen
-  werden in `spec/pflichtenheft.md` festgelegt.
+- **Messmethode:** Benchmark über LH-FA-ADM-004 (messbarer Abstand);
+  Schwellen-Initialwerte sind in `spec/pflichtenheft.md` als offene
+  Festlegung bis zur MVP-Abnahme vermerkt.
 
 ### LH-QA-SEC-001 — Least-Privilege
 
@@ -1155,8 +1078,9 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 
 - **Anforderung:** Mehrere aktiv unterstützte PostgreSQL-Major-Versionen
   sollen unterstützt werden.
-- **Messmethode:** Testumgebung je unterstützter Version; Versionen werden
-  in `spec/pflichtenheft.md` festgelegt.
+- **Messmethode:** Testumgebung je unterstützter Version; konkrete
+  Versionen sind in `spec/pflichtenheft.md` als offene Festlegung bis zur
+  MVP-Abnahme vermerkt.
 
 ### LH-QA-POR-002 — Primäre Zielplattform Linux
 
@@ -1189,18 +1113,23 @@ Explizite Nicht-Anforderungen, die für das Gesamtsystem gelten:
 - Kein generisches Exactly-Once über externe Systeme hinweg
   (LH-QA-REL-004).
 
-Vorgesehene zukünftige Erweiterungen — bewusst nicht im ersten Stand, aber
-geplant (keine Out-of-Scope im engeren Sinne, sondern befristete
-Zurückstellung):
+Vorgesehene zukünftige Erweiterungen — die genannten Anforderungen bleiben
+bindend; zurückgestellt ist jeweils ihre Produktionsreife bzw. Ausbaustufe
+über die geforderte Fähigkeit hinaus:
 
-- Mehrere unabhängige Consumer (Fähigkeit ist als LH-FA-CON-001 ff.
-  angefordert; hier steht ihre Produktionsreife aus).
-- Erweiterte Retention (LH-FA-RET-004).
-- Schema Evolution (LH-FA-SCH-001 ff.).
-- Produktionsreife Observability (LH-QA-OPS-001 ff.).
-- High Availability.
+- Mehrere unabhängige Consumer (LH-FA-CON-001 ff. — Fähigkeit gefordert;
+  ihre Produktionsreife im Betrieb steht aus).
+- Erweiterte Retention (LH-FA-RET-004 — Fähigkeit gefordert; Ausbau über
+  die consumer- und zeitbasierte Basis hinaus).
+- Schema Evolution (LH-FA-SCH-001 ff. — Erkennung und definiertes Verhalten
+  sind gefordert; eine darüber hinausgehende Evolutions-Behandlung ist
+  zukünftige Erweiterung).
+- Produktionsreife Observability (LH-QA-OPS-001 ff. — Fähigkeiten
+  gefordert; ihre Betriebshärtung in Produktionsumgebungen steht aus).
+- High Availability (keine Anforderung dieses Lastenhefts).
 - Exportadapter, beispielsweise Kafka, NATS, RabbitMQ, HTTP/Webhooks oder
-  Object Storage — nicht Bestandteil des MVP.
+  Object Storage (keine Anforderung dieses Lastenhefts; nicht Bestandteil
+  des MVP).
 
 ## 6. Glossar
 
