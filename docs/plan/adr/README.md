@@ -54,3 +54,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0041 | a-check als Maschinenform der Architektur-Prüfung | Accepted | 2026-09-09 | [0041-a-check-maschinenform-architekturpruefung.md](0041-a-check-maschinenform-architekturpruefung.md) |
 | ADR-0042 | Transport-Typen am Port | Accepted | 2026-09-09 | [0042-transport-typen-am-port.md](0042-transport-typen-am-port.md) |
 | ADR-0043 | Schemamigrationen mit d-migrate | Accepted | 2026-09-09 | [0043-schemamigrationen-mit-d-migrate.md](0043-schemamigrationen-mit-d-migrate.md) |
+| ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
