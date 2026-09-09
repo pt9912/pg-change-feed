@@ -5,7 +5,7 @@ scan:
   # .harness/**: tool-interne Ablage (vendored Baseline, Sprachskelett) —
   # keine Adopter-Doku, vom Doc-Gate ausgenommen.
   ignore: ["**/*.template.md", ".tmp/**", ".harness/**"]
-modules: [links, anchors, ids, matrix, versions]
+modules: [links, anchors, ids, matrix, versions, structure]
 ids:
   # Kennungs-Linkpflicht (id-unlinked): nackte Kennungen muessen auf ihr
   # Definitions-Dokument verlinken. Je Stratum ein Muster; das .a-Muster
@@ -52,6 +52,72 @@ vcs:
   # unveraendert — Eintraege werden nie ueberschrieben.
   paths: ["harness/conventions/**/MR-[0-9]*.md"]
   immutable-when: '^- \*\*Datum:\*\*'
+structure:
+  # Struktur-Invarianten INNERHALB der Register-Dokumente: Spalten bleiben
+  # kurz und gefüllt, damit das Register als Quelle nicht driftet. Spalten
+  # adressiert über Kopfzeilen-Namen (nicht Position). Zell-Laenge misst
+  # wie dargestellt, inkl. Markdown-Syntax.
+  - files: docs/plan/adr/README.md
+    section: "# ADR-Index — PG Change Feed"
+    table:
+      column:
+        - name: ID          # ADR-0001
+          cell-min-chars: 8
+          cell-max-chars: 8
+        - name: Titel
+          cell-min-chars: 10
+          cell-max-chars: 80
+        - name: Status      # Accepted | Proposed
+          cell-min-chars: 5
+          cell-max-chars: 10
+        - name: Datum       # ISO-Datum: exakt zehn Zeichen
+          cell-min-chars: 10
+          cell-max-chars: 10
+  - files: spec/pflichtenheft.md
+    section: "## 3. Defaults und Konstanten"
+    table:
+      column:
+        - name: ID          # `SPEC-00NN` — inkl. Backticks
+          cell-min-chars: 10
+          cell-max-chars: 10
+        - name: Name
+          cell-min-chars: 3
+          cell-max-chars: 40
+        - name: Wert
+          cell-min-chars: 1
+          cell-max-chars: 120
+        - name: Begründung
+          cell-min-chars: 10
+          cell-max-chars: 220
+  - files: spec/architecture.md
+    section: "## 1. Komponenten-Übersicht"
+    table:
+      column:
+        - name: ID          # `ARC-00NN` — inkl. Backticks
+          cell-min-chars: 9
+          cell-max-chars: 9
+        - name: Komponente
+          cell-min-chars: 3
+          cell-max-chars: 40
+        - name: Rolle
+          cell-min-chars: 10
+          cell-max-chars: 220
+  - files: spec/architecture.md
+    section: "## 3. Externe Abhängigkeiten"
+    table:
+      column:
+        - name: ID          # `ARC-00NN` — inkl. Backticks
+          cell-min-chars: 9
+          cell-max-chars: 9
+        - name: System
+          cell-min-chars: 3
+          cell-max-chars: 60
+        - name: Rolle
+          cell-min-chars: 10
+          cell-max-chars: 120
+        - name: Substituierbarkeit
+          cell-min-chars: 10
+          cell-max-chars: 200
 # codepaths: aktivieren, sobald alle in Doku referenzierten Pfade existieren
 # (z. B. nennt spec/architecture.md den Roadmap-Pfad, der erst mit der
 # ersten Welle angelegt wird) — sonst behaupteter, aber roter Gate
