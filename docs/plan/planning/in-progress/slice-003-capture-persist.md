@@ -127,6 +127,9 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/application/port/outbound/changestore.go` (Kommentar) | update | *Grenz-Träger aus slice-002 (Lerneintrag):* [`ADR-0029`](../../../../docs/plan/adr/README.md)-Regel 1 (Persist-before-ACK) hat in `ARC-001` kein Subjekt — die Grenze wird hier als Port-Kontrakt-Zeile benannt (ACK nur über nach Persistenz gefragte Positionen) |
 | `internal/application/usecase/capture/*.go` | neu | `CaptureService` + Command/Result über zwei Ports ([`ADR-0027`](../../../../docs/plan/adr/README.md), [`ADR-0039`](../../../../docs/plan/adr/README.md)) |
 | `internal/application/usecase/capture/*_test.go` | neu | Fake-Ports (Store, ACK): Ordnung, Fehlermodi, Idempotenz |
+| `internal/application/port/inbound/capture.go` (Transport-Typen) | update | *Plan-Nachzug (Review F-2, Konflikt-Sequenz Klasse A 3×):* `CaptureCommand`/`CaptureResult` werden am Inbound-Port definiert, der Use Case führt sie als Typ-Aliase — beides trägt die [`ADR-0039`](../../../../docs/plan/adr/README.md)-Hälften (Fitness + Use-Case-Lesart); Schärfung als [`ADR-0042`](../../../../docs/plan/adr/README.md) (Architect-Verdikt der Sequenz) |
+| `internal/application/port/*.go` (Signaturen) | update | *Plan-Nachzug (Review F-2):* `context.Context` in allen Port-Signaturen; `ErrMissingTransaction` als Port-Fehler ([`SPEC-008`](../../../../spec/pflichtenheft.md)-Familie) |
+| `internal/application/usecase/capture/service.go` (leere Transaktion) | update | *Plan-Nachzug (Review F-4):* Verhalten der leeren committed Transaktion (ablehnen oder Grenze am Port-Kontrakt) + Test — Fix-Runde des Implementers |
 
 ## 4. Trigger
 
