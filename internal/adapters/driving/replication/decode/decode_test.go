@@ -380,6 +380,7 @@ func TestDecodeChangeBeforeRelation(t *testing.T) {
 		t.Fatalf("Änderung ohne Relation: %v", err)
 	}
 }
+
 // TestDecodeFlowToCapture trägt den vollständigen Byte-Durchlauf:
 // BEGIN, Relation, Insert, COMMIT — das COMMIT meldet die committed
 // Quelltransaktion als CaptureCommand (`LH-FA-CAP-006.a`,

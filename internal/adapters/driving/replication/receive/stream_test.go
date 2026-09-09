@@ -8,16 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
-	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
-	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
-	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -25,10 +20,12 @@ import (
 // Publication und Logical Replication Slot im Testcontainer (`ADR-0030`,
 // `LH-FA-CFG-001.a`), gepinnt über `make test-replication`; ohne DSN
 // überspringen sie — die Dekodier- und Mapper-Seite tragen die
-// Unit-Tests gegen die `pgoutput`-Binärcodes. Die Instanz gehört dem
-// Container: Tabellen, Publication und Slot werden je Test frisch
-// aufgesetzt, Daten bleiben im Container und landen nicht im
-// Arbeitsbaum.
+// Unit-Tests gegen die `pgoutput`-Binärcodes. Die
+// Verdrahtung mit ChangeStore und ACK-Adapter trägt der
+// Verdrahtungs-Test in der Composition-Root (`internal/bootstrap`,
+// `ADR-0026`). Die Instanz gehört dem Container: Tabellen, Publication
+// und Slot werden je Test frisch aufgesetzt, Daten bleiben im Container
+// und landen nicht im Arbeitsbaum.
 
 const (
 	testSource  = "src-1"
@@ -41,7 +38,7 @@ const (
 // fakeCapture nimmt die Commands des Streams auf und meldet die
 // Commit-Position als bestätigt — die Stand-in-Application des
 // Adapter-Tests; die Persist-before-ACK-Ordnung am realen Treiber trägt
-// TestRealPersistBeforeAck mit dem echten Service.
+// der Verdrahtungs-Test in der Composition-Root.
 type fakeCapture struct {
 	commands chan *inbound.CaptureCommand
 }
@@ -195,46 +192,83 @@ func TestStreamTranslatesRealChanges(t *testing.T) {
 		t.Fatalf("DELETE: %v", err)
 	}
 
-	insert := awaitCommand(t, commands, 15*time.Second)
-	insertChanges, err := insert.Transaction.Changes()
+	// Die vier Quelltransaktionen laufen ein; die Zuordnung läuft über
+	// den Inhalt, die Ordnung der Feed-Transaktionen über ihre
+	// Commit-Positionen (`LH-FA-CAP-004`).
+	var delivered []*inbound.CaptureCommand
+	for i := 0; i < 4; i++ {
+		delivered = append(delivered, awaitCommand(t, commands, 15*time.Second))
+	}
+
+	var emptyTransaction *inbound.CaptureCommand
+	feedTransactions := map[model.Operation]*inbound.CaptureCommand{}
+	for _, command := range delivered {
+		changes, err := command.Transaction.Changes()
+		if err != nil {
+			t.Fatalf("Changes: %v", err)
+		}
+		if len(changes) == 0 {
+			emptyTransaction = command
+			continue
+		}
+		feedTransactions[changes[0].Operation] = command
+	}
+	if emptyTransaction == nil {
+		t.Fatalf("Transaktion der nicht aktivierten Tabelle fehlt")
+	}
+	for _, operation := range []model.Operation{model.OperationInsert, model.OperationUpdate, model.OperationDelete} {
+		if feedTransactions[operation] == nil {
+			t.Fatalf("Transaktion mit %s fehlt", operation)
+		}
+	}
+	insertChanges, err := feedTransactions[model.OperationInsert].Transaction.Changes()
 	if err != nil {
 		t.Fatalf("Insert-Changes: %v", err)
 	}
-	if len(insertChanges) != 1 || insertChanges[0].Operation != model.OperationInsert {
-		t.Fatalf("Insert-Change: %+v", insertChanges)
+	if len(insertChanges) != 1 {
+		t.Fatalf("Insert-Change-Anzahl: %d", len(insertChanges))
 	}
 	if string(insertChanges[0].NewImage) != `{"id":"1","name":"Alpha"}` {
 		t.Fatalf("Insert-Image: %s", insertChanges[0].NewImage)
 	}
-
-	other := awaitCommand(t, commands, 15*time.Second)
-	otherChanges, err := other.Transaction.Changes()
-	if err != nil {
-		t.Fatalf("Other-Changes: %v", err)
-	}
-	if len(otherChanges) != 0 {
-		t.Fatalf("Nicht aktivierte Tabelle trägt %d Changes", len(otherChanges))
-	}
-
-	update := awaitCommand(t, commands, 15*time.Second)
-	updateChanges, err := update.Transaction.Changes()
+	updateChanges, err := feedTransactions[model.OperationUpdate].Transaction.Changes()
 	if err != nil {
 		t.Fatalf("Update-Changes: %v", err)
 	}
 	if len(updateChanges) != 1 || updateChanges[0].Operation != model.OperationUpdate {
 		t.Fatalf("Update-Change: %+v", updateChanges)
 	}
-
-	deleteCommand := awaitCommand(t, commands, 15*time.Second)
-	deleteChanges, err := deleteCommand.Transaction.Changes()
+	deleteChanges, err := feedTransactions[model.OperationDelete].Transaction.Changes()
 	if err != nil {
 		t.Fatalf("Delete-Changes: %v", err)
 	}
-	if len(deleteChanges) != 1 || deleteChanges[0].Operation != model.OperationDelete {
-		t.Fatalf("Delete-Change: %+v", deleteChanges)
+	if len(deleteChanges) != 1 {
+		t.Fatalf("Delete-Change-Anzahl: %d", len(deleteChanges))
 	}
 	if string(deleteChanges[0].OldImage) != `{"id":"1"}` {
 		t.Fatalf("Delete-Alt-Image: %s", deleteChanges[0].OldImage)
+	}
+
+	// Die Commit-Positionen der Feed-Transaktionen laufen in
+	// Commit-Reihenfolge (`LH-FA-CAP-004`, `LH-FA-DAT-004`).
+	var feedPosition []model.SourcePosition
+	for _, command := range delivered {
+		position, committed := command.Transaction.CommitPosition()
+		if !committed {
+			t.Fatalf("Transaktion ohne Commit-Position")
+		}
+		if _, err := command.Transaction.Changes(); err != nil {
+			t.Fatalf("Changes: %v", err)
+		}
+		changes, _ := command.Transaction.Changes()
+		if len(changes) > 0 {
+			feedPosition = append(feedPosition, position)
+		}
+	}
+	for i := 1; i < len(feedPosition); i++ {
+		if !feedPosition[i-1].Before(feedPosition[i]) {
+			t.Fatalf("Commit-Positionen: %v läuft nicht vor %v", feedPosition[i-1], feedPosition[i])
+		}
 	}
 }
 
@@ -303,128 +337,4 @@ func TestStreamTruncateUnsupported(t *testing.T) {
 	case <-time.After(15 * time.Second):
 		t.Fatalf("TRUNCATE endete nicht als Stream-Fehler")
 	}
-}
-
-// TestRealPersistBeforeAck trägt die Persist-before-ACK-Ordnung am
-// realen Treiber (`LH-QA-REL-001.a`): der echte Capture Service
-// persistiert über den ChangeStore und bestätigt die Position über den
-// realen ACK-Adapter an der Stream-Verbindung — confirmed_flush_lsn
-// trägt die bestätigte Position und die persistierten Changes sind
-// lesbar (`ADR-0027`, `ADR-0007`).
-func TestRealPersistBeforeAck(t *testing.T) {
-	pool, ctx := newPool(t)
-	env := newTestEnv(t, "ack")
-	if _, err := pool.Exec(ctx, "DROP SCHEMA IF EXISTS cdc CASCADE"); err != nil {
-		t.Fatalf("Schema-Rückbau: %v", err)
-	}
-	if err := postgresstorage.ApplySchema(ctx, pool); err != nil {
-		t.Fatalf("ApplySchema: %v", err)
-	}
-	for _, statement := range []string{
-		fmt.Sprintf("INSERT INTO cdc.source (source_id, name) VALUES ('%s', 'Quelle')", testSource),
-		fmt.Sprintf("INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ('%s', '%s', 'public', 'feed_stream_test')", testTableID, testSource),
-		fmt.Sprintf("INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ('%s', '%s', 1)", testSchemaV, testTableID),
-	} {
-		if _, err := pool.Exec(ctx, statement); err != nil {
-			t.Fatalf("Referenz-Zeilen: %v", err)
-		}
-	}
-
-	store, err := postgresstorage.New(ctx, env.pool.Config().ConnString())
-	if err != nil {
-		t.Fatalf("Store: %v", err)
-	}
-	t.Cleanup(store.Close)
-
-	// Die Verdrahtung läuft in dieser Reihenfolge: der Stream baut die
-	// Verbindung, der ACK-Adapter trägt seine Bestätigung über dieselbe
-	// Verbindung (`ADR-0007`, Option C), der Service orchestriert.
-	stream, err := receive.NewStream(env.ctx, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-	})
-	if err != nil {
-		t.Fatalf("NewStream: %v", err)
-	}
-	ack, err := postgresack.New(stream.Conn())
-	if err != nil {
-		t.Fatalf("ACK-Adapter: %v", err)
-	}
-	if err := stream.BindCapture(capture.NewCaptureService(store, ack)); err != nil {
-		t.Fatalf("BindCapture: %v", err)
-	}
-	runDone := make(chan error, 1)
-	go func() { runDone <- stream.Run(env.ctx) }()
-
-	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Alpha')"); err != nil {
-		t.Fatalf("INSERT: %v", err)
-	}
-	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Beta')"); err != nil {
-		t.Fatalf("INSERT: %v", err)
-	}
-
-	records, err := awaitPersistedChanges(t, store, 2)
-	if err != nil {
-		// Der Ausgang des Laufs ist der nächstgelegene Beleg — ein
-		// Stream-Fehler endet ohne Persistenz.
-		select {
-		case runErr := <-runDone:
-			t.Fatalf("Persistierte Changes: %v — Stream-Ausgang: %v", err, runErr)
-		default:
-			t.Fatalf("Persistierte Changes: %v", err)
-		}
-	}
-	if len(records) != 2 {
-		t.Fatalf("Persistierte Changes: %d", len(records))
-	}
-	lastPosition := records[len(records)-1].Position
-
-	// Die bestätigte Position trägt confirmed_flush_lsn; sie kann die
-	// letzte Commit-Position nicht unterschreiten — der ACK lief erst
-	// nach der Persistenz (`LH-QA-REL-001.a`).
-	values, err := pool.Query(ctx,
-		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = $1", env.slot)
-	if err != nil {
-		t.Fatalf("Slot-Stand: %v", err)
-	}
-	defer values.Close()
-	if !values.Next() {
-		t.Fatalf("Slot %q fehlt", env.slot)
-	}
-	var confirmed string
-	if err := values.Scan(&confirmed); err != nil {
-		t.Fatalf("Slot-Stand lesen: %v", err)
-	}
-	confirmedLSN, err := pglogrepl.ParseLSN(confirmed)
-	if err != nil {
-		t.Fatalf("confirmed_flush_lsn %q: %v", confirmed, err)
-	}
-	if uint64(confirmedLSN) < lastPosition.Offset {
-		t.Fatalf("confirmed_flush_lsn %x unterschreitet die bestätigte Position %x", uint64(confirmedLSN), lastPosition.Offset)
-	}
-}
-
-// awaitPersistedChanges liest den Store, bis die erwarteten Changes
-// persistiert sind (Polling mit Test-Zeitgrenze).
-func awaitPersistedChanges(t *testing.T, store *postgresstorage.PostgresChangeStoreAdapter, limit int) ([]outbound.ChangeRecord, error) {
-	t.Helper()
-	deadline := time.Now().Add(15 * time.Second)
-	source := model.SourceID(testSource)
-	for time.Now().Before(deadline) {
-		query := outbound.ChangeQuery{Source: source}
-		records, err := store.ReadChanges(context.Background(), query)
-		if err != nil {
-			return nil, err
-		}
-		if len(records) >= limit {
-			return records, nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	return nil, fmt.Errorf("persistierte Changes innerhalb der Zeitspanne fehlgeschlagen")
 }
