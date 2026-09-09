@@ -187,7 +187,7 @@ wird, steht oben im Fliesstext, weil dieser Kommentar beim Kopieren wegfaellt.
 
 | Sub-Area (Pfad / Modul) | Kürzel | Modus | Begründung | Graduation-Bedingung / Folge-Slice |
 |---|---|---|---|---|
-| `*` (Default für gesamtes Repo) | `<KUERZEL>` | <Greenfield / Brownfield / Hybrid> | <warum> | <Bedingung oder "n/a (GF)" oder "permanent + slice-Ref"> |
+| `*` (Default für gesamtes Repo) | `PGC` | Greenfield | Repo startet ohne Code-Bestand; die drei Spec-Straten (Lastenheft 0.3.0, Pflichtenheft, Architektur-Sicht) sind committet, bevor der erste Code entsteht — Doc führt | n/a (GF) |
 
 ## Glossar (optional)
 

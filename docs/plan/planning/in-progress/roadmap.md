@@ -16,7 +16,9 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-- <welle-NN-titel>
+- [welle-1](../welle-1.md) — MVP-Grundlage: Bootstrap, Domänenkern, Capture-Persist
+
+- Nichts in Arbeit.
 
 <!-- BEDIENHINWEIS: Zwei unabhängige Aussagen in diesem Block. Die Liste oben
 folgt den Dateien (ein Zeiger je offener Welle-Datei). Trägt in-progress/
@@ -49,8 +51,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| <welle-N+1> | Welle <N> done | <…> | S/M/L |
-| <welle-N+2> | Welle <N+1> done + ADR-<NNNN> accepted | <…> | S/M/L |
+| *(keine geplanten Wellen; Welle 2 (reale PostgreSQL-Integration) wird geschnitten, wenn Welle 1 schließt)* | — | — | — |
 
 ## Meilensteine
 
@@ -70,7 +71,7 @@ Kommentar trägt, "Dieselbe Regel für Zustandsfelder").
 
 | Meilenstein | Welle(n) | Trigger | Status |
 |---|---|---|---|
-| M1 | <welle-NN> | <…> | erreicht / offen |
+| M1 — MVP-Abnahme | mehrere (welle-1 ff.) | MVP-Integrationstest grün ([Lastenheft §1, MVP-Schnitt](../../../../spec/lastenheft.md)) | offen |
 
 ## Abhängigkeitsgraph
 
@@ -82,15 +83,10 @@ eine Phantom-Welle.
 
 ```mermaid
 flowchart LR
-    W1[Welle 1]
-    W2[Welle 2]
-    W3[Welle 3]
-    W4[Welle 4]
-    
+    W1[welle-1: MVP-Grundlage]
+    W2[welle-2: reale PostgreSQL-Integration]
+
     W1 --> W2
-    W1 --> W3
-    W2 --> W4
-    W3 --> W4
 ```
 
 ## Abgeschlossene Wellen
