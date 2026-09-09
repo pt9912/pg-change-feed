@@ -1,7 +1,12 @@
 # OCI-Image für PG Change Feed — Reproduzierbarkeits-Anker (Modul 14).
 # Rezept-Form: Quellen-Commit + die gepinnten Digests der Eingangs-Images
 # bauen die Umgebung neu; der Digest des gebauten Images landet via
-# `make image` in harness/image-hash.txt (Beleg, kein Wiederholungs-Schlüssel).
+# `make image` in harness/image-hash.txt.
+# Semantik des Belegs: er ist der Digest des **exportierten Images**
+# (Runtime-Stage: Distroless-Basis + Binary). Änderungen, die nur den
+# deps-Layer betreffen (go.mod/go.sum, solange das Binary den Import nicht
+# trägt), lassen den Digest unverändert — das ist ein gültiger Befund
+# ("Beleg, kein Wiederholungs-Schlüssel"), kein Staleness-Zeichen.
 # Base-Image-Update = bewusster Commit, der nur die Digest-Zeile anhebt.
 
 # go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; die
