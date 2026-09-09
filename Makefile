@@ -14,11 +14,11 @@ GATE_CHECKS :=
 include harness/mk/*.mk
 
 # Architektur-Gate (a-check) — aktivieren mit dem ersten src/-Slice
-# (Bedingung, beobachtbar: erste .go-Datei unter internal/). Bis dahin wäre
-# `make a-check` ein behaupteter, aber leerer Gate — das Modul meldet einen
-# Auflösungs-Hinweis statt eines Prüfbereichs (AGENTS.md §4, Modul 13).
-# Das Fragment trägt den gepinnten Release-Digest; Pin-Hebung = bewusster
-# Commit (a-check.mk).
+# (Bedingung, beobachtbar: erste .go-Datei im Baum, cmd/ oder internal/).
+# Bis dahin wäre `make a-check` ein behaupteter, aber leerer Gate — das
+# Modul meldet einen Auflösungs-Hinweis statt eines Prüfbereichs
+# (AGENTS.md §4, Modul 13). Das Fragment trägt den gepinnten Release-
+# Digest; Pin-Hebung = bewusster Commit (a-check.mk).
 # include a-check.mk
 
 .PHONY: image

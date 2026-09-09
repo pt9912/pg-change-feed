@@ -12,6 +12,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [`LH-FA-CAP-004`](../../../../spec/lastenheft.md),
 [`LH-FA-CAP-005`](../../../../spec/lastenheft.md),
 [`ADR-0004`](../../../../docs/plan/adr/README.md),
+[`ADR-0005`](../../../../docs/plan/adr/README.md),
 [`ADR-0029`](../../../../docs/plan/adr/README.md),
 [`ADR-0039`](../../../../docs/plan/adr/README.md),
 [`ADR-0040`](../../../../docs/plan/adr/README.md)
@@ -41,10 +42,11 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Die Domänenmodelle je [`ARC-001`](../../../../spec/architecture.md) —
-Change, ChangeTransaction, SourcePosition, Consumer, ConsumerPosition,
-SchemaVersion, RetentionPolicy — mit Invarianten-Validierung in
-Konstruktoren und Domain-Tests; dazu das `ClockPort`-Interface
-([`ADR-0040`](../../../../docs/plan/adr/README.md)).
+Source, SourceTable, Change, ChangeTransaction, SourcePosition, Consumer,
+ConsumerPosition, SchemaVersion, RetentionPolicy — mit Invarianten-
+Validierung in Konstruktoren und Domain-Tests; dazu das `ClockPort`-Interface
+([`ADR-0040`](../../../../docs/plan/adr/README.md)). `SourcePosition` folgt
+[`ADR-0005`](../../../../docs/plan/adr/README.md) (abstrahiert die LSN).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -93,7 +95,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt ist — hier:
+      keine Schnittstelle berührt, dann trägt der Bericht die begründete
+      Aussage „kein öffentlicher Vertrag berührt".
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.

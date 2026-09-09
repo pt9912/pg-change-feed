@@ -12,6 +12,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [`LH-FA-CAP-006`](../../../../spec/lastenheft.md),
 [`LH-FA-CAP-007`](../../../../spec/lastenheft.md),
 [`ADR-0011`](../../../../docs/plan/adr/README.md),
+[`ADR-0012`](../../../../docs/plan/adr/README.md),
 [`ADR-0007`](../../../../docs/plan/adr/README.md),
 [`ADR-0009`](../../../../docs/plan/adr/README.md),
 [`ADR-0027`](../../../../docs/plan/adr/README.md),
@@ -53,9 +54,12 @@ Persist-before-ACK-Ordnung aus [`LH-QA-REL-001.a`](../../../../spec/pflichtenhef
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- Reale PostgreSQL-Adapter (Store, ACK, Stream) — ein Folge-Slice übernimmt
-  es (Welle 2: reale Integrationstests, [`PH-TST-001`-Umfang](../../../../spec/pflichtenheft.md));
-  die Fak-Port-Tests tragen die Ordnungs-Logik schon.
+- Reale PostgreSQL-Adapter (Store, ACK, Stream) — es wäre ein anderer
+  Vorgang: Treiber-Integration mit realem PostgreSQL
+  ([`PH-TST-001`-Umfang](../../../../spec/pflichtenheft.md)); die Welle 2
+  bündelt sie, sobald sie eröffnet wird (noch keine Lifecycle-Datei — die
+  Slices von Welle 2 entstehen bei ihrer Eröffnung, Modul 6). Die
+  Fake-Port-Tests dieser Welle tragen die Ordnungs-Logik schon.
 - Große Transaktionen/Spooling — [`ADR-0021`](../../../../docs/plan/adr/README.md)
   ist Proposed; der TransactionBufferPort wird mit der realen Stream-
   Integration entschieden, nicht hier.
@@ -117,8 +121,9 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `internal/application/port/inbound/capture.go` | neu | `CaptureInboundPort` ([`ADR-0028`](../../../../docs/plan/adr/README.md)) |
 | `internal/application/port/outbound/changestore.go` | neu | `ChangeStorePort`-Interface ([`ADR-0009`](../../../../docs/plan/adr/README.md)) |
-| `internal/application/usecase/capture/*.go` | neu | `CaptureService` + Command/Result ([`ADR-0027`](../../../../docs/plan/adr/README.md), [`ADR-0039`](../../../../docs/plan/adr/README.md)) |
-| `internal/application/usecase/capture/*_test.go` | neu | Fake-Port-Tests: Ordnung, Fehlermodi, Idempotenz |
+| `internal/application/port/outbound/replicationack.go` | neu | `ReplicationAckPort`-Interface ([`ADR-0007`](../../../../docs/plan/adr/README.md)) — der ACK ist der zweite Port des Capture-Services |
+| `internal/application/usecase/capture/*.go` | neu | `CaptureService` + Command/Result über zwei Ports ([`ADR-0027`](../../../../docs/plan/adr/README.md), [`ADR-0039`](../../../../docs/plan/adr/README.md)) |
+| `internal/application/usecase/capture/*_test.go` | neu | Fake-Ports (Store, ACK): Ordnung, Fehlermodi, Idempotenz |
 
 ## 4. Trigger
 
@@ -169,8 +174,10 @@ dasteht.
   ins Register, falls er 3× auffällt.
 - Idempotenz des Persistierens (Wiederholung nach Crash) braucht eine
   Deduplizierungsbasis ([`SPEC-002`](../../../../spec/pflichtenheft.md): change_id) —
-  **Ausgang:** entfallen; die Change-ID ist Modell-Pflicht (slice-002) und
-  der Fake-Test wiederholt die Persistenz.
+  **Ausgang:** weiter offen; der Fake-Store belegt die Ordnung
+  (ACK nach Persistenz), aber nicht die reale Idempotenz-Eigenschaft des
+  Stores — die ist [`ADR-0011`](../../../../docs/plan/adr/README.md)-Pflicht
+  und bekommt ihren vollen Beleg erst mit dem realen Adapter (Welle 2).
 
 ## 7. Closure-Notiz
 

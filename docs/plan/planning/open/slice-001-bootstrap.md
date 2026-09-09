@@ -9,7 +9,9 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
 **Bezug:** [`LH-QA-POR-003`](../../../../spec/lastenheft.md) (reproduzierbares
 Deployment, MVP), [`LH-QA-OPS-001`](../../../../spec/lastenheft.md) (containerisierter
-Betrieb), [`ADR-0039`](../../../../docs/plan/adr/README.md)
+Betrieb), [`ADR-0039`](../../../../docs/plan/adr/README.md),
+[`ADR-0036`](../../../../docs/plan/adr/README.md) (dieser Slice vollzieht
+dessen Hochschalt-Trigger: die Maschinenprüfung der §2-Constraints wird real)
 
 **Berührte Spec-Stellen:** [`ARC-007`](../../../../spec/architecture.md)
 (Bootstrap entsteht als Paket) · [architecture.md §1](../../../../spec/architecture.md)
@@ -85,7 +87,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt ist (hier:
+      `harness/README.md` — `make image`-Zeile auf [`ADR-0039`](../../../../docs/plan/adr/README.md)
+      umziehen, `make a-check` aus *Nicht behauptet* in die Werkzeuge-Tabelle).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -104,7 +108,7 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `go.mod`, `go.sum` | neu | Go-Modul `github.com/pt9912/pg-change-feed`, Go 1.26 ([`SPEC-012`](../../../../spec/pflichtenheft.md)-Umfeld), keine externen Deps im Bootstrap |
+| `go.mod`, `go.sum` | neu | Go-Modul `github.com/pt9912/pg-change-feed`, Go 1.26 (Toolchain-Digest im Dockerfile gepinnt), keine externen Deps im Bootstrap |
 | `cmd/pg-change-feed/main.go` | neu | Minimal-Einstiegspunkt (Bootstrap-Verdrahtung noch leer; `--version` als beobachtbarer Beleg) |
 | `Makefile` | update | `# include a-check.mk` aktivieren (Aktivierungsbedingung dieses Slice erfüllt) |
 | `a-check.mk`, `.a-check.yml` | update | Prüfen, ob die Deklaration gegen den entstehenden Baum hält (Schichten-Globs) |
