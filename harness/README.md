@@ -132,7 +132,10 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 
 **Aktueller Lauf-Status:** CI-Badge bzw. lokal `make help` / `make gates`.
 **Rote Gates:** Begründung im verlinkten `CO-<NNN>` (siehe Bindung-Spalte), Modul 7.
-**Nicht behauptet** (geplant): `<make-target-1>`, `<make-target-2>` (Welle <n>).
+**Nicht behauptet** (geplant): `make a-check` (Architektur-Gate; aktiviert mit
+der ersten Go-Quelle unter `internal/`, [`ADR-0036`](../docs/plan/adr/README.md);
+Fragment `a-check.mk` + `.a-check.yml` stehen bereit), `make image-cve`
+(CVE-Scan des gebauten Images, advisory; ab dem ersten `make image`-Lauf).
 
 <!-- Domänenspezifische Gates ergänzen, je nach Repo-Klasse: -->
 

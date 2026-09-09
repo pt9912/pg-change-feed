@@ -1,0 +1,26 @@
+# .a-check.yml — Architektur-Regeln für a-check (Modul: hexagonale Schichten).
+# Die Schichten/Edges bilden die Sicht-Stratum-Constraints ab
+# (spec/architecture.md §1/§2; ADR-0002, ADR-0039) — die Maschinenform der
+# Abhängigkeitsregel, die bis hierhin Review-Prüfpflicht war (ADR-0036).
+# Gerüst: `a-check --print-config`; strikt dekodiert — unbekannte Schlüssel
+# brechen mit Exit 2 ab.
+version: 1
+languages:
+  go: ["**/*.go"]
+layers:
+  domain:   ["internal/domain/**"]
+  ports:    ["internal/application/port/**"]
+  app:      ["internal/application/usecase/**"]
+  adapters: ["internal/adapters/**"]
+edges:
+  # Abhängigkeiten zeigen nach innen (ADR-0002): Ports und Use Cases
+  # referenzieren die Domain; Adapter referenzieren Ports und Domain-Typen
+  # (Mapper übersetzen, ADR-0039) — nicht umgekehrt.
+  - {from: ports,    to: domain}
+  - {from: app,      to: domain}
+  - {from: app,      to: ports}
+  - {from: adapters, to: ports}
+  - {from: adapters, to: domain}
+composition_root: ["internal/bootstrap/**", "cmd/**"]
+markers:
+  ignore_symbols: []
