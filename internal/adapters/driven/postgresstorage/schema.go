@@ -35,12 +35,19 @@ func ApplySchema(ctx context.Context, pool *pgxpool.Pool) error {
 }
 
 // statements teilt die DDL in Einzelanweisungen: pgx führt über das
-// Extended-Protokoll eine Anweisung je Exec aus; die DDL trägt keine
-// Semikolons in String-Literalen, das einfache Trennen trägt ihren vollen
-// Text.
+// Extended-Protokoll eine Anweisung je Exec aus. Kommentarzeilen werden
+// vor dem Trennen abgetrennt — ihre Texte können Semikolons tragen —; die
+// SQL-Blöcke selbst tragen keine Semikolons in String-Literalen.
 func statements(sql string) []string {
+	var withoutComments []string
+	for _, line := range strings.Split(sql, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "--") {
+			continue
+		}
+		withoutComments = append(withoutComments, line)
+	}
 	var result []string
-	for _, part := range strings.Split(sql, ";") {
+	for _, part := range strings.Split(strings.Join(withoutComments, "\n"), ";") {
 		trimmed := strings.TrimSpace(part)
 		if trimmed == "" {
 			continue

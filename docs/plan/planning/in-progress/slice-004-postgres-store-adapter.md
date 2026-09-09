@@ -44,7 +44,17 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 - Schreibpfad-Performance-Tuning — Messungen folgen mit dem
   MVP-Integrationstest (slice-006).
 
-**Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
+- *Plan-Nachzug (Review F-1, slice-004):* (b) „Position-Verwaltung" ist
+  enger gefasst als der Plan-Text — Commit-Positionen je Transaktion als
+  Ordnungs-/Bereichs-Größe des Lesens; Source-ACK-/Consumer-Positionen
+  bleiben bei [`ReplicationAckPort`](../../../../docs/plan/adr/README.md) /
+  [`ConsumerStatePort`](../../../../docs/plan/adr/README.md) (slice-005/006) — Plan-**Ergänzung**
+  (trägt sich aus §1-Ausschlüssen slice-005/006). *Konsequenz (d):* die
+  DDL trägt die Consumer-/Capture-State-Tabellen von [`SPEC-001`](../../../../spec/pflichtenheft.md)
+  **bewusst nicht** (ihre Ports liegen außerhalb des Store-Adapters,
+  slice-005/006) — das ist die eine **Plan-Änderung** dieses Slices, hier
+  nachgezogen statt still.
+- **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
 Ausfüll-Liste. Suchreihenfolge: Was übernimmt ein **Folge-Slice** (mit
 Kennung — und die Kennung muss den Punkt auch annehmen)? Was bleibt als
@@ -71,12 +81,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Deterministisches Lesen über [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellen
       (Bereich/Limit/Filter) — Teil-Beleg zu
       [`LH-FA-REA-001`](../../../../spec/lastenheft.md)…006.
-- [ ] `make gates` grün.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+      *Beleg: review-slice-004.md.*
+- [x] Doku-Update — **entfällt**: kein öffentlicher Vertrag berührt (nur
+      `internal/**`); die begründete Aussage trägt der Bericht.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -97,6 +108,10 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `internal/adapters/driven/postgresstorage/*.go` | neu | row-Typen, `queries/`, `mapper/` je [`ADR-0039`](../../../../docs/plan/adr/README.md); [`SPEC-001`](../../../../spec/pflichtenheft.md)-Schema-DDL |
 | `internal/adapters/driven/postgresstorage/*_test.go` | neu | Adapter-Tests gegen reale PostgreSQL (Testcontainer im gepinnten Docker-Netz) |
+| `internal/application/port/outbound/changestore.go` | geändert | Lesefähigkeit am Fähigkeits-Port (`ADR-0009`: Lesen und Schreiben an einem Port) mit Kontrakt-Typen am Port (`ADR-0042`); der Port-Vertrag ist eine öffentliche Stelle (`ADR-0009` Negativ) |
+| `internal/adapters/driven/postgresstorage/schema.sql` | neu | Schema-DDL (`SPEC-001`/`SPEC-002`) als eingebettete Datei |
+| `go.mod`, `go.sum` | geändert | gepinnter nativer Go-Treiber (pgx/v5, CGO-frei — [`ADR-0038`](../../../../docs/plan/adr/README.md) bleibt fortgeltend); `go.sum` füllt sich erstmals |
+| `Makefile`, `tools/harness/run-store-tests.sh` | neu | Test-Targets im gepinnten Toolchain-Container (`make test` netzlos, `make test-store` mit PostgreSQL-Testcontainer); kein Gate |
 
 ## 4. Trigger
 

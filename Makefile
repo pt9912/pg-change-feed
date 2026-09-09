@@ -26,6 +26,27 @@ image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (Modul 14)
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
+# --- Tests (kein Gate; Docker-only, gepinnte Images) ---
+# Toolchain-Container = derselbe gepinnte Digest wie im Dockerfile; der
+# PostgreSQL-Testcontainer trägt seinen Digest aus `docker manifest inspect
+# postgres:18-alpine` (amd64). Caches leben in Docker-Volumes, Daten im
+# Container — nichts davon im Arbeitsbaum.
+TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
+PG_TEST_IMAGE ?= postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
+GO_MODCACHE_VOLUME ?= pg-change-feed-gomodcache
+
+mod-download: ## Go-Module in den Volume-Cache laden (braucht Netz, Vorbereitung für netzlose Test-Läufe)
+	docker run --rm -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod \
+	  -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go mod download
+
+test: ## Unit-Tests im gepinnten Toolchain-Container (netzlos)
+	docker run --rm --network none -v "$(CURDIR)":/src:ro \
+	  -v $(GO_MODCACHE_VOLUME):/go/pkg/mod \
+	  -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go test ./...
+
+test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
+	@bash tools/harness/run-store-tests.sh
+
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'
 

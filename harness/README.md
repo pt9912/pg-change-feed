@@ -122,6 +122,8 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 |---|---|---|
 | `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` — der Beleg gilt am HEAD: ein Zug, der Build-Kontext-Dateien ändert, erneuert ihn vor seiner Closure (Re-Build + Commit) | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) |
 | `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags, plus Existenz des nächsten Major-Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
+| `make test` | Unit-Tests im gepinnten Toolchain-Container (netzlos; Modul-Cache im Docker-Volume, Vorbereitung: `make mod-download`) | kein Gate, [`ADR-0030`](../docs/plan/adr/0030-testpyramide.md) |
+| `make test-store` | Adapter-Tests gegen reale PostgreSQL im Testcontainer (gepinnte Digests: Toolchain + PostgreSQL; DB-Daten im Container) | kein Gate, [`ADR-0030`](../docs/plan/adr/0030-testpyramide.md) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |
