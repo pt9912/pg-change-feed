@@ -124,6 +124,7 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 
 | Target | Tut was | Bindung |
 |---|---|---|
+| `make image` | baut das OCI-Image (Multi-Stage, digest-gepinnt); Image-Hash nach `harness/image-hash.txt` — baut ab dem ersten `src/`-Slice, wenn `go.mod`/`go.sum` existieren | kein Gate, [`ADR-0038`](../docs/plan/adr/README.md) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |

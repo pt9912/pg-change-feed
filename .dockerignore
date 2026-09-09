@@ -1,0 +1,8 @@
+# Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
+# Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
+# wandern).
+*
+!cmd/
+!internal/
+!go.mod
+!go.sum
