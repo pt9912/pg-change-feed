@@ -119,6 +119,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/domain/model/*.go` | neu | Domänenobjekte je [`ARC-001`](../../../../spec/architecture.md); Invarianten in Konstruktoren ([`ADR-0029`](../../../../docs/plan/adr/README.md)) |
 | `internal/domain/errors/*.go` | neu | Domänen-Fehler (Invarianten-Verletzungen), [`ADR-0039`](../../../../docs/plan/adr/README.md) |
 | `internal/application/port/outbound/clock.go` | neu | `ClockPort` ([`ADR-0040`](../../../../docs/plan/adr/README.md)) |
+| `internal/domain/model/consumer.go` | update | *Plan-Nachzug (Review F-4):* `ConsumerPosition` trägt `SourceID` unabhängig von der bestätigten Position — nötig, damit die erste Bestätigung nicht an der Quell-Prüfung scheitert (aus [`SPEC-003`](../../../../spec/pflichtenheft.md) ableitbar, verletzt keinen §1-Ausschluss; als Plan-**Ergänzung** bewertet, review-slice-002.md) |
 | `internal/domain/model/*_test.go` | neu | Domain-Tests (Testpyramide-Basis, [`ADR-0030`](../../../../docs/plan/adr/README.md)) |
 
 ## 4. Trigger
