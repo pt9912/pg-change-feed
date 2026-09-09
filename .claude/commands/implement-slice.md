@@ -48,6 +48,8 @@ emittierten Durchsetzungsschicht):
   dann ausfüllen — keine handgeschriebenen oder repo-gepflegten Template-Kopien.
 - **Commit via Message-Datei** (`git commit -F <datei>`): der Guard scannt den Command-String,
   also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält.
+- **Commit-Message-Kennungen.** **Struktur-IDs (`SPEC-*`, `ARC-*`) gehören NICHT in die
+  Commit-Message** (`AGENTS.md` §5) — nur `LH-*`/`ADR-*` · seit slice-003.
 
 ## Kontext lesen (Modul 9, Schritte 1–3)
 
