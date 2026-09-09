@@ -35,6 +35,13 @@ type CaptureResult struct {
 // → ACK Source. Die Implementierung bestätigt die Commit-Position erst,
 // wenn die abhängigen Changes dauerhaft gespeichert sind; ein
 // Persistenzfehler endet ohne Source-ACK (`SPEC-008`, Klasse `storage`).
+//
+// Eine committed Quelltransaktion darf ohne Changes auftreten — in
+// `pgoutput` treten BEGIN/COMMIT-Paare ohne relevante Relation-Nachricht
+// als realer Input auf (`LH-FA-CAP-006.a`). Der Pfad persistiert sie mit
+// ihrer Commit-Position und bestätigt die Position; das Ablehnen würde
+// dieselbe leere Transaktion in einer Wiederholung (`ADR-0012`) endlos
+// neu liefern.
 type CaptureInboundPort interface {
 	Capture(ctx context.Context, command CaptureCommand) (CaptureResult, error)
 }

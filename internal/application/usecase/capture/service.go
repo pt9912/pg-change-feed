@@ -10,6 +10,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
 // CaptureCommand und CaptureResult sind die Transport-Typen des Capture
@@ -60,11 +61,12 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	}
 	// Offene Transaktionen sind nicht konsumierbar (`ADR-0029`, Regel 3);
 	// zurückgerollte Transaktionen erreichen den Commit nicht
-	// (`LH-FA-CAP-007`) und tragen daher keine committed Changes.
-	if _, err := tx.Changes(); err != nil {
-		return CaptureResult{}, err
+	// (`LH-FA-CAP-007`). Die Position liest der Pfad nur am committed
+	// Transaktionsträger.
+	position, committed := tx.CommitPosition()
+	if !committed {
+		return CaptureResult{}, domainerrors.ErrTransactionNotCommitted
 	}
-	position, _ := tx.CommitPosition() // committed ist über Changes geprüft
 	if err := s.store.PersistTransaction(ctx, tx); err != nil {
 		// Persistenzfehler → kein Source-ACK (`LH-QA-REL-001.a`).
 		return CaptureResult{}, err

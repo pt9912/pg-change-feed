@@ -17,6 +17,12 @@ import (
 // über nach Persistenz gefragte Positionen (`LH-QA-REL-001.a`,
 // `ADR-0029` Regel 1). Die Quell-Bestätigung ist die Wirkung des
 // `ReplicationAckPort` (`ADR-0007`), keine Speicherwirkung dieses Ports.
+//
+// Der Port trägt die Idempotenz-Pflicht des Persistierens (`ADR-0011`):
+// PersistTransaction ist deduplizierbar — dieselbe Transaktion darf
+// erneut persistiert werden, wenn ein Crash zwischen Persistenz und ACK
+// sie wiederholt; die Deduplizierungsbasis trägt die interne
+// Transaktions-ID (`SPEC-001`, `cdc.transaction`).
 type ChangeStorePort interface {
 	// PersistTransaction persistiert eine committed Quelltransaktion
 	// dauerhaft — mit interner ID, Commit-Position und Changes in

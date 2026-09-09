@@ -125,6 +125,32 @@ func TestCapturePersistsBeforeAck(t *testing.T) {
 	}
 }
 
+// Eine committed Quelltransaktion ohne Changes passiert den Pfad: sie
+// wird mit ihrer Commit-Position persistiert und geackt (`LH-FA-CAP-006.a`,
+// Grenze am `CaptureInboundPort`) — das Ablehnen würde dieselbe leere
+// Transaktion in einer Wiederholung (`ADR-0012`) endlos neu liefern.
+func TestCapturePersistsEmptyCommittedTransaction(t *testing.T) {
+	service, events, store, ack := newService(t)
+	tx := committedTransaction(t, "t-1", 100, 0)
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if len(store.persisted) != 1 || store.persisted[0].ID != tx.ID {
+		t.Fatalf("Store trägt %d Transaktionen, wollen die von %s", len(store.persisted), tx.ID)
+	}
+	if len(ack.acked) != 1 || ack.acked[0].Offset != 100 {
+		t.Fatalf("ACK trägt %v, wollen Offset 100", ack.acked)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+	if got, want := *events, []string{"persist:t-1", "ack:100"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
+	}
+}
+
 // Persistenzfehler → kein Source-ACK (`LH-QA-REL-001.a`; `SPEC-008`,
 // Klasse `storage`): der Store-Commit endet mit Fehler, der Fake-ACK
 // trägt keine Bestätigung.
