@@ -124,6 +124,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/application/port/inbound/capture.go` | neu | `CaptureInboundPort` ([`ADR-0028`](../../../../docs/plan/adr/README.md)) |
 | `internal/application/port/outbound/changestore.go` | neu | `ChangeStorePort`-Interface ([`ADR-0009`](../../../../docs/plan/adr/README.md)) |
 | `internal/application/port/outbound/replicationack.go` | neu | `ReplicationAckPort`-Interface ([`ADR-0007`](../../../../docs/plan/adr/README.md)) — der ACK ist der zweite Port des Capture-Services |
+| `internal/application/port/outbound/changestore.go` (Kommentar) | update | *Grenz-Träger aus slice-002 (Lerneintrag):* [`ADR-0029`](../../../../docs/plan/adr/README.md)-Regel 1 (Persist-before-ACK) hat in `ARC-001` kein Subjekt — die Grenze wird hier als Port-Kontrakt-Zeile benannt (ACK nur über nach Persistenz gefragte Positionen) |
 | `internal/application/usecase/capture/*.go` | neu | `CaptureService` + Command/Result über zwei Ports ([`ADR-0027`](../../../../docs/plan/adr/README.md), [`ADR-0039`](../../../../docs/plan/adr/README.md)) |
 | `internal/application/usecase/capture/*_test.go` | neu | Fake-Ports (Store, ACK): Ordnung, Fehlermodi, Idempotenz |
 

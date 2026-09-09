@@ -82,26 +82,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Domänenmodelle je [`ARC-001`](../../../../spec/architecture.md) tragen ihre
+- [x] Domänenmodelle je [`ARC-001`](../../../../spec/architecture.md) tragen ihre
       Invarianten; Domain-Tests prüfen [`LH-FA-DAT-001`](../../../../spec/lastenheft.md)
       (eindeutige Identifikation) und [`LH-FA-DAT-004`](../../../../spec/lastenheft.md)
       (sortierbare Position) mit referenzierten Tests.
-- [ ] Transaktionszusammengehörigkeit und eindeutige Sequenz modelliert —
+- [x] Transaktionszusammengehörigkeit und eindeutige Sequenz modelliert —
       Teil-Beleg zu [`LH-FA-CAP-004`](../../../../spec/lastenheft.md) und
       [`LH-FA-CAP-005`](../../../../spec/lastenheft.md).
-- [ ] `ClockPort`-Interface (Outbound, [`ADR-0040`](../../../../docs/plan/adr/README.md))
+- [x] `ClockPort`-Interface (Outbound, [`ADR-0040`](../../../../docs/plan/adr/README.md))
       mit Fake Clock in den Tests.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt ist — hier:
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt ist — hier:
       keine Schnittstelle berührt, dann trägt der Bericht die begründete
       Aussage „kein öffentlicher Vertrag berührt".
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -190,18 +190,37 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die Layer-Globs des a-check matchen mit diesem
+  Slice erstmals echten Domain-/Ports-Content (0 Befunde, Kante
+  `ports → domain` per `a-check-graph` bestätigt); die Invarianten liegen
+  in Konstruktoren statt nur in Kommentaren (nach Review F-1); der
+  Verlaufskorrektur-Schnitt (3 Commits, je stand-alone) hielt der
+  Stand-alone-Prüfung je Commit stand.
+- **Was ging anders als geplant:** der erste Commit-Schnitt kompilierte
+  nicht stand-alone und wurde von `9a4d8ad` aus neu geschnitten — dabei
+  landete der Erstversuch (`e509c09`) über den Auto-Push der Umgebung auf
+  origin und erzeugte eine Divergenz, die per Force-Push mit
+  Ours-Auflösung (Vorgabe pt9912) aufgelöst wurde. Lesson: der
+  Verlaufskorrektur-Schnitt muss vor jedem Push stehen, nicht nach ihm.
+- **Steering-Loop-Eintrag:** geschärfte Regel: *[`ADR-0029`](../../../../docs/plan/adr/README.md)-Invarianten gelten
+  als getragen nur, wenn der Typ sie erzwingt; ein Kommentar-Claim ohne
+  Typ-Träger ist ein Review-Befund (F-1), und Invarianten ohne Subjekt im
+  [`ARC-001`](../../../../spec/architecture.md)-Baum werden als Grenze mit
+  Folgetermin benannt (Regel 1: Persist-before-ACK folgt mit dem
+  Store-Port, slice-003 §3)* —
+  *(gezählt, nicht verkörpert; kein Zielort trägt sie als Artefakt).*
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-002.md`
+  in `BEO-PGC/a-check-null-abdeckung/` ergänzt — Zähler steht damit bei
+  2× (teils entkräftet: `domain`/`ports` matchen, `app`/`adapters`
+  weiter null bis slice-003).
+- **Folge-Slices:** slice-003 (Capture-Persist-Pfad) — ist eine Datei in
+  `open/`.
+- **Risiken aus §6:** Risiko 1 (Positionsordnung als Quell-Tiebreak) →
+  **entfallen** (Review bestätigt: CAP-004 fordert keine Totalordnung über
+  Quellen, Source-Mismatch-Check vor `Before`); Risiko 2 (ClockPort-Typ) →
+  **entfallen** (domänengetragener `TimePoint`, konsistent mit
+  [`ADR-0040`](../../../../docs/plan/adr/README.md)-Fitness).
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-1-Closure delegiert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
