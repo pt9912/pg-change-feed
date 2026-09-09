@@ -2,11 +2,13 @@
 # Rezept-Form: Quellen-Commit + die gepinnten Digests der Eingangs-Images
 # bauen die Umgebung neu; der Digest des gebauten Images landet via
 # `make image` in harness/image-hash.txt.
-# Semantik des Belegs: er ist der Digest des **exportierten Images**
-# (Runtime-Stage: Distroless-Basis + Binary). Änderungen, die nur den
-# deps-Layer betreffen (go.mod/go.sum, solange das Binary den Import nicht
-# trägt), lassen den Digest unverändert — das ist ein gültiger Befund
-# ("Beleg, kein Wiederholungs-Schlüssel"), kein Staleness-Zeichen.
+# Semantik des Belegs (ADR-0044): der Digest ist der **Lauf-Beleg** des
+# letzten offiziellen `make image`-Laufs — builder- und lauf-gebunden,
+# kein Inhalts-Fingerabdruck; ein Digest-Vergleich über Umgebungen oder
+# Läufe entscheidet Staleness nicht. Inhalts-Streits werden über den
+# sha256 des extrahierten Binaries entschieden (Container-Export;
+# Verfahren: docs/reviews/verify-slice-004.md F-2-Schiedsspruch,
+# docs/reviews/review-slice-005.md F-7).
 # Base-Image-Update = bewusster Commit, der nur die Digest-Zeile anhebt.
 
 # go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; die
