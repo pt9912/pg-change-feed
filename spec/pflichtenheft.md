@@ -251,7 +251,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 |---|---|---|---|
 | `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | PostgreSQL 17 und 18 (SPEC-012, [`LH-QA-POR-001`](lastenheft.md)) | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
-| `SPEC-015` | Eigenständiges Linux-Executable (Deployment-Form neben SPEC-011) | Cross-Compile-Targets amd64/arm64, `CGO_ENABLED=0` | — (Deployment-Artefakt; Cross-Compile in CI/CD) |
+| `SPEC-015` | Eigenständiges Executable (Deployment-Form neben SPEC-011) | Cross-Compile: Linux amd64/arm64 (primär, [`LH-QA-POR-002`](lastenheft.md)); darwin/amd64, darwin/arm64, windows/amd64 perspektivisch; `CGO_ENABLED=0` | — (Deployment-Artefakt; Cross-Compile in CI/CD) |
 
 ---
 
@@ -264,4 +264,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | Datum | Änderung |
 |---|---|
 | 2026-09-09 | Initial — Technik-Inhalt überführt aus dem zurückgezogenen Pflichtenheft-Entwurf (Git: angelegt in c70ee1c, zurückgezogen in 5a6f8ea); Algorithmen, CDC-Schema, Fehlerklassen, Metriken, externe Verträge |
-| 2026-09-09 | SPEC-015 ergänzt: eigenständiges Linux-Executable (Cross-Compile amd64/arm64, `CGO_ENABLED=0`) als Deployment-Form neben SPEC-011 (OCI) |
+| 2026-09-09 | SPEC-015 ergänzt: eigenständiges Executable — Cross-Compile Linux amd64/arm64 primär, darwin/windows perspektivisch, `CGO_ENABLED=0`; Deployment-Form neben SPEC-011 (OCI) |

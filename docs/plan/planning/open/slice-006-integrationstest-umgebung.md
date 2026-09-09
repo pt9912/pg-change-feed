@@ -35,6 +35,8 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Die reproduzierbare Docker-Compose-Umgebung (PostgreSQL + PG Change Feed + Test-Consumer) und der automatisierte MVP-Integrationstest: PostgreSQL starten → CDC aktivieren → INSERT/UPDATE/DELETE → Changes lesen → Reihenfolge und Inhalt prüfen.
 
+*Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)):* der **Schema-Rollout in die Compose-Test-DB läuft über d-migrate** (`make schema-rollout` mit Pflicht-Report und Rollback-Artefakt) **vor jedem E2E-Lauf** — das ist der Erstversatz der ADR und löst die handgeschriebene DDL + `ApplySchema`-Grenze aus slice-004 ab.
+
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - Produktions-Deployment (HA/Kubernetes) — Out-of-Scope des MVP.
@@ -70,7 +72,6 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       INSERT/UPDATE/DELETE → lesen → Reihenfolge/Inhalt (Abschnitt 1,
       MVP-Schnitt) — Teil-Beleg zu [`LH-FA-CAP-001`](../../../../spec/lastenheft.md)…003.
 - [ ] `make gates` grün.
-- [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -96,6 +97,7 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `compose.yaml` | neu | Lauf- und CI-Vertrag je Modul 14 (Devcontainer = Komfort, nicht hier) |
 | `test/integration/*` | neu | MVP-Integrationstest gegen die Compose-Umgebung |
+| `Makefile` (schema-rollout-Verkabelung) | update | *Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)):* Schema-Rollout in die Compose-Test-DB vor jedem E2E-Lauf (`make schema-rollout` mit Pflicht-Report und Rollback-Artefakt) — Erstversatz der ADR, löst die slice-004-Loader-Grenze ab |
 
 ## 4. Trigger
 

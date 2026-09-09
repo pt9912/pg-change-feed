@@ -43,6 +43,10 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 - HTTP-/gRPC-API — [`ADR-0020`](../../../../docs/plan/adr/README.md) bleibt optional ohne
   beobachtbaren Bedarf.
 - Consumer-Verwaltung — nicht MVP.
+- d-migrate-Rollout — nicht nötig in diesem Slice: die Stream-Adapter-
+  Tests brauchen ein Fixture-Schema (Publikation über eine Fixture-Tabelle),
+  keinen CDC-Schema-Rollout ([`ADR-0043`](../../../../docs/plan/adr/README.md):
+  Erstversatz ist slice-006, Compose-Umgebung).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
