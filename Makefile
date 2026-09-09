@@ -13,13 +13,12 @@ GATE_CHECKS :=
 # NACH dem Include und sieht GATE_CHECKS damit vollstaendig.
 include harness/mk/*.mk
 
-# Architektur-Gate (a-check) — aktivieren mit dem ersten src/-Slice
-# (Bedingung, beobachtbar: erste .go-Datei im Baum, cmd/ oder internal/).
-# Bis dahin wäre `make a-check` ein behaupteter, aber leerer Gate — das
-# Modul meldet einen Auflösungs-Hinweis statt eines Prüfbereichs
-# (AGENTS.md §4, Modul 13). Das Fragment trägt den gepinnten Release-
-# Digest; Pin-Hebung = bewusster Commit (a-check.mk).
-# include a-check.mk
+# Architektur-Gate (a-check) — eingebunden seit dem ersten Binary im Baum
+# (cmd/pg-change-feed); das Fragment trägt den gepinnten Release-Digest,
+# Pin-Hebung = bewusster Commit (a-check.mk). Das Ziel hängt NICHT an
+# GATE_CHECKS: es läuft als eigener Aufruf (`make a-check`), nicht im
+# `make gates`-Bündel.
+include a-check.mk
 
 .PHONY: image
 image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (Modul 14)
