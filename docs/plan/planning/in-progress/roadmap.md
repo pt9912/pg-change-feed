@@ -16,6 +16,8 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
+- [welle-2](../welle-2.md) — Reale PostgreSQL-Integration: Store, Stream, E2E
+
 - Nichts in Arbeit.
 
 <!-- BEDIENHINWEIS: Zwei unabhängige Aussagen in diesem Block. Die Liste oben
