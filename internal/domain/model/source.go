@@ -1,7 +1,9 @@
 // Package model trägt die Domänenobjekte des CDC-Modells
 // (`ARC-001`): pur, ohne Treiber, Frameworks oder PostgreSQL-Typen
-// (`ADR-0004`, `ADR-0039`). Die Invarianten (`ADR-0029`) erzwingen die
-// Konstruktoren; illegale Zustände sind zur Laufzeit unerreichbar.
+// (`ADR-0004`, `ADR-0039`). Die Invarianten (`ADR-0029`) tragen die
+// Konstruktoren und Methoden; die exportierten Felder lassen
+// Struktur-Literale zu, die diese Prüfung umgehen — der
+// Konstruktor-/Methoden-Pfad ist der einzige geprüfte.
 package model
 
 import (

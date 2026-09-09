@@ -16,8 +16,11 @@ func NewTimePoint(unixNanos int64) TimePoint {
 	return TimePoint{UnixNanos: unixNanos}
 }
 
-// IsZero meldet den Nullwert.
-func (t TimePoint) IsZero() bool {
+// Unset meldet den Nullwert — „nicht gesetzt“. Der Wert 0 ist zugleich die
+// Unix-Epoche; die Domain rechnet mit Abständen (Duration), nicht mit
+// absoluten Epochen-Zeitpunkten, deshalb trägt diese Grenze hier keine
+// fachliche Rolle.
+func (t TimePoint) Unset() bool {
 	return t.UnixNanos == 0
 }
 

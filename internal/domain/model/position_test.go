@@ -10,6 +10,16 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
+// mustSourcePosition liefert eine gültige Position für Tests.
+func mustSourcePosition(t *testing.T, source SourceID, offset uint64) SourcePosition {
+	t.Helper()
+	position, err := NewSourcePosition(source, offset)
+	if err != nil {
+		t.Fatalf("Position: %v", err)
+	}
+	return position
+}
+
 // LH-FA-DAT-004, Happy Path: die Positionen zweier committed Changes
 // bestimmen die Ordnung; sie entspricht der logischen Reihenfolge
 // (LH-FA-CAP-004).

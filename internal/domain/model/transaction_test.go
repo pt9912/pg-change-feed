@@ -20,6 +20,28 @@ func openTransaction(t *testing.T, id TransactionID, source SourceID) *ChangeTra
 	return tx
 }
 
+// commitTransaction trägt eine Position an die Transaktion und committet.
+func commitTransaction(t *testing.T, tx *ChangeTransaction, offset uint64) {
+	t.Helper()
+	position, err := NewSourcePosition(tx.SourceID, offset)
+	if err != nil {
+		t.Fatalf("Position: %v", err)
+	}
+	if err := tx.Commit(position); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+}
+
+// committedChanges liest die Changes einer committed Transaktion.
+func committedChanges(t *testing.T, tx *ChangeTransaction) []Change {
+	t.Helper()
+	changes, err := tx.Changes()
+	if err != nil {
+		t.Fatalf("Changes: %v", err)
+	}
+	return changes
+}
+
 // LH-FA-CAP-005, Happy Path: drei Änderungen derselben Quelltransaktion
 // tragen dieselbe Transaktionskennung.
 func TestLHFACAP005ChangesCarrySameTransactionID(t *testing.T) {
@@ -33,7 +55,8 @@ func TestLHFACAP005ChangesCarrySameTransactionID(t *testing.T) {
 			t.Fatalf("Change %d anhängen: %v", i, err)
 		}
 	}
-	changes := tx.Changes()
+	commitTransaction(t, tx, 100)
+	changes := committedChanges(t, tx)
 	if len(changes) != 3 {
 		t.Fatalf("Transaktion trägt %d Changes, wollen 3", len(changes))
 	}
@@ -65,8 +88,10 @@ func TestLHFACAP005ConcurrentTransactionsAreDistinguishable(t *testing.T) {
 			t.Fatalf("Change %q anhängen: %v", pair.id, err)
 		}
 	}
+	commitTransaction(t, first, 100)
+	commitTransaction(t, second, 200)
 	for _, tx := range []*ChangeTransaction{first, second} {
-		for _, change := range tx.Changes() {
+		for _, change := range committedChanges(t, tx) {
 			if change.TransactionID != tx.ID {
 				t.Fatalf("Change %q hängt an Transaktion %q, trägt aber %q", change.ID, tx.ID, change.TransactionID)
 			}
@@ -88,20 +113,8 @@ func TestLHFACAP004ExecutionOrderReconstructibleAcrossTransactions(t *testing.T)
 	if err := second.AppendChange(secondChange); err != nil {
 		t.Fatalf("Change 2 anhängen: %v", err)
 	}
-	firstPosition, err := NewSourcePosition("src-1", 100)
-	if err != nil {
-		t.Fatalf("Position 1: %v", err)
-	}
-	secondPosition, err := NewSourcePosition("src-1", 200)
-	if err != nil {
-		t.Fatalf("Position 2: %v", err)
-	}
-	if err := first.Commit(firstPosition); err != nil {
-		t.Fatalf("Commit 1: %v", err)
-	}
-	if err := second.Commit(secondPosition); err != nil {
-		t.Fatalf("Commit 2: %v", err)
-	}
+	commitTransaction(t, first, 100)
+	commitTransaction(t, second, 200)
 	firstCommit, _ := first.CommitPosition()
 	secondCommit, _ := second.CommitPosition()
 	if c := secondCommit.Compare(firstCommit); c <= 0 {
@@ -110,10 +123,13 @@ func TestLHFACAP004ExecutionOrderReconstructibleAcrossTransactions(t *testing.T)
 }
 
 // LH-FA-DAT-004, Boundary: mehrere Changes derselben Transaktion erhalten
-// ihre Reihenfolge innerhalb der Transaktion (Sequenz).
+// ihre Reihenfolge innerhalb der Transaktion — Changes() trägt die
+// Anhang-Reihenfolge unverändert (3, 1, 2), und die Sortierung nach der
+// Sequenz rekonstruiert die Ausführungsreihenfolge 1, 2, 3.
 func TestLHFADAT004IntraTransactionOrderPreservedBySequence(t *testing.T) {
 	tx := openTransaction(t, "tx-1", "src-1")
-	for _, seq := range []int64{3, 1, 2} {
+	appended := []int64{3, 1, 2}
+	for _, seq := range appended {
 		change, err := NewChange(ChangeID(fmt.Sprintf("ch-%d", seq)), "tx-1", "tbl-1", seq, OperationInsert, nil, []byte(`{}`), "sv-1")
 		if err != nil {
 			t.Fatalf("Change %d: %v", seq, err)
@@ -122,11 +138,21 @@ func TestLHFADAT004IntraTransactionOrderPreservedBySequence(t *testing.T) {
 			t.Fatalf("Change %d anhängen: %v", seq, err)
 		}
 	}
-	changes := tx.Changes()
-	sort.Slice(changes, func(i, j int) bool { return changes[i].Sequence < changes[j].Sequence })
+	commitTransaction(t, tx, 100)
+	changes := committedChanges(t, tx)
+	if len(changes) != len(appended) {
+		t.Fatalf("Transaktion trägt %d Changes, wollen %d", len(changes), len(appended))
+	}
 	for i, change := range changes {
-		if change.Sequence != int64(i+1) {
-			t.Fatalf("Reihenfolge innerhalb der Transaktion nicht erhalten: Stelle %d trägt Sequenz %d", i+1, change.Sequence)
+		if change.Sequence != appended[i] {
+			t.Fatalf("Anhang-Reihenfolge nicht erhalten: Stelle %d trägt Sequenz %d, wollen %d", i, change.Sequence, appended[i])
+		}
+	}
+	sorted := append([]Change(nil), changes...)
+	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Sequence < sorted[j].Sequence })
+	for i, want := range []int64{1, 2, 3} {
+		if sorted[i].Sequence != want {
+			t.Fatalf("Sortierung nach Sequenz rekonstruiert die Ausführungsreihenfolge nicht: Stelle %d trägt Sequenz %d, wollen %d", i, sorted[i].Sequence, want)
 		}
 	}
 }
@@ -161,54 +187,51 @@ func TestChangeTransactionRejectsInvariantViolations(t *testing.T) {
 		if err := tx.AppendChange(change); err != nil {
 			t.Fatalf("Anhang: %v", err)
 		}
-		position, err := NewSourcePosition("src-1", 100)
-		if err != nil {
-			t.Fatalf("Position: %v", err)
-		}
-		if err := tx.Commit(position); err != nil {
-			t.Fatalf("Commit: %v", err)
-		}
+		commitTransaction(t, tx, 100)
 		late := buildChange(t, changeArgs{id: "ch-2", tx: "tx-1", table: "tbl-1", seq: 2, op: OperationInsert, newData: []byte(`{}`), sv: "sv-1"})
-		err = tx.AppendChange(late)
+		err := tx.AppendChange(late)
 		if !stderrors.Is(err, domainerrors.ErrTransactionAlreadyCommitted) {
 			t.Fatalf("Fehler = %v, wollen ErrTransactionAlreadyCommitted", err)
 		}
 	})
 	t.Run("doppelter Commit", func(t *testing.T) {
 		tx := openTransaction(t, "tx-1", "src-1")
-		position, err := NewSourcePosition("src-1", 100)
-		if err != nil {
-			t.Fatalf("Position: %v", err)
-		}
-		if err := tx.Commit(position); err != nil {
-			t.Fatalf("erster Commit: %v", err)
-		}
-		err = tx.Commit(position)
+		commitTransaction(t, tx, 100)
+		err := tx.Commit(mustSourcePosition(t, tx.SourceID, 200))
 		if !stderrors.Is(err, domainerrors.ErrTransactionAlreadyCommitted) {
 			t.Fatalf("Fehler = %v, wollen ErrTransactionAlreadyCommitted", err)
 		}
 	})
 	t.Run("Commit an fremder Quelle", func(t *testing.T) {
 		tx := openTransaction(t, "tx-1", "src-1")
-		position, err := NewSourcePosition("src-2", 100)
-		if err != nil {
-			t.Fatalf("Position: %v", err)
-		}
-		err = tx.Commit(position)
+		position := mustSourcePosition(t, "src-2", 100)
+		err := tx.Commit(position)
 		if !stderrors.Is(err, domainerrors.ErrSourceMismatch) {
 			t.Fatalf("Fehler = %v, wollen ErrSourceMismatch", err)
 		}
 	})
 }
 
-// LH-FA-CAP-006, Happy Path: solange die Transaktion offen ist, trägt sie
-// keine Commit-Position und ihre Changes sind nicht konsumierbar.
-func TestLHFACAP006OpenTransactionHasNoCommitPosition(t *testing.T) {
+// LH-FA-CAP-006 / ADR-0029, Regel 3: solange die Transaktion offen ist,
+// trägt sie keine Commit-Position, und ihre Changes sind nicht konsumierbar
+// — Changes() liefert einen Fehler.
+func TestLHFACAP006OpenTransactionIsNotConsumable(t *testing.T) {
 	tx := openTransaction(t, "tx-1", "src-1")
 	if tx.IsCommitted() {
 		t.Fatal("offene Transaktion meldet committed")
 	}
 	if _, committed := tx.CommitPosition(); committed {
 		t.Fatal("offene Transaktion trägt eine Commit-Position")
+	}
+	changes, err := tx.Changes()
+	if !stderrors.Is(err, domainerrors.ErrTransactionNotCommitted) {
+		t.Fatalf("Fehler = %v, wollen ErrTransactionNotCommitted", err)
+	}
+	if changes != nil {
+		t.Fatalf("offene Transaktion liefert Changes: %d", len(changes))
+	}
+	commitTransaction(t, tx, 100)
+	if _, err := tx.Changes(); err != nil {
+		t.Fatalf("Changes nach dem Commit: %v", err)
 	}
 }

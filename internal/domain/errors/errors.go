@@ -55,6 +55,11 @@ var (
 	// Regel 3).
 	ErrTransactionAlreadyCommitted = stderrors.New("Transaktion ist bereits committed")
 
+	// ErrTransactionNotCommitted: offene Transaktionen sind nicht
+	// konsumierbar (`ADR-0029`, Regel 3); ihre Changes sind erst nach dem
+	// Commit lesbar (`LH-FA-CAP-006`).
+	ErrTransactionNotCommitted = stderrors.New("Transaktion ist nicht committed")
+
 	// ErrNegativeDuration: Zeiträume der Retention sind nicht negativ
 	// (`LH-FA-RET-003`).
 	ErrNegativeDuration = stderrors.New("negative Dauer")

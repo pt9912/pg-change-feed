@@ -9,44 +9,53 @@ import (
 )
 
 // LH-FA-RET-004 / ADR-0029, Regel 5: Retention löscht keine benötigten
-// Changes — ohne die Bestätigung aller relevanten Consumer gibt die Policy
-// keine Bereinigung frei.
-func TestLHFARET004RetentionRequiresAllConsumersAcknowledged(t *testing.T) {
+// Changes — eine unbestätigte Consumer-Position oder eine Position hinter
+// der Change-Position blockiert die Bereinigung.
+func TestLHFARET004RetentionRequiresAcknowledgedPositions(t *testing.T) {
 	policy, err := NewRetentionPolicy(Duration{})
 	if err != nil {
 		t.Fatalf("Policy: %v", err)
 	}
-	age, err := NewDuration(1000)
+	changePosition := mustSourcePosition(t, "src-1", 100)
+	consumer, err := NewConsumerPosition("c-1")
 	if err != nil {
-		t.Fatalf("Alter: %v", err)
+		t.Fatalf("Consumer-Position: %v", err)
 	}
-	if policy.AllowsDeletion(age, false) {
-		t.Fatal("Bereinigung ohne Bestätigung aller Consumer freigegeben")
+	confirmed, err := consumer.Advance(mustSourcePosition(t, "src-1", 200))
+	if err != nil {
+		t.Fatalf("Bestätigung: %v", err)
 	}
-	if !policy.AllowsDeletion(age, true) {
-		t.Fatal("Bereinigung mit Bestätigung aller Consumer blockiert")
+	if !policy.AllowsDeletion(Duration{Nanos: 1}, changePosition, []ConsumerPosition{confirmed}) {
+		t.Fatal("Bereinigung hinter der bestätigten Position blockiert")
+	}
+	if policy.AllowsDeletion(Duration{Nanos: 1}, changePosition, []ConsumerPosition{consumer}) {
+		t.Fatal("Bereinigung mit unbestätigter Consumer-Position freigegeben")
+	}
+	behind, err := NewConsumerPosition("c-2")
+	if err != nil {
+		t.Fatalf("Consumer-Position: %v", err)
+	}
+	behind, err = behind.Advance(mustSourcePosition(t, "src-1", 50))
+	if err != nil {
+		t.Fatalf("Bestätigung: %v", err)
+	}
+	if policy.AllowsDeletion(Duration{Nanos: 1}, changePosition, []ConsumerPosition{behind}) {
+		t.Fatal("Bereinigung hinter einer benötigten Position freigegeben")
 	}
 }
 
 // LH-FA-RET-003: unter dem Mindestalter gibt die Policy keine Bereinigung
-// frei; ab dem Alter schon.
+// frei; ab dem Alter schon — auch ohne blockierende Consumer-Positionen.
 func TestLHFARET003RetentionRequiresMinimumAge(t *testing.T) {
 	policy, err := NewRetentionPolicy(Duration{Nanos: 1000})
 	if err != nil {
 		t.Fatalf("Policy: %v", err)
 	}
-	tooYoung, err := NewDuration(999)
-	if err != nil {
-		t.Fatalf("zu junges Alter: %v", err)
-	}
-	oldEnough, err := NewDuration(1000)
-	if err != nil {
-		t.Fatalf("altes genug Alter: %v", err)
-	}
-	if policy.AllowsDeletion(tooYoung, true) {
+	changePosition := mustSourcePosition(t, "src-1", 100)
+	if policy.AllowsDeletion(Duration{Nanos: 999}, changePosition, nil) {
 		t.Fatal("Bereinigung unter dem Mindestalter freigegeben")
 	}
-	if !policy.AllowsDeletion(oldEnough, true) {
+	if !policy.AllowsDeletion(Duration{Nanos: 1000}, changePosition, nil) {
 		t.Fatal("Bereinigung am Mindestalter blockiert")
 	}
 }

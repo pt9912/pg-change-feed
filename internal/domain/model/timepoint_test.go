@@ -9,8 +9,8 @@ import (
 func TestTimePointArithmetic(t *testing.T) {
 	base := NewTimePoint(1000)
 	later := NewTimePoint(2000)
-	if base.IsZero() || later.IsZero() {
-		t.Fatal("belegte Zeitpunkte melden Nullwert")
+	if base.Unset() || later.Unset() {
+		t.Fatal("belegte Zeitpunkte melden „nicht gesetzt“")
 	}
 	if !later.After(base) || !base.Before(later) {
 		t.Fatalf("Ordnung verletzt: %d vs %d", base.UnixNanos, later.UnixNanos)
@@ -21,7 +21,7 @@ func TestTimePointArithmetic(t *testing.T) {
 	if got := later.Sub(base); got.Nanos != 1000 {
 		t.Fatalf("Sub = %d, wollen 1000", got.Nanos)
 	}
-	if !NewTimePoint(0).IsZero() {
-		t.Fatal("Nullwert meldet nicht Null")
+	if !NewTimePoint(0).Unset() {
+		t.Fatal("Nullwert meldet nicht „nicht gesetzt“")
 	}
 }
