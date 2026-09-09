@@ -9,7 +9,7 @@
 # verifiziert eine leere Modulliste (`go mod download`/`go mod verify`).
 
 # --- deps: gepinnte Base, Lock-File vor dem Code (Layer-Cache greift) ---
-FROM golang:1.26-alpine@sha256:ce864e7223ac17b1775e6fd0b4c0db580c2eb50e7953a427916379e4b92a1628 AS deps
+FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS deps
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
