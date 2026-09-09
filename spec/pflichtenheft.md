@@ -1,6 +1,6 @@
-# Spezifikation — PG Change Feed
+# Pflichtenheft — PG Change Feed
 
-**Bezug zum Lastenheft:** Diese Spezifikation präzisiert die in
+**Bezug zum Lastenheft:** Dieses Pflichtenheft präzisiert die in
 `spec/lastenheft.md` formulierten Anforderungen (`LH-*`-IDs). Bei
 Konflikt gewinnt das Lastenheft — präzisieren ja, erweitern nie.
 

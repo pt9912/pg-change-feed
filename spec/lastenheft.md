@@ -164,8 +164,8 @@ Traceability-Muster (Beispiel):
 
 Kennungen werden nach Veröffentlichung nicht wiederverwendet. Die exakten
 technischen Namen von Objekten (Schema, Funktionen, Views) werden von
-diesem Lastenheft nicht vorgeschrieben; sie sind Gegenstand der
-Spezifikation.
+diesem Lastenheft nicht vorgeschrieben; sie sind Gegenstand des
+Pflichtenhefts.
 
 ### LH-FA-CFG-001 — CDC-Aktivierung je Tabelle
 
@@ -423,7 +423,7 @@ vorherige und neue Werte bereitgestellt werden.
 - **Negative:** —
 
 **Out-of-Scope:** Die konkrete Form des Identifikators (z. B. LSN-basiert)
-wird in der Spezifikation festgelegt.
+wird im Pflichtenheft festgelegt.
 
 ### LH-FA-DAT-002 — Identifizierbarkeit der Quelltabelle
 
@@ -1077,7 +1077,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Das System soll von kleinen Datenbanken bis zu
   kontinuierlichen Änderungsvolumina skalieren können.
 - **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina werden
-  in `spec/spezifikation.md` festgelegt.
+  in `spec/pflichtenheft.md` festgelegt.
 
 ### LH-QA-PER-003 — Batch-Verarbeitung
 
@@ -1090,7 +1090,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Die Latenz zwischen Commit und CDC-Verfügbarkeit soll
   gering sein und über Benchmarks bewertet werden.
 - **Messmethode:** Benchmark über LH-FA-ADM-004 (messbarer Abstand); Schwellen
-  werden in `spec/spezifikation.md` festgelegt.
+  werden in `spec/pflichtenheft.md` festgelegt.
 
 ### LH-QA-SEC-001 — Least-Privilege
 
@@ -1156,7 +1156,7 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Mehrere aktiv unterstützte PostgreSQL-Major-Versionen
   sollen unterstützt werden.
 - **Messmethode:** Testumgebung je unterstützter Version; Versionen werden
-  in `spec/spezifikation.md` festgelegt.
+  in `spec/pflichtenheft.md` festgelegt.
 
 ### LH-QA-POR-002 — Primäre Zielplattform Linux
 
