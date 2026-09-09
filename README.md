@@ -35,3 +35,7 @@ Eine Quellposition wird erst bestätigt, nachdem die zugehörigen Änderungen da
 - **Technische Spezifikation:** [`spec/pflichtenheft.md`](spec/pflichtenheft.md).
 - **Gates:** Nur tatsächlich implementierte und ausführbare Quality Gates werden hier als erfolgreich aufgeführt.
 - **Auditierbarkeit:** Architekturentscheidungen liegen in [`docs/plan/adr/`](docs/plan/adr/), Planung in [`docs/plan/planning/`](docs/plan/planning/).
+
+## Lizenz
+
+MIT — siehe [`LICENSE`](LICENSE).
