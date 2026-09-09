@@ -47,6 +47,31 @@ test: ## Unit-Tests im gepinnten Toolchain-Container (netzlos)
 test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 	@bash tools/harness/run-store-tests.sh
 
+# --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
+# Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
+# CDC-Schema-Form; SQL wird erzeugt, Rollouts laufen mit Pflicht-Report und
+# Rollback-Artefakt. Die Quelle der Überführung ist die handgeschriebene DDL
+# (internal/adapters/driven/postgresstorage/schema.sql); bis zur Überführung
+# bleibt die DDL die Quelle und der Testloader die benannte Grenze (ADR-0043).
+# Image per Digest gepinnt — Pin-Hebung = bewusster Commit (Modul 14).
+# `schema migrate --execute` braucht DB-Zugang: kein Target davon hängt an
+# GATE_CHECKS.
+D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:8d1433990ee4dd6a975b29d8db18356d1204ae6e45f96f312872ba5eca1230ea
+SCHEMA_SOURCE ?= tools/schema/schema.yaml
+SCHEMA_TARGET ?= db:postgres://postgres:postgres@localhost:5432/cdc?sslmode=disable
+
+.PHONY: schema-validate schema-rollout
+schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor generate/migrate, kein Gate)
+	@if [ ! -f "$(SCHEMA_SOURCE)" ]; then \
+	  echo "FEHLER: $(SCHEMA_SOURCE) fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus (ADR-0043); Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2; \
+	  exit 2; \
+	fi
+	docker run --rm --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
+
+schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
+	@mkdir -p tools/schema
+	docker run --rm -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target $(SCHEMA_TARGET) --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
+
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'
 

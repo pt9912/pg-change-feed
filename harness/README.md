@@ -124,6 +124,8 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `make image-stale` | meldet Base-Image-Drift: FROM-Digests des Dockerfile gegen die aktuellen Registry-Digests derselben Tags, plus Existenz des nächsten Major-Tags; braucht Netz | kein Gate, [`ADR-0039`](../docs/plan/adr/README.md) (Update = bewusster Digest-Commit, Modul 14) |
 | `make test` | Unit-Tests im gepinnten Toolchain-Container (netzlos; Modul-Cache im Docker-Volume, Vorbereitung: `make mod-download`) | kein Gate, [`ADR-0030`](../docs/plan/adr/0030-testpyramide.md) |
 | `make test-store` | Adapter-Tests gegen reale PostgreSQL im Testcontainer (gepinnte Digests: Toolchain + PostgreSQL; DB-Daten im Container) | kein Gate, [`ADR-0030`](../docs/plan/adr/0030-testpyramide.md) |
+| `make schema-validate` | prüft das neutrale Schema-YAML mit d-migrate (netzlos; Vorlauf vor jedem `generate`/`migrate`) | kein Gate, [`ADR-0043`](../docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md) |
+| `make schema-rollout` | rollt das Schema mit d-migrate aus — `schema migrate --execute` mit Pflicht-Report (`tools/schema/plan.yaml`) und Rollback-Artefakt (`tools/schema/down.sql`); braucht DB-Zugang | kein Gate, [`ADR-0043`](../docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md) |
 | `make <mover>` | bewegt <…>, prüft nichts | kein Gate |
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |
@@ -170,19 +172,20 @@ Für ein Policy/Compliance-Repo:
 ## Minimal agent workflow
 
 1. Diese Datei lesen.
-2. Relevante kanonische Quelle lesen.
-3. Betroffene IDs identifizieren.
-4. Kleinste Änderung planen.
+2. Relevante kanonische Quelle lesen (Source Precedence beachten).
+3. Betroffene Requirement-/ADR-IDs identifizieren.
+4. Kleinste sinnvolle Änderung planen.
 5. Engsten nützlichen Sensor laufen lassen.
 6. Repo-weiten Gate-Lauf vor Handoff (`make gates`).
 7. Doku/Indizes aktualisieren, falls ein öffentlicher Vertrag berührt.
-8. Ausgeführte Sensors und verbleibende Risiken berichten.
+8. Ausgeführte Sensors und verbleibende Risiken berichten — keine Erfolgsmeldung ohne Gate-Ausführung.
 
 Dieser Workflow deckt ausschließlich die Implementer-Rolle ab. Schritt 8
 ist der Rollenwechsel, kein Abschluss: Bericht → Handoff an Reviewer
-(`.harness/skills/reviewer.md`, siehe §Guides) → Verifier. Kein
-Self-Review — anderer Kontext findet andere Findings, derselbe Kontext
-dieselben blinden Flecken (Baseline-Regelwerk `modul-08-agentenrollen.md`).
+(`.harness/skills/reviewer.md`, siehe `harness/README.md` §Guides) →
+Verifier. Kein Self-Review — anderer Kontext findet andere Findings,
+derselbe Kontext dieselben blinden Flecken (Baseline-Regelwerk
+`modul-08-agentenrollen.md`).
 
 ## Leseordnung
 
