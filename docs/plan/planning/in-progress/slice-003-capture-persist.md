@@ -87,26 +87,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `CaptureInboundPort` und `CaptureService` tragen die
+- [x] `CaptureInboundPort` und `CaptureService` tragen die
       Persist-before-ACK-Ordnung: ACK nur nach dauerhafter Persistenz —
       Test referenziert zu [`LH-QA-REL-001.a`](../../../../spec/pflichtenheft.md).
-- [ ] Application-Tests mit Fake Ports belegen: kein ACK bei
+- [x] Application-Tests mit Fake Ports belegen: kein ACK bei
       Persistenzfehler; Crash zwischen Persistenz und ACK erzeugt höchstens
       erneute Verarbeitung — Teil-Beleg zu [`LH-QA-REL-002`](../../../../spec/lastenheft.md)
       und [`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md) (Rollback-Case in
       [`LH-FA-CAP-007`](../../../../spec/lastenheft.md)-Semantik).
-- [ ] Application-Testsuite grün (`go test ./internal/application/...`).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Application-Testsuite grün (`go test ./internal/application/...`).
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt ist — hier:
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt ist — hier:
       keine Schnittstelle berührt, dann trägt der Bericht die begründete
       Aussage „kein öffentlicher Vertrag berührt".
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. (*§7*)
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -202,18 +202,38 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die Ordnungs-Invariante liegt an **einer**
+  Orchestrierungs-Stelle (`service.Capture` — persist → ack, kein zweiter
+  ACK-Pfad); die Grenz-Träger-Zeilen stehen am Port-Kontrakt (Regel 1,
+  Idempotenz), wie der slice-002-Lerneintrag sie vorsah; alle drei
+  Ordnungs-Zusagen trugen Mutations-Proben (rot gesehen, Fix-Zug
+  `9bfcd7a`, Verifier-Replikation).
+- **Was ging anders als geplant:** die Transport-Typen mussten am
+  Inbound-Port definiert werden (Plan §3 legte den Ort nicht fest) — der
+  Konflikt (beide [`ADR-0039`](../../../../docs/plan/adr/README.md)-Hälften) ging in die **Konflikt-Sequenz**
+  (drittes Auftreten der Klasse) und endete in [`ADR-0042`](../../../../docs/plan/adr/README.md)
+  (Supersedes [`ADR-0039`](../../../../docs/plan/adr/README.md)); die
+  Klasse „Struktur-IDs in Commit-Messagen" erreichte ebenfalls 3× und ist
+  als Regel in `.claude/commands/implement-slice.md` verkörpert
+  (`· seit slice-003`). Der Review-F-7-Verlauf (stale Zähler im Register)
+  war ein §3.7-Defekt, vor der Welle-Closure berichtigt.
+- **Steering-Loop-Eintrag:** *Klasse A — Konflikt-Sequenz ausgegangen in
+  [`ADR-0042`](../../../../docs/plan/adr/README.md) (Transport-Typen am
+  Port; der bestehende Code ist die Ziel-Form) · Klasse B: Commit-
+  Message-Regel verkörpert in `.claude/commands/implement-slice.md`
+  (Struktur-IDs aus Messagen) · seit slice-003.*
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-003.md`
+  in `BEO-PGC/a-check-null-abdeckung/` ergänzt — **Zähler 3×**; der
+  Ausgang wird im Lese-Schritt der Welle-1-Closure zugewiesen (Regel-
+  Material steht bereit: [`ADR-0042`](../../../../docs/plan/adr/README.md)
+  trägt die Alias-Pflicht, a-check bleibt die Maschinenform).
+- **Folge-Slices:** keiner — welle-1 schließt mit diesem Slice; Welle 2
+  (reale PostgreSQL-Integration) wird bei ihrer Eröffnung geschnitten.
+- **Risiken aus §6:** Risiko (a) Fake-Ordnung stärker als realer Treiber →
+  **weiter offen** (Beleg erst mit dem realen Adapter, Welle 2); Risiko
+  (b) reale Idempotenz des Stores → **weiter offen** ([`ADR-0011`](../../../../docs/plan/adr/README.md)-Pflicht,
+  Kontrakt-Zeile getragen; Beleg mit dem realen Adapter).
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-1-Closure delegiert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
