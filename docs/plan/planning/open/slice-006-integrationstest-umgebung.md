@@ -98,6 +98,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `compose.yaml` | neu | Lauf- und CI-Vertrag je Modul 14 (Devcontainer = Komfort, nicht hier) |
 | `test/integration/*` | neu | MVP-Integrationstest gegen die Compose-Umgebung |
 | `Makefile` (schema-rollout-Verkabelung) | update | *Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)):* Schema-Rollout in die Compose-Test-DB vor jedem E2E-Lauf (`make schema-rollout` mit Pflicht-Report und Rollback-Artefakt) — Erstversatz der ADR, löst die slice-004-Loader-Grenze ab |
+| `tools/schema/schema.yaml` | neu | *Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)-Erstlieferung):* das neutrale Schema-YAML, überführt aus `internal/adapters/driven/postgresstorage/schema.sql` (Stand slice-004) — die Quelle, ohne die `schema-rollout` keinen Input hat; Platzierung (`tools/schema/` vs. co-loziert am Adapter) ist die offene Platzierungs-Frage aus [`ADR-0043`](../../../../docs/plan/adr/README.md) |
 
 ## 4. Trigger
 

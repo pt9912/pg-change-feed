@@ -73,8 +73,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       [`LH-FA-CAP-001`](../../../../spec/lastenheft.md)…003.
 - [ ] ACK real: nur Positionen nach dauerhafter Persistenz —
       [`LH-QA-REL-001.a`](../../../../spec/pflichtenheft.md) am realen Treiber.
-- [ ] `make gates` grün.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -100,6 +99,11 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `internal/adapters/driving/replication/{receive,decode,mapper}/*.go` | neu | Stream-Adapter je [`ADR-0006`](../../../../docs/plan/adr/README.md)/[`ADR-0039`](../../../../docs/plan/adr/README.md) |
 | `internal/adapters/driven/postgresack/*.go` | neu | Realer ACK-Adapter ([`ADR-0007`](../../../../docs/plan/adr/README.md)) |
+| `internal/adapters/driving/replication/` (Keepalive-Regel) | update | *Plan-Nachzug (Review F-2, Implementer-Entscheidung):* Keepalive-Antworten melden ausschließlich die bestätigte Position — never über den Empfangsstand hinaus ([`LH-QA-REL-001.a`](../../../../spec/pflichtenheft.md), Datenverlust-Fenster); Test mit roter Probe am realen Pfad |
+| `internal/adapters/driving/replication/receive/receive.go` (BindCapture) | update | *Plan-Nachzug (Review F-2):* Verbindungsaufbau getrennt von Port-Verdrahtung — der ACK-Adapter braucht die Verbindung erst nach deren Aufbau ([`ADR-0007`](../../../../docs/plan/adr/README.md) Option C) |
+| `internal/bootstrap/replication_stream_test.go` | neu | *Plan-Nachzug (Review F-2, a-check-Befunde):* Verdrahtungstests im Composition-Root-Layer ([`ADR-0026`](../../../../docs/plan/adr/README.md)) — Adapter-Tests importieren keine fremden Adapter/Use Cases |
+| `Makefile` (test-replication) | update | *Plan-Nachzug:* Testcontainer-Target gegen reale PostgreSQL (`wal_level=logical`, gepinnte Digests, tabellenscopierte Publications) + `tools/harness/run-replication-tests.sh` |
+| `github.com/jackc/pglogrepl` | neu (deps) | Replication-Protokoll-Handshake — [`ADR-0032`](../../../../docs/plan/adr/README.md): Infrastrukturdetail; pgx/v5 trägt den Fall nicht (grep-Beleg im Modul-Cache) |
 
 ## 4. Trigger
 
