@@ -192,15 +192,9 @@ eine ADR nur den ganzen Abschnitt nennen.
 |---|---|---|---|
 | `SPEC-006` | `CDC_SCHEMA` | `cdc` | Standard-Schema-Name für alle CDC-Objekte (§2, SPEC-001) |
 | `SPEC-007` | `HEALTH_STATES` | `healthy`, `degraded`, `unhealthy` | Health-Zustände; Readiness zeigt, ob die Instanz ihre Betriebsrolle erfüllen kann |
-
-Offene Festlegungen — Delegationen aus dem Lastenheft, bewusst noch nicht
-gesetzt, jede mit ihrem Schlusspunkt:
-
-| Gegenstand | Referenz | Schlusspunkt |
-|---|---|---|
-| PostgreSQL-Major-Versionen | LH-QA-POR-001 (SPEC-010) | Festlegung bis zur MVP-Abnahme; Vorschlagsregel: die zwei neuesten aktiven Major-Versionen |
-| Latenz-Schwellen-Initialwerte | LH-QA-PER-004 | Festlegung mit dem Benchmark-Design vor der MVP-Abnahme |
-| Skalierungs-Volumina | LH-QA-PER-002 | Festlegung mit dem Benchmark-Design vor der MVP-Abnahme |
+| `SPEC-012` | `PG_MAJOR_VERSIONS` | 17, 18 | Vorschlagsregel: die zwei neuesten aktiven Major-Versionen (Stand 2026-09-09; PostgreSQL 19 unmittelbar vor Release — Aufnahme als spätere Ausweitung) |
+| `SPEC-013` | `CDC_LAG_THRESHOLDS` | Messziel p95 ≤ 1 s · Warnschwelle > 5 s · Fehlerschwelle > 60 s | Initialwerte für Commit → CDC-Verfügbarkeit (LH-QA-PER-004, Metrik `cdc_capture_lag`); über ADR schärfbar |
+| `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung (LH-QA-PER-002): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
 
 ---
 
@@ -246,8 +240,8 @@ LH-QA-OPS-003 ab.
 | `SPEC-009` | `cdc_oldest_change_age` | Alter des ältesten aufbewahrten Changes | ChangeStore |
 
 Warn- und Fehlerschwellen für WAL-Rückstand und Capture-Lag sind
-konfigurierbar; Replication-Slot-Zustand, WAL-Rückstand und Capture-Lag
-werden überwacht.
+konfigurierbar; Initialwerte: SPEC-013. Replication-Slot-Zustand,
+WAL-Rückstand und Capture-Lag werden überwacht.
 
 ---
 
@@ -255,7 +249,7 @@ werden überwacht.
 
 | ID | System | Version | Vertrag-Datei |
 |---|---|---|---|
-| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | mehrere aktive Major-Versionen (LH-QA-POR-001); konkrete Versionen: offene Festlegung, §3 | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
+| `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | PostgreSQL 17 und 18 (SPEC-012, LH-QA-POR-001) | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
 
 ---

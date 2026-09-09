@@ -997,9 +997,8 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 
 - **Anforderung:** Das System soll von kleinen Datenbanken bis zu
   kontinuierlichen Änderungsvolumina skalieren können.
-- **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina sind
-  in `spec/pflichtenheft.md` als offene Festlegung bis zur MVP-Abnahme
-  vermerkt.
+- **Messmethode:** Lasttests mit gestuften Änderungsvolumina; Volumina sind in
+  `spec/pflichtenheft.md` §3 festgelegt (SPEC-014).
 
 ### LH-QA-PER-003 — Batch-Verarbeitung
 
@@ -1012,8 +1011,8 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 - **Anforderung:** Die Latenz zwischen Commit und CDC-Verfügbarkeit soll
   gering sein und über Benchmarks bewertet werden.
 - **Messmethode:** Benchmark über LH-FA-ADM-004 (messbarer Abstand);
-  Schwellen-Initialwerte sind in `spec/pflichtenheft.md` als offene
-  Festlegung bis zur MVP-Abnahme vermerkt.
+  Schwellen-Initialwerte sind in `spec/pflichtenheft.md` §3 festgelegt
+  (SPEC-013).
 
 ### LH-QA-SEC-001 — Least-Privilege
 
@@ -1078,9 +1077,8 @@ Qualitätsziel-Prioritäten (Herkunft: Qualitätsziele des Projekts):
 
 - **Anforderung:** Mehrere aktiv unterstützte PostgreSQL-Major-Versionen
   sollen unterstützt werden.
-- **Messmethode:** Testumgebung je unterstützter Version; konkrete
-  Versionen sind in `spec/pflichtenheft.md` als offene Festlegung bis zur
-  MVP-Abnahme vermerkt.
+- **Messmethode:** Testumgebung je unterstützter Version; konkrete Versionen
+  sind in `spec/pflichtenheft.md` §3 festgelegt (SPEC-012).
 
 ### LH-QA-POR-002 — Primäre Zielplattform Linux
 
