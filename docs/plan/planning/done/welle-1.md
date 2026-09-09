@@ -23,12 +23,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 Die MVP-Grundlage steht: Go-Modul und Build-Vertrag sind real baut
-([`LH-QA-POR-003`](../../../spec/lastenheft.md)), der Domänenkern trägt seine
-Invarianten ([`ADR-0029`](../../../docs/plan/adr/README.md)), und der Capture-Pfad
+([`LH-QA-POR-003`](../../../../spec/lastenheft.md)), der Domänenkern trägt seine
+Invarianten ([`ADR-0029`](../../../../docs/plan/adr/README.md)), und der Capture-Pfad
 erfüllt die Persist-before-ACK-Ordnung gegen Fake Ports
-([`LH-QA-REL-001.a`](../../../spec/pflichtenheft.md)). Nach dieser Welle ist die
+([`LH-QA-REL-001.a`](../../../../spec/pflichtenheft.md)). Nach dieser Welle ist die
 Grundlage für die reale PostgreSQL-Integration (Welle 2) belegt — gemessen
-an den Abnahmekriterien des MVP ([Lastenheft §1](../../../spec/lastenheft.md),
+an den Abnahmekriterien des MVP ([Lastenheft §1](../../../../spec/lastenheft.md),
 MVP-Schnitt) als Fortschritt, nicht als Abschluss.
 
 ## 2. Trigger (Welle startet)
@@ -42,10 +42,10 @@ werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - `make gates` grün über den Architektur-Bestand: alle 40 ADRs
-  ([ADR-0001](../../../docs/plan/adr/README.md)…0040) committet, die drei Spec-Straten committet, das
+  ([ADR-0001](../../../../docs/plan/adr/README.md)…0040) committet, die drei Spec-Straten committet, das
   Doc-Gate grün (Beleg: Gate-Lauf nach a-check-Vorbereitung).
-- [`ADR-0039`](../../../docs/plan/adr/README.md) und
-  [`ADR-0040`](../../../docs/plan/adr/README.md) `Accepted` (Paketstruktur und
+- [`ADR-0039`](../../../../docs/plan/adr/README.md) und
+  [`ADR-0040`](../../../../docs/plan/adr/README.md) `Accepted` (Paketstruktur und
   Port-Bestand stehen fest) — beobachtbar am ADR-Index.
 
 ## 3. Closure-Trigger (Welle schließt)
@@ -74,9 +74,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-001 | Go-Modul-Bootstrap und Gate-Aktivierung | [`LH-QA-POR-003`](../../../spec/lastenheft.md), [`LH-QA-OPS-001`](../../../spec/lastenheft.md) |
-| slice-002 | Domänenkern — Modelle, Invarianten, ClockPort | [`LH-FA-DAT-001`](../../../spec/lastenheft.md), [`LH-FA-DAT-004`](../../../spec/lastenheft.md) |
-| slice-003 | Capture-Persist-Pfad — Ports, Service, Persist-before-ACK | [`LH-QA-REL-001`](../../../spec/lastenheft.md), [`LH-QA-REL-002`](../../../spec/lastenheft.md) |
+| slice-001 | Go-Modul-Bootstrap und Gate-Aktivierung | [`LH-QA-POR-003`](../../../../spec/lastenheft.md), [`LH-QA-OPS-001`](../../../../spec/lastenheft.md) |
+| slice-002 | Domänenkern — Modelle, Invarianten, ClockPort | [`LH-FA-DAT-001`](../../../../spec/lastenheft.md), [`LH-FA-DAT-004`](../../../../spec/lastenheft.md) |
+| slice-003 | Capture-Persist-Pfad — Ports, Service, Persist-before-ACK | [`LH-QA-REL-001`](../../../../spec/lastenheft.md), [`LH-QA-REL-002`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -87,7 +87,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - Blockiert: Welle 2 (reale PostgreSQL-Integration) — sie baut auf dem
   Domänenkern und den Ports dieser Welle auf; der Store-Adapter
-  ([`ADR-0009`](../../../docs/plan/adr/README.md)) braucht die Port-Verträge.
+  ([`ADR-0009`](../../../../docs/plan/adr/README.md)) braucht die Port-Verträge.
 - Wird blockiert von: nichts — der Start-Trigger ist mit dem
   Architektur-Bestand eingetreten.
 
@@ -106,7 +106,7 @@ der Closure-Trigger unerreichbar wird.
 - MVP-Abnahmekriterien als Abschluss — der Meilenstein M1 schließt erst mit
   dem MVP-Integrationstest; diese Welle legt nur die Grundlage.
 - Consumer-Verwaltung, Retention, SQL-/CLI-Adapter — spätere Wellen;
-  [`ADR-0028`](../../../docs/plan/adr/README.md) listet die Use Cases, die hier
+  [`ADR-0028`](../../../../docs/plan/adr/README.md) listet die Use Cases, die hier
   nicht angetastet werden.
 - `codepaths`-Aktivierung und `image-cve`-Sensor — die Pfade/Belege
   entstehen später; die Bedingungen stehen in `.d-check.yml` und

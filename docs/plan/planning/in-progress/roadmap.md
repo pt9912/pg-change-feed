@@ -16,8 +16,6 @@ Zustand sind die flachen Welle-Dateien; woran gearbeitet wird, sagt das
 `Welle:`-Feld der Slices in `in-progress/`. Ziel, Trigger und
 Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
-- [welle-1](../welle-1.md) — MVP-Grundlage: Bootstrap, Domänenkern, Capture-Persist
-
 - Nichts in Arbeit.
 
 <!-- BEDIENHINWEIS: Zwei unabhängige Aussagen in diesem Block. Die Liste oben
@@ -96,7 +94,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 | Welle | Abschluss | Closure-Notiz |
 |---|---|---|
-| <welle-NN> | YYYY-MM-DD | `welle-NN-results.md` |
+| welle-1 — MVP-Grundlage | 2026-09-09 | [welle-1-results.md](../done/welle-1-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
