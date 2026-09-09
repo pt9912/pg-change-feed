@@ -74,11 +74,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `PostgresChangeStoreAdapter` persistiert committed Transaktionen
+- [x] `PostgresChangeStoreAdapter` persistiert committed Transaktionen
       deduplizierbar (Idempotenz-Kontrakt [`ADR-0011`](../../../../docs/plan/adr/README.md):
       dieselbe Transaktion erneut → höchstens erneute Verarbeitung) —
       Teil-Beleg zu [`LH-FA-RET-001`](../../../../spec/lastenheft.md).
-- [ ] Deterministisches Lesen über [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellen
+- [x] Deterministisches Lesen über [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellen
       (Bereich/Limit/Filter) — Teil-Beleg zu
       [`LH-FA-REA-001`](../../../../spec/lastenheft.md)…006.
 - [x] `make gates` grün.
@@ -92,10 +92,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`harness/README.md`, Dockerfile). *Korrektur (V-3): die
       Erst-Begründung „nur `internal/**`" trug nicht — die Range ändert
       die Doku-Bestände.*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. (*§7*)
+- [x] Reconciliation-Register — **entfällt**: Repos ohne
+      Brownfield-Bootstrap haben die Datei nicht., **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register fortgeschrieben — **keine Beobachtung
+      angefallen** (die `adapters`-Globs matchen Content, kein
+      Abdeckungs-/Auflösungs-Hinweis; die verkörperte Beobachtung
+      `BEO-PGC/a-check-null-abdeckung` ist nicht erneut aufgetreten). — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (siehe §7).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -182,18 +186,39 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die Idempotenz- und Ordnungs-Zusagen tragen
+  echte Mutations-Proben am realen Treiber (Deduplizierung, Sortierung —
+  implementer-seitig rot gesehen); die Fehlerklassen-Grenze
+  ([`ADR-0023`](../../../../docs/plan/adr/README.md), Klasse `storage` am
+  Port-Sentinel) trägt Adapter- und Commit-Ausgänge mit
+  `errors.Is`-Lesbarkeit; der Schema-Loader-Defekt (Kommentar-Split) war
+  eine Rücksprungkante 15→13 mit sauberem Fix.
+- **Was ging anders als geplant:** die Review- und Verifier-Läufe
+  überlappten mit parallelen Zugriffen auf denselben Arbeitsbaum — zwei
+  gemischte Commits (`13abe88`, `e3e36f2`: Implementer-Test/Content +
+  Review-/Plan-Artefakte) und eine verdrängte Review-Basis (`193716e`)
+  sind die Folge; dokumentiert, nicht still. Konsequenz für den nächsten
+  Zyklus: Rollen-Läufe auf dem Hauptzweig strikt sequenzieren
+  (Implementer-Fix-Zug **endet**, bevor Review/Verifier-Artefakte
+  committet werden); der Compile-/Test-Beleg als Gate ist der
+  Steering-Loop-Kandidat aus Review F-7 (Welle-2-Closure).
+- **Steering-Loop-Eintrag:** *F-2-Schiedsspruch: der `image-hash`-Beleg
+  ist der Digest des exportierten Images und **builder-gebunden** — der
+  Vergleich über Umgebungen hinweg kann Staleness nicht entscheiden;
+  entscheidbar am Inhalt (Binary byte-identisch). Deklaration*
+  — liegt in `Dockerfile`-Kopf und `harness/README.md` Werkzeuge-Zeile ·
+  seit slice-004. *(Zusätzlich aus der Klasse „Datei-Ende-Zeilen fehlen"
+  (3. Auftreten, V-4): Ausgang folgt in der Welle-2-Closure.)*
+- **Beobachtungs-Register (`../observations/`):** **keine Beobachtung
+  angefallen** — die `adapters`-Globs matchen Content ohne
+  Abdeckungs-/Auflösungs-Hinweis; die verkörperte Beobachtung
+  `BEO-PGC/a-check-null-abdeckung` ist nicht erneut aufgetreten.
+- **Folge-Slices:** keiner aus diesem Slice — slice-005 (Stream-Adapter)
+  folgt in der Welle-Sequenz (Datei in `open/`).
+- **Risiken aus §6:** Risiko (a) reale Idempotenz → **entfallen** (belegt
+  am realen Treiber, Idempotenz-Tests); Risiko (b) Row-Images/REPLICA
+  IDENTITY → **weiter offen** (bewertet im Integrationstest, slice-006).
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-2-Closure delegiert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
