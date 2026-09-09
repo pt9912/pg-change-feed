@@ -48,4 +48,6 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0035 | Gesamtarchitektur | Accepted | 2026-09-09 | [0035-gesamtarchitektur.md](0035-gesamtarchitektur.md) |
 | ADR-0036 | Architekturprüfung in CI | Proposed | 2026-09-09 | [0036-architekturpruefung-ci.md](0036-architekturpruefung-ci.md) |
 | ADR-0037 | Implementierungsreihenfolge | Accepted | 2026-09-09 | [0037-implementierungsreihenfolge.md](0037-implementierungsreihenfolge.md) |
-| ADR-0038 | Implementierungssprache Go | Accepted | 2026-09-09 | [0038-implementierungssprache-go.md](0038-implementierungssprache-go.md) |
+| ADR-0038 | Implementierungssprache Go (→ ADR-0039) | Superseded | 2026-09-09 | [0038-implementierungssprache-go.md](0038-implementierungssprache-go.md) |
+| ADR-0039 | Paketstruktur-Detaillierung (Go) | Accepted | 2026-09-09 | [0039-paketstruktur-detaillierung-go.md](0039-paketstruktur-detaillierung-go.md) |
+| ADR-0040 | ClockPort (Zeit als Outbound Port) | Accepted | 2026-09-09 | [0040-clockport.md](0040-clockport.md) |

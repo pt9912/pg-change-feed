@@ -1,6 +1,6 @@
 # ADR-0038: Implementierungssprache Go
 
-**Status:** Accepted
+**Status:** Superseded by [`ADR-0039`](0039-paketstruktur-detaillierung-go.md)
 
 **Datum:** 2026-09-09
 
@@ -161,6 +161,7 @@ Lastenhefts-Anforderung.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-09 | Accepted (überführt aus dem Architektur-Entwurf `architecture-decision-records.md`) | — |
+| 2026-09-09 | Superseded durch ADR-0039 (Paketstruktur-Detaillierung); Sprache, Cross-Compilation, CGO-Ziel und nativer PostgreSQL-Stack bleiben verbindlich | [ADR-0039](0039-paketstruktur-detaillierung-go.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

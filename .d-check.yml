@@ -38,7 +38,13 @@ matrix:
     - {from: spec, to: adr, allow: false}
     - {from: spec, to: slice, allow: false}
     - {from: adr, to: slice, allow: false}
-  status: {forbidden: [superseded, deprecated]}
+  status:
+    forbidden: [superseded, deprecated]
+    # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel
+    # zeigen — Supersession-Linien (ADR-0039 → ADR-0038) sind legitime
+    # Provenance, kein Drift.
+    allow-supersede-lineage: true
+    supersede-fields: [Supersedes, Status]
 versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in

@@ -96,6 +96,7 @@ System (Baseline-Regelwerk `grundlagen-source-precedence.md` §ID-Schema als Kla
 | `ARC-009` | PostgreSQL (Store) | persistenter CDC-Speicher (Referenzimplementierung des ChangeStore) | über den Outbound Port substituierbar; kein externer Broker für den Grundbetrieb erforderlich |
 | `ARC-010` | Dateisystem | Spool für große offene Transaktionen | über den Outbound Port substituierbar; Crash-Verhalten testpflichtig |
 | `ARC-011` | Telemetrie-Backend (Prometheus/OpenTelemetry) | Metriken und strukturierte Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
+| `ARC-012` | Systemzeit | Zeitquelle für zeitbasierte Retention, Change-Alter und CDC-Lag-Messung | über den Outbound Port substituierbar; Fake Clock in Application-Tests |
 
 ## 4. Sequenz-Diagramme
 
