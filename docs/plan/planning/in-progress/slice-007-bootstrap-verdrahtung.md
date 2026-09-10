@@ -194,8 +194,9 @@ Backticks).
   bestätigte den [`ADR-0044`](../../../../docs/plan/adr/0044-image-beleg-semantik.md)-Vertrag (Digest lauf-gebunden) — diesmal
   wechselte der Digest wirklich (Binary trägt die Verdrahtung), und der
   Beleg wurde am HEAD committet (`789b76e`). Die commit-traceability-
-  Klasse färbte beim ersten F-3-Commit **selbst rot** (ADR-0045-Sensor
-  greift) — die Klasse ist jetzt maschinell getragen (ADR-0045).
+  Klasse färbte beim ersten F-3-Commit **selbst rot** ([`ADR-0045`](../../../../docs/plan/adr/0045-commit-traceability-standing-gate.md)-Sensor
+  greift) — die Klasse ist jetzt maschinell getragen
+  ([`ADR-0045`](../../../../docs/plan/adr/0045-commit-traceability-standing-gate.md)).
 - **Steering-Loop-Eintrag:** *F-2-Fehlerbehandlungs-Grenze → Ausgang
   weiter offen (Retry/Backoff folgt mit der Konfigurationsschicht);
   die Grenze trägt der `wiring.go`-Kommentar und die Container-
