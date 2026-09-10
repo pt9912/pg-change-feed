@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -45,6 +46,12 @@ const (
 	envPublication = "CDC_PUBLICATION"
 	envSlot        = "CDC_SLOT"
 	envTables      = "CDC_TABLES"
+	// envLogLevel trägt den Log-Level der strukturierten Ausgabe
+	// (`LH-QA-OPS-004`, slice-014): anders als die fünf Namen oben ist er
+	// keine Start-Vorbedingung — er hat einen Default (parseLogLevel) und
+	// eine fehlende oder nicht erkannte Eingabe bricht die Verdrahtung
+	// nicht ab.
+	envLogLevel = "CDC_LOG_LEVEL"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -79,6 +86,9 @@ type Config struct {
 	Publication string
 	Slot        string
 	Tables      map[string]mapper.TableBinding
+	// LogLevel trägt den Level des JSON-Handlers (`newLogger`); Herkunft
+	// ist `envLogLevel`/`parseLogLevel`, mit Default `slog.LevelInfo`.
+	LogLevel slog.Level
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -108,7 +118,33 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	cfg.Tables = tables
+	cfg.LogLevel = parseLogLevel(getenv(envLogLevel))
 	return cfg, nil
+}
+
+// parseLogLevel liest den Log-Level der strukturierten Ausgabe
+// (`envLogLevel`, `LH-QA-OPS-004`): die Textformen trägt `slog.Level`
+// selbst (`DEBUG`/`INFO`/`WARN`/`ERROR`, case-insensitive,
+// `UnmarshalText`). Eine leere oder nicht erkannte Eingabe bleibt beim
+// Default `Info` — anders als die Vorbedingungen oben (`ConfigFromEnv`)
+// ist ein falsch gesetzter Level kein Start-Hindernis: er gefährdet die
+// laufende Erfassung nicht, nur ihre Beobachtbarkeit.
+func parseLogLevel(raw string) slog.Level {
+	if raw == "" {
+		return slog.LevelInfo
+	}
+	var level slog.Level
+	if err := level.UnmarshalText([]byte(raw)); err != nil {
+		return slog.LevelInfo
+	}
+	return level
+}
+
+// newLogger baut den strukturierten JSON-Logger der Verdrahtung
+// (`LH-QA-OPS-004`): Ausgabe auf `stdout` — der Betriebsbeleg des
+// Containers (`compose.yaml`) — mit dem übergebenen Level.
+func newLogger(level slog.Level) *slog.Logger {
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 }
 
 // parseTables liest die Tabellen-Aktivierungen in der Form
@@ -168,6 +204,22 @@ func splitQualifiedName(qualified string) (string, string, error) {
 // der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
 // `defer`-Kette hinweg.
 func Run(ctx context.Context, cfg Config) (runErr error) {
+	// Der JSON-Handler wird als `slog`-Default gesetzt (`newLogger`,
+	// `LH-QA-OPS-004`): alle Driven-/Driving-Adapter unten protokollieren
+	// über die paketweiten `slog`-Funktionen — die Composition Root ist
+	// die einzige Stelle, die den Handler baut (`ADR-0026`), ein
+	// eigener Logger je Adapter-Konstruktor ist kein Bestandteil dieses
+	// Verdrahtungsstands.
+	slog.SetDefault(newLogger(cfg.LogLevel))
+	slog.InfoContext(ctx, "pg-change-feed: Verdrahtung gestartet", "source", string(cfg.Source))
+	defer func() {
+		if runErr != nil {
+			slog.ErrorContext(ctx, "pg-change-feed: Lauf beendet mit Fehler", "error", runErr)
+			return
+		}
+		slog.InfoContext(ctx, "pg-change-feed: Lauf regulär beendet")
+	}()
+
 	store, err := postgresstorage.New(ctx, cfg.DSN)
 	if err != nil {
 		return err

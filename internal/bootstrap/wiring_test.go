@@ -2,6 +2,7 @@ package bootstrap_test
 
 import (
 	"errors"
+	"log/slog"
 	"strings"
 	"testing"
 
@@ -113,5 +114,36 @@ func TestConfigFromEnvLiestAktivierung(t *testing.T) {
 	}
 	if len(cfg.Tables) != 2 {
 		t.Fatalf("Tabellen-Bindungen: %d (Erwartung: 2)", len(cfg.Tables))
+	}
+}
+
+// TestConfigFromEnvLogLevel trägt den Default und die erkannten Textformen
+// von `CDC_LOG_LEVEL` (`LH-QA-OPS-004`, slice-014): anders als die fünf
+// Vorbedingungen oben bricht ein leerer oder nicht erkannter Wert die
+// Verdrahtung nicht ab — er bleibt beim Default `Info`
+// (`bootstrap.parseLogLevel`).
+func TestConfigFromEnvLogLevel(t *testing.T) {
+	for _, testcase := range []struct {
+		raw      string
+		expected slog.Level
+	}{
+		{raw: "", expected: slog.LevelInfo},
+		{raw: "debug", expected: slog.LevelDebug},
+		{raw: "DEBUG", expected: slog.LevelDebug},
+		{raw: "warn", expected: slog.LevelWarn},
+		{raw: "error", expected: slog.LevelError},
+		{raw: "nicht-erkannt", expected: slog.LevelInfo},
+	} {
+		values := vollständigeVerdrahtung()
+		if testcase.raw != "" {
+			values["CDC_LOG_LEVEL"] = testcase.raw
+		}
+		cfg, err := bootstrap.ConfigFromEnv(getenv(values))
+		if err != nil {
+			t.Fatalf("CDC_LOG_LEVEL %q: vollständige Vorbedingung, aber Fehler: %v", testcase.raw, err)
+		}
+		if cfg.LogLevel != testcase.expected {
+			t.Fatalf("CDC_LOG_LEVEL %q: Level %s, Erwartung %s", testcase.raw, cfg.LogLevel, testcase.expected)
+		}
 	}
 }
