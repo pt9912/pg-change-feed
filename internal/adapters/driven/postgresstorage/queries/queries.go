@@ -177,3 +177,14 @@ DELETE FROM cdc.consumer_position WHERE consumer_id = $1`
 // Positions-Zeilen-Entzug (DeleteConsumerPosition).
 const DeleteConsumer = `
 DELETE FROM cdc.consumer WHERE consumer_id = $1`
+
+// UpsertHeartbeat trägt das Lebenszeichen der Quelle fort
+// (`cdc.process_heartbeat`, slice-012, `LH-FA-ADM-002`): die Instanzzeit
+// der Speicherseite trägt den Zeitstempel (current_timestamp, wie
+// InsertTransaction über committed_at) — der Aufrufer übergibt keine Uhr.
+// Eine bestehende Zeile aktualisiert ihren Zeitstempel; je Quelle bleibt
+// genau eine Zeile.
+const UpsertHeartbeat = `
+INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at)
+VALUES ($1, current_timestamp)
+ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp`

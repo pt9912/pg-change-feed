@@ -1,0 +1,73 @@
+package postgresstorage
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
+)
+
+// PostgresHeartbeatAdapter ist die Referenzimplementierung des
+// `HeartbeatPort` (`ARC-004`, `ADR-0024`): er trägt das periodische
+// Lebenszeichen des Capture-Prozesses gegen `cdc.process_heartbeat`
+// fort. Der Treiber (pgx/v5) bleibt Adapterdetail (`ADR-0032`, rein Go,
+// CGO-frei); die Tabellenform trägt der d-migrate-Rollout (`ADR-0043`) —
+// die DDL des Store-Adapters (schema.sql) trägt sie nicht (dieselbe
+// Abgrenzung wie bei den Consumer-State-Tabellen).
+type PostgresHeartbeatAdapter struct {
+	pool *pgxpool.Pool
+}
+
+// NewHeartbeat baut den Verbindungspool gegen die Instanz, die Quelle und
+// CDC-Speicher gleichermaßen trägt (Abschnitt 1 Lastenheft), und meldet
+// eine nicht erreichbare Instanz als Fehler der Klasse `storage`
+// (`outbound.ErrHeartbeatStorage`, `SPEC-008`). Der Pool bleibt vom
+// Store- und Aktivierungs-Pool getrennt (`internal/bootstrap/wiring.go`)
+// — der periodische Schreib-Zug teilt keine Verbindung mit der
+// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012 §6-Risiko).
+func NewHeartbeat(ctx context.Context, dsn string) (*PostgresHeartbeatAdapter, error) {
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return nil, heartbeatStorageFailure(err)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, heartbeatStorageFailure(err)
+	}
+	return &PostgresHeartbeatAdapter{pool: pool}, nil
+}
+
+// heartbeatStorageFailure trägt die Übersetzungsverantwortung dieses
+// Adapters (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser
+// Grenze in die Klasse `storage` über den eigenen Sentinel des Ports
+// (`outbound.ErrHeartbeatStorage`) — die technische Ursache bleibt über
+// die zweite Wrappung lesbar.
+func heartbeatStorageFailure(cause error) error {
+	return fmt.Errorf("%w: %w", outbound.ErrHeartbeatStorage, cause)
+}
+
+// Close schließt den Verbindungspool.
+func (a *PostgresHeartbeatAdapter) Close() {
+	a.pool.Close()
+}
+
+var _ outbound.HeartbeatPort = (*PostgresHeartbeatAdapter)(nil)
+
+// Beat trägt die Lebenszeichen-Zeile der Quelle fort (UPSERT): der
+// Zeitstempel trägt die Instanzzeit der Speicherseite; eine erneute
+// Quelle überschreibt den vorigen Zeitstempel, keine zweite Zeile.
+// Treiber-Fehler gehen in die Klasse `storage` (heartbeatStorageFailure).
+func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.SourceID) error {
+	if source == "" {
+		return domainerrors.ErrEmptyIdentifier
+	}
+	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
+		return heartbeatStorageFailure(err)
+	}
+	return nil
+}
