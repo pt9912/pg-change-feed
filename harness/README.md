@@ -113,7 +113,8 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `make baseline-verify` | verifiziert die vendored Baseline netzlos (Integrität + Vollständigkeit gegen `SHA256SUMS`) | [`harness/sensors/baseline-verify.md`](sensors/baseline-verify.md) |
 | `make docs-check` | kaputte Referenzen in der Markdown-Doku (links, anchors, ids, matrix, versions, structure) | [`harness/sensors/docs-check.md`](sensors/docs-check.md) |
 | `make a-check` | prüft die Hexagon-Schichten-Edges aus `.a-check.yml` gegen den Go-Baum — netzlos, read-only, digest-gepinntes Release-Image | [`ADR-0041`](../docs/plan/adr/0041-a-check-maschinenform-architekturpruefung.md) · [`harness/sensors/a-check.md`](sensors/a-check.md) |
-| `make gates` | alle inneren Gates (baseline-verify, docs-check, a-check), Nachweis-Stempel zuletzt | — |
+| `make commit-traceability` | Commit-Message-Traceability: je Message der Range ≥ 1 `LH-*`-/`ADR-*`-Kennung (d-check Modul `commits`, Befund `commit-untraceable`) und keine `SPEC-*`/`ARC-*`-Kennung im Betreff (`tools/harness/commit-traceability.sh`); Standing-Gate über die letzten 5 Commits (`RANGE=base..head` überschreibt) | [`ADR-0045`](../docs/plan/adr/0045-commit-traceability-standing-gate.md) · seit slice-006 |
+| `make gates` | alle inneren Gates (baseline-verify, docs-check, a-check, commit-traceability), Nachweis-Stempel zuletzt | — |
 | `<make-target>` | volle Closure | Image-Hash `sha256:…` (Modul 14) |
 
 **Werkzeuge — genannt, weil der Lauf sie braucht, aber kein Gate:**
@@ -144,6 +145,7 @@ implementiert, bis dahin bleibt der Scan unausgesprochen.
 ## Traceability rules
 
 - PRs/Commits **müssen** mindestens eine `<LH-*>` oder `ADR-*`-ID nennen.
+- Mechanisch getragen (Standing-Gate, [`ADR-0045`](../docs/plan/adr/0045-commit-traceability-standing-gate.md)): `make commit-traceability` prüft je Message der letzten 5 Commits (`RANGE=base..head` überschreibt) beide Grenzen — positive Hälfte via d-check Modul `commits` (Befund `commit-untraceable`), Betreff-Grenze via `tools/harness/commit-traceability.sh` · seit slice-006 (ausgelöst durch das dritte Auftreten der Verstoß-Klasse, review-slice-006 F-2).
 - Neue oder geänderte Anforderungen brauchen einen Beleg: Test, Gate, Demo oder ADR.
 - Neue ADRs müssen im ADR-Index ergänzt werden.
 - Änderungen an Planning-Dokumenten müssen die Lifecycle-Regeln beachten (open → next → in-progress → done; reine `git mv`-Commits siehe AGENTS.md §3.3).

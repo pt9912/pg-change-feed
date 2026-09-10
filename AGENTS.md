@@ -188,6 +188,7 @@ Halluzinierte Gates sind die häufigste Form von Harness-Lüge
 | `make baseline-verify` | vendored Baseline unverändert (Integrität + Vollständigkeit) |
 | `make docs-check` | kaputte Referenzen in der Markdown-Doku (d-check) |
 | `make a-check` | Hexagon-Schichten-Edges gegen `.a-check.yml` |
+| `make commit-traceability` | Commit-Message-Traceability: je Message ≥ 1 `LH-*`/`ADR-*`, keine `SPEC-*`/`ARC-*` im Betreff; Standing-Gate über die letzten 5 Commits ([ADR-0045](docs/plan/adr/0045-commit-traceability-standing-gate.md)) |
 | `make gates` | alle inneren Gates (mandatory vor PR), Nachweis-Stempel zuletzt |
 | `make image` | baut das OCI-Image, Image-Hash-Beleg (kein Gate) |
 | `make image-stale` | advisory: Base-Image-Drift (kein Gate, braucht Netz) |
