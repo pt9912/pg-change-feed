@@ -3,23 +3,28 @@
 // aktivieren → INSERT → UPDATE → DELETE → Changes lesen → Reihenfolge und
 // Inhalt prüfen (`LH-FA-CAP-001`…003, `LH-QA-POR-003`). Der Lauf fährt das
 // verdrahtete System: der Feed-Container trägt die CDC-Runtime des
-// Binarys — die Verdrahtung (Store, Stream, Service, ACK) liegt am
-// Composition Root (`ADR-0026`) und läuft im Container, nicht hier. Der
-// Test verdrahtet keinen Adapter und betreibt keinen Stream; sein
-// Lese-Pfad ist der Store-Adapter (`PostgresChangeStoreAdapter.ReadChanges`)
-// gegen dieselbe Instanz, in die das Binary persistiert — persistierte
-// Changes am Ende-zu-Ende-Pfad haben keinen anderen Schreiber als den
-// Feed-Container (`LH-QA-REL-001.a`).
+// Binarys — die Verdrahtung (Store, Aktivierung, Stream, Service, ACK)
+// liegt am Composition Root (`ADR-0026`) und läuft im Container, nicht
+// hier. Der Test verdrahtet keinen Stream und betreibt keinen; seinen
+// Lese-Pfad trägt der Store-Adapter
+// (`PostgresChangeStoreAdapter.ReadChanges`) gegen dieselbe Instanz, in
+// die das Binary persistiert — persistierte Changes am Ende-zu-Ende-Pfad
+// haben keinen anderen Schreiber als den Feed-Container
+// (`LH-QA-REL-001.a`).
 //
 // Die Instanz gehört der Compose-Umgebung (`make test-integration`); der
 // d-migrate-Rollout (ADR-0043) trägt die CDC-Tabellen und der Runner die
-// Aktivierung (Feed-Tabellen, Publication, Bindungs-Zeilen) vor dem
-// Container-Start. Ohne DSN überspringt der Test.
+// Aktivierungs-Vorbedingung (Quell-Tabellen, Quelle-Zeile) vor dem
+// Container-Start — die Aktivierung selbst läuft über die Verdrahtung des
+// Containers als EnableTable-Aufrufe (`ADR-0028`), und der Test liest den
+// Stand über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`/`004`).
+// Ohne DSN überspringt der Test.
 package integration_test
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -27,7 +32,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/list"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -94,7 +102,7 @@ func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
 	if err := pool.QueryRow(ctx,
 		"SELECT source_table_id FROM cdc.source_table WHERE schema_name = 'public' AND table_name = $1", feedTable,
 	).Scan(&tableID); err != nil {
-		t.Fatalf("Bindungs-Zeile für %q: %v — die Aktivierung trägt der Runner vor dem Feed-Container-Start", feedTable, err)
+		t.Fatalf("Bindungs-Zeile für %q: %v — die Aktivierung trägt die Verdrahtung des Feed-Containers als EnableTable-Aufruf (ADR-0028)", feedTable, err)
 	}
 
 	store, err := postgresstorage.New(ctx, dsn)
@@ -298,5 +306,76 @@ func TestMVPUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
 	newImage := imageJSON(t, records[1].Change.NewImage)
 	if newImage["id"] != "1" || newImage["name"] != "Delta" {
 		t.Fatalf("UPDATE-Neu-Image: %s", records[1].Change.NewImage)
+	}
+}
+
+// TestMVPActivationState liest den Aktivierungsstand am verdrahteten
+// Feed-Container über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`,
+// `LH-FA-CFG-004`, `ADR-0028`): die aktivierte Feed-Tabelle meldet
+// „aktiviert", die nie aktivierte Tabelle meldet „nicht aktiviert"
+// (Boundary), die fehlende Tabelle endet sichtbar (Negative), und die
+// Liste trägt die aktivierten Tabellen der Quelle.
+func TestMVPActivationState(t *testing.T) {
+	dsn := os.Getenv("CDC_INTEGRATION_DSN")
+	if dsn == "" {
+		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — MVP-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
+	}
+	ctx := context.Background()
+	activation, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Aktivierungs-Adapter: %v", err)
+	}
+	t.Cleanup(activation.Close)
+	statusCase := status.NewGetStatusService(activation)
+	listCase := list.NewListTablesService(activation)
+
+	// Happy Path: die aktivierte Tabelle meldet „aktiviert" (`LH-FA-CFG-003`).
+	enabled, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow",
+	})
+	if err != nil {
+		t.Fatalf("Status der aktivierten Tabelle: %v", err)
+	}
+	if !enabled.Enabled {
+		t.Fatalf("Status von feed_mvp_flow: nicht aktiviert — die Verdrahtung des Feed-Containers trägt die Aktivierung als EnableTable-Aufruf (ADR-0028)")
+	}
+
+	// Boundary: die nie aktivierte Tabelle meldet „nicht aktiviert"
+	// (`LH-FA-CFG-003`).
+	idle, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle",
+	})
+	if err != nil {
+		t.Fatalf("Status der nie aktivierten Tabelle: %v", err)
+	}
+	if idle.Enabled {
+		t.Fatalf("Status von feed_mvp_idle: aktiviert (nie aktivierte Tabelle)")
+	}
+
+	// Negative: die fehlende Tabelle endet sichtbar (`LH-FA-CFG-003`).
+	if _, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_missing",
+	}); !errors.Is(err, inbound.ErrSourceTableMissing) {
+		t.Fatalf("Status der fehlenden Tabelle: %v (Erwartung: Fehlerklasse der fehlenden Quelle-Tabelle)", err)
+	}
+
+	// Liste: die Quelle trägt beide aktivierten Feed-Tabellen
+	// (`LH-FA-CFG-004` Happy Path); die nie aktivierte Tabelle bleibt
+	// außerhalb.
+	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource})
+	if err != nil {
+		t.Fatalf("Tabellen-Liste: %v", err)
+	}
+	activated := map[string]bool{}
+	for _, table := range tables.Tables {
+		activated[table.QualifiedName()] = true
+	}
+	for _, expected := range []string{"public.feed_mvp_flow", "public.feed_mvp_full"} {
+		if !activated[expected] {
+			t.Fatalf("Tabellen-Liste ohne %q: %d Tabellen", expected, len(tables.Tables))
+		}
+	}
+	if activated["public.feed_mvp_idle"] {
+		t.Fatalf("Tabellen-Liste trägt die nie aktivierte Tabelle")
 	}
 }

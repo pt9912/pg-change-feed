@@ -45,12 +45,11 @@ services:
     image: ghcr.io/pt9912/pg-change-feed:dev
     container_name: cdc-test-feed
     # Der Container fährt die CDC-Runtime des Binarys: die Verdrahtung
-    # (Store, Stream, Service, ACK, ADR-0026) liest ihre Vorbedingungen
-    # aus dieser Umgebung. Die Aktivierung — Feed-Tabellen, Publication,
-    # Bindungs-Zeilen — trägt tools/harness/run-integration-tests.sh vor
-    # dem Start (die Publication ist Start-Vorbedingung des
-    # Stream-Adapters, LH-FA-CFG-001.a); den Slot legt der Stream beim
-    # Start selbst an.
+    # (Store, Aktivierung, Stream, Service, ACK, ADR-0026) liest ihre
+    # Vorbedingungen aus dieser Umgebung. Die Aktivierung — Publication,
+    # Bindungs- und Schema-Version-Zeilen — trägt die Verdrahtung über
+    # den EnableTable Use Case beim Start (ADR-0028, LH-FA-CFG-001.a);
+    # den Slot legt der Stream beim Start selbst an.
     environment:
       CDC_SOURCE_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
       CDC_SOURCE_ID: src-mvp

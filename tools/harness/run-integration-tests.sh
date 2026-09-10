@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # run-integration-tests — MVP-Integrationstest gegen die Compose-Umgebung
 # (compose.yaml; LH-QA-POR-003). Kette je Lauf: Compose-PostgreSQL frisch
-# hochfahren → Schema-Rollout über d-migrate (ADR-0043) → Aktivierung der
-# Feed-Tabellen (Publication, Bindungs-Zeilen) → Feed-Container als
-# CDC-Runtime starten → Toolchain-Container gegen das Compose-Netz. Der
-# Feed-Container streamt dabei selbst (Verdrahtung je ADR-0026); der Test
-# schreibt nur Quelländerungen und liest den Store.
+# hochfahren → Schema-Rollout über d-migrate (ADR-0043) → Vorbedingungen
+# der Aktivierung (Quell-Tabellen, Quelle-Zeile) → Feed-Container als
+# CDC-Runtime starten — seine Verdrahtung aktiviert die Tabellen über den
+# EnableTable Use Case (ADR-0028), nicht über Seed-SQL → Toolchain-
+# Container gegen das Compose-Netz. Der Feed-Container streamt dabei
+# selbst (Verdrahtung je ADR-0026); der Test schreibt nur Quelländerungen
+# und liest den Store.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -56,23 +58,21 @@ fi
 # tools/schema/down.sql.
 make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
-# Aktivierung vor dem Feed-Container-Start (LH-FA-CFG-001): Feed-Tabellen,
-# Publication über beide Tabellen, Bindungs-Zeilen in den
-# CDC-Referenztabellen. Die Publication ist Start-Vorbedingung des
-# Stream-Adapters — ohne sie endet der Feed-Container rot (Klasse
-# configuration), deshalb liegt dieser Schritt vor `up`.
+# Vorbedingung der Aktivierung (LH-FA-CFG-001.a): die physischen
+# Quell-Tabellen und die Zeile der Quelle in cdc.source — die
+# Metadaten-Registrierung ist Vorbedingung der Aktivierung (SPEC-001,
+# Fremdschlüssel). Die Aktivierung selbst trägt die Verdrahtung des
+# Feed-Containers: die Bindungen aus CDC_TABLES laufen als
+# EnableTable-Aufrufe (ADR-0028) — Publication, Bindungs- und
+# Schema-Version-Zeilen entstehen dort, nicht hier. Die REPLICA IDENTITY
+# trägt der Runner für die volle Alt-Bild-Prüfung (LH-FA-CAP-008); sie
+# bleibt vom Aktivieren unberührt (LH-FA-CFG-001.a).
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE public.feed_mvp_flow (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_mvp_full (id int PRIMARY KEY, name text);
 ALTER TABLE public.feed_mvp_full REPLICA IDENTITY FULL;
-CREATE PUBLICATION pub_pgc_mvp FOR TABLE public.feed_mvp_flow, public.feed_mvp_full;
+CREATE TABLE public.feed_mvp_idle (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-mvp', 'MVP-Quelle');
-INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES
-  ('tbl-mvp-flow', 'src-mvp', 'public', 'feed_mvp_flow'),
-  ('tbl-mvp-full', 'src-mvp', 'public', 'feed_mvp_full');
-INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES
-  ('sv-mvp-flow', 'tbl-mvp-flow', 1),
-  ('sv-mvp-full', 'tbl-mvp-full', 1);
 SQL
 
 $COMPOSE up -d pg-change-feed >/dev/null
