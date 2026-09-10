@@ -106,16 +106,16 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
 - `pfad`: `tools/schema/nacharbeit-observability.sql:54`
   (`SELECT 'cdc_capture_lag', NULL, … FROM cdc.transaction`)
 - `befund`: Die View `cdc.metrics` liefert unter dem exakten
-  SPEC-009-Metriknamen `cdc_capture_lag` einen Persistenz-Zeit-Proxy
-  (`now() − max(committed_at)`, Pipeline-Frische) statt des in SPEC-009
+  `SPEC-009`-Metriknamen `cdc_capture_lag` einen Persistenz-Zeit-Proxy
+  (`now() − max(committed_at)`, Pipeline-Frische) statt des in `SPEC-009`
   definierten Quell-Commit-Abstands. Die Unterscheidung steht
   ausschließlich als SQL-Quellkommentar (Zeilen 23–32 derselben Datei) —
   nicht in der View-Ausgabe selbst (kein zweiter `metric_name`-Suffix,
   kein unterscheidendes Label). Der Datei-Kopfkommentar hält selbst
   fest: „ein Monitoring-System liest die Zeilen roh" — genau dieser
-  Leser sieht die Unterscheidung nie. SPEC-013s konkrete Schwellenwerte
+  Leser sieht die Unterscheidung nie. `SPEC-013`s konkrete Schwellenwerte
   sind an denselben Namen gebunden; die vom Slice-Plan §1 ausgeschlossene
-  „volle SPEC-013-Latenzschwellen-Durchsetzung" ist der naheliegende
+  „volle `SPEC-013`-Latenzschwellen-Durchsetzung" ist der naheliegende
   nächste Schritt, der diese Werte unverändert übernehmen würde.
 - `verifizierbar`: nein — semantische/Namens-Frage, kein bestehender
   Gate unterscheidet reale von genäherten Metrikwerten
