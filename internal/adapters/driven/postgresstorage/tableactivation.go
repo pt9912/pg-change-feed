@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"regexp"
 
 	"github.com/jackc/pgx/v5"
@@ -34,25 +33,29 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // Instanz die Quelle und den CDC-Speicher gleichermaßen (Abschnitt 1
 // Lastenheft) — die Bindungs-Zeilen der CDC-Referenztabellen (`SPEC-001`)
 // und die Publication der Quelle laufen über denselben Verbindungspool
-// (`LH-FA-CFG-001.a`).
+// (`LH-FA-CFG-001.a`). `log` trägt die strukturierte Protokollierung über
+// den injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) —
+// Default `outbound.NoopLog`.
 type TableActivationAdapter struct {
 	pool *pgxpool.Pool
+	log  outbound.LogPort
 }
 
 // NewTableActivation baut den Verbindungspool gegen die Instanz und
 // meldet eine nicht erreichbare Instanz als Fehler der Klasse `storage`
 // (`outbound.ErrStorage`, `SPEC-008`).
-func NewTableActivation(ctx context.Context, dsn string) (*TableActivationAdapter, error) {
+func NewTableActivation(ctx context.Context, dsn string, opts ...Option) (*TableActivationAdapter, error) {
+	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, o.log, err)
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, o.log, err)
 	}
-	slog.InfoContext(ctx, "tableactivation: verbunden")
-	return &TableActivationAdapter{pool: pool}, nil
+	o.log.Info(ctx, "tableactivation: verbunden")
+	return &TableActivationAdapter{pool: pool, log: o.log}, nil
 }
 
 // Close schließt den Verbindungspool.
@@ -77,7 +80,7 @@ func (a *TableActivationAdapter) TableExists(ctx context.Context, schema, table 
 		"SELECT count(*) FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
 		schema, table,
 	).Scan(&count); err != nil {
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
 	return count > 0, nil
 }
@@ -90,7 +93,7 @@ func (a *TableActivationAdapter) Registered(ctx context.Context, source model.So
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.SourceTable{}, false, nil
 		}
-		return model.SourceTable{}, false, storageFailure(err)
+		return model.SourceTable{}, false, storageFailure(ctx, a.log, err)
 	}
 	registered, err := model.NewSourceTable(model.SourceTableID(id), source, schema, table)
 	if err != nil {
@@ -116,7 +119,7 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 	}
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -126,19 +129,19 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 		table.Schema,
 		table.Table,
 	); err != nil {
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
 	if _, err := tx.Exec(ctx, queries.InsertSchemaVersion,
 		string(version.ID),
 		string(version.SourceTableID),
 		version.Version,
 	); err != nil {
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
-	slog.InfoContext(ctx, "tableactivation: Tabelle registriert",
+	a.log.Info(ctx, "tableactivation: Tabelle registriert",
 		"table_id", table.ID, "schema", table.Schema, "table", table.Table)
 	return true, nil
 }
@@ -151,25 +154,25 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 func (a *TableActivationAdapter) Unregister(ctx context.Context, table model.SourceTable) (outbound.ActivationRemoval, error) {
 	var hasChanges bool
 	if err := a.pool.QueryRow(ctx, queries.SelectSourceTableChanges, string(table.ID)).Scan(&hasChanges); err != nil {
-		return "", storageFailure(err)
+		return "", storageFailure(ctx, a.log, err)
 	}
 	if hasChanges {
 		return outbound.ActivationRetained, nil
 	}
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return "", storageFailure(err)
+		return "", storageFailure(ctx, a.log, err)
 	}
 	defer tx.Rollback(ctx)
 	if _, err := tx.Exec(ctx, queries.DeleteSchemaVersions, string(table.ID)); err != nil {
-		return "", storageFailure(err)
+		return "", storageFailure(ctx, a.log, err)
 	}
 	tag, err := tx.Exec(ctx, queries.DeleteSourceTable, string(table.ID))
 	if err != nil {
-		return "", storageFailure(err)
+		return "", storageFailure(ctx, a.log, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return "", storageFailure(err)
+		return "", storageFailure(ctx, a.log, err)
 	}
 	if tag.RowsAffected() == 0 {
 		return outbound.ActivationAbsent, nil
@@ -182,7 +185,7 @@ func (a *TableActivationAdapter) Unregister(ctx context.Context, table model.Sou
 func (a *TableActivationAdapter) List(ctx context.Context, source model.SourceID) ([]model.SourceTable, error) {
 	rows, err := a.pool.Query(ctx, queries.SelectSourceTables, string(source))
 	if err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, a.log, err)
 	}
 	defer rows.Close()
 
@@ -190,7 +193,7 @@ func (a *TableActivationAdapter) List(ctx context.Context, source model.SourceID
 	for rows.Next() {
 		var id, tableSource, schema, table string
 		if err := rows.Scan(&id, &tableSource, &schema, &table); err != nil {
-			return nil, storageFailure(err)
+			return nil, storageFailure(ctx, a.log, err)
 		}
 		entry, err := model.NewSourceTable(model.SourceTableID(id), model.SourceID(tableSource), schema, table)
 		if err != nil {
@@ -199,7 +202,7 @@ func (a *TableActivationAdapter) List(ctx context.Context, source model.SourceID
 		tables = append(tables, entry)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, a.log, err)
 	}
 	return tables, nil
 }
@@ -222,12 +225,12 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 				fmt.Sprintf("CREATE PUBLICATION %s FOR TABLE %s WITH (publish = 'insert, update, delete')",
 					publicationName, qualified),
 			); err != nil {
-				return storageFailure(err)
+				return storageFailure(ctx, a.log, err)
 			}
-			slog.InfoContext(ctx, "tableactivation: Publication angelegt", "publication", publication, "table", qualified)
+			a.log.Info(ctx, "tableactivation: Publication angelegt", "publication", publication, "table", qualified)
 			return nil
 		}
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	var member int
 	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
@@ -235,12 +238,12 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 			if _, err := a.pool.Exec(ctx,
 				fmt.Sprintf("ALTER PUBLICATION %s ADD TABLE %s", publicationName, qualified),
 			); err != nil {
-				return storageFailure(err)
+				return storageFailure(ctx, a.log, err)
 			}
-			slog.InfoContext(ctx, "tableactivation: Tabelle zur Publication hinzugefügt", "publication", publication, "table", qualified)
+			a.log.Info(ctx, "tableactivation: Tabelle zur Publication hinzugefügt", "publication", publication, "table", qualified)
 			return nil
 		}
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	return nil
 }
@@ -258,19 +261,19 @@ func (a *TableActivationAdapter) Unpublish(ctx context.Context, publication, sch
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	var member int
 	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	if _, err := a.pool.Exec(ctx,
 		fmt.Sprintf("ALTER PUBLICATION %s DROP TABLE %s", publicationName, qualified),
 	); err != nil {
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	return nil
 }
@@ -294,7 +297,7 @@ func (a *TableActivationAdapter) Published(ctx context.Context, publication, sch
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
-		return false, storageFailure(err)
+		return false, storageFailure(ctx, a.log, err)
 	}
 	return true, nil
 }

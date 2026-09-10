@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"math"
 
 	"github.com/jackc/pgx/v5"
@@ -25,26 +24,30 @@ import (
 // (pgx/v5) und die PostgreSQL-Typen bleiben Adapterdetail (`ADR-0032`,
 // rein Go, CGO-frei); die Tabellenform trägt der d-migrate-Rollout
 // (`ADR-0043`) — die DDL des Store-Adapters (schema.sql) trägt die
-// Consumer-State-Tabellen nicht.
+// Consumer-State-Tabellen nicht. `log` trägt die strukturierte
+// Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
+// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
 type PostgresConsumerStateAdapter struct {
 	pool *pgxpool.Pool
+	log  outbound.LogPort
 }
 
 // NewConsumerState baut den Verbindungspool gegen die Instanz, die Quelle
 // und den CDC-Speicher gleichermaßen trägt (Abschnitt 1 Lastenheft), und
 // meldet eine nicht erreichbare Instanz als Fehler der Klasse `storage`
 // (`outbound.ErrConsumerStateStorage`, `SPEC-008`).
-func NewConsumerState(ctx context.Context, dsn string) (*PostgresConsumerStateAdapter, error) {
+func NewConsumerState(ctx context.Context, dsn string, opts ...Option) (*PostgresConsumerStateAdapter, error) {
+	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		return nil, stateStorageFailure(err)
+		return nil, stateStorageFailure(ctx, o.log, err)
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		return nil, stateStorageFailure(err)
+		return nil, stateStorageFailure(ctx, o.log, err)
 	}
-	slog.InfoContext(ctx, "consumerstate: verbunden")
-	return &PostgresConsumerStateAdapter{pool: pool}, nil
+	o.log.Info(ctx, "consumerstate: verbunden")
+	return &PostgresConsumerStateAdapter{pool: pool, log: o.log}, nil
 }
 
 // stateStorageFailure trägt die Übersetzungsverantwortung dieses Adapters
@@ -53,11 +56,12 @@ func NewConsumerState(ctx context.Context, dsn string) (*PostgresConsumerStateAd
 // (`outbound.ErrConsumerStateStorage`) — die Klasse-Aktion des
 // ChangeStore-Sentinels (kein Source-ACK, `LH-QA-REL-001.a`) trägt dieser
 // Adapter nicht; die technische Ursache bleibt über die zweite Wrappung
-// lesbar. Derselbe Aufruf trägt den strukturierten Fehler-Log
-// (`LH-QA-OPS-004`), aus demselben Grund ohne `context.Context`-Parameter
-// wie `storageFailure` (`store.go`).
-func stateStorageFailure(cause error) error {
-	slog.Error("consumerstate: Datenbankfehler", "error", cause)
+// lesbar. Derselbe Aufruf trägt den strukturierten Fehler-Log über den
+// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`), aus demselben
+// Grund mit explizitem `ctx`/`log`-Parameter wie `storageFailure`
+// (`store.go`).
+func stateStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
+	log.Error(ctx, "consumerstate: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrConsumerStateStorage, cause)
 }
 
@@ -82,11 +86,11 @@ func (a *PostgresConsumerStateAdapter) Register(ctx context.Context, consumer mo
 	}
 	tag, err := a.pool.Exec(ctx, queries.InsertConsumer, string(valid.ID), valid.Name)
 	if err != nil {
-		return false, stateStorageFailure(err)
+		return false, stateStorageFailure(ctx, a.log, err)
 	}
 	registered := tag.RowsAffected() == 1
 	if registered {
-		slog.InfoContext(ctx, "consumerstate: Consumer registriert", "consumer_id", valid.ID)
+		a.log.Info(ctx, "consumerstate: Consumer registriert", "consumer_id", valid.ID)
 	}
 	return registered, nil
 }
@@ -111,7 +115,7 @@ func (a *PostgresConsumerStateAdapter) Position(ctx context.Context, consumer mo
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.ConsumerPosition{}, nil
 		}
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 	position, err := mapper.ToPosition(source, offset)
 	if err != nil {
@@ -145,7 +149,7 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -154,14 +158,14 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 		if errors.Is(err, pgx.ErrNoRows) {
 			return model.ConsumerPosition{}, outbound.ErrConsumerUnregistered
 		}
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 
 	var source string
 	var offset int64
 	err = tx.QueryRow(ctx, queries.SelectConsumerPositionLocked, string(position.ConsumerID)).Scan(&source, &offset)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 	stored, err := storedPosition(position.ConsumerID, source, offset, err)
 	if err != nil {
@@ -176,25 +180,29 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 		string(carried.Position.SourceID),
 		int64(carried.Position.Offset),
 	); err != nil {
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return model.ConsumerPosition{}, stateStorageFailure(err)
+		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
-	slog.DebugContext(ctx, "consumerstate: Position bestätigt",
+	a.log.Debug(ctx, "consumerstate: Position bestätigt",
 		"consumer_id", carried.ConsumerID, "offset", carried.Position.Offset)
 	return carried, nil
 }
 
 // storedPosition trägt den gesperrten Fortschritt aus dem Lese: eine
 // Zeile liest sich als Quellposition, ihre Abwesenheit als Nullwert des
-// Consumers — der Träger der ersten Bestätigung.
+// Consumers — der Träger der ersten Bestätigung. `stateStorageFailure`
+// hier läuft ohne Port-Log (kein `log`/`ctx` in dieser Funktionssignatur):
+// der einzige Fehlerpfad ist ein bereits von `Acknowledge` gelesener
+// Scan-Fehler, dessen Log-Aufruf am Lese-Aufruf selbst nicht dupliziert
+// werden soll — siehe Aufrufstelle.
 func storedPosition(consumer model.ConsumerID, source string, offset int64, scanErr error) (model.ConsumerPosition, error) {
 	if errors.Is(scanErr, pgx.ErrNoRows) {
 		return model.NewConsumerPosition(consumer)
 	}
 	if scanErr != nil {
-		return model.ConsumerPosition{}, stateStorageFailure(scanErr)
+		return model.ConsumerPosition{}, fmt.Errorf("%w: %w", outbound.ErrConsumerStateStorage, scanErr)
 	}
 	stored, err := mapper.ToPosition(source, offset)
 	if err != nil {
@@ -214,18 +222,18 @@ func (a *PostgresConsumerStateAdapter) Remove(ctx context.Context, consumer mode
 	}
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return false, stateStorageFailure(err)
+		return false, stateStorageFailure(ctx, a.log, err)
 	}
 	defer tx.Rollback(ctx)
 	if _, err := tx.Exec(ctx, queries.DeleteConsumerPosition, string(consumer)); err != nil {
-		return false, stateStorageFailure(err)
+		return false, stateStorageFailure(ctx, a.log, err)
 	}
 	tag, err := tx.Exec(ctx, queries.DeleteConsumer, string(consumer))
 	if err != nil {
-		return false, stateStorageFailure(err)
+		return false, stateStorageFailure(ctx, a.log, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return false, stateStorageFailure(err)
+		return false, stateStorageFailure(ctx, a.log, err)
 	}
 	return tag.RowsAffected() == 1, nil
 }

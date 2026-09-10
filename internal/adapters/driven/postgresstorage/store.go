@@ -3,7 +3,6 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,26 +18,31 @@ import (
 // `ChangeStorePort` (`ADR-0009`, `ADR-0010`): er persistiert committed
 // CDC-Transaktionen und liest persistierte Changes gegen die CDC-Tabellen
 // (`SPEC-001`). Der Treiber (pgx/v5) und die PostgreSQL-Typen bleiben
-// Adapterdetail (`ADR-0032`, rein Go, CGO-frei).
+// Adapterdetail (`ADR-0032`, rein Go, CGO-frei). `log` trägt die
+// strukturierte Protokollierung über den injizierten `LogPort`
+// (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`,
+// kein Paket-globaler Logging-Zustand.
 type PostgresChangeStoreAdapter struct {
 	pool *pgxpool.Pool
+	log  outbound.LogPort
 }
 
 // New baut den Verbindungspool gegen die CDC-Instanz und meldet eine
 // nicht erreichbare Instanz als Fehler der Klasse `storage`
 // (`outbound.ErrStorage`, `SPEC-008`) — ein Speicher, der nicht erreichbar
 // ist, trägt keine Persistenz; der Träger ist storageFailure.
-func New(ctx context.Context, dsn string) (*PostgresChangeStoreAdapter, error) {
+func New(ctx context.Context, dsn string, opts ...Option) (*PostgresChangeStoreAdapter, error) {
+	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, o.log, err)
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, o.log, err)
 	}
-	slog.InfoContext(ctx, "changestore: verbunden")
-	return &PostgresChangeStoreAdapter{pool: pool}, nil
+	o.log.Info(ctx, "changestore: verbunden")
+	return &PostgresChangeStoreAdapter{pool: pool, log: o.log}, nil
 }
 
 // storageFailure trägt die Übersetzungsverantwortung des Adapters
@@ -46,13 +50,13 @@ func New(ctx context.Context, dsn string) (*PostgresChangeStoreAdapter, error) {
 // Klasse `storage` — Application und Betrieb klassifizieren über
 // `errors.Is(err, outbound.ErrStorage)` und kennen keinen Treibertyp; die
 // technische Ursache bleibt über die zweite Wrappung lesbar. Derselbe
-// Aufruf trägt den strukturierten Fehler-Log (`LH-QA-OPS-004`) — der
-// einzige Übersetzungspunkt dieses Adapters *und* von
-// `tableactivation.go` (gleiches Paket), kein Log je Aufrufstelle. Ohne
-// `context.Context`-Parameter: `slog.Error` statt `ErrorContext`, damit
-// die Signatur an allen bestehenden Aufrufstellen unverändert bleibt.
-func storageFailure(cause error) error {
-	slog.Error("postgresstorage: Datenbankfehler", "error", cause)
+// Aufruf trägt den strukturierten Fehler-Log über den injizierten
+// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — der einzige
+// Übersetzungspunkt dieses Adapters *und* von `tableactivation.go`
+// (gleiches Paket), kein Log je Aufrufstelle; `log`/`ctx` reicht jeder
+// Aufrufer explizit durch (Konstruktoren: `o.log`, Methoden: `a.log`).
+func storageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
+	log.Error(ctx, "postgresstorage: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrStorage, cause)
 }
 
@@ -96,7 +100,7 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 
 	tx, err := a.pool.Begin(ctx)
 	if err != nil {
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -105,7 +109,7 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 		transactionRow.SourceID,
 		transactionRow.CommitPosition,
 	); err != nil {
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
 	for _, row := range changeRows {
 		if _, err := tx.Exec(ctx, queries.InsertChange,
@@ -118,13 +122,13 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 			mapper.JSONImage(row.NewData),
 			row.SchemaVersion,
 		); err != nil {
-			return storageFailure(err)
+			return storageFailure(ctx, a.log, err)
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return storageFailure(err)
+		return storageFailure(ctx, a.log, err)
 	}
-	slog.DebugContext(ctx, "changestore: Transaktion persistiert",
+	a.log.Debug(ctx, "changestore: Transaktion persistiert",
 		"transaction_id", transactionRow.TransactionID, "changes", len(changeRows))
 	return nil
 }
@@ -149,11 +153,11 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 		query.Limit,
 	)
 	if err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, a.log, err)
 	}
 	defer rows.Close()
 
-	records, err := collectRecords(rows)
+	records, err := collectRecords(ctx, a.log, rows)
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +184,10 @@ func tableArgument(table *model.SourceTableID) any {
 // collectRecords trägt die Ergebnis-Zeilen in ChangeRecords; die
 // Commit-Position kommt von der Transaktion, der Change aus seiner Zeile.
 // Lese- und Scan-Fehler des Treibers tragen die Klasse `storage`; die
-// Domänen-Konstruktoren tragen ihre Invarianten-Sentinels selbst.
-func collectRecords(rows pgx.Rows) ([]outbound.ChangeRecord, error) {
+// Domänen-Konstruktoren tragen ihre Invarianten-Sentinels selbst. `ctx`/
+// `log` reicht `ReadChanges` durch — diese Funktion trägt keinen
+// eigenen Empfänger.
+func collectRecords(ctx context.Context, log outbound.LogPort, rows pgx.Rows) ([]outbound.ChangeRecord, error) {
 	records := make([]outbound.ChangeRecord, 0)
 	for rows.Next() {
 		var row mapper.ChangeRow
@@ -199,7 +205,7 @@ func collectRecords(rows pgx.Rows) ([]outbound.ChangeRecord, error) {
 			&row.NewData,
 			&row.SchemaVersion,
 		); err != nil {
-			return nil, storageFailure(err)
+			return nil, storageFailure(ctx, log, err)
 		}
 		position, err := mapper.ToPosition(source, commitPosition)
 		if err != nil {
@@ -212,7 +218,7 @@ func collectRecords(rows pgx.Rows) ([]outbound.ChangeRecord, error) {
 		records = append(records, outbound.ChangeRecord{Position: position, Change: change})
 	}
 	if err := rows.Err(); err != nil {
-		return nil, storageFailure(err)
+		return nil, storageFailure(ctx, log, err)
 	}
 	return records, nil
 }

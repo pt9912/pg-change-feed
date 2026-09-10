@@ -3,7 +3,6 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -19,9 +18,12 @@ import (
 // fort. Der Treiber (pgx/v5) bleibt Adapterdetail (`ADR-0032`, rein Go,
 // CGO-frei); die Tabellenform trägt der d-migrate-Rollout (`ADR-0043`) —
 // die DDL des Store-Adapters (schema.sql) trägt sie nicht (dieselbe
-// Abgrenzung wie bei den Consumer-State-Tabellen).
+// Abgrenzung wie bei den Consumer-State-Tabellen). `log` trägt die
+// strukturierte Protokollierung über den injizierten `LogPort`
+// (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
 type PostgresHeartbeatAdapter struct {
 	pool *pgxpool.Pool
+	log  outbound.LogPort
 }
 
 // NewHeartbeat baut den Verbindungspool gegen die Instanz, die Quelle und
@@ -31,17 +33,18 @@ type PostgresHeartbeatAdapter struct {
 // Store- und Aktivierungs-Pool getrennt (`internal/bootstrap/wiring.go`)
 // — der periodische Schreib-Zug teilt keine Verbindung mit der
 // Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012 §6-Risiko).
-func NewHeartbeat(ctx context.Context, dsn string) (*PostgresHeartbeatAdapter, error) {
+func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHeartbeatAdapter, error) {
+	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
-		return nil, heartbeatStorageFailure(err)
+		return nil, heartbeatStorageFailure(ctx, o.log, err)
 	}
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
-		return nil, heartbeatStorageFailure(err)
+		return nil, heartbeatStorageFailure(ctx, o.log, err)
 	}
-	slog.InfoContext(ctx, "heartbeat: verbunden")
-	return &PostgresHeartbeatAdapter{pool: pool}, nil
+	o.log.Info(ctx, "heartbeat: verbunden")
+	return &PostgresHeartbeatAdapter{pool: pool, log: o.log}, nil
 }
 
 // heartbeatStorageFailure trägt die Übersetzungsverantwortung dieses
@@ -49,10 +52,11 @@ func NewHeartbeat(ctx context.Context, dsn string) (*PostgresHeartbeatAdapter, e
 // Grenze in die Klasse `storage` über den eigenen Sentinel des Ports
 // (`outbound.ErrHeartbeatStorage`) — die technische Ursache bleibt über
 // die zweite Wrappung lesbar. Derselbe Aufruf trägt den strukturierten
-// Fehler-Log (`LH-QA-OPS-004`), aus demselben Grund ohne
-// `context.Context`-Parameter wie `storageFailure` (`store.go`).
-func heartbeatStorageFailure(cause error) error {
-	slog.Error("heartbeat: Datenbankfehler", "error", cause)
+// Fehler-Log über den injizierten `LogPort` (`LH-QA-OPS-004`,
+// `ADR-0024`), aus demselben Grund mit explizitem `ctx`/`log`-Parameter
+// wie `storageFailure` (`store.go`).
+func heartbeatStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
+	log.Error(ctx, "heartbeat: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrHeartbeatStorage, cause)
 }
 
@@ -75,9 +79,9 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 		return domainerrors.ErrEmptyIdentifier
 	}
 	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
-		return heartbeatStorageFailure(err)
+		return heartbeatStorageFailure(ctx, a.log, err)
 	}
-	slog.DebugContext(ctx, "heartbeat: Lebenszeichen geschrieben", "source", source)
+	a.log.Debug(ctx, "heartbeat: Lebenszeichen geschrieben", "source", source)
 	return nil
 }
 
@@ -95,8 +99,8 @@ func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.Sourc
 		return err
 	}
 	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
-		return heartbeatStorageFailure(err)
+		return heartbeatStorageFailure(ctx, a.log, err)
 	}
-	slog.WarnContext(ctx, "heartbeat: Fehlerzustand gemeldet", "source", source, "class", validated)
+	a.log.Warn(ctx, "heartbeat: Fehlerzustand gemeldet", "source", source, "class", validated)
 	return nil
 }
