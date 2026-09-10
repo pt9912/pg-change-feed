@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/jackc/pglogrepl"
@@ -124,6 +125,8 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, fmt.Errorf("%w: START_REPLICATION: %v", ErrReplication, err)
 	}
+	slog.InfoContext(ctx, "replication: Stream gestartet",
+		"source", cfg.Source, "publication", cfg.Publication, "slot", cfg.Slot)
 	return &Stream{
 		conn:      conn,
 		decoder:   decode.NewDecoder(),
@@ -218,6 +221,7 @@ func ensureSlot(ctx context.Context, conn *pgconn.PgConn, slot string) (pglogrep
 		if err != nil {
 			return 0, fmt.Errorf("%w: confirmed_flush_lsn %q: %v", ErrReplication, values[0], err)
 		}
+		slog.DebugContext(ctx, "replication: bestehender Slot fortgesetzt", "slot", slot, "start_lsn", startLSN)
 		return startLSN, nil
 	}
 	created, err := pglogrepl.CreateReplicationSlot(ctx, conn, slot, outputPlugin, pglogrepl.CreateReplicationSlotOptions{
@@ -231,6 +235,7 @@ func ensureSlot(ctx context.Context, conn *pgconn.PgConn, slot string) (pglogrep
 	if err != nil {
 		return 0, fmt.Errorf("%w: ConsistentPoint %q: %v", ErrReplication, created.ConsistentPoint, err)
 	}
+	slog.InfoContext(ctx, "replication: Slot angelegt", "slot", slot, "start_lsn", startLSN)
 	return startLSN, nil
 }
 
@@ -264,11 +269,22 @@ func (s *Stream) Conn() *pgconn.PgConn {
 // bricht den Stream ab — Persist-before-ACK und das Verbot des stillen
 // Überspringens enden an keiner stillen Fortsetzung (`LH-QA-REL-001.a`,
 // `SPEC-008`).
-func (s *Stream) Run(ctx context.Context) error {
+func (s *Stream) Run(ctx context.Context) (err error) {
 	if s.capture == nil {
 		return fmt.Errorf("%w: CaptureInboundPort fehlt", ErrConfiguration)
 	}
 	defer s.conn.Close(ctx)
+	// Ein Log je Rückkehr des Stream-Laufs (`LH-QA-OPS-004`) — der
+	// benannte Rückgabewert `err` trägt den Ausgang über alle
+	// `return`-Stellen unten hinweg zu diesem einen `defer`, dasselbe
+	// Muster wie `bootstrap.Run`/`reportFault`.
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "replication: Stream beendet mit Fehler", "error", err)
+			return
+		}
+		slog.InfoContext(ctx, "replication: Stream regulär beendet")
+	}()
 	for {
 		rawMessage, err := s.conn.ReceiveMessage(ctx)
 		if err != nil {
