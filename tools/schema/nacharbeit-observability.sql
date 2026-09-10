@@ -11,13 +11,25 @@
 -- Abgedeckt (Minimum, nicht vollständig — Slice-Plan slice-011 §1
 -- Ausgrenzung): cdc_transactions_total, cdc_changes_processed,
 -- cdc_oldest_change_age_seconds, cdc_consumer_position{consumer},
--- cdc_consumer_lag{consumer}. Nicht abgedeckt: cdc_changes_pending,
--- cdc_capture_lag, cdc_errors_total, cdc_wal_retention_bytes,
+-- cdc_consumer_lag{consumer}. Seit slice-013 zusätzlich cdc_capture_lag —
+-- als dokumentierte Näherung, siehe Grenze unten. Nicht abgedeckt:
+-- cdc_changes_pending, cdc_errors_total, cdc_wal_retention_bytes,
 -- cdc_storage_bytes (SPEC-009-Zeilen) — sie brauchen entweder
--- persistierten Zustand, den dieses Schema noch nicht trägt (Fehler-Log,
--- Quell-Commit-Zeitstempel) oder Systemkatalog-Zugriffe außerhalb des
--- cdc-Schemas (pg_stat_replication, Relationsgrößen), die die
--- Least-Privilege-Fläche von cdc_reader unnötig erweitern würden; Folge-Slice.
+-- persistierten Zustand, den dieses Schema noch nicht trägt (Fehler-Log)
+-- oder Systemkatalog-Zugriffe außerhalb des cdc-Schemas
+-- (pg_stat_replication, Relationsgrößen), die die Least-Privilege-Fläche
+-- von cdc_reader unnötig erweitern würden; Folge-Slice.
+--
+-- Grenze (cdc_capture_lag, slice-013 §4 Rückführung): `committed_at`
+-- trägt die Persistenz-Zeit der Instanz (DB-DEFAULT now(), s.
+-- tools/schema/schema.yaml), nicht den tatsächlichen Quell-Commit-
+-- Zeitpunkt aus dem WAL — pgoutput trägt ihn zwar bereits
+-- (BEGIN/COMMIT-Nachrichten, github.com/jackc/pglogrepl), aber ihn bis in
+-- diese Persistenz zu spiegeln berührt zusätzlich die
+-- Replication-Adapter-Schicht (mehr als zwei Schichten, Folge-Slice). Der
+-- Wert unten misst deshalb nur, wie lange die letzte persistierte
+-- Transaktion zurückliegt (Pipeline-Frische) — kein LH-FA-ADM-004-Abstand
+-- zur Quelländerung.
 --
 -- Der Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) liegt bewusst nicht
 -- in dieser Datei: eine reine Lese-View auf bereits persistierten Zustand
@@ -37,6 +49,9 @@ SELECT 'cdc_changes_processed', NULL, count(*)::numeric
 FROM cdc.change
 UNION ALL
 SELECT 'cdc_oldest_change_age_seconds', NULL, COALESCE(extract(epoch FROM (now() - min(committed_at))), 0)::numeric
+FROM cdc.transaction
+UNION ALL
+SELECT 'cdc_capture_lag', NULL, COALESCE(extract(epoch FROM (now() - max(committed_at))), 0)::numeric
 FROM cdc.transaction
 UNION ALL
 SELECT 'cdc_consumer_position', cp.consumer_id, cp.acknowledged_position::numeric

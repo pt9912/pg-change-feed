@@ -12,10 +12,16 @@
 -- schema-rollout-Lauf nach nacharbeit-roles.sql (Makefile) — der
 -- Rollen-Schritt kann cdc.heartbeat deshalb nicht grants, die View
 -- grantet sich selbst an cdc_reader, wie zuvor schon cdc.metrics.
+--
+-- error_class (slice-013, LH-FA-ADM-003, LH-QA-REL-003) projiziert den
+-- zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist
+-- Normalbetrieb und von einer der sieben ADR-0023-Kategorien
+-- unterscheidbar, kein eigenes Fehler-Log.
 CREATE OR REPLACE VIEW cdc.heartbeat AS
 SELECT
     source_id,
     heartbeat_at,
+    error_class,
     extract(epoch FROM (now() - heartbeat_at))::numeric AS age_seconds
 FROM cdc.process_heartbeat;
 
