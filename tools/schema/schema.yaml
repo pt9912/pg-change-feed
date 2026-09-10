@@ -6,9 +6,11 @@
 # Schema-Form (ADR-0043, Folgepflicht).
 #
 # Umfang: die Store-Seite — source, source_table, schema_version,
-# transaction, change (SPEC-001, SPEC-002). consumer, consumer_position und
-# capture_state trägt dieses Modell nicht; ihre Ports liegen außerhalb des
-# Store-Adapters (gleiche Grenze wie in der DDL).
+# transaction, change (SPEC-001, SPEC-002) — und die Consumer-State-Tabellen
+# consumer, consumer_position (SPEC-001, LH-FA-CON-001…006); ihr Port
+# (ConsumerStatePort) liegt außerhalb des Store-Adapters, die Tabellenform
+# trägt dieses Modell wie die übrigen. capture_state trägt dieses Modell
+# nicht; sein Port (Betriebs-/Capture-Zustand) ist nicht real.
 #
 # Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
 # trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
@@ -123,3 +125,28 @@ tables:
       - name: uq_change_transaction_sequence
         type: unique
         columns: [transaction_id, sequence]
+
+  consumer:
+    description: "Registrierter Consumer (SPEC-001; LH-FA-CON-001)"
+    columns:
+      consumer_id: { type: text, required: true }
+      name: { type: text, required: true }
+    primary_key: [consumer_id]
+
+  consumer_position:
+    description: "Bestätigte Verarbeitungsposition je Consumer (SPEC-001; LH-FA-CON-003). Die Spalte trägt den bestätigten Offset der gebundenen Quelle; ihr Name entgeht dem reservierten Wort `position` — der Katalog kanonisiert es mit Anführungszeichen, der textliche Vergleich des Rollouts läse Drift."
+    columns:
+      consumer_id:
+        type: text
+        required: true
+        references: { table: consumer, column: consumer_id }
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      acknowledged_position: { type: biginteger, required: true }
+    primary_key: [consumer_id]
+    constraints:
+      - name: chk_consumer_position_position_positive
+        type: check
+        expression: "(acknowledged_position > 0)"
