@@ -12,6 +12,20 @@
 # trägt dieses Modell wie die übrigen. capture_state trägt dieses Modell
 # nicht; sein Port (Betriebs-/Capture-Zustand) ist nicht real.
 #
+# Die drei Views (active_tables, consumer_status, changes) tragen den
+# SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
+# als eigene Driving-Adapter-Fläche (ARC-005, „SQL-Funktionen/Views"): sie
+# lesen dieselben Tabellen wie der Go-Store-Adapter, ersetzen ihn aber
+# nicht — Bereich/Limit/Filter tragen WHERE/LIMIT des lesenden SQL-Aufrufs,
+# nicht die View selbst. active_tables bleibt bewusst auf die Bindungs- und
+# Versions-Zeilen beschränkt und bildet die Publication-Mitgliedschaft
+# (LH-FA-CFG-003 „aktiviert" vs. „retained") nicht nach — diese Prüfung
+# bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Die drei
+# Views tragen dieselbe benannte Grenze wie `chk_change_operation` unten
+# (roher SQL-Text, `raw-sql-text-drift`) und leben deshalb nicht im
+# `views:`-Knoten dieser Datei, sondern als Nacharbeit
+# (tools/schema/nacharbeit-views.sql).
+#
 # Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
 # trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
 # Rollout-Kontext: der Rollout-Lauf führt current_schema() über
@@ -35,6 +49,17 @@
 # CHECK-Ausdrücke, die wie die verbleibenden drei konvergieren, tragen die
 # Katalogform wortgleich (Klammerpaar eingeschlossen) — der Vergleich ist
 # textlich, nicht semantisch.
+#
+# Benannte Grenze — die drei Views: derselbe `raw-sql-text-drift`-Befund
+# trifft `CREATE VIEW`: PostgreSQL deparsed die gespeicherte Katalogform
+# über `pg_get_viewdef` (Alias-Präfixe fallen dort, wo sie eindeutig sind,
+# Einrückung und Klammerung ändern sich), und der Post-execute-Vergleich
+# liest das als Drift gegen die Autorenform — unabhängig von der
+# Query-Komplexität, am Erststand geprüft (`docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`).
+# Dieselbe Ausweichform wie beim CHECK: die drei Views leben als
+# berichtete manuelle Nacharbeit in `tools/schema/nacharbeit-views.sql`,
+# als Schritt im `make schema-rollout`-Lauf — nicht im `views:`-Knoten
+# dieser Datei.
 schema_format: "1.0"
 name: "cdc"
 version: "1.0.0"

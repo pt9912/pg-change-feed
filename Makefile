@@ -88,18 +88,21 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
 
 # Der Rollout trägt die CDC-Schema-Form vollständig — der CHECK über der
-# Operation läuft als berichtete manuelle Nacharbeit mit (ADR-0043,
-# Re-Evaluierungs-Trigger; die Grenze steht in tools/schema/schema.yaml und
-# tools/schema/nacharbeit-operation-check.sql): d-migrate 1.2.0 konvergiert
-# am CHECK-Ausdruck mit String-Literalen nicht, der Constraint lebt in
-# diesem psql-Schritt. Der Schritt zielt auf die frische Instanz des
-# Rollout-Laufs; ein Lauf gegen eine mit der Nacharbeit bestückte Instanz
-# scheitert an der Katalogform des Constraints (E012) — die Runner-Kette
+# Operation und die drei SQL-Views (LH-FA-SST-002) laufen als berichtete
+# manuelle Nacharbeit mit (ADR-0043, Re-Evaluierungs-Trigger; die Grenze
+# steht in tools/schema/schema.yaml, tools/schema/nacharbeit-operation-check.sql
+# und tools/schema/nacharbeit-views.sql): d-migrate 1.2.0 konvergiert weder
+# am CHECK-Ausdruck mit String-Literalen noch an der Katalogform eines
+# `CREATE VIEW` (`pg_get_viewdef` weicht von der Autorenform ab) — beide
+# leben in diesen psql-Schritten. Die Schritte zielen auf die frische
+# Instanz des Rollout-Laufs; ein Lauf gegen eine mit der Nacharbeit
+# bestückte Instanz scheitert an der Katalogform (E012) — die Runner-Kette
 # (tools/harness/run-integration-tests.sh) räumt die Umgebung vorher ab.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-operation-check.sql
+	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-views.sql
 
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'

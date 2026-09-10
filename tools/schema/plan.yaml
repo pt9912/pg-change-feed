@@ -2,7 +2,7 @@
   "status": "ok",
   "exitCode": 0,
   "source": "tools/schema/schema.yaml",
-  "target": "postgres://postgres:***@cdc-test-postgres:5432/cdc?sslmode=disable",
+  "target": "postgres://cdc:***@cdc-store-test-pg:5432/cdc_test?sslmode=disable",
   "dialect": "POSTGRESQL",
   "planOnly": false,
   "blockers": [],
