@@ -66,6 +66,19 @@ services:
     # Fehlerklassen-Tabelle (Erneut versuchen mit begrenztem Backoff)
     # trägt dieser Vertrag nicht.
     restart: "no"
+    # Health-Endpoint per Heartbeat (LH-FA-ADM-002, LH-QA-OPS-002,
+    # slice-012): der Prozess selbst befragt cdc.heartbeat über
+    # `--healthcheck` (Binary-CMD statt CMD-SHELL — das distroless
+    # Runtime-Image trägt weder Shell noch psql, Dockerfile) und meldet
+    # den Zustand über den Exit-Code (bootstrap.Healthcheck). Vorher
+    # (kein Healthcheck-Block) meldete Compose nur den Prozess-Start, kein
+    # Lebenszeichen des laufenden Captures.
+    healthcheck:
+      test: ["CMD", "/pg-change-feed", "--healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
     networks:
       - cdc-test
 

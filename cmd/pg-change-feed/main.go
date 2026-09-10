@@ -22,8 +22,26 @@ func main() {
 		fmt.Printf("pg-change-feed %s\n", version)
 		return
 	}
+	if len(os.Args) == 2 && os.Args[1] == "--healthcheck" {
+		// Der Compose-Healthcheck des Feed-Containers (`compose.yaml`,
+		// slice-012, `LH-FA-ADM-002`, `LH-QA-OPS-002`): das Runtime-Image
+		// ist distroless (kein Shell, kein `psql`, Dockerfile) — der
+		// einzige Aufruf, den Compose innerhalb dieses Containers
+		// ausführen kann, ist das Binary selbst (`CMD`-Form ohne Shell).
+		// Dieselben Umgebungs-Vorbedingungen wie der reguläre Lauf
+		// (`ConfigFromEnv`) tragen DSN und Quelle; Publication/Slot/
+		// Tabellen bleiben ungenutzt, die Vorbedingungsprüfung teilt sich
+		// beide Läufe trotzdem, statt eine zweite Lese-Funktion zu
+		// pflegen.
+		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(bootstrap.Healthcheck(context.Background(), cfg.DSN, cfg.Source))
+	}
 	if len(os.Args) > 1 {
-		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version zeigt den Lieferstand")
+		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand")
 		os.Exit(2)
 	}
 	// Der Lauf endet kontrolliert auf SIGINT/SIGTERM: der Stream-Lauf

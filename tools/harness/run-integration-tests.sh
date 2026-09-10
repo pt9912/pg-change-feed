@@ -102,6 +102,26 @@ if [ "$wired" -ne 1 ]; then
   exit 1
 fi
 
+# Compose-Healthcheck-Vertrag (LH-FA-ADM-002, LH-QA-OPS-002, slice-012):
+# der Feed-Container befragt cdc.heartbeat über seinen eigenen
+# `--healthcheck`-Ausgang (compose.yaml); dieser Lauf belegt den
+# End-zu-Ende-Vertrag am realen Docker-Health-Status statt nur am
+# Binary-Exit-Code (das gepinnte Toolchain-Image trägt Healthcheck-Belege
+# nicht direkt).
+healthy=0
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  if [ "$health" = "healthy" ]; then
+    healthy=1
+    break
+  fi
+  sleep 1
+done
+if [ "$healthy" -ne 1 ]; then
+  echo "run-integration-tests: Feed-Container meldet Compose-Health-Status ${health:-fehlt}, wollen healthy (cdc.heartbeat-Alter unter der Schwelle)" >&2
+  exit 1
+fi
+
 # Modul-Cache befüllen (braucht Netz); der Testlauf selbst trägt den DSN
 # über das Compose-Netz und braucht sonst kein Netz.
 docker run --rm --network "$NETWORK" \
