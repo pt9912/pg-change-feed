@@ -60,13 +60,35 @@ var _ outbound.HeartbeatPort = (*PostgresHeartbeatAdapter)(nil)
 
 // Beat trägt die Lebenszeichen-Zeile der Quelle fort (UPSERT): der
 // Zeitstempel trägt die Instanzzeit der Speicherseite; eine erneute
-// Quelle überschreibt den vorigen Zeitstempel, keine zweite Zeile.
-// Treiber-Fehler gehen in die Klasse `storage` (heartbeatStorageFailure).
+// Quelle überschreibt den vorigen Zeitstempel, keine zweite Zeile. Ein
+// zuvor gemeldeter Fehlerzustand (Fault) geht dabei verloren — bewusst:
+// der nächste erfolgreiche Beat ist das Zeichen, dass die Erfassung
+// wieder normal läuft (`LH-FA-ADM-003` Boundary). Treiber-Fehler gehen in
+// die Klasse `storage` (heartbeatStorageFailure).
 func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.SourceID) error {
 	if source == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
 	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
+		return heartbeatStorageFailure(err)
+	}
+	return nil
+}
+
+// Fault trägt den zuletzt beobachteten Fehlerzustand der Quelle fort
+// (`slice-013`, `LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Zeile und
+// derselbe Zeitstempel-Mechanismus wie Beat, nur mit Klasse. Eine leere
+// Quelle oder eine Klasse außerhalb der sieben `ADR-0023`-Kategorien
+// erreicht keinen SQL-Aufruf (Port-Grenze, wie bei Beat).
+func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error {
+	if source == "" {
+		return domainerrors.ErrEmptyIdentifier
+	}
+	validated, err := model.NewErrorClass(string(class))
+	if err != nil {
+		return err
+	}
+	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
 		return heartbeatStorageFailure(err)
 	}
 	return nil

@@ -23,10 +23,23 @@ var ErrHeartbeatStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler 
 // (`ADR-0026`) meldet, dass die Instanz läuft. Die Quelle trägt zugleich
 // die Prozess-Kennung — im MVP-Schnitt trägt eine Instanz die Quelle und
 // den CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft), ein eigenes
-// Prozess-Kennungsfeld trägt dieser Port nicht.
+// Prozess-Kennungsfeld trägt dieser Port nicht. Seit `slice-013` trägt
+// derselbe Port auch den zuletzt beobachteten Fehlerzustand
+// (`LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Ablage, statt eine zweite
+// Tabelle einzuführen.
 type HeartbeatPort interface {
 	// Beat trägt das Lebenszeichen der Quelle fort; die Instanzzeit der
 	// Speicherseite trägt den Zeitstempel (wie `transaction.committed_at`)
-	// — der Aufrufer übergibt keine Uhr.
+	// — der Aufrufer übergibt keine Uhr. Ein erfolgreicher Beat löscht
+	// einen zuvor gemeldeten Fehlerzustand (`Fault`) wieder — der
+	// Fehlerzustand endet dadurch selbst erkennbar (`LH-FA-ADM-003`
+	// Boundary).
 	Beat(ctx context.Context, source model.SourceID) error
+
+	// Fault trägt den zuletzt beobachteten Fehlerzustand der Quelle fort
+	// (`LH-FA-ADM-003`, `LH-QA-REL-003`): die Composition Root ruft ihn
+	// auf, bevor der Capture-Prozess auf einen Adapter-Fehler endet
+	// (`ADR-0026`). Der Zeitstempel läuft mit fort (wie `Beat`) — ein
+	// Fehlerzustand ist damit ebenso ein Lebenszeichen, nur mit Klasse.
+	Fault(ctx context.Context, source model.SourceID, class model.ErrorClass) error
 }
