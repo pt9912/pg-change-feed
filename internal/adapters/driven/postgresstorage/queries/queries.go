@@ -132,6 +132,12 @@ INSERT INTO cdc.consumer (consumer_id, name)
 VALUES ($1, $2)
 ON CONFLICT (consumer_id) DO NOTHING`
 
+// SelectConsumer liest die Consumer-Zeile; die Bestätigung prüft die
+// Registrierung über sie vor dem Schreiben — die Abwesenheit endet über
+// den benannten Sentinel am Port, nicht über den Fremdschlüssel (`SPEC-001`).
+const SelectConsumer = `
+SELECT 1 FROM cdc.consumer WHERE consumer_id = $1`
+
 // SelectConsumerPosition liest die bestätigte Position eines Consumers
 // (`LH-FA-CON-003`); das Lesen trägt keine Schreibwirkung — der
 // gesperrte Lese der Bestätigung läuft als eigene Abfrage

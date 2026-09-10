@@ -2,9 +2,28 @@ package outbound
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
+
+// ErrConsumerStateStorage trägt die Fehlerklasse `storage` dieses Ports
+// (`SPEC-008`, `ADR-0023`): ein Persistenzfehler am Consumer-State-Speicher
+// endet sichtbar, Application und Betrieb klassifizieren über `errors.Is`
+// und kennen keinen Treibertyp. Abgrenzung: der ChangeStore-Sentinel
+// (`ErrStorage`) trägt dieselbe Klasse am `ChangeStorePort` samt seiner
+// Klasse-Aktion (kein Source-ACK, `LH-QA-REL-001.a`) — diese Aktion hat am
+// Consumer-ACK keinen Träger, der Consumer-ACK bestätigt keine
+// Quellposition; deshalb führt dieser Port seine Klasse als eigenen
+// Sentinel.
+var ErrConsumerStateStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Consumer-State-Speicher")
+
+// ErrConsumerUnregistered trägt die Registrierungs-Grenze der Bestätigung
+// (`LH-FA-CON-004`): ein ACK ohne registrierte Kennung ist ein
+// Aufrufvertrags-Verstoß und endet sichtbar über diesen Sentinel, nicht
+// still — die Rest-Grenze zwischen Prüfung und Schreiben trägt der
+// Fremdschlüssel der DDL (`SPEC-001`) über `ErrConsumerStateStorage`.
+var ErrConsumerUnregistered = stderrors.New("Consumer ist nicht registriert")
 
 // ConsumerStatePort trägt die Zustands-Fähigkeit der Consumer
 // (`ARC-004`, Fähigkeits-Port je `ADR-0034`): die unabhängigen
@@ -26,10 +45,10 @@ import (
 // `ErrSourceMismatch`), die Wiederholung derselben Position ist
 // idempotent (`LH-FA-CON-004` Boundary).
 //
-// Die Bestätigung setzt die Registrierung voraus — der
-// Fremdschlüssel der DDL trägt die Grenze (`SPEC-001`); ein Aufruf ohne
-// Registrierung endet sichtbar über die Klasse `storage` (`SPEC-008`),
-// nicht still.
+// Die Bestätigung setzt die Registrierung voraus (`SPEC-001`
+// Fremdschlüssel); ein Aufruf ohne Registrierung endet sichtbar über
+// `ErrConsumerUnregistered`, nicht still — zwischen Prüfung und Schreiben
+// trägt der Fremdschlüssel die Rest-Grenze über `ErrConsumerStateStorage`.
 type ConsumerStatePort interface {
 	// Register trägt die Consumer-Zeile ein; die Rückkehr meldet, ob der
 	// Aufruf neu registriert hat. Eine bereits registrierte Kennung
