@@ -60,6 +60,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Kein Neustart im Container-Vertrag: die CDC-Runtime endet auf jeden
+    # Adapter-Fehler mit Ausgang 1, und der Neustart-Vertrag liegt beim
+    # Aufrufer — der Neustart setzt am Slot fort, confirmed_flush_lsn
+    # trägt die bestätigte Position (ADR-0012). Die `transient`-Aktion der
+    # Fehlerklassen-Tabelle (Erneut versuchen mit begrenztem Backoff)
+    # trägt dieser Vertrag nicht.
     restart: "no"
     networks:
       - cdc-test

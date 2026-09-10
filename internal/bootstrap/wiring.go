@@ -117,8 +117,13 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // ACK-Adapter bestätigt über dieselbe Verbindung (`ADR-0007`, Option C)
 // und der Capture Service orchestriert Persist-before-ACK
 // (`LH-QA-REL-001.a`). Die Rückkehr ohne Fehler meldet das reguläre
-// Lauf-Ende; ein Fehler wird durchgereicht, nicht still fortgesetzt
-// (`SPEC-008`).
+// Lauf-Ende. Ein Adapter-Fehler wird durchgereicht, nicht still
+// fortgesetzt (`SPEC-008`): der Prozess-Aufrufer endet auf jeden
+// Adapter-Fehler mit Ausgang 1 — die Fortsetzung nach
+// Verbindungsabbruch trägt der Prozess-Neustart, der Slot liest seinen
+// Start über confirmed_flush_lsn (`ADR-0012`); die `transient`-Aktion
+// (Erneut versuchen mit begrenztem Backoff, `SPEC-008`) trägt dieser
+// Pfad nicht.
 func Run(ctx context.Context, cfg Config) error {
 	store, err := postgresstorage.New(ctx, cfg.DSN)
 	if err != nil {
