@@ -63,4 +63,9 @@ var (
 	// ErrNegativeDuration: Zeiträume der Retention sind nicht negativ
 	// (`LH-FA-RET-003`).
 	ErrNegativeDuration = stderrors.New("negative Dauer")
+
+	// ErrInvalidErrorClass: eine Fehlerklasse ist eine der sieben stabilen
+	// Kategorien aus `ADR-0023` (`SPEC-008`) — eine leere oder unbekannte
+	// Klasse verletzt die Invariante (`slice-013`, `LH-FA-ADM-003`).
+	ErrInvalidErrorClass = stderrors.New("unbekannte Fehlerklasse")
 )
