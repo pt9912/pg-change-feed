@@ -134,7 +134,7 @@ tables:
     primary_key: [consumer_id]
 
   consumer_position:
-    description: "Bestätigte Verarbeitungsposition je Consumer (SPEC-001; LH-FA-CON-003). Die Spalte trägt den bestätigten Offset der gebundenen Quelle; ihr Name entgeht dem reservierten Wort `position` — der Katalog kanonisiert es mit Anführungszeichen, der textliche Vergleich des Rollouts läse Drift."
+    description: "Bestätigte Verarbeitungsposition je Consumer (SPEC-001; LH-FA-CON-003). Die Spalte trägt den bestätigten Offset der gebundenen Quelle; sie heißt acknowledged_position, weil position ein reserviertes Wort ist — der Katalog kanonisiert die Spalte mit Anführungszeichen, und der textliche Vergleich des Rollouts liest den Unterschied als Drift."
     columns:
       consumer_id:
         type: text
