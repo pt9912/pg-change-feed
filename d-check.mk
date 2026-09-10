@@ -53,8 +53,10 @@ doc-commits: ## Commit-Message-Traceability via Modul commits; RANGE=base..head 
 # Sensor über dieselbe Hälfte wäre eine zweite Quelle. Gate statt
 # commit-msg-Hook (ADR-0045, Alternativen): das Gate läuft im
 # `make gates`-Bündel und deckt Commits jedes Urhebers im Fenster.
-# RANGE=base..head überschreibt den Standing-Default.
-COMMIT_TRACE_RANGE ?= HEAD~5..HEAD
+# RANGE=base..head überschreibt den Standing-Default (ADR-0045);
+# COMMIT_TRACE_RANGE trägt denselben Wert für die Aufrufe, die den
+# Standing-Default nicht berühren wollen.
+COMMIT_TRACE_RANGE ?= $(if $(RANGE),$(RANGE),HEAD~5..HEAD)
 
 .PHONY: commit-traceability
 commit-traceability: ## Commit-Traceability als Standing-Gate (letzte 5 Commits; ADR-0045); RANGE=base..head
