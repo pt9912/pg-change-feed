@@ -71,23 +71,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Heartbeat-Schreiber im Capture-Prozess (periodischer Timer,
+- [x] Heartbeat-Schreiber im Capture-Prozess (periodischer Timer,
       Bootstrap-Verdrahtung) — Teil-Beleg zu
       [`LH-FA-ADM-002`](../../../../spec/lastenheft.md).
-- [ ] `cdc.process_heartbeat`-View + `make test-store`-Beleg — Teil-Beleg
+- [x] `cdc.process_heartbeat`-View + `make test-store`-Beleg — Teil-Beleg
       zu [`LH-QA-OPS-002`](../../../../spec/lastenheft.md) (automatisierte
       Health Checks über SQL).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `compose.yaml` (Healthcheck liest den Heartbeat statt
+- [x] Doku-Update für `compose.yaml` (Healthcheck liest den Heartbeat statt
       nur den Prozess-Start), falls berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -175,8 +175,11 @@ dasteht.
   **Ausgang:** eingetreten (Träger: dieser Slice).
 - Der Timer-Zug im Capture-Prozess könnte die Persist-before-ACK-Ordnung
   ([`LH-QA-REL-001`](../../../../spec/lastenheft.md)`.a`) stören, wenn er in
-  derselben Goroutine läuft — muss nachweislich unabhängig laufen. Wird bei
-  Closure bewertet.
+  derselben Goroutine läuft — muss nachweislich unabhängig laufen. —
+  **Ausgang:** entfallen; struktureller Nachweis (eigene Goroutine, eigene
+  `pgxpool`-Verbindung, kein geteiltes Lock) plus Mutationsprobe
+  (`TestHeartbeatDoesNotBlockCapturePersistAck`, real rot gesehen bei
+  synchronem `hb.Beat`-Aufruf, vom Verifier unabhängig reproduziert).
 
 ## 7. Closure-Notiz
 
@@ -195,18 +198,33 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer prüfte die eigene §4-
+  Rückführungs-Bedingung ernsthaft vor Beginn und begründete nachvollziehbar,
+  warum der Slice trotz des `--healthcheck`-CLI-Zugs innerhalb des Rahmens
+  blieb (Composition-Root-Import-Freiheit, kein neuer Driving-Adapter-Typ) —
+  der Reviewer bestätigte das unabhängig als tragfähig, kein Konfliktpfad
+  nötig. Die Timer/ACK-Unabhängigkeit wurde doppelt real bewiesen (Implementer-
+  und Verifier-Mutationsprobe, beide rot gesehen bei synchronem Aufruf).
+- **Was ging anders als geplant:** Der distroless-Runtime (kein Shell, kein
+  `psql`) erzwang einen echten `--healthcheck`-CLI-Modus statt eines reinen
+  Compose-Doku-Updates — größte Erweiterung über den ursprünglichen
+  6-Zeilen-§3-Plan hinaus, sauber im Plan-Nachzug getragen und vom Reviewer
+  geprüft. Die [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellenzeile `cdc.capture_state` (nie detailliert)
+  wurde durch `cdc.process_heartbeat` ersetzt, um zwei Namen für denselben
+  Zweck zu vermeiden (Fund beim Plan-vs-Bestand-Abgleich). Zwei Verifier-
+  Funde (V-1: Plan-Nachzug-Lücke bei `healthcheck_test.go`; V-2: stehen-
+  gebliebener `capture_state`-Kommentar in `schema.sql`) wurden nach der
+  Verifikation nachgetragen.
+- **Steering-Loop-Eintrag:** nichts verkörpert — der Normalfall.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/health-endpoint-heartbeat/`
+  Ausgang von *weiter offen* auf **eingetreten** aktualisiert (Träger:
+  dieser Slice) — Register-Zeile bleibt mit Vermerk stehen.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** (a) eingetreten (Träger: dieser Slice) · (b) entfallen
+  (struktureller Nachweis + Mutationsprobe).
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen; die
+  Welle-4-Closure prüft Anker · Folge-Slice · Register auch für diesen
+  Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
