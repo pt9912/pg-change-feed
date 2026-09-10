@@ -27,6 +27,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
@@ -161,8 +162,12 @@ func splitQualifiedName(qualified string) (string, string, error) {
 // Verbindungsabbruch trägt der Prozess-Neustart, der Slot liest seinen
 // Start über confirmed_flush_lsn (`ADR-0012`); die `transient`-Aktion
 // (Erneut versuchen mit begrenztem Backoff, `SPEC-008`) trägt dieser
-// Pfad nicht.
-func Run(ctx context.Context, cfg Config) error {
+// Pfad nicht. Seit `slice-013` meldet ein nicht-`nil`-Ausgang zusätzlich
+// den Fehlerzustand über den Heartbeat (`reportFault` unten,
+// `LH-FA-ADM-003`, `LH-QA-REL-003`), bevor der Prozess-Aufrufer beendet —
+// der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
+// `defer`-Kette hinweg.
+func Run(ctx context.Context, cfg Config) (runErr error) {
 	store, err := postgresstorage.New(ctx, cfg.DSN)
 	if err != nil {
 		return err
@@ -198,6 +203,10 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 	defer heartbeat.Close()
+	// reportFault läuft vor heartbeat.Close() (LIFO-Reihenfolge der
+	// `defer`-Kette: zuletzt registriert, zuerst ausgeführt) — der
+	// Fehlerzustand erreicht den Speicher, bevor der Pool schließt.
+	defer reportFault(heartbeat, cfg.Source, &runErr)
 	enableTables := enable.NewEnableTableService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
@@ -254,10 +263,10 @@ func Run(ctx context.Context, cfg Config) error {
 		runHeartbeat(heartbeatCtx, heartbeat, cfg.Source, heartbeatInterval)
 	}()
 
-	runErr := stream.Run(ctx)
+	streamErr := stream.Run(ctx)
 	stopHeartbeat()
 	heartbeatDone.Wait()
-	return runErr
+	return streamErr
 }
 
 // runHeartbeat schreibt das Lebenszeichen der Quelle periodisch fort, bis
@@ -277,6 +286,56 @@ func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model
 		case <-ticker.C:
 			_ = port.Beat(ctx, source)
 		}
+	}
+}
+
+// reportFault meldet einen nicht-`nil` Lauf-Fehler als Fehlerzustand über
+// den Heartbeat (`slice-013`, `LH-FA-ADM-003`, `LH-QA-REL-003`) — die
+// Sichtbarkeit gilt für „Erfassung kann nicht fortsetzen" (`Run` endet auf
+// jeden Adapter-Fehler, Dateikommentar oben), nicht für einen regulären
+// Lauf-Abschluss (`runErr == nil`). Der Schreib-Zug trägt eine eigene,
+// kurzlebige Frist, unabhängig von `ctx`: das Beenden des Prozesses selbst
+// hat `ctx` bereits abgebrochen, und genau dann muss der Fehlerzustand noch
+// geschrieben werden können (dasselbe Muster wie `Healthcheck` unten). Ein
+// Persistenzfehler dieses Schreib-Zugs bleibt best-effort und unterdrückt
+// nicht den eigentlichen Lauf-Fehler, den `*runErr` weiterhin trägt.
+func reportFault(port outbound.HeartbeatPort, source model.SourceID, runErr *error) {
+	if runErr == nil || *runErr == nil {
+		return
+	}
+	faultCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_ = port.Fault(faultCtx, source, classifyRunError(*runErr))
+}
+
+// classifyRunError übersetzt den Lauf-Fehler in eine der sieben stabilen
+// Kategorien aus `ADR-0023`/`SPEC-008`: die Composition Root kennt die
+// Sentinel-Fehler aller beteiligten Adapter (`.a-check.yml`
+// `composition_root` — kein Hexagon-Schichten-Edge, der diese Referenz
+// einschränkt) und übersetzt sie in den Fehlerzustand, den `reportFault`
+// oben fortträgt. Ein nicht erkannter Fehler bleibt in der Kategorie
+// `internal` (`SPEC-008`: „unerwarteter interner Fehler").
+func classifyRunError(err error) model.ErrorClass {
+	switch {
+	case errors.Is(err, ErrConfiguration),
+		errors.Is(err, receive.ErrConfiguration),
+		errors.Is(err, postgresstorage.ErrActivationConfiguration):
+		return model.ErrorClassConfiguration
+	case errors.Is(err, decode.ErrSchema),
+		errors.Is(err, mapper.ErrTruncateUnsupported):
+		return model.ErrorClassSchema
+	case errors.Is(err, receive.ErrReplication),
+		errors.Is(err, outbound.ErrReplication),
+		errors.Is(err, mapper.ErrChangeWithoutBegin),
+		errors.Is(err, mapper.ErrCommitWithoutBegin),
+		errors.Is(err, mapper.ErrBeginWithoutCommit):
+		return model.ErrorClassReplication
+	case errors.Is(err, outbound.ErrStorage),
+		errors.Is(err, outbound.ErrHeartbeatStorage),
+		errors.Is(err, outbound.ErrConsumerStateStorage):
+		return model.ErrorClassStorage
+	default:
+		return model.ErrorClassInternal
 	}
 }
 
