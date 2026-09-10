@@ -18,8 +18,6 @@ Closure-Kriterien stehen in der Welle-Datei, nicht hier.
 
 - [welle-2](../welle-2.md) — Reale PostgreSQL-Integration: Store, Stream, E2E
 
-- Nichts in Arbeit.
-
 <!-- BEDIENHINWEIS: Zwei unabhängige Aussagen in diesem Block. Die Liste oben
 folgt den Dateien (ein Zeiger je offener Welle-Datei). Trägt in-progress/
 keinen Slice, kommt der Ruhe-Marker ZUSÄTZLICH dazu — nicht an Stelle der
