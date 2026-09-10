@@ -140,6 +140,137 @@ func TestCdcAdminRoleManagesSchemaNotChanges(t *testing.T) {
 	}
 }
 
+// TestCdcAdminPublicationRequiresTableOwnership belegt Review-Finding F-3
+// (review-slice-011.md): das GRANT CREATE ON DATABASE trägt
+// `CREATE PUBLICATION` selbst, aber nicht das Hinzufügen einer Tabelle
+// über `FOR TABLE` — PostgreSQL verlangt dafür zusätzlich Eigentümerrechte
+// an der Zieltabelle (real gegen die Quelltabelle geprüft, nicht gegen
+// cdc-Schema-Objekte, denn die zu aktivierenden Tabellen liegen außerhalb
+// des cdc-Schemas). Ohne Eigentümerschaft schlägt der Aufruf fehl
+// (SQLSTATE 42501 „must be owner of table"); nach Eigentümer-Übertragung
+// (die Betriebs-Vorbedingung aus tools/schema/nacharbeit-roles.sql)
+// gelingt er — das belegt, dass die dort dokumentierte
+// Grant-Strategie tatsächlich trägt.
+func TestCdcAdminPublicationRequiresTableOwnership(t *testing.T) {
+	pool := newTestRolesConn(t)
+	ctx := context.Background()
+	const (
+		sourceTable = "public.roles_pub_owner_test"
+		publication = "roles_admin_owner_test_pub"
+	)
+
+	if _, err := pool.Exec(ctx, "DROP TABLE IF EXISTS "+sourceTable); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Quelltabelle: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE TABLE "+sourceTable+" (id int PRIMARY KEY)"); err != nil {
+		t.Fatalf("Quelltabelle anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		_, _ = pool.Exec(cleanupCtx, "DROP PUBLICATION IF EXISTS "+publication)
+		_, _ = pool.Exec(cleanupCtx, "DROP TABLE IF EXISTS "+sourceTable)
+	})
+
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("Verbindung reservieren: %v", err)
+	}
+	defer func() {
+		_, _ = conn.Exec(ctx, "RESET ROLE")
+		conn.Release()
+	}()
+
+	if _, err := conn.Exec(ctx, "SET ROLE cdc_admin"); err != nil {
+		t.Fatalf("SET ROLE cdc_admin: %v", err)
+	}
+
+	// Ohne Eigentümerschaft: CREATE ON DATABASE allein reicht nicht.
+	if _, err := conn.Exec(ctx,
+		"CREATE PUBLICATION "+publication+" FOR TABLE "+sourceTable+" WITH (publish = 'insert, update, delete')",
+	); !permissionDenied(err) {
+		t.Fatalf("cdc_admin CREATE PUBLICATION … FOR TABLE ohne Eigentümerschaft: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+
+	// Betriebs-Vorbedingung herstellen (nacharbeit-roles.sql-Kommentar):
+	// Eigentümerschaft der Quelltabelle an cdc_admin übertragen — dafür
+	// zurück zur reservierenden (superuser-artigen) Identität dieser
+	// Verbindung.
+	if _, err := conn.Exec(ctx, "RESET ROLE"); err != nil {
+		t.Fatalf("RESET ROLE vor Eigentümer-Übertragung: %v", err)
+	}
+	if _, err := conn.Exec(ctx, "ALTER TABLE "+sourceTable+" OWNER TO cdc_admin"); err != nil {
+		t.Fatalf("Eigentümer-Übertragung: %v", err)
+	}
+	if _, err := conn.Exec(ctx, "SET ROLE cdc_admin"); err != nil {
+		t.Fatalf("SET ROLE cdc_admin (2. Versuch): %v", err)
+	}
+
+	// Mit Eigentümerschaft: derselbe Aufruf gelingt.
+	if _, err := conn.Exec(ctx,
+		"CREATE PUBLICATION "+publication+" FOR TABLE "+sourceTable+" WITH (publish = 'insert, update, delete')",
+	); err != nil {
+		t.Fatalf("cdc_admin CREATE PUBLICATION … FOR TABLE nach Eigentümer-Übertragung: erwartet Erfolg, %v", err)
+	}
+}
+
+// TestCdcAdminAlterPublicationAddTableRequiresTableOwnership belegt
+// dieselbe Grenze für den zweiten betroffenen Aufruf
+// (tableactivation.go:231, `ALTER PUBLICATION … ADD TABLE`) — eine
+// bestehende Publication, eine zweite Quelltabelle ohne Eigentümerschaft.
+func TestCdcAdminAlterPublicationAddTableRequiresTableOwnership(t *testing.T) {
+	pool := newTestRolesConn(t)
+	ctx := context.Background()
+	const (
+		ownedTable   = "public.roles_pub_add_owned_test"
+		secondTable  = "public.roles_pub_add_second_test"
+		publication2 = "roles_admin_add_test_pub"
+	)
+
+	if _, err := pool.Exec(ctx, "DROP TABLE IF EXISTS "+ownedTable+", "+secondTable); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Quelltabellen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE TABLE "+ownedTable+" (id int PRIMARY KEY)"); err != nil {
+		t.Fatalf("erste Quelltabelle anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE TABLE "+secondTable+" (id int PRIMARY KEY)"); err != nil {
+		t.Fatalf("zweite Quelltabelle anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "ALTER TABLE "+ownedTable+" OWNER TO cdc_admin"); err != nil {
+		t.Fatalf("Eigentümer-Übertragung erste Tabelle: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx := context.Background()
+		_, _ = pool.Exec(cleanupCtx, "DROP PUBLICATION IF EXISTS "+publication2)
+		_, _ = pool.Exec(cleanupCtx, "DROP TABLE IF EXISTS "+ownedTable+", "+secondTable)
+	})
+
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("Verbindung reservieren: %v", err)
+	}
+	defer func() {
+		_, _ = conn.Exec(ctx, "RESET ROLE")
+		conn.Release()
+	}()
+
+	if _, err := conn.Exec(ctx, "SET ROLE cdc_admin"); err != nil {
+		t.Fatalf("SET ROLE cdc_admin: %v", err)
+	}
+	if _, err := conn.Exec(ctx,
+		"CREATE PUBLICATION "+publication2+" FOR TABLE "+ownedTable+" WITH (publish = 'insert, update, delete')",
+	); err != nil {
+		t.Fatalf("cdc_admin CREATE PUBLICATION mit eigener Tabelle: erwartet Erfolg, %v", err)
+	}
+
+	// Zweite Tabelle ohne Eigentümerschaft hinzufügen: derselbe
+	// Eigentümer-Zwang gilt auch für ADD TABLE, nicht nur für FOR TABLE.
+	if _, err := conn.Exec(ctx,
+		"ALTER PUBLICATION "+publication2+" ADD TABLE "+secondTable,
+	); !permissionDenied(err) {
+		t.Fatalf("cdc_admin ALTER PUBLICATION … ADD TABLE ohne Eigentümerschaft: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}
+
 // TestCdcReaderRoleReadsViewsNotBaseTables belegt LH-QA-SEC-003: der
 // Lesezugriff trägt ausschließlich die Views — SELECT direkt auf einer
 // Basistabelle scheitert, obwohl dieselben Zeilen über cdc.metrics lesbar
