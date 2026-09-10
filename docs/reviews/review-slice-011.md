@@ -173,7 +173,7 @@ neu zu schreiben.
   `nacharbeit-observability.sql:6-8`). `WHERE cs.acknowledged_position IS NOT
   NULL` ist ein Null-Schutz für die Subtraktion, keine Geschäftsregel — siehe
   INFO-Hinweis unten
-- geprüft, ohne Befund: **Deckung von SPEC-009 gegen den Plan-Ausschluss** —
+- geprüft, ohne Befund: **Deckung von `SPEC-009` gegen den Plan-Ausschluss** —
   die fünf gelieferten Metriken (`cdc_transactions_total`,
   `cdc_changes_processed`, `cdc_oldest_change_age_seconds`,
   `cdc_consumer_position`, `cdc_consumer_lag`) und die fünf explizit als
