@@ -21,16 +21,17 @@
 
 [`ADR-0018`](0018-sql-driving-adapter.md) entschied: „SQL-Funktionen/Views
 sind Driving Adapter und rufen Inbound Ports auf. Businesslogik wird nicht
-in SQL dupliziert." Der Review von slice-010
-(`docs/reviews/review-slice-010.md`, F-1, HIGH) fand die drei dort
-gelieferten Lese-Views (`cdc.active_tables`, `cdc.consumer_status`,
-`cdc.changes`, `tools/schema/nacharbeit-views.sql`) im Wortlaut-Verstoß:
+in SQL dupliziert." Ein Review fand drei gelieferte Lese-Views
+(`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`,
+`tools/schema/nacharbeit-views.sql`) im Wortlaut-Verstoß: <!-- d-check:status-provenance -->
 Sie selektieren direkt aus `cdc.source_table`, `cdc.consumer`,
 `cdc.consumer_position`, `cdc.transaction`, `cdc.change` — denselben
 Tabellen, die der `PostgresChangeStoreAdapter` (`ARC-006`, Driven) verwaltet
-— ohne einen Inbound Port aufzurufen. Kein Implementer-Commit und der
-Slice-Kopf referenzierten `ADR-0018`, obwohl slice-007s Closure-Notiz genau
-diese Lieferung dorthin verwiesen hatte.
+— ohne einen Inbound Port aufzurufen. Weder der Plankopf noch die
+Implementer-Commits referenzierten `ADR-0018`, obwohl eine frühere
+Closure-Notiz genau diese Lieferung dorthin verwiesen hatte
+(Review-Report: [`docs/reviews/review-slice-010.md`](../../reviews/review-slice-010.md) <!-- d-check:status-provenance -->,
+Finding F-1, HIGH).
 
 **Physikalischer Befund, der `ADR-0018` beim Schreiben nicht auflöste:** Eine
 PostgreSQL-`VIEW` ist eine gespeicherte `SELECT`-Anweisung. Sie hat kein
@@ -48,7 +49,7 @@ gelassen.
 Domänenlogik in einer zweiten Sprache; nicht domänentestbar; Wartung an
 zwei Orten." Das ist eine Aussage über **Entscheidungslogik** — Code, der
 eine Domänenregel auswertet oder einen Zustand ändert —, nicht über
-Projektion. Die drei slice-010-Views enthalten keine solche Logik: Sie
+Projektion. Die drei gelieferten Views enthalten keine solche Logik: Sie
 joinen und projizieren bereits persistierte, bereits validierte Zeilen;
 Bereich/Limit/Filter kommen vom aufrufenden SQL-Client (`WHERE`/`LIMIT` auf
 der View), nicht aus der View selbst (`tools/schema/schema.yaml:16-27`
@@ -66,11 +67,12 @@ Zweitimplementierung in SQL `ADR-0018` verhindern wollte. Diese Pflicht
 ändert diese ADR nicht.
 
 **Was diese ADR nicht löst:** Für die noch nicht implementierten
-schreibenden SQL-Funktionen (Enable/Disable/ACK — slice-007s benannte
-`ADR-0018`/`ADR-0019`-Rest-Arbeit) besteht dasselbe physikalische Problem
-wie bei den Views: Eine reine SQL-Funktion kann einen Go-Inbound-Port
-ebenfalls nicht synchron aufrufen. Diese Frage bleibt **offen** und ist
-nicht Gegenstand dieser Entscheidung (siehe Konsequenzen, Folgepflicht).
+schreibenden SQL-Funktionen (Enable/Disable/ACK — als
+`ADR-0018`/`ADR-0019`-Rest-Arbeit benannt <!-- d-check:status-provenance -->)
+besteht dasselbe physikalische Problem wie bei den Views: Eine reine
+SQL-Funktion kann einen Go-Inbound-Port ebenfalls nicht synchron aufrufen.
+Diese Frage bleibt **offen** und ist nicht Gegenstand dieser Entscheidung
+(siehe Konsequenzen, Folgepflicht).
 
 ## Entscheidung
 
@@ -99,9 +101,9 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 ## Konsequenzen
 
-- Positiv: slice-010s drei Views (`active_tables`, `consumer_status`,
-  `changes`) sind konform; keine Rückbau-Pflicht, kein Implementer-Fix-Zug
-  nötig.
+- Positiv: Die drei bereits gelieferten Views (`active_tables`,
+  `consumer_status`, `changes`) sind konform; keine Rückbau-Pflicht, kein
+  Implementer-Fix-Zug nötig.
 - Positiv: Der eigentliche Schutz von `ADR-0018` — keine
   Domänenlogik-Duplikation in SQL — bleibt für den Teil vollständig
   erhalten, der ihn tatsächlich betrifft: schreibende/aktionsauslösende
@@ -116,8 +118,8 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
   SQL-Funktionen bleibt ungeklärt, wie eine reine SQL-Funktion physisch
   einen Inbound Port aufrufen soll — dasselbe physikalische Problem wie bei
   den Views, nur dass hier keine Ausnahme greift. Diese Design-Lücke ist
-  nicht Gegenstand dieser ADR und bleibt offen für den Slice, der
-  `ADR-0018`/`ADR-0019`-Rest umsetzt (slice-007 Closure-Notiz).
+  nicht Gegenstand dieser ADR und bleibt offen für den Slice, der das
+  `ADR-0018`/`ADR-0019`-Rest umsetzt.
 - Folgepflicht: `spec/architecture.md` §4, Sequenzdiagramm zu
   [`LH-FA-REA-002`](../../../spec/lastenheft.md) ("Consumer über CLI/SQL"
   → `ReadChangesUseCase` → `ChangeStorePort` → `PostgresChangeStoreAdapter`)
@@ -126,7 +128,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
   Planner-/Architect-Korrektur (SQL-Kanal in der Lese-Sequenz als
   Direktzugriff kennzeichnen oder auf den CLI-Kanal beschränken), sonst
   zeigt die Sicht einen Ablauf, der für SQL nicht mehr gilt. Der
-  Slice-Kopf von slice-010 (`Bezug:`) referenziert bislang nur
+  betroffene Slice-Plankopf (`Bezug:`) referenziert bislang nur
   [`ADR-0009`](0009-change-store-outbound-port.md); Planner/Implementer
   tragen `ADR-0046` nach, sobald der Implementer-Zug fortgesetzt wird.
 
@@ -134,7 +136,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Tooling | Regel | Make-Target |
 |---|---|---|
-| — (Review-Prüfpflicht, wie `ADR-0018`) | SQL-Objekte unter `tools/schema/nacharbeit-*.sql` bzw. im `views:`-Knoten des Schemamodells: eine Lese-View enthält kein `INSERT`/`UPDATE`/`DELETE`, keine Funktionsdefinition mit Seiteneffekt und keine `WHERE`-Klausel, die eine Autorisierungs- oder Domänenentscheidung kodiert (statt sie an den aufrufenden Client zu übergeben) | kein Gate — `.a-check.yml` kennt nur Go-Globs, SQL-Layer-Edges sind ihm unsichtbar (bestätigt in review-slice-010) |
+| — (Review-Prüfpflicht, wie `ADR-0018`) | SQL-Objekte unter `tools/schema/nacharbeit-*.sql` bzw. im `views:`-Knoten des Schemamodells: eine Lese-View enthält kein `INSERT`/`UPDATE`/`DELETE`, keine Funktionsdefinition mit Seiteneffekt und keine `WHERE`-Klausel, die eine Autorisierungs- oder Domänenentscheidung kodiert (statt sie an den aufrufenden Client zu übergeben) | kein Gate — `.a-check.yml` kennt nur Go-Globs, SQL-Layer-Edges sind ihm unsichtbar |
 
 ## Re-Evaluierungs-Trigger
 
@@ -154,7 +156,7 @@ reiner SQL-Views besteht unabhängig vom Datenbestand.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-10 | Accepted — Anlass: review-slice-010 F-1 (Konflikt-Pfad, Modul 8); Verdikt 2 (Folge-ADR `supersedes`) | [`docs/reviews/review-slice-010.md`](../../reviews/review-slice-010.md) |
+| 2026-09-10 | Accepted — Anlass: Review-Finding F-1 (Konflikt-Pfad, Modul 8); Verdikt 2 (Folge-ADR `supersedes`) <!-- d-check:status-provenance --> | [`docs/reviews/review-slice-010.md`](../../reviews/review-slice-010.md) <!-- d-check:status-provenance --> |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
