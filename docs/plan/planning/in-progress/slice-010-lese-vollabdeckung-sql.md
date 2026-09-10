@@ -61,23 +61,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Lesen-Vollabdeckung am `PostgresChangeStoreAdapter` — Teil-Beleg
+- [x] Lesen-Vollabdeckung am `PostgresChangeStoreAdapter` — Teil-Beleg
       zu [`LH-FA-REA-001`](../../../../spec/lastenheft.md)…006 (Bereich,
       Limit, Filter, Wiederlesen).
-- [ ] SQL-Views im `cdc`-Schema für SST-002 — Teil-Beleg zu
+- [x] SQL-Views im `cdc`-Schema für SST-002 — Teil-Beleg zu
       [`LH-FA-SST-002`](../../../../spec/lastenheft.md).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `spec/architecture.md` (SQL-Lese-View-Kanal,
+- [x] Doku-Update für `spec/architecture.md` (SQL-Lese-View-Kanal,
       [`LH-FA-REA-002`](../../../../spec/lastenheft.md)), falls berührt
       — geprüft: nachgezogen (`5365ee2`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -142,9 +142,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 - (a) SQL-Views im `cdc`-Schema konkurrieren mit den Use-Case-
-  Lese-Pfaden (zwei Quellen für denselben Zustand) — **Ausgang:** wird
-  bei Closure bewertet; weiter offen → `BEO-PGC/lese-doppelquelle`
-  im Register.
+  Lese-Pfaden (zwei Quellen für denselben Zustand) — **Ausgang:**
+  weiter offen → `BEO-PGC/lese-doppelquelle` im Register (Eintrag
+  angelegt, Beleg `evidence/slice-010.md`).
 
 ## 7. Closure-Notiz
 
@@ -163,18 +163,44 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer-Zug maß den Ist-Zustand vor
+  Code (§Plan vor Code, Schritt 12) und fand, dass die geplante
+  Lesen-Vollabdeckung bereits seit slice-004 vollständig belegt war —
+  kein Diff, sondern ein gemessener Bestand; der Verifier bestätigte
+  das unabhängig gegen die realen Store-Tests. Die neue Plan-Nachzug-
+  Pflicht (seit slice-009) bestand ihren ersten Praxistest sauber
+  (Commit-Reihenfolge korrekt, §3 vollständig).
+- **Was ging anders als geplant:** Die drei SQL-Views trafen einen
+  echten Rollen-Widerspruch (Review F-1, HIGH): [`ADR-0018`](../../../../docs/plan/adr/README.md)
+  verlangt Inbound-Port-Aufrufe für SQL-Driving-Adapter, was für reine
+  Lese-Views physikalisch nicht möglich ist. Architect-Verdikt:
+  [`ADR-0046`](../../../../docs/plan/adr/README.md) (`Supersedes ADR-0018`)
+  trennt Lese-Views (keine Entscheidungslogik, direkter Lesezugriff
+  zulässig) von schreibenden SQL-Funktionen (bleiben portgebunden).
+  `spec/architecture.md` wurde entsprechend nachgezogen (kein
+  ADR-Bezug in der Sicht selbst, Hard Rule 3.4). Zusätzlich: derselbe
+  d-migrate-`raw-sql-text-drift`-Blocker aus slice-006 traf jetzt auch
+  gespeicherte Views (PostgreSQL-Umformatierung via `pg_get_viewdef`) —
+  zweite Ausweichform nötig. Und: die Verifikation deckte eine
+  4./3. Wiederholung der Dup-DoD-/Platzhalter-Klasse auf, die außerhalb
+  jedes Implementer-Diffs lag (§2 war seit der welle-3-Eröffnung nie
+  berührt worden).
+- **Steering-Loop-Eintrag:** Planner-Workflow geschärft (§2-Form-
+  Prüfung nach dem Füllen mehrerer Slices in einem Zug) — liegt in
+  `.claude/commands/plan-welle.md §Slices bereitstellen`.
+  Auslöser: `BEO-PGC/plan-vorlagen-defekt` (slice-005, slice-008,
+  slice-009 — 3×).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-010.md`
+  in `BEO-PGC/d-migrate-nacharbeit/` ergänzt (Zähler 2×, weiter offen);
+  `BEO-PGC/plan-vorlagen-defekt/` neu angelegt und auf *verkörpert*
+  gesetzt (Beleg aus slice-005/008/009, 3×); `BEO-PGC/lese-doppelquelle/`
+  neu angelegt (Beleg `evidence/slice-010.md`, 1×, weiter offen).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** (a) SQL-Views vs. Use-Case-Lesepfade — weiter
+  offen → `BEO-PGC/lese-doppelquelle` im Register.
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen;
+  die Welle-3-Closure prüft Anker · Folge-Slice · Register auch für
+  diesen Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -190,11 +216,24 @@ in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Beding
 ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
 Hälften.
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** <je berührter Sub-Area: erfüllt sie
-die Schwelle ≥ 2 von 3 Achsen? zu grobe vorher ausdifferenzieren>
+**Vorgelagert — Sub-Area-Wahl prüfen:** Die berührten Sub-Areas
+(Store-Adapter/Lesepfad, Schemamigration/SQL-Views) sind Segmente des
+GF-Baums der Modus-Deklaration (`PGC` Greenfield, Doc führt) — jede
+erfüllt die Schwelle ≥ 2 von 3 Achsen: Strukturregeln im Spec-Stratum
+committet, Phase-Reife 3–4, Evidenz-/Diskrepanz-Risiko niedrig. Keine
+Sub-Area zu grob.
 
-**Vorgelagert — offene Beobachtungen sichten:** <Register durchgegangen;
-je berührter Sub-Area der Treffer mit Zähler-Stand — oder "keine Treffer">
+**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (sechs
+Einträge zum Zeitpunkt dieser Nachpflege): `d-migrate-nacharbeit` 2×
+(dieser Slice ist sein 2. Beleg — SQL-Views trafen dieselbe
+`raw-sql-text-drift`-Grenze), `plan-nachzug` verkörpert (2×, nicht
+berührt — die Regel hielt in diesem Lauf), `plan-vorlagen-defekt`
+verkörpert (3×, dieser Slice war der Auslöser der Verifikations-Findung
+V-1, die zur Registrierung führte — die Klasse selbst betraf slice-005/
+008/009 als Beleg), `adapter-fehler-ausgang` 1× (nicht berührt),
+`walsender-wirksamkeit` 1× (nicht berührt), `a-check-null-abdeckung`
+verkörpert (seit welle-1). Kein Eintrag erreicht mit diesem Slice neu
+3× (die beiden verkörperten waren es bereits vor diesem Slice).
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
