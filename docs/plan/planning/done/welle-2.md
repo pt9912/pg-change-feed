@@ -24,8 +24,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 Die MVP-Integrationstest-Abnahme ist belegt: PostgreSQL startet in der
 Compose-Umgebung, CDC wird je Tabelle aktiviert, INSERT/UPDATE/DELETE
 werden Ende-zu-Ende erfasst und deterministisch gelesen
-([`LH-QA-REL-001.a`](../../../spec/pflichtenheft.md) am realen Treiber) — der
-MVP-Schnitt ([`spec/lastenheft.md` §1](../../../spec/lastenheft.md)) ist belegt;
+([`LH-QA-REL-001.a`](../../../../spec/pflichtenheft.md) am realen Treiber) — der
+MVP-Schnitt ([`spec/lastenheft.md` §1](../../../../spec/lastenheft.md)) ist belegt;
 der Meilenstein M1 kann erreicht werden.
 
 *Benannte Grenze (Review F-6, slice-006):* der Feed-Container trägt
@@ -77,9 +77,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-004 | PostgreSQL-ChangeStore-Adapter | [`LH-QA-REL-001`](../../../spec/lastenheft.md), [`LH-FA-RET-001`](../../../spec/lastenheft.md) |
-| slice-005 | Replication-Stream-Adapter (pgoutput, real) | [`LH-FA-CAP-001`](../../../spec/lastenheft.md)…003 |
-| slice-006 | Docker-Compose-Umgebung und MVP-Integrationstest | [`LH-QA-POR-003`](../../../spec/lastenheft.md) |
+| slice-004 | PostgreSQL-ChangeStore-Adapter | [`LH-QA-REL-001`](../../../../spec/lastenheft.md), [`LH-FA-RET-001`](../../../../spec/lastenheft.md) |
+| slice-005 | Replication-Stream-Adapter (pgoutput, real) | [`LH-FA-CAP-001`](../../../../spec/lastenheft.md)…003 |
+| slice-006 | Docker-Compose-Umgebung und MVP-Integrationstest | [`LH-QA-POR-003`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -103,11 +103,11 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - Performance-Benchmarks mit Laststufen
-  ([`LH-QA-PER-002`](../../../spec/lastenheft.md)) — das Benchmark-Design folgt
+  ([`LH-QA-PER-002`](../../../../spec/lastenheft.md)) — das Benchmark-Design folgt
   nach dem grünen E2E; Messmethode-Delegation bleibt gesetzt
-  ([`SPEC-014`](../../../spec/pflichtenheft.md)).
+  ([`SPEC-014`](../../../../spec/pflichtenheft.md)).
 - Consumer-Verwaltung, Retention-Adapter, SQL-/CLI-Adapter — spätere
-  Wellen ([`ADR-0028`](../../../docs/plan/adr/README.md)-Rest; nicht MVP).
+  Wellen ([`ADR-0028`](../../../plan/adr/README.md)-Rest; nicht MVP).
 - `codepaths`-Aktivierung — geprüft und aktiviert, sobald die
   referenzierten Pfade existieren (Bedingung in `.d-check.yml`); hier
   geprüft, nicht zugesagt.
