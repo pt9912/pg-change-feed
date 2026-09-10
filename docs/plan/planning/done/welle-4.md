@@ -23,9 +23,9 @@ Die in welle-3 bewusst zurückgestellte Observability-Basis wird
 vervollständigt: Health-Endpoint (per Heartbeat-Pattern, Architect-Verdikt
 aus slice-011 liegt bereits vor — `docs/plan/adr/architect-review-slice-011.md`),
 sichtbare Fehlerzustände, messbarer CDC-Abstand und strukturiertes Logging.
-Damit schließen [`LH-FA-ADM-002`](../../../spec/lastenheft.md)…004,
-[`LH-QA-OPS-002`](../../../spec/lastenheft.md)…004 sowie der Rest von
-[`LH-FA-SST-004`](../../../spec/lastenheft.md).
+Damit schließen [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)…004,
+[`LH-QA-OPS-002`](../../../../spec/lastenheft.md)…004 sowie der Rest von
+[`LH-FA-SST-004`](../../../../spec/lastenheft.md).
 
 ## 2. Trigger (Welle startet)
 
@@ -36,7 +36,7 @@ werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - welle-3 done: alle vier Slices in `done/`, vier Gates grün, Closure-Notiz
-  geschrieben (Beleg: [`docs/plan/planning/done/welle-3-results.md`](done/welle-3-results.md),
+  geschrieben (Beleg: [`docs/plan/planning/done/welle-3-results.md`](welle-3-results.md),
   Verifikation) — **bereits eingetreten**.
 
 ## 3. Closure-Trigger (Welle schließt)
@@ -58,9 +58,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-012 | Health-Endpoint per Heartbeat | [`LH-FA-ADM-002`](../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../spec/lastenheft.md) |
-| slice-013 | Fehlerzustände sichtbar, CDC-Abstand messbar | [`LH-FA-ADM-003`](../../../spec/lastenheft.md)/004, [`LH-QA-REL-003`](../../../spec/lastenheft.md) |
-| slice-014 | Strukturiertes Logging | [`LH-QA-OPS-004`](../../../spec/lastenheft.md) |
+| slice-012 | Health-Endpoint per Heartbeat | [`LH-FA-ADM-002`](../../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../../spec/lastenheft.md) |
+| slice-013 | Fehlerzustände sichtbar, CDC-Abstand messbar | [`LH-FA-ADM-003`](../../../../spec/lastenheft.md)/004, [`LH-QA-REL-003`](../../../../spec/lastenheft.md) |
+| slice-014 | Strukturiertes Logging | [`LH-QA-OPS-004`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -82,14 +82,14 @@ der Closure-Trigger unerreichbar wird.
   `internal/bootstrap/wiring.go`) — anderer Vorgang: Sicherheits-Thema, kein
   Observability-Thema; bleibt Register-Beobachtung bis zum nächsten
   Schneiden.
-- **[`LH-QA-OPS-005`](../../../spec/lastenheft.md)** (Upgrade-Sicherheit) —
+- **[`LH-QA-OPS-005`](../../../../spec/lastenheft.md)** (Upgrade-Sicherheit) —
   anderer Vorgang: ein Upgrade-Testlauf ist eine Test-/Release-Disziplin,
   keine Observability-Lieferung; bleibt offen für eine eigene Welle.
-- **Volle [`SPEC-009`](../../../spec/pflichtenheft.md)-Metrik-Abdeckung**
+- **Volle [`SPEC-009`](../../../../spec/pflichtenheft.md)-Metrik-Abdeckung**
   (`cdc_wal_retention_bytes`, `cdc_storage_bytes`) — Bestand bleibt bewusst
   stehen: diese zwei Kennzahlen hängen an Retention-Arbeit, die in dieser
   Welle nicht ansteht; sie folgen mit einer künftigen Retention-Welle.
-- **HTTP-/gRPC-Health-Endpoint** — [`ADR-0020`](../adr/0020-http-grpc-optional.md)
+- **HTTP-/gRPC-Health-Endpoint** — [`ADR-0020`](../../adr/0020-http-grpc-optional.md)
   bleibt unberührt; der Health-Endpoint dieser Welle läuft über den
   bestehenden SQL-Kanal (Heartbeat-Tabelle + View), kein neuer
   Driving-Adapter-Typ.
