@@ -18,11 +18,11 @@ func getenv(values map[string]string) func(string) string {
 // Verdrahtung startet; die Tests entfernen oder verletzen je ein Element.
 func vollständigeVerdrahtung() map[string]string {
 	return map[string]string{
-		"CDC_SOURCE_DSN": "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
-		"CDC_SOURCE_ID":  "src-1",
+		"CDC_SOURCE_DSN":  "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_SOURCE_ID":   "src-1",
 		"CDC_PUBLICATION": "pub_1",
-		"CDC_SLOT":       "slot_1",
-		"CDC_TABLES":     "public.t1=tbl-1:sv-1",
+		"CDC_SLOT":        "slot_1",
+		"CDC_TABLES":      "public.t1=tbl-1:sv-1",
 	}
 }
 
@@ -73,11 +73,11 @@ func TestConfigFromEnvOhneTabellenAktivierung(t *testing.T) {
 // Schema-Version-Kennung enden über die Klasse `configuration`.
 func TestConfigFromEnvTabellenForm(t *testing.T) {
 	for _, raw := range []string{
-		"public.t1",            // ohne Aktivierungs-Trennung
-		"public.t1=tbl-1",      // ohne Schema-Version-Trennung
-		"public.t1=:sv-1",      // ohne Tabellen-Kennung
-		"public.t1=tbl-1:",     // ohne Schema-Version-Kennung
-		"=tbl-1:sv-1",          // ohne qualifizierten Tabellennamen
+		"public.t1",                   // ohne Aktivierungs-Trennung
+		"public.t1=tbl-1",             // ohne Schema-Version-Trennung
+		"public.t1=:sv-1",             // ohne Tabellen-Kennung
+		"public.t1=tbl-1:",            // ohne Schema-Version-Kennung
+		"=tbl-1:sv-1",                 // ohne qualifizierten Tabellennamen
 		"public.t1=tbl-1:sv-1,fehler", // zweiter Eintrag ohne Form
 	} {
 		values := vollständigeVerdrahtung()
