@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-3 — CDC-Verwaltung, Lesen-Vollabdeckung, Sicherheit und Observability-Basis](../welle-3.md)
+
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
@@ -47,7 +49,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| *(keine geplanten Wellen; Welle 2 (reale PostgreSQL-Integration) wird geschnitten, wenn Welle 1 schließt)* | — | — | — |
+| *(keine geplanten Wellen)* | — | — | — |
 
 ## Meilensteine
 
@@ -81,8 +83,9 @@ eine Phantom-Welle.
 flowchart LR
     W1[welle-1: MVP-Grundlage]
     W2[welle-2: reale PostgreSQL-Integration]
+    W3[welle-3: CDC-Verwaltung, Lesen, Sicherheit]
 
-    W1 --> W2
+    W1 --> W2 --> W3
 ```
 
 ## Abgeschlossene Wellen
