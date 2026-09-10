@@ -85,7 +85,7 @@ tables:
         required: true
         references: { table: source, column: source_id }
       commit_position: { type: biginteger, required: true }
-      committed_at: { type: datetime, timezone: true, default: current_timestamp }
+      committed_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
     primary_key: [transaction_id]
     indices:
       - name: cdc_transaction_source_position_idx
