@@ -1,9 +1,10 @@
 // Package bootstrap ist die Composition Root (`ADR-0026`): er kennt die
 // konkreten Adapter und verdrahtet die Pipeline an genau einer Stelle —
 // ChangeStore-Driven-Adapter, Aktivierungs-Driven-Adapter mit dem
-// EnableTable Use Case (`ADR-0028`), Replication-Stream-Driving-Adapter,
-// Capture Service und Replication-ACK-Driven-Adapter. Die
-// Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
+// EnableTable Use Case (`ADR-0028`), Heartbeat-Driven-Adapter mit dem
+// periodischen Timer-Zug (`ADR-0024`, slice-012), Replication-Stream-
+// Driving-Adapter, Capture Service und Replication-ACK-Driven-Adapter.
+// Die Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
 // einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
 //
 // Die Verdrahtung liest ihre Vorbedingungen als Minimal-Form aus der
@@ -17,12 +18,17 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -43,6 +49,21 @@ const (
 // Vorbedingung endet ohne Start und ohne Fortsetzung im falschen Stand;
 // der Prozess-Aufrufer meldet sie als Ausgang.
 var ErrConfiguration = errors.New("Fehlerklasse configuration: Verdrahtung ohne vollständige Vorbedingung")
+
+// heartbeatInterval trägt den periodischen Schreib-Zug des
+// Heartbeat-Timers (slice-012, `LH-FA-ADM-002`): ein MVP-Default ohne
+// eigene Konfigurationsschicht — dieselbe Minimal-Form wie die übrigen
+// Verdrahtungs-Vorbedingungen (Datei-Kommentar oben).
+const heartbeatInterval = 5 * time.Second
+
+// heartbeatStaleAfter trägt die Alters-Schwelle des `--healthcheck`-Laufs
+// (Healthcheck): älter als das Dreifache des Schreib-Takts gilt als
+// unhealthy — ein einzelner verpasster Takt (z. B. durch eine langsame
+// Transaktion auf derselben Instanz) bleibt healthy, drei verpasste Takte
+// in Folge nicht mehr. Ausführungsdetail der Composition-Root-Verdrahtung
+// (`ADR-0026`), keine Architekturentscheidung (Architect-Verdikt
+// `docs/plan/adr/architect-review-slice-011.md`).
+const heartbeatStaleAfter = 3 * heartbeatInterval
 
 // Config trägt die Verdrahtungs-Eingabe: die Verbindung zur Instanz, die
 // Quelle und die CDC-Speicherrollen gleichermaßen trägt (MVP-Schnitt,
@@ -153,17 +174,28 @@ func Run(ctx context.Context, cfg Config) error {
 	// die Fremdschlüssel der ersten Persistenz (`SPEC-001`). Der Aufruf
 	// ist idempotent (`LH-FA-CFG-001` Boundary) und trägt den Stand auch
 	// nach einem Container-Neustart nach.
-	// Die Verdrahtung trägt drei Verbindungen gegen dieselbe Instanz —
-	// Store-Pool, Aktivierungs-Pool, Stream-Verbindung; das MVP hält die
-	// Adapter-Lebenszyklen getrennt, statt einen Pool über die Adapter zu
-	// teilen. Die Instanz trägt Quelle und CDC-Speicher gleichermaßen
-	// (Abschnitt 1 Lastenheft); ein geteilter Pool ist keine Wirkung
-	// dieses Verdrahtungsstands.
+	// Die Verdrahtung trägt vier Verbindungen gegen dieselbe Instanz —
+	// Store-Pool, Aktivierungs-Pool, Heartbeat-Pool, Stream-Verbindung;
+	// das MVP hält die Adapter-Lebenszyklen getrennt, statt einen Pool
+	// über die Adapter zu teilen. Die Instanz trägt Quelle und
+	// CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft); ein geteilter
+	// Pool ist keine Wirkung dieses Verdrahtungsstands.
 	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN)
 	if err != nil {
 		return err
 	}
 	defer activation.Close()
+	// Der Heartbeat-Pool trägt ausschließlich den periodischen
+	// Lebenszeichen-Zug (runHeartbeat, unten) — eine eigene Verbindung,
+	// getrennt von Store- und Aktivierungs-Pool: der Timer-Zug teilt
+	// keine Verbindung und keine Goroutine mit der
+	// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012
+	// §6-Risiko).
+	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.DSN)
+	if err != nil {
+		return err
+	}
+	defer heartbeat.Close()
 	enableTables := enable.NewEnableTableService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
@@ -204,5 +236,80 @@ func Run(ctx context.Context, cfg Config) error {
 	if err := stream.BindCapture(capture.NewCaptureService(store, ack)); err != nil {
 		return err
 	}
-	return stream.Run(ctx)
+
+	// Der Heartbeat-Zug läuft in einer eigenen Goroutine über den eigenen
+	// Pool (oben) — kein Eingriff in die kritische Sektion des
+	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`, slice-012
+	// §6-Risiko). `heartbeatCtx` endet spätestens mit `stream.Run`; das
+	// Warten auf die Goroutine läuft synchron vor der Rückkehr, damit der
+	// deferred `heartbeat.Close()` oben nicht gegen einen noch
+	// schreibenden Aufruf läuft.
+	heartbeatCtx, stopHeartbeat := context.WithCancel(ctx)
+	var heartbeatDone sync.WaitGroup
+	heartbeatDone.Add(1)
+	go func() {
+		defer heartbeatDone.Done()
+		runHeartbeat(heartbeatCtx, heartbeat, cfg.Source, heartbeatInterval)
+	}()
+
+	runErr := stream.Run(ctx)
+	stopHeartbeat()
+	heartbeatDone.Wait()
+	return runErr
+}
+
+// runHeartbeat schreibt das Lebenszeichen der Quelle periodisch fort, bis
+// ctx endet (slice-012, `LH-FA-ADM-002`). Ein Persistenzfehler des
+// Heartbeats bricht den Aufruf nicht ab und wird verworfen: ein
+// Schreibfehler des Heartbeats ist keine Fehlerklasse des Capture-Pfads
+// (`SPEC-008`) — seine Abwesenheit zeigt sich stattdessen über das Alter
+// der Lebenszeichen-Zeile (`cdc.heartbeat`, Healthcheck unten), nicht über
+// einen abgebrochenen Stream-Lauf.
+func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model.SourceID, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_ = port.Beat(ctx, source)
+		}
+	}
+}
+
+// healthcheckVerdict trägt die binäre Healthcheck-Entscheidung (Compose
+// Exit-Code 0/1) über das Alter des letzten Lebenszeichens — reiner
+// Vergleich ohne Verbindungsversuch, testbar ohne reale Instanz.
+func healthcheckVerdict(age time.Duration) int {
+	if age > heartbeatStaleAfter {
+		return 1
+	}
+	return 0
+}
+
+// Healthcheck liest das Alter des letzten Lebenszeichens über die
+// SQL-Lese-View `cdc.heartbeat` (`LH-FA-ADM-002`, `LH-QA-OPS-002`,
+// `ADR-0046` Kategorie C) und trägt den Prozess-Ausgang des
+// `--healthcheck`-Laufs (`cmd/pg-change-feed/main.go`): 0 (healthy)
+// unterhalb der Schwelle, 1 sonst — ein Verbindungsfehler und eine
+// fehlende Zeile (die Instanz hat noch nie geschlagen) gelten als nicht
+// gesund. Die Klassifikation `SPEC-007` (`HEALTH_STATES`) bleibt Sache des
+// lesenden Systems; dieser Ausgang trägt nur die binäre Compose-Semantik.
+// Der Aufruf öffnet eine eigene, kurzlebige Verbindung — kein Bestandteil
+// der laufenden Verdrahtung (`Run` oben).
+func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return 1
+	}
+	defer pool.Close()
+	var ageSeconds float64
+	err = pool.QueryRow(ctx, "SELECT age_seconds FROM cdc.heartbeat WHERE source_id = $1", string(source)).Scan(&ageSeconds)
+	if err != nil {
+		return 1
+	}
+	return healthcheckVerdict(time.Duration(ageSeconds * float64(time.Second)))
 }
