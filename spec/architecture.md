@@ -133,7 +133,7 @@ getrennte Rollen.
 
 ```mermaid
 sequenceDiagram
-    participant C as Consumer über CLI/SQL (ARC-005)
+    participant C as Consumer über CLI (ARC-005)
     participant RUC as ReadChangesUseCase (ARC-003/002)
     participant CSP as ChangeStorePort (ARC-004)
     participant SA as PostgresChangeStoreAdapter (ARC-006)
@@ -147,6 +147,26 @@ sequenceDiagram
 ```
 
 Lesen verändert gespeicherte Positionen nicht.
+
+Der SQL-Kanal (ARC-005) liest reine Projektionen — Views ohne
+Entscheidungslogik — direkt gegen die gespeicherten Tabellen, ohne den
+Umweg über `ReadChangesUseCase`/`ChangeStorePort`:
+
+```mermaid
+sequenceDiagram
+    participant Q as Consumer über SQL (ARC-005)
+    participant V as SQL-View (ARC-005, cdc-Schema)
+    participant SA as gespeicherte Tabellen (ARC-006)
+
+    Q->>V: SELECT … WHERE Bereich/Filter
+    V->>SA: Projektion/Join über persistierte Daten
+    SA-->>V: Zeilen
+    V-->>Q: Ergebnis (begrenzt, sortiert)
+```
+
+Der Unterschied zum CLI-Kanal ist die Abwesenheit von Entscheidungslogik:
+Eine Lese-View projiziert bereits validierte, bereits persistierte
+Zustände; sie trifft keine Entscheidung, die dupliziert werden könnte.
 
 ### Use-Case: LH-FA-CON-004 — Consumer-ACK
 
