@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-4 — Observability-Vervollständigung](../welle-4.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -84,8 +86,9 @@ flowchart LR
     W1[welle-1: MVP-Grundlage]
     W2[welle-2: reale PostgreSQL-Integration]
     W3[welle-3: CDC-Verwaltung, Lesen, Sicherheit]
+    W4[welle-4: Observability-Vervollständigung]
 
-    W1 --> W2 --> W3
+    W1 --> W2 --> W3 --> W4
 ```
 
 ## Abgeschlossene Wellen
