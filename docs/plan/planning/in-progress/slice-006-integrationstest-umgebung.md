@@ -183,7 +183,8 @@ Backticks).
 
 - **Was hat funktioniert:** der Rollout-Beleg (Pflicht-Report +
   Rollback-Artefakt) reproduziert sich bit-stabil über zwei Läufe
-  (ADR-0044-Verfahren, verify-slice-006.md); der MVP-Integrationstest
+  ([`ADR-0044`](../../../../docs/plan/adr/0044-image-beleg-semantik.md)-Verfahren,
+  verify-slice-006.md); der MVP-Integrationstest
   fährt die MVP-Schnitt-Abfolge automatisiert (Compose frisch → Rollout
   → Toolchain-Container); der a-check-Glob trägt den
   Composition-Root-Layer und fing die fremden Adapter-Imports **vor dem
