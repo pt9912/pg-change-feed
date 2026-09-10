@@ -153,6 +153,12 @@ func Run(ctx context.Context, cfg Config) error {
 	// die Fremdschlüssel der ersten Persistenz (`SPEC-001`). Der Aufruf
 	// ist idempotent (`LH-FA-CFG-001` Boundary) und trägt den Stand auch
 	// nach einem Container-Neustart nach.
+	// Die Verdrahtung trägt drei Verbindungen gegen dieselbe Instanz —
+	// Store-Pool, Aktivierungs-Pool, Stream-Verbindung; das MVP hält die
+	// Adapter-Lebenszyklen getrennt, statt einen Pool über die Adapter zu
+	// teilen. Die Instanz trägt Quelle und CDC-Speicher gleichermaßen
+	// (Abschnitt 1 Lastenheft); ein geteilter Pool ist keine Wirkung
+	// dieses Verdrahtungsstands.
 	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN)
 	if err != nil {
 		return err

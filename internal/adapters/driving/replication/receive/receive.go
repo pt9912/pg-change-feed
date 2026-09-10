@@ -44,7 +44,11 @@ var ErrConfiguration = errors.New("Fehlerklasse configuration: ungültige/falsch
 
 // identifierShape begrenzt Slot- und Publication-Namen auf das
 // Bezeichner-Alphabet der Quelle; beide gehen als Bezeichner-Literal in
-// Replication- und Katalogabfragen.
+// Replication- und Katalogabfragen. Diese Definition trägt die Quelle
+// des Alphabet-Vertrags; der Aktivierungs-Adapter
+// (`postgresstorage.identifierShape`) hält denselben Ausdruck gegen
+// denselben Aufrufgegenstand — die Adapter-Schicht importiert keine
+// Adapter-Kante (Kopplung).
 var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 
 // Config trägt die Konfiguration des Stream-Adapters: die

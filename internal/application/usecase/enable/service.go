@@ -41,10 +41,10 @@ func NewEnableTableService(activation outbound.TableActivationPort) *EnableTable
 var _ inbound.EnableTableUseCase = (*EnableTableService)(nil)
 
 // Enable aktiviert die Tabelle idempotent (`LH-FA-CFG-001` Boundary): die
-// Bindungs-Zeile läuft vor der Publication — eine fehlgeschlagene
-// Publication hinterlässt die Bindung ohne Erfassung, ein erneuter Aufruf
-// trägt die Publication nach; umgekehrt würde eine Publication ohne
-// Bindungs-Zeile die ersten Changes an der Fremdschlüssel-Kante verlieren.
+// Bindungs-Zeile läuft vor der Publication — die Publication trägt nur
+// Tabellen, deren Bindungs-Zeile die Fremdschlüssel der ersten Persistenz
+// vorhält (`SPEC-001`); eine fehlgeschlagene Publication hinterlässt die
+// Bindung ohne Erfassung, ein erneuter Aufruf trägt die Publication nach.
 // Eine bereits aktivierte Tabelle bleibt unverändert; die Rückkehr meldet
 // den Ausgang über `AlreadyEnabled`.
 func (s *EnableTableService) Enable(ctx context.Context, command EnableTableCommand) (EnableTableResult, error) {
