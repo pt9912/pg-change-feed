@@ -37,16 +37,39 @@ func TestNewWithWriterWritesStructuredJSON(t *testing.T) {
 	}
 }
 
-// TestNewWithWriterFiltersBelowLevel trägt die Level-Filterung: `Debug`
-// bleibt unterhalb des konfigurierten `Info`-Levels stumm — dieselbe
-// Semantik, die `CDC_LOG_LEVEL` am Container-stdout steuert.
+// TestNewWithWriterFiltersBelowLevel trägt die Level-Filterung: eine Stufe
+// unterhalb des konfigurierten Levels bleibt stumm — dieselbe Semantik, die
+// `CDC_LOG_LEVEL` am Container-stdout steuert. Zwei Fälle, nicht nur einer
+// (Verifier-Fund V-1, `docs/reviews/verify-slice-014.md`): `slog.
+// HandlerOptions{}` defaultet ein unbesetztes `Level`-Feld selbst auf
+// `LevelInfo` — ein Test, der ausschließlich mit `LevelInfo` konfiguriert,
+// bleibt grün, selbst wenn `newWithWriter` das `Level:`-Feld gar nicht mehr
+// an die `HandlerOptions` durchreicht (die Mutation, die V-1 beschreibt).
+// Der zweite Fall (`LevelWarn`) liegt oberhalb dieses Zufalls-Defaults:
+// ohne durchgereichten Level fiele die `Info`-Zeile *nicht* unter den
+// (dann wirkungslosen) Default und der Test schlägt fehl — genau die
+// Mutation, die der erste Fall allein nicht fängt.
 func TestNewWithWriterFiltersBelowLevel(t *testing.T) {
-	var buf bytes.Buffer
-	adapter := newWithWriter(&buf, slog.LevelInfo)
+	for _, testcase := range []struct {
+		name       string
+		configured slog.Level
+	}{
+		{name: "Info-Level filtert Debug", configured: slog.LevelInfo},
+		{name: "Warn-Level filtert Info (Zufalls-Default-Probe V-1)", configured: slog.LevelWarn},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			adapter := newWithWriter(&buf, testcase.configured)
 
-	adapter.Debug(context.Background(), "heartbeat: Lebenszeichen geschrieben")
+			if testcase.configured == slog.LevelInfo {
+				adapter.Debug(context.Background(), "heartbeat: Lebenszeichen geschrieben")
+			} else {
+				adapter.Info(context.Background(), "changestore: verbunden")
+			}
 
-	if buf.Len() != 0 {
-		t.Fatalf("Debug-Zeile trotz Info-Level geschrieben: %s", buf.String())
+			if buf.Len() != 0 {
+				t.Fatalf("Zeile trotz konfiguriertem Level %s geschrieben: %s", testcase.configured, buf.String())
+			}
+		})
 	}
 }
