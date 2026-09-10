@@ -1,0 +1,110 @@
+# Neutrales Schemamodell der CDC-Tabellen (ADR-0043): die Quelle der
+# Schema-Form — SQL wird aus dieser Datei erzeugt, nicht mehr handgeschrieben.
+# Überführt aus der handgeschriebenen DDL
+# (internal/adapters/driven/postgresstorage/schema.sql, Stand slice-004);
+# Abweichung zwischen DDL und dieser Datei wäre zwei Quellen für dieselbe
+# Schema-Form (ADR-0043, Folgepflicht).
+#
+# Umfang: die Store-Seite — source, source_table, schema_version,
+# transaction, change (SPEC-001, SPEC-002). consumer, consumer_position und
+# capture_state trägt dieses Modell nicht; ihre Ports liegen außerhalb des
+# Store-Adapters (gleiche Grenze wie in der DDL).
+#
+# Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
+# trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
+# Rollout-Kontext: der Rollout-Lauf führt current_schema() über
+# search_path = cdc, und die generated DDL landet dort. Die CREATE SCHEMA-
+# Zeile der DDL ist Umgebungs-Vorbedingung (Compose-Init), nicht Schema-Form.
+schema_format: "1.0"
+name: "cdc"
+version: "1.0.0"
+
+tables:
+  source:
+    description: "Erfasste Quelle (SPEC-001)"
+    columns:
+      source_id: { type: text, required: true }
+      name: { type: text, required: true }
+    primary_key: [source_id]
+
+  source_table:
+    description: "Aktivierte Tabelle je Quelle (SPEC-001; LH-FA-DAT-002)"
+    columns:
+      source_table_id: { type: text, required: true }
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      schema_name: { type: text, required: true }
+      table_name: { type: text, required: true }
+    primary_key: [source_table_id]
+    constraints:
+      - name: uq_source_table_source_schema_table
+        type: unique
+        columns: [source_id, schema_name, table_name]
+
+  schema_version:
+    description: "Schema-Version (SPEC-004; LH-FA-SCH-005)"
+    columns:
+      schema_version_id: { type: text, required: true }
+      source_table_id:
+        type: text
+        required: true
+        references: { table: source_table, column: source_table_id }
+      version: { type: biginteger, required: true }
+    primary_key: [schema_version_id]
+    constraints:
+      - name: chk_schema_version_version_range
+        type: check
+        expression: "version >= 1"
+
+  transaction:
+    description: "Persistierte Quelltransaktion (SPEC-001; LH-FA-DAT-004)"
+    columns:
+      transaction_id: { type: text, required: true }
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      commit_position: { type: biginteger, required: true }
+      committed_at: { type: datetime, timezone: true, default: current_timestamp }
+    primary_key: [transaction_id]
+    indices:
+      - name: cdc_transaction_source_position_idx
+        columns: [source_id, commit_position]
+    constraints:
+      - name: chk_transaction_commit_position_positive
+        type: check
+        expression: "commit_position > 0"
+
+  change:
+    description: "Einzelner Change (SPEC-002; Row Images als jsonb, LH-FA-CAP-008)"
+    columns:
+      change_id: { type: text, required: true }
+      transaction_id:
+        type: text
+        required: true
+        references: { table: transaction, column: transaction_id }
+      source_table_id:
+        type: text
+        required: true
+        references: { table: source_table, column: source_table_id }
+      sequence: { type: biginteger, required: true }
+      operation: { type: text, required: true }
+      old_data: { type: json }
+      new_data: { type: json }
+      schema_version:
+        type: text
+        required: true
+        references: { table: schema_version, column: schema_version_id }
+    primary_key: [change_id]
+    constraints:
+      - name: chk_change_sequence_positive
+        type: check
+        expression: "sequence >= 1"
+      - name: chk_change_operation
+        type: check
+        expression: "operation IN ('INSERT', 'UPDATE', 'DELETE')"
+      - name: uq_change_transaction_sequence
+        type: unique
+        columns: [transaction_id, sequence]
