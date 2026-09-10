@@ -57,10 +57,10 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-008 | CDC-Verwaltung als Use Cases | [`LH-FA-CFG-001`](../../../spec/lastenheft.md)…004 |
-| slice-009 | Consumer-Verwaltung | [`LH-FA-CON-001`](../../../spec/lastenheft.md)…006 |
-| slice-010 | Lesen-Vollabdeckung und SQL-Schnittstelle | [`LH-FA-REA-002`](../../../spec/lastenheft.md)…006 |
-| slice-011 | Sicherheit und Observability-Basis | [`LH-QA-SEC-001`](../../../spec/lastenheft.md)…003 |
+| slice-008 | CDC-Verwaltung als Use Cases | [`LH-FA-CFG-001`](../../../../spec/lastenheft.md)…004 |
+| slice-009 | Consumer-Verwaltung | [`LH-FA-CON-001`](../../../../spec/lastenheft.md)…006 |
+| slice-010 | Lesen-Vollabdeckung und SQL-Schnittstelle | [`LH-FA-REA-002`](../../../../spec/lastenheft.md)…006 |
+| slice-011 | Sicherheit und Observability-Basis | [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003 |
 
 ## 5. Abhängigkeiten
 
@@ -97,5 +97,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: <Zeiger auf `welle-<NN>-results.md`, Geschwister im Ruheort `done/`>
-Zähler: <Zeiger aufs Beobachtungs-Register, eine Ebene über dem Ruheort>
+Ergebnis: [`welle-3-results.md`](welle-3-results.md)
+Zähler: [`../observations/`](../observations/)
