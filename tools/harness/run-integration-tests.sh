@@ -23,10 +23,9 @@ FEED_CONTAINER=${FEED_CONTAINER:-cdc-test-feed}
 PG_DB=cdc
 PG_USER=postgres
 PG_PASSWORD=postgres
-# Die Aktivierungs-Werte tragen dieselben Kennungen wie der
-# Container-Vertrag in compose.yaml (CDC_TABLES): Feed-Tabellen, Bindungs-
-# und Versions-Kennungen der MVP-Läufe.
-PUBLICATION=pub_pgc_mvp
+# Der Slot-Name trägt denselben Wert wie der Container-Vertrag in
+# compose.yaml (CDC_SLOT); der Runner liest ihn im Start- und im
+# End-Wächter.
 SLOT=slot_pgc_mvp
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
@@ -119,3 +118,14 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v ./test/integration/...
+
+# End-Beleg des Feed-Containers: der Lauf sieht auch den Ausgang der
+# CDC-Runtime — ein Container, der nach der letzten Test-Assertion endet
+# (Störung am Stream, Klasse replication), färbt den Lauf rot statt still
+# durchzulaufen.
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  feed_exit=$(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  echo "run-integration-tests: Feed-Container endete während des Testlaufs (Lauf: $feed_running, Ausgang: $feed_exit)" >&2
+  exit 1
+fi
