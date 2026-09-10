@@ -184,7 +184,7 @@ Backticks).
   vom Implementer committet. F-2 brauchte eine Port-Erweiterung
   (`Published`) — die ADR-Listen-Erweiterung (F-5) folgt unten.
 - **F-5-Closure-Vermerk (ADR-Listen):** `ListTablesUseCase` steht erstmals
-  in ADR-0028 (dort „vorgesehen"), `TableActivationPort` und
+  in [`ADR-0028`](../../../../docs/plan/adr/README.md) (dort „vorgesehen"), `TableActivationPort` und
   `GetStatusQuery`-`Publication`-Eingabe ergänzen die [`ADR-0039`](../../../../docs/plan/adr/README.md)-Struktur
   — keine stillen ADR-Widersprüche (Listen sind offen, kanonische
   Quelle gewinnt); die ADRs bleiben unverändert (Accepted-immutable).
