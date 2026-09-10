@@ -11,5 +11,5 @@ neutralen Modell (`tools/schema/schema.yaml`).
 
 Deklaration: `tools/schema/schema.yaml` (Benannte Grenze),
 `Makefile` (psql-Nacharbeit-Schritt im `schema-rollout`-Target);
-[`ADR-0043`](../../../../docs/plan/adr/README.md) trägt die
+[`ADR-0043`](../../../../../plan/adr/README.md) trägt die
 Re-Evaluierungs-Regel (Ausweichform/Retirement).
