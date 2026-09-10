@@ -55,6 +55,18 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht — der Trigger muss das *Mehr* gegenüber den
 einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
+- Alle Slices dieser Welle liegen in `done/` (slice-004, slice-005,
+  slice-006).
+- `make gates` grün (a-check im Bündel) **und** `make image` am HEAD
+  (Beleg `harness/image-hash.txt`).
+- Der MVP-Integrationstest läuft automatisiert grün gegen die
+  Compose-Umgebung (der welle-spezifische Beleg über die Slice-DoDs
+  hinaus — Ende-zu-Ende, kein einzelner Slice-DoD trägt ihn).
+- **Rest-Verdrahtung** (Review F-6): der Feed-Container fährt erst nach
+  slice-007 (Bootstrap-Verdrahtung, wellenloser Zug) die CDC-Runtime —
+  bis dahin gilt die Grenze aus §1; die Welle schließt nicht, bevor
+  dieser Ausgang getragen ist.
+
 ## 4. Slices in dieser Welle
 
 <!-- BEDIENHINWEIS: keine Status-Spalte ergaenzen. -->

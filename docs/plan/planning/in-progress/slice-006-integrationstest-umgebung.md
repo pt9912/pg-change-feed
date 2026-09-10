@@ -44,6 +44,14 @@ zusammen mit der Begründungs-Pflicht je Punkt.
   [`LH-QA-PER-002`](../../../../spec/lastenheft.md)-Messmethode braucht das
   Benchmark-Design; erst nach dem grünen E2E.
 - Exportadapter (Kafka/NATS/…) — keine Anforderung dieses Lastenhefts.
+- d-migrate-Nacharbeit (CHECK `chk_change_operation` lebt als psql-Schritt
+  statt im Rollout — [`ADR-0043`](../../../../docs/plan/adr/README.md)-Ausweichform
+  am Blocker `raw-sql-text-drift`, d-migrate 1.2.0) — **Ausgang: weiter
+  offen** → Retirement mit dem d-migrate-Fix-Release (Pin-Hebung +
+  `chk_change_operation` direkt ins YAML + Rückbau des psql-Schritts);
+  Träger: der Beobachtungs-Register-Eintrag
+  `BEO-PGC/d-migrate-nacharbeit` (angelegt mit dieser Closure), Beleg
+  `evidence/slice-006.md`.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -98,6 +106,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `compose.yaml` | neu | Lauf- und CI-Vertrag je Modul 14 (Devcontainer = Komfort, nicht hier) |
 | `test/integration/*` | neu | MVP-Integrationstest gegen die Compose-Umgebung |
 | `Makefile` (schema-rollout-Verkabelung) | update | *Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)):* Schema-Rollout in die Compose-Test-DB vor jedem E2E-Lauf (`make schema-rollout` mit Pflicht-Report und Rollback-Artefakt) — Erstversatz der ADR, löst die slice-004-Loader-Grenze ab |
+| `.a-check.yml` (Composition-Root-Glob) | update | *Plan-Nachzug (F-3, jetzt tatsächlich getragen):* `test/integration/**` in `composition_root` — der Verdrahtungstest-Layer als eigene a-check-Klasse (Architect-Fix, a-check 0 Befunde) |
+| `harness/README.md` (Werkzeuge-Zeilen) | update | *Plan-Nachzug (F-3):* `test-integration`-Target als Werkzeuge-Zeile (gepinnte Digests, Compose-Kette) — Archiver-Fixes getragen |
 | `tools/schema/schema.yaml` | neu | *Plan-Nachzug ([`ADR-0043`](../../../../docs/plan/adr/README.md)-Erstlieferung):* das neutrale Schema-YAML, überführt aus `internal/adapters/driven/postgresstorage/schema.sql` (Stand slice-004) — die Quelle, ohne die `schema-rollout` keinen Input hat; Platzierung (`tools/schema/` vs. co-loziert am Adapter) ist die offene Platzierungs-Frage aus [`ADR-0043`](../../../../docs/plan/adr/README.md) |
 
 ## 4. Trigger
