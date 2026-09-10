@@ -9,7 +9,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
 **Bezug:** [`LH-QA-POR-003`](../../../../spec/lastenheft.md), [`LH-QA-OPS-001`](../../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)
 
-**Berührte Spec-Stellen:** [`PH-DEP-002`](../../../../spec/pflichtenheft.md) (Umfang), [`PH-TST-001`](../../../../spec/pflichtenheft.md), [`ARC-007`](../../../../spec/architecture.md)
+**Berührte Spec-Stellen:** [`SPEC-011`](../../../../spec/pflichtenheft.md)/[`SPEC-015`](../../../../spec/pflichtenheft.md) (Deployment-Formen, Umfang), [`LH-QA-POR-003`](../../../../spec/lastenheft.md) (reproduzierbare Umgebung), [`ARC-007`](../../../../spec/architecture.md) — *Korrektur (Review F-11): die Verweise `PH-DEP-002`/`PH-TST-001` adressieren Kennungen, die kein Stratum trägt (Vorbestand aus dem zurückgezogenen Pflichtenheft-Entwurf); die echten Anker sind die Deployment-Verträge und die Testpyramide-Regeln (`.harness/skills`-Muster, [`ADR-0030`](../../../../docs/plan/adr/0030-testpyramide.md)-Bahn).*
 Der Verweis zeigt **aufwärts**: Die Spec nennt diesen Slice nie
 (Baseline-Regelwerk `grundlagen-referenz-richtung.md`
 §Referenz-Richtung (SDP), `grundlagen-source-precedence.md` §ID-Schema als Klammer).
