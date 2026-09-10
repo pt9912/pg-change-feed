@@ -9,10 +9,18 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
 **Bezug:** [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003, [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)/003, [`LH-FA-SST-004`](../../../../spec/lastenheft.md)
 
-**Berührte Spec-Stellen:** [`SPEC-009`](../../../../spec/pflichtenheft.md), [`ARC-006`](../../../../spec/architecture.md), [`ARC-011`](../../../../spec/architecture.md)
+**Berührte Spec-Stellen:** [`SPEC-009`](../../../../spec/pflichtenheft.md), [`ARC-005`](../../../../spec/architecture.md)
 Der Verweis zeigt **aufwärts**: Die Spec nennt diesen Slice nie
 (Baseline-Regelwerk `grundlagen-referenz-richtung.md`
 §Referenz-Richtung (SDP), `grundlagen-source-precedence.md` §ID-Schema als Klammer).
+
+**Plan-Nachzug (Implementer-Lauf, vor dem Sensor-Lauf — §3/§1/§8 unten):**
+`ARC-006`/`ARC-011` (Driven-Adapter, Telemetrie-Backend) ersetzt durch
+`ARC-005` (Driving Adapters, SQL-Funktionen/Views) — die tatsächliche
+Lieferung erweitert die bestehende SQL-Driving-Adapter-Fläche
+([`ADR-0046`](../../../../docs/plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md))
+um zwei Nacharbeit-Dateien; kein Driven-Adapter/Telemetrie-Backend-Code
+entstand in diesem Lauf. Begründung und Abgrenzung: §1, §3, §8.
 
 **Verantwortlich:** pt9912.
 **Autor:** pt9912. **Datum:** 2026-09-09.
@@ -41,6 +49,37 @@ zusammen mit der Begründungs-Pflicht je Punkt.
   Slice liefert die Rollen und Endpoints, nicht die Betriebsumgebung.
 - Vollständige Observability-Abdeckung — Basis hier (Health +
   Metriken-Minimum); die volle Metriken-Abdeckung folgt.
+
+**Plan-Nachzug (Implementer-Lauf, vor dem Sensor-Lauf, Baseline-Regelwerk
+`modul-09-implementierung.md` §Plan-Nachzug):** Zwei Punkte gehen über die
+ursprüngliche Abgrenzung hinaus und werden hier nachgetragen — Klasse
+**anderer Vorgang** bzw. **Schicht-Abgrenzung**, keine Kennung vorhanden,
+weil keine der beiden Erweiterungen bereits als eigener Slice existiert:
+
+- **Health-Endpoint ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) — nicht realisiert.**
+  Geprüft und verworfen: eine SQL-View liest nur persistierten Zustand und
+  kann den Lauf-Zustand des CDC-Prozesses selbst nicht bezeugen (ein
+  abgestürzter Prozess hinterlässt eine weiterhin erreichbare Datenbank —
+  die View läse „gesund"). Eine echte Prozess-Liveness-Antwort braucht
+  einen neuen Driving-Adapter-Zuschnitt (HTTP-Listener, Heartbeat-Datei
+  o. ä.); [`ADR-0020`](../../../../docs/plan/adr/0020-http-grpc-optional.md)
+  stellt HTTP/gRPC für das MVP explizit zurück und verlangt einen neuen
+  Entscheidungsanlass. Diese architektonische Entscheidung fehlt und ist
+  nicht Ermessen des Implementers (Modul 8 §Konflikt-Pfad) — **anderer
+  Vorgang**: Folge-ADR (Architect) klärt den Adapter-Zuschnitt, danach
+  Folge-Slice. Bis dahin bleibt der zugehörige DoD-Punkt (§2) teilweise
+  unerfüllt; siehe §6 (Risiko) und Hinweis an Reviewer/Planner unten.
+- **`internal/bootstrap/wiring.go` bleibt unverändert** — die drei Rollen
+  (`cdc_capture`/`cdc_admin`/`cdc_reader`) entstehen als DDL/Compose-Artefakt
+  (Rollen existieren, sind über `SET ROLE` einzeln testbar,
+  `internal/adapters/driven/postgresstorage/roles_test.go`), aber die
+  Verdrahtung trägt weiterhin eine gemeinsame Instanz-DSN (`Config.DSN`)
+  für Store-, Aktivierungs- und Stream-Verbindung. Rollen-spezifische DSNs
+  je Adapter zu verdrahten berührt Bootstrap **und** alle drei
+  Driven-Adapter-Konstruktoren zugleich — **Schicht-Abgrenzung**: dieser
+  Slice hält sich auf die DB-Schicht (DDL/Compose), die Anwendungs-/
+  Verdrahtungsschicht bleibt unberührt; sonst wäre der bereits im Plan
+  vorab benannte Rückführungs-Trigger „zu groß" (§4) eingetreten. Siehe §6.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -90,8 +129,11 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driving/` (Health/Metrics) | neu | Health-Endpoint + Metriken-Minimum je [`ADR-0024`](../../../../docs/plan/adr/README.md)/[`SPEC-009`](../../../../spec/pflichtenheft.md) |
-| `tools/schema/` (Rollen-DDL) | update | Least-Privilege-Rollen je [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003 |
+| ~~`internal/adapters/driving/` (Health/Metrics)~~ — **Plan-Nachzug: nicht realisiert** | — | ersetzt durch die beiden Zeilen unten; Health-Endpoint fehlt eine ADR (§1 Plan-Nachzug), kein neuer Go-Driving-Adapter entstand |
+| `tools/schema/nacharbeit-roles.sql` — **Plan-Nachzug: neue Datei statt „Rollen-DDL"-Sammelzeile** | neu | drei Least-Privilege-Rollen (`cdc_capture`/`cdc_admin`/`cdc_reader`) je [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003, angewandt über `make schema-rollout` (Nacharbeit-Schritt wie `nacharbeit-views.sql`, [`ADR-0043`](../../../../docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md)) |
+| `tools/schema/nacharbeit-observability.sql` — **Plan-Nachzug: neue Datei** | neu | Metriken-Minimum-View `cdc.metrics` je [`LH-FA-SST-004`](../../../../spec/lastenheft.md)/[`SPEC-009`](../../../../spec/pflichtenheft.md)-Teilmenge, als vierte Lese-View auf der bestehenden SQL-Driving-Adapter-Fläche ([`ARC-005`](../../../../spec/architecture.md), [`ADR-0046`](../../../../docs/plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)) |
+| `Makefile` (`schema-rollout`) — **Plan-Nachzug: neue Zeile** | update | zwei zusätzliche Nacharbeit-Schritte für die beiden Dateien oben |
+| `internal/adapters/driven/postgresstorage/roles_test.go` — **Plan-Nachzug: neue Datei** | neu | Berechtigungsprüfung (`SET ROLE`) gegen reale PostgreSQL — Teil-Beleg [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003, `make test-store` |
 
 ## 4. Trigger
 
@@ -140,6 +182,29 @@ dasteht.
 - Produktions-Deployment (HA/Kubernetes) — Out-of-Scope des MVP.
 - Vollständige Observability-Abdeckung — Basis hier, volle
   [`LH-QA-OPS-003`](../../../../spec/lastenheft.md)-Metriken folgen.
+- **Plan-Nachzug (Implementer-Lauf):** Health-Endpoint
+  ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md),
+  [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) fehlt eine
+  Driving-Adapter-Entscheidung ([`ADR-0020`](../../../../docs/plan/adr/0020-http-grpc-optional.md)
+  stellt HTTP/gRPC zurück) — §1 Plan-Nachzug, §5 Closure-Trigger
+  („Health- … Endpoint am verdrahteten System belegt") ist damit **nicht**
+  erfüllt. Reviewer-Hinweis statt Implementer-Ermessen (Modul 8
+  §Konflikt-Pfad): Planner entscheidet zwischen Carveout + Folge-Slice
+  (nach Folge-ADR) oder Anpassung des Closure-Triggers, der die
+  Metriken-Minimum-Lieferung dieses Slice von der noch offenen
+  Health-Frage trennt.
+- **Plan-Nachzug (Implementer-Lauf):** die drei Rollen bleiben
+  unverdrahtet — `internal/bootstrap/wiring.go` trägt weiter eine
+  gemeinsame Instanz-DSN für Store/Aktivierung/Stream (§1 Plan-Nachzug).
+  Die Rollen-Adoption in der Verdrahtung ist Folge-Arbeit (kein Slice
+  dafür existiert).
+- **Beobachtungs-Register gesichtet (§8):** `BEO-PGC/lese-doppelquelle`
+  (1× vor diesem Lauf, `evidence/slice-010.md`) trifft `cdc.metrics`
+  strukturell mit — die View liest über `cdc.consumer_status` dieselbe
+  Rückstands-Semantik, die auch am Go-Lesepfad denkbar wäre, ohne
+  koppelnden Sensor. Kein neuer Evidence-Eintrag durch den Implementer
+  (Register-Schreibschritt ist Planner-Sache bei Closure, Modul 8);
+  Hinweis für die Closure-Sichtung.
 
 ## 7. Closure-Notiz
 
@@ -185,11 +250,27 @@ in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Beding
 ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
 Hälften.
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** <je berührter Sub-Area: erfüllt sie
-die Schwelle ≥ 2 von 3 Achsen? zu grobe vorher ausdifferenzieren>
+**Vorgelagert — Sub-Area-Wahl prüfen (nachgetragen im Implementer-Lauf):**
+`harness/conventions.md` deklariert genau eine Sub-Area (`*`, Kürzel `PGC`,
+Modus Greenfield) für das gesamte Repo — keine feinere Deklaration
+existiert, gegen die dieser Slice zu grob wäre. Die berührte Fläche
+(DDL/Compose-Rollen, SQL-Lese-View) fällt vollständig unter dieses eine
+`PGC`; keine Ausdifferenzierung nötig.
 
-**Vorgelagert — offene Beobachtungen sichten:** <Register durchgegangen;
-je berührter Sub-Area der Treffer mit Zähler-Stand — oder "keine Treffer">
+**Vorgelagert — offene Beobachtungen sichten (nachgetragen im
+Implementer-Lauf):** Register `docs/plan/planning/observations/BEO-PGC/`
+durchgegangen (sieben Einträge). Treffer mit Zähler-Stand:
+`lese-doppelquelle` (1×, `evidence/slice-010.md`) — die neue
+`cdc.metrics`-View liest über `cdc.consumer_status` dieselbe
+Rückstands-Semantik wie die bestehenden Views, verstärkt also dieselbe
+Beobachtungsklasse (kein Sensor hält SQL-View-Semantik gegen
+Go-Use-Case-Semantik), siehe §6. `d-migrate-nacharbeit` (2×) — nicht
+unmittelbar getroffen: die beiden neuen Nacharbeit-Dateien folgen
+demselben etablierten Muster (`nacharbeit-views.sql`), lösen aber keinen
+neuen `raw-sql-text-drift`-Fall aus (getestet, `make test-store` grün).
+Übrige fünf Einträge (`a-check-null-abdeckung`, `adapter-fehler-ausgang`,
+`plan-nachzug`, `plan-vorlagen-defekt`, `walsender-wirksamkeit`) ohne
+Bezug zu diesem Slice.
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
