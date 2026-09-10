@@ -1,9 +1,10 @@
 // Package bootstrap ist die Composition Root (`ADR-0026`): er kennt die
 // konkreten Adapter und verdrahtet die Pipeline an genau einer Stelle —
-// ChangeStore-Driven-Adapter, Replication-Stream-Driving-Adapter, Capture
-// Service und Replication-ACK-Driven-Adapter. Die Abhängigkeitsregel (§2
-// der Architektur-Sicht) bleibt hier lokal einhaltbar; `main` referenziert
-// keinen Adapter-Konstruktor.
+// ChangeStore-Driven-Adapter, Aktivierungs-Driven-Adapter mit dem
+// EnableTable Use Case (`ADR-0028`), Replication-Stream-Driving-Adapter,
+// Capture Service und Replication-ACK-Driven-Adapter. Die
+// Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
+// einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
 //
 // Die Verdrahtung liest ihre Vorbedingungen als Minimal-Form aus der
 // Umgebung: DSN, Quelle, Publication, Slot-Name und die
@@ -21,7 +22,9 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
+	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -112,6 +115,18 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 	return tables, nil
 }
 
+// splitQualifiedName teilt den qualifizierten Tabellennamen am ersten
+// Punkt in Schema und Tabellenname; die Bindungs-Zeile trägt beide Teile
+// getrennt (`LH-FA-DAT-002`), die Umgebung trägt den Namen als
+// Schlüssel.
+func splitQualifiedName(qualified string) (string, string, error) {
+	schema, table, found := strings.Cut(qualified, ".")
+	if !found || schema == "" || table == "" {
+		return "", "", fmt.Errorf("%w: Aktivierung %q trägt nicht die Form schema.table", ErrConfiguration, qualified)
+	}
+	return schema, table, nil
+}
+
 // Run verdrahtet die Pipeline (`ADR-0026`) und trägt den Stream-Lauf bis
 // zum Kontext-Ende: der Stream baut die Replication-Verbindung, der
 // ACK-Adapter bestätigt über dieselbe Verbindung (`ADR-0007`, Option C)
@@ -130,6 +145,41 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 	defer store.Close()
+
+	// Die Aktivierung läuft als Use Case (`ADR-0028`, `LH-FA-CFG-001`):
+	// die Bindungen der Konfiguration laufen vor dem Stream-Start als
+	// EnableTable-Aufrufe — die Publication ist Start-Vorbedingung des
+	// Stream-Adapters (`LH-FA-CFG-001.a`) und die Bindungs-Zeilen tragen
+	// die Fremdschlüssel der ersten Persistenz (`SPEC-001`). Der Aufruf
+	// ist idempotent (`LH-FA-CFG-001` Boundary) und trägt den Stand auch
+	// nach einem Container-Neustart nach.
+	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN)
+	if err != nil {
+		return err
+	}
+	defer activation.Close()
+	enableTables := enable.NewEnableTableService(activation)
+	for qualified, binding := range cfg.Tables {
+		schema, table, err := splitQualifiedName(qualified)
+		if err != nil {
+			return err
+		}
+		if _, err := enableTables.Enable(ctx, inbound.EnableTableCommand{
+			Source:          cfg.Source,
+			Schema:          schema,
+			Table:           table,
+			TableID:         binding.TableID,
+			SchemaVersionID: binding.SchemaVersion,
+			// Die Umgebung trägt die Bindungs-Kennungen; die
+			// Anfangs-Version trägt die Verdrahtung als erste Version
+			// (`SPEC-004`) — spätere Versionen trägt die Schema-Evolution
+			// über den Metadata-Pfad (`LH-FA-SCH-004.a`).
+			Version:     1,
+			Publication: cfg.Publication,
+		}); err != nil {
+			return err
+		}
+	}
 
 	stream, err := receive.NewStream(ctx, receive.Config{
 		DSN:         cfg.DSN,
