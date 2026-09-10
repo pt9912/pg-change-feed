@@ -69,6 +69,15 @@ die Antwort und wird notiert.
    Plans trägt dieselbe Register-Sichtung noch einmal je Slice** (Modul 5, *Zwei Schritte vor der
    Modus-Begründung*) — und ist damit für alles **unter** 3× der einzige Leser; keine Treffer sind
    dort ebenfalls eine Antwort und werden notiert.
+   **§2-Form-Prüfung nach dem Füllen · seit slice-010:** Beim Füllen mehrerer
+   Slices in einem Zug (Skript oder wiederholtes Editieren) `grep` gegen jede
+   gefüllte §2 auf doppelte DoD-Zeilen (identischer Text zweimal) und
+   verbliebene Vorlagen-Platzhalter (`<…>`) — vor dem Commit, nicht erst beim
+   Review. Diese Klasse (`Dup-DoD` / `Vorlagen-Platzhalter im DoD`) trat bei
+   der Eröffnung von welle-3 in allen vier Slices gleichzeitig auf (derselbe
+   Fill-Fehler) und wurde erst je einzeln im Review/bei der Verifikation
+   gefunden (review-slice-005 F-11 · review-slice-008 F-8 · review-slice-009
+   F-6 · verify-slice-010 V-1).
 
 ## Welle-Plan per cp anlegen und füllen (der Kern-Schritt)
 
