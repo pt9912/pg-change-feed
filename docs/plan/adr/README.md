@@ -28,7 +28,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0015 | Schema Evolution | Accepted | 2026-09-09 | [0015-schema-evolution.md](0015-schema-evolution.md) |
 | ADR-0016 | JSONB Row Images im MVP | Accepted | 2026-09-09 | [0016-jsonb-row-images-mvp.md](0016-jsonb-row-images-mvp.md) |
 | ADR-0017 | Generische Change-Tabelle | Accepted | 2026-09-09 | [0017-generische-change-tabelle.md](0017-generische-change-tabelle.md) |
-| ADR-0018 | SQL als Driving Adapter | Accepted | 2026-09-09 | [0018-sql-driving-adapter.md](0018-sql-driving-adapter.md) |
+| ADR-0018 | SQL als Driving Adapter (→ ADR-0046) | Superseded | 2026-09-09 | [0018-sql-driving-adapter.md](0018-sql-driving-adapter.md) |
 | ADR-0019 | CLI als Driving Adapter | Accepted | 2026-09-09 | [0019-cli-driving-adapter.md](0019-cli-driving-adapter.md) |
 | ADR-0020 | HTTP/gRPC optional | Accepted | 2026-09-09 | [0020-http-grpc-optional.md](0020-http-grpc-optional.md) |
 | ADR-0021 | Large Transaction Buffer | Proposed | 2026-09-09 | [0021-large-transaction-buffer.md](0021-large-transaction-buffer.md) |
@@ -56,3 +56,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0043 | Schemamigrationen mit d-migrate | Accepted | 2026-09-09 | [0043-schemamigrationen-mit-d-migrate.md](0043-schemamigrationen-mit-d-migrate.md) |
 | ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
 | ADR-0045 | Commit-Traceability als Standing-Gate | Accepted | 2026-09-10 | [0045-commit-traceability-standing-gate.md](0045-commit-traceability-standing-gate.md) |
+| ADR-0046 | SQL-Driving-Adapter: Lese-Views direkt, schreibende Funktionen über Inbound Ports (Supersedes ADR-0018) | Accepted | 2026-09-10 | [0046-sql-driving-adapter-lese-schreib-trennung.md](0046-sql-driving-adapter-lese-schreib-trennung.md) |

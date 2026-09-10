@@ -1,6 +1,6 @@
 # ADR-0018: SQL als Driving Adapter
 
-**Status:** Accepted
+**Status:** Superseded by [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md)
 
 **Datum:** 2026-09-09
 
@@ -63,6 +63,7 @@ Bedingung.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-09 | Accepted (überführt aus dem Architektur-Entwurf `architecture-decision-records.md`) | — |
+| 2026-09-10 | Superseded durch ADR-0046 (Rollenspaltung nach Datenrichtung: reine Lese-Views dürfen Driven-Adapter-Tabellen direkt lesen; die hier benannte Pflicht — schreibende/aktionsauslösende SQL-Funktionen rufen Inbound Ports auf — gilt fort) | [ADR-0046](0046-sql-driving-adapter-lese-schreib-trennung.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
