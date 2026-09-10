@@ -15,6 +15,24 @@
 # Rollout-Kontext: der Rollout-Lauf führt current_schema() über
 # search_path = cdc, und die generated DDL landet dort. Die CREATE SCHEMA-
 # Zeile der DDL ist Umgebungs-Vorbedingung (Compose-Init), nicht Schema-Form.
+#
+# Benannte Grenze — der CHECK über der Operation: die Überführung trägt
+# vier der fünf CHECK-Constraints; `chk_change_operation`
+# (operation IN ('INSERT', 'UPDATE', 'DELETE')) kann d-migrate 1.2.0
+# (gepinnt) nicht überführen: der Lauf konvergiert nicht, weil der
+# Post-execute-Vergleich den kanonisierten Cast der Katalogform
+# (`::text`) und das `IN` → `= ANY (ARRAY[...])` als Drift liest und die
+# Autorenform desselben Ausdrucks an E012 scheitert (roher SQL-Text im
+# neutralen Modell, bekannter Befund des Werkzeugs, dort als offener
+# Slice `raw-sql-text-drift` geführt). Ausweichform nach dem
+# Re-Evaluierungs-Trigger von ADR-0043: berichtete manuelle Nacharbeit —
+# der Constraint lebt als dokumentierter Schritt im
+# `make schema-rollout`-Lauf
+# (tools/schema/nacharbeit-operation-check.sql); die handgeschriebene DDL
+# (internal/adapters/driven/postgresstorage/schema.sql) trägt dieselbe Form.
+# CHECK-Ausdrücke, die wie die verbleibenden drei konvergieren, tragen die
+# Katalogform wortgleich (Klammerpaar eingeschlossen) — der Vergleich ist
+# textlich, nicht semantisch.
 schema_format: "1.0"
 name: "cdc"
 version: "1.0.0"
@@ -56,7 +74,7 @@ tables:
     constraints:
       - name: chk_schema_version_version_range
         type: check
-        expression: "version >= 1"
+        expression: "(version >= 1)"
 
   transaction:
     description: "Persistierte Quelltransaktion (SPEC-001; LH-FA-DAT-004)"
@@ -75,7 +93,7 @@ tables:
     constraints:
       - name: chk_transaction_commit_position_positive
         type: check
-        expression: "commit_position > 0"
+        expression: "(commit_position > 0)"
 
   change:
     description: "Einzelner Change (SPEC-002; Row Images als jsonb, LH-FA-CAP-008)"
@@ -101,10 +119,7 @@ tables:
     constraints:
       - name: chk_change_sequence_positive
         type: check
-        expression: "sequence >= 1"
-      - name: chk_change_operation
-        type: check
-        expression: "operation IN ('INSERT', 'UPDATE', 'DELETE')"
+        expression: "(sequence >= 1)"
       - name: uq_change_transaction_sequence
         type: unique
         columns: [transaction_id, sequence]

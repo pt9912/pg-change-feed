@@ -50,6 +50,9 @@ test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publication/Slot (wal_level=logical, gepinnt)
 	@bash tools/harness/run-replication-tests.sh
 
+test-integration: ## MVP-Integrationstest gegen die Compose-Umgebung (Compose + schema-rollout + Toolchain-Container, kein Gate)
+	@bash tools/harness/run-integration-tests.sh
+
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
 # CDC-Schema-Form; SQL wird erzeugt, Rollouts laufen mit Pflicht-Report und
@@ -59,9 +62,19 @@ test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publica
 # Image per Digest gepinnt — Pin-Hebung = bewusster Commit (Modul 14).
 # `schema migrate --execute` braucht DB-Zugang: kein Target davon hängt an
 # GATE_CHECKS.
+# SCHEMA_ROLLOUT_NETWORK trägt das Docker-Netz des Rollout-Ziels: der
+# d-migrate-Container erreicht die Compose-Test-DB über den Dienstnamen
+# (Netz cdc-feed-test aus compose.yaml); für ein Host-seitiges localhost-Ziel
+# trägt der Aufrufer `host`. Der Default `bridge` passt für ein DB-Ziel, das
+# selbst im Default-Brückennetz liegt.
 D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:8d1433990ee4dd6a975b29d8db18356d1204ae6e45f96f312872ba5eca1230ea
 SCHEMA_SOURCE ?= tools/schema/schema.yaml
 SCHEMA_TARGET ?= db:postgres://postgres:postgres@localhost:5432/cdc?sslmode=disable
+SCHEMA_ROLLOUT_NETWORK ?= bridge
+# Das d-migrate-Image läuft als uid 10001 (dmigrate) und kann in den
+# Bind-Mount des Arbeitsbaums nicht schreiben — der Report- und
+# Rollback-Schreibpfad trägt den Host-Nutzer (uid/gid des make-Laufs).
+D_MIGRATE_RUN_USER ?= $(shell id -u):$(shell id -g)
 
 .PHONY: schema-validate schema-rollout
 schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor generate/migrate, kein Gate)
@@ -69,11 +82,21 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 	  echo "FEHLER: $(SCHEMA_SOURCE) fehlt — das neutrale Schema-YAML ist die Erstlieferung des d-migrate-Einbaus (ADR-0043); Überführungsquelle ist internal/adapters/driven/postgresstorage/schema.sql" >&2; \
 	  exit 2; \
 	fi
-	docker run --rm --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
+	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
 
+# Der Rollout trägt die CDC-Schema-Form vollständig — der CHECK über der
+# Operation läuft als berichtete manuelle Nacharbeit mit (ADR-0043,
+# Re-Evaluierungs-Trigger; die Grenze steht in tools/schema/schema.yaml und
+# tools/schema/nacharbeit-operation-check.sql): d-migrate 1.2.0 konvergiert
+# am CHECK-Ausdruck mit String-Literalen nicht, der Constraint lebt in
+# diesem psql-Schritt. Der Schritt zielt auf die frische Instanz des
+# Rollout-Laufs; ein Lauf gegen eine mit der Nacharbeit bestückte Instanz
+# scheitert an der Katalogform des Constraints (E012) — die Runner-Kette
+# (tools/harness/run-integration-tests.sh) räumt die Umgebung vorher ab.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
-	docker run --rm -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target $(SCHEMA_TARGET) --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
+	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
+	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-operation-check.sql
 
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'

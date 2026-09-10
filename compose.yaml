@@ -1,0 +1,61 @@
+# Compose-Umgebung der Lauf- und CI-Vertrag-Seite (LH-QA-POR-003,
+# LH-QA-OPS-001): PostgreSQL als Quelle mit Logical Decoding und der
+# PG-Change-Feed-Container am OCI-Vertrag. Das Image wird per
+# `make image` geladen (docker buildx build --load, Tag :dev); diese Datei
+# trägt bewusst keinen build:-Block — der Zweit-Build würde das geladene
+# Tag vom Lauf-Beleg in harness/image-hash.txt entkoppeln (ADR-0044).
+#
+# Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum); die
+# Umgebung läuft über tools/harness/run-integration-tests.sh und wird dort
+# in jedem Ausgang abgeräumt.
+
+services:
+  postgres:
+    # Digest-Pin wie im Makefile (PG_TEST_IMAGE); Pin-Hebung = bewusster
+    # Commit (Modul 14).
+    image: postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
+    container_name: cdc-test-postgres
+    environment:
+      POSTGRES_DB: cdc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    # Logical Decoding ist Vorbedingung des Replication-Streams (Slot,
+    # pgoutput); wal_sender_timeout=2000 trägt dieselbe Zeitspanne wie im
+    # Replication-Testcontainer (Keepalive-Antwort-Zug in Test-Zeitspanne).
+    command: >-
+      postgres -c wal_level=logical -c max_wal_senders=10
+      -c max_replication_slots=10 -c wal_sender_timeout=2000
+    # Der Init-SQL-Lauf legt das CDC-Ziel-Schema an und trägt
+    # current_schema() der Rollout-Verbindung — die generated DDL des
+    # d-migrate-Rollouts (ADR-0043) trägt unqualifizierte Tabellennamen und
+    # landet über search_path im Schema `cdc` (SPEC-006).
+    volumes:
+      - ./tools/schema/compose-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cdc"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      - cdc-test
+
+  pg-change-feed:
+    # Das geladene Image aus `make image` (Lauf-Beleg:
+    # harness/image-hash.txt); kein build:-Block in dieser Datei.
+    image: ghcr.io/pt9912/pg-change-feed:dev
+    container_name: cdc-test-feed
+    # Das Binary trägt den --version-Vertrag (Bootstrap-Stand der
+    # Composition Root, ADR-0026); der Adapter-Verdrahtungsstand entsteht am
+    # Composition Root und ist nicht Teil dieses Image-Vertrags. Der
+    # Container belegt den Lauf des Image in der Compose-Umgebung und endet
+    # nach dem Versionsausdruck ohne Fehler (Exit 0).
+    command: ["--version"]
+    restart: "no"
+    networks:
+      - cdc-test
+
+networks:
+  cdc-test:
+    # Fester Netzname: `make schema-rollout` trägt ihn über
+    # SCHEMA_ROLLOUT_NETWORK, ohne vom Compose-Projektnamen abzuleiten.
+    name: cdc-feed-test
