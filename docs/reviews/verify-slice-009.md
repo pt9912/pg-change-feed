@@ -3,7 +3,7 @@
 **Review-Art:** Verifikation — *wogegen*: Slice-Plan §2 (Definition of Done,
 **9 Items** nach dem Plan-Nachzug), §3 (Plan-vs-Code, Range `60cfd3e..HEAD`
 inkl. Plan-Nachzug `13d3d3f`), §6 (Risiko-Ausgang) und Entscheidungs-
-Konformität ([`ADR-0013`](../plan/adr/0013-consumer-als-domaenenkonzept.md) ·
+Konformität ([`ADR-0013`](../plan/adr/0013-consumer-domainkonzept.md) ·
 [`ADR-0028`](../plan/adr/0028-inbound-use-cases.md) ·
 [`ADR-0029`](../plan/adr/0029-domain-invarianten.md) Regel 2 ·
 [`ADR-0034`](../plan/adr/0034-ports-nach-faehigkeiten.md) ·
@@ -137,7 +137,7 @@ Deckung vollständig.
 | Finding | Disposition | Verdikt |
 |---|---|---|
 | F-1 (Plan-Nachzug fehlt, 9. Auftreten — Architect-Sequenz) | Architect-Verdikt-Commit `1d19738` verkörpert die Regel im Implementer-Workflow (`.claude/commands/implement-slice.md`, Anker „seit slice-009"); Plan-Nachzug `13d3d3f` trägt die vollständige §3-Liste + reset-Streichung | **getragen** — Anker geprüft: die Zeile „seit slice-009" steht wörtlich an der Zielstelle (Schritt 14, `.claude/commands/implement-slice.md`), Anker-Paarung besteht |
-| F-2 (ADR-0028-Liste ohne `GetConsumerPositionUseCase`/`RemoveConsumerUseCase`, 2. Auftreten) | Closure-Vermerk §7 („Architect-Verdikt 2026-09-10: Closure-Vermerk reicht") | **getragen, mit Einschränkung (V-2 unten)** — der Vermerk steht im selben Commit wie die Planner-Arbeit (`13d3d3f`, `docs(planning)`), kein separat identifizierbares Architect-Artefakt wie bei F-1; die `ADR-0028`-Liste selbst bleibt unverändert (Accepted-immutable, korrekt keine stille Erweiterung) |
+| F-2 (`ADR-0028`-Liste ohne `GetConsumerPositionUseCase`/`RemoveConsumerUseCase`, 2. Auftreten) | Closure-Vermerk §7 („Architect-Verdikt 2026-09-10: Closure-Vermerk reicht") | **getragen, mit Einschränkung (V-2 unten)** — der Vermerk steht im selben Commit wie die Planner-Arbeit (`13d3d3f`, `docs(planning)`), kein separat identifizierbares Architect-Artefakt wie bei F-1; die `ADR-0028`-Liste selbst bleibt unverändert (Accepted-immutable, korrekt keine stille Erweiterung) |
 | F-3 (Monotonie-Sperre benannt, nicht demonstriert) | Konkurrenz-Test `8c36952` (`TestAcknowledgeLockCarriesConcurrentOrdering`) | **getragen** — in diesem Lauf selbst am realen PostgreSQL nachgefahren (Sensor-Tabelle oben): Blockier-Probe (300 ms) und Invarianten-Prüfung nach Commit laufen tatsächlich |
 | F-4 (Fehlerklasse `storage` über den ChangeStore-Träger erweitert) | `fba659c` — eigener Sentinel `ErrConsumerStateStorage` + Registrierungs-Grenze `ErrConsumerUnregistered` | **getragen** — im Code gelesen (`port/outbound/consumerstate.go:10-26`), Kommentar trägt die Abgrenzung zur ChangeStore-Klasse indikativ; Adapter nutzt beide Sentinels konsistent (`consumerstate.go:39,80,146,170` etc.) |
 | F-5 (§8 vorgelagerte Prüfungen unausgefüllt) | `13d3d3f` — beide Blöcke gefüllt (Sub-Area-Wahl, 5-Einträge-Sichtung) | **getragen** — im Plan gelesen; Register-Sichtung deckt sich mit dem tatsächlichen Bestand (5 Verzeichnisse unter `BEO-PGC/`, geprüft) |
