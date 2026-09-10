@@ -56,7 +56,7 @@ Persist-before-ACK-Ordnung aus [`LH-QA-REL-001.a`](../../../../spec/pflichtenhef
 
 - Reale PostgreSQL-Adapter (Store, ACK, Stream) — es wäre ein anderer
   Vorgang: Treiber-Integration mit realem PostgreSQL
-  ([`PH-TST-001`-Umfang](../../../../spec/pflichtenheft.md)); die Welle 2
+  ([`LH-QA-POR-003`](../../../../spec/lastenheft.md)/[`SPEC-011`](../../../../spec/pflichtenheft.md)-Umfang); die Welle 2
   bündelt sie, sobald sie eröffnet wird (noch keine Lifecycle-Datei — die
   Slices von Welle 2 entstehen bei ihrer Eröffnung, Modul 6). Die
   Fake-Port-Tests dieser Welle tragen die Ordnungs-Logik schon.

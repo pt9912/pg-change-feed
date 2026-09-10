@@ -28,6 +28,11 @@ werden Ende-zu-Ende erfasst und deterministisch gelesen
 MVP-Schnitt ([`spec/lastenheft.md` §1](../../../spec/lastenheft.md)) ist belegt;
 der Meilenstein M1 kann erreicht werden.
 
+*Benannte Grenze (Review F-6, slice-006):* der Feed-Container trägt
+bis zum Bootstrap-Verdrahtungs-Slice (slice-007, in `open/`) den
+`--version`-Vertrag-Smoke; der Integrationstest fährt das System auf
+der Go-Baum-Ebene. Die Verdrahtung folgt als wellenloser Zug.
+
 ## 2. Trigger (Welle startet)
 
 <!-- BEDIENHINWEIS: Was muss vorher passiert sein? -->
@@ -49,11 +54,6 @@ dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht — der Trigger muss das *Mehr* gegenüber den
 einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
-
-- <z.B. Alle Slices done.>
-- <z.B. `make fullbuild` grün.>
-- <z.B. Replay-Lauf gegen Golden Set durchläuft.>
-- <z.B. Closure-Notiz in `welle-<NN>-results.md`.>
 
 ## 4. Slices in dieser Welle
 
