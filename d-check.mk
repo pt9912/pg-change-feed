@@ -43,6 +43,24 @@ doc-immutable: ## Doc-/ADR-Immutabilität via git-Diff (Modul vcs); RANGE=base..
 doc-commits: ## Commit-Message-Traceability via Modul commits; RANGE=base..head (DC-FA-COMMITS-001)
 	docker run --rm --network none -v "$(CURDIR):/repo:ro" $(DCHECK_REF) --enable commits --disable links --disable anchors --disable ids --disable matrix --disable external --disable codepaths --disable spans --disable hostpaths --disable diagrams --disable versions --disable pins --disable immutable --disable vcs --disable planning --disable tracked --disable targets --disable citations --disable sources --disable structure --disable workflows --disable reviews --range $(RANGE)
 
+# commit-traceability — Standing-Gate der Commit-Traceability (ADR-0045):
+# die Traceability-Regel (harness/README.md §Traceability rules) je Commit-
+# Message der letzten fünf Commits, mechanisch getragen. Positive Hälfte
+# (je Message eine Vertrags-Kennung): d-check Modul commits, konfiguriert
+# im commits-Abschnitt der .d-check.yml (Befund commit-untraceable).
+# Grenz-Hälfte (keine Struktur-ID im Betreff): der Shell-Sensor — das
+# commits-Modul kennt heute keine verbotene-Muster-Option; ein zweiter
+# Sensor über dieselbe Hälfte wäre eine zweite Quelle. Gate statt
+# commit-msg-Hook (ADR-0045, Alternativen): das Gate läuft im
+# `make gates`-Bündel und deckt Commits jedes Urhebers im Fenster.
+# RANGE=base..head überschreibt den Standing-Default.
+COMMIT_TRACE_RANGE ?= HEAD~5..HEAD
+
+.PHONY: commit-traceability
+commit-traceability: ## Commit-Traceability als Standing-Gate (letzte 5 Commits; ADR-0045); RANGE=base..head
+	docker run --rm --network none -v "$(CURDIR):/repo:ro" $(DCHECK_REF) --enable commits --disable links --disable anchors --disable ids --disable matrix --disable external --disable codepaths --disable spans --disable hostpaths --disable diagrams --disable versions --disable pins --disable immutable --disable vcs --disable planning --disable tracked --disable targets --disable citations --disable sources --disable structure --disable workflows --disable reviews --range $(COMMIT_TRACE_RANGE)
+	bash tools/harness/commit-traceability.sh "$(COMMIT_TRACE_RANGE)"
+
 .PHONY: doc-planning
 doc-planning: ## Planning-Lifecycle-Konsistenz (Roadmap <-> in-progress) via Modul planning; hermetisch, ohne Range (DC-FA-PLAN-001)
 	docker run --rm --network none -v "$(CURDIR):/repo:ro" $(DCHECK_REF) --enable planning --disable links --disable anchors --disable ids --disable matrix --disable external --disable codepaths --disable spans --disable hostpaths --disable diagrams --disable versions --disable pins --disable immutable --disable vcs --disable commits --disable tracked --disable targets --disable citations --disable sources --disable structure --disable workflows --disable reviews

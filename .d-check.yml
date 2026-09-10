@@ -149,3 +149,16 @@ reviews:
 # (z. B. nennt spec/architecture.md den Roadmap-Pfad, der erst mit der
 # ersten Welle angelegt wird) — sonst behaupteter, aber roter Gate
 # (Modul 13, LH-QA-01).
+# commits: Traceability-Kennung in Commit-Messagen (opt-in, git) — die
+# positive Haelfte des Commit-Traceability-Gates (ADR-0045): je Message der
+# Standing-Range (make-Target commit-traceability, Default HEAD~5..HEAD)
+# mindestens eine Vertrags-Kennung, sonst Befund commit-untraceable. Die
+# Grenz-Haelfte (keine Struktur-ID im Betreff) prueft im selben Target
+# tools/harness/commit-traceability.sh — das commits-Modul kennt heute
+# keine verbotene-Muster-Option. Kein slice-Kennungs-Muster: der Commit
+# nennt den Vertrag, nicht den Lifecycle-Plan.
+commits:
+  id-patterns:
+    - 'ADR-\d{4}'
+    - 'LH-(FA|QA)-[A-Z]{3}-\d{3}(\.[a-z])?'
+  exempt-pattern: '^(Merge |Revert )'
