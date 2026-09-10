@@ -65,8 +65,10 @@ Ausschluss unten); das reale `cdc_capture_lag` ist Folge-Slice-Arbeit.
   (Kennung folgt bei der nächsten Eröffnung; die Schätzung ist bereits
   präzisiert: `pglogrepl.CommitMessage.CommitTime` existiert, keine neue
   Wire-Verbindung nötig — nur das Durchreichen berührt Replication-
-  Decoder, Domain, Application/Ports und Store-Adapter). Bis dahin
-  trägt dieser Slice eine dokumentierte Näherung (Persistenz-Zeit als
+  Decoder, Domain, Application/Ports und Store-Adapter). Beleg im
+  Register: `BEO-PGC/cdc-capture-lag-real` (Eintrag angelegt, Beleg
+  `evidence/slice-013.md`). Bis dahin trägt dieser Slice eine
+  dokumentierte Näherung (Persistenz-Zeit als
   Proxy, Kommentar-Klasse Grenze in `nacharbeit-observability.sql`).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
