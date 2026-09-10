@@ -1,4 +1,4 @@
-// Package queries trägt die SQL-Texte des PostgresChangeStoreAdapters
+// Package queries trägt die SQL-Texte der postgresstorage-Adapter
 // (Paketstruktur je `ADR-0042`, der die Struktur-Regeln des abgelösten
 // `ADR-0039` als Rest fortgilt): die Tabellennamen nach `SPEC-001` stehen
 // hier und nirgends sonst im Adapter; die Zeilen-Übersetzung trägt der
@@ -63,3 +63,62 @@ SELECT count(*) FROM cdc.transaction WHERE source_id = $1`
 // Transaktions-Kennung; dieselbe Verwendung wie CountTransactions.
 const CountChanges = `
 SELECT count(*) FROM cdc.change WHERE transaction_id = $1`
+
+// InsertSourceTable trägt die Bindungs-Zeile einer Aktivierung
+// (`LH-FA-CFG-001`); die Deduplizierung der Idempotenz läuft über
+// Primärschlüssel und UNIQUE-Kante (source_id, schema_name, table_name) —
+// die erneut aktivierte Tabelle bleibt ohne Wirkung.
+const InsertSourceTable = `
+INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT DO NOTHING`
+
+// InsertSchemaVersion trägt die Schema-Version-Zeile einer Aktivierung
+// (`LH-FA-CFG-001`, `SPEC-004`); dieselbe Idempotenz über den
+// Primärschlüssel.
+const InsertSchemaVersion = `
+INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING`
+
+// SelectSourceTable liest die Bindungs-Zeile einer Tabelle — der Zustand
+// „aktiviert" (`LH-FA-CFG-003`).
+const SelectSourceTable = `
+SELECT source_table_id FROM cdc.source_table
+WHERE source_id = $1 AND schema_name = $2 AND table_name = $3`
+
+// SelectSourceTableChanges liest den Change-Bestand der Tabelle; der
+// Bindungs-Zeilen-Entzug liest darüber die Herkunft der persistierten
+// Changes (`LH-FA-CFG-002` Out-of-Scope) und entzieht bei Bestand nichts.
+const SelectSourceTableChanges = `
+SELECT EXISTS (SELECT 1 FROM cdc.change WHERE source_table_id = $1)`
+
+// DeleteSchemaVersions entzieht die Schema-Version-Zeilen der Tabelle; der
+// Entzug läuft nach der Change-Bestands-Prüfung (SelectSourceTableChanges)
+// und vor dem Bindungs-Zeilen-Entzug.
+const DeleteSchemaVersions = `
+DELETE FROM cdc.schema_version WHERE source_table_id = $1`
+
+// DeleteSourceTable entzieht die Bindungs-Zeile; die
+// Fremdschlüssel-Kante der Changes schützt den Bestand — der Entzug läuft
+// nach der Change-Bestands-Prüfung (SelectSourceTableChanges).
+const DeleteSourceTable = `
+DELETE FROM cdc.source_table WHERE source_table_id = $1`
+
+// SelectSourceTables liest die Bindungs-Zeilen einer Quelle — die Liste
+// der aktivierten Tabellen (`LH-FA-CFG-004`).
+const SelectSourceTables = `
+SELECT source_table_id, source_id, schema_name, table_name
+FROM cdc.source_table
+WHERE source_id = $1
+ORDER BY schema_name, table_name`
+
+// SelectPublication liest den Publication-Bestand an der Quelle.
+const SelectPublication = `
+SELECT 1 FROM pg_publication WHERE pubname = $1`
+
+// SelectPublicationMember liest die Mitgliedschaft einer Tabelle in der
+// Publication.
+const SelectPublicationMember = `
+SELECT 1 FROM pg_publication_tables
+WHERE pubname = $1 AND schemaname = $2 AND tablename = $3`
