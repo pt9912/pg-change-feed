@@ -37,9 +37,10 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- Vollständige Konfigurationsschicht (TOML/YAML) — ENV-Minimal-
-  verdrahtung bleibt (slice-007-Muster); die vollständige Schicht folgt
-  in späteren Wellen.
+- Vollständige Konfigurationsschicht (TOML/YAML) — **Klasse 2 (Bestand
+  bleibt bewusst stehen):** die ENV-Minimalverdrahtung aus slice-007
+  bleibt als Bestand; die vollständige Schicht ist anderer Vorgang mit
+  eigenem Bedarfsmoment und folgt in späteren Wellen.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -63,14 +64,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 - [ ] `EnableTableUseCase`/`DisableTableUseCase` am Inbound-Port —
       Teil-Beleg zu [`LH-FA-CFG-001`](../../../../spec/lastenheft.md)/002.
-- [ ] `StatusUseCase`/`ListTablesUseCase` — Teil-Beleg zu
+- [ ] `GetStatusUseCase`/`ListTablesUseCase` (Kanon-Bezeichner je
+      [`ADR-0028`](../../../../docs/plan/adr/README.md)) — Teil-Beleg zu
       [`LH-FA-CFG-003`](../../../../spec/lastenheft.md)/004.
-- [ ] `make gates` grün.
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+- [ ] Doku-Update für den ENV-Container-Vertrag (`compose.yaml`), falls
+      berührt — geprüft: ENV-Vertrag unverändert, Item entfällt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -89,9 +91,14 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/port/inbound/verwaltung.go` | neu | EnableTable/DisableTable/Status/Liste je [`ADR-0028`](../../../../docs/plan/adr/README.md) |
-| `internal/application/usecase/{enable,disable}/*.go` | neu | Services + Command/Result je [`ADR-0039`](../../../../docs/plan/adr/README.md) |
+| `internal/application/port/inbound/verwaltung.go` | neu | EnableTable/DisableTable/Status/Liste je [`ADR-0028`](../../../../docs/plan/adr/README.md), Transport-Typen am Port je [`ADR-0042`](../../../../docs/plan/adr/README.md) |
+| `internal/application/port/outbound/tableactivation.go` | neu | `TableActivationPort` als Fähigkeits-Port je [`ADR-0034`](../../../../docs/plan/adr/README.md) (Aktivierung außerhalb des Store-Ports) |
+| `internal/application/usecase/{enable,disable,status,list}/*.go` | neu | Services + Command/Query/Result je [`ADR-0039`](../../../../docs/plan/adr/README.md); Status/Liste ergänzt (DoD-Deckung, §2) |
+| `internal/adapters/driven/postgresstorage/tableactivation.go` + `queries/queries.go` | neu/update | Aktivierungs-Adapter mit Bindungs-/Publikations-Zugriff; Zustands-View (Published/Retained, Review F-2) |
+| `internal/bootstrap/wiring.go` | update | Aktivierung als Use Case vor dem Stream-Start je [`ADR-0026`](../../../../docs/plan/adr/README.md) |
 | `tools/harness/run-integration-tests.sh` | update | Aktivierung über die Use-Case-Fähigkeit statt Seed-SQL |
+| `compose.yaml` | update | Seed-SQL-Aktivierung entfällt; Feed-Container aktiviert beim Start |
+| `test/integration/mvp_test.go` | update | MVP-Test fährt die Use-Case-Abfolge; Zustands-Wächter (Disable → Retained) |
 
 ## 4. Trigger
 
@@ -141,6 +148,11 @@ dasteht.
 
 - (a) Aktivierung über Use Case vs. Runner-Seed-SQL — **Ausgang:**
   eingetreten (Träger: dieser Slice; der Seed-SQL-Prüfpfad entfällt).
+- (b) Wirksamkeits-Grenze der Deaktivierung am laufenden Walsender —
+  der Publication-Entzug wirkt am laufenden Stream erst nach dessen
+  Neuaufbau (PostgreSQL-Verhalten); der Zustands-View (Kataloge) belegt
+  die Bindung, nicht das Capture-Zeitverhalten — **Ausgang:** weiter
+  offen → `BEO-PGC/walsender-wirksamkeit` im Register (bei Closure).
 
 ## 7. Closure-Notiz
 
