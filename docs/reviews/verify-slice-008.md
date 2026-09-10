@@ -34,7 +34,7 @@ Schreibaktion dieses Laufs ist dieser Report (`docs/reviews/verify-slice-008.md`
   `review-slice-008.md` (F-1…F-10, committet in `bd0efde`) · Fix-Commits im
   Volltext
 - `../../spec/lastenheft.md` ([`LH-FA-CFG-001`](../../spec/lastenheft.md)…004
-  samt Akzeptanzkriterien), ADR-0028/0042/0034/0026 im Volltext
+    samt Akzeptanzkriterien), [`ADR-0028`](../plan/adr/0028-inbound-use-cases.md)/[`ADR-0042`](../plan/adr/0042-transport-typen-am-port.md)/[`ADR-0034`](../plan/adr/0034-ports-nach-faehigkeiten.md)/[`ADR-0026`](../plan/adr/0026-composition-root.md) im Volltext
 - Beobachtungs-Register (`BEO-PGC/*`, drei Einträge) ·
   `../plan/planning/welle-3.md` (flach — Repo **mit** Wellen-Betrieb) ·
   `harness/image-hash.txt`
@@ -73,7 +73,7 @@ den Review-Negativbefund „Traceability aller sechs Commits" getragen).
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **offen bis Closure (normal)** | §7 trägt Platzhalter; Slice korrekt in `in-progress/`. Closure-Lern- und Vermerk-Pflichten unten (Summary) |
 | 7 | Reconciliation-Register fortgeschrieben, falls Inventur-Fund | **entfällt** | `docs/plan/planning/reconciliation.md` existiert nicht (Repo ohne Brownfield-Bootstrap) — vom DoD-Wortlaut ausdrücklich vorgesehen; kein Inventur-Fund im Range |
 | 8 | Beobachtungs-Register fortgeschrieben | **offene Closure-Pflicht — Ausgang benannt** | Risiko §6 (b) trägt den Ausgang „weiter offen → `BEO-PGC/walsender-wirksamkeit` im Register (bei Closure)" — das Verzeichnis existiert **noch nicht** (Register führt drei Einträge: `d-migrate-nacharbeit`, `adapter-fehler-ausgang`, `a-check-null-abdeckung`); korrekter Vor-Closure-Stand, Beleg `evidence/slice-008.md` fällig beim Übergang |
-| 9 | Jedes Risiko aus §6 trägt einen Ausgang | **Voreinstellung getragen — Endbelege fällig bei Closure** | (a) Aktivierung über Use Case vs. Seed-SQL — **eingetreten**, Träger dieser Slice: belegt — der Runner trägt keine Seed-Aktivierung mehr (`grep seed` im Runner: nur Kommentar „EnableTable Use Case (ADR-0028), nicht über Seed-SQL"), die Aktivierung läuft an genau einer Stelle (`wiring.go`), der Runner-Wächter prüft Slot- und Feed-Bestand. (b) Wirksamkeits-Grenze am laufenden Walsender — **weiter offen**, Träger: Register-Eintrag bei Closure (Item 8). Beide Ausgänge stammen aus der geschlossenen Dreier-Menge; der Register-Beleg für (b) fällt bei der Closure an |
+| 9 | Jedes Risiko aus §6 trägt einen Ausgang | **Voreinstellung getragen — Endbelege fällig bei Closure** | (a) Aktivierung über Use Case vs. Seed-SQL — **eingetreten**, Träger dieser Slice: belegt — der Runner trägt keine Seed-Aktivierung mehr (`grep seed` im Runner: nur Kommentar „EnableTable Use Case, nicht über Seed-SQL“), die Aktivierung läuft an genau einer Stelle (`wiring.go`), der Runner-Wächter prüft Slot- und Feed-Bestand. (b) Wirksamkeits-Grenze am laufenden Walsender — **weiter offen**, Träger: Register-Eintrag bei Closure (Item 8). Beide Ausgänge stammen aus der geschlossenen Dreier-Menge; der Register-Beleg für (b) fällt bei der Closure an |
 | 10 | Drei Paarungen (Anker · Folge-Slice · Register) | **delegiert — korrekt** | Repo **mit** Wellen-Betrieb (`welle-3.md` flach vorhanden; der Slice trägt `**Welle:** welle-3`): der DoD-Wortlaut weist die Prüfung der nächsten Welle-Closure zu |
 
 **Zwischenstand: 4/10 Punkte jetzt erfüllt** (Items 1–4, Belege selbst
