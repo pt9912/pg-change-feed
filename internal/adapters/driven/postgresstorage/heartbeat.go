@@ -3,6 +3,7 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -39,6 +40,7 @@ func NewHeartbeat(ctx context.Context, dsn string) (*PostgresHeartbeatAdapter, e
 		pool.Close()
 		return nil, heartbeatStorageFailure(err)
 	}
+	slog.InfoContext(ctx, "heartbeat: verbunden")
 	return &PostgresHeartbeatAdapter{pool: pool}, nil
 }
 
@@ -46,8 +48,11 @@ func NewHeartbeat(ctx context.Context, dsn string) (*PostgresHeartbeatAdapter, e
 // Adapters (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser
 // Grenze in die Klasse `storage` über den eigenen Sentinel des Ports
 // (`outbound.ErrHeartbeatStorage`) — die technische Ursache bleibt über
-// die zweite Wrappung lesbar.
+// die zweite Wrappung lesbar. Derselbe Aufruf trägt den strukturierten
+// Fehler-Log (`LH-QA-OPS-004`), aus demselben Grund ohne
+// `context.Context`-Parameter wie `storageFailure` (`store.go`).
 func heartbeatStorageFailure(cause error) error {
+	slog.Error("heartbeat: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrHeartbeatStorage, cause)
 }
 
@@ -72,6 +77,7 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
 		return heartbeatStorageFailure(err)
 	}
+	slog.DebugContext(ctx, "heartbeat: Lebenszeichen geschrieben", "source", source)
 	return nil
 }
 
@@ -91,5 +97,6 @@ func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.Sourc
 	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
 		return heartbeatStorageFailure(err)
 	}
+	slog.WarnContext(ctx, "heartbeat: Fehlerzustand gemeldet", "source", source, "class", validated)
 	return nil
 }

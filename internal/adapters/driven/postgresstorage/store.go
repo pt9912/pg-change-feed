@@ -3,6 +3,7 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,6 +37,7 @@ func New(ctx context.Context, dsn string) (*PostgresChangeStoreAdapter, error) {
 		pool.Close()
 		return nil, storageFailure(err)
 	}
+	slog.InfoContext(ctx, "changestore: verbunden")
 	return &PostgresChangeStoreAdapter{pool: pool}, nil
 }
 
@@ -43,8 +45,14 @@ func New(ctx context.Context, dsn string) (*PostgresChangeStoreAdapter, error) {
 // (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `storage` — Application und Betrieb klassifizieren über
 // `errors.Is(err, outbound.ErrStorage)` und kennen keinen Treibertyp; die
-// technische Ursache bleibt über die zweite Wrappung lesbar.
+// technische Ursache bleibt über die zweite Wrappung lesbar. Derselbe
+// Aufruf trägt den strukturierten Fehler-Log (`LH-QA-OPS-004`) — der
+// einzige Übersetzungspunkt dieses Adapters *und* von
+// `tableactivation.go` (gleiches Paket), kein Log je Aufrufstelle. Ohne
+// `context.Context`-Parameter: `slog.Error` statt `ErrorContext`, damit
+// die Signatur an allen bestehenden Aufrufstellen unverändert bleibt.
 func storageFailure(cause error) error {
+	slog.Error("postgresstorage: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrStorage, cause)
 }
 
@@ -116,6 +124,8 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 	if err := tx.Commit(ctx); err != nil {
 		return storageFailure(err)
 	}
+	slog.DebugContext(ctx, "changestore: Transaktion persistiert",
+		"transaction_id", transactionRow.TransactionID, "changes", len(changeRows))
 	return nil
 }
 

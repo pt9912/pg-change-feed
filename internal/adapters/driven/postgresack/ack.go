@@ -10,6 +10,7 @@ package postgresack
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -33,6 +34,7 @@ func New(conn *pgconn.PgConn) (*PostgresReplicationAckAdapter, error) {
 	if conn == nil {
 		return nil, fmt.Errorf("%w: keine Replication-Verbindung", outbound.ErrReplication)
 	}
+	slog.Info("replicationack: verdrahtet")
 	return &PostgresReplicationAckAdapter{conn: conn}, nil
 }
 
@@ -41,8 +43,11 @@ var _ outbound.ReplicationAckPort = (*PostgresReplicationAckAdapter)(nil)
 // replicationFailure trägt die Übersetzungsverantwortung des Adapters
 // (`ADR-0023`, `SPEC-008`): Treiber-Fehler gehen an dieser Grenze in die
 // Klasse `replication` (`outbound.ErrReplication`); die technische
-// Ursache bleibt über die zweite Wrappung lesbar.
+// Ursache bleibt über die zweite Wrappung lesbar. Derselbe Aufruf trägt
+// den strukturierten Fehler-Log (`LH-QA-OPS-004`); `New` oben trägt kein
+// `context.Context`, deshalb `slog.Info` statt `InfoContext`.
 func replicationFailure(cause error) error {
+	slog.Error("replicationack: Bestätigungsfehler", "error", cause)
 	return fmt.Errorf("%w: %v", outbound.ErrReplication, cause)
 }
 
@@ -63,5 +68,6 @@ func (a *PostgresReplicationAckAdapter) Acknowledge(ctx context.Context, positio
 	}); err != nil {
 		return replicationFailure(err)
 	}
+	slog.DebugContext(ctx, "replicationack: Position bestätigt", "offset", position.Offset)
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 
 	"github.com/jackc/pgx/v5"
@@ -42,6 +43,7 @@ func NewConsumerState(ctx context.Context, dsn string) (*PostgresConsumerStateAd
 		pool.Close()
 		return nil, stateStorageFailure(err)
 	}
+	slog.InfoContext(ctx, "consumerstate: verbunden")
 	return &PostgresConsumerStateAdapter{pool: pool}, nil
 }
 
@@ -51,8 +53,11 @@ func NewConsumerState(ctx context.Context, dsn string) (*PostgresConsumerStateAd
 // (`outbound.ErrConsumerStateStorage`) — die Klasse-Aktion des
 // ChangeStore-Sentinels (kein Source-ACK, `LH-QA-REL-001.a`) trägt dieser
 // Adapter nicht; die technische Ursache bleibt über die zweite Wrappung
-// lesbar.
+// lesbar. Derselbe Aufruf trägt den strukturierten Fehler-Log
+// (`LH-QA-OPS-004`), aus demselben Grund ohne `context.Context`-Parameter
+// wie `storageFailure` (`store.go`).
 func stateStorageFailure(cause error) error {
+	slog.Error("consumerstate: Datenbankfehler", "error", cause)
 	return fmt.Errorf("%w: %w", outbound.ErrConsumerStateStorage, cause)
 }
 
@@ -79,7 +84,11 @@ func (a *PostgresConsumerStateAdapter) Register(ctx context.Context, consumer mo
 	if err != nil {
 		return false, stateStorageFailure(err)
 	}
-	return tag.RowsAffected() == 1, nil
+	registered := tag.RowsAffected() == 1
+	if registered {
+		slog.InfoContext(ctx, "consumerstate: Consumer registriert", "consumer_id", valid.ID)
+	}
+	return registered, nil
 }
 
 // Position liest die bestätigte Position des Consumers (`LH-FA-CON-003`
@@ -172,6 +181,8 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 	if err := tx.Commit(ctx); err != nil {
 		return model.ConsumerPosition{}, stateStorageFailure(err)
 	}
+	slog.DebugContext(ctx, "consumerstate: Position bestätigt",
+		"consumer_id", carried.ConsumerID, "offset", carried.Position.Offset)
 	return carried, nil
 }
 

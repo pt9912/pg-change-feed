@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/jackc/pgx/v5"
@@ -50,6 +51,7 @@ func NewTableActivation(ctx context.Context, dsn string) (*TableActivationAdapte
 		pool.Close()
 		return nil, storageFailure(err)
 	}
+	slog.InfoContext(ctx, "tableactivation: verbunden")
 	return &TableActivationAdapter{pool: pool}, nil
 }
 
@@ -136,6 +138,8 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 	if err := tx.Commit(ctx); err != nil {
 		return false, storageFailure(err)
 	}
+	slog.InfoContext(ctx, "tableactivation: Tabelle registriert",
+		"table_id", table.ID, "schema", table.Schema, "table", table.Table)
 	return true, nil
 }
 
@@ -220,6 +224,7 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 			); err != nil {
 				return storageFailure(err)
 			}
+			slog.InfoContext(ctx, "tableactivation: Publication angelegt", "publication", publication, "table", qualified)
 			return nil
 		}
 		return storageFailure(err)
@@ -232,6 +237,7 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 			); err != nil {
 				return storageFailure(err)
 			}
+			slog.InfoContext(ctx, "tableactivation: Tabelle zur Publication hinzugefügt", "publication", publication, "table", qualified)
 			return nil
 		}
 		return storageFailure(err)
