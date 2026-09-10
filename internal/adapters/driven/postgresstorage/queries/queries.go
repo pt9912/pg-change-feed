@@ -122,3 +122,52 @@ SELECT 1 FROM pg_publication WHERE pubname = $1`
 const SelectPublicationMember = `
 SELECT 1 FROM pg_publication_tables
 WHERE pubname = $1 AND schemaname = $2 AND tablename = $3`
+
+// InsertConsumer trägt die Consumer-Zeile einer Registrierung
+// (`LH-FA-CON-001`); die Deduplizierung der Idempotenz läuft über den
+// Primärschlüssel — die erneut registrierte Kennung bleibt ohne Wirkung
+// und die betroffene Zeilen-Zahl liest den Ausgang.
+const InsertConsumer = `
+INSERT INTO cdc.consumer (consumer_id, name)
+VALUES ($1, $2)
+ON CONFLICT (consumer_id) DO NOTHING`
+
+// SelectConsumerPosition liest die bestätigte Position eines Consumers
+// (`LH-FA-CON-003`); das Lesen trägt keine Schreibwirkung — der
+// gesperrte Lese der Bestätigung läuft als eigene Abfrage
+// (SelectConsumerPositionLocked).
+const SelectConsumerPosition = `
+SELECT source_id, acknowledged_position FROM cdc.consumer_position
+WHERE consumer_id = $1`
+
+// SelectConsumerPositionLocked liest und sperrt die bestätigte Position
+// innerhalb des Bestätigungs-Commits; die Zeilen-Sperre hält die
+// konkurrierenden Bestätigungen desselben Consumers in Ordnung — der
+// Monotonie-Vergleich läuft gegen den gesperrten Stand (`LH-FA-CON-002`
+// trennt die Consumer, ihr Fortschritt kollidiert nicht).
+const SelectConsumerPositionLocked = `
+SELECT source_id, acknowledged_position FROM cdc.consumer_position
+WHERE consumer_id = $1
+FOR UPDATE`
+
+// UpsertConsumerPosition trägt die bestätigte Position fort
+// (`LH-FA-CON-003` Boundary); die Monotonie trägt der Domänen-Vergleich
+// vor dem Schreiben (`ADR-0029`, Regel 2), nicht der SQL-Ausdruck — die
+// gesperrte Zeile liest der Adapter vor diesem Upsert.
+const UpsertConsumerPosition = `
+INSERT INTO cdc.consumer_position (consumer_id, source_id, acknowledged_position)
+VALUES ($1, $2, $3)
+ON CONFLICT (consumer_id) DO UPDATE
+SET source_id = EXCLUDED.source_id, acknowledged_position = EXCLUDED.acknowledged_position`
+
+// DeleteConsumerPosition entzieht die bestätigte Position; der Entzug
+// läuft vor dem Consumer-Zeilen-Entzug — der Fremdschlüssel der
+// Positions-Zeile setzt die Consumer-Zeile voraus (`LH-FA-CON-006`
+// Boundary: die Position geht mit der Entfernung).
+const DeleteConsumerPosition = `
+DELETE FROM cdc.consumer_position WHERE consumer_id = $1`
+
+// DeleteConsumer entzieht die Consumer-Zeile; der Entzug läuft nach dem
+// Positions-Zeilen-Entzug (DeleteConsumerPosition).
+const DeleteConsumer = `
+DELETE FROM cdc.consumer WHERE consumer_id = $1`
