@@ -106,6 +106,23 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driving/replication/receive/receive.go` | update | strukturierte Log-Aufrufe am Stream-Adapter |
 | `compose.yaml` | update | `CDC_LOG_LEVEL`-Variable im ENV-Vertrag |
 
+**Plan-Nachzug (Fix-Zug, Baseline-Regelwerk `modul-09-implementierung.md`
+„Plan-Nachzug im selben Lauf" · seit slice-009):** Review-Finding F-1
+(HIGH, [`docs/reviews/review-slice-014.md`](../../../../docs/reviews/review-slice-014.md))
+und das Architect-Verdikt
+[`docs/plan/adr/architect-review-slice-014.md`](../../../../docs/plan/adr/architect-review-slice-014.md)
+verlangen strukturiertes Logging über einen Outbound Port + Driven Adapter
+statt eines globalen `slog`-Singletons ([`ADR-0024`](../../../../docs/plan/adr/README.md)).
+Zusätzlich zu den vier Zeilen oben liefert der Fix-Zug:
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/adapters/driven/postgresack/ack.go` | update | strukturierte Log-Aufrufe am Replication-Ack-Adapter — war bereits im ersten Zug berührt, fehlte aber als eigene Zeile in diesem Plan (Nachtrag) |
+| `internal/application/port/outbound/log.go` | neu | `LogPort`-Schnittstelle (vier Stufen, spiegelt `log/slog`) + `NoopLog`-Default, `ADR-0024` |
+| `internal/adapters/driven/telemetry/slog.go`, `slog_internal_test.go` | neu | `SlogAdapter` als einzige Driven-Implementierung des `LogPort`, JSON-Handler-Bau — löst `bootstrap.newLogger`/`slog.SetDefault` ab |
+| `internal/adapters/driven/postgresstorage/options.go` | neu | geteilte `Option`/`WithLog`-Infrastruktur der vier `postgresstorage`-Konstruktoren (variadisch, bestehende Aufrufstellen bleiben unverändert kompilierbar) |
+| `internal/application/port/outbound/log_test.go` | neu | Testdouble-Beleg für `LogPort` (Substitution ohne globalen Zustand) |
+
 ## 4. Trigger
 
 <!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
