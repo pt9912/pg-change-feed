@@ -205,7 +205,11 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	defer heartbeat.Close()
 	// reportFault läuft vor heartbeat.Close() (LIFO-Reihenfolge der
 	// `defer`-Kette: zuletzt registriert, zuerst ausgeführt) — der
-	// Fehlerzustand erreicht den Speicher, bevor der Pool schließt.
+	// Schreibversuch startet, bevor der Pool schließt. Kein
+	// Zustellungs-Erfolg: reportFault ist best-effort (siehe dort) und
+	// dasselbe Auslöse-Szenario (Quell-Instanz nicht erreichbar) kann den
+	// nachfolgenden Fault-Schreibversuch am selben DSN ebenfalls scheitern
+	// lassen.
 	defer reportFault(heartbeat, cfg.Source, &runErr)
 	enableTables := enable.NewEnableTableService(activation)
 	for qualified, binding := range cfg.Tables {
