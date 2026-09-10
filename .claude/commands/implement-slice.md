@@ -92,6 +92,14 @@ emittierten Durchsetzungsschicht):
 ## Implementieren und gaten (Modul 9, Schritte 5–6)
 
 14. Die kleinste sinnvolle Änderung implementieren.
+    **Plan-Nachzug im selben Lauf · seit slice-009:** Jede über den
+    Slice-Plan hinausgehende Änderung wird **vor** dem Sensor-Lauf (15)
+    in die §3-Tabelle des Slice-Plans eingetragen — neu gelieferte
+    Dateien und Artefakte ebenso wie Nicht-Realisierungen geplanter
+    Punkte; eine Reduktion steht als §3-Zeile mit Begründung im Plan,
+    sie wird nicht still gestrichen. Der Plan-Commit gehört in denselben
+    Lauf; ein Plan-Nachzug durch den Planner ist ein Review-Befund,
+    kein Ablauf-Schritt.
 15. Zuerst den engsten nützlichen Gate laufen lassen (z. B. eine Testdatei / ein Gate).
 16. `make gates` laufen lassen.
 
