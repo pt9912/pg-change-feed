@@ -28,6 +28,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
@@ -86,8 +87,10 @@ type Config struct {
 	Publication string
 	Slot        string
 	Tables      map[string]mapper.TableBinding
-	// LogLevel trägt den Level des JSON-Handlers (`newLogger`); Herkunft
-	// ist `envLogLevel`/`parseLogLevel`, mit Default `slog.LevelInfo`.
+	// LogLevel trägt den Level des JSON-Handlers, den der
+	// Telemetrie-Driven-Adapter baut (`telemetry.New`, `ADR-0024`);
+	// Herkunft ist `envLogLevel`/`parseLogLevel`, mit Default
+	// `slog.LevelInfo`.
 	LogLevel slog.Level
 }
 
@@ -138,13 +141,6 @@ func parseLogLevel(raw string) slog.Level {
 		return slog.LevelInfo
 	}
 	return level
-}
-
-// newLogger baut den strukturierten JSON-Logger der Verdrahtung
-// (`LH-QA-OPS-004`): Ausgabe auf `stdout` — der Betriebsbeleg des
-// Containers (`compose.yaml`) — mit dem übergebenen Level.
-func newLogger(level slog.Level) *slog.Logger {
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 }
 
 // parseTables liest die Tabellen-Aktivierungen in der Form
@@ -204,23 +200,26 @@ func splitQualifiedName(qualified string) (string, string, error) {
 // der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
 // `defer`-Kette hinweg.
 func Run(ctx context.Context, cfg Config) (runErr error) {
-	// Der JSON-Handler wird als `slog`-Default gesetzt (`newLogger`,
-	// `LH-QA-OPS-004`): alle Driven-/Driving-Adapter unten protokollieren
-	// über die paketweiten `slog`-Funktionen — die Composition Root ist
-	// die einzige Stelle, die den Handler baut (`ADR-0026`), ein
-	// eigener Logger je Adapter-Konstruktor ist kein Bestandteil dieses
-	// Verdrahtungsstands.
-	slog.SetDefault(newLogger(cfg.LogLevel))
-	slog.InfoContext(ctx, "pg-change-feed: Verdrahtung gestartet", "source", string(cfg.Source))
+	// Der Telemetrie-Driven-Adapter (`ADR-0024`: „Logging-/Metrics-
+	// Frameworks bleiben Infrastruktur. … werden durch Driven Adapters
+	// implementiert.", geschärft durch `ARC-011`) baut den JSON-Handler
+	// (`telemetry.New`, `LH-QA-OPS-004`) — die Composition Root hält ihn
+	// als lokale Variable und injiziert ihn über `WithLog`/`Config.Log`
+	// in jeden Adapter-Konstruktor unten; kein Paket-globaler
+	// Logging-Zustand (Architect-Verdikt
+	// `docs/plan/adr/architect-review-slice-014.md`: ein `slog.SetDefault`
+	// an dieser Stelle verletzt `ADR-0024`, Alternative B).
+	var log outbound.LogPort = telemetry.New(cfg.LogLevel)
+	log.Info(ctx, "pg-change-feed: Verdrahtung gestartet", "source", string(cfg.Source))
 	defer func() {
 		if runErr != nil {
-			slog.ErrorContext(ctx, "pg-change-feed: Lauf beendet mit Fehler", "error", runErr)
+			log.Error(ctx, "pg-change-feed: Lauf beendet mit Fehler", "error", runErr)
 			return
 		}
-		slog.InfoContext(ctx, "pg-change-feed: Lauf regulär beendet")
+		log.Info(ctx, "pg-change-feed: Lauf regulär beendet")
 	}()
 
-	store, err := postgresstorage.New(ctx, cfg.DSN)
+	store, err := postgresstorage.New(ctx, cfg.DSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -239,7 +238,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// über die Adapter zu teilen. Die Instanz trägt Quelle und
 	// CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft); ein geteilter
 	// Pool ist keine Wirkung dieses Verdrahtungsstands.
-	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN)
+	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -250,7 +249,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// keine Verbindung und keine Goroutine mit der
 	// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012
 	// §6-Risiko).
-	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.DSN)
+	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.DSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -292,11 +291,12 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		Publication: cfg.Publication,
 		Slot:        cfg.Slot,
 		Tables:      cfg.Tables,
+		Log:         log,
 	})
 	if err != nil {
 		return err
 	}
-	ack, err := postgresack.New(stream.Conn())
+	ack, err := postgresack.New(stream.Conn(), postgresack.WithLog(log))
 	if err != nil {
 		return err
 	}
