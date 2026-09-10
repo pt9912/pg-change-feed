@@ -34,7 +34,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   `BEO-PGC/a-check-null-abdeckung` (verkörpert)
 - vorherige Reports: review-slice-006 (F-3, d-migrate-Ausweichform),
   review-slice-007 (Closure-Notiz: „CLI-Adapter und SQL-Funktionen —
-  ADR-0018/ADR-0019-Rest, folgen nach dem MVP"), review-slice-009 (F-1
+  `ADR-0018`/`ADR-0019`-Rest, folgen nach dem MVP"), review-slice-009 (F-1
   Plan-Nachzug 9. Auftreten — Architekt-Sequenz angekündigt; F-5 §8
   unausgefüllt, 1. Auftreten)
 
@@ -61,10 +61,10 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   Entscheidung C aus `ADR-0018` (gewählt gegen Option A „Logik in
   PL/pgSQL-Funktionen"), die für „SQL-Funktionen/Views" explizit „rufen
   Inbound Ports auf" verlangt. Weder der Slice-Kopf (`Bezug: … ADR-0009`,
-  nicht ADR-0018) noch die Commit-Messages `9a7b3c1`/`fe1ff63`/`c534fec`
+  nicht `ADR-0018`) noch die Commit-Messages `9a7b3c1`/`fe1ff63`/`c534fec`
   noch der Kommentar-Block in `schema.yaml` erwähnen `ADR-0018` — obwohl
   slice-007s eigene Closure-Notiz genau diese Lieferung dorthin verwiesen
-  hatte („CLI-Adapter und SQL-Funktionen — ADR-0018/ADR-0019-Rest, folgen
+  hatte („CLI-Adapter und SQL-Funktionen — `ADR-0018`/`ADR-0019`-Rest, folgen
   nach dem MVP"). `ADR-0018` erklärt die Regel selbst als „Review-Prüfpflicht"
   (kein Gate deckt Go-Import-Verstöße in reinem SQL ab; `.a-check.yml`
   kennt nur Go-Globs) — der Konflikt ist also genau der Fall, den kein
@@ -213,7 +213,7 @@ Plan-Nachzug".
 ## Verdikt
 
 **Merge-blockierend:** ja — F-1 (HIGH). Die Architektur-Frage, ob reine
-Lesezugriffe über SQL-Views ADR-0018s „rufen Inbound Ports auf" erfüllen
+Lesezugriffe über SQL-Views `ADR-0018`s „rufen Inbound Ports auf" erfüllen
 müssen oder ob die Klausel auf Administrations-Funktionen zielt, ist nicht
 implementierbar-lokal zu entscheiden; sie braucht die Architect-Sequenz
 (Modul 8: `ADR-0018` bestätigen mit Plan-Korrektur / Folge-ADR mit
