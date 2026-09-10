@@ -62,7 +62,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   `internal/adapters/driven/postgresstorage/consumerstate.go:46,60` ·
   `internal/adapters/driven/postgresstorage/tableactivation.go:54,141,227,240` ·
   `internal/adapters/driving/replication/receive/receive.go:128,224,238,283,286`
-- `befund`: ADR-0024 wurde ausdrücklich für `LH-QA-OPS-003`/`LH-QA-OPS-004`
+- `befund`: `ADR-0024` wurde ausdrücklich für `LH-QA-OPS-003`/`LH-QA-OPS-004`
   geschrieben (Kontext-Abschnitt zitiert beide) und entscheidet für
   strukturiertes Logging **und** Metriken dieselbe Form: Weiterleitung
   über `MetricsPort`/`EventSinkPort`, implementiert durch Driven Adapters
@@ -79,13 +79,13 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   `EventSinkPort`/`MetricsPort` in `internal/`). Die Commit-Begründung
   (`e499e42`: „ein Logger je Adapter-Konstruktor ist kein Bestandteil
   dieses Verdrahtungsstands") verteidigt die Wahl ausschließlich gegen
-  ADR-0026 (Composition Root) — die dort verworfenen „globalen
+  `ADR-0026` (Composition Root) — die dort verworfenen „globalen
   Singletons" betreffen jedoch die *fachliche* Verdrahtung (Driving
   Adapters, Inbound Ports, Application Services, Outbound Ports, Driven
   Adapters selbst als Objekte im Abhängigkeitsgraph), nicht ein
   Cross-Cutting-Infrastrukturdetail wie einen Logger; `slog.SetDefault` +
-  paketweite Aufrufe ist dafür das stdlib-Idiom und verletzt ADR-0026
-  nicht. Die tatsächlich einschlägige Entscheidung ist ADR-0024, und die
+  paketweite Aufrufe ist dafür das stdlib-Idiom und verletzt `ADR-0026`
+  nicht. Die tatsächlich einschlägige Entscheidung ist `ADR-0024`, und die
   wird an keiner Stelle des Diffs oder der Commit-Nachrichten adressiert
   — die vom Implementer selbst gestellte Design-Frage zielt auf die
   falsche ADR.
@@ -121,7 +121,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
 
 ## Negativbefunde
 
-- geprüft, ohne Befund: **ADR-0001/ADR-0024-Domain-Grenze** — kein
+- geprüft, ohne Befund: **`ADR-0001`/`ADR-0024`-Domain-Grenze** — kein
   `slog`-Aufruf in `internal/domain/` oder
   `internal/application/usecase/` (`grep -rn "slog\." internal/domain
   internal/application/usecase` liefert keinen Treffer); Logging bleibt
@@ -184,12 +184,12 @@ Struktur-Test bei neuem Vertrag, im Plan vorab akzeptiert (1. Auftreten)
 als Closure-Trigger „Review-Schluss ohne offenes HIGH-Finding" (§5); der
 `in-progress → done`-Übergang bleibt gesperrt, bis F-1 einen Ausgang
 trägt. F-1 ist ein HIGH mit Rollen-Widerspruch: Die Commit-Begründung
-verteidigt die gewählte Form explizit (gegen ADR-0026), der Reviewer
+verteidigt die gewählte Form explizit (gegen `ADR-0026`), der Reviewer
 stellt eine Verletzung einer anderen, direkt einschlägigen ADR
-(ADR-0024) fest. Das greift den Konflikt-Pfad aus Modul 8 §Konflikt-Pfad
+(`ADR-0024`) fest. Das greift den Konflikt-Pfad aus Modul 8 §Konflikt-Pfad
 als Rollen-Sequenz: Die Klärung braucht ein Architect-Verdikt als
 Übergabe-Artefakt — eines der drei legitimen Verdikte (Plan/ADR-Bezug im
-Slice war unvollständig und wird korrigiert · ADR-0024 wird per
+Slice war unvollständig und wird korrigiert · `ADR-0024` wird per
 Folge-ADR gelockert/`supersedes`d, mit begründetem Verglichene-Alternativen-
 Eintrag für Cross-Cutting-Infra-Logging · die vorliegende Form ist eine
 legitime, aber bisher undokumentierte Lockerung und wird per Folge-ADR
@@ -197,8 +197,8 @@ nachgezogen) — nicht eine Herabstufung, weil der Implementer
 widerspricht. F-2 ist kein Closure-Stopp; sie geht als Hinweis an den
 Verifier (Modul 8 §Welche Rolle braucht welche Artefaktklasse).
 
-**Zur eigentlichen Design-Frage (ADR-0026 vs. globaler Singleton):**
-unproblematisch. ADR-0026 verwirft „globale Singletons" für die
+**Zur eigentlichen Design-Frage (`ADR-0026` vs. globaler Singleton):**
+unproblematisch. `ADR-0026` verwirft „globale Singletons" für die
 *fachliche* Verdrahtung (Driving Adapters, Inbound Ports, Application
 Services, Outbound Ports, Driven Adapters als Objekte im
 Abhängigkeitsgraph) — mit der Begründung „versteckte Abhängigkeiten,
@@ -207,9 +207,9 @@ Cross-Cutting-Infrastrukturdetail wie ein Logger, per
 `slog.SetDefault` einmal in der Composition Root gesetzt und über die
 stdlib-paketweiten Funktionen genutzt, ist kategorial etwas anderes: Es
 trägt keine fachliche Lebenszyklus- oder Identitäts-Semantik und ist das
-in `log/slog` selbst vorgesehene Idiom für genau diesen Zweck. ADR-0026
+in `log/slog` selbst vorgesehene Idiom für genau diesen Zweck. `ADR-0026`
 ist durch diesen Diff **nicht** verletzt. Das eigentliche Problem liegt
-in ADR-0024, die der Implementer in seiner Selbstprüfung nicht
+in `ADR-0024`, die der Implementer in seiner Selbstprüfung nicht
 herangezogen hat (F-1).
 
 **Übergabe:** F-1 geht an Implementer/Architect (Rollen-Widerspruch,
