@@ -102,12 +102,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
 Aussagen-Berührung steht hier gar nicht.
 
+**Plan-Nachzug im selben Lauf · seit slice-009 (`AGENTS.md` §6,
+`.claude/commands/implement-slice.md` Schritt 14):** Die §4-Prüfung ergab
+eine Rückführung (`in-progress` → `next`, siehe §4/§6) — die Zeile für
+`tools/schema/nacharbeit-observability.sql` unten trägt deshalb eine
+**Reduktion** (Näherung statt echtem `cdc_capture_lag`, mit Begründung, nicht
+still gestrichen); vier Zeilen sind gegenüber der ursprünglichen Planung
+**neu hinzugekommen** (Domänenfehler-Sentinel, Store-Adapter, SQL-Text,
+Composition Root) — sie tragen dieselben Liefer-Punkte (Fehlerzustands-
+Sichtbarkeit, CDC-Abstand-Näherung), keinen dritten.
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/domain/model/errorstate.go` | neu | Domänen-Typ für Fehlerklassen-Sichtbarkeit, orientiert an [`ADR-0023`](../../../../docs/plan/adr/README.md)s Fehlerklassifikation |
-| `internal/application/port/outbound/heartbeat.go` | update | Heartbeat-Schreiber (slice-012) trägt zusätzlich den Fehlerzustand, statt eine zweite Tabelle einzuführen |
+| `internal/domain/model/errorstate.go` | neu | Domänen-Typ für Fehlerklassen-Sichtbarkeit (`ErrorClass`, sieben Kategorien), orientiert an [`ADR-0023`](../../../../docs/plan/adr/README.md)s Fehlerklassifikation |
+| `internal/domain/errors/errors.go` | update | *(Plan-Nachzug)* Sentinel `ErrInvalidErrorClass` für die Invariante des neuen Domänen-Typs — derselbe Konstruktor-Pfad wie die übrigen Domänenfehler |
+| `internal/application/port/outbound/heartbeat.go` | update | Heartbeat-Schreiber (slice-012) trägt zusätzlich den Fehlerzustand über eine neue Port-Methode `Fault`, statt eine zweite Tabelle einzuführen |
+| `internal/adapters/driven/postgresstorage/heartbeat.go` | update | *(Plan-Nachzug)* `Fault`-Implementierung des Store-Adapters; `Beat` löscht einen zuvor gemeldeten Fehlerzustand wieder |
+| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | *(Plan-Nachzug)* `UpsertHeartbeat` löscht `error_class` mit, neue Query `UpsertHeartbeatFault` |
+| `tools/schema/schema.yaml` | update | *(Plan-Nachzug)* `process_heartbeat.error_class` (nullable text, kein Default = NULL = Normalbetrieb) |
 | `tools/schema/nacharbeit-heartbeat.sql` | update | Heartbeat-View erweitert um Fehlerzustands-Spalte |
-| `tools/schema/nacharbeit-observability.sql` | update | `cdc.metrics`-View um `cdc_capture_lag` ergänzt (Differenz zwischen Quell-Commit-Zeit und Persistenz-Zeit) |
+| `tools/schema/nacharbeit-observability.sql` | update, **reduziert** | `cdc.metrics`-View um `cdc_capture_lag` ergänzt — **nicht** wie ursprünglich geplant als Differenz Quell-Commit-Zeit/Persistenz-Zeit (siehe §4 Rückführung: das bräuchte Commit-Zeitstempel-Wiring durch die Replication-Adapter-Schicht), sondern als dokumentierte Näherung `now() − max(committed_at)` (Pipeline-Frische über die letzte persistierte Transaktion, Kommentar-Klasse Grenze in der Datei) |
+| `internal/bootstrap/wiring.go` | update | *(Plan-Nachzug)* `classifyRunError`/`reportFault`: die Composition Root übersetzt den Lauf-Fehler in eine `ADR-0023`-Klasse und meldet ihn über `Fault`, bevor der Prozess auf einen Adapter-Fehler endet |
+| `internal/domain/model/errorstate_test.go`, `internal/adapters/driven/postgresstorage/heartbeat_test.go`, `internal/bootstrap/heartbeat_internal_test.go` | neu/update | *(Plan-Nachzug)* Tests für Konstruktor-Invariante, Store-Adapter (`make test-store`) und Composition-Root-Klassifikation |
 
 ## 4. Trigger
 
@@ -133,6 +149,32 @@ Slice in `in-progress/` (WIP-Limit 1).
 - `in-progress` → `open` (blockiert — Carveout?): die Heartbeat-Tabelle aus
   slice-012 existiert noch nicht (WIP-Reihenfolge verletzt) — Blocker,
   Priorität offen.
+
+**Ausgang der Prüfung (Implementer-Lauf, vor jeder Code-Änderung, wie
+`.claude/commands/implement-slice.md` Schritt 12 verlangt):** Die
+`in-progress` → `next`-Bedingung ist **eingetreten**, mit einer Präzisierung
+gegenüber der vorab benannten Schätzung. `pglogrepl` (Treiber, `ADR-0032`)
+dekodiert `BEGIN`/`COMMIT`-Nachrichten bereits mit einem `CommitTime
+time.Time`-Feld (`go doc github.com/jackc/pglogrepl.CommitMessage`,
+netzlos gegen den vendored Modul-Cache geprüft) — ein reales
+`cdc_capture_lag` bräuchte **keine neue Wire-Verbindung**, wie die
+ursprüngliche Formulierung nahelegte. Trotzdem bleibt die Schichten-Zahl
+unverändert zu groß: den Zeitstempel bis in `cdc.transaction.committed_at`
+zu spiegeln, verlangt eine Änderung an `decode.Commit` (Replication-
+Driving-Adapter), am `ChangeTransaction`/`SourcePosition`-Domänenmodell
+(Domain), am `CaptureCommand`/`ChangeStorePort`-Vertrag (Application/Ports)
+und an `InsertTransaction` (Store-Driven-Adapter) — vier Schichten statt
+höchstens zwei. Die Rückführung trägt deshalb weiterhin: **Rückzug mit
+Zerlegung**, mit einer kleineren, klareren Folge-Slice-Schätzung (reines
+Zeitstempel-Durchreichen, kein neuer Protokoll-Zugriff) als eigenem
+Liefer-Punkt. Der unabhängige Teil — Fehlerzustands-Sichtbarkeit
+([`LH-FA-ADM-003`](../../../../spec/lastenheft.md),
+[`LH-QA-REL-003`](../../../../spec/lastenheft.md)) und eine als Grenze
+dokumentierte `cdc_capture_lag`-Näherung auf Persistenz-Zeit-Basis (kein
+echter [`LH-FA-ADM-004`](../../../../spec/lastenheft.md)-Abstand zur
+Quelländerung) — bleibt vollständig innerhalb von Application/Store-Adapter
+und wird in diesem Lauf trotzdem geliefert (§3 Plan-Nachzug), während dieser
+Plan nach `next/` zurückgeht.
 
 ## 5. Closure-Trigger
 
@@ -160,10 +202,16 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 - `committed_at` misst Persistenz-Zeit statt Quell-Commit-Zeit (siehe §4
-  Rückführung) — falls das den Slice sprengt, trägt die Rückführung den
-  Ausgang; falls nicht, wird bei Closure bewertet, ob eine Näherung
-  (Persistenz-Zeit als Proxy, mit Kommentar-Klasse Grenze) für dieses
-  MVP-Stadium genügt.
+  Rückführung) — **eingetreten**: die Rückführung trägt den Ausgang, dieser
+  Slice geht nach `next/` zurück, kein `done/`-Übergang in diesem Lauf. Kein
+  Ausgang im Sinn von §Offene Risiken werden bei Closure aufgelöst
+  (Baseline-Regelwerk `modul-05-planning-harness.md`) — die drei dort
+  benannten Ausgänge (eingetreten/entfallen/weiter offen) sind an den
+  `in-progress → done`-Übergang gebunden, den dieser Lauf nicht vollzieht;
+  die Zeile bleibt bis zur nächsten `in-progress`-Runde offen und wandert mit
+  dem wiederaufgenommenen Plan. Die Näherung (Persistenz-Zeit als Proxy, mit
+  Kommentar-Klasse Grenze) ist trotzdem umgesetzt — als Teil des
+  unabhängigen, gelieferten Teils (§3, §4), nicht als Risiko-Ausgang.
 
 ## 7. Closure-Notiz
 
