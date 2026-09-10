@@ -1,6 +1,6 @@
 # Compose-Umgebung der Lauf- und CI-Vertrag-Seite (LH-QA-POR-003,
 # LH-QA-OPS-001): PostgreSQL als Quelle mit Logical Decoding und der
-# PG-Change-Feed-Container am OCI-Vertrag. Das Image wird per
+# PG-Change-Feed-Container als CDC-Runtime. Das Image wird per
 # `make image` geladen (docker buildx build --load, Tag :dev); diese Datei
 # trägt bewusst keinen build:-Block — der Zweit-Build würde das geladene
 # Tag vom Lauf-Beleg in harness/image-hash.txt entkoppeln (ADR-0044).
@@ -44,12 +44,22 @@ services:
     # harness/image-hash.txt); kein build:-Block in dieser Datei.
     image: ghcr.io/pt9912/pg-change-feed:dev
     container_name: cdc-test-feed
-    # Das Binary trägt den --version-Vertrag (Bootstrap-Stand der
-    # Composition Root, ADR-0026); der Adapter-Verdrahtungsstand entsteht am
-    # Composition Root und ist nicht Teil dieses Image-Vertrags. Der
-    # Container belegt den Lauf des Image in der Compose-Umgebung und endet
-    # nach dem Versionsausdruck ohne Fehler (Exit 0).
-    command: ["--version"]
+    # Der Container fährt die CDC-Runtime des Binarys: die Verdrahtung
+    # (Store, Stream, Service, ACK, ADR-0026) liest ihre Vorbedingungen
+    # aus dieser Umgebung. Die Aktivierung — Feed-Tabellen, Publication,
+    # Bindungs-Zeilen — trägt tools/harness/run-integration-tests.sh vor
+    # dem Start (die Publication ist Start-Vorbedingung des
+    # Stream-Adapters, LH-FA-CFG-001.a); den Slot legt der Stream beim
+    # Start selbst an.
+    environment:
+      CDC_SOURCE_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
+      CDC_SOURCE_ID: src-mvp
+      CDC_PUBLICATION: pub_pgc_mvp
+      CDC_SLOT: slot_pgc_mvp
+      CDC_TABLES: public.feed_mvp_flow=tbl-mvp-flow:sv-mvp-flow,public.feed_mvp_full=tbl-mvp-full:sv-mvp-full
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: "no"
     networks:
       - cdc-test
