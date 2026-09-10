@@ -70,24 +70,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `slog`-JSON-Handler am Bootstrap verdrahtet, Log-Level über ENV
+- [x] `slog`-JSON-Handler am Bootstrap verdrahtet, Log-Level über ENV
       konfigurierbar — Teil-Beleg zu
       [`LH-QA-OPS-004`](../../../../spec/lastenheft.md).
-- [ ] Driven-Adapter (Store, Aktivierung, Consumer-State,
+- [x] Driven-Adapter (Store, Aktivierung, Consumer-State,
       Replication-Ack) protokollieren strukturiert statt mit
       `fmt`/`log`-Resten — Teil-Beleg zu
       [`LH-QA-OPS-004`](../../../../spec/lastenheft.md).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `compose.yaml` (ENV-Vertrag um Log-Level-Variable
+- [x] Doku-Update für `compose.yaml` (ENV-Vertrag um Log-Level-Variable
       erweitert), falls berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -169,8 +169,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 - Ein bestehender `fmt.Println`/`log.Printf`-Aufruf könnte übersehen
-  werden (kein Sensor prüft Log-Aufruf-Konsistenz) — wird bei Closure
-  bewertet; falls übersehen, ist das eine benannte Grenze, kein Blocker.
+  werden — **Ausgang:** entfallen; geprüft (Implementer + Verifier
+  unabhängig), keine Reste im berührten Scope (nur ein vorbestehender
+  `fmt.Printf` für `--version`-CLI-Ausgabe in `cmd/pg-change-feed/main.go`,
+  außerhalb des Slice-Scopes — CLI-Ausgabe, kein Log).
 
 ## 7. Closure-Notiz
 
@@ -189,18 +191,35 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer stellte die eigene Design-
+  Entscheidung (globaler `slog`-Singleton) selbst zur Prüfung, statt sie
+  zu verschweigen — allerdings gegen die falsche ADR (0026 statt 0024).
+  Der Review-Fund (F-1, HIGH) ging über die Architect-Sequenz statt
+  über eine Herabstufung durch den Reviewer; der Architect löste die
+  Kernfrage mit vier unabhängigen Text-Belegen aus
+  [`ADR-0024`](../../../../docs/plan/adr/README.md)
+  (Bezug-Feld, Kontext, Entscheidungssatz, Schärft-Kette zu
+  [`ARC-011`](../../../../spec/architecture.md)). Der
+  anschließende Fix-Zug lieferte eine saubere Port-Abstraktion
+  (`LogPort` + `SlogAdapter`) **vollständig in einem Lauf** — keine
+  Rückführung nötig, obwohl sie realistisch drohte (Port-Definition +
+  Driven-Adapter + Bootstrap-Neuverdrahtung + sechs Aufrufstellen).
+- **Was ging anders als geplant:** Der ursprüngliche §3-Plan sah keinen
+  neuen Port vor (reine `slog`-Verdrahtung war die ursprüngliche
+  Annahme) — der Fix-Zug fügte `internal/application/port/outbound/log.go`
+  und `internal/adapters/driven/telemetry/` neu hinzu, sauber im
+  Plan-Nachzug getragen. Ein Verifier-Fund (V-1, LOW: Mutationsproben-
+  Lücke durch eine Go-Zero-Value-Koinzidenz im Level-Filter-Test) wurde
+  in einer letzten Fixrunde geschlossen, mit echter Mutationsprobe
+  (rot bei der zuvor unentdeckten Mutation, dann wieder grün).
+- **Steering-Loop-Eintrag:** nichts verkörpert — der Normalfall.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** (a) entfallen (geprüft, kein Rest im Scope).
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen; die
+  Welle-4-Closure prüft Anker · Folge-Slice · Register auch für diesen
+  Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
