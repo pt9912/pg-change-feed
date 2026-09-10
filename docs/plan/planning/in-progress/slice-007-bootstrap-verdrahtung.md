@@ -183,7 +183,8 @@ wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
 - **Was hat funktioniert:** die Verdrahtung trennt Verbindungsaufbau
-  (`BindCapture`) von Port-Verdrahtung (ADR-0007 Option C) — der
+  (`BindCapture`) von Port-Verdrahtung ([`ADR-0007`](../../../../docs/plan/adr/0007-source-ack-outbound-port.md)
+  Option C) — der
   ACK-Adapter braucht die Verbindung erst nach deren Aufbau; der
   zweigeteilte Wächter (Slot **und** `State.Running`) wurde am
   Fehlmodus-Probe live rot gesehen (Publication fehlt → Exit 1, Slot
