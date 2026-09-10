@@ -96,27 +96,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Fehlerzustands-Sichtbarkeit (Erfassung gestört/normal
+- [x] Fehlerzustands-Sichtbarkeit (Erfassung gestört/normal
       unterscheidbar) — Teil-Beleg zu
       [`LH-FA-ADM-003`](../../../../spec/lastenheft.md),
       [`LH-QA-REL-003`](../../../../spec/lastenheft.md).
-- [ ] `cdc_capture_lag_approx`-Näherung in der Metriken-View (eigener
+- [x] `cdc_capture_lag_approx`-Näherung in der Metriken-View (eigener
       Metrik-Name, nicht der [`SPEC-009`](../../../../spec/pflichtenheft.md)-kanonische `cdc_capture_lag`,
       review-slice-013 F-2; Persistenz-Zeit-Proxy, Kommentar-Klasse
       Grenze — reales Quell-Commit-basiertes Maß ist Folge-Slice-Arbeit,
       §1) — Teil-Beleg zu
       [`LH-QA-OPS-003`](../../../../spec/lastenheft.md).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` falls berührt (Sensors-Tabelle,
+- [x] Doku-Update für `harness/README.md` falls berührt (Sensors-Tabelle,
       falls ein neuer Rollout-Schritt entsteht).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -251,10 +251,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 - `committed_at` misst Persistenz-Zeit statt Quell-Commit-Zeit — **Ausgang:**
-  eingetreten (Träger: Folge-Slice, §1-Ausschluss, Kennung folgt bei der
-  nächsten Eröffnung). Dieser Slice selbst liefert die dokumentierte
-  Näherung (Persistenz-Zeit als Proxy, Kommentar-Klasse Grenze in
-  `nacharbeit-observability.sql`) statt des realen Abstands.
+  weiter offen → `BEO-PGC/cdc-capture-lag-real` im Register (Eintrag
+  angelegt, Beleg `evidence/slice-013.md`). **Architect-Verdikt-Korrektur**
+  ([`docs/plan/adr/architect-review-slice-013.md`](../../adr/architect-review-slice-013.md)):
+  „eingetreten" verlangt eine echte Folge-Slice-Kennung (Modul 5), die
+  hier noch nicht existiert — „weiter offen" ist der korrekte Ausgang,
+  bis eine Kennung vergeben ist. Dieser Slice selbst liefert die
+  dokumentierte Näherung (Persistenz-Zeit als Proxy, Kommentar-Klasse
+  Grenze in `nacharbeit-observability.sql`) statt des realen Abstands.
 
 ## 7. Closure-Notiz
 
@@ -273,18 +277,41 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer prüfte die vorab benannte
+  §4-Rückführungs-Bedingung ernsthaft vor jedem Code (Schritt 12) und
+  präzisierte die Schätzung dabei mit einem echten Fund (`pglogrepl`
+  trägt den Commit-Zeitstempel bereits) statt sie unbesehen zu
+  übernehmen. Der Reviewer fand die inhaltliche Rückführungs-Analyse
+  bei unabhängiger Prüfung zutreffend.
+- **Was ging anders als geplant:** Der Implementer lieferte trotz
+  Rückführung den unabhängigen Teil weiter (Fehlerzustands-Sichtbarkeit
+  + `cdc_capture_lag_approx`-Näherung) und zog den Plan zunächst per
+  `git mv` nach `next/` zurück. Der Planner holte den Plan danach
+  wieder nach `in-progress/`, um den Zustand (Verzeichnis) mit dem
+  bereits gemergten Code konsistent zu halten — **ohne** zunächst einen
+  unabhängigen Architect-Zug, was Review-F-1 (HIGH) als
+  Selbstprüfungs-Blindspot markierte (Modul 8). Ein nachträglicher,
+  unabhängiger Architect-Verdikt
+  ([`docs/plan/adr/architect-review-slice-013.md`](../../adr/architect-review-slice-013.md))
+  bestätigte den Scope inhaltlich und ordnete die Prozess-Abweichung
+  als dokumentierten Lerneintrag ein (kein Carveout — kein rotes Gate,
+  die Verzeichnis-Position war zum Zeitpunkt des Verdikts bereits
+  korrekt).
+- **Steering-Loop-Eintrag:** Implementer-Workflow geschärft (Rückführung
+  mit fortgesetzter Lieferung verlangt einen eigenständigen
+  Architect-Verdikt-Zug vor der Planner-Rückkehr, keine
+  Planner-Selbstbestätigung im selben Kontext) — liegt in
+  `.claude/commands/implement-slice.md §Lifecycle-Rücksprungkanten`
+  (`· seit slice-013`).
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/cdc-capture-lag-real/`
+  neu angelegt (Beleg `evidence/slice-013.md`, 1×, weiter offen).
+- **Folge-Slices:** keine mit Kennung — das reale `cdc_capture_lag`
+  bleibt Register-Beobachtung bis zum nächsten Schneiden.
+- **Risiken aus §6:** (a) weiter offen → `BEO-PGC/cdc-capture-lag-real`
+  im Register.
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen; die
+  Welle-4-Closure prüft Anker · Folge-Slice · Register auch für diesen
+  Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

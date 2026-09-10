@@ -81,6 +81,13 @@ emittierten Durchsetzungsschicht):
 11. Lifecycle-Rücksprungkanten (Modul 5), falls sich der Slice als falsch erweist: zu groß →
     `in-progress → next` (zurück zur Zerlegung); blockiert → `in-progress → open` (Carveout,
     Modul 7). Zurückführen ist Disziplin, kein Scheitern.
+    **Rückführung mit fortgesetzter Lieferung · seit slice-013:** Lieferst du trotz
+    Rückführung den unabhängigen Teil noch im selben Lauf (statt den Slice komplett
+    ruhen zu lassen), braucht die spätere Planner-Rückkehr nach `in-progress/` einen
+    **eigenständigen Architect-Verdikt-Zug** (frischer Kontext) — keine Planner-
+    Selbstbestätigung in derselben Session (Modul 8, Rollen-Trennung ist Kontext-
+    Trennung). Der Rückkehr-Move landet außerdem vor jedem weiteren
+    Produktions-Commit des fortgesetzten Teils, nicht danach.
 
 ## Plan vor Code (Modul 9, Schritt 4 — nicht optional)
 
