@@ -7,7 +7,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
 **Welle:** welle-3.
 
-**Bezug:** [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003, [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)/003, [`LH-FA-SST-004`](../../../../spec/lastenheft.md)
+**Bezug:** [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003, [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)/003, [`LH-FA-SST-004`](../../../../spec/lastenheft.md), [`ADR-0043`](../../../../docs/plan/adr/README.md), [`ADR-0046`](../../../../docs/plan/adr/README.md)
 
 **Berührte Spec-Stellen:** [`SPEC-009`](../../../../spec/pflichtenheft.md), [`ARC-005`](../../../../spec/architecture.md)
 Der Verweis zeigt **aufwärts**: Die Spec nennt diesen Slice nie
@@ -57,18 +57,28 @@ ursprüngliche Abgrenzung hinaus und werden hier nachgetragen — Klasse
 weil keine der beiden Erweiterungen bereits als eigener Slice existiert:
 
 - **Health-Endpoint ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) — nicht realisiert.**
-  Geprüft und verworfen: eine SQL-View liest nur persistierten Zustand und
-  kann den Lauf-Zustand des CDC-Prozesses selbst nicht bezeugen (ein
-  abgestürzter Prozess hinterlässt eine weiterhin erreichbare Datenbank —
-  die View läse „gesund"). Eine echte Prozess-Liveness-Antwort braucht
-  einen neuen Driving-Adapter-Zuschnitt (HTTP-Listener, Heartbeat-Datei
-  o. ä.); [`ADR-0020`](../../../../docs/plan/adr/0020-http-grpc-optional.md)
-  stellt HTTP/gRPC für das MVP explizit zurück und verlangt einen neuen
-  Entscheidungsanlass. Diese architektonische Entscheidung fehlt und ist
-  nicht Ermessen des Implementers (Modul 8 §Konflikt-Pfad) — **anderer
-  Vorgang**: Folge-ADR (Architect) klärt den Adapter-Zuschnitt, danach
-  Folge-Slice. Bis dahin bleibt der zugehörige DoD-Punkt (§2) teilweise
-  unerfüllt; siehe §6 (Risiko) und Hinweis an Reviewer/Planner unten.
+  **Planner-Korrektur nach Architect-Verdikt**
+  ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md)):
+  Die ursprüngliche Implementer-Begründung (neue ADR nötig) trug nicht —
+  der Architect bestätigte den Reviewer (review-slice-011 F-1): ein
+  Heartbeat-Pattern (Prozess schreibt periodisch in eine
+  `cdc.process_heartbeat`-Tabelle, eine vierte SQL-View liest sie) deckt
+  [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)/[`LH-QA-OPS-002`](../../../../spec/lastenheft.md)
+  vollständig innerhalb der bestehenden Entscheidungslage
+  ([`ADR-0024`](../../../../docs/plan/adr/0024-observability-ausserhalb-der-domain.md),
+  [`ADR-0027`](../../../../docs/plan/adr/0027-capture-application-service.md),
+  [`ADR-0046`](../../../../docs/plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md))
+  — **kein Folge-ADR nötig**, [`ADR-0020`](../../../../docs/plan/adr/0020-http-grpc-optional.md)s
+  HTTP/gRPC-Sperre ist nicht berührt. Der tragende Ausschlussgrund ist
+  **Schicht-Abgrenzung**, nicht **anderer Vorgang**: Der periodische
+  Schreib-Zug berührt Application- und Bootstrap-Schicht zugleich
+  (Timer im Capture-Prozess) — genau dieselbe Grenze, die dieser Slice
+  bereits für `wiring.go` unten zieht; ihn hier mitzuliefern hätte den
+  bereits vorab benannten „zu groß"-Rückführungs-Trigger (§4) ausgelöst.
+  **Klasse: Folge-Slice** (Kennung folgt bei der nächsten Slice-Eröffnung
+  — `Bezug: LH-FA-ADM-002, LH-QA-OPS-002`, Kopf-Referenz
+  `ADR-0024`/`ADR-0027`/`ADR-0046`, Beleg-Zeiger auf das Architect-
+  Verdikt oben). Siehe §5 (Closure-Trigger geteilt) und §6 (Risiko).
 - **`internal/bootstrap/wiring.go` bleibt unverändert** — die drei Rollen
   (`cdc_capture`/`cdc_admin`/`cdc_reader`) entstehen als DDL/Compose-Artefakt
   (Rollen existieren, sind über `SET ROLE` einzeln testbar,
@@ -101,21 +111,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Least-Privilege-Rollen in Compose/DDL getrennt — Teil-Beleg zu
+- [x] Least-Privilege-Rollen in Compose/DDL getrennt — Teil-Beleg zu
       [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…003.
-- [ ] Health-Endpoint + Metriken-Minimum — Teil-Beleg zu
-      [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)/[`LH-FA-SST-004`](../../../../spec/lastenheft.md).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Metriken-Minimum (`cdc.metrics`-View) — Teil-Beleg zu
+      [`LH-FA-SST-004`](../../../../spec/lastenheft.md). Health-Endpoint
+      ist Folge-Slice-Arbeit (§1, §5 — Architect-Verdikt).
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` (Sensors-Tabelle, Health/
-      Metriken-Endpoint), falls berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update für `harness/README.md` (Sensors-Tabelle), falls
+      berührt — geprüft: `make test-store`-Bindung trägt bereits den
+      Rollout-Schritt (seit slice-009); kein neuer Vertrag, Item
+      entfällt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -164,8 +177,15 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
 - DoD vollständiges Häkchen + `make gates` grün + Review-Schluss
-      ohne offenes HIGH-Finding; Health- und Metriken-Endpoint am
-      verdrahteten System belegt (beobachtbar am Integrationstest-Diff).
+      ohne offenes HIGH-Finding; Least-Privilege-Rollen und
+      Metriken-Minimum-View am realen Adapter belegt (`make test-store`).
+      **Planner-Korrektur nach Architect-Verdikt**
+      ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md),
+      review-slice-011 F-2): Der ursprüngliche Trigger verlangte „Health-
+      und Metriken-Endpoint am verdrahteten System" — Health-Endpoint ist
+      als Folge-Slice-Arbeit ausgegliedert (§1), dieser Slice schließt auf
+      Sicherheit + Metriken-Minimum allein; kein Carveout, da dies eine
+      Scope-Reduktion des Triggers ist, kein rotes Gate.
 - Lerneintrag §7: geschärfte Regel oder benannte Spec-Lücke —
   ohne ihn bleibt der Slice abgelegt, nicht fertig.
 
@@ -179,32 +199,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
 dasteht.
 
-- Produktions-Deployment (HA/Kubernetes) — Out-of-Scope des MVP.
-- Vollständige Observability-Abdeckung — Basis hier, volle
-  [`LH-QA-OPS-003`](../../../../spec/lastenheft.md)-Metriken folgen.
-- **Plan-Nachzug (Implementer-Lauf):** Health-Endpoint
-  ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md),
-  [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) fehlt eine
-  Driving-Adapter-Entscheidung ([`ADR-0020`](../../../../docs/plan/adr/0020-http-grpc-optional.md)
-  stellt HTTP/gRPC zurück) — §1 Plan-Nachzug, §5 Closure-Trigger
-  („Health- … Endpoint am verdrahteten System belegt") ist damit **nicht**
-  erfüllt. Reviewer-Hinweis statt Implementer-Ermessen (Modul 8
-  §Konflikt-Pfad): Planner entscheidet zwischen Carveout + Folge-Slice
-  (nach Folge-ADR) oder Anpassung des Closure-Triggers, der die
-  Metriken-Minimum-Lieferung dieses Slice von der noch offenen
-  Health-Frage trennt.
-- **Plan-Nachzug (Implementer-Lauf):** die drei Rollen bleiben
-  unverdrahtet — `internal/bootstrap/wiring.go` trägt weiter eine
-  gemeinsame Instanz-DSN für Store/Aktivierung/Stream (§1 Plan-Nachzug).
-  Die Rollen-Adoption in der Verdrahtung ist Folge-Arbeit (kein Slice
-  dafür existiert).
+- Produktions-Deployment (HA/Kubernetes) — **Ausgang:** entfallen; das
+  ist eine Out-of-Scope-Deklaration aus §1, keine eigene Risiko-Klasse
+  (redundante Übernahme aus der welle-3-Fill-Routine, ohne Fehlwirkung
+  — nichts zu tun).
+- Vollständige Observability-Abdeckung — **Ausgang:** entfallen;
+  ebenfalls redundante §1-Übernahme, kein eigenständiges Risiko. Der
+  konkrete Rest ([`LH-QA-OPS-003`](../../../../spec/lastenheft.md))
+  ist kein akutes Risiko dieses Slice, sondern erwarteter MVP-Rand.
+- **Health-Endpoint** ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md),
+  [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) — **Ausgang:**
+  weiter offen → `BEO-PGC/health-endpoint-heartbeat` im Register
+  (Eintrag angelegt, Beleg `evidence/slice-011.md`). Architect-Verdikt
+  klärte: kein Folge-ADR nötig, Folge-Slice-Arbeit (§1, §5).
+- **Rollen-Verdrahtung** (`internal/bootstrap/wiring.go` trägt weiter
+  eine gemeinsame Instanz-DSN) — **Ausgang:** weiter offen →
+  `BEO-PGC/rollen-verdrahtung` im Register (Eintrag angelegt, Beleg
+  `evidence/slice-011.md`).
 - **Beobachtungs-Register gesichtet (§8):** `BEO-PGC/lese-doppelquelle`
-  (1× vor diesem Lauf, `evidence/slice-010.md`) trifft `cdc.metrics`
-  strukturell mit — die View liest über `cdc.consumer_status` dieselbe
-  Rückstands-Semantik, die auch am Go-Lesepfad denkbar wäre, ohne
-  koppelnden Sensor. Kein neuer Evidence-Eintrag durch den Implementer
-  (Register-Schreibschritt ist Planner-Sache bei Closure, Modul 8);
-  Hinweis für die Closure-Sichtung.
+  trifft `cdc.metrics` strukturell mit (`evidence/slice-011.md`
+  ergänzt, Zähler 2×, unter der Schwelle).
 
 ## 7. Closure-Notiz
 
@@ -223,18 +237,40 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer eskalierte die
+  Health-Endpoint-Frage sauber statt selbst zu entscheiden (Modul 8
+  §Konflikt-Pfad) — kein stiller ADR-Widerspruch, sondern ein
+  benannter Plan-Nachzug mit Reviewer-/Architect-Hinweis. Der
+  Review deckte trotzdem auf, dass der Rückzug zu breit begründet
+  war (F-1) — die Rollen-Trennung fing zwei Findings echt ab: F-1
+  (Architektur-Rückzug zu breit) und F-3 (ungetesteter
+  Least-Privilege-Kernpfad, real als SQLSTATE 42501 nachgewiesen).
+- **Was ging anders als geplant:** Health-Endpoint und Metriken-Minimum
+  wurden getrennt statt gemeinsam geliefert — Architect-Verdikt
+  ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md))
+  klärte, dass Health-per-Heartbeat keine neue ADR braucht, aber eine
+  eigene Schicht-Abgrenzung ist (Application-/Bootstrap-Zug), die
+  dieser Slice bewusst nicht mitliefert. `cdc_admin`s
+  `GRANT CREATE ON DATABASE` reichte entgegen der ersten Annahme
+  nicht für `ALTER PUBLICATION … ADD TABLE` — PostgreSQL verlangt
+  Tabellen-Ownership; als operative Vorbedingung dokumentiert statt
+  über-großzügig nachgegeben.
+- **Steering-Loop-Eintrag:** nichts verkörpert — der Normalfall in
+  diesem Slice (die Verkörperung lief bereits über slice-009/010s
+  Steering-Loop-Einträge). Die drei neuen Register-Einträge (unten)
+  bleiben unter der 3×-Schwelle.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/health-endpoint-heartbeat/`
+  neu angelegt (Beleg `evidence/slice-011.md`, 1×); `BEO-PGC/rollen-verdrahtung/`
+  neu angelegt (Beleg `evidence/slice-011.md`, 1×); `BEO-PGC/lese-doppelquelle/`
+  ergänzt (`evidence/slice-011.md`, Zähler jetzt 2×).
+- **Folge-Slices:** keine mit Kennung — Health-per-Heartbeat und
+  Rollen-Verdrahtung bleiben Register-Beobachtungen bis zum nächsten
+  Schneiden.
+- **Risiken aus §6:** zwei entfallen (redundante §1-Übernahme aus der
+  welle-3-Fill-Routine), zwei weiter offen → Register (siehe oben).
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen;
+  die Welle-3-Closure prüft Anker · Folge-Slice · Register auch für
+  diesen Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
