@@ -191,7 +191,7 @@ Backticks).
   (E2E-Probe: 2 INSERTs → 2 cdc.change-Zeilen, Binary als einziger
   Schreiber — verify-slice-007.md).
 - **Was ging anders als geplant:** der Review-F-7-Schiedsspruch
-  bestätigte den ADR-0044-Vertrag (Digest lauf-gebunden) — diesmal
+  bestätigte den [`ADR-0044`](../../../../docs/plan/adr/0044-image-beleg-semantik.md)-Vertrag (Digest lauf-gebunden) — diesmal
   wechselte der Digest wirklich (Binary trägt die Verdrahtung), und der
   Beleg wurde am HEAD committet (`789b76e`). Die commit-traceability-
   Klasse färbte beim ersten F-3-Commit **selbst rot** (ADR-0045-Sensor
