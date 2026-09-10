@@ -65,21 +65,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `cmd/pg-change-feed` verdrahtet die reale Pipeline (Store,
+- [x] `cmd/pg-change-feed` verdrahtet die reale Pipeline (Store,
       Stream, Service, ACK) je [`ADR-0026`](../../../../docs/plan/adr/README.md) — der
-      Feed-Container fährt CDC-Runtime statt `--version`-Smoke.
-- [ ] Der MVP-Integrationstest (slice-006) fährt gegen den
+      Feed-Container fährt CDC-Runtime statt `--version`-Smoke. *Beleg:
+      verify-slice-007.md (E2E-Probe: 2 INSERTs → 2 cdc.change-Zeilen,
+      Binary als einziger Schreiber).*
+- [x] Der MVP-Integrationstest (slice-006) fährt gegen den
       verdrahteten Feed-Container: INSERT/UPDATE/DELETE landen im
-      Store (Ende-zu-Ende durch das Binary).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      Store (Ende-zu-Ende durch das Binary). *Beleg:
+      `make test-integration` grün am verdrahteten Pfad
+      (verify-slice-007.md, eigene E2E-Probe).*
+- [x] `make gates` grün. *Beleg: vier Gates inkl.
+      commit-traceability am HEAD (verify-slice-007.md).*
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      *Beleg: review-slice-007.md committet (`e971ed4`).*
 - [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. (*§7*)
+- [x] Reconciliation-Register — **entfällt**: Repos ohne
+      Brownfield-Bootstrap haben die Datei nicht., **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (siehe §7).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -114,8 +121,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
-- `in-progress` → `next` (zu groß, zurück zur Zerlegung): <Bedingung>
-- `in-progress` → `open` (blockiert — Carveout?): <Bedingung>
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): wächst der
+  Verdrahtungs-Scope über die drei Liefer-Punkte hinaus (z. B. vollständige
+  Konfigurationsschicht) → aufteilen.
+- `in-progress` → `open` (blockiert — Carveout?): der Feed-Container
+  kann die CDC-Runtime nicht fahren (Image-/Compose-Faktoren).
 
 ## 5. Closure-Trigger
 
@@ -126,7 +136,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
-<…>
+DoD (§2) vollständig abgehakt · `make test-integration` grün am
+verdrahteten Pfad · Review-Report unter `docs/reviews/` · Closure-Notiz
+mit Lerneintrag.
 
 ## 6. Risiken und offene Punkte
 
@@ -170,13 +182,35 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** (fällig bei der Implementierung)
-- **Was ging anders als geplant:** (fällig bei der Implementierung)
-- **Steering-Loop-Eintrag:** (fällig bei der Implementierung)
-- **Beobachtungs-Register (`../observations/`):** (fällig bei der Implementierung)
-- **Folge-Slices:** —
-- **Risiken aus §6:** —
-- **Drei Paarungen:** —
+- **Was hat funktioniert:** die Verdrahtung trennt Verbindungsaufbau
+  (`BindCapture`) von Port-Verdrahtung (ADR-0007 Option C) — der
+  ACK-Adapter braucht die Verbindung erst nach deren Aufbau; der
+  zweigeteilte Wächter (Slot **und** `State.Running`) wurde am
+  Fehlmodus-Probe live rot gesehen (Publication fehlt → Exit 1, Slot
+  blieb); der MVP-Integrationstest fährt danach das verdrahtete System
+  (E2E-Probe: 2 INSERTs → 2 cdc.change-Zeilen, Binary als einziger
+  Schreiber — verify-slice-007.md).
+- **Was ging anders als geplant:** der Review-F-7-Schiedsspruch
+  bestätigte den ADR-0044-Vertrag (Digest lauf-gebunden) — diesmal
+  wechselte der Digest wirklich (Binary trägt die Verdrahtung), und der
+  Beleg wurde am HEAD committet (`789b76e`). Die commit-traceability-
+  Klasse färbte beim ersten F-3-Commit **selbst rot** (ADR-0045-Sensor
+  greift) — die Klasse ist jetzt maschinell getragen (ADR-0045).
+- **Steering-Loop-Eintrag:** *F-2-Fehlerbehandlungs-Grenze → Ausgang
+  weiter offen (Retry/Backoff folgt mit der Konfigurationsschicht);
+  die Grenze trägt der `wiring.go`-Kommentar und die Container-
+  Vertrags-Zeile · seit slice-007.* *(Der Review-INFO-Kanal F-10
+  (Signal-Ende-Vertrag) bleibt ohne automatisierten Träger —
+  Binary-Lauf-Test-Aufbau wächst über den Nachzug hinaus; Restrisiko
+  benannt.)*
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/adapter-fehler-ausgang/`
+  neu angelegt (Beleg `evidence/slice-007.md`, 1×).
+- **Folge-Slices:** keiner — wellenloser Zug, abgeschlossen vor der
+  Welle-2-Closure.
+- **Risiken aus §6:** Verdrahtungs-Lücke → **eingetreten** (Träger:
+  dieser Slice); Fehlerbehandlungs-Grenze → **weiter offen** (Retry/
+  Backoff mit der Konfigurationsschicht).
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-2-Closure delegiert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -192,8 +226,13 @@ in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Beding
 ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
 Hälften.
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** <je berührter Sub-Area: erfüllt sie
-die Schwelle ≥ 2 von 3 Achsen? zu grobe vorher ausdifferenzieren>
+**Vorgelagert — Sub-Area-Wahl prüfen:** berührte Sub-Area:
+Bootstrap-Verdrahtung (`cmd/**`, `internal/bootstrap/**`; [`ARC-007`](../../../../spec/architecture.md)).
+Achsen: (1) Konventionen-Dichte — Composition-Root-Regeln in
+[`ADR-0026`](../../../../docs/plan/adr/README.md), Deployment-Form in [`SPEC-015`](../../../../spec/pflichtenheft.md);
+(2) Phase-Reife — Phase 5 (alle Adapter und Ports real committet,
+Verdrahtung entsteht); (3) Evidenz-Risiko niedrig (GF). Schwelle ≥ 2
+erfüllt.
 
 **Vorgelagert — offene Beobachtungen sichten:** <Register durchgegangen;
 je berührter Sub-Area der Treffer mit Zähler-Stand — oder "keine Treffer">
@@ -207,13 +246,4 @@ Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
 mit dem im Baseline-Regelwerk §Ziel-Form: Sub-Area-Modus-Begründung
 abgedruckten Block. -->
 
-### Sub-Area: <Name>
-
-- **Modus:** GF | BF | Hybrid
-- **Konventionen-Dichte:** <Beleg aus `harness/conventions.md`,
-  Adaptions-Block oder Code>
-- **Phase-Reife:** Phase 0–5 <Begründung gegen die Phase × Modus-Matrix>
-- **Evidenz-/Diskrepanz-Risiko:** <bei BF/Hybrid: was kann die
-  Inventur sichtbar machen? bei GF: meist niedrig>
-- **Reconciliation-Aufwand:** <Slice-Schätzung;
-  Graduation-/Folge-Slice-Trigger>
+*Reiner GF-Hinweis genügt (siehe oben); kein Sub-Area-Block.*
