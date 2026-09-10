@@ -3,8 +3,8 @@
 # einziges als Gate behauptetes Target) und DCHECK_DIGEST auf den erzeugenden
 # Image-Digest gepinnt (Reproduzierbarkeit). advisory doc-*-Targets verbatim.
 # Einbinden: `include d-check.mk`; eigene .d-check.yml danebenlegen.
-DCHECK_IMAGE ?= ghcr.io/pt9912/d-check:v0.74.1
-DCHECK_DIGEST ?= sha256:e31a372b66dbde26305982424854cfce7c9ab7ce555a94debeee7ee26e6d4641
+DCHECK_IMAGE ?= ghcr.io/pt9912/d-check:v0.75.0
+DCHECK_DIGEST ?= sha256:18e9cd857f8db3569526d1f9a3cbeba8af51e9f2dd84c17a22444028b977c3da
 # TRACE_FLAGS: optionale Flags für die RTM-Targets (z. B. --json).
 TRACE_FLAGS ?=
 
