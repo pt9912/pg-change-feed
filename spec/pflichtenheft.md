@@ -134,7 +134,7 @@ Vorgesehene Tabellen:
 | `cdc.consumer` | registrierte Consumer |
 | `cdc.consumer_position` | bestätigte Position je Consumer |
 | `cdc.schema_version` | Schema-Versionen (SPEC-004) |
-| `cdc.capture_state` | Betriebs-/Capture-Zustand |
+| `cdc.process_heartbeat` | Betriebs-/Capture-Zustand: periodisches Lebenszeichen des Capture-Prozesses ([`LH-FA-ADM-002`](lastenheft.md), [`LH-QA-OPS-002`](lastenheft.md)) |
 
 ### SPEC-002 — `cdc.change`
 

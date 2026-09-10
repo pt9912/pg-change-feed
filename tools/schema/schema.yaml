@@ -9,8 +9,11 @@
 # transaction, change (SPEC-001, SPEC-002) — und die Consumer-State-Tabellen
 # consumer, consumer_position (SPEC-001, LH-FA-CON-001…006); ihr Port
 # (ConsumerStatePort) liegt außerhalb des Store-Adapters, die Tabellenform
-# trägt dieses Modell wie die übrigen. capture_state trägt dieses Modell
-# nicht; sein Port (Betriebs-/Capture-Zustand) ist nicht real.
+# trägt dieses Modell wie die übrigen. process_heartbeat (slice-012)
+# realisiert die in SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle
+# als Lebenszeichen des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002);
+# ihr Port (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe
+# Abgrenzung wie beim Consumer-State.
 #
 # Die drei Views (active_tables, consumer_status, changes) tragen den
 # SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
@@ -175,3 +178,13 @@ tables:
       - name: chk_consumer_position_position_positive
         type: check
         expression: "(acknowledged_position > 0)"
+
+  process_heartbeat:
+    description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002; slice-012). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld."
+    columns:
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      heartbeat_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
+    primary_key: [source_id]

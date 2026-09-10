@@ -20,13 +20,15 @@
 -- Least-Privilege-Fläche von cdc_reader unnötig erweitern würden; Folge-Slice.
 --
 -- Der Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) liegt bewusst nicht
--- in dieser Datei: eine SQL-View liest nur persistierten Zustand und kann
--- den Lauf-Zustand des CDC-Prozesses selbst nicht bezeugen — ein
+-- in dieser Datei: eine reine Lese-View auf bereits persistierten Zustand
+-- konnte den Lauf-Zustand des CDC-Prozesses selbst nicht bezeugen — ein
 -- abgestürzter Prozess hinterlässt eine weiterhin erreichbare Datenbank,
--- die View würde „gesund" lesen. Das verlangt einen Treiber, der den
--- laufenden Prozess selbst befragt (neuer Driving-Adapter-Zuschnitt,
--- ADR-0020 stellt HTTP/gRPC explizit zurück); offene Architekturfrage,
--- siehe Slice-Plan slice-011 §7.
+-- die View würde „gesund" lesen. Aufgelöst über den Heartbeat-Mechanismus
+-- (kein neuer Driving-Adapter-Zuschnitt, ADR-0020 bleibt unberührt,
+-- Architect-Verdikt docs/plan/adr/architect-review-slice-011.md): der
+-- Capture-Prozess schreibt sein Lebenszeichen periodisch fort
+-- (cdc.process_heartbeat), cdc.heartbeat (tools/schema/nacharbeit-heartbeat.sql,
+-- slice-012) projiziert dessen Alter.
 CREATE OR REPLACE VIEW cdc.metrics AS
 SELECT 'cdc_transactions_total'::text AS metric_name, NULL::text AS label, count(*)::numeric AS value
 FROM cdc.transaction

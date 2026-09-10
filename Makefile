@@ -102,7 +102,11 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # LH-FA-SST-004): tools/schema/nacharbeit-roles.sql trägt die drei
 # Least-Privilege-Rollen, tools/schema/nacharbeit-observability.sql die
 # Metriken-Minimum-View cdc.metrics, die auf cdc_reader grantet — deshalb
-# läuft sie nach der Rollen-Datei.
+# läuft sie nach der Rollen-Datei. Ein weiterer Schritt seit slice-012
+# (LH-FA-ADM-002, LH-QA-OPS-002): tools/schema/nacharbeit-heartbeat.sql
+# trägt die Health-View cdc.heartbeat, die sich aus demselben Grund wie
+# cdc.metrics selbst an cdc_reader grantet — sie läuft deshalb ebenfalls
+# nach der Rollen-Datei.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
@@ -110,6 +114,7 @@ schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflic
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-views.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-roles.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-observability.sql
+	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-heartbeat.sql
 
 help: ## Diese Hilfe
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*##"}{printf "  %-14s %s\n",$$1,$$2}'
