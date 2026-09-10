@@ -21,6 +21,10 @@ edges:
   - {from: app,      to: ports}
   - {from: adapters, to: ports}
   - {from: adapters, to: domain}
-composition_root: ["internal/bootstrap/**", "cmd/**"]
+# Composition Root (`ADR-0026`): die Verdrahtung konkreter Adapter lebt in
+# `internal/bootstrap` und `cmd` — und in den Verdrahtungs-Tests, die
+# denselben Aufbau als Test tragen (MVP-Integrationstest gegen die
+# Compose-Umgebung, `test/integration`).
+composition_root: ["internal/bootstrap/**", "cmd/**", "test/integration/**"]
 markers:
   ignore_symbols: []
