@@ -32,9 +32,14 @@ docker run -d --name "$PG_CONTAINER" \
   -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
   "$PG_TEST_IMAGE" >/dev/null
 
+# Die Bereitschaft verlangt eine echte Abfrage: pg_isready meldet bereit,
+# sobald der Server antwortet — auch der temporäre Server der Initdb-Phase
+# antwortet (mit „shutting down“), und der Folgeschritt würde sonst gegen
+# ihn fahren.
 ready=0
 for _ in $(seq 1 60); do
-  if docker exec "$PG_CONTAINER" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
+  if docker exec "$PG_CONTAINER" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1 \
+    && docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc "SELECT 1" >/dev/null 2>&1; then
     ready=1
     break
   fi
@@ -46,6 +51,22 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
+
+# CDC-Ziel-Schema und search_path der Rollout-Verbindung: dieselbe
+# Umgebungs-Vorbedingung, die der Compose-Init der Integration-Umgebung
+# trägt (compose-init/01-cdc-schema.sql) — die Tabellen-DDL entsteht über
+# den d-migrate-Rollout (ADR-0043), nicht hier. Der Rollout trägt die
+# Consumer-State-Tabellen vor dem Testlauf (State-Schema vor der Nutzung):
+# die handgeschriebene DDL des Store-Adapters (ApplySchema) rollt sie
+# nicht aus.
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 \
+  -c "CREATE SCHEMA IF NOT EXISTS cdc" \
+  -c "ALTER ROLE $PG_USER IN DATABASE $PG_DB SET search_path = cdc"
+
+# Schema-Rollout über d-migrate vor dem Testlauf (ADR-0043): der
+# Pflicht-Report landet in tools/schema/plan.yaml, das Rollback-Artefakt
+# in tools/schema/down.sql.
+make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
 # Modul-Cache befüllen (braucht Netz); der Testlauf selbst trägt den
 # DSN über das Docker-Netz und braucht sonst kein Netz.
