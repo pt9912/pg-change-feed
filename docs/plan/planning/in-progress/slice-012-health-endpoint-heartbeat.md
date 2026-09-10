@@ -108,6 +108,19 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/schema/nacharbeit-heartbeat.sql` | neu | vierte SQL-Lese-View `cdc.heartbeat` (reine Projektion, [`ADR-0046`](../../../../docs/plan/adr/README.md)) — Ausweichform wie die bestehenden drei Views (`BEO-PGC/d-migrate-nacharbeit`) |
 | `compose.yaml` | update | Healthcheck liest den Heartbeat-Zustand |
 
+**Plan-Nachzug im selben Lauf (Baseline-Regelwerk `modul-09-implementierung.md`, seit slice-009):** über die obige Liste hinaus berührte dieser Lauf folgende Dateien — vor dem Sensor-Lauf nachgetragen, kein stilles Erweitern:
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | `UpsertHeartbeat`-SQL-Text — die SQL-Texte der postgresstorage-Adapter stehen ausschließlich hier (Paket-Kommentar), keine neue Komponente, direkte Abhängigkeit von `postgresstorage/heartbeat.go` |
+| `internal/adapters/driven/postgresstorage/heartbeat_test.go` | neu | Adapter- und View-Test-Beleg (`make test-store`) für die zwei planmäßigen DoD-Punkte (Schreiber, View) |
+| `internal/bootstrap/heartbeat_internal_test.go` | neu | Whitebox-Beleg (`package bootstrap`) für das §6-Risiko (Timer-Zug blockiert die Capture-Persist-ACK-Schleife nicht) und für die Healthcheck-Schwelle (`healthcheckVerdict`) |
+| `Makefile` | update | fünfter `schema-rollout`-Schritt (`nacharbeit-heartbeat.sql`), direkte Folge der neuen Nacharbeit-Datei |
+| `tools/schema/nacharbeit-observability.sql` | update | Kommentar korrigiert — die dort als „offene Architekturfrage" benannte Health-Endpoint-Lücke (Slice-Plan slice-011 §7) ist mit diesem Slice aufgelöst; ein stehengebliebener Kommentar wäre nach `AGENTS.md` §3.7 falsch |
+| `spec/pflichtenheft.md` | update | [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellenzeile: die dort bereits vorgesehene, nie detaillierte `cdc.capture_state`-Zeile („Betriebs-/Capture-Zustand") wird durch die jetzt realisierte `cdc.process_heartbeat` ersetzt — sonst zwei Namen für denselben Zweck (Fund beim Plan-vs-Bestand-Abgleich, Schritt 12 des Implementer-Workflows) |
+| `cmd/pg-change-feed/main.go` | update | `--healthcheck`-Modus — der einzig ausführbare Compose-Healthcheck-Befehl im distroless Runtime-Image (kein Shell, kein `psql`, `Dockerfile`); ohne ihn bliebe der geplante `compose.yaml`-DoD-Punkt eine Doku-Behauptung ohne Wirkung |
+| `tools/harness/run-integration-tests.sh` | update | Docker-Health-Status-Wartepunkt (`docker inspect .State.Health.Status`) — Beleg des Compose-Healthcheck-Vertrags am realen Container, nicht nur am Binary-Exit-Code |
+
 ## 4. Trigger
 
 <!-- BEDIENHINWEIS: Beispiele — "Wenn Welle X done." / "Wenn Carveout CO-NN
