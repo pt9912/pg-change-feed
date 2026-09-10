@@ -122,6 +122,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/harness/run-integration-tests.sh` | update | Docker-Health-Status-Wartepunkt (`docker inspect .State.Health.Status`) — Beleg des Compose-Healthcheck-Vertrags am realen Container, nicht nur am Binary-Exit-Code |
 | `tools/schema/plan.yaml` | update | generierter Pflicht-Report des `schema-rollout`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md)) — Folge der `schema.yaml`-Änderung, kein eigener Liefer-Punkt (Review-Finding F-3, `docs/reviews/review-slice-012.md`) |
 | `tools/schema/down.sql` | update | generiertes Rollback-Artefakt desselben `schema-rollout`-Laufs — dieselbe Begründung wie `plan.yaml` |
+| `internal/bootstrap/healthcheck_test.go` | neu | Test-Beleg für F-2 (Review-Finding, `docs/reviews/review-slice-012.md`) — fünf unterscheidbare stderr-Diagnosen je Fehlerklasse; in der ersten Plan-Nachzug-Runde übersehen (Verifier-Finding V-1, `docs/reviews/verify-slice-012.md`) |
 
 ## 4. Trigger
 

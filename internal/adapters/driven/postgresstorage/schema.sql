@@ -8,8 +8,8 @@
 -- `cdc.schema_version` als referenzierte Tabellen (Fremdschlüssel-Ziele der
 -- Changes), `cdc.transaction` und `cdc.change` als Träger der Transaktionen
 -- und Changes. `cdc.consumer`, `cdc.consumer_position` (Consumer-State)
--- und `cdc.capture_state` (Betriebs-/Capture-Zustand) trägt die DDL nicht —
--- ihre Ports (`ConsumerStatePort`, `ReplicationAckPort`) liegen außerhalb
+-- und `cdc.process_heartbeat` (Betriebs-Lebenszeichen) trägt die DDL nicht —
+-- ihre Ports (`ConsumerStatePort`, `HeartbeatPort`) liegen außerhalb
 -- dieses Store-Adapters.
 --
 -- Die Fremdschlüssel setzen voraus, dass Quelle, Tabelle und Schema-Version
