@@ -97,6 +97,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `cmd/pg-change-feed/main.go` | update | Verdrahtung: Bootstrap konstruiert Store/Stream/ACK/Service je [`ADR-0026`](../../../../docs/plan/adr/README.md) |
 | `internal/bootstrap/*.go` | update | Verdrahtungs-Funktionen (kein Test-Layer mehr allein) |
 | `compose.yaml` | update | Feed-Container fährt CDC-Runtime (ENV für DSN/Publication) |
+| `tools/harness/run-integration-tests.sh` | update | *Plan-Nachzug (Review F-1):* der Runner trägt die Aktivierung (Feed-Tabellen, Publication, Bindungs-Zeilen) **vor** dem Container-Start und prüft den Stream-Vertrag zweigeteilt (Slot **und** `State.Running`) — Wächter-Lücke aus der eigenen Probe belegt |
+| `test/integration/mvp_test.go` | update (neuschreiben) | *Plan-Nachzug (Review F-2):* der Test konsumiert über den Store-Adapter-Lese-Pfad (`PostgresChangeStoreAdapter.ReadChanges`) — „kein anderer Schreiber als das Binary" geprüft; die Go-Baum-Verdrahtung des slice-006-Stands ist entfernt |
 
 ## 4. Trigger
 
@@ -139,6 +141,14 @@ dasteht.
 - Verdrahtungs-Lücke (Review F-6, slice-006): der Feed-Container ist
   Image-Vertrag-Smoke — **Ausgang:** eingetreten; Träger ist dieser
   Slice (das Binary verdrahtet, der Container fährt CDC-Runtime).
+- Fehlerbehandlungs-Grenze (Review F-2): der erste Production-Pfad endet
+  auf jeden Adapter-Fehler mit Ausgang 1; die [`SPEC-008`](../../../../spec/pflichtenheft.md)-Aktion für
+  `transient` (Retry/Backoff) trägt kein Element, und die Adapter-Grenze
+  „kontrollierte Fortsetzung beim Aufrufer" wird vom Aufrufer mit
+  Prozess-Ende beantwortet — **Ausgang: weiter offen** → Retry/Backoff
+  folgt mit der Konfigurationsschicht (späterer Slice); die Grenze trägt
+  der Kommentar in `wiring.go` und der `restart: "no"`-Vertrags-Zeile in
+  `compose.yaml` (Fix-Runde).
 - MVP-Integrationstest-Claim hängt an der Go-Baum-Ebene — **Ausgang:**
   eingetreten (Grenze benannt); der Test fährt nach diesem Slice das
   verdrahtete System am Container.
