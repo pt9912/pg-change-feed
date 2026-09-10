@@ -35,10 +35,18 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Fehlerzustände des Capture-Prozesses sichtbar machen (Erfassung
-kann nicht fortsetzen, erkennbar und vom Normalbetrieb unterscheidbar) und
-den CDC-Abstand (Zeit/Position zwischen Quelländerung und
-CDC-Verfügbarkeit) messbar machen — beides über die bestehende
-SQL-Lese-Fläche.
+kann nicht fortsetzen, erkennbar und vom Normalbetrieb unterscheidbar) —
+inklusive einer als Grenze dokumentierten `cdc_capture_lag`-Näherung auf
+Persistenz-Zeit-Basis, beides über die bestehende SQL-Lese-Fläche.
+
+**Planner-Korrektur nach Implementer-Rückführungs-Prüfung (§4):** Der
+ursprüngliche Titel/Ziel dieses Slice umfasste auch ein *reales*
+`cdc_capture_lag` (Quell-Commit-Zeit → CDC-Verfügbarkeit). Die
+§4-Prüfung im Implementer-Lauf ergab: das bräuchte Zeitstempel-Wiring
+durch vier Schichten (Replication-Decoder, Domain, Application/Ports,
+Store-Adapter) — zu groß für diesen Slice. Der Slice-Titel/Scope ist
+entsprechend auf den gelieferten, unabhängigen Teil reduziert (siehe
+Ausschluss unten); das reale `cdc_capture_lag` ist Folge-Slice-Arbeit.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -51,6 +59,15 @@ SQL-Lese-Fläche.
   bleibt bewusst stehen: dieser Slice liefert die Messung, nicht die
   Schwellen-Bewertung; die Schwellen selbst stehen bereits in
   [`SPEC-013`](../../../../spec/pflichtenheft.md).
+- **Reales `cdc_capture_lag`** ([`LH-FA-ADM-004`](../../../../spec/lastenheft.md),
+  Quell-Commit-Zeitstempel aus dem Replication-Stream bis in
+  `cdc.transaction.committed_at` gespiegelt) — Klasse Folge-Slice
+  (Kennung folgt bei der nächsten Eröffnung; die Schätzung ist bereits
+  präzisiert: `pglogrepl.CommitMessage.CommitTime` existiert, keine neue
+  Wire-Verbindung nötig — nur das Durchreichen berührt Replication-
+  Decoder, Domain, Application/Ports und Store-Adapter). Bis dahin
+  trägt dieser Slice eine dokumentierte Näherung (Persistenz-Zeit als
+  Proxy, Kommentar-Klasse Grenze in `nacharbeit-observability.sql`).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -76,9 +93,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       unterscheidbar) — Teil-Beleg zu
       [`LH-FA-ADM-003`](../../../../spec/lastenheft.md),
       [`LH-QA-REL-003`](../../../../spec/lastenheft.md).
-- [ ] CDC-Abstand messbar (`cdc_capture_lag`-Kennzahl in der
-      Metriken-View) — Teil-Beleg zu
-      [`LH-FA-ADM-004`](../../../../spec/lastenheft.md),
+- [ ] `cdc_capture_lag`-Näherung in der Metriken-View (Persistenz-Zeit-
+      Proxy, Kommentar-Klasse Grenze — reales Quell-Commit-basiertes
+      Maß ist Folge-Slice-Arbeit, §1) — Teil-Beleg zu
       [`LH-QA-OPS-003`](../../../../spec/lastenheft.md).
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -164,17 +181,21 @@ zu spiegeln, verlangt eine Änderung an `decode.Commit` (Replication-
 Driving-Adapter), am `ChangeTransaction`/`SourcePosition`-Domänenmodell
 (Domain), am `CaptureCommand`/`ChangeStorePort`-Vertrag (Application/Ports)
 und an `InsertTransaction` (Store-Driven-Adapter) — vier Schichten statt
-höchstens zwei. Die Rückführung trägt deshalb weiterhin: **Rückzug mit
-Zerlegung**, mit einer kleineren, klareren Folge-Slice-Schätzung (reines
-Zeitstempel-Durchreichen, kein neuer Protokoll-Zugriff) als eigenem
-Liefer-Punkt. Der unabhängige Teil — Fehlerzustands-Sichtbarkeit
-([`LH-FA-ADM-003`](../../../../spec/lastenheft.md),
-[`LH-QA-REL-003`](../../../../spec/lastenheft.md)) und eine als Grenze
-dokumentierte `cdc_capture_lag`-Näherung auf Persistenz-Zeit-Basis (kein
-echter [`LH-FA-ADM-004`](../../../../spec/lastenheft.md)-Abstand zur
-Quelländerung) — bleibt vollständig innerhalb von Application/Store-Adapter
-und wird in diesem Lauf trotzdem geliefert (§3 Plan-Nachzug), während dieser
-Plan nach `next/` zurückgeht.
+höchstens zwei. Der Implementer zog den Plan zunächst per `git mv` nach
+`next/` zurück (reiner Move-Commit `426e1ed`) und lieferte den
+unabhängigen Teil trotzdem (§3 Plan-Nachzug).
+
+**Planner-Korrektur (nach Implementer-Handoff):** Da der unabhängige Teil
+bereits real geliefert, getestet und gegatet ist, zieht der Planner den
+Plan wieder nach `in-progress/` — der Zustand (Verzeichnis) muss den
+tatsächlich gemergten Code widerspiegeln, ein „next/"-Plan mit bereits
+verschmolzenen Produktions-Commits wäre ein zweiter, driftender
+Zustands-Träger. §1/§2/§5/§6 sind auf den gelieferten, reduzierten Scope
+umgeschrieben (Fehlerzustands-Sichtbarkeit + Näherung); das reale
+`cdc_capture_lag` ist als Folge-Slice-Ausschluss in §1 benannt (keine
+Kennung, keine Zerlegung dieses Slice — er schließt normal auf seinem
+reduzierten Scope). Kein neuer `next → in-progress`-Trigger nötig, da
+kein WIP-Limit-Konflikt entstand (kein anderer Slice lief dazwischen).
 
 ## 5. Closure-Trigger
 
@@ -186,8 +207,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
 - DoD vollständiges Häkchen + `make gates` grün + Review-Schluss ohne
-  offenes HIGH-Finding; Fehlerzustands-Sichtbarkeit und CDC-Abstand-
-  Messung am realen Adapter belegt (`make test-store`).
+  offenes HIGH-Finding; Fehlerzustands-Sichtbarkeit und die
+  `cdc_capture_lag`-Näherung am realen Adapter belegt (`make test-store`).
 - Lerneintrag §7: geschärfte Regel oder benannte Spec-Lücke — ohne ihn
   bleibt der Slice abgelegt, nicht fertig.
 
@@ -201,17 +222,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
 dasteht.
 
-- `committed_at` misst Persistenz-Zeit statt Quell-Commit-Zeit (siehe §4
-  Rückführung) — **eingetreten**: die Rückführung trägt den Ausgang, dieser
-  Slice geht nach `next/` zurück, kein `done/`-Übergang in diesem Lauf. Kein
-  Ausgang im Sinn von §Offene Risiken werden bei Closure aufgelöst
-  (Baseline-Regelwerk `modul-05-planning-harness.md`) — die drei dort
-  benannten Ausgänge (eingetreten/entfallen/weiter offen) sind an den
-  `in-progress → done`-Übergang gebunden, den dieser Lauf nicht vollzieht;
-  die Zeile bleibt bis zur nächsten `in-progress`-Runde offen und wandert mit
-  dem wiederaufgenommenen Plan. Die Näherung (Persistenz-Zeit als Proxy, mit
-  Kommentar-Klasse Grenze) ist trotzdem umgesetzt — als Teil des
-  unabhängigen, gelieferten Teils (§3, §4), nicht als Risiko-Ausgang.
+- `committed_at` misst Persistenz-Zeit statt Quell-Commit-Zeit — **Ausgang:**
+  eingetreten (Träger: Folge-Slice, §1-Ausschluss, Kennung folgt bei der
+  nächsten Eröffnung). Dieser Slice selbst liefert die dokumentierte
+  Näherung (Persistenz-Zeit als Proxy, Kommentar-Klasse Grenze in
+  `nacharbeit-observability.sql`) statt des realen Abstands.
 
 ## 7. Closure-Notiz
 
