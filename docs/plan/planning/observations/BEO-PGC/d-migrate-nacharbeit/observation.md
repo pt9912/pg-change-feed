@@ -10,5 +10,6 @@ Nacharbeit (`nacharbeit-operation-check.sql`) im Rollout-Lauf statt im
 neutralen Modell (`tools/schema/schema.yaml`).
 
 Deklaration: `tools/schema/schema.yaml` (Benannte Grenze),
-`Makefile` (psql-Nacharbeit-Schritt im `schema-rollout`-Target),
-[`ADR-0043`](../../../spec/lastenheft.md-Verweis folgt über die ADR).
+`Makefile` (psql-Nacharbeit-Schritt im `schema-rollout`-Target);
+[`ADR-0043`](../../../../docs/plan/adr/README.md) trägt die
+Re-Evaluierungs-Regel (Ausweichform/Retirement).
