@@ -17,10 +17,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
@@ -292,24 +294,44 @@ func healthcheckVerdict(age time.Duration) int {
 // SQL-Lese-View `cdc.heartbeat` (`LH-FA-ADM-002`, `LH-QA-OPS-002`,
 // `ADR-0046` Kategorie C) und trägt den Prozess-Ausgang des
 // `--healthcheck`-Laufs (`cmd/pg-change-feed/main.go`): 0 (healthy)
-// unterhalb der Schwelle, 1 sonst — ein Verbindungsfehler und eine
-// fehlende Zeile (die Instanz hat noch nie geschlagen) gelten als nicht
-// gesund. Die Klassifikation `SPEC-007` (`HEALTH_STATES`) bleibt Sache des
-// lesenden Systems; dieser Ausgang trägt nur die binäre Compose-Semantik.
-// Der Aufruf öffnet eine eigene, kurzlebige Verbindung — kein Bestandteil
-// der laufenden Verdrahtung (`Run` oben).
+// unterhalb der Schwelle, 1 sonst — ein Verbindungsfehler, eine fehlende
+// Zeile (die Instanz hat noch nie geschlagen) und eine nicht lesbare View
+// (z. B. Schema-Rollout nicht gelaufen) gelten als nicht gesund. Jede der
+// drei Fehlerklassen trägt eine eigene, kurze `stderr`-Zeile — ein
+// Docker-Healthcheck-Fail unterscheidet sich sonst nicht von echter
+// Staleness (Review-Finding F-2, review-slice-012.md); kein neues
+// Fehlerklassen-Schema, nur Diagnose-Text. Die Klassifikation `SPEC-007`
+// (`HEALTH_STATES`) bleibt Sache des lesenden Systems; der Exit-Code
+// trägt nur die binäre Compose-Semantik. Der Aufruf öffnet eine eigene,
+// kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
+// (`Run` oben).
 func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: healthcheck: DSN ungültig: %v\n", err)
 		return 1
 	}
 	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: healthcheck: Instanz nicht erreichbar: %v\n", err)
+		return 1
+	}
 	var ageSeconds float64
 	err = pool.QueryRow(ctx, "SELECT age_seconds FROM cdc.heartbeat WHERE source_id = $1", string(source)).Scan(&ageSeconds)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: healthcheck: kein Lebenszeichen für Quelle %q — Instanz hat noch nie geschlagen\n", source)
+		} else {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: healthcheck: cdc.heartbeat nicht lesbar (Schema-Rollout gelaufen?): %v\n", err)
+		}
 		return 1
 	}
-	return healthcheckVerdict(time.Duration(ageSeconds * float64(time.Second)))
+	age := time.Duration(ageSeconds * float64(time.Second))
+	if verdict := healthcheckVerdict(age); verdict != 0 {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: healthcheck: Lebenszeichen veraltet (%s, Schwelle %s)\n", age, heartbeatStaleAfter)
+		return verdict
+	}
+	return 0
 }
