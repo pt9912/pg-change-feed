@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
 **Eingang:** [`docs/reviews/review-slice-014.md`](../../reviews/review-slice-014.md)
 F-1 (HIGH, Rollen-Widerspruch) · Slice-Plan
-[`docs/plan/planning/in-progress/slice-014-strukturiertes-logging.md`](../planning/in-progress/slice-014-strukturiertes-logging.md)
+[`docs/plan/planning/done/slice-014-strukturiertes-logging.md`](../planning/done/slice-014-strukturiertes-logging.md)
 §1/§3 · [`ADR-0024`](0024-observability-ausserhalb-der-domain.md) (Accepted,
 permanent) · [`ADR-0026`](0026-composition-root.md) (Accepted, permanent) ·
 `spec/architecture.md` `ARC-011` (Telemetrie-Backend) · `spec/lastenheft.md`
