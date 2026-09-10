@@ -34,8 +34,8 @@ docker run -d --name "$PG_CONTAINER" \
 
 # Die Bereitschaft verlangt eine echte Abfrage: pg_isready meldet bereit,
 # sobald der Server antwortet — auch der temporäre Server der Initdb-Phase
-# antwortet (mit „shutting down“), und der Folgeschritt würde sonst gegen
-# ihn fahren.
+# antwortet (mit „shutting down“). Die Abfrage liest ihre Bereitschaft vom
+# Datenbank-Server, nicht vom Initdb-Lauf.
 ready=0
 for _ in $(seq 1 60); do
   if docker exec "$PG_CONTAINER" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1 \
