@@ -2,6 +2,7 @@ package postgresstorage_test
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -310,5 +311,136 @@ func TestTableExistsMissing(t *testing.T) {
 	}
 	if exists {
 		t.Fatalf("fehlende Tabelle meldet Bestand")
+	}
+}
+
+// TestIdentifierVerweigerung trägt den configuration-Vertrag der
+// Aktivierung an der Adapter-Grenze (`SPEC-008`): Bezeichner außerhalb
+// des Alphabets enden vor dem ersten SQL-Aufruf über
+// `ErrActivationConfiguration` — die Publication bleibt unberührt.
+func TestIdentifierVerweigerung(t *testing.T) {
+	activation, pool, _ := newTestActivation(t)
+	ctx, cancel := activationContext(t)
+	defer cancel()
+
+	if _, err := activation.TableExists(ctx, "Public", "t_act_1"); !errors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("TableExists mit Schema außerhalb des Alphabets: %v (Erwartung: Fehlerklasse configuration)", err)
+	}
+	if _, err := activation.Published(ctx, "mit-Bindestrich", "public", "t_act_1"); !errors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Published mit Publication außerhalb des Alphabets: %v (Erwartung: Fehlerklasse configuration)", err)
+	}
+	if err := activation.Publish(ctx, "mit-Bindestrich", "public", "t_act_1"); !errors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Publish mit Publication außerhalb des Alphabets: %v (Erwartung: Fehlerklasse configuration)", err)
+	}
+	if err := activation.Publish(ctx, "pub_act_verweigert", "Public", "t_act_1"); !errors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Publish mit Schema außerhalb des Alphabets: %v (Erwartung: Fehlerklasse configuration)", err)
+	}
+	if err := activation.Unpublish(ctx, "pub_act_verweigert", "public", "T_act_1"); !errors.Is(err, postgresstorage.ErrActivationConfiguration) {
+		t.Fatalf("Unpublish mit Tabelle außerhalb des Alphabets: %v (Erwartung: Fehlerklasse configuration)", err)
+	}
+
+	var publications int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM pg_publication").Scan(&publications); err != nil {
+		t.Fatalf("Publication-Bestand: %v", err)
+	}
+	if publications != 0 {
+		t.Fatalf("Verweigerung hinterließ Publicationen: %d (Erwartung: 0)", publications)
+	}
+}
+
+// TestRetainedStateView trägt den Zustand nach der Deaktivierung mit
+// Change-Bestand (`LH-FA-CFG-002` Out-of-Scope): die Bindungs-Zeile
+// bleibt als Herkunft der persistierten Changes, die Publication trägt
+// die Tabelle nicht mehr — Status- und Listen-Abfragen trennen darüber
+// den Erfassungs-Zustand von der Herkunft.
+func TestRetainedStateView(t *testing.T) {
+	activation, pool, _ := newTestActivation(t)
+	ctx, cancel := activationContext(t)
+	defer cancel()
+
+	registered, err := model.NewSourceTable("tbl-act-3", activationSource, "public", "t_act_state")
+	if err != nil {
+		t.Fatalf("Tabelle: %v", err)
+	}
+	version, err := model.NewSchemaVersion("sv-act-3", "tbl-act-3", 1)
+	if err != nil {
+		t.Fatalf("Schema-Version: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE TABLE public.t_act_state (id int PRIMARY KEY)"); err != nil {
+		t.Fatalf("Quell-Tabelle: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, "DROP PUBLICATION IF EXISTS pub_act_state")
+		_, _ = pool.Exec(cleanupCtx, "DROP TABLE IF EXISTS public.t_act_state")
+	})
+	if _, err := activation.Register(ctx, registered, version); err != nil {
+		t.Fatalf("Register: %v", err)
+	}
+	if err := activation.Publish(ctx, "pub_act_state", "public", "t_act_state"); err != nil {
+		t.Fatalf("Publish: %v", err)
+	}
+
+	// Change-Bestand: die persistierten Changes tragen die Bindungs-Zeile
+	// als Herkunft.
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ('tx-act-3', $1, 1)",
+		activationSource,
+	); err != nil {
+		t.Fatalf("Transaktion: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.change (change_id, transaction_id, source_table_id, sequence, operation, schema_version) VALUES ('ch-act-3', 'tx-act-3', 'tbl-act-3', 1, 'INSERT', 'sv-act-3')",
+	); err != nil {
+		t.Fatalf("Change: %v", err)
+	}
+
+	if published, err := activation.Published(ctx, "pub_act_state", "public", "t_act_state"); err != nil || !published {
+		t.Fatalf("Published vor dem Entzug: %v (%v)", published, err)
+	}
+	if err := activation.Unpublish(ctx, "pub_act_state", "public", "t_act_state"); err != nil {
+		t.Fatalf("Unpublish: %v", err)
+	}
+	removal, err := activation.Unregister(ctx, registered)
+	if err != nil {
+		t.Fatalf("Unregister mit Bestand: %v", err)
+	}
+	if removal != outbound.ActivationRetained {
+		t.Fatalf("Entzug mit Change-Bestand: %s (Erwartung: belassen)", removal)
+	}
+
+	// Der Zustands-View nach der Deaktivierung: Bindungs-Zeile steht,
+	// Mitgliedschaft fehlt — GetStatus liest darüber Retained, ListTables
+	// führt die Tabelle in der Retained-Liste.
+	if _, ok, err := activation.Registered(ctx, activationSource, "public", "t_act_state"); err != nil || !ok {
+		t.Fatalf("Bindungs-Zeile nach der Deaktivierung: %v (%v)", ok, err)
+	}
+	if published, err := activation.Published(ctx, "pub_act_state", "public", "t_act_state"); err != nil || published {
+		t.Fatalf("Mitgliedschaft nach der Deaktivierung: %v (%v)", published, err)
+	}
+}
+
+// TestPublishedMissingPublication liest die Abwesenheit der
+// Mitgliedschaft bei fehlender Publication.
+func TestPublishedMissingPublication(t *testing.T) {
+	activation, pool, _ := newTestActivation(t)
+	ctx, cancel := activationContext(t)
+	defer cancel()
+
+	if _, err := pool.Exec(ctx, "CREATE TABLE public.t_act_pub2 (id int PRIMARY KEY)"); err != nil {
+		t.Fatalf("Quell-Tabelle: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cleanupCancel()
+		_, _ = pool.Exec(cleanupCtx, "DROP TABLE IF EXISTS public.t_act_pub2")
+	})
+	published, err := activation.Published(ctx, "pub_act_fehlt", "public", "t_act_pub2")
+	if err != nil {
+		t.Fatalf("Published: %v", err)
+	}
+	if published {
+		t.Fatalf("fehlende Publication meldet Mitgliedschaft")
 	}
 }

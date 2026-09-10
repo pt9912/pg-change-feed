@@ -62,6 +62,10 @@ func (f *fakeActivation) Unpublish(ctx context.Context, publication, schema, tab
 	return nil
 }
 
+func (f *fakeActivation) Published(ctx context.Context, publication, schema, table string) (bool, error) {
+	return true, nil
+}
+
 // TestEnableHappyPath trägt die Aktivierung (`LH-FA-CFG-001` Happy Path):
 // der Use Case trägt die Bindungs-Zeilen und die Publication — die
 // Rückkehr meldet die aktivierte Tabelle.

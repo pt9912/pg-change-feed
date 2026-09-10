@@ -83,4 +83,10 @@ type TableActivationPort interface {
 	// Happy Path); seine Wirkung auf einen laufenden Stream-Container
 	// liegt am Walsender der Quelle.
 	Unpublish(ctx context.Context, publication, schema, table string) error
+
+	// Published liest die Mitgliedschaft der Tabelle in der Publication;
+	// die Status- und Listen-Abfragen trennen darüber den
+	// Erfassungs-Zustand von der Bindungs-Zeile als Herkunft
+	// (`LH-FA-CFG-003`, `LH-FA-CFG-004`).
+	Published(ctx context.Context, publication, schema, table string) (bool, error)
 }

@@ -26,7 +26,9 @@ type (
 // Zustand über den `TableActivationPort`: die Existenz der physischen
 // Tabelle ist die Vorbedingung (`LH-FA-CFG-003` Negative: expliziter
 // Fehlerpfad), der Zustand „nicht aktiviert" liest sich aus der
-// Abwesenheit der Bindungs-Zeile (`LH-FA-CFG-003` Boundary).
+// Abwesenheit der Bindungs-Zeile (`LH-FA-CFG-003` Boundary); die
+// Publication-Mitgliedschaft trennt den Erfassungs-Zustand von der
+// Bindungs-Zeile als Herkunft.
 type GetStatusService struct {
 	activation outbound.TableActivationPort
 }
@@ -39,10 +41,13 @@ func NewGetStatusService(activation outbound.TableActivationPort) *GetStatusServ
 var _ inbound.GetStatusUseCase = (*GetStatusService)(nil)
 
 // Status meldet den CDC-Zustand der Tabelle: „aktiviert" liest die
-// Bindungs-Zeile, „nicht aktiviert" ihre Abwesenheit — der Bindungs-Zeilen-
-// Bestand trägt den Aktivierungszustand (`SPEC-001`, `cdc.source_table`).
+// Bindungs-Zeile samt Publication-Mitgliedschaft; eine Bindungs-Zeile
+// ohne Mitgliedschaft liest sich als Herkunft persistierter Changes
+// (Retained — `LH-FA-CFG-002` Out-of-Scope: ihr Verhalten folgt der
+// Retention), ihre Abwesenheit als „nicht aktiviert" (`LH-FA-CFG-003`
+// Boundary).
 func (s *GetStatusService) Status(ctx context.Context, query GetStatusQuery) (GetStatusResult, error) {
-	if query.Source == "" || query.Schema == "" || query.Table == "" {
+	if query.Source == "" || query.Schema == "" || query.Table == "" || query.Publication == "" {
 		return GetStatusResult{}, domainerrors.ErrEmptyIdentifier
 	}
 	exists, err := s.activation.TableExists(ctx, query.Schema, query.Table)
@@ -56,5 +61,15 @@ func (s *GetStatusService) Status(ctx context.Context, query GetStatusQuery) (Ge
 	if err != nil {
 		return GetStatusResult{}, err
 	}
-	return GetStatusResult{Enabled: registered}, nil
+	if !registered {
+		return GetStatusResult{}, nil
+	}
+	published, err := s.activation.Published(ctx, query.Publication, query.Schema, query.Table)
+	if err != nil {
+		return GetStatusResult{}, err
+	}
+	if published {
+		return GetStatusResult{Enabled: true}, nil
+	}
+	return GetStatusResult{Retained: true}, nil
 }

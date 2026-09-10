@@ -60,6 +60,10 @@ func (f *fakeActivation) Unpublish(ctx context.Context, publication, schema, tab
 	return nil
 }
 
+func (f *fakeActivation) Published(ctx context.Context, publication, schema, table string) (bool, error) {
+	return false, nil
+}
+
 // TestDisableHappyPath trägt die Deaktivierung ohne Change-Bestand
 // (`LH-FA-CFG-002` Happy Path): der Publication-Entzug trägt den Stopp
 // der Erfassung, die Bindungs-Zeile wird entfernt.

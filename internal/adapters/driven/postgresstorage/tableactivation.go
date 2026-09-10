@@ -22,8 +22,10 @@ var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivie
 
 // identifierShape begrenzt die Bezeichner der Aktivierung auf das
 // Alphabet der Quelle; Publication, Schema und Tabellenname gehen als
-// Bezeichner-Literale in die Publication-DDL — dieselbe Grenze wie im
-// Stream-Adapter.
+// Bezeichner-Literale in die Publication-DDL. Die Quelle der Regel trägt
+// der Stream-Adapter (`receive.identifierShape`); dieser Ausdruck hält
+// denselben Alphabet-Vertrag für denselben Aufrufgegenstand — die
+// Adapter-Schicht importiert keine Adapter-Kante (Kopplung).
 var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 
 // TableActivationAdapter implementiert den `TableActivationPort`
@@ -265,6 +267,30 @@ func (a *TableActivationAdapter) Unpublish(ctx context.Context, publication, sch
 		return storageFailure(err)
 	}
 	return nil
+}
+
+// Published liest die Mitgliedschaft der Tabelle in der Publication; eine
+// fehlende Publication liest als Abwesenheit der Mitgliedschaft — die
+// Status- und Listen-Abfragen trennen darüber den Erfassungs-Zustand von
+// der Herkunft (`LH-FA-CFG-003`, `LH-FA-CFG-004`).
+func (a *TableActivationAdapter) Published(ctx context.Context, publication, schema, table string) (bool, error) {
+	if err := validateIdentifier(publication); err != nil {
+		return false, err
+	}
+	if err := validateIdentifier(schema); err != nil {
+		return false, err
+	}
+	if err := validateIdentifier(table); err != nil {
+		return false, err
+	}
+	var member int
+	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, storageFailure(err)
+	}
+	return true, nil
 }
 
 // publicationIdentifiers trägt die Bezeichner der Publication-DDL: die

@@ -34,16 +34,19 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/list"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// mvpSource und mvpSlot tragen dieselben Werte wie der Container-Vertrag
-// in compose.yaml (CDC_SOURCE_ID, CDC_SLOT).
+// mvpSource, mvpPublication und mvpSlot tragen dieselben Werte wie der
+// Container-Vertrag in compose.yaml (CDC_SOURCE_ID, CDC_PUBLICATION,
+// CDC_SLOT).
 const (
-	mvpSource = "src-mvp"
-	mvpSlot   = "slot_pgc_mvp"
+	mvpSource      = "src-mvp"
+	mvpPublication = "pub_pgc_mvp"
+	mvpSlot        = "slot_pgc_mvp"
 )
 
 // mvpEnv trägt die Compose-seitige Testumgebung eines MVP-Laufs: die
@@ -331,7 +334,7 @@ func TestMVPActivationState(t *testing.T) {
 
 	// Happy Path: die aktivierte Tabelle meldet „aktiviert" (`LH-FA-CFG-003`).
 	enabled, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow",
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der aktivierten Tabelle: %v", err)
@@ -343,7 +346,7 @@ func TestMVPActivationState(t *testing.T) {
 	// Boundary: die nie aktivierte Tabelle meldet „nicht aktiviert"
 	// (`LH-FA-CFG-003`).
 	idle, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle",
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle", Publication: mvpPublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der nie aktivierten Tabelle: %v", err)
@@ -354,7 +357,7 @@ func TestMVPActivationState(t *testing.T) {
 
 	// Negative: die fehlende Tabelle endet sichtbar (`LH-FA-CFG-003`).
 	if _, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_missing",
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_missing", Publication: mvpPublication,
 	}); !errors.Is(err, inbound.ErrSourceTableMissing) {
 		t.Fatalf("Status der fehlenden Tabelle: %v (Erwartung: Fehlerklasse der fehlenden Quelle-Tabelle)", err)
 	}
@@ -362,7 +365,7 @@ func TestMVPActivationState(t *testing.T) {
 	// Liste: die Quelle trägt beide aktivierten Feed-Tabellen
 	// (`LH-FA-CFG-004` Happy Path); die nie aktivierte Tabelle bleibt
 	// außerhalb.
-	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource})
+	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource, Publication: mvpPublication})
 	if err != nil {
 		t.Fatalf("Tabellen-Liste: %v", err)
 	}
@@ -375,7 +378,82 @@ func TestMVPActivationState(t *testing.T) {
 			t.Fatalf("Tabellen-Liste ohne %q: %d Tabellen", expected, len(tables.Tables))
 		}
 	}
-	if activated["public.feed_mvp_idle"] {
-		t.Fatalf("Tabellen-Liste trägt die nie aktivierte Tabelle")
+	if activated["public.feed_mvp_idle"] || len(tables.Retained) != 0 {
+		t.Fatalf("Tabellen-Listen ohne Deaktivierung: aktiviert %v, Herkunft %v", tables.Tables, tables.Retained)
+	}
+}
+
+// TestMVPDisableRetainedState trägt die Deaktivierung mit Change-Bestand
+// am verdrahteten Feed-Container (`LH-FA-CFG-002` Out-of-Scope,
+// `ADR-0028`): die Erfassung stoppt über den Publication-Entzug, die
+// Bindungs-Zeile bleibt als Herkunft der persistierten Changes — Status
+// und Liste trennen den Herkunfts-Bestand vom Erfassungs-Zustand. Der
+// Test läuft nach den Capture-Läufen (Quell-Reihenfolge) und deaktiviert
+// die Tabelle als letztes.
+func TestMVPDisableRetainedState(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_flow")
+	ctx := context.Background()
+
+	activation, err := postgresstorage.NewTableActivation(ctx, env.dsn)
+	if err != nil {
+		t.Fatalf("Aktivierungs-Adapter: %v", err)
+	}
+	t.Cleanup(activation.Close)
+	disableCase := disable.NewDisableTableService(activation)
+	statusCase := status.NewGetStatusService(activation)
+	listCase := list.NewListTablesService(activation)
+
+	// Change-Bestand vor der Deaktivierung sichern: eine Zeile läuft über
+	// den Feed-Container in den Store, unabhängig von der
+	// Test-Reihenfolge der Capture-Läufe. Der Bestand liest vor der
+	// Quelländerung, die Erwartung zählt ihn hoch.
+	before, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
+		Source: mvpSource, Table: &env.tableID,
+	})
+	if err != nil {
+		t.Fatalf("Change-Bestand lesen: %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (7, 'Kilo')"); err != nil {
+		t.Fatalf("Quelländerung: %v", err)
+	}
+	awaitPersistedChanges(t, env, len(before)+1)
+
+	result, err := disableCase.Disable(ctx, inbound.DisableTableCommand{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
+	})
+	if err != nil {
+		t.Fatalf("Disable: %v", err)
+	}
+	if !result.Retained || result.Removed {
+		t.Fatalf("Deaktivierung mit Change-Bestand: %+v (Erwartung: Retained)", result)
+	}
+
+	// Der Zustand nach der Deaktivierung: die Bindungs-Zeile liest sich
+	// als Herkunft, die Publication trägt die Tabelle nicht mehr.
+	state, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
+	})
+	if err != nil {
+		t.Fatalf("Status nach der Deaktivierung: %v", err)
+	}
+	if state.Enabled || !state.Retained {
+		t.Fatalf("Status nach der Deaktivierung: %+v (Erwartung: Retained)", state)
+	}
+	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource, Publication: mvpPublication})
+	if err != nil {
+		t.Fatalf("Tabellen-Liste nach der Deaktivierung: %v", err)
+	}
+	for _, table := range tables.Tables {
+		if table.QualifiedName() == "public.feed_mvp_flow" {
+			t.Fatalf("aktivierte Liste trägt die deaktivierte Tabelle")
+		}
+	}
+	retained := map[string]bool{}
+	for _, table := range tables.Retained {
+		retained[table.QualifiedName()] = true
+	}
+	if !retained["public.feed_mvp_flow"] {
+		t.Fatalf("Herkunfts-Liste ohne die deaktivierte Tabelle: %v", tables.Retained)
 	}
 }

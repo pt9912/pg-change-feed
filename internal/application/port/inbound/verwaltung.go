@@ -63,29 +63,44 @@ type DisableTableResult struct {
 	Retained bool
 }
 
-// GetStatusQuery trägt die Eingabe der Status-Abfrage (`LH-FA-CFG-003`).
+// GetStatusQuery trägt die Eingabe der Status-Abfrage (`LH-FA-CFG-003`):
+// die Tabelle und die Publication, deren Mitgliedschaft den
+// Erfassungs-Zustand trägt.
 type GetStatusQuery struct {
-	Source model.SourceID
-	Schema string
-	Table  string
+	Source      model.SourceID
+	Schema      string
+	Table       string
+	Publication string
 }
 
-// GetStatusResult trägt den Ausgang der Status-Abfrage: der Zustand
-// „aktiviert" einer Tabelle; „nicht aktiviert" meldet die Rückkehr mit
-// Enabled=false (`LH-FA-CFG-003` Happy Path und Boundary).
+// GetStatusResult trägt den Ausgang der Status-Abfrage getrennt nach
+// Erfassungs-Zustand und Herkunft: `Enabled` liest die Bindungs-Zeile
+// samt Publication-Mitgliedschaft (Zustand „aktiviert", `LH-FA-CFG-003`);
+// `Retained` liest eine Bindungs-Zeile ohne Mitgliedschaft — die Zeile
+// trägt die Herkunft persistierter Changes (`LH-FA-CFG-002` Out-of-Scope:
+// ihr Verhalten folgt der Retention), die Erfassung trägt die
+// Publication nicht mehr. Beide false liest eine nie aktivierte Tabelle.
 type GetStatusResult struct {
-	Enabled bool
+	Enabled  bool
+	Retained bool
 }
 
-// ListTablesQuery trägt die Eingabe der Tabellen-Liste (`LH-FA-CFG-004`).
+// ListTablesQuery trägt die Eingabe der Tabellen-Liste (`LH-FA-CFG-004`)
+// samt der Publication, deren Mitgliedschaft die aktivierten Tabellen
+// trägt.
 type ListTablesQuery struct {
-	Source model.SourceID
+	Source      model.SourceID
+	Publication string
 }
 
-// ListTablesResult trägt die aktivierten Tabellen der Quelle
-// (`LH-FA-CFG-004`); ohne Aktivierung trägt die Liste keine Tabellen.
+// ListTablesResult trägt die Tabellen der Quelle getrennt nach
+// Erfassungs-Zustand und Herkunft (`LH-FA-CFG-004`): `Tables` liest die
+// aktivierten Tabellen (Bindungs-Zeile samt Publication-Mitgliedschaft),
+// `Retained` liest die Bindungs-Zeilen, die nur noch Herkunft
+// persistierter Changes tragen (`LH-FA-CFG-002` Out-of-Scope).
 type ListTablesResult struct {
-	Tables []model.SourceTable
+	Tables   []model.SourceTable
+	Retained []model.SourceTable
 }
 
 // EnableTableUseCase aktiviert CDC für eine einzelne Tabelle
