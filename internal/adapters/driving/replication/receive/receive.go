@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"regexp"
 
 	"github.com/jackc/pglogrepl"
@@ -23,6 +22,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -68,6 +68,11 @@ type Config struct {
 	Slot        string
 	Tables      map[string]mapper.TableBinding
 	Capture     inbound.CaptureInboundPort
+	// Log trägt den injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`);
+	// ungesetzt (`nil`) fällt `NewStream` auf `outbound.NoopLog` zurück —
+	// bestehende Aufrufstellen (Tests), die dieses Feld nicht setzen,
+	// bleiben unverändert kompilierbar.
+	Log outbound.LogPort
 }
 
 // Stream ist der Replication-Stream-Driving-Adapter
@@ -84,6 +89,10 @@ type Stream struct {
 	// Slot-Feedback: confirmed_flush_lsn rückt nur über bestätigte
 	// Positionen (`LH-QA-REL-001.a`), nicht über den Empfangsstand.
 	lastAcked pglogrepl.LSN
+	// log trägt die strukturierte Protokollierung über den injizierten
+	// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — nie `nil` (`NewStream`
+	// trägt den `outbound.NoopLog`-Default nach).
+	log outbound.LogPort
 }
 
 // NewStream baut die Replication-Verbindung auf (`LH-QA-REL-001.a`,
@@ -97,11 +106,15 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	if err := validateConfig(cfg); err != nil {
 		return nil, err
 	}
+	log := cfg.Log
+	if log == nil {
+		log = outbound.NoopLog
+	}
 	conn, err := connectReplication(ctx, cfg.DSN)
 	if err != nil {
 		return nil, err
 	}
-	startLSN, err := ensureSlot(ctx, conn, cfg.Slot)
+	startLSN, err := ensureSlot(ctx, log, conn, cfg.Slot)
 	if err != nil {
 		conn.Close(ctx)
 		return nil, err
@@ -125,13 +138,14 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, fmt.Errorf("%w: START_REPLICATION: %v", ErrReplication, err)
 	}
-	slog.InfoContext(ctx, "replication: Stream gestartet",
+	log.Info(ctx, "replication: Stream gestartet",
 		"source", cfg.Source, "publication", cfg.Publication, "slot", cfg.Slot)
 	return &Stream{
 		conn:      conn,
 		decoder:   decode.NewDecoder(),
 		assembler: assembler,
 		capture:   cfg.Capture,
+		log:       log,
 	}, nil
 }
 
@@ -207,7 +221,7 @@ func querySingle(ctx context.Context, conn *pgconn.PgConn, sql string) ([]string
 // `pgoutput`), und trägt die Startposition: der Stand von
 // confirmed_flush_lsn des bestehenden Slots bzw. der konsistente Punkt
 // des neu angelegten.
-func ensureSlot(ctx context.Context, conn *pgconn.PgConn, slot string) (pglogrepl.LSN, error) {
+func ensureSlot(ctx context.Context, log outbound.LogPort, conn *pgconn.PgConn, slot string) (pglogrepl.LSN, error) {
 	values, exists, err := querySingle(ctx, conn,
 		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = '"+slot+"' AND slot_type = 'logical'")
 	if err != nil {
@@ -221,7 +235,7 @@ func ensureSlot(ctx context.Context, conn *pgconn.PgConn, slot string) (pglogrep
 		if err != nil {
 			return 0, fmt.Errorf("%w: confirmed_flush_lsn %q: %v", ErrReplication, values[0], err)
 		}
-		slog.DebugContext(ctx, "replication: bestehender Slot fortgesetzt", "slot", slot, "start_lsn", startLSN)
+		log.Debug(ctx, "replication: bestehender Slot fortgesetzt", "slot", slot, "start_lsn", startLSN)
 		return startLSN, nil
 	}
 	created, err := pglogrepl.CreateReplicationSlot(ctx, conn, slot, outputPlugin, pglogrepl.CreateReplicationSlotOptions{
@@ -235,7 +249,7 @@ func ensureSlot(ctx context.Context, conn *pgconn.PgConn, slot string) (pglogrep
 	if err != nil {
 		return 0, fmt.Errorf("%w: ConsistentPoint %q: %v", ErrReplication, created.ConsistentPoint, err)
 	}
-	slog.InfoContext(ctx, "replication: Slot angelegt", "slot", slot, "start_lsn", startLSN)
+	log.Info(ctx, "replication: Slot angelegt", "slot", slot, "start_lsn", startLSN)
 	return startLSN, nil
 }
 
@@ -280,10 +294,10 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 	// Muster wie `bootstrap.Run`/`reportFault`.
 	defer func() {
 		if err != nil {
-			slog.ErrorContext(ctx, "replication: Stream beendet mit Fehler", "error", err)
+			s.log.Error(ctx, "replication: Stream beendet mit Fehler", "error", err)
 			return
 		}
-		slog.InfoContext(ctx, "replication: Stream regulär beendet")
+		s.log.Info(ctx, "replication: Stream regulär beendet")
 	}()
 	for {
 		rawMessage, err := s.conn.ReceiveMessage(ctx)
