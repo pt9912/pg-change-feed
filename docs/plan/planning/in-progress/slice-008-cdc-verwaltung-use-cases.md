@@ -62,22 +62,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `EnableTableUseCase`/`DisableTableUseCase` am Inbound-Port —
+- [x] `EnableTableUseCase`/`DisableTableUseCase` am Inbound-Port —
       Teil-Beleg zu [`LH-FA-CFG-001`](../../../../spec/lastenheft.md)/002.
-- [ ] `GetStatusUseCase`/`ListTablesUseCase` (Kanon-Bezeichner je
+- [x] `GetStatusUseCase`/`ListTablesUseCase` (Kanon-Bezeichner je
       [`ADR-0028`](../../../../docs/plan/adr/README.md)) — Teil-Beleg zu
       [`LH-FA-CFG-003`](../../../../spec/lastenheft.md)/004.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für den ENV-Container-Vertrag (`compose.yaml`), falls
-      berührt — geprüft: ENV-Vertrag unverändert, Item entfällt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update für den ENV-Container-Vertrag (`compose.yaml`), falls
+      berührt — geprüft: ENV-Vertrag unverändert, Item entfällt (Verifier-Stichprobe).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). — getragen durch die Welle-3-Closure (Repo arbeitet mit Wellen).
 
 ## 3. Plan (vor Code)
 
@@ -152,7 +152,8 @@ dasteht.
   der Publication-Entzug wirkt am laufenden Stream erst nach dessen
   Neuaufbau (PostgreSQL-Verhalten); der Zustands-View (Kataloge) belegt
   die Bindung, nicht das Capture-Zeitverhalten — **Ausgang:** weiter
-  offen → `BEO-PGC/walsender-wirksamkeit` im Register (bei Closure).
+  offen → `BEO-PGC/walsender-wirksamkeit` im Register (Eintrag
+  angelegt, Beleg `evidence/slice-008.md`).
 
 ## 7. Closure-Notiz
 
@@ -171,18 +172,40 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Rollen-Sequenz mit Übergabe-Artefakten
+  (Report → Fixrunde beim selben Implementer → Verifier in frischem
+  Kontext); die F-2-Entscheidung als echte Zustands-Trennung
+  (`Published` am Port, `Retained` am Result) statt Grenz-Kommentar —
+  der Reviewer-Pfad „verifizierbar" lief am realen Container
+  (`TestMVPDisableRetainedState`) rot→grün der Reihenfolge-Fix ausgenommen.
+- **Was ging anders als geplant:** Der Implementer-Lauf erweiterte §3 um
+  8 Dateien über die geplante Liste hinaus (Review F-1, 8. Auftreten der
+  Klasse); der Plan-Nachzug kam als Planner-Commit `81fc8f2` nach, nicht
+  vom Implementer committet. F-2 brauchte eine Port-Erweiterung
+  (`Published`) — die ADR-Listen-Erweiterung (F-5) folgt unten.
+- **F-5-Closure-Vermerk (ADR-Listen):** `ListTablesUseCase` steht erstmals
+  in ADR-0028 (dort „vorgesehen"), `TableActivationPort` und
+  `GetStatusQuery`-`Publication`-Eingabe ergänzen die ADR-0039-Struktur
+  — keine stillen ADR-Widersprüche (Listen sind offen, kanonische
+  Quelle gewinnt); die ADRs bleiben unverändert (Accepted-immutable).
+- **Steering-Loop-Eintrag:** nichts verkörpert — der Normalfall; die
+  Plan-Erweiterungs-Klasse ist erst-registriert (unten), die
+  Verkörperung als geschärfte Regel ist die Schwelle-Antwort der
+  Welle-3-Closure (Lese-Schritt).
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/walsender-wirksamkeit/`
+  neu angelegt (Beleg `evidence/slice-008.md`, 1×) ·
+  `BEO-PGC/plan-nachzug/` neu angelegt (Erst-Registrierung der
+  Review-Klasse, Beleg `evidence/slice-008.md`, 1×; Historie
+  slice-001…007 benannt, nicht gezählt).
+- **Folge-Slices:** keine — die Walsender-Wirksamkeit bleibt Register-
+  Beobachtung (`BEO-PGC/walsender-wirksamkeit`), kein eigener Slice;
+  die d-migrate-Retirement-Pflicht trägt slice-009/010-Trigger.
+- **Risiken aus §6:** (a) eingetreten (Träger: dieser Slice;
+  Seed-SQL-Prüfpfad entfällt) · (b) weiter offen →
+  `BEO-PGC/walsender-wirksamkeit` im Register.
+- **Drei Paarungen:** entfällt hier — das Repo arbeitet mit Wellen; die
+  Welle-3-Closure prüft Anker · Folge-Slice · Register auch für diesen
+  Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -198,11 +221,22 @@ in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Beding
 ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
 Hälften.
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** <je berührter Sub-Area: erfüllt sie
-die Schwelle ≥ 2 von 3 Achsen? zu grobe vorher ausdifferenzieren>
+**Vorgelagert — Sub-Area-Wahl prüfen:** Die berührten Sub-Areas
+(Application-Ports/Use-Cases, Store-Adapter, Bootstrap) sind Segmente
+des GF-Baums der Modus-Deklaration (`PGC` Greenfield, Doc führt) —
+jede erfüllt die Schwelle ≥ 2 von 3 Achsen: Strukturregeln im
+Spec-Stratum committet (Konventionen-Dichte), Phase-Reife 3–4
+(Spec-Straten committet, Code folgt), Evidenz-/Diskrepanz-Risiko
+niedrig (Inventur prüft Code-Konformität gegen geführte Doku). Keine
+Sub-Area zu grob („Backend" kommt nicht vor).
 
-**Vorgelagert — offene Beobachtungen sichten:** <Register durchgegangen;
-je berührter Sub-Area der Treffer mit Zähler-Stand — oder "keine Treffer">
+**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (drei
+Einträge zum Zeitpunkt der Planung): `d-migrate-nacharbeit` 1× (nicht
+berührt — keine Schema-Änderung in diesem Slice), `adapter-fehler-
+ausgang` 1× (randständig berührt — die Bootstrap-Verdrahtung erweitert
+sich um den Aktivierungs-Zug, aber die Fehler-Ausgangs-Klasse trat im
+Lauf nicht auf; unter der Schwelle), `a-check-null-abdeckung` verkörpert
+(seit welle-1). Kein Eintrag erreicht mit diesem Slice 3× — keine Lücke.
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
