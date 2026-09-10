@@ -151,7 +151,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   konsumierbare Schnittstelle — er ist ein `CMD`-Exec-Aufruf desselben
   Binarys durch Docker selbst, kein Driving Adapter im Sinne der ADR
   (HTTP/gRPC). Das deckt sich mit dem Architect-Verdikt
-  (`architect-review-slice-011.md` §„Berührt das ADR-0020-Sperrfeld?
+  (`architect-review-slice-011.md` §„Berührt das `ADR-0020`-Sperrfeld?
   Nein."), das exakt diese Grenze bereits für das Heartbeat-Muster
   gezogen hat. (3) *Scope*: Der Compose-Healthcheck-Umbau stand bereits in
   der **ursprünglichen** (nicht nachgetragenen) §3-Zeile „`compose.yaml` |
