@@ -120,6 +120,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `spec/pflichtenheft.md` | update | [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellenzeile: die dort bereits vorgesehene, nie detaillierte `cdc.capture_state`-Zeile („Betriebs-/Capture-Zustand") wird durch die jetzt realisierte `cdc.process_heartbeat` ersetzt — sonst zwei Namen für denselben Zweck (Fund beim Plan-vs-Bestand-Abgleich, Schritt 12 des Implementer-Workflows) |
 | `cmd/pg-change-feed/main.go` | update | `--healthcheck`-Modus — der einzig ausführbare Compose-Healthcheck-Befehl im distroless Runtime-Image (kein Shell, kein `psql`, `Dockerfile`); ohne ihn bliebe der geplante `compose.yaml`-DoD-Punkt eine Doku-Behauptung ohne Wirkung |
 | `tools/harness/run-integration-tests.sh` | update | Docker-Health-Status-Wartepunkt (`docker inspect .State.Health.Status`) — Beleg des Compose-Healthcheck-Vertrags am realen Container, nicht nur am Binary-Exit-Code |
+| `tools/schema/plan.yaml` | update | generierter Pflicht-Report des `schema-rollout`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md)) — Folge der `schema.yaml`-Änderung, kein eigener Liefer-Punkt (Review-Finding F-3, `docs/reviews/review-slice-012.md`) |
+| `tools/schema/down.sql` | update | generiertes Rollback-Artefakt desselben `schema-rollout`-Laufs — dieselbe Begründung wie `plan.yaml` |
 
 ## 4. Trigger
 
