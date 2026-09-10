@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -219,6 +220,82 @@ func TestAcknowledgeIsMonotonic(t *testing.T) {
 	}
 }
 
+// TestAcknowledgeLockCarriesConcurrentOrdering trägt die Zeilen-Sperre
+// unter Konkurrenz (`LH-FA-CON-002`, `ADR-0029` Regel 2): die zweite
+// Bestätigung desselben Consumers blockiert am gesperrten Lese, liest
+// nach dem Commit des Vorwärts-Laufs dessen fortgeschriebenen Stand und
+// endet über die Invariante — der Stand des Vorwärts-Laufs bleibt
+// erhalten, der Rückläufer überlieftert ihn nicht.
+func TestAcknowledgeLockCarriesConcurrentOrdering(t *testing.T) {
+	adapter, pool := newTestConsumerState(t)
+	registerConsumer(t, adapter, testConsumer)
+	ctx := context.Background()
+	if _, err := adapter.Acknowledge(ctx, model.ConsumerPosition{
+		ConsumerID: testConsumer,
+		Position:   consumerPosition(t, consumerStateSource, 100),
+	}); err != nil {
+		t.Fatalf("bestehende Bestätigung 100: %v", err)
+	}
+
+	// Der Vorwärts-Lauf hält die Zeilen-Sperre offen; sein Commit trägt
+	// den Stand 300.
+	txHold, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Vorwärts-Lauf: %v", err)
+	}
+	defer txHold.Rollback(ctx)
+	var heldSource string
+	var heldOffset int64
+	if err := txHold.QueryRow(ctx,
+		"SELECT source_id, acknowledged_position FROM cdc.consumer_position WHERE consumer_id = $1 FOR UPDATE",
+		testConsumer,
+	).Scan(&heldSource, &heldOffset); err != nil {
+		t.Fatalf("gesperrter Lese: %v", err)
+	}
+	if heldOffset != 100 {
+		t.Fatalf("gesperrter Stand = %d, wollen 100", heldOffset)
+	}
+
+	// Der Rückläufer (200 — über dem committeten Stand, unter dem
+	// Vorwärts-Lauf) blockiert am gesperrten Lese; sein Ausgang liest der
+	// Test erst nach dem Commit des Vorwärts-Laufs.
+	done := make(chan error, 1)
+	go func() {
+		_, err := adapter.Acknowledge(ctx, model.ConsumerPosition{
+			ConsumerID: testConsumer,
+			Position:   consumerPosition(t, consumerStateSource, 200),
+		})
+		done <- err
+	}()
+	time.Sleep(300 * time.Millisecond)
+	select {
+	case err := <-done:
+		t.Fatalf("Bestätigung lief am gesperrten Lese vorbei (Erwartung: Blockieren): %v", err)
+	default:
+	}
+
+	if _, err := txHold.Exec(ctx,
+		"UPDATE cdc.consumer_position SET acknowledged_position = 300 WHERE consumer_id = $1",
+		testConsumer,
+	); err != nil {
+		t.Fatalf("Vorwärts-Schreibzug: %v", err)
+	}
+	if err := txHold.Commit(ctx); err != nil {
+		t.Fatalf("Commit des Vorwärts-Laufs: %v", err)
+	}
+	select {
+	case err := <-done:
+		if !stderrors.Is(err, domainerrors.ErrPositionRegression) {
+			t.Fatalf("Rückläufer nach dem Commit: %v (Erwartung: ErrPositionRegression gegen den Stand 300)", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatalf("Rückläufer blockiert über den Commit des Vorwärts-Laufs hinaus")
+	}
+	if got, ok := storedOffset(t, adapter, testConsumer); !ok || got != 300 {
+		t.Fatalf("gespeicherte Position nach der Konkurrenz = %d (bestätigt: %v), wollen 300", got, ok)
+	}
+}
+
 // TestAcknowledgeCarriesSourceBinding trägt die Quell-Bindung der
 // bestätigten Position (`ADR-0005`): die erste Bestätigung bindet die
 // Quelle, eine Position einer anderen Quelle ist keine
@@ -246,9 +323,10 @@ func TestAcknowledgeCarriesSourceBinding(t *testing.T) {
 }
 
 // TestAcknowledgeRejectsUnregisteredConsumer trägt die
-// Registrierungs-Vorbedingung der Bestätigung: der Fremdschlüssel der
-// Position-Zeile endet den Aufruf sichtbar über die Klasse `storage`
-// (`SPEC-001`, `SPEC-008`), nicht still.
+// Registrierungs-Vorbedingung der Bestätigung: ein ACK ohne registrierte
+// Kennung ist ein Aufrufvertrags-Verstoß und endet sichtbar über den
+// benannten Sentinel (`SPEC-001` Fremdschlüssel als Rest-Grenze), nicht
+// still.
 func TestAcknowledgeRejectsUnregisteredConsumer(t *testing.T) {
 	adapter, _ := newTestConsumerState(t)
 
@@ -256,8 +334,8 @@ func TestAcknowledgeRejectsUnregisteredConsumer(t *testing.T) {
 		ConsumerID: testConsumer,
 		Position:   consumerPosition(t, consumerStateSource, 100),
 	})
-	if !stderrors.Is(err, outbound.ErrStorage) {
-		t.Fatalf("Bestätigung ohne Registrierung: %v (Erwartung: Klasse storage)", err)
+	if !stderrors.Is(err, outbound.ErrConsumerUnregistered) {
+		t.Fatalf("Bestätigung ohne Registrierung: %v (Erwartung: ErrConsumerUnregistered)", err)
 	}
 }
 
@@ -391,12 +469,20 @@ func TestRemoveCarriesConsumerAndPosition(t *testing.T) {
 }
 
 // Die Kennungs-Grenzen des Adapters enden vor dem ersten SQL-Aufruf über
-// die Domänen-Invarianten (`ADR-0029`); ein Offset außerhalb des
-// bigint-Bereichs endet über die PostgreSQL-Abbildung (`SPEC-003`).
+// die Domänen-Invarianten (`ADR-0029`) — bei Register über den
+// Domänen-Konstruktor, dieselbe Grenze wie bei Position, Acknowledge und
+// Remove; ein Offset außerhalb des bigint-Bereichs endet über die
+// PostgreSQL-Abbildung (`SPEC-003`).
 func TestConsumerStateCarriesContractBounds(t *testing.T) {
 	adapter, _ := newTestConsumerState(t)
 	ctx := context.Background()
 
+	if _, err := adapter.Register(ctx, model.Consumer{}); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Register ohne Kennung: %v (Erwartung: ErrEmptyIdentifier)", err)
+	}
+	if _, err := adapter.Register(ctx, model.Consumer{ID: testConsumer}); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Register ohne Namen: %v (Erwartung: ErrEmptyIdentifier)", err)
+	}
 	if _, err := adapter.Position(ctx, ""); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
 		t.Fatalf("Position ohne Kennung: %v (Erwartung: ErrEmptyIdentifier)", err)
 	}
@@ -419,10 +505,11 @@ func TestConsumerStateCarriesContractBounds(t *testing.T) {
 }
 
 // Eine nicht erreichbare Instanz meldet der Aufbau als Fehler der Klasse
-// `storage`; der Test braucht keine Datenbank (Port 1 verwirft lokal).
+// `storage` über den eigenen Sentinel des Ports; der Test braucht keine
+// Datenbank (Port 1 verwirft lokal).
 func TestNewConsumerStateCarriesStorageClass(t *testing.T) {
 	_, err := postgresstorage.NewConsumerState(context.Background(), "postgres://cdc:cdc@127.0.0.1:1/cdc_test?sslmode=disable")
-	if !stderrors.Is(err, outbound.ErrStorage) {
-		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrStorage)
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) {
+		t.Fatalf("Fehler = %v, wollen Klasse storage (%v)", err, outbound.ErrConsumerStateStorage)
 	}
 }
