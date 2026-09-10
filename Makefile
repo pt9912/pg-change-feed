@@ -6,7 +6,10 @@
 # baseline/doc-gate/enforce, mit --lang zusaetzlich das Code-Gate-Fragment.
 GATE_CHECKS :=
 
-.PHONY: gates help
+# .PHONY trägt die Targets, deren Name ein Baum-Verzeichnis schattieren kann
+# (`test:` gegen das Verzeichnis `test/` — make meldet "bereits aktuell",
+# ohne das Rezept zu fahren).
+.PHONY: gates help mod-download test test-store test-replication test-integration image image-stale
 
 # Gate-Fragmente je Belang (baseline/doc-gate/enforce + Sprach-Code-Gates) einbinden.
 # Alphabetisch (baseline < doc-gate < enforce < <lang>); die Ordnungskante unten steht
