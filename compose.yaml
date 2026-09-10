@@ -70,13 +70,11 @@ services:
     # slice-012): der Prozess selbst befragt cdc.heartbeat über
     # `--healthcheck` (Binary-CMD statt CMD-SHELL — das distroless
     # Runtime-Image trägt weder Shell noch psql, Dockerfile) und meldet
-    # den Zustand über den Exit-Code (bootstrap.Healthcheck). Vorher
-    # (kein Healthcheck-Block) meldete Compose nur den Prozess-Start, kein
-    # Lebenszeichen des laufenden Captures.
+    # den Zustand über den Exit-Code (bootstrap.Healthcheck).
     healthcheck:
       test: ["CMD", "/pg-change-feed", "--healthcheck"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 6
       start_period: 10s
     networks:
