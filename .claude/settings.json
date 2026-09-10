@@ -1,4 +1,30 @@
 {
+    "permissions": {
+        "allow": [
+            "Bash(make:*)",
+            "Bash(make)",
+            "Bash(git status:*)",
+            "Bash(git log:*)",
+            "Bash(git diff:*)",
+            "Bash(git show:*)",
+            "Bash(git mv:*)",
+            "Bash(git add:*)",
+            "Bash(git commit:*)",
+            "Bash(git push --force-with-lease origin main)",
+            "Bash(git worktree list)",
+            "Bash(docker manifest inspect:*)",
+            "Bash(docker buildx imagetools inspect:*)",
+            "Bash(ls:*)",
+            "Bash(grep:*)",
+            "Bash(find:*)",
+            "Bash(cat:*)",
+            "Bash(head:*)",
+            "Bash(tail:*)",
+            "Bash(wc:*)",
+            "Bash(diff:*)",
+            "Bash(sed -n:*)"
+        ]
+    },
     "hooks": {
         "PostToolUse": [
             {
