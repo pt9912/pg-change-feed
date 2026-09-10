@@ -49,7 +49,11 @@ emittierten Durchsetzungsschicht):
 - **Commit via Message-Datei** (`git commit -F <datei>`): der Guard scannt den Command-String,
   also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält.
 - **Commit-Message-Kennungen.** **Struktur-IDs (`SPEC-*`, `ARC-*`) gehören NICHT in die
-  Commit-Message** (`AGENTS.md` §5) — nur `LH-*`/`ADR-*` · seit slice-003.
+  Commit-Message** (`AGENTS.md` §5) — nur `LH-*`/`ADR-*` · seit slice-003. Mechanisch
+  getragen: `make commit-traceability` prüft je Message der letzten 5 Commits beide
+  Grenzen (d-check `commits` + `tools/harness/commit-traceability.sh`,
+  [`ADR-0045`](../../docs/plan/adr/0045-commit-traceability-standing-gate.md)
+  · seit slice-006) — `make gates` färbt einen Verstoß rot, bevor der Review ihn sieht.
 
 ## Kontext lesen (Modul 9, Schritte 1–3)
 
