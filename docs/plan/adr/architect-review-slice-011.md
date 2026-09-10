@@ -4,7 +4,7 @@
 **Eingang:** [`docs/reviews/review-slice-011.md`](../../reviews/review-slice-011.md)
 F-1 (MEDIUM, Architektur-Frage) und F-2 (MEDIUM, Closure-Trigger nicht mehr
 erfüllbar) · Slice-Plan
-[`docs/plan/planning/in-progress/slice-011-sicherheit-observability.md`](../planning/in-progress/slice-011-sicherheit-observability.md)
+[`docs/plan/planning/done/slice-011-sicherheit-observability.md`](../planning/done/slice-011-sicherheit-observability.md)
 §1/§3/§6 · [`ADR-0020`](0020-http-grpc-optional.md) (Accepted, permanent) ·
 [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md) (Accepted,
 Supersedes ADR-0018) · [`ADR-0024`](0024-observability-ausserhalb-der-domain.md)
