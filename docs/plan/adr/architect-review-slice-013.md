@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
 **Eingang:** [`docs/reviews/review-slice-013.md`](../../reviews/review-slice-013.md)
 F-1 (HIGH, Rollen-Bezug) · Slice-Plan
-[`docs/plan/planning/in-progress/slice-013-fehlerzustaende-cdc-abstand.md`](../planning/in-progress/slice-013-fehlerzustaende-cdc-abstand.md)
+[`docs/plan/planning/done/slice-013-fehlerzustaende-cdc-abstand.md`](../planning/done/slice-013-fehlerzustaende-cdc-abstand.md)
 §1/§2/§4/§6 · Commit-Sequenz `fcf442d..HEAD` (`git log --oneline`, s.
 Beleg-Anker) · Präzedenzfall
 [`architect-review-slice-011.md`](architect-review-slice-011.md) ·
