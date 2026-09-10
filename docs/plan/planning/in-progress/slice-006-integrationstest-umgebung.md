@@ -73,23 +73,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Die Compose-Umgebung startet PostgreSQL + PG Change Feed
+- [x] Die Compose-Umgebung startet PostgreSQL + PG Change Feed
       reproduzierbar aus dokumentierten Schritten — Teil-Beleg zu
-      [`LH-QA-POR-003`](../../../../spec/lastenheft.md).
-- [ ] Der MVP-Integrationstest läuft automatisiert grün: aktivieren →
+      [`LH-QA-POR-003`](../../../../spec/lastenheft.md). *Beleg:
+      verify-slice-006.md (Compose frisch, Feed-Smoke Exit 0).*
+- [x] Der MVP-Integrationstest läuft automatisiert grün: aktivieren →
       INSERT/UPDATE/DELETE → lesen → Reihenfolge/Inhalt (Abschnitt 1,
       MVP-Schnitt) — Teil-Beleg zu [`LH-FA-CAP-001`](../../../../spec/lastenheft.md)…003.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      *Beleg: `make test-integration` Exit 0, 0.696 s (verify-slice-006.md).*
+- [x] `make gates` grün. *Beleg: vier Gates grün am HEAD
+      (baseline-verify 54, docs-check 97/0, a-check 0,
+      commit-traceability 5/5) — verify-slice-006.md.*
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update bzw. begründete Aussage „kein öffentlicher Vertrag
-      berührt" — fällig bei der Implementierung.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      *Beleg: review-slice-006.md (2 HIGH/5 MEDIUM/2 LOW/3 INFO, behoben
+      oder als Grenze getragen).*
+- [x] Doku-Update — getragen: die Werkzeuge-Zeilen `schema-validate`/
+      `schema-rollout` und `test-integration` sind über den Verifier
+      bestätigt (verify-slice-006.md Item 5).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. (*§7*)
+- [x] Reconciliation-Register — **entfällt**: Repos ohne
+      Brownfield-Bootstrap haben die Datei nicht., **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (siehe §7).
+- [x] Die drei Paarungen — im Wellen-Betrieb an die Welle-2-Closure delegiert.
 
 ## 3. Plan (vor Code)
 
@@ -173,18 +181,32 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** der Rollout-Beleg (Pflicht-Report +
+  Rollback-Artefakt) reproduziert sich bit-stabil über zwei Läufe
+  (ADR-0044-Verfahren, verify-slice-006.md); der MVP-Integrationstest
+  fährt die MVP-Schnitt-Abfolge automatisiert (Compose frisch → Rollout
+  → Toolchain-Container); der a-check-Glob trägt den
+  Composition-Root-Layer und fing die fremden Adapter-Imports **vor dem
+  Commit**.
+- **Was ging anders als geplant:** die d-migrate-1.2.0-Konvergenz-Grenze
+  am CHECK-Ausdruck (`raw-sql-text-drift`) erzwang die Nacharbeit-
+  Ausweichform (Register `BEO-PGC/d-migrate-nacharbeit`); die DDL-
+  Überführung verlor `NOT NULL` auf `committed_at` (Review F-1) —
+  behoben mit Katalogprobe; das `test`-Target wurde vom neuen
+  Verzeichnis schattiert (`.PHONY`-Fix). Die Verdrahtungslücke
+  (Feed-Container als Smoke) trägt slice-007.
+- **Steering-Loop-Eintrag:** *F-6-Verdrahtungslücke → Ausgang
+  eingetreten; Träger ist slice-007 (Bootstrap-Verdrahtung, in
+  `open/`); die d-migrate-Nacharbeit trägt Register-Ausgang „weiter
+  offen" → Retirement mit dem Fix-Release
+  (`BEO-PGC/d-migrate-nacharbeit`) · seit slice-006.*
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/d-migrate-nacharbeit/`
+  neu angelegt (Beleg `evidence/slice-006.md`, 1×).
+- **Folge-Slices:** slice-007 (Bootstrap-Verdrahtung) — ist eine Datei
+  in `open/`.
+- **Risiken aus §6:** Nacharbeit-Retirement → **weiter offen** (siehe
+  §6); Verdrahtungslücke → **eingetreten**, Träger slice-007.
+- **Drei Paarungen:** im Wellen-Betrieb an die Welle-2-Closure delegiert.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
