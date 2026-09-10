@@ -69,7 +69,7 @@ Kommentar trägt, "Dieselbe Regel für Zustandsfelder").
 
 | Meilenstein | Welle(n) | Trigger | Status |
 |---|---|---|---|
-| M1 — MVP-Abnahme | mehrere (welle-1 ff.) | MVP-Integrationstest grün ([Lastenheft §1, MVP-Schnitt](../../../../spec/lastenheft.md)) | offen |
+| M1 — MVP-Abnahme | welle-1, welle-2 | MVP-Integrationstest grün ([Lastenheft §1, MVP-Schnitt](../../../../spec/lastenheft.md)) | erreicht 2026-09-10 — Beleg: `make test-integration` grün am verdrahteten System ([welle-2-results.md](../done/welle-2-results.md), Verifikation) |
 
 ## Abhängigkeitsgraph
 
@@ -95,6 +95,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | Welle | Abschluss | Closure-Notiz |
 |---|---|---|
 | welle-1 — MVP-Grundlage | 2026-09-09 | [welle-1-results.md](../done/welle-1-results.md) |
+| welle-2 — Reale PostgreSQL-Integration | 2026-09-10 | [welle-2-results.md](../done/welle-2-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
