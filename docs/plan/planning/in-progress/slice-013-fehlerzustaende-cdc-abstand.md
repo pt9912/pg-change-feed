@@ -36,8 +36,10 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Fehlerzustände des Capture-Prozesses sichtbar machen (Erfassung
 kann nicht fortsetzen, erkennbar und vom Normalbetrieb unterscheidbar) —
-inklusive einer als Grenze dokumentierten `cdc_capture_lag`-Näherung auf
-Persistenz-Zeit-Basis, beides über die bestehende SQL-Lese-Fläche.
+inklusive einer als Grenze dokumentierten `cdc_capture_lag_approx`-Näherung
+auf Persistenz-Zeit-Basis (eigener Metrik-Name, **nicht** der
+SPEC-009-kanonische `cdc_capture_lag`, review-slice-013 F-2), beides über
+die bestehende SQL-Lese-Fläche.
 
 **Planner-Korrektur nach Implementer-Rückführungs-Prüfung (§4):** Der
 ursprüngliche Titel/Ziel dieses Slice umfasste auch ein *reales*
@@ -68,8 +70,11 @@ Ausschluss unten); das reale `cdc_capture_lag` ist Folge-Slice-Arbeit.
   Decoder, Domain, Application/Ports und Store-Adapter). Beleg im
   Register: `BEO-PGC/cdc-capture-lag-real` (Eintrag angelegt, Beleg
   `evidence/slice-013.md`). Bis dahin trägt dieser Slice eine
-  dokumentierte Näherung (Persistenz-Zeit als
-  Proxy, Kommentar-Klasse Grenze in `nacharbeit-observability.sql`).
+  dokumentierte Näherung unter eigenem Metrik-Namen `cdc_capture_lag_approx`
+  (Persistenz-Zeit als Proxy, Kommentar-Klasse Grenze in
+  `nacharbeit-observability.sql`) — der `_approx`-Suffix ist die
+  Interface-Markierung, die den SPEC-009-kanonischen Namen für die Näherung
+  ausdrücklich nicht beansprucht (review-slice-013 F-2).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -95,9 +100,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       unterscheidbar) — Teil-Beleg zu
       [`LH-FA-ADM-003`](../../../../spec/lastenheft.md),
       [`LH-QA-REL-003`](../../../../spec/lastenheft.md).
-- [ ] `cdc_capture_lag`-Näherung in der Metriken-View (Persistenz-Zeit-
-      Proxy, Kommentar-Klasse Grenze — reales Quell-Commit-basiertes
-      Maß ist Folge-Slice-Arbeit, §1) — Teil-Beleg zu
+- [ ] `cdc_capture_lag_approx`-Näherung in der Metriken-View (eigener
+      Metrik-Name, nicht der SPEC-009-kanonische `cdc_capture_lag`,
+      review-slice-013 F-2; Persistenz-Zeit-Proxy, Kommentar-Klasse
+      Grenze — reales Quell-Commit-basiertes Maß ist Folge-Slice-Arbeit,
+      §1) — Teil-Beleg zu
       [`LH-QA-OPS-003`](../../../../spec/lastenheft.md).
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -131,6 +138,24 @@ still gestrichen); vier Zeilen sind gegenüber der ursprünglichen Planung
 Composition Root) — sie tragen dieselben Liefer-Punkte (Fehlerzustands-
 Sichtbarkeit, CDC-Abstand-Näherung), keinen dritten.
 
+**Fixrunde-Nachzug (review-slice-013 F-3 · 3. Auftreten der Klasse
+„Plan-Nachzug unvollständig bei generierten Rollout-Artefakten",
+review-slice-012 F-3 2. Auftreten):** `tools/schema/plan.yaml` und
+`tools/schema/down.sql` fehlten in der obigen Tabelle, obwohl Commit
+`79dbe3f` beide ändert (regulärer `schema-rollout`-Report/Rollback-Beleg,
+[`ADR-0043`](../../../../docs/plan/adr/README.md)) — Zeile unten
+nachgetragen. Register-Prüfung (sorgfältig, gegen den Fixrunden-Auftrag):
+nur **zwei** echte, review-getragene Vorgänge tragen diese Klasse
+(review-slice-012 F-3, review-slice-013 F-3) — der in review-slice-012 F-3
+erwähnte Vorfall vor slice-012 (Commit `90cbfcb`) war dort selbst als
+„informell — nicht im Beobachtungs-Register erfasst" ausgewiesen: kein
+eigener Review-Fund, keine eigene Evidence-Datei möglich. Die 3×-Schwelle
+zählt über *Vorgänge* mit Beleg, nicht über informelle Erwähnungen
+(dieselbe Abgrenzung wie `verify-slice-012.md` V-1 gegenüber F-3 zieht: „die
+3×-Schwelle des Beobachtungs-Registers zählt über *Vorgänge* … kein
+automatischer dritter Treffer"). Damit bleibt es bei 2× — **kein**
+Register-Eintrag in diesem Lauf; die Zeile unten trägt den Nachzug.
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/domain/model/errorstate.go` | neu | Domänen-Typ für Fehlerklassen-Sichtbarkeit (`ErrorClass`, sieben Kategorien), orientiert an [`ADR-0023`](../../../../docs/plan/adr/README.md)s Fehlerklassifikation |
@@ -140,9 +165,10 @@ Sichtbarkeit, CDC-Abstand-Näherung), keinen dritten.
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | *(Plan-Nachzug)* `UpsertHeartbeat` löscht `error_class` mit, neue Query `UpsertHeartbeatFault` |
 | `tools/schema/schema.yaml` | update | *(Plan-Nachzug)* `process_heartbeat.error_class` (nullable text, kein Default = NULL = Normalbetrieb) |
 | `tools/schema/nacharbeit-heartbeat.sql` | update | Heartbeat-View erweitert um Fehlerzustands-Spalte |
-| `tools/schema/nacharbeit-observability.sql` | update, **reduziert** | `cdc.metrics`-View um `cdc_capture_lag` ergänzt — **nicht** wie ursprünglich geplant als Differenz Quell-Commit-Zeit/Persistenz-Zeit (siehe §4 Rückführung: das bräuchte Commit-Zeitstempel-Wiring durch die Replication-Adapter-Schicht), sondern als dokumentierte Näherung `now() − max(committed_at)` (Pipeline-Frische über die letzte persistierte Transaktion, Kommentar-Klasse Grenze in der Datei) |
+| `tools/schema/nacharbeit-observability.sql` | update, **reduziert** | `cdc.metrics`-View um `cdc_capture_lag_approx` ergänzt — eigener Metrik-Name, **nicht** der SPEC-009-kanonische `cdc_capture_lag` (review-slice-013 F-2, Interface-Markierung der Näherung); **nicht** wie ursprünglich geplant als Differenz Quell-Commit-Zeit/Persistenz-Zeit (siehe §4 Rückführung: das bräuchte Commit-Zeitstempel-Wiring durch die Replication-Adapter-Schicht), sondern als dokumentierte Näherung `now() − max(committed_at)` (Pipeline-Frische über die letzte persistierte Transaktion, Kommentar-Klasse Grenze in der Datei) |
 | `internal/bootstrap/wiring.go` | update | *(Plan-Nachzug)* `classifyRunError`/`reportFault`: die Composition Root übersetzt den Lauf-Fehler in eine `ADR-0023`-Klasse und meldet ihn über `Fault`, bevor der Prozess auf einen Adapter-Fehler endet |
 | `internal/domain/model/errorstate_test.go`, `internal/adapters/driven/postgresstorage/heartbeat_test.go`, `internal/bootstrap/heartbeat_internal_test.go` | neu/update | *(Plan-Nachzug)* Tests für Konstruktor-Invariante, Store-Adapter (`make test-store`) und Composition-Root-Klassifikation |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | update | *(Fixrunde-Nachzug, review-slice-013 F-3)* Regulärer `schema-rollout`-Report (Pflicht-Report) und Rollback-Artefakt — Nebenprodukt jedes `make schema-rollout`-Laufs (Teil von `make test-store`), kein eigener Liefer-Punkt, [`ADR-0043`](../../../../docs/plan/adr/README.md) |
 
 ## 4. Trigger
 
@@ -210,7 +236,7 @@ Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
 - DoD vollständiges Häkchen + `make gates` grün + Review-Schluss ohne
   offenes HIGH-Finding; Fehlerzustands-Sichtbarkeit und die
-  `cdc_capture_lag`-Näherung am realen Adapter belegt (`make test-store`).
+  `cdc_capture_lag_approx`-Näherung am realen Adapter belegt (`make test-store`).
 - Lerneintrag §7: geschärfte Regel oder benannte Spec-Lücke — ohne ihn
   bleibt der Slice abgelegt, nicht fertig.
 
