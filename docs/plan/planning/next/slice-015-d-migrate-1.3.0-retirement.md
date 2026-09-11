@@ -14,7 +14,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht
 
 **Berührte Spec-Stellen:** —
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-11.
 
