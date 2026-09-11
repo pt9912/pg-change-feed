@@ -238,7 +238,7 @@ aber eine offene Vollständigkeits-Lücke im Plan-Nachzug.**
   Artefakten (`done/`-Slices, frühere Review-/Verify-Reports, dem
   Beobachtungs-Register-Beleg `evidence/slice-010.md`/`slice-015.md`,
   `state.md` mit Vermerk „bleibt technisch bestehen" — Planner-Closure
-  aktualisiert das mit dem neuen Beleg) und der `Accepted`-ADR-0046
+  aktualisiert das mit dem neuen Beleg) und der `Accepted`-[`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
   (immutabel, Kontext-Abschnitt beschreibt korrekt den historischen
   Stand zum Zeitpunkt ihrer Annahme). Keiner dieser Treffer ist ein
   aktiv geltender, gebrochener Verweis.
