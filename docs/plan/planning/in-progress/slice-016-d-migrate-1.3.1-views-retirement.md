@@ -82,9 +82,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] d-migrate-Pin auf v1.3.1 gehoben (`Makefile` `D_MIGRATE_IMAGE`),
-      `make schema-validate` grün am neuen Pin.
-- [ ] Die drei Views (`active_tables`, `consumer_status`, `changes`) real
+- [x] d-migrate-Pin auf v1.3.1 gehoben (`Makefile` `D_MIGRATE_IMAGE`),
+      `make schema-validate` grün am neuen Pin. Beleg: Implementer- und
+      Verifier-Lauf, Digest gegen die Registry verifiziert.
+- [x] Die drei Views (`active_tables`, `consumer_status`, `changes`) real
       gegen den neuen Pin getestet, mit `source_dialect: postgresql` und
       `columns:`-Signatur (Anhang F.11, verhindert `VIEW_SIGNATURE_UNKNOWN`
       beim Ersetzungspfad) deklarativ in `tools/schema/schema.yaml`
@@ -92,19 +93,25 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       gegen eine leere DB (Erstanlage) als auch gegen eine bereits
       migrierte DB (Folgelauf, kein `ReplaceView`-Blocker).
       `tools/schema/nacharbeit-views.sql` gelöscht, `Makefile`
-      `schema-rollout`-Target um den psql-Schritt gekürzt.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      `schema-rollout`-Target um den psql-Schritt gekürzt. Beleg:
+      dreifach real reproduziert (Implementer, Reviewer, Verifier —
+      jeweils eigene Testcontainer), inklusive Gegenprobe ohne
+      `columns:` (reproduziert `VIEW_SIGNATURE_UNKNOWN`).
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update falls öffentlicher Vertrag berührt — `harness/README.md`
+      Beleg: [`review-slice-016.md`](../../../../docs/reviews/review-slice-016.md)
+      (F-1 HIGH disponiert in `04590a4`, danach 0 HIGH), Verifier
+      bestätigt in [`verify-slice-016.md`](../../../../docs/reviews/verify-slice-016.md).
+- [x] Doku-Update falls öffentlicher Vertrag berührt — `harness/README.md`
       §Sensors, `make schema-rollout`-Bindungszeile (die mit slice-015
       verkörperte Test-Kadenz-Regel referenziert die jetzt gelöste
-      Views-Drift; Zeile entsprechend aktualisieren).
+      Views-Drift; Zeile entsprechend aktualisiert).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg: `BEO-PGC/d-migrate-nacharbeit/evidence/slice-016.md` (4. Beleg, Views technisch aufgelöst) sowie neu `BEO-PGC/schema-rollout-fremdobjekte/` (1. Beleg, Nebenfund).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -125,6 +132,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` (`schema-rollout`-Target) | update | psql-Nacharbeit-Schritt für die Views entfernt |
 | `harness/README.md` | update | `make schema-rollout`-Bindungszeile — mit slice-015 verkörperte Test-Kadenz-Regel referenziert jetzt die gelöste Views-Drift |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | update | Plan-Nachzug: nicht ursprünglich gelistet — Pflicht-Report und Rollback-Artefakt des `make test-integration`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md), `schema migrate --execute`), der den neuen Pin real belegt (Closure-Trigger); Nebenprodukt des Sensor-Laufs, kein separat verfasster Inhalt |
+| `tools/schema/nacharbeit-roles.sql`, `tools/schema/nacharbeit-observability.sql`, `tools/schema/nacharbeit-heartbeat.sql` | update (Kommentar) | Plan-Nachzug: Review-Fixrunde F-1 (`review-slice-016.md`, HIGH) — Kopfkommentar zeigte auf die gelöschte `nacharbeit-views.sql`; jetzt eigenständig auf [`ADR-0043`](../../../../docs/plan/adr/README.md) verankert |
 
 ## 4. Trigger
 
@@ -178,10 +186,19 @@ dasteht.
 - Der reale Test könnte zeigen, dass `source_dialect`/`columns:` allein
   nicht genügen (z. B. weitere Metadaten-Lücke für den Ersetzungspfad
   nötig) — Retirement bliebe dann partiell oder verschöbe sich.
-  Wird bei Closure bewertet.
+  **Ausgang: entfallen.** Beide Felder genügten — real bestätigt (Exit 0
+  für Erstanlage und Folgelauf; Gegenprobe ohne `columns:` reproduziert
+  den vorhergesagten Blocker und belegt damit gerade, dass die Furcht
+  begründet war und die gewählte Lösung sie auflöst).
 - Der Digest-Bump selbst (Patch-Release, kleineres Risiko als 1.3.0) könnte
   dennoch einen unerwarteten Regressions-Fund gegen den bestehenden
   `schema.yaml`-Bestand auslösen — wird bei Closure bewertet.
+  **Ausgang: entfallen.** Kein Regressions-Fund in `make gates`, `make
+  test-integration` oder den drei unabhängigen Zusatzproben
+  (Implementer/Reviewer/Verifier). Das gefundene Exit-8/`DropView`-Verhalten
+  (heartbeat/metrics) ist real auch gegen den alten Pin 1.3.0 reproduziert
+  — keine Regression dieses Slices, siehe eigener Register-Eintrag
+  `BEO-PGC/schema-rollout-fremdobjekte`.
 
 ## 7. Closure-Notiz
 
