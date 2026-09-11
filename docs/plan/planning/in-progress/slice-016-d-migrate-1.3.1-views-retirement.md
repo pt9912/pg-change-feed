@@ -217,18 +217,46 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die mit slice-015 verkörperte Test-Kadenz-Regel
+  hat sich sofort bewährt: kein Real-Test zwischen Pin-Bumps, real getestet
+  erst nach dem expliziten d-migrate-Fix-Signal (1.3.1-Changelog). Der
+  kritische Punkt — Konvergenz sowohl bei Erstanlage als auch beim
+  Folgelauf (`ReplaceView`) — wurde dreifach unabhängig real reproduziert
+  (Implementer, Reviewer, Verifier, je eigene Testcontainer-Instanz),
+  inklusive einer Gegenprobe ohne `columns:`-Signatur, die den
+  vorhergesagten Blocker (`VIEW_SIGNATURE_UNKNOWN`) tatsächlich auslöst —
+  Kausalität gezeigt, nicht nur behauptet.
+- **Was ging anders als geplant:** Ein Nebenfund entstand während der
+  realen Tests, der im Plan nicht vorgesehen war: ein zweiter
+  `schema-rollout`-Lauf gegen eine bereits migrierte DB blockiert mit
+  Exit 8 (`DropView`) auf `cdc.heartbeat`/`cdc.metrics`, die außerhalb
+  des neutralen Modells liegen. Pin-unabhängig (auch gegen 1.3.0
+  reproduziert), kein Regressions-Risiko dieses Slices — aber ein bisher
+  undokumentierter Zustand, jetzt als eigene Beobachtung geführt statt
+  stillschweigend übergangen.
+- **Trigger-Audit ([`ADR-0043`](../../../../docs/plan/adr/README.md)):**
+  Architect-Verdikt
+  ([`architect-review-slice-016.md`](../../adr/architect-review-slice-016.md))
+  bestätigt: Trigger feuert nicht — geprüft gegen alle sechs relevanten
+  Fälle (CHECK, Views, Rollen-DDL, Observability-/Heartbeat-Views,
+  Foreign-Object-Blocker), keiner davon ist aktuell ein "d-migrate kann X
+  nicht ausdrücken UND keine Ausweichform"-Fall.
+  [`ADR-0043`](../../../../docs/plan/adr/README.md) bleibt
+  `Accepted`/permanent, kein Folge-ADR.
+- **Steering-Loop-Eintrag:** Mit diesem Slice wurde nichts neu verkörpert
+  — die mit slice-015 verkörperte Test-Kadenz-Regel bleibt unverändert in
+  Kraft und hat sich bewährt (siehe oben). Der Eintrag ist gezählt
+  (4. Beleg), nicht neu verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-016.md`
+  in `BEO-PGC/d-migrate-nacharbeit/` ergänzt — Zähler steht bei 4×, Ausgang
+  bleibt `verkörpert` (Architect bestätigt, keine Korrektur nötig). Neu
+  angelegt: `BEO-PGC/schema-rollout-fremdobjekte/` (1. Beleg, Exit-8/
+  `DropView`-Nebenfund, unter der Schwelle, `offen`).
+- **Folge-Slices:** keine. `BEO-PGC/schema-rollout-fremdobjekte` bleibt
+  ohne Kennung offen — kein Träger bislang, kein Termin.
+- **Risiken aus §6:** beide `entfallen` (siehe §6).
+- **Drei Paarungen:** wird nach dem `git mv` geprüft (dritter
+  Closure-Commit, s. u.).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
