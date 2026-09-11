@@ -1,8 +1,9 @@
-Zustand: offen — Ausgang: **weiter offen** → Retirement mit dem
-d-migrate-Fix-Release (die gemeldete Lösung kommt noch; Pin-Hebung +
-`chk_change_operation` direkt ins YAML + Rückbau des psql-Schritts),
-Träger: slice-006-§6-Ausgang. Die Grenze ist keine Einzelstelle mehr:
-slice-010 trifft dieselbe `raw-sql-text-drift`-Klasse an gespeicherten
-Views (PostgreSQL-Umformatierung via `pg_get_viewdef`). Zähler
-(abgeleitet): 2× (evidence/slice-006.md, evidence/slice-010.md) —
-unter der 3×-Schwelle, noch keine Lücke.
+Zustand: verkörpert → geschärfte Test-Kadenz-Regel liegt in
+`harness/README.md` §Sensors, `make schema-rollout`-Bindung (seit
+slice-015). Zähler (abgeleitet): 3× (evidence/slice-006.md,
+evidence/slice-010.md, evidence/slice-015.md) — Schwelle erreicht.
+Nachrichtlich: `chk_change_operation` ist mit slice-015 retiriert
+(deklarativ in `tools/schema/schema.yaml`); die Views-Ausweichform
+(`tools/schema/nacharbeit-views.sql`) bleibt technisch bestehen — real
+gegen d-migrate 1.3.0 reproduzierte Post-execute-Drift, bei d-migrate
+gemeldet und dort als Bug anerkannt (Fix in Arbeit, kein Release-Termin).
