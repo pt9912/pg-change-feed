@@ -118,8 +118,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       von `nacharbeit-operation-check.sql` berührt sie nicht, Item entfällt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: `docs/plan/planning/reconciliation.md` existiert nicht (Repo ist GF, `harness/conventions.md` §Modus-Deklaration) — Item entfällt.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg: `BEO-PGC/d-migrate-nacharbeit/evidence/slice-015.md` — dritter Beleg, Zähler erreicht 3×, Ausgang `verkörpert` (Architect-Verdikt, siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -193,12 +193,18 @@ dasteht.
 
 - Der Sandbox-Modus löst möglicherweise nur EINEN der beiden Fälle (CHECK
   vs. Views), nicht beide — der Retirement-Umfang wäre dann partiell.
-  Wird bei Closure bewertet; ein Teil-Retirement ist ein legitimes
-  Ergebnis, kein Scheitern.
+  **Ausgang: eingetreten.** Real bestätigt (Implementer + unabhängig
+  Verifier): CHECK konvergiert deklarativ, die drei Views bleiben
+  Ausweichform (Exit 5, Post-execute-Drift, real reproduziert). Teil-
+  Retirement wie vorgesehen kein Scheitern — Commit `3cb0c8e` benennt den
+  Fall explizit.
 - Der Digest-Bump selbst könnte einen Regressions-Fund gegen den
   bestehenden `schema.yaml`-Bestand auslösen (Major-Feature-Release,
   „View Portability Knowledge Shift" laut Changelog verschiebt
   Dialekt-Wissen) — wird bei Closure bewertet.
+  **Ausgang: entfallen.** Kein Regressions-Fund in `make gates`, `make
+  test-integration` oder den gezielten Zusatzproben des Verifiers gegen
+  den neuen Pin.
 
 ## 7. Closure-Notiz
 
@@ -217,18 +223,58 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Real getestet statt behauptet, an zwei
+  unabhängigen Stellen (Implementer, dann getrennt der Verifier in einer
+  eigenen Testcontainer-Instanz) — beide reproduzieren dieselben zwei
+  Kernaussagen (CHECK konvergiert, Views driften). Die ursprünglich aus
+  dem Changelog übernommene Prämisse eines „Raw SQL Sandbox Mode" wurde
+  erst als nicht existent verifiziert (erschöpfende `--help`-Prüfung),
+  dann — nach einem externen Hinweis auf das reale d-migrate-Handbuch
+  (`docs/user/anwenderhandbuch.md`) und `spec/cli-spec.md` im lokal
+  vorhandenen d-migrate-Repo — präzise eingeordnet: der Schalter
+  (`migrate.raw_sql_sandbox`) existiert, ist aber ein Config-Feld, kein
+  CLI-Flag, und adressiert Planungs-Konvergenz, nicht das tatsächlich
+  aufgetretene Post-execute-Drift-Problem. Eine isolierte, saubere
+  Reproduktion (eigenes Docker-Netz, frische Postgres-Instanz, exakter
+  Aufruf + vollständiger Report) wurde an d-migrate übergeben.
+- **Was ging anders als geplant:** Der Post-execute-Drift-Fehler auf den
+  drei frisch angelegten Views widerspricht `spec/cli-spec.md:940-951`
+  (Post-Compare soll nur Objekte prüfen, die der Plan *nicht* angefasst
+  hat — die Views wurden aber vom selben Plan neu angelegt). d-migrate hat
+  den Befund geprüft, einen eigenen Bug bestätigt und mit der Behebung
+  begonnen (Stand 2026-09-11, kein Release-Termin). Das Retirement bleibt
+  deshalb bewusst **teilweise** — kein Scheitern, sondern der im Plan
+  vorgesehene legitime Ausgang bei einer echten Werkzeug-Grenze.
+- **Trigger-Audit ([`ADR-0043`](../../../../docs/plan/adr/README.md)):**
+  Architect-Verdikt
+  ([`architect-review-slice-015.md`](../../adr/architect-review-slice-015.md))
+  bestätigt: Re-Evaluierungs-Trigger feuert nicht — Views sind zwar
+  weiterhin nicht ausdrückbar, aber eine funktionierende Ausweichform
+  (`nacharbeit-views.sql`) besteht; die Konjunktion des Triggers ist damit
+  nicht erfüllt. [`ADR-0043`](../../../../docs/plan/adr/README.md) bleibt
+  `Accepted`/permanent, kein Folge-ADR.
+- **Steering-Loop-Eintrag:** `harness/README.md` §Sensors,
+  `make schema-rollout`-Bindungszeile geschärft: kein routinemäßiger
+  Real-Test der Views-Drift bei jedem d-migrate-Pin-Bump mehr, erst bei
+  explizitem d-migrate-Fix-Signal für CREATE-VIEW-Post-Compare-Drift —
+  liegt in `harness/README.md §Sensors (make schema-rollout-Bindung)`.
+  Auslöser: `BEO-PGC/d-migrate-nacharbeit` (slice-006, slice-010,
+  slice-015 — 3×).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-015.md`
+  in `BEO-PGC/d-migrate-nacharbeit/` ergänzt — Zähler steht damit bei 3×,
+  Ausgang `verkörpert` (Architect-Verdikt, siehe oben).
+- **Folge-Slices:** keine. Das technische Views-Retirement bleibt in
+  `BEO-PGC/d-migrate-nacharbeit` als weiterhin offen dokumentiert
+  (`state.md`); ein neuer Slice entsteht erst, wenn d-migrate ein
+  Fix-Signal gibt (Trigger jetzt in `harness/README.md` verkörpert statt
+  eines Pin-Bump-Automatismus) — keine Kennung vergeben, solange der
+  Termin unbekannt ist (Modul 6: „geplant" braucht eine Kennung, die hier
+  nicht existiert).
+- **Risiken aus §6:** beide mit Ausgang — Risiko 1 `eingetreten`
+  (Teil-Retirement real bestätigt), Risiko 2 `entfallen` (kein
+  Regressions-Fund).
+- **Drei Paarungen:** wird nach dem `git mv` geprüft (dritter
+  Closure-Commit, s. u.).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
