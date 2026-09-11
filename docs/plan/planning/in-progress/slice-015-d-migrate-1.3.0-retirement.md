@@ -103,9 +103,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       bereits driftfreien Lauf schreibt (real geprüft: kein Overlay-File bei
       gescheitertem Erstlauf). Details im Bericht an den Reviewer/Planner.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`review-slice-015.md`](../../../../docs/reviews/review-slice-015.md)
+      (`0f00b52`), F-1/F-2 disponiert (`ceaf464`), 0 HIGH.
 - [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft: der
       d-migrate-Digest ist nirgends außer im `Makefile` dokumentiert,
       Item entfällt, sofern kein Sensor-Vertrag in `harness/README.md`

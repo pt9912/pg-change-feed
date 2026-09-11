@@ -1,5 +1,5 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043, s. o.
--- tools/schema/nacharbeit-operation-check.sql): cdc.metrics trägt das
+-- tools/schema/nacharbeit-views.sql): cdc.metrics trägt das
 -- Metriken-Minimum nach LH-FA-SST-004/LH-QA-OPS-003 (SPEC-009) als vierte
 -- Lese-View — reine Projektion/Aggregation über bereits persistierte
 -- Zeilen, keine Domänenentscheidung (ARC-005 „SQL-Funktionen/Views",

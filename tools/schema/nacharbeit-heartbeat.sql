@@ -1,5 +1,5 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043, s. o.
--- tools/schema/nacharbeit-operation-check.sql): cdc.heartbeat trägt den
+-- tools/schema/nacharbeit-views.sql): cdc.heartbeat trägt den
 -- Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002; slice-012) als weitere
 -- Lese-View — reine Projektion über die vom Capture-Prozess periodisch
 -- fortgeschriebene Lebenszeichen-Zeile (cdc.process_heartbeat), keine

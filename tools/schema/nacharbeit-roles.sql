@@ -1,5 +1,5 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043, s. o.
--- tools/schema/nacharbeit-operation-check.sql): die drei
+-- tools/schema/nacharbeit-views.sql): die drei
 -- Least-Privilege-Rollen nach LH-QA-SEC-001…003 sind kein Tabellen- oder
 -- View-Objekt und liegen deshalb außerhalb von tools/schema/schema.yaml
 -- (dessen tables:-Knoten trägt nur d-migrate-überführbare Objekte,
