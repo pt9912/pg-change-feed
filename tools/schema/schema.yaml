@@ -23,11 +23,8 @@
 # nicht die View selbst. active_tables bleibt bewusst auf die Bindungs- und
 # Versions-Zeilen beschränkt und bildet die Publication-Mitgliedschaft
 # (LH-FA-CFG-003 „aktiviert" vs. „retained") nicht nach — diese Prüfung
-# bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Die drei
-# Views tragen die benannte Grenze `raw-sql-text-drift` (roher SQL-Text)
-# und leben deshalb nicht im `views:`-Knoten dieser Datei, sondern als
-# Nacharbeit (tools/schema/nacharbeit-views.sql); `chk_change_operation`
-# ist seit slice-015 deklarativ überführt (Details unten).
+# bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Sie leben
+# deklarativ im `views:`-Knoten unten (Pflichtfelder siehe dort).
 #
 # Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
 # trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
@@ -45,20 +42,13 @@
 # getestet (slice-015), kein E5/E012 mehr. Die handgeschriebene DDL
 # (internal/adapters/driven/postgresstorage/schema.sql) trägt dieselbe Form.
 #
-# Benannte Grenze — die drei Views: derselbe `raw-sql-text-drift`-Befund
-# trifft `CREATE VIEW` weiterhin: PostgreSQL deparsed die gespeicherte
-# Katalogform über `pg_get_viewdef` (Alias-Präfixe fallen dort, wo sie
-# eindeutig sind, Einrückung und Klammerung ändern sich), und der
-# Post-execute-Vergleich liest das als Drift gegen die Autorenform —
-# unabhängig von der Query-Komplexität. Mit d-migrate 1.3.0 (aktueller Pin)
-# real erneut geprüft (slice-015, `views:`-Knoten testweise deklariert,
-# frischer Rollout): derselbe Post-execute-Drift (Exit 5) wie am Erststand
-# (`docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`) — anders
-# als beim CHECK-Ausdruck bleibt die Grenze für Views bestehen. Ausweichform
-# weiter nach dem Re-Evaluierungs-Trigger von ADR-0043: die drei Views leben
-# als berichtete manuelle Nacharbeit in `tools/schema/nacharbeit-views.sql`,
-# als Schritt im `make schema-rollout`-Lauf — nicht im `views:`-Knoten
-# dieser Datei.
+# Views (active_tables, consumer_status, changes): `source_dialect:
+# postgresql` und eine sichtbare `columns:`-Signatur sind Pflicht (d-migrate
+# Anwenderhandbuch Anhang F.11) — ohne Signatur blockiert ein Folgelauf mit
+# `VIEW_SIGNATURE_UNKNOWN`/`VIEW_SIGNATURE_INCOMPATIBLE` beim
+# `ReplaceView`-Pfad. Herkunft:
+# `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit` · seit
+# slice-016.
 schema_format: "1.0"
 name: "cdc"
 version: "1.0.0"
@@ -188,3 +178,86 @@ tables:
       heartbeat_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
       error_class: { type: text }
     primary_key: [source_id]
+
+views:
+  active_tables:
+    description: "Konfigurations-Sicht: aktivierte Tabelle je Quelle mit ihrer höchsten Schema-Version (LH-FA-SST-002)"
+    source_dialect: postgresql
+    query: |
+      SELECT
+          st.source_table_id,
+          st.source_id,
+          st.schema_name,
+          st.table_name,
+          (
+              SELECT max(sv.version)
+              FROM cdc.schema_version sv
+              WHERE sv.source_table_id = st.source_table_id
+          ) AS current_schema_version
+      FROM cdc.source_table st
+    columns:
+      - { name: source_table_id, type: text }
+      - { name: source_id, type: text }
+      - { name: schema_name, type: text }
+      - { name: table_name, type: text }
+      - { name: current_schema_version, type: bigint }
+
+  consumer_status:
+    description: "Status-Sicht: Consumer-Rückstand als Differenz von bestätigter und letzter Commit-Position (LH-FA-SST-002, LH-FA-ADM-005)"
+    source_dialect: postgresql
+    query: |
+      SELECT
+          c.consumer_id,
+          c.name,
+          cp.source_id,
+          cp.acknowledged_position,
+          (
+              SELECT max(t.commit_position)
+              FROM cdc.transaction t
+              WHERE t.source_id = cp.source_id
+          ) AS latest_commit_position
+      FROM cdc.consumer c
+      LEFT JOIN cdc.consumer_position cp ON cp.consumer_id = c.consumer_id
+    columns:
+      - { name: consumer_id, type: text }
+      - { name: name, type: text }
+      - { name: source_id, type: text }
+      - { name: acknowledged_position, type: bigint }
+      - { name: latest_commit_position, type: bigint }
+
+  changes:
+    description: "Kernlesezugriff: Changes mit Bereichs-, Limit-, Ordnungs- und Filter-Zusagen über WHERE/LIMIT des lesenden SQL-Aufrufs (LH-FA-SST-002, LH-FA-REA-001…006)"
+    source_dialect: postgresql
+    query: |
+      SELECT
+          t.source_id,
+          t.commit_position,
+          c.change_id,
+          c.transaction_id,
+          c.source_table_id,
+          st.schema_name,
+          st.table_name,
+          c.sequence,
+          c.operation,
+          c.old_data,
+          c.new_data,
+          c.schema_version,
+          t.committed_at
+      FROM cdc.change c
+      JOIN cdc.transaction t ON t.transaction_id = c.transaction_id
+      JOIN cdc.source_table st ON st.source_table_id = c.source_table_id
+      ORDER BY t.commit_position, c.transaction_id, c.sequence
+    columns:
+      - { name: source_id, type: text }
+      - { name: commit_position, type: bigint }
+      - { name: change_id, type: text }
+      - { name: transaction_id, type: text }
+      - { name: source_table_id, type: text }
+      - { name: schema_name, type: text }
+      - { name: table_name, type: text }
+      - { name: sequence, type: bigint }
+      - { name: operation, type: text }
+      - { name: old_data, type: jsonb }
+      - { name: new_data, type: jsonb }
+      - { name: schema_version, type: text }
+      - { name: committed_at, type: "timestamp with time zone" }

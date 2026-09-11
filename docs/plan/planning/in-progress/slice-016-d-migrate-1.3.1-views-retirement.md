@@ -124,6 +124,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/schema/nacharbeit-views.sql` | löschen | Bedingung eingetreten — d-migrate 1.3.1 konvergiert deklarativ |
 | `Makefile` (`schema-rollout`-Target) | update | psql-Nacharbeit-Schritt für die Views entfernt |
 | `harness/README.md` | update | `make schema-rollout`-Bindungszeile — mit slice-015 verkörperte Test-Kadenz-Regel referenziert jetzt die gelöste Views-Drift |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | update | Plan-Nachzug: nicht ursprünglich gelistet — Pflicht-Report und Rollback-Artefakt des `make test-integration`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md), `schema migrate --execute`), der den neuen Pin real belegt (Closure-Trigger); Nebenprodukt des Sensor-Laufs, kein separat verfasster Inhalt |
 
 ## 4. Trigger
 
