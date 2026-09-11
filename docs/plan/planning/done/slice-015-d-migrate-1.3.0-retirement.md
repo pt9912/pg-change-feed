@@ -120,7 +120,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: `docs/plan/planning/reconciliation.md` existiert nicht (Repo ist GF, `harness/conventions.md` §Modus-Deklaration) — Item entfällt.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg: `BEO-PGC/d-migrate-nacharbeit/evidence/slice-015.md` — dritter Beleg, Zähler erreicht 3×, Ausgang `verkörpert` (Architect-Verdikt, siehe §7).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Grün: siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -273,8 +273,10 @@ Backticks).
 - **Risiken aus §6:** beide mit Ausgang — Risiko 1 `eingetreten`
   (Teil-Retirement real bestätigt), Risiko 2 `entfallen` (kein
   Regressions-Fund).
-- **Drei Paarungen:** wird nach dem `git mv` geprüft (dritter
-  Closure-Commit, s. u.).
+- **Drei Paarungen:** alle drei grün — Anker: `harness/README.md:131`
+  trägt „· seit slice-015"; Folge-Slice: keiner genannt (§7 oben),
+  Paarung entfällt damit vakuos; Register: `BEO-PGC/d-migrate-nacharbeit/`
+  existiert mit nicht-leerem `evidence/` (3 Dateien).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
