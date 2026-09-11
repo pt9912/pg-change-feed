@@ -38,10 +38,11 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 `sha256:d8dc38cfe3315ab4a1df9f366b262700f402a531b62abd27eb836d3bc4c1e5cc`)
 und die berichtete Nacharbeit-Ausweichform zurückbauen, wo der Fix-Release
 sie tatsächlich löst — Changelog nennt „Post-compare drift eliminated"
-(Server-Form-zu-Server-Form-Vergleich) und einen neuen „Raw SQL Sandbox
-Mode" mit Provenance-Overlay, die genau die `raw-sql-text-drift`-Klasse
-aus `BEO-PGC/d-migrate-nacharbeit` (2×: CHECK-Ausdruck slice-006,
-gespeicherte Views slice-010) adressieren.
+(Server-Form-zu-Server-Form-Vergleich); dieser generelle Mechanismus ist
+es, der ggf. die `raw-sql-text-drift`-Klasse aus
+`BEO-PGC/d-migrate-nacharbeit` (2×: CHECK-Ausdruck slice-006, gespeicherte
+Views slice-010) adressiert — ein eigenständiges „Raw SQL Sandbox
+Mode"-Feature existiert nicht (real geprüft, siehe DoD-Punkt 2).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -53,8 +54,9 @@ gespeicherte Views slice-010) adressieren.
   hier adressierte Drift-Behebung und wird nur geprüft, falls der
   Implementer beim Ist-Zustand-Abgleich einen Bezug findet.
 - Provenance-Overlay-Workflow (`--provenance-output`, `raw-text-provenance`)
-  produktiv einführen — Bestand bleibt bewusst stehen: der Sandbox-Modus
-  allein genügt, um die Drift-Klasse zu testen; das Overlay ist eine
+  produktiv einführen — Bestand bleibt bewusst stehen: der reguläre
+  Post-compare-Vergleich (Server-Form-zu-Server-Form) genügt allein, um
+  die Drift-Klasse zu testen; das Overlay ist eine
   Convergence-Optimierung für Folge-Läufe, kein Blocker-Fix, und bräuchte
   eine eigene Bewertung des Rollout-Workflows.
 
@@ -84,7 +86,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`docker buildx imagetools inspect ghcr.io/pt9912/d-migrate:1.3.0`).
 - [x] CHECK-Ausdruck `chk_change_operation` und die drei bestehenden
       SQL-Views (`active_tables`, `consumer_status`, `changes`) real
-      gegen den Sandbox-Modus getestet — je Fall entweder ins
+      gegen den neuen Pin (generischer Post-compare-Vergleich, kein
+      separates Sandbox-Feature) getestet — je Fall entweder ins
       deklarative `tools/schema/schema.yaml` überführt (Ausweichform
       zurückgebaut) oder mit dokumentiertem Befund, warum nicht. Beleg: real
       gegen einen frischen Rollout (Testcontainer, außerhalb des Baums)

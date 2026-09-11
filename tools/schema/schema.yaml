@@ -24,10 +24,10 @@
 # Versions-Zeilen beschränkt und bildet die Publication-Mitgliedschaft
 # (LH-FA-CFG-003 „aktiviert" vs. „retained") nicht nach — diese Prüfung
 # bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Die drei
-# Views tragen dieselbe benannte Grenze wie `chk_change_operation` unten
-# (roher SQL-Text, `raw-sql-text-drift`) und leben deshalb nicht im
-# `views:`-Knoten dieser Datei, sondern als Nacharbeit
-# (tools/schema/nacharbeit-views.sql).
+# Views tragen die benannte Grenze `raw-sql-text-drift` (roher SQL-Text)
+# und leben deshalb nicht im `views:`-Knoten dieser Datei, sondern als
+# Nacharbeit (tools/schema/nacharbeit-views.sql); `chk_change_operation`
+# ist seit slice-015 deklarativ überführt (Details unten).
 #
 # Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
 # trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
