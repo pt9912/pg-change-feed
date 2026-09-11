@@ -112,7 +112,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg: `BEO-PGC/d-migrate-nacharbeit/evidence/slice-016.md` (4. Beleg, Views technisch aufgelöst) sowie neu `BEO-PGC/schema-rollout-fremdobjekte/` (1. Beleg, Nebenfund).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Grün: siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -255,8 +255,11 @@ Backticks).
 - **Folge-Slices:** keine. `BEO-PGC/schema-rollout-fremdobjekte` bleibt
   ohne Kennung offen — kein Träger bislang, kein Termin.
 - **Risiken aus §6:** beide `entfallen` (siehe §6).
-- **Drei Paarungen:** wird nach dem `git mv` geprüft (dritter
-  Closure-Commit, s. u.).
+- **Drei Paarungen:** alle drei grün — Anker: vakuos wahr (mit diesem
+  Slice wurde nichts neu verkörpert, keine `liegt in`-Zeile geschrieben);
+  Folge-Slice: vakuos wahr (§7 nennt keinen); Register:
+  `BEO-PGC/d-migrate-nacharbeit/` und `BEO-PGC/schema-rollout-fremdobjekte/`
+  existieren beide mit nicht-leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
