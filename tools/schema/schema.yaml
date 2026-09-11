@@ -1,19 +1,19 @@
 # Neutrales Schemamodell der CDC-Tabellen (ADR-0043): die Quelle der
 # Schema-Form — SQL wird aus dieser Datei erzeugt, nicht mehr handgeschrieben.
 # Überführt aus der handgeschriebenen DDL
-# (internal/adapters/driven/postgresstorage/schema.sql, Stand slice-004);
-# Abweichung zwischen DDL und dieser Datei wäre zwei Quellen für dieselbe
-# Schema-Form (ADR-0043, Folgepflicht).
+# (internal/adapters/driven/postgresstorage/schema.sql); Abweichung zwischen
+# DDL und dieser Datei wäre zwei Quellen für dieselbe Schema-Form
+# (ADR-0043, Folgepflicht).
 #
 # Umfang: die Store-Seite — source, source_table, schema_version,
 # transaction, change (SPEC-001, SPEC-002) — und die Consumer-State-Tabellen
 # consumer, consumer_position (SPEC-001, LH-FA-CON-001…006); ihr Port
 # (ConsumerStatePort) liegt außerhalb des Store-Adapters, die Tabellenform
-# trägt dieses Modell wie die übrigen. process_heartbeat (slice-012)
-# realisiert die in SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle
-# als Lebenszeichen des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002);
-# ihr Port (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe
-# Abgrenzung wie beim Consumer-State.
+# trägt dieses Modell wie die übrigen. process_heartbeat realisiert die in
+# SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle als Lebenszeichen
+# des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002); ihr Port
+# (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe Abgrenzung
+# wie beim Consumer-State.
 #
 # Die drei Views (active_tables, consumer_status, changes) tragen den
 # SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
@@ -32,23 +32,17 @@
 # search_path = cdc, und die generated DDL landet dort. Die CREATE SCHEMA-
 # Zeile der DDL ist Umgebungs-Vorbedingung (Compose-Init), nicht Schema-Form.
 #
-# Retired (slice-015): `chk_change_operation` lebte bis d-migrate 1.2.0 als
-# Ausweichform (`raw-sql-text-drift`, ADR-0043 Re-Evaluierungs-Trigger,
-# `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`) — der
-# Post-execute-Vergleich las den kanonisierten Cast der Katalogform
-# (`::text`, `IN` → `= ANY (ARRAY[...])`) als Drift gegen die Autorenform.
-# Mit d-migrate 1.3.0 (aktueller Pin) konvergiert der Ausdruck deklarativ
-# unten unter `change.constraints` — real gegen einen frischen Rollout
-# getestet (slice-015), kein E5/E012 mehr. Die handgeschriebene DDL
+# `chk_change_operation` ist deklarativ unter `change.constraints` unten
+# geführt, keine SQL-Nacharbeit nötig; die handgeschriebene DDL
 # (internal/adapters/driven/postgresstorage/schema.sql) trägt dieselbe Form.
+# Herkunft: `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 #
 # Views (active_tables, consumer_status, changes): `source_dialect:
 # postgresql` und eine sichtbare `columns:`-Signatur sind Pflicht (d-migrate
 # Anwenderhandbuch Anhang F.11) — ohne Signatur blockiert ein Folgelauf mit
 # `VIEW_SIGNATURE_UNKNOWN`/`VIEW_SIGNATURE_INCOMPATIBLE` beim
 # `ReplaceView`-Pfad. Herkunft:
-# `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit` · seit
-# slice-016.
+# `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 schema_format: "1.0"
 name: "cdc"
 version: "1.0.0"
@@ -169,7 +163,7 @@ tables:
         expression: "(acknowledged_position > 0)"
 
   process_heartbeat:
-    description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002; slice-012). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld. error_class (slice-013, LH-FA-ADM-003, LH-QA-REL-003) trägt den zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist Normalbetrieb, ein erfolgreicher Beat löscht die Spalte wieder."
+    description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld. error_class (LH-FA-ADM-003, LH-QA-REL-003) trägt den zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist Normalbetrieb, ein erfolgreicher Beat löscht die Spalte wieder."
     columns:
       source_id:
         type: text
