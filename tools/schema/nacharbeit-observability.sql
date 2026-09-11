@@ -1,5 +1,6 @@
--- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043, s. o.
--- tools/schema/nacharbeit-views.sql): cdc.metrics trägt das
+-- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043
+-- §Re-Evaluierungs-Trigger: zulässige Ausweichform für Rollout-Schritte,
+-- die d-migrate nicht aus tools/schema/schema.yaml erzeugt): cdc.metrics trägt das
 -- Metriken-Minimum nach LH-FA-SST-004/LH-QA-OPS-003 (SPEC-009) als vierte
 -- Lese-View — reine Projektion/Aggregation über bereits persistierte
 -- Zeilen, keine Domänenentscheidung (ARC-005 „SQL-Funktionen/Views",

@@ -1,5 +1,6 @@
--- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043, s. o.
--- tools/schema/nacharbeit-views.sql): die drei
+-- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043
+-- §Re-Evaluierungs-Trigger: zulässige Ausweichform für Rollout-Schritte,
+-- die d-migrate nicht aus tools/schema/schema.yaml erzeugt): die drei
 -- Least-Privilege-Rollen nach LH-QA-SEC-001…003 sind kein Tabellen- oder
 -- View-Objekt und liegen deshalb außerhalb von tools/schema/schema.yaml
 -- (dessen tables:-Knoten trägt nur d-migrate-überführbare Objekte,
