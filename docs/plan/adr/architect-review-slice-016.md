@@ -2,7 +2,7 @@
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-11.
 **Eingang:** Slice-Plan
-[`docs/plan/planning/in-progress/slice-016-d-migrate-1.3.1-views-retirement.md`](../planning/in-progress/slice-016-d-migrate-1.3.1-views-retirement.md)
+[`docs/plan/planning/done/slice-016-d-migrate-1.3.1-views-retirement.md`](../planning/done/slice-016-d-migrate-1.3.1-views-retirement.md)
 §1–§8 · [`docs/reviews/review-slice-016.md`](../../reviews/review-slice-016.md)
 (F-1 HIGH disponiert in `04590a4`, danach 0 HIGH) ·
 [`docs/reviews/verify-slice-016.md`](../../reviews/verify-slice-016.md)
