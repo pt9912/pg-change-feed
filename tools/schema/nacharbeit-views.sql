@@ -1,13 +1,15 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043,
 -- Re-Evaluierungs-Trigger): die drei SQL-Views nach LH-FA-SST-002 sind die
 -- benannte Grenze des neutralen Schemamodells (tools/schema/schema.yaml) —
--- d-migrate 1.2.0 (gepinnt) kann eine `CREATE VIEW` nicht überführen, deren
--- Katalogform (`pg_get_viewdef`) von der Autorenform abweicht; der
+-- d-migrate 1.3.0 (aktueller Pin, real gegen einen frischen Rollout
+-- getestet, slice-015) kann eine `CREATE VIEW` weiterhin nicht überführen,
+-- deren Katalogform (`pg_get_viewdef`) von der Autorenform abweicht; der
 -- Rollout-Lauf konvergiert am Post-execute-Vergleich nicht (derselbe
--- `raw-sql-text-drift`-Befund wie bei `chk_change_operation`,
--- `nacharbeit-operation-check.sql`). Diese Datei trägt die Views als
--- Schritt des `make schema-rollout`-Laufs; `CREATE OR REPLACE VIEW` macht
--- den Schritt wiederholbar.
+-- `raw-sql-text-drift`-Befund, der mit 1.3.0 für `chk_change_operation`
+-- behoben ist — CHECK-Ausdrücke leben deklarativ in schema.yaml, Views
+-- weiterhin hier). Diese Datei trägt die Views als Schritt des
+-- `make schema-rollout`-Laufs; `CREATE OR REPLACE VIEW` macht den Schritt
+-- wiederholbar.
 CREATE OR REPLACE VIEW cdc.active_tables AS
 SELECT
     st.source_table_id,

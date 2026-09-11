@@ -70,7 +70,7 @@ test-integration: ## MVP-Integrationstest gegen die Compose-Umgebung (Compose + 
 # (Netz cdc-feed-test aus compose.yaml); für ein Host-seitiges localhost-Ziel
 # trägt der Aufrufer `host`. Der Default `bridge` passt für ein DB-Ziel, das
 # selbst im Default-Brückennetz liegt.
-D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:8d1433990ee4dd6a975b29d8db18356d1204ae6e45f96f312872ba5eca1230ea
+D_MIGRATE_IMAGE ?= ghcr.io/pt9912/d-migrate@sha256:d8dc38cfe3315ab4a1df9f366b262700f402a531b62abd27eb836d3bc4c1e5cc
 SCHEMA_SOURCE ?= tools/schema/schema.yaml
 SCHEMA_TARGET ?= db:postgres://postgres:postgres@localhost:5432/cdc?sslmode=disable
 SCHEMA_ROLLOUT_NETWORK ?= bridge
@@ -88,15 +88,18 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
 
 # Der Rollout trägt die CDC-Schema-Form vollständig — der CHECK über der
-# Operation und die drei SQL-Views (LH-FA-SST-002) laufen als berichtete
-# manuelle Nacharbeit mit (ADR-0043, Re-Evaluierungs-Trigger; die Grenze
-# steht in tools/schema/schema.yaml, tools/schema/nacharbeit-operation-check.sql
-# und tools/schema/nacharbeit-views.sql): d-migrate 1.2.0 konvergiert weder
-# am CHECK-Ausdruck mit String-Literalen noch an der Katalogform eines
-# `CREATE VIEW` (`pg_get_viewdef` weicht von der Autorenform ab) — beide
-# leben in diesen psql-Schritten. Die Schritte zielen auf die frische
-# Instanz des Rollout-Laufs; ein Lauf gegen eine mit der Nacharbeit
-# bestückte Instanz scheitert an der Katalogform (E012) — die Runner-Kette
+# Operation ist mit d-migrate 1.3.0 deklarativ konvergent (schema.yaml,
+# chk_change_operation) und braucht keine Nacharbeit mehr (slice-015 hat das
+# real gegen einen frischen Rollout getestet, Post-Compare grün). Die drei
+# SQL-Views (LH-FA-SST-002) laufen weiter als berichtete manuelle Nacharbeit
+# (ADR-0043, Re-Evaluierungs-Trigger; die Grenze steht in
+# tools/schema/schema.yaml und tools/schema/nacharbeit-views.sql): d-migrate
+# 1.3.0 konvergiert an der Katalogform eines `CREATE VIEW` weiterhin nicht
+# (`pg_get_viewdef` weicht von der Autorenform ab, slice-015 hat denselben
+# Post-Compare-Drift real gegen den neuen Pin reproduziert) — sie lebt in
+# diesem psql-Schritt. Der Schritt zielt auf die frische Instanz des
+# Rollout-Laufs; ein Lauf gegen eine mit der Nacharbeit bestückte Instanz
+# scheitert an der Katalogform (E012) — die Runner-Kette
 # (tools/harness/run-integration-tests.sh) räumt die Umgebung vorher ab.
 # Zwei weitere Schritte seit slice-011 (LH-QA-SEC-001…003,
 # LH-FA-SST-004): tools/schema/nacharbeit-roles.sql trägt die drei
@@ -110,7 +113,6 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
-	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-operation-check.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-views.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-roles.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-observability.sql

@@ -78,25 +78,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] d-migrate-Pin auf v1.3.0 gehoben (`Makefile` `D_MIGRATE_IMAGE`),
-      `make schema-validate` grün am neuen Pin.
-- [ ] CHECK-Ausdruck `chk_change_operation` und die drei bestehenden
+- [x] d-migrate-Pin auf v1.3.0 gehoben (`Makefile` `D_MIGRATE_IMAGE`),
+      `make schema-validate` grün am neuen Pin. Beleg: `make schema-validate`
+      grün (Implementer-Lauf), Digest gegen die Registry verifiziert
+      (`docker buildx imagetools inspect ghcr.io/pt9912/d-migrate:1.3.0`).
+- [x] CHECK-Ausdruck `chk_change_operation` und die drei bestehenden
       SQL-Views (`active_tables`, `consumer_status`, `changes`) real
       gegen den Sandbox-Modus getestet — je Fall entweder ins
       deklarative `tools/schema/schema.yaml` überführt (Ausweichform
-      zurückgebaut) oder mit dokumentiertem Befund, warum nicht.
-- [ ] `make gates` grün.
+      zurückgebaut) oder mit dokumentiertem Befund, warum nicht. Beleg: real
+      gegen einen frischen Rollout (Testcontainer, außerhalb des Baums)
+      getestet — CHECK konvergiert (Exit 0), alle drei Views einzeln und
+      kombiniert weiterhin Post-execute-Drift (Exit 5); **kein separates
+      „Raw SQL Sandbox Mode"-Flag existiert** (erschöpfend geprüft:
+      `--help` auf `schema migrate`/`generate`/`validate`/`compare`/`reverse`
+      und Top-Level — kein `sandbox`-Begriff). Die dem Slice zugrunde
+      liegende Changelog-Prämisse eines separaten Sandbox-Modus trifft nicht
+      zu; der einzig verwandte Mechanismus ist `--provenance-output`/
+      `--migration-overlay` (explizit Out-of-Scope, §1) — und der kann den
+      *ersten* View-Rollout ohnehin nicht lösen, weil er nur nach einem
+      bereits driftfreien Lauf schreibt (real geprüft: kein Overlay-File bei
+      gescheitertem Erstlauf). Details im Bericht an den Reviewer/Planner.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update falls öffentlicher Vertrag berührt — geprüft: der
+- [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft: der
       d-migrate-Digest ist nirgends außer im `Makefile` dokumentiert,
       Item entfällt, sofern kein Sensor-Vertrag in `harness/README.md`
       sich ändert (z. B. wenn eine `nacharbeit-*.sql`-Datei entfällt und
       die [`ADR-0043`](../../../../docs/plan/adr/README.md)-Bindungszeile
-      das erwähnt).
+      das erwähnt). Geprüft: die `schema-rollout`-Bindungszeile in
+      `harness/README.md` nennt keine `nacharbeit-*.sql`-Dateinamen — Wegfall
+      von `nacharbeit-operation-check.sql` berührt sie nicht, Item entfällt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: `docs/plan/planning/reconciliation.md` existiert nicht (Repo ist GF, `harness/conventions.md` §Modus-Deklaration) — Item entfällt.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -114,10 +130,11 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `Makefile` | update | `D_MIGRATE_IMAGE`-Digest auf v1.3.0 gehoben ([`ADR-0043`](../../../../docs/plan/adr/README.md)) |
-| `tools/schema/schema.yaml` | update | CHECK-Ausdruck + Views deklarativ ergänzt, soweit der Sandbox-Modus sie real konvergieren lässt |
-| `tools/schema/nacharbeit-operation-check.sql` | löschen (bedingt) | falls der CHECK-Ausdruck jetzt deklarativ konvergiert |
-| `tools/schema/nacharbeit-views.sql` | löschen (bedingt) | falls die drei Views jetzt deklarativ konvergieren |
-| `Makefile` (`schema-rollout`-Target) | update | entfällt die/die psql-Nacharbeit-Schritte, die durch die obigen Löschungen frei werden |
+| `tools/schema/schema.yaml` | update | `chk_change_operation` deklarativ in `change.constraints` ergänzt (real gegen frischen Rollout konvergent, kein Drift) — die Views-Grenze bleibt bestehen und ist im Kommentarblock aktualisiert (1.3.0 real getestet, Exit 5 unverändert) |
+| `tools/schema/nacharbeit-operation-check.sql` | gelöscht | Plan-Nachzug: Bedingung eingetreten — der CHECK-Ausdruck konvergiert mit d-migrate 1.3.0 deklarativ, real gegen einen frischen Rollout getestet (Exit 0, keine Drift) |
+| `tools/schema/nacharbeit-views.sql` | update (Kommentar), Datei bleibt | Plan-Nachzug: Bedingung NICHT eingetreten — die drei Views konvergieren mit d-migrate 1.3.0 weiterhin nicht deklarativ (real getestet: Post-execute-Vergleich Exit 5, `pg_get_viewdef`-Katalogform weicht von der Autorenform ab, sowohl einzeln als auch kombiniert mit dem CHECK-Ausdruck reproduziert); Kommentar aktualisiert (Pin-Version, Bezug zum jetzt gelösten CHECK-Fall entfernt) |
+| `Makefile` (`schema-rollout`-Target) | update | psql-Nacharbeit-Schritt für `nacharbeit-operation-check.sql` entfällt (Datei gelöscht); der Views-Schritt bleibt; erklärender Kommentarblock über dem Target aktualisiert |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | update | Plan-Nachzug: nicht ursprünglich gelistet — Pflicht-Report und Rollback-Artefakt des `make test-integration`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md), `schema migrate --execute`), der den neuen Pin real belegt (Closure-Trigger); Nebenprodukt des Sensor-Laufs, kein separat verfasster Inhalt |
 
 ## 4. Trigger
 
