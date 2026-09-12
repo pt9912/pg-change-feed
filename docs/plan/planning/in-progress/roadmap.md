@@ -40,8 +40,6 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-8 — Black-Box-E2E und Integrationstest-Nachzug](../welle-8.md)
 
-Nichts in Arbeit.
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
