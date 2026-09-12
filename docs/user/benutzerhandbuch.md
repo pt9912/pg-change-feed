@@ -186,6 +186,35 @@ Positionen bestätigen (`LH-FA-CON-001`). Ein bereits registrierter Name
 bleibt unverändert; der Lauf meldet das über eine eigene Ausgabe-Zeile,
 Exit-Code bleibt 0 (Idempotenz, `LH-FA-CON-001` Boundary).
 
+### Position bestätigen
+
+**Voraussetzung:** Der Consumer ist registriert (siehe oben); Zugriff auf
+dieselbe Instanz-DSN wie der reguläre CDC-Lauf (`CDC_SOURCE_DSN`) — eine
+gesonderte Rolle für diesen Zugriffsweg ist nicht verdrahtet.
+
+**Vorgehen:** Derselbe Sondermodus-Mechanismus wie bei der Registrierung
+führt den Aufruf über `AcknowledgeConsumerUseCase`, statt die
+Consumer-Positions-Tabelle direkt zu schreiben — derselbe Image-Tag wie
+der Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
+
+```bash
+docker run --rm -e CDC_SOURCE_DSN -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
+  ghcr.io/pt9912/pg-change-feed:dev acknowledge-consumer <consumer-id> <position>
+```
+
+In der Compose-Umgebung: `docker compose run --rm pg-change-feed
+acknowledge-consumer <consumer-id> <position>`. `<position>` trägt den
+Offset innerhalb der konfigurierten Quelle (`CDC_SOURCE_ID`) — derselbe
+Wert, den `cdc.changes.commit_position` für die zuletzt verarbeitete
+Änderung trägt.
+
+**Ergebnis:** Die Position ist bestätigt und fortgeschrieben
+(`LH-FA-CON-004`). Die Wiederholung derselben Position bleibt ohne Wirkung
+(Idempotenz, `LH-FA-CON-004` Boundary); ein echter Rückschritt (eine
+Position vor dem bereits bestätigten Stand) wird abgelehnt, der
+gespeicherte Fortschritt bleibt unverändert — die Vorwärts-Invariante gilt
+für jeden Aufruf über diesen Zugriffsweg (`LH-FA-CON-004.a`).
+
 ### Änderungen lesen
 
 ```sql

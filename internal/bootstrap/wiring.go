@@ -34,6 +34,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/acknowledge"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
@@ -424,6 +425,41 @@ func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
 		return 0
 	}
 	fmt.Printf("pg-change-feed: Consumer %q registriert\n", result.Consumer.ID)
+	return 0
+}
+
+// AcknowledgeConsumer verdrahtet den `AcknowledgeConsumerUseCase`
+// (`ADR-0028`) für den `acknowledge-consumer`-Sondermodus
+// (`cmd/pg-change-feed/main.go`, `LH-FA-CON-004.a`) und trägt dessen
+// Prozess-Ausgang: 0 nach Bestätigung — neu vorgerückt oder eine
+// Wiederholung derselben Position, beide Fälle tragen `LH-FA-CON-004`s
+// Boundary-Kriterium (Idempotenz), die Ausgabe unterscheidet sie nicht
+// gesondert —, 1 bei Verdrahtungs- oder Domänenfehler, unter anderem ein
+// echter Rückschritt (`domainerrors.ErrPositionRegression`) oder eine
+// nicht registrierte Kennung (`outbound.ErrConsumerUnregistered`). Der
+// Aufruf öffnet eine eigene, kurzlebige Verbindung über denselben
+// `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
+// nutzen würde — kein Bestandteil des Dauerbetriebs. Die bestätigte
+// Position trägt dieselbe Quelle wie die laufende Erfassung
+// (`cfg.Source`); der Zugriffsweg unterscheidet keine zweite Quelle.
+func AcknowledgeConsumer(ctx context.Context, cfg Config, consumerID string, offset uint64) int {
+	state, err := postgresstorage.NewConsumerState(ctx, cfg.DSN)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: acknowledge-consumer: %v\n", err)
+		return 1
+	}
+	defer state.Close()
+
+	result, err := acknowledge.NewAcknowledgeConsumerService(state).Acknowledge(ctx, inbound.AcknowledgeConsumerCommand{
+		Consumer: model.ConsumerID(consumerID),
+		Position: model.SourcePosition{SourceID: cfg.Source, Offset: offset},
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: acknowledge-consumer: %v\n", err)
+		return 1
+	}
+	fmt.Printf("pg-change-feed: Consumer %q Position bestätigt (Quelle %q, Offset %d)\n",
+		consumerID, result.Position.Position.SourceID, result.Position.Position.Offset)
 	return 0
 }
 

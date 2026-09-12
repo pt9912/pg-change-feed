@@ -77,10 +77,36 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
 
+# `internal/bootstrap` läuft in einem eigenen, vorgezogenen Aufruf: seine
+# Zugriffsweg-Tests (`register-consumer`, `acknowledge-consumer`,
+# `LH-FA-CON-001.a`/`LH-FA-CON-004.a`) schreiben gegen dieselben Zeilen
+# (`cdc.consumer`/`cdc.consumer_position`), die mehrere Tests im Paket
+# `postgresstorage` tabellenweit abräumen bzw. per `DROP SCHEMA cdc
+# CASCADE` neu aufsetzen (`store_test.go`, `tableactivation_test.go`) —
+# ein paralleler Lauf (Go-Default über Pakete hinweg) kann eine gerade
+# registrierte Kennung wegreißen oder das erweiterte, per d-migrate
+# ausgerollte Schema unter dem laufenden Test entfernen. Der vorgezogene
+# Lauf steht auf dem frisch ausgerollten Schema, bevor ein anderes Paket
+# es berührt; der zweite Aufruf deckt alle übrigen Pakete wie zuvor ab.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_STORE_TEST_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test ./...
+  "$TOOLCHAIN_IMAGE" go test ./internal/bootstrap/...
+
+OTHER_PACKAGES=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go list ./... | grep -v '/internal/bootstrap$')
+
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_STORE_TEST_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test $OTHER_PACKAGES

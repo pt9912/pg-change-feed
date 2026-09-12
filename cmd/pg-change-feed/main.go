@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/pt9912/pg-change-feed/internal/bootstrap"
@@ -58,8 +59,32 @@ func main() {
 		}
 		os.Exit(bootstrap.RegisterConsumer(context.Background(), cfg, os.Args[2]))
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "acknowledge-consumer" {
+		// Der Sondermodus bestätigt die Position eines Consumers über
+		// `AcknowledgeConsumerUseCase` (`LH-FA-CON-004.a`) und beendet
+		// sich, ohne je den Capture-Loop (`bootstrap.Run`) zu erreichen —
+		// dasselbe Muster wie `register-consumer` oben. Die Quelle der
+		// bestätigten Position ist die konfigurierte `CDC_SOURCE_ID`
+		// (`cfg.Source`); das zweite Argument trägt nur den Offset
+		// innerhalb dieser Quelle.
+		if len(os.Args) != 4 {
+			fmt.Fprintln(os.Stderr, "pg-change-feed: acknowledge-consumer erwartet Consumer-Kennung und Position als Argumente")
+			os.Exit(2)
+		}
+		offset, parseErr := strconv.ParseUint(os.Args[3], 10, 64)
+		if parseErr != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: acknowledge-consumer: Position %q ist kein gültiger Offset: %v\n", os.Args[3], parseErr)
+			os.Exit(2)
+		}
+		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(bootstrap.AcknowledgeConsumer(context.Background(), cfg, os.Args[2], offset))
+	}
 	if len(os.Args) > 1 {
-		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand, register-consumer <name> registriert einen Consumer")
+		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand, register-consumer <name> registriert einen Consumer, acknowledge-consumer <consumer-id> <position> bestätigt eine Position")
 		os.Exit(2)
 	}
 	// Der Lauf endet kontrolliert auf SIGINT/SIGTERM: der Stream-Lauf

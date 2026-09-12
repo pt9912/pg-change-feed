@@ -79,17 +79,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] [`LH-FA-CON-004.a`](../../../../spec/pflichtenheft.md) erfüllt: ein
+- [x] [`LH-FA-CON-004.a`](../../../../spec/pflichtenheft.md) erfüllt: ein
       externer Aufruf über den Zugriffsweg aus `slice-021` bestätigt eine
       Position über `AcknowledgeConsumerUseCase`, ohne die
-      Consumer-Positions-Tabelle direkt zu schreiben — Test referenziert.
-- [ ] Vorwärts-Invariante (`ErrPositionRegression`) real über den externen
-      Zugriffsweg getestet (Wiederholung/Rückschritt abgelehnt).
-- [ ] `make gates` grün.
+      Consumer-Positions-Tabelle direkt zu schreiben — Test referenziert:
+      `internal/bootstrap/acknowledge_test.go::TestAcknowledgeConsumerEndToEnd`
+      (Happy Path, real gegen PostgreSQL über `make test-store`).
+- [x] Vorwärts-Invariante (`ErrPositionRegression`) real über den externen
+      Zugriffsweg getestet (Wiederholung/Rückschritt abgelehnt) —
+      `internal/bootstrap/acknowledge_test.go::TestAcknowledgeConsumerEndToEnd`
+      (Wiederholung derselben Position idempotent, echter Rückschritt
+      abgelehnt, gespeicherter Stand bleibt unverändert; real gegen
+      PostgreSQL, verbose Einzellauf bestätigt: `--- PASS:
+      TestAcknowledgeConsumerEndToEnd`).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
+- [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
       Positions-Bestätigung).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -109,6 +116,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `cmd/pg-change-feed/main.go` | update | Zugriffsweg aus `slice-021` um Bestätigung erweitert |
 | `internal/bootstrap/wiring.go` | update | ruft `AcknowledgeConsumerUseCase` über den Zugriffsweg |
 | `docs/user/benutzerhandbuch.md` | update | Bestätigung über den Zugriffsweg dokumentiert |
+| `internal/bootstrap/acknowledge_test.go` | neu | End-to-End-Test gegen reale PostgreSQL (Happy Path, Wiederholung/Idempotenz, echter Rückschritt gegen `ErrPositionRegression`, Registrierungs-Grenze) und zwei netzlose Verdrahtungsfehler-Tests — nicht in der ursprünglichen Plan-Tabelle, Plan-Nachzug im selben Lauf (dasselbe Muster wie `register_test.go` in `slice-021`) |
+| `tools/harness/run-store-tests.sh` | update | `internal/bootstrap` läuft vorgezogen in einem eigenen `go test`-Aufruf, getrennt vom übrigen Paket-Bündel — nicht im ursprünglichen Plan, Plan-Nachzug im selben Lauf: mehrere `postgresstorage`-Tests räumen `cdc.consumer`/`cdc.consumer_position` tabellenweit ab bzw. per `DROP SCHEMA cdc CASCADE` neu auf; ein paralleler Lauf (Go-Default über Pakete hinweg) ließ den neuen Bestätigungs-Test real und reproduzierbar an einer weggerissenen bzw. entfernten Zeile scheitern, ohne dass der Zugriffsweg selbst fehlerhaft war |
 
 ## 4. Trigger
 
