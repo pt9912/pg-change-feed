@@ -101,17 +101,30 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün. Beleg: `baseline-verify` OK (54 Dateien),
       `docs-check` 268 Dateien/0 Befunde, `commit-traceability` OK (5
       Commits, Range `HEAD~5..HEAD`), `a-check` 0 Befunde.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
+      Beleg: [`docs/reviews/review-slice-031.md`](../../../reviews/review-slice-031.md)
+      (2 HIGH, 1 MEDIUM), Fixrunde behoben in Commit `100ff2b`, bestätigt
+      in [`docs/reviews/review-slice-031-fixrunde.md`](../../../reviews/review-slice-031-fixrunde.md)
+      (alle drei Findings behoben, keine Regression). Verifikation in
+      [`docs/reviews/verify-slice-031.md`](../../../reviews/verify-slice-031.md)
+      (DoD eigenständig nachgeprüft, real reproduziert).
+- [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und begründet
-      im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      im Plan-Nachzug. **Begründung:** kein neuer Sensor/Vertrag entstanden
+      — `make test-store` existiert bereits als dokumentierter Sensor
+      (`harness/README.md` §Sensors), die neuen Tests erweitern ihn nur;
+      kein neues `make`-Target.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Keine Beobachtung angefallen — dieser Slice liefert nur einen
+      Baustein zur Auflösung von `BEO-PGC/schema-evolution-nicht-dynamisch`
+      (1×, unverändert); die Auflösung selbst erfolgt erst mit `slice-032`/
+      `slice-033`/`welle-10`-Closure, nicht schon hier.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-10`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -264,11 +277,20 @@ dasteht.
   Spalte — PostgreSQL-OID roh oder ein bereits übersetzter,
   technologieunabhängiger Typ-Enum) könnte sich erst in `slice-033`
   (Typ-Auswertung) als unpassend erweisen und eine Nacharbeit an diesem
-  Slice erzwingen. **Ausgang:** <bei Closure einzutragen>
+  Slice erzwingen. **Ausgang: entfallen** — der Reviewer hat die Form
+  (`Column{Name, OID}`) eigenständig als Grundlage für `slice-033`
+  geprüft (`docs/reviews/review-slice-031.md`, Negativbefund): eine
+  PostgreSQL-OID identifiziert den exakten Datentyp eindeutig und ist
+  ausreichendes Rohmaterial für eine spätere Typ-Kompatibilitätsprüfung.
 - Eine neue Tabelle `cdc.table_schema` im neutralen Schema könnte mit
   d-migrates View-Signatur-Handling (`ADR-0043`, bekannte Historie bei
   `views:`) in Konflikt geraten, obwohl es sich um eine reguläre Tabelle
-  handelt. **Ausgang:** <bei Closure einzutragen>
+  handelt. **Ausgang: entfallen** — der reale Rollout
+  (`make schema-rollout`, regenerierte `plan.yaml`/`down.sql`) verlief
+  ohne Konflikt; das bekannte View-Signatur-Problem betrifft
+  ausschließlich `views:`-Knoten, `table_schema` ist eine reguläre
+  Tabelle und dadurch strukturell nicht betroffen — vom Reviewer
+  eigenständig anhand der erzeugten DDL bestätigt.
 
 ## 7. Closure-Notiz
 
@@ -287,18 +309,37 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Reviewer fand real, nicht nur behauptet,
+  zwei HIGH-Findings (Kommentar-Klassen-Verstöße, dieselbe Fehlerklasse
+  wie bereits einmal in `slice-018` korrigiert) und ein MEDIUM (eine
+  echte API-Lücke in `RegisterVersion`, die `slice-032` sonst blockiert
+  hätte) — durch eigene, empirische Proben gegen reale PostgreSQL, nicht
+  durch bloße Code-Lektüre. Die anschließende Fixrunde und ihre
+  Bestätigung liefen sauber getrennt (Implementer → Reviewer-Bestätigung
+  → Verifier), ohne Architect-Eskalation, da keine ADR-/Plan-Frage
+  vorlag.
+- **Was ging anders als geplant:** Zwei Fixrunden-Findings (F-1, F-2)
+  betrafen reine Kommentar-Formulierung, nicht die Fähigkeit selbst — ein
+  wiederkehrendes Muster (dieselbe Fehlerklasse wie `slice-018`s
+  Kommentar-Chronik-Fund). F-3 deckte auf, dass `RegisterVersion`
+  ursprünglich keine Spaltenform für eine bereits per `EnableTable`
+  existierende `SchemaVersionID` nachtragen konnte — behoben, bevor
+  `slice-032` darauf hätte aufbauen müssen.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  der Normalfall. `BEO-PGC/schema-evolution-nicht-dynamisch` bleibt
+  unverändert bei 1× (dieser Slice liefert einen Baustein, keinen neuen
+  Beleg).
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — siehe §2-Begründung.
+- **Folge-Slices:** keine — `slice-032` (dynamische Re-Versionierung) und
+  `slice-033` (Typ-Auswertung/Fehlerklasse `schema`) stehen bereits in
+  `welle-10` §4 als vorgesehene Slices dieser Welle, werden aber noch
+  nicht als Dateien angelegt (Modul 5: nicht alle Slices vor der ersten
+  Implementation planen) — `slice-032` wird als nächster Schritt dieser
+  Welle neu geschnitten, nicht durch diesen Closure-Schritt ausgelöst.
+- **Risiken aus §6:** beide *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-10` offen) —
+  Prüfung läuft bei der `welle-10`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
