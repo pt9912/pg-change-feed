@@ -200,9 +200,10 @@ SELECT metric_name, label, value FROM cdc.metrics;
 ```
 
 Verfügbare Kennzahlen: `cdc_transactions_total`, `cdc_changes_processed`,
-`cdc_oldest_change_age_seconds`, `cdc_capture_lag_approx` (Näherung über
-die Persistenzzeit, kein exakter Quell-Commit-Abstand),
-`cdc_consumer_position` und `cdc_consumer_lag` je registriertem Consumer.
+`cdc_oldest_change_age_seconds`, `cdc_capture_lag` (Abstand zwischen der
+letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
+Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
+`cdc_consumer_lag` je registriertem Consumer.
 
 ### Schema aktualisieren
 
