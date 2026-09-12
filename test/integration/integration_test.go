@@ -744,6 +744,50 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 	}
 }
 
+// TestMVPHeartbeatHealthy trägt `LH-FA-ADM-002` (Betriebsstatus, Happy
+// Path) am verdrahteten Feed-Container: `cdc.heartbeat` trägt für die
+// laufende Quelle eine frische, fehlerfreie Lebenszeichen-Zeile —
+// derselbe externe SQL-Lesezugriffsweg wie `awaitHeartbeatErrorClass`
+// unten, gegen dieselbe Projektion (`tools/schema/nacharbeit-heartbeat.sql`,
+// `LH-QA-OPS-002`). Die Alters-Schwelle spiegelt den
+// Produktions-Healthcheck (`internal/bootstrap/wiring.go`,
+// `heartbeatStaleAfter` = 3 × `heartbeatInterval` = 15s) — derselbe Wert,
+// den der Compose-Healthcheck bereits gegen dieselbe Zeile prüft
+// (`docker inspect --format '{{.State.Health.Status}}'` im Runner-Skript
+// oben). Dieser Testfall läuft im ersten `go test`-Aufruf des
+// Runner-Skripts, vor `TestMVPSchemaChangeIncompatibleTypeChange` — jener
+// setzt `error_class` dauerhaft auf `schema` und würde den
+// Happy-Path-Beleg sonst verdecken.
+func TestMVPHeartbeatHealthy(t *testing.T) {
+	dsn := os.Getenv("CDC_INTEGRATION_DSN")
+	if dsn == "" {
+		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — Compose-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
+	}
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Verbindungsaufbau: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	const freshnessThresholdSeconds = 15.0
+	deadline := time.Now().Add(30 * time.Second)
+	var errorClass string
+	var ageSeconds float64
+	for time.Now().Before(deadline) {
+		if err := pool.QueryRow(ctx,
+			"SELECT coalesce(error_class, ''), age_seconds FROM cdc.heartbeat WHERE source_id = $1", mvpSource,
+		).Scan(&errorClass, &ageSeconds); err != nil {
+			t.Fatalf("cdc.heartbeat-Lesung: %v", err)
+		}
+		if errorClass == "" && ageSeconds < freshnessThresholdSeconds {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatalf("cdc.heartbeat innerhalb der Zeitspanne nicht frisch/fehlerfrei: error_class=%q age_seconds=%.1f (Schwelle %.0fs)", errorClass, ageSeconds, freshnessThresholdSeconds)
+}
+
 // awaitHeartbeatErrorClass liest `cdc.heartbeat.error_class` der Quelle
 // über `env.pool`, bis der erwartete Fehlerzustand ansteht (Polling mit
 // Test-Zeitgrenze) — derselbe externe SQL-Lesezugriffsweg wie

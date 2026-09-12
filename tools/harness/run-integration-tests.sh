@@ -238,7 +238,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPActivationState|TestMVPActiveTablesViewMatchesActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn)$' \
+  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPActivationState|TestMVPActiveTablesViewMatchesActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn|TestMVPHeartbeatHealthy)$' \
   ./test/integration/...
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
@@ -481,6 +481,90 @@ if [ "$acked_second" != "$second_position" ]; then
 fi
 
 echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern (docker exec), Fortsetzen nach simuliertem Neustart ab Position $first_position, Endposition $second_position"
+
+# Verarbeitungsrückstand-Beleg (LH-FA-ADM-005, cdc.consumer_status): ein
+# über register-consumer/acknowledge-consumer geführter Consumer (extern,
+# docker exec — dasselbe Muster wie der Black-Box-CLI-Rundlauf oben)
+# bestätigt zunächst eine frühe, real erfasste Position; das bindet
+# consumer_status.source_id an diese Quelle (die Sicht liest
+# latest_commit_position über eine auf cp.source_id korrelierte
+# Unterabfrage — ohne jede vorherige Bestätigung liefert sie dafür NULL,
+# keinen Rückstand). Eine danach real erfasste weitere Änderung hebt
+# latest_commit_position über die bestätigte Position an: der Rückstand
+# wird über eine reine SQL-Lesung von cdc.consumer_status sichtbar. Die
+# zweite externe Bestätigung auf dieselbe (jetzt aktuelle) Position senkt
+# ihn auf 0. Die IDs 120/121 liegen in einem eigenen Wertebereich,
+# getrennt von den übrigen Testfall-Gruppen auf derselben Tabelle (id=1,
+# id=90/91, id=95/96 oben).
+BACKLOG_CONSUMER=cli-e2e-backlog-consumer
+BACKLOG_TABLE=feed_mvp_full
+
+if ! exec_feed register-consumer "$BACKLOG_CONSUMER"; then
+  echo "run-integration-tests: register-consumer (Rückstands-Beleg, docker exec) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$BACKLOG_TABLE (id, name) VALUES (120, 'BacklogBaseline');
+SQL
+
+baseline_backlog_position=""
+for _ in $(seq 1 120); do
+  baseline_backlog_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '120'")
+  if [ -n "$baseline_backlog_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$baseline_backlog_position" ]; then
+  echo "run-integration-tests: Baseline-Änderung des Rückstands-Belegs (id=120) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$BACKLOG_CONSUMER" "$baseline_backlog_position"; then
+  echo "run-integration-tests: erste externe Bestätigung des Rückstands-Belegs (acknowledge-consumer, docker exec) endete mit einem Fehler (Position $baseline_backlog_position)" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$BACKLOG_TABLE (id, name) VALUES (121, 'BacklogAhead');
+SQL
+
+latest_backlog_position=""
+for _ in $(seq 1 120); do
+  latest_backlog_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '121'")
+  if [ -n "$latest_backlog_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$latest_backlog_position" ]; then
+  echo "run-integration-tests: nachfolgende Änderung des Rückstands-Belegs (id=121) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+backlog_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-mvp'")
+if [ -z "$backlog_before" ] || [ "$backlog_before" -le 0 ]; then
+  echo "run-integration-tests: cdc.consumer_status-Rückstand vor der zweiten Bestätigung: '${backlog_before:-leer}' (Erwartung: > 0, acknowledged_position=$baseline_backlog_position, danach erfasste Position=$latest_backlog_position)" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$BACKLOG_CONSUMER" "$latest_backlog_position"; then
+  echo "run-integration-tests: zweite externe Bestätigung des Rückstands-Belegs (acknowledge-consumer, docker exec) endete mit einem Fehler (Position $latest_backlog_position)" >&2
+  exit 1
+fi
+
+backlog_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-mvp'")
+if [ "$backlog_after" != "0" ]; then
+  echo "run-integration-tests: cdc.consumer_status-Rückstand nach der zweiten Bestätigung: $backlog_after, wollen 0 (bestätigte Position=$latest_backlog_position)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status — Rückstand vor der zweiten Bestätigung $backlog_before, danach $backlog_after (LH-FA-ADM-005)"
 
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
