@@ -15,7 +15,13 @@ Aktivierung/Deaktivierung. Zusätzlich hat
 [`LH-FA-CFG-002`](../../../../../../spec/lastenheft.md) (CDC-Deaktivierung)
 im gesamten Repo **keinen** Live-Zugriffsweg: `disable.NewDisableTableService`
 wird in `internal/bootstrap/wiring.go` nirgends konstruiert; der einzige
-Aufrufer ist der weißbox-Unit-/Integrationstest selbst.
+Aufrufer ist der weißbox-Unit-/Integrationstest selbst. Derselbe
+Befund gilt für die CLI-Seite:
+[`LH-FA-SST-003`](../../../../../../spec/lastenheft.md) verlangt, dass eine
+CLI mindestens die Status-/Diagnoseabfragen aus
+[`LH-FA-ADM-002`](../../../../../../spec/lastenheft.md)…`005` abdeckt — real
+existieren nur die `register-consumer`/`acknowledge-consumer`-Befehle,
+kein Status-/Diagnose-Befehl.
 
 ## Benannt, nicht gezählt
 
