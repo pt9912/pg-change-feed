@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-10`](../welle-10.md) — der Nachweis, dass die
+**Welle:** [`welle-10`](welle-10.md) — der Nachweis, dass die
 `ADR-0015`-Folgepflicht real eingelöst ist, ist `welle-10`s Closure-Trigger
 (§3), kein Einzel-Slice-DoD; dieser Slice liefert nur die
 Persistenz-Grundlage, ohne die sich `LH-FA-SCH-004`/`005` selbst noch nicht

@@ -19,17 +19,17 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 `welle-9`s `slice-030` fand real, dass eine Folgepflicht aus
-[`ADR-0015`](../adr/0015-schema-evolution.md) (Accepted, `permanent`,
+[`ADR-0015`](../../adr/0015-schema-evolution.md) (Accepted, `permanent`,
 Option C: `TableSchema`-/`SchemaVersion`-Modelle je Change,
 `SchemaStorePort` als Outbound Port, Fehlerklasse `schema` für nicht
 sicher interpretierbare Änderungen) nie umgesetzt wurde: der ausgelieferte
 Code verhält sich wie das in `ADR-0015` explizit verworfene Option A
 (Relation Metadata 1:1 durchreichen, keine stabile historische
 Interpretation). Zwei Lastenheft-Akzeptanzkriterien sind dadurch
-strukturell unerfüllbar — [`LH-FA-SCH-005`](../../../spec/lastenheft.md)s
+strukturell unerfüllbar — [`LH-FA-SCH-005`](../../../../spec/lastenheft.md)s
 Boundary (zwei Changes vor/nach einer Schemaänderung müssen sich anhand
 ihrer Schema-Version unterscheiden lassen) und
-[`LH-FA-SCH-004`](../../../spec/lastenheft.md)s Negative-Fall (eine
+[`LH-FA-SCH-004`](../../../../spec/lastenheft.md)s Negative-Fall (eine
 inkompatible Typänderung muss erkennbar gemeldet werden, keine stille
 Fehlinterpretation). Ein Architect-Verdikt
 (`docs/reviews/architect-verdict-slice-030-adr-0015.md`) bestätigte:
@@ -83,9 +83,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-031 | Schema-Persistenz-Fähigkeit — `TableSchema`-Modell, `SchemaStorePort`, Adapter (ohne Live-Verdrahtung) | [`SPEC-004`](../../../spec/pflichtenheft.md) |
-| slice-032 | Dynamische Re-Versionierung im Consume-Pfad | [`LH-FA-SCH-005`](../../../spec/lastenheft.md) |
-| slice-033 | Typ-Auswertung und Fehlerklasse `schema` für inkompatible Typänderungen | [`LH-FA-SCH-004`](../../../spec/lastenheft.md) |
+| slice-031 | Schema-Persistenz-Fähigkeit — `TableSchema`-Modell, `SchemaStorePort`, Adapter (ohne Live-Verdrahtung) | [`SPEC-004`](../../../../spec/pflichtenheft.md) |
+| slice-032 | Dynamische Re-Versionierung im Consume-Pfad | [`LH-FA-SCH-005`](../../../../spec/lastenheft.md) |
+| slice-033 | Typ-Auswertung und Fehlerklasse `schema` für inkompatible Typänderungen | [`LH-FA-SCH-004`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
