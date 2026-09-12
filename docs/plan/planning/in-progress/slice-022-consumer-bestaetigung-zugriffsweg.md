@@ -103,11 +103,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Beobachtungs-Register-Kandidat (§7-Closure).
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
       Positions-Bestätigung).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Kein Eintrag verkörpert
+      in diesem Lauf — siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `BEO-PGC/rollen-verdrahtung/evidence/slice-022.md` ergänzt (3×);
+      `BEO-PGC/test-isolation-geteilter-zustand` neu angelegt (1×).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Beide disponiert.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-6` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice. Item entfällt hier bewusst.
 
 ## 3. Plan (vor Code)
 
@@ -160,8 +163,21 @@ dasteht.
 - Der Lesepfad `cdc.consumer_status` (SQL-View) und der Go-Use-Case-Lesepfad
   könnten bei der Verdrahtung des neuen Zugriffswegs erneut auseinanderlaufen
   (`BEO-PGC/lese-doppelquelle`, aktuell 2×) — falls dieser Slice den
-  View-Lesepfad berührt, wäre das ein drittes Auftreten. **Ausgang:** wird
-  bei Closure eingetragen.
+  View-Lesepfad berührt, wäre das ein drittes Auftreten.
+  **Ausgang: entfallen** — `AcknowledgeConsumer` liest nicht über
+  `cdc.consumer_status`, ausschließlich über den Use-Case-Weg (real
+  geprüft, `verify-slice-022.md` Punkt 3 der Planner-Closure-Liste); kein
+  drittes Auftreten.
+- Der neue Zugriffsweg nutzt dieselbe gemeinsame Instanz-DSN wie
+  Store-/Aktivierungs-/Stream-Verbindung und `RegisterConsumer`
+  (`slice-021`), statt der `cdc_admin`-Rolle (`BEO-PGC/rollen-verdrahtung`)
+  — Folge des bestehenden, unveränderten Verdrahtungsstands, keine
+  Neuverschärfung durch diesen Slice; im ursprünglichen Plan nicht
+  benannt, nachgetragen nach `verify-slice-022.md` V-1.
+  **Ausgang: weiter offen** → `BEO-PGC/rollen-verdrahtung`
+  (`evidence/slice-022.md` ergänzt, dritter Vorgang, Zähler jetzt 3× —
+  Lese-Schritt/Ausgang-Zuweisung fällig bei `welle-6`-Closure, da
+  `slice-022` einer Welle angehört).
 
 ## 7. Closure-Notiz
 
@@ -173,18 +189,44 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Verifier hat unabhängig vom Reviewer einen
+  eigenen Mutationstest gegen die Vorwärts-Invariante gefahren (nicht nur
+  dessen Ergebnis übernommen) und real dieselbe rote Stelle reproduziert —
+  doppelte, unabhängige Bestätigung desselben Kernverhaltens. Das
+  kanalgenerische Architect-Verdikt aus `slice-021` hat einen kompletten
+  zweiten Slice ohne neuen Architect-Rundlauf getragen.
+- **Was ging anders als geplant:** `internal/bootstrap/acknowledge_test.go`
+  und `tools/harness/run-store-tests.sh` waren nicht im ursprünglichen
+  §3-Plan (Plan-Nachzug im selben Implementer-Lauf). Der Reviewer fand
+  F-1 (MEDIUM, 2. Auftreten derselben Klasse wie `review-slice-021` F-1),
+  F-2 (MEDIUM, Test-Isolations-Symptom-Fix) und F-3 (LOW,
+  unquoted Shell-Variable). F-1/F-3 in einer Fixrunde geschlossen
+  (`8c33e94`); F-2 bewusst nicht gefixt — siehe Beobachtungs-Register
+  unten. Der Verifier fand zusätzlich V-1 (MEDIUM): dieser Slice
+  reproduziert `BEO-PGC/rollen-verdrahtung` ein drittes Mal, was §6 im
+  ursprünglichen Plan nicht benannte — nachgetragen. V-2 (LOW, wie schon
+  bei `slice-021`) ist erneut ein themenfremder Lastenheft-CR
+  (`9f5030d`), der zeitlich zwischen den Slice-Commits landete — kein
+  Bezug zu diesem Slice, siehe `welle-6.md` §Vermerk für den
+  Trigger-Audit bei Closure.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-022.md`
+  in `BEO-PGC/rollen-verdrahtung` ergänzt — Zähler steht jetzt bei 3×,
+  Lese-Schritt/Ausgang-Zuweisung fällig bei `welle-6`-Closure.
+  `BEO-PGC/lese-doppelquelle` nicht berührt (Risiko entfallen, siehe §6).
+  F-2 (Test-Isolation gegen geteilten Live-Zustand,
+  `review-slice-022.md`) ist ein Kandidat für einen **neuen**
+  Register-Eintrag (bereits zwei unabhängige Workarounds im Repo für
+  dasselbe Grundmuster: Dateinamen-Sortierung in `sqlviews_test.go`,
+  Paket-Serialisierung in `run-store-tests.sh`) — als eigener, neuer
+  Eintrag `BEO-PGC/test-isolation-geteilter-zustand` angelegt (1×, dieser
+  Vorgang), nicht rückwirkend auf frühere Vorgänge gezählt, da hier zum
+  ersten Mal als Register-Beobachtung benannt.
+- **Folge-Slices:** Keine.
+- **Risiken aus §6:** `lese-doppelquelle` — entfallen (kein
+  View-Lesepfad berührt); `rollen-verdrahtung` — weiter offen →
+  `BEO-PGC/rollen-verdrahtung` (siehe oben).
+- **Drei Paarungen:** Dieser Slice gehört zu `welle-6` — die Paarungen
+  prüft die Welle-Closure, nicht dieser Slice (Modul 6/8).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

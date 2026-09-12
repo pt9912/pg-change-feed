@@ -116,6 +116,23 @@ ein Folge-ADR fällig wird — unabhängig vom Ausgang ohne Auswirkung auf
 `slice-021`/`slice-022`, die bereits auf CLI festgelegt sind
 (`docs/plan/adr/architect-review-slice-021.md` §3, kanalgenerisch).
 
+`LH-FA-SST-007` (Benachrichtigung über NATS, ebenfalls ein Lastenheft-CR
+außerhalb dieser Welle) landete während `slice-022`s Umsetzung auf `main`
+— dasselbe Muster wie oben, ohne dass ein bestehendes ADR einen Trigger
+trägt, der wörtlich auf einen Benachrichtigungsweg zielt
+(`docs/reviews/verify-slice-022.md` V-2). Beide Funde zusammen (`slice-021`
+V-1, `slice-022` V-2) sind das zweite bzw. dritte Auftreten des Musters
+„Lastenheft-CR landet im laufenden Slice-Commit-Fenster" — der
+Trigger-Audit hält das als Prozessbeobachtung fest, unabhängig vom
+jeweiligen ADR-Ausgang.
+
+Der Lese-Schritt dieser Welle (Modul 6, Closure-Schritt 3) liest
+außerdem `BEO-PGC/rollen-verdrahtung`: `slice-022` hat den dritten,
+unabhängigen Vorgang beigetragen (`evidence/slice-022.md`), die
+3×-Schwelle ist damit erreicht — der Eintrag bekommt bei dieser
+Welle-Closure seinen Ausgang (verkörpert/geplant/gestrichen), nicht mehr
+nur `weiter offen` ohne Zuweisung.
+
 ## 7. Closure-Notiz
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
