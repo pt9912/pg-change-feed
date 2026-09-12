@@ -14,7 +14,7 @@ DoD dieses einzelnen Slice hinaus.
 **Berührte Spec-Stellen:** [`SPEC-001`](../../../../spec/pflichtenheft.md)
 (`cdc.transaction.committed_at`)
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-12.
 
