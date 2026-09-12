@@ -49,7 +49,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| *(keine geplanten Wellen)* | — | — | — |
+| welle-6 — Consumer-Zugriffsweg | Kein Slice in `in-progress/`, `make gates` grün auf `main` | Architect-Entscheidung (ADR) zum Zugriffsweg für Consumer-Registrierung/-Bestätigung, danach Umsetzungs-Slice(s) für [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md)/[`004.a`](../../../../spec/pflichtenheft.md) | M |
 
 ## Meilensteine
 
