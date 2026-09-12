@@ -59,3 +59,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0046 | SQL-Driving-Adapter: Lese-Views direkt, Schreiben über Ports | Accepted | 2026-09-10 | [0046-sql-driving-adapter-lese-schreib-trennung.md](0046-sql-driving-adapter-lese-schreib-trennung.md) |
 | ADR-0047 | Rollen-spezifische DSN-Verdrahtung (→ ADR-0048, teilweise) | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |
 | ADR-0048 | Heartbeat-Grant-Korrektur (SELECT-Ergänzung) | Accepted | 2026-09-12 | [0048-heartbeat-grant-korrektur-select-ergaenzung.md](0048-heartbeat-grant-korrektur-select-ergaenzung.md) |
+| ADR-0049 | Replication-Fehlerklassen-Trennung und WAL-Rückstand-Schwellen | Accepted | 2026-09-12 | [0049-replication-fehlerklassen-schwellen.md](0049-replication-fehlerklassen-schwellen.md) |
