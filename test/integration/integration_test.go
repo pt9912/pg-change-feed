@@ -406,8 +406,9 @@ func changeRowID(t *testing.T, change model.Change) string {
 // desselben Datensatzes (`LH-FA-REA-002`…`006`). Die Zeilen-ID ist
 // isoliert von den übrigen Testfällen dieser Datei auf derselben Tabelle
 // (id=1 in TestMVPUpdateOldImageWithFullReplicaIdentity, id=90/91 im
-// nachgelagerten Lasttest-Beleg von run-integration-tests.sh) — die
-// Lesung filtert auf den Feldwert, nicht auf die Testreihenfolge.
+// nachgelagerten Lasttest-Beleg und id=95/96 im CLI-E2E-Abschnitt, beide in
+// run-integration-tests.sh) — die Lesung filtert auf den Feldwert, nicht auf
+// die Testreihenfolge.
 func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
 	env := newMVPEnv(t, "feed_mvp_full")
 	ctx := context.Background()
