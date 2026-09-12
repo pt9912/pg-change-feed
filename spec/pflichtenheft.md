@@ -75,6 +75,34 @@ Tabelle; aktualisierte Publication/Slot-Verwaltung.
    im MVP explizit als nicht unterstützt behandelt (Lastenheft fordert
    TRUNCATE nicht, §5 Out-of-Scope).
 
+### LH-FA-CON-001.a — Registrierung eines Consumers: Zugriffsweg offen
+
+**Eingabe:** Consumer-Name. **Ausgabe:** registrierter Consumer.
+
+Die Registrierungslogik (Ablehnung eines bereits vergebenen Namens,
+Erzeugung der Consumer-Kennung) ist als eigenständig testbare Einheit
+umgesetzt, aber **ohne einen von außen erreichbaren Zugriffsweg**: Eine
+externe Anwendung kann sich heute über keinen unterstützten Kanal (CLI,
+Netzwerkschnittstelle) registrieren. Ein direktes Schreiben der
+CDC-Speichertabelle (`SPEC-001`) am Anwendungsdienst vorbei ist möglich,
+umgeht aber jede künftige Prüfung dieser Logik. Welcher Zugriffsweg den
+Aufruf trägt (CLI-Unterbefehl, Netzwerkschnittstelle, ein anderer
+Mechanismus), ist eine offene technische Frage.
+
+### LH-FA-CON-004.a — Bestätigung einer Position: Zugriffsweg offen, Vorwärts-Invariante nicht durchgesetzt
+
+**Eingabe:** Consumer-Kennung, zu bestätigende Position. **Ausgabe:**
+aktualisierte Consumer-Position.
+
+Derselbe Befund wie LH-FA-CON-001.a: die Bestätigungslogik trägt die
+Vorwärts-Invariante (eine Bestätigung bewegt die Position nur vorwärts,
+nie zurück) als eigenständig getestete Prüfung, aber ohne von außen
+erreichbaren Zugriffsweg. Ein direktes Schreiben der
+Consumer-Positions-Tabelle (`SPEC-001`) umgeht diese Invariante
+vollständig — sie ist an keiner anderen Stelle (auch nicht im
+Datenbankschema selbst) durchgesetzt. Zugriffsweg wie LH-FA-CON-001.a
+offen.
+
 ### LH-FA-REA-004.a — Deterministische Sortierung
 
 **Eingabe:** Positionsbereich bzw. Startposition, Limit, optionaler
@@ -265,3 +293,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 |---|---|
 | 2026-09-09 | Initial — Technik-Inhalt überführt aus dem zurückgezogenen Pflichtenheft-Entwurf (Git: angelegt in c70ee1c, zurückgezogen in 5a6f8ea); Algorithmen, CDC-Schema, Fehlerklassen, Metriken, externe Verträge |
 | 2026-09-09 | SPEC-015 ergänzt: eigenständiges Executable — Cross-Compile Linux amd64/arm64 primär, darwin/windows perspektivisch, `CGO_ENABLED=0`; Deployment-Form neben SPEC-011 (OCI) |
+| 2026-09-12 | LH-FA-CON-001.a und LH-FA-CON-004.a ergänzt: Registrierungs- und Bestätigungslogik sind eigenständig getestet, aber ohne von außen erreichbaren Zugriffsweg — die Wahl des Zugriffswegs bleibt eine offene technische Frage |
