@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-7 — Replication-Schwellen-Überwachung](../welle-7.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -87,8 +89,9 @@ flowchart LR
     W4[welle-4: Observability-Vervollständigung]
     W5[welle-5: Realer CDC-Capture-Lag]
     W6[welle-6: Consumer-Zugriffsweg]
+    W7[welle-7: Replication-Schwellen-Überwachung]
 
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7
 ```
 
 ## Abgeschlossene Wellen
