@@ -2,7 +2,7 @@
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
 
-**Eingang:** [`docs/plan/planning/welle-6.md`](../planning/welle-6.md) §1–§6,
+**Eingang:** [`docs/plan/planning/welle-6.md`](../planning/done/welle-6.md) §1–§6,
 §Vermerk für den Trigger-Audit bei Closure ·
 [`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../planning/done/slice-021-consumer-registrierung-zugriffsweg.md),
 [`docs/plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md`](../planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md)

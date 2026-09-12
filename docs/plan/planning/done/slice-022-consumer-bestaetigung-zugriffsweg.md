@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-6`](../welle-6.md) — die Ende-zu-Ende-Belegpflicht (externer
+**Welle:** [`welle-6`](welle-6.md) — die Ende-zu-Ende-Belegpflicht (externer
 Consumer durchläuft Registrierung + Bestätigung ausschließlich über den
 neuen Zugriffsweg) übersteigt, was dieser Slice allein beweist.
 

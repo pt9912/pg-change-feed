@@ -18,8 +18,8 @@ zwei Positionen, nicht drei.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`LH-FA-CON-001.a`](../../../spec/pflichtenheft.md) und
-[`LH-FA-CON-004.a`](../../../spec/pflichtenheft.md) sind seit `slice-009`
+[`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) und
+[`LH-FA-CON-004.a`](../../../../spec/pflichtenheft.md) sind seit `slice-009`
 (`welle-3`) als benannte Spec-Lücke geführt: Registrierungs- und
 Bestätigungslogik für Consumer sind eigenständig getestete Einheiten
 (`internal/application/usecase`), aber ohne einen von außen erreichbaren
@@ -70,8 +70,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-021 | Consumer-Registrierung: Zugriffsweg (ADR) + Verdrahtung | [`LH-FA-CON-001.a`](../../../spec/pflichtenheft.md) |
-| slice-022 | Positions-Bestätigung über denselben Zugriffsweg | [`LH-FA-CON-004.a`](../../../spec/pflichtenheft.md) |
+| slice-021 | Consumer-Registrierung: Zugriffsweg (ADR) + Verdrahtung | [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) |
+| slice-022 | Positions-Bestätigung über denselben Zugriffsweg | [`LH-FA-CON-004.a`](../../../../spec/pflichtenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -90,7 +90,7 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - **Administrative Entfernung von Consumern**
-  ([`LH-FA-CON-006`](../../../spec/lastenheft.md)) über denselben
+  ([`LH-FA-CON-006`](../../../../spec/lastenheft.md)) über denselben
   Zugriffsweg — anderer Vorgang, keine benannte Spec-Lücke; folgt bei
   Bedarf mit eigenem Slice.
 - **Least-Privilege-Rollen-Adoption des neuen Zugriffswegs**
@@ -106,9 +106,9 @@ der Closure-Trigger unerreichbar wird.
 
 ## Vermerk für den Trigger-Audit bei Closure
 
-[`LH-FA-SST-006`](../../../spec/pflichtenheft.md) (konkrete HTTP-/gRPC-API,
+[`LH-FA-SST-006`](../../../../spec/pflichtenheft.md) (konkrete HTTP-/gRPC-API,
 Lastenheft-CR außerhalb dieser Welle) erfüllt wörtlich
-[`ADR-0020`](../adr/0020-http-grpc-optional.md)s Re-Evaluierungs-Trigger
+[`ADR-0020`](../../adr/0020-http-grpc-optional.md)s Re-Evaluierungs-Trigger
 („Beobachtbarer Bedarf eines API-Consumers — sichtbar als Anforderung im
 Lastenheft-Change"). Der Trigger-Audit dieser Welle (Modul 6,
 Closure-Schritt 2) prüft deshalb explizit, ob `ADR-0020` weiterhin gilt oder
