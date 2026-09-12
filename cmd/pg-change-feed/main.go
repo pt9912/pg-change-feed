@@ -30,16 +30,17 @@ func main() {
 		// einzige Aufruf, den Compose innerhalb dieses Containers
 		// ausführen kann, ist das Binary selbst (`CMD`-Form ohne Shell).
 		// Dieselben Umgebungs-Vorbedingungen wie der reguläre Lauf
-		// (`ConfigFromEnv`) tragen DSN und Quelle; Publication/Slot/
-		// Tabellen bleiben ungenutzt, die Vorbedingungsprüfung teilt sich
-		// beide Läufe trotzdem, statt eine zweite Lese-Funktion zu
-		// pflegen.
+		// (`ConfigFromEnv`) tragen die drei rollen-spezifischen DSNs und
+		// die Quelle (`ADR-0047`) — der Healthcheck-Lauf selbst nutzt nur
+		// `cfg.ReaderDSN`; Publication/Slot/Tabellen bleiben ungenutzt, die
+		// Vorbedingungsprüfung teilt sich beide Läufe trotzdem, statt eine
+		// zweite Lese-Funktion zu pflegen.
 		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 			os.Exit(1)
 		}
-		os.Exit(bootstrap.Healthcheck(context.Background(), cfg.DSN, cfg.Source))
+		os.Exit(bootstrap.Healthcheck(context.Background(), cfg.ReaderDSN, cfg.Source))
 	}
 	if len(os.Args) >= 2 && os.Args[1] == "register-consumer" {
 		// Der Sondermodus registriert einen Consumer über

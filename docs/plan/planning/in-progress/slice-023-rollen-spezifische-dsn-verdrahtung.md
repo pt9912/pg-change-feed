@@ -89,21 +89,25 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-QA-SEC-001`/`002`/`003` erfüllt: Jeder Verdrahtungspfad in
+- [x] `LH-QA-SEC-001`/`002`/`003` erfüllt: Jeder Verdrahtungspfad in
       `internal/bootstrap/wiring.go` verwendet die zur Aufgabe passende Rolle,
       nicht mehr die gemeinsame Instanz-DSN — real getestet (z. B.
       Verbindungsaufbau mit `cdc_reader`-Rolle scheitert an einem
-      schreibenden Aufruf).
-- [ ] Konfigurationsvertrag erweitert gemäß [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md):
+      schreibenden Aufruf). Beleg: `internal/bootstrap/roles_wiring_test.go`
+      (`TestCdcReaderLoginConnectionRejectsWrite`,
+      `TestCdcCaptureLoginConnectionRejectsAdminWrite`,
+      `TestCdcAdminHeartbeatWriteRequiresGrant`), real gegen PostgreSQL
+      dreimal in Folge grün (`make test-store`).
+- [x] Konfigurationsvertrag erweitert gemäß [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md):
       `CDC_CAPTURE_DSN`, `CDC_ADMIN_DSN`, `CDC_READER_DSN` ersetzen
       `CDC_SOURCE_DSN` ersatzlos (Breaking Change, kein Fallback —
       Greenfield, kein veröffentlichtes Image) — `compose.yaml` und
       `docs/user/benutzerhandbuch.md` entsprechend nachgezogen.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für den erweiterten Konfigurationsvertrag
+- [x] Doku-Update für den erweiterten Konfigurationsvertrag
       (`docs/user/benutzerhandbuch.md`, `compose.yaml`) — bereits Teil des
       ersten DoD-Punkts, hier kein eigener Liefer-Punkt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -135,6 +139,34 @@ Der Implementer erweitert diese Liste im ersten Lauf um alle
 Driven-/Driving-Adapter-Konstruktoren, die heute `cfg.DSN` nutzen (u. a.
 `RegisterConsumer`, `AcknowledgeConsumer`, der Stream-Adapter, der
 `EnableTableUseCase`-Pfad) — vollständig zu identifizieren, nicht zu raten.
+
+**Plan-Nachzug (Implementer-Lauf, vor dem Sensor-Lauf eingetragen —
+`modul-09-implementierung.md` §Plan-Nachzug im selben Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/bootstrap/wiring.go` (kein eigenes `config.go`) | Klarstellung | `Config`/`ConfigFromEnv` liegen bereits in `wiring.go` (Composition Root, `ADR-0026`) — kein separates `config.go` im Bestand, deshalb kein neuer Dateiname |
+| `cmd/pg-change-feed/main.go` | update | `--healthcheck`-Aufruf verwendet `cfg.ReaderDSN` statt der entfallenen `cfg.DSN` |
+| `internal/bootstrap/wiring_test.go`, `register_test.go`, `acknowledge_test.go`, `welle6_endtoend_test.go` | update | `bootstrap.Config{DSN: …}` auf `AdminDSN`/drei-DSN-Form nachgezogen (Feldumbenennung) |
+| `internal/bootstrap/roles_wiring_test.go` | neu | reale Verbindungsaufbau-Tests mit anmeldefähigen Test-Login-Identitäten je Rolle (`ADR-0047` §Fitness Function, beide Zeilen) — Login-Rolle ist Test-Fixture, kein Rollen-DDL |
+| `harness/README.md` | update | ENV-Vertrag-Zeile für `make test-integration` auf die drei neuen DSN-Variablen umgestellt (öffentlicher Vertrag berührt, Workflow-Schritt 17) |
+| `harness/image-hash.txt` | update | `make image` neu gelaufen (Build-Kontext geändert — Go-Quellen), neuer Lauf-Beleg-Digest |
+
+**Korrektur ggü. Plan-Text (`tools/schema/nacharbeit-roles.sql`):** Der
+Slice-Plan-Text (und `ADR-0047` Kontext-Befund 3/Konsequenzen) nennt
+`GRANT INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin`. Real gegen
+PostgreSQL getestet (`internal/bootstrap/roles_wiring_test.go`,
+`TestCdcAdminHeartbeatWriteRequiresGrant`) zeigte: `INSERT, UPDATE` allein
+lässt den Heartbeat-Schreibpfad weiterhin mit SQLSTATE 42501 scheitern —
+PostgreSQL verlangt für den `ON CONFLICT (…) DO UPDATE`-Zweig zusätzlich
+`SELECT` auf der Zieltabelle, auch wenn die `SET`-Klausel selbst keinen
+bestehenden Spaltenwert liest. Der tatsächliche Grant lautet deshalb
+`GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin` — eine
+Ergänzung um ein drittes Recht auf derselben einen Tabelle, keine Änderung
+der Rollen-Zuordnung selbst (`ADR-0047`s Entscheidung bleibt unberührt;
+diese Korrektur betrifft nur die SQL-Mechanik der bereits beschlossenen
+Lückenschließung). Kandidat für einen Steering-Loop-Eintrag bei der
+Planner-Closure (§7).
 
 ## 4. Trigger
 

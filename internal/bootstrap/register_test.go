@@ -69,7 +69,7 @@ func TestRegisterConsumerEndToEnd(t *testing.T) {
 
 	var code int
 	output := captureStdout(t, func() {
-		code = bootstrap.RegisterConsumer(ctx, bootstrap.Config{DSN: dsn}, name)
+		code = bootstrap.RegisterConsumer(ctx, bootstrap.Config{AdminDSN: dsn}, name)
 	})
 	if code != 0 {
 		t.Fatalf("erste Registrierung: Exit-Code = %d, wollen 0", code)
@@ -90,7 +90,7 @@ func TestRegisterConsumerEndToEnd(t *testing.T) {
 	// Zugriffsweg bleibt idempotent und meldet weiterhin Exit-Code 0, mit
 	// einer eigenen Ausgabe-Zeile für den bereits registrierten Stand.
 	output = captureStdout(t, func() {
-		code = bootstrap.RegisterConsumer(ctx, bootstrap.Config{DSN: dsn}, name)
+		code = bootstrap.RegisterConsumer(ctx, bootstrap.Config{AdminDSN: dsn}, name)
 	})
 	if code != 0 {
 		t.Fatalf("erneute Registrierung: Exit-Code = %d, wollen 0", code)
@@ -113,7 +113,7 @@ func TestRegisterConsumerEndToEnd(t *testing.T) {
 func TestRegisterConsumerReportsStorageFailure(t *testing.T) {
 	var code int
 	output := captureStderr(t, func() {
-		code = bootstrap.RegisterConsumer(context.Background(), bootstrap.Config{DSN: "postgres://x:x@127.0.0.1:1/db?connect_timeout=1"}, "irrelevant")
+		code = bootstrap.RegisterConsumer(context.Background(), bootstrap.Config{AdminDSN: "postgres://x:x@127.0.0.1:1/db?connect_timeout=1"}, "irrelevant")
 	})
 	if code != 1 {
 		t.Fatalf("Exit-Code = %d, wollen 1 (Verdrahtungsfehler)", code)
@@ -139,7 +139,7 @@ func TestRegisterConsumerReportsDomainFailure(t *testing.T) {
 
 	var code int
 	output := captureStderr(t, func() {
-		code = bootstrap.RegisterConsumer(context.Background(), bootstrap.Config{DSN: dsn}, "")
+		code = bootstrap.RegisterConsumer(context.Background(), bootstrap.Config{AdminDSN: dsn}, "")
 	})
 	if code != 1 {
 		t.Fatalf("Exit-Code = %d, wollen 1 (Domänenfehler)", code)

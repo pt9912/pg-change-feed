@@ -116,7 +116,7 @@ func TestWelle6ConsumerFullCycleEndToEnd(t *testing.T) {
 		}
 	}
 
-	cfg := bootstrap.Config{DSN: dsn, Source: sourceID}
+	cfg := bootstrap.Config{AdminDSN: dsn, Source: sourceID}
 
 	// 1. Registrieren — der externe Zugriffsweg aus `slice-021`.
 	if code := bootstrap.RegisterConsumer(ctx, cfg, consumerName); code != 0 {

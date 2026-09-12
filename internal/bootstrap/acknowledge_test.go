@@ -52,7 +52,7 @@ func TestAcknowledgeConsumerEndToEnd(t *testing.T) {
 		t.Fatalf("Quelle-Zeile: %v", err)
 	}
 
-	cfg := bootstrap.Config{DSN: dsn, Source: source}
+	cfg := bootstrap.Config{AdminDSN: dsn, Source: source}
 	if code := bootstrap.RegisterConsumer(ctx, cfg, name); code != 0 {
 		t.Fatalf("Consumer-Registrierung (Vorbedingung): Exit-Code = %d, wollen 0", code)
 	}
@@ -153,7 +153,7 @@ func TestAcknowledgeConsumerReportsUnregistered(t *testing.T) {
 
 	var code int
 	output := captureStderr(t, func() {
-		code = bootstrap.AcknowledgeConsumer(ctx, bootstrap.Config{DSN: dsn, Source: "cli-acknowledge-source"}, name, 100)
+		code = bootstrap.AcknowledgeConsumer(ctx, bootstrap.Config{AdminDSN: dsn, Source: "cli-acknowledge-source"}, name, 100)
 	})
 	if code != 1 {
 		t.Fatalf("Exit-Code = %d, wollen 1 (nicht registriert)", code)
@@ -188,7 +188,7 @@ func TestAcknowledgeConsumerReportsInvalidPosition(t *testing.T) {
 	var code int
 	output := captureStderr(t, func() {
 		code = bootstrap.AcknowledgeConsumer(context.Background(),
-			bootstrap.Config{DSN: dsn, Source: "cli-acknowledge-source"},
+			bootstrap.Config{AdminDSN: dsn, Source: "cli-acknowledge-source"},
 			"cli-acknowledge-invalid-position", 0)
 	})
 	if code != 1 {
@@ -217,7 +217,7 @@ func TestAcknowledgeConsumerReportsEmptyIdentifier(t *testing.T) {
 	var code int
 	output := captureStderr(t, func() {
 		code = bootstrap.AcknowledgeConsumer(context.Background(),
-			bootstrap.Config{DSN: dsn, Source: "cli-acknowledge-source"},
+			bootstrap.Config{AdminDSN: dsn, Source: "cli-acknowledge-source"},
 			"", 100)
 	})
 	if code != 1 {
@@ -238,7 +238,7 @@ func TestAcknowledgeConsumerReportsEmptyIdentifier(t *testing.T) {
 func TestAcknowledgeConsumerReportsStorageFailure(t *testing.T) {
 	var code int
 	output := captureStderr(t, func() {
-		code = bootstrap.AcknowledgeConsumer(context.Background(), bootstrap.Config{DSN: "postgres://x:x@127.0.0.1:1/db?connect_timeout=1"}, "irrelevant", 1)
+		code = bootstrap.AcknowledgeConsumer(context.Background(), bootstrap.Config{AdminDSN: "postgres://x:x@127.0.0.1:1/db?connect_timeout=1"}, "irrelevant", 1)
 	})
 	if code != 1 {
 		t.Fatalf("Exit-Code = %d, wollen 1 (Verdrahtungsfehler)", code)

@@ -51,7 +51,17 @@ services:
     # den EnableTable Use Case beim Start (ADR-0028, LH-FA-CFG-001.a);
     # den Slot legt der Stream beim Start selbst an.
     environment:
-      CDC_SOURCE_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
+      # Drei rollen-spezifische DSNs statt einer gemeinsamen Instanz-DSN
+      # (ADR-0047, Breaking Change ohne Fallback): die Test-Umgebung
+      # verbindet sich mit dem Superuser `postgres`, weil die drei
+      # Least-Privilege-Rollen (cdc_capture/cdc_admin/cdc_reader,
+      # tools/schema/nacharbeit-roles.sql) NOLOGIN bleiben und diese
+      # Compose-Datei keine eigenen Login-Identitäten je Rolle anlegt —
+      # die reale Rollentrennung belegen die Testcontainer-Tests
+      # (internal/bootstrap, make test-store), nicht dieser Integrationslauf.
+      CDC_CAPTURE_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
+      CDC_ADMIN_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
+      CDC_READER_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
       CDC_SOURCE_ID: src-mvp
       CDC_PUBLICATION: pub_pgc_mvp
       CDC_SLOT: slot_pgc_mvp

@@ -19,7 +19,9 @@ func getenv(values map[string]string) func(string) string {
 // Verdrahtung startet; die Tests entfernen oder verletzen je ein Element.
 func vollständigeVerdrahtung() map[string]string {
 	return map[string]string{
-		"CDC_SOURCE_DSN":  "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_CAPTURE_DSN": "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_ADMIN_DSN":   "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_READER_DSN":  "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
 		"CDC_SOURCE_ID":   "src-1",
 		"CDC_PUBLICATION": "pub_1",
 		"CDC_SLOT":        "slot_1",
@@ -33,7 +35,7 @@ func vollständigeVerdrahtung() map[string]string {
 // die Fehlerzeile nennt den ENV-Namen, nie den Wert.
 func TestConfigFromEnvOhneVorbedingung(t *testing.T) {
 	for _, missing := range []string{
-		"CDC_SOURCE_DSN", "CDC_SOURCE_ID", "CDC_PUBLICATION", "CDC_SLOT",
+		"CDC_CAPTURE_DSN", "CDC_ADMIN_DSN", "CDC_READER_DSN", "CDC_SOURCE_ID", "CDC_PUBLICATION", "CDC_SLOT",
 	} {
 		values := vollständigeVerdrahtung()
 		delete(values, missing)
@@ -47,7 +49,7 @@ func TestConfigFromEnvOhneVorbedingung(t *testing.T) {
 		if !strings.Contains(err.Error(), missing) {
 			t.Fatalf("%s fehlt: Fehlerzeile nennt den ENV-Namen nicht: %v", missing, err)
 		}
-		if cfg.DSN != "" || len(cfg.Tables) != 0 {
+		if cfg.CaptureDSN != "" || cfg.AdminDSN != "" || cfg.ReaderDSN != "" || len(cfg.Tables) != 0 {
 			t.Fatalf("%s fehlt: Verdrahtung liest trotz Verweigerung Teileingabe", missing)
 		}
 	}
@@ -102,7 +104,9 @@ func TestConfigFromEnvLiestAktivierung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("vollständige Vorbedingung: %v", err)
 	}
-	if cfg.DSN != values["CDC_SOURCE_DSN"] ||
+	if cfg.CaptureDSN != values["CDC_CAPTURE_DSN"] ||
+		cfg.AdminDSN != values["CDC_ADMIN_DSN"] ||
+		cfg.ReaderDSN != values["CDC_READER_DSN"] ||
 		string(cfg.Source) != "src-1" ||
 		cfg.Publication != "pub_1" ||
 		cfg.Slot != "slot_1" {

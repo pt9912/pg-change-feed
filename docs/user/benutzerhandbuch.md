@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.0
+Version: 1.1
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-12
 
@@ -64,16 +64,40 @@ Das legt alle `cdc.*`-Tabellen, die drei Least-Privilege-Rollen
 
 Es gibt keinen eigenen Login für PG Change Feed — der Zugriff läuft über
 die PostgreSQL-Verbindung selbst. Der Schema-Rollout legt drei
-Gruppenrollen an, die Sie einer eigenen Login-Rolle zuweisen können:
+Gruppenrollen an; alle drei bleiben `NOLOGIN` (Gruppenrollen ohne eigenes
+Passwort). Der Feed-Container verbindet sich rollen-spezifisch — jede der
+drei Verbindungs-Umgebungsvariablen ([Konfiguration](#5-konfiguration))
+trägt eine eigene, anmeldefähige Login-Identität, die Sie der passenden
+Gruppenrolle zuweisen:
 
-| Rolle | Zweck |
-|---|---|
-| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen) |
-| `cdc_capture` | Vom Feed-Container selbst genutzt; nicht für externe Verbindungen vorgesehen |
+| Rolle | Zweck | Umgebungsvariable |
+|---|---|---|
+| `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`) | `CDC_ADMIN_DSN` |
+| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) | `CDC_READER_DSN` |
+
+```sql
+CREATE ROLE feed_capture_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_capture;
+CREATE ROLE feed_admin_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_admin;
+CREATE ROLE feed_reader_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_reader;
+```
+
+Für einen bereits bestehenden Login genügt die Mitgliedschaft:
 
 ```sql
 GRANT cdc_reader TO ihr_login;
+```
+
+**Betriebs-Hinweis (`REPLICATION`-Attribut):** PostgreSQL vererbt
+Rollen-*Attribute* (`LOGIN`, `REPLICATION`, …) nicht über Mitgliedschaft —
+nur Objekt-Privilegien (`GRANT SELECT`/`INSERT`/…) tun das. Das
+`REPLICATION`-Attribut liegt auf der Gruppenrolle `cdc_capture` selbst;
+eine Login-Identität, die nur `IN ROLE cdc_capture` erhält, kann dadurch
+**keine** Replication-Verbindung aufbauen. Setzen Sie das Attribut
+zusätzlich direkt auf die Login-Identität hinter `CDC_CAPTURE_DSN`:
+
+```sql
+ALTER ROLE feed_capture_login REPLICATION;
 ```
 
 ## 3. Erste Schritte
@@ -96,7 +120,9 @@ Quelltabelle existiert bereits.
 
    ```bash
    docker run --rm \
-     -e CDC_SOURCE_DSN="postgres://user:pass@host:5432/db?sslmode=disable" \
+     -e CDC_CAPTURE_DSN="postgres://feed_capture_login:pass@host:5432/db?sslmode=disable" \
+     -e CDC_ADMIN_DSN="postgres://feed_admin_login:pass@host:5432/db?sslmode=disable" \
+     -e CDC_READER_DSN="postgres://feed_reader_login:pass@host:5432/db?sslmode=disable" \
      -e CDC_SOURCE_ID="meine-quelle" \
      -e CDC_PUBLICATION="pub_meine_quelle" \
      -e CDC_SLOT="slot_meine_quelle" \
@@ -163,9 +189,11 @@ gebundenen Schema-Version.
 
 ### Consumer registrieren
 
-**Voraussetzung:** Zugriff auf dieselbe Instanz-DSN wie der reguläre
-CDC-Lauf (`CDC_SOURCE_DSN`) — eine gesonderte Rolle für diesen Zugriffsweg
-ist nicht verdrahtet.
+**Voraussetzung:** eine Login-Identität für `CDC_ADMIN_DSN` (Mitglied von
+`cdc_admin`, siehe [Zugriff und Rollen](#zugriff-und-rollen)). Der
+Sondermodus liest dieselben Umgebungs-Vorbedingungen wie der reguläre
+Lauf, verbindet sich für den Zugriffsweg selbst aber ausschließlich über
+`CDC_ADMIN_DSN`.
 
 **Vorgehen:** Der Feed-Container trägt einen Sondermodus, der den Aufruf
 über `RegisterConsumerUseCase` führt, statt die CDC-Speichertabellen
@@ -173,7 +201,8 @@ direkt zu schreiben — derselbe Image-Tag wie der Daemon, als einmaliger,
 kurzlebiger Lauf statt als Dauerdienst:
 
 ```bash
-docker run --rm -e CDC_SOURCE_DSN -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
+docker run --rm -e CDC_CAPTURE_DSN -e CDC_ADMIN_DSN -e CDC_READER_DSN \
+  -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
   ghcr.io/pt9912/pg-change-feed:dev register-consumer <name>
 ```
 
@@ -188,9 +217,9 @@ Exit-Code bleibt 0 (Idempotenz, `LH-FA-CON-001` Boundary).
 
 ### Position bestätigen
 
-**Voraussetzung:** Der Consumer ist registriert (siehe oben); Zugriff auf
-dieselbe Instanz-DSN wie der reguläre CDC-Lauf (`CDC_SOURCE_DSN`) — eine
-gesonderte Rolle für diesen Zugriffsweg ist nicht verdrahtet.
+**Voraussetzung:** Der Consumer ist registriert (siehe oben); eine
+Login-Identität für `CDC_ADMIN_DSN` wie bei der Registrierung — derselbe
+Zugriffsweg verbindet sich ausschließlich über `CDC_ADMIN_DSN`.
 
 **Vorgehen:** Derselbe Sondermodus-Mechanismus wie bei der Registrierung
 führt den Aufruf über `AcknowledgeConsumerUseCase`, statt die
@@ -198,7 +227,8 @@ Consumer-Positions-Tabelle direkt zu schreiben — derselbe Image-Tag wie
 der Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
 
 ```bash
-docker run --rm -e CDC_SOURCE_DSN -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
+docker run --rm -e CDC_CAPTURE_DSN -e CDC_ADMIN_DSN -e CDC_READER_DSN \
+  -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
   ghcr.io/pt9912/pg-change-feed:dev acknowledge-consumer <consumer-id> <position>
 ```
 
@@ -234,8 +264,9 @@ LIMIT 500;
 
 Der Container meldet seinen Zustand über den Docker-Healthcheck
 (`docker inspect --format '{{.State.Health.Status}}' <container>`), der
-intern `--healthcheck` ausführt und das Lebenszeichen der Quelle prüft.
-Direkter SQL-Zugriff:
+intern `--healthcheck` ausführt und das Lebenszeichen der Quelle über
+`CDC_READER_DSN` prüft (`SELECT`-Grant der Rolle `cdc_reader` auf
+`cdc.heartbeat`). Direkter SQL-Zugriff:
 
 ```sql
 SELECT source_id, heartbeat_at, age_seconds, error_class FROM cdc.heartbeat;
@@ -277,7 +308,9 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 
 | Variable | Pflicht | Bedeutung |
 |---|---|---|
-| `CDC_SOURCE_DSN` | ja | Verbindung zur Quelle/zum CDC-Speicher |
+| `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream) |
+| `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, `register-consumer`/`acknowledge-consumer`) |
+| `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`) |
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
@@ -385,3 +418,4 @@ MIT — siehe `LICENSE`.
 | Version | Datum | Änderung |
 |---|---|---|
 | 1.0 | 2026-09-12 | Erste Fassung |
+| 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |

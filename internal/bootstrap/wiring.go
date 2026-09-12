@@ -42,9 +42,15 @@ import (
 )
 
 // Die Umgebungs-Namen der Verdrahtungs-Vorbedingungen; sie tragen dieselben
-// Werte wie der Container-Vertrag in compose.yaml.
+// Werte wie der Container-Vertrag in compose.yaml. Die drei DSN-Variablen
+// tragen je eine PostgreSQL-Rolle (`ADR-0047`): `envCaptureDSN` bindet an
+// `cdc_capture`, `envAdminDSN` an `cdc_admin`, `envReaderDSN` an
+// `cdc_reader` — `CDC_SOURCE_DSN` (eine gemeinsame Instanz-DSN für alle
+// Aufrufer) entfällt ersatzlos.
 const (
-	envDSN         = "CDC_SOURCE_DSN"
+	envCaptureDSN  = "CDC_CAPTURE_DSN"
+	envAdminDSN    = "CDC_ADMIN_DSN"
+	envReaderDSN   = "CDC_READER_DSN"
 	envSource      = "CDC_SOURCE_ID"
 	envPublication = "CDC_PUBLICATION"
 	envSlot        = "CDC_SLOT"
@@ -77,13 +83,26 @@ const heartbeatInterval = 5 * time.Second
 // (`ADR-0026`), keine Architekturentscheidung.
 const heartbeatStaleAfter = 3 * heartbeatInterval
 
-// Config trägt die Verdrahtungs-Eingabe: die Verbindung zur Instanz, die
-// Quelle und die CDC-Speicherrollen gleichermaßen trägt (MVP-Schnitt,
-// Abschnitt 1 Lastenheft), die Quelle, die Verwaltungs-Namen Publication
-// und Slot (`LH-FA-CFG-001.a`) und die aktivierten Tabellen mit ihren
-// Port-Kennungen.
+// Config trägt die Verdrahtungs-Eingabe: drei rollen-spezifische
+// Verbindungs-DSNs statt einer gemeinsamen Instanz-DSN (`ADR-0047`) — die
+// Quelle und der CDC-Speicher bleiben dieselbe Instanz (MVP-Schnitt,
+// Abschnitt 1 Lastenheft), die Rollentrennung greift auf Ebene der
+// PostgreSQL-Anmeldung. Dazu die Quelle, die Verwaltungs-Namen
+// Publication und Slot (`LH-FA-CFG-001.a`) und die aktivierten Tabellen
+// mit ihren Port-Kennungen.
 type Config struct {
-	DSN         string
+	// CaptureDSN bindet an die Rolle `cdc_capture` (`ADR-0047`):
+	// Store-Adapter, Replication-Stream und der ACK-Adapter (teilt die
+	// Stream-Verbindung) verbinden sich darüber.
+	CaptureDSN string
+	// AdminDSN bindet an die Rolle `cdc_admin` (`ADR-0047`):
+	// Tabellen-Aktivierung, Heartbeat-Adapter sowie die beiden
+	// CLI-Sondermodi `RegisterConsumer`/`AcknowledgeConsumer` verbinden
+	// sich darüber.
+	AdminDSN string
+	// ReaderDSN bindet an die Rolle `cdc_reader` (`ADR-0047`): der
+	// `--healthcheck`-Lauf verbindet sich darüber.
+	ReaderDSN   string
 	Source      model.SourceID
 	Publication string
 	Slot        string
@@ -100,13 +119,21 @@ type Config struct {
 // über die Klasse `configuration` (ErrConfiguration).
 func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg := Config{
-		DSN:         getenv(envDSN),
+		CaptureDSN:  getenv(envCaptureDSN),
+		AdminDSN:    getenv(envAdminDSN),
+		ReaderDSN:   getenv(envReaderDSN),
 		Source:      model.SourceID(getenv(envSource)),
 		Publication: getenv(envPublication),
 		Slot:        getenv(envSlot),
 	}
-	if cfg.DSN == "" {
-		return Config{}, fmt.Errorf("%w: %s fehlt", ErrConfiguration, envDSN)
+	if cfg.CaptureDSN == "" {
+		return Config{}, fmt.Errorf("%w: %s fehlt", ErrConfiguration, envCaptureDSN)
+	}
+	if cfg.AdminDSN == "" {
+		return Config{}, fmt.Errorf("%w: %s fehlt", ErrConfiguration, envAdminDSN)
+	}
+	if cfg.ReaderDSN == "" {
+		return Config{}, fmt.Errorf("%w: %s fehlt", ErrConfiguration, envReaderDSN)
 	}
 	if cfg.Source == "" {
 		return Config{}, fmt.Errorf("%w: %s fehlt", ErrConfiguration, envSource)
@@ -219,7 +246,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		log.Info(ctx, "pg-change-feed: Lauf regulär beendet")
 	}()
 
-	store, err := postgresstorage.New(ctx, cfg.DSN, postgresstorage.WithLog(log))
+	store, err := postgresstorage.New(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -233,12 +260,13 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// ist idempotent (`LH-FA-CFG-001` Boundary) und trägt den Stand auch
 	// nach einem Container-Neustart nach.
 	// Die Verdrahtung trägt vier Verbindungen gegen dieselbe Instanz —
-	// Store-Pool, Aktivierungs-Pool, Heartbeat-Pool, Stream-Verbindung;
-	// das MVP hält die Adapter-Lebenszyklen getrennt, statt einen Pool
-	// über die Adapter zu teilen. Die Instanz trägt Quelle und
-	// CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft); ein geteilter
-	// Pool ist keine Wirkung dieses Verdrahtungsstands.
-	activation, err := postgresstorage.NewTableActivation(ctx, cfg.DSN, postgresstorage.WithLog(log))
+	// Store-Pool, Aktivierungs-Pool, Heartbeat-Pool, Stream-Verbindung —,
+	// verteilt auf zwei PostgreSQL-Rollen (`ADR-0047`): Store, Stream und
+	// der ACK-Adapter (der die Stream-Verbindung teilt) binden an
+	// `cdc_capture`, Aktivierung und Heartbeat an `cdc_admin`. Das MVP
+	// hält die Adapter-Lebenszyklen getrennt, statt einen Pool über die
+	// Adapter zu teilen.
+	activation, err := postgresstorage.NewTableActivation(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -248,7 +276,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// getrennt von Store- und Aktivierungs-Pool: der Timer-Zug teilt
 	// keine Verbindung und keine Goroutine mit der
 	// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`).
-	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.DSN, postgresstorage.WithLog(log))
+	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
 	}
@@ -285,7 +313,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	}
 
 	stream, err := receive.NewStream(ctx, receive.Config{
-		DSN:         cfg.DSN,
+		DSN:         cfg.CaptureDSN,
 		Source:      cfg.Source,
 		Publication: cfg.Publication,
 		Slot:        cfg.Slot,
@@ -401,11 +429,12 @@ func classifyRunError(err error) model.ErrorClass {
 // unterscheidet sie —, 1 bei Verdrahtungs- oder Domänenfehler. Der Aufruf
 // öffnet eine eigene, kurzlebige Verbindung über denselben
 // `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
-// nutzen würde — kein Bestandteil des Dauerbetriebs. Consumer-Kennung und
-// -Name tragen denselben Wert (`name`); dieser Zugriffsweg trennt beide
-// (noch) nicht.
+// nutzen würde — kein Bestandteil des Dauerbetriebs, gebunden an die Rolle
+// `cdc_admin` (`ADR-0047`: DML auf `consumer`/`consumer_position`).
+// Consumer-Kennung und -Name tragen denselben Wert (`name`); dieser
+// Zugriffsweg trennt beide (noch) nicht.
 func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
-	state, err := postgresstorage.NewConsumerState(ctx, cfg.DSN)
+	state, err := postgresstorage.NewConsumerState(ctx, cfg.AdminDSN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pg-change-feed: register-consumer: %v\n", err)
 		return 1
@@ -439,11 +468,12 @@ func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
 // nicht registrierte Kennung (`outbound.ErrConsumerUnregistered`). Der
 // Aufruf öffnet eine eigene, kurzlebige Verbindung über denselben
 // `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
-// nutzen würde — kein Bestandteil des Dauerbetriebs. Die bestätigte
-// Position trägt dieselbe Quelle wie die laufende Erfassung
+// nutzen würde — kein Bestandteil des Dauerbetriebs, gebunden an die Rolle
+// `cdc_admin` (`ADR-0047`: DML auf `consumer`/`consumer_position`). Die
+// bestätigte Position trägt dieselbe Quelle wie die laufende Erfassung
 // (`cfg.Source`); der Zugriffsweg unterscheidet keine zweite Quelle.
 func AcknowledgeConsumer(ctx context.Context, cfg Config, consumerID string, offset uint64) int {
-	state, err := postgresstorage.NewConsumerState(ctx, cfg.DSN)
+	state, err := postgresstorage.NewConsumerState(ctx, cfg.AdminDSN)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pg-change-feed: acknowledge-consumer: %v\n", err)
 		return 1
@@ -486,7 +516,8 @@ func healthcheckVerdict(age time.Duration) int {
 // (`HEALTH_STATES`) bleibt Sache des lesenden Systems; der Exit-Code
 // trägt nur die binäre Compose-Semantik. Der Aufruf öffnet eine eigene,
 // kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
-// (`Run` oben).
+// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: die
+// View-Lesung deckt sich mit dem `SELECT`-Grant der Rolle `cdc_reader`).
 func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()

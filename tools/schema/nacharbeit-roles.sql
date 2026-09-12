@@ -29,10 +29,14 @@
 --
 -- Grenze: alle drei Rollen bleiben NOLOGIN — sie bündeln Privilegien
 -- (Gruppenrollen), keine Anmelde-Identität mit Passwort. Die Verdrahtung
--- (internal/bootstrap/wiring.go) trägt in diesem Slice-Stand weiterhin
--- eine einzige Instanz-DSN für Store-, Aktivierungs- und
--- Stream-Verbindung; das Binden einzelner Anmelde-Rollen je Adapter ist
--- offenes Risiko dieses Slice (Slice-Plan §6) und Folge-Arbeit.
+-- (internal/bootstrap/wiring.go) bindet jeden Aufrufer über eine eigene
+-- DSN an die zur Aufgabe passende Rolle (CDC_CAPTURE_DSN/CDC_ADMIN_DSN/
+-- CDC_READER_DSN, ADR-0047); der Betreiber legt die anmeldefähige
+-- Login-Identität je Rolle selbst an (`GRANT cdc_reader TO ihr_login;`,
+-- docs/user/benutzerhandbuch.md §2) und setzt das REPLICATION-Attribut
+-- zusätzlich direkt auf die CDC_CAPTURE_DSN-Login-Identität
+-- (`ALTER ROLE <login> REPLICATION;`) — PostgreSQL vererbt
+-- Rollen-Attribute nicht über Mitgliedschaft (ADR-0047 Kontext-Befund 2).
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'cdc_capture') THEN
@@ -86,9 +90,23 @@ $$;
 -- Eigentümer-Rolle auf (`GRANT <eigentümer-rolle> TO cdc_admin`), bevor
 -- die Tabelle aktiviert wird — dieselbe Klasse offener Vorbedingung wie
 -- REPLICA IDENTITY (tools/harness/run-integration-tests.sh). Diese
--- Vorbedingung wird erst wirksam, sobald wiring.go die Rolle tatsächlich
--- einsetzt (offenes Risiko, Slice-Plan §6); bis dahin ist sie dokumentiert
--- und getestet, nicht angenommen.
+-- Vorbedingung gilt für jede aktivierte Tabelle, seit wiring.go die Rolle
+-- über CDC_ADMIN_DSN tatsächlich einsetzt (ADR-0047); dokumentiert und
+-- getestet (roles_test.go), nicht angenommen.
 
 -- cdc_reader: ausschließlich die drei bestehenden Lese-Views.
 GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes TO cdc_reader;
+
+-- Lückenschließung (ADR-0047 Kontext-Befund 3): cdc.process_heartbeat
+-- trug bislang keinen Grant an irgendeine der drei Rollen — der
+-- Heartbeat-Adapter (postgresstorage.NewHeartbeat, Beat/Fault) schreibt
+-- über CDC_ADMIN_DSN mit `INSERT … ON CONFLICT (source_id) DO UPDATE …`
+-- (queries.UpsertHeartbeat/UpsertHeartbeatFault). Real getestet (nicht nur
+-- ADR-0047s Textvorschlag übernommen): `INSERT, UPDATE` allein reicht
+-- nicht — PostgreSQL verlangt für den ON-CONFLICT-DO-UPDATE-Zweig
+-- zusätzlich SELECT auf der Zieltabelle, auch wenn die SET-Klausel selbst
+-- keinen bestehenden Spaltenwert liest (empirisch bestätigt, SQLSTATE
+-- 42501 „permission denied for table process_heartbeat" ohne SELECT).
+-- Kein Neu-Zuschnitt der bestehenden cdc_admin-Privilegien, nur die drei
+-- fehlenden Rechte auf dieser einen Tabelle.
+GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin;
