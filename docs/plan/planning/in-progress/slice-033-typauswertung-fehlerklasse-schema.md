@@ -239,6 +239,14 @@ dasteht.
   Annahmen treffen, die für einen während des laufenden Streams
   auftretenden Fehler (statt eines Fehlers beim initialen Decode) nicht
   zutreffen. **Ausgang:** <bei Closure einzutragen>
+- Der Split der `go test -run`-Filterung in `tools/harness/run-integration-tests.sh`
+  (sechs benannte Testfunktionen im vorderen Aufruf, genau
+  `TestMVPSchemaChangeIncompatibleTypeChange` im hinteren) kann eine
+  künftig zu `test/integration/integration_test.go` hinzugefügte
+  Testfunktion, die in keinem der beiden `-run`-Muster auftaucht,
+  dauerhaft und stillschweigend von `make test-integration` ausschließen
+  — `go test -run` meldet keinen Fehler, solange mindestens eine andere
+  Funktion im selben Aufruf matcht. **Ausgang:** <bei Closure einzutragen>
 
 ## 7. Closure-Notiz
 

@@ -220,7 +220,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
 
-# TestMVPSchemaChangeIncompatibleTypeChange (slice-033) meldet ihren
+# TestMVPSchemaChangeIncompatibleTypeChange meldet ihren
 # Negative-Fall sichtbar über die Fehlerklasse `schema`
 # (`mapper.ErrIncompatibleSchemaChange`) — der Erfassungspfad des
 # Feed-Containers endet darüber (`bootstrap.Run` -> `os.Exit(1)`), und
@@ -482,7 +482,7 @@ fi
 
 echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern (docker exec), Fortsetzen nach simuliertem Neustart ab Position $first_position, Endposition $second_position"
 
-# TestMVPSchemaChangeIncompatibleTypeChange (slice-033, LH-FA-SCH-004
+# TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
 # Fehlerklasse `schema` und beendet damit den Erfassungspfad des
