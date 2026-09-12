@@ -40,8 +40,6 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-10 — Schema-Evolution-Nachlieferung (ADR-0015)](../welle-10.md)
 
-Nichts in Arbeit.
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
