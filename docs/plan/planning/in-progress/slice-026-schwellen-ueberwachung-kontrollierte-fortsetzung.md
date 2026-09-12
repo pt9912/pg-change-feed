@@ -104,15 +104,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       färbende Mutation (Priorität in `mergeStreamAndWALFaultOutcome`
       umgedreht) real gesehen und wieder zurückgesetzt.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-026.md`](../../../reviews/review-slice-026.md)
+      (0 HIGH — Prioritätsgarantie explizit geprüft inkl. `-race`-Läufen —,
+      1 MEDIUM F-1, kein Merge-Blocker), F-1 per Fixrunde behoben
+      (`29a49ea`), unabhängig bestätigt durch
+      [`docs/reviews/verify-slice-026.md`](../../../reviews/verify-slice-026.md)
+      (eigene Rot-Grün-Gegenproben zu Prioritätsgarantie und
+      Zero-Value-Fallback, 1× LOW V-1, siehe §7).
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` §6 Fehlerklassen
       (Zeile `replication` — Aktion ändert sich real von „Sichtbarer Fehler"
       auf „Schwellen-Überwachung; kontrollierte Fortsetzung"). Beleg:
       `docs/user/benutzerhandbuch.md` §4 (WAL-Rückstand prüfen), §6
       (Fehlerklassen-Tabelle), §9 (Grenzwerte), Änderungshistorie 1.4.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
       Plan-Nachzug: Datei existiert in diesem Repo nicht (`PGC` ist
       Greenfield, kein Brownfield-Bootstrap) — Item entfällt.
@@ -125,8 +132,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`evidence/slice-026.md`, `state.md`) bleibt Closure-Arbeit (§7,
       Modul 6 „Eingetragen wird bei der Slice-Closure") und ist hier bewusst
       nicht vorweggenommen.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      Erledigt: `BEO-PGC/spec008-replication-luecke` → *eingetreten*
+      (`evidence/slice-026.md`).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo **mit** Wellen-Betrieb — `slice-026` ist der letzte Slice von `welle-7`; die Paarungen laufen bei der unmittelbar folgenden welle-7-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -189,13 +198,22 @@ dasteht.
 
 - Ein Schwellen-Vergleich, der versehentlich auch den Stream-Ordnungs-
   Verletzungs-Zweig erreicht, würde echte Dateintegritäts-Korruption
-  stillschweigend fortsetzen lassen — das genaue Gegenteil der Absicht. Der
-  Regressionstest aus §2 ist der Gegenbeleg. **Ausgang:** <bei Closure
-  einzutragen>
+  stillschweigend fortsetzen lassen — das genaue Gegenteil der Absicht.
+  **Ausgang: entfallen** — Reviewer und Verifier bestätigten unabhängig
+  voneinander (eigene Race-Analyse, eigene Rot-Grün-Gegenprobe an
+  `mergeStreamAndWALFaultOutcome`, `go test -race`), dass ein WAL-Fault
+  einen echten Stream-Ordnungs-Fehler strukturell nicht maskieren kann —
+  der Mapper-Sentinel-Pfad prüft nie `ctx.Err()` und gibt seinen Fehler
+  unbedingt zurück.
 - Der in `slice-024` vorgeschlagene Byte-Schwellenwert könnte sich beim
   realen Ende-zu-Ende-Test als unpraktikabel erweisen (z. B. zu schnell oder
   zu langsam erreichbar für einen reproduzierbaren Test).
-  **Ausgang:** <bei Closure einzutragen — ggf. Folge-ADR>
+  **Ausgang: entfallen** — gelöst über einen Test-Override
+  (`Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`, 32 KiB/512 KiB
+  statt 100 MiB/1 GiB): derselbe Produktionscode-Pfad, kalibriert auf
+  testbare Zeiträume, Produktions-Startwerte unverändert. Die separate
+  Frage, ob 100 MiB/1 GiB die richtigen *realen* Werte sind, trägt bereits
+  `ADR-0049`s eigener Re-Evaluierungs-Trigger — kein neuer Slice/BEO nötig.
 
 ## 7. Closure-Notiz
 
@@ -214,18 +232,49 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Prioritäts-Garantie
+  (`mergeStreamAndWALFaultOutcome`) — der sicherheitskritische Kernpunkt
+  dieses Slices — wurde dreimal unabhängig bewiesen statt einmal behauptet:
+  Implementer (Rot-Grün am Prioritäts-Code), Reviewer (eigene Race-Analyse
+  plus `-race`-Läufe), Verifier (eigene Rot-Grün-Gegenprobe plus statische
+  Analyse des Mapper-Fehlerpfads). Derselbe Musterablauf wie bei
+  `slice-025`, jetzt am sicherheitsrelevantesten Punkt der ganzen Welle.
+- **Was ging anders als geplant:** Der Review fand eine MEDIUM-Lücke
+  (fehlender Test für den Zero-Value-Fallback der neuen
+  `Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`-Felder — ein
+  Produktionslauf hätte sonst bei jedem Start sofort mit Schwelle `0`
+  abbrechen können), behoben per kurzer Fixrunde mit eigener
+  Rot-Grün-Verifikation. Außerdem, im Gespräch mit dem Nutzer während der
+  Closure-Vorbereitung: Der als „Ende-zu-Ende-Test" bezeichnete
+  `TestWALRetentionThresholdEndToEnd` erfüllt zwar welle-7 §3s Anforderung
+  (beide Seiten der Schwelle real in einem Lauf), ruft aber `bootstrap.Run`
+  in-process auf — nach `ADR-0030`s Testpyramide ist das ein
+  **Integrationstest**, kein Black-Box-E2E-Test. Dasselbe gilt für die
+  beiden älteren `*_endtoend_test.go`-Dateien (`slice-022`, `welle-6`) und
+  für `make test-integration`, das zudem seit `welle-3` nicht mehr über
+  MVP-Scope hinausgewachsen ist. Der Nutzer hat dafür eine eigene Welle
+  vorgemerkt (Roadmap *Nächste Wellen*, direkt nach `welle-7`) — kein
+  Nachtrag an diesem Slice, da die Benennung zum Zeitpunkt der Arbeit dem
+  hier verlangten *funktionalen* Ende-zu-Ende-Beleg (beide Schwellen-Seiten
+  in einem Lauf) korrekt entsprach; nur die Verwechslung mit der
+  *Test-Architektur*-Bedeutung aus `ADR-0030` war die Lücke.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× und
+  wird verkörpert — der Normalfall. Die vom Verifier notierte
+  DoD-Checkbox-Lücke (V-1) ist wie bei `slice-024`/`slice-025` keine neue
+  Beobachtung, sondern derselbe strukturelle Punkt: die Review-Zeile kann
+  erst nach dem Review getickt werden.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/spec008-replication-luecke`
+  → **eingetreten**, `evidence/slice-026.md` neu angelegt. Damit ist die
+  Kette geschlossen: `slice-020` fand die Spec-vs-Code-Lücke,
+  `slice-024`/`025`/`026` (welle-7) bauen die tatsächliche Umsetzung.
+- **Folge-Slices:** keine neuen — die Testing-Welle (Black-Box-E2E,
+  Integrationstest-Nachzug) ist als Vorschau-Zeile in der Roadmap
+  vermerkt, noch nicht als Slice geschnitten.
+- **Risiken aus §6:** beide *entfallen* (Sentinel-Trennung strukturell
+  bewiesen; Test-Reproduzierbarkeit über Test-Override gelöst) — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb — `slice-026` ist der
+  letzte Slice von `welle-7`; die Paarungen laufen bei der unmittelbar
+  folgenden welle-7-Closure (Modul 8 §Rollen-Sequenz für eine Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
