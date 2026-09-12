@@ -91,19 +91,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `SPEC-009` (`cdc_wal_retention_bytes`) erfüllt: periodische Messung
-      gegen `pg_replication_slots` liefert einen Bytes-Wert, real getestet
-      gegen PostgreSQL mit künstlich erzeugtem WAL-Rückstand (Wert steigt
-      messbar, während der Slot inaktiv bleibt und weitergeschrieben wird).
-- [ ] Messintervall konfigurierbar oder an einen bestehenden
-      Health-Check-Takt gebunden (Implementer entscheidet anhand des
-      Bestands in §3, keine neue Konfigurationsachse ohne Not).
-- [ ] `make gates` grün.
+- [x] `SPEC-009` (`cdc_wal_retention_bytes`) erfüllt: `receive.WALRetentionChecker`
+      (`internal/adapters/driving/replication/receive/walretention.go`) misst
+      periodisch gegen `pg_replication_slots`/`IDENTIFY_SYSTEM` und liefert
+      einen Bytes-Wert, real getestet
+      (`TestWALRetentionMeasuresGrowingBytes`,
+      `internal/adapters/driving/replication/receive/stream_test.go`) gegen
+      PostgreSQL mit künstlich erzeugtem WAL-Rückstand (Slot bewusst inaktiv
+      gehalten, Wert steigt real messbar) — `make test-replication` dreimal in
+      Folge grün; rot färbende Mutation (LSN-Subtraktion vertauscht) einmal
+      gesehen (rot, Bericht Schritt 8).
+- [x] Messintervall an den bestehenden Heartbeat-Takt gebunden
+      (`heartbeatInterval`, `internal/bootstrap/wiring.go`) — keine neue
+      Konfigurationsachse.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `docs/user/benutzerhandbuch.md` (Metriken-Abschnitt,
-      falls vorhanden) — die Metrik wird erstmals real erhoben.
+- [x] Doku-Update für `docs/user/benutzerhandbuch.md` (§4 „WAL-Rückstand
+      prüfen", neu; §9 Grenzwerte und Änderungshistorie 1.3) — die Metrik
+      wird erstmals real erhoben, exponiert über strukturiertes Log statt
+      `cdc.metrics` (Begründung §3).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -119,12 +127,11 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driving/replication/receive/receive.go` (oder neuer Health-Check-Baustein daneben — Implementer prüft den passenden Ort im Bestand, analog zum Heartbeat-Mechanismus) | neu/update | periodische Abfrage von `pg_replication_slots` über die bestehende `cdc_capture`-Verbindung, Umrechnung LSN-Differenz → Bytes |
-| Prozessinterner Expositionsweg (analog `cdc.process_heartbeat`/Log — **kein** `cdc.metrics`-View-Eintrag, siehe §1) | neu | macht den Wert für einen Betreiber lesbar, ohne die `cdc_reader`-Rechtefläche zu erweitern |
-| `internal/adapters/driving/replication/receive/receive_test.go` bzw. Äquivalent | neu/update | realer Test gegen PostgreSQL-Testcontainer mit künstlich erzeugtem Rückstand |
-
-Der Implementer erweitert diese Liste im ersten Lauf um den konkreten
-Expositionsweg, sobald er im Bestand entschieden ist (nicht raten).
+| `internal/adapters/driving/replication/receive/walretention.go` (neu, Paket `receive`) | neu | `WALRetentionChecker`: eigene, von der Stream-Verbindung getrennte `replication=database`-Verbindung derselben Rolle `cdc_capture` (die Stream-Verbindung steht während `Run` im COPY-Modus und nimmt keine Abfragen mehr entgegen); `Measure` bildet die Differenz aus `IDENTIFY_SYSTEM` (aktuelle WAL-Position) und `confirmed_flush_lsn` (`pg_replication_slots`) — beide LSN-Werte sind derselbe 64-Bit-Byte-Offset, die Subtraktion in Go erspart den sonst nötigen Aufruf der auf `pg_monitor` beschränkten Funktion `pg_current_wal_lsn()` |
+| `internal/bootstrap/wiring.go` | update | **Plan-Nachzug:** periodischer Health-Check-Zug `runWALRetentionCheck` — eigene Goroutine, eigener `WALRetentionChecker`, gebunden an `heartbeatInterval` (keine neue Konfigurationsachse), analog zu `runHeartbeat` |
+| Expositionsweg: **strukturiertes Log** (`outbound.LogPort`, `metric=cdc_wal_retention_bytes`) — **kein** `cdc.metrics`-View-Eintrag, siehe §1 | neu | **Plan-Nachzug — Entscheidung nachgetragen:** von den beiden im Slice-Kopf skizzierten Optionen (Tabellenspalte analog `cdc.process_heartbeat`, oder Log) fiel die Wahl auf Log, nicht auf eine Tabellenspalte: `slice-026` liest den Messwert direkt im selben Prozess (In-Memory-Rückgabewert von `Measure`) für die Schwellen-Entscheidung — ein persistierter Zwischenstand hätte keinen weiteren Leser, bräuchte aber einen Schema-Rollout (`tools/schema/schema.yaml` + d-migrate) und eine zusätzliche Schreibrolle/-verbindung; das Log macht den Wert für einen Betreiber lesbar, ohne die `cdc_reader`-Rechtefläche zu erweitern und ohne neues Schema |
+| `internal/adapters/driving/replication/receive/stream_test.go` | update | **Plan-Nachzug (Ort statt neuer Datei):** `TestWALRetentionMeasuresGrowingBytes` realer Test gegen PostgreSQL-Testcontainer mit künstlich erzeugtem Rückstand (Slot inaktiv nach einer bestätigten Transaktion, weitere unbestätigte Inserts lassen die Messung real wachsen) — im bestehenden `stream_test.go` statt einer neuen Datei, weil die Test-Infrastruktur (`newTestEnv`, `fakeCapture`, `readConfirmedFlush`) dort bereits liegt |
+| `docs/user/benutzerhandbuch.md` | update | **Plan-Nachzug:** neuer Abschnitt „WAL-Rückstand prüfen" (§4), Abgrenzung gegen `cdc.metrics` (§4 Metriken lesen), Grenzwerte-Hinweis zu `max_wal_senders` (§9), Änderungshistorie 1.3 |
 
 ## 4. Trigger
 
