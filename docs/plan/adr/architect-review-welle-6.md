@@ -35,7 +35,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wellen-Closure-Prozedur
 2. **Beobachtungs-Register — Lese-Schritt (Modul 6, Closure-Schritt
    3a/3b):** `BEO-PGC/rollen-verdrahtung` erreicht mit
    `evidence/slice-022.md` 3×. Ausgang: **geplant** — Folge-Slice
-   [`slice-023`](../planning/next/slice-023-rollen-spezifische-dsn-verdrahtung.md)
+   [`slice-023`](../planning/in-progress/slice-023-rollen-spezifische-dsn-verdrahtung.md)
    (Skelett von diesem Lauf angelegt, in `open/`; Planner vervollständigt
    §2–§8 vor `next/`).
 
@@ -250,7 +250,7 @@ einen Vorsatz. Geprüfte Kriterien:
   ist die im Slice-Entwurf selbst benannte Rückführung `in-progress→next`
   die vorgesehene Antwort, keine stillschweigende Ausweitung.
 - **Existiert eine belastbare Kennung?** Ja —
-  [`slice-023`](../planning/next/slice-023-rollen-spezifische-dsn-verdrahtung.md),
+  [`slice-023`](../planning/in-progress/slice-023-rollen-spezifische-dsn-verdrahtung.md),
   von diesem Lauf als Skelett in `open/` angelegt (§1 Ziel/Abgrenzung,
   §3 Datei-Kandidaten, §4/§5 Trigger, §8 Sub-Area-Vorprüfung bereits
   gefüllt; §2/§6/§7 bewusst als Platzhalter markiert — Planner
@@ -273,7 +273,7 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 | `ADR-0020`-Trigger gegen `LH-FA-SST-006` eingetreten? | **Ja**, wörtlich — Re-Evaluierung durchgeführt, Verdikt: **bestätigt**, kein Folge-ADR (Entscheidungssatz widerspruchsfrei mit `LH-FA-SST-006`; künftige Protokollwahl ist eine neue, parallele ADR, keine Supersession) |
 | `LH-FA-SST-007` löst einen bestehenden ADR-Trigger aus? | Nein — eigenständig geprüft (Volltextsuche über alle ADR-Dateien), deckungsgleich mit `verify-slice-022.md` V-2 |
 | `ADR-0019`/`ADR-0046` fällig? | Nein — beide `permanent`, in dieser Welle nur angewendet |
-| `BEO-PGC/rollen-verdrahtung` (3×) — Ausgang | **geplant** → [`slice-023`](../planning/next/slice-023-rollen-spezifische-dsn-verdrahtung.md) (Skelett angelegt) |
+| `BEO-PGC/rollen-verdrahtung` (3×) — Ausgang | **geplant** → [`slice-023`](../planning/in-progress/slice-023-rollen-spezifische-dsn-verdrahtung.md) (Skelett angelegt) |
 | Warum nicht „verkörpert"? | Physische Verdrahtungslücke im Bootstrap-Code, kein Workflow-Disziplin-Defizit; eine Regel löst das bestehende, dreifach reproduzierte Defizit nicht auf |
 | Auswirkung auf die übrige `welle-6`-Closure | Keine Blocker — Schritte 1, 3c–6 bleiben Planner-Arbeit |
 
@@ -291,5 +291,5 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 | `ADR-0019`/`ADR-0046` `permanent`, unberührt | jeweiliges ADR §Re-Evaluierungs-Trigger; `verify-slice-022.md` §Entscheidungs-Konformität |
 | Zähler `rollen-verdrahtung` = 3× | `evidence/{slice-011,slice-021,slice-022}.md`, `state.md` |
 | Least-Privilege ist Soll-Anforderung, bereits als DDL+Test erfüllt, Laufzeit-Verdrahtung offen | [`LH-QA-SEC-001`](../../../spec/lastenheft.md)…003; `observation.md` |
-| Folge-Slice-Skelett angelegt | [`slice-023`](../planning/next/slice-023-rollen-spezifische-dsn-verdrahtung.md) |
+| Folge-Slice-Skelett angelegt | [`slice-023`](../planning/in-progress/slice-023-rollen-spezifische-dsn-verdrahtung.md) |
 | Präzedenzfall „verkörpert" zum Vergleich (Workflow-Disziplin, nicht Architektur-Lücke) | `architect-review-welle-5.md` Zug 2 |
