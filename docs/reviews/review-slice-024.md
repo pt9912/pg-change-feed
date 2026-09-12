@@ -5,7 +5,7 @@
 §Referenz-Richtung/Matrix). Kein Code-Diff: dieser Slice liefert eine
 Entscheidung und zwei Spec-Präzisierungen, keine Implementierung.
 
-**Gegenstand:** Commits `741f845` (ADR-0049 neu), `52e207d`
+**Gegenstand:** Commits `741f845` ([ADR-0049](../plan/adr/0049-replication-fehlerklassen-schwellen.md) neu), `52e207d`
 (`spec/pflichtenheft.md` `SPEC-008`/`SPEC-013` geschärft), `988ab9a`
 (Slice-Plan-Nachzug: DoD-Häkchen, Plan-Nachzug-Tabelle)
 
