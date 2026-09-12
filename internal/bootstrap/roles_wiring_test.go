@@ -11,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/bootstrap"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // Die Rollen-Verdrahtungs-Tests belegen ADR-0047 §Fitness Function real
@@ -151,10 +153,14 @@ func TestCdcCaptureLoginConnectionRejectsAdminWrite(t *testing.T) {
 }
 
 // TestCdcAdminHeartbeatWriteRequiresGrant belegt ADR-0047 §Fitness
-// Function, zweite Zeile (Kontext-Befund 3): der Heartbeat-Schreibpfad
-// gelingt nur, nachdem der ergänzende GRANT auf `cdc.process_heartbeat`
-// ausgerollt ist. Der Test entzieht das Recht testweise und stellt es
-// danach wieder her (derselbe Vorher/Nachher-Beleg wie
+// Function, zweite Zeile (Kontext-Befund 3), und ADR-0048s korrigierten
+// Grant-Text real gegen die exakte Fehlerklasse, die ADR-0048 dokumentiert:
+// drei Stufen — kein Recht (muss scheitern), `INSERT, UPDATE` ohne `SELECT` (der
+// ursprüngliche, von ADR-0048 korrigierte ADR-0047-Text — muss ebenfalls
+// scheitern, sonst zeigt der Test eine Regression auf genau diesen Text
+// nicht an) und der vollständige `SELECT, INSERT, UPDATE`-Grant (muss
+// gelingen). Der Test entzieht/erteilt das Recht testweise und stellt den
+// vollständigen Grant danach wieder her (derselbe Vorher/Nachher-Beleg wie
 // `roles_test.go::TestCdcAdminPublicationRequiresTableOwnership`), damit
 // der Schema-Rollout-Zustand für nachfolgende Tests unverändert bleibt.
 func TestCdcAdminHeartbeatWriteRequiresGrant(t *testing.T) {
@@ -181,6 +187,7 @@ func TestCdcAdminHeartbeatWriteRequiresGrant(t *testing.T) {
 		}
 	})
 
+	// Stufe 1: kein Recht — Beat muss scheitern.
 	adapterWithoutGrant, err := postgresstorage.NewHeartbeat(ctx, loginDSN)
 	if err != nil {
 		t.Fatalf("NewHeartbeat mit cdc_admin-Login-Identität: %v", err)
@@ -191,16 +198,212 @@ func TestCdcAdminHeartbeatWriteRequiresGrant(t *testing.T) {
 		t.Fatalf("Beat ohne Grant: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", beatErr)
 	}
 
+	// Stufe 2 (die dokumentierte Regressions-Stufe): exakt der
+	// ursprüngliche ADR-0047-Text (`INSERT, UPDATE` ohne `SELECT`) — dieser
+	// Grant lässt den `ON CONFLICT … DO UPDATE`-Zweig weiterhin mit
+	// SQLSTATE 42501 scheitern (ADR-0048 §Kontext). Ein Test, der diese
+	// Stufe nicht real prüft, bliebe grün, wenn `nacharbeit-roles.sql`
+	// versehentlich auf diesen Text zurückfiele.
+	if _, err := adminPool.Exec(ctx, "GRANT INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin"); err != nil {
+		t.Fatalf("Grant auf den ADR-0047-Ursprungstext setzen: %v", err)
+	}
+	adapterInsertUpdateOnly, err := postgresstorage.NewHeartbeat(ctx, loginDSN)
+	if err != nil {
+		t.Fatalf("NewHeartbeat mit cdc_admin-Login-Identität (Stufe INSERT/UPDATE ohne SELECT): %v", err)
+	}
+	insertUpdateOnlyErr := adapterInsertUpdateOnly.Beat(ctx, rolesWiringTestSource)
+	adapterInsertUpdateOnly.Close()
+	if !permissionDenied(insertUpdateOnlyErr) {
+		t.Fatalf("Beat mit INSERT/UPDATE ohne SELECT (ADR-0047-Ursprungstext, von ADR-0048 korrigiert): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", insertUpdateOnlyErr)
+	}
+
+	// Stufe 3: der von ADR-0048 korrigierte vollständige Grant — Beat muss
+	// gelingen.
 	if _, err := adminPool.Exec(ctx, "GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin"); err != nil {
-		t.Fatalf("Grant wiederherstellen (vor dem zweiten Beat): %v", err)
+		t.Fatalf("Grant wiederherstellen (vor dem dritten Beat): %v", err)
 	}
 
 	adapterWithGrant, err := postgresstorage.NewHeartbeat(ctx, loginDSN)
 	if err != nil {
-		t.Fatalf("NewHeartbeat mit cdc_admin-Login-Identität (2. Versuch): %v", err)
+		t.Fatalf("NewHeartbeat mit cdc_admin-Login-Identität (3. Versuch): %v", err)
 	}
 	defer adapterWithGrant.Close()
 	if err := adapterWithGrant.Beat(ctx, rolesWiringTestSource); err != nil {
-		t.Fatalf("Beat nach Grant: erwartet Erfolg, erhalten %v", err)
+		t.Fatalf("Beat nach vollständigem Grant: erwartet Erfolg, erhalten %v", err)
+	}
+}
+
+// TestCdcWiringCallerRejectsWrongRoleAssignment belegt ADR-0047
+// §Entscheidung gegen Vertauschung: für jeden DML-fähigen Aufrufer aus der
+// Zuordnungstabelle verbindet dieser Test mit der FALSCHEN Rolle und prüft,
+// dass der reale Produktionsaufruf scheitert — dass er mit der richtigen
+// Rolle gelingt, belegt für sich keine Vertauschungssicherheit.
+//
+// Zwei Prüftiefen, je nachdem, ob der Aufrufer eigenständig aufrufbar ist:
+//   - RegisterConsumer, AcknowledgeConsumer, Healthcheck rufen die
+//     tatsächliche `wiring.go`-Funktion auf (`bootstrap.RegisterConsumer`/
+//     `AcknowledgeConsumer`/`Healthcheck`) mit einer `Config`, deren
+//     einschlägiges DSN-Feld die falsche Rolle trägt — eine Vertauschung in
+//     `wiring.go` selbst (z. B. `cfg.CaptureDSN` statt `cfg.AdminDSN`)
+//     würde dieser Test real anzeigen.
+//   - Store-Adapter, Tabellen-Aktivierung und Heartbeat-Adapter laufen nur
+//     über `bootstrap.Run`, das den vollen Erfassungspfad braucht
+//     (Replication-Stream, `wal_level=logical`) und dessen
+//     Heartbeat-Fehlerpfad bewusst unterdrückt wird (`runHeartbeat`,
+//     `_ = port.Beat(...)` — kein Abbruch des Capture-Pfads durch einen
+//     Heartbeat-Fehler, `SPEC-008`). Diese drei Fälle bauen deshalb den
+//     jeweiligen Adapter direkt mit der falschen Rolle und rufen seine
+//     reale Produktionsmethode auf — das belegt „mit dieser Rolle scheitert
+//     der Aufruf real", nicht „`wiring.go` weist diesem Aufrufer die
+//     richtige Rolle zu" (Letzteres bleibt Code-Lektüre). Eine Vertauschung
+//     ausschließlich dieser drei Zeilen in `wiring.go` bliebe von diesem
+//     Test unentdeckt.
+//
+// Replication-Stream und ACK-Adapter (`cdc_capture`, REPLICATION-Attribut)
+// bleiben ganz außerhalb dieser Tabelle: ihre reale Prüfung braucht eine
+// Instanz mit `wal_level=logical` (`make test-replication`), die die drei
+// Login-Test-Identitäten dieser Datei nicht bereitstellt — eine offene,
+// benannte Lücke, kein stiller Auslassungsfall.
+func TestCdcWiringCallerRejectsWrongRoleAssignment(t *testing.T) {
+	adminPool, baseDSN := adminTestPool(t)
+	ctx := context.Background()
+
+	if _, err := adminPool.Exec(ctx,
+		"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'Rollen-Verdrahtungs-Quelle') ON CONFLICT (source_id) DO NOTHING",
+		rolesWiringTestSource,
+	); err != nil {
+		t.Fatalf("Quelle-Zeile: %v", err)
+	}
+
+	cases := []struct {
+		name      string
+		wrongRole string
+		loginName string
+		action    func(t *testing.T, wrongDSN string)
+	}{
+		{
+			name:      "Store-Adapter (ADR-0047: cdc_capture) mit cdc_admin-Login",
+			wrongRole: "cdc_admin",
+			loginName: "pgc_test_wrongrole_store",
+			action: func(t *testing.T, wrongDSN string) {
+				store, err := postgresstorage.New(ctx, wrongDSN)
+				if err != nil {
+					t.Fatalf("Store-Adapter mit cdc_admin-Login verbinden: %v", err)
+				}
+				defer store.Close()
+				tx, err := model.NewOpenTransaction("tx-wrongrole-store", rolesWiringTestSource)
+				if err != nil {
+					t.Fatalf("NewOpenTransaction: %v", err)
+				}
+				position, err := model.NewSourcePosition(rolesWiringTestSource, 100001)
+				if err != nil {
+					t.Fatalf("NewSourcePosition: %v", err)
+				}
+				if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+					t.Fatalf("Commit: %v", err)
+				}
+				if err := store.PersistTransaction(ctx, tx); !permissionDenied(err) {
+					t.Fatalf("Store-Adapter PersistTransaction mit cdc_admin-Login: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+				}
+			},
+		},
+		{
+			name:      "Tabellen-Aktivierung (ADR-0047: cdc_admin) mit cdc_capture-Login",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_activation",
+			action: func(t *testing.T, wrongDSN string) {
+				activation, err := postgresstorage.NewTableActivation(ctx, wrongDSN)
+				if err != nil {
+					t.Fatalf("Aktivierungs-Adapter mit cdc_capture-Login verbinden: %v", err)
+				}
+				defer activation.Close()
+				table, err := model.NewSourceTable("st-wrongrole-activation", rolesWiringTestSource, "public", "wrongrole_activation")
+				if err != nil {
+					t.Fatalf("NewSourceTable: %v", err)
+				}
+				version, err := model.NewSchemaVersion("sv-wrongrole-activation", "st-wrongrole-activation", 1)
+				if err != nil {
+					t.Fatalf("NewSchemaVersion: %v", err)
+				}
+				if _, err := activation.Register(ctx, table, version); !permissionDenied(err) {
+					t.Fatalf("Tabellen-Aktivierung Register mit cdc_capture-Login: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+				}
+			},
+		},
+		{
+			name:      "Heartbeat-Adapter (ADR-0047: cdc_admin) mit cdc_capture-Login",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_heartbeat",
+			action: func(t *testing.T, wrongDSN string) {
+				heartbeat, err := postgresstorage.NewHeartbeat(ctx, wrongDSN)
+				if err != nil {
+					t.Fatalf("Heartbeat-Adapter mit cdc_capture-Login verbinden: %v", err)
+				}
+				defer heartbeat.Close()
+				if err := heartbeat.Beat(ctx, rolesWiringTestSource); !permissionDenied(err) {
+					t.Fatalf("Heartbeat-Adapter Beat mit cdc_capture-Login: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+				}
+			},
+		},
+		{
+			// Ruft die tatsächliche `wiring.go`-Aufrufer-Funktion auf (nicht
+			// nur den darunterliegenden Adapter direkt) — sie liest
+			// `cfg.AdminDSN` selbst; eine Vertauschung in `wiring.go` (z. B.
+			// `cfg.CaptureDSN` statt `cfg.AdminDSN`) würde dieser Test real
+			// als Regression zeigen.
+			name:      "RegisterConsumer (ADR-0047: cdc_admin) mit cdc_capture-Login als cfg.AdminDSN",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_register",
+			action: func(t *testing.T, wrongDSN string) {
+				stderr := captureStderr(t, func() {
+					if code := bootstrap.RegisterConsumer(ctx, bootstrap.Config{AdminDSN: wrongDSN}, "c-wrongrole-register"); code == 0 {
+						t.Fatalf("RegisterConsumer mit cdc_capture-Login als cfg.AdminDSN: erwartet Exit-Code != 0, erhalten 0")
+					}
+				})
+				if !strings.Contains(stderr, "SQLSTATE 42501") {
+					t.Fatalf("RegisterConsumer mit cdc_capture-Login als cfg.AdminDSN: erwartet SQLSTATE 42501 (insufficient_privilege) in stderr, erhalten %q", stderr)
+				}
+			},
+		},
+		{
+			// Dieselbe Begründung wie oben — ruft `bootstrap.AcknowledgeConsumer`
+			// direkt auf, nicht nur `postgresstorage.NewConsumerState`.
+			name:      "AcknowledgeConsumer (ADR-0047: cdc_admin) mit cdc_capture-Login als cfg.AdminDSN",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_acknowledge",
+			action: func(t *testing.T, wrongDSN string) {
+				cfg := bootstrap.Config{AdminDSN: wrongDSN, Source: rolesWiringTestSource}
+				stderr := captureStderr(t, func() {
+					if code := bootstrap.AcknowledgeConsumer(ctx, cfg, "c-wrongrole-acknowledge", 1); code == 0 {
+						t.Fatalf("AcknowledgeConsumer mit cdc_capture-Login als cfg.AdminDSN: erwartet Exit-Code != 0, erhalten 0")
+					}
+				})
+				if !strings.Contains(stderr, "SQLSTATE 42501") {
+					t.Fatalf("AcknowledgeConsumer mit cdc_capture-Login als cfg.AdminDSN: erwartet SQLSTATE 42501 (insufficient_privilege) in stderr, erhalten %q", stderr)
+				}
+			},
+		},
+		{
+			name:      "Healthcheck (ADR-0047: cdc_reader) mit cdc_capture-Login",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_healthcheck",
+			action: func(t *testing.T, wrongDSN string) {
+				stderr := captureStderr(t, func() {
+					if code := bootstrap.Healthcheck(ctx, wrongDSN, rolesWiringTestSource); code == 0 {
+						t.Fatalf("Healthcheck mit cdc_capture-Login: erwartet Exit-Code != 0, erhalten 0")
+					}
+				})
+				if !strings.Contains(stderr, "nicht lesbar") {
+					t.Fatalf("Healthcheck mit cdc_capture-Login: erwartet die Permission-Denied-Meldung (\"nicht lesbar\"), stderr=%q", stderr)
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			wrongDSN := newTestLoginRole(t, adminPool, baseDSN, tc.loginName, tc.wrongRole)
+			tc.action(t, wrongDSN)
+		})
 	}
 }

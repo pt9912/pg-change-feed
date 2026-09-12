@@ -108,9 +108,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Greenfield, kein veröffentlichtes Image) — `compose.yaml` und
       `docs/user/benutzerhandbuch.md` entsprechend nachgezogen.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-023.md`](../../../reviews/review-slice-023.md)
+      (0 HIGH, 0 MEDIUM, 1 LOW/1 INFO, kein Merge-Blocker).
 - [x] Doku-Update für den erweiterten Konfigurationsvertrag
       (`docs/user/benutzerhandbuch.md`, `compose.yaml`) — bereits Teil des
       ersten DoD-Punkts, hier kein eigener Liefer-Punkt.
