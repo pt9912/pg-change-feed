@@ -213,12 +213,15 @@ Hälften.
 Modus-Deklaration (`PGC` Greenfield, Doc führt) — erfüllt die Schwelle
 ≥ 2 von 3 Achsen. Nicht zu grob.
 
-**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (elf
-Einträge, unverändert seit slice-017): `cdc-capture-lag-real` 1× — dieser
-Slice bringt den Wert real in die DB, liefert aber noch keinen
-Register-Beleg (der Metrik-Bezug/die Auflösung folgt in slice-019).
-Übrige zehn ohne Bezug — siehe slice-017 §8 für die vollständige Liste.
-Kein Eintrag erreicht mit diesem Slice 3× — keine Lücke.
+**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (zwölf
+Einträge — `BEO-PGC/dod-checkbox-nachzug` kam während der Closure von
+slice-017 neu hinzu): `cdc-capture-lag-real` 1× — dieser Slice bringt den
+Wert real in die DB, liefert aber noch keinen Register-Beleg (der
+Metrik-Bezug/die Auflösung folgt in slice-019). Übrige elf ohne Bezug —
+siehe slice-017 §8 für die vollständige Liste der zehn ursprünglichen,
+plus `dod-checkbox-nachzug` (3×, Lese-Schritt fällt der
+`welle-5`-Closure zu). Kein Eintrag erreicht mit diesem Slice neu 3× —
+keine Lücke.
 
 **Modus-Begründungsblock — Umfang.** Reiner GF-Hinweis genügt (siehe oben);
 kein Sub-Area-Block.
