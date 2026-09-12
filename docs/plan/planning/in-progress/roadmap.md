@@ -47,9 +47,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 Vorschau: je Zeile Welle, Trigger als beobachtbare Bedingung, wichtigste Slices
 und geschätzter Aufwand (S/M/L, kein Termin).
 
+**E2E-Abdeckungsprogramm** (Nutzerentscheidung 2026-09-12: alle implementierten
+Fähigkeiten sollen Black-Box-E2E-Abdeckung bekommen — vier Wellen, gebaut auf
+dem Aufrufmuster aus `welle-8`/`slice-027`; Retention-Löschausführung ist
+bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
+
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Publication-Entzug-Wirksamkeit am laufenden Stream | `welle-8` liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
+| E2E-Abdeckung — CDC-Kernpfad | `welle-8` liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für Erfassung/Lesen/Schema-Änderungen (`LH-FA-CAP-*`, `LH-FA-DAT-*`, `LH-FA-REA-*`, `LH-FA-SCH-*`) über die externe SQL-Schnittstelle, analog zum CLI-Rundlauf-Muster aus `slice-027` | M |
+| E2E-Abdeckung — Verwaltung & Observability | Vorherige Welle (CDC-Kernpfad) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
+| Retention-Löschausführung | Vorherige Welle (Verwaltung & Observability) liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
+| E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
+| Performance-Benchmarks | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail) | M |
+| Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Performance-Benchmarks) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
 
 ## Meilensteine
@@ -90,10 +100,15 @@ flowchart LR
     W6[welle-6: Consumer-Zugriffsweg]
     W7[welle-7: Replication-Schwellen-Überwachung]
     W8[welle-8: Black-Box-E2E und Integrationstest-Nachzug]
-    W9[geplant: Publication-Entzug-Wirksamkeit]
-    W10[geplant: LH-FA-SST-007 NATS-Change-Notification]
+    W9[geplant: E2E-Abdeckung — CDC-Kernpfad]
+    W10[geplant: E2E-Abdeckung — Verwaltung & Observability]
+    W11[geplant: Retention-Löschausführung]
+    W12[geplant: E2E-Abdeckung — Retention]
+    W13[geplant: Performance-Benchmarks]
+    W14[geplant: Publication-Entzug-Wirksamkeit]
+    W15[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W10
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W10 --> W11 --> W12 --> W13 --> W14 --> W15
 ```
 
 ## Abgeschlossene Wellen
