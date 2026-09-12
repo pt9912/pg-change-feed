@@ -73,14 +73,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `tools/schema/nacharbeit-observability.sql`: `cdc_capture_lag_approx`
+- [x] `tools/schema/nacharbeit-observability.sql`: `cdc_capture_lag_approx`
       durch `cdc_capture_lag` ersetzt (Metrik-Name, Kommentar); die
       übrigen Metriken unverändert.
-- [ ] Ende-zu-Ende-Lasttest: eine Testtransaktion mit künstlich
+- [x] Ende-zu-Ende-Lasttest: eine Testtransaktion mit künstlich
       eingebauter Verzögerung zwischen Quell-Commit und Verarbeitung
       zeigt, dass `cdc_capture_lag` diese Verzögerung real abbildet —
-      nicht nur die (jetzt beseitigte) Persistenz-Zeit-Differenz.
-- [ ] `make gates` grün.
+      nicht nur die Persistenz-Zeit-Differenz. Real gegen die Compose-
+      Umgebung belegt (`make test-integration`, `tools/harness/
+      run-integration-tests.sh`): Feed-Container über die Freezer-Cgroup
+      pausiert (`docker pause`), Quell-Commit während der Pause,
+      Fortsetzen — gemessen Baseline (ungehindert) ~0,1–0,13 s, verzögert
+      (1 s künstliche Pause) ~1,15–1,16 s, stabil über mehrere Läufe.
+      Fund unterwegs: der geladene `ghcr.io/pt9912/pg-change-feed:dev`
+      war seit vor slice-017/018 nicht neu gebaut — `make image` lief vor
+      dem Beleg (`harness/image-hash.txt` fortgeschrieben), sonst hätte
+      der Lasttest gegen die alte Persistenz-Zeit-Näherung gemessen statt
+      gegen den realen Fix.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -90,7 +100,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       unter ihrem kanonischen Namen `cdc_capture_lag` als Zielzustand,
       unabhängig vom Umsetzungsstand — kein Textinhalt behauptet dort
       etwas, das dieser Slice widerlegen würde. `spec/pflichtenheft.md`
-      bleibt unverändert; Item entfällt.
+      bleibt unverändert. Zusätzlich im ersten Lauf gefunden und
+      korrigiert: `docs/user/benutzerhandbuch.md` nannte die Metrik noch
+      unter dem `_approx`-Namen mit veralteter Beschreibung — aktualisiert
+      auf `cdc_capture_lag` mit der realen Bedeutung.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — `BEO-PGC/cdc-capture-lag-real` bekommt den Auflösungs-Beleg dieser Welle (Ausgang `eingetreten`, Träger dieser Slice).
@@ -110,7 +123,8 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/schema/nacharbeit-observability.sql` | update | Metrik-Zeile `cdc_capture_lag_approx` → `cdc_capture_lag`, Kommentar aktualisiert |
-| Integrationstest (`tools/harness/run-integration-tests.sh` oder ein neuer Lasttest-Lauf) | update/neu | künstliche Verzögerung einbauen, `cdc_capture_lag` real prüfen |
+| `tools/harness/run-integration-tests.sh` | update | Lasttest-Block: Feed-Container pausieren, Quell-Commit während der Pause, `cdc_capture_lag` nach dem Fortsetzen gegen die künstliche Verzögerung prüfen |
+| `docs/user/benutzerhandbuch.md` | update | Metriken-Liste nennt `cdc_capture_lag_approx` mit veralteter Beschreibung („Näherung über die Persistenzzeit") — öffentlicher Vertrag (Source Precedence Rang 6), im ersten Lauf gefunden, nicht im ursprünglichen Plan |
 
 ## 4. Trigger
 
