@@ -84,21 +84,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-CFG-003`/`004` erfüllt: neuer Testfall liest
+- [x] `LH-FA-CFG-003`/`004` erfüllt: neuer Testfall liest
       `cdc.active_tables` real über SQL (kein Go-Adapter-Import) für eine
-      aktivierte und eine nie aktivierte Tabelle im selben Compose-Lauf.
-- [ ] Vertragstest belegt Übereinstimmung mit der internen
+      aktivierte und eine nie aktivierte Tabelle im selben Compose-Lauf —
+      `TestMVPActiveTablesViewMatchesActivationState` in
+      `test/integration/integration_test.go`.
+- [x] Vertragstest belegt Übereinstimmung mit der internen
       Use-Case-Semantik für den geprüften Fall (aktiviert/nicht
-      aktiviert) — dieselbe Aussage über beide Lesewege.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      aktiviert) — dieselbe Aussage über beide Lesewege — derselbe
+      Testfall hält die SQL-Sicht gegen `status.NewGetStatusService`.
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün —
+      beide Läufe lokal ausgeführt, siehe Bericht an den Reviewer.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
-      voraussichtlich keiner; Implementer entscheidet und begründet im
-      Plan-Nachzug.
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — kein
+      öffentlicher Vertrag berührt (reine Testabdeckung eines
+      bestehenden, bereits dokumentierten Lesezugriffswegs); keine
+      Doku-Änderung.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. — entfällt: `../reconciliation.md` existiert nicht (Repo ist Greenfield, kein Brownfield-Bootstrap).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -113,6 +118,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `test/integration/integration_test.go` | update | neuer Testfall: SQL-Lesung gegen `cdc.active_tables` für eine aktivierte und eine nie aktivierte Tabelle |
+| `tools/harness/run-integration-tests.sh` | update | **Plan-Nachzug:** neuer Testfall ins `-run`-Muster aufgenommen — ohne diese Zeile liefe er nie in `make test-integration` (`BEO-PGC/test-runner-stiller-ausschluss`, im Slice-Auftrag bereits benannt, aber ursprünglich nicht als eigene §3-Zeile geführt). |
 
 ## 4. Trigger
 
