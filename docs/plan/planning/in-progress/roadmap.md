@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-6](../welle-6.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -49,7 +51,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| welle-6 — Consumer-Zugriffsweg | Kein Slice in `in-progress/`, `make gates` grün auf `main` | Architect-Entscheidung (ADR) zum Zugriffsweg für Consumer-Registrierung/-Bestätigung, danach Umsetzungs-Slice(s) für [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md)/[`004.a`](../../../../spec/pflichtenheft.md) | M |
+| *(keine geplanten Wellen)* | — | — | — |
 
 ## Meilensteine
 
@@ -86,8 +88,9 @@ flowchart LR
     W3[welle-3: CDC-Verwaltung, Lesen, Sicherheit]
     W4[welle-4: Observability-Vervollständigung]
     W5[welle-5: Realer CDC-Capture-Lag]
+    W6[welle-6: Consumer-Zugriffsweg]
 
-    W1 --> W2 --> W3 --> W4 --> W5
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6
 ```
 
 ## Abgeschlossene Wellen
