@@ -1,4 +1,4 @@
-# Architect-Verdikt: slice-030 F-1 gegen ADR-0015
+# Architect-Verdikt: slice-030 F-1 gegen `ADR-0015`
 
 **Rolle:** Architect (Modul 8 §Konflikt-Pfad als Rollen-Sequenz)
 **Anlass:** `docs/reviews/review-slice-030.md`, Finding F-1 (HIGH) — behaupteter
@@ -17,7 +17,7 @@ Verstoß gegen [`ADR-0015`](../plan/adr/0015-schema-evolution.md) (Accepted,
 ## Verdikt
 
 **Verdikt 1 — ADR gilt; kein Plan hat sie fälschlich als umgesetzt
-behauptet.** Die in ADR-0015 (Option C) beschlossene und als Folgepflicht
+behauptet.** Die in `ADR-0015` (Option C) beschlossene und als Folgepflicht
 benannte Fähigkeit — `TableSchema`-/`SchemaVersion`-Modelle je Change,
 `SchemaStorePort` als Outbound Port, Fehlerklasse `schema` für nicht sicher
 interpretierbare Schemaänderungen — wurde **nie gebaut**. Das ist keine
@@ -38,7 +38,7 @@ unten.
 
 ## Begründung
 
-### Ist ADR-0015s Kontext heute noch gültig?
+### Ist `ADR-0015`s Kontext heute noch gültig?
 
 Ja, ungebrochen:
 
@@ -69,17 +69,17 @@ Ja, ungebrochen:
   einer beobachtbaren Bedingung, die eine Neubewertung auslösen würde.
 
 Damit entfällt Verdikt 2: Es gibt keinen sachlichen Grund, Option A heute für
-architektonisch richtiger zu halten als bei Verabschiedung von ADR-0015. Die
-in ADR-0015 gegen Option A vorgebrachten Contras (PostgreSQL-Details sickern
+architektonisch richtiger zu halten als bei Verabschiedung von `ADR-0015`. Die
+in `ADR-0015` gegen Option A vorgebrachten Contras (PostgreSQL-Details sickern
 in den Core; keine stabile historische Interpretation) sind exakt die
-Symptome, die der heutige Code zeigt — das bestätigt ADR-0015s Abwägung,
+Symptome, die der heutige Code zeigt — das bestätigt `ADR-0015`s Abwägung,
 statt sie zu widerlegen.
 
 ### Gibt es eine legitime, aber undokumentierte Lockerung?
 
 Nein. Die vier Code-Kommentare, die der Reviewer als „Metadata-Pfad"-Zeiger
 identifiziert hat (`mapper.go:53`, `wiring.go:331`, `receive.go:62`,
-`verwaltung.go:26`), sind selbst **Vorwärtsverweise auf die von ADR-0015
+`verwaltung.go:26`), sind selbst **Vorwärtsverweise auf die von `ADR-0015`
 geforderte Fähigkeit** — sie behaupten nicht, dass ein Ersatzmechanismus
 bewusst gewählt wurde, sondern benennen die Stelle, an der die noch fehlende
 Übersetzung greifen soll. Das ist keine dokumentierte Abweichung von Option
@@ -92,7 +92,7 @@ auf `SchemaStorePort` oder dynamische Re-Versionierung. Verdikt 3 entfällt.
 Ja. Der Reviewer prüft explizit gegen ADR (Modul 1 Kernidee, Modul 8
 Kernidee), und die Kategorie „ADR-Verstoß" trifft strukturell zu: Der
 aktuell ausgelieferte Code verhält sich bei Relation-Metadata-Änderungen wie
-das in ADR-0015 **explizit verworfene** Option A (Rohdaten-Durchreichen ohne
+das in `ADR-0015` **explizit verworfene** Option A (Rohdaten-Durchreichen ohne
 stabile historische Interpretation), nicht wie das beschlossene Option C.
 Zwei Lastenheft-Akzeptanzkriterien (`LH-FA-SCH-004` Negative-Fall,
 `LH-FA-SCH-005` Boundary) sind strukturell unerfüllbar, nicht nur zufällig
@@ -115,7 +115,7 @@ Hexagon-Schichten:
    `SchemaStorePort` — Fähigkeiten mindestens: aktuelle Schema-Version einer
    Tabelle lesen, neue Version registrieren (bei erkannter Änderung),
    `TableSchema` zu einer Version lesen (für historische Interpretation).
-   Das ist exakt die in ADR-0015 benannte Folgepflicht.
+   Das ist exakt die in `ADR-0015` benannte Folgepflicht.
 3. **Adapter** (`internal/adapters/driven/…` o. ä., Analogie zu
    `PostgresMetadataAdapter` aus der Architektur-Sicht): Persistenz über eine
    neue Tabelle im neutralen Schema (`tools/schema/schema.yaml`, z. B.
@@ -156,7 +156,7 @@ hat — dort wurde reine Feature-Arbeit korrekt als eigene Welle abgetrennt,
 statt sie in eine E2E-Abdeckungs-Welle zu pressen. Empfehlung in derselben
 Form:
 
-- Neue Feature-Welle, z. B. „Schema-Evolution-Nachlieferung (ADR-0015)",
+- Neue Feature-Welle, z. B. „Schema-Evolution-Nachlieferung (`ADR-0015`)",
   Größe **L**, geschnitten (Planner-Aufgabe) in mindestens drei Slices
   entlang der Skizze oben (Persistenz-Fähigkeit ohne Live-Verdrahtung →
   dynamische Re-Versionierung im Consume-Pfad → Typ-Auswertung/Fehlerklasse
@@ -170,7 +170,7 @@ Form:
 Closure umgeht (Carveout vs. Beobachtungs-Register-Eintrag vs. Verweis auf
 die neue Welle als Folge-Slice-Adresse) — das bleibt Planner-Entscheidung
 nach Modul 5 §Offene Risiken werden bei Closure aufgelöst. Dieses Verdikt
-beantwortet ausschließlich die ADR-Frage: ADR-0015 gilt unverändert fort,
+beantwortet ausschließlich die ADR-Frage: `ADR-0015` gilt unverändert fort,
 der heutige Zustand ist eine bislang nicht eingelöste Folgepflicht, keine
 ADR-Verletzung, die eine Korrektur der ADR verlangt.
 
