@@ -100,20 +100,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] ADR `Accepted`: entscheidet die Fehler-Sentinel-Trennung
+- [x] ADR `Accepted`: entscheidet die Fehler-Sentinel-Trennung
       (Stream-Ordnungs-Verletzung vs. Transport-/Verbindungsstörung) und die
-      WAL-Rückstand-Schwellenwerte (Warn/Fehler, in Bytes).
-- [ ] `SPEC-008`-Zeile `replication` präzisiert: Aktionstext benennt beide
+      WAL-Rückstand-Schwellenwerte (Warn/Fehler, in Bytes). Beleg:
+      [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md)
+      (Warn 100 MiB / Fehler 1 GiB, wie im Vorschlag oben).
+- [x] `SPEC-008`-Zeile `replication` präzisiert: Aktionstext benennt beide
       Fehlerklassen-Unterarten getrennt (hart abbrechend vs. Schwellen-
       überwacht mit kontrollierter Fortsetzung).
-- [ ] `SPEC-013` um einen Eintrag für `cdc_wal_retention_bytes` ergänzt
+- [x] `SPEC-013` um einen Eintrag für `cdc_wal_retention_bytes` ergänzt
       (Warn-/Fehlerschwelle in Bytes, „über ADR schärfbar" wie beim
-      bestehenden `cdc_capture_lag`-Eintrag).
-- [ ] `make gates` grün.
+      bestehenden `cdc_capture_lag`-Eintrag) — siehe Plan-Nachzug §3: im
+      bestehenden `SPEC-013`-Eintrag (§3 Defaults) erweitert, nicht als
+      neue §5-Zeile.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Kein Doku-Update jenseits von `spec/pflichtenheft.md` und dem ADR-Index
+- [x] Kein Doku-Update jenseits von `spec/pflichtenheft.md` und dem ADR-Index
       nötig — dieser Slice ändert keinen Betreiber-sichtbaren Vertrag.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -134,6 +138,16 @@ Aussagen-Berührung steht hier gar nicht.
 | `docs/plan/adr/README.md` | update | ADR-Index-Eintrag |
 | `spec/pflichtenheft.md` (§4 `SPEC-008`, §5 `SPEC-013`) | update | Zeile `replication` präzisiert, `SPEC-013`-Tabelle um `cdc_wal_retention_bytes`-Schwellen ergänzt |
 | `docs/plan/planning/observations/BEO-PGC/spec008-replication-luecke/state.md` | update | Ausgang auf *geplant* (`slice-025`/`slice-026`) gesetzt, sobald die ADR die Umsetzung verbindlich zuweist |
+
+**Plan-Nachzug (Architect-Lauf, vor dem Sensor-Lauf eingetragen —
+`modul-09-implementierung.md` §Plan-Nachzug im selben Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `docs/plan/adr/0049-replication-fehlerklassen-schwellen.md` | neu | Nummer aus dem ADR-Index ermittelt (`0049`, nächste freie nach `0048`) statt des Platzhalters `00NN` oben |
+| `spec/pflichtenheft.md` §3 (`SPEC-013`) statt §5 | Klarstellung | `SPEC-013` ist als ID in §3 *Defaults und Konstanten* definiert, nicht in §5 *Metriken*; §5 verweist bereits per Prosa auf diesen Eintrag als Initialwert-Quelle für WAL-Rückstand *und* Capture-Lag — die WAL-Rückstand-Schwelle erweitert deshalb den bestehenden `SPEC-013`-Eintrag in §3 (Name-Feld auf `CDC_THRESHOLDS` verallgemeinert), keine neue Zeile in §5; das löst genau die in §1 benannte Spec-interne Inkonsistenz |
+| `docs/plan/planning/observations/BEO-PGC/spec008-replication-luecke/state.md` | **nicht geändert** | Die Beobachtungs-Register-Fortschreibung ist laut Aufgaben-Vorgabe Planner-Arbeit bei der Closure (§7), nicht Teil dieses Architect-Laufs — bleibt für die Slice-Closure offen |
+| `**Bezug:**`/`**Schärft:**`-Felder der neuen ADR ohne `#anker`-Suffix | Klarstellung | Alle 48 bestehenden ADRs dieses Repos verlinken `LH-*`/`SPEC-*`/`ARC-*` ohne Anker (ganzes Dokument, nicht Abschnitt) — Anker-Auflösung ist laut Baseline-Regelwerk `grundlagen-referenz-richtung.md` eine noch nicht aktivierte Reifestufe; diese ADR folgt dem etablierten Bestand statt der Template-Kopfzeile wörtlich zu nehmen |
 
 ## 4. Trigger
 
