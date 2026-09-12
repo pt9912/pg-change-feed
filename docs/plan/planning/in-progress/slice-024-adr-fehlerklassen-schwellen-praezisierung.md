@@ -114,16 +114,25 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       bestehenden `SPEC-013`-Eintrag (§3 Defaults) erweitert, nicht als
       neue §5-Zeile.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-024.md`](../../../reviews/review-slice-024.md)
+      (0 HIGH/MEDIUM/LOW, 1 INFO, kein Merge-Blocker), verifiziert unabhängig
+      durch [`docs/reviews/verify-slice-024.md`](../../../reviews/verify-slice-024.md)
+      (1 LOW: V-1, siehe §7).
 - [x] Kein Doku-Update jenseits von `spec/pflichtenheft.md` und dem ADR-Index
       nötig — dieser Slice ändert keinen Betreiber-sichtbaren Vertrag.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `BEO-PGC/spec008-replication-luecke` → Ausgang bleibt *weiter offen*
+      (Zähler unverändert 1×) — dieser Slice liefert erst die Entscheidung,
+      die eigentliche Schließung erfolgt in `slice-026`.
+      `BEO-PGC/dod-checkbox-nachzug-architect-pfad` neu angelegt (1×,
+      weiter offen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo **mit** Wellen-Betrieb (`welle-7` offen) — verschoben auf die welle-7-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -186,12 +195,19 @@ dasteht.
 - Der vorgeschlagene Byte-Schwellenwert (100 MiB/1 GiB) ist eine
   Stil-Analogie zu `SPEC-013`s Zeitschwellen, keine aus Produktionsdaten
   abgeleitete Zahl — er könnte sich als zu grob oder zu fein erweisen, sobald
-  `slice-025`/`slice-026` real dagegen testen. **Ausgang:** <bei Closure
-  einzutragen — eingetreten: Folge-ADR mit angepassten Werten / entfallen:
-  Architect bestätigt den Wert unverändert / weiter offen: → BEO im Register>
+  `slice-025`/`slice-026` real dagegen testen. **Ausgang: eingetreten →
+  slice-026** — `slice-026`s eigenes §6 führt denselben Punkt bereits als
+  Risiko mit Prüfauftrag (dort: „könnte sich beim realen Ende-zu-Ende-Test
+  als unpraktikabel erweisen"); die Kennung nimmt den Punkt an, `ADR-0049`
+  benennt die Werte zusätzlich explizit als nicht-permanent
+  (Re-Evaluierungs-Trigger).
 - Die Sentinel-Trennung könnte beim genauen Hinsehen mehr als zwei Kategorien
   brauchen (z. B. ein dritter Fall, der weder eindeutig hart noch eindeutig
-  Schwellen-Kandidat ist). **Ausgang:** <bei Closure einzutragen>
+  Schwellen-Kandidat ist). **Ausgang: entfallen** — Reviewer und Verifier
+  bestätigten unabhängig durch eigenes Lesen von `classifyRunError`
+  (`internal/bootstrap/wiring.go:400-421`): Der `switch` bildet exakt fünf
+  Sentinels sauber auf genau zwei Kategorien ab, kein dritter Fall existiert
+  im heutigen Code-Bestand.
 
 ## 7. Closure-Notiz
 
@@ -210,18 +226,38 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Architect-Lauf hat die Sentinel-Trennung
+  nicht nur behauptet, sondern selbst im Code verifiziert (vier Dateien
+  gelesen, nicht nur den Plan-Vorschlag übernommen) — Reviewer und Verifier
+  bestätigten das unabhängig durch eigenes Nachlesen von `classifyRunError`.
+  Der vorgeschlagene Schwellenwert (100 MiB/1 GiB) wurde unverändert
+  übernommen, mit nachvollziehbarer eigener Begründung ergänzt und explizit
+  als vorläufig (Re-Evaluierungs-Trigger) markiert statt als endgültig
+  ausgegeben.
+- **Was ging anders als geplant:** Vier kleinere Abweichungen ggü. dem
+  ursprünglichen §3-Plan, alle im Architect-Lauf als Plan-Nachzug dokumentiert
+  und von Reviewer/Verifier einzeln als plausibel bestätigt (ADR-Nummer 0049
+  statt Platzhalter, `SPEC-013`-Erweiterung in §3 statt neuer §5-Zeile,
+  Register-Fortschreibung auf die Closure verschoben, ADR-Verweise ohne
+  `#anker`-Suffix passend zum Bestand). Zusätzlich: Die DoD-Zeile „Review
+  durchgeführt" blieb trotz abgeschlossenem Review zunächst auf `[ ]` —
+  derselbe Symptom-Typ wie `BEO-PGC/dod-checkbox-nachzug`, aber über einen
+  Pfad (Architect-Rolle), den die dortige verkörperte Regel nicht abdeckt.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× und
+  wird verkörpert (siehe unten) — der Normalfall.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/spec008-replication-luecke`
+  bleibt *weiter offen* (Zähler unverändert 1×) — dieser Slice liefert die
+  Entscheidung, `slice-026` die tatsächliche Schließung.
+  `BEO-PGC/dod-checkbox-nachzug-architect-pfad` neu angelegt, Beleg
+  `evidence/slice-024.md` — Zähler steht bei 1×.
+- **Folge-Slices:** `slice-025` (Metrik `cdc_wal_retention_bytes`) und
+  `slice-026` (Schwellen-Überwachung mit kontrollierter Fortsetzung) — beide
+  bereits Dateien in `open/` (welle-7 §4).
+- **Risiken aus §6:** Byte-Schwellenwert-Risiko → *eingetreten* (`slice-026`
+  übernimmt die reale Prüfung). Sentinel-Kategorien-Risiko → *entfallen*
+  (Reviewer/Verifier bestätigten Vollständigkeit der Zweiteilung).
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-7` offen) — verschoben
+  auf die welle-7-Closure (Modul 8 §Rollen-Sequenz für eine Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
