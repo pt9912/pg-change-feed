@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-11`](../welle-11.md) — der Nachweis, dass CDC-Status/
+**Welle:** [`welle-11`](welle-11.md) — der Nachweis, dass CDC-Status/
 -Liste real über die externe SQL-Sicht lesbar sind, ist `welle-11`s
 Closure-Trigger (§3), kein Einzel-Slice-DoD.
 

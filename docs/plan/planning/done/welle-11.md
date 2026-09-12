@@ -19,9 +19,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 Der Compose-Integrationstest prüft CDC-Status/-Liste
-([`LH-FA-CFG-003`](../../../spec/lastenheft.md)/`004`) und
+([`LH-FA-CFG-003`](../../../../spec/lastenheft.md)/`004`) und
 Administration/Observability
-([`LH-FA-ADM-002`](../../../spec/lastenheft.md)…`005`) bislang nur
+([`LH-FA-ADM-002`](../../../../spec/lastenheft.md)…`005`) bislang nur
 teilweise oder ausschließlich white-box über interne Go-Use-Cases
 (`status.NewGetStatusService` u. a.), obwohl die externen SQL-Sichten
 (`cdc.active_tables`, `cdc.consumer_status`, `cdc.process_heartbeat`)
@@ -82,8 +82,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-034 | Black-Box-Status/Liste gegen `cdc.active_tables` | [`LH-FA-CFG-003`](../../../spec/lastenheft.md)/`004` |
-| slice-035 | Black-Box-Observability-Konsolidierung (Betriebsstatus, Fehlerzustand, CDC-Abstand, Verarbeitungsrückstand) | [`LH-FA-ADM-002`](../../../spec/lastenheft.md)…`005` |
+| slice-034 | Black-Box-Status/Liste gegen `cdc.active_tables` | [`LH-FA-CFG-003`](../../../../spec/lastenheft.md)/`004` |
+| slice-035 | Black-Box-Observability-Konsolidierung (Betriebsstatus, Fehlerzustand, CDC-Abstand, Verarbeitungsrückstand) | [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)…`005` |
 
 ## 5. Abhängigkeiten
 
