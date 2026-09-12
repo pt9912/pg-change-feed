@@ -104,6 +104,18 @@ der Closure-Trigger unerreichbar wird.
   den Zugriffsweg für die im Lastenheft geforderten Fähigkeiten, keine neue
   Sicherheitsschicht darüber.
 
+## Vermerk für den Trigger-Audit bei Closure
+
+[`LH-FA-SST-006`](../../../spec/pflichtenheft.md) (konkrete HTTP-/gRPC-API,
+Lastenheft-CR außerhalb dieser Welle) erfüllt wörtlich
+[`ADR-0020`](../adr/0020-http-grpc-optional.md)s Re-Evaluierungs-Trigger
+(„Beobachtbarer Bedarf eines API-Consumers — sichtbar als Anforderung im
+Lastenheft-Change"). Der Trigger-Audit dieser Welle (Modul 6,
+Closure-Schritt 2) prüft deshalb explizit, ob `ADR-0020` weiterhin gilt oder
+ein Folge-ADR fällig wird — unabhängig vom Ausgang ohne Auswirkung auf
+`slice-021`/`slice-022`, die bereits auf CLI festgelegt sind
+(`docs/plan/adr/architect-review-slice-021.md` §3, kanalgenerisch).
+
 ## 7. Closure-Notiz
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`

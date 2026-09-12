@@ -102,11 +102,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
       Consumer-Registrierung) und den ADR-Index. ADR-Index unverändert —
       dieser Slice legt kein neues ADR an (Architect-Verdikt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Kein Eintrag verkörpert
+      (Normalfall) — siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `BEO-PGC/rollen-verdrahtung/evidence/slice-021.md` ergänzt, Zähler 2×.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Ausgang: weiter offen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-6` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice. Item entfällt hier bewusst.
 
 ## 3. Plan (vor Code)
 
@@ -161,7 +163,8 @@ dasteht.
   Store-/Aktivierungs-/Stream-Verbindung, statt der `cdc_admin`-Rolle
   (`BEO-PGC/rollen-verdrahtung`) — Folge des bestehenden, unveränderten
   Verdrahtungsstands, keine Neuverschärfung durch diesen Slice.
-  **Ausgang:** wird bei Closure eingetragen.
+  **Ausgang: weiter offen** → `BEO-PGC/rollen-verdrahtung`
+  (`evidence/slice-021.md` ergänzt, Zähler jetzt 2×).
 
 ## 7. Closure-Notiz
 
@@ -173,18 +176,30 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Architect-Verdikt-Weg (Verdikt statt neues
+  ADR, wenn bereits Accepted-ADRs den Optionsraum abdecken) hat einen ganzen
+  Zug ohne Folge-ADR-Overhead getragen — drei bereits bestehende ADRs
+  (`ADR-0019`/`0020`/`0046`) reichten aus, die Zugriffsweg-Frage
+  erschöpfend zu entscheiden. Der Verifier hat den vom Implementer
+  offengelassenen Mutationstest-Vorbehalt eigenständig geschlossen (real
+  reproduziert, real rot).
+- **Was ging anders als geplant:** `internal/bootstrap/register_test.go`
+  war nicht im ursprünglichen §3-Plan (Plan-Nachzug im selben
+  Implementer-Lauf). Der Reviewer fand F-1 (MEDIUM, Negativtest-Lücke für
+  den `Register`-Domänenfehler-Pfad), geschlossen in einer eigenen
+  Fixrunde (`ef99df8`). Ein themenfremder Lastenheft-CR (`9936e82`,
+  `LH-FA-SST-006`) landete zeitlich zwischen den Slice-Commits — der
+  Verifier hat das als V-1 (LOW, non-blocking) korrekt nicht diesem Slice
+  angelastet, sondern der `welle-6`-Trigger-Audit zugeordnet (siehe
+  `welle-6.md` §Vermerk für den Trigger-Audit bei Closure).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-021.md`
+  in `BEO-PGC/rollen-verdrahtung` ergänzt — Zähler steht jetzt bei 2×.
+- **Folge-Slices:** `slice-022` (Positions-Bestätigung über denselben
+  Zugriffsweg) — liegt in `open/`.
+- **Risiken aus §6:** einziges Risiko (gemeinsame Instanz-DSN statt
+  `cdc_admin`) — Ausgang *weiter offen* → `BEO-PGC/rollen-verdrahtung`.
+- **Drei Paarungen:** Dieser Slice gehört zu `welle-6` — die Paarungen
+  prüft die Welle-Closure, nicht dieser Slice (Modul 6/8).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
