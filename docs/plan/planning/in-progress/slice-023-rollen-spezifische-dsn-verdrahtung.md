@@ -22,7 +22,11 @@ Zug 2 — Ausgang `geplant` für `BEO-PGC/rollen-verdrahtung` (3×), dieser
 Slice ist die zugewiesene Kennung. **[`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)**
 (Accepted) — der Konfigurationsvertrag (drei Verbindungs-DSNs,
 Rollen-Zuordnung je Aufrufer) ist damit entschieden; dieser Slice setzt
-sie um, ohne selbst noch zu entscheiden.
+sie um, ohne selbst noch zu entscheiden. **[`ADR-0048`](../../adr/0048-heartbeat-grant-korrektur-select-ergaenzung.md)**
+(Accepted, Supersedes `ADR-0047` teilweise) — korrigiert den in
+`ADR-0047` §Konsequenzen genannten Heartbeat-Grant-Text auf
+`GRANT SELECT, INSERT, UPDATE`; die Rollen-Zuordnung selbst bleibt
+unverändert.
 
 **Berührte Spec-Stellen:** — (kein `SPEC-*`/`ARC-*`-Eintrag zur
 DSN-Rollenbindung; die drei Rollen `cdc_capture`/`cdc_admin`/`cdc_reader`
