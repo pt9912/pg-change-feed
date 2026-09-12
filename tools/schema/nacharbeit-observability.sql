@@ -12,28 +12,18 @@
 -- Abgedeckt (Minimum, nicht vollständig): cdc_transactions_total,
 -- cdc_changes_processed, cdc_oldest_change_age_seconds,
 -- cdc_consumer_position{consumer}, cdc_consumer_lag{consumer},
--- cdc_capture_lag_approx — bewusst **nicht** unter dem SPEC-009-
--- kanonischen Namen `cdc_capture_lag`, siehe Grenze unten. Nicht
--- abgedeckt: der reale `cdc_capture_lag` selbst, cdc_changes_pending,
+-- cdc_capture_lag. Nicht abgedeckt: cdc_changes_pending,
 -- cdc_errors_total, cdc_wal_retention_bytes, cdc_storage_bytes
 -- (SPEC-009-Zeilen) — sie brauchen entweder persistierten Zustand, den
--- dieses Schema noch nicht trägt (Fehler-Log, Quell-Commit-Zeitstempel)
--- oder Systemkatalog-Zugriffe außerhalb des cdc-Schemas
--- (pg_stat_replication, Relationsgrößen), die die Least-Privilege-Fläche
--- von cdc_reader unnötig erweitern würden (`BEO-PGC/cdc-capture-lag-real`).
+-- dieses Schema nicht trägt (Fehler-Log) oder Systemkatalog-Zugriffe
+-- außerhalb des cdc-Schemas (pg_stat_replication, Relationsgrößen), die
+-- die Least-Privilege-Fläche von cdc_reader unnötig erweitern würden.
 --
--- Grenze (`cdc_capture_lag_approx`): `committed_at` trägt den realen
--- Quell-Commit-Zeitpunkt aus dem WAL (`InsertTransaction`,
--- `LH-FA-ADM-004`) — der Wert unten misst damit tatsächlich den Abstand
--- zwischen Quelländerung und CDC-Verfügbarkeit. Offen ist allein der
--- Name: `cdc_capture_lag_approx` trägt weiterhin den `_approx`-Suffix
--- statt des SPEC-009-kanonischen `cdc_capture_lag`. Ein
--- Monitoring-System, das die Zeilen roh liest (Datei-Kopfkommentar
--- oben), unterscheidet die Zeile deshalb noch nicht vom kanonischen
--- Namen — der Name selbst trägt die Zusage, nicht nur der SQL-Kommentar.
--- `SPEC-013`s Latenzschwellen (p95/Warn/Fehler) sind an den kanonischen
--- Namen `cdc_capture_lag` gebunden und bewusst NICHT an
--- `cdc_capture_lag_approx` anwendbar, bis die Umbenennung erfolgt ist.
+-- `cdc_capture_lag` (`SPEC-009`, `LH-FA-ADM-004`; Latenzschwellen
+-- p95/Warn/Fehler `SPEC-013`): `committed_at` trägt den Quell-
+-- Commit-Zeitpunkt aus dem WAL (`InsertTransaction`) — der Wert misst
+-- den Abstand zwischen der letzten Quelländerung und der
+-- CDC-Verfügbarkeit über `now() - max(committed_at)`.
 --
 -- Der Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) liegt bewusst nicht
 -- in dieser Datei: eine reine Lese-View auf bereits persistierten Zustand
@@ -54,7 +44,7 @@ UNION ALL
 SELECT 'cdc_oldest_change_age_seconds', NULL, COALESCE(extract(epoch FROM (now() - min(committed_at))), 0)::numeric
 FROM cdc.transaction
 UNION ALL
-SELECT 'cdc_capture_lag_approx', NULL, COALESCE(extract(epoch FROM (now() - max(committed_at))), 0)::numeric
+SELECT 'cdc_capture_lag', NULL, COALESCE(extract(epoch FROM (now() - max(committed_at))), 0)::numeric
 FROM cdc.transaction
 UNION ALL
 SELECT 'cdc_consumer_position', cp.consumer_id, cp.acknowledged_position::numeric
