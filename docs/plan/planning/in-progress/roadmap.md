@@ -49,7 +49,8 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Publication-Entzug-Wirksamkeit am laufenden Stream | `welle-7` liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
+| Black-Box-E2E und Integrationstest-Nachzug | `welle-7` liegt in `done/` | Noch nicht geschnitten — mindestens: echter Black-Box-E2E-Test über die bestehende CLI (`register-consumer`/`acknowledge-consumer` als externer Subprozess/Container-Aufruf, nicht als Go-Paket-Import), Compose-Integrationstest um post-MVP-Fähigkeiten erweitert (Consumer-Zugriffsweg, rollen-spezifische DSN-Trennung, WAL-Rückstand-Schwellen-Verhalten), Umbenennung weg von „MVP" sobald der Scope das rechtfertigt | L |
+| Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Black-Box-E2E/Integrationstest-Nachzug) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
 
 ## Meilensteine
@@ -89,8 +90,11 @@ flowchart LR
     W5[welle-5: Realer CDC-Capture-Lag]
     W6[welle-6: Consumer-Zugriffsweg]
     W7[welle-7: Replication-Schwellen-Überwachung]
+    W8[geplant: Black-Box-E2E und Integrationstest-Nachzug]
+    W9[geplant: Publication-Entzug-Wirksamkeit]
+    W10[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W10
 ```
 
 ## Abgeschlossene Wellen
