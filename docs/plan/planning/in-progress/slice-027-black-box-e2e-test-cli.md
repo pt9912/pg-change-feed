@@ -105,22 +105,27 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       „gelesene id-Folge '95,96', wollen '96'"), danach zurückgesetzt.
 - [x] `make gates` grün, `make test-integration` dreimal in Folge grün
       (real gegen den Compose-Stack).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-027.md`](../../../reviews/review-slice-027.md)
+      (0 HIGH/MEDIUM/LOW/INFO, kein Merge-Blocker), unabhängig bestätigt
+      durch [`docs/reviews/verify-slice-027.md`](../../../reviews/verify-slice-027.md)
+      (eigene Rot-Grün-Gegenprobe, 1× LOW V-1, siehe §7).
 - [x] Doku-Update für `harness/README.md` (Sensors-Tabelle,
       `make test-integration`-Zeile) falls sich der geprüfte Umfang
       erkennbar ändert. Entscheidung: durchgeführt — der geprüfte Umfang
       ändert sich für einen Leser erkennbar (bislang rein interne
       Store-/Go-Assertions, jetzt zusätzlich ein echter externer
       CLI-Rundlauf über einen simulierten Container-Neustart).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register — **entfällt**: Repos ohne
       Brownfield-Bootstrap haben die Datei nicht (`docs/plan/planning/reconciliation.md`
       existiert in diesem Repo nicht, Sub-Area `*`/`PGC` ist Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Keine Beobachtung angefallen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo **mit** Wellen-Betrieb (`welle-8` offen) — verschoben auf die welle-8-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -188,12 +193,17 @@ dasteht.
 
 - Ein simulierter Container-Neustart (`docker restart`/`docker stop && up`)
   könnte länger dauern oder sich anders verhalten als ein echter Prozess-
-  Neustart und den Test flaky machen. **Ausgang:** <bei Closure einzutragen>
+  Neustart und den Test flaky machen. **Ausgang: entfallen** — real
+  widerlegt: drei Folge-Läufe von `make test-integration` waren grün, das
+  Health-Gate (60×1s-Warteschleife auf `healthy`) trägt die Wartezeit
+  strukturell ab, kein Flake beobachtet.
 - Die Lese-Verifikation bleibt technisch „intern" (SQL-Query direkt gegen
   `cdc.changes`, kein CLI-Lese-Unterbefehl vorhanden) — der Test ist damit
   kein reiner Black-Box-Test, sondern black-box für Schreiben/Bestätigen und
-  white-box fürs Lesen. **Ausgang:** <bei Closure einzutragen — vermutlich
-  entfallen, da bereits in §1 als bewusste, benannte Grenze deklariert>
+  white-box fürs Lesen. **Ausgang: entfallen** — wie in §1 vorweggenommen,
+  eine bewusste, benannte Grenze; Reviewer und Verifier bestätigten
+  unabhängig, dass die *Aktionen* (Schreiben, Bestätigen) real extern
+  laufen, nur die Lese-Verifikation nicht.
 
 ## 7. Closure-Notiz
 
@@ -212,18 +222,31 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Bash-Ansatz (Erweiterung von
+  `run-integration-tests.sh` statt eines neuen Go-Tests) hielt die
+  Indirektion niedrig — `exec_feed()` ruft die CLI genauso auf, wie ein
+  echter Betreiber es täte, ohne einen zusätzlichen Testprozess-Layer.
+  Die eigene Rot-Grün-Verifikation zog sich wie in den vorigen Slices durch
+  alle drei Rollen (Implementer, Reviewer, Verifier je einmal unabhängig).
+- **Was ging anders als geplant:** Kein neuer Go-Test/keine `compose.yaml`-
+  Änderung nötig (Plan-Nachzug §3) — die Bash-Erweiterung reichte für den
+  vollen Rundlauf inkl. echtem Container-Neustart.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× und
+  wird verkörpert — der Normalfall. Die vom Verifier notierte
+  DoD-Checkbox-Lücke (V-1) ist strukturell dieselbe wie bei
+  `slice-024`/`025`/`026`: Die Review-Zeile kann erst nach dem Review
+  getickt werden.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen.
+- **Folge-Slices:** `slice-028` (Compose-Integrationstest-Nachzug —
+  Rollen-DSN-Trennung, MVP-Umbenennung) — bereits eine Datei in `open/`
+  (welle-8 §4).
+- **Risiken aus §6:** beide *entfallen* (Neustart real dreimal flake-frei
+  reproduziert; White-Box-Lesegrenze bereits in §1 bewusst benannt und von
+  Reviewer/Verifier bestätigt).
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-8` offen) —
+  verschoben auf die welle-8-Closure (Modul 8 §Rollen-Sequenz für eine
+  Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
