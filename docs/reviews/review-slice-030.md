@@ -56,12 +56,12 @@ LOW-Finding zur DoD-Formulierung.
   („inkompatible Typänderung … erkennbar gemeldet") kann aus diesem Pfad
   nicht entstehen, weil er keinen Typ interpretiert, den er verlieren
   könnte. **Das ist kein bloßer Spec-Rückstand, sondern ein Verstoß gegen
-  eine bereits `Accepted` und `permanent` gesetzte ADR:** ADR-0015 hat
+  eine bereits `Accepted` und `permanent` gesetzte ADR:** `ADR-0015` hat
   explizit Option A („Relation Metadata 1:1 durchreichen") gegen Option C
   abgewogen und **verworfen**, u. a. weil Option A „keine stabile
   historische Interpretation" trägt — der heutige Code verhält sich exakt
   wie das verworfene Option A, nicht wie das beschlossene Option C. Die
-  in ADR-0015 als „Folgepflicht" benannte `SchemaStorePort`-Abstraktion
+  in `ADR-0015` als „Folgepflicht" benannte `SchemaStorePort`-Abstraktion
   existiert im gesamten Repo nicht (0 Treffer). Die vier Code-Kommentare,
   die einen „Metadata-Pfad" referenzieren (`wiring.go:331`, `mapper.go:53`,
   `receive.go:62`, `verwaltung.go:26`), verweisen auf einen Mechanismus,
@@ -103,7 +103,7 @@ schreibt — die drei plausiblen Verdikte sind (a) Folge-Slice(s) mit ADR-
 Bezug, der `SchemaStorePort` und die dynamische Re-Versionierung sowie die
 Typ-Prüfung tatsächlich liefert, (b) ein Carveout mit Folge-Slice-ID, falls
 die Lücke vorerst bewusst offen bleiben soll, oder (c) eine Folge-ADR, die
-ADR-0015 zurücknimmt oder abschwächt, falls sich die Anforderung inzwischen
+`ADR-0015` zurücknimmt oder abschwächt, falls sich die Anforderung inzwischen
 als nicht mehr tragfähig erweist (unwahrscheinlich, da Lastenheft und
 Pflichtenheft unverändert `LH-FA-SCH-004`/`005`/`SPEC-004` fordern). Meine
 Einordnung ist **HIGH**, nicht „außerhalb des Reviewer-Kontexts": Der
@@ -194,7 +194,7 @@ selbst Verifier-Aufgabe bleibt.
   bleibt innerhalb des bestehenden Docker-/Compose-Musters.
 - geprüft, ohne Befund: **Hard Rule 3.2** (Suppression-Verbot), **3.5**
   (ADR-Immutabilität), **3.6** (Gate-Lockerung) — keine Berührung; kein
-  `#noqa`/`//nolint`, kein ADR-Inhalt editiert (ADR-0015 bleibt
+  `#noqa`/`//nolint`, kein ADR-Inhalt editiert (`ADR-0015` bleibt
   unangetastet — der Diff zitiert sie nur implizit über den Code-Befund),
   keine Gate-Schwelle geändert.
 - geprüft, ohne Befund: **Hard Rule 3.7** (Kommentar-Klassen) — die beiden
@@ -259,7 +259,7 @@ explizit gegen ADR und Plan, und genau das trifft hier zu.
 **Ausdrücklich unabhängig geprüft, nicht vom Implementer-Bericht
 übernommen:** Beide gemeldeten Funde am Code selbst nachvollzogen
 (`mapper.go`, `decode.go`, `wiring.go`/`receive.go`/`verwaltung.go`),
-inklusive repo-weiter Suche nach `SchemaStorePort` (0 Treffer) und ADR-0015
+inklusive repo-weiter Suche nach `SchemaStorePort` (0 Treffer) und `ADR-0015`
 im Original gelesen (Optionen-Vergleich, Folgepflicht); Kompilierbarkeit
 (`make test`, `gofmt`); Traceability; Register-Sichtung gegen alle 16
 bestehenden `BEO-PGC/*`-Einträge; `make gates` komplett neu ausgeführt.
