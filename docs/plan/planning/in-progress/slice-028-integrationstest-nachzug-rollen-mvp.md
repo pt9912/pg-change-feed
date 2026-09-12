@@ -40,11 +40,12 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Der Compose-Integrationstest verifiziert real, dass die seit
 `slice-023` verdrahtete rollen-spezifische DSN-Trennung
-(`cdc_capture`/`cdc_admin`/`cdc_reader`, `ADR-0047`) auch am laufenden,
-containerisierten Gesamtsystem greift — insbesondere schließt er
-`BEO-PGC/rollen-test-abdeckungsluecken` Punkt (2): Replication-Stream- und
-ACK-Adapter (`cdc_capture`-gebunden) werden gegen Rollen-Vertauschung
-testgesichert. Zusätzlich: `make test-integration`
+(`cdc_capture`/`cdc_admin`/`cdc_reader`, `ADR-0047`) auf PostgreSQL-Ebene
+greift — angestrebt war, damit `BEO-PGC/rollen-test-abdeckungsluecken`
+Punkt (2) zu schließen (Replication-Stream- und ACK-Adapter,
+`cdc_capture`-gebunden, gegen Rollen-Vertauschung testgesichert); real
+erreicht wurde nur die PostgreSQL-Ebene, nicht die Adapter-Ebene — siehe
+§2 DoD und §7 Closure-Notiz für die tatsächliche Deckung. Zusätzlich: `make test-integration`
 ([`tools/harness/run-integration-tests.sh`](../../../../tools/harness/run-integration-tests.sh))
 und `test/integration/mvp_test.go` werden umbenannt, sobald ihr Scope die
 Bezeichnung „MVP" nicht mehr korrekt trägt.
@@ -85,12 +86,20 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [x] `LH-QA-SEC-001`…`003` erfüllt: Der Compose-Integrationstest belegt
-      real, dass ein Zugriff mit der falschen Rolle (z. B. `cdc_reader` für
-      einen schreibenden Aufruf, oder ein Replication-Stream-/ACK-Aufruf
-      mit vertauschter Rolle) am laufenden, containerisierten System
-      zurückgewiesen wird — schließt `BEO-PGC/rollen-test-abdeckungsluecken`
-      Punkt (2). Beleg: `tools/harness/run-integration-tests.sh` (Abschnitt
+- [x] `LH-QA-SEC-001`…`003` **teilweise** erfüllt — **Planner-Korrektur nach
+      Reviewer-Fund F-1** ([`review-slice-028.md`](../../../reviews/review-slice-028.md)):
+      Der Compose-Integrationstest belegt real PostgreSQLs serverseitige
+      Durchsetzung des `REPLICATION`-Attributs (Schreib-Ablehnung für
+      `cdc_reader`, Verbindungs-Ablehnung ohne `REPLICATION`-Attribut,
+      Erfolg mit) — über eigens angelegte, ephemere Login-Identitäten per
+      rohem `psql`. Er ruft **nicht** die tatsächlichen Replication-Stream-/
+      ACK-Adapter (`receive.NewStream`/`postgresack.New`) auf und bleibt vom
+      laufenden Feed-Container entkoppelt (der ohnehin mit Superuser-DSNs
+      verdrahtet ist, `BEO`/`review-slice-023.md` INFO-1, unverändert seit
+      `slice-023`). Er schließt `BEO-PGC/rollen-test-abdeckungsluecken`
+      Punkt (2) damit **nicht vollständig** — nur die PostgreSQL-Ebene der
+      Rollentrennung, nicht die Adapter-Ebene. Beleg:
+      `tools/harness/run-integration-tests.sh` (Abschnitt
       „Rollen-DSN-Verifikation gegen den Compose-Stack"), Commit `ba508ed`;
       dreimal in Folge grün gegen den realen Compose-Stack.
 - [x] `mvp_test.go` benannt nach tatsächlichem Scope (der Make-**Target**-Name
@@ -110,15 +119,20 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün, `make test-integration` dreimal in Folge grün.
       Beleg: lokaler Lauf am HEAD (`632ddca`/`ba508ed`/`9a84407`), je
       dreimal in Folge grün — siehe Implementer-Bericht.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-028.md`](../../../reviews/review-slice-028.md)
+      (1 MEDIUM F-1 — DoD-Überzeichnung, oben per Planner-Korrektur behoben;
+      1 INFO F-2 — Superuser-Verdrahtung real bestätigt, aber unverändert
+      seit `slice-023`/`review-slice-023.md` INFO-1, keine Eskalation
+      gerechtfertigt). Verifier-Bestätigung der Korrektur: siehe §7.
 - [x] Doku-Update für `harness/README.md`/`AGENTS.md` (Sensors-Tabelle,
       Target-Name und -Beschreibung nach der Umbenennung). Beleg: siehe
       oben, Commit `9a84407`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Zurückgestellt auf die Closure** (§7, Planner-Rolle) — inhaltlich vorbereitet: `evidence/slice-028.md` unter `BEO-PGC/rollen-test-abdeckungsluecken/` mit Verweis auf den oben genannten Beleg, `state.md` bleibt `weiter offen` (Punkt (1) unverändert offen), Zähler auf 2× (`evidence/slice-023.md`, `evidence/slice-028.md`).
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Zurückgestellt auf die Closure** (§7, Planner-Rolle) — inhaltlich vorbereitet, **nach Reviewer-Fund F-1 korrigiert**: `evidence/slice-028.md` unter `BEO-PGC/rollen-test-abdeckungsluecken/` mit Verweis auf den oben genannten Beleg, `state.md` bleibt `weiter offen` — **beide** Punkte (1) *und* (2) bleiben offen (Punkt (2) nur auf PostgreSQL-Ebene, nicht auf Adapter-Ebene geschlossen), Zähler auf 2× (`evidence/slice-023.md`, `evidence/slice-028.md`).
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-8`-Closure.
 
@@ -197,13 +211,25 @@ dasteht.
 - Rollenbeschränkte Login-Test-Identitäten für den Replication-Stream
   könnten zusätzliche PostgreSQL-Rollen-Berechtigungen brauchen, die
   `ADR-0047`s Rollenmodell nicht vorsieht — das wäre eine Architect-Frage,
-  keine reine Testinfrastruktur-Änderung. **Ausgang:** <bei Closure
-  einzutragen>
+  keine reine Testinfrastruktur-Änderung. **Ausgang: entfallen** — der
+  Implementer fand einen einfacheren Weg (Prüfung direkt gegen die
+  Compose-Instanz statt gegen die `wal_level=logical`-Testcontainer-Kette),
+  der ohne neue Rollen-Berechtigungen auskam; die Frage stellte sich nicht.
 - Die Umbenennung von `mvp_test.go`/Helptext könnte weitere, hier nicht
   erfasste Erwähnungen von „MVP-Integrationstest" im Repo übersehen (z. B.
   in älteren Closure-Notizen — die bleiben unangetastet, da sie Historie
-  sind, aber laufende Doku könnte betroffen sein). **Ausgang:** <bei
-  Closure einzutragen>
+  sind, aber laufende Doku könnte betroffen sein). **Ausgang: entfallen** —
+  Implementer und Reviewer bestätigten unabhängig, dass alle laufenden
+  Doku-Stellen (`Makefile`, `harness/README.md`, `run-integration-tests.sh`,
+  `welle-8.md`) nachgezogen wurden; verbleibende Erwähnungen liegen nur in
+  bereits abgeschlossenen `done/`-Closure-Notizen (Historie, bewusst
+  unangetastet).
+- **Neues Risiko, aus Reviewer-Fund F-1:** `BEO-PGC/rollen-test-abdeckungsluecken`
+  Punkt (2) ist nur auf PostgreSQL-Ebene geschlossen, nicht auf
+  Adapter-Ebene (`receive.NewStream`/`postgresack.New` werden nie mit
+  rollenbeschränkten Verbindungen aufgerufen). **Ausgang: weiter offen** →
+  bleibt in `BEO-PGC/rollen-test-abdeckungsluecken` (Zähler 2×, Punkt (2)
+  weiterhin nicht vollständig geschlossen).
 
 ## 7. Closure-Notiz
 
