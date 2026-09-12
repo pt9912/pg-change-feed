@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-10 — Schema-Evolution-Nachlieferung (ADR-0015)](../welle-10.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -54,7 +56,6 @@ bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Schema-Evolution-Nachlieferung (`ADR-0015`) | `welle-9` liegt in `done/` | Noch nicht geschnitten — Architect-Skizze in [`docs/reviews/architect-verdict-slice-030-adr-0015.md`](../../../reviews/architect-verdict-slice-030-adr-0015.md): `TableSchema`-Domänenmodell, `SchemaStorePort` als Outbound Port, Persistenz-Adapter (`cdc.table_schema`), Decoder-Erweiterung um Spalten-Oid, dynamische Re-Versionierung im `Assembler.Consume`-Pfad, Fehlerklasse `schema` für inkompatible Typänderungen; löst die von `slice-030` gefundene, real unerfüllte `ADR-0015`-Folgepflicht ein (`LH-FA-SCH-004`/`005`), schließt `BEO-PGC/schema-evolution-nicht-dynamisch` | L |
 | E2E-Abdeckung — Verwaltung & Observability | Vorherige Welle (Schema-Evolution-Nachlieferung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
 | Retention-Löschausführung | Vorherige Welle (Verwaltung & Observability) liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
 | E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
@@ -101,7 +102,7 @@ flowchart LR
     W7[welle-7: Replication-Schwellen-Überwachung]
     W8[welle-8: Black-Box-E2E und Integrationstest-Nachzug]
     W9[welle-9: E2E-Abdeckung — CDC-Kernpfad]
-    W9B[geplant: Schema-Evolution-Nachlieferung ADR-0015]
+    W9B[welle-10: Schema-Evolution-Nachlieferung ADR-0015]
     W10[geplant: E2E-Abdeckung — Verwaltung & Observability]
     W11[geplant: Retention-Löschausführung]
     W12[geplant: E2E-Abdeckung — Retention]
