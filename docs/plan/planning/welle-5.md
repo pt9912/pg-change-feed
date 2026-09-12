@@ -98,20 +98,10 @@ der Closure-Trigger unerreichbar wird.
 
 ## 7. Closure-Notiz
 
-<!--
-BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md §Verwendung,
-Schritt 5) und darf deshalb nichts Tragendes halten.
-
-- Erst nach Welle-Abschluss fuellen; nur die Nummer, nicht die volle Welle-ID.
-- Ziel-Form der Ergebnis-Notiz: `welle-results.template.md` — Schwester-Vorlage
-  im Template-Verzeichnis, kein Artefakt deines Repos. Sie ist von der
-  Ruheort-Regel ausgenommen und faellt mit diesem Kommentar ohnehin weg.
--->
-
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 §Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**: Die
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: <Zeiger auf `welle-<NN>-results.md`, Geschwister im Ruheort `done/`>
-Zähler: <Zeiger aufs Beobachtungs-Register, eine Ebene über dem Ruheort>
+Ergebnis: [`welle-5-results.md`](welle-5-results.md), Geschwister im Ruheort `done/`.
+Zähler: [`../observations/`](../observations/)`BEO-PGC/`, eine Ebene über dem Ruheort.
