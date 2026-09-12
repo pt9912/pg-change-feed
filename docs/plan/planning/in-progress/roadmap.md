@@ -40,6 +40,8 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-5](../welle-5.md)
 
+Nichts in Arbeit.
+
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
