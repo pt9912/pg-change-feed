@@ -68,19 +68,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `decode.Commit` trägt `CommitTime` (aus
+- [x] `decode.Commit` trägt `CommitTime` (aus
       `pglogrepl.CommitMessage.CommitTime`) — real gegen eine dekodierte
-      Beispiel-COMMIT-Nachricht getestet.
-- [ ] `mapper.Assembler.Consume` übergibt den Zeitstempel beim
+      Beispiel-COMMIT-Nachricht getestet. Beleg: `TestDecodeFlowToCapture`
+      (Commit `3fa7e5d`), real durch alle drei Schichten getrieben,
+      Verifier bestätigt eigenständig.
+- [x] `mapper.Assembler.Consume` übergibt den Zeitstempel beim
       Commit-Aufruf an `model.ChangeTransaction.Commit`; die Domäne
       speichert ihn und stellt einen Zugriff bereit — bestehende
       Invarianten (einmaliger Commit, gleiche Quelle) bleiben unverändert
-      getestet grün.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      getestet grün. Beleg: Mutation-Test real reproduziert (Verifier,
+      `verify-slice-017.md`) — Entfernen der Zuweisung lässt drei Tests
+      rot laufen.
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update falls öffentlicher Vertrag berührt — geprüft: reine
+      Beleg: [`review-slice-017.md`](../../../../docs/reviews/review-slice-017.md)
+      (F-1 MEDIUM/F-2 LOW, beide als Selbstauskunfts-Korrektur ohne
+      Repo-Änderung disponiert), Verifier bestätigt in
+      [`verify-slice-017.md`](../../../../docs/reviews/verify-slice-017.md).
+- [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft: reine
       interne Signatur-Änderung (Domäne + Driving-Adapter), der
       `ChangeStorePort` bleibt unverändert — Item entfällt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
