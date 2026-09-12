@@ -1,7 +1,7 @@
 # Architect-Review welle-5 — Trigger-Audit (Carveout · Bootstrap-aware Gate · ADR-Re-Evaluierung) und Beobachtungs-Register-Verkörperung (BEO-PGC/dod-checkbox-nachzug, 3×)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
-**Eingang:** [`docs/plan/planning/welle-5.md`](../planning/welle-5.md) (§1–§3,
+**Eingang:** [`docs/plan/planning/welle-5.md`](../planning/done/welle-5.md) (§1–§3,
 Closure-Trigger noch offen zum Zeitpunkt dieses Laufs) ·
 [`docs/plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`](../planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md),
 [`docs/plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md`](../planning/done/slice-018-commit-zeitstempel-store-adapter.md),

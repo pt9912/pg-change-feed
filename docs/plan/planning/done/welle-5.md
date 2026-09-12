@@ -16,16 +16,16 @@ Verzeichnis-Position — kein Status-Feld.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`LH-FA-ADM-004`](../../../spec/lastenheft.md) (messbarer CDC-Abstand) ist
+[`LH-FA-ADM-004`](../../../../spec/lastenheft.md) (messbarer CDC-Abstand) ist
 bislang nur als Näherung geliefert (`cdc_capture_lag_approx`,
 Persistenz-Zeit-Proxy, slice-013) — kein realer Abstand zwischen
 Quell-Commit und CDC-Verfügbarkeit. Diese Welle spiegelt den bereits von
 `pglogrepl` gelieferten `CommitMessage.CommitTime`-Zeitstempel durch vier
 Schichten (Replication-Decoder, Domäne, Anwendungsschicht/Ports,
 Store-Adapter) bis in `cdc.transaction.committed_at` und löst die
-Beobachtung [`BEO-PGC/cdc-capture-lag-real`](observations/BEO-PGC/cdc-capture-lag-real/observation.md)
+Beobachtung [`BEO-PGC/cdc-capture-lag-real`](../observations/BEO-PGC/cdc-capture-lag-real/observation.md)
 auf: `cdc_capture_lag_approx` wird durch den kanonischen
-`cdc_capture_lag` ([`SPEC-013`](../../../spec/pflichtenheft.md)) abgelöst.
+`cdc_capture_lag` ([`SPEC-013`](../../../../spec/pflichtenheft.md)) abgelöst.
 
 **Das *Mehr* gegenüber den einzelnen Slice-DoDs:** Keine der drei Slices
 allein beweist, dass der Zeitstempel tatsächlich vom Quell-Commit stammt
@@ -64,9 +64,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-017 | Commit-Zeitstempel: Decoder+Mapper+Domäne | [`LH-FA-ADM-004`](../../../spec/lastenheft.md) |
-| slice-018 | Commit-Zeitstempel: Store-Adapter | [`LH-FA-ADM-004`](../../../spec/lastenheft.md) |
-| slice-019 | `cdc_capture_lag` ablösen + Lasttest-Beleg | [`LH-FA-ADM-004`](../../../spec/lastenheft.md), [`SPEC-013`](../../../spec/pflichtenheft.md) |
+| slice-017 | Commit-Zeitstempel: Decoder+Mapper+Domäne | [`LH-FA-ADM-004`](../../../../spec/lastenheft.md) |
+| slice-018 | Commit-Zeitstempel: Store-Adapter | [`LH-FA-ADM-004`](../../../../spec/lastenheft.md) |
+| slice-019 | `cdc_capture_lag` ablösen + Lasttest-Beleg | [`LH-FA-ADM-004`](../../../../spec/lastenheft.md), [`SPEC-013`](../../../../spec/pflichtenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -90,10 +90,10 @@ der Closure-Trigger unerreichbar wird.
   Schema-Rollout — anderer Vorgang (d-migrate-Workflow, unabhängig vom
   Zeitstempel-Wiring dieser Welle).
 - Consumer-Registrierungs-/ACK-Zugriffsweg
-  ([`LH-FA-CON-001.a`](../../../spec/pflichtenheft.md)/`004.a`) — anderer
+  ([`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md)/`004.a`) — anderer
   Vorgang, unbetroffen von der Capture-Seite.
 - Rollen-Verdrahtung (`BEO-PGC/rollen-verdrahtung`,
-  [`LH-QA-SEC-001`](../../../spec/lastenheft.md)/[`002`](../../../spec/lastenheft.md)) —
+  [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)/[`002`](../../../../spec/lastenheft.md)) —
   anderer Vorgang, eigene Bootstrap-Änderung.
 
 ## 7. Closure-Notiz
