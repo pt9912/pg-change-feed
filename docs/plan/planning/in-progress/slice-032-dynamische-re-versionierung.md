@@ -112,20 +112,29 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       grün. Beleg: `test/integration/integration_test.go` (Assertion
       dreht auf „unterscheidbar"), drei aufeinanderfolgende grüne
       `make test-integration`-Läufe.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-032.md`](../../../reviews/review-slice-032.md)
+      (1 LOW, kein Merge-Blocker). Verifikation in
+      [`docs/reviews/verify-slice-032.md`](../../../reviews/verify-slice-032.md)
+      (DoD eigenständig nachgeprüft, `LH-FA-SCH-005` dreifach real gegen
+      PostgreSQL bestätigt).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
       Implementer entscheidet und begründet im Plan-Nachzug. Kein
       öffentlicher Vertrag geändert: `CDC_TABLES`-Format, Port-Signaturen
       (`SchemaStorePort` selbst) und `ADR-0015` bleiben unverändert; die
       neue `Config.SchemaStore`/`Consume(ctx, …)`-Signatur ist interne
       Adapter-/Assembler-Verdrahtung ohne öffentlichen Vertrag.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Keine Beobachtung angefallen — dieser Slice liefert den zweiten
+      Baustein zur Auflösung von `BEO-PGC/schema-evolution-nicht-dynamisch`
+      (1×, unverändert); die Auflösung selbst erfolgt erst mit `slice-033`/
+      `welle-10`-Closure.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-10`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -245,14 +254,21 @@ dasteht.
   interpretierbare Änderung" könnte in der Praxis unschärfer sein als
   eine reine Obermengen-Prüfung auf Spaltennamen — z. B. eine Spalte, die
   entfernt und mit gleichem Namen, anderem Typ wieder hinzugefügt wird,
-  in einer einzigen `pgoutput`-Relation-Message. **Ausgang:** <bei
-  Closure einzutragen>
+  in einer einzigen `pgoutput`-Relation-Message. **Ausgang: entfallen** —
+  `classifyRelationColumns` behandelt jede Spalte mit geändertem Typ
+  (unabhängig davon, ob per `ALTER COLUMN TYPE` oder Drop+Re-Add
+  entstanden) einheitlich konservativ über denselben `relationOther`-Pfad;
+  Reviewer und Verifier haben das eigenständig am Code und real gegen
+  `TestMVPSchemaChangeIncompatibleTypeChange` bestätigt.
 - Bestehende, bereits aktivierte Tabellen ohne je registrierte
   `TableSchema` (Version 1 aus der statischen Erstaktivierung, siehe
   `slice-031`s Backfill-Fähigkeit) könnten beim ersten real eintreffenden
   `*decode.Relation`-Ereignis eine unerwartete Erstregistrierung
   auslösen, wenn der Assembler keine vorhandene `TableSchema` findet.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen** — genau dieser Fall ist die vom Implementer
+  bewusst gebaute Backfill-Fähigkeit
+  (`TestConsumeRelationBackfillsMissingTableSchema`): die Erstregistrierung
+  ist beabsichtigt und getestet, nicht unerwartet.
 
 ## 7. Closure-Notiz
 
@@ -271,18 +287,32 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand während der Umsetzung
+  zwei reale, vorbestehende Lücken (fehlende `cdc.table_schema`-DDL in
+  `walretention_endtoend_test.go`, fehlende `cdc_capture`-Grants in
+  `nacharbeit-roles.sql`) über echte rote Testläufe (`make
+  test-replication`), nicht durch Vermutung — und behob beide, statt sie
+  zu umgehen. Reviewer und Verifier bestätigten unabhängig voneinander,
+  dass der konservative „alles andere bleibt unverändert"-Zweig
+  (`classifyRelationColumns`) wirklich für alle drei benannten
+  Unterfälle greift, real gegen PostgreSQL, nicht nur durch Code-Lektüre.
+- **Was ging anders als geplant:** Keine wesentliche Abweichung vom
+  Slice-Ziel. Der Reviewer fand ein LOW-Finding (F-1: zwei von drei
+  konservativen Unterfällen ohne dedizierten eigenen Testfall, laufen
+  aber nachweislich über denselben Code-Pfad wie der geprüfte dritte) —
+  kein Merge-Blocker, keine Fixrunde nötig.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  der Normalfall. `BEO-PGC/schema-evolution-nicht-dynamisch` bleibt
+  unverändert bei 1× (dieser Slice liefert einen weiteren Baustein,
+  keinen neuen Beleg).
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — siehe §2-Begründung.
+- **Folge-Slices:** keine — `slice-033` (Typ-Auswertung/Fehlerklasse
+  `schema`) steht bereits in `welle-10` §4 als vorgesehener nächster
+  Slice dieser Welle, wird als nächster Schritt neu geschnitten.
+- **Risiken aus §6:** beide *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-10` offen) —
+  Prüfung läuft bei der `welle-10`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
