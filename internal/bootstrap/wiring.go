@@ -396,13 +396,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	streamCtx, stopStream := context.WithCancel(ctx)
 	defer stopStream()
 
-	warnBytes, errorBytes := cfg.WALRetentionWarnBytes, cfg.WALRetentionErrorBytes
-	if warnBytes <= 0 {
-		warnBytes = walRetentionWarnBytes
-	}
-	if errorBytes <= 0 {
-		errorBytes = walRetentionErrorBytes
-	}
+	warnBytes, errorBytes := resolveWALRetentionThresholds(cfg.WALRetentionWarnBytes, cfg.WALRetentionErrorBytes)
 	var walFault walRetentionFault
 	walRetentionCtx, stopWALRetention := context.WithCancel(ctx)
 	var walRetentionDone sync.WaitGroup
@@ -458,6 +452,25 @@ const (
 	walRetentionWarn
 	walRetentionError
 )
+
+// resolveWALRetentionThresholds löst die effektiven Warn-/Fehlerschwellen
+// auf: ein nicht gesetzter Override (0 oder negativ) übernimmt die
+// SPEC-013-Startwerte (`walRetentionWarnBytes`/`walRetentionErrorBytes`)
+// statt einer Schwelle von 0 — 0 würde jeden gemessenen Byte-Wert sofort als
+// Fehlerschwellen-Überschreitung klassifizieren (`classifyWALRetention`) und
+// den Lauf beim ersten Tick abbrechen lassen. Eigene Funktion statt Inline-
+// Code in `Run`, damit der Fallback ohne reale PostgreSQL-Verbindung
+// testbar ist (`slice-026` Fixrunde, Review F-1).
+func resolveWALRetentionThresholds(warnOverride, errorOverride int64) (warnBytes, errorBytes int64) {
+	warnBytes, errorBytes = warnOverride, errorOverride
+	if warnBytes <= 0 {
+		warnBytes = walRetentionWarnBytes
+	}
+	if errorBytes <= 0 {
+		errorBytes = walRetentionErrorBytes
+	}
+	return warnBytes, errorBytes
+}
 
 // classifyWALRetention vergleicht den gemessenen WAL-Rückstand gegen die
 // beiden Schwellen aus `SPEC-013` (strikt größer als, wie dort formuliert:

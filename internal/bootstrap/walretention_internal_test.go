@@ -20,6 +20,54 @@ import (
 // belegt die Vergleichs-/Prioritäts-Logik selbst, ohne reale PostgreSQL-
 // Instanz.
 
+// TestResolveWALRetentionThresholdsDefaultsToSpec013 belegt den
+// Zero-Value-Fallback von `Config.WALRetentionWarnBytes`/
+// `WALRetentionErrorBytes` (Review-Finding F-1, `review-slice-026.md`): ein
+// unbesetzter (0 oder negativer) Override übernimmt die
+// SPEC-013-Startwerte (100 MiB/1 GiB), nicht eine Schwelle von 0 — ein
+// über `ConfigFromEnv` gestarteter Produktionsprozess erreicht `Run` immer
+// mit `Config{}`-Zero-Values für beide Felder (kein Umgebungsname mappt
+// darauf, siehe `wiring.go` Kommentar an `Config.WALRetentionWarnBytes`).
+// Rot färbende Mutation: die Bedingung in `resolveWALRetentionThresholds`
+// von `<= 0` auf `>= 0` umkehren — dann liefert dieser Test 0/0 statt der
+// SPEC-013-Startwerte.
+func TestResolveWALRetentionThresholdsDefaultsToSpec013(t *testing.T) {
+	cases := []struct {
+		name          string
+		warnOverride  int64
+		errorOverride int64
+	}{
+		{"beide Felder 0 (Zero-Value-Config)", 0, 0},
+		{"beide Felder negativ", -1, -1},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			warnBytes, errorBytes := resolveWALRetentionThresholds(c.warnOverride, c.errorOverride)
+			if warnBytes != walRetentionWarnBytes {
+				t.Fatalf("resolveWALRetentionThresholds(%d, %d) warnBytes = %d, wollen SPEC-013-Startwert %d", c.warnOverride, c.errorOverride, warnBytes, walRetentionWarnBytes)
+			}
+			if errorBytes != walRetentionErrorBytes {
+				t.Fatalf("resolveWALRetentionThresholds(%d, %d) errorBytes = %d, wollen SPEC-013-Startwert %d", c.warnOverride, c.errorOverride, errorBytes, walRetentionErrorBytes)
+			}
+		})
+	}
+}
+
+// TestResolveWALRetentionThresholdsKeepsPositiveOverride belegt die
+// Gegenseite: ein gesetzter positiver Override (Testfixture-Schwellen, wie
+// `TestWALRetentionThresholdEndToEnd` sie nutzt) bleibt unverändert und wird
+// nicht durch die SPEC-013-Startwerte ersetzt.
+func TestResolveWALRetentionThresholdsKeepsPositiveOverride(t *testing.T) {
+	const warnOverride, errorOverride int64 = 32 * 1024, 512 * 1024
+	warnBytes, errorBytes := resolveWALRetentionThresholds(warnOverride, errorOverride)
+	if warnBytes != warnOverride {
+		t.Fatalf("resolveWALRetentionThresholds(%d, %d) warnBytes = %d, wollen den Override unverändert", warnOverride, errorOverride, warnBytes)
+	}
+	if errorBytes != errorOverride {
+		t.Fatalf("resolveWALRetentionThresholds(%d, %d) errorBytes = %d, wollen den Override unverändert", warnOverride, errorOverride, errorBytes)
+	}
+}
+
 // TestClassifyWALRetentionThresholds belegt die `>`-Semantik aus `SPEC-013`
 // („Warn > 100 MiB · Fehler > 1 GiB"): an der Schwelle selbst gilt noch die
 // niedrigere Stufe — dieselbe Semantik wie `healthcheckVerdict`

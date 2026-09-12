@@ -145,6 +145,13 @@ Aussagen-Berührung steht hier gar nicht.
 Der Implementer erweitert diese Liste im ersten Lauf, sobald `slice-024`s
 ADR und `slice-025`s konkreter Expositionsweg vorliegen.
 
+**Plan-Nachzug (Fixrunde nach Review, [`review-slice-026.md`](../../../reviews/review-slice-026.md) F-1 behoben):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/bootstrap/wiring.go` | update | F-1: Fallback-Logik (`if warnBytes <= 0 { warnBytes = walRetentionWarnBytes }`, dieselbe Form für `errorBytes`) aus der Inline-Stelle in `Run` in die eigene Funktion `resolveWALRetentionThresholds` extrahiert — reiner Wert-Vergleich ohne PostgreSQL-Zugriff, dadurch ohne Testcontainer testbar |
+| `internal/bootstrap/walretention_internal_test.go` | update | F-1: `TestResolveWALRetentionThresholdsDefaultsToSpec013` belegt Zero-Value- und negative Config-Felder → `SPEC-013`-Startwerte (100 MiB/1 GiB), nicht 0; `TestResolveWALRetentionThresholdsKeepsPositiveOverride` belegt, dass ein gesetzter Override unverändert bleibt. Rot färbende Mutation (`<= 0` → `>= 0`) real gesehen und zurückgesetzt |
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
