@@ -16,7 +16,18 @@
 # SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle als Lebenszeichen
 # des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002); ihr Port
 # (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe Abgrenzung
-# wie beim Consumer-State.
+# wie beim Consumer-State. administration_request trägt die Antrags-Queue
+# der schreibenden SQL-Administration (ADR-0050, LH-FA-ADM-001) — die
+# Tabelle selbst läuft über dieses Modell, die zugehörigen Funktionen
+# cdc.enable_table/cdc.disable_table dagegen nicht: d-migrate 1.3.1 generiert
+# ihre DDL korrekt (`schema generate`), aber `schema migrate --execute`
+# bricht für jede function: im `functions:`-Knoten mit
+# POST_EXECUTE_DRIFT (Exit 5) ab — real reproduziert auch mit einer
+# trivialen No-Arg-Funktion gegen eine frische PostgreSQL-18-Instanz. Die
+# Funktionen laufen deshalb über die etablierte Ausweichform
+# (tools/schema/nacharbeit-administration.sql, ADR-0043
+# Re-Evaluierungs-Trigger, dieselbe Klasse wie nacharbeit-roles.sql).
+# Herkunft: `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 #
 # Die drei Views (active_tables, consumer_status, changes) tragen den
 # SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
@@ -188,6 +199,29 @@ tables:
       - name: chk_consumer_position_position_positive
         type: check
         expression: "(acknowledged_position > 0)"
+
+  administration_request:
+    description: "Antrags-Datensatz der schreibenden SQL-Administration (ADR-0050, LH-FA-ADM-001): cdc.enable_table/cdc.disable_table (tools/schema/nacharbeit-administration.sql) schreiben ausschließlich hierher und senden pg_notify — die eigentliche Bindungs-/Publication-Änderung bleibt TableActivationAdapter vorbehalten und läuft asynchron über die Administrations-Goroutine (Folge-Slice). request_kind/status sind bewusst text mit CHECK statt eines eigenen Enum-Typs — dasselbe Muster wie change.operation."
+    columns:
+      administration_request_id: { type: text, required: true }
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      schema_name: { type: text, required: true }
+      table_name: { type: text, required: true }
+      request_kind: { type: text, required: true }
+      requested_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
+      status: { type: text, required: true, default: "pending" }
+      error_message: { type: text }
+    primary_key: [administration_request_id]
+    constraints:
+      - name: chk_administration_request_kind
+        type: check
+        expression: "request_kind IN ('enable', 'disable')"
+      - name: chk_administration_request_status
+        type: check
+        expression: "status IN ('pending', 'applied', 'failed')"
 
   process_heartbeat:
     description: "Lebenszeichen des Capture-Prozesses je Quelle (LH-FA-ADM-002, LH-QA-OPS-002). Eine Instanz trägt Quelle und CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft) — der periodische Schreib-Zug der Composition Root (ADR-0026) trägt genau eine Zeile je Quelle fort, kein eigenes Prozess-Kennungsfeld. error_class (LH-FA-ADM-003, LH-QA-REL-003) trägt den zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist Normalbetrieb, ein erfolgreicher Beat löscht die Spalte wieder."
