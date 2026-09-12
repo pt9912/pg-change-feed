@@ -238,7 +238,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn)$' \
+  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPActivationState|TestMVPActiveTablesViewMatchesActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn)$' \
   ./test/integration/...
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag

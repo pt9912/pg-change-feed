@@ -540,6 +540,75 @@ func TestMVPActivationState(t *testing.T) {
 	}
 }
 
+// TestMVPActiveTablesViewMatchesActivationState liest den
+// Aktivierungsstand am verdrahteten Feed-Container über die externe
+// SQL-Sicht `cdc.active_tables` (`LH-FA-SST-002`) statt über den
+// internen Status-Use-Case: die aktivierte Feed-Tabelle erscheint in der
+// Sicht (`LH-FA-CFG-003`/`004` Happy Path), die nie aktivierte Tabelle
+// nicht (`LH-FA-CFG-003`/`004` Boundary) — beide Lesewege tragen dieselbe
+// Aussage über denselben Bindungszustand. `feed_mvp_full` bleibt über den
+// gesamten Compose-Lauf aktiviert (Lasttest-Beleg in
+// run-integration-tests.sh) und ist damit unabhängig von der
+// Deaktivierung in TestMVPDisableRetainedState, die nur feed_mvp_flow
+// betrifft.
+func TestMVPActiveTablesViewMatchesActivationState(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_full")
+	ctx := context.Background()
+
+	activation, err := postgresstorage.NewTableActivation(ctx, env.dsn)
+	if err != nil {
+		t.Fatalf("Aktivierungs-Adapter: %v", err)
+	}
+	t.Cleanup(activation.Close)
+	statusCase := status.NewGetStatusService(activation)
+
+	// Happy Path: die aktivierte Tabelle erscheint in `cdc.active_tables`,
+	// gefiltert auf ihre eigene Bindungs-Kennung — isoliert von den
+	// übrigen im selben Compose-Lauf aktivierten Tabellen
+	// (`feed_mvp_flow`, `feed_mvp_schema`).
+	var activeCount int
+	if err := env.pool.QueryRow(ctx,
+		"SELECT count(*) FROM cdc.active_tables WHERE source_table_id = $1",
+		string(env.tableID),
+	).Scan(&activeCount); err != nil {
+		t.Fatalf("cdc.active_tables-Lesung (feed_mvp_full): %v", err)
+	}
+	if activeCount != 1 {
+		t.Fatalf("cdc.active_tables ohne feed_mvp_full: %d Zeilen (Erwartung: 1)", activeCount)
+	}
+	enabled, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_full", Publication: mvpPublication,
+	})
+	if err != nil {
+		t.Fatalf("Status der aktivierten Tabelle: %v", err)
+	}
+	if !enabled.Enabled {
+		t.Fatalf("Status von feed_mvp_full: nicht aktiviert, obwohl cdc.active_tables eine Zeile trägt")
+	}
+
+	// Boundary: die nie aktivierte Tabelle (kein `source_table`-Eintrag)
+	// erscheint nicht in `cdc.active_tables`.
+	var idleCount int
+	if err := env.pool.QueryRow(ctx,
+		"SELECT count(*) FROM cdc.active_tables WHERE source_id = $1 AND schema_name = 'public' AND table_name = $2",
+		mvpSource, "feed_mvp_idle",
+	).Scan(&idleCount); err != nil {
+		t.Fatalf("cdc.active_tables-Lesung (feed_mvp_idle): %v", err)
+	}
+	if idleCount != 0 {
+		t.Fatalf("cdc.active_tables mit feed_mvp_idle: %d Zeilen (Erwartung: 0)", idleCount)
+	}
+	idle, err := statusCase.Status(ctx, inbound.GetStatusQuery{
+		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle", Publication: mvpPublication,
+	})
+	if err != nil {
+		t.Fatalf("Status der nie aktivierten Tabelle: %v", err)
+	}
+	if idle.Enabled {
+		t.Fatalf("Status von feed_mvp_idle: aktiviert, obwohl cdc.active_tables keine Zeile trägt")
+	}
+}
+
 // TestMVPDisableRetainedState trägt die Deaktivierung mit Change-Bestand
 // am verdrahteten Feed-Container (`LH-FA-CFG-002` Out-of-Scope,
 // `ADR-0028`): die Erfassung stoppt über den Publication-Entzug, die
