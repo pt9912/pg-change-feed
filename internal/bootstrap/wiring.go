@@ -36,6 +36,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -389,6 +390,41 @@ func classifyRunError(err error) model.ErrorClass {
 	default:
 		return model.ErrorClassInternal
 	}
+}
+
+// RegisterConsumer verdrahtet den `RegisterConsumerUseCase` (`ADR-0028`)
+// für den `register-consumer`-Sondermodus
+// (`cmd/pg-change-feed/main.go`, `LH-FA-CON-001.a`) und trägt dessen
+// Prozess-Ausgang: 0 nach Registrierung — neu oder bereits registriert,
+// beide Fälle tragen `LH-FA-CON-001`s Boundary-Kriterium, die Ausgabe
+// unterscheidet sie —, 1 bei Verdrahtungs- oder Domänenfehler. Der Aufruf
+// öffnet eine eigene, kurzlebige Verbindung über denselben
+// `ConsumerStatePort`-Adapter, den die laufende Verdrahtung (`Run` oben)
+// nutzen würde — kein Bestandteil des Dauerbetriebs. Consumer-Kennung und
+// -Name tragen denselben Wert (`name`); dieser Zugriffsweg trennt beide
+// (noch) nicht.
+func RegisterConsumer(ctx context.Context, cfg Config, name string) int {
+	state, err := postgresstorage.NewConsumerState(ctx, cfg.DSN)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: register-consumer: %v\n", err)
+		return 1
+	}
+	defer state.Close()
+
+	result, err := register.NewRegisterConsumerService(state).Register(ctx, inbound.RegisterConsumerCommand{
+		Consumer: model.ConsumerID(name),
+		Name:     name,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: register-consumer: %v\n", err)
+		return 1
+	}
+	if result.AlreadyRegistered {
+		fmt.Printf("pg-change-feed: Consumer %q bereits registriert\n", result.Consumer.ID)
+		return 0
+	}
+	fmt.Printf("pg-change-feed: Consumer %q registriert\n", result.Consumer.ID)
+	return 0
 }
 
 // healthcheckVerdict trägt die binäre Healthcheck-Entscheidung (Compose

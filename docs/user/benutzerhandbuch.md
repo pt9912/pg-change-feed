@@ -161,6 +161,31 @@ SELECT * FROM cdc.active_tables;
 **Ergebnis:** Eine Zeile je aktivierter Tabelle mit der aktuell
 gebundenen Schema-Version.
 
+### Consumer registrieren
+
+**Voraussetzung:** Zugriff auf dieselbe Instanz-DSN wie der reguläre
+CDC-Lauf (`CDC_SOURCE_DSN`) — eine gesonderte Rolle für diesen Zugriffsweg
+ist nicht verdrahtet.
+
+**Vorgehen:** Der Feed-Container trägt einen Sondermodus, der den Aufruf
+über `RegisterConsumerUseCase` führt, statt die CDC-Speichertabellen
+direkt zu schreiben — derselbe Image-Tag wie der Daemon, als einmaliger,
+kurzlebiger Lauf statt als Dauerdienst:
+
+```bash
+docker run --rm -e CDC_SOURCE_DSN -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
+  ghcr.io/pt9912/pg-change-feed:dev register-consumer <name>
+```
+
+In der Compose-Umgebung: `docker compose run --rm pg-change-feed
+register-consumer <name>`. `<name>` trägt zugleich Kennung und Namen des
+Consumers.
+
+**Ergebnis:** Der Consumer ist registriert und kann fortan lesen und
+Positionen bestätigen (`LH-FA-CON-001`). Ein bereits registrierter Name
+bleibt unverändert; der Lauf meldet das über eine eigene Ausgabe-Zeile,
+Exit-Code bleibt 0 (Idempotenz, `LH-FA-CON-001` Boundary).
+
 ### Änderungen lesen
 
 ```sql

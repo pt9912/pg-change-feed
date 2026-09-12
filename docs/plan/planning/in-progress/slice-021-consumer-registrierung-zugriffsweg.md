@@ -80,21 +80,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] ADR entschieden (Architect): Zugriffsweg für Consumer-Registrierung
+- [x] ADR entschieden (Architect): Zugriffsweg für Consumer-Registrierung
       (CLI-Unterbefehl / Netzwerkschnittstelle / anderer Mechanismus),
       referenziert [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md).
-- [ ] [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) erfüllt: ein
+      Architect-Verdikt [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md):
+      CLI-Unterbefehl, kein neues ADR nötig.
+- [x] [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) erfüllt: ein
       externer Aufruf über den entschiedenen Zugriffsweg registriert einen
       Consumer über `RegisterConsumerUseCase`, ohne die CDC-Speichertabellen
-      direkt zu schreiben — Test referenziert.
-- [ ] `make gates` grün.
+      direkt zu schreiben — Test referenziert:
+      `internal/bootstrap/register_test.go::TestRegisterConsumerEndToEnd`
+      (Happy Path + „bereits registriert"-Boundary, real gegen PostgreSQL
+      über `make test-store`).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
-      Consumer-Registrierung) und den ADR-Index.
+- [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
+      Consumer-Registrierung) und den ADR-Index. ADR-Index unverändert —
+      dieser Slice legt kein neues ADR an (Architect-Verdikt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -108,9 +114,10 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `docs/plan/adr/NNNN-consumer-zugriffsweg.md` | neu | Architect-Entscheidung zum Zugriffsweg |
-| `cmd/pg-change-feed/main.go` | update | neuer Zugriffsweg verdrahtet (Art hängt von der ADR ab) |
-| `internal/bootstrap/wiring.go` | update | ruft `RegisterConsumerUseCase` über den neuen Zugriffsweg |
+| ~~`docs/plan/adr/NNNN-consumer-zugriffsweg.md`~~ | **entfällt** | Architect-Verdikt [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md): drei bereits `Accepted`-ADRs (`ADR-0019`, `ADR-0020`, `ADR-0046`) schließen den Optionsraum erschöpfend — kein neues ADR nötig |
+| `cmd/pg-change-feed/main.go` | update | neuer Sondermodus `register-consumer <name>` (Unterbefehl), verdrahtet bis `RegisterConsumerUseCase`, Exit-Codes 0/1/2 |
+| `internal/bootstrap/wiring.go` | update | `RegisterConsumer(ctx, cfg, name)` baut `postgresstorage.NewConsumerState` + `register.NewRegisterConsumerService` und ruft `Register` auf |
+| `internal/bootstrap/register_test.go` | neu | End-to-End-Test gegen reale PostgreSQL (Happy Path + „bereits registriert"-Boundary) und ein netzloser Verdrahtungsfehler-Test — nicht in der ursprünglichen Plan-Tabelle, Plan-Nachzug im selben Lauf |
 | `docs/user/benutzerhandbuch.md` | update | neuer Zugriffsweg für Consumer-Registrierung dokumentiert |
 
 ## 4. Trigger

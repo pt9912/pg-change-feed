@@ -40,8 +40,26 @@ func main() {
 		}
 		os.Exit(bootstrap.Healthcheck(context.Background(), cfg.DSN, cfg.Source))
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "register-consumer" {
+		// Der Sondermodus registriert einen Consumer über
+		// `RegisterConsumerUseCase` (`LH-FA-CON-001.a`) und beendet sich,
+		// ohne je den Capture-Loop (`bootstrap.Run`) zu erreichen —
+		// dasselbe Muster wie `--healthcheck` oben. Kennung und Name des
+		// Consumers tragen denselben Wert; dieser Zugriffsweg trennt
+		// beide (noch) nicht.
+		if len(os.Args) != 3 {
+			fmt.Fprintln(os.Stderr, "pg-change-feed: register-consumer erwartet genau einen Namen als Argument")
+			os.Exit(2)
+		}
+		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(bootstrap.RegisterConsumer(context.Background(), cfg, os.Args[2]))
+	}
 	if len(os.Args) > 1 {
-		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand")
+		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand, register-consumer <name> registriert einen Consumer")
 		os.Exit(2)
 	}
 	// Der Lauf endet kontrolliert auf SIGINT/SIGTERM: der Stream-Lauf
