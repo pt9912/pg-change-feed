@@ -64,6 +64,84 @@ fi
 # tools/schema/down.sql.
 make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
+# Rollen-DSN-Verifikation gegen den Compose-Stack (LH-QA-SEC-001…003,
+# ADR-0047, BEO-PGC/rollen-test-abdeckungsluecken): Die laufende
+# CDC_CAPTURE_DSN/CDC_ADMIN_DSN/CDC_READER_DSN-Verdrahtung des
+# Feed-Containers verbindet sich testbedingt mit allen drei DSNs über den
+# Superuser postgres (siehe compose.yaml-Kommentar) — die drei
+# Gruppenrollen selbst liegen seit dem Schema-Rollout oben aber real in
+# dieser Instanz vor (nacharbeit-roles.sql). Dieser Abschnitt belegt die
+# Rollentrennung direkt gegen sie, mit derselben Fixture-Disziplin wie
+# internal/bootstrap/roles_wiring_test.go::newTestLoginRole: anmeldefähige
+# Test-Identitäten je Rolle, angelegt und am Ende dieses Abschnitts wieder
+# entfernt — kein Bestandteil des Rollen-DDL
+# (tools/schema/nacharbeit-roles.sql, unverändert seit slice-011/-023).
+#
+# Zwei Prüfungen: (1) ein cdc_reader-Login scheitert an einem schreibenden
+# Aufruf — dieselbe Fehlerklasse wie
+# TestCdcReaderLoginConnectionRejectsWrite. (2) schließt
+# BEO-PGC/rollen-test-abdeckungsluecken Punkt (2): Replication-Stream und
+# ACK-Adapter (beide cdc_capture-gebunden, ADR-0047 — dieselbe physische
+# Verbindung, Option C) waren gegen Rollen-Vertauschung nicht
+# testgesichert, weil run-replication-tests.sh keine rollenbeschränkten
+# Login-Test-Identitäten bereitstellt. Real geschlossen mit zwei
+# Verbindungsversuchen im Replication-Protokoll (`replication=database`):
+# eine Login-Identität ohne das REPLICATION-Attribut (hier mit der
+# falschen Gruppenrolle cdc_admin) scheitert am Verbindungsaufbau
+# ("permission denied to start WAL sender"); eine Login-Identität mit
+# cdc_capture-Mitgliedschaft UND direkt gesetztem REPLICATION-Attribut
+# (ADR-0047 Kontext-Befund 2: PostgreSQL vererbt Rollen-Attribute nicht
+# über Mitgliedschaft) gelingt — der Kontrast belegt, dass die Ablehnung
+# oben an der Rolle liegt, nicht an einem allgemeinen Verbindungsfehler.
+ROLE_TEST_PASSWORD=pgc-e2e-role-verify
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+DROP ROLE IF EXISTS pgc_e2e_reader_login;
+CREATE ROLE pgc_e2e_reader_login LOGIN PASSWORD '$ROLE_TEST_PASSWORD' IN ROLE cdc_reader;
+DROP ROLE IF EXISTS pgc_e2e_wrongrole_login;
+CREATE ROLE pgc_e2e_wrongrole_login LOGIN PASSWORD '$ROLE_TEST_PASSWORD' IN ROLE cdc_admin;
+DROP ROLE IF EXISTS pgc_e2e_capture_login;
+CREATE ROLE pgc_e2e_capture_login LOGIN PASSWORD '$ROLE_TEST_PASSWORD' IN ROLE cdc_capture;
+ALTER ROLE pgc_e2e_capture_login REPLICATION;
+SQL
+
+set +e
+reader_write_output=$(docker exec "$PG_CONTAINER" psql \
+  "postgres://pgc_e2e_reader_login:$ROLE_TEST_PASSWORD@localhost:5432/$PG_DB?sslmode=disable" \
+  -c "INSERT INTO cdc.change (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version) VALUES ('c-role-verify','tx-role-verify','st-role-verify',1,'INSERT',NULL,'{}'::jsonb,'sv-role-verify')" 2>&1)
+reader_write_status=$?
+set -e
+if [ "$reader_write_status" -eq 0 ] || ! printf '%s' "$reader_write_output" | grep -q "permission denied"; then
+  echo "run-integration-tests: cdc_reader-Login-Identität INSERT auf cdc.change — erwartet permission denied, erhalten (Status $reader_write_status): $reader_write_output" >&2
+  exit 1
+fi
+
+set +e
+wrongrole_replication_output=$(docker exec "$PG_CONTAINER" psql \
+  "postgres://pgc_e2e_wrongrole_login:$ROLE_TEST_PASSWORD@localhost:5432/$PG_DB?sslmode=disable&replication=database" \
+  -c "IDENTIFY_SYSTEM;" 2>&1)
+wrongrole_replication_status=$?
+set -e
+if [ "$wrongrole_replication_status" -eq 0 ] || ! printf '%s' "$wrongrole_replication_output" | grep -q "permission denied to start WAL sender"; then
+  echo "run-integration-tests: cdc_admin-Login-Identität (falsche Rolle für eine Replication-Verbindung) — erwartet 'permission denied to start WAL sender', erhalten (Status $wrongrole_replication_status): $wrongrole_replication_output" >&2
+  exit 1
+fi
+
+set +e
+capture_replication_output=$(docker exec "$PG_CONTAINER" psql \
+  "postgres://pgc_e2e_capture_login:$ROLE_TEST_PASSWORD@localhost:5432/$PG_DB?sslmode=disable&replication=database" \
+  -c "IDENTIFY_SYSTEM;" 2>&1)
+capture_replication_status=$?
+set -e
+if [ "$capture_replication_status" -ne 0 ]; then
+  echo "run-integration-tests: cdc_capture-Login-Identität (korrekte Rolle + REPLICATION-Attribut) — erwartet Erfolg als Kontrast zur vorigen Ablehnung, erhalten (Status $capture_replication_status): $capture_replication_output" >&2
+  exit 1
+fi
+
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "DROP ROLE pgc_e2e_reader_login; DROP ROLE pgc_e2e_wrongrole_login; DROP ROLE pgc_e2e_capture_login;" >/dev/null
+
+echo "run-integration-tests: Rollen-DSN-Verifikation belegt — cdc_reader-Login-Identität schreibender Zugriff abgelehnt, Replication-Verbindung ohne REPLICATION-Attribut abgelehnt, mit cdc_capture-Mitgliedschaft+REPLICATION-Attribut erfolgreich (BEO-PGC/rollen-test-abdeckungsluecken Punkt 2 geschlossen)"
+
 # Vorbedingung der Aktivierung (LH-FA-CFG-001.a): die physischen
 # Quell-Tabellen und die Zeile der Quelle in cdc.source — die
 # Metadaten-Registrierung ist Vorbedingung der Aktivierung (SPEC-001,
