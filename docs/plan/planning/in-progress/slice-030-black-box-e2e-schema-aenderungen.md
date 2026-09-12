@@ -81,18 +81,40 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       aktivierten Tabelle wird real erfasst; die `schema_version` der
       danach erfassten Changes unterscheidet sich nachweislich von der
       davor; ältere Changes bleiben unverändert über `cdc.changes` lesbar.
+      **Teilweise:** `LH-FA-SCH-001`/`002` real belegt
+      (`TestMVPSchemaChangeAddColumn`, `test/integration/integration_test.go`)
+      — neue Spalte im Row Image danach erfasster Changes erkennbar, ältere
+      Change unverändert/ohne die neue Spalte lesbar. `LH-FA-SCH-005`s
+      Unterscheidbarkeits-Boundary **nicht** erfüllt — Fund, siehe §3
+      Plan-Nachzug (statische Schema-Version-Bindung, kein Metadata-Pfad
+      implementiert). Checkbox bleibt deshalb offen.
 - [ ] `LH-FA-SCH-004` erfüllt: eine inkompatible Typänderung (z. B. `text`
       → `integer` auf einer Spalte mit vorhandenen Daten, die nicht
       verlustfrei konvertierbar sind) wird real erkennbar gemeldet
       (Fehlerklasse `schema`, sichtbarer Fehler) — keine stille
       Fehlinterpretation.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      **Teilweise:** der PostgreSQL-seitige Ablehnungsfall real belegt
+      (`TestMVPSchemaChangeIncompatibleTypeChange`). Der CDC-seitige
+      Negative-Fall (PostgreSQL lässt zu, CDC meldet Fehlerklasse `schema`)
+      ist mit dem aktuellen System **nicht real herstellbar** — Fund, siehe
+      §3 Plan-Nachzug (Text-Pass-through ohne Typprüfung). Checkbox bleibt
+      deshalb offen.
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün. —
+      `make gates`: `d-check` 259 Dateien / 0 Befund(e), `a-check` 0
+      Befund(e), `commit-traceability` OK, `baseline-verify` OK (Lauf vor
+      dem Plan-Nachzug-Commit dieses Slice). `make test-integration`: 3×
+      in Folge grün, inklusive der beiden neuen Testfunktionen (Commit
+      folgt).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
       voraussichtlich keiner; Implementer entscheidet und begründet im
-      Plan-Nachzug.
+      Plan-Nachzug. **Begründung:** kein öffentlicher Vertrag berührt — die
+      dritte `CDC_TABLES`-Bindung ist test-lokal (`compose.yaml`,
+      `run-integration-tests.sh`); `docs/user/benutzerhandbuch.md`
+      dokumentiert das `CDC_TABLES`-Format generisch, ohne die konkreten
+      Compose-Tabellennamen zu nennen, und bleibt unverändert korrekt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -109,6 +131,9 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/harness/run-integration-tests.sh` oder `test/integration/integration_test.go` | update | neue Testfälle: `ALTER TABLE ADD COLUMN` real erfasst, `schema_version`-Wechsel geprüft, ältere Changes weiter lesbar; inkompatible Typänderung sichtbar als Fehler |
+| `compose.yaml` | update | *Plan-Nachzug:* dritte aktivierte Testtabelle `public.feed_mvp_schema=tbl-mvp-schema:sv-mvp-schema` in `CDC_TABLES` ergänzt — eigene, von den bestehenden MVP-Referenztabellen isolierte Tabelle für die Schema-Änderungs-Testfälle. |
+| `tools/harness/run-integration-tests.sh` | update | *Plan-Nachzug:* `CREATE TABLE public.feed_mvp_schema (id int PRIMARY KEY, name text, amount text)` vor dem Feed-Container-Start ergänzt (Vorbedingung der Aktivierung, wie bei den bestehenden `feed_mvp_*`-Tabellen). |
+| `test/integration/integration_test.go` | update | *Plan-Nachzug:* zwei Testfunktionen ergänzt — `TestMVPSchemaChangeAddColumn` (`LH-FA-SCH-001` Happy Path, `LH-FA-SCH-002` Boundary, real gegen den Compose-Stack: neue Spalte im Row Image danach erfasster Changes, ältere Change unverändert/ohne die neue Spalte lesbar) und `TestMVPSchemaChangeIncompatibleTypeChange` (`LH-FA-SCH-004`: PostgreSQL lehnt eine tatsächlich inkompatible Typänderung selbst per DDL ab — Boundary-Fall aus §6 real belegt; eine PostgreSQL-seitig zugelassene Typänderung mit konvertierbaren Bestandsdaten wird von CDC unverändert übernommen). **Fund (beide Testfälle, empirisch am realen Compose-Stack verifiziert, nicht nur aus Code-Lektüre geschlossen):** (1) `LH-FA-SCH-005`s Boundary — unterscheidbare Schema-Versionen vor/nach einer Schemaänderung — hält mit dem aktuellen System nicht: `mapper.TableBinding.SchemaVersion` (`internal/adapters/driving/replication/mapper/mapper.go`) ist eine bei der Aktivierung aus `CDC_TABLES` statisch gebundene Kennung, unverändert für die Laufzeit des Feed-Containers; `mapper.Assembler.Consume` verwirft `*decode.Relation`-Ereignisse ungenutzt (Default-Zweig). Die an vier Stellen referenzierte dynamische Re-Versionierung „über den Metadata-Pfad" (`internal/bootstrap/wiring.go:331`, `internal/adapters/driving/replication/mapper/mapper.go:53`, `internal/adapters/driving/replication/receive/receive.go:62`, `internal/application/port/inbound/verwaltung.go:26`) hat im Repo keine Implementierung. (2) `LH-FA-SCH-004`s Negative-Fall — PostgreSQL lässt eine Typänderung zu, CDC decodiert sie aber nicht verlustfrei und meldet das sichtbar (Fehlerklasse `schema`) — ist mit dem aktuellen System nicht real herstellbar: `decode.tupleValues`/`mapper.rowImage` interpretieren jeden Spaltenwert ausschließlich als Text ohne eigene Typprüfung; eine „nicht sicher interpretierbare Schemaänderung" (`LH-FA-SCH-004.a`) kann daraus für einen von PostgreSQL zugelassenen Typwechsel nicht entstehen. Beide Funde ändern den Erkennungsmechanismus nicht (Out-of-Scope §1) — die Tests belegen den realen Ist-Zustand inklusive dieser Lücken, statt sie zu verdecken. DoD-Punkte entsprechend nicht als erfüllt markiert; Einordnung (Carveout/Folge-Slice/Beobachtung) bleibt der Planner-Closure vorbehalten. |
 
 ## 4. Trigger
 
