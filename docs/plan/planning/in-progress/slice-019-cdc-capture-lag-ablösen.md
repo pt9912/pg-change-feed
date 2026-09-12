@@ -91,9 +91,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       der Lasttest gegen die alte Persistenz-Zeit-Näherung gemessen statt
       gegen den realen Fix.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`review-slice-019.md`](../../../../docs/reviews/review-slice-019.md)
+      (F-1 MEDIUM/F-2 LOW disponiert, 0 HIGH), Verifier bestätigt in
+      [`verify-slice-019.md`](../../../../docs/reviews/verify-slice-019.md).
 - [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft:
       [`SPEC-013`](../../../../spec/pflichtenheft.md) und der
       Metriken-Katalog-Eintrag (`SPEC-009`) nennen die Metrik bereits
@@ -104,11 +107,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       korrigiert: `docs/user/benutzerhandbuch.md` nannte die Metrik noch
       unter dem `_approx`-Namen mit veralteter Beschreibung — aktualisiert
       auf `cdc_capture_lag` mit der realen Bedeutung.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — `BEO-PGC/cdc-capture-lag-real` bekommt den Auflösungs-Beleg dieser Welle (Ausgang `eingetreten`, Träger dieser Slice).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — `BEO-PGC/cdc-capture-lag-real` bekommt den Auflösungs-Beleg dieser Welle (Ausgang `eingetreten`, Träger dieser Slice). Beleg: `evidence/slice-019.md`, `state.md` auf `eingetreten` gesetzt.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice. Item entfällt hier bewusst.
 
 ## 3. Plan (vor Code)
 
@@ -176,12 +179,16 @@ dasteht.
 - Der Lasttest könnte zeigen, dass `cdc_capture_lag` zwar die
   Persistenz-Verzögerung, aber nicht die reine Netzwerk-/
   Replication-Slot-Latenz abbildet (verschiedene Teilstrecken derselben
-  Gesamtverzögerung). Wird bei Closure bewertet — ein Teilbeleg ist
-  legitim, solange die abgedeckte Teilstrecke benannt ist.
+  Gesamtverzögerung). **Ausgang: entfallen.** Die künstliche `docker
+  pause`-Verzögerung liegt zwischen Quell-Commit und Verarbeitung — vor
+  der Persistenz —, und die Messung bildet genau diese Verzögerung ab
+  (Faktor 8–9× gegenüber der Baseline, real reproduziert von
+  Implementer, Reviewer und Verifier unabhängig). Der Beleg deckt damit
+  die volle Commit-zu-Verfügbarkeit-Strecke, nicht nur einen Teilabschnitt.
 - Bestehende Dashboards/Beobachter, die noch `cdc_capture_lag_approx`
-  erwarten, sehen den Namen nach dieser Umbenennung nicht mehr. Wird bei
-  Closure bewertet (in diesem Repo bislang kein externer Konsument
-  bekannt).
+  erwarten, sehen den Namen nach dieser Umbenennung nicht mehr.
+  **Ausgang: entfallen.** Kein externer Konsument dieser Metrik ist in
+  diesem Repo bekannt oder dokumentiert.
 
 ## 7. Closure-Notiz
 
@@ -200,18 +207,32 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand während der Arbeit
+  selbst heraus, dass der erste Lasttest-Lauf fälschlich nahezu keine
+  Verzögerung maß — statt das als Testfehler zu verwerfen, isolierte er
+  die Ursache bis zu einem veralteten Container-Image (gebaut vor
+  slice-017/018) und baute es neu, bevor er den Beleg als erbracht
+  meldete. Genau das ist der Zweck eines Ende-zu-Ende-Belegs: er hat
+  einen realen Bereitstellungs-Fehler gefangen, den keine der drei
+  Einzel-Slice-DoDs allein hätte aufdecken können (`welle-5` §1, „Das
+  *Mehr* gegenüber den einzelnen Slice-DoDs"). Reviewer und Verifier
+  haben den Lasttest und die neue `LAG_DELAY_SECONDS`-Fehlerprüfung
+  jeweils unabhängig real reproduziert.
+- **Was ging anders als geplant:** Zwei Punkte lagen nicht im
+  ursprünglichen §3-Plan und wurden per Plan-Nachzug ergänzt: die
+  Korrektur von `docs/user/benutzerhandbuch.md` (öffentlicher Vertrag,
+  Rang 6) und der Image-Rebuild (`harness/image-hash.txt`, ausgelöst
+  durch den oben beschriebenen Fund).
+- **Steering-Loop-Eintrag:** Mit diesem Slice wurde nichts verkörpert.
+  Der Eintrag ist gezählt, nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-019.md`
+  in `BEO-PGC/cdc-capture-lag-real/` ergänzt — Zähler steht bei 2×,
+  Ausgang `eingetreten` (Träger `welle-5`, siehe DoD-Beleg oben).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide `entfallen` (siehe §6).
+- **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-5`;
+  die Paarungen prüft die anschließende Welle-Closure für alle drei
+  Slices gemeinsam.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -232,12 +253,13 @@ Hälften.
 Modus-Deklaration (`PGC` Greenfield, Doc führt) — erfüllt die Schwelle
 ≥ 2 von 3 Achsen. Nicht zu grob.
 
-**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (elf
-Einträge, unverändert seit slice-017/018): `cdc-capture-lag-real` 1× —
-dieser Slice ist der vorgesehene Auflösungs-Träger (Ausgang
-`eingetreten`, siehe §2 DoD). Übrige zehn ohne Bezug — siehe slice-017
-§8 für die vollständige Liste. Kein Eintrag erreicht mit diesem Slice
-3× — keine Lücke.
+**Vorgelagert — offene Beobachtungen sichten:** Register gelesen (zwölf
+Einträge — `BEO-PGC/dod-checkbox-nachzug` kam während der Closure von
+slice-017 hinzu, siehe slice-018 §8): `cdc-capture-lag-real` 1× — dieser
+Slice ist der vorgesehene Auflösungs-Träger (Ausgang `eingetreten`,
+siehe §2 DoD). Übrige elf ohne Bezug — siehe slice-017/018 §8 für die
+vollständige Liste. Kein Eintrag erreicht mit diesem Slice neu 3× —
+keine Lücke.
 
 **Modus-Begründungsblock — Umfang.** Reiner GF-Hinweis genügt (siehe oben);
 kein Sub-Area-Block.

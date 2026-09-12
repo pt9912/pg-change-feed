@@ -1,4 +1,4 @@
-Zustand: offen — Ausgang: **weiter offen** → Folge-Slice (Kennung folgt
-bei der nächsten Eröffnung; `Bezug: LH-FA-ADM-004`, Zeitstempel-
-Durchreichen durch Replication-Decoder, Domain, Application/Ports,
-Store-Adapter). Zähler (abgeleitet): 1× (evidence/slice-013.md).
+Zustand: eingetreten — Ausgang: **eingetreten** → Träger `welle-5`
+(slice-017 Decoder/Mapper/Domäne, slice-018 Store-Adapter, slice-019
+Metrik-Ablösung + Ende-zu-Ende-Lasttest-Beleg). Zähler (abgeleitet): 2×
+(evidence/slice-013.md, evidence/slice-019.md).
