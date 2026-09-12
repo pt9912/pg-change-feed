@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.4.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.5.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -965,6 +965,30 @@ Authentifizierungs-/Autorisierungsverfahren, Protokoll- und
 Endpunkt-Details — das sind Architektur- (ADR) bzw. Spezifikations-Fragen
 (`SPEC-*`), keine Lastenheft-Festlegung.
 
+### LH-FA-SST-007 — Benachrichtigung neuer Änderungen über NATS
+
+**Beschreibung:** Ein Consumer muss über NATS erfahren können, dass neue
+Changes vorliegen, ohne dafür den bestehenden Lesezugriffsweg (SQL/API)
+pollen zu müssen.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given eine neue committed Änderung, when sie erfasst
+  wird, then erhält ein über NATS verbundener Consumer eine
+  Benachrichtigung darüber.
+- **Boundary:** Given kein Consumer ist über NATS verbunden, when eine
+  Änderung erfasst wird, then geht sie nicht verloren — sie bleibt über
+  den bestehenden Lesezugriffsweg abrufbar (`LH-FA-REA-001` ff.).
+- **Negative:** Given die NATS-Verbindung ist unterbrochen, when
+  Änderungen währenddessen erfasst werden, then muss der Consumer sie nach
+  Wiederverbindung über den bestehenden Lesezugriffsweg nachholen können —
+  NATS ersetzt nicht die Nachvollziehbarkeit des Zugriffswegs.
+
+**Out-of-Scope:** Ob NATS nur ein Wecksignal oder die vollständigen
+Change-Inhalte trägt, konkretes Subjekt-/Stream-Schema,
+Zustellgarantien (JetStream vs. Core NATS) — das sind Architektur- (ADR)
+bzw. Spezifikationsfragen (`SPEC-*`), keine Lastenheft-Festlegung.
+
 ---
 
 ## 4. Nichtfunktionale Anforderungen
@@ -1152,9 +1176,9 @@ bindend; zurückgestellt ist jeweils ihre Produktionsreife bzw. Ausbaustufe
 - Produktionsreife Observability (LH-QA-OPS-001 ff. — Fähigkeiten
   gefordert; ihre Betriebshärtung in Produktionsumgebungen steht aus).
 - High Availability (keine Anforderung dieses Lastenhefts).
-- Exportadapter, beispielsweise Kafka, NATS, RabbitMQ, HTTP/Webhooks oder
+- Exportadapter, beispielsweise Kafka, RabbitMQ, HTTP/Webhooks oder
   Object Storage (keine Anforderung dieses Lastenhefts; nicht Bestandteil
-  des MVP).
+  des MVP). NATS ausgenommen — siehe `LH-FA-SST-007`.
 
 ## 6. Glossar
 
@@ -1187,3 +1211,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.2.0 | 2026-09-09 | Initiale Fassung (Entwurf v0.2, vor Vorlagen-Überführung) | — |
 | 0.3.0 | 2026-09-09 | Überführung in Lastenheft-Vorlagen-Struktur (Abschnitte 1–7); ID-Schema auf `LH-FA-<BEREICH>-<NNN>` / `LH-QA-<BEREICH>-<NNN>` normalisiert; Akzeptanzkriterien (Happy/Boundary/Negative) und Out-of-Scope je Anforderung ergänzt | — |
 | 0.4.0 | 2026-09-12 | `LH-FA-SST-006` (konkrete HTTP-/gRPC-API) ergänzt; `LH-FA-SST-005`s Out-of-Scope-Klausel entsprechend angepasst — Auftraggeber und Entwickler sind dieselbe Person, Status ist `Draft` (frei änderbar ohne Change Request), diese Änderung liegt in einem eigenen Commit vor jedem umsetzenden Slice | — |
+| 0.5.0 | 2026-09-12 | `LH-FA-SST-007` (Benachrichtigung neuer Änderungen über NATS) ergänzt; NATS aus der globalen Exportadapter-Out-of-Scope-Zeile (§5) ausgenommen und auf `LH-FA-SST-007` verwiesen — dieselbe Draft-Regel wie bei 0.4.0, eigener Commit vor jedem umsetzenden Slice | — |
