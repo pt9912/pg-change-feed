@@ -60,3 +60,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0047 | Rollen-spezifische DSN-Verdrahtung (→ ADR-0048, teilweise) | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |
 | ADR-0048 | Heartbeat-Grant-Korrektur (SELECT-Ergänzung) | Accepted | 2026-09-12 | [0048-heartbeat-grant-korrektur-select-ergaenzung.md](0048-heartbeat-grant-korrektur-select-ergaenzung.md) |
 | ADR-0049 | Replication-Fehlerklassen-Trennung und WAL-Rückstand-Schwellen | Accepted | 2026-09-12 | [0049-replication-fehlerklassen-schwellen.md](0049-replication-fehlerklassen-schwellen.md) |
+| ADR-0050 | Schreibende SQL-Administration über Antrags-Queue + Live-Reload | Accepted | 2026-09-13 | [0050-sql-administration-antragsqueue-und-live-reload.md](0050-sql-administration-antragsqueue-und-live-reload.md) |
