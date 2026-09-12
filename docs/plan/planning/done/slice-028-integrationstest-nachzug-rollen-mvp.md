@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-8`](../welle-8.md) — der Nachweis, dass der
+**Welle:** [`welle-8`](welle-8.md) — der Nachweis, dass der
 Compose-Integrationstest alle seit `welle-3` hinzugekommenen
 post-MVP-Fähigkeiten zusammen abdeckt, ist welle-8s Closure-Trigger (§3),
 kein Einzel-Slice-DoD.

@@ -28,13 +28,13 @@ im selben Testprozess auf. Nach `ADR-0030`s Testpyramide ist das der
 **Integrationstest**-Tier, nicht der getrennt geführte **E2E**-Tier — das
 Repo hat aktuell **keinen einzigen** echten Black-Box-E2E-Test, obwohl die
 externe Schnittstelle dafür bereits existiert:
-[`cmd/pg-change-feed/main.go`](../../../cmd/pg-change-feed/main.go) hat
+[`cmd/pg-change-feed/main.go`](../../../../cmd/pg-change-feed/main.go) hat
 reale CLI-Unterbefehle (`register-consumer`, `acknowledge-consumer`), die im
 Container laufen und bislang von keinem Test als Subprozess/`docker exec`
 aufgerufen werden.
 
 Zusätzlich ist `make test-integration`
-([`tools/harness/run-integration-tests.sh`](../../../tools/harness/run-integration-tests.sh))
+([`tools/harness/run-integration-tests.sh`](../../../../tools/harness/run-integration-tests.sh))
 seit `welle-3` inhaltlich nicht über den ursprünglichen MVP-Zuschnitt
 hinausgewachsen (`spec/lastenheft.md` §1 MVP-Schnitt) — mit einer Ausnahme
 (der `cdc_capture_lag`-Lasttest-Beleg aus `welle-5`, selbst außerhalb des
@@ -91,8 +91,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-027 | Black-Box-E2E-Test über die bestehende CLI | [`LH-QA-POR-003`](../../../spec/lastenheft.md) |
-| slice-028 | Compose-Integrationstest-Nachzug — Rollen-DSN-Trennung, MVP-Umbenennung | [`LH-QA-SEC-001`](../../../spec/lastenheft.md)…`003` |
+| slice-027 | Black-Box-E2E-Test über die bestehende CLI | [`LH-QA-POR-003`](../../../../spec/lastenheft.md) |
+| slice-028 | Compose-Integrationstest-Nachzug — Rollen-DSN-Trennung, MVP-Umbenennung | [`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…`003` |
 
 ## 5. Abhängigkeiten
 

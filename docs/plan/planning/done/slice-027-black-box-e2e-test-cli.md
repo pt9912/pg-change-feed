@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-8`](../welle-8.md) — der repo-weite Nachweis, dass ein
+**Welle:** [`welle-8`](welle-8.md) — der repo-weite Nachweis, dass ein
 echter externer Aufrufer das System nur über seine reale Schnittstelle
 bedienen kann, geht über die DoD dieses einzelnen Slice hinaus (welle-8 §3).
 
