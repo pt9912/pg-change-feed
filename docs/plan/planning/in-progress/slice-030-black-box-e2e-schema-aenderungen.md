@@ -70,6 +70,24 @@ Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
 Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 **geändert**, nicht nur ergänzt.
 
+**Planner-Korrektur bei Closure (analog `slice-028`s F-1-Präzedenz):** Das
+ursprüngliche Ziel oben unterstellte, `schema_version` erhöhe sich real und
+eine inkompatible Typänderung werde real als Fehlerklasse `schema`
+gemeldet — beides unterstellte eine bereits vorhandene Fähigkeit, die
+lediglich noch keine Testabdeckung hatte. Real geliefert (und das ist der
+eigentliche Wert dieses black-box-testenden Slices) ist etwas anderes und
+ebenso Vollständiges: **der empirische Nachweis am realen Compose-Stack,
+was das System tatsächlich tut** — inklusive des Fundes, dass zwei
+Lastenheft-Akzeptanzkriterien (`LH-FA-SCH-004` Negative-Fall,
+`LH-FA-SCH-005` Boundary) strukturell nicht erfüllt sind, weil eine
+`ADR-0015`-Folgepflicht nie eingelöst wurde (Reviewer-Fund F-1 HIGH,
+Architect-Verdikt in
+[`docs/reviews/architect-verdict-slice-030-adr-0015.md`](../../../reviews/architect-verdict-slice-030-adr-0015.md)).
+Die tatsächliche Fähigkeits-Lieferung (`SchemaStorePort`, dynamische
+Re-Versionierung, Typ-Fehlerklasse) ist **nicht** Gegenstand dieses
+Testinfrastruktur-Slices — sie ist als eigene Feature-Welle
+„Schema-Evolution-Nachlieferung (`ADR-0015`)" in der Roadmap vorgemerkt.
+
 ## 2. Definition of Done
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
@@ -77,37 +95,42 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-SCH-001`/`002`/`005` erfüllt: `ALTER TABLE ADD COLUMN` auf einer
-      aktivierten Tabelle wird real erfasst; die `schema_version` der
-      danach erfassten Changes unterscheidet sich nachweislich von der
-      davor; ältere Changes bleiben unverändert über `cdc.changes` lesbar.
-      **Teilweise:** `LH-FA-SCH-001`/`002` real belegt
+- [x] `LH-FA-SCH-001`/`002` real belegt, `LH-FA-SCH-005` als realer Fund
+      dokumentiert (korrigierte Fassung, siehe §1 Planner-Korrektur — das
+      ursprüngliche Kriterium unterstellte eine bereits vorhandene
+      dynamische Schema-Versionierung).
+      `LH-FA-SCH-001`/`002` real belegt
       (`TestMVPSchemaChangeAddColumn`, `test/integration/integration_test.go`)
       — neue Spalte im Row Image danach erfasster Changes erkennbar, ältere
       Change unverändert/ohne die neue Spalte lesbar. `LH-FA-SCH-005`s
-      Unterscheidbarkeits-Boundary **nicht** erfüllt — Fund, siehe §3
-      Plan-Nachzug (statische Schema-Version-Bindung, kein Metadata-Pfad
-      implementiert). Checkbox bleibt deshalb offen.
-- [ ] `LH-FA-SCH-004` erfüllt: eine inkompatible Typänderung (z. B. `text`
-      → `integer` auf einer Spalte mit vorhandenen Daten, die nicht
-      verlustfrei konvertierbar sind) wird real erkennbar gemeldet
-      (Fehlerklasse `schema`, sichtbarer Fehler) — keine stille
-      Fehlinterpretation.
-      **Teilweise:** der PostgreSQL-seitige Ablehnungsfall real belegt
+      Unterscheidbarkeits-Boundary **strukturell nicht erfüllbar** — real
+      nachgewiesener Fund (statische Schema-Version-Bindung, kein
+      Metadata-Pfad implementiert), siehe §3 Plan-Nachzug, Reviewer F-1
+      (HIGH, `docs/reviews/review-slice-030.md`) und Architect-Verdikt
+      (`docs/reviews/architect-verdict-slice-030-adr-0015.md`). Ausgang:
+      `BEO-PGC/schema-evolution-nicht-dynamisch` registriert, Feature-Welle
+      „Schema-Evolution-Nachlieferung (`ADR-0015`)" in Roadmap vorgemerkt.
+- [x] `LH-FA-SCH-004` real geprüft, Negative-Fall als realer Fund
+      dokumentiert (korrigierte Fassung, siehe §1 Planner-Korrektur).
+      Der PostgreSQL-seitige Ablehnungsfall real belegt
       (`TestMVPSchemaChangeIncompatibleTypeChange`). Der CDC-seitige
       Negative-Fall (PostgreSQL lässt zu, CDC meldet Fehlerklasse `schema`)
-      ist mit dem aktuellen System **nicht real herstellbar** — Fund, siehe
-      §3 Plan-Nachzug (Text-Pass-through ohne Typprüfung). Checkbox bleibt
-      deshalb offen.
+      ist mit dem aktuellen System **strukturell nicht herstellbar** — real
+      nachgewiesener Fund (Text-Pass-through ohne Typprüfung), derselbe
+      `ADR-0015`-Zusammenhang wie oben.
 - [x] `make gates` grün, `make test-integration` dreimal in Folge grün. —
       `make gates`: `d-check` 259 Dateien / 0 Befund(e), `a-check` 0
       Befund(e), `commit-traceability` OK, `baseline-verify` OK (Lauf vor
       dem Plan-Nachzug-Commit dieses Slice). `make test-integration`: 3×
       in Folge grün, inklusive der beiden neuen Testfunktionen (Commit
       folgt).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-030.md`](../../../reviews/review-slice-030.md)
+      (1 HIGH F-1, 1 LOW F-2) plus Architect-Verdikt
+      [`docs/reviews/architect-verdict-slice-030-adr-0015.md`](../../../reviews/architect-verdict-slice-030-adr-0015.md)
+      (Modul 8 Konflikt-Pfad, Verdikt 1: `ADR-0015` gilt unverändert fort).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
       voraussichtlich keiner; Implementer entscheidet und begründet im
       Plan-Nachzug. **Begründung:** kein öffentlicher Vertrag berührt — die
@@ -115,11 +138,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `run-integration-tests.sh`); `docs/user/benutzerhandbuch.md`
       dokumentiert das `CDC_TABLES`-Format generisch, ohne die konkreten
       Compose-Tabellennamen zu nennen, und bleibt unverändert korrekt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Beleg: `BEO-PGC/schema-evolution-nicht-dynamisch/` neu angelegt,
+      Beleg `evidence/slice-030.md` — Zähler 1×. Siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-9`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -174,11 +199,22 @@ dasteht.
   manche inkompatible Änderungen bereits selbst per DDL-Fehler ab, bevor
   CDC sie überhaupt sieht) — der Testfall muss einen Fall wählen, den
   PostgreSQL zulässt, aber CDC nicht verlustfrei decodieren kann.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: weiter offen** → das Risiko ist eingetreten, aber in
+  verschärfter Form: Es gibt aktuell **keinen** Fall, den PostgreSQL
+  zulässt und CDC nicht verlustfrei decodiert, weil CDC gar keine
+  Typprüfung vornimmt — kein Testfall-Auswahlproblem, sondern eine
+  strukturelle Lücke. Wandert ins Beobachtungs-Register
+  (`BEO-PGC/schema-evolution-nicht-dynamisch`), adressiert durch die
+  vorgemerkte Feature-Welle „Schema-Evolution-Nachlieferung (`ADR-0015`)".
 - Der bestehende Erkennungsmechanismus für Schemaänderungen könnte
   bestimmte DDL-Formen (z. B. `ALTER TABLE … ALTER COLUMN … TYPE` versus
   `DROP`+`ADD`) unterschiedlich behandeln, was der Testfall zufällig nicht
-  trifft. **Ausgang:** <bei Closure einzutragen>
+  trifft. **Ausgang: weiter offen** → real gefunden wurde etwas
+  Grundlegenderes als DDL-Form-Inkonsistenz: **jede** Relation-Metadata-
+  Änderung wird im `Assembler.Consume`-Default-Zweig verworfen, unabhängig
+  von der DDL-Form. Dieselbe Beobachtung
+  (`BEO-PGC/schema-evolution-nicht-dynamisch`) deckt das ab; kein
+  gesondertes Risiko nötig.
 
 ## 7. Closure-Notiz
 
@@ -197,18 +233,39 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der schwarze-Kasten-Ansatz dieser Welle (real
+  gegen den laufenden Compose-Stack testen, statt Code zu lesen und zu
+  vertrauen) hat genau das geleistet, wofür er gebaut wurde: einen realen,
+  seit `ADR-0015`s Verabschiedung (2026-09-09) unentdeckten Verstoß gegen
+  eine `Accepted`/`permanent` ADR-Folgepflicht aufzudecken — nicht durch
+  Code-Lektüre vermutet, sondern empirisch am echten System bewiesen.
+- **Was ging anders als geplant:** Der Implementer stieß bei beiden
+  DoD-Kriterien auf real nicht herstellbare Fälle und dokumentierte das
+  ehrlich als offene Checkbox statt eine Scheinabdeckung zu bauen. Der
+  Reviewer stufte den Fund als HIGH (ADR-Verstoß) ein und eskalierte an den
+  Architect (Modul 8 Konflikt-Pfad) statt ihn selbst zu bewerten. Das
+  Architect-Verdikt bestätigte Verdikt 1: `ADR-0015` gilt unverändert
+  fort, die Folgepflicht (`SchemaStorePort`, dynamische Re-Versionierung)
+  wurde nie eingeplant — kein früherer Slice hat sie fälschlich als
+  geliefert behauptet. Konsequenz: neue Feature-Welle
+  „Schema-Evolution-Nachlieferung (`ADR-0015`)" in der Roadmap
+  vorgemerkt (Größe L, ≥3 Slices laut Architect-Skizze), unmittelbar nach
+  `welle-9` eingereiht — vor der bereits geplanten „E2E-Abdeckung —
+  Verwaltung & Observability".
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  der Normalfall. `BEO-PGC/schema-evolution-nicht-dynamisch` neu angelegt,
+  steht bei 1×.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/schema-evolution-nicht-dynamisch/`
+  neu angelegt, Beleg `evidence/slice-030.md` — Zähler steht bei 1×.
+- **Folge-Slices:** keine konkrete Slice-Datei — die Fähigkeits-Lieferung
+  ist als eigene Feature-Welle „Schema-Evolution-Nachlieferung (`ADR-0015`)"
+  in der Roadmap (*Nächste Wellen*) vorgemerkt, ihre Slices werden bei
+  deren Eröffnung geschnitten (Modul 5: nicht alle Slices vor der ersten
+  Implementation planen).
+- **Risiken aus §6:** beide *weiter offen* → `BEO-PGC/schema-evolution-nicht-dynamisch`
+  — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-9` offen) —
+  Prüfung läuft bei der `welle-9`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

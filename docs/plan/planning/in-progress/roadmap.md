@@ -54,7 +54,8 @@ bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| E2E-Abdeckung — Verwaltung & Observability | `welle-9` liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
+| Schema-Evolution-Nachlieferung (`ADR-0015`) | `welle-9` liegt in `done/` | Noch nicht geschnitten — Architect-Skizze in [`docs/reviews/architect-verdict-slice-030-adr-0015.md`](../../../reviews/architect-verdict-slice-030-adr-0015.md): `TableSchema`-Domänenmodell, `SchemaStorePort` als Outbound Port, Persistenz-Adapter (`cdc.table_schema`), Decoder-Erweiterung um Spalten-Oid, dynamische Re-Versionierung im `Assembler.Consume`-Pfad, Fehlerklasse `schema` für inkompatible Typänderungen; löst die von `slice-030` gefundene, real unerfüllte `ADR-0015`-Folgepflicht ein (`LH-FA-SCH-004`/`005`), schließt `BEO-PGC/schema-evolution-nicht-dynamisch` | L |
+| E2E-Abdeckung — Verwaltung & Observability | Vorherige Welle (Schema-Evolution-Nachlieferung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
 | Retention-Löschausführung | Vorherige Welle (Verwaltung & Observability) liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
 | E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
 | Performance-Benchmarks & Test-Coverage-Gate | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — (a) Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail); (b) Go-Test-Coverage-Gate (`go test -coverprofile`, Schwelle 80 % — Modul 13 „Schwellen sind ADR-pflichtig", eigene ADR nötig) ohne Suppression-Möglichkeit ohne zentral dokumentierte Ausnahme (Muster: `/Development/KI/ai-harness-init/.golangci.yml` `exclusions.rules` mit `Why:`-Begründung statt Inline-`//nolint`); füllt dabei `AGENTS.md` §3.2 (Suppression-Verbot) aus, das in diesem Repo noch der unausgefüllte Template-Platzhalter ist | L |
@@ -100,6 +101,7 @@ flowchart LR
     W7[welle-7: Replication-Schwellen-Überwachung]
     W8[welle-8: Black-Box-E2E und Integrationstest-Nachzug]
     W9[welle-9: E2E-Abdeckung — CDC-Kernpfad]
+    W9B[geplant: Schema-Evolution-Nachlieferung ADR-0015]
     W10[geplant: E2E-Abdeckung — Verwaltung & Observability]
     W11[geplant: Retention-Löschausführung]
     W12[geplant: E2E-Abdeckung — Retention]
@@ -107,7 +109,7 @@ flowchart LR
     W14[geplant: Publication-Entzug-Wirksamkeit]
     W15[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W10 --> W11 --> W12 --> W13 --> W14 --> W15
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W9B --> W10 --> W11 --> W12 --> W13 --> W14 --> W15
 ```
 
 ## Abgeschlossene Wellen
@@ -144,4 +146,4 @@ zweites Closure-Log, und zwei Logs driften.
 
 | Datum | Was wurde geändert? | Warum? |
 |---|---|---|
-| YYYY-MM-DD | <…> | <…> |
+| 2026-09-12 | Neue Feature-Welle „Schema-Evolution-Nachlieferung (`ADR-0015`)" zwischen `welle-9` und „E2E-Abdeckung — Verwaltung & Observability" eingefügt; deren Trigger von „`welle-9` liegt in `done/`" auf „Vorherige Welle (Schema-Evolution-Nachlieferung) liegt in `done/`" umgehängt. | `slice-030` fand real, dass [`ADR-0015`](../../adr/0015-schema-evolution.md)s Folgepflicht (`SchemaStorePort`, dynamische Re-Versionierung) nie eingelöst wurde (`docs/reviews/review-slice-030.md` F-1 HIGH, Architect-Verdikt `docs/reviews/architect-verdict-slice-030-adr-0015.md`) — Größenordnung Feature-Welle, nicht Einzel-Slice. |
