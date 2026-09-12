@@ -105,18 +105,25 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`heartbeatInterval`, `internal/bootstrap/wiring.go`) — keine neue
       Konfigurationsachse.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-025.md`](../../../reviews/review-slice-025.md)
+      (0 HIGH, 2 MEDIUM F-1/F-2, kein Merge-Blocker) — beide per Fixrunde
+      behoben (`68134d5`, `c7db69d`), unabhängig bestätigt durch
+      [`docs/reviews/verify-slice-025.md`](../../../reviews/verify-slice-025.md)
+      (eigene Rot-Grün-Gegenprobe, 2× LOW V-1/V-2, siehe §7).
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` (§4 „WAL-Rückstand
       prüfen", neu; §9 Grenzwerte und Änderungshistorie 1.3) — die Metrik
       wird erstmals real erhoben, exponiert über strukturiertes Log statt
       `cdc.metrics` (Begründung §3).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Keine Beobachtung angefallen — `BEO-PGC/spec008-replication-luecke` bleibt
+      *weiter offen* (Zähler unverändert 1×), Schließung erfolgt in `slice-026`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo **mit** Wellen-Betrieb (`welle-7` offen) — verschoben auf die welle-7-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -179,11 +186,19 @@ dasteht.
 
 - Ein künstlich erzeugter WAL-Rückstand in einem Testcontainer-Lauf könnte
   durch PostgreSQLs eigene WAL-Rotation/Checkpoint-Verhalten schwer
-  reproduzierbar oder flaky sein. **Ausgang:** <bei Closure einzutragen>
+  reproduzierbar oder flaky sein. **Ausgang: entfallen** — real widerlegt:
+  `TestWALRetentionMeasuresGrowingBytes` lief dreimal in Folge grün, und
+  der Verifier bestätigte in einem eigenen, unabhängigen Lauf denselben
+  deterministischen Ablauf (Slot inaktiv, unbestätigte Inserts, Wert steigt
+  real und reproduzierbar) — keine Flakiness beobachtet.
 - Der konkrete prozessinterne Expositionsweg (eigene Tabelle analog
   `cdc.process_heartbeat`, reine Log-Zeile, oder ein neuer schlanker
   Lese-Pfad) ist hier noch nicht entschieden — nur, dass es **nicht** die
-  `cdc.metrics`-View sein darf. **Ausgang:** <bei Closure einzutragen>
+  `cdc.metrics`-View sein darf. **Ausgang: entfallen** — Implementer-
+  Entscheidung getroffen und begründet (§3 Plan-Nachzug): strukturiertes
+  Log, weil `slice-026` den Wert ohnehin im selben Prozess in-memory
+  konsumiert und kein zusätzliches Schema/keine zusätzliche Schreibrolle
+  nötig ist.
 
 ## 7. Closure-Notiz
 
@@ -202,18 +217,34 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Rot-Grün-Disziplin trug über zwei Runden:
+  Der Implementer sah die vertauschte LSN-Subtraktion einmal real rot, die
+  Fixrunde sah den fehlenden Reconnect real rot (Reconnect deaktiviert,
+  Test schlug fehl), und der Verifier hat dieselbe Gegenprobe unabhängig
+  ein drittes Mal wiederholt — dieselbe Eigenschaft dreimal unabhängig
+  bewiesen statt einmal behauptet und zweimal geglaubt.
+- **Was ging anders als geplant:** Der Review fand zwei MEDIUM-Lücken
+  (fehlende Fehlerpfad-Tests, kein Reconnect bei dauerhaftem
+  Verbindungsausfall), die eine eigene Fixrunde brauchten, bevor der
+  Verifier lief — beide inhaltlich wichtig, weil `slice-026` genau auf
+  dieser Metrik die Schwellen-Überwachung aufbaut: ein stillschweigend
+  verstummter Health-Check hätte die ganze welle-7-Zusage unterlaufen.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× und
+  wird verkörpert — der Normalfall. Die vom Verifier notierte
+  DoD-Checkbox-Lücke (V-1) ist keine neue Beobachtung: Die Zeile „Review
+  durchgeführt" kann strukturell erst nach dem Review getickt werden, also
+  erst bei dieser Closure — kein Rückfall in `BEO-PGC/dod-checkbox-nachzug`.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen. `BEO-PGC/spec008-replication-luecke` bleibt *weiter offen*
+  (Zähler unverändert 1×).
+- **Folge-Slices:** `slice-026` (Schwellen-Überwachung mit kontrollierter
+  Fortsetzung) — bereits eine Datei in `open/` (welle-7 §4).
+- **Risiken aus §6:** Test-Flakiness-Risiko → *entfallen* (real widerlegt,
+  dreimal reproduzierbar grün). Expositionsweg-Risiko → *entfallen*
+  (Implementer-Entscheidung getroffen und begründet: strukturiertes Log).
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-7` offen) —
+  verschoben auf die welle-7-Closure (Modul 8 §Rollen-Sequenz für eine
+  Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
