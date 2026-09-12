@@ -412,11 +412,14 @@ func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 }
 
 // Der reale Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) unterscheidet sich
-// vom Persistenz-Zeitpunkt: eine künstliche Verzögerung zwischen dem
-// Domänen-Commit und dem Store-Aufruf zeigt, dass `committed_at` den
-// früheren Quell-Commit-Zeitpunkt trägt — nicht die Instanzzeit des
-// Persistenz-Aufrufs (die Spalten-DEFAULT `current_timestamp`, die nur
-// außerhalb dieses Pfads greift).
+// vom Persistenz-Zeitpunkt: der Domänen-Commit trägt einen 2 Stunden in
+// der Vergangenheit liegenden Zeitstempel, das Lesen zeigt, dass
+// `committed_at` genau diesen Quell-Commit-Zeitpunkt trägt — nicht die
+// Instanzzeit des Persistenz-Aufrufs (die Spalten-DEFAULT
+// `current_timestamp`, die nur außerhalb dieses Pfads greift). Der
+// 2-Stunden-Versatz allein trägt beide Assertions unten; ein zusätzlicher
+// realer Zeitabstand zwischen Commit und Persistenz-Aufruf ist dafür nicht
+// nötig.
 func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
 	store, pool := newTestStore(t)
 	seedReference(t, pool)
@@ -434,10 +437,9 @@ func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
 		t.Fatalf("Commit: %v", err)
 	}
 
-	// Künstliche Verzögerung zwischen Domänen-Commit und Persistenz-Aufruf:
-	// die Instanzzeit beim Exec liegt danach klar nach sourceCommittedAt —
-	// eine DEFAULT-basierte Spalte würde hier current_timestamp ziehen.
-	time.Sleep(1500 * time.Millisecond)
+	// persistCallTime liegt nahe an sourceCommittedAt + 2h, also klar nach
+	// sourceCommittedAt selbst — eine DEFAULT-basierte Spalte würde hier
+	// current_timestamp ziehen.
 	persistCallTime := time.Now()
 
 	if err := store.PersistTransaction(context.Background(), tx); err != nil {
