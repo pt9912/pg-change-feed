@@ -19,7 +19,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 Keiner der drei bestehenden `*_endtoend_test.go`-Tests
-(`test/integration/mvp_test.go`, `internal/bootstrap/welle6_endtoend_test.go`,
+(`test/integration/integration_test.go`, `internal/bootstrap/welle6_endtoend_test.go`,
 `internal/bootstrap/walretention_endtoend_test.go`) behandelt das System als
 Black Box — alle drei importieren interne Go-Pakete
 (`postgresstorage`/`list`/`status`/`disable`/`bootstrap.Run`/

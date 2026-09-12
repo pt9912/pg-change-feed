@@ -1,12 +1,17 @@
-// Package integration_test trägt den MVP-Integrationstest gegen die
-// Compose-Umgebung (Abschnitt 1, MVP-Schnitt): PostgreSQL starten → CDC
-// aktivieren → INSERT → UPDATE → DELETE → Changes lesen → Reihenfolge und
-// Inhalt prüfen (`LH-FA-CAP-001`…003, `LH-QA-POR-003`). Der Lauf fährt das
-// verdrahtete System: der Feed-Container trägt die CDC-Runtime des
-// Binarys — die Verdrahtung (Store, Aktivierung, Stream, Service, ACK)
-// liegt am Composition Root (`ADR-0026`) und läuft im Container, nicht
-// hier. Der Test verdrahtet keinen Stream und betreibt keinen; seinen
-// Lese-Pfad trägt der Store-Adapter
+// Package integration_test trägt den Kern-CDC-Erfassungspfad-Ausschnitt
+// des Compose-Integrationstests (`make test-integration`): PostgreSQL
+// starten → CDC aktivieren → INSERT → UPDATE → DELETE → Changes lesen →
+// Reihenfolge und Inhalt prüfen (`LH-FA-CAP-001`…003, `LH-QA-POR-003`).
+// Der über den ursprünglichen MVP-Schnitt (Abschnitt 1 Lastenheft)
+// hinausgewachsene Scope desselben Compose-Integrationstests — Rollen-DSN-
+// Verifikation (`ADR-0047`, `LH-QA-SEC-001`…`003`), `cdc_capture_lag`-
+// Lasttest-Beleg und der Black-Box-CLI-Rundlauf — läuft im Runner-Skript
+// (`tools/harness/run-integration-tests.sh`), nicht in diesem Paket. Der
+// Lauf hier fährt das verdrahtete System: der Feed-Container trägt die
+// CDC-Runtime des Binarys — die Verdrahtung (Store, Aktivierung, Stream,
+// Service, ACK) liegt am Composition Root (`ADR-0026`) und läuft im
+// Container, nicht hier. Der Test verdrahtet keinen Stream und betreibt
+// keinen; seinen Lese-Pfad trägt der Store-Adapter
 // (`PostgresChangeStoreAdapter.ReadChanges`) gegen dieselbe Instanz, in
 // die das Binary persistiert — persistierte Changes am Ende-zu-Ende-Pfad
 // haben keinen anderen Schreiber als den Feed-Container
@@ -72,7 +77,7 @@ func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
 	t.Helper()
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
-		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — MVP-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
+		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — Compose-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
 	}
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dsn)
@@ -321,7 +326,7 @@ func TestMVPUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
 func TestMVPActivationState(t *testing.T) {
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
-		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — MVP-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
+		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — Compose-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
 	}
 	ctx := context.Background()
 	activation, err := postgresstorage.NewTableActivation(ctx, dsn)

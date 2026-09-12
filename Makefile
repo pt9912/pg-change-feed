@@ -53,7 +53,7 @@ test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publication/Slot (wal_level=logical, gepinnt)
 	@bash tools/harness/run-replication-tests.sh
 
-test-integration: ## MVP-Integrationstest gegen die Compose-Umgebung (Compose + schema-rollout + Toolchain-Container, kein Gate)
+test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Verifikation, Black-Box-CLI-Rundlauf (Compose + schema-rollout + Toolchain-Container, kein Gate)
 	@bash tools/harness/run-integration-tests.sh
 
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---

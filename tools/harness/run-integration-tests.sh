@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# run-integration-tests — MVP-Integrationstest gegen die Compose-Umgebung
-# (compose.yaml; LH-QA-POR-003). Kette je Lauf: Compose-PostgreSQL frisch
-# hochfahren → Schema-Rollout über d-migrate (ADR-0043) → Vorbedingungen
-# der Aktivierung (Quell-Tabellen, Quelle-Zeile) → Feed-Container als
-# CDC-Runtime starten — seine Verdrahtung aktiviert die Tabellen über den
+# run-integration-tests — Compose-Integrationstest gegen die
+# Compose-Umgebung (compose.yaml; LH-QA-POR-003), inhaltlich über den
+# ursprünglichen MVP-Zuschnitt hinausgewachsen (Rollen-DSN-Trennung,
+# Lasttest-Beleg, Black-Box-CLI-Rundlauf). Kette je Lauf:
+# Compose-PostgreSQL frisch hochfahren → Schema-Rollout über d-migrate
+# (ADR-0043) → Rollen-DSN-Verifikation direkt gegen die Instanz
+# (LH-QA-SEC-001…003, ADR-0047) → Vorbedingungen der Aktivierung
+# (Quell-Tabellen, Quelle-Zeile) → Feed-Container als CDC-Runtime
+# starten — seine Verdrahtung aktiviert die Tabellen über den
 # EnableTable Use Case (ADR-0028), nicht über Seed-SQL → Toolchain-
 # Container gegen das Compose-Netz. Der Feed-Container streamt dabei
 # selbst (Verdrahtung je ADR-0026); der Test schreibt nur Quelländerungen
@@ -252,7 +256,7 @@ if ! awk -v d="$LAG_DELAY_SECONDS" -v m="$LAG_DELAY_SECONDS_MAX" 'BEGIN { exit !
 fi
 
 # Die IDs 90/91 liegen in einem eigenen Wertebereich, getrennt von den
-# MVP-Referenzzeilen in test/integration/mvp_test.go (id=1, id=7 auf
+# Referenzzeilen in test/integration/integration_test.go (id=1, id=7 auf
 # derselben Tabelle feed_mvp_full) — keine Kollision zwischen den beiden
 # Testfall-Gruppen.
 baseline_count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
