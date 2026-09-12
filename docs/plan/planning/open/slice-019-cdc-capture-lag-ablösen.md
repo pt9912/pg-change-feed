@@ -84,9 +84,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update falls öffentlicher Vertrag berührt — `harness/README.md`
-      §Sensors (falls dort erwähnt) und `spec/pflichtenheft.md` [`SPEC-013`](../../../../spec/pflichtenheft.md)
-      auf den jetzt gelieferten Zustand prüfen.
+- [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft:
+      [`SPEC-013`](../../../../spec/pflichtenheft.md) und der
+      Metriken-Katalog-Eintrag (`SPEC-009`) nennen die Metrik bereits
+      unter ihrem kanonischen Namen `cdc_capture_lag` als Zielzustand,
+      unabhängig vom Umsetzungsstand — kein Textinhalt behauptet dort
+      etwas, das dieser Slice widerlegen würde. `spec/pflichtenheft.md`
+      bleibt unverändert; Item entfällt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — `BEO-PGC/cdc-capture-lag-real` bekommt den Auflösungs-Beleg dieser Welle (Ausgang `eingetreten`, Träger dieser Slice).
@@ -106,7 +110,6 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/schema/nacharbeit-observability.sql` | update | Metrik-Zeile `cdc_capture_lag_approx` → `cdc_capture_lag`, Kommentar aktualisiert |
-| `spec/pflichtenheft.md` | update (Kommentar/Historie) | [`SPEC-013`](../../../../spec/pflichtenheft.md) auf gelieferten Zustand geprüft, Historie-Zeile |
 | Integrationstest (`tools/harness/run-integration-tests.sh` oder ein neuer Lasttest-Lauf) | update/neu | künstliche Verzögerung einbauen, `cdc_capture_lag` real prüfen |
 
 ## 4. Trigger
