@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-9 — E2E-Abdeckung — CDC-Kernpfad](../welle-9.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -54,8 +56,7 @@ bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| E2E-Abdeckung — CDC-Kernpfad | `welle-8` liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für Erfassung/Lesen/Schema-Änderungen (`LH-FA-CAP-*`, `LH-FA-DAT-*`, `LH-FA-REA-*`, `LH-FA-SCH-*`) über die externe SQL-Schnittstelle, analog zum CLI-Rundlauf-Muster aus `slice-027` | M |
-| E2E-Abdeckung — Verwaltung & Observability | Vorherige Welle (CDC-Kernpfad) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
+| E2E-Abdeckung — Verwaltung & Observability | `welle-9` liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
 | Retention-Löschausführung | Vorherige Welle (Verwaltung & Observability) liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
 | E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
 | Performance-Benchmarks & Test-Coverage-Gate | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — (a) Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail); (b) Go-Test-Coverage-Gate (`go test -coverprofile`, Schwelle 80 % — Modul 13 „Schwellen sind ADR-pflichtig", eigene ADR nötig) ohne Suppression-Möglichkeit ohne zentral dokumentierte Ausnahme (Muster: `/Development/KI/ai-harness-init/.golangci.yml` `exclusions.rules` mit `Why:`-Begründung statt Inline-`//nolint`); füllt dabei `AGENTS.md` §3.2 (Suppression-Verbot) aus, das in diesem Repo noch der unausgefüllte Template-Platzhalter ist | L |
@@ -100,7 +101,7 @@ flowchart LR
     W6[welle-6: Consumer-Zugriffsweg]
     W7[welle-7: Replication-Schwellen-Überwachung]
     W8[welle-8: Black-Box-E2E und Integrationstest-Nachzug]
-    W9[geplant: E2E-Abdeckung — CDC-Kernpfad]
+    W9[welle-9: E2E-Abdeckung — CDC-Kernpfad]
     W10[geplant: E2E-Abdeckung — Verwaltung & Observability]
     W11[geplant: Retention-Löschausführung]
     W12[geplant: E2E-Abdeckung — Retention]
