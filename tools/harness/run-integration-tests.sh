@@ -7,7 +7,12 @@
 # EnableTable Use Case (ADR-0028), nicht über Seed-SQL → Toolchain-
 # Container gegen das Compose-Netz. Der Feed-Container streamt dabei
 # selbst (Verdrahtung je ADR-0026); der Test schreibt nur Quelländerungen
-# und liest den Store.
+# und liest den Store. Am Ende der Kette steht ein Black-Box-Rundlauf
+# (ADR-0030 E2E-Tier): `register-consumer`/`acknowledge-consumer` laufen
+# dort ausschließlich als externer `docker exec`-Aufruf gegen den
+# laufenden Feed-Container, über einen simulierten Container-Neustart
+# hinweg — kein Go-Paket-Import interner Anwendungslogik in diesem
+# Abschnitt.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -245,3 +250,138 @@ if [ "$feed_running" != "true" ]; then
   echo "run-integration-tests: Feed-Container endete während des Testlaufs (Lauf: $feed_running, Ausgang: $feed_exit)" >&2
   exit 1
 fi
+
+# Black-Box-CLI-Rundlauf (LH-QA-POR-003, ADR-0030 E2E-Tier): anders als der
+# Go-Testlauf oben (`go test ./test/integration/...`, der intern gegen
+# `postgresstorage`/`bootstrap` läuft) ruft dieser Abschnitt
+# `register-consumer`/`acknowledge-consumer` ausschließlich als externen
+# Prozess gegen den laufenden, containerisierten Produktions-Binary auf
+# (`docker exec … /pg-change-feed …`, distroless — kein Shell im
+# Feed-Container, daher kein `sh -c`-Umweg nötig). Lesen bleibt über den
+# bestehenden externen Lesezugriffsweg `cdc.changes` (LH-FA-SST-002) — die
+# CLI trägt keinen Lese-Unterbefehl. `feed_mvp_full` trägt denselben Grund
+# wie beim Lasttest-Beleg oben: die Tabelle bleibt über den ganzen Lauf
+# aktiviert. Die IDs 95/96 liegen in einem eigenen Wertebereich, getrennt
+# von den MVP-Referenzzeilen (id=1) und dem Lasttest-Beleg (id=90/91) auf
+# derselben Tabelle.
+exec_feed() {
+  docker exec "$FEED_CONTAINER" /pg-change-feed "$@"
+}
+
+CLI_CONSUMER=cli-e2e-consumer
+CLI_TABLE=feed_mvp_full
+
+if ! exec_feed register-consumer "$CLI_CONSUMER"; then
+  echo "run-integration-tests: register-consumer (extern, docker exec) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+registered=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$CLI_CONSUMER'")
+if [ "$registered" != "1" ]; then
+  echo "run-integration-tests: cdc.consumer trägt $CLI_CONSUMER nicht nach dem externen register-consumer-Aufruf" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$CLI_TABLE (id, name) VALUES (95, 'CliE2EFirst');
+SQL
+
+first_position=""
+for _ in $(seq 1 120); do
+  first_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '95'")
+  if [ -n "$first_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$first_position" ]; then
+  echo "run-integration-tests: erste CLI-Rundlauf-Änderung (id=95) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$CLI_CONSUMER" "$first_position"; then
+  echo "run-integration-tests: acknowledge-consumer (extern, docker exec) endete mit einem Fehler (Position $first_position)" >&2
+  exit 1
+fi
+
+acked_first=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+if [ "$acked_first" != "$first_position" ]; then
+  echo "run-integration-tests: cdc.consumer_position trägt $acked_first, wollen $first_position (erste externe Bestätigung)" >&2
+  exit 1
+fi
+
+# Simulierter Container-Neustart: `docker restart` sendet SIGTERM und
+# startet denselben Container neu (kein `compose down`/`up`, Slot und
+# Publication bleiben auf der PostgreSQL-Seite unberührt) — die CDC-Runtime
+# durchläuft dabei einen echten Prozess-Neustart, nicht nur eine
+# `docker pause`/`unpause`-Unterbrechung wie beim Lasttest-Beleg oben.
+docker restart "$FEED_CONTAINER" >/dev/null
+
+healthy=0
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  if [ "$health" = "healthy" ]; then
+    healthy=1
+    break
+  fi
+  sleep 1
+done
+if [ "$healthy" -ne 1 ]; then
+  echo "run-integration-tests: Feed-Container meldet nach dem simulierten Neustart Health-Status ${health:-fehlt}, wollen healthy" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$CLI_TABLE (id, name) VALUES (96, 'CliE2ESecond');
+SQL
+
+second_position=""
+for _ in $(seq 1 120); do
+  second_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '96'")
+  if [ -n "$second_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$second_position" ]; then
+  echo "run-integration-tests: zweite CLI-Rundlauf-Änderung (id=96, nach dem simulierten Neustart) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen — die Erfassung hat den Neustart nicht fortgesetzt" >&2
+  exit 1
+fi
+
+# Neustart-Beleg: ein unabhängiger Lesezugriff fragt die bestätigte
+# Position erneut aus cdc.consumer_position ab, statt sie im Skript
+# weiterzutragen — genau das, was ein neu gestarteter Consumer-Prozess
+# täte. Der anschließende Lesezugriff über cdc.changes zeigt das
+# Fortsetzen ab dieser Position: die bereits bestätigte Änderung (id=95)
+# wiederholt sich nicht, nur die neue (id=96) erscheint.
+restored_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+if [ "$restored_position" != "$first_position" ]; then
+  echo "run-integration-tests: aus cdc.consumer_position zurückgelesene Position nach dem Neustart = $restored_position, wollen $first_position (die zuvor bestätigte)" >&2
+  exit 1
+fi
+
+resumed_ids=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT string_agg(new_data->>'id', ',' ORDER BY commit_position) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND commit_position > $restored_position")
+if [ "$resumed_ids" != "96" ]; then
+  echo "run-integration-tests: Fortsetzen ab der bestätigten Position (Neustart-Beleg) — ab commit_position=$restored_position gelesene id-Folge '$resumed_ids', wollen '96' (id=95 bleibt hinter der bestätigten Position, keine Wiederholung)" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$CLI_CONSUMER" "$second_position"; then
+  echo "run-integration-tests: zweite externe Bestätigung (acknowledge-consumer, docker exec) endete mit einem Fehler (Position $second_position)" >&2
+  exit 1
+fi
+
+acked_second=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+if [ "$acked_second" != "$second_position" ]; then
+  echo "run-integration-tests: cdc.consumer_position trägt $acked_second, wollen $second_position (zweite externe Bestätigung, nach dem simulierten Neustart)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern (docker exec), Fortsetzen nach simuliertem Neustart ab Position $first_position, Endposition $second_position"
