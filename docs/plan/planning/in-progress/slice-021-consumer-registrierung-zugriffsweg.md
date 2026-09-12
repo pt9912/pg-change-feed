@@ -11,7 +11,12 @@ neuen Zugriffsweg) übersteigt, was dieser Slice allein beweist.
 
 **Bezug:** [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) (Zugriffsweg
 offen), [`LH-FA-CON-001`](../../../../spec/lastenheft.md) (Registrierung
-benannter Consumer).
+benannter Consumer), [`ADR-0019`](../../adr/0019-cli-driving-adapter.md)
+(CLI-Muster, trägt den Zugriffsweg), [`ADR-0020`](../../adr/0020-http-grpc-optional.md)
+(Netzwerkschnittstelle ohne Bedarf ausgeschlossen), [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
+(SQL-Funktions-Weg physisch ungelöst, deshalb ausgeschlossen). Architect-Verdikt:
+[`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md)
+— kein neues ADR nötig, Zugriffsweg = CLI-Unterbefehl.
 
 **Berührte Spec-Stellen:** [`ARC-003`](../../../../spec/architecture.md)
 (Inbound Ports), [`ARC-005`](../../../../spec/architecture.md) (Driving
