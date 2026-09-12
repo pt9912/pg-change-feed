@@ -91,11 +91,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft: reine
       interne Signatur-Änderung (Domäne + Driving-Adapter), der
       `ChangeStorePort` bleibt unverändert — Item entfällt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg: `BEO-PGC/dod-checkbox-nachzug/` neu angelegt, 3. Beleg — Ausgang bei `welle-5`-Closure.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice. Item entfällt hier bewusst.
 
 ## 3. Plan (vor Code)
 
@@ -164,10 +164,16 @@ dasteht.
 
 - `pglogrepl.CommitMessage.CommitTime` könnte ohne klare Zeitzonen-Angabe
   vorliegen (naive `time.Time`) und zu einem Missverständnis über UTC vs.
-  lokale Zeit führen. Wird bei Closure bewertet.
+  lokale Zeit führen. **Ausgang: entfallen.** Real geklärt (Reviewer +
+  Verifier, unabhängig reproduziert): `pglogrepl.pgTimeToTime` liefert
+  `Location=Local`, nicht UTC — der Code bleibt trotzdem korrekt, weil
+  `mapper.go` ausschließlich `.UnixNano()` nutzt und die Tests `.Equal()`
+  verwenden, beide location-unabhängig auf dem absoluten Zeitinstant.
 - Die Signatur-Änderung an `ChangeTransaction.Commit` könnte mehr
-  Test-Fixtures berühren als die drei geplanten Pakete. Wird bei Closure
-  bewertet.
+  Test-Fixtures berühren als die drei geplanten Pakete. **Ausgang:
+  entfallen.** Vier zusätzliche Call-Sites traten auf (Plan-Nachzug §3),
+  aber Implementer, Reviewer und Verifier stimmen unabhängig überein:
+  bounded, mechanisch, kein Rückführungs-Trigger im Sinne von §4.
 
 ## 7. Closure-Notiz
 
@@ -186,18 +192,34 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Reale Mutation-Tests (Zeile entfernt/verändert,
+  Tests laufen lassen, zurücksetzen) haben zweimal — bei Implementer UND
+  unabhängig beim Reviewer/Verifier — belegt, dass die neuen Tests den
+  Zeitstempel-Fluss tatsächlich erzwingen, nicht nur behaupten. Der von
+  [`ADR-0040`](../../../../docs/plan/adr/0040-clockport.md) verlangte
+  `TimePoint`-statt-`time.Time`-Weg in der Domäne wurde
+  vom Implementer selbst erkannt, ohne dass der Auftrag ihn nannte.
+- **Was ging anders als geplant:** Zwei kleine Ungenauigkeiten in
+  mündlichen Zwischenberichten (nicht im Repo-Inhalt selbst) — eine
+  falsche Zeitzonen-Begründung und eine untertriebene Mutation-Test-Zahl
+  — wurden vom Reviewer und dann vom Verifier unabhängig aufgedeckt und
+  korrigiert, ohne dass eine Repo-Änderung nötig war.
+- **Steering-Loop-Eintrag:** Mit diesem Slice wurde nichts verkörpert —
+  das dritte Auftreten der Finding-Klasse „DoD-Checkboxen bleiben
+  ungesetzt trotz materieller Erledigung" ist als neue Beobachtung
+  erfasst, aber der Lese-Schritt (Ausgang zuweisen) fällt der
+  `welle-5`-Closure zu, nicht diesem Einzel-Slice. Der Eintrag ist
+  gezählt, nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-017.md`
+  in `BEO-PGC/dod-checkbox-nachzug/` neu angelegt (rückwirkend auch
+  `evidence/slice-015.md`/`slice-016.md` ergänzt) — Zähler steht bei 3×,
+  Ausgang steht bei `welle-5`-Closure aus.
+- **Folge-Slices:** keine — slice-018 und slice-019 sind bereits Teil
+  derselben Welle und lagen von Anfang an in `open/`/`next/`, keine neue
+  Kennung.
+- **Risiken aus §6:** beide `entfallen` (siehe §6).
+- **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-5`;
+  die Paarungen prüft die Welle-Closure für alle drei Slices gemeinsam.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
