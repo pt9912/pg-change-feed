@@ -81,17 +81,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `TableSchema`-Domänenmodell (`internal/domain/model/`) trägt eine
+- [x] `TableSchema`-Domänenmodell (`internal/domain/model/`) trägt eine
       Spaltenmenge mit Typ-/OID-Information je `SchemaVersionID`; Unit-
-      getestet (`make test`).
-- [ ] `SchemaStorePort` (`internal/application/port/outbound/`) neu
+      getestet (`make test`). Beleg: `internal/domain/model/table_schema.go`,
+      `internal/domain/model/table_schema_test.go` — `make test` grün.
+- [x] `SchemaStorePort` (`internal/application/port/outbound/`) neu
       definiert (`CurrentVersion`, `RegisterVersion`, `TableSchema` lesen
       — exakte Signatur Implementer-Entscheidung im Plan-Nachzug); ein
       Postgres-Adapter implementiert ihn real gegen eine neue Tabelle
       `cdc.table_schema` (`tools/schema/schema.yaml`, ausgerollt über
       d-migrate). Real gegen PostgreSQL getestet (`make test-store`-Muster):
-      Schreiben, Lesen, Round-Trip.
-- [ ] `make gates` grün.
+      Schreiben, Lesen, Round-Trip. Beleg:
+      `internal/application/port/outbound/schemastore.go`,
+      `internal/adapters/driven/postgresstorage/schemastore.go`,
+      `internal/adapters/driven/postgresstorage/schemastore_test.go`,
+      `tools/schema/schema.yaml` (neue Tabelle `table_schema`) — `make
+      test-store` grün (5 neue Tests, real gegen PostgreSQL im
+      Testcontainer, Schema ausgerollt über d-migrate/`make schema-rollout`).
+- [x] `make gates` grün. Beleg: `baseline-verify` OK (54 Dateien),
+      `docs-check` 268 Dateien/0 Befunde, `commit-traceability` OK (5
+      Commits, Range `HEAD~5..HEAD`), `a-check` 0 Befunde.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -118,6 +127,65 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driven/postgresstorage/` | update | Postgres-Adapter für `SchemaStorePort` |
 | `tools/schema/schema.yaml` | update | neue Tabelle `cdc.table_schema` |
 | `internal/bootstrap/wiring.go` | update | `SchemaStorePort`-Adapter verdrahten (additiv, keine Verhaltensänderung am laufenden Pfad) |
+
+### Plan-Nachzug (nach Implementierung)
+
+- **`TableSchema`-Form:** `Column{ Name string; OID ColumnOID }` (`ColumnOID
+  uint32`) und `TableSchema{ VersionID SchemaVersionID; Columns []Column }`
+  (`internal/domain/model/table_schema.go`). Die OID bleibt roh (keine
+  Übersetzung in einen technologieunabhängigen Typ-Enum) — dieselbe
+  Abgrenzung wie beim Architect-Verdikt (Schritt 4 der Skizze trennt
+  Decoder-OID-Mitführung von der Typ-Kompatibilitätsprüfung, `slice-033`).
+  `NewTableSchema` verlangt eine nichtleere `VersionID`, mindestens eine
+  Spalte (`ErrEmptyColumns`, neu in `internal/domain/errors`) und
+  nichtleere Spaltennamen; die Spaltenmenge wird beim Konstruieren
+  kopiert. Kein separates Ordnungsfeld auf `Column` — die
+  Spalten-Reihenfolge trägt die Position im Slice und (persistiert) die
+  neue Spalte `ordinal_position`.
+- **`SchemaStorePort`-Signatur:** `CurrentVersion(ctx, table
+  model.SourceTableID) (model.SchemaVersion, bool, error)` (höchste
+  registrierte Version; `bool` false = keine über diesen Port
+  registrierte Version — die statische Erstaktivierung schreibt ihre
+  Version-1-Zeile weiterhin über `TableActivationPort.Register`, siehe
+  Ausschluss §1), `RegisterVersion(ctx, version model.SchemaVersion,
+  schema model.TableSchema) (bool, error)` (Schema-Version- und
+  TableSchema-Zeilen in einem Store-Commit; `version.ID != schema.VersionID`
+  endet vor dem ersten SQL-Aufruf über den neuen Sentinel
+  `outbound.ErrSchemaVersionMismatch`) und `TableSchema(ctx, versionID
+  model.SchemaVersionID) (model.TableSchema, error)` (Abwesenheit über
+  `outbound.ErrSchemaVersionUnknown` sichtbar, keine stille
+  Fehlinterpretation, `LH-FA-SCH-004`). Fehlerklasse `storage` über den
+  neuen Sentinel `outbound.ErrSchemaStoreStorage` — derselbe Aufbau wie
+  `ErrConsumerStateStorage` (eigener Sentinel je Port, keine geteilte
+  Klasse-Aktion mit dem ChangeStore-Sentinel).
+- **Adapter-Ort:** eigene Datei
+  `internal/adapters/driven/postgresstorage/schemastore.go`
+  (`PostgresSchemaStoreAdapter`, `NewSchemaStore`) statt Erweiterung von
+  `tableactivation.go` — eigenständiger Port mit eigenem Lebenszyklus
+  (`Close`), analog zu `consumerstate.go`/`ConsumerStatePort`, nicht
+  Erweiterung eines bestehenden Adapters.
+- **Tabellenform `cdc.table_schema`:** pro Spalte eine Zeile
+  (`schema_version_id`, `ordinal_position`, `column_name`, `column_oid`),
+  PK `(schema_version_id, ordinal_position)`, UNIQUE
+  `(schema_version_id, column_name)`; `column_oid` als `biginteger` (eine
+  PostgreSQL-OID ist ein vorzeichenloses 32-Bit-Feld und passt nicht
+  verlustfrei in ein vorzeichenbehaftetes `integer`). Nur in
+  `tools/schema/schema.yaml` (d-migrate-Rollout) — nicht in der
+  handgeschriebenen `schema.sql`/`ApplySchema`, dieselbe Abgrenzung wie
+  bei den Consumer-State-Tabellen (`ADR-0043`); Adapter-Test folgt dem
+  `consumerstate_test.go`-Muster (Tabellen-Existenz prüfen, kein `DROP
+  SCHEMA … CASCADE`) statt dem `tableactivation_test.go`-Muster, weil
+  `cdc.table_schema` nur über den d-migrate-Rollout entsteht.
+- **Wiring — entfällt bewusst:** `internal/bootstrap/wiring.go` bleibt in
+  diesem Slice unverändert. Keine bestehende Verdrahtungsstelle in `Run`
+  ruft `SchemaStorePort` auf (Verdrahtung in `Assembler.Consume` ist
+  ausdrücklich `slice-032`); eine reine Objekt-Konstruktion ohne Aufrufer
+  würde nur eine zusätzliche, ungenutzte DB-Verbindung im
+  Produktionspfad öffnen und schließen — ein neuer Fehlermodus
+  (Erreichbarkeits-Fehler eines Ports, den dieser Lauf nicht braucht)
+  ohne Gegenwert. Die §3-Plan-Zeile zu `wiring.go` oben ist damit nicht
+  eingelöst; das ist eine bewusste Abweichung vom Vorab-Plan, keine
+  stillschweigende.
 
 ## 4. Trigger
 
