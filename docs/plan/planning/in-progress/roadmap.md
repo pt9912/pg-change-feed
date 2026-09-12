@@ -58,7 +58,7 @@ bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
 | E2E-Abdeckung — Verwaltung & Observability | Vorherige Welle (CDC-Kernpfad) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für CDC-Verwaltung (`LH-FA-CFG-*`) und Administration/Observability (`LH-FA-ADM-*`); deckt dabei teilweise `BEO-PGC/rollen-test-abdeckungsluecken`-Nachbarschaft und die `LH-FA-SST-003`-CLI-Diagnoselücke auf | M |
 | Retention-Löschausführung | Vorherige Welle (Verwaltung & Observability) liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
 | E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
-| Performance-Benchmarks | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail) | M |
+| Performance-Benchmarks & Test-Coverage-Gate | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — (a) Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail); (b) Go-Test-Coverage-Gate (`go test -coverprofile`, Schwelle 80 % — Modul 13 „Schwellen sind ADR-pflichtig", eigene ADR nötig) ohne Suppression-Möglichkeit ohne zentral dokumentierte Ausnahme (Muster: `/Development/KI/ai-harness-init/.golangci.yml` `exclusions.rules` mit `Why:`-Begründung statt Inline-`//nolint`); füllt dabei `AGENTS.md` §3.2 (Suppression-Verbot) aus, das in diesem Repo noch der unausgefüllte Template-Platzhalter ist | L |
 | Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Performance-Benchmarks) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
 
@@ -104,7 +104,7 @@ flowchart LR
     W10[geplant: E2E-Abdeckung — Verwaltung & Observability]
     W11[geplant: Retention-Löschausführung]
     W12[geplant: E2E-Abdeckung — Retention]
-    W13[geplant: Performance-Benchmarks]
+    W13[geplant: Performance-Benchmarks & Test-Coverage-Gate]
     W14[geplant: Publication-Entzug-Wirksamkeit]
     W15[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
