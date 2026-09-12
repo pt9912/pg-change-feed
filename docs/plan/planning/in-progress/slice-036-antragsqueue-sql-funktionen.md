@@ -103,9 +103,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün. Beleg: `baseline-verify` OK (54 Dateien),
       `d-check` 0 Befunde (296 Dateien), `commit-traceability` OK,
       `a-check` 0 Befunde.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-036.md`](../../../reviews/review-slice-036.md)
+      (3 MEDIUM, kein Merge-Blocker), Fixrunde behoben in Commit
+      `3f57e8d`, bestätigt in
+      [`docs/reviews/review-slice-036-fixrunde.md`](../../../reviews/review-slice-036-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-036.md`](../../../reviews/verify-slice-036.md)
+      (DoD eigenständig nachgeprüft, alle drei Testfälle real reproduziert).
 - [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und
       begründet im Plan-Nachzug. Entscheidung: kein Update nötig —
@@ -127,13 +134,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ausblendet und die Ausweichform zurückgebaut wird, bekommt die Zeile
       denselben Nachtrag wie bei den Views; kein neues Gate/Target
       entstanden.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg:
       `../observations/BEO-PGC/d-migrate-nacharbeit/evidence/slice-036.md`
       (weitere Datei im bestehenden Verzeichnis ergänzt).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-12`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -186,12 +193,26 @@ dasteht.
   generieren können (nur Tabellen/Views bekannt) — dann muss die
   Antrags-Tabelle über `schema.yaml` laufen, die Funktionen aber über die
   bestehende `nacharbeit-*.sql`-Ausweichform (`ADR-0043`
-  Re-Evaluierungs-Trigger). **Ausgang:** <bei Closure einzutragen>
+  Re-Evaluierungs-Trigger). **Ausgang: eingetreten** — real reproduziert
+  (`POST_EXECUTE_DRIFT`, Exit 5, auch mit einer trivialen No-Arg-Funktion
+  gegen eine frische PostgreSQL-18-Instanz; Ursache im d-migrate-Quellcode
+  vom Reviewer identifiziert: `RawSqlTextProjection.blank()` blendet
+  Roh-SQL-Text für Tabellen/Views aus dem Post-Compare-Fingerabdruck aus,
+  für Funktionen/Prozeduren/Trigger noch nicht). Aufgefangen über die
+  etablierte `nacharbeit-*.sql`-Ausweichform
+  (`tools/schema/nacharbeit-administration.sql`) und im bereits
+  bestehenden Beobachtungs-Register-Eintrag
+  `BEO-PGC/d-migrate-nacharbeit` dokumentiert (jetzt 5×, dritter,
+  weiterhin offener Fall neben den beiden bereits aufgelösten).
 - Die Rollentrennung (`ADR-0047`) könnte verlangen, dass die neuen
   SQL-Funktionen nur einer bestimmten Rolle (`cdc_admin`?) gewährt
   werden, nicht `cdc_reader`/`cdc_capture` — das muss beim Grants-Schritt
-  (`nacharbeit-roles.sql`-Muster) bedacht werden. **Ausgang:** <bei
-  Closure einzutragen>
+  (`nacharbeit-roles.sql`-Muster) bedacht werden. **Ausgang: entfallen** —
+  die Anforderung war real, wurde aber innerhalb dieses Slices selbst
+  korrekt umgesetzt (`REVOKE EXECUTE ... FROM PUBLIC` +
+  `GRANT EXECUTE ... TO cdc_admin`) und automatisiert abgesichert
+  (`TestAdministrationRequestEnableTableRequiresCdcAdminMembership`,
+  Reviewer und Verifier real reproduziert) — kein offener Rest.
 
 ## 7. Closure-Notiz
 
@@ -210,18 +231,36 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand real (nicht vermutet)
+  die d-migrate-`POST_EXECUTE_DRIFT`-Grenze für Funktionen und wich sauber
+  auf die etablierte `nacharbeit-*.sql`-Form aus, statt den Rollout zu
+  erzwingen. Der Reviewer verifizierte die zentrale `ADR-0050`-Eigenschaft
+  (SQL-Funktionen schreiben ausschließlich den Antrags-Datensatz) direkt
+  am SQL-Quelltext und bestätigte die d-migrate-Grenze sogar über eine
+  eigene Code-Inspektion des d-migrate-Quellcodes selbst — eine
+  ungewöhnlich tiefe, eigenständige Prüfung. Alle drei MEDIUM-Findings
+  der Fixrunde waren binnen eines Laufs sauber behoben und von Reviewer
+  und Verifier unabhängig voneinander bestätigt.
+- **Was ging anders als geplant:** Der Reviewer fand drei MEDIUM-
+  Findings (Register-Stand nicht nachgezogen, fehlender automatisierter
+  Negativtest für die Rollen-Beschränkung, eine faktisch falsche
+  DoD-Begründung) — alle drei behoben, kein Merge-Blocker, keine
+  Architect-Eskalation nötig.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  der Normalfall (`BEO-PGC/d-migrate-nacharbeit` war bereits vor diesem
+  Slice verkörpert; der neue, fünfte Beleg dokumentiert einen weiterhin
+  offenen dritten Fall innerhalb desselben, bereits verkörperten
+  Eintrags, kein neuer Schwellen-Übertritt).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-036.md` in `BEO-PGC/d-migrate-nacharbeit/` ergänzt —
+  Zähler steht bei 5×, dritter Fall (SQL-Funktionen) bleibt offen.
+- **Folge-Slices:** keine — `slice-037` (Administrations-Goroutine,
+  Assembler-Live-Reload) steht bereits in `welle-12` §4 als vorgesehener
+  nächster Slice, wird als nächster Schritt neu geschnitten.
+- **Risiken aus §6:** eines *eingetreten* (aufgefangen, im Register
+  dokumentiert), eines *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-12` offen) —
+  Prüfung läuft bei der `welle-12`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
