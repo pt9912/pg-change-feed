@@ -20,14 +20,17 @@ func openTransaction(t *testing.T, id TransactionID, source SourceID) *ChangeTra
 	return tx
 }
 
-// commitTransaction trägt eine Position an die Transaktion und committet.
+// commitTransaction trägt eine Position an die Transaktion und committet;
+// der Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) trägt einen festen Wert, den
+// die meisten Tests dieser Datei nicht prüfen — `TestCommitCarriesSourceCommittedAt`
+// prüft den Zeitstempel-Fluss selbst.
 func commitTransaction(t *testing.T, tx *ChangeTransaction, offset uint64) {
 	t.Helper()
 	position, err := NewSourcePosition(tx.SourceID, offset)
 	if err != nil {
 		t.Fatalf("Position: %v", err)
 	}
-	if err := tx.Commit(position); err != nil {
+	if err := tx.Commit(position, NewTimePoint(1)); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 }
@@ -197,7 +200,7 @@ func TestChangeTransactionRejectsInvariantViolations(t *testing.T) {
 	t.Run("doppelter Commit", func(t *testing.T) {
 		tx := openTransaction(t, "tx-1", "src-1")
 		commitTransaction(t, tx, 100)
-		err := tx.Commit(mustSourcePosition(t, tx.SourceID, 200))
+		err := tx.Commit(mustSourcePosition(t, tx.SourceID, 200), NewTimePoint(2))
 		if !stderrors.Is(err, domainerrors.ErrTransactionAlreadyCommitted) {
 			t.Fatalf("Fehler = %v, wollen ErrTransactionAlreadyCommitted", err)
 		}
@@ -205,7 +208,7 @@ func TestChangeTransactionRejectsInvariantViolations(t *testing.T) {
 	t.Run("Commit an fremder Quelle", func(t *testing.T) {
 		tx := openTransaction(t, "tx-1", "src-1")
 		position := mustSourcePosition(t, "src-2", 100)
-		err := tx.Commit(position)
+		err := tx.Commit(position, NewTimePoint(1))
 		if !stderrors.Is(err, domainerrors.ErrSourceMismatch) {
 			t.Fatalf("Fehler = %v, wollen ErrSourceMismatch", err)
 		}
@@ -223,6 +226,9 @@ func TestLHFACAP006OpenTransactionIsNotConsumable(t *testing.T) {
 	if _, committed := tx.CommitPosition(); committed {
 		t.Fatal("offene Transaktion trägt eine Commit-Position")
 	}
+	if _, committed := tx.SourceCommittedAt(); committed {
+		t.Fatal("offene Transaktion trägt einen Quell-Commit-Zeitpunkt")
+	}
 	changes, err := tx.Changes()
 	if !stderrors.Is(err, domainerrors.ErrTransactionNotCommitted) {
 		t.Fatalf("Fehler = %v, wollen ErrTransactionNotCommitted", err)
@@ -233,5 +239,24 @@ func TestLHFACAP006OpenTransactionIsNotConsumable(t *testing.T) {
 	commitTransaction(t, tx, 100)
 	if _, err := tx.Changes(); err != nil {
 		t.Fatalf("Changes nach dem Commit: %v", err)
+	}
+}
+
+// LH-FA-ADM-004, Happy Path: der Commit trägt den realen
+// Quell-Commit-Zeitpunkt an die Transaktion — abrufbar über
+// SourceCommittedAt(), unverändert gegenüber dem übergebenen Wert.
+func TestCommitCarriesSourceCommittedAt(t *testing.T) {
+	tx := openTransaction(t, "tx-1", "src-1")
+	position := mustSourcePosition(t, tx.SourceID, 100)
+	want := NewTimePoint(1_700_000_000_000_000_000)
+	if err := tx.Commit(position, want); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	got, committed := tx.SourceCommittedAt()
+	if !committed {
+		t.Fatal("committed Transaktion meldet SourceCommittedAt als nicht committed")
+	}
+	if got != want {
+		t.Fatalf("SourceCommittedAt = %+v, wollen %+v", got, want)
 	}
 }

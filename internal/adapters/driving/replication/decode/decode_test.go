@@ -3,10 +3,12 @@ package decode_test
 import (
 	stderrors "errors"
 	"testing"
+	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // Die Dekodier-Tests tragen die `pgoutput`-Binärcodes in Handform
@@ -46,12 +48,21 @@ func beginPayload(finalLSN uint64, xid uint32) []byte {
 }
 
 // commitPayload trägt eine COMMIT-Nachricht (`C`): Flags, Commit-LSN,
-// End-LSN, Commit-Zeitstempel.
-func commitPayload(commitLSN, endLSN uint64) []byte {
+// End-LSN, Commit-Zeitstempel — commitMicros zählt Mikrosekunden seit der
+// `pgoutput`-Epoche (Y2K, 2000-01-01 UTC), siehe `commitEpoch`.
+func commitPayload(commitLSN, endLSN uint64, commitMicros int64) []byte {
 	payload := []byte{'C', 0}
 	payload = appendLSN(payload, commitLSN)
 	payload = appendLSN(payload, endLSN)
-	return appendMicros(payload, 0)
+	return appendMicros(payload, commitMicros)
+}
+
+// commitEpoch trägt die `pgoutput`-Zeitstempel-Epoche (Y2K, 2000-01-01
+// UTC): commitPayload zählt Mikrosekunden ab hier, unabhängig vom
+// Treiber (`ADR-0032`) — der Test verifiziert damit den vollen
+// Dekodier-Weg, nicht nur, dass irgendein Wert durchgereicht wird.
+func commitEpoch() time.Time {
+	return time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 }
 
 // relationPayload trägt eine Relation-Nachricht (`R`): Relation-ID,
@@ -226,13 +237,18 @@ func TestDecodeBeginCommit(t *testing.T) {
 	if event.XID != 42 {
 		t.Fatalf("XID: %d != 42", event.XID)
 	}
-	commit := decodeOne(t, decoder, commitPayload(0xABCDEF01, 0xABCDFFFF))
+	const commitMicros = int64(823_247_400_000_000) // 2026-02-04T12:30:00Z ab Y2K
+	commit := decodeOne(t, decoder, commitPayload(0xABCDEF01, 0xABCDFFFF, commitMicros))
 	commitEvent, isCommit := commit.(decode.Commit)
 	if !isCommit {
 		t.Fatalf("COMMIT endete als %T", commit)
 	}
 	if commitEvent.CommitLSN != 0xABCDEF01 || commitEvent.EndLSN != 0xABCDFFFF {
 		t.Fatalf("Commit-LSN: %x/%x", commitEvent.CommitLSN, commitEvent.EndLSN)
+	}
+	wantCommitTime := commitEpoch().Add(time.Duration(commitMicros) * time.Microsecond)
+	if !commitEvent.CommitTime.Equal(wantCommitTime) {
+		t.Fatalf("CommitTime = %v, wollen %v (LH-FA-ADM-004)", commitEvent.CommitTime, wantCommitTime)
 	}
 }
 
@@ -384,7 +400,10 @@ func TestDecodeChangeBeforeRelation(t *testing.T) {
 // TestDecodeFlowToCapture trägt den vollständigen Byte-Durchlauf:
 // BEGIN, Relation, Insert, COMMIT — das COMMIT meldet die committed
 // Quelltransaktion als CaptureCommand (`LH-FA-CAP-006.a`,
-// `LH-QA-REL-001.a` Schritte Receive und Decode).
+// `LH-QA-REL-001.a` Schritte Receive und Decode). Der Zeitstempel-Fluss
+// (`LH-FA-ADM-004`) läuft mit: dieselbe COMMIT-Nachricht trägt den realen
+// Quell-Commit-Zeitpunkt vom dekodierten `pgoutput`-Byte-Stand über den
+// Mapper bis zum Domänen-Zugriff `SourceCommittedAt()` (slice-017).
 func TestDecodeFlowToCapture(t *testing.T) {
 	assembler, err := mapper.NewAssembler("src-1", map[string]mapper.TableBinding{
 		"public.feed": {TableID: "tbl-1", SchemaVersion: "sv-1"},
@@ -394,11 +413,12 @@ func TestDecodeFlowToCapture(t *testing.T) {
 	}
 	decoder := decode.NewDecoder()
 
+	const commitMicros = int64(823_247_400_000_000) // 2026-02-04T12:30:00Z ab Y2K
 	steps := [][]byte{
 		beginPayload(0x1000, 99),
 		relationPayload(40001, "public", "feed", testColumn{name: "id", flags: 1}),
 		insertPayload(40001, textTuple(text("5"))),
-		commitPayload(0x2000, 0x2004),
+		commitPayload(0x2000, 0x2004, commitMicros),
 	}
 	var command *inbound.CaptureCommand
 	for i, payload := range steps {
@@ -420,6 +440,11 @@ func TestDecodeFlowToCapture(t *testing.T) {
 	position, committed := command.Transaction.CommitPosition()
 	if !committed || position.Offset != 0x2000 {
 		t.Fatalf("Commit-Position: %+v committed=%v", position, committed)
+	}
+	wantCommitTime := commitEpoch().Add(time.Duration(commitMicros) * time.Microsecond)
+	sourceCommittedAt, committedAt := command.Transaction.SourceCommittedAt()
+	if !committedAt || sourceCommittedAt != model.NewTimePoint(wantCommitTime.UnixNano()) {
+		t.Fatalf("SourceCommittedAt = %+v committed=%v, wollen %+v (LH-FA-ADM-004)", sourceCommittedAt, committedAt, model.NewTimePoint(wantCommitTime.UnixNano()))
 	}
 	changes, err := command.Transaction.Changes()
 	if err != nil {

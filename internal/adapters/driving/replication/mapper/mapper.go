@@ -92,10 +92,11 @@ func NewAssembler(source model.SourceID, tables map[string]TableBinding) (*Assem
 
 // Consume übersetzt ein Ereignis in höchstens einen Capture-Aufruf:
 // BEGIN öffnet, Änderungen hängen an, COMMIT bringt die Transaktion an
-// ihre Commit-Position (`SPEC-001`, `cdc.transaction`) und meldet sie
-// konsumierbar (`LH-FA-CAP-006`). Änderungen an nicht aktivierten
-// Tabellen fließen nicht in die Transaktion — CDC erfasst nur
-// aktivierte Tabellen (`LH-FA-CFG-001`).
+// ihre Commit-Position (`SPEC-001`, `cdc.transaction`) samt dem realen
+// Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`, als `model.TimePoint` —
+// `ADR-0040`) und meldet sie konsumierbar (`LH-FA-CAP-006`). Änderungen
+// an nicht aktivierten Tabellen fließen nicht in die Transaktion — CDC
+// erfasst nur aktivierte Tabellen (`LH-FA-CFG-001`).
 func (a *Assembler) Consume(event decode.Event) (*inbound.CaptureCommand, error) {
 	switch event := event.(type) {
 	case decode.Begin:
@@ -116,7 +117,8 @@ func (a *Assembler) Consume(event decode.Event) (*inbound.CaptureCommand, error)
 		if err != nil {
 			return nil, err
 		}
-		if err := a.open.tx.Commit(position); err != nil {
+		sourceCommittedAt := model.NewTimePoint(event.CommitTime.UnixNano())
+		if err := a.open.tx.Commit(position, sourceCommittedAt); err != nil {
 			return nil, err
 		}
 		command := &inbound.CaptureCommand{Transaction: a.open.tx}

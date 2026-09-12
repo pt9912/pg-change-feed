@@ -131,7 +131,7 @@ func TestHeartbeatDoesNotBlockCapturePersistAck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewSourcePosition: %v", err)
 	}
-	if err := tx.Commit(position); err != nil {
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 

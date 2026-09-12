@@ -13,12 +13,13 @@ import (
 // offenen Transaktion liefert sie einen Fehler; konsumierbar ist die
 // Transaktion erst nach dem Commit (`LH-FA-CAP-006`).
 type ChangeTransaction struct {
-	ID             TransactionID
-	SourceID       SourceID
-	commitPosition SourcePosition
-	committed      bool
-	changes        []Change
-	usedSequences  map[int64]struct{}
+	ID                TransactionID
+	SourceID          SourceID
+	commitPosition    SourcePosition
+	sourceCommittedAt TimePoint
+	committed         bool
+	changes           []Change
+	usedSequences     map[int64]struct{}
 }
 
 // NewOpenTransaction legt eine offene Transaktion an; ihr Commit-Position
@@ -46,9 +47,18 @@ func (t *ChangeTransaction) CommitPosition() (SourcePosition, bool) {
 	return t.commitPosition, t.committed
 }
 
+// SourceCommittedAt trägt den realen Quell-Commit-Zeitpunkt
+// (`LH-FA-ADM-004`) und meldet über das zweite Ergebnis, ob die
+// Transaktion committed ist — analog zu `CommitPosition`.
+func (t *ChangeTransaction) SourceCommittedAt() (TimePoint, bool) {
+	return t.sourceCommittedAt, t.committed
+}
+
 // Commit bringt die Transaktion an ihre Commit-Position — einmalig, und
 // nur an einer Position der eigenen Quelle (`LH-FA-DAT-004`).
-func (t *ChangeTransaction) Commit(position SourcePosition) error {
+// sourceCommittedAt trägt den realen Quell-Commit-Zeitpunkt
+// (`LH-FA-ADM-004`), abrufbar über `SourceCommittedAt`.
+func (t *ChangeTransaction) Commit(position SourcePosition, sourceCommittedAt TimePoint) error {
 	if t.committed {
 		return domainerrors.ErrTransactionAlreadyCommitted
 	}
@@ -56,6 +66,7 @@ func (t *ChangeTransaction) Commit(position SourcePosition) error {
 		return domainerrors.ErrSourceMismatch
 	}
 	t.commitPosition = position
+	t.sourceCommittedAt = sourceCommittedAt
 	t.committed = true
 	return nil
 }

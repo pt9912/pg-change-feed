@@ -4,6 +4,7 @@ import (
 	stderrors "errors"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
@@ -95,7 +96,8 @@ func TestConsumeFullTransaction(t *testing.T) {
 		t.Fatalf("Delete: %v", err)
 	}
 
-	command, err := assembler.Consume(decode.Commit{CommitLSN: 0xABCDEF01, EndLSN: 0xABCDFFFF})
+	commitTime := time.Date(2026, 2, 4, 12, 30, 0, 0, time.UTC)
+	command, err := assembler.Consume(decode.Commit{CommitLSN: 0xABCDEF01, EndLSN: 0xABCDFFFF, CommitTime: commitTime})
 	if err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
@@ -109,6 +111,10 @@ func TestConsumeFullTransaction(t *testing.T) {
 	position, committed := transaction.CommitPosition()
 	if !committed || position.Offset != 0xABCDEF01 || position.SourceID != "src-1" {
 		t.Fatalf("Commit-Position: %+v committed=%v", position, committed)
+	}
+	sourceCommittedAt, committedAt := transaction.SourceCommittedAt()
+	if !committedAt || sourceCommittedAt != model.NewTimePoint(commitTime.UnixNano()) {
+		t.Fatalf("SourceCommittedAt = %+v committed=%v, wollen %+v (LH-FA-ADM-004)", sourceCommittedAt, committedAt, model.NewTimePoint(commitTime.UnixNano()))
 	}
 	changes, err := transaction.Changes()
 	if err != nil {

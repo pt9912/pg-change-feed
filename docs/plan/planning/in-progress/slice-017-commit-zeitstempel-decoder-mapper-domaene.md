@@ -101,10 +101,11 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driving/replication/decode/decode.go` | update | `Commit`-Event trägt `CommitTime` |
-| `internal/adapters/driving/replication/mapper/mapper.go` | update | `Consume` übergibt `CommitTime` an `Commit()` |
-| `internal/domain/model/transaction.go` | update | `Commit(position, sourceCommittedAt)`-Signatur + Zugriff |
-| zugehörige `_test.go`-Dateien der drei obigen Pakete | update | Tests für den neuen Zeitstempel-Fluss |
+| `internal/adapters/driving/replication/decode/decode.go` | update | `Commit`-Event trägt `CommitTime` (`time.Time`, aus `pglogrepl.CommitMessage.CommitTime`) |
+| `internal/adapters/driving/replication/mapper/mapper.go` | update | `Consume` übersetzt `CommitTime` in `model.TimePoint` (`ADR-0040` — Domain importiert `time` nicht) und übergibt sie an `Commit()` |
+| `internal/domain/model/transaction.go` | update | `Commit(position, sourceCommittedAt TimePoint)`-Signatur + Zugriff `SourceCommittedAt()`; Feld bleibt `TimePoint`, kein `time.Time` (`ADR-0040`) |
+| zugehörige `_test.go`-Dateien der drei obigen Pakete | update | Tests für den neuen Zeitstempel-Fluss, inkl. Ende-zu-Ende-Beleg `TestDecodeFlowToCapture` |
+| **Plan-Nachzug (§6-Risiko eingetreten, im Rahmen absorbiert):** `internal/bootstrap/heartbeat_internal_test.go`, `internal/adapters/driven/postgresstorage/store_test.go` (zwei Stellen), `internal/application/usecase/capture/service_test.go` | update | Vier Aufrufstellen von `tx.Commit(position)` außerhalb der drei geplanten Pakete — reine Test-Fixtures, die die neue Signatur mit einem Platzhalter-Zeitstempel (`model.NewTimePoint(1)`) bedienen; keine Design-Änderung, kein Umbau nötig |
 
 ## 4. Trigger
 

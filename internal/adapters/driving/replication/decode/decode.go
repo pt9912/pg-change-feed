@@ -14,6 +14,7 @@ package decode
 import (
 	stderrors "errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pglogrepl"
 )
@@ -41,10 +42,15 @@ func (Begin) isEvent() {}
 
 // Commit trägt den Commit einer Quelltransaktion (Typ `C`): CommitLSN
 // ist die Commit-Position (`SPEC-003`, der Adapter mappt die LSN auf
-// den Offset), EndLSN ist das Transaktionsende.
+// den Offset), EndLSN ist das Transaktionsende. CommitTime trägt den
+// realen Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) aus
+// `pglogrepl.CommitMessage.CommitTime`; der Mapper übersetzt ihn beim
+// Domänen-Commit in `model.TimePoint` (`ADR-0040` — Domain importiert
+// `time` nicht).
 type Commit struct {
-	CommitLSN uint64
-	EndLSN    uint64
+	CommitLSN  uint64
+	EndLSN     uint64
+	CommitTime time.Time
 }
 
 func (Commit) isEvent() {}
@@ -133,8 +139,9 @@ func (d *Decoder) Decode(payload []byte) (Event, error) {
 		return Begin{XID: message.Xid}, nil
 	case *pglogrepl.CommitMessage:
 		return Commit{
-			CommitLSN: uint64(message.CommitLSN),
-			EndLSN:    uint64(message.TransactionEndLSN),
+			CommitLSN:  uint64(message.CommitLSN),
+			EndLSN:     uint64(message.TransactionEndLSN),
+			CommitTime: message.CommitTime,
 		}, nil
 	case *pglogrepl.RelationMessage:
 		relation := &Relation{
