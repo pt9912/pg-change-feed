@@ -170,6 +170,67 @@ func TestAcknowledgeConsumerReportsUnregistered(t *testing.T) {
 	}
 }
 
+// TestAcknowledgeConsumerReportsInvalidPosition trägt einen der zwei
+// externen Domänenfehler-Pfade aus `review-slice-022.md` F-1: ein Offset
+// von 0 scheitert an `model.NewSourcePosition`
+// (`domainerrors.ErrInvalidPosition`), bevor der Consumer-State-Port
+// berührt wird — real gegen PostgreSQL (`make test-store`), weil der
+// Verdrahtungsschritt davor (`postgresstorage.NewConsumerState`) eine
+// echte Verbindung braucht, um diesen Zweig überhaupt zu erreichen
+// (dasselbe Muster wie `TestRegisterConsumerReportsDomainFailure` in
+// `register_test.go`).
+func TestAcknowledgeConsumerReportsInvalidPosition(t *testing.T) {
+	dsn := os.Getenv("CDC_STORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("CDC_STORE_TEST_DSN nicht gesetzt — reale PostgreSQL-Tests laufen über make test-store")
+	}
+
+	var code int
+	output := captureStderr(t, func() {
+		code = bootstrap.AcknowledgeConsumer(context.Background(),
+			bootstrap.Config{DSN: dsn, Source: "cli-acknowledge-source"},
+			"cli-acknowledge-invalid-position", 0)
+	})
+	if code != 1 {
+		t.Fatalf("Exit-Code = %d, wollen 1 (Domänenfehler: Offset ohne Wert)", code)
+	}
+	if !strings.Contains(output, "acknowledge-consumer") {
+		t.Fatalf("stderr = %q, wollen eine acknowledge-consumer-Diagnose-Zeile", output)
+	}
+	if !strings.Contains(output, "Offset") {
+		t.Fatalf("stderr = %q, wollen einen Hinweis auf die fehlende Offset-Invariante (ErrInvalidPosition)", output)
+	}
+}
+
+// TestAcknowledgeConsumerReportsEmptyIdentifier trägt den zweiten der
+// zwei externen Domänenfehler-Pfade aus `review-slice-022.md` F-1: eine
+// leere Consumer-Kennung scheitert an `AcknowledgeConsumerService.Acknowledge`
+// (`domainerrors.ErrEmptyIdentifier`), noch vor der Positions-Prüfung und
+// bevor der Consumer-State-Port berührt wird — real gegen PostgreSQL
+// (`make test-store`), aus demselben Verdrahtungsgrund wie oben.
+func TestAcknowledgeConsumerReportsEmptyIdentifier(t *testing.T) {
+	dsn := os.Getenv("CDC_STORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("CDC_STORE_TEST_DSN nicht gesetzt — reale PostgreSQL-Tests laufen über make test-store")
+	}
+
+	var code int
+	output := captureStderr(t, func() {
+		code = bootstrap.AcknowledgeConsumer(context.Background(),
+			bootstrap.Config{DSN: dsn, Source: "cli-acknowledge-source"},
+			"", 100)
+	})
+	if code != 1 {
+		t.Fatalf("Exit-Code = %d, wollen 1 (Domänenfehler: leere Kennung)", code)
+	}
+	if !strings.Contains(output, "acknowledge-consumer") {
+		t.Fatalf("stderr = %q, wollen eine acknowledge-consumer-Diagnose-Zeile", output)
+	}
+	if !strings.Contains(output, "Kennung") {
+		t.Fatalf("stderr = %q, wollen einen Hinweis auf die leere Kennung (ErrEmptyIdentifier)", output)
+	}
+}
+
 // TestAcknowledgeConsumerReportsStorageFailure trägt die
 // Verdrahtungs-Fehlerklasse (Exit-Code 1) — netzlos (`make test`), die
 // Verbindung scheitert am geschlossenen lokalen Port, dieselbe

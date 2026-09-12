@@ -96,7 +96,7 @@ docker run --rm --network "$NETWORK" \
   -e CDC_STORE_TEST_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test ./internal/bootstrap/...
 
-OTHER_PACKAGES=$(docker run --rm --network "$NETWORK" \
+mapfile -t OTHER_PACKAGES < <(docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
@@ -109,4 +109,4 @@ docker run --rm --network "$NETWORK" \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_STORE_TEST_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test $OTHER_PACKAGES
+  "$TOOLCHAIN_IMAGE" go test "${OTHER_PACKAGES[@]}"

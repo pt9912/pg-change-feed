@@ -93,9 +93,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       PostgreSQL, verbose Einzellauf bestätigt: `--- PASS:
       TestAcknowledgeConsumerEndToEnd`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-022.md`: 0 HIGH, 2 MEDIUM (F-1, F-2), 1 LOW
+      (F-3) — F-1 (Negativtest-Lücke) und F-3 (unquoted Shell-Variable)
+      geschlossen in dieser Fixrunde; F-2 (Test-Isolations-Symptom-Fix)
+      laut Verdikt kein Merge-Blocker, bleibt Planner-Arbeit als
+      Beobachtungs-Register-Kandidat (§7-Closure).
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
       Positions-Bestätigung).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
