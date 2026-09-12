@@ -115,17 +115,24 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `make test-integration`-Läufe plus zwei gezielt rot geführte
       Mutationsläufe zum Beleg der Wächter-Wirksamkeit — siehe Bericht an
       den Reviewer).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-035.md`](../../../reviews/review-slice-035.md)
+      (1 LOW, kein Merge-Blocker; Plan-Abweichung bei `LH-FA-ADM-005`
+      eigenständig geprüft und als legitime Präzisierung bestätigt, keine
+      Verwässerung). Verifikation in
+      [`docs/reviews/verify-slice-035.md`](../../../reviews/verify-slice-035.md)
+      (DoD eigenständig nachgeprüft, dreifach real reproduziert).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — kein
       öffentlicher Vertrag berührt (reine Testabdeckung bestehender,
       bereits dokumentierter Lesezugriffswege); keine Doku-Änderung.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. — entfällt: `../reconciliation.md` existiert nicht (Repo ist Greenfield, kein Brownfield-Bootstrap).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Keine Beobachtung angefallen — reine Testabdeckung ohne neuen Fund.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-11`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -175,13 +182,18 @@ dasteht.
 - Der Rückstandstestfall könnte durch Timing/Nebenläufigkeit (Erfassung
   läuft weiter, während der Test die Position prüft) flaky werden, wenn
   nicht sauber auf „alle erwarteten Changes erfasst" gewartet wird, bevor
-  die Rückstands-Messung gelesen wird. **Ausgang:** <bei Closure
-  einzutragen>
+  die Rückstands-Messung gelesen wird. **Ausgang: entfallen** — Reviewer
+  und Verifier haben den Testfall unabhängig voneinander dreifach real
+  reproduziert (identischer Rückstandswert 1464 → 0 in jedem Lauf), keine
+  Flakiness gefunden.
 - Der Betriebsstatus-Testfall könnte gegen eine bereits durch einen
   anderen Testfall (z. B. `slice-033`s Fehlerklassen-Test, der den
   Feed-Container real beendet) beeinträchtigte `cdc.heartbeat`-Zeile
   laufen, wenn die Testreihenfolge im Runner-Skript nicht beachtet wird.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen** — Reviewer prüfte die Platzierung eigenständig:
+  `TestMVPHeartbeatHealthy` läuft im vorderen `-run`-Muster, vor dem
+  containerbeendenden Testfall aus `slice-033`; dreifach real grün ohne
+  Beeinträchtigung.
 
 ## 7. Closure-Notiz
 
@@ -200,18 +212,31 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand real, dass
+  `cdc.consumer_status`s Rückstands-Semantik von der wörtlichen
+  Ziel-Formulierung abweicht (LEFT JOIN liefert `NULL` statt eines
+  positiven Rückstands für einen nie bestätigenden Consumer), passte den
+  Testablauf präzise an den tatsächlichen Lastenheft-Wortlaut an und
+  dokumentierte die Abweichung transparent im Plan-Nachzug statt sie zu
+  verschweigen. Reviewer und Verifier prüften diese Präzisierung beide
+  unabhängig gegen den Lastenheft-Text und den Code (LEFT JOIN, Go-Pfad
+  `UpsertConsumerPosition`) und bestätigten: legitime Präzisierung, keine
+  Verwässerung.
+- **Was ging anders als geplant:** Der Reviewer fand ein LOW-Finding
+  (F-1: ein unveränderter Kommentar im Runner-Skript zählt den neuen
+  Rückstands-Beleg-Block nicht unter den Voraussetzungen für den
+  nachfolgenden containerbeendenden Test auf) — kein Merge-Blocker, keine
+  Fixrunde nötig.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  der Normalfall. `BEO-PGC/test-runner-stiller-ausschluss` bleibt
+  unverändert bei 1× (dieser Slice hat die Lücke für seine beiden
+  Testfälle korrekt vermieden).
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — siehe §2-Begründung.
+- **Folge-Slices:** keine — `welle-11` schließt mit diesem Slice.
+- **Risiken aus §6:** beide *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-11` offen) —
+  Prüfung läuft bei der `welle-11`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
