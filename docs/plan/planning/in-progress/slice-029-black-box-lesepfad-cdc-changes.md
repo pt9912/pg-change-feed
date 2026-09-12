@@ -98,24 +98,25 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Beleg: `make gates` grün nach dem Test-Commit; `make test-integration`
       dreimal in Folge grün im Anschluss an die Mutationsprobe (drei weitere
       Läufe auf dem zurückgesetzten Stand).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-029.md`](../../../reviews/review-slice-029.md)
+      (1 LOW, F-1 behoben in Commit `f96eff3`); Verifikation in
+      [`docs/reviews/verify-slice-029.md`](../../../reviews/verify-slice-029.md)
+      (Mutationsprobe eigenständig reproduziert, DoD-Konformität bestätigt).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — keiner
       berührt: reine Testabdeckung eines bestehenden Lesezugriffswegs, kein
       Guide/Sensor/Vertrag geändert. Kein Doku-Update vorgenommen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-      Wenn der Vertragstest wirklich als dauerhafter Sensor gegen Drift
-      hält (läuft mit jedem `make test-integration`), ist
-      `BEO-PGC/lese-doppelquelle` ein Kandidat für Ausgang *verkörpert*
-      (Träger: dieser Testfall), auch ohne die 3×-Schwelle zu erreichen —
-      analog zu `BEO-PGC/spec008-replication-luecke`s direkter Auflösung
-      bei 2× (Modul 5 „Offene Risiken werden bei Closure aufgelöst" gilt
-      sinngemäß). Planner entscheidet bei Closure.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Beleg: `evidence/slice-029.md` in `BEO-PGC/lese-doppelquelle/` angelegt
+      — Zähler damit bei 3×. Ausgang **verkörpert**: der neue Testfall ist
+      der dauerhafte Sensor, den die Beobachtung vermisste (real
+      mutations-geprüft, siehe Verifikationsbericht). Siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-9`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -187,11 +188,17 @@ dasteht.
   SQL-View und Go-Adapter aufdecken (z. B. unterschiedliche Behandlung von
   `NULL`-Werten in `old_data`/`new_data`) — das wäre ein echter Fund, kein
   Testinfrastruktur-Defekt, und bräuchte eine Architect-Entscheidung, welche
-  Semantik korrekt ist. **Ausgang:** <bei Closure einzutragen>
+  Semantik korrekt ist. **Ausgang: entfallen** — keine Drift gefunden;
+  SQL-View- und Go-Adapter-Lesung stimmen für den realen INSERT/UPDATE/
+  DELETE-Rundlauf real überein (dreimal grün, zusätzlich durch die
+  Mutationsprobe als scharfer Vergleich bestätigt, nicht nur trivial grün).
 - Der Vergleich zweier Lesungen (SQL-View, Go-Adapter) im selben Testlauf
   könnte durch Timing/Nebenläufigkeit einer laufenden Erfassung flaky
   werden, wenn nicht sauber auf „alle erwarteten Changes erfasst" gewartet
-  wird. **Ausgang:** <bei Closure einzutragen>
+  wird. **Ausgang: entfallen** — `awaitChangesViewRows` wartet mit
+  Deadline/Poll-Intervall auf die vollständige Zeilenzahl, bevor verglichen
+  wird; Implementer- und Verifier-Läufe (insgesamt acht `make
+  test-integration`-Durchläufe über beide Rollen) zeigten keine Flakiness.
 
 ## 7. Closure-Notiz
 
@@ -210,18 +217,38 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Verifier hat die vom Reviewer offen
+  gelassene Prüfgrenze (Mutationsbeleg im Repo-Zustand nicht nachvollziehbar)
+  nicht als Lücke stehen gelassen, sondern die Mutationsprobe selbst
+  reproduziert — inklusive der Erkenntnis, dass eine reine Spalten-
+  *Reihenfolge*-Vertauschung wirkungslos gewesen wäre (die generierte
+  `CREATE VIEW`-SQL trägt keine explizite Spaltenliste) und stattdessen ein
+  `AS`-Alias-Tausch nötig war. Damit ist der zentrale Sicherheitsbeleg dieses
+  Slices unabhängig von Implementer und Reviewer ein drittes Mal bestätigt.
+- **Was ging anders als geplant:** Keine wesentliche Abweichung vom
+  Slice-Ziel; die im Plan-Nachzug (§3) begründeten zwei Entscheidungen
+  (Go/pgx statt `docker exec … psql`, eigener isolierter Rundlauf statt
+  Wiederverwendung von `TestMVPCaptureFlow`) trugen. Der Reviewer fand ein
+  LOW-Finding (F-1: Kopplungs-Kommentar nannte nur zwei von drei
+  koexistierenden ID-Gruppen) — direkt behoben (Commit `f96eff3`), kein
+  Sachdefekt.
+- **Steering-Loop-Eintrag:** `BEO-PGC/lese-doppelquelle` erreicht mit
+  diesem Slice 3× und geht direkt auf Ausgang *verkörpert* — der neue
+  Testfall ist der dauerhafte Sensor, den die Beobachtung seit `slice-010`
+  vermisste, läuft mit jedem `make test-integration` mit und wurde real
+  mutations-scharf verifiziert. Verkörpert in
+  `test/integration/integration_test.go` (`TestMVPChangesViewMatchesReadChanges`)
+  — liegt in `test/integration/integration_test.go`. Auslöser: `BEO-PGC/lese-doppelquelle`
+  (slice-010, slice-011, slice-029 — 3×).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-029.md`
+  in `BEO-PGC/lese-doppelquelle/` ergänzt — Zähler steht damit bei 3×,
+  Ausgang **verkörpert** (`state.md` fortgeschrieben, Anker `seit slice-029`).
+- **Folge-Slices:** keine — `slice-030` (Black-Box-E2E für
+  Schema-Änderungen) ist bereits als Datei in `open/` vorhanden, unabhängig
+  von diesem Slice geplant, kein neuer Folge-Slice dieses Vorgangs.
+- **Risiken aus §6:** beide *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-9` offen) —
+  Prüfung läuft bei der `welle-9`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

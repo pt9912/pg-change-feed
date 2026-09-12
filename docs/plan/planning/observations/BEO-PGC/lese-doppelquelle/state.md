@@ -1,5 +1,8 @@
-Zustand: offen — Ausgang: **weiter offen** → kein Sensor hält die
-SQL-View-Semantik gegen die Go-Use-Case-Semantik; wird beobachtet,
-bis eine konkrete Drift auftritt oder ein Sensor/Vertrags-Test beide
-Pfade koppelt. Zähler (abgeleitet): 2× (evidence/slice-010.md,
-evidence/slice-011.md) — unter der 3×-Schwelle, noch keine Lücke.
+Zustand: **verkörpert** — der fehlende Vertragstest ist gebaut: der
+`TestMVPChangesViewMatchesReadChanges`-Testfall in
+`test/integration/integration_test.go` hält die SQL-View-Semantik
+(`cdc.changes`) und die Go-Use-Case-Semantik (`ReadChanges`) bei jedem
+`make test-integration`-Lauf gegeneinander — verkörpert in
+`test/integration/integration_test.go` (`TestMVPChangesViewMatchesReadChanges`)
+`seit slice-029`. Zähler (abgeleitet): 3× (evidence/slice-010.md,
+evidence/slice-011.md, evidence/slice-029.md).
