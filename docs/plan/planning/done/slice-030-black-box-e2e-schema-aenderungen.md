@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-9`](../welle-9.md) — der Nachweis, dass
+**Welle:** [`welle-9`](welle-9.md) — der Nachweis, dass
 Schema-Änderungen real gegen den Compose-Stack erfasst und gelesen werden,
 ist welle-9s Closure-Trigger (§3), kein Einzel-Slice-DoD.
 

@@ -77,8 +77,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-029 | Black-Box-Lesepfad über `cdc.changes` — Vertragstest gegen `BEO-PGC/lese-doppelquelle` | [`LH-FA-REA-002`](../../../spec/lastenheft.md) |
-| slice-030 | Black-Box-E2E für Schema-Änderungen | [`LH-FA-SCH-001`](../../../spec/lastenheft.md)…`005` |
+| slice-029 | Black-Box-Lesepfad über `cdc.changes` — Vertragstest gegen `BEO-PGC/lese-doppelquelle` | [`LH-FA-REA-002`](../../../../spec/lastenheft.md) |
+| slice-030 | Black-Box-E2E für Schema-Änderungen | [`LH-FA-SCH-001`](../../../../spec/lastenheft.md)…`005` |
 
 ## 5. Abhängigkeiten
 

@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-9`](../welle-9.md) — der Nachweis, dass Lesen über die
+**Welle:** [`welle-9`](welle-9.md) — der Nachweis, dass Lesen über die
 externe SQL-Sicht real funktioniert und mit dem internen Go-Lesepfad
 übereinstimmt, ist welle-9s Closure-Trigger (§3), kein Einzel-Slice-DoD.
 
