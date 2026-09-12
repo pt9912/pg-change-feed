@@ -433,3 +433,125 @@ eine direkte manuelle Probe (ohne Testcode) bestätigt real `SQLSTATE
 zurückgesetzt, `git diff` danach leer. `make doc-commits
 RANGE=91c7813^..f98a5c9` Exit 0, 0 Befunde. `git status` am Ende dieses
 Laufs sauber.
+
+---
+
+### Nachtrag — Fixrunden-Bestätigung, 2026-09-12
+
+**Grundsatz:** Dieser Nachtrag übernimmt keine Behauptung aus der Fixrunde
+(Commit `eed73e7`) ungeprüft — jeder Befund unten wurde in einem eigenen,
+zweiten Lauf gegen einen frischen, dedizierten Testcontainer
+(`cdc-verify023b-pg`/`cdc-verify023b`, wieder nicht der von `make test-store`
+verwaltete) selbst reproduziert. Geprüfter Diff: `git show eed73e7` — genau
+zwei Dateien (`internal/bootstrap/roles_wiring_test.go`,
+`docs/plan/planning/in-progress/slice-023-….md`), kein Produktionscode
+berührt.
+
+**Sensor-Belege (dieser Lauf):**
+
+| Sensor | Ergebnis | Exit |
+|---|---|---|
+| `make gates` | 217 Dateien, 0 Befunde (alle vier Gates) | **0** |
+| `make test-store` (zweimal) | alle Pakete `ok`, beide Läufe identisch grün | **0** (beide) |
+| `go test ./internal/bootstrap/... -run 'TestCdc' -v` (eigener Container, Baseline) | alle vier `TestCdc*`-Tests inkl. `TestCdcWiringCallerRejectsWrongRoleAssignment` (6 Unter-Fälle) PASS | **0** |
+
+**V-1 — real gegengeprüft:**
+
+- Den tatsächlichen Postgres-Grant auf `cdc_admin`/`cdc.process_heartbeat`
+  manuell auf den alten `ADR-0047`-Wortlaut (`GRANT INSERT, UPDATE`, ohne
+  `SELECT`) gesetzt (`\dp` zeigt `cdc_admin=aw`) und danach den
+  unveränderten, committeten `TestCdcAdminHeartbeatWriteRequiresGrant`
+  ausgeführt: **PASS** — der Test setzt in seiner neuen Stufe 2 selbst
+  exakt diesen Grant-Text und prüft real `SQLSTATE 42501`; die Zwischenstufe
+  aus `ADR-0048`s Fitness-Function-Zeile ist damit nachweislich real
+  geprüft, nicht mehr nur behauptet. Bestätigt V-1 im wörtlichen Sinn des
+  Findings (fehlende Test-Assertion für genau diese Zwischenstufe).
+- **Zusatzbefund, über V-1 hinaus (nicht blockierend, aber der Fixrunde
+  nicht entnehmbar):** Weil der Test zu Beginn selbst `REVOKE SELECT,
+  INSERT, UPDATE` ausführt und seine drei Stufen über eigene, hartkodierte
+  `GRANT`-Anweisungen erzeugt, ist sein Ergebnis vom tatsächlichen Inhalt
+  von `tools/schema/nacharbeit-roles.sql` vollständig entkoppelt — real
+  bestätigt: Nach obigem manuellem Zurücksetzen des Produktions-Grants auf
+  den alten, kaputten Text lief der Test **grün** (s.o.), und sein
+  `t.Cleanup` überschrieb den (absichtlich kaputt belassenen) Grant am Ende
+  sogar wieder auf den korrekten Zustand (`\dp` zeigt danach `cdc_admin=arw`)
+  — der Testlauf hätte eine reale Regression in der Rollout-Datei selbst
+  unsichtbar gemacht statt sie anzuzeigen. Dieser Zusatzbefund ist eine
+  eigenständige, engere Beobachtung als V-1 (V-1 war: „Zwischenstufe fehlt
+  als Assertion" — jetzt geschlossen; dieser Zusatzbefund ist: „kein Test
+  liest den tatsächlichen `nacharbeit-roles.sql`-Grant-Text ungefiltert").
+  `ADR-0048`s Fitness-Function-Zeile verlangt wörtlich nur den
+  Postgres-Semantik-Nachweis (INSERT/UPDATE ohne SELECT scheitert), nicht
+  einen Regressionsschutz für die Rollout-Datei selbst — insofern **kein
+  offener DoD-/ADR-Verstoß**, aber ein Kandidat für einen eigenen
+  Beobachtungs-Register-Eintrag bei der Planner-Closure.
+
+**V-2 — real gegengeprüft:**
+
+- Mutation gegen einen **jetzt abgedeckten** Aufrufer: `wiring.go`s
+  `RegisterConsumer` testweise von `cfg.AdminDSN` auf `cfg.CaptureDSN`
+  umgestellt (ein realer Rollen-Vertauschungsfehler an exakt der Stelle,
+  die `TestCdcWiringCallerRejectsWrongRoleAssignment`s
+  `RegisterConsumer`-Fall prüft) — `go test
+  ./internal/bootstrap/... -run TestCdcWiringCallerRejectsWrongRoleAssignment
+  -v`: **FAIL**, genau im `RegisterConsumer`-Unterfall (die übrigen fünf
+  bleiben PASS). Mutation vollständig zurückgesetzt (`git checkout --
+  internal/bootstrap/wiring.go`), `git diff` danach leer, Testsuite erneut
+  vollständig PASS. **V-2s Kernbehauptung — dass eine Vertauschung an einem
+  über `wiring.go`-Funktionen erreichbaren Aufrufer jetzt real auffällt —
+  ist damit unabhängig bestätigt**, nicht nur für den vom Fixrunden-Commit
+  genannten Fall geglaubt.
+- **Offene, benannte Lücke (Replication-Stream/ACK-Adapter) — real
+  nachvollzogen:** `tools/harness/run-replication-tests.sh` baut eine
+  eigene Testcontainer-Instanz (`wal_level=logical`) und übergibt den DSN
+  über `CDC_REPLICATION_TEST_DSN` — ohne die rollenbeschränkten
+  Login-Test-Identitäten (`newTestLoginRole`), die `roles_wiring_test.go`
+  nutzt. Die Behauptung aus Commit `eed73e7`s Code-Kommentar („eine offene,
+  benannte Lücke, kein stiller Auslassungsfall") ist damit technisch
+  zutreffend — `cdc_capture`/`REPLICATION`-Aufrufer und der ACK-Adapter des
+  Replication-Pfads bleiben ungetestet gegen Rollen-Vertauschung.
+  **Aber:** „benannt" ist diese Lücke bislang **nur** im Testcode-Kommentar
+  und in der Fixrunden-Commit-Message — **nicht** in der Slice- oder
+  Closure-Doku: `docs/plan/planning/in-progress/slice-023-….md` §6 führt
+  weiterhin ausschließlich das Konfigurationsvertrag-Bruch-Risiko, §7 ist
+  weiterhin vollständig der Platzhalter-Vorlagentext. Vor `git mv` nach
+  `done/` fehlt damit noch die sichtbare Benennung dieser Lücke im
+  Slice-Plan selbst (z. B. als zusätzliches §6-Risiko mit Ausgang
+  *weiter offen* → Beobachtungs-Register, oder als eigener
+  `BEO-PGC/…`-Eintrag) — **das ist ein neuer Punkt für die
+  Planner-Closure**, kein Widerspruch zu V-1/V-2, aber auch keine
+  Formsache: ohne ihn verschwindet die Lücke mit der Slice-Archivierung.
+
+**Delta-Check der übrigen DoD-Punkte (Slice-Plan §2):** `git show eed73e7
+--stat` bestätigt: nur zwei Dateien geändert
+(`internal/bootstrap/roles_wiring_test.go`,
+`docs/plan/planning/in-progress/slice-023-….md`), kein Produktionscode.
+Einzige inhaltliche Slice-Plan-Änderung: DoD-Punkt „Review durchgeführt"
+von `[ ]` auf `[x]` mit Beleg-Zeile auf `review-slice-023.md` — durch
+eigene Lektüre bestätigt (0 HIGH/0 MEDIUM/1 LOW/1 INFO, unverändert seit
+dem ersten Durchgang). Alle übrigen neun DoD-Punkte sind durch diese
+Fixrunde nicht berührt; die Bewertung aus dem ersten Durchgang
+(Zwischenstand 5/10 material erfüllt, 2 entfallen/vermerkt, 3 regulär
+offen als Planner-Arbeit) gilt unverändert fort — mit V-1/V-2 jetzt
+geschlossen statt offen.
+
+**Docker-Umgebung/`git status` nach diesem Nachtrags-Lauf:** keine
+verwaisten `cdc-verify023b-*`-Container/-Netze; `tools/schema/plan.yaml`
+zurückgesetzt; `git status` sauber.
+
+**Verdikt (Nachtrag):** V-1 und V-2 sind im wörtlichen Sinn ihrer
+ursprünglichen Findings **geschlossen**, beide real und unabhängig
+reproduziert (kein Übernehmen der Fixrunden-Behauptung). Ein Zusatzbefund
+zu V-1 (Testergebnis vollständig entkoppelt vom tatsächlichen
+`nacharbeit-roles.sql`-Inhalt) und die Replication-Stream/ACK-Lücke aus
+V-2 sind real, aber **beide non-blocking für `slice-023`s eigene DoD**
+(keine der beiden verletzt eine wörtliche DoD- oder Fitness-Function-Zusage
+von `ADR-0047`/`ADR-0048`). Vor `git mv` nach `done/` sollte der Planner
+jedoch **beide** in die Closure-Doku aufnehmen (§6-Risiko oder
+Beobachtungs-Register-Eintrag), damit sie die Slice-Archivierung sichtbar
+überleben — bislang stehen sie nur im Testcode-Kommentar bzw. in diesem
+Verifier-Nachtrag.
+
+**Übergabe:** Bericht an den Planner. Keine Reparaturen — Mutation an
+`internal/bootstrap/wiring.go` und der manuell gesetzte Grant wurden
+vollständig zurückgesetzt; der eigene Testcontainer/-netz wurde entfernt.
