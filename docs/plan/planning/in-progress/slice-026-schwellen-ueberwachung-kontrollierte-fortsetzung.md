@@ -76,31 +76,55 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `SPEC-008`-Zeile `replication` (Transport-/Verbindungsstörungs-Anteil,
+- [x] `SPEC-008`-Zeile `replication` (Transport-/Verbindungsstörungs-Anteil,
       nach `slice-024`s ADR-Trennung) erfüllt: unterhalb der Warnschwelle
       unveränderte Fortsetzung, zwischen Warn-/Fehlerschwelle sichtbare
       Fortsetzung, oberhalb der Fehlerschwelle kontrollierter Abbruch über
-      den bestehenden `replication`-Klassifikationspfad.
-- [ ] Ende-zu-Ende-Test (welle-7 §3): künstlich erzeugter, wachsender
+      den bestehenden `replication`-Klassifikationspfad. Beleg:
+      `internal/bootstrap/wiring.go` (`classifyWALRetention`,
+      `runWALRetentionCheck`, `mergeStreamAndWALFaultOutcome`) —
+      Schwellen-Vergleich hängt am periodischen WAL-Rückstand-Check
+      (`slice-025`) und löst bei Überschreiten der Fehlerschwelle
+      `stopStream` + den bestehenden `outbound.ErrReplication`-Klassifikations-
+      pfad (`classifyRunError`, `reportFault`) aus.
+- [x] Ende-zu-Ende-Test (welle-7 §3): künstlich erzeugter, wachsender
       WAL-Rückstand durchläuft real beide Seiten der Schwelle in einem
       Testlauf, dreimal in Folge grün (`make test-replication` oder
-      Äquivalent).
-- [ ] Stream-Ordnungs-Verletzungen bleiben nachweislich unverändert hart
+      Äquivalent). Beleg:
+      `internal/bootstrap/walretention_endtoend_test.go`
+      (`TestWALRetentionThresholdEndToEnd`), `make test-replication` dreimal
+      in Folge grün (Testfixture-Schwellen 32 KiB/512 KiB über
+      `Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`,
+      Produktions-Startwerte aus `SPEC-013` unverändert).
+- [x] Stream-Ordnungs-Verletzungen bleiben nachweislich unverändert hart
       abbrechend (Regressionstest — kein neuer Fortsetzungspfad greift dort
-      versehentlich).
-- [ ] `make gates` grün.
+      versehentlich). Beleg:
+      `internal/bootstrap/walretention_internal_test.go`
+      (`TestMergeStreamAndWALFaultOutcomePrioritizesStreamError`) — rot
+      färbende Mutation (Priorität in `mergeStreamAndWALFaultOutcome`
+      umgedreht) real gesehen und wieder zurückgesetzt.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `docs/user/benutzerhandbuch.md` §6 Fehlerklassen
+- [x] Doku-Update für `docs/user/benutzerhandbuch.md` §6 Fehlerklassen
       (Zeile `replication` — Aktion ändert sich real von „Sichtbarer Fehler"
-      auf „Schwellen-Überwachung; kontrollierte Fortsetzung").
+      auf „Schwellen-Überwachung; kontrollierte Fortsetzung"). Beleg:
+      `docs/user/benutzerhandbuch.md` §4 (WAL-Rückstand prüfen), §6
+      (Fehlerklassen-Tabelle), §9 (Grenzwerte), Änderungshistorie 1.4.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+      Plan-Nachzug: Datei existiert in diesem Repo nicht (`PGC` ist
+      Greenfield, kein Brownfield-Bootstrap) — Item entfällt.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
       `BEO-PGC/spec008-replication-luecke` → *eingetreten* (dieser Slice
       schließt die Lücke real, `evidence/slice-026.md`), sofern der
       Ende-zu-Ende-Test wirklich beide Seiten der Schwelle belegt.
+      Plan-Nachzug: Die Bedingung ist erfüllt (E2E-Test belegt real beide
+      Seiten der Schwelle, dreimal grün) — das Eintragen selbst
+      (`evidence/slice-026.md`, `state.md`) bleibt Closure-Arbeit (§7,
+      Modul 6 „Eingetragen wird bei der Slice-Closure") und ist hier bewusst
+      nicht vorweggenommen.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
