@@ -85,13 +85,15 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-QA-SEC-001`…`003` erfüllt: Der Compose-Integrationstest belegt
+- [x] `LH-QA-SEC-001`…`003` erfüllt: Der Compose-Integrationstest belegt
       real, dass ein Zugriff mit der falschen Rolle (z. B. `cdc_reader` für
       einen schreibenden Aufruf, oder ein Replication-Stream-/ACK-Aufruf
       mit vertauschter Rolle) am laufenden, containerisierten System
       zurückgewiesen wird — schließt `BEO-PGC/rollen-test-abdeckungsluecken`
-      Punkt (2).
-- [ ] `mvp_test.go` benannt nach tatsächlichem Scope (der Make-**Target**-Name
+      Punkt (2). Beleg: `tools/harness/run-integration-tests.sh` (Abschnitt
+      „Rollen-DSN-Verifikation gegen den Compose-Stack"), Commit `ba508ed`;
+      dreimal in Folge grün gegen den realen Compose-Stack.
+- [x] `mvp_test.go` benannt nach tatsächlichem Scope (der Make-**Target**-Name
       `test-integration` bleibt unverändert — er ist bereits scope-neutral,
       nur der Datei- und Helptext-Name trägt „MVP"), und der
       Makefile-Helptext (`## MVP-Integrationstest …`) sowie
@@ -99,18 +101,26 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       sobald der tatsächliche Scope (Consumer-Zugriffsweg,
       Rollen-DSN-Trennung, plus der bereits bestehende
       `cdc_capture_lag`-Lasttest-Beleg) die Bezeichnung „MVP" nicht mehr
-      korrekt trägt.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      korrekt trägt. Beleg: `git mv` Commit `632ddca`
+      (`test/integration/integration_test.go`), Inhalts-/Doku-Nachzug
+      Commit `9a84407` (Makefile, `harness/README.md`,
+      `integration_test.go`-Kommentare, `run-integration-tests.sh`,
+      `welle-8.md`-Kreuzverweis). `AGENTS.md` trug keine „MVP"-Erwähnung —
+      kein Änderungsbedarf dort.
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      Beleg: lokaler Lauf am HEAD (`632ddca`/`ba508ed`/`9a84407`), je
+      dreimal in Folge grün — siehe Implementer-Bericht.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md`/`AGENTS.md` (Sensors-Tabelle,
-      Target-Name und -Beschreibung nach der Umbenennung).
+- [x] Doku-Update für `harness/README.md`/`AGENTS.md` (Sensors-Tabelle,
+      Target-Name und -Beschreibung nach der Umbenennung). Beleg: siehe
+      oben, Commit `9a84407`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Zurückgestellt auf die Closure** (§7, Planner-Rolle) — inhaltlich vorbereitet: `evidence/slice-028.md` unter `BEO-PGC/rollen-test-abdeckungsluecken/` mit Verweis auf den oben genannten Beleg, `state.md` bleibt `weiter offen` (Punkt (1) unverändert offen), Zähler auf 2× (`evidence/slice-023.md`, `evidence/slice-028.md`).
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-8`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -126,6 +136,27 @@ Aussagen-Berührung steht hier gar nicht.
 | `test/integration/mvp_test.go` → neuer Dateiname | rename+update | Umbenennung nach tatsächlichem Scope |
 | `Makefile` | update | Helptext-Zeile für `test-integration` (Target-Name bleibt) |
 | `harness/README.md`, `AGENTS.md` | update | Sensors-Tabelle/Erwähnungen nach der Umbenennung nachgezogen |
+
+**Plan-Nachzug (Abweichungen, nach Bestandsprüfung entschieden — §Bestand
+lesen, Schritt 1 der Aufgabe):**
+
+- **`tools/harness/run-replication-tests.sh` bleibt unverändert.** Die
+  Compose-PostgreSQL-Instanz trägt die drei Gruppenrollen bereits real
+  (`make schema-rollout` rollt `nacharbeit-roles.sql` auch dort aus, vor
+  dem Feed-Container-Start) — anders als angenommen brauchte die
+  Rollen-Vertauschungsprüfung für Replication-Stream/ACK deshalb keine
+  Erweiterung der `wal_level=logical`-Testcontainer-Kette
+  (`run-replication-tests.sh`), sondern ließ sich vollständig gegen die
+  ohnehin laufende Compose-Instanz in `run-integration-tests.sh`
+  umsetzen — empirisch mit einem Scratch-Postgres desselben Digest-Pins
+  verifiziert, bevor die Änderung in den Runner ging (kein Rätselraten
+  über `pg_hba.conf`-Verhalten oder REPLICATION-Attribut-Vererbung).
+  Näher an `ADR-0047` Kontext-Befund 2 (Attribut wird nicht über
+  Mitgliedschaft vererbt) und ohne die Testpyramide-Schicht zu wechseln.
+- **`docs/plan/planning/welle-8.md`** zusätzlich angefasst (nicht in der
+  ursprünglichen Plan-Tabelle): ein Dateipfad-Kreuzverweis auf
+  `test/integration/mvp_test.go` in §1 wäre nach der Umbenennung
+  veraltet gewesen.
 
 ## 4. Trigger
 
