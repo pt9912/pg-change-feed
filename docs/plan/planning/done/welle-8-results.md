@@ -141,6 +141,16 @@ Anker (Hash, Lauf, Zahl).
   bootstrap-aware Gate berührt. `ADR-0047`s Re-Evaluierungs-Trigger (vierte
   CDC-Rolle · Secrets-Management-System) ist nicht eingetreten — bestätigt.
   `ADR-0030` ist permanent, kein Trigger fällig.
+- Drei Paarungen (Anker · Folge-Slice · Register): Anker — kein
+  Steering-Loop-Eintrag mit `liegt in` in dieser Welle, nichts zu prüfen.
+  Folge-Slice — keiner genannt, nichts zu prüfen. Register — jede zitierte
+  `BEO-PGC/*`-Kennung existiert als Verzeichnis; alle Verzeichnisse tragen
+  ein nicht leeres `evidence/`, **mit einer benannten, transparenten
+  Ausnahme:** `BEO-PGC/retention-keine-loeschausfuehrung` (neu in dieser
+  Welle) hat 0 Belege — sein eigenes `observation.md` benennt das explizit
+  unter „Benannt, nicht gezählt" (Fund aus einer Fork-Recherche, kein
+  abgeschlossener Vorgang trägt bisher einen Beleg). Kein fabrizierter
+  Eintrag, keine stille Lücke.
 
 ## Archivierung
 
