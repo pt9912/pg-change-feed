@@ -33,6 +33,7 @@ SLOT=slot_pgc_mvp
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
 cleanup() {
+  docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -138,6 +139,85 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v ./test/integration/...
+
+# Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
+# bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
+# Quelltransaktionen auf derselben Tabelle zeigen den Unterschied: eine
+# ungehinderte Transaktion liefert einen kleinen Wert; eine Transaktion,
+# deren Erfassung durch eine pausierte CDC-Runtime künstlich verzögert wird
+# (`docker pause` hält den Feed-Container über die Freezer-Cgroup an, bevor
+# die Transaktion verarbeitet ist), liefert einen Wert nahe der
+# Pausendauer. `feed_mvp_full` bleibt über den ganzen Lauf aktiviert (anders
+# als `feed_mvp_flow`, das der letzte MVP-Testfall deaktiviert). Die
+# Pausendauer bleibt unter `wal_sender_timeout=2000` (compose.yaml): eine
+# längere Pause ließe die Quelle die Replication-Verbindung selbst beenden,
+# bevor der Feed-Container sie fortsetzen kann — der Lasttest misst die
+# Erfassungsverzögerung, keine Verbindungsstörung.
+LAG_TABLE=feed_mvp_full
+LAG_DELAY_SECONDS=${LAG_DELAY_SECONDS:-1}
+
+baseline_count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.transaction")
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$LAG_TABLE (id, name) VALUES (90, 'LagBaseline');
+SQL
+
+baseline_captured=0
+for _ in $(seq 1 120); do
+  count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.transaction")
+  if [ "$count" -gt "$baseline_count" ]; then
+    baseline_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$baseline_captured" -ne 1 ]; then
+  echo "run-integration-tests: Baseline-Transaktion für den Lasttest-Beleg wurde nicht erfasst" >&2
+  exit 1
+fi
+baseline_lag=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'")
+
+delayed_count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.transaction")
+docker pause "$FEED_CONTAINER" >/dev/null
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$LAG_TABLE (id, name) VALUES (91, 'LagDelayed');
+SQL
+sleep "$LAG_DELAY_SECONDS"
+docker unpause "$FEED_CONTAINER" >/dev/null
+
+delayed_captured=0
+for _ in $(seq 1 120); do
+  count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.transaction")
+  if [ "$count" -gt "$delayed_count" ]; then
+    delayed_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$delayed_captured" -ne 1 ]; then
+  echo "run-integration-tests: verzögerte Transaktion für den Lasttest-Beleg wurde nach dem Fortsetzen nicht erfasst" >&2
+  exit 1
+fi
+delayed_lag=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'")
+
+echo "run-integration-tests: Lasttest-Beleg cdc_capture_lag — Baseline ${baseline_lag}s, verzögert ${delayed_lag}s (künstliche Pause ${LAG_DELAY_SECONDS}s)"
+
+# Toleranz proportional zur Pausendauer (nicht als feste Sekundenspanne):
+# die Hälfte der künstlichen Verzögerung trennt die beiden Messungen
+# unabhängig davon, wie kurz LAG_DELAY_SECONDS gewählt ist.
+if ! awk -v v="$delayed_lag" -v d="$LAG_DELAY_SECONDS" 'BEGIN { exit !(v+0 >= d*0.5) }'; then
+  echo "run-integration-tests: cdc_capture_lag=$delayed_lag bildet die künstliche Verzögerung von ${LAG_DELAY_SECONDS}s nicht ab" >&2
+  exit 1
+fi
+if ! awk -v v="$baseline_lag" -v d="$LAG_DELAY_SECONDS" 'BEGIN { exit !(v+0 < d*0.5) }'; then
+  echo "run-integration-tests: cdc_capture_lag=$baseline_lag der ungehinderten Transaktion liegt nicht unter der künstlichen Verzögerung von ${LAG_DELAY_SECONDS}s — kein Kontrast zur verzögerten Messung" >&2
+  exit 1
+fi
 
 # End-Beleg des Feed-Containers: der Lauf sieht auch den Ausgang der
 # CDC-Runtime — ein Container, der nach der letzten Test-Assertion endet
