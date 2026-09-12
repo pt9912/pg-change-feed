@@ -290,6 +290,30 @@ letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
 Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
 `cdc_consumer_lag` je registriertem Consumer.
 
+`cdc_wal_retention_bytes` (WAL-Rückstand des Capture-Slots, `SPEC-009`)
+steht **nicht** in `cdc.metrics`: Die Erhebung braucht Systemkatalog-Zugriffe
+außerhalb des `cdc`-Schemas (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die
+die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — siehe
+[WAL-Rückstand prüfen](#wal-rückstand-prüfen).
+
+### WAL-Rückstand prüfen
+
+Der Feed-Container misst den WAL-Rückstand des Capture-Slots periodisch
+(gebunden an denselben Takt wie das Lebenszeichen, siehe
+[Grenzwerte](#grenzwerte)) über die Rolle `cdc_capture` und protokolliert ihn
+strukturiert:
+
+```json
+{"msg": "replication: WAL-Rückstand gemessen", "metric": "cdc_wal_retention_bytes", "bytes": 12345}
+```
+
+**Ergebnis:** `bytes` wächst, solange der Capture-Slot inaktiv ist und die
+Quelle weiterschreibt (z. B. während eines Verbindungsabbruchs) — ein
+dauerhaft wachsender Wert ist ein Warnsignal für WAL-Erschöpfung auf der
+Quelle. Die Schwellenwerte (Warn-/Fehlergrenze) und die daraus folgende
+kontrollierte Fortsetzung/Abbruch trägt eine spätere Erweiterung dieser
+Überwachung.
+
 ### Schema aktualisieren
 
 Änderungen am neutralen Schema (`tools/schema/schema.yaml`) rollen Sie
@@ -413,7 +437,11 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 
 - Lebenszeichen-Takt: 5 Sekunden; als veraltet gilt ein Lebenszeichen
   nach mehr als 15 Sekunden (Faktor 3).
+- WAL-Rückstand-Messtakt: derselbe Takt wie das Lebenszeichen (5 Sekunden).
 - Ein Container-Lauf bindet genau eine Quelle.
+- Ein Container-Lauf hält zwei gleichzeitige Replication-Protokoll-
+  Verbindungen zur Quelle (Stream-Adapter, WAL-Rückstand-Messung) — beide
+  zählen gegen `max_wal_senders` der Quell-Instanz.
 
 ### Support und Kontakt
 
@@ -430,3 +458,4 @@ MIT — siehe `LICENSE`.
 | 1.0 | 2026-09-12 | Erste Fassung |
 | 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
 | 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |
+| 1.3 | 2026-09-12 | WAL-Rückstand-Metrik `cdc_wal_retention_bytes` (`SPEC-009`) ergänzt: periodische Messung, strukturierte Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
