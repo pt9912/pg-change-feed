@@ -614,3 +614,142 @@ func TestMVPDisableRetainedState(t *testing.T) {
 		t.Fatalf("Herkunfts-Liste ohne die deaktivierte Tabelle: %v", tables.Retained)
 	}
 }
+
+// TestMVPSchemaChangeAddColumn trägt eine reale `ALTER TABLE … ADD
+// COLUMN` auf der aktivierten Tabelle `feed_mvp_schema` am verdrahteten
+// Feed-Container (`LH-FA-SCH-001` Happy Path, `LH-FA-SCH-002` Boundary):
+// die danach erfassten Changes tragen die neue Spalte im Row Image, die
+// zuvor erfasste Change bleibt über `cdc.changes` unverändert lesbar und
+// ohne die neue Spalte.
+//
+// `LH-FA-SCH-005` (Boundary: unterscheidbare Schema-Versionen vor/nach
+// einer Schemaänderung) bleibt dabei unbelegt: Die Schema-Version einer
+// aktivierten Tabelle ist eine bei der Aktivierung statisch gebundene
+// Kennung (`mapper.TableBinding.SchemaVersion`,
+// `internal/adapters/driving/replication/mapper/mapper.go`), gesetzt aus
+// der Umgebung (`CDC_TABLES`, `compose.yaml`) und unverändert für die
+// Laufzeit des Feed-Containers. Die an vier Stellen referenzierte
+// dynamische Re-Versionierung „über den Metadata-Pfad“
+// (`internal/bootstrap/wiring.go`,
+// `internal/adapters/driving/replication/mapper/mapper.go`,
+// `internal/adapters/driving/replication/receive/receive.go`,
+// `internal/application/port/inbound/verwaltung.go`) hat im Repo keine
+// Implementierung — `mapper.Assembler.Consume` verwirft
+// `*decode.Relation`-Ereignisse ungenutzt (Default-Zweig des
+// Switch-Statements) und ändert keine Bindung. Beide Changes dieses Tests
+// tragen deshalb dieselbe Schema-Version; die letzte Prüfung hält das als
+// Tatsachenbeleg fest, nicht als Erwartung.
+func TestMVPSchemaChangeAddColumn(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_schema")
+	ctx := context.Background()
+
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, amount) VALUES (1, 'Before', '100')"); err != nil {
+		t.Fatalf("INSERT vor der Schemaänderung: %v", err)
+	}
+	beforeRows := awaitChangesViewRows(t, env, "1", 1)
+
+	if _, err := env.pool.Exec(ctx, "ALTER TABLE "+env.feed+" ADD COLUMN extra text"); err != nil {
+		t.Fatalf("ALTER TABLE ADD COLUMN: %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, amount, extra) VALUES (2, 'After', '200', 'NewCol')"); err != nil {
+		t.Fatalf("INSERT nach der Schemaänderung: %v", err)
+	}
+	afterRows := awaitChangesViewRows(t, env, "2", 1)
+
+	// LH-FA-SCH-001 Happy Path: die neue Spalte ist im Row Image der
+	// danach erfassten Änderung erkennbar.
+	afterImage := imageJSON(t, afterRows[0].newData)
+	if afterImage["extra"] != "NewCol" {
+		t.Fatalf("Row Image nach ADD COLUMN: %s (Erwartung: extra=NewCol)", afterRows[0].newData)
+	}
+
+	// LH-FA-SCH-002 Boundary: die ältere Change bleibt unverändert lesbar
+	// — sie trägt weiterhin nur die zum Erfassungszeitpunkt bekannten
+	// Spalten, ohne die erst danach hinzugefügte.
+	rereadBefore := awaitChangesViewRows(t, env, "1", 1)
+	if string(rereadBefore[0].newData) != string(beforeRows[0].newData) {
+		t.Fatalf("ältere Change nach der Schemaänderung: %s (vor der Änderung: %s)", rereadBefore[0].newData, beforeRows[0].newData)
+	}
+	beforeImage := imageJSON(t, rereadBefore[0].newData)
+	if _, present := beforeImage["extra"]; present {
+		t.Fatalf("ältere Change trägt die erst danach hinzugefügte Spalte: %s", rereadBefore[0].newData)
+	}
+
+	// Tatsachenbeleg zum Funktionskommentar oben: beide Changes tragen
+	// dieselbe statisch gebundene Schema-Version. Schlägt diese Prüfung
+	// künftig fehl, hat sich der Metadata-Pfad geändert — dann braucht
+	// dieser Test eine bewusste Überarbeitung, kein stilles Grün.
+	if beforeRows[0].schemaVersion != afterRows[0].schemaVersion {
+		t.Fatalf("Schema-Version unterscheidet sich entgegen dem im Funktionskommentar dokumentierten Stand: davor %s, danach %s", beforeRows[0].schemaVersion, afterRows[0].schemaVersion)
+	}
+}
+
+// TestMVPSchemaChangeIncompatibleTypeChange trägt `LH-FA-SCH-004` an der
+// aktivierten Tabelle `feed_mvp_schema` (nach
+// TestMVPSchemaChangeAddColumn, mit der dort hinzugefügten Spalte
+// `extra`) in beiden im Slice-Plan (`slice-030`, §6) benannten Fällen:
+//
+//  1. PostgreSQL lehnt eine tatsächlich inkompatible Typänderung bereits
+//     selbst über die DDL ab, bevor CDC sie überhaupt sieht — der reale
+//     Boundary-Fall aus `LH-FA-SCH-004`.
+//  2. Eine Typänderung, die PostgreSQL über eine `USING`-Klausel bei
+//     durchgehend konvertierbaren Bestandsdaten zulässt, wird von CDC
+//     unverändert übernommen.
+//
+// Der Negative-Fall aus `LH-FA-SCH-004` — PostgreSQL lässt eine
+// Typänderung zu, CDC kann sie aber nicht verlustfrei decodieren, und
+// meldet das sichtbar (Fehlerklasse `schema`) — ist mit dem aktuellen
+// System nicht real herstellbar: Der Decoder-/Mapper-Pfad
+// (`internal/adapters/driving/replication/decode/decode.go` `tupleValues`,
+// `internal/adapters/driving/replication/mapper/mapper.go` `rowImage`)
+// interpretiert jeden Spaltenwert ausschließlich als Text ohne eigene
+// Typprüfung — eine „nicht sicher interpretierbare Schemaänderung“ im
+// Sinn von `LH-FA-SCH-004.a` entsteht dabei nicht, weil der Pfad keinen
+// Typ interpretiert, den er verlieren könnte. Fall 2 unten belegt das:
+// die Typänderung gelingt an PostgreSQL, und CDC übernimmt den
+// konvertierten Wert ohne jede sichtbare Fehlermeldung.
+func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_schema")
+	ctx := context.Background()
+
+	// Fall 1 (Boundary aus slice-030 §6): PostgreSQL lehnt die DDL ab,
+	// weil "NichtNumerisch" nicht in integer konvertiert — CDC sieht die
+	// Änderung nie.
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, amount, extra) VALUES (10, 'Reject', 'NichtNumerisch', 'Z')"); err != nil {
+		t.Fatalf("INSERT der nicht konvertierbaren Zeile: %v", err)
+	}
+	awaitChangesViewRows(t, env, "10", 1)
+
+	if _, err := env.pool.Exec(ctx,
+		"ALTER TABLE "+env.feed+" ALTER COLUMN amount TYPE integer USING amount::integer"); err == nil {
+		t.Fatalf("ALTER COLUMN TYPE integer mit nicht konvertierbaren Bestandsdaten: kein Fehler (Erwartung: PostgreSQL lehnt ab)")
+	} else {
+		t.Logf("PostgreSQL lehnt die inkompatible Typänderung selbst ab (slice-030 §6): %v", err)
+	}
+
+	if _, err := env.pool.Exec(ctx, "DELETE FROM "+env.feed+" WHERE id = 10"); err != nil {
+		t.Fatalf("Aufräumen der nicht konvertierbaren Zeile: %v", err)
+	}
+
+	// Fall 2 (Fund, s. Funktionskommentar): dieselbe Typänderung gelingt
+	// mit durchgehend konvertierbaren Bestandsdaten (id=1 "100", id=2
+	// "200" aus TestMVPSchemaChangeAddColumn) — CDC übernimmt den neuen
+	// Wert unverändert als Text, ohne eine Fehlerklasse `schema` zu
+	// melden.
+	if _, err := env.pool.Exec(ctx,
+		"ALTER TABLE "+env.feed+" ALTER COLUMN amount TYPE integer USING amount::integer"); err != nil {
+		t.Fatalf("ALTER COLUMN TYPE integer mit konvertierbaren Bestandsdaten: %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, amount, extra) VALUES (11, 'TypeChanged', 300, 'Y')"); err != nil {
+		t.Fatalf("INSERT nach der zugelassenen Typänderung: %v", err)
+	}
+	rows := awaitChangesViewRows(t, env, "11", 1)
+	image := imageJSON(t, rows[0].newData)
+	if image["amount"] != "300" {
+		t.Fatalf("Row Image nach der zugelassenen Typänderung: %s (Erwartung: amount=300 als Text, unverändert übernommen)", rows[0].newData)
+	}
+}

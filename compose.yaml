@@ -65,7 +65,7 @@ services:
       CDC_SOURCE_ID: src-mvp
       CDC_PUBLICATION: pub_pgc_mvp
       CDC_SLOT: slot_pgc_mvp
-      CDC_TABLES: public.feed_mvp_flow=tbl-mvp-flow:sv-mvp-flow,public.feed_mvp_full=tbl-mvp-full:sv-mvp-full
+      CDC_TABLES: public.feed_mvp_flow=tbl-mvp-flow:sv-mvp-flow,public.feed_mvp_full=tbl-mvp-full:sv-mvp-full,public.feed_mvp_schema=tbl-mvp-schema:sv-mvp-schema
       # Log-Level des strukturierten JSON-Loggers (`LH-QA-OPS-004`,
       # slice-014); anders als die fünf Namen oben keine Start-Vorbedingung
       # — `bootstrap.parseLogLevel` fällt auf `info` zurück (leer/nicht

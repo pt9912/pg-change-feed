@@ -160,6 +160,7 @@ CREATE TABLE public.feed_mvp_flow (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_mvp_full (id int PRIMARY KEY, name text);
 ALTER TABLE public.feed_mvp_full REPLICA IDENTITY FULL;
 CREATE TABLE public.feed_mvp_idle (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_mvp_schema (id int PRIMARY KEY, name text, amount text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-mvp', 'MVP-Quelle');
 SQL
 
