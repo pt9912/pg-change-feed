@@ -84,26 +84,40 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-QA-POR-003` erfüllt: neuer Black-Box-Testfall ruft
+- [x] `LH-QA-POR-003` erfüllt: neuer Black-Box-Testfall ruft
       `register-consumer`/`acknowledge-consumer` real als externen Prozess
       (`docker exec` gegen den laufenden Feed-Container) auf — kein
-      Go-Paket-Import interner Anwendungslogik in diesem Testfall.
-- [ ] Voller Rundlauf real bewiesen: registrieren (extern) → Change
+      Go-Paket-Import interner Anwendungslogik in diesem Testfall. Beleg:
+      neuer Abschnitt „Black-Box-CLI-Rundlauf" in
+      [`tools/harness/run-integration-tests.sh`](../../../../tools/harness/run-integration-tests.sh)
+      (`exec_feed()` ruft ausschließlich `docker exec … /pg-change-feed …`).
+- [x] Voller Rundlauf real bewiesen: registrieren (extern) → Change
       schreiben (Quelltabelle) → lesen (bestehender SQL-Lesezugriffsweg) →
       bestätigen (extern) → Feed-Container-Neustart simulieren (analog zum
       bestehenden `welle6_endtoend_test.go`-Muster, aber mit dem
       *containerisierten* Prozess statt einem in-process-Aufruf) →
-      Fortsetzen ab der bestätigten Position real gezeigt.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün
+      Fortsetzen ab der bestätigten Position real gezeigt. Beleg: drei
+      Folge-Läufe von `make test-integration`, je mit der Ausgabezeile
+      „Black-Box-CLI-Rundlauf belegt — … Fortsetzen nach simuliertem
+      Neustart …"; die zentrale Assertion (kein Wiederholen der bereits
+      bestätigten Änderung nach dem Neustart) wurde einmal mit einer
+      absichtlich mutierten Grenze (`>=` statt `>`) rot gesehen (Ausgabe
+      „gelesene id-Folge '95,96', wollen '96'"), danach zurückgesetzt.
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün
       (real gegen den Compose-Stack).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` (Sensors-Tabelle,
+- [x] Doku-Update für `harness/README.md` (Sensors-Tabelle,
       `make test-integration`-Zeile) falls sich der geprüfte Umfang
-      erkennbar ändert.
+      erkennbar ändert. Entscheidung: durchgeführt — der geprüfte Umfang
+      ändert sich für einen Leser erkennbar (bislang rein interne
+      Store-/Go-Assertions, jetzt zusätzlich ein echter externer
+      CLI-Rundlauf über einen simulierten Container-Neustart).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register — **entfällt**: Repos ohne
+      Brownfield-Bootstrap haben die Datei nicht (`docs/plan/planning/reconciliation.md`
+      existiert in diesem Repo nicht, Sub-Area `*`/`PGC` ist Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -120,9 +134,24 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/run-integration-tests.sh` | update | neuer Abschnitt: `register-consumer`/`acknowledge-consumer` als `docker exec`-Aufrufe gegen `$FEED_CONTAINER`, analog zum bestehenden Lasttest-Beleg-Abschnitt (Bash + Exit-Code-Prüfung) |
-| `test/integration/mvp_test.go` oder neue Datei im selben Paket (Implementer entscheidet) | neu/update | Assertion-Logik für den vollen Rundlauf, falls in Go statt reinem Bash sinnvoller |
-| `compose.yaml` | ggf. update | falls ein Neustart-Mechanismus für den Feed-Container (`docker restart`/`docker stop && up`) zusätzliche Konfiguration braucht |
+| `tools/harness/run-integration-tests.sh` | update | neuer Abschnitt „Black-Box-CLI-Rundlauf": `register-consumer`/`acknowledge-consumer` als `docker exec`-Aufrufe gegen `$FEED_CONTAINER` (Helfer-Funktion `exec_feed()`), Vorbedingungs-/Ergebnis-Prüfung per SQL gegen `cdc.consumer`/`cdc.consumer_position`/`cdc.changes`, `docker restart` für den simulierten Neustart — analog zum bestehenden Lasttest-Beleg-Abschnitt (Bash + Exit-Code-Prüfung) |
+| `harness/README.md` | update | `make test-integration`-Zeile ergänzt: der geprüfte Umfang trägt jetzt sichtbar den externen CLI-Rundlauf, nicht nur interne Store-/Go-Assertions |
+
+**Plan-Nachzug (Abweichungen vom ursprünglichen §3, seit dem ersten Implementer-Lauf):**
+
+- **`test/integration/mvp_test.go` / neue Go-Datei — nicht realisiert.** Die
+  Bash-Variante in `run-integration-tests.sh` reicht: Sie ruft die CLI
+  bereits als externen Prozess auf, prüft Vor-/Nachbedingungen über
+  dieselben `docker exec psql`-Aufrufe wie der Rest des Skripts und braucht
+  keinen zusätzlichen Go-Testprozess. Ein Go-Test hätte selbst wieder
+  `os/exec` gegen `docker exec` aufrufen müssen — mehr Indirektion ohne
+  zusätzlichen Beleg.
+- **`compose.yaml` — nicht geändert.** `docker restart` (SIGTERM + Neustart
+  desselben Containers) braucht keine zusätzliche Compose-Konfiguration;
+  Slot und Publication bleiben auf der PostgreSQL-Seite unberührt, ein
+  eigener Neustart-Mechanismus im Container-Vertrag ist nicht nötig.
+- **`harness/README.md` ergänzt** (war im ursprünglichen §3 nicht gelistet,
+  aber im Plan-Ziel unter §2 DoD vorgesehen) — siehe Zeile oben.
 
 ## 4. Trigger
 
