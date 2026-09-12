@@ -626,7 +626,8 @@ func classifyRunError(err error) model.ErrorClass {
 		errors.Is(err, postgresstorage.ErrActivationConfiguration):
 		return model.ErrorClassConfiguration
 	case errors.Is(err, decode.ErrSchema),
-		errors.Is(err, mapper.ErrTruncateUnsupported):
+		errors.Is(err, mapper.ErrTruncateUnsupported),
+		errors.Is(err, mapper.ErrIncompatibleSchemaChange):
 		return model.ErrorClassSchema
 	case errors.Is(err, receive.ErrReplication),
 		errors.Is(err, outbound.ErrReplication),

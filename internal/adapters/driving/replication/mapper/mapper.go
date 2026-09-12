@@ -47,6 +47,14 @@ var ErrCommitWithoutBegin = errors.New("Fehlerklasse replication: Commit ohne of
 // (`LH-QA-REL-001.a` Fehlermodi, `SPEC-008` Klasse `replication`).
 var ErrBeginWithoutCommit = errors.New("Fehlerklasse replication: BEGIN während offener Quelltransaktion")
 
+// ErrIncompatibleSchemaChange trägt jede nicht sicher als Obermenge
+// erkennbare Relation-Änderung (`relationOther`: Spalte entfernt, Typ
+// einer bestehenden Spalte geändert, Spalte umbenannt) als sichtbaren
+// Fehler der Klasse `schema` (`LH-FA-SCH-004.a`, `SPEC-008`,
+// `observeRelation`) — der Erfassungspfad endet darüber, statt die
+// Änderung stillschweigend zu übernehmen.
+var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änderung nicht sicher als Obermenge interpretierbar")
+
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
 // Tabelle (`SPEC-001`): die Tabelle und die Schema-Version, die die
 // Changes dieser Tabelle referenzieren (`LH-FA-SCH-005`). Die
@@ -235,9 +243,9 @@ const (
 	relationCompatibleExtension
 	// relationOther trägt jede nicht sicher als Obermenge erkennbare
 	// Änderung (Spalte entfernt, Typ einer bestehenden Spalte geändert,
-	// Spalte umbenannt) — konservativ ohne Store-Schreibzugriff, keine
-	// Fehlerklasse `schema` (`LH-FA-SCH-004.a` bleibt an dieser Stelle
-	// unbelegt).
+	// Spalte umbenannt) — ohne Store-Schreibzugriff, aber sichtbar als
+	// `ErrIncompatibleSchemaChange` gemeldet (Fehlerklasse `schema`,
+	// `LH-FA-SCH-004.a`, `observeRelation`).
 	relationOther
 )
 
@@ -297,9 +305,10 @@ func nextSchemaVersionID(table model.SourceTableID, version int64) model.SchemaV
 // `TableActivationPort.Register`), bekommt sie ihre Spaltenform aus der
 // eingehenden Relation nachgetragen (Backfill), ohne die Version zu
 // wechseln. Eine kompatible Erweiterung registriert eine neue Version
-// und hebt die `TableBinding` auf sie; unverändert oder jede andere
-// Änderung bleiben ohne Wirkung (konservativ — keine Fehlerklasse
-// `schema` an dieser Stelle, `LH-FA-SCH-004.a` bleibt unbelegt).
+// und hebt die `TableBinding` auf sie; unverändert bleibt ohne Wirkung.
+// Jede andere Änderung (`relationOther`) meldet `ErrIncompatibleSchemaChange`
+// (Fehlerklasse `schema`, `LH-FA-SCH-004.a`) — der Erfassungspfad endet
+// darüber sichtbar, statt die Änderung still zu verwerfen.
 func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relation) error {
 	if a.schemaStore == nil {
 		return nil
@@ -327,7 +336,11 @@ func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relati
 		}
 		return err
 	}
-	if classifyRelationColumns(known.Columns, relation.Columns) != relationCompatibleExtension {
+	comparison := classifyRelationColumns(known.Columns, relation.Columns)
+	if comparison == relationOther {
+		return fmt.Errorf("%w: %s", ErrIncompatibleSchemaChange, relation.QualifiedName())
+	}
+	if comparison != relationCompatibleExtension {
 		return nil
 	}
 	nextID := nextSchemaVersionID(binding.TableID, current.Version+1)

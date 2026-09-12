@@ -196,6 +196,7 @@ func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 		{"Aktivierungs-Konfiguration", postgresstorage.ErrActivationConfiguration, model.ErrorClassConfiguration},
 		{"Dekodierfehler", decode.ErrSchema, model.ErrorClassSchema},
 		{"TRUNCATE nicht unterstützt", mapper.ErrTruncateUnsupported, model.ErrorClassSchema},
+		{"nicht sicher interpretierbare Relation-Änderung", mapper.ErrIncompatibleSchemaChange, model.ErrorClassSchema},
 		{"Replication-Stream-Störung", receive.ErrReplication, model.ErrorClassReplication},
 		{"ACK fehlgeschlagen", outbound.ErrReplication, model.ErrorClassReplication},
 		{"Change ohne Begin", mapper.ErrChangeWithoutBegin, model.ErrorClassReplication},

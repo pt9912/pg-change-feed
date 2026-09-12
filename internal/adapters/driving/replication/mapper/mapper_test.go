@@ -449,12 +449,13 @@ func TestConsumeRelationCompatibleExtension(t *testing.T) {
 	}
 }
 
-// TestConsumeRelationOtherChangeStaysConservative trägt jede nicht sicher
+// TestConsumeRelationOtherChangeReportsSchemaError trägt jede nicht sicher
 // als Obermenge erkennbare Änderung (hier: eine bekannte Spalte trägt eine
-// andere Typ-OID) — konservativ ohne Store-Schreibzugriff, keine
-// Fehlerklasse `schema` (Slice-Abgrenzung §1: `LH-FA-SCH-004.a` bleibt an
-// dieser Stelle unbelegt).
-func TestConsumeRelationOtherChangeStaysConservative(t *testing.T) {
+// andere Typ-OID) als sichtbaren Fehler der Fehlerklasse `schema`
+// (`ErrIncompatibleSchemaChange`, `LH-FA-SCH-004.a`): kein
+// Store-Schreibzugriff, und die Bindung bleibt auf der bekannten Version
+// stehen.
+func TestConsumeRelationOtherChangeReportsSchemaError(t *testing.T) {
 	ctx := context.Background()
 	store := newFakeSchemaStore()
 	store.versions["tbl-1"] = model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1}
@@ -469,15 +470,15 @@ func TestConsumeRelationOtherChangeStaysConservative(t *testing.T) {
 		decode.Column{Name: "id", Key: true, TypeOID: 23},
 		decode.Column{Name: "amount", TypeOID: 23}) // Typ geändert: 25 -> 23
 
-	if _, err := assembler.Consume(ctx, typeChangedRelation); err != nil {
-		t.Fatalf("Relation: %v", err)
+	if _, err := assembler.Consume(ctx, typeChangedRelation); !stderrors.Is(err, mapper.ErrIncompatibleSchemaChange) {
+		t.Fatalf("Relation mit geändertem Spaltentyp: %v, wollen ErrIncompatibleSchemaChange", err)
 	}
 	if store.registrations != 0 {
-		t.Fatalf("registrations = %d, wollen 0 (konservativ, keine Version)", store.registrations)
+		t.Fatalf("registrations = %d, wollen 0 (kein Store-Schreibzugriff bei relationOther)", store.registrations)
 	}
 	version := consumedChangeSchemaVersion(t, ctx, assembler, 1, typeChangedRelation)
 	if version != "sv-1" {
-		t.Fatalf("Schema-Version nach nicht sicher interpretierbarer Änderung: %s, wollen sv-1 (Bindung unverändert)", version)
+		t.Fatalf("Schema-Version nach dem gemeldeten Fehler: %s, wollen sv-1 (Bindung unverändert)", version)
 	}
 }
 

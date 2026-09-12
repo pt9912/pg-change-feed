@@ -220,13 +220,26 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
 
+# TestMVPSchemaChangeIncompatibleTypeChange (slice-033) meldet ihren
+# Negative-Fall sichtbar über die Fehlerklasse `schema`
+# (`mapper.ErrIncompatibleSchemaChange`) — der Erfassungspfad des
+# Feed-Containers endet darüber (`bootstrap.Run` -> `os.Exit(1)`), und
+# `restart: "no"` in compose.yaml trägt danach keinen Neustart-Vertrag:
+# der Container bleibt beendet stehen. Diese Testfunktion läuft deshalb
+# separat und zuletzt (siehe unten, nach Lasttest-Beleg und
+# Black-Box-CLI-Rundlauf) — jede andere Testfunktion dieses Pakets läuft
+# hier, solange der Feed-Container noch gebraucht wird. Eine künftig
+# ergänzte Testfunktion gehört in dieses `-run`-Muster, sofern sie den
+# laufenden Container nicht ebenfalls beendet.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test -v ./test/integration/...
+  "$TOOLCHAIN_IMAGE" go test -v \
+  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn)$' \
+  ./test/integration/...
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
 # bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
@@ -468,3 +481,18 @@ if [ "$acked_second" != "$second_position" ]; then
 fi
 
 echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern (docker exec), Fortsetzen nach simuliertem Neustart ab Position $first_position, Endposition $second_position"
+
+# TestMVPSchemaChangeIncompatibleTypeChange (slice-033, LH-FA-SCH-004
+# Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
+# eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
+# Fehlerklasse `schema` und beendet damit den Erfassungspfad des
+# Feed-Containers dauerhaft (`restart: "no"`, kein Neustart-Vertrag,
+# siehe Funktionskommentar). Alles, was den laufenden Container noch
+# braucht (Lasttest-Beleg, Black-Box-CLI-Rundlauf oben), lief davor.
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_INTEGRATION_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test -v -run '^TestMVPSchemaChangeIncompatibleTypeChange$' ./test/integration/...

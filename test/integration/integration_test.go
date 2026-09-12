@@ -675,6 +675,33 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 	}
 }
 
+// awaitHeartbeatErrorClass liest `cdc.heartbeat.error_class` der Quelle
+// über `env.pool`, bis der erwartete Fehlerzustand ansteht (Polling mit
+// Test-Zeitgrenze) — derselbe externe SQL-Lesezugriffsweg wie
+// `cdc.changes` (`awaitChangesViewRows` oben), gegen die Projektion aus
+// `tools/schema/nacharbeit-heartbeat.sql` (`LH-FA-ADM-003`,
+// `LH-QA-REL-003`). Eine leere Zeichenkette trägt `NULL` (Normalbetrieb,
+// `error_class` noch nicht gesetzt).
+func awaitHeartbeatErrorClass(t *testing.T, env *mvpEnv, want string) string {
+	t.Helper()
+	ctx := context.Background()
+	deadline := time.Now().Add(30 * time.Second)
+	got := ""
+	for time.Now().Before(deadline) {
+		if err := env.pool.QueryRow(ctx,
+			"SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = $1", mvpSource,
+		).Scan(&got); err != nil {
+			t.Fatalf("cdc.heartbeat-Lesung: %v", err)
+		}
+		if got == want {
+			return got
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatalf("cdc.heartbeat.error_class innerhalb der Zeitspanne %q, wollen %q", got, want)
+	return ""
+}
+
 // TestMVPSchemaChangeIncompatibleTypeChange trägt `LH-FA-SCH-004` an der
 // aktivierten Tabelle `feed_mvp_schema` (nach
 // TestMVPSchemaChangeAddColumn, mit der dort hinzugefügten Spalte
@@ -684,21 +711,29 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 //     selbst über die DDL ab, bevor CDC sie überhaupt sieht — der reale
 //     Boundary-Fall aus `LH-FA-SCH-004`.
 //  2. Eine Typänderung, die PostgreSQL über eine `USING`-Klausel bei
-//     durchgehend konvertierbaren Bestandsdaten zulässt, wird von CDC
-//     unverändert übernommen.
+//     durchgehend konvertierbaren Bestandsdaten zulässt, sendet
+//     `pgoutput` dennoch eine neue Relation-Nachricht für die geänderte
+//     Spalte (andere PostgreSQL-Typ-OID): nicht sicher als Obermenge
+//     erkennbar (`relationOther`,
+//     `internal/adapters/driving/replication/mapper/mapper.go`
+//     `classifyRelationColumns`) — der Negative-Fall aus `LH-FA-SCH-004`.
+//     `Assembler.observeRelation` meldet ihn sichtbar als Fehler der
+//     Klasse `schema` (`mapper.ErrIncompatibleSchemaChange`), statt die
+//     Änderung still zu übernehmen.
 //
-// Der Negative-Fall aus `LH-FA-SCH-004` — PostgreSQL lässt eine
-// Typänderung zu, CDC kann sie aber nicht verlustfrei decodieren, und
-// meldet das sichtbar (Fehlerklasse `schema`) — ist mit dem aktuellen
-// System nicht real herstellbar: Der Decoder-/Mapper-Pfad
-// (`internal/adapters/driving/replication/decode/decode.go` `tupleValues`,
-// `internal/adapters/driving/replication/mapper/mapper.go` `rowImage`)
-// interpretiert jeden Spaltenwert ausschließlich als Text ohne eigene
-// Typprüfung — eine „nicht sicher interpretierbare Schemaänderung“ im
-// Sinn von `LH-FA-SCH-004.a` entsteht dabei nicht, weil der Pfad keinen
-// Typ interpretiert, den er verlieren könnte. Fall 2 unten belegt das:
-// die Typänderung gelingt an PostgreSQL, und CDC übernimmt den
-// konvertierten Wert ohne jede sichtbare Fehlermeldung.
+// Der sichtbare Fehler beendet den Erfassungspfad des Feed-Containers
+// (`Assembler.Consume` -> `receive.Stream.Run` -> `bootstrap.Run` ->
+// `os.Exit(1)`, `restart: "no"` in compose.yaml trägt keinen
+// Neustart-Vertrag) — der Container bleibt danach beendet stehen. Dieser
+// Test läuft deshalb als eigener, letzter `go test`-Aufruf des
+// Compose-Laufs (`tools/harness/run-integration-tests.sh`), nach jedem
+// Schritt, der den laufenden Feed-Container noch braucht (Lasttest-Beleg,
+// Black-Box-CLI-Rundlauf). Beobachtet wird der Fehlerzustand über den
+// bestehenden externen Lesezugriffsweg `cdc.heartbeat` (`error_class`,
+// `LH-FA-ADM-003`) — dieselbe SQL-Lesedisziplin wie `cdc.changes`. Die
+// Zeile id=11 bleibt dabei unerfasst: ihre Transaktion trägt die
+// auslösende Relation-Nachricht vor ihrem eigenen Commit, und der
+// Erfassungspfad endet, bevor sie committed wird.
 func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
 	env := newMVPEnv(t, "feed_mvp_schema")
 	ctx := context.Background()
@@ -723,11 +758,11 @@ func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
 		t.Fatalf("Aufräumen der nicht konvertierbaren Zeile: %v", err)
 	}
 
-	// Fall 2 (Fund, s. Funktionskommentar): dieselbe Typänderung gelingt
-	// mit durchgehend konvertierbaren Bestandsdaten (id=1 "100", id=2
-	// "200" aus TestMVPSchemaChangeAddColumn) — CDC übernimmt den neuen
-	// Wert unverändert als Text, ohne eine Fehlerklasse `schema` zu
-	// melden.
+	// Fall 2 (Negative-Fall, s. Funktionskommentar): dieselbe Typänderung
+	// gelingt an PostgreSQL mit durchgehend konvertierbaren Bestandsdaten
+	// (id=1 "100", id=2 "200" aus TestMVPSchemaChangeAddColumn) — CDC
+	// meldet sie trotzdem sichtbar als Fehlerklasse `schema`, weil die
+	// Spalte `amount` ihre PostgreSQL-Typ-OID wechselt.
 	if _, err := env.pool.Exec(ctx,
 		"ALTER TABLE "+env.feed+" ALTER COLUMN amount TYPE integer USING amount::integer"); err != nil {
 		t.Fatalf("ALTER COLUMN TYPE integer mit konvertierbaren Bestandsdaten: %v", err)
@@ -736,9 +771,16 @@ func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
 		"INSERT INTO "+env.feed+" (id, name, amount, extra) VALUES (11, 'TypeChanged', 300, 'Y')"); err != nil {
 		t.Fatalf("INSERT nach der zugelassenen Typänderung: %v", err)
 	}
-	rows := awaitChangesViewRows(t, env, "11", 1)
-	image := imageJSON(t, rows[0].newData)
-	if image["amount"] != "300" {
-		t.Fatalf("Row Image nach der zugelassenen Typänderung: %s (Erwartung: amount=300 als Text, unverändert übernommen)", rows[0].newData)
+
+	if got := awaitHeartbeatErrorClass(t, env, "schema"); got != "schema" {
+		t.Fatalf("cdc.heartbeat.error_class nach der Typänderung: %q, wollen \"schema\"", got)
+	}
+
+	rows, err := queryChangesView(ctx, env, "11")
+	if err != nil {
+		t.Fatalf("cdc.changes-Lesung für id=11: %v", err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("cdc.changes trägt id=11 nach dem gemeldeten schema-Fehler: %+v (Erwartung: der Erfassungspfad endete vor dem Commit dieser Transaktion)", rows)
 	}
 }
