@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -524,6 +525,172 @@ func TestWALRetentionMeasuresGrowingBytes(t *testing.T) {
 	}
 	if after <= before {
 		t.Fatalf("WAL-Rückstand ist nicht real gestiegen: vorher %d, nachher %d", before, after)
+	}
+}
+
+// TestWALRetentionMeasureInvalidSlotName trägt einen der drei
+// Fehlerpfade aus `review-slice-025.md` F-1 (ungültiger Slot):
+// `NewWALRetentionChecker` weist einen Slot-Namen außerhalb des
+// Bezeichner-Alphabets ab, bevor überhaupt eine Verbindung versucht wird
+// — kein Testcontainer nötig, dieser Zweig läuft vor jeder DB-Interaktion.
+func TestWALRetentionMeasureInvalidSlotName(t *testing.T) {
+	_, err := receive.NewWALRetentionChecker(context.Background(), "postgres://ignored/db", "Ungueltiger Slot!")
+	if !stderrors.Is(err, receive.ErrConfiguration) {
+		t.Fatalf("NewWALRetentionChecker mit ungültigem Slot-Namen = %v, wollen ErrConfiguration", err)
+	}
+}
+
+// TestWALRetentionMeasureConnectionRefusedFails trägt den
+// Verbindungsfehler-Pfad aus `review-slice-025.md` F-1: ein nicht
+// erreichbarer Host scheitert am Verbindungsaufbau selbst, sichtbar als
+// `ErrReplication` — kein Testcontainer nötig, der Verbindungsversuch
+// scheitert bereits am Transport (Port 1 trägt keinen Listener).
+func TestWALRetentionMeasureConnectionRefusedFails(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := receive.NewWALRetentionChecker(ctx,
+		"postgres://cdc:cdc@127.0.0.1:1/cdc_test?sslmode=disable&connect_timeout=2", "slot_pgc_test_unreachable")
+	if !stderrors.Is(err, receive.ErrReplication) {
+		t.Fatalf("NewWALRetentionChecker gegen nicht erreichbaren Host = %v, wollen ErrReplication", err)
+	}
+}
+
+// TestWALRetentionMeasureMissingSlot trägt den `!exists`-Fehlerpfad aus
+// `review-slice-025.md` F-1 (fehlender Slot): ein syntaktisch gültiger,
+// aber nie angelegter Slot-Name liefert einen sichtbaren
+// `ErrReplication`-Fehler statt eines stillen Nullwerts.
+func TestWALRetentionMeasureMissingSlot(t *testing.T) {
+	_, ctx := newPool(t)
+	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
+	checker, err := receive.NewWALRetentionChecker(ctx, dsn, "slot_pgc_test_missing_retention")
+	if err != nil {
+		t.Fatalf("NewWALRetentionChecker: %v", err)
+	}
+	t.Cleanup(func() { _ = checker.Close(context.Background()) })
+
+	if _, err := checker.Measure(ctx); !stderrors.Is(err, receive.ErrReplication) {
+		t.Fatalf("Measure gegen fehlenden Slot = %v, wollen ErrReplication", err)
+	}
+}
+
+// dsnWithApplicationName markiert eine Verbindungszeichenkette mit einem
+// `application_name`, damit ein Test das serverseitige Backend eindeutig
+// über `pg_stat_activity` wiederfindet — unabhängig davon, ob die DSN als
+// URL oder als Schlüssel/Wert-Zeichenkette vorliegt (beide Formen
+// akzeptiert `pgconn.ParseConfig`).
+func dsnWithApplicationName(dsn, name string) string {
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		sep := "?"
+		if strings.Contains(dsn, "?") {
+			sep = "&"
+		}
+		return dsn + sep + "application_name=" + name
+	}
+	return dsn + " application_name=" + name
+}
+
+// countBackends trägt die Anzahl aktiver Backends mit dem gegebenen
+// `application_name`.
+func countBackends(t *testing.T, pool *pgxpool.Pool, applicationName string) int {
+	t.Helper()
+	var count int
+	if err := pool.QueryRow(context.Background(),
+		"SELECT count(*) FROM pg_stat_activity WHERE application_name = $1", applicationName).Scan(&count); err != nil {
+		t.Fatalf("pg_stat_activity zählen: %v", err)
+	}
+	return count
+}
+
+// terminateBackend beendet serverseitig die Backends mit dem gegebenen
+// `application_name` und wartet, bis sie tatsächlich beendet sind —
+// simuliert einen dauerhaften Verbindungsabbruch (Idle-Timeout zwischen
+// zwei Ticks) für den Reconnect-Test unten.
+func terminateBackend(t *testing.T, pool *pgxpool.Pool, applicationName string) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx,
+		"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name = $1", applicationName); err != nil {
+		t.Fatalf("pg_terminate_backend: %v", err)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for countBackends(t, pool, applicationName) > 0 {
+		if time.Now().After(deadline) {
+			t.Fatalf("Backend %q endet nicht nach pg_terminate_backend", applicationName)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// TestWALRetentionMeasureReconnectsAfterConnectionLoss trägt sowohl den
+// IDENTIFY_SYSTEM-Fehlerpfad aus `review-slice-025.md` F-1 als auch den
+// Reconnect-Pfad aus F-2: Ein serverseitig beendetes Backend (simuliert
+// einen dauerhaften Idle-Timeout zwischen zwei Ticks, anders als die
+// Stream-Verbindung mit ihrem Keepalive-Verkehr) lässt die laufende
+// Messung sichtbar scheitern; die eigene Verbindung des
+// `WALRetentionChecker` wird dabei intern ersetzt (`reconnectAfterError`)
+// — der übernächste Aufruf (der nächste Tick in `runWALRetentionCheck`)
+// misst wieder erfolgreich, statt dass die Metrik für den Rest des
+// Prozesslaufs verstummt.
+func TestWALRetentionMeasureReconnectsAfterConnectionLoss(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "reconnect")
+	commands := make(chan *inbound.CaptureCommand, 32)
+
+	// Der Slot muss bestehen, bevor der Checker misst — derselbe
+	// kurzlebige Stream-Aufbau wie in TestWALRetentionMeasuresGrowingBytes.
+	runCtx, cancelRun := context.WithCancel(ctx)
+	stream, err := receive.NewStream(runCtx, receive.Config{
+		DSN:         env.pool.Config().ConnString(),
+		Source:      testSource,
+		Publication: env.publication,
+		Slot:        env.slot,
+		Tables: map[string]mapper.TableBinding{
+			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
+		},
+		Capture: &fakeCapture{commands: commands},
+	})
+	if err != nil {
+		t.Fatalf("NewStream: %v", err)
+	}
+	runDone := make(chan error, 1)
+	go func() { runDone <- stream.Run(runCtx) }()
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Bestätigt')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	awaitCommand(t, commands, 15*time.Second)
+	cancelRun()
+	select {
+	case <-runDone:
+	case <-time.After(15 * time.Second):
+		t.Fatalf("Stream endet nicht")
+	}
+
+	const applicationName = "walretention_reconnect_test"
+	checker, err := receive.NewWALRetentionChecker(context.Background(),
+		dsnWithApplicationName(env.pool.Config().ConnString(), applicationName), env.slot)
+	if err != nil {
+		t.Fatalf("NewWALRetentionChecker: %v", err)
+	}
+	t.Cleanup(func() { _ = checker.Close(context.Background()) })
+
+	if _, err := checker.Measure(context.Background()); err != nil {
+		t.Fatalf("Measure (vor Verbindungsabbruch): %v", err)
+	}
+	if countBackends(t, pool, applicationName) == 0 {
+		t.Fatalf("Checker-Backend %q nicht in pg_stat_activity sichtbar", applicationName)
+	}
+
+	terminateBackend(t, pool, applicationName)
+
+	measureCtx, cancelMeasure := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancelMeasure()
+	if _, err := checker.Measure(measureCtx); !stderrors.Is(err, receive.ErrReplication) {
+		t.Fatalf("Measure nach Verbindungsabbruch = %v, wollen ErrReplication", err)
+	}
+
+	if _, err := checker.Measure(context.Background()); err != nil {
+		t.Fatalf("Measure nach Reconnect: %v", err)
 	}
 }
 

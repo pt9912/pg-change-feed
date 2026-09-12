@@ -16,7 +16,13 @@ import (
 // Protokolls und nimmt dort keine weiteren Abfragen entgegen — die
 // periodische Messung braucht deshalb eine zweite, unabhängige
 // Verbindung mit demselben `replication=database`-Verbindungsparameter.
+// Anders als die Stream-Verbindung steht diese zwischen zwei Messungen
+// untätig (kein Keepalive-Verkehr) und kann dadurch von der Quelle oder
+// einem dazwischenliegenden Netzwerkelement getrennt werden (Idle-Timeout)
+// — `dsn` bleibt deshalb erhalten, damit `Measure` eine so gestörte
+// Verbindung selbst ersetzen kann.
 type WALRetentionChecker struct {
+	dsn  string
 	conn *pgconn.PgConn
 	slot string
 }
@@ -34,7 +40,7 @@ func NewWALRetentionChecker(ctx context.Context, dsn, slot string) (*WALRetentio
 	if err != nil {
 		return nil, err
 	}
-	return &WALRetentionChecker{conn: conn, slot: slot}, nil
+	return &WALRetentionChecker{dsn: dsn, conn: conn, slot: slot}, nil
 }
 
 // Close schließt die eigene Verbindung.
@@ -55,11 +61,13 @@ func (c *WALRetentionChecker) Close(ctx context.Context) error {
 func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
 	current, err := pglogrepl.IdentifySystem(ctx, c.conn)
 	if err != nil {
+		c.reconnectAfterError(ctx)
 		return 0, fmt.Errorf("%w: IDENTIFY_SYSTEM: %v", ErrReplication, err)
 	}
 	values, exists, err := querySingle(ctx, c.conn,
 		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = '"+c.slot+"' AND slot_type = 'logical'")
 	if err != nil {
+		c.reconnectAfterError(ctx)
 		return 0, err
 	}
 	if !exists || values[0] == "" {
@@ -70,4 +78,22 @@ func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("%w: confirmed_flush_lsn %q: %v", ErrReplication, values[0], err)
 	}
 	return int64(current.XLogPos - confirmed), nil
+}
+
+// reconnectAfterError ersetzt die eigene Verbindung, nachdem ein
+// Protokoll- oder Katalogaufruf auf ihr fehlgeschlagen ist: Eine zwischen
+// zwei Ticks dauerhaft unterbrochene Verbindung (Idle-Timeout, s. o.)
+// bleibt so nicht für den Rest des Prozesslaufs bestehen — der nächste
+// `Measure`-Aufruf versucht erneut, statt dass die Metrik endgültig
+// verstummt. Ein Fehler beim Schließen der alten Verbindung wird
+// verworfen — sie gilt bereits als unbrauchbar. Schlägt der Neuaufbau
+// selbst fehl, bleibt die alte (bereits geschlossene) Verbindung stehen;
+// der nächste `Measure`-Aufruf scheitert dann erneut auf demselben Pfad
+// und versucht wieder — kein Aufgeben, aber auch kein
+// Endlos-Reconnect-Loop innerhalb eines einzigen Aufrufs.
+func (c *WALRetentionChecker) reconnectAfterError(ctx context.Context) {
+	_ = c.conn.Close(ctx)
+	if conn, err := connectReplication(ctx, c.dsn); err == nil {
+		c.conn = conn
+	}
 }

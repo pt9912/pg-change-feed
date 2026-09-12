@@ -410,7 +410,11 @@ func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model
 // Fläche von `cdc_reader` unnötig erweitern würden — dieselbe Begründung
 // wie beim Health-Endpoint (Heartbeat statt `cdc.metrics`). Eine
 // fehlgeschlagene Messung bricht den Aufruf nicht ab und wird verworfen —
-// dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug oben.
+// dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug oben. Eine
+// dauerhaft gestörte eigene Verbindung des Checkers (z. B. Idle-Timeout
+// zwischen zwei Ticks) muss diese Schleife nicht selbst behandeln:
+// `WALRetentionChecker.Measure` ersetzt eine so gestörte Verbindung intern,
+// sodass ein folgender Tick erneut misst statt dauerhaft zu verstummen.
 func runWALRetentionCheck(ctx context.Context, checker *receive.WALRetentionChecker, log outbound.LogPort, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
