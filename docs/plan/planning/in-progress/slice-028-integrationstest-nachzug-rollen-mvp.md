@@ -126,14 +126,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (1 MEDIUM F-1 — DoD-Überzeichnung, oben per Planner-Korrektur behoben;
       1 INFO F-2 — Superuser-Verdrahtung real bestätigt, aber unverändert
       seit `slice-023`/`review-slice-023.md` INFO-1, keine Eskalation
-      gerechtfertigt). Verifier-Bestätigung der Korrektur: siehe §7.
+      gerechtfertigt), unabhängig bestätigt durch
+      [`docs/reviews/verify-slice-028.md`](../../../reviews/verify-slice-028.md)
+      (Planner-Korrektur als akkurat bestätigt, 2× LOW V-1/V-2, siehe §7).
 - [x] Doku-Update für `harness/README.md`/`AGENTS.md` (Sensors-Tabelle,
       Target-Name und -Beschreibung nach der Umbenennung). Beleg: siehe
       oben, Commit `9a84407`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Zurückgestellt auf die Closure** (§7, Planner-Rolle) — inhaltlich vorbereitet, **nach Reviewer-Fund F-1 korrigiert**: `evidence/slice-028.md` unter `BEO-PGC/rollen-test-abdeckungsluecken/` mit Verweis auf den oben genannten Beleg, `state.md` bleibt `weiter offen` — **beide** Punkte (1) *und* (2) bleiben offen (Punkt (2) nur auf PostgreSQL-Ebene, nicht auf Adapter-Ebene geschlossen), Zähler auf 2× (`evidence/slice-023.md`, `evidence/slice-028.md`).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `evidence/slice-028.md` in `BEO-PGC/rollen-test-abdeckungsluecken/`
+      ergänzt — Zähler steht bei 2×, beide Punkte (1) und (2) bleiben
+      `weiter offen`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-8`-Closure.
 
 ## 3. Plan (vor Code)
@@ -248,18 +253,40 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer verifizierte seine eigene
+  Plan-Annahme empirisch (Scratch-Postgres mit demselben Digest-Pin), bevor
+  er sie in den Runner übernahm — das ersparte eine unnötige Erweiterung
+  von `run-replication-tests.sh` und hielt den Slice klein. Reviewer und
+  Verifier haben unabhängig voneinander dieselbe Grenze gefunden
+  (Adapter-Ebene fehlt) und unabhängig dieselbe Einordnung der
+  Superuser-Verdrahtung als „vorbestehend, keine Regression" getroffen —
+  zwei unabhängige Kontexte, dieselbe Schlussfolgerung.
+- **Was ging anders als geplant:** Der DoD-Text behauptete zunächst, dieser
+  Slice schließe `BEO-PGC/rollen-test-abdeckungsluecken` Punkt (2)
+  vollständig. Der Reviewer fand das zu stark formuliert (F-1) — die
+  Rollen-Verifikation deckt nur die PostgreSQL-Server-Ebene ab, nicht die
+  tatsächlichen Replication-Stream-/ACK-Adapter. Als Planner habe ich die
+  DoD-Zeile, §1 und §6 korrigiert; der Verifier bestätigte die Korrektur
+  unabhängig als akkurat. Konsequenz: Punkt (2) bleibt im Register offen,
+  keine stillschweigende Schließung einer nicht wirklich erfüllten Zusage.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× und
+  wird verkörpert — der Normalfall. Die vom Verifier notierten
+  DoD-Checkbox-Lücken (V-1, V-2) sind dieselbe strukturelle Klasse wie bei
+  `slice-024`…`027`.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-028.md`
+  in `BEO-PGC/rollen-test-abdeckungsluecken/` ergänzt — Zähler steht bei
+  2×, beide Punkte (1) und (2) bleiben `weiter offen`. Keine neue
+  Beobachtung angefallen.
+- **Folge-Slices:** keine neuen — die Adapter-Ebenen-Lücke bleibt im
+  Register; ein Folge-Slice entsteht erst, falls sie 3× erreicht oder ein
+  Nutzer sie gezielt einplant.
+- **Risiken aus §6:** zwei *entfallen* (rollenbeschränkte Login-Identitäten
+  brauchten keine neuen Berechtigungen; MVP-Umbenennung vollständig
+  nachgezogen), ein neues Risiko (Adapter-Ebenen-Lücke) *weiter offen* →
+  `BEO-PGC/rollen-test-abdeckungsluecken`.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-8` offen) —
+  verschoben auf die welle-8-Closure (Modul 8 §Rollen-Sequenz für eine
+  Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
