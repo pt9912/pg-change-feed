@@ -38,7 +38,7 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-8 — Black-Box-E2E und Integrationstest-Nachzug](../welle-8.md)
+Nichts in Arbeit.
 
 ## Nächste Wellen
 
@@ -125,6 +125,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-5 — Realer CDC-Capture-Lag | 2026-09-12 | [welle-5-results.md](../done/welle-5-results.md) |
 | welle-6 — Consumer-Zugriffsweg | 2026-09-12 | [welle-6-results.md](../done/welle-6-results.md) |
 | welle-7 — Replication-Schwellen-Überwachung | 2026-09-12 | [welle-7-results.md](../done/welle-7-results.md) |
+| welle-8 — Black-Box-E2E und Integrationstest-Nachzug | 2026-09-12 | [welle-8-results.md](../done/welle-8-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
