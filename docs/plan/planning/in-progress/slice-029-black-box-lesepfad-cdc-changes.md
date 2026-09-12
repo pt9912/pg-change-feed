@@ -79,22 +79,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-REA-002` erfüllt: neuer Testfall liest Changes real über
+- [x] `LH-FA-REA-002` erfüllt: neuer Testfall liest Changes real über
       `cdc.changes` (rohes SQL, kein Go-Adapter-Import) für denselben
       INSERT/UPDATE/DELETE-Rundlauf, den `TestMVPCaptureFlow` bereits über
-      `ReadChanges` liest.
-- [ ] Vertragstest belegt Übereinstimmung: dieselbe Reihenfolge
+      `ReadChanges` liest. Beleg: `TestMVPChangesViewMatchesReadChanges` in
+      `test/integration/integration_test.go` (Commit `7b7ca3c`).
+- [x] Vertragstest belegt Übereinstimmung: dieselbe Reihenfolge
       (`commit_position`, `sequence`), derselbe Feldinhalt (`operation`,
       `old_data`/`new_data`, `schema_version`) zwischen SQL-View-Lesung und
-      Go-Adapter-Lesung desselben Datensatzes.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      Go-Adapter-Lesung desselben Datensatzes. Beleg: drei grüne
+      `make test-integration`-Läufe (kein Feldunterschied); zusätzlich real
+      als roter Fund verifiziert — `old_data`/`new_data` in der
+      `changes`-View-Spaltenprojektion testweise vertauscht, derselbe
+      Testfall lief rot (einzig er, die übrigen vier blieben grün), Mutation
+      danach zurückgesetzt (`tools/schema/schema.yaml` unverändert laut
+      `git diff`).
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      Beleg: `make gates` grün nach dem Test-Commit; `make test-integration`
+      dreimal in Folge grün im Anschluss an die Mutationsprobe (drei weitere
+      Läufe auf dem zurückgesetzten Stand).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
-      voraussichtlich keiner (reine Testabdeckung eines bestehenden
-      Lesezugriffswegs); Implementer entscheidet und begründet im
-      Plan-Nachzug.
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — keiner
+      berührt: reine Testabdeckung eines bestehenden Lesezugriffswegs, kein
+      Guide/Sensor/Vertrag geändert. Kein Doku-Update vorgenommen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -117,7 +126,24 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/run-integration-tests.sh` oder `test/integration/integration_test.go` | update | neuer Vertragstest: SQL-Lesung gegen `cdc.changes` vs. bestehende `ReadChanges`-Lesung desselben Rundlaufs — Implementer entscheidet den passenderen Ort (Bash analog zu `slice-027`, oder Go-Testfall analog zu `TestMVPCaptureFlow`) |
+| `test/integration/integration_test.go` | update | neuer Testfall `TestMVPChangesViewMatchesReadChanges`: SQL-Lesung gegen `cdc.changes` vs. bestehende `ReadChanges`-Lesung desselben Rundlaufs |
+
+**Plan-Nachzug (Abweichungen, nach Bestandsprüfung entschieden):**
+
+- **Go-Testfall statt Bash/`docker exec … psql`.** Der bestehende
+  `mvpEnv.pool` (pgx) verbindet bereits gegen dieselbe Compose-Instanz; ein
+  direktes `pool.Query` gegen `cdc.changes` liest den externen
+  SQL-Lesezugriffsweg genauso „von außen" wie ein `docker exec … psql`
+  (kein Import von `postgresstorage.NewChangeStoreAdapter`/`ReadChanges`),
+  ohne eine zweite Sprache (Bash-Heredoc/`psql`-Parsing) im selben Vergleich
+  zu tragen. `run-integration-tests.sh` bleibt unverändert.
+- **Eigener, isolierter Rundlauf statt Wiederverwendung von
+  `TestMVPCaptureFlow`s Zeilen.** Eine feste Zeilen-ID (`id=60` auf
+  `feed_mvp_full`, das über den ganzen Testlauf aktiviert bleibt) macht den
+  Vergleich unabhängig von der Ausführungsreihenfolge der übrigen
+  Testfälle dieser Datei — anders als eine Kopplung an `TestMVPCaptureFlow`s
+  Zustand, die bei künftigen Testfall-Einfügungen zwischen beiden brechen
+  könnte.
 
 ## 4. Trigger
 
