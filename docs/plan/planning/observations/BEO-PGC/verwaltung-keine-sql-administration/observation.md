@@ -28,3 +28,18 @@ kein Status-/Diagnose-Befehl.
 Gefunden bei einer Fork-Recherche zur Eröffnung von `welle-11`
 (E2E-Abdeckung — Verwaltung & Observability), kein abgeschlossener
 Vorgang trägt bisher einen Beleg.
+
+Zweiter Fund (Fork-Recherche zur Eröffnung der Feature-Welle
+„Verwaltungsfunktionen — SQL-Administration & CLI-Diagnose",
+2026-09-13): [`ADR-0046`](../../../../../plan/adr/README.md) (Accepted)
+hat die Frage, wie eine schreibende SQL-Funktion
+(`cdc.enable_table(...)`) einen Go-Inbound-Port erreichen soll, bereits
+bewusst offen gelassen („dasselbe physikalische Problem wie bei den
+Views … bleibt offen und ist nicht Gegenstand dieser Entscheidung").
+Zusätzlich baut `Assembler.tables`
+(`internal/adapters/driving/replication/mapper/mapper.go`, verdrahtet in
+`internal/bootstrap/wiring.go`) seine Tabellen-Bindungen einmalig beim
+Container-Start aus `CDC_TABLES` — ohne Reload-Mechanismus. Selbst eine
+rein SQL-seitige Aktivierung (Bindungs-Zeile + `ALTER PUBLICATION`)
+würde den laufenden Erfassungspfad nicht erreichen. Beides ist eine
+Architect-Entscheidung wert, bevor eine Umsetzung geschnitten wird.
