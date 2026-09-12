@@ -68,4 +68,9 @@ var (
 	// Kategorien aus `ADR-0023` (`SPEC-008`) — eine leere oder unbekannte
 	// Klasse verletzt die Invariante (`LH-FA-ADM-003`).
 	ErrInvalidErrorClass = stderrors.New("unbekannte Fehlerklasse")
+
+	// ErrEmptyColumns: ein TableSchema trägt mindestens eine Spalte
+	// (`SPEC-004`, `ADR-0015` Folgepflicht) — eine Schema-Version ohne
+	// Spaltenform trägt keine historisch stabile Interpretation.
+	ErrEmptyColumns = stderrors.New("TableSchema ohne Spalten")
 )

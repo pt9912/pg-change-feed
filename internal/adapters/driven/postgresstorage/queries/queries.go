@@ -193,6 +193,31 @@ INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
 VALUES ($1, current_timestamp, NULL)
 ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = NULL`
 
+// InsertTableSchemaColumn persistiert eine Spalten-Zeile einer
+// TableSchema-Version (`ADR-0015` Folgepflicht, `SPEC-004`) — eine Zeile
+// je Spalte, in Anlage-Reihenfolge über `ordinal_position` sortiert
+// (`SelectTableSchemaColumns`); dieselbe Deduplizierungsbasis wie
+// `InsertChange`.
+const InsertTableSchemaColumn = `
+INSERT INTO cdc.table_schema (schema_version_id, ordinal_position, column_name, column_oid)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT DO NOTHING`
+
+// SelectCurrentSchemaVersion liest die höchste registrierte Schema-Version
+// einer Tabelle — die „aktuelle" Version (`ADR-0015` Folgepflicht).
+const SelectCurrentSchemaVersion = `
+SELECT schema_version_id, version FROM cdc.schema_version
+WHERE source_table_id = $1
+ORDER BY version DESC
+LIMIT 1`
+
+// SelectTableSchemaColumns liest die Spaltenform einer Schema-Version in
+// Spalten-Reihenfolge (`ordinal_position`).
+const SelectTableSchemaColumns = `
+SELECT column_name, column_oid FROM cdc.table_schema
+WHERE schema_version_id = $1
+ORDER BY ordinal_position`
+
 // UpsertHeartbeatFault trägt den zuletzt beobachteten Fehlerzustand der
 // Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`,
 // `LH-QA-REL-003`): dieselbe Zeile wie UpsertHeartbeat,

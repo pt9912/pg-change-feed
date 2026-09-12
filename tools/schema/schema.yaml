@@ -9,7 +9,10 @@
 # transaction, change (SPEC-001, SPEC-002) — und die Consumer-State-Tabellen
 # consumer, consumer_position (SPEC-001, LH-FA-CON-001…006); ihr Port
 # (ConsumerStatePort) liegt außerhalb des Store-Adapters, die Tabellenform
-# trägt dieses Modell wie die übrigen. process_heartbeat realisiert die in
+# trägt dieses Modell wie die übrigen. table_schema trägt die Spaltenform
+# einer Schema-Version, eine Zeile je Spalte (ADR-0015 Folgepflicht,
+# SPEC-004); ihr Port (SchemaStorePort) liegt ebenfalls außerhalb des
+# Store-Adapters. process_heartbeat realisiert die in
 # SPEC-001 vorgesehene Betriebs-/Capture-Zustand-Tabelle als Lebenszeichen
 # des Capture-Prozesses (LH-FA-ADM-002, LH-QA-OPS-002); ihr Port
 # (HeartbeatPort) liegt außerhalb des Store-Adapters, dieselbe Abgrenzung
@@ -141,6 +144,25 @@ tables:
       - name: uq_change_transaction_sequence
         type: unique
         columns: [transaction_id, sequence]
+
+  table_schema:
+    description: "Spaltenform einer Schema-Version, eine Zeile je Spalte (ADR-0015 Folgepflicht; SPEC-004, LH-FA-SCH-004/005). Ihr Port (SchemaStorePort) liegt außerhalb des Store-Adapters, dieselbe Abgrenzung wie bei den Consumer-State-Tabellen. column_oid trägt die PostgreSQL-Typ-OID als biginteger — eine OID ist ein vorzeichenloses 32-Bit-Feld und passt nicht verlustfrei in ein vorzeichenbehaftetes integer."
+    columns:
+      schema_version_id:
+        type: text
+        required: true
+        references: { table: schema_version, column: schema_version_id }
+      ordinal_position: { type: biginteger, required: true }
+      column_name: { type: text, required: true }
+      column_oid: { type: biginteger, required: true }
+    primary_key: [schema_version_id, ordinal_position]
+    constraints:
+      - name: chk_table_schema_ordinal_position_positive
+        type: check
+        expression: "(ordinal_position >= 1)"
+      - name: uq_table_schema_version_column_name
+        type: unique
+        columns: [schema_version_id, column_name]
 
   consumer:
     description: "Registrierter Consumer (SPEC-001; LH-FA-CON-001)"
