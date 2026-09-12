@@ -303,10 +303,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 
 	// Der Heartbeat-Zug läuft in einer eigenen Goroutine über den eigenen
 	// Pool (oben) — kein Eingriff in die kritische Sektion des
-	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`). `heartbeatCtx` endet spätestens mit `stream.Run`; das
-	// Warten auf die Goroutine läuft synchron vor der Rückkehr, damit der
-	// deferred `heartbeat.Close()` oben nicht gegen einen noch
-	// schreibenden Aufruf läuft.
+	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`). `heartbeatCtx` endet
+	// spätestens mit `stream.Run`; das Warten auf die Goroutine läuft
+	// synchron vor der Rückkehr, damit der deferred `heartbeat.Close()`
+	// oben nicht gegen einen noch schreibenden Aufruf läuft.
 	heartbeatCtx, stopHeartbeat := context.WithCancel(ctx)
 	var heartbeatDone sync.WaitGroup
 	heartbeatDone.Add(1)
