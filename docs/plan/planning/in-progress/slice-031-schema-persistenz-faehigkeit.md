@@ -187,6 +187,45 @@ Aussagen-Berührung steht hier gar nicht.
   eingelöst; das ist eine bewusste Abweichung vom Vorab-Plan, keine
   stillschweigende.
 
+### Fixrunde nach Review (`docs/reviews/review-slice-031.md`, F-1/F-2/F-3)
+
+- **F-1 (HIGH, Kommentar-Chronik):** Die Vorwärtsverweise auf `slice-032`/
+  `slice-033` und der Review-Report-Pfad in den Doc-Kommentaren von
+  `internal/domain/model/table_schema.go`, `internal/application/port/
+  outbound/schemastore.go` und `internal/adapters/driven/postgresstorage/
+  schemastore.go` sind entfernt; die Kommentare beschreiben jetzt nur noch
+  den Ist-Zustand von Modell, Port und Adapter (`AGENTS.md` §3.7). Die
+  Out-of-Scope-/Folgepflicht-Information bleibt vollständig in §1 dieses
+  Plans stehen — das ist ihr Ort.
+- **F-2 (HIGH, falscher Doc-Kommentar):** Der `CurrentVersion`-Kommentar in
+  `postgresstorage/schemastore.go` behauptete, Version 1 der statischen
+  Erstaktivierung werde „erst nach der ersten `RegisterVersion`" sichtbar.
+  Eigenständig gegen eine reale PostgreSQL-Instanz nachvollzogen
+  (Aktivierung über `TableActivationAdapter.Register`, danach
+  `CurrentVersion` ohne `RegisterVersion`-Aufruf): meldet sofort `ok=true,
+  version=1`, weil beide Adapter dieselbe `cdc.schema_version`-Tabelle
+  beschreiben. Kommentar auf dieses tatsächliche Verhalten korrigiert.
+- **F-3 (MEDIUM, Backfill-Lücke):** `RegisterVersion` übersprang die
+  Spalten-Einfügung immer dann, wenn die `schema_version`-Zeile bereits
+  bestand (`registered == false`) — für Version 1 nach jeder
+  `EnableTable`-Aktivierung der Fall, da diese dieselbe Zeile über
+  `queries.InsertSchemaVersion` schreibt. Ein späteres Nachtragen der
+  Spaltenform für exakt diese Version blieb dadurch wirkungslos
+  (`TableSchema` dauerhaft `ErrSchemaVersionUnknown`). Fix: Die
+  Spalten-Einfügung hängt jetzt an der Abwesenheit einer bestehenden
+  Spaltenform selbst (neue Abfrage `queries.CountTableSchemaColumns`),
+  nicht mehr an der Neuheit der `schema_version`-Zeile — eine
+  `SchemaVersionID` ohne Spaltenform bekommt sie geschrieben (Rückkehr
+  `true`), unabhängig davon, ob ihre Versions-Zeile neu ist oder über
+  einen anderen Schreibpfad (`TableActivationAdapter.Register`) bereits
+  bestand; eine Version mit bestehender Spaltenform bleibt unverändert
+  (Rückkehr `false`, keine doppelte Spaltenform). Neuer Testfall
+  `TestSchemaStoreRegisterVersionBackfillsColumns`
+  (`schemastore_test.go`): simuliert die bestehende Schema-Version-Zeile,
+  registriert die Spaltenform nach, liest sie über `TableSchema` zurück,
+  prüft die Idempotenz einer erneuten Registrierung — real gegen
+  PostgreSQL, `make test-store` grün.
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`

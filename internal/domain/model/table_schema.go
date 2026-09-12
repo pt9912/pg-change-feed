@@ -4,10 +4,10 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// ColumnOID trägt die PostgreSQL-Typ-OID einer Spalte (`SPEC-004`,
-// `ADR-0015` Folgepflicht) — die technologieunabhängige Übersetzung dieser
+// ColumnOID trägt die rohe PostgreSQL-Typ-OID einer Spalte (`SPEC-004`,
+// `ADR-0015` Folgepflicht); die technologieunabhängige Übersetzung dieser
 // OID in eine Vergleichs-/Kompatibilitätsentscheidung trägt dieses Modell
-// nicht (Out-of-Scope dieses Slice, siehe `slice-033`).
+// nicht.
 type ColumnOID uint32
 
 // Column trägt eine Spalte eines TableSchema: Name und PostgreSQL-Typ-OID

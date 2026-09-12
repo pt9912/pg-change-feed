@@ -21,10 +21,9 @@ import (
 // (`tools/schema/schema.yaml`, `ADR-0043`) — die handgeschriebene DDL des
 // Store-Adapters (`schema.sql`) trägt sie nicht, dieselbe Abgrenzung wie
 // bei den Consumer-State-Tabellen (`consumerstate.go`). Dieser Adapter
-// trägt ausschließlich die Persistenz-Fähigkeit dieses Slice — die
-// dynamische Re-Versionierung im laufenden Erfassungspfad und die
-// Typ-Kompatibilitätsprüfung sind Folgepflichten anderer Slices
-// (`slice-032`, `slice-033`). `log` trägt die strukturierte
+// trägt ausschließlich die Persistenz-Fähigkeit: weder die dynamische
+// Re-Versionierung im laufenden Erfassungspfad noch die
+// Typ-Kompatibilitätsprüfung gehören zu ihm. `log` trägt die strukturierte
 // Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
 // `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
 type PostgresSchemaStoreAdapter struct {
@@ -69,10 +68,11 @@ var _ outbound.SchemaStorePort = (*PostgresSchemaStoreAdapter)(nil)
 // CurrentVersion liest die höchste registrierte Schema-Version einer
 // Tabelle; die Abwesenheit meldet, dass die Tabelle noch keine über
 // diesen Port registrierte Version trägt (`ADR-0015` Folgepflicht — die
-// statische Erstaktivierung schreibt ihre Schema-Version-Zeile weiterhin
-// über `TableActivationPort.Register`, nicht über diesen Port; ihre
-// Version 1 wird über `CurrentVersion` erst nach der ersten
-// `RegisterVersion` sichtbar).
+// statische Erstaktivierung schreibt ihre Schema-Version-Zeile über
+// `TableActivationPort.Register`, nicht über diesen Port; sie beschreibt
+// aber dieselbe Tabelle `cdc.schema_version`, und macht ihre Version 1
+// dadurch bereits ohne einen `RegisterVersion`-Aufruf über
+// `CurrentVersion` sichtbar).
 func (a *PostgresSchemaStoreAdapter) CurrentVersion(ctx context.Context, table model.SourceTableID) (model.SchemaVersion, bool, error) {
 	if table == "" {
 		return model.SchemaVersion{}, false, domainerrors.ErrEmptyIdentifier
@@ -98,11 +98,16 @@ func (a *PostgresSchemaStoreAdapter) CurrentVersion(ctx context.Context, table m
 // Schema-Version-Zeile trägt dieselbe Anweisung wie die statische
 // Erstaktivierung (`queries.InsertSchemaVersion`,
 // `TableActivationAdapter.Register`) — ihre Idempotenz trägt derselbe
-// Primärschlüssel. Die Spaltenform geht als eine Zeile je Spalte
-// (`queries.InsertTableSchemaColumn`), nur wenn die Version neu ist — eine
-// erneut registrierte Version schreibt keine zweite Spaltenform. Eine
-// widersprüchliche Kennung zwischen Version und TableSchema endet vor dem
-// ersten SQL-Aufruf über `outbound.ErrSchemaVersionMismatch`.
+// Primärschlüssel, unabhängig davon, ob die Zeile hier oder dort zuerst
+// entsteht. Die Spaltenform geht als eine Zeile je Spalte
+// (`queries.InsertTableSchemaColumn`), aber nur, wenn diese
+// `SchemaVersionID` noch keine Spaltenform trägt (`CountTableSchemaColumns`)
+// — das trägt sowohl die Erstregistrierung als auch das Nachtragen der
+// Spaltenform zu einer `SchemaVersionID`, deren Schema-Version-Zeile
+// bereits über einen anderen Schreibpfad besteht (Backfill); eine
+// `SchemaVersionID` mit bestehender Spaltenform schreibt keine zweite.
+// Eine widersprüchliche Kennung zwischen Version und TableSchema endet
+// vor dem ersten SQL-Aufruf über `outbound.ErrSchemaVersionMismatch`.
 func (a *PostgresSchemaStoreAdapter) RegisterVersion(ctx context.Context, version model.SchemaVersion, schema model.TableSchema) (bool, error) {
 	if version.ID != schema.VersionID {
 		return false, outbound.ErrSchemaVersionMismatch
@@ -113,13 +118,17 @@ func (a *PostgresSchemaStoreAdapter) RegisterVersion(ctx context.Context, versio
 	}
 	defer tx.Rollback(ctx)
 
-	tag, err := tx.Exec(ctx, queries.InsertSchemaVersion,
-		string(version.ID), string(version.SourceTableID), version.Version)
-	if err != nil {
+	if _, err := tx.Exec(ctx, queries.InsertSchemaVersion,
+		string(version.ID), string(version.SourceTableID), version.Version); err != nil {
 		return false, schemaStoreFailure(ctx, a.log, err)
 	}
-	registered := tag.RowsAffected() == 1
-	if registered {
+
+	var existingColumns int
+	if err := tx.QueryRow(ctx, queries.CountTableSchemaColumns, string(schema.VersionID)).Scan(&existingColumns); err != nil {
+		return false, schemaStoreFailure(ctx, a.log, err)
+	}
+	written := existingColumns == 0
+	if written {
 		for i, column := range schema.Columns {
 			if _, err := tx.Exec(ctx, queries.InsertTableSchemaColumn,
 				string(schema.VersionID), int64(i+1), column.Name, int64(column.OID),
@@ -131,11 +140,11 @@ func (a *PostgresSchemaStoreAdapter) RegisterVersion(ctx context.Context, versio
 	if err := tx.Commit(ctx); err != nil {
 		return false, schemaStoreFailure(ctx, a.log, err)
 	}
-	if registered {
+	if written {
 		a.log.Info(ctx, "schemastore: Schema-Version registriert",
 			"schema_version_id", version.ID, "source_table_id", version.SourceTableID, "version", version.Version)
 	}
-	return registered, nil
+	return written, nil
 }
 
 // TableSchema liest die Spaltenform einer Schema-Version in

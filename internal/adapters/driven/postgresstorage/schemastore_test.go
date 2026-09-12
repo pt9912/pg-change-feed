@@ -173,6 +173,70 @@ func TestSchemaStoreRegisterAndReadRoundTrip(t *testing.T) {
 	}
 }
 
+// TestSchemaStoreRegisterVersionBackfillsColumns trägt das Nachtragen der
+// Spaltenform für eine `SchemaVersionID`, deren Schema-Version-Zeile
+// bereits über einen anderen Schreibpfad besteht — dieselbe Ausgangslage
+// wie bei Version 1 nach `TableActivationAdapter.Register`, hier über die
+// Zeile direkt simuliert. Ohne Spaltenform bliebe `TableSchema` dauerhaft
+// bei `ErrSchemaVersionUnknown`; der Backfill schreibt sie nach, ohne die
+// bestehende Idempotenz bei einer erneuten Registrierung zu verlieren.
+func TestSchemaStoreRegisterVersionBackfillsColumns(t *testing.T) {
+	store, pool := newTestSchemaStore(t)
+	table := registerSchemaStoreTable(t, pool, "tbl-schema-backfill")
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ($1, $2, 1)",
+		"sv-schema-backfill-1", string(table),
+	); err != nil {
+		t.Fatalf("Schema-Version-Zeile (Simulation Erstaktivierung): %v", err)
+	}
+
+	version, err := model.NewSchemaVersion("sv-schema-backfill-1", table, 1)
+	if err != nil {
+		t.Fatalf("NewSchemaVersion: %v", err)
+	}
+	schema, err := model.NewTableSchema("sv-schema-backfill-1", []model.Column{
+		{Name: "id", OID: 23},
+	})
+	if err != nil {
+		t.Fatalf("NewTableSchema: %v", err)
+	}
+
+	backfilled, err := store.RegisterVersion(ctx, version, schema)
+	if err != nil {
+		t.Fatalf("RegisterVersion (Backfill): %v", err)
+	}
+	if !backfilled {
+		t.Fatalf("Backfill einer Version ohne bestehende Spaltenform meldet keine Wirkung")
+	}
+
+	read, err := store.TableSchema(ctx, "sv-schema-backfill-1")
+	if err != nil {
+		t.Fatalf("TableSchema nach Backfill: %v", err)
+	}
+	if len(read.Columns) != 1 || read.Columns[0].Name != "id" {
+		t.Fatalf("TableSchema nach Backfill: %+v", read.Columns)
+	}
+
+	repeat, err := store.RegisterVersion(ctx, version, schema)
+	if err != nil {
+		t.Fatalf("RegisterVersion erneut nach Backfill: %v", err)
+	}
+	if repeat {
+		t.Fatalf("erneute Registrierung nach Backfill meldet Neustand (Idempotenz)")
+	}
+	var columnRows int
+	if err := pool.QueryRow(ctx,
+		"SELECT count(*) FROM cdc.table_schema WHERE schema_version_id = $1", "sv-schema-backfill-1",
+	).Scan(&columnRows); err != nil {
+		t.Fatalf("Spalten-Zeilen: %v", err)
+	}
+	if columnRows != 1 {
+		t.Fatalf("Spalten-Zeilen nach erneuter Registrierung: %d (Erwartung: 1, keine doppelte Spaltenform)", columnRows)
+	}
+}
+
 // TestSchemaStoreCurrentVersionHighest trägt die „aktuelle" Version als
 // die höchste registrierte, unabhängig von der Registrierungs-Reihenfolge.
 func TestSchemaStoreCurrentVersionHighest(t *testing.T) {

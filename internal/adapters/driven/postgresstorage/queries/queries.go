@@ -218,6 +218,13 @@ SELECT column_name, column_oid FROM cdc.table_schema
 WHERE schema_version_id = $1
 ORDER BY ordinal_position`
 
+// CountTableSchemaColumns zählt die Spalten-Zeilen einer Schema-Version —
+// die Backfill-Prüfung von `RegisterVersion`: eine Version ohne
+// bestehende Spaltenform bekommt sie geschrieben, unabhängig davon, ob
+// ihre `schema_version`-Zeile neu ist oder bereits besteht.
+const CountTableSchemaColumns = `
+SELECT count(*) FROM cdc.table_schema WHERE schema_version_id = $1`
+
 // UpsertHeartbeatFault trägt den zuletzt beobachteten Fehlerzustand der
 // Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`,
 // `LH-QA-REL-003`): dieselbe Zeile wie UpsertHeartbeat,

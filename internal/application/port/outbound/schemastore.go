@@ -33,14 +33,12 @@ var ErrSchemaVersionMismatch = stderrors.New("SchemaVersion und TableSchema trag
 // zugehörige Spaltenform (`model.TableSchema`) dieser Port hält — ohne sie
 // bleiben `LH-FA-SCH-004` (inkompatible Typänderungen erkennbar melden)
 // und `LH-FA-SCH-005` (Changes einer Schema-Version zuordenbar,
-// unterscheidbar) unerfüllbar (Architect-Verdikt
-// `docs/reviews/architect-verdict-slice-030-adr-0015.md`).
+// unterscheidbar) unerfüllbar.
 //
-// Dieser Slice liefert ausschließlich die Persistenz-Fähigkeit: die
+// Dieser Port trägt ausschließlich die Persistenz-Fähigkeit: weder die
 // dynamische Re-Versionierung im laufenden Erfassungspfad
-// (`Assembler.Consume`) und die Typ-Kompatibilitätsprüfung mit der
-// Fehlerklasse `schema` sind Folgepflichten anderer Slices (`slice-032`,
-// `slice-033`) — dieser Port trägt weder Vergleichs- noch
+// (`Assembler.Consume`) noch die Typ-Kompatibilitätsprüfung mit der
+// Fehlerklasse `schema` gehören zu ihm — er trägt weder Vergleichs- noch
 // Kompatibilitätslogik. Die statische Erstaktivierung
 // (`TableActivationPort.Register`, Version 1) bleibt unverändert und
 // schreibt ihre Schema-Version-Zeile weiterhin über jenen Port, nicht
@@ -51,12 +49,15 @@ type SchemaStorePort interface {
 	// noch keine über diesen Port registrierte Version trägt.
 	CurrentVersion(ctx context.Context, table model.SourceTableID) (model.SchemaVersion, bool, error)
 
-	// RegisterVersion trägt eine neue Schema-Version mit ihrer
-	// Spaltenform in EINEM Store-Commit ein; die Idempotenz trägt der
-	// Primärschlüssel der Version — eine erneut registrierte Version
-	// bleibt ohne Wirkung, die Rückkehr meldet den Ausgang. `version.ID`
-	// und `schema.VersionID` müssen übereinstimmen
-	// (`ErrSchemaVersionMismatch`).
+	// RegisterVersion trägt eine Schema-Version und ihre Spaltenform in
+	// EINEM Store-Commit ein; die Idempotenz trägt die Anwesenheit der
+	// Spaltenform selbst — eine `SchemaVersionID`, die bereits eine
+	// Spaltenform trägt, bleibt ohne Wirkung (Rückkehr `false`). Eine
+	// `SchemaVersionID` ohne bestehende Spaltenform bekommt sie
+	// geschrieben und die Rückkehr meldet `true` — unabhängig davon, ob
+	// die `SchemaVersion`-Zeile selbst neu ist oder bereits über einen
+	// anderen Schreibpfad besteht. `version.ID` und `schema.VersionID`
+	// müssen übereinstimmen (`ErrSchemaVersionMismatch`).
 	RegisterVersion(ctx context.Context, version model.SchemaVersion, schema model.TableSchema) (bool, error)
 
 	// TableSchema liest die Spaltenform einer Schema-Version — die
