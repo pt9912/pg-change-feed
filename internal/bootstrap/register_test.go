@@ -122,3 +122,29 @@ func TestRegisterConsumerReportsStorageFailure(t *testing.T) {
 		t.Fatalf("stderr = %q, wollen eine register-consumer-Diagnose-Zeile", output)
 	}
 }
+
+// TestRegisterConsumerReportsDomainFailure trägt den zweiten,
+// unabhängigen Fehler-Zweig in `RegisterConsumer` — den nach
+// `register.Register(...)` (`review-slice-021.md` F-1): eine leere
+// Consumer-Kennung scheitert an `model.NewConsumer`
+// (`domainerrors.ErrEmptyIdentifier`), bevor der Consumer-State-Port
+// berührt wird — real gegen PostgreSQL (`make test-store`), weil der
+// Verdrahtungsschritt davor (`postgresstorage.NewConsumerState`) eine
+// echte Verbindung braucht, um diesen Zweig überhaupt zu erreichen.
+func TestRegisterConsumerReportsDomainFailure(t *testing.T) {
+	dsn := os.Getenv("CDC_STORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("CDC_STORE_TEST_DSN nicht gesetzt — reale PostgreSQL-Tests laufen über make test-store")
+	}
+
+	var code int
+	output := captureStderr(t, func() {
+		code = bootstrap.RegisterConsumer(context.Background(), bootstrap.Config{DSN: dsn}, "")
+	})
+	if code != 1 {
+		t.Fatalf("Exit-Code = %d, wollen 1 (Domänenfehler)", code)
+	}
+	if !strings.Contains(output, "register-consumer") {
+		t.Fatalf("stderr = %q, wollen eine register-consumer-Diagnose-Zeile", output)
+	}
+}

@@ -93,9 +93,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (Happy Path + „bereits registriert"-Boundary, real gegen PostgreSQL
       über `make test-store`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-021.md`: 0 HIGH, 1 MEDIUM (F-1,
+      Negativtest-Lücke) — geschlossen in dieser Fixrunde
+      (`internal/bootstrap/register_test.go::TestRegisterConsumerReportsDomainFailure`).
 - [x] Doku-Update für `docs/user/benutzerhandbuch.md` (neuer Zugriffsweg für
       Consumer-Registrierung) und den ADR-Index. ADR-Index unverändert —
       dieser Slice legt kein neues ADR an (Architect-Verdikt).
