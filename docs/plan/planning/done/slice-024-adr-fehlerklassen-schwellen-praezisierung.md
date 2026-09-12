@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-7`](../welle-7.md) — der Ende-zu-Ende-Beleg über beide
+**Welle:** [`welle-7`](welle-7.md) — der Ende-zu-Ende-Beleg über beide
 Seiten der WAL-Rückstand-Schwelle (welle-7 §3) geht über die DoD dieses
 Slice hinaus; dieser Slice liefert nur die Entscheidung, keine Laufzeit.
 

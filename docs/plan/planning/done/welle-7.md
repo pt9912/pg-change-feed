@@ -18,13 +18,13 @@ zwei Positionen, nicht drei.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`SPEC-008`](../../../spec/pflichtenheft.md) verlangt für die Fehlerklasse
+[`SPEC-008`](../../../../spec/pflichtenheft.md) verlangt für die Fehlerklasse
 `replication`: „Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte
 Fortsetzung." Real ist davon nichts umgesetzt
 (`BEO-PGC/spec008-replication-luecke`): Jeder als `replication`
 klassifizierte Fehler beendet den Prozess sofort, die Metrik
 `cdc_wal_retention_bytes` existiert nicht, und
-[`SPEC-013`](../../../spec/pflichtenheft.md) definiert Schwellenwerte nur für
+[`SPEC-013`](../../../../spec/pflichtenheft.md) definiert Schwellenwerte nur für
 `cdc_capture_lag`, nicht für WAL-Rückstand.
 
 Beim Nachvollziehen des Codes zeigt sich zusätzlich: Die heutige
@@ -86,9 +86,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-024 | ADR — Fehlerklassen-Trennung und Schwellen-Präzisierung (`SPEC-008`/`SPEC-013`) | [`SPEC-008`](../../../spec/pflichtenheft.md), [`SPEC-013`](../../../spec/pflichtenheft.md) |
-| slice-025 | Metrik `cdc_wal_retention_bytes` | [`SPEC-009`](../../../spec/pflichtenheft.md) |
-| slice-026 | Schwellen-Überwachung mit kontrollierter Fortsetzung im Capture-Pfad | [`SPEC-008`](../../../spec/pflichtenheft.md), [`SPEC-013`](../../../spec/pflichtenheft.md) |
+| slice-024 | ADR — Fehlerklassen-Trennung und Schwellen-Präzisierung (`SPEC-008`/`SPEC-013`) | [`SPEC-008`](../../../../spec/pflichtenheft.md), [`SPEC-013`](../../../../spec/pflichtenheft.md) |
+| slice-025 | Metrik `cdc_wal_retention_bytes` | [`SPEC-009`](../../../../spec/pflichtenheft.md) |
+| slice-026 | Schwellen-Überwachung mit kontrollierter Fortsetzung im Capture-Pfad | [`SPEC-008`](../../../../spec/pflichtenheft.md), [`SPEC-013`](../../../../spec/pflichtenheft.md) |
 
 ## 5. Abhängigkeiten
 

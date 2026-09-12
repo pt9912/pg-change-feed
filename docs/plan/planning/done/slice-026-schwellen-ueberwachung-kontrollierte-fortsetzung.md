@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-7`](../welle-7.md) — dieser Slice liefert den letzten
+**Welle:** [`welle-7`](welle-7.md) — dieser Slice liefert den letzten
 Baustein für welle-7 §3 Closure-Trigger (Ende-zu-Ende-Beleg über beide
 Seiten der Schwelle); die Welle schließt mit diesem Slice.
 
