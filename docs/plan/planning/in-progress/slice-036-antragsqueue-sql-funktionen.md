@@ -108,11 +108,25 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und
-      begründet im Plan-Nachzug. Entscheidung: kein Update nötig — `make
-      schema-rollout`s Vertrag in `harness/README.md` bleibt unverändert
-      (die Zeile nennt schon heute keine einzelnen `nacharbeit-*.sql`-Dateien
-      namentlich, das bleibt Makefile-Kommentar-Ebene); kein neues
-      Gate/Target entstanden.
+      begründet im Plan-Nachzug. Entscheidung: kein Update nötig —
+      korrigierte Begründung (Review-Finding F-3, `review-slice-036.md`):
+      Die `make schema-rollout`-Zeile in `harness/README.md` nennt
+      `nacharbeit-views.sql` tatsächlich namentlich, aber ausschließlich
+      im Kontext einer **aufgelösten** Post-Compare-Drift-Geschichte
+      („zurückgebaut · seit slice-016"). Dieselbe Zeile nennt weder
+      `nacharbeit-roles.sql` noch `nacharbeit-observability.sql` noch
+      `nacharbeit-heartbeat.sql`, obwohl alle drei seit ihrer jeweiligen
+      Einführung aktiv und im Makefile verankert sind — der Präzedenzfall
+      trägt Auflösungen, nicht aktive Ausweichformen.
+      `nacharbeit-administration.sql` ist mit diesem Slice neu entstanden
+      und bleibt aktiv (offener dritter Fall im Beobachtungs-Register
+      `BEO-PGC/d-migrate-nacharbeit`) — sie fällt damit unter dieselbe
+      Nicht-Nennung wie die drei bestehenden aktiven Ausweichformen, nicht
+      unter den Views-Präzedenzfall. Sobald d-migrate die Funktionsklasse
+      ebenso wie Views seit 1.3.1 aus dem Post-Compare-Fingerabdruck
+      ausblendet und die Ausweichform zurückgebaut wird, bekommt die Zeile
+      denselben Nachtrag wie bei den Views; kein neues Gate/Target
+      entstanden.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg:

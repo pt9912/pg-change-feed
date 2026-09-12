@@ -133,6 +133,39 @@ func TestAdministrationRequestEnableTableWritesPendingRequestAndNotifies(t *test
 	}
 }
 
+// TestAdministrationRequestEnableTableRequiresCdcAdminMembership belegt die
+// Least-Privilege-Durchsetzung des REVOKE/GRANT-Paars in
+// nacharbeit-administration.sql (ADR-0047): eine Rolle ohne
+// cdc_admin-Mitgliedschaft scheitert am Aufruf — derselbe `SET
+// ROLE`-Mechanismus wie roles_test.go, `permissionDenied` von dort
+// wiederverwendet (SQLSTATE 42501, dieselbe PostgreSQL-Fehlerklasse, die
+// „permission denied for function" auslöst).
+func TestAdministrationRequestEnableTableRequiresCdcAdminMembership(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("Verbindung reservieren: %v", err)
+	}
+	defer func() {
+		_, _ = conn.Exec(ctx, "RESET ROLE")
+		conn.Release()
+	}()
+
+	if _, err := conn.Exec(ctx, "SET ROLE cdc_reader"); err != nil {
+		t.Fatalf("SET ROLE cdc_reader: %v", err)
+	}
+
+	var requestID string
+	err = conn.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_reader_denied",
+	).Scan(&requestID)
+	if !permissionDenied(err) {
+		t.Fatalf("cdc_reader SELECT cdc.enable_table(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}
+
 // TestAdministrationRequestDisableTableWritesPendingRequestAndNotifies
 // spiegelt den vorigen Test für `cdc.disable_table` — dieselbe Zusage,
 // anderer `request_kind`.
