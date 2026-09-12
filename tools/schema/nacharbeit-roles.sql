@@ -110,3 +110,16 @@ GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes TO cdc_reade
 -- Kein Neu-Zuschnitt der bestehenden cdc_admin-Privilegien, nur die drei
 -- fehlenden Rechte auf dieser einen Tabelle.
 GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin;
+
+-- Lückenschließung (ADR-0015 Folgepflicht): cdc.table_schema trug bislang
+-- keinen Grant an irgendeine der drei Rollen, und cdc_capture trug für
+-- cdc.schema_version nur SELECT — die dynamische Re-Versionierung im
+-- laufenden Erfassungspfad (mapper.Assembler.Consume über
+-- SchemaStorePort.RegisterVersion) schreibt beide Tabellen über
+-- CDC_CAPTURE_DSN; ON CONFLICT DO NOTHING (queries.InsertSchemaVersion/
+-- InsertTableSchemaColumn) verlangt dafür kein zusätzliches SELECT (anders
+-- als der ON-CONFLICT-DO-UPDATE-Zweig oben). Kein Neu-Zuschnitt der
+-- bestehenden cdc_capture-Privilegien, nur die fehlenden Rechte auf diesen
+-- beiden Tabellen.
+GRANT INSERT ON cdc.schema_version TO cdc_capture;
+GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;

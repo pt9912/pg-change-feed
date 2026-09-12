@@ -56,10 +56,15 @@ type Commit struct {
 func (Commit) isEvent() {}
 
 // Column ist eine Relation-Spalte; Key markiert eine Spalte der
-// Replica-Identity.
+// Replica-Identity. TypeOID trägt die rohe PostgreSQL-Typ-OID der Spalte
+// (`ADR-0015` Folgepflicht, `SPEC-004`) — die Grundlage, auf der der
+// Mapper unverändert von kompatibel erweitert unterscheidet
+// (`LH-FA-SCH-005`); die Übersetzung dieser OID in eine
+// Vergleichsentscheidung trägt dieses Paket nicht.
 type Column struct {
-	Name string
-	Key  bool
+	Name    string
+	Key     bool
+	TypeOID uint32
 }
 
 // Relation trägt die Relation-Metadaten einer `pgoutput`-Relation (Typ
@@ -232,13 +237,14 @@ func (d *Decoder) lookup(relationID uint32) (*Relation, error) {
 }
 
 // relationColumns trägt die Spalten einer Relation-Nachricht mit ihren
-// Replica-Identity-Markierungen; der Protokollwert 1 markiert eine
-// Schlüssel-Spalte.
+// Replica-Identity-Markierungen und ihrer Typ-OID; der Protokollwert 1
+// markiert eine Schlüssel-Spalte, `DataType` trägt die PostgreSQL-Typ-OID
+// (`ADR-0015` Folgepflicht).
 func relationColumns(message *pglogrepl.RelationMessage) []Column {
 	const columnFlagKey = uint8(1)
 	columns := make([]Column, 0, len(message.Columns))
 	for _, source := range message.Columns {
-		columns = append(columns, Column{Name: source.Name, Key: source.Flags == columnFlagKey})
+		columns = append(columns, Column{Name: source.Name, Key: source.Flags == columnFlagKey, TypeOID: source.DataType})
 	}
 	return columns
 }

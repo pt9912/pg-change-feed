@@ -1,6 +1,7 @@
 package decode_test
 
 import (
+	"context"
 	stderrors "errors"
 	"testing"
 	"time"
@@ -17,10 +18,13 @@ import (
 // — kein Netz, kein Treiber (`ADR-0030`). Die Binärform folgt der
 // Logical-Replication-Protokoll-Form des Output-Plugins.
 
-// testColumn trägt eine Relation-Spalte für relationPayload.
+// testColumn trägt eine Relation-Spalte für relationPayload; typeOID
+// überschreibt den Default-Wert (Typ-OID `text`, 25) für Tests, die die
+// Typ-OID gezielt prüfen (`ADR-0015` Folgepflicht).
 type testColumn struct {
-	name  string
-	flags byte
+	name    string
+	flags   byte
+	typeOID uint32
 }
 
 // tupleValue trägt einen Einzelwert für textTuple.
@@ -77,7 +81,11 @@ func relationPayload(oid uint32, namespace, name string, columns ...testColumn) 
 	for _, column := range columns {
 		payload = append(payload, column.flags)
 		payload = appendString(payload, column.name)
-		payload = appendUint32(payload, 25) // Typ-OID (text), für die Dekodierung ohne Bedeutung
+		typeOID := column.typeOID
+		if typeOID == 0 {
+			typeOID = 25 // Typ-OID text, Default für Tests ohne eigenen OID-Fokus
+		}
+		payload = appendUint32(payload, typeOID)
 		payload = appendUint32(payload, 0xFFFFFFFF)
 	}
 	return payload
@@ -283,6 +291,31 @@ func TestDecodeRelationInsert(t *testing.T) {
 	}
 }
 
+// TestDecodeRelationColumnTypeOID trägt die Spalten-Typ-OID einer
+// Relation-Nachricht (`ADR-0015` Folgepflicht, `SPEC-004`): zwei Spalten
+// mit unterschiedlichen Typ-OIDs bleiben nach der Dekodierung
+// unterscheidbar — die Grundlage, auf der der Mapper unverändert von
+// kompatibel erweitert unterscheidet (`LH-FA-SCH-005`).
+func TestDecodeRelationColumnTypeOID(t *testing.T) {
+	decoder := decode.NewDecoder()
+	relation := decodeOne(t, decoder, relationPayload(30010, "public", "typed",
+		testColumn{name: "id", flags: 1, typeOID: 23}, // int4
+		testColumn{name: "name", typeOID: 25}))        // text
+	relationEvent, isRelation := relation.(*decode.Relation)
+	if !isRelation {
+		t.Fatalf("Relation endete als %T", relation)
+	}
+	if len(relationEvent.Columns) != 2 {
+		t.Fatalf("Spalten-Anzahl: %d", len(relationEvent.Columns))
+	}
+	if relationEvent.Columns[0].TypeOID != 23 {
+		t.Fatalf("Typ-OID Spalte 0: %d, wollen 23", relationEvent.Columns[0].TypeOID)
+	}
+	if relationEvent.Columns[1].TypeOID != 25 {
+		t.Fatalf("Typ-OID Spalte 1: %d, wollen 25", relationEvent.Columns[1].TypeOID)
+	}
+}
+
 // TestDecodeUpdateDelete trägt Update mit Schlüssel- und vollem
 // Alt-Tupel sowie Delete: der `K`-Tupel trägt nur Schlüssel-Spalten, der
 // `O`-Tupel alle (`LH-FA-CAP-008`).
@@ -405,13 +438,19 @@ func TestDecodeChangeBeforeRelation(t *testing.T) {
 // Quell-Commit-Zeitpunkt vom dekodierten `pgoutput`-Byte-Stand über den
 // Mapper bis zum Domänen-Zugriff `SourceCommittedAt()`.
 func TestDecodeFlowToCapture(t *testing.T) {
+	// Ohne SchemaStorePort (nil) bleibt die Relation-Nachricht dieses
+	// Durchlaufs wirkungslos für die dynamische Re-Versionierung
+	// (`mapper.Assembler.observeRelation`) — dieser Test trägt den
+	// Byte-Durchlauf bis zum CaptureCommand, nicht die Schema-Store-
+	// Verdrahtung (dafür `mapper_test.go`).
 	assembler, err := mapper.NewAssembler("src-1", map[string]mapper.TableBinding{
 		"public.feed": {TableID: "tbl-1", SchemaVersion: "sv-1"},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("NewAssembler: %v", err)
 	}
 	decoder := decode.NewDecoder()
+	ctx := context.Background()
 
 	const commitMicros = int64(823_247_400_000_000) // 2026-02-04T12:30:00Z ab Y2K
 	steps := [][]byte{
@@ -426,7 +465,7 @@ func TestDecodeFlowToCapture(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Schritt %d: %v", i, err)
 		}
-		consumed, err := assembler.Consume(event)
+		consumed, err := assembler.Consume(ctx, event)
 		if err != nil {
 			t.Fatalf("Schritt %d: %v", i, err)
 		}

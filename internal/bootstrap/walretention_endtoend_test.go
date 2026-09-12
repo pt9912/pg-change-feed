@@ -95,6 +95,24 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 	if err := postgresstorage.ApplySchema(ctx, pool); err != nil {
 		t.Fatalf("ApplySchema: %v", err)
 	}
+	// `cdc.table_schema` trägt `ApplySchema` (schema.sql) nicht — ihr Port
+	// (SchemaStorePort) liegt außerhalb dieses Store-Adapters, dieselbe
+	// Abgrenzung wie bei den Consumer-State-Tabellen
+	// (`schemastore_test.go`, `ADR-0015` Folgepflicht). Dieser Lauf
+	// verdrahtet `bootstrap.Run` real und durchläuft damit
+	// `mapper.Assembler.Consume`s Relation-Behandlung — anders als
+	// `cdc.consumer`/`cdc.consumer_position` liegt dieser Port im
+	// laufenden Erfassungspfad, die Tabelle muss deshalb hier bestehen.
+	if _, err := pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS cdc.table_schema (
+		schema_version_id text NOT NULL REFERENCES cdc.schema_version (schema_version_id),
+		ordinal_position   bigint NOT NULL CHECK (ordinal_position >= 1),
+		column_name        text NOT NULL,
+		column_oid         bigint NOT NULL,
+		PRIMARY KEY (schema_version_id, ordinal_position),
+		UNIQUE (schema_version_id, column_name)
+	)`); err != nil {
+		t.Fatalf("cdc.table_schema anlegen: %v", err)
+	}
 	if _, err := pool.Exec(ctx,
 		"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'WAL-E2E-Quelle')", string(source),
 	); err != nil {

@@ -276,6 +276,16 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	}
 	defer store.Close()
 
+	// Die dynamische Re-Versionierung im laufenden Erfassungspfad
+	// (`mapper.Assembler.Consume`, `ADR-0015` Folgepflicht) liest und
+	// schreibt über dieselbe Rolle wie Store und Stream (`cdc_capture`,
+	// `ADR-0047`) — derselbe DSN, ein eigener Pool.
+	schemaStore, err := postgresstorage.NewSchemaStore(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer schemaStore.Close()
+
 	// Die Aktivierung läuft als Use Case (`ADR-0028`, `LH-FA-CFG-001`):
 	// die Bindungen der Konfiguration laufen vor dem Stream-Start als
 	// EnableTable-Aufrufe — die Publication ist Start-Vorbedingung des
@@ -342,6 +352,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		Publication: cfg.Publication,
 		Slot:        cfg.Slot,
 		Tables:      cfg.Tables,
+		SchemaStore: schemaStore,
 		Log:         log,
 	})
 	if err != nil {

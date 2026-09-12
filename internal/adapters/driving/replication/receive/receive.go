@@ -58,9 +58,11 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // mit ihren Port-Kennungen. Der Capture-Port wird vor dem Lauf
 // verdrahtet (BindCapture) — der ACK-Adapter braucht die Verbindung
 // (`ADR-0007`), die `NewStream` erst aufbaut. Die Tabellen-Kennungen
-// und die Schema-Versionen liegen bei der Konfiguration; die
-// Schema-Evolution trägt sie über den Metadata-Pfad
-// (LH-FA-SCH-004.a).
+// und die Schema-Versionen liegen initial bei der Konfiguration; die
+// dynamische Re-Versionierung trägt `SchemaStore` über den Mapper
+// (`mapper.Assembler.Consume`, `ADR-0015` Folgepflicht) — die Erkennung
+// nicht sicher interpretierbarer Änderungen als Fehlerklasse `schema`
+// bleibt `LH-FA-SCH-004.a`.
 type Config struct {
 	DSN         string
 	Source      model.SourceID
@@ -68,6 +70,12 @@ type Config struct {
 	Slot        string
 	Tables      map[string]mapper.TableBinding
 	Capture     inbound.CaptureInboundPort
+	// SchemaStore trägt die Persistenz-Fähigkeit der dynamischen
+	// Re-Versionierung (`outbound.SchemaStorePort`, `ADR-0015`
+	// Folgepflicht); ungesetzt (`nil`) bleibt die Relation-Behandlung des
+	// Assemblers wirkungslos — bestehende Aufrufstellen (Tests), die
+	// dieses Feld nicht setzen, bleiben unverändert kompilierbar.
+	SchemaStore outbound.SchemaStorePort
 	// Log trägt den injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`);
 	// ungesetzt (`nil`) fällt `NewStream` auf `outbound.NoopLog` zurück —
 	// bestehende Aufrufstellen (Tests), die dieses Feld nicht setzen,
@@ -123,7 +131,7 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, err
 	}
-	assembler, err := mapper.NewAssembler(cfg.Source, cfg.Tables)
+	assembler, err := mapper.NewAssembler(cfg.Source, cfg.Tables, cfg.SchemaStore)
 	if err != nil {
 		conn.Close(ctx)
 		return nil, fmt.Errorf("%w: %v", ErrConfiguration, err)
@@ -366,7 +374,7 @@ func (s *Stream) process(ctx context.Context, payload []byte) error {
 	if event == nil {
 		return nil
 	}
-	command, err := s.assembler.Consume(event)
+	command, err := s.assembler.Consume(ctx, event)
 	if err != nil {
 		return err
 	}

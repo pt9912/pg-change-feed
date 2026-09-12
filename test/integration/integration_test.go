@@ -617,28 +617,18 @@ func TestMVPDisableRetainedState(t *testing.T) {
 
 // TestMVPSchemaChangeAddColumn trägt eine reale `ALTER TABLE … ADD
 // COLUMN` auf der aktivierten Tabelle `feed_mvp_schema` am verdrahteten
-// Feed-Container (`LH-FA-SCH-001` Happy Path, `LH-FA-SCH-002` Boundary):
-// die danach erfassten Changes tragen die neue Spalte im Row Image, die
-// zuvor erfasste Change bleibt über `cdc.changes` unverändert lesbar und
-// ohne die neue Spalte.
-//
-// `LH-FA-SCH-005` (Boundary: unterscheidbare Schema-Versionen vor/nach
-// einer Schemaänderung) bleibt dabei unbelegt: Die Schema-Version einer
-// aktivierten Tabelle ist eine bei der Aktivierung statisch gebundene
-// Kennung (`mapper.TableBinding.SchemaVersion`,
-// `internal/adapters/driving/replication/mapper/mapper.go`), gesetzt aus
-// der Umgebung (`CDC_TABLES`, `compose.yaml`) und unverändert für die
-// Laufzeit des Feed-Containers. Die an vier Stellen referenzierte
-// dynamische Re-Versionierung „über den Metadata-Pfad“
-// (`internal/bootstrap/wiring.go`,
-// `internal/adapters/driving/replication/mapper/mapper.go`,
-// `internal/adapters/driving/replication/receive/receive.go`,
-// `internal/application/port/inbound/verwaltung.go`) hat im Repo keine
-// Implementierung — `mapper.Assembler.Consume` verwirft
-// `*decode.Relation`-Ereignisse ungenutzt (Default-Zweig des
-// Switch-Statements) und ändert keine Bindung. Beide Changes dieses Tests
-// tragen deshalb dieselbe Schema-Version; die letzte Prüfung hält das als
-// Tatsachenbeleg fest, nicht als Erwartung.
+// Feed-Container (`LH-FA-SCH-001` Happy Path, `LH-FA-SCH-002` Boundary,
+// `LH-FA-SCH-005` Boundary): die danach erfassten Changes tragen die neue
+// Spalte im Row Image, die zuvor erfasste Change bleibt über
+// `cdc.changes` unverändert lesbar und ohne die neue Spalte — und beide
+// Changes tragen unterscheidbare Schema-Versionen. Die erste real
+// eintreffende Relation-Nachricht trägt die Spaltenform der statisch
+// gebundenen Erstversion nach (`mapper.Assembler.Consume`, `ADR-0015`
+// Folgepflicht); `ADD COLUMN` ist eine kompatible Erweiterung und
+// registriert eine neue `SchemaVersionID` über den `SchemaStorePort`, auf
+// die die `TableBinding` gehoben wird — künftige Changes referenzieren
+// sie, die bereits erfasste Change bleibt bei ihrer ursprünglichen
+// Version.
 func TestMVPSchemaChangeAddColumn(t *testing.T) {
 	env := newMVPEnv(t, "feed_mvp_schema")
 	ctx := context.Background()
@@ -677,12 +667,11 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 		t.Fatalf("ältere Change trägt die erst danach hinzugefügte Spalte: %s", rereadBefore[0].newData)
 	}
 
-	// Tatsachenbeleg zum Funktionskommentar oben: beide Changes tragen
-	// dieselbe statisch gebundene Schema-Version. Schlägt diese Prüfung
-	// künftig fehl, hat sich der Metadata-Pfad geändert — dann braucht
-	// dieser Test eine bewusste Überarbeitung, kein stilles Grün.
-	if beforeRows[0].schemaVersion != afterRows[0].schemaVersion {
-		t.Fatalf("Schema-Version unterscheidet sich entgegen dem im Funktionskommentar dokumentierten Stand: davor %s, danach %s", beforeRows[0].schemaVersion, afterRows[0].schemaVersion)
+	// LH-FA-SCH-005 Boundary: die Schema-Versionen vor und nach der
+	// Erweiterung sind unterscheidbar — `ADD COLUMN` registriert real eine
+	// neue Version (`ADR-0015` Folgepflicht).
+	if beforeRows[0].schemaVersion == afterRows[0].schemaVersion {
+		t.Fatalf("Schema-Version unterscheidet sich nicht: davor %s, danach %s (Erwartung: ADD COLUMN registriert eine neue Version)", beforeRows[0].schemaVersion, afterRows[0].schemaVersion)
 	}
 }
 
