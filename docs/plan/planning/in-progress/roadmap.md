@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-8 — Black-Box-E2E und Integrationstest-Nachzug](../welle-8.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -49,8 +51,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Black-Box-E2E und Integrationstest-Nachzug | `welle-7` liegt in `done/` | Noch nicht geschnitten — mindestens: echter Black-Box-E2E-Test über die bestehende CLI (`register-consumer`/`acknowledge-consumer` als externer Subprozess/Container-Aufruf, nicht als Go-Paket-Import), Compose-Integrationstest um post-MVP-Fähigkeiten erweitert (Consumer-Zugriffsweg, rollen-spezifische DSN-Trennung, WAL-Rückstand-Schwellen-Verhalten), Umbenennung weg von „MVP" sobald der Scope das rechtfertigt | L |
-| Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Black-Box-E2E/Integrationstest-Nachzug) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
+| Publication-Entzug-Wirksamkeit am laufenden Stream | `welle-8` liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
 
 ## Meilensteine
@@ -90,7 +91,7 @@ flowchart LR
     W5[welle-5: Realer CDC-Capture-Lag]
     W6[welle-6: Consumer-Zugriffsweg]
     W7[welle-7: Replication-Schwellen-Überwachung]
-    W8[geplant: Black-Box-E2E und Integrationstest-Nachzug]
+    W8[welle-8: Black-Box-E2E und Integrationstest-Nachzug]
     W9[geplant: Publication-Entzug-Wirksamkeit]
     W10[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
