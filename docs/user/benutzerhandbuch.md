@@ -324,14 +324,24 @@ Container nicht (Fehlerklasse `configuration`).
 
 ### Fehlerklassen
 
-Jeder Fehler des Feed-Containers gehört zu einer von vier Klassen:
+Jeder Fehler des Feed-Containers gehört zu einer von sieben stabilen
+Klassen (`ADR-0023`, `SPEC-008`):
 
 | Klasse | Bedeutung | Verhalten |
 |---|---|---|
+| `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff; deklariert, aktuell von keinem Adapter konstruiert |
 | `configuration` | ungültige oder fehlende Umgebungsvariable | Kein Start, sichtbarer Fehler |
+| `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; deklariert, aktuell von keinem Adapter konstruiert |
 | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) | Sichtbarer Fehler, kein stilles Überspringen |
-| `replication` | eine Störung der Stream-Ordnung (z. B. Commit ohne offene Transaktion) | Sichtbarer Fehler |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
+| `replication` | eine Störung der Stream-Ordnung (z. B. Commit ohne offene Transaktion) | Sichtbarer Fehler |
+| `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
+
+`transient` und `permission` gehören zur deklarierten Menge der sieben
+Klassen, werden aber von keinem Adapter aktuell konstruiert — sie sind
+heute nicht beobachtbar. `internal` ist dagegen der real erreichbare
+Fallback-Zweig: Jeder Fehler, der keiner der übrigen sechs Klassen
+zugeordnet werden kann, fällt auf `internal` zurück.
 
 Ein Fehler jeder Klasse beendet den Container-Prozess mit Ausgang 1; der
 zuletzt beobachtete Fehlerzustand wird zusätzlich in
@@ -419,3 +429,4 @@ MIT — siehe `LICENSE`.
 |---|---|---|
 | 1.0 | 2026-09-12 | Erste Fassung |
 | 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
+| 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) · seit slice-020 |
