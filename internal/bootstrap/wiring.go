@@ -331,6 +331,22 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		return err
 	}
 
+	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
+	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
+	// (`cdc_capture`) — die Stream-Verbindung steht während `stream.Run` im
+	// COPY-Modus des Replication-Protokolls und nimmt keine Abfragen mehr
+	// entgegen. Der Slot besteht an dieser Stelle bereits (`NewStream`
+	// oben).
+	walRetention, err := receive.NewWALRetentionChecker(ctx, cfg.CaptureDSN, cfg.Slot)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = walRetention.Close(closeCtx)
+	}()
+
 	// Der Heartbeat-Zug läuft in einer eigenen Goroutine über den eigenen
 	// Pool (oben) — kein Eingriff in die kritische Sektion des
 	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`). `heartbeatCtx` endet
@@ -345,9 +361,23 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		runHeartbeat(heartbeatCtx, heartbeat, cfg.Source, heartbeatInterval)
 	}()
 
+	// Derselbe Aufbau wie der Heartbeat-Zug: eigene Goroutine, eigene
+	// Verbindung, an denselben Schreibtakt gebunden (`heartbeatInterval`)
+	// — keine zweite Konfigurationsachse für ein zweites periodisches
+	// Intervall ohne eigenen Bedarf.
+	walRetentionCtx, stopWALRetention := context.WithCancel(ctx)
+	var walRetentionDone sync.WaitGroup
+	walRetentionDone.Add(1)
+	go func() {
+		defer walRetentionDone.Done()
+		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval)
+	}()
+
 	streamErr := stream.Run(ctx)
 	stopHeartbeat()
 	heartbeatDone.Wait()
+	stopWALRetention()
+	walRetentionDone.Wait()
 	return streamErr
 }
 
@@ -367,6 +397,34 @@ func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model
 			return
 		case <-ticker.C:
 			_ = port.Beat(ctx, source)
+		}
+	}
+}
+
+// runWALRetentionCheck misst den WAL-Rückstand des Capture-Slots periodisch
+// und protokolliert ihn strukturiert (`SPEC-009` `cdc_wal_retention_bytes`,
+// `ADR-0049`) — ein Betreiber liest den Wert aus dem Log, ohne dass die
+// Erhebung über `cdc.metrics`/`cdc_reader` läuft: Die Erhebung braucht
+// Systemkatalog-Zugriffe außerhalb des `cdc`-Schemas
+// (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die die Least-Privilege-
+// Fläche von `cdc_reader` unnötig erweitern würden — dieselbe Begründung
+// wie beim Health-Endpoint (Heartbeat statt `cdc.metrics`). Eine
+// fehlgeschlagene Messung bricht den Aufruf nicht ab und wird verworfen —
+// dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug oben.
+func runWALRetentionCheck(ctx context.Context, checker *receive.WALRetentionChecker, log outbound.LogPort, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			bytes, err := checker.Measure(ctx)
+			if err != nil {
+				log.Warn(ctx, "replication: WAL-Rückstand-Messung fehlgeschlagen", "error", err)
+				continue
+			}
+			log.Info(ctx, "replication: WAL-Rückstand gemessen", "metric", "cdc_wal_retention_bytes", "bytes", bytes)
 		}
 	}
 }

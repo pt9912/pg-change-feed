@@ -443,6 +443,90 @@ func TestStreamKeepaliveReportsAcknowledgedPosition(t *testing.T) {
 	}
 }
 
+// TestWALRetentionMeasuresGrowingBytes trägt die reale Byte-Differenz
+// zwischen dem aktuellen WAL-Schreibstand und `confirmed_flush_lsn` eines
+// inaktiven Slots (`SPEC-009` `cdc_wal_retention_bytes`, `ADR-0049`): der
+// Stream bestätigt eine erste Transaktion und endet danach — der Slot
+// bleibt mit seinem Bestand liegen (derselbe inaktive Zustand wie in
+// `TestStreamRestartsOnExistingSlot`). Weitere, unbestätigte Transaktionen
+// lassen den gemessenen Rückstand real wachsen — eine vertauschte
+// Subtraktion in `WALRetentionChecker.Measure` (Mutation) würde hier einen
+// fallenden oder negativen Wert liefern statt eines steigenden.
+func TestWALRetentionMeasuresGrowingBytes(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "retention")
+	commands := make(chan *inbound.CaptureCommand, 32)
+
+	runCtx, cancelRun := context.WithCancel(ctx)
+	stream, err := receive.NewStream(runCtx, receive.Config{
+		DSN:         env.pool.Config().ConnString(),
+		Source:      testSource,
+		Publication: env.publication,
+		Slot:        env.slot,
+		Tables: map[string]mapper.TableBinding{
+			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
+		},
+		Capture: &fakeCapture{commands: commands},
+	})
+	if err != nil {
+		t.Fatalf("NewStream: %v", err)
+	}
+	runDone := make(chan error, 1)
+	go func() { runDone <- stream.Run(runCtx) }()
+
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Bestätigt')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	awaitCommand(t, commands, 15*time.Second)
+
+	// confirmed_flush_lsn erreicht die bestätigte Position, bevor der Slot
+	// inaktiv wird — sonst trüge die spätere Messung einen zufällig
+	// kleineren Anfangsstand.
+	deadline := time.Now().Add(15 * time.Second)
+	for readConfirmedFlush(t, pool, env.slot) == 0 {
+		if time.Now().After(deadline) {
+			t.Fatalf("confirmed_flush_lsn bleibt 0")
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	// Der Stream endet — der Slot bleibt mit seinem Bestand liegen
+	// (inaktiv, wie `TestStreamRestartsOnExistingSlot`).
+	cancelRun()
+	select {
+	case <-runDone:
+	case <-time.After(15 * time.Second):
+		t.Fatalf("Stream endet nicht")
+	}
+
+	checker, err := receive.NewWALRetentionChecker(context.Background(), env.pool.Config().ConnString(), env.slot)
+	if err != nil {
+		t.Fatalf("NewWALRetentionChecker: %v", err)
+	}
+	t.Cleanup(func() { _ = checker.Close(context.Background()) })
+
+	before, err := checker.Measure(context.Background())
+	if err != nil {
+		t.Fatalf("Measure (vorher): %v", err)
+	}
+
+	// Weitere, unbestätigte Transaktionen — der Slot bleibt inaktiv, der
+	// WAL-Rückstand wächst real.
+	for i := 0; i < 20; i++ {
+		if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES ($1, repeat('x', 4000))", 100+i); err != nil {
+			t.Fatalf("INSERT (Rückstand): %v", err)
+		}
+	}
+
+	after, err := checker.Measure(context.Background())
+	if err != nil {
+		t.Fatalf("Measure (nachher): %v", err)
+	}
+	if after <= before {
+		t.Fatalf("WAL-Rückstand ist nicht real gestiegen: vorher %d, nachher %d", before, after)
+	}
+}
+
 // TestStreamRestartsOnExistingSlot trägt den bestehende-Slot-Zweig am
 // realen Pfad (`ADR-0012`): der Stream endet, weitere Changes entstehen,
 // der Restart legt denselben Slot wieder auf — `ensureSlot` liest den
