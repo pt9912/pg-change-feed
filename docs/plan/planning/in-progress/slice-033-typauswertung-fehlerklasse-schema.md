@@ -90,26 +90,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `observeRelation` meldet `relationOther` als sichtbaren Fehler der
+- [x] `observeRelation` meldet `relationOther` als sichtbaren Fehler der
       Fehlerklasse `schema` (Muster: `Fehlerklasse schema: …`, analog zu
       `ErrTruncateUnsupported`/`ErrChangeWithoutBegin` in derselben
       Datei) statt `nil` zurückzugeben. Unit-getestet (Assembler-Tests).
-- [ ] `LH-FA-SCH-004`s Negative-Fall real geschlossen:
+      Beleg: `internal/adapters/driving/replication/mapper/mapper.go`
+      (`ErrIncompatibleSchemaChange`, `observeRelation`), Test
+      `TestConsumeRelationOtherChangeReportsSchemaError` (`mapper_test.go`,
+      grün über `make test`).
+- [x] `LH-FA-SCH-004`s Negative-Fall real geschlossen:
       `TestMVPSchemaChangeIncompatibleTypeChange` (`slice-030`) läuft mit
       angepasster Erwartung grün — der PostgreSQL-seitig zugelassene
       Typänderungs-Fall erwartet jetzt einen sichtbaren `schema`-Fehler
       statt stillschweigender Übernahme. `TestMVPSchemaChangeAddColumn`
-      bleibt unverändert grün (Regressionsschutz für `slice-032`s
-      Ergebnis). `make gates` und `make test-integration` dreimal in
-      Folge grün.
-- [ ] `make gates` grün.
+      bleibt unverändert grün (Regressionsschutz für die dynamische
+      Re-Versionierung). `make gates` und `make test-integration` dreimal
+      in Folge grün. Beleg: `test/integration/integration_test.go`
+      (`awaitHeartbeatErrorClass`, Fall 2), drei aufeinanderfolgende
+      grüne `make test-integration`-Läufe (Runner-Skript-Anpassung s.
+      Plan-Nachzug).
+- [x] `make gates` grün. Beleg: `make gates`-Lauf,
+      `d-check: 275 Datei(en) geprüft, 0 Befund(e)` /
+      `a-check: gesamt: 0 Befund(e)`.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
-      Implementer entscheidet und begründet im Plan-Nachzug.
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
+      Implementer entscheidet und begründet im Plan-Nachzug. Kein
+      Doku-Update nötig: `LH-FA-SCH-004.a`/`SPEC-008` beschreiben den
+      Vertrag bereits generisch („sichtbarer Fehler statt stiller
+      Fehlinterpretation"); dieser Slice schließt die Implementierungslücke,
+      ändert aber keinen Vertragstext. `mapper.ErrIncompatibleSchemaChange`
+      ist eine neue exportierte Kennung derselben, bereits dokumentierten
+      Fehlerklasse `schema` — kein neuer Vertrag.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -125,6 +140,62 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `internal/adapters/driving/replication/mapper/mapper.go` | update | `observeRelation` meldet `relationOther` als sichtbaren `schema`-Fehler |
 | `test/integration/integration_test.go` | update | `TestMVPSchemaChangeIncompatibleTypeChange`s zweiter Testfall erwartet jetzt einen sichtbaren Fehler |
+| `internal/adapters/driving/replication/mapper/mapper_test.go` | update | Plan-Nachzug: `TestConsumeRelationOtherChangeStaysConservative` umbenannt/umformuliert auf `TestConsumeRelationOtherChangeReportsSchemaError` |
+| `internal/bootstrap/wiring.go` | update | Plan-Nachzug: `classifyRunError` übersetzt `mapper.ErrIncompatibleSchemaChange` in `model.ErrorClassSchema` (Konsistenz-Anforderung §1) |
+| `internal/bootstrap/heartbeat_internal_test.go` | update | Plan-Nachzug: Testfall für `classifyRunError(mapper.ErrIncompatibleSchemaChange)` ergänzt |
+| `tools/harness/run-integration-tests.sh` | update | Plan-Nachzug: der sichtbare `schema`-Fehler beendet den Erfassungspfad des einzigen, geteilten Feed-Containers dauerhaft (`restart: "no"`) — `TestMVPSchemaChangeIncompatibleTypeChange` läuft deshalb als eigener, letzter `go test`-Aufruf, nach Lasttest-Beleg und Black-Box-CLI-Rundlauf, statt im ursprünglichen gemeinsamen `go test ./test/integration/...`-Aufruf |
+
+### Plan-Nachzug (nach Implementierung)
+
+- **Fehler-Sentinel:** `mapper.ErrIncompatibleSchemaChange` — Muster
+  identisch zu `ErrTruncateUnsupported`/`ErrChangeWithoutBegin`
+  (`errors.New("Fehlerklasse schema: …")`); `observeRelation` wrappt ihn
+  mit dem qualifizierten Tabellennamen (`fmt.Errorf("%w: %s", …,
+  relation.QualifiedName())`). `internal/bootstrap/wiring.go`s
+  `classifyRunError` ordnet ihn `model.ErrorClassSchema` zu — dieselbe
+  Übersetzungsstelle wie für `decode.ErrSchema`/`ErrTruncateUnsupported`
+  (Konsistenz-Anforderung aus §1, mit eigenem Testfall in
+  `heartbeat_internal_test.go` belegt).
+- **Reale Konsequenz, vor dem ersten grünen Lauf rot gesehen:** Der
+  gemeldete `schema`-Fehler beendet `receive.Stream.Run` (`Consume` →
+  `process` → `Run` gibt den Fehler zurück) und darüber `bootstrap.Run` →
+  `os.Exit(1)`. Der Compose-Feed-Container trägt `restart: "no"` (kein
+  Neustart-Vertrag) und **eine einzige** Replication-Verbindung für
+  **alle** aktivierten Tabellen (`CDC_TABLES` in `compose.yaml`) — ein
+  ausgelöster `schema`-Fehler an `feed_mvp_schema` beendet damit den
+  gesamten Feed-Container, nicht nur den Erfassungspfad dieser einen
+  Tabelle. Der erste Lauf mit ungeändertem `tools/harness/run-integration-tests.sh`
+  bestätigte das real: der anschließende Lasttest-Beleg
+  (`cdc_capture_lag`, braucht einen laufenden Container) und der
+  Black-Box-CLI-Rundlauf hätten denselben, bereits beendeten Container
+  gebraucht. Behoben durch Umstellen der Aufruf-Reihenfolge — nicht durch
+  eine neue Recovery-Fähigkeit des Produkts (§1-Ausschluss bleibt
+  unberührt): `go test ./test/integration/...` lief bisher als ein
+  einziger Aufruf vor Lasttest-Beleg und CLI-Rundlauf; er läuft jetzt als
+  zwei `-run`-gefilterte Aufrufe — die sechs unveränderten Testfunktionen
+  vorn (unveränderte Position), `TestMVPSchemaChangeIncompatibleTypeChange`
+  separat und zuletzt, nach dem Black-Box-CLI-Rundlauf. Eine künftig
+  ergänzte Testfunktion dieses Pakets muss in das vordere `-run`-Muster
+  aufgenommen werden, sofern sie den Container nicht selbst beendet — im
+  Runner-Skript kommentiert.
+- **Bild-Rebuild-Falle (Steering-Loop-relevant, s. §7 bei Closure):**
+  Der erste `make test-integration`-Lauf nach der Code-Änderung blieb
+  rot, weil das lokal geladene Image (`ghcr.io/pt9912/pg-change-feed:dev`)
+  noch den Stand vor dieser Änderung trug — `make image` war nicht erneut
+  gelaufen. `harness/README.md`s Werkzeug-Hinweis („Ein Zug, der
+  Build-Kontext-Dateien ändert, läuft `make image` vor seiner Closure")
+  trägt das bereits; der Implementer-Lauf hat ihn hier zunächst
+  übersehen.
+- **Beobachtungspfad des sichtbaren Fehlers:** `cdc.heartbeat.error_class`
+  (`tools/schema/nacharbeit-heartbeat.sql`, bereits bestehende, für
+  `cdc_reader` gegrantete Projektion von `cdc.process_heartbeat`) — derselbe
+  externe SQL-Lesezugriffsweg wie `cdc.changes`, kein Container-Log- oder
+  Exit-Code-Parsing im Testcode. `awaitHeartbeatErrorClass`
+  (`test/integration/integration_test.go`) pollt darauf, `coalesce(error_class, '')`
+  trägt den Normalbetrieb (`NULL`) als leere Zeichenkette. Zusätzlich
+  bestätigt der Test, dass `cdc.changes` die Zeile `id=11` nicht trägt —
+  ihre Transaktion trägt die auslösende Relation-Nachricht vor dem
+  eigenen Commit, der Erfassungspfad endet davor.
 
 ## 4. Trigger
 
