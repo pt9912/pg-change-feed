@@ -1,7 +1,7 @@
 -- Berichtete manuelle Nacharbeit am Schema-Rollout (ADR-0043
 -- §Re-Evaluierungs-Trigger: zulässige Ausweichform für Rollout-Schritte,
 -- die d-migrate nicht aus tools/schema/schema.yaml erzeugt): cdc.heartbeat trägt den
--- Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002; slice-012) als weitere
+-- Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) als weitere
 -- Lese-View — reine Projektion über die vom Capture-Prozess periodisch
 -- fortgeschriebene Lebenszeichen-Zeile (cdc.process_heartbeat), keine
 -- Domänenentscheidung (ARC-005 „SQL-Funktionen/Views", ADR-0046
@@ -14,7 +14,7 @@
 -- Rollen-Schritt kann cdc.heartbeat deshalb nicht grants, die View
 -- grantet sich selbst an cdc_reader, wie zuvor schon cdc.metrics.
 --
--- error_class (slice-013, LH-FA-ADM-003, LH-QA-REL-003) projiziert den
+-- error_class (LH-FA-ADM-003, LH-QA-REL-003) projiziert den
 -- zuletzt beobachteten Fehlerzustand derselben Zeile — NULL ist
 -- Normalbetrieb und von einer der sieben ADR-0023-Kategorien
 -- unterscheidbar, kein eigenes Fehler-Log.

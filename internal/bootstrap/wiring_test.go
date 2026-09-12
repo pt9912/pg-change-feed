@@ -118,7 +118,7 @@ func TestConfigFromEnvLiestAktivierung(t *testing.T) {
 }
 
 // TestConfigFromEnvLogLevel trägt den Default und die erkannten Textformen
-// von `CDC_LOG_LEVEL` (`LH-QA-OPS-004`, slice-014): anders als die fünf
+// von `CDC_LOG_LEVEL` (`LH-QA-OPS-004`): anders als die fünf
 // Vorbedingungen oben bricht ein leerer oder nicht erkannter Wert die
 // Verdrahtung nicht ab — er bleibt beim Default `Info`
 // (`bootstrap.parseLogLevel`).

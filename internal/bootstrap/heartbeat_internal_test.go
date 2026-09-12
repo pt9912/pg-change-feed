@@ -24,9 +24,9 @@ import (
 // Funktion für den Test zu exportieren.
 
 // blockingHeartbeat blockiert jeden Beat-Aufruf, bis der Test ihn
-// freigibt — Stellvertreter für einen langsamen Heartbeat-Schreib-Zug
-// (slice-012 §6-Risiko: der Timer-Zug darf die Persist-before-ACK-Ordnung,
-// `LH-QA-REL-001.a`, nicht stören).
+// freigibt — Stellvertreter für einen langsamen Heartbeat-Schreib-Zug:
+// der Timer-Zug darf die Persist-before-ACK-Ordnung (`LH-QA-REL-001.a`)
+// nicht stören.
 type blockingHeartbeat struct {
 	release chan struct{}
 	calls   chan struct{}
@@ -51,7 +51,7 @@ func (b *blockingHeartbeat) Fault(ctx context.Context, source model.SourceID, cl
 var _ outbound.HeartbeatPort = (*blockingHeartbeat)(nil)
 
 // recordingHeartbeat trägt jeden Fault-Aufruf zur Prüfung von reportFault
-// (`slice-013`, `LH-FA-ADM-003`) — Beat bleibt hier ungenutzt.
+// (`LH-FA-ADM-003`) — Beat bleibt hier ungenutzt.
 type recordingHeartbeat struct {
 	faultClass model.ErrorClass
 	faultCalls int
@@ -93,9 +93,9 @@ func (f *loggingAck) Acknowledge(ctx context.Context, position model.SourcePosit
 
 var _ outbound.ReplicationAckPort = (*loggingAck)(nil)
 
-// TestHeartbeatDoesNotBlockCapturePersistAck belegt die §6-Risiko-Zusage
-// (slice-012): `runHeartbeat` läuft in einer eigenen Goroutine über einen
-// eigenen Port — ein blockierender Heartbeat-Schreib-Zug hält den
+// TestHeartbeatDoesNotBlockCapturePersistAck belegt: `runHeartbeat`
+// läuft in einer eigenen Goroutine über einen eigenen Port — ein
+// blockierender Heartbeat-Schreib-Zug hält den
 // Capture-Persist-ACK-Pfad (`LH-QA-REL-001.a`) nicht auf. Rot färbende
 // Mutation: `runHeartbeat` unter demselben Lock/derselben Goroutine wie
 // die Capture-Persist-ACK-Schleife laufen lassen — dann blockiert
@@ -118,8 +118,8 @@ func TestHeartbeatDoesNotBlockCapturePersistAck(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("Heartbeat-Timer hat nicht innerhalb 1s aufgerufen")
 	}
-	// hb.Beat blockiert jetzt in <-b.release. Die Capture-Persist-ACK-
-	// Schleife läuft unabhängig weiter — genau das behauptet slice-012 §6.
+	// hb.Beat blockiert in <-b.release. Die Capture-Persist-ACK-
+	// Schleife läuft trotzdem unabhängig weiter.
 
 	events := []string{}
 	captureSvc := capture.NewCaptureService(&loggingStore{events: &events}, &loggingAck{events: &events})
@@ -182,8 +182,8 @@ func TestHealthcheckVerdictThreshold(t *testing.T) {
 }
 
 // TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes belegt die
-// Übersetzung der Composition Root (`slice-013`, `LH-FA-ADM-003`,
-// `ADR-0023`): jeder bekannte Sentinel trägt die dokumentierte Klasse, ein
+// Übersetzung der Composition Root (`LH-FA-ADM-003`, `ADR-0023`): jeder
+// bekannte Sentinel trägt die dokumentierte Klasse, ein
 // unbekannter Fehler bleibt `internal`.
 func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 	cases := []struct {
@@ -220,7 +220,7 @@ func TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes(t *testing.T) {
 }
 
 // TestReportFaultWritesClassifiedFaultOnNonNilError belegt reportFault
-// (`slice-013`, `LH-FA-ADM-003`): ein Lauf-Fehler erreicht den
+// (`LH-FA-ADM-003`): ein Lauf-Fehler erreicht den
 // Heartbeat-Port mit der klassifizierten Kategorie, ein regulärer
 // Lauf-Abschluss (`nil`) schreibt nichts. Rot färbende Mutation: die
 // nil-Prüfung entfernen — dann trägt jeder reguläre Lauf-Abschluss

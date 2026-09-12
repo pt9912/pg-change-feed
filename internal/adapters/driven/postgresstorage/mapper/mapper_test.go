@@ -59,7 +59,7 @@ func TestTransactionRowRejectsPositionBeyondBigint(t *testing.T) {
 }
 
 // Der Zeitstempel der Zeile trägt den realen Quell-Commit-Zeitpunkt
-// (`LH-FA-ADM-004`, slice-018) aus dem committed Domänenobjekt — nicht
+// (`LH-FA-ADM-004`) aus dem committed Domänenobjekt — nicht
 // irgendeine Instanzzeit des Mappers selbst.
 func TestTransactionRowCarriesSourceCommittedAt(t *testing.T) {
 	tx, err := model.NewOpenTransaction("t-1", "src-1")

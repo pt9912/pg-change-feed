@@ -7,7 +7,7 @@
 -- ADR-0043). CREATE ROLE kennt kein IF NOT EXISTS — der DO-Block macht
 -- den Schritt wiederholbar wie die übrigen Nacharbeit-Dateien.
 --
--- Rollenschnitt (Slice-Plan slice-011, LH-QA-SEC-001 Least-Privilege,
+-- Rollenschnitt (LH-QA-SEC-001 Least-Privilege,
 -- LH-QA-SEC-002 getrennte Berechtigbarkeit): cdc_capture trägt den
 -- Erfassungspfad — REPLICATION-Attribut für den Replication-Stream
 -- (ADR-0008), INSERT auf transaction/change (queries.go InsertTransaction/
@@ -71,8 +71,8 @@ $$;
 
 -- Grenze (real geprüft, roles_test.go
 -- TestCdcAdminPublicationRequiresTableOwnership/
--- TestCdcAdminAlterPublicationAddTableRequiresTableOwnership,
--- Review-Finding F-3 review-slice-011.md): CREATE ON DATABASE trägt nur
+-- TestCdcAdminAlterPublicationAddTableRequiresTableOwnership):
+-- CREATE ON DATABASE trägt nur
 -- `CREATE PUBLICATION` selbst — für `… FOR TABLE`/`ALTER PUBLICATION …
 -- ADD TABLE` verlangt PostgreSQL zusätzlich Eigentümerrechte an JEDER
 -- hinzugefügten Tabelle (SQLSTATE 42501 „must be owner of table …" ohne

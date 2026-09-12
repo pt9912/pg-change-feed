@@ -8,9 +8,8 @@ import (
 )
 
 // fakeLog trägt einen Testdouble für `LogPort` — genau die Substitution,
-// die ein globaler `slog`-Singleton nicht erlaubt (`ADR-0024`,
-// architect-review-slice-014.md): der Port ist eine Schnittstelle, kein
-// paketweiter Zustand.
+// die ein globaler `slog`-Singleton nicht erlaubt (`ADR-0024`): der Port
+// ist eine Schnittstelle, kein paketweiter Zustand.
 type fakeLog struct {
 	messages []string
 }

@@ -13,9 +13,8 @@ import (
 
 // captureStderr leitet os.Stderr für die Dauer von fn auf einen Puffer um
 // und liefert dessen Inhalt zurück — `bootstrap.Healthcheck` schreibt
-// seine Diagnose direkt auf `os.Stderr` (Review-Finding F-2,
-// `docs/reviews/review-slice-012.md`: der Exit-Code allein unterscheidet
-// die drei Fehlerklassen nicht, die Diagnose-Zeile schon).
+// seine Diagnose direkt auf `os.Stderr`: der Exit-Code allein
+// unterscheidet die drei Fehlerklassen nicht, die Diagnose-Zeile schon.
 func captureStderr(t *testing.T, fn func()) string {
 	t.Helper()
 	original := os.Stderr

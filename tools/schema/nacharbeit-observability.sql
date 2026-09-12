@@ -9,10 +9,9 @@
 -- (SPEC-007 HEALTH_STATES) bleibt Sache des lesenden Systems — diese View
 -- trifft keine Schwellenwert-Entscheidung.
 --
--- Abgedeckt (Minimum, nicht vollständig — Slice-Plan slice-011 §1
--- Ausgrenzung): cdc_transactions_total, cdc_changes_processed,
--- cdc_oldest_change_age_seconds, cdc_consumer_position{consumer},
--- cdc_consumer_lag{consumer}. Seit slice-013 zusätzlich
+-- Abgedeckt (Minimum, nicht vollständig): cdc_transactions_total,
+-- cdc_changes_processed, cdc_oldest_change_age_seconds,
+-- cdc_consumer_position{consumer}, cdc_consumer_lag{consumer},
 -- cdc_capture_lag_approx — bewusst **nicht** unter dem SPEC-009-
 -- kanonischen Namen `cdc_capture_lag`, siehe Grenze unten. Nicht
 -- abgedeckt: der reale `cdc_capture_lag` selbst, cdc_changes_pending,
@@ -21,37 +20,30 @@
 -- dieses Schema noch nicht trägt (Fehler-Log, Quell-Commit-Zeitstempel)
 -- oder Systemkatalog-Zugriffe außerhalb des cdc-Schemas
 -- (pg_stat_replication, Relationsgrößen), die die Least-Privilege-Fläche
--- von cdc_reader unnötig erweitern würden; Folge-Slice
--- (`BEO-PGC/cdc-capture-lag-real`).
+-- von cdc_reader unnötig erweitern würden (`BEO-PGC/cdc-capture-lag-real`).
 --
--- Grenze (cdc_capture_lag_approx, slice-013 §4 Rückführung): `committed_at`
--- trägt die Persistenz-Zeit der Instanz (DB-DEFAULT now(), s.
--- tools/schema/schema.yaml), nicht den tatsächlichen Quell-Commit-
--- Zeitpunkt aus dem WAL — pgoutput trägt ihn zwar bereits
--- (BEGIN/COMMIT-Nachrichten, github.com/jackc/pglogrepl), aber ihn bis in
--- diese Persistenz zu spiegeln berührt zusätzlich die
--- Replication-Adapter-Schicht (mehr als zwei Schichten, Folge-Slice). Der
--- Wert unten misst deshalb nur, wie lange die letzte persistierte
--- Transaktion zurückliegt (Pipeline-Frische) — kein LH-FA-ADM-004-Abstand
--- zur Quelländerung. Der `_approx`-Suffix im metric_name ist die
--- Interface-Markierung dieser Grenze (review-slice-013 F-2): ein
+-- Grenze (`cdc_capture_lag_approx`): `committed_at` trägt den realen
+-- Quell-Commit-Zeitpunkt aus dem WAL (`InsertTransaction`,
+-- `LH-FA-ADM-004`) — der Wert unten misst damit tatsächlich den Abstand
+-- zwischen Quelländerung und CDC-Verfügbarkeit. Offen ist allein der
+-- Name: `cdc_capture_lag_approx` trägt weiterhin den `_approx`-Suffix
+-- statt des SPEC-009-kanonischen `cdc_capture_lag`. Ein
 -- Monitoring-System, das die Zeilen roh liest (Datei-Kopfkommentar
--- oben), unterscheidet die Näherung sonst nicht vom SPEC-009-kanonischen
--- `cdc_capture_lag` — der Name selbst trägt die Zusage, nicht nur der
--- SQL-Kommentar. `SPEC-013`s Latenzschwellen (p95/Warn/Fehler) sind an
--- den kanonischen Namen `cdc_capture_lag` gebunden und bewusst NICHT an
--- `cdc_capture_lag_approx` anwendbar, bis der reale Abstand existiert.
+-- oben), unterscheidet die Zeile deshalb noch nicht vom kanonischen
+-- Namen — der Name selbst trägt die Zusage, nicht nur der SQL-Kommentar.
+-- `SPEC-013`s Latenzschwellen (p95/Warn/Fehler) sind an den kanonischen
+-- Namen `cdc_capture_lag` gebunden und bewusst NICHT an
+-- `cdc_capture_lag_approx` anwendbar, bis die Umbenennung erfolgt ist.
 --
 -- Der Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) liegt bewusst nicht
 -- in dieser Datei: eine reine Lese-View auf bereits persistierten Zustand
 -- konnte den Lauf-Zustand des CDC-Prozesses selbst nicht bezeugen — ein
 -- abgestürzter Prozess hinterlässt eine weiterhin erreichbare Datenbank,
 -- die View würde „gesund" lesen. Aufgelöst über den Heartbeat-Mechanismus
--- (kein neuer Driving-Adapter-Zuschnitt, ADR-0020 bleibt unberührt,
--- Architect-Verdikt docs/plan/adr/architect-review-slice-011.md): der
+-- (kein neuer Driving-Adapter-Zuschnitt, ADR-0020 bleibt unberührt): der
 -- Capture-Prozess schreibt sein Lebenszeichen periodisch fort
--- (cdc.process_heartbeat), cdc.heartbeat (tools/schema/nacharbeit-heartbeat.sql,
--- slice-012) projiziert dessen Alter.
+-- (cdc.process_heartbeat), cdc.heartbeat (tools/schema/nacharbeit-heartbeat.sql)
+-- projiziert dessen Alter.
 CREATE OR REPLACE VIEW cdc.metrics AS
 SELECT 'cdc_transactions_total'::text AS metric_name, NULL::text AS label, count(*)::numeric AS value
 FROM cdc.transaction

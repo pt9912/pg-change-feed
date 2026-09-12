@@ -24,7 +24,7 @@ func main() {
 	}
 	if len(os.Args) == 2 && os.Args[1] == "--healthcheck" {
 		// Der Compose-Healthcheck des Feed-Containers (`compose.yaml`,
-		// slice-012, `LH-FA-ADM-002`, `LH-QA-OPS-002`): das Runtime-Image
+		// `LH-FA-ADM-002`, `LH-QA-OPS-002`): das Runtime-Image
 		// ist distroless (kein Shell, kein `psql`, Dockerfile) — der
 		// einzige Aufruf, den Compose innerhalb dieses Containers
 		// ausführen kann, ist das Binary selbst (`CMD`-Form ohne Shell).

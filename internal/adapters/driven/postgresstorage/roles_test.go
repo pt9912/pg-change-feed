@@ -140,10 +140,10 @@ func TestCdcAdminRoleManagesSchemaNotChanges(t *testing.T) {
 	}
 }
 
-// TestCdcAdminPublicationRequiresTableOwnership belegt Review-Finding F-3
-// (review-slice-011.md): das GRANT CREATE ON DATABASE trägt
-// `CREATE PUBLICATION` selbst, aber nicht das Hinzufügen einer Tabelle
-// über `FOR TABLE` — PostgreSQL verlangt dafür zusätzlich Eigentümerrechte
+// TestCdcAdminPublicationRequiresTableOwnership belegt: das GRANT
+// CREATE ON DATABASE trägt `CREATE PUBLICATION` selbst, aber nicht das
+// Hinzufügen einer Tabelle über `FOR TABLE` — PostgreSQL verlangt dafür
+// zusätzlich Eigentümerrechte
 // an der Zieltabelle (real gegen die Quelltabelle geprüft, nicht gegen
 // cdc-Schema-Objekte, denn die zu aktivierenden Tabellen liegen außerhalb
 // des cdc-Schemas). Ohne Eigentümerschaft schlägt der Aufruf fehl

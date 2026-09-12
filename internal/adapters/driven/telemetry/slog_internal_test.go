@@ -10,11 +10,11 @@ import (
 )
 
 // TestNewWithWriterWritesStructuredJSON trägt den Beleg für
-// `LH-QA-OPS-004`/`ADR-0024`, den slice-014 bisher nur am
-// Integrationstest-stdout-Diff hatte (Review-Finding F-2): die Ausgabe von
-// `New` (über den paketinternen Test-Zugang `newWithWriter`, derselbe
-// Handler-Aufbau wie am `stdout`-Pfad) ist gültiges JSON mit `msg`,
-// `level` und den übergebenen Attributen.
+// `LH-QA-OPS-004`/`ADR-0024` auf Unit-Test-Ebene, unabhängig vom
+// Integrationstest-stdout-Diff: die Ausgabe von `New` (über den
+// paketinternen Test-Zugang `newWithWriter`, derselbe Handler-Aufbau wie
+// am `stdout`-Pfad) ist gültiges JSON mit `msg`, `level` und den
+// übergebenen Attributen.
 func TestNewWithWriterWritesStructuredJSON(t *testing.T) {
 	var buf bytes.Buffer
 	adapter := newWithWriter(&buf, slog.LevelDebug)
@@ -39,12 +39,11 @@ func TestNewWithWriterWritesStructuredJSON(t *testing.T) {
 
 // TestNewWithWriterFiltersBelowLevel trägt die Level-Filterung: eine Stufe
 // unterhalb des konfigurierten Levels bleibt stumm — dieselbe Semantik, die
-// `CDC_LOG_LEVEL` am Container-stdout steuert. Zwei Fälle, nicht nur einer
-// (Verifier-Fund V-1, `docs/reviews/verify-slice-014.md`): `slog.
-// HandlerOptions{}` defaultet ein unbesetztes `Level`-Feld selbst auf
-// `LevelInfo` — ein Test, der ausschließlich mit `LevelInfo` konfiguriert,
-// bleibt grün, selbst wenn `newWithWriter` das `Level:`-Feld gar nicht mehr
-// an die `HandlerOptions` durchreicht (die Mutation, die V-1 beschreibt).
+// `CDC_LOG_LEVEL` am Container-stdout steuert. Zwei Fälle, nicht nur
+// einer: `slog.HandlerOptions{}` defaultet ein unbesetztes `Level`-Feld
+// selbst auf `LevelInfo` — ein Test, der ausschließlich mit `LevelInfo`
+// konfiguriert, bliebe grün, selbst wenn `newWithWriter` das
+// `Level:`-Feld gar nicht mehr an die `HandlerOptions` durchreicht.
 // Der zweite Fall (`LevelWarn`) liegt oberhalb dieses Zufalls-Defaults:
 // ohne durchgereichten Level fiele die `Info`-Zeile *nicht* unter den
 // (dann wirkungslosen) Default und der Test schlägt fehl — genau die

@@ -2,7 +2,7 @@
 // konkreten Adapter und verdrahtet die Pipeline an genau einer Stelle —
 // ChangeStore-Driven-Adapter, Aktivierungs-Driven-Adapter mit dem
 // EnableTable Use Case (`ADR-0028`), Heartbeat-Driven-Adapter mit dem
-// periodischen Timer-Zug (`ADR-0024`, slice-012), Replication-Stream-
+// periodischen Timer-Zug (`ADR-0024`), Replication-Stream-
 // Driving-Adapter, Capture Service und Replication-ACK-Driven-Adapter.
 // Die Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
 // einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
@@ -48,7 +48,7 @@ const (
 	envSlot        = "CDC_SLOT"
 	envTables      = "CDC_TABLES"
 	// envLogLevel trägt den Log-Level der strukturierten Ausgabe
-	// (`LH-QA-OPS-004`, slice-014): anders als die fünf Namen oben ist er
+	// (`LH-QA-OPS-004`): anders als die fünf Namen oben ist er
 	// keine Start-Vorbedingung — er hat einen Default (parseLogLevel) und
 	// eine fehlende oder nicht erkannte Eingabe bricht die Verdrahtung
 	// nicht ab.
@@ -62,7 +62,7 @@ const (
 var ErrConfiguration = errors.New("Fehlerklasse configuration: Verdrahtung ohne vollständige Vorbedingung")
 
 // heartbeatInterval trägt den periodischen Schreib-Zug des
-// Heartbeat-Timers (slice-012, `LH-FA-ADM-002`): ein MVP-Default ohne
+// Heartbeat-Timers (`LH-FA-ADM-002`): ein MVP-Default ohne
 // eigene Konfigurationsschicht — dieselbe Minimal-Form wie die übrigen
 // Verdrahtungs-Vorbedingungen (Datei-Kommentar oben).
 const heartbeatInterval = 5 * time.Second
@@ -72,8 +72,7 @@ const heartbeatInterval = 5 * time.Second
 // unhealthy — ein einzelner verpasster Takt (z. B. durch eine langsame
 // Transaktion auf derselben Instanz) bleibt healthy, drei verpasste Takte
 // in Folge nicht mehr. Ausführungsdetail der Composition-Root-Verdrahtung
-// (`ADR-0026`), keine Architekturentscheidung (Architect-Verdikt
-// `docs/plan/adr/architect-review-slice-011.md`).
+// (`ADR-0026`), keine Architekturentscheidung.
 const heartbeatStaleAfter = 3 * heartbeatInterval
 
 // Config trägt die Verdrahtungs-Eingabe: die Verbindung zur Instanz, die
@@ -194,7 +193,7 @@ func splitQualifiedName(qualified string) (string, string, error) {
 // Verbindungsabbruch trägt der Prozess-Neustart, der Slot liest seinen
 // Start über confirmed_flush_lsn (`ADR-0012`); die `transient`-Aktion
 // (Erneut versuchen mit begrenztem Backoff, `SPEC-008`) trägt dieser
-// Pfad nicht. Seit `slice-013` meldet ein nicht-`nil`-Ausgang zusätzlich
+// Pfad nicht. Ein nicht-`nil`-Ausgang meldet zusätzlich
 // den Fehlerzustand über den Heartbeat (`reportFault` unten,
 // `LH-FA-ADM-003`, `LH-QA-REL-003`), bevor der Prozess-Aufrufer beendet —
 // der benannte Rückgabewert `runErr` trägt dafür den Fehler über die
@@ -206,9 +205,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// (`telemetry.New`, `LH-QA-OPS-004`) — die Composition Root hält ihn
 	// als lokale Variable und injiziert ihn über `WithLog`/`Config.Log`
 	// in jeden Adapter-Konstruktor unten; kein Paket-globaler
-	// Logging-Zustand (Architect-Verdikt
-	// `docs/plan/adr/architect-review-slice-014.md`: ein `slog.SetDefault`
-	// an dieser Stelle verletzt `ADR-0024`, Alternative B).
+	// Logging-Zustand — ein `slog.SetDefault` an dieser Stelle verletzt
+	// `ADR-0024`, Alternative B.
 	var log outbound.LogPort = telemetry.New(cfg.LogLevel)
 	log.Info(ctx, "pg-change-feed: Verdrahtung gestartet", "source", string(cfg.Source))
 	defer func() {
@@ -247,8 +245,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Lebenszeichen-Zug (runHeartbeat, unten) — eine eigene Verbindung,
 	// getrennt von Store- und Aktivierungs-Pool: der Timer-Zug teilt
 	// keine Verbindung und keine Goroutine mit der
-	// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012
-	// §6-Risiko).
+	// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`).
 	heartbeat, err := postgresstorage.NewHeartbeat(ctx, cfg.DSN, postgresstorage.WithLog(log))
 	if err != nil {
 		return err
@@ -306,8 +303,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 
 	// Der Heartbeat-Zug läuft in einer eigenen Goroutine über den eigenen
 	// Pool (oben) — kein Eingriff in die kritische Sektion des
-	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`, slice-012
-	// §6-Risiko). `heartbeatCtx` endet spätestens mit `stream.Run`; das
+	// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`). `heartbeatCtx` endet spätestens mit `stream.Run`; das
 	// Warten auf die Goroutine läuft synchron vor der Rückkehr, damit der
 	// deferred `heartbeat.Close()` oben nicht gegen einen noch
 	// schreibenden Aufruf läuft.
@@ -326,7 +322,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 }
 
 // runHeartbeat schreibt das Lebenszeichen der Quelle periodisch fort, bis
-// ctx endet (slice-012, `LH-FA-ADM-002`). Ein Persistenzfehler des
+// ctx endet (`LH-FA-ADM-002`). Ein Persistenzfehler des
 // Heartbeats bricht den Aufruf nicht ab und wird verworfen: ein
 // Schreibfehler des Heartbeats ist keine Fehlerklasse des Capture-Pfads
 // (`SPEC-008`) — seine Abwesenheit zeigt sich stattdessen über das Alter
@@ -346,7 +342,7 @@ func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model
 }
 
 // reportFault meldet einen nicht-`nil` Lauf-Fehler als Fehlerzustand über
-// den Heartbeat (`slice-013`, `LH-FA-ADM-003`, `LH-QA-REL-003`) — die
+// den Heartbeat (`LH-FA-ADM-003`, `LH-QA-REL-003`) — die
 // Sichtbarkeit gilt für „Erfassung kann nicht fortsetzen" (`Run` endet auf
 // jeden Adapter-Fehler, Dateikommentar oben), nicht für einen regulären
 // Lauf-Abschluss (`runErr == nil`). Der Schreib-Zug trägt eine eigene,
@@ -414,8 +410,7 @@ func healthcheckVerdict(age time.Duration) int {
 // (z. B. Schema-Rollout nicht gelaufen) gelten als nicht gesund. Jede der
 // drei Fehlerklassen trägt eine eigene, kurze `stderr`-Zeile — ein
 // Docker-Healthcheck-Fail unterscheidet sich sonst nicht von echter
-// Staleness (Review-Finding F-2, review-slice-012.md); kein neues
-// Fehlerklassen-Schema, nur Diagnose-Text. Die Klassifikation `SPEC-007`
+// Staleness; kein neues Fehlerklassen-Schema, nur Diagnose-Text. Die Klassifikation `SPEC-007`
 // (`HEALTH_STATES`) bleibt Sache des lesenden Systems; der Exit-Code
 // trägt nur die binäre Compose-Semantik. Der Aufruf öffnet eine eigene,
 // kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung

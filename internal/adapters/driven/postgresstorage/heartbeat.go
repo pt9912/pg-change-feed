@@ -32,7 +32,7 @@ type PostgresHeartbeatAdapter struct {
 // (`outbound.ErrHeartbeatStorage`, `SPEC-008`). Der Pool bleibt vom
 // Store- und Aktivierungs-Pool getrennt (`internal/bootstrap/wiring.go`)
 // — der periodische Schreib-Zug teilt keine Verbindung mit der
-// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`, slice-012 §6-Risiko).
+// Capture-Persist-ACK-Schleife (`LH-QA-REL-001.a`).
 func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHeartbeatAdapter, error) {
 	o := newOptions(opts)
 	pool, err := pgxpool.New(ctx, dsn)
@@ -86,7 +86,7 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 }
 
 // Fault trägt den zuletzt beobachteten Fehlerzustand der Quelle fort
-// (`slice-013`, `LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Zeile und
+// (`LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Zeile und
 // derselbe Zeitstempel-Mechanismus wie Beat, nur mit Klasse. Eine leere
 // Quelle oder eine Klasse außerhalb der sieben `ADR-0023`-Kategorien
 // erreicht keinen SQL-Aufruf (Port-Grenze, wie bei Beat).

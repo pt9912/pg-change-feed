@@ -181,21 +181,21 @@ const DeleteConsumer = `
 DELETE FROM cdc.consumer WHERE consumer_id = $1`
 
 // UpsertHeartbeat trägt das Lebenszeichen der Quelle fort
-// (`cdc.process_heartbeat`, slice-012, `LH-FA-ADM-002`): die Instanzzeit
-// der Speicherseite trägt den Zeitstempel (current_timestamp, wie
-// InsertTransaction über committed_at) — der Aufrufer übergibt keine Uhr.
-// Eine bestehende Zeile aktualisiert ihren Zeitstempel; je Quelle bleibt
-// genau eine Zeile. Seit `slice-013` löscht ein erfolgreicher Beat einen
-// zuvor gemeldeten Fehlerzustand (`error_class`) wieder — der
-// Fehlerzustand endet dadurch selbst erkennbar (`LH-FA-ADM-003` Boundary).
+// (`cdc.process_heartbeat`, `LH-FA-ADM-002`): die Instanzzeit der
+// Speicherseite trägt den Zeitstempel (`current_timestamp`) — der
+// Aufrufer übergibt keine Uhr. Eine bestehende Zeile aktualisiert ihren
+// Zeitstempel; je Quelle bleibt genau eine Zeile. Ein erfolgreicher Beat
+// löscht einen zuvor gemeldeten Fehlerzustand (`error_class`) wieder —
+// der Fehlerzustand endet dadurch selbst erkennbar (`LH-FA-ADM-003`
+// Boundary).
 const UpsertHeartbeat = `
 INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
 VALUES ($1, current_timestamp, NULL)
 ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = NULL`
 
 // UpsertHeartbeatFault trägt den zuletzt beobachteten Fehlerzustand der
-// Quelle fort (`cdc.process_heartbeat.error_class`, slice-013,
-// `LH-FA-ADM-003`, `LH-QA-REL-003`): dieselbe Zeile wie UpsertHeartbeat,
+// Quelle fort (`cdc.process_heartbeat.error_class`, `LH-FA-ADM-003`,
+// `LH-QA-REL-003`): dieselbe Zeile wie UpsertHeartbeat,
 // derselbe fortlaufende Zeitstempel — ein Fehlerzustand ist ein
 // Lebenszeichen mit Klasse, keine zweite Tabelle.
 const UpsertHeartbeatFault = `

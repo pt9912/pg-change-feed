@@ -13,8 +13,7 @@ import (
 // anders als der ChangeStore-Sentinel (`ErrStorage`, Klasse-Aktion „kein
 // Source-ACK", `LH-QA-REL-001.a`) trägt dieser Sentinel keine
 // Klasse-Aktion am Capture-Pfad — ein Heartbeat-Schreibfehler bricht den
-// Stream-Lauf nicht ab (slice-012 §1: Liveness, keine Fehlerdetails;
-// Folge-Slice slice-013 trägt Erfassungs-Fehlerklassen).
+// Stream-Lauf nicht ab.
 var ErrHeartbeatStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler im Heartbeat-Speicher")
 
 // HeartbeatPort trägt die Lebenszeichen-Fähigkeit des Capture-Prozesses
@@ -23,10 +22,10 @@ var ErrHeartbeatStorage = stderrors.New("Fehlerklasse storage: Persistenzfehler 
 // (`ADR-0026`) meldet, dass die Instanz läuft. Die Quelle trägt zugleich
 // die Prozess-Kennung — im MVP-Schnitt trägt eine Instanz die Quelle und
 // den CDC-Speicher gleichermaßen (Abschnitt 1 Lastenheft), ein eigenes
-// Prozess-Kennungsfeld trägt dieser Port nicht. Seit `slice-013` trägt
-// derselbe Port auch den zuletzt beobachteten Fehlerzustand
-// (`LH-FA-ADM-003`, `LH-QA-REL-003`) — dieselbe Ablage, statt eine zweite
-// Tabelle einzuführen.
+// Prozess-Kennungsfeld trägt dieser Port nicht. Derselbe Port trägt auch
+// den zuletzt beobachteten Fehlerzustand (`LH-FA-ADM-003`,
+// `LH-QA-REL-003`) — dieselbe Ablage, statt eine zweite Tabelle
+// einzuführen.
 type HeartbeatPort interface {
 	// Beat trägt das Lebenszeichen der Quelle fort; die Instanzzeit der
 	// Speicherseite trägt den Zeitstempel (wie `transaction.committed_at`)

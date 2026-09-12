@@ -411,11 +411,12 @@ func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 	}
 }
 
-// Der reale Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`, slice-018) unterscheidet
-// sich vom Persistenz-Zeitpunkt: eine künstliche Verzögerung zwischen dem
+// Der reale Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) unterscheidet sich
+// vom Persistenz-Zeitpunkt: eine künstliche Verzögerung zwischen dem
 // Domänen-Commit und dem Store-Aufruf zeigt, dass `committed_at` den
 // früheren Quell-Commit-Zeitpunkt trägt — nicht die Instanzzeit des
-// Persistenz-Aufrufs (die frühere DEFAULT-Semantik, `current_timestamp`).
+// Persistenz-Aufrufs (die Spalten-DEFAULT `current_timestamp`, die nur
+// außerhalb dieses Pfads greift).
 func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
 	store, pool := newTestStore(t)
 	seedReference(t, pool)

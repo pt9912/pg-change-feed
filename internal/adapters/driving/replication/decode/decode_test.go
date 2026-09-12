@@ -403,7 +403,7 @@ func TestDecodeChangeBeforeRelation(t *testing.T) {
 // `LH-QA-REL-001.a` Schritte Receive und Decode). Der Zeitstempel-Fluss
 // (`LH-FA-ADM-004`) läuft mit: dieselbe COMMIT-Nachricht trägt den realen
 // Quell-Commit-Zeitpunkt vom dekodierten `pgoutput`-Byte-Stand über den
-// Mapper bis zum Domänen-Zugriff `SourceCommittedAt()` (slice-017).
+// Mapper bis zum Domänen-Zugriff `SourceCommittedAt()`.
 func TestDecodeFlowToCapture(t *testing.T) {
 	assembler, err := mapper.NewAssembler("src-1", map[string]mapper.TableBinding{
 		"public.feed": {TableID: "tbl-1", SchemaVersion: "sv-1"},
