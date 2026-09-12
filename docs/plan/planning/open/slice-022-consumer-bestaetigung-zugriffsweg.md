@@ -11,7 +11,15 @@ neuen Zugriffsweg) übersteigt, was dieser Slice allein beweist.
 
 **Bezug:** [`LH-FA-CON-004.a`](../../../../spec/pflichtenheft.md) (Zugriffsweg
 offen, Vorwärts-Invariante nicht durchgesetzt),
-[`LH-FA-CON-004`](../../../../spec/lastenheft.md) (Bestätigung einer Position).
+[`LH-FA-CON-004`](../../../../spec/lastenheft.md) (Bestätigung einer Position),
+[`ADR-0019`](../../adr/0019-cli-driving-adapter.md) (CLI-Muster, trägt den
+Zugriffsweg), [`ADR-0020`](../../adr/0020-http-grpc-optional.md)
+(Netzwerkschnittstelle ohne Bedarf ausgeschlossen), [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
+(SQL-Funktions-Weg physisch ungelöst, deshalb ausgeschlossen).
+Architect-Verdikt: [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md)
+§3 — dieselbe, für `slice-021` bereits entschiedene Zugriffsweg-Mechanik
+(CLI-Unterbefehl) gilt kanalgenerisch auch hier, kein erneuter
+Architect-Rundlauf für dieselbe Frage.
 
 **Berührte Spec-Stellen:** [`ARC-003`](../../../../spec/architecture.md)
 (Inbound Ports), [`ARC-005`](../../../../spec/architecture.md) (Driving
