@@ -317,6 +317,157 @@ func TestMVPUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
 	}
 }
 
+// changesViewRow trägt eine über `cdc.changes` gelesene Zeile — den
+// externen SQL-Lesezugriffsweg (`LH-FA-SST-002`,
+// `tools/schema/schema.yaml` `views.changes`), unabhängig vom internen
+// `postgresstorage`-Adapter (`SelectChanges` in
+// `internal/adapters/driven/postgresstorage/queries/queries.go`).
+type changesViewRow struct {
+	commitPosition int64
+	sequence       int64
+	operation      string
+	oldData        []byte
+	newData        []byte
+	schemaVersion  string
+}
+
+// queryChangesView liest `cdc.changes`, gefiltert auf Quelle, Tabelle und
+// den `id`-Feldwert im Row Image (dieselbe `->>`-Filterform wie im
+// Black-Box-CLI-Rundlauf, `tools/harness/run-integration-tests.sh`).
+func queryChangesView(ctx context.Context, env *mvpEnv, rowID string) ([]changesViewRow, error) {
+	rows, err := env.pool.Query(ctx, `
+SELECT commit_position, sequence, operation, old_data, new_data, schema_version
+FROM cdc.changes
+WHERE source_id = $1 AND source_table_id = $2
+  AND (new_data->>'id' = $3 OR old_data->>'id' = $3)
+ORDER BY commit_position, sequence`,
+		mvpSource, string(env.tableID), rowID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	view := make([]changesViewRow, 0)
+	for rows.Next() {
+		var row changesViewRow
+		if err := rows.Scan(&row.commitPosition, &row.sequence, &row.operation,
+			&row.oldData, &row.newData, &row.schemaVersion); err != nil {
+			return nil, err
+		}
+		view = append(view, row)
+	}
+	return view, rows.Err()
+}
+
+// awaitChangesViewRows liest `cdc.changes`, bis die erwartete Anzahl
+// Zeilen für `rowID` vorliegt (Polling mit Test-Zeitgrenze) — dieselbe
+// Warte-Disziplin wie `awaitPersistedChanges`, gegen den externen
+// SQL-Lesezugriffsweg statt gegen den Store-Adapter.
+func awaitChangesViewRows(t *testing.T, env *mvpEnv, rowID string, limit int) []changesViewRow {
+	t.Helper()
+	ctx := context.Background()
+	deadline := time.Now().Add(30 * time.Second)
+	var view []changesViewRow
+	for time.Now().Before(deadline) {
+		var err error
+		view, err = queryChangesView(ctx, env, rowID)
+		if err != nil {
+			t.Fatalf("cdc.changes-Lesung: %v", err)
+		}
+		if len(view) >= limit {
+			return view
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatalf("cdc.changes-Lesung innerhalb der Zeitspanne fehlgeschlagen (%d von %d)", len(view), limit)
+	return nil
+}
+
+// changeRowID liest den `id`-Feldwert eines Changes aus seinem Neu- oder
+// Alt-Image; beide Testrichtungen (INSERT/UPDATE tragen `id` im
+// Neu-Image, UPDATE/DELETE mit voller Replica-Identity auch im
+// Alt-Image) treffen denselben Wert.
+func changeRowID(t *testing.T, change model.Change) string {
+	t.Helper()
+	if id, ok := imageJSON(t, change.NewImage)["id"].(string); ok {
+		return id
+	}
+	if id, ok := imageJSON(t, change.OldImage)["id"].(string); ok {
+		return id
+	}
+	return ""
+}
+
+// TestMVPChangesViewMatchesReadChanges belegt `BEO-PGC/lese-doppelquelle`:
+// derselbe INSERT/UPDATE/DELETE-Rundlauf, gelesen über die externe
+// SQL-Sicht `cdc.changes` (`LH-FA-SST-002`) statt über den internen
+// Store-Adapter (`ReadChanges`), trägt dieselbe Reihenfolge
+// (`commit_position`, `sequence`) und denselben Feldinhalt (`operation`,
+// `old_data`/`new_data`, `schema_version`) wie die `ReadChanges`-Lesung
+// desselben Datensatzes (`LH-FA-REA-002`…`006`). Die Zeilen-ID ist
+// isoliert von den übrigen Testfällen dieser Datei auf derselben Tabelle
+// (id=1 in TestMVPUpdateOldImageWithFullReplicaIdentity, id=90/91 im
+// nachgelagerten Lasttest-Beleg von run-integration-tests.sh) — die
+// Lesung filtert auf den Feldwert, nicht auf die Testreihenfolge.
+func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_full")
+	ctx := context.Background()
+
+	const rowID = "60"
+	for _, statement := range []string{
+		"INSERT INTO " + env.feed + " (id, name) VALUES (60, 'ViewAlpha')",
+		"UPDATE " + env.feed + " SET name = 'ViewBravo' WHERE id = 60",
+		"DELETE FROM " + env.feed + " WHERE id = 60",
+	} {
+		if _, err := env.pool.Exec(ctx, statement); err != nil {
+			t.Fatalf("Quelländerung: %v (%s)", err, statement)
+		}
+	}
+
+	viewRows := awaitChangesViewRows(t, env, rowID, 3)
+	if len(viewRows) != 3 {
+		t.Fatalf("cdc.changes-Lesung: %d Zeilen (Erwartung: 3)", len(viewRows))
+	}
+
+	all, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{Source: mvpSource, Table: &env.tableID})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	records := make([]outbound.ChangeRecord, 0, 3)
+	for _, record := range all {
+		if changeRowID(t, record.Change) == rowID {
+			records = append(records, record)
+		}
+	}
+	if len(records) != 3 {
+		t.Fatalf("ReadChanges-Lesung: %d Zeilen mit id=%s (Erwartung: 3)", len(records), rowID)
+	}
+
+	operations := []model.Operation{model.OperationInsert, model.OperationUpdate, model.OperationDelete}
+	for i := range records {
+		if records[i].Change.Operation != operations[i] {
+			t.Fatalf("ReadChanges Change %d: Operation %s, Erwartung %s", i, records[i].Change.Operation, operations[i])
+		}
+		if viewRows[i].operation != string(records[i].Change.Operation) {
+			t.Fatalf("Change %d: operation Sicht=%s ReadChanges=%s", i, viewRows[i].operation, records[i].Change.Operation)
+		}
+		if uint64(viewRows[i].commitPosition) != records[i].Position.Offset {
+			t.Fatalf("Change %d: commit_position Sicht=%d ReadChanges=%d", i, viewRows[i].commitPosition, records[i].Position.Offset)
+		}
+		if viewRows[i].sequence != records[i].Change.Sequence {
+			t.Fatalf("Change %d: sequence Sicht=%d ReadChanges=%d", i, viewRows[i].sequence, records[i].Change.Sequence)
+		}
+		if string(viewRows[i].oldData) != string(records[i].Change.OldImage) {
+			t.Fatalf("Change %d: old_data Sicht=%s ReadChanges=%s", i, viewRows[i].oldData, records[i].Change.OldImage)
+		}
+		if string(viewRows[i].newData) != string(records[i].Change.NewImage) {
+			t.Fatalf("Change %d: new_data Sicht=%s ReadChanges=%s", i, viewRows[i].newData, records[i].Change.NewImage)
+		}
+		if viewRows[i].schemaVersion != string(records[i].Change.SchemaVersion) {
+			t.Fatalf("Change %d: schema_version Sicht=%s ReadChanges=%s", i, viewRows[i].schemaVersion, records[i].Change.SchemaVersion)
+		}
+	}
+}
+
 // TestMVPActivationState liest den Aktivierungsstand am verdrahteten
 // Feed-Container über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`,
 // `LH-FA-CFG-004`, `ADR-0028`): die aktivierte Feed-Tabelle meldet
