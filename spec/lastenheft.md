@@ -1,10 +1,10 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.3.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.4.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
-**Autor:** pt9912, **Datum:** 2026-09-09
+**Autor:** pt9912, **Datum:** 2026-09-12
 
 ---
 
@@ -935,8 +935,35 @@ ermöglichen, ohne das interne CDC-Modell grundlegend zu verändern.
 - **Boundary:** —
 - **Negative:** —
 
-**Out-of-Scope:** Eine konkrete HTTP-/gRPC-API ist nicht Teil dieses
-Lastenhefts.
+**Out-of-Scope:** Protokoll-/Endpunkt-Details sind Sache der Spezifikation
+und einer Architekturentscheidung (ADR), nicht dieses Lastenhefts — siehe
+`LH-FA-SST-006`.
+
+### LH-FA-SST-006 — Konkrete HTTP-/gRPC-API
+
+**Beschreibung:** Eine konkrete HTTP-/gRPC-API muss die bestehenden
+Lese- und Verwaltungsfähigkeiten (u. a. Consumer-Registrierung,
+Positions-Bestätigung, Changes lesen, Status-/Diagnoseabfragen) zusätzlich
+zu den bestehenden CLI-/SQL-Zugriffswegen über einen Netzwerkzugriffsweg
+bereitstellen.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given ein Netzwerk-Client, when er eine unterstützte
+  Fähigkeit (z. B. Consumer-Registrierung) über die API aufruft, then wird
+  sie ausgeführt, ohne dass CLI- oder SQL-Direktzugriff nötig sind.
+- **Boundary:** Given dieselbe Fähigkeit über mehrere Zugriffswege (CLI,
+  SQL, API), when sie über unterschiedliche Wege ausgeführt wird, then ist
+  das Ergebnis fachlich gleichwertig (dieselbe Domänenlogik, kein
+  Zweitpfad).
+- **Negative:** Given ein nicht unterstützter oder nicht autorisierter
+  Aufruf, when er über die API erfolgt, then wird er abgelehnt, nicht
+  stillschweigend ignoriert.
+
+**Out-of-Scope:** Wahl zwischen HTTP und gRPC, konkretes
+Authentifizierungs-/Autorisierungsverfahren, Protokoll- und
+Endpunkt-Details — das sind Architektur- (ADR) bzw. Spezifikations-Fragen
+(`SPEC-*`), keine Lastenheft-Festlegung.
 
 ---
 
@@ -1159,3 +1186,4 @@ in dieser Tabelle (Decken-Regel).
 |---|---|---|---|
 | 0.2.0 | 2026-09-09 | Initiale Fassung (Entwurf v0.2, vor Vorlagen-Überführung) | — |
 | 0.3.0 | 2026-09-09 | Überführung in Lastenheft-Vorlagen-Struktur (Abschnitte 1–7); ID-Schema auf `LH-FA-<BEREICH>-<NNN>` / `LH-QA-<BEREICH>-<NNN>` normalisiert; Akzeptanzkriterien (Happy/Boundary/Negative) und Out-of-Scope je Anforderung ergänzt | — |
+| 0.4.0 | 2026-09-12 | `LH-FA-SST-006` (konkrete HTTP-/gRPC-API) ergänzt; `LH-FA-SST-005`s Out-of-Scope-Klausel entsprechend angepasst — Auftraggeber und Entwickler sind dieselbe Person, Status ist `Draft` (frei änderbar ohne Change Request), diese Änderung liegt in einem eigenen Commit vor jedem umsetzenden Slice | — |
