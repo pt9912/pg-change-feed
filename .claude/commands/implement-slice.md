@@ -130,6 +130,13 @@ ist eine Lifecycle-Rücksprungkante (11).
     *Eingabe* des Verifiers — **nicht** das finale DoD-Urteil (Modul 11: „Behauptung ohne
     Bestätigung ist die häufigste Verifier-Lücke"; eine DoD-Verletzung ist eine Verifier-only-Klasse,
     unsichtbar für Review und Tests). Ausgeführte Sensors + Restrisiken berichten.
+    **DoD-Checkbox-Nachzug im selben Lauf · seit welle-5
+    (`BEO-PGC/dod-checkbox-nachzug`, 3×):** „behaupten" heißt hier auch: jede zu
+    diesem Zeitpunkt materiell erfüllte oder korrekt entfallene DoD-Zeile in §2 wird
+    **in diesem Lauf** von `[ ]` auf `[x]` gesetzt, nicht nur im Bericht behauptet und
+    der Planner-Closure zur Nacharbeit überlassen. Nur Punkte, die die Rollen-Sequenz
+    zu diesem Zeitpunkt noch nicht durchlaufen haben (Review, Verifikation,
+    Register-/Risiko-Ausgänge — Planner-Closure-Arbeit), bleiben regulär `[ ]`.
 19. **Zu jedem neuen oder geänderten Wächter die rot färbende Mutation benennen**
     (`AGENTS.md` §3.6). Ein grüner Gate-Lauf belegt nur, dass nichts *bricht* — nicht, dass
     der Wächter greift. Pro Zusage also: *welche Änderung am geprüften Code müsste diesen
@@ -156,6 +163,10 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     den Diff gegen **Plan + ADR + Hard Rules** (nicht die DoD). HIGH/MEDIUM auflösen; ein HIGH mit
     Rollen-Konflikt folgt Modul 8 §Konflikt-Pfad (Sequenz mit Übergabe-Artefakten, nie
     „herabstufen, weil der Implementer widerspricht").
+    **Fixrunden-Checkbox-Nachzug · seit welle-5:** Löst eine Fixrunde nach
+    Reviewer-Findings einen bislang offenen DoD-Punkt auf (typischerweise „Review
+    durchgeführt, … kein offenes HIGH"), wird die zugehörige Checkbox **im
+    Fixrunden-Commit** mitgesetzt — nicht erst bei der Planner-Closure nachgetragen.
 22. **→ Verifier (Modul 11):** in getrenntem Kontext die DoD-/Spec-Behauptung und den
     Plan-vs-Code-Diff **bestätigen**, dazu ADR-Konformität. Das fängt, was Tests übersehen und der
     Reviewer nicht sieht (DoD-Verletzung).
