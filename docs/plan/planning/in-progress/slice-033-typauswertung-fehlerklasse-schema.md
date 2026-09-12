@@ -112,9 +112,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün. Beleg: `make gates`-Lauf,
       `d-check: 275 Datei(en) geprüft, 0 Befund(e)` /
       `a-check: gesamt: 0 Befund(e)`.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-033.md`](../../../reviews/review-slice-033.md)
+      (1 HIGH, 1 MEDIUM), Fixrunde behoben in Commit `ef16e38`, bestätigt
+      in [`docs/reviews/review-slice-033-fixrunde.md`](../../../reviews/review-slice-033-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-033.md`](../../../reviews/verify-slice-033.md)
+      (DoD eigenständig nachgeprüft, `LH-FA-SCH-004` dreifach real gegen
+      PostgreSQL bestätigt).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
       Implementer entscheidet und begründet im Plan-Nachzug. Kein
       Doku-Update nötig: `LH-FA-SCH-004.a`/`SPEC-008` beschreiben den
@@ -123,11 +130,17 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ändert aber keinen Vertragstext. `mapper.ErrIncompatibleSchemaChange`
       ist eine neue exportierte Kennung derselben, bereits dokumentierten
       Fehlerklasse `schema` — kein neuer Vertrag.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` §Modus-Deklaration), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      Beleg: (1) `evidence/slice-033.md` in
+      `BEO-PGC/schema-evolution-nicht-dynamisch/` ergänzt — Ausgang
+      **verkörpert** (2×, direkt aufgelöst analog
+      `BEO-PGC/spec008-replication-luecke`). (2) Neue Beobachtung
+      `BEO-PGC/test-runner-stiller-ausschluss/` angelegt (1×, weiter
+      offen) für den vom Reviewer gefundenen F-2-Risikoklasse. Siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der `welle-10`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -233,12 +246,33 @@ dasteht.
   Änderung (auch harmlose Umbenennungen ohne Datenverlust) könnte in der
   Praxis zu häufig auslösen und den Erfassungspfad unnötig hart stoppen —
   eine feinere Unterscheidung wäre eine größere, hier nicht geleistete
-  Fähigkeit. **Ausgang:** <bei Closure einzutragen>
+  Fähigkeit. **Ausgang: entfallen** — das ist keine neu eingetretene
+  Nebenwirkung, sondern eine bereits in §1 bewusst dokumentierte
+  Design-Grenze („Änderung der Klassifikationslogik selbst" bleibt
+  bestehen): die konservative Binär-Entscheidung entspricht exakt der
+  Architect-Skizze (`docs/reviews/architect-verdict-slice-030-adr-0015.md`)
+  und ist keine unbeabsichtigte Überreaktion.
 - Der bestehende Fehlerbehandlungspfad (wie ein `schema`-Fehler aus
   `Consume` den Erfassungspfad tatsächlich beendet/meldet) könnte
   Annahmen treffen, die für einen während des laufenden Streams
   auftretenden Fehler (statt eines Fehlers beim initialen Decode) nicht
-  zutreffen. **Ausgang:** <bei Closure einzutragen>
+  zutreffen. **Ausgang: entfallen** — Reviewer und Verifier haben den
+  vollständigen Propagationspfad (`Consume` → `receive.Stream.Run` →
+  `bootstrap.Run` → `os.Exit(1)`) real nachvollzogen und dreifach gegen
+  den laufenden Compose-Stack reproduziert: er verhält sich konsistent
+  zu bereits bestehenden `schema`-Klassen-Fehlern
+  (`ErrTruncateUnsupported` durchläuft denselben Pfad), keine
+  falsche Annahme gefunden.
+- Der Split der `go test -run`-Filterung in `tools/harness/run-integration-tests.sh`
+  (sechs benannte Testfunktionen im vorderen Aufruf, genau
+  `TestMVPSchemaChangeIncompatibleTypeChange` im hinteren) kann eine
+  künftig zu `test/integration/integration_test.go` hinzugefügte
+  Testfunktion, die in keinem der beiden `-run`-Muster auftaucht,
+  dauerhaft und stillschweigend von `make test-integration` ausschließen
+  — `go test -run` meldet keinen Fehler, solange mindestens eine andere
+  Funktion im selben Aufruf matcht. **Ausgang: weiter offen** → wandert
+  ins Beobachtungs-Register (`BEO-PGC/test-runner-stiller-ausschluss`,
+  neu angelegt).
 - Der Split der `go test -run`-Filterung in `tools/harness/run-integration-tests.sh`
   (sechs benannte Testfunktionen im vorderen Aufruf, genau
   `TestMVPSchemaChangeIncompatibleTypeChange` im hinteren) kann eine
@@ -265,18 +299,47 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand die reale
+  Container-Sterblichkeits-Konsequenz des neuen Fehlers selbst über
+  einen echten roten Testlauf, nicht durch Vermutung, und behob sie durch
+  eine saubere Testreihenfolge-Anpassung statt einer Ad-hoc-Umgehung. Der
+  Reviewer verfolgte den vollständigen Fehler-Propagationspfad
+  eigenständig bis `os.Exit(1)` und bestätigte die Lösung als korrekt,
+  fand aber real ein wiederkehrendes Kommentar-Disziplin-Finding (vierte
+  Gelegenheit für dieselbe Fehlerklasse nach `slice-018`/`slice-031`) —
+  diesmal in einem Shell-Skript statt Go-Code, was zeigt, dass die Regel
+  (`AGENTS.md` §3.7) tatsächlich medienübergreifend gilt und geprüft
+  werden muss.
+- **Was ging anders als geplant:** Der ursprüngliche Plan unterschätzte
+  die Tragweite des neuen sichtbaren Fehlers (Container-weiter Absturz,
+  nicht nur ein lokal isolierter Fehlerpfad) — das erzwang eine
+  Runner-Skript-Anpassung, die im Plan-Nachzug, nicht im ursprünglichen
+  §3-Plan stand. Der Reviewer fand zusätzlich eine strukturelle Lücke im
+  Testrunner selbst (F-2), die dieser Slice nicht behebt, sondern als
+  Beobachtung weiterreicht.
+- **Steering-Loop-Eintrag:** `BEO-PGC/schema-evolution-nicht-dynamisch`
+  erreicht mit diesem Slice 2× und geht direkt auf Ausgang *verkörpert*
+  (analog `BEO-PGC/spec008-replication-luecke`s Auflösung bei 2×) — die
+  `ADR-0015`-Folgepflicht ist real eingelöst. Verkörpert in
+  `internal/adapters/driving/replication/mapper/mapper.go`
+  (`Assembler.observeRelation`, `classifyRelationColumns`) — liegt in
+  `internal/adapters/driving/replication/mapper/mapper.go`. Auslöser:
+  `BEO-PGC/schema-evolution-nicht-dynamisch` (slice-030, slice-033 — 2×,
+  direkt aufgelöst).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-033.md` in `BEO-PGC/schema-evolution-nicht-dynamisch/`
+  ergänzt — Ausgang **verkörpert** (2×). Neu angelegt:
+  `BEO-PGC/test-runner-stiller-ausschluss/`, Beleg `evidence/slice-033.md`
+  — Zähler 1×, weiter offen.
+- **Folge-Slices:** keine — `welle-10` schließt mit diesem Slice; ein
+  optionaler schlanker „E2E-Abdeckung — Schema-Evolution"-Folgeschritt
+  (Architect-Verdikt-Vorschlag) ist bereits durch die in `slice-030`
+  geschriebenen und jetzt real grünen Black-Box-Tests eingelöst, braucht
+  keinen eigenen Folge-Slice.
+- **Risiken aus §6:** zwei *entfallen*, eines *weiter offen* → siehe §6
+  für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-10` offen) —
+  Prüfung läuft bei der `welle-10`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
