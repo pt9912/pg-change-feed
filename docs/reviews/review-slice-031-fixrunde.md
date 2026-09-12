@@ -5,7 +5,7 @@ vorigen Review-Report `docs/reviews/review-slice-031.md` (F-1/F-2/F-3),
 kein erneutes Vollreview des Slice.
 
 **Gegenstand:** Commit `100ff2b`
-(„fix(schema-store): Review-Fixrunde slice-031 F-1/F-2/F-3 (ADR-0015)"),
+(„fix(schema-store): Review-Fixrunde slice-031 F-1/F-2/F-3 (`ADR-0015`)"),
 gegen `docs/reviews/review-slice-031.md` und `ADR-0015`.
 
 **Skill:** `.harness/skills/reviewer.md` @ HEAD (Accepted, geschärft 2026-09-09)
