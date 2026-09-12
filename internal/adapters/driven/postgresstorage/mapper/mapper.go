@@ -23,7 +23,7 @@ var ErrPositionOutOfRange = stderrors.New("Position liegt außerhalb des bigint-
 
 // TransactionRow trägt eine Zeile aus `cdc.transaction` (`SPEC-001`).
 // CommittedAt trägt den realen Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) —
-// der Store schreibt ihn explizit, die Spalten-DEFAULT greift nur noch
+// der Store schreibt ihn explizit, die Spalten-DEFAULT greift nur
 // außerhalb des Anwendungspfads.
 type TransactionRow struct {
 	TransactionID  string

@@ -10,9 +10,9 @@ package queries
 // Primärschlüssel `transaction_id`: die erneut persistierte Transaktion
 // konfligiert und bleibt ohne Wirkung — die Rückkehr meldet keinen Fehler,
 // und der zuerst geschriebene committed_at-Wert bleibt bestehen.
-// committed_at trägt seit `slice-018` den realen Quell-Commit-Zeitpunkt
+// committed_at trägt den realen Quell-Commit-Zeitpunkt
 // (`LH-FA-ADM-004`) — der Store übergibt ihn explizit; die Spalten-DEFAULT
-// (`current_timestamp`) greift nur noch außerhalb dieses Anwendungspfads.
+// (`current_timestamp`) greift nur außerhalb dieses Anwendungspfads.
 const InsertTransaction = `
 INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committed_at)
 VALUES ($1, $2, $3, $4)

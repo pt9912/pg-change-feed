@@ -96,10 +96,10 @@ tables:
         references: { table: source, column: source_id }
       commit_position: { type: biginteger, required: true }
       # committed_at trägt den realen Quell-Commit-Zeitpunkt
-      # (LH-FA-ADM-004); die Anwendung liefert ihn seit slice-018 immer
-      # explizit (InsertTransaction). Die DEFAULT bleibt als Absicherung
-      # für Inserts außerhalb des Anwendungscodes stehen und greift im
-      # regulären Pfad nicht mehr.
+      # (LH-FA-ADM-004); die Anwendung liefert ihn immer explizit
+      # (InsertTransaction). Die DEFAULT bleibt als Absicherung für
+      # Inserts außerhalb des Anwendungscodes stehen und greift im
+      # regulären Pfad nicht.
       committed_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
     primary_key: [transaction_id]
     indices:
