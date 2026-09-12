@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
 
 **Eingang:** Slice-Plan
-[`docs/plan/planning/in-progress/slice-021-consumer-registrierung-zugriffsweg.md`](../planning/in-progress/slice-021-consumer-registrierung-zugriffsweg.md)
+[`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../planning/done/slice-021-consumer-registrierung-zugriffsweg.md)
 §1–§8 · [`spec/pflichtenheft.md`](../../../spec/pflichtenheft.md)
 `LH-FA-CON-001.a`/`LH-FA-CON-004.a` · [`spec/lastenheft.md`](../../../spec/lastenheft.md)
 `LH-FA-CON-001`, `LH-FA-SST-003`, `LH-FA-SST-005` · [`spec/architecture.md`](../../../spec/architecture.md)
