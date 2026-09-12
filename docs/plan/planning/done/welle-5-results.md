@@ -139,3 +139,14 @@ Anker (Hash, Lauf, Zahl).
 - Trigger-Audit der Welle (Carveout · bootstrap-aware Gate · ADR): alle
   drei Klassen „0 fällig"/permanent bestätigt
   (`docs/plan/adr/architect-review-welle-5.md`).
+
+## Archivierung
+
+Feststellung: das Repo führt **kein Archivierungs-Werkzeug**
+(`archiv.zip`-Target existiert nicht) — die Archivierungs-Bedingung ist in
+diesem Zug **nicht eingetreten**; die drei Slice-Dateien, ihre Review-/
+Verifier-Reports und der Architect-Verdikt sowie dieser Welle-Plan bleiben
+vollständig in `done/`. Vor der ersten tatsächlichen Archivierung gilt die
+Prüfpflicht aus dem Closure-Command: Geltungsbereich der Sensoren
+(`structure`-Regel 5 keilt auf `done/slice-*.md` — bei Stubs in einem
+Unterverzeichnis anzupassen) und Link-/ID-Pflichten im Stub prüfen.
