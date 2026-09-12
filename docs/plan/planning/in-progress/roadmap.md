@@ -40,8 +40,6 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-9 — E2E-Abdeckung — CDC-Kernpfad](../welle-9.md)
 
-Nichts in Arbeit.
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
