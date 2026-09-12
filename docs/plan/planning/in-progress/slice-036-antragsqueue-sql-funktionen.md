@@ -79,28 +79,45 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neue Antrags-Tabelle im neutralen Schema (`tools/schema/schema.yaml`
+- [x] Neue Antrags-Tabelle im neutralen Schema (`tools/schema/schema.yaml`
       oder, falls d-migrate keine SQL-Funktionen aus dem Schemamodell
       generieren kann, `tools/schema/nacharbeit-*.sql`-Ausweichform nach
       dem Muster von `nacharbeit-heartbeat.sql`/`nacharbeit-observability.sql`
       — Implementer-Entscheidung, Plan-Nachzug), ausgerollt über
-      `make schema-rollout`.
-- [ ] `cdc.enable_table(...)`/`cdc.disable_table(...)` real als SQL-
+      `make schema-rollout`. Beleg: `tools/schema/schema.yaml`
+      (`administration_request`), real ausgerollt über
+      `bash tools/harness/run-store-tests.sh` (`make schema-rollout`
+      intern, Exit 0, Tabelle real angelegt).
+- [x] `cdc.enable_table(...)`/`cdc.disable_table(...)` real als SQL-
       Funktionen angelegt; schreiben ausschließlich einen Antrags-
       Datensatz (Status `pending`) und senden `pg_notify` auf einem
       Administrations-Kanal — real gegen PostgreSQL getestet
       (`make test-store`-Muster: Funktionsaufruf, resultierende Zeile,
-      `LISTEN`-Beobachtung des `NOTIFY`).
-- [ ] `make gates` grün.
+      `LISTEN`-Beobachtung des `NOTIFY`). Beleg:
+      `tools/schema/nacharbeit-administration.sql`,
+      `internal/adapters/driven/postgresstorage/administrationrequest_test.go`
+      (`TestAdministrationRequestEnableTableWritesPendingRequestAndNotifies`,
+      `TestAdministrationRequestDisableTableWritesPendingRequestAndNotifies`
+      — beide real grün, `go test -v -run TestAdministrationRequest`
+      gegen eine frische PostgreSQL-18-Instanz).
+- [x] `make gates` grün. Beleg: `baseline-verify` OK (54 Dateien),
+      `d-check` 0 Befunde (296 Dateien), `commit-traceability` OK,
+      `a-check` 0 Befunde.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
+- [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und
-      begründet im Plan-Nachzug.
+      begründet im Plan-Nachzug. Entscheidung: kein Update nötig — `make
+      schema-rollout`s Vertrag in `harness/README.md` bleibt unverändert
+      (die Zeile nennt schon heute keine einzelnen `nacharbeit-*.sql`-Dateien
+      namentlich, das bleibt Makefile-Kommentar-Ebene); kein neues
+      Gate/Target entstanden.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Beleg:
+      `../observations/BEO-PGC/d-migrate-nacharbeit/evidence/slice-036.md`
+      (weitere Datei im bestehenden Verzeichnis ergänzt).
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
@@ -221,3 +238,40 @@ Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
 Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
 
 Alle berührten Sub-Areas GF (nur `*`/`PGC`).
+
+## Plan-Nachzug (Implementer-Entscheidungen)
+
+Nachgetragen während der Implementierung — §6/§7 bleiben davon unberührt
+(deren Ausgänge/Lerneintrag sind Sache des Übergangs nach `done/`).
+
+- **Tabellenname:** `cdc.administration_request` — der in §1 vorgeschlagene
+  Name übernommen, kein abweichender Bedarf aufgetreten.
+- **d-migrate-Funktionsunterstützung:** Ja, mit einer real geprüften
+  Einschränkung. Der `functions:`-Knoten des neutralen Schemamodells
+  generiert die DDL korrekt (`schema generate --target postgresql`,
+  inklusive `security: definer`/`search_path`) — aber `schema migrate
+  --execute` bricht für **jede** dort deklarierte Funktion mit
+  `POST_EXECUTE_DRIFT` (Exit 5) ab, real isoliert mit einer trivialen
+  No-Arg-Funktion gegen eine frische PostgreSQL-18-Instanz (dieselbe
+  Objektklasse betroffen, nicht auf `cdc.enable_table`/`cdc.disable_table`
+  beschränkt; eine Tabelle im selben Lauf rollt dagegen Exit 0). Die beiden
+  Funktionen laufen deshalb über die etablierte Ausweichform
+  `tools/schema/nacharbeit-administration.sql` (`ADR-0043`
+  Re-Evaluierungs-Trigger, dieselbe Klasse wie `nacharbeit-roles.sql`); die
+  Antrags-Tabelle selbst läuft unverändert über `tools/schema/schema.yaml`.
+  Beleg: `../observations/BEO-PGC/d-migrate-nacharbeit/evidence/slice-036.md`.
+- **Rollenwahl:** `cdc_admin` (`ADR-0047`-Verwaltungspfad) — `EXECUTE` wird
+  zuerst explizit `REVOKE … FROM PUBLIC` (PostgreSQL vergibt `EXECUTE` auf
+  neue Funktionen sonst standardmäßig an `PUBLIC`) und danach gezielt
+  `GRANT … TO cdc_admin`. Real geprüft: ein Login ohne
+  `cdc_admin`-Mitgliedschaft scheitert an `SELECT
+  cdc.enable_table(...)` mit „permission denied for function", ein Login
+  mit Mitgliedschaft gelingt.
+- **Security-Modell:** `SECURITY DEFINER` mit gepinntem `SET search_path =
+  cdc, pg_temp` — dieselbe Definer-Semantik, die die drei Lese-Views bereits
+  implizit tragen (`nacharbeit-roles.sql`); die Funktion schreibt mit den
+  Rechten ihres Eigentümers (des Rollout-Läufers), `cdc_admin` braucht kein
+  zusätzliches `INSERT`-Grant auf `cdc.administration_request`.
+- **Kanal-Name:** `cdc_administration` — real über `LISTEN`/`pgx`
+  `WaitForNotification` bestätigt
+  (`administrationrequest_test.go`).
