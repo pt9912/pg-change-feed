@@ -3,6 +3,7 @@ package mapper_test
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
@@ -54,6 +55,31 @@ func TestTransactionRowRejectsPositionBeyondBigint(t *testing.T) {
 	}
 	if _, err := mapper.NewTransactionRow(tx, position); err != mapper.ErrPositionOutOfRange {
 		t.Fatalf("Fehler = %v, wollen %v", err, mapper.ErrPositionOutOfRange)
+	}
+}
+
+// Der Zeitstempel der Zeile trägt den realen Quell-Commit-Zeitpunkt
+// (`LH-FA-ADM-004`, slice-018) aus dem committed Domänenobjekt — nicht
+// irgendeine Instanzzeit des Mappers selbst.
+func TestTransactionRowCarriesSourceCommittedAt(t *testing.T) {
+	tx, err := model.NewOpenTransaction("t-1", "src-1")
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	position, err := model.NewSourcePosition("src-1", 100)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	sourceCommittedAt := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
+	if err := tx.Commit(position, model.NewTimePoint(sourceCommittedAt.UnixNano())); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	row, err := mapper.NewTransactionRow(tx, position)
+	if err != nil {
+		t.Fatalf("NewTransactionRow: %v", err)
+	}
+	if !row.CommittedAt.Equal(sourceCommittedAt) {
+		t.Fatalf("CommittedAt = %s, wollen den Quell-Commit-Zeitpunkt %s", row.CommittedAt, sourceCommittedAt)
 	}
 }
 

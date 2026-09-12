@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -407,6 +408,52 @@ func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 	}
 	if got := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE commit_position = 100"); got != 1 {
 		t.Fatalf("Transaktions-Zeilen nach dem Lesen = %d, wollen 1", got)
+	}
+}
+
+// Der reale Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`, slice-018) unterscheidet
+// sich vom Persistenz-Zeitpunkt: eine künstliche Verzögerung zwischen dem
+// Domänen-Commit und dem Store-Aufruf zeigt, dass `committed_at` den
+// früheren Quell-Commit-Zeitpunkt trägt — nicht die Instanzzeit des
+// Persistenz-Aufrufs (die frühere DEFAULT-Semantik, `current_timestamp`).
+func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+
+	sourceCommittedAt := time.Now().Add(-2 * time.Hour).Truncate(time.Microsecond)
+	tx, err := model.NewOpenTransaction("t-committed-at", testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	pos, err := model.NewSourcePosition(testSource, 100)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(pos, model.NewTimePoint(sourceCommittedAt.UnixNano())); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	// Künstliche Verzögerung zwischen Domänen-Commit und Persistenz-Aufruf:
+	// die Instanzzeit beim Exec liegt danach klar nach sourceCommittedAt —
+	// eine DEFAULT-basierte Spalte würde hier current_timestamp ziehen.
+	time.Sleep(1500 * time.Millisecond)
+	persistCallTime := time.Now()
+
+	if err := store.PersistTransaction(context.Background(), tx); err != nil {
+		t.Fatalf("PersistTransaction: %v", err)
+	}
+
+	var got time.Time
+	if err := pool.QueryRow(context.Background(),
+		"SELECT committed_at FROM cdc.transaction WHERE transaction_id = 't-committed-at'").Scan(&got); err != nil {
+		t.Fatalf("committed_at lesen: %v", err)
+	}
+
+	if diff := got.Sub(sourceCommittedAt); diff < -time.Millisecond || diff > time.Millisecond {
+		t.Fatalf("committed_at = %s, wollen den Quell-Commit-Zeitpunkt %s (Differenz %s)", got, sourceCommittedAt, diff)
+	}
+	if !got.Before(persistCallTime.Add(-time.Second)) {
+		t.Fatalf("committed_at = %s liegt nahe am Persistenz-Aufruf %s — trägt die Instanzzeit statt des Quell-Commit-Zeitpunkts", got, persistCallTime)
 	}
 }
 

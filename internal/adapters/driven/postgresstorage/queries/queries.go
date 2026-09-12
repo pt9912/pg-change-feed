@@ -8,12 +8,14 @@ package queries
 // InsertTransaction persistiert eine Quelltransaktion. Die
 // Deduplizierungsbasis der Idempotenz (`ADR-0011`) ist der
 // Primärschlüssel `transaction_id`: die erneut persistierte Transaktion
-// konfligiert und bleibt ohne Wirkung — die Rückkehr meldet keinen Fehler.
-// committed_at trägt die Instanzzeit (DEFAULT), der Store schreibt sie
-// nicht.
+// konfligiert und bleibt ohne Wirkung — die Rückkehr meldet keinen Fehler,
+// und der zuerst geschriebene committed_at-Wert bleibt bestehen.
+// committed_at trägt seit `slice-018` den realen Quell-Commit-Zeitpunkt
+// (`LH-FA-ADM-004`) — der Store übergibt ihn explizit; die Spalten-DEFAULT
+// (`current_timestamp`) greift nur noch außerhalb dieses Anwendungspfads.
 const InsertTransaction = `
-INSERT INTO cdc.transaction (transaction_id, source_id, commit_position)
-VALUES ($1, $2, $3)
+INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committed_at)
+VALUES ($1, $2, $3, $4)
 ON CONFLICT (transaction_id) DO NOTHING`
 
 // InsertChange persistiert einen Change; die Deduplizierungsbasis ist der

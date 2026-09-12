@@ -108,6 +108,7 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 		transactionRow.TransactionID,
 		transactionRow.SourceID,
 		transactionRow.CommitPosition,
+		transactionRow.CommittedAt,
 	); err != nil {
 		return storageFailure(ctx, a.log, err)
 	}

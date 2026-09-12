@@ -9,6 +9,7 @@ package mapper
 import (
 	stderrors "errors"
 	"math"
+	"time"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -21,10 +22,14 @@ import (
 var ErrPositionOutOfRange = stderrors.New("Position liegt außerhalb des bigint-Bereichs")
 
 // TransactionRow trägt eine Zeile aus `cdc.transaction` (`SPEC-001`).
+// CommittedAt trägt den realen Quell-Commit-Zeitpunkt (`LH-FA-ADM-004`) —
+// der Store schreibt ihn explizit, die Spalten-DEFAULT greift nur noch
+// außerhalb des Anwendungspfads.
 type TransactionRow struct {
 	TransactionID  string
 	SourceID       string
 	CommitPosition int64
+	CommittedAt    time.Time
 }
 
 // ChangeRow trägt eine Zeile aus `cdc.change` (`SPEC-002`); die Row Images
@@ -42,15 +47,22 @@ type ChangeRow struct {
 
 // NewTransactionRow trägt die `cdc.transaction`-Zeile einer committed
 // Quelltransaktion. Die Position muss in den bigint-Bereich der Spalte
-// passen (`SPEC-003`, PostgreSQL-Abbildung).
+// passen (`SPEC-003`, PostgreSQL-Abbildung). Der Zeitstempel kommt über
+// `SourceCommittedAt` aus dem bereits committed Domänenobjekt
+// (`LH-FA-ADM-004`); das zweite Rückgabe-Ergebnis ist an dieser Stelle
+// immer `true` — der Aufrufer (`PersistTransaction`) hat die Committed-
+// Bedingung bereits über `CommitPosition` geprüft, bevor er hierher
+// gelangt, genau wie bei der Position selbst.
 func NewTransactionRow(transaction *model.ChangeTransaction, position model.SourcePosition) (TransactionRow, error) {
 	if position.Offset > math.MaxInt64 {
 		return TransactionRow{}, ErrPositionOutOfRange
 	}
+	sourceCommittedAt, _ := transaction.SourceCommittedAt()
 	return TransactionRow{
 		TransactionID:  string(transaction.ID),
 		SourceID:       string(transaction.SourceID),
 		CommitPosition: int64(position.Offset),
+		CommittedAt:    time.Unix(0, sourceCommittedAt.UnixNanos).UTC(),
 	}, nil
 }
 
