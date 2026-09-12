@@ -79,16 +79,20 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Änderungshistorie (§9) des Handbuchs trägt einen Eintrag für diese
       Korrektur.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-020.md`](../../../reviews/review-slice-020.md)
+      (0 HIGH, 1 MEDIUM pre-existing/kein Blocker, 1 LOW, 1 INFO).
 - [x] Doku-Update für `error_class`-Sichtbarkeit — bereits der Kern der
       Lieferung (DoD-Punkt 1); Item entfällt hier als Duplikat.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Kein Eintrag verkörpert
+      in diesem Lauf — siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `BEO-PGC/spec008-replication-luecke` neu angelegt (1×).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Beide disponiert.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — hier geprüft, siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -138,8 +142,18 @@ dasteht.
 - `classifyRunError` (`internal/bootstrap/wiring.go`) könnte sich zwischen
   dieser Planung und der Umsetzung ändern (neue Sentinel-Fehler, neue
   produzierte Klasse) — der Implementer verifiziert bei Umsetzung gegen den
-  dann aktuellen Code, nicht gegen diese Planung. **Ausgang:** wird bei
-  Closure eingetragen.
+  dann aktuellen Code, nicht gegen diese Planung.
+  **Ausgang: entfallen** — der Implementer hat real gegen den aktuellen
+  Code verifiziert (`grep` über den gesamten Baum): kein Drift gegenüber
+  der Planung, `internal`/`transient`/`permission` verhalten sich wie
+  angenommen.
+- Reviewer (F-1) und Verifier fanden unabhängig voneinander: Die
+  `replication`-Zeile des Handbuchs widerspricht `SPEC-008`s Ziel-Zustand
+  (kontrollierte Fortsetzung statt Prozessabbruch) — real bestätigt als
+  vorbestehende Spec-vs-Code-Lücke, nicht als Handbuch-Fehler (das
+  Handbuch beschreibt den heutigen Code korrekt).
+  **Ausgang: weiter offen** → `BEO-PGC/spec008-replication-luecke` (neu
+  angelegt, 1×).
 
 ## 7. Closure-Notiz
 
@@ -151,18 +165,33 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Reviewer prüfte die Fehlerklassen-Tabelle
+  wörtlich gegen `SPEC-008` statt nur die Zeilenzahl zu zählen — das fand
+  eine echte, vorbestehende Spec-vs-Code-Lücke (`replication`), die sonst
+  unbemerkt geblieben wäre. Der Verifier bestätigte unabhängig, welche der
+  beiden Seiten (Handbuch oder Spec) den heutigen Code korrekt beschreibt,
+  statt die Diskrepanz nur zu vermerken.
+- **Was ging anders als geplant:** Der Implementer hatte ursprünglich eine
+  Slice-Chronik-Referenz („· seit slice-020") in die Änderungshistorie
+  geschrieben — vom Planner entfernt (Commit `051096e`), da sie dem
+  etablierten Muster der Tabelle (ADR-Zitat statt Slice-Nummer) und der
+  Nutzer-Vorgabe zu interner Prozess-Sprache in Betreiberdoku widerspricht.
+  Der Verifier fand zusätzlich (V-1), dass die DoD-Checkbox „Review
+  durchgeführt" trotz bereits committetem Report offen geblieben war —
+  nachgezogen.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/spec008-replication-luecke`
+  neu angelegt (1×, weiter offen) — vorbestehende Diskrepanz zwischen
+  `SPEC-008`s Ziel-Zustand für `replication`-Fehler und dem tatsächlichen
+  Code (kein Schwellen-/Fortsetzungspfad).
+- **Folge-Slices:** Keine.
+- **Risiken aus §6:** `classifyRunError`-Drift — entfallen (real gegen
+  aktuellen Code verifiziert, kein Drift); `SPEC-008`/Handbuch-Diskrepanz
+  bei `replication` — weiter offen → `BEO-PGC/spec008-replication-luecke`.
+- **Drei Paarungen:** wellenlos — hier geprüft. Anker: kein `liegt in`-Feld
+  in diesem Lauf (kein Steering-Loop-Eintrag verkörpert). Folge-Slice:
+  keiner genannt, vakuos erfüllt. Register:
+  `BEO-PGC/spec008-replication-luecke` existiert mit nicht-leerem
+  `evidence/` — bestätigt.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
