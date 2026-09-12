@@ -310,9 +310,26 @@ strukturiert:
 **Ergebnis:** `bytes` wächst, solange der Capture-Slot inaktiv ist und die
 Quelle weiterschreibt (z. B. während eines Verbindungsabbruchs) — ein
 dauerhaft wachsender Wert ist ein Warnsignal für WAL-Erschöpfung auf der
-Quelle. Die Schwellenwerte (Warn-/Fehlergrenze) und die daraus folgende
-kontrollierte Fortsetzung/Abbruch trägt eine spätere Erweiterung dieser
-Überwachung.
+Quelle. Der Feed-Container vergleicht den gemessenen Wert bei jedem Takt
+gegen zwei Schwellen (`SPEC-013`, `ADR-0049`):
+
+- **Unterhalb 100 MiB:** unauffällig — derselbe Log-Eintrag wie oben.
+- **Zwischen 100 MiB und 1 GiB:** kontrollierte Fortsetzung — der
+  Capture-Betrieb läuft unverändert weiter, sichtbar über eine
+  Log-Warnung:
+  ```json
+  {"level": "WARN", "msg": "replication: WAL-Rückstand über Warnschwelle — kontrollierte Fortsetzung", "metric": "cdc_wal_retention_bytes", "bytes": 150000000, "threshold_bytes": 104857600}
+  ```
+- **Oberhalb 1 GiB:** kontrollierter Abbruch — der Container protokolliert
+  den Fehler, klassifiziert den Lauf als `replication` (Transport-/
+  Verbindungsstörung, siehe [Fehlerklassen](#fehlerklassen)) und beendet
+  sich (Ausgang 1). Ein Neustart setzt den Stream über den bestehenden
+  Slot-Stand fort.
+
+Diese Schwellen betreffen ausschließlich Transport-/Verbindungsstörungen
+(`receive.ErrReplication`/`outbound.ErrReplication`); eine
+Stream-Ordnungs-Verletzung bricht unabhängig vom WAL-Rückstand weiterhin
+sofort ab (siehe [Fehlerklassen](#fehlerklassen)).
 
 ### Schema aktualisieren
 
@@ -358,7 +375,7 @@ Klassen (`ADR-0023`, `SPEC-008`):
 | `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; deklariert, aktuell von keinem Adapter konstruiert |
 | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) | Sichtbarer Fehler, kein stilles Überspringen |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
-| `replication` | eine Störung der Stream-Ordnung (z. B. Commit ohne offene Transaktion) | Sichtbarer Fehler |
+| `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
 
 `transient` und `permission` gehören zur deklarierten Menge der sieben
@@ -438,6 +455,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 - Lebenszeichen-Takt: 5 Sekunden; als veraltet gilt ein Lebenszeichen
   nach mehr als 15 Sekunden (Faktor 3).
 - WAL-Rückstand-Messtakt: derselbe Takt wie das Lebenszeichen (5 Sekunden).
+- WAL-Rückstand-Schwellen (`SPEC-013`, `ADR-0049`): Warnschwelle 100 MiB,
+  Fehlerschwelle 1 GiB — betrifft ausschließlich die Fehlerklasse
+  `replication`, Unterart Transport-/Verbindungsstörung (siehe
+  [Fehlerklassen](#fehlerklassen)).
 - Ein Container-Lauf bindet genau eine Quelle.
 - Ein Container-Lauf hält zwei gleichzeitige Replication-Protokoll-
   Verbindungen zur Quelle (Stream-Adapter, WAL-Rückstand-Messung) — beide
@@ -459,3 +480,4 @@ MIT — siehe `LICENSE`.
 | 1.1 | 2026-09-12 | Rollen-spezifische DSN-Verdrahtung (`ADR-0047`): `CDC_SOURCE_DSN` ersatzlos ersetzt durch `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN`, Betriebs-Hinweis zum `REPLICATION`-Attribut ergänzt |
 | 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |
 | 1.3 | 2026-09-12 | WAL-Rückstand-Metrik `cdc_wal_retention_bytes` (`SPEC-009`) ergänzt: periodische Messung, strukturierte Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
+| 1.4 | 2026-09-12 | Fehlerklasse `replication` auf zwei Unterarten präzisiert (`ADR-0049`): Stream-Ordnungs-Verletzung bleibt sofortiger Abbruch, Transport-/Verbindungsstörung trägt jetzt die Schwellen-Überwachung über den WAL-Rückstand (Warn 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung/Abbruch |

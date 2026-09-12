@@ -83,6 +83,21 @@ const heartbeatInterval = 5 * time.Second
 // (`ADR-0026`), keine Architekturentscheidung.
 const heartbeatStaleAfter = 3 * heartbeatInterval
 
+// walRetentionWarnBytes und walRetentionErrorBytes tragen die
+// SPEC-013-Startwerte für `cdc_wal_retention_bytes` (`CDC_THRESHOLDS`,
+// präzisiert durch `ADR-0049`(b)): unterhalb der Warnschwelle bleibt der
+// periodische Schwellen-Vergleich unauffällig, zwischen Warn- und
+// Fehlerschwelle setzt sich der Capture-Betrieb sichtbar fort (`SPEC-008`
+// „kontrollierte Fortsetzung"), oberhalb der Fehlerschwelle klassifiziert
+// `Run` den Lauf als `replication`-Fehler (`outbound.ErrReplication`) und
+// bricht über den bestehenden Abbruchpfad ab (`classifyRunError`,
+// `reportFault`). `Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`
+// überschreiben diese Werte für den Ende-zu-Ende-Testlauf.
+const (
+	walRetentionWarnBytes  int64 = 100 * 1024 * 1024  // 100 MiB
+	walRetentionErrorBytes int64 = 1024 * 1024 * 1024 // 1 GiB
+)
+
 // Config trägt die Verdrahtungs-Eingabe: drei rollen-spezifische
 // Verbindungs-DSNs statt einer gemeinsamen Instanz-DSN (`ADR-0047`) — die
 // Quelle und der CDC-Speicher bleiben dieselbe Instanz (MVP-Schnitt,
@@ -112,6 +127,15 @@ type Config struct {
 	// Herkunft ist `envLogLevel`/`parseLogLevel`, mit Default
 	// `slog.LevelInfo`.
 	LogLevel slog.Level
+	// WALRetentionWarnBytes und WALRetentionErrorBytes überschreiben die
+	// SPEC-013-Startwerte (`walRetentionWarnBytes`/`walRetentionErrorBytes`
+	// unten, `ADR-0049`(b)) — für Testläufe, die beide Seiten der Schwelle
+	// in vertretbarer Testzeit real durchlaufen wollen, statt 100 MiB/1 GiB
+	// abzuwarten. Ungesetzt (0 oder negativ) übernimmt `Run` die
+	// SPEC-013-Startwerte; kein Umgebungsname liest hierher — kein
+	// Operator-Vertrag, siehe `ConfigFromEnv`.
+	WALRetentionWarnBytes  int64
+	WALRetentionErrorBytes int64
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -364,21 +388,36 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Derselbe Aufbau wie der Heartbeat-Zug: eigene Goroutine, eigene
 	// Verbindung, an denselben Schreibtakt gebunden (`heartbeatInterval`)
 	// — keine zweite Konfigurationsachse für ein zweites periodisches
-	// Intervall ohne eigenen Bedarf.
+	// Intervall ohne eigenen Bedarf. `streamCtx` ist eigens für den
+	// Stream-Lauf abgeleitet (statt `ctx` direkt): der Schwellen-Vergleich
+	// unten kann darüber den Stream-Lauf gezielt beenden (`stopStream`),
+	// ohne den gesamten Prozess-Kontext zu kappen — ein regulärer
+	// Prozess-Abbruch über `ctx` bricht `streamCtx` unverändert mit.
+	streamCtx, stopStream := context.WithCancel(ctx)
+	defer stopStream()
+
+	warnBytes, errorBytes := cfg.WALRetentionWarnBytes, cfg.WALRetentionErrorBytes
+	if warnBytes <= 0 {
+		warnBytes = walRetentionWarnBytes
+	}
+	if errorBytes <= 0 {
+		errorBytes = walRetentionErrorBytes
+	}
+	var walFault walRetentionFault
 	walRetentionCtx, stopWALRetention := context.WithCancel(ctx)
 	var walRetentionDone sync.WaitGroup
 	walRetentionDone.Add(1)
 	go func() {
 		defer walRetentionDone.Done()
-		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval)
+		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval, warnBytes, errorBytes, stopStream, &walFault)
 	}()
 
-	streamErr := stream.Run(ctx)
+	streamErr := stream.Run(streamCtx)
 	stopHeartbeat()
 	heartbeatDone.Wait()
 	stopWALRetention()
 	walRetentionDone.Wait()
-	return streamErr
+	return mergeStreamAndWALFaultOutcome(streamErr, &walFault)
 }
 
 // runHeartbeat schreibt das Lebenszeichen der Quelle periodisch fort, bis
@@ -401,21 +440,106 @@ func runHeartbeat(ctx context.Context, port outbound.HeartbeatPort, source model
 	}
 }
 
+// walRetentionMeasurer entkoppelt den periodischen Schwellen-Vergleich von
+// der konkreten Verbindung: `*receive.WALRetentionChecker` erfüllt dieses
+// Interface bereits über seine `Measure`-Methode — Whitebox-Tests
+// (`package bootstrap`) belegen `runWALRetentionCheck` damit ohne reale
+// PostgreSQL-Instanz.
+type walRetentionMeasurer interface {
+	Measure(ctx context.Context) (int64, error)
+}
+
+// walRetentionLevel trägt die drei Zustände des Schwellen-Vergleichs
+// (`SPEC-008` „kontrollierte Fortsetzung", `ADR-0049`(b)).
+type walRetentionLevel int
+
+const (
+	walRetentionOK walRetentionLevel = iota
+	walRetentionWarn
+	walRetentionError
+)
+
+// classifyWALRetention vergleicht den gemessenen WAL-Rückstand gegen die
+// beiden Schwellen aus `SPEC-013` (strikt größer als, wie dort formuliert:
+// „Warn > 100 MiB · Fehler > 1 GiB") — dieselbe `>`-Semantik wie
+// `healthcheckVerdict` oben (an der Schwelle selbst gilt die niedrigere
+// Stufe).
+func classifyWALRetention(bytes, warnBytes, errorBytes int64) walRetentionLevel {
+	switch {
+	case bytes > errorBytes:
+		return walRetentionError
+	case bytes > warnBytes:
+		return walRetentionWarn
+	default:
+		return walRetentionOK
+	}
+}
+
+// walRetentionFault trägt den WAL-Schwellen-Fehler thread-sicher von der
+// periodischen Prüf-Goroutine (`runWALRetentionCheck`) zum Rückgabewert von
+// `Run` (`mergeStreamAndWALFaultOutcome`): Die Fehlerschwelle wird aus einer
+// eigenen Goroutine heraus festgestellt, `Run` liest sie erst, nachdem
+// `stream.Run` zurückgekehrt ist. Nur der erste gesetzte Fehler bleibt
+// erhalten — ein zweiter Tick über der Fehlerschwelle (vor der Rückkehr der
+// bereits über `stopStream` beendeten Stream-Goroutine) trägt keine neue
+// Information.
+type walRetentionFault struct {
+	mu  sync.Mutex
+	err error
+}
+
+func (f *walRetentionFault) set(err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err == nil {
+		f.err = err
+	}
+}
+
+func (f *walRetentionFault) get() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.err
+}
+
+// mergeStreamAndWALFaultOutcome trägt die Priorität zwischen dem
+// Stream-Ausgang und einem aufgelaufenen WAL-Schwellen-Fehler: Ein
+// Stream-Fehler — jede Klasse, ausdrücklich einschließlich einer
+// Stream-Ordnungs-Verletzung (`mapper.ErrChangeWithoutBegin` u. ä.) —
+// erreicht `Run`s Rückgabewert unverändert; ein WAL-Schwellen-Fehler kommt
+// nur zum Zug, wenn der Stream-Lauf regulär endete (`nil`, ausgelöst über
+// `stopStream` durch dieselbe Schwellen-Prüfung). Diese Reihenfolge trägt
+// die Sentinel-Trennung aus `ADR-0049`(a) auf Ebene der Rückgabewert-
+// Priorität: Der Schwellen-Fortsetzungspfad kann eine Stream-Ordnungs-
+// Verletzung nie überschreiben oder verdecken.
+func mergeStreamAndWALFaultOutcome(streamErr error, fault *walRetentionFault) error {
+	if streamErr != nil {
+		return streamErr
+	}
+	return fault.get()
+}
+
 // runWALRetentionCheck misst den WAL-Rückstand des Capture-Slots periodisch
-// und protokolliert ihn strukturiert (`SPEC-009` `cdc_wal_retention_bytes`,
-// `ADR-0049`) — ein Betreiber liest den Wert aus dem Log, ohne dass die
-// Erhebung über `cdc.metrics`/`cdc_reader` läuft: Die Erhebung braucht
-// Systemkatalog-Zugriffe außerhalb des `cdc`-Schemas
-// (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die die Least-Privilege-
-// Fläche von `cdc_reader` unnötig erweitern würden — dieselbe Begründung
-// wie beim Health-Endpoint (Heartbeat statt `cdc.metrics`). Eine
-// fehlgeschlagene Messung bricht den Aufruf nicht ab und wird verworfen —
-// dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug oben. Eine
-// dauerhaft gestörte eigene Verbindung des Checkers (z. B. Idle-Timeout
-// zwischen zwei Ticks) muss diese Schleife nicht selbst behandeln:
-// `WALRetentionChecker.Measure` ersetzt eine so gestörte Verbindung intern,
-// sodass ein folgender Tick erneut misst statt dauerhaft zu verstummen.
-func runWALRetentionCheck(ctx context.Context, checker *receive.WALRetentionChecker, log outbound.LogPort, interval time.Duration) {
+// und vergleicht ihn gegen die Warn-/Fehlerschwelle (`SPEC-009`
+// `cdc_wal_retention_bytes`, `SPEC-008` „kontrollierte Fortsetzung",
+// `ADR-0049`): unterhalb der Warnschwelle protokolliert der Zug den Wert
+// unauffällig — ein Betreiber liest ihn aus dem Log, ohne dass die Erhebung
+// über `cdc.metrics`/`cdc_reader` läuft (dieselbe Begründung wie beim
+// Health-Endpoint: `pg_replication_slots`/`IDENTIFY_SYSTEM` liegen
+// außerhalb der Least-Privilege-Fläche von `cdc_reader`). Zwischen Warn-
+// und Fehlerschwelle setzt der Capture-Betrieb sich sichtbar fort
+// (Log-Warnung, kein Abbruch). Oberhalb der Fehlerschwelle setzt der Zug
+// den WAL-Schwellen-Fehler (`fault.set`, `outbound.ErrReplication`), beendet
+// den Stream-Lauf über `stopStream` und kehrt zurück — der bestehende
+// Abbruchpfad (`classifyRunError`, `reportFault`) trägt den Rest. Eine
+// fehlgeschlagene Messung selbst bricht den Aufruf nicht ab und wird
+// verworfen — dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug
+// oben. Eine dauerhaft gestörte eigene Verbindung des Checkers (z. B.
+// Idle-Timeout zwischen zwei Ticks) muss diese Schleife nicht selbst
+// behandeln: `WALRetentionChecker.Measure` ersetzt eine so gestörte
+// Verbindung intern, sodass ein folgender Tick erneut misst statt dauerhaft
+// zu verstummen.
+func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log outbound.LogPort, interval time.Duration, warnBytes, errorBytes int64, stopStream context.CancelFunc, fault *walRetentionFault) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -428,7 +552,19 @@ func runWALRetentionCheck(ctx context.Context, checker *receive.WALRetentionChec
 				log.Warn(ctx, "replication: WAL-Rückstand-Messung fehlgeschlagen", "error", err)
 				continue
 			}
-			log.Info(ctx, "replication: WAL-Rückstand gemessen", "metric", "cdc_wal_retention_bytes", "bytes", bytes)
+			switch classifyWALRetention(bytes, warnBytes, errorBytes) {
+			case walRetentionError:
+				log.Error(ctx, "replication: WAL-Rückstand über Fehlerschwelle — kontrollierter Abbruch",
+					"metric", "cdc_wal_retention_bytes", "bytes", bytes, "threshold_bytes", errorBytes)
+				fault.set(fmt.Errorf("%w: WAL-Rückstand %d Bytes über Fehlerschwelle %d Bytes", outbound.ErrReplication, bytes, errorBytes))
+				stopStream()
+				return
+			case walRetentionWarn:
+				log.Warn(ctx, "replication: WAL-Rückstand über Warnschwelle — kontrollierte Fortsetzung",
+					"metric", "cdc_wal_retention_bytes", "bytes", bytes, "threshold_bytes", warnBytes)
+			default:
+				log.Info(ctx, "replication: WAL-Rückstand gemessen", "metric", "cdc_wal_retention_bytes", "bytes", bytes)
+			}
 		}
 	}
 }
