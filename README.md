@@ -8,12 +8,15 @@ PG Change Feed stellt persistente Change Feeds für bestehende PostgreSQL-Tabell
 
 ## Was kann ich heute tun?
 
-PG Change Feed befindet sich derzeit in der Architektur- und frühen Implementierungsphase.
-
-Es gibt noch keinen produktionsreifen Daemon und keine stabile öffentliche API. Der aktuelle Stand besteht aus spezifizierten Anforderungen, Architekturentscheidungen und dem geplanten MVP.
+Der MVP ist real und Ende-zu-Ende getestet: eine PostgreSQL-Quelle mit
+Logical Replication anbinden, Tabellen aktivieren, Änderungen dauerhaft
+erfassen und per SQL lesen, Betriebsstatus und Metriken abfragen — alles
+über Umgebungsvariablen, `docker compose`/`make` und SQL, ohne
+grafische Oberfläche.
 
 Siehe:
 
+- [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) für die Bedienung.
 - [`spec/lastenheft.md`](spec/lastenheft.md) für Anforderungen und Akzeptanzkriterien.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) für die technische Spezifikation.
 - [`docs/plan/adr/`](docs/plan/adr/) für Architekturentscheidungen.
