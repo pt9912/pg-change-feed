@@ -57,3 +57,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
 | ADR-0045 | Commit-Traceability als Standing-Gate | Accepted | 2026-09-10 | [0045-commit-traceability-standing-gate.md](0045-commit-traceability-standing-gate.md) |
 | ADR-0046 | SQL-Driving-Adapter: Lese-Views direkt, Schreiben über Ports | Accepted | 2026-09-10 | [0046-sql-driving-adapter-lese-schreib-trennung.md](0046-sql-driving-adapter-lese-schreib-trennung.md) |
+| ADR-0047 | Rollen-spezifische DSN-Verdrahtung | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |

@@ -19,7 +19,10 @@ entscheidet die Planung beim Ausplanen, nicht dieser Entwurf.
 (Beschränkbarkeit von CDC-Datenzugriffen). Architect-Verdikt:
 [`architect-review-welle-6.md`](../../adr/architect-review-welle-6.md)
 Zug 2 — Ausgang `geplant` für `BEO-PGC/rollen-verdrahtung` (3×), dieser
-Slice ist die zugewiesene Kennung.
+Slice ist die zugewiesene Kennung. **[`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)**
+(Accepted) — der Konfigurationsvertrag (drei Verbindungs-DSNs,
+Rollen-Zuordnung je Aufrufer) ist damit entschieden; dieser Slice setzt
+sie um, ohne selbst noch zu entscheiden.
 
 **Berührte Spec-Stellen:** — (kein `SPEC-*`/`ARC-*`-Eintrag zur
 DSN-Rollenbindung; die drei Rollen `cdc_capture`/`cdc_admin`/`cdc_reader`
@@ -91,10 +94,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       nicht mehr die gemeinsame Instanz-DSN — real getestet (z. B.
       Verbindungsaufbau mit `cdc_reader`-Rolle scheitert an einem
       schreibenden Aufruf).
-- [ ] Konfigurationsvertrag erweitert (voraussichtlich mehrere `*_DSN`-
-      oder `*_ROLE`-Umgebungsvariablen statt einer `CDC_SOURCE_DSN`) —
-      `compose.yaml` und `docs/user/benutzerhandbuch.md` entsprechend
-      nachgezogen.
+- [ ] Konfigurationsvertrag erweitert gemäß [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md):
+      `CDC_CAPTURE_DSN`, `CDC_ADMIN_DSN`, `CDC_READER_DSN` ersetzen
+      `CDC_SOURCE_DSN` ersatzlos (Breaking Change, kein Fallback —
+      Greenfield, kein veröffentlichtes Image) — `compose.yaml` und
+      `docs/user/benutzerhandbuch.md` entsprechend nachgezogen.
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -120,10 +124,11 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/wiring.go` | refactor | zentrale Verdrahtungsstelle (`ADR-0026`) — jede Adapter-Konstruktion bekommt ihre Rollen-DSN statt `cfg.DSN` |
-| `internal/bootstrap/config.go` (oder Äquivalent — Implementer prüft den tatsächlichen Dateinamen) | update | Konfigurationsvertrag um rollen-spezifische Verbindungsangaben erweitern |
-| `compose.yaml` | update | Env-Vertrag für die neuen DSN-/Rollen-Variablen |
-| `docs/user/benutzerhandbuch.md` | update | Betreiber-Doku für den neuen Konfigurationsvertrag |
+| `internal/bootstrap/wiring.go` | refactor | zentrale Verdrahtungsstelle (`ADR-0026`) — jede Adapter-Konstruktion bekommt ihre Rollen-DSN statt `cfg.DSN`, Zuordnung je Aufrufer nach `ADR-0047` |
+| `internal/bootstrap/config.go` (oder Äquivalent — Implementer prüft den tatsächlichen Dateinamen) | update | `Config` trägt `CDC_CAPTURE_DSN`/`CDC_ADMIN_DSN`/`CDC_READER_DSN` statt eines einzelnen `DSN`-Felds; `CDC_SOURCE_DSN` entfällt |
+| `tools/schema/nacharbeit-roles.sql` (oder neue gleichartige Nacharbeit-Datei) | update | fehlenden Grant nachtragen: `GRANT INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin` (`ADR-0047` Kontext-Befund 3) — Lückenschließung, kein Neu-Zuschnitt der drei Rollen |
+| `compose.yaml` | update | Env-Vertrag für die drei neuen DSN-Variablen |
+| `docs/user/benutzerhandbuch.md` | update | Betreiber-Doku für den neuen Konfigurationsvertrag, inkl. Hinweis zum `REPLICATION`-Attribut auf der `CDC_CAPTURE_DSN`-Login-Identität (`ADR-0047` Kontext-Befund 2) |
 | `internal/bootstrap/*_test.go` | update/neu | Rollenbindung real gegen PostgreSQL-Testcontainer geprüft (nicht nur behauptet) |
 
 Der Implementer erweitert diese Liste im ersten Lauf um alle
@@ -170,8 +175,14 @@ dasteht.
 - Konfigurationsvertrag-Bruch: bestehende `CDC_SOURCE_DSN`-Nutzer (Betreiber,
   `compose.yaml`, Betreiberdoku) müssten auf mehrere Variablen umstellen —
   ein Migrationspfad/Kompatibilitäts-Fallback könnte nötig werden.
-  **Ausgang:** wird bei Closure eingetragen, sobald der Implementer den
-  tatsächlichen Konfigurationsvertrag entworfen hat.
+  **Architect-Entscheidung ([`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)):**
+  kein Fallback — reiner Breaking Change. Begründung: Repo ist Greenfield,
+  es gibt kein veröffentlichtes Image (`docs/user/benutzerhandbuch.md`
+  §„Es gibt aktuell kein veröffentlichtes Container-Image"), also keine
+  bestehenden externen Nutzer, deren Konfiguration bräche. **Ausgang:**
+  formal bei Closure einzutragen, voraussichtlich *entfallen* (mit dieser
+  Begründung) — kein Migrationspfad ist nötig, weil die Voraussetzung für
+  das Risiko (ein bestehender externer Nutzer) nicht gegeben ist.
 
 ## 7. Closure-Notiz
 
