@@ -90,22 +90,39 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-ADM-005` erfüllt: neuer Testfall liest `cdc.consumer_status`
+- [x] `LH-FA-ADM-005` erfüllt: neuer Testfall liest `cdc.consumer_status`
       real über SQL für einen registrierten, noch nicht bestätigenden
       Consumer (Rückstand > 0) und nach `acknowledge-consumer` (Rückstand
-      = 0).
-- [ ] `LH-FA-ADM-002` erfüllt (Happy Path): neuer Testfall liest
+      = 0). **Präzisierung (Plan-Nachzug, siehe §3):** black-box real
+      belegt ist der Rückstand nach einer ersten Bestätigung, gefolgt von
+      einer weiteren real erfassten Änderung (Rückstand > 0), und dessen
+      Auflösung nach der zweiten Bestätigung (Rückstand = 0) — nicht die
+      wörtliche „niemals bestätigt"-Situation, die die Sicht strukturell
+      nicht als Zahl ausgibt (siehe Begründung in §3). Beleg: neuer
+      Abschnitt in
+      [`tools/harness/run-integration-tests.sh`](../../../../tools/harness/run-integration-tests.sh)
+      (`BACKLOG_CONSUMER`/`BACKLOG_TABLE`), dreifach grün über
+      `make test-integration` — siehe Bericht an den Reviewer.
+- [x] `LH-FA-ADM-002` erfüllt (Happy Path): neuer Testfall liest
       `cdc.heartbeat` real über SQL während des laufenden Betriebs und
-      belegt eine frische, fehlerfreie Lebenszeichen-Zeile.
-- [ ] `make gates` grün, `make test-integration` dreimal in Folge grün.
+      belegt eine frische, fehlerfreie Lebenszeichen-Zeile. Beleg:
+      `TestMVPHeartbeatHealthy` in
+      [`test/integration/integration_test.go`](../../../../test/integration/integration_test.go),
+      Schwelle 15s (Plan-Nachzug, siehe §3), dreifach grün über
+      `make test-integration`.
+- [x] `make gates` grün, `make test-integration` dreimal in Folge grün —
+      beide Läufe lokal ausgeführt (tatsächlich vier grüne
+      `make test-integration`-Läufe plus zwei gezielt rot geführte
+      Mutationsläufe zum Beleg der Wächter-Wirksamkeit — siehe Bericht an
+      den Reviewer).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird — hier
-      voraussichtlich keiner; Implementer entscheidet und begründet im
-      Plan-Nachzug.
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird — kein
+      öffentlicher Vertrag berührt (reine Testabdeckung bestehender,
+      bereits dokumentierter Lesezugriffswege); keine Doku-Änderung.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. — entfällt: `../reconciliation.md` existiert nicht (Repo ist Greenfield, kein Brownfield-Bootstrap).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -119,7 +136,8 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `test/integration/integration_test.go` oder `tools/harness/run-integration-tests.sh` | update | zwei neue Testfälle: `cdc.consumer_status`-Rückstandsmessung (Go oder Bash, Implementer-Entscheidung, Muster `slice-027`s Black-Box-CLI-Rundlauf), `cdc.heartbeat`-Happy-Path-Lesung |
+| `test/integration/integration_test.go` | update | **Plan-Nachzug:** neuer Testfall `TestMVPHeartbeatHealthy` (`LH-FA-ADM-002` Happy Path) — reine SQL-Lesung ohne CLI-Bedarf, dasselbe Muster wie `awaitHeartbeatErrorClass` (`slice-033`). Läuft im ersten `go test`-Aufruf des Runner-Skripts, vor `TestMVPSchemaChangeIncompatibleTypeChange` (jener setzt `error_class` dauerhaft). **Schwellenwert-Entscheidung:** 15s, identisch mit der Produktions-Healthcheck-Schwelle `heartbeatStaleAfter` (`internal/bootstrap/wiring.go`, 3 × `heartbeatInterval` = 15s) — derselbe Wert, den der Compose-Healthcheck bereits gegen dieselbe `cdc.heartbeat`-Zeile prüft, statt einer neu erfundenen Zahl. |
+| `tools/harness/run-integration-tests.sh` | update | **Plan-Nachzug:** (1) neuer Bash-Abschnitt für `LH-FA-ADM-005` — Implementer-Entscheidung gegen einen Go-Testfall, weil `register-consumer`/`acknowledge-consumer` nur extern per `docker exec` gegen den laufenden Feed-Container aufrufbar sind (der Toolchain-Container, in dem die Go-Tests laufen, hat keinen Docker-Socket-Zugriff) — dasselbe Muster wie der bestehende Black-Box-CLI-Rundlauf (`slice-027`). **Design-Entscheidung/Präzisierung ggü. der ursprünglichen Formulierung:** `cdc.consumer_status` liest `latest_commit_position` über eine auf `cp.source_id` korrelierte Unterabfrage; ein Consumer, der *noch nie* bestätigt hat, hat keine `cdc.consumer_position`-Zeile, wodurch die Sicht dafür `NULL` statt eines Rückstands liefert (kein SQL-Fehler, aber auch keine belegbare Zahl > 0). Real umgesetzt und belegt: eine erste externe Bestätigung bindet `source_id`, eine danach real erfasste weitere Änderung hebt `latest_commit_position` über die bestätigte Position — der Rückstand wird über eine reine SQL-Lesung sichtbar (> 0); die zweite externe Bestätigung senkt ihn auf 0. (2) `TestMVPHeartbeatHealthy` ins bestehende `-run`-Muster des ersten `go test`-Aufrufs aufgenommen (`BEO-PGC/test-runner-stiller-ausschluss`, weiter offen, 1× — dieser Slice vermeidet die Lücke erneut, wie bereits `slice-034`). |
 
 ## 4. Trigger
 
