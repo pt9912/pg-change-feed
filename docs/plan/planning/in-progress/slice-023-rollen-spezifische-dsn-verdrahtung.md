@@ -116,14 +116,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Doku-Update für den erweiterten Konfigurationsvertrag
       (`docs/user/benutzerhandbuch.md`, `compose.yaml`) — bereits Teil des
       ersten DoD-Punkts, hier kein eigener Liefer-Punkt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-      `BEO-PGC/rollen-verdrahtung` (3×, Ausgang bereits `geplant` →
-      dieser Slice, siehe Kopf-Feld) bekommt bei Abschluss dieses Slice
-      seinen finalen Ausgang *eingetreten*.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Kein Eintrag verkörpert
+      in diesem Lauf — siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+      `BEO-PGC/rollen-verdrahtung` → *eingetreten* (`evidence/slice-023.md`).
+      `BEO-PGC/rollen-test-abdeckungsluecken` neu angelegt (1×).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Alle drei disponiert.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — hier geprüft, siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -217,10 +217,24 @@ dasteht.
   kein Fallback — reiner Breaking Change. Begründung: Repo ist Greenfield,
   es gibt kein veröffentlichtes Image (`docs/user/benutzerhandbuch.md`
   §„Es gibt aktuell kein veröffentlichtes Container-Image"), also keine
-  bestehenden externen Nutzer, deren Konfiguration bräche. **Ausgang:**
-  formal bei Closure einzutragen, voraussichtlich *entfallen* (mit dieser
-  Begründung) — kein Migrationspfad ist nötig, weil die Voraussetzung für
-  das Risiko (ein bestehender externer Nutzer) nicht gegeben ist.
+  bestehenden externen Nutzer, deren Konfiguration bräche.
+  **Ausgang: entfallen** — kein Migrationspfad nötig, weil die
+  Voraussetzung für das Risiko (ein bestehender externer Nutzer) nicht
+  gegeben ist.
+- Der Heartbeat-Grant-Test (`TestCdcAdminHeartbeatWriteRequiresGrant`)
+  entzieht/erteilt die Rechte per `REVOKE`/`GRANT` selbst im Test und
+  liest nie den tatsächlichen `tools/schema/nacharbeit-roles.sql`-Inhalt —
+  eine reale Regression in der Rollout-Datei selbst bliebe unsichtbar und
+  würde vom Test-Cleanup sogar still „repariert" (Verifier-Nachtrag,
+  `verify-slice-023.md`). **Ausgang: weiter offen** →
+  `BEO-PGC/rollen-test-abdeckungsluecken` (neu angelegt, 1×).
+- Replication-Stream- und ACK-Adapter (`cdc_capture`-gebunden) sind gegen
+  Rollen-Vertauschung nicht testgesichert, weil
+  `tools/harness/run-replication-tests.sh` keine rollenbeschränkten
+  Login-Test-Identitäten bereitstellt (Verifier-Nachtrag,
+  `verify-slice-023.md`). **Ausgang: weiter offen** →
+  `BEO-PGC/rollen-test-abdeckungsluecken` (dieselbe Beobachtung, ein
+  Vorgang zählt einmal).
 
 ## 7. Closure-Notiz
 
@@ -232,18 +246,42 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Architect-Verdikt-Weg (ADR statt Verdikt,
+  da eine echte neue Entscheidung nötig war, anders als bei `slice-022`)
+  hat eine saubere, real getestete Zuordnungstabelle geliefert, die der
+  Implementer ohne Rückfragen umsetzen konnte. Reviewer und Verifier haben
+  in getrennten, eigenständigen Mutationstests jeweils andere
+  Rollen-Vertauschungen geprüft (Reviewer: `RegisterConsumer`; Verifier
+  Durchgang 1: Heartbeat-Adapter; Verifier Durchgang 2 (Nachtrag):
+  `RegisterConsumer` erneut, unabhängig vom Fixrunden-Bericht) — mehrfache,
+  sich ergänzende reale Absicherung statt einmaliger Prüfung.
+- **Was ging anders als geplant:** Der Implementer fand real (nicht
+  angenommen), dass `ADR-0047`s genannter Grant-Text unvollständig war
+  (`SELECT` fehlte für den `ON CONFLICT DO UPDATE`-Zweig) — korrekt nicht
+  die ADR-Datei selbst geändert (Hard Rule 3.5), sondern per Folge-ADR
+  [`ADR-0048`](../../adr/0048-heartbeat-grant-korrektur-select-ergaenzung.md)
+  korrigiert. Der Verifier fand in zwei Durchgängen vier weitere
+  Testabdeckungslücken (V-1, V-2, geschlossen in einer Fixrunde
+  `eed73e7`; zwei non-blocking Zusatzbefunde, siehe Beobachtungs-Register
+  unten) — kein einziger Fund war ein DoD- oder ADR-Verstoß, alle waren
+  Testschärfe-Fragen.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/rollen-verdrahtung`
+  erreicht mit diesem Slice seinen finalen Ausgang **eingetreten**
+  (`evidence/slice-023.md` ergänzt) — die rollen-spezifische Verdrahtung
+  ist jetzt real gebunden, das Muster kann nicht mehr auftreten.
+  `BEO-PGC/rollen-test-abdeckungsluecken` neu angelegt (1×, weiter offen)
+  für die beiden vom Verifier gefundenen, non-blocking Testschärfe-Lücken
+  (Heartbeat-Grant-Test entkoppelt vom Rollout-Datei-Inhalt,
+  Replication-Stream/ACK-Adapter ungetestet gegen Rollen-Vertauschung).
+- **Folge-Slices:** Keine.
+- **Risiken aus §6:** Konfigurationsvertrag-Bruch — entfallen; die zwei
+  Testabdeckungslücken — weiter offen → `BEO-PGC/rollen-test-abdeckungsluecken`.
+- **Drei Paarungen:** wellenlos — hier geprüft. Anker: kein `liegt in`-Feld
+  in diesem Eintrag (kein Steering-Loop-Eintrag verkörpert diesen Lauf,
+  nur Register-Ausgänge). Folge-Slice: keiner genannt, vakuos erfüllt.
+  Register: `BEO-PGC/rollen-verdrahtung` und
+  `BEO-PGC/rollen-test-abdeckungsluecken` existieren beide mit
+  nicht-leerem `evidence/` — bestätigt.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
