@@ -69,27 +69,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `mapper.NewTransactionRow` liest den Zeitstempel aus dem
+- [x] `mapper.NewTransactionRow` liest den Zeitstempel aus dem
       Domänenobjekt; `TransactionRow` trägt ein neues Feld dafür.
-- [ ] `queries.InsertTransaction` nimmt `committed_at` als Parameter statt
+- [x] `queries.InsertTransaction` nimmt `committed_at` als Parameter statt
       sich auf die Spalten-DEFAULT zu verlassen; `store.go` übergibt den
       Wert. Real gegen eine PostgreSQL-Testinstanz getestet: eine mit
       künstlicher Verzögerung eingefügte Transaktion zeigt
-      `committed_at` ≠ Persistenzzeitpunkt.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      `committed_at` ≠ Persistenzzeitpunkt. Beleg: `TestPersistCarriesSourceCommittedAtNotPersistenceTime`,
+      Verifier hat den Effekt real per eigener Mutationsprobe reproduziert.
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update falls öffentlicher Vertrag berührt — geprüft: die
+      Beleg: [`review-slice-018.md`](../../../../docs/reviews/review-slice-018.md)
+      (F-1 LOW disponiert, F-2 INFO), Verifier bestätigt in
+      [`verify-slice-018.md`](../../../../docs/reviews/verify-slice-018.md).
+- [x] Doku-Update falls öffentlicher Vertrag berührt — geprüft: die
       Spalten-DEFAULT in `tools/schema/schema.yaml`
       (`transaction.committed_at`) bleibt als Absicherung stehen (nur ohne
-      Anwendungscode greifend); Kommentar aktualisieren, dass die
-      Anwendung den Wert jetzt immer explizit liefert.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice.
+      Anwendungscode greifend); Kommentar aktualisiert.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Geprüft: Datei existiert nicht (GF-Repo) — entfällt.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Keine Beobachtung angefallen — siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-5` — die Paarungen prüft die **Welle-Closure**, nicht dieser Slice. Item entfällt hier bewusst.
 
 ## 3. Plan (vor Code)
 
@@ -158,11 +161,17 @@ dasteht.
 
 - Bestehende Tests könnten implizit auf `committed_at` als
   Persistenzzeitpunkt (statt Quell-Commit-Zeitpunkt) vertrauen und nach
-  der Umstellung fehlschlagen. Wird bei Closure bewertet.
+  der Umstellung fehlschlagen. **Ausgang: entfallen.** `make test-store`
+  läuft grün, kein bestehender Test brach.
 - `ON CONFLICT (transaction_id) DO NOTHING` bei einer erneut
   persistierten Transaktion (Idempotenz-Fall) behält den zuerst
   geschriebenen Zeitstempel — das ist beabsichtigt, aber ohne expliziten
-  Test bislang unbelegt. Wird bei Closure bewertet.
+  Test bislang unbelegt. **Ausgang: entfallen.** Der Wert stammt aus dem
+  WAL-`COMMIT`-Zeitstempel derselben Transaktion (`pglogrepl`, real
+  deterministisch bei erneuter Auslieferung derselben WAL-Position nach
+  einem Crash) — ein Retry liefert denselben Zeitstempel wie der
+  Erstversuch, `DO NOTHING` behält also ohnehin den korrekten Wert. Kein
+  eigener Test nötig, da kein abweichendes Verhalten möglich ist.
 
 ## 7. Closure-Notiz
 
@@ -181,18 +190,30 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der reale Test mit künstlicher Verzögerung
+  zwischen Domänen-Commit und Store-Aufruf hat den Unterschied
+  `committed_at` vs. Persistenzzeitpunkt sauber bewiesen; die
+  Review-Fixrunde (F-1) zeigte real per Laufzeit-Differenz (−1,5s), dass
+  eine zuvor eingebaute Sleep für die Testaussage überflüssig war — der
+  Verifier reproduzierte den Kern-Beleg danach unabhängig per eigener
+  Mutationsprobe. Die WAL-Determinismus-Überlegung zum
+  Idempotenz-Risiko (§6) hielt einer unabhängigen Prüfung durch Reviewer
+  und Verifier stand, ohne dass ein eigener Test nötig wurde.
+- **Was ging anders als geplant:** Während der Bearbeitung entstand ein
+  repo-weiter Kommentar-Bereinigungsauftrag (Hard Rule 3.7, konkret für
+  `tools/schema/schema.yaml` und Quellcode) über 18 Dateien, die
+  außerhalb des Slice-Plans §3 lagen. Der Verifier flaggte das zu Recht
+  als unreviewten Nachtrag (VF-2); eine gezielte Nachprüfung
+  (`review-comment-cleanup.md`) hat die Änderungen als rein
+  kommentar-ändernd und fachlich korrekt bestätigt.
+- **Steering-Loop-Eintrag:** Mit diesem Slice wurde nichts verkörpert.
+  Der Eintrag ist gezählt, nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen.
+- **Folge-Slices:** keine — slice-019 lag bereits als Datei in `open/`.
+- **Risiken aus §6:** beide `entfallen` (siehe §6).
+- **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-5`;
+  die Paarungen prüft die Welle-Closure für alle drei Slices gemeinsam.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
