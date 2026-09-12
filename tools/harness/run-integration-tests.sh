@@ -156,6 +156,22 @@ docker run --rm --network "$NETWORK" \
 LAG_TABLE=feed_mvp_full
 LAG_DELAY_SECONDS=${LAG_DELAY_SECONDS:-1}
 
+# Obergrenze für einen überschriebenen LAG_DELAY_SECONDS-Wert: oberhalb
+# von wal_sender_timeout=2000 (compose.yaml) beendet PostgreSQL die
+# Replication-Verbindung selbst, bevor der pausierte Feed-Container sie
+# fortsetzen kann — der Container trägt keine Restart-Policy und bliebe
+# beendet stehen. 1,5s Sicherheitsabstand zum 2s-Timeout hält auch bei
+# Docker-Scheduling-Varianz einen Puffer.
+LAG_DELAY_SECONDS_MAX=1.5
+if ! awk -v d="$LAG_DELAY_SECONDS" -v m="$LAG_DELAY_SECONDS_MAX" 'BEGIN { exit !(d+0 <= m+0) }'; then
+  echo "run-integration-tests: LAG_DELAY_SECONDS=$LAG_DELAY_SECONDS überschreitet die Obergrenze ${LAG_DELAY_SECONDS_MAX}s — darüber beendet PostgreSQL die Replication-Verbindung selbst (wal_sender_timeout=2000 aus compose.yaml), und der Feed-Container ohne Restart-Policy bliebe beendet stehen" >&2
+  exit 1
+fi
+
+# Die IDs 90/91 liegen in einem eigenen Wertebereich, getrennt von den
+# MVP-Referenzzeilen in test/integration/mvp_test.go (id=1, id=7 auf
+# derselben Tabelle feed_mvp_full) — keine Kollision zwischen den beiden
+# Testfall-Gruppen.
 baseline_count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT count(*) FROM cdc.transaction")
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
