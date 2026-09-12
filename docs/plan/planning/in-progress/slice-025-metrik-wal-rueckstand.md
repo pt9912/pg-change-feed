@@ -133,6 +133,14 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driving/replication/receive/stream_test.go` | update | **Plan-Nachzug (Ort statt neuer Datei):** `TestWALRetentionMeasuresGrowingBytes` realer Test gegen PostgreSQL-Testcontainer mit künstlich erzeugtem Rückstand (Slot inaktiv nach einer bestätigten Transaktion, weitere unbestätigte Inserts lassen die Messung real wachsen) — im bestehenden `stream_test.go` statt einer neuen Datei, weil die Test-Infrastruktur (`newTestEnv`, `fakeCapture`, `readConfirmedFlush`) dort bereits liegt |
 | `docs/user/benutzerhandbuch.md` | update | **Plan-Nachzug:** neuer Abschnitt „WAL-Rückstand prüfen" (§4), Abgrenzung gegen `cdc.metrics` (§4 Metriken lesen), Grenzwerte-Hinweis zu `max_wal_senders` (§9), Änderungshistorie 1.3 |
 
+**Plan-Nachzug (Fixrunde nach Review, [`review-slice-025.md`](../../../reviews/review-slice-025.md) F-1/F-2 behoben):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/adapters/driving/replication/receive/walretention.go` | update | F-2: `WALRetentionChecker` trägt jetzt die eigene `dsn`; `Measure` ersetzt die Verbindung über `reconnectAfterError` bei einem Protokoll-/Katalogfehler (`IDENTIFY_SYSTEM`, Katalogabfrage) — der nächste Aufruf misst wieder, statt die Metrik dauerhaft verstummen zu lassen |
+| `internal/bootstrap/wiring.go` | update | Kommentar-Nachzug an `runWALRetentionCheck`: die Schleife muss den Reconnect nicht selbst behandeln, das übernimmt `Measure` intern — keine Verhaltensänderung der Schleife selbst |
+| `internal/adapters/driving/replication/receive/stream_test.go` | update | F-1: drei neue reale Fehlerpfad-Tests (`TestWALRetentionMeasureInvalidSlotName`, `TestWALRetentionMeasureConnectionRefusedFails`, `TestWALRetentionMeasureMissingSlot`) für ungültigen/fehlenden Slot und Verbindungsfehler; F-2: `TestWALRetentionMeasureReconnectsAfterConnectionLoss` terminiert die Checker-Verbindung serverseitig (`pg_terminate_backend`, Backend über `application_name` identifiziert) und belegt real, dass der übernächste `Measure`-Aufruf nach dem sichtbar gescheiterten wieder erfolgreich misst |
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
