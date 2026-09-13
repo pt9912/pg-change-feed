@@ -23,7 +23,13 @@
 # (LH-FA-ADM-003 Boundary). Ergänzend ein Retention-Sichtbarkeits-Beleg
 # (deckt LH-FA-RET-005/006) über denselben `diagnose`-Aufruf: „kein
 # Blocker" vor jeder Consumer-Bestätigung, dann ein real blockierender
-# Consumer samt `cdc_storage_bytes`.
+# Consumer samt `cdc_storage_bytes`. Direkt davor ein kombinierter
+# Retention-Lebenszyklus-Rundlauf (deckt LH-FA-RET-002…006 in einer Kette):
+# eine eigene, isolierte Zeile und ein eigener Consumer durchlaufen real
+# Blocker-Sichtbarkeit über `cdc.retention_blockers`, Bestätigung über die
+# Position hinweg, die reale Abwesenheit jeder Zeile für `src-mvp` danach,
+# die reale Löschung sowie die durchgehende numerische Lesbarkeit von
+# `cdc_storage_bytes`.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -372,6 +378,147 @@ exec_feed() {
   docker exec "$FEED_CONTAINER" /pg-change-feed "$@"
 }
 
+# Retention-Lebenszyklus-Rundlauf (kombiniert, LH-FA-RET-002…006): eine
+# eigene, isolierte Zeile (id=210 auf feed_mvp_full) und ein eigener, neu
+# registrierter Consumer durchlaufen real die vollständige Kette in einer
+# Kette, statt sie wie in den folgenden Abschnitten über mehrere getrennte
+# Belege zu prüfen — Blocker-Sichtbarkeit, Bestätigung über die Position
+# hinweg, die reale Abwesenheit jeder Zeile für `src-mvp` danach, die reale
+# Löschung, `cdc_storage_bytes` durchgehend numerisch. Läuft an dieser
+# Stelle, weil hier noch kein über register-consumer/acknowledge-consumer
+# geführter Consumer gegen `src-mvp` bestätigt hat (dieselbe Ausgangslage,
+# die der folgende Abschnitt „Zustand 1" voraussetzt) — der hier
+# registrierte Consumer wird am Ende real wieder entfernt, damit diese
+# Ausgangslage für den folgenden Abschnitt unverändert gilt.
+#
+# `cdc.retention_blockers` trägt je Quelle höchstens eine Zeile
+# (`DISTINCT ON`) und tut das unabhängig vom Rückstandswert, solange
+# irgendein Consumer eine bestätigte Position gegen die Quelle trägt
+# (`INNER JOIN cdc.consumer_position`) — „kein Blocker" ist deshalb
+# ausschließlich die Abwesenheit jeder bestätigten Position, nicht ein
+# Rückstand von 0. Die reale Abwesenheit nach der Bestätigung über die
+# Position hinweg verlangt deshalb die reale Entfernung dieser Position,
+# nicht nur ihr Fortschreiten — dieselbe Abwesenheits-Lesart, die die View
+# für einen nie bestätigenden Consumer bereits trägt.
+LIFECYCLE_CONSUMER=cli-e2e-lifecycle-consumer
+LIFECYCLE_TABLE=feed_mvp_full
+
+storage_bytes_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'")
+if ! printf '%s' "$storage_bytes_before" | grep -qE '^[0-9]+$'; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc_storage_bytes vor der Kette nicht real numerisch abfragbar: '$storage_bytes_before'" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$LIFECYCLE_TABLE (id, name) VALUES (210, 'RetentionLifecycle');
+SQL
+
+lifecycle_position=""
+for _ in $(seq 1 120); do
+  lifecycle_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+  if [ -n "$lifecycle_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$lifecycle_position" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210')" >/dev/null
+
+earliest_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT min(commit_position) FROM cdc.transaction WHERE source_id = 'src-mvp'")
+if [ -z "$earliest_position" ] || [ "$earliest_position" -ge "$lifecycle_position" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — keine reale, frühere Position als $lifecycle_position gefunden (min=${earliest_position:-leer})" >&2
+  exit 1
+fi
+
+if ! exec_feed register-consumer "$LIFECYCLE_CONSUMER"; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — register-consumer ($LIFECYCLE_CONSUMER) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$LIFECYCLE_CONSUMER" "$earliest_position"; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — erste Bestätigung ($LIFECYCLE_CONSUMER, Position $earliest_position) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+blocker_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT consumer_id FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
+if [ "$blocker_before" != "$LIFECYCLE_CONSUMER" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt $LIFECYCLE_CONSUMER nicht als aktuellen Blocker für src-mvp, sondern '${blocker_before:-leer}'" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real $LIFECYCLE_CONSUMER als aktuellen Blocker für src-mvp (LH-FA-RET-005)"
+
+# Erste Phase (Consumer-Block, LH-FA-RET-004): eine großzügige, feste
+# Wartezeit über mehr als zwei Lösch-Takte (retentionInterval=10s) hinweg
+# belegt die Abwesenheit einer Löschung über mehrere reale Takte, nicht nur
+# einen einzelnen zu frühen Blick.
+sleep 25
+lifecycle_present_blocked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+if [ "$lifecycle_present_blocked" != "1" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210, bereits alt genug) wurde entfernt, obwohl $LIFECYCLE_CONSUMER seine Position noch nicht bestätigt hatte (LH-FA-RET-004 Consumer-Block)" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$LIFECYCLE_CONSUMER" "$lifecycle_position"; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — zweite Bestätigung ($LIFECYCLE_CONSUMER, über die Position von id=210 hinweg, $lifecycle_position) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+# Die reale Abwesenheit jeder Zeile für src-mvp (siehe Kommentar oben)
+# verlangt die reale Entfernung der Position — der Consumer hat seinen
+# Zweck (die Kette real zu durchlaufen) erfüllt.
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "DELETE FROM cdc.consumer_position WHERE consumer_id = '$LIFECYCLE_CONSUMER'" >/dev/null
+
+blocker_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
+if [ "$blocker_after" != "0" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers trägt nach der Bestätigung über die Position hinweg noch eine Zeile für src-mvp ($blocker_after), erwartet leer" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real keinen Blocker mehr für src-mvp (LH-FA-RET-005)"
+
+lifecycle_deleted=0
+for _ in $(seq 1 60); do
+  remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+  if [ "$remaining" = "0" ]; then
+    lifecycle_deleted=1
+    break
+  fi
+  sleep 1
+done
+if [ "$lifecycle_deleted" -ne 1 ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210) wurde nach Freigabe nicht innerhalb der Zeitspanne real entfernt" >&2
+  exit 1
+fi
+
+storage_bytes_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'")
+if ! printf '%s' "$storage_bytes_after" | grep -qE '^[0-9]+$'; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc_storage_bytes nach der Löschung nicht real numerisch abfragbar: '$storage_bytes_after'" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Retention-Lebenszyklus-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf (kombiniert) — 'RetentionLifecycle' (id=210) real entfernt, cdc_storage_bytes durchgehend numerisch abfragbar (vorher $storage_bytes_before Bytes, nachher $storage_bytes_after Bytes; LH-FA-RET-002…006)"
+
 # Retention-Sichtbarkeits-Beleg (CLI), Zustand 1 — kein Blocker
 # (LH-FA-SST-003, deckt LH-FA-RET-005/006): an dieser Stelle hat noch kein
 # über register-consumer/acknowledge-consumer geführter Consumer gegen
@@ -379,9 +526,11 @@ exec_feed() {
 # TestMVPRetentionBlockersViewShowsFurthestBehindConsumer weiter oben direkt
 # über den ConsumerStatePort-Adapter registrierte, sind bereits per
 # `t.Cleanup` entfernt (siehe deren Funktionskommentar in
-# test/integration/integration_test.go). `cdc.retention_blockers` trägt
-# deshalb real keine Zeile für `src-mvp`, und die `diagnose`-Ausgabe muss das
-# als „kein Blocker" zeigen, nicht als Fehlerzustand.
+# test/integration/integration_test.go), und der oben real durchlaufene
+# Retention-Lebenszyklus-Consumer ist am Ende dieses Abschnitts ebenfalls
+# real entfernt. `cdc.retention_blockers` trägt deshalb real keine Zeile für
+# `src-mvp`, und die `diagnose`-Ausgabe muss das als „kein Blocker" zeigen,
+# nicht als Fehlerzustand.
 set +e
 diagnose_noblocker_output=$(exec_feed diagnose)
 diagnose_noblocker_status=$?
