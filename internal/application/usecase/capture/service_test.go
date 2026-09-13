@@ -74,19 +74,21 @@ func (f *fakeAck) Acknowledge(ctx context.Context, position model.SourcePosition
 // fakeNotify trägt den Regressionsbeleg für `ADR-0055`: ein fehlschlagender
 // `ChangeNotificationPort` darf `Capture()` nicht scheitern lassen, wenn
 // `store`/`ack` erfolgreich waren — `notifyErr` ist standardmäßig gesetzt,
-// damit der Test den ungünstigsten Fall trägt.
+// damit der Test den ungünstigsten Fall trägt. `notified` trägt die
+// distinkten `(schema, table)`-Aufrufe für den Deduplizierungs-Beleg
+// (`ADR-0056`).
 type fakeNotify struct {
 	events    *[]string
 	notifyErr error
 	notified  []string
 }
 
-func (f *fakeNotify) Notify(ctx context.Context, sourceID string) error {
-	*f.events = append(*f.events, "notify:"+sourceID)
+func (f *fakeNotify) Notify(ctx context.Context, sourceID, schema, table string) error {
+	*f.events = append(*f.events, fmt.Sprintf("notify:%s.%s.%s", sourceID, schema, table))
 	if f.notifyErr != nil {
 		return f.notifyErr
 	}
-	f.notified = append(f.notified, sourceID)
+	f.notified = append(f.notified, schema+"."+table)
 	return nil
 }
 
@@ -101,29 +103,54 @@ func newService(t *testing.T) (*capture.CaptureService, *[]string, *fakeStore, *
 }
 
 // committedTransaction legt eine committed Quelltransaktion mit count
-// Changes an (`LH-FA-CAP-005`, `LH-FA-DAT-004`).
+// Changes an derselben Tabelle `public.tbl-1` an (`LH-FA-CAP-005`,
+// `LH-FA-DAT-004`).
 func committedTransaction(t *testing.T, id model.TransactionID, offset uint64, count int) *model.ChangeTransaction {
+	t.Helper()
+	return committedTransactionOverTables(t, id, offset, tableSpec{schema: "public", table: "tbl-1", count: count})
+}
+
+// tableSpec trägt die Change-Zahl einer Tabelle für
+// `committedTransactionOverTables` (`ADR-0056`-Deduplizierungsbelege).
+type tableSpec struct {
+	schema string
+	table  string
+	count  int
+}
+
+// committedTransactionOverTables legt eine committed Quelltransaktion an,
+// deren Changes über mehrere `(schema, table)`-Paare verteilt sein können
+// (`ADR-0056`, Notify-Deduplizierung je distinktem Paar). Jeder Change
+// trägt `SourceTableID` als `<schema>.<table>` (analog zum
+// Driving-Adapter-Mapper) und die Klartext-Felder `Schema`/`Table`.
+func committedTransactionOverTables(t *testing.T, id model.TransactionID, offset uint64, specs ...tableSpec) *model.ChangeTransaction {
 	t.Helper()
 	tx, err := model.NewOpenTransaction(id, "src-1")
 	if err != nil {
 		t.Fatalf("NewOpenTransaction: %v", err)
 	}
-	for i := 1; i <= count; i++ {
-		change, err := model.NewChange(
-			model.ChangeID(fmt.Sprintf("%s-%d", id, i)),
-			id,
-			"tbl-1",
-			int64(i),
-			model.OperationInsert,
-			nil,
-			[]byte(`{"x":1}`),
-			"sv-1",
-		)
-		if err != nil {
-			t.Fatalf("NewChange %d: %v", i, err)
-		}
-		if err := tx.AppendChange(change); err != nil {
-			t.Fatalf("AppendChange %d: %v", i, err)
+	sequence := int64(0)
+	for _, spec := range specs {
+		for i := 1; i <= spec.count; i++ {
+			sequence++
+			change, err := model.NewChange(
+				model.ChangeID(fmt.Sprintf("%s-%d", id, sequence)),
+				id,
+				model.SourceTableID(spec.schema+"."+spec.table),
+				sequence,
+				model.OperationInsert,
+				nil,
+				[]byte(`{"x":1}`),
+				"sv-1",
+			)
+			if err != nil {
+				t.Fatalf("NewChange %d: %v", sequence, err)
+			}
+			change.Schema = spec.schema
+			change.Table = spec.table
+			if err := tx.AppendChange(change); err != nil {
+				t.Fatalf("AppendChange %d: %v", sequence, err)
+			}
 		}
 	}
 	position, err := model.NewSourcePosition("src-1", offset)
@@ -319,11 +346,11 @@ func TestCaptureNotifiesAfterAckOnSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Capture: %v", err)
 	}
-	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
+	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1.public.tbl-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
 	}
-	if len(notify.notified) != 1 || notify.notified[0] != "src-1" {
-		t.Fatalf("Notify trägt %v, wollen [\"src-1\"]", notify.notified)
+	if len(notify.notified) != 1 || notify.notified[0] != "public.tbl-1" {
+		t.Fatalf("Notify trägt %v, wollen [\"public.tbl-1\"]", notify.notified)
 	}
 	if result.Acknowledged.Offset != 100 {
 		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
@@ -358,7 +385,47 @@ func TestCaptureSucceedsDespiteFailingNotification(t *testing.T) {
 	if len(notify.notified) != 0 {
 		t.Fatalf("Notify trägt %v, wollen keine erfolgreiche Zustellung", notify.notified)
 	}
-	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
+	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1.public.tbl-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("Ereignisse = %v, wollen %v (Notify-Versuch trotz Fehlschlag geloggt)", got, want)
+	}
+}
+
+// TestCaptureNotifiesOnceForSameTableMultipleChanges trägt die
+// Deduplizierung (`ADR-0056`): mehrere Changes derselben Tabelle in einer
+// Transaktion lösen genau ein Notify für dieses `(schema, table)`-Paar aus.
+func TestCaptureNotifiesOnceForSameTableMultipleChanges(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify))
+	tx := committedTransactionOverTables(t, "t-1", 100, tableSpec{schema: "public", table: "tbl-1", count: 3})
+
+	if _, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx}); err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if got, want := notify.notified, []string{"public.tbl-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Notify trägt %v, wollen %v (genau ein Aufruf trotz drei Changes derselben Tabelle)", got, want)
+	}
+}
+
+// TestCaptureNotifiesDistinctlyForTwoTables trägt die Kehrseite: Changes
+// über zwei Tabellen lösen zwei distinkte Notify-Aufrufe aus (`ADR-0056`).
+func TestCaptureNotifiesDistinctlyForTwoTables(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify))
+	tx := committedTransactionOverTables(t, "t-1", 100,
+		tableSpec{schema: "public", table: "tbl-1", count: 2},
+		tableSpec{schema: "public", table: "tbl-2", count: 1},
+	)
+
+	if _, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx}); err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if got, want := notify.notified, []string{"public.tbl-1", "public.tbl-2"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Notify trägt %v, wollen %v (zwei distinkte Aufrufe für zwei Tabellen)", got, want)
 	}
 }

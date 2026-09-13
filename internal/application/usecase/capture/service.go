@@ -11,6 +11,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // CaptureCommand und CaptureResult sind die Transport-Typen des Capture
@@ -33,7 +34,8 @@ var ErrMissingTransaction = stderrors.New("Capture ohne Quelltransaktion")
 //
 //	Receive → Decode → Persist → COMMIT Store → ACK Source → Notify (best effort)
 //
-// (`LH-QA-REL-001.a`, `ADR-0055` für den optionalen letzten Schritt)
+// (`LH-QA-REL-001.a`, `ADR-0055` für den optionalen letzten Schritt,
+// `ADR-0056` für dessen tabellen-granulare Deduplizierung)
 type CaptureService struct {
 	store  outbound.ChangeStorePort
 	ack    outbound.ReplicationAckPort
@@ -105,11 +107,44 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	// Fehler geht nie in den Rückgabewert dieses Aufrufs ein — die bereits
 	// erfolgte Persistierung und Bestätigung bleiben davon unberührt. Ohne
 	// konfigurierten Port (`s.notify == nil`) unterbleibt der Versuch
-	// vollständig, bestehendes Verhalten bleibt bit-identisch.
+	// vollständig, bestehendes Verhalten bleibt bit-identisch. Ein Notify
+	// je distinkter `(schema, table)`-Paarung der Transaktion, dedupliziert
+	// (`ADR-0056`): mehrere Changes derselben Tabelle lösen genau ein
+	// Signal aus.
 	if s.notify != nil {
-		if err := s.notify.Notify(ctx, string(position.SourceID)); err != nil {
-			s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", "error", err, "source_id", position.SourceID)
+		for _, table := range distinctTables(tx) {
+			if err := s.notify.Notify(ctx, string(position.SourceID), table.schema, table.table); err != nil {
+				s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", "error", err, "source_id", position.SourceID, "schema", table.schema, "table", table.table)
+			}
 		}
 	}
 	return CaptureResult{Acknowledged: position}, nil
+}
+
+// schemaTable trägt ein distinktes Schema-/Tabellenpaar einer Transaktion
+// für die Notify-Deduplizierung (`ADR-0056`).
+type schemaTable struct {
+	schema string
+	table  string
+}
+
+// distinctTables sammelt die distinkten `(schema, table)`-Paare der
+// bereits committed Transaktion in erster Auftrittsreihenfolge
+// (`ADR-0056`): mehrere Changes derselben Tabelle liefern genau einen
+// Eintrag. Der Fehler von `tx.Changes()` (offene Transaktion) kann an
+// dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
+// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
+func distinctTables(tx *model.ChangeTransaction) []schemaTable {
+	changes, _ := tx.Changes()
+	seen := make(map[schemaTable]struct{}, len(changes))
+	tables := make([]schemaTable, 0, len(changes))
+	for _, change := range changes {
+		key := schemaTable{schema: change.Schema, table: change.Table}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		tables = append(tables, key)
+	}
+	return tables
 }
