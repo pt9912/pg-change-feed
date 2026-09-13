@@ -19,7 +19,7 @@ Schema-/Domänen-Änderung), siehe Baseline-Regelwerk `modul-06-roadmap.md`
 **Berührte Spec-Stellen:** — (reine Testabdeckungs-Ergänzung, keine neue
 Architektur-Sicht-Aussage).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
