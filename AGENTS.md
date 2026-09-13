@@ -70,14 +70,7 @@ In dieser Reihenfolge:
 
 ## 3. Harte Regeln
 
-<!--
-Eigene Hard Rules ergänzen, basierend auf der Repo-Klasse. Beispiele
-zur Inspiration:
--->
-
 ### 3.1 Docker-only
-
-<!-- Wenn das Repo Docker-only ist (typisch für Multi-Toolchain-Repos): -->
 
 Kein lokales <venv/SDK/Toolchain-Install>. Alles läuft über `make`
 (das Docker nutzt). Host braucht nur Docker und GNU `make`.
@@ -89,17 +82,32 @@ Kein lokales <venv/SDK/Toolchain-Install>. Alles läuft über `make`
 
 ### 3.2 Suppression-Verbot
 
-<!--
-Pro Sprache eine Variante. Beispiele:
-- Python: # noqa
-- Go: //nolint
-- C#: #pragma warning disable, [SuppressMessage]
-- Kotlin: @Suppress
-- Java: @SuppressWarnings
--->
+Dieses Repo hat **keinen Linter** — kein `.golangci.yml`, kein
+`lint`-Target in `Makefile` oder `harness/mk/*.mk`. Inline-Suppression
+(`//nolint`) ist deshalb **ausnahmslos verboten**, nicht weil eine
+Ausnahmeliste sie einschränkt, sondern weil es kein Werkzeug gibt, dessen
+Warnung sie unterdrücken könnte — ein `//nolint` ohne Linter ist entweder
+tote Dekoration oder ein Vorgriff auf ein Profil, das noch niemand
+entschieden hat.
 
-Inline-Suppression bricht das `<suppression>-gate`. Ausnahmen leben in
-<zentraler Konfigurations-Datei> mit Begründung.
+Das Coverage-Gate (`make coverage-gate`, [ADR-0054](docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md))
+hat aus demselben Grund **strukturell keinen** Ausnahme-Pfad: Es gibt kein
+Coverage-Pendant zu `//nolint` — die Gesamt-Coverage besteht oder scheitert
+als Zahl, keine Zeile lässt sich davon ausnehmen. Ist die Schwelle für den
+aktuellen Ist-Stand unerreichbar, ist die Antwort ein Carveout (Modul 7)
+oder ein bootstrap-aware Gate mit eigener, niedrigerer Einstiegsstufe
+([ADR-0054](docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)) —
+keine stille Ausnahmeliste.
+
+**Falsch:** `//nolint:errcheck // reicht so` irgendwo im Code.
+**Richtig:** kein `//nolint` — es gibt (noch) keinen Linter, dessen Warnung
+es unterdrücken könnte.
+
+**Begründung:** Ein Suppression-Verbot ohne Objekt ist eine Lücke, keine
+Regel. Führt ein späterer Slice einen Linter ein, deklariert die
+einführende ADR den Ausnahme-Ort dieses Abschnitts neu (zentrale
+Konfigurationsdatei mit `Why:`-Begründung je Regel) — bis dahin bleibt
+Inline-Suppression ohne Ausnahme verboten.
 
 ### 3.3 git mv + Inhaltsänderung = zwei Commits
 
@@ -164,12 +172,6 @@ Umplanungen, keine Schließungen und keine erreichten Meilensteine.
 Herkunft in **ein** auflösbares Feld (`LH-*`, `ADR-*`, `· seit welle-<NN>`).
 Was daneben steht, liest jeder Lauf mit und bezahlt es mit Kontext.
 
-<!--
-In emittierten Artefakten (ein Werkzeug erzeugt Repos) entfällt der
-Herkunfts-Anker: Die Slice-Nummer des Erzeugers existiert im erzeugten Repo
-nicht und löst ins Leere auf.
--->
-
 ### 3.8 Action-Pinning (GitHub Actions)
 
 Jede `uses:`-Zeile in `.github/workflows/*.yml` ist auf einen vollständigen
@@ -186,13 +188,6 @@ Diff im eigenen Repo.
 **Begründung:** Supply-Chain-Härtung. Der Kommentar hält die Pinnung
 lesbar und audit-/hebbar, ohne den SHA manuell gegen die Releases der
 Action auflösen zu müssen ([`ADR-0051`](docs/plan/adr/0051-cicd-pipeline-github-actions.md)).
-
-<!--
-Repo-spezifische Hard Rules ergänzen, z.B. für Safety/Control:
-- "Optimierer darf nie direkt aufs Gerät schreiben."
-- "Protokoll-Adapter dürfen keine Marktentscheidungen enthalten."
-- "Produktion-Profile müssen fail-closed sein."
--->
 
 ## 4. Quality Gates
 

@@ -64,3 +64,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0051 | CI/CD-Pipeline über GitHub Actions | Accepted | 2026-09-13 | [0051-cicd-pipeline-github-actions.md](0051-cicd-pipeline-github-actions.md) |
 | ADR-0052 | Optionale YAML-Konfigurationsdatei ergänzt Umgebungsvariablen | Accepted | 2026-09-13 | [0052-optionale-yaml-konfigurationsdatei.md](0052-optionale-yaml-konfigurationsdatei.md) |
 | ADR-0053 | Retention-Löschausführung bindet an `cdc_admin` — `DELETE`-Grant-Ergänzung | Accepted | 2026-09-13 | [0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md](0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) |
+| ADR-0054 | Coverage-Gate mit Eskalationsklausel und Performance-Benchmark-Infrastruktur | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
