@@ -32,7 +32,7 @@ funktionierte · was anders lief. Mit ID-Bezug, wo es einen gibt.
 - Ein während `slice-044` real gefundenes, außerhalb des ursprünglichen
   Welle-Scopes liegendes Sicherheits-Loch (`cdc_admin` ohne `DELETE`-Grant
   auf `cdc.transaction`/`cdc.change`) wurde über einen eigenen
-  Architect-Zug geschlossen: [`ADR-0053`](../adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md)
+  Architect-Zug geschlossen: [`ADR-0053`](../../adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md)
   (`Supersedes ADR-0047`, auf die Rollen-Zuweisungstabelle begrenzt).
 
 ## Was hat funktioniert?

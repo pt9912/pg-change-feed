@@ -22,22 +22,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 reine Entscheidungslogik ohne Aufrufer — der eigene Doc-Kommentar benennt
 den fehlenden „Run-Retention-Use-Case" explizit, aber er existiert nicht:
 `grep -rn "AllowsDeletion"` trifft ausschließlich die eigene Testdatei.
-[`ADR-0014`](../../../spec/lastenheft.md) (Retention als Domain Policy,
+[`ADR-0014`](../../../../spec/lastenheft.md) (Retention als Domain Policy,
 Accepted, `permanent`) benennt diesen Use-Case bereits als Folgepflicht —
 derselbe Präzedenzfall wie `slice-030`/`ADR-0015`: die Entscheidung steht,
 ihre Umsetzung fehlt. Diese Welle liefert die reale Löschausführung
-([`LH-FA-RET-002`](../../../spec/lastenheft.md)…`004`), die Sichtbarkeit
-blockierender Consumer ([`LH-FA-RET-005`](../../../spec/lastenheft.md))
+([`LH-FA-RET-002`](../../../../spec/lastenheft.md)…`004`), die Sichtbarkeit
+blockierender Consumer ([`LH-FA-RET-005`](../../../../spec/lastenheft.md))
 und die Metrik `cdc_storage_bytes`
-([`LH-FA-RET-006`](../../../spec/lastenheft.md)), die
+([`LH-FA-RET-006`](../../../../spec/lastenheft.md)), die
 `tools/schema/nacharbeit-observability.sql` bisher explizit als „nicht
 abgedeckt" ausweist. Ein Architect-Verdikt
-([`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`](../../reviews/architect-verdict-retention-loeschausfuehrung.md))
+([`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`](../../../reviews/architect-verdict-retention-loeschausfuehrung.md))
 hat vorab bestätigt: keine neue ADR nötig — bestehende ADRs
-([`ADR-0009`](../adr/0009-change-store-outbound-port.md),
-[`ADR-0011`](../adr/0011-persist-before-ack.md),
-[`ADR-0012`](../adr/0012-at-least-once.md),
-[`ADR-0014`](../adr/0014-retention-domain-policy.md)) tragen die
+([`ADR-0009`](../../adr/0009-change-store-outbound-port.md),
+[`ADR-0011`](../../adr/0011-persist-before-ack.md),
+[`ADR-0012`](../../adr/0012-at-least-once.md),
+[`ADR-0014`](../../adr/0014-retention-domain-policy.md)) tragen die
 Port-Erweiterung bereits, und die `cdc_storage_bytes`-Metrik kann dem
 etablierten View-Owner-Muster (`cdc.metrics`, `cdc.heartbeat`) folgen,
 ohne die `cdc_reader`-Rolle zu erweitern.
@@ -92,10 +92,10 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-043 | `ChangeStorePort`-Löschmethode und `RunRetentionUseCase` | [ADR-0009](../adr/0009-change-store-outbound-port.md), [ADR-0014](../adr/0014-retention-domain-policy.md) |
-| slice-044 | Hintergrund-Job/CLI-Trigger für die Löschausführung | [ADR-0014](../adr/0014-retention-domain-policy.md) |
-| slice-045 | Sichtbarkeit blockierender Consumer | [LH-FA-RET-005](../../../spec/lastenheft.md) |
-| slice-046 | `cdc_storage_bytes`-Metrik | [LH-FA-RET-006](../../../spec/lastenheft.md) |
+| slice-043 | `ChangeStorePort`-Löschmethode und `RunRetentionUseCase` | [ADR-0009](../../adr/0009-change-store-outbound-port.md), [ADR-0014](../../adr/0014-retention-domain-policy.md) |
+| slice-044 | Hintergrund-Job/CLI-Trigger für die Löschausführung | [ADR-0014](../../adr/0014-retention-domain-policy.md) |
+| slice-045 | Sichtbarkeit blockierender Consumer | [LH-FA-RET-005](../../../../spec/lastenheft.md) |
+| slice-046 | `cdc_storage_bytes`-Metrik | [LH-FA-RET-006](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -139,9 +139,9 @@ der Closure-Trigger unerreichbar wird.
   (`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`, Frage 1)
   hatte die Domain-/Port-/ADR-Ebene geprüft, nicht die Rollen-/
   Grant-Konsequenz. Der fällige Architect-Zug ist nachgetragen:
-  [`docs/reviews/architect-verdict-slice-044-rollen-grant.md`](../../reviews/architect-verdict-slice-044-rollen-grant.md)
+  [`docs/reviews/architect-verdict-slice-044-rollen-grant.md`](../../../reviews/architect-verdict-slice-044-rollen-grant.md)
   (Verdikt 2, Modul 8 §Konflikt-Pfad) und
-  [`ADR-0053`](../adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md)
+  [`ADR-0053`](../../adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md)
   (`Supersedes ADR-0047`, teilweise) bestätigen die bereits von Commit
   `824e001` umgesetzte Erweiterung — kein stiller Fortschritt mehr, sondern
   ein vollzogener, dokumentierter Architect-Zug. `cdc_storage_bytes`
