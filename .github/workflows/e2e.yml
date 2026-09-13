@@ -1,0 +1,63 @@
+---
+name: e2e
+
+# Black-Box-E2E-Workflow (ADR-0051 Entscheidung 2, Folgepflicht): laeuft auf
+# jeden Pull Request und jeden Branch-Push, wie `ci.yml` (Tag-Pushes
+# ausgenommen, `tags-ignore: ['**']`). Anders als `ci.yml` ist dieser
+# Workflow bewusst **kein** Required-Status-Check (Repository-Einstellung,
+# nicht Teil dieser Datei) — ein roter Lauf ist sichtbar, blockiert aber
+# keinen Merge (LH-QA-POR-003: vollstaendige Testumgebung automatisiert und
+# reproduzierbar, ohne `ci.yml`s kurzes Signal durch den deutlich laengeren
+# Compose-Stack-Aufbau zu verzoegern).
+#
+# Ruft ausschliesslich bestehende `make`-Targets auf (AGENTS.md §3.1,
+# Docker-only): `make image` baut das lokale Image
+# (`ghcr.io/pt9912/pg-change-feed:dev`), das `compose.yaml` ohne eigenen
+# `build:`-Block referenziert (ADR-0044) — ohne diesen Schritt haette
+# `make test-integration` kein Image zum Laden und der Compose-Start
+# schluege fehl. `make test-integration` faehrt danach den vollen
+# Compose-Stack samt Schema-Rollout und mehreren Testphasen (Rollen-DSN,
+# Retention-Lebenszyklus, Black-Box-CLI-Rundlauf, drei NATS-Testabschnitte)
+# — kein Gate ([`ADR-0030`](../../docs/plan/adr/0030-testpyramide.md)),
+# aber der konkreteste Beleg fuer LH-QA-POR-003. Kein Workflow-Schritt
+# enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
+# dupliziert.
+#
+# Timeout 60 Minuten (ci.yml: 30) — `make test-integration` traegt mehrere
+# feste Wartephasen (Retention-Alters-/Lag-Schwellen, NATS-Reconnect-Timing)
+# zusaetzlich zum Compose-Hochfahren und Schema-Rollout; ein
+# GitHub-hosted Runner kann dabei langsamer sein als eine lokale
+# Entwicklungsumgebung. Ob das Zeitlimit real ausreicht, bleibt bis zum
+# ersten echten Lauf offen (`BEO-PGC/github-actions-unverifizierbar-lokal`).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar. `fetch-depth: 0` ist hier nicht noetig — dieser Workflow
+# ruft `make commit-traceability` nicht auf, der Standard-Checkout reicht.
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  e2e:
+    name: image + test-integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Image bauen (Lauf-Beleg harness/image-hash.txt)
+        run: make image
+
+      - name: Compose-Integrationstest (Black-Box-E2E)
+        run: make test-integration
