@@ -87,7 +87,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Fehlerpropagation versehentlich eingeführt wird — real
       demonstriert durch temporäres Entfernen des Error-Swallowing).
 - [ ] `make gates` grün, `make test` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: keiner erwartet (kein Betriebs-Vertrag entsteht, bevor
