@@ -28,7 +28,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   (Capture Application Service, permanent),
   [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
   (SQL-Driving-Adapter: Lese-Views direkt, Kategorie C), und das
-  Übergabe-Artefakt [`architect-review-slice-011.md`](../plan/adr/architect-review-slice-011.md)
+  Übergabe-Artefakt [`architect-review-slice-011.md`](architect-review-slice-011.md)
   (Architect-Verdikt: Heartbeat-Muster ohne Folge-ADR trägt)
 - `AGENTS.md` §3 Hard Rules (§3.1 Docker-only, §3.2 Suppression-Verbot, §3.7
   Kommentar-Klassen) · `harness/conventions.md` (MR-000/MR-001, genau eine

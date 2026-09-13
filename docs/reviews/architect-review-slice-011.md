@@ -1,14 +1,14 @@
 # Architect-Review slice-011 — Verdikt zu F-1/F-2 (Heartbeat-Pattern)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
-**Eingang:** [`docs/reviews/review-slice-011.md`](../../reviews/review-slice-011.md)
+**Eingang:** [`docs/reviews/review-slice-011.md`](review-slice-011.md)
 F-1 (MEDIUM, Architektur-Frage) und F-2 (MEDIUM, Closure-Trigger nicht mehr
 erfüllbar) · Slice-Plan
-[`docs/plan/planning/done/slice-011-sicherheit-observability.md`](../planning/done/slice-011-sicherheit-observability.md)
-§1/§3/§6 · [`ADR-0020`](0020-http-grpc-optional.md) (Accepted, permanent) ·
-[`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md) (Accepted,
-Supersedes ADR-0018) · [`ADR-0024`](0024-observability-ausserhalb-der-domain.md)
-(Accepted, permanent) · [`ADR-0027`](0027-capture-application-service.md)
+[`docs/plan/planning/done/slice-011-sicherheit-observability.md`](../plan/planning/done/slice-011-sicherheit-observability.md)
+§1/§3/§6 · [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) (Accepted, permanent) ·
+[`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) (Accepted,
+Supersedes [`ADR-0018`](../plan/adr/0018-sql-driving-adapter.md)) · [`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md)
+(Accepted, permanent) · [`ADR-0027`](../plan/adr/0027-capture-application-service.md)
 (Accepted, permanent).
 **Ausgang:** Übergabe-Artefakt an Planner — **kein Folge-ADR nötig**; Verdikt
 zu F-1 und Anpassungs-Empfehlung zu F-2.
@@ -28,13 +28,13 @@ begründet. Health-Endpoint per Heartbeat-Tabelle + SQL-View ist eine offene
 
 ### Prüfung: Schreib-Seite (Heartbeat-Tabelle)
 
-Der laufende CDC-Prozess (Capture Application Service, ADR-0027) schreibt
+Der laufende CDC-Prozess (Capture Application Service, [`ADR-0027`](../plan/adr/0027-capture-application-service.md)) schreibt
 periodisch seinen Lebenszeichen-Zustand in `cdc.process_heartbeat`. Das ist
-architektonisch **kein** SQL-Driving-Adapter im Sinne von ADR-0046 — dort
+architektonisch **kein** SQL-Driving-Adapter im Sinne von [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) — dort
 geht es um SQL-Objekte, die ein **externer** Client aufruft (Views/
 Funktionen). Der Heartbeat-Schreiber ist der umgekehrte Fall: der Prozess
 selbst persistiert Betriebsinformation über die eigene DB-Verbindung — exakt
-das Muster, das [`ADR-0024`](0024-observability-ausserhalb-der-domain.md)
+das Muster, das [`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md)
 bereits entschieden hat: „Betriebsinformationen … müssen aus allen Schichten
 ankommen"; Träger sind Outbound Ports + Driven Adapters (dort für
 `MetricsPort`/`EventSinkPort`, dieselbe Klasse trägt eine
@@ -45,10 +45,10 @@ Adapter-**Typ**.
 
 Der periodische Schreib-**Zeitpunkt** (Timer statt „ein Aufruf pro
 eingehender Replication-Message") ist ein Ausführungsdetail der
-Composition-Root-Verdrahtung ([`ADR-0026`](0026-composition-root.md)), nicht
+Composition-Root-Verdrahtung ([`ADR-0026`](../plan/adr/0026-composition-root.md)), nicht
 eine neue Schicht- oder Abhängigkeitsentscheidung: Er fügt dem bereits
-laufenden, langlebigen Capture-Prozess (ADR-0027) einen weiteren
-Aufruf-Auslöser für denselben Port-Adapter-Mechanismus hinzu, den ADR-0024
+laufenden, langlebigen Capture-Prozess ([`ADR-0027`](../plan/adr/0027-capture-application-service.md)) einen weiteren
+Aufruf-Auslöser für denselben Port-Adapter-Mechanismus hinzu, den [`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md)
 schon autorisiert. Keine Domain-Berührung, keine neue Abhängigkeitsrichtung,
 kein neuer Driving-Adapter. Ein Timer/Goroutine-Zuschnitt ist Implementierung
 unter bereits Entschiedenem, keine Architekturentscheidung.
@@ -58,7 +58,7 @@ unter bereits Entschiedenem, keine Architekturentscheidung.
 Eine vierte Lese-View (nach `active_tables`, `consumer_status`, `changes`,
 `metrics`) liest `cdc.process_heartbeat` und projiziert Alter/Zeitstempel des
 letzten Lebenszeichens. Das ist deckungsgleich mit
-[`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md) Kategorie C:
+[`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) Kategorie C:
 reine Projektion über bereits persistierte, bereits validierte Daten, keine
 Domänenregel. Die `SPEC-007`-Klassifikation (`HEALTH_STATES`) bleibt beim
 lesenden System — dasselbe bereits gelebte Muster wie bei `cdc.metrics`
@@ -67,7 +67,7 @@ Projektion"). Kein neuer Adapter-Typ, keine neue Entscheidung.
 
 ### Prüfung: Berührt das `ADR-0020`-Sperrfeld?
 
-Nein. [`ADR-0020`](0020-http-grpc-optional.md) stellt **HTTP/gRPC als
+Nein. [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) stellt **HTTP/gRPC als
 Driving Adapter** zurück — neue Netz-Listener, die einen konkreten
 API-Consumer-Bedarf voraussetzen (Re-Evaluierungs-Trigger: „Beobachtbarer
 Bedarf eines API-Consumers"). Weder die Tabellen-Schreibseite (kein Driving
@@ -87,7 +87,7 @@ Reviewer benennt.
 ### Einordnung nach Modul 8 §Konflikt-Pfad (sinngemäß, kein Rollenwiderspruch)
 
 Kein Fall „ADR wird per Folge-ADR abgelöst" und kein Fall „Lockerung legitim,
-aber undokumentiert". Es ist der erste der drei Pfade: **ADR-0020 gilt
+aber undokumentiert". Es ist der erste der drei Pfade: **[`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) gilt
 unverändert** (bleibt `Accepted`, permanent, kein neuer Entscheidungsanlass
 eingetreten) — **der Plan-Nachzug hat ihre Sperrwirkung zu breit auf einen
 Fall ausgedehnt, den sie nicht erfasst.** Der tatsächlich tragende Grund für

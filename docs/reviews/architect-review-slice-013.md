@@ -1,19 +1,19 @@
 # Architect-Review slice-013 — Verdikt zu F-1 (Scope-Reduktion und Übergangs-Reihenfolge)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
-**Eingang:** [`docs/reviews/review-slice-013.md`](../../reviews/review-slice-013.md)
+**Eingang:** [`docs/reviews/review-slice-013.md`](review-slice-013.md)
 F-1 (HIGH, Rollen-Bezug) · Slice-Plan
-[`docs/plan/planning/done/slice-013-fehlerzustaende-cdc-abstand.md`](../planning/done/slice-013-fehlerzustaende-cdc-abstand.md)
+[`docs/plan/planning/done/slice-013-fehlerzustaende-cdc-abstand.md`](../plan/planning/done/slice-013-fehlerzustaende-cdc-abstand.md)
 §1/§2/§4/§6 · Commit-Sequenz `fcf442d..HEAD` (`git log --oneline`, s.
 Beleg-Anker) · Präzedenzfall
 [`architect-review-slice-011.md`](architect-review-slice-011.md) ·
-[`done/welle-2-results.md`](../planning/done/welle-2-results.md) §Steering-
+[`done/welle-2-results.md`](../plan/planning/done/welle-2-results.md) §Steering-
 Loop-Einträge, Eintrag „Zwei gemischte Commits" (zweiter Präzedenzfall, für
 Frage 2 einschlägiger als slice-011) ·
-[`ADR-0023`](0023-fehlerklassifikation.md) (Accepted, permanent) ·
-[`ADR-0032`](0032-postgresql-adapterdetail.md) (Accepted, permanent) ·
-[`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md) (Accepted,
-Supersedes ADR-0018) · Baseline-Regelwerk
+[`ADR-0023`](../plan/adr/0023-fehlerklassifikation.md) (Accepted, permanent) ·
+[`ADR-0032`](../plan/adr/0032-postgresql-adapterdetail.md) (Accepted, permanent) ·
+[`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) (Accepted,
+Supersedes [`ADR-0018`](../plan/adr/0018-sql-driving-adapter.md)) · Baseline-Regelwerk
 `modul-05-planning-harness.md` §Lifecycle als State Machine ·
 `modul-08-agentenrollen.md` §Kernidee, §Konflikt-Pfad als Rollen-Sequenz.
 **Ausgang:** Übergabe-Artefakt an Planner — **kein Folge-ADR nötig, kein

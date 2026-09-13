@@ -15,7 +15,7 @@ benannter Consumer), [`ADR-0019`](../../adr/0019-cli-driving-adapter.md)
 (CLI-Muster, trägt den Zugriffsweg), [`ADR-0020`](../../adr/0020-http-grpc-optional.md)
 (Netzwerkschnittstelle ohne Bedarf ausgeschlossen), [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
 (SQL-Funktions-Weg physisch ungelöst, deshalb ausgeschlossen). Architect-Verdikt:
-[`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md)
+[`architect-review-slice-021.md`](../../../reviews/architect-review-slice-021.md)
 — kein neues ADR nötig, Zugriffsweg = CLI-Unterbefehl.
 
 **Berührte Spec-Stellen:** [`ARC-003`](../../../../spec/architecture.md)
@@ -83,7 +83,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] ADR entschieden (Architect): Zugriffsweg für Consumer-Registrierung
       (CLI-Unterbefehl / Netzwerkschnittstelle / anderer Mechanismus),
       referenziert [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md).
-      Architect-Verdikt [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md):
+      Architect-Verdikt [`architect-review-slice-021.md`](../../../reviews/architect-review-slice-021.md):
       CLI-Unterbefehl, kein neues ADR nötig.
 - [x] [`LH-FA-CON-001.a`](../../../../spec/pflichtenheft.md) erfüllt: ein
       externer Aufruf über den entschiedenen Zugriffsweg registriert einen
@@ -119,7 +119,7 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| ~~`docs/plan/adr/NNNN-consumer-zugriffsweg.md`~~ | **entfällt** | Architect-Verdikt [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md): drei bereits `Accepted`-ADRs (`ADR-0019`, `ADR-0020`, `ADR-0046`) schließen den Optionsraum erschöpfend — kein neues ADR nötig |
+| ~~`docs/plan/adr/NNNN-consumer-zugriffsweg.md`~~ | **entfällt** | Architect-Verdikt [`architect-review-slice-021.md`](../../../reviews/architect-review-slice-021.md): drei bereits `Accepted`-ADRs (`ADR-0019`, `ADR-0020`, `ADR-0046`) schließen den Optionsraum erschöpfend — kein neues ADR nötig |
 | `cmd/pg-change-feed/main.go` | update | neuer Sondermodus `register-consumer <name>` (Unterbefehl), verdrahtet bis `RegisterConsumerUseCase`, Exit-Codes 0/1/2 |
 | `internal/bootstrap/wiring.go` | update | `RegisterConsumer(ctx, cfg, name)` baut `postgresstorage.NewConsumerState` + `register.NewRegisterConsumerService` und ruft `Register` auf |
 | `internal/bootstrap/register_test.go` | neu | End-to-End-Test gegen reale PostgreSQL (Happy Path + „bereits registriert"-Boundary) und ein netzloser Verdrahtungsfehler-Test — nicht in der ursprünglichen Plan-Tabelle, Plan-Nachzug im selben Lauf |

@@ -3,15 +3,15 @@
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
 
 **Eingang:** Slice-Plan
-[`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../planning/done/slice-021-consumer-registrierung-zugriffsweg.md)
-§1–§8 · [`spec/pflichtenheft.md`](../../../spec/pflichtenheft.md)
-`LH-FA-CON-001.a`/`LH-FA-CON-004.a` · [`spec/lastenheft.md`](../../../spec/lastenheft.md)
-`LH-FA-CON-001`, `LH-FA-SST-003`, `LH-FA-SST-005` · [`spec/architecture.md`](../../../spec/architecture.md)
+[`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md)
+§1–§8 · [`spec/pflichtenheft.md`](../../spec/pflichtenheft.md)
+`LH-FA-CON-001.a`/`LH-FA-CON-004.a` · [`spec/lastenheft.md`](../../spec/lastenheft.md)
+`LH-FA-CON-001`, `LH-FA-SST-003`, `LH-FA-SST-005` · [`spec/architecture.md`](../../spec/architecture.md)
 §4 (Sequenz-Diagramme, insbesondere `LH-FA-REA-002` und `LH-FA-CON-004`),
-`ARC-003`/`ARC-005` · [`ADR-0018`](0018-sql-driving-adapter.md) (Superseded
-by `ADR-0046`) · [`ADR-0019`](0019-cli-driving-adapter.md) (Accepted,
-`permanent`) · [`ADR-0020`](0020-http-grpc-optional.md) (Accepted, Trigger
-„beobachtbarer API-Consumer-Bedarf") · [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md)
+`ARC-003`/`ARC-005` · [`ADR-0018`](../plan/adr/0018-sql-driving-adapter.md) (Superseded
+by `ADR-0046`) · [`ADR-0019`](../plan/adr/0019-cli-driving-adapter.md) (Accepted,
+`permanent`) · [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) (Accepted, Trigger
+„beobachtbarer API-Consumer-Bedarf") · [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
 (Accepted, `permanent`, benennt die offene SQL-Bridge-Lücke explizit) ·
 `cmd/pg-change-feed/main.go` · `internal/bootstrap/wiring.go` ·
 `internal/application/port/inbound/consumer.go` · `compose.yaml` ·
@@ -27,9 +27,9 @@ die den Optionsraum bereits erschöpfend abdecken:
 
 | Option | Bereits entschieden durch | Verdikt für slice-021 |
 |---|---|---|
-| **A — CLI-Unterbefehl** | [`ADR-0019`](0019-cli-driving-adapter.md): CLI verwendet dieselben Inbound Use Cases wie jeder andere Driving Adapter; physisch trivial, weil CLI im selben Go-Prozess läuft und den Port ohne Brücke direkt aufruft | **Gewählt** |
-| B — Netzwerkschnittstelle (HTTP/gRPC) | [`ADR-0020`](0020-http-grpc-optional.md): „nicht zwingend zum MVP", nur bei beobachtbarem API-Consumer-Bedarf; ihr Re-Evaluierungs-Trigger ist nicht eingetreten — kein Eintrag im Beobachtungs-Register, keine Lastenheft-Änderung, die einen solchen Bedarf benennt | Ausgeschlossen für diesen Slice |
-| C — schreibende SQL-Funktion | [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md): schreibende SQL-Funktionen müssen über Inbound Ports laufen, aber die dafür nötige physische Brücke (FDW/`dblink`/Extension mit Prozess-/Socket-Zugriff) existiert nicht und ist nirgends entschieden — die ADR benennt diese Lücke ausdrücklich als **offen** und verweist sie an „den Slice, der das `ADR-0018`/`ADR-0019`-Rest umsetzt" | Ausgeschlossen — würde eine ungelöste Architektur-Lücke voraussetzen, die dieses Slice laut eigenem §1 nicht lösen muss (es genügt, sie nicht zu wählen) |
+| **A — CLI-Unterbefehl** | [`ADR-0019`](../plan/adr/0019-cli-driving-adapter.md): CLI verwendet dieselben Inbound Use Cases wie jeder andere Driving Adapter; physisch trivial, weil CLI im selben Go-Prozess läuft und den Port ohne Brücke direkt aufruft | **Gewählt** |
+| B — Netzwerkschnittstelle (HTTP/gRPC) | [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md): „nicht zwingend zum MVP", nur bei beobachtbarem API-Consumer-Bedarf; ihr Re-Evaluierungs-Trigger ist nicht eingetreten — kein Eintrag im Beobachtungs-Register, keine Lastenheft-Änderung, die einen solchen Bedarf benennt | Ausgeschlossen für diesen Slice |
+| C — schreibende SQL-Funktion | [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md): schreibende SQL-Funktionen müssen über Inbound Ports laufen, aber die dafür nötige physische Brücke (FDW/`dblink`/Extension mit Prozess-/Socket-Zugriff) existiert nicht und ist nirgends entschieden — die ADR benennt diese Lücke ausdrücklich als **offen** und verweist sie an „den Slice, der das `ADR-0018`/`ADR-0019`-Rest umsetzt" | Ausgeschlossen — würde eine ungelöste Architektur-Lücke voraussetzen, die dieses Slice laut eigenem §1 nicht lösen muss (es genügt, sie nicht zu wählen) |
 | D — Direktes Schreiben der CDC-Tabellen (Status quo) | Ist der von `LH-FA-CON-001.a` benannte **Missstand** selbst, keine Option | Verworfen (Ausgangslage, kein Zugriffsweg) |
 
 **Harte Regel eingehalten:** Keine der drei herangezogenen `Accepted`-ADRs
@@ -173,12 +173,12 @@ Architektur-Entscheidung.
 
 | Aussage | Beleg |
 |---|---|
-| CLI ruft dieselben Inbound Use Cases wie jeder Driving Adapter, `permanent` | [`ADR-0019`](0019-cli-driving-adapter.md) §Entscheidung, §Re-Evaluierungs-Trigger |
-| Netzwerkschnittstelle nur bei beobachtbarem API-Consumer-Bedarf | [`ADR-0020`](0020-http-grpc-optional.md) §Entscheidung, §Re-Evaluierungs-Trigger |
+| CLI ruft dieselben Inbound Use Cases wie jeder Driving Adapter, `permanent` | [`ADR-0019`](../plan/adr/0019-cli-driving-adapter.md) §Entscheidung, §Re-Evaluierungs-Trigger |
+| Netzwerkschnittstelle nur bei beobachtbarem API-Consumer-Bedarf | [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) §Entscheidung, §Re-Evaluierungs-Trigger |
 | Kein Register-Eintrag zu HTTP/gRPC/API-Bedarf | `docs/plan/planning/observations/BEO-PGC/` (eigene Durchsicht aller elf Verzeichnisnamen) |
-| SQL-Funktions-Bridge physisch ungelöst, Lücke ausdrücklich offen und an diesen Slice verwiesen | [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md) §Kontext („Was diese ADR nicht löst"), §Konsequenzen |
+| SQL-Funktions-Bridge physisch ungelöst, Lücke ausdrücklich offen und an diesen Slice verwiesen | [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) §Kontext („Was diese ADR nicht löst"), §Konsequenzen |
 | `ARC-005` benennt den vollständigen Optionsraum | `spec/architecture.md` Zeile 58 (`ARC-005`-Tabellenzeile) |
-| [`LH-FA-CON-001.a`](../../../spec/pflichtenheft.md)/[`LH-FA-CON-004.a`](../../../spec/pflichtenheft.md) benennen den Missstand (Direktschreiben umgeht Prüfung/Invariante) | `spec/pflichtenheft.md` (siehe Link in der linken Spalte) |
+| [`LH-FA-CON-001.a`](../../spec/pflichtenheft.md)/[`LH-FA-CON-004.a`](../../spec/pflichtenheft.md) benennen den Missstand (Direktschreiben umgeht Prüfung/Invariante) | `spec/pflichtenheft.md` (siehe Link in der linken Spalte) |
 | `RegisterConsumerUseCase` bislang nicht verdrahtet | `internal/bootstrap/wiring.go` (kein Treffer für „Register") |
 | Bestehendes Sondermodus-Muster in `main.go` (`--version`/`--healthcheck`) | `cmd/pg-change-feed/main.go:20-46` |
 | Kein Sequenzdiagramm für `LH-FA-CON-001` in der Sicht | `spec/architecture.md` §4 (vier Diagramme: Persist-before-ACK, Lesen, ACK, Tabelle aktivieren — keines für Registrierung) |

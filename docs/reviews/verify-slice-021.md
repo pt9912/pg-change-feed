@@ -3,7 +3,7 @@
 **Review-Art:** Verifikation — *wogegen*: Slice-Plan §2 (Definition of
 Done, 10 Punkte), §3 (Plan-vs-Code), §6 (Risiko, Ausgang bleibt
 Planner-Entscheidung) und Entscheidungs-Konformität gegen den
-Architect-Verdikt [`architect-review-slice-021.md`](../plan/adr/architect-review-slice-021.md)
+Architect-Verdikt [`architect-review-slice-021.md`](architect-review-slice-021.md)
 (CLI-Unterbefehl, kein neues ADR, `ADR-0019`/`ADR-0020`/`ADR-0046`).
 Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über die DoD-Punkte
 hinaus (Reviewer-Aufgabe, bereits erledigt, siehe
@@ -32,7 +32,7 @@ Netz/Container), `git status` am Ende sauber.
   (`in-progress/slice-021-consumer-registrierung-zugriffsweg.md`)
 - `docs/plan/planning/welle-6.md` (§1 Welle-Ziel, §3 Closure-Trigger,
   §4 Slices)
-- `docs/plan/adr/architect-review-slice-021.md` (Architect-Verdikt,
+- `docs/reviews/architect-review-slice-021.md` (Architect-Verdikt,
   Volltext)
 - `docs/plan/adr/0019-cli-driving-adapter.md`,
   `0020-http-grpc-optional.md`, `0046-sql-driving-adapter-lese-schreib-trennung.md`,
@@ -70,7 +70,7 @@ Netz/Container), `git status` am Ende sauber.
 
 | # | DoD-Punkt | Verdikt | Beleg-Kernaussage |
 |---|---|---|---|
-| 1 | ADR entschieden (Architect) | **bestätigt** | `docs/plan/adr/architect-review-slice-021.md` existiert, trägt ein eindeutiges Verdikt (CLI-Unterbefehl, kein neues ADR) mit Gegenprobe (§1) und vollständiger Options-Tabelle (A–D); ADR-Index unverändert, konsistent mit „kein neues ADR" |
+| 1 | ADR entschieden (Architect) | **bestätigt** | `docs/reviews/architect-review-slice-021.md` existiert, trägt ein eindeutiges Verdikt (CLI-Unterbefehl, kein neues ADR) mit Gegenprobe (§1) und vollständiger Options-Tabelle (A–D); ADR-Index unverändert, konsistent mit „kein neues ADR" |
 | 2 | `LH-FA-CON-001.a` erfüllt | **bestätigt** | Wortlaut geprüft (`spec/pflichtenheft.md` Z.78–90): „ohne einen von außen erreichbaren Zugriffsweg" — `main.go` registriert einen neuen Sondermodus `register-consumer <name>`, der über `bootstrap.RegisterConsumer` ausschließlich `register.NewRegisterConsumerService(state).Register(...)` aufruft; kein Code-Pfad in `wiring.go`/`main.go` schreibt die CDC-Speichertabellen (`cdc.consumer`/`cdc.consumer_position`) direkt. `TestRegisterConsumerEndToEnd` bestätigt das real (Zeilenzahl-Prüfung nach Aufruf über den Use Case) |
 | 3 | `make gates` grün | **bestätigt** | zwei eigene Läufe (vor und nach dem Mutationstest), je 0 Befunde |
 | 4 | Review durchgeführt, kein offenes HIGH | **bestätigt** | `review-slice-021.md` liegt vor, 0 HIGH, F-1 (MEDIUM) in `ef99df8` geschlossen; DoD-Checkbox in `ef99df8` korrekt nachgezogen |

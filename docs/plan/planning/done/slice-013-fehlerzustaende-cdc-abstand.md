@@ -253,7 +253,7 @@ dasteht.
 - `committed_at` misst Persistenz-Zeit statt Quell-Commit-Zeit — **Ausgang:**
   weiter offen → `BEO-PGC/cdc-capture-lag-real` im Register (Eintrag
   angelegt, Beleg `evidence/slice-013.md`). **Architect-Verdikt-Korrektur**
-  ([`docs/plan/adr/architect-review-slice-013.md`](../../adr/architect-review-slice-013.md)):
+  ([`docs/plan/adr/architect-review-slice-013.md`](../../../reviews/architect-review-slice-013.md)):
   „eingetreten" verlangt eine echte Folge-Slice-Kennung (Modul 5), die
   hier noch nicht existiert — „weiter offen" ist der korrekte Ausgang,
   bis eine Kennung vergeben ist. Dieser Slice selbst liefert die
@@ -292,7 +292,7 @@ Backticks).
   unabhängigen Architect-Zug, was Review-F-1 (HIGH) als
   Selbstprüfungs-Blindspot markierte (Modul 8). Ein nachträglicher,
   unabhängiger Architect-Verdikt
-  ([`docs/plan/adr/architect-review-slice-013.md`](../../adr/architect-review-slice-013.md))
+  ([`docs/plan/adr/architect-review-slice-013.md`](../../../reviews/architect-review-slice-013.md))
   bestätigte den Scope inhaltlich und ordnete die Prozess-Abweichung
   als dokumentierten Lerneintrag ein (kein Carveout — kein rotes Gate,
   die Verzeichnis-Position war zum Zeitpunkt des Verdikts bereits

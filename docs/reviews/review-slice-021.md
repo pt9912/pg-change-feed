@@ -14,7 +14,7 @@ CLI-Unterbefehl verdrahtet (LH-FA-CON-001.a)`
 
 - `docs/plan/planning/in-progress/slice-021-consumer-registrierung-zugriffsweg.md`
   §1–§8
-- `docs/plan/adr/architect-review-slice-021.md` (bindender Architect-Verdikt)
+- `docs/reviews/architect-review-slice-021.md` (bindender Architect-Verdikt)
 - `ADR-0019`, `ADR-0020`, `ADR-0026`, `ADR-0028`, `ADR-0040`, `ADR-0046`
 - `LH-FA-CON-001`, `LH-FA-CON-001.a` (`spec/lastenheft.md`,
   `spec/pflichtenheft.md`)

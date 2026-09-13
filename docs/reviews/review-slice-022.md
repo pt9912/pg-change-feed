@@ -18,7 +18,7 @@ CLI-Unterbefehl verdrahtet (LH-FA-CON-004.a)`
   §1–§8
 - `docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`
   (Referenz-Muster, bereits reviewt/verifiziert)
-- `docs/plan/adr/architect-review-slice-021.md` §3 (bindendes,
+- `docs/reviews/architect-review-slice-021.md` §3 (bindendes,
   kanalgenerisches Verdikt für diesen Slice)
 - `docs/reviews/review-slice-021.md`, `docs/reviews/verify-slice-021.md`
   (Vorgänger-Findings, insbesondere F-1: Negativtest-Lücke)

@@ -1,11 +1,11 @@
 # Architect-Review slice-014 — Verdikt zu F-1 (globaler `slog`-Singleton vs. `ADR-0024`)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
-**Eingang:** [`docs/reviews/review-slice-014.md`](../../reviews/review-slice-014.md)
+**Eingang:** [`docs/reviews/review-slice-014.md`](review-slice-014.md)
 F-1 (HIGH, Rollen-Widerspruch) · Slice-Plan
-[`docs/plan/planning/done/slice-014-strukturiertes-logging.md`](../planning/done/slice-014-strukturiertes-logging.md)
-§1/§3 · [`ADR-0024`](0024-observability-ausserhalb-der-domain.md) (Accepted,
-permanent) · [`ADR-0026`](0026-composition-root.md) (Accepted, permanent) ·
+[`docs/plan/planning/done/slice-014-strukturiertes-logging.md`](../plan/planning/done/slice-014-strukturiertes-logging.md)
+§1/§3 · [`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md) (Accepted,
+permanent) · [`ADR-0026`](../plan/adr/0026-composition-root.md) (Accepted, permanent) ·
 `spec/architecture.md` `ARC-011` (Telemetrie-Backend) · `spec/lastenheft.md`
 `LH-QA-OPS-003`/`LH-QA-OPS-004` · Präzedenzfall
 [`architect-review-slice-011.md`](architect-review-slice-011.md) (Heartbeat-
@@ -31,8 +31,8 @@ durch eine Lesart des Entscheidungssatzes.**
 Vier voneinander unabhängige Textstellen tragen dieselbe Aussage:
 
 1. **`ADR-0024` `Bezug:`-Feld** nennt explizit **beide** Anforderungen:
-   [`LH-QA-OPS-003`](../../../spec/lastenheft.md) (Metriken) **und**
-   [`LH-QA-OPS-004`](../../../spec/lastenheft.md) (strukturiertes Logging).
+   [`LH-QA-OPS-003`](../../spec/lastenheft.md) (Metriken) **und**
+   [`LH-QA-OPS-004`](../../spec/lastenheft.md) (strukturiertes Logging).
    Ein ADR-Kopf, der nur Metriken entscheiden wollte, hätte `LH-QA-OPS-004`
    nicht im Bezug geführt.
 2. **`ADR-0024` Kontext** formuliert wörtlich: „Das Lastenheft fordert
@@ -174,4 +174,4 @@ beim Implementer/Planner im nächsten Zug, nicht bei diesem Verdikt.
 | Globaler Singleton + paketweite Aufrufe, kein Port | `internal/bootstrap/wiring.go:213`, `internal/adapters/driven/postgresack/ack.go:37,50`, `internal/adapters/driven/postgresstorage/{store,heartbeat,consumerstate,tableactivation}.go`, `internal/adapters/driving/replication/receive/receive.go` |
 | Kein `EventSinkPort`/`MetricsPort` im Repo | `grep -rn "EventSinkPort\|MetricsPort" internal/` → kein Treffer |
 | `ADR-0026` betrifft fachliche Verdrahtung, nicht Cross-Cutting-Infra | `docs/plan/adr/0026-composition-root.md` Kontext/Entscheidung/Alternative B |
-| Präzedenz „Port-Erweiterung statt neuer Adapter-Typ" | `docs/plan/adr/architect-review-slice-011.md` §Prüfung: Schreib-Seite |
+| Präzedenz „Port-Erweiterung statt neuer Adapter-Typ" | `docs/reviews/architect-review-slice-011.md` §Prüfung: Schreib-Seite |

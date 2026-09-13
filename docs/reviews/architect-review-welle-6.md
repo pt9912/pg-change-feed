@@ -2,16 +2,16 @@
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
 
-**Eingang:** [`docs/plan/planning/welle-6.md`](../planning/done/welle-6.md) §1–§6,
+**Eingang:** [`docs/plan/planning/welle-6.md`](../plan/planning/done/welle-6.md) §1–§6,
 §Vermerk für den Trigger-Audit bei Closure ·
-[`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../planning/done/slice-021-consumer-registrierung-zugriffsweg.md),
-[`docs/plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md`](../planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md)
+[`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md),
+[`docs/plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md`](../plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md)
 (je §6–§8) ·
 [`docs/plan/adr/architect-review-slice-021.md`](architect-review-slice-021.md) ·
-[`docs/reviews/verify-slice-022.md`](../../reviews/verify-slice-022.md)
-(V-1, V-2) · [`ADR-0019`](0019-cli-driving-adapter.md) (Accepted,
-`permanent`) · [`ADR-0020`](0020-http-grpc-optional.md) (Accepted, Trigger
-„beobachtbarer API-Consumer-Bedarf") · [`ADR-0046`](0046-sql-driving-adapter-lese-schreib-trennung.md)
+[`docs/reviews/verify-slice-022.md`](verify-slice-022.md)
+(V-1, V-2) · [`ADR-0019`](../plan/adr/0019-cli-driving-adapter.md) (Accepted,
+`permanent`) · [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) (Accepted, Trigger
+„beobachtbarer API-Consumer-Bedarf") · [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
 (Accepted, `permanent`) · `spec/lastenheft.md` `LH-FA-SST-005`…007,
 `LH-QA-SEC-001`…003 (Versionshistorie 0.3.0→0.5.0, Commits `9936e82`,
 `9f5030d`) · `docs/plan/carveouts/` (nur `.gitkeep`) ·
@@ -35,7 +35,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wellen-Closure-Prozedur
 2. **Beobachtungs-Register — Lese-Schritt (Modul 6, Closure-Schritt
    3a/3b):** `BEO-PGC/rollen-verdrahtung` erreicht mit
    `evidence/slice-022.md` 3×. Ausgang: **geplant** — Folge-Slice
-   [`slice-023`](../planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md)
+   [`slice-023`](../plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md)
    (Skelett von diesem Lauf angelegt, in `open/`; Planner vervollständigt
    §2–§8 vor `next/`).
 
@@ -250,7 +250,7 @@ einen Vorsatz. Geprüfte Kriterien:
   ist die im Slice-Entwurf selbst benannte Rückführung `in-progress→next`
   die vorgesehene Antwort, keine stillschweigende Ausweitung.
 - **Existiert eine belastbare Kennung?** Ja —
-  [`slice-023`](../planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md),
+  [`slice-023`](../plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md),
   von diesem Lauf als Skelett in `open/` angelegt (§1 Ziel/Abgrenzung,
   §3 Datei-Kandidaten, §4/§5 Trigger, §8 Sub-Area-Vorprüfung bereits
   gefüllt; §2/§6/§7 bewusst als Platzhalter markiert — Planner
@@ -273,7 +273,7 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 | `ADR-0020`-Trigger gegen `LH-FA-SST-006` eingetreten? | **Ja**, wörtlich — Re-Evaluierung durchgeführt, Verdikt: **bestätigt**, kein Folge-ADR (Entscheidungssatz widerspruchsfrei mit `LH-FA-SST-006`; künftige Protokollwahl ist eine neue, parallele ADR, keine Supersession) |
 | `LH-FA-SST-007` löst einen bestehenden ADR-Trigger aus? | Nein — eigenständig geprüft (Volltextsuche über alle ADR-Dateien), deckungsgleich mit `verify-slice-022.md` V-2 |
 | `ADR-0019`/`ADR-0046` fällig? | Nein — beide `permanent`, in dieser Welle nur angewendet |
-| `BEO-PGC/rollen-verdrahtung` (3×) — Ausgang | **geplant** → [`slice-023`](../planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md) (Skelett angelegt) |
+| `BEO-PGC/rollen-verdrahtung` (3×) — Ausgang | **geplant** → [`slice-023`](../plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md) (Skelett angelegt) |
 | Warum nicht „verkörpert"? | Physische Verdrahtungslücke im Bootstrap-Code, kein Workflow-Disziplin-Defizit; eine Regel löst das bestehende, dreifach reproduzierte Defizit nicht auf |
 | Auswirkung auf die übrige `welle-6`-Closure | Keine Blocker — Schritte 1, 3c–6 bleiben Planner-Arbeit |
 
@@ -285,11 +285,11 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 |---|---|
 | 0 aktive Carveouts | `docs/plan/carveouts/` (nur `.gitkeep`) |
 | Durchgehend Greenfield, keine Reifestufe | `harness/conventions.md` §Modus-Deklaration; `slice-021`/`slice-022` §8 |
-| [`LH-FA-SST-006`](../../../spec/lastenheft.md) ist eine `muss`-Anforderung, Version 0.3.0→0.4.0 | `spec/lastenheft.md` §Versionshistorie 0.4.0 |
-| `ADR-0020`-Trigger-Wortlaut, Konsequenzen-Vorwegnahme | [`ADR-0020`](0020-http-grpc-optional.md) §Re-Evaluierungs-Trigger, §Konsequenzen |
+| [`LH-FA-SST-006`](../../spec/lastenheft.md) ist eine `muss`-Anforderung, Version 0.3.0→0.4.0 | `spec/lastenheft.md` §Versionshistorie 0.4.0 |
+| `ADR-0020`-Trigger-Wortlaut, Konsequenzen-Vorwegnahme | [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) §Re-Evaluierungs-Trigger, §Konsequenzen |
 | Kein ADR mit Pub/Sub-/Benachrichtigungs-Trigger | eigene Volltextsuche `docs/plan/adr/*.md` (keine Treffer für `nats\|benachrichtig\|publish.?subscribe\|pub/sub`) |
 | `ADR-0019`/`ADR-0046` `permanent`, unberührt | jeweiliges ADR §Re-Evaluierungs-Trigger; `verify-slice-022.md` §Entscheidungs-Konformität |
 | Zähler `rollen-verdrahtung` = 3× | `evidence/{slice-011,slice-021,slice-022}.md`, `state.md` |
-| Least-Privilege ist Soll-Anforderung, bereits als DDL+Test erfüllt, Laufzeit-Verdrahtung offen | [`LH-QA-SEC-001`](../../../spec/lastenheft.md)…003; `observation.md` |
-| Folge-Slice-Skelett angelegt | [`slice-023`](../planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md) |
+| Least-Privilege ist Soll-Anforderung, bereits als DDL+Test erfüllt, Laufzeit-Verdrahtung offen | [`LH-QA-SEC-001`](../../spec/lastenheft.md)…003; `observation.md` |
+| Folge-Slice-Skelett angelegt | [`slice-023`](../plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md) |
 | Präzedenzfall „verkörpert" zum Vergleich (Workflow-Disziplin, nicht Architektur-Lücke) | `architect-review-welle-5.md` Zug 2 |

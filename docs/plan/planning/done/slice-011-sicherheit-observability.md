@@ -58,7 +58,7 @@ weil keine der beiden Erweiterungen bereits als eigener Slice existiert:
 
 - **Health-Endpoint ([`LH-FA-ADM-002`](../../../../spec/lastenheft.md), [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)) — nicht realisiert.**
   **Planner-Korrektur nach Architect-Verdikt**
-  ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md)):
+  ([`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md)):
   Die ursprüngliche Implementer-Begründung (neue ADR nötig) trug nicht —
   der Architect bestätigte den Reviewer (review-slice-011 F-1): ein
   Heartbeat-Pattern (Prozess schreibt periodisch in eine
@@ -180,7 +180,7 @@ Lerneintrag; ohne ihn ist der Slice nur abgelegt.
       ohne offenes HIGH-Finding; Least-Privilege-Rollen und
       Metriken-Minimum-View am realen Adapter belegt (`make test-store`).
       **Planner-Korrektur nach Architect-Verdikt**
-      ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md),
+      ([`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md),
       review-slice-011 F-2): Der ursprüngliche Trigger verlangte „Health-
       und Metriken-Endpoint am verdrahteten System" — Health-Endpoint ist
       als Folge-Slice-Arbeit ausgegliedert (§1), dieser Slice schließt auf
@@ -247,7 +247,7 @@ Backticks).
   Least-Privilege-Kernpfad, real als SQLSTATE 42501 nachgewiesen).
 - **Was ging anders als geplant:** Health-Endpoint und Metriken-Minimum
   wurden getrennt statt gemeinsam geliefert — Architect-Verdikt
-  ([`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md))
+  ([`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md))
   klärte, dass Health-per-Heartbeat keine neue ADR braucht, aber eine
   eigene Schicht-Abgrenzung ist (Application-/Bootstrap-Zug), die
   dieser Slice bewusst nicht mitliefert. `cdc_admin`s

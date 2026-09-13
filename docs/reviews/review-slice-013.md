@@ -31,7 +31,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
   (SQL-Driving-Adapter Kategorie C), [`ADR-0044`](../plan/adr/README.md)
   (Image-Beleg-Semantik), Architect-Verdikt
-  [`architect-review-slice-011.md`](../plan/adr/architect-review-slice-011.md)
+  [`architect-review-slice-011.md`](architect-review-slice-011.md)
   (Präzedenzfall für eine vergleichbare Scope-Reduktion)
 - `AGENTS.md` §3 Hard Rules (§3.1 Docker-only, §3.2 Suppression-Verbot,
   §3.3 Move/Inhalt-Trennung, §3.7 Kommentar-Klassen) ·

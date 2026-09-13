@@ -19,7 +19,7 @@ funktionierte · was anders lief. Mit ID-Bezug, wo es einen gibt.
   getragen von [`ADR-0024`](../../adr/0024-observability-ausserhalb-der-domain.md)/
   [`ADR-0027`](../../adr/0027-capture-application-service.md)/
   [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
-  (Architect-Verdikt [`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md)):
+  (Architect-Verdikt [`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md)):
   kein neuer Driving-Adapter-Typ, keine neue ADR nötig.
 - Fehlerzustände sichtbar (Erfassung gestört/normal unterscheidbar) über
   dieselbe Heartbeat-Fläche (`Fault`-Methode) plus eine als Grenze
@@ -79,13 +79,13 @@ die daraus schon gezogen wurde (Folge-Slice, Spec-Version).
   `· seit slice-013`) — jede fortgesetzte Lieferung nach einer
   Rückführung braucht künftig einen eigenständigen Architect-Verdikt
   vor der Planner-Rückkehr. Kein Carveout (Architect-Verdikt
-  [`docs/plan/adr/architect-review-slice-013.md`](../../adr/architect-review-slice-013.md)):
+  [`docs/plan/adr/architect-review-slice-013.md`](../../../reviews/architect-review-slice-013.md)):
   kein rotes Gate, die Verzeichnis-Position war bereits korrekt.
 - **[`ADR-0024`](../../adr/0024-observability-ausserhalb-der-domain.md)-Verstoß bei slice-014** (Review F-1, HIGH): Der Implementer
   stellte die eigene Design-Entscheidung (globaler `slog`-Singleton)
   selbst zur Prüfung, adressierte aber die falsche ADR (0026 statt
   0024). Architect-Verdikt
-  ([`docs/plan/adr/architect-review-slice-014.md`](../../adr/architect-review-slice-014.md)):
+  ([`docs/plan/adr/architect-review-slice-014.md`](../../../reviews/architect-review-slice-014.md)):
   [`ADR-0024`](../../adr/0024-observability-ausserhalb-der-domain.md) deckt Logging eindeutig ab (vier unabhängige Text-Belege).
   Konsequenz: vollständiger Fix-Zug lieferte eine saubere Port-
   Abstraktion in einem Lauf, keine Rückführung nötig.

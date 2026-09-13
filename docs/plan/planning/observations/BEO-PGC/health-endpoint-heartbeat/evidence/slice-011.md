@@ -8,4 +8,4 @@ Umsetzungs-Zug selbst (Application-/Bootstrap-Schicht) ist noch nicht
 geschnitten.
 
 Quelle: docs/reviews/review-slice-011.md (F-1),
-docs/plan/adr/architect-review-slice-011.md.
+docs/reviews/architect-review-slice-011.md.

@@ -8,7 +8,7 @@ Entscheidungs-Konformität ([`ADR-0020`](../plan/adr/0020-http-grpc-optional.md)
 [`ADR-0027`](../plan/adr/0027-capture-application-service.md) ·
 [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) ·
 [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) ·
-Architect-Verdikt [`architect-review-slice-011.md`](../plan/adr/architect-review-slice-011.md)).
+Architect-Verdikt [`architect-review-slice-011.md`](architect-review-slice-011.md)).
 Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über die
 F-1…F-4-Dispositionen hinaus (Reviewer, `review-slice-012.md`, Verdikt
 dort), realer Bedarf (Validator).

@@ -138,7 +138,7 @@ Anker (Hash, Lauf, Zahl).
   `docs/reviews/verify-slice-019.md`).
 - Trigger-Audit der Welle (Carveout · bootstrap-aware Gate · ADR): alle
   drei Klassen „0 fällig"/permanent bestätigt
-  (`docs/plan/adr/architect-review-welle-5.md`).
+  (`docs/reviews/architect-review-welle-5.md`).
 
 ## Archivierung
 

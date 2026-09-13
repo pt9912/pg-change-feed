@@ -5,7 +5,7 @@ Done, 10 Punkte), §3 (Plan-vs-Code, Range `d663da1..e829812`, inkl. Fix-Zug
 und Plan-Nachzug `1a14777`), §6 (Risiko-Ausgang) und Entscheidungs-Konformität
 ([`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md) ·
 [`ADR-0026`](../plan/adr/0026-composition-root.md) ·
-Architect-Verdikt [`architect-review-slice-014.md`](../plan/adr/architect-review-slice-014.md)).
+Architect-Verdikt [`architect-review-slice-014.md`](architect-review-slice-014.md)).
 Besonderer Fokus (Auftrag): ist Review-Finding F-1 (HIGH,
 [`review-slice-014.md`](review-slice-014.md)) durch den Fix-Zug tatsächlich
 aufgelöst — nicht nur behauptet? Nicht geprüft: Diff gegen Plan/Hard Rules im
@@ -44,7 +44,7 @@ Sensor-/Probenlauf dieses Verifikationslaufs *inhaltlich* verändert wurde
 - Slice-Plan §1–§8 am geprüften Stand (`in-progress/slice-014-…md`,
   inkl. Plan-Nachzug für den Fix-Zug)
 - `review-slice-014.md` (F-1 HIGH, F-2 INFO, committet `b4c68d0`/`13d2e68`)
-- `docs/plan/adr/architect-review-slice-014.md` (Verdikt 1: `ADR-0024`
+- `docs/reviews/architect-review-slice-014.md` (Verdikt 1: `ADR-0024`
   gilt uneingeschränkt für strukturiertes Logging, Implementierung war
   falsch, Fix-Zug beim Implementer)
 - `spec/lastenheft.md` `LH-QA-OPS-004`, `docs/plan/adr/0024-…md`,

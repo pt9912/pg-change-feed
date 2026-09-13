@@ -2,12 +2,12 @@
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-11.
 **Eingang:** Slice-Plan
-[`docs/plan/planning/done/slice-016-d-migrate-1.3.1-views-retirement.md`](../planning/done/slice-016-d-migrate-1.3.1-views-retirement.md)
-§1–§8 · [`docs/reviews/review-slice-016.md`](../../reviews/review-slice-016.md)
+[`docs/plan/planning/done/slice-016-d-migrate-1.3.1-views-retirement.md`](../plan/planning/done/slice-016-d-migrate-1.3.1-views-retirement.md)
+§1–§8 · [`docs/reviews/review-slice-016.md`](review-slice-016.md)
 (F-1 HIGH disponiert in `04590a4`, danach 0 HIGH) ·
-[`docs/reviews/verify-slice-016.md`](../../reviews/verify-slice-016.md)
+[`docs/reviews/verify-slice-016.md`](verify-slice-016.md)
 (DoD-Konformität bestätigt, VF-1/VF-2 LOW für Planner-Closure) ·
-[`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md) (Accepted, permanent,
+[`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) (Accepted, permanent,
 Re-Evaluierungs-Trigger) ·
 `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit/`
 (`observation.md`, `state.md`, `evidence/{slice-006,slice-010,slice-015,slice-016}.md`)
@@ -20,8 +20,8 @@ pro Welle — dieser Slice ist wellenlos).
 
 **Ausgang:** Drei unabhängige Prüfungen, alle mit Verdikt:
 
-1. **Trigger-Audit (ADR-0043):** Der Re-Evaluierungs-Trigger feuert
-   **nicht**. ADR-0043 bleibt `Accepted`, `permanent`, unverändert, kein
+1. **Trigger-Audit ([`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)):** Der Re-Evaluierungs-Trigger feuert
+   **nicht**. [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) bleibt `Accepted`, `permanent`, unverändert, kein
    Folge-ADR fällig.
 2. **Register-Bestätigung (BEO-PGC/d-migrate-nacharbeit, jetzt 4×):** Die
    `state.md`-Formulierung des Planners gibt den vollständig aufgelösten
@@ -34,7 +34,7 @@ pro Welle — dieser Slice ist wellenlos).
    siehe Zug 3) — keine Entscheidung nötig, keine Auswirkung auf diese
    Closure.
 
-**Harte Regel eingehalten:** ADR-0043 (`Accepted`) wird von diesem Lauf
+**Harte Regel eingehalten:** [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) (`Accepted`) wird von diesem Lauf
 **nicht** inhaltlich geändert — der Trigger-Audit bestätigt sie nur. Weder
 der Slice-Plan noch das Beobachtungs-Register werden von diesem Lauf
 editiert — das ist Planner-Arbeit im Closure-Zug (Modul 8, Schritt 3a/3c:
@@ -54,7 +54,7 @@ Der Trigger ist eine **Konjunktion**: beide Teilbedingungen müssen
 gleichzeitig gelten — *nicht ausdrückbar* **und** *keine Ausweichform*.
 Fehlt eine der beiden, feuert der Trigger nicht. Geprüft wird jeder
 verbliebene `nacharbeit-*.sql`-Fall einzeln, nicht nur die zwei historisch
-unter ADR-0043 geführten:
+unter [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) geführten:
 
 | Fall | Ausdrückbar? | Ausweichform vorhanden? | Trigger-Bedingung erfüllt? |
 |---|---|---|---|
@@ -62,11 +62,11 @@ unter ADR-0043 geführten:
 | Drei Views (`active_tables`, `consumer_status`, `changes`) | **ja, seit 1.3.1** (dieser Slice: `source_dialect`+`columns:`, real dreifach reproduziert — Erstanlage und Folgelauf, Exit 0, Gegenprobe ohne `columns:` reproduziert den vorhergesagten `VIEW_SIGNATURE_UNKNOWN`) | entfällt — `nacharbeit-views.sql` bereits gelöscht (dieser Slice) | **nein** — Fall gelöst |
 | Rollen-DDL (`nacharbeit-roles.sql`) | **kein Ausdrückbarkeits-Fall** — `CREATE ROLE` ist kein Tabellen-/View-Objekt und liegt außerhalb des Gegenstandsbereichs von `schema.yaml` (Kopfkommentar der Datei bestätigt das explizit); es gibt hier keine „benötigte Operation", die d-migrate ausdrücken soll | ja — DO-Block, unverändert seit slice-011, stabil in Betrieb | **nein** — Konjunktion greift nicht (erste Teilbedingung ist kategorial nicht einschlägig) |
 | `cdc.metrics`/`cdc.heartbeat` (Views, `nacharbeit-observability.sql`/`nacharbeit-heartbeat.sql`) | **technisch ausdrückbar** — dieser Slice beweist gerade, dass d-migrate Views mit `source_dialect`+`columns:` deklarativ trägt; es ist **nicht dokumentiert**, dass eine Überführung an einer Werkzeug-Grenze scheitert, sondern schlicht **noch nicht angegangen** (slice-011-Abgrenzung, „anderer Vorgang") | ja — psql-Nacharbeit, real in Betrieb, grantet sich selbst an `cdc_reader` | **nein** — erste Teilbedingung nicht belegt („kann nicht" ≠ „wurde noch nicht überführt") |
-| Foreign-Object-Blocker (`BEO-PGC/schema-rollout-fremdobjekte`, Exit 8 `DropView` auf `heartbeat`/`metrics` bei erneutem Rollout) | **kein Ausdrückbarkeits-Fall** — das ist **beabsichtigtes** Werkzeug-Verhalten: ADR-0043 Entscheidung Punkt 3 sagt wörtlich „destruktive Operationen bleiben default blockiert (Exit 8); ihre Zulassung ist ein bewusster, berichteter Entschluss, kein Default." Der Blocker ist die Sicherheits-Vorkehrung selbst, nicht ein Scheitern an einer benötigten Operation | — (Frage stellt sich nicht) | **nein** — kategorial kein Trigger-Kandidat |
+| Foreign-Object-Blocker (`BEO-PGC/schema-rollout-fremdobjekte`, Exit 8 `DropView` auf `heartbeat`/`metrics` bei erneutem Rollout) | **kein Ausdrückbarkeits-Fall** — das ist **beabsichtigtes** Werkzeug-Verhalten: [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) Entscheidung Punkt 3 sagt wörtlich „destruktive Operationen bleiben default blockiert (Exit 8); ihre Zulassung ist ein bewusster, berichteter Entschluss, kein Default." Der Blocker ist die Sicherheits-Vorkehrung selbst, nicht ein Scheitern an einer benötigten Operation | — (Frage stellt sich nicht) | **nein** — kategorial kein Trigger-Kandidat |
 
 Für **keinen** der sechs geprüften Fälle sind beide Teilbedingungen
 gleichzeitig erfüllt. Bestätigt damit den Reviewer- (kein HIGH gegen
-ADR-0043) und Verifier-Negativbefund („Re-Evaluierungs-Trigger feuert
+[`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)) und Verifier-Negativbefund („Re-Evaluierungs-Trigger feuert
 nicht") unabhängig, und erweitert die Prüfung explizit auf die drei
 verbliebenen `nacharbeit-*.sql`-Dateien sowie den neuen Fremdobjekte-Fund,
 die beide im Reviewer-/Verifier-Kontext nicht als Trigger-Frage gestellt
@@ -83,7 +83,7 @@ Exit-8-Verhalten dort keine Werkzeug-Grenze, sondern eine in der ADR selbst
 beschriebene Schutzfunktion ist.
 
 **Verdikt Zug 1:** Bestätigt — der Re-Evaluierungs-Trigger feuert nicht.
-ADR-0043 bleibt `Accepted`, `permanent`, unverändert. Kein Folge-ADR.
+[`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) bleibt `Accepted`, `permanent`, unverändert. Kein Folge-ADR.
 
 ---
 
@@ -146,7 +146,7 @@ Verifier-/Reviewer-Befund deckungsgleich — Exit 8,
 `cdc.heartbeat`/`cdc.metrics`, außerhalb des neutralen Modells, real gegen
 1.3.0 **und** 1.3.1 reproduziert (drei unabhängige Läufe: Implementer,
 Reviewer im separaten Worktree gegen den alten Pin, Verifier). Der
-ADR-0043-Bezug ist zutreffend gesetzt. `evidence/slice-016.md` benennt
+[`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Bezug ist zutreffend gesetzt. `evidence/slice-016.md` benennt
 korrekt, warum dieser Slice den Fund **nicht** behebt (anderer Vorgang,
 §1-Klasse 3 — träfe `nacharbeit-observability.sql`/`nacharbeit-heartbeat.sql`,
 nicht die Views-Ausweichform dieses Slices).
@@ -183,8 +183,8 @@ die Closure von slice-016.
 
 | Frage | Ergebnis |
 |---|---|
-| Feuert der ADR-0043-Re-Evaluierungs-Trigger? | Nein — für keinen der sechs geprüften Fälle (CHECK, Views, Rollen, Observability/Heartbeat, Foreign-Object-Blocker) ist die Konjunktion erfüllt |
-| ADR-0043-Status | unverändert, `Accepted`, `permanent` |
+| Feuert der [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Re-Evaluierungs-Trigger? | Nein — für keinen der sechs geprüften Fälle (CHECK, Views, Rollen, Observability/Heartbeat, Foreign-Object-Blocker) ist die Konjunktion erfüllt |
+| [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Status | unverändert, `Accepted`, `permanent` |
 | Folge-ADR nötig? | Nein |
 | Register-Bestätigung `BEO-PGC/d-migrate-nacharbeit` (4×) | `state.md`-Formulierung korrekt, kein Widerspruch zur bereits verkörperten Regel, keine Korrektur nötig |
 | Neuer Ausgang für `d-migrate-nacharbeit` fällig? | Nein — bereits `verkörpert` seit slice-015, vierter Beleg ändert daran nichts |
@@ -201,8 +201,8 @@ die Closure von slice-016.
 | Views ausdrückbar seit 1.3.1, Ausweichform zurückgebaut | `review-slice-016.md` Negativbefund „DoD-Punkt 2 real erfüllt"; `verify-slice-016.md` Sensor-Tabelle (Erstanlage/Folgelauf/Gegenprobe); `BEO-PGC/d-migrate-nacharbeit/evidence/slice-016.md` |
 | Rollen kein Tabellen-/View-Objekt | `tools/schema/nacharbeit-roles.sql:1-8` (Kopfkommentar, eigene Lektüre) |
 | Observability/Heartbeat technisch ausdrückbar, nur noch nicht überführt | `tools/schema/nacharbeit-observability.sql:1-8`, `tools/schema/nacharbeit-heartbeat.sql:1-13` (Kopfkommentare, eigene Lektüre); Slice-Plan §1 (slice-011-Abgrenzung als „anderer Vorgang") |
-| Foreign-Object-Blocker ist beabsichtigtes Sicherheitsverhalten, kein Ausdrückbarkeits-Fall | [`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md) Entscheidung Punkt 3 („destruktive Operationen bleiben default blockiert … kein Default"); `BEO-PGC/schema-rollout-fremdobjekte/observation.md` |
-| Trigger-Wortlaut (Konjunktion) | [`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md) §Re-Evaluierungs-Trigger |
-| Register-Ausgang bereits `verkörpert` seit slice-015 | `docs/plan/adr/architect-review-slice-015.md` Zug 2 |
+| Foreign-Object-Blocker ist beabsichtigtes Sicherheitsverhalten, kein Ausdrückbarkeits-Fall | [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) Entscheidung Punkt 3 („destruktive Operationen bleiben default blockiert … kein Default"); `BEO-PGC/schema-rollout-fremdobjekte/observation.md` |
+| Trigger-Wortlaut (Konjunktion) | [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) §Re-Evaluierungs-Trigger |
+| Register-Ausgang bereits `verkörpert` seit slice-015 | `docs/reviews/architect-review-slice-015.md` Zug 2 |
 | Zähler bei 4× | `BEO-PGC/d-migrate-nacharbeit/evidence/{slice-006,slice-010,slice-015,slice-016}.md` |
 | Register-Ausgangs-Vokabular vs. Risiko-Ausgangs-Vokabular | Baseline-Regelwerk `modul-06-roadmap.md` §Das Beobachtungs-Register („Nur zwei der drei hängen an der Schwelle … unterhalb der Schwelle ist `offen` der Stand … kein Ausgang") vs. `modul-05-planning-harness.md` §Offene Risiken werden bei Closure aufgelöst |

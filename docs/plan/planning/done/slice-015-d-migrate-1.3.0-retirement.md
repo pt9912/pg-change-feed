@@ -247,7 +247,7 @@ Backticks).
   vorgesehene legitime Ausgang bei einer echten Werkzeug-Grenze.
 - **Trigger-Audit ([`ADR-0043`](../../../../docs/plan/adr/README.md)):**
   Architect-Verdikt
-  ([`architect-review-slice-015.md`](../../adr/architect-review-slice-015.md))
+  ([`architect-review-slice-015.md`](../../../reviews/architect-review-slice-015.md))
   bestätigt: Re-Evaluierungs-Trigger feuert nicht — Views sind zwar
   weiterhin nicht ausdrückbar, aber eine funktionierende Ausweichform
   (`nacharbeit-views.sql`) besteht; die Konjunktion des Triggers ist damit

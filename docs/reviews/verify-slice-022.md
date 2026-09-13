@@ -4,7 +4,7 @@
 Done, 10 Punkte), §3 (Plan-vs-Code), §6/§8 (Risiko- und
 Beobachtungs-Sichtung, Ausgang bleibt Planner-Entscheidung) und
 Entscheidungs-Konformität gegen den Architect-Verdikt
-[`architect-review-slice-021.md`](../plan/adr/architect-review-slice-021.md)
+[`architect-review-slice-021.md`](architect-review-slice-021.md)
 §3 (kanalgenerisch, kein neuer Architect-Rundlauf für `slice-022`).
 Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über die DoD-Punkte
 hinaus (Reviewer-Aufgabe, bereits erledigt, siehe
@@ -33,7 +33,7 @@ Netz/Container), `git status` am Ende sauber.
   (`in-progress/slice-022-consumer-bestaetigung-zugriffsweg.md`)
 - `docs/plan/planning/welle-6.md` (§1 Out-of-Scope, insbesondere
   `BEO-PGC/rollen-verdrahtung`)
-- `docs/plan/adr/architect-review-slice-021.md` §3 (bindendes,
+- `docs/reviews/architect-review-slice-021.md` §3 (bindendes,
   kanalgenerisches Verdikt für diesen Slice), §4 (Beobachtung für den
   Planner, nicht diesen Slice betreffend)
 - `docs/reviews/review-slice-022.md` (0 HIGH, 2 MEDIUM F-1/F-2, 1 LOW F-3)

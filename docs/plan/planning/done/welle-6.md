@@ -114,7 +114,7 @@ Lastenheft-Change"). Der Trigger-Audit dieser Welle (Modul 6,
 Closure-Schritt 2) prüft deshalb explizit, ob `ADR-0020` weiterhin gilt oder
 ein Folge-ADR fällig wird — unabhängig vom Ausgang ohne Auswirkung auf
 `slice-021`/`slice-022`, die bereits auf CLI festgelegt sind
-(`docs/plan/adr/architect-review-slice-021.md` §3, kanalgenerisch).
+(`docs/reviews/architect-review-slice-021.md` §3, kanalgenerisch).
 
 `LH-FA-SST-007` (Benachrichtigung über NATS, ebenfalls ein Lastenheft-CR
 außerhalb dieser Welle) landete während `slice-022`s Umsetzung auf `main`

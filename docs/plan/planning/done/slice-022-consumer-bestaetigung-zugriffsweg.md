@@ -16,7 +16,7 @@ offen, Vorwärts-Invariante nicht durchgesetzt),
 Zugriffsweg), [`ADR-0020`](../../adr/0020-http-grpc-optional.md)
 (Netzwerkschnittstelle ohne Bedarf ausgeschlossen), [`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
 (SQL-Funktions-Weg physisch ungelöst, deshalb ausgeschlossen).
-Architect-Verdikt: [`architect-review-slice-021.md`](../../adr/architect-review-slice-021.md)
+Architect-Verdikt: [`architect-review-slice-021.md`](../../../reviews/architect-review-slice-021.md)
 §3 — dieselbe, für `slice-021` bereits entschiedene Zugriffsweg-Mechanik
 (CLI-Unterbefehl) gilt kanalgenerisch auch hier, kein erneuter
 Architect-Rundlauf für dieselbe Frage.

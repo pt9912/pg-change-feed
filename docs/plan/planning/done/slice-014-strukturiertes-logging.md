@@ -110,7 +110,7 @@ Aussagen-Berührung steht hier gar nicht.
 „Plan-Nachzug im selben Lauf" · seit slice-009):** Review-Finding F-1
 (HIGH, [`docs/reviews/review-slice-014.md`](../../../../docs/reviews/review-slice-014.md))
 und das Architect-Verdikt
-[`docs/plan/adr/architect-review-slice-014.md`](../../../../docs/plan/adr/architect-review-slice-014.md)
+[`docs/plan/adr/architect-review-slice-014.md`](../../../reviews/architect-review-slice-014.md)
 verlangen strukturiertes Logging über einen Outbound Port + Driven Adapter
 statt eines globalen `slog`-Singletons ([`ADR-0024`](../../../../docs/plan/adr/README.md)).
 Zusätzlich zu den vier Zeilen oben liefert der Fix-Zug:

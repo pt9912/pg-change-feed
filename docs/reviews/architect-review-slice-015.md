@@ -2,12 +2,12 @@
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-11.
 **Eingang:** Slice-Plan
-[`docs/plan/planning/done/slice-015-d-migrate-1.3.0-retirement.md`](../planning/done/slice-015-d-migrate-1.3.0-retirement.md)
-§1–§8 · [`docs/reviews/review-slice-015.md`](../../reviews/review-slice-015.md)
+[`docs/plan/planning/done/slice-015-d-migrate-1.3.0-retirement.md`](../plan/planning/done/slice-015-d-migrate-1.3.0-retirement.md)
+§1–§8 · [`docs/reviews/review-slice-015.md`](review-slice-015.md)
 (0 HIGH, F-1 MEDIUM/F-2 LOW disponiert) ·
-[`docs/reviews/verify-slice-015.md`](../../reviews/verify-slice-015.md)
+[`docs/reviews/verify-slice-015.md`](verify-slice-015.md)
 (DoD 5/10 real geprüft, kein Defekt, V-1/V-2 offen für Planner) ·
-[`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md) (Accepted, permanent,
+[`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) (Accepted, permanent,
 Re-Evaluierungs-Trigger) ·
 `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit/`
 (`observation.md`, `state.md`, `evidence/{slice-006,slice-010,slice-015}.md`)
@@ -18,8 +18,8 @@ Verifikations-Zug entfällt — dieser Slice ist wellenlos).
 
 **Ausgang:** Zwei unabhängige Architect-Züge, beide mit Verdikt:
 
-1. **Trigger-Audit (ADR-0043):** Der Re-Evaluierungs-Trigger feuert
-   **nicht**. ADR-0043 bleibt `permanent`, unverändert, kein Folge-ADR
+1. **Trigger-Audit ([`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)):** Der Re-Evaluierungs-Trigger feuert
+   **nicht**. [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) bleibt `permanent`, unverändert, kein Folge-ADR
    fällig — bestätigt den Reviewer- und Verifier-Negativbefund unabhängig.
 2. **Register-Verkörperung (BEO-PGC/d-migrate-nacharbeit, 3×):**
    Ausgang **verkörpert** — Regeltext und Zielort unten, Herkunftsanker
@@ -30,7 +30,7 @@ Verifikations-Zug entfällt — dieser Slice ist wellenlos).
 **Zusätzlich:** Beide vorgeschlagenen §6-Risiko-Ausgänge werden bestätigt
 (Risiko 1 „eingetreten", Risiko 2 „entfallen") — siehe §Risiko-Bestätigung.
 
-**Harte Regel eingehalten:** ADR-0043 (`Accepted`) wird von diesem Lauf
+**Harte Regel eingehalten:** [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) (`Accepted`) wird von diesem Lauf
 **nicht** inhaltlich geändert — der Trigger-Audit bestätigt sie nur; die in
 Zug 2 vorgeschlagene Regel liegt **außerhalb** der ADR-Aussage selbst (eine
 operative Test-Kadenz-Regel, keine Änderung an „welches Werkzeug, welche
@@ -88,7 +88,7 @@ Charakteristikum von d-migrate, sondern ein von den Autoren selbst
 anerkannter, in Bearbeitung befindlicher Defekt.
 
 **Verdikt Zug 1:** Bestätigt — Reviewer-Negativbefund und
-Verifier-Negativbefund sind beide unabhängig zutreffend. ADR-0043 bleibt
+Verifier-Negativbefund sind beide unabhängig zutreffend. [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) bleibt
 `Accepted`, `permanent`, unverändert. Kein Folge-ADR.
 
 ---
@@ -167,14 +167,13 @@ Slice, nicht einer späteren.
 ### Zielort
 
 `harness/README.md`, §Sensors, Zeile `make schema-rollout`
-(Bindung-Spalte, aktuell `kein Gate,
-[`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md)`) — dieselbe Zeile
-trägt bereits den ADR-0043-Bezug und ist damit der Ort, an dem ein Leser
+(Bindung-Spalte, aktuell `kein Gate`, [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)) — dieselbe Zeile
+trägt bereits den [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Bezug und ist damit der Ort, an dem ein Leser
 die Testcadence für den d-migrate-Rollout ohnehin nachschlägt. Ergänzung
 nach dem Muster der bestehenden `commit-traceability`-Zeile (die dort
 bereits einen Trigger-Satz plus `seit slice-006` führt):
 
-> kein Gate, [`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md);
+> kein Gate, [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md);
 > Views-Ausweichform-Retest nur bei explizitem d-migrate-Fix-Signal für
 > CREATE-VIEW-Post-Compare-Drift, nicht bei jedem Pin-Bump — seit slice-015
 > (`BEO-PGC/d-migrate-nacharbeit`, 3×)
@@ -234,8 +233,8 @@ Beide Ausgänge sind bei Closure so in §7/§6 des Slice-Plans zu übernehmen.
 
 | Frage | Ergebnis |
 |---|---|
-| Feuert der ADR-0043-Re-Evaluierungs-Trigger? | Nein — Konjunktion nicht erfüllt (CHECK: gelöst; Views: Ausweichform vorhanden) |
-| ADR-0043-Status | unverändert, `Accepted`, `permanent` |
+| Feuert der [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Re-Evaluierungs-Trigger? | Nein — Konjunktion nicht erfüllt (CHECK: gelöst; Views: Ausweichform vorhanden) |
+| [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)-Status | unverändert, `Accepted`, `permanent` |
 | Folge-ADR nötig? | Nein |
 | Register-Ausgang `BEO-PGC/d-migrate-nacharbeit` bei 3× | **verkörpert** |
 | Regeltext | siehe §Regeltext oben |
@@ -253,7 +252,7 @@ Beide Ausgänge sind bei Closure so in §7/§6 des Slice-Plans zu übernehmen.
 |---|---|
 | CHECK jetzt ausdrückbar, deklarativ konvergent | `verify-slice-015.md` Sensor-Tabelle Zeile „Eigener frischer Rollout … `--dry-run`" |
 | Views weiterhin nicht ausdrückbar, Ausweichform aktiv und real getestet | `verify-slice-015.md` Sensor-Tabelle Zeile „Eigener Rollout mit … Views … testweise deklariert"; `tools/schema/nacharbeit-views.sql`; `make test-integration` (beide Läufe) |
-| Trigger-Wortlaut (Konjunktion) | [`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md) §Re-Evaluierungs-Trigger |
+| Trigger-Wortlaut (Konjunktion) | [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) §Re-Evaluierungs-Trigger |
 | d-migrate-Bug bestätigt, Fix in Arbeit, kein Termin | `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit/evidence/slice-015.md` |
 | Zähler bei 3× | `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit/evidence/{slice-006,slice-010,slice-015}.md` |
 | Register-Regel „geplant nur mit Kennung" | Baseline-Regelwerk `modul-06-roadmap.md` §Das Beobachtungs-Register |

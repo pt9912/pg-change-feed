@@ -37,7 +37,7 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 **Ziel:** Health-Endpoint real: der Capture-Prozess schreibt periodisch
 seinen Lebenszeichen-Zustand in eine `cdc.process_heartbeat`-Tabelle, eine
 vierte SQL-Lese-View macht ihn automatisiert abfragbar (Architect-Verdikt
-[`docs/plan/adr/architect-review-slice-011.md`](../../adr/architect-review-slice-011.md):
+[`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md):
 kein neuer Driving-Adapter, keine neue ADR nötig).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:

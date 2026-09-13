@@ -17,7 +17,7 @@ entscheidet die Planung beim Ausplanen, nicht dieser Entwurf.
 (Least-Privilege), [`LH-QA-SEC-002`](../../../../spec/lastenheft.md)
 (Getrennte Berechtigbarkeit), [`LH-QA-SEC-003`](../../../../spec/lastenheft.md)
 (Beschränkbarkeit von CDC-Datenzugriffen). Architect-Verdikt:
-[`architect-review-welle-6.md`](../../adr/architect-review-welle-6.md)
+[`architect-review-welle-6.md`](../../../reviews/architect-review-welle-6.md)
 Zug 2 — Ausgang `geplant` für `BEO-PGC/rollen-verdrahtung` (3×), dieser
 Slice ist die zugewiesene Kennung. **[`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)**
 (Accepted) — der Konfigurationsvertrag (drei Verbindungs-DSNs,

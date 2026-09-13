@@ -13,7 +13,7 @@ Berechtigbarkeit), [`LH-QA-SEC-003`](../../../spec/lastenheft.md)
 [ADR-0026](0026-composition-root.md) (Composition Root),
 [ADR-0043](0043-schemamigrationen-mit-d-migrate.md) (Nacharbeit-Ausweichform
 für Rollen-DDL), Architect-Verdikt
-[`architect-review-welle-6.md`](architect-review-welle-6.md) Zug 2
+[`architect-review-welle-6.md`](../../reviews/architect-review-welle-6.md) Zug 2
 (`BEO-PGC/rollen-verdrahtung`, 3×, Ausgang `geplant` →
 `slice-023`) <!-- d-check:status-provenance -->
 

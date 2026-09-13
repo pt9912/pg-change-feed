@@ -1,19 +1,19 @@
 # Architect-Review welle-5 — Trigger-Audit (Carveout · Bootstrap-aware Gate · ADR-Re-Evaluierung) und Beobachtungs-Register-Verkörperung (BEO-PGC/dod-checkbox-nachzug, 3×)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
-**Eingang:** [`docs/plan/planning/welle-5.md`](../planning/done/welle-5.md) (§1–§3,
+**Eingang:** [`docs/plan/planning/welle-5.md`](../plan/planning/done/welle-5.md) (§1–§3,
 Closure-Trigger noch offen zum Zeitpunkt dieses Laufs) ·
-[`docs/plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`](../planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md),
-[`docs/plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md`](../planning/done/slice-018-commit-zeitstempel-store-adapter.md),
-[`docs/plan/planning/done/slice-019-cdc-capture-lag-ablösen.md`](../planning/done/slice-019-cdc-capture-lag-ablösen.md)
+[`docs/plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`](../plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md),
+[`docs/plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md`](../plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md),
+[`docs/plan/planning/done/slice-019-cdc-capture-lag-ablösen.md`](../plan/planning/done/slice-019-cdc-capture-lag-ablösen.md)
 (je §1–§8) ·
-[`docs/reviews/review-slice-017.md`](../../reviews/review-slice-017.md),
-[`docs/reviews/review-slice-018.md`](../../reviews/review-slice-018.md),
-[`docs/reviews/review-slice-019.md`](../../reviews/review-slice-019.md) ·
-[`docs/reviews/verify-slice-017.md`](../../reviews/verify-slice-017.md),
-[`docs/reviews/verify-slice-018.md`](../../reviews/verify-slice-018.md),
-[`docs/reviews/verify-slice-019.md`](../../reviews/verify-slice-019.md) ·
-[`ADR-0040`](0040-clockport.md) (Accepted, `permanent`) ·
+[`docs/reviews/review-slice-017.md`](review-slice-017.md),
+[`docs/reviews/review-slice-018.md`](review-slice-018.md),
+[`docs/reviews/review-slice-019.md`](review-slice-019.md) ·
+[`docs/reviews/verify-slice-017.md`](verify-slice-017.md),
+[`docs/reviews/verify-slice-018.md`](verify-slice-018.md),
+[`docs/reviews/verify-slice-019.md`](verify-slice-019.md) ·
+[`ADR-0040`](../plan/adr/0040-clockport.md) (Accepted, `permanent`) ·
 `docs/plan/carveouts/` (nur `.gitkeep`) ·
 `harness/conventions.md` §Modus-Deklaration (`PGC`, Greenfield, gesamtes
 Repo) ·
@@ -35,7 +35,7 @@ Trigger-Audit, Schritt 3a/3b Lese-Schritt/Verkörperung) ·
 2. **Beobachtungs-Register — Lese-Schritt (Modul 6, Closure-Schritt 3a/3b):**
    `BEO-PGC/dod-checkbox-nachzug` erreicht mit `evidence/slice-017.md` 3×.
    Ausgang: **verkörpert.** Geschärfte Regel geschrieben in
-   [`.claude/commands/implement-slice.md`](../../../.claude/commands/implement-slice.md)
+   [`.claude/commands/implement-slice.md`](../../.claude/commands/implement-slice.md)
    (Pre-completion-Checkliste, Schritt 18, plus Fixrunden-Ergänzung an
    Schritt 21) · Herkunfts-Anker `seit welle-5`.
 
@@ -210,7 +210,7 @@ desselben Workflow-Dokuments ergänzt (Details siehe Commit-Diff):
    `verify-slice-019.md` VF-2 benannte Lücke (Checkbox blieb nach
    abgeschlossener Fixrunde `[ ]`).
 
-Zielort: [`.claude/commands/implement-slice.md`](../../../.claude/commands/implement-slice.md).
+Zielort: [`.claude/commands/implement-slice.md`](../../.claude/commands/implement-slice.md).
 Herkunfts-Anker: `seit welle-5`.
 
 ---
@@ -235,8 +235,8 @@ Herkunfts-Anker: `seit welle-5`.
 |---|---|
 | 0 aktive Carveouts | `docs/plan/carveouts/` (nur `.gitkeep`) |
 | Durchgehend Greenfield, keine Reifestufe | `harness/conventions.md` §Modus-Deklaration; slice-017/018/019 §8 je „Reiner GF-Hinweis genügt" |
-| `ADR-0040` real eingehalten, alle drei Slices | `verify-slice-017.md` „ADR-0040-Konformität (eigenständig verifiziert)"; `verify-slice-018.md` dieselbe Sektion; `review-slice-017.md`/`review-slice-018.md` Prüfung 1 |
-| `ADR-0040`-Trigger `permanent` | [`ADR-0040`](0040-clockport.md) §Re-Evaluierungs-Trigger |
+| [`ADR-0040`](../plan/adr/0040-clockport.md) real eingehalten, alle drei Slices | `verify-slice-017.md` „`ADR-0040`-Konformität (eigenständig verifiziert)"; `verify-slice-018.md` dieselbe Sektion; `review-slice-017.md`/`review-slice-018.md` Prüfung 1 |
+| `ADR-0040`-Trigger `permanent` | [`ADR-0040`](../plan/adr/0040-clockport.md) §Re-Evaluierungs-Trigger |
 | `ADR-0011`/`ADR-0044` nur angewendet, nicht belastet | `review-slice-018.md` Prüfung 4 (Idempotenz/`ADR-0011`); `verify-slice-019.md` Sensor-Tabelle + Prüfung 4 (`ADR-0044`-Digest-Commit) |
 | Zähler `dod-checkbox-nachzug` = 3× | `BEO-PGC/dod-checkbox-nachzug/evidence/{slice-015,slice-016,slice-017}.md`, `state.md` |
 | Wiederholtes Auftreten über die drei Belege hinaus (kein neuer Zähler-Beitrag) | `verify-slice-017.md` VF-1, `verify-slice-019.md` VF-2 |

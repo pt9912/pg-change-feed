@@ -236,7 +236,7 @@ Backticks).
   stillschweigend übergangen.
 - **Trigger-Audit ([`ADR-0043`](../../../../docs/plan/adr/README.md)):**
   Architect-Verdikt
-  ([`architect-review-slice-016.md`](../../adr/architect-review-slice-016.md))
+  ([`architect-review-slice-016.md`](../../../reviews/architect-review-slice-016.md))
   bestätigt: Trigger feuert nicht — geprüft gegen alle sechs relevanten
   Fälle (CHECK, Views, Rollen-DDL, Observability-/Heartbeat-Views,
   Foreign-Object-Blocker), keiner davon ist aktuell ein "d-migrate kann X
