@@ -87,9 +87,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       §Sensors trägt die Kalibrierungs-Bindung, `AGENTS.md` §4 die neue
       Zeile.
 - [x] `make gates` grün (inkl. des neuen Coverage-Gates).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Siehe [`docs/reviews/review-slice-049.md`](../../../reviews/review-slice-049.md)
+      — 0 HIGH, 0 MEDIUM, 1 LOW, 1 INFO, keine Fixrunde.
 - [x] Doku-Update: `harness/README.md` §Sensors, `AGENTS.md` §4 (siehe oben).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
