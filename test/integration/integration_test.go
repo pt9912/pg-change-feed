@@ -469,6 +469,131 @@ func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
 	}
 }
 
+// TestMVPRetentionBlockersViewShowsFurthestBehindConsumer belegt
+// `LH-FA-RET-005`: `cdc.retention_blockers` zeigt je Quelle real den
+// Consumer mit der am weitesten zurückliegenden bestätigten Position — der
+// Consumer, dessen Position `RetentionPolicy.AllowsDeletion`
+// (`RunRetentionUseCase`) aktuell als Löschgrenze der Quelle behandelt.
+// Registrierung und Bestätigung laufen direkt über den
+// `ConsumerStatePort`-Adapter, ohne CLI-Rundlauf — isoliert von den über
+// `register-consumer`/`acknowledge-consumer` geführten Consumern des
+// externen Black-Box-Rundlaufs (`tools/harness/run-integration-tests.sh`),
+// die erst nach diesem Go-Testlauf entstehen. Real gegen zwei Consumer
+// getestet (`LH-FA-RET-005` Happy Path/Boundary): einer blockiert (weiter
+// zurückliegende Position), einer nicht (bereits weiter bestätigt). Die
+// Sicht berechnet nichts neu, was die Domain-Policy nicht bereits real
+// entscheidet — sie macht nur sichtbar, welche Position aktuell die
+// Löschgrenze trägt.
+func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_full")
+	ctx := context.Background()
+
+	for _, statement := range []string{
+		"INSERT INTO " + env.feed + " (id, name) VALUES (70, 'RetentionViewBehind')",
+		"INSERT INTO " + env.feed + " (id, name) VALUES (71, 'RetentionViewAhead')",
+	} {
+		if _, err := env.pool.Exec(ctx, statement); err != nil {
+			t.Fatalf("Quelländerung: %v (%s)", err, statement)
+		}
+	}
+	behindRows := awaitChangesViewRows(t, env, "70", 1)
+	aheadRows := awaitChangesViewRows(t, env, "71", 1)
+	behindPosition, err := model.NewSourcePosition(mvpSource, uint64(behindRows[0].commitPosition))
+	if err != nil {
+		t.Fatalf("Positions-Konstruktion (behind): %v", err)
+	}
+	aheadPosition, err := model.NewSourcePosition(mvpSource, uint64(aheadRows[0].commitPosition))
+	if err != nil {
+		t.Fatalf("Positions-Konstruktion (ahead): %v", err)
+	}
+
+	state, err := postgresstorage.NewConsumerState(ctx, env.dsn)
+	if err != nil {
+		t.Fatalf("ConsumerState-Adapter: %v", err)
+	}
+	t.Cleanup(state.Close)
+
+	const behindConsumer = model.ConsumerID("retention-view-behind")
+	const aheadConsumer = model.ConsumerID("retention-view-ahead")
+	for _, consumer := range []model.Consumer{
+		{ID: behindConsumer, Name: "Retention View Behind"},
+		{ID: aheadConsumer, Name: "Retention View Ahead"},
+	} {
+		if _, err := state.Register(ctx, consumer); err != nil {
+			t.Fatalf("Register(%s): %v", consumer.ID, err)
+		}
+	}
+	// Beide Consumer entfernen, sobald dieser Testfall endet: eine
+	// bestätigte, nie wieder fortgeschriebene Position dieser Consumer
+	// würde sonst über das Testende hinaus als reale, dauerhaft
+	// zurückliegende Position in `Positions(mvpSource)` weiterleben und
+	// den späteren Retention-Beleg des Compose-Laufs
+	// (`tools/harness/run-integration-tests.sh`, `RunRetentionUseCase`)
+	// dauerhaft blockieren — die Zeilen-Abwesenheit ist hier die
+	// Rücknahme, dieselbe Lesart wie bei jeder administrativen Entfernung
+	// (`ConsumerStatePort.Remove`-Doku).
+	t.Cleanup(func() {
+		if _, err := state.Remove(context.Background(), behindConsumer); err != nil {
+			t.Errorf("Remove(%s) nach Testende: %v", behindConsumer, err)
+		}
+		if _, err := state.Remove(context.Background(), aheadConsumer); err != nil {
+			t.Errorf("Remove(%s) nach Testende: %v", aheadConsumer, err)
+		}
+	})
+	if _, err := state.Acknowledge(ctx, model.ConsumerPosition{ConsumerID: behindConsumer, Position: behindPosition}); err != nil {
+		t.Fatalf("Acknowledge(%s): %v", behindConsumer, err)
+	}
+	if _, err := state.Acknowledge(ctx, model.ConsumerPosition{ConsumerID: aheadConsumer, Position: aheadPosition}); err != nil {
+		t.Fatalf("Acknowledge(%s): %v", aheadConsumer, err)
+	}
+
+	rows, err := env.pool.Query(ctx,
+		"SELECT consumer_id, acknowledged_position, backlog FROM cdc.retention_blockers WHERE source_id = $1 AND consumer_id = ANY($2)",
+		mvpSource, []string{string(behindConsumer), string(aheadConsumer)})
+	if err != nil {
+		t.Fatalf("cdc.retention_blockers-Lesung: %v", err)
+	}
+	defer rows.Close()
+	type blockerRow struct {
+		consumerID string
+		position   int64
+		backlog    int64
+	}
+	var blockers []blockerRow
+	for rows.Next() {
+		var row blockerRow
+		if err := rows.Scan(&row.consumerID, &row.position, &row.backlog); err != nil {
+			t.Fatalf("cdc.retention_blockers-Scan: %v", err)
+		}
+		blockers = append(blockers, row)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("cdc.retention_blockers-Lesung: %v", err)
+	}
+
+	// Happy Path (LH-FA-RET-005): der weiter zurückliegende Consumer
+	// erscheint als aktueller Blocker der Quelle, mit realem Rückstand.
+	if len(blockers) != 1 {
+		t.Fatalf("cdc.retention_blockers für %q/%q: %d Zeilen (Erwartung: 1 — genau der aktuell blockierende Consumer je Quelle)", behindConsumer, aheadConsumer, len(blockers))
+	}
+	if blockers[0].consumerID != string(behindConsumer) {
+		t.Fatalf("cdc.retention_blockers zeigt %q als Blocker (Erwartung: %q, der weiter zurückliegende Consumer)", blockers[0].consumerID, behindConsumer)
+	}
+	if blockers[0].position != behindRows[0].commitPosition {
+		t.Fatalf("cdc.retention_blockers.acknowledged_position: %d (Erwartung: %d)", blockers[0].position, behindRows[0].commitPosition)
+	}
+	if blockers[0].backlog <= 0 {
+		t.Fatalf("cdc.retention_blockers.backlog: %d (Erwartung: > 0 — der zurückliegende Consumer hat einen realen Rückstand)", blockers[0].backlog)
+	}
+
+	// Boundary (LH-FA-RET-005): der bereits weiter bestätigende Consumer
+	// blockiert nicht — nur der am weitesten zurückliegende Consumer wird
+	// je Quelle gezeigt, nicht auch der bereits vorbeigezogene.
+	if blockers[0].consumerID == string(aheadConsumer) {
+		t.Fatalf("cdc.retention_blockers zeigt den bereits weiter bestätigenden Consumer %q als Blocker", aheadConsumer)
+	}
+}
+
 // TestMVPActivationState liest den Aktivierungsstand am verdrahteten
 // Feed-Container über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`,
 // `LH-FA-CFG-004`, `ADR-0028`): die aktivierte Feed-Tabelle meldet

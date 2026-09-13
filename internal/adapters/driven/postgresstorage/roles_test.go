@@ -300,6 +300,15 @@ func TestCdcReaderRoleReadsViewsNotBaseTables(t *testing.T) {
 		t.Fatalf("cdc.metrics trägt keine Zeilen — erwartet mindestens die aggregierten Zähl-Metriken")
 	}
 
+	// cdc.retention_blockers (LH-FA-RET-005) trägt dieselbe
+	// View-Owner-Lese-Disziplin wie cdc.metrics/cdc.active_tables/
+	// cdc.consumer_status — ein leeres Ergebnis ist hier zulässig (kein
+	// Consumer hat in dieser Fixtur bestätigt), geprüft wird ausschließlich
+	// die Zugriffserlaubnis.
+	if _, err := conn.Exec(ctx, "SELECT count(*) FROM cdc.retention_blockers"); err != nil {
+		t.Fatalf("cdc_reader SELECT auf cdc.retention_blockers: erwartet Erfolg, %v", err)
+	}
+
 	if _, err := conn.Exec(ctx, "SELECT count(*) FROM cdc.transaction"); !permissionDenied(err) {
 		t.Fatalf("cdc_reader SELECT auf cdc.transaction (Basistabelle): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
 	}

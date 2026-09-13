@@ -97,8 +97,12 @@ $$;
 -- über CDC_ADMIN_DSN tatsächlich einsetzt (ADR-0047); dokumentiert und
 -- getestet (roles_test.go), nicht angenommen.
 
--- cdc_reader: ausschließlich die drei bestehenden Lese-Views.
-GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes TO cdc_reader;
+-- cdc_reader: ausschließlich die vier bestehenden Lese-Views aus
+-- tools/schema/schema.yaml (retention_blockers seit LH-FA-RET-005 dabei —
+-- dieselbe Definer-Semantik trägt den Lesezugriff auf
+-- cdc.consumer_position/cdc.consumer/cdc.transaction, ohne dass cdc_reader
+-- je einen Grant auf eine dieser Basistabellen bekommt).
+GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes, cdc.retention_blockers TO cdc_reader;
 
 -- Lückenschließung (ADR-0047 Kontext-Befund 3): cdc.process_heartbeat
 -- trug bislang keinen Grant an irgendeine der drei Rollen — der

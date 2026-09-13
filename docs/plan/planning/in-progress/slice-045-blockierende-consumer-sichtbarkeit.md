@@ -71,19 +71,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neue SQL-View zeigt je Quelle real den am weitesten
+- [x] Neue SQL-View zeigt je Quelle real den am weitesten
       zurückliegenden unbestätigten Consumer (Name, Position,
       Rückstand) — real gegen mindestens zwei Consumer getestet
-      (einer blockiert, einer nicht).
-- [ ] `LH-FA-RET-005` real erfüllt: ein Integrationstest liest die neue
+      (einer blockiert, einer nicht). `cdc.retention_blockers`
+      (`tools/schema/schema.yaml`), siehe Plan-Nachzug Punkt 1.
+- [x] `LH-FA-RET-005` real erfüllt: ein Integrationstest liest die neue
       View über SQL (analog zum bestehenden `cdc.active_tables`-/
       `cdc.consumer_status`-Testmuster aus `welle-11`).
-- [ ] `make gates` grün, `make test-integration` grün.
+      `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer`
+      (`test/integration/integration_test.go`), real grün über
+      `make test-integration`; die Rollen-Beschränkung (`cdc_reader`)
+      zusätzlich real über `make test-store`
+      (`TestCdcReaderRoleReadsViewsNotBaseTables`, siehe Plan-Nachzug
+      Punkt 4).
+- [x] `make gates` grün, `make test-integration` grün. Beide real
+      ausgeführt (Ausgaben im Implementer-Bericht); zusätzlich
+      `make test-store` real grün (Rollen-Grant-Beleg).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die neue View
-      (analog zu „Aktivierte Tabellen auflisten").
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die neue View
+      (analog zu „Aktivierte Tabellen auflisten"). Neuer Abschnitt
+      „Blockierende Consumer erkennen" unter „Aufbewahrung (Retention)",
+      plus `cdc_reader`-Zeile in der Rollen-Tabelle ergänzt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -102,6 +113,132 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/schema/schema.yaml` | update | neue View im `views:`-Knoten (deklarativ, wie `active_tables`/`consumer_status`) |
 | `test/integration/integration_test.go` | neu/update | Testfall gegen die neue View |
 | `docs/user/benutzerhandbuch.md` | update | neue View dokumentiert |
+
+### Plan-Nachzug (nach Implementierung)
+
+Regeln dieser Sektion: Implementierungsentscheidungen, die über die Tabelle
+oben hinausgehen — Name/Form der View, die CLI-Entscheidung und die
+Behandlung des „Consumer nie bestätigt"-Randfalls.
+
+**1. Name/Form: `cdc.retention_blockers`, eine Zeile je Quelle über
+`DISTINCT ON`.** Die View liest `cdc.consumer_position` (INNER JOIN
+`cdc.consumer`, keine Basistabelle direkt aus Go-Code oder Domain-Logik
+neu ausgewertet) und wählt je `source_id` deterministisch den Consumer mit
+der kleinsten `acknowledged_position` — das ist exakt die Position, die
+`RetentionPolicy.AllowsDeletion` (`slice-043`) als bindende Untergrenze
+behandelt, weil eine Freigabe verlangt, dass **alle** übergebenen
+Consumer-Positionen die Change-Position erreicht haben. `DISTINCT ON
+(cp.source_id) ... ORDER BY cp.source_id, cp.acknowledged_position ASC,
+c.consumer_id ASC` liefert höchstens eine Zeile je Quelle, mit
+`consumer_id` als deterministischem Tie-Breaker bei mehreren Consumern auf
+identischer Position (PostgreSQL-Dialekt-spezifisch, `source_dialect:
+postgresql` ist bereits Pflicht für alle Views dieser Datei). `backlog`
+berechnet `max(commit_position) - acknowledged_position` über eine
+korrelierte Unterabfrage auf `cdc.transaction` — dasselbe Muster wie
+`consumer_status.latest_commit_position`, keine neue Abfrageform.
+
+**Verhältnis zu `cdc.consumer_status` (Architect-Verdikt,
+`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`, Frage 1):**
+Das Verdikt notiert bereits, dass `consumer_status` „je Consumer" die
+Rückstands-Information trägt und damit `LH-FA-RET-005`s Boundary („mehrere
+blockierende Consumer ... alle einzeln erkennbar") bereits für **alle**
+Consumer mit bestätigter Position abdeckt — unabhängig davon, ob sie
+aktuell die Löschgrenze einer Quelle tragen. `cdc.retention_blockers`
+dupliziert das nicht, sondern beantwortet die engere, im Ziel dieses
+Slice-Plans benannte Frage: **welcher** Consumer je Quelle **aktuell**
+die Freigabe blockiert (die für die Retention einzig entscheidende
+Konsumenten-Position) — zwei verschiedene Fragen, zwei Sichten, keine
+Redundanz.
+
+**2. CLI-Erweiterung (`diagnose`) bewusst nicht vorgenommen.** Die DoD
+dieses Slice zählt bereits drei Liefer-Punkte (View, Integrationstest,
+Doku-Update) — die Größen-Obergrenze aus
+`modul-05-planning-harness.md` §Ziel-Form: Slice. Eine vierte
+Artefakt-Änderung an `internal/bootstrap/wiring.go` (`diagnose`-Ausgabe um
+denselben Inhalt ergänzen) würde den Slice über diese Grenze heben, ohne
+einen Informationsgewinn zu liefern, den der direkte SQL-Zugriff nicht
+bereits trägt: `cdc.retention_blockers` ist über `CDC_READER_DSN`
+(`cdc_reader`-Grant, siehe unten) genauso erreichbar wie jede andere
+Lese-View, ohne den Feed-Container-Prozess oder sein stabiles
+`diagnose`-Ausgabeformat zu berühren — ein Risiko, das
+`run-integration-tests.sh`s bestehende Text-Assertions gegen die
+`diagnose`-Ausgabe (`LH-FA-ADM-002`…`005`) sonst mittragen müssten. Die
+CLI-Erweiterung bleibt damit ein **Bestand, der bewusst stehen bleibt**
+(§1-Klasse „anderer Vorgang"): ein eigener Folge-Slice, falls ein
+Betriebs-Bedarf für die Information *innerhalb* der `diagnose`-Ausgabe
+entsteht, den der direkte SQL-Zugriff nicht deckt.
+
+**3. „Consumer nie bestätigt"-Randfall (§6, Risiko 1) — dieselbe
+Abwesenheits-Lesart wie `ConsumerStatePort.Positions`, keine neue
+Sonderbehandlung nötig.** Die View liest ausschließlich
+`cdc.consumer_position`-Zeilen (INNER JOIN, keine `LEFT JOIN` von
+`cdc.consumer` wie bei `consumer_status`). Ein registrierter, aber gegen
+eine Quelle noch nie bestätigender Consumer trägt keine Zeile in
+`cdc.consumer_position` (`slice-043`s bereits etablierte
+Abwesenheits-Lesart, `internal/application/port/outbound/consumerstate.go`
+`Positions`-Doku) und erscheint deshalb **nicht** in
+`cdc.retention_blockers` — weder fälschlich als „kein Blocker" (er wird
+schlicht nicht betrachtet) noch mit einem irreführenden Wert. Das ist
+konsistent mit dem, was `RunRetentionUseCase` real entscheidet: Ein
+solcher Consumer blockiert auch die tatsächliche Löschausführung nicht
+(`Positions` liefert ihn dort ebenfalls nicht zurück). Eine Quelle, für
+die **kein** Consumer je bestätigt hat, trägt konsequent gar keine Zeile
+in der View (kein aktueller Blocker) — dokumentiert in
+`docs/user/benutzerhandbuch.md` §„Blockierende Consumer erkennen". Real
+getestet: `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer`
+(`test/integration/integration_test.go`) registriert zwei Consumer direkt
+über den `ConsumerStatePort`-Adapter (kein CLI-Rundlauf), bestätigt beide
+auf unterschiedliche reale Positionen und belegt, dass ausschließlich der
+weiter zurückliegende als Blocker erscheint — der bereits weiter
+bestätigende Consumer erscheint nicht als Zeile.
+
+**4. `cdc_reader`-Grant ergänzt (`tools/schema/nacharbeit-roles.sql`).**
+Dieselbe View-Owner-Lese-Disziplin wie bei den drei bestehenden Views
+(Definer-Semantik, kein Grant auf eine Basistabelle):
+`GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes,
+cdc.retention_blockers TO cdc_reader;` — ohne diese Ergänzung bliebe die
+neue View für `CDC_READER_DSN` unerreichbar, obwohl sie dieselbe
+Rollen-Klasse (Lese-View, `LH-QA-SEC-003`) trägt wie die drei
+bestehenden. `CDC_INTEGRATION_DSN` (`test/integration`) verbindet nicht
+als `cdc_reader`, sondern mit weiterreichenden Rechten — dieser Weg belegt
+nur, dass die View selbst korrekt liest, nicht die Rollen-Beschränkung.
+Die Rollen-Beschränkung selbst ist deshalb real über `make test-store`
+geprüft: `TestCdcReaderRoleReadsViewsNotBaseTables`
+(`internal/adapters/driven/postgresstorage/roles_test.go`) um eine
+Zeile ergänzt, die nach `SET ROLE cdc_reader` ein `SELECT count(*) FROM
+cdc.retention_blockers` real ausführt (Erfolg erwartet, Zeilenzahl 0 ist
+in dieser Fixtur zulässig — geprüft wird die Zugriffserlaubnis, nicht der
+Zeileninhalt) — dieselbe reale Rollenprüfung, die die Datei bereits für
+`cdc.metrics` trägt.
+
+**5. Realer Fund während der Implementierung — Testfall blockierte
+dauerhaft die Retention-Löschausführung des Compose-Laufs, behoben durch
+Cleanup im Testfall selbst.** `make test-integration` schlug in drei
+aufeinanderfolgenden Läufen am bestehenden Retention-Beleg
+(`tools/harness/run-integration-tests.sh`, aus `slice-044`) fehl:
+`'RetentionOld' (id=200) wurde nach Freigabe durch beide Consumer nicht
+innerhalb der Zeitspanne real entfernt`. Isoliert durch einen vierten Lauf
+gegen den unveränderten `HEAD`-Stand (per `git stash`, ohne diesen
+Slice-Diff) — dort lief derselbe Retention-Beleg real grün, also lag die
+Ursache im eigenen Diff, nicht an Umgebungs-Flakiness. Ursache: Der neue
+Testfall `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer`
+registrierte zwei eigene Consumer und bestätigte sie einmalig auf eine
+frühe Position, ohne sie danach wieder zu entfernen — `Positions(mvpSource)`
+(`ConsumerStatePort`, `slice-043`) liest **alle** bestätigten Positionen der
+Quelle, unabhängig davon, welcher Testfall den Consumer angelegt hat; die
+beiden liegen gebliebenen, nie fortgeschriebenen Positionen blockierten
+danach `RetentionPolicy.AllowsDeletion` für den **gesamten** restlichen
+Compose-Lauf — real derselbe Mechanismus, den dieser Slice sichtbar macht,
+hier als selbst verursachter Störfall statt als Beobachtungsgegenstand.
+Behoben: `t.Cleanup` entfernt beide Consumer über
+`ConsumerStatePort.Remove` am Ende des Testfalls (Zeilen-Abwesenheit als
+Rücknahme, dieselbe Lesart wie bei jeder administrativen Entfernung) —
+danach lief `make test-integration` real grün, inklusive des bestehenden
+Retention-Belegs. Kein Lerneintrag im Sinne einer Regel-/Sensor-Schärfung
+(der Fehler war eine lokale Testfall-Hygiene-Lücke, kein wiederkehrendes
+Muster über mehrere Slices), aber der Reihenfolge nach dokumentiert, weil
+er über die ursprünglich geplante Implementierung hinausging und real
+einen bestehenden Sensor rot gefärbt hätte, wäre er unentdeckt geblieben.
 
 ## 4. Trigger
 

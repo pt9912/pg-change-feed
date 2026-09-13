@@ -40,6 +40,14 @@
 # bleibt Sache der Go-Use-Case-Schicht (TableActivationPort). Sie leben
 # deklarativ im `views:`-Knoten unten (Pflichtfelder siehe dort).
 #
+# Eine vierte View, retention_blockers, trägt einen anderen Vertrag
+# (LH-FA-RET-005, Erkennbarkeit blockierender Consumer): sie macht sichtbar,
+# welcher Consumer die Löschausführung (RunRetentionUseCase,
+# RetentionPolicy.AllowsDeletion) je Quelle aktuell blockiert, berechnet
+# aber nichts, was die Domain-Policy nicht bereits real entscheidet — reine
+# Projektion über cdc.consumer_position/cdc.consumer/cdc.transaction, im
+# selben deklarativen Muster wie die übrigen drei.
+#
 # Die neutralen Tabellennamen sind unqualifiziert — das d-migrate-Modell
 # trägt kein Schema-Namespace; das Ziel-Schema (`SPEC-006`, `cdc`) trägt der
 # Rollout-Kontext: der Rollout-Lauf führt current_schema() über
@@ -51,11 +59,11 @@
 # (internal/adapters/driven/postgresstorage/schema.sql) trägt dieselbe Form.
 # Herkunft: `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 #
-# Views (active_tables, consumer_status, changes): `source_dialect:
-# postgresql` und eine sichtbare `columns:`-Signatur sind Pflicht (d-migrate
-# Anwenderhandbuch Anhang F.11) — ohne Signatur blockiert ein Folgelauf mit
-# `VIEW_SIGNATURE_UNKNOWN`/`VIEW_SIGNATURE_INCOMPATIBLE` beim
-# `ReplaceView`-Pfad. Herkunft:
+# Views (active_tables, consumer_status, changes, retention_blockers):
+# `source_dialect: postgresql` und eine sichtbare `columns:`-Signatur sind
+# Pflicht (d-migrate Anwenderhandbuch Anhang F.11) — ohne Signatur blockiert
+# ein Folgelauf mit `VIEW_SIGNATURE_UNKNOWN`/`VIEW_SIGNATURE_INCOMPATIBLE`
+# beim `ReplaceView`-Pfad. Herkunft:
 # `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 schema_format: "1.0"
 name: "cdc"
@@ -316,3 +324,27 @@ views:
       - { name: new_data, type: jsonb }
       - { name: schema_version, type: text }
       - { name: committed_at, type: "timestamp with time zone" }
+
+  retention_blockers:
+    description: "Retention-Sicht: je Quelle der Consumer, dessen bestätigte Position den größten Rückstand zur letzten Commit-Position trägt — genau die Position, die RetentionPolicy.AllowsDeletion (RunRetentionUseCase) aktuell als Löschgrenze der Quelle behandelt (LH-FA-RET-005). Macht die bereits real getroffene Freigabe-Entscheidung sichtbar, berechnet sie nicht neu. Ein Consumer ohne jede bestätigte Position gegen eine Quelle trägt keine Zeile in cdc.consumer_position und erscheint hier nicht — dieselbe Abwesenheits-Lesart wie ConsumerStatePort.Positions (er blockiert retentionsseitig auch nicht). Eine Quelle ohne jede bestätigte Consumer-Position erscheint deshalb gar nicht in dieser Sicht (kein aktueller Blocker)."
+    source_dialect: postgresql
+    query: |
+      SELECT DISTINCT ON (cp.source_id)
+          cp.source_id,
+          c.consumer_id,
+          c.name,
+          cp.acknowledged_position,
+          (
+              SELECT max(t.commit_position)
+              FROM cdc.transaction t
+              WHERE t.source_id = cp.source_id
+          ) - cp.acknowledged_position AS backlog
+      FROM cdc.consumer_position cp
+      JOIN cdc.consumer c ON c.consumer_id = cp.consumer_id
+      ORDER BY cp.source_id, cp.acknowledged_position ASC, c.consumer_id ASC
+    columns:
+      - { name: source_id, type: text }
+      - { name: consumer_id, type: text }
+      - { name: name, type: text }
+      - { name: acknowledged_position, type: bigint }
+      - { name: backlog, type: bigint }

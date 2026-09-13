@@ -74,7 +74,7 @@ Gruppenrolle zuweisen:
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
 | `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung) | `CDC_ADMIN_DSN` |
-| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
+| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
 CREATE ROLE feed_capture_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_capture;
@@ -358,6 +358,31 @@ SELECT change_id, committed_at FROM cdc.changes WHERE source_id = '<quelle-id>' 
 ```
 
 Eine Zeile, die dort nicht mehr erscheint, wurde bereits bereinigt.
+
+### Blockierende Consumer erkennen
+
+`cdc.retention_blockers` zeigt je Quelle den Consumer, dessen bestätigte
+Position aktuell die Löschgrenze der Bereinigung trägt (`LH-FA-RET-005`) —
+also genau den Consumer, den `RunRetentionUseCase` als
+weitesten-zurückliegend behandelt, bevor er weitere Zeilen freigibt:
+
+```sql
+SELECT consumer_id, name, acknowledged_position, backlog
+FROM cdc.retention_blockers
+WHERE source_id = '<quelle-id>';
+```
+
+**Ergebnis:** Höchstens eine Zeile je Quelle — `backlog` trägt den Abstand
+zwischen der bestätigten Position dieses Consumers und der letzten
+Commit-Position der Quelle. Eine Quelle ohne Zeile hat aktuell keinen
+Consumer-Blocker (entweder hat noch nie ein Consumer gegen sie bestätigt,
+oder alle bestätigenden Consumer sind bereits auf Höhe der letzten
+Commit-Position). Ein registrierter, aber gegen diese Quelle noch nie
+bestätigender Consumer erscheint hier nicht — dieselbe Abwesenheits-Lesart
+wie beim [Betriebs-Hinweis](#aufbewahrung-retention) oben: Schutz vor
+Bereinigung entsteht erst mit seiner ersten Bestätigung. Die Sicht macht
+nur sichtbar, was `RunRetentionUseCase` bereits real entscheidet — sie
+berechnet die Freigabe nicht neu.
 
 ### Betriebsstatus prüfen
 
