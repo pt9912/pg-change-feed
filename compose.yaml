@@ -80,10 +80,10 @@ services:
       CDC_CAPTURE_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
       CDC_ADMIN_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
       CDC_READER_DSN: postgres://postgres:postgres@cdc-test-postgres:5432/cdc?sslmode=disable
-      CDC_SOURCE_ID: src-mvp
-      CDC_PUBLICATION: pub_pgc_mvp
-      CDC_SLOT: slot_pgc_mvp
-      CDC_TABLES: public.feed_mvp_flow=tbl-mvp-flow:sv-mvp-flow,public.feed_mvp_full=tbl-mvp-full:sv-mvp-full,public.feed_mvp_schema=tbl-mvp-schema:sv-mvp-schema
+      CDC_SOURCE_ID: src-e2e
+      CDC_PUBLICATION: pub_pgc_e2e
+      CDC_SLOT: slot_pgc_e2e
+      CDC_TABLES: public.feed_e2e_flow=tbl-e2e-flow:sv-e2e-flow,public.feed_e2e_full=tbl-e2e-full:sv-e2e-full,public.feed_e2e_schema=tbl-e2e-schema:sv-e2e-schema
       # Log-Level des strukturierten JSON-Loggers (`LH-QA-OPS-004`,
       # slice-014); anders als die fünf Namen oben keine Start-Vorbedingung
       # — `bootstrap.parseLogLevel` fällt auf `info` zurück (leer/nicht
