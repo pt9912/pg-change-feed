@@ -101,7 +101,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       vier-Ebenen-Subjekt nachgezogen — `make test-integration` grün,
       realer Empfangsbeleg mit dem neuen Subjekt-Format.
 - [ ] `make gates` grün, `make test` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-058.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: keiner erwartet (`SPEC-017`/`ARC-013` bereits durch
