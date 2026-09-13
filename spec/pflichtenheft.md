@@ -250,6 +250,23 @@ beiden Quellen. `CDC_CONFIG_FILE` selbst trägt den Dateipfad; leer/unbenannt
 bedeutet kein Dateizugriff, der bestehende Env-only-Pfad bleibt unverändert
 Default.
 
+### SPEC-017 — NATS-Wecksignal (Subjekt- und Nachrichtenform)
+
+Technische Ausgestaltung von [`LH-FA-SST-007`](lastenheft.md): Core NATS
+(kein JetStream) als reines, verlustbehaftetes Wecksignal — keine eigene
+Zustellgarantie, keine eigene Nachvollziehbarkeit. Nachvollziehbarkeit bleibt
+ausschließlich beim bestehenden Lesezugriffsweg
+([`LH-FA-REA-001`](lastenheft.md) ff., `cdc.changes`).
+
+| Merkmal | Festlegung |
+|---|---|
+| Subjekt-Schema | `cdc.changes.<source_id>` — ein Subjekt je Quelle, `<source_id>` identisch zur konfigurierten `CDC_SOURCE_ID`. Ein Consumer, der mehrere Quellen verfolgt, abonniert `cdc.changes.>` (NATS-Wildcard) |
+| Nachrichteninhalt | leerer Payload (Trigger ohne Daten) — kein Change-Inhalt, keine Positionsangabe. Jede Nachricht bedeutet ausschließlich „lies erneut über den bestehenden Zugriffsweg"; Fehlen oder Verdopplung einer Nachricht trägt keine eigene Bedeutung |
+| Zustellgarantie | keine (Core NATS, Fire-and-Forget); ein nicht verbundener oder gerade getrennter Consumer verpasst das Signal ersatzlos — zulässig nach `LH-FA-SST-007` Boundary/Negative |
+| Reconnect-Verhalten | die Client-Bibliothek (`github.com/nats-io/nats.go`) trägt automatisches Reconnect mit eingebautem Backoff auf Verbindungsebene; auf Nachrichtenebene gibt es keinen gesonderten Replay — der Consumer holt entfallene Änderungen ausschließlich über den bestehenden Lesezugriffsweg nach |
+| Fehlerklasse bei Notify-Fehlschlag | `transient` (`SPEC-008`) — der Fehler wird an der Aufrufstelle (`CaptureService`) abgefangen und propagiert **nicht** in den Rückgabewert des Capture-Aufrufs; er darf die bereits erfolgte Persistierung oder das bereits erfolgte Source-ACK (`LH-QA-REL-001.a`) nicht beeinflussen |
+| Aktivierung | optional über `CDC_NATS_URL`; ungesetzt bedeutet deaktiviertes Feature, keine NATS-Verbindung, unverändertes Bestandsverhalten |
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -323,6 +340,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-010` | PostgreSQL Logical Replication (`pgoutput`) | PostgreSQL 17 und 18 (SPEC-012, [`LH-QA-POR-001`](lastenheft.md)) | — (Vertrag steht in diesem Dokument, §1 LH-FA-CFG-001.a; Zeiger auf `spec/architecture.md` entfällt, bis diese gefüllt ist) |
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
 | `SPEC-015` | Eigenständiges Executable (Deployment-Form neben SPEC-011) | Cross-Compile: Linux amd64/arm64 (primär, [`LH-QA-POR-002`](lastenheft.md)); darwin/amd64, darwin/arm64, windows/amd64 perspektivisch; `CGO_ENABLED=0` | — (Deployment-Artefakt; Cross-Compile in CI/CD) |
+| `SPEC-017` | NATS Core (Wecksignal, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` | — (Vertrag steht in diesem Dokument, §2 SPEC-017) |
 
 ---
 
@@ -338,3 +356,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-09 | SPEC-015 ergänzt: eigenständiges Executable — Cross-Compile Linux amd64/arm64 primär, darwin/windows perspektivisch, `CGO_ENABLED=0`; Deployment-Form neben SPEC-011 (OCI) |
 | 2026-09-12 | LH-FA-CON-001.a und LH-FA-CON-004.a ergänzt: Registrierungs- und Bestätigungslogik sind eigenständig getestet, aber ohne von außen erreichbaren Zugriffsweg — die Wahl des Zugriffswegs bleibt eine offene technische Frage |
 | 2026-09-13 | SPEC-016 ergänzt: Feldform der optionalen YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`) — Schlüsselnamen, Precedence-Verweis, DSN-Ausschluss |
+| 2026-09-13 | SPEC-017 ergänzt: NATS-Wecksignal — Subjekt-Schema (`cdc.changes.<source_id>`), leerer Payload, Zustellgarantie, Reconnect-Verhalten, Fehlerklasse `transient`, Aktivierung über `CDC_NATS_URL`; externe-Verträge-Zeile in §6 |
