@@ -65,6 +65,19 @@ test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publica
 test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Verifikation, Black-Box-CLI-Rundlauf (Compose + schema-rollout + Toolchain-Container, kein Gate)
 	@bash tools/harness/run-integration-tests.sh
 
+# --- Performance-Benchmarks (kein Gate; ADR-0054 §(b)) ---
+# Drei eigenständige Skripte (LH-QA-PER-001…003), je ein Beleg, gebündelt
+# hinter diesem Ziel — analog /Development/d-check/Makefile Zeile 84
+# (`bench: build`); nicht Teil von `gates`/`ci`/`fullbuild`, weil kein
+# einzelner Schwellenwert existiert, gegen den Aufwand/Ergebnis
+# entscheiden würde (Kontrast zu coverage-gate). Braucht ein zuvor
+# geladenes Image (make image) für den Feed-Container der Skripte.
+.PHONY: bench
+bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
+	@bash tools/bench-source-impact.sh
+	@bash tools/bench-scaling.sh
+	@bash tools/bench-batch-vs-single.sh
+
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
 # CDC-Schema-Form; SQL wird erzeugt, Rollouts laufen mit Pflicht-Report und
