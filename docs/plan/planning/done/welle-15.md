@@ -18,9 +18,9 @@ zwei Positionen, nicht drei.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-`pg-change-feed` erfüllt [LH-FA-SST-007](../../../spec/lastenheft.md)
+`pg-change-feed` erfüllt [LH-FA-SST-007](../../../../spec/lastenheft.md)
 (NATS-Change-Notification) aktuell **gar nicht** — komplett grüne Wiese,
-kein NATS-Bezug irgendwo im Repo. [ADR-0055](../adr/0055-nats-change-notification-wecksignal.md)
+kein NATS-Bezug irgendwo im Repo. [ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md)
 hat vorab entschieden: Core NATS als reines, unpersistiertes Wecksignal
 (leerer Payload, Subjekt `cdc.changes.<source_id>`), `transient`-
 Fehlerklasse, best-effort NACH `ACK Source` in `CaptureService.Capture()`,
@@ -42,7 +42,7 @@ werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - `slice-051` liegt in `done/`.
-- [ADR-0055](../adr/0055-nats-change-notification-wecksignal.md) liegt vor
+- [ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md) liegt vor
   (Accepted).
 - Kein Slice liegt in `in-progress/`.
 
@@ -73,11 +73,11 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-052 | `ChangeNotificationPort` und `natsnotify`-Adapter | [ADR-0055](../adr/0055-nats-change-notification-wecksignal.md) |
-| slice-053 | Compose-Verdrahtung und Happy-Path-Beleg | [LH-FA-SST-007](../../../spec/lastenheft.md) |
-| slice-058 | NATS-Subjekt auf Tabellen-Granularität heben | [ADR-0056](../adr/0056-nats-tabellen-granulares-subjekt.md) |
-| slice-054 | Boundary-Beleg — nicht verbundener Consumer | [LH-FA-SST-007](../../../spec/lastenheft.md) |
-| slice-055 | Negative-Beleg — Reconnect-Nachholen | [LH-FA-SST-007](../../../spec/lastenheft.md) |
+| slice-052 | `ChangeNotificationPort` und `natsnotify`-Adapter | [ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md) |
+| slice-053 | Compose-Verdrahtung und Happy-Path-Beleg | [LH-FA-SST-007](../../../../spec/lastenheft.md) |
+| slice-058 | NATS-Subjekt auf Tabellen-Granularität heben | [ADR-0056](../../adr/0056-nats-tabellen-granulares-subjekt.md) |
+| slice-054 | Boundary-Beleg — nicht verbundener Consumer | [LH-FA-SST-007](../../../../spec/lastenheft.md) |
+| slice-055 | Negative-Beleg — Reconnect-Nachholen | [LH-FA-SST-007](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
