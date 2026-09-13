@@ -104,7 +104,7 @@ Keine HIGH-, MEDIUM- oder LOW-Findings. Eine INFO-Beobachtung unten.
   0 Befunde plus dem vorbestehenden, unveränderten Abdeckungs-Hinweis zu
   `tools/harness/natssub/main.go`) und `make test-integration` (voller
   Compose-Lauf inkl. des neuen Boundary-Abschnitts: „NATS-Boundary-Beleg
-  (LH-FA-SST-007) — Change (id=231, feed_mvp_full) entstand real ohne einen
+  ([LH-FA-SST-007](../../spec/lastenheft.md)) — Change (id=231, feed_mvp_full) entstand real ohne einen
   auf … abonnierten Client …, blieb vollständig über cdc.changes lesbar, und
   der Feed-Container lief unverändert weiter"), beide real in diesem Review
   ausgeführt, Exit 0
