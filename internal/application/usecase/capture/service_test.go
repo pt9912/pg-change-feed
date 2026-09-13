@@ -332,10 +332,10 @@ func TestCaptureNotifiesAfterAckOnSuccess(t *testing.T) {
 
 // Regressionstest — die wichtigste Einzeleigenschaft aus `ADR-0055`: ein
 // fehlschlagender `ChangeNotificationPort` darf `Capture()` nicht scheitern
-// lassen, wenn `store`/`ack` bereits erfolgreich waren. Rot-Beleg (nicht
-// eingecheckt, siehe Implementer-Bericht): entfernt man das Abfangen in
-// `CaptureService.Capture()` (`if err := s.notify.Notify(...); err != nil { … }`
-// durch `return CaptureResult{}, err` ersetzt), schlägt genau dieser Test fehl.
+// lassen, wenn `store`/`ack` bereits erfolgreich waren: entfernt man das
+// Abfangen in `CaptureService.Capture()` (`if err := s.notify.Notify(...);
+// err != nil { … }` durch `return CaptureResult{}, err` ersetzt), schlägt
+// genau dieser Test fehl.
 func TestCaptureSucceedsDespiteFailingNotification(t *testing.T) {
 	events := []string{}
 	store := &fakeStore{events: &events}

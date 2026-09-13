@@ -58,7 +58,7 @@ type NatsChangeNotificationAdapter struct {
 
 // New legt den Notify-Adapter auf eine bestehende NATS-Verbindung; die
 // Composition Root verdrahtet den Verbindungsaufbau über `CDC_NATS_URL`
-// (Folge-Slice `slice-053`).
+// (`ADR-0055`).
 func New(conn *nats.Conn, opts ...Option) (*NatsChangeNotificationAdapter, error) {
 	if conn == nil {
 		return nil, fmt.Errorf("%w: keine NATS-Verbindung", outbound.ErrNotify)
