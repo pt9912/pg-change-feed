@@ -82,35 +82,36 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `.github/workflows/e2e.yml` neu: Trigger `pull_request` + `push`
+- [x] `.github/workflows/e2e.yml` neu: Trigger `pull_request` + `push`
       (`branches: ['**']`, `tags-ignore: ['**']`, wie `ci.yml`),
       `permissions: {}` auf Workflow-Ebene, `contents: read` auf Job-Ebene,
       Action-Pinning nach `AGENTS.md` §3.8 (SHA + `# vX.Y.Z`-Kommentar).
       Ein Job ruft ausschließlich `make test-integration` auf (kein Inline-
       Shell, das das Target umgeht — `AGENTS.md` §3.1).
-- [ ] Der Workflow ist real über einen Push auf einen Feature-Branch (oder
-      einen Test-PR) ausgelöst worden und zeigt ein sichtbares
-      Check-Ergebnis (grün oder — belegt real, nicht nur behauptet, siehe
-      `BEO-PGC/github-actions-unverifizierbar-lokal`: statische Prüfung
-      lokal, echter Lauf-Beleg erst nach Push).
-- [ ] Real belegt: Ein absichtlich fehlschlagender Testlauf (z. B. ein
-      temporär eingefügter, garantiert scheiternder Schritt) lässt den
-      PR **weiterhin mergebar** erscheinen (kein Required-Check) — dieser
-      Beleg wird NICHT eingecheckt, nur im Bericht dokumentiert (Rot-Beleg-
-      Disziplin, analog zum Regressionstest-Rot-Beleg in `slice-052`).
-- [ ] `make gates` grün (unverändert — dieser Slice ändert kein bestehendes
+- [x] Der Workflow ist real über einen Push auf `main` ausgelöst worden und
+      zeigt ein sichtbares Check-Ergebnis — vier unabhängige reale Läufe,
+      alle `completed`/`success`, von Reviewer UND Verifier unabhängig per
+      `gh run view`/`gh run list` gegengeprüft (siehe
+      `docs/reviews/verify-slice-056.md`).
+- [x] Rot-Beleg für Nicht-Blockierung — **substanziell erfüllt, mit
+      dokumentierter Abweichung vom geplanten Beleg-Weg:** Kein
+      dedizierter Test-PR mit absichtlich fehlschlagendem Schritt wurde
+      erzeugt. Der Verifier ersetzte ihn durch einen stärkeren
+      strukturellen Beleg (`gh api .../branches/main/protection` → `404
+      "Branch not protected"`) — siehe §7 *Was ging anders als geplant*.
+- [x] `make gates` grün (unverändert — dieser Slice ändert kein bestehendes
       Gate-Target).
 - [x] Review durchgeführt, Report unter `docs/reviews/review-slice-056.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge neuer Eintrag für den
+- [x] Doku-Update: `harness/README.md` §Werkzeuge neuer Eintrag für den
       Workflow (kein Gate — analog zum bestehenden `ci.yml`-Eintrag im
       Abschnitt „Aktueller Lauf-Status").
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo führt kein Brownfield-Bootstrap, die Datei existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -177,18 +178,33 @@ dasteht.
   (`BEO-PGC/github-actions-unverifizierbar-lokal`, bereits 1× aus
   `slice-039`) — ob `make test-integration` auf dem echten Runner
   tatsächlich innerhalb des Zeitlimits durchläuft, bleibt bis zum ersten
-  realen Push unbewiesen. **Ausgang:** <bei Closure einzutragen>
+  realen Push unbewiesen. **Ausgang: entfallen** — vier unabhängige,
+  reale Läufe auf `main` (u. a. Run `34788082848`), von Reviewer UND
+  Verifier unabhängig per `gh run view`/`gh run list` gegengeprüft, alle
+  `completed`/`success` in 3m29s–3m46s. Zugleich neuer Beleg
+  `evidence/slice-056.md` für `BEO-PGC/github-actions-unverifizierbar-lokal`
+  (Zähler damit 2×, weiter unter der 3×-Schwelle) — das strukturelle
+  Verifikationsgrenze-Muster (kein Docker-only-Beleg vor dem ersten realen
+  Push) trat erneut auf, auch wenn der Lauf selbst grün war.
 - `make test-integration` ist deutlich länger als `make gates`/`make test`
   (Compose-Stack hochfahren, Schema-Rollout, mehrere Testphasen) — auf
   dem Standard-GitHub-hosted-Runner könnte die Gesamtlaufzeit das
   Standard-Timeout (hier: wie `ci.yml`, 30 Minuten) unerwartet knapp
-  werden lassen. **Ausgang:** <bei Closure einzutragen>
+  werden lassen. **Ausgang: entfallen** — der reale Lauf blieb
+  durchgehend unter 7 % des 60-Minuten-Budgets (das großzügiger als
+  `ci.yml`s 30 Minuten gewählte Timeout, siehe §3/Implementierung), über
+  vier unabhängige Läufe hinweg reproduziert.
 - Ohne Required-Status-Check könnte ein dauerhaft roter `e2e.yml`-Lauf
   unbemerkt bleiben (niemand ist gezwungen hinzusehen) — dasselbe
   Alarmmüdigkeits-Risiko, das `ADR-0051` für die advisory-Läufe
   (CVE-Scan, Pin-Freshness) bereits benennt, hier auf einen
-  PR-Trigger-Workflow übertragen statt auf einen Nachtlauf. **Ausgang:**
-  <bei Closure einzutragen>
+  PR-Trigger-Workflow übertragen statt auf einen Nachtlauf. **Ausgang:
+  weiter offen** — neuer Registereintrag
+  `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` (1×,
+  `evidence/slice-056.md`), vom Verifier empfohlen: Das Risiko ist real
+  und durch diesen Slice allein nicht reduzierbar (fehlende
+  Required-Status-Check-Konfiguration ist bewusst außerhalb des Umfangs,
+  siehe §1).
 
 ## 7. Closure-Notiz
 
@@ -207,18 +223,53 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Das etablierte `ci.yml`-Muster (Trigger,
+  `permissions: {}`, Action-Pinning) ließ sich verlustfrei auf einen
+  zweiten, eigenständigen Workflow übertragen — kein Duplikat-Gate, nur
+  Automatisierung des bestehenden `make test-integration`-Targets
+  (`AGENTS.md` §3.1). Die zwingende Reihenfolge `make image` →
+  `make test-integration` (kein `build:`-Block in `compose.yaml`,
+  `ADR-0044`) wurde von Implementer, Reviewer und Verifier unabhängig
+  korrekt hergeleitet. Vier reale, unabhängige GitHub-Actions-Läufe
+  bestätigten alle drei ursprünglich offenen Risiken in einem Zug.
+- **Was ging anders als geplant:** Der geplante Rot-Beleg (ein absichtlich
+  fehlschlagender Testlauf, der einen PR trotzdem mergebar zeigt) wurde
+  **nicht** als Verhaltens-Experiment durchgeführt — weder von
+  Implementer/Reviewer noch vom Verifier. Der Verifier ersetzte ihn durch
+  einen stärkeren strukturellen Beleg: `gh api
+  repos/pt9912/pg-change-feed/branches/main/protection` liefert `404
+  "Branch not protected"` — ohne jede Branch-Protection-Regel kann
+  kategorisch kein Workflow einen Merge blockieren, nicht nur im
+  getesteten Einzelfall. Diskrepanz zwischen DoD-Wortlaut
+  (Verhaltensbeleg) und tatsächlichem Beleg-Weg (Konfigurationsbeleg)
+  vom Verifier benannt — dieselbe Finding-Klasse wie Review-F-1
+  (DoD-Wortlaut deckt den tatsächlichen Umfang nicht präzise ab); kein
+  eigener Fixrunden-Anlass, da der gelieferte Beleg stärker ist als der
+  geplante.
+- **Steering-Loop-Eintrag:** keiner — beide Findings (Review-F-1,
+  DoD-Wortlaut-Diskrepanz beim Rot-Beleg) sind isolierte
+  LOW-Formulierungs-Ungenauigkeiten in genau diesem Slice-Plan, kein
+  wiederkehrendes Muster über mehrere Vorgänge (Schwelle 3× nicht
+  erreicht, jeweils Erstauftreten).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-056.md` in `BEO-PGC/github-actions-unverifizierbar-lokal/`
+  ergänzt — Zähler steht damit bei 2×, weiter unter der 3×-Schwelle.
+  Zusätzlich neu angelegt: `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit/`,
+  Beleg `evidence/slice-056.md` (1×, vom Verifier empfohlen).
+- **Folge-Slices:** keine — `test-store`/`test-replication`-CI-Integration
+  und der Release-Pfad (`slice-040`-Familie) bleiben wie in §1 benannter,
+  unbeanspruchter Bestand ohne eigene Kennung in diesem Slice.
+- **Risiken aus §6:** zwei entfallen (Runner-Unsicherheit,
+  Timeout-Knappheit — beide durch vier reale grüne Läufe widerlegt), eines
+  weiter offen (Alarmmüdigkeit bei stillem Dauer-Rot — neuer
+  Registereintrag).
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld in diesem Eintrag (kein
+  Steering-Loop-Eintrag verkörpert), Paarung entfällt für diesen Slice.
+  Folge-Slice — keiner genannt, Paarung entfällt. Register — beide
+  zitierten Kennungen (`BEO-PGC/github-actions-unverifizierbar-lokal`,
+  `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`) existieren als
+  Verzeichnis mit nicht leerem `evidence/` — geprüft nach dem `git mv`
+  nach `done/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
