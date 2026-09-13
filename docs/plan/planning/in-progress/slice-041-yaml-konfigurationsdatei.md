@@ -236,6 +236,18 @@ ungültiges YAML → verbotener DSN-Schlüssel → striktes Decoding
 `io.EOF` beim Decode) ist **kein** Fehler — sie liefert
 `fileConfig{}` zurück, äquivalent zu einer Datei ohne jedes Feld.
 
+**Doku-Update-Ort:** ausschließlich `docs/user/benutzerhandbuch.md` (§5,
+neue Unterüberschrift „Optionale YAML-Konfigurationsdatei", plus
+`SPEC-016`-Verweis) und `spec/pflichtenheft.md`. `harness/README.md` bleibt
+unverändert: seine Abschnitte (Source precedence, Guides, Sensors,
+Traceability, Safety, Workflow, Leseordnung) haben keinen Platz für eine
+operative Env-Var-/Datei-Erklärung — dieselbe Begründung, aus der
+`CDC_LOG_LEVEL`/`CDC_TABLES` dort ebenfalls nicht stehen, nur im
+Benutzerhandbuch. Die Sensor-Zeile `make test-integration` nennt
+`compose.yaml`s Container-Vertrag, der `CDC_CONFIG_FILE` bewusst nicht
+führt (§1 Out-of-Scope, `compose.yaml`-Anpassung ist Folgepflicht eines
+späteren Slice) — sie bleibt deshalb unverändert richtig.
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
