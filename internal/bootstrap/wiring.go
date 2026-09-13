@@ -2,8 +2,10 @@
 // konkreten Adapter und verdrahtet die Pipeline an genau einer Stelle —
 // ChangeStore-Driven-Adapter, Aktivierungs-Driven-Adapter mit dem
 // EnableTable Use Case (`ADR-0028`), Heartbeat-Driven-Adapter mit dem
-// periodischen Timer-Zug (`ADR-0024`), Replication-Stream-
-// Driving-Adapter, Capture Service und Replication-ACK-Driven-Adapter.
+// periodischen Timer-Zug (`ADR-0024`), Retention-Use-Case mit
+// periodischem Lösch-Takt über den System-Clock-Adapter (`ADR-0014`,
+// `ADR-0040`), Replication-Stream-Driving-Adapter, Capture Service und
+// Replication-ACK-Driven-Adapter.
 // Die Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
 // einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
 //
@@ -30,6 +32,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
@@ -41,6 +44,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/retention"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -94,6 +98,22 @@ const heartbeatStaleAfter = 3 * heartbeatInterval
 // unbemerkt, ohne einen zweiten Konfigurationswert ohne eigenen Bedarf
 // einzuführen (Implementer-Entscheidung).
 const administrationPollInterval = heartbeatInterval
+
+// retentionInterval trägt den periodischen Lösch-Takt der
+// Retention-Goroutine (`runRetentionCleanup`, `LH-FA-RET-002`…`004`,
+// `ADR-0014`): ein MVP-Default ohne eigene Konfigurationsschicht, analog
+// zu `heartbeatInterval` — Implementer-Entscheidung. Jeder Takt liest alle
+// Changes der Quelle und befragt `RetentionPolicy.AllowsDeletion`, ein
+// selteneres Intervall als der Heartbeat-Takt hält diese breitere
+// Leseoperation von der kritischen Sektion des Capture-Pfads fern.
+const retentionInterval = 10 * time.Second
+
+// retentionMinAge trägt das Mindestalter der `RetentionPolicy`
+// (`LH-FA-RET-003`): ein MVP-Default ohne eigene Konfigurationsschicht,
+// dieselbe Minimal-Form wie `retentionInterval` — Implementer-
+// Entscheidung. Eine Laufzeit-Konfigurationsanbindung ist ein anderer
+// Vorgang (`welle-13` §6).
+const retentionMinAge = 24 * time.Hour
 
 // walRetentionWarnBytes und walRetentionErrorBytes tragen die
 // SPEC-013-Startwerte für `cdc_wal_retention_bytes` (`CDC_THRESHOLDS`,
@@ -364,6 +384,35 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// nachfolgenden Fault-Schreibversuch am selben DSN ebenfalls scheitern
 	// lassen.
 	defer reportFault(heartbeat, cfg.Source, &runErr)
+	// Der Retention-Pool trägt ausschließlich die periodische
+	// Lösch-Ausführung (`runRetentionCleanup` unten) — eine eigene
+	// Verbindung, gebunden an `cdc_admin` (`ADR-0047`): `DeleteChanges` und
+	// die Waisen-Transaktions-Bereinigung sind ein Verwaltungs-, kein
+	// Erfassungs-Nutzlast-Schreibzug (`tools/schema/nacharbeit-roles.sql`).
+	retentionStore, err := postgresstorage.New(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer retentionStore.Close()
+	// Eine eigene `ConsumerStatePort`-Verbindung, getrennt von den
+	// kurzlebigen Verbindungen der CLI-Sondermodi
+	// (`RegisterConsumer`/`AcknowledgeConsumer` unten): der Retention-Zug
+	// liest die bestätigten Consumer-Positionen der Quelle wiederholt, über
+	// die Lebensdauer des Prozesses.
+	retentionConsumerState, err := postgresstorage.NewConsumerState(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer retentionConsumerState.Close()
+	retentionMinAgeDuration, err := model.NewDuration(int64(retentionMinAge))
+	if err != nil {
+		return err
+	}
+	retentionPolicy, err := model.NewRetentionPolicy(retentionMinAgeDuration)
+	if err != nil {
+		return err
+	}
+	retentionUseCase := retention.NewRunRetentionService(retentionStore, retentionConsumerState, systemclock.New())
 	enableTables := enable.NewEnableTableService(activation)
 	disableTables := disable.NewDisableTableService(activation)
 	for qualified, binding := range cfg.Tables {
@@ -468,6 +517,20 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		})
 	}()
 
+	// Die Retention-Goroutine läuft wie Heartbeat, Administration und
+	// WAL-Retention über den eigenen Pool und die eigene Goroutine — kein
+	// Eingriff in die kritische Sektion des Capture-Persist-ACK-Pfads
+	// (`LH-QA-REL-001.a`). Der Lösch-Takt trägt `retentionInterval`, die
+	// Freigabe je Change `RetentionPolicy.AllowsDeletion` über
+	// `retentionPolicy` (`LH-FA-RET-002`…`004`, `ADR-0014`).
+	retentionCtx, stopRetention := context.WithCancel(ctx)
+	var retentionDone sync.WaitGroup
+	retentionDone.Add(1)
+	go func() {
+		defer retentionDone.Done()
+		runRetentionCleanup(retentionCtx, retentionUseCase, cfg.Source, retentionInterval, retentionPolicy, log)
+	}()
+
 	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
 	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
 	// (`cdc_capture`) — die Stream-Verbindung steht während `stream.Run` im
@@ -526,6 +589,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	walRetentionDone.Wait()
 	stopAdministration()
 	administrationDone.Wait()
+	stopRetention()
+	retentionDone.Wait()
 	return mergeStreamAndWALFaultOutcome(streamErr, &walFault)
 }
 
@@ -693,6 +758,33 @@ func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log
 			default:
 				log.Info(ctx, "replication: WAL-Rückstand gemessen", "metric", "cdc_wal_retention_bytes", "bytes", bytes)
 			}
+		}
+	}
+}
+
+// runRetentionCleanup ruft die Retention-Bereinigung periodisch für die
+// konfigurierte Quelle auf, bis `ctx` endet (`LH-FA-RET-002`…`004`,
+// `ADR-0014`): jeder Tick befragt `RunRetentionUseCase.Run` — die Freigabe
+// je Change trägt `RetentionPolicy.AllowsDeletion` im Use Case, diese
+// Schleife trägt nur den periodischen Auslöser. Ein Fehler des Aufrufs
+// bricht den Lauf nicht ab und wird protokolliert: eine gescheiterte
+// Bereinigung ist kein Fehlerzustand des Capture-Pfads (`SPEC-008`) —
+// dieselbe best-effort-Haltung wie beim Heartbeat-Schreib-Zug und der
+// WAL-Rückstand-Messung oben.
+func runRetentionCleanup(ctx context.Context, useCase inbound.RunRetentionUseCase, source model.SourceID, interval time.Duration, policy model.RetentionPolicy, log outbound.LogPort) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			result, err := useCase.Run(ctx, inbound.RunRetentionCommand{Source: source, Policy: policy})
+			if err != nil {
+				log.Warn(ctx, "retention: Bereinigung fehlgeschlagen", "error", err)
+				continue
+			}
+			log.Info(ctx, "retention: Bereinigung gelaufen", "deleted", result.Deleted)
 		}
 	}
 }
