@@ -5,6 +5,7 @@ go 1.27
 require (
 	github.com/jackc/pglogrepl v0.0.0-20260824121319-4ae5c490f7ce
 	github.com/jackc/pgx/v5 v5.11.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

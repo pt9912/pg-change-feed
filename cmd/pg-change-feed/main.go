@@ -29,13 +29,14 @@ func main() {
 		// ist distroless (kein Shell, kein `psql`, Dockerfile) — der
 		// einzige Aufruf, den Compose innerhalb dieses Containers
 		// ausführen kann, ist das Binary selbst (`CMD`-Form ohne Shell).
-		// Dieselben Umgebungs-Vorbedingungen wie der reguläre Lauf
-		// (`ConfigFromEnv`) tragen die drei rollen-spezifischen DSNs und
-		// die Quelle (`ADR-0047`) — der Healthcheck-Lauf selbst nutzt nur
-		// `cfg.ReaderDSN`; Publication/Slot/Tabellen bleiben ungenutzt, die
+		// Dieselben Umgebungs-/Datei-Vorbedingungen wie der reguläre Lauf
+		// (`ConfigFromEnvAndFile`, `ADR-0052`) tragen die drei
+		// rollen-spezifischen DSNs und die Quelle (`ADR-0047`) — der
+		// Healthcheck-Lauf selbst nutzt nur `cfg.ReaderDSN`;
+		// Publication/Slot/Tabellen bleiben ungenutzt, die
 		// Vorbedingungsprüfung teilt sich beide Läufe trotzdem, statt eine
 		// zweite Lese-Funktion zu pflegen.
-		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		cfg, err := bootstrap.ConfigFromEnvAndFile(os.Getenv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 			os.Exit(1)
@@ -53,7 +54,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "pg-change-feed: register-consumer erwartet genau einen Namen als Argument")
 			os.Exit(2)
 		}
-		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		cfg, err := bootstrap.ConfigFromEnvAndFile(os.Getenv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 			os.Exit(1)
@@ -77,7 +78,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: acknowledge-consumer: Position %q ist kein gültiger Offset: %v\n", os.Args[3], parseErr)
 			os.Exit(2)
 		}
-		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		cfg, err := bootstrap.ConfigFromEnvAndFile(os.Getenv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 			os.Exit(1)
@@ -90,9 +91,9 @@ func main() {
 		// `cdc.metrics` (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`) und
 		// beendet sich, ohne je den Capture-Loop (`bootstrap.Run`) zu
 		// erreichen — dasselbe Muster wie `--healthcheck` oben, dieselben
-		// Vorbedingungen (`ConfigFromEnv`); der Aufruf nutzt nur
+		// Vorbedingungen (`ConfigFromEnvAndFile`); der Aufruf nutzt nur
 		// `cfg.ReaderDSN`.
-		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		cfg, err := bootstrap.ConfigFromEnvAndFile(os.Getenv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 			os.Exit(1)
@@ -107,7 +108,7 @@ func main() {
 	// kehrt ohne Fehler zurück und der Prozess trägt Ausgang 0.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+	cfg, err := bootstrap.ConfigFromEnvAndFile(os.Getenv)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
 		os.Exit(2)

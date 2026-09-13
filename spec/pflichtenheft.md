@@ -207,6 +207,49 @@ noch nicht abgeschlossenen Transaktion werden außerhalb des RAM
 gehalten, bis die Transaktion committed und dauerhaft persistiert ist
 (vorgesehene Implementierung: FileTransactionBufferAdapter).
 
+### SPEC-016 — Konfigurationsdatei (`CDC_CONFIG_FILE`)
+
+Feldform der optionalen YAML-Konfigurationsdatei: additiv zu den
+Umgebungsvariablen, mit Umgebungsvariable-schlägt-Datei-Feld-für-Feld-
+Precedence; die drei DSN-Schlüssel (`capture_dsn`/`admin_dsn`/
+`reader_dsn`) sind **nicht zulässig** und brechen das Laden über die
+Fehlerklasse `configuration` ab
+([`LH-QA-SEC-001`](lastenheft.md)/[`LH-QA-SEC-002`](lastenheft.md):
+Least-Privilege/Secret-Trennung — eine Konfigurationsdatei ist für andere
+Aufbewahrungs-/Verteilwege bestimmt als eine Umgebungsvariable). Striktes
+Decoding (unbekannter Schlüssel → Fehlerklasse `configuration`).
+
+| Schlüssel | Typ | Entspricht (Env-Var) | Pflicht in der Datei |
+|---|---|---|---|
+| `source_id` | string | `CDC_SOURCE_ID` | nein — Pflichtfeld nach Merge (Datei oder Env) |
+| `publication` | string | `CDC_PUBLICATION` | nein — Pflichtfeld nach Merge (Datei oder Env) |
+| `slot` | string | `CDC_SLOT` | nein — Pflichtfeld nach Merge (Datei oder Env) |
+| `tables` | Mapping `<schema.tabelle>: {table_id, schema_version}` | `CDC_TABLES` (Zeichenkettenform, unverändert bestehen) | nein — Pflichtfeld nach Merge (Datei oder Env) |
+| `log_level` | string (`debug`/`info`/`warn`/`error`) | `CDC_LOG_LEVEL` | nein, Default `info` |
+| `wal_retention_warn_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
+| `wal_retention_error_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
+
+```yaml
+source_id: quelle-1
+publication: pub_quelle_1
+slot: slot_quelle_1
+tables:
+  public.orders:
+    table_id: tbl-orders
+    schema_version: sv-orders-1
+  public.customers:
+    table_id: tbl-customers
+    schema_version: sv-customers-1
+log_level: info
+```
+
+`tables` als Feld wird **als Ganzes** ersetzt, nicht Zeile für Zeile
+zusammengeführt: eine gesetzte `CDC_TABLES` schlägt die gesamte
+Datei-`tables`-Mapping vollständig, ohne Vermischung einzelner Tabellen aus
+beiden Quellen. `CDC_CONFIG_FILE` selbst trägt den Dateipfad; leer/unbenannt
+bedeutet kein Dateizugriff, der bestehende Env-only-Pfad bleibt unverändert
+Default.
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -294,3 +337,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-09 | Initial — Technik-Inhalt überführt aus dem zurückgezogenen Pflichtenheft-Entwurf (Git: angelegt in c70ee1c, zurückgezogen in 5a6f8ea); Algorithmen, CDC-Schema, Fehlerklassen, Metriken, externe Verträge |
 | 2026-09-09 | SPEC-015 ergänzt: eigenständiges Executable — Cross-Compile Linux amd64/arm64 primär, darwin/windows perspektivisch, `CGO_ENABLED=0`; Deployment-Form neben SPEC-011 (OCI) |
 | 2026-09-12 | LH-FA-CON-001.a und LH-FA-CON-004.a ergänzt: Registrierungs- und Bestätigungslogik sind eigenständig getestet, aber ohne von außen erreichbaren Zugriffsweg — die Wahl des Zugriffswegs bleibt eine offene technische Frage |
+| 2026-09-13 | SPEC-016 ergänzt: Feldform der optionalen YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`) — Schlüsselnamen, Precedence-Verweis, DSN-Ausschluss |

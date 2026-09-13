@@ -7,10 +7,12 @@
 // Die Abhängigkeitsregel (§2 der Architektur-Sicht) bleibt hier lokal
 // einhaltbar; `main` referenziert keinen Adapter-Konstruktor.
 //
-// Die Verdrahtung liest ihre Vorbedingungen als Minimal-Form aus der
-// Umgebung: DSN, Quelle, Publication, Slot-Name und die
-// Tabellen-Aktivierungen. Eine vollständige Konfigurationsschicht mit
-// Format-Wahl ist nicht Teil dieses Verdrahtungsstands.
+// Die Verdrahtung liest ihre Vorbedingungen aus der Umgebung: DSN, Quelle,
+// Publication, Slot-Name und die Tabellen-Aktivierungen (`ConfigFromEnv`).
+// Eine optionale YAML-Konfigurationsdatei ergänzt das additiv, mit
+// Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence und
+// env-var-exklusiven DSNs (`ConfigFromEnvAndFile`, `config_file.go`,
+// `ADR-0052`).
 package bootstrap
 
 import (

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.5
+Version: 1.6
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-13
 
@@ -394,11 +394,49 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
-| `CDC_TABLES` | ja | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
+| `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
+| `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
-Fehlt eine Pflichtvariable oder ist `CDC_TABLES` leer, startet der
-Container nicht (Fehlerklasse `configuration`).
+Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
+einen Wert für dasselbe Feld, startet der Container nicht (Fehlerklasse
+`configuration`).
+
+### Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`)
+
+Additiv zu den Umgebungsvariablen (`ADR-0052`, `SPEC-016`): Ist
+`CDC_CONFIG_FILE` gesetzt, liest der Container zusätzlich eine
+YAML-Datei unter diesem Pfad (read-only in den Container gemountet). Jede
+gesetzte Umgebungsvariable überschreibt das gleichnamige Feld der Datei
+einzeln — Env-Var schlägt Datei, Feld für Feld. Ist `CDC_CONFIG_FILE`
+nicht gesetzt, ändert sich am Env-only-Betrieb oben nichts.
+
+```yaml
+source_id: quelle-1
+publication: pub_quelle_1
+slot: slot_quelle_1
+tables:
+  public.orders:
+    table_id: tbl-orders
+    schema_version: sv-orders-1
+  public.customers:
+    table_id: tbl-customers
+    schema_version: sv-customers-1
+log_level: info
+```
+
+**Wichtig — Secrets bleiben env-var-exklusiv:** `CDC_CAPTURE_DSN`,
+`CDC_ADMIN_DSN` und `CDC_READER_DSN` dürfen in dieser Datei **nicht**
+vorkommen (Schlüssel `capture_dsn`/`admin_dsn`/`reader_dsn`). Ein Treffer
+bricht das Laden ab (Fehlerklasse `configuration`) — eine
+Konfigurationsdatei landet typischerweise in Kanälen (Repository,
+ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Ein
+unbekannter Schlüssel bricht das Laden ebenfalls ab (striktes Decoding).
+
+Ist sowohl `CDC_TABLES` als auch `tables` in der Datei gesetzt, schlägt
+`CDC_TABLES` die gesamte Datei-Tabellenliste vollständig — es findet keine
+Vermischung einzelner Tabellen aus beiden Quellen statt (`tables` gilt als
+ein Feld, nicht als Menge einzeln überschreibbarer Einträge).
 
 ## 6. Fehlerbehebung
 
@@ -521,3 +559,4 @@ MIT — siehe `LICENSE`.
 | 1.3 | 2026-09-12 | WAL-Rückstand-Metrik `cdc_wal_retention_bytes` (`SPEC-009`) ergänzt: periodische Messung, strukturierte Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
 | 1.4 | 2026-09-12 | Fehlerklasse `replication` auf zwei Unterarten präzisiert (`ADR-0049`): Stream-Ordnungs-Verletzung bleibt sofortiger Abbruch, Transport-/Verbindungsstörung trägt jetzt die Schwellen-Überwachung über den WAL-Rückstand (Warn 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung/Abbruch |
 | 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |
+| 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`, `ADR-0052`, `SPEC-016`, slice-041) ergänzt: §5 neue Unterüberschrift, Env-Var-Tabelle um `CDC_CONFIG_FILE` erweitert, `CDC_TABLES`-Pflichtangabe präzisiert |
