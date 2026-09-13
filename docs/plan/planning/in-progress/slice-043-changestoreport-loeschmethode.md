@@ -90,27 +90,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `ChangeStorePort` trägt eine neue Löschmethode; der
+- [x] `ChangeStorePort` trägt eine neue Löschmethode; der
       `PostgresChangeStoreAdapter` implementiert sie real gegen
       PostgreSQL (`cdc.change`-Zeilen werden tatsächlich entfernt,
       `make test-store` real belegt).
-- [ ] `RunRetentionUseCase` (Application-Schicht) ruft für eine Quelle
+- [x] `RunRetentionUseCase` (Application-Schicht) ruft für eine Quelle
       `RetentionPolicy.AllowsDeletion` je betrachtetem Change real auf
       (Alter, Change-Position, alle bestätigten Consumer-Positionen) und
       übergibt ausschließlich freigegebene Changes an die neue
       Port-Methode — mit Fake-Port-Test, der eine gemischte Menge
       (löschbar/nicht löschbar wegen Alter, löschbar/nicht löschbar wegen
       eines zurückhängenden Consumers) real unterscheidet.
-- [ ] `LH-FA-RET-002` (Negative: ungültige Konfiguration liefert
+- [x] `LH-FA-RET-002` (Negative: ungültige Konfiguration liefert
       expliziten Fehler statt stiller Übernahme) real erfüllt — Test für
       den Fehlerpfad.
-- [ ] `make gates` grün, `make test`/`make test-store` grün.
+- [x] `make gates` grün, `make test`/`make test-store` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: falls ein öffentlicher Vertrag entsteht (neue
+- [x] Doku-Update: falls ein öffentlicher Vertrag entsteht (neue
       Port-Methode ist intern, kein CLI/SQL-Vertrag in diesem Slice) —
-      Implementer prüft und begründet im Plan-Nachzug.
+      Implementer prüft und begründet im Plan-Nachzug. **Geprüft:** kein
+      öffentlicher Vertrag entsteht — `DeleteChanges`, `Positions` und
+      `RunRetentionUseCase` sind interne Go-Schnittstellen ohne
+      CLI-/SQL-Außenfläche; kein Doku-Update fällig (Details im
+      Plan-Nachzug).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -131,6 +135,109 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/application/usecase/retention/*.go` (neu) | neu | `RunRetentionUseCase`, ruft `AllowsDeletion` real auf |
 | `internal/application/port/outbound/consumerposition.go` (falls nötig) | prüfen | ob ein bestehender Port bereits alle Consumer-Positionen einer Quelle liefert, oder eine neue Lesefähigkeit nötig ist |
 | `*_test.go` | neu/update | Fake-Port-Tests (Use-Case), reale PostgreSQL-Tests (Adapter) |
+
+### Plan-Nachzug (nach Implementierung)
+
+Regeln dieser Sektion: Implementierungsentscheidungen, die über die Tabelle
+oben hinausgehen — Namen, Signaturen und die Auflösung der beiden §6-Risiken.
+
+**1. Name/Signatur der Löschmethode.** `ChangeStorePort.DeleteChanges(ctx
+context.Context, changeIDs []model.ChangeID) error` — keine
+`DeleteChangesBefore(position)`-Variante. Begründung: Die DoD verlangt, dass
+`RunRetentionUseCase` `AllowsDeletion` **je betrachtetem Change** real
+aufruft und **ausschließlich die freigegebene Menge** an den Port übergibt.
+Eine explizite ID-Liste ist die wörtlichste Umsetzung dieses Vertrags — sie
+verlangt keine Zusatz-Annahme über die Kontiguität der freigegebenen Menge
+(die zwar aus der Policy-Struktur folgt, aber vom Use Case nicht behauptet
+werden muss) und ist an der realen Test-Assertion
+(`TestDeleteChangesRemovesOnlyGivenChanges`) direkt ablesbar: eine Teilmenge
+geht, der Rest bleibt unangetastet, unabhängig von der Positions-Ordnung.
+`DeleteChanges` ist idempotent (SQL `DELETE ... WHERE change_id = ANY($1)`);
+eine leere Menge ist ein gültiger Aufruf ohne Datenbank-Rundlauf.
+
+**2. „Alle bestätigten Consumer-Positionen einer Quelle" (§6, Risiko 2).**
+Kein bestehender Port lieferte das — `ConsumerStatePort.Position` liest
+genau einen Consumer über seine Kennung, es gab keine quellen-skopierte
+Variante. Statt eines neuen Ports (`consumerposition.go` aus der
+Plan-Tabelle) wurde `ConsumerStatePort` um eine vierte Methode erweitert:
+`Positions(ctx context.Context, source model.SourceID)
+([]model.ConsumerPosition, error)` — Begründung: Die Fähigkeit gehört
+fachlich zum bestehenden `ConsumerStatePort` (`ARC-004`, Fähigkeits-Port je
+`ADR-0034`), der bereits die einzige Konsistenzgrenze der Consumer-Zustände
+trägt; ein zweiter Port für dieselbe Tabelle (`cdc.consumer_position`) hätte
+keine eigene Konsistenzgrenze, nur eine zweite Adresse für dieselbe Zeile.
+SQL: `SELECT consumer_id, acknowledged_position FROM
+cdc.consumer_position WHERE source_id = $1` — neue Konstante
+`SelectConsumerPositionsBySource`.
+
+**Abwesenheits-Lesart (wichtige Nebenentscheidung):** `Positions` liest
+ausschließlich Zeilen aus `cdc.consumer_position`. Ein registrierter, aber
+noch nie gegen *irgendeine* Quelle bestätigender Consumer erscheint in
+**keiner** Quelle und blockiert damit auch keine — dieselbe Lesart, die der
+bestehende Code für `Position`/`Remove` bereits dokumentiert („die
+Zeilen-Abwesenheit trägt der Rolle des Consumers in der Retention
+Rechnung", `ConsumerStatePort.Remove`-Doku). Das ist konsistent, weil das
+Domänenmodell einen Consumer erst über seine erste Bestätigung an eine
+Quelle bindet (`ConsumerPosition.Advance`, `ADR-0029` Regel 2) — vor der
+ersten Bestätigung besteht keine Quellen-Zuordnung, die `Positions` melden
+könnte.
+
+**3. Age-Berechnung — `ChangeRecord` trägt jetzt `CommittedAt`.**
+`RetentionPolicy.AllowsDeletion` verlangt das Alter eines Changes; der
+reale Quell-Commit-Zeitpunkt lag bereits in `cdc.transaction.committed_at`
+(`LH-FA-ADM-004`), aber `ChangeRecord`/`ReadChanges` gaben ihn nicht an den
+Aufrufer weiter. Ergänzt: `ChangeRecord.CommittedAt model.TimePoint`,
+`SelectChanges` liest zusätzlich `t.committed_at`, `collectRecords` scannt
+und mappt ihn. Rückwärtskompatibel (additive Struct-Erweiterung, einzige
+bestehende `ChangeRecord{...}`-Konstruktion mit benannten Feldern in
+`store.go`, per `grep` verifiziert). `RunRetentionService.Run` berechnet
+`age := clock.Now().Sub(record.CommittedAt)` über den injizierten
+`ClockPort` (`ADR-0040`) — Domain und Application rufen keine Systemzeit
+direkt auf.
+
+**4. `RunRetentionUseCase` als neue Inbound-Port-Kategorie.** Neue Datei
+`internal/application/port/inbound/retention.go` (`RunRetentionCommand`,
+`RunRetentionResult`, `RunRetentionUseCase`) statt Erweiterung einer
+bestehenden Datei — `ARC-002` führt „Retention" bereits als eigene
+Use-Case-Kategorie neben Capture/Consumer/Konfiguration
+(Architect-Verdikt), dieselbe Eins-Datei-je-Kategorie-Konvention wie
+`capture.go`/`consumer.go`/`verwaltung.go`.
+
+**5. `RunRetentionCommand`-Validierung — Auflösung von `LH-FA-RET-002`
+Negative auf dieser Schicht.** Die domänenseitige Negative
+(`NewRetentionPolicy` weist eine negative `MinAge` zurück) bestand bereits
+vor diesem Slice (`TestNewRetentionPolicyRejectsNegativeDuration`) und
+bleibt unverändert. Auf der Use-Case-Schicht ist eine `RetentionPolicy`
+immer schon gültig konstruiert (Wertobjekt ohne Nachträglich-Invalidierung)
+— die einzige an dieser Schicht neu mögliche „ungültige Konfiguration" ist
+ein `RunRetentionCommand` ohne Quelle. `Run` weist eine leere
+`command.Source` über `domainerrors.ErrEmptyIdentifier` zurück, **bevor**
+einer der drei Ports berührt wird (`TestRunRejectsEmptySource` belegt beide
+Hälften: den Fehler und die Null-Berührung der Ports) — derselbe explizite
+Fehlerpfad statt stiller Übernahme, den `LH-FA-RET-002` verlangt, nur auf
+der Konfigurations-Fläche dieser Schicht statt der Policy-Konstruktion.
+
+**6. Idempotenz-Risiko (§6, Risiko 1) — kein Konflikt, kein
+Implementierungs-Zusatz nötig.** Das Architect-Verdikt hatte bereits
+geprüft, dass `AllowsDeletion` als einzige Freigabe-Instanz einen
+zeitlichen Vorrang von Persist-before-ACK/At-Least-Once vor jeder
+physischen Löschung erzwingt. Die Implementierung bestätigt das strukturell:
+`RunRetentionService.Run` löscht ausschließlich Changes, die
+`ReadChanges` bereits als persistiert zurückgibt und für die
+`AllowsDeletion` zusätzlich alle übergebenen Consumer-Positionen als
+bestätigt und mindestens auf Höhe der Change-Position verlangt — ein
+Bypass am Domain Core vorbei existiert nicht (`DeleteChanges` ist die
+einzige Löschfähigkeit am Port, und sie wird ausschließlich aus der
+freigegebenen Teilmenge heraus aufgerufen). Der Fall „gelöschte Transaktion muss erneut persistiert werden" tritt unter
+dieser Reihenfolge nicht ein: Das Source-ACK einer Transaktion erfolgt
+bereits im Capture-Pfad direkt nach ihrer Persistenz
+(`LH-QA-REL-001.a`), unabhängig von der Retention — ein Crash-Replay
+derselben Quelltransaktion (`ADR-0012`, At-Least-Once) kann also nur
+auftreten, *bevor* die Quelle ihr Commit bestätigt bekam, also lange bevor
+irgendein Consumer sie verarbeitet und `AllowsDeletion` sie je zur
+physischen Löschung freigibt. Der Konflikt, den das Risiko benannte, setzt
+eine Reihenfolge voraus, die am Domain Core (`AllowsDeletion` als einzige
+Freigabe-Instanz) strukturell ausgeschlossen ist.
 
 ## 4. Trigger
 

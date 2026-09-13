@@ -49,6 +49,10 @@ func (f *fakeState) Remove(ctx context.Context, consumer model.ConsumerID) (bool
 	return f.exists, nil
 }
 
+func (f *fakeState) Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error) {
+	return nil, nil
+}
+
 // TestRemoveHappyPath trägt die administrative Entfernung
 // (`LH-FA-CON-006` Happy Path): der Consumer führt danach keine Rolle
 // mehr in der Retention — die Rückkehr meldet die Entfernung.

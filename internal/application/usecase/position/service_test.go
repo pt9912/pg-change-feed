@@ -45,6 +45,10 @@ func (f *fakeState) Remove(ctx context.Context, consumer model.ConsumerID) (bool
 	return true, nil
 }
 
+func (f *fakeState) Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error) {
+	return nil, nil
+}
+
 // TestPositionHappyPath trägt den Positions-Lese (`LH-FA-CON-003` Happy
 // Path): der Consumer erhält seine bestätigte Position.
 func TestPositionHappyPath(t *testing.T) {

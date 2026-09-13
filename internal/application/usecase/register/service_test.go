@@ -49,6 +49,10 @@ func (f *fakeState) Remove(ctx context.Context, consumer model.ConsumerID) (bool
 	return true, nil
 }
 
+func (f *fakeState) Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error) {
+	return nil, nil
+}
+
 // TestRegisterHappyPath trägt die Registrierung (`LH-FA-CON-001` Happy
 // Path): der Consumer ist fortan registriert — die Rückkehr liest die
 // Kennung und den Namen.

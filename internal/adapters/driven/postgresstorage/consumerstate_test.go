@@ -504,6 +504,70 @@ func TestConsumerStateCarriesContractBounds(t *testing.T) {
 	}
 }
 
+// TestPositionsCarriesAllAcknowledgedConsumersOfSource trägt die
+// Consumer-basierte Retention (`LH-FA-RET-004`): die Rückgabe trägt einen
+// Eintrag je Consumer, der gegen diese Quelle bereits bestätigt hat — ein
+// Consumer einer anderen Quelle und ein registrierter, aber nie
+// bestätigender Consumer erscheinen nicht in der Liste (dieselbe
+// Abwesenheits-Lesart wie `Position`).
+func TestPositionsCarriesAllAcknowledgedConsumersOfSource(t *testing.T) {
+	adapter, _ := newTestConsumerState(t)
+	registerConsumer(t, adapter, testConsumer)
+	registerConsumer(t, adapter, testConsumerOther)
+	const unacknowledged = "con-3-unacked"
+	registerConsumer(t, adapter, unacknowledged)
+
+	if _, err := adapter.Acknowledge(context.Background(), model.ConsumerPosition{
+		ConsumerID: testConsumer,
+		Position:   consumerPosition(t, consumerStateSource, 100),
+	}); err != nil {
+		t.Fatalf("Bestätigung %s: %v", testConsumer, err)
+	}
+	if _, err := adapter.Acknowledge(context.Background(), model.ConsumerPosition{
+		ConsumerID: testConsumerOther,
+		Position:   consumerPosition(t, consumerStateSourceOther, 50),
+	}); err != nil {
+		t.Fatalf("Bestätigung %s (andere Quelle): %v", testConsumerOther, err)
+	}
+
+	positions, err := adapter.Positions(context.Background(), consumerStateSource)
+	if err != nil {
+		t.Fatalf("Positions: %v", err)
+	}
+	if len(positions) != 1 {
+		t.Fatalf("Positionen = %v, wollen genau eine (nur %s hat gegen %s bestätigt)", positions, testConsumer, consumerStateSource)
+	}
+	if positions[0].ConsumerID != testConsumer || positions[0].Position.Offset != 100 || positions[0].Position.SourceID != consumerStateSource {
+		t.Fatalf("Position = %+v, wollen %s@100 an %s", positions[0], testConsumer, consumerStateSource)
+	}
+}
+
+// TestPositionsWithoutAcknowledgementsCarriesEmptySlice trägt den Fall
+// ohne bestätigte Consumer: die Rückgabe ist leer, kein Fehler — dieselbe
+// Boundary-Lesart wie bei `Position`.
+func TestPositionsWithoutAcknowledgementsCarriesEmptySlice(t *testing.T) {
+	adapter, _ := newTestConsumerState(t)
+	registerConsumer(t, adapter, testConsumer)
+
+	positions, err := adapter.Positions(context.Background(), consumerStateSource)
+	if err != nil {
+		t.Fatalf("Positions: %v", err)
+	}
+	if len(positions) != 0 {
+		t.Fatalf("Positionen = %v, wollen leer", positions)
+	}
+}
+
+// Die Kennungs-Grenze von Positions endet vor dem ersten SQL-Aufruf über
+// die Domänen-Invariante — dieselbe Grenze wie Position/Register/Remove.
+func TestPositionsRejectsEmptySource(t *testing.T) {
+	adapter, _ := newTestConsumerState(t)
+
+	if _, err := adapter.Positions(context.Background(), ""); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Positions ohne Quelle: %v (Erwartung: ErrEmptyIdentifier)", err)
+	}
+}
+
 // Eine nicht erreichbare Instanz meldet der Aufbau als Fehler der Klasse
 // `storage` über den eigenen Sentinel des Ports; der Test braucht keine
 // Datenbank (Port 1 verwirft lokal).

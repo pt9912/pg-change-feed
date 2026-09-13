@@ -33,7 +33,9 @@ ON CONFLICT (change_id) DO NOTHING`
 // Sequenz innerhalb der Transaktion). Der Start ist inklusive, das Ende
 // exklusiv (`LH-FA-REA-001`); NULL-Grenzen grenzen nicht ein, LIMIT NULL
 // liest unbegrenzt. Lesen trägt nur SELECT — gespeicherte Positionen
-// bleiben unverändert (`LH-FA-REA-002`).
+// bleiben unverändert (`LH-FA-REA-002`). committed_at trägt den realen
+// Quell-Commit-Zeitpunkt der Transaktion (`LH-FA-ADM-004`) — die
+// zeitbasierte Retention (`LH-FA-RET-003`) liest ihr Alter dagegen.
 const SelectChanges = `
 SELECT
     t.source_id,
@@ -45,7 +47,8 @@ SELECT
     c.operation,
     c.old_data,
     c.new_data,
-    c.schema_version
+    c.schema_version,
+    t.committed_at
 FROM cdc.change AS c
 JOIN cdc.transaction AS t
     ON c.transaction_id = t.transaction_id
@@ -55,6 +58,14 @@ WHERE t.source_id = $1
   AND ($4::text IS NULL OR c.source_table_id = $4)
 ORDER BY t.commit_position, c.transaction_id, c.sequence
 LIMIT $5`
+
+// DeleteChanges entfernt genau die übergebenen Change-Zeilen
+// (`LH-FA-RET-002`…`004`); die Freigabe je Change trägt der aufrufende Use
+// Case über `RetentionPolicy.AllowsDeletion` — diese Abfrage führt nur die
+// bereits freigegebene Menge aus. Eine Kennung ohne Zeile bleibt ohne
+// Wirkung (Idempotenz).
+const DeleteChanges = `
+DELETE FROM cdc.change WHERE change_id = ANY($1)`
 
 // CountTransactions zählt die Transaktions-Zeilen einer Quelle; die Tests
 // tragen den Deduplizierungs-Stand darüber, nicht der Adapter.
@@ -157,6 +168,15 @@ const SelectConsumerPositionLocked = `
 SELECT source_id, acknowledged_position FROM cdc.consumer_position
 WHERE consumer_id = $1
 FOR UPDATE`
+
+// SelectConsumerPositionsBySource liest die bestätigten Positionen aller
+// Consumer einer Quelle (`LH-FA-RET-004`): je Zeile ein Consumer, der
+// bereits gegen diese Quelle bestätigt hat — ein Consumer ohne Zeile trägt
+// keine Bestätigung gegen diese Quelle und blockiert ihre Retention nicht
+// (dieselbe Abwesenheits-Lesart wie bei SelectConsumerPosition).
+const SelectConsumerPositionsBySource = `
+SELECT consumer_id, acknowledged_position FROM cdc.consumer_position
+WHERE source_id = $1`
 
 // UpsertConsumerPosition trägt die bestätigte Position fort
 // (`LH-FA-CON-003` Boundary); die Monotonie trägt der Domänen-Vergleich

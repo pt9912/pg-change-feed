@@ -3,6 +3,7 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -165,6 +166,28 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 	return records, nil
 }
 
+// DeleteChanges entfernt physisch genau die übergebenen Changes
+// (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt der
+// aufrufende Use Case über `RetentionPolicy.AllowsDeletion`, dieser Adapter
+// führt nur die bereits freigegebene Menge aus. Eine leere Menge bleibt
+// ohne Datenbank-Aufruf; Treiber-Fehler gehen in die Klasse `storage`
+// (storageFailure).
+func (a *PostgresChangeStoreAdapter) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
+	if len(changeIDs) == 0 {
+		return nil
+	}
+	ids := make([]string, len(changeIDs))
+	for i, id := range changeIDs {
+		ids[i] = string(id)
+	}
+	tag, err := a.pool.Exec(ctx, queries.DeleteChanges, ids)
+	if err != nil {
+		return storageFailure(ctx, a.log, err)
+	}
+	a.log.Info(ctx, "changestore: Changes bereinigt", "deleted", tag.RowsAffected())
+	return nil
+}
+
 // positionArgument trägt eine Positions-Grenze als bigint-Argument; nil
 // grenzt nicht ein (LIMIT- und NULL-Semantik der Abfrage).
 func positionArgument(position *model.SourcePosition) any {
@@ -194,6 +217,7 @@ func collectRecords(ctx context.Context, log outbound.LogPort, rows pgx.Rows) ([
 		var row mapper.ChangeRow
 		var source string
 		var commitPosition int64
+		var committedAt time.Time
 		if err := rows.Scan(
 			&source,
 			&commitPosition,
@@ -205,6 +229,7 @@ func collectRecords(ctx context.Context, log outbound.LogPort, rows pgx.Rows) ([
 			&row.OldData,
 			&row.NewData,
 			&row.SchemaVersion,
+			&committedAt,
 		); err != nil {
 			return nil, storageFailure(ctx, log, err)
 		}
@@ -216,7 +241,11 @@ func collectRecords(ctx context.Context, log outbound.LogPort, rows pgx.Rows) ([
 		if err != nil {
 			return nil, err
 		}
-		records = append(records, outbound.ChangeRecord{Position: position, Change: change})
+		records = append(records, outbound.ChangeRecord{
+			Position:    position,
+			Change:      change,
+			CommittedAt: model.NewTimePoint(committedAt.UnixNano()),
+		})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, storageFailure(ctx, log, err)

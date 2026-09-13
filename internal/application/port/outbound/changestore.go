@@ -12,9 +12,13 @@ import (
 // Quelltransaktion (`LH-FA-REA-004.a`): die Ordnungs- und Bereichs-Größe
 // des Lesens liegt auf der Transaktion (`LH-FA-DAT-004`), der Change nach
 // `SPEC-002` trägt sie nicht — der Datensatz am Port bündelt beide.
+// CommittedAt trägt den realen Quell-Commit-Zeitpunkt seiner Transaktion
+// (`LH-FA-ADM-004`); die zeitbasierte Retention (`LH-FA-RET-003`) liest ihr
+// Alter gegen diesen Zeitpunkt.
 type ChangeRecord struct {
-	Position model.SourcePosition
-	Change   model.Change
+	Position    model.SourcePosition
+	Change      model.Change
+	CommittedAt model.TimePoint
 }
 
 // ChangeQuery trägt die Lese-Eingabe am `ChangeStorePort`: Bereich
@@ -117,4 +121,14 @@ type ChangeStorePort interface {
 	// (`LH-FA-REA-002`); gelesene Changes bleiben innerhalb der Aufbewahrung
 	// erneut lesbar (`LH-FA-REA-005`).
 	ReadChanges(ctx context.Context, query ChangeQuery) ([]ChangeRecord, error)
+
+	// DeleteChanges entfernt physisch genau die übergebenen Changes
+	// (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt
+	// `RetentionPolicy.AllowsDeletion` im aufrufenden Use Case, dieser Port
+	// führt nur die bereits freigegebene Menge aus — keine eigene
+	// Freigabe-Entscheidung. Eine leere Menge ist ein gültiger Aufruf ohne
+	// Wirkung; eine bereits entfernte oder nie vorhandene Kennung bleibt
+	// ohne Wirkung (Idempotenz). Treiber-Fehler gehen in die Klasse
+	// `storage` (`ErrStorage`).
+	DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error
 }

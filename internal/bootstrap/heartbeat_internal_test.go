@@ -82,6 +82,10 @@ func (f *loggingStore) ReadChanges(ctx context.Context, query outbound.ChangeQue
 	return nil, nil
 }
 
+func (f *loggingStore) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
+	return nil
+}
+
 var _ outbound.ChangeStorePort = (*loggingStore)(nil)
 
 type loggingAck struct{ events *[]string }

@@ -47,6 +47,14 @@ func (f *fakeStore) ReadChanges(ctx context.Context, query outbound.ChangeQuery)
 	return nil, stderrors.New("Fake-Store trägt nur die Persist-Seite")
 }
 
+// DeleteChanges trägt die Löschfähigkeit am Port (`ADR-0014`); der Fake
+// implementiert sie ohne Stand — der Capture-Pfad löscht nicht, die reale
+// Löschfähigkeit trägt der Adapter-Test gegen PostgreSQL und der
+// RunRetention-Use-Case-Test seine eigenen Fakes.
+func (f *fakeStore) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
+	return stderrors.New("Fake-Store trägt nur die Persist-Seite")
+}
+
 type fakeAck struct {
 	events *[]string
 	ackErr error

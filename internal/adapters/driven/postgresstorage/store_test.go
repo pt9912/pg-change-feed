@@ -460,6 +460,99 @@ func TestPersistCarriesSourceCommittedAtNotPersistenceTime(t *testing.T) {
 	}
 }
 
+// DeleteChanges entfernt physisch genau die übergebenen Changes
+// (`LH-FA-RET-002`…`004`, `ADR-0014`): eine Teilmenge geht, die übrigen
+// bleiben unangetastet — die Freigabe-Entscheidung trägt der aufrufende
+// Use Case, dieser Adapter führt nur die übergebene Menge aus.
+func TestDeleteChangesRemovesOnlyGivenChanges(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	persist(t, store,
+		committedTransaction(t, "t-1", 100, 2, testTableMain, testSchemaMain),
+		committedTransaction(t, "t-2", 200, 1, testTableMain, testSchemaMain),
+	)
+
+	if err := store.DeleteChanges(context.Background(), []model.ChangeID{"t-1-1"}); err != nil {
+		t.Fatalf("DeleteChanges: %v", err)
+	}
+
+	got := readRecords(t, store, query(t, nil, nil, nil, nil))
+	want := []string{"t-1-2@100:INSERT#2", "t-2-1@200:INSERT#1"}
+	if len(got) != len(want) {
+		t.Fatalf("verbleibende Changes = %v, wollen %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("verbleibende Changes an Stelle %d = %q, wollen %q (voll: %v)", i, got[i], want[i], got)
+		}
+	}
+}
+
+// DeleteChanges ist idempotent (dieselbe Lesart wie Remove/Register): eine
+// bereits entfernte oder nie vorhandene Kennung bleibt ohne Wirkung und
+// ohne Fehler; eine leere Menge löst keinen Datenbank-Aufruf aus, dessen
+// Ausbleiben dieser Test nicht direkt sieht, dessen Erfolg aber die
+// unveränderte Zeilen-Zahl belegt.
+func TestDeleteChangesIsIdempotent(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	persist(t, store, committedTransaction(t, "t-1", 100, 1, testTableMain, testSchemaMain))
+
+	if err := store.DeleteChanges(context.Background(), []model.ChangeID{"t-1-1"}); err != nil {
+		t.Fatalf("erstes DeleteChanges: %v", err)
+	}
+	if err := store.DeleteChanges(context.Background(), []model.ChangeID{"t-1-1", "c-nie-vorhanden"}); err != nil {
+		t.Fatalf("erneutes DeleteChanges: %v", err)
+	}
+	if err := store.DeleteChanges(context.Background(), nil); err != nil {
+		t.Fatalf("DeleteChanges mit leerer Menge: %v", err)
+	}
+	if got := count(t, pool, "SELECT count(*) FROM cdc.change WHERE transaction_id = 't-1'"); got != 0 {
+		t.Fatalf("Change-Zeilen = %d, wollen 0", got)
+	}
+}
+
+// ReadChanges trägt den realen Quell-Commit-Zeitpunkt jeder Zeile
+// (`LH-FA-ADM-004`) an ihrem Record mit — die Retention-Alters-Berechnung
+// (`LH-FA-RET-003`) liest ihn über `RunRetentionUseCase`; dieser Test
+// belegt, dass die Spalte real am Record ankommt.
+func TestReadChangesCarriesCommittedAt(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	sourceCommittedAt := time.Now().Add(-3 * time.Hour).Truncate(time.Microsecond)
+	tx, err := model.NewOpenTransaction("t-committed-at", testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	change, err := model.NewChange("t-committed-at-1", "t-committed-at", testTableMain, 1, model.OperationInsert, nil, []byte(`{"n":1}`), testSchemaMain)
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	if err := tx.AppendChange(change); err != nil {
+		t.Fatalf("AppendChange: %v", err)
+	}
+	pos, err := model.NewSourcePosition(testSource, 100)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(pos, model.NewTimePoint(sourceCommittedAt.UnixNano())); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	persist(t, store, tx)
+
+	records, err := store.ReadChanges(context.Background(), query(t, nil, nil, nil, nil))
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("Records = %v, wollen genau einen", records)
+	}
+	got := time.Unix(0, records[0].CommittedAt.UnixNanos).UTC()
+	if diff := got.Sub(sourceCommittedAt); diff < -time.Millisecond || diff > time.Millisecond {
+		t.Fatalf("CommittedAt = %s, wollen den Quell-Commit-Zeitpunkt %s (Differenz %s)", got, sourceCommittedAt, diff)
+	}
+}
+
 // Treiber-Fehler tragen die Klasse `storage` (`outbound.ErrStorage`,
 // `SPEC-008`, `ADR-0023`); Application und Betrieb klassifizieren über
 // errors.Is und kennen keinen Treibertyp. Die technische Ursache bleibt

@@ -190,6 +190,44 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 	return carried, nil
 }
 
+// Positions liest die bestätigten Positionen aller Consumer einer Quelle
+// (`LH-FA-RET-004`): je Zeile in `cdc.consumer_position` ein Eintrag — ein
+// Consumer ohne Zeile trägt keine Bestätigung gegen diese Quelle und
+// erscheint nicht in der Rückgabe (dieselbe Abwesenheits-Lesart wie
+// `Position`). Treiber-Fehler gehen in die Klasse `storage`
+// (stateStorageFailure).
+func (a *PostgresConsumerStateAdapter) Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error) {
+	if source == "" {
+		return nil, domainerrors.ErrEmptyIdentifier
+	}
+	rows, err := a.pool.Query(ctx, queries.SelectConsumerPositionsBySource, string(source))
+	if err != nil {
+		return nil, stateStorageFailure(ctx, a.log, err)
+	}
+	defer rows.Close()
+
+	positions := make([]model.ConsumerPosition, 0)
+	for rows.Next() {
+		var consumerID string
+		var offset int64
+		if err := rows.Scan(&consumerID, &offset); err != nil {
+			return nil, stateStorageFailure(ctx, a.log, err)
+		}
+		acknowledged, err := mapper.ToPosition(string(source), offset)
+		if err != nil {
+			return nil, err
+		}
+		positions = append(positions, model.ConsumerPosition{
+			ConsumerID: model.ConsumerID(consumerID),
+			Position:   acknowledged,
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, stateStorageFailure(ctx, a.log, err)
+	}
+	return positions, nil
+}
+
 // storedPosition trägt den gesperrten Fortschritt aus dem Lese: eine
 // Zeile liest sich als Quellposition, ihre Abwesenheit als Nullwert des
 // Consumers — der Träger der ersten Bestätigung. `stateStorageFailure`

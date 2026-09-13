@@ -78,4 +78,13 @@ type ConsumerStatePort interface {
 	// (Idempotenz). Der Rolle des Consumers in der Retention
 	// (`LH-FA-RET-004`) trägt die Zeilen-Abwesenheit Rechnung.
 	Remove(ctx context.Context, consumer model.ConsumerID) (bool, error)
+
+	// Positions liest die bestätigten Positionen aller Consumer einer
+	// Quelle (`LH-FA-RET-004`): die Consumer-basierte Retention befragt
+	// über diese Liste `RetentionPolicy.AllowsDeletion` je betrachtetem
+	// Change. Ein Consumer ohne Bestätigung trägt keine Zeile in
+	// `cdc.consumer_position` und erscheint damit nicht in der
+	// zurückgegebenen Liste — dieselbe Abwesenheits-Lesart wie bei
+	// `Position`.
+	Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error)
 }

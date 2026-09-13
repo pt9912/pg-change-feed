@@ -45,6 +45,10 @@ func (f *fakeState) Remove(ctx context.Context, consumer model.ConsumerID) (bool
 	return true, nil
 }
 
+func (f *fakeState) Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error) {
+	return nil, nil
+}
+
 func position(t *testing.T, offset uint64) model.SourcePosition {
 	t.Helper()
 	p, err := model.NewSourcePosition("src-1", offset)
