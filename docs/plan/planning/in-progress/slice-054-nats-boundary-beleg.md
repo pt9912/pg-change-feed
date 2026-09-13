@@ -77,7 +77,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Fall **nicht** blockiert oder fehlschlägt (Notify hat keinen
       Empfänger, aber das ist kein Fehler — `ADR-0055`).
 - [ ] `make gates` grün, `make test-integration` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
