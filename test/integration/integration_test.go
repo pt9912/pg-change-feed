@@ -45,20 +45,20 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// mvpSource, mvpPublication und mvpSlot tragen dieselben Werte wie der
+// e2eSource, e2ePublication und e2eSlot tragen dieselben Werte wie der
 // Container-Vertrag in compose.yaml (CDC_SOURCE_ID, CDC_PUBLICATION,
 // CDC_SLOT).
 const (
-	mvpSource      = "src-mvp"
-	mvpPublication = "pub_pgc_mvp"
-	mvpSlot        = "slot_pgc_mvp"
+	e2eSource      = "src-e2e"
+	e2ePublication = "pub_pgc_e2e"
+	e2eSlot        = "slot_pgc_e2e"
 )
 
-// mvpEnv trägt die Compose-seitige Testumgebung eines MVP-Laufs: die
+// e2eEnv trägt die Compose-seitige Testumgebung eines E2E-Laufs: die
 // Quell-Verbindung, den Store-Lese-Pfad und die Port-Kennung der
 // Feed-Tabelle, die der Test aus den CDC-Referenztabellen liest — der
 // Test führt die Bindungs-Kennungen nicht selbst.
-type mvpEnv struct {
+type e2eEnv struct {
 	dsn     string
 	pool    *pgxpool.Pool
 	store   *postgresstorage.PostgresChangeStoreAdapter
@@ -66,14 +66,14 @@ type mvpEnv struct {
 	tableID model.SourceTableID
 }
 
-// newMVPEnv verbindet gegen die Compose-Instanz und liest die
+// newE2EEnv verbindet gegen die Compose-Instanz und liest die
 // Port-Kennung der Feed-Tabelle. Der verdrahtete Feed-Container ist
 // Vorbedingung: der Slot trägt seinen Lauf — fehlt er, endet der Test mit
 // dem Verweis auf den Container-Start (Klasse `configuration`), nicht mit
 // einem stillen Warten auf Changes, die niemand streamt. Slot, Publication
 // und Feed-Tabellen räumt der Runner mit der Compose-Umgebung ab
 // (`compose down -v`).
-func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
+func newE2EEnv(t *testing.T, feedTable string) *e2eEnv {
 	t.Helper()
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
@@ -98,12 +98,12 @@ func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
 
 	var slotCount int
 	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_replication_slots WHERE slot_name = $1", mvpSlot,
+		"SELECT count(*) FROM pg_replication_slots WHERE slot_name = $1", e2eSlot,
 	).Scan(&slotCount); err != nil {
 		t.Fatalf("Slot-Prüfung: %v", err)
 	}
 	if slotCount != 1 {
-		t.Fatalf("Replication-Slot %q fehlt — der Feed-Container trägt die CDC-Verdrahtung nicht (Container-Start im Runner, compose.yaml)", mvpSlot)
+		t.Fatalf("Replication-Slot %q fehlt — der Feed-Container trägt die CDC-Verdrahtung nicht (Container-Start im Runner, compose.yaml)", e2eSlot)
 	}
 
 	var tableID string
@@ -118,7 +118,7 @@ func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
 		t.Fatalf("Store: %v", err)
 	}
 	t.Cleanup(store.Close)
-	return &mvpEnv{
+	return &e2eEnv{
 		dsn:     dsn,
 		pool:    pool,
 		store:   store,
@@ -131,12 +131,12 @@ func newMVPEnv(t *testing.T, feedTable string) *mvpEnv {
 // Tabelle dieser Umgebungen persistiert sind (Polling mit Test-Zeitgrenze);
 // der Erfassungsweg läuft im Feed-Container. Der Tabellenfilter trennt die
 // Läufe der beiden Feed-Tabellen.
-func awaitPersistedChanges(t *testing.T, env *mvpEnv, limit int) []outbound.ChangeRecord {
+func awaitPersistedChanges(t *testing.T, env *e2eEnv, limit int) []outbound.ChangeRecord {
 	t.Helper()
 	deadline := time.Now().Add(30 * time.Second)
 	for time.Now().Before(deadline) {
 		records, err := env.store.ReadChanges(context.Background(), outbound.ChangeQuery{
-			Source: mvpSource, Table: &env.tableID,
+			Source: e2eSource, Table: &env.tableID,
 		})
 		if err != nil {
 			t.Fatalf("ReadChanges: %v", err)
@@ -147,7 +147,7 @@ func awaitPersistedChanges(t *testing.T, env *mvpEnv, limit int) []outbound.Chan
 		time.Sleep(100 * time.Millisecond)
 	}
 	records, err := env.store.ReadChanges(context.Background(), outbound.ChangeQuery{
-		Source: mvpSource, Table: &env.tableID,
+		Source: e2eSource, Table: &env.tableID,
 	})
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
@@ -170,7 +170,7 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 	return image
 }
 
-// TestMVPCaptureFlow trägt den MVP-Ablauf am verdrahteten Feed-Container:
+// TestE2ECaptureFlow trägt den E2E-Ablauf am verdrahteten Feed-Container:
 // INSERT, UPDATE und DELETE an der aktivierten Tabelle werden Ende-zu-Ende
 // durch das Binary erfasst, in Commit-Reihenfolge persistiert und mit
 // Inhalt gelesen (`LH-FA-CAP-001`…003, `LH-FA-CAP-004`, `LH-QA-POR-003`).
@@ -178,8 +178,8 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 // Zeile, das Alt-Bild der DELETE-Änderung trägt die Schlüsselspalte; der
 // Alt-Stand eines UPDATE bleibt bei unverändertem Schlüssel abwesend —
 // Quellverhalten der Default-Identity (`LH-FA-CAP-008` Boundary).
-func TestMVPCaptureFlow(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_flow")
+func TestE2ECaptureFlow(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_flow")
 	ctx := context.Background()
 
 	for _, statement := range []string{
@@ -248,7 +248,7 @@ func TestMVPCaptureFlow(t *testing.T) {
 	// Das Wiederlesen desselben Bereichs trägt dieselben Changes in
 	// derselben Reihenfolge (`LH-FA-REA-004.a`, `LH-FA-REA-005`).
 	reread, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: mvpSource, Table: &env.tableID,
+		Source: e2eSource, Table: &env.tableID,
 	})
 	if err != nil {
 		t.Fatalf("Wiederlesen: %v", err)
@@ -266,12 +266,12 @@ func TestMVPCaptureFlow(t *testing.T) {
 
 	// Der Bereich hinter der letzten Position trägt keinen Change
 	// (`LH-FA-REA-002` Boundary).
-	after, err := model.NewSourcePosition(mvpSource, records[len(records)-1].Position.Offset+0x10000)
+	after, err := model.NewSourcePosition(e2eSource, records[len(records)-1].Position.Offset+0x10000)
 	if err != nil {
 		t.Fatalf("Bereichs-Position: %v", err)
 	}
 	tail, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: mvpSource, Table: &env.tableID, Start: &after,
+		Source: e2eSource, Table: &env.tableID, Start: &after,
 	})
 	if err != nil {
 		t.Fatalf("Bereichslesen: %v", err)
@@ -281,13 +281,13 @@ func TestMVPCaptureFlow(t *testing.T) {
 	}
 }
 
-// TestMVPUpdateOldImageWithFullReplicaIdentity trägt die
+// TestE2EUpdateOldImageWithFullReplicaIdentity trägt die
 // REPLICA-IDENTITY-FULL-Seite der Row Images am verdrahteten
 // Feed-Container (`LH-FA-CAP-008`): mit voller Identity trägt die Quelle
 // den kompletten Alt-Stand — `old_data` trägt beide Spalten (`ADR-0016`),
 // nicht nur den Schlüssel.
-func TestMVPUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_full")
+func TestE2EUpdateOldImageWithFullReplicaIdentity(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
 
 	if _, err := env.pool.Exec(ctx,
@@ -334,14 +334,14 @@ type changesViewRow struct {
 // queryChangesView liest `cdc.changes`, gefiltert auf Quelle, Tabelle und
 // den `id`-Feldwert im Row Image (dieselbe `->>`-Filterform wie im
 // Black-Box-CLI-Rundlauf, `tools/harness/run-integration-tests.sh`).
-func queryChangesView(ctx context.Context, env *mvpEnv, rowID string) ([]changesViewRow, error) {
+func queryChangesView(ctx context.Context, env *e2eEnv, rowID string) ([]changesViewRow, error) {
 	rows, err := env.pool.Query(ctx, `
 SELECT commit_position, sequence, operation, old_data, new_data, schema_version
 FROM cdc.changes
 WHERE source_id = $1 AND source_table_id = $2
   AND (new_data->>'id' = $3 OR old_data->>'id' = $3)
 ORDER BY commit_position, sequence`,
-		mvpSource, string(env.tableID), rowID)
+		e2eSource, string(env.tableID), rowID)
 	if err != nil {
 		return nil, err
 	}
@@ -362,7 +362,7 @@ ORDER BY commit_position, sequence`,
 // Zeilen für `rowID` vorliegt (Polling mit Test-Zeitgrenze) — dieselbe
 // Warte-Disziplin wie `awaitPersistedChanges`, gegen den externen
 // SQL-Lesezugriffsweg statt gegen den Store-Adapter.
-func awaitChangesViewRows(t *testing.T, env *mvpEnv, rowID string, limit int) []changesViewRow {
+func awaitChangesViewRows(t *testing.T, env *e2eEnv, rowID string, limit int) []changesViewRow {
 	t.Helper()
 	ctx := context.Background()
 	deadline := time.Now().Add(30 * time.Second)
@@ -397,7 +397,7 @@ func changeRowID(t *testing.T, change model.Change) string {
 	return ""
 }
 
-// TestMVPChangesViewMatchesReadChanges belegt `BEO-PGC/lese-doppelquelle`:
+// TestE2EChangesViewMatchesReadChanges belegt `BEO-PGC/lese-doppelquelle`:
 // derselbe INSERT/UPDATE/DELETE-Rundlauf, gelesen über die externe
 // SQL-Sicht `cdc.changes` (`LH-FA-SST-002`) statt über den internen
 // Store-Adapter (`ReadChanges`), trägt dieselbe Reihenfolge
@@ -405,12 +405,12 @@ func changeRowID(t *testing.T, change model.Change) string {
 // `old_data`/`new_data`, `schema_version`) wie die `ReadChanges`-Lesung
 // desselben Datensatzes (`LH-FA-REA-002`…`006`). Die Zeilen-ID ist
 // isoliert von den übrigen Testfällen dieser Datei auf derselben Tabelle
-// (id=1 in TestMVPUpdateOldImageWithFullReplicaIdentity, id=90/91 im
+// (id=1 in TestE2EUpdateOldImageWithFullReplicaIdentity, id=90/91 im
 // nachgelagerten Lasttest-Beleg und id=95/96 im CLI-E2E-Abschnitt, beide in
 // run-integration-tests.sh) — die Lesung filtert auf den Feldwert, nicht auf
 // die Testreihenfolge.
-func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_full")
+func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
 
 	const rowID = "60"
@@ -429,7 +429,7 @@ func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
 		t.Fatalf("cdc.changes-Lesung: %d Zeilen (Erwartung: 3)", len(viewRows))
 	}
 
-	all, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{Source: mvpSource, Table: &env.tableID})
+	all, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{Source: e2eSource, Table: &env.tableID})
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
 	}
@@ -469,7 +469,7 @@ func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
 	}
 }
 
-// TestMVPRetentionBlockersViewShowsFurthestBehindConsumer belegt
+// TestE2ERetentionBlockersViewShowsFurthestBehindConsumer belegt
 // `LH-FA-RET-005`: `cdc.retention_blockers` zeigt je Quelle real den
 // Consumer mit der am weitesten zurückliegenden bestätigten Position — der
 // Consumer, dessen Position `RetentionPolicy.AllowsDeletion`
@@ -484,8 +484,8 @@ func TestMVPChangesViewMatchesReadChanges(t *testing.T) {
 // Sicht berechnet nichts neu, was die Domain-Policy nicht bereits real
 // entscheidet — sie macht nur sichtbar, welche Position aktuell die
 // Löschgrenze trägt.
-func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_full")
+func TestE2ERetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
 
 	for _, statement := range []string{
@@ -498,11 +498,11 @@ func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 	}
 	behindRows := awaitChangesViewRows(t, env, "70", 1)
 	aheadRows := awaitChangesViewRows(t, env, "71", 1)
-	behindPosition, err := model.NewSourcePosition(mvpSource, uint64(behindRows[0].commitPosition))
+	behindPosition, err := model.NewSourcePosition(e2eSource, uint64(behindRows[0].commitPosition))
 	if err != nil {
 		t.Fatalf("Positions-Konstruktion (behind): %v", err)
 	}
-	aheadPosition, err := model.NewSourcePosition(mvpSource, uint64(aheadRows[0].commitPosition))
+	aheadPosition, err := model.NewSourcePosition(e2eSource, uint64(aheadRows[0].commitPosition))
 	if err != nil {
 		t.Fatalf("Positions-Konstruktion (ahead): %v", err)
 	}
@@ -526,7 +526,7 @@ func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 	// Beide Consumer entfernen, sobald dieser Testfall endet: eine
 	// bestätigte, nie wieder fortgeschriebene Position dieser Consumer
 	// würde sonst über das Testende hinaus als reale, dauerhaft
-	// zurückliegende Position in `Positions(mvpSource)` weiterleben und
+	// zurückliegende Position in `Positions(e2eSource)` weiterleben und
 	// den späteren Retention-Beleg des Compose-Laufs
 	// (`tools/harness/run-integration-tests.sh`, `RunRetentionUseCase`)
 	// dauerhaft blockieren — die Zeilen-Abwesenheit ist hier die
@@ -549,7 +549,7 @@ func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 
 	rows, err := env.pool.Query(ctx,
 		"SELECT consumer_id, acknowledged_position, backlog FROM cdc.retention_blockers WHERE source_id = $1 AND consumer_id = ANY($2)",
-		mvpSource, []string{string(behindConsumer), string(aheadConsumer)})
+		e2eSource, []string{string(behindConsumer), string(aheadConsumer)})
 	if err != nil {
 		t.Fatalf("cdc.retention_blockers-Lesung: %v", err)
 	}
@@ -594,14 +594,14 @@ func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 	}
 }
 
-// TestMVPMetricsCarriesStorageBytes belegt `LH-FA-RET-006` (`SPEC-009`
+// TestE2EMetricsCarriesStorageBytes belegt `LH-FA-RET-006` (`SPEC-009`
 // `cdc_storage_bytes`) am verdrahteten Feed-Container: `cdc.metrics` trägt
 // nach einer realen CDC-Erfassung einen positiven Wert für die physische
 // Speichergröße von `cdc.change` — derselbe externe SQL-Lesezugriffsweg wie
 // der bestehende `cdc_capture_lag`-Beleg
 // (`tools/harness/run-integration-tests.sh`), hier gegen dieselbe View.
-func TestMVPMetricsCarriesStorageBytes(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_full")
+func TestE2EMetricsCarriesStorageBytes(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
 
 	if _, err := env.pool.Exec(ctx,
@@ -622,13 +622,13 @@ func TestMVPMetricsCarriesStorageBytes(t *testing.T) {
 	}
 }
 
-// TestMVPActivationState liest den Aktivierungsstand am verdrahteten
+// TestE2EActivationState liest den Aktivierungsstand am verdrahteten
 // Feed-Container über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`,
 // `LH-FA-CFG-004`, `ADR-0028`): die aktivierte Feed-Tabelle meldet
 // „aktiviert", die nie aktivierte Tabelle meldet „nicht aktiviert"
 // (Boundary), die fehlende Tabelle endet sichtbar (Negative), und die
 // Liste trägt die aktivierten Tabellen der Quelle.
-func TestMVPActivationState(t *testing.T) {
+func TestE2EActivationState(t *testing.T) {
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
 		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — Compose-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
@@ -644,30 +644,30 @@ func TestMVPActivationState(t *testing.T) {
 
 	// Happy Path: die aktivierte Tabelle meldet „aktiviert" (`LH-FA-CFG-003`).
 	enabled, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_flow", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der aktivierten Tabelle: %v", err)
 	}
 	if !enabled.Enabled {
-		t.Fatalf("Status von feed_mvp_flow: nicht aktiviert — die Verdrahtung des Feed-Containers trägt die Aktivierung als EnableTable-Aufruf (ADR-0028)")
+		t.Fatalf("Status von feed_e2e_flow: nicht aktiviert — die Verdrahtung des Feed-Containers trägt die Aktivierung als EnableTable-Aufruf (ADR-0028)")
 	}
 
 	// Boundary: die nie aktivierte Tabelle meldet „nicht aktiviert"
 	// (`LH-FA-CFG-003`).
 	idle, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_idle", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der nie aktivierten Tabelle: %v", err)
 	}
 	if idle.Enabled {
-		t.Fatalf("Status von feed_mvp_idle: aktiviert (nie aktivierte Tabelle)")
+		t.Fatalf("Status von feed_e2e_idle: aktiviert (nie aktivierte Tabelle)")
 	}
 
 	// Negative: die fehlende Tabelle endet sichtbar (`LH-FA-CFG-003`).
 	if _, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_missing", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_missing", Publication: e2ePublication,
 	}); !errors.Is(err, inbound.ErrSourceTableMissing) {
 		t.Fatalf("Status der fehlenden Tabelle: %v (Erwartung: Fehlerklasse der fehlenden Quelle-Tabelle)", err)
 	}
@@ -675,7 +675,7 @@ func TestMVPActivationState(t *testing.T) {
 	// Liste: die Quelle trägt beide aktivierten Feed-Tabellen
 	// (`LH-FA-CFG-004` Happy Path); die nie aktivierte Tabelle bleibt
 	// außerhalb.
-	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource, Publication: mvpPublication})
+	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: e2eSource, Publication: e2ePublication})
 	if err != nil {
 		t.Fatalf("Tabellen-Liste: %v", err)
 	}
@@ -683,29 +683,29 @@ func TestMVPActivationState(t *testing.T) {
 	for _, table := range tables.Tables {
 		activated[table.QualifiedName()] = true
 	}
-	for _, expected := range []string{"public.feed_mvp_flow", "public.feed_mvp_full"} {
+	for _, expected := range []string{"public.feed_e2e_flow", "public.feed_e2e_full"} {
 		if !activated[expected] {
 			t.Fatalf("Tabellen-Liste ohne %q: %d Tabellen", expected, len(tables.Tables))
 		}
 	}
-	if activated["public.feed_mvp_idle"] || len(tables.Retained) != 0 {
+	if activated["public.feed_e2e_idle"] || len(tables.Retained) != 0 {
 		t.Fatalf("Tabellen-Listen ohne Deaktivierung: aktiviert %v, Herkunft %v", tables.Tables, tables.Retained)
 	}
 }
 
-// TestMVPActiveTablesViewMatchesActivationState liest den
+// TestE2EActiveTablesViewMatchesActivationState liest den
 // Aktivierungsstand am verdrahteten Feed-Container über die externe
 // SQL-Sicht `cdc.active_tables` (`LH-FA-SST-002`) statt über den
 // internen Status-Use-Case: die aktivierte Feed-Tabelle erscheint in der
 // Sicht (`LH-FA-CFG-003`/`004` Happy Path), die nie aktivierte Tabelle
 // nicht (`LH-FA-CFG-003`/`004` Boundary) — beide Lesewege tragen dieselbe
-// Aussage über denselben Bindungszustand. `feed_mvp_full` bleibt über den
+// Aussage über denselben Bindungszustand. `feed_e2e_full` bleibt über den
 // gesamten Compose-Lauf aktiviert (Lasttest-Beleg in
 // run-integration-tests.sh) und ist damit unabhängig von der
-// Deaktivierung in TestMVPDisableRetainedState, die nur feed_mvp_flow
+// Deaktivierung in TestE2EDisableRetainedState, die nur feed_e2e_flow
 // betrifft.
-func TestMVPActiveTablesViewMatchesActivationState(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_full")
+func TestE2EActiveTablesViewMatchesActivationState(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
 	ctx := context.Background()
 
 	activation, err := postgresstorage.NewTableActivation(ctx, env.dsn)
@@ -718,25 +718,25 @@ func TestMVPActiveTablesViewMatchesActivationState(t *testing.T) {
 	// Happy Path: die aktivierte Tabelle erscheint in `cdc.active_tables`,
 	// gefiltert auf ihre eigene Bindungs-Kennung — isoliert von den
 	// übrigen im selben Compose-Lauf aktivierten Tabellen
-	// (`feed_mvp_flow`, `feed_mvp_schema`).
+	// (`feed_e2e_flow`, `feed_e2e_schema`).
 	var activeCount int
 	if err := env.pool.QueryRow(ctx,
 		"SELECT count(*) FROM cdc.active_tables WHERE source_table_id = $1",
 		string(env.tableID),
 	).Scan(&activeCount); err != nil {
-		t.Fatalf("cdc.active_tables-Lesung (feed_mvp_full): %v", err)
+		t.Fatalf("cdc.active_tables-Lesung (feed_e2e_full): %v", err)
 	}
 	if activeCount != 1 {
-		t.Fatalf("cdc.active_tables ohne feed_mvp_full: %d Zeilen (Erwartung: 1)", activeCount)
+		t.Fatalf("cdc.active_tables ohne feed_e2e_full: %d Zeilen (Erwartung: 1)", activeCount)
 	}
 	enabled, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_full", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_full", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der aktivierten Tabelle: %v", err)
 	}
 	if !enabled.Enabled {
-		t.Fatalf("Status von feed_mvp_full: nicht aktiviert, obwohl cdc.active_tables eine Zeile trägt")
+		t.Fatalf("Status von feed_e2e_full: nicht aktiviert, obwohl cdc.active_tables eine Zeile trägt")
 	}
 
 	// Boundary: die nie aktivierte Tabelle (kein `source_table`-Eintrag)
@@ -744,33 +744,33 @@ func TestMVPActiveTablesViewMatchesActivationState(t *testing.T) {
 	var idleCount int
 	if err := env.pool.QueryRow(ctx,
 		"SELECT count(*) FROM cdc.active_tables WHERE source_id = $1 AND schema_name = 'public' AND table_name = $2",
-		mvpSource, "feed_mvp_idle",
+		e2eSource, "feed_e2e_idle",
 	).Scan(&idleCount); err != nil {
-		t.Fatalf("cdc.active_tables-Lesung (feed_mvp_idle): %v", err)
+		t.Fatalf("cdc.active_tables-Lesung (feed_e2e_idle): %v", err)
 	}
 	if idleCount != 0 {
-		t.Fatalf("cdc.active_tables mit feed_mvp_idle: %d Zeilen (Erwartung: 0)", idleCount)
+		t.Fatalf("cdc.active_tables mit feed_e2e_idle: %d Zeilen (Erwartung: 0)", idleCount)
 	}
 	idle, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_idle", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_idle", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Status der nie aktivierten Tabelle: %v", err)
 	}
 	if idle.Enabled {
-		t.Fatalf("Status von feed_mvp_idle: aktiviert, obwohl cdc.active_tables keine Zeile trägt")
+		t.Fatalf("Status von feed_e2e_idle: aktiviert, obwohl cdc.active_tables keine Zeile trägt")
 	}
 }
 
-// TestMVPDisableRetainedState trägt die Deaktivierung mit Change-Bestand
+// TestE2EDisableRetainedState trägt die Deaktivierung mit Change-Bestand
 // am verdrahteten Feed-Container (`LH-FA-CFG-002` Out-of-Scope,
 // `ADR-0028`): die Erfassung stoppt über den Publication-Entzug, die
 // Bindungs-Zeile bleibt als Herkunft der persistierten Changes — Status
 // und Liste trennen den Herkunfts-Bestand vom Erfassungs-Zustand. Der
 // Test läuft nach den Capture-Läufen (Quell-Reihenfolge) und deaktiviert
 // die Tabelle als letztes.
-func TestMVPDisableRetainedState(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_flow")
+func TestE2EDisableRetainedState(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_flow")
 	ctx := context.Background()
 
 	activation, err := postgresstorage.NewTableActivation(ctx, env.dsn)
@@ -787,7 +787,7 @@ func TestMVPDisableRetainedState(t *testing.T) {
 	// Test-Reihenfolge der Capture-Läufe. Der Bestand liest vor der
 	// Quelländerung, die Erwartung zählt ihn hoch.
 	before, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: mvpSource, Table: &env.tableID,
+		Source: e2eSource, Table: &env.tableID,
 	})
 	if err != nil {
 		t.Fatalf("Change-Bestand lesen: %v", err)
@@ -799,7 +799,7 @@ func TestMVPDisableRetainedState(t *testing.T) {
 	awaitPersistedChanges(t, env, len(before)+1)
 
 	result, err := disableCase.Disable(ctx, inbound.DisableTableCommand{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_flow", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Disable: %v", err)
@@ -811,7 +811,7 @@ func TestMVPDisableRetainedState(t *testing.T) {
 	// Der Zustand nach der Deaktivierung: die Bindungs-Zeile liest sich
 	// als Herkunft, die Publication trägt die Tabelle nicht mehr.
 	state, err := statusCase.Status(ctx, inbound.GetStatusQuery{
-		Source: mvpSource, Schema: "public", Table: "feed_mvp_flow", Publication: mvpPublication,
+		Source: e2eSource, Schema: "public", Table: "feed_e2e_flow", Publication: e2ePublication,
 	})
 	if err != nil {
 		t.Fatalf("Status nach der Deaktivierung: %v", err)
@@ -819,12 +819,12 @@ func TestMVPDisableRetainedState(t *testing.T) {
 	if state.Enabled || !state.Retained {
 		t.Fatalf("Status nach der Deaktivierung: %+v (Erwartung: Retained)", state)
 	}
-	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: mvpSource, Publication: mvpPublication})
+	tables, err := listCase.ListTables(ctx, inbound.ListTablesQuery{Source: e2eSource, Publication: e2ePublication})
 	if err != nil {
 		t.Fatalf("Tabellen-Liste nach der Deaktivierung: %v", err)
 	}
 	for _, table := range tables.Tables {
-		if table.QualifiedName() == "public.feed_mvp_flow" {
+		if table.QualifiedName() == "public.feed_e2e_flow" {
 			t.Fatalf("aktivierte Liste trägt die deaktivierte Tabelle")
 		}
 	}
@@ -832,13 +832,13 @@ func TestMVPDisableRetainedState(t *testing.T) {
 	for _, table := range tables.Retained {
 		retained[table.QualifiedName()] = true
 	}
-	if !retained["public.feed_mvp_flow"] {
+	if !retained["public.feed_e2e_flow"] {
 		t.Fatalf("Herkunfts-Liste ohne die deaktivierte Tabelle: %v", tables.Retained)
 	}
 }
 
-// TestMVPSchemaChangeAddColumn trägt eine reale `ALTER TABLE … ADD
-// COLUMN` auf der aktivierten Tabelle `feed_mvp_schema` am verdrahteten
+// TestE2ESchemaChangeAddColumn trägt eine reale `ALTER TABLE … ADD
+// COLUMN` auf der aktivierten Tabelle `feed_e2e_schema` am verdrahteten
 // Feed-Container (`LH-FA-SCH-001` Happy Path, `LH-FA-SCH-002` Boundary,
 // `LH-FA-SCH-005` Boundary): die danach erfassten Changes tragen die neue
 // Spalte im Row Image, die zuvor erfasste Change bleibt über
@@ -851,8 +851,8 @@ func TestMVPDisableRetainedState(t *testing.T) {
 // die die `TableBinding` gehoben wird — künftige Changes referenzieren
 // sie, die bereits erfasste Change bleibt bei ihrer ursprünglichen
 // Version.
-func TestMVPSchemaChangeAddColumn(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_schema")
+func TestE2ESchemaChangeAddColumn(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_schema")
 	ctx := context.Background()
 
 	if _, err := env.pool.Exec(ctx,
@@ -897,7 +897,7 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 	}
 }
 
-// TestMVPHeartbeatHealthy trägt `LH-FA-ADM-002` (Betriebsstatus, Happy
+// TestE2EHeartbeatHealthy trägt `LH-FA-ADM-002` (Betriebsstatus, Happy
 // Path) am verdrahteten Feed-Container: `cdc.heartbeat` trägt für die
 // laufende Quelle eine frische, fehlerfreie Lebenszeichen-Zeile —
 // derselbe externe SQL-Lesezugriffsweg wie `awaitHeartbeatErrorClass`
@@ -908,10 +908,10 @@ func TestMVPSchemaChangeAddColumn(t *testing.T) {
 // den der Compose-Healthcheck bereits gegen dieselbe Zeile prüft
 // (`docker inspect --format '{{.State.Health.Status}}'` im Runner-Skript
 // oben). Dieser Testfall läuft im ersten `go test`-Aufruf des
-// Runner-Skripts, vor `TestMVPSchemaChangeIncompatibleTypeChange` — jener
+// Runner-Skripts, vor `TestE2ESchemaChangeIncompatibleTypeChange` — jener
 // setzt `error_class` dauerhaft auf `schema` und würde den
 // Happy-Path-Beleg sonst verdecken.
-func TestMVPHeartbeatHealthy(t *testing.T) {
+func TestE2EHeartbeatHealthy(t *testing.T) {
 	dsn := os.Getenv("CDC_INTEGRATION_DSN")
 	if dsn == "" {
 		t.Skip("CDC_INTEGRATION_DSN nicht gesetzt — Compose-Integrationstest läuft über make test-integration gegen die Compose-Umgebung")
@@ -929,7 +929,7 @@ func TestMVPHeartbeatHealthy(t *testing.T) {
 	var ageSeconds float64
 	for time.Now().Before(deadline) {
 		if err := pool.QueryRow(ctx,
-			"SELECT coalesce(error_class, ''), age_seconds FROM cdc.heartbeat WHERE source_id = $1", mvpSource,
+			"SELECT coalesce(error_class, ''), age_seconds FROM cdc.heartbeat WHERE source_id = $1", e2eSource,
 		).Scan(&errorClass, &ageSeconds); err != nil {
 			t.Fatalf("cdc.heartbeat-Lesung: %v", err)
 		}
@@ -948,14 +948,14 @@ func TestMVPHeartbeatHealthy(t *testing.T) {
 // `tools/schema/nacharbeit-heartbeat.sql` (`LH-FA-ADM-003`,
 // `LH-QA-REL-003`). Eine leere Zeichenkette trägt `NULL` (Normalbetrieb,
 // `error_class` noch nicht gesetzt).
-func awaitHeartbeatErrorClass(t *testing.T, env *mvpEnv, want string) string {
+func awaitHeartbeatErrorClass(t *testing.T, env *e2eEnv, want string) string {
 	t.Helper()
 	ctx := context.Background()
 	deadline := time.Now().Add(30 * time.Second)
 	got := ""
 	for time.Now().Before(deadline) {
 		if err := env.pool.QueryRow(ctx,
-			"SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = $1", mvpSource,
+			"SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = $1", e2eSource,
 		).Scan(&got); err != nil {
 			t.Fatalf("cdc.heartbeat-Lesung: %v", err)
 		}
@@ -968,9 +968,9 @@ func awaitHeartbeatErrorClass(t *testing.T, env *mvpEnv, want string) string {
 	return ""
 }
 
-// TestMVPSchemaChangeIncompatibleTypeChange trägt `LH-FA-SCH-004` an der
-// aktivierten Tabelle `feed_mvp_schema` (nach
-// TestMVPSchemaChangeAddColumn, mit der dort hinzugefügten Spalte
+// TestE2ESchemaChangeIncompatibleTypeChange trägt `LH-FA-SCH-004` an der
+// aktivierten Tabelle `feed_e2e_schema` (nach
+// TestE2ESchemaChangeAddColumn, mit der dort hinzugefügten Spalte
 // `extra`) in beiden im Slice-Plan (`slice-030`, §6) benannten Fällen:
 //
 //  1. PostgreSQL lehnt eine tatsächlich inkompatible Typänderung bereits
@@ -1000,8 +1000,8 @@ func awaitHeartbeatErrorClass(t *testing.T, env *mvpEnv, want string) string {
 // Zeile id=11 bleibt dabei unerfasst: ihre Transaktion trägt die
 // auslösende Relation-Nachricht vor ihrem eigenen Commit, und der
 // Erfassungspfad endet, bevor sie committed wird.
-func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
-	env := newMVPEnv(t, "feed_mvp_schema")
+func TestE2ESchemaChangeIncompatibleTypeChange(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_schema")
 	ctx := context.Background()
 
 	// Fall 1 (Boundary aus slice-030 §6): PostgreSQL lehnt die DDL ab,
@@ -1026,7 +1026,7 @@ func TestMVPSchemaChangeIncompatibleTypeChange(t *testing.T) {
 
 	// Fall 2 (Negative-Fall, s. Funktionskommentar): dieselbe Typänderung
 	// gelingt an PostgreSQL mit durchgehend konvertierbaren Bestandsdaten
-	// (id=1 "100", id=2 "200" aus TestMVPSchemaChangeAddColumn) — CDC
+	// (id=1 "100", id=2 "200" aus TestE2ESchemaChangeAddColumn) — CDC
 	// meldet sie trotzdem sichtbar als Fehlerklasse `schema`, weil die
 	// Spalte `amount` ihre PostgreSQL-Typ-OID wechselt.
 	if _, err := env.pool.Exec(ctx,
