@@ -155,7 +155,10 @@ Changelog-Zeile),
   Ausschluss), „Pflichtenheft/Architektur-Änderungen" (Bestand bleibt
   stehen, bereits vollständig).
 - geprüft, ohne Befund: **Traceability.** Commit-Betreff nennt
-  `LH-FA-ADM-001`, `LH-FA-CFG-002`, `ADR-0050` — mindestens eine
+  [LH-FA-ADM-001](../../spec/lastenheft.md),
+  [LH-FA-CFG-002](../../spec/lastenheft.md),
+  [ADR-0050](../plan/adr/0050-sql-administration-antragsqueue-und-live-reload.md)
+  — mindestens eine
   `LH-*`/`ADR-*`-Kennung erfüllt, keine `SPEC-*`/`ARC-*`-Struktur-ID im
   Betreff.
 - geprüft, ohne Befund: **§8 Sub-Area-Prüfung.** Einzige berührte
