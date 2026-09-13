@@ -91,9 +91,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün, `make test-integration` grün. Beide real
       ausgeführt (Ausgaben im Implementer-Bericht); `make test-integration`
       dreimal in Folge grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Siehe `docs/reviews/review-slice-048.md` — 0 HIGH, 1 MEDIUM (F-1,
+      ohne Reviewer→Implementer-Rückgabe-Pfeil), keine Fixrunde nötig.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Aufbewahrung
       (Retention)" nennt den kombinierten Rundlauf als Testbeleg, falls
       das über den bereits dokumentierten Mechanismus hinausgeht
