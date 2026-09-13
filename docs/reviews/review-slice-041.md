@@ -28,7 +28,7 @@ begründet (ADR-0052)`) — neu: `internal/bootstrap/config_file.go`,
   Alternativen, Konsequenzen, Re-Evaluierungs-Trigger)
 - `AGENTS.md` §3.1 (Docker-only), §3.5 (ADR-Immutabilität), §3.7
   (Kommentar-Disziplin)
-- `spec/pflichtenheft.md` §SPEC-016 (neue Feldform-Verfeinerung, vor und
+- `spec/pflichtenheft.md` §`SPEC-016` (neue Feldform-Verfeinerung, vor und
   nach dem Diff)
 - `.a-check.yml` (Composition-Root-Freistellung für den neuen
   `yaml.v3`-Import)
@@ -86,7 +86,7 @@ begründet (ADR-0052)`) — neu: `internal/bootstrap/config_file.go`,
   widersprechen" bzw. eine von der ADR offen gelassene Entscheidung
   eigenständig treffen und als bindend fortschreiben)
 - `pfad`: `internal/bootstrap/config_file.go:189–201` (`mergeTables`),
-  `spec/pflichtenheft.md:246–249` (SPEC-016, `tables`-Ersetzungsregel),
+  `spec/pflichtenheft.md:246–249` (`SPEC-016`, `tables`-Ersetzungsregel),
   Plan-Nachzug „Implementierungsentscheidung zu §6 Risiko 1"
 - `befund`: `ADR-0052` benennt selbst, dass die `tables`-Merge-Semantik
   bei gleichzeitig gesetzter `CDC_TABLES` und Datei-`tables` „nicht
@@ -203,7 +203,7 @@ begründet (ADR-0052)`) — neu: `internal/bootstrap/config_file.go`,
   (`internal/bootstrap/**`); `make a-check` real ausgeführt: 0 Befunde.
 - geprüft, ohne Befund: **`spec/pflichtenheft.md` `SPEC-016` verletzt
   keine Matrix-Regel.** Kein `ADR-*`- oder `slice-*`-Verweis innerhalb
-  von SPEC-016 oder sonst im Diff der Datei (`grep -n "ADR-\|slice-"
+  von `SPEC-016` oder sonst im Diff der Datei (`grep -n "ADR-\|slice-"
   spec/pflichtenheft.md` — die einzigen Treffer liegen in
   unveränderten, allgemeinen Abschnitten außerhalb des Diffs); `make
   docs-check` real ausgeführt: 0 Befunde über 322 Dateien.
