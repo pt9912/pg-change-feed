@@ -1,0 +1,14 @@
+---
+# yamllint-Konfiguration: `extends: default`, mit einer Abweichung.
+#
+# `comments.min-spaces-from-content: 1` statt Default 2 — AGENTS.md §3.8
+# (Action-Pinning) gibt das Trailing-Tag-Kommentar-Format mit genau einem
+# Leerzeichen vor dem `#` als kanonisches Beispiel vor
+# (`uses: actions/checkout@<sha> # v7.0.1`); der yamllint-Default verlangt
+# zwei. Diese Datei richtet das Werkzeug an der bereits geltenden Hard Rule
+# aus, statt die Hard Rule an ein Default-Linter-Preset anzupassen.
+extends: default
+
+rules:
+  comments:
+    min-spaces-from-content: 1

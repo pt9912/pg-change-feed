@@ -1,3 +1,4 @@
+---
 name: ci
 
 # PR-/Push-CI (ADR-0051 Entscheidung 2): laeuft auf jeden Pull Request und
@@ -24,7 +25,7 @@ name: ci
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
 
-on:
+"on":
   pull_request:
   push:
     branches:
@@ -44,7 +45,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 

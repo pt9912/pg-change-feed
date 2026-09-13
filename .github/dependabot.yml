@@ -1,3 +1,4 @@
+---
 # Dependabot deckt zwei Oekosysteme ab (ADR-0051 Entscheidung 9): `gomod`
 # und `github-actions`, wöchentlich. Der `commit-message.prefix` `[ADR-0051]`
 # ist der ehrliche Anker fuer die daraus entstehenden Commits — ohne ihn

@@ -139,22 +139,47 @@ Aussagen-Berührung steht hier gar nicht.
   im gelesenen `d-check`-Vorbild.
 - **YAML-Realprüfung — vier unabhängige Belege statt nur `yamllint`:**
   (1) `python3 -c "import yaml; yaml.safe_load(...)"` für beide Dateien —
-  strukturell parsebar; (2) `yamllint` (Host-Toolchain vorhanden, kein
-  Docker-Image mit `yamllint` im Repo verankert) — sauber bis auf eine
-  Kommentar-Abstand-Warnung, behoben; (3) `actionlint` (`rhysd/actionlint`,
+  strukturell parsebar; (2) `yamllint`; (3) `actionlint` (`rhysd/actionlint`,
   Docker-Pull) gegen `ci.yml` — exit 0, keine Befunde, GitHub-Actions-
-  Workflow-Semantik (nicht nur YAML-Syntax) geprüft; (4) `jsonschema`
-  gegen die offiziellen SchemaStore-Schemata (`dependabot-2.0.json` für
-  `dependabot.yml` — **schema-valid**; `github-workflow.json` für
-  `ci.yml` — ein einzelner Fehlschlag ist eine bekannte PyYAML-1.1-
-  Eigenheit: `on:` wird von `yaml.safe_load` als Bool-Key `True` geparst
-  („Norway Problem"), nicht vom Schema-Validator noch von GitHub selbst
-  so gelesen; `actionlint` (echter GHA-Parser) bestätigt derweil die
-  Gültigkeit ohne diesen Artefakt). Keine dieser vier Prüfungen lief im
-  Toolchain-Container (kein `yamllint`/`actionlint`-Image im Repo
-  verankert) — alle vier liefen host-seitig bzw. via Docker-Pull eines
-  externen Images; das ist dokumentierte manuelle/host-Prüfung im Sinne
-  des DoD-Items, kein Repo-Sensor.
+  Workflow-Semantik (nicht nur YAML-Syntax) geprüft; (4) `jsonschema` gegen
+  die offiziellen SchemaStore-Schemata. Keine dieser vier Prüfungen lief im
+  repo-eigenen Toolchain-Container (kein `yamllint`/`actionlint`-Image dort
+  verankert) — das ist dokumentierte manuelle/externe Docker-Prüfung im
+  Sinne des DoD-Items, kein Repo-Sensor.
+
+  **Korrektur nach Review (`review-slice-039.md` F-2, 2026-09-13):** Die
+  ursprüngliche Fassung dieses Punkts behauptete für (2) „sauber bis auf
+  eine Kommentar-Abstand-Warnung, behoben" — dieser Befund war falsch und
+  ist beim ursprünglichen Lauf nicht so aufgetreten; der Reviewer hat
+  `yamllint` eigenständig gegen den committeten Stand reproduziert (Default-
+  Konfiguration, keine `.yamllint`-Datei existierte zu dem Zeitpunkt) und
+  fand stattdessen 1 Error (`ci.yml:47:81`, Zeile zu lang) + 3 Warnings
+  (fehlender Dokumentstart `---` in beiden Dateien, `truthy value`-Warnung
+  auf `on:` in `ci.yml:27:1`) — keiner davon eine
+  Kommentar-Abstand-Warnung. Nachvollzogen mit demselben Befund
+  (`docker run --rm -v "$PWD":/repo -w /repo cytopia/yamllint:latest
+  .github/workflows/ci.yml .github/dependabot.yml`, Default-Konfiguration).
+
+  Real behoben statt nur umbeschrieben: `---`-Dokumentstart in beiden
+  Dateien ergänzt; `on:` in `ci.yml` als `"on":` gequotet (behebt
+  nebenbei auch das zuvor hier dokumentierte PyYAML-„Norway
+  Problem" bei Prüfung (4) — `yaml.safe_load` liefert seither den
+  String-Key `on`, nicht mehr den Bool-Key `True`); der Kommentar-Abstand
+  vor dem Tag-Kommentar der Checkout-Action auf ein Leerzeichen vereinheit-
+  licht (deckt sich exakt mit der Beispielform in `AGENTS.md` §3.8: `uses:
+  actions/checkout@<sha> # v7.0.1`) und macht die Zeile zugleich 80 statt
+  81 Zeichen lang. Diese Ein-Leerzeichen-Form weicht vom yamllint-Default
+  (`comments.min-spaces-from-content: 2`) ab; dafür trägt das Repo neu
+  `.yamllint` (`extends: default`, `comments.min-spaces-from-content: 1`,
+  mit Begründung in der Datei selbst) — das Werkzeug wird an der bereits
+  geltenden Hard Rule ausgerichtet, nicht umgekehrt.
+
+  Erneuter Lauf nach der Korrektur: `docker run --rm -v "$PWD":/repo -w
+  /repo cytopia/yamllint:latest -c .yamllint .github/workflows/ci.yml
+  .github/dependabot.yml .yamllint` → Exit 0, keine Befunde. `actionlint`
+  und der `python3`/PyYAML-Parse-Beleg wurden nach der Korrektur erneut
+  gegen den geänderten Stand ausgeführt und bleiben unverändert grün bzw.
+  strukturell valide.
 - **`harness/README.md` §„Aktueller Lauf-Status"** statt einer neuen
   Zeile in der Sensors-Tabelle: Die Zeile referenzierte bereits vor diesem
   Slice ein „CI-Badge" als Platzhalter, ohne dass ein Workflow existierte.
