@@ -128,6 +128,37 @@ geprüft“ unterscheidbar). Report-Gerüst für den ganzen Lauf:
 `docs/reviews/review-report.template.md`, ein Report pro Lauf, Folgeläufe als
 neue Datei statt Überschreibung.
 
+## DoD-Checkbox-Nachzug ohne Fixrunde
+
+Kommt dein eigenes **Verdikt** zu dem Schluss, dass **keine Fixrunde am
+Implementer** nötig ist — 0 HIGH, oder alle HIGH/MEDIUM/LOW-Findings werden
+ohne einen Reviewer→Implementer-Rückgabe-Pfeil weitergereicht (z. B. direkt
+vom Planner behoben) —, zieh die DoD-Zeile „Review durchgeführt, Report unter
+`docs/reviews/` liegt vor" im betroffenen Slice-Plan **selbst** auf `[x]`
+nach, mit Verweis auf den eigenen Report-Pfad, **im selben Commit**, der den
+Report anlegt.
+
+**Warum hier und nicht beim Implementer:** Der reguläre Nachzug-Mechanismus
+(`.claude/commands/implement-slice.md` Schritt 18/21,
+`BEO-PGC/dod-checkbox-nachzug`) hängt an einem *zweiten Implementer-Lauf* —
+Schritt 18 kommt zu früh (vor dem Review), Schritt 21 greift nur bei einer
+echten Fixrunde. Bleibt die Fixrunde aus, gibt es keinen Implementer-Lauf
+mehr, an den sich der Nachzug hängen könnte. Du bist die einzige Rolle, die
+im richtigen Moment — beim Schreiben deines eigenen Verdikts — bereits weiß,
+ob eine Fixrunde kommt oder nicht.
+
+**Grenze:** Nur diese eine Checkbox. Kein anderer DoD-Punkt, keine
+Verifikations-Substanz (das bleibt Verifier-Aufgabe, Modul 11) — du
+bestätigst ausschließlich die Tatsache, dass dein eigener, abgeschlossener
+Arbeitsschritt stattgefunden hat. Braucht der Slice eine Fixrunde, bleibt die
+Checkbox offen; sie wird dann regulär bei Schritt 21 des
+Implementer-Workflows nachgezogen.
+
+Herkunft: `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde` (3×,
+`slice-045`/`slice-046`/`slice-047`), Architect-Verdikt
+[`architect-verdict-dod-checkbox-review-ohne-fixrunde.md`](../../docs/reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md)
+· seit slice-047.
+
 ## Pflege (Steering-Loop)
 
 Bei dreimaligem Auftreten desselben Findings:
