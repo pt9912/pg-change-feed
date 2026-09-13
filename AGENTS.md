@@ -189,6 +189,40 @@ Diff im eigenen Repo.
 lesbar und audit-/hebbar, ohne den SHA manuell gegen die Releases der
 Action auflösen zu müssen ([`ADR-0051`](docs/plan/adr/0051-cicd-pipeline-github-actions.md)).
 
+### 3.9 Exit-Code eines Gate-Laufs wird direkt geprüft, nie durch eine Pipe/einen Wrapper hindurch
+
+Ein `make`-Gate-Aufruf (`make gates`, `make docs-check`,
+`make test-integration`, …), dessen Ausgabe gefiltert wird (`| tail`,
+`| grep`, …), oder der über einen Hintergrund-Task-Wrapper läuft, liefert
+als Gesamt-Exit-Code den des **letzten** Pipe-Glieds bzw. den des
+Wrappers — nicht den von `make` selbst. Schlägt `make` fehl, während
+`tail`/`grep` erfolgreich terminiert (Regelfall) oder der Wrapper nur sein
+eigenes Ende meldet, zeigt die Shell trotzdem Exit 0: ein rotes Gate
+erscheint unbemerkt grün, und eine daran gehängte Folgehandlung
+(`&& git push`, Closure, Merge) läuft auf Basis eines falschen Signals.
+
+**Falsch:** `make gates | tail -15 && git push`
+**Richtig:** `make gates` ungefiltert laufen lassen und seinen eigenen
+Exit-Code unmittelbar danach feststellen, bevor irgendeine Filterung
+dazwischentritt (z. B. `make gates; ec=$?; tail -15 <log>; test $ec -eq 0
+&& git push` — oder `make gates > <log> 2>&1; ec=$?` mit separatem
+`grep`/`tail` gegen die geschriebene Log-Datei). Bei Hintergrund-Tasks
+ebenso: Der von einem Wrapper gemeldete „Exit"-Wert ist nicht automatisch
+der von `make` — den `make`-eigenen Exit-Code separat sichern (z. B.
+`make ...; echo $? > <datei>` als eigener, ungeketteter Schritt).
+
+**Begründung:** Repo-weite Ausführungsdisziplin, die für jede Rolle gilt
+(Implementer, Reviewer, Verifier, Planner/Architect) — kein
+rollenspezifisches Problem, siehe
+[`docs/reviews/architect-verdict-pipe-maskiert-make-exit-code.md`](docs/reviews/architect-verdict-pipe-maskiert-make-exit-code.md).
+Dreifach real aufgetreten in `welle-15`
+(`docs/plan/planning/observations/BEO-PGC/pipe-maskiert-make-exit-code`):
+einmal vom Implementer selbst bemerkt und korrigiert, einmal beim Planner
+bis zum realen `git push` durchgerutscht, einmal durch einen
+Hintergrund-Task-Wrapper verschärft — jeweils ohne dass ein zweites,
+unabhängig einsehbares Artefakt (Diff) den Fehler hätte fangen können, da
+er in der Ausführung selbst liegt, nicht im committeten Ergebnis.
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.
@@ -235,7 +269,7 @@ Pro Slice:
 3. Betroffene Requirement-/ADR-IDs identifizieren.
 4. Kleinste sinnvolle Änderung planen.
 5. Engsten nützlichen Sensor laufen lassen.
-6. Repo-weiten Gate-Lauf vor Handoff (`make gates`).
+6. Repo-weiten Gate-Lauf vor Handoff (`make gates`) — Exit-Code direkt prüfen, nie durch eine Pipe/einen Wrapper hindurch (§3.9).
 7. Doku/Indizes aktualisieren, falls ein öffentlicher Vertrag berührt.
 8. Ausgeführte Sensors und verbleibende Risiken berichten — keine Erfolgsmeldung ohne Gate-Ausführung.
 

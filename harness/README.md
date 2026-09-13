@@ -188,7 +188,7 @@ Für ein Policy/Compliance-Repo:
 3. Betroffene Requirement-/ADR-IDs identifizieren.
 4. Kleinste sinnvolle Änderung planen.
 5. Engsten nützlichen Sensor laufen lassen.
-6. Repo-weiten Gate-Lauf vor Handoff (`make gates`).
+6. Repo-weiten Gate-Lauf vor Handoff (`make gates`) — Exit-Code direkt prüfen, nie durch eine Pipe/einen Wrapper hindurch (`AGENTS.md` §3.9).
 7. Doku/Indizes aktualisieren, falls ein öffentlicher Vertrag berührt.
 8. Ausgeführte Sensors und verbleibende Risiken berichten — keine Erfolgsmeldung ohne Gate-Ausführung.
 
