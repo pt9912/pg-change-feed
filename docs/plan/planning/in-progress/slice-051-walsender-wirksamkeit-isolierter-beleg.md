@@ -102,9 +102,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       **Entfallen ersatzlos** — PostgreSQL filtert real sofort (siehe §3
       Plan-Nachzug); kein Liefer-Punkt.
 - [x] `make gates` grün, `make test-integration` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      **Report:** `docs/reviews/review-slice-051.md` — 0 HIGH/MEDIUM/LOW,
+      2 INFO, keine Fixrunde nötig.
 - [x] Doku-Update: nur falls der Walsender real verzögert (siehe oben) —
       Implementer prüft und begründet im Plan-Nachzug. **Entfällt** — kein
       Verzögerungsfall eingetreten, kein Doku-Update nötig.
