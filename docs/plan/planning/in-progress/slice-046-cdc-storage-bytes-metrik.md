@@ -90,9 +90,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün, `make test-integration` grün. Beide real
       ausgeführt (Ausgaben im Implementer-Bericht); zusätzlich
       `make test-store` real grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-046.md`](../../../reviews/review-slice-046.md)
+      (F-1 MEDIUM Register-Ausgang-Zeitpunkt — an `welle-13`-Closure
+      delegiert, siehe §7; F-2 LOW Commit-Granularität, kein Handlungsbedarf).
+      Verifikation in
+      [`docs/reviews/verify-slice-046.md`](../../../reviews/verify-slice-046.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Metriken lesen"
       nennt die neue Zeile.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
@@ -276,13 +282,20 @@ Backticks).
   bereits bekannte, unter der Schwelle liegende Beobachtung) — real geprüft,
   keine neue Instanz dieser Klasse.
 - **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
-- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
-  angefallen. `BEO-PGC/retention-keine-loeschausfuehrung` bleibt bei 0×
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-046.md` in `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde/`
+  ergänzt (Verifier-Fund V-1: DoD-Zeile „Review durchgeführt" trotz sauberem
+  Review ohne Fixrunde nicht nachgezogen, dieselbe Klasse wie bei
+  `slice-045`) — Zähler steht damit bei 2×, unter der Schwelle. Nachträglich
+  in dieser Datei ergänzt: Reviewer-Finding F-1
+  (`docs/reviews/review-slice-046.md`) korrigiert.
+  `BEO-PGC/retention-keine-loeschausfuehrung` bleibt bei 0×
   (analog zu `slice-043`/`044`/`045`) — mit diesem Slice sind alle vier in
   der Beobachtung benannten Lücken (Löschausführung, Hintergrundjob,
   Sichtbarkeit blockierender Consumer, `cdc_storage_bytes`-Metrik)
   geliefert; der Ausgang selbst bleibt der `welle-13`-Closure vorbehalten
-  (Lese-Schritt, Modul 6). `BEO-PGC/test-runner-stiller-ausschluss` bleibt
+  (Lese-Schritt, Modul 6 — der Trigger dafür steht bereits explizit in
+  `welle-13.md` §3, nicht am 3×-Schwellenwert-Lese-Schritt). `BEO-PGC/test-runner-stiller-ausschluss` bleibt
   bei 1× (kein neues Auftreten, siehe oben).
 - **Folge-Slices:** keine neuen — `welle-13` trägt keine weiteren Slices
   über `slice-046` hinaus.
