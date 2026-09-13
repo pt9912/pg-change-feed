@@ -62,3 +62,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0049 | Replication-Fehlerklassen-Trennung und WAL-Rückstand-Schwellen | Accepted | 2026-09-12 | [0049-replication-fehlerklassen-schwellen.md](0049-replication-fehlerklassen-schwellen.md) |
 | ADR-0050 | Schreibende SQL-Administration über Antrags-Queue + Live-Reload | Accepted | 2026-09-13 | [0050-sql-administration-antragsqueue-und-live-reload.md](0050-sql-administration-antragsqueue-und-live-reload.md) |
 | ADR-0051 | CI/CD-Pipeline über GitHub Actions | Accepted | 2026-09-13 | [0051-cicd-pipeline-github-actions.md](0051-cicd-pipeline-github-actions.md) |
+| ADR-0052 | Optionale YAML-Konfigurationsdatei ergänzt Umgebungsvariablen | Accepted | 2026-09-13 | [0052-optionale-yaml-konfigurationsdatei.md](0052-optionale-yaml-konfigurationsdatei.md) |
