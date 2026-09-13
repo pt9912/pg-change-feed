@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.11
+Version: 1.12
 Software-Version: 0.2.0-verdrahtung
-Stand: 2026-09-13
+Stand: 2026-09-14
 
 ## 1. Einleitung
 
@@ -444,7 +444,7 @@ oder gegen einen bereits laufenden Feed-Container: `docker exec <container>
 **Ausgabe (Beispiel):**
 
 ```text
-pg-change-feed diagnose: Quelle "src-mvp"
+pg-change-feed diagnose: Quelle "src-e2e"
   Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor 1.203s
   Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)
   CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): 0.087s
@@ -706,3 +706,4 @@ MIT — siehe `LICENSE`.
 | 1.9 | 2026-09-13 | `cdc_storage_bytes`-Metrik ergänzt (`LH-FA-RET-006`, slice-046): §4 „Metriken lesen" nennt die neue `cdc.metrics`-Zeile |
 | 1.10 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`, slice-047): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
 | 1.11 | 2026-09-13 | `CDC_NATS_URL`-Zeile (§5) auf das tabellen-granulare Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>` korrigiert (`ADR-0056`, slice-058) |
+| 1.12 | 2026-09-14 | Diagnose-Beispielausgabe (§4) auf den umbenannten E2E-Quellnamen `src-e2e` aktualisiert (reines Namensrelikt aus der ursprünglichen MVP-Testumgebung, slice-057) |
