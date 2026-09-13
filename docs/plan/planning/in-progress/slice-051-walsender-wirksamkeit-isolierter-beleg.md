@@ -247,7 +247,11 @@ Backticks).
 - **Was ging anders als geplant:** Nichts Wesentliches. Der im Slice-Plan
   vorab benannte Kontingenzfall (Walsender liefert verzögert, Rückführung
   `in-progress` → `next`) ist nicht eingetreten — der einfachere der
-  beiden im Architect-Verdikt beschriebenen Ausgänge traf real zu.
+  beiden im Architect-Verdikt beschriebenen Ausgänge traf real zu. Der
+  Verifier fand einen kleinen, unabhängigen Dokumentations-Nachtrag
+  (`harness/README.md` §Sensors' `make test-integration`-Zeile trug noch
+  keinen `seit slice-051`-Verweis, abweichend vom etablierten Muster für
+  `slice-037`/`038`) — in dieser Closure direkt nachgezogen.
 - **Steering-Loop-Eintrag:** neuer Sensor — `run-integration-tests.sh`
   trägt jetzt einen isolierten, von der App-seitigen
   `Assembler`-Filterung entkoppelten Beleg für die
