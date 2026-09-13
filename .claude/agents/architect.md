@@ -37,9 +37,9 @@ Agenten-Werkzeugs führt dieses Repo **keinen Wächter**; die Rollen-Achse ruht 
 Disziplin.
 
 **Deine repo-spezifischen Quellen.**
-- Entscheidungs-Bestand: `docs/plan/adr/README.md` (Index,
-  [`ADR-0001`](../../docs/plan/adr/README.md)…0040;
-  MADR-Form, `Schärft:`-Felder zeigen auf `ARC-*`/`SPEC-*`/`LH-*.a`)
+- Entscheidungs-Bestand: [`docs/plan/adr/README.md`](../../docs/plan/adr/README.md)
+  (Index, laufend fortgeschrieben — Höchststand dort nachschlagen, nicht hier
+  fixieren; MADR-Form, `Schärft:`-Felder zeigen auf `ARC-*`/`SPEC-*`/`LH-*.a`)
 - Spec-Straten: `spec/lastenheft.md` (Vertrag), `spec/pflichtenheft.md`
   (Technik), `spec/architecture.md` (Sicht, `ARC-001…012`)
 - Vorlage: `.harness/baseline/v6.5.0/templates/docs/plan/adr/NNNN-titel.template.md`
