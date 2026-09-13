@@ -94,19 +94,26 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `actionlint` im Toolchain-Container, falls verfügbar — sonst
       dokumentierte manuelle Prüfung im Plan-Nachzug).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-039.md`](../../../reviews/review-slice-039.md)
+      (0 HIGH, 1 MEDIUM, 2 INFO), Fixrunde in Commit `a23305a`, bestätigt
+      in [`docs/reviews/review-slice-039-fixrunde.md`](../../../reviews/review-slice-039-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-039.md`](../../../reviews/verify-slice-039.md)
+      (DoD eigenständig nachgeprüft, ein neues Finding V-1 zu dieser
+      Checkbox selbst — hiermit nachgezogen).
 - [x] Doku-Update: `harness/README.md` §Sensors — kein neues Gate (CI
       automatisiert nur bestehende `make gates`), aber ein Hinweis, dass
       PRs/Pushes jetzt automatisiert geprüft werden, gehört dorthin, falls
       die bestehende Tabellenform das zulässt; Implementer entscheidet und
       begründet im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft (dieser Slice ist wellenlos — die Prüfung läuft **hier**, nicht bei einer Welle-Closure).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — neues Verzeichnis `BEO-PGC/github-actions-unverifizierbar-lokal/` angelegt, Beleg `evidence/slice-039.md` (1×).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide *weiter offen*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft (dieser Slice ist wellenlos — die Prüfung läuft **hier**, nicht bei einer Welle-Closure). Siehe §7 — alle drei geprüft, kein Rot.
 
 ## 3. Plan (vor Code)
 
@@ -230,12 +237,18 @@ dasteht.
   ausgeführt werden (GitHub Actions ist nicht in Docker simulierbar) —
   die Verifikation bleibt auf statische YAML-Prüfung und logische
   Nachvollziehbarkeit beschränkt, bis der Nutzer nach dem Merge einen
-  echten PR/Push auslöst. **Ausgang:** <bei Closure einzutragen>
+  echten PR/Push auslöst. **Ausgang: weiter offen** →
+  `BEO-PGC/github-actions-unverifizierbar-lokal` im Register (Eintrag
+  neu angelegt, 1×) — löst sich erst mit dem ersten echten Workflow-Lauf,
+  Sache des Nutzers, kein Slice kann das repo-intern vorwegnehmen.
 - `make test` im CI-Runner könnte einen anderen Ressourcen-/Zeitbedarf
   haben als lokal (Race-Detector-Build ist bereits als
   Debian-Toolchain-Image bekannt, größer als die Alpine-Variante) — ein
   GitHub-Actions-Runner-Timeout ist ohne realen Lauf nicht ausschließbar.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: weiter offen** → dieselbe Beobachtung
+  `BEO-PGC/github-actions-unverifizierbar-lokal` deckt auch dieses
+  Risiko (beide sind Facetten derselben Grenze: kein realer
+  GitHub-Actions-Lauf vor dem Merge), kein zweiter Registereintrag nötig.
 
 ## 7. Closure-Notiz
 
@@ -254,18 +267,42 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <Anker · Folge-Slice · Register, Ergebnis — wellenlos, hier geprüft>
+- **Was hat funktioniert:** Der Implementer fand von sich aus zwei
+  nicht im Plan vorweggenommene, aber notwendige Ergänzungen
+  (`make mod-download` vor `make test`, `fetch-depth: 0` für
+  `commit-traceability`) und begründete sie im Plan-Nachzug statt sie
+  stillschweigend einzubauen. Die vierfache statische YAML-Prüfung
+  (PyYAML-Parse, `yamllint`, `actionlint`, `jsonschema`) ging über das im
+  DoD geforderte Minimum hinaus und deckte real, dass `actions/checkout`
+  echt und nicht erfunden auf `v7.0.1` gepinnt ist (Reviewer-Beleg F-1).
+- **Was ging anders als geplant:** Der Reviewer fand 1 MEDIUM (F-2): der
+  ursprüngliche Plan-Nachzug behauptete einen falschen `yamllint`-Befund
+  ("Kommentar-Abstand-Warnung, behoben" statt der tatsächlichen 1 Error +
+  3 Warnings). Die Fixrunde reparierte real (Dokumentstart, `"on":`-Quoting,
+  Kommentar-Abstand, neue `.yamllint`-Konfiguration) statt nur die
+  Behauptung zu korrigieren, bestätigt in `review-slice-039-fixrunde.md`.
+  Der Verifier fand zusätzlich ein eigenes Finding V-1: die
+  "Review durchgeführt"-Checkbox war trotz vorliegender Reports nicht
+  nachgezogen — hiermit in dieser Closure nachgeholt.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  `BEO-PGC/github-actions-unverifizierbar-lokal` ist neu und steht bei 1×.
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/github-actions-unverifizierbar-lokal/` neu angelegt, Beleg
+  `evidence/slice-039.md` — Zähler steht bei 1×, beide §6-Risiken decken
+  dieselbe Beobachtung ab.
+- **Folge-Slices:** keine — die restliche CI/CD-Arbeit (`version.md`,
+  `release.yml`, `hub-description.yml`, `image-scan.yml`,
+  `upstream-drift.yml`) ist in `ADR-0051` als Slice B benannt, wird als
+  `slice-040` erst beim nächsten Planungsschritt neu geschnitten und
+  existiert noch nicht als Datei.
+- **Risiken aus §6:** beide *weiter offen* → dieselbe neue Beobachtung
+  `BEO-PGC/github-actions-unverifizierbar-lokal` — siehe §6.
+- **Drei Paarungen (wellenlos, hier geprüft):** (a) Anker — kein
+  Steering-Loop-Eintrag mit `liegt in`-Feld in diesem Slice, nichts zu
+  prüfen. (b) Folge-Slice — keiner benannt (siehe oben), nichts zu
+  prüfen. (c) Register — `BEO-PGC/github-actions-unverifizierbar-lokal/`
+  existiert als Verzeichnis mit nicht leerem `evidence/`. Alle drei
+  grün, kein Rot.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
