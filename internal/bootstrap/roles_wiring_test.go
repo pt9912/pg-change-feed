@@ -398,6 +398,27 @@ func TestCdcWiringCallerRejectsWrongRoleAssignment(t *testing.T) {
 				}
 			},
 		},
+		{
+			// Die Retention-Löschausführung (RunRetentionUseCase, ADR-0014)
+			// verbindet sich über CDC_ADMIN_DSN — ein `cdc_capture`-Login
+			// trägt weder SELECT noch DELETE auf `cdc.change`
+			// (`nacharbeit-roles.sql`) und scheitert bereits am
+			// `DELETE … RETURNING`-Aufruf, unabhängig von der Treffermenge.
+			name:      "Retention Store-Adapter (ADR-0047: cdc_admin) mit cdc_capture-Login",
+			wrongRole: "cdc_capture",
+			loginName: "pgc_test_wrongrole_retention",
+			action: func(t *testing.T, wrongDSN string) {
+				store, err := postgresstorage.New(ctx, wrongDSN)
+				if err != nil {
+					t.Fatalf("Retention Store-Adapter mit cdc_capture-Login verbinden: %v", err)
+				}
+				defer store.Close()
+				deleteErr := store.DeleteChanges(ctx, []model.ChangeID{"c-wrongrole-retention"})
+				if !permissionDenied(deleteErr) {
+					t.Fatalf("DeleteChanges mit cdc_capture-Login: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", deleteErr)
+				}
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -405,5 +426,57 @@ func TestCdcWiringCallerRejectsWrongRoleAssignment(t *testing.T) {
 			wrongDSN := newTestLoginRole(t, adminPool, baseDSN, tc.loginName, tc.wrongRole)
 			tc.action(t, wrongDSN)
 		})
+	}
+}
+
+// TestCdcAdminRetentionDeleteChangesRequiresGrant belegt den DELETE-Grant
+// auf `cdc.transaction`/`cdc.change` für `cdc_admin`
+// (`nacharbeit-roles.sql`): die Retention-Löschausführung
+// (`RunRetentionUseCase`, `ADR-0014`) verbindet sich über `CDC_ADMIN_DSN`
+// und führt `DeleteChanges`/die Waisen-Transaktions-Bereinigung aus. Der
+// Aufruf braucht keine tatsächlich vorhandene Zeile — PostgreSQL prüft das
+// Privileg unabhängig von der Treffermenge (0 betroffene Zeilen bei
+// fehlender Übereinstimmung ist ein gültiger, aber privilegierter Aufruf).
+// Der Test entzieht/erteilt das Recht testweise und stellt den
+// ursprünglichen Grant danach wieder her (derselbe Vorher/Nachher-Beleg wie
+// `TestCdcAdminHeartbeatWriteRequiresGrant`).
+func TestCdcAdminRetentionDeleteChangesRequiresGrant(t *testing.T) {
+	adminPool, baseDSN := adminTestPool(t)
+	ctx := context.Background()
+
+	loginDSN := newTestLoginRole(t, adminPool, baseDSN, "pgc_test_admin_retention_login", "cdc_admin")
+
+	if _, err := adminPool.Exec(ctx, "REVOKE DELETE ON cdc.transaction, cdc.change FROM cdc_admin"); err != nil {
+		t.Fatalf("Grant testweise entziehen: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := adminPool.Exec(context.Background(),
+			"GRANT DELETE ON cdc.transaction, cdc.change TO cdc_admin",
+		); err != nil {
+			t.Fatalf("Grant nach Testlauf wiederherstellen: %v", err)
+		}
+	})
+
+	adapterWithoutGrant, err := postgresstorage.New(ctx, loginDSN)
+	if err != nil {
+		t.Fatalf("Store-Adapter mit cdc_admin-Login-Identität: %v", err)
+	}
+	deleteErrWithoutGrant := adapterWithoutGrant.DeleteChanges(ctx, []model.ChangeID{"c-retention-grant-test"})
+	adapterWithoutGrant.Close()
+	if !permissionDenied(deleteErrWithoutGrant) {
+		t.Fatalf("DeleteChanges ohne DELETE-Grant: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", deleteErrWithoutGrant)
+	}
+
+	if _, err := adminPool.Exec(ctx, "GRANT DELETE ON cdc.transaction, cdc.change TO cdc_admin"); err != nil {
+		t.Fatalf("Grant wiederherstellen (vor dem zweiten Aufruf): %v", err)
+	}
+
+	adapterWithGrant, err := postgresstorage.New(ctx, loginDSN)
+	if err != nil {
+		t.Fatalf("Store-Adapter mit cdc_admin-Login-Identität (2. Versuch): %v", err)
+	}
+	defer adapterWithGrant.Close()
+	if err := adapterWithGrant.DeleteChanges(ctx, []model.ChangeID{"c-retention-grant-test"}); err != nil {
+		t.Fatalf("DeleteChanges nach vollständigem Grant: erwartet Erfolg, erhalten %v", err)
 	}
 }

@@ -58,10 +58,13 @@ GRANT SELECT ON cdc.source_table, cdc.schema_version TO cdc_capture;
 GRANT INSERT ON cdc.transaction, cdc.change TO cdc_capture;
 
 -- cdc_admin: Registrierungs- und Verwaltungspfad (LH-FA-CFG-001.a,
--- LH-FA-CON-001…006). Kein Grant auf transaction/change — der
--- Erfassungspfad bleibt cdc_capture vorbehalten (LH-QA-SEC-002).
+-- LH-FA-CON-001…006) sowie die Retention-Löschausführung
+-- (RunRetentionUseCase, ADR-0014) — DELETE auf transaction/change trägt
+-- ausschließlich die von RetentionPolicy.AllowsDeletion freigegebene Menge
+-- (DeleteChanges/DeleteOrphanedTransactions, queries.go); der
+-- Erfassungspfad bleibt cdc_capture auf INSERT beschränkt (LH-QA-SEC-002).
 GRANT SELECT, INSERT, UPDATE, DELETE ON cdc.source_table, cdc.schema_version, cdc.consumer, cdc.consumer_position TO cdc_admin;
-GRANT SELECT ON cdc.transaction, cdc.change TO cdc_admin;
+GRANT SELECT, DELETE ON cdc.transaction, cdc.change TO cdc_admin;
 
 -- CREATE PUBLICATION/ALTER PUBLICATION (tableactivation.go) verlangt das
 -- CREATE-Privileg auf der Zieldatenbank; der Datenbankname wechselt
