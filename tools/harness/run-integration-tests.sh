@@ -1331,6 +1331,160 @@ fi
 
 echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=231, feed_mvp_full) entstand real ohne einen auf $NATS_SUBJECT abonnierten Client (belegt über NATS-Server-Monitor /subsz vor und nach der Change), blieb vollständig über cdc.changes lesbar, und der Feed-Container lief unverändert weiter"
 
+# NATS-Negative-Beleg — Reconnect-Nachholen (LH-FA-SST-007, ADR-0055,
+# ADR-0056): Gegenstück zum Boundary-Beleg oben (dort: nie abonniert
+# gewesen) — hier ist der Test-Subscriber bereits real verbunden und
+# abonniert, bevor er real vom Compose-Netz getrennt wird
+# (`docker network disconnect "$NETWORK" "$NATS_RECONNECT_BEFORE_CONTAINER"`),
+# NICHT der NATS-Server-Container selbst: ein gestoppter Server träfe auch
+# den Feed-Container (Publisher) und würde den Testfall verfälschen. Die
+# reale Trennung wird über `docker inspect` (Feld `NetworkSettings.Networks`)
+# belegt — eine sofortige, von Docker selbst geführte Zustandsauskunft,
+# unabhängig davon, wie schnell der NATS-Server eine unterbrochene
+# TCP-Verbindung als tot erkennt (server-seitige Ping-Erkennung liegt in
+# einer Größenordnung von Minuten, nicht Sekunden, und ist für die reale
+# Trennung selbst kein Beleg). `docker logs` des Subscribers belegt
+# zusätzlich explizit das Fehlen jedes "RECEIVED"-Frames während der
+# Trennung, nicht nur, dass die währenddessen entstandene Change über
+# `cdc.changes` sichtbar ist. Die Wiederverbindung wird über einen
+# frischen, zweiten Subscriber-Prozess hergestellt statt über
+# `docker network connect` auf demselben Container: Eine während der
+# Trennung vom Broker noch nicht als tot erkannte TCP-Verbindung könnte
+# nach dem Heilen des Netzpfads eine zwischenzeitlich im Sendepuffer
+# hängengebliebene Zustellung nachholen — genau die Zweideutigkeit, die
+# dieser Beleg ausschließen soll. Ein neuer Subscriber-Prozess hat
+# dagegen strukturell keine Möglichkeit, ein vor seiner eigenen
+# Subscription publiziertes Signal zu empfangen (dieselbe Begründung wie
+# beim Boundary-Beleg oben), was den Negativ-Beleg für die verpasste
+# Change eindeutig macht. Die verpasste Change wird ausschließlich über
+# den bestehenden SQL-Lesezugriffsweg `cdc.changes` nachgeholt; der neue
+# Subscriber-Prozess belegt zusätzlich, dass das Wecksignal für eine
+# danach entstehende Change unverändert funktioniert.
+NATS_RECONNECT_BEFORE_CONTAINER=cdc-e2e-natssub-reconnect-before
+NATS_RECONNECT_AFTER_CONTAINER=cdc-e2e-natssub-reconnect-after
+
+docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$NATS_RECONNECT_BEFORE_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/natssub "nats://nats:4222" "$NATS_SUBJECT" >/dev/null
+
+nats_reconnect_before_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    nats_reconnect_before_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$NATS_RECONNECT_BEFORE_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$nats_reconnect_before_ready" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+nats_subs_before_disconnect=$(docker exec "$NATS_CONTAINER" wget -q -O - "http://localhost:8222/subsz?subs=1")
+if ! echo "$nats_subs_before_disconnect" | grep -qF "\"subject\": \"$NATS_SUBJECT\""; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber ($NATS_SUBJECT) war vor der Trennung entgegen der Erwartung nicht als Abonnent beim Broker gelistet: $nats_subs_before_disconnect" >&2
+  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker network disconnect "$NETWORK" "$NATS_RECONNECT_BEFORE_CONTAINER"
+
+subscriber_networks_after_disconnect=$(docker inspect "$NATS_RECONNECT_BEFORE_CONTAINER" --format '{{json .NetworkSettings.Networks}}')
+if echo "$subscriber_networks_after_disconnect" | grep -qF "\"$NETWORK\""; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber-Container trägt laut docker inspect nach dem Trennungsversuch noch die Netzbindung $NETWORK (reale Trennung nicht hergestellt): $subscriber_networks_after_disconnect" >&2
+  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.feed_mvp_full (id, name) VALUES (240, 'NatsReconnectMissed');
+SQL
+
+# Kleine reale Wartezeit: ein (fälschlich doch zugestelltes) Signal hätte
+# hier Zeit, im Log aufzutauchen, bevor der Negativ-Beleg unten gezogen
+# wird — kein Poll auf ein Ereignis, das hier per Definition nicht
+# eintreten soll.
+sleep 5
+
+nats_reconnect_before_output=$(docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>&1 || true)
+docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+if printf '%s' "$nats_reconnect_before_output" | grep -qF "RECEIVED"; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber empfing trotz realer Trennung ein Wecksignal für die verpasste Change (id=240): $nats_reconnect_before_output" >&2
+  exit 1
+fi
+
+reconnect_missed_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = 'feed_mvp_full' AND new_data->>'id' = '240'")
+if [ "$reconnect_missed_present" != "1" ]; then
+  echo "run-integration-tests: NATS-Negative-Beleg — verpasste Change (id=240) war nach der Trennung nicht über den bestehenden SQL-Lesezugriffsweg cdc.changes vollständig sichtbar" >&2
+  exit 1
+fi
+
+# Wiederverbindung als frischer Subscriber-Prozess (siehe Begründung oben):
+# er abonniert dasselbe Subjekt normal verbunden, bevor die neue Change
+# entsteht — dieselbe Reihenfolge-Disziplin wie beim Happy-Path-Beleg.
+docker run -d --name "$NATS_RECONNECT_AFTER_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/natssub "nats://nats:4222" "$NATS_SUBJECT" >/dev/null
+
+nats_reconnect_after_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    nats_reconnect_after_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$nats_reconnect_after_ready" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Wiederverbindungs-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.feed_mvp_full (id, name) VALUES (241, 'NatsReconnectResumed');
+SQL
+
+nats_reconnect_signal_resumed=0
+for _ in $(seq 1 60); do
+  if docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    nats_reconnect_signal_resumed=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$NATS_RECONNECT_AFTER_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 0.5
+done
+nats_reconnect_after_output=$(docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>&1 || true)
+docker rm -f "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+if [ "$nats_reconnect_signal_resumed" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Negative-Beleg — Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) kein Wecksignal innerhalb der Zeitspanne — die Verbindung wäre damit nicht real wiederhergestellt gewesen: $nats_reconnect_after_output" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem NATS-Negative-Beleg (Reconnect-Nachholen) nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
+
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
