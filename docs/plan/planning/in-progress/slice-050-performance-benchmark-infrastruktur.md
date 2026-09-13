@@ -78,28 +78,34 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-QA-PER-001` real erfüllt: Bench-Skript zeigt real einen
+- [x] `LH-QA-PER-001` real erfüllt: Bench-Skript zeigt real einen
       messbaren Unterschied (oder dessen Abwesenheit) zwischen
       Schreiblast mit und ohne aktivem Replication-Slot/Capture-Prozess,
-      dokumentiertes Ergebnis.
-- [ ] `LH-QA-PER-002` real erfüllt: Bench-Skript durchläuft real alle
+      dokumentiertes Ergebnis. Siehe §3 Plan-Nachzug — real gemessen:
+      1000 Schreibtransaktionen ohne CDC 3812 ms, mit CDC 7104 ms
+      (+86,4 %).
+- [x] `LH-QA-PER-002` real erfüllt: Bench-Skript durchläuft real alle
       drei `SPEC-014`-Lastenstufen, dokumentiertes Ergebnis je Stufe.
-- [ ] `LH-QA-PER-003` real erfüllt: Bench-Skript vergleicht real
+      Siehe §3 Plan-Nachzug — alle drei Stufen (10/100/1000 pro
+      Sekunde) real mit Ziel-Rate durchlaufen, `cdc_capture_lag` je
+      Stufe gelesen.
+- [x] `LH-QA-PER-003` real erfüllt: Bench-Skript vergleicht real
       Batch- vs. Einzelabruf beim Lesen über `cdc.changes`,
-      dokumentiertes Ergebnis.
-- [ ] `make bench` startet alle drei Skripte, kein Gate (Aufnahme in
+      dokumentiertes Ergebnis. Siehe §3 Plan-Nachzug — real gemessen:
+      200 Zeilen Batch 72 ms vs. Einzelabruf 12874 ms (178,8×).
+- [x] `make bench` startet alle drei Skripte, kein Gate (Aufnahme in
       `make gates` explizit unterlassen), `harness/README.md`
       §Werkzeuge trägt die neue Zeile.
-- [ ] `make gates` grün (unverändert, da kein Gate hinzukommt).
+- [x] `make gates` grün (unverändert, da kein Gate hinzukommt).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — neues Verzeichnis `BEO-PGC/schema-rollout-braucht-compose-init/`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). `welle-14` ist offen; an die Welle-14-Closure delegiert.
 
 ## 3. Plan (vor Code)
 
@@ -116,7 +122,74 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` (bzw. `harness/mk/*.mk`) | update | `bench`-Target, kein Gate |
 | `harness/README.md` | update | §Werkzeuge-Zeile für `make bench` |
 
-## 4. Trigger
+### Plan-Nachzug (nach Code)
+
+**Vierte Datei ergänzt, ungeplant:** `tools/bench-lib.sh` — gemeinsame
+Umgebungs-Bausteine (PostgreSQL-/Feed-Container über `docker
+network`/`docker run`, Schema-Rollout, Cleanup), von allen drei
+Bench-Skripten gequellt. `ADR-0054` §(b) verlangt „je Beleg ein eigenes
+Bench-Skript" — das bleibt gewahrt: geteilt ist nur der Umgebungsaufbau,
+nicht die Messung selbst (jedes der drei Skripte bleibt für sich lauffähig,
+lesbar und änderbar). Ohne die gemeinsame Datei hätte jedes der drei
+Skripte denselben ca. 40-zeiligen Umgebungs-Aufbau dupliziert — genau die
+Kopplung, die `ADR-0054` mit „ein Fix an einem Beleg riskiert, die anderen
+zwei mitzubrechen" bei der **verworfenen** Option B (ein kombiniertes
+Skript) meinte, hier aber auf den Aufbau bezogen, nicht auf die Messung.
+Die Umgebung ist bewusst **nicht** `compose.yaml` (das die
+Integrationstests nutzen): eigene Netz-/Container-Namen
+(`pgc-bench-*`), damit ein `make bench`-Lauf nicht mit einem parallel
+laufenden `make test-integration` um dieselben Namen konkurriert.
+
+**Realer Fallstrick beim Aufbau (nicht in `.dockerignore`/Alpine-Klasse,
+siehe unten):** Der erste `make schema-rollout`-Versuch gegen die
+eigenständige Bench-Umgebung scheiterte real mit `POST_EXECUTE_DRIFT`
+(Exit 5, `relation "cdc.source_table" does not exist"`) beim Anlegen der
+ersten View. Ursache: `compose.yaml` mountet
+`tools/schema/compose-init/01-cdc-schema.sql` als PostgreSQL-Init-Skript
+(`CREATE SCHEMA IF NOT EXISTS cdc; ALTER ROLE postgres IN DATABASE cdc SET
+search_path = cdc;`) — ohne diesen Mount landet die unqualifizierte
+Tabellen-DDL des d-migrate-Rollouts in `public`, während die generierten
+Views explizit `cdc.<table>` referenzieren. Behoben, indem
+`bench::start_postgres` denselben `docker-entrypoint-initdb.d`-Mount
+setzt wie `compose.yaml`. Neue Beobachtung dokumentiert:
+[`BEO-PGC/schema-rollout-braucht-compose-init`](../observations/BEO-PGC/schema-rollout-braucht-compose-init/observation.md)
+(1×, unter der Schwelle) — eine andere Fehlerklasse als die aus
+`slice-049` bekannte `.dockerignore`/Alpine-`bash`-Beobachtung
+(`BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`): Diese
+Skripte fügen **keine** neue Docker-Multi-Stage-Stufe hinzu (sie laufen
+direkt per `bash` gegen bereits gebaute/geladene Images, wie
+`tools/harness/run-integration-tests.sh`), der dort benannte Fallstrick
+(`.dockerignore`-Ausnahme, fehlendes `bash` in der Alpine-Basis) ist
+deshalb hier **nicht einschlägig** — die zugehörige `state.md` bleibt
+unverändert bei 1× (weiter offen).
+
+**Risiko 2 (Slice-Plan §6) — Lösung:** `tools/bench-scaling.sh`
+unterscheidet zwei Modi: **Default** fährt stark verkürzte, aber reale
+Dauern je Stufe (`klein`/`mittel`/`groß`: 10 s/15 s/15 s, je per Env-Var
+override- bar) bei **unveränderter Ziel-Rate** (10/100/1.000 Änderungen
+pro Sekunde, real über eine `INSERT … generate_series`-Anweisung je
+Sekunde erzeugt — bei 1.000/s wären 1.000 einzelne
+`docker exec`-Aufrufe pro Sekunde nicht durchhaltbar gewesen, die
+serverseitige Mengen-Anweisung bleibt ein reales Schreib-Volumen in der
+Zielrate). **`--full`** fährt die tatsächlichen `SPEC-014`-Dauern
+(`mittel` 1.800 s, `groß` 3.600 s). Für die `klein`-Stufe legt
+`SPEC-014` keine Dauer fest (nur die Rate ≤10/s) — die hier gewählte
+volle Dauer (60 s) ist eine dokumentierte Annahme dieses Bench-Skripts,
+keine Schärfung von `SPEC-014` selbst. Real durchlaufen (Default-Modus,
+`make bench`): `klein` 100 Zeilen/10 s (~10,0/s), `mittel` 1.500
+Zeilen/15 s (~100,0/s), `groß` 15.000 Zeilen/15 s (~1.000,0/s) —
+`cdc_capture_lag` blieb in allen drei Stufen nahe 1 s.
+
+**Risiko 1 (Streuung) — Einordnung vorweggenommen für §6:** Anders als
+d-checks `bench-fixture.sh` (eine Kennzahl gegen eine feste
+< 5 s-Schwelle, N=3-Läufe + Median nötig, weil ein einzelner Ausreißer
+das Gate fälschlich rot färben könnte) tragen diese drei Skripte **keine**
+Schwelle — Aufwand/Ergebnis wird dokumentiert, nicht durchgesetzt
+(`ADR-0054` §(b)). `bench-source-impact.sh` vergleicht zusätzlich beide
+Phasen **innerhalb desselben Laufs** gegen dieselbe Postgres-Instanz
+unmittelbar nacheinander — Host-seitige Varianz (Docker-Overhead,
+CPU-Kontention) wirkt auf beide Phasen ähnlich und wird im Differenzwert
+weitgehend herausgekürzt. Details siehe §6.
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Trigger je Lifecycle-Übergang und WIP-Limit.
@@ -155,12 +228,27 @@ dasteht.
 - Benchmark-Ergebnisse könnten in einer geteilten/virtualisierten
   Docker-Umgebung (kein dediziertes Hardware-Budget) real streuen —
   dasselbe Problem, das d-checks `bench:`-Target über N=3-Läufe und
-  Median statt Einzelmessung adressiert. **Ausgang:** <bei Closure
-  einzutragen>
+  Median statt Einzelmessung adressiert. **Ausgang: entfallen.**
+  Begründung: Anders als d-checks Ein-Schwellen-Gate (< 5 s, ein
+  Ausreißer kann fälschlich rot werden) tragen alle drei Skripte hier
+  keine Pass/Fail-Schwelle (`ADR-0054` §(b)) — Streuung verfälscht kein
+  Urteil, nur die absolute Zahl. `bench-source-impact.sh` vergleicht
+  zudem beide Phasen innerhalb desselben Laufs gegen dieselbe Instanz
+  unmittelbar nacheinander, was Host-seitige Varianz in der
+  Differenzmessung weitgehend kürzt (siehe §3 Plan-Nachzug). Wer höhere
+  statistische Sicherheit braucht, kann jedes Skript mehrfach aufrufen
+  (kein technischer Hinderungsgrund) — das ist bewusst nicht in den
+  Skripten erzwungen, weil es den Aufbau-/Laufzeit-Aufwand für einen
+  reinen Dokumentations-Beleg unnötig verdreifachen würde.
 - `LH-QA-PER-002`s „groß"-Lastenstufe (1.000/s × 60 Minuten,
   `SPEC-014`) könnte `make bench` für einen schnellen, wiederholten
-  Implementer-/Reviewer-Lauf unpraktikabel lang machen. **Ausgang:**
-  <bei Closure einzutragen>
+  Implementer-/Reviewer-Lauf unpraktikabel lang machen. **Ausgang:
+  eingetreten.** Gelöst innerhalb dieses Slices (kein Carveout, kein
+  Folge-Slice nötig): `tools/bench-scaling.sh` trägt einen
+  Default-Modus mit real stark verkürzten Dauern bei unveränderter
+  Ziel-Rate sowie ein `--full`-Flag für die tatsächlichen
+  `SPEC-014`-Dauern — siehe §3 Plan-Nachzug für die volle Begründung und
+  die real gemessenen Default-Lauf-Ergebnisse.
 
 ## 7. Closure-Notiz
 
@@ -179,18 +267,45 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Das Kopiervorbild `/Development/d-check/Makefile`
+  Zeile 84 + `/Development/d-check/tools/bench-fixture.sh` trug den
+  Grundriss (Fixture/Umgebung aufbauen, real messen, dokumentiertes
+  Ergebnis auf stdout), angepasst um die `ADR-0054`-Vorgabe „drei
+  eigenständige Skripte statt einer Kennzahl gegen eine Schwelle". Die
+  gemeinsame `tools/bench-lib.sh` hielt die drei Skripte trotz geteiltem
+  Umgebungsaufbau unabhängig lauffähig — jedes lief einzeln vor dem
+  gebündelten `make bench` real durch. Alle drei Skripte liefern
+  plausible, klar interpretierbare reale Ergebnisse (CDC-Schreib-Overhead
+  ~86 %, Batch/Einzelabruf-Faktor ~179×, alle drei Lastenstufen mit
+  `cdc_capture_lag` nahe 1 s).
+- **Was ging anders als geplant:** Ein realer Fallstrick beim Aufbau der
+  eigenständigen (von `compose.yaml` unabhängigen) Bench-Umgebung: der
+  fehlende `tools/schema/compose-init`-Mount ließ den ersten
+  `make schema-rollout`-Versuch mit `POST_EXECUTE_DRIFT` (Exit 5)
+  scheitern, weil die generierten Views explizit `cdc.<table>`
+  referenzieren, während die unqualifizierte Tabellen-DDL ohne den
+  `search_path`-Init in `public` gelandet wäre — siehe §3 Plan-Nachzug
+  und die neue Beobachtung unten. Eine andere, in `slice-049` bereits
+  bekannte Fallstrick-Klasse (`.dockerignore`/Alpine-`bash`,
+  `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`) trat **nicht**
+  erneut auf, weil diese Skripte keine neue Docker-Multi-Stage-Stufe
+  einführen, sondern — wie `tools/harness/run-integration-tests.sh` —
+  direkt per `bash` gegen bereits gebaute/geladene Images laufen; diese
+  `state.md` bleibt unverändert bei 1×.
+- **Steering-Loop-Eintrag:** keiner — dieser Slice liefert die in
+  `ADR-0054` §(b) bereits entschiedene Bench-Infrastruktur, ohne einen
+  Guide/Sensor über dieses Repo hinaus zu schärfen. Der Eintrag ist
+  gezählt (Beobachtung unten), nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/schema-rollout-braucht-compose-init/`
+  neu angelegt, Beleg `evidence/slice-050.md` — Zähler steht bei 1×
+  (unter der Schwelle).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** eines entfallen (Streuung — keine Schwelle
+  betroffen, Differenzmessung innerhalb desselben Laufs), eines
+  eingetreten und innerhalb dieses Slices gelöst (groß-Stufe-Dauer →
+  Default-/`--full`-Modus) — siehe §6.
+- **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-14`
+  (offen); die Paarungen prüft die Welle-14-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
