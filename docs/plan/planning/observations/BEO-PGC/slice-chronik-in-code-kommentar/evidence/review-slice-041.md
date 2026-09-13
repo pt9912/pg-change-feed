@@ -1,0 +1,12 @@
+# Beleg: review-slice-041 (Review-Report als abgeschlossener Vorgang)
+
+Vorgang: `docs/reviews/review-slice-041.md` (Reviewer-Lauf zu `slice-041`).
+
+Fund: Zwei Vorkommen derselben Klasse innerhalb dieses einen
+Review-Reports (ein Vorgang, eine Gelegenheit — Modul 6): F-1 (HIGH,
+`internal/bootstrap/config_file.go`s `mergeTables`-Kommentar nannte
+explizit `slice-041` als Begründungsquelle) und F-4 (LOW, verwandter,
+schwächerer Verweis „des Slice-Plans" im Testkommentar). Beide in
+Commit `35a5279` behoben.
+
+Quelle: `docs/reviews/review-slice-041.md` F-1/F-4.
