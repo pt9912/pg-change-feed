@@ -1203,6 +1203,77 @@ fi
 
 echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing (LH-FA-RET-004), und wurde nach Freigabe durch beide Consumer real entfernt (LH-FA-RET-003); 'RetentionYoung' (id=201, zu jung) blieb durchgehend erhalten"
 
+# NATS-Happy-Path-Beleg (LH-FA-SST-007, ADR-0055): compose.yaml verdrahtet
+# den Feed-Container mit CDC_NATS_URL=nats://nats:4222 (siehe dortigen
+# Kommentar). Ein eigener Wegwerf-Testclient
+# (tools/harness/natssub/main.go, per `go run` im Toolchain-Container)
+# abonniert cdc.changes.src-mvp real, BEVOR die auslösende Change entsteht
+# — Core NATS liefert nichts nach (ADR-0055 Punkt 1, Fire-and-Forget); ein
+# Subscriber, der erst danach abonniert, verpasst das Signal strukturell.
+# Der Subscriber läuft dazu als eigener, per Name adressierter Container
+# (nicht `--rm` vor dem Poll): `docker logs` trägt die Zeile "READY", sobald
+# die Subscription server-seitig bestätigt ist (Flush im Tool), erst danach
+# folgt die Change. `feed_mvp_full` bleibt über den ganzen Lauf aktiviert
+# (siehe Lasttest-/Retention-Belege oben); die ID 230 liegt in einem
+# eigenen, bisher unbenutzten Wertebereich auf derselben Tabelle.
+NATS_SUBSCRIBER_CONTAINER=cdc-e2e-natssub
+NATS_SUBJECT="cdc.changes.src-mvp"
+
+docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$NATS_SUBSCRIBER_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/natssub "nats://nats:4222" "$NATS_SUBJECT" >/dev/null
+
+nats_subscriber_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    nats_subscriber_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$nats_subscriber_ready" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Test-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.feed_mvp_full (id, name) VALUES (230, 'NatsHappyPath');
+SQL
+
+nats_signal_received=0
+for _ in $(seq 1 60); do
+  if docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+    nats_signal_received=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$NATS_SUBSCRIBER_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 0.5
+done
+nats_subscriber_output=$(docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>&1 || true)
+docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+if [ "$nats_signal_received" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Test-Subscriber ($NATS_SUBJECT) empfing nach der Change (id=230) kein Wecksignal innerhalb der Zeitspanne: $nats_subscriber_output" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem NATS-Happy-Path-Beleg nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber ($NATS_SUBJECT) abonnierte real vor der Change (id=230, feed_mvp_full) und empfing danach real das leere Wecksignal: $nats_subscriber_output"
+
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die

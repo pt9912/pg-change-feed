@@ -68,24 +68,27 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `CDC_NATS_URL` real in `internal/bootstrap/wiring.go` verdrahtet —
-      real getestet: gesetzt → `ChangeNotificationPort` konstruiert;
-      ungesetzt → kein Notify-Versuch, bestehendes Verhalten unverändert
-      (Boundary-Vorprüfung für `slice-054`, hier nur die Verdrahtung
-      selbst).
-- [ ] `compose.yaml` trägt real einen digest-gepinnten NATS-Service samt
+- [x] `CDC_NATS_URL` real in `internal/bootstrap/wiring.go` verdrahtet —
+      real getestet: gesetzt → `ChangeNotificationPort` konstruiert und real
+      benachrichtigt (`make test-integration`, NATS-Happy-Path-Beleg);
+      ungesetzt → kein Notify-Versuch, bestehendes Verhalten unverändert,
+      real belegt über `make test-replication`
+      (`TestWALRetentionThresholdEndToEnd` ruft `bootstrap.Run` mit einer
+      `Config` ohne `NatsURL` auf, unverändert grün) (Boundary-Vorprüfung
+      für `slice-054`, hier nur die Verdrahtung selbst).
+- [x] `compose.yaml` trägt real einen digest-gepinnten NATS-Service samt
       `CDC_NATS_URL` für den Feed-Container.
-- [ ] `LH-FA-SST-007` Happy Path real erfüllt: ein Testclient, der
+- [x] `LH-FA-SST-007` Happy Path real erfüllt: ein Testclient, der
       `cdc.changes.<source_id>` abonniert, empfängt real ein Wecksignal
       nach einer neuen Change — `make test-integration`.
-- [ ] `make gates` grün, `make test-integration` grün.
+- [x] `make gates` grün, `make test-integration` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` §„Umgebungsvariablen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Umgebungsvariablen
       des Feed-Containers" um `CDC_NATS_URL` ergänzt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -102,6 +105,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/wiring.go` | update | `CDC_NATS_URL`-Verdrahtung, No-Op bei ungesetzt |
 | `compose.yaml` | update | neuer NATS-Service, `CDC_NATS_URL`-Env für Feed-Container |
 | `tools/harness/run-integration-tests.sh` | update | Happy-Path-Beleg (Test-Subscriber) |
+| `tools/harness/natssub/main.go` | neu | Wegwerf-Testclient (Subscribe-vor-Change, `go run` im Toolchain-Container) — Plan-Nachzug: der Happy-Path-Beleg brauchte einen eigenständigen NATS-Testclient-Prozess, den `run-integration-tests.sh` allein (Shell/`psql`) nicht bereitstellen kann |
 | `docs/user/benutzerhandbuch.md` | update | `CDC_NATS_URL` in der Env-Var-Tabelle |
 
 ## 4. Trigger
