@@ -862,8 +862,9 @@ if ! exec_feed acknowledge-consumer "$BACKLOG_CONSUMER" "$retention_young_positi
   exit 1
 fi
 
-# Zweite Phase (Alters-Freigabe, LH-FA-RET-003): jetzt sind beide Zeilen
-# aus Consumer-Sicht frei — ein Poll auf das Verschwinden von id=200.
+# Zweite Phase (Alters-Freigabe, LH-FA-RET-003): Beide Zeilen sind ab
+# dieser Bestätigung aus Consumer-Sicht frei — ein Poll auf das
+# Verschwinden von id=200.
 old_deleted=0
 for _ in $(seq 1 60); do
   remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \

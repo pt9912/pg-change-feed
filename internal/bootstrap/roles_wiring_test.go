@@ -438,8 +438,8 @@ func TestCdcWiringCallerRejectsWrongRoleAssignment(t *testing.T) {
 // Privileg unabhängig von der Treffermenge (0 betroffene Zeilen bei
 // fehlender Übereinstimmung ist ein gültiger, aber privilegierter Aufruf).
 // Der Test entzieht/erteilt das Recht testweise und stellt den
-// ursprünglichen Grant danach wieder her (derselbe Vorher/Nachher-Beleg wie
-// `TestCdcAdminHeartbeatWriteRequiresGrant`).
+// ursprünglichen Grant am Ende wieder her — dieselbe Entzug-und-
+// Wiedererteilungs-Probe wie `TestCdcAdminHeartbeatWriteRequiresGrant`.
 func TestCdcAdminRetentionDeleteChangesRequiresGrant(t *testing.T) {
 	adminPool, baseDSN := adminTestPool(t)
 	ctx := context.Background()
