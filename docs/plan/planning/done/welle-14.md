@@ -19,14 +19,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 `pg-change-feed` hat aktuell **keinen** Test-Coverage-Beleg und **keine**
-systematische Performance-Mess-Infrastruktur: [LH-QA-PER-001](../../../spec/lastenheft.md)…`003`
+systematische Performance-Mess-Infrastruktur: [LH-QA-PER-001](../../../../spec/lastenheft.md)…`003`
 (Quell-Impact mit/ohne CDC, Skalierbarkeit über die in
-[`SPEC-014`](../../../spec/pflichtenheft.md) fixierten Lastenstufen,
+[`SPEC-014`](../../../../spec/pflichtenheft.md) fixierten Lastenstufen,
 Batch- vs. Einzelabruf-Effizienz) haben keinen einzigen Beleg außer dem
 bereits bestehenden, punktuellen `cdc_capture_lag`-Lasttest (der nur
 `LH-QA-PER-004` teilweise deckt). `AGENTS.md` §3.2 (Suppression-Verbot)
 war bis zu dieser Welle der unausgefüllte Template-Platzhalter.
-[`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
+[`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 hat vorab entschieden: ein scope-eingeschränktes Coverage-Gate
 (`internal/...`+`cmd/...`, Endstufe 80 %, bedingte Eskalationsklausel je
 nach realem Ist-Stand) und eine Bench-Skript-Familie (drei eigenständige
@@ -47,7 +47,7 @@ werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - `slice-047` liegt in `done/`.
-- [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
+- [`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
   liegt vor (Accepted).
 - Kein Slice liegt in `in-progress/`.
 
@@ -73,8 +73,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-049 | Test-Coverage-Gate | [ADR-0054](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
-| slice-050 | Performance-Benchmark-Infrastruktur | [LH-QA-PER-001](../../../spec/lastenheft.md), [LH-QA-PER-002](../../../spec/lastenheft.md), [LH-QA-PER-003](../../../spec/lastenheft.md) |
+| slice-049 | Test-Coverage-Gate | [ADR-0054](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
+| slice-050 | Performance-Benchmark-Infrastruktur | [LH-QA-PER-001](../../../../spec/lastenheft.md), [LH-QA-PER-002](../../../../spec/lastenheft.md), [LH-QA-PER-003](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
