@@ -134,9 +134,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `make test` läuft jetzt mit `-race` über `TOOLCHAIN_RACE_IMAGE`
       (Makefile-Plan-Nachzug, Debian-basiert wegen `gcc`); alle vier
       Kommandos real ausgeführt, siehe Bericht.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-037.md`](../../../reviews/review-slice-037.md)
+      (1 HIGH, 3 MEDIUM), Fixrunde behoben in Commit `c78aa1d`, bestätigt
+      in [`docs/reviews/review-slice-037-fixrunde.md`](../../../reviews/review-slice-037-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-037.md`](../../../reviews/verify-slice-037.md)
+      (DoD eigenständig nachgeprüft, Race-Freiheit real diskriminierend
+      reproduziert, End-zu-End-Beleg dreifach real reproduziert).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
       Implementer entscheidet und begründet im Plan-Nachzug (die
       Architektur-Sicht-Korrektur oben zählt bereits als eigenes
@@ -145,11 +152,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Debian-Image-Begründung; `make test-integration`-Zeile: neuer
       Live-Reload-Beleg) — beide sind öffentliche Sensor-Beschreibungen,
       deren Verhalten sich mit diesem Slice geändert hat.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen, `BEO-PGC/verwaltung-keine-sql-administration` bleibt bei 0×.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — alle drei *entfallen*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-12` offen) — Prüfung läuft bei der `welle-12`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -223,16 +230,35 @@ dasteht.
 - Der `Assembler.tables`-Zugriff aus zwei Goroutinen (Capture-Stream,
   Administrations-Goroutine) könnte eine Data Race einführen, wenn die
   Synchronisation unvollständig ist — `ADR-0050`s eigene Fitness Function
-  benennt `go test -race` als Prüfpflicht. **Ausgang:** <bei Closure
-  einzutragen>
+  benennt `go test -race` als Prüfpflicht. **Ausgang: entfallen.**
+  `lookupBinding`/`AddBinding`/`RemoveBinding` sind über ein
+  `sync.RWMutex` synchronisiert; Implementer, Reviewer und Verifier haben
+  je eigenständig die Sperren testweise entfernt und real eine
+  `DATA RACE`-Meldung an genau den erwarteten Stellen reproduziert, dann
+  wiederhergestellt und den grünen Zustand erneut bestätigt (dreifache
+  unabhängige Reproduktion, `verify-slice-037.md` §1 Punkt 2).
 - Ein offener Antrag über einen Prozess-Neustart hinweg (`ADR-0050`s
   Konsequenz: „bleibt pending, wird beim nächsten Boot/Poll erneut
   abgeholt") könnte doppelt verarbeitet werden, wenn `EnableTableUseCase`
-  nicht real idempotent ist. **Ausgang:** <bei Closure einzutragen>
+  nicht real idempotent ist. **Ausgang: entfallen.** Der Reviewer prüfte
+  `EnableTableUseCase`/`DisableTableUseCase` real: `TableActivationAdapter
+  .Register`/`Unregister` prüfen den Bestand vorab und sind idempotent;
+  zusätzlich liest `applyAdministrationRequest` nach `Enable` die
+  tatsächlich registrierte Bindung über `Registered`/`CurrentVersion`
+  frisch zurück statt lokal berechneten IDs blind zu vertrauen, sodass
+  eine Doppelverarbeitung keinen Stale-ID-Zustand erzeugen kann
+  (`review-slice-037.md`, Abschnitt „Zur Idempotenz-Frage").
 - Der Fallback-Poll-Intervall könnte zu grob gewählt werden und die
   Latenz zwischen SQL-Antrag und realer Wirksamkeit unnötig verlängern,
   wenn `NOTIFY` verpasst wird (z. B. nach einem Verbindungsabbruch der
-  `LISTEN`-Verbindung). **Ausgang:** <bei Closure einzutragen>
+  `LISTEN`-Verbindung). **Ausgang: entfallen.**
+  `administrationPollInterval` ist auf `heartbeatInterval` (5s) gesetzt,
+  kein grobes Intervall; der Reviewer bestätigte zusätzlich, dass
+  `runAdministration`s Schleife bei gestörter `LISTEN`-Verbindung sogar
+  häufiger statt seltener pollt (kein Zeitfenster mit unbemerkt
+  bleibenden Anträgen), und die Fixrunde (F-3) ergänzte einen
+  exponentiellen Backoff (200ms→30s) für den Reconnect-Versuch selbst,
+  ohne die Poll-Frequenz zu verschlechtern.
 
 ## 7. Closure-Notiz
 
@@ -251,18 +277,44 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Administrations-Goroutine reiht sich
+  sauber neben `runHeartbeat`/`runWALRetentionCheck` in dasselbe
+  Hintergrundzug-Muster ein; der `LISTEN`/`NOTIFY`-plus-Fallback-Poll-Ansatz
+  aus `ADR-0050` trug ohne Anpassung. Der Implementer fand von sich aus
+  den Rücklese-Kniff (`applyAdministrationRequest` liest die real
+  registrierte Bindung zurück statt lokal berechnete IDs zu vertrauen),
+  der die Idempotenz-Eigenschaft erst wirklich tragfähig macht. Die
+  `go test -race`-Fitness-Function aus `ADR-0050` erwies sich als
+  diskriminierend genau geplant: Implementer, Reviewer und Verifier
+  reproduzierten unabhängig voneinander denselben roten Kontrollfall.
+- **Was ging anders als geplant:** Der Reviewer fand 1 HIGH (fehlender
+  automatisierter Whitebox-Test für `internal/bootstrap`s neue
+  Fehlerpfade — Enable/Disable/MarkFailed/default-Kind/Listener-Fehler/
+  ctx-Cancel — trotz eines Kommentars, der genau dieses Testmuster
+  versprach) und 3 MEDIUM (fehlender netzloser Backoff-Test, fehlender
+  `gosec`-freier Schleifenzähler, fehlender validierender Konstruktor
+  `NewAdministrationRequest`), alle vier in der Fixrunde behoben und vom
+  Reviewer bestätigt (`review-slice-037-fixrunde.md`). Zusätzlich pausierte
+  ein parallel laufender Reviewer-Subagent während des Aufrufs von
+  `EnterPlanMode` für das orthogonale CI/CD-Vorhaben und wurde nach
+  `ExitPlanMode` sauber fortgesetzt — kein Arbeitsverlust, aber ein bisher
+  unbekannter Nebeneffekt von Plan Mode auf laufende Hintergrund-Agenten.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  `BEO-PGC/verwaltung-keine-sql-administration` steht weiterhin bei 0×
+  (benannt, nicht gezählt; Auflösung ist Sache der `welle-12`-Closure, nicht
+  dieses Einzel-Slice, siehe §8).
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — `BEO-PGC/verwaltung-keine-sql-administration` wurde in §8
+  gesichtet, aber kein neuer Beleg trägt eine `evidence/`-Datei aus diesem
+  Slice.
+- **Folge-Slices:** keine neuen — `slice-038` (CLI-Diagnose,
+  `LH-FA-SST-003`) steht bereits in `welle-12` §4 als letzter vorgesehener
+  Slice, wird als nächster Schritt neu geschnitten.
+- **Risiken aus §6:** alle drei *entfallen* — siehe §6 für Begründung
+  (Data-Race-Freiheit real gegenkontrolliert, Idempotenz real geprüft,
+  Poll-Intervall real nicht zu grob).
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-12` offen) —
+  Prüfung läuft bei der `welle-12`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
