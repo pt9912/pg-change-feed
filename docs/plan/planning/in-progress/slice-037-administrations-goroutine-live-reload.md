@@ -173,6 +173,18 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update | Adapter-/Listener-Tests (`ListPending`/`MarkApplied`/`MarkFailed`, `WaitForNotification`) — ergänzt die bereits vorhandenen Funktions-Tests aus `slice-036` |
 | `internal/adapters/driving/replication/mapper/mapper_test.go` | update | `AddBinding`/`RemoveBinding`-Tests + `TestAssemblerLiveReloadIsRaceFree` (`ADR-0050` Fitness Function) |
 
+**Plan-Nachzug (Fixrunde, `review-slice-037.md`):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/adapters/driving/replication/mapper/mapper_test.go` | update | F-1: `//nolint:gosec`-Suppression entfernt — Schleifenzähler trägt jetzt selbst den Zieltyp `uint32`, keine Schmal-Konvertierung mehr nötig |
+| `internal/bootstrap/administration_internal_test.go` | neu | F-2: Whitebox-Tests (Fake-Ports, dasselbe Muster wie `walretention_internal_test.go`) für `processAdministrationRequests`/`applyAdministrationRequest`/`runAdministration` — Enable-/Disable-Bindung, `MarkFailed`-Zweig, `default`-Zweig bei unbekannter Antragsart, Listener-Fehler-Zweig, ctx-Cancel-Austritt |
+| `internal/adapters/driven/postgresstorage/administrationrequest.go` | update | F-3: `AdministrationListener.WaitForNotification` wartet nach einem gescheiterten Wiederverbindungsversuch einen exponentiellen Backoff (200ms Start, 30s Deckel) ab, statt sofort erneut zu versuchen |
+| `internal/adapters/driven/postgresstorage/administration_backoff_internal_test.go` | neu | F-3: netzloser Test der reinen Backoff-Verdopplungs-/Deckelungs-Funktion |
+| `internal/domain/model/administrationrequest.go` | update | F-4: `NewAdministrationRequest(...)`-Konstruktor ergänzt (validiert nichtleere Kennungen und die geschlossene Menge `enable`/`disable`) — dasselbe Muster wie die übrigen zehn Domänentypen (`NewSchemaVersion` als Vorbild) |
+| `internal/domain/errors/errors.go` | update | F-4: neuer Sentinel `ErrInvalidAdministrationRequestKind` |
+| `internal/adapters/driven/postgresstorage/administrationrequest.go` | update | F-4: `ListPending` baut jetzt über `model.NewAdministrationRequest(...)` statt über ein Struct-Literal (dasselbe Muster wie `TableActivationAdapter.List`/`model.NewSourceTable`) |
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`

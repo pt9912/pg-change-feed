@@ -73,4 +73,9 @@ var (
 	// (`SPEC-004`, `ADR-0015` Folgepflicht) — eine Schema-Version ohne
 	// Spaltenform trägt keine historisch stabile Interpretation.
 	ErrEmptyColumns = stderrors.New("TableSchema ohne Spalten")
+
+	// ErrInvalidAdministrationRequestKind: die Antragsart eines
+	// Administrations-Antrags ist eine der geschlossenen Menge
+	// `enable`/`disable` (`chk_administration_request_kind`, `ADR-0050`).
+	ErrInvalidAdministrationRequestKind = stderrors.New("unbekannte Antragsart")
 )

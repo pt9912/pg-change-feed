@@ -3,6 +3,7 @@ package postgresstorage
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -79,13 +80,13 @@ func (a *AdministrationRequestAdapter) ListPending(ctx context.Context) ([]model
 		if err := rows.Scan(&id, &source, &schema, &table, &kind); err != nil {
 			return nil, administrationStorageFailure(ctx, a.log, err)
 		}
-		requests = append(requests, model.AdministrationRequest{
-			ID:     model.AdministrationRequestID(id),
-			Source: model.SourceID(source),
-			Schema: schema,
-			Table:  table,
-			Kind:   model.AdministrationRequestKind(kind),
-		})
+		request, err := model.NewAdministrationRequest(
+			model.AdministrationRequestID(id), model.SourceID(source), schema, table, model.AdministrationRequestKind(kind),
+		)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, request)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, administrationStorageFailure(ctx, a.log, err)
@@ -132,6 +133,42 @@ func (a *AdministrationRequestAdapter) MarkFailed(ctx context.Context, id model.
 type AdministrationListener struct {
 	dsn  string
 	conn *pgx.Conn
+	// reconnectBackoff trägt die Wartezeit vor dem nächsten
+	// `WaitForNotification`-Rückgabewert nach einem gescheiterten
+	// Wiederverbindungsversuch (Review-Finding F-3, `review-slice-037.md`):
+	// 0 vor dem ersten Fehlschlag und nach jedem erfolgreichen
+	// Wiederaufbau — `nextAdministrationReconnectBackoff` verdoppelt sie ab
+	// da, gedeckelt bei `administrationReconnectMaxBackoff`. Ohne sie liefe
+	// ein dauerhaft unerreichbares `AdminDSN` in eine ungedrosselte
+	// Wiederholschleife (jeder `WaitForNotification`-Aufruf des Aufrufers
+	// träfe sofort auf denselben Fehler).
+	reconnectBackoff time.Duration
+}
+
+// administrationReconnectInitialBackoff und administrationReconnectMaxBackoff
+// tragen die Backoff-Grenzen des `LISTEN`-Wiederverbindungspfads: die erste
+// Wartezeit nach einem Fehlschlag ist kurz (schnelle Erholung von einem
+// kurzen Netzwerk-Blip), die Obergrenze verhindert, dass ein dauerhaft
+// unerreichbares `AdminDSN` den Fallback-Poll-Takt der
+// Administrations-Goroutine (`administrationPollInterval`, `wiring.go`)
+// deutlich überschreitet.
+const (
+	administrationReconnectInitialBackoff = 200 * time.Millisecond
+	administrationReconnectMaxBackoff     = 30 * time.Second
+)
+
+// nextAdministrationReconnectBackoff verdoppelt die aktuelle Wartezeit
+// (0 startet bei der Initial-Backoff), gedeckelt bei der Obergrenze —
+// reine Funktion, netzlos testbar.
+func nextAdministrationReconnectBackoff(current time.Duration) time.Duration {
+	if current <= 0 {
+		return administrationReconnectInitialBackoff
+	}
+	doubled := current * 2
+	if doubled > administrationReconnectMaxBackoff {
+		return administrationReconnectMaxBackoff
+	}
+	return doubled
 }
 
 // NewAdministrationListener baut die eigene Verbindung auf und registriert
@@ -170,14 +207,31 @@ func (l *AdministrationListener) Close(ctx context.Context) error {
 // `ctx`) ersetzt der Aufruf selbst — der nächste Aufruf `LISTEN`t erneut,
 // statt dass das Wecksignal für den Rest des Prozesslaufs ausbleibt; bis
 // zum erfolgreichen Wiederaufbau trägt der Fallback-Poll die
-// Anfragen-Verarbeitung.
+// Anfragen-Verarbeitung. Ein gescheiterter Wiederverbindungsversuch wartet
+// zusätzlich den Backoff aus `reconnectBackoff` ab (oder bis `ctx` endet),
+// bevor der Aufruf zurückkehrt — ein dauerhaft unerreichbares `AdminDSN`
+// läuft damit nicht in eine ungedrosselte Wiederholschleife (Review-Finding
+// F-3, `review-slice-037.md`). Ein erfolgreiches Wecksignal oder ein
+// erfolgreicher Wiederaufbau setzt den Backoff auf 0 zurück.
 func (l *AdministrationListener) WaitForNotification(ctx context.Context) error {
 	_, err := l.conn.WaitForNotification(ctx)
-	if err != nil && ctx.Err() == nil {
-		_ = l.conn.Close(context.Background())
-		if conn, reconnectErr := connectAdministrationListener(context.Background(), l.dsn); reconnectErr == nil {
-			l.conn = conn
-		}
+	if err == nil {
+		l.reconnectBackoff = 0
+		return nil
+	}
+	if ctx.Err() != nil {
+		return err
+	}
+	_ = l.conn.Close(context.Background())
+	if conn, reconnectErr := connectAdministrationListener(context.Background(), l.dsn); reconnectErr == nil {
+		l.conn = conn
+		l.reconnectBackoff = 0
+		return err
+	}
+	l.reconnectBackoff = nextAdministrationReconnectBackoff(l.reconnectBackoff)
+	select {
+	case <-time.After(l.reconnectBackoff):
+	case <-ctx.Done():
 	}
 	return err
 }

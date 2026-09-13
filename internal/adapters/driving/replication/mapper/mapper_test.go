@@ -590,8 +590,12 @@ func TestAssemblerLiveReloadIsRaceFree(t *testing.T) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		for i := 0; i < iterations; i++ {
-			xid := uint32(i + 1) //nolint:gosec // Testschleife, kein Sicherheitskontext
+		// Der Schleifenzähler trägt bereits den Zieltyp `uint32` (statt
+		// `int` mit anschließender Schmal-Konvertierung): `xid` bleibt
+		// dieselbe Zahl wie zuvor, ohne dass eine Konvertierung zwischen
+		// vorzeichenbehafteten und vorzeichenlosen Typen nötig ist.
+		for i := uint32(0); i < iterations; i++ {
+			xid := i + 1
 			if _, err := assembler.Consume(ctx, decode.Begin{XID: xid}); err != nil {
 				t.Errorf("Begin: %v", err)
 				return
@@ -602,7 +606,7 @@ func TestAssemblerLiveReloadIsRaceFree(t *testing.T) {
 				t.Errorf("Change: %v", err)
 				return
 			}
-			if _, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(i + 1), CommitTime: time.Now()}); err != nil {
+			if _, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(xid), CommitTime: time.Now()}); err != nil {
 				t.Errorf("Commit: %v", err)
 				return
 			}
