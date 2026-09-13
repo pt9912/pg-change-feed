@@ -75,18 +75,18 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Alle in §1 genannten Bezeichner real umbenannt in `compose.yaml`,
+- [x] Alle in §1 genannten Bezeichner real umbenannt in `compose.yaml`,
       `test/integration/integration_test.go`,
       `tools/harness/run-integration-tests.sh`,
       `docs/user/benutzerhandbuch.md` — real per `grep -rn "mvp"` (case-
       insensitive, außer den zwei §1-Ausnahmen) auf null Treffer geprüft.
-- [ ] `make test-integration` läuft real vollständig durch und ist
+- [x] `make test-integration` läuft real vollständig durch und ist
       inhaltlich unverändert erfolgreich (derselbe Rundlauf, neue Namen).
-- [ ] `make gates`, `make test` grün.
+- [x] `make gates`, `make test` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md`-Beispiele, falls sie
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md`-Beispiele, falls sie
       die alten Namen zeigen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -136,10 +136,10 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `compose.yaml` | update | `CDC_SOURCE_ID`/`CDC_PUBLICATION`/`CDC_SLOT`/`CDC_TABLES` umbenannt |
-| `test/integration/integration_test.go` | update | Go-Konstanten/-Funktionsnamen + Tabellen-/Kennungs-Literale umbenannt |
-| `tools/harness/run-integration-tests.sh` | update | alle `mvp`-Literale (Subjekt, SQL, Kommentare) umbenannt |
-| `docs/user/benutzerhandbuch.md` | update | Beispiel-Werte, falls betroffen |
+| `compose.yaml` | update | `CDC_SOURCE_ID`/`CDC_PUBLICATION`/`CDC_SLOT`/`CDC_TABLES` umbenannt — inklusive der Bindungs-/Schema-Version-Alias-Fragmente in `CDC_TABLES` (`tbl-mvp-*`→`tbl-e2e-*`, `sv-mvp-*`→`sv-e2e-*`), die derselbe Bezeichner-Stamm sind, aber nicht wörtlich in §1 aufgeführt waren (*Plan-Nachzug*) |
+| `test/integration/integration_test.go` | update | Go-Konstanten/-Funktionsnamen + Tabellen-/Kennungs-Literale umbenannt — zusätzlich zu den in §1 genannten alle `TestMVP*`-Funktionsnamen sowie der Typ `mvpEnv`→`e2eEnv` (*Plan-Nachzug*, DoD verlangt Null-Treffer für `grep -in mvp` über die ganze Datei) |
+| `tools/harness/run-integration-tests.sh` | update | alle `mvp`-Literale (Subjekt, SQL, Kommentare) umbenannt — zusätzlich `feed_mvp_sql_admin`→`feed_e2e_sql_admin`, `feed_mvp_walsender_timing`→`feed_e2e_walsender_timing`, die `-run`-Regex-Liste der `TestMVP*`-Namen sowie der Freitext-Wert `'MVP-Quelle'`→`'E2E-Quelle'` (*Plan-Nachzug*) |
+| `docs/user/benutzerhandbuch.md` | update | Beispiel-Wert `src-mvp`→`src-e2e` in der `diagnose`-Beispielausgabe (§4); zieht per Implementer-Workflow (`BEO-PGC/handbuch-versionshistorie-uebersprungen`) den `Version:`-Kopf (1.11→1.12) und eine neue Zeile in `### Änderungshistorie` mit (*Plan-Nachzug*) |
 
 ## 4. Trigger
 
