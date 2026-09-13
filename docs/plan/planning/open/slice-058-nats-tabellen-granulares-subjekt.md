@@ -19,7 +19,7 @@ Port-/Modell-Erweiterung — vorab entschieden), [ADR-0055](../../adr/0055-nats-
 **Berührte Spec-Stellen:** [SPEC-017](../../../../spec/pflichtenheft.md)
 (Subjekt-Schema-Zeile, bereits durch `ADR-0056` aktualisiert, nur gelesen).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
