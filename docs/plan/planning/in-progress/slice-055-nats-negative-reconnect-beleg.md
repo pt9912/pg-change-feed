@@ -92,11 +92,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       keine Fixrunde nötig).
 - [x] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
       zusätzlicher Beleg für bestehendes Verhalten.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Keine Beobachtung angefallen** — der Implementer meldete einen einmaligen `d-check`-Git-Repack-Fund (unter der Zählschwelle, siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Verschoben auf `welle-15`-Closure** (dieser Slice trägt `Welle: welle-15` — letzter Slice der Welle, Closure folgt unmittelbar).
 
 ## 3. Plan (vor Code)
 
@@ -150,14 +150,25 @@ dasteht.
   Prozess-Stopp des Test-Subscribers — z. B. `docker network disconnect`
   gegen das Compose-Netzwerk-Alias des Test-Containers, statt den
   NATS-Server selbst zu stoppen (ein gestoppter Server würde auch den
-  Publisher treffen und den Testfall verfälschen). **Ausgang:** <bei
-  Closure einzutragen>
+  Publisher treffen und den Testfall verfälschen). **Ausgang: entfallen**
+  — `docker network disconnect` funktionierte beim ersten Versuch;
+  real bestätigt über `docker inspect`s sofortigen Netzwerk-Status
+  (Implementer, Reviewer und Verifier haben den Mechanismus je
+  unabhängig gegen einen frischen Wegwerf-Container reproduziert). Der
+  ursprünglich geplante `/subsz`-Bestätigungsweg erwies sich als zu
+  träge (NATS' ping-basierte Dead-Connection-Erkennung reagiert nicht
+  sofort) — realer Kurswechsel während der Implementierung, kein
+  Rückfall auf eine bloße Annahme.
 - Der Testablauf könnte fälschlich einen erfolgreichen SQL-Nachhol-Beleg
   zeigen, obwohl in Wahrheit doch (versehentlich) ein NATS-Signal
   nachgeliefert wurde — das Log muss explizit belegen, dass beim
   Subscriber während der Trennung **kein** Frame ankam, nicht nur, dass
   die Changes am Ende über SQL sichtbar sind (sonst bliebe unklar, welcher
-  Weg tatsächlich trug). **Ausgang:** <bei Closure einzutragen>
+  Weg tatsächlich trug). **Ausgang: entfallen** — der Testablauf prüft
+  explizit die Abwesenheit von `RECEIVED` im Log des getrennten
+  Subscribers, unabhängig vom SQL-Nachhol-Beleg; ein frischer
+  Wiederverbindungs-Subscriber empfängt strukturell nur neue Signale
+  (kann nichts vor seiner eigenen Existenz Publiziertes erhalten).
 
 ## 7. Closure-Notiz
 
@@ -176,18 +187,43 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Wechsel von `/subsz`-Introspektion auf
+  `docker inspect`s synchronen Netzwerk-Status als Trennungs-Beleg — eine
+  reale Fehlschlag-Erfahrung während der Implementierung (NATS' eigene
+  Dead-Connection-Erkennung ist ping-basiert und reagiert nicht sofort),
+  behoben durch einen Mechanismus, der auf Dockers eigenem, garantiert
+  synchronem Zustand beruht statt auf NATS-Protokoll-Timing. Die
+  Design-Entscheidung, für die „Wiederverbindung" einen frischen
+  Subscriber-Prozess statt eines erneuten `docker network connect`
+  desselben Containers zu verwenden, hielt den Testfall eindeutig (eine
+  neue Subscription kann strukturell nichts vor ihrer Existenz
+  Publiziertes empfangen) und vermied jede Mehrdeutigkeit über eine
+  möglicherweise noch „hängende" TCP-Sitzung.
+- **Was ging anders als geplant:** Der ursprünglich im Plan §6 genannte
+  `/subsz`-Bestätigungsweg erwies sich real als ungeeignet (siehe oben) —
+  ein echter roter Zwischenstand während der Implementierung, kein
+  Prozessfehler. Zusätzlich trat während dieses Slices erneut (drittes
+  Mal in dieser Welle) der Pipe-Exit-Code-Fallstrick auf: ein
+  Hintergrund-Task-Wrapper meldete einen fehlgeschlagenen
+  `make test-integration`-Lauf fälschlich als Erfolg; der Implementer
+  hat es real bemerkt und im Bericht benannt. Außerdem meldete der
+  Implementer einen einmaligen `d-check`-Commit-Range-Fund
+  („Range-Basis-Vorfahren nicht lesbar" nach einem Git-Auto-Repack,
+  behoben durch `git gc`) — ein Vorkommen, unter der Zählschwelle für
+  einen Register-Eintrag.
+- **Steering-Loop-Eintrag:** keiner — der Pipe-Exit-Code-Fallstrick ist
+  jetzt beim dritten Vorkommen in dieser Welle (Implementer bei
+  `slice-058`, Planner bei `slice-054`, Implementer bei `slice-055`);
+  ein formaler Register-Eintrag/Architect-Zug ist bei der `welle-15`-
+  Closure fällig, nicht hier (siehe dortige Behandlung).
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung in
+  diesem Slice direkt angelegt — der Pipe-Exit-Code-Fallstrick wird bei
+  der unmittelbar folgenden `welle-15`-Closure formal registriert (dort
+  ist der Lese-Schritt ohnehin fällig).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide mit Ausgang *entfallen* — siehe §6.
+- **Drei Paarungen:** verschoben auf `welle-15`-Closure (dieser Slice
+  trägt `Welle: welle-15`, letzter Slice der Welle).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
