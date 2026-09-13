@@ -88,16 +88,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Änderungshistorie: Versionsfeld → 1.7, neuer Eintrag mit Bezug auf
       `LH-FA-ADM-001`/`LH-FA-CFG-002`, `ADR-0050`, `slice-036`/`037`.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-042.md`](../../../reviews/review-slice-042.md)
+      (0 HIGH, 1 MEDIUM, 2 LOW), Fixrunde in Commit `9cae8f9`, bestätigt
+      in [`docs/reviews/review-slice-042-fixrunde.md`](../../../reviews/review-slice-042-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-042.md`](../../../reviews/verify-slice-042.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig).
 - [x] Doku-Update — entfällt zusätzlich: dieser Slice **ist** das
       Doku-Update, kein weiterer öffentlicher Vertrag wird berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen; `BEO-PGC/verwaltung-keine-sql-administration` ist bereits seit `welle-12` verkörpert und wird durch diesen reinen Doku-Nachtrag nicht erneut berührt.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — entfallen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — Prüfung läuft hier, siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -145,7 +151,13 @@ dasteht.
   asynchrone Verarbeitung statt sofortiger Wirkung) ungenau oder
   irreführend vereinfacht darstellen, wenn der Implementer den
   `slice-037`-Code nicht erneut liest, sondern nur aus der Erinnerung an
-  diesen Plan schreibt. **Ausgang:** <bei Closure einzutragen>
+  diesen Plan schreibt. **Ausgang: entfallen.** Der Implementer las
+  `slice-037`, `tools/schema/nacharbeit-administration.sql` und
+  `ADR-0050` real erneut, statt aus der Erinnerung zu schreiben; der
+  Reviewer und der Verifier bestätigten unabhängig voneinander, dass
+  das asynchrone Antrags-Framing (Status `pending`→`applied`/`failed`,
+  kein „sofort aktiv") sachlich korrekt gegenüber der realen
+  Implementierung ist.
 
 ## 7. Closure-Notiz
 
@@ -164,18 +176,30 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer las die reale Implementierung
+  (`slice-037`, `tools/schema/nacharbeit-administration.sql`) statt aus
+  der Erinnerung an diesen Plan zu schreiben — das machte die neue Doku
+  von Anfang an sachlich korrekt (asynchrones Antrags-Framing, exakte
+  Funktionssignaturen).
+- **Was ging anders als geplant:** Der Reviewer fand 1 MEDIUM (fehlende
+  Tabellen-/`REPLICA IDENTITY`-Voraussetzung in den neuen Abschnitten)
+  und 2 LOW (uneinheitliches Poll-Format, Prosa-Bruch in der
+  Changelog-Zeile), alle drei in der Fixrunde behoben und vom Reviewer
+  bestätigt. Zwei Docs-Check-Reparatur-Commits waren nötig
+  (`a98e099`), weil eine Kennungs-Verlinkung mit verschachtelten
+  Backticks in Link-Klammern (`` [`ID`](pfad) ``) von d-check in diesem
+  Report abgelehnt wurde, obwohl dasselbe Muster andernorts im Repo
+  funktioniert — behoben durch bare ID-Linktext ohne Backticks.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3×.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** *entfallen* — siehe §6.
+- **Drei Paarungen (wellenlos, hier geprüft):** (a) Anker — kein
+  Steering-Loop-Eintrag mit `liegt in`-Feld, nichts zu prüfen.
+  (b) Folge-Slice — keiner genannt, nichts zu prüfen. (c) Register —
+  keine neue/geänderte Beobachtung in diesem Slice, nichts zu prüfen.
+  Alle drei grün, kein Rot.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
