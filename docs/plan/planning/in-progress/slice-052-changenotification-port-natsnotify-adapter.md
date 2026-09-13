@@ -86,18 +86,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       erfolgreich waren (Rot-Beleg: Test schlägt fehl, wenn die
       Fehlerpropagation versehentlich eingeführt wird — real
       demonstriert durch temporäres Entfernen des Error-Swallowing).
-- [ ] `make gates` grün, `make test` grün.
+- [x] `make gates` grün, `make test` grün. Verifier hat beide real
+      erneut ausgeführt (`docs/reviews/verify-slice-052.md`).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: keiner erwartet (kein Betriebs-Vertrag entsteht, bevor
-      `slice-053` `CDC_NATS_URL` verdrahtet) — Implementer prüft und
-      begründet im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update: **entfällt** — kein Betriebs-Vertrag entsteht, bevor
+      `slice-053` `CDC_NATS_URL` verdrahtet (Verifier bestätigt: kein
+      `internal/bootstrap`/`compose.yaml`-Diff in diesem Slice).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Verschoben auf `welle-15`-Closure** (dieser Slice trägt `Welle: welle-15`).
 
 ## 3. Plan (vor Code)
 
@@ -151,16 +152,22 @@ dasteht.
   netzlose, Docker-only-taugliche Testumgebung (analog zu
   `make test-store`s Testcontainer-Muster) — ohne das würde der Test
   entweder gegen einen Mock laufen (schwächerer Beleg) oder Netzzugriff
-  brauchen (verboten, `AGENTS.md` §3.1). **Ausgang:** <bei Closure
-  einzutragen>
+  brauchen (verboten, `AGENTS.md` §3.1). **Ausgang: entfallen** —
+  `tools/harness/run-notify-tests.sh` + `make test-notify` lösen es real
+  (Verifier hat den Lauf selbst reproduziert, `docs/reviews/verify-slice-052.md`).
 - Die `CaptureService.Capture()`-Signaturänderung (dritter Parameter)
   könnte mehr Aufrufer/Tests berühren als erwartet und den Slice über
-  die Drei-Liefer-Punkte-Grenze heben. **Ausgang:** <bei Closure
-  einzutragen>
+  die Drei-Liefer-Punkte-Grenze heben. **Ausgang: entfallen** —
+  Functional-Option-Muster (`WithChangeNotification`) hielt alle fünf
+  bestehenden Aufrufstellen unverändert kompilierbar, kein Aufrufer
+  musste angefasst werden.
 - `github.com/nats-io/nats.go` als erste Nicht-PostgreSQL-Abhängigkeit
   könnte unerwartete transitive Abhängigkeiten in `go.sum` einführen, die
   gegen die bisher schlanke Abhängigkeitsfläche des Repos abgewogen
-  werden müssen. **Ausgang:** <bei Closure einzutragen>
+  werden müssen. **Ausgang: entfallen** — nur fünf kleine, erwartbare
+  `// indirect`-Einträge (`klauspost/compress`, `nats-io/nkeys`,
+  `nats-io/nuid`, `golang.org/x/crypto`, `golang.org/x/sys`), vom
+  Reviewer und Verifier unabhängig als unproblematisch bewertet.
 
 ## 7. Closure-Notiz
 
@@ -179,18 +186,51 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Das Functional-Option-Muster
+  (`WithChangeNotification`, analog `postgresack.WithLog`) hielt die
+  `CaptureService`-Erweiterung additiv — alle fünf bestehenden
+  `NewCaptureService`-Aufrufstellen kompilierten unverändert, kein
+  Rückführungsrisiko trat ein. Der Referenz-Adapter `postgresack.go` als
+  Kopiervorlage für `natsnotify` trug die Konstruktions-/Options-/
+  Fehler-Wrapping-Form vollständig. Der Rot-Beleg-Nachweis (Notify-Fehler
+  darf `Capture()` nicht scheitern lassen) wurde real erbracht und vom
+  Verifier unabhängig reproduziert (Error-Swallowing temporär entfernt,
+  Test schlug real fehl, danach zurückgesetzt).
+- **Was ging anders als geplant:** Der Godoc-Kommentar über `natsnotify.New`
+  trug versehentlich eine Slice-Chronik ("Folge-Slice `slice-053`") statt
+  eines ADR-Bezugs — das vierte Auftreten der bereits 3×-verkörperten
+  Klasse `BEO-PGC/slice-chronik-in-code-kommentar`, trotz der seit der
+  3×-Verkörperung geltenden Implementer-Selbstprüf-Instruktion
+  (`.claude/commands/implement-slice.md` Schritt 20). Fixrunde behob den
+  Fund; ein vorgezogener Architect-Zug (siehe Steering-Loop-Eintrag)
+  bewertete das vierte Auftreten.
+- **Steering-Loop-Eintrag:** `.harness/skills/reviewer.md` geschärft: ein
+  eigener, benannter HIGH-Unterpunkt „Slice-/Wellen-Chronik in
+  Produktionscode-Kommentar" ersetzt die bisher implizite Subsumtion
+  unter „Kommentar trägt keine der Kommentar-Klassen"; zusätzlich trägt
+  `.claude/commands/implement-slice.md` Schritt 20 seither eine
+  Grenz-Klarstellung (Implementer-Selbstprüfung ist erste, nicht
+  tragende Verteidigungslinie — der unabhängige Reviewer bleibt die
+  tragende Instanz, Modul 8 §Kernidee)
+  — liegt in `.harness/skills/reviewer.md` (HIGH-Liste) und
+  `.claude/commands/implement-slice.md` (Schritt 20).
+  Auslöser: `BEO-PGC/slice-chronik-in-code-kommentar` (bereits 3×
+  verkörpert; dieser Slice liefert den vorgezogen bewerteten 4. Beleg,
+  siehe Architect-Verdikt
+  `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`
+  — Status quo bestätigt, kein neuer mechanischer Sensor, aber die
+  Rollenteilung Implementer-Selbstprüfung/Reviewer-Sicherheitsnetz
+  explizit verkörpert).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-052.md`
+  in `BEO-PGC/slice-chronik-in-code-kommentar/` ergänzt — 4. Beleg (Klasse
+  war bereits bei 3× verkörpert; dieses Auftreten löste den oben
+  genannten vorgezogenen Architect-Zug aus, unabhängig vom normalen
+  Lese-Schritt bei Welle-Closure).
+- **Folge-Slices:** `slice-053` (Compose-Verdrahtung und
+  Happy-Path-Beleg) — liegt als Datei in `open/`.
+- **Risiken aus §6:** alle drei mit Ausgang *entfallen* — siehe §6.
+- **Drei Paarungen:** verschoben auf `welle-15`-Closure (dieser Slice
+  trägt `Welle: welle-15`, siehe DoD-Item).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
