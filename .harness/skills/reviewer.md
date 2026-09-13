@@ -59,6 +59,20 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   (`review-slice-052.md`, 2026-09-13) — vierter gezählter Beleg von
   `BEO-PGC/slice-chronik-in-code-kommentar`, Architect-Verdikt-Nachtrag
   [`architect-verdict-slice-chronik-in-code-kommentar-4x.md`](../../docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md).
+- **Handbuch-Versionshistorie nicht fortgeschrieben** — ein Diff ändert
+  `docs/user/benutzerhandbuch.md` inhaltlich (neuer Abschnitt, neue
+  Umgebungsvariable, geänderte Beschreibung), ohne im selben Diff den
+  `Version:`-Kopf hochzuzählen **und** eine neue Zeile in
+  `### Änderungshistorie` zu ergänzen. Dies ist die tragende
+  Verteidigungslinie: Die Implementer-Selbstprüfung
+  (`.claude/commands/implement-slice.md` Schritt 17) läuft im selben
+  Kontext, der die Doku-Änderung geschrieben hat, und hat die Klasse real
+  dreimal übersehen (`slice-045`, `-046`, `-053` — jedes Mal erst bei
+  einem späteren Slice bemerkt), bevor sie geschärft wurde — dieselbe
+  Struktur wie beim Chronik-Fall oben. Erstes benanntes Auftreten als
+  eigener HIGH-Punkt: Architect-Verdikt
+  [`architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)
+  (3× `BEO-PGC/handbuch-versionshistorie-uebersprungen`) · seit slice-053.
 - **Zustandsfeld trägt Chronik** — eine `Stand`-/`Status`-Zelle (Roadmap,
   Beobachtungs-Register, Meilenstein) erzählt, wie der Zustand entstand, statt
   Zustand und Beleg als Anker zu nennen; oder ein Drift-Log protokolliert

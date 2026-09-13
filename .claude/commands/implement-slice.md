@@ -118,6 +118,26 @@ ist eine Lifecycle-Rücksprungkante (11).
 ## Pre-completion-Checkliste (Modul 9, Schritt 8 — letzte Handlung der Implementer-Rolle)
 
 17. Doku, ADR-Index und README aktualisieren, falls ein öffentlicher Vertrag berührt ist.
+    **Handbuch-Versionshistorie im selben Diff · seit slice-053**
+    (`BEO-PGC/handbuch-versionshistorie-uebersprungen`, 3×; Architect-Verdikt
+    [`architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)):
+    Berührt dieser Lauf `docs/user/benutzerhandbuch.md` inhaltlich (neuer
+    Abschnitt, neue Umgebungsvariable, geänderte Beschreibung — nicht nur eine
+    reine Versions-/Historie-Korrektur), zieht derselbe Diff **zwingend** den
+    `Version:`-Kopf hoch und ergänzt eine neue Zeile in
+    `### Änderungshistorie`. Real dreimal übersprungen (`slice-045`, `-046`,
+    `-053`), jedes Mal erst bei einem späteren, unabhängigen Slice bemerkt —
+    derselbe Fehlermodus wie bei der Slice-Chronik-Prüfung unten (Schritt 20):
+    der fachliche Inhalt stimmt, die Meta-Pflicht an derselben Datei fällt aus
+    dem Blick. Kandidatenlauf:
+    `git diff --name-only <Basis> -- docs/user/benutzerhandbuch.md` — bei
+    Treffer zusätzlich `git diff <Basis> -- docs/user/benutzerhandbuch.md |
+    grep -E '^\+Version:|^\+\| [0-9]+\.[0-9]+ \|'` gegen beide Muster prüfen;
+    fehlt eines, Version/Historie vor Handoff nachtragen. **Grenze (wie bei
+    Schritt 20):** diese Selbstprüfung läuft im selben Kontext, der die
+    Doku-Änderung geschrieben hat — erste, nicht tragende Verteidigungslinie;
+    die tragende ist der unabhängige Reviewer
+    (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt).
 18. Die Pre-completion-Checkliste laufen: die DoD Punkt für Punkt **behaupten** und die
     **Sensor-Belege** anhängen — `make gates` **und die Nicht-Gate-Sensoren, die den Slice
     betreffen** (die dein Repo führt — z. B. ein Mutations-Sensor, wenn Wächter neu/geändert sind;
