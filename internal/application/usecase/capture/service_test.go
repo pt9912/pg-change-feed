@@ -20,9 +20,10 @@ import (
 // prüfbar ist.
 
 var (
-	_ inbound.CaptureInboundPort  = (*capture.CaptureService)(nil)
-	_ outbound.ChangeStorePort    = (*fakeStore)(nil)
-	_ outbound.ReplicationAckPort = (*fakeAck)(nil)
+	_ inbound.CaptureInboundPort      = (*capture.CaptureService)(nil)
+	_ outbound.ChangeStorePort        = (*fakeStore)(nil)
+	_ outbound.ReplicationAckPort     = (*fakeAck)(nil)
+	_ outbound.ChangeNotificationPort = (*fakeNotify)(nil)
 )
 
 type fakeStore struct {
@@ -67,6 +68,25 @@ func (f *fakeAck) Acknowledge(ctx context.Context, position model.SourcePosition
 		return f.ackErr
 	}
 	f.acked = append(f.acked, position)
+	return nil
+}
+
+// fakeNotify trägt den Regressionsbeleg für `ADR-0055`: ein fehlschlagender
+// `ChangeNotificationPort` darf `Capture()` nicht scheitern lassen, wenn
+// `store`/`ack` erfolgreich waren — `notifyErr` ist standardmäßig gesetzt,
+// damit der Test den ungünstigsten Fall trägt.
+type fakeNotify struct {
+	events    *[]string
+	notifyErr error
+	notified  []string
+}
+
+func (f *fakeNotify) Notify(ctx context.Context, sourceID string) error {
+	*f.events = append(*f.events, "notify:"+sourceID)
+	if f.notifyErr != nil {
+		return f.notifyErr
+	}
+	f.notified = append(f.notified, sourceID)
 	return nil
 }
 
@@ -261,5 +281,84 @@ func TestCrashBetweenPersistAndAckLeadsToReprocessing(t *testing.T) {
 	}
 	if got, want := *events, []string{"persist:t-1", "ack:100", "persist:t-1", "ack:100"}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
+	}
+}
+
+// Ohne konfigurierten `ChangeNotificationPort` bleibt das Bestandsverhalten
+// bit-identisch: kein Notify-Versuch, kein zusätzliches Ereignis
+// (`ADR-0055` Punkt 5, Boundary: ungesetzt bedeutet deaktiviert).
+func TestCaptureWithoutNotificationPortLeavesBehaviourUnchanged(t *testing.T) {
+	service, events, store, ack := newService(t)
+	tx := committedTransaction(t, "t-1", 100, 1)
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if got, want := *events, []string{"persist:t-1", "ack:100"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v (kein Notify ohne konfigurierten Port)", got, want)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+	_ = store
+	_ = ack
+}
+
+// Erfolgreicher Notify-Aufruf reiht sich NACH ACK Source ein (`ADR-0055`:
+// Receive → Decode → Persist → COMMIT Store → ACK Source → Notify).
+func TestCaptureNotifiesAfterAckOnSuccess(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify))
+	tx := committedTransaction(t, "t-1", 100, 1)
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
+	}
+	if len(notify.notified) != 1 || notify.notified[0] != "src-1" {
+		t.Fatalf("Notify trägt %v, wollen [\"src-1\"]", notify.notified)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+}
+
+// Regressionstest — die wichtigste Einzeleigenschaft aus `ADR-0055`: ein
+// fehlschlagender `ChangeNotificationPort` darf `Capture()` nicht scheitern
+// lassen, wenn `store`/`ack` bereits erfolgreich waren. Rot-Beleg (nicht
+// eingecheckt, siehe Implementer-Bericht): entfernt man das Abfangen in
+// `CaptureService.Capture()` (`if err := s.notify.Notify(...); err != nil { … }`
+// durch `return CaptureResult{}, err` ersetzt), schlägt genau dieser Test fehl.
+func TestCaptureSucceedsDespiteFailingNotification(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notifyErr := stderrors.New("NATS nicht erreichbar")
+	notify := &fakeNotify{events: &events, notifyErr: notifyErr}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify))
+	tx := committedTransaction(t, "t-1", 100, 1)
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v, wollen keinen Fehler trotz fehlschlagendem Notify", err)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+	if len(store.persisted) != 1 || len(ack.acked) != 1 {
+		t.Fatalf("Store/ACK tragen %d/%d, wollen 1/1 trotz fehlschlagendem Notify", len(store.persisted), len(ack.acked))
+	}
+	if len(notify.notified) != 0 {
+		t.Fatalf("Notify trägt %v, wollen keine erfolgreiche Zustellung", notify.notified)
+	}
+	if got, want := events, []string{"persist:t-1", "ack:100", "notify:src-1"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v (Notify-Versuch trotz Fehlschlag geloggt)", got, want)
 	}
 }

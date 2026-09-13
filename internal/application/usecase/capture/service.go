@@ -31,18 +31,45 @@ var ErrMissingTransaction = stderrors.New("Capture ohne Quelltransaktion")
 // CaptureService implementiert `inbound.CaptureInboundPort` und hält die
 // Persist-before-ACK-Ordnung an einer Stelle (`ADR-0027`):
 //
-//	Receive → Decode → Persist → COMMIT Store → ACK Source
+//	Receive → Decode → Persist → COMMIT Store → ACK Source → Notify (best effort)
 //
-// (`LH-QA-REL-001.a`)
+// (`LH-QA-REL-001.a`, `ADR-0055` für den optionalen letzten Schritt)
 type CaptureService struct {
-	store outbound.ChangeStorePort
-	ack   outbound.ReplicationAckPort
+	store  outbound.ChangeStorePort
+	ack    outbound.ReplicationAckPort
+	notify outbound.ChangeNotificationPort
+	log    outbound.LogPort
+}
+
+// Option konfiguriert `CaptureService` bei der Konstruktion (`NewCaptureService`);
+// variadisch, damit bestehende Aufrufstellen unverändert kompilieren
+// (dasselbe Muster wie `postgresack.Option`).
+type Option func(*CaptureService)
+
+// WithChangeNotification injiziert den optionalen `ChangeNotificationPort`
+// (`ADR-0055`): ungesetzt bleibt das Wecksignal-Feature deaktiviert, kein
+// Notify-Versuch — das bestehende Verhalten bleibt für jeden Aufrufer ohne
+// diese Option unverändert.
+func WithChangeNotification(notify outbound.ChangeNotificationPort) Option {
+	return func(s *CaptureService) { s.notify = notify }
+}
+
+// WithLog injiziert den `LogPort` (`ADR-0024`) für den Notify-Fehlerpfad —
+// dasselbe Muster wie `postgresack.WithLog`. Ungesetzt bleibt die
+// Protokollierung beim No-Op (`outbound.NoopLog`).
+func WithLog(log outbound.LogPort) Option {
+	return func(s *CaptureService) { s.log = log }
 }
 
 // NewCaptureService verdrahtet den Capture Use Case mit seinen beiden
-// Outbound-Ports.
-func NewCaptureService(store outbound.ChangeStorePort, ack outbound.ReplicationAckPort) *CaptureService {
-	return &CaptureService{store: store, ack: ack}
+// obligatorischen Outbound-Ports; der `ChangeNotificationPort` ist optional
+// (`WithChangeNotification`, `ADR-0055`).
+func NewCaptureService(store outbound.ChangeStorePort, ack outbound.ReplicationAckPort, opts ...Option) *CaptureService {
+	s := &CaptureService{store: store, ack: ack, log: outbound.NoopLog}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 var _ inbound.CaptureInboundPort = (*CaptureService)(nil)
@@ -73,6 +100,16 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	}
 	if err := s.ack.Acknowledge(ctx, position); err != nil {
 		return CaptureResult{}, err
+	}
+	// Notify läuft NACH der Bestätigung und best-effort (`ADR-0055`): sein
+	// Fehler geht nie in den Rückgabewert dieses Aufrufs ein — die bereits
+	// erfolgte Persistierung und Bestätigung bleiben davon unberührt. Ohne
+	// konfigurierten Port (`s.notify == nil`) unterbleibt der Versuch
+	// vollständig, bestehendes Verhalten bleibt bit-identisch.
+	if s.notify != nil {
+		if err := s.notify.Notify(ctx, string(position.SourceID)); err != nil {
+			s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", "error", err, "source_id", position.SourceID)
+		}
 	}
 	return CaptureResult{Acknowledged: position}, nil
 }
