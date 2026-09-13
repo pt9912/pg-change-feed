@@ -39,6 +39,24 @@ services:
     networks:
       - cdc-test
 
+  nats:
+    # Digest-Pin (ADR-0055): Core NATS als reines Wecksignal, kein
+    # JetStream — die Server-Version selbst ist unbeteiligt an dieser
+    # Entscheidung (Re-Evaluierungs-Trigger dort).
+    image: nats:2-alpine@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
+    container_name: cdc-test-nats
+    # -m 8222 aktiviert den HTTP-Monitor-Port ausschließlich für den
+    # Healthcheck unten (/healthz); der Client-Port 4222 bleibt der
+    # einzige Verbindungsweg des Feed-Containers (CDC_NATS_URL).
+    command: ["-m", "8222"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8222/healthz | grep -q ok"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks:
+      - cdc-test
+
   pg-change-feed:
     # Das geladene Image aus `make image` (Lauf-Beleg:
     # harness/image-hash.txt); kein build:-Block in dieser Datei.
@@ -72,8 +90,14 @@ services:
       # erkannt). `debug` trägt den Integrationstest-Beleg (stdout-Diff
       # der JSON-Struktur, slice-Plan §5 Closure-Trigger).
       CDC_LOG_LEVEL: debug
+      # Optionales Change-Notification-Wecksignal (ADR-0055,
+      # LH-FA-SST-007): gesetzt in dieser Compose-Umgebung, damit der
+      # Happy-Path-Beleg real läuft (tools/harness/run-integration-tests.sh).
+      CDC_NATS_URL: nats://nats:4222
     depends_on:
       postgres:
+        condition: service_healthy
+      nats:
         condition: service_healthy
     # Kein Neustart im Container-Vertrag: die CDC-Runtime endet auf jeden
     # Adapter-Fehler mit Ausgang 1, und der Neustart-Vertrag liegt beim

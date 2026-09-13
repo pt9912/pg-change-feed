@@ -536,6 +536,7 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
 | `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
+| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>`, leerer Payload); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`) |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
