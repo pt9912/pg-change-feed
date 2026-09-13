@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.6
+Version: 1.7
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-13
 
@@ -177,6 +177,57 @@ CDC_TABLES="public.orders=tbl-orders:sv-orders-1,public.customers=tbl-customers:
 **Ergebnis:** Beim Start legt der Container die Publication-Mitgliedschaft
 sowie die Bindungs- und Schema-Version-Zeile an. Eine bereits aktivierte
 Tabelle bleibt unverändert (idempotent).
+
+### Tabelle live aktivieren
+
+**Voraussetzung:** Die Quelle ist registriert (siehe oben); eine
+Login-Identität mit `cdc_admin`-Mitgliedschaft, verbunden über
+`CDC_ADMIN_DSN` (siehe [Zugriff und Rollen](#zugriff-und-rollen)); der
+Feed-Container läuft bereits für die betroffene Quelle.
+
+**Vorgehen:** Anders als die `CDC_TABLES`-gesteuerte Aktivierung beim
+Containerstart (siehe oben) lässt sich eine Tabelle zusätzlich **während
+des laufenden Betriebs** aktivieren, ohne den Container neu zu starten:
+
+```sql
+SELECT cdc.enable_table('<source_id>', '<schema>', '<tabelle>');
+```
+
+**Ergebnis:** Der Aufruf ist asynchron: Er schreibt einen Antrag nach
+`cdc.administration_request` (Status `pending`) und gibt dessen Kennung
+zurück — die Tabelle ist damit noch nicht aktiv. Die Administrations-
+Goroutine des laufenden Feed-Containers verarbeitet offene Anträge
+(`LISTEN`/`NOTIFY`-Weckung mit periodischem Fallback-Poll) und trägt bei
+Erfolg die Publication-Mitgliedschaft sowie die laufende Erfassungs-Bindung
+nach — ohne Neustart. Den Fortschritt prüfen Sie über den Antrags-Status:
+
+```sql
+SELECT status, error_message
+FROM cdc.administration_request
+WHERE administration_request_id = '<zurückgegebene-id>';
+```
+
+`status` wechselt von `pending` zu `applied` (Erfolg) oder `failed`
+(Fehlertext in `error_message`). Erst nach `applied` erfasst der laufende
+Prozess Änderungen an der Tabelle.
+
+### Tabelle deaktivieren
+
+**Voraussetzung:** wie bei der Live-Aktivierung — `cdc_admin`-Mitgliedschaft
+über `CDC_ADMIN_DSN`, der Feed-Container läuft bereits.
+
+**Vorgehen:** Derselbe Antrags-Weg, spiegelbildlich:
+
+```sql
+SELECT cdc.disable_table('<source_id>', '<schema>', '<tabelle>');
+```
+
+Den Fortschritt prüfen Sie wie oben über
+`SELECT status, error_message FROM cdc.administration_request WHERE administration_request_id = '<zurückgegebene-id>';`.
+
+**Ergebnis:** Nach `applied` endet die Erfassung dieser einen Tabelle; der
+Feed-Container läuft für alle übrigen aktivierten Tabellen unverändert
+weiter — kein Neustart, keine Unterbrechung des laufenden Prozesses.
 
 ### Aktivierte Tabellen auflisten
 
@@ -560,3 +611,4 @@ MIT — siehe `LICENSE`.
 | 1.4 | 2026-09-12 | Fehlerklasse `replication` auf zwei Unterarten präzisiert (`ADR-0049`): Stream-Ordnungs-Verletzung bleibt sofortiger Abbruch, Transport-/Verbindungsstörung trägt jetzt die Schwellen-Überwachung über den WAL-Rückstand (Warn 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung/Abbruch |
 | 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |
 | 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`, `ADR-0052`, `SPEC-016`, slice-041) ergänzt: §5 neue Unterüberschrift, Env-Var-Tabelle um `CDC_CONFIG_FILE` erweitert, `CDC_TABLES`-Pflichtangabe präzisiert |
+| 1.7 | 2026-09-13 | SQL-Administration nachdokumentiert (`LH-FA-ADM-001`, `LH-FA-CFG-002`, `ADR-0050`, slice-036/slice-037, nachgetragen mit slice-042): §4 zwei neue Abschnitte „Tabelle live aktivieren" und „Tabelle deaktivieren" (`cdc.enable_table`/`cdc.disable_table`, asynchrone Antrags-Queue, Status-Polling) |

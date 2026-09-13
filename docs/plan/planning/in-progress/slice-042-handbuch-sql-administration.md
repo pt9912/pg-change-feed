@@ -74,7 +74,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neuer Abschnitt „Tabelle live aktivieren" in
+- [x] Neuer Abschnitt „Tabelle live aktivieren" in
       `docs/user/benutzerhandbuch.md` §4, direkt nach dem bestehenden
       „Tabelle aktivieren"-Abschnitt: Voraussetzung (`cdc_admin`-
       Mitgliedschaft, `CDC_ADMIN_DSN`), Vorgehen
@@ -82,16 +82,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Ergebnis (Antrag landet in `cdc.administration_request`, die
       Administrations-Goroutine des laufenden Prozesses verarbeitet ihn
       ohne Neustart, `status` wird `applied`/`failed`).
-- [ ] Neuer Abschnitt „Tabelle deaktivieren" (analoges Format,
+- [x] Neuer Abschnitt „Tabelle deaktivieren" (analoges Format,
       `SELECT cdc.disable_table(...)`, Ergebnis: Erfassung endet für die
       Tabelle, der Prozess läuft unverändert weiter).
-- [ ] Änderungshistorie: Versionsfeld → 1.7, neuer Eintrag mit Bezug auf
+- [x] Änderungshistorie: Versionsfeld → 1.7, neuer Eintrag mit Bezug auf
       `LH-FA-ADM-001`/`LH-FA-CFG-002`, `ADR-0050`, `slice-036`/`037`.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update — entfällt zusätzlich: dieser Slice **ist** das
+- [x] Doku-Update — entfällt zusätzlich: dieser Slice **ist** das
       Doku-Update, kein weiterer öffentlicher Vertrag wird berührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
