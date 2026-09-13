@@ -44,6 +44,7 @@ COMPOSE=${COMPOSE:-docker compose -f compose.yaml}
 NETWORK=${NETWORK:-cdc-feed-test}
 PG_CONTAINER=${PG_CONTAINER:-cdc-test-postgres}
 FEED_CONTAINER=${FEED_CONTAINER:-cdc-test-feed}
+NATS_CONTAINER=${NATS_CONTAINER:-cdc-test-nats}
 PG_DB=cdc
 PG_USER=postgres
 PG_PASSWORD=postgres
@@ -1275,6 +1276,60 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber ($NATS_SUBJECT) abonnierte real vor der Change (id=230, feed_mvp_full) und empfing danach real das leere Wecksignal: $nats_subscriber_output"
+
+# NATS-Boundary-Beleg (LH-FA-SST-007, ADR-0055): Gegenstück zum
+# Happy-Path-Beleg oben — hier abonniert **kein** Client das Subjekt
+# cdc.changes.src-mvp.public.feed_mvp_full. Der reale Beleg, dass zum
+# Zeitpunkt der Change tatsächlich niemand verbunden ist, kommt aus dem
+# NATS-Server selbst: dessen HTTP-Monitor-Port 8222 (bereits für den
+# Healthcheck aktiviert, siehe compose.yaml) trägt den Endpoint
+# /subsz?subs=1, der jede aktive Subscription mit ihrem Subjekt auflistet
+# (auch die internen $SYS-Subscriptions des Servers selbst — deren Subjekte
+# beginnen mit "$SYS." und überschneiden sich nie mit "cdc.changes."). Ein
+# `docker exec` gegen den NATS-Container liest diese Liste unmittelbar vor
+# der Change und stellt sicher, dass unser Subjekt darin nicht vorkommt —
+# kein Rückschluss aus "wir haben keinen Subscriber gestartet", sondern eine
+# reale Server-seitige Momentaufnahme. Nach der Change bleibt der
+# Feed-Container weiter am Leben (CaptureService.Capture()s Notify-Aufruf
+# darf einen fehlenden Empfänger nicht als Fehler werten, ADR-0055 Punkt 4)
+# und die Change ist über den bestehenden Lesezugriffsweg cdc.changes
+# vollständig auffindbar.
+nats_subs_before_boundary=$(docker exec "$NATS_CONTAINER" wget -q -O - "http://localhost:8222/subsz?subs=1")
+if echo "$nats_subs_before_boundary" | grep -qF "\"subject\": \"$NATS_SUBJECT\""; then
+  echo "run-integration-tests: NATS-Boundary-Beleg — vor der auslösenden Change war entgegen der Erwartung bereits ein Client auf $NATS_SUBJECT abonniert (Testablauf hat den Boundary-Fall nicht real hergestellt): $nats_subs_before_boundary" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.feed_mvp_full (id, name) VALUES (231, 'NatsBoundary');
+SQL
+
+# Kleine reale Wartezeit, damit ein (fälschlich doch aktiver) Notify-Versuch
+# und ein etwaiger Absturz des Feed-Containers Zeit hätten, sich zu zeigen,
+# bevor die Belege unten gezogen werden — kein Poll auf ein Ereignis, das
+# hier per Definition nicht eintreten soll.
+sleep 2
+
+boundary_change_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = 'feed_mvp_full' AND new_data->>'id' = '231'")
+if [ "$boundary_change_present" != "1" ]; then
+  echo "run-integration-tests: NATS-Boundary-Beleg — Change (id=231, feed_mvp_full) war trotz fehlendem NATS-Subscriber nicht vollständig über cdc.changes lesbar (LH-FA-SST-007 Boundary verletzt)" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem NATS-Boundary-Beleg nicht mehr weiter — ein Notify ohne Empfänger hätte CaptureService.Capture() nicht blockieren oder beenden dürfen (ADR-0055 Punkt 4)" >&2
+  exit 1
+fi
+
+nats_subs_after_boundary=$(docker exec "$NATS_CONTAINER" wget -q -O - "http://localhost:8222/subsz?subs=1")
+if echo "$nats_subs_after_boundary" | grep -qF "\"subject\": \"$NATS_SUBJECT\""; then
+  echo "run-integration-tests: NATS-Boundary-Beleg — nach der Change war entgegen der Erwartung ein Client auf $NATS_SUBJECT abonniert (Testablauf hat den Boundary-Fall nicht real hergestellt): $nats_subs_after_boundary" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=231, feed_mvp_full) entstand real ohne einen auf $NATS_SUBJECT abonnierten Client (belegt über NATS-Server-Monitor /subsz vor und nach der Change), blieb vollständig über cdc.changes lesbar, und der Feed-Container lief unverändert weiter"
 
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
