@@ -1,7 +1,15 @@
-Zustand: offen — Ausgang: **weiter offen** → tatsächliche Löschausführung
-(Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft und
-`cdc.change`-Zeilen löscht) und die Metrik `cdc_storage_bytes` bauen, oder
-`LH-FA-RET-002`…`006` bewusst als noch nicht umgesetzt markieren, falls das
-Ziel aktuell nicht verfolgt wird; kein Slice dafür existiert.
-Zähler (abgeleitet): 0× — noch kein abgeschlossener Vorgang trägt einen
-Beleg (siehe observation.md, „Benannt, nicht gezählt").
+Zustand: **verkörpert** — die real fehlende Löschausführung ist gebaut:
+`RunRetentionUseCase`/`RunRetentionService`
+(`internal/application/usecase/retention/service.go`, `slice-043`), der
+Hintergrundzug `runRetentionCleanup`
+(`internal/bootstrap/wiring.go`, `slice-044`), die Sichtbarkeit
+blockierender Consumer über `cdc.retention_blockers`
+(`tools/schema/schema.yaml`, `slice-045`) und die Metrik
+`cdc_storage_bytes` (`tools/schema/nacharbeit-observability.sql`,
+`slice-046`). Verkörpert in den vier genannten Zielorten · seit welle-13.
+Zähler (abgeleitet): 0× — kein abgeschlossener Vorgang trug je einen Beleg
+(die Beobachtung wurde nie über die 3×-Schwelle gezählt, sondern direkt
+über eine dedizierte Feature-Welle aufgelöst, analog zu
+`BEO-PGC/verwaltung-keine-sql-administration`s und
+`BEO-PGC/schema-evolution-nicht-dynamisch`s direkter Auflösung unter der
+Schwelle).
