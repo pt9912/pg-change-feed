@@ -132,6 +132,20 @@ der Closure-Trigger unerreichbar wird.
   `cdc_storage_bytes` eine Rollen-Erweiterung braucht; träfe das während
   der Umsetzung doch zu, wäre das ein eigener Architect-Zug, kein
   stiller Fortschritt dieser Welle.
+
+  **Real eingetreten während `slice-044`:** `RunRetentionUseCase` verlangte
+  ein bis dahin fehlendes `DELETE`-Grant für `cdc_admin` auf
+  `cdc.transaction`/`cdc.change` — der ursprüngliche Architect-Verdikt
+  (`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`, Frage 1)
+  hatte die Domain-/Port-/ADR-Ebene geprüft, nicht die Rollen-/
+  Grant-Konsequenz. Der fällige Architect-Zug ist nachgetragen:
+  [`docs/reviews/architect-verdict-slice-044-rollen-grant.md`](../../reviews/architect-verdict-slice-044-rollen-grant.md)
+  (Verdikt 2, Modul 8 §Konflikt-Pfad) und
+  [`ADR-0053`](../adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md)
+  (`Supersedes ADR-0047`, teilweise) bestätigen die bereits von Commit
+  `824e001` umgesetzte Erweiterung — kein stiller Fortschritt mehr, sondern
+  ein vollzogener, dokumentierter Architect-Zug. `cdc_storage_bytes`
+  (`slice-046`) bleibt von dieser Klarstellung unberührt.
 - **Konfigurierbarkeit der Retention-Policy zur Laufzeit** (z. B. über
   die neue YAML-Konfigurationsdatei aus `slice-041`) — `RetentionPolicy`
   bleibt, wie sie ist (`MinAge`, Consumer-Positionen); eine

@@ -57,9 +57,10 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
 | ADR-0045 | Commit-Traceability als Standing-Gate | Accepted | 2026-09-10 | [0045-commit-traceability-standing-gate.md](0045-commit-traceability-standing-gate.md) |
 | ADR-0046 | SQL-Driving-Adapter: Lese-Views direkt, Schreiben über Ports | Accepted | 2026-09-10 | [0046-sql-driving-adapter-lese-schreib-trennung.md](0046-sql-driving-adapter-lese-schreib-trennung.md) |
-| ADR-0047 | Rollen-spezifische DSN-Verdrahtung (→ ADR-0048, teilweise) | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |
+| ADR-0047 | Rollen-spezifische DSN-Verdrahtung (→ ADR-0048, ADR-0053, teilweise) | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |
 | ADR-0048 | Heartbeat-Grant-Korrektur (SELECT-Ergänzung) | Accepted | 2026-09-12 | [0048-heartbeat-grant-korrektur-select-ergaenzung.md](0048-heartbeat-grant-korrektur-select-ergaenzung.md) |
 | ADR-0049 | Replication-Fehlerklassen-Trennung und WAL-Rückstand-Schwellen | Accepted | 2026-09-12 | [0049-replication-fehlerklassen-schwellen.md](0049-replication-fehlerklassen-schwellen.md) |
 | ADR-0050 | Schreibende SQL-Administration über Antrags-Queue + Live-Reload | Accepted | 2026-09-13 | [0050-sql-administration-antragsqueue-und-live-reload.md](0050-sql-administration-antragsqueue-und-live-reload.md) |
 | ADR-0051 | CI/CD-Pipeline über GitHub Actions | Accepted | 2026-09-13 | [0051-cicd-pipeline-github-actions.md](0051-cicd-pipeline-github-actions.md) |
 | ADR-0052 | Optionale YAML-Konfigurationsdatei ergänzt Umgebungsvariablen | Accepted | 2026-09-13 | [0052-optionale-yaml-konfigurationsdatei.md](0052-optionale-yaml-konfigurationsdatei.md) |
+| ADR-0053 | Retention-Löschausführung bindet an `cdc_admin` — `DELETE`-Grant-Ergänzung | Accepted | 2026-09-13 | [0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md](0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) |
