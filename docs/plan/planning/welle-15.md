@@ -75,6 +75,7 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 |---|---|---|
 | slice-052 | `ChangeNotificationPort` und `natsnotify`-Adapter | [ADR-0055](../adr/0055-nats-change-notification-wecksignal.md) |
 | slice-053 | Compose-Verdrahtung und Happy-Path-Beleg | [LH-FA-SST-007](../../../spec/lastenheft.md) |
+| slice-058 | NATS-Subjekt auf Tabellen-Granularität heben | [ADR-0056](../adr/0056-nats-tabellen-granulares-subjekt.md) |
 | slice-054 | Boundary-Beleg — nicht verbundener Consumer | [LH-FA-SST-007](../../../spec/lastenheft.md) |
 | slice-055 | Negative-Beleg — Reconnect-Nachholen | [LH-FA-SST-007](../../../spec/lastenheft.md) |
 
@@ -87,10 +88,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - Wird blockiert von: keine andere Welle.
 - Intern: `slice-052` (Port/Adapter/`CaptureService`-Erweiterung) muss vor
   `slice-053` (Compose-Verdrahtung, braucht den fertigen Adapter) laufen.
-  `slice-053` muss vor `slice-054`/`slice-055` laufen (beide brauchen die
-  laufende NATS-Verdrahtung aus `slice-053`, um sie gezielt zu stören).
-  `slice-054` und `slice-055` sind voneinander unabhängig und können in
-  beliebiger Reihenfolge laufen.
+  `slice-053` muss vor `slice-058` laufen (löst die während `slice-053`s
+  Laufzeit entstandene `ADR-0056`-Folgepflicht ein, hebt den bereits
+  verdrahteten Adapter auf das tabellen-granulare Subjekt). `slice-058`
+  muss vor `slice-054`/`slice-055` laufen (beide müssen gegen das
+  *korrekte*, tabellen-granulare Subjekt geführt werden, nicht gegen das
+  von `ADR-0056` überholte Schema). `slice-054` und `slice-055` sind
+  voneinander unabhängig und können in beliebiger Reihenfolge laufen.
 
 ## 6. Out-of-Scope für diese Welle
 

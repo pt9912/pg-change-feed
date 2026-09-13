@@ -31,8 +31,10 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Ein realer Beleg zeigt: Eine Change, die auftritt, während **kein**
-Consumer gegen `cdc.changes.<source_id>` abonniert ist, geht nicht verloren
-— sie bleibt über den bestehenden SQL-Lesezugriffsweg `cdc.changes`
+Consumer gegen `cdc.changes.<source_id>.<schema>.<table>` abonniert ist
+(tabellen-granulares Subjekt, [ADR-0056](../../adr/0056-nats-tabellen-granulares-subjekt.md)),
+geht nicht verloren — sie bleibt über den bestehenden SQL-Lesezugriffsweg
+`cdc.changes`
 vollständig lesbar. Das belegt strukturell, dass NATS ausschließlich ein
 Wecksignal ist und niemals zur Wahrheitsquelle wird: Ein fehlendes oder zu
 spätes Wecksignal darf die Erfassung selbst nicht beeinflussen
@@ -102,8 +104,10 @@ Aussagen-Berührung steht hier gar nicht.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Trigger je Lifecycle-Übergang und WIP-Limit.
 
-**Start** (`next` → `in-progress`): `slice-053` liegt in `done/`,
-`Verantwortlich:` gesetzt, WIP-Limit (1 je Implementer) frei.
+**Start** (`next` → `in-progress`): `slice-058` liegt in `done/` (das
+Subjekt-Schema muss auf dem tabellen-granularen Stand von `ADR-0056` sein,
+bevor dieser Slice dagegen testet), `Verantwortlich:` gesetzt, WIP-Limit
+(1 je Implementer) frei.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

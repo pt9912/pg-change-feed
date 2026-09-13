@@ -1,20 +1,23 @@
-# Slice slice-055: NATS-Negative-Beleg — Reconnect-Nachholen
+# Slice slice-058: NATS-Subjekt auf Tabellen-Granularität heben (ADR-0056)
 
 **Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** welle-15 — vierter Slice, unabhängig von `slice-054`, baut auf
-der laufenden NATS-Verdrahtung aus `slice-053` auf.
+**Welle:** welle-15 — löst die während `slice-053`s Laufzeit entstandene
+`ADR-0056`-Folgepflicht ein; muss vor `slice-054`/`055` laufen (deren
+Belege gegen das *korrekte*, tabellen-granulare Subjekt geführt werden
+müssen).
 
-**Bezug:** [LH-FA-SST-007](../../../../spec/lastenheft.md) (Negative-Beleg),
-[ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md)
-(Wecksignal ohne Zustellgarantie, kein Nachliefern bei Core NATS — vorab
-entschieden).
+**Bezug:** [LH-FA-SST-007](../../../../spec/lastenheft.md),
+[ADR-0056](../../adr/0056-nats-tabellen-granulares-subjekt.md)
+(Supersedes `ADR-0055` Punkt 2 — bindend: Subjekt-Schema, Notify-Kardinalität,
+Port-/Modell-Erweiterung — vorab entschieden), [ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md)
+(alle übrigen Punkte weiterhin gültig).
 
 **Berührte Spec-Stellen:** [SPEC-017](../../../../spec/pflichtenheft.md)
-(nur gelesen, nicht geändert).
+(Subjekt-Schema-Zeile, bereits durch `ADR-0056` aktualisiert, nur gelesen).
 
 **Verantwortlich:** —.
 
@@ -31,30 +34,35 @@ des Lastenhefts, auf den Slice-Plan angewandt); die vier Klassen des
 Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
-**Ziel:** Ein realer Beleg zeigt: Nach einem simulierten NATS-
-Verbindungsabbruch (der Testablauf trennt real die Verbindung zwischen
-Test-Client und NATS-Server, nicht nur eine Attrappe) und anschließender
-Wiederverbindung holt ein Consumer die während der Unterbrechung
-aufgetretenen Changes **ausschließlich** über den bestehenden
-SQL-Lesezugriffsweg `cdc.changes` nach — **nicht** über NATS selbst
-(Core NATS liefert fire-and-forget nichts nach, `ADR-0055`). Das ist der
-Gegenbeleg zu `slice-053`s Happy Path: Er zeigt, dass NATS als
-Wecksignal-Kanal ausfallen darf, ohne dass die Erfassung oder die
-Nachvollziehbarkeit der Changes beeinträchtigt wird.
+**Ziel:** `ChangeNotificationPort.Notify` bekommt die Signatur
+`Notify(ctx context.Context, sourceID, schema, table string) error`
+(`ADR-0056`); `natsnotify` baut das Subjekt als
+`cdc.changes.<source_id>.<schema>.<table>`. `model.Change` (bzw. eine
+begleitende Struktur) trägt Schema/Tabellenname zusätzlich zur
+`SourceTableID`, durchgereicht aus dem bereits vorhandenen Wissen des
+Driving-Adapter-Mappers — **kein** neuer Laufzeit-Lookup in
+`CaptureService`. `CaptureService.Capture()` sammelt die distinkten
+`(schema, table)`-Paare einer Transaktion und ruft `Notify` genau einmal
+je Paar auf (Deduplizierung). Eine defensive Validierung lehnt Schema-/
+Tabellennamen mit NATS-reservierten Zeichen (`.`, `*`, `>`) oder
+Whitespace vor dem ersten Notify-Versuch ab. `tools/harness/natssub` und
+der Happy-Path-Testabschnitt in `run-integration-tests.sh` (aus
+`slice-053`) werden auf das neue vier-Ebenen-Subjekt nachgezogen.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **Kein-Consumer-verbunden-Fall** — `slice-054`; dieser Slice prüft den
-  Fall *verbunden gewesen, dann getrennt, dann wiederverbunden*, nicht
-  *nie verbunden gewesen*.
-- **Automatische NATS-Client-Reconnect-Logik im Produktionscode** — die
-  `nats.go`-Bibliothek trägt bereits eingebautes Reconnect-Verhalten für
-  den Publisher (`natsnotify`); dieser Slice belegt nur die
-  Konsumenten-seitige Nachhol-Eigenschaft über SQL, ändert aber keine
-  Publisher-seitige Reconnect-Konfiguration.
-- **Neue Compose-/Wiring-Verdrahtung** — `slice-053` liefert sie bereits
-  vollständig; dieser Slice nutzt die bestehende Verdrahtung nur als
-  Testumgebung.
+- **Neue Boundary-/Negative-Belege** — `slice-054`/`055`; dieser Slice
+  liefert nur die korrigierte Grundlage (Port/Adapter/Modell/Kardinalität),
+  keine neuen End-zu-Ende-Testfälle über den bereits bestehenden
+  Happy-Path-Nachzug hinaus.
+- **Zeilen-/Operations-Prädikat-Filterung** (`INSERT`/`UPDATE`/`DELETE`
+  als weitere Subjekt-Ebene) — `ADR-0056`s Re-Evaluierungs-Trigger
+  benennt das explizit als eigene, künftige Folge-ADR-Frage, keine dieser
+  ADR/dieses Slice.
+- **Rückwirkende Anpassung von `slice-052`/`053`s Closure-Notizen** —
+  `git` hält die Historie; ihre §7-Einträge beschreiben korrekt, was zum
+  jeweiligen Zeitpunkt galt (dieselbe Disziplin wie bei Slice-Chronik:
+  Historie wird nicht umgeschrieben).
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -74,22 +82,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-SST-007` Negative-Beleg real erfüllt: real gegen den
-      NATS-Server-Container die Verbindung des Test-Subscribers trennen
-      (nicht bloß simulieren), während der Trennung eine oder mehrere
-      Changes erzeugen, danach real wiederverbinden und belegen, dass die
-      Changes ausschließlich über `cdc.changes` sichtbar werden — nicht
-      über ein nachgeliefertes NATS-Signal — `make test-integration`.
-- [ ] Der Testablauf belegt real (Log-Beleg), dass während der Trennung
-      **kein** Wecksignal beim Subscriber ankommt, sondern erst nach der
-      Wiederverbindung überhaupt kein Signal für die verpassten Changes
-      mehr eintrifft (Core NATS liefert nichts nach).
-- [ ] `make gates` grün, `make test-integration` grün.
+- [ ] `ChangeNotificationPort.Notify(ctx, sourceID, schema, table) error`
+      real umgesetzt, `natsnotify` publiziert real auf
+      `cdc.changes.<source_id>.<schema>.<table>` — Regressionstest gegen
+      eine Rückkehr zur Drei-Token-Form (`make test`/`make test-notify`).
+- [ ] `model.Change`/Assembler tragen Schema/Tabellenname zusätzlich zur
+      `SourceTableID`, ohne neuen Laufzeit-Lookup in `CaptureService` —
+      real durch Codeinspektion belegt (keine neue Outbound-Abhängigkeit).
+- [ ] `CaptureService.Capture()` dedupliziert real: mehrere Changes
+      derselben Tabelle in einer Transaktion lösen genau **ein** Notify
+      aus; Changes über zwei Tabellen lösen zwei distinkte Aufrufe aus —
+      Regressionstest (`make test`).
+- [ ] Defensive Validierung gegen NATS-reservierte Zeichen (`.`, `*`, `>`)
+      und Whitespace in Schema-/Tabellennamen vor dem ersten Notify-Versuch
+      real getestet (mindestens ein Negativ-Fall).
+- [ ] `tools/harness/natssub` und der Happy-Path-Testabschnitt in
+      `run-integration-tests.sh` (`slice-053`) real auf das neue
+      vier-Ebenen-Subjekt nachgezogen — `make test-integration` grün,
+      realer Empfangsbeleg mit dem neuen Subjekt-Format.
+- [ ] `make gates` grün, `make test` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
-      zusätzlicher Beleg für bestehendes Verhalten.
+- [ ] Doku-Update: keiner erwartet (`SPEC-017`/`ARC-013` bereits durch
+      `ADR-0056` aktualisiert; `docs/user/benutzerhandbuch.md` nennt kein
+      Subjekt-Format) — Implementer prüft und begründet im Plan-Nachzug.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -105,26 +122,30 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/run-integration-tests.sh` | update | Negative-Beleg: reale Trennung/Wiederverbindung des Test-Subscribers, SQL-Nachhol-Beleg |
+| `internal/application/port/outbound/changenotification.go` | update | `Notify`-Signatur um `schema`, `table` erweitert |
+| `internal/adapters/driven/natsnotify/notify.go` | update | Subjekt-Bildung auf vier Tokens, Validierung reservierter Zeichen |
+| `internal/domain/model/change.go` | update | Schema/Tabellenname zusätzlich zur `SourceTableID` |
+| `internal/adapters/driving/replication/mapper/mapper.go` | update | Schema/Tabellenname an `model.NewChange`/Assembler-Konstruktion durchreichen |
+| `internal/application/usecase/capture/service.go` | update | Deduplizierung je `(schema, table)`-Paar pro Transaktion |
+| `tools/harness/natssub/main.go` | update | Subjekt-Parameter auf vier-Ebenen-Form |
+| `tools/harness/run-integration-tests.sh` | update | Happy-Path-Subjekt aus `slice-053` nachgezogen |
 
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Trigger je Lifecycle-Übergang und WIP-Limit.
 
-**Start** (`next` → `in-progress`): `slice-058` liegt in `done/` (das
-Subjekt-Schema muss auf dem tabellen-granularen Stand von `ADR-0056` sein,
-bevor dieser Slice dagegen testet), `Verantwortlich:` gesetzt, WIP-Limit
+**Start** (`next` → `in-progress`): `slice-053` liegt in `done/`,
+`ADR-0056` liegt vor (Accepted), `Verantwortlich:` gesetzt, WIP-Limit
 (1 je Implementer) frei.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
-- `in-progress` → `next` (zu groß, zurück zur Zerlegung): Nicht zu
-  erwarten bei reinem Testablauf-Beleg — falls doch, wäre das ein Zeichen,
-  dass eine reale NATS-Verbindungstrennung im Compose-Netz komplexer zu
-  erzwingen ist als angenommen (z. B. `docker network disconnect`
-  gegenüber einem simplen Prozess-Stopp) und eine eigene Untersuchung
-  braucht.
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): Zeigt sich,
+  dass die `model.Change`-Erweiterung mehr Aufrufer berührt als die in
+  §3 gelistete Datei-Menge (z. B. weitere Adapter, die `model.Change`
+  direkt konstruieren, außerhalb des Driving-Adapter-Mappers), gehört
+  das zurück zur Zerlegung.
 - `in-progress` → `open` (blockiert — Carveout?): Kein bekannter Blocker.
 
 ## 5. Closure-Trigger
@@ -143,19 +164,20 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
 dasteht.
 
-- Eine reale NATS-Verbindungstrennung im Compose-Netz zu erzwingen (statt
-  sie nur zu simulieren) könnte technisch aufwändiger sein als ein reiner
-  Prozess-Stopp des Test-Subscribers — z. B. `docker network disconnect`
-  gegen das Compose-Netzwerk-Alias des Test-Containers, statt den
-  NATS-Server selbst zu stoppen (ein gestoppter Server würde auch den
-  Publisher treffen und den Testfall verfälschen). **Ausgang:** <bei
+- Die `model.Change`-Erweiterung um Schema/Tabellenname könnte mehr
+  Konstruktionsstellen berühren als nur den Driving-Adapter-Mapper
+  (`ADR-0056` nennt ihn als einzige bekannte Stelle, aber das ist eine
+  Annahme, keine vollständige Inventur). **Ausgang:** <bei Closure
+  einzutragen>
+- Die defensive Validierung gegen NATS-reservierte Zeichen könnte
+  Aktivierungen ablehnen, die heute (ohne NATS) unauffällig funktionieren
+  — ein Bestandsschema/-tabellenname mit einem ungewöhnlichen Zeichen
+  würde durch dieses Slice zum ersten Mal sichtbar. **Ausgang:** <bei
   Closure einzutragen>
-- Der Testablauf könnte fälschlich einen erfolgreichen SQL-Nachhol-Beleg
-  zeigen, obwohl in Wahrheit doch (versehentlich) ein NATS-Signal
-  nachgeliefert wurde — das Log muss explizit belegen, dass beim
-  Subscriber während der Trennung **kein** Frame ankam, nicht nur, dass
-  die Changes am Ende über SQL sichtbar sind (sonst bliebe unklar, welcher
-  Weg tatsächlich trug). **Ausgang:** <bei Closure einzutragen>
+- `slice-054`/`055` (noch in `open/`) referenzieren in ihrem aktuellen
+  Text noch das alte, drei-Token-Subjekt-Schema — sie brauchen einen
+  Plan-Nachzug, bevor sie aktiviert werden, sonst driftet ihr Text vom
+  tatsächlichen Namensstand. **Ausgang:** <bei Closure einzutragen>
 
 ## 7. Closure-Notiz
 
