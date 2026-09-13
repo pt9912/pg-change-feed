@@ -16,7 +16,7 @@ kombinierter End-zu-Ende-Rundlauf über alle vier `welle-13`-Fähigkeiten, den
 **Berührte Spec-Stellen:** — (Testabdeckungs-Erweiterung auf bereits
 bestehenden Fähigkeiten, keine neue Architektur-Sicht-Aussage).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
