@@ -170,6 +170,23 @@ Herkunfts-Anker: Die Slice-Nummer des Erzeugers existiert im erzeugten Repo
 nicht und löst ins Leere auf.
 -->
 
+### 3.8 Action-Pinning (GitHub Actions)
+
+Jede `uses:`-Zeile in `.github/workflows/*.yml` ist auf einen vollständigen
+Commit-SHA gepinnt, mit einem Tag-Kommentar dahinter. Ein Tag allein ist
+keine Pinnung: Ein Tag ist beweglich, sein Ziel-Commit kann sich ändern,
+ohne dass die Workflow-Datei sich ändert — ein Workflow-Schritt läuft mit
+den Zugangsdaten dieses Repositories (`GITHUB_TOKEN`, ggf.
+Registry-Secrets), ein umgebogener Tag wäre ein stiller Angriffsvektor ohne
+Diff im eigenen Repo.
+
+**Falsch:** `uses: actions/checkout@v7`
+**Richtig:** `uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`
+
+**Begründung:** Supply-Chain-Härtung. Der Kommentar hält die Pinnung
+lesbar und audit-/hebbar, ohne den SHA manuell gegen die Releases der
+Action auflösen zu müssen ([`ADR-0051`](docs/plan/adr/0051-cicd-pipeline-github-actions.md)).
+
 <!--
 Repo-spezifische Hard Rules ergänzen, z.B. für Safety/Control:
 - "Optimierer darf nie direkt aufs Gerät schreiben."
