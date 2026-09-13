@@ -243,7 +243,13 @@ Backticks).
   [`BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`](../observations/BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/observation.md)
   (`.dockerignore` schloss `tools/` aus; `golang:1.27-alpine` trägt kein
   `bash`). Beide erst am realen `docker build` sichtbar, nicht durch
-  Code-Lesen.
+  Code-Lesen. Reviewer-Finding F-1 (LOW, redundanter Doppel-Link in
+  `harness/README.md`s Sensors-Zeile) direkt in der Closure behoben —
+  reine Formulierungssache, keine Fixrunde nötig. Der Verifier fand
+  zusätzlich eine geringe Coverage-Lauf-zu-Lauf-Schwankung
+  (39,60 %/39,60 %/39,80 % über drei Läufe) ohne Auswirkung auf die
+  Gate-Belege (`verify-slice-049.md` VF-1) — erstes Auftreten, keine
+  neue Beobachtungs-Registerzeile.
 - **Steering-Loop-Eintrag:** keiner — dieser Slice liefert das in
   `ADR-0054` bereits entschiedene Gate, ohne einen Guide/Sensor über
   dieses Repo hinaus zu schärfen. Der Eintrag ist gezählt (Beobachtung
