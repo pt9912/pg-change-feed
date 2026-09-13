@@ -82,36 +82,43 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `ChangeNotificationPort.Notify(ctx, sourceID, schema, table) error`
+- [x] `ChangeNotificationPort.Notify(ctx, sourceID, schema, table) error`
       real umgesetzt, `natsnotify` publiziert real auf
       `cdc.changes.<source_id>.<schema>.<table>` — Regressionstest gegen
       eine Rückkehr zur Drei-Token-Form (`make test`/`make test-notify`).
-- [ ] `model.Change`/Assembler tragen Schema/Tabellenname zusätzlich zur
+      Verifier hat zusätzlich real den Wildcard-Erhalt
+      (`cdc.changes.<source_id>.>`) gegen einen Testcontainer bestätigt.
+- [x] `model.Change`/Assembler tragen Schema/Tabellenname zusätzlich zur
       `SourceTableID`, ohne neuen Laufzeit-Lookup in `CaptureService` —
-      real durch Codeinspektion belegt (keine neue Outbound-Abhängigkeit).
-- [ ] `CaptureService.Capture()` dedupliziert real: mehrere Changes
+      real durch Codeinspektion belegt (keine neue Outbound-Abhängigkeit;
+      Reviewer und Verifier bestätigen unabhängig genau zwei
+      `model.NewChange(`-Konstruktionsstellen im Repo).
+- [x] `CaptureService.Capture()` dedupliziert real: mehrere Changes
       derselben Tabelle in einer Transaktion lösen genau **ein** Notify
       aus; Changes über zwei Tabellen lösen zwei distinkte Aufrufe aus —
       Regressionstest (`make test`).
-- [ ] Defensive Validierung gegen NATS-reservierte Zeichen (`.`, `*`, `>`)
+- [x] Defensive Validierung gegen NATS-reservierte Zeichen (`.`, `*`, `>`)
       und Whitespace in Schema-/Tabellennamen vor dem ersten Notify-Versuch
       real getestet (mindestens ein Negativ-Fall).
-- [ ] `tools/harness/natssub` und der Happy-Path-Testabschnitt in
+- [x] `tools/harness/natssub` und der Happy-Path-Testabschnitt in
       `run-integration-tests.sh` (`slice-053`) real auf das neue
       vier-Ebenen-Subjekt nachgezogen — `make test-integration` grün,
-      realer Empfangsbeleg mit dem neuen Subjekt-Format.
-- [ ] `make gates` grün, `make test` grün.
+      realer Empfangsbeleg mit dem neuen Subjekt-Format (Verifier hat den
+      Lauf selbst reproduziert: `RECEIVED subject=cdc.changes.src-mvp.public.feed_mvp_full`).
+- [x] `make gates` grün, `make test` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/review-slice-058.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: keiner erwartet (`SPEC-017`/`ARC-013` bereits durch
-      `ADR-0056` aktualisiert; `docs/user/benutzerhandbuch.md` nennt kein
-      Subjekt-Format) — Implementer prüft und begründet im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update: entgegen der ursprünglichen Plan-Annahme ("keiner
+      erwartet") stellte sich real heraus, dass `docs/user/benutzerhandbuch.md`
+      die alte `CDC_NATS_URL`-Subjekt-Form bereits nannte (aus `slice-053`)
+      — auf das neue vier-Token-Schema korrigiert, Versionshistorie
+      fortgeschrieben (1.11).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Verschoben auf `welle-15`-Closure** (dieser Slice trägt `Welle: welle-15`).
 
 ## 3. Plan (vor Code)
 
@@ -167,17 +174,25 @@ dasteht.
 - Die `model.Change`-Erweiterung um Schema/Tabellenname könnte mehr
   Konstruktionsstellen berühren als nur den Driving-Adapter-Mapper
   (`ADR-0056` nennt ihn als einzige bekannte Stelle, aber das ist eine
-  Annahme, keine vollständige Inventur). **Ausgang:** <bei Closure
-  einzutragen>
+  Annahme, keine vollständige Inventur). **Ausgang: entfallen** — reale
+  Inventur (`grep model.NewChange(`) bestätigt genau zwei
+  Konstruktionsstellen; die zweite (`postgresstorage/mapper.ToChange`,
+  SQL-Lesepfad) speist niemals den Notify-Pfad und brauchte keine
+  Änderung — unabhängig von Reviewer und Verifier bestätigt.
 - Die defensive Validierung gegen NATS-reservierte Zeichen könnte
   Aktivierungen ablehnen, die heute (ohne NATS) unauffällig funktionieren
   — ein Bestandsschema/-tabellenname mit einem ungewöhnlichen Zeichen
-  würde durch dieses Slice zum ersten Mal sichtbar. **Ausgang:** <bei
-  Closure einzutragen>
+  würde durch dieses Slice zum ersten Mal sichtbar. **Ausgang: weiter
+  offen** — reale, wenn auch seltene Möglichkeit (Verifier-Einschätzung);
+  nicht durch diesen Slice allein auf null reduzierbar, da abhängig vom
+  konkreten Bestand künftiger Aktivierungen. →
+  `BEO-PGC/nats-notify-validierung-koennte-bestand-ablehnen` im Register.
 - `slice-054`/`055` (noch in `open/`) referenzieren in ihrem aktuellen
   Text noch das alte, drei-Token-Subjekt-Schema — sie brauchen einen
   Plan-Nachzug, bevor sie aktiviert werden, sonst driftet ihr Text vom
-  tatsächlichen Namensstand. **Ausgang:** <bei Closure einzutragen>
+  tatsächlichen Namensstand. **Ausgang: entfallen** — bereits vor
+  Implementierungsbeginn nachgezogen (Commit `a883251`, Subjekt-Referenz
+  und Start-Trigger auf `slice-058`/`ADR-0056` korrigiert).
 
 ## 7. Closure-Notiz
 
@@ -196,18 +211,51 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Design-Entscheidung, `Schema`/`Table` als
+  nicht-invariante Felder per Direktzuweisung nach `NewChange(...)` zu
+  setzen statt als Konstruktor-Pflichtparameter, hielt den zweiten
+  Konstruktionsort (`postgresstorage/mapper.ToChange`, SQL-Lesepfad)
+  vollständig unberührt — real durch Inventur bestätigt (genau zwei
+  `model.NewChange(`-Aufrufstellen). Die Deduplizierung über ein
+  In-Memory-Set in `CaptureService.Capture()` blieb einfach und wurde
+  von Reviewer und Verifier unabhängig mit eigenen Testläufen
+  (unterschiedliche Tabellen-/Change-Kombinationen) bestätigt. Der
+  Verifier hat zusätzlich den Wildcard-Erhalt (`cdc.changes.<source_id>.>`)
+  real gegen einen Testcontainer verifiziert — über den Plan hinausgehend.
+- **Was ging anders als geplant:** Der erste `make test-integration`-Lauf
+  des Implementers schlug real fehl (veraltetes, vor den Code-Änderungen
+  gebautes Image) — ein legitimer roter Zwischenstand, kein
+  Prozessfehler; nach `make image` lief der Beleg grün. Zusätzlich fiel
+  während der Implementierung ein drittes, bislang unregistriertes
+  Auftreten von `BEO-PGC/handbuch-versionshistorie-uebersprungen` auf
+  (`slice-053`s Commit `6ddb7ae` hatte die neue `CDC_NATS_URL`-Zeile ohne
+  Versionshistorie-Nachzug eingeführt) — die Schwelle (3×) wurde damit
+  erreicht und per vorgezogenem Architect-Zug behandelt (siehe
+  Steering-Loop-Eintrag).
+- **Steering-Loop-Eintrag:** `.harness/skills/reviewer.md` und
+  `.claude/commands/implement-slice.md` geschärft: ein neuer HIGH-Punkt
+  „Handbuch-Versionshistorie nicht fortgeschrieben" (tragende Linie,
+  Reviewer) sowie eine Implementer-Selbstprüf-Instruktion (Schritt 17,
+  erste, nicht tragende Linie) stellen sicher, dass eine inhaltliche
+  Änderung an `docs/user/benutzerhandbuch.md` künftig immer mit
+  `Version:`-Kopf und Änderungshistorie-Zeile im selben Diff einhergeht
+  — liegt in `.harness/skills/reviewer.md` und
+  `.claude/commands/implement-slice.md` (Schritt 17).
+  Auslöser: `BEO-PGC/handbuch-versionshistorie-uebersprungen`
+  (`slice-045`, `slice-046`, `slice-053` — 3×).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-053.md`
+  in `BEO-PGC/handbuch-versionshistorie-uebersprungen/` ergänzt — 3.
+  Beleg, Schwelle erreicht, Ausgang *verkörpert* (siehe oben). Zusätzlich
+  neu angelegt: `BEO-PGC/nats-notify-validierung-koennte-bestand-ablehnen/`,
+  Beleg `evidence/slice-058.md` (1×, §6-Risiko 2, Ausgang *weiter offen*).
+- **Folge-Slices:** keine neuen — `slice-054`/`055` waren bereits als
+  Folge-Slices von `welle-15` geplant und sind bereits auf dieses Slice
+  nachgezogen (siehe §6-Risiko 3).
+- **Risiken aus §6:** zwei mit Ausgang *entfallen*, eines mit Ausgang
+  *weiter offen* (`BEO-PGC/nats-notify-validierung-koennte-bestand-ablehnen`)
+  — siehe §6.
+- **Drei Paarungen:** verschoben auf `welle-15`-Closure (dieser Slice
+  trägt `Welle: welle-15`, siehe DoD-Item).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
