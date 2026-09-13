@@ -219,6 +219,22 @@ Entscheidung, kein stiller Fortschritt dieser. Real gegen
 `TestMergeConfigTabellenCDCTablesSchlaegtDatei` getestet (rot bei
 Sabotage der Implementierung, siehe Bericht an den Reviewer/Verifier).
 
+**Rollen-Einordnung dieser Entscheidung (`review-slice-041.md` F-2,
+MEDIUM):** Der Reviewer stuft die `tables`-Merge-Precedence als
+Entscheidung mit Architektur-Charakter ein — echte, gegeneinander
+abzuwägende Alternativen (Gesamt-Ersetzung vs. elementweise Vermischung),
+strukturell ähnlich den übrigen `ADR-0052`-Entscheidungen — und stellt
+zugleich fest, dass **kein Rollen-Widerspruch** vorliegt: Die offene Frage
+wurde selbst benannt (§6 Risiko 1), nicht bestritten, und die
+Architect-Sequenz aus Modul 8 greift damit nicht zwingend. Der Implementer
+akzeptiert die Entscheidung als hinreichend begründetes
+Implementierungsdetail innerhalb der bestehenden ADR (Konsistenz zur
+Ganzwert-Precedence der Stringfelder trägt die Begründung) und eskaliert sie
+nicht zu einem Folge-ADR. Sollte die Precedence-Frage künftig erneut
+strittig werden (z. B. ein Bedarf für elementweise Mischung), ist sie ein
+Folge-ADR-Kandidat — dafür entscheidet dann die Architect-Rolle, nicht
+dieser Slice.
+
 **Ort der DSN-Ablehnung:** doppelt abgesichert — ein expliziter Check der
 drei verbotenen Schlüssel auf einem roh eingelesenen `map[string]any`
 *vor* dem typisierten, strikten Decoding (eigene, den Secret-Grund

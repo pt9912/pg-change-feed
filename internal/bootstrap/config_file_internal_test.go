@@ -202,8 +202,8 @@ tables:
 }
 
 // TestMergeConfigTabellenCDCTablesSchlaegtDatei trägt die
-// Implementer-Entscheidung zu §6 Risiko 1 des Slice-Plans: eine gesetzte
-// `CDC_TABLES` schlägt die gesamte Datei-`tables`-Mapping vollständig, ohne
+// `tables`-Merge-Precedence (`SPEC-016`): eine gesetzte `CDC_TABLES`
+// schlägt die gesamte Datei-`tables`-Mapping vollständig, ohne
 // Vermischung — die Datei-Tabelle `public.t-datei` erscheint im Ergebnis
 // nicht.
 func TestMergeConfigTabellenCDCTablesSchlaegtDatei(t *testing.T) {

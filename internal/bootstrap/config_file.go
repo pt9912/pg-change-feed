@@ -65,14 +65,21 @@ type fileConfig struct {
 	WALRetentionErrorBytes int64 `yaml:"wal_retention_error_bytes"`
 }
 
-// ConfigFromFile lädt die optionale Konfigurationsdatei striktes YAML
-// (`yaml.Decoder.KnownFields(true)`, `ADR-0052` Entscheidung 1): ein
-// unbekannter Schlüssel und jeder der drei DSN-Schlüssel enden über die
-// Fehlerklasse `configuration` (`ErrConfiguration`) — nicht stillschweigend
-// ignoriert, nicht stillschweigend übernommen (`ADR-0052` Entscheidung 6).
-// Eine leere Datei (kein YAML-Dokument, z. B. nur Kommentare) liefert die
-// Nullwerte zurück, keinen Fehler — sie trägt dann keine Datei-Basis, jedes
-// Feld bleibt der Env-var-Seite von `mergeConfig` überlassen.
+// ConfigFromFile lädt die optionale Konfigurationsdatei. Einer der drei
+// DSN-Schlüssel (`forbiddenFileDSNKeys`) wird auf dem roh eingelesenen
+// Dokument geprüft und liefert — im aktuellen Kontrollfluss immer zuerst —
+// `ErrConfiguration` mit einer eigenen, den Secret-Grund benennenden
+// Fehlerzeile (`ADR-0052` Entscheidung 6). Jeder andere unbekannte
+// Schlüssel liefert `ErrConfiguration` über striktes YAML-Decoding
+// (`yaml.Decoder.KnownFields(true)`, `ADR-0052` Entscheidung 1); da
+// `fileConfig` auch keines der drei DSN-Felder deklariert, würde
+// `KnownFields` sie ebenfalls ablehnen, sollte der explizite Check je
+// entfallen — im jetzigen Kontrollfluss ist dieser Pfad für die drei
+// DSN-Schlüssel nicht erreichbar, weil der explizite Check vorher
+// zurückkehrt. Eine leere Datei (kein YAML-Dokument, z. B. nur
+// Kommentare) liefert die Nullwerte zurück, keinen Fehler — sie trägt
+// dann keine Datei-Basis, jedes Feld bleibt der Env-var-Seite von
+// `mergeConfig` überlassen.
 func ConfigFromFile(path string) (fileConfig, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -186,14 +193,12 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	return cfg, nil
 }
 
-// mergeTables trägt die Implementer-Entscheidung zu §6 Risiko 1 des
-// Slice-Plans (`slice-041`, `ADR-0052` entscheidet die Frage nicht
-// explizit): eine gesetzte `CDC_TABLES` schlägt die gesamte
-// Datei-`tables`-Mapping vollständig — keine Vermischung einzelner
-// Tabellen aus beiden Quellen innerhalb derselben Liste. Die
-// Feld-für-Feld-Precedence aus `ADR-0052` Entscheidung 2 behandelt
-// `tables` damit als ein Feld (die ganze Aktivierungsliste), nicht als
-// Menge einzeln überschreibbarer Einträge.
+// mergeTables trägt die `tables`-Merge-Precedence (`SPEC-016`): eine
+// gesetzte `CDC_TABLES` schlägt die gesamte Datei-`tables`-Mapping
+// vollständig — keine Vermischung einzelner Tabellen aus beiden Quellen
+// innerhalb derselben Liste. Die Feld-für-Feld-Precedence aus `ADR-0052`
+// Entscheidung 2 behandelt `tables` damit als ein Feld (die ganze
+// Aktivierungsliste), nicht als Menge einzeln überschreibbarer Einträge.
 func mergeTables(fileTables map[string]fileTableBinding, envRaw string) (map[string]mapper.TableBinding, error) {
 	if strings.TrimSpace(envRaw) != "" {
 		return parseTables(envRaw)
