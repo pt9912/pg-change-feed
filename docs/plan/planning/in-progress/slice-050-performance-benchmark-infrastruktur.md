@@ -97,9 +97,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `make gates` explizit unterlassen), `harness/README.md`
       §Werkzeuge trägt die neue Zeile.
 - [x] `make gates` grün (unverändert, da kein Gate hinzukommt).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Siehe `docs/reviews/review-slice-050.md` — 0 HIGH/MEDIUM/LOW, 2 INFO,
+      keine Fixrunde nötig (DoD-Checkbox-Nachzug ohne Fixrunde,
+      `.harness/skills/reviewer.md`).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
