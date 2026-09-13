@@ -97,7 +97,7 @@ System (Baseline-Regelwerk `grundlagen-source-precedence.md` §ID-Schema als Kla
 | `ARC-010` | Dateisystem | Spool für große offene Transaktionen | über den Outbound Port substituierbar; Crash-Verhalten testpflichtig |
 | `ARC-011` | Telemetrie-Backend (Prometheus/OpenTelemetry) | Metriken und strukturierte Logs | über den Outbound Port substituierbar; Frameworks bleiben Infrastruktur |
 | `ARC-012` | Systemzeit | Zeitquelle für zeitbasierte Retention, Change-Alter und CDC-Lag-Messung | über den Outbound Port substituierbar; Fake Clock in Application-Tests |
-| `ARC-013` | NATS (Core, kein JetStream) | Wecksignal für neue Changes an verbundene Consumer, additiv zum bestehenden Lesezugriffsweg | über den Outbound Port substituierbar; optional — ohne konfigurierte Verbindung bleibt die Fähigkeit deaktiviert, kein Ersatz für die Nachvollziehbarkeit des bestehenden Zugriffswegs |
+| `ARC-013` | NATS (Core, kein JetStream) | tabellen-granulares Wecksignal für neue Changes an verbundene Consumer, additiv zum bestehenden Lesezugriffsweg | über den Outbound Port substituierbar; optional — ohne konfigurierte Verbindung bleibt die Fähigkeit deaktiviert, kein Ersatz für die Nachvollziehbarkeit des bestehenden Zugriffswegs |
 
 ## 4. Sequenz-Diagramme
 

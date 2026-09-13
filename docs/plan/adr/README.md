@@ -65,4 +65,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0052 | Optionale YAML-Konfigurationsdatei ergänzt Umgebungsvariablen | Accepted | 2026-09-13 | [0052-optionale-yaml-konfigurationsdatei.md](0052-optionale-yaml-konfigurationsdatei.md) |
 | ADR-0053 | Retention-Löschausführung bindet an `cdc_admin` — `DELETE`-Grant-Ergänzung | Accepted | 2026-09-13 | [0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md](0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) |
 | ADR-0054 | Coverage-Gate mit Eskalationsklausel und Performance-Benchmark-Infrastruktur | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
-| ADR-0055 | NATS-Change-Notification als reines Wecksignal (Core NATS, kein JetStream) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
+| ADR-0055 | NATS-Change-Notification als Wecksignal (→ ADR-0056, teilweise) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
+| ADR-0056 | NATS-Wecksignal — tabellen-granulares Subjekt | Accepted | 2026-09-13 | [0056-nats-tabellen-granulares-subjekt.md](0056-nats-tabellen-granulares-subjekt.md) |

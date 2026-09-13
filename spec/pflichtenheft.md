@@ -260,7 +260,7 @@ ausschließlich beim bestehenden Lesezugriffsweg
 
 | Merkmal | Festlegung |
 |---|---|
-| Subjekt-Schema | `cdc.changes.<source_id>` — ein Subjekt je Quelle, `<source_id>` identisch zur konfigurierten `CDC_SOURCE_ID`. Ein Consumer, der mehrere Quellen verfolgt, abonniert `cdc.changes.>` (NATS-Wildcard) |
+| Subjekt-Schema | `cdc.changes.<source_id>.<schema>.<table>` — ein Subjekt je Tabelle einer Quelle, `<source_id>` identisch zur konfigurierten `CDC_SOURCE_ID`, `<schema>`/`<table>` die Klartext-Bezeichner der betroffenen Tabelle. Ein Consumer mit Tabelleninteresse abonniert das vollständige vierstufige Subjekt; ein Consumer, der alle Tabellen einer Quelle verfolgt, abonniert `cdc.changes.<source_id>.>` (NATS-Wildcard); ein Consumer, der mehrere Quellen verfolgt, abonniert `cdc.changes.>`. Ein Notify je Transaktion und distinkter berührter Tabelle (dedupliziert) |
 | Nachrichteninhalt | leerer Payload (Trigger ohne Daten) — kein Change-Inhalt, keine Positionsangabe. Jede Nachricht bedeutet ausschließlich „lies erneut über den bestehenden Zugriffsweg"; Fehlen oder Verdopplung einer Nachricht trägt keine eigene Bedeutung |
 | Zustellgarantie | keine (Core NATS, Fire-and-Forget); ein nicht verbundener oder gerade getrennter Consumer verpasst das Signal ersatzlos — zulässig nach `LH-FA-SST-007` Boundary/Negative |
 | Reconnect-Verhalten | die Client-Bibliothek (`github.com/nats-io/nats.go`) trägt automatisches Reconnect mit eingebautem Backoff auf Verbindungsebene; auf Nachrichtenebene gibt es keinen gesonderten Replay — der Consumer holt entfallene Änderungen ausschließlich über den bestehenden Lesezugriffsweg nach |
@@ -357,3 +357,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-12 | LH-FA-CON-001.a und LH-FA-CON-004.a ergänzt: Registrierungs- und Bestätigungslogik sind eigenständig getestet, aber ohne von außen erreichbaren Zugriffsweg — die Wahl des Zugriffswegs bleibt eine offene technische Frage |
 | 2026-09-13 | SPEC-016 ergänzt: Feldform der optionalen YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`) — Schlüsselnamen, Precedence-Verweis, DSN-Ausschluss |
 | 2026-09-13 | SPEC-017 ergänzt: NATS-Wecksignal — Subjekt-Schema (`cdc.changes.<source_id>`), leerer Payload, Zustellgarantie, Reconnect-Verhalten, Fehlerklasse `transient`, Aktivierung über `CDC_NATS_URL`; externe-Verträge-Zeile in §6 |
+| 2026-09-13 | SPEC-017 Subjekt-Schema korrigiert: tabellen-granulares Subjekt `cdc.changes.<source_id>.<schema>.<table>` statt quellen-weit; übrige SPEC-017-Festlegungen unverändert |
