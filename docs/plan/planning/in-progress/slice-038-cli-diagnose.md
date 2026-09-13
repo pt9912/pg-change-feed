@@ -115,18 +115,27 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       erkennbar von Normalbetrieb unterscheidbaren Fehlerzustand
       (Boundary-Kriterium von `LH-FA-ADM-002`/`003`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-038.md`](../../../reviews/review-slice-038.md)
+      (0 HIGH, 2 MEDIUM, 1 LOW), Fixrunde behoben in Commit `95db5a5`,
+      bestätigt in
+      [`docs/reviews/review-slice-038-fixrunde.md`](../../../reviews/review-slice-038-fixrunde.md)
+      (dabei neuer Nebenbefund F-4 LOW, in Commit `af00c0c` behoben).
+      Verifikation in
+      [`docs/reviews/verify-slice-038.md`](../../../reviews/verify-slice-038.md)
+      (DoD eigenständig nachgeprüft, alle vier `LH-FA-ADM-002`…`005`-Signale
+      real bestätigt, keine Rückführung nötig).
 - [x] Doku-Update: `README.md`/`harness/README.md`, falls dort die
       vorhandenen CLI-Befehle aufgezählt sind (Implementer prüft und
       begründet im Plan-Nachzug, ob eine Stelle existiert, die den neuen
       Befehl nennen muss).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht (siehe §3 Plan-Nachzug).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — `BEO-PGC/adapter-fehler-ausgang` um `evidence/slice-038.md` ergänzt (2×, Zähler in Commit `af00c0c` nachgezogen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide *entfallen*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-12`) — Prüfung läuft bei der `welle-12`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -270,14 +279,30 @@ dasteht.
   normalem Betrieb") im laufenden Compose-Stack künstlich zu erzeugen,
   könnte schwieriger sein als angenommen (bisherige Fehlerklassen-Tests,
   z. B. `TestMVPSchemaChangeIncompatibleTypeChange`, brauchen einen
-  eigenen, isolierten Feed-Container-Lauf) — **Ausgang:** <bei Closure
-  einzutragen>
+  eigenen, isolierten Feed-Container-Lauf) — **Ausgang: entfallen.** Die
+  Befürchtung bestätigte sich in einer schärferen Form als angenommen: ein
+  genuin vom Erfassungspfad ausgelöster Fehlerzustand ist an einem
+  **laufenden** Container strukturell nicht per `docker exec` beobachtbar,
+  weil `reportFault` nur unmittelbar vor `os.Exit` schreibt (§3
+  Plan-Nachzug). Die eigentliche Sorge hinter dem Risiko — dass das
+  DoD-Item „Fehlerzustand real erkennbar" damit unerfüllbar bliebe —
+  entfällt aber, weil der wörtliche DoD-Wortlaut nur einen „erkennbar von
+  Normalbetrieb unterscheidbaren Fehlerzustand" verlangt, nicht dessen
+  reale Auslösung durch den Erfassungspfad: derselbe Spaltenwert
+  (`cdc.process_heartbeat.error_class`) und derselbe Lesepfad (View → CLI)
+  ohne Prozessende erfüllen das. Der Reviewer hat diesen Ersatzbeleg
+  eigenständig geprüft und als „akzeptabel, keine unzulässige Verwässerung"
+  bestätigt (`review-slice-038.md`). Kein Carveout, kein Folge-Slice nötig.
 - `cdc.metrics`s `cdc_consumer_lag`-Zeilen existieren nur für Consumer mit
   mindestens einer bestätigten Position (`WHERE cs.acknowledged_position
   IS NOT NULL`); ein frisch registrierter, noch nie bestätigender
   Consumer erscheint dort nicht — die CLI-Ausgabe könnte das
   fälschlich als „kein Rückstand" statt „noch nie gemessen" lesen lassen.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** Behoben durch explizite Ausgabe-Formulierung
+  („nur Consumer mit mindestens einer bestätigten Position") statt eines
+  Silent-Fallbacks, real durch `TestDiagnoseReportsNoConfirmedConsumer`
+  (Fixrunde-Ergänzung, Commit `95db5a5`, vom Reviewer eigenständig
+  reproduziert bestätigt) abgesichert.
 
 ## 7. Closure-Notiz
 
@@ -296,18 +321,37 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer fand von sich aus den
+  NULL-sicheren Scan-Bugfix für `cdc_consumer_lag` und die reale
+  `latest_commit_position`-Quellenweit-statt-Consumer-spezifisch-Erkenntnis
+  während der E2E-Belegarbeit — beide real vor dem Review, nicht erst
+  danach gefunden. Die Wiederverwendung des `Healthcheck`-Musters
+  (kurzlebige `ReaderDSN`-Verbindung, Timeout, klare Fehlerklassen) trug
+  ohne Anpassung. Der Reviewer traf eine klare, begründete
+  Bewertungsentscheidung zur Ersatzbeleg-Frage (§6 Risiko 1), statt sie
+  offen zu lassen — das machte die Closure-Entscheidung eindeutig.
+- **Was ging anders als geplant:** Der Reviewer fand 2 MEDIUM (fehlende
+  Regressionstests für drei reale `Diagnose`-Zweige; ein übersehener
+  Beobachtungs-Register-Treffer `BEO-PGC/adapter-fehler-ausgang`) und
+  1 LOW (Risiko-Nummerierung im Plan-Nachzug widersprach §6), alle drei in
+  der Fixrunde behoben. Die Fixrunden-Bestätigung selbst fand einen
+  weiteren, kleinen Nebenbefund F-4 (Register-`state.md` zeigte nach der
+  Fixrunde weiterhin den alten 1×-Zähler statt 2×) — bei der Closure
+  direkt nachgezogen, kein weiterer Rollenwechsel nötig für eine reine
+  Zähler-Korrektur im Register selbst.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  `BEO-PGC/adapter-fehler-ausgang` steht jetzt bei 2× (`slice-007`,
+  `slice-038`), `BEO-PGC/verwaltung-keine-sql-administration` bleibt bei
+  0× (siehe unten).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-038.md` in `BEO-PGC/adapter-fehler-ausgang/` ergänzt —
+  Zähler steht bei 2×, dieselbe strukturelle Eigenschaft („jeder
+  klassifizierte Fehler ist terminal") erneut bestätigt.
+- **Folge-Slices:** keine — dies ist der letzte Slice von `welle-12`;
+  ihre Closure ist der nächste Schritt.
+- **Risiken aus §6:** beide *entfallen* — siehe §6 für Begründung.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-12`) — Prüfung
+  läuft bei der `welle-12`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
