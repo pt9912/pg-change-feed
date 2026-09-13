@@ -27,7 +27,7 @@
 # Retention-Lebenszyklus-Rundlauf (deckt LH-FA-RET-002…006 in einer Kette):
 # eine eigene, isolierte Zeile und ein eigener Consumer durchlaufen real
 # Blocker-Sichtbarkeit über `cdc.retention_blockers`, Bestätigung über die
-# Position hinweg, die reale Abwesenheit jeder Zeile für `src-mvp` danach,
+# Position hinweg, die reale Abwesenheit jeder Zeile für `src-e2e` danach,
 # die reale Löschung sowie die durchgehende numerische Lesbarkeit von
 # `cdc_storage_bytes`.
 #
@@ -51,7 +51,7 @@ PG_PASSWORD=postgres
 # Der Slot-Name trägt denselben Wert wie der Container-Vertrag in
 # compose.yaml (CDC_SLOT); der Runner liest ihn im Start- und im
 # End-Wächter.
-SLOT=slot_pgc_mvp
+SLOT=slot_pgc_e2e
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
@@ -170,14 +170,14 @@ echo "run-integration-tests: Rollen-DSN-Verifikation belegt — cdc_reader-Login
 # trägt der Runner für die volle Alt-Bild-Prüfung (LH-FA-CAP-008); sie
 # bleibt vom Aktivieren unberührt (LH-FA-CFG-001.a).
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<'SQL'
-CREATE TABLE public.feed_mvp_flow (id int PRIMARY KEY, name text);
-CREATE TABLE public.feed_mvp_full (id int PRIMARY KEY, name text);
-ALTER TABLE public.feed_mvp_full REPLICA IDENTITY FULL;
-CREATE TABLE public.feed_mvp_idle (id int PRIMARY KEY, name text);
-CREATE TABLE public.feed_mvp_schema (id int PRIMARY KEY, name text, amount text);
-CREATE TABLE public.feed_mvp_sql_admin (id int PRIMARY KEY, name text);
-CREATE TABLE public.feed_mvp_walsender_timing (id int PRIMARY KEY, name text);
-INSERT INTO cdc.source (source_id, name) VALUES ('src-mvp', 'MVP-Quelle');
+CREATE TABLE public.feed_e2e_flow (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_full (id int PRIMARY KEY, name text);
+ALTER TABLE public.feed_e2e_full REPLICA IDENTITY FULL;
+CREATE TABLE public.feed_e2e_idle (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_schema (id int PRIMARY KEY, name text, amount text);
+CREATE TABLE public.feed_e2e_sql_admin (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_e2e_walsender_timing (id int PRIMARY KEY, name text);
+INSERT INTO cdc.source (source_id, name) VALUES ('src-e2e', 'E2E-Quelle');
 SQL
 
 $COMPOSE up -d pg-change-feed >/dev/null
@@ -236,7 +236,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
 
-# TestMVPSchemaChangeIncompatibleTypeChange meldet ihren
+# TestE2ESchemaChangeIncompatibleTypeChange meldet ihren
 # Negative-Fall sichtbar über die Fehlerklasse `schema`
 # (`mapper.ErrIncompatibleSchemaChange`) — der Erfassungspfad des
 # Feed-Containers endet darüber (`bootstrap.Run` -> `os.Exit(1)`), und
@@ -254,7 +254,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestMVPCaptureFlow|TestMVPUpdateOldImageWithFullReplicaIdentity|TestMVPChangesViewMatchesReadChanges|TestMVPRetentionBlockersViewShowsFurthestBehindConsumer|TestMVPMetricsCarriesStorageBytes|TestMVPActivationState|TestMVPActiveTablesViewMatchesActivationState|TestMVPDisableRetainedState|TestMVPSchemaChangeAddColumn|TestMVPHeartbeatHealthy)$' \
+  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EHeartbeatHealthy)$' \
   ./test/integration/...
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
@@ -264,13 +264,13 @@ docker run --rm --network "$NETWORK" \
 # deren Erfassung durch eine pausierte CDC-Runtime künstlich verzögert wird
 # (`docker pause` hält den Feed-Container über die Freezer-Cgroup an, bevor
 # die Transaktion verarbeitet ist), liefert einen Wert nahe der
-# Pausendauer. `feed_mvp_full` bleibt über den ganzen Lauf aktiviert (anders
-# als `feed_mvp_flow`, das der letzte MVP-Testfall deaktiviert). Die
+# Pausendauer. `feed_e2e_full` bleibt über den ganzen Lauf aktiviert (anders
+# als `feed_e2e_flow`, das der letzte E2E-Testfall deaktiviert). Die
 # Pausendauer bleibt unter `wal_sender_timeout=2000` (compose.yaml): eine
 # längere Pause ließe die Quelle die Replication-Verbindung selbst beenden,
 # bevor der Feed-Container sie fortsetzen kann — der Lasttest misst die
 # Erfassungsverzögerung, keine Verbindungsstörung.
-LAG_TABLE=feed_mvp_full
+LAG_TABLE=feed_e2e_full
 LAG_DELAY_SECONDS=${LAG_DELAY_SECONDS:-1}
 
 # Obergrenze für einen überschriebenen LAG_DELAY_SECONDS-Wert: oberhalb
@@ -287,7 +287,7 @@ fi
 
 # Die IDs 90/91 liegen in einem eigenen Wertebereich, getrennt von den
 # Referenzzeilen in test/integration/integration_test.go (id=1, id=7 auf
-# derselben Tabelle feed_mvp_full) — keine Kollision zwischen den beiden
+# derselben Tabelle feed_e2e_full) — keine Kollision zwischen den beiden
 # Testfall-Gruppen.
 baseline_count=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT count(*) FROM cdc.transaction")
@@ -371,25 +371,25 @@ fi
 # (`docker exec … /pg-change-feed …`, distroless — kein Shell im
 # Feed-Container, daher kein `sh -c`-Umweg nötig). Lesen bleibt über den
 # bestehenden externen Lesezugriffsweg `cdc.changes` (LH-FA-SST-002) — die
-# CLI trägt keinen Lese-Unterbefehl. `feed_mvp_full` trägt denselben Grund
+# CLI trägt keinen Lese-Unterbefehl. `feed_e2e_full` trägt denselben Grund
 # wie beim Lasttest-Beleg oben: die Tabelle bleibt über den ganzen Lauf
 # aktiviert. Die IDs 95/96 liegen in einem eigenen Wertebereich, getrennt
-# von den MVP-Referenzzeilen (id=1) und dem Lasttest-Beleg (id=90/91) auf
+# von den E2E-Referenzzeilen (id=1) und dem Lasttest-Beleg (id=90/91) auf
 # derselben Tabelle.
 exec_feed() {
   docker exec "$FEED_CONTAINER" /pg-change-feed "$@"
 }
 
 # Retention-Lebenszyklus-Rundlauf (kombiniert, LH-FA-RET-002…006): eine
-# eigene, isolierte Zeile (id=210 auf feed_mvp_full) und ein eigener, neu
+# eigene, isolierte Zeile (id=210 auf feed_e2e_full) und ein eigener, neu
 # registrierter Consumer durchlaufen real die vollständige Kette in einer
 # Kette, statt sie wie in den folgenden Abschnitten über mehrere getrennte
 # Belege zu prüfen — Blocker-Sichtbarkeit, Bestätigung über die Position
 # hinweg, die reale Löschung (während die bestätigte Position noch real
-# vorhanden ist), danach die reale Abwesenheit jeder Zeile für `src-mvp`,
+# vorhanden ist), danach die reale Abwesenheit jeder Zeile für `src-e2e`,
 # `cdc_storage_bytes` durchgehend numerisch. Läuft an dieser
 # Stelle, weil hier noch kein über register-consumer/acknowledge-consumer
-# geführter Consumer gegen `src-mvp` bestätigt hat (dieselbe Ausgangslage,
+# geführter Consumer gegen `src-e2e` bestätigt hat (dieselbe Ausgangslage,
 # die der folgende Abschnitt „Zustand 1" voraussetzt) — der hier
 # registrierte Consumer wird am Ende real wieder entfernt, damit diese
 # Ausgangslage für den folgenden Abschnitt unverändert gilt.
@@ -404,7 +404,7 @@ exec_feed() {
 # nicht nur ihr Fortschreiten — dieselbe Abwesenheits-Lesart, die die View
 # für einen nie bestätigenden Consumer bereits trägt.
 LIFECYCLE_CONSUMER=cli-e2e-lifecycle-consumer
-LIFECYCLE_TABLE=feed_mvp_full
+LIFECYCLE_TABLE=feed_e2e_full
 
 storage_bytes_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'")
@@ -420,7 +420,7 @@ SQL
 lifecycle_position=""
 for _ in $(seq 1 120); do
   lifecycle_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
   if [ -n "$lifecycle_position" ]; then
     break
   fi
@@ -432,10 +432,10 @@ if [ -z "$lifecycle_position" ]; then
 fi
 
 docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210')" >/dev/null
+  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210')" >/dev/null
 
 earliest_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT min(commit_position) FROM cdc.transaction WHERE source_id = 'src-mvp'")
+  "SELECT min(commit_position) FROM cdc.transaction WHERE source_id = 'src-e2e'")
 if [ -z "$earliest_position" ] || [ "$earliest_position" -ge "$lifecycle_position" ]; then
   echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — keine reale, frühere Position als $lifecycle_position gefunden (min=${earliest_position:-leer})" >&2
   exit 1
@@ -452,13 +452,13 @@ if ! exec_feed acknowledge-consumer "$LIFECYCLE_CONSUMER" "$earliest_position"; 
 fi
 
 blocker_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT consumer_id FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
+  "SELECT consumer_id FROM cdc.retention_blockers WHERE source_id = 'src-e2e'")
 if [ "$blocker_before" != "$LIFECYCLE_CONSUMER" ]; then
-  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt $LIFECYCLE_CONSUMER nicht als aktuellen Blocker für src-mvp, sondern '${blocker_before:-leer}'" >&2
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt $LIFECYCLE_CONSUMER nicht als aktuellen Blocker für src-e2e, sondern '${blocker_before:-leer}'" >&2
   exit 1
 fi
 
-echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real $LIFECYCLE_CONSUMER als aktuellen Blocker für src-mvp (LH-FA-RET-005)"
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real $LIFECYCLE_CONSUMER als aktuellen Blocker für src-e2e (LH-FA-RET-005)"
 
 # Erste Phase (Consumer-Block, LH-FA-RET-004): eine großzügige, feste
 # Wartezeit über mehr als zwei Lösch-Takte (retentionInterval=10s) hinweg
@@ -466,7 +466,7 @@ echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_b
 # einen einzelnen zu frühen Blick.
 sleep 25
 lifecycle_present_blocked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
 if [ "$lifecycle_present_blocked" != "1" ]; then
   echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210, bereits alt genug) wurde entfernt, obwohl $LIFECYCLE_CONSUMER seine Position noch nicht bestätigt hatte (LH-FA-RET-004 Consumer-Block)" >&2
   exit 1
@@ -485,7 +485,7 @@ fi
 lifecycle_deleted=0
 for _ in $(seq 1 60); do
   remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$LIFECYCLE_TABLE' AND new_data->>'id' = '210'")
   if [ "$remaining" = "0" ]; then
     lifecycle_deleted=1
     break
@@ -508,13 +508,13 @@ docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c
   "DELETE FROM cdc.consumer_position WHERE consumer_id = '$LIFECYCLE_CONSUMER'" >/dev/null
 
 blocker_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
+  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-e2e'")
 if [ "$blocker_after" != "0" ]; then
-  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers trägt nach der Bestätigung über die Position hinweg noch eine Zeile für src-mvp ($blocker_after), erwartet leer" >&2
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers trägt nach der Bestätigung über die Position hinweg noch eine Zeile für src-e2e ($blocker_after), erwartet leer" >&2
   exit 1
 fi
 
-echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real keinen Blocker mehr für src-mvp, auch nach der bereits erfolgten realen Löschung (LH-FA-RET-005)"
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real keinen Blocker mehr für src-e2e, auch nach der bereits erfolgten realen Löschung (LH-FA-RET-005)"
 
 storage_bytes_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'")
@@ -534,14 +534,14 @@ echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf (kombiniert) — 'R
 # Retention-Sichtbarkeits-Beleg (CLI), Zustand 1 — kein Blocker
 # (LH-FA-SST-003, deckt LH-FA-RET-005/006): an dieser Stelle hat noch kein
 # über register-consumer/acknowledge-consumer geführter Consumer gegen
-# `src-mvp` bestätigt — die beiden Consumer, die
-# TestMVPRetentionBlockersViewShowsFurthestBehindConsumer weiter oben direkt
+# `src-e2e` bestätigt — die beiden Consumer, die
+# TestE2ERetentionBlockersViewShowsFurthestBehindConsumer weiter oben direkt
 # über den ConsumerStatePort-Adapter registrierte, sind bereits per
 # `t.Cleanup` entfernt (siehe deren Funktionskommentar in
 # test/integration/integration_test.go), und der oben real durchlaufene
 # Retention-Lebenszyklus-Consumer ist am Ende dieses Abschnitts ebenfalls
 # real entfernt. `cdc.retention_blockers` trägt deshalb real keine Zeile für
-# `src-mvp`, und die `diagnose`-Ausgabe muss das als „kein Blocker" zeigen,
+# `src-e2e`, und die `diagnose`-Ausgabe muss das als „kein Blocker" zeigen,
 # nicht als Fehlerzustand.
 set +e
 diagnose_noblocker_output=$(exec_feed diagnose)
@@ -563,7 +563,7 @@ fi
 echo "run-integration-tests: Retention-Sichtbarkeits-Beleg (CLI, Zustand 1) — 'kein Blocker' vor jeder Consumer-Bestätigung, cdc_storage_bytes numerisch sichtbar (LH-FA-RET-005/006)"
 
 CLI_CONSUMER=cli-e2e-consumer
-CLI_TABLE=feed_mvp_full
+CLI_TABLE=feed_e2e_full
 
 if ! exec_feed register-consumer "$CLI_CONSUMER"; then
   echo "run-integration-tests: register-consumer (extern, docker exec) endete mit einem Fehler" >&2
@@ -584,7 +584,7 @@ SQL
 first_position=""
 for _ in $(seq 1 120); do
   first_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '95'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '95'")
   if [ -n "$first_position" ]; then
     break
   fi
@@ -601,7 +601,7 @@ if ! exec_feed acknowledge-consumer "$CLI_CONSUMER" "$first_position"; then
 fi
 
 acked_first=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-e2e'")
 if [ "$acked_first" != "$first_position" ]; then
   echo "run-integration-tests: cdc.consumer_position trägt $acked_first, wollen $first_position (erste externe Bestätigung)" >&2
   exit 1
@@ -635,7 +635,7 @@ SQL
 second_position=""
 for _ in $(seq 1 120); do
   second_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '96'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$CLI_TABLE' AND new_data->>'id' = '96'")
   if [ -n "$second_position" ]; then
     break
   fi
@@ -653,14 +653,14 @@ fi
 # Fortsetzen ab dieser Position: die bereits bestätigte Änderung (id=95)
 # wiederholt sich nicht, nur die neue (id=96) erscheint.
 restored_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-e2e'")
 if [ "$restored_position" != "$first_position" ]; then
   echo "run-integration-tests: aus cdc.consumer_position zurückgelesene Position nach dem Neustart = $restored_position, wollen $first_position (die zuvor bestätigte)" >&2
   exit 1
 fi
 
 resumed_ids=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT string_agg(new_data->>'id', ',' ORDER BY commit_position) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$CLI_TABLE' AND commit_position > $restored_position")
+  "SELECT string_agg(new_data->>'id', ',' ORDER BY commit_position) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$CLI_TABLE' AND commit_position > $restored_position")
 if [ "$resumed_ids" != "96" ]; then
   echo "run-integration-tests: Fortsetzen ab der bestätigten Position (Neustart-Beleg) — ab commit_position=$restored_position gelesene id-Folge '$resumed_ids', wollen '96' (id=95 bleibt hinter der bestätigten Position, keine Wiederholung)" >&2
   exit 1
@@ -672,7 +672,7 @@ if ! exec_feed acknowledge-consumer "$CLI_CONSUMER" "$second_position"; then
 fi
 
 acked_second=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-mvp'")
+  "SELECT acknowledged_position FROM cdc.consumer_position WHERE consumer_id = '$CLI_CONSUMER' AND source_id = 'src-e2e'")
 if [ "$acked_second" != "$second_position" ]; then
   echo "run-integration-tests: cdc.consumer_position trägt $acked_second, wollen $second_position (zweite externe Bestätigung, nach dem simulierten Neustart)" >&2
   exit 1
@@ -695,7 +695,7 @@ echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer
 # getrennt von den übrigen Testfall-Gruppen auf derselben Tabelle (id=1,
 # id=90/91, id=95/96 oben).
 BACKLOG_CONSUMER=cli-e2e-backlog-consumer
-BACKLOG_TABLE=feed_mvp_full
+BACKLOG_TABLE=feed_e2e_full
 
 if ! exec_feed register-consumer "$BACKLOG_CONSUMER"; then
   echo "run-integration-tests: register-consumer (Rückstands-Beleg, docker exec) endete mit einem Fehler" >&2
@@ -709,7 +709,7 @@ SQL
 baseline_backlog_position=""
 for _ in $(seq 1 120); do
   baseline_backlog_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '120'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '120'")
   if [ -n "$baseline_backlog_position" ]; then
     break
   fi
@@ -732,7 +732,7 @@ SQL
 latest_backlog_position=""
 for _ in $(seq 1 120); do
   latest_backlog_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '121'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BACKLOG_TABLE' AND new_data->>'id' = '121'")
   if [ -n "$latest_backlog_position" ]; then
     break
   fi
@@ -744,7 +744,7 @@ if [ -z "$latest_backlog_position" ]; then
 fi
 
 backlog_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-mvp'")
+  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-e2e'")
 if [ -z "$backlog_before" ] || [ "$backlog_before" -le 0 ]; then
   echo "run-integration-tests: cdc.consumer_status-Rückstand vor der zweiten Bestätigung: '${backlog_before:-leer}' (Erwartung: > 0, acknowledged_position=$baseline_backlog_position, danach erfasste Position=$latest_backlog_position)" >&2
   exit 1
@@ -756,7 +756,7 @@ if ! exec_feed acknowledge-consumer "$BACKLOG_CONSUMER" "$latest_backlog_positio
 fi
 
 backlog_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-mvp'")
+  "SELECT latest_commit_position - acknowledged_position FROM cdc.consumer_status WHERE consumer_id = '$BACKLOG_CONSUMER' AND source_id = 'src-e2e'")
 if [ "$backlog_after" != "0" ]; then
   echo "run-integration-tests: cdc.consumer_status-Rückstand nach der zweiten Bestätigung: $backlog_after, wollen 0 (bestätigte Position=$latest_backlog_position)" >&2
   exit 1
@@ -838,7 +838,7 @@ diagnose_error_output=""
 diagnose_error_status=1
 for _ in $(seq 1 20); do
   docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema' WHERE source_id = 'src-mvp'" >/dev/null
+    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema' WHERE source_id = 'src-e2e'" >/dev/null
   set +e
   diagnose_error_output=$(exec_feed diagnose)
   diagnose_error_status=$?
@@ -866,7 +866,7 @@ fi
 echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
 
 # SQL-Administration Live-Reload-Beleg (ADR-0050, LH-FA-ADM-001,
-# LH-FA-CFG-001/002): `feed_mvp_sql_admin` ist bewusst NICHT Teil von
+# LH-FA-CFG-001/002): `feed_e2e_sql_admin` ist bewusst NICHT Teil von
 # CDC_TABLES (compose.yaml) — ihre Aktivierung/Deaktivierung läuft
 # ausschließlich über die Antrags-Queue (`cdc.enable_table`/
 # `cdc.disable_table`), verarbeitet von der Administrations-Goroutine des
@@ -874,10 +874,10 @@ echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sic
 # wie beim Black-Box-CLI-Rundlauf oben). `SELECT cdc.enable_table(...)`
 # bestätigt nur „beantragt" — der Poll unten wartet auf
 # `status = 'applied'`, bevor die reale Erfassungswirkung geprüft wird.
-ADMIN_TABLE=feed_mvp_sql_admin
+ADMIN_TABLE=feed_e2e_sql_admin
 
 enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT cdc.enable_table('src-mvp', 'public', '$ADMIN_TABLE')")
+  "SELECT cdc.enable_table('src-e2e', 'public', '$ADMIN_TABLE')")
 if [ -z "$enable_request_id" ]; then
   echo "run-integration-tests: cdc.enable_table($ADMIN_TABLE) lieferte keine Antrags-ID" >&2
   exit 1
@@ -912,7 +912,7 @@ SQL
 admin_enabled_captured=0
 for _ in $(seq 1 120); do
   found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '1'")
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '1'")
   if [ "$found" = "1" ]; then
     admin_enabled_captured=1
     break
@@ -936,7 +936,7 @@ echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (enable) — c
 # bleibt danach am Leben — nur die Erfassung dieser einen Tabelle endet
 # (`LH-FA-CFG-002`), der Prozess selbst nicht.
 disable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT cdc.disable_table('src-mvp', 'public', '$ADMIN_TABLE')")
+  "SELECT cdc.disable_table('src-e2e', 'public', '$ADMIN_TABLE')")
 if [ -z "$disable_request_id" ]; then
   echo "run-integration-tests: cdc.disable_table($ADMIN_TABLE) lieferte keine Antrags-ID" >&2
   exit 1
@@ -973,7 +973,7 @@ SQL
 # NICHT in cdc.changes ankommt.
 sleep 3
 disabled_leaked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '2'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '2'")
 if [ "$disabled_leaked" != "0" ]; then
   echo "run-integration-tests: nach cdc.disable_table($ADMIN_TABLE) wurde eine Änderung (id=2) dennoch erfasst — Deaktivierung griff nicht" >&2
   exit 1
@@ -1007,10 +1007,10 @@ echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — 
 # Dekodierung erklärbar. Die Tabelle ist eine Wegwerf-Tabelle — kein
 # späterer Abschnitt dieses Skripts liest oder schreibt sie —, eine
 # Wiederherstellung der Publication-Mitgliedschaft entfällt deshalb.
-WALSENDER_TABLE=feed_mvp_walsender_timing
+WALSENDER_TABLE=feed_e2e_walsender_timing
 
 walsender_enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT cdc.enable_table('src-mvp', 'public', '$WALSENDER_TABLE')")
+  "SELECT cdc.enable_table('src-e2e', 'public', '$WALSENDER_TABLE')")
 if [ -z "$walsender_enable_request_id" ]; then
   echo "run-integration-tests: cdc.enable_table($WALSENDER_TABLE) lieferte keine Antrags-ID" >&2
   exit 1
@@ -1045,7 +1045,7 @@ SQL
 walsender_enabled_captured=0
 for _ in $(seq 1 120); do
   found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '1'")
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '1'")
   if [ "$found" = "1" ]; then
     walsender_enabled_captured=1
     break
@@ -1061,7 +1061,7 @@ fi
 # Begründung oben. Die Assembler-Bindung dieser Tabelle bleibt dadurch
 # unverändert aktiv (activated == true).
 docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-  "ALTER PUBLICATION pub_pgc_mvp DROP TABLE public.$WALSENDER_TABLE;"
+  "ALTER PUBLICATION pub_pgc_e2e DROP TABLE public.$WALSENDER_TABLE;"
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
 INSERT INTO public.$WALSENDER_TABLE (id, name) VALUES (2, 'WalsenderTimingAfterDrop');
@@ -1077,7 +1077,7 @@ SQL
 # die App-seitige Assembler-Filterung zur tragenden Ebene.
 sleep 3
 walsender_after_drop_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '2'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '2'")
 if [ "$walsender_after_drop_captured" = "0" ]; then
   echo "run-integration-tests: Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION ... DROP TABLE $WALSENDER_TABLE (Assembler-Bindung blieb aktiv) wurde Änderung id=2 NICHT erfasst: PostgreSQLs bereits laufende Decoding-Session filtert eine entzogene Tabelle real sofort aus (BEO-PGC/walsender-wirksamkeit widerlegt)"
 else
@@ -1092,7 +1092,7 @@ fi
 
 # Retention-Beleg (LH-FA-RET-002…004, ADR-0014): der Hintergrundzug
 # runRetentionCleanup ruft RunRetentionUseCase periodisch real auf
-# (retentionInterval, wiring.go). Zwei Zeilen auf feed_mvp_full (bereits
+# (retentionInterval, wiring.go). Zwei Zeilen auf feed_e2e_full (bereits
 # über den ganzen Lauf aktiviert): 'RetentionOld' (id=200), deren
 # Quelltransaktion direkt über SQL auf ein Alter über der konfigurierten
 # RetentionPolicy.MinAge (retentionMinAge = 24h, wiring.go) zurückdatiert
@@ -1108,7 +1108,7 @@ fi
 # gibt beide Zeilen aus Consumer-Sicht frei; der zweite Poll belegt, dass
 # danach nur die zurückdatierte Zeile real entfernt wird (LH-FA-RET-003),
 # die junge nicht — beides ohne Neustart des Feed-Containers.
-RETENTION_TABLE=feed_mvp_full
+RETENTION_TABLE=feed_e2e_full
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
 INSERT INTO public.$RETENTION_TABLE (id, name) VALUES (200, 'RetentionOld');
@@ -1117,7 +1117,7 @@ SQL
 retention_old_position=""
 for _ in $(seq 1 120); do
   retention_old_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
   if [ -n "$retention_old_position" ]; then
     break
   fi
@@ -1135,7 +1135,7 @@ SQL
 retention_young_position=""
 for _ in $(seq 1 120); do
   retention_young_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
   if [ -n "$retention_young_position" ]; then
     break
   fi
@@ -1147,7 +1147,7 @@ if [ -z "$retention_young_position" ]; then
 fi
 
 docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200')" >/dev/null
+  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200')" >/dev/null
 
 # Erste Phase (Consumer-Block, LH-FA-RET-004): eine großzügige, feste
 # Wartezeit über mehr als zwei Lösch-Takte (retentionInterval=10s) hinweg
@@ -1156,7 +1156,7 @@ docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c
 # mehrere reale Takte, nicht nur einen einzelnen zu frühen Blick.
 sleep 25
 old_present_blocked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
 if [ "$old_present_blocked" != "1" ]; then
   echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200, bereits alt genug) wurde entfernt, obwohl CLI_CONSUMER/BACKLOG_CONSUMER seine Position noch nicht bestätigt hatten (LH-FA-RET-004 Consumer-Block)" >&2
   exit 1
@@ -1177,7 +1177,7 @@ fi
 old_deleted=0
 for _ in $(seq 1 60); do
   remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
   if [ "$remaining" = "0" ]; then
     old_deleted=1
     break
@@ -1190,7 +1190,7 @@ if [ "$old_deleted" -ne 1 ]; then
 fi
 
 young_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
 if [ "$young_present" != "1" ]; then
   echo "run-integration-tests: Retention-Beleg — 'RetentionYoung' (id=201, zu jung) wurde fälschlich real entfernt (LH-FA-RET-003 Mindestalter)" >&2
   exit 1
@@ -1209,18 +1209,18 @@ echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) blieb e
 # dortigen Kommentar). Ein eigener Wegwerf-Testclient
 # (tools/harness/natssub/main.go, per `go run` im Toolchain-Container)
 # abonniert das tabellen-granulare Subjekt
-# cdc.changes.src-mvp.public.feed_mvp_full real, BEVOR die auslösende
+# cdc.changes.src-e2e.public.feed_e2e_full real, BEVOR die auslösende
 # Change entsteht — Core NATS liefert nichts nach (ADR-0055 Punkt 1,
 # Fire-and-Forget); ein Subscriber, der erst danach abonniert, verpasst das
 # Signal strukturell. Der Subscriber läuft dazu als eigener, per Name
 # adressierter Container (nicht `--rm` vor dem Poll): `docker logs` trägt
 # die Zeile "READY", sobald die Subscription server-seitig bestätigt ist
-# (Flush im Tool), erst danach folgt die Change. `feed_mvp_full` bleibt
+# (Flush im Tool), erst danach folgt die Change. `feed_e2e_full` bleibt
 # über den ganzen Lauf aktiviert (siehe Lasttest-/Retention-Belege oben);
 # die ID 230 liegt in einem eigenen, bisher unbenutzten Wertebereich auf
 # derselben Tabelle.
 NATS_SUBSCRIBER_CONTAINER=cdc-e2e-natssub
-NATS_SUBJECT="cdc.changes.src-mvp.public.feed_mvp_full"
+NATS_SUBJECT="cdc.changes.src-e2e.public.feed_e2e_full"
 
 docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_SUBSCRIBER_CONTAINER" --network "$NETWORK" \
@@ -1248,7 +1248,7 @@ if [ "$nats_subscriber_ready" -ne 1 ]; then
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.feed_mvp_full (id, name) VALUES (230, 'NatsHappyPath');
+INSERT INTO public.feed_e2e_full (id, name) VALUES (230, 'NatsHappyPath');
 SQL
 
 nats_signal_received=0
@@ -1275,11 +1275,11 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber ($NATS_SUBJECT) abonnierte real vor der Change (id=230, feed_mvp_full) und empfing danach real das leere Wecksignal: $nats_subscriber_output"
+echo "run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber ($NATS_SUBJECT) abonnierte real vor der Change (id=230, feed_e2e_full) und empfing danach real das leere Wecksignal: $nats_subscriber_output"
 
 # NATS-Boundary-Beleg (LH-FA-SST-007, ADR-0055): Gegenstück zum
 # Happy-Path-Beleg oben — hier abonniert **kein** Client das Subjekt
-# cdc.changes.src-mvp.public.feed_mvp_full. Der reale Beleg, dass zum
+# cdc.changes.src-e2e.public.feed_e2e_full. Der reale Beleg, dass zum
 # Zeitpunkt der Change tatsächlich niemand verbunden ist, kommt aus dem
 # NATS-Server selbst: dessen HTTP-Monitor-Port 8222 (bereits für den
 # Healthcheck aktiviert, siehe compose.yaml) trägt den Endpoint
@@ -1301,7 +1301,7 @@ if echo "$nats_subs_before_boundary" | grep -qF "\"subject\": \"$NATS_SUBJECT\""
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.feed_mvp_full (id, name) VALUES (231, 'NatsBoundary');
+INSERT INTO public.feed_e2e_full (id, name) VALUES (231, 'NatsBoundary');
 SQL
 
 # Kleine reale Wartezeit, damit ein (fälschlich doch aktiver) Notify-Versuch
@@ -1311,9 +1311,9 @@ SQL
 sleep 2
 
 boundary_change_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = 'feed_mvp_full' AND new_data->>'id' = '231'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '231'")
 if [ "$boundary_change_present" != "1" ]; then
-  echo "run-integration-tests: NATS-Boundary-Beleg — Change (id=231, feed_mvp_full) war trotz fehlendem NATS-Subscriber nicht vollständig über cdc.changes lesbar (LH-FA-SST-007 Boundary verletzt)" >&2
+  echo "run-integration-tests: NATS-Boundary-Beleg — Change (id=231, feed_e2e_full) war trotz fehlendem NATS-Subscriber nicht vollständig über cdc.changes lesbar (LH-FA-SST-007 Boundary verletzt)" >&2
   exit 1
 fi
 
@@ -1329,7 +1329,7 @@ if echo "$nats_subs_after_boundary" | grep -qF "\"subject\": \"$NATS_SUBJECT\"";
   exit 1
 fi
 
-echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=231, feed_mvp_full) entstand real ohne einen auf $NATS_SUBJECT abonnierten Client (belegt über NATS-Server-Monitor /subsz vor und nach der Change), blieb vollständig über cdc.changes lesbar, und der Feed-Container lief unverändert weiter"
+echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=231, feed_e2e_full) entstand real ohne einen auf $NATS_SUBJECT abonnierten Client (belegt über NATS-Server-Monitor /subsz vor und nach der Change), blieb vollständig über cdc.changes lesbar, und der Feed-Container lief unverändert weiter"
 
 # NATS-Negative-Beleg — Reconnect-Nachholen (LH-FA-SST-007, ADR-0055,
 # ADR-0056): Gegenstück zum Boundary-Beleg oben (dort: nie abonniert
@@ -1405,7 +1405,7 @@ if echo "$subscriber_networks_after_disconnect" | grep -qF "\"$NETWORK\""; then
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.feed_mvp_full (id, name) VALUES (240, 'NatsReconnectMissed');
+INSERT INTO public.feed_e2e_full (id, name) VALUES (240, 'NatsReconnectMissed');
 SQL
 
 # Kleine reale Wartezeit: ein (fälschlich doch zugestelltes) Signal hätte
@@ -1422,7 +1422,7 @@ if printf '%s' "$nats_reconnect_before_output" | grep -qF "RECEIVED"; then
 fi
 
 reconnect_missed_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = 'feed_mvp_full' AND new_data->>'id' = '240'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = 'feed_e2e_full' AND new_data->>'id' = '240'")
 if [ "$reconnect_missed_present" != "1" ]; then
   echo "run-integration-tests: NATS-Negative-Beleg — verpasste Change (id=240) war nach der Trennung nicht über den bestehenden SQL-Lesezugriffsweg cdc.changes vollständig sichtbar" >&2
   exit 1
@@ -1456,7 +1456,7 @@ if [ "$nats_reconnect_after_ready" -ne 1 ]; then
 fi
 
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.feed_mvp_full (id, name) VALUES (241, 'NatsReconnectResumed');
+INSERT INTO public.feed_e2e_full (id, name) VALUES (241, 'NatsReconnectResumed');
 SQL
 
 nats_reconnect_signal_resumed=0
@@ -1485,7 +1485,7 @@ fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
 
-# TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
+# TestE2ESchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
 # Fehlerklasse `schema` und beendet damit den Erfassungspfad des
@@ -1498,4 +1498,4 @@ docker run --rm --network "$NETWORK" \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test -v -run '^TestMVPSchemaChangeIncompatibleTypeChange$' ./test/integration/...
+  "$TOOLCHAIN_IMAGE" go test -v -run '^TestE2ESchemaChangeIncompatibleTypeChange$' ./test/integration/...
