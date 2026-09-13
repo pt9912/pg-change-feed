@@ -43,6 +43,22 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   abwesenden Text („früher stand hier …") oder bricht mitten im Satz ab, weil
   eine Teilersetzung den Rest stehen ließ. Kein Gate fängt das (siehe
   Baseline-Regelwerk `grundlagen-harness-dateien.md` §Was ein Kommentar trägt)
+- **Slice-/Wellen-Chronik in Produktionscode-Kommentar** — ein Godoc- oder
+  Inline-Kommentar über einem **Produktionscode**-Pfad (Funktion, Typ, Datei —
+  nicht ein `Test*`-Godoc) begründet eine Aussage mit einer Slice-/
+  Wellen-Nummer (`slice-<NNN>`, `welle-<NN>`) oder impliziter
+  Vorher/Nachher-Sprache, statt mit `ADR-*`/`LH-*` oder dem Herkunfts-Anker
+  `· seit slice-<NNN>` (`AGENTS.md` §3.7). Abgrenzung zur **zulässigen**
+  Testfall-Provenienz („`TestXyz` trägt/deckt … aus `review-slice-NNN.md`
+  F-x“ — Subjekt ist der Test, nicht der Produktionscode-Pfad, siehe
+  [`architect-verdict-slice-chronik-in-code-kommentar.md`](../../docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md)):
+  Probe ist das **Satzsubjekt** — die Funktion/der Code-Pfad (Chronik,
+  unzulässig) oder der Testfall (Provenienz, zulässig). Kein Gate fängt das
+  (repo-weiter Textmuster-Sensor geprüft und verworfen, s.o.). Erstes
+  benanntes Auftreten als eigener HIGH-Punkt: Review F-1
+  (`review-slice-052.md`, 2026-09-13) — vierter gezählter Beleg von
+  `BEO-PGC/slice-chronik-in-code-kommentar`, Architect-Verdikt-Nachtrag
+  [`architect-verdict-slice-chronik-in-code-kommentar-4x.md`](../../docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md).
 - **Zustandsfeld trägt Chronik** — eine `Stand`-/`Status`-Zelle (Roadmap,
   Beobachtungs-Register, Meilenstein) erzählt, wie der Zustand entstand, statt
   Zustand und Beleg als Anker zu nennen; oder ein Drift-Log protokolliert

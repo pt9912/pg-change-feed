@@ -170,6 +170,15 @@ ist eine Lifecycle-Rücksprungkante (11).
     unzulässig)? Nur Letzteres wird umformuliert. Kein Sensor/Gate dafür (geprüft und verworfen,
     Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
     dieser Schritt bleibt Disziplin.
+    **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, Architect-Verdikt-Nachtrag
+    `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`): Dieser Schritt
+    läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,
+    vor der Modul 8 §Kernidee warnt („wer geschrieben hat, reviewt nicht“). Er bleibt Pflicht,
+    weil er nachweislich die Zahl der Fixrunden senkt, ist aber **nicht** die tragende
+    Verteidigungslinie — das ist der unabhängige Reviewer (`.harness/skills/reviewer.md`,
+    eigener benannter HIGH-Punkt seit diesem Nachtrag). Ein Auftreten trotz gelaufenem
+    Schritt 20 ist kein Beleg für einen defekten Prozess, solange der Reviewer den Fall vor
+    Merge fängt (bislang 4/4) — das ist der Regelfall, für den die Rollentrennung sorgt.
 
 Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontexten** (Modul 8).
 

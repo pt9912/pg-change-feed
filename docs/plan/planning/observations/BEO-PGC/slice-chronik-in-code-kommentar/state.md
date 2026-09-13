@@ -37,3 +37,21 @@ Klassifikations-Frage (Testfall-Provenienz vs. Chronik). Tritt die Klasse
 trotz der geschärften Instruktion ein viertes Mal auf, ist das ein
 Signal, dass Enumeration allein nicht trägt — neue Beobachtung oder
 Zähler-Fortschreibung, Urteil beim nächsten Lese-Schritt.
+Vorgezogene Antwort auf das Restrisiko (4. Beleg, `slice-052` F-1,
+`docs/reviews/review-slice-052.md`/`review-slice-052-fixrunde.md`; formal
+noch nicht als `evidence/slice-052.md` gezählt — das ist reguläre
+Slice-Closure-Arbeit des Planners, `slice-052` liegt noch in
+`in-progress/`): Architect-Verdikt-Nachtrag
+`docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`.
+Diagnose: kein neuer Enumerations-Fall (das bestehende Pattern hätte den
+Fund getroffen), sondern Bestätigung, dass Schritt 20 strukturell nur die
+erste, nicht die tragende Verteidigungslinie sein kann (Modul 8 §Kernidee)
+— der unabhängige Reviewer hat 4/4 Fälle vor Merge gefangen, kein
+Hard-Rule-Verstoß hat je `main` erreicht. Verkörpert statt eines neuen
+Sensors: eigener benannter HIGH-Punkt in `.harness/skills/reviewer.md`
+(„Slice-/Wellen-Chronik in Produktionscode-Kommentar") und eine
+Grenz-Klarstellung in `.claude/commands/implement-slice.md` Schritt 20.
+Für den Lese-Schritt bei `slice-052`s Closure ist der Ausgang damit
+vorweggenommen: **verkörpert** (erneut), Herkunfts-Anker `seit slice-052`
+auf diesen Nachtrag — keine weitere Architect-Eskalation nötig, nur
+Zähler und `evidence/slice-052.md` nachtragen.
