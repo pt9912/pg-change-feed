@@ -1203,21 +1203,23 @@ fi
 
 echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing (LH-FA-RET-004), und wurde nach Freigabe durch beide Consumer real entfernt (LH-FA-RET-003); 'RetentionYoung' (id=201, zu jung) blieb durchgehend erhalten"
 
-# NATS-Happy-Path-Beleg (LH-FA-SST-007, ADR-0055): compose.yaml verdrahtet
-# den Feed-Container mit CDC_NATS_URL=nats://nats:4222 (siehe dortigen
-# Kommentar). Ein eigener Wegwerf-Testclient
+# NATS-Happy-Path-Beleg (LH-FA-SST-007, ADR-0055, ADR-0056): compose.yaml
+# verdrahtet den Feed-Container mit CDC_NATS_URL=nats://nats:4222 (siehe
+# dortigen Kommentar). Ein eigener Wegwerf-Testclient
 # (tools/harness/natssub/main.go, per `go run` im Toolchain-Container)
-# abonniert cdc.changes.src-mvp real, BEVOR die auslösende Change entsteht
-# — Core NATS liefert nichts nach (ADR-0055 Punkt 1, Fire-and-Forget); ein
-# Subscriber, der erst danach abonniert, verpasst das Signal strukturell.
-# Der Subscriber läuft dazu als eigener, per Name adressierter Container
-# (nicht `--rm` vor dem Poll): `docker logs` trägt die Zeile "READY", sobald
-# die Subscription server-seitig bestätigt ist (Flush im Tool), erst danach
-# folgt die Change. `feed_mvp_full` bleibt über den ganzen Lauf aktiviert
-# (siehe Lasttest-/Retention-Belege oben); die ID 230 liegt in einem
-# eigenen, bisher unbenutzten Wertebereich auf derselben Tabelle.
+# abonniert das tabellen-granulare Subjekt
+# cdc.changes.src-mvp.public.feed_mvp_full real, BEVOR die auslösende
+# Change entsteht — Core NATS liefert nichts nach (ADR-0055 Punkt 1,
+# Fire-and-Forget); ein Subscriber, der erst danach abonniert, verpasst das
+# Signal strukturell. Der Subscriber läuft dazu als eigener, per Name
+# adressierter Container (nicht `--rm` vor dem Poll): `docker logs` trägt
+# die Zeile "READY", sobald die Subscription server-seitig bestätigt ist
+# (Flush im Tool), erst danach folgt die Change. `feed_mvp_full` bleibt
+# über den ganzen Lauf aktiviert (siehe Lasttest-/Retention-Belege oben);
+# die ID 230 liegt in einem eigenen, bisher unbenutzten Wertebereich auf
+# derselben Tabelle.
 NATS_SUBSCRIBER_CONTAINER=cdc-e2e-natssub
-NATS_SUBJECT="cdc.changes.src-mvp"
+NATS_SUBJECT="cdc.changes.src-mvp.public.feed_mvp_full"
 
 docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_SUBSCRIBER_CONTAINER" --network "$NETWORK" \
