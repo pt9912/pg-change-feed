@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.7
+Version: 1.10
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-13
 
@@ -449,8 +449,8 @@ pg-change-feed diagnose: Quelle "src-mvp"
   Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)
   CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): 0.087s
   Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):
-    cli-e2e-consumer: 0
-  Blockierender Consumer (LH-FA-RET-005): CLI E2E Consumer (cli-e2e-consumer), bestätigte Position 42, Rückstand 3
+    cli-e2e-consumer: 3
+  Blockierender Consumer (LH-FA-RET-005): cli-e2e-consumer, bestätigte Position 42, Rückstand 3
   Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): 65536 Bytes
 ```
 
@@ -701,4 +701,6 @@ MIT — siehe `LICENSE`.
 | 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |
 | 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`, `ADR-0052`, `SPEC-016`, slice-041) ergänzt: §5 neue Unterüberschrift, Env-Var-Tabelle um `CDC_CONFIG_FILE` erweitert, `CDC_TABLES`-Pflichtangabe präzisiert |
 | 1.7 | 2026-09-13 | SQL-Administration nachdokumentiert (`LH-FA-ADM-001`, `LH-FA-CFG-002`, `ADR-0050`, slice-036, slice-037, slice-042): §4 zwei neue Abschnitte „Tabelle live aktivieren" und „Tabelle deaktivieren" (`cdc.enable_table`/`cdc.disable_table`, asynchrone Antrags-Queue, Status-Polling) |
-| 1.8 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
+| 1.8 | 2026-09-13 | Sichtbarkeit blockierender Consumer ergänzt (`LH-FA-RET-005`, slice-045): §4 neuer Abschnitt „Blockierende Consumer erkennen" (`cdc.retention_blockers`) |
+| 1.9 | 2026-09-13 | `cdc_storage_bytes`-Metrik ergänzt (`LH-FA-RET-006`, slice-046): §4 „Metriken lesen" nennt die neue `cdc.metrics`-Zeile |
+| 1.10 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`, slice-047): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
