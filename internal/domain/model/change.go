@@ -26,6 +26,16 @@ const (
 // (`cdc.change`). Row Images sind JSON-Bytes; ihre Zusammensetzung bleibt
 // beim Adapter-Mapper. Ein fehlendes Bild ist Abwesenheit, kein Fehler
 // (`LH-FA-CAP-008`, Boundary) — der Konstruktor fordert deshalb kein Bild.
+//
+// Schema und Table tragen die Klartext-Bezeichner der betroffenen Tabelle
+// zusätzlich zur opaken SourceTableID (`ADR-0056`) — ausschließlich für den
+// NATS-Notify-Pfad (`ChangeNotificationPort`, tabellen-granulares
+// Subjekt). Sie sind bewusst keine Konstruktor-Invariante: Der
+// Driving-Adapter-Mapper kennt beide bereits vor dem Aufruf von `NewChange`
+// und setzt sie am Ergebnis; die Rekonstruktion eines persistierten Change
+// aus `cdc.change` (`postgresstorage/mapper.ToChange`) trägt keine eigenen
+// Schema-/Tabellen-Spalten und lässt die Felder leer — dieser Lesepfad
+// speist nie den Notify-Aufruf.
 type Change struct {
 	ID            ChangeID
 	TransactionID TransactionID
@@ -35,6 +45,8 @@ type Change struct {
 	OldImage      []byte
 	NewImage      []byte
 	SchemaVersion SchemaVersionID
+	Schema        string
+	Table         string
 }
 
 // NewChange legt einen Change an und erzwingt die Change-Invarianten:

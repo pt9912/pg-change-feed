@@ -180,6 +180,9 @@ func TestConsumeFullTransaction(t *testing.T) {
 	if changes[0].ID != "42-1" || changes[0].Sequence != 1 || changes[0].Operation != model.OperationInsert {
 		t.Fatalf("Change 1: %+v", changes[0])
 	}
+	if changes[0].Schema != "public" || changes[0].Table != "feed" {
+		t.Fatalf("Change 1 trägt Schema/Tabelle = %q/%q, wollen \"public\"/\"feed\" (ADR-0056, ohne neuen Lookup aus event.Relation)", changes[0].Schema, changes[0].Table)
+	}
 	if string(changes[0].NewImage) != `{"id":"1","name":"Wert"}` {
 		t.Fatalf("Insert-Neu-Image: %s", changes[0].NewImage)
 	}

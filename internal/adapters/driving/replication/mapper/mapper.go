@@ -196,7 +196,10 @@ func (a *Assembler) Consume(ctx context.Context, event decode.Event) (*inbound.C
 // Transaktion und Sequenz, Operation, Row Images als JSON
 // (`SPEC-002`), Tabelle und Schema-Version über die Aktivierung. Die
 // Sequenz trägt die Anhang-Reihenfolge und startet je Transaktion bei 1
-// (`SPEC-002`).
+// (`SPEC-002`). `event.Relation.Schema`/`.Name` sind hier bereits bekannt
+// (die `TableBinding`-Map ist nach dem qualifizierten Namen indiziert) und
+// gehen ohne neuen Lookup in `Change.Schema`/`.Table` ein (`ADR-0056`,
+// NATS-Notify-Pfad).
 func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	binding, activated := a.lookupBinding(event.Relation.QualifiedName())
 	if !activated {
@@ -239,6 +242,8 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	if err != nil {
 		return nil, err
 	}
+	change.Schema = event.Relation.Schema
+	change.Table = event.Relation.Name
 	return &change, nil
 }
 
