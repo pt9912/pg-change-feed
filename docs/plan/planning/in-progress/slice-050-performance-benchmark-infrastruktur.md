@@ -306,7 +306,12 @@ Backticks).
 - **Risiken aus §6:** eines entfallen (Streuung — keine Schwelle
   betroffen, Differenzmessung innerhalb desselben Laufs), eines
   eingetreten und innerhalb dieses Slices gelöst (groß-Stufe-Dauer →
-  Default-/`--full`-Modus) — siehe §6.
+  Default-/`--full`-Modus) — siehe §6. Der Verifier reproduzierte die
+  Bench-Läufe eigenständig und maß real spürbar andere Werte (91,4 %
+  statt 86,4 % CDC-Overhead; Faktor 128,2× statt 178,8×) — das bestätigt
+  die reale Streuung unabhängig, ändert aber den Ausgang *entfallen*
+  nicht, da kein Skript einen Pass/Fail-Schwellenwert trägt
+  (`verify-slice-050.md`).
 - **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-14`
   (offen); die Paarungen prüft die Welle-14-Closure.
 
