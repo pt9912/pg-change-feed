@@ -9,7 +9,7 @@ GATE_CHECKS :=
 # .PHONY trägt die Targets, deren Name ein Baum-Verzeichnis schattieren kann
 # (`test:` gegen das Verzeichnis `test/` — make meldet "bereits aktuell",
 # ohne das Rezept zu fahren).
-.PHONY: gates help mod-download test test-store test-replication test-integration image image-stale
+.PHONY: gates help mod-download test test-store test-replication test-integration test-notify image image-stale
 
 # Gate-Fragmente je Belang (baseline/doc-gate/enforce + Sprach-Code-Gates) einbinden.
 # Alphabetisch (baseline < doc-gate < enforce < <lang>); die Ordnungskante unten steht
@@ -61,6 +61,9 @@ test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 
 test-replication: ## Replication-Stream-Tests gegen reale PostgreSQL mit Publication/Slot (wal_level=logical, gepinnt)
 	@bash tools/harness/run-replication-tests.sh
+
+test-notify: ## natsnotify-Adapter-Tests gegen einen echten NATS-Server (Testcontainer, gepinnt, ADR-0055)
+	@bash tools/harness/run-notify-tests.sh
 
 test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Verifikation, Black-Box-CLI-Rundlauf (Compose + schema-rollout + Toolchain-Container, kein Gate)
 	@bash tools/harness/run-integration-tests.sh
