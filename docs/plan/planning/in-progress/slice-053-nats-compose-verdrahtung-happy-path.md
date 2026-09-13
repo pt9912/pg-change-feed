@@ -89,11 +89,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Fixrunde, 2 INFO).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Umgebungsvariablen
       des Feed-Containers" um `CDC_NATS_URL` ergänzt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Keine Beobachtung angefallen** — der `ADR-0056`-Drift ist ein einmaliges Timing-Ereignis (ADR landete parallel zur Implementierung), keine wiederkehrende Verstoßklasse.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Verschoben auf `welle-15`-Closure** (dieser Slice trägt `Welle: welle-15`).
 
 ## 3. Plan (vor Code)
 
@@ -146,12 +146,34 @@ dasteht.
 - Der Feed-Container könnte beim Compose-Start versuchen, sich mit NATS
   zu verbinden, bevor der NATS-Server bereit ist (dieselbe Klasse
   Startreihenfolge-Risiko wie bei PostgreSQL, dort über einen
-  Healthcheck gelöst, `compose.yaml`). **Ausgang:** <bei Closure
-  einzutragen>
+  Healthcheck gelöst, `compose.yaml`). **Ausgang: entfallen** — NATS-
+  Service trägt einen eigenen Healthcheck (`-m 8222`, `/healthz`),
+  `depends_on: service_healthy`; real bestätigt über die Compose-Log-
+  Reihenfolge (`cdc-test-nats … Healthy` vor `cdc-test-feed Starting`) in
+  mehreren `make test-integration`-Läufen (Implementer, Reviewer,
+  Verifier je eigenständig).
 - Ein Test-Subscriber, der erst NACH der Change abonniert, verpasst das
   Fire-and-Forget-Signal strukturell (kein Nachliefern bei Core NATS,
   `ADR-0055`) — der Testablauf muss die Subscription real vor dem
-  Erfassungs-Ereignis aufbauen. **Ausgang:** <bei Closure einzutragen>
+  Erfassungs-Ereignis aufbauen. **Ausgang: entfallen** — `natssub`
+  bestätigt die Subscription server-seitig (`conn.Flush()`) und meldet
+  erst danach `READY`; der Testablauf pollt auf diese Zeile, bevor er
+  die auslösende Change einfügt — real belegt (drei unabhängige
+  Repro-Läufe: Implementer, Reviewer, Verifier).
+- **Neu während der Implementierung entdeckt (nicht vorab benannt):**
+  [ADR-0056](../../adr/0056-nats-tabellen-granulares-subjekt.md) landete
+  parallel zu diesem Slice und korrigiert das Subjekt-Schema auf
+  `cdc.changes.<source_id>.<schema>.<tabelle>` — `slice-053`s eigener
+  Diff konstruiert selbst kein Subjekt (das passiert ausschließlich in
+  `natsnotify`, `slice-052`, `done/`) und ist damit nicht `ADR-0056`-
+  widersprüchlich, aber der von diesem Slice gebaute Testbeleg
+  (`tools/harness/natssub`, `run-integration-tests.sh`) sowie der
+  zugrunde liegende Adapter nutzen noch das alte, von `ADR-0056`
+  überholte Schema — unabhängig von Reviewer und Verifier bestätigt
+  (`docs/reviews/review-slice-053.md`, `docs/reviews/verify-slice-053.md`).
+  **Ausgang: eingetreten → `slice-058`** (Folge-Slice, hebt
+  `ChangeNotificationPort`/`natsnotify`/`CaptureService` sowie diesen
+  Testbeleg auf `ADR-0056`).
 
 ## 7. Closure-Notiz
 
@@ -170,18 +192,35 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Healthcheck-Ansatz für den NATS-Service
+  (`-m 8222`/`/healthz`, `depends_on: service_healthy`) übertrug sich
+  direkt vom etablierten PostgreSQL-Muster in `compose.yaml`. Das
+  Subscribe-vor-Change-Muster im Testbeleg (`natssub` meldet `READY`
+  erst nach server-seitig bestätigter Subscription über `conn.Flush()`)
+  erwies sich als robust — kein Flake über mehrere Repro-Läufe (Implementer,
+  Reviewer, Verifier je unabhängig).
+- **Was ging anders als geplant:** Während der Implementierung landete
+  [ADR-0056](../../adr/0056-nats-tabellen-granulares-subjekt.md) parallel
+  auf `main` und korrigierte das Subjekt-Schema — eine externe
+  Architekturentscheidung, die während eines laufenden Implementer-Zugs
+  eintrat, nicht durch diesen Slice ausgelöst. Der Implementer hat das
+  korrekt erkannt und nicht selbst behoben (Modul 8: kein stiller
+  ADR-Widerspruch); Reviewer und Verifier haben unabhängig bestätigt,
+  dass `slice-053`s eigener Diff keine Subjekt-Konstruktion enthält und
+  deshalb selbst nicht `ADR-0056`-widersprüchlich ist — die Korrektur
+  gehört strukturell zu `slice-052`s Nachfolgearbeit (`slice-058`).
+- **Steering-Loop-Eintrag:** keiner — kein wiederkehrendes Muster, siehe
+  Beobachtungs-Register-Zeile unten.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — der `ADR-0056`-Drift ist ein Timing-Einzelfall (siehe §6),
+  keine wiederkehrende Verstoßklasse.
+- **Folge-Slices:** `slice-058` (`ChangeNotificationPort`/`natsnotify`/
+  `CaptureService` und Testbeleg auf `ADR-0056` heben) — ist eine Datei
+  in `open/`.
+- **Risiken aus §6:** zwei mit Ausgang *entfallen*, ein neu entdecktes
+  mit Ausgang *eingetreten → `slice-058`* — siehe §6.
+- **Drei Paarungen:** verschoben auf `welle-15`-Closure (dieser Slice
+  trägt `Welle: welle-15`, siehe DoD-Item).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
