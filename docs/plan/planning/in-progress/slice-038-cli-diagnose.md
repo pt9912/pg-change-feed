@@ -171,11 +171,11 @@ geplant, scannt der Consumer-Zeilen-Loop jetzt über `*float64` und gibt in
 diesem Fall „unbekannt (Quelle trug noch nie eine Transaktion)" statt eines
 irreführenden Rückstands aus. Dieselbe defensive Formulierung („nur
 Consumer mit mindestens einer bestätigten Position") schließt zugleich
-Risiko 1 aus §6: ein nie bestätigender Consumer erscheint gar nicht erst,
+Risiko 2 aus §6: ein nie bestätigender Consumer erscheint gar nicht erst,
 und der Text sagt das ausdrücklich, statt sein Fehlen als „kein Rückstand"
 lesbar zu lassen.
 
-**Risiko 2 aus §6 (realer Fehlerzustand im laufenden Container):**
+**Risiko 1 aus §6 (realer Fehlerzustand im laufenden Container):**
 `reportFault` (`internal/bootstrap/wiring.go`) schreibt `error_class` nur
 unmittelbar vor `os.Exit` — jeder von `Run()` klassifizierte Fehler beendet
 den Prozess, `restart: "no"` hält den Container danach beendet stehen; ein
@@ -329,10 +329,18 @@ Repo-weite Default-Sub-Area `*`/`PGC`.
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen.
 Treffer für `PGC`: `BEO-PGC/verwaltung-keine-sql-administration` (0×,
 benannt nicht gezählt — dieser Slice liefert den dritten und letzten
-Baustein der Auflösung, siehe `welle-12` §3 Closure-Trigger) und
+Baustein der Auflösung, siehe `welle-12` §3 Closure-Trigger),
 `BEO-PGC/github-actions-unverifizierbar-lokal` (1×, thematisch nicht
-berührt von diesem Slice — reine CDC-Fähigkeit, kein CI/CD-Bezug). Keiner
-der Treffer erreicht mit diesem Slice 3×.
+berührt von diesem Slice — reine CDC-Fähigkeit, kein CI/CD-Bezug) und
+`BEO-PGC/adapter-fehler-ausgang` (1× seit `slice-007` — thematisch
+einschlägig, nachträglich ergänzt nach `review-slice-038` F-3: der
+Plan-Nachzug oben bestätigt real dieselbe strukturelle Eigenschaft, dass
+jeder von `Run()` klassifizierte Fehler terminal ist, als Grund, warum §6
+Risiko 1 nur per SQL-Ersatzbeleg statt eines realen, prozess-ausgelösten
+Fehlerzustands testbar ist; Beleg `evidence/slice-038.md` nachgetragen,
+Zähler damit bei 2× — Schwelle 3× noch nicht erreicht, kein
+Steering-Loop-Eintrag fällig). Keiner der Treffer erreicht mit diesem
+Slice 3×.
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
