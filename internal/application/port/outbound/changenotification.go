@@ -17,20 +17,22 @@ import (
 var ErrNotify = stderrors.New("Fehlerklasse transient: Wecksignal fehlgeschlagen")
 
 // ChangeNotificationPort trägt das Wecksignal an verbundene Consumer
-// (`ARC-013`, `ADR-0055`): ein reines, verlustbehaftetes Trigger-Signal
-// ohne Change-Inhalt und ohne Positionsangabe (`SPEC-017`) — die
-// Nachvollziehbarkeit bleibt ausschließlich beim bestehenden
+// (`ARC-013`, `ADR-0055`, `ADR-0056`): ein reines, verlustbehaftetes
+// Trigger-Signal ohne Change-Inhalt und ohne Positionsangabe (`SPEC-017`)
+// — die Nachvollziehbarkeit bleibt ausschließlich beim bestehenden
 // Lesezugriffsweg (`ChangeStorePort`). Der Port ist optional: ohne
 // konfigurierte Verbindung bleibt die Fähigkeit deaktiviert
 // (`LH-FA-SST-007` Boundary). Die erste Driven-Implementierung ist der
 // `NatsChangeNotificationAdapter`.
 type ChangeNotificationPort interface {
-	// Notify sendet das Wecksignal für die genannte Quelle; die Rückkehr
-	// ohne Fehler meldet den abgeschickten Publish-Versuch, keine
-	// Zustellgarantie (`SPEC-017`, Core NATS Fire-and-Forget). Der Aufruf
-	// reiht sich als dritter, optionaler Schritt NACH `ACK Source` ein
-	// (`ADR-0055`): sein Fehler wird an der Aufrufstelle abgefangen und
-	// darf die bereits erfolgte Persistierung oder Bestätigung nicht
-	// beeinflussen.
-	Notify(ctx context.Context, sourceID string) error
+	// Notify sendet das Wecksignal für die genannte Quelle und Tabelle;
+	// Schema und Tabelle gehen getrennt ein, nicht vorkombiniert
+	// (`ADR-0056`) — der Adapter, nicht der Aufrufer, setzt sie zu einem
+	// eindeutigen Subjekt zusammen. Die Rückkehr ohne Fehler meldet den
+	// abgeschickten Publish-Versuch, keine Zustellgarantie (`SPEC-017`,
+	// Core NATS Fire-and-Forget). Der Aufruf reiht sich als dritter,
+	// optionaler Schritt NACH `ACK Source` ein (`ADR-0055`): sein Fehler
+	// wird an der Aufrufstelle abgefangen und darf die bereits erfolgte
+	// Persistierung oder Bestätigung nicht beeinflussen.
+	Notify(ctx context.Context, sourceID, schema, table string) error
 }

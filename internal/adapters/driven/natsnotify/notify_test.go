@@ -59,8 +59,52 @@ func TestNotifyRejectsEmptySourceID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	if err := adapter.Notify(context.Background(), ""); !stderrors.Is(err, outbound.ErrNotify) {
-		t.Fatalf("Notify(\"\"): %v", err)
+	if err := adapter.Notify(context.Background(), "", "public", "tbl"); !stderrors.Is(err, outbound.ErrNotify) {
+		t.Fatalf("Notify(\"\", ...): %v", err)
+	}
+}
+
+// TestNotifyRejectsEmptySchemaOrTable trägt dieselbe Grenze für Schema und
+// Tabelle: beide sind Pflichtangaben des vier-Ebenen-Subjekts (`ADR-0056`).
+func TestNotifyRejectsEmptySchemaOrTable(t *testing.T) {
+	adapter, err := natsnotify.New(newDisconnectedConn(t))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if err := adapter.Notify(context.Background(), "src-1", "", "tbl"); !stderrors.Is(err, outbound.ErrNotify) {
+		t.Fatalf("Notify(..., \"\", \"tbl\"): %v", err)
+	}
+	if err := adapter.Notify(context.Background(), "src-1", "public", ""); !stderrors.Is(err, outbound.ErrNotify) {
+		t.Fatalf("Notify(..., \"public\", \"\"): %v", err)
+	}
+}
+
+// TestNotifyRejectsReservedSubjectCharacters trägt die defensive
+// Validierung gegen NATS-reservierte Zeichen und Whitespace in Schema-
+// oder Tabellenname (`ADR-0056` Folgepflicht) — vor jedem Publish-Versuch,
+// ein nie-verbundener Conn genügt.
+func TestNotifyRejectsReservedSubjectCharacters(t *testing.T) {
+	adapter, err := natsnotify.New(newDisconnectedConn(t))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	cases := []struct {
+		name   string
+		schema string
+		table  string
+	}{
+		{"Punkt im Schema", "pub.lic", "tbl"},
+		{"Punkt in der Tabelle", "public", "tbl.name"},
+		{"Stern in der Tabelle", "public", "tbl*"},
+		{"Größer-als im Schema", "pub>lic", "tbl"},
+		{"Whitespace in der Tabelle", "public", "tbl name"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := adapter.Notify(context.Background(), "src-1", tc.schema, tc.table); !stderrors.Is(err, outbound.ErrNotify) {
+				t.Fatalf("Notify(%q, %q): %v", tc.schema, tc.table, err)
+			}
+		})
 	}
 }
 
@@ -76,16 +120,17 @@ func TestNotifyWrapsPublishFailureAsTransient(t *testing.T) {
 	}
 	conn.Close()
 
-	if err := adapter.Notify(context.Background(), "src-1"); !stderrors.Is(err, outbound.ErrNotify) {
+	if err := adapter.Notify(context.Background(), "src-1", "public", "tbl"); !stderrors.Is(err, outbound.ErrNotify) {
 		t.Fatalf("Notify nach Close: %v", err)
 	}
 }
 
 // TestNotifyPublishesEmptyPayloadOnSubject trägt den echten
-// Publish-Erfolgsbeleg gegen einen laufenden NATS-Server (`SPEC-017`):
-// Subjekt-Schema `cdc.changes.<source_id>`, leerer Payload — kein
-// Change-Inhalt, keine Positionsangabe. Läuft nur über `make test-notify`
-// (`CDC_NATS_TEST_URL` gesetzt); ohne Server übersprungen.
+// Publish-Erfolgsbeleg gegen einen laufenden NATS-Server (`SPEC-017`,
+// `ADR-0056`): Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>`,
+// leerer Payload — kein Change-Inhalt, keine Positionsangabe. Läuft nur
+// über `make test-notify` (`CDC_NATS_TEST_URL` gesetzt); ohne Server
+// übersprungen.
 func TestNotifyPublishesEmptyPayloadOnSubject(t *testing.T) {
 	url := os.Getenv("CDC_NATS_TEST_URL")
 	if url == "" {
@@ -110,7 +155,7 @@ func TestNotifyPublishesEmptyPayloadOnSubject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
-	if err := adapter.Notify(context.Background(), "src-1"); err != nil {
+	if err := adapter.Notify(context.Background(), "src-1", "public", "tbl"); err != nil {
 		t.Fatalf("Notify: %v", err)
 	}
 
@@ -118,8 +163,8 @@ func TestNotifyPublishesEmptyPayloadOnSubject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NextMsg: %v", err)
 	}
-	if msg.Subject != "cdc.changes.src-1" {
-		t.Fatalf("Subjekt = %q, wollen %q", msg.Subject, "cdc.changes.src-1")
+	if msg.Subject != "cdc.changes.src-1.public.tbl" {
+		t.Fatalf("Subjekt = %q, wollen %q", msg.Subject, "cdc.changes.src-1.public.tbl")
 	}
 	if len(msg.Data) != 0 {
 		t.Fatalf("Payload = %q, wollen leer (SPEC-017: kein Change-Inhalt)", msg.Data)

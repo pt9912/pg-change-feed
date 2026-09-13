@@ -11,16 +11,26 @@ package natsnotify
 import (
 	"context"
 	"fmt"
+	"strings"
+	"unicode"
 
 	"github.com/nats-io/nats.go"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 )
 
-// subjectPrefix trägt das Subjekt-Schema `cdc.changes.<source_id>`
-// (`SPEC-017`): ein Subjekt je Quelle, konsistent mit der übrigen
+// subjectPrefix trägt das Subjekt-Schema
+// `cdc.changes.<source_id>.<schema>.<table>` (`SPEC-017`, `ADR-0056`): ein
+// Subjekt je Tabelle einer Quelle, konsistent mit der übrigen
 // Quelle-Skopierung (Publication-/Slot-Namen).
 const subjectPrefix = "cdc.changes."
+
+// reservedSubjectChars trägt die NATS-Subjekt-Sonderzeichen, die ein
+// Schema- oder Tabellenname als eigenständiges Token nicht enthalten darf
+// (`ADR-0056` Folgepflicht): `.` trennt Subjekt-Ebenen, `*`/`>` sind
+// Wildcards. Ein Token mit einem dieser Zeichen würde das vier-Ebenen-
+// Subjekt unbeabsichtigt aufspalten oder eine Wildcard-Bedeutung annehmen.
+const reservedSubjectChars = ".*>"
 
 // Option konfiguriert den Adapter bei der Konstruktion (`New`); aktuell
 // trägt sie nur den optionalen `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) —
@@ -84,19 +94,45 @@ func notifyFailure(ctx context.Context, log outbound.LogPort, cause error) error
 	return fmt.Errorf("%w: %v", outbound.ErrNotify, cause)
 }
 
-// Notify sendet das Wecksignal auf `cdc.changes.<source_id>` mit leerem
-// Payload (`SPEC-017`): kein Change-Inhalt, keine Positionsangabe — jede
-// Nachricht bedeutet ausschließlich „lies erneut über den bestehenden
-// Zugriffsweg". Core NATS trägt keine Zustellgarantie (Fire-and-Forget);
-// die Rückkehr ohne Fehler meldet den abgeschickten Publish-Versuch.
-func (a *NatsChangeNotificationAdapter) Notify(ctx context.Context, sourceID string) error {
+// containsReservedSubjectToken meldet, ob `token` ein NATS-Subjekt-
+// Sonderzeichen oder Whitespace trägt (`ADR-0056` Folgepflicht) — die
+// defensive Validierung vor dem ersten Publish-Versuch.
+func containsReservedSubjectToken(token string) bool {
+	if strings.ContainsAny(token, reservedSubjectChars) {
+		return true
+	}
+	for _, r := range token {
+		if unicode.IsSpace(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// Notify sendet das Wecksignal auf
+// `cdc.changes.<source_id>.<schema>.<table>` mit leerem Payload
+// (`SPEC-017`, `ADR-0056`): kein Change-Inhalt, keine Positionsangabe —
+// jede Nachricht bedeutet ausschließlich „lies erneut über den
+// bestehenden Zugriffsweg". Core NATS trägt keine Zustellgarantie
+// (Fire-and-Forget); die Rückkehr ohne Fehler meldet den abgeschickten
+// Publish-Versuch. Schema/Tabelle mit NATS-reservierten Zeichen
+// (`.`, `*`, `>`) oder Whitespace werden vor dem Publish-Versuch
+// abgelehnt (`ADR-0056` Folgepflicht) — sonst spaltet ein Punkt im Token
+// das Subjekt unbeabsichtigt in weitere Ebenen auf.
+func (a *NatsChangeNotificationAdapter) Notify(ctx context.Context, sourceID, schema, table string) error {
 	if sourceID == "" {
 		return fmt.Errorf("%w: Notify ohne Quelle", outbound.ErrNotify)
 	}
-	subject := subjectPrefix + sourceID
+	if schema == "" || table == "" {
+		return fmt.Errorf("%w: Notify ohne Schema oder Tabelle", outbound.ErrNotify)
+	}
+	if containsReservedSubjectToken(schema) || containsReservedSubjectToken(table) {
+		return fmt.Errorf("%w: Schema %q oder Tabelle %q trägt ein NATS-reserviertes Zeichen (.,*,>) oder Whitespace", outbound.ErrNotify, schema, table)
+	}
+	subject := subjectPrefix + sourceID + "." + schema + "." + table
 	if err := a.conn.Publish(subject, nil); err != nil {
 		return notifyFailure(ctx, a.log, err)
 	}
-	a.log.Debug(ctx, "natsnotify: Signal gesendet", "source_id", sourceID, "subject", subject)
+	a.log.Debug(ctx, "natsnotify: Signal gesendet", "source_id", sourceID, "schema", schema, "table", table, "subject", subject)
 	return nil
 }
