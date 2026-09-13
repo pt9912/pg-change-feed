@@ -105,28 +105,6 @@ Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
 Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 **geändert**, nicht nur ergänzt.
 
-## 2. Definition of Done
-
-<!-- BEDIENHINWEIS: je Zeile ein pruefbares Kriterium. -->
-
-Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
-§Ziel-Form: Slice — **≤ 3 Liefer-Punkte**; mehr heißt: der Slice ist zu groß und
-gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
-Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
-
-- [ ] LH-FA-<NN> erfüllt, Test referenziert.
-- [ ] LH-QA-<NN> erfüllt, Messung dokumentiert.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
-
 ## 3. Plan (vor Code)
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
@@ -240,43 +218,3 @@ Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
 Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
 
 Entfällt — reines Renaming ohne neue Sub-Area-Berührung.
-
-## 8. Sub-Area-Prüfungen und Modus-Begründung
-
-Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
-§Ziel-Form: Sub-Area-Modus-Begründung — dort die **zwei vorgelagerten
-Schritte** (sie stehen in jedem Slice-Plan, unabhängig von Modus und
-Slice-Typ) und die **vier Pflichtkriterien** (Konventionen-Dichte ·
-Phase-Reife · Evidenz-/Diskrepanz-Risiko · Reconciliation-Aufwand), vier und
-nicht mehr.
-
-**Der Abschnitt selbst entfällt nie.** Die zwei vorgelagerten Prüfungen laufen
-in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Bedingt
-ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
-Hälften.
-
-**Vorgelagert — Sub-Area-Wahl prüfen:** <je berührter Sub-Area: erfüllt sie
-die Schwelle ≥ 2 von 3 Achsen? zu grobe vorher ausdifferenzieren>
-
-**Vorgelagert — offene Beobachtungen sichten:** <Register durchgegangen;
-je berührter Sub-Area der Treffer mit Zähler-Stand — oder "keine Treffer">
-
-**Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
-Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
-Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
-Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
-
-<!-- Block für jede berührte Sub-Area duplizieren. Format identisch
-mit dem im Baseline-Regelwerk §Ziel-Form: Sub-Area-Modus-Begründung
-abgedruckten Block. -->
-
-### Sub-Area: <Name>
-
-- **Modus:** GF | BF | Hybrid
-- **Konventionen-Dichte:** <Beleg aus `harness/conventions.md`,
-  Adaptions-Block oder Code>
-- **Phase-Reife:** Phase 0–5 <Begründung gegen die Phase × Modus-Matrix>
-- **Evidenz-/Diskrepanz-Risiko:** <bei BF/Hybrid: was kann die
-  Inventur sichtbar machen? bei GF: meist niedrig>
-- **Reconciliation-Aufwand:** <Slice-Schätzung;
-  Graduation-/Folge-Slice-Trigger>
