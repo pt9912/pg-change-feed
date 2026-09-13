@@ -105,9 +105,18 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       expliziten Fehler statt stiller Übernahme) real erfüllt — Test für
       den Fehlerpfad.
 - [x] `make gates` grün, `make test`/`make test-store` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-043.md`](../../../reviews/review-slice-043.md)
+      (0 HIGH, 2 MEDIUM), Fixrunde in Commit `193c47b` (F-1 real
+      behoben — Transaktions-Waisen-Bereinigung neu gebaut —, F-2
+      Semantik bewusst beibehalten und begründet), bestätigt in
+      [`docs/reviews/review-slice-043-fixrunde.md`](../../../reviews/review-slice-043-fixrunde.md)
+      (dabei neuer Nebenbefund F-3 LOW — falsche `ADR-0029`-Zitierung in
+      Prosa —, in Commit `3177b9c` behoben). Verifikation in
+      [`docs/reviews/verify-slice-043.md`](../../../reviews/verify-slice-043.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig).
 - [x] Doku-Update: falls ein öffentlicher Vertrag entsteht (neue
       Port-Methode ist intern, kein CLI/SQL-Vertrag in diesem Slice) —
       Implementer prüft und begründet im Plan-Nachzug. **Geprüft:** kein
@@ -115,11 +124,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `RunRetentionUseCase` sind interne Go-Schnittstellen ohne
       CLI-/SQL-Außenfläche; kein Doku-Update fällig (Details im
       Plan-Nachzug).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen; `BEO-PGC/retention-keine-loeschausfuehrung` bleibt bei 0× bis zur `welle-13`-Closure (analog zu `welle-12`s Slices).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-13` offen) — Prüfung läuft bei der `welle-13`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -339,13 +348,24 @@ dasteht.
 - Eine Löschoperation am `ChangeStorePort` könnte mit `ADR-0011`s
   Idempotenz-Pflicht (`PersistTransaction` ist deduplizierbar über die
   interne Transaktions-ID) kollidieren, wenn eine gelöschte Transaktion
-  erneut persistiert werden müsste (Crash-Replay) — **Ausgang:** <bei
-  Closure einzutragen>
+  erneut persistiert werden müsste (Crash-Replay) — **Ausgang: entfallen.**
+  Das Kollisionsfenster von `PersistTransaction`s Replay-Pflicht liegt
+  strukturell vor der Quell-ACK (ein Crash-Restart wiederholt eine
+  jüngst persistierte, noch nicht quellenseitig bestätigte Transaktion).
+  `AllowsDeletion` gibt eine Transaktion dagegen erst frei, wenn sie das
+  konfigurierte Mindestalter erreicht hat **und** alle betrachteten
+  Consumer-Positionen sie bereits bestätigt haben — beide Fenster
+  (Replay-nah vs. Retention-alt-und-bestätigt) überschneiden sich in
+  keinem realen Ablauf.
 - Es könnte bereits einen etablierten Lesezugriffsweg für „alle
   bestätigten Consumer-Positionen einer Quelle" geben (z. B. über
   `cdc.consumer_status`s Go-Pendant), oder er könnte fehlen und müsste
   neu gebaut werden — der Aufwand ist vor der Implementierung nicht
-  exakt bekannt. **Ausgang:** <bei Closure einzutragen>
+  exakt bekannt. **Ausgang: entfallen.** Real geprüft (Plan-Nachzug
+  Punkt 2): kein bestehender Port lieferte das; `ConsumerStatePort`
+  wurde um `Positions` erweitert, statt einen neuen Port anzulegen —
+  begrenzter, klar begründeter Aufwand, kein unerwartet größerer
+  Umbau nötig.
 
 ## 7. Closure-Notiz
 
@@ -364,18 +384,32 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer und der Reviewer trieben
+  beide dieselbe Disziplin real bis zum Ende: der Implementer prüfte in
+  der Fixrunde tatsächlich, ob eine verwaiste `cdc.transaction`-Zeile
+  irgendwo gelesen wird, statt das Risiko nur als „theoretisch" abzutun
+  — und fand einen echten, bereits ausgerollten Fehler in
+  `cdc.metrics` (`cdc_oldest_change_age_seconds`/`cdc_transactions_total`
+  hätten eine verwaiste Transaktion weiter mitgezählt). Der Reviewer
+  reproduzierte den Fix eigenständig gegen echtes PostgreSQL und fand
+  zusätzlich noch einen kleinen, eigenständigen Zitier-Fehler (F-3).
+- **Was ging anders als geplant:** Der Reviewer fand 2 MEDIUM (verwaiste
+  Transaktions-Zeilen, Consumer-Abwesenheits-Lesart gegen
+  `LH-FA-RET-004` ungeprüft) — beide in der Fixrunde behoben bzw.
+  bewusst und begründet beibehalten. Die Fixrunden-Bestätigung fand
+  einen kleinen Nebenbefund F-3 (falsche `ADR-0029`-Regel-Zitierung in
+  der Prosa des Plan-Nachzugs — die Consumer-Quellen-Bindung ist eine
+  Domänenmodell-Eigenschaft, keine `ADR-0029`-Regel), bei der Closure
+  direkt korrigiert.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3×.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen; `BEO-PGC/retention-keine-loeschausfuehrung` bleibt bei 0×
+  bis zur `welle-13`-Closure.
+- **Folge-Slices:** keine neuen — `slice-044`/`045`/`046` stehen bereits
+  in `welle-13` §4 als vorgesehene nächste Slices.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-13` offen) —
+  Prüfung läuft bei der `welle-13`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
