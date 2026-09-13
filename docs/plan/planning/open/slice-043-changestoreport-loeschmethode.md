@@ -27,7 +27,7 @@ nennt diesen Slice nie (Baseline-Regelwerk
 `grundlagen-referenz-richtung.md` §Referenz-Richtung (SDP),
 `grundlagen-source-precedence.md` §ID-Schema als Klammer).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
