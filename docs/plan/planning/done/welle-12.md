@@ -19,18 +19,18 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 `welle-11`s Eröffnungs-Recherche fand real, dass
-[`LH-FA-ADM-001`](../../../spec/lastenheft.md) (Lastenheft, Rang 1) SQL-
+[`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (Lastenheft, Rang 1) SQL-
 Funktionen für Aktivierung/Deaktivierung/Status/Consumer-Verwaltung
 verlangt, die real nicht existieren; dass
-[`LH-FA-CFG-002`](../../../spec/lastenheft.md) (Deaktivierung) keinen
+[`LH-FA-CFG-002`](../../../../spec/lastenheft.md) (Deaktivierung) keinen
 Live-Zugriffsweg hat; und dass
-[`LH-FA-SST-003`](../../../spec/lastenheft.md) (CLI) keinen Status-/
+[`LH-FA-SST-003`](../../../../spec/lastenheft.md) (CLI) keinen Status-/
 Diagnose-Befehl hat. Eine zweite Fork-Recherche fand zusätzlich, dass
-[`ADR-0046`](../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
+[`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
 die Frage, wie eine schreibende SQL-Funktion einen Go-Inbound-Port
 erreichen soll, bewusst offen gelassen hatte, und dass
 `Assembler.tables` ohne Live-Reload-Mechanismus ist. Ein Architect-Verdikt
-([`ADR-0050`](../adr/0050-sql-administration-antragsqueue-und-live-reload.md))
+([`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md))
 hat beide Fragen entschieden: eine Antrags-Queue mit `LISTEN`/`NOTIFY`,
 verarbeitet von einer neuen Administrations-Goroutine im laufenden
 Capture-Prozess, die den bestehenden Inbound Port aufruft und die
@@ -88,9 +88,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-036 | Antrags-Queue und schreibende SQL-Funktionen (`cdc.enable_table`, `cdc.disable_table`) | [`ADR-0050`](../adr/0050-sql-administration-antragsqueue-und-live-reload.md) |
-| slice-037 | Administrations-Goroutine, Assembler-Live-Reload und Boot-Wechsel auf `TableActivationPort.List` | [`ADR-0050`](../adr/0050-sql-administration-antragsqueue-und-live-reload.md) |
-| slice-038 | CLI-Diagnose-Befehl | [`LH-FA-SST-003`](../../../spec/lastenheft.md) |
+| slice-036 | Antrags-Queue und schreibende SQL-Funktionen (`cdc.enable_table`, `cdc.disable_table`) | [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md) |
+| slice-037 | Administrations-Goroutine, Assembler-Live-Reload und Boot-Wechsel auf `TableActivationPort.List` | [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md) |
+| slice-038 | CLI-Diagnose-Befehl | [`LH-FA-SST-003`](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 

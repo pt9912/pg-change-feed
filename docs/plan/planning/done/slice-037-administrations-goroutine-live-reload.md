@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-12`](../welle-12.md) — der Nachweis, dass eine über SQL
+**Welle:** [`welle-12`](welle-12.md) — der Nachweis, dass eine über SQL
 beantragte Aktivierung/Deaktivierung den **laufenden** Erfassungspfad real
 erreicht, ist `welle-12`s Closure-Trigger (§3); dieser Slice liefert genau
 das, nachdem `slice-036` die Antrags-Seite geliefert hat.
