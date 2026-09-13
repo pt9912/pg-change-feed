@@ -84,31 +84,34 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neuer, isolierter Testabschnitt in `run-integration-tests.sh` real
+- [x] Neuer, isolierter Testabschnitt in `run-integration-tests.sh` real
       ausgeführt: dedizierte, über die reguläre `cdc.enable_table`-Kette
       aktivierte Tabelle, `ALTER PUBLICATION ... DROP TABLE` direkt per
       `psql` (ohne `cdc.disable_table`), neue Zeile eingefügt, reales
       Ergebnis gegen `cdc.changes` dokumentiert (erscheint/erscheint
       nicht).
-- [ ] `LH-FA-CFG-002` real belegt in Bezug auf die Walsender-Timing-Frage
+- [x] `LH-FA-CFG-002` real belegt in Bezug auf die Walsender-Timing-Frage
       — Ergebnis eindeutig einer der beiden Auswertungen aus dem
       Architect-Verdikt zugeordnet.
-- [ ] Falls der Walsender real verzögert liefert: ein benannter
+- [x] Falls der Walsender real verzögert liefert: ein benannter
       Liefer-Punkt (Grace-Wait-Doku oder Klarstellung, dass die
       App-seitige Filterung die tragende Ebene ist) — falls PostgreSQL
       real sofort filtert: entfällt dieser Punkt ersatzlos (§1 „Keine
       Mindestzahl"-Prinzip sinngemäß auf DoD-Punkte übertragen; der
       Implementer trägt im Plan-Nachzug nach, welcher Fall eintrat).
-- [ ] `make gates` grün, `make test-integration` grün.
+      **Entfallen ersatzlos** — PostgreSQL filtert real sofort (siehe §3
+      Plan-Nachzug); kein Liefer-Punkt.
+- [x] `make gates` grün, `make test-integration` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: nur falls der Walsender real verzögert (siehe oben) —
-      Implementer prüft und begründet im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Doku-Update: nur falls der Walsender real verzögert (siehe oben) —
+      Implementer prüft und begründet im Plan-Nachzug. **Entfällt** — kein
+      Verzögerungsfall eingetreten, kein Doku-Update nötig.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -122,6 +125,36 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `tools/harness/run-integration-tests.sh` | update | neuer isolierter Walsender-Timing-Testabschnitt |
 | `docs/user/benutzerhandbuch.md` | update, falls Walsender real verzögert | Implementer entscheidet, siehe §2 |
+
+### Plan-Nachzug (nach Implementierung)
+
+- **Realer Ausgang:** PostgreSQL (18-alpine, `compose.yaml`) filtert eine
+  per `ALTER PUBLICATION ... DROP TABLE` entzogene Tabelle an einer
+  bereits laufenden Decoding-Session **sofort** aus — dreimal
+  hintereinander real mit `make test-integration` reproduziert
+  (identisches Ergebnis: die nach dem Entzug eingefügte Zeile `id=2`
+  erscheint in keinem der drei Läufe in `cdc.changes`). Damit trifft die
+  Verzögerungs-Annahme aus `BEO-PGC/walsender-wirksamkeit` für die
+  geprüfte Version nicht zu — Fall "PostgreSQL filtert sofort" aus dem
+  Architect-Verdikt. Kein Liefer-Punkt, kein Doku-Update nötig (§2).
+- **Neue Tabelle statt Wiederherstellung:** `feed_mvp_walsender_timing`
+  ist eine Wegwerf-Tabelle — kein späterer Abschnitt des Skripts liest
+  oder schreibt sie, deshalb entfällt der in Architect-Verdikt Punkt 6
+  genannte `ALTER PUBLICATION ... ADD TABLE`-Nachlauf ersatzlos (zweite
+  der beiden vom Verdikt genannten Optionen).
+- **Publication-Name** `pub_pgc_mvp` direkt im neuen Testabschnitt
+  benannt (kein Alias existiert im Skript bisher; `CDC_PUBLICATION` aus
+  `compose.yaml` trägt denselben Wert).
+- **Testabschnitt-Platzierung:** direkt nach dem bestehenden
+  „SQL-Administration Live-Reload-Beleg (disable)", vor dem
+  Retention-Beleg — beide Abschnitte laufen am selben, weiterhin
+  laufenden Feed-Container, ohne sich gegenseitig zu stören
+  (unterschiedliche Tabellen, unterschiedliche IDs-Wertebereiche).
+- **Auswertung ohne Abbruch bei beiden Ausgängen:** der neue
+  Testabschnitt beendet den Lauf nicht mit `exit 1`, wenn die Zeile
+  erscheint — das ist eine offene empirische Frage, kein bekannter
+  Fehlerzustand; beide Ausgänge werden nur real geloggt (siehe §1
+  Architect-Verdikt-Auswertung).
 
 ## 4. Trigger
 
@@ -161,16 +194,27 @@ dasteht.
   eintretendes Ereignis, sondern ein reales, begrenztes `sleep` — Muster
   Architect-Verdikt Punkt 4) — eine zu kurze Wartezeit könnte einen real
   verzögerten Walsender fälschlich als „sofort filternd" auswerten.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** Dieselbe Wartezeit (`sleep 3`) trägt bereits
+  den bestehenden „SQL-Administration Live-Reload-Beleg (disable)" als
+  ausreichend akzeptiert; drei unabhängige reale `make test-integration`-
+  Läufe lieferten dasselbe Ergebnis (keine Zeile). Strukturelle Grenze
+  bleibt bestehen (ein beliebig langsamer Walsender ist mit endlicher
+  Wartezeit nie ausschließbar) — dieselbe Grenze gilt bereits für den
+  bestehenden Beleg und ist damit kein neues, unadressiertes Risiko.
 - Isolation gegenüber dem bestehenden „SQL-Administration Live-Reload-
   Beleg (disable)" — beide Abschnitte dürfen sich nicht gegenseitig
   stören (eigene, dedizierte Tabelle nötig, Architect-Verdikt Punkt 1).
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** Dedizierte Tabelle `feed_mvp_walsender_timing`
+  (getrennt von `$ADMIN_TABLE`) implementiert und real verifiziert: beide
+  Abschnitte liefen in allen drei Testläufen fehlerfrei nacheinander,
+  keine gegenseitige Störung beobachtet.
 - Bestätigt sich real die Verzögerungs-Annahme (Walsender liefert trotz
   entzogener Publication weiter), könnte der benannte Liefer-Punkt
   (Grace-Wait/Doku-Klarstellung) den realen Umfang unterschätzen — dann
   greift die in §4 vorab benannte Rückführung `in-progress` → `next`.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** Die Verzögerungs-Annahme hat sich real nicht
+  bestätigt (PostgreSQL filtert sofort, siehe §3 Plan-Nachzug) — die
+  Rückführung greift nicht, der Kontingenzfall ist nicht eingetreten.
 
 ## 7. Closure-Notiz
 
@@ -189,18 +233,50 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der isolierte Testansatz aus dem
+  Architect-Verdikt ließ sich unverändert 1:1 umsetzen — dedizierte
+  Tabelle über die reguläre `cdc.enable_table`-Kette, direkter
+  `ALTER PUBLICATION ... DROP TABLE`-Aufruf per `psql` ohne
+  `cdc.disable_table`, reale Wartezeit, Auswertung gegen `cdc.changes`.
+  Drei unabhängige `make test-integration`-Läufe lieferten dasselbe,
+  eindeutige Ergebnis: die Zeile erscheint nicht — PostgreSQL filtert
+  eine entzogene Tabelle an einer bereits laufenden Decoding-Session
+  sofort aus.
+- **Was ging anders als geplant:** Nichts Wesentliches. Der im Slice-Plan
+  vorab benannte Kontingenzfall (Walsender liefert verzögert, Rückführung
+  `in-progress` → `next`) ist nicht eingetreten — der einfachere der
+  beiden im Architect-Verdikt beschriebenen Ausgänge traf real zu.
+- **Steering-Loop-Eintrag:** neuer Sensor — `run-integration-tests.sh`
+  trägt jetzt einen isolierten, von der App-seitigen
+  `Assembler`-Filterung entkoppelten Beleg für die
+  Publication-Entzug-Wirksamkeit am laufenden Walsender — liegt in
+  `tools/harness/run-integration-tests.sh` (Abschnitt
+  „Publication-Entzug-Wirksamkeit — isolierter Beleg"). Auslöser:
+  Architect-Verdikt
+  [`docs/reviews/architect-verdict-walsender-wirksamkeit.md`](../../../reviews/architect-verdict-walsender-wirksamkeit.md)
+  (Fork-Recherche identifizierte den bestehenden „SQL-Administration
+  Live-Reload-Beleg (disable)" als strukturell unzureichend für diese
+  Frage).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-051.md`
+  in `BEO-PGC/walsender-wirksamkeit/` ergänzt — Ausgang **gestrichen**
+  (Verzögerungs-Annahme real widerlegt, `state.md` aktualisiert; Zähler
+  abgeleitet 2×: `evidence/slice-008.md`, `evidence/slice-051.md`).
+  `BEO-PGC/test-isolation-geteilter-zustand` und
+  `BEO-PGC/test-runner-stiller-ausschluss` bleiben unverändert bei 1× —
+  dieser Slice hat gegen beide Risiken gearbeitet (dedizierte Tabelle,
+  reiner Shell/SQL-Abschnitt außerhalb jedes `-run`-Filtermusters), aber
+  keinen neuen Fund derselben Klasse ausgelöst.
+- **Folge-Slices:** keine — die Beobachtung ist mit diesem Slice
+  geschlossen (Ausgang gestrichen), kein offener Kontingenzfall.
+- **Risiken aus §6:** alle drei mit Ausgang **entfallen** — siehe §6.
+- **Drei Paarungen:** Repo ohne Wellen-Betrieb, hier geprüft (nach dem
+  `git mv`, siehe unten): (a) Anker-Paarung — kein `liegt in`-Feld
+  außerhalb des Steering-Loop-Eintrags oben; dessen Zielort
+  `tools/harness/run-integration-tests.sh` existiert und trägt den neuen
+  Abschnitt. (b) Folge-Slice-Paarung — keine Folge-Slices genannt,
+  nichts zu prüfen. (c) Register-Paarung — `BEO-PGC/walsender-wirksamkeit`
+  existiert als Verzeichnis, `evidence/` ist nicht leer
+  (`slice-008.md`, `slice-051.md`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

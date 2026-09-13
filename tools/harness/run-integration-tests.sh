@@ -175,6 +175,7 @@ ALTER TABLE public.feed_mvp_full REPLICA IDENTITY FULL;
 CREATE TABLE public.feed_mvp_idle (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_mvp_schema (id int PRIMARY KEY, name text, amount text);
 CREATE TABLE public.feed_mvp_sql_admin (id int PRIMARY KEY, name text);
+CREATE TABLE public.feed_mvp_walsender_timing (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-mvp', 'MVP-Quelle');
 SQL
 
@@ -984,6 +985,109 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — cdc.disable_table($ADMIN_TABLE) verarbeitet, Änderung id=2 nicht erfasst, Feed-Container läuft unverändert weiter"
+
+# Publication-Entzug-Wirksamkeit — isolierter Beleg (BEO-PGC/walsender-wirksamkeit,
+# LH-FA-CFG-002, ADR-0050, docs/reviews/architect-verdict-walsender-wirksamkeit.md):
+# Der SQL-Administration Live-Reload-Beleg (disable) oben prüft nur die
+# App-seitige Assembler-Filterung — RemoveBinding läuft synchron mit
+# cdc.disable_table und verwirft jede Änderung der Tabelle, unabhängig
+# davon, ob PostgreSQLs bereits laufende Decoding-Session die
+# WAL-Änderung selbst noch gesendet hätte. Dieser Abschnitt trennt beide
+# Ebenen: eine eigene, dedizierte Tabelle (nicht $ADMIN_TABLE) wird über
+# die reguläre cdc.enable_table-Antragskette aktiviert und gebunden;
+# danach wird die Publication-Mitgliedschaft NICHT über
+# cdc.disable_table entzogen, sondern direkt per
+# `ALTER PUBLICATION ... DROP TABLE` als $PG_USER gesetzt — es entsteht
+# keine Zeile in cdc.administration_request, die Administrations-
+# Goroutine wird nicht tätig, Assembler.RemoveBinding läuft für diese
+# Tabelle nicht. Die Assembler-Bindung bleibt damit über den gesamten
+# Testverlauf aktiv; jede Abwesenheit einer danach eingefügten Zeile in
+# cdc.changes ist deshalb ausschließlich durch PostgreSQLs eigene
+# Dekodierung erklärbar. Die Tabelle ist eine Wegwerf-Tabelle — kein
+# späterer Abschnitt dieses Skripts liest oder schreibt sie —, eine
+# Wiederherstellung der Publication-Mitgliedschaft entfällt deshalb.
+WALSENDER_TABLE=feed_mvp_walsender_timing
+
+walsender_enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.enable_table('src-mvp', 'public', '$WALSENDER_TABLE')")
+if [ -z "$walsender_enable_request_id" ]; then
+  echo "run-integration-tests: cdc.enable_table($WALSENDER_TABLE) lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+walsender_enable_status=""
+walsender_enable_applied=0
+for _ in $(seq 1 60); do
+  walsender_enable_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$walsender_enable_request_id'")
+  if [ "$walsender_enable_status" = "applied" ]; then
+    walsender_enable_applied=1
+    break
+  fi
+  if [ "$walsender_enable_status" = "failed" ]; then
+    error_message=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$walsender_enable_request_id'")
+    echo "run-integration-tests: cdc.enable_table($WALSENDER_TABLE)-Antrag $walsender_enable_request_id scheiterte: $error_message" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+if [ "$walsender_enable_applied" -ne 1 ]; then
+  echo "run-integration-tests: cdc.enable_table($WALSENDER_TABLE)-Antrag $walsender_enable_request_id wurde nicht innerhalb der Zeitspanne von der Administrations-Goroutine verarbeitet (status=${walsender_enable_status:-leer})" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WALSENDER_TABLE (id, name) VALUES (1, 'WalsenderTimingEnabled');
+SQL
+
+walsender_enabled_captured=0
+for _ in $(seq 1 120); do
+  found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '1'")
+  if [ "$found" = "1" ]; then
+    walsender_enabled_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$walsender_enabled_captured" -ne 1 ]; then
+  echo "run-integration-tests: über SQL aktivierte Tabelle $WALSENDER_TABLE — Änderung (id=1) wurde nicht vom laufenden Feed-Container erfasst (kein Neustart)" >&2
+  exit 1
+fi
+
+# Publication-Entzug DIREKT per DDL, ohne cdc.disable_table — siehe
+# Begründung oben. Die Assembler-Bindung dieser Tabelle bleibt dadurch
+# unverändert aktiv (activated == true).
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "ALTER PUBLICATION pub_pgc_mvp DROP TABLE public.$WALSENDER_TABLE;"
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WALSENDER_TABLE (id, name) VALUES (2, 'WalsenderTimingAfterDrop');
+SQL
+
+# Keine Erfassung ist kein Ereignis, das ein Poll beobachten kann — eine
+# reale, aber begrenzte Wartezeit (Muster wie beim SQL-Administration
+# Live-Reload-Beleg oben), bevor das reale Ergebnis gegen cdc.changes
+# ausgewertet wird. Beide Ausgänge sind ein gültiges, dokumentiertes
+# Testergebnis dieses isolierten Belegs (kein Abbruch in beiden Fällen):
+# Abwesenheit widerlegt die Verzögerungs-Annahme empirisch für die
+# geprüfte PostgreSQL-Version; Anwesenheit bestätigt sie real und macht
+# die App-seitige Assembler-Filterung zur tragenden Ebene.
+sleep 3
+walsender_after_drop_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$WALSENDER_TABLE' AND new_data->>'id' = '2'")
+if [ "$walsender_after_drop_captured" = "0" ]; then
+  echo "run-integration-tests: Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION ... DROP TABLE $WALSENDER_TABLE (Assembler-Bindung blieb aktiv) wurde Änderung id=2 NICHT erfasst: PostgreSQLs bereits laufende Decoding-Session filtert eine entzogene Tabelle real sofort aus (BEO-PGC/walsender-wirksamkeit widerlegt)"
+else
+  echo "run-integration-tests: Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION ... DROP TABLE $WALSENDER_TABLE (Assembler-Bindung blieb aktiv) wurde Änderung id=2 DENNOCH erfasst (Anzahl: $walsender_after_drop_captured): PostgreSQLs Walsender liefert für eine bereits laufende Session real verzögert weiter (BEO-PGC/walsender-wirksamkeit bestätigt) — die App-seitige Assembler-Filterung ist die tragende Ebene"
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Publication-Entzug-Wirksamkeit-Beleg nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
 
 # Retention-Beleg (LH-FA-RET-002…004, ADR-0014): der Hintergrundzug
 # runRetentionCleanup ruft RunRetentionUseCase periodisch real auf
