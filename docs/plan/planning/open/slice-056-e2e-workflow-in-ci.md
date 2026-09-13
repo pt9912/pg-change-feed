@@ -22,7 +22,7 @@ Design).
 **Berührte Spec-Stellen:** — (reine CI-Infrastruktur, keine Spec-Stelle
 berührt).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
