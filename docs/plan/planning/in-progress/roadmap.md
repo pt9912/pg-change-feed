@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-14 — Performance-Benchmarks & Test-Coverage-Gate](../welle-14.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -49,8 +51,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Performance-Benchmarks & Test-Coverage-Gate | `slice-047` liegt in `done/` | Noch nicht geschnitten — (a) Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail); (b) Go-Test-Coverage-Gate (`go test -coverprofile`, Schwelle 80 % — Modul 13 „Schwellen sind ADR-pflichtig", eigene ADR nötig) ohne Suppression-Möglichkeit ohne zentral dokumentierte Ausnahme (Muster: `/Development/KI/ai-harness-init/.golangci.yml` `exclusions.rules` mit `Why:`-Begründung statt Inline-`//nolint`); füllt dabei `AGENTS.md` §3.2 (Suppression-Verbot) aus, das in diesem Repo noch der unausgefüllte Template-Platzhalter ist | L |
-| Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Performance-Benchmarks) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
+| Publication-Entzug-Wirksamkeit am laufenden Stream | `welle-14` liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
 
 ## Meilensteine
@@ -96,8 +97,8 @@ flowchart LR
     W10[welle-11: E2E-Abdeckung — Verwaltung & Observability]
     W10B[welle-12: Verwaltungsfunktionen — SQL-Administration und CLI-Diagnose]
     W11[welle-13: Retention-Löschausführung]
-    S047[wellenlos: slice-047 Diagnose-CLI-Retention-Sichtbarkeit]
-    W13[geplant: Performance-Benchmarks & Test-Coverage-Gate]
+    S047[wellenlos: slice-047/048 Retention-CLI-Sichtbarkeit und kombinierter E2E-Rundlauf]
+    W13[welle-14: Performance-Benchmarks & Test-Coverage-Gate]
     W14[geplant: Publication-Entzug-Wirksamkeit]
     W15[geplant: LH-FA-SST-007 NATS-Change-Notification]
 
@@ -148,3 +149,4 @@ zweites Closure-Log, und zwei Logs driften.
 | 2026-09-13 | „Retention-Löschausführung" als `welle-13` eröffnet (verlässt *Nächste Wellen*, Zeiger unter *Offene Wellen*); „E2E-Abdeckung — Retention"s Trigger von „Vorherige Welle (Retention-Löschausführung) liegt in `done/`" auf „`welle-13` liegt in `done/`" präzisiert. | `welle-12` liegt in `done/`, Architect-Verdikt zur Löschausführung liegt vor (`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`) — Eröffnungs-Trigger erfüllt. |
 | 2026-09-13 | „E2E-Abdeckung — Retention" aus *Nächste Wellen* entfernt — kein eigener Welle-Schnitt mehr, sondern der wellenlose `slice-047` (Diagnose-CLI-Erweiterung für Retention-Sichtbarkeit); „Performance-Benchmarks & Test-Coverage-Gate"s Trigger von „Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/`" auf „`slice-047` liegt in `done/`" umgehängt. | Eröffnungs-Recherche (Fork) fand real: Die SQL-View-Black-Box-Ebene für Retention ist bereits vollständig geliefert (`slice-045`/`046` selbst, kein Go-Domain-Import); nur die `diagnose`-CLI-Sichtbarkeit fehlt real — ein einzelner Slice ohne Closure-Bedingung jenseits seiner eigenen DoD trägt laut Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht keine eigene Welle. |
 | 2026-09-13 | Header-Absatz „E2E-Abdeckungsprogramm" (Nutzerentscheidung 2026-09-12, ursprünglich vier Wellen: `welle-9`, `welle-11`, `welle-13`, „E2E-Abdeckung — Retention") aus *Nächste Wellen* entfernt — er stand fälschlich über den drei völlig unabhängigen Folgezeilen (Performance-Benchmarks, Publication-Entzug, NATS), nachdem die vorherige Korrektur seine letzte zugehörige Tabellenzeile entfernt hatte, ohne den darüberstehenden Programm-Header mitzuziehen. Das Programm selbst ist damit vollständig abgeschlossen: drei seiner vier Wellen liegen in `done/` (`welle-9`, `welle-11`, `welle-13`), die vierte wurde wie oben beschrieben als wellenloser `slice-047`/`048` statt als eigene Welle realisiert. | Nutzerfrage („warum steht das in roadmap.md?") deckte real auf, dass der Header nach der vorherigen Zeilen-Entfernung verwaist stehen geblieben war. |
+| 2026-09-13 | „Performance-Benchmarks & Test-Coverage-Gate" als `welle-14` eröffnet (verlässt *Nächste Wellen*, Zeiger unter *Offene Wellen*); „Publication-Entzug-Wirksamkeit"s Trigger von „Vorherige Welle (Performance-Benchmarks) liegt in `done/`" auf „`welle-14` liegt in `done/`" präzisiert. | `slice-047` liegt in `done/`, Architect-Verdikt zu Scope/Schwelle/Suppression liegt vor ([ADR-0054](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)) — Eröffnungs-Trigger erfüllt; zwei unabhängige Slices geschnitten (`slice-049` Coverage-Gate, `slice-050` Benchmark-Infrastruktur). |
