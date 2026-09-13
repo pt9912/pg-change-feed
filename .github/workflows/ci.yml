@@ -1,0 +1,58 @@
+name: ci
+
+# PR-/Push-CI (ADR-0051 Entscheidung 2): laeuft auf jeden Pull Request und
+# jeden Branch-Push. Tag-Pushes sind ausgenommen (`tags-ignore: ['**']`) —
+# sie loesen ausschliesslich den (noch nicht existierenden) Release-Workflow
+# aus, kein Doppellauf.
+#
+# Ruft ausschliesslich bestehende `make`-Targets auf (AGENTS.md §3.1,
+# Docker-only): `make gates` deckt baseline-verify, docs-check, a-check und
+# commit-traceability ab (harness/README.md §Sensors), `make test` ergaenzt
+# den Race-Detector-Unit-Test-Lauf (kein Gate, ADR-0030). Kein Workflow-
+# Schritt enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
+# dupliziert.
+#
+# `make test` laeuft mit `--network none` gegen einen vorab befuellten
+# Docker-Volume-Modulcache — `make mod-download` laedt ihn (braucht Netz)
+# und laeuft deshalb vor `make test`.
+#
+# Commit-Traceability (ADR-0045) prueft per Default die letzten fuenf
+# Commits (`HEAD~5..HEAD`); `fetch-depth: 0` haelt dafuer die volle
+# Commit-Historie vor — ein flacher Checkout (Default-Tiefe 1) liesse
+# `HEAD~5` ins Leere greifen.
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  ci:
+    name: gates + test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Gates (baseline-verify, docs-check, a-check, commit-traceability)
+        run: make gates
+
+      - name: Go-Module in den Volume-Cache laden
+        run: make mod-download
+
+      - name: Unit-Tests mit Race-Detector
+        run: make test

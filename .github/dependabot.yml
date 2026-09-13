@@ -1,0 +1,35 @@
+# Dependabot deckt zwei Oekosysteme ab (ADR-0051 Entscheidung 9): `gomod`
+# und `github-actions`, wöchentlich. Der `commit-message.prefix` `[ADR-0051]`
+# ist der ehrliche Anker fuer die daraus entstehenden Commits — ohne ihn
+# erfuellten Dependabot-Commit-Betreffe das Commit-Traceability-Standing-Gate
+# (ADR-0045, `harness/README.md` §Traceability rules) nicht.
+#
+# Bewusst NICHT aufgenommen — `docker`. Ein Digest-Hoist der Basis-Images
+# bleibt ein bewusster Commit, kein Auto-Update (deckt sich mit der
+# bestehenden `make image-stale`-Disziplin dieses Repos). Ebenfalls nicht
+# aufgenommen: die uebrigen Pin-Achsen des Inventars (d-migrate, a-check,
+# d-check, PostgreSQL-Testcontainer, Kurs-Baseline) — sie leben nicht in
+# einem Manifest, das Dependabot liest, sondern im Makefile/den mk-Fragmenten
+# bzw. in `harness/conventions.md`.
+version: 2
+
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Berlin
+    commit-message:
+      prefix: "[ADR-0051]"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Berlin
+    commit-message:
+      prefix: "[ADR-0051]"

@@ -133,7 +133,12 @@ dorthin, sondern in seine ADR/Spec-Zeile/seinen Skriptkopf.
 | `make <messung>` | misst <…> gegen <Schwelle> | kein Gate, ADR-<NNNN> |
 | `make <vorschau>` | sagt, was <schreibender Lauf> täte; Ausgänge und Sperren in der verlinkten Datei | kein Gate |
 
-**Aktueller Lauf-Status:** CI-Badge bzw. lokal `make help` / `make gates`.
+**Aktueller Lauf-Status:** [![ci](https://github.com/pt9912/pg-change-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/pt9912/pg-change-feed/actions/workflows/ci.yml)
+bzw. lokal `make help` / `make gates`. Der Workflow
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) automatisiert
+diesen Gate-Lauf (plus `make test`) auf jeden Pull Request und Push — kein
+neues Gate, nur die Automatisierung des bestehenden
+([`ADR-0051`](../docs/plan/adr/0051-cicd-pipeline-github-actions.md)).
 **Rote Gates:** Begründung im verlinkten `CO-<NNN>` (siehe Bindung-Spalte), Modul 7.
 **Nicht behauptet** (geplant): `make image-cve` (CVE-Scan des gebauten
 Images, advisory) — die Aktivierungsbedingung ist seit slice-001 eingetreten

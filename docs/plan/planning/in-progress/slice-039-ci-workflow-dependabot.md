@@ -82,22 +82,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `.github/workflows/ci.yml` angelegt: `pull_request` + `push`
+- [x] `.github/workflows/ci.yml` angelegt: `pull_request` + `push`
       (`tags-ignore: ['**']`), `permissions: {}` auf Workflow-Ebene,
       `contents: read` auf Job-Ebene; ruft `make gates` und `make test`
       auf; Checkout-Action SHA-gepinnt mit Tag-Kommentar (`AGENTS.md`
       §3.8).
-- [ ] `.github/dependabot.yml` angelegt: `gomod` + `github-actions`,
+- [x] `.github/dependabot.yml` angelegt: `gomod` + `github-actions`,
       wöchentlich, `commit-message.prefix` `[ADR-0051]`, kein
       `docker`-Ecosystem.
-- [ ] Beide YAML-Dateien real syntaktisch valide (z. B. `yamllint`/
+- [x] Beide YAML-Dateien real syntaktisch valide (z. B. `yamllint`/
       `actionlint` im Toolchain-Container, falls verfügbar — sonst
       dokumentierte manuelle Prüfung im Plan-Nachzug).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors — kein neues Gate (CI
+- [x] Doku-Update: `harness/README.md` §Sensors — kein neues Gate (CI
       automatisiert nur bestehende `make gates`), aber ein Hinweis, dass
       PRs/Pushes jetzt automatisiert geprüft werden, gehört dorthin, falls
       die bestehende Tabellenform das zulässt; Implementer entscheidet und
@@ -120,6 +120,54 @@ Aussagen-Berührung steht hier gar nicht.
 | `.github/workflows/ci.yml` | neu | PR-/Push-CI: `make gates` + `make test` |
 | `.github/dependabot.yml` | neu | `gomod` + `github-actions`, wöchentlich |
 | `harness/README.md` | update | Hinweis auf automatisierte CI, falls sinnvoll |
+
+### Plan-Nachzug (Implementer, nach Umsetzung)
+
+- **`make mod-download` als zusätzlicher Schritt vor `make test`.**
+  `make test` läuft mit `--network none` gegen den Docker-Volume-
+  Modulcache (Makefile-Kommentar „Vorbereitung: `make mod-download`");
+  ohne den vorgeschalteten Lauf bricht `go test -race` auf einem frischen
+  CI-Runner ohne befüllten Cache ab. Kein zusätzlicher Liefer-Punkt — reine
+  Voraussetzung, damit das DoD-Item „ruft `make test` auf" real
+  funktioniert, kein neues Artefakt und keine neue Fähigkeit.
+- **`fetch-depth: 0` beim Checkout.** `make gates` schließt
+  `commit-traceability` ein, das per Default gegen `HEAD~5..HEAD` prüft
+  (`ADR-0045`). Der GitHub-Actions-Default-Checkout ist flach
+  (`fetch-depth: 1`) und ließe `HEAD~5` bei jedem PR/Push mit weniger als
+  sechs erreichbaren Commits ins Leere greifen bzw. dauerhaft mit nur
+  einem Commit im Fenster laufen. Übernommen aus derselben Begründung wie
+  im gelesenen `d-check`-Vorbild.
+- **YAML-Realprüfung — vier unabhängige Belege statt nur `yamllint`:**
+  (1) `python3 -c "import yaml; yaml.safe_load(...)"` für beide Dateien —
+  strukturell parsebar; (2) `yamllint` (Host-Toolchain vorhanden, kein
+  Docker-Image mit `yamllint` im Repo verankert) — sauber bis auf eine
+  Kommentar-Abstand-Warnung, behoben; (3) `actionlint` (`rhysd/actionlint`,
+  Docker-Pull) gegen `ci.yml` — exit 0, keine Befunde, GitHub-Actions-
+  Workflow-Semantik (nicht nur YAML-Syntax) geprüft; (4) `jsonschema`
+  gegen die offiziellen SchemaStore-Schemata (`dependabot-2.0.json` für
+  `dependabot.yml` — **schema-valid**; `github-workflow.json` für
+  `ci.yml` — ein einzelner Fehlschlag ist eine bekannte PyYAML-1.1-
+  Eigenheit: `on:` wird von `yaml.safe_load` als Bool-Key `True` geparst
+  („Norway Problem"), nicht vom Schema-Validator noch von GitHub selbst
+  so gelesen; `actionlint` (echter GHA-Parser) bestätigt derweil die
+  Gültigkeit ohne diesen Artefakt). Keine dieser vier Prüfungen lief im
+  Toolchain-Container (kein `yamllint`/`actionlint`-Image im Repo
+  verankert) — alle vier liefen host-seitig bzw. via Docker-Pull eines
+  externen Images; das ist dokumentierte manuelle/host-Prüfung im Sinne
+  des DoD-Items, kein Repo-Sensor.
+- **`harness/README.md` §„Aktueller Lauf-Status"** statt einer neuen
+  Zeile in der Sensors-Tabelle: Die Zeile referenzierte bereits vor diesem
+  Slice ein „CI-Badge" als Platzhalter, ohne dass ein Workflow existierte.
+  Ein echter Badge-Link plus ein Satz, dass `ci.yml` `make gates`
+  (unverändert) und `make test` automatisiert, macht diese bereits
+  bestehende Zusage wahr, statt eine neue Sensors-Zeile für etwas
+  einzuführen, das kein neues Gate ist (`ADR-0051`, DoD-Item 6 —
+  Implementer-Entscheidung: **ja, aber an der Lauf-Status-Zeile, nicht an
+  der Tabelle**).
+- **Kein GitHub-Workflow-Lauf ausgelöst.** Wie in §1/§6 vorgesehen bleibt
+  die Verifikation auf die vier oben genannten statischen Prüfungen
+  beschränkt; ein echter Lauf gegen GitHub Actions ist Sache des Nutzers
+  nach dem Merge.
 
 ## 4. Trigger
 
