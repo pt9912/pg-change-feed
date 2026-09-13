@@ -88,11 +88,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md`-Beispiele, falls sie
       die alten Namen zeigen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Neu angelegt: `BEO-PGC/test-integration-retention-timing-flake/` (1×, `slice-057`).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Geprüft** (wellenlos, kein Wellen-Betrieb): Anker — kein Steering-Loop-Eintrag mit `liegt in` in diesem Slice, nichts zu prüfen. Folge-Slice — keiner genannt. Register — `test-integration-retention-timing-flake/` existiert mit nicht leerem `evidence/`.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -154,13 +154,21 @@ dasteht.
 - Ein übersehenes `mvp`-Literal (z. B. in einer SQL-Zeichenkette innerhalb
   eines Heredocs in `run-integration-tests.sh`, wo `grep` über
   Zeilenumbrüche hinweg leichter etwas übersieht) könnte den Testlauf
-  unbemerkt gegen einen inkonsistenten Namensmix laufen lassen. **Ausgang:**
-  <bei Closure einzutragen>
+  unbemerkt gegen einen inkonsistenten Namensmix laufen lassen. **Ausgang:
+  entfallen** — Implementer, Reviewer und Verifier haben je unabhängig
+  `grep -rniE "mvp"` über alle vier betroffenen Dateien ausgeführt und
+  identisch nur die zwei bewusst ausgenommenen Meilenstein-Referenzen
+  plus die neue Changelog-Zeile gefunden.
 - Falls `slice-054`/`055` (Boundary-/Negative-Belege für NATS) inzwischen
   bereits Text mit den alten `mvp`-Namen tragen (sie sind zum Zeitpunkt
   dieser Planung noch unangetastet in `open/`), müssen ihre Plan-Texte
   nachgezogen werden, bevor sie aktiviert werden — sonst driftet ihr Text
-  vom tatsächlichen Namensstand. **Ausgang:** <bei Closure einzutragen>
+  vom tatsächlichen Namensstand. **Ausgang: entfallen** — `slice-054`/`055`
+  liefen bereits vollständig ab und liegen in `done/`, bevor dieser Slice
+  begann; ihre historischen §7-Closure-Notizen zitieren korrekt den zum
+  jeweiligen Zeitpunkt gültigen `mvp`-Namensstand und werden nicht
+  rückwirkend umgeschrieben (dieselbe Historien-Disziplin wie bei
+  Slice-Chronik — `git`/`done/` hält die Vergangenheit fest).
 
 ## 7. Closure-Notiz
 
@@ -179,18 +187,34 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die systematische `grep`-basierte
+  Fundstellen-Inventur (case-insensitiv, über alle vier Kandidatendateien)
+  fing zuverlässig auch Bezeichner ab, die nicht wörtlich in der
+  ursprünglichen Umbenennungs-Tabelle standen (`tbl-mvp-*`/`sv-mvp-*`,
+  `feed_mvp_sql_admin`, `feed_mvp_walsender_timing`, zehn `TestMVP*`-
+  Funktionsnamen, der Typ `mvpEnv`) — ein Plan-Nachzug in §3 dokumentierte
+  das transparent, statt es stillschweigend zu erledigen oder unvollständig
+  zu lassen. Reviewer und Verifier bestätigten unabhängig dasselbe
+  Null-Treffer-Ergebnis.
+- **Was ging anders als geplant:** Der ursprüngliche Slice-Plan trug einen
+  Planungsfehler aus einem früheren Bearbeitungszug dieser Session: §2 und
+  §8 waren jeweils doppelt vorhanden (einmal korrekt ausgefüllt, einmal als
+  unausgefüllte Vorlagen-Reste). Der Implementer fand und meldete das,
+  ohne es selbst zu beheben (außerhalb seines Mandats) — der Planner
+  behob es in einem eigenen Commit vor der Review-Übergabe. Zusätzlich
+  zeigte ein `make test-integration`-Lauf des Verifiers real einen
+  Flake (Exit 2 in der Retention-Lebenszyklus-Timing-Zusicherung,
+  `LH-FA-RET-004`), der durch Diff-Inspektion eindeutig nicht auf dieses
+  Slice zurückgeführt werden konnte (reines Renaming, keine
+  Zeitwert-/Assertion-Änderung) — als neue, erste Beobachtung registriert.
+- **Steering-Loop-Eintrag:** keiner — die Plan-Dublette war ein einmaliger
+  Planungsfehler dieser Session (kein wiederkehrendes Muster mit
+  eigenem Register-Eintrag), der Flake ist bei 1× (unter der Schwelle).
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/test-integration-retention-timing-flake/`
+  neu angelegt, Beleg `evidence/slice-057.md` — 1×, unter der Schwelle.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide mit Ausgang *entfallen* — siehe §6.
+- **Drei Paarungen:** wellenlos, hier geprüft — siehe DoD-Zeile.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
