@@ -26,7 +26,7 @@ Secret-Trennung, bindet die DSN-Ablehnung),
 Slice, siehe §1/§3 unten — bei Umsetzung entsteht dort eine neue `SPEC-<NNN>`-
 Stelle, die zum Zeitpunkt der Planung noch nicht existiert).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-13.
 
