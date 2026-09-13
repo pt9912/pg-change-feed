@@ -30,6 +30,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/nats-io/nats.go"
+
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsnotify"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
@@ -68,6 +71,17 @@ const (
 	// eine fehlende oder nicht erkannte Eingabe bricht die Verdrahtung
 	// nicht ab.
 	envLogLevel = "CDC_LOG_LEVEL"
+	// envNatsURL trägt die optionale NATS-Server-URL für das
+	// Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`): anders
+	// als die fünf Namen oben ist sie keine Start-Vorbedingung — ungesetzt
+	// bleibt das Feature vollständig deaktiviert, kein
+	// `ChangeNotificationPort` wird konstruiert und keine NATS-Verbindung
+	// aufgebaut (bestehendes Verhalten bit-identisch, `ADR-0055` Punkt 5).
+	// Ist sie gesetzt, ist eine erfolgreiche Verbindung dagegen eine
+	// explizite Vorbedingung dieses Laufs (`ErrConfiguration` bei
+	// Fehlschlag) — anders als `envLogLevel`, dessen Fehlerfall die
+	// Erfassung selbst nicht gefährdet.
+	envNatsURL = "CDC_NATS_URL"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -168,6 +182,10 @@ type Config struct {
 	// Operator-Vertrag, siehe `ConfigFromEnv`.
 	WALRetentionWarnBytes  int64
 	WALRetentionErrorBytes int64
+	// NatsURL trägt die optionale NATS-Server-URL des
+	// Change-Notification-Wecksignals (`envNatsURL`, `ADR-0055`); leer
+	// heißt Feature deaktiviert.
+	NatsURL string
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -206,6 +224,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	}
 	cfg.Tables = tables
 	cfg.LogLevel = parseLogLevel(getenv(envLogLevel))
+	cfg.NatsURL = getenv(envNatsURL)
 	return cfg, nil
 }
 
@@ -465,7 +484,31 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	if err != nil {
 		return err
 	}
-	if err := stream.BindCapture(capture.NewCaptureService(store, ack)); err != nil {
+
+	// Das Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`)
+	// bleibt vollständig deaktiviert, solange `envNatsURL` leer ist — kein
+	// Verbindungsversuch, kein `ChangeNotificationPort`. Ist die
+	// Umgebungsvariable gesetzt, ist die Verbindung eine explizite
+	// Vorbedingung dieses Laufs: anders als der Notify-Aufruf selbst später
+	// (best-effort nach ACK, `ADR-0055` Punkt 4) meldet ein
+	// Verbindungsfehler an dieser Stelle die Klasse `configuration`
+	// (`ErrConfiguration`) — ein Betreiber, der das Feature einschaltet,
+	// aber die Server-Adresse falsch trägt, soll das beim Start bemerken,
+	// nicht durch ein unauffällig ausbleibendes Wecksignal.
+	captureOpts := []capture.Option{capture.WithLog(log)}
+	if cfg.NatsURL != "" {
+		natsConn, err := nats.Connect(cfg.NatsURL)
+		if err != nil {
+			return fmt.Errorf("%w: %s (%s) fehlgeschlagen: %v", ErrConfiguration, envNatsURL, cfg.NatsURL, err)
+		}
+		defer natsConn.Close()
+		notify, err := natsnotify.New(natsConn, natsnotify.WithLog(log))
+		if err != nil {
+			return err
+		}
+		captureOpts = append(captureOpts, capture.WithChangeNotification(notify))
+	}
+	if err := stream.BindCapture(capture.NewCaptureService(store, ack, captureOpts...)); err != nil {
 		return err
 	}
 
