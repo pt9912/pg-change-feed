@@ -95,7 +95,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Siehe `docs/reviews/review-slice-048.md` — 0 HIGH, 1 MEDIUM (F-1,
-      ohne Reviewer→Implementer-Rückgabe-Pfeil), keine Fixrunde nötig.
+      DELETE-Reihenfolge unterminierte die Kausal-Aussage). F-1 wurde
+      entgegen der ursprünglichen Reviewer-Einschätzung doch über eine
+      Fixrunde behoben (Commit `668f2cd`), bestätigt in
+      `docs/reviews/review-slice-048-fixrunde.md`. Verifikation in
+      `docs/reviews/verify-slice-048.md` (DoD eigenständig nachgeprüft,
+      inkl. eigener Beobachtung der realen Log-Reihenfolge; keine
+      Rückführung nötig).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Aufbewahrung
       (Retention)" nennt den kombinierten Rundlauf als Testbeleg, falls
       das über den bereits dokumentierten Mechanismus hinausgeht
@@ -332,12 +338,20 @@ Backticks).
   "cdc.retention_blockers zeigt real keinen Blocker mehr … auch nach der
   bereits erfolgten realen Löschung".
 - **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
-- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
-  angefallen. Beide vorab gesichteten Treffer (`BEO-PGC/test-isolation-
-  geteilter-zustand`, `BEO-PGC/test-runner-stiller-ausschluss`) bleiben bei
-  1× — der erste ist mit diesem Slice *entfallen* (§6), nicht eingetreten;
-  der zweite betrifft neue Go-Testfunktionen und war für diesen rein
-  SQL/Shell-basierten Slice nicht einschlägig (§1 Ausschluss).
+- **Beobachtungs-Register (`../observations/`):** keine neue Beobachtung
+  angelegt — bewusstes Urteil, kein Auslassen. Beide vorab gesichteten
+  Treffer (`BEO-PGC/test-isolation-geteilter-zustand`,
+  `BEO-PGC/test-runner-stiller-ausschluss`) bleiben bei 1× — der erste ist
+  mit diesem Slice *entfallen* (§6), nicht eingetreten; der zweite betrifft
+  neue Go-Testfunktionen und war für diesen rein SQL/Shell-basierten Slice
+  nicht einschlägig (§1 Ausschluss). Reviewer-Finding F-1 (DELETE-
+  Reihenfolge unterminierte die Kausal-Aussage eines E2E-Belegs) selbst
+  registriert keine neue Beobachtung: Einzelfall innerhalb des regulären
+  Review→Fixrunde→Bestätigung-Zyklus (Modul 8), kein zweites Auftreten
+  derselben Klasse in dieser Session erkennbar — sollte diese
+  Finding-Klasse („Testbeleg-Reihenfolge verdeckt behauptete
+  Kausal-Unabhängigkeit") in einem künftigen Review erneut auftreten, ist
+  das der Moment, sie als eigene `BEO-PGC/`-Beobachtung anzulegen.
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** beide *entfallen* — siehe §6.
 - **Drei Paarungen:** Wellenlos — Prüfung nach dem `git mv` nach `done/`
