@@ -93,34 +93,58 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neue Administrations-Goroutine (`internal/bootstrap/wiring.go`,
+- [x] Neue Administrations-Goroutine (`internal/bootstrap/wiring.go`,
       Muster `runHeartbeat`/`runWALRetentionCheck`) verarbeitet reale
       `pending`-Anträge aus `cdc.administration_request`: ruft
       `EnableTableUseCase`/`DisableTableUseCase` auf, schreibt
-      `applied`/`failed` zurück.
-- [ ] `Assembler` bekommt eine neue, synchronisierte Methode, die eine
+      `applied`/`failed` zurück. Beleg: `runAdministration`/
+      `processAdministrationRequests`/`applyAdministrationRequest`
+      (`internal/bootstrap/wiring.go`), real gegen den Compose-Stack
+      geprüft (nächstes Item) und dreifach grün in `make test-integration`.
+- [x] `Assembler` bekommt eine neue, synchronisierte Methode, die eine
       `TableBinding` zur Laufzeit hinzufügt/entfernt; `a.tables`-Zugriff
-      aus zwei Goroutinen ist race-frei (`go test -race`).
-- [ ] `internal/bootstrap/wiring.go` baut `Assembler.tables` beim Start
+      aus zwei Goroutinen ist race-frei (`go test -race`). Beleg:
+      `Assembler.AddBinding`/`RemoveBinding` (`sync.RWMutex`,
+      `internal/adapters/driving/replication/mapper/mapper.go`),
+      `TestAssemblerLiveReloadIsRaceFree` (`mapper_test.go`) — real rot
+      gesehen ohne die Sperren (Mutation entfernt, `go test -race` meldete
+      die Data Race exakt an `lookupBinding`/`AddBinding`), danach wieder
+      grün mit den Sperren.
+- [x] `internal/bootstrap/wiring.go` baut `Assembler.tables` beim Start
       aus `cdc.source_table` (`TableActivationPort.List`); `CDC_TABLES`
-      bleibt Erstaktivierungs-Seed.
-- [ ] Real gegen den Compose-Stack belegt: `cdc.enable_table(...)` →
+      bleibt Erstaktivierungs-Seed. Beleg: `activatedTableBindings`
+      (`internal/bootstrap/wiring.go`), `receive.Config.Tables` liest jetzt
+      diesen Rückgabewert statt `cfg.Tables` direkt.
+- [x] Real gegen den Compose-Stack belegt: `cdc.enable_table(...)` →
       Goroutine verarbeitet → neu aktivierte Tabelle wird vom laufenden
       Prozess ohne Neustart erfasst. Derselbe Nachweis für
-      `cdc.disable_table(...)`.
-- [ ] `spec/architecture.md`s Sequenzdiagramm zu `LH-FA-CFG-001.a`
+      `cdc.disable_table(...)`. Beleg: `tools/harness/run-integration-tests.sh`
+      Abschnitt „SQL-Administration Live-Reload-Beleg" gegen
+      `feed_mvp_sql_admin` (bewusst nicht in `CDC_TABLES`) — dreifach grün
+      in `make test-integration`, Feed-Container läuft nach beiden
+      Anträgen unverändert weiter (kein `docker restart`).
+- [x] `spec/architecture.md`s Sequenzdiagramm zu `LH-FA-CFG-001.a`
       korrigiert: SQL-Pfad (asynchron, Antrag → Queue → Goroutine → Port)
       von CLI-Pfad (synchron, direkter Aufruf) getrennt (`ADR-0050`
-      Folgepflicht).
-- [ ] `make gates` grün, `make test` (Race-Detector) und
-      `make test-integration` dreimal in Folge grün.
+      Folgepflicht). Beleg: zwei Sequenzdiagramme unter `LH-FA-CFG-001.a`
+      (CLI/SQL), keine Wellen-/Slice-/ADR-Bezüge im Diagramm selbst
+      (Hard Rule 3.4).
+- [x] `make gates` grün, `make test` (Race-Detector) und
+      `make test-integration` dreimal in Folge grün. Beleg:
+      `make test` läuft jetzt mit `-race` über `TOOLCHAIN_RACE_IMAGE`
+      (Makefile-Plan-Nachzug, Debian-basiert wegen `gcc`); alle vier
+      Kommandos real ausgeführt, siehe Bericht.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
+- [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
       Implementer entscheidet und begründet im Plan-Nachzug (die
       Architektur-Sicht-Korrektur oben zählt bereits als eigenes
-      DoD-Item, nicht doppelt hier).
+      DoD-Item, nicht doppelt hier). Entscheidung: `harness/README.md`
+      §Werkzeuge aktualisiert (`make test`-Zeile: Race-Detector +
+      Debian-Image-Begründung; `make test-integration`-Zeile: neuer
+      Live-Reload-Beleg) — beide sind öffentliche Sensor-Beschreibungen,
+      deren Verhalten sich mit diesem Slice geändert hat.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -137,10 +161,17 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/bootstrap/wiring.go` | update | neue Administrations-Goroutine; Boot-Wechsel auf `TableActivationPort.List` |
-| `internal/adapters/driving/replication/mapper/mapper.go` | update | synchronisierte Methode für neue `TableBinding`-Einträge zur Laufzeit |
-| `internal/adapters/driven/postgresstorage/` | update | Lese-/Schreibzugriff auf `cdc.administration_request` (Antrag lesen, Ergebnis zurückschreiben) |
-| `spec/architecture.md` | update | Sequenzdiagramm zu `LH-FA-CFG-001.a`: SQL-Pfad von CLI-Pfad getrennt |
-| `test/integration/integration_test.go` oder `tools/harness/run-integration-tests.sh` | update | realer End-zu-End-Nachweis: SQL-Aktivierung → laufende Erfassung |
+| `internal/adapters/driving/replication/mapper/mapper.go` | update | `sync.RWMutex` + `AddBinding`/`RemoveBinding` für neue/entfallende `TableBinding`-Einträge zur Laufzeit |
+| `internal/adapters/driven/postgresstorage/administrationrequest.go` | neu | `AdministrationRequestAdapter` (Port-Implementierung) + `AdministrationListener` (`LISTEN`-Wecksignal, eigene Verbindung mit Reconnect) |
+| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | SQL-Texte der Antrags-Queue (`SelectPendingAdministrationRequests`, `UpdateAdministrationRequestApplied/Failed`) |
+| `internal/application/port/outbound/administrationrequest.go` | neu | `AdministrationRequestPort` (`ListPending`/`MarkApplied`/`MarkFailed`) |
+| `internal/domain/model/administrationrequest.go` | neu | `AdministrationRequest`, `AdministrationRequestID`, `AdministrationRequestKind` |
+| `internal/adapters/driving/replication/receive/receive.go` | update | `Stream.Assembler()`-Zugriffsmethode — die Administrations-Goroutine trägt die Bindung des laufenden Streams nach, kein zweiter Übersetzer |
+| `spec/architecture.md` | update | Sequenzdiagramm zu `LH-FA-CFG-001.a`: SQL-Pfad (asynchron) von CLI-Pfad (synchron) getrennt, zwei Diagramme statt eines |
+| `tools/harness/run-integration-tests.sh` | update | realer End-zu-End-Nachweis: `cdc.enable_table`/`cdc.disable_table` → Goroutine verarbeitet → laufender Feed-Container erfasst/stoppt ohne Neustart |
+| `Makefile` | update | `make test` läuft jetzt mit `-race` (`TOOLCHAIN_RACE_IMAGE`, Debian-basiert — der Race-Detector braucht `gcc`, das Alpine-Toolchain-Image trägt keinen) |
+| `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update | Adapter-/Listener-Tests (`ListPending`/`MarkApplied`/`MarkFailed`, `WaitForNotification`) — ergänzt die bereits vorhandenen Funktions-Tests aus `slice-036` |
+| `internal/adapters/driving/replication/mapper/mapper_test.go` | update | `AddBinding`/`RemoveBinding`-Tests + `TestAssemblerLiveReloadIsRaceFree` (`ADR-0050` Fitness Function) |
 
 ## 4. Trigger
 
