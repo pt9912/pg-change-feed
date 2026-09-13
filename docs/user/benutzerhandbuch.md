@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.10
+Version: 1.11
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-13
 
@@ -536,7 +536,7 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
 | `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
-| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>`, leerer Payload); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`) |
+| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload, `ADR-0056`); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`) |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
@@ -705,3 +705,4 @@ MIT — siehe `LICENSE`.
 | 1.8 | 2026-09-13 | Sichtbarkeit blockierender Consumer ergänzt (`LH-FA-RET-005`, slice-045): §4 neuer Abschnitt „Blockierende Consumer erkennen" (`cdc.retention_blockers`) |
 | 1.9 | 2026-09-13 | `cdc_storage_bytes`-Metrik ergänzt (`LH-FA-RET-006`, slice-046): §4 „Metriken lesen" nennt die neue `cdc.metrics`-Zeile |
 | 1.10 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`, slice-047): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
+| 1.11 | 2026-09-13 | `CDC_NATS_URL`-Zeile (§5) auf das tabellen-granulare Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>` korrigiert (`ADR-0056`, slice-058) |
