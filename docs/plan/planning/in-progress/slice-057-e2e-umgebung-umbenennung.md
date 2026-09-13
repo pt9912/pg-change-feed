@@ -83,7 +83,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make test-integration` läuft real vollständig durch und ist
       inhaltlich unverändert erfolgreich (derselbe Rundlauf, neue Namen).
 - [x] `make gates`, `make test` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-057.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md`-Beispiele, falls sie
