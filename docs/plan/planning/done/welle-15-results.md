@@ -208,3 +208,10 @@ Anker (Hash, Lauf, Zahl).
   `pipe-maskiert-make-exit-code`, `slice-chronik-in-code-kommentar`,
   `handbuch-versionshistorie-uebersprungen`) existieren mit nicht leerem
   `evidence/` — grün.
+
+## Archivierung
+
+Feststellung: das Repo führt **kein Archivierungs-Werkzeug**
+(`archiv.zip`-Target existiert nicht) — die Archivierungs-Bedingung ist in
+diesem Zug **nicht eingetreten**; alle fünf Slice-Dateien, ihre Review-/
+Verifier-Reports sowie dieser Welle-Plan bleiben vollständig in `done/`.
