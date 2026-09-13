@@ -70,25 +70,36 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `cdc.metrics` trägt eine neue `cdc_storage_bytes`-Zeile, real
+- [x] `cdc.metrics` trägt eine neue `cdc_storage_bytes`-Zeile, real
       gegen PostgreSQL getestet (ein numerischer Wert > 0 nach dem
       Einfügen von Testdaten).
-- [ ] `LH-FA-RET-006` real erfüllt: ein Integrationstest liest die neue
+      `TestMetricsViewCarriesStorageBytes`
+      (`internal/adapters/driven/postgresstorage/roles_test.go`), real
+      grün über `make test-store`, siehe Plan-Nachzug Punkt 1.
+- [x] `LH-FA-RET-006` real erfüllt: ein Integrationstest liest die neue
       Metrik über `cdc.metrics` (analog zum bestehenden
       `cdc_capture_lag`-Testmuster).
-- [ ] Bestätigt: `cdc_reader`s Grant-Fläche bleibt unverändert (kein
-      neuer direkter Grant außerhalb des View-`GRANT SELECT`).
-- [ ] `make gates` grün, `make test-integration` grün.
+      `TestMVPMetricsCarriesStorageBytes`
+      (`test/integration/integration_test.go`), real grün über
+      `make test-integration`, siehe Plan-Nachzug Punkt 2.
+- [x] Bestätigt: `cdc_reader`s Grant-Fläche bleibt unverändert (kein
+      neuer direkter Grant außerhalb des View-`GRANT SELECT`). Siehe
+      Plan-Nachzug Punkt 3 — `TestCdcReaderRoleReadsViewsNotBaseTables`
+      unverändert grün, kein neuer Grant in
+      `tools/schema/nacharbeit-roles.sql`.
+- [x] `make gates` grün, `make test-integration` grün. Beide real
+      ausgeführt (Ausgaben im Implementer-Bericht); zusätzlich
+      `make test-store` real grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` §„Metriken lesen"
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` §„Metriken lesen"
       nennt die neue Zeile.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-13` offen) — Prüfung läuft bei der `welle-13`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -102,6 +113,74 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/schema/nacharbeit-observability.sql` | update | neue `cdc_storage_bytes`-Zeile in `cdc.metrics` |
 | `test/integration/integration_test.go` | update | Testfall für die neue Metrik |
 | `docs/user/benutzerhandbuch.md` | update | neue Metrik dokumentiert |
+
+### Plan-Nachzug (nach Implementierung)
+
+Regeln dieser Sektion: Implementierungsentscheidungen, die über die Tabelle
+oben hinausgehen — Aggregation, Testansatz (zwei Testebenen statt einer) und
+die reale Bestätigung der unveränderten `cdc_reader`-Grant-Fläche.
+
+**1. Aggregation: einzelne Tabelle `cdc.change`, keine Summe mehrerer
+`cdc`-Tabellen.** `pg_relation_size('cdc.change')::numeric` als zusätzlicher
+`UNION ALL`-Zweig der bestehenden View, exakt wie im Ziel dieses Slice-Plans
+und im Architect-Verdikt
+([`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`](../../../reviews/architect-verdict-retention-loeschausfuehrung.md),
+Frage 2) besprochen. Keine Summe über `cdc.transaction`,
+`cdc.source_table`, `cdc.schema_version`, `cdc.consumer`,
+`cdc.consumer_position` gebildet: `cdc.change` trägt die Row Images als
+`jsonb` (`LH-FA-CAP-008`) und wächst mit jedem erfassten Change; die übrigen
+fünf Tabellen tragen ausschließlich Referenz-/Katalogdaten (Quelle,
+Tabellen-/Schema-Katalog, Transaktions-Kopf, Consumer-Zustand) mit fester
+oder linear zur Zahl der Quelltabellen/Consumer wachsender Zeilenzahl, nicht
+zum Erfassungsvolumen. Eine Summe hätte keinen zusätzlichen
+Informationsgewinn für den in `LH-FA-RET-006` benannten Zweck
+(„Kontrolle des Datenwachstums") geliefert, aber die Bedeutung der Kennzahl
+verwässert (ein Wachstum von `cdc.change` wäre neben dem konstanten Anteil
+der übrigen Tabellen schwerer erkennbar) und die Abfrage unnötig verbreitert.
+
+**2. Zwei Testebenen, kein Widerspruch zur Slice-Größe.** Die DoD zählt einen
+Liefer-Punkt „real gegen PostgreSQL getestet" — dieser Punkt ist über zwei
+Testfälle auf unterschiedlichen Testebenen belegt, nicht über zwei
+Liefer-Punkte:
+`TestMetricsViewCarriesStorageBytes`
+(`internal/adapters/driven/postgresstorage/roles_test.go`, `make test-store`)
+fügt eine vollständige Change-Zeile über direkte SQL-Inserts ein (Transaktion,
+Tabellen-/Schema-Referenz, Change) und prüft den numerischen Wert isoliert
+gegen eine frisch ausgerollte Instanz — dieselbe Testebene und dasselbe Muster
+wie das bestehende `TestMetricsViewCarriesConsumerLag` für `cdc_consumer_lag`.
+`TestMVPMetricsCarriesStorageBytes`
+(`test/integration/integration_test.go`, `make test-integration`) liest
+denselben Wert am verdrahteten Feed-Container nach einer realen
+CDC-Erfassung — dieselbe externe SQL-Lesezugriffsweg-Disziplin wie der
+bestehende `cdc_capture_lag`-Lasttest-Beleg
+(`tools/harness/run-integration-tests.sh`). Die neue Testfunktion wurde in
+das bestehende `-run`-Muster in `run-integration-tests.sh` aufgenommen
+(`BEO-PGC/test-runner-stiller-ausschluss`: eine Testfunktion, die in keinem
+`-run`-Muster auftaucht, liefe unter `make test-integration` dauerhaft und
+stillschweigend nie) — real bestätigt: `go test ./test/integration/...` mit
+gesetztem `-run` zeigt `TestMVPMetricsCarriesStorageBytes` explizit in der
+Ausgabe.
+
+**3. `cdc_reader`-Grant-Fläche real unverändert bestätigt.** Kein neuer
+Eintrag in `tools/schema/nacharbeit-roles.sql` — das bestehende
+`GRANT SELECT ON cdc.metrics TO cdc_reader;`
+(`tools/schema/nacharbeit-observability.sql`) trägt die neue Zeile bereits
+mit, weil sie ein zusätzlicher `UNION ALL`-Zweig derselben View ist, kein
+neues Objekt. Real bestätigt statt nur angenommen:
+`TestCdcReaderRoleReadsViewsNotBaseTables`
+(`internal/adapters/driven/postgresstorage/roles_test.go`) bleibt
+unverändert und lief real grün gegen die um `cdc_storage_bytes` erweiterte
+View — derselbe Testfall, der bereits vor diesem Slice `cdc_reader`s
+`SELECT`-Zugriff auf `cdc.metrics` insgesamt belegt (Zeilenzahl > 0). Eine
+isolierte Prüfung nur der neuen Zeile war nicht nötig: PostgreSQLs
+View-Owner-Semantik (Definer ohne `security_invoker`) kennt keine
+Zeilen-/Spalten-granulare Rechteprüfung innerhalb einer View — der Zugriff
+gilt für die View als Ganzes oder gar nicht. Der Architect-Verdikt
+(Frage 2) hatte das bereits vorab hergeleitet
+(`pg_relation_size()` ist eine reguläre, für `PUBLIC` ausführbare
+Systemfunktion ohne eigenes Privileg auf `cdc.change`); die reale Prüfung
+deckte keine bislang unbekannte PostgreSQL-Versions-/
+Berechtigungs-Eigenheit auf (§6, Risiko 2 — Ausgang: entfallen).
 
 ## 4. Trigger
 
@@ -140,11 +219,25 @@ dasteht.
   (`slice-043`/`044`) durch PostgreSQLs Tabellen-Bloat (gelöschte
   Tupel, kein automatisches `VACUUM FULL`) einen irreführend hohen Wert
   zeigen, der den tatsächlich freigegebenen Platz nicht widerspiegelt.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** `LH-FA-RET-006`s Akzeptanzkriterium verlangt
+  genau das Gegenteil einer „Bereinigung" des Werts: „Given wachsende
+  CDC-Daten, when der Verbrauch beobachtet wird, then ist er über die
+  Metriken ablesbar" (Happy Path) und „Given die Retention kann ein
+  Wachstum nicht begrenzen … then ist er erkennbar" (Boundary,
+  `spec/lastenheft.md`). Bloat aus verzögerter, durch einen
+  zurückhängenden Consumer blockierter Löschung (`LH-FA-RET-004`) ist
+  reales, noch nicht freigegebenes physisches Datenwachstum — genau der
+  Zustand, den dieser Boundary-Fall sichtbar verlangt. Ein Wert, der Bloat
+  herausrechnete, wäre die irreführende Variante, nicht die hier gebaute.
 - Der Architect-Verdikt zum View-Owner-Muster wurde vor der
   tatsächlichen Implementierung getroffen — eine reale Prüfung könnte
   eine bisher unbekannte PostgreSQL-Versions-/Berechtigungs-Eigenheit
-  aufdecken. **Ausgang:** <bei Closure einzutragen>
+  aufdecken. **Ausgang: entfallen.** Real durch
+  `TestCdcReaderRoleReadsViewsNotBaseTables`
+  (`internal/adapters/driven/postgresstorage/roles_test.go`) bestätigt,
+  unverändert grün gegen die um `cdc_storage_bytes` erweiterte View — kein
+  neuer Grant nötig, keine unbekannte Eigenheit aufgetreten
+  (Plan-Nachzug Punkt 3).
 
 ## 7. Closure-Notiz
 
@@ -163,18 +256,41 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die einzelne `UNION ALL`-Zeile über
+  `pg_relation_size('cdc.change')` hielt den Slice tatsächlich auf einen
+  Liefer-Punkt für die View selbst, ohne Rollen-/Grant-Änderung — der
+  Architect-Verdikt (Frage 2) traf real zu: `TestCdcReaderRoleReadsViewsNotBaseTables`
+  blieb unverändert grün, kein neuer Eintrag in
+  `tools/schema/nacharbeit-roles.sql` nötig. Die zwei Testebenen
+  (`make test-store` für den isolierten numerischen Beleg,
+  `make test-integration` für den End-zu-Ende-Beleg über den verdrahteten
+  Feed-Container) ließen sich beide direkt aus bereits etablierten Mustern
+  ableiten (`TestMetricsViewCarriesConsumerLag`,
+  `cdc_capture_lag`-Lasttest-Beleg) — kein neuer Testansatz nötig.
+- **Was ging anders als geplant:** Nichts Wesentliches — die Implementierung
+  folgte dem im Architect-Verdikt vorgezeichneten Weg ohne Abweichung. Eine
+  neue Testfunktion in `test/integration/integration_test.go` musste
+  zusätzlich in das bestehende `-run`-Filtermuster in
+  `tools/harness/run-integration-tests.sh` aufgenommen werden, sonst liefe
+  sie unter `make test-integration` nie (`BEO-PGC/test-runner-stiller-ausschluss`,
+  bereits bekannte, unter der Schwelle liegende Beobachtung) — real geprüft,
+  keine neue Instanz dieser Klasse.
+- **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen. `BEO-PGC/retention-keine-loeschausfuehrung` bleibt bei 0×
+  (analog zu `slice-043`/`044`/`045`) — mit diesem Slice sind alle vier in
+  der Beobachtung benannten Lücken (Löschausführung, Hintergrundjob,
+  Sichtbarkeit blockierender Consumer, `cdc_storage_bytes`-Metrik)
+  geliefert; der Ausgang selbst bleibt der `welle-13`-Closure vorbehalten
+  (Lese-Schritt, Modul 6). `BEO-PGC/test-runner-stiller-ausschluss` bleibt
+  bei 1× (kein neues Auftreten, siehe oben).
+- **Folge-Slices:** keine neuen — `welle-13` trägt keine weiteren Slices
+  über `slice-046` hinaus.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-13` offen) —
+  Prüfung läuft bei der `welle-13`-Closure. Kein `liegt in`-Feld in diesem
+  Slice (nichts verkörpert), also kein Anker-Paarungs-Gegenstand aus diesem
+  Slice selbst.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

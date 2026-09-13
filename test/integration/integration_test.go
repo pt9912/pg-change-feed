@@ -594,6 +594,34 @@ func TestMVPRetentionBlockersViewShowsFurthestBehindConsumer(t *testing.T) {
 	}
 }
 
+// TestMVPMetricsCarriesStorageBytes belegt `LH-FA-RET-006` (`SPEC-009`
+// `cdc_storage_bytes`) am verdrahteten Feed-Container: `cdc.metrics` trägt
+// nach einer realen CDC-Erfassung einen positiven Wert für die physische
+// Speichergröße von `cdc.change` — derselbe externe SQL-Lesezugriffsweg wie
+// der bestehende `cdc_capture_lag`-Beleg
+// (`tools/harness/run-integration-tests.sh`), hier gegen dieselbe View.
+func TestMVPMetricsCarriesStorageBytes(t *testing.T) {
+	env := newMVPEnv(t, "feed_mvp_full")
+	ctx := context.Background()
+
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (80, 'StorageBytesMetric')",
+	); err != nil {
+		t.Fatalf("Quelländerung: %v", err)
+	}
+	awaitChangesViewRows(t, env, "80", 1)
+
+	var storageBytes float64
+	if err := env.pool.QueryRow(ctx,
+		"SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'",
+	).Scan(&storageBytes); err != nil {
+		t.Fatalf("cdc_storage_bytes-Lesen: %v", err)
+	}
+	if storageBytes <= 0 {
+		t.Fatalf("cdc_storage_bytes = %v, wollen > 0 nach realer CDC-Erfassung", storageBytes)
+	}
+}
+
 // TestMVPActivationState liest den Aktivierungsstand am verdrahteten
 // Feed-Container über die Status- und Listen-Use-Cases (`LH-FA-CFG-003`,
 // `LH-FA-CFG-004`, `ADR-0028`): die aktivierte Feed-Tabelle meldet

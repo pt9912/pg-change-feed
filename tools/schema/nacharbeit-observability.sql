@@ -12,18 +12,30 @@
 -- Abgedeckt (Minimum, nicht vollständig): cdc_transactions_total,
 -- cdc_changes_processed, cdc_oldest_change_age_seconds,
 -- cdc_consumer_position{consumer}, cdc_consumer_lag{consumer},
--- cdc_capture_lag. Nicht abgedeckt: cdc_changes_pending,
--- cdc_errors_total, cdc_wal_retention_bytes, cdc_storage_bytes
--- (SPEC-009-Zeilen) — sie brauchen entweder persistierten Zustand, den
--- dieses Schema nicht trägt (Fehler-Log) oder Systemkatalog-Zugriffe
--- außerhalb des cdc-Schemas (pg_stat_replication, Relationsgrößen), die
--- die Least-Privilege-Fläche von cdc_reader unnötig erweitern würden.
+-- cdc_capture_lag, cdc_storage_bytes. Nicht abgedeckt: cdc_changes_pending,
+-- cdc_errors_total, cdc_wal_retention_bytes (SPEC-009-Zeilen) — sie
+-- brauchen entweder persistierten Zustand, den dieses Schema nicht trägt
+-- (Fehler-Log) oder Systemkatalog-Zugriffe außerhalb des cdc-Schemas
+-- (pg_stat_replication), die die Least-Privilege-Fläche von cdc_reader
+-- unnötig erweitern würden.
 --
 -- `cdc_capture_lag` (`SPEC-009`, `LH-FA-ADM-004`; Latenzschwellen
 -- p95/Warn/Fehler `SPEC-013`): `committed_at` trägt den Quell-
 -- Commit-Zeitpunkt aus dem WAL (`InsertTransaction`) — der Wert misst
 -- den Abstand zwischen der letzten Quelländerung und der
 -- CDC-Verfügbarkeit über `now() - max(committed_at)`.
+--
+-- `cdc_storage_bytes` (`SPEC-009`, `LH-FA-RET-006`): die physische
+-- Speichergröße von `cdc.change` über `pg_relation_size` — die mit dem
+-- Erfassungsvolumen wachsende Tabelle dieses Schemas (Row Images als
+-- jsonb, `LH-FA-CAP-008`); die übrigen vier Tabellen tragen
+-- Referenzdaten (Quelle, Tabellen-/Schema-Katalog, Transaktions-Kopf) und
+-- bleiben dagegen klein. `pg_relation_size()` ist eine reguläre, für
+-- `PUBLIC` ausführbare Systemfunktion (kein `SECURITY DEFINER`, kein
+-- direkter Grant an `cdc_reader` nötig) und liefert reine Metadaten,
+-- keinen Zeileninhalt; die View hardcodet den Tabellennamen in ihrer
+-- `SELECT`-Klausel, `cdc_reader` kann ihn nicht selbst parametrisieren
+-- (`ADR-0046` Kategorie C: Projektion ohne Domänenentscheidung).
 --
 -- Der Health-Endpoint (LH-FA-ADM-002, LH-QA-OPS-002) liegt bewusst nicht
 -- in dieser Datei: eine reine Lese-View auf bereits persistierten Zustand
@@ -52,6 +64,8 @@ FROM cdc.consumer_position cp
 UNION ALL
 SELECT 'cdc_consumer_lag', cs.consumer_id, (cs.latest_commit_position - cs.acknowledged_position)::numeric
 FROM cdc.consumer_status cs
-WHERE cs.acknowledged_position IS NOT NULL;
+WHERE cs.acknowledged_position IS NOT NULL
+UNION ALL
+SELECT 'cdc_storage_bytes', NULL, pg_relation_size('cdc.change')::numeric;
 
 GRANT SELECT ON cdc.metrics TO cdc_reader;

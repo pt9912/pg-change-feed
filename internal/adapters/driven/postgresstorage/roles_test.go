@@ -363,3 +363,55 @@ func TestMetricsViewCarriesConsumerLag(t *testing.T) {
 		t.Fatalf("cdc_consumer_lag = %v, wollen 300 (950 - 650)", lag)
 	}
 }
+
+// TestMetricsViewCarriesStorageBytes belegt LH-FA-RET-006 (SPEC-009
+// cdc_storage_bytes): cdc.metrics trägt einen realen, positiven Wert für
+// die physische Speichergröße von cdc.change über pg_relation_size, nach
+// dem Einfügen einer vollständigen Change-Zeile (Transaktion,
+// Tabellen-/Schema-Referenz, Change selbst) — ein numerischer Wert, kein
+// Zeilenzähler.
+func TestMetricsViewCarriesStorageBytes(t *testing.T) {
+	pool := newTestRolesConn(t)
+	ctx := context.Background()
+	const (
+		sourceTableID   = "st-storage-bytes"
+		schemaVersionID = "sv-storage-bytes"
+		transactionID   = "tx-storage-bytes"
+		changeID        = "ch-storage-bytes"
+	)
+
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ($1, $2, 'public', 'storage_bytes')",
+		sourceTableID, rolesTestSource,
+	); err != nil {
+		t.Fatalf("source_table-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ($1, $2, 1)",
+		schemaVersionID, sourceTableID,
+	); err != nil {
+		t.Fatalf("schema_version-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ($1, $2, 970)",
+		transactionID, rolesTestSource,
+	); err != nil {
+		t.Fatalf("transaction-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.change (change_id, transaction_id, source_table_id, sequence, operation, new_data, schema_version) VALUES ($1, $2, $3, 1, 'INSERT', '{}', $4)",
+		changeID, transactionID, sourceTableID, schemaVersionID,
+	); err != nil {
+		t.Fatalf("change-Zeile: %v", err)
+	}
+
+	var storageBytes float64
+	if err := pool.QueryRow(ctx,
+		"SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'",
+	).Scan(&storageBytes); err != nil {
+		t.Fatalf("cdc_storage_bytes-Lesen: %v", err)
+	}
+	if storageBytes <= 0 {
+		t.Fatalf("cdc_storage_bytes = %v, wollen > 0 nach dem Einfügen von Testdaten", storageBytes)
+	}
+}

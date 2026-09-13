@@ -412,7 +412,9 @@ Verfügbare Kennzahlen: `cdc_transactions_total`, `cdc_changes_processed`,
 `cdc_oldest_change_age_seconds`, `cdc_capture_lag` (Abstand zwischen der
 letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
 Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
-`cdc_consumer_lag` je registriertem Consumer.
+`cdc_consumer_lag` je registriertem Consumer, sowie `cdc_storage_bytes`
+(`LH-FA-RET-006`, physische Speichergröße von `cdc.change` über
+`pg_relation_size` — der mit dem Erfassungsvolumen wachsenden Tabelle).
 
 `cdc_wal_retention_bytes` (WAL-Rückstand des Capture-Slots, `SPEC-009`)
 steht **nicht** in `cdc.metrics`: Die Erhebung braucht Systemkatalog-Zugriffe
