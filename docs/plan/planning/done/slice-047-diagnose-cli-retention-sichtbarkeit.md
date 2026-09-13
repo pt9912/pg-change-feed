@@ -117,7 +117,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — zwei Register-Berührungen (3×-Verkörperung, neue Beobachtung).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — Prüfung läuft bei diesem Slice erst nach dem `git mv` nach `done/` (AGENTS.md §3.3), also bei der Closure, nicht im Implementer-Lauf.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos, nach dem `git mv` geprüft — siehe §7. Alle drei grün.
 
 ## 3. Plan (vor Code)
 
@@ -292,12 +292,14 @@ Backticks).
   1.8/1.9 geschlossen.
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** beide *entfallen* — siehe §6.
-- **Drei Paarungen:** Wellenlos — Prüfung läuft bei diesem Slice erst nach
-  dem `git mv` nach `done/`, nicht in diesem Implementer-Lauf. Vorab
-  feststellbar: kein `liegt in`-Feld in dieser Notiz (nichts verkörpert),
-  kein Folge-Slice genannt, keine neue Beobachtungs-Register-Zeile — alle
-  drei Paarungen sind damit vor der eigentlichen Prüfung bereits vakuos
-  erfüllbar.
+- **Drei Paarungen:** Wellenlos — Prüfung nach dem `git mv` nach `done/`
+  durchgeführt. **Anker:** `liegt in` verweist auf
+  `.harness/skills/reviewer.md §DoD-Checkbox-Nachzug ohne Fixrunde` —
+  Zielort existiert (Abschnitt real geprüft), grün. **Folge-Slice:** keiner
+  genannt, nichts zu prüfen. **Register:** `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`
+  existiert mit nicht leerem `evidence/` (3 Dateien);
+  `BEO-PGC/handbuch-versionshistorie-uebersprungen` existiert mit nicht
+  leerem `evidence/` (2 Dateien) — beide grün.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
