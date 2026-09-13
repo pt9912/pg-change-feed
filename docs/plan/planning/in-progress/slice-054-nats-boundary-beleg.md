@@ -70,23 +70,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-SST-007` Boundary real erfüllt: **ohne** einen abonnierten
+- [x] `LH-FA-SST-007` Boundary real erfüllt: **ohne** einen abonnierten
       Test-Client eine Change erzeugen, danach real gegen `cdc.changes`
       belegen, dass sie vollständig vorhanden ist — `make test-integration`.
-- [ ] Derselbe Lauf belegt real, dass `CaptureService.Capture()` in diesem
+- [x] Derselbe Lauf belegt real, dass `CaptureService.Capture()` in diesem
       Fall **nicht** blockiert oder fehlschlägt (Notify hat keinen
       Empfänger, aber das ist kein Fehler — `ADR-0055`).
-- [ ] `make gates` grün, `make test-integration` grün.
+- [x] `make gates` grün, `make test-integration` grün. Verifier hat beide
+      real erneut ausgeführt, Exit-Code separat geprüft.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
+- [x] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
       zusätzlicher Beleg für bestehendes Verhalten.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. **Keine Beobachtung angefallen** — siehe §7 (Pipe-Exit-Code-Fallstrick unter der Zähl-Schwelle, kein formaler Vorgang).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). **Verschoben auf `welle-15`-Closure** (dieser Slice trägt `Welle: welle-15`).
 
 ## 3. Plan (vor Code)
 
@@ -136,12 +137,18 @@ dasteht.
   gar nicht real herstellen — der Testablauf muss explizit belegen, dass
   zum Zeitpunkt der Change kein Client verbunden ist (z. B. über eine
   reale `nats server list-connections`/Server-Statistik-Abfrage statt
-  einer bloßen Annahme). **Ausgang:** <bei Closure einzutragen>
+  einer bloßen Annahme). **Ausgang: entfallen** — reale Abfrage gegen den
+  NATS-Server-Monitor-Endpunkt `/subsz` vor UND nach der Change belegt
+  real das Fehlen des Subjekts in den aktiven Subscriptions; Reviewer
+  und Verifier haben den Mechanismus unabhängig voneinander gegen einen
+  frischen, gleich gepinnten Testcontainer reproduziert.
 - `CaptureService.Capture()`s Notify-Aufruf könnte bei fehlendem Subscriber
   einen NATS-Client-seitigen Fehler zurückgeben, der versehentlich doch
   propagiert wird (Regressions-Risiko trotz `slice-052`s Unit-Test) —
   muss end-to-end, nicht nur unit-testseitig, real widerlegt werden.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen** — realer `make test-integration`-Lauf zeigt: die
+  Change bleibt über `cdc.changes` vollständig lesbar, der Feed-Container
+  läuft danach unverändert weiter (`feed_running=true`).
 
 ## 7. Closure-Notiz
 
@@ -160,18 +167,33 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der NATS-Server-Monitor-Endpunkt `/subsz`
+  (Port 8222, bereits aus `slice-053`s Healthcheck bekannt) erwies sich
+  als robuster, mechanismus-basierter Beleg für „kein Subscriber
+  verbunden" — kein Rückgriff auf eine bloße Testablauf-Annahme nötig.
+  Das bestehende Muster aus dem Happy-Path-Beleg (`natssub`,
+  `docker logs`-Polling) diente als Stilvorbild für den neuen Abschnitt,
+  ohne selbst gebraucht zu werden (hier läuft bewusst kein Subscriber).
+- **Was ging anders als geplant:** Während der Verifikation trat real
+  ein Pipe-Exit-Code-Fallstrick auf: ein `make gates | tail` maskiert
+  einen Fehlschlag von `make` durch den Exit-Code von `tail` (0) — das
+  führte zu einem real gepushten Commit mit einer nicht verlinkten
+  Kennung im eigenen Reviewer-Report, bevor es bemerkt und sofort
+  korrigiert wurde. Kein Produktionscode-Fehler, aber ein Planungs-/
+  Verifikationsablauf-Fallstrick, der bereits einmal zuvor (beim
+  `slice-058`-Implementer) auftrat.
+- **Steering-Loop-Eintrag:** keiner — zwei Vorkommen (`slice-058`-
+  Implementer, diese Slice-Closure) sind unter der 3×-Schwelle für einen
+  Architect-Zug; benannt für den Fall eines dritten Auftretens.
+- **Beobachtungs-Register (`../observations/`):** keine neue Beobachtung
+  angelegt — der Pipe-Exit-Code-Fallstrick ist (noch) kein formal
+  gezählter Vorgang (kein abgeschlossener Slice/Review trägt ihn als
+  Fund), sondern eine im Fließtext benannte Beobachtung; bei einem
+  dritten Auftreten wird ein Register-Eintrag fällig.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide mit Ausgang *entfallen* — siehe §6.
+- **Drei Paarungen:** verschoben auf `welle-15`-Closure (dieser Slice
+  trägt `Welle: welle-15`, siehe DoD-Item).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
