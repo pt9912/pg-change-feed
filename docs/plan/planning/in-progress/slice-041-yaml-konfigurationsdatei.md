@@ -116,17 +116,30 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       der Tabellen-Aktivierung, `CDC_CONFIG_FILE`-Semantik.
 - [x] `make gates` grün, `make test` grün (Whitebox-Tests in
       `internal/bootstrap`, analog zu den bestehenden Config-Tests).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-041.md`](../../../reviews/review-slice-041.md)
+      (1 HIGH, 1 MEDIUM, 2 LOW, 1 INFO), Fixrunde in Commit `35a5279`,
+      bestätigt in
+      [`docs/reviews/review-slice-041-fixrunde.md`](../../../reviews/review-slice-041-fixrunde.md)
+      (F-1/F-3/F-4 behoben, F-2 als Implementierungsdetail akzeptiert
+      dokumentiert; dabei ein drittes, unabhängiges Chronik-Vorkommen neu
+      als HIGH gefunden). Zweite Fixrunde in Commit `8ceee6b`, final
+      bestätigt in
+      [`docs/reviews/review-slice-041-fixrunde-2.md`](../../../reviews/review-slice-041-fixrunde-2.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-041.md`](../../../reviews/verify-slice-041.md)
+      (DoD eigenständig nachgeprüft, alle sieben `ADR-0052`-Entscheidungen
+      real bestätigt, keine Rückführung nötig).
 - [x] Doku-Update: `harness/README.md`/`docs/user/benutzerhandbuch.md`
       (falls vorhanden) nennt `CDC_CONFIG_FILE` und die Datei-Feldform,
       da ein öffentlicher Konfigurationsvertrag entsteht.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — zwei neue Register-Einträge aus der Review-Kette dieses Slice.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide *entfallen*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — Prüfung läuft hier, siehe §7.
 
 ## 3. Plan (vor Code)
 
@@ -301,12 +314,23 @@ dasteht.
   `tables`-Feld unklar werden, wenn sowohl `CDC_TABLES` als auch die
   Datei-`tables`-Mapping gleichzeitig gesetzt sind — welches „Feld" gilt
   hier als Einheit (die ganze Tabellenliste, oder je Tabelle einzeln)?
-  `ADR-0052` entscheidet das nicht explizit. **Ausgang:** <bei Closure
-  einzutragen>
+  `ADR-0052` entscheidet das nicht explizit. **Ausgang: entfallen.** Der
+  Implementer traf eine begründete, dokumentierte Entscheidung
+  (`CDC_TABLES` überschreibt die Datei-Tabellenliste vollständig, `tables`
+  gilt als ein Feld, keine elementweise Mischung), real getestet
+  (`TestMergeConfigTabellenCDCTablesSchlaegtDatei`, rot bei Sabotage). Der
+  Reviewer stufte die Entscheidung als vertretbares Implementierungsdetail
+  ohne Rollen-Widerspruch ein (`review-slice-041.md` F-2) — die
+  Unklarheit ist damit real aufgelöst, kein Folge-ADR nötig; ein
+  künftiger, anders lautender Bedarf wäre eine neue Entscheidung.
 - Ein bestehendes Env-only-Deployment (`compose.yaml`) könnte durch die
   neue `ConfigFromFile`-Codepfad-Verzweigung unbeabsichtigt einen anderen
   Fehlerpfad durchlaufen, selbst wenn `CDC_CONFIG_FILE` leer bleibt.
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** `TestConfigFromEnvAndFileLeereEnvVariable`
+  bestätigt real, dass `ConfigFromEnvAndFile` bei leerer `CDC_CONFIG_FILE`
+  identisches Verhalten zu `ConfigFromEnv` zeigt (Feld-für-Feld-Vergleich);
+  `ConfigFromEnv` selbst ist laut Diff-Inspektion (Reviewer und Verifier,
+  unabhängig) byteidentisch zum Vorzustand geblieben.
 
 ## 7. Closure-Notiz
 
@@ -325,18 +349,47 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer traf eine begründete
+  Entscheidung genau dort, wo `ADR-0052` bewusst eine Lücke ließ
+  (`tables`-Merge-Semantik), dokumentierte sie transparent im
+  Plan-Nachzug und eskalierte sie nicht unnötig zu einem Folge-ADR — der
+  Reviewer bestätigte diese Einschätzung unabhängig. Der dreistufige
+  Review-Fixzyklus (Review → Fixrunde → Bestätigung, dabei ein drittes
+  Chronik-Vorkommen neu gefunden → zweite Fixrunde → zweite Bestätigung)
+  zeigt, dass wiederholtes, eigenständiges Nachprüfen (nicht nur am
+  gemeldeten Fundort, sondern am ganzen Diff) tatsächlich mehr findet als
+  ein einzelner Durchlauf.
+- **Was ging anders als geplant:** Zwei reale Prozess-Stolpersteine traten
+  auf, beide selbstverursacht und beide behoben: (1) ein Move-Commit ohne
+  Kennung im Betreff (`246abdb`, behoben per Amend), (2) ein Commit mit
+  verbotener Struktur-ID `SPEC-016` im Betreff (`4e4c7bb`) — dieser
+  konnte nicht per Amend behoben werden, da er nicht mehr `HEAD` war; der
+  dafür nötige History-Rewrite wurde vom Auto-Mode-Klassifikator als
+  „Git Destructive" blockiert und blieb bewusst unbehoben (löst sich
+  selbst durchs Sliding-Window). Beide Vorfälle sind als
+  `BEO-PGC/commit-traceability-kein-vorab-hook` registriert. Zusätzlich
+  fand die Review-Kette drei unabhängige Vorkommen derselben
+  Kommentar-Chronik-Klasse (`AGENTS.md` §3.7) — registriert als
+  `BEO-PGC/slice-chronik-in-code-kommentar`.
+- **Steering-Loop-Eintrag:** Kein Eintrag erreicht mit diesem Slice 3× —
+  `BEO-PGC/slice-chronik-in-code-kommentar` steht bei 2× (Vorgänge, nicht
+  Funde gezählt — F-1+F-4 aus `review-slice-041.md` sind ein Vorgang, das
+  dritte Vorkommen aus `review-slice-041-fixrunde.md` ein zweiter),
+  `BEO-PGC/commit-traceability-kein-vorab-hook` ebenfalls bei 2×.
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/slice-chronik-in-code-kommentar/` neu angelegt (2×, siehe
+  oben); `BEO-PGC/commit-traceability-kein-vorab-hook/` neu angelegt (2×,
+  ein Beleg aus diesem Slice-Umfeld, ein Beleg aus dem `slice-038`/
+  `slice-039`-Zeitraum).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen (wellenlos, hier geprüft):** (a) Anker — kein
+  Steering-Loop-Eintrag mit `liegt in`-Feld in diesem Slice (beide
+  Register-Einträge stehen unter der 3×-Schwelle), nichts zu prüfen.
+  (b) Folge-Slice — keiner benannt, nichts zu prüfen. (c) Register —
+  `BEO-PGC/slice-chronik-in-code-kommentar/` und
+  `BEO-PGC/commit-traceability-kein-vorab-hook/` existieren beide als
+  Verzeichnis mit nicht leerem `evidence/`. Alle drei grün, kein Rot.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
