@@ -146,40 +146,48 @@ Ausgangslage, und stellt sie am eigenen Ende real wieder her (Punkt 3).
 
 **2. Realer Fund — „kein Blocker" ist ausschließlich Abwesenheit jeder
 bestätigten Position, kein Rückstand von 0; DoD-Punkt 1 dementsprechend
-umgesetzt.** Die View-Definition trägt keine Bedingung auf den berechneten
-`backlog`-Wert — sie liefert exakt eine Zeile je Quelle, für die
-`cdc.consumer_position` mindestens eine Zeile trägt, unabhängig davon, ob
-dieser Consumer noch tatsächlich zurückhängt. Ein Consumer, der über die
-Position der eigenen Test-Zeile hinweg bestätigt, verschwindet dadurch
-**nicht** aus der View — er erscheint weiter, nur mit `backlog = 0`. Die
-geplante Lesart von DoD-Punkt 1 ging von einer sich beim Aufholen selbst
-leerenden Sicht aus; das entspricht nicht dem real ausgelieferten
-Vertrag (`slice-045`, real durch drei `make test-integration`-Läufe hier
-gegengeprüft, nicht nur gelesen). Der Abschnitt behandelt diesen Unterschied
-nicht als Bug — die View macht exakt das sichtbar, was
+umgesetzt. Reihenfolge im Skript nach Reviewer-Finding F-1
+(`docs/reviews/review-slice-048.md`) korrigiert: der Löschbeleg steht vor,
+nicht nach der `DELETE`-Sichtbarkeits-Nachbereitung.** Die View-Definition
+trägt keine Bedingung auf den berechneten `backlog`-Wert — sie liefert
+exakt eine Zeile je Quelle, für die `cdc.consumer_position` mindestens eine
+Zeile trägt, unabhängig davon, ob dieser Consumer noch tatsächlich
+zurückhängt. Ein Consumer, der über die Position der eigenen Test-Zeile
+hinweg bestätigt, verschwindet dadurch **nicht** aus der View — er
+erscheint weiter, nur mit `backlog = 0`. Die geplante Lesart von
+DoD-Punkt 1 ging von einer sich beim Aufholen selbst leerenden Sicht aus;
+das entspricht nicht dem real ausgelieferten Vertrag (`slice-045`, real
+durch mehrere `make test-integration`-Läufe hier gegengeprüft, nicht nur
+gelesen). Der Abschnitt behandelt diesen Unterschied nicht als Bug — die
+View macht exakt das sichtbar, was
 `RunRetentionUseCase`/`ConsumerStatePort.Positions` bereits als
 Abwesenheits-Lesart etabliert (`slice-045` Plan-Nachzug Punkt 3): ein
 Consumer ohne jede bestätigte Position blockiert nicht, und nur die
-Abwesenheit jeder Position macht die Quelle „unblockiert" sichtbar. Der
-neue Abschnitt bildet deshalb nach dem Sichtbarkeits-Nachweis
+Abwesenheit jeder Position macht die Quelle „unblockiert" sichtbar.
+
+Der neue Abschnitt bildet deshalb nach dem Sichtbarkeits-Nachweis
 (`cdc.retention_blockers` zeigt real `cli-e2e-lifecycle-consumer` als
 aktuellen Blocker) und der realen Bestätigung über die Position der
-Test-Zeile hinweg einen expliziten dritten Schritt: die bestätigte Position
-des eigens für diesen Test registrierten Consumers wird real entfernt
+Test-Zeile hinweg zunächst den realen Löschbeleg selbst: Die bestätigte
+Position bleibt zu diesem Zeitpunkt unverändert in `cdc.consumer_position`
+bestehen, und der bestehende Poll auf die reale Entfernung von `id=210`
+zeigt, dass die Bestätigung über die Position hinweg allein die Löschung
+freigibt — unabhängig davon, ob die Position später aus
+`cdc.consumer_position` entfernt wird. **Erst danach** wird die bestätigte
+Position des eigens für diesen Test registrierten Consumers real entfernt
 (`DELETE FROM cdc.consumer_position WHERE consumer_id = …`) — kein
 CLI-Unterbefehl dafür existiert, dieselbe Klasse direkter administrativer
 SQL-Schreibzugriff, die das Skript bereits für `cdc.process_heartbeat` und
-`cdc.transaction.committed_at` nutzt. Wichtig: diese Entfernung **löst**
-die reale Löschung nicht aus — sie ist bereits durch die Bestätigung
-selbst freigegeben (`Positions()` liefert ab diesem Zeitpunkt nur noch
-Positionen ≥ der Zeilen-Position, unabhängig davon, ob die Zeile in
-`cdc.consumer_position` später entfernt wird); die Entfernung dient
-ausschließlich der Sichtbarkeits-Prüfung selbst (DoD-Punkt 1, „keinen
+`cdc.transaction.committed_at` nutzt. Diese Entfernung **löst** an dieser
+Stelle keine Löschung mehr aus, die nicht bereits real erfolgt wäre — sie
+dient ausschließlich der Sichtbarkeits-Prüfung selbst (DoD-Punkt 1, „keinen
 Blocker mehr … leeres Ergebnis") und der Wiederherstellung der
-Ausgangslage für den nachfolgenden „Zustand 1"-Abschnitt (Punkt 3). Beide
-Zwischenzustände sind real per SQL geprüft, nicht nur die Endzustände:
-`blocker_before` (Consumer sichtbar) und `blocker_after` (keine Zeile mehr)
-in `run-integration-tests.sh`.
+Ausgangslage für den nachfolgenden „Zustand 1"-Abschnitt (Punkt 3). Alle
+drei Zwischenzustände sind real per SQL geprüft, nicht nur die
+Endzustände: `blocker_before` (Consumer sichtbar), der Löschbeleg selbst
+(`lifecycle_deleted`, real während die Position noch besteht) und
+`blocker_after` (keine Zeile mehr, nach der bereits erfolgten Löschung) in
+`run-integration-tests.sh`.
 
 **3. Isolation — eigene Zeile (id=210 auf `feed_mvp_full`), eigener
 Consumer (`cli-e2e-lifecycle-consumer`), reale Wiederherstellung der
@@ -305,6 +313,24 @@ Backticks).
   und der real ausgelieferten Semantik, gelöst durch einen zusätzlichen,
   transparent dokumentierten dritten Schritt (reale Entfernung der
   Test-Consumer-Position nach der Bestätigung).
+- **Fixrunde (Reviewer-Finding F-1, MEDIUM):** Die zweite Bestätigung und
+  der `DELETE FROM cdc.consumer_position`-Sichtbarkeits-Schritt liefen
+  ursprünglich **vor** der Polling-Schleife, die die reale Löschung von
+  `id=210` belegt — dadurch beobachtete kein Lösch-Takt real den Zustand
+  „bestätigte, weiterhin vorhandene Position gibt die Löschung frei",
+  sondern nur „keine Position mehr vorhanden" (denselben Pfad wie der
+  bereits bestehende Abschnitt für einen nie bestätigenden Consumer). Die
+  Reihenfolge wurde korrigiert: Löschbeleg (Poll) zuerst, `DELETE` und
+  `blocker_after`-Check danach (siehe Plan-Nachzug Punkt 2). Der Testlauf
+  belegt damit jetzt real, nicht nur über Code-Lektüre, dass eine
+  bestätigte, weiterhin vorhandene Position die Löschung freigibt
+  (`LH-FA-RET-003`/`004`) — real durch drei aufeinanderfolgende
+  `make test-integration`-Läufe in dieser Fixrunde bestätigt: die
+  Log-Zeile "'RetentionLifecycle' (id=210) real entfernt, während die
+  bestätigte Position … noch real in cdc.consumer_position vorhanden ist"
+  erscheint in allen drei Läufen konsistent **vor** der Log-Zeile
+  "cdc.retention_blockers zeigt real keinen Blocker mehr … auch nach der
+  bereits erfolgten realen Löschung".
 - **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
 - **Beobachtungs-Register (`../observations/`):** keine Beobachtung
   angefallen. Beide vorab gesichteten Treffer (`BEO-PGC/test-isolation-

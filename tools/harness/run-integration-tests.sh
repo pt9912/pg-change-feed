@@ -383,8 +383,9 @@ exec_feed() {
 # registrierter Consumer durchlaufen real die vollständige Kette in einer
 # Kette, statt sie wie in den folgenden Abschnitten über mehrere getrennte
 # Belege zu prüfen — Blocker-Sichtbarkeit, Bestätigung über die Position
-# hinweg, die reale Abwesenheit jeder Zeile für `src-mvp` danach, die reale
-# Löschung, `cdc_storage_bytes` durchgehend numerisch. Läuft an dieser
+# hinweg, die reale Löschung (während die bestätigte Position noch real
+# vorhanden ist), danach die reale Abwesenheit jeder Zeile für `src-mvp`,
+# `cdc_storage_bytes` durchgehend numerisch. Läuft an dieser
 # Stelle, weil hier noch kein über register-consumer/acknowledge-consumer
 # geführter Consumer gegen `src-mvp` bestätigt hat (dieselbe Ausgangslage,
 # die der folgende Abschnitt „Zustand 1" voraussetzt) — der hier
@@ -474,21 +475,11 @@ if ! exec_feed acknowledge-consumer "$LIFECYCLE_CONSUMER" "$lifecycle_position";
   exit 1
 fi
 
-# Die reale Abwesenheit jeder Zeile für src-mvp (siehe Kommentar oben)
-# verlangt die reale Entfernung der Position — der Consumer hat seinen
-# Zweck (die Kette real zu durchlaufen) erfüllt.
-docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
-  "DELETE FROM cdc.consumer_position WHERE consumer_id = '$LIFECYCLE_CONSUMER'" >/dev/null
-
-blocker_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
-if [ "$blocker_after" != "0" ]; then
-  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers trägt nach der Bestätigung über die Position hinweg noch eine Zeile für src-mvp ($blocker_after), erwartet leer" >&2
-  exit 1
-fi
-
-echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real keinen Blocker mehr für src-mvp (LH-FA-RET-005)"
-
+# Die bestätigte Position von $LIFECYCLE_CONSUMER bleibt an dieser Stelle
+# real in cdc.consumer_position bestehen (kein DELETE vorher) — der
+# folgende Poll belegt dadurch real, dass die Bestätigung über die Position
+# hinweg allein die Löschung freigibt, unabhängig von einer späteren
+# Entfernung der Position selbst (LH-FA-RET-003/004).
 lifecycle_deleted=0
 for _ in $(seq 1 60); do
   remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
@@ -503,6 +494,25 @@ if [ "$lifecycle_deleted" -ne 1 ]; then
   echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210) wurde nach Freigabe nicht innerhalb der Zeitspanne real entfernt" >&2
   exit 1
 fi
+
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — 'RetentionLifecycle' (id=210) real entfernt, während die bestätigte Position von $LIFECYCLE_CONSUMER noch real in cdc.consumer_position vorhanden ist (LH-FA-RET-003/004)"
+
+# Die Zeile ist an dieser Stelle bereits real gelöscht; die Entfernung der
+# Position dient ausschließlich der Sichtbarkeits-Prüfung von
+# cdc.retention_blockers (DoD-Punkt 1) und der Wiederherstellung der
+# Ausgangslage für den nachfolgenden „Zustand 1"-Abschnitt — sie löst keine
+# Löschung mehr aus, die nicht bereits erfolgt wäre.
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "DELETE FROM cdc.consumer_position WHERE consumer_id = '$LIFECYCLE_CONSUMER'" >/dev/null
+
+blocker_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-mvp'")
+if [ "$blocker_after" != "0" ]; then
+  echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers trägt nach der Bestätigung über die Position hinweg noch eine Zeile für src-mvp ($blocker_after), erwartet leer" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real keinen Blocker mehr für src-mvp, auch nach der bereits erfolgten realen Löschung (LH-FA-RET-005)"
 
 storage_bytes_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'")
