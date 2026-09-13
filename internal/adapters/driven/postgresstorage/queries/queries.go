@@ -63,9 +63,32 @@ LIMIT $5`
 // (`LH-FA-RET-002`…`004`); die Freigabe je Change trägt der aufrufende Use
 // Case über `RetentionPolicy.AllowsDeletion` — diese Abfrage führt nur die
 // bereits freigegebene Menge aus. Eine Kennung ohne Zeile bleibt ohne
-// Wirkung (Idempotenz).
+// Wirkung (Idempotenz). RETURNING liefert die betroffenen
+// Transaktions-Kennungen an den Aufrufer zurück — Grundlage für
+// DeleteOrphanedTransactions: die Fremdschlüssel-Kante
+// (`change.transaction_id → transaction.transaction_id`) kaskadiert nur in
+// Richtung Parent-Löschung auf die Children, nie umgekehrt; eine durch
+// diese Löschung verwaiste Elternzeile in `cdc.transaction` bräuchte sonst
+// keinen weiteren Träger und bliebe stehen.
 const DeleteChanges = `
-DELETE FROM cdc.change WHERE change_id = ANY($1)`
+DELETE FROM cdc.change WHERE change_id = ANY($1)
+RETURNING transaction_id`
+
+// DeleteOrphanedTransactions entfernt aus der übergebenen Menge genau die
+// Transaktions-Zeilen, die keine Change-Zeile mehr referenziert. `cdc.metrics`
+// (`tools/schema/nacharbeit-observability.sql`) berechnet
+// `cdc_oldest_change_age_seconds`/`cdc_transactions_total` direkt über
+// `cdc.transaction`, ungefiltert nach verbliebenen Changes — eine verwaiste
+// Zeile läse dort als bestehende Aktivität. Scope bewusst eng auf die von
+// DeleteChanges betroffene Menge — eine Transaktion, die von Geburt an nie
+// eine Change-Zeile trug, ist ein anderer Fall (keine Rolle der Retention)
+// und bleibt unberührt.
+const DeleteOrphanedTransactions = `
+DELETE FROM cdc.transaction
+WHERE transaction_id = ANY($1)
+  AND NOT EXISTS (
+      SELECT 1 FROM cdc.change c WHERE c.transaction_id = cdc.transaction.transaction_id
+  )`
 
 // CountTransactions zählt die Transaktions-Zeilen einer Quelle; die Tests
 // tragen den Deduplizierungs-Stand darüber, nicht der Adapter.

@@ -82,9 +82,13 @@ type ConsumerStatePort interface {
 	// Positions liest die bestätigten Positionen aller Consumer einer
 	// Quelle (`LH-FA-RET-004`): die Consumer-basierte Retention befragt
 	// über diese Liste `RetentionPolicy.AllowsDeletion` je betrachtetem
-	// Change. Ein Consumer ohne Bestätigung trägt keine Zeile in
-	// `cdc.consumer_position` und erscheint damit nicht in der
+	// Change. Ein Consumer ohne Bestätigung gegen diese Quelle trägt keine
+	// Zeile in `cdc.consumer_position` und erscheint damit nicht in der
 	// zurückgegebenen Liste — dieselbe Abwesenheits-Lesart wie bei
-	// `Position`.
+	// `Position`. Grenze: Ein registrierter, aber gegen diese Quelle noch
+	// nie bestätigender Consumer blockiert damit keine Löschung — Schutz
+	// vor Retention entsteht erst mit seiner ersten `Acknowledge`-Bestätigung
+	// gegen dieselbe Quelle, nicht bereits mit seiner Registrierung
+	// (`LH-FA-CON-001`).
 	Positions(ctx context.Context, source model.SourceID) ([]model.ConsumerPosition, error)
 }

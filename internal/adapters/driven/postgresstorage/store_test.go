@@ -512,6 +512,35 @@ func TestDeleteChangesIsIdempotent(t *testing.T) {
 	}
 }
 
+// DeleteChanges räumt eine `cdc.transaction`-Zeile mit auf, sobald ihre
+// letzte Change-Zeile entfernt wurde — sonst bliebe sie verwaist zurück und
+// `cdc.metrics` läse sie als bestehende Aktivität. Eine Transaktion, die
+// noch eine verbleibende Change-Zeile trägt, bleibt dagegen unangetastet.
+func TestDeleteChangesRemovesOrphanedTransactionOnly(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	persist(t, store,
+		committedTransaction(t, "t-1", 100, 1, testTableMain, testSchemaMain),
+		committedTransaction(t, "t-2", 200, 2, testTableMain, testSchemaMain),
+	)
+
+	// "t-1" verliert mit "t-1-1" ihre einzige Change-Zeile — verwaist.
+	// "t-2" verliert mit "t-2-1" nur eine von zweien — bleibt bestehen.
+	if err := store.DeleteChanges(context.Background(), []model.ChangeID{"t-1-1", "t-2-1"}); err != nil {
+		t.Fatalf("DeleteChanges: %v", err)
+	}
+
+	if got := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE transaction_id = 't-1'"); got != 0 {
+		t.Fatalf("verwaiste Transaktion 't-1' = %d Zeilen, wollen 0", got)
+	}
+	if got := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE transaction_id = 't-2'"); got != 1 {
+		t.Fatalf("weiterhin referenzierte Transaktion 't-2' = %d Zeilen, wollen 1", got)
+	}
+	if got := count(t, pool, "SELECT count(*) FROM cdc.change WHERE transaction_id = 't-2'"); got != 1 {
+		t.Fatalf("verbleibende Change-Zeile von 't-2' = %d, wollen 1", got)
+	}
+}
+
 // ReadChanges trägt den realen Quell-Commit-Zeitpunkt jeder Zeile
 // (`LH-FA-ADM-004`) an ihrem Record mit — die Retention-Alters-Berechnung
 // (`LH-FA-RET-003`) liest ihn über `RunRetentionUseCase`; dieser Test

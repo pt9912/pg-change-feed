@@ -239,6 +239,68 @@ physischen Löschung freigibt. Der Konflikt, den das Risiko benannte, setzt
 eine Reihenfolge voraus, die am Domain Core (`AllowsDeletion` als einzige
 Freigabe-Instanz) strukturell ausgeschlossen ist.
 
+**7. Fixrunde nach `review-slice-043` — F-1 (verwaiste `cdc.transaction`-Zeilen):
+behoben, nicht ausgeschlossen.** Realer Befund vor der Entscheidung:
+`tools/schema/nacharbeit-observability.sql`s bereits ausgerollte
+`cdc.metrics`-View berechnet `cdc_oldest_change_age_seconds` und
+`cdc_transactions_total` direkt über `cdc.transaction` — ungefiltert nach
+verbliebenen `cdc.change`-Zeilen. Eine verwaiste Transaktion (alle ihre
+Changes bereits über `DeleteChanges` bereinigt) hätte
+`cdc_oldest_change_age_seconds` weiterhin auf ihrem alten
+`committed_at`-Wert gehalten, obwohl der tatsächlich älteste verbliebene
+Change längst jünger ist — genau die „fälschlich als bestehende Aktivität"
+gelesene Zeile, vor der die Fixrunden-Anweisung warnte. Kein
+`ON DELETE CASCADE` hätte geholfen: Die Fremdschlüssel-Kante
+(`change.transaction_id → transaction.transaction_id`) kaskadiert nur beim
+Löschen der Transaktion, nicht beim Löschen ihrer Changes — die
+Elternwaisen-Bereinigung braucht die umgekehrte Richtung. `DeleteChanges`
+(`internal/adapters/driven/postgresstorage/store.go`,
+`internal/adapters/driven/postgresstorage/queries/queries.go`) läuft jetzt
+als eine DB-Transaktion: `DeleteChanges`-SQL mit `RETURNING transaction_id`
+liefert die betroffenen Transaktions-Kennungen, eine zweite Abfrage
+(`DeleteOrphanedTransactions`) entfernt daraus genau die, die keine
+Change-Zeile mehr referenzieren. Scope bewusst eng auf die von diesem
+Aufruf betroffene Menge — eine Transaktion, die von Geburt an nie eine
+Change-Zeile trug, ist ein anderer Fall (keine Rolle der Retention) und
+bleibt unberührt; dafür bräuchte es einen eigenen Slice, der diese Frage
+erst aufwirft. Real belegt:
+`TestDeleteChangesRemovesOrphanedTransactionOnly` (verwaiste Transaktion
+verschwindet, weiterhin referenzierte bleibt stehen).
+
+**8. Fixrunde nach `review-slice-043` — F-2 (Abwesenheits-Lesart von
+`ConsumerStatePort.Positions`): bestätigt, mit dokumentierter Konsequenz.**
+`LH-FA-RET-004` und `LH-FA-CON-005` vollständig gelesen: Keines der beiden
+entscheidet die konkrete Konstellation „registriert, aber für **diese**
+Quelle noch nie bestätigend" — beide Akzeptanzkriterien setzen einen
+Consumer voraus, der bereits irgendeine Position für die Quelle trägt oder
+zumindest *irgendwann* liest. Entscheidung: Die Abwesenheits-Lesart bleibt
+unverändert. Begründung: `model.Consumer` (Registrierung) und
+`model.ConsumerPosition` (Quellen-Bindung) sind im Domänenmodell bewusst
+getrennt — ein Consumer bindet sich erst mit seiner ersten `Advance`
+(`ADR-0029` Regel 2) an eine Quelle. Vor dieser ersten Bindung besteht
+keine Quellen-Zuordnung, die `Positions` melden könnte, und ein
+registrierter, aber quellen-seitig untätiger Consumer ist retentionsseitig
+so zu behandeln, als hätte er noch nie erklärt, dass ihn *diese* Quelle
+betrifft — dieselbe Lesart, die der bestehende `Remove`-Kommentar bereits
+für die administrative Entfernung trägt, jetzt einheitlich auch für die
+Erstbestätigung. Eine geänderte Semantik (jeder registrierte Consumer
+blockiert jede Quelle bis zur ersten Bestätigung) würde eine
+Quellen-Bindung bereits bei der Registrierung voraussetzen, die
+`LH-FA-CON-001`/`RegisterConsumerService.Register` nicht kennt — das wäre
+eine Spec-Erweiterung, kein Bugfix dieses Slice.
+**Konsequenz für `slice-044`:** Ein frisch registrierter, aber gegen eine
+Quelle noch nie bestätigender Consumer blockiert `RunRetentionUseCase.Run`
+für diese Quelle **nicht** — ihre gesamte bisherige Historie kann gelöscht
+werden, bevor dieser Consumer je gelesen hat. Schutz entsteht erst mit der
+ersten `Acknowledge`-Bestätigung gegen diese Quelle (auch eine, die nur die
+dokumentierte Anfangsposition aus `LH-FA-CON-005` Boundary bestätigt).
+Operativ heißt das: ein neu angebundener Consumer, der vor seinem ersten
+Lesezugriff Schutz vor Retention braucht, muss diese erste Bestätigung
+setzen, *bevor* ein Retention-Lauf gegen dieselbe Quelle läuft — `slice-044`
+(Hintergrund-Job/CLI-Trigger) dokumentiert diese Reihenfolge-Abhängigkeit
+in seinem eigenen Plan, sie ist keine neue Erfindung dieses Slice, aber
+erstmals operativ scharf.
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`

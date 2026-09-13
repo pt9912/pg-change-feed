@@ -171,7 +171,11 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 // aufrufende Use Case über `RetentionPolicy.AllowsDeletion`, dieser Adapter
 // führt nur die bereits freigegebene Menge aus. Eine leere Menge bleibt
 // ohne Datenbank-Aufruf; Treiber-Fehler gehen in die Klasse `storage`
-// (storageFailure).
+// (storageFailure). In derselben DB-Transaktion räumt der Adapter
+// anschließend jede `cdc.transaction`-Zeile mit auf, die durch diese
+// Löschung ihre letzte Change-Zeile verloren hat — eine solche Elternzeile
+// trägt sonst keine Change-Zeile mehr, bliebe aber bestehen, und
+// `cdc.metrics` läse sie weiterhin als bestehende Aktivität.
 func (a *PostgresChangeStoreAdapter) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
 	if len(changeIDs) == 0 {
 		return nil
@@ -180,11 +184,52 @@ func (a *PostgresChangeStoreAdapter) DeleteChanges(ctx context.Context, changeID
 	for i, id := range changeIDs {
 		ids[i] = string(id)
 	}
-	tag, err := a.pool.Exec(ctx, queries.DeleteChanges, ids)
+
+	tx, err := a.pool.Begin(ctx)
 	if err != nil {
 		return storageFailure(ctx, a.log, err)
 	}
-	a.log.Info(ctx, "changestore: Changes bereinigt", "deleted", tag.RowsAffected())
+	defer tx.Rollback(ctx)
+
+	rows, err := tx.Query(ctx, queries.DeleteChanges, ids)
+	if err != nil {
+		return storageFailure(ctx, a.log, err)
+	}
+	touchedTransactions := make(map[string]struct{}, len(ids))
+	deleted := 0
+	for rows.Next() {
+		var transactionID string
+		if err := rows.Scan(&transactionID); err != nil {
+			rows.Close()
+			return storageFailure(ctx, a.log, err)
+		}
+		touchedTransactions[transactionID] = struct{}{}
+		deleted++
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return storageFailure(ctx, a.log, err)
+	}
+	rows.Close()
+
+	var orphanedTransactions int64
+	if len(touchedTransactions) > 0 {
+		transactionIDs := make([]string, 0, len(touchedTransactions))
+		for id := range touchedTransactions {
+			transactionIDs = append(transactionIDs, id)
+		}
+		tag, err := tx.Exec(ctx, queries.DeleteOrphanedTransactions, transactionIDs)
+		if err != nil {
+			return storageFailure(ctx, a.log, err)
+		}
+		orphanedTransactions = tag.RowsAffected()
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return storageFailure(ctx, a.log, err)
+	}
+	a.log.Info(ctx, "changestore: Changes bereinigt",
+		"deleted", deleted, "orphaned_transactions", orphanedTransactions)
 	return nil
 }
 
