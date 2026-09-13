@@ -38,8 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-15.md](../welle-15.md) — NATS-Change-Notification.
-
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -128,6 +126,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-12 — Verwaltungsfunktionen — SQL-Administration & CLI-Diagnose | 2026-09-13 | [welle-12-results.md](../done/welle-12-results.md) |
 | welle-13 — Retention-Löschausführung | 2026-09-13 | [welle-13-results.md](../done/welle-13-results.md) |
 | welle-14 — Performance-Benchmarks & Test-Coverage-Gate | 2026-09-13 | [welle-14-results.md](../done/welle-14-results.md) |
+| welle-15 — NATS-Change-Notification | 2026-09-14 | [welle-15-results.md](../done/welle-15-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
