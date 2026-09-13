@@ -112,7 +112,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos, nach dem `git mv` geprüft — siehe §7. Alle drei grün.
 
 ## 3. Plan (vor Code)
 
@@ -354,11 +354,12 @@ Backticks).
   das der Moment, sie als eigene `BEO-PGC/`-Beobachtung anzulegen.
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** beide *entfallen* — siehe §6.
-- **Drei Paarungen:** Wellenlos — Prüfung nach dem `git mv` nach `done/`
-  durch die nächste Rolle (kein `liegt in`-Feld in diesem Slice, kein
-  neuer Folge-Slice, keine neue Registerzeile — nur die Register-Existenz
-  der beiden zitierten, bereits bestehenden Beobachtungen bleibt zu
-  bestätigen).
+- **Drei Paarungen:** Wellenlos, nach dem `git mv` geprüft. **Anker:** kein
+  `liegt in`-Feld in diesem Slice, nichts zu prüfen. **Folge-Slice:**
+  keiner genannt, nichts zu prüfen. **Register:**
+  `BEO-PGC/test-isolation-geteilter-zustand` und
+  `BEO-PGC/test-runner-stiller-ausschluss` existieren beide mit nicht
+  leerem `evidence/` — grün.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
