@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.1
+Version: 1.5
 Software-Version: 0.2.0-verdrahtung
-Stand: 2026-09-12
+Stand: 2026-09-13
 
 ## 1. Einleitung
 
@@ -74,7 +74,7 @@ Gruppenrolle zuweisen:
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
 | `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`) | `CDC_ADMIN_DSN` |
-| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) | `CDC_READER_DSN` |
+| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
 CREATE ROLE feed_capture_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_capture;
@@ -296,6 +296,45 @@ außerhalb des `cdc`-Schemas (`pg_replication_slots`, `IDENTIFY_SYSTEM`), die
 die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — siehe
 [WAL-Rückstand prüfen](#wal-rückstand-prüfen).
 
+### Diagnose ausführen
+
+Statt der beiden SQL-Abfragen oben einzeln zu stellen, liest der
+`diagnose`-Sondermodus dieselben Views (`cdc.heartbeat`, `cdc.metrics`) über
+`CDC_READER_DSN` und gibt eine menschenlesbare Zusammenfassung aus
+(`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`) — derselbe Image-Tag wie der
+Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
+
+```bash
+docker run --rm -e CDC_CAPTURE_DSN -e CDC_ADMIN_DSN -e CDC_READER_DSN \
+  -e CDC_SOURCE_ID -e CDC_PUBLICATION -e CDC_SLOT -e CDC_TABLES \
+  ghcr.io/pt9912/pg-change-feed:dev diagnose
+```
+
+In der Compose-Umgebung: `docker compose run --rm pg-change-feed diagnose`,
+oder gegen einen bereits laufenden Feed-Container: `docker exec <container>
+/pg-change-feed diagnose`.
+
+**Ausgabe (Beispiel):**
+
+```text
+pg-change-feed diagnose: Quelle "src-mvp"
+  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor 1.203s
+  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)
+  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): 0.087s
+  Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):
+    cli-e2e-consumer: 0
+```
+
+**Ergebnis:** Wie bei den Rohwerten der beiden Views trifft der Befehl keine
+Schwellenwert-Entscheidung (`SPEC-007` bleibt Sache des lesenden Systems) und
+der Prozess-Ausgang trägt nur den Lese-Erfolg — ein gemeldeter Fehlerzustand
+oder Rückstand ist Berichtsinhalt, kein Befehlsfehler (Ausgang bleibt 0). Ein
+Consumer ohne je bestätigte Position erscheint nicht in der Rückstands-Liste
+(dieselbe Grenze wie bei `cdc_consumer_lag` in [Metriken
+lesen](#metriken-lesen)); ein Consumer mit bestätigter Position, dessen
+Quelle noch nie eine Transaktion trug, erscheint mit dem Text „unbekannt"
+statt einem irreführenden Rückstand von 0.
+
 ### WAL-Rückstand prüfen
 
 Der Feed-Container misst den WAL-Rückstand des Capture-Slots periodisch
@@ -351,7 +390,7 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 |---|---|---|
 | `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream) |
 | `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, `register-consumer`/`acknowledge-consumer`) |
-| `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`) |
+| `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`, `diagnose`) |
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
@@ -481,3 +520,4 @@ MIT — siehe `LICENSE`.
 | 1.2 | 2026-09-12 | Fehlerklassen-Tabelle (§6) auf alle sieben Klassen aus `ADR-0023`/`SPEC-008` vervollständigt (`transient`, `permission`, `internal` ergänzt) |
 | 1.3 | 2026-09-12 | WAL-Rückstand-Metrik `cdc_wal_retention_bytes` (`SPEC-009`) ergänzt: periodische Messung, strukturierte Log-Ausgabe, Abgrenzung gegen `cdc.metrics` |
 | 1.4 | 2026-09-12 | Fehlerklasse `replication` auf zwei Unterarten präzisiert (`ADR-0049`): Stream-Ordnungs-Verletzung bleibt sofortiger Abbruch, Transport-/Verbindungsstörung trägt jetzt die Schwellen-Überwachung über den WAL-Rückstand (Warn 100 MiB, Fehler 1 GiB) mit kontrollierter Fortsetzung/Abbruch |
+| 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |

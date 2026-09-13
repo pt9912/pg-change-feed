@@ -16,7 +16,11 @@
 # dort ausschließlich als externer `docker exec`-Aufruf gegen den
 # laufenden Feed-Container, über einen simulierten Container-Neustart
 # hinweg — kein Go-Paket-Import interner Anwendungslogik in diesem
-# Abschnitt.
+# Abschnitt. Danach ein CLI-Diagnose-Beleg (LH-FA-SST-003, deckt
+# LH-FA-ADM-002…005, slice-038): derselbe externe `docker exec`-Zugriffsweg
+# gegen den `diagnose`-Sondermodus, einmal im Normalbetrieb und einmal mit
+# einem direkt in `cdc.process_heartbeat` geschriebenen Fehlerzustand
+# (LH-FA-ADM-003 Boundary).
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -566,6 +570,94 @@ if [ "$backlog_after" != "0" ]; then
 fi
 
 echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status — Rückstand vor der zweiten Bestätigung $backlog_before, danach $backlog_after (LH-FA-ADM-005)"
+
+# CLI-Diagnose-Beleg (LH-FA-SST-003, deckt LH-FA-ADM-002…005, slice-038):
+# der neue `diagnose`-Sondermodus liest denselben SQL-Zugriffsweg wie
+# `--healthcheck` oben (`cfg.ReaderDSN`) plus `cdc.metrics` und gibt alle
+# vier Signale menschenlesbar aus — extern per `docker exec` gegen den
+# laufenden Feed-Container (`exec_feed`, dasselbe Muster wie der
+# Black-Box-CLI-Rundlauf oben). Normalbetrieb zuerst: `cdc.heartbeat` trägt
+# an dieser Stelle bereits ein aktuelles Lebenszeichen ohne Fehlerzustand
+# (Compose-Healthcheck-Vertrag oben) und `cdc.metrics` einen gemessenen
+# `cdc_capture_lag` sowie die beiden oben geführten Consumer. `latest_commit_position`
+# (`cdc.consumer_status`) ist quellenweit, nicht consumer- oder
+# tabellenspezifisch — CLI_CONSUMER trägt hier real einen Rückstand
+# ungleich 0 (die BACKLOG_CONSUMER-Belegschreibungen liefen auf derselben
+# Tabelle nach seiner letzten Bestätigung); nur BACKLOG_CONSUMER, dessen
+# zweite Bestätigung unmittelbar davor lief, ist an dieser Stelle
+# verlässlich 0.
+set +e
+diagnose_output=$(exec_feed diagnose)
+diagnose_status=$?
+set -e
+if [ "$diagnose_status" -ne 0 ]; then
+  echo "run-integration-tests: diagnose (Normalbetrieb, docker exec) endete mit Ausgang $diagnose_status: $diagnose_output" >&2
+  exit 1
+fi
+for expected in \
+  "Betriebsstatus (LH-FA-ADM-002):" \
+  "Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)" \
+  "CDC-Abstand cdc_capture_lag (LH-FA-ADM-004):" \
+  "$BACKLOG_CONSUMER: 0"
+do
+  if ! printf '%s' "$diagnose_output" | grep -qF "$expected"; then
+    echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt nicht den erwarteten Text '$expected': $diagnose_output" >&2
+    exit 1
+  fi
+done
+if ! printf '%s' "$diagnose_output" | grep -qE "$CLI_CONSUMER: [0-9]+"; then
+  echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt keine numerische Rückstands-Zeile für $CLI_CONSUMER: $diagnose_output" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: CLI-Diagnose-Beleg (Normalbetrieb) — alle vier Signale (LH-FA-ADM-002…005) in der diagnose-Ausgabe sichtbar"
+
+# Fehlerzustand-Beleg (LH-FA-ADM-003 Boundary: „erkennbar von Normalbetrieb
+# unterscheidbar"). Ein real vom Erfassungspfad ausgelöster Fehlerzustand
+# beendet den Feed-Container-Prozess dauerhaft (`reportFault` läuft nur
+# unmittelbar vor `os.Exit`, siehe `internal/bootstrap/wiring.go`
+# Funktionskommentar) — ein `docker exec` gegen einen bereits beendeten,
+# `restart: "no"`-Container ist danach nicht mehr möglich (slice-038 §6
+# Risiko 1). Dieser Beleg schreibt denselben Spaltenwert
+# (`cdc.process_heartbeat.error_class`), den der reale Fehlerpfad schriebe,
+# direkt über SQL — derselbe Lesepfad (View -> diagnose-Ausgabe), ohne den
+# laufenden Container zu beenden. Der periodische Heartbeat-Takt (5s,
+# `heartbeatInterval`) überschreibt `error_class` beim nächsten
+# erfolgreichen Beat wieder auf NULL, unabhängig von unserem
+# SQL-Schreibzug — die Schleife schreibt den Fehlerzustand deshalb
+# wiederholt, bis ein `diagnose`-Aufruf ihn innerhalb desselben kurzen
+# Fensters liest (bei 20 Versuchen weit innerhalb eines einzigen 5s-Takts).
+error_state_seen=0
+diagnose_error_output=""
+diagnose_error_status=1
+for _ in $(seq 1 20); do
+  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'schema' WHERE source_id = 'src-mvp'" >/dev/null
+  set +e
+  diagnose_error_output=$(exec_feed diagnose)
+  diagnose_error_status=$?
+  set -e
+  if [ "$diagnose_error_status" -eq 0 ] && printf '%s' "$diagnose_error_output" | grep -qF "Fehlerzustand (LH-FA-ADM-003): schema"; then
+    error_state_seen=1
+    break
+  fi
+done
+if [ "$error_state_seen" -ne 1 ]; then
+  echo "run-integration-tests: diagnose-Ausgabe zeigt den gesetzten Fehlerzustand 'schema' nicht innerhalb von 20 Versuchen (Boundary LH-FA-ADM-003, letzter Ausgang $diagnose_error_status): $diagnose_error_output" >&2
+  exit 1
+fi
+if printf '%s' "$diagnose_error_output" | grep -qF "keiner (Normalbetrieb)"; then
+  echo "run-integration-tests: diagnose-Ausgabe trägt fälschlich die Normalbetrieb-Zeile trotz gesetztem Fehlerzustand: $diagnose_error_output" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem diagnose-Fehlerzustand-Beleg nicht mehr weiter (der Fehlerzustand wurde direkt in cdc.process_heartbeat geschrieben, nicht vom Erfassungspfad ausgelöst — kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
 
 # SQL-Administration Live-Reload-Beleg (ADR-0050, LH-FA-ADM-001,
 # LH-FA-CFG-001/002): `feed_mvp_sql_admin` ist bewusst NICHT Teil von

@@ -84,8 +84,23 @@ func main() {
 		}
 		os.Exit(bootstrap.AcknowledgeConsumer(context.Background(), cfg, os.Args[2], offset))
 	}
+	if len(os.Args) == 2 && os.Args[1] == "diagnose" {
+		// Der Sondermodus liest Betriebsstatus, sichtbare Fehlerzustände,
+		// CDC-Abstand und Verarbeitungsrückstand über `cdc.heartbeat` +
+		// `cdc.metrics` (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`) und
+		// beendet sich, ohne je den Capture-Loop (`bootstrap.Run`) zu
+		// erreichen — dasselbe Muster wie `--healthcheck` oben, dieselben
+		// Vorbedingungen (`ConfigFromEnv`); der Aufruf nutzt nur
+		// `cfg.ReaderDSN`.
+		cfg, err := bootstrap.ConfigFromEnv(os.Getenv)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(bootstrap.Diagnose(context.Background(), cfg.ReaderDSN, cfg.Source))
+	}
 	if len(os.Args) > 1 {
-		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand, register-consumer <name> registriert einen Consumer, acknowledge-consumer <consumer-id> <position> bestätigt eine Position")
+		fmt.Fprintln(os.Stderr, "pg-change-feed: unbekanntes Argument; der CDC-Lauf läuft ohne Argumente, --version und --healthcheck zeigen bzw. prüfen den Lieferstand, register-consumer <name> registriert einen Consumer, acknowledge-consumer <consumer-id> <position> bestätigt eine Position, diagnose gibt Betriebsstatus/Fehlerzustand/CDC-Abstand/Verarbeitungsrückstand aus")
 		os.Exit(2)
 	}
 	// Der Lauf endet kontrolliert auf SIGINT/SIGTERM: der Stream-Lauf

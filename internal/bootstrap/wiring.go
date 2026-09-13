@@ -1034,3 +1034,106 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	}
 	return 0
 }
+
+// Diagnose liest die vier in `LH-FA-SST-003`s Boundary genannten
+// Status-/Diagnosesignale über dieselben SQL-Lese-Views wie `Healthcheck`
+// oben (`cdc.heartbeat`, `cdc.metrics`) und gibt sie menschenlesbar auf
+// `stdout` aus: Betriebsstatus und Fehlerzustand (`LH-FA-ADM-002`/`003`,
+// aus `cdc.heartbeat`), CDC-Abstand (`LH-FA-ADM-004`, `cdc_capture_lag`)
+// und Verarbeitungsrückstand je Consumer (`LH-FA-ADM-005`,
+// `cdc_consumer_lag{consumer}`). Anders als `Healthcheck` trifft dieser
+// Befehl keine binäre Verdikt-Entscheidung — er gibt die Rohwerte beider
+// Views unverändert weiter, keine Schwellenwert-Klassifikation (`SPEC-007`
+// bleibt Sache des lesenden Systems, wie bei den Views selbst). Der
+// Prozess-Ausgang trägt nur den Lese-Erfolg: 0 nach vollständig
+// gelesenen Views — unabhängig vom Inhalt, ein gemeldeter Fehlerzustand
+// oder Rückstand ist Berichtsinhalt, kein Befehlsfehler —, 1 bei
+// Verbindungs- oder Query-Fehler (dieselben ersten beiden Fehlerklassen
+// wie `Healthcheck`: DSN ungültig, Instanz nicht erreichbar, plus eine
+// dritte je nicht lesbarer View). Der Aufruf öffnet eine eigene,
+// kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
+// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: beide
+// Views tragen ein `SELECT`-Grant an `cdc_reader`).
+func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: DSN ungültig: %v\n", err)
+		return 1
+	}
+	defer pool.Close()
+	if err := pool.Ping(ctx); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: Instanz nicht erreichbar: %v\n", err)
+		return 1
+	}
+
+	fmt.Printf("pg-change-feed diagnose: Quelle %q\n", source)
+
+	var ageSeconds float64
+	var errorClass *string
+	err = pool.QueryRow(ctx, "SELECT age_seconds, error_class FROM cdc.heartbeat WHERE source_id = $1", string(source)).Scan(&ageSeconds, &errorClass)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		fmt.Println("  Betriebsstatus (LH-FA-ADM-002): kein Lebenszeichen — Instanz hat noch nie geschlagen")
+		fmt.Println("  Fehlerzustand (LH-FA-ADM-003): unbekannt (kein Lebenszeichen)")
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.heartbeat nicht lesbar (Schema-Rollout gelaufen?): %v\n", err)
+		return 1
+	default:
+		fmt.Printf("  Betriebsstatus (LH-FA-ADM-002): Lebenszeichen vor %.3fs\n", ageSeconds)
+		if errorClass == nil {
+			fmt.Println("  Fehlerzustand (LH-FA-ADM-003): keiner (Normalbetrieb)")
+		} else {
+			fmt.Printf("  Fehlerzustand (LH-FA-ADM-003): %s\n", *errorClass)
+		}
+	}
+
+	var captureLag float64
+	if err := pool.QueryRow(ctx, "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'").Scan(&captureLag); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_capture_lag) nicht lesbar: %v\n", err)
+		return 1
+	}
+	fmt.Printf("  CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): %.3fs\n", captureLag)
+
+	rows, err := pool.Query(ctx, "SELECT label, value FROM cdc.metrics WHERE metric_name = 'cdc_consumer_lag' ORDER BY label")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
+		return 1
+	}
+	defer rows.Close()
+	// Nur Consumer mit mindestens einer bestätigten Position tragen eine
+	// Zeile (cdc.metrics-Definition, nacharbeit-observability.sql): ein
+	// frisch registrierter, noch nie bestätigender Consumer erscheint
+	// hier nicht — der Text unten benennt das ausdrücklich, statt sein
+	// Fehlen als "kein Rückstand" lesbar zu lassen. `value` selbst ist für
+	// eine solche Zeile trotzdem NULL, wenn die gebundene Quelle noch nie
+	// eine Transaktion trug (`latest_commit_position`-Unterabfrage liefert
+	// dann NULL, `WHERE cs.acknowledged_position IS NOT NULL` filtert das
+	// nicht heraus) — der Scan liest deshalb über einen Zeiger, statt auf
+	// diesen Fall mit einem Lesefehler zu enden.
+	fmt.Println("  Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):")
+	found := false
+	for rows.Next() {
+		var consumer string
+		var lag *float64
+		if err := rows.Scan(&consumer, &lag); err != nil {
+			fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
+			return 1
+		}
+		if lag == nil {
+			fmt.Printf("    %s: unbekannt (Quelle trug noch nie eine Transaktion)\n", consumer)
+		} else {
+			fmt.Printf("    %s: %.0f\n", consumer, *lag)
+		}
+		found = true
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_consumer_lag) nicht lesbar: %v\n", err)
+		return 1
+	}
+	if !found {
+		fmt.Println("    (keiner — kein Consumer mit bestätigter Position)")
+	}
+	return 0
+}

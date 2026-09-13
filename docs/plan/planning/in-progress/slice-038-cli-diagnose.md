@@ -99,14 +99,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neuer CLI-Befehl (`cmd/pg-change-feed/main.go`, z. B. `diagnose` —
+- [x] Neuer CLI-Befehl (`cmd/pg-change-feed/main.go`, z. B. `diagnose` —
       Implementer entscheidet den exakten Namen und begründet ihn im
       Plan-Nachzug) liest `cdc.heartbeat` + `cdc.metrics` über
       `cfg.ReaderDSN` und gibt `age_seconds`/`error_class`
       (`LH-FA-ADM-002`/`003`), `cdc_capture_lag`
       (`LH-FA-ADM-004`) und `cdc_consumer_lag{consumer}` je Consumer
       (`LH-FA-ADM-005`) menschenlesbar aus.
-- [ ] `LH-FA-SST-003` real erfüllt: ein Integrationstest (Ergänzung in
+- [x] `LH-FA-SST-003` real erfüllt: ein Integrationstest (Ergänzung in
       `tools/harness/run-integration-tests.sh`, analog zum bestehenden
       `--healthcheck`-Testabschnitt) ruft den neuen Befehl gegen den
       laufenden Compose-Feed-Container per `docker exec` auf und
@@ -114,11 +114,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       sowohl im Normalbetrieb als auch (mindestens für ADM-003) in einem
       erkennbar von Normalbetrieb unterscheidbaren Fehlerzustand
       (Boundary-Kriterium von `LH-FA-ADM-002`/`003`).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `README.md`/`harness/README.md`, falls dort die
+- [x] Doku-Update: `README.md`/`harness/README.md`, falls dort die
       vorhandenen CLI-Befehle aufgezählt sind (Implementer prüft und
       begründet im Plan-Nachzug, ob eine Stelle existiert, die den neuen
       Befehl nennen muss).
@@ -141,6 +141,96 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/wiring.go` | update | neue Funktion (Muster `Healthcheck`) — öffnet kurzlebige `ReaderDSN`-Verbindung, liest `cdc.heartbeat` + `cdc.metrics`, formatiert die Ausgabe |
 | `tools/harness/run-integration-tests.sh` | update | realer E2E-Beleg des neuen Befehls gegen den laufenden Feed-Container |
 | `README.md` oder `harness/README.md` | update, falls zutreffend | Implementer prüft, ob eine Stelle die vorhandenen CLI-Befehle aufzählt |
+
+### Plan-Nachzug (nach Code)
+
+**Exakter Befehlsname:** `diagnose` (ohne führende `--`, wie `register-consumer`/
+`acknowledge-consumer` — kein Infra-Flag wie `--healthcheck`/`--version`,
+sondern ein admin-facing Sondermodus ohne Argumente:
+`pg-change-feed diagnose` bzw. `docker exec <container> /pg-change-feed diagnose`).
+
+**Implementierung** (`internal/bootstrap/wiring.go`, Funktion `Diagnose`,
+Muster identisch zu `Healthcheck`): kurzlebige `pgxpool`-Verbindung über
+`cfg.ReaderDSN`, `context.WithTimeout(3s)`, liest `cdc.heartbeat`
+(`age_seconds`, `error_class`) und zwei `cdc.metrics`-Abfragen
+(`cdc_capture_lag`, alle `cdc_consumer_lag`-Zeilen). Anders als
+`Healthcheck` trifft der Befehl keine binäre Verdikt-Entscheidung — Ausgang
+0 heißt „Lesezugriff erfolgreich", unabhängig vom Berichtsinhalt (ein
+gemeldeter Fehlerzustand oder Rückstand ist kein Befehlsfehler); Ausgang 1
+nur bei Verbindungs-/Query-Fehler (DSN ungültig, Instanz nicht erreichbar,
+View nicht lesbar).
+
+**Abweichung vom Plan — NULL-sicherer Scan für `cdc_consumer_lag`:** Der
+`test-store`-Lauf deckte real auf, dass `cdc.metrics.value` für eine
+`cdc_consumer_lag`-Zeile `NULL` sein kann, obwohl `WHERE
+cs.acknowledged_position IS NOT NULL` filtert — die
+`latest_commit_position`-Unterabfrage in `cdc.consumer_status` liefert
+`NULL`, wenn die an die Position gebundene Quelle noch nie eine Transaktion
+trug; die Differenz `NULL - x` bleibt `NULL`. Ursprünglich als `float64`
+geplant, scannt der Consumer-Zeilen-Loop jetzt über `*float64` und gibt in
+diesem Fall „unbekannt (Quelle trug noch nie eine Transaktion)" statt eines
+irreführenden Rückstands aus. Dieselbe defensive Formulierung („nur
+Consumer mit mindestens einer bestätigten Position") schließt zugleich
+Risiko 1 aus §6: ein nie bestätigender Consumer erscheint gar nicht erst,
+und der Text sagt das ausdrücklich, statt sein Fehlen als „kein Rückstand"
+lesbar zu lassen.
+
+**Risiko 2 aus §6 (realer Fehlerzustand im laufenden Container):**
+`reportFault` (`internal/bootstrap/wiring.go`) schreibt `error_class` nur
+unmittelbar vor `os.Exit` — jeder von `Run()` klassifizierte Fehler beendet
+den Prozess, `restart: "no"` hält den Container danach beendet stehen; ein
+`docker exec` gegen einen bereits beendeten Container ist nicht mehr
+möglich. Ein genuin vom Erfassungspfad ausgelöster Fehlerzustand lässt sich
+an einem **laufenden** Container deshalb strukturell nicht per CLI
+beobachten, ohne den Container zu beenden — das bestätigt die im Risiko
+vorab benannte Schwierigkeit. Sowohl der Unit-Test
+(`internal/bootstrap/diagnose_test.go`,
+`TestDiagnoseReportsErrorState`) als auch der E2E-Beleg
+(`tools/harness/run-integration-tests.sh`) schreiben denselben Spaltenwert
+(`cdc.process_heartbeat.error_class`), den `reportFault` im realen Fehlerfall
+schriebe, direkt über SQL — derselbe Lesepfad (View → CLI-Ausgabe), ohne den
+laufenden Prozess zu beenden. Der E2E-Beleg schreibt den Fehlerzustand in
+einer bis zu 20 Versuche kurzen Schleife, weil der periodische
+Heartbeat-Takt (5s) ihn beim nächsten erfolgreichen Beat unabhängig davon
+wieder auf `NULL` zurücksetzt — 20 Versuche liegen weit innerhalb eines
+einzigen 5s-Takts und sind kein Flakiness-Kompromiss, sondern eine
+Sicherheitsmarge gegen die Taktphase. **Ausgang siehe §6, Risiko 1** (in §6
+oben ist es das erste der beiden Risiken).
+
+**Zweite reale Erkenntnis beim E2E-Beleg:** `cdc.consumer_status.
+latest_commit_position` ist **quellenweit**, nicht consumer- oder
+tabellenspezifisch (`SELECT max(commit_position) FROM cdc.transaction WHERE
+source_id = cp.source_id`, unabhängig von der Tabelle). Die ursprünglich im
+Testskript angenommene Erwartung „`CLI_CONSUMER` zeigt Rückstand 0" war
+deshalb falsch, sobald nach seiner letzten Bestätigung eine weitere
+Transaktion auf `src-mvp` läuft (hier: die `BACKLOG_CONSUMER`-Belege auf
+derselben Tabelle) — der E2E-Abschnitt prüft für `CLI_CONSUMER` jetzt nur
+noch generisch eine numerische Zeile, für `BACKLOG_CONSUMER` (dessen zweite
+Bestätigung unmittelbar davor lief) weiterhin exakt 0.
+
+**Doku-Update — Ort geprüft, nicht README.md/harness/README.md selbst:**
+Weder `README.md` noch `harness/README.md` zählen die vorhandenen
+CLI-Befehle auf (geprüft: kein Treffer für `register-consumer`,
+`--healthcheck` o. ä. in `README.md`; `harness/README.md` nennt sie nur
+innerhalb der `make test-integration`-Sensor-Beschreibung). Die tatsächliche
+„Bedienung"-Stelle ist `docs/user/benutzerhandbuch.md` (von `README.md` §Was
+kann ich heute tun? verlinkt) — sie führt `register-consumer`,
+`acknowledge-consumer` und `--healthcheck` mit Beispielaufrufen. Aktualisiert:
+neue Untersektion „Diagnose ausführen" (§4, zwischen „Metriken lesen" und
+„WAL-Rückstand prüfen"), die `cdc_reader`-Zeile und die
+`CDC_READER_DSN`-Zeile, Versionsfeld 1.1→1.5 und Änderungshistorie-Eintrag
+1.5 (die Versions-/Datums-Kopfzeile hatte bereits vor diesem Slice hinter der
+Änderungshistorie zurückgelegen — mit diesem Eintrag korrigiert).
+`harness/README.md`s `make test-integration`-Zeile zusätzlich um den neuen
+CLI-Diagnose-Beleg ergänzt (`seit slice-038`).
+
+**Image neu gebaut:** `main.go`/`wiring.go` sind Build-Kontext-Dateien
+(`harness/README.md` §Sensors, `make image`-Zeile) — `make image` gelaufen,
+`harness/image-hash.txt` trägt den neuen Digest, committet im selben Zug.
+
+**Reconciliation-Register (§2-DoD-Punkt):** entfällt — dieses Repo führt
+kein `docs/plan/planning/reconciliation.md` (Greenfield, kein
+Brownfield-Bootstrap, `harness/conventions.md` §Modus-Deklaration).
 
 ## 4. Trigger
 
