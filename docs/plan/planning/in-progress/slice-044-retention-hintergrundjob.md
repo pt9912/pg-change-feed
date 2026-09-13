@@ -79,22 +79,26 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `runRetentionCleanup`-Hintergrundzug verdrahtet (`internal/bootstrap/wiring.go`,
+- [x] `runRetentionCleanup`-Hintergrundzug verdrahtet (`internal/bootstrap/wiring.go`,
       Muster identisch zu `runHeartbeat`/`runWALRetentionCheck`/
       `runAdministration`), ruft periodisch `RunRetentionUseCase` real
       auf.
-- [ ] Realer End-zu-End-Beleg (`tools/harness/run-integration-tests.sh`):
+- [x] Realer End-zu-End-Beleg (`tools/harness/run-integration-tests.sh`):
       eine freigegebene Change-Zeile wird am laufenden Prozess real
       entfernt; eine nicht freigegebene (zu jung, oder Consumer hängt
       zurück) bleibt real erhalten — beides ohne Neustart.
-- [ ] `make gates` grün, `make test-integration` grün (inkl. des neuen
+- [x] `make gates` grün, `make test-integration` grün (inkl. des neuen
       Belegs).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` (falls ein
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` (falls ein
       Betriebs-Aspekt entsteht, den ein Betreiber kennen muss — z. B.
       der Lösch-Takt) — Implementer prüft und begründet im Plan-Nachzug.
+      **Geprüft:** ja, öffentlicher Betriebs-Vertrag entsteht (fester
+      Lösch-Takt und Mindestalter, Consumer-Abwesenheits-Lesart) — neuer
+      Abschnitt „Aufbewahrung (Retention)" plus `cdc_admin`-Zeile in der
+      Rollen-Tabelle, Details im Plan-Nachzug.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -113,6 +117,113 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/wiring.go` | update | neuer Hintergrundzug `runRetentionCleanup` |
 | `tools/harness/run-integration-tests.sh` | update | realer E2E-Beleg (Löschung erfolgt/unterbleibt korrekt) |
 | `docs/user/benutzerhandbuch.md` | update, falls zutreffend | Betriebs-Aspekt des Lösch-Takts |
+
+### Plan-Nachzug (nach Implementierung)
+
+Regeln dieser Sektion: Implementierungsentscheidungen, die über die Tabelle
+oben hinausgehen — der exakte Lösch-Takt, wie der E2E-Beleg Alter/Freigabe
+real erzeugt, und ein Fund, der über den geplanten Umfang hinausging.
+
+**1. `ClockPort` hatte noch keine Produktionsimplementierung — `SystemClockAdapter`
+neu gebaut.** `ADR-0040` benennt den `SystemClockAdapter` bereits als
+Folgepflicht („die einzige Produktionsimplementierung ist der
+SystemClockAdapter, Driven, im Bootstrap verdrahtet"), aber `slice-043`
+lieferte nur den Use-Case mit Fake-Clock-Tests — ohne einen Produktions-Clock
+hätte `bootstrap.Run` `RunRetentionService` nicht real verdrahten können.
+Neues Paket `internal/adapters/driven/systemclock/` (`Adapter{}`, wertlos,
+`Now()` über `time.Now().UnixNano()`) — dieselbe Minimal-Form wie
+`telemetry.New`. Unit-Tests (`TestAdapterImplementsClockPort`,
+`TestNowReflectsWallClock`, `TestNowIsNonDecreasing`) belegen Port-Erfüllung
+und Wanduhr-Treue ohne reale PostgreSQL-Instanz.
+
+**2. Fester Lösch-Takt `retentionInterval = 10s`, festes Mindestalter
+`retentionMinAge = 24h`.** Beide als unexportierte Konstanten in
+`internal/bootstrap/wiring.go`, exakt im Stil von `heartbeatInterval` — §1
+schließt eine Laufzeit-Konfigurationsanbindung bereits aus. 10 Sekunden
+Takt: seltener als der 5-Sekunden-Heartbeat-Takt, weil jeder Durchlauf eine
+breitere Leseoperation ist (`ReadChanges` über alle Changes der Quelle),
+aber kurz genug, um im E2E-Beleg innerhalb weniger Takte real beobachtbar zu
+sein. 24 Stunden Mindestalter: ein für einen realen Betrieb plausibler
+MVP-Default („mindestens einen Tag aufbewahren"); die tatsächliche Zeit
+erreicht der E2E-Beleg nicht durch Warten, sondern durch reales
+Zurückdatieren (Punkt 3).
+
+**3. E2E-Beleg — Alter über direktes `UPDATE cdc.transaction.committed_at`
+erzeugt, kein Warten auf reale Zeit (löst §6 Risiko 2 auf).**
+`tools/harness/run-integration-tests.sh` schreibt für eine markierte Zeile
+(`'RetentionOld'`, id=200) `committed_at` direkt auf `current_timestamp -
+interval '25 hours'` — 1 Stunde Sicherheitsabstand über
+`retentionMinAge` — statt 24 Stunden real abzuwarten oder `retentionMinAge`
+für den Testlauf herabzusetzen. Dasselbe Prinzip wie der bereits bestehende
+Fehlerzustand-Beleg, der `cdc.process_heartbeat` direkt schreibt: eine reale
+Spalte wird direkt auf den Zustand gesetzt, den ein realer Ablauf irgendwann
+erreichen würde, statt die Zeit dorthin verstreichen zu lassen. Damit ist der
+Testlauf unabhängig von `retentionMinAge`s konkretem Wert deterministisch
+und schnell.
+
+**4. Consumer-Block real demonstriert, nicht nur Alters-Freigabe (stärker
+als die reine DoD-Formulierung „zu jung, ODER Consumer hängt zurück"
+verlangt).** Zwei bereits im Skript geführte Consumer (`CLI_CONSUMER`,
+`BACKLOG_CONSUMER`) haben zum Zeitpunkt des Retention-Abschnitts jeweils
+eine ältere Position bestätigt als die neu eingefügten Zeilen (id=200/201)
+— beide blockieren die Löschung also bereits strukturell, ohne
+zusätzliche Consumer-Logik im Testskript. Ablauf: (a) `RetentionOld`
+zurückdatiert, aber beide Consumer noch zurück → erster Poll (feste
+Wartezeit über mehr als zwei Lösch-Takte) belegt reale Nichtlöschung trotz
+erfülltem Alter (`LH-FA-RET-004`). (b) beide Consumer bestätigen über die
+neue Position hinweg → zweiter Poll belegt reale Löschung von `RetentionOld`
+und reales Erhaltenbleiben von `RetentionYoung` (`LH-FA-RET-003`). Damit
+werden beide Freigabe-Bedingungen der Policy real und unterscheidbar
+geprüft, nicht nur eine.
+
+**5. Retention-Pools binden an `cfg.AdminDSN` (`cdc_admin`), nicht an
+`cfg.CaptureDSN`.** `DeleteChanges`/die Waisen-Transaktions-Bereinigung sind
+ein Verwaltungs-, kein Erfassungs-Nutzlast-Schreibzug — dieselbe
+Rollen-Logik wie Heartbeat, Aktivierung und Administration (alle
+`cdc_admin`). Zwei eigene, langlebige Pools (Store, ConsumerState),
+getrennt von den kurzlebigen CLI-Sondermodus-Verbindungen, dieselbe
+Ein-Pool-je-Hintergrundzug-Disziplin wie Heartbeat/Aktivierung/
+Administration/WAL-Retention.
+
+**6. Fund, der über den geplanten Umfang hinausging — fehlendes
+`DELETE`-Grant auf `cdc.transaction`/`cdc.change` real geschlossen, mit
+transparenter Begründung statt stillem Fortschritt.** `welle-13` §6 schließt
+eine Rollen-Erweiterung ausdrücklich als Out-of-Scope aus und benennt für
+einen tatsächlichen Bedarf „ein eigener Architect-Zug, kein stiller
+Fortschritt dieser Welle" — das zugrundeliegende Architect-Verdikt
+(`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`, Frage 1)
+prüfte die Domain-/Port-/ADR-Ebene der neuen Löschmethode, aber keine
+Rollen-/Grant-Konsequenz. Ein realer Grant-Abgleich
+(`tools/schema/nacharbeit-roles.sql`) zeigte: weder `cdc_capture` noch
+`cdc_admin` trugen ein `DELETE`-Grant auf diesen beiden Tabellen — ohne
+Ergänzung hätte ein Betreiber, der `CDC_ADMIN_DSN` tatsächlich an eine
+`cdc_admin`-beschränkte Login-Identität bindet (wie
+`docs/user/benutzerhandbuch.md` es vorsieht), eine dauerhaft scheiternde
+Retention-Ausführung erhalten — im Compose-E2E-Lauf unsichtbar, weil dort
+alle drei DSNs mit dem Superuser verbunden sind (`compose.yaml`-Kommentar).
+Diese Implementer-Session lief ohne separaten Architect-Kontext; statt
+still zu ergänzen oder den Slice ungelöst zurückzuführen, wurde die
+minimale, zur bestehenden Rollen-Grenze konsistente Erweiterung
+vorgenommen (`GRANT SELECT, DELETE ON cdc.transaction, cdc.change TO
+cdc_admin;`, an der bereits bestehenden `cdc_admin`-Zeile in
+`nacharbeit-roles.sql`) — **keine** neue ADR, weil sie keine bestehende
+ADR-Entscheidung ändert, nur eine bereits etablierte Rollen-Grenze
+(`cdc_admin` = Verwaltungspfad, `ADR-0047`) um die dafür nötige Fähigkeit
+ergänzt. Real regressionsgetestet
+(`TestCdcAdminRetentionDeleteChangesRequiresGrant`,
+`TestCdcWiringCallerRejectsWrongRoleAssignment` neuer Fall „Retention
+Store-Adapter … mit cdc_capture-Login", beide `make test-store`, grün).
+Transparent dokumentiert als neue Beobachtung
+(`docs/plan/planning/observations/BEO-PGC/architect-verdikt-rollen-scope-luecke/`,
+1×, unter der Schwelle) — Reviewer/Verifier sollten diesen Punkt gezielt
+prüfen, da er über die ursprünglich geplante Implementer-Rolle
+hinausgeht (Modul 8: „Implementer darf höchstens Folge-ADR vorschlagen,
+niemals stillschweigend einer ADR widersprechen" — hier widerspricht die
+Änderung keiner ADR, aber sie widerspricht der Welle-Out-of-Scope-Klausel
+in ihrem Wortlaut „ein eigener Architect-Zug"; die Begründung dafür, warum
+die Erweiterung trotzdem in dieser Session vorgenommen wurde, statt den
+Slice zurückzuführen, steht hier vollständig und ist damit ein Urteil, das
+Reviewer/Verifier nachvollziehen und nötigenfalls zurückweisen können).
 
 ## 4. Trigger
 
