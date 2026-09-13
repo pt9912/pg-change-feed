@@ -89,9 +89,21 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       zurück) bleibt real erhalten — beides ohne Neustart.
 - [x] `make gates` grün, `make test-integration` grün (inkl. des neuen
       Belegs).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-044.md`](../../../reviews/review-slice-044.md)
+      (1 HIGH — drittes Chronik-Vorkommen), Fixrunde in Commit `e800d9d`,
+      bestätigt in
+      [`docs/reviews/review-slice-044-fixrunde.md`](../../../reviews/review-slice-044-fixrunde.md).
+      Zusätzlich der Architect-Zug zum Rollen-Grant-Konflikt
+      ([`docs/reviews/architect-verdict-slice-044-rollen-grant.md`](../../../reviews/architect-verdict-slice-044-rollen-grant.md),
+      Verdikt 2, `ADR-0053`) und zur Steering-Loop-Verkörperung der
+      3×-Schwelle
+      ([`docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`](../../../reviews/architect-verdict-slice-chronik-in-code-kommentar.md)).
+      Verifikation in
+      [`docs/reviews/verify-slice-044.md`](../../../reviews/verify-slice-044.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` (falls ein
       Betriebs-Aspekt entsteht, den ein Betreiber kennen muss — z. B.
       der Lösch-Takt) — Implementer prüft und begründet im Plan-Nachzug.
@@ -99,11 +111,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Lösch-Takt und Mindestalter, Consumer-Abwesenheits-Lesart) — neuer
       Abschnitt „Aufbewahrung (Retention)" plus `cdc_admin`-Zeile in der
       Rollen-Tabelle, Details im Plan-Nachzug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — zwei Register-Berührungen dieses Slice-Umfelds.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-13` offen) — Prüfung läuft bei der `welle-13`-Closure, **außer** dem Anker für die jetzt verkörperte `BEO-PGC/slice-chronik-in-code-kommentar` (wellenloser Architect-Zug, dort bereits geprüft, siehe §7).
 
 ## 3. Plan (vor Code)
 
@@ -259,12 +271,22 @@ dasteht.
 
 - Ein zu kurzer Lösch-Takt könnte im Compose-Testlauf mit anderen
   Hintergrundzügen (Heartbeat, WAL-Retention-Check, Administration) um
-  dieselbe Verbindung/Ressourcen konkurrieren. **Ausgang:** <bei Closure
-  einzutragen>
+  dieselbe Verbindung/Ressourcen konkurrieren. **Ausgang: entfallen.**
+  Der Retention-Hintergrundzug bindet zwei eigene, langlebige Pools an
+  `cfg.AdminDSN`, getrennt von den Pools der übrigen Hintergrundzüge
+  (Plan-Nachzug Punkt 5) — dieselbe Ein-Pool-je-Hintergrundzug-Disziplin
+  wie Heartbeat/Administration/WAL-Retention-Check. `make test-integration`
+  lief dreimal in Folge grün, real durch Implementer, Reviewer (indirekt)
+  und Verifier unabhängig reproduziert, keine Ressourcen-Konkurrenz
+  beobachtet.
 - Der reale E2E-Beleg könnte eine präzise Zeitsteuerung brauchen
   (Change muss „alt genug" sein, `MinAge` real verstreichen lassen),
-  was den Testlauf verlangsamt oder flaky machen könnte. **Ausgang:**
-  <bei Closure einzutragen>
+  was den Testlauf verlangsamt oder flaky machen könnte. **Ausgang:
+  entfallen.** Gelöst durch reales Zurückdatieren
+  (`UPDATE cdc.transaction.committed_at`) statt Warten auf reale Zeit
+  (Plan-Nachzug Punkt 3) — der Testlauf ist damit unabhängig von
+  `retentionMinAge`s konkretem Wert deterministisch und schnell, real
+  dreimal in Folge grün bestätigt.
 
 ## 7. Closure-Notiz
 
@@ -283,18 +305,47 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der Implementer stieß auf einen echten,
+  über den geplanten Umfang hinausgehenden Fund (fehlendes `DELETE`-Grant)
+  und behandelte ihn vorbildlich: transparent begründet statt still
+  vorgenommen, mit neuer Beobachtung registriert, und explizit an
+  Reviewer/Verifier zur gezielten Prüfung adressiert — genau das
+  Verhalten, das Modul 8 von der Implementer-Rolle bei einem
+  Rollen-Widerspruch verlangt. Der nachträgliche Architect-Zug bestätigte
+  die Entscheidung inhaltlich vollständig (Verdikt 2, `ADR-0053`), kein
+  Rückbau nötig.
+- **Was ging anders als geplant:** Zwei Architect-Züge wurden nötig, die
+  `welle-13`s ursprüngliche Planung nicht vorsah: (1) der Rollen-Grant-
+  Konflikt (`ADR-0053`, Folge-ADR zu `ADR-0047`, begrenzt), (2) die
+  Steering-Loop-Verkörperung für `BEO-PGC/slice-chronik-in-code-kommentar`
+  (3×, drittes Vorkommen als Reviewer-HIGH F-1) — beide sind
+  wellenlose Architect-Züge außerhalb der regulären Slice-Rollenkette,
+  dieselbe Lücke, die `BEO-PGC/dod-checkbox-nachzug-architect-pfad`
+  bereits für den DoD-Pfad benennt.
+- **Steering-Loop-Eintrag:** `AGENTS.md` §3.7 / Implementer-Workflow
+  geschärft: diff-skopierte Chronik-Enumerationspflicht — liegt in
+  `.claude/commands/implement-slice.md` Schritt 20.
+  Auslöser: `BEO-PGC/slice-chronik-in-code-kommentar`
+  (`review-slice-041.md`, `review-slice-041-fixrunde.md`,
+  `review-slice-044.md` — 3×).
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/slice-chronik-in-code-kommentar` erreichte mit diesem Slice
+  3× und wurde per Architect-Zug auf *verkörpert* gesetzt (siehe oben);
+  `BEO-PGC/architect-verdikt-rollen-scope-luecke` wurde neu angelegt
+  (1×, unter der Schwelle — Architect-Verdikte prüfen nicht
+  durchgängig Rollen-/Grant-Konsequenzen); `BEO-PGC/retention-keine-
+  loeschausfuehrung` bleibt bei 0× bis zur `welle-13`-Closure.
+- **Folge-Slices:** keine neuen — `slice-045`/`046` stehen bereits in
+  `welle-13` §4.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-13` offen) —
+  Prüfung für `retention-keine-loeschausfuehrung`/Folge-Slices läuft bei
+  der `welle-13`-Closure. Der Anker für die verkörperte
+  `BEO-PGC/slice-chronik-in-code-kommentar` (`liegt in
+  .claude/commands/implement-slice.md Schritt 20`) ist bereits jetzt
+  geprüft: Zielort existiert, Herkunfts-Anker
+  `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`
+  ist auflösbar — grün, kein Rot.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
