@@ -13,7 +13,7 @@ import (
 
 // Whitebox-Test (`package bootstrap`, nicht `bootstrap_test`): der
 // periodische Auslöse-Zug ist ein unexportiertes Verdrahtungsdetail
-// (`slice-044`, `ADR-0014`) — der reale Ende-zu-Ende-Beleg (Löschung
+// (`ADR-0014`) — der reale Ende-zu-Ende-Beleg (Löschung
 // erfolgt/unterbleibt am laufenden Feed-Container) liegt in
 // `tools/harness/run-integration-tests.sh` (`make test-integration`);
 // dieser Test belegt die Auslöse-/Fehlerbehandlungs-Logik selbst, ohne
