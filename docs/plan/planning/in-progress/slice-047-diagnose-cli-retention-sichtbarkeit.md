@@ -98,16 +98,24 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (analog zum bestehenden CLI-Diagnose-Beleg-Muster). Siehe Plan-Nachzug.
 - [x] `make gates` grün, `make test-integration` grün. Beide real ausgeführt
       (Ausgaben im Implementer-Bericht).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-047.md`](../../../reviews/review-slice-047.md)
+      (0 HIGH, 1 MEDIUM, 1 LOW — kein Fixrunden-Bedarf, beide Findings direkt
+      behoben, Commit `fb6173d`). Verifikation in
+      [`docs/reviews/verify-slice-047.md`](../../../reviews/verify-slice-047.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig; vier
+      Nacharbeits-Punkte VF-1…VF-4, hier nachgezogen).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die erweiterte
       `diagnose`-Ausgabe (Abschnitt „Aufbewahrung (Retention)"). Neuer
       Beispiel-Block in „Diagnose ausführen" (beide Zustände) plus
-      Changelog-Zeile 1.8.
+      Changelog-Zeile 1.10 (ursprünglich als 1.8 eingetragen; Verifikation
+      VF-2 fand zwei rückwirkend fehlende Zeilen bei `slice-045`/`046`
+      — siehe Beobachtungs-Register unten).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
-- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — zwei Register-Berührungen (3×-Verkörperung, neue Beobachtung).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — Prüfung läuft bei diesem Slice erst nach dem `git mv` nach `done/` (AGENTS.md §3.3), also bei der Closure, nicht im Implementer-Lauf.
 
@@ -263,13 +271,25 @@ Backticks).
   für Build-Kontext-Änderungen vorschreibt. Nach `make image` lief derselbe
   Testlauf real grün. Der Image-Digest änderte sich entsprechend
   (`harness/image-hash.txt`), der Digest-Commit ist Teil dieses Slice.
-- **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
-- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
-  angefallen — kein neuer Testfall entstand (die neuen Prüfungen sind
-  Shell-Assertions gegen einen bereits existierenden `docker exec
-  diagnose`-Aufruf, kein neues `-run`-Filtermuster-Element), und keine der
-  bereits registrierten `BEO-PGC`-Einträge (siehe §8) wurde durch diesen
-  Slice ein weiteres Mal ausgelöst.
+- **Steering-Loop-Eintrag:** Reviewer-Skill geschärft: Zieht der Reviewer
+  im eigenen Verdikt „keine Fixrunde nötig", zieht er die DoD-Checkbox
+  „Review durchgeführt" im selben Commit selbst nach — liegt in
+  `.harness/skills/reviewer.md §DoD-Checkbox-Nachzug ohne Fixrunde`.
+  Auslöser: `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`
+  (`slice-045`, `slice-046`, `slice-047` — 3×).
+- **Beobachtungs-Register (`../observations/`):** Zwei Register-Berührungen
+  während des Lebenszyklus dieses Slice: (1) `evidence/slice-047.md` in
+  `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde/` ergänzt — Zähler
+  erreichte damit 3×, Architect-Zug
+  ([`docs/reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md`](../../../reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md))
+  setzte den Ausgang auf *verkörpert* (siehe Steering-Loop-Eintrag oben).
+  (2) Während der direkten Korrektur der Reviewer-Findings F-1/F-2 (Commit
+  `fb6173d`) wurde eine neue, eigenständige Beobachtung
+  `BEO-PGC/handbuch-versionshistorie-uebersprungen` angelegt (2×,
+  `slice-045`, `slice-046` — unter der Schwelle): beide Slices hatten
+  `benutzerhandbuch.md` real erweitert, dabei aber die Änderungshistorie-
+  Tabelle nicht fortgeschrieben; nachträglich mit den fehlenden Zeilen
+  1.8/1.9 geschlossen.
 - **Folge-Slices:** keine.
 - **Risiken aus §6:** beide *entfallen* — siehe §6.
 - **Drei Paarungen:** Wellenlos — Prüfung läuft bei diesem Slice erst nach
