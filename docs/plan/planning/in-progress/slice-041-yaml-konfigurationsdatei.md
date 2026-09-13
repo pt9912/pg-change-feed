@@ -96,30 +96,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `ConfigFromFile` (`internal/bootstrap`) lädt eine YAML-Datei striktes
+- [x] `ConfigFromFile` (`internal/bootstrap`) lädt eine YAML-Datei striktes
       Decoding (`KnownFields(true)`); ein unbekannter Schlüssel liefert
       `ErrConfiguration`; einer der drei DSN-Schlüssel in der Datei liefert
       `ErrConfiguration` (`ADR-0052` Entscheidung 1/6, `LH-QA-SEC-001`/`002`).
-- [ ] Merge-Funktion überschreibt Datei-Werte Feld für Feld mit gesetzten
+- [x] Merge-Funktion überschreibt Datei-Werte Feld für Feld mit gesetzten
       Env-Vars (`ADR-0052` Entscheidung 2) — real gegen mindestens einen
       Fall getestet, in dem nur ein einzelnes Feld per Env-Var überschrieben
       wird, während die übrigen aus der Datei stammen.
-- [ ] Neue Env-Var `CDC_CONFIG_FILE` verdrahtet: leer/unbenannt → exakt der
+- [x] Neue Env-Var `CDC_CONFIG_FILE` verdrahtet: leer/unbenannt → exakt der
       heutige `ConfigFromEnv`-Pfad, unverändert (`ADR-0052` Entscheidung 3) —
       ein Regressionstest bestätigt, dass ein bestehender Env-only-Aufruf
       ohne `CDC_CONFIG_FILE` identisches Verhalten zu vor diesem Slice zeigt.
-- [ ] Tabellen-Aktivierung in der Datei als YAML-Mapping (nicht die
+- [x] Tabellen-Aktivierung in der Datei als YAML-Mapping (nicht die
       `CDC_TABLES`-Zeichenkettenform) — mit eigenem Test, der eine Datei mit
       mehreren Tabellen-Aktivierungen erfolgreich lädt.
-- [ ] `spec/pflichtenheft.md` trägt die neue Feldform als `SPEC-<NNN>`-
+- [x] `spec/pflichtenheft.md` trägt die neue Feldform als `SPEC-<NNN>`-
       Verfeinerung (`ADR-0052`s Folgepflicht) — Schlüsselnamen, YAML-Struktur
       der Tabellen-Aktivierung, `CDC_CONFIG_FILE`-Semantik.
-- [ ] `make gates` grün, `make test` grün (Whitebox-Tests in
+- [x] `make gates` grün, `make test` grün (Whitebox-Tests in
       `internal/bootstrap`, analog zu den bestehenden Config-Tests).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md`/`docs/user/benutzerhandbuch.md`
+- [x] Doku-Update: `harness/README.md`/`docs/user/benutzerhandbuch.md`
       (falls vorhanden) nennt `CDC_CONFIG_FILE` und die Datei-Feldform,
       da ein öffentlicher Konfigurationsvertrag entsteht.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -142,6 +142,99 @@ Aussagen-Berührung steht hier gar nicht.
 | `go.mod`/`go.sum` | update | `gopkg.in/yaml.v3` von transitiv auf direkt |
 | `spec/pflichtenheft.md` | update | neue `SPEC-<NNN>`-Verfeinerung: Datei-Feldform |
 | `harness/README.md`/`docs/user/benutzerhandbuch.md` | update | `CDC_CONFIG_FILE`-Vertrag dokumentieren |
+
+### Plan-Nachzug (Implementer, nach Umsetzung)
+
+Regeln dieser Sektion: `implement-slice` §Pre-completion-Checkliste — jede
+Implementierungsentscheidung, die über den Plan oben hinausgeht oder von
+ihm abweicht, wird hier mit Begründung nachgetragen, statt nur im Diff
+sichtbar zu sein.
+
+**Dateien — Abweichung von der Tabelle oben:**
+
+- **`internal/bootstrap/config_file.go` (neu)**, statt den Ladepfad/die
+  Merge-Funktion direkt in `wiring.go` einzufügen: `wiring.go` trägt bereits
+  1140 Zeilen; ein neuer, in sich abgeschlossener Belang (Datei-Loader +
+  Merge) bekommt eine eigene Datei im selben Paket, `wiring.go` selbst
+  bekommt nur einen aktualisierten Datei-Kommentar (Zeile 10–13, AGENTS.md
+  §3.7: der Kommentar beschreibt den jetzigen Zustand, nicht mehr nur den
+  Env-only-Stand).
+- **`internal/bootstrap/config_file_internal_test.go` (neu)**, `package
+  bootstrap` (echtes Whitebox, nicht `bootstrap_test` wie das bestehende
+  `wiring_test.go`) — `ADR-0052`s Folgepflicht-Absatz nennt „Whitebox,
+  package bootstrap" ausdrücklich; die drei bestehenden
+  `*_internal_test.go`-Dateien im Paket folgen derselben Konvention.
+- **`cmd/pg-change-feed/main.go` (update, nicht in der ursprünglichen
+  Tabelle)**: alle fünf Aufrufstellen (`--healthcheck`,
+  `register-consumer`, `acknowledge-consumer`, `diagnose`, Hauptlauf) rufen
+  jetzt `bootstrap.ConfigFromEnvAndFile(os.Getenv)` statt
+  `bootstrap.ConfigFromEnv(os.Getenv)`. **Begründung:** `CDC_CONFIG_FILE`
+  ist laut ADR ein Umgebungsvariablen-Zugriffsweg wie die DSNs — ohne
+  diese Rewiring bliebe die neue Variable im tatsächlichen Binary
+  wirkungslos (nur über die Paket-API testbar, nie über einen echten
+  Container-Start erreichbar), und DoD-Punkt 3 („Neue Env-Var
+  `CDC_CONFIG_FILE` **verdrahtet**") wäre für das Binary nicht wahr. Keiner
+  der vier Out-of-Scope-Punkte aus §1 schließt das aus — ausgeschlossen ist
+  ein `--config`-CLI-Flag, nicht das Einlesen der bereits bestehenden
+  Env-Var-Vorbedingung über einen neuen Namen. `ConfigFromEnv` selbst bleibt
+  unverändert und weiterhin exportiert (Regressionstest,
+  `TestConfigFromEnvAndFileLeereEnvVariable`).
+
+**Exakte YAML-Feldnamen** (`fileConfig` in `config_file.go`, dokumentiert
+in `spec/pflichtenheft.md` `SPEC-016`): `source_id`, `publication`, `slot`,
+`tables` (Mapping `<schema.tabelle>: {table_id, schema_version}`),
+`log_level`, `wal_retention_warn_bytes`, `wal_retention_error_bytes`. Die
+drei verbotenen Schlüssel: `capture_dsn`, `admin_dsn`, `reader_dsn`.
+
+**Struktur der Merge-Funktion:** `ConfigFromEnvAndFile(getenv)` ist der neue
+Einstiegspunkt — `CDC_CONFIG_FILE` leer → delegiert unverändert an
+`ConfigFromEnv(getenv)` (identisches Verhalten, siehe Regressionstest);
+sonst `ConfigFromFile(path)` (striktes YAML-Decoding + expliziter
+DSN-Schlüssel-Check *vor* dem strikten Decoding, eigene Fehlerzeile statt
+generischem „unbekannter Schlüssel") gefolgt von `mergeConfig(file,
+getenv)`: DSNs werden unverändert direkt aus der Umgebung gelesen und
+geprüft (env-var-exklusiv, kein Datei-Gegenstück); `Source`/`Publication`/
+`Slot` je über `overrideString(fileWert, envWert)` (env gewinnt, wenn
+gesetzt) und danach identisch zu `ConfigFromEnv` auf Nicht-Leere geprüft;
+`Tables` über `mergeTables` (siehe Risiko-Ausgang unten); `LogLevel` über
+dieselbe Präzedenz wie die drei String-Felder, geparst mit dem
+bestehenden `parseLogLevel`; `WALRetentionWarnBytes`/`WALRetentionErrorBytes`
+haben kein Env-Gegenstück und kommen ausschließlich aus der Datei (0
+bleibt 0, `Run`s bestehender Fallback auf die [`SPEC-013`](../../../../spec/pflichtenheft.md)-Startwerte bleibt
+unverändert wirksam).
+
+**Implementierungsentscheidung zu §6 Risiko 1 (`tables`-Merge-Semantik):**
+Eine gesetzte `CDC_TABLES` schlägt die gesamte Datei-`tables`-Mapping
+**vollständig** — keine Vermischung einzelner Tabellen aus beiden Quellen
+innerhalb derselben Liste (`mergeTables` in `config_file.go`). Begründung:
+`ADR-0052` Entscheidung 2 formuliert die Precedence als „Feld für Feld";
+`tables` ist im `Config`-Typ ein einzelnes Feld (eine Map), keine Menge
+unabhängig geführter Einzelfelder — dieselbe Behandlung wie bei
+`Source`/`Publication`/`Slot` (ganzer Wert ersetzt, nicht anteilig
+gemischt) vermeidet zusätzlich eine unklare dritte Präzedenz-Ebene
+(„welche Tabelle gewinnt, wenn `public.t1` in beiden Quellen mit
+unterschiedlicher `table_id` vorkommt?"), die `ADR-0052` nicht anspricht.
+Ein anders lautendes künftiges Bedürfnis (additive Mischung) ist eine neue
+Entscheidung, kein stiller Fortschritt dieser. Real gegen
+`TestMergeConfigTabellenCDCTablesSchlaegtDatei` getestet (rot bei
+Sabotage der Implementierung, siehe Bericht an den Reviewer/Verifier).
+
+**Ort der DSN-Ablehnung:** doppelt abgesichert — ein expliziter Check der
+drei verbotenen Schlüssel auf einem roh eingelesenen `map[string]any`
+*vor* dem typisierten, strikten Decoding (eigene, den Secret-Grund
+nennende Fehlerzeile, `ADR-0052` Entscheidung 6: „nicht stillschweigend
+ignoriert") **und** implizit durch `KnownFields(true)` selbst (die drei
+Schlüssel sind im `fileConfig`-Typ nicht deklariert, ein generischer
+„Feld nicht gefunden"-Fehler träte auch ohne den expliziten Check ein).
+Der explizite Check bleibt die tragende Instanz für die Fehlermeldung, die
+implizite Deckung ist eine Verteidigungslinie unabhängig von künftigen
+Struct-Änderungen.
+
+**Reihenfolge im Fehlerpfad `ConfigFromFile`:** Datei nicht lesbar →
+ungültiges YAML → verbotener DSN-Schlüssel → striktes Decoding
+(unbekannter Schlüssel/Typfehler). Eine leere Datei (kein YAML-Dokument,
+`io.EOF` beim Decode) ist **kein** Fehler — sie liefert
+`fileConfig{}` zurück, äquivalent zu einer Datei ohne jedes Feld.
 
 ## 4. Trigger
 
