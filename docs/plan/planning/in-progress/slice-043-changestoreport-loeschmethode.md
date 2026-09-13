@@ -178,9 +178,10 @@ bestehende Code für `Position`/`Remove` bereits dokumentiert („die
 Zeilen-Abwesenheit trägt der Rolle des Consumers in der Retention
 Rechnung", `ConsumerStatePort.Remove`-Doku). Das ist konsistent, weil das
 Domänenmodell einen Consumer erst über seine erste Bestätigung an eine
-Quelle bindet (`ConsumerPosition.Advance`, `ADR-0029` Regel 2) — vor der
-ersten Bestätigung besteht keine Quellen-Zuordnung, die `Positions` melden
-könnte.
+Quelle bindet (`internal/domain/model/consumer.go`,
+`ConsumerPosition.Advance`: „eine bestätigte Quelle bleibt gebunden") —
+vor der ersten Bestätigung besteht keine Quellen-Zuordnung, die
+`Positions` melden könnte.
 
 **3. Age-Berechnung — `ChangeRecord` trägt jetzt `CommittedAt`.**
 `RetentionPolicy.AllowsDeletion` verlangt das Alter eines Changes; der
@@ -277,7 +278,7 @@ zumindest *irgendwann* liest. Entscheidung: Die Abwesenheits-Lesart bleibt
 unverändert. Begründung: `model.Consumer` (Registrierung) und
 `model.ConsumerPosition` (Quellen-Bindung) sind im Domänenmodell bewusst
 getrennt — ein Consumer bindet sich erst mit seiner ersten `Advance`
-(`ADR-0029` Regel 2) an eine Quelle. Vor dieser ersten Bindung besteht
+(`internal/domain/model/consumer.go`) an eine Quelle. Vor dieser ersten Bindung besteht
 keine Quellen-Zuordnung, die `Positions` melden könnte, und ein
 registrierter, aber quellen-seitig untätiger Consumer ist retentionsseitig
 so zu behandeln, als hätte er noch nie erklärt, dass ihn *diese* Quelle
