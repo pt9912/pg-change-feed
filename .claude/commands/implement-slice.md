@@ -152,6 +152,24 @@ ist eine Lifecycle-Rücksprungkante (11).
     auflösbares Feld in den dort genannten Formen (`LH-*`, `ADR-*`, `· seit welle-<NN>`, wellenlos
     `· seit slice-<NNN>`) — alles andere ist Zustand, keine Chronik, und wird vor der Übergabe
     umformuliert statt mitgeschleift.
+    **Enumerations-Pflicht statt Erinnerung** (`BEO-PGC/slice-chronik-in-code-kommentar`, 3×;
+    Architect-Verdikt
+    `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`): ein visueller Scan hat
+    real eine von mehreren Fundstellen im selben Commit übersehen, nachdem zwei andere bereits
+    korrigiert waren — eine Enumerations-Lücke, keine Verständnis-Lücke. Deshalb vor der Übergabe
+    zusätzlich einen **diff-skopierten** (nicht repo-weiten) Kandidatenlauf gegen genau die in
+    diesem Lauf geänderten `.go`-/`tools/schema/*.sql`-Dateien ausführen, z. B.:
+    `git diff --name-only <Basis> -- '*.go' 'tools/schema/*.sql' | xargs -r grep -nE
+    'slice-[0-9]+|welle-[0-9]+|vor diesem [Ss]lice|nach diesem [Ss]lice|seit diesem [Ss]lice'`.
+    Repo-weit liefe derselbe Lauf gegen die etablierte, zulässige Testfall-Provenienz-Zitierform
+    (Godoc-Kommentare wie „TestXyz trägt/deckt … aus `review-slice-NNN.md` F-x" — über 15+ Dateien
+    etabliert, siehe Architect-Verdikt) und würde in Rauschen ertrinken; deshalb nur der Diff dieses
+    Laufs. Jeder Treffer bekommt **eine** Probe: Begründet der Satz, **warum ein Testfall/
+    Regressionsfall existiert** (Subjekt: der Test — zulässige Provenienz), oder **warum sich der
+    Produktionscode aktuell so verhält** (Subjekt: die Funktion/der Code-Pfad — Chronik,
+    unzulässig)? Nur Letzteres wird umformuliert. Kein Sensor/Gate dafür (geprüft und verworfen,
+    Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
+    dieser Schritt bleibt Disziplin.
 
 Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontexten** (Modul 8).
 
