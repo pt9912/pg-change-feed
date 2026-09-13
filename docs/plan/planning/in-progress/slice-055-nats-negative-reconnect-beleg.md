@@ -74,24 +74,24 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-SST-007` Negative-Beleg real erfüllt: real gegen den
+- [x] `LH-FA-SST-007` Negative-Beleg real erfüllt: real gegen den
       NATS-Server-Container die Verbindung des Test-Subscribers trennen
       (nicht bloß simulieren), während der Trennung eine oder mehrere
       Changes erzeugen, danach real wiederverbinden und belegen, dass die
       Changes ausschließlich über `cdc.changes` sichtbar werden — nicht
       über ein nachgeliefertes NATS-Signal — `make test-integration`.
-- [ ] Der Testablauf belegt real (Log-Beleg), dass während der Trennung
+- [x] Der Testablauf belegt real (Log-Beleg), dass während der Trennung
       **kein** Wecksignal beim Subscriber ankommt, sondern erst nach der
       Wiederverbindung überhaupt kein Signal für die verpassten Changes
       mehr eintrifft (Core NATS liefert nichts nach).
-- [ ] `make gates` grün, `make test-integration` grün.
+- [x] `make gates` grün, `make test-integration` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
+- [x] Kein Doku-Update nötig — kein neuer öffentlicher Vertrag, nur ein
       zusätzlicher Beleg für bestehendes Verhalten.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine `reconciliation.md` vorhanden.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
