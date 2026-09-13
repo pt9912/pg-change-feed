@@ -100,7 +100,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Disziplin, analog zum Regressionstest-Rot-Beleg in `slice-052`).
 - [ ] `make gates` grün (unverändert — dieser Slice ändert kein bestehendes
       Gate-Target).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-056.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update: `harness/README.md` §Werkzeuge neuer Eintrag für den
