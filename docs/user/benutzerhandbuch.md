@@ -424,10 +424,11 @@ die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — sieh
 
 ### Diagnose ausführen
 
-Statt der beiden SQL-Abfragen oben einzeln zu stellen, liest der
-`diagnose`-Sondermodus dieselben Views (`cdc.heartbeat`, `cdc.metrics`) über
-`CDC_READER_DSN` und gibt eine menschenlesbare Zusammenfassung aus
-(`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`) — derselbe Image-Tag wie der
+Statt der SQL-Abfragen oben einzeln zu stellen, liest der
+`diagnose`-Sondermodus dieselben Views (`cdc.heartbeat`, `cdc.metrics`,
+`cdc.retention_blockers`) über `CDC_READER_DSN` und gibt eine
+menschenlesbare Zusammenfassung aus (`LH-FA-SST-003`, deckt
+`LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`) — derselbe Image-Tag wie der
 Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
 
 ```bash
@@ -449,9 +450,18 @@ pg-change-feed diagnose: Quelle "src-mvp"
   CDC-Abstand cdc_capture_lag (LH-FA-ADM-004): 0.087s
   Verarbeitungsrückstand cdc_consumer_lag je Consumer (LH-FA-ADM-005, nur Consumer mit mindestens einer bestätigten Position):
     cli-e2e-consumer: 0
+  Blockierender Consumer (LH-FA-RET-005): CLI E2E Consumer (cli-e2e-consumer), bestätigte Position 42, Rückstand 3
+  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): 65536 Bytes
 ```
 
-**Ergebnis:** Wie bei den Rohwerten der beiden Views trifft der Befehl keine
+Trägt keine Quelle in `cdc.retention_blockers` gar keine Zeile (noch kein
+Consumer hat je gegen sie bestätigt), zeigt die Zeile stattdessen:
+
+```text
+  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)
+```
+
+**Ergebnis:** Wie bei den Rohwerten der Views trifft der Befehl keine
 Schwellenwert-Entscheidung (`SPEC-007` bleibt Sache des lesenden Systems) und
 der Prozess-Ausgang trägt nur den Lese-Erfolg — ein gemeldeter Fehlerzustand
 oder Rückstand ist Berichtsinhalt, kein Befehlsfehler (Ausgang bleibt 0). Ein
@@ -459,7 +469,11 @@ Consumer ohne je bestätigte Position erscheint nicht in der Rückstands-Liste
 (dieselbe Grenze wie bei `cdc_consumer_lag` in [Metriken
 lesen](#metriken-lesen)); ein Consumer mit bestätigter Position, dessen
 Quelle noch nie eine Transaktion trug, erscheint mit dem Text „unbekannt"
-statt einem irreführenden Rückstand von 0.
+statt einem irreführenden Rückstand von 0. Der blockierende Consumer und
+`cdc_storage_bytes` folgen derselben Lese-Disziplin wie [Blockierende
+Consumer erkennen](#blockierende-consumer-erkennen) und [Metriken
+lesen](#metriken-lesen) — keine neue Berechnung, nur dieselben Sichten über
+die CLI ausgegeben.
 
 ### WAL-Rückstand prüfen
 
@@ -687,3 +701,4 @@ MIT — siehe `LICENSE`.
 | 1.5 | 2026-09-13 | Neuer `diagnose`-Sondermodus ergänzt (`LH-FA-SST-003`, deckt `LH-FA-ADM-002`…`005`, slice-038): §4 „Diagnose ausführen", `cdc_reader`-Zeile und `CDC_READER_DSN`-Zeile aktualisiert |
 | 1.6 | 2026-09-13 | Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`, `ADR-0052`, `SPEC-016`, slice-041) ergänzt: §5 neue Unterüberschrift, Env-Var-Tabelle um `CDC_CONFIG_FILE` erweitert, `CDC_TABLES`-Pflichtangabe präzisiert |
 | 1.7 | 2026-09-13 | SQL-Administration nachdokumentiert (`LH-FA-ADM-001`, `LH-FA-CFG-002`, `ADR-0050`, slice-036, slice-037, slice-042): §4 zwei neue Abschnitte „Tabelle live aktivieren" und „Tabelle deaktivieren" (`cdc.enable_table`/`cdc.disable_table`, asynchrone Antrags-Queue, Status-Polling) |
+| 1.8 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |

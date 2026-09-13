@@ -20,7 +20,10 @@
 # LH-FA-ADM-002…005, slice-038): derselbe externe `docker exec`-Zugriffsweg
 # gegen den `diagnose`-Sondermodus, einmal im Normalbetrieb und einmal mit
 # einem direkt in `cdc.process_heartbeat` geschriebenen Fehlerzustand
-# (LH-FA-ADM-003 Boundary).
+# (LH-FA-ADM-003 Boundary). Ergänzend ein Retention-Sichtbarkeits-Beleg
+# (deckt LH-FA-RET-005/006) über denselben `diagnose`-Aufruf: „kein
+# Blocker" vor jeder Consumer-Bestätigung, dann ein real blockierender
+# Consumer samt `cdc_storage_bytes`.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -369,6 +372,35 @@ exec_feed() {
   docker exec "$FEED_CONTAINER" /pg-change-feed "$@"
 }
 
+# Retention-Sichtbarkeits-Beleg (CLI), Zustand 1 — kein Blocker
+# (LH-FA-SST-003, deckt LH-FA-RET-005/006): an dieser Stelle hat noch kein
+# über register-consumer/acknowledge-consumer geführter Consumer gegen
+# `src-mvp` bestätigt — die beiden Consumer, die
+# TestMVPRetentionBlockersViewShowsFurthestBehindConsumer weiter oben direkt
+# über den ConsumerStatePort-Adapter registrierte, sind bereits per
+# `t.Cleanup` entfernt (siehe deren Funktionskommentar in
+# test/integration/integration_test.go). `cdc.retention_blockers` trägt
+# deshalb real keine Zeile für `src-mvp`, und die `diagnose`-Ausgabe muss das
+# als „kein Blocker" zeigen, nicht als Fehlerzustand.
+set +e
+diagnose_noblocker_output=$(exec_feed diagnose)
+diagnose_noblocker_status=$?
+set -e
+if [ "$diagnose_noblocker_status" -ne 0 ]; then
+  echo "run-integration-tests: diagnose (Retention-Beleg, kein Blocker, docker exec) endete mit Ausgang $diagnose_noblocker_status: $diagnose_noblocker_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$diagnose_noblocker_output" | grep -qF "Blockierender Consumer (LH-FA-RET-005): kein Blocker"; then
+  echo "run-integration-tests: diagnose-Ausgabe zeigt vor jeder Consumer-Bestätigung nicht 'kein Blocker' (LH-FA-RET-005): $diagnose_noblocker_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$diagnose_noblocker_output" | grep -qE "Speicherverbrauch cdc_storage_bytes \(LH-FA-RET-006\): [0-9]+ Bytes"; then
+  echo "run-integration-tests: diagnose-Ausgabe trägt keine numerische cdc_storage_bytes-Zeile (LH-FA-RET-006): $diagnose_noblocker_output" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Sichtbarkeits-Beleg (CLI, Zustand 1) — 'kein Blocker' vor jeder Consumer-Bestätigung, cdc_storage_bytes numerisch sichtbar (LH-FA-RET-005/006)"
+
 CLI_CONSUMER=cli-e2e-consumer
 CLI_TABLE=feed_mvp_full
 
@@ -585,7 +617,12 @@ echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status �
 # ungleich 0 (die BACKLOG_CONSUMER-Belegschreibungen liefen auf derselben
 # Tabelle nach seiner letzten Bestätigung); nur BACKLOG_CONSUMER, dessen
 # zweite Bestätigung unmittelbar davor lief, ist an dieser Stelle
-# verlässlich 0.
+# verlässlich 0. Retention-Sichtbarkeits-Beleg (CLI), Zustand 2 — realer
+# Blocker (LH-FA-RET-005/006): `cdc.retention_blockers` wählt je Quelle den
+# Consumer mit der kleinsten bestätigten Position — das ist an dieser
+# Stelle real CLI_CONSUMER (Rückstand ungleich 0, siehe oben), nicht
+# BACKLOG_CONSUMER (Rückstand 0). `cdc_storage_bytes` trägt zu diesem
+# Zeitpunkt bereits einen positiven Wert aus der bisherigen CDC-Erfassung.
 set +e
 diagnose_output=$(exec_feed diagnose)
 diagnose_status=$?
@@ -609,8 +646,16 @@ if ! printf '%s' "$diagnose_output" | grep -qE "$CLI_CONSUMER: [0-9]+"; then
   echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt keine numerische Rückstands-Zeile für $CLI_CONSUMER: $diagnose_output" >&2
   exit 1
 fi
+if ! printf '%s' "$diagnose_output" | grep -qE "Blockierender Consumer \(LH-FA-RET-005\): .*\($CLI_CONSUMER\), bestätigte Position [0-9]+, Rückstand [0-9]+"; then
+  echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) zeigt $CLI_CONSUMER nicht als real blockierenden Consumer (LH-FA-RET-005): $diagnose_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$diagnose_output" | grep -qE "Speicherverbrauch cdc_storage_bytes \(LH-FA-RET-006\): [0-9]+ Bytes"; then
+  echo "run-integration-tests: diagnose-Ausgabe (Normalbetrieb) trägt keine numerische cdc_storage_bytes-Zeile (LH-FA-RET-006): $diagnose_output" >&2
+  exit 1
+fi
 
-echo "run-integration-tests: CLI-Diagnose-Beleg (Normalbetrieb) — alle vier Signale (LH-FA-ADM-002…005) in der diagnose-Ausgabe sichtbar"
+echo "run-integration-tests: CLI-Diagnose-Beleg (Normalbetrieb) — alle vier Signale (LH-FA-ADM-002…005) sowie der reale Blocker $CLI_CONSUMER und cdc_storage_bytes (LH-FA-RET-005/006) in der diagnose-Ausgabe sichtbar"
 
 # Fehlerzustand-Beleg (LH-FA-ADM-003 Boundary: „erkennbar von Normalbetrieb
 # unterscheidbar"). Ein real vom Erfassungspfad ausgelöster Fehlerzustand

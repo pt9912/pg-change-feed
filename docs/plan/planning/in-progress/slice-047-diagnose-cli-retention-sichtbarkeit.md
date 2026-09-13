@@ -88,25 +88,28 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `diagnose`-CLI zeigt real den aktuell blockierenden Consumer je
+- [x] `diagnose`-CLI zeigt real den aktuell blockierenden Consumer je
       Quelle (aus `cdc.retention_blockers`) und den `cdc_storage_bytes`-Wert
       (aus `cdc.metrics`) — real gegen mindestens einen Zustand ohne
-      Blocker und einen mit realem Blocker getestet.
-- [ ] `LH-FA-SST-003` real erweitert: ein externer `docker exec`-Beleg in
+      Blocker und einen mit realem Blocker getestet. Siehe Plan-Nachzug.
+- [x] `LH-FA-SST-003` real erweitert: ein externer `docker exec`-Beleg in
       `tools/harness/run-integration-tests.sh` zeigt beide Zustände in der
       `diagnose`-Ausgabe, ohne den laufenden Feed-Container zu beenden
-      (analog zum bestehenden CLI-Diagnose-Beleg-Muster).
-- [ ] `make gates` grün, `make test-integration` grün.
+      (analog zum bestehenden CLI-Diagnose-Beleg-Muster). Siehe Plan-Nachzug.
+- [x] `make gates` grün, `make test-integration` grün. Beide real ausgeführt
+      (Ausgaben im Implementer-Bericht).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die erweiterte
-      `diagnose`-Ausgabe (Abschnitt „Aufbewahrung (Retention)").
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die erweiterte
+      `diagnose`-Ausgabe (Abschnitt „Aufbewahrung (Retention)"). Neuer
+      Beispiel-Block in „Diagnose ausführen" (beide Zustände) plus
+      Changelog-Zeile 1.8.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — keine Beobachtung angefallen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Wellenlos — Prüfung läuft bei diesem Slice erst nach dem `git mv` nach `done/` (AGENTS.md §3.3), also bei der Closure, nicht im Implementer-Lauf.
 
 ## 3. Plan (vor Code)
 
@@ -120,6 +123,55 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/wiring.go` (`Diagnose`) | update | neuer Retention-Abschnitt (Blocker, Storage-Bytes) |
 | `tools/harness/run-integration-tests.sh` | update | neuer `docker exec`-Diagnose-Beleg für Retention |
 | `docs/user/benutzerhandbuch.md` | update | erweiterte `diagnose`-Ausgabe dokumentiert |
+
+### Plan-Nachzug (nach Implementierung)
+
+Regeln dieser Sektion: Implementierungsentscheidungen, die über die Tabelle
+oben hinausgehen — Platzierung der beiden realen Zustände im
+Compose-Lauf und die SQL-Form der neuen Abfragen.
+
+**1. Zwei reale Zustände, kein neuer Backdating-Aufwand.** Der Plan nannte
+einen „zurückhängenden Consumer" als Muster für den realen Blocker-Zustand,
+analog zu `slice-044`s Backdating-Technik. Die Implementierung braucht diese
+Technik nicht: Der bereits bestehende `CLI-Diagnose-Beleg
+(Normalbetrieb)`-Abschnitt in `tools/harness/run-integration-tests.sh` läuft
+zu einem Zeitpunkt, an dem `CLI_CONSUMER` real einen von Null verschiedenen
+Rückstand trägt (siehe dessen eigener Kommentar: `BACKLOG_CONSUMER`s zweite
+Bestätigung lief unmittelbar davor und ist dort verlässlich 0). Da
+`cdc.retention_blockers` je Quelle den Consumer mit der kleinsten
+bestätigten Position wählt, ist `CLI_CONSUMER` an genau dieser Stelle real
+der blockierende Consumer — ein zweiter, eigens konstruierter Rückstand war
+nicht nötig; die bestehende Assertion-Gruppe wurde um zwei weitere
+Prüfungen ergänzt (Blocker-Zeile, `cdc_storage_bytes`-Zeile).
+
+**2. „Kein Blocker"-Zustand vor jeder Consumer-Bestätigung, nicht über eine
+eigene Quelle.** `cdc.retention_blockers` trägt für `src-mvp` erst ab der
+ersten Consumer-Bestätigung gegen diese Quelle eine Zeile. Die beiden
+Consumer, die `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer`
+direkt über den `ConsumerStatePort`-Adapter registriert und bestätigt hatte,
+sind zu diesem Zeitpunkt bereits über `t.Cleanup` entfernt (siehe deren
+Funktionskommentar) — der neue Beleg läuft deshalb unmittelbar nach dem
+`exec_feed`-Funktionsdefinitionspunkt und vor der ersten
+`register-consumer`/`acknowledge-consumer`-Zeile des Black-Box-Rundlaufs,
+wo `cdc.retention_blockers` für `src-mvp` real keine Zeile trägt.
+
+**3. `retention_blockers`-Abfrage mit `WHERE source_id = $1`, dieselbe
+Ein-Zeilen-Erwartung wie die View selbst.** `cdc.retention_blockers` trägt
+laut ihrer eigenen `DISTINCT ON (source_id)`-Definition höchstens eine Zeile
+je Quelle; `Diagnose` fragt sie mit derselben Quellen-Bindung ab, die die
+Funktion bereits für `cdc.heartbeat` trägt (`source model.SourceID`,
+Parameter `$1`). `pgx.ErrNoRows` ist die einzige erwartete Abwesenheitsform
+(dieselbe Lesart wie beim Betriebsstatus-Zweig oben in derselben Funktion),
+kein Fehlerausgang.
+
+**4. `backlog` als `*int64` gelesen, defensiv gegen einen strukturell nicht
+erreichbaren Fall.** Die Spalte ist eine Subtraktion über eine korrelierte
+`max(commit_position)`-Unterabfrage; ein `NULL`-Ergebnis wäre nur möglich,
+wenn eine Quelle ohne jede committete Transaktion trotzdem eine bestätigte
+Consumer-Position trägt — strukturell nicht erreichbar, aber der Scan liest
+defensiv über einen Zeiger statt mit einem Lesefehler zu enden, dieselbe
+Disziplin wie beim bestehenden `cdc_consumer_lag`-Zweig in derselben
+Funktion.
 
 ## 4. Trigger
 
@@ -157,13 +209,22 @@ dasteht.
 - Eine Quelle ohne aktuellen Blocker (`cdc.retention_blockers` liefert
   keine Zeile) könnte die CLI-Ausgabe fälschlich als Fehlerzustand statt
   als „kein Blocker" zeigen — dieselbe Klasse Randfall wie `slice-038`s
-  §6 Risiko 2 und `slice-045`s §6 Risiko 1. **Ausgang:** <bei Closure
-  einzutragen>
+  §6 Risiko 2 und `slice-045`s §6 Risiko 1. **Ausgang: entfallen.** Der
+  `pgx.ErrNoRows`-Zweig behandelt die Abwesenheit explizit als eigenen Fall
+  (dieselbe Lesart wie beim Betriebsstatus-Zweig) und gibt „kein Blocker
+  (kein Consumer hat je gegen diese Quelle bestätigt)" aus, kein
+  Fehlerausgang. Real bestätigt: `make test-integration` zeigt den Text vor
+  jeder Consumer-Bestätigung, Prozess-Ausgang bleibt 0.
 - Die neue Retention-Sektion könnte das bestehende, stabile
   `diagnose`-Ausgabeformat so verändern, dass `run-integration-tests.sh`s
   bereits bestehende Text-Assertions gegen `LH-FA-ADM-002`…`005`
-  (Normalbetrieb/Fehlerzustand-Belege) brechen. **Ausgang:** <bei Closure
-  einzutragen>
+  (Normalbetrieb/Fehlerzustand-Belege) brechen. **Ausgang: entfallen.** Die
+  neuen Zeilen kommen ausschließlich als zusätzliche, angehängte Ausgabe
+  nach dem bestehenden `cdc_consumer_lag`-Block — kein bestehender
+  Ausgabetext wurde verändert oder verschoben. Real bestätigt: derselbe
+  `make test-integration`-Lauf zeigt alle bereits bestehenden Assertions
+  (Normalbetrieb, Fehlerzustand-Boundary) unverändert grün, zusätzlich zu
+  den beiden neuen Retention-Zuständen.
 
 ## 7. Closure-Notiz
 
@@ -182,18 +243,41 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der real bereits existierende Rückstand von
+  `CLI_CONSUMER` im bestehenden `CLI-Diagnose-Beleg (Normalbetrieb)`-Abschnitt
+  ließ sich direkt als realer Blocker-Beleg wiederverwenden — ohne die in
+  `slice-044` etablierte Backdating-Technik nachzubauen, siehe Plan-Nachzug
+  Punkt 1. Die „kein Blocker"-Prüfung nutzt denselben Effekt in die
+  Gegenrichtung: der Zeitpunkt vor jeder `register-consumer`/
+  `acknowledge-consumer`-Zeile des Black-Box-Rundlaufs trägt real keine
+  Zeile in `cdc.retention_blockers`, ohne eine eigene Quelle oder einen
+  eigenen Consumer anlegen zu müssen. Beide Zustände liefen im ersten
+  vollständigen `make test-integration`-Lauf nach dem obligatorischen
+  `make image`-Rebuild sofort grün.
+- **Was ging anders als geplant:** Der erste `make test-integration`-Lauf
+  schlug an der neuen „kein Blocker"-Prüfung fehl, weil der Compose-Stack
+  noch das alte `ghcr.io/pt9912/pg-change-feed:dev`-Image ohne die neue
+  `Diagnose`-Erweiterung führte (`compose.yaml` trägt bewusst keinen
+  `build:`-Block) — kein Code-Fehler, sondern ein übersprungener
+  `make image`-Lauf vor dem Testlauf, wie `harness/README.md` §Werkzeuge es
+  für Build-Kontext-Änderungen vorschreibt. Nach `make image` lief derselbe
+  Testlauf real grün. Der Image-Digest änderte sich entsprechend
+  (`harness/image-hash.txt`), der Digest-Commit ist Teil dieses Slice.
+- **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — kein neuer Testfall entstand (die neuen Prüfungen sind
+  Shell-Assertions gegen einen bereits existierenden `docker exec
+  diagnose`-Aufruf, kein neues `-run`-Filtermuster-Element), und keine der
+  bereits registrierten `BEO-PGC`-Einträge (siehe §8) wurde durch diesen
+  Slice ein weiteres Mal ausgelöst.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen:** Wellenlos — Prüfung läuft bei diesem Slice erst nach
+  dem `git mv` nach `done/`, nicht in diesem Implementer-Lauf. Vorab
+  feststellbar: kein `liegt in`-Feld in dieser Notiz (nichts verkörpert),
+  kein Folge-Slice genannt, keine neue Beobachtungs-Register-Zeile — alle
+  drei Paarungen sind damit vor der eigentlichen Prüfung bereits vakuos
+  erfüllbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

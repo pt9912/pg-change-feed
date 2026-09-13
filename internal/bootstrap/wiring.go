@@ -1129,25 +1129,30 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 	return 0
 }
 
-// Diagnose liest die vier in `LH-FA-SST-003`s Boundary genannten
+// Diagnose liest die in `LH-FA-SST-003`s Boundary genannten
 // Status-/Diagnosesignale über dieselben SQL-Lese-Views wie `Healthcheck`
-// oben (`cdc.heartbeat`, `cdc.metrics`) und gibt sie menschenlesbar auf
-// `stdout` aus: Betriebsstatus und Fehlerzustand (`LH-FA-ADM-002`/`003`,
-// aus `cdc.heartbeat`), CDC-Abstand (`LH-FA-ADM-004`, `cdc_capture_lag`)
-// und Verarbeitungsrückstand je Consumer (`LH-FA-ADM-005`,
-// `cdc_consumer_lag{consumer}`). Anders als `Healthcheck` trifft dieser
-// Befehl keine binäre Verdikt-Entscheidung — er gibt die Rohwerte beider
-// Views unverändert weiter, keine Schwellenwert-Klassifikation (`SPEC-007`
-// bleibt Sache des lesenden Systems, wie bei den Views selbst). Der
-// Prozess-Ausgang trägt nur den Lese-Erfolg: 0 nach vollständig
-// gelesenen Views — unabhängig vom Inhalt, ein gemeldeter Fehlerzustand
-// oder Rückstand ist Berichtsinhalt, kein Befehlsfehler —, 1 bei
-// Verbindungs- oder Query-Fehler (dieselben ersten beiden Fehlerklassen
-// wie `Healthcheck`: DSN ungültig, Instanz nicht erreichbar, plus eine
-// dritte je nicht lesbarer View). Der Aufruf öffnet eine eigene,
+// oben (`cdc.heartbeat`, `cdc.metrics`) sowie `cdc.retention_blockers` und
+// gibt sie menschenlesbar auf `stdout` aus: Betriebsstatus und
+// Fehlerzustand (`LH-FA-ADM-002`/`003`, aus `cdc.heartbeat`), CDC-Abstand
+// (`LH-FA-ADM-004`, `cdc_capture_lag`), Verarbeitungsrückstand je Consumer
+// (`LH-FA-ADM-005`, `cdc_consumer_lag{consumer}`), der aktuell die Löschung
+// blockierende Consumer je Quelle (`LH-FA-RET-005`, `cdc.retention_blockers`)
+// und der Speicherverbrauch (`LH-FA-RET-006`, `cdc_storage_bytes`). Anders
+// als `Healthcheck` trifft dieser Befehl keine binäre Verdikt-Entscheidung —
+// er gibt die Rohwerte aller Views unverändert weiter, keine
+// Schwellenwert-Klassifikation (`SPEC-007` bleibt Sache des lesenden
+// Systems, wie bei den Views selbst). Der Prozess-Ausgang trägt nur den
+// Lese-Erfolg: 0 nach vollständig gelesenen Views — unabhängig vom Inhalt,
+// ein gemeldeter Fehlerzustand oder Rückstand ist Berichtsinhalt, kein
+// Befehlsfehler —, 1 bei Verbindungs- oder Query-Fehler (dieselben ersten
+// beiden Fehlerklassen wie `Healthcheck`: DSN ungültig, Instanz nicht
+// erreichbar, plus eine dritte je nicht lesbarer View). Eine Quelle ohne
+// Zeile in `cdc.retention_blockers` (kein Consumer hat je gegen sie
+// bestätigt) meldet „kein Blocker" — dieselbe Abwesenheits-Lesart wie beim
+// Betriebsstatus oben, kein Fehlerzustand. Der Aufruf öffnet eine eigene,
 // kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
-// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: beide
-// Views tragen ein `SELECT`-Grant an `cdc_reader`).
+// (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: alle
+// drei Views tragen ein `SELECT`-Grant an `cdc_reader`).
 func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -1229,5 +1234,34 @@ func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 	if !found {
 		fmt.Println("    (keiner — kein Consumer mit bestätigter Position)")
 	}
+
+	var blockerConsumer, blockerName string
+	var blockerAckPos int64
+	var blockerBacklog *int64
+	err = pool.QueryRow(ctx,
+		"SELECT consumer_id, name, acknowledged_position, backlog FROM cdc.retention_blockers WHERE source_id = $1",
+		string(source),
+	).Scan(&blockerConsumer, &blockerName, &blockerAckPos, &blockerBacklog)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		fmt.Println("  Blockierender Consumer (LH-FA-RET-005): kein Blocker (kein Consumer hat je gegen diese Quelle bestätigt)")
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.retention_blockers nicht lesbar: %v\n", err)
+		return 1
+	default:
+		if blockerBacklog == nil {
+			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand unbekannt (Quelle trug noch nie eine Transaktion)\n", blockerName, blockerConsumer, blockerAckPos)
+		} else {
+			fmt.Printf("  Blockierender Consumer (LH-FA-RET-005): %s (%s), bestätigte Position %d, Rückstand %d\n", blockerName, blockerConsumer, blockerAckPos, *blockerBacklog)
+		}
+	}
+
+	var storageBytes float64
+	if err := pool.QueryRow(ctx, "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_storage_bytes'").Scan(&storageBytes); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.metrics (cdc_storage_bytes) nicht lesbar: %v\n", err)
+		return 1
+	}
+	fmt.Printf("  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): %.0f Bytes\n", storageBytes)
+
 	return 0
 }
