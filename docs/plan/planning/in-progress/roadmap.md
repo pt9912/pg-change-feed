@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-13 — Retention-Löschausführung](../welle-13.md)
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -54,8 +56,7 @@ bewusst als eigene Feature-Welle abgetrennt, nicht als E2E-Testarbeit):
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| Retention-Löschausführung | `welle-12` liegt in `done/` | Noch nicht geschnitten — reine Feature-Arbeit: tatsächliche Löschausführung für `LH-FA-RET-002`…`006` (Use-Case/CLI/Job, der `RetentionPolicy.AllowsDeletion` real aufruft) plus Metrik `cdc_storage_bytes`; schließt `BEO-PGC/retention-keine-loeschausfuehrung` | L |
-| E2E-Abdeckung — Retention | Vorherige Welle (Retention-Löschausführung) liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
+| E2E-Abdeckung — Retention | `welle-13` liegt in `done/` | Noch nicht geschnitten — Black-Box-E2E für die neu gebaute Löschausführung; ohne die vorherige Welle gäbe es nichts zu testen | M |
 | Performance-Benchmarks & Test-Coverage-Gate | Vorherige Welle (E2E-Abdeckung Retention) liegt in `done/` | Noch nicht geschnitten — (a) Mess-Infrastruktur für `LH-QA-PER-001`…`003` (Quell-Impact, Skalierung, Batch-Effizienz); andere Disziplin als E2E-Tests (Benchmark statt Pass/Fail); (b) Go-Test-Coverage-Gate (`go test -coverprofile`, Schwelle 80 % — Modul 13 „Schwellen sind ADR-pflichtig", eigene ADR nötig) ohne Suppression-Möglichkeit ohne zentral dokumentierte Ausnahme (Muster: `/Development/KI/ai-harness-init/.golangci.yml` `exclusions.rules` mit `Why:`-Begründung statt Inline-`//nolint`); füllt dabei `AGENTS.md` §3.2 (Suppression-Verbot) aus, das in diesem Repo noch der unausgefüllte Template-Platzhalter ist | L |
 | Publication-Entzug-Wirksamkeit am laufenden Stream | Vorherige Welle (Performance-Benchmarks) liegt in `done/` | Slice(s), die `BEO-PGC/walsender-wirksamkeit` schließen: Wirksamkeits-Beleg für Disable am live laufenden Walsender (Neuaufbau-Wait oder Stream-Neustart-Behandlung) | S |
 | `LH-FA-SST-007` — NATS-Change-Notification | Vorherige Welle (Publication-Entzug-Wirksamkeit) liegt in `done/` | Noch nicht geschnitten — mindestens: NATS-Publish-Adapter bei Commit, Nachhol-Garantie für nicht verbundene Consumer (`LH-FA-SST-007` Boundary), Wiederverbindungs-Verhalten (`LH-FA-SST-007` Negative) | L |
@@ -102,7 +103,7 @@ flowchart LR
     W9B[welle-10: Schema-Evolution-Nachlieferung ADR-0015]
     W10[welle-11: E2E-Abdeckung — Verwaltung & Observability]
     W10B[welle-12: Verwaltungsfunktionen — SQL-Administration und CLI-Diagnose]
-    W11[geplant: Retention-Löschausführung]
+    W11[welle-13: Retention-Löschausführung]
     W12[geplant: E2E-Abdeckung — Retention]
     W13[geplant: Performance-Benchmarks & Test-Coverage-Gate]
     W14[geplant: Publication-Entzug-Wirksamkeit]
@@ -151,3 +152,4 @@ zweites Closure-Log, und zwei Logs driften.
 |---|---|---|
 | 2026-09-12 | Neue Feature-Welle „Schema-Evolution-Nachlieferung (`ADR-0015`)" zwischen `welle-9` und „E2E-Abdeckung — Verwaltung & Observability" eingefügt; deren Trigger von „`welle-9` liegt in `done/`" auf „Vorherige Welle (Schema-Evolution-Nachlieferung) liegt in `done/`" umgehängt. | `slice-030` fand real, dass [`ADR-0015`](../../adr/0015-schema-evolution.md)s Folgepflicht (`SchemaStorePort`, dynamische Re-Versionierung) nie eingelöst wurde (`docs/reviews/review-slice-030.md` F-1 HIGH, Architect-Verdikt `docs/reviews/architect-verdict-slice-030-adr-0015.md`) — Größenordnung Feature-Welle, nicht Einzel-Slice. |
 | 2026-09-12 | Neue Feature-Welle „Verwaltungsfunktionen — SQL-Administration (`LH-FA-ADM-001`)" zwischen „E2E-Abdeckung — Verwaltung & Observability" und „Retention-Löschausführung" eingefügt; „E2E-Abdeckung — Verwaltung & Observability"s Scope auf den bereits existierenden Lesezugriff (`LH-FA-CFG-003`/`004`, `LH-FA-ADM-002`…`005`) präzisiert, ihr fälschlicher Bezug zu `BEO-PGC/rollen-test-abdeckungsluecken` gestrichen; „Retention-Löschausführung"s Trigger entsprechend umgehängt. | Fork-Recherche zur Eröffnung von `welle-11` fand real, dass [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (Lastenheft, Rang 1) explizite SQL-Administrationsfunktionen (Aktivierung/Deaktivierung/Status/Consumer-Verwaltung) verlangt, die nicht existieren, und dass `LH-FA-CFG-002` (Deaktivierung) keinen Live-Zugriffsweg hat — registriert als `BEO-PGC/verwaltung-keine-sql-administration`; Größenordnung Feature-Welle, kein Testabdeckungs-Defizit. |
+| 2026-09-13 | „Retention-Löschausführung" als `welle-13` eröffnet (verlässt *Nächste Wellen*, Zeiger unter *Offene Wellen*); „E2E-Abdeckung — Retention"s Trigger von „Vorherige Welle (Retention-Löschausführung) liegt in `done/`" auf „`welle-13` liegt in `done/`" präzisiert. | `welle-12` liegt in `done/`, Architect-Verdikt zur Löschausführung liegt vor (`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`) — Eröffnungs-Trigger erfüllt. |
