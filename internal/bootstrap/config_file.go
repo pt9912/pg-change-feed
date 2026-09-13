@@ -110,11 +110,10 @@ func ConfigFromFile(path string) (fileConfig, error) {
 
 // ConfigFromEnvAndFile ist der verdrahtete Zugriffsweg (`ADR-0052`
 // Entscheidung 5, verdrahtet in `cmd/pg-change-feed/main.go`):
-// `CDC_CONFIG_FILE` leer/unbenannt trägt exakt den heutigen
-// `ConfigFromEnv`-Pfad, unverändert — jeder bestehende Env-only-Aufruf
-// zeigt identisches Verhalten wie vor diesem Slice. Ist die Variable
-// gesetzt, aber die Datei unter diesem Pfad nicht ladbar, ist das ein
-// `ErrConfiguration`-Fehler — kein stiller Fallback auf Env-only
+// `CDC_CONFIG_FILE` leer/unbenannt delegiert vollständig an
+// `ConfigFromEnv` — derselbe Env-only-Pfad, keine Datei-Berührung. Ist die
+// Variable gesetzt, aber die Datei unter diesem Pfad nicht ladbar, ist das
+// ein `ErrConfiguration`-Fehler — kein stiller Fallback auf Env-only
 // (`ADR-0052` Entscheidung 5).
 func ConfigFromEnvAndFile(getenv func(string) string) (Config, error) {
 	path := getenv(envConfigFile)
