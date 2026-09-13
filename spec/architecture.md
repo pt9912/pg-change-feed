@@ -1,6 +1,6 @@
 # Architektur — PG Change Feed
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-09-09.
+**Status:** Aktiv. **Letzte Änderung:** 2026-09-13.
 
 **Rolle:** Sicht-Stratum — *keine* eigenen Anforderungen, derivativ. Regeln:
 Baseline-Regelwerk `modul-03-spec.md` §Ziel-Form: Architektur-Sicht.
@@ -186,11 +186,14 @@ sequenceDiagram
 
 Reset ist eine explizite administrative Sonderoperation, keine reguläre ACK.
 
-### Use-Case: LH-FA-CFG-001.a — Tabelle aktivieren
+### Use-Case: LH-FA-CFG-001.a — Tabelle aktivieren (CLI, synchron)
+
+Der CLI-Aufruf ruft `EnableTableUseCase` direkt auf und wartet auf dessen
+Rückkehr — derselbe Aufbau wie `register-consumer`/`acknowledge-consumer`.
 
 ```mermaid
 sequenceDiagram
-    participant A as Administrator über SQL/CLI (ARC-005)
+    participant A as Administrator über CLI (ARC-005)
     participant EUC as EnableTableUseCase (ARC-003/002)
     participant SSP as SchemaStorePort (ARC-004)
     participant MA as PostgresMetadataAdapter (ARC-006)
@@ -203,6 +206,39 @@ sequenceDiagram
     MA-->>SSP: registriert
     SSP-->>EUC: aktiviert
     EUC-->>A: Status
+```
+
+### Use-Case: LH-FA-CFG-001.a — Tabelle aktivieren (SQL, asynchron)
+
+Der SQL-Aufruf schreibt ausschließlich einen Antrags-Datensatz und
+bestätigt „beantragt", nicht „aktiv" — der laufende Capture-Prozess trägt
+einen Hintergrund-Zug, der offene Anträge liest, denselben
+`EnableTableUseCase` wie der CLI-Pfad aufruft und sein Ergebnis im
+Antrags-Datensatz vermerkt. Beide Pfade laufen über denselben Inbound
+Port; nur der Aufrufweg zu ihm unterscheidet sich.
+
+```mermaid
+sequenceDiagram
+    participant A as Administrator über SQL (ARC-005)
+    participant AQ as Antragsqueue (ARC-006)
+    participant AP as Administrations-Hintergrundzug (ARC-007)
+    participant EUC as EnableTableUseCase (ARC-003/002)
+    participant SSP as SchemaStorePort (ARC-004)
+    participant MA as PostgresMetadataAdapter (ARC-006)
+    participant PG as PostgreSQL
+
+    A->>AQ: Antrag schreiben (Status offen) + Wecksignal
+    AQ-->>A: Antrags-Kennung
+    AP->>AQ: Wecksignal empfangen oder periodisch lesen
+    AQ-->>AP: offene Anträge
+    AP->>EUC: Aktiviere Tabelle t
+    EUC->>SSP: Replica Identity prüfen, Tabellen-/Schema-Registrierung
+    SSP->>MA: Metadaten persistieren
+    MA->>PG: Publication / Replication Slot verwalten
+    MA-->>SSP: registriert
+    SSP-->>EUC: aktiviert
+    EUC-->>AP: Status
+    AP->>AQ: Antrag als erledigt vermerken
 ```
 
 ## 5. Fehlermodelle und Resilienz

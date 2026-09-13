@@ -234,3 +234,31 @@ const UpsertHeartbeatFault = `
 INSERT INTO cdc.process_heartbeat (source_id, heartbeat_at, error_class)
 VALUES ($1, current_timestamp, $2)
 ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_class = EXCLUDED.error_class`
+
+// SelectPendingAdministrationRequests liest die offenen Anträge der
+// Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
+// Anlage-Reihenfolge (`requested_at`) — die Administrations-Goroutine
+// verarbeitet sie in dieser Ordnung, sowohl nach `NOTIFY` als auch
+// periodisch als Fallback-Poll.
+const SelectPendingAdministrationRequests = `
+SELECT administration_request_id, source_id, schema_name, table_name, request_kind
+FROM cdc.administration_request
+WHERE status = 'pending'
+ORDER BY requested_at`
+
+// UpdateAdministrationRequestApplied vermerkt einen erfolgreich
+// verarbeiteten Antrag; die WHERE-Klausel trägt die Idempotenz — ein
+// bereits vermerkter Antrag (nicht mehr `pending`) bleibt unverändert und
+// die Rückkehr trägt `RowsAffected() == 0`, kein Fehler.
+const UpdateAdministrationRequestApplied = `
+UPDATE cdc.administration_request
+SET status = 'applied', error_message = NULL
+WHERE administration_request_id = $1 AND status = 'pending'`
+
+// UpdateAdministrationRequestFailed vermerkt einen gescheiterten Antrag
+// samt Fehlertext; dieselbe Idempotenz-Klausel wie
+// UpdateAdministrationRequestApplied.
+const UpdateAdministrationRequestFailed = `
+UPDATE cdc.administration_request
+SET status = 'failed', error_message = $2
+WHERE administration_request_id = $1 AND status = 'pending'`

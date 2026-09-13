@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -492,4 +493,127 @@ func TestConsumeRelationNilSchemaStoreStaysNoop(t *testing.T) {
 	if _, err := assembler.Consume(ctx, relationEvent); err != nil {
 		t.Fatalf("Relation ohne SchemaStorePort: %v", err)
 	}
+}
+
+// TestAddBindingActivatesNewTable trägt die Live-Reload-Zusage
+// (`ADR-0050`): eine über `AddBinding` nachgetragene Bindung aktiviert die
+// Erfassung derselben laufenden `Assembler`-Instanz, ohne Neuanlage — das
+// Muster der Administrations-Goroutine, nachdem `EnableTableUseCase` real
+// gelaufen ist.
+func TestAddBindingActivatesNewTable(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{})
+	newRelation := relation("public", "orders", decode.Column{Name: "id", Key: true})
+
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 1}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	if _, err := assembler.Consume(ctx, decode.Change{
+		Relation: newRelation, Operation: decode.OpInsert, New: []*string{pointer("1")},
+	}); err != nil {
+		t.Fatalf("Insert vor AddBinding: %v", err)
+	}
+	command, err := assembler.Consume(ctx, decode.Commit{CommitLSN: 1, CommitTime: time.Now()})
+	if err != nil {
+		t.Fatalf("Commit vor AddBinding: %v", err)
+	}
+	if changes, err := command.Transaction.Changes(); err != nil || len(changes) != 0 {
+		t.Fatalf("vor AddBinding: Änderungen = %v (err=%v), wollen 0 (noch nicht aktiviert)", changes, err)
+	}
+
+	assembler.AddBinding("public.orders", mapper.TableBinding{TableID: "tbl-orders", SchemaVersion: "sv-orders"})
+
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 2}); err != nil {
+		t.Fatalf("Begin nach AddBinding: %v", err)
+	}
+	if _, err := assembler.Consume(ctx, decode.Change{
+		Relation: newRelation, Operation: decode.OpInsert, New: []*string{pointer("2")},
+	}); err != nil {
+		t.Fatalf("Insert nach AddBinding: %v", err)
+	}
+	command, err = assembler.Consume(ctx, decode.Commit{CommitLSN: 2, CommitTime: time.Now()})
+	if err != nil {
+		t.Fatalf("Commit nach AddBinding: %v", err)
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil || len(changes) != 1 {
+		t.Fatalf("nach AddBinding: Änderungen = %v (err=%v), wollen 1 (jetzt aktiviert)", changes, err)
+	}
+	if changes[0].SourceTableID != "tbl-orders" || changes[0].SchemaVersion != "sv-orders" {
+		t.Fatalf("Change trägt nicht die nachgetragene Bindung: %+v", changes[0])
+	}
+}
+
+// TestRemoveBindingDeactivatesTable spiegelt den vorigen Test für die
+// Deaktivierung: nach `RemoveBinding` fließen Änderungen an der Tabelle
+// nicht mehr in die Transaktion — derselbe Aktivierungs-Filter
+// (`LH-FA-CFG-001`) wie bei einer nie aktivierten Tabelle.
+func TestRemoveBindingDeactivatesTable(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+
+	assembler.RemoveBinding("public.feed")
+
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 1}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	relationEvent := &decode.Relation{Schema: "public", Name: "feed", Columns: []decode.Column{{Name: "id", Key: true}}}
+	if _, err := assembler.Consume(ctx, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert, New: []*string{pointer("1")},
+	}); err != nil {
+		t.Fatalf("Insert nach RemoveBinding: %v", err)
+	}
+	command, err := assembler.Consume(ctx, decode.Commit{CommitLSN: 1, CommitTime: time.Now()})
+	if err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil || len(changes) != 0 {
+		t.Fatalf("nach RemoveBinding: Änderungen = %v (err=%v), wollen 0 (deaktiviert)", changes, err)
+	}
+}
+
+// TestAssemblerLiveReloadIsRaceFree trägt `ADR-0050`s Fitness Function:
+// `Assembler.tables` verträgt gleichzeitigen Zugriff aus zwei Goroutinen —
+// dem Capture-Stream (`Consume`) und der Administrations-Goroutine
+// (`AddBinding`/`RemoveBinding`) — ohne Data Race (`go test -race`). Die
+// Schleife bildet genau dieses Muster nach: eine Goroutine konsumiert
+// fortlaufend Transaktionen, während eine zweite dieselbe Bindung
+// wiederholt hinzufügt und entfernt.
+func TestAssemblerLiveReloadIsRaceFree(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{})
+	dynRelation := relation("public", "dyn", decode.Column{Name: "id", Key: true})
+
+	const iterations = 200
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			xid := uint32(i + 1) //nolint:gosec // Testschleife, kein Sicherheitskontext
+			if _, err := assembler.Consume(ctx, decode.Begin{XID: xid}); err != nil {
+				t.Errorf("Begin: %v", err)
+				return
+			}
+			if _, err := assembler.Consume(ctx, decode.Change{
+				Relation: dynRelation, Operation: decode.OpInsert, New: []*string{pointer("1")},
+			}); err != nil {
+				t.Errorf("Change: %v", err)
+				return
+			}
+			if _, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(i + 1), CommitTime: time.Now()}); err != nil {
+				t.Errorf("Commit: %v", err)
+				return
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			assembler.AddBinding("public.dyn", mapper.TableBinding{TableID: "tbl-dyn", SchemaVersion: "sv-dyn"})
+			assembler.RemoveBinding("public.dyn")
+		}
+	}()
+	wg.Wait()
 }

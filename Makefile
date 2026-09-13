@@ -35,6 +35,15 @@ image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht
 # postgres:18-alpine` (amd64). Caches leben in Docker-Volumes, Daten im
 # Container — nichts davon im Arbeitsbaum.
 TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
+# TOOLCHAIN_RACE_IMAGE trägt denselben Go-Toolchain-Stand wie TOOLCHAIN_IMAGE
+# (`go1.27.1`, real geprüft), aber Debian statt Alpine: der Race-Detector
+# braucht einen C-Compiler zum Linken (`gcc`), den das Alpine-Image nicht
+# trägt (`CGO_ENABLED=0` dort ohne ihn) — `go test -race` bricht sonst vor
+# dem ersten Testlauf ab (`ADR-0050` Fitness Function: „Assembler.tables …
+# ohne Mutex/Kommando-Kanal ist das ein Data Race, go test -race"). Die
+# Produktions-Kompilierung (Dockerfile) bleibt CGO-frei — dieses Image trägt
+# ausschließlich den Testlauf.
+TOOLCHAIN_RACE_IMAGE ?= golang:1.27@sha256:b475798fb16158e6c38e8b5ca2d870fbeaa8b7fec0fc8ec64b3dc20966040635
 PG_TEST_IMAGE ?= postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
 GO_MODCACHE_VOLUME ?= pg-change-feed-gomodcache
 
@@ -42,10 +51,10 @@ mod-download: ## Go-Module in den Volume-Cache laden (braucht Netz, Vorbereitung
 	docker run --rm -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod \
 	  -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go mod download
 
-test: ## Unit-Tests im gepinnten Toolchain-Container (netzlos)
+test: ## Unit-Tests im gepinnten Toolchain-Container (netzlos, mit Race-Detector)
 	docker run --rm --network none -v "$(CURDIR)":/src:ro \
 	  -v $(GO_MODCACHE_VOLUME):/go/pkg/mod \
-	  -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go test ./...
+	  -w /src -e GOCACHE=/tmp/gocache -e CGO_ENABLED=1 $(TOOLCHAIN_RACE_IMAGE) go test -race ./...
 
 test-store: ## Adapter-Tests gegen reale PostgreSQL (Testcontainer, gepinnt)
 	@bash tools/harness/run-store-tests.sh

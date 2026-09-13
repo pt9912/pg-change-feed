@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -76,9 +77,21 @@ type TableBinding struct {
 // (`nil`) bleibt eine Relation-Nachricht wirkungslos — der Regelfall für
 // Tests, die diesen Pfad nicht prüfen, die reale Verdrahtung übergibt
 // immer eine Instanz (`internal/bootstrap/wiring.go`).
+//
+// `tables` wird über `tablesMu` synchronisiert (`ADR-0050`): der
+// Capture-Stream liest sie aus `Consume`/`change`/`observeRelation` in
+// seiner eigenen Goroutine, die Administrations-Goroutine schreibt
+// zusätzliche Bindungen über `AddBinding`/`RemoveBinding` aus einer
+// zweiten Goroutine — ohne Synchronisation wäre der gleichzeitige Zugriff
+// eine Data Race (`go test -race`). Ein `sync.RWMutex` statt eines
+// Kommando-Kanals in `Consume`: die Lese-Seite (jede Änderung im
+// Capture-Stream) ist weitaus häufiger als die Schreib-Seite (eine
+// Aktivierung/Deaktivierung), und ein Mutex hält die bestehenden
+// Konsum-Methoden ohne Umbau zu einer kanalgetriebenen Schleife.
 type Assembler struct {
 	source      model.SourceID
 	tables      map[string]TableBinding
+	tablesMu    sync.RWMutex
 	schemaStore outbound.SchemaStorePort
 	open        *openTransaction
 }
@@ -185,7 +198,7 @@ func (a *Assembler) Consume(ctx context.Context, event decode.Event) (*inbound.C
 // Sequenz trägt die Anhang-Reihenfolge und startet je Transaktion bei 1
 // (`SPEC-002`).
 func (a *Assembler) change(event decode.Change) (*model.Change, error) {
-	binding, activated := a.tables[event.Relation.QualifiedName()]
+	binding, activated := a.lookupBinding(event.Relation.QualifiedName())
 	if !activated {
 		return nil, nil
 	}
@@ -313,7 +326,7 @@ func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relati
 	if a.schemaStore == nil {
 		return nil
 	}
-	binding, activated := a.tables[relation.QualifiedName()]
+	binding, activated := a.lookupBinding(relation.QualifiedName())
 	if !activated {
 		return nil
 	}
@@ -355,8 +368,40 @@ func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relati
 	if _, err := a.schemaStore.RegisterVersion(ctx, nextVersion, schema); err != nil {
 		return err
 	}
-	a.tables[relation.QualifiedName()] = TableBinding{TableID: binding.TableID, SchemaVersion: nextID}
+	a.AddBinding(relation.QualifiedName(), TableBinding{TableID: binding.TableID, SchemaVersion: nextID})
 	return nil
+}
+
+// lookupBinding liest eine `TableBinding` synchronisiert (`tablesMu`) —
+// die gemeinsame Lese-Stelle von `change` und `observeRelation`.
+func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
+	a.tablesMu.RLock()
+	defer a.tablesMu.RUnlock()
+	binding, activated := a.tables[qualified]
+	return binding, activated
+}
+
+// AddBinding trägt eine `TableBinding` synchronisiert nach — sowohl die
+// dynamische Re-Versionierung einer bereits aktivierten Tabelle
+// (`observeRelation`, `ADR-0015` Folgepflicht) als auch die
+// Administrations-Goroutine (`ADR-0050`) rufen sie auf, wenn eine über SQL
+// beantragte Aktivierung real ausgeführt wurde — hier erstmals für eine
+// bislang nicht aktivierte Tabelle, aus einer zweiten Goroutine.
+func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	a.tables[qualified] = binding
+}
+
+// RemoveBinding entfernt eine `TableBinding` synchronisiert — die
+// Administrations-Goroutine ruft sie auf, nachdem eine über SQL beantragte
+// Deaktivierung real ausgeführt wurde (`ADR-0050`). Eine nicht (mehr)
+// vorhandene Bindung bleibt ohne Wirkung (Idempotenz, wie
+// `DisableTableUseCase`).
+func (a *Assembler) RemoveBinding(qualified string) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	delete(a.tables, qualified)
 }
 
 // rowImage trägt das JSON-Row-Image (`SPEC-002`, `ADR-0016`) einer

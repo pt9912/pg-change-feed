@@ -190,6 +190,16 @@ func (s *Stream) BindCapture(capture inbound.CaptureInboundPort) error {
 	return nil
 }
 
+// Assembler trägt den laufenden `mapper.Assembler` dieses Streams nach
+// außen (`ADR-0050`): die Administrations-Goroutine der Composition Root
+// trägt über ihn eine neue oder entfallene `TableBinding` synchronisiert
+// nach (`Assembler.AddBinding`/`RemoveBinding`), nachdem eine über SQL
+// beantragte Aktivierung/Deaktivierung real ausgeführt wurde — derselbe
+// laufende Übersetzer, den `Consume` in `Run` verwendet, kein zweiter.
+func (s *Stream) Assembler() *mapper.Assembler {
+	return s.assembler
+}
+
 // connectReplication baut die Replication-Verbindung über den
 // Treiber-Aufrufparameter `replication=database` auf; der DSN bleibt
 // unverändert für die übrigen Verbindungszüge (`ADR-0032`).

@@ -36,6 +36,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/acknowledge"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -82,6 +83,15 @@ const heartbeatInterval = 5 * time.Second
 // in Folge nicht mehr. Ausführungsdetail der Composition-Root-Verdrahtung
 // (`ADR-0026`), keine Architekturentscheidung.
 const heartbeatStaleAfter = 3 * heartbeatInterval
+
+// administrationPollInterval trägt den periodischen Fallback-Poll-Takt der
+// Administrations-Goroutine (`runAdministration`, `ADR-0050`): derselbe
+// Takt wie der Heartbeat-Schreib-Zug (`heartbeatInterval`) — ein
+// verpasstes `NOTIFY` (z. B. nach einem Verbindungsabbruch der
+// `LISTEN`-Verbindung) bleibt so höchstens einen Heartbeat-Takt lang
+// unbemerkt, ohne einen zweiten Konfigurationswert ohne eigenen Bedarf
+// einzuführen (Implementer-Entscheidung).
+const administrationPollInterval = heartbeatInterval
 
 // walRetentionWarnBytes und walRetentionErrorBytes tragen die
 // SPEC-013-Startwerte für `cdc_wal_retention_bytes` (`CDC_THRESHOLDS`,
@@ -223,6 +233,35 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 	return tables, nil
 }
 
+// activatedTableBindings liest den committed Bindungsstand einer Quelle
+// (`TableActivationPort.List`) und trägt ihn als `mapper.TableBinding`-Map
+// fort — die Grundlage des Stream-Starts (`ADR-0050`): `CDC_TABLES` bleibt
+// der Erstaktivierungs-Seed einer leeren Datenbank (oben in `Run`), dieser
+// Aufruf liest danach den tatsächlichen Stand, einschließlich jeder
+// zwischenzeitlich über SQL aktivierten Tabelle, deren Kennung `CDC_TABLES`
+// nicht trägt. Eine aktivierte Tabelle ohne registrierte Schema-Version
+// (widerspräche `TableActivationPort.Register`s Vertrag: beide Zeilen in
+// einem Commit) bleibt ohne Bindung — keine Erfassung ohne
+// Interpretationsgrundlage.
+func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, source model.SourceID) (map[string]mapper.TableBinding, error) {
+	registered, err := activation.List(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	tables := make(map[string]mapper.TableBinding, len(registered))
+	for _, table := range registered {
+		current, found, err := schemaStore.CurrentVersion(ctx, table.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			continue
+		}
+		tables[table.QualifiedName()] = mapper.TableBinding{TableID: table.ID, SchemaVersion: current.ID}
+	}
+	return tables, nil
+}
+
 // splitQualifiedName teilt den qualifizierten Tabellennamen am ersten
 // Punkt in Schema und Tabellenname; die Bindungs-Zeile trägt beide Teile
 // getrennt (`LH-FA-DAT-002`), die Umgebung trägt den Namen als
@@ -324,6 +363,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// lassen.
 	defer reportFault(heartbeat, cfg.Source, &runErr)
 	enableTables := enable.NewEnableTableService(activation)
+	disableTables := disable.NewDisableTableService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
 		if err != nil {
@@ -346,12 +386,24 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}
 	}
 
+	// Der laufende Bindungsstand des Assemblers trägt sich aus der
+	// Datenbank fort (`TableActivationPort.List`/`SchemaStorePort.CurrentVersion`),
+	// nicht ausschließlich aus `cfg.Tables`: `CDC_TABLES` bleibt der
+	// Erstaktivierungs-Seed oben (schreibt eine leere Datenbank fort), die
+	// Grundlage des Stream-Starts ist der committed Stand — ein
+	// Prozess-Neustart verliert damit keine zwischenzeitlich per SQL
+	// aktivierte Tabelle, deren Kennung `CDC_TABLES` nicht trägt.
+	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, cfg.Source)
+	if err != nil {
+		return err
+	}
+
 	stream, err := receive.NewStream(ctx, receive.Config{
 		DSN:         cfg.CaptureDSN,
 		Source:      cfg.Source,
 		Publication: cfg.Publication,
 		Slot:        cfg.Slot,
-		Tables:      cfg.Tables,
+		Tables:      assemblerTables,
 		SchemaStore: schemaStore,
 		Log:         log,
 	})
@@ -365,6 +417,54 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	if err := stream.BindCapture(capture.NewCaptureService(store, ack)); err != nil {
 		return err
 	}
+
+	// Die Antrags-Queue-Verbindung (`cdc.administration_request`,
+	// `ADR-0050`) trägt dieselbe Rolle wie Aktivierung und Heartbeat
+	// (`cdc_admin`) — ein eigener Pool, getrennt von beiden: die
+	// Administrations-Goroutine liest und schreibt unabhängig von ihrem
+	// Schreib-Takt.
+	adminRequests, err := postgresstorage.NewAdministrationRequest(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer adminRequests.Close()
+	// Die `LISTEN`-Verbindung trägt eine eigene, dedizierte Verbindung
+	// (keine Pool-Verbindung, siehe `AdministrationListener`) — dieselbe
+	// Rolle `cdc_admin`.
+	adminListener, err := postgresstorage.NewAdministrationListener(ctx, cfg.AdminDSN)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = adminListener.Close(closeCtx)
+	}()
+
+	// Die Administrations-Goroutine läuft wie Heartbeat und WAL-Retention
+	// über den eigenen Pool und die eigene Goroutine — kein Eingriff in
+	// die kritische Sektion des Capture-Persist-ACK-Pfads
+	// (`LH-QA-REL-001.a`). Sie trägt die laufende `Assembler`-Bindung
+	// desselben Streams nach (`stream.Assembler()`), den `stream.Run`
+	// unten konsumiert — kein zweiter Übersetzer.
+	administrationCtx, stopAdministration := context.WithCancel(ctx)
+	var administrationDone sync.WaitGroup
+	administrationDone.Add(1)
+	go func() {
+		defer administrationDone.Done()
+		runAdministration(administrationCtx, administrationDeps{
+			requests:      adminRequests,
+			listener:      adminListener,
+			activation:    activation,
+			enableTables:  enableTables,
+			disableTables: disableTables,
+			schemaStore:   schemaStore,
+			assembler:     stream.Assembler(),
+			publication:   cfg.Publication,
+			pollInterval:  administrationPollInterval,
+			log:           log,
+		})
+	}()
 
 	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
 	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
@@ -422,6 +522,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	heartbeatDone.Wait()
 	stopWALRetention()
 	walRetentionDone.Wait()
+	stopAdministration()
+	administrationDone.Wait()
 	return mergeStreamAndWALFaultOutcome(streamErr, &walFault)
 }
 
@@ -591,6 +693,167 @@ func runWALRetentionCheck(ctx context.Context, checker walRetentionMeasurer, log
 			}
 		}
 	}
+}
+
+// administrationListener entkoppelt `runAdministration` von der konkreten
+// `LISTEN`-Verbindung (`*postgresstorage.AdministrationListener` erfüllt
+// dieses Interface) — dasselbe Whitebox-Test-Muster wie
+// `walRetentionMeasurer`: eine Fälschung belegt die Fallback-Poll-Schleife
+// ohne reale PostgreSQL-Instanz.
+type administrationListener interface {
+	WaitForNotification(ctx context.Context) error
+}
+
+// administrationDeps bündelt die Abhängigkeiten der Administrations-
+// Goroutine (`runAdministration`, `ADR-0050`) — ein eigener Typ statt
+// einer langen Parameterliste, wie bei den übrigen periodischen Zügen
+// dieser Datei.
+type administrationDeps struct {
+	requests      outbound.AdministrationRequestPort
+	listener      administrationListener
+	activation    outbound.TableActivationPort
+	enableTables  inbound.EnableTableUseCase
+	disableTables inbound.DisableTableUseCase
+	schemaStore   outbound.SchemaStorePort
+	assembler     *mapper.Assembler
+	publication   string
+	pollInterval  time.Duration
+	log           outbound.LogPort
+}
+
+// runAdministration verarbeitet offene Anträge der Antrags-Queue
+// (`cdc.administration_request`, `ADR-0050`), bis `ctx` endet: jeder
+// Durchlauf verarbeitet zuerst die offenen Anträge, dann wartet er auf das
+// nächste Wecksignal (`NOTIFY`) — mit dem Fallback-Poll-Takt als Timeout
+// desselben Warte-Aufrufs, kein zweiter Ticker neben `WaitForNotification`.
+// Ein abgelaufener Timeout und ein reales Wecksignal lösen denselben
+// nächsten Verarbeitungs-Durchlauf aus; ein Verbindungsfehler der
+// `LISTEN`-Verbindung wird protokolliert und bleibt bis zum nächsten
+// erfolgreichen Wiederaufbau (`AdministrationListener`) durch den
+// Fallback-Poll gedeckt.
+func runAdministration(ctx context.Context, deps administrationDeps) {
+	for {
+		processAdministrationRequests(ctx, deps)
+		if ctx.Err() != nil {
+			return
+		}
+		waitCtx, cancel := context.WithTimeout(ctx, deps.pollInterval)
+		err := deps.listener.WaitForNotification(waitCtx)
+		cancel()
+		if err != nil && ctx.Err() != nil {
+			return
+		}
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+			deps.log.Warn(ctx, "administration: Wecksignal gestört — Fallback-Poll übernimmt", "error", err)
+		}
+	}
+}
+
+// processAdministrationRequests liest die offenen Anträge und verarbeitet
+// jeden einzeln; ein Lesefehler bleibt best-effort (derselbe nächste
+// Durchlauf versucht erneut). Ein gescheiterter Antrag wird als `failed`
+// vermerkt, statt `pending` zu bleiben — ein `pending` bleibender Antrag
+// würde jeden Durchlauf erneut versuchen, ohne dass sich der Fehlerzustand
+// ändert.
+func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
+	pending, err := deps.requests.ListPending(ctx)
+	if err != nil {
+		deps.log.Warn(ctx, "administration: Anträge lesen fehlgeschlagen", "error", err)
+		return
+	}
+	for _, request := range pending {
+		if err := applyAdministrationRequest(ctx, deps, request); err != nil {
+			deps.log.Warn(ctx, "administration: Antrag fehlgeschlagen",
+				"request_id", request.ID, "kind", request.Kind, "error", err)
+			if markErr := deps.requests.MarkFailed(ctx, request.ID, err.Error()); markErr != nil {
+				deps.log.Warn(ctx, "administration: Fehlschlag nicht vermerkt", "request_id", request.ID, "error", markErr)
+			}
+			continue
+		}
+		if err := deps.requests.MarkApplied(ctx, request.ID); err != nil {
+			deps.log.Warn(ctx, "administration: Erfolg nicht vermerkt", "request_id", request.ID, "error", err)
+		}
+	}
+}
+
+// applyAdministrationRequest führt einen einzelnen Antrag über den
+// passenden Inbound Port aus (einziger Schreibpfad auf Bindungs-Zeile und
+// Publication bleibt der Port, `ADR-0018`/`ADR-0046` unverändert) und
+// trägt bei Erfolg die laufende `Assembler`-Bindung nach. Die
+// Bindungs-Kennungen einer SQL-beantragten Aktivierung liegen nicht am
+// Antrags-Datensatz (anders als bei `CDC_TABLES`) — `administrationTableID`
+// trägt eine deterministische, wiederholbare Kennung: ein erneuter
+// Durchlauf über denselben (bereits verarbeiteten) Antrag — etwa nach
+// einem Prozess-Neustart, bevor der vorige Durchlauf den Vermerk schreiben
+// konnte — trägt dieselbe Kennung und trifft über `EnableTableUseCase`s
+// Idempotenz (`LH-FA-CFG-001` Boundary) dieselbe Zeile. Nach `Enable`
+// liest der Aufruf die tatsächlich registrierte Bindung über
+// `TableActivationPort.Registered` zurück, statt der soeben übergebenen
+// Kennung blind zu vertrauen — bereits vor diesem Antrag über `CDC_TABLES`
+// aktivierte Tabellen tragen sonst die falsche Kennung in der
+// nachgetragenen `Assembler`-Bindung.
+func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
+	qualified := request.Schema + "." + request.Table
+	switch request.Kind {
+	case model.AdministrationRequestEnable:
+		tableID := administrationTableID(request.Schema, request.Table)
+		if _, err := deps.enableTables.Enable(ctx, inbound.EnableTableCommand{
+			Source:          request.Source,
+			Schema:          request.Schema,
+			Table:           request.Table,
+			TableID:         tableID,
+			SchemaVersionID: administrationSchemaVersionID(tableID),
+			Version:         1,
+			Publication:     deps.publication,
+		}); err != nil {
+			return err
+		}
+		registered, found, err := deps.activation.Registered(ctx, request.Source, request.Schema, request.Table)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("Aktivierung ohne Bindungs-Zeile: %s", qualified)
+		}
+		current, found, err := deps.schemaStore.CurrentVersion(ctx, registered.ID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("Aktivierung ohne registrierte Schema-Version: %s", qualified)
+		}
+		deps.assembler.AddBinding(qualified, mapper.TableBinding{TableID: registered.ID, SchemaVersion: current.ID})
+		return nil
+	case model.AdministrationRequestDisable:
+		if _, err := deps.disableTables.Disable(ctx, inbound.DisableTableCommand{
+			Source:      request.Source,
+			Schema:      request.Schema,
+			Table:       request.Table,
+			Publication: deps.publication,
+		}); err != nil {
+			return err
+		}
+		deps.assembler.RemoveBinding(qualified)
+		return nil
+	default:
+		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable", request.Kind)
+	}
+}
+
+// administrationTableID trägt die deterministische Tabellen-Kennung einer
+// über SQL beantragten Aktivierung: der qualifizierte Name selbst — anders
+// als `CDC_TABLES`, das eine frei gewählte Kennung aus der Umgebung trägt,
+// hält ein Antrags-Datensatz nur Schema und Tabellenname.
+func administrationTableID(schema, table string) model.SourceTableID {
+	return model.SourceTableID(schema + "." + table)
+}
+
+// administrationSchemaVersionID trägt die Anfangs-Version-Kennung einer
+// über SQL beantragten Aktivierung — dasselbe Kennungsformat wie die
+// dynamische Re-Versionierung des Mappers (Tabellen-Kennung, getrennt
+// durch `-v`, Versionsnummer), hier für die erste Version.
+func administrationSchemaVersionID(table model.SourceTableID) model.SchemaVersionID {
+	return model.SchemaVersionID(fmt.Sprintf("%s-v1", table))
 }
 
 // reportFault meldet einen nicht-`nil` Lauf-Fehler als Fehlerzustand über

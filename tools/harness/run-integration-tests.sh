@@ -161,6 +161,7 @@ CREATE TABLE public.feed_mvp_full (id int PRIMARY KEY, name text);
 ALTER TABLE public.feed_mvp_full REPLICA IDENTITY FULL;
 CREATE TABLE public.feed_mvp_idle (id int PRIMARY KEY, name text);
 CREATE TABLE public.feed_mvp_schema (id int PRIMARY KEY, name text, amount text);
+CREATE TABLE public.feed_mvp_sql_admin (id int PRIMARY KEY, name text);
 INSERT INTO cdc.source (source_id, name) VALUES ('src-mvp', 'MVP-Quelle');
 SQL
 
@@ -565,6 +566,128 @@ if [ "$backlog_after" != "0" ]; then
 fi
 
 echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status — Rückstand vor der zweiten Bestätigung $backlog_before, danach $backlog_after (LH-FA-ADM-005)"
+
+# SQL-Administration Live-Reload-Beleg (ADR-0050, LH-FA-ADM-001,
+# LH-FA-CFG-001/002): `feed_mvp_sql_admin` ist bewusst NICHT Teil von
+# CDC_TABLES (compose.yaml) — ihre Aktivierung/Deaktivierung läuft
+# ausschließlich über die Antrags-Queue (`cdc.enable_table`/
+# `cdc.disable_table`), verarbeitet von der Administrations-Goroutine des
+# bereits laufenden Feed-Containers (kein Neustart, kein `docker restart`
+# wie beim Black-Box-CLI-Rundlauf oben). `SELECT cdc.enable_table(...)`
+# bestätigt nur „beantragt" — der Poll unten wartet auf
+# `status = 'applied'`, bevor die reale Erfassungswirkung geprüft wird.
+ADMIN_TABLE=feed_mvp_sql_admin
+
+enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.enable_table('src-mvp', 'public', '$ADMIN_TABLE')")
+if [ -z "$enable_request_id" ]; then
+  echo "run-integration-tests: cdc.enable_table($ADMIN_TABLE) lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+enable_status=""
+enable_applied=0
+for _ in $(seq 1 60); do
+  enable_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$enable_request_id'")
+  if [ "$enable_status" = "applied" ]; then
+    enable_applied=1
+    break
+  fi
+  if [ "$enable_status" = "failed" ]; then
+    error_message=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$enable_request_id'")
+    echo "run-integration-tests: cdc.enable_table($ADMIN_TABLE)-Antrag $enable_request_id scheiterte: $error_message" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+if [ "$enable_applied" -ne 1 ]; then
+  echo "run-integration-tests: cdc.enable_table($ADMIN_TABLE)-Antrag $enable_request_id wurde nicht innerhalb der Zeitspanne von der Administrations-Goroutine verarbeitet (status=${enable_status:-leer})" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$ADMIN_TABLE (id, name) VALUES (1, 'SqlAdminEnabled');
+SQL
+
+admin_enabled_captured=0
+for _ in $(seq 1 120); do
+  found=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '1'")
+  if [ "$found" = "1" ]; then
+    admin_enabled_captured=1
+    break
+  fi
+  sleep 0.25
+done
+if [ "$admin_enabled_captured" -ne 1 ]; then
+  echo "run-integration-tests: über SQL aktivierte Tabelle $ADMIN_TABLE — Änderung (id=1) wurde nicht vom laufenden Feed-Container erfasst (kein Neustart)" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach der SQL-Aktivierung nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (enable) — cdc.enable_table($ADMIN_TABLE) ohne Neustart verarbeitet, Änderung id=1 real erfasst"
+
+# Deaktivierung: derselbe Antrags-Weg, spiegelbildlich. Der Feed-Container
+# bleibt danach am Leben — nur die Erfassung dieser einen Tabelle endet
+# (`LH-FA-CFG-002`), der Prozess selbst nicht.
+disable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.disable_table('src-mvp', 'public', '$ADMIN_TABLE')")
+if [ -z "$disable_request_id" ]; then
+  echo "run-integration-tests: cdc.disable_table($ADMIN_TABLE) lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+disable_status=""
+disable_applied=0
+for _ in $(seq 1 60); do
+  disable_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$disable_request_id'")
+  if [ "$disable_status" = "applied" ]; then
+    disable_applied=1
+    break
+  fi
+  if [ "$disable_status" = "failed" ]; then
+    error_message=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$disable_request_id'")
+    echo "run-integration-tests: cdc.disable_table($ADMIN_TABLE)-Antrag $disable_request_id scheiterte: $error_message" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+if [ "$disable_applied" -ne 1 ]; then
+  echo "run-integration-tests: cdc.disable_table($ADMIN_TABLE)-Antrag $disable_request_id wurde nicht innerhalb der Zeitspanne von der Administrations-Goroutine verarbeitet (status=${disable_status:-leer})" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$ADMIN_TABLE (id, name) VALUES (2, 'SqlAdminDisabled');
+SQL
+
+# Keine Erfassung ist kein Ereignis, das ein Poll beobachten kann — eine
+# reale, aber begrenzte Wartezeit, bevor geprüft wird, dass die Zeile
+# NICHT in cdc.changes ankommt.
+sleep 3
+disabled_leaked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$ADMIN_TABLE' AND new_data->>'id' = '2'")
+if [ "$disabled_leaked" != "0" ]; then
+  echo "run-integration-tests: nach cdc.disable_table($ADMIN_TABLE) wurde eine Änderung (id=2) dennoch erfasst — Deaktivierung griff nicht" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach der SQL-Deaktivierung nicht mehr weiter (der Prozess muss weiterlaufen, nur die Tabellen-Erfassung endet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — cdc.disable_table($ADMIN_TABLE) verarbeitet, Änderung id=2 nicht erfasst, Feed-Container läuft unverändert weiter"
 
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet

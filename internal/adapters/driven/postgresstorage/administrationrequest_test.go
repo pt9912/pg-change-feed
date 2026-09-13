@@ -2,12 +2,16 @@ package postgresstorage_test
 
 import (
 	"context"
+	stderrors "errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // Die Antrags-Queue-Tests laufen gegen dieselbe reale PostgreSQL-Instanz wie
@@ -204,5 +208,162 @@ func TestAdministrationRequestDisableTableWritesPendingRequestAndNotifies(t *tes
 	}
 	if status != "pending" {
 		t.Fatalf("status = %q, wollen pending", status)
+	}
+}
+
+// TestAdministrationRequestAdapterListPendingMarkAppliedMarkFailed trägt
+// die Gegenrichtung des Ports (`ADR-0050`): der Adapter liest die über SQL
+// geschriebenen Anträge und vermerkt ihr Ergebnis — je ein Antrag pro
+// Ausgang (erfolgreich/gescheitert), damit beide Update-Pfade real
+// geprüft sind.
+func TestAdministrationRequestAdapterListPendingMarkAppliedMarkFailed(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var enableID, disableID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_adapter_enable",
+	).Scan(&enableID); err != nil {
+		t.Fatalf("cdc.enable_table: %v", err)
+	}
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.disable_table($1, $2, $3)", administrationRequestSource, "public", "orders_adapter_disable",
+	).Scan(&disableID); err != nil {
+		t.Fatalf("cdc.disable_table: %v", err)
+	}
+
+	pending, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending: %v", err)
+	}
+	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
+	for _, request := range pending {
+		byID[request.ID] = request
+	}
+	enableRequest, found := byID[model.AdministrationRequestID(enableID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den enable-Antrag %q: %+v", enableID, pending)
+	}
+	if enableRequest.Source != administrationRequestSource || enableRequest.Schema != "public" ||
+		enableRequest.Table != "orders_adapter_enable" || enableRequest.Kind != model.AdministrationRequestEnable {
+		t.Fatalf("enable-Antrag: %+v", enableRequest)
+	}
+	disableRequest, found := byID[model.AdministrationRequestID(disableID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den disable-Antrag %q: %+v", disableID, pending)
+	}
+	if disableRequest.Kind != model.AdministrationRequestDisable {
+		t.Fatalf("disable-Antrag: %+v", disableRequest)
+	}
+
+	if err := adapter.MarkApplied(ctx, enableRequest.ID); err != nil {
+		t.Fatalf("MarkApplied: %v", err)
+	}
+	if err := adapter.MarkFailed(ctx, disableRequest.ID, "Tabelle existiert nicht an der Quelle"); err != nil {
+		t.Fatalf("MarkFailed: %v", err)
+	}
+
+	var appliedStatus string
+	var failedStatus, failedMessage string
+	if err := pool.QueryRow(ctx, "SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", enableID).Scan(&appliedStatus); err != nil {
+		t.Fatalf("Status enable-Antrag lesen: %v", err)
+	}
+	if appliedStatus != "applied" {
+		t.Fatalf("Status enable-Antrag = %q, wollen applied", appliedStatus)
+	}
+	if err := pool.QueryRow(ctx, "SELECT status, error_message FROM cdc.administration_request WHERE administration_request_id = $1", disableID).Scan(&failedStatus, &failedMessage); err != nil {
+		t.Fatalf("Status disable-Antrag lesen: %v", err)
+	}
+	if failedStatus != "failed" || failedMessage != "Tabelle existiert nicht an der Quelle" {
+		t.Fatalf("Status/Fehlertext disable-Antrag = %q/%q", failedStatus, failedMessage)
+	}
+
+	remaining, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending nach Vermerk: %v", err)
+	}
+	for _, request := range remaining {
+		if request.ID == enableRequest.ID || request.ID == disableRequest.ID {
+			t.Fatalf("ListPending nach Vermerk trägt weiterhin einen vermerkten Antrag: %+v", request)
+		}
+	}
+}
+
+// TestAdministrationRequestAdapterMarkAppliedIsIdempotent trägt die
+// Idempotenz des Vermerks (`ADR-0050`s Konsequenz: ein Antrag über einen
+// Prozess-Neustart hinweg wird beim nächsten Poll erneut abgeholt) — ein
+// zweiter `MarkApplied`-Aufruf auf einen bereits vermerkten Antrag bleibt
+// ohne Fehler und ohne Wirkung.
+func TestAdministrationRequestAdapterMarkAppliedIsIdempotent(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var requestID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_adapter_idempotent",
+	).Scan(&requestID); err != nil {
+		t.Fatalf("cdc.enable_table: %v", err)
+	}
+
+	if err := adapter.MarkApplied(ctx, model.AdministrationRequestID(requestID)); err != nil {
+		t.Fatalf("erstes MarkApplied: %v", err)
+	}
+	if err := adapter.MarkFailed(ctx, model.AdministrationRequestID(requestID), "zu spät"); err != nil {
+		t.Fatalf("MarkFailed nach MarkApplied: %v", err)
+	}
+
+	var status string
+	if err := pool.QueryRow(ctx, "SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", requestID).Scan(&status); err != nil {
+		t.Fatalf("Status lesen: %v", err)
+	}
+	if status != "applied" {
+		t.Fatalf("status = %q, wollen applied (MarkFailed nach MarkApplied bleibt ohne Wirkung)", status)
+	}
+}
+
+// TestAdministrationListenerWaitForNotification trägt die
+// `LISTEN`-Wecksignal-Fähigkeit real: ein `NOTIFY` löst die Rückkehr aus,
+// eine ausbleibende Benachrichtigung endet über den Timeout des
+// übergebenen `ctx` (`context.DeadlineExceeded`) — der Fallback-Poll-Takt
+// der Administrations-Goroutine.
+func TestAdministrationListenerWaitForNotification(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	listener, err := postgresstorage.NewAdministrationListener(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationListener: %v", err)
+	}
+	t.Cleanup(func() { _ = listener.Close(context.Background()) })
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+	defer cancel()
+	if err := listener.WaitForNotification(timeoutCtx); !stderrors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("WaitForNotification ohne NOTIFY: %v, wollen context.DeadlineExceeded", err)
+	}
+
+	var requestID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_listener",
+	).Scan(&requestID); err != nil {
+		t.Fatalf("cdc.enable_table: %v", err)
+	}
+
+	notifyCtx, cancelNotify := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelNotify()
+	if err := listener.WaitForNotification(notifyCtx); err != nil {
+		t.Fatalf("WaitForNotification nach NOTIFY: %v", err)
 	}
 }
