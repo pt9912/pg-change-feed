@@ -88,18 +88,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün, `make test-integration` grün. Beide real
       ausgeführt (Ausgaben im Implementer-Bericht); zusätzlich
       `make test-store` real grün (Rollen-Grant-Beleg).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-045.md`](../../../reviews/review-slice-045.md)
+      (0 HIGH/MEDIUM/LOW, 1 INFO — kein Fixrunden-Bedarf). Verifikation in
+      [`docs/reviews/verify-slice-045.md`](../../../reviews/verify-slice-045.md)
+      (DoD eigenständig nachgeprüft, keine Rückführung nötig).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` nennt die neue View
       (analog zu „Aktivierte Tabellen auflisten"). Neuer Abschnitt
       „Blockierende Consumer erkennen" unter „Aufbewahrung (Retention)",
       plus `cdc_reader`-Zeile in der Rollen-Tabelle ergänzt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6 — beide entfallen.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo mit Wellen-Betrieb (`welle-13` offen) — Prüfung läuft bei der `welle-13`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -276,12 +280,21 @@ dasteht.
 - Ein Consumer ohne jede bestätigte Position (nie bestätigt) könnte die
   View entweder fälschlich als „kein Blocker" oder mit einem
   irreführenden Wert zeigen — dieselbe Klasse Randfall wie
-  `slice-038`s §6 Risiko 2. **Ausgang:** <bei Closure einzutragen>
+  `slice-038`s §6 Risiko 2. **Ausgang: entfallen.** Die View liest
+  `cdc.consumer_position` per `INNER JOIN` (keine `LEFT JOIN`) — ein nie
+  bestätigender Consumer trägt strukturell keine Zeile und kann deshalb
+  weder fälschlich als „kein Blocker" noch mit einem irreführenden Wert
+  erscheinen (Plan-Nachzug Punkt 3, real getestet und unabhängig vom
+  Verifier bestätigt, `docs/reviews/verify-slice-045.md` §3).
 - d-migrate könnte für die neue View denselben `POST_EXECUTE_DRIFT`-
   Bootstrap-Bedarf zeigen wie frühere Views vor ihrer deklarativen
   Überführung (`BEO-PGC/d-migrate-nacharbeit`) — mittlerweile aber laut
-  `harness/README.md` seit `slice-016` behoben für Views. **Ausgang:**
-  <bei Closure einzutragen>
+  `harness/README.md` seit `slice-016` behoben für Views. **Ausgang:
+  entfallen.** Real durch mehrere `make test-integration`-/
+  `make test-store`-Läufe bestätigt: `schema migrate --execute` legt
+  `cdc.retention_blockers` ohne `VIEW_SIGNATURE_UNKNOWN`-Blocker an,
+  auch nach wiederholtem Lauf gegen eine bereits migrierte DB
+  (`docs/reviews/verify-slice-045.md` §3).
 
 ## 7. Closure-Notiz
 
@@ -300,18 +313,47 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die reine Projektions-View (`DISTINCT ON` über
+  bestehende Tabellen) hielt den Slice tatsächlich auf drei Liefer-Punkte,
+  ohne neue Go-Domain-/Use-Case-Logik zu berühren — Reviewer und Verifier
+  bestätigen beide unabhängig, dass keine Duplikat-Logik zu
+  `RetentionPolicy.AllowsDeletion` entstand. Der Implementer fand und behob
+  einen realen Testfall-Hygiene-Fehler (liegen gebliebene
+  Consumer-Positionen blockierten den bestehenden `slice-044`-Retention-
+  Beleg) durch saubere Ursachen-Isolation (`git stash`-Vergleich gegen
+  unveränderten `HEAD`) statt Symptom-Behandlung.
+- **Was ging anders als geplant:** Der Reviewer markierte einen Punkt
+  (Verhältnis der neuen View zu `LH-FA-RET-005`s Boundary-Kriterium)
+  ausdrücklich als Verifier-Aufgabe statt ihn selbst zu bewerten — der
+  Verifier klärte eigenständig, dass die Boundary bereits vor diesem Slice
+  durch die bestehende `cdc.consumer_status`/`cdc_consumer_lag`-Kette
+  gedeckt war (`docs/reviews/verify-slice-045.md` §2); kein Substanz-Mangel,
+  nur eine Formulierungs-Unschärfe in DoD-Punkt 2. Der Verifier fand zudem
+  erneut eine nicht nachgezogene DoD-Checkbox („Review durchgeführt" trotz
+  sauberem Review ohne Fixrunde) — vierte Wiederholung dieser Symptom-Klasse
+  (nach `slice-039`/`043`/`044`), diesmal aber strukturell distinkt von
+  der bereits verkörperten `BEO-PGC/dod-checkbox-nachzug`-Regel: Diese
+  deckt nur den Implementer-eigenen Lauf (Schritt 18) bzw. eine Fixrunde
+  (Schritt 21) ab — bei einem sauberen Review ohne Fixrunde greift keiner
+  der beiden Träger. Neue Beobachtung registriert (siehe unten), kein
+  Architect-Zug ausgelöst (1×, unter der Schwelle).
+- **Steering-Loop-Eintrag:** *(kein Eintrag verkörpert — der Normalfall.)*
+- **Beobachtungs-Register (`../observations/`):**
+  `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde` neu angelegt, Beleg
+  `evidence/slice-045.md` — Zähler steht bei 1× (historische Vorkommen bei
+  `slice-039`/`043`/`044` zählen laut Präzedenzfall `BEO-PGC/plan-nachzug`
+  nicht, da vor der Registrierung). `BEO-PGC/retention-keine-
+  loeschausfuehrung` bleibt bei 0× bis zur `welle-13`-Closure;
+  `BEO-PGC/d-migrate-nacharbeit` unverändert bei 5× (bereits verkörpert).
+- **Folge-Slices:** keine neuen — `slice-046` steht bereits in `welle-13` §4.
+- **Risiken aus §6:** beide *entfallen* — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-13` offen) — Prüfung
+  für `retention-keine-loeschausfuehrung`/`slice-046` läuft bei der
+  `welle-13`-Closure. Für die neu angelegte
+  `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde` gilt: kein `liegt in`-Feld
+  (Ausgang *weiter offen*, nichts verkörpert), also kein Anker-Paarungs-
+  Gegenstand — nur die Register-Existenz zählt und ist hier bereits
+  geprüft (Verzeichnis + nicht leeres `evidence/`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
