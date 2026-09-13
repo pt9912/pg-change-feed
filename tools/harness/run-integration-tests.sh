@@ -781,6 +781,119 @@ fi
 
 echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — cdc.disable_table($ADMIN_TABLE) verarbeitet, Änderung id=2 nicht erfasst, Feed-Container läuft unverändert weiter"
 
+# Retention-Beleg (LH-FA-RET-002…004, ADR-0014): der Hintergrundzug
+# runRetentionCleanup ruft RunRetentionUseCase periodisch real auf
+# (retentionInterval, wiring.go). Zwei Zeilen auf feed_mvp_full (bereits
+# über den ganzen Lauf aktiviert): 'RetentionOld' (id=200), deren
+# Quelltransaktion direkt über SQL auf ein Alter über der konfigurierten
+# RetentionPolicy.MinAge (retentionMinAge = 24h, wiring.go) zurückdatiert
+# wird — derselbe Ansatz wie beim Fehlerzustand-Beleg oben, der
+# cdc.process_heartbeat direkt schreibt, statt auf reale Zeit zu warten —,
+# und 'RetentionYoung' (id=201), die real jung bleibt. Beide Zeilen liegen
+# zunächst hinter der zuletzt bestätigten Position beider bereits
+# geführten Consumer (CLI_CONSUMER, BACKLOG_CONSUMER) und sind damit
+# zusätzlich zur Alters-Prüfung durch die Consumer-Positionen blockiert:
+# der erste Poll unten belegt, dass die bereits alte Zeile trotzdem
+# erhalten bleibt, solange ein Consumer zurückhängt (LH-FA-RET-004). Erst
+# die zweite Bestätigung beider Consumer über die neue Position hinweg
+# gibt beide Zeilen aus Consumer-Sicht frei; der zweite Poll belegt, dass
+# danach nur die zurückdatierte Zeile real entfernt wird (LH-FA-RET-003),
+# die junge nicht — beides ohne Neustart des Feed-Containers.
+RETENTION_TABLE=feed_mvp_full
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$RETENTION_TABLE (id, name) VALUES (200, 'RetentionOld');
+SQL
+
+retention_old_position=""
+for _ in $(seq 1 120); do
+  retention_old_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+  if [ -n "$retention_old_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$retention_old_position" ]; then
+  echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$RETENTION_TABLE (id, name) VALUES (201, 'RetentionYoung');
+SQL
+
+retention_young_position=""
+for _ in $(seq 1 120); do
+  retention_young_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
+  if [ -n "$retention_young_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$retention_young_position" ]; then
+  echo "run-integration-tests: Retention-Beleg — 'RetentionYoung' (id=201) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "UPDATE cdc.transaction SET committed_at = current_timestamp - interval '25 hours' WHERE transaction_id = (SELECT transaction_id FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200')" >/dev/null
+
+# Erste Phase (Consumer-Block, LH-FA-RET-004): eine großzügige, feste
+# Wartezeit über mehr als zwei Lösch-Takte (retentionInterval=10s) hinweg
+# — anders als ein Poll-auf-Verschwinden, das es hier nicht geben soll,
+# belegt eine feste Wartezeit die Abwesenheit einer Löschung über
+# mehrere reale Takte, nicht nur einen einzelnen zu frühen Blick.
+sleep 25
+old_present_blocked=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+if [ "$old_present_blocked" != "1" ]; then
+  echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200, bereits alt genug) wurde entfernt, obwohl CLI_CONSUMER/BACKLOG_CONSUMER seine Position noch nicht bestätigt hatten (LH-FA-RET-004 Consumer-Block)" >&2
+  exit 1
+fi
+
+if ! exec_feed acknowledge-consumer "$CLI_CONSUMER" "$retention_young_position"; then
+  echo "run-integration-tests: Retention-Beleg — CLI_CONSUMER-Bestätigung über die Retention-Positionen hinweg endete mit einem Fehler" >&2
+  exit 1
+fi
+if ! exec_feed acknowledge-consumer "$BACKLOG_CONSUMER" "$retention_young_position"; then
+  echo "run-integration-tests: Retention-Beleg — BACKLOG_CONSUMER-Bestätigung über die Retention-Positionen hinweg endete mit einem Fehler" >&2
+  exit 1
+fi
+
+# Zweite Phase (Alters-Freigabe, LH-FA-RET-003): jetzt sind beide Zeilen
+# aus Consumer-Sicht frei — ein Poll auf das Verschwinden von id=200.
+old_deleted=0
+for _ in $(seq 1 60); do
+  remaining=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '200'")
+  if [ "$remaining" = "0" ]; then
+    old_deleted=1
+    break
+  fi
+  sleep 1
+done
+if [ "$old_deleted" -ne 1 ]; then
+  echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) wurde nach Freigabe durch beide Consumer nicht innerhalb der Zeitspanne real entfernt" >&2
+  exit 1
+fi
+
+young_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-mvp' AND table_name = '$RETENTION_TABLE' AND new_data->>'id' = '201'")
+if [ "$young_present" != "1" ]; then
+  echo "run-integration-tests: Retention-Beleg — 'RetentionYoung' (id=201, zu jung) wurde fälschlich real entfernt (LH-FA-RET-003 Mindestalter)" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Retention-Beleg nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing (LH-FA-RET-004), und wurde nach Freigabe durch beide Consumer real entfernt (LH-FA-RET-003); 'RetentionYoung' (id=201, zu jung) blieb durchgehend erhalten"
+
 # TestMVPSchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
