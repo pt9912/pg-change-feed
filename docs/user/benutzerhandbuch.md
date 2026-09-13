@@ -73,7 +73,7 @@ Gruppenrolle zuweisen:
 | Rolle | Zweck | Umgebungsvariable |
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`) | `CDC_ADMIN_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung) | `CDC_ADMIN_DSN` |
 | `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
@@ -327,6 +327,37 @@ LIMIT 500;
 **Ergebnis:** Jede Zeile ist eine committed Änderung in Anhang-Reihenfolge.
 `old_data`/`new_data` sind `jsonb`; bei `INSERT` ist `old_data` NULL, bei
 `DELETE` ist `new_data` NULL.
+
+### Aufbewahrung (Retention)
+
+Der Feed-Container bereinigt `cdc.change`-Zeilen automatisch über einen
+Hintergrundzug — kein CLI-Befehl und keine manuelle Auslösung nötig. Der
+Zug läuft alle 10 Sekunden und entfernt je Durchlauf genau die Zeilen, die
+zwei Bedingungen zugleich erfüllen: ihr Alter (gemessen am realen
+Quell-Commit-Zeitpunkt) erreicht mindestens 24 Stunden, **und** jeder
+Consumer, der für die Quelle bereits einmal bestätigt hat, hat eine
+Position an oder hinter der jeweiligen Zeile bestätigt. Beide Werte
+(Takt, Mindestalter) sind fest im Feed-Container hinterlegt; eine
+Laufzeit-Konfiguration über Umgebungsvariablen oder die YAML-Datei
+existiert dafür nicht.
+
+**Betriebs-Hinweis (Consumer-Bindung):** Ein registrierter, aber gegen
+eine Quelle noch nie bestätigender Consumer blockiert die Bereinigung
+dieser Quelle **nicht** — er zählt erst ab seiner ersten Bestätigung
+(`acknowledge-consumer` bzw. [Position bestätigen](#position-bestätigen))
+als schützenswert. Ein neu angebundener Consumer, der vor seinem ersten
+Lesezugriff vor Bereinigung geschützt sein soll, sollte deshalb einmal
+bestätigen (auch die dokumentierte Anfangsposition genügt), bevor er mit
+dem Lesen beginnt.
+
+Direkter SQL-Zugriff auf die betroffenen Tabellen bleibt zulässig
+(`cdc_admin`-Mitgliedschaft, verbunden über `CDC_ADMIN_DSN`):
+
+```sql
+SELECT change_id, committed_at FROM cdc.changes WHERE source_id = '<quelle-id>' ORDER BY commit_position;
+```
+
+Eine Zeile, die dort nicht mehr erscheint, wurde bereits bereinigt.
 
 ### Betriebsstatus prüfen
 
