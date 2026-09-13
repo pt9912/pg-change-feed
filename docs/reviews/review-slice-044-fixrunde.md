@@ -152,7 +152,7 @@ in den fünf Dateien; insbesondere `retention_internal_test.go` und
   vollständiger `grep`-Durchlauf gegen die Vereinigungsmenge der
   betroffenen `.go`-Dateien (oben dokumentiert), nicht aus dem
   Implementer-Bericht übernommen.
-- geprüft, ohne Befund: **`git diff` gegen ADR-0014 selbst ist leer** —
+- geprüft, ohne Befund: **`git diff` gegen `ADR-0014` selbst ist leer** —
   der Fix-Commit `e800d9d` ändert keine ADR-Datei (`AGENTS.md` §3.5).
 - geprüft, ohne Befund: **`make gates` real ausgeführt, grün.**
   `baseline-verify` (54 Dateien), `docs-check` (355 Dateien, 0 Befunde,
