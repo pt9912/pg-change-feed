@@ -21,6 +21,37 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
+# --- coverage: Go-Test-Coverage ueber internal/...+cmd/..., Gate-Skript
+# gegen COVERAGE_THRESHOLD (ADR-0054; Kalibrierungs-Bindung harness/README.md
+# §Sensors). `-coverpkg` misst ueber die Paketgrenzen von internal/...+cmd/...
+# hinweg, sonst zaehlt nur paket-lokale Abdeckung. `test/integration/` bleibt
+# ausgeschlossen (eigene Black-Box-Paketwurzel gegen einen laufenden
+# Compose-Container, kein Unit-Coverage-Kandidat). Adapter-Tests ohne
+# gesetzte CDC_*_TEST_DSN-Variable skippen real in diesem netzlosen Lauf,
+# ohne den Build zu brechen. `pipefail` via SHELL, damit
+# `go test … | tee` bzw. `go tool cover … | tee` den Exit-Code nicht maskiert. ---
+FROM deps AS coverage
+
+# golang:1.27-alpine traegt kein bash (anders als d-checks Debian-basierte
+# golang:${GO_VERSION}); die SHELL-Direktive unten braucht ein installiertes
+# bash, also VOR der Umstellung installieren (noch mit dem Alpine-Default-sh).
+RUN apk add --no-cache bash
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ARG COVERAGE_THRESHOLD
+ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
+
+COPY . .
+RUN mkdir -p /out && \
+    go test \
+        -coverpkg=./internal/...,./cmd/... \
+        -coverprofile=/out/coverage.out \
+        -covermode=atomic \
+        ./internal/... ./cmd/... && \
+    go tool cover -func=/out/coverage.out | tee /out/coverage-func.txt && \
+    bash tools/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
+
 # --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus
 # (ADR-0042: die Struktur-Regeln der abgeloesten Kette ADR-0038/0039 bleiben fortgeltend) ---
 FROM deps AS build

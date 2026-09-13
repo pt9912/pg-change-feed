@@ -1,8 +1,11 @@
 # Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
 # Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
-# wandern).
+# wandern). tools/coverage-gate.sh ist die Coverage-Gate-Zusatzausnahme
+# (ADR-0054, coverage-Stage): das Runtime-Image bleibt unberührt, die
+# Ausnahme gilt nur der Coverage-Stage im selben Dockerfile.
 *
 !cmd/
 !internal/
 !go.mod
 !go.sum
+!tools/coverage-gate.sh

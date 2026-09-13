@@ -72,26 +72,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Neue `coverage`-Docker-Stage misst real die Go-Test-Coverage über
+- [x] Neue `coverage`-Docker-Stage misst real die Go-Test-Coverage über
       `internal/...`+`cmd/...` und scheitert real, wenn ein künstlich
       abgesenkter Schwellenwert unterschritten wird (Rot-Beleg), und
-      besteht real bei der tatsächlichen Schwelle (Grün-Beleg).
-- [ ] Realer Ist-Stand beim ersten Lauf gemessen und dokumentiert
+      besteht real bei der tatsächlichen Schwelle (Grün-Beleg). Siehe §3
+      Plan-Nachzug — real gebaut, `COVERAGE_THRESHOLD=45` (über dem
+      Ist-Stand) scheitert real mit Exit 1, `COVERAGE_THRESHOLD=35`
+      (Einstiegsstufe) besteht real.
+- [x] Realer Ist-Stand beim ersten Lauf gemessen und dokumentiert
       (Plan-Nachzug) — Endstufe 80 % direkt, oder dokumentierte
-      Eskalationsstufe nach `ADR-0054`.
-- [ ] `make coverage-gate` in `make gates` verdrahtet, `harness/README.md`
+      Eskalationsstufe nach `ADR-0054`. Siehe §3 Plan-Nachzug — Ist-Stand
+      39,6 %, bootstrap-aware Gate mit Einstiegsstufe 35 %.
+- [x] `make coverage-gate` in `make gates` verdrahtet, `harness/README.md`
       §Sensors trägt die Kalibrierungs-Bindung, `AGENTS.md` §4 die neue
       Zeile.
-- [ ] `make gates` grün (inkl. des neuen Coverage-Gates).
+- [x] `make gates` grün (inkl. des neuen Coverage-Gates).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors, `AGENTS.md` §4 (siehe oben).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Doku-Update: `harness/README.md` §Sensors, `AGENTS.md` §4 (siehe oben).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield, `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Siehe §7 — neues Verzeichnis `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen). Siehe §6.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). `welle-14` ist offen; an die Welle-14-Closure delegiert.
 
 ## 3. Plan (vor Code)
 
@@ -107,6 +111,48 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` (bzw. `harness/mk/*.mk`) | update | `coverage-gate`-Target, Einbindung in `gates:` |
 | `harness/README.md` | update | §Sensors-Zeile für `make coverage-gate` |
 | `AGENTS.md` | update | §4 neue Zeile |
+
+### Plan-Nachzug (nach Code)
+
+Zwei Abweichungen vom reinen Kopiervorbild, beide erst am realen
+`docker build` sichtbar geworden (Details:
+[`BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`](../observations/BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/observation.md)):
+
+- `.dockerignore` schloss `tools/` aus — `tools/coverage-gate.sh` brauchte
+  eine gezielte `!tools/coverage-gate.sh`-Ausnahme, sonst fehlt das Skript
+  im Build-Kontext.
+- `golang:1.27-alpine` (dieses Repos `deps`-Basis) trägt kein `bash`
+  (anders als d-checks Debian-basierte `golang:${GO_VERSION}`) — die
+  `coverage`-Stage installiert es vor der `SHELL
+  ["/bin/bash", …]`-Direktive per `apk add --no-cache bash`.
+
+**Realer Ist-Stand (erster Lauf, `THRESHOLD=0`):** Gesamt-Coverage
+`39,6 %` über `./internal/...`+`./cmd/...` (`go tool cover -func`,
+`total:`-Zeile). Kein Paket ganz ohne Testdatei mit Fachlogik: die drei
+`[no test files]`-Pakete (`postgresstorage/queries`,
+`application/port/inbound`, `domain/errors`) tragen ausschließlich
+SQL-Textkonstanten bzw. Typ-/Sentinel-Deklarationen ohne ausführbare
+Statements. Ein erheblicher Teil der niedrigen Prozentzahl geht auf die
+DB-Adapter-Pakete zurück (`postgresstorage/*`, `postgresack`,
+`replication/receive`), deren reale Testdateien ohne gesetzte
+`CDC_*_TEST_DSN`-Variable im netzlosen Coverage-Lauf skippen, aber in
+`make test-store`/`make test-replication` real gegen PostgreSQL grün
+laufen (Risiko aus §6, eingetreten) — das ist genau das in §6
+antizipierte Bild, keine „ganze Pakete ohne jeden Test"-Lücke, die eine
+Rückführung nach `next` verlangt hätte (§4).
+
+**Schwellen-Entscheidung (`ADR-0054`):** Ist-Stand `39,6 %` liegt unter
+`80 %` → bootstrap-aware Gate. Einstiegsstufe: `39,6 %` abgerundet auf den
+nächsten vollen 5-%-Schritt = **35 %** (`THRESHOLD` in
+`harness/mk/coverage.mk`). Endstufe bleibt bei `80 %` fest
+(Kalibrierungs-Bindung: `harness/README.md` §Sensors →
+[`harness/sensors/coverage-gate.md`](../../../../harness/sensors/coverage-gate.md)).
+Rot-/Grün-Beleg real geführt: `THRESHOLD=45` (über dem Ist-Stand)
+scheitert real mit Exit 1 (`coverage-gate: FAIL — Coverage 39.60% unter
+Schwelle 45%`); `THRESHOLD=35` besteht real (`coverage-gate: OK —
+Coverage 39.60% erfüllt Schwelle 35%`); `make gates` lief anschließend
+komplett grün (baseline-verify, docs-check, commit-traceability,
+coverage-gate, a-check, record-gates).
 
 ## 4. Trigger
 
@@ -145,15 +191,26 @@ dasteht.
 - Der reale Ist-Stand könnte deutlich unter 80 % liegen (unbekannt, kein
   Host-Go-Zugriff) — der Implementer müsste dann ein bootstrap-aware Gate
   mit Eskalationsstufe öffnen, statt das Gate direkt auf 80 % zu setzen
-  (`ADR-0054`). **Ausgang:** <bei Closure einzutragen>
+  (`ADR-0054`). **Ausgang: eingetreten.** Real gemessener Ist-Stand
+  39,6 % — bootstrap-aware Gate geöffnet, Einstiegsstufe 35 % (siehe §3
+  Plan-Nachzug, Kalibrierungs-Bindung `harness/sensors/coverage-gate.md`).
 - Adapter-Tests, die ohne `CDC_*_TEST_DSN`-Umgebungsvariable real
   überspringen (netzloser Docker-Build), könnten die gemessene Coverage
   künstlich drücken, obwohl die Tests real existieren und in
-  `make test-store` grün laufen. **Ausgang:** <bei Closure einzutragen>
+  `make test-store` grün laufen. **Ausgang: eingetreten.** Real bestätigt
+  (Coverage-Ausgabe zeigt nahe-0-%-Werte konzentriert in den
+  DB-Adapter-Paketen `postgresstorage/*`, `postgresack`,
+  `replication/receive`) und in `harness/sensors/coverage-gate.md`
+  §Grenze dokumentiert — kein Sensor-Bedarf, die Erklärung trägt.
 - Docker-Layer-Caching könnte einen veralteten Coverage-Lauf über einen
   Cache-Hit hinweg überleben lassen (dasselbe Muster, das d-checks
-  `NO_CACHE_FILTER_COV` adressiert). **Ausgang:** <bei Closure
-  einzutragen>
+  `NO_CACHE_FILTER_COV` adressiert). **Ausgang: entfallen.** Begründung:
+  `harness/mk/coverage.mk` übernimmt `NO_CACHE_FILTER_COV :=
+  --no-cache-filter coverage` unmittelbar ins `coverage-gate`-Rezept —
+  jeder Aufruf erzwingt die Neu-Auswertung der Stage; real durch mehrere
+  aufeinanderfolgende Läufe mit unterschiedlichem `COVERAGE_THRESHOLD`
+  bestätigt (jeder Lauf zeigte den frischen Messwert 39,6 %, kein
+  gecachtes Ergebnis).
 
 ## 7. Closure-Notiz
 
@@ -172,18 +229,35 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Das Kopiervorbild `/Development/d-check/Dockerfile`
+  + `/Development/d-check/tools/coverage-gate.sh` trug fast unverändert:
+  Stage-Reihenfolge, `SHELL`-Direktive, `-coverpkg`-Muster,
+  Awk-Schwellenvergleich im Gate-Skript. Die Eskalationsklausel aus
+  `ADR-0054` (statt eines erfundenen Ramp-Fahrplans) machte die
+  Ist-Stand-Messung zu einem klaren einmaligen Schritt (`THRESHOLD=0`
+  bauen, `total:`-Zeile lesen, runden) statt einer Ermessensdebatte.
+- **Was ging anders als geplant:** Zwei reale Fallstricke beim direkten
+  Kopieren des d-check-Musters auf dieses Alpine-basierte Repo — siehe
+  [`BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`](../observations/BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/observation.md)
+  (`.dockerignore` schloss `tools/` aus; `golang:1.27-alpine` trägt kein
+  `bash`). Beide erst am realen `docker build` sichtbar, nicht durch
+  Code-Lesen.
+- **Steering-Loop-Eintrag:** keiner — dieser Slice liefert das in
+  `ADR-0054` bereits entschiedene Gate, ohne einen Guide/Sensor über
+  dieses Repo hinaus zu schärfen. Der Eintrag ist gezählt (Beobachtung
+  unten), nicht verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/`
+  neu angelegt, Beleg `evidence/slice-049.md` — Zähler steht bei 1×
+  (unter der Schwelle).
+- **Folge-Slices:** keine — `slice-050` (Benchmark-Infrastruktur) ist
+  bereits als unabhängiger Slice geplant (`ADR-0054` §(b)), nicht durch
+  diesen Slice ausgelöst.
+- **Risiken aus §6:** zwei eingetreten (Ist-Stand unter 80 % →
+  bootstrap-aware Gate 35 %; DB-Adapter-Coverage-Drücker real bestätigt),
+  eines entfallen (Docker-Layer-Caching durch `NO_CACHE_FILTER_COV`
+  strukturell ausgeschlossen) — siehe §6.
+- **Drei Paarungen:** entfällt hier — dieser Slice gehört zu `welle-14`
+  (offen); die Paarungen prüft die Welle-14-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
