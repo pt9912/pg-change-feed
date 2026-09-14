@@ -289,6 +289,15 @@ Anker (Hash, Lauf, Zahl).
     (Modul 8 §Rollen-Sequenz für eine Welle, Schritt 2: Planner → Architect →
     Planner) und liegt damit beim Architect — sie gehört nicht in diese
     Planner-Closure und wird hier als offener Träger benannt.
+    **Stand des Trägers:** entschieden, nicht mehr offen. Der
+    Architect-Zug dieses Reifestufen-Zweigs hat den Trigger als **fällig**
+    bestätigt — der Wortlaut der Klausel bindet an den gemessenen Wert
+    gegen die nächste 5-%-Stufe, nicht an eine Wellen-Anzahl, ein Datum
+    oder eine Stabilitätsbedingung — und die **Stufe 40 %** festgelegt.
+    Träger der Umsetzung ist `slice-076`; die Entscheidung liegt in
+    `architect-verdict-coverage-gate-reifestufe` (beide als Kennung
+    zitiert, nicht als Pfad-Link — `BEO-PGC/slice-pfad-als-link-in-berichten`,
+    2×).
   - **ADRs mit Re-Evaluierungs-Trigger:**
     [`ADR-0059`](../../adr/0059-spaltenauswahl-mechanismus.md) trägt zwei
     Trigger; **keiner ist eingetreten** — die technische Brücke für
