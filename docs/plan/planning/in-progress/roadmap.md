@@ -38,7 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-18.md](../welle-18.md) — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`LH-FA-CFG-005`, `ADR-0059`).
 - [welle-19.md](../welle-19.md) — Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE (`LH-FA-SST-008`, `ADR-0060`, `ADR-0061`).
 
 ## Nächste Wellen
@@ -131,6 +130,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-15 — NATS-Change-Notification | 2026-09-14 | [welle-15-results.md](../done/welle-15-results.md) |
 | welle-16 — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`, `ADR-0057`) | 2026-09-14 | [welle-16-results.md](../done/welle-16-results.md) |
 | welle-17 — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`) | 2026-09-14 | [welle-17-results.md](../done/welle-17-results.md) |
+| welle-18 — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`LH-FA-CFG-005`, `ADR-0059`) | 2026-09-14 | [welle-18-results.md](../done/welle-18-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
