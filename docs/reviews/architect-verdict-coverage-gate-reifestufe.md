@@ -47,9 +47,13 @@ Lifecycle-Ablage, und die Klasse
    **nächsten** Stufe"; „jede Stufe braucht ihren eigenen Beleg
    (Hochschalt-Trigger), keinen Freibrief").
 3. **Kein Folge-ADR, kein `Supersedes`.** Die Hochschaltung ist die von
-   `ADR-0054` selbst vorgesehene Bewegung ihres bootstrap-aware Gates;
-   `AGENTS.md` §3.6 verlangt einen ADR für die **Senkung**, nicht für diese
-   Bewegung. `ADR-0054` bleibt `Accepted` und unverändert.
+   `ADR-0054` selbst vorgesehene Bewegung ihres bootstrap-aware Gates, und
+   die ADR schreibt ausdrücklich **keine** feste Stufenfolge vor („Diese ADR
+   schreibt **keine** feste Stufenfolge (z. B. 60 → 70 → 80) vor"): die
+   geltende Stufe lebt in der Kalibrierungs-Bindung, nicht im ADR-Text —
+   ihre Änderung ist deshalb keine ADR-Änderung. `AGENTS.md` §3.6 verlangt
+   einen ADR für die **Senkung**, nicht für diese Bewegung. `ADR-0054`
+   bleibt `Accepted` und unverändert.
 4. **Form: eigener — wellenloser — Slice `slice-076`, kein
    Architect-Commit.** Der Träger ist mit der Adresse entschieden, nicht mehr
    „offen".
