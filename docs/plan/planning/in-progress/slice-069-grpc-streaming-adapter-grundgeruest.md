@@ -158,7 +158,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `Makefile` | update | neues Ziel `proto-generate` (+ `PROTO_IMAGE`/`PROTO_RUN_USER`) |
 | `internal/bootstrap/wiring.go` | update | additive `CDC_GRPC_ADDR`-Verdrahtung (Server-Start, noch ohne `CaptureService`-Anschluss — folgt in `slice-070`) |
 | `internal/bootstrap/wiring_test.go` | update | ConfigFromEnv-Test: `CDC_GRPC_ADDR` bleibt optional |
-| `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` (§2), externe-Verträge-Zeile (§6), Historie-Zeile (§7); Fixrunde F-4: Feldnamen-Quelle in `SPEC-020` von `SPEC-002` auf den Domain-Typ `model.Change` berichtigt |
+| `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` (§2), externe-Verträge-Zeile (§6), Historie-Zeile (§7); Fixrunde F-1/F-4: Erzeuger-Blockade-Zeile um den Kontext-Fehlerausgang präzisiert, Feldnamen-Quelle in `SPEC-020` von `SPEC-002` auf den Domain-Typ `model.Change` berichtigt |
 | `harness/README.md`, `AGENTS.md` | update | neues `make`-Ziel `proto-generate` in der Werkzeuge-/Gate-Tabelle |
 | `go.mod`, `go.sum` | update | neue direkte Abhängigkeiten `google.golang.org/grpc`, `google.golang.org/protobuf` |
 | `harness/image-hash.txt` | update | Digest-Beleg nach `make image` (Build-Kontext geändert, `harness/README.md` §Werkzeuge) |
