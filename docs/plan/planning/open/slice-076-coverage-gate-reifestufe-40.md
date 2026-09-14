@@ -25,7 +25,7 @@ ihr Gegenstand, sie fällt in den Reifestufen-Zweig der `welle-18`-Closure).
 `LH-QA-PER-001`…`003` und die `SPEC-014`-Lastenstufen bleiben unberührt, die
 Bench-Skripte sind Teil (b) derselben ADR und nicht Gegenstand).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Architect-Zug — dieser Plan trägt die Adresse der
 Verdikt-Auflage aus dem Trigger-Audit der `welle-18`-Closure; Priorisierung,
