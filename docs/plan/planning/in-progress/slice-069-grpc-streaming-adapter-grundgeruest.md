@@ -138,7 +138,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driven/grpcstream/broadcaster_test.go` | neu | Fire-and-Forget-Regressionstest |
 | `internal/adapters/driving/grpc/server.go` | neu | gRPC-Server-Grundgerüst, lokales `changeSubscriber`-Interface, Domain↔Protobuf-Übersetzung |
 | `internal/adapters/driving/grpc/interceptor.go` | neu | Auth-Interceptor (Metadata-Token-Prüfung) |
-| `internal/adapters/driving/grpc/server_test.go` | neu | Unauthenticated-/Erfolgs-Pfad-Tests gegen `bufconn` mit lokalem Fake-Subscriber |
+| `internal/adapters/driving/grpc/server_test.go` | neu | Unauthenticated-/Erfolgs-Pfad-Tests gegen `bufconn` mit lokalem Fake-Subscriber, dazu `Start`/`Shutdown`-Lebenszyklus und Bind-Fehlerpfad |
 | `proto/cdc/stream/v1/changestream.proto` | neu | Protobuf-Schema für Change-Nachricht + RPC-Methode (konkretisiert den Plan-Platzhalter `proto/`) |
 | `internal/adapters/driving/grpc/streamv1/changestream.pb.go`, `changestream_grpc.pb.go` | neu | erzeugter Go-Code (committet, damit `make test`/`make image` ohne Codegen laufen) |
 | `Dockerfile` | update | neue Stufe `proto` für protoc + `protoc-gen-go`/`protoc-gen-go-grpc` (Docker-only) |

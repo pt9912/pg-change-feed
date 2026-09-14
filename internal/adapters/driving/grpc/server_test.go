@@ -210,3 +210,33 @@ func TestStreamChangesOhneBroadcasterEndetMitInternal(t *testing.T) {
 		t.Fatalf("Status: %v (Erwartung: %v)", status.Code(err), codes.Internal)
 	}
 }
+
+// TestStartUndShutdown trägt den Lebenszyklus über eine reale
+// Horch-Adresse: `Start` bindet und kehrt nach `Shutdown` ohne Fehler
+// zurück (`grpc.ErrServerStopped` ist der reguläre Ausgang, keine
+// Fehlerklasse).
+func TestStartUndShutdown(t *testing.T) {
+	srv := New(Config{Addr: "127.0.0.1:0", Subscriber: newFakeSubscriber()})
+	fertig := make(chan error, 1)
+	go func() { fertig <- srv.Start() }()
+
+	srv.Shutdown()
+	select {
+	case err := <-fertig:
+		if err != nil {
+			t.Fatalf("Start/Shutdown: %v (Erwartung: kein Fehler)", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Start kehrt nach Shutdown nicht zurück")
+	}
+}
+
+// TestStartLiefertFehlerBeiUngueltigerAdresse trägt den Bind-Fehlerpfad:
+// eine unbrauchbare Horch-Adresse endet als Fehler von `Start`, nicht in
+// einem stillen Lauf ohne Listener.
+func TestStartLiefertFehlerBeiUngueltigerAdresse(t *testing.T) {
+	srv := New(Config{Addr: "127.0.0.1:-1", Subscriber: newFakeSubscriber()})
+	if err := srv.Start(); err == nil {
+		t.Fatal("Start mit ungültiger Horch-Adresse liefert keinen Fehler")
+	}
+}
