@@ -86,7 +86,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`cdc.exclude_column`/`cdc.include_column`, Antrags-Queue mit
       `status = 'applied'`-Poll wie bei `cdc.enable_table`) samt benannter
       Dauerhaftigkeitsgrenze (`ADR-0065`).
-- [ ] §4 trägt die zwei Netzwerk-Zugriffswege (HTTP/JSON-API, gRPC-Stream):
+- [ ] §4 trägt die **drei** Netzwerk-Zugriffswege (HTTP/JSON-API, gRPC-Stream,
+      HTTP/Server-Sent-Events `GET /changes/stream` — `SPEC-018`, `SPEC-020`,
+      `SPEC-021`):
       Erreichbarkeit, Authentifizierung (`Authorization: Bearer` bzw.
       Metadata), Zustellsemantik und der Hinweis, dass die Nachvollziehbarkeit
       beim Lesezugriffsweg bleibt.

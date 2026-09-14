@@ -115,11 +115,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       kein Self-Review (Modul 8).
 - [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer SSE-Rundlauf-Satz).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -197,18 +197,24 @@ dasteht.
   `internal/bootstrap/wiring.go`, `tools/harness/httpclient/`) — auch bei
   eingehaltenem Start-Trigger (§4) bleibt das Risiko einer inhaltlichen
   Überschneidung (z. B. beide Slices ändern denselben Router-Abschnitt). —
-  **Ausgang:** wird bei Closure zugewiesen.
+  **Ausgang: entfallen** — `slice-061` war längst geschlossen; die
+  Erweiterungen trafen keine parallele Änderung.
 - Die Bootstrap-Entkopplung ändert eine bestehende Bedingung
   (`CDC_GRPC_ADDR` → „`CDC_GRPC_ADDR` oder `CDC_HTTP_ADDR`") in
   `internal/bootstrap/wiring.go` — Regressionsrisiko für `slice-069`s
   bereits bestehenden gRPC-only-Verdrahtungspfad, falls die Oder-Bedingung
-  fehlerhaft umgesetzt wird. — **Ausgang:** wird bei Closure zugewiesen.
+  fehlerhaft umgesetzt wird. — **Ausgang: entfallen** — der Verifier hat die
+  Oder-Bedingung am Code bestätigt (derselbe `Broadcaster` an beide Adapter;
+  beide Adressen leer → unverändertes Bestandsverhalten) und die Mutation
+  `||`→`&&` färbt genau die zwei Sub-Fälle rot.
 - `withToken`s Eignung für lang laufende Verbindungen ist in
   [ADR-0061](../../adr/0061-http-sse-zusaetzlich-zu-grpc.md) Teilfrage 2
   geprüft, aber nicht real getestet — ein bislang unentdecktes
   Response-Buffering (z. B. durch einen künftig eingeführten
-  Reverse-Proxy) würde erst hier sichtbar. — **Ausgang:** wird bei Closure
-  zugewiesen.
+  Reverse-Proxy) würde erst hier sichtbar. — **Ausgang: entfallen** — der
+  reale `make test-integration`-Lauf zeigt den Client die Änderung
+  **während** der offenen Verbindung empfangen (`READY` → `RECEIVED`), also
+  kein Buffering des Adapters.
 
 ## 7. Closure-Notiz
 
@@ -220,18 +226,44 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
+- **Was hat funktioniert:** Der zweite Zustellweg brauchte keinen neuen
+  Server und keinen neuen Port — derselbe HTTP-Adapter, dieselbe
+  Token-Middleware, derselbe `Broadcaster` als zweiter Abonnent. Die
+  Bootstrap-Entkopplung ist eine reine Oder-Bedingung
+  (`changeStreamEnabled`), und der reale Lauf zeigt beide Wege gegen
+  **denselben** laufenden Prozess grün (`RECEIVED change_id=967-1` über SSE,
+  `REJECTED code=401` ohne Token). Der Verifier hat drei Mutationen selbst
+  rot gesehen.
+- **Was ging anders als geplant:** (a) Der SSE-Block lag zunächst als
+  Erweiterung in `SPEC-018`; `ADR-0061`s Folgepflicht verlangt aber einen
+  **neuen** `SPEC-*`-Eintrag, und `SPEC-018`s Intro grenzt sich ausdrücklich
+  auf die neun Port-gedeckten Fähigkeiten aus `LH-FA-SST-006` ab — der
+  Block ist deshalb bei der Closure nach `SPEC-021` herausgelöst (Review
+  F-6, Verifier bestätigt). (b) Der `503`-Pfad ist über den regulären
+  Start unerreichbar (Review F-2) — benannt, kein Fix. (c) Eine Verzweigung
+  in `rowImage` ist durch keinen Test gebunden (Review F-4, mit Probe
+  bestätigt) — benannte Grenze.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — die zwei Klassen aus
+  den Reviews sind benannt statt gezählt: „Aufschub-Adresse nimmt die
+  Sendung nicht an" (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, mit
+  diesem Slice **2×**) und „Adapter-Unit-Test verdeckt eine
+  Bootstrap-Lücke" (`BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`,
+  mit diesem Slice **2×**).
   — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
   Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
   *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
   Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
   verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an/` angelegt, Beleg
+  `evidence/slice-072.md` (Zähler 2×); `evidence/slice-072.md` in
+  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke/` ergänzt (Zähler 2×).
+- **Folge-Slices:** keiner aus diesem Slice — der Handbuch-Aufschub zeigt
+  auf `slice-077` (in `open/`), dessen DoD-Punkt bei dieser Closure um den
+  SSE-Endpunkt erweitert wurde.
+- **Risiken aus §6:** alle drei entfallen — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-19` offen) —
+  Prüfung läuft bei der `welle-19`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
