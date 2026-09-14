@@ -243,13 +243,18 @@ Anker (Hash, Lauf, Zahl).
 
 - Alle drei Slices (`slice-066`, `slice-067`, `slice-068`) liegen in
   `docs/plan/planning/done/`.
-- `make gates` grün — Planner-Lauf zur Closure, Exit-Code ungefiltert
-  ermittelt und in einem eigenen Schritt geprüft, nicht durch eine Pipe
-  maskiert (`AGENTS.md` §3.9): `baseline-verify` OK (v6.5.0, 54 Dateien),
-  d-check 536 Dateien/0 Befunde, d-check `commits`-Modul über
-  `HEAD~5..HEAD` 0 Befunde, `commit-traceability` OK (5 Commits, Betreffe
-  ohne Struktur-ID), `a-check` gesamt 0 Befunde, `coverage-gate` OK —
-  Coverage 45,80 % über der geltenden 35-%-Schwelle.
+- `make gates` grün — zwei Planner-Läufe, je mit ungefiltert ermitteltem
+  Exit-Code in einem eigenen Schritt geprüft, nicht durch eine Pipe
+  maskiert (`AGENTS.md` §3.9):
+  - Schritt 1 (Trigger prüfen, vor den Closure-Commits) — Exit 0:
+    `baseline-verify` OK (v6.5.0, 54 Dateien), d-check 536 Dateien/0
+    Befunde, d-check `commits`-Modul über `HEAD~5..HEAD` 0 Befunde,
+    `commit-traceability` OK (5 Commits, Betreffe ohne Struktur-ID),
+    `a-check` gesamt 0 Befunde, `coverage-gate` OK — Coverage 45,80 %
+    über der geltenden 35-%-Schwelle.
+  - Nach den Closure-Commits (Ergebnis-Notiz, Register-Beleg, `git mv`,
+    Link-Reconciliation) — Exit 0, d-check 538 Dateien/0 Befunde
+    (die zwei neuen Dateien dieser Closure), dieselben Teil-Gates grün.
 - **`welle-18`s Closure-Trigger (c)** — der reale E2E-Beleg aus `slice-068`
   ist grün, und er ist das *Mehr* gegenüber den Einzel-DoDs: `make
   test-integration` Exit 0 (voller Compose-Stack-Lauf, beide neuen
