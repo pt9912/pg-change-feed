@@ -43,7 +43,7 @@ Beobachtungs-Register übernommen:
 
    Aufgelöst über die `operations`-Liste im Report: die zwei
    `DropFunction`-Einträge sind `disable_table`/`enable_table`
-   (`tools/schema/nacharbeit-administration.sql`, ADR-0050), die zwei
+   (`tools/schema/nacharbeit-administration.sql`, `ADR-0050`), die zwei
    `DropView`-Einträge sind `heartbeat`/`metrics`
    (`tools/schema/nacharbeit-heartbeat.sql`,
    `tools/schema/nacharbeit-observability.sql`).
@@ -55,7 +55,7 @@ Verwendetes Image: `ghcr.io/pt9912/d-migrate@sha256:862dfb04c34dd17278b1bab46961
 Die Beobachtung (`evidence/slice-016.md`) nannte ausschließlich
 `cdc.heartbeat`/`cdc.metrics` als Fremdobjekte. Der reale Lauf zeigt vier
 betroffene Objekte, nicht zwei — zusätzlich `cdc.disable_table`/
-`cdc.enable_table` (SQL-Funktionen, seit `slice-036`/ADR-0050 ebenfalls
+`cdc.enable_table` (SQL-Funktionen, seit `slice-036`/`ADR-0050` ebenfalls
 über eine `nacharbeit-*.sql`-Datei statt über den deklarativen
 `schema.yaml`-Knoten eingespielt, siehe `Makefile`-Kommentar zu
 `POST_EXECUTE_DRIFT`/Exit 5 bei Funktionen). Alle vier liegen außerhalb des
@@ -98,7 +98,7 @@ plant ihren Abbau.
   No-Arg-Funktion). Eine Korrektur dieses Zustands wäre eine
   d-migrate-Versions- oder Modellierungsfrage außerhalb des Umfangs dieses
   Slice (Orchestrierungs-Skript, kein Schema-Modell) und bereits an
-  anderer Stelle (ADR-0043-Kontext, `BEO-PGC/schema-rollout-fremdobjekte`)
+  anderer Stelle (`ADR-0043`-Kontext, `BEO-PGC/schema-rollout-fremdobjekte`)
   als offene Beobachtung geführt, nicht als in diesem Slice zu lösende
   Aufgabe.
 
