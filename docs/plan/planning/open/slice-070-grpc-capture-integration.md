@@ -29,7 +29,7 @@ und `slice-069` fixiert, keine inhaltliche Änderung erwartet).
 > caller-seitige Goroutine oder Deadline ist ausdrücklich **nicht** Teil
 > dieses Slice.
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Rolleninhaber: Planner-Lauf, 2026-09-14). **Datum:** 2026-09-14.
 
