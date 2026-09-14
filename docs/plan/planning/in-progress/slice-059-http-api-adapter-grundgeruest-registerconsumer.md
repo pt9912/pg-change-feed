@@ -83,21 +83,21 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Report: `docs/reviews/review-slice-059.md` (0 HIGH/MEDIUM/LOW, 2 INFO,
       kein Fixrunden-Pfad).
-- [ ] Doku-Update: `harness/README.md` §Sensors bleibt unverändert (kein
+- [x] Doku-Update: `harness/README.md` §Sensors bleibt unverändert (kein
       neues Gate); `SPEC-018`-Neuanlage ist der öffentliche Vertrag dieses
       Slice.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-16`-Closure** (dieser Slice trägt
       `Welle: welle-16`).
 
@@ -136,26 +136,53 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 - Die Token-Middleware könnte versehentlich eine dritte, implizite
   Rechtsklasse einführen (z. B. ein leerer String als gültiges Token), wenn
   `CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN` nicht gesetzt sind. —
-  **Ausgang:** <bei Closure zu füllen>
+  **Ausgang: entfallen** — `classifyToken` prüft `token == ""`
+  bedingungslos vor jedem Klassenvergleich, ein unkonfiguriertes Token kann
+  strukturell nie gegen ein leeres/fehlendes Caller-Token matchen; real
+  durch einen eigenen Test (`TestClassifyTokenLeereKonfigurationTrifftKeinToken`)
+  belegt und von Reviewer UND Verifier unabhängig am Code nachvollzogen,
+  nicht nur am Testnamen.
 - `RegisterConsumer` als erste exponierte Fähigkeit könnte sich beim
   Implementieren als schlechter Vertikalschnitt erweisen (z. B. weil ein
   lesender Endpunkt die Reader-Klasse realistischer end-to-end belegt) —
   `ADR-0057` benennt `RegisterConsumer` nur als Vorschlag, der Implementer
-  entscheidet final. — **Ausgang:** <bei Closure zu füllen>
+  entscheidet final. — **Ausgang: entfallen** — der Schnitt belegt beide
+  Token-Klassen bereits vollständig (401/403/admin-Erfolg), Reviewer und
+  Verifier bestätigten unabhängig, dass kein Nacharbeitsbedarf besteht.
 - Der neue `SPEC-018`-Eintrag könnte mit dem tatsächlich implementierten
   JSON-Schema auseinanderlaufen, wenn Spec vor Code geschrieben und beim
-  Implementieren nicht nachgezogen wird. — **Ausgang:** <bei Closure zu
-  füllen>
+  Implementieren nicht nachgezogen wird. — **Ausgang: entfallen** — Reviewer
+  und Verifier prüften den Eintrag unabhängig gegen den tatsächlichen Code
+  (Statuscodes, JSON-Feldnamen) und bestätigten Deckungsgleichheit; zusätzlich
+  real bestätigt, dass der Eintrag keinen `ADR-*`-Rückverweis trägt
+  (Spec→ADR-Referenzverbot gewahrt).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der bestehende Driving-Adapter-Zuschnitt
+  (`internal/adapters/driving/replication` als Strukturvorbild) und die
+  bereits vorab von `ADR-0057` getroffenen Design-Entscheidungen
+  (Protokoll, Umfang, Token-Klassen, Adapter-Platzierung) ließen den
+  Implementer ohne offene Design-Fragen direkt umsetzen — Reviewer und
+  Verifier fanden beide 0 HIGH/MEDIUM/LOW-Findings.
+- **Was ging anders als geplant:** Ein Commit des Implementers trug
+  `SPEC-018` im Betreff (verbotene Struktur-ID nach `AGENTS.md` §5) — vom
+  Planner-Koordinator erst beim eigenen `make gates`-Lauf gefangen (kein
+  Vorab-Hook existiert) und non-interaktiv korrigiert, ohne den
+  Implementer-Diff selbst zu verändern. Drittes Auftreten von
+  `BEO-PGC/commit-traceability-kein-vorab-hook` — Schwelle erreicht, siehe
+  unten.
+- **Steering-Loop-Eintrag:** keiner mit dieser Slice-Closure selbst
+  verkörpert — die Schwelle ist erreicht, aber der Lese-Schritt, der über
+  Verkörperung entscheidet, läuft bei der `welle-16`-Closure (dieser Slice
+  gehört zur Welle, ist nicht wellenlos).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-059.md`
+  in `BEO-PGC/commit-traceability-kein-vorab-hook/` ergänzt — Zähler steht
+  damit bei 3× (Schwelle erreicht), Ausgang wird bei der `welle-16`-Closure
+  zugewiesen.
 - **Folge-Slices:** slice-060 (HTTP-API — restliche Port-gedeckte
   Fähigkeiten) — ist eine Datei in `open/`.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** alle drei entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-16`-Closure (dieser Slice trägt
   `Welle: welle-16`, siehe DoD-Item).
 
