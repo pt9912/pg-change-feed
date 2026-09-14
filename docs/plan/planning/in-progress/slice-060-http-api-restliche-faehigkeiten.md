@@ -80,20 +80,20 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       Report: `docs/reviews/review-slice-060.md` (Erstlauf: 1 HIGH, 1
       MEDIUM, 1 LOW, 1 INFO; Fixrunde real geprüft — alle vier Findings
       behoben, siehe Nachtrag im Report).
-- [ ] Doku-Update: `SPEC-018`-Erweiterung ist der öffentliche Vertrag dieses
+- [x] Doku-Update: `SPEC-018`-Erweiterung ist der öffentliche Vertrag dieses
       Slice.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-16`-Closure** (dieser Slice trägt
       `Welle: welle-16`).
 
@@ -133,24 +133,43 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 
 - Uneinheitliches Fehler-Mapping zwischen den acht Fähigkeiten (z. B.
   unterschiedliche Fehlerformate für dieselbe Fehlerklasse), weil jede
-  Fähigkeit einen eigenen Use-Case-Fehlertyp trägt. — **Ausgang:** <bei
-  Closure zu füllen>
+  Fähigkeit einen eigenen Use-Case-Fehlertyp trägt. — **Ausgang: entfallen**
+  — `errors.go` bündelt das Mapping an einem Ort (`writeDomainError`), von
+  Reviewer UND Verifier unabhängig gegen alle acht Fähigkeiten real
+  gegengeprüft.
 - `RemoveConsumer`/`DisableTable` sind laut Domänenlogik idempotent (siehe
   `LH-FA-CON-006`/`LH-FA-CFG-002` Boundary) — die Abbildung auf HTTP-
   Statuscodes (idempotenter Erfolg vs. `404`) muss konsistent zur
   bestehenden CLI-/SQL-Semantik bleiben (`LH-FA-SST-006` Boundary:
-  fachlich gleichwertiges Ergebnis über alle Zugriffswege). — **Ausgang:**
-  <bei Closure zu füllen>
+  fachlich gleichwertiges Ergebnis über alle Zugriffswege). — **Ausgang:
+  entfallen** — real getestet: `RemoveConsumer` behandelt eine unbekannte
+  Kennung als Idempotenz (`200`/`removed=false`), `EnableTable`/
+  `DisableTable` melden eine an der Quelle fehlende Tabelle als `404` —
+  von Reviewer und Verifier unabhängig gegen die bestehende CLI-/SQL-
+  Semantik gegengeprüft.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der bereits in `slice-059` etablierte Adapter-
+  und Test-Zuschnitt ließ sich verlustfrei auf acht weitere Fähigkeiten
+  erweitern; ein zentrales Fehler-Mapping (`errors.go`) hielt die
+  Konsistenz über alle acht hinweg ohne Zusatzaufwand.
+- **Was ging anders als geplant:** Review fand 1 HIGH (Slice-Chronik in
+  Produktionscode-Kommentar, `errors.go`/`consumer.go`), 1 MEDIUM
+  (fehlender `404`-Test für `GetStatus`), 1 LOW (Sechs-vs-Acht-Zählfehler
+  im Slice-Kopf) und 1 INFO (asymmetrische Testabdeckung) — Fixrunde
+  behob alle vier, vom selben Reviewer real gegengeprüft.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — die Slice-Chronik-
+  Regel ist bereits seit `slice-052` in `.harness/skills/reviewer.md`
+  verkörpert; dieses Auftreten bestätigt nur, dass die Verteidigungslinie
+  weiterhin trägt (Reviewer fing den Fund vor jedem Merge).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-060.md`
+  in `BEO-PGC/slice-chronik-in-code-kommentar/` ergänzt (5. Beleg,
+  reguläre Fortschreibung ohne neue Eskalation — siehe Architect-Verdikt-
+  Nachtrag dort).
 - **Folge-Slices:** slice-061 (HTTP-API — Beispiel-Client und
   E2E-Rundlauf) — ist eine Datei in `open/`.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** beide entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-16`-Closure (dieser Slice trägt
   `Welle: welle-16`, siehe DoD-Item).
 
