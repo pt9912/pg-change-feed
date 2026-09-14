@@ -223,6 +223,40 @@ Hintergrund-Task-Wrapper verschärft — jeweils ohne dass ein zweites,
 unabhängig einsehbares Artefakt (Diff) den Fehler hätte fangen können, da
 er in der Ausführung selbst liegt, nicht im committeten Ergebnis.
 
+**Geschärft — Prüfung und Folgehandlung sind zwei Schritte, nicht einer.**
+Ein korrekt (ungepiped) ermittelter roter Exit-Code schützt nur, wenn die
+davon abhängige Folgehandlung (`git push`, Merge, Closure) tatsächlich auf
+ihn wartet und ihn auswertet, bevor sie beauftragt wird — nicht schon
+dadurch, dass der Wert irgendwo sichtbar im Output steht. Ein Gate-Lauf und
+seine abhängige Folgehandlung dürfen deshalb nicht im selben
+Werkzeug-Aufruf-Batch beauftragt werden: Dazwischen steht ein eigener,
+expliziter Schritt, der den zuvor ermittelten Exit-Code auswertet, bevor
+die Folgehandlung läuft. In einem einzelnen Shell-Aufruf erzwingt `&&`
+diese Reihenfolge mechanisch (siehe die `test $ec -eq 0 && git push`-Form
+oben); über mehrere, separat beauftragte Werkzeug-Aufrufe eines
+Agenten-Laufs hinweg gibt es diese Kopplung nicht von selbst.
+
+**Falsch:** `make gates` aufrufen und — auch mit korrekt (ungepiped)
+ermitteltem, sichtbar rotem Exit-Code — im selben Arbeitsschritt-Batch
+`git push` beauftragen; der sichtbare rote Wert verhindert die
+Folgehandlung nicht von selbst, wenn sie nicht tatsächlich auf ihn
+konditioniert ist.
+**Richtig:** `make gates` laufen lassen, das Ergebnis in einem eigenen,
+abgeschlossenen Schritt auswerten (Exit-Code lesen, bewusste Entscheidung
+treffen), und erst danach — als eigene, separat beauftragte Handlung —
+`git push` anstoßen.
+
+Viertes reales Auftreten der zugrunde liegenden Beobachtung
+(`docs/plan/planning/observations/BEO-PGC/report-nackte-id-ohne-link`,
+`evidence/slice-063-blocker.md`): Der Exit-Code eines `make
+gates`-Laufs wurde korrekt und ungepiped ermittelt (sichtbar rot), die
+nachfolgende `git push`-Aktion lief aber im selben Arbeitsschritt-Batch,
+bevor der bereits sichtbare rote Wert sie tatsächlich blockierte — eine
+andere Fehlerklasse als die drei `welle-15`-Fälle oben (dort: Exit-Code
+falsch *gemessen*; hier: Exit-Code korrekt gemessen, aber nicht
+*wirksam*), siehe
+[`docs/reviews/architect-verdict-report-nackte-id-ohne-link-4x.md`](docs/reviews/architect-verdict-report-nackte-id-ohne-link-4x.md).
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.

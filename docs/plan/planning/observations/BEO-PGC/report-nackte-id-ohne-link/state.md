@@ -1,27 +1,25 @@
-Zustand: **gestrichen** — der reale Risikopfad (unentdeckte oder dauerhafte
-nackte Kennung in `main`) ist strukturell geschlossen, nicht nur „nicht
-schlimm": `make docs-check`s `ids`-Prüfung entscheidet deterministisch ohne
-Interpretationsspielraum und hat alle drei Belege gefangen
-(evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md); der
-einzige Fall mit realem, kurzem Durchbruch in einen gepushten Commit
-(`slice-054`) hatte eine andere, bereits unabhängig geschlossene Ursache
-(Exit-Code-Maskierung, `BEO-PGC/pipe-maskiert-make-exit-code`, gelöst über
-`AGENTS.md` §3.9) — deren Fix bereits im dritten Beleg dieser Beobachtung
-(`slice-056`) nachweislich wirkte (Sensor griff korrekt vor dem Push). Der
-rollenunabhängige Stop-Hook (`.claude/hooks/stop-require-gates.sh`) erzwingt
-zusätzlich einen frischen `make gates`-Lauf vor jedem Sitzungsende, für jede
-Rolle. Details und verworfene Alternativen (Reviewer-Skill-Punkt, neue Hard
-Rule):
-[`architect-verdict-report-nackte-id-ohne-link.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link.md).
-Zähler (abgeleitet): 4× (evidence/slice-054.md, evidence/slice-055.md,
-evidence/slice-056.md, evidence/slice-063-blocker.md) — der vierte Beleg
-(`slice-063-blocker`, Planner-Koordinator) widerspricht der Prämisse des
-`gestrichen`-Verdikts: Der Exit-Code wurde korrekt ungepiped erfasst,
-aber der Push lief, bevor der bereits sichtbare rote Wert die Aktion
-tatsächlich blockierte — die Konsequenz trat ein, bevor der Fund bemerkt
-wurde. Damit greift das Verdikt-Argument „der Sensor fängt es vor jeder
-Konsequenz" hier nicht. Ausgang bleibt vorerst `gestrichen`, aber zur
-Reevaluierung markiert — ein neuer Architect-Zug sollte prüfen, ob eine
-Verkörperung (z. B. eine explizite Anweisungs-Regel: Exit-Code-Prüfung
-und Folgehandlung dürfen nicht im selben Werkzeug-Aufruf-Batch stehen)
-jetzt doch trägt.
+Zustand: **verkörpert** (geändert ggü. dem ersten `gestrichen`-Verdikt bei
+3×) — liegt in `AGENTS.md` §3.9, neuer Absatz „Prüfung und Folgehandlung
+sind zwei Schritte, nicht einer" · `seit slice-063`. Zähler (abgeleitet):
+4× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
+evidence/slice-063-blocker.md).
+
+Der ursprüngliche `gestrichen`-Ausgang (3×,
+[`architect-verdict-report-nackte-id-ohne-link.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link.md))
+beruhte auf: „der einzige Weg, den roten Befund zu ignorieren
+(maskierter Exit-Code), ist bereits verschlossen" (`AGENTS.md` §3.9,
+Pipe-/Wrapper-Fall). Der vierte Beleg (`slice-063-blocker`,
+Planner-Koordinator) widerlegt diese Prämisse real: Der Exit-Code wurde
+korrekt ungepiped ermittelt (`EXIT=2`, sichtbar), aber `git push` lief im
+selben Arbeitsschritt-Batch, bevor der bereits sichtbare rote Wert die
+Aktion tatsächlich blockierte — eine andere Fehlerklasse als die drei
+vorherigen Belege (Mess-Ebene korrekt, Sequenzierungs-Ebene nicht). Ein
+neuer Architect-Zug hat deshalb geprüft, ob eine Verkörperung jetzt doch
+trägt, und `AGENTS.md` §3.9 um einen eigenen Absatz geschärft: Details in
+[`architect-verdict-report-nackte-id-ohne-link-4x.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link-4x.md).
+Kein neuer Sensor (Begründung wie beim Ursprungsfall von §3.9: die
+Verletzung liegt in der Ausführung, nicht im committeten Ergebnis).
+
+Der 3×-Verdikt bleibt für die von ihm analysierte Fehlerklasse
+(Pipe-/Wrapper-Maskierung) unverändert richtig — kein `supersedes`,
+dieses Verdikt tritt daneben.
