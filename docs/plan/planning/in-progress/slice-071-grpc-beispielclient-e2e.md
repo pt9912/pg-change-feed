@@ -67,7 +67,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] [LH-FA-SST-008](../../../../spec/lastenheft.md) Happy-Path/Negative
+- [x] [LH-FA-SST-008](../../../../spec/lastenheft.md) Happy-Path/Negative
       erfüllt, Test referenziert: `make test-integration` — ein Wegwerf-
       Beispiel-Client (`tools/harness/grpcclient/`) empfängt eine reale
       committed Änderung mit vollständigem Inhalt über den laufenden
@@ -76,14 +76,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       derselben Rundlauf-Erweiterung
       ([ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) Fitness
       Function).
-- [ ] `compose.yaml` exponiert `CDC_GRPC_ADDR`;
+- [x] `compose.yaml` exponiert `CDC_GRPC_ADDR`;
       `run-integration-tests.sh` fährt den gRPC-Rundlauf als Teil des
       bestehenden Compose-Integrationstests.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update `harness/README.md` §Sensors (`make test-integration`
+- [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer gRPC-Rundlauf-Satz analog zum bestehenden HTTP-API-Satz).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -104,6 +104,45 @@ Aussagen-Berührung steht hier gar nicht.
 | `compose.yaml` | update | Port-Exposition `CDC_GRPC_ADDR` |
 | `tools/harness/run-integration-tests.sh` | update | Rundlauf-Erweiterung: gRPC-Stream-Client verbindet, empfängt Change, negativer Token-Test |
 | `harness/README.md` | update | `make test-integration`-Sensor-Zeile um gRPC-Rundlauf-Satz ergänzt |
+| `.a-check.yml` | update | `composition_root` um `tools/**` erweitert (Plan-Nachzug nach rotem `make a-check`: der Wegwerf-Client ist ein testseitiger Adapter-Konsument, analog `test/integration/**`) |
+
+**Implementer-Entscheidungen und -Abweichungen (Plan-Nachzug im selben Lauf):**
+
+- **`.a-check.yml` — Plan-Defekt-Rücksprungkante (Modul 9).** Der erste
+  `make a-check`-Lauf färbte rot (`wrong-direction: (ohne Schicht) ->
+  adapters`): der Wegwerf-Client unter `tools/harness/grpcclient/` importiert
+  den erzeugten gRPC-Stub `internal/adapters/driving/grpc/streamv1`, und
+  `tools/**` lag in keiner Schicht. Der Beleg braucht diesen Stub, um über
+  gRPC sprechen zu können; ihn zu vermeiden hieße, die Protobuf-Form
+  handzurollen. `composition_root` trägt bereits denselben testseitigen
+  Verdrahtungs-Konsumenten (`test/integration/**`); `tools/**` steht dort in
+  derselben Rolle. Die Erweiterung ist eine Änderung am deklarativen Stand
+  der `.a-check.yml` und berührt keinen Schichten-Edge —
+  [`ADR-0041`](../../adr/0041-a-check-maschinenform-architekturpruefung.md)
+  §Entscheidung führt `composition_root` als Teil genau dieses Standes.
+- **Bereitschaft und Fire-and-Forget-Rennen.** Der Client meldet `READY`
+  direkt nach dem Aufbau der Streaming-Verbindung; die Registrierung des
+  Empfängers am `Broadcaster` läuft serverseitig asynchron dazu. Zwischen
+  beiden liegt ein Fenster, in dem eine committete Änderung für diesen
+  Empfänger ersatzlos verworfen wird ([`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md),
+  Fire-and-Forget ohne Replay). Der Rundlauf committet deshalb eine
+  begrenzte Folge eindeutiger Zeilen, bis der Client genau eine real
+  empfangen hat — die Zusage „eine danach committete Änderung erreicht den
+  verbundenen Client" wird so ohne Replay-Annahme belegt.
+- **Negativ-Beleg = fehlende `authorization`-Metadata.** Der Client führt
+  einen zweiten Stream-Öffnungsversuch ohne Token aus und verlangt
+  `Unauthenticated`. Die beiden anderen Grenzen derselben Zusage
+  (unbekannter Wert, falsche Wertform) deckt bereits
+  `internal/adapters/driving/grpc/server_test.go` auf Unit-Ebene
+  ([`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md) Teilfrage 4).
+- **Handbuch-Assessment.** Der `implement-slice`-Kandidatenlauf für eine
+  neue Betreiber-Oberfläche (`internal/bootstrap/`, `tools/schema/`,
+  `internal/adapters/driving/`) trifft diesen Diff nicht: der gRPC-Adapter
+  und `CDC_GRPC_ADDR` entstanden in `slice-069`, dieser Slice setzt die
+  Variable nur im E2E-Compose-Vertrag und belegt sie. `docs/user/benutzerhandbuch.md`
+  bleibt deshalb unberührt; die Operator-Dokumentation des Streamings reist
+  mit der Operator-Erreichbarkeit (`slice-072`), wie `slice-069` §3 sie
+  bereits adressiert hat.
 
 ## 4. Trigger
 
