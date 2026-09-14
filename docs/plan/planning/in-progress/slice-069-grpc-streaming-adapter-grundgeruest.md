@@ -101,7 +101,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `internal/application/port/outbound/changestream.go`
       (`ChangeStreamPort`), Driven-Adapter
       `internal/adapters/driven/grpcstream/` (`Broadcaster`:
-      `Subscribe()`/`Publish()`, nebenläufigkeitssicher, kein Puffer,
+      `Subscribe()`/`Publish()`, nebenläufigkeitssicher, begrenzte
+      Empfangs-Warteschlange je Abonnent (Fassung nach
+      [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md);
+      die ursprüngliche Fassung dieses Punktes sagte „kein Puffer" —
+      überholt, siehe die Fixrunden-Zeile darunter),
       Fire-and-Forget-Regressionstest gegen `make test` — ein `Publish`
       ohne aktiven Subscriber blockiert nicht und liefert keinen Fehler),
       Driving-Adapter `internal/adapters/driving/grpc/`-Server-Grundgerüst
@@ -133,11 +137,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Doku-Update `harness/README.md` §Sensors/Werkzeuge und `AGENTS.md`
       §4, falls ein neues `make`-Ziel für die Protobuf-/buf-Codegenerierung
       entsteht.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(Entfällt: `docs/plan/planning/reconciliation.md` existiert in diesem GF-Repo nicht.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -245,17 +249,24 @@ dasteht.
 
 - Die neue Docker-Build-Stufe für Protobuf-/buf-Codegenerierung könnte den
   bestehenden `make image`-Build verlängern oder brechen (neue,
-  bislang ungetestete Toolchain-Abhängigkeit). — **Ausgang:** wird bei
-  Closure zugewiesen.
+  bislang ungetestete Toolchain-Abhängigkeit). — **Ausgang: entfallen** —
+  `make image` lief real grün, der neue Digest ist als Beleg committet;
+  die Stufe nutzt denselben digest-gepinnten Basisstand wie die
+  bestehenden Stufen.
 - Paralleler Lauf `slice-061` ändert `internal/bootstrap/wiring.go`
   gleichzeitig (anderer Feature-Zweig, additiver `CDC_HTTP_ADDR`-Pfad) —
   Merge-Konflikt-Risiko beim additiven `CDC_GRPC_ADDR`-Zweig in derselben
-  Datei. — **Ausgang:** wird bei Closure zugewiesen.
+  Datei. — **Ausgang: entfallen** — `slice-061` war bei Beginn dieses
+  Slice längst geschlossen; der additive `CDC_GRPC_ADDR`-Zweig traf keine
+  parallele Änderung an, der Branch ließ sich per Fast-Forward führen.
 - Das lokal im `grpc`-Paket deklarierte Interface (`changeSubscriber`)
   könnte im ersten Entwurf enger oder weiter gefasst werden, als
   `slice-070`s Anschluss an `CaptureService.WithChangeStream` es braucht,
-  und einen kleinen Nacharbeits-Zyklus auslösen. — **Ausgang:** wird bei
-  Closure zugewiesen.
+  und einen kleinen Nacharbeits-Zyklus auslösen. — **Ausgang: entfallen**
+  — `slice-070` bindet über den Outbound Port `ChangeStreamPort`, nicht
+  über das driving-seitige Interface; der Anschluss berührt die Form
+  dieses Interfaces nicht (Review und Verifikation haben keine Kopplung
+  festgestellt).
 - Der `Broadcaster` übergibt ungepuffert und hält die Übergabe an einen
   registrierten, gerade nicht lesenden Empfänger an (`kein Puffer`,
   `ADR-0060` Teilfrage 3); ein langsamer Stream-Client könnte darüber den
@@ -277,18 +288,46 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
+- **Was hat funktioniert:** Der Zuschnitt nach `ADR-0060` hielt — Port,
+  Driven-Adapter, Driving-Adapter und Toolchain ließen sich einzeln bauen
+  und testen. Die Codegen-Toolchain läuft wirklich Docker-only
+  (`make proto-generate` über eine digest-gepinnte Dockerfile-Stufe, kein
+  Host-`protoc`) und ist deterministisch (zweiter Lauf byte-identisch,
+  vom Reviewer nachgeprüft). Der Reviewer fand die entscheidende Schwäche
+  (blockierender `Publish`) am Code, nicht nur am Test — und der
+  Architect-Zug löste sie **strukturell** statt sie zu dokumentieren.
+- **Was ging anders als geplant:** (a) Der `Broadcaster` war zunächst
+  ungepuffert; das erwies sich über den Capture-Pfad als Head-of-Line-
+  Stillstand und wurde über `ADR-0066` (nicht-blockierender Send,
+  begrenzte Empfangs-Warteschlange je Abonnent, Drop-Newest) korrigiert —
+  der Slice-Plan trug das Risiko in §6, die Entscheidung kam aus dem
+  Architect-Zug. (b) Zwei Rest-Beobachtungen der Verifikation, beide
+  benannt statt still: DoD-Zeile 2 trug noch „kein Puffer" (hier
+  angeglichen) und `ADR-0066`s Festlegung 1 nennt als Fehlerquelle nur den
+  ungültigen Aufruf, während der Code auch bei beendetem Aufruf-Kontext
+  einen rohen Kontext-Fehler liefert — `SPEC-020` und der Port-Godoc
+  nennen beide Ausgänge korrekt, nur die ADR-Klammer ist enger.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der auslösende Befund
+  ist eine Architektur-Korrektur (`ADR-0066`), kein wiederkehrendes Muster
+  über mehrere Vorgänge. Benannt statt gezählt: (1) generierte Artefakte
+  ohne Sync-Sensor (`F-6`) und (2) Deckung des generierten Codes in der
+  Coverage-Messung (`F-7`) — beide als eigene Beobachtungen notiert, nicht
+  als Beleg dieses Slice gezählt.
   *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
   Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
   verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/generierte-artefakte-ohne-sync-sensor/` angelegt, Beleg
+  `evidence/slice-069.md` (1×) — der erzeugte Protobuf-Code liegt
+  committet im Baum, aber kein Sensor hält ihn gegen seine `.proto`-Quelle;
+  dieselbe Klasse trifft `tools/schema/{plan.yaml,down.sql}`.
+- **Folge-Slices:** keiner aus diesem Slice — `slice-070` (Capture-Integration),
+  `slice-071` (gRPC-E2E) und `slice-072` (HTTP/SSE) stehen bereits in
+  `welle-19` §4.
+- **Risiken aus §6:** alle vier entfallen — siehe §6 (Risiko 4 war
+  eingetreten und wurde über `ADR-0066` vor dieser Closure beseitigt).
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-19` offen) —
+  Prüfung läuft bei der `welle-19`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
