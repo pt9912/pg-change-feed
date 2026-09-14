@@ -17,7 +17,7 @@ Beispiel-Client, E2E-Beleg).
 (nur gelesen, nicht geändert — der Client ruft die dort festgelegten
 Endpunkte auf).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
