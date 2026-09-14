@@ -22,7 +22,7 @@ Matrix-Job, Parametrisierung, Betroffene Dateien; vorab entschieden),
 — bereits festgelegt, dieser Slice liefert den fehlenden E2E-Beleg für
 beide Versionen, ändert die Liste nicht).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
