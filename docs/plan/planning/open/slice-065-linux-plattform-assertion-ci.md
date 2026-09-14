@@ -22,7 +22,7 @@ Workflow-Wahl, Messmethode, Betroffene Dateien; vorab entschieden),
 Linux — bereits im Lastenheft festgelegt, dieser Slice liefert den
 fehlenden sichtbaren Log-Beleg, ändert die Zusage nicht.
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
