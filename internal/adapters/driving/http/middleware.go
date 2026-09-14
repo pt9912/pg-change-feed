@@ -23,7 +23,14 @@ const (
 // leer konfiguriertes Token (`readerToken`/`adminToken` ungesetzt) trifft
 // nie ein Aufruf-Token — sonst würde ein fehlender Header (leerer Token)
 // gegen eine ebenfalls ungesetzte Token-Klasse eine dritte, implizite
-// Rechtsklasse eröffnen (`slice-059` §6 Risiko).
+// Rechtsklasse eröffnen.
+//
+// Diese Funktion steht als zweite, wortgleiche Fassung in
+// `internal/adapters/driving/grpc/interceptor.go` (`role`, die drei
+// Konstanten und `classifyToken`). Das `.a-check.yml`-Schichtenmodell führt
+// keine `adapters→adapters`-Kante, deshalb trägt jeder Driving-Adapter seine
+// eigene Fassung derselben Zuordnung; beide Fassungen sind zusammen zu
+// ändern.
 func classifyToken(token, readerToken, adminToken string) role {
 	if token == "" {
 		return roleNone

@@ -48,10 +48,18 @@ func (f *fakeSubscriber) Subscribe() (<-chan *model.Change, func()) {
 // (`bufconn`) — kein realer Port, kein Netz (`AGENTS.md` §3.1 im Testlauf).
 func startTestServer(t *testing.T, subscriber changeSubscriber) streamv1.ChangeStreamClient {
 	t.Helper()
+	return startTestServerMitTokenKonfiguration(t, subscriber, testReaderToken, testAdminToken)
+}
+
+// startTestServerMitTokenKonfiguration verdrahtet den Adapter mit den
+// übergebenen Token-Klassen; ein leerer Wert trägt die ungesetzte
+// Konfiguration (`CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`).
+func startTestServerMitTokenKonfiguration(t *testing.T, subscriber changeSubscriber, readerToken, adminToken string) streamv1.ChangeStreamClient {
+	t.Helper()
 	srv := New(Config{
 		Addr:        "unused:0",
-		TokenReader: testReaderToken,
-		TokenAdmin:  testAdminToken,
+		TokenReader: readerToken,
+		TokenAdmin:  adminToken,
 		Subscriber:  subscriber,
 	})
 	listener := bufconn.Listen(1024 * 1024)

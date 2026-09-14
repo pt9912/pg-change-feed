@@ -41,6 +41,13 @@ const (
 // Aufruf-Token — ein ungesetztes Token würde sonst eine dritte, implizite
 // Rechtsklasse eröffnen (dieselbe Grenze wie in der HTTP-Token-Middleware,
 // `ADR-0057` Teilfrage 3).
+//
+// Diese Funktion steht als zweite, wortgleiche Fassung in
+// `internal/adapters/driving/http/middleware.go` (`role`, die drei
+// Konstanten und `classifyToken`). Das `.a-check.yml`-Schichtenmodell führt
+// keine `adapters→adapters`-Kante, deshalb trägt jeder Driving-Adapter seine
+// eigene Fassung derselben Zuordnung; beide Fassungen sind zusammen zu
+// ändern.
 func classifyToken(token, readerToken, adminToken string) role {
 	if token == "" {
 		return roleNone

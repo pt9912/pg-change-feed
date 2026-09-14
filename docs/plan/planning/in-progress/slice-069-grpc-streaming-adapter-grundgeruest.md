@@ -108,7 +108,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       samt Auth-Interceptor, additive Bootstrap-Verdrahtung
       `CDC_GRPC_ADDR` (No-Op bei fehlender Adresse), Docker-only
       Protobuf-/buf-Build-Stufe für die Code-Generierung.
-- [ ] Fixrunde (Review `slice-069` F-1/F-2, [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)):
+- [x] Fixrunde (Review `slice-069` F-1/F-2, [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)):
       `Publish` nicht-blockierend mit begrenzter Empfangs-Warteschlange je
       Abonnent (Drop-Newest, Kanal nie geschlossen), Paket-/Funktions-Godoc
       und `internal/application/port/outbound/changestream.go`-Godoc auf die
@@ -144,19 +144,21 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/port/outbound/changestream.go` | neu | `ChangeStreamPort` — `Publish(ctx, change) error`, dazu der Sentinel `ErrChangeStream` |
-| `internal/adapters/driven/grpcstream/broadcaster.go` | neu | `Broadcaster`: `Subscribe()`/`Publish()`, In-Prozess-Fan-out |
-| `internal/adapters/driven/grpcstream/broadcaster_test.go` | neu | Fire-and-Forget-Regressionstest |
+| `internal/application/port/outbound/changestream.go` | neu | `ChangeStreamPort` — `Publish(ctx, change) error`, dazu der Sentinel `ErrChangeStream`; Fixrunde F-1: `Publish`-Godoc auf die nicht-blockierende Zustellsemantik nachgezogen |
+| `internal/adapters/driven/grpcstream/broadcaster.go` | neu | `Broadcaster`: `Subscribe()`/`Publish()`, In-Prozess-Fan-out; Fixrunde: begrenzte Empfangs-Warteschlange je Abonnent (`queueCapacity`), nicht-blockierender Send mit Drop-Newest |
+| `internal/adapters/driven/grpcstream/broadcaster_test.go` | neu | Fire-and-Forget-Regressionstest; Fixrunde: Regression „ein registrierter, nicht lesender Abonnent hält `Publish` nicht an“ plus Warteschlangen-Test (begrenzt, Drop-Newest, Reihenfolge) |
 | `internal/adapters/driving/grpc/server.go` | neu | gRPC-Server-Grundgerüst, lokales `changeSubscriber`-Interface, Domain↔Protobuf-Übersetzung |
-| `internal/adapters/driving/grpc/interceptor.go` | neu | Auth-Interceptor (Metadata-Token-Prüfung) |
+| `internal/adapters/driving/grpc/interceptor.go` | neu | Auth-Interceptor (Metadata-Token-Prüfung); Fixrunde F-3: zweite Fassung von `classifyToken`/`role` als benannte Duplikation dokumentiert |
 | `internal/adapters/driving/grpc/server_test.go` | neu | Unauthenticated-/Erfolgs-Pfad-Tests gegen `bufconn` mit lokalem Fake-Subscriber, dazu `Start`/`Shutdown`-Lebenszyklus und Bind-Fehlerpfad |
+| `internal/adapters/driving/grpc/interceptor_test.go` | neu (Fixrunde F-2) | Negativtest der Token-Konfigurationsgrenze: `classifyToken` bei leer konfiguriertem Token, fail-closed am laufenden Adapter |
+| `internal/adapters/driving/http/middleware.go` | update (Fixrunde F-3) | Gegenverweis auf die zweite `classifyToken`-Fassung im `grpc`-Adapter; Chronik-Verweis im Kommentar durch die Invariante ersetzt (`AGENTS.md` §3.7) |
 | `proto/cdc/stream/v1/changestream.proto` | neu | Protobuf-Schema für Change-Nachricht + RPC-Methode (konkretisiert den Plan-Platzhalter `proto/`) |
 | `internal/adapters/driving/grpc/streamv1/changestream.pb.go`, `changestream_grpc.pb.go` | neu | erzeugter Go-Code (committet, damit `make test`/`make image` ohne Codegen laufen) |
 | `Dockerfile` | update | neue Stufe `proto` für protoc + `protoc-gen-go`/`protoc-gen-go-grpc` (Docker-only) |
 | `Makefile` | update | neues Ziel `proto-generate` (+ `PROTO_IMAGE`/`PROTO_RUN_USER`) |
 | `internal/bootstrap/wiring.go` | update | additive `CDC_GRPC_ADDR`-Verdrahtung (Server-Start, noch ohne `CaptureService`-Anschluss — folgt in `slice-070`) |
 | `internal/bootstrap/wiring_test.go` | update | ConfigFromEnv-Test: `CDC_GRPC_ADDR` bleibt optional |
-| `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` (§2), externe-Verträge-Zeile (§6), Historie-Zeile (§7) |
+| `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` (§2), externe-Verträge-Zeile (§6), Historie-Zeile (§7); Fixrunde F-4: Feldnamen-Quelle in `SPEC-020` von `SPEC-002` auf den Domain-Typ `model.Change` berichtigt |
 | `harness/README.md`, `AGENTS.md` | update | neues `make`-Ziel `proto-generate` in der Werkzeuge-/Gate-Tabelle |
 | `go.mod`, `go.sum` | update | neue direkte Abhängigkeiten `google.golang.org/grpc`, `google.golang.org/protobuf` |
 | `harness/image-hash.txt` | update | Digest-Beleg nach `make image` (Build-Kontext geändert, `harness/README.md` §Werkzeuge) |

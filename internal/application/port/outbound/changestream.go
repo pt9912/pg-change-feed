@@ -28,14 +28,19 @@ var ErrChangeStream = stderrors.New("Stream-Publish fehlgeschlagen")
 // Die erste Driven-Implementierung ist der `Broadcaster` in
 // `internal/adapters/driven/grpcstream`.
 type ChangeStreamPort interface {
-	// Publish verteilt einen Change an alle aktuell registrierten
-	// Stream-Abonnenten (`ADR-0060` Teilfrage 3, Fire-and-Forget). Der
-	// Aufruf trägt keine Zustellgarantie: ein Abonnent, der zum
-	// Verteilungszeitpunkt nicht empfangsbereit ist, erhält diesen Change
-	// nicht nachgeliefert — die Nachvollziehbarkeit bleibt ausschließlich
-	// beim Lesezugriffsweg (`LH-FA-REA-001` ff.) und der bestätigten
-	// Consumer-Position (`LH-FA-CON-003`/`005`). Sein Fehler wird an der
-	// Aufrufstelle abgefangen und darf die bereits erfolgte Persistierung
-	// oder Bestätigung nicht beeinflussen.
+	// Publish verteilt einen Change an alle zum Aufrufzeitpunkt
+	// registrierten Stream-Abonnenten (`ADR-0060` Teilfrage 3, `ADR-0066`).
+	// Der Aufruf blockiert nie auf einen Abonnenten: jeder Abonnent trägt
+	// eine begrenzte Empfangs-Warteschlange; liest er nicht schnell genug,
+	// werden die über sie hinausgehenden Changes für ihn verworfen
+	// (Drop-Newest, nicht nachgeliefert). Der Aufruf trägt keine
+	// Zustellgarantie: ein Abonnent, der nicht verbunden ist oder langsamer
+	// liest als Changes eintreffen, verpasst die betroffenen Changes
+	// ersatzlos — die Nachvollziehbarkeit bleibt ausschließlich beim
+	// Lesezugriffsweg (`LH-FA-REA-001` ff.) und der bestätigten
+	// Consumer-Position (`LH-FA-CON-003`/`005`). Ein Fehler entsteht nur aus
+	// einem ungültigen Aufruf (`ErrChangeStream`) oder einem bereits
+	// beendeten `ctx`; er wird an der Aufrufstelle abgefangen und darf die
+	// bereits erfolgte Persistierung oder Bestätigung nicht beeinflussen.
 	Publish(ctx context.Context, change *model.Change) error
 }
