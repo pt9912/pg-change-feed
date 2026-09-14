@@ -1,0 +1,268 @@
+# Slice slice-075: Dauerhafter Ausschlussstand — Wiedereinspielung über Neustart und Bindungs-Zyklus
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`, siehe
+Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
+
+**Welle:** — (Zuordnung offen, Planner-Entscheidung: dieser Slice ist **nicht**
+Teil des `welle-18`-Closure-Triggers — `welle-18` schließt über den realen
+E2E-Beleg aus `slice-068`, siehe
+`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`).
+
+**Bezug:** [`LH-FA-CFG-005`](../../../../spec/lastenheft.md) (Haupt-Bezug —
+Spaltenausschluss), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (deren
+Zusage hängt an der Dauerhaftigkeit des Ausschlussstandes),
+[`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)
+(bindend — entscheidet den dauerhaften, tabellen-scoped Träger),
+[`ADR-0059`](../../adr/0059-spaltenauswahl-mechanismus.md) (Mechanismus,
+Wirkort und Rückkanal — in der Dauerhaftigkeits-Aussage durch `ADR-0065`
+superseded, in allen übrigen Teilfragen unverändert gültig),
+[`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
+(Antrags-Queue als einziger Schreibpfad administrativer Zustände),
+[`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) (Port-Zuschnitt der
+neuen Lesefähigkeit).
+
+**Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md)
+(Antrags-Datensatz — seine `applied`-Zeilen sind die Herkunft des Standes),
+[`ARC-004`](../../../../spec/architecture.md) (die Spalten-Prüfungs-Fähigkeit
+bekommt eine Lesefähigkeit für den Ausschlussstand).
+
+**Verantwortlich:** —.
+
+**Autor:** pt9912 (Architect-Zug — dieser Plan trägt die Adresse der
+Verdikt-Auflage aus
+`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`; die
+endgültige Planung führt der Planner, einschließlich der Wellen-Zuordnung).
+**Datum:** 2026-09-14.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — Schnitt nach Lieferwert, nicht nach Schichten; jeder Slice
+ist einzeln lieferbar. **§1 nennt Ziel und Abgrenzung** (Out-of-Scope-Disziplin
+des Lastenhefts, auf den Slice-Plan angewandt); die vier Klassen des
+Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
+zusammen mit der Begründungs-Pflicht je Punkt.
+
+**Ziel:** Den Ausschlussstand über die Prozesslebensdauer hinaus tragen
+(`ADR-0065`): den Stand einer Tabelle aus den `applied`-Zeilen der beiden
+Spalten-Antragsarten in `cdc.administration_request` ableiten
+(`exclude_column` trägt ein, `include_column` nimmt heraus, Reihenfolge
+`requested_at` mit deterministischem Zweitschlüssel), ihn über eine neue
+Lesefähigkeit am Outbound Port (`ARC-004`) bereitstellen und bei **jedem**
+Anlegen einer Bindung mitführen — im Prozessstart
+(`activatedTableBindings`) **und** im Aktivierungs-Zweig der
+Antrags-Verarbeitung (`AddBinding`). Belegt wird das durch einen Unit-Test
+über den Bindungs-Neuaufbau und einen `disable`/`enable`-Zyklus sowie durch
+einen realen E2E-Beleg: ein simulierter Container-Neustart im bestehenden
+Rundlauf (`tools/harness/run-integration-tests.sh`) lässt einen zuvor
+beantragten Ausschluss wirksam.
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Boot-Zeit-Ausschlussfeld in `CDC_TABLES`/der optionalen YAML-Datei** —
+  `ADR-0059` Teilfrage 1 erklärt es für nicht ausgeschlossen, aber nicht zum
+  Gegenstand; `ADR-0065` führt es als eigenen Re-Evaluierungs-Trigger (ein
+  zweiter Herkunftsort des Standes bräuchte eine eigene Zusammenführungs-
+  Festlegung). Es gibt keinen benannten Bedarf dafür.
+- **Quellen-/musterweiter Ausschluss über mehrere Tabellen hinweg** —
+  `ADR-0059` Teilfrage 2 schließt Option C bewusst aus; dieser Slice belegt
+  weiterhin ausschließlich die pro-Tabelle-Granularität.
+- **Ausschluss zusätzlich als Publication-Spaltenliste** — `ADR-0065`
+  §Verglichene Alternativen (Option C) verwirft den zweiten Wirkort: er
+  verdoppelte die Auswertung (SQL und `Assembler`) und berührte die
+  Konvergenz mit `LH-FA-SCH-003`.
+- **Wiederholung des Live-Reload-Belegs aus `slice-068`** — dieser Slice
+  ergänzt den Neustart- und den Bindungs-Zyklus-Beleg; der Beleg des
+  laufenden Pfads bleibt bei `slice-068` (`welle-18` §3), ein zweiter Lauf
+  desselben Pfades prüfte nichts Neues.
+- **Eine dritte Zustands-Kategorie „ausgeschlossen" vs. „real gelöscht"** —
+  `ADR-0059` Teilfrage 4 (Option B) bleibt verworfen; die Boundary-Klausel
+  von `LH-FA-CFG-005` verlangt ausdrücklich nur das Verhalten aus
+  `LH-FA-SCH-003`.
+
+**Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
+einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
+Ausfüll-Liste. Suchreihenfolge: Was übernimmt ein **Folge-Slice** (mit
+Kennung — und die Kennung muss den Punkt auch annehmen)? Was bleibt als
+**Bestand** bewusst stehen (mit Begründung)? Was wäre ein **anderer Vorgang**?
+Welche **Schicht** rührt der Slice nicht an?
+
+Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
+Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
+**geändert**, nicht nur ergänzt.
+
+## 2. Definition of Done
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — **≤ 3 Liefer-Punkte**; mehr heißt: der Slice ist zu groß und
+gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
+Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
+
+- [ ] Der Ausschlussstand einer Tabelle wird aus den `applied`-Zeilen der
+      beiden Spalten-Antragsarten abgeleitet und bei jedem Anlegen einer
+      Bindung mitgeführt — im Prozessstart (`activatedTableBindings`) und im
+      Aktivierungs-Zweig (`AddBinding`). Beleg: Test in
+      `internal/bootstrap/`, der den Bindungs-Neuaufbau und einen
+      `disable`/`enable`-Zyklus real nachbildet und danach prüft, dass der
+      ausgeschlossene Spaltenname im Row Image fehlt.
+- [ ] Die Ableitung liegt hinter einer neuen Lesefähigkeit am Outbound Port
+      (`ARC-004`, Fähigkeits-Zuschnitt nach `ADR-0034`), gegen die reale
+      PostgreSQL erprobt (`make test-store`) — inklusive der deterministischen
+      Reihenfolge bei gleichem `requested_at`.
+- [ ] E2E-Beleg (`LH-QA-SEC-004`): ein simulierter Container-Neustart im
+      bestehenden Rundlauf (`tools/harness/run-integration-tests.sh`) lässt
+      einen zuvor per `cdc.exclude_column` beantragten Ausschluss wirksam —
+      ein danach eingefügter Change trägt den Spaltenwert nicht in
+      `cdc.changes`. Beleg: `make test-integration` real grün.
+- [ ] `make gates` grün.
+- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [ ] Doku-Update: `harness/README.md` §Werkzeuge, Zeile `make
+      test-integration`, um den neuen Beleg-Baustein ergänzt; dazu der
+      `SPEC-019`-Fließtext zur Bedeutung des `applied`-Wertes (Folgepflicht
+      aus `ADR-0065`, Planner-/Architect-Zug).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Erwartet: `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (der Eintrag trägt diesen Slice als Auslöser, siehe §8).
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der Closure der Welle, der dieser Slice zugeordnet wird.
+
+## 3. Plan (vor Code)
+
+Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
+§Was ist eine Sub-Area? — diese Liste liefert die **Pfad-Kandidaten** für §8,
+nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
+Aussagen-Berührung steht hier gar nicht.
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `internal/application/port/outbound/columnexclusion.go` | update | neue Lesefähigkeit für den abgeleiteten Ausschlussstand einer Tabelle (Fähigkeits-Zuschnitt, `ADR-0034`) |
+| `internal/adapters/driven/postgresstorage/tableactivation.go` | update | Implementierung der Lesefähigkeit gegen `cdc.administration_request` (dieselbe Instanz wie die Spalten-Prüfung) |
+| `internal/adapters/driven/postgresstorage/queries.go` | update | Abfrage der `applied`-Zeilen der beiden Spalten-Antragsarten in `requested_at`-Ordnung mit deterministischem Zweitschlüssel |
+| `internal/bootstrap/wiring.go` | update | `activatedTableBindings` und der Aktivierungs-Zweig tragen den abgeleiteten Stand in die Bindung |
+| `internal/bootstrap/*_test.go` | update | Belege für Bindungs-Neuaufbau und `disable`/`enable`-Zyklus |
+| `tools/harness/run-integration-tests.sh` | update | Neustart-Beleg des Ausschlussstandes im bestehenden Rundlauf |
+| `harness/README.md` | update | Werkzeuge-Zeile `make test-integration` um den neuen Beleg-Baustein ergänzt |
+
+## 4. Trigger
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Trigger je Lifecycle-Übergang und WIP-Limit.
+
+**Start** (`next` → `in-progress`): `ADR-0065` liegt Accepted vor;
+`slice-067` liegt in `done/` (sein §6-Risiko trägt den Ausgang
+*eingetreten → slice-075*, der Planner-Zug zu diesem Risiko-Ausgang ist
+gelaufen); WIP-Limit (1 je Implementer) frei.
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): Zeigt sich, dass
+  Ableitung, Lesefähigkeit und die zwei Beleg-Tiers zusammen mehr als drei
+  Liefer-Punkte oder mehr als zwei Schichten in einer Review-Sitzung nicht
+  mehr prüfbar machen, gehört das zurück zur Zerlegung.
+- `in-progress` → `open` (blockiert — Carveout?): Die Antrags-Historie trägt
+  den Stand nicht (z. B. weil eine Bereinigungs- oder Altersgrenze auf
+  `cdc.administration_request` liegt oder die Reihenfolge nicht
+  deterministisch herstellbar ist) — dann greift der Re-Evaluierungs-Trigger 1
+  aus `ADR-0065`: der Träger wird per Folge-ADR neu entschieden, statt hier
+  ein unvollständiges Modell zu bauen.
+
+## 5. Closure-Trigger
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
+Lerneintrag; ohne ihn ist der Slice nur abgelegt.
+
+DoD vollständig **und** `make gates` grün **und** `make test-integration` real
+grün (der Neustart-Beleg ist darin enthalten) **und** Closure-Notiz
+geschrieben.
+
+## 6. Risiken und offene Punkte
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Offene Risiken werden bei Closure aufgelöst — **jedes** Risiko bekommt genau
+**einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
+dasteht.
+
+- `requested_at` trägt `current_timestamp` (Transaktionszeit): ein
+  `exclude_column` und ein `include_column` für dieselbe Spalte in **einer**
+  Transaktion tragen denselben Zeitstempel — die Ableitung braucht einen
+  deterministischen Zweitschlüssel, sonst ist die Reihenfolge zufällig und der
+  Stand hängt von der Ausführungsreihenfolge ab. — **Ausgang:** <bei Closure
+  zuzuweisen>
+- Der Prozessstart liest eine weitere Quelle je Quelle; ein Lesefehler dort
+  endet in der Startfehlerklasse des bestehenden Pfads (`storage`,
+  `SPEC-008`) — eine neue Startabbruch-Bedingung, die der Slice benennen muss.
+  — **Ausgang:** <bei Closure zuzuweisen>
+- Der Neustart-Beleg teilt Zustand mit den übrigen Abschnitten des langen
+  Compose-Rundlaufs (`BEO-PGC/test-isolation-geteilter-zustand`, 1×, weiter
+  offen — Musterrisiko für geteilten Testzustand) und trifft dieselbe
+  Poll-Familie wie `BEO-PGC/test-integration-retention-timing-flake` (1×,
+  weiter offen). — **Ausgang:** <bei Closure zuzuweisen>
+
+## 7. Closure-Notiz
+
+<!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
+§Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
+diese Sektion vor dem `git mv` nach done/ fuellen — einzige Ausnahme ist das
+letzte DoD-Item in §2 (die Paarungen suchen in `done/`, also nach dem `git mv`).
+Im Repo ohne Wellen-Betrieb braucht die Closure dadurch drei Commits: Inhalt,
+`git mv`, Haekchen — das folgt aus der Hard Rule, es widerspricht ihr nicht. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
+formulieren — sonst zählt das Register zwei Namen getrennt) ·
+`grundlagen-traceability.md` §Herkunfts-Anker für Steering-Loop-Regeln (das
+Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
+wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
+Backticks).
+
+- **Was hat funktioniert:** <bei Closure>
+- **Was ging anders als geplant:** <bei Closure>
+- **Steering-Loop-Eintrag:** <bei Closure>
+- **Beobachtungs-Register (`../observations/`):** <bei Closure — erwartet:
+  `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/`>
+- **Folge-Slices:** <bei Closure>
+- **Risiken aus §6:** <bei Closure — jedes mit genau einem Ausgang, siehe §6>
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb — Prüfung läuft bei der
+  Closure der Welle, der dieser Slice zugeordnet wird.
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Sub-Area-Modus-Begründung — dort die **zwei vorgelagerten
+Schritte** (sie stehen in jedem Slice-Plan, unabhängig von Modus und
+Slice-Typ) und die **vier Pflichtkriterien** (Konventionen-Dichte ·
+Phase-Reife · Evidenz-/Diskrepanz-Risiko · Reconciliation-Aufwand), vier und
+nicht mehr.
+
+**Der Abschnitt selbst entfällt nie.** Die zwei vorgelagerten Prüfungen laufen
+in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Bedingt
+ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
+Hälften.
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** Einzige berührte Sub-Area ist die
+Repo-weite Default-Sub-Area `*`/`PGC`.
+
+**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen.
+Treffer mit Bezug zu diesem Slice: `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger`
+(1×, offen — **dieser Slice ist sein Träger**; die Beobachtung bleibt bis zur
+Umsetzung unter der Schwelle offen), `BEO-PGC/test-isolation-geteilter-zustand`
+(1×, weiter offen — siehe §6) und `BEO-PGC/test-integration-retention-timing-flake`
+(1×, weiter offen — siehe §6). Keiner der drei erreicht mit diesem Slice 3×.
+Keine weiteren Treffer für `Assembler`/`TableBinding`/Antrags-Queue über die
+bereits in `slice-066`/`slice-067`/`slice-068` gesichteten hinaus
+(`BEO-PGC/schema-evolution-nicht-dynamisch` bleibt verkörpert, ohne neuen
+Bezug).
+
+**Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
+Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
+Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
+Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
+
+Alle berührten Sub-Areas GF (nur `*`/`PGC`).
