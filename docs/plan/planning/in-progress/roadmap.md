@@ -39,6 +39,7 @@ oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-16.md](../welle-16.md) — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`, `ADR-0057`).
+- [welle-17.md](../welle-17.md) — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`).
 
 Nichts in Arbeit.
 
