@@ -131,11 +131,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       neuer `SPEC-*`-Eintrag — sind bereits `slice-066` zugeordnet);
       Implementer bestätigt oder begründet Abweichung im Plan-Nachzug.
       Bestätigt: kein Doku-Update in diesem Slice (§3 Plan-Nachzug).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -228,12 +228,18 @@ dasteht.
   Stellen von `TableBinding` berühren (z. B. Erstaktivierung über
   `NewAssembler`) und dort eine andere Semantik brauchen (leerer
   Ausschluss bei Erstaktivierung ist korrekt, ein Bump muss dagegen
-  erhalten) — Verwechslungsgefahr zwischen beiden Pfaden. — **Ausgang:**
-  <bei Closure zuzuweisen>
+  erhalten) — Verwechslungsgefahr zwischen beiden Pfaden. — **Ausgang:
+  entfallen** — der Implementer fand genau **zwei** Voll-Schreibstellen
+  (`observeRelation`s Bump-Pfad, `AddBinding`) und belegte mit Mutationen,
+  dass beide einzeln tragend sind; ein weiterer Pfad trat nicht auf.
 - `go test -race` könnte einen Data Race an der neuen Methode aufdecken,
   wenn ein Aufrufer außerhalb von `tablesMu` auf `ExcludedColumns`
   zugreift (dieselbe Fitness-Function-Anforderung wie in `ADR-0059`
-  §Fitness Function benannt). — **Ausgang:** <bei Closure zuzuweisen>
+  §Fitness Function benannt). — **Ausgang: entfallen** — real belegt:
+  `ExcludedColumns` wird ausschließlich unter `tablesMu` geschrieben (jeder
+  Schreibpfad baut die Liste neu auf, kein In-place-Mutieren), das
+  Entfernen der Sperre macht `TestAssemblerColumnExclusionIsRaceFree` rot
+  (Reviewer bestätigte den Data-Race-Beleg eigenständig).
 - **Nachgetragen (Implementer, 2026-09-14):** Der Ausschlussstand lebt mit
   diesem Slice ausschließlich in der laufenden `Assembler`-Bindung
   (`TableBinding.ExcludedColumns`); kein Startpfad liest ihn wieder ein —
@@ -247,7 +253,15 @@ dasteht.
   Antrags-Seite, `slice-068` den laufenden Container. Die dauerhafte Spur
   eines Antrags ist heute allein die `applied`-Zeile in
   `cdc.administration_request`, die der Startpfad nicht auswertet. —
-  **Ausgang:** <bei Closure zuzuweisen>
+  **Ausgang: eingetreten → `slice-075`** — der Architect-Zug hat das Risiko
+  über den Reviewer-Befund F-1 hinaus **erweitert** (der Stand geht auch bei
+  einem `cdc.disable_table`/`enable_table`-Zyklus ohne Neustart verloren) und
+  als **Lücke** entschieden, nicht als zulässige Grenze: Folge-ADR
+  [`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)
+  (`Supersedes ADR-0059`, nur die Dauerhaftigkeits-Aussage) und Folge-Slice
+  `slice-075` (dauerhafter Träger, aus den `applied`-Zeilen der
+  Spalten-Antragsarten abgeleitet). Verdikt:
+  [`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`](../../../reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md).
 
 ## 7. Closure-Notiz
 
@@ -266,13 +280,38 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure>
-- **Folge-Slices:** keine — `slice-068` (E2E-Beleg) steht bereits in
-  `welle-18` §4 als vorgesehener nächster Slice.
-- **Risiken aus §6:** <bei Closure>
+- **Was hat funktioniert:** Die Filterung nutzt die im `rowImage` bereits
+  vorhandene `nil`-Abwesenheits-Kodierung — kein neuer Platzhalter, damit
+  `LH-FA-DAT-005`s Negative-Kriterium ohne neue Kodierung erfüllt. Der
+  Implementer fand selbst, dass es **zwei** Voll-Schreibstellen für
+  `TableBinding` gibt (nicht eine) und dass der Ausschlussstand an beiden
+  erhalten werden muss — mit Mutationen belegt: erst das Zurückdrehen beider
+  macht den Erhalt-Test rot. Der Konvergenz-Test zu `LH-FA-SCH-003` braucht
+  keine Sonderbehandlung, weil die Filterung unterhalb der
+  Schema-Vergleichsebene liegt (`ADR-0059` Teilfrage 4).
+- **Was ging anders als geplant:** Der Plan nannte nur `mapper_test.go` als
+  Testort; dazu kamen der Whitebox-Test der Verdrahtung
+  (`administration_internal_test.go`) und eine `Assembler`-Instanz im realen
+  PostgreSQL-Test (`administration_endtoend_test.go`) — dort fehlte ein
+  Assembler in `administrationDeps`, was der Implementer beim Bauen fand und
+  mitbehob. Größer: Der Reviewer deckte auf, dass der Ausschlussstand
+  **keinen dauerhaften Träger** hat — und zwar enger als im §6-Risiko
+  benannt (auch ein `disable`/`enable`-Zyklus verliert ihn). Der
+  Architect-Zug entschied das als Lücke (nicht als zulässige Grenze) und
+  löste `ADR-0065` + `slice-075` aus.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der Befund ist als
+  Registereintrag geführt (unten), der Ausgang ist `geplant`.
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (Zustand `geplant`,
+  Träger `slice-075`), Beleg `evidence/review-slice-067.md` — angelegt vom
+  Architect-Zug; Kennung bewusst als **Klasse** formuliert statt als
+  Instanz (`spaltenausschluss-nur-prozesslebensdauer` hätte einen zweiten
+  Fall derselben Klasse gespalten).
+- **Folge-Slices:** `slice-075` (dauerhafter Ausschlussstand, `open/`,
+  wellenlos) — aus dem Architect-Verdikt; `slice-068` (E2E-Beleg) steht
+  weiterhin in `welle-18` §4.
+- **Risiken aus §6:** zwei entfallen, eines eingetreten → `slice-075` —
+  siehe §6.
 - **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-18` offen) —
   Prüfung läuft bei der `welle-18`-Closure.
 

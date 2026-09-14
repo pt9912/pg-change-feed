@@ -75,6 +75,19 @@ Zerlegung.
 - **Echte technische Brücke für synchrone SQL→Go-Aufrufe** (FDW, `dblink`)
   — eigener, von `ADR-0050` geerbter Re-Evaluierungs-Trigger, unverändert
   unberührt von dieser Welle.
+- **Dauerhaftigkeit des Ausschlussstandes über Prozess-Neustart und
+  Bindungs-Zyklus** — diese Welle liefert den Ausschluss für den *laufenden*
+  Prozess: die Antrags-Seite (`slice-066`), die Filterung samt Live-Reload
+  (`slice-067`) und den realen E2E-Beleg des laufenden Pfads (`slice-068`).
+  Dass der Stand keinen dauerhaften Träger hat — er geht bei jedem Neustart
+  **und** bei einem `cdc.disable_table`/`enable_table`-Zyklus verloren —, ist
+  im Review von `slice-067` real gefunden und vom Architect-Zug als **Lücke**
+  entschieden worden, nicht als zulässige Grenze; er löst `ADR-0065`
+  (`Supersedes ADR-0059`, nur die Dauerhaftigkeits-Aussage) und den
+  wellenlosen Folge-Slice `slice-075` aus. `welle-18`s Closure-Trigger
+  berührt das nicht (er verlangt den Beleg des laufenden Pfads, nicht
+  Dauerhaftigkeit). Verdikt:
+  [`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`](../../reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md).
 
 ## 7. Closure-Notiz
 

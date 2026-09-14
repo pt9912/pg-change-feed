@@ -5,10 +5,13 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** — (Zuordnung offen, Planner-Entscheidung: dieser Slice ist **nicht**
-Teil des `welle-18`-Closure-Triggers — `welle-18` schließt über den realen
-E2E-Beleg aus `slice-068`, siehe
-`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`).
+**Welle:** ohne Welle — die Closure-Bedingung ist ausschließlich die eigene
+DoD (ein einzelner Slice, der eine im Review von `slice-067` gefundene Lücke
+schließt), kein repo-weites *Mehr* wie bei `welle-13`/`welle-14`/`welle-15`
+(Baseline-Regelwerk `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht).
+Ausdrücklich **nicht** Teil des `welle-18`-Closure-Triggers — `welle-18`
+schließt über den realen E2E-Beleg aus `slice-068`, siehe
+`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`.
 
 **Bezug:** [`LH-FA-CFG-005`](../../../../spec/lastenheft.md) (Haupt-Bezug —
 Spaltenausschluss), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (deren
