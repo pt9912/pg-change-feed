@@ -29,7 +29,13 @@
 # Blocker-Sichtbarkeit über `cdc.retention_blockers`, Bestätigung über die
 # Position hinweg, die reale Abwesenheit jeder Zeile für `src-e2e` danach,
 # die reale Löschung sowie die durchgehende numerische Lesbarkeit von
-# `cdc_storage_bytes`.
+# `cdc_storage_bytes`. Ein Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005,
+# ADR-0064) folgt danach: ein realer Container-Tausch über
+# `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
+# Feed-Container durch eine neue Instanz desselben `:dev`-Images, während
+# `postgres`/`nats` unberührt bleiben — Datenstand vor dem Tausch bleibt
+# über `cdc.changes` identisch lesbar, eine danach eingefügte Zeile wird
+# weiterhin erfasst.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -1544,6 +1550,103 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
+
+# Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
+# ADR-0058 Entscheidung 3): bildet den Mechanismus eines
+# Anwendungs-Upgrades nach — ein realer Container-Tausch über
+# `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
+# in ADR-0058 vorgesehenen, real blockierten zweiten
+# `make schema-rollout`-Lauf (BEO-PGC/schema-rollout-fremdobjekte, Exit 8
+# auf vier Fremdobjekten, docs/reviews/blocker-slice-063.md). Läuft hier,
+# solange der Feed-Container noch unversehrt und gesund ist — vor
+# TestE2ESchemaChangeDropColumn/TestE2ESchemaChangeIncompatibleTypeChange
+# unten, die ihn beide dauerhaft beenden. `feed_e2e_full` bleibt über den
+# ganzen Lauf aktiviert (siehe Lasttest-Beleg oben); die IDs 250/251 liegen
+# in einem eigenen Wertebereich, getrennt von den übrigen Testfall-Gruppen
+# auf derselben Tabelle.
+UPGRADE_TABLE=feed_e2e_full
+
+upgrade_feed_id_before=$(docker inspect --format '{{.Id}}' "$FEED_CONTAINER")
+upgrade_pg_id_before=$(docker inspect --format '{{.Id}}' "$PG_CONTAINER")
+upgrade_nats_id_before=$(docker inspect --format '{{.Id}}' "$NATS_CONTAINER")
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$UPGRADE_TABLE (id, name) VALUES (250, 'UpgradeBeforeSwap');
+SQL
+
+upgrade_before_position=""
+for _ in $(seq 1 120); do
+  upgrade_before_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$UPGRADE_TABLE' AND new_data->>'id' = '250'")
+  if [ -n "$upgrade_before_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$upgrade_before_position" ]; then
+  echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf — Vorher-Datenstand (id=250) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+# Realer Container-Tausch (ADR-0064): --force-recreate stoppt und entfernt
+# die bestehende Feed-Container-Instanz und legt eine neue aus demselben
+# :dev-Image an (container_name bleibt cdc-test-feed); --no-deps lässt
+# postgres/nats unberührt, die bereits laufen und healthy sind.
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+
+upgrade_feed_id_after=$(docker inspect --format '{{.Id}}' "$FEED_CONTAINER")
+if [ "$upgrade_feed_id_after" = "$upgrade_feed_id_before" ]; then
+  echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf — Feed-Container-ID nach --force-recreate unverändert ($upgrade_feed_id_after), kein realer Container-Tausch" >&2
+  exit 1
+fi
+
+upgrade_pg_id_after=$(docker inspect --format '{{.Id}}' "$PG_CONTAINER")
+upgrade_nats_id_after=$(docker inspect --format '{{.Id}}' "$NATS_CONTAINER")
+if [ "$upgrade_pg_id_after" != "$upgrade_pg_id_before" ] || [ "$upgrade_nats_id_after" != "$upgrade_nats_id_before" ]; then
+  echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf — postgres/nats-Container-ID änderte sich trotz --no-deps (postgres: $upgrade_pg_id_before -> $upgrade_pg_id_after, nats: $upgrade_nats_id_before -> $upgrade_nats_id_after)" >&2
+  exit 1
+fi
+
+healthy=0
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  if [ "$health" = "healthy" ]; then
+    healthy=1
+    break
+  fi
+  sleep 1
+done
+if [ "$healthy" -ne 1 ]; then
+  echo "run-integration-tests: Feed-Container meldet nach dem Upgrade-Sicherheits-Container-Tausch Health-Status ${health:-fehlt}, wollen healthy" >&2
+  exit 1
+fi
+
+upgrade_before_still=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$UPGRADE_TABLE' AND new_data->>'id' = '250'")
+if [ "$upgrade_before_still" != "1" ]; then
+  echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf — Datenstand vor dem Tausch (id=250) nach dem Container-Tausch nicht mehr identisch über cdc.changes lesbar (count=$upgrade_before_still)" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$UPGRADE_TABLE (id, name) VALUES (251, 'UpgradeAfterSwap');
+SQL
+
+upgrade_after_position=""
+for _ in $(seq 1 120); do
+  upgrade_after_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$UPGRADE_TABLE' AND new_data->>'id' = '251'")
+  if [ -n "$upgrade_after_position" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ -z "$upgrade_after_position" ]; then
+  echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf — nach dem Container-Tausch eingefügte Zeile (id=251) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen — die Erfassung wurde nach dem Tausch nicht fortgesetzt" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt — realer Container-Tausch über \$COMPOSE up -d --force-recreate --no-deps ($upgrade_feed_id_before -> $upgrade_feed_id_after), postgres/nats unberührt (--no-deps), Feed-Container danach healthy, Datenstand vor dem Tausch (id=250, Position $upgrade_before_position) identisch lesbar, danach eingefügte Zeile (id=251) weiterhin erfasst (Position $upgrade_after_position)"
 
 # TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063 Supersedes
 # ADR-0058 Entscheidung 1) läuft als eigener go-test-Aufruf, NACH allem,

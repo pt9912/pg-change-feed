@@ -76,26 +76,26 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `LH-QA-OPS-005` erfüllt: neue Phase in
+- [x] `LH-QA-OPS-005` erfüllt: neue Phase in
       `tools/harness/run-integration-tests.sh` (nach dem
       Black-Box-CLI-Rundlauf, vor `TestE2ESchemaChangeIncompatibleTypeChange`)
       führt real `$COMPOSE up -d --force-recreate --no-deps
       pg-change-feed` aus (`ADR-0064`) und belegt den vor dem Tausch
       erfassten Datenstand über `cdc.changes` identisch lesbar; eine danach
       eingefügte Zeile wird weiterhin erfasst.
-- [ ] Real bestätigt: `--force-recreate` erzeugt eine neue Container-
+- [x] Real bestätigt: `--force-recreate` erzeugt eine neue Container-
       Instanz desselben `:dev`-Images (`container_name` bleibt
       `cdc-test-feed`), `postgres`/`nats` bleiben durch `--no-deps`
       unberührt und healthy.
-- [ ] Health-Poll nach dem Tausch analog zum bestehenden simulierten
+- [x] Health-Poll nach dem Tausch analog zum bestehenden simulierten
       `docker restart`-Rundlauf (`LH-QA-REL-001`).
-- [ ] `make gates` grün.
-- [ ] `make test-integration` grün mit der neuen Phase sichtbar im Log
+- [x] `make gates` grün.
+- [x] `make test-integration` grün mit der neuen Phase sichtbar im Log
       (kein Gate, [ADR-0030](../../adr/0030-testpyramide.md)).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
+- [x] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
       test-integration`-Zeile um die neue Upgrade-Sicherheits-Phase ergänzt
       (kein neues Gate, kein neues Target).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
