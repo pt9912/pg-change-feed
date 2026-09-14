@@ -120,9 +120,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `TestConsumeExcludedColumnDroppedInSourceReportsSchemaError`.
 - [x] `make gates` grün. Beleg: `make gates` Exit 0 (d-check, commit-traceability,
       a-check, coverage-gate grün) und `make test` Exit 0 (`go test -race ./...`).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Report: `docs/reviews/review-slice-067.md`, Verdikt 0 HIGH, 2 MEDIUM
+      (F-1/F-2 als Closure-Nachzug an Planner/Architect, kein
+      Reviewer→Implementer-Pfeil), 1 LOW, 2 INFO, keine Fixrunde.
 - [x] Doku-Update: keiner erwartet (kein neuer öffentlicher Vertrag; die
       Folgepflichten aus `ADR-0059` — `spec/architecture.md`-Korrektur,
       neuer `SPEC-*`-Eintrag — sind bereits `slice-066` zugeordnet);
