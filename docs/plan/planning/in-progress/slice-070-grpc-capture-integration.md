@@ -74,7 +74,10 @@ Goroutine, Deadline) ist weder nötig noch Gegenstand dieses Slice.
   Teilfrage 2, dieselbe Grenze wie
   [ADR-0011](../../adr/0011-persist-before-ack.md)/
   [ADR-0027](../../adr/0027-capture-application-service.md)); dieser Slice
-  fasst keine Zeile des Kernpfads vor dem Stream-Publish-Aufruf an.
+  fasst den Kernpfad `Receive → … → ACK Source` sowie den Notify-Block
+  verhaltensneutral nicht an (die Fixrunde hat eine Zeile in
+  `distinctTables` in einen gemeinsamen Helfer gehoben — wörtlich eine
+  Zeilenberührung, verhaltensneutral; §3, Review-Finding F-9).
 - **Stream-internes Replay und tabellen-granulare Filterung** — Bestand
   bleibt bewusst stehen, dieselbe Vertagung wie in `slice-069` §1
   begründet; kein Gegenstand dieser Welle.
@@ -128,11 +131,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       der Capture-Verdrahtung konstruiert und trägt den
       `ChangeStreamPort`; beide `CDC_GRPC_ADDR`-Kommentarblöcke
       nachgezogen.)*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -233,11 +236,17 @@ dasteht.
   Notify) könnte versehentlich vor statt nach `ACK Source` einsortiert
   werden und damit den unantastbaren Kernpfad
   ([ADR-0011](../../adr/0011-persist-before-ack.md)) berühren. —
-  **Ausgang:** wird bei Closure zugewiesen.
+  **Ausgang: entfallen** — der Aufruf steht real nach `ACK Source` und nach
+  dem Notify-Block; Reviewer und Verifier haben das am Code nachgezogen, und
+  die Fixrunden-Mutation „Publish-Block vor `ack.Acknowledge`" färbt drei
+  Tests rot.
 - Der Fehlerisolations-Test könnte einen bereits bestehenden,
   strukturell ähnlichen `ChangeNotificationPort`-Test unbeabsichtigt
   duplizieren statt ihn zu spiegeln, was Testpflege-Aufwand doppelt. —
-  **Ausgang:** wird bei Closure zugewiesen.
+  **Ausgang: entfallen** — der Test spiegelt das Muster (`fake`-Port,
+  Fehler wird verschluckt, `store`/`ack` bleiben erfolgreich), dupliziert es
+  aber nicht: der bestehende Notify-Test bleibt unverändert und grün, der
+  neue prüft einen anderen Port und einen anderen Fehlerausgang.
 
 ## 7. Closure-Notiz
 
@@ -249,18 +258,44 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
+- **Was hat funktioniert:** Der Anschluss war klein: eine optionale
+  Konstruktions-Option (analog `WithChangeNotification`), ein
+  Best-Effort-Block nach `ACK Source`, und der bestehende Kernpfad blieb
+  unberührt. Der Port-Vertrag aus `slice-069` trug ohne Nacharbeit — die
+  Fehlerisolation an der Aufrufstelle genügte, weil `Publish` selbst nicht
+  blockiert. Reviewer und Verifier haben je eigene Mutationen gesetzt
+  (Fehler-Rückgabe statt Warnung, Publish vor `ACK`, `break` nach dem ersten
+  Change, Zählwert im Empfänger-Fall) und rot gesehen.
+- **Was ging anders als geplant:** (a) Der Review fand einen
+  **Selbstwiderspruch in `ADR-0066`**: dessen dritte Fitness-Function-Zeile
+  verlangte, dass `Capture()` auch bei einem nicht zurückkehrenden `Publish`
+  nicht anhält — während dieselbe ADR den synchronen Aufruf festschreibt und
+  die caller-seitige Zeit-Isolation ausdrücklich verwirft. Der Architect-Zug
+  bestätigte den Widerspruch, ließ die Entscheidung bestehen und korrigierte
+  die Zeile über `ADR-0067` (partielles `Supersedes`). (b) Ein
+  `wiring.go`-Kommentar behauptete einen Fehlerpfad, den der Code nicht
+  trägt (HIGH, behoben). (c) Die Fixrunde hat eine Zeile in
+  `distinctTables` verhaltensneutral berührt, wodurch die wörtliche
+  §1-Aussage „keine Zeile des Kernpfads angefasst" zu eng war (F-9, hier im
+  Text korrigiert).
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der auslösende Befund
+  ist eine ADR-Korrektur (`ADR-0067`), kein wiederkehrendes Muster. Benannt
+  statt gezählt: die Klasse „Fitness-Function-Zeile widerspricht der eigenen
+  Entscheidung derselben ADR" ist als eigener Registereintrag notiert
+  (Beleg `evidence/slice-070.md`), nicht als Verkörperung gezählt.
   — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
   Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
   *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
   Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
   verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/fitness-function-gegen-eigene-entscheidung/` angelegt, Beleg
+  `evidence/slice-070.md` (1×).
+- **Folge-Slices:** keiner aus diesem Slice — `slice-071`/`slice-072` stehen
+  bereits in `welle-19` §4.
+- **Risiken aus §6:** beide entfallen — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-19` offen) —
+  Prüfung läuft bei der `welle-19`-Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
