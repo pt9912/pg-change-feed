@@ -121,6 +121,33 @@ func TestConfigFromEnvLiestAktivierung(t *testing.T) {
 	}
 }
 
+// TestConfigFromEnvHTTPAddrBleibtOptional trägt die Additivitäts-Regel
+// von `ADR-0057`/`slice-059`: `CDC_HTTP_ADDR` und die beiden Token-
+// Umgebungsvariablen sind keine Vorbedingung — eine vollständige
+// Verdrahtung ohne die drei neuen Namen startet unverändert
+// (Regressionstest), gesetzte Werte landen unverändert in `Config`.
+func TestConfigFromEnvHTTPAddrBleibtOptional(t *testing.T) {
+	values := vollständigeVerdrahtung()
+	cfg, err := bootstrap.ConfigFromEnv(getenv(values))
+	if err != nil {
+		t.Fatalf("bestehende Verdrahtung ohne CDC_HTTP_ADDR/CDC_API_TOKEN_*: %v", err)
+	}
+	if cfg.HTTPAddr != "" || cfg.APITokenReader != "" || cfg.APITokenAdmin != "" {
+		t.Fatalf("Config trägt trotz ungesetzter Umgebung einen Wert: %+v", cfg)
+	}
+
+	values["CDC_HTTP_ADDR"] = ":8080"
+	values["CDC_API_TOKEN_READER"] = "reader-token"
+	values["CDC_API_TOKEN_ADMIN"] = "admin-token"
+	cfg, err = bootstrap.ConfigFromEnv(getenv(values))
+	if err != nil {
+		t.Fatalf("vollständige Vorbedingung plus HTTP-Verdrahtung: %v", err)
+	}
+	if cfg.HTTPAddr != ":8080" || cfg.APITokenReader != "reader-token" || cfg.APITokenAdmin != "admin-token" {
+		t.Fatalf("Config liest die drei neuen Umgebungsvariablen nicht vollständig: %+v", cfg)
+	}
+}
+
 // TestConfigFromEnvLogLevel trägt den Default und die erkannten Textformen
 // von `CDC_LOG_LEVEL` (`LH-QA-OPS-004`): anders als die fünf
 // Vorbedingungen oben bricht ein leerer oder nicht erkannter Wert die

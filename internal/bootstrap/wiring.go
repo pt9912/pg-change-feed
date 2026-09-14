@@ -37,6 +37,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
+	apihttp "github.com/pt9912/pg-change-feed/internal/adapters/driving/http"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/receive"
@@ -82,6 +83,20 @@ const (
 	// Fehlschlag) — anders als `envLogLevel`, dessen Fehlerfall die
 	// Erfassung selbst nicht gefährdet.
 	envNatsURL = "CDC_NATS_URL"
+	// envHTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
+	// Adapters (`ADR-0057`, `LH-FA-SST-006`): anders als die sechs
+	// Vorbedingungen oben ist sie keine Start-Vorbedingung — ungesetzt
+	// bleibt die API vollständig deaktiviert, kein `http.Server` wird
+	// konstruiert (additiv, kein Breaking Change für bestehende
+	// Deployments, analog zu `envNatsURL`/`ADR-0055` Punkt 5).
+	envHTTPAddr = "CDC_HTTP_ADDR"
+	// envAPITokenReader und envAPITokenAdmin tragen die beiden
+	// Rechtsklassen der Token-Middleware (`ADR-0057` Teilfrage 3,
+	// analog zum DB-Rollenmodell `ADR-0047`); beide bleiben optional wie
+	// `envHTTPAddr` — ein leerer Wert deaktiviert die jeweilige Klasse
+	// (`internal/adapters/driving/http`, `classifyToken`).
+	envAPITokenReader = "CDC_API_TOKEN_READER"
+	envAPITokenAdmin  = "CDC_API_TOKEN_ADMIN"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -186,6 +201,16 @@ type Config struct {
 	// Change-Notification-Wecksignals (`envNatsURL`, `ADR-0055`); leer
 	// heißt Feature deaktiviert.
 	NatsURL string
+	// HTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
+	// Adapters (`envHTTPAddr`, `ADR-0057`); leer heißt Feature
+	// deaktiviert — derselbe additive Zuschnitt wie `NatsURL`.
+	HTTPAddr string
+	// APITokenReader und APITokenAdmin tragen die beiden Rechtsklassen
+	// der Token-Middleware (`envAPITokenReader`/`envAPITokenAdmin`,
+	// `ADR-0057` Teilfrage 3); leer heißt die jeweilige Klasse
+	// deaktiviert.
+	APITokenReader string
+	APITokenAdmin  string
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -225,6 +250,9 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg.Tables = tables
 	cfg.LogLevel = parseLogLevel(getenv(envLogLevel))
 	cfg.NatsURL = getenv(envNatsURL)
+	cfg.HTTPAddr = getenv(envHTTPAddr)
+	cfg.APITokenReader = getenv(envAPITokenReader)
+	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
 	return cfg, nil
 }
 
@@ -574,6 +602,39 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		runRetentionCleanup(retentionCtx, retentionUseCase, cfg.Source, retentionInterval, retentionPolicy, log)
 	}()
 
+	// Der HTTP/JSON-Driving-Adapter (`ADR-0057`, `LH-FA-SST-006`) bleibt
+	// vollständig deaktiviert, solange `cfg.HTTPAddr` leer ist — kein
+	// `http.Server` wird konstruiert, keine zusätzliche Verbindung
+	// geöffnet (additiv, unverändertes Bestandsverhalten, analog zum
+	// Change-Notification-Wecksignal oben, `ADR-0055` Punkt 5). Ist die
+	// Adresse gesetzt, trägt der Adapter eine eigene `cdc_admin`-
+	// Verbindung (`ADR-0047`): `RegisterConsumer` ist ein
+	// administrativer Schreibzug auf `cdc.consumer`, dieselbe Rolle wie
+	// die CLI-Sondermodi (`RegisterConsumer`-Funktion unten).
+	var httpServer *apihttp.Server
+	var httpDone sync.WaitGroup
+	if cfg.HTTPAddr != "" {
+		apiConsumerState, err := postgresstorage.NewConsumerState(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+		if err != nil {
+			return err
+		}
+		defer apiConsumerState.Close()
+		httpServer = apihttp.New(apihttp.Config{
+			Addr:             cfg.HTTPAddr,
+			TokenReader:      cfg.APITokenReader,
+			TokenAdmin:       cfg.APITokenAdmin,
+			RegisterConsumer: register.NewRegisterConsumerService(apiConsumerState),
+			Log:              log,
+		})
+		httpDone.Add(1)
+		go func() {
+			defer httpDone.Done()
+			if err := httpServer.Start(); err != nil {
+				log.Error(ctx, "http: Adapter beendet mit Fehler", "error", err)
+			}
+		}()
+	}
+
 	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
 	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
 	// (`cdc_capture`) — die Stream-Verbindung steht während `stream.Run` im
@@ -634,6 +695,12 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	administrationDone.Wait()
 	stopRetention()
 	retentionDone.Wait()
+	if httpServer != nil {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		_ = httpServer.Shutdown(shutdownCtx)
+		cancel()
+		httpDone.Wait()
+	}
 	return mergeStreamAndWALFaultOutcome(streamErr, &walFault)
 }
 
