@@ -41,8 +41,7 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 - [welle-16.md](../welle-16.md) — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`, `ADR-0057`).
 - [welle-17.md](../welle-17.md) — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`).
 - [welle-18.md](../welle-18.md) — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`LH-FA-CFG-005`, `ADR-0059`).
-
-Nichts in Arbeit.
+- [welle-19.md](../welle-19.md) — Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE (`LH-FA-SST-008`, `ADR-0060`, `ADR-0061`).
 
 ## Nächste Wellen
 
