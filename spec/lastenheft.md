@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.6.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.7.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -239,10 +239,10 @@ können.
 
 **Out-of-Scope:** —
 
-### LH-FA-CFG-005 — Spaltenauswahl (perspektivisch)
+### LH-FA-CFG-005 — Spaltenauswahl
 
-**Beschreibung:** Perspektivisch sollen einzelne Spalten von der Erfassung
-ausgeschlossen bzw. gezielt ausgewählt werden können.
+**Beschreibung:** Einzelne Spalten sollen von der Erfassung ausgeschlossen
+bzw. gezielt ausgewählt werden können.
 
 **Akzeptanzkriterien:**
 
@@ -254,8 +254,10 @@ ausgeschlossen bzw. gezielt ausgewählt werden können.
 - **Negative:** Given die Spalte `c` existiert nicht, when der Ausschluss
   konfiguriert wird, dann folgt ein expliziter Fehlerpfad.
 
-**Out-of-Scope:** Nicht Teil des aktuellen Anforderungsumfangs; eine
-Ergänzung ohne eigene Neuanforderung ist nicht vorgesehen.
+**Out-of-Scope:** Konfigurationsmechanismus, Konfigurationsgranularität
+(Tabelle vs. Quelle) und Zusammenspiel mit der SQL-Administration sind
+Architektur- (ADR) bzw. Spezifikationsfragen (`SPEC-*`), keine
+Lastenheft-Festlegung.
 
 ### LH-FA-CFG-006 — Keine Anwendungscode-Anpassung
 
@@ -468,7 +470,7 @@ Datenwerte müssen bereitgestellt werden.
 **Akzeptanzkriterien:**
 
 - **Happy Path:** Given CDC ist ohne Spaltenausschluss aktiviert, when ein Change gelesen wird, then enthält er alle Zeilenwerte, die die Quelle zuverlässig liefert.
-- **Boundary:** Given ein Spaltenausschluss ist konfiguriert (perspektivisch, LH-FA-CFG-005), when ein Change gelesen wird, then enthält er die Werte der nicht ausgeschlossenen Spalten.
+- **Boundary:** Given ein Spaltenausschluss ist konfiguriert (`LH-FA-CFG-005`), when ein Change gelesen wird, then enthält er die Werte der nicht ausgeschlossenen Spalten.
 - **Negative:** Given ein Wert ist nicht lieferbar, when der Change gelesen wird, then ist seine Abwesenheit erkennbar, nicht mit einem Platzhalter überdeckt.
 
 **Out-of-Scope:** —
@@ -1213,3 +1215,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.4.0 | 2026-09-12 | `LH-FA-SST-006` (konkrete HTTP-/gRPC-API) ergänzt; `LH-FA-SST-005`s Out-of-Scope-Klausel entsprechend angepasst — Auftraggeber und Entwickler sind dieselbe Person, Status ist `Draft` (frei änderbar ohne Change Request), diese Änderung liegt in einem eigenen Commit vor jedem umsetzenden Slice | — |
 | 0.5.0 | 2026-09-12 | `LH-FA-SST-007` (Benachrichtigung neuer Änderungen über NATS) ergänzt; NATS aus der globalen Exportadapter-Out-of-Scope-Zeile (§5) ausgenommen und auf `LH-FA-SST-007` verwiesen — dieselbe Draft-Regel wie bei 0.4.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.6.0 | 2026-09-14 | `LH-FA-CFG-005`s Out-of-Scope-Klausel und die globale Exportadapter-Out-of-Scope-Zeile (§5) von der Milestone-Bezeichnung „MVP" gelöst — beide benennen den Ausschluss eigenständig, ohne Meilenstein-Bezug; dieselbe Draft-Regel wie bei 0.4.0/0.5.0, eigener Commit vor jeder folgenden Änderung | — |
+| 0.7.0 | 2026-09-14 | `LH-FA-CFG-005` (Spaltenauswahl) von dauerhaftem Ausschluss auf aktive Anforderung umgestellt — Titel- und Out-of-Scope-Klausel angepasst, `LH-FA-DAT-005`s Boundary-Kriterium verweist ohne Zusatzbezeichnung darauf; dieselbe Draft-Regel wie bei 0.4.0–0.6.0, eigener Commit vor jedem umsetzenden Slice | — |
