@@ -94,6 +94,16 @@ services:
       # LH-FA-SST-007): gesetzt in dieser Compose-Umgebung, damit der
       # Happy-Path-Beleg real läuft (tools/harness/run-integration-tests.sh).
       CDC_NATS_URL: nats://nats:4222
+      # Optionaler HTTP/JSON-Driving-Adapter (ADR-0057, LH-FA-SST-006):
+      # gesetzt in dieser Compose-Umgebung, damit der reale HTTP-Rundlauf
+      # (tools/harness/run-integration-tests.sh, tools/harness/httpclient)
+      # gegen einen tatsächlich horchenden Server läuft. Die führende
+      # Doppelpunkt-Form bindet auf allen Interfaces im Container-Netz,
+      # nicht nur auf localhost — der Toolchain-Container erreicht den
+      # Feed-Container ausschließlich über den Netzwerk-Alias `pg-change-feed`.
+      CDC_HTTP_ADDR: ":8090"
+      CDC_API_TOKEN_READER: e2e-reader-token
+      CDC_API_TOKEN_ADMIN: e2e-admin-token
     depends_on:
       postgres:
         condition: service_healthy

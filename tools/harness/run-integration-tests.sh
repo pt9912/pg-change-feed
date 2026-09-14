@@ -53,6 +53,15 @@ PG_PASSWORD=postgres
 # End-Wächter.
 SLOT=slot_pgc_e2e
 
+# Die drei HTTP-API-Werte tragen denselben Wert wie der Container-Vertrag
+# in compose.yaml (CDC_HTTP_ADDR/CDC_API_TOKEN_READER/CDC_API_TOKEN_ADMIN,
+# ADR-0057): der Toolchain-Container erreicht den Feed-Container über den
+# Netzwerk-Alias `pg-change-feed`, den Compose aus dem Service-Namen
+# vergibt (dasselbe Muster wie `nats://nats:4222` für den NATS-Server).
+HTTP_BASE_URL="http://pg-change-feed:8090"
+HTTP_TOKEN_READER=e2e-reader-token
+HTTP_TOKEN_ADMIN=e2e-admin-token
+
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
 cleanup() {
@@ -1484,6 +1493,52 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
+
+# HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057): ein Wegwerf-Client
+# (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token und
+# ListTables mit dem reader-Token real per HTTP gegen den laufenden
+# Feed-Container auf — ein echter Netzwerk-Request, kein `docker exec` und
+# kein Mock. `feed_e2e_full` bleibt über den ganzen Lauf aktiviert (siehe
+# Lasttest-Beleg oben), ihr Auftreten in der ListTables-Antwort belegt
+# einen realen, nicht leeren Rückgabewert. Muss vor der abschließenden
+# Schema-Negative-Testfunktion unten laufen, weil diese den Feed-Container
+# dauerhaft beendet.
+HTTP_CONSUMER=http-e2e-consumer
+http_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient \
+  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$HTTP_TOKEN_READER" "$HTTP_CONSUMER" "HTTP E2E Consumer" src-e2e pub_pgc_e2e 2>&1)
+http_status=$?
+if [ "$http_status" -ne 0 ]; then
+  echo "run-integration-tests: HTTP-API-Rundlauf (httpclient) endete mit Ausgang $http_status: $http_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$http_output" | grep -qF "REGISTERED"; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — keine REGISTERED-Zeile (admin-Token, RegisterConsumer): $http_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$http_output" | grep -qE '"table":"feed_e2e_full"'; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — ListTables (reader-Token) trägt die dauerhaft aktivierte Tabelle feed_e2e_full nicht: $http_output" >&2
+  exit 1
+fi
+
+registered_via_http=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT consumer_id FROM cdc.consumer WHERE consumer_id = '$HTTP_CONSUMER'")
+if [ "$registered_via_http" != "$HTTP_CONSUMER" ]; then
+  echo "run-integration-tests: cdc.consumer trägt $HTTP_CONSUMER nicht nach dem realen HTTP-RegisterConsumer-Aufruf" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem HTTP-API-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
 
 # TestE2ESchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
