@@ -138,6 +138,20 @@ ist eine Lifecycle-Rücksprungkante (11).
     Doku-Änderung geschrieben hat — erste, nicht tragende Verteidigungslinie;
     die tragende ist der unabhängige Reviewer
     (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt).
+
+    **Neue Betreiber-Oberfläche zieht das Handbuch mit · seit slice-077**
+    (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`, 3×;
+    Architect-Zug des Lese-Schritts, Modul 6): Führt dieser Lauf eine neue
+    Betreiber-Oberfläche ein — eine Umgebungsvariable des Feed-Containers
+    (`CDC_*`, als Konstante in `internal/bootstrap/wiring.go`), eine
+    administrative SQL-Funktion (`cdc.*`, in `tools/schema/`), eine
+    Horch-Adresse oder einen Endpunkt (Adapter unter
+    `internal/adapters/driving/`) —, so zieht **derselbe Diff**
+    `docs/user/benutzerhandbuch.md` mit (§5 „Umgebungsvariablen des
+    Feed-Containers", §4 „Aufgaben") **oder benennt den Aufschub mit
+    Adresse**: eine Folge-Slice-ID, die die Doku nachholt. Ein Aufschub ohne
+    Adresse ist keiner; die Versionshistorie folgt der Regel direkt darüber.
+    Kandidatenlauf: `git diff --name-only <Basis> -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` — trifft er eine neue Oberfläche, ohne dass `docs/user/benutzerhandbuch.md` im selben Diff liegt, ist sie unversorgt. **Grenze (wie oben):** derselbe schreibende Kontext — erste, nicht tragende Linie; die tragende ist der unabhängige Reviewer (`.harness/skills/reviewer.md`, eigener benannter HIGH-Punkt, seit slice-077).
 18. Die Pre-completion-Checkliste laufen: die DoD Punkt für Punkt **behaupten** und die
     **Sensor-Belege** anhängen — `make gates` **und die Nicht-Gate-Sensoren, die den Slice
     betreffen** (die dein Repo führt — z. B. ein Mutations-Sensor, wenn Wächter neu/geändert sind;

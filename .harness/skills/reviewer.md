@@ -73,6 +73,24 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   eigener HIGH-Punkt: Architect-Verdikt
   [`architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)
   (3× `BEO-PGC/handbuch-versionshistorie-uebersprungen`) · seit slice-053.
+- **Neue Betreiber-Oberfläche ohne Handbuch-Zug** — ein Diff führt eine neue
+  Betreiber-Oberfläche ein (eine `CDC_*`-Umgebungsvariable des
+  Feed-Containers, eine administrative `cdc.*`-SQL-Funktion, eine
+  Horch-Adresse oder einen Endpunkt), ohne dass derselbe Diff
+  `docs/user/benutzerhandbuch.md` inhaltlich mitzieht (§5
+  „Umgebungsvariablen des Feed-Containers", §4 „Aufgaben") **und** ohne einen
+  benannten Aufschub mit Adresse (Folge-Slice-ID). Die
+  Handbuch-Versionshistorie-Regel oben greift erst, wenn das Handbuch
+  angefasst wird — wer es gar nicht anfasst, löst sie nicht aus; hier ist
+  der Diff selbst die Fundstelle. Dies ist die tragende Verteidigungslinie:
+  Die Implementer-Selbstprüfung (`.claude/commands/implement-slice.md`
+  Schritt 17) läuft im selben Kontext, der die Oberfläche eingeführt hat —
+  dieselbe Struktur wie beim Versionshistorie-Fall oben. Kein Gate fängt die
+  Klasse: `docs-check` prüft Referenzen, nicht Vollständigkeit, und ein
+  Sensor gegen die ENV-Variablen im Code bräuchte eine Semantik-Entscheidung,
+  welche Variablen „Betreiber-Oberfläche" sind (geprüft und verworfen).
+  Herkunft: `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+  (3×, `slice-059`/`-066`/`-069`) · seit slice-077.
 - **Zustandsfeld trägt Chronik** — eine `Stand`-/`Status`-Zelle (Roadmap,
   Beobachtungs-Register, Meilenstein) erzählt, wie der Zustand entstand, statt
   Zustand und Beleg als Anker zu nennen; oder ein Drift-Log protokolliert
