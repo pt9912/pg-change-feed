@@ -1,0 +1,238 @@
+# Slice slice-068: E2E-Beleg — Spaltenausschluss am laufenden Feed-Container
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`, siehe
+Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
+
+**Welle:** [`welle-18`](../welle-18.md) — letzter Slice, baut auf
+`slice-066` (Antrag existiert) **und** `slice-067` (Filterwirkung existiert)
+auf; sein grüner Lauf ist `welle-18`s Closure-Trigger (§3).
+
+**Bezug:** [`LH-FA-CFG-005`](../../../../spec/lastenheft.md) (Haupt-Bezug —
+alle drei Akzeptanzkriterien: Happy Path, Boundary, Negative),
+[`ADR-0059`](../../../../docs/plan/adr/0059-spaltenauswahl-mechanismus.md)
+(nur umgesetzt — keine aktive ADR wird geändert, `ADR-0059` bleibt
+`Accepted`).
+
+**Berührte Spec-Stellen:** `—` (dieser Slice erweitert einen bestehenden
+Testrundlauf, berührt keine neue Spec-Stelle über `LH-FA-CFG-005` selbst
+hinaus).
+
+**Verantwortlich:** —.
+
+**Autor:** pt9912. **Datum:** 2026-09-14.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — Schnitt nach Lieferwert, nicht nach Schichten; jeder Slice
+ist einzeln lieferbar. **§1 nennt Ziel und Abgrenzung** (Out-of-Scope-Disziplin
+des Lastenhefts, auf den Slice-Plan angewandt); die vier Klassen des
+Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
+zusammen mit der Begründungs-Pflicht je Punkt.
+
+**Ziel:** `make test-integration`
+(`tools/harness/run-integration-tests.sh`) um einen realen
+Spaltenausschluss-Rundlauf erweitern, analog zum bestehenden
+Schema-Evolution-Rundlauf: `SELECT cdc.exclude_column(...)` gegen eine
+bereits aktivierte Tabelle im laufenden Feed-Container, Poll auf
+`status = 'applied'` (dasselbe Muster wie beim bestehenden
+`cdc.enable_table`-Live-Reload-Beleg), dann realer Beleg, dass **künftige
+und historische** Changes gemäß `LH-FA-CFG-005`s Akzeptanzkriterien den
+ausgeschlossenen Wert nicht mehr tragen (Happy Path). Zusätzlich ein
+Negative-Beleg: `cdc.exclude_column` gegen eine nicht existierende Spalte,
+Antrag landet real `failed` mit Fehlertext (Negative).
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Boundary-Fall reale Spaltenlöschung nach Ausschluss** — bereits als
+  Unit-/Konvergenz-Test in `slice-067` gedeckt (`ADR-0059` Teilfrage 4);
+  ein zusätzlicher E2E-Beleg für denselben, bereits durch reine Schichtung
+  garantierten Pfad liefert keinen neuen Erkenntniswert und würde den
+  bereits langen Compose-Stack-Lauf weiter verlängern, ohne ein
+  Akzeptanzkriterium zu erfüllen, das nicht schon gedeckt ist.
+- **Quellen-/musterweiter Ausschluss über mehrere Tabellen hinweg** —
+  Bestand bleibt bewusst außen vor, `ADR-0059` Teilfrage 2 schließt Option
+  C bewusst aus; dieser Slice belegt ausschließlich die pro-Tabelle-
+  Granularität.
+- **`cdc.include_column`-eigener E2E-Rundlauf** — bleibt bewusst Bestand:
+  Der Happy-Path-Rundlauf dieses Slice belegt bereits den vollständigen
+  Antrags-/Live-Reload-/Filterungs-Pfad für `exclude_column`;
+  `include_column` teilt denselben Code-Pfad (`ADR-0059`s symmetrische
+  Entscheidung, zwei Antragsarten auf derselben Queue) und ist bereits in
+  `slice-066`/`slice-067`s Unit-Tests gedeckt — ein zusätzlicher
+  Compose-Stack-Rundlauf für die exakt spiegelbildliche Operation liefert
+  keinen neuen E2E-spezifischen Erkenntniswert.
+
+**Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
+einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
+Ausfüll-Liste. Suchreihenfolge: Was übernimmt ein **Folge-Slice** (mit
+Kennung — und die Kennung muss den Punkt auch annehmen)? Was bleibt als
+**Bestand** bewusst stehen (mit Begründung)? Was wäre ein **anderer Vorgang**?
+Welche **Schicht** rührt der Slice nicht an?
+
+Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
+Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
+**geändert**, nicht nur ergänzt.
+
+## 2. Definition of Done
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Slice — **≤ 3 Liefer-Punkte**; mehr heißt: der Slice ist zu groß und
+gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
+Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
+
+- [ ] `LH-FA-CFG-005` Happy Path real belegt: `SELECT
+      cdc.exclude_column(...)` gegen eine bereits aktivierte Tabelle im
+      laufenden Feed-Container, Poll auf `status = 'applied'`, danach ein
+      neuer Change ohne den ausgeschlossenen Spaltenschlüssel in
+      `new_data`, **und** ein bereits vor dem Ausschluss erfasster
+      historischer Change über `cdc.changes` gemäß `LH-FA-CFG-005`s
+      Akzeptanzkriterien geprüft. Beleg:
+      `tools/harness/run-integration-tests.sh` (neuer Abschnitt, real
+      grün).
+- [ ] `LH-FA-CFG-005` Negative real belegt: `cdc.exclude_column` gegen eine
+      nicht existierende Spalte, Antrag landet `failed` mit Fehlertext
+      (`ErrSourceColumnMissing`-Pfad aus `slice-066`). Beleg: derselbe
+      Skript-Abschnitt, Poll auf `status = 'failed'` und Prüfung des
+      Fehlertexts.
+- [ ] `make gates` grün, `make test-integration` real grün (voller
+      Compose-Stack-Lauf).
+- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [ ] Doku-Update: `harness/README.md` §Sensors, Zeile `make
+      test-integration` um den neuen Rundlauf-Abschnitt ergänzt (Muster
+      der bestehenden Zeile, die jeden Rundlauf-Baustein einzeln nennt).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure. Dieser Slice ist zusätzlich `welle-18`s Closure-Trigger selbst (§3 der Welle-Datei) — sein grüner `make test-integration`-Lauf ist das *Mehr*, das die Welle schließt.
+
+## 3. Plan (vor Code)
+
+Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
+§Was ist eine Sub-Area? — diese Liste liefert die **Pfad-Kandidaten** für §8,
+nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
+Aussagen-Berührung steht hier gar nicht.
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `tools/harness/run-integration-tests.sh` | update | neuer Rundlauf-Abschnitt (Happy Path + Negative) |
+| `harness/README.md` | update | Sensors-Zeile `make test-integration` um neuen Baustein ergänzt |
+
+## 4. Trigger
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Trigger je Lifecycle-Übergang und WIP-Limit.
+
+**Start** (`next` → `in-progress`): `slice-066` **und** `slice-067` liegen
+in `done/` (der Rundlauf braucht Antrag, Verarbeitung und Filterung
+zusammen), WIP-Limit (1 je Implementer) frei.
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): Zeigt sich, dass
+  Happy-Path- und Negative-Beleg zusammen mehr als drei Liefer-Punkte
+  ergeben (z. B. weil der Compose-Stack-Rundlauf unerwartet umfangreiche
+  Hilfsfunktionen im Skript braucht), gehört das zurück zur Zerlegung.
+- `in-progress` → `open` (blockiert — Carveout?): Der historische-Changes-
+  Teil des Happy-Path-Belegs lässt sich am laufenden Compose-Stack nicht
+  sauber von den bestehenden Schema-Evolution-/Walsender-Testabschnitten
+  isolieren (Zustands-Überschneidung, `BEO-PGC/test-isolation-geteilter-
+  zustand`-Muster) — dann Carveout statt eines flackernden Tests.
+
+## 5. Closure-Trigger
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
+Lerneintrag; ohne ihn ist der Slice nur abgelegt.
+
+DoD vollständig **und** `make test-integration` real grün (voller
+Compose-Stack-Lauf, beide neuen Abschnitte enthalten) **und** `make gates`
+grün **und** Closure-Notiz geschrieben.
+
+## 6. Risiken und offene Punkte
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Offene Risiken werden bei Closure aufgelöst — **jedes** Risiko bekommt genau
+**einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
+dasteht.
+
+- Der bestehende Compose-Stack-Lauf ist bereits lang (mehrere
+  Administrations-, Schema-Evolution- und Walsender-Rundläufe im selben
+  Skript); ein weiterer Abschnitt könnte eine bereits bekannte Timing-
+  Empfindlichkeit verschärfen (`BEO-PGC/test-integration-retention-
+  timing-flake`, 1×, weiter offen — anderer Rundlauf-Bereich, aber
+  dieselbe Skript-Familie und dasselbe Poll-Muster). — **Ausgang:** <bei
+  Closure zuzuweisen>
+- Der historische-Changes-Teil des Happy-Path-Belegs setzt voraus, dass
+  ein vor dem Ausschluss erfasster Change im selben Testlauf bereits
+  existiert, ohne durch einen späteren Cleanup-Schritt eines anderen
+  Rundlauf-Abschnitts überschrieben zu werden (Musterrisiko wie
+  `BEO-PGC/test-isolation-geteilter-zustand`, 1×, weiter offen). —
+  **Ausgang:** <bei Closure zuzuweisen>
+
+## 7. Closure-Notiz
+
+<!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
+§Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
+diese Sektion vor dem `git mv` nach done/ fuellen — einzige Ausnahme ist das
+letzte DoD-Item in §2 (die Paarungen suchen in `done/`, also nach dem `git mv`).
+Im Repo ohne Wellen-Betrieb braucht die Closure dadurch drei Commits: Inhalt,
+`git mv`, Haekchen — das folgt aus der Hard Rule, es widerspricht ihr nicht. -->
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Das Beobachtungs-Register (vorhandene `BEO-<NNN>` **zitieren** statt neu
+formulieren — sonst zählt das Register zwei Namen getrennt) ·
+`grundlagen-traceability.md` §Herkunfts-Anker für Steering-Loop-Regeln (das
+Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
+wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
+Backticks).
+
+- **Was hat funktioniert:** <bei Closure>
+- **Was ging anders als geplant:** <bei Closure>
+- **Steering-Loop-Eintrag:** <bei Closure>
+- **Beobachtungs-Register (`../observations/`):** <bei Closure>
+- **Folge-Slices:** <bei Closure>
+- **Risiken aus §6:** <bei Closure>
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-18` offen) —
+  Prüfung läuft bei der `welle-18`-Closure.
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
+§Ziel-Form: Sub-Area-Modus-Begründung — dort die **zwei vorgelagerten
+Schritte** (sie stehen in jedem Slice-Plan, unabhängig von Modus und
+Slice-Typ) und die **vier Pflichtkriterien** (Konventionen-Dichte ·
+Phase-Reife · Evidenz-/Diskrepanz-Risiko · Reconciliation-Aufwand), vier und
+nicht mehr.
+
+**Der Abschnitt selbst entfällt nie.** Die zwei vorgelagerten Prüfungen laufen
+in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Bedingt
+ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
+Hälften.
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** Einzige berührte Sub-Area ist die
+Repo-weite Default-Sub-Area `*`/`PGC`.
+
+**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen.
+Treffer mit Bezug zur Test-Integration-Skript-Familie:
+`BEO-PGC/test-integration-retention-timing-flake` (1×, weiter offen —
+anderer Rundlauf-Bereich, siehe §6), `BEO-PGC/test-isolation-geteilter-
+zustand` (1×, weiter offen — Musterrisiko für geteilten Testzustand,
+siehe §6). Keiner der beiden erreicht mit diesem Slice 3× erstmals; beide
+bleiben unter der Schwelle offen. Keine weiteren Treffer für
+`Assembler`/`TableBinding`/Antrags-Queue/Schema-Evolution über die bereits
+in `slice-066`/`slice-067` gesichteten hinaus.
+
+**Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
+Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
+Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
+Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
+
+Alle berührten Sub-Areas GF (nur `*`/`PGC`).
