@@ -11,9 +11,14 @@ braucht diesen Slice zusammen mit `slice-063` in jedem Matrix-Leg.
 
 **Bezug:** [LH-FA-SCH-003](../../../../spec/lastenheft.md),
 [LH-FA-DAT-006](../../../../spec/lastenheft.md),
-[ADR-0058](../../adr/0058-testansatz-fuenf-luecken.md) (Entscheidungen 1 und
-2 — Testform, Platzierung, Betroffene Dateien; vorab entschieden),
-[ADR-0030](../../adr/0030-testpyramide.md) (E2E-Tier-Definition).
+[ADR-0058](../../adr/0058-testansatz-fuenf-luecken.md) (Entscheidung 2 —
+Testform, Platzierung, Betroffene Dateien für `LH-FA-DAT-006`; vorab
+entschieden), [ADR-0063](../../adr/0063-lh-fa-sch-003-testform-korrektur.md)
+(Supersedes `ADR-0058` Entscheidung 1 — korrigierte Testform für
+`LH-FA-SCH-003`: Happy Path als Konvergenz mit `LH-FA-SCH-004`s
+`ErrIncompatibleSchemaChange`-Pfad statt stiller Spalten-Auslassung,
+Boundary unverändert), [ADR-0030](../../adr/0030-testpyramide.md)
+(E2E-Tier-Definition).
 
 **Berührte Spec-Stellen:** [`LH-FA-SCH-003`](../../../../spec/lastenheft.md)
 §Entfernte Spalten, [`LH-FA-DAT-006`](../../../../spec/lastenheft.md)
@@ -30,13 +35,21 @@ Slice liefert den fehlenden Testbeleg, ändert die Zusage nicht.
 
 **Ziel:** Zwei neue E2E-Testfunktionen in
 `test/integration/integration_test.go` — `TestE2ESchemaChangeDropColumn`
-(`LH-FA-SCH-003`, Happy Path + Boundary nach dem Vorbild
-`TestE2ESchemaChangeAddColumn`) und `TestE2EChangeTableMetadataExtensibility`
+(`LH-FA-SCH-003`, korrigierte Testform nach `ADR-0063`: Happy Path als
+Konvergenz mit `LH-FA-SCH-004`s `ErrIncompatibleSchemaChange`-Pfad,
+Boundary unverändert — die vor der Entfernung erfasste Zeile bleibt
+inklusive historischem Wert lesbar) und `TestE2EChangeTableMetadataExtensibility`
 (`LH-FA-DAT-006`, realer additiver `ALTER TABLE cdc.change ADD COLUMN`-Beleg
 mit `t.Cleanup`-Rückbau) — belegen die beiden bislang testfreien
-Lastenheft-Kennungen am laufenden Feed-Container; `run-integration-tests.sh`s
-`-run`-Muster wird um beide Funktionsnamen erweitert, platziert vor der
-Container-Ende-Grenze (`TestE2ESchemaChangeIncompatibleTypeChange`).
+Lastenheft-Kennungen am laufenden Feed-Container. `run-integration-tests.sh`s
+`-run`-Muster wird umstrukturiert: `TestE2EChangeTableMetadataExtensibility`
+bleibt in der vorderen, Container-lebt-noch-Gruppe;
+`TestE2ESchemaChangeDropColumn` beendet den Erfassungspfad seit der
+`ADR-0063`-Korrektur ebenfalls dauerhaft (wie
+`TestE2ESchemaChangeIncompatibleTypeChange`) und läuft deshalb als eigener
+Aufruf dahinter, mit explizitem Neustart (Replication-Slot neu angelegt,
+Schema-Version nachgetragen) und Health-Poll vor
+`TestE2ESchemaChangeIncompatibleTypeChange`.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -69,27 +82,35 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SCH-003` erfüllt: `TestE2ESchemaChangeDropColumn` belegt Happy
-      Path (danach eingefügte Zeile ohne die entfernte Spalte) und Boundary
-      (vor der Entfernung erfasste Zeile bleibt inklusive historischem Wert
-      unverändert lesbar) — reales `ALTER TABLE … ADD/DROP COLUMN` auf einer
-      eigenen, wegwerfbaren Spalte von `feed_e2e_schema`.
-- [ ] `LH-FA-DAT-006` erfüllt: `TestE2EChangeTableMetadataExtensibility`
+- [x] `LH-FA-SCH-003` erfüllt: `TestE2ESchemaChangeDropColumn` belegt Happy
+      Path (`ADR-0063`-Testform: reale Spaltenentfernung löst denselben
+      `ErrIncompatibleSchemaChange`-Pfad aus wie eine inkompatible
+      Typänderung) und Boundary (vor der Entfernung erfasste Zeile bleibt
+      inklusive historischem Wert unverändert lesbar) — reales
+      `ALTER TABLE … ADD/DROP COLUMN` auf einer eigenen, wegwerfbaren
+      Spalte von `feed_e2e_schema`.
+- [x] `LH-FA-DAT-006` erfüllt: `TestE2EChangeTableMetadataExtensibility`
       belegt Happy Path (vor der Erweiterung erfasste Zeile bleibt nach
       realem `ALTER TABLE cdc.change ADD COLUMN` unverändert lesbar) und
       Boundary (danach eingefügte Zeile ebenfalls lesbar, neue interne
       Spalte über `cdc.changes` nicht sichtbar); `t.Cleanup` entfernt die
       Spalte real vor nachfolgenden Testphasen.
-- [ ] `tools/harness/run-integration-tests.sh`s `-run`-Musterzeile trägt
-      beide neuen Funktionsnamen, platziert vor
-      `TestE2ESchemaChangeIncompatibleTypeChange` (Container-Ende-Grenze).
-- [ ] `make gates` grün.
-- [ ] `make test-integration` grün mit beiden neuen Testfunktionen sichtbar
+- [x] `tools/harness/run-integration-tests.sh`s `-run`-Muster trägt beide
+      neuen Funktionsnamen: `TestE2EChangeTableMetadataExtensibility` in
+      der vorderen, Container-lebt-noch-Gruppe;
+      `TestE2ESchemaChangeDropColumn` als eigener Aufruf nach der
+      ursprünglichen Container-Ende-Grenze, mit explizitem
+      Slot-Neuanlage/Schema-Version-Nachtrag/Neustart/Health-Poll vor
+      `TestE2ESchemaChangeIncompatibleTypeChange` (`ADR-0063` §Konsequenzen
+      — beide Funktionen beenden den Erfassungspfad unabhängig voneinander
+      dauerhaft).
+- [x] `make gates` grün.
+- [x] `make test-integration` grün mit beiden neuen Testfunktionen sichtbar
       im Log (kein Gate, [ADR-0030](../../adr/0030-testpyramide.md)).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
+- [x] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
       test-integration`-Zeile um die zwei neuen Testfälle ergänzt (kein
       neues Gate, kein neues Target).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -111,8 +132,8 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `test/integration/integration_test.go` | update | zwei neue Testfunktionen `TestE2ESchemaChangeDropColumn`, `TestE2EChangeTableMetadataExtensibility` — platziert nach `TestE2ESchemaChangeAddColumn` (Zeile 854), vor `TestE2EHeartbeatHealthy`/`TestE2ESchemaChangeIncompatibleTypeChange` |
-| `tools/harness/run-integration-tests.sh` | update | `-run`-Musterzeile (bestehende Liste vor der Container-Ende-Grenze) um beide neuen Funktionsnamen erweitert |
+| `test/integration/integration_test.go` | update | zwei neue Testfunktionen `TestE2ESchemaChangeDropColumn` (`ADR-0063`-Testform), `TestE2EChangeTableMetadataExtensibility` — platziert nach `TestE2ESchemaChangeAddColumn`, vor `TestE2EHeartbeatHealthy`/`TestE2ESchemaChangeIncompatibleTypeChange` |
+| `tools/harness/run-integration-tests.sh` | update | `-run`-Muster umstrukturiert: `TestE2EChangeTableMetadataExtensibility` in der vorderen Gruppe, `TestE2ESchemaChangeDropColumn` als eigener Aufruf nach der ursprünglichen Container-Ende-Grenze mit explizitem Slot-Neuanlage/Schema-Version-Nachtrag/Neustart/Health-Poll vor `TestE2ESchemaChangeIncompatibleTypeChange` (`ADR-0063` §Konsequenzen) |
 | `harness/README.md` | update | `make test-integration`-Sensor-Zeile um die zwei neuen Testfälle ergänzt |
 
 ## 4. Trigger
@@ -165,6 +186,23 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
   Log-Beleg beider Funktionsnamen in einem realen `make
   test-integration`-Lauf, nicht nur den Diff. — **Ausgang:** <bei Closure
   zu füllen>
+- **Real gefunden während der Umsetzung (`ADR-0063`-Folge, nicht vorab
+  benannt):** Zwischen `TestE2ESchemaChangeDropColumn` und
+  `TestE2ESchemaChangeIncompatibleTypeChange` reicht ein bloßer
+  `docker start` nicht — real getestet mit zwei Poison-Zuständen (Anhang:
+  Implementer-Bericht): der Replication-Slot liest ohne durabel
+  bestätigte Position die bereits verarbeitete `ADD COLUMN
+  removable`-Transaktion erneut ein und die zuletzt registrierte
+  Schema-Version trägt weiterhin `removable`, obwohl die Spalte real
+  bereits entfernt ist — beides würde `TestE2ESchemaChangeIncompatibleTypeChange`
+  vorzeitig mit einem artefaktbedingten, nicht selbst ausgelösten
+  `schema`-Fehler beenden. Behoben über Slot-Neuanlage plus Nachtrag
+  einer korrigierten Schema-Version (`run-integration-tests.sh`, real
+  gegen den Compose-Stack verifiziert). Direkte SQL-Eingriffe in
+  `cdc.schema_version`/`cdc.table_schema` sind ein Sonderfall gegenüber
+  den sonst rein anwendungsseitigen E2E-Testfällen dieses Skripts (ähnlich
+  dem bereits bestehenden Sonderfall für `cdc.process_heartbeat`,
+  `LH-FA-ADM-003`-Boundary-Beleg). — **Ausgang:** <bei Closure zu füllen>
 
 ## 7. Closure-Notiz
 

@@ -897,6 +897,144 @@ func TestE2ESchemaChangeAddColumn(t *testing.T) {
 	}
 }
 
+// TestE2ESchemaChangeDropColumn trägt eine reale `ALTER TABLE … DROP
+// COLUMN` auf der aktivierten Tabelle `feed_e2e_schema` am verdrahteten
+// Feed-Container (`LH-FA-SCH-003` Happy Path und Boundary, `ADR-0063`
+// Supersedes `ADR-0058` Entscheidung 1): eine real entfernte Spalte fehlt
+// in der eingehenden Relation-Nachricht genauso wie jede andere gelöschte
+// Spalte und löst denselben `relationOther`-Pfad mit
+// `mapper.ErrIncompatibleSchemaChange` aus wie eine inkompatible
+// Typänderung (`LH-FA-SCH-004`, bereits von `ADR-0059` Teilfrage 4
+// akzeptierter Präzedenzfall) — sichtbarer `schema`-Fehler, kein stilles
+// Auslassen. Der Erfassungspfad des Feed-Containers endet darüber
+// dauerhaft (`restart: "no"` in `compose.yaml`), genau wie bei
+// `TestE2ESchemaChangeIncompatibleTypeChange` — deshalb läuft diese
+// Funktion nach der bisherigen Container-Ende-Grenze, mit einem expliziten
+// Container-Neustart davor (`tools/harness/run-integration-tests.sh`). Die
+// Boundary-Klausel bleibt unverändert: die vor der Entfernung erfasste
+// Change bleibt über `cdc.changes` inklusive historischem Wert lesbar. Die
+// Spalte `removable` ist eine eigene, wegwerfbare Spalte, getrennt von
+// `amount`/`extra`, die bereits Zustand für
+// `TestE2ESchemaChangeIncompatibleTypeChange` tragen.
+func TestE2ESchemaChangeDropColumn(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_schema")
+	ctx := context.Background()
+
+	if _, err := env.pool.Exec(ctx, "ALTER TABLE "+env.feed+" ADD COLUMN removable text"); err != nil {
+		t.Fatalf("ALTER TABLE ADD COLUMN (removable): %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name, removable) VALUES (3, 'BeforeDrop', 'ToBeRemoved')"); err != nil {
+		t.Fatalf("INSERT vor der Entfernung: %v", err)
+	}
+	beforeRows := awaitChangesViewRows(t, env, "3", 1)
+
+	if _, err := env.pool.Exec(ctx, "ALTER TABLE "+env.feed+" DROP COLUMN removable"); err != nil {
+		t.Fatalf("ALTER TABLE DROP COLUMN: %v", err)
+	}
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (4, 'AfterDrop')"); err != nil {
+		t.Fatalf("INSERT nach der Entfernung: %v", err)
+	}
+
+	// LH-FA-SCH-003 Happy Path (ADR-0063, Supersedes ADR-0058 Entscheidung 1):
+	// die reale Spaltenentfernung löst denselben ErrIncompatibleSchemaChange-
+	// Pfad aus wie jede andere inkompatible Relation-Änderung (Konvergenz
+	// mit LH-FA-SCH-004, bereits von ADR-0059 Teilfrage 4 akzeptiert) —
+	// sichtbarer schema-Fehler, kein stilles Auslassen.
+	if got := awaitHeartbeatErrorClass(t, env, "schema"); got != "schema" {
+		t.Fatalf("cdc.heartbeat.error_class nach DROP COLUMN: %q, wollen \"schema\"", got)
+	}
+	rows, err := queryChangesView(ctx, env, "4")
+	if err != nil {
+		t.Fatalf("cdc.changes-Lesung für id=4: %v", err)
+	}
+	if len(rows) != 0 {
+		t.Fatalf("cdc.changes trägt id=4 nach dem gemeldeten schema-Fehler: %+v (Erwartung: der Erfassungspfad endete vor dem Commit dieser Transaktion)", rows)
+	}
+
+	// LH-FA-SCH-003 Boundary (unverändert ggü. ADR-0058): die vor der
+	// Entfernung erfasste Change bleibt über cdc.changes unverändert lesbar,
+	// inklusive des historischen Werts der entfernten Spalte.
+	rereadBefore := awaitChangesViewRows(t, env, "3", 1)
+	if string(rereadBefore[0].newData) != string(beforeRows[0].newData) {
+		t.Fatalf("ältere Change nach DROP COLUMN: %s (vor der Entfernung: %s)", rereadBefore[0].newData, beforeRows[0].newData)
+	}
+	beforeImage := imageJSON(t, rereadBefore[0].newData)
+	if beforeImage["removable"] != "ToBeRemoved" {
+		t.Fatalf("ältere Change trägt den historischen Wert der entfernten Spalte nicht: %s", rereadBefore[0].newData)
+	}
+}
+
+// TestE2EChangeTableMetadataExtensibility trägt `LH-FA-DAT-006`: eine
+// reale, additive Erweiterung des internen Change-Schemas (`cdc.change`,
+// `ADR-0017`) lässt bereits gespeicherte Changes unverändert über
+// `cdc.changes` lesbar — Schreib- und Lesepfad (`InsertChange`/
+// `SelectChanges`,
+// `internal/adapters/driven/postgresstorage/queries/queries.go`) tragen
+// explizite Spaltenlisten statt `SELECT *`/positioneller Vollständigkeit,
+// und die deklarative `changes`-View (`tools/schema/schema.yaml`) trägt
+// dieselbe Disziplin mit einer sichtbaren `columns:`-Signatur. Die neue
+// Spalte bleibt additiv, nullable, und wird per `t.Cleanup` vor den
+// nachfolgenden Testphasen wieder entfernt (`ADR-0058` Entscheidung 2).
+func TestE2EChangeTableMetadataExtensibility(t *testing.T) {
+	env := newE2EEnv(t, "feed_e2e_full")
+	ctx := context.Background()
+
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (500, 'BeforeMetadataExtension')"); err != nil {
+		t.Fatalf("INSERT vor der Metadaten-Erweiterung: %v", err)
+	}
+	beforeRows := awaitChangesViewRows(t, env, "500", 1)
+
+	const metadataColumn = "e2e_metadata_probe"
+	if _, err := env.pool.Exec(ctx,
+		"ALTER TABLE cdc.change ADD COLUMN "+metadataColumn+" jsonb DEFAULT NULL"); err != nil {
+		t.Fatalf("ALTER TABLE cdc.change ADD COLUMN: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := env.pool.Exec(context.Background(),
+			"ALTER TABLE cdc.change DROP COLUMN "+metadataColumn); err != nil {
+			t.Errorf("ALTER TABLE cdc.change DROP COLUMN nach Testende: %v", err)
+		}
+	})
+
+	// Happy Path (LH-FA-DAT-006): die vor der Erweiterung erfasste Change
+	// bleibt über cdc.changes unverändert lesbar.
+	rereadBefore := awaitChangesViewRows(t, env, "500", 1)
+	if string(rereadBefore[0].newData) != string(beforeRows[0].newData) {
+		t.Fatalf("vor der Erweiterung erfasste Change nach ALTER TABLE cdc.change ADD COLUMN: %s (davor: %s)", rereadBefore[0].newData, beforeRows[0].newData)
+	}
+
+	if _, err := env.pool.Exec(ctx,
+		"INSERT INTO "+env.feed+" (id, name) VALUES (501, 'AfterMetadataExtension')"); err != nil {
+		t.Fatalf("INSERT nach der Metadaten-Erweiterung: %v", err)
+	}
+	afterRows := awaitChangesViewRows(t, env, "501", 1)
+
+	// Boundary (LH-FA-DAT-006): die danach eingefügte Zeile ist ebenfalls
+	// unverändert lesbar.
+	afterImage := imageJSON(t, afterRows[0].newData)
+	if afterImage["id"] != "501" || afterImage["name"] != "AfterMetadataExtension" {
+		t.Fatalf("Row Image nach der Metadaten-Erweiterung: %s", afterRows[0].newData)
+	}
+
+	// Boundary (LH-FA-DAT-006): die neue interne Spalte ist über die
+	// bestehende cdc.changes-View nicht sichtbar — die View trägt eine
+	// explizite columns:-Signatur (tools/schema/schema.yaml), keine
+	// SELECT *-Kopplung an die vollständige Spaltenmenge von cdc.change.
+	var exposed int
+	if err := env.pool.QueryRow(ctx,
+		"SELECT count(*) FROM information_schema.columns WHERE table_schema = 'cdc' AND table_name = 'changes' AND column_name = $1",
+		metadataColumn,
+	).Scan(&exposed); err != nil {
+		t.Fatalf("cdc.changes-Spalten-Prüfung: %v", err)
+	}
+	if exposed != 0 {
+		t.Fatalf("cdc.changes exponiert die neue interne Spalte %q (Erwartung: nicht sichtbar)", metadataColumn)
+	}
+}
+
 // TestE2EHeartbeatHealthy trägt `LH-FA-ADM-002` (Betriebsstatus, Happy
 // Path) am verdrahteten Feed-Container: `cdc.heartbeat` trägt für die
 // laufende Quelle eine frische, fehlerfreie Lebenszeichen-Zeile —

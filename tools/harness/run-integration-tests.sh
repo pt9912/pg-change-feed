@@ -255,7 +255,12 @@ docker run --rm --network "$NETWORK" \
 # Black-Box-CLI-Rundlauf) — jede andere Testfunktion dieses Pakets läuft
 # hier, solange der Feed-Container noch gebraucht wird. Eine künftig
 # ergänzte Testfunktion gehört in dieses `-run`-Muster, sofern sie den
-# laufenden Container nicht ebenfalls beendet.
+# laufenden Container nicht ebenfalls beendet. `TestE2ESchemaChangeDropColumn`
+# (`LH-FA-SCH-003`, `ADR-0063` Supersedes `ADR-0058` Entscheidung 1) beendet
+# den Erfassungspfad seit der Testform-Korrektur ebenfalls dauerhaft (derselbe
+# `relationOther`/`ErrIncompatibleSchemaChange`-Pfad wie eine inkompatible
+# Typänderung) und läuft deshalb NICHT hier, sondern als eigener Aufruf nach
+# der Container-Ende-Grenze, mit einem expliziten Neustart davor — siehe dort.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -263,7 +268,7 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v \
-  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EHeartbeatHealthy)$' \
+  -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy)$' \
   ./test/integration/...
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
@@ -1540,13 +1545,109 @@ fi
 
 echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
 
+# TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063 Supersedes
+# ADR-0058 Entscheidung 1) läuft als eigener go-test-Aufruf, NACH allem,
+# was den bislang unversehrten Feed-Container noch braucht (Lasttest-Beleg,
+# Black-Box-CLI-Rundlauf, Retention-/NATS-/HTTP-Belege oben) und VOR
+# TestE2ESchemaChangeIncompatibleTypeChange: eine real entfernte Spalte löst
+# denselben relationOther/ErrIncompatibleSchemaChange-Pfad aus wie eine
+# inkompatible Typänderung und beendet den Erfassungspfad des
+# Feed-Containers ebenso dauerhaft (restart: "no", kein Neustart-Vertrag).
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_INTEGRATION_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test -v -run '^TestE2ESchemaChangeDropColumn$' ./test/integration/...
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "false" ]; then
+  echo "run-integration-tests: Feed-Container lief nach TestE2ESchemaChangeDropColumn entgegen der Erwartung noch (der Test belegt gerade, dass eine reale Spaltenentfernung den Erfassungspfad dauerhaft beendet — ADR-0063)" >&2
+  exit 1
+fi
+
+# Zwei Poison-Zustände trennen TestE2ESchemaChangeDropColumn von einem
+# sauberen Neustart, beide real durch Testen dieses Mechanismus gefunden
+# (ADR-0063 delegiert den konkreten Mechanismus an diesen Slice):
+#
+# 1. Der Replication-Slot: Der Prozess stirbt, bevor sein letzter
+#    Standby-Status-Update-Zyklus die bereits verarbeitete Position
+#    durabel im Slot bestätigt — ein bloßer `docker start` liest daher
+#    nicht nur die eine noch offene Transaktion erneut, sondern auch die
+#    bereits erfolgreich verarbeitete `ADD COLUMN removable`-Transaktion
+#    ein zweites Mal, die dann (real getestet) erneut als kompatible
+#    Erweiterung über der zwischenzeitlich korrigierten Spaltenform
+#    hinweg registriert wird — und die anschließend wiederholte
+#    `DROP COLUMN`-Transaktion triggert denselben Fehler ein zweites Mal.
+#    Der Slot wird deshalb real verworfen: ein danach neu angelegter Slot
+#    beginnt beim aktuellen WAL-Stand, ohne jede der beiden bereits
+#    verarbeiteten Transaktionen erneut vorzulegen.
+# 2. Die zuletzt registrierte Schema-Version (`cdc.schema_version`,
+#    `cdc.table_schema`): Sie trägt nach `TestE2ESchemaChangeDropColumn`
+#    weiterhin `removable`, weil genau diese Spalte real gelöscht wurde,
+#    nachdem die kompatible Erweiterung sie bereits registriert hatte —
+#    ohne Korrektur vergliche `TestE2ESchemaChangeIncompatibleTypeChange`s
+#    eigene erste Änderung (id=10, ohne `removable`) gegen diese veraltete
+#    Spaltenform und triggerte denselben `relationOther`-Fehler sofort
+#    erneut, bevor die eigentliche Typänderungs-Prüfung dieser Funktion
+#    überhaupt beginnt. Eine neue, nachgetragene Version mit der real
+#    aktuellen Spaltenform (ohne `removable`) schließt diese Lücke, ohne
+#    die bereits registrierte, von `TestE2ESchemaChangeDropColumn`s
+#    Boundary-Assertion referenzierte Version `tbl-e2e-schema-v3`
+#    anzutasten (Fremdschlüssel aus `cdc.change.schema_version`, die
+#    Version bleibt für die historische Change von id=3 unverändert
+#    gültig).
+SCHEMA_TABLE_ID=tbl-e2e-schema
+
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+  "SELECT pg_drop_replication_slot('$SLOT') WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = '$SLOT');" >/dev/null
+
+stale_schema_version_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT schema_version_id FROM cdc.schema_version WHERE source_table_id = '$SCHEMA_TABLE_ID' ORDER BY version DESC LIMIT 1")
+next_schema_version=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT max(version) + 1 FROM cdc.schema_version WHERE source_table_id = '$SCHEMA_TABLE_ID'")
+if [ -z "$stale_schema_version_id" ] || [ -z "$next_schema_version" ]; then
+  echo "run-integration-tests: keine registrierte Schema-Version für $SCHEMA_TABLE_ID nach TestE2ESchemaChangeDropColumn gefunden" >&2
+  exit 1
+fi
+next_schema_version_id="${SCHEMA_TABLE_ID}-v${next_schema_version}"
+docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c "
+INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ('$next_schema_version_id', '$SCHEMA_TABLE_ID', $next_schema_version);
+INSERT INTO cdc.table_schema (schema_version_id, ordinal_position, column_name, column_oid)
+  SELECT '$next_schema_version_id', ordinal_position, column_name, column_oid
+  FROM cdc.table_schema WHERE schema_version_id = '$stale_schema_version_id' AND column_name <> 'removable';
+" >/dev/null
+
+docker start "$FEED_CONTAINER" >/dev/null
+
+healthy=0
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  if [ "$health" = "healthy" ]; then
+    healthy=1
+    break
+  fi
+  sleep 1
+done
+if [ "$healthy" -ne 1 ]; then
+  echo "run-integration-tests: Feed-Container meldet nach dem Neustart zwischen TestE2ESchemaChangeDropColumn und TestE2ESchemaChangeIncompatibleTypeChange Health-Status ${health:-fehlt}, wollen healthy" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063) belegt — reale Spaltenentfernung beendete den Erfassungspfad real (error_class=schema); Replication-Slot neu angelegt (kein Replay der beiden bereits verarbeiteten Transaktionen) und Schema-Version $next_schema_version_id nachgetragen (real aktuelle Spaltenform ohne removable), Feed-Container real neu gestartet und wieder healthy vor TestE2ESchemaChangeIncompatibleTypeChange"
+
 # TestE2ESchemaChangeIncompatibleTypeChange (LH-FA-SCH-004
 # Negative-Fall) läuft als eigener, letzter go-test-Aufruf: sie meldet
 # eine nicht sicher als Obermenge erkennbare Typänderung sichtbar über die
 # Fehlerklasse `schema` und beendet damit den Erfassungspfad des
 # Feed-Containers dauerhaft (`restart: "no"`, kein Neustart-Vertrag,
 # siehe Funktionskommentar). Alles, was den laufenden Container noch
-# braucht (Lasttest-Beleg, Black-Box-CLI-Rundlauf oben), lief davor.
+# braucht (Lasttest-Beleg, Black-Box-CLI-Rundlauf oben), lief davor;
+# TestE2ESchemaChangeDropColumn direkt davor beendete den Container
+# ebenfalls bereits dauerhaft (ADR-0063) — der Neustart oben stellt einen
+# sauberen, healthy Zustand wieder her, bevor diese Funktion ihren eigenen
+# Mechanismus real prüft.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
