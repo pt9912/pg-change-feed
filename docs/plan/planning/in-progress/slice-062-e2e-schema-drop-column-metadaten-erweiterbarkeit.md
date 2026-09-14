@@ -107,9 +107,11 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] `make gates` grün.
 - [x] `make test-integration` grün mit beiden neuen Testfunktionen sichtbar
       im Log (kein Gate, [ADR-0030](../../adr/0030-testpyramide.md)).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: [`docs/reviews/review-slice-062.md`](../../../reviews/review-slice-062.md)
+      (0 HIGH/MEDIUM/LOW, 2 INFO, keine Fixrunde).
 - [x] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
       test-integration`-Zeile um die zwei neuen Testfälle ergänzt (kein
       neues Gate, kein neues Target).
