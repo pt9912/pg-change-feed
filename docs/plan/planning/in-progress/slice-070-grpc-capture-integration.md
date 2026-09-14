@@ -106,9 +106,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Subscriber blockiert `Capture()` nicht) **und** bei einem
       **registrierten, nicht lesenden** Empfänger — der Aufruf kehrt ohne
       Zeit-Isolation zurück ([ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)).
-      *(Die dritte Fitness-Function-Hälfte — ein `Publish`, das nicht
-      zurückkehrt — ist nicht als Test gebaut; Begründung und die
-      stattdessen gebauten Belege: §3, Implementer-Abweichungen.)*
+      *(Die dritte Fitness-Function-Zeile des
+      [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+      war gegen dessen eigene Entscheidung formuliert und wurde durch
+      [ADR-0067](../../adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+      korrigiert — die zwei gebauten Tests sind die **zutreffende** Zeile,
+      keine Reduktion; Begründung: §3.)*
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -140,19 +143,20 @@ Aussagen-Berührung steht hier gar nicht.
 
 **Implementer-Entscheidungen und -Abweichungen (Plan-Nachzug im selben Lauf):**
 
-- **Abweichung (Reduktion) — Zeit-Isolations-Test:** Die Fitness-Function-Zeile
-  aus [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
-  („ein `ChangeStreamPort`, dessen `Publish` nicht zurückkehrt … darf
-  `Capture()` nicht anhalten") ist **nicht** als Test gebaut. Ihre
-  Voraussetzung — ein `Publish`, das dauerhaft nicht zurückkehrt — erreicht
-  `Capture()` per Konstruktion nicht: die Entkopplung liegt laut
+- **Plan-Nachzug (nach `ADR-0067`) — Zeit-Isolations-Test:** Die
+  Fitness-Function-Zeile aus
   [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
-  §Entscheidung im Adapter (`Broadcaster`: begrenzte Empfangs-Warteschlange,
-  nicht-blockierender Send) und ihr §Verglichene Alternativen Option B
-  schließt eine caller-seitige Goroutine ausdrücklich aus; der reale Port
-  belegt sein Nicht-Blockieren in seinem eigenen Paket
-  (`internal/adapters/driven/grpcstream`, `slice-069`-Fixrunde). Die
-  Anschlussstelle testet stattdessen die zwei Hälften, die ihr zufallen:
+  („ein `ChangeStreamPort`, dessen `Publish` nicht zurückkehrt … darf
+  `Capture()` nicht anhalten") widersprach der Entscheidung derselben ADR
+  (synchroner Aufruf, Option B ausdrücklich verworfen) und ist deshalb
+  **nicht als Test gebaut** — der Reviewer hat das als HIGH bestätigt und an
+  den Architect gereicht;
+  [`ADR-0067`](../../adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+  superseded genau diese Zeile. Die zutreffende Zusage ist geschichtet: das
+  Nicht-Blockieren ist **Vertragspflicht des Ports** und wird **am Port**
+  belegt (Paket `internal/adapters/driven/grpcstream`,
+  `slice-069`-Fixrunde); der Anteil der Capture-Schicht ist die folgende
+  Eigenschaft. Die Anschlussstelle testet die zwei Hälften, die ihr zufallen:
   (a) die Capture-kritische Kette `Persist → ACK` steht vollständig und
   unberührt, wenn der Port bei `Publish` eintritt
   (`TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn`),
