@@ -282,9 +282,13 @@ Anker (Hash, Lauf, Zahl).
     `commit-traceability` OK (5 Commits, Betreffe ohne Struktur-ID),
     `a-check` `gesamt: 0 Befund(e)`, `coverage-gate` OK — Coverage **49,40 %**
     über der geltenden 35-%-Schwelle.
-  - **Lauf 2** (nach allen Closure-Commits, Ergebnis-Notiz · Welle-§7-Zeiger ·
-    Roadmap · `git mv` · Link-Reconciliation) — Exit **0**; Beleg siehe
-    §Abschluss-Bemerkung unten.
+  - **Lauf 2** (nach den strukturellen Closure-Commits — Ergebnis-Notiz,
+    Welle-§7-Zeiger, Roadmap, Register-Nachtrag, `git mv`,
+    Link-Reconciliation) — Exit **0**: `baseline-verify` OK (v6.5.0, 54
+    Dateien) · `d-check` 574 Dateien / 0 Befunde · `d-check`s `commits`-Modul
+    über `HEAD~5..HEAD` 0 Befunde · `commit-traceability` OK (5 Commits,
+    Betreffe ohne Struktur-ID) · `a-check` `gesamt: 0 Befund(e)` ·
+    `coverage-gate: OK — Coverage 49,50 % erfüllt Schwelle 35 %`.
 - **`welle-19`s Closure-Trigger (§3)** — geprüft gegen die vier Bedingungen:
   - Slices in `done/` — erfüllt (vier Dateien, `git mv` je eigener Commit).
   - `make gates` grün — erfüllt (Lauf 1 und Lauf 2, Exit 0).
@@ -293,17 +297,17 @@ Anker (Hash, Lauf, Zahl).
     `READY` → `RECEIVED change_id=964-1 table=feed_e2e_full operation=INSERT
     new_image={"id":"261","name":"GrpcStreamE2ESentinel"}` → `REJECTED
     code=Unauthenticated`; die `change_id` ist gegen `cdc.changes` gebunden
-    (`docs/reviews/verify-slice-071.md`).
+    (`verify-slice-071`).
   - **Realer SSE-E2E-Rundlauf** (`slice-072`) — erfüllt, ebenso zusammengefasst:
     derselbe `make test-integration`-Lauf des Verifiers zeigt `READY` →
     `RECEIVED change_id=967-1 table=feed_e2e_full operation=INSERT
     new_image={"id":"271","name":"SseStreamE2ESentinel"}` → `REJECTED code=401`;
-    `sse_captured ≥ 1` hielt (`docs/reviews/verify-slice-072.md` §5).
+    `sse_captured ≥ 1` hielt (`verify-slice-072` §5).
   - **Gemeinsamer Träger** — erfüllt: **ein** Lauf führt beide Rundläufe gegen
     **denselben** Feed-Container; `changeStreamEnabled` (`wiring.go`) ist die
     eine Oder-Bedingung, derselbe `changeBroadcaster`-Zeiger geht an
     `apihttp.Server{Subscriber: …}` und an das gRPC-`Server{Subscriber: …}`
-    (`docs/reviews/verify-slice-072.md` §4; Mutation `||` → `&&` rot).
+    (`verify-slice-072` §4; Mutation `||` → `&&` rot).
   - Closure-Notiz — diese Datei.
 - **Trigger-Audit der Welle** (Modul 6 §Wellen-Closure-Prozedur, Schritt 2 —
   drei Artefaktklassen, jede mit belegter Feststellung):
@@ -386,7 +390,20 @@ Anker (Hash, Lauf, Zahl).
     `adapter-unittest-verdeckt-bootstrap-luecke`,
     `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
     `commit-traceability-kein-vorab-hook`, `plan-vorlagen-defekt`) existieren
-    als Verzeichnisse mit nicht leerem `evidence/` — grün.
+    als Verzeichnisse mit nicht leerem `evidence/` — grün. **Benannte
+    Abweichung von der zweiten Hälfte der Paarung** („jedes Verzeichnis trägt
+    ein nicht leeres `evidence/`"): drei Verzeichnisse im Register tragen
+    **kein** `evidence/` — `verwaltung-keine-sql-administration`,
+    `retention-keine-loeschausfuehrung` und
+    `architect-verdikt-ablageort-uneinheitlich`. Alle drei sind per eigener
+    `observation.md` *benannt, nicht gezählt* (Fork-Recherche zur
+    Wellen-Eröffnung bzw. direkte Nutzerfrage, kein abgeschlossener Vorgang)
+    und tragen in ihrer `state.md` den Ausgang `verkörpert`/`gestrichen` mit
+    `Zähler (abgeleitet): 0×`. Sie sind nicht von dieser Welle berührt; die
+    zweite Hälfte der Paarung ist damit so gelesen, wie die Register-Regel
+    sie meint („jedes zitierte Verzeichnis hat einen Beleg"), nicht nach
+    ihrem Wortlaut („jedes Verzeichnis"). Diese
+    Wortlaut-Differenz ist hier benannt, nicht still übergangen.
   - **Gegenprobe zur Nachbarschaftsklasse:** kein Bericht und kein Slice-Plan
     dieser Welle adressiert `welle-19` als Markdown-Link mit festem
     Verzeichnis; die `**Welle:**`-Kopfzeilen und die Berichte zitieren die
