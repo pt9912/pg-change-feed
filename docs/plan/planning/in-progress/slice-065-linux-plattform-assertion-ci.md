@@ -79,18 +79,18 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] Doku-Update: `harness/README.md` §Sensors, `ci.yml`-Beschreibung
       (falls dort vorhanden) um den neuen Schritt ergänzt — kein neues
       Gate, `ci.yml` bleibt derselbe blockierende Workflow.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-17`-Closure** (dieser Slice trägt
       `Welle: welle-17`).
 
@@ -120,26 +120,41 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- `BEO-PGC/github-actions-unverifizierbar-lokal` (offen, 2× — siehe §8):
-  Ob der neue Schritt real auf `ubuntu-latest` grün ausgibt, löst sich erst
-  mit dem ersten echten `ci.yml`-Lauf auf GitHub nach einem Push auf —
-  lokal simulierbar nur über `act` oder manuelles Nachvollziehen der
-  Befehle, kein repo-interner Beweis. — **Ausgang:** <bei Closure zu
-  füllen>
+- `BEO-PGC/github-actions-unverifizierbar-lokal` (Hinweis: der Plan-Text
+  nannte bei Eröffnung 2×; `slice-064`s Closure hatte den Zähler bereits
+  auf 3× gehoben, bevor dieser Slice `in-progress` erreichte — vom
+  Reviewer als INFO F-1 vermerkt, vom Verifier bestätigt): Ob der neue
+  Schritt real auf `ubuntu-latest` grün ausgibt, löst sich erst mit dem
+  ersten echten `ci.yml`-Lauf auf GitHub auf. — **Ausgang: entfallen** —
+  real belegt: Run `34823976027` (Implementierungs-Commit `5d7672b`)
+  `completed`/`success`, von Planner UND Verifier unabhängig per `gh run
+  view` bestätigt.
 - Der neue Schritt könnte versehentlich vor `Checkout` oder nach `Gates`
-  platziert werden, wenn die Workflow-Datei beim Einfügen nicht sorgfältig
-  gelesen wird — die Messmethode verlangt „unmittelbar nach Checkout, vor
-  `make gates`" (`ADR-0058` Entscheidung 5). — **Ausgang:** <bei Closure zu
-  füllen>
+  platziert werden. — **Ausgang: entfallen** — Reviewer UND Verifier
+  bestätigten unabhängig die korrekte Position (unmittelbar nach
+  Checkout, vor dem Gates-Schritt).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der kleinste Slice der Welle — ein Zwei-
+  Zeilen-Schritt — lief im ersten Versuch real grün, keine Fixrunde nötig.
+- **Was ging anders als geplant:** Der Plan zitierte bei Eröffnung
+  `BEO-PGC/github-actions-unverifizierbar-lokal` mit 2×, obwohl
+  `slice-064`s Closure den Zähler bereits auf 3× gehoben hatte — der
+  Reviewer fand die veraltete Momentaufnahme (INFO F-1), der Verifier
+  bestätigte den aktuellen Stand. Kein Fehler in der Implementierung
+  selbst, aber ein Hinweis: Slice-Pläne zitieren den Registerstand zum
+  Planungszeitpunkt, nicht den zur Closure-Zeit — bei mehreren Slices
+  derselben Welle kann der Stand zwischen Eröffnung und Closure
+  weiterlaufen.
+- **Steering-Loop-Eintrag:** keiner — die Beobachtung ist bereits durch
+  `slice-064` auf 3× gehoben, der Lese-Schritt (Ausgang-Zuweisung) folgt
+  bei der jetzt anstehenden `welle-17`-Closure, nicht hier.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  dieses Slices angefallen — der bereits erreichte 3×-Stand von
+  `BEO-PGC/github-actions-unverifizierbar-lokal` stammt aus `slice-064`.
 - **Folge-Slices:** keine.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** beide entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-17`-Closure (dieser Slice trägt
   `Welle: welle-17`, siehe DoD-Item).
 
