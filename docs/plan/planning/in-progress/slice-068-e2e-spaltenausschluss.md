@@ -10,7 +10,9 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 auf; sein grüner Lauf ist `welle-18`s Closure-Trigger (§3).
 
 **Bezug:** [`LH-FA-CFG-005`](../../../../spec/lastenheft.md) (Haupt-Bezug —
-alle drei Akzeptanzkriterien: Happy Path, Boundary, Negative),
+Happy Path und Negative; die Boundary-Klausel ist ausdrücklich nicht
+Gegenstand dieses Slice, sie verweist auf `LH-FA-SCH-003` und ist dort
+belegt),
 [`ADR-0059`](../../../../docs/plan/adr/0059-spaltenauswahl-mechanismus.md)
 (nur umgesetzt — keine aktive ADR wird geändert, `ADR-0059` bleibt
 `Accepted`).
@@ -40,9 +42,15 @@ Spaltenausschluss-Rundlauf erweitern, analog zum bestehenden
 Schema-Evolution-Rundlauf: `SELECT cdc.exclude_column(...)` gegen eine
 bereits aktivierte Tabelle im laufenden Feed-Container, Poll auf
 `status = 'applied'` (dasselbe Muster wie beim bestehenden
-`cdc.enable_table`-Live-Reload-Beleg), dann realer Beleg, dass **künftige
-und historische** Changes gemäß `LH-FA-CFG-005`s Akzeptanzkriterien den
-ausgeschlossenen Wert nicht mehr tragen (Happy Path). Zusätzlich ein
+`cdc.enable_table`-Live-Reload-Beleg), dann realer Beleg, dass **künftige**
+Changes gemäß `LH-FA-CFG-005`s Happy Path den ausgeschlossenen Wert nicht
+mehr tragen — der Schlüssel fehlt im Row Image, der Wert steht weder in
+`new_data` noch in `old_data` (Happy Path). Eine **vor** dem Ausschluss
+erfasste Change bleibt über `cdc.changes` unverändert lesbar; ein
+rückwirkendes Entfernen aus bereits persistierten Changes ist mit dem in
+`ADR-0059` Teilfrage 3 Option D entschiedenen Wirkort (Filterung in der
+Row-Image-Konstruktion, vor jeder Serialisierung) nicht verbunden und
+deshalb auch nicht zugesagt. Zusätzlich ein
 Negative-Beleg: `cdc.exclude_column` gegen eine nicht existierende Spalte,
 Antrag landet real `failed` mit Fehlertext (Negative).
 
