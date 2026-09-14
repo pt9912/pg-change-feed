@@ -270,3 +270,73 @@ Beobachtungs-Register-Zähler. Dieser Report selbst ist ein **Lauf-Beleg**
 über Läufe hinweg nicht wieder gelesen. Der Report ersetzt keine
 Verifikation — DoD-/Spec-Konformität prüft der Verifier separat
 (Modul 11).
+
+---
+
+## Fixrunden-Nachtrag — 2026-09-14
+
+Drei Fix-Commits real geprüft (`git show`, nicht nur Commit-Messages):
+`bf38260` (F-1), `5b2921c` (F-2 + F-4), `2364860` (F-3).
+
+### F-1 — behoben
+
+`git show bf38260` bestätigt: `errors.go:13-19` (`writeDomainError`-Godoc)
+und `consumer.go:104-107` (`removeConsumerResponse`-Godoc) tragen keine
+`slice-060`-Referenz mehr; beide beschreiben den Ist-Zustand ausschließlich
+über `ADR-*`/`LH-*`/`SPEC-*`-Bezüge. `errors.go` verliert zugleich die
+falsche „sechs"-Zählung aus demselben Satz. `grep -n "slice-0"
+internal/adapters/driving/http/errors.go internal/adapters/driving/http/consumer.go`
+liefert real keinen Treffer mehr.
+
+### F-2 — behoben
+
+`git show 5b2921c` bestätigt: `TestGetStatusFehlendeTabelleEndetMit404`
+setzt `fakeGetStatusUseCase{tableExists: false}` und erwartet real
+`http.StatusNotFound` — übt damit den zuvor ungetesteten
+`ErrSourceTableMissing`→`404`-Pfad tatsächlich aus, nicht nur namentlich.
+`make gates` (Coverage-Stufe, s. u.) lief mit diesem neuen Test grün durch.
+
+### F-3 — behoben, mit Selbstkorrektur meines eigenen Erstlauf-Befunds
+
+`git show 2364860` und `grep -rn "sechs" internal/adapters/driving/http/
+docs/plan/planning/in-progress/slice-060*.md` (selbst ausgeführt): **kein
+Treffer mehr** — Titel-Zeile in §1, DoD, Plan-Tabelle (§3), §4 und §6 des
+Slice-Plans sowie der Test-Godoc in `errors_test.go` sind durchgängig auf
+„acht" korrigiert; die DoD-Abweichungsnotiz ist konsequent entfernt, da sie
+gegenstandslos wurde.
+
+Bei der Verifikation fällt eine Ungenauigkeit meines **eigenen**
+Erstlauf-Befunds auf, die hier festgehalten wird statt stillschweigend
+übernommen zu werden: F-3 hatte `consumer_test.go:278` und
+`verwaltung_test.go:74` als weitere Fundstellen „derselben Falschzahl"
+gelistet. Ein realer Blick auf den dortigen Text (bereits im Erstlauf-Stand
+`60afc38`) zeigt: Diese beiden Stellen enthielten nie eine Zahl „sechs" —
+sie zitieren `slice-060 §2 DoD` als zulässige Testfall-Provenienz (Subjekt
+ist der Testfall, kein Zählfehler). Der Implementer hat sie im Fix-Commit
+deshalb zu Recht **nicht** angefasst; mein Erstlauf-`pfad`-Feld war an
+diesen zwei Stellen überzogen. Der tatsächliche Kern von F-3 (Titel-Zeile
+§1, DoD, §3, §4, §6, `errors_test.go`) ist vollständig und korrekt behoben.
+
+### F-4 — behoben
+
+`git show 5b2921c` bestätigt zwei neue Tests:
+`TestGetStatusAdminTokenLiefertStatus` und
+`TestListTablesAdminTokenLiefertListe`, beide mit `testAdminToken` gegen
+den jeweiligen lesenden Endpunkt und realer Prüfung auf
+`http.StatusOK`. Schließt die zuvor benannte Asymmetrie zwischen den drei
+lesenden Endpunkten sinnvoll.
+
+### Gate-Lauf nach der Fixrunde
+
+`make gates` erneut selbst ausgeführt (ungepiped, Exit-Code direkt
+geprüft): **Exit-Code `0`** — `baseline-verify`, `docs-check` (476 Dateien,
+0 Befunde), `commit-traceability` (5 Commits im Fenster, keine
+Struktur-ID im Betreff), `coverage-gate` (44,40 % ≥ 35 %, neue Tests liefen
+grün durch), `a-check` (0 Befunde) — alle grün.
+
+### Aktualisiertes Verdikt
+
+Alle vier Findings sind real geprüft und behoben. Kein weiterer
+Fixrunden-Bedarf. Die DoD-Zeile „Review durchgeführt, Report unter
+`docs/reviews/` liegt vor" ist im Slice-Plan auf `[x]` nachgezogen (dieser
+Commit), mit Verweis auf diesen Report.

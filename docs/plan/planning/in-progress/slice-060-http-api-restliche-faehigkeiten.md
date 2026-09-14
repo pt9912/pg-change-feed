@@ -74,9 +74,12 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] `spec/pflichtenheft.md`s `SPEC-018` um die acht neuen Endpunkte
       erweitert (Methode, Pfad, Request-/Response-Schema, Fehler-Codes).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-060.md` (Erstlauf: 1 HIGH, 1
+      MEDIUM, 1 LOW, 1 INFO; Fixrunde real geprüft — alle vier Findings
+      behoben, siehe Nachtrag im Report).
 - [ ] Doku-Update: `SPEC-018`-Erweiterung ist der öffentliche Vertrag dieses
       Slice.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
