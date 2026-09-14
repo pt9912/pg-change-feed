@@ -85,6 +85,29 @@ bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokume
 	@bash tools/bench-scaling.sh
 	@bash tools/bench-batch-vs-single.sh
 
+# --- Codegenerierung (kein Gate; Docker-only, ADR-0060) ---
+# Protobuf-/gRPC-Codegenerierung laeuft ausschliesslich im gepinnten
+# Toolchain-Container (`AGENTS.md` §3.1) — kein Host-protoc/-buf. Die
+# Dockerfile-Stufe `proto` traegt protoc und die beiden protoc-gen-*-
+# Plugins; dieses Ziel ruft protoc ueber den Bind-Mount des Arbeitsbaums
+# auf, der erzeugte Go-Code liegt committet im Baum und wird von
+# `make test`/`make image` mitkompiliert. Kein Gate: der Generator laeuft
+# nur, wenn sich die `.proto`-Quelle aendert.
+PROTO_IMAGE ?= pg-change-feed:proto
+# Der Generator schreibt in den Bind-Mount des Arbeitsbaums; laeuft der
+# Container als root, gehoeren die erzeugten .pb.go-Dateien root statt dem
+# Aufrufer (derselbe Grund wie D_MIGRATE_RUN_USER).
+PROTO_RUN_USER ?= $(shell id -u):$(shell id -g)
+
+.PHONY: proto-generate
+proto-generate: ## Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.proto erzeugen (Docker-only, gepinnte Stufe)
+	docker build --target proto -t $(PROTO_IMAGE) .
+	docker run --rm --user "$(PROTO_RUN_USER)" --network none -v "$(CURDIR)":/src -w /src $(PROTO_IMAGE) \
+	  sh -c 'protoc -I proto \
+	    --go_out=. --go_opt=module=github.com/pt9912/pg-change-feed \
+	    --go-grpc_out=. --go-grpc_opt=module=github.com/pt9912/pg-change-feed \
+	    proto/cdc/stream/v1/changestream.proto'
+
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
 # CDC-Schema-Form; SQL wird erzeugt, Rollouts laufen mit Pflicht-Report und

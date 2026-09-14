@@ -336,6 +336,28 @@ Quelle", gefolgt von der Adresse `schema.table.column`, getrennt durch
 Punkte). Die beiden Tabellen-Antragsarten tragen unverändert Bindungs-Zeilen
 und Publication nach.
 
+### SPEC-020 — gRPC-Live-Change-Stream (Nachrichtenschema, RPC-Name, Stream-Semantik)
+
+Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md): ein
+gRPC-Server-Streaming-RPC, der jedem verbundenen Consumer jeden einzelnen
+committed Change mit vollständigem Inhalt überträgt. Die
+Nachvollziehbarkeit bleibt beim bestehenden Lesezugriffsweg
+([`LH-FA-REA-001`](lastenheft.md) ff.) und der bestätigten Consumer-Position
+([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)); der Stream selbst
+trägt kein Replay ([`LH-FA-SST-008`](lastenheft.md) Boundary).
+
+| Merkmal | Festlegung |
+|---|---|
+| Protokoll / Dienst | gRPC über HTTP/2 mit Protobuf (`proto3`); Paket `cdc.stream.v1`, Dienst `ChangeStream`, Quelldatei `proto/cdc/stream/v1/changestream.proto` |
+| RPC | `StreamChanges(StreamChangesRequest) returns (stream Change)` — ein Server-Streaming-Aufruf: ein Öffnungsversuch, viele Antwortnachrichten über die Zeit |
+| Request | `StreamChangesRequest` trägt keine Felder; eine tabellen-granulare Filterung ist nicht Teil dieser Version |
+| Nachricht `Change` | dieselben Felder wie der Domain-Change (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string) |
+| Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, in deren Reihenfolge — keine Deduplizierung nach Tabelle |
+| Zustellgarantie | keine (Fire-and-Forget): ein zum Zustellzeitpunkt nicht empfangender Consumer verpasst die Nachricht ersatzlos, ein Replay innerhalb des Streams gibt es nicht |
+| Fehler bei Publish-Fehlschlag | der Aufrufer (`CaptureService`) fängt ihn ab; er geht nicht in den Rückgabewert des Capture-Aufrufs ein und beeinflusst weder die bereits erfolgte Persistierung noch das Source-ACK ([`LH-QA-REL-001.a`](lastenheft.md)) |
+| Authentifizierung | gRPC-Metadata-Eintrag `authorization` in der Wertform `Bearer <token>` — dieselben zwei Token-Klassen wie die HTTP-API (`SPEC-018`, `CDC_API_TOKEN_READER`/`CDC_API_TOKEN_ADMIN`); ein fehlender oder keiner Klasse entsprechender Wert endet mit gRPC-Status `Unauthenticated`, nicht mit einem stillen leeren Stream |
+| Aktivierung | optional über `CDC_GRPC_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein Listener, unverändertes Bestandsverhalten |
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -410,6 +432,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-011` | OCI-Container-Runtime | OCI-Image-Spec | — (Deployment; keine privilegierten Rechte nötig) |
 | `SPEC-015` | Eigenständiges Executable (Deployment-Form neben SPEC-011) | Cross-Compile: Linux amd64/arm64 (primär, [`LH-QA-POR-002`](lastenheft.md)); darwin/amd64, darwin/arm64, windows/amd64 perspektivisch; `CGO_ENABLED=0` | — (Deployment-Artefakt; Cross-Compile in CI/CD) |
 | `SPEC-017` | NATS Core (Wecksignal, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` | — (Vertrag steht in diesem Dokument, §2 SPEC-017) |
+| `SPEC-020` | gRPC Server-Streaming (HTTP/2 mit Protobuf) | gRPC-Go `google.golang.org/grpc`, Protobuf-Runtime `google.golang.org/protobuf` | — (Vertrag steht in diesem Dokument, §2 SPEC-020) |
 
 ---
 
@@ -430,3 +453,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-14 | SPEC-018 ergänzt: HTTP-API `RegisterConsumer` — Endpunkt/Methode, JSON-Request-/Response-Schema, Fehler-Antwortform `400`/`401`/`403`/`500`, Token-Header-Form, Aktivierung über `CDC_HTTP_ADDR` |
 | 2026-09-14 | SPEC-018 erweitert: acht weitere Endpunkte (Acknowledge-/Position-/Remove-Consumer, Enable-/Disable-/Status-/List-Table, Retention-Lauf) — Fehler-Antwortform um `404` (physisch fehlende Tabelle an der Quelle) ergänzt |
 | 2026-09-14 | SPEC-019 ergänzt: Feldform von `cdc.administration_request` — Spalte `column_name`, erweiterte `request_kind`-Menge `enable`/`disable`/`exclude_column`/`include_column`, `failed`-Fehlertext der fehlenden Spalte |
+| 2026-09-14 | SPEC-020 ergänzt: gRPC-Live-Change-Stream — Dienst `ChangeStream` mit Server-Streaming-RPC `StreamChanges`, Protobuf-Nachrichtenschema der Change-Nachricht, Fire-and-Forget-Zustellsemantik ohne Stream-internes Replay, Authentifizierung über den Metadata-Eintrag `authorization` (`Bearer`-Form, dieselben Token-Klassen wie SPEC-018), Aktivierung über `CDC_GRPC_ADDR`; externe-Verträge-Zeile in §6 |

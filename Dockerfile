@@ -21,6 +21,20 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
+# --- proto: Docker-only Toolchain-Stufe der Protobuf-/gRPC-Codegenerierung
+# (`ADR-0060` Folgepflicht, `LH-FA-SST-008`). `protoc` und die beiden
+# `protoc-gen-*`-Plugins laufen ausschliesslich hier (`AGENTS.md` §3.1: kein
+# Host-`protoc`/`buf`); die Plugin-Versionen sind gepinnt, die Basis ist der
+# bereits digest-gepinnte Toolchain-Stand aus `deps`. Das Ziel
+# `make proto-generate` baut diese Stufe und ruft `protoc` ueber den
+# Bind-Mount des Arbeitsbaums auf. Der normale Build (`make image`) braucht
+# sie nicht — der erzeugte Go-Code liegt committet im Baum und wird von
+# `build`/`coverage` mitkompiliert. ---
+FROM deps AS proto
+RUN apk add --no-cache protobuf-dev=31.1-r1 \
+ && GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 \
+ && GOBIN=/usr/local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+
 # --- coverage: Go-Test-Coverage ueber internal/...+cmd/..., Gate-Skript
 # gegen COVERAGE_THRESHOLD (ADR-0054; Kalibrierungs-Bindung harness/README.md
 # §Sensors). `-coverpkg` misst ueber die Paketgrenzen von internal/...+cmd/...

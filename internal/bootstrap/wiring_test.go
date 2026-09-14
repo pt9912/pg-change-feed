@@ -148,6 +148,30 @@ func TestConfigFromEnvHTTPAddrBleibtOptional(t *testing.T) {
 	}
 }
 
+// TestConfigFromEnvGRPCAddrBleibtOptional trägt die Additivitäts-Regel von
+// `ADR-0060` Teilfrage 6: `CDC_GRPC_ADDR` ist keine Vorbedingung — eine
+// vollständige Verdrahtung ohne den Namen startet unverändert
+// (Regressionstest), ein gesetzter Wert landet unverändert in `Config`.
+func TestConfigFromEnvGRPCAddrBleibtOptional(t *testing.T) {
+	values := vollständigeVerdrahtung()
+	cfg, err := bootstrap.ConfigFromEnv(getenv(values))
+	if err != nil {
+		t.Fatalf("bestehende Verdrahtung ohne CDC_GRPC_ADDR: %v", err)
+	}
+	if cfg.GRPCAddr != "" {
+		t.Fatalf("Config trägt trotz ungesetzter Umgebung eine gRPC-Adresse: %+v", cfg)
+	}
+
+	values["CDC_GRPC_ADDR"] = ":9090"
+	cfg, err = bootstrap.ConfigFromEnv(getenv(values))
+	if err != nil {
+		t.Fatalf("vollständige Vorbedingung plus gRPC-Verdrahtung: %v", err)
+	}
+	if cfg.GRPCAddr != ":9090" {
+		t.Fatalf("Config liest CDC_GRPC_ADDR nicht: %+v", cfg)
+	}
+}
+
 // TestConfigFromEnvLogLevel trägt den Default und die erkannten Textformen
 // von `CDC_LOG_LEVEL` (`LH-QA-OPS-004`): anders als die fünf
 // Vorbedingungen oben bricht ein leerer oder nicht erkannter Wert die

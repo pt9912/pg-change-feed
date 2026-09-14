@@ -32,11 +32,13 @@ import (
 
 	"github.com/nats-io/nats.go"
 
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/grpcstream"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsnotify"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
+	apigrpc "github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc"
 	apihttp "github.com/pt9912/pg-change-feed/internal/adapters/driving/http"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
@@ -103,6 +105,14 @@ const (
 	// (`internal/adapters/driving/http`, `classifyToken`).
 	envAPITokenReader = "CDC_API_TOKEN_READER"
 	envAPITokenAdmin  = "CDC_API_TOKEN_ADMIN"
+	// envGRPCAddr trägt die optionale Horch-Adresse des
+	// gRPC-Streaming-Driving-Adapters (`ADR-0060`, `LH-FA-SST-008`): wie
+	// `envHTTPAddr` ist sie keine Start-Vorbedingung — ungesetzt bleibt der
+	// Streaming-Server vollständig deaktiviert, kein Listener wird geöffnet
+	// (additiv, unverändertes Bestandsverhalten, `ADR-0060` Teilfrage 6).
+	// Ein gesetzter Wert trägt denselben Listener-Fehler ins Ergebnis von
+	// `Run` wie jeder andere Adapter-Startfehler.
+	envGRPCAddr = "CDC_GRPC_ADDR"
 )
 
 // ErrConfiguration trägt die Fehlerklasse `configuration` der Verdrahtung
@@ -217,6 +227,12 @@ type Config struct {
 	// deaktiviert.
 	APITokenReader string
 	APITokenAdmin  string
+	// GRPCAddr trägt die optionale Horch-Adresse des
+	// gRPC-Streaming-Driving-Adapters (`envGRPCAddr`, `ADR-0060`); leer
+	// heißt Feature deaktiviert — derselbe additive Zuschnitt wie
+	// `HTTPAddr`. Der Adapter trägt dieselben beiden Token-Klassen wie der
+	// HTTP-Adapter (`ADR-0060` Teilfrage 4).
+	GRPCAddr string
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -259,6 +275,7 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg.HTTPAddr = getenv(envHTTPAddr)
 	cfg.APITokenReader = getenv(envAPITokenReader)
 	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
+	cfg.GRPCAddr = getenv(envGRPCAddr)
 	return cfg, nil
 }
 
@@ -655,6 +672,34 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}()
 	}
 
+	// Der gRPC-Streaming-Driving-Adapter (`ADR-0060`, `LH-FA-SST-008`)
+	// bleibt vollständig deaktiviert, solange `cfg.GRPCAddr` leer ist — kein
+	// `grpc.Server`, kein Listener (additiv, unverändertes
+	// Bestandsverhalten, analog zum HTTP-Adapter oben, `ADR-0060`
+	// Teilfrage 6). Der `Broadcaster` läuft in diesem Prozess; ein
+	// `ChangeStreamPort` ist in dieser Verdrahtung nicht gesetzt, der
+	// `CaptureService` trägt also keinen Stream-Publish-Schritt
+	// (`ADR-0060` Teilfrage 2). Der Adapter trägt dieselben beiden
+	// Token-Klassen wie der HTTP-Adapter (`ADR-0060` Teilfrage 4).
+	var grpcServer *apigrpc.Server
+	var grpcDone sync.WaitGroup
+	if cfg.GRPCAddr != "" {
+		grpcServer = apigrpc.New(apigrpc.Config{
+			Addr:        cfg.GRPCAddr,
+			TokenReader: cfg.APITokenReader,
+			TokenAdmin:  cfg.APITokenAdmin,
+			Subscriber:  grpcstream.New(),
+			Log:         log,
+		})
+		grpcDone.Add(1)
+		go func() {
+			defer grpcDone.Done()
+			if err := grpcServer.Start(); err != nil {
+				log.Error(ctx, "grpc: Adapter beendet mit Fehler", "error", err)
+			}
+		}()
+	}
+
 	// Der WAL-Rückstand-Health-Check (`SPEC-009` `cdc_wal_retention_bytes`,
 	// `ADR-0049`) braucht eine eigene Verbindung derselben Rolle
 	// (`cdc_capture`) — die Stream-Verbindung steht während `stream.Run` im
@@ -720,6 +765,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		_ = httpServer.Shutdown(shutdownCtx)
 		cancel()
 		httpDone.Wait()
+	}
+	if grpcServer != nil {
+		grpcServer.Shutdown()
+		grpcDone.Wait()
 	}
 	return mergeStreamAndWALFaultOutcome(streamErr, &walFault)
 }

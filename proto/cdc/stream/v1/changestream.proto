@@ -1,0 +1,43 @@
+// Protobuf-Form des Live-Change-Streams (`SPEC-020`, `ADR-0060`
+// Teilfrage 1): ein Server-Streaming-RPC, der je verbundenem Consumer
+// jeden einzelnen committed Change mit vollständigem Inhalt überträgt
+// (`LH-FA-SST-008`) — fire-and-forget ohne Replay (`ADR-0060`
+// Teilfrage 3).
+syntax = "proto3";
+
+package cdc.stream.v1;
+
+option go_package = "github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1;streamv1";
+
+// Change trägt einen einzelnen erfassten Change (`SPEC-020`) mit denselben
+// Feldern wie der Domain-Typ (`internal/domain/model.Change`, `SPEC-002`).
+// old_image/new_image sind die rohen Row-Image-Bytes des Adapter-Mappers —
+// die Nachricht überträgt sie unverändert, ohne sie im Stream zu
+// interpretieren.
+message Change {
+  string change_id = 1;
+  string transaction_id = 2;
+  string source_table_id = 3;
+  int64 sequence = 4;
+  string operation = 5;
+  bytes old_image = 6;
+  bytes new_image = 7;
+  string schema_version = 8;
+  string schema = 9;
+  string table = 10;
+}
+
+// StreamChangesRequest trägt keine Filter (`ADR-0060` §Konsequenzen —
+// tabellen-granulare Filterung ist bewusst vertagt): ein Abonnent erhält
+// zunächst alle Changes der konfigurierten Tabellen.
+message StreamChangesRequest {}
+
+// ChangeStream trägt die eine Streaming-Fähigkeit dieses Adapters
+// (`SPEC-020`).
+service ChangeStream {
+  // StreamChanges öffnet den Server-Stream und überträgt jeden ab
+  // Verbindungsaufbau eintreffenden Change; ein Öffnungsversuch ohne
+  // gültige Authentifizierung endet mit gRPC-Status `Unauthenticated`
+  // (`LH-FA-SST-008` Negative, `ADR-0060` Teilfrage 4).
+  rpc StreamChanges(StreamChangesRequest) returns (stream Change);
+}
