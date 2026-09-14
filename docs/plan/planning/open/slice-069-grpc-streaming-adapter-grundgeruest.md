@@ -14,13 +14,15 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 Boundary-Kriterium),
 [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
 
-**Berührte Spec-Stellen:** [SPEC-019](../../../../spec/pflichtenheft.md)
-(neu anzulegen durch diesen Slice — Protobuf-Nachrichtenschema,
-RPC-Methodenname, Stream-Semantik; von
+**Berührte Spec-Stellen:** `SPEC-020` (neu anzulegen durch diesen Slice —
+Protobuf-Nachrichtenschema, RPC-Methodenname, Stream-Semantik; von
 [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) als Folgepflicht
-benannt).
+benannt). **Plan-Korrektur 2026-09-14:** Der Slice-Plan nannte dafür
+zunächst `SPEC-019`; diese Kennung hat inzwischen `slice-066` belegt
+(Feldform von `cdc.administration_request`), deshalb rückt dieser Slice auf
+die nächste freie Kennung `SPEC-020`.
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Rolleninhaber: Planner-Lauf, 2026-09-14). **Datum:** 2026-09-14.
 
@@ -105,7 +107,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `CDC_GRPC_ADDR` (No-Op bei fehlender Adresse), Docker-only
       Protobuf-/buf-Build-Stufe für die Code-Generierung.
 - [ ] `spec/pflichtenheft.md` erhält den neuen Eintrag
-      [SPEC-019](../../../../spec/pflichtenheft.md) (konkretes
+      [`SPEC-020`](../../../../spec/pflichtenheft.md) (konkretes
       Protobuf-/Nachrichtenschema, RPC-Methodenname, Stream-Semantik) —
       Folgepflicht aus
       [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
@@ -141,7 +143,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `Dockerfile` | update | neue Build-Stufe für protoc/buf-Codegenerierung |
 | `Makefile` / `harness/mk/*.mk` | update | neues Ziel für Codegen, falls eines entsteht |
 | `internal/bootstrap/wiring.go` | update | additive `CDC_GRPC_ADDR`-Verdrahtung (Server-Start, noch ohne `CaptureService`-Anschluss — folgt in `slice-070`) |
-| `spec/pflichtenheft.md` | update | neuer Eintrag [SPEC-019](../../../../spec/pflichtenheft.md) |
+| `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` |
 
 ## 4. Trigger
 
