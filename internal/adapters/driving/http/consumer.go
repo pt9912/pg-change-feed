@@ -102,10 +102,10 @@ type removeConsumerRequest struct {
 
 // removeConsumerResponse trägt den JSON-Response-Body bei Erfolg
 // (`SPEC-018`): `Removed` trägt `LH-FA-CON-006`s Idempotenz-Ausgang — ein
-// nie registrierter Consumer meldet `false`, kein `404` (`slice-060` §2
-// DoD: der Use Case behandelt die Entfernung als Idempotenz, nicht als
-// Fehler gegen eine unbekannte Ressource; dieselbe fachliche Gleichwertigkeit
-// über alle Zugriffswege wie CLI/SQL, `LH-FA-SST-006` Boundary).
+// nie registrierter Consumer meldet `false`, kein `404`: der Use Case
+// behandelt die Entfernung als Idempotenz, nicht als Fehler gegen eine
+// unbekannte Ressource, dieselbe fachliche Gleichwertigkeit über alle
+// Zugriffswege wie CLI/SQL (`LH-FA-SST-006` Boundary).
 type removeConsumerResponse struct {
 	ConsumerID string `json:"consumer_id"`
 	Removed    bool   `json:"removed"`
