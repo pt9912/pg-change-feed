@@ -10,11 +10,13 @@ implementierbar; der Welle-Closure-Trigger (grüner `e2e.yml`-Matrix-Lauf)
 braucht diesen Slice zusammen mit `slice-062` in jedem Matrix-Leg.
 
 **Bezug:** [LH-QA-OPS-005](../../../../spec/lastenheft.md),
-[ADR-0058](../../adr/0058-testansatz-fuenf-luecken.md) (Entscheidung 3 —
-Mechanismus, Platzierung, Betroffene Dateien; vorab entschieden),
-[ADR-0043](../../adr/0043-schemamigrationen-mit-d-migrate.md)
-(`make schema-rollout`-Idempotenz, Voraussetzung für den Zyklus),
-[ADR-0030](../../adr/0030-testpyramide.md) (E2E-Tier-Definition).
+[ADR-0064](../../adr/0064-lh-qa-ops-005-testansatz-korrektur.md)
+(Supersedes `ADR-0058` Entscheidung 3 — korrigierter Mechanismus:
+Container-Tausch über `$COMPOSE up -d --force-recreate --no-deps
+pg-change-feed` statt eines zweiten `make schema-rollout`-Laufs;
+maßgeblich für diesen Slice), [ADR-0058](../../adr/0058-testansatz-fuenf-luecken.md)
+(Entscheidung 3 — ursprüngliche, real blockierte Fassung, nur noch als
+Kontext), [ADR-0030](../../adr/0030-testpyramide.md) (E2E-Tier-Definition).
 
 **Berührte Spec-Stellen:** [`LH-QA-OPS-005`](../../../../spec/lastenheft.md)
 §Upgrade-Sicherheit — bereits im Lastenheft festgelegt, dieser Slice liefert
@@ -31,12 +33,15 @@ den fehlenden Testbeleg, ändert die Zusage nicht.
 **Ziel:** Eine neue Phase in `tools/harness/run-integration-tests.sh`, nach
 dem bestehenden Black-Box-CLI-Rundlauf und vor
 `TestE2ESchemaChangeIncompatibleTypeChange`, bildet den Mechanismus eines
-Anwendungs-Upgrades nach: Zeile einfügen und Position über `cdc.changes`
-festhalten → `docker stop "$FEED_CONTAINER"` (realer Stopp, kein `docker
-restart`) → `make schema-rollout` erneut gegen dieselbe Compose-DB (steht
-für den Migrationsschritt) → `docker start "$FEED_CONTAINER"` (dasselbe
-`:dev`-Image) → Datenstand vor dem Stopp identisch lesbar, eine danach
-eingefügte Zeile wird weiterhin erfasst.
+Anwendungs-Upgrades nach — korrigierte Form nach `ADR-0064` (Supersedes
+`ADR-0058` Entscheidung 3, ein zweiter `make schema-rollout`-Lauf blockiert
+real mit Exit 8 auf Fremdobjekten und entfällt ersatzlos): Zeile einfügen
+und Position über `cdc.changes` festhalten → `$COMPOSE up -d
+--force-recreate --no-deps pg-change-feed` (realer Container-Tausch —
+neue Instanz desselben `:dev`-Images, `container_name` bleibt stabil,
+`postgres`/`nats` bleiben unberührt) → Health-Poll → Datenstand vor dem
+Tausch identisch lesbar, eine danach eingefügte Zeile wird weiterhin
+erfasst.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -74,16 +79,15 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [ ] `LH-QA-OPS-005` erfüllt: neue Phase in
       `tools/harness/run-integration-tests.sh` (nach dem
       Black-Box-CLI-Rundlauf, vor `TestE2ESchemaChangeIncompatibleTypeChange`)
-      führt real `docker stop` → `make schema-rollout` → `docker start` aus
-      und belegt den vor dem Stopp erfassten Datenstand über `cdc.changes`
-      identisch lesbar; eine danach eingefügte Zeile wird weiterhin erfasst.
-- [ ] `make schema-rollout`s zweiter Lauf gegen eine bereits migrierte DB
-      real geprüft und Ergebnis dokumentiert — Exit 0 (Idempotenz trägt,
-      siehe `harness/README.md` §Sensors, `make schema-rollout`-Zeile) ODER
-      der in `BEO-PGC/schema-rollout-fremdobjekte` (§6) benannte Exit-8-Fall
-      tritt real ein und der Slice geht über die Rückführung `in-progress`
-      → `open` zurück, statt den Befund stillschweigend zu umgehen.
-- [ ] Health-Poll nach `docker start` analog zum bestehenden simulierten
+      führt real `$COMPOSE up -d --force-recreate --no-deps
+      pg-change-feed` aus (`ADR-0064`) und belegt den vor dem Tausch
+      erfassten Datenstand über `cdc.changes` identisch lesbar; eine danach
+      eingefügte Zeile wird weiterhin erfasst.
+- [ ] Real bestätigt: `--force-recreate` erzeugt eine neue Container-
+      Instanz desselben `:dev`-Images (`container_name` bleibt
+      `cdc-test-feed`), `postgres`/`nats` bleiben durch `--no-deps`
+      unberührt und healthy.
+- [ ] Health-Poll nach dem Tausch analog zum bestehenden simulierten
       `docker restart`-Rundlauf (`LH-QA-REL-001`).
 - [ ] `make gates` grün.
 - [ ] `make test-integration` grün mit der neuen Phase sichtbar im Log
@@ -113,7 +117,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/run-integration-tests.sh` | update | neue Phase (Stopp/Rollout/Start-Zyklus), nutzt ausschließlich bestehende Bausteine |
+| `tools/harness/run-integration-tests.sh` | update | neue Phase (Container-Tausch über `$COMPOSE up -d --force-recreate --no-deps`, `ADR-0064`), nutzt ausschließlich bestehende Bausteine |
 | `harness/README.md` | update | `make test-integration`-Sensor-Zeile um die neue Phase ergänzt |
 
 ## 4. Trigger
@@ -152,23 +156,18 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **`BEO-PGC/schema-rollout-fremdobjekte` (offen, 1×, real reproduziert
-  gegen d-migrate 1.3.0/1.3.1 — siehe §8):** Ein zweiter `make
-  schema-rollout`-Lauf gegen eine bereits migrierte DB blockiert mit Exit 8
-  (`DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`, `DropView`) auf
-  `cdc.heartbeat`/`cdc.metrics` — beide Views entstehen außerhalb des
-  neutralen Modells (`tools/schema/nacharbeit-heartbeat.sql`,
-  `tools/schema/nacharbeit-observability.sql`), d-migrate sieht sie als
-  Fremdobjekte und plant ihren Abbau. `ADR-0058` Entscheidung 3 setzt
-  genau diesen zweiten Rollout-Lauf voraus und begründet ihn mit der
-  Idempotenz der **deklarativen** Views (`ReplaceView`, seit `slice-016`)
-  — die beiden Fremdobjekt-Views sind davon nicht erfasst. Dieses Risiko
-  ist real blockierend, nicht nur potenziell: Trifft es zu, ist der in
-  `ADR-0058` beschriebene Mechanismus in dieser Form nicht lauffähig, und
-  der Implementer meldet den Slice über die Rückführung `in-progress` →
-  `open` zurück (siehe §4) statt den Befund stillschweigend zu umgehen
-  (z. B. durch einen verdeckten `--allow-destructive`-Flag ohne
-  Dokumentation). — **Ausgang:** <bei Closure zu füllen>
+- **`BEO-PGC/schema-rollout-fremdobjekte` — bereits eingetreten
+  (2×, real reproduziert mit vier statt zwei Objekten,
+  `docs/reviews/blocker-slice-063.md`):** Der ursprünglich geplante zweite
+  `make schema-rollout`-Lauf blockierte real mit Exit 8 — dieser Slice
+  vermeidet das jetzt durch `ADR-0064`s korrigierten Mechanismus
+  (Container-Tausch statt Migrationsschritt) vollständig, statt den
+  Blocker zu umgehen. Kein weiteres Risiko für die aktuelle Umsetzung,
+  aber `BEO-PGC/schema-rollout-fremdobjekte` bleibt als eigenständige,
+  ungelöste strukturelle Lücke bestehen (`ADR-0064` Re-Evaluierungs-
+  Trigger 2). — **Ausgang:** eingetreten → `ADR-0064` (Folge-Entscheidung
+  mit korrigiertem Mechanismus, kein neuer Slice nötig, da derselbe
+  `slice-063` die korrigierte Form umsetzt).
 - Der Container-Stopp könnte den Replication-Slot oder eine offene
   Transaktion in einem Zustand hinterlassen, der den nachfolgenden Start
   real verzögert oder einen Health-Check-Timeout auslöst (anders als beim
@@ -217,15 +216,15 @@ Testphasen im selben Compose-Lauf:
   laufende DB — kein direkter Treffer, aber die dort dokumentierte
   Abhängigkeit (Rollout braucht eine erreichbare Postgres-Instanz) gilt
   unverändert auch für den wiederholten Lauf dieses Slice.
-- **`BEO-PGC/schema-rollout-fremdobjekte` — direkter Treffer, offen, 1×**
-  (`evidence/slice-016.md`; unter der 3×-Schwelle, „kein Ausgang fällig"
-  laut Register-Vermerk): Ein zweiter `make schema-rollout`-Lauf gegen
-  eine bereits migrierte DB blockiert real mit Exit 8
-  (`DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`) auf
-  `cdc.heartbeat`/`cdc.metrics` — genau der zweite Rollout-Lauf, den dieser
-  Slice als Kernschritt des Upgrade-Zyklus braucht. Als HIGH-Risiko in §6
-  aufgenommen, nicht stillschweigend übergangen; ein Auftreten in diesem
-  Slice wäre das zweite (2×) für diese Beobachtung.
+- **`BEO-PGC/schema-rollout-fremdobjekte` — direkter Treffer, tatsächlich
+  eingetreten (2×, real reproduziert mit vier statt zwei Objekten,
+  `docs/reviews/blocker-slice-063.md`; Beleg wird bei der Closure dieses
+  Slice nachgetragen):** Der ursprünglich geplante zweite
+  `make schema-rollout`-Lauf blockierte real mit Exit 8, sogar mit
+  `--dry-run` (Architect-Zug, `ADR-0064` §Kontext). Dieser Slice umgeht
+  das nicht, sondern nutzt jetzt `ADR-0064`s korrigierten Mechanismus
+  (Container-Tausch statt Migrationsschritt), der den blockierten Lauf
+  gar nicht mehr braucht.
 - Weitere durchgesehen (`d-migrate-nacharbeit`,
   `test-runner-stiller-ausschluss`): kein direkter Treffer —
   `d-migrate-nacharbeit` betrifft eine inzwischen zurückgebaute
