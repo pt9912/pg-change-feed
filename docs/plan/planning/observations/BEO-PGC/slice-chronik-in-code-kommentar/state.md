@@ -19,8 +19,9 @@ selbst (obiger Verdikt-Pfad), analog zu
 `BEO-PGC/architect-verdikt-ablageort-uneinheitlich`s wellenloser
 Behebung direkt aus einer Nutzerfrage.
 
-Zähler (abgeleitet): 3× (evidence/review-slice-041.md,
-evidence/review-slice-041-fixrunde.md, evidence/review-slice-044.md) —
+Zähler (abgeleitet): 6× (evidence/review-slice-041.md,
+evidence/review-slice-041-fixrunde.md, evidence/review-slice-044.md,
+evidence/slice-052.md, evidence/slice-060.md, evidence/slice-066.md) —
 Schwelle erreicht, Ausgang im Lese-Schritt dieses Architect-Zugs
 zugewiesen (wellenlos, siehe Modul 6 „Träger im Repo ohne Wellen": der
 Lese-Schritt läuft normalerweise in der Slice-Closure; hier lief er als
@@ -55,3 +56,14 @@ Für den Lese-Schritt bei `slice-052`s Closure ist der Ausgang damit
 vorweggenommen: **verkörpert** (erneut), Herkunfts-Anker `seit slice-052`
 auf diesen Nachtrag — keine weitere Architect-Eskalation nötig, nur
 Zähler und `evidence/slice-052.md` nachtragen.
+
+Belege 4–6 (`slice-052`, `slice-060`, `slice-066`) bestätigen die
+Verdikt-Diagnose: in allen drei Fällen fing der unabhängige Reviewer den
+Fund vor dem Merge, kein Hard-Rule-Verstoß hat `main` erreicht. Der
+Ausgang bleibt **verkörpert** — die tragende Verteidigungslinie ist der
+Reviewer-HIGH-Punkt, nicht die Selbstprüfung des schreibenden Laufs. Der
+`slice-066`-Beleg zeigt zusätzlich den Nutzen des datei-skopierten
+Enumerationslaufs: er fand vier weitere Produktionscode-Stellen derselben
+Klasse in `postgresstorage/administrationrequest.go` und
+`bootstrap/wiring.go`, die über den ursprünglichen Review-Befund
+hinausgingen.

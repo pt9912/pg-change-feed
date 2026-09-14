@@ -138,11 +138,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       neuer `SPEC-*`-Eintrag in `spec/pflichtenheft.md` für die konkrete
       Feldform des erweiterten Antrags-Datensatzes (`ADR-0059`
       Folgepflicht).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure.
 
 ## 3. Plan (vor Code)
 
@@ -281,12 +281,24 @@ dasteht.
   bestehenden Tabelle scheitern (der bislang belegte
   `POST_EXECUTE_DRIFT`-Fall aus `BEO-PGC/d-migrate-nacharbeit` betrifft nur
   Funktionen/Prozeduren, nicht Tabellenänderungen — unklar, ob dieselbe
-  Grenze auch hier greift). — **Ausgang:** <bei Closure zuzuweisen>
+  Grenze auch hier greift). — **Ausgang: eingetreten** — real gemessen
+  (Reviewer-Rolle, PostgreSQL 18 / d-migrate 1.3.1, dokumentiert in
+  [`docs/reviews/review-slice-066.md`](../../../reviews/review-slice-066.md)):
+  die Spaltenerweiterung konvergiert (Exit 0), die CHECK-Klausel an einer
+  bestehenden Tabelle **nicht** (Exit 5, die bestehende Klausel entfällt
+  beim Änderungsversuch). Aufgelöst über die etablierte Ausweichform
+  (`tools/schema/nacharbeit-administration.sql`, idempotent) — kein neuer
+  Slice, keine Folge-ADR nötig. Der Befund ist eine **neue Objektklasse**
+  derselben Werkzeuggrenze (Änderung an einer *bestehenden* Tabelle statt
+  der seit `slice-015` gelösten Erstanlage) und als zusätzlicher Beleg in
+  `BEO-PGC/d-migrate-nacharbeit` eingetragen.
 - Der Fehlerpfad für `ErrSourceColumnMissing` folgt dem
   `applyAdministrationRequest`-Muster mit Prozess-Fortsetzung bei
   Adapter-Fehlern (`BEO-PGC/adapter-fehler-ausgang`, 2×, weiter offen) —
   ein dritter, ähnlich gelagerter Fund würde die 3×-Schwelle erreichen. —
-  **Ausgang:** <bei Closure zuzuweisen>
+  **Ausgang: entfallen** — kein dritter Fund; der neue Pfad nutzt dasselbe
+  Muster ohne neue Abweichung (Verifier bestätigte den realen
+  `applied`/`failed`-Pfad über `ColumnExclusionPort`).
 
 ## 7. Closure-Notiz
 
@@ -305,13 +317,37 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure>
+- **Was hat funktioniert:** Die Wiederverwendung der bestehenden
+  Antrags-Queue (`ADR-0050`) trug ohne neuen Mechanismus — zwei neue
+  Antragsarten, ein neuer Outbound Port am bereits vorhandenen
+  `cdc_admin`-Pool, dieselbe Live-Reload-Verdrahtung. Der reale Test im
+  Composition-Root (`administration_endtoend_test.go`) belegte den
+  `applied`/`failed`-Pfad gegen echtes PostgreSQL, den die Whitebox-Tests
+  des Adapter-Pakets strukturell nicht erreichen konnten.
+- **Was ging anders als geplant:** Der Plan sah die `request_kind`-CHECK-
+  Klausel deklarativ in `tools/schema/schema.yaml` vor. Real gemessen
+  trägt d-migrate 1.3.1 eine CHECK-Klausel an einer **bestehenden**
+  Tabelle nicht (Exit 5, die bestehende Klausel entfällt beim
+  Änderungsversuch) — die Klausel liegt deshalb in der etablierten
+  Ausweichform (`tools/schema/nacharbeit-administration.sql`), die Spalte
+  bleibt deklarativ. Das ist eine neue Objektklasse derselben
+  Werkzeuggrenze (§6, eingetreten, über die Ausweichform aufgelöst).
+  Zusätzlich fand die Fixrunde über den Review-Befund hinaus vier weitere
+  Chronik-Stellen in Produktionscode-Kommentaren und formulierte sie um.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der HIGH-Fund
+  (Slice-Chronik in Produktionscode) fiel in eine bereits verkörperte
+  Klasse ein (`BEO-PGC/slice-chronik-in-code-kommentar`), der Reviewer
+  fing ihn vor dem Merge; die d-migrate-Grenze ist in
+  `BEO-PGC/d-migrate-nacharbeit` belegt, nicht neu verkörpert.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-066.md`
+  in `BEO-PGC/d-migrate-nacharbeit/` ergänzt (Zähler 6×, neue
+  Objektklasse „CHECK-Klausel an bestehender Tabelle") sowie
+  `evidence/slice-066.md` in `BEO-PGC/slice-chronik-in-code-kommentar/`
+  (Zähler 6×, Ausgang bleibt `verkörpert`).
 - **Folge-Slices:** keine — `slice-067`/`slice-068` stehen bereits in
   `welle-18` §4 als vorgesehene nächste Slices.
-- **Risiken aus §6:** <bei Closure>
+- **Risiken aus §6:** eines eingetreten (über die Ausweichform aufgelöst),
+  eines entfallen — siehe §6.
 - **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-18` offen) —
   Prüfung läuft bei der `welle-18`-Closure.
 
