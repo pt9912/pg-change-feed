@@ -11,9 +11,12 @@
 
 services:
   postgres:
-    # Digest-Pin wie im Makefile (PG_TEST_IMAGE); Pin-Hebung = bewusster
-    # Commit (Modul 14).
-    image: postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
+    # PG_TEST_IMAGE-Interpolation (LH-QA-POR-001, ADR-0058 Entscheidung 4):
+    # ohne gesetzte Umgebungsvariable greift der Default unten — derselbe
+    # Digest-Pin wie im Makefile (PG_TEST_IMAGE), PostgreSQL 18. Die
+    # CI-Matrix (.github/workflows/e2e.yml) exportiert die Variable je Leg
+    # auf den PostgreSQL-17-Digest; Pin-Hebung = bewusster Commit (Modul 14).
+    image: ${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8}
     container_name: cdc-test-postgres
     environment:
       POSTGRES_DB: cdc

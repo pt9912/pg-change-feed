@@ -71,29 +71,29 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `LH-QA-POR-001` erfüllt: `.github/workflows/e2e.yml` trägt eine
+- [x] `LH-QA-POR-001` erfüllt: `.github/workflows/e2e.yml` trägt eine
       `strategy: matrix:` über die PostgreSQL-17- und PostgreSQL-18-Digests;
       jedes Leg exportiert `PG_TEST_IMAGE`, ruft dieselben bestehenden
       Targets (`make image`, `make test-integration`) unverändert auf.
-- [ ] `compose.yaml`s `postgres`-Service-Image-Zeile nutzt
+- [x] `compose.yaml`s `postgres`-Service-Image-Zeile nutzt
       `${PG_TEST_IMAGE}`-Interpolation mit dem PostgreSQL-18-Digest als
       Default; ein lokaler Lauf ohne gesetzte Variable bleibt unverändert
       lauffähig (Regressionstest).
-- [ ] Der PostgreSQL-17-Digest ist real über `docker manifest inspect
+- [x] Der PostgreSQL-17-Digest ist real über `docker manifest inspect
       postgres:17-alpine` (amd64) ermittelt, mit Tag-Kommentar gepinnt
       (`AGENTS.md` §3.8) und in der Matrix-Zeile referenziert.
-- [ ] `Makefile`s `PG_TEST_IMAGE`-Default bleibt unverändert (siehe §1
+- [x] `Makefile`s `PG_TEST_IMAGE`-Default bleibt unverändert (siehe §1
       Out-of-Scope) — Regressionstest: `make test-integration` ohne
       gesetzte Variable nutzt weiterhin den PostgreSQL-18-Digest.
-- [ ] `make gates` grün.
-- [ ] `make test-integration` lokal mit explizit exportiertem
+- [x] `make gates` grün.
+- [x] `make test-integration` lokal mit explizit exportiertem
       PostgreSQL-17-`PG_TEST_IMAGE` mindestens einmal grün belegt (lokaler
       Vorab-Beleg vor dem ersten echten CI-Matrix-Lauf; kein Gate,
       [ADR-0030](../../adr/0030-testpyramide.md)).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge, `.github/workflows/e2e.yml`-Zeile
+- [x] Doku-Update: `harness/README.md` §Werkzeuge, `.github/workflows/e2e.yml`-Zeile
       um die Matrix-Beschreibung ergänzt (kein neues Gate, `e2e.yml` bleibt
       nicht-blockierend).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.

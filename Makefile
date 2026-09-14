@@ -33,7 +33,11 @@ image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht
 # Toolchain-Container = derselbe gepinnte Digest wie im Dockerfile; der
 # PostgreSQL-Testcontainer trägt seinen Digest aus `docker manifest inspect
 # postgres:18-alpine` (amd64). Caches leben in Docker-Volumes, Daten im
-# Container — nichts davon im Arbeitsbaum.
+# Container — nichts davon im Arbeitsbaum. PG_TEST_IMAGE bleibt hier auf
+# PostgreSQL 18 für lokale/manuelle Läufe (ADR-0058 Entscheidung 4); die
+# CI-Versionsmatrix (LH-QA-POR-001, .github/workflows/e2e.yml) überschreibt
+# dieselbe Variable je Leg, die compose.yaml per `${PG_TEST_IMAGE}`-
+# Interpolation liest — kein zweiter Mechanismus.
 TOOLCHAIN_IMAGE ?= golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
 # TOOLCHAIN_RACE_IMAGE trägt denselben Go-Toolchain-Stand wie TOOLCHAIN_IMAGE
 # (`go1.27.1`, real geprüft), aber Debian statt Alpine: der Race-Detector

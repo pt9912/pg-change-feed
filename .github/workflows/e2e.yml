@@ -33,6 +33,18 @@ name: e2e
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar. `fetch-depth: 0` ist hier nicht noetig — dieser Workflow
 # ruft `make commit-traceability` nicht auf, der Standard-Checkout reicht.
+#
+# PostgreSQL-Versionsmatrix (LH-QA-POR-001, SPEC-012, ADR-0058 Entscheidung
+# 4): zwei Matrix-Legs ueber die in SPEC-012 festgelegten Digests
+# (postgres:17-alpine, postgres:18-alpine), GitHub Actions fuehrt sie
+# standardmaessig parallel aus (`fail-fast: false`, damit ein rotes Leg das
+# andere nicht abbricht — beide Ergebnisse bleiben sichtbar, der Workflow ist
+# ohnehin nicht-blockierend). Jedes Leg setzt PG_TEST_IMAGE auf Job-Ebene;
+# `compose.yaml`s `${PG_TEST_IMAGE}`-Interpolation liest die Variable aus der
+# Prozessumgebung, `make image`/`make test-integration` laufen unveraendert.
+# Der PostgreSQL-17-Digest ist real ueber `docker manifest inspect
+# postgres:17-alpine` (amd64, ermittelt 2026-09-14) gepinnt — Pin-Hebung =
+# bewusster Commit (Modul 14).
 
 "on":
   pull_request:
@@ -47,11 +59,26 @@ permissions: {}
 
 jobs:
   e2e:
-    name: image + test-integration
+    name: image + test-integration (PostgreSQL ${{ matrix.pg_major }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # PostgreSQL 17 (SPEC-012, LH-QA-POR-001): Digest via
+          # `docker manifest inspect postgres:17-alpine` (amd64, real
+          # ermittelt 2026-09-14).
+          - pg_major: "17"
+            pg_test_image: postgres:17-alpine@sha256:7456ef82e5f5bc43d997f4781bbd7c0d6389bff397564649a356e206ba473aee
+          # PostgreSQL 18 (SPEC-012, LH-QA-POR-001): derselbe Digest-Pin wie
+          # Makefile PG_TEST_IMAGE / compose.yaml-Default.
+          - pg_major: "18"
+            pg_test_image: postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8
+    env:
+      PG_TEST_IMAGE: ${{ matrix.pg_test_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
