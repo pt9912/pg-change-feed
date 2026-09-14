@@ -55,7 +55,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0042 | Transport-Typen am Port | Accepted | 2026-09-09 | [0042-transport-typen-am-port.md](0042-transport-typen-am-port.md) |
 | ADR-0043 | Schemamigrationen mit d-migrate | Accepted | 2026-09-09 | [0043-schemamigrationen-mit-d-migrate.md](0043-schemamigrationen-mit-d-migrate.md) |
 | ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
-| ADR-0045 | Commit-Traceability als Standing-Gate | Accepted | 2026-09-10 | [0045-commit-traceability-standing-gate.md](0045-commit-traceability-standing-gate.md) |
+| ADR-0045 | Commit-Traceability als Standing-Gate (→ ADR-0062, teilweise) | Accepted | 2026-09-10 | [0045-commit-traceability-standing-gate.md](0045-commit-traceability-standing-gate.md) |
 | ADR-0046 | SQL-Driving-Adapter: Lese-Views direkt, Schreiben über Ports | Accepted | 2026-09-10 | [0046-sql-driving-adapter-lese-schreib-trennung.md](0046-sql-driving-adapter-lese-schreib-trennung.md) |
 | ADR-0047 | Rollen-spezifische DSN-Verdrahtung (→ ADR-0048, ADR-0053, teilweise) | Accepted | 2026-09-12 | [0047-rollenspezifische-dsn-verdrahtung.md](0047-rollenspezifische-dsn-verdrahtung.md) |
 | ADR-0048 | Heartbeat-Grant-Korrektur (SELECT-Ergänzung) | Accepted | 2026-09-12 | [0048-heartbeat-grant-korrektur-select-ergaenzung.md](0048-heartbeat-grant-korrektur-select-ergaenzung.md) |
@@ -72,3 +72,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0059 | Spaltenauswahl — Mechanismus, Granularität und Wirkort | Accepted | 2026-09-14 | [0059-spaltenauswahl-mechanismus.md](0059-spaltenauswahl-mechanismus.md) |
 | ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
 | ADR-0061 | HTTP/SSE zusätzlich zu gRPC für Live-Change-Zustellung | Accepted | 2026-09-14 | [0061-http-sse-zusaetzlich-zu-grpc.md](0061-http-sse-zusaetzlich-zu-grpc.md) |
+| ADR-0062 | Lokaler commit-msg-Hook (Supersedes ADR-0045, teilweise) | Accepted | 2026-09-14 | [0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md](0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md) |
