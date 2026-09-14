@@ -142,11 +142,9 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	// Zeit-Isolation. Sein Fehler geht nie in den Rückgabewert dieses Aufrufs
 	// ein, die bereits erfolgte Persistierung und Bestätigung bleiben
 	// unberührt. Ohne konfigurierten Port (`s.stream == nil`) unterbleibt der
-	// Versuch vollständig. Der Fehler von `tx.Changes()` (offene Transaktion)
-	// kann an dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
-	// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
+	// Versuch vollständig.
 	if s.stream != nil {
-		changes, _ := tx.Changes()
+		changes := changesOfCommittedTransaction(tx)
 		for i := range changes {
 			if err := s.stream.Publish(ctx, &changes[i]); err != nil {
 				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", "error", err, "change_id", changes[i].ID)
@@ -154,6 +152,15 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 		}
 	}
 	return CaptureResult{Acknowledged: position}, nil
+}
+
+// changesOfCommittedTransaction liefert die Changes einer Transaktion, deren
+// Commit-Status der Aufrufer bereits über `CommitPosition` geprüft hat. Der
+// Fehler von `tx.Changes()` (offene Transaktion) kann deshalb nicht auftreten
+// und wird hier verworfen.
+func changesOfCommittedTransaction(tx *model.ChangeTransaction) []model.Change {
+	changes, _ := tx.Changes()
+	return changes
 }
 
 // schemaTable trägt ein distinktes Schema-/Tabellenpaar einer Transaktion
@@ -166,11 +173,9 @@ type schemaTable struct {
 // distinctTables sammelt die distinkten `(schema, table)`-Paare der
 // bereits committed Transaktion in erster Auftrittsreihenfolge
 // (`ADR-0056`): mehrere Changes derselben Tabelle liefern genau einen
-// Eintrag. Der Fehler von `tx.Changes()` (offene Transaktion) kann an
-// dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
-// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
+// Eintrag.
 func distinctTables(tx *model.ChangeTransaction) []schemaTable {
-	changes, _ := tx.Changes()
+	changes := changesOfCommittedTransaction(tx)
 	seen := make(map[schemaTable]struct{}, len(changes))
 	tables := make([]schemaTable, 0, len(changes))
 	for _, change := range changes {

@@ -538,6 +538,22 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		return err
 	}
 
+	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
+	// Stelle, an der beide gRPC-Rollen zusammenlaufen: der Driving-Adapter
+	// (Server) liest aus ihm, der `CaptureService` schreibt über den Outbound
+	// Port `ChangeStreamPort` in ihn. Er bleibt an `envGRPCAddr` gebunden —
+	// ohne gesetzte Adresse entsteht kein Broadcaster, der `CaptureService`
+	// trägt keinen Stream-Publish-Schritt (additiv, unverändertes
+	// Bestandsverhalten, `ADR-0060` Teilfrage 6). Die Bindung ist keine
+	// Start-Vorbedingung: der gRPC-Server startet weiter unten in eigener
+	// Goroutine, ein Startfehler wird dort über `log.Error` gemeldet und geht
+	// nicht in das Ergebnis von `Run` ein — wie beim HTTP-Adapter.
+	var grpcBroadcaster *grpcstream.Broadcaster
+	captureOpts := []capture.Option{capture.WithLog(log)}
+	if cfg.GRPCAddr != "" {
+		grpcBroadcaster = grpcstream.New()
+		captureOpts = append(captureOpts, capture.WithChangeStream(grpcBroadcaster))
+	}
 	// Das Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`)
 	// bleibt vollständig deaktiviert, solange `envNatsURL` leer ist — kein
 	// Verbindungsversuch, kein `ChangeNotificationPort`. Ist die
@@ -548,22 +564,6 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// (`ErrConfiguration`) — ein Betreiber, der das Feature einschaltet,
 	// aber die Server-Adresse falsch trägt, soll das beim Start bemerken,
 	// nicht durch ein unauffällig ausbleibendes Wecksignal.
-	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
-	// Stelle, an der beide gRPC-Rollen zusammenlaufen: der Driving-Adapter
-	// (Server) liest aus ihm, der `CaptureService` schreibt über den Outbound
-	// Port `ChangeStreamPort` in ihn. Er bleibt an `envGRPCAddr` gebunden —
-	// ohne gesetzte Adresse entsteht kein Broadcaster, der `CaptureService`
-	// trägt keinen Stream-Publish-Schritt (additiv, unverändertes
-	// Bestandsverhalten, `ADR-0060` Teilfrage 6). Die Bindung ist keine
-	// Start-Vorbedingung: der gRPC-Server-Startfehler erreicht das Ergebnis
-	// von `Run` weiter unten auf demselben Pfad wie jeder andere
-	// Adapter-Startfehler.
-	var grpcBroadcaster *grpcstream.Broadcaster
-	captureOpts := []capture.Option{capture.WithLog(log)}
-	if cfg.GRPCAddr != "" {
-		grpcBroadcaster = grpcstream.New()
-		captureOpts = append(captureOpts, capture.WithChangeStream(grpcBroadcaster))
-	}
 	if cfg.NatsURL != "" {
 		natsConn, err := nats.Connect(cfg.NatsURL)
 		if err != nil {

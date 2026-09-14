@@ -172,6 +172,19 @@ Aussagen-Berührung steht hier gar nicht.
 - **Keine Zeile des Kernpfads vor dem Stream-Publish-Aufruf angefasst**
   (§1-Schicht-Abgrenzung): der bestehende `Receive → … → ACK Source`-Pfad
   und der Notify-Block bleiben unverändert; der neue Block steht danach.
+- **Fixrunde nach Review** (`../../../reviews/review-slice-070.md`): vier
+  Findings am Code behoben — F-2 (der `wiring.go`-Kommentar behauptete, ein
+  gRPC-Server-Startfehler erreiche den Rückgabewert von `Run`; tatsächlich
+  läuft der Server in eigener Goroutine und der Fehler wird dort über
+  `log.Error` gemeldet, wie beim HTTP-Adapter), F-3 (NATS-Kommentar direkt
+  an sein `if cfg.NatsURL != ""` gerückt), F-4
+  (`erwarteteZustellung` → `erwarteteErfolgreicheAufrufe`: die Größe zählt
+  zurückgekehrte `Publish`-Aufrufe, nicht zugestellte Changes), F-6 (die
+  Begründung des verworfenen `tx.Changes()`-Fehlers steht jetzt einmal im
+  Helfer `changesOfCommittedTransaction`, den `Capture()` und
+  `distinctTables` gemeinsam nutzen). F-1 ist durch
+  [ADR-0067](../../adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+  entschieden, F-5/F-7/F-8 sind INFO ohne Code-Änderung.
 
 ## 4. Trigger
 

@@ -584,12 +584,12 @@ func TestCaptureSucceedsDespiteFailingStream(t *testing.T) {
 // lassen.
 func TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck(t *testing.T) {
 	faelle := []struct {
-		name                string
-		empfaenger          chan *model.Change
-		erwarteteZustellung int
+		name                         string
+		empfaenger                   chan *model.Change
+		erwarteteErfolgreicheAufrufe int
 	}{
-		{name: "getrennter Client", empfaenger: nil, erwarteteZustellung: 2},
-		{name: "nicht lesender Empfänger", empfaenger: make(chan *model.Change, 1), erwarteteZustellung: 2},
+		{name: "getrennter Client", empfaenger: nil, erwarteteErfolgreicheAufrufe: 2},
+		{name: "nicht lesender Empfänger", empfaenger: make(chan *model.Change, 1), erwarteteErfolgreicheAufrufe: 2},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {
@@ -622,7 +622,7 @@ func TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck(t *testing.T
 				t.Fatal("Capture kehrt nicht zurück")
 			}
 
-			if got, want := len(stream.published), fall.erwarteteZustellung; got != want {
+			if got, want := len(stream.published), fall.erwarteteErfolgreicheAufrufe; got != want {
 				t.Fatalf("Stream trägt %d erfolgreiche Aufrufe, wollen %d (der Port kehrt je Change zurück)", got, want)
 			}
 			if fall.empfaenger == nil {
