@@ -127,9 +127,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       SQL-Funktionen, Rücklesen von `column_name`/`request_kind` und
       `cdc_reader`-Ablehnung).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: [`docs/reviews/review-slice-066.md`](../../../../docs/reviews/review-slice-066.md)
+      (Fixrunde zu F-1…F-8 geprüft; F-9/F-10 gehen als Closure-Nachzug an
+      den Planner, keine weitere Implementer-Runde).
 - [x] Doku-Update: `spec/architecture.md`s Sequenzdiagramm zu `ARC-005`
       um die beiden neuen Antragsarten ergänzt (`ADR-0059` Folgepflicht);
       neuer `SPEC-*`-Eintrag in `spec/pflichtenheft.md` für die konkrete

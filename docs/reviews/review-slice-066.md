@@ -432,3 +432,216 @@ durchgeführt, Report unter `docs/reviews/` liegt vor" in §2 offen
 nicht); sie wird regulär bei Schritt 21 des Implementer-Workflows nachgezogen.
 Dieser Report ist Lauf-Beleg und wird über Läufe hinweg nicht erneut gelesen;
 Verifikation gegen DoD/Spec bleibt Aufgabe des Verifiers.
+
+---
+
+## Fixrunden-Vermerk (2026-09-14, Prüfung des Fix-Commit `58cddac`)
+
+**Gegenstand:** `58cddac` (`fix(slice-066): Fixrunde — Chronik, Plan-Belege
+und Negativtests`), Diff `0b0ae8e..58cddac`; geprüft per `git show 58cddac`,
+nicht über die Commit-Message. Die Findings oben bleiben unverändert stehen —
+dieser Vermerk trägt das Ergebnis je Finding nach (Modul 10: Ergebnis pro
+Finding).
+
+### Ergebnis je Finding
+
+**F-1 (HIGH) — behoben.** `internal/domain/model/administrationrequest.go:51`
+trägt jetzt einen Rang-Zeiger auf die Architektur-Sicht (`ARC-001`) statt der Fund-Referenz. `ARC-001` ist die
+Domain-Zeile der Sicht (`spec/architecture.md` §1: „Domänenmodell,
+Invarianten, Retention-Policy") und trägt die Aussage „die Prüfung liegt am
+Domain-Core-Rand, wie es die Architektur-Sicht vorsieht" genau; kein
+Slice-/Wellen-Bezug, keine Vorher/Nachher-Sprache mehr in diesem Block.
+Der Kommentar trägt damit den Ist-Zustand plus Rang-Zeiger — die
+zulässige Form. Die Wahl eines `ARC-*`-Rang-Zeigers entspricht dem
+etablierten Gebrauch in unmittelbar benachbarten Produktionskommentaren
+(`outbound/columnexclusion.go`, `inbound/verwaltung.go`: `ARC-002`/`ARC-003`/`ARC-004`).
+
+**F-2 (MEDIUM) — behoben, mit einem Resthinweis (siehe F-9).**
+`docs/plan/planning/in-progress/slice-066-spaltenausschluss-sql-funktionen.md`
+§3 gibt den Sachverhalt jetzt so wieder, wie ich ihn gemessen habe: frischer
+Rollout Exit 0 mit „`nacharbeit-administration.sql:58` meldet zuvor
+`NOTICE: constraint … does not exist, skipping`", Ausweichform idempotent
+(dreimal Exit 0, unveränderter Endzustand), Bestands-Instanz **Exit 8**
+(`DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`, `make` bricht vor den
+psql-Schritten ab), und die neue destruktive Plan-Operation auf
+`administration_request.request_kind` samt Zuordnung (manuelles Entfernen
+der Klausel: 11 → 10 Operationen). Alle Zahlen decken sich mit meiner
+Nachmessung in diesem Report.
+Zur Beleg-Übernahme: **zulässig.** Der Reviewer→Implementer-Pfeil trägt
+genau ein Artefakt — die Findings samt Beleg (Modul 8); keine Regel
+verlangt, dass der umsetzende Lauf eine bereits unabhängig geführte,
+reproduzierbar beschriebene Messung erneut fährt, und der Reviewer ist für
+diese Konstellation die *unabhängigere* Quelle. Bedingung ist, dass die
+Herkunft im Beleg auflösbar bleibt — daran fehlt eine Kleinigkeit (F-9).
+
+**F-3 (MEDIUM) — behoben.** Neu
+`internal/domain/model/administrationrequest_test.go` (84 Zeilen) übt die
+Ablehnungszweige real aus: leere ID/Quelle/Schema/Tabelle → `ErrEmptyIdentifier`,
+beide Spalten-Antragsarten ohne Spalte → `ErrEmptyIdentifier`, `""` und
+`"truncate"` → `ErrInvalidAdministrationRequestKind`; dazu zwei
+Akzeptanz-Tests (Tabellenarten ohne Spalte, Spaltenarten mit Spalte). Eigener
+fokussierter Lauf (Exit 0) zeigt alle drei Subtests als `RUN`/`PASS`, und die
+eigene Coverage-Messung über `./internal/domain/model/` weist
+`NewAdministrationRequest` mit **100.0 %** Statement-Coverage aus — der neue
+Zweig und der `default`-Zweig werden also wirklich ausgeübt, nicht nur
+berührt.
+
+**F-4 (LOW) — behoben.** Die DoD-Beleg-Angabe nennt jetzt den real
+tragenden Pfad (`internal/bootstrap/administration_endtoend_test.go` für
+Happy Path *und* Negative-Fall) und beschreibt den
+`administrationrequest_test.go`-Beitrag zutreffend (Anlage über beide
+SQL-Funktionen, Rücklesen von `column_name`/`request_kind`,
+`cdc_reader`-Ablehnung). Die §3-Tabelle führt die produktiv nötigen
+Folgeänderungen (Domänenmodell, `domain/errors`, beide
+`postgresstorage`-Dateien, `tableactivation`, die drei Testdateien, die
+generierten Rollout-Artefakte) mit konkretem Pfad statt Sammelplatzhalter.
+
+**F-5 (LOW) — behoben.** Der `Makefile`-Kopplungskommentar beschreibt den
+Schritt jetzt mit vier Funktionen und der `request_kind`-CHECK-Klausel und
+nennt beide d-migrate-Grenzen (Funktions-DDL, neue CHECK-Klausel an
+bestehender Tabelle). Zum neuen Delta-Marker „sowie seit slice-066" siehe
+Negativbefunde.
+
+**F-6 (INFO) — behoben.** `spec/architecture.md:237` sagt jetzt, was das
+Diagramm zeigt („am Beispiel `enable` (`EnableTableUseCase`); die drei
+übrigen Antragsarten nehmen denselben Weg … und wählen dort ihren Inbound
+Port") — deckungsgleich mit `applyAdministrationRequest`; kein `ADR-*`,
+kein Slice-Bezug in der Sicht.
+
+**F-7 (INFO) — bewusst nicht geändert; Begründung geteilt.** Ein Sensor auf
+die Paarung „Go-Konstante ↔ `SPEC-019` ↔ handgeschriebene SQL-Klausel"
+müsste drei Sprachräume zugleich auswerten (Go-Konstanten, Prosa-Festlegung,
+DDL-Text) oder die lebende Datenbank befragen — das ist kein kleines,
+dependency-freies Skript, sondern dieselbe Verwerfung, die das
+Architect-Verdikt für den Chronik-Sensor bereits getragen hat. Die mittelbare
+Deckung trägt für den Fall, auf den es ankommt (eine neue Antragsart in der
+Go-Menge ohne Klausel-Erweiterung scheitert an einem realen Einfügeversuch in
+`administrationrequest_test.go`/`administration_endtoend_test.go` unter
+`make test-store`). **Grenze, benannt statt verschwiegen:** die Umkehrung —
+eine Klausel, die *weiter* ist als die Go-Menge — bliebe unentdeckt; sie ist
+heute harmlos, weil kein Aufrufer einen Wert außerhalb der Go-Menge erzeugt.
+Der Report-Eintrag zu F-7 bleibt als INFO ohne erwartete Aktion stehen.
+
+**F-8 (INFO) — behoben.**
+`internal/application/usecase/includecolumn/service_test.go` trägt jetzt
+`TestIncludeColumnPropagatesPortError` (spiegelbildlich zum
+Ausschluss-Paket, inklusive der Abgrenzung „nicht als fehlende Spalte
+gelesen"); eigener fokussierter Lauf: `PASS`.
+
+### Prüfung des zusätzlichen Enumerationslaufs (F-1-Nachbarschaft)
+
+Der Implementer meldet, sein datei-skopierter Chronik-Lauf habe über meinen
+Befund hinaus weitere Stellen gefunden. **Selbst nachgelaufen** mit dem
+Muster aus `.claude/commands/implement-slice.md` Schritt 20
+(`slice-[0-9]+|welle-[0-9]+|vor/nach/seit diesem [Ss]lice`) über
+`git diff --name-only 0b0ae8e 58cddac -- '*.go' 'tools/schema/*.sql'`:
+**null Treffer** in allen in der Fixrunde geänderten Go-/SQL-Dateien. Über
+den gesamten Slice-Diff `529f021..58cddac` bleibt genau ein Treffer:
+`internal/bootstrap/administration_internal_test.go:27`
+(`Review-Finding F-2`, `review-slice-037.md`) — Satzsubjekt ist dort die
+Testdatei bzw. der Testfall, also die zulässige Provenienz-Form; sie ist
+unangetastet geblieben.
+
+Die vier umformulierten Stellen sind durchweg **Produktionscode-Subjekte**:
+`internal/adapters/driven/postgresstorage/administrationrequest.go:135-141`
+(Feld-Doku `reconnectBackoff`), `:210-215` (Doku `WaitForNotification`),
+`internal/bootstrap/wiring.go:147-153` (Konstanten-Doku `retentionMinAge`),
+`:770-773` (Doku `resolveWALRetentionThresholds`). Kein `Test*`-Godoc wurde
+angefasst; die beiden Dateien wurden ganzflächig geprüft, was der
+diff-skopierte Kandidatenlauf aus Schritt 20 (`--name-only` → `grep` über
+die ganze Datei) genau so vorschreibt — die Ausweitung über die ursprünglich
+geänderten Hunks hinaus ist damit die vorgeschriebene Form, kein Scope-Creep.
+
+### Negativbefunde dieser Prüfung
+
+- **geprüft, ohne Befund: der neue Delta-Marker „sowie seit slice-066" im
+  `Makefile`-Kommentar.** Ich habe ihn gegen die vier Marker desselben
+  Kommentarblocks geprüft, die ihn umgeben (`seit slice-016` Zeile 123,
+  `seit slice-011` Zeile 134, `seit slice-012` Zeile 138, `seit slice-036`
+  Zeile 142): gleiche Form, gleicher Ort, über rund 30 Review-Läufe hinweg
+  nie beanstandet — und `.harness/skills/reviewer.md` nennt den
+  Herkunfts-Anker `· seit slice-<NNN>` ausdrücklich als zulässige Alternative
+  zur Slice-Begründung. Der neue Marker ist damit die fünfte Instanz einer
+  etablierten Form dieses Blocks, kein neuer Verstoß. **Bewusst benannt statt
+  stillschweigend übergangen:** wer diese Form *generell* aus dem `Makefile`
+  entfernen will, ändert die Konvention für den ganzen Block (vier
+  Alt-Marker) und schärft dafür `BEO-PGC/slice-chronik-in-code-kommentar`
+  oder `.claude/commands/implement-slice.md` Schritt 20 (`*.go` und
+  `tools/schema/*.sql` sind heute der Skopus) — das ist ein eigener Vorgang,
+  nicht eine Fixrunde dieses Slice.
+- **geprüft, ohne Befund: Umfang der Fixrunde.** `git show 58cddac --stat`
+  zeigt acht Dateien, davon fünf, die F-1/F-5/F-4/F-2/F-6 unmittelbar
+  adressieren; keine Berührung von `internal/adapters/driving/http`,
+  `compose.yaml`, `.github/workflows/` oder fremden Planungsdokumenten.
+  Die Ausweitung auf die vier Chronik-Stellen außerhalb der ursprünglichen
+  Hunks (`administrationrequest.go`, `wiring.go`) folgt dem
+  diff-skopierten Kandidatenlauf aus Schritt 20 (Skopus = geänderte
+  *Dateien*, nicht geänderte Zeilen) und ist deshalb kein Scope-Creep.
+- **geprüft, ohne Befund: Testfall-Provenienzen unangetastet.** Keine
+  bestehende `_test.go`-Provenienz wurde umformuliert; die einzigen
+  Testdatei-Änderungen sind die zwei neuen Testdateien bzw. der neue
+  Port-Fehler-Test. Die verbleibende Provenienz-Zeile
+  (`administration_internal_test.go:27`) steht unverändert.
+- **geprüft, ohne Befund: die beiden reformulierten Kommentarblöcke in
+  `administrationrequest.go` tragen weiterhin die Klassen Zusage und
+  Kopplung.** Der Feld-Kommentar beschreibt Zweck und Deckelung des
+  `reconnectBackoff`, die Funktions-Doku den Wiederaufbau-Pfad — beide ohne
+  Slice-Bezug; die Bedingung „Ohne sie liefe ein dauerhaft unerreichbares
+  `AdminDSN` in eine ungedrosselte Wiederholschleife" ist unverändert
+  übernommen (Bestand, nicht Gegenstand dieser Fixrunde) und wurde deshalb
+  hier nicht neu bewertet.
+
+### Zwei Nachträge aus dieser Prüfung (beide LOW, ohne Implementer-Rückgabe)
+
+**F-9 — die Beleg-Aussage in §3 nennt die Quelle der Messung nicht.**
+- `kategorie`: LOW
+- `quelle`: Maintainability · `AGENTS.md` §3.7 (Beleg als auflösbarer
+  Anker) · Modul 8 (Beleg-Übernahme braucht ein benennbares Artefakt)
+- `pfad`: `docs/plan/planning/in-progress/slice-066-spaltenausschluss-sql-funktionen.md:201`
+- `befund`: Der Satz „Beleg (real gemessen, PostgreSQL 18, d-migrate 1.3.1)"
+  übernimmt die Exit-8-/Exit-0-Werte aus der Nachmessung dieses Reports
+  (`docs/reviews/review-slice-066.md`), nennt diese Quelle aber nicht — weder
+  im Plan noch in der Commit-Message. Ein späterer Leser ordnet die Messung
+  damit dem umsetzenden Lauf zu, in dem sie nicht entstanden ist; die
+  Zahlen selbst sind mit meiner Messung deckungsgleich.
+- `verifizierbar`: ja — `grep` nach `docs/reviews/review-slice-066.md` in
+  Plan und Commit-Message liefert keinen Treffer
+- `klasse`: „Übernommener Beleg ohne genannte Quelle"
+
+**F-10 — Begründungszelle der §3-Tabelle nennt den falschen Gegenstand.**
+- `kategorie`: LOW
+- `quelle`: Maintainability · Modul 5 §Ziel-Form: Slice (Plan-Tabelle als
+  Vorhabens-Beschreibung)
+- `pfad`: `docs/plan/planning/in-progress/slice-066-spaltenausschluss-sql-funktionen.md:162`
+- `befund`: Die neue §3-Zeile führt `internal/domain/errors/errors.go` mit
+  der Begründung „Sentinel `ErrSourceColumnMissing`". Dieser Sentinel liegt
+  laut derselben Tabelle in `internal/application/port/inbound/verwaltung.go`
+  (dort korrekt geführt); in `errors.go` hat dieser Diff ausschließlich den
+  Kommentar des bestehenden `ErrInvalidAdministrationRequestKind` auf die
+  vierwertige Menge nachgezogen.
+- `verifizierbar`: ja — `git show 82ce83e -- internal/domain/errors/errors.go`
+- `klasse`: „Plan-Tabellen-Begründung nennt einen Gegenstand, den die Datei nicht trägt"
+
+### Eigene Sensor-Läufe dieser Prüfung
+
+| Lauf | Exit | Bemerkung |
+|---|---|---|
+| fokussierter Testlauf (`go test -run TestNewAdministrationRequest\|TestIncludeColumnPropagatesPortError`, netzlos, gepinntes Toolchain-Image) | **0** | drei Subtests + ein Test `PASS` |
+| Coverage-Messung `./internal/domain/model/` | **0** | `NewAdministrationRequest` 100.0 % (Paket 94.5 %) |
+| `make gates` | **0** | d-check, commit-traceability, a-check, coverage-gate grün |
+| `make test` | **0** | vollständige Suite, alle Pakete `ok` |
+| `make test-store` | **0** | `internal/bootstrap` 0.743s, Rollout + alle realen PostgreSQL-Tests grün |
+
+### Stand nach der Fixrunde
+
+**0 HIGH · 0 MEDIUM · 2 LOW (F-9, F-10) · 3 INFO (F-6/F-8 behoben, F-7
+begründet stehen gelassen).** F-1, F-2, F-3, F-4, F-5, F-6 und F-8 sind
+behoben; F-7 bleibt als begründeter INFO-Eintrag. **Keine weitere Fixrunde
+am Implementer:** F-9 und F-10 sind zwei Ein-Satz-Nachträge **im
+Plan-Dokument** und gehen als Closure-Nachzug an den Planner — das
+Übergabe-Artefakt ist dieser Report; sie sind ohne Reviewer→Implementer-Pfeil
+weitergereicht. Damit greift `.harness/skills/reviewer.md`
+§DoD-Checkbox-Nachzug ohne Fixrunde: Die DoD-Zeile „Review durchgeführt,
+Report unter `docs/reviews/` liegt vor" ist im selben Commit wie dieser
+Vermerk auf `[x]` gezogen. Verifikation gegen DoD/Spec bleibt Aufgabe des
+Verifiers.
