@@ -107,6 +107,15 @@ services:
       CDC_HTTP_ADDR: ":8090"
       CDC_API_TOKEN_READER: e2e-reader-token
       CDC_API_TOKEN_ADMIN: e2e-admin-token
+      # Optionaler gRPC-Streaming-Driving-Adapter (ADR-0060, LH-FA-SST-008):
+      # gesetzt in dieser Compose-Umgebung, damit der reale gRPC-Stream-Rundlauf
+      # (tools/harness/run-integration-tests.sh, tools/harness/grpcclient)
+      # gegen einen tatsächlich horchenden Server läuft. Dieselbe
+      # Doppelpunkt-Form wie der HTTP-Adapter — der Toolchain-Container
+      # erreicht den Feed-Container über denselben Netzwerk-Alias. Die
+      # Authentifizierung trägt dieselben zwei Token-Klassen wie der
+      # HTTP-Adapter (CDC_API_TOKEN_READER/CDC_API_TOKEN_ADMIN).
+      CDC_GRPC_ADDR: ":9090"
     depends_on:
       postgres:
         condition: service_healthy

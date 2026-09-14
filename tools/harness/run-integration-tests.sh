@@ -1754,6 +1754,142 @@ fi
 
 echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
 
+# gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060): ein Wegwerf-Client
+# (tools/harness/grpcclient, per `go run` im Toolchain-Container) verbindet
+# sich real über gRPC mit dem laufenden Feed-Container, öffnet den
+# Server-Stream und empfängt eine danach committete Änderung mit
+# vollständigem Inhalt; abschließend belegt derselbe Prozess, dass ein
+# Stream-Öffnungsversuch ohne gültiges Token über gRPC-Status
+# `Unauthenticated` abgelehnt wird. Ein echter Netzwerk-Request über den
+# Compose-Netz-Alias `pg-change-feed:9090` (CDC_GRPC_ADDR im
+# Container-Vertrag), kein `docker exec` und kein Mock; der Client trägt
+# dieselbe `reader`-Token-Klasse wie der HTTP-Adapter (CDC_API_TOKEN_READER).
+# `feed_e2e_full` bleibt über den ganzen Lauf aktiviert (siehe
+# Lasttest-Beleg oben); die IDs 260ff. liegen in einem eigenen Wertebereich.
+# Läuft vor dem Upgrade-Sicherheits-Container-Tausch (der den Feed-Container
+# ersetzt) und vor der Container-Ende-Grenze der beiden
+# Schema-Negative-Testfunktionen unten.
+GRPC_CLIENT_CONTAINER=cdc-e2e-grpcclient
+GRPC_STREAM_TABLE=feed_e2e_full
+GRPC_STREAM_SENTINEL=GrpcStreamE2ESentinel
+GRPC_ADDR="pg-change-feed:9090"
+
+docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$GRPC_CLIENT_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/grpcclient "$GRPC_ADDR" "$HTTP_TOKEN_READER" >/dev/null
+
+grpc_client_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    grpc_client_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$grpc_client_ready" -ne 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$GRPC_CLIENT_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+# Die Zustellung ist Fire-and-Forget ohne Replay (ADR-0066): zwischen
+# „Client hat den Stream geöffnet" und „Server hat den Empfänger am
+# Broadcaster registriert" liegt ein kurzes Fenster, in dem eine committete
+# Änderung für diesen Empfänger verworfen wird. Der Rundlauf committet
+# deshalb eine begrenzte Folge eindeutiger Zeilen, bis der Client genau eine
+# davon real empfangen hat.
+grpc_received=0
+for grpc_attempt in $(seq 1 5); do
+  grpc_id=$((260 + grpc_attempt))
+  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$GRPC_STREAM_TABLE (id, name) VALUES ($grpc_id, '$GRPC_STREAM_SENTINEL');
+SQL
+  for _ in $(seq 1 20); do
+    if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+      grpc_received=1
+      break
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$grpc_received" -eq 1 ]; then
+    break
+  fi
+done
+
+# Der Client führt nach dem Empfang im selben Prozess noch die
+# Negative-Prüfung aus (Stream-Öffnungsversuch ohne Token); auf deren
+# Ergebnis und auf das Prozessende wird separat gewartet, damit die
+# ausgewerteten Zeilen unten aus einem abgeschlossenen Lauf stammen.
+grpc_rejected=0
+for _ in $(seq 1 40); do
+  if docker logs "$GRPC_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED code=Unauthenticated"; then
+    grpc_rejected=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 0.5
+done
+
+grpc_client_stopped=0
+for _ in $(seq 1 20); do
+  if [ "$(docker inspect --format '{{.State.Running}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    grpc_client_stopped=1
+    break
+  fi
+  sleep 0.5
+done
+grpc_client_exit=$(docker inspect --format '{{.State.ExitCode}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo unbekannt)
+grpc_client_output=$(docker logs "$GRPC_CLIENT_CONTAINER" 2>&1 || true)
+docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+
+if [ "$grpc_received" -ne 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — Test-Client empfing keine der committeten Änderungen ($GRPC_STREAM_TABLE, $GRPC_STREAM_SENTINEL) über den Stream: $grpc_client_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$grpc_client_output" | grep -qE "RECEIVED .*table=$GRPC_STREAM_TABLE .*operation=INSERT .*new_image=.*$GRPC_STREAM_SENTINEL"; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — die RECEIVED-Zeile trägt nicht die erwartete Änderung ($GRPC_STREAM_TABLE, INSERT, vollständiger Inhalt): $grpc_client_output" >&2
+  exit 1
+fi
+if [ "$grpc_rejected" -ne 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — Stream-Öffnungsversuch ohne gültiges Token wurde nicht mit Unauthenticated abgelehnt: $grpc_client_output" >&2
+  exit 1
+fi
+if [ "$grpc_client_stopped" -ne 1 ] || [ "$grpc_client_exit" != "0" ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — Test-Client endete nicht mit Ausgang 0 (gestoppt: $grpc_client_stopped, Ausgang: $grpc_client_exit): $grpc_client_output" >&2
+  exit 1
+fi
+
+# Unabhängiger SQL-Beleg, dass die empfangene Änderung real erfasst wurde:
+# die Sentinell-Zeile steht über den bestehenden Lesezugriffsweg in
+# cdc.changes — der Stream-Empfang ist damit keine erfundene Ausgabe des
+# Clients.
+grpc_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$GRPC_STREAM_TABLE' AND new_data->>'name' = '$GRPC_STREAM_SENTINEL'")
+if [ -z "$grpc_captured" ] || [ "$grpc_captured" -lt 1 ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — die über den Stream empfangene Änderung ($GRPC_STREAM_SENTINEL) ist nicht real über cdc.changes lesbar (count=${grpc_captured:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem gRPC-Stream-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung mit vollständigem Inhalt (real in cdc.changes lesbar); ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
+
 # Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
 # ADR-0058 Entscheidung 3): bildet den Mechanismus eines
 # Anwendungs-Upgrades nach — ein realer Container-Tausch über
