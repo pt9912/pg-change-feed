@@ -1757,8 +1757,12 @@ echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt 
 # gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060): ein Wegwerf-Client
 # (tools/harness/grpcclient, per `go run` im Toolchain-Container) verbindet
 # sich real über gRPC mit dem laufenden Feed-Container, öffnet den
-# Server-Stream und empfängt eine danach committete Änderung mit
-# vollständigem Inhalt; abschließend belegt derselbe Prozess, dass ein
+# Server-Stream und empfängt eine danach committete Änderung. Geprüft wird
+# die RECEIVED-Zeile über Tabelle, Operation und den Wert der Spalte `name`
+# im Stream-Image und ihre `change_id` gegen den Lesezugriffsweg
+# `cdc.changes`; die Feldvollständigkeit des Nachrichtenschemas trägt
+# `internal/adapters/driving/grpc/server_test.go` auf Unit-Ebene.
+# Abschließend belegt derselbe Prozess, dass ein
 # Stream-Öffnungsversuch ohne gültiges Token über gRPC-Status
 # `Unauthenticated` abgelehnt wird. Ein echter Netzwerk-Request über den
 # Compose-Netz-Alias `pg-change-feed:9090` (CDC_GRPC_ADDR im
@@ -1871,14 +1875,19 @@ if [ "$grpc_client_stopped" -ne 1 ] || [ "$grpc_client_exit" != "0" ]; then
   exit 1
 fi
 
-# Unabhängiger SQL-Beleg, dass die empfangene Änderung real erfasst wurde:
-# die Sentinell-Zeile steht über den bestehenden Lesezugriffsweg in
-# cdc.changes — der Stream-Empfang ist damit keine erfundene Ausgabe des
-# Clients.
+# Unabhängiger SQL-Beleg, dass genau die empfangene Änderung real erfasst
+# wurde: die change_id der RECEIVED-Zeile steht über den bestehenden
+# Lesezugriffsweg in cdc.changes — der Stream-Empfang ist damit keine
+# erfundene Ausgabe des Clients.
+grpc_change_id=$(printf '%s' "$grpc_client_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$grpc_change_id" ]; then
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — die RECEIVED-Zeile trägt keine change_id: $grpc_client_output" >&2
+  exit 1
+fi
 grpc_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$GRPC_STREAM_TABLE' AND new_data->>'name' = '$GRPC_STREAM_SENTINEL'")
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$grpc_change_id' AND table_name = '$GRPC_STREAM_TABLE' AND new_data->>'name' = '$GRPC_STREAM_SENTINEL'")
 if [ -z "$grpc_captured" ] || [ "$grpc_captured" -lt 1 ]; then
-  echo "run-integration-tests: gRPC-Stream-Rundlauf — die über den Stream empfangene Änderung ($GRPC_STREAM_SENTINEL) ist nicht real über cdc.changes lesbar (count=${grpc_captured:-leer})" >&2
+  echo "run-integration-tests: gRPC-Stream-Rundlauf — die über den Stream empfangene Änderung (change_id=$grpc_change_id, $GRPC_STREAM_SENTINEL) ist nicht real über cdc.changes lesbar (count=${grpc_captured:-leer})" >&2
   exit 1
 fi
 
@@ -1888,7 +1897,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung mit vollständigem Inhalt (real in cdc.changes lesbar); ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
+echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
 # Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
 # ADR-0058 Entscheidung 3): bildet den Mechanismus eines

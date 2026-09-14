@@ -12,7 +12,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
 **Berührte Spec-Stellen:** — (Beispiel-Client und E2E-Rundlauf validieren
 gegen das in `slice-069` festgelegte
-[SPEC-019](../../../../spec/pflichtenheft.md), ändern keinen Spec-Inhalt).
+[SPEC-020](../../../../spec/pflichtenheft.md), ändern keinen Spec-Inhalt).
 
 **Verantwortlich:** pt9912.
 
@@ -104,22 +104,24 @@ Aussagen-Berührung steht hier gar nicht.
 | `compose.yaml` | update | Port-Exposition `CDC_GRPC_ADDR` |
 | `tools/harness/run-integration-tests.sh` | update | Rundlauf-Erweiterung: gRPC-Stream-Client verbindet, empfängt Change, negativer Token-Test |
 | `harness/README.md` | update | `make test-integration`-Sensor-Zeile um gRPC-Rundlauf-Satz ergänzt |
-| `.a-check.yml` | update | `composition_root` um `tools/**` erweitert (Plan-Nachzug nach rotem `make a-check`: der Wegwerf-Client ist ein testseitiger Adapter-Konsument, analog `test/integration/**`) |
+| `.a-check.yml` | update | Plan-Nachzug nach rotem `make a-check`: neue Gate-Scope-Gruppe `tooling: ["tools/harness/**"]` samt genau einer Kante `{from: tooling, to: adapters}` — der Wegwerf-Client importiert den erzeugten Protokoll-Stub (`internal/adapters/driving/grpc/streamv1`), sonst nichts ([`ADR-0068`](../../adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)) |
 
 **Implementer-Entscheidungen und -Abweichungen (Plan-Nachzug im selben Lauf):**
 
 - **`.a-check.yml` — Plan-Defekt-Rücksprungkante (Modul 9).** Der erste
   `make a-check`-Lauf färbte rot (`wrong-direction: (ohne Schicht) ->
   adapters`): der Wegwerf-Client unter `tools/harness/grpcclient/` importiert
-  den erzeugten gRPC-Stub `internal/adapters/driving/grpc/streamv1`, und
-  `tools/**` lag in keiner Schicht. Der Beleg braucht diesen Stub, um über
-  gRPC sprechen zu können; ihn zu vermeiden hieße, die Protobuf-Form
-  handzurollen. `composition_root` trägt bereits denselben testseitigen
-  Verdrahtungs-Konsumenten (`test/integration/**`); `tools/**` steht dort in
-  derselben Rolle. Die Erweiterung ist eine Änderung am deklarativen Stand
-  der `.a-check.yml` und berührt keinen Schichten-Edge —
-  [`ADR-0041`](../../adr/0041-a-check-maschinenform-architekturpruefung.md)
-  §Entscheidung führt `composition_root` als Teil genau dieses Standes.
+  den erzeugten Protokoll-Stub `internal/adapters/driving/grpc/streamv1`, und
+  `tools/harness/**` lag in keiner Schicht. Der Beleg braucht diesen Stub, um
+  über gRPC sprechen zu können; ihn zu vermeiden hieße, die Protobuf-Form
+  handzurollen. Träger ist die neue Gate-Scope-Gruppe
+  `tooling: ["tools/harness/**"]` mit genau einer Kante
+  `{from: tooling, to: adapters}` ([`ADR-0068`](../../adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)):
+  die Import-Berechtigung ist auf `adapters` begrenzt, ein Import aus `app`,
+  `ports` oder `domain` in `tools/harness/**` bleibt `wrong-direction`. Die
+  Aufnahme eines Pfad-Bereichs, den `spec/architecture.md` §2 nicht als
+  Komponente führt, mit einer Import-Berechtigung ist eine Erweiterung der
+  Architekturregel und deshalb ADR-pflichtig (`AGENTS.md` §3.6).
 - **Bereitschaft und Fire-and-Forget-Rennen.** Der Client meldet `READY`
   direkt nach dem Aufbau der Streaming-Verbindung; die Registrierung des
   Empfängers am `Broadcaster` läuft serverseitig asynchron dazu. Zwischen
@@ -140,9 +142,9 @@ Aussagen-Berührung steht hier gar nicht.
   `internal/adapters/driving/`) trifft diesen Diff nicht: der gRPC-Adapter
   und `CDC_GRPC_ADDR` entstanden in `slice-069`, dieser Slice setzt die
   Variable nur im E2E-Compose-Vertrag und belegt sie. `docs/user/benutzerhandbuch.md`
-  bleibt deshalb unberührt; die Operator-Dokumentation des Streamings reist
-  mit der Operator-Erreichbarkeit (`slice-072`), wie `slice-069` §3 sie
-  bereits adressiert hat.
+  bleibt deshalb unberührt; die Operator-Dokumentation des Streamings holt
+  `slice-077` (Handbuch auf den aktuellen Betreiber-Stand) nach — er führt
+  `CDC_GRPC_ADDR` in §5 („Umgebungsvariablen des Feed-Containers").
 
 ## 4. Trigger
 
