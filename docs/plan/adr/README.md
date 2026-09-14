@@ -30,7 +30,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0017 | Generische Change-Tabelle | Accepted | 2026-09-09 | [0017-generische-change-tabelle.md](0017-generische-change-tabelle.md) |
 | ADR-0018 | SQL als Driving Adapter (→ ADR-0046) | Superseded | 2026-09-09 | [0018-sql-driving-adapter.md](0018-sql-driving-adapter.md) |
 | ADR-0019 | CLI als Driving Adapter | Accepted | 2026-09-09 | [0019-cli-driving-adapter.md](0019-cli-driving-adapter.md) |
-| ADR-0020 | HTTP/gRPC optional | Accepted | 2026-09-09 | [0020-http-grpc-optional.md](0020-http-grpc-optional.md) |
+| ADR-0020 | HTTP/gRPC optional (→ ADR-0057) | Superseded | 2026-09-09 | [0020-http-grpc-optional.md](0020-http-grpc-optional.md) |
 | ADR-0021 | Large Transaction Buffer | Proposed | 2026-09-09 | [0021-large-transaction-buffer.md](0021-large-transaction-buffer.md) |
 | ADR-0022 | Filesystem Spool als Driven Adapter | Proposed | 2026-09-09 | [0022-filesystem-spool-driven-adapter.md](0022-filesystem-spool-driven-adapter.md) |
 | ADR-0023 | Fehlerklassifikation | Accepted | 2026-09-09 | [0023-fehlerklassifikation.md](0023-fehlerklassifikation.md) |
@@ -67,3 +67,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0054 | Coverage-Gate mit Eskalationsklausel und Performance-Benchmark-Infrastruktur | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
 | ADR-0055 | NATS-Change-Notification als Wecksignal (→ ADR-0056, teilweise) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
 | ADR-0056 | NATS-Wecksignal — tabellen-granulares Subjekt | Accepted | 2026-09-13 | [0056-nats-tabellen-granulares-subjekt.md](0056-nats-tabellen-granulares-subjekt.md) |
+| ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
