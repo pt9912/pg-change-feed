@@ -68,9 +68,11 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       zum bestehenden `docker exec`-Rundlauf für CLI-Fähigkeiten.
 - [x] `make test-integration` grün mit dem neuen HTTP-Rundlauf.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-061.md` (0 HIGH, 0 MEDIUM, 0 LOW,
+      1 INFO; keine Fixrunde nötig).
 - [x] Doku-Update: `harness/README.md` §Sensors — `make test-integration`s
       Tabellenzeile um den neuen HTTP-Rundlauf-Satz ergänzt (analog zu den
       bisherigen Ergänzungen je Slice).
