@@ -56,22 +56,22 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `tools/harness/httpclient/` liefert ein lauffähiges Wegwerf-Werkzeug,
+- [x] `tools/harness/httpclient/` liefert ein lauffähiges Wegwerf-Werkzeug,
       das mindestens einen `admin`-Endpunkt (z. B. `RegisterConsumer`) und
       mindestens einen `reader`-Endpunkt (z. B. `GetStatus` oder
       `ListTables`) real per HTTP aufruft.
-- [ ] `compose.yaml` exponiert `CDC_HTTP_ADDR` als Port am Feed-Container,
+- [x] `compose.yaml` exponiert `CDC_HTTP_ADDR` als Port am Feed-Container,
       analog zum bestehenden `CDC_*`-Umgebungsvariablen-Schema.
-- [ ] `tools/harness/run-integration-tests.sh` fährt einen echten
+- [x] `tools/harness/run-integration-tests.sh` fährt einen echten
       HTTP-Rundlauf gegen den laufenden Feed-Container über mindestens eine
       Fähigkeit je Token-Klasse — realer Erfolgsbeleg (kein Mock), analog
       zum bestehenden `docker exec`-Rundlauf für CLI-Fähigkeiten.
-- [ ] `make test-integration` grün mit dem neuen HTTP-Rundlauf.
-- [ ] `make gates` grün.
+- [x] `make test-integration` grün mit dem neuen HTTP-Rundlauf.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors — `make test-integration`s
+- [x] Doku-Update: `harness/README.md` §Sensors — `make test-integration`s
       Tabellenzeile um den neuen HTTP-Rundlauf-Satz ergänzt (analog zu den
       bisherigen Ergänzungen je Slice).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -97,6 +97,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 | `compose.yaml` | update | Port-Exposition für `CDC_HTTP_ADDR` |
 | `tools/harness/run-integration-tests.sh` | update | echter HTTP-Rundlauf je Token-Klasse |
 | `harness/README.md` | update | Sensors-Tabellenzeile `make test-integration` ergänzt |
+| `internal/bootstrap/wiring.go` | update (Abweichung vom Plan, siehe unten) | HTTP-`Config` wurde bislang nur mit `RegisterConsumer` befüllt (`slice-059`); die übrigen acht in `slice-060` gebauten Handler liefen am realen Feed-Container mangels Verdrahtung ins Leere (`nil`-Use-Case). Ohne Nachtrag ist kein `reader`-Endpunkt real aufrufbar — DoD-Punkt 3 wäre strukturell unerfüllbar. Reine Verdrahtungs-Vervollständigung mit bereits bestehenden Konstruktoren/Instanzen (`activation`, `enableTables`, `disableTables`, `retentionUseCase`), keine neue Fähigkeit, kein Fehler-Mapping geändert. |
 
 ## 4. Trigger
 
