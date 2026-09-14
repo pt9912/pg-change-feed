@@ -45,9 +45,9 @@ bereits vollständig; diese Welle setzt sie in drei Slices um.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-059 | HTTP-API-Adapter-Grundgerüst, Token-Middleware, `RegisterConsumer` | [LH-FA-SST-006](../../../spec/lastenheft.md), [LH-FA-CON-001](../../../spec/lastenheft.md) |
-| slice-060 | HTTP-API — restliche Port-gedeckte Fähigkeiten | [LH-FA-SST-006](../../../spec/lastenheft.md), `LH-FA-CON-*`, `LH-FA-CFG-*`, `LH-FA-RET-*` |
-| slice-061 | HTTP-API — Beispiel-Client und E2E-Rundlauf | [LH-FA-SST-006](../../../spec/lastenheft.md) |
+| slice-059 | HTTP-API-Adapter-Grundgerüst, Token-Middleware, `RegisterConsumer` | [LH-FA-SST-006](../../../../spec/lastenheft.md), [LH-FA-CON-001](../../../../spec/lastenheft.md) |
+| slice-060 | HTTP-API — restliche Port-gedeckte Fähigkeiten | [LH-FA-SST-006](../../../../spec/lastenheft.md), `LH-FA-CON-*`, `LH-FA-CFG-*`, `LH-FA-RET-*` |
+| slice-061 | HTTP-API — Beispiel-Client und E2E-Rundlauf | [LH-FA-SST-006](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
