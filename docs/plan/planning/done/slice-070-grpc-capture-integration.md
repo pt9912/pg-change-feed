@@ -283,11 +283,6 @@ Backticks).
   statt gezählt: die Klasse „Fitness-Function-Zeile widerspricht der eigenen
   Entscheidung derselben ADR" ist als eigener Registereintrag notiert
   (Beleg `evidence/slice-070.md`), nicht als Verkörperung gezählt.
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
 - **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
   `BEO-PGC/fitness-function-gegen-eigene-entscheidung/` angelegt, Beleg
   `evidence/slice-070.md` (1×).
