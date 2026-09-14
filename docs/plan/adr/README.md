@@ -70,9 +70,10 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
 | ADR-0058 | Testansatz für fünf Lastenheft-Kennungen ohne Testbeleg (→ ADR-0063/0064) | Accepted | 2026-09-14 | [0058-testansatz-fuenf-luecken.md](0058-testansatz-fuenf-luecken.md) |
 | ADR-0059 | Spaltenauswahl — Mechanismus, Granularität und Wirkort (→ ADR-0065, teilweise) | Accepted | 2026-09-14 | [0059-spaltenauswahl-mechanismus.md](0059-spaltenauswahl-mechanismus.md) |
-| ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
+| ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung (→ ADR-0066, teilweise) | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
 | ADR-0061 | HTTP/SSE zusätzlich zu gRPC für Live-Change-Zustellung | Accepted | 2026-09-14 | [0061-http-sse-zusaetzlich-zu-grpc.md](0061-http-sse-zusaetzlich-zu-grpc.md) |
 | ADR-0062 | Lokaler commit-msg-Hook (Supersedes ADR-0045, teilweise) | Accepted | 2026-09-14 | [0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md](0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md) |
 | ADR-0063 | Testform-Korrektur „Entfernte Spalten“ (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0063-lh-fa-sch-003-testform-korrektur.md](0063-lh-fa-sch-003-testform-korrektur.md) |
 | ADR-0064 | `LH-QA-OPS-005`-Testansatz-Korrektur (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0064-lh-qa-ops-005-testansatz-korrektur.md](0064-lh-qa-ops-005-testansatz-korrektur.md) |
 | ADR-0065 | Spaltenausschluss — dauerhafter Träger (Supersedes ADR-0059, teilweise) | Accepted | 2026-09-14 | [0065-spaltenausschluss-dauerhafter-traeger.md](0065-spaltenausschluss-dauerhafter-traeger.md) |
+| ADR-0066 | Broadcaster — begrenzte Empfangswarteschlange (Supersedes ADR-0060, teilweise) | Accepted | 2026-09-14 | [0066-broadcaster-begrenzte-empfangswarteschlange.md](0066-broadcaster-begrenzte-empfangswarteschlange.md) |
