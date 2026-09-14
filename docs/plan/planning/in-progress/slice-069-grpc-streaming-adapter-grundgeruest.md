@@ -123,9 +123,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Folgepflicht aus
       [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Report: `docs/reviews/review-slice-069.md`, Verdikt 0 HIGH, 2 MEDIUM /
+      2 LOW / 4 INFO, F-1…F-5 in der Fixrunde behoben, damit ohne weitere
+      Fixrunde geschlossen (Nachzug nach `.harness/skills/reviewer.md`
+      §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update `harness/README.md` §Sensors/Werkzeuge und `AGENTS.md`
       §4, falls ein neues `make`-Ziel für die Protobuf-/buf-Codegenerierung
       entsteht.

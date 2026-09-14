@@ -438,3 +438,199 @@ dieser Diff, dieser Skill, dieses Modell, dieses Verdikt) — er wird über Läu
 hinweg nicht wieder gelesen. Der Report ersetzt keine Verifikation — DoD-/Spec-
 Konformität prüft der Verifier separat (Baseline-Regelwerk `v6.5.0` ·
 `regelwerk/modul-11-*.md`; anderes Prüf-Artefakt, anderer Eingabe-Kontext).
+
+---
+
+## Fixrunde (2. Lauf) — 2026-09-14
+
+**Gegenstand:** die zwei Fix-Commits `0867835` (Broadcaster nicht-blockierend
+mit begrenzter Empfangswarteschlange) und `2f6882c` (`SPEC-020`-Präzisierung),
+beide real gelesen, nicht aus den Commit-Messages übernommen. Zusätzliche
+Prüfgrundlage dieses Laufs:
+[`ADR-0066`](../plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+(`Supersedes` [`ADR-0060`](../plan/adr/0060-grpc-streaming-mechanismus.md)
+**nur** die Puffer-Klausel; Index-Vermerk in `docs/plan/adr/README.md`,
+`ADR-0060`s Textkörper unangetastet — das Muster von
+`ADR-0059`/`ADR-0065` ist eingehalten) und das Architect-Verdikt
+[`architect-verdict-publish-blockiert-capture-pfad.md`](architect-verdict-publish-blockiert-capture-pfad.md).
+Alle fünf umsetzbaren Findings (F-1…F-5) sind damit über den
+Rollenweg Reviewer → Architect → Implementer zurückgekommen; die zwei
+INFO-Befunde F-6/F-7 bleiben begründet liegen (unten).
+
+**Eigene Sensor-Läufe** (Exit-Code je eigener Schritt, ungepiped, mechanisch
+konditioniert):
+
+| Lauf | Exit | Bemerkung |
+|---|---|---|
+| `make test` (Stand nach der Fixrunde) | **0** | 28 Pakete `ok`, kein `FAIL` |
+| `make test` + Mutation A (Sende-Zweig blockierend) | **2** | rot genau an der Kernzusage — `TestNichtLesenderAbonnentHaeltPublishNichtAn` und `TestWarteschlangeVerwirftUeberlaufOhneAndereZuStauen`, je `2.00s`-Frist |
+| `make test` + Mutation C (nur der Leer-Token-Frühausstieg entfernt) | **0** | grün — das ist Befund F-10 |
+| `make test` + Mutation B (Frühausstieg **und** beide `!= ""`-Wächter entfernt) | **2** | rot in **beiden** Hälften des F-2-Tests: `TestClassifyTokenLeereKonfigurationTrifftKeinToken` (`interceptor_test.go:17`) und `TestStreamChangesLeereTokenKonfigurationEndetMitUnauthenticated` am realen Adapter |
+| `make test` (nach Rücknahme aller Mutationen) | **0** | Arbeitsbaum leer |
+| `make gates` (nach Rücknahme) | **0** | baseline-verify, docs-check, commit-traceability, a-check, coverage-gate |
+
+**Rücknahme und Blatt-Identität (Mutation A und B):** nach `git checkout --`
+stimmt `git hash-object` beider Dateien mit `git rev-parse HEAD:<pfad>` überein
+(`broadcaster.go` `36672aa9…`, `interceptor.go` `49f98fee…`),
+`git status --porcelain` ist leer, kein Rest im Baum.
+
+### Verdikt je Finding
+
+| Finding | Verdikt | Beleg |
+|---|---|---|
+| F-1 (MEDIUM) | **behoben** | `spec/pflichtenheft.md:356-357`, `changestream.go:31-45` |
+| F-2 (MEDIUM) | **behoben** | `interceptor_test.go:15-38`, `server_test.go:49-64` |
+| F-3 (LOW) | **behoben** | `interceptor.go:44-50`, `http/middleware.go:26-32` |
+| F-4 (LOW) | **behoben** | `spec/pflichtenheft.md:354` |
+| F-5 (INFO) | **behoben** | `broadcaster.go:56-65`, `broadcaster_test.go:167-190` |
+| F-6 (INFO) | **Begründung geteilt** — Klasse bleibt offen, gehört ins Register | unten |
+| F-7 (INFO) | **Begründung geteilt** — Klasse bleibt offen, gehört ins Register | unten |
+
+**F-1 — behoben.** Die zwei Zeilen
+(`spec/pflichtenheft.md:356-357`) und der Port-Godoc (`changestream.go:31-45`)
+tragen jetzt beide Hälften und decken sich mit dem Code: nicht-blockierend
+(`broadcaster.go:110-115`, `select` mit `default`), begrenzte
+Empfangs-Warteschlange je Abonnent (`queueCapacity = 64`, `:36`, `:67`),
+Drop-Newest (der **eintreffende** Change fällt weg, die eingereihten bleiben in
+Reihenfolge — der Test `TestWarteschlangeVerwirftUeberlaufOhneAndereZuStauen`
+prüft beides), keine Zustellgarantie (Abmeldung verwirft die Warteschlange,
+kein Replay, keine Subskriptions-übergreifende Position). **Die
+*Erzeuger-Blockade*-Zeile ist nach der Ergänzung korrekt:** `Publish` hat genau
+zwei Fehlerausgänge — `ErrChangeStream` beim fehlenden Change (`:97-99`) und
+den rohen Kontext-Fehler beim bereits beendeten `ctx` (`:100-102`); die Zeile
+nennt beide und die Einordnung des zweiten als *ungültiger Aufruf* trifft den
+Code, weil der Aufruf vor jeder Verteilung abbricht. Der Wortlaut des Verdikts
+wurde dabei überholt — der Implementer hat den Kontext-Ausgang ergänzt, den
+Frage 3 des Verdikts noch offen ließ; `2f6882c` zieht die Zeile nach, statt die
+Lücke zu lassen.
+
+**F-2 — behoben.** `interceptor_test.go:15-22` übt die reine Funktion, `:29-38`
+zusätzlich den **realen** `bufconn`-Adapter mit leerer Token-Konfiguration
+(`startTestServerMitTokenKonfiguration(t, newFakeSubscriber(), "", "")`,
+`server_test.go:56-64`) über drei Metadata-Formen (fehlend, `Bearer ` mit leerem
+Rest, `Bearer beliebig`) — alle drei enden mit `Unauthenticated`. Die
+Sensitivität ist nicht behauptet, sondern belegt: Mutation B färbt genau diesen
+Test rot (Tabelle oben).
+
+**F-3 — behoben.** Beide Fassungen tragen denselben Gegenverweis
+(`interceptor.go:45-50`, `middleware.go:27-32`) samt der tragenden Begründung
+(„Das `.a-check.yml`-Schichtenmodell führt keine `adapters→adapters`-Kante")
+und der Kopplungs-Anweisung („beide Fassungen sind zusammen zu ändern"). **Die
+Begründung trägt:** `.a-check.yml` führt die Kanten `adapters→ports` und
+`adapters→domain` und ist im Diff unberührt; ein gemeinsamer Ort außerhalb der
+Adapter-Schichten existiert nicht. Der HTTP-Kommentar hat dabei seinen
+`slice-059`-Verweis gegen die Invariante getauscht — kein Chronik-Verlust, der
+Vorgang steht in `git` und im Register.
+
+**F-4 — behoben.** `spec/pflichtenheft.md:354` nennt jetzt den Domain-Typ
+(`model.Change`, `OldImage`/`NewImage`) und die Datei — die zitierte Stelle
+trägt den Satz.
+
+**F-5 — behoben.** Der Godoc (`broadcaster.go:56-65`) sagt jetzt, was gilt
+(„Nach der Abmeldung werden dem Aufrufer keine weiteren Changes zugestellt; er
+liest den gelieferten Kanal nicht weiter") und nennt den Grund des
+Nicht-Schließens ausdrücklich („ein Schließen träfe einen gleichzeitig
+laufenden Sende-Versuch in `Publish` und panikte, `select` schützt davor
+nicht"); `TestAbmeldenIstIdempotent` (`:167-190`) liest den Kanal nach `cancel`
+nicht mehr und prüft stattdessen den entfernten Empfänger. Godoc und Test sind
+deckungsgleich — der Widerspruch ist weg, nicht umformuliert.
+
+**F-6 — Begründung geteilt, Klasse bleibt offen.** Kein Sync-Gate für
+`.proto`↔`.pb.go` ist die richtige Entscheidung **jetzt**: ein solches Gate
+kostete in jedem `make gates`-Lauf einen Codegen-Durchlauf (Docker-Build +
+`protoc`), und das Repo führt dieselbe Klasse bereits ohne Sensor
+(`tools/schema/plan.yaml`/`down.sql`). Der richtige Moment ist der Eintritt
+eines zweiten Konsumenten der Schnittstelle (`slice-070`/`slice-071`) — bis
+dahin ist die Lücke zulässig, aber **nicht verschwiegen**: die Klasse
+„committetes Generator-Erzeugnis ohne Sync-Sensor" gehört bei der
+Slice-Closure in §7 und von dort ins Register, damit sie nicht als erledigt
+gilt.
+
+**F-7 — Begründung geteilt, Klasse bleibt offen.** Die Messdefinition zu
+ändern (generierten Code aus `-coverpkg` nehmen) wäre selbst eine
+Schwellen-/Sensor-Entscheidung und gehört nicht in einen Fixlauf; das
+`coverage-gate` ist bootstrap-aware (`ADR-0054`) und misst als Gesamtzahl, die
+Generat-Coverage trägt derzeit rund um die Schwelle keinen Ausschlag
+(48,30 % ≥ 35 %). Scharf wird die Frage erst an der Endstufe, weil
+Generator-Erzeugnisse die Gesamtzahl strukturell drücken, ohne testbar zu sein —
+der Träger dafür ist die Reifestufen-Linie (`slice-076` in `next/`). Auch hier:
+Klasse bei der Closure in §7 ins Register, nicht still schließen.
+
+### Neue Findings dieses Laufs
+
+### F-9 — `SPEC-020` nennt die Verwerfungsrichtung nicht
+
+- `kategorie`: INFO
+- `quelle`: [`ADR-0066`](../plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  Festlegung 3 („Explizite Verwerfungsregel: Drop-Newest … bereits eingereihte
+  Changes werden nicht verdrängt") · Maintainability
+- `pfad`: `spec/pflichtenheft.md:356` gegen
+  `internal/adapters/driven/grpcstream/broadcaster.go:88-90` und
+  `internal/application/port/outbound/changestream.go:33-36`
+- `befund`: Die Zeile *Zustellgarantie* sagt „je Abonnent trägt der
+  `Broadcaster` eine begrenzte Empfangs-Warteschlange, deren Überlauf verworfen
+  wird" — die Richtung (der eintreffende Change fällt weg, der eingereihte
+  bleibt) nennt sie nicht, während Port-Godoc und Paket-Kommentar „Drop-Newest"
+  ausdrücklich führen und die ADR sie als eigene Festlegung führt. Der Wortlaut
+  stammt aus dem Architect-Verdikt (Frage 3), ist also nicht vom Implementer
+  abgewichen, sondern dort schon offen.
+- `verifizierbar`: nein — Prosa-Abgleich, kein Gate-Gegenstand
+- `klasse`: „Verwerfungsrichtung im Spec-Text nicht benannt"
+
+### F-10 — Die benannte Mutation „Leer-Token-Frühausstieg" färbt den Lauf nicht rot
+
+- `kategorie`: INFO
+- `quelle`: Maintainability (Mutations-Beleg als Nachweis der Test-Sensitivität)
+- `pfad`: `internal/adapters/driving/grpc/interceptor.go:51-59`
+- `befund`: Der Frühausstieg `if token == "" { return roleNone }` ist mit den
+  `!= ""`-Wächtern der beiden konfigurierten Klassen **doppelt** gedeckt: jede
+  Hälfte allein hält die Klasse „leeres konfiguriertes Token" ab — Entfernen
+  des Frühausstiegs allein lässt die Suite grün (selbst gestellt, Exit 0),
+  Entfernen **beider** Hälften färbt sie rot (selbst gestellt, Exit 2). Die
+  Verteidigung im Code ist damit nicht schmal, aber ein Beleg, der nur den
+  Frühausstieg entfernt, weist keine Sensitivität nach. Der *tragende* Fall ist
+  das Paar — und das ist belegt (F-2).
+- `verifizierbar`: ja — `make test` mit der jeweiligen Mutation; beide Läufe in
+  der Tabelle oben mit Exit-Code
+- `klasse`: „Mutations-Beleg greift die redundante Hälfte"
+
+## Summary (Fixrunde)
+
+| Kategorie | Anzahl |
+|---|---|
+| HIGH | 0 |
+| MEDIUM | 0 |
+| LOW | 0 |
+| INFO | 2 |
+
+**Finding-Klassen dieses Laufs:** Verwerfungsrichtung im Spec-Text nicht
+benannt · Mutations-Beleg greift die redundante Hälfte
+
+## Verdikt (Fixrunde)
+
+**Merge-blockierend:** nein — **keine Fixrunde mehr nötig.** F-1 bis F-5 sind
+behoben (Verdikt-Tabelle oben, jeder Punkt am Code/Test nachgeprüft, nicht an
+der Commit-Message), die beiden neuen Findings sind INFO ohne erwartete Aktion,
+F-6/F-7 bleiben begründet liegen. Die Kette läuft damit über
+Reviewer → Architect (Folge-ADR [`ADR-0066`](../plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
++ Verdikt) → Implementer (Fixrunde) → Reviewer und schließt hier; der nächste
+Rollenwechsel ist Reviewer → Verifier (DoD-/Spec-Konformität, Baseline-Regelwerk
+`v6.5.0` · `regelwerk/modul-11-*.md`).
+
+**Zur Kernzusage, unabhängig nachgestellt:** Der Test
+`TestNichtLesenderAbonnentHaeltPublishNichtAn` pulsiert `queueCapacity+1` Changes
+(`broadcaster_test.go:122`) und ist genau deshalb sensitiv — mit Mutation A
+(blockierender Send in einen **64er**-Puffer) fällt er nach der 65. Übergabe in
+die 2-Sekunden-Frist (`broadcaster_test.go:45`), rot an der zugesagten Stelle.
+Die Begründung des Implementers trifft zu: ein einzelner Change hätte auch in
+einen blockierenden Send in einen 64er-Puffer gepasst und den Test grün
+gelassen. Damit ist `ADR-0066` Festlegung 1 („Senke darf die Quelle nie
+aufhalten — strukturell, nicht per Schranke") testgetragen, nicht nur
+kommentiert.
+
+**DoD-Nachzug:** Mit diesem Verdikt ist die Rückkante geschlossen — die Zeile
+„Review durchgeführt, Report unter `docs/reviews/` liegt vor" in §2 des
+Slice-Plans ist in demselben Commit wie dieser Vermerk auf `[x]` gezogen
+(`.harness/skills/reviewer.md` §DoD-Checkbox-Nachzug ohne Fixrunde). Nur diese
+eine Zeile; Closure-Notiz, Beobachtungs-Register und die drei Paarungen bleiben
+offen (Planner-Arbeit).
