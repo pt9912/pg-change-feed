@@ -32,14 +32,17 @@ var ErrMissingTransaction = stderrors.New("Capture ohne Quelltransaktion")
 // CaptureService implementiert `inbound.CaptureInboundPort` und hält die
 // Persist-before-ACK-Ordnung an einer Stelle (`ADR-0027`):
 //
-//	Receive → Decode → Persist → COMMIT Store → ACK Source → Notify (best effort)
+//	Receive → Decode → Persist → COMMIT Store → ACK Source →
+//	Notify (best effort) → Stream-Publish (best effort)
 //
-// (`LH-QA-REL-001.a`, `ADR-0055` für den optionalen letzten Schritt,
-// `ADR-0056` für dessen tabellen-granulare Deduplizierung)
+// (`LH-QA-REL-001.a`, `ADR-0055` für das optionale Wecksignal,
+// `ADR-0056` für dessen tabellen-granulare Deduplizierung, `ADR-0060`
+// Teilfrage 2 für den optionalen Stream-Publish nach dem Wecksignal)
 type CaptureService struct {
 	store  outbound.ChangeStorePort
 	ack    outbound.ReplicationAckPort
 	notify outbound.ChangeNotificationPort
+	stream outbound.ChangeStreamPort
 	log    outbound.LogPort
 }
 
@@ -56,6 +59,17 @@ func WithChangeNotification(notify outbound.ChangeNotificationPort) Option {
 	return func(s *CaptureService) { s.notify = notify }
 }
 
+// WithChangeStream injiziert den optionalen `ChangeStreamPort`
+// (`ADR-0060` Teilfrage 2): ungesetzt bleibt das Live-Streaming deaktiviert,
+// kein Publish-Versuch — das bestehende Verhalten bleibt für jeden Aufrufer
+// ohne diese Option unverändert. Der Aufruf reiht sich nach `ACK Source` und
+// nach dem Notify-Schritt ein und trägt die Zustellsemantik des Ports: er
+// blockiert nicht auf einen Abonnenten, sein Fehler geht nicht in den
+// Rückgabewert von `Capture` ein (`ADR-0066`).
+func WithChangeStream(stream outbound.ChangeStreamPort) Option {
+	return func(s *CaptureService) { s.stream = stream }
+}
+
 // WithLog injiziert den `LogPort` (`ADR-0024`) für den Notify-Fehlerpfad —
 // dasselbe Muster wie `postgresack.WithLog`. Ungesetzt bleibt die
 // Protokollierung beim No-Op (`outbound.NoopLog`).
@@ -64,8 +78,9 @@ func WithLog(log outbound.LogPort) Option {
 }
 
 // NewCaptureService verdrahtet den Capture Use Case mit seinen beiden
-// obligatorischen Outbound-Ports; der `ChangeNotificationPort` ist optional
-// (`WithChangeNotification`, `ADR-0055`).
+// obligatorischen Outbound-Ports; `ChangeNotificationPort` und
+// `ChangeStreamPort` sind optional (`WithChangeNotification`, `ADR-0055`;
+// `WithChangeStream`, `ADR-0060` Teilfrage 2).
 func NewCaptureService(store outbound.ChangeStorePort, ack outbound.ReplicationAckPort, opts ...Option) *CaptureService {
 	s := &CaptureService{store: store, ack: ack, log: outbound.NoopLog}
 	for _, opt := range opts {
@@ -115,6 +130,38 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 		for _, table := range distinctTables(tx) {
 			if err := s.notify.Notify(ctx, string(position.SourceID), table.schema, table.table); err != nil {
 				s.log.Warn(ctx, "capture: Wecksignal fehlgeschlagen", "error", err, "source_id", position.SourceID, "schema", table.schema, "table", table.table)
+			}
+		}
+	}
+	// Der Stream-Publish läuft als letzter Schritt der Best-Effort-Kette
+	// (`ADR-0060` Teilfrage 2): genau ein Aufruf je Change der Transaktion in
+	// der Reihenfolge von `tx.Changes()`, ohne Deduplizierung nach Tabelle —
+	// `LH-FA-SST-008` verlangt den vollständigen Inhalt je Zeilen-Change. Der
+	// Aufruf blockiert nicht auf einen Abonnenten; die Entkopplung trägt der
+	// Port (`ADR-0066`), deshalb braucht diese Aufrufstelle keine eigene
+	// Zeit-Isolation. Sein Fehler geht nie in den Rückgabewert dieses Aufrufs
+	// ein, die bereits erfolgte Persistierung und Bestätigung bleiben
+	// unberührt. Ohne konfigurierten Port (`s.stream == nil`) unterbleibt der
+	// Versuch vollständig. Der Fehler von `tx.Changes()` (offene Transaktion)
+	// kann an dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
+	// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
+	// Der Stream-Publish läuft als letzter Schritt der Best-Effort-Kette
+	// (`ADR-0060` Teilfrage 2): genau ein Aufruf je Change der Transaktion in
+	// der Reihenfolge von `tx.Changes()`, ohne Deduplizierung nach Tabelle —
+	// `LH-FA-SST-008` verlangt den vollständigen Inhalt je Zeilen-Change. Der
+	// Aufruf blockiert nicht auf einen Abonnenten; die Entkopplung trägt der
+	// Port (`ADR-0066`), deshalb braucht diese Aufrufstelle keine eigene
+	// Zeit-Isolation. Sein Fehler geht nie in den Rückgabewert dieses Aufrufs
+	// ein, die bereits erfolgte Persistierung und Bestätigung bleiben
+	// unberührt. Ohne konfigurierten Port (`s.stream == nil`) unterbleibt der
+	// Versuch vollständig. Der Fehler von `tx.Changes()` (offene Transaktion)
+	// kann an dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
+	// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
+	if s.stream != nil {
+		changes, _ := tx.Changes()
+		for i := range changes {
+			if err := s.stream.Publish(ctx, &changes[i]); err != nil {
+				s.log.Warn(ctx, "capture: Stream-Publish fehlgeschlagen", "error", err, "change_id", changes[i].ID)
 			}
 		}
 	}

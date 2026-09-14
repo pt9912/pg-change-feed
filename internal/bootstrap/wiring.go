@@ -548,7 +548,22 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// (`ErrConfiguration`) — ein Betreiber, der das Feature einschaltet,
 	// aber die Server-Adresse falsch trägt, soll das beim Start bemerken,
 	// nicht durch ein unauffällig ausbleibendes Wecksignal.
+	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
+	// Stelle, an der beide gRPC-Rollen zusammenlaufen: der Driving-Adapter
+	// (Server) liest aus ihm, der `CaptureService` schreibt über den Outbound
+	// Port `ChangeStreamPort` in ihn. Er bleibt an `envGRPCAddr` gebunden —
+	// ohne gesetzte Adresse entsteht kein Broadcaster, der `CaptureService`
+	// trägt keinen Stream-Publish-Schritt (additiv, unverändertes
+	// Bestandsverhalten, `ADR-0060` Teilfrage 6). Die Bindung ist keine
+	// Start-Vorbedingung: der gRPC-Server-Startfehler erreicht das Ergebnis
+	// von `Run` weiter unten auf demselben Pfad wie jeder andere
+	// Adapter-Startfehler.
+	var grpcBroadcaster *grpcstream.Broadcaster
 	captureOpts := []capture.Option{capture.WithLog(log)}
+	if cfg.GRPCAddr != "" {
+		grpcBroadcaster = grpcstream.New()
+		captureOpts = append(captureOpts, capture.WithChangeStream(grpcBroadcaster))
+	}
 	if cfg.NatsURL != "" {
 		natsConn, err := nats.Connect(cfg.NatsURL)
 		if err != nil {
@@ -676,11 +691,11 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// bleibt vollständig deaktiviert, solange `cfg.GRPCAddr` leer ist — kein
 	// `grpc.Server`, kein Listener (additiv, unverändertes
 	// Bestandsverhalten, analog zum HTTP-Adapter oben, `ADR-0060`
-	// Teilfrage 6). Der `Broadcaster` läuft in diesem Prozess; ein
-	// `ChangeStreamPort` ist in dieser Verdrahtung nicht gesetzt, der
-	// `CaptureService` trägt also keinen Stream-Publish-Schritt
-	// (`ADR-0060` Teilfrage 2). Der Adapter trägt dieselben beiden
-	// Token-Klassen wie der HTTP-Adapter (`ADR-0060` Teilfrage 4).
+	// Teilfrage 6). Ist die Adresse gesetzt, liest der Server aus demselben
+	// `grpcBroadcaster`, den der `CaptureService` oben über
+	// `WithChangeStream` bedient (`ADR-0060` Teilfrage 2). Der Adapter trägt
+	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
+	// Teilfrage 4).
 	var grpcServer *apigrpc.Server
 	var grpcDone sync.WaitGroup
 	if cfg.GRPCAddr != "" {
@@ -688,7 +703,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			Addr:        cfg.GRPCAddr,
 			TokenReader: cfg.APITokenReader,
 			TokenAdmin:  cfg.APITokenAdmin,
-			Subscriber:  grpcstream.New(),
+			Subscriber:  grpcBroadcaster,
 			Log:         log,
 		})
 		grpcDone.Add(1)

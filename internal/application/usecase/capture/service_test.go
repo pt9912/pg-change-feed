@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
@@ -24,6 +25,8 @@ var (
 	_ outbound.ChangeStorePort        = (*fakeStore)(nil)
 	_ outbound.ReplicationAckPort     = (*fakeAck)(nil)
 	_ outbound.ChangeNotificationPort = (*fakeNotify)(nil)
+	_ outbound.ChangeStreamPort       = (*fakeStream)(nil)
+	_ outbound.ChangeStreamPort       = (*fakeBlockingStream)(nil)
 )
 
 type fakeStore struct {
@@ -427,5 +430,260 @@ func TestCaptureNotifiesDistinctlyForTwoTables(t *testing.T) {
 	}
 	if got, want := notify.notified, []string{"public.tbl-1", "public.tbl-2"}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("Notify trägt %v, wollen %v (zwei distinkte Aufrufe für zwei Tabellen)", got, want)
+	}
+}
+
+// fakeStream trägt den optionalen `ChangeStreamPort` (`ADR-0060` Teilfrage 2)
+// und spiegelt die Zustellsemantik des realen Ports (`ADR-0066`): er kehrt
+// unabhängig davon zurück, ob ein Empfänger liest. `publishErr` trägt den
+// Regressionsbeleg — er ist standardmäßig gesetzt, damit der ungünstigste
+// Fall im Test steht. `nichtLesenderEmpfaenger` modelliert einen
+// registrierten, nie lesenden Empfänger über dessen begrenzte
+// Empfangs-Warteschlange; ist sie voll, verwirft der Aufruf den eintreffenden
+// Change für diesen Empfänger (Drop-Newest) statt zu warten.
+type fakeStream struct {
+	events                  *[]string
+	publishErr              error
+	published               []model.ChangeID
+	nichtLesenderEmpfaenger chan *model.Change
+}
+
+func (f *fakeStream) Publish(ctx context.Context, change *model.Change) error {
+	*f.events = append(*f.events, "stream:"+string(change.ID))
+	if f.nichtLesenderEmpfaenger != nil {
+		select {
+		case f.nichtLesenderEmpfaenger <- change:
+		default:
+		}
+	}
+	if f.publishErr != nil {
+		return f.publishErr
+	}
+	f.published = append(f.published, change.ID)
+	return nil
+}
+
+// fakeBlockingStream trägt den ungünstigsten Port-Zustand: `Publish` meldet
+// seinen Eintritt und kehrt erst zurück, wenn der Test die Freigabe schließt —
+// ein Port, der entgegen seinem Vertrag nicht zurückkehrt. `eingetreten` ist
+// gepuffert, damit die Meldung selbst nicht zum Warten wird.
+type fakeBlockingStream struct {
+	eingetreten chan model.ChangeID
+	freigabe    chan struct{}
+}
+
+func (f *fakeBlockingStream) Publish(ctx context.Context, change *model.Change) error {
+	select {
+	case f.eingetreten <- change.ID:
+	default:
+	}
+	<-f.freigabe
+	return nil
+}
+
+// TestCapturePublishesEachChangeOnceAfterAckAndNotify trägt den Happy Path
+// aus `LH-FA-SST-008` und die Ordnung aus `ADR-0060` Teilfrage 2: der
+// Stream-Publish reiht sich als letzter Best-Effort-Schritt ein — nach
+// `ACK Source` und nach dem Wecksignal — und ruft je Change der Transaktion
+// genau einmal auf, in der Reihenfolge von `tx.Changes()` und ohne
+// Deduplizierung nach Tabelle (zwei Changes derselben Tabelle ergeben zwei
+// Aufrufe, anders als beim tabellen-granularen Notify).
+func TestCapturePublishesEachChangeOnceAfterAckAndNotify(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	stream := &fakeStream{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify), capture.WithChangeStream(stream))
+	tx := committedTransactionOverTables(t, "t-1", 100, tableSpec{schema: "public", table: "tbl-1", count: 2})
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	want := []string{"persist:t-1", "ack:100", "notify:src-1.public.tbl-1", "stream:t-1-1", "stream:t-1-2"}
+	if fmt.Sprint(events) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v", events, want)
+	}
+	if got, wantIDs := stream.published, []model.ChangeID{"t-1-1", "t-1-2"}; fmt.Sprint(got) != fmt.Sprint(wantIDs) {
+		t.Fatalf("Stream trägt %v, wollen %v", got, wantIDs)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+}
+
+// TestCaptureWithoutStreamPortLeavesBehaviourUnchanged trägt die Boundary aus
+// `ADR-0060` Teilfrage 6: ohne konfigurierten `ChangeStreamPort` bleibt das
+// Bestandsverhalten bit-identisch — kein Publish-Versuch, kein zusätzliches
+// Ereignis.
+func TestCaptureWithoutStreamPortLeavesBehaviourUnchanged(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeNotification(notify))
+	tx := committedTransaction(t, "t-1", 100, 2)
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	want := []string{"persist:t-1", "ack:100", "notify:src-1.public.tbl-1"}
+	if fmt.Sprint(events) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v (kein Stream-Publish ohne konfigurierten Port)", events, want)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+}
+
+// Regressionstest — die wichtigste Einzeleigenschaft aus `ADR-0060`
+// Teilfrage 2 (`SPEC-020`, Zeile *Fehler bei Publish-Fehlschlag*): ein
+// fehlschlagender `ChangeStreamPort` darf `Capture()` nicht scheitern lassen,
+// wenn `store`/`ack` bereits erfolgreich waren. Der Aufruf läuft über alle
+// Changes weiter — ein Fehler auf dem ersten verwirft die übrigen nicht.
+// Entfernt man das Abfangen in `CaptureService.Capture()` (die
+// `s.log.Warn`-Verzweigung durch `return CaptureResult{}, err` ersetzt),
+// schlägt genau dieser Test fehl.
+func TestCaptureSucceedsDespiteFailingStream(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	streamErr := stderrors.New("Stream nicht verfügbar")
+	stream := &fakeStream{events: &events, publishErr: streamErr}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeStream(stream))
+	tx := committedTransactionOverTables(t, "t-1", 100, tableSpec{schema: "public", table: "tbl-1", count: 2})
+
+	result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+	if err != nil {
+		t.Fatalf("Capture: %v, wollen keinen Fehler trotz fehlschlagendem Stream-Publish", err)
+	}
+	if result.Acknowledged.Offset != 100 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 100", result.Acknowledged.Offset)
+	}
+	if len(store.persisted) != 1 || len(ack.acked) != 1 {
+		t.Fatalf("Store/ACK tragen %d/%d, wollen 1/1 trotz fehlschlagendem Stream-Publish", len(store.persisted), len(ack.acked))
+	}
+	if len(stream.published) != 0 {
+		t.Fatalf("Stream trägt %v, wollen keine erfolgreiche Zustellung", stream.published)
+	}
+	want := []string{"persist:t-1", "ack:100", "stream:t-1-1", "stream:t-1-2"}
+	if fmt.Sprint(events) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v (Publish-Versuch je Change trotz Fehlschlag)", events, want)
+	}
+}
+
+// TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck trägt die
+// Fire-and-Forget-Hälfte aus `ADR-0066`: `Capture()` kehrt ohne eigene
+// Zeit-Isolation zurück — bei getrenntem Client (kein Abonnent registriert)
+// ebenso wie bei einem registrierten, nie lesenden Empfänger. Die
+// Entkopplung trägt der Port (nicht-blockierender Send mit Drop-Newest),
+// nicht diese Aufrufstelle. Der Frist-Beleg macht einen blockierenden Aufruf
+// sofort sichtbar, statt den Testlauf bis zum globalen Timeout hängen zu
+// lassen.
+func TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck(t *testing.T) {
+	faelle := []struct {
+		name                string
+		empfaenger          chan *model.Change
+		erwarteteZustellung int
+	}{
+		{name: "getrennter Client", empfaenger: nil, erwarteteZustellung: 2},
+		{name: "nicht lesender Empfänger", empfaenger: make(chan *model.Change, 1), erwarteteZustellung: 2},
+	}
+	for _, fall := range faelle {
+		t.Run(fall.name, func(t *testing.T) {
+			events := []string{}
+			store := &fakeStore{events: &events}
+			ack := &fakeAck{events: &events}
+			stream := &fakeStream{events: &events, nichtLesenderEmpfaenger: fall.empfaenger}
+			service := capture.NewCaptureService(store, ack, capture.WithChangeStream(stream))
+			tx := committedTransactionOverTables(t, "t-1", 100, tableSpec{schema: "public", table: "tbl-1", count: 2})
+
+			type ergebnis struct {
+				result capture.CaptureResult
+				err    error
+			}
+			fertig := make(chan ergebnis, 1)
+			go func() {
+				result, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+				fertig <- ergebnis{result: result, err: err}
+			}()
+
+			select {
+			case got := <-fertig:
+				if got.err != nil {
+					t.Fatalf("Capture: %v", got.err)
+				}
+				if got.result.Acknowledged.Offset != 100 {
+					t.Fatalf("Ergebnis trägt Offset %d, wollen 100", got.result.Acknowledged.Offset)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("Capture kehrt nicht zurück")
+			}
+
+			if got, want := len(stream.published), fall.erwarteteZustellung; got != want {
+				t.Fatalf("Stream trägt %d erfolgreiche Aufrufe, wollen %d (der Port kehrt je Change zurück)", got, want)
+			}
+			if fall.empfaenger == nil {
+				return
+			}
+			select {
+			case got := <-fall.empfaenger:
+				if got.ID != "t-1-1" {
+					t.Fatalf("Empfangswarteschlange trägt %q, wollen die erste Change-ID", got.ID)
+				}
+			default:
+				t.Fatalf("Empfangswarteschlange des nicht lesenden Empfängers ist leer")
+			}
+			select {
+			case got := <-fall.empfaenger:
+				t.Fatalf("über die Kapazität hinausgehender Change wurde eingereiht: %q", got.ID)
+			default:
+			}
+		})
+	}
+}
+
+// TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn pinnt die Grenze
+// aus `ADR-0066`: die Entkopplung liegt im Port — `Publish` kehrt nicht auf
+// einen Abonnenten wartend zurück —, diese Aufrufstelle ruft ihn synchron in
+// der Best-Effort-Kette. Ein Port, der dennoch nicht zurückkehrt, kann die
+// Capture-kritische Kette nicht mehr berühren: Persistenz und Source-ACK sind
+// geschrieben, bevor der erste Change das Haus verlässt (`ADR-0011`,
+// `ADR-0027`), und der Rückgabewert von `Capture()` hängt an einem Port, der
+// seinen Vertrag nicht verletzt.
+func TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	stream := &fakeBlockingStream{eingetreten: make(chan model.ChangeID, 1), freigabe: make(chan struct{})}
+	service := capture.NewCaptureService(store, ack, capture.WithChangeStream(stream))
+	tx := committedTransaction(t, "t-1", 100, 2)
+
+	fertig := make(chan error, 1)
+	go func() {
+		_, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx})
+		fertig <- err
+	}()
+
+	select {
+	case <-stream.eingetreten:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Capture erreicht den Stream-Publish nicht")
+	}
+	if len(store.persisted) != 1 {
+		t.Fatalf("Store trägt %d Transaktionen beim Eintritt in den Stream-Publish, wollen 1", len(store.persisted))
+	}
+	if len(ack.acked) != 1 || ack.acked[0].Offset != 100 {
+		t.Fatalf("ACK trägt %v beim Eintritt in den Stream-Publish, wollen Offset 100", ack.acked)
+	}
+	if got, want := fmt.Sprint(events), fmt.Sprint([]string{"persist:t-1", "ack:100"}); got != want {
+		t.Fatalf("Ereignisse = %v, wollen %v vor dem ersten Stream-Publish", got, want)
+	}
+
+	close(stream.freigabe)
+	if err := <-fertig; err != nil {
+		t.Fatalf("Capture: %v, wollen keinen Fehler", err)
 	}
 }

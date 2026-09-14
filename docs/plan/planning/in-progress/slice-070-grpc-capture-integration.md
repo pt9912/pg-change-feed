@@ -90,13 +90,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] [LH-FA-SST-008](../../../../spec/lastenheft.md) Happy-Path erfüllt,
+- [x] [LH-FA-SST-008](../../../../spec/lastenheft.md) Happy-Path erfüllt,
       Test referenziert:
       `internal/application/usecase/capture` — `CaptureService` ruft nach
       `ACK Source` und nach dem bestehenden Notify-Schritt genau einmal
       `ChangeStreamPort.Publish` je `Change` der committed Transaktion auf
       (`WithChangeStream`-Option gesetzt).
-- [ ] [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) Teilfrage 2
+- [x] [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) Teilfrage 2
       vollständig umgesetzt: Fehlerisolations-Regressionstest — ein
       fehlschlagender `ChangeStreamPort` darf `Capture()`s Rückgabewert
       nicht beeinflussen, wenn `store`/`ack` erfolgreich waren, analog zum
@@ -106,13 +106,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Subscriber blockiert `Capture()` nicht) **und** bei einem
       **registrierten, nicht lesenden** Empfänger — der Aufruf kehrt ohne
       Zeit-Isolation zurück ([ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)).
-- [ ] `make gates` grün.
+      *(Die dritte Fitness-Function-Hälfte — ein `Publish`, das nicht
+      zurückkehrt — ist nicht als Test gebaut; Begründung und die
+      stattdessen gebauten Belege: §3, Implementer-Abweichungen.)*
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update `internal/bootstrap/wiring.go`-Kommentar zur
+- [x] Doku-Update `internal/bootstrap/wiring.go`-Kommentar zur
       `CDC_GRPC_ADDR`-Verdrahtung, falls sich der Aktivierungspfad seit
-      `slice-069` sichtbar ändert.
+      `slice-069` sichtbar ändert. *(Eingetreten: der `Broadcaster` wird an
+      der Capture-Verdrahtung konstruiert und trägt den
+      `ChangeStreamPort`; beide `CDC_GRPC_ADDR`-Kommentarblöcke
+      nachgezogen.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -131,6 +137,37 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/application/usecase/capture/service.go` | update | neue Option `WithChangeStream(stream outbound.ChangeStreamPort) Option`; Publish-Aufruf nach `ACK Source`/Notify, synchron (nicht-blockierend, [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)) |
 | `internal/application/usecase/capture/service_test.go` | update | Fehlerisolations-Regressionstest, Fire-and-Forget-Regressionstest |
 | `internal/bootstrap/wiring.go` | update | `CaptureService` erhält den in `slice-069` konstruierten `*grpcstream.Broadcaster` über `WithChangeStream`, wenn `CDC_GRPC_ADDR` gesetzt ist |
+
+**Implementer-Entscheidungen und -Abweichungen (Plan-Nachzug im selben Lauf):**
+
+- **Abweichung (Reduktion) — Zeit-Isolations-Test:** Die Fitness-Function-Zeile
+  aus [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  („ein `ChangeStreamPort`, dessen `Publish` nicht zurückkehrt … darf
+  `Capture()` nicht anhalten") ist **nicht** als Test gebaut. Ihre
+  Voraussetzung — ein `Publish`, das dauerhaft nicht zurückkehrt — erreicht
+  `Capture()` per Konstruktion nicht: die Entkopplung liegt laut
+  [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  §Entscheidung im Adapter (`Broadcaster`: begrenzte Empfangs-Warteschlange,
+  nicht-blockierender Send) und ihr §Verglichene Alternativen Option B
+  schließt eine caller-seitige Goroutine ausdrücklich aus; der reale Port
+  belegt sein Nicht-Blockieren in seinem eigenen Paket
+  (`internal/adapters/driven/grpcstream`, `slice-069`-Fixrunde). Die
+  Anschlussstelle testet stattdessen die zwei Hälften, die ihr zufallen:
+  (a) die Capture-kritische Kette `Persist → ACK` steht vollständig und
+  unberührt, wenn der Port bei `Publish` eintritt
+  (`TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn`),
+  (b) `Capture()` kehrt ohne eigene Zeit-Isolation zurück — bei getrenntem
+  Client und bei einem registrierten, nicht lesenden Empfänger
+  (`TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck`).
+- **Keine caller-seitige Goroutine, keine Deadline** — bestätigt §1 und
+  [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  §Entscheidung; `internal/application/usecase/capture` importiert
+  `internal/adapters/driven/grpcstream` nicht (`.a-check.yml` kennt keine
+  `app → adapters`-Kante), der Capture-Test trägt deshalb einen
+  vertragstreuen Port-Doppel.
+- **Keine Zeile des Kernpfads vor dem Stream-Publish-Aufruf angefasst**
+  (§1-Schicht-Abgrenzung): der bestehende `Receive → … → ACK Source`-Pfad
+  und der Notify-Block bleiben unverändert; der neue Block steht danach.
 
 ## 4. Trigger
 
