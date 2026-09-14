@@ -54,22 +54,30 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] Alle sechs restlichen Fähigkeiten (Acknowledge/Position/
+- [x] Alle sechs restlichen Fähigkeiten (Acknowledge/Position/
       Remove-Consumer, Enable/Disable/Status/List-Table, Retention-Lauf)
       über den HTTP-Adapter erreichbar, je mit Unit-Test (Whitebox,
       `httptest`) — Reader-Endpunkte (`GetConsumerPosition`, `GetStatus`,
       `ListTables`) akzeptieren `reader`- und `admin`-Token, die übrigen
-      nur `admin`-Token (`ADR-0057` Teilfrage 3).
-- [ ] Einheitliches Fehler-Mapping real getestet: `400` (ungültige
+      nur `admin`-Token (`ADR-0057` Teilfrage 3). Abweichung: `ADR-0057`s
+      Port-Aufzählung und dieses Slice-Plans eigene DoD-Klammer benennen
+      acht Fähigkeiten (Acknowledge, Position, Remove, Enable, Disable,
+      Status, List, Retention), nicht sechs — implementiert sind alle
+      acht, siehe Closure-Notiz.
+- [x] Einheitliches Fehler-Mapping real getestet: `400` (ungültige
       Eingabe, z. B. fehlendes Pflichtfeld im JSON-Body), `404` (unbekannte
       Ressource, z. B. `RemoveConsumer` für nie registrierten Consumer —
       sofern der Use Case das als Fehler statt Idempotenz behandelt, sonst
       dokumentiert dieser Slice den gewählten Ausgang explizit), `500`
       (unerwarteter Fehler) — zusätzlich zu den bereits in `slice-059`
-      getesteten `401`/`403`.
-- [ ] `spec/pflichtenheft.md`s `SPEC-018` um die sechs neuen Endpunkte
+      getesteten `401`/`403`. `RemoveConsumer` behandelt eine unbekannte
+      Kennung als Idempotenz (`removed=false`, `200`), nicht als `404` —
+      real getestet (`TestRemoveConsumerUnbekannteKennungBleibtIdempotent`);
+      `404` real getestet über `EnableTable`/`DisableTable` gegen eine an
+      der Quelle physisch fehlende Tabelle.
+- [x] `spec/pflichtenheft.md`s `SPEC-018` um die sechs neuen Endpunkte
       erweitert (Methode, Pfad, Request-/Response-Schema, Fehler-Codes).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
