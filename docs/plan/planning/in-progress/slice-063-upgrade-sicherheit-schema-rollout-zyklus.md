@@ -100,18 +100,18 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
       test-integration`-Zeile um die neue Upgrade-Sicherheits-Phase ergänzt
       (kein neues Gate, kein neues Target).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-17`-Closure** (dieser Slice trägt
       `Welle: welle-17`).
 
@@ -170,28 +170,54 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
   Trigger 2). — **Ausgang:** eingetreten → `ADR-0064` (Folge-Entscheidung
   mit korrigiertem Mechanismus, kein neuer Slice nötig, da derselbe
   `slice-063` die korrigierte Form umsetzt).
-- Der Container-Stopp könnte den Replication-Slot oder eine offene
+- Der Container-Tausch könnte den Replication-Slot oder eine offene
   Transaktion in einem Zustand hinterlassen, der den nachfolgenden Start
-  real verzögert oder einen Health-Check-Timeout auslöst (anders als beim
-  bestehenden `docker restart`-Rundlauf, der denselben Prozess ohne
-  Zwischenschritt neu startet). — **Ausgang:** <bei Closure zu füllen>
-- `BEO-PGC/test-integration-retention-timing-flake` (offen, 1× — siehe
-  §8): eine zusätzliche Phase mit Stopp/Rollout/Start-Timing im selben
-  Compose-Lauf könnte bestehende Alters-/Lag-Schwellen-Wartephasen
-  verschieben. — **Ausgang:** <bei Closure zu füllen>
-- Kein echter Versionswechsel (`ADR-0058` benennt das offen): „alt" und
-  „neu" sind dasselbe Image — die Lücke bleibt bestehen, bis eine echte
-  Release-Historie existiert (Re-Evaluierungs-Trigger 3 der ADR). —
-  **Ausgang:** <bei Closure zu füllen>
+  real verzögert oder einen Health-Check-Timeout auslöst. — **Ausgang:
+  entfallen** — real über zwei unabhängige, vollständige `make
+  test-integration`-Läufe (Reviewer, Verifier) ohne Timeout bestätigt;
+  die danach eingefügte Zeile (id=251) wurde real erfasst, kein
+  Slot-Zustand blockierte die Fortsetzung.
+- `BEO-PGC/test-integration-retention-timing-flake` (offen, 1×). —
+  **Ausgang: entfallen** — über drei unabhängige, vollständige Läufe
+  (Implementer, Reviewer, Verifier) kein Flake beobachtet.
+- Kein echter Versionswechsel (`ADR-0058`/`ADR-0064` benennen das offen):
+  „alt" und „neu" sind dasselbe Image. — **Ausgang: weiter offen** — bleibt
+  bestehen, bis eine echte Release-Historie existiert
+  (`ADR-0064` Re-Evaluierungs-Trigger 1, unverändert aus `ADR-0058`
+  übernommen); kein Ausgang, den dieser Slice selbst auflösen kann.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der Implementer reproduzierte den geplanten
+  Blocker real, bevor Code entstand, und meldete ihn sauber über die
+  Rückführung zurück, statt ihn zu umgehen (Modul 8 §Konflikt-Pfad). Der
+  nachfolgende Architect-Zug (`ADR-0064`) fand einen tragfähigen,
+  nicht-destruktiven Ersatzmechanismus (`--force-recreate` statt
+  Migrationsschritt), der beim zweiten Versuch sofort real funktionierte —
+  drei unabhängige, vollständige `make test-integration`-Läufe ohne Flake.
+- **Was ging anders als geplant:** `ADR-0058`s ursprünglicher Mechanismus
+  (zweiter `make schema-rollout`-Lauf) war strukturell nicht lauffähig
+  (real mit und ohne `--execute` reproduziert) — korrigiert über `ADR-0064`.
+  Der Implementer platzierte die neue Phase abweichend vom
+  ursprünglichen Plan-Vorschlag (vor statt nach den beiden
+  container-beendenden Schema-Testfunktionen aus `slice-062`), mit einer
+  von Reviewer und Verifier unabhängig bestätigten Begründung
+  (Kollision mit deren eigenem Recovery-Mechanismus).
+- **Steering-Loop-Eintrag:** `AGENTS.md` geschärft: neuer Absatz „Prüfung
+  und Folgehandlung sind zwei Schritte, nicht einer" — liegt in
+  `AGENTS.md §3.9`. Auslöser: `BEO-PGC/report-nackte-id-ohne-link`
+  (slice-054, slice-055, slice-056, slice-063-blocker — 4×). Ausgelöst
+  durch einen Planner-Koordinator-Fehler beim Blocker-Report dieses
+  Slice, nicht durch die eigentliche Implementierung.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-063.md`
+  in `BEO-PGC/schema-rollout-fremdobjekte/` ergänzt — Zähler steht bei 2×.
+  Neues Verzeichnis `BEO-PGC/kein-echter-versionswechsel-upgrade-test/`
+  angelegt, Beleg `evidence/slice-063.md` (1×). `evidence/slice-063-blocker.md`
+  in `BEO-PGC/report-nackte-id-ohne-link/` bereits während des Vorgangs
+  ergänzt (4×, verkörpert — siehe Steering-Loop-Eintrag oben).
 - **Folge-Slices:** keine.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** ein eingetreten, zwei entfallen, ein weiter offen —
+  siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-17`-Closure (dieser Slice trägt
   `Welle: welle-17`, siehe DoD-Item).
 
