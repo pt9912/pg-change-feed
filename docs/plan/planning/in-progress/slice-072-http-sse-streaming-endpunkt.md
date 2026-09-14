@@ -109,9 +109,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       verbundenen SSE-Client mit vollständigem Inhalt; ein
       Verbindungsversuch ohne gültiges Token wird mit `401` abgelehnt.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-072.md`, `.harness/skills/reviewer.md`) —
+      Rollenwechsel nach Schritt 8 des Minimal Agent Workflow (`AGENTS.md` §6),
+      kein Self-Review (Modul 8).
 - [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer SSE-Rundlauf-Satz).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
