@@ -13,6 +13,12 @@ name: ci
 # Schritt enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
 # dupliziert.
 #
+# Einzige Ausnahme: Der Schritt "Linux-Plattform-Assertion" laeuft bewusst
+# auf dem Runner selbst statt in Docker — er prueft die Runner-Plattform
+# (`uname -s`/`go env GOOS` gegen Linux/linux, sichtbarer Fehlschlag bei
+# Abweichung, LH-QA-POR-002, ADR-0058 Entscheidung 5), nicht eine
+# Docker-Umgebung; ein `make`-Target dafuer gaebe es nichts zu isolieren.
+#
 # `make test` laeuft mit `--network none` gegen einen vorab befuellten
 # Docker-Volume-Modulcache — `make mod-download` laedt ihn (braucht Netz)
 # und laeuft deshalb vor `make test`.
@@ -48,6 +54,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      - name: Linux-Plattform-Assertion (LH-QA-POR-002)
+        run: |
+          uname -s
+          go env GOOS
+          test "$(uname -s)" = "Linux"
+          test "$(go env GOOS)" = "linux"
 
       - name: Gates (baseline-verify, docs-check, a-check, commit-traceability)
         run: make gates

@@ -143,6 +143,12 @@ bzw. lokal `make help` / `make gates`. Der Workflow
 diesen Gate-Lauf (plus `make test`) auf jeden Pull Request und Push — kein
 neues Gate, nur die Automatisierung des bestehenden
 ([`ADR-0051`](../docs/plan/adr/0051-cicd-pipeline-github-actions.md)).
+Unmittelbar nach dem Checkout, vor dem `Gates`-Schritt, prüft ein eigener
+Workflow-Schritt `uname -s`/`go env GOOS` gegen `Linux`/`linux` mit
+sichtbarem Fehlschlag bei Abweichung — der sichtbare Log-Beleg für
+[`LH-QA-POR-002`](../spec/lastenheft.md)
+([`ADR-0058`](../docs/plan/adr/0058-testansatz-fuenf-luecken.md)
+Entscheidung 5, kein Gate).
 **Rote Gates:** Begründung im verlinkten `CO-<NNN>` (siehe Bindung-Spalte), Modul 7.
 **Nicht behauptet** (geplant): `make image-cve` (CVE-Scan des gebauten
 Images, advisory) — die Aktivierungsbedingung ist seit slice-001 eingetreten

@@ -65,20 +65,20 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `LH-QA-POR-002` erfüllt: neuer, benannter Schritt in
+- [x] `LH-QA-POR-002` erfüllt: neuer, benannter Schritt in
       `.github/workflows/ci.yml`, unmittelbar nach `Checkout` und vor dem
       `Gates`-Schritt, gibt `uname -s` und `go env GOOS` aus und schlägt
       sichtbar fehl, wenn eines von beiden nicht `Linux`/`linux` ist.
-- [ ] Der Schritt trägt eine sprechende `name:`-Zeile (Log-Auffindbarkeit).
-- [ ] `make gates` grün.
+- [x] Der Schritt trägt eine sprechende `name:`-Zeile (Log-Auffindbarkeit).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors, `ci.yml`-Beschreibung
+- [x] Doku-Update: `harness/README.md` §Sensors, `ci.yml`-Beschreibung
       (falls dort vorhanden) um den neuen Schritt ergänzt — kein neues
       Gate, `ci.yml` bleibt derselbe blockierende Workflow.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
