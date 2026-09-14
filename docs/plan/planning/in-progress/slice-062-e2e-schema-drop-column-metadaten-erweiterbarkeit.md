@@ -115,18 +115,18 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] Doku-Update: `harness/README.md` §Sensors/§Werkzeuge, `make
       test-integration`-Zeile um die zwei neuen Testfälle ergänzt (kein
       neues Gate, kein neues Target).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-17`-Closure** (dieser Slice trägt
       `Welle: welle-17`).
 
@@ -168,52 +168,66 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
   zurückgenommen (`ADR-0058` Entscheidung 2, benannter Sonderfall), könnte
   sich aber bei einem fehlgeschlagenen Testlauf (Abbruch vor `t.Cleanup`)
   als stehengebliebene Spalte auf nachfolgende Testphasen auswirken. —
-  **Ausgang:** <bei Closure zu füllen>
+  **Ausgang: entfallen** — über drei unabhängige, vollständige
+  `make test-integration`-Läufe (Implementer, Reviewer 2×, Verifier 1×)
+  trat kein Abbruch vor `t.Cleanup` auf; der Reviewer bestätigte zusätzlich
+  keine verwaisten Compose-Container nach einem Lauf.
 - Timing-Interferenz mit anderen Testphasen im selben Compose-Lauf
-  (`BEO-PGC/test-integration-retention-timing-flake`, 1× — siehe §8): die
-  beiden neuen Testfunktionen laufen im selben `go test`-Aufruf wie die
-  Retention-/Aktivierungs-Testphasen; ein zusätzlicher Flake-Kandidat wäre
-  ein zweites Auftreten dieser Beobachtung. — **Ausgang:** <bei Closure zu
-  füllen>
-- Die Platzierung vor `TestE2ESchemaChangeIncompatibleTypeChange` (Go führt
-  Testfunktionen eines Pakets in Deklarationsreihenfolge aus) könnte beim
-  Einfügen versehentlich falsch gesetzt werden, wenn Quelltext-Reihenfolge
-  und `-run`-Musterzeile auseinanderlaufen. — **Ausgang:** <bei Closure zu
-  füllen>
-- `BEO-PGC/test-runner-stiller-ausschluss` (offen, 1×): Eine der beiden
-  neuen Testfunktionen wird im Quelltext ergänzt, aber im
-  `-run`-Musterzeile von `run-integration-tests.sh` vergessen — `go test
-  -run` meldet dabei keinen Fehler, die Funktion liefe dauerhaft und
-  stillschweigend nie. Gegenmaßnahme: DoD verlangt den sichtbaren
-  Log-Beleg beider Funktionsnamen in einem realen `make
-  test-integration`-Lauf, nicht nur den Diff. — **Ausgang:** <bei Closure
-  zu füllen>
+  (`BEO-PGC/test-integration-retention-timing-flake`, 1× — siehe §8). —
+  **Ausgang: entfallen** — über vier unabhängige, vollständige Läufe
+  (Implementer, Reviewer 2×, Verifier 1×) kein Flake beobachtet.
+- Die Platzierung vor `TestE2ESchemaChangeIncompatibleTypeChange` könnte
+  beim Einfügen versehentlich falsch gesetzt werden. — **Ausgang:
+  entfallen** — Reviewer und Verifier bestätigten unabhängig die korrekte
+  Reihenfolge (Quelltext-Deklaration und `-run`-Muster stimmen überein,
+  sichtbar an den Log-Belegen aller Läufe).
+- `BEO-PGC/test-runner-stiller-ausschluss` (offen, 1×): eine Testfunktion
+  könnte im `-run`-Muster vergessen werden. — **Ausgang: entfallen** —
+  beide Funktionsnamen sind real im `-run`-Muster verankert, sichtbarer
+  Log-Beleg (`PASS`) für beide über alle vier unabhängigen Läufe.
 - **Real gefunden während der Umsetzung (`ADR-0063`-Folge, nicht vorab
   benannt):** Zwischen `TestE2ESchemaChangeDropColumn` und
   `TestE2ESchemaChangeIncompatibleTypeChange` reicht ein bloßer
-  `docker start` nicht — real getestet mit zwei Poison-Zuständen (Anhang:
-  Implementer-Bericht): der Replication-Slot liest ohne durabel
-  bestätigte Position die bereits verarbeitete `ADD COLUMN
-  removable`-Transaktion erneut ein und die zuletzt registrierte
-  Schema-Version trägt weiterhin `removable`, obwohl die Spalte real
-  bereits entfernt ist — beides würde `TestE2ESchemaChangeIncompatibleTypeChange`
-  vorzeitig mit einem artefaktbedingten, nicht selbst ausgelösten
-  `schema`-Fehler beenden. Behoben über Slot-Neuanlage plus Nachtrag
-  einer korrigierten Schema-Version (`run-integration-tests.sh`, real
-  gegen den Compose-Stack verifiziert). Direkte SQL-Eingriffe in
-  `cdc.schema_version`/`cdc.table_schema` sind ein Sonderfall gegenüber
-  den sonst rein anwendungsseitigen E2E-Testfällen dieses Skripts (ähnlich
-  dem bereits bestehenden Sonderfall für `cdc.process_heartbeat`,
-  `LH-FA-ADM-003`-Boundary-Beleg). — **Ausgang:** <bei Closure zu füllen>
+  `docker start` nicht — real getestet mit zwei Poison-Zuständen: der
+  Replication-Slot liest ohne durabel bestätigte Position die bereits
+  verarbeitete `ADD COLUMN removable`-Transaktion erneut ein, und die
+  zuletzt registrierte Schema-Version trägt weiterhin `removable`, obwohl
+  die Spalte real bereits entfernt ist. — **Ausgang: entfallen** — behoben
+  über Slot-Neuanlage plus Nachtrag einer korrigierten Schema-Version
+  (`tbl-e2e-schema-v4`), von Reviewer UND Verifier unabhängig am Code
+  nachvollzogen (keine FK-Verletzung, `tbl-e2e-schema-v3` unangetastet)
+  und über drei unabhängige Läufe ohne Flake bestätigt. Zusätzlich ein
+  neuer Beobachtungs-Registereintrag `BEO-PGC/kein-admin-weg-schema-fehler-recovery`
+  (1×, siehe unten) für den fehlenden Produktions-Administrationsweg —
+  dieselbe Problemklasse, aber ein anderer Aspekt (Betriebsdokumentation
+  statt Testharness-Mechanismus).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der Implementer stoppte korrekt bei einem
+  echten Widerspruch zwischen `ADR-0058`s Testannahme und dem real
+  bestehenden, bereits von `ADR-0059` akzeptierten Verhalten, statt ihn
+  selbst aufzulösen (Modul 8 §Konflikt-Pfad) — der nachfolgende
+  Architect-Zug (`ADR-0063`) korrigierte die Klausel eng und minimal-
+  invasiv. Der danach real gefundene Recovery-Mechanismus (Slot-Neuanlage,
+  Schema-Version-Nachtrag) wurde über vier unabhängige Läufe verifiziert,
+  kein Flake.
+- **Was ging anders als geplant:** `ADR-0058`s ursprüngliche
+  Happy-Path-Annahme für `LH-FA-SCH-003` traf nicht zu (siehe oben);
+  außerdem musste `run-integration-tests.sh` strukturell umgebaut werden
+  (Drop-Column-Test wanderte hinter die Container-Ende-Grenze), was
+  `ADR-0058`s ursprüngliche Platzierungsannahme (vor der Grenze)
+  hinfällig machte — beides bereits in `ADR-0063` als Folgepflicht benannt.
+- **Steering-Loop-Eintrag:** keiner verkörpert — der Konflikt wurde über
+  den regulären Konflikt-Pfad (Folge-ADR) gelöst, kein wiederkehrendes
+  Muster über mehrere Vorgänge hinweg.
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/kein-admin-weg-schema-fehler-recovery/` angelegt, Beleg
+  `evidence/slice-062.md` (1×) — kein dokumentierter Produktions-
+  Administrationsweg für die Wiederinbetriebnahme nach einem
+  `schema`-Fehler-Abbruch, nur der Testharness-interne Mechanismus.
 - **Folge-Slices:** keine.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** alle fünf entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-17`-Closure (dieser Slice trägt
   `Welle: welle-17`, siehe DoD-Item).
 
