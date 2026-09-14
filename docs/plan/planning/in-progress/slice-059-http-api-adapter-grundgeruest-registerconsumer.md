@@ -63,21 +63,21 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-006` (Happy-Path-Ausschnitt: eine unterstützte Fähigkeit
+- [x] `LH-FA-SST-006` (Happy-Path-Ausschnitt: eine unterstützte Fähigkeit
       über die API) und `LH-FA-CON-001` erfüllt über `RegisterConsumer` —
       Unit-Test gegen den Adapter (Whitebox, `httptest`).
-- [ ] Token-Middleware real getestet: kein/unbekannter Bearer-Token → `401`;
+- [x] Token-Middleware real getestet: kein/unbekannter Bearer-Token → `401`;
       gültiges `reader`-Token gegen `RegisterConsumer` → `403`; gültiges
       `admin`-Token erreicht den Endpunkt (`LH-FA-SST-006` Negative-Kriterium,
       `ADR-0057` Fitness Function).
-- [ ] Bootstrap-Verdrahtung: `CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`,
+- [x] Bootstrap-Verdrahtung: `CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`,
       `CDC_API_TOKEN_ADMIN` additiv verdrahtet — fehlende `CDC_HTTP_ADDR`
       bleibt No-Op (Regressionstest: bestehende Verdrahtung ohne die drei
       neuen Variablen bleibt unverändert lauffähig).
-- [ ] `spec/pflichtenheft.md` trägt `SPEC-018` (Endpunkt-/Methoden-/
+- [x] `spec/pflichtenheft.md` trägt `SPEC-018` (Endpunkt-/Methoden-/
       JSON-Schema für `RegisterConsumer`, Token-Header-Form,
       Fehler-Antwortform für `401`/`403`).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
