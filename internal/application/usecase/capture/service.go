@@ -145,18 +145,6 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	// Versuch vollständig. Der Fehler von `tx.Changes()` (offene Transaktion)
 	// kann an dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
 	// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
-	// Der Stream-Publish läuft als letzter Schritt der Best-Effort-Kette
-	// (`ADR-0060` Teilfrage 2): genau ein Aufruf je Change der Transaktion in
-	// der Reihenfolge von `tx.Changes()`, ohne Deduplizierung nach Tabelle —
-	// `LH-FA-SST-008` verlangt den vollständigen Inhalt je Zeilen-Change. Der
-	// Aufruf blockiert nicht auf einen Abonnenten; die Entkopplung trägt der
-	// Port (`ADR-0066`), deshalb braucht diese Aufrufstelle keine eigene
-	// Zeit-Isolation. Sein Fehler geht nie in den Rückgabewert dieses Aufrufs
-	// ein, die bereits erfolgte Persistierung und Bestätigung bleiben
-	// unberührt. Ohne konfigurierten Port (`s.stream == nil`) unterbleibt der
-	// Versuch vollständig. Der Fehler von `tx.Changes()` (offene Transaktion)
-	// kann an dieser Aufrufstelle nicht auftreten — der Commit-Status ist über
-	// `CommitPosition` bereits geprüft, deshalb wird er hier verworfen.
 	if s.stream != nil {
 		changes, _ := tx.Changes()
 		for i := range changes {
