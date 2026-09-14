@@ -4,7 +4,7 @@
 §Drei Review-Arten); DoD-/Spec-Konformität ist Verifier-Aufgabe und nicht
 Gegenstand dieses Reports.
 
-**Gegenstand:** [`slice-068`](../plan/planning/in-progress/slice-068-e2e-spaltenausschluss.md),
+**Gegenstand:** `slice-068` (Slice-Plan, Pfad in `docs/plan/planning/`),
 Diff `d088bb0..7fa5784` (Elter-Commit `d088bb0` ist ein reiner
 `next→in-progress`-Move und trägt keinen Inhalt). Ein Commit `7fa5784`,
 vier Dateien (+262/−8): `tools/harness/run-integration-tests.sh`,
@@ -16,7 +16,7 @@ Review-Zeitpunkt, unverändert seit der letzten Schärfung 2026-09-13).
 
 **Eingangs-Kontext** (die Verträge, gegen die geprüft wurde):
 
-- Slice-Plan [`slice-068`](../plan/planning/in-progress/slice-068-e2e-spaltenausschluss.md)
+- Slice-Plan `slice-068`
   (vollständig, inkl. der vier Plan-Nachzüge und §6)
 - [`ADR-0059`](../plan/adr/0059-spaltenauswahl-mechanismus.md) (vollständig,
   insbesondere Teilfrage 3 Option D, Teilfrage 5, §Konsequenzen,

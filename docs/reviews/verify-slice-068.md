@@ -1,7 +1,7 @@
 # Verifikationsbericht: slice-068 — 2026-09-14
 
 **Rolle:** Verifier (Modul 11) — Prüfung „Bauen wir es richtig?" gegen Plan
-([`slice-068`](../plan/planning/in-progress/slice-068-e2e-spaltenausschluss.md)
+(`slice-068`
 §1 Ziel/Abgrenzung, §2 DoD, §3 Plan, §4 Trigger, §5 Closure-Trigger, §6
 Risiken, §8 Sub-Area) und die bindenden Entscheidungen
 ([`ADR-0059`](../plan/adr/0059-spaltenauswahl-mechanismus.md) — umgesetzt,
