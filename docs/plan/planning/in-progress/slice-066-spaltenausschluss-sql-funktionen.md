@@ -162,7 +162,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/application/usecase/excludecolumn/service.go` | neu | `ExcludeColumnService` |
 | `internal/application/usecase/includecolumn/service.go` | neu | `IncludeColumnService` |
 | `internal/domain/model/administrationrequest.go` | update | `Column`-Feld, zwei Werte der geschlossenen Menge, Invarianten-Prüfung im Konstruktor |
-| `internal/domain/errors/errors.go` | update | Sentinel `ErrSourceColumnMissing` |
+| `internal/domain/errors/errors.go` | update | Kommentar der geschlossenen Antragsarten-Menge (`ErrInvalidAdministrationRequestKind`) auf die vier Werte nachgezogen — der Sentinel `ErrSourceColumnMissing` liegt in `internal/application/port/inbound/verwaltung.go` |
 | `internal/adapters/driven/postgresstorage/{administrationrequest,queries}.go` | update | `column_name` in Lese-/Schreibweg und Query-Text |
 | `internal/adapters/driven/postgresstorage/tableactivation.go` | update | `ColumnExists`-Implementierung des neuen Ports |
 | `internal/bootstrap/wiring.go` | update | `applyAdministrationRequest` um zwei `case`-Zweige |
@@ -201,8 +201,11 @@ genommen** (`tools/schema/schema.yaml` trägt nur noch
 `chk_administration_request_status`) und in die etablierte Ausweichform
 `tools/schema/nacharbeit-administration.sql` gelegt — idempotent
 (`DROP CONSTRAINT IF EXISTS` vor `ADD CONSTRAINT`), dieselbe Form wie die
-Antrags-Funktionen. Beleg (real gemessen, PostgreSQL 18, d-migrate 1.3.1):
-ein **frischer Rollout** mit dem aktuellen Baum läuft Exit 0; danach trägt
+Antrags-Funktionen. Beleg (real gemessen von der Reviewer-Rolle gegen
+PostgreSQL 18 / d-migrate 1.3.1, dokumentiert in
+[`docs/reviews/review-slice-066.md`](../../../reviews/review-slice-066.md)
+§Eigene Nachmessung; vom umsetzenden Lauf übernommen, nicht dort erneut
+gefahren): ein **frischer Rollout** mit dem aktuellen Baum läuft Exit 0; danach trägt
 `cdc.administration_request` die Spalte `column_name`, und
 `chk_administration_request_kind` entsteht anschließend mit den vier Arten
 (`nacharbeit-administration.sql:58` meldet zuvor
