@@ -14,7 +14,7 @@ Verzeichnis-Position — kein Status-Feld.
 ## 1. Welle-Ziel
 
 `LH-FA-CFG-005` (Spaltenauswahl) bekommt den in
-[ADR-0059](../adr/0059-spaltenauswahl-mechanismus.md) entschiedenen,
+[ADR-0059](../../adr/0059-spaltenauswahl-mechanismus.md) entschiedenen,
 vollständigen Umsetzungspfad: zwei neue Antragsarten
 (`exclude_column`/`include_column`) auf der bestehenden Antrags-Queue aus
 `ADR-0050`, Filterung im `Assembler` bei der Row-Image-Konstruktion (vor
@@ -46,9 +46,9 @@ Zerlegung.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-066 | SQL-Funktionen + Antrags-Verarbeitung — `cdc.exclude_column`/`cdc.include_column` | [LH-FA-CFG-005](../../../spec/lastenheft.md), [ADR-0059](../adr/0059-spaltenauswahl-mechanismus.md) |
-| slice-067 | Assembler-Filterung + Live-Reload-Verdrahtung — `TableBinding.ExcludedColumns` | [LH-FA-CFG-005](../../../spec/lastenheft.md), [LH-FA-SCH-003](../../../spec/lastenheft.md), [LH-FA-DAT-005](../../../spec/lastenheft.md) |
-| slice-068 | E2E-Beleg — Spaltenausschluss am laufenden Feed-Container | [LH-FA-CFG-005](../../../spec/lastenheft.md) |
+| slice-066 | SQL-Funktionen + Antrags-Verarbeitung — `cdc.exclude_column`/`cdc.include_column` | [LH-FA-CFG-005](../../../../spec/lastenheft.md), [ADR-0059](../../adr/0059-spaltenauswahl-mechanismus.md) |
+| slice-067 | Assembler-Filterung + Live-Reload-Verdrahtung — `TableBinding.ExcludedColumns` | [LH-FA-CFG-005](../../../../spec/lastenheft.md), [LH-FA-SCH-003](../../../../spec/lastenheft.md), [LH-FA-DAT-005](../../../../spec/lastenheft.md) |
+| slice-068 | E2E-Beleg — Spaltenausschluss am laufenden Feed-Container | [LH-FA-CFG-005](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -87,7 +87,7 @@ Zerlegung.
   wellenlosen Folge-Slice `slice-075` aus. `welle-18`s Closure-Trigger
   berührt das nicht (er verlangt den Beleg des laufenden Pfads, nicht
   Dauerhaftigkeit). Verdikt:
-  [`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`](../../reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md).
+  [`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md`](../../../reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md).
 
 ## 7. Closure-Notiz
 

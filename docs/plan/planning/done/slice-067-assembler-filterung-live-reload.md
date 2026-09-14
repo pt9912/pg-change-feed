@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-18`](../welle-18.md) — baut auf `slice-066` auf (die
+**Welle:** `welle-18` — baut auf `slice-066` auf (die
 Antrags-Verarbeitung ruft die hier gebaute Live-Reload-Methode auf);
 `slice-068` (E2E-Beleg) baut auf diesem Slice auf.
 

@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-18`](../welle-18.md) — erster Slice; `slice-067` (Filterung)
+**Welle:** `welle-18` — erster Slice; `slice-067` (Filterung)
 und `slice-068` (E2E-Beleg) bauen auf ihm auf, ohne die Anträge blieben ohne
 Wirkung.
 

@@ -19,7 +19,7 @@ Stand `HEAD = 8b8fa6f`), die vollständige
 vollständigen Review-Report, die beiden Vorgänger
 `docs/plan/planning/done/slice-066-spaltenausschluss-sql-funktionen.md` und
 `docs/plan/planning/done/slice-067-assembler-filterung-live-reload.md`, die
-Wellen-Datei [`welle-18`](../plan/planning/welle-18.md) und die betroffenen
+Wellen-Datei `welle-18` und die betroffenen
 Abschnitte des Lastenhefts. Die Sensoren wurden in dieser Sitzung
 **eigenständig real ausgeführt** (Exit-Code je in einem eigenen, ungepipten
 Schritt, `AGENTS.md` §3.9) — kein Implementer- oder Reviewer-Beleg ungeprüft
@@ -203,7 +203,7 @@ Häkchen. Die fünf Closure-Zeilen bleiben über alle drei Commits offen. Keine
 
 ## 7. `welle-18`-Closure-Reife
 
-Der Closure-Trigger der Welle ([`welle-18`](../plan/planning/welle-18.md) §3)
+Der Closure-Trigger der Welle (`welle-18` §3)
 hat vier Bedingungen; ich prüfe jede einzeln gegen den gemergten Stand:
 
 | Bedingung | Stand meiner Prüfung | Erfüllt? |
