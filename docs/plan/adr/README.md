@@ -71,3 +71,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0058 | Testansatz für fünf Lastenheft-Kennungen ohne Testbeleg | Accepted | 2026-09-14 | [0058-testansatz-fuenf-luecken.md](0058-testansatz-fuenf-luecken.md) |
 | ADR-0059 | Spaltenauswahl — Mechanismus, Granularität und Wirkort | Accepted | 2026-09-14 | [0059-spaltenauswahl-mechanismus.md](0059-spaltenauswahl-mechanismus.md) |
 | ADR-0060 | gRPC-Server-Streaming für Live-Change-Zustellung | Accepted | 2026-09-14 | [0060-grpc-streaming-mechanismus.md](0060-grpc-streaming-mechanismus.md) |
+| ADR-0061 | HTTP/SSE zusätzlich zu gRPC für Live-Change-Zustellung | Accepted | 2026-09-14 | [0061-http-sse-zusaetzlich-zu-grpc.md](0061-http-sse-zusaetzlich-zu-grpc.md) |
