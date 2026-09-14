@@ -155,6 +155,36 @@ Aussagen-Berührung steht hier gar nicht.
 | `spec/architecture.md` | update | `ARC-005`-Sequenzdiagramm-Korrektur (`ADR-0059` Folgepflicht) |
 | `spec/pflichtenheft.md` | update | neuer `SPEC-*`-Eintrag (`ADR-0059` Folgepflicht) |
 
+**Plan-Nachzug (Implementer, 2026-09-14) — Migrationsform der
+`request_kind`-CHECK-Klausel.** Die DoD-Zeile zu
+`cdc.administration_request` hat den Fall vorgesehen („oder, falls d-migrate
+für eine reine Spalten-/CHECK-Änderung an einer bestehenden Tabelle real
+scheitert … über eine geeignete Migrationsform — Implementer-Entscheidung,
+Plan-Nachzug"); er ist eingetreten. Real gemessen gegen eine bestehende
+Instanz (PostgreSQL 18, d-migrate 1.3.1): die Spalten-Erweiterung
+(`column_name`) konvergiert (Exit 0), die CHECK-Erweiterung **nicht** —
+`POST_EXECUTE_DRIFT` (Exit 5), und die bestehende Klausel entfällt dabei;
+dasselbe Bild mit umbenanntem Constraint, also unabhängig vom Namen, und
+ohne dass die neue Klausel entsteht. Die Anlage einer neuen CHECK-Klausel an
+einer bestehenden Tabelle ist von d-migrate 1.3.1 also nicht getragen. Der
+Implementer hat deshalb die Klausel **aus dem deklarativen Modell
+genommen** (`tools/schema/schema.yaml` trägt nur noch
+`chk_administration_request_status`) und in die etablierte Ausweichform
+`tools/schema/nacharbeit-administration.sql` gelegt — idempotent
+(`DROP CONSTRAINT IF EXISTS` vor `ADD CONSTRAINT`), dieselbe Form wie die
+Antrags-Funktionen. Beleg: `make schema-rollout` gegen eine Instanz mit dem
+Stand *vor* dieser Änderung läuft Exit 0, danach trägt
+`cdc.administration_request` die Spalte `column_name` und
+`chk_administration_request_kind` die vier Arten; ein frischer Rollout
+bleibt unverändert grün (`make test-store`). Die `column_name`-Spalte
+bleibt bewusst deklarativ — sie konvergiert. Das ist eine **neue
+Objektklasse** derselben Beobachtung (`BEO-PGC/d-migrate-nacharbeit`):
+„CHECK-Änderung/-Anlage an einer bestehenden Tabelle", verschieden von der
+seit `slice-015` deklarativ gelösten Erstanlage-Konvergenz; §8 dieser
+Planung hatte „keinen neuen Zähler-Beitrag" erwartet, solange keine neue
+Objektklasse betroffen ist — sie ist betroffen, der Beleg gehört in die
+Closure.
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`

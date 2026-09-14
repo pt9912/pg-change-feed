@@ -218,6 +218,24 @@ einen Hintergrund-Zug, der offene Anträge liest, denselben
 Antrags-Datensatz vermerkt. Beide Pfade laufen über denselben Inbound
 Port; nur der Aufrufweg zu ihm unterscheidet sich.
 
+Die **Antragsart des Datensatzes wählt den Inbound Port** — vier Arten
+laufen über diesen einen Weg:
+
+| Antragsart | SQL-Funktion | Inbound Port |
+|---|---|---|
+| `enable` | `cdc.enable_table(...)` | `EnableTableUseCase` |
+| `disable` | `cdc.disable_table(...)` | `DisableTableUseCase` |
+| `exclude_column` | `cdc.exclude_column(...)` | `ExcludeColumnUseCase` |
+| `include_column` | `cdc.include_column(...)` | `IncludeColumnUseCase` |
+
+Die beiden Spalten-Antragsarten ([`LH-FA-CFG-005`](lastenheft.md)) rufen
+denselben Administrations-Hintergrundzug auf demselben Antrags-Datensatz;
+sie tragen keinen Tabellen-Bindungs- oder Publication-Zug, sondern den
+Spaltennamen und die Spaltenexistenz-Prüfung (`ColumnExclusionPort`,
+`ARC-004`). Der Hintergrund-Zug vermerkt das Ergebnis wie bei den beiden
+Tabellen-Antragsarten im selben Datensatz (`applied`/`failed` samt
+Fehlertext). Die Antragsarten-Wahl im Diagramm unten steht für alle vier.
+
 ```mermaid
 sequenceDiagram
     participant A as Administrator über SQL (ARC-005)

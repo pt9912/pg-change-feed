@@ -307,6 +307,35 @@ interner Fehler (`500`).
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `GET /tables?source=<string>&publication=<string>` | `reader` oder `admin` | beide Query-Parameter Pflicht | `200`: `{"tables": [{"table_id": "<string>", "source": "<string>", "schema": "<string>", "table": "<string>"}, …], "retained": [...]}` — ohne Aktivierung beide Listen leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `POST /retention/run` | `admin` | `{"source": "<string>", "min_age_nanos": <int64>}` — `source` Pflicht, `min_age_nanos` ≥ 0 | `200`: `{"deleted": <int>}` — Anzahl real gelöschter Changes |
 
+### SPEC-019 — `cdc.administration_request` (Antrags-Datensatz)
+
+Feldform des Antrags-Datensatzes der schreibenden SQL-Administration
+([`LH-FA-ADM-001`](lastenheft.md), [`LH-FA-CFG-005`](lastenheft.md)):
+`cdc.enable_table`/`cdc.disable_table`/`cdc.exclude_column`/
+`cdc.include_column` schreiben ausschließlich eine Zeile hierher und senden
+`pg_notify` auf dem Kanal `cdc_administration`; der laufende Capture-Prozess
+liest die offenen Anträge und vermerkt das Ergebnis in derselben Zeile.
+
+| Spalte | Typ | Pflicht | Bedeutung |
+|---|---|---|---|
+| `administration_request_id` | text (PK) | ja | von der SQL-Funktion vergeben; zugleich der `pg_notify`-Payload |
+| `source_id` | text (FK `cdc.source`) | ja | Quelle des Antrags |
+| `schema_name` / `table_name` | text | ja | adressierte Tabelle |
+| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die beiden Tabellen-Antragsarten tragen hier NULL |
+| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` |
+| `requested_at` | timestamptz | ja, Default `current_timestamp` | Anlage-Zeitpunkt; die Verarbeitungs-Ordnung |
+| `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
+| `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
+
+`column_name` ist für die beiden Spalten-Antragsarten Pflicht (ein Antrag
+ohne Spalte adressiert kein Ziel, Domänen-Invariante des
+Antrags-Konstruktors); ein Spaltenausschluss gegen eine an der Quelle nicht
+existierende Spalte endet als `failed` mit dem Fehlertext der
+`ErrSourceColumnMissing`-Ausprägung (Klartext „Spalte existiert nicht an der
+Quelle", gefolgt von der Adresse `schema.table.column`, getrennt durch
+Punkte). Die beiden Tabellen-Antragsarten tragen unverändert Bindungs-Zeilen
+und Publication nach.
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -400,3 +429,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-13 | SPEC-017 Subjekt-Schema korrigiert: tabellen-granulares Subjekt `cdc.changes.<source_id>.<schema>.<table>` statt quellen-weit; übrige SPEC-017-Festlegungen unverändert |
 | 2026-09-14 | SPEC-018 ergänzt: HTTP-API `RegisterConsumer` — Endpunkt/Methode, JSON-Request-/Response-Schema, Fehler-Antwortform `400`/`401`/`403`/`500`, Token-Header-Form, Aktivierung über `CDC_HTTP_ADDR` |
 | 2026-09-14 | SPEC-018 erweitert: acht weitere Endpunkte (Acknowledge-/Position-/Remove-Consumer, Enable-/Disable-/Status-/List-Table, Retention-Lauf) — Fehler-Antwortform um `404` (physisch fehlende Tabelle an der Quelle) ergänzt |
+| 2026-09-14 | SPEC-019 ergänzt: Feldform von `cdc.administration_request` — Spalte `column_name`, erweiterte `request_kind`-Menge `enable`/`disable`/`exclude_column`/`include_column`, `failed`-Fehlertext der fehlenden Spalte |
