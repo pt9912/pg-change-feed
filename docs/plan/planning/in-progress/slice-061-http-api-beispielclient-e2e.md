@@ -76,18 +76,18 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] Doku-Update: `harness/README.md` §Sensors — `make test-integration`s
       Tabellenzeile um den neuen HTTP-Rundlauf-Satz ergänzt (analog zu den
       bisherigen Ergänzungen je Slice).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-16`-Closure** (dieser Slice trägt
       `Welle: welle-16`).
 
@@ -129,21 +129,39 @@ grün **und** Closure-Notiz geschrieben.
   allen Interfaces binden, was ihn innerhalb des Compose-Netzes für den
   Toolchain-Container unerreichbar macht (analog zum
   NATS-Grundgerüst-Vorbild, das im Container-Netz erreichbar sein muss). —
-  **Ausgang:** <bei Closure zu füllen>
+  **Ausgang: entfallen** — `compose.yaml` setzt `CDC_HTTP_ADDR: ":8090"`
+  (bindet alle Interfaces), real bestätigt durch den grünen
+  `make test-integration`-Rundlauf gegen den laufenden Container.
 - Der Beispiel-Client könnte beim direkten Kopieren des `natssub`-Musters
   denselben `.dockerignore`-/Alpine-`bash`-Fallstrick treffen wie
   `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` beschreibt, falls
   der Client in eine neue Docker-Stage eingebaut wird (statt nur lokal per
-  `go run` ausgeführt zu werden). — **Ausgang:** <bei Closure zu füllen>
+  `go run` ausgeführt zu werden). — **Ausgang: entfallen** — der Client
+  läuft per `docker run --rm --network` gegen den bestehenden Toolchain-
+  Weg, keine neue Docker-Build-Stage, kein Dockerignore-Fallstrick
+  betroffen.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der reale End-to-End-Rundlauf deckte eine
+  echte Verdrahtungslücke aus `slice-059`/`060` auf (acht Handler mit
+  `nil`-Use-Case im Bootstrap), die deren eigene Whitebox-Unit-Tests
+  strukturell nicht sehen konnten — genau der Nachweiswert, den ein
+  realer E2E-Beleg gegenüber Unit-Tests hat.
+- **Was ging anders als geplant:** `internal/bootstrap/wiring.go` musste
+  außerplanmäßig nachgezogen werden (dokumentiert in §3), da DoD-Punkt 3
+  ohne echte Verdrahtung strukturell unerfüllbar gewesen wäre. Reviewer
+  und Verifier prüften die Korrektur unabhängig gegen `ADR-0047`
+  (Least-Privilege) und bestätigten sie als legitim — kein Carveout-Fall.
+- **Steering-Loop-Eintrag:** keiner verkörpert — neue Beobachtung
+  registriert, unter der 3×-Schwelle (siehe unten).
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke/` angelegt, Beleg
+  `evidence/slice-061.md` (1×) — Whitebox-Unit-Tests eines neuen Driving-
+  Adapters können eine Bootstrap-Verdrahtungslücke strukturell nicht
+  fangen, nur ein realer E2E-Lauf deckt sie auf.
 - **Folge-Slices:** keine — letzter Slice der Welle.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** beide entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-16`-Closure (dieser Slice trägt
   `Welle: welle-16`, siehe DoD-Item).
 
