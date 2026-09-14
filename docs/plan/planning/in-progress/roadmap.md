@@ -38,7 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-16.md](../welle-16.md) — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`, `ADR-0057`).
 - [welle-17.md](../welle-17.md) — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`).
 - [welle-18.md](../welle-18.md) — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`LH-FA-CFG-005`, `ADR-0059`).
 - [welle-19.md](../welle-19.md) — Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE (`LH-FA-SST-008`, `ADR-0060`, `ADR-0061`).
@@ -104,8 +103,9 @@ flowchart LR
     W13[welle-14: Performance-Benchmarks & Test-Coverage-Gate]
     S051[wellenlos: slice-051 Walsender-Wirksamkeit isolierter Beleg]
     W15[welle-15: NATS-Change-Notification]
+    W16[welle-16: HTTP/JSON-API mit Token-Authn]
 
-    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W9B --> W10 --> W10B --> W11 --> S047 --> W13 --> S051 --> W15
+    W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W9B --> W10 --> W10B --> W11 --> S047 --> W13 --> S051 --> W15 --> W16
 ```
 
 ## Abgeschlossene Wellen
@@ -130,6 +130,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-13 — Retention-Löschausführung | 2026-09-13 | [welle-13-results.md](../done/welle-13-results.md) |
 | welle-14 — Performance-Benchmarks & Test-Coverage-Gate | 2026-09-13 | [welle-14-results.md](../done/welle-14-results.md) |
 | welle-15 — NATS-Change-Notification | 2026-09-14 | [welle-15-results.md](../done/welle-15-results.md) |
+| welle-16 — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`, `ADR-0057`) | 2026-09-14 | [welle-16-results.md](../done/welle-16-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

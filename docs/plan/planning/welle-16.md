@@ -86,5 +86,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: <Zeiger auf `welle-16-results.md`, Geschwister im Ruheort `done/`>
-Zähler: <Zeiger aufs Beobachtungs-Register, eine Ebene über dem Ruheort>
+Ergebnis: [welle-16-results.md](welle-16-results.md), Geschwister im Ruheort `done/`
+Zähler: [../observations/](../observations/)`BEO-PGC/`, eine Ebene über dem Ruheort
