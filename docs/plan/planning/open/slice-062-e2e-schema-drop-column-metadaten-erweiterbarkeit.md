@@ -20,7 +20,7 @@ braucht diesen Slice zusammen mit `slice-063` in jedem Matrix-Leg.
 §Metadaten-Erweiterbarkeit — beide bereits im Lastenheft festgelegt, dieser
 Slice liefert den fehlenden Testbeleg, ändert die Zusage nicht.
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
