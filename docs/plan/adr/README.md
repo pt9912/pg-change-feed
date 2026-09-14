@@ -76,4 +76,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0063 | Testform-Korrektur „Entfernte Spalten“ (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0063-lh-fa-sch-003-testform-korrektur.md](0063-lh-fa-sch-003-testform-korrektur.md) |
 | ADR-0064 | `LH-QA-OPS-005`-Testansatz-Korrektur (Supersedes ADR-0058, teilweise) | Accepted | 2026-09-14 | [0064-lh-qa-ops-005-testansatz-korrektur.md](0064-lh-qa-ops-005-testansatz-korrektur.md) |
 | ADR-0065 | Spaltenausschluss — dauerhafter Träger (Supersedes ADR-0059, teilweise) | Accepted | 2026-09-14 | [0065-spaltenausschluss-dauerhafter-traeger.md](0065-spaltenausschluss-dauerhafter-traeger.md) |
-| ADR-0066 | Broadcaster — begrenzte Empfangswarteschlange (Supersedes ADR-0060, teilweise) | Accepted | 2026-09-14 | [0066-broadcaster-begrenzte-empfangswarteschlange.md](0066-broadcaster-begrenzte-empfangswarteschlange.md) |
+| ADR-0066 | Broadcaster — begrenzte Empfangswarteschlange (Supersedes ADR-0060; → ADR-0067) | Accepted | 2026-09-14 | [0066-broadcaster-begrenzte-empfangswarteschlange.md](0066-broadcaster-begrenzte-empfangswarteschlange.md) |
+| ADR-0067 | Publish-Einbindung — Fitness-Function-Zeile korrigiert (Supersedes ADR-0066) | Accepted | 2026-09-14 | [0067-capture-publish-einbindung-fitness-function-korrektur.md](0067-capture-publish-einbindung-fitness-function-korrektur.md) |
