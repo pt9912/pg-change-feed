@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.8.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.9.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -991,17 +991,17 @@ Change-Inhalte trägt, konkretes Subjekt-/Stream-Schema,
 Zustellgarantien (JetStream vs. Core NATS) — das sind Architektur- (ADR)
 bzw. Spezifikationsfragen (`SPEC-*`), keine Lastenheft-Festlegung.
 
-### LH-FA-SST-008 — Live-Streaming neuer Changes über gRPC
+### LH-FA-SST-008 — Live-Streaming neuer Changes
 
 **Beschreibung:** Ein Consumer muss neue committed Changes über einen
-gRPC-Server-Stream mit vollständigem Change-Inhalt empfangen können, ohne
+Server-Stream mit vollständigem Change-Inhalt empfangen können, ohne
 dafür den bestehenden Lesezugriffsweg (SQL/API) pollen zu müssen.
 
 **Akzeptanzkriterien:**
 
-- **Happy Path:** Given ein Consumer ist über einen gRPC-Stream verbunden,
-  when eine neue committed Änderung erfasst wird, then erhält der Consumer
-  den vollständigen Change-Inhalt über den Stream.
+- **Happy Path:** Given ein Consumer ist über einen Stream verbunden, when
+  eine neue committed Änderung erfasst wird, then erhält der Consumer den
+  vollständigen Change-Inhalt über den Stream.
 - **Boundary:** Given der Stream wird unterbrochen oder beendet, when
   Änderungen währenddessen erfasst werden, then gehen sie nicht verloren —
   sie bleiben über den bestehenden Lesezugriffsweg abrufbar
@@ -1011,12 +1011,12 @@ dafür den bestehenden Lesezugriffsweg (SQL/API) pollen zu müssen.
   Autorisierung, when der Stream geöffnet werden soll, then wird die
   Verbindung abgelehnt, nicht stillschweigend mit leeren Daten fortgesetzt.
 
-**Out-of-Scope:** Konkretes Protobuf-/Nachrichtenschema,
-Zustellgarantien innerhalb des Streams, Backpressure-/
-Flusskontrollverfahren, Verhältnis zu `LH-FA-SST-007` (NATS bleibt ein
-eigenständiges Wecksignal, dieses Streaming ersetzt es nicht) — das sind
-Architektur- (ADR) bzw. Spezifikationsfragen (`SPEC-*`), keine
-Lastenheft-Festlegung.
+**Out-of-Scope:** Konkretes Übertragungsprotokoll (gRPC, HTTP/SSE, oder
+beide nebeneinander), Nachrichtenschema, Zustellgarantien innerhalb des
+Streams, Backpressure-/Flusskontrollverfahren, Verhältnis zu
+`LH-FA-SST-007` (NATS bleibt ein eigenständiges Wecksignal, dieses
+Streaming ersetzt es nicht) — das sind Architektur- (ADR) bzw.
+Spezifikationsfragen (`SPEC-*`), keine Lastenheft-Festlegung.
 
 ---
 
@@ -1244,3 +1244,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.6.0 | 2026-09-14 | `LH-FA-CFG-005`s Out-of-Scope-Klausel und die globale Exportadapter-Out-of-Scope-Zeile (§5) von der Milestone-Bezeichnung „MVP" gelöst — beide benennen den Ausschluss eigenständig, ohne Meilenstein-Bezug; dieselbe Draft-Regel wie bei 0.4.0/0.5.0, eigener Commit vor jeder folgenden Änderung | — |
 | 0.7.0 | 2026-09-14 | `LH-FA-CFG-005` (Spaltenauswahl) von dauerhaftem Ausschluss auf aktive Anforderung umgestellt — Titel- und Out-of-Scope-Klausel angepasst, `LH-FA-DAT-005`s Boundary-Kriterium verweist ohne Zusatzbezeichnung darauf; dieselbe Draft-Regel wie bei 0.4.0–0.6.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.8.0 | 2026-09-14 | `LH-FA-SST-008` (Live-Streaming neuer Changes über gRPC) neu ergänzt — abgegrenzt gegen `LH-FA-SST-007` (NATS bleibt eigenständiges Wecksignal); dieselbe Draft-Regel wie bei 0.4.0–0.7.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.9.0 | 2026-09-14 | `LH-FA-SST-008` von einer gRPC-spezifischen auf eine protokollneutrale Formulierung umgestellt (Titel, Beschreibung, Out-of-Scope) — Protokollwahl (gRPC, HTTP/SSE, oder beide) ist Architektur-/Spezifikationsfrage wie bei `LH-FA-SST-005`/`006`, keine Lastenheft-Festlegung; dieselbe Draft-Regel wie bei 0.4.0–0.8.0, eigener Commit vor jedem umsetzenden Slice | — |
