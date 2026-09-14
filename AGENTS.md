@@ -257,6 +257,45 @@ falsch *gemessen*; hier: Exit-Code korrekt gemessen, aber nicht
 *wirksam*), siehe
 [`docs/reviews/architect-verdict-report-nackte-id-ohne-link-4x.md`](docs/reviews/architect-verdict-report-nackte-id-ohne-link-4x.md).
 
+### 3.10 Ein neuer oder strukturell geänderter GitHub-Actions-Workflow gilt erst nach einem realen, grünen Post-Push-Lauf als abgeschlossen
+
+GitHub-Actions-Workflows laufen auf einem externen, gehosteten Runner.
+Jede lokal mögliche Prüfung — YAML-Parse, `yamllint`, `actionlint`,
+JSON-Schema-Validierung gegen die SchemaStore-Schemata, `make gates` —
+bleibt strukturell statisch: Ob der Workflow auf dem echten Runner
+tatsächlich grün läuft (Ressourcen-/Zeitverhalten,
+Registry-Zugangsdaten-Pfade, Runner-spezifische
+Umgebungsunterschiede), bleibt bis zum ersten realen Lauf unbewiesen.
+Das ist keine Prozesslücke, sondern eine Eigenschaft des Werkzeugs
+selbst — ein Docker-only-Sensor kann diese Prüfung strukturell nicht
+leisten (§3.1).
+
+**Falsch:** einen Slice, dessen Umfang einen neuen Workflow oder eine
+strukturelle Änderung an einem bestehenden Workflow enthält (neue
+Matrix-Achse, neuer Schritt, neue Job-Abhängigkeit), als
+DoD-vollständig behandeln, weil `make gates` grün lief — ohne den
+ersten realen Post-Push-Lauf auf GitHub geprüft zu haben (`gh run
+view`/`gh run list` oder gleichwertig).
+**Richtig:** das betroffene §6-Risiko (Modul 5) bleibt **weiter offen**,
+bis der reale Lauf bestätigt ist; die Bestätigung — grüner Lauf oder
+roter Befund mit Folgemaßnahme — wird explizit nachgetragen, bevor
+Closure erfolgt.
+
+**Begründung:** Dreifach real aufgetreten
+(`docs/plan/planning/observations/BEO-PGC/github-actions-unverifizierbar-lokal`,
+`evidence/slice-039.md`, `evidence/slice-056.md`, `evidence/slice-064.md`)
+— in allen drei Fällen korrekt als *weiter offen* im §6-Risiko geführt
+und vor bzw. bei Closure real bestätigt, aber jedes Mal neu hergeleitet
+statt einer bereits geltenden Regel gefolgt. Diese Regel macht die
+bislang implizite, aber jedes Mal richtige Praxis explizit, damit
+künftige Slice-/Wellen-Planungen sie nicht erneut herleiten müssen;
+kein neuer Sensor, aus dem oben genannten strukturellen Grund — die
+tragende Instanz bleibt die Planner-/Verifier-Disziplin beim
+Risiko-Ausgang (Modul 5 §Offene Risiken werden bei Closure aufgelöst),
+siehe
+[`docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md`](docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md)
+· seit welle-17.
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.
