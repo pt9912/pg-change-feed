@@ -68,3 +68,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0055 | NATS-Change-Notification als Wecksignal (→ ADR-0056, teilweise) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
 | ADR-0056 | NATS-Wecksignal — tabellen-granulares Subjekt | Accepted | 2026-09-13 | [0056-nats-tabellen-granulares-subjekt.md](0056-nats-tabellen-granulares-subjekt.md) |
 | ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
+| ADR-0058 | Testansatz für fünf Lastenheft-Kennungen ohne Testbeleg | Accepted | 2026-09-14 | [0058-testansatz-fuenf-luecken.md](0058-testansatz-fuenf-luecken.md) |
