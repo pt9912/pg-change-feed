@@ -68,12 +68,19 @@ gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst —
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 - [x] [LH-FA-SST-008](../../../../spec/lastenheft.md) Happy-Path/Negative
-      erfüllt, Test referenziert: `make test-integration` — ein Wegwerf-
-      Beispiel-Client (`tools/harness/grpcclient/`) empfängt eine reale
-      committed Änderung mit vollständigem Inhalt über den laufenden
-      Feed-Container, **und** ein Verbindungsversuch ohne gültiges Token
-      wird real abgelehnt (`gRPC Unauthenticated`) — beide Belege in
-      derselben Rundlauf-Erweiterung
+      erfüllt, Tests referenziert — **zwei** Zeiger, weil zwei Tiers zwei
+      Hälften tragen: `make test-integration` weist real nach, dass ein
+      Wegwerf-Client (`tools/harness/grpcclient/`) eine reale committed
+      Änderung über den laufenden Feed-Container empfängt (Tabelle,
+      Operation, Spaltenwert am Stream **und** dieselbe `change_id`
+      unabhängig über `cdc.changes` lesbar) **und** dass ein
+      Verbindungsversuch ohne gültiges Token real abgelehnt wird
+      (`gRPC Unauthenticated`); die **Feldvollständigkeit** der Nachricht
+      trägt `make test` (`internal/adapters/driving/grpc/server_test.go`,
+      beide Row Images, alle Felder). Der ursprüngliche Ein-Zeiger nannte nur
+      den E2E-Tier und wiederholte dabei „mit vollständigem Inhalt" — die
+      Verifikation hat den fehlenden zweiten Verweis benannt; kein Nachweis
+      fehlte, nur der Verweis
       ([ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) Fitness
       Function).
 - [x] `compose.yaml` exponiert `CDC_GRPC_ADDR`;
@@ -86,11 +93,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer gRPC-Rundlauf-Satz analog zum bestehenden HTTP-API-Satz).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -186,12 +193,20 @@ dasteht.
 - `harness/README.md` wird von diesem Slice und parallel von `slice-061`
   berührt (unterschiedliche Zeilen — neue gRPC-Sensor-Satz vs. neue
   HTTP-API-Sensor-Zeile); Merge-Konflikt-Risiko, falls `slice-061` bei
-  Start dieses Slice noch nicht gemerged ist. — **Ausgang:** wird bei
-  Closure zugewiesen.
+  Start dieses Slice noch nicht gemerged ist. — **Ausgang: entfallen** —
+  `slice-061` war längst geschlossen; die Zeile wurde ohne Konflikt
+  angehängt.
 - Der Compose-Stack exponiert mit `CDC_GRPC_ADDR` einen weiteren Port;
   Netzwerk-Alias- oder Port-Kollision mit einem bereits belegten
   Compose-Dienst ist nicht ausgeschlossen, bevor real getestet wurde. —
-  **Ausgang:** wird bei Closure zugewiesen.
+  **Ausgang: entfallen** — der reale `make test-integration`-Lauf fährt den
+  Stack mit beiden Ports (`CDC_HTTP_ADDR`, `CDC_GRPC_ADDR`) grün; keine
+  Kollision. **Zur Closure ergänzt:** der Slice hat ein Gate berührt
+  (`.a-check.yml`), das `welle-19` §6 als „keine Änderung nötig" führte —
+  der Konflikt wurde nicht still übergangen, sondern über den Konflikt-Pfad
+  entschieden (Review-HIGH → `ADR-0068`: Gruppe `tooling` + Kante statt
+  `composition_root`-Erweiterung); die `welle-19`-§6-Zeile ist damit
+  widerlegt und wird bei der Wellen-Closure nachgezogen.
 
 ## 7. Closure-Notiz
 
@@ -203,18 +218,48 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
+- **Was hat funktioniert:** Der reale Rundlauf belegt beide Hälften des
+  Slice in einem Lauf: der Wegwerf-Client verbindet sich über gRPC, empfängt
+  eine committed Änderung (`change_id=964-1`, `new_image` mit dem
+  Sentinel-Wert), und ohne Token wird der Stream real abgelehnt
+  (`REJECTED code=Unauthenticated`). Der Beleg ist stärker geworden, als er
+  geplant war: statt nur die Existenz einer Sentinell-Zeile zu prüfen, bindet
+  die Assertion die **empfangene** `change_id` an `cdc.changes` — der
+  Verifier hat das mit einer gefälschten `change_id` rot gesehen. Und der
+  Rundlauf hat `ADR-0066`s Semantik real bestätigt: die erste committete
+  Änderung ging im asynchronen Registrierungs-Fenster verloren (fire-and-
+  forget ohne Replay), die zweite kam an.
+- **Was ging anders als geplant:** (a) Der Slice musste ein Gate berühren,
+  das die Welle ausgeschlossen hatte: `.a-check.yml`. Der erste
+  `make a-check`-Lauf war rot (der Client importiert den Stub); die erste
+  Lösung (Ausnahme für `tools/**` in `composition_root`) war eine
+  Gate-Lockerung ohne ADR — der Reviewer hat sie als HIGH bestätigt, ein
+  Architect-Zug hat sie über `ADR-0068` durch eine **begrenzte Kante**
+  ersetzt. (b) Die ursprüngliche E2E-Zusage „vollständiger Inhalt" war zu
+  weit — die Feldvollständigkeit trägt `make test`; die Fixrunde hat die
+  Zusage aufgeteilt (Identität erweitert, Vollständigkeit zurückgenommen).
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der auslösende Befund
+  ist eine ADR-Entscheidung (`ADR-0068`, sie schärft die Klausel selbst und
+  trägt damit die Regel), kein wiederkehrendes Muster. Benannt statt gezählt:
+  die Klasse „Gate-Scope-Erweiterung durch Konfiguration ohne den von der ADR
+  benannten Träger" ist als eigener Registereintrag notiert
+  (`BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger`, 1×).
   — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
   Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
   *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
   Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
   verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger/` angelegt, Beleg
+  `evidence/slice-071.md` (1×).
+- **Folge-Slices:** keiner aus diesem Slice — `slice-072` steht bereits in
+  `welle-19` §4.
+- **Risiken aus §6:** beide entfallen; der zur Closure ergänzte
+  Gate-Konflikt ist über `ADR-0068` entschieden — siehe §6.
+- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-19` offen) —
+  Prüfung läuft bei der `welle-19`-Closure. **Für die Welle vorgemerkt:**
+  `welle-19` §6 („`.a-check.yml` — keine Änderung nötig") ist durch diesen
+  Slice widerlegt und dort nachzuziehen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
