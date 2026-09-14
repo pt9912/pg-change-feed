@@ -14,8 +14,11 @@ leakt nicht in Ports (`tech-leak`, `port-impurity`), Composition Root außer
 
 1. **Abdeckung folgt dem Baum** — Layer-Globs matchen nur vorhandene Dateien;
    eine Datei ohne Schicht fällt unter den Abdeckungs-Hinweis (kein
-   Exit-Wechsel, aber auf stderr lesbar). Heilbar durch Glob-Nachzug in
-   `.a-check.yml` je Slice.
+   Exit-Wechsel, aber auf stderr lesbar). Ein Glob-Nachzug, der nur den
+   §2-Komponentensatz verfeinert, ist eine `.a-check.yml`-Änderung; eine
+   Gruppe aufzunehmen, die §2 nicht als Komponente führt, **mit einer
+   Import-Berechtigung**, ist eine Erweiterung der Architekturregel und
+   braucht eine ADR ([`ADR-0068`](../../docs/plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)).
 2. **Auflösungs-Hinweis ist kein Grün** — löst kein Symbol auf eine Schicht
    auf, meldet der Lauf einen Hinweis; „alles grün“ sagt dann nichts über
    einen Prüfbereich. Beobachten, nicht durchwinken.
@@ -51,5 +54,7 @@ Exit nicht — sie stehen auf stderr und sind zu lesen, nicht zu ignorieren.
 ## Bindung
 
 [`ADR-0041`](../../docs/plan/adr/README.md) (Maschinenform der §2-Constraints,
-supersedes [`ADR-0036`](../../docs/plan/adr)) · `.a-check.yml` (deklarativer Stand) · Image-Digest in
+supersedes [`ADR-0036`](../../docs/plan/adr); Änderungs-Ausnahmeklausel
+gefasst durch [`ADR-0068`](../../docs/plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)) ·
+`.a-check.yml` (deklarativer Stand) · Image-Digest in
 `a-check.mk` (Pin-Hebung = bewusster Commit).

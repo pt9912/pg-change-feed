@@ -12,6 +12,12 @@ layers:
   ports:    ["internal/application/port/**"]
   app:      ["internal/application/usecase/**"]
   adapters: ["internal/adapters/**"]
+  # `tooling` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
+  # Gruppe der Wegwerf-Clients unter `tools/harness/**`. Sie sprechen den
+  # gRPC-Stream über den erzeugten Protokoll-Stub des Adapters
+  # (`internal/adapters/driving/grpc/streamv1`) real über das Netz an und
+  # verdrahten nichts (ADR-0068).
+  tooling:  ["tools/harness/**"]
 edges:
   # Abhängigkeiten zeigen nach innen (ADR-0002): Ports und Use Cases
   # referenzieren die Domain; Adapter referenzieren Ports und Domain-Typen
@@ -21,16 +27,14 @@ edges:
   - {from: app,      to: ports}
   - {from: adapters, to: ports}
   - {from: adapters, to: domain}
+  # `tooling` → `adapters` ist die einzige Berechtigung dieser Gruppe: der
+  # Zugriff auf den Protokoll-Stub. Ein Import aus `app`, `ports` oder
+  # `domain` in `tools/harness/**` bleibt `wrong-direction` (ADR-0068).
+  - {from: tooling,  to: adapters}
 # Composition Root (`ADR-0026`): die Verdrahtung konkreter Adapter lebt in
 # `internal/bootstrap` und `cmd` — und in den Verdrahtungs-Tests, die
 # denselben Aufbau als Test tragen (MVP-Integrationstest gegen die
 # Compose-Umgebung, `test/integration`).
-# `tools/**` trägt die testseitigen Wegwerf-Clients des Harness (z. B.
-# `tools/harness/grpcclient`), die einen laufenden Adapter real über das
-# Netz konsumieren — derselbe testseitige Verdrahtungs-Konsument wie
-# `test/integration`, deshalb dieselbe Ausnahme von der Schicht-Regel
-# (`ADR-0041` §Entscheidung: `composition_root` ist deklarativer Stand der
-# `.a-check.yml`, kein Schichten-Edge).
-composition_root: ["internal/bootstrap/**", "cmd/**", "test/integration/**", "tools/**"]
+composition_root: ["internal/bootstrap/**", "cmd/**", "test/integration/**"]
 markers:
   ignore_symbols: []

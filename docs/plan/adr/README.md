@@ -51,7 +51,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0038 | Implementierungssprache Go (→ ADR-0039) | Superseded | 2026-09-09 | [0038-implementierungssprache-go.md](0038-implementierungssprache-go.md) |
 | ADR-0039 | Paketstruktur-Detaillierung (Go) (→ ADR-0042) | Superseded | 2026-09-09 | [0039-paketstruktur-detaillierung-go.md](0039-paketstruktur-detaillierung-go.md) |
 | ADR-0040 | ClockPort (Zeit als Outbound Port) | Accepted | 2026-09-09 | [0040-clockport.md](0040-clockport.md) |
-| ADR-0041 | a-check als Maschinenform der Architektur-Prüfung | Accepted | 2026-09-09 | [0041-a-check-maschinenform-architekturpruefung.md](0041-a-check-maschinenform-architekturpruefung.md) |
+| ADR-0041 | a-check als Maschinenform der Architektur-Prüfung (→ ADR-0068, teilweise) | Accepted | 2026-09-09 | [0041-a-check-maschinenform-architekturpruefung.md](0041-a-check-maschinenform-architekturpruefung.md) |
 | ADR-0042 | Transport-Typen am Port | Accepted | 2026-09-09 | [0042-transport-typen-am-port.md](0042-transport-typen-am-port.md) |
 | ADR-0043 | Schemamigrationen mit d-migrate | Accepted | 2026-09-09 | [0043-schemamigrationen-mit-d-migrate.md](0043-schemamigrationen-mit-d-migrate.md) |
 | ADR-0044 | Image-Beleg-Semantik (Digest ist lauf-gebunden) | Accepted | 2026-09-09 | [0044-image-beleg-semantik.md](0044-image-beleg-semantik.md) |
@@ -78,3 +78,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0065 | Spaltenausschluss — dauerhafter Träger (Supersedes ADR-0059, teilweise) | Accepted | 2026-09-14 | [0065-spaltenausschluss-dauerhafter-traeger.md](0065-spaltenausschluss-dauerhafter-traeger.md) |
 | ADR-0066 | Broadcaster — begrenzte Empfangswarteschlange (Supersedes ADR-0060; → ADR-0067) | Accepted | 2026-09-14 | [0066-broadcaster-begrenzte-empfangswarteschlange.md](0066-broadcaster-begrenzte-empfangswarteschlange.md) |
 | ADR-0067 | Publish-Einbindung — Fitness-Function-Zeile korrigiert (Supersedes ADR-0066) | Accepted | 2026-09-14 | [0067-capture-publish-einbindung-fitness-function-korrektur.md](0067-capture-publish-einbindung-fitness-function-korrektur.md) |
+| ADR-0068 | Wegwerf-Harness-Clients (Supersedes ADR-0041, teilweise) | Accepted | 2026-09-14 | [0068-wegwerf-clients-begrenzte-import-berechtigung.md](0068-wegwerf-clients-begrenzte-import-berechtigung.md) |
