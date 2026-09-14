@@ -113,9 +113,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       korrigiert — die zwei gebauten Tests sind die **zutreffende** Zeile,
       keine Reduktion; Begründung: §3.)*
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Report: [`review-slice-070`](../../../reviews/review-slice-070.md),
+      Verdikt 2 HIGH / 0 MEDIUM / 2 LOW / 4 INFO, F-1 durch
+      [ADR-0067](../../adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+      entschieden, F-2/F-3/F-4/F-6 in der Fixrunde behoben, damit ohne weitere
+      Fixrunde geschlossen (Nachzug nach `.harness/skills/reviewer.md`
+      §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update `internal/bootstrap/wiring.go`-Kommentar zur
       `CDC_GRPC_ADDR`-Verdrahtung, falls sich der Aktivierungspfad seit
       `slice-069` sichtbar ändert. *(Eingetreten: der `Broadcaster` wird an

@@ -476,3 +476,175 @@ dieser Skill, dieses Modell, dieses Verdikt) und wird über Läufe hinweg nicht
 wieder gelesen. Er ersetzt keine Verifikation — DoD-/Spec-Konformität prüft der
 Verifier separat (Baseline-Regelwerk `v6.5.0` · `regelwerk/modul-11-*.md`;
 anderes Prüf-Artefakt, anderer Eingabe-Kontext).
+
+
+---
+
+## Fixrunde (2. Lauf) — 2026-09-14
+
+**Gegenstand:** Commit `37717c6` (`wiring.go`, `service.go`, `service_test.go`,
+Slice-Plan-§3) — real gelesen, nicht aus der Commit-Message übernommen.
+Zusätzliche Prüfgrundlage dieses Laufs: [`ADR-0067`](../plan/adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+vollständig (`20d643a`, samt Index-Zeile `docs/plan/adr/README.md:79-80`),
+`f714a88` (Plan-Nachzug), `docs/plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md`
+(gegen die Korrektur gelesen), `spec/pflichtenheft.md:339-361` (`SPEC-020`,
+auf eine Rest-Hälfte geprüft).
+
+**Eigene Sensor-Läufe** (Exit-Code je eigener, ungepipter, mechanisch
+konditionierter Schritt, `AGENTS.md` §3.9):
+
+| Lauf | Exit | Bemerkung |
+|---|---|---|
+| `make gates` | **0** | baseline-verify `v6.5.0` 54 Dateien OK; d-check 555 Dateien/0 Befunde (links/anchors/ids/matrix/versions/structure), `commits`-Modul 0 Befunde; commit-traceability 5 Commits; a-check 0 Befunde; `coverage-gate: OK — 48.40 % ≥ 35 %` |
+| `make test` (Stand `37717c6`) | **0** | kein `FAIL`; `capture`, `grpcstream`, `bootstrap` grün |
+| `make test` + Mutation A (`erwarteteErfolgreicheAufrufe: 2 → 1`, Fall „nicht lesender Empfänger") | **2** | rot genau an `TestCaptureKehrtOhneUndMitNichtLesendemStreamEmpfaengerZurueck/nicht_lesender_Empfänger` (`service_test.go:626`, „Stream trägt 2 erfolgreiche Aufrufe, wollen 1") |
+| `make test` + Mutation B (`log.Warn` → `return CaptureResult{}, err` im Publish-Block) | **2** | rot genau an `TestCaptureSucceedsDespiteFailingStream` (`service_test.go:559`) |
+
+**Rücknahme und Blatt-Identität:** nach `git checkout --` stimmt
+`git hash-object` beider Dateien mit `git rev-parse HEAD:<pfad>` überein
+(`service_test.go` `e1d86977…`, `service.go` `b6a912c0…`),
+`git status --porcelain` ist leer.
+
+### Verdikt je Finding
+
+| Finding | Verdikt | Beleg (eigene Prüfung am Code/Text) |
+|---|---|---|
+| F-1 (HIGH) | **behoben — durch `ADR-0067`, nicht am Code** | `0067-…md:114-176` (Entscheidung + Ersatztext), `:252-257` (neue Fitness Function), `README.md:79-80`; kein Code-Eingriff, keiner nötig |
+| F-2 (HIGH) | **behoben** | `wiring.go:547-550` gegen `:563-566`, `:685`, `:713`, `:788` |
+| F-3 (LOW) | **behoben** | `wiring.go:553-562` steht jetzt unmittelbar über `if cfg.NatsURL != ""` (`:563`) |
+| F-4 (LOW) | **behoben** | `service_test.go:586-593`, `:625`; Name trifft die gezählte Größe |
+| F-5 (INFO) | **Einordnung geteilt** — kein „Repair" nötig | Finaler Digest bleibt der echte Lauf-Beleg (`ADR-0044`), der Zwischenstempel ist Historie in `git`; unverändert gegenüber dem ersten Lauf |
+| F-6 (INFO) | **behoben** | `service.go:157-164` (Helfer), `:175` (`distinctTables`), `:146-149`; die Begründung steht genau einmal |
+| F-7 (INFO) | **beantwortet durch `ADR-0067`** | `0067-…md:83-92` (Klammer-Hälfte mit dem `app-impurity`-Beleg), `:167-168`, `:234-237` (Doppel statt realer Port als Schichtgrenze, kein Mangel) |
+| F-8 (INFO) | **erledigt, kein Handlungsbedarf** | Die zwei Pfade sind inzwischen von der Planer-Rolle committet (`8423b28`, `68d2ebd`); `git status --porcelain` ist jetzt leer |
+
+**F-2 — behoben, am Code nachgeprüft.** Der neue Satz
+(`wiring.go:547-550`) lautet: „Die Bindung ist keine Start-Vorbedingung: der
+gRPC-Server startet weiter unten in eigener Goroutine, ein Startfehler wird
+dort über `log.Error` gemeldet und geht nicht in das Ergebnis von `Run` ein —
+wie beim HTTP-Adapter." Beide Hälften stimmen: der Server startet in einer
+eigenen Goroutine mit `defer grpcDone.Done()` und `log.Error` (`:708-714`), der
+HTTP-Adapter ebenso (`:680-687`), und `Run` gibt ausschließlich
+`mergeStreamAndWALFaultOutcome(streamErr, &walFault)` zurück (`:788`). Der Satz
+beschreibt jetzt den Ist-Zustand; die alte Fehlaussage ist weg, nicht
+umformuliert.
+
+**F-3 — behoben.** Der NATS-Block steht zeichengleich direkt über seinem `if`
+(`:553-562`/`:563`); die Broadcaster-Erklärung und der Aufbau von `captureOpts`
+liegen jetzt davor. Kommentar und Gegenstand sind wieder zusammen.
+
+**F-4 — behoben, und der Name trägt den Sachverhalt.**
+`erwarteteErfolgreicheAufrufe` beschreibt genau die gezählte Größe
+(`len(stream.published)` — Aufrufe, die ohne Fehler zurückkehren); im Fall
+„nicht lesender Empfänger" ist der Wert `2` bei einer real verworfenen zweiten
+Change weiterhin korrekt, weil der Doppel die Rückkehr, nicht die Zustellung
+zählt. Mutation A färbt genau diesen Fall rot — der Wert ist lasttragend, nicht
+Dekoration.
+
+**F-6 — behoben, und die Aussage „Notify-Block bleibt unverändert" ist nicht
+falsch geworden.** Die Begründung des verworfenen `tx.Changes()`-Fehlers steht
+jetzt einmal im Helfer `changesOfCommittedTransaction`
+(`service.go:157-164`); `Capture()` (`:149`) und `distinctTables` (`:175`)
+nutzen ihn. Der Helfer tut zeichengleich das, was vorher an beiden Stellen
+stand (`changes, _ := tx.Changes(); return changes`) — dieselbe Kopie
+(`transaction.go:102`), dieselbe Reihenfolge, derselbe verworfene Fehler. Der
+**Notify-Block** in `Capture()` (`:129-135`) ist byte-identisch unverändert; die
+*eine* berührte Zeile liegt im Helfer der Notify-Deduplizierung und ist
+verhaltensneutral — die Notify-Tests (`TestCaptureNotifiesAfterAckOnSuccess`,
+`…NotifiesOnceForSameTableMultipleChanges`, `…NotifiesDistinctlyForTwoTables`)
+sind unverändert und grün. Die Extraktion ist im selben §3, einen Bullet
+unterhalb der Abgrenzungs-Aussage, ausdrücklich benannt. Kein Befund — siehe
+aber F-9 zum Wortlaut der Abgrenzung.
+
+**Zur Vorgeschichte F-1 (entschieden durch `ADR-0067`).** Der Architect-Zug
+bestätigt den von F-1 belegten Widerspruch und wählt genau das, was der Report
+als Verdikt 1 skizziert hat: die Fitness-Function-Zeile ist der Defekt, die
+Entscheidung gilt. Alle drei im Report skizzierten Verdikte sind in §Verglichene
+Alternativen abgebildet (dort A = Verdikt 3, B = Verdikt 1, C = Verdikt 2; dazu
+zwei weitere: D „Zeile streichen", E „Zeile in Prosa"), und die Wahl ist mit
+demselben Grund begründet, den der Report trägt (die Entscheidung ist am Port
+strukturell gedeckt, eine caller-seitige Maßnahme wäre eine zweite Stelle).
+
+**Trägt `ADR-0067` den Befund vollständig?** Ja — beide Hälften sind
+geschlossen:
+
+1. *Der Selbstwiderspruch:* Die dritte Zeile ist ersetzt
+   (`0067-…md:158-172`), der Ersatztext grenzt die unerreichbare Behauptung
+   ausdrücklich aus („**Nicht** Gegenstand dieser Zeile: ein
+   `ChangeStreamPort`, dessen `Publish` nicht zurückkehrt"), und §Entscheidung
+   sowie Option B der `ADR-0066` sind als bestätigt erklärt (`:3-12`, `:122-134`).
+   Die neue Fitness Function (`:252-257`) nennt genau die zwei real gebauten
+   Tests als Regel — beide existieren, beide sind grün, und Mutation A belegt,
+   dass der zweite nicht blind ist.
+2. *Die unerreichbare Klammer-Hälfte (F-7):* `ADR-0067` übernimmt den
+   `app-impurity`-Beleg (`:83-92`) und macht die Schichtgrenze zum explizit
+   benannten Bestandteil der Ersatz-Zeile („gegen einen Port-Doppel, weil diese
+   Schicht keinen Adapter importieren darf, `.a-check.yml`", `:160-168`;
+   Konsequenz „Negativ", `:234-237`).
+
+Keine offene Hälfte gefunden. Zusätzlich geprüft: `SPEC-020` ist zu Recht
+unberührt (`spec/pflichtenheft.md:356-358`: die Zeile *Erzeuger-Blockade* ist
+eine **Port**-Aussage — „`Publish` blockiert nie auf einen Abonnenten" — und
+verlangt keine Aufrufstellen-Zeit-Isolation; der Widerspruch lag allein in der
+Fitness-Function-Zeile); `ADR-0060`s Fitness-Function-Zeilen sind unberührt;
+`ADR-0066`s §Kontext („isoliert nur den Fehler, nicht die Zeit") und
+§Konsequenzen („best-effort in Zeit und Fehler") bleiben unter der bestätigten
+Entscheidung kohärent; der ADR-Index trägt die Zeile und den
+`→ ADR-0067`-Vermerk (`README.md:79-80`, `AGENTS.md` §5).
+
+### Neues Finding dieses Laufs
+
+### F-9 — Der Wortlaut der §1/§3-Abgrenzung deckt die verhaltensneutrale Helfer-Extraktion im Notify-Pfad nicht mehr
+
+- `kategorie`: INFO
+- `quelle`: Maintainability (`AGENTS.md` §3.7 — ein Kommentar/Text beschreibt,
+  was da ist)
+- `pfad`: `docs/plan/planning/in-progress/slice-070-grpc-capture-integration.md:76-77`
+  (§1) und `:170-172` (§3), gegen
+  `internal/application/usecase/capture/service.go:175`
+- `befund`: §1 sagt „dieser Slice fasst keine Zeile des Kernpfads vor dem
+  Stream-Publish-Aufruf an", §3 wiederholt das als „Keine Zeile des Kernpfads
+  vor dem Stream-Publish-Aufruf angefasst"; die Fixrunde hat mit
+  `distinctTables`s erster Zeile (Helfer der Notify-Deduplizierung) genau so
+  eine Zeile berührt — verhaltensneutral, und im selben §3 einen Bullet tiefer
+  ausdrücklich benannt. Die semantische Aussage hält (der Notify-Block
+  `service.go:129-135` ist byte-identisch, der Helfer tut dasselbe wie zuvor);
+  die *wörtliche* „keine Zeile"-Form ist seit der Fixrunde enger als der
+  Vorgang.
+- `verifizierbar`: ja — `git show 37717c6 -- internal/application/usecase/capture/service.go`
+  gegen `git diff 6f9e9d8..37717c6 -- .../service.go`
+- `klasse`: „Abgrenzungs-Wortlaut und getroffene Zeile fallen auseinander"
+
+## Summary (Fixrunde)
+
+| Kategorie | Anzahl |
+|---|---|
+| HIGH | 0 |
+| MEDIUM | 0 |
+| LOW | 0 |
+| INFO | 1 |
+
+**Finding-Klassen dieses Laufs:** Abgrenzungs-Wortlaut und getroffene Zeile
+fallen auseinander
+
+## Verdikt (Fixrunde)
+
+**Merge-blockierend:** nein — **keine Fixrunde mehr nötig.** F-2, F-3, F-4 und
+F-6 sind am Code behoben und einzeln nachgeprüft (nicht an der Commit-Message),
+F-1 ist durch [`ADR-0067`](../plan/adr/0067-capture-publish-einbindung-fitness-function-korrektur.md)
+entschieden und trägt den Befund vollständig, F-5/F-7/F-8 sind INFO ohne
+erwartete Aktion, F-9 ist ein Wortlaut-Hinweis ohne Fix-Zwang. Die Kette läuft
+damit Reviewer → Architect (Folge-ADR `ADR-0067`) → Implementer (Fixrunde) →
+Reviewer und schließt hier; der nächste Rollenwechsel ist Reviewer → Verifier
+(DoD-/Spec-Konformität, Baseline-Regelwerk `v6.5.0` · `regelwerk/modul-11-*.md`).
+
+**DoD-Nachzug:** Mit diesem Verdikt ist die Rückkante geschlossen — die Zeile
+„Review durchgeführt, Report unter `docs/reviews/` liegt vor" in §2 des
+Slice-Plans ist in demselben Commit wie dieser Vermerk auf `[x]` gezogen
+(`.harness/skills/reviewer.md` §DoD-Checkbox-Nachzug ohne Fixrunde). Nur diese
+eine Zeile; Closure-Notiz, Beobachtungs-Register, die Risiko-Ausgänge und die
+drei Paarungen bleiben offen (Planner-Arbeit).
+
+**Übergabe:** F-9 geht als Wortlaut-Hinweis an die Planner-Seite (kein
+Implementer-Rückweg); die **Finding-Klassen beider Läufe** gehen in die
+Slice-Closure §7 und von dort in den Zähler.
