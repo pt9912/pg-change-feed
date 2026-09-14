@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.5.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.6.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -254,8 +254,8 @@ ausgeschlossen bzw. gezielt ausgewählt werden können.
 - **Negative:** Given die Spalte `c` existiert nicht, when der Ausschluss
   konfiguriert wird, dann folgt ein expliziter Fehlerpfad.
 
-**Out-of-Scope:** Kein Bestandteil des MVP; eine nachträgliche
-Ergänzung ohne Neuanforderung ist nicht vorgesehen.
+**Out-of-Scope:** Nicht Teil des aktuellen Anforderungsumfangs; eine
+Ergänzung ohne eigene Neuanforderung ist nicht vorgesehen.
 
 ### LH-FA-CFG-006 — Keine Anwendungscode-Anpassung
 
@@ -1177,8 +1177,8 @@ bindend; zurückgestellt ist jeweils ihre Produktionsreife bzw. Ausbaustufe
   gefordert; ihre Betriebshärtung in Produktionsumgebungen steht aus).
 - High Availability (keine Anforderung dieses Lastenhefts).
 - Exportadapter, beispielsweise Kafka, RabbitMQ, HTTP/Webhooks oder
-  Object Storage (keine Anforderung dieses Lastenhefts; nicht Bestandteil
-  des MVP). NATS ausgenommen — siehe `LH-FA-SST-007`.
+  Object Storage (keine Anforderung dieses Lastenhefts). NATS ausgenommen —
+  siehe `LH-FA-SST-007`.
 
 ## 6. Glossar
 
@@ -1212,3 +1212,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.3.0 | 2026-09-09 | Überführung in Lastenheft-Vorlagen-Struktur (Abschnitte 1–7); ID-Schema auf `LH-FA-<BEREICH>-<NNN>` / `LH-QA-<BEREICH>-<NNN>` normalisiert; Akzeptanzkriterien (Happy/Boundary/Negative) und Out-of-Scope je Anforderung ergänzt | — |
 | 0.4.0 | 2026-09-12 | `LH-FA-SST-006` (konkrete HTTP-/gRPC-API) ergänzt; `LH-FA-SST-005`s Out-of-Scope-Klausel entsprechend angepasst — Auftraggeber und Entwickler sind dieselbe Person, Status ist `Draft` (frei änderbar ohne Change Request), diese Änderung liegt in einem eigenen Commit vor jedem umsetzenden Slice | — |
 | 0.5.0 | 2026-09-12 | `LH-FA-SST-007` (Benachrichtigung neuer Änderungen über NATS) ergänzt; NATS aus der globalen Exportadapter-Out-of-Scope-Zeile (§5) ausgenommen und auf `LH-FA-SST-007` verwiesen — dieselbe Draft-Regel wie bei 0.4.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.6.0 | 2026-09-14 | `LH-FA-CFG-005`s Out-of-Scope-Klausel und die globale Exportadapter-Out-of-Scope-Zeile (§5) von der Milestone-Bezeichnung „MVP" gelöst — beide benennen den Ausschluss eigenständig, ohne Meilenstein-Bezug; dieselbe Draft-Regel wie bei 0.4.0/0.5.0, eigener Commit vor jeder folgenden Änderung | — |
