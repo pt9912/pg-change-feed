@@ -136,6 +136,16 @@ gesetzt, WIP-Limit (1 je Implementer) frei.
   ob der zweite Rollout-Lauf in dieser Form (`ADR-0058` Entscheidung 3)
   tragfähig bleibt oder eine Folge-ADR braucht.
 
+  **Nachtrag — was tatsächlich eintrat (2026-09-14):** Der Implementer
+  reproduzierte den Fall real (Exit 8, sogar auf vier statt zwei
+  Objekten — zusätzlich `cdc.disable_table`/`cdc.enable_table`,
+  `ADR-0050`) und prüfte drei Umgehungen (`--allow-destructive`,
+  Objekt-Ausschluss-Flag, Überführung ins deklarative Schema) — alle
+  verworfen, keine im Slice-Umfang liegende, nicht-destruktive Lösung.
+  Befund: `docs/reviews/blocker-slice-063.md`. Rückführung nach `open`
+  ausgeführt; ein Architect-Zug entscheidet über Carveout vs. Folge-ADR
+  zu `ADR-0058` Entscheidung 3.
+
 ## 5. Closure-Trigger
 
 DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
