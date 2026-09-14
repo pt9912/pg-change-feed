@@ -211,6 +211,32 @@ func TestGetStatusFehlendeParameterEndetMit400(t *testing.T) {
 	}
 }
 
+// TestGetStatusAdminTokenLiefertStatus trägt die Hierarchie aus `ADR-0057`
+// Teilfrage 3: ein `admin`-Token erreicht auch lesende Endpunkte.
+func TestGetStatusAdminTokenLiefertStatus(t *testing.T) {
+	useCase := fakeGetStatusUseCase{tableExists: true, result: inbound.GetStatusResult{Enabled: true}}
+	ts := newDefaultTestServer(t, Config{GetStatus: useCase})
+	resp := doRequest(t, ts, http.MethodGet,
+		"/tables/status?source=src-1&schema=public&table=orders&publication=cdc_pub", testAdminToken, "")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Status: %d (Erwartung: 200)", resp.StatusCode)
+	}
+}
+
+// TestGetStatusFehlendeTabelleEndetMit404 trägt dieselbe Fehler-Mapping-
+// Regel wie `TestEnableTableFehlendeTabelleEndetMit404`.
+func TestGetStatusFehlendeTabelleEndetMit404(t *testing.T) {
+	useCase := fakeGetStatusUseCase{tableExists: false}
+	ts := newDefaultTestServer(t, Config{GetStatus: useCase})
+	resp := doRequest(t, ts, http.MethodGet,
+		"/tables/status?source=src-1&schema=public&table=nicht_vorhanden&publication=cdc_pub", testAdminToken, "")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("Status: %d (Erwartung: 404)", resp.StatusCode)
+	}
+}
+
 // fakeListTablesUseCase trägt eine In-Memory-Fälschung analog zur realen
 // `ListTablesService`-Trennung nach Erfassungs-Zustand.
 type fakeListTablesUseCase struct {
@@ -244,6 +270,18 @@ func TestListTablesReaderTokenLiefertListe(t *testing.T) {
 	}
 	if len(decoded.Tables) != 1 || decoded.Tables[0].TableID != "tbl-1" || len(decoded.Retained) != 0 {
 		t.Fatalf("Antwort: %+v", decoded)
+	}
+}
+
+// TestListTablesAdminTokenLiefertListe trägt die Hierarchie aus `ADR-0057`
+// Teilfrage 3: ein `admin`-Token erreicht auch lesende Endpunkte.
+func TestListTablesAdminTokenLiefertListe(t *testing.T) {
+	useCase := fakeListTablesUseCase{result: inbound.ListTablesResult{Tables: []model.SourceTable{}, Retained: []model.SourceTable{}}}
+	ts := newDefaultTestServer(t, Config{ListTables: useCase})
+	resp := doRequest(t, ts, http.MethodGet, "/tables?source=src-1&publication=cdc_pub", testAdminToken, "")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Status: %d (Erwartung: 200)", resp.StatusCode)
 	}
 }
 
