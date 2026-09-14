@@ -22,10 +22,18 @@ Server-Streaming ([ADR-0060](../adr/0060-grpc-streaming-mechanismus.md))
 und HTTP/SSE ([ADR-0061](../adr/0061-http-sse-zusaetzlich-zu-grpc.md)) —,
 beide gespeist vom selben In-Prozess-`Broadcaster` hinter dem neuen
 Outbound Port `ChangeStreamPort`. Das *Mehr* gegenüber den einzelnen
-Slice-DoDs: Ein realer E2E-Beleg zeigt, dass eine einzelne committed
-Änderung **gleichzeitig** über beide Wege einen verbundenen Client mit
-vollständigem Inhalt erreicht — kein einzelner Slice-DoD belegt das
-Zusammenspiel beider Wege über denselben `Broadcaster`.
+Slice-DoDs ist der **gemeinsame Träger dieser Kopplung**: beide Wege hängen
+in **einer** Bootstrap-Bedingung an **einem** `Broadcaster`, und **ein**
+Compose-Lauf (`make test-integration`) führt beide Rundläufe gegen
+**denselben** laufenden Feed-Container. Beide Hälften sind real belegt
+(`slice-071`: `change_id=964-1` über gRPC, `slice-072`: `change_id=967-1`
+über SSE, je mit abgewiesenem tokenlosen Aufruf, in einem grünen Lauf; der
+gemeinsame Zeiger ist am Code und über die Mutation der Oder-Bedingung
+geprüft). Kein einzelner Slice-DoD belegt diesen gemeinsamen Träger — die
+**Gleichzeitigkeit zweier verbundener Clients bei einer Änderung** ist
+dagegen *nicht* Teil dieser Welle: die Verteilungsbreite eines `Publish`
+ist Eigenschaft des `Broadcaster` und in `make test` belegt, nicht
+Gegenstand des Wellen-Schnitts.
 
 ## 2. Trigger (Welle startet)
 
@@ -54,6 +62,11 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   abgelehnt.
 - Ein real belegter SSE-E2E-Rundlauf (`slice-072`, `make test-integration`)
   zeigt dasselbe über `GET /changes/stream`.
+- Der gemeinsame Träger ist real belegt: **ein** `make test-integration`-Lauf
+  führt beide Rundläufe gegen **denselben** laufenden Feed-Container, und
+  beide Driving-Adapter hängen an **einem** `Broadcaster` hinter **einer**
+  Bootstrap-Bedingung (`changeStreamEnabled`, Oder-Verknüpfung der beiden
+  Adressen).
 - Closure-Notiz in `welle-19-results.md`.
 
 ## 4. Slices in dieser Welle
@@ -128,10 +141,16 @@ der Closure-Trigger unerreichbar wird.
   `GET /changes/stream`-Endpunkts — bestehende
   Endpunkte, Middleware-Verhalten und Fehler-Antwortform bleiben
   unangetastet.
-- **`.a-check.yml`** — beide ADRs stellen fest, dass keine Änderung nötig
-  ist (bestehende Globs decken beide neuen Pakete ab); ein Slice, der
-  dennoch eine Änderung vornimmt, hat den Plan geändert, nicht nur
-  ergänzt.
+- **`.a-check.yml`** — die Welle trägt **eine** Änderung der Maschinenform:
+  die Gruppe `tooling` und eine begrenzte Import-Kante für die
+  Wegwerf-Harness-Clients unter `tools/harness/` (Träger
+  [ADR-0068](../adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md);
+  es löst [ADR-0041](../adr/0041-a-check-maschinenform-architekturpruefung.md)s
+  Änderungs-Ausnahmeklausel für den Fall „Erweiterung statt Verfeinerung" ab).
+  Die neuen Adapter-Pakete liegen unverändert in den bestehenden
+  Schichten-Globs. Jede **weitere** Änderung an Schichten-Globs oder Kanten
+  bleibt ausgeschlossen: sie braucht ihren eigenen Träger (`AGENTS.md` §3.6),
+  nicht diese Welle.
 
 ## 7. Closure-Notiz
 
@@ -140,7 +159,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: noch offen — erst nach Welle-Abschluss zu füllen (Zeiger auf
-`welle-19-results.md`, Geschwister im Ruheort `done/`).
-Zähler: noch offen — erst nach Welle-Abschluss zu füllen (Zeiger auf
-`../observations/README.md`, eine Ebene über dem Ruheort).
+Ergebnis: [welle-19-results.md](welle-19-results.md), Geschwister im Ruheort `done/`
+Zähler: [../observations/](../observations/)`BEO-PGC/`, eine Ebene über dem Ruheort
