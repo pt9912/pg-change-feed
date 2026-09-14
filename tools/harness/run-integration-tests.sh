@@ -277,6 +277,209 @@ docker run --rm --network "$NETWORK" \
   -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy)$' \
   ./test/integration/...
 
+# Spaltenausschluss-Rundlauf (LH-FA-CFG-005, ADR-0059): der reale Pfad
+# SQL-Antrag → Live-Reload → gefiltertes Row Image am laufenden
+# Feed-Container. Eine eigene, dedizierte Tabelle wird über dieselbe
+# Antrags-Queue aktiviert wie im SQL-Administration-Live-Reload-Beleg
+# (kein CDC_TABLES-Eintrag, kein Neustart); `SELECT cdc.exclude_column(...)`
+# bestätigt nur „beantragt" — der Poll wartet auf `status = 'applied'`,
+# bevor die Filterwirkung geprüft wird. Läuft vor der Container-Ende-Grenze
+# unten (TestE2ESchemaChangeDropColumn/-IncompatibleTypeChange), die den
+# Erfassungspfad dauerhaft beendet.
+COLUMN_TABLE=feed_e2e_column_exclusion
+COLUMN_NAME=secret
+COLUMN_VALUE_BEFORE=ColumnBeforeExclusionSentinel
+COLUMN_VALUE_AFTER=ColumnAfterExclusionSentinel
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$COLUMN_TABLE (id int PRIMARY KEY, name text, $COLUMN_NAME text);
+SQL
+
+column_enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.enable_table('src-e2e', 'public', '$COLUMN_TABLE')")
+if [ -z "$column_enable_request_id" ]; then
+  echo "run-integration-tests: cdc.enable_table($COLUMN_TABLE) lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+column_enable_status=""
+column_enable_applied=0
+for _ in $(seq 1 60); do
+  column_enable_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$column_enable_request_id'")
+  if [ "$column_enable_status" = "applied" ]; then
+    column_enable_applied=1
+    break
+  fi
+  if [ "$column_enable_status" = "failed" ]; then
+    error_message=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$column_enable_request_id'")
+    echo "run-integration-tests: cdc.enable_table($COLUMN_TABLE)-Antrag $column_enable_request_id scheiterte: $error_message" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+if [ "$column_enable_applied" -ne 1 ]; then
+  echo "run-integration-tests: cdc.enable_table($COLUMN_TABLE)-Antrag $column_enable_request_id wurde nicht innerhalb der Zeitspanne von der Administrations-Goroutine verarbeitet (status=${column_enable_status:-leer})" >&2
+  exit 1
+fi
+
+# Baseline vor dem Ausschluss: die Spalte wird ohne Ausschluss real
+# erfasst — dieser Beleg trennt „Wert abwesend" nach dem Ausschluss von
+# „die Spalte war nie Teil des Row Image".
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$COLUMN_TABLE (id, name, $COLUMN_NAME) VALUES (1, 'ColumnBefore', '$COLUMN_VALUE_BEFORE');
+SQL
+
+column_before_value=""
+for _ in $(seq 1 120); do
+  column_before_value=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT new_data->>'$COLUMN_NAME' FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '1'")
+  if [ -n "$column_before_value" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$column_before_value" != "$COLUMN_VALUE_BEFORE" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — die vor dem Ausschluss erfasste Change (id=1, $COLUMN_TABLE) trägt $COLUMN_NAME='${column_before_value:-leer}', wollen '$COLUMN_VALUE_BEFORE' (Baseline: ohne Ausschluss wird die Spalte real erfasst)" >&2
+  exit 1
+fi
+
+column_exclude_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.exclude_column('src-e2e', 'public', '$COLUMN_TABLE', '$COLUMN_NAME')")
+if [ -z "$column_exclude_request_id" ]; then
+  echo "run-integration-tests: cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME) lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+column_exclude_status=""
+column_exclude_applied=0
+for _ in $(seq 1 60); do
+  column_exclude_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$column_exclude_request_id'")
+  if [ "$column_exclude_status" = "applied" ]; then
+    column_exclude_applied=1
+    break
+  fi
+  if [ "$column_exclude_status" = "failed" ]; then
+    error_message=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$column_exclude_request_id'")
+    echo "run-integration-tests: cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME)-Antrag $column_exclude_request_id scheiterte: $error_message" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
+if [ "$column_exclude_applied" -ne 1 ]; then
+  echo "run-integration-tests: cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME)-Antrag $column_exclude_request_id wurde nicht innerhalb der Zeitspanne von der Administrations-Goroutine verarbeitet (status=${column_exclude_status:-leer})" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$COLUMN_TABLE (id, name, $COLUMN_NAME) VALUES (2, 'ColumnAfter', '$COLUMN_VALUE_AFTER');
+SQL
+
+column_after_present=""
+for _ in $(seq 1 120); do
+  column_after_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '2'")
+  if [ "$column_after_present" = "1" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$column_after_present" != "1" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — die nach dem Ausschluss erfasste Change (id=2, $COLUMN_TABLE) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen" >&2
+  exit 1
+fi
+
+# Drei Aussagen zur danach erfassten Change: der ausgeschlossene
+# Spaltenschlüssel fehlt im Row Image; die nicht ausgeschlossene Spalte
+# bleibt darin (Kontrolle gegen ein leeres Row Image als Alternativerklärung);
+# der ausgeschlossene Wert kommt im ganzen persistierten Change nicht vor
+# (LH-QA-SEC-004: der Wert erreicht die Persistenzschicht nie).
+column_after_key=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT jsonb_exists(new_data, '$COLUMN_NAME') FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '2'")
+column_after_name=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT new_data->>'name' FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '2'")
+column_after_leak=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT (coalesce(new_data::text, '') LIKE '%$COLUMN_VALUE_AFTER%') OR (coalesce(old_data::text, '') LIKE '%$COLUMN_VALUE_AFTER%') FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '2'")
+if [ "$column_after_key" != "f" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — die nach dem Ausschluss erfasste Change (id=2, $COLUMN_TABLE) trägt den ausgeschlossenen Spaltenschlüssel $COLUMN_NAME weiterhin im Row Image" >&2
+  exit 1
+fi
+if [ "$column_after_name" != "ColumnAfter" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — die nach dem Ausschluss erfasste Change (id=2, $COLUMN_TABLE) trägt die nicht ausgeschlossene Spalte name='${column_after_name:-leer}', wollen 'ColumnAfter'" >&2
+  exit 1
+fi
+if [ "$column_after_leak" != "f" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — der ausgeschlossene Wert '$COLUMN_VALUE_AFTER' steht im persistierten Change (id=2, $COLUMN_TABLE) (LH-QA-SEC-004)" >&2
+  exit 1
+fi
+
+# Der vor dem Ausschluss erfasste Change bleibt über cdc.changes unverändert
+# lesbar und trägt seinen damals erfassten Wert weiter: die Filterung liegt
+# in der Row-Image-Konstruktion (ADR-0059 Teilfrage 3; cdc.changes ist eine
+# reine Projektion über cdc.change) und schreibt persistierte Changes nicht
+# rückwirkend um — LH-FA-CFG-005 adressiert „künftige Changes von t".
+column_history_value=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT new_data->>'$COLUMN_NAME' FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '1'")
+if [ "$column_history_value" != "$COLUMN_VALUE_BEFORE" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Rundlauf — die vor dem Ausschluss erfasste Change (id=1, $COLUMN_TABLE) liest sich nach dem Ausschluss nicht mehr unverändert (${COLUMN_NAME}='${column_history_value:-leer}', wollen '$COLUMN_VALUE_BEFORE')" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Spaltenausschluss-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Spaltenausschluss-Rundlauf (LH-FA-CFG-005 Happy Path, ADR-0059) belegt — cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME) wurde ohne Neustart verarbeitet (status=applied), die danach erfasste Change (id=2) trägt $COLUMN_NAME nicht im Row Image und den Wert '$COLUMN_VALUE_AFTER' nirgends, die davor erfasste Change (id=1) bleibt mit '$COLUMN_VALUE_BEFORE' unverändert lesbar"
+
+# Negative-Beleg (LH-FA-CFG-005 Negative): der Ausschluss einer an der Quelle
+# nicht existierenden Spalte endet real `failed` samt Fehlertext — nicht
+# still `applied` (ErrSourceColumnMissing-Pfad).
+column_missing_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT cdc.exclude_column('src-e2e', 'public', '$COLUMN_TABLE', 'nicht_vorhandene_spalte')")
+if [ -z "$column_missing_request_id" ]; then
+  echo "run-integration-tests: cdc.exclude_column gegen die nicht existierende Spalte lieferte keine Antrags-ID" >&2
+  exit 1
+fi
+
+column_missing_status=""
+column_missing_failed=0
+column_missing_error=""
+for _ in $(seq 1 60); do
+  column_missing_status=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$column_missing_request_id'")
+  if [ "$column_missing_status" = "failed" ]; then
+    column_missing_error=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+      "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$column_missing_request_id'")
+    column_missing_failed=1
+    break
+  fi
+  if [ "$column_missing_status" = "applied" ]; then
+    break
+  fi
+  sleep 0.5
+done
+if [ "$column_missing_failed" -ne 1 ]; then
+  echo "run-integration-tests: cdc.exclude_column gegen die nicht existierende Spalte endete mit status=${column_missing_status:-leer}, wollen failed (LH-FA-CFG-005 Negative: expliziter Fehlerpfad)" >&2
+  exit 1
+fi
+if ! printf '%s' "$column_missing_error" | grep -qF "Spalte existiert nicht an der Quelle"; then
+  echo "run-integration-tests: cdc.exclude_column-Antrag $column_missing_request_id endete failed, trägt aber nicht den Fehlertext 'Spalte existiert nicht an der Quelle': $column_missing_error" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Spaltenausschluss-Negative-Beleg nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Spaltenausschluss-Negative-Beleg (LH-FA-CFG-005) — cdc.exclude_column($COLUMN_TABLE.nicht_vorhandene_spalte) endete real failed mit Fehlertext, der Feed-Container lief unverändert weiter"
+
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
 # bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
 # Quelltransaktionen auf derselben Tabelle zeigen den Unterschied: eine

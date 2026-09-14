@@ -85,7 +85,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `LH-FA-CFG-005` Happy Path real belegt: `SELECT
+- [x] `LH-FA-CFG-005` Happy Path real belegt: `SELECT
       cdc.exclude_column(...)` gegen eine bereits aktivierte Tabelle im
       laufenden Feed-Container, Poll auf `status = 'applied'`, danach ein
       neuer Change ohne den ausgeschlossenen Spaltenschlüssel in
@@ -93,18 +93,21 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       historischer Change über `cdc.changes` gemäß `LH-FA-CFG-005`s
       Akzeptanzkriterien geprüft. Beleg:
       `tools/harness/run-integration-tests.sh` (neuer Abschnitt, real
-      grün).
-- [ ] `LH-FA-CFG-005` Negative real belegt: `cdc.exclude_column` gegen eine
+      grün: `make test-integration` Exit 0, beide neuen Belege in der
+      Ausgabe; Auslegung des historischen Changes in §3 Plan-Nachzug).
+- [x] `LH-FA-CFG-005` Negative real belegt: `cdc.exclude_column` gegen eine
       nicht existierende Spalte, Antrag landet `failed` mit Fehlertext
       (`ErrSourceColumnMissing`-Pfad aus `slice-066`). Beleg: derselbe
       Skript-Abschnitt, Poll auf `status = 'failed'` und Prüfung des
       Fehlertexts.
-- [ ] `make gates` grün, `make test-integration` real grün (voller
-      Compose-Stack-Lauf).
+- [x] `make gates` grün, `make test-integration` real grün (voller
+      Compose-Stack-Lauf). Beleg: `make test-integration` Exit 0 (voller
+      Compose-Stack-Lauf, beide neuen Abschnitte enthalten), `make gates`
+      Exit 0.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Sensors, Zeile `make
+- [x] Doku-Update: `harness/README.md` §Sensors, Zeile `make
       test-integration` um den neuen Rundlauf-Abschnitt ergänzt (Muster
       der bestehenden Zeile, die jeden Rundlauf-Baustein einzeln nennt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -124,6 +127,54 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `tools/harness/run-integration-tests.sh` | update | neuer Rundlauf-Abschnitt (Happy Path + Negative) |
 | `harness/README.md` | update | Sensors-Zeile `make test-integration` um neuen Baustein ergänzt |
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Platzierung.** Der Abschnitt
+liegt nach dem Go-E2E-Tier und vor dem Lasttest-Beleg, nicht direkt neben
+dem SQL-Administration-Live-Reload-Beleg. Grund: die dedizierte Tabelle
+(`feed_e2e_column_exclusion`) wird selbst erst über `cdc.enable_table`
+aktiviert; kein Go-Testfall dieses Tiers liest sie (jeder Testfall bindet
+seine eigene Tabelle), und der Rundlauf bleibt so vollständig vor der
+Container-Ende-Grenze der beiden Schema-Negative-Funktionen. Das
+Zustands-Überschneidungs-Risiko aus §4 (Muster
+`BEO-PGC/test-isolation-geteilter-zustand`) trägt der Abschnitt damit
+nicht: er legt keine Tabelle an, die ein anderer Abschnitt liest, und
+liest keine, die ein anderer anlegt.
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Auslegung des „historischen
+Changes".** Der DoD-Punkt „ein bereits vor dem Ausschluss erfasster
+historischer Change über `cdc.changes` gemäß Akzeptanzkriterien geprüft"
+ist gegen den gewählten Wirkort auszulegen: `ADR-0059` Teilfrage 3
+Option D filtert in der Row-Image-Konstruktion, und `cdc.changes` ist eine
+reine Projektion über `cdc.change` — ein **vor** dem Ausschluss
+persistierter Change kann den Wert nicht mehr verlieren; ihn „ohne den
+Wert" zu prüfen verlangte ein rückwirkendes Umschreiben, das dieselbe
+Option D ausschließt. Der Abschnitt prüft deshalb beide Hälften: die
+**nach** dem Ausschluss erfasste Change ist über `cdc.changes` **ohne**
+Spaltenschlüssel und **ohne** den Wert lesbar (`LH-FA-CFG-005` Happy Path,
+„künftige Changes von `t`"), und die **vor** dem Ausschluss erfasste Change
+bleibt **unverändert** lesbar — dieselbe Lesart, die
+`TestE2ESchemaChangeAddColumn` für die vor einer Schemaänderung erfasste
+Change trägt. Der §1-Satz „künftige **und historische** Changes … den
+ausgeschlossenen Wert nicht mehr tragen" trifft für den historischen Teil
+nicht zu und ist insoweit ungenau; die DoD-Formulierung ist die
+auslegbare.
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Baseline und Kontrolle.** Der
+Abschnitt setzt zwei zusätzliche Beobachtungen, die der Plan nicht
+ausdrücklich nennt: eine Change **vor** dem Ausschluss trägt den
+Spaltenwert real (sie trennt „Wert abwesend" nach dem Ausschluss von „die
+Spalte war nie Teil des Row Image"), und die **nicht** ausgeschlossene
+Spalte bleibt in der nach dem Ausschluss erfassten Change (Kontrolle gegen
+ein leeres Row Image als Alternativerklärung). Beide sind Teil desselben
+Happy-Path-Belegs, kein vierter Liefer-Punkt.
+
+**Plan-Nachzug (Implementer, 2026-09-14) — `tools/schema/plan.yaml`.** Der
+`make test-integration`-Lauf führt `make schema-rollout` aus; dessen
+Pflicht-Report (`tools/schema/plan.yaml`) wird dabei geschrieben und trägt
+die Ziel-DSN des Laufs. Der Unterschied zum Stand davor ist diese eine
+Ziel-Zeile (`cdc-test-postgres:5432/cdc`); das Rollback-Artefakt
+`tools/schema/down.sql` bleibt unverändert. Die Datei reist mit dem Lauf
+mit, wie in den vorigen Rollout-Commits.
 
 ## 4. Trigger
 
