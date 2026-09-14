@@ -99,18 +99,18 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] Doku-Update: `harness/README.md` §Werkzeuge, `.github/workflows/e2e.yml`-Zeile
       um die Matrix-Beschreibung ergänzt (kein neues Gate, `e2e.yml` bleibt
       nicht-blockierend).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
       und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       **verschoben auf `welle-17`-Closure** (dieser Slice trägt
       `Welle: welle-17`).
 
@@ -149,27 +149,42 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 - Ein `docker run`/`docker manifest inspect`-Aufruf gegen die Registry
   braucht Netzzugriff, den ein Agentenlauf ggf. nicht hat — die
   Digest-Ermittlung ist damit potenziell blockierend (siehe §4
-  Rückführung). — **Ausgang:** <bei Closure zu füllen>
-- `BEO-PGC/github-actions-unverifizierbar-lokal` (offen, 2× — siehe §8):
-  Ob die Matrix-Legs real parallel laufen und beide grün werden, löst sich
-  erst mit dem ersten echten Lauf auf GitHub nach einem Push auf, kein
-  Slice kann das repo-intern vorwegnehmen. Der Welle-Closure-Trigger trägt
-  diesen realen Lauf explizit als eigenes Kriterium (siehe `welle-17.md`
-  §3), nicht dieser Slice allein. — **Ausgang:** <bei Closure zu füllen>
+  Rückführung). — **Ausgang: entfallen** — real gelang der Zugriff
+  mehrfach unabhängig (Implementer, Reviewer, Verifier), identischer
+  Digest über alle drei Läufe.
+- `BEO-PGC/github-actions-unverifizierbar-lokal` (3× mit diesem Slice —
+  siehe §8): Der reale Matrix-Lauf (Run `34822131377`) ist bereits grün,
+  beide Legs `completed`/`success`, vom Planner-Koordinator UND
+  unabhängig vom Verifier per `gh run view` bestätigt. — **Ausgang:
+  entfallen** — real belegt. Zusätzlich `evidence/slice-064.md` im
+  Register ergänzt (3. Beleg der strukturellen Verifikationsgrenze-
+  Beobachtung, Ausgang folgt bei `welle-17`-Closure).
 - PostgreSQL 17 könnte real ein vom bestehenden PostgreSQL-18-Verhalten
-  abweichendes `pgoutput`-/Replication-Detail zeigen, das eine der
-  bestehenden E2E-Testfunktionen zum Scheitern bringt (Versionsdrift
-  jenseits des reinen CI-Verdrahtungsaufwands dieses Slice). —
-  **Ausgang:** <bei Closure zu füllen>
+  abweichendes `pgoutput`-/Replication-Detail zeigen. — **Ausgang:
+  entfallen** — realer `make test-integration`-Lauf gegen PostgreSQL 17
+  (Implementer + isolierter Verifier-Lauf, plus der reale CI-Matrix-Leg)
+  lief vollständig grün, keine Abweichung beobachtet.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
+- **Was hat funktioniert:** Der Mechanismus (`${PG_TEST_IMAGE}`-
+  Interpolation, Matrix-Job) funktionierte im ersten Versuch real —
+  beide Legs liefen beim ersten Push grün. Der Verifier fand und schloss
+  eigenständig eine Lücke (DoD-Punkt „lokaler PG-17-Vorab-Lauf" war
+  abgehakt, aber ohne Artefakt-Beleg im Repo) — reale, unabhängige Prüfung
+  trug hier über eine reine Selbstauskunfts-Übernahme hinaus.
+- **Was ging anders als geplant:** Nichts Wesentliches — Implementierung
+  entsprach `ADR-0058` Entscheidung 4 nahezu wörtlich; einzige Ergänzung
+  war `fail-fast: false` (Implementer-Entscheidung, von Reviewer und
+  Verifier unabhängig als legitim bestätigt).
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — `BEO-PGC/github-actions-unverifizierbar-lokal`
+  erreicht mit diesem Slice zwar 3×, aber der Lese-Schritt (Verkörperung
+  ja/nein) läuft bei der `welle-17`-Closure, nicht hier.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-064.md`
+  in `BEO-PGC/github-actions-unverifizierbar-lokal/` ergänzt — Zähler
+  steht bei 3×, Ausgang folgt bei `welle-17`-Closure.
 - **Folge-Slices:** keine.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Risiken aus §6:** alle drei entfallen — siehe §6.
 - **Drei Paarungen:** verschoben auf `welle-17`-Closure (dieser Slice trägt
   `Welle: welle-17`, siehe DoD-Item).
 
