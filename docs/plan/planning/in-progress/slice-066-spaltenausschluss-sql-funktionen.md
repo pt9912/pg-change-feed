@@ -101,7 +101,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `cdc.administration_request` erweitert (neue Spalte für den
+- [x] `cdc.administration_request` erweitert (neue Spalte für den
       Spaltennamen, erweiterte `request_kind`-CHECK-Klausel um
       `exclude_column`/`include_column`) — über `tools/schema/schema.yaml`
       **oder**, falls d-migrate für eine reine Spalten-/CHECK-Änderung an
@@ -110,7 +110,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       für Tabellenänderungen), über eine geeignete Migrationsform —
       Implementer-Entscheidung, Plan-Nachzug. Beleg: real ausgerollt über
       `make schema-rollout`.
-- [ ] `cdc.exclude_column(...)`/`cdc.include_column(...)` real als SQL-
+- [x] `cdc.exclude_column(...)`/`cdc.include_column(...)` real als SQL-
       Funktionen angelegt (`tools/schema/nacharbeit-administration.sql`,
       analog `cdc.enable_table`/`cdc.disable_table` — dieselbe
       d-migrate-Ausweichform, `BEO-PGC/d-migrate-nacharbeit`); schreiben
@@ -121,11 +121,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       erweitert. Beleg: `internal/adapters/driven/postgresstorage/administrationrequest_test.go`
       (neue Testfälle, real gegen PostgreSQL: Happy Path `applied`,
       Negative-Fall nicht existierende Spalte `failed` mit Fehlertext).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `spec/architecture.md`s Sequenzdiagramm zu `ARC-005`
+- [x] Doku-Update: `spec/architecture.md`s Sequenzdiagramm zu `ARC-005`
       um die beiden neuen Antragsarten ergänzt (`ADR-0059` Folgepflicht);
       neuer `SPEC-*`-Eintrag in `spec/pflichtenheft.md` für die konkrete
       Feldform des erweiterten Antrags-Datensatzes (`ADR-0059`
