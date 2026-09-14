@@ -19,10 +19,10 @@ import (
 
 // Config trägt die Verdrahtungs-Eingabe des Adapters (`ADR-0057`
 // Folgepflicht): die Server-Adresse, die beiden Token-Klassen
-// (`ADR-0057` Teilfrage 3) und die Use Cases, die dieser Slice über die
-// API erreichbar macht — `RegisterConsumer` ist die einzige verdrahtete
-// Fähigkeit dieses Slice (`slice-059` §1); restliche Port-gedeckte
-// Fähigkeiten folgen mit `slice-060`.
+// (`ADR-0057` Teilfrage 3) und die neun Port-gedeckten Use Cases, die
+// dieser Adapter über die API erreichbar macht (`ADR-0057` §Umfang der
+// ersten API-Version) — Changes-Lesen und Diagnose/Health bleiben
+// außerhalb, siehe `ADR-0057` §Konsequenzen/Folgepflicht.
 type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_HTTP_ADDR`); die Composition
 	// Root entscheidet über den Start, dieser Typ trägt nur die Adresse.
@@ -33,9 +33,24 @@ type Config struct {
 	// behandeln (`middleware.go`, `classifyToken`).
 	TokenReader string
 	TokenAdmin  string
-	// RegisterConsumer trägt den einzigen in diesem Slice verdrahteten
-	// Inbound Port (`LH-FA-CON-001`, `ADR-0028`).
+	// RegisterConsumer trägt die Registrierung eines Consumers
+	// (`LH-FA-CON-001`, `ADR-0028`).
 	RegisterConsumer inbound.RegisterConsumerUseCase
+	// AcknowledgeConsumer, GetConsumerPosition und RemoveConsumer tragen
+	// die übrigen Consumer-Fähigkeiten: Bestätigung (`LH-FA-CON-004`),
+	// Positions-Lese (`LH-FA-CON-003`/`-005`) und administrative Entfernung
+	// (`LH-FA-CON-006`).
+	AcknowledgeConsumer inbound.AcknowledgeConsumerUseCase
+	GetConsumerPosition inbound.GetConsumerPositionUseCase
+	RemoveConsumer      inbound.RemoveConsumerUseCase
+	// EnableTable, DisableTable, GetStatus und ListTables tragen die
+	// Verwaltungs-Fähigkeiten (`LH-FA-CFG-001`…`004`).
+	EnableTable  inbound.EnableTableUseCase
+	DisableTable inbound.DisableTableUseCase
+	GetStatus    inbound.GetStatusUseCase
+	ListTables   inbound.ListTablesUseCase
+	// RunRetention trägt den Retention-Lauf (`LH-FA-RET-002`…`004`).
+	RunRetention inbound.RunRetentionUseCase
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter
 	// Wert fällt auf `outbound.NoopLog` zurück.
 	Log outbound.LogPort
@@ -59,6 +74,22 @@ func New(cfg Config) *Server {
 	mux := http.NewServeMux()
 	mux.Handle("POST /consumers", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
 		registerConsumerHandler(cfg.RegisterConsumer, log)))
+	mux.Handle("POST /consumers/acknowledge", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+		acknowledgeConsumerHandler(cfg.AcknowledgeConsumer, log)))
+	mux.Handle("GET /consumers/position", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		getConsumerPositionHandler(cfg.GetConsumerPosition, log)))
+	mux.Handle("POST /consumers/remove", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+		removeConsumerHandler(cfg.RemoveConsumer, log)))
+	mux.Handle("POST /tables/enable", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+		enableTableHandler(cfg.EnableTable, log)))
+	mux.Handle("POST /tables/disable", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+		disableTableHandler(cfg.DisableTable, log)))
+	mux.Handle("GET /tables/status", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		getStatusHandler(cfg.GetStatus, log)))
+	mux.Handle("GET /tables", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		listTablesHandler(cfg.ListTables, log)))
+	mux.Handle("POST /retention/run", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
+		runRetentionHandler(cfg.RunRetention, log)))
 	return &Server{
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux},
 		log:        log,
