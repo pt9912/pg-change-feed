@@ -90,9 +90,12 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       PostgreSQL-17-`PG_TEST_IMAGE` mindestens einmal grün belegt (lokaler
       Vorab-Beleg vor dem ersten echten CI-Matrix-Lauf; kein Gate,
       [ADR-0030](../../adr/0030-testpyramide.md)).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Siehe `docs/reviews/review-slice-064.md` (0 HIGH, 0 MEDIUM, 1 LOW,
+      keine Fixrunde nötig — DoD-Checkbox-Nachzug ohne Fixrunde,
+      `.harness/skills/reviewer.md` §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge, `.github/workflows/e2e.yml`-Zeile
       um die Matrix-Beschreibung ergänzt (kein neues Gate, `e2e.yml` bleibt
       nicht-blockierend).
