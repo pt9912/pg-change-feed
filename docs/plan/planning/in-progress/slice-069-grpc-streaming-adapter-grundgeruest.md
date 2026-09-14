@@ -148,6 +148,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `spec/pflichtenheft.md` | update | neuer Eintrag `SPEC-020` (§2), externe-Verträge-Zeile (§6), Historie-Zeile (§7) |
 | `harness/README.md`, `AGENTS.md` | update | neues `make`-Ziel `proto-generate` in der Werkzeuge-/Gate-Tabelle |
 | `go.mod`, `go.sum` | update | neue direkte Abhängigkeiten `google.golang.org/grpc`, `google.golang.org/protobuf` |
+| `harness/image-hash.txt` | update | Digest-Beleg nach `make image` (Build-Kontext geändert, `harness/README.md` §Werkzeuge) |
 
 **Implementer-Entscheidungen und -Abweichungen (Plan-Nachzug im selben Lauf):**
 
