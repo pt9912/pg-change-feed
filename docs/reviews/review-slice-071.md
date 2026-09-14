@@ -502,3 +502,212 @@ Architect-Antwort eine Änderung an `.a-check.yml` und damit einen weiteren
 Review-Lauf auslösen; F-2/F-3/F-4 liegen zudem in Dateien, die ein
 Implementer-Lauf trägt. Der Nachzug gehört in den regulären Mechanismus
 (Schritt 21 des Implementer-Workflows), nicht in diesen Report.
+
+---
+
+## Fixrunde (2. Lauf) — 2026-09-14
+
+**Gegenstand:** `3589e51` (`tools/harness/run-integration-tests.sh`,
+`harness/README.md`, Slice-Plan — real gelesen) und `e051071` (Architect-Zug:
+`.a-check.yml`, [`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md),
+ADR-Index, `harness/sensors/a-check.md`,
+[`architect-verdict-a-check-composition-root-tools.md`](architect-verdict-a-check-composition-root-tools.md)).
+F-1 ist **nicht** vom Implementer umgesetzt, sondern von einem unabhängigen
+Architect-Zug entschieden und umgesetzt (Modul 8 §Konflikt-Pfad, Verdikt 3 —
+„Erweiterung zulässig, aber falsch zugeschnitten").
+
+**Zusätzliche Prüfgrundlage dieses Laufs:**
+[`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md)
+vollständig, das Architect-Verdikt vollständig,
+[`ADR-0041`](../plan/adr/0041-a-check-maschinenform-architekturpruefung.md)
+gegen die Supersedes-Reichweite (`git log -- docs/plan/adr/0041-…`:
+letzter Commit `46d2fc6` — die Datei ist **unberührt**, `AGENTS.md` §3.5
+eingehalten), `docs/plan/adr/README.md:54`/`:81`,
+`harness/sensors/a-check.md`, `.a-check.yml` (neuer Stand),
+`tools/schema/schema.yaml:328` (`change_id` in der View-Signatur des
+Lesezugriffs — die neue SQL-Bindung trifft eine existierende, per
+`primary_key` eindeutige Spalte).
+
+**Eigene Sensor- und Probenläufe** (Exit-Code je eigener, ungepipter,
+mechanisch konditionierter Schritt, `AGENTS.md` §3.9):
+
+| Lauf | Exit | Bemerkung |
+|---|---|---|
+| `make gates` (Stand `3589e51`) | **0** | baseline-verify `v6.5.0` OK (54 Dateien); d-check 562 Dateien/0 Befunde; commit-traceability 5 Commits; a-check 0 Befunde; `coverage-gate: OK — 48.40 % ≥ 35 %` |
+| `make test` (Stand `3589e51`) | **0** | 28 Pakete `ok`, kein `FAIL` |
+| `make a-check` (Stand `3589e51`) | **0** | `gesamt: 0 Befund(e)`, Stub-Import grün, **kein** Abdeckungs-Hinweis |
+| `make a-check` + `tools/harness/grpcclient/probe_scope.go` (Import `internal/application/usecase/capture`) | **2** | `wrong-direction: tooling -> app` — **dieselbe Probe war unter dem zurückgenommenen Scope grün (Exit 0)**; die Kante ist messbar enger |
+| `make a-check` + `tools/probe_scope/main.go` (außerhalb `tools/harness/**`, Import `…/streamv1`) | **2** | `wrong-direction: (ohne Schicht) -> adapters` + Abdeckungs-Hinweis — die Gruppe reicht **nicht** über `tools/harness/**` hinaus |
+| `make a-check` + Probe in `tools/harness/grpcclient/` (Import `internal/adapters/driven/postgresstorage`) | **0** | die in [`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md) §Konsequenzen **benannte** Grenze ist real: die Kante erlaubt die ganze `adapters`-Schicht, nicht nur den Stub |
+| `make test-integration` + Mutation (Client druckt `change_id=FALSCH-260`) | **2** | `gRPC-Stream-Rundlauf — die über den Stream empfangene Änderung (change_id=FALSCH-260, GrpcStreamE2ESentinel) ist nicht real über cdc.changes lesbar (count=0)`; der Lauf stoppt genau an der erweiterten Assertion |
+| `bash -n tools/harness/run-integration-tests.sh` | **0** | — |
+
+**Rücknahme und Blatt-Identität:** `git checkout --
+tools/harness/grpcclient/main.go`, danach `git hash-object` = `c4ed07e8…` =
+`git rev-parse HEAD:tools/harness/grpcclient/main.go`; beide Probe-Pfade
+gelöscht; `git status --porcelain` ist leer. Die drei grünen Gate-Läufe oben
+gelten damit für die committeten Bytes.
+
+### Verdikt je Finding
+
+| Finding | Verdikt | Beleg (eigene Prüfung am Text/Code/Lauf) |
+|---|---|---|
+| F-1 (HIGH) | **behoben — durch `ADR-0068` + `e051071`, nicht am Client** | `.a-check.yml:12-31` (Rücknahme, `tooling`-Gruppe, genau eine Kante); `0068-…md:114-152` (Festlegungen 1–4), `:192-212` (Konsequenzen inkl. benannter Grenze); Probe Exit 2 gegen vorher Exit 0 |
+| F-2 (LOW) | **behoben** | `run-integration-tests.sh:1878-1890` (Extraktion + `change_id`-Bindung), `:1900` (Erfolgszeile), `harness/README.md:132`; Mutation Exit 2 |
+| F-3 (LOW) | **behoben** | Slice-Plan `:13-15` führt `SPEC-020` |
+| F-4 (LOW) | **behoben** | Slice-Plan `:142-146` adressiert `slice-077` samt dessen §5-Gegenstand (`slice-077` §1 Ziel: „die drei fehlenden Umgebungsvariablen-Gruppen in §5 … gRPC-Stream") |
+| F-1-Plan-Nachzug | **behoben** | Slice-Plan `:107` (§3-Zeile nennt `tooling` + Kante + `ADR-0068`), `:111-124` (Absatz ohne die `test/integration`-Gleichsetzung) |
+| F-5 (INFO) | **unverändert** — die Unit-Fassung trägt das Verhalten rot-fähig; kein Handlungsbedarf | `server_test.go:112-156` |
+| F-6 (INFO) | **unverändert** — Formulierungs-Hinweis ohne Aktion | `grpcclient/main.go:62-63` |
+
+### Trägt `ADR-0068` den Befund vollständig?
+
+**Ja — und sie trägt mehr als den Befund.** Alle drei Hälften der F-1 stehen
+in §Kontext (`:62-75`) und in §Entscheidung: die **Rolle** (`composition_root`
+ist „verdrahtet konkret", ein konsumierender Client nicht — Festlegung 1), die
+**Weite** (der Glob nahm `tools/schema/**` mit, Festlegung 2), die **falsche
+Gleichsetzung** (`test/integration` importiert sieben Pakete, der Client eins).
+Darüber hinaus schärft Festlegung 3 die Klausel selbst: ADR-frei ist die
+**Verfeinerung** (bestehende Layer-Globs/Edges abbilden §2 unverändert),
+ADR-pflichtig die **Erweiterung** — und sie nennt beide Wege ausdrücklich
+(`layers`/`edges` **oder** `composition_root`). Das ist die Stelle, die den
+Befund vor seiner Wiederholung schließt: ohne diese Hälfte wäre derselbe Zug
+über eine neue `layers`-Gruppe wiederholbar gewesen — genau die Form, die der
+geprüfte Diff fast genommen hätte.
+
+Die Rücknahme ist vollständig (`composition_root` führt wieder genau die drei
+Verdrahtungs-Träger, `:114-120`), `ADR-0041`s Datei ist unberührt und der
+Nachfolge-Vermerk steht im Index (`:54`) — der von §3.5 vorgesehene Weg. Mein
+Vorschlag „Klausel nachziehen, `composition_root` in beide Sätze" ist
+ausdrücklich **nicht** gewählt (`0068-…md:163-166`, Verdikt §Frage 2) — die
+Begründung ist sachlich richtig: er hätte `composition_root` in die
+ADR-freie Klasse gezogen, also genau das Gegenteil dessen, was F-1 verlangt.
+Kein Rest, der offen bliebe.
+
+**Benannte Reste** (nicht still): die Kante `tooling → adapters` ist grob und
+erlaubt die ganze `adapters`-Schicht — §Konsequenzen benennt es, mein
+Driven-Adapter-Probe-Lauf bestätigt es, und ein Re-Evaluierungs-Trigger hält
+den Weg zur feineren Lösung (Stub herauslösen, Option F) offen. Dass
+a-check den **Inhalt** von `composition_root` nicht gegen eine feste Liste
+prüft, steht als zweite, ausdrücklich **nicht-maschinelle**
+Fitness-Function-Zeile (`0068-…md:230`) — das ist die ehrliche Form.
+
+### Ist die neue Kante enger als der alte Glob?
+
+**Ja, auf beiden Achsen, real gemessen** (nicht übernommen):
+
+- **Einheit:** derselbe Wegwerf-Pfad liegt jetzt in `tools/harness/**`; eine
+  Datei außerhalb dieser Gruppe fällt auf „(ohne Schicht)" zurück und ihr
+  Stub-Import ist wieder `wrong-direction`, Exit 2.
+- **Recht:** dieselbe Probe, die unter `composition_root` grün war (Import
+  eines Produktions-Use-Cases), endet jetzt Exit 2 mit `wrong-direction:
+  tooling -> app`. Belegt: `tooling` gewährt nur noch `adapters`.
+
+Die vom Architect gemessene Zahl (`Exit 2` bei Use-Case-Import) ist damit
+unabhängig reproduziert. Die verbleibende Grobheit (driven-Adapter-Import
+bleibt grün) ist dieselbe, die `ADR-0068` selbst benennt.
+
+### F-2 — trägt die Aufteilung?
+
+**Ja.** Die Aufteilung trennt zwei verschiedene Prüfgegenstände sauber nach
+Tier: der **Transport am realen System** (Kommt die Zeile an? Trägt sie die
+Tabelle, die Operation, den Spaltenwert?) plus die **Identität** (ist die
+empfangene `change_id` dieselbe, die der Lesezugriffsweg kennt?) gehört in
+den E2E-Lauf; die **Feldvollständigkeit des Nachrichtenschemas** (alle zehn
+Felder, beide Row Images) gehört auf die Unit-Ebene, wo sie schon liegt
+(`server_test.go:198-207`). Die Aufteilung ist nicht nur zulässig, sie ist
+**stärker als der Vorschlag des Reports**: statt „eine Spalte mehr prüfen"
+bindet die neue Assertion die empfangene Nachricht an ihre Identität im
+Lesezugriffsweg — das ist der Nachweis, den der frühere Satz behauptet und
+nicht geführt hat. Die Extraktion ist robust (`grep -oE 'RECEIVED
+change_id=[^ ]+' | head -n1 | cut -d= -f2`, Leerfall mit eigenem Exit 1), und
+die Mutation ist real rot.
+
+**Deckungsgleich jetzt?** Ja, alle drei Träger der Zusage:
+`run-integration-tests.sh:1760-1766` (Blockkommentar), `:1900` (Erfolgszeile)
+und `harness/README.md:132` nennen genau die geprüften Größen und verweisen
+die Feldvollständigkeit an `server_test.go`; „vollständiger Inhalt" ist an
+allen drei Stellen zurückgenommen. `change_id` ist in `cdc.changes` eine
+eigene, per `primary_key` eindeutige Spalte (`tools/schema/schema.yaml:157`,
+`:328`) — die Bindung ist kein Filter, der immer trifft.
+
+### Restpunkt — die DoD-Zeile §2 und `ADR-0060`s Fitness-Function-Zeile
+
+**Verdikt: das ist keine echte Spannung, und `ADR-0060`s Zeile trägt
+weiter — aber der Beweis-Zeiger der DoD-Zeile ist enger als ihre Aussage.**
+
+Zwei verschiedene Sätze mit zwei verschiedenen Gegenständen:
+
+1. **Die DoD-Zeile** (Slice-Plan `:70-78`) wiederholt `LH-FA-SST-008`s eigene
+   Happy-Path-Formulierung („erhält der Consumer den vollständigen
+   Change-Inhalt"). Das ist eine **Anforderungs**-Aussage über das System —
+   und sie ist wahr: der Stream überträgt den Change unverändert
+   (`internal/adapters/driving/grpc/server.go:121-135` reicht `NewImage`
+   ohne Interpretation durch, `server_test.go:198-207` pinnt alle Felder).
+   Ihre Schwäche ist der **Zeiger**: „Test referenziert: `make
+   test-integration`" nennt nur einen der beiden Träger. Seit der Fixrunde
+   trägt `make test-integration` Transport und Identität, `make test`
+   (`server_test.go`) die Feldvollständigkeit. Das ist ein Ein-Zeilen-Nachzug
+   der Planner-Rolle bei der Closure — kein Merge- und kein Closure-Hindernis,
+   und **kein** Folge-ADR-Grund: die DoD ist kein `Accepted`-Artefakt.
+2. **`ADR-0060`s Fitness-Function-Zeile** (`:273`) ist eine
+   **Ziel-Attribution**: sie sagt, welches Target was belegt. Sie ist nicht
+   falsch geworden — der E2E-Lauf zeigt weiterhin, dass eine committete
+   Änderung einen verbundenen Client **mit Inhalt** erreicht (der
+   Spaltenwert liegt real im `new_image`); was er nicht (mehr) behauptet, ist
+   die *erschöpfende* Feldvollständigkeit, und die liegt eine Zeile darüber
+   in derselben FF-Tabelle auf `make test`. Ein Selbstwiderspruch wie im Fall
+   von `ADR-0067` liegt nicht vor: dort verlangte die Zeile etwas, das
+   dieselbe ADR an der Aufrufstelle verbot; hier beschreibt sie den
+   E2E-Tier-Ausschnitt zutreffend, nur nicht abschließend.
+
+   **Falsifizierbarkeit an diesem Target, geprüft:** eine Mutation, die das
+   Row Image ganz aus `new_image` nimmt, färbt die Zeile rot (der
+   Sentinel-Regex greift nicht); eine Mutation, die eine von zwei Spalten
+   fallen lässt, tut es nicht. Genau diese Restunschärfe ist jetzt an drei
+   Stellen **benannt** (Blockkommentar, Erfolgszeile, `harness/README.md`) —
+   das ist die Form, die dieses Repo für eine benannte Grenze verwendet.
+
+   **Keine Folge-ADR.** `AGENTS.md` §3.5 verbietet die In-place-Korrektur
+   einer `Accepted`-ADR; sie zu ändern, obwohl ihr Satz trägt, wäre eine
+   Änderung ohne Anlass. Sobald ein zweiter Zustellweg (`slice-072`, SSE)
+   dieselbe Zeile liest, ist der Zeitpunkt, sie um die Tier-Teilung zu
+   ergänzen — das ist Planner-/Architect-Arbeit bei Bedarf, kein Bestandteil
+   dieser Fixrunde.
+
+**Was ich dem Closure mitgebe (kein Finding, kein Rückweg):** die DoD-Zeile
+§2 darf bei der Slice-Closure ihren zweiten Test-Zeiger bekommen;
+`ADR-0060`s FF-Zeile bleibt wie sie ist.
+
+## Summary (Fixrunde)
+
+| Kategorie | Anzahl |
+|---|---|
+| HIGH | 0 |
+| MEDIUM | 0 |
+| LOW | 0 |
+| INFO | 0 |
+
+**Finding-Klassen dieses Laufs:** keine neuen. Die Klasse zu F-1
+(„Gate-Scope-Erweiterung ohne die Rolle, die der Schlüssel deklariert") ist
+mit `ADR-0068` **verkörpert** — sie hat in derselben Welle ihren Träger
+gefunden; die Zuordnung in den Zähler leistet die Slice-Closure §7.
+
+## Verdikt (Fixrunde)
+
+**Merge-blockierend:** nein — **keine Fixrunde mehr nötig.** F-1 ist durch
+`ADR-0068` entschieden und der neue Stand von `.a-check.yml` in diesem Lauf
+selbst geprüft (Verdikt des Architect-Zugs, Frage 4, Punkt 3); F-2, F-3, F-4
+und der Plan-Nachzug sind am Text und am Lauf nachgeprüft, nicht an der
+Commit-Message. Die Kette schließt hier: Reviewer → Architect
+([`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md))
+→ Implementer/Planner (Fixrunde) → Reviewer. Der nächste Rollenwechsel ist
+Reviewer → Verifier (DoD-/Spec-Konformität, `v6.5.0` ·
+`regelwerk/modul-11-*.md`).
+
+**DoD-Nachzug:** Mit diesem Verdikt ist die Rückkante geschlossen — die Zeile
+„Review durchgeführt, Report unter `docs/reviews/` liegt vor" in §2 des
+Slice-Plans ist in demselben Commit wie dieser Vermerk auf `[x]` gezogen
+(`.harness/skills/reviewer.md` §DoD-Checkbox-Nachzug ohne Fixrunde). Nur
+diese eine Zeile; Closure-Notiz, Beobachtungs-Register, Risiko-Ausgänge und
+die drei Paarungen bleiben offen (Planner-Arbeit).

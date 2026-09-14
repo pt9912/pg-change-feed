@@ -80,8 +80,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `run-integration-tests.sh` fährt den gRPC-Rundlauf als Teil des
       bestehenden Compose-Integrationstests.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-071.md`, `.harness/skills/reviewer.md`) —
+      Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer gRPC-Rundlauf-Satz analog zum bestehenden HTTP-API-Satz).
