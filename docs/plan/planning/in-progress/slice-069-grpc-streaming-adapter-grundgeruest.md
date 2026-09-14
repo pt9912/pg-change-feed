@@ -111,7 +111,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Protobuf-/Nachrichtenschema, RPC-Methodenname, Stream-Semantik) —
       Folgepflicht aus
       [ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
