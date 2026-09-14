@@ -18,7 +18,8 @@ var ErrAdministrationStorage = stderrors.New("Fehlerklasse storage: Persistenzfe
 
 // AdministrationRequestPort trägt die Lese- und Ergebnis-Fähigkeit der
 // Antrags-Queue (`ARC-004`, `LH-FA-ADM-001`): `cdc.enable_table`/
-// `cdc.disable_table` schreiben den Antrags-Datensatz direkt über SQL
+// `cdc.disable_table`/`cdc.exclude_column`/`cdc.include_column` schreiben
+// den Antrags-Datensatz direkt über SQL
 // (kein Go-Aufrufpfad, Fähigkeits-Trennung); dieser Port trägt ausschließlich
 // die Gegenrichtung — die Administrations-Goroutine liest offene Anträge
 // und vermerkt ihr Ergebnis.

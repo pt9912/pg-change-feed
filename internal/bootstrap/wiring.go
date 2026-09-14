@@ -47,6 +47,8 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/list"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/position"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
@@ -466,6 +468,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	retentionUseCase := retention.NewRunRetentionService(retentionStore, retentionConsumerState, systemclock.New())
 	enableTables := enable.NewEnableTableService(activation)
 	disableTables := disable.NewDisableTableService(activation)
+	excludeColumns := excludecolumn.NewExcludeColumnService(activation)
+	includeColumns := includecolumn.NewIncludeColumnService(activation)
 	for qualified, binding := range cfg.Tables {
 		schema, table, err := splitQualifiedName(qualified)
 		if err != nil {
@@ -579,16 +583,18 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	go func() {
 		defer administrationDone.Done()
 		runAdministration(administrationCtx, administrationDeps{
-			requests:      adminRequests,
-			listener:      adminListener,
-			activation:    activation,
-			enableTables:  enableTables,
-			disableTables: disableTables,
-			schemaStore:   schemaStore,
-			assembler:     stream.Assembler(),
-			publication:   cfg.Publication,
-			pollInterval:  administrationPollInterval,
-			log:           log,
+			requests:       adminRequests,
+			listener:       adminListener,
+			activation:     activation,
+			enableTables:   enableTables,
+			disableTables:  disableTables,
+			excludeColumns: excludeColumns,
+			includeColumns: includeColumns,
+			schemaStore:    schemaStore,
+			assembler:      stream.Assembler(),
+			publication:    cfg.Publication,
+			pollInterval:   administrationPollInterval,
+			log:            log,
 		})
 	}()
 
@@ -927,16 +933,18 @@ type administrationListener interface {
 // einer langen Parameterliste, wie bei den übrigen periodischen Zügen
 // dieser Datei.
 type administrationDeps struct {
-	requests      outbound.AdministrationRequestPort
-	listener      administrationListener
-	activation    outbound.TableActivationPort
-	enableTables  inbound.EnableTableUseCase
-	disableTables inbound.DisableTableUseCase
-	schemaStore   outbound.SchemaStorePort
-	assembler     *mapper.Assembler
-	publication   string
-	pollInterval  time.Duration
-	log           outbound.LogPort
+	requests       outbound.AdministrationRequestPort
+	listener       administrationListener
+	activation     outbound.TableActivationPort
+	enableTables   inbound.EnableTableUseCase
+	disableTables  inbound.DisableTableUseCase
+	excludeColumns inbound.ExcludeColumnUseCase
+	includeColumns inbound.IncludeColumnUseCase
+	schemaStore    outbound.SchemaStorePort
+	assembler      *mapper.Assembler
+	publication    string
+	pollInterval   time.Duration
+	log            outbound.LogPort
 }
 
 // runAdministration verarbeitet offene Anträge der Antrags-Queue
@@ -1010,6 +1018,11 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // Kennung blind zu vertrauen — bereits vor diesem Antrag über `CDC_TABLES`
 // aktivierte Tabellen tragen sonst die falsche Kennung in der
 // nachgetragenen `Assembler`-Bindung.
+//
+// Die beiden Spalten-Antragsarten rufen ausschließlich ihren Use Case auf:
+// ihr Ziel ist der Filterzustand der laufenden Erfassung, nicht die
+// Bindungs- oder Publication-Menge, die die beiden Tabellen-Antragsarten
+// tragen (`ADR-0059` Teilfrage 3).
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1053,8 +1066,22 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}
 		deps.assembler.RemoveBinding(qualified)
 		return nil
+	case model.AdministrationRequestExcludeColumn:
+		return deps.excludeColumns.Exclude(ctx, inbound.ExcludeColumnCommand{
+			Source: request.Source,
+			Schema: request.Schema,
+			Table:  request.Table,
+			Column: request.Column,
+		})
+	case model.AdministrationRequestIncludeColumn:
+		return deps.includeColumns.Include(ctx, inbound.IncludeColumnCommand{
+			Source: request.Source,
+			Schema: request.Schema,
+			Table:  request.Table,
+			Column: request.Column,
+		})
 	default:
-		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable", request.Kind)
+		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable/exclude_column/include_column", request.Kind)
 	}
 }
 

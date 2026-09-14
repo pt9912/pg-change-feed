@@ -28,14 +28,17 @@ var ErrActivationConfiguration = fmt.Errorf("Fehlerklasse configuration: Aktivie
 // Adapter-Schicht importiert keine Adapter-Kante (Kopplung).
 var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 
-// TableActivationAdapter implementiert den `TableActivationPort`
-// (`outbound`, `ARC-004`) gegen dieselbe Instanz: im MVP trägt eine
-// Instanz die Quelle und den CDC-Speicher gleichermaßen (Abschnitt 1
-// Lastenheft) — die Bindungs-Zeilen der CDC-Referenztabellen (`SPEC-001`)
-// und die Publication der Quelle laufen über denselben Verbindungspool
-// (`LH-FA-CFG-001.a`). `log` trägt die strukturierte Protokollierung über
-// den injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) —
-// Default `outbound.NoopLog`.
+// TableActivationAdapter implementiert den `TableActivationPort` und den
+// `ColumnExclusionPort` (`outbound`, `ARC-004`) gegen dieselbe Instanz: im
+// MVP trägt eine Instanz die Quelle und den CDC-Speicher gleichermaßen
+// (Abschnitt 1 Lastenheft) — die Bindungs-Zeilen der CDC-Referenztabellen
+// (`SPEC-001`), die Publication der Quelle und die Katalog-Prüfungen ihrer
+// Objekte laufen über denselben Verbindungspool (`LH-FA-CFG-001.a`). Die
+// beiden Ports bleiben getrennt: der Spaltenausschluss (`LH-FA-CFG-005`)
+// hängt nur an der Spalten-Prüfung, nicht an Bindungs-Zeilen oder
+// Publication. `log` trägt die strukturierte Protokollierung über den
+// injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default
+// `outbound.NoopLog`.
 type TableActivationAdapter struct {
 	pool *pgxpool.Pool
 	log  outbound.LogPort
@@ -64,6 +67,31 @@ func (a *TableActivationAdapter) Close() {
 }
 
 var _ outbound.TableActivationPort = (*TableActivationAdapter)(nil)
+
+var _ outbound.ColumnExclusionPort = (*TableActivationAdapter)(nil)
+
+// ColumnExists prüft die physische Spalte über den Katalog; der
+// Negative-Pfad von Spaltenausschluss und -einschluss endet über die
+// Abwesenheit sichtbar (`LH-FA-CFG-005`). Die Prüfung liest dieselbe
+// Katalog-Quelle wie `TableExists` — eine Spalte ohne Tabelle existiert
+// nicht, `false` trägt beide Fälle. Schema und Tabelle tragen dasselbe
+// Bezeichner-Alphabet wie bei `TableExists` (sie adressieren dieselbe
+// Objektklasse der Quelle); der Spaltenname geht dagegen als Wert in die
+// parameterisierte Katalog-Abfrage, nicht in DDL-Text — sein Alphabet
+// gehört der Quelle, nicht diesem Adapter.
+func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table, column string) (bool, error) {
+	if err := validateIdentifier(schema); err != nil {
+		return false, err
+	}
+	if err := validateIdentifier(table); err != nil {
+		return false, err
+	}
+	var count int
+	if err := a.pool.QueryRow(ctx, queries.SelectTableColumnExists, schema, table, column).Scan(&count); err != nil {
+		return false, storageFailure(ctx, a.log, err)
+	}
+	return count > 0, nil
+}
 
 // TableExists prüft die physische Tabelle über den Katalog; die
 // Negative-Pfade der Aktivierung, Deaktivierung und Status-Abfrage enden

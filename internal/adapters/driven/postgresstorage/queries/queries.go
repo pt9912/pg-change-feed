@@ -159,6 +159,13 @@ const SelectPublicationMember = `
 SELECT 1 FROM pg_publication_tables
 WHERE pubname = $1 AND schemaname = $2 AND tablename = $3`
 
+// SelectTableColumnExists liest die physische Spalte einer Tabelle über
+// den Katalog; der Negative-Pfad des Spaltenausschlusses/-einschlusses
+// endet über die Abwesenheit (`LH-FA-CFG-005`) — dieselbe Katalog-Quelle
+// wie `TableExists` (information_schema.tables), hier eine Ebene tiefer.
+const SelectTableColumnExists = `
+SELECT count(*) FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 AND column_name = $3`
+
 // InsertConsumer trägt die Consumer-Zeile einer Registrierung
 // (`LH-FA-CON-001`); die Deduplizierung der Idempotenz läuft über den
 // Primärschlüssel — die erneut registrierte Kennung bleibt ohne Wirkung
@@ -282,9 +289,11 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
 // Anlage-Reihenfolge (`requested_at`) — die Administrations-Goroutine
 // verarbeitet sie in dieser Ordnung, sowohl nach `NOTIFY` als auch
-// periodisch als Fallback-Poll.
+// periodisch als Fallback-Poll. Die vier Antragsarten teilen sich eine
+// Tabelle; die beiden Tabellen-Antragsarten tragen keine Spalte
+// (`column_name` NULL) — `COALESCE` normalisiert das auf den leeren Wert.
 const SelectPendingAdministrationRequests = `
-SELECT administration_request_id, source_id, schema_name, table_name, request_kind
+SELECT administration_request_id, source_id, schema_name, table_name, COALESCE(column_name, ''), request_kind
 FROM cdc.administration_request
 WHERE status = 'pending'
 ORDER BY requested_at`

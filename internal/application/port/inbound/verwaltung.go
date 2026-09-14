@@ -1,7 +1,8 @@
 // Die Verwaltungs-Use-Cases trägt diese Datei an einer Stelle (`ARC-003`):
 // die Driving-Adapter (`ARC-005`) rufen die Tabellen-Aktivierung, die
-// Deaktivierung, den Status und die Liste über sie auf (`ADR-0028`); die
-// Orchestrierung liegt in den Application Services (`ARC-002`).
+// Deaktivierung, den Status, die Liste und den Spaltenausschluss/-einschluss
+// über sie auf (`ADR-0028`); die Orchestrierung liegt in den Application
+// Services (`ARC-002`).
 
 package inbound
 
@@ -17,6 +18,12 @@ import (
 // Deaktivierung und Status-Abfrage enden über dieses Sentinel sichtbar
 // (`LH-FA-CFG-001`/`002`/`003`) statt still.
 var ErrSourceTableMissing = stderrors.New("Tabelle existiert nicht an der Quelle")
+
+// ErrSourceColumnMissing meldet, dass die angesprochene Spalte an der
+// Quelle nicht existiert; der Negative-Pfad von Spaltenausschluss und
+// -einschluss endet über dieses Sentinel sichtbar (`LH-FA-CFG-005`) statt
+// still — dasselbe Muster wie `ErrSourceTableMissing` für die Tabelle.
+var ErrSourceColumnMissing = stderrors.New("Spalte existiert nicht an der Quelle")
 
 // EnableTableCommand trägt die Eingabe der Aktivierung (`LH-FA-CFG-001`):
 // die Tabelle mit ihrer Bindung — Tabellen- und Schema-Version-Kennung
@@ -127,4 +134,40 @@ type GetStatusUseCase interface {
 // (`LH-FA-CFG-004`, `ADR-0028`).
 type ListTablesUseCase interface {
 	ListTables(ctx context.Context, query ListTablesQuery) (ListTablesResult, error)
+}
+
+// ExcludeColumnCommand trägt die Eingabe des Spaltenausschlusses
+// (`LH-FA-CFG-005`): die aktivierte Tabelle und die Spalte, deren Werte
+// von der Erfassung ausgeschlossen werden. Die Bindung liegt bei der
+// Tabelle (`ADR-0059` Teilfrage 2: ausschließlich pro Tabelle).
+type ExcludeColumnCommand struct {
+	Source model.SourceID
+	Schema string
+	Table  string
+	Column string
+}
+
+// IncludeColumnCommand trägt die Eingabe des Spalteneinschlusses
+// (`LH-FA-CFG-005`): dieselbe Adressierung wie `ExcludeColumnCommand`,
+// umgekehrter Ausschluss-Sinn.
+type IncludeColumnCommand struct {
+	Source model.SourceID
+	Schema string
+	Table  string
+	Column string
+}
+
+// ExcludeColumnUseCase schließt eine Spalte einer aktivierten Tabelle von
+// der Erfassung aus (`LH-FA-CFG-005`, `ADR-0028`): die Spaltenexistenz ist
+// die Vorbedingung, ihre Abwesenheit endet über
+// `ErrSourceColumnMissing`.
+type ExcludeColumnUseCase interface {
+	Exclude(ctx context.Context, command ExcludeColumnCommand) error
+}
+
+// IncludeColumnUseCase hebt den Ausschluss einer Spalte wieder auf
+// (`LH-FA-CFG-005`, `ADR-0028`); dieselbe Vorbedingung wie
+// `ExcludeColumnUseCase`.
+type IncludeColumnUseCase interface {
+	Include(ctx context.Context, command IncludeColumnCommand) error
 }

@@ -76,12 +76,12 @@ func (a *AdministrationRequestAdapter) ListPending(ctx context.Context) ([]model
 
 	requests := make([]model.AdministrationRequest, 0)
 	for rows.Next() {
-		var id, source, schema, table, kind string
-		if err := rows.Scan(&id, &source, &schema, &table, &kind); err != nil {
+		var id, source, schema, table, column, kind string
+		if err := rows.Scan(&id, &source, &schema, &table, &column, &kind); err != nil {
 			return nil, administrationStorageFailure(ctx, a.log, err)
 		}
 		request, err := model.NewAdministrationRequest(
-			model.AdministrationRequestID(id), model.SourceID(source), schema, table, model.AdministrationRequestKind(kind),
+			model.AdministrationRequestID(id), model.SourceID(source), schema, table, column, model.AdministrationRequestKind(kind),
 		)
 		if err != nil {
 			return nil, err

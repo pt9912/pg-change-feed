@@ -3,6 +3,7 @@ package postgresstorage_test
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -51,12 +53,12 @@ func newTestAdministrationRequestPool(t *testing.T) (*pgxpool.Pool, string) {
 
 	var functions int
 	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table')",
+		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column')",
 	).Scan(&functions); err != nil {
 		t.Fatalf("Funktions-Prüfung: %v", err)
 	}
-	if functions != 2 {
-		t.Fatalf("cdc.enable_table/cdc.disable_table fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
+	if functions != 4 {
+		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
 	}
 
 	if _, err := pool.Exec(ctx,
@@ -143,7 +145,9 @@ func TestAdministrationRequestEnableTableWritesPendingRequestAndNotifies(t *test
 // cdc_admin-Mitgliedschaft scheitert am Aufruf — derselbe `SET
 // ROLE`-Mechanismus wie roles_test.go, `permissionDenied` von dort
 // wiederverwendet (SQLSTATE 42501, dieselbe PostgreSQL-Fehlerklasse, die
-// „permission denied for function" auslöst).
+// „permission denied for function" auslöst). Der Spaltenausschluss trägt
+// dieselbe Zusage; er prüft zusätzlich, dass die vierteilige Funktion im
+// REVOKE/GRANT-Paar wirklich eingeschlossen ist.
 func TestAdministrationRequestEnableTableRequiresCdcAdminMembership(t *testing.T) {
 	pool, _ := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
@@ -167,6 +171,13 @@ func TestAdministrationRequestEnableTableRequiresCdcAdminMembership(t *testing.T
 	).Scan(&requestID)
 	if !permissionDenied(err) {
 		t.Fatalf("cdc_reader SELECT cdc.enable_table(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+
+	err = conn.QueryRow(ctx,
+		"SELECT cdc.exclude_column($1, $2, $3, $4)", administrationRequestSource, "public", "orders_reader_denied", "secret",
+	).Scan(&requestID)
+	if !permissionDenied(err) {
+		t.Fatalf("cdc_reader SELECT cdc.exclude_column(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
 	}
 }
 
@@ -208,6 +219,83 @@ func TestAdministrationRequestDisableTableWritesPendingRequestAndNotifies(t *tes
 	}
 	if status != "pending" {
 		t.Fatalf("status = %q, wollen pending", status)
+	}
+}
+
+// TestAdministrationRequestColumnRequestsCarryColumnAndExitStatus trägt den
+// realen Antrags-Weg des Spaltenausschlusses/-einschlusses
+// (`LH-FA-CFG-005`, `ADR-0059`): die beiden vierteiligen Funktionen legen
+// eine Zeile mit `column_name` und `request_kind` an, der Adapter liest
+// beides zurück, und der Ergebnis-Vermerk endet für eine vorhandene Spalte
+// als `applied`, für eine nicht existierende als `failed` samt Fehlertext
+// (`LH-FA-CFG-005` Negative) — dieselbe asynchrone Sichtbarkeit wie bei den
+// beiden Tabellen-Antragsarten.
+func TestAdministrationRequestColumnRequestsCarryColumnAndExitStatus(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var excludeID, includeID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.exclude_column($1, $2, $3, $4)", administrationRequestSource, "public", "orders_columns_exclude", "secret",
+	).Scan(&excludeID); err != nil {
+		t.Fatalf("cdc.exclude_column: %v", err)
+	}
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.include_column($1, $2, $3, $4)", administrationRequestSource, "public", "orders_columns_include", "missing",
+	).Scan(&includeID); err != nil {
+		t.Fatalf("cdc.include_column: %v", err)
+	}
+
+	pending, err := adapter.ListPending(ctx)
+	if err != nil {
+		t.Fatalf("ListPending: %v", err)
+	}
+	byID := map[model.AdministrationRequestID]model.AdministrationRequest{}
+	for _, request := range pending {
+		byID[request.ID] = request
+	}
+	excludeRequest, found := byID[model.AdministrationRequestID(excludeID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den exclude_column-Antrag %q: %+v", excludeID, pending)
+	}
+	if excludeRequest.Kind != model.AdministrationRequestExcludeColumn || excludeRequest.Column != "secret" ||
+		excludeRequest.Table != "orders_columns_exclude" {
+		t.Fatalf("exclude_column-Antrag: %+v", excludeRequest)
+	}
+	includeRequest, found := byID[model.AdministrationRequestID(includeID)]
+	if !found {
+		t.Fatalf("ListPending trägt nicht den include_column-Antrag %q: %+v", includeID, pending)
+	}
+	if includeRequest.Kind != model.AdministrationRequestIncludeColumn || includeRequest.Column != "missing" {
+		t.Fatalf("include_column-Antrag: %+v", includeRequest)
+	}
+
+	if err := adapter.MarkApplied(ctx, excludeRequest.ID); err != nil {
+		t.Fatalf("MarkApplied: %v", err)
+	}
+	failure := fmt.Sprintf("%v: public.orders_columns_include.missing", inbound.ErrSourceColumnMissing)
+	if err := adapter.MarkFailed(ctx, includeRequest.ID, failure); err != nil {
+		t.Fatalf("MarkFailed: %v", err)
+	}
+
+	var appliedStatus, failedStatus, failedMessage string
+	if err := pool.QueryRow(ctx, "SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", excludeID).Scan(&appliedStatus); err != nil {
+		t.Fatalf("Status exclude_column-Antrag lesen: %v", err)
+	}
+	if appliedStatus != "applied" {
+		t.Fatalf("Status exclude_column-Antrag = %q, wollen applied", appliedStatus)
+	}
+	if err := pool.QueryRow(ctx, "SELECT status, error_message FROM cdc.administration_request WHERE administration_request_id = $1", includeID).Scan(&failedStatus, &failedMessage); err != nil {
+		t.Fatalf("Status include_column-Antrag lesen: %v", err)
+	}
+	if failedStatus != "failed" || failedMessage != failure {
+		t.Fatalf("Status/Fehlertext include_column-Antrag = %q/%q", failedStatus, failedMessage)
 	}
 }
 

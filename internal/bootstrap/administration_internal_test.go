@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	stderrors "errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -124,6 +125,34 @@ func (f *fakeDisableTableUseCase) Disable(ctx context.Context, command inbound.D
 }
 
 var _ inbound.DisableTableUseCase = (*fakeDisableTableUseCase)(nil)
+
+// fakeExcludeColumnUseCase trägt jeden Aufruf zur Prüfung — `err` gesetzt
+// bildet den Fehlschlag-Pfad nach (`MarkFailed`-Zweig).
+type fakeExcludeColumnUseCase struct {
+	err   error
+	calls []inbound.ExcludeColumnCommand
+}
+
+func (f *fakeExcludeColumnUseCase) Exclude(ctx context.Context, command inbound.ExcludeColumnCommand) error {
+	f.calls = append(f.calls, command)
+	return f.err
+}
+
+var _ inbound.ExcludeColumnUseCase = (*fakeExcludeColumnUseCase)(nil)
+
+// fakeIncludeColumnUseCase spiegelt `fakeExcludeColumnUseCase` für den
+// Einschluss-Pfad.
+type fakeIncludeColumnUseCase struct {
+	err   error
+	calls []inbound.IncludeColumnCommand
+}
+
+func (f *fakeIncludeColumnUseCase) Include(ctx context.Context, command inbound.IncludeColumnCommand) error {
+	f.calls = append(f.calls, command)
+	return f.err
+}
+
+var _ inbound.IncludeColumnUseCase = (*fakeIncludeColumnUseCase)(nil)
 
 // fakeTableActivationPort trägt nur `Registered` mit echtem Verhalten — die
 // übrigen Methoden bleiben ungenutzte Nullwerte, `applyAdministrationRequest`
@@ -306,6 +335,103 @@ func TestProcessAdministrationRequestsDisableAppliesAndUnbindsAssembler(t *testi
 	}
 	if assemblerCapturesQualified(t, assembler, 2, "public", "orders_admin_disable") {
 		t.Fatal("Assembler trägt nach Disable weiterhin eine Bindung für orders_admin_disable — RemoveBinding hat nicht nachgetragen")
+	}
+}
+
+// TestProcessAdministrationRequestsExcludeColumnAppliesWithoutBinding trägt
+// den Happy Path des Spaltenausschlusses (`LH-FA-CFG-005`, `ADR-0059`): der
+// Antrag läuft über den Inbound Port mit der Spalte aus dem Antrags-Datensatz
+// und wird als `applied` vermerkt — die beiden Spalten-Antragsarten tragen
+// keine `Assembler`-Bindung nach, ihr Ziel ist der Filterzustand der
+// laufenden Erfassung.
+func TestProcessAdministrationRequestsExcludeColumnAppliesWithoutBinding(t *testing.T) {
+	ctx := context.Background()
+	const requestID = model.AdministrationRequestID("req-exclude-1")
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{
+			ID: requestID, Source: "src-admin", Schema: "public", Table: "orders_admin_exclude",
+			Column: "secret", Kind: model.AdministrationRequestExcludeColumn,
+		},
+	}}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	excludeColumns := &fakeExcludeColumnUseCase{}
+	deps := administrationDeps{
+		requests:       requests,
+		activation:     &fakeTableActivationPort{},
+		enableTables:   &fakeEnableTableUseCase{},
+		disableTables:  &fakeDisableTableUseCase{},
+		excludeColumns: excludeColumns,
+		includeColumns: &fakeIncludeColumnUseCase{},
+		schemaStore:    &fakeSchemaStorePort{},
+		assembler:      assembler,
+		publication:    "cdc_pub",
+		log:            &recordingLog{},
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	if len(excludeColumns.calls) != 1 {
+		t.Fatalf("Exclude-Aufrufe = %d, wollen 1", len(excludeColumns.calls))
+	}
+	if got := excludeColumns.calls[0]; got.Table != "orders_admin_exclude" || got.Column != "secret" {
+		t.Fatalf("Exclude-Kommando = %+v, wollen Tabelle orders_admin_exclude mit Spalte secret", got)
+	}
+	if requests.appliedCount() != 1 {
+		t.Fatalf("applied = %d, wollen 1", requests.appliedCount())
+	}
+	if assemblerCapturesQualified(t, assembler, 1, "public", "orders_admin_exclude") {
+		t.Fatal("Assembler trägt nach dem Spaltenausschluss eine Bindung für orders_admin_exclude — diese Antragsart trägt keine Bindung nach")
+	}
+}
+
+// TestProcessAdministrationRequestsMarksFailedWhenColumnUseCaseErrors trägt
+// den `MarkFailed`-Zweig des Spalteneinschlusses: eine nicht existierende
+// Spalte endet über `ErrSourceColumnMissing` und wird als `failed` samt
+// Fehlertext vermerkt (`LH-FA-CFG-005` Negative) — ohne diesen Vermerk
+// bliebe der Antrag `pending` und der Fehlschlag unsichtbar.
+func TestProcessAdministrationRequestsMarksFailedWhenColumnUseCaseErrors(t *testing.T) {
+	ctx := context.Background()
+	const requestID = model.AdministrationRequestID("req-include-fail-1")
+	wantErr := fmt.Errorf("%w: public.orders_admin_include.missing", inbound.ErrSourceColumnMissing)
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{
+			ID: requestID, Source: "src-admin", Schema: "public", Table: "orders_admin_include",
+			Column: "missing", Kind: model.AdministrationRequestIncludeColumn,
+		},
+	}}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	deps := administrationDeps{
+		requests:       requests,
+		activation:     &fakeTableActivationPort{},
+		enableTables:   &fakeEnableTableUseCase{},
+		disableTables:  &fakeDisableTableUseCase{},
+		excludeColumns: &fakeExcludeColumnUseCase{},
+		includeColumns: &fakeIncludeColumnUseCase{err: wantErr},
+		schemaStore:    &fakeSchemaStorePort{},
+		assembler:      assembler,
+		publication:    "cdc_pub",
+		log:            &recordingLog{},
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	if requests.appliedCount() != 0 {
+		t.Fatalf("applied = %d, wollen 0 (Include ist gescheitert)", requests.appliedCount())
+	}
+	requests.mu.Lock()
+	failedMessage, failedFound := requests.failed[requestID]
+	requests.mu.Unlock()
+	if !failedFound {
+		t.Fatal("MarkFailed wurde nicht aufgerufen")
+	}
+	if failedMessage != wantErr.Error() {
+		t.Fatalf("Fehlertext = %q, wollen %q", failedMessage, wantErr.Error())
 	}
 }
 
