@@ -25,9 +25,9 @@ Dauerhaftigkeits-Aussage durch die Folge-ADR korrigiert),
 (Port-Zuschnitt), [`SPEC-019`](../../spec/pflichtenheft.md) (Feldform und
 Bedeutung des Antrags-Datensatzes),
 [`docs/plan/planning/welle-18.md`](../plan/planning/welle-18.md) (§3
-Closure-Trigger, §4 Slices, §6 Out-of-Scope),
-[`docs/plan/planning/open/slice-068-e2e-spaltenausschluss.md`](../plan/planning/open/slice-068-e2e-spaltenausschluss.md)
-(E2E-Beleg des laufenden Pfads)
+Closure-Trigger, §4 Slices, §6 Out-of-Scope), `slice-068`
+(E2E-Beleg des laufenden Pfads; als Kennung zitiert, nicht als Pfad-Link —
+ein Slice wechselt die Lifecycle-Ablage und ein Pfad-Link bräche mit)
 
 **Erzeugte Artefakte dieses Zugs:**
 

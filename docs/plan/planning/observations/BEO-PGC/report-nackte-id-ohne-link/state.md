@@ -23,3 +23,14 @@ Verletzung liegt in der Ausführung, nicht im committeten Ergebnis).
 Der 3×-Verdikt bleibt für die von ihm analysierte Fehlerklasse
 (Pipe-/Wrapper-Maskierung) unverändert richtig — kein `supersedes`,
 dieses Verdikt tritt daneben.
+
+**Benannt, nicht gezählt (2026-09-14, Planner-Koordinator):** Ein weiteres
+Auftreten derselben Sequenzierungs-Klasse im Anschluss an `slice-067`s
+Closure. Beim `open→next`-Übergang von `slice-068` lief `make gates` real
+rot (Exit 2, `docs-check`: das Architect-Verdikt verlinkte `slice-068`s
+Pfad fest mit `open/`, was der Move brach) — der Exit-Code war korrekt
+ungespiped ermittelt und sichtbar, die Folgehandlung (`git commit`) lief
+trotzdem, weil sie nicht an ihn konditioniert war. Behoben durch Auflösen
+des Links in eine Kennungs-Zitierung. Kein eigener Beleg: der Vorgang
+(`slice-068`) ist noch nicht abgeschlossen — Beleg-Entscheidung fällt bei
+dessen Closure.
