@@ -267,6 +267,24 @@ ausschließlich beim bestehenden Lesezugriffsweg
 | Fehlerklasse bei Notify-Fehlschlag | `transient` (`SPEC-008`) — der Fehler wird an der Aufrufstelle (`CaptureService`) abgefangen und propagiert **nicht** in den Rückgabewert des Capture-Aufrufs; er darf die bereits erfolgte Persistierung oder das bereits erfolgte Source-ACK (`LH-QA-REL-001.a`) nicht beeinflussen |
 | Aktivierung | optional über `CDC_NATS_URL`; ungesetzt bedeutet deaktiviertes Feature, keine NATS-Verbindung, unverändertes Bestandsverhalten |
 
+### SPEC-018 — HTTP-API: `RegisterConsumer` und Token-Header-Form
+
+Technische Ausgestaltung des ersten Ausschnitts von
+[`LH-FA-SST-006`](lastenheft.md): Endpunkt, Methode, JSON-Schema und
+Token-Header-Form für `RegisterConsumer`
+([`LH-FA-CON-001`](lastenheft.md)); restliche Port-gedeckte Fähigkeiten
+liefert ein Folge-Slice über denselben Adapter.
+
+| Merkmal | Festlegung |
+|---|---|
+| Endpunkt | `POST /consumers` |
+| Authn-Header | `Authorization: Bearer <token>` — fehlend oder einer nicht konfigurierten Klasse entsprechend → `401`; ein bekanntes `reader`-Token gegen diesen (schreibenden) Endpunkt → `403`; ein bekanntes `admin`-Token erreicht den Endpunkt (`admin` deckt implizit die lesende Klasse ab) |
+| Request-Body | `{"consumer_id": "<string>", "name": "<string>"}` — beide Felder Pflicht; leer oder fehlend → `400` |
+| Response `201 Created` | `{"consumer_id": "<string>", "name": "<string>", "already_registered": <bool>}` — `already_registered` trägt `LH-FA-CON-001`s Idempotenz-Ausgang, kein gesonderter Statuscode für die Wiederholung |
+| Response `400`/`401`/`403`/`500` | `{"error": "<Klartext>"}` — ungültiger JSON-Body oder leere Kennung/leerer Name (`400`), fehlender/unbekannter Bearer-Token (`401`), bekanntes Token mit unzureichender Rechtsklasse (`403`), unerwarteter interner Fehler (`500`) |
+| Token-Umgebungsvariablen | `CDC_API_TOKEN_READER` (lesende Rechtsklasse — in diesem Slice noch ohne eigenen Endpunkt), `CDC_API_TOKEN_ADMIN` (schreibend/administrativ) — orthogonal zum DB-Rollenmodell der Verdrahtung: die API-Token-Prüfung entscheidet an der HTTP-Schicht, welcher Use Case erreichbar ist; welche DSN der Adapter darunter benutzt, bleibt die bei der Verdrahtung fixierte |
+| Aktivierung | optional über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server, unverändertes Bestandsverhalten |
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -358,3 +376,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-13 | SPEC-016 ergänzt: Feldform der optionalen YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`) — Schlüsselnamen, Precedence-Verweis, DSN-Ausschluss |
 | 2026-09-13 | SPEC-017 ergänzt: NATS-Wecksignal — Subjekt-Schema (`cdc.changes.<source_id>`), leerer Payload, Zustellgarantie, Reconnect-Verhalten, Fehlerklasse `transient`, Aktivierung über `CDC_NATS_URL`; externe-Verträge-Zeile in §6 |
 | 2026-09-13 | SPEC-017 Subjekt-Schema korrigiert: tabellen-granulares Subjekt `cdc.changes.<source_id>.<schema>.<table>` statt quellen-weit; übrige SPEC-017-Festlegungen unverändert |
+| 2026-09-14 | SPEC-018 ergänzt: HTTP-API `RegisterConsumer` — Endpunkt/Methode, JSON-Request-/Response-Schema, Fehler-Antwortform `400`/`401`/`403`/`500`, Token-Header-Form, Aktivierung über `CDC_HTTP_ADDR` |
