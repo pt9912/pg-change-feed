@@ -19,7 +19,7 @@ Boundary-Kriterium),
 verwendet; Folgepflicht aus
 [ADR-0061](../../adr/0061-http-sse-zusaetzlich-zu-grpc.md)).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Rolleninhaber: Planner-Lauf, 2026-09-14). **Datum:** 2026-09-14.
 
