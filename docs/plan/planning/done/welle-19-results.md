@@ -247,6 +247,14 @@ Register-Regel verbietet einen Eintrag, der eine Closure ohne Ausgang
 eigenen) samt Schärfung des Zielorts ist eine **Verkörperungs-Entscheidung**
 (Planner → Architect → Planner, Modul 8 Schritt 3b). Sie ist hier benannt,
 offen und mit dem Nachtrag in `plan-vorlagen-defekt/state.md` festgehalten.
+Die Erscheinung ist älter als diese Welle: `done/welle-1.md` und
+`done/welle-2.md` tragen in §7 noch `<Zeiger auf welle-<NN>-results.md …>`,
+`done/slice-007-bootstrap-verdrahtung.md` trägt in §2 `<Schnittstelle X>` samt
+offener Checkbox. Dieser Bestand bleibt stehen — geschlossene Vorgänge werden
+nicht nachträglich umgeschrieben, und ein Sensor darauf würde sie alle melden.
+**Konsequenz für die Zielort-Wahl:** die Verkörperung muss das Grandfathering
+mitdenken (Ausnahme für Vorgänge vor ihrer Einführung) oder auf die
+Closure-Form zielen statt auf den Bestand.
 
 ## Folge-Slices
 
