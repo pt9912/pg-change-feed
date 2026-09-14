@@ -13,7 +13,15 @@ zusätzlich einen frischen `make gates`-Lauf vor jedem Sitzungsende, für jede
 Rolle. Details und verworfene Alternativen (Reviewer-Skill-Punkt, neue Hard
 Rule):
 [`architect-verdict-report-nackte-id-ohne-link.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link.md).
-Zähler (abgeleitet): 3× — der Eintrag schließt hier, ein vierter Beleg
-bliebe möglich (Schreibfehler entstehen weiter), triggert aber keine neue
-Verkörperung, solange er weiterhin vor jeder folgenreichen Konsequenz vom
-Sensor gefangen wird.
+Zähler (abgeleitet): 4× (evidence/slice-054.md, evidence/slice-055.md,
+evidence/slice-056.md, evidence/slice-063-blocker.md) — der vierte Beleg
+(`slice-063-blocker`, Planner-Koordinator) widerspricht der Prämisse des
+`gestrichen`-Verdikts: Der Exit-Code wurde korrekt ungepiped erfasst,
+aber der Push lief, bevor der bereits sichtbare rote Wert die Aktion
+tatsächlich blockierte — die Konsequenz trat ein, bevor der Fund bemerkt
+wurde. Damit greift das Verdikt-Argument „der Sensor fängt es vor jeder
+Konsequenz" hier nicht. Ausgang bleibt vorerst `gestrichen`, aber zur
+Reevaluierung markiert — ein neuer Architect-Zug sollte prüfen, ob eine
+Verkörperung (z. B. eine explizite Anweisungs-Regel: Exit-Code-Prüfung
+und Folgehandlung dürfen nicht im selben Werkzeug-Aufruf-Batch stehen)
+jetzt doch trägt.
