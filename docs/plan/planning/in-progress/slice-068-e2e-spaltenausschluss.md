@@ -97,9 +97,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       cdc.exclude_column(...)` gegen eine bereits aktivierte Tabelle im
       laufenden Feed-Container, Poll auf `status = 'applied'`, danach ein
       neuer Change ohne den ausgeschlossenen Spaltenschlüssel in
-      `new_data`, **und** ein bereits vor dem Ausschluss erfasster
-      historischer Change über `cdc.changes` gemäß `LH-FA-CFG-005`s
-      Akzeptanzkriterien geprüft. Beleg:
+      `new_data`; **zusätzlich** (über den Happy Path hinaus, als
+      Abgrenzungsbeleg) bleibt ein bereits vor dem Ausschluss erfasster
+      Change über `cdc.changes` unverändert lesbar — die Anforderung sagt
+      nur „künftige Changes" zu, ein rückwirkendes Entfernen ist mit dem
+      Wirkort aus `ADR-0059` Teilfrage 3 Option D nicht verbunden (siehe
+      §1). Beleg:
       `tools/harness/run-integration-tests.sh` (neuer Abschnitt, real
       grün: `make test-integration` Exit 0, beide neuen Belege in der
       Ausgabe; Auslegung des historischen Changes in §3 Plan-Nachzug).
@@ -121,11 +124,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Doku-Update: `harness/README.md` §Sensors, Zeile `make
       test-integration` um den neuen Rundlauf-Abschnitt ergänzt (Muster
       der bestehenden Zeile, die jeden Rundlauf-Baustein einzeln nennt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure. Dieser Slice ist zusätzlich `welle-18`s Closure-Trigger selbst (§3 der Welle-Datei) — sein grüner `make test-integration`-Lauf ist das *Mehr*, das die Welle schließt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb (`welle-18` offen) — Prüfung läuft bei der `welle-18`-Closure. Dieser Slice ist zusätzlich `welle-18`s Closure-Trigger selbst (§3 der Welle-Datei) — sein grüner `make test-integration`-Lauf ist das *Mehr*, das die Welle schließt.
 
 ## 3. Plan (vor Code)
 
@@ -230,14 +233,21 @@ dasteht.
   Skript); ein weiterer Abschnitt könnte eine bereits bekannte Timing-
   Empfindlichkeit verschärfen (`BEO-PGC/test-integration-retention-
   timing-flake`, 1×, weiter offen — anderer Rundlauf-Bereich, aber
-  dieselbe Skript-Familie und dasselbe Poll-Muster). — **Ausgang:** <bei
-  Closure zuzuweisen>
+  dieselbe Skript-Familie und dasselbe Poll-Muster). — **Ausgang:
+  entfallen** — im realen Lauf nicht eingetreten; über vier unabhängige
+  vollständige Läufe (Implementer, Reviewer 2×, Verifier) kein Flake.
+  `BEO-PGC/test-integration-retention-timing-flake` bleibt unverändert bei
+  1× (kein zweiter Beleg).
 - Der historische-Changes-Teil des Happy-Path-Belegs setzt voraus, dass
   ein vor dem Ausschluss erfasster Change im selben Testlauf bereits
   existiert, ohne durch einen späteren Cleanup-Schritt eines anderen
   Rundlauf-Abschnitts überschrieben zu werden (Musterrisiko wie
   `BEO-PGC/test-isolation-geteilter-zustand`, 1×, weiter offen). —
-  **Ausgang:** <bei Closure zuzuweisen>
+  **Ausgang: entfallen** — der Abschnitt liest die Zeile unmittelbar nach
+  ihrer Erfassung, die Retention-Schwelle liegt bei 24 h und die
+  Retention-Abschnitte fassen eine andere Tabelle an; die Auslegung des
+  „historischen" Teils ist zusätzlich in §1 korrigiert (F-1 des Reviews:
+  die Anforderung sagt nur „künftige Changes" zu).
 
 ## 7. Closure-Notiz
 
@@ -256,12 +266,40 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure>
-- **Folge-Slices:** <bei Closure>
-- **Risiken aus §6:** <bei Closure>
+- **Was hat funktioniert:** Der Rundlauf nutzt die bestehende
+  Antrags-Queue-Mechanik unverändert — der reale Beleg am laufenden
+  Container brauchte keinen Neustart und keine neue Infrastruktur. Zwei
+  Konstruktionen machen den Beleg belastbar: eine **Baseline** (Zeile *vor*
+  dem Ausschluss, Sentinel im `new_data`) schließt die Alternativerklärung
+  „die Spalte war nie im Row Image" real aus, und die **Kontrollspalte**
+  `name` trennt gezielten von totalem Filter. Implementer, Reviewer und
+  Verifier haben je eigene Mutationen gesetzt und rot gesehen; die zwei
+  Hälften (Happy Path, Negative) sind einzeln tragend.
+- **Was ging anders als geplant:** (a) Der §1-Satz des Plans sprach von
+  „künftige **und historische** Changes" — der Historien-Teil ist unter
+  `ADR-0059` Teilfrage 3 Option D unerfüllbar (Filterung zur Bauzeit,
+  `cdc.changes` ist reine Projektion); der Reviewer stufte das als Finding
+  gegen den **Text** ein, der Planner hat §1 korrigiert. (b) Die Platzierung
+  wanderte vom SQL-Administrations-Abschnitt weg hinter das Go-E2E-Tier
+  (die eigene Tabelle wird selbst erst über die Queue aktiviert) — im
+  §3-Nachzug begründet, kein Scope-Creep.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert. Zwei Beobachtungen
+  wurden in dieser Closure **benannt statt gezählt** (kein eigener Beleg,
+  weil beide keinen eigenen abgeschlossenen Vorgang tragen): (1) das
+  wiederholte Auftreten der Sequenzierungs-Klasse aus `AGENTS.md` §3.9 beim
+  Planner-Koordinator während des `open→next`-Übergangs dieses Slice
+  (Gate rot gesehen, Folgehandlung trotzdem ausgeführt) — im Registereintrag
+  `BEO-PGC/report-nackte-id-ohne-link` vermerkt; (2) der Konventionsfehler
+  im Architect-Verdikt, einen Slice-Pfad fest mit seiner Lifecycle-Ablage
+  zu verlinken (bricht beim nächsten Übergang) — Repo-Konvention ist die
+  Kennungs-Zitierung.
+- **Beobachtungs-Register (`../observations/`):** kein neuer Eintrag, kein
+  neuer Beleg aus diesem Slice selbst — die zwei obigen Punkte sind
+  benannt, nicht gezählt.
+- **Folge-Slices:** `slice-075` (dauerhafter Ausschlussstand, `open/`,
+  wellenlos) aus dem Architect-Verdikt zu `slice-067` — **nicht** Teil
+  dieser Welle.
+- **Risiken aus §6:** beide entfallen — siehe §6.
 - **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-18` offen) —
   Prüfung läuft bei der `welle-18`-Closure.
 
