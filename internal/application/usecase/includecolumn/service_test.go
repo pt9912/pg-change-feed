@@ -52,3 +52,21 @@ func TestIncludeColumnRejectsMissingSourceColumn(t *testing.T) {
 		t.Fatalf("Fehler = %v, wollen ErrSourceColumnMissing", err)
 	}
 }
+
+// TestIncludeColumnPropagatesPortError trägt den Adapter-Fehlerpfad: ein
+// Fehler der Katalog-Prüfung wird unverändert durchgereicht, nicht als
+// fehlende Spalte fehlinterpretiert.
+func TestIncludeColumnPropagatesPortError(t *testing.T) {
+	wantErr := stderrors.New("Katalog nicht lesbar")
+	service := includecolumn.NewIncludeColumnService(&fakeColumnExclusion{err: wantErr})
+
+	err := service.Include(context.Background(), includecolumn.IncludeColumnCommand{
+		Source: "src-1", Schema: "public", Table: "orders", Column: "secret",
+	})
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Fehler = %v, wollen %v", err, wantErr)
+	}
+	if stderrors.Is(err, inbound.ErrSourceColumnMissing) {
+		t.Fatalf("Fehler = %v, darf nicht als fehlende Spalte gelesen werden", err)
+	}
+}

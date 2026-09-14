@@ -140,13 +140,18 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # trägt die Health-View cdc.heartbeat, die sich aus demselben Grund wie
 # cdc.metrics selbst an cdc_reader grantet — sie läuft deshalb ebenfalls
 # nach der Rollen-Datei. Ein weiterer Schritt seit slice-036 (ADR-0050,
-# LH-FA-ADM-001): tools/schema/nacharbeit-administration.sql trägt die
-# schreibenden SQL-Funktionen cdc.enable_table/cdc.disable_table der
-# Antrags-Queue — d-migrate 1.3.1 generiert ihre DDL korrekt über den
-# `functions:`-Knoten, aber `schema migrate --execute` bricht für jede dort
-# deklarierte Funktion mit POST_EXECUTE_DRIFT (Exit 5) ab (real reproduziert,
-# auch mit einer trivialen No-Arg-Funktion). Die Datei grantet EXECUTE an
-# cdc_admin und läuft deshalb ebenfalls nach der Rollen-Datei.
+# LH-FA-ADM-001, LH-FA-CFG-005): tools/schema/nacharbeit-administration.sql
+# trägt die vier schreibenden SQL-Funktionen der Antrags-Queue
+# (cdc.enable_table/cdc.disable_table sowie seit slice-066
+# cdc.exclude_column/cdc.include_column) und die CHECK-Klausel
+# chk_administration_request_kind mit den vier Antragsarten — d-migrate 1.3.1
+# generiert Funktions-DDL korrekt über den `functions:`-Knoten, aber `schema
+# migrate --execute` bricht für jede dort deklarierte Funktion mit
+# POST_EXECUTE_DRIFT (Exit 5) ab (real reproduziert, auch mit einer trivialen
+# No-Arg-Funktion), und eine neue CHECK-Klausel an einer bestehenden Tabelle
+# trägt derselbe Lauf ebenfalls nicht (Exit 5, BEO-PGC/d-migrate-nacharbeit).
+# Die Datei grantet EXECUTE an cdc_admin und läuft deshalb ebenfalls nach der
+# Rollen-Datei.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql

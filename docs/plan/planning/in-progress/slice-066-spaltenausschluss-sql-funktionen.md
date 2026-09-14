@@ -118,9 +118,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Outbound Port mit `ColumnExists`, neue Inbound Ports
       (`ExcludeColumnUseCase`/`IncludeColumnUseCase`), `ErrSourceColumnMissing`.
       `applyAdministrationRequest` um `exclude_column`/`include_column`
-      erweitert. Beleg: `internal/adapters/driven/postgresstorage/administrationrequest_test.go`
-      (neue Testfälle, real gegen PostgreSQL: Happy Path `applied`,
-      Negative-Fall nicht existierende Spalte `failed` mit Fehlertext).
+      erweitert. Beleg: `internal/bootstrap/administration_endtoend_test.go`
+      (neu, real gegen PostgreSQL: Happy Path `applied` über
+      `cdc.exclude_column` mit vorhandener Spalte, Negative-Fall `failed`
+      samt Fehlertext über `cdc.include_column` mit nicht existierender
+      Spalte); `internal/adapters/driven/postgresstorage/administrationrequest_test.go`
+      (neue Testfälle, real gegen PostgreSQL: Anlage über beide
+      SQL-Funktionen, Rücklesen von `column_name`/`request_kind` und
+      `cdc_reader`-Ablehnung).
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -145,15 +150,36 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/schema/schema.yaml` | update | neue Spalte + `request_kind`-CHECK-Erweiterung an `cdc.administration_request` |
-| `tools/schema/nacharbeit-administration.sql` | update | zwei neue SQL-Funktionen `cdc.exclude_column`/`cdc.include_column` |
-| `internal/application/port/outbound/` | neu | neuer Outbound Port mit `ColumnExists` |
+| `tools/schema/schema.yaml` | update | neue Spalte `column_name` an `cdc.administration_request`; die `request_kind`-CHECK-Klausel verlässt das deklarative Modell (Plan-Nachzug unten) |
+| `tools/schema/nacharbeit-administration.sql` | update | vier SQL-Funktionen `cdc.exclude_column`/`cdc.include_column` zusätzlich zu `cdc.enable_table`/`cdc.disable_table`; `request_kind`-CHECK-Klausel mit den vier Antragsarten |
+| `tools/schema/{down.sql,plan.yaml}` | update | generierte Rollout-Artefakte zu obigen Schema-Änderungen |
+| `internal/application/port/outbound/columnexclusion.go` | neu | neuer Outbound Port mit `ColumnExists` |
+| `internal/application/port/outbound/administrationrequest.go` | update | Port-Doku auf die vier Antragsarten |
 | `internal/application/port/inbound/verwaltung.go` | update | `ExcludeColumnUseCase`/`IncludeColumnUseCase`, `ErrSourceColumnMissing` |
-| `internal/application/service/` (o. ä.) | neu | `ExcludeColumnService`/`IncludeColumnService` |
+| `internal/application/usecase/excludecolumn/service.go` | neu | `ExcludeColumnService` |
+| `internal/application/usecase/includecolumn/service.go` | neu | `IncludeColumnService` |
+| `internal/domain/model/administrationrequest.go` | update | `Column`-Feld, zwei Werte der geschlossenen Menge, Invarianten-Prüfung im Konstruktor |
+| `internal/domain/errors/errors.go` | update | Sentinel `ErrSourceColumnMissing` |
+| `internal/adapters/driven/postgresstorage/{administrationrequest,queries}.go` | update | `column_name` in Lese-/Schreibweg und Query-Text |
+| `internal/adapters/driven/postgresstorage/tableactivation.go` | update | `ColumnExists`-Implementierung des neuen Ports |
 | `internal/bootstrap/wiring.go` | update | `applyAdministrationRequest` um zwei `case`-Zweige |
 | `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update | Tests real gegen PostgreSQL |
+| `internal/application/usecase/{exclude,include}column/service_test.go` | neu | Use-Case-Tests |
+| `internal/bootstrap/administration_endtoend_test.go` | neu | Ende-zu-Ende-Beleg des Spaltenwegs real gegen PostgreSQL |
+| `internal/bootstrap/administration_internal_test.go` | update | `MarkFailed`-Zweig für die beiden Spalten-Antragsarten |
+| `internal/domain/model/administrationrequest_test.go` | neu | Invarianten-Tests des Konstruktors |
 | `spec/architecture.md` | update | `ARC-005`-Sequenzdiagramm-Korrektur (`ADR-0059` Folgepflicht) |
 | `spec/pflichtenheft.md` | update | neuer `SPEC-*`-Eintrag (`ADR-0059` Folgepflicht) |
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Code-Umfang der Tabelle.** Die
+Tabelle trug vor der Umsetzung zwei Sammelpfade als Platzhalter
+(`internal/application/port/outbound/`, `internal/application/service/`
+(o. ä.)); implementiert wurden sie an den oben eingetragenen konkreten
+Pfaden, dazu die produktiv nötigen Folgeänderungen an
+`internal/domain/model/administrationrequest.go`,
+`internal/domain/errors/errors.go`, den beiden
+`postgresstorage`-Dateien und dem `tableactivation`-Adapter
+(`ColumnExists`). Die Tabelle ist auf diesen Stand nachgezogen.
 
 **Plan-Nachzug (Implementer, 2026-09-14) — Migrationsform der
 `request_kind`-CHECK-Klausel.** Die DoD-Zeile zu
@@ -172,18 +198,39 @@ genommen** (`tools/schema/schema.yaml` trägt nur noch
 `chk_administration_request_status`) und in die etablierte Ausweichform
 `tools/schema/nacharbeit-administration.sql` gelegt — idempotent
 (`DROP CONSTRAINT IF EXISTS` vor `ADD CONSTRAINT`), dieselbe Form wie die
-Antrags-Funktionen. Beleg: `make schema-rollout` gegen eine Instanz mit dem
-Stand *vor* dieser Änderung läuft Exit 0, danach trägt
-`cdc.administration_request` die Spalte `column_name` und
-`chk_administration_request_kind` die vier Arten; ein frischer Rollout
-bleibt unverändert grün (`make test-store`). Die `column_name`-Spalte
-bleibt bewusst deklarativ — sie konvergiert. Das ist eine **neue
-Objektklasse** derselben Beobachtung (`BEO-PGC/d-migrate-nacharbeit`):
-„CHECK-Änderung/-Anlage an einer bestehenden Tabelle", verschieden von der
-seit `slice-015` deklarativ gelösten Erstanlage-Konvergenz; §8 dieser
-Planung hatte „keinen neuen Zähler-Beitrag" erwartet, solange keine neue
-Objektklasse betroffen ist — sie ist betroffen, der Beleg gehört in die
-Closure.
+Antrags-Funktionen. Beleg (real gemessen, PostgreSQL 18, d-migrate 1.3.1):
+ein **frischer Rollout** mit dem aktuellen Baum läuft Exit 0; danach trägt
+`cdc.administration_request` die Spalte `column_name`, und
+`chk_administration_request_kind` entsteht anschließend mit den vier Arten
+(`nacharbeit-administration.sql:58` meldet zuvor
+`NOTICE: constraint … does not exist, skipping`). Die Ausweichform ist
+idempotent — dreimaliges `psql -f nacharbeit-administration.sql` endet
+dreimal Exit 0 mit unverändertem Endzustand. Ein Rollout mit dem aktuellen
+Baum gegen eine Instanz auf dem Stand *vor* dieser Änderung endet dagegen
+**nicht** mit Exit 0, sondern mit **Exit 8**
+(`DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`); `make` bricht vor den
+psql-Nacharbeitsschritten ab, der Endzustand (Spalte + vierwertige Klausel)
+entsteht so nicht. Der Blocker ist nicht neu — derselbe Lauf mit dem
+*Eltern*-Modell gegen dieselbe Instanz endet ebenfalls Exit 8; die seit
+`slice-011`/`slice-012`/`slice-036` undeklarierten Nacharbeitsobjekte
+(Funktionen/Views) tragen ihn. **Neu** durch diesen Diff ist eine
+zusätzliche destruktive Plan-Operation auf
+`administration_request.request_kind` (`AlterColumnType`, erste Anweisung
+`ALTER TABLE … DROP CONSTRAINT IF EXISTS "chk_administration_request_kind"`):
+sie entsteht erst dadurch, dass die Klausel aus dem deklarativen Modell
+genommen wurde, während sie im Katalog liegt; manuelles Entfernen der
+Klausel lässt den Plan von 11 auf 10 Operationen fallen und genau diese
+Operation verschwinden. Die Ausweichform macht ein Objekt, das d-migrate im
+Katalog vorfindet und das Modell nicht mehr deklariert, für den
+Bestands-Rollout damit zum **destruktiven** Plan-Eintrag; der reale Ausgang
+dieser Upgrade-Konstellation ist Exit 8, kein Exit 0. Die
+`column_name`-Spalte bleibt bewusst deklarativ — sie konvergiert. Das ist
+eine **neue Objektklasse** derselben Beobachtung
+(`BEO-PGC/d-migrate-nacharbeit`): „CHECK-Änderung/-Anlage an einer
+bestehenden Tabelle", verschieden von der seit `slice-015` deklarativ
+gelösten Erstanlage-Konvergenz; §8 dieser Planung hatte „keinen neuen
+Zähler-Beitrag" erwartet, solange keine neue Objektklasse betroffen ist —
+sie ist betroffen, der Beleg gehört in die Closure.
 
 ## 4. Trigger
 

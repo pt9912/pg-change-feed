@@ -135,13 +135,13 @@ type AdministrationListener struct {
 	conn *pgx.Conn
 	// reconnectBackoff trägt die Wartezeit vor dem nächsten
 	// `WaitForNotification`-Rückgabewert nach einem gescheiterten
-	// Wiederverbindungsversuch (Review-Finding F-3, `review-slice-037.md`):
-	// 0 vor dem ersten Fehlschlag und nach jedem erfolgreichen
-	// Wiederaufbau — `nextAdministrationReconnectBackoff` verdoppelt sie ab
-	// da, gedeckelt bei `administrationReconnectMaxBackoff`. Ohne sie liefe
-	// ein dauerhaft unerreichbares `AdminDSN` in eine ungedrosselte
-	// Wiederholschleife (jeder `WaitForNotification`-Aufruf des Aufrufers
-	// träfe sofort auf denselben Fehler).
+	// Wiederverbindungsversuch: 0 vor dem ersten Fehlschlag und nach jedem
+	// erfolgreichen Wiederaufbau — `nextAdministrationReconnectBackoff`
+	// verdoppelt sie ab da, gedeckelt bei
+	// `administrationReconnectMaxBackoff`. Ohne sie liefe ein dauerhaft
+	// unerreichbares `AdminDSN` in eine ungedrosselte Wiederholschleife
+	// (jeder `WaitForNotification`-Aufruf des Aufrufers träfe sofort auf
+	// denselben Fehler).
 	reconnectBackoff time.Duration
 }
 
@@ -210,9 +210,9 @@ func (l *AdministrationListener) Close(ctx context.Context) error {
 // Anfragen-Verarbeitung. Ein gescheiterter Wiederverbindungsversuch wartet
 // zusätzlich den Backoff aus `reconnectBackoff` ab (oder bis `ctx` endet),
 // bevor der Aufruf zurückkehrt — ein dauerhaft unerreichbares `AdminDSN`
-// läuft damit nicht in eine ungedrosselte Wiederholschleife (Review-Finding
-// F-3, `review-slice-037.md`). Ein erfolgreiches Wecksignal oder ein
-// erfolgreicher Wiederaufbau setzt den Backoff auf 0 zurück.
+// läuft damit nicht in eine ungedrosselte Wiederholschleife. Ein
+// erfolgreiches Wecksignal oder ein erfolgreicher Wiederaufbau setzt den
+// Backoff auf 0 zurück.
 func (l *AdministrationListener) WaitForNotification(ctx context.Context) error {
 	_, err := l.conn.WaitForNotification(ctx)
 	if err == nil {

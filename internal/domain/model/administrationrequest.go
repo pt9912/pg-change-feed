@@ -48,7 +48,7 @@ type AdministrationRequest struct {
 // Domänentypen in diesem Paket (z. B. `NewSchemaVersion`); die Prüfung der
 // geschlossenen Menge liegt am Domain-Core-Rand, wie es die
 // Architektur-Sicht für Domänenobjekte und ihre Invarianten vorsieht
-// (Review-Finding F-4, `review-slice-037.md`).
+// (`ARC-001`).
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
 // adressiert der Antrag kein Ziel; die beiden Tabellen-Antragsarten tragen
 // keine Spalte.

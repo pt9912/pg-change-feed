@@ -147,7 +147,7 @@ const retentionInterval = 10 * time.Second
 // (`LH-FA-RET-003`): ein MVP-Default ohne eigene Konfigurationsschicht,
 // dieselbe Minimal-Form wie `retentionInterval` — Implementer-
 // Entscheidung. Eine Laufzeit-Konfigurationsanbindung ist ein anderer
-// Vorgang (`welle-13` §6).
+// Vorgang.
 const retentionMinAge = 24 * time.Hour
 
 // walRetentionWarnBytes und walRetentionErrorBytes tragen die
@@ -770,7 +770,7 @@ const (
 // Fehlerschwellen-Überschreitung klassifizieren (`classifyWALRetention`) und
 // den Lauf beim ersten Tick abbrechen lassen. Eigene Funktion statt Inline-
 // Code in `Run`, damit der Fallback ohne reale PostgreSQL-Verbindung
-// testbar ist (`slice-026` Fixrunde, Review F-1).
+// testbar ist.
 func resolveWALRetentionThresholds(warnOverride, errorOverride int64) (warnBytes, errorBytes int64) {
 	warnBytes, errorBytes = warnOverride, errorOverride
 	if warnBytes <= 0 {

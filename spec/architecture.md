@@ -234,7 +234,10 @@ sie tragen keinen Tabellen-Bindungs- oder Publication-Zug, sondern den
 Spaltennamen und die Spaltenexistenz-Prüfung (`ColumnExclusionPort`,
 `ARC-004`). Der Hintergrund-Zug vermerkt das Ergebnis wie bei den beiden
 Tabellen-Antragsarten im selben Datensatz (`applied`/`failed` samt
-Fehlertext). Die Antragsarten-Wahl im Diagramm unten steht für alle vier.
+Fehlertext). Das Diagramm unten zeigt den Weg am Beispiel `enable`
+(`EnableTableUseCase`); die drei übrigen Antragsarten nehmen denselben Weg
+von der Antragsqueue über den Hintergrund-Zug und wählen dort ihren Inbound
+Port.
 
 ```mermaid
 sequenceDiagram
