@@ -15,7 +15,7 @@ Verzeichnis-Position — kein Status-Feld.
 
 Fünf Lastenheft-Kennungen ohne jeden Testbeleg (`LH-FA-SCH-003`,
 `LH-FA-DAT-006`, `LH-QA-OPS-005`, `LH-QA-POR-001`, `LH-QA-POR-002`) bekommen
-je den in [ADR-0058](../adr/0058-testansatz-fuenf-luecken.md) entschiedenen,
+je den in [ADR-0058](../../adr/0058-testansatz-fuenf-luecken.md) entschiedenen,
 konkreten Testansatz umgesetzt — zwei neue E2E-Testfunktionen am laufenden
 Feed-Container, eine neue Orchestrierungs-Phase für einen simulierten
 Upgrade-Zyklus, eine PostgreSQL-Versionsmatrix im nicht-blockierenden
@@ -45,10 +45,10 @@ Alternativen-Vergleich; diese Welle setzt sie in vier Slices um.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-062 | E2E-Testfälle Schema-Verhalten & Struktur — entfernte Spalten, Metadaten-Erweiterbarkeit | [LH-FA-SCH-003](../../../spec/lastenheft.md), [LH-FA-DAT-006](../../../spec/lastenheft.md) |
-| slice-063 | Upgrade-Sicherheit — simulierter Container-Stopp/Rollout/Start-Zyklus | [LH-QA-OPS-005](../../../spec/lastenheft.md) |
-| slice-064 | PostgreSQL-Versionsmatrix im E2E-Workflow | [LH-QA-POR-001](../../../spec/lastenheft.md) |
-| slice-065 | Linux-Plattform-Assertion im Gate-Workflow | [LH-QA-POR-002](../../../spec/lastenheft.md) |
+| slice-062 | E2E-Testfälle Schema-Verhalten & Struktur — entfernte Spalten, Metadaten-Erweiterbarkeit | [LH-FA-SCH-003](../../../../spec/lastenheft.md), [LH-FA-DAT-006](../../../../spec/lastenheft.md) |
+| slice-063 | Upgrade-Sicherheit — simulierter Container-Stopp/Rollout/Start-Zyklus | [LH-QA-OPS-005](../../../../spec/lastenheft.md) |
+| slice-064 | PostgreSQL-Versionsmatrix im E2E-Workflow | [LH-QA-POR-001](../../../../spec/lastenheft.md) |
+| slice-065 | Linux-Plattform-Assertion im Gate-Workflow | [LH-QA-POR-002](../../../../spec/lastenheft.md) |
 
 ## 5. Abhängigkeiten
 
@@ -68,7 +68,7 @@ Alternativen-Vergleich; diese Welle setzt sie in vier Slices um.
   `ADR-0058` Entscheidung 3/Re-Evaluierungs-Trigger 3 verschiebt das
   ausdrücklich auf den Zeitpunkt, sobald eine echte Release-Historie
   existiert (`slice-040`, Release-Pipeline/Tags — noch nicht angelegt, siehe
-  [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md)); `slice-039`
+  [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)); `slice-039`
   (CI-Workflow/Dependabot) liegt bereits in `done/`. Diese Welle bildet nur
   den Mechanismus (Stopp/Rollout/Start) nach, keinen echten
   Versionswechsel.
