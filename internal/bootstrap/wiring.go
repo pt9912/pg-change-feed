@@ -47,8 +47,12 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/list"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/position"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/remove"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/retention"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/status"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -608,9 +612,11 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// geöffnet (additiv, unverändertes Bestandsverhalten, analog zum
 	// Change-Notification-Wecksignal oben, `ADR-0055` Punkt 5). Ist die
 	// Adresse gesetzt, trägt der Adapter eine eigene `cdc_admin`-
-	// Verbindung (`ADR-0047`): `RegisterConsumer` ist ein
-	// administrativer Schreibzug auf `cdc.consumer`, dieselbe Rolle wie
-	// die CLI-Sondermodi (`RegisterConsumer`-Funktion unten).
+	// Verbindung (`ADR-0047`) für die Consumer-Fähigkeiten
+	// (Registrierung/Bestätigung/Position/Entfernung); die
+	// Tabellen-Verwaltung und der Retention-Lauf nutzen dieselben
+	// Use-Case-Instanzen wie die übrige Verdrahtung (`activation`,
+	// `enableTables`, `disableTables`, `retentionUseCase` oben).
 	var httpServer *apihttp.Server
 	var httpDone sync.WaitGroup
 	if cfg.HTTPAddr != "" {
@@ -620,11 +626,19 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		}
 		defer apiConsumerState.Close()
 		httpServer = apihttp.New(apihttp.Config{
-			Addr:             cfg.HTTPAddr,
-			TokenReader:      cfg.APITokenReader,
-			TokenAdmin:       cfg.APITokenAdmin,
-			RegisterConsumer: register.NewRegisterConsumerService(apiConsumerState),
-			Log:              log,
+			Addr:                cfg.HTTPAddr,
+			TokenReader:         cfg.APITokenReader,
+			TokenAdmin:          cfg.APITokenAdmin,
+			RegisterConsumer:    register.NewRegisterConsumerService(apiConsumerState),
+			AcknowledgeConsumer: acknowledge.NewAcknowledgeConsumerService(apiConsumerState),
+			GetConsumerPosition: position.NewGetConsumerPositionService(apiConsumerState),
+			RemoveConsumer:      remove.NewRemoveConsumerService(apiConsumerState),
+			EnableTable:         enableTables,
+			DisableTable:        disableTables,
+			GetStatus:           status.NewGetStatusService(activation),
+			ListTables:          list.NewListTablesService(activation),
+			RunRetention:        retentionUseCase,
+			Log:                 log,
 		})
 		httpDone.Add(1)
 		go func() {
