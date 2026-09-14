@@ -366,6 +366,17 @@ func splitQualifiedName(qualified string) (string, string, error) {
 	return schema, table, nil
 }
 
+// changeStreamEnabled meldet, ob die Live-Streaming-Fähigkeit aktiv ist
+// (`ADR-0061` Teilfrage 5): Der `Broadcaster` wird konstruiert und über
+// `CaptureService.WithChangeStream` verdrahtet, sobald mindestens einer der
+// beiden Zustellwege aktiv ist — `CDC_GRPC_ADDR` oder `CDC_HTTP_ADDR`
+// gesetzt. Sind beide leer, bleibt die Fähigkeit vollständig deaktiviert:
+// kein Broadcaster, kein Stream-Publish-Schritt, unverändertes
+// Bestandsverhalten.
+func changeStreamEnabled(grpcAddr, httpAddr string) bool {
+	return grpcAddr != "" || httpAddr != ""
+}
+
 // Run verdrahtet die Pipeline (`ADR-0026`) und trägt den Stream-Lauf bis
 // zum Kontext-Ende: der Stream baut die Replication-Verbindung, der
 // ACK-Adapter bestätigt über dieselbe Verbindung (`ADR-0007`, Option C)
@@ -539,20 +550,22 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	}
 
 	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
-	// Stelle, an der beide gRPC-Rollen zusammenlaufen: der Driving-Adapter
-	// (Server) liest aus ihm, der `CaptureService` schreibt über den Outbound
-	// Port `ChangeStreamPort` in ihn. Er bleibt an `envGRPCAddr` gebunden —
-	// ohne gesetzte Adresse entsteht kein Broadcaster, der `CaptureService`
-	// trägt keinen Stream-Publish-Schritt (additiv, unverändertes
-	// Bestandsverhalten, `ADR-0060` Teilfrage 6). Die Bindung ist keine
-	// Start-Vorbedingung: der gRPC-Server startet weiter unten in eigener
-	// Goroutine, ein Startfehler wird dort über `log.Error` gemeldet und geht
-	// nicht in das Ergebnis von `Run` ein — wie beim HTTP-Adapter.
-	var grpcBroadcaster *grpcstream.Broadcaster
+	// Stelle, an der die Zustellwege zusammenlaufen: beide Driving-Adapter
+	// (gRPC-Server und SSE-Endpunkt) lesen aus ihm, der `CaptureService`
+	// schreibt über den Outbound Port `ChangeStreamPort` in ihn. Er wird
+	// konstruiert, sobald mindestens einer der beiden Zustellwege aktiv ist
+	// (`changeStreamEnabled`, `ADR-0061` Teilfrage 5); sind beide Adressen
+	// leer, entsteht kein Broadcaster und der `CaptureService` trägt keinen
+	// Stream-Publish-Schritt (additiv, unverändertes Bestandsverhalten). Die
+	// Bindung ist keine Start-Vorbedingung: die Server starten weiter unten
+	// in eigener Goroutine, ein Startfehler wird dort über `log.Error`
+	// gemeldet und geht nicht in das Ergebnis von `Run` ein — wie beim
+	// HTTP-Adapter.
+	var changeBroadcaster *grpcstream.Broadcaster
 	captureOpts := []capture.Option{capture.WithLog(log)}
-	if cfg.GRPCAddr != "" {
-		grpcBroadcaster = grpcstream.New()
-		captureOpts = append(captureOpts, capture.WithChangeStream(grpcBroadcaster))
+	if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+		changeBroadcaster = grpcstream.New()
+		captureOpts = append(captureOpts, capture.WithChangeStream(changeBroadcaster))
 	}
 	// Das Change-Notification-Wecksignal (`ADR-0055`, `LH-FA-SST-007`)
 	// bleibt vollständig deaktiviert, solange `envNatsURL` leer ist — kein
@@ -654,7 +667,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// (Registrierung/Bestätigung/Position/Entfernung); die
 	// Tabellen-Verwaltung und der Retention-Lauf nutzen dieselben
 	// Use-Case-Instanzen wie die übrige Verdrahtung (`activation`,
-	// `enableTables`, `disableTables`, `retentionUseCase` oben).
+	// `enableTables`, `disableTables`, `retentionUseCase` oben). Der
+	// Adapter trägt daneben den SSE-Stream-Endpunkt (`LH-FA-SST-008`,
+	// `ADR-0061`): er liest aus `changeBroadcaster`, demselben Broadcaster
+	// wie der gRPC-Server.
 	var httpServer *apihttp.Server
 	var httpDone sync.WaitGroup
 	if cfg.HTTPAddr != "" {
@@ -676,6 +692,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
+			Subscriber:          changeBroadcaster,
 			Log:                 log,
 		})
 		httpDone.Add(1)
@@ -692,7 +709,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// `grpc.Server`, kein Listener (additiv, unverändertes
 	// Bestandsverhalten, analog zum HTTP-Adapter oben, `ADR-0060`
 	// Teilfrage 6). Ist die Adresse gesetzt, liest der Server aus demselben
-	// `grpcBroadcaster`, den der `CaptureService` oben über
+	// `changeBroadcaster`, den der `CaptureService` oben über
 	// `WithChangeStream` bedient (`ADR-0060` Teilfrage 2). Der Adapter trägt
 	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
 	// Teilfrage 4).
@@ -703,7 +720,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			Addr:        cfg.GRPCAddr,
 			TokenReader: cfg.APITokenReader,
 			TokenAdmin:  cfg.APITokenAdmin,
-			Subscriber:  grpcBroadcaster,
+			Subscriber:  changeBroadcaster,
 			Log:         log,
 		})
 		grpcDone.Add(1)

@@ -84,7 +84,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] [LH-FA-SST-008](../../../../spec/lastenheft.md) (Happy-Path/Negative)
+- [x] [LH-FA-SST-008](../../../../spec/lastenheft.md) (Happy-Path/Negative)
       und [ADR-0061](../../adr/0061-http-sse-zusaetzlich-zu-grpc.md)
       Teilfrage 1/2/3/5 umgesetzt, Test referenziert:
       `internal/adapters/driving/http` — neue Route
@@ -99,20 +99,20 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `Broadcaster`; Fire-and-Forget-Regressionstest (ein `Publish` ohne
       verbundenen SSE-Client blockiert nicht) (Fitness Function aus
       [ADR-0061](../../adr/0061-http-sse-zusaetzlich-zu-grpc.md)).
-- [ ] `spec/pflichtenheft.md` erhält die Erweiterung von
+- [x] `spec/pflichtenheft.md` erhält die Erweiterung von
       [SPEC-018](../../../../spec/pflichtenheft.md) um das
       SSE-Nachrichtenschema (Event-Feld-Layout, `event:`-Typ falls
       verwendet).
-- [ ] `tools/harness/sseclient/` (Wegwerf-Beispiel-Client) und ein realer
+- [x] `tools/harness/sseclient/` (Wegwerf-Beispiel-Client) und ein realer
       SSE-E2E-Rundlauf gegen den laufenden Feed-Container
       (`make test-integration`): eine committed Änderung erreicht einen
       verbundenen SSE-Client mit vollständigem Inhalt; ein
       Verbindungsversuch ohne gültiges Token wird mit `401` abgelehnt.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update `harness/README.md` §Sensors (`make test-integration`
+- [x] Doku-Update `harness/README.md` §Sensors (`make test-integration`
       Zeile: neuer SSE-Rundlauf-Satz).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -138,6 +138,9 @@ Aussagen-Berührung steht hier gar nicht.
 | `tools/harness/sseclient/` | neu | Wegwerf-Beispiel-Client, analog `tools/harness/grpcclient/`/`tools/harness/httpclient/` |
 | `tools/harness/run-integration-tests.sh` | update | Rundlauf-Erweiterung: SSE-Client verbindet, empfängt Change, negativer Token-Test |
 | `harness/README.md` | update | `make test-integration`-Sensor-Zeile um SSE-Rundlauf-Satz ergänzt |
+| `internal/adapters/driving/http/sse_test.go` | neu | Whitebox-Tests: `401` (fehlend/unbekannt), Happy Path mit vollständigem Event, `null`-Row-Image, `503` ohne Broadcaster, Freigabe der Subskription bei Verbindungsende |
+| `internal/bootstrap/changestream_internal_test.go` | neu | Unit-Test der Oder-Bedingung `changeStreamEnabled` (`CDC_GRPC_ADDR` oder `CDC_HTTP_ADDR`) |
+| `docs/user/benutzerhandbuch.md` | unverändert (Aufschub) | neue Betreiber-Oberfläche (Endpunkt `GET /changes/stream`, kein neues ENV-Feld); die Handbuch-Dokumentation holt `slice-077` nach — benannte Aufschub-Adresse statt Mitnahme in diesem Diff |
 
 ## 4. Trigger
 

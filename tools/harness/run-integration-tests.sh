@@ -1899,6 +1899,147 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
+# SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061): ein Wegwerf-Client
+# (tools/harness/sseclient, per `go run` im Toolchain-Container) verbindet
+# sich real per HTTP mit dem laufenden Feed-Container, öffnet den
+# SSE-Stream `GET /changes/stream` und empfängt eine danach committete
+# Änderung. Geprüft wird die RECEIVED-Zeile über Tabelle, Operation und den
+# Wert der Spalte `name` im neuen Row Image und ihre `change_id` gegen den
+# Lesezugriffsweg `cdc.changes`; die Feldvollständigkeit des
+# Nachrichtenschemas trägt `internal/adapters/driving/http/sse_test.go` auf
+# Unit-Ebene. Abschließend belegt derselbe Prozess, dass ein
+# Öffnungsversuch ohne gültiges Token mit HTTP-Status 401 abgelehnt wird.
+# Ein echter Netzwerk-Request über den Compose-Netz-Alias
+# `pg-change-feed:8090` (CDC_HTTP_ADDR im Container-Vertrag), kein
+# `docker exec` und kein Mock; der Client trägt dieselbe `reader`-Klasse
+# wie der übrige HTTP-Zugriff (CDC_API_TOKEN_READER). `feed_e2e_full` bleibt
+# über den ganzen Lauf aktiviert (siehe Lasttest-Beleg oben); die IDs 270ff.
+# liegen in einem eigenen Wertebereich. Läuft vor dem
+# Upgrade-Sicherheits-Container-Tausch (der den Feed-Container ersetzt) und
+# vor der Container-Ende-Grenze der beiden Schema-Negative-Testfunktionen
+# unten.
+SSE_CLIENT_CONTAINER=cdc-e2e-sseclient
+SSE_STREAM_TABLE=feed_e2e_full
+SSE_STREAM_SENTINEL=SseStreamE2ESentinel
+
+docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$SSE_CLIENT_CONTAINER" --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/sseclient "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" >/dev/null
+
+sse_client_ready=0
+for _ in $(seq 1 60); do
+  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+    sse_client_ready=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 1
+done
+if [ "$sse_client_ready" -ne 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$SSE_CLIENT_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+# Die Zustellung ist Fire-and-Forget ohne Replay (ADR-0066): der Rundlauf
+# committet eine begrenzte Folge eindeutiger Zeilen, bis der Client genau
+# eine davon real empfangen hat.
+sse_received=0
+for sse_attempt in $(seq 1 5); do
+  sse_id=$((270 + sse_attempt))
+  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$SSE_STREAM_TABLE (id, name) VALUES ($sse_id, '$SSE_STREAM_SENTINEL');
+SQL
+  for _ in $(seq 1 20); do
+    if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+      sse_received=1
+      break
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 0.5
+  done
+  if [ "$sse_received" -eq 1 ]; then
+    break
+  fi
+done
+
+# Der Client führt nach dem Empfang im selben Prozess noch die
+# Negative-Prüfung aus (Stream-Öffnungsversuch ohne Token); auf deren
+# Ergebnis und auf das Prozessende wird separat gewartet, damit die
+# ausgewerteten Zeilen unten aus einem abgeschlossenen Lauf stammen.
+sse_rejected=0
+for _ in $(seq 1 40); do
+  if docker logs "$SSE_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED code=401"; then
+    sse_rejected=1
+    break
+  fi
+  if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    break
+  fi
+  sleep 0.5
+done
+
+sse_client_stopped=0
+for _ in $(seq 1 20); do
+  if [ "$(docker inspect --format '{{.State.Running}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+    sse_client_stopped=1
+    break
+  fi
+  sleep 0.5
+done
+sse_client_exit=$(docker inspect --format '{{.State.ExitCode}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo unbekannt)
+sse_client_output=$(docker logs "$SSE_CLIENT_CONTAINER" 2>&1 || true)
+docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+
+if [ "$sse_received" -ne 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — Test-Client empfing keine der committeten Änderungen ($SSE_STREAM_TABLE, $SSE_STREAM_SENTINEL) über den Stream: $sse_client_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$sse_client_output" | grep -qE "RECEIVED .*table=$SSE_STREAM_TABLE .*operation=INSERT .*new_image=.*$SSE_STREAM_SENTINEL"; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — die RECEIVED-Zeile trägt nicht die erwartete Änderung ($SSE_STREAM_TABLE, INSERT, vollständiger Inhalt): $sse_client_output" >&2
+  exit 1
+fi
+if [ "$sse_rejected" -ne 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — Stream-Öffnungsversuch ohne gültiges Token wurde nicht mit 401 abgelehnt: $sse_client_output" >&2
+  exit 1
+fi
+if [ "$sse_client_stopped" -ne 1 ] || [ "$sse_client_exit" != "0" ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — Test-Client endete nicht mit Ausgang 0 (gestoppt: $sse_client_stopped, Ausgang: $sse_client_exit): $sse_client_output" >&2
+  exit 1
+fi
+
+# Unabhängiger SQL-Beleg, dass genau die empfangene Änderung real erfasst
+# wurde: die change_id der RECEIVED-Zeile steht über den bestehenden
+# Lesezugriffsweg in cdc.changes — der Stream-Empfang ist damit keine
+# erfundene Ausgabe des Clients.
+sse_change_id=$(printf '%s' "$sse_client_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$sse_change_id" ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — die RECEIVED-Zeile trägt keine change_id: $sse_client_output" >&2
+  exit 1
+fi
+sse_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$sse_change_id' AND table_name = '$SSE_STREAM_TABLE' AND new_data->>'name' = '$SSE_STREAM_SENTINEL'")
+if [ -z "$sse_captured" ] || [ "$sse_captured" -lt 1 ]; then
+  echo "run-integration-tests: SSE-Stream-Rundlauf — die über den Stream empfangene Änderung (change_id=$sse_change_id, $SSE_STREAM_SENTINEL) ist nicht real über cdc.changes lesbar (count=${sse_captured:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem SSE-Stream-Rundlauf nicht mehr weiter (kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt — ein Wegwerf-Client (tools/harness/sseclient) öffnete real per HTTP den SSE-Stream GET /changes/stream gegen den laufenden Feed-Container ($HTTP_BASE_URL) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt sse_test.go auf Unit-Ebene), deren change_id ($sse_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit HTTP-Status 401 abgelehnt: $sse_client_output"
+
 # Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
 # ADR-0058 Entscheidung 3): bildet den Mechanismus eines
 # Anwendungs-Upgrades nach — ein realer Container-Tausch über

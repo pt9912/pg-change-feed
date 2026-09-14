@@ -307,6 +307,24 @@ interner Fehler (`500`).
 | `ListTables` ([`LH-FA-CFG-004`](lastenheft.md)) | `GET /tables?source=<string>&publication=<string>` | `reader` oder `admin` | beide Query-Parameter Pflicht | `200`: `{"tables": [{"table_id": "<string>", "source": "<string>", "schema": "<string>", "table": "<string>"}, …], "retained": [...]}` — ohne Aktivierung beide Listen leer |
 | `RunRetention` ([`LH-FA-RET-002`](lastenheft.md)…[`004`](lastenheft.md)) | `POST /retention/run` | `admin` | `{"source": "<string>", "min_age_nanos": <int64>}` — `source` Pflicht, `min_age_nanos` ≥ 0 | `200`: `{"deleted": <int>}` — Anzahl real gelöschter Changes |
 
+**Streaming-Endpunkt** (technische Ausgestaltung von
+[`LH-FA-SST-008`](lastenheft.md)): derselbe Adapter trägt neben den
+Request-/Response-Endpunkten oben einen lang laufenden Server-Stream. Der
+Endpunkt läuft mit derselben Horch-Adresse (`CDC_HTTP_ADDR`) und derselben
+Token-Form; ein Aufruf ohne oder mit unbekanntem Bearer-Token endet mit
+`401`, bevor ein Event geschrieben wird.
+
+| Merkmal | Festlegung |
+|---|---|
+| Endpunkt / Methode | `GET /changes/stream` |
+| Rechtsklasse | `reader` oder `admin` — Streaming ist rein lesend |
+| Response-Form | `Content-Type: text/event-stream`; je Change ein Event, sofort über `http.Flusher` ausgeliefert |
+| Event-Typ | `event: change` |
+| Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`: `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
+| Zustellgarantie | keine (Fire-and-Forget): ein nicht verbundener **oder langsamer lesender** Consumer verpasst die betroffenen Nachrichten ersatzlos; ein Erzeuger hält nie auf einen Empfänger an. Verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar |
+| Replay | kein Stream-internes Replay; der `Last-Event-ID`-Header wird weder gesendet noch ausgewertet |
+| Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server. Ist die Adresse gesetzt, aber kein `Broadcaster` verdrahtet, antwortet der Endpunkt mit `503` |
+
 ### SPEC-019 — `cdc.administration_request` (Antrags-Datensatz)
 
 Feldform des Antrags-Datensatzes der schreibenden SQL-Administration
@@ -455,3 +473,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-14 | SPEC-018 erweitert: acht weitere Endpunkte (Acknowledge-/Position-/Remove-Consumer, Enable-/Disable-/Status-/List-Table, Retention-Lauf) — Fehler-Antwortform um `404` (physisch fehlende Tabelle an der Quelle) ergänzt |
 | 2026-09-14 | SPEC-019 ergänzt: Feldform von `cdc.administration_request` — Spalte `column_name`, erweiterte `request_kind`-Menge `enable`/`disable`/`exclude_column`/`include_column`, `failed`-Fehlertext der fehlenden Spalte |
 | 2026-09-14 | SPEC-020 ergänzt: gRPC-Live-Change-Stream — Dienst `ChangeStream` mit Server-Streaming-RPC `StreamChanges`, Protobuf-Nachrichtenschema der Change-Nachricht, Fire-and-Forget-Zustellsemantik ohne Stream-internes Replay, Authentifizierung über den Metadata-Eintrag `authorization` (`Bearer`-Form, dieselben Token-Klassen wie SPEC-018), Aktivierung über `CDC_GRPC_ADDR`; externe-Verträge-Zeile in §6 |
+| 2026-09-15 | SPEC-018 erweitert: Streamings-Endpunkt `GET /changes/stream` (`text/event-stream`) — Event-Typ `change`, JSON-Nachrichtenschema mit denselben zehn Change-Feldern, kein Stream-internes Replay (der `Last-Event-ID`-Header bleibt ungenutzt), Fire-and-Forget-Zustellsemantik, Aktivierung über `CDC_HTTP_ADDR` samt `503`-Pfad ohne verdrahteten `Broadcaster` |

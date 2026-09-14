@@ -51,6 +51,10 @@ type Config struct {
 	ListTables   inbound.ListTablesUseCase
 	// RunRetention trägt den Retention-Lauf (`LH-FA-RET-002`…`004`).
 	RunRetention inbound.RunRetentionUseCase
+	// Subscriber trägt den `Broadcaster`, von dem der SSE-Stream-Endpunkt
+	// seine Changes liest (`LH-FA-SST-008`, `ADR-0061` Teilfrage 1/2).
+	// Ohne ihn antwortet `GET /changes/stream` mit `503` (`sse.go`).
+	Subscriber changeSubscriber
 	// Log trägt den Telemetrie-Port (`ADR-0024`); ein nicht gesetzter
 	// Wert fällt auf `outbound.NoopLog` zurück.
 	Log outbound.LogPort
@@ -90,6 +94,8 @@ func New(cfg Config) *Server {
 		listTablesHandler(cfg.ListTables, log)))
 	mux.Handle("POST /retention/run", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
 		runRetentionHandler(cfg.RunRetention, log)))
+	mux.Handle("GET /changes/stream", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		streamChangesHandler(cfg.Subscriber, log)))
 	return &Server{
 		httpServer: &http.Server{Addr: cfg.Addr, Handler: mux},
 		log:        log,
