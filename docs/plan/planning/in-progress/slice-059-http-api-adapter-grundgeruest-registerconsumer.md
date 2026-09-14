@@ -78,9 +78,11 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       JSON-Schema für `RegisterConsumer`, Token-Header-Form,
       Fehler-Antwortform für `401`/`403`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-059.md` (0 HIGH/MEDIUM/LOW, 2 INFO,
+      kein Fixrunden-Pfad).
 - [ ] Doku-Update: `harness/README.md` §Sensors bleibt unverändert (kein
       neues Gate); `SPEC-018`-Neuanlage ist der öffentliche Vertrag dieses
       Slice.
