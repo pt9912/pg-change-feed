@@ -25,7 +25,7 @@ restlichen Endpunkte).
 
 ## 1. Ziel und Abgrenzung
 
-**Ziel:** Der HTTP-Adapter aus `slice-059` bekommt die restlichen sechs
+**Ziel:** Der HTTP-Adapter aus `slice-059` bekommt die restlichen acht
 Port-gedeckten Fähigkeiten (Acknowledge-/Position-/Remove-Consumer,
 Enable-/Disable-/Status-/List-Table, Retention-Lauf) als Endpunkte, mit
 einheitlichem Fehler-Mapping (`400` ungültige Eingabe, `401` fehlendes/
@@ -54,16 +54,12 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [x] Alle sechs restlichen Fähigkeiten (Acknowledge/Position/
+- [x] Alle acht restlichen Fähigkeiten (Acknowledge/Position/
       Remove-Consumer, Enable/Disable/Status/List-Table, Retention-Lauf)
       über den HTTP-Adapter erreichbar, je mit Unit-Test (Whitebox,
       `httptest`) — Reader-Endpunkte (`GetConsumerPosition`, `GetStatus`,
       `ListTables`) akzeptieren `reader`- und `admin`-Token, die übrigen
-      nur `admin`-Token (`ADR-0057` Teilfrage 3). Abweichung: `ADR-0057`s
-      Port-Aufzählung und dieses Slice-Plans eigene DoD-Klammer benennen
-      acht Fähigkeiten (Acknowledge, Position, Remove, Enable, Disable,
-      Status, List, Retention), nicht sechs — implementiert sind alle
-      acht, siehe Closure-Notiz.
+      nur `admin`-Token (`ADR-0057` Teilfrage 3).
 - [x] Einheitliches Fehler-Mapping real getestet: `400` (ungültige
       Eingabe, z. B. fehlendes Pflichtfeld im JSON-Body), `404` (unbekannte
       Ressource, z. B. `RemoveConsumer` für nie registrierten Consumer —
@@ -75,7 +71,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       real getestet (`TestRemoveConsumerUnbekannteKennungBleibtIdempotent`);
       `404` real getestet über `EnableTable`/`DisableTable` gegen eine an
       der Quelle physisch fehlende Tabelle.
-- [x] `spec/pflichtenheft.md`s `SPEC-018` um die sechs neuen Endpunkte
+- [x] `spec/pflichtenheft.md`s `SPEC-018` um die acht neuen Endpunkte
       erweitert (Methode, Pfad, Request-/Response-Schema, Fehler-Codes).
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -106,8 +102,8 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 | `internal/adapters/driving/http/verwaltung.go` | neu | Handler für Enable/Disable/Status/List-Table |
 | `internal/adapters/driving/http/retention.go` | neu | Handler für Retention-Lauf |
 | `internal/adapters/driving/http/errors.go` | neu | einheitliches Fehler-Mapping (400/401/403/404/500) |
-| `internal/adapters/driving/http/server.go` | update | Routing um sechs weitere Endpunkte erweitert |
-| `spec/pflichtenheft.md` | update | `SPEC-018` um sechs Endpunkte erweitert |
+| `internal/adapters/driving/http/server.go` | update | Routing um acht weitere Endpunkte erweitert |
+| `spec/pflichtenheft.md` | update | `SPEC-018` um acht Endpunkte erweitert |
 
 ## 4. Trigger
 
@@ -117,7 +113,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): Zeigt sich, dass
-  sechs Fähigkeiten plus einheitliches Fehler-Mapping zusammen mehr als drei
+  acht Fähigkeiten plus einheitliches Fehler-Mapping zusammen mehr als drei
   Liefer-Punkte ergeben (z. B. weil jede Fähigkeit ein eigenes,
   inkompatibles Fehlerverhalten braucht), wird nach Consumer-Fähigkeiten und
   Verwaltungs-/Retention-Fähigkeiten neu geschnitten.
@@ -132,7 +128,7 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- Uneinheitliches Fehler-Mapping zwischen den sechs Fähigkeiten (z. B.
+- Uneinheitliches Fehler-Mapping zwischen den acht Fähigkeiten (z. B.
   unterschiedliche Fehlerformate für dieselbe Fehlerklasse), weil jede
   Fähigkeit einen eigenen Use-Case-Fehlertyp trägt. — **Ausgang:** <bei
   Closure zu füllen>

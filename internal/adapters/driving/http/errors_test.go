@@ -14,12 +14,11 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// TestWriteDomainErrorBildetEinheitlichAb trägt `slice-060` §1 Ziel
-// (einheitliches Fehler-Mapping) direkt an der Funktion, die alle sechs
-// neuen Handler dieses Slice gemeinsam nutzen: jede benannte
-// Domänen-Invariante (`ADR-0029`) auf `400`, die fehlende physische Tabelle
-// (`inbound.ErrSourceTableMissing`) auf `404`, jeder übrige Fehler auf
-// `500`.
+// TestWriteDomainErrorBildetEinheitlichAb trägt das einheitliche
+// Fehler-Mapping direkt an der Funktion, die alle acht Handler dieses
+// Adapters gemeinsam nutzen: jede benannte Domänen-Invariante (`ADR-0029`)
+// auf `400`, die fehlende physische Tabelle (`inbound.ErrSourceTableMissing`)
+// auf `404`, jeder übrige Fehler auf `500`.
 func TestWriteDomainErrorBildetEinheitlichAb(t *testing.T) {
 	tests := []struct {
 		name string
