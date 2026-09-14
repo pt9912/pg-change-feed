@@ -17,7 +17,7 @@ Token-Authn, Adapter-Platzierung — vorab entschieden), [ADR-0047](../../adr/00
 dieser Slice legt den Eintrag an — Endpunkt-/Methoden-/JSON-Schema für
 `RegisterConsumer` und die Token-Middleware-Form).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
