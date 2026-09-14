@@ -12,7 +12,9 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [LH-FA-CON-003](../../../../spec/lastenheft.md),
 [LH-FA-CON-005](../../../../spec/lastenheft.md) (Fortsetzungs-Referenz,
 Boundary-Kriterium),
-[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
+[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md),
+[ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+(Zustellsemantik des `Broadcaster` — superseded `ADR-0060`s Puffer-Klausel).
 
 **Berührte Spec-Stellen:** `SPEC-020` (neu anzulegen durch diesen Slice —
 Protobuf-Nachrichtenschema, RPC-Methodenname, Stream-Semantik; von
@@ -106,6 +108,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       samt Auth-Interceptor, additive Bootstrap-Verdrahtung
       `CDC_GRPC_ADDR` (No-Op bei fehlender Adresse), Docker-only
       Protobuf-/buf-Build-Stufe für die Code-Generierung.
+- [ ] Fixrunde (Review `slice-069` F-1/F-2, [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)):
+      `Publish` nicht-blockierend mit begrenzter Empfangs-Warteschlange je
+      Abonnent (Drop-Newest, Kanal nie geschlossen), Paket-/Funktions-Godoc
+      und `internal/application/port/outbound/changestream.go`-Godoc auf die
+      Semantik aus [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md);
+      Regressionstest „ein registrierter, nicht lesender Abonnent hält
+      `Publish` nicht an"; Negativtest der Token-Konfigurationsgrenze
+      (`classifyToken` bei leer konfiguriertem Token, analog
+      `TestClassifyTokenLeereKonfiguration`).
 - [x] `spec/pflichtenheft.md` erhält den neuen Eintrag
       [`SPEC-020`](../../../../spec/pflichtenheft.md) (konkretes
       Protobuf-/Nachrichtenschema, RPC-Methodenname, Stream-Semantik) —
@@ -161,13 +172,16 @@ Aussagen-Berührung steht hier gar nicht.
   dieselbe Wertform wie der HTTP-Header (`SPEC-018`); `ADR-0060`
   Teilfrage 4 lässt die Wertform ausdrücklich der Spezifikation
   (`SPEC-020` pinnt sie).
-- **`Publish`-Blockade-Semantik:** ungepuffert („kein Puffer",
-  `ADR-0060` Teilfrage 3); ohne registrierten Empfänger blockiert der
-  Aufruf nicht und liefert keinen Fehler (Fitness Function), mit einem
-  registrierten, gerade nicht lesenden Empfänger hält die Übergabe an,
-  bis er liest, sich abmeldet oder `ctx` endet. Begründung im
-  Paket-Kommentar; das Stau-Risiko für den künftigen Capture-Aufruf steht
-  als neues §6-Risiko.
+- **`Publish`-Blockade-Semantik (korrigiert durch Architect-Verdikt,
+  [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)):**
+  Der erste Entwurf übergab ungepuffert und hielt an einen registrierten,
+  gerade nicht lesenden Empfänger an (`ADR-0060` Teilfrage 3, „kein
+  Puffer"). [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  löst die Puffer-Klausel ab: `Publish` übergibt **nicht-blockierend** an
+  eine begrenzte Empfangs-Warteschlange je Abonnent (Drop-Newest), der
+  Erzeuger hält nie an; ohne registrierten Empfänger unterbleibt die
+  Verteilung (Fitness Function bleibt). Die Fixrunde setzt das samt Godoc
+  und Regressionstest um — siehe §2 und §6.
 - **Kein Unary-Interceptor:** `ChangeStream` trägt ausschließlich
   Streaming-RPCs; ein Unary-Interceptor hätte keinen Aufruf zu schützen.
 - **Driving-Test ohne Broadcaster-Import:** der Whitebox-Test im
@@ -240,8 +254,12 @@ dasteht.
   registrierten, gerade nicht lesenden Empfänger an (`kein Puffer`,
   `ADR-0060` Teilfrage 3); ein langsamer Stream-Client könnte darüber den
   Capture-Pfad stauen, sobald `slice-070` `Publish` an die
-  Best-Effort-Kette nach `ACK Source` anschließt. — **Ausgang:** wird bei
-  Closure zugewiesen.
+  Best-Effort-Kette nach `ACK Source` anschließt. **Eingetreten** (Review
+  `slice-069`, bestätigt am Code: `stream.Send` blockiert in derselben
+  Goroutine, der der Kanal liest). — **Ausgang: entfallen** —
+  [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+  macht `Publish` nicht-blockierend; die Fixrunde **dieses** Slice
+  beseitigt den Auslöser vor der Closure, kein Folge-Slice nötig.
 
 ## 7. Closure-Notiz
 

@@ -8,12 +8,26 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 **Welle:** welle-19.
 
 **Bezug:** [LH-FA-SST-008](../../../../spec/lastenheft.md) (Haupt-Bezug),
-[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md).
+[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md),
+[ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+(Zustellsemantik des `Broadcaster` — `Publish` blockiert nie auf einen
+Abonnenten).
 
-**Berührte Spec-Stellen:** [SPEC-019](../../../../spec/pflichtenheft.md)
-(Referenz — Publish-Aufrufkontrakt bereits durch
-[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md) und `slice-069`
-fixiert, keine inhaltliche Änderung erwartet).
+**Berührte Spec-Stellen:** [SPEC-020](../../../../spec/pflichtenheft.md)
+(Referenz — Publish-Aufrufkontrakt und Zustellsemantik bereits durch
+[ADR-0060](../../adr/0060-grpc-streaming-mechanismus.md),
+[ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
+und `slice-069` fixiert, keine inhaltliche Änderung erwartet).
+
+> **Plan-Korrektur 2026-09-14 (Architect-Verdikt, `ADR-0066`):** Die
+> Kennung der berührten Spec-Stelle ist `SPEC-020` (Stream-Semantik), nicht
+> `SPEC-019` (Feldform von `cdc.administration_request`). Der Stream-Publish
+> ruft `Publish` **synchron** in der Best-Effort-Kette und isoliert nur den
+> **Fehler** — die **Zeit** braucht er nicht zu isolieren: `ADR-0066` macht
+> `Publish` nicht-blockierend (begrenzte Empfangs-Warteschlange je Abonnent,
+> Drop-Newest), der Erzeuger hält nie auf einen Abonnenten an. Eine
+> caller-seitige Goroutine oder Deadline ist ausdrücklich **nicht** Teil
+> dieses Slice.
 
 **Verantwortlich:** —.
 
@@ -35,7 +49,10 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 (`Receive → Decode → Persist → COMMIT Store → ACK Source → Notify (best
 effort) → Stream-Publish (best effort)`) — der in `slice-069` gebaute
 `ChangeStreamPort`/`Broadcaster` bekommt damit erstmals einen realen
-Aufrufer, isoliert und fehlerisoliert getestet.
+Aufrufer, isoliert und fehlerisoliert getestet. Der Publish-Aufruf ist
+nicht-blockierend ([ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)):
+die Fehlerisolation an der Aufrufstelle genügt, eine Zeit-Isolation (eigene
+Goroutine, Deadline) ist weder nötig noch Gegenstand dieses Slice.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -86,7 +103,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       bestehenden `ChangeNotificationPort`-Test
       ([ADR-0055](../../adr/0055-nats-change-notification-wecksignal.md));
       Fire-and-Forget-Regressionstest bei getrenntem Client (kein aktiver
-      Subscriber blockiert `Capture()` nicht).
+      Subscriber blockiert `Capture()` nicht) **und** bei einem
+      **registrierten, nicht lesenden** Empfänger — der Aufruf kehrt ohne
+      Zeit-Isolation zurück ([ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)).
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -109,7 +128,7 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/usecase/capture/service.go` | update | neue Option `WithChangeStream(stream outbound.ChangeStreamPort) Option`; Publish-Aufruf nach `ACK Source`/Notify |
+| `internal/application/usecase/capture/service.go` | update | neue Option `WithChangeStream(stream outbound.ChangeStreamPort) Option`; Publish-Aufruf nach `ACK Source`/Notify, synchron (nicht-blockierend, [ADR-0066](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)) |
 | `internal/application/usecase/capture/service_test.go` | update | Fehlerisolations-Regressionstest, Fire-and-Forget-Regressionstest |
 | `internal/bootstrap/wiring.go` | update | `CaptureService` erhält den in `slice-069` konstruierten `*grpcstream.Broadcaster` über `WithChangeStream`, wenn `CDC_GRPC_ADDR` gesetzt ist |
 
