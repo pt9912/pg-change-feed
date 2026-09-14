@@ -1019,10 +1019,12 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // aktivierte Tabellen tragen sonst die falsche Kennung in der
 // nachgetragenen `Assembler`-Bindung.
 //
-// Die beiden Spalten-Antragsarten rufen ausschließlich ihren Use Case auf:
-// ihr Ziel ist der Filterzustand der laufenden Erfassung, nicht die
-// Bindungs- oder Publication-Menge, die die beiden Tabellen-Antragsarten
-// tragen (`ADR-0059` Teilfrage 3).
+// Die beiden Spalten-Antragsarten rufen ihren Use Case auf und tragen
+// danach den Ausschlussstand in die laufende `Assembler`-Bindung nach: ihr
+// Ziel ist der Filterzustand der laufenden Erfassung, nicht die Bindungs-
+// oder Publication-Menge, die die beiden Tabellen-Antragsarten tragen
+// (`ADR-0059` Teilfrage 3). Die Nachträge greifen unter `tablesMu` —
+// derselbe synchronisierte Schreibpfad wie `AddBinding`/`RemoveBinding`.
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1067,19 +1069,27 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		deps.assembler.RemoveBinding(qualified)
 		return nil
 	case model.AdministrationRequestExcludeColumn:
-		return deps.excludeColumns.Exclude(ctx, inbound.ExcludeColumnCommand{
+		if err := deps.excludeColumns.Exclude(ctx, inbound.ExcludeColumnCommand{
 			Source: request.Source,
 			Schema: request.Schema,
 			Table:  request.Table,
 			Column: request.Column,
-		})
+		}); err != nil {
+			return err
+		}
+		deps.assembler.ExcludeColumn(qualified, request.Column)
+		return nil
 	case model.AdministrationRequestIncludeColumn:
-		return deps.includeColumns.Include(ctx, inbound.IncludeColumnCommand{
+		if err := deps.includeColumns.Include(ctx, inbound.IncludeColumnCommand{
 			Source: request.Source,
 			Schema: request.Schema,
 			Table:  request.Table,
 			Column: request.Column,
-		})
+		}); err != nil {
+			return err
+		}
+		deps.assembler.IncludeColumn(qualified, request.Column)
+		return nil
 	default:
 		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable/exclude_column/include_column", request.Kind)
 	}

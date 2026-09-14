@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -496,6 +497,310 @@ func TestConsumeRelationNilSchemaStoreStaysNoop(t *testing.T) {
 	if _, err := assembler.Consume(ctx, relationEvent); err != nil {
 		t.Fatalf("Relation ohne SchemaStorePort: %v", err)
 	}
+}
+
+// consumedChange trägt ein Begin/Change/Commit über den Assembler und
+// liefert den resultierenden Change — die gemeinsame Prüf-Form der
+// Row-Image- und Ausschluss-Tests unten.
+func consumedChange(t *testing.T, ctx context.Context, assembler *mapper.Assembler, xid uint32, event decode.Change) model.Change {
+	t.Helper()
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: xid}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	if _, err := assembler.Consume(ctx, event); err != nil {
+		t.Fatalf("Change: %v", err)
+	}
+	command, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(xid) * 100})
+	if err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil {
+		t.Fatalf("Changes: %v", err)
+	}
+	if len(changes) != 1 {
+		t.Fatalf("Change-Anzahl: %d", len(changes))
+	}
+	return changes[0]
+}
+
+// excludedBindingTables trägt eine Aktivierung, deren Bindung eine Spalte
+// ausschließt — die gemeinsame Ausgangslage der Ausschluss-Tests unten.
+func excludedBindingTables() map[string]mapper.TableBinding {
+	return map[string]mapper.TableBinding{
+		"public.feed": {TableID: "tbl-1", SchemaVersion: "sv-1", ExcludedColumns: []string{"secret"}},
+	}
+}
+
+// TestConsumeExcludedColumnAbsentFromRowImages trägt die Filterwirkung des
+// Spaltenausschlusses (`LH-FA-CFG-005`, `ADR-0059` Teilfrage 3) auf allen
+// drei Operationen: ein in `TableBinding.ExcludedColumns` geführter
+// Spaltenname erscheint weder als Schlüssel noch als Wert im `old_data`-
+// und `new_data`-Bild — die übrigen Spalten bleiben unverändert.
+func TestConsumeExcludedColumnAbsentFromRowImages(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, excludedBindingTables())
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"},
+		decode.Column{Name: "name"})
+
+	insert := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim"), pointer("Wert")},
+	})
+	if string(insert.NewImage) != `{"id":"1","name":"Wert"}` {
+		t.Fatalf("Insert-Neu-Image: %s, wollen ohne den ausgeschlossenen Schlüssel secret", insert.NewImage)
+	}
+
+	update := consumedChange(t, ctx, assembler, 2, decode.Change{
+		Relation: relationEvent, Operation: decode.OpUpdate,
+		Old: []*string{pointer("1"), pointer("geheim"), pointer("alt")},
+		New: []*string{pointer("1"), pointer("geheimer"), pointer("neu")},
+	})
+	if string(update.NewImage) != `{"id":"1","name":"neu"}` {
+		t.Fatalf("Update-Neu-Image: %s, wollen ohne den ausgeschlossenen Schlüssel secret", update.NewImage)
+	}
+	if string(update.OldImage) != `{"id":"1","name":"alt"}` {
+		t.Fatalf("Update-Alt-Image: %s, wollen ohne den ausgeschlossenen Schlüssel secret", update.OldImage)
+	}
+
+	deletion := consumedChange(t, ctx, assembler, 3, decode.Change{
+		Relation: relationEvent, Operation: decode.OpDelete,
+		Old: []*string{pointer("2"), pointer("geheim"), pointer("weg")},
+	})
+	if string(deletion.OldImage) != `{"id":"2","name":"weg"}` {
+		t.Fatalf("Delete-Alt-Image: %s, wollen ohne den ausgeschlossenen Schlüssel secret", deletion.OldImage)
+	}
+	for _, image := range []string{string(insert.NewImage), string(update.NewImage), string(update.OldImage), string(deletion.OldImage)} {
+		if strings.Contains(image, "geheim") {
+			t.Fatalf("Row Image %s trägt den Wert der ausgeschlossenen Spalte (LH-FA-CFG-005)", image)
+		}
+	}
+}
+
+// TestConsumeExcludedColumnSurvivesSchemaBump trägt den Erhalt des
+// Ausschlussstandes über einen Schema-Versions-Nachtrag (`ADR-0059`
+// Teilfrage 3): eine kompatible Erweiterung hebt die Bindung auf die neue
+// Version und lässt `ExcludedColumns` stehen — die ausgeschlossene Spalte
+// bleibt danach gefiltert.
+func TestConsumeExcludedColumnSurvivesSchemaBump(t *testing.T) {
+	ctx := context.Background()
+	store := newFakeSchemaStore()
+	store.versions["tbl-1"] = model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1}
+	store.schemas["sv-1"] = model.TableSchema{VersionID: "sv-1", Columns: []model.Column{
+		{Name: "id", OID: 23}, {Name: "secret", OID: 25},
+	}}
+	assembler, err := mapper.NewAssembler("src-1", excludedBindingTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	extendedRelation := relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "secret", TypeOID: 25},
+		decode.Column{Name: "extra", TypeOID: 25})
+
+	if _, err := assembler.Consume(ctx, extendedRelation); err != nil {
+		t.Fatalf("Relation: %v", err)
+	}
+	nextVersion := store.versions["tbl-1"]
+	if nextVersion.Version != 2 {
+		t.Fatalf("Schema-Version nach der Erweiterung: %+v, wollen Version 2", nextVersion)
+	}
+
+	change := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: extendedRelation, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim"), pointer("zusatz")},
+	})
+	if change.SchemaVersion != nextVersion.ID {
+		t.Fatalf("Schema-Version des Changes: %s, wollen %s", change.SchemaVersion, nextVersion.ID)
+	}
+	if string(change.NewImage) != `{"id":"1","extra":"zusatz"}` {
+		t.Fatalf("Neu-Image nach dem Schema-Bump: %s, wollen ohne den ausgeschlossenen Schlüssel secret", change.NewImage)
+	}
+}
+
+// TestConsumeExcludedColumnDroppedInSourceReportsSchemaError trägt die
+// Konvergenz mit `LH-FA-SCH-003` (`ADR-0059` Teilfrage 4): eine real
+// gelöschte, zuvor ausgeschlossene Spalte fehlt in der eingehenden
+// Relation wie jede andere gelöschte Spalte und endet über denselben
+// `ErrIncompatibleSchemaChange`-Pfad — kein Sonderfall für den
+// Ausschlussstand.
+func TestConsumeExcludedColumnDroppedInSourceReportsSchemaError(t *testing.T) {
+	ctx := context.Background()
+	store := newFakeSchemaStore()
+	store.versions["tbl-1"] = model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1}
+	store.schemas["sv-1"] = model.TableSchema{VersionID: "sv-1", Columns: []model.Column{
+		{Name: "id", OID: 23}, {Name: "secret", OID: 25},
+	}}
+	assembler, err := mapper.NewAssembler("src-1", excludedBindingTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	withoutSecret := relation("public", "feed", decode.Column{Name: "id", Key: true, TypeOID: 23})
+
+	if _, err := assembler.Consume(ctx, withoutSecret); !stderrors.Is(err, mapper.ErrIncompatibleSchemaChange) {
+		t.Fatalf("real gelöschte, zuvor ausgeschlossene Spalte: %v, wollen ErrIncompatibleSchemaChange", err)
+	}
+	if store.registrations != 0 {
+		t.Fatalf("registrations = %d, wollen 0 (kein Store-Schreibzugriff bei relationOther)", store.registrations)
+	}
+}
+
+// TestExcludeColumnFiltersLiveBinding trägt den Live-Reload-Nachtrag eines
+// Ausschlusses (`Assembler.ExcludeColumn`, `ADR-0059` Bestätigung): eine
+// bereits getragene Bindung filtert die Spalte ab dem Aufruf, ohne dass
+// die Bindung neu angelegt wird.
+func TestExcludeColumnFiltersLiveBinding(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	before := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim")},
+	})
+	if string(before.NewImage) != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Neu-Image vor dem Ausschluss: %s, wollen beide Spalten", before.NewImage)
+	}
+
+	assembler.ExcludeColumn("public.feed", "secret")
+
+	after := consumedChange(t, ctx, assembler, 2, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("2"), pointer("geheim")},
+	})
+	if string(after.NewImage) != `{"id":"2"}` {
+		t.Fatalf("Neu-Image nach dem Ausschluss: %s, wollen ohne den ausgeschlossenen Schlüssel secret", after.NewImage)
+	}
+}
+
+// TestIncludeColumnRestoresLiveBinding trägt das Gegenstück zu
+// `TestExcludeColumnFiltersLiveBinding`: `Assembler.IncludeColumn` nimmt
+// einen geführten Ausschluss wieder zurück, die Spalte erscheint danach
+// erneut im Row Image (`LH-FA-CFG-005`).
+func TestIncludeColumnRestoresLiveBinding(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, excludedBindingTables())
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	excluded := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim")},
+	})
+	if string(excluded.NewImage) != `{"id":"1"}` {
+		t.Fatalf("Neu-Image mit geführtem Ausschluss: %s, wollen ohne secret", excluded.NewImage)
+	}
+
+	assembler.IncludeColumn("public.feed", "secret")
+
+	restored := consumedChange(t, ctx, assembler, 2, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("2"), pointer("geheim")},
+	})
+	if string(restored.NewImage) != `{"id":"2","secret":"geheim"}` {
+		t.Fatalf("Neu-Image nach dem Einschluss: %s, wollen beide Spalten", restored.NewImage)
+	}
+}
+
+// TestExcludeColumnOnUnboundTableStaysNoop trägt den idempotenten Vertrag
+// der Ausschluss-Nachträge auf eine nicht getragene Bindung (dieselbe
+// Haltung wie `RemoveBinding`): ohne Erfassungspfad entsteht kein
+// Filterzustand — auch nicht als später nachgetragene Bindung.
+func TestExcludeColumnOnUnboundTableStaysNoop(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{})
+	relationEvent := relation("public", "orders",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	assembler.ExcludeColumn("public.orders", "secret")
+	assembler.AddBinding("public.orders", mapper.TableBinding{TableID: "tbl-orders", SchemaVersion: "sv-orders"})
+
+	change := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim")},
+	})
+	if string(change.NewImage) != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Neu-Image nach dem nachgetragenen Ausschluss ohne Bindung: %s, wollen beide Spalten", change.NewImage)
+	}
+}
+
+// TestAddBindingKeepsExclusionState trägt denselben Erhalt aus der
+// Aufrufer-Seite der Tabellen-Antragsarten (`ADR-0059` Teilfrage 3): ein
+// erneutes Nachttragen derselben Tabelle setzt `TableID`/`SchemaVersion`
+// neu und lässt einen geführten Ausschluss stehen, statt die Bindung
+// vollständig zu überschreiben.
+func TestAddBindingKeepsExclusionState(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, excludedBindingTables())
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	assembler.AddBinding("public.feed", mapper.TableBinding{TableID: "tbl-2", SchemaVersion: "sv-2"})
+
+	change := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim")},
+	})
+	if change.SourceTableID != "tbl-2" || change.SchemaVersion != "sv-2" {
+		t.Fatalf("Change trägt nicht die nachgetragene Bindung: %+v", change)
+	}
+	if string(change.NewImage) != `{"id":"1"}` {
+		t.Fatalf("Neu-Image nach dem erneuten AddBinding: %s, wollen ohne den erhaltenen Ausschluss secret", change.NewImage)
+	}
+}
+
+// TestAssemblerColumnExclusionIsRaceFree trägt die Fitness Function aus
+// `ADR-0059`: die neue Live-Reload-Methode für Ausschluss-Änderungen greift
+// wie `AddBinding`/`RemoveBinding` unter `tablesMu` zu — ohne sie wäre der
+// gleichzeitige Zugriff aus zwei Goroutinen eine Data Race
+// (`go test -race`). Eine Goroutine konsumiert fortlaufend Transaktionen
+// der gebundenen Tabelle, eine zweite schaltet den Ausschluss derselben
+// Spalte um.
+func TestAssemblerColumnExclusionIsRaceFree(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	const iterations = 200
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i := uint32(1); i <= iterations; i++ {
+			if _, err := assembler.Consume(ctx, decode.Begin{XID: i}); err != nil {
+				t.Errorf("Begin: %v", err)
+				return
+			}
+			if _, err := assembler.Consume(ctx, decode.Change{
+				Relation: relationEvent, Operation: decode.OpInsert,
+				New: []*string{pointer("1"), pointer("geheim")},
+			}); err != nil {
+				t.Errorf("Change: %v", err)
+				return
+			}
+			if _, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(i), CommitTime: time.Now()}); err != nil {
+				t.Errorf("Commit: %v", err)
+				return
+			}
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			assembler.ExcludeColumn("public.feed", "secret")
+			assembler.IncludeColumn("public.feed", "secret")
+		}
+	}()
+	wg.Wait()
 }
 
 // TestAddBindingActivatesNewTable trägt die Live-Reload-Zusage

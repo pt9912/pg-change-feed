@@ -93,33 +93,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `TableBinding` um `ExcludedColumns` erweitert; `rowImage`/`change`
+- [x] `TableBinding` um `ExcludedColumns` erweitert; `rowImage`/`change`
       filtern ausgeschlossene Spaltenschlüssel real heraus, bevor das Row
       Image gebaut wird. Beleg: Unit-Test in
       `internal/adapters/driving/replication/mapper/mapper_test.go`, der
       belegt, dass ein in `TableBinding.ExcludedColumns` geführter
       Spaltenname nie als Schlüssel im resultierenden `old_data`/`new_data`
-      erscheint.
-- [ ] Neue synchronisierte `Assembler`-Methode für den Live-Reload-Nachtrag
+      erscheint
+      (`TestConsumeExcludedColumnAbsentFromRowImages` für alle drei
+      Operationen, dazu `TestExcludeColumnFiltersLiveBinding`/`TestIncludeColumnRestoresLiveBinding`).
+- [x] Neue synchronisierte `Assembler`-Methode für den Live-Reload-Nachtrag
       eines Ausschluss-Standes; der Schema-Bump-Pfad
       (`observeRelation`/`AddBinding`) erhält den bestehenden
       `ExcludedColumns`-Stand einer Bindung, statt ihn zurückzusetzen.
       Beleg: Unit-Test, der einen Ausschluss setzt, danach einen
       Schema-Bump derselben Tabelle simuliert, und erneut prüft, dass die
-      ausgeschlossene Spalte weiterhin gefiltert wird; `go test -race`
-      grün (neue Methode greift wie `AddBinding`/`RemoveBinding` unter
-      `tablesMu`).
-- [ ] Konvergenz-Test: eine real gelöschte, zuvor ausgeschlossene Spalte
+      ausgeschlossene Spalte weiterhin gefiltert wird
+      (`TestConsumeExcludedColumnSurvivesSchemaBump`, dazu
+      `TestAddBindingKeepsExclusionState` für den zweiten Erhalt-Punkt);
+      `go test -race` grün (neue Methode greift wie
+      `AddBinding`/`RemoveBinding` unter `tablesMu`,
+      `TestAssemblerColumnExclusionIsRaceFree`).
+- [x] Konvergenz-Test: eine real gelöschte, zuvor ausgeschlossene Spalte
       löst denselben `ErrIncompatibleSchemaChange`-Pfad aus wie jede andere
-      Spaltenlöschung — kein Sonderfall (`ADR-0059` Teilfrage 4).
-- [ ] `make gates` grün.
+      Spaltenlöschung — kein Sonderfall (`ADR-0059` Teilfrage 4). Beleg:
+      `TestConsumeExcludedColumnDroppedInSourceReportsSchemaError`.
+- [x] `make gates` grün. Beleg: `make gates` Exit 0 (d-check, commit-traceability,
+      a-check, coverage-gate grün) und `make test` Exit 0 (`go test -race ./...`).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: keiner erwartet (kein neuer öffentlicher Vertrag; die
+- [x] Doku-Update: keiner erwartet (kein neuer öffentlicher Vertrag; die
       Folgepflichten aus `ADR-0059` — `spec/architecture.md`-Korrektur,
       neuer `SPEC-*`-Eintrag — sind bereits `slice-066` zugeordnet);
       Implementer bestätigt oder begründet Abweichung im Plan-Nachzug.
+      Bestätigt: kein Doku-Update in diesem Slice (§3 Plan-Nachzug).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -138,6 +146,43 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driving/replication/mapper/mapper.go` | update | `TableBinding.ExcludedColumns`, Filterung in `rowImage`/`change`, neue Live-Reload-Methode, Schema-Bump-Erhalt |
 | `internal/adapters/driving/replication/mapper/mapper_test.go` | update | Filter-, Schema-Bump-Erhalt- und Konvergenz-Tests |
 | `internal/bootstrap/wiring.go` | update (kleiner Nachtrag) | ruft die neue Live-Reload-Methode aus `slice-066`s `applyAdministrationRequest`-Zweigen auf |
+| `internal/bootstrap/administration_internal_test.go` | update | Whitebox-Test des Verdrahtungs-Aufrufs: `applyAdministrationRequest` trägt den verarbeiteten Spaltennamen real in die laufende `Assembler`-Bindung nach |
+| `internal/bootstrap/administration_endtoend_test.go` | update | reale PostgreSQL-Test-Verdrahtung trägt die laufende `Assembler`-Bindung; belegt die Filterwirkung des real verarbeiteten Antrags |
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Test-Ort und `deps`-Verdrahtung.**
+Die Tabelle führte für die Belege nur `mapper_test.go`; dazu kommen zwei
+Test-Orte. `internal/bootstrap/administration_internal_test.go` trägt den
+Whitebox-Beleg für den Verdrahtungs-Aufruf — ohne ihn bliebe der
+`slice-066`-Zweig, der die neue Methode wirklich aufruft, unbelegt (die
+Filterung selbst deckt `mapper_test.go` ab). `administration_endtoend_test.go`
+trägt die `Assembler`-Instanz in seinem `administrationDeps` nach: der
+Spalten-Zweig von `applyAdministrationRequest` ruft den Assembler auf, die
+reale PostgreSQL-Test-Verdrahtung führte dort bislang keine Bindung — ohne den
+Nachtrag liefe der Happy-Path-Zweig des Tests in einen leeren Zeiger. Dieselbe
+Instanz trägt zugleich den realen Beleg der Filterwirkung (Happy Path) und den
+Fall „gescheiterter Einschluss-Antrag lässt den Ausschluss stehen".
+
+**Plan-Nachzug (Implementer, 2026-09-14) — zwei Erhalt-Punkte statt einem.**
+Der Plan nennt den Wiederherstellungsort als „den" Schema-Bump-Pfad; real
+tragen **zwei** Stellen einen vollständigen `TableBinding`-Schreibzugriff, und
+beide erhalten den Ausschlussstand: `observeRelation` hebt die Version über
+eine gezielte Aktualisierung (nur das Feld `SchemaVersion`, die übrigen Felder
+bleiben stehen) statt über den bisherigen vollen Überschreibzugriff, und
+`AddBinding` übernimmt bei einer bereits getragenen Bindung deren
+`ExcludedColumns` — der Enable-Zweig der Antrags-Queue trägt dieselbe Tabelle
+erneut nach und setzt sie dabei nicht auf den leeren Ausschlussstand zurück.
+`TableBinding.ExcludedColumns` trägt eine unveränderliche `[]string`-
+Momentaufnahme: jeder Nachtrag ersetzt sie unter `tablesMu` durch eine neue
+Liste, ein Leser-Schnappschuss bleibt dadurch ohne eigene Sperre gültig.
+
+**Plan-Nachzug (Implementer, 2026-09-14) — Ausschluss-Nachtrag ohne Bindung und
+Doku-Umfang.** `ExcludeColumn`/`IncludeColumn` bleiben auf eine nicht getragene
+Bindung ohne Wirkung — derselbe idempotente Vertrag wie `RemoveBinding`; einen
+Filterzustand ohne Erfassungspfad gibt es nicht. Kein Doku-Update erwartet: der
+Slice ändert keinen öffentlichen Vertrag (keine neue Umgebungsvariable, keine
+neue View, kein neues Kommando; die Sensors-Zeile in `harness/README.md` bleibt
+unverändert). Die DoD-Zeile *Doku-Update* ist damit bestätigt, nicht
+abgewichen.
 
 ## 4. Trigger
 
@@ -186,6 +231,20 @@ dasteht.
   wenn ein Aufrufer außerhalb von `tablesMu` auf `ExcludedColumns`
   zugreift (dieselbe Fitness-Function-Anforderung wie in `ADR-0059`
   §Fitness Function benannt). — **Ausgang:** <bei Closure zuzuweisen>
+- **Nachgetragen (Implementer, 2026-09-14):** Der Ausschlussstand lebt mit
+  diesem Slice ausschließlich in der laufenden `Assembler`-Bindung
+  (`TableBinding.ExcludedColumns`); kein Startpfad liest ihn wieder ein —
+  `activatedTableBindings` baut den Bindungsstand aus
+  `cdc.source_table`/`SchemaVersion` auf, `processAdministrationRequests`
+  liest nur `pending`-Anträge. Ein Prozess-Neustart erfasst eine zuvor
+  ausgeschlossene Spalte damit wieder; `LH-FA-CFG-005`s Happy Path („künftige
+  Changes von `t` ohne die Datenwerte von `c`") und `LH-QA-SEC-004` gelten
+  über die Lebensdauer des Prozesses, nicht über seinen Neustart. Keiner der
+  drei Slices der Welle deckt den Neustart ab: `slice-066` liefert nur die
+  Antrags-Seite, `slice-068` den laufenden Container. Die dauerhafte Spur
+  eines Antrags ist heute allein die `applied`-Zeile in
+  `cdc.administration_request`, die der Startpfad nicht auswertet. —
+  **Ausgang:** <bei Closure zuzuweisen>
 
 ## 7. Closure-Notiz
 

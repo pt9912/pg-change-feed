@@ -342,8 +342,10 @@ func TestProcessAdministrationRequestsDisableAppliesAndUnbindsAssembler(t *testi
 // den Happy Path des Spaltenausschlusses (`LH-FA-CFG-005`, `ADR-0059`): der
 // Antrag läuft über den Inbound Port mit der Spalte aus dem Antrags-Datensatz
 // und wird als `applied` vermerkt — die beiden Spalten-Antragsarten tragen
-// keine `Assembler`-Bindung nach, ihr Ziel ist der Filterzustand der
-// laufenden Erfassung.
+// keine `Assembler`-Bindung nach, ihr Ziel ist der Filterzustand einer
+// bereits getragenen Bindung. Eine nicht gebundene Tabelle bleibt deshalb
+// ohne Filterwirkung (`mapper.Assembler.ExcludeColumn`, siehe
+// `TestProcessAdministrationRequestsExcludeColumnFiltersAssemblerRowImage`).
 func TestProcessAdministrationRequestsExcludeColumnAppliesWithoutBinding(t *testing.T) {
 	ctx := context.Background()
 	const requestID = model.AdministrationRequestID("req-exclude-1")
@@ -384,6 +386,98 @@ func TestProcessAdministrationRequestsExcludeColumnAppliesWithoutBinding(t *test
 	}
 	if assemblerCapturesQualified(t, assembler, 1, "public", "orders_admin_exclude") {
 		t.Fatal("Assembler trägt nach dem Spaltenausschluss eine Bindung für orders_admin_exclude — diese Antragsart trägt keine Bindung nach")
+	}
+}
+
+// assemblerRowImage liefert das neue Row Image eines erfassten Changes für
+// `schema.table` über die öffentliche `Consume`-Schnittstelle (derselbe
+// Zugriffsweg wie `assemblerCapturesQualified`): die Relation trägt zwei
+// Spalten, das Bild lässt den ausgeschlossenen Schlüssel bei gebundener
+// Tabelle und geführtem Ausschluss weg.
+func assemblerRowImage(t *testing.T, assembler *mapper.Assembler, xid uint32, schema, table string) string {
+	t.Helper()
+	ctx := context.Background()
+	rel := &decode.Relation{Schema: schema, Name: table, Columns: []decode.Column{
+		{Name: "id", Key: true}, {Name: "secret"},
+	}}
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: xid}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	id, secret := "1", "geheim"
+	if _, err := assembler.Consume(ctx, decode.Change{Relation: rel, Operation: decode.OpInsert, New: []*string{&id, &secret}}); err != nil {
+		t.Fatalf("Change: %v", err)
+	}
+	command, err := assembler.Consume(ctx, decode.Commit{CommitLSN: uint64(xid), CommitTime: time.Now()})
+	if err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	changes, err := command.Transaction.Changes()
+	if err != nil {
+		t.Fatalf("Changes: %v", err)
+	}
+	if len(changes) != 1 {
+		t.Fatalf("Change-Anzahl = %d, wollen 1 (Tabelle gebunden)", len(changes))
+	}
+	return string(changes[0].NewImage)
+}
+
+// TestProcessAdministrationRequestsExcludeColumnFiltersAssemblerRowImage
+// trägt die Live-Reload-Wirkung des Spaltenausschlusses über die
+// Verdrahtung (`LH-FA-CFG-005`, `ADR-0059` Bestätigung): ein verarbeiteter
+// `exclude_column`-Antrag trägt den Spaltennamen in den Ausschlussstand der
+// laufenden `Assembler`-Bindung nach, ein danach erfasster Change führt ihn
+// nicht mehr — ohne diesen Nachtrag bliebe der Antrag `applied` und ohne
+// Filterwirkung. Der spiegelbildliche `include_column`-Fall nimmt denselben
+// Ausschluss über denselben Weg wieder zurück.
+func TestProcessAdministrationRequestsExcludeColumnFiltersAssemblerRowImage(t *testing.T) {
+	ctx := context.Background()
+	const table = "orders_admin_filter"
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{
+			ID: "req-exclude-filter-1", Source: "src-admin", Schema: "public", Table: table,
+			Column: "secret", Kind: model.AdministrationRequestExcludeColumn,
+		},
+	}}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{
+		"public." + table: {TableID: "tbl-filter", SchemaVersion: "sv-filter"},
+	}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	deps := administrationDeps{
+		requests:       requests,
+		activation:     &fakeTableActivationPort{},
+		enableTables:   &fakeEnableTableUseCase{},
+		disableTables:  &fakeDisableTableUseCase{},
+		excludeColumns: &fakeExcludeColumnUseCase{},
+		includeColumns: &fakeIncludeColumnUseCase{},
+		schemaStore:    &fakeSchemaStorePort{},
+		assembler:      assembler,
+		publication:    "cdc_pub",
+		log:            &recordingLog{},
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	if requests.appliedCount() != 1 {
+		t.Fatalf("applied = %d, wollen 1", requests.appliedCount())
+	}
+	excluded := assemblerRowImage(t, assembler, 1, "public", table)
+	if excluded != `{"id":"1"}` {
+		t.Fatalf("Neu-Image nach dem Spaltenausschluss: %s, wollen ohne den ausgeschlossenen Schlüssel secret", excluded)
+	}
+
+	requests.mu.Lock()
+	requests.pending = []model.AdministrationRequest{{
+		ID: "req-include-filter-1", Source: "src-admin", Schema: "public", Table: table,
+		Column: "secret", Kind: model.AdministrationRequestIncludeColumn,
+	}}
+	requests.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+
+	restored := assemblerRowImage(t, assembler, 2, "public", table)
+	if restored != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Neu-Image nach dem Spalteneinschluss: %s, wollen beide Spalten", restored)
 	}
 }
 

@@ -64,9 +64,18 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 // aktualisiert (`ADR-0015` Folgepflicht) — die Erkennung nicht sicher
 // interpretierbarer Änderungen als Fehlerklasse `schema` trägt
 // `LH-FA-SCH-004.a` über denselben Metadata-Pfad.
+//
+// `ExcludedColumns` trägt die Spaltennamen, deren Werte die
+// Row-Image-Konstruktion übergeht (`LH-FA-CFG-005`, `ADR-0059`
+// Teilfrage 3): der Wert wird dadurch nie serialisiert und nie an die
+// Persistenzschicht übergeben. Die Liste ist ab dem Schreiben
+// unverändert — jeder Nachtrag ersetzt sie unter `tablesMu` durch eine
+// neue (`Assembler.ExcludeColumn`/`IncludeColumn`), ein Leser hält
+// seinen Schnappschuss ohne eigene Sperre.
 type TableBinding struct {
-	TableID       model.SourceTableID
-	SchemaVersion model.SchemaVersionID
+	TableID         model.SourceTableID
+	SchemaVersion   model.SchemaVersionID
+	ExcludedColumns []string
 }
 
 // Assembler baut aus den dekodierten Ereignissen committed
@@ -81,8 +90,9 @@ type TableBinding struct {
 // `tables` wird über `tablesMu` synchronisiert (`ADR-0050`): der
 // Capture-Stream liest sie aus `Consume`/`change`/`observeRelation` in
 // seiner eigenen Goroutine, die Administrations-Goroutine schreibt
-// zusätzliche Bindungen über `AddBinding`/`RemoveBinding` aus einer
-// zweiten Goroutine — ohne Synchronisation wäre der gleichzeitige Zugriff
+// zusätzliche Bindungen über `AddBinding`/`RemoveBinding` und den
+// Ausschlussstand einer Bindung über `ExcludeColumn`/`IncludeColumn` aus
+// einer zweiten Goroutine — ohne Synchronisation wäre der gleichzeitige Zugriff
 // eine Data Race (`go test -race`). Ein `sync.RWMutex` statt eines
 // Kommando-Kanals in `Consume`: die Lese-Seite (jede Änderung im
 // Capture-Stream) ist weitaus häufiger als die Schreib-Seite (eine
@@ -220,11 +230,11 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 		return nil, fmt.Errorf("%w: unbekannte Operation %d", domainerrors.ErrInvalidOperation, event.Operation)
 	}
 
-	newImage, err := rowImage(event.Relation, event.New)
+	newImage, err := rowImage(event.Relation, event.New, binding.ExcludedColumns)
 	if err != nil {
 		return nil, err
 	}
-	oldImage, err := rowImage(event.Relation, event.Old)
+	oldImage, err := rowImage(event.Relation, event.Old, binding.ExcludedColumns)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +383,7 @@ func (a *Assembler) observeRelation(ctx context.Context, relation *decode.Relati
 	if _, err := a.schemaStore.RegisterVersion(ctx, nextVersion, schema); err != nil {
 		return err
 	}
-	a.AddBinding(relation.QualifiedName(), TableBinding{TableID: binding.TableID, SchemaVersion: nextID})
+	a.setSchemaVersion(relation.QualifiedName(), nextID)
 	return nil
 }
 
@@ -386,16 +396,109 @@ func (a *Assembler) lookupBinding(qualified string) (TableBinding, bool) {
 	return binding, activated
 }
 
-// AddBinding trägt eine `TableBinding` synchronisiert nach — sowohl die
-// dynamische Re-Versionierung einer bereits aktivierten Tabelle
-// (`observeRelation`, `ADR-0015` Folgepflicht) als auch die
-// Administrations-Goroutine (`ADR-0050`) rufen sie auf, wenn eine über SQL
-// beantragte Aktivierung real ausgeführt wurde — hier erstmals für eine
-// bislang nicht aktivierte Tabelle, aus einer zweiten Goroutine.
+// AddBinding trägt eine `TableBinding` synchronisiert nach — die
+// Administrations-Goroutine (`ADR-0050`) ruft sie auf, wenn eine über SQL
+// beantragte Aktivierung real ausgeführt wurde, für eine bislang nicht
+// aktivierte Tabelle aus einer zweiten Goroutine. Trägt die Tabelle
+// bereits eine Bindung, bleiben deren `ExcludedColumns` stehen: der
+// Aufruf setzt `TableID`/`SchemaVersion` neu und übernimmt alle übrigen
+// Felder der getragenen Bindung (`ADR-0059` Teilfrage 3).
 func (a *Assembler) AddBinding(qualified string, binding TableBinding) {
 	a.tablesMu.Lock()
 	defer a.tablesMu.Unlock()
+	if existing, activated := a.tables[qualified]; activated {
+		binding.ExcludedColumns = existing.ExcludedColumns
+	}
 	a.tables[qualified] = binding
+}
+
+// setSchemaVersion hebt die Schema-Version einer getragenen Bindung
+// synchronisiert auf eine neu registrierte Version und lässt ihre übrigen
+// Felder unangetastet (`observeRelation`, `ADR-0015` Folgepflicht,
+// `LH-FA-SCH-005`): der Ausschlussstand der Bindung überlebt den
+// Schema-Versions-Nachtrag (`ADR-0059` Teilfrage 3). Eine nicht mehr
+// getragene Bindung bleibt ohne Wirkung — der Nachtrag belebt sie nicht
+// neu.
+func (a *Assembler) setSchemaVersion(qualified string, version model.SchemaVersionID) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.SchemaVersion = version
+	a.tables[qualified] = binding
+}
+
+// ExcludeColumn trägt einen Spaltennamen synchronisiert in den
+// Ausschlussstand einer getragenen Bindung nach (`LH-FA-CFG-005`,
+// `ADR-0059` Teilfrage 3): die Administrations-Goroutine ruft sie auf,
+// nachdem `ExcludeColumnUseCase` den Antrag real verarbeitet hat. Eine
+// nicht getragene Bindung bleibt ohne Wirkung — derselbe idempotente
+// Vertrag wie `RemoveBinding`; ohne Erfassungspfad gibt es keinen
+// Filterzustand zu ändern. Ein bereits geführter Name bleibt einmal
+// geführt.
+func (a *Assembler) ExcludeColumn(qualified, column string) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated || containsColumn(binding.ExcludedColumns, column) {
+		return
+	}
+	binding.ExcludedColumns = appendExcluded(binding.ExcludedColumns, column)
+	a.tables[qualified] = binding
+}
+
+// IncludeColumn entfernt einen Spaltennamen synchronisiert aus dem
+// Ausschlussstand einer getragenen Bindung (`LH-FA-CFG-005`) — das
+// Gegenstück zu `ExcludeColumn`, dieselbe Aufrufer-Seite
+// (`IncludeColumnUseCase`). Eine nicht getragene Bindung und ein nicht
+// geführter Name bleiben ohne Wirkung; die Liste wird auch ohne Treffer
+// neu aufgebaut, damit kein Leser-Schnappschuss auf ihrem Speicher liegt.
+func (a *Assembler) IncludeColumn(qualified, column string) {
+	a.tablesMu.Lock()
+	defer a.tablesMu.Unlock()
+	binding, activated := a.tables[qualified]
+	if !activated {
+		return
+	}
+	binding.ExcludedColumns = removeExcluded(binding.ExcludedColumns, column)
+	a.tables[qualified] = binding
+}
+
+// appendExcluded trägt einen Spaltennamen an eine Ausschluss-Liste an und
+// liefert eine neue Liste: der Rückgabewert teilt keinen Speicher mit dem
+// übergebenen, ein Schnappschuss eines Lesers (`rowImage`) bleibt
+// dadurch gültig.
+func appendExcluded(excluded []string, column string) []string {
+	next := make([]string, 0, len(excluded)+1)
+	next = append(next, excluded...)
+	return append(next, column)
+}
+
+// removeExcluded liefert die Ausschluss-Liste ohne den übergebenen
+// Spaltennamen; der Rückgabewert ist neu aufgebaut, damit kein
+// Schnappschuss eines Lesers auf dem Speicher der übergebenen Liste liegt.
+func removeExcluded(excluded []string, column string) []string {
+	next := make([]string, 0, len(excluded))
+	for _, name := range excluded {
+		if name != column {
+			next = append(next, name)
+		}
+	}
+	return next
+}
+
+// containsColumn meldet, ob ein Spaltenname in einer Ausschluss-Liste
+// steht; die Liste trägt die Ausschlüsse einer Tabelle und bleibt klein,
+// die lineare Suche damit ohne eigenen Index.
+func containsColumn(columns []string, name string) bool {
+	for _, column := range columns {
+		if column == name {
+			return true
+		}
+	}
+	return false
 }
 
 // RemoveBinding entfernt eine `TableBinding` synchronisiert — die
@@ -414,8 +517,11 @@ func (a *Assembler) RemoveBinding(qualified string) {
 // Relation-Reihenfolge. Werte sind JSON-Strings — der Text-Stand der
 // Quelle geht unverändert in das Bild, ohne Typ-Interpretation; ein
 // nil-Wert trägt NULL oder unverändertes TOAST und ist Abwesenheit
-// (`LH-FA-CAP-008` Boundary).
-func rowImage(relation *decode.Relation, values []*string) ([]byte, error) {
+// (`LH-FA-CAP-008` Boundary). Ein in `excluded` geführter Spaltenname
+// wird ebenso übersprungen (`LH-FA-CFG-005`): derselbe
+// Abwesenheits-Vertrag wie beim nil-Wert, kein eigener Platzhalter
+// (`LH-FA-DAT-005` Boundary).
+func rowImage(relation *decode.Relation, values []*string, excluded []string) ([]byte, error) {
 	if values == nil {
 		return nil, nil
 	}
@@ -423,7 +529,7 @@ func rowImage(relation *decode.Relation, values []*string) ([]byte, error) {
 	image.WriteByte('{')
 	first := true
 	for i, column := range relation.Columns {
-		if i >= len(values) || values[i] == nil {
+		if i >= len(values) || values[i] == nil || containsColumn(excluded, column.Name) {
 			continue
 		}
 		name, err := json.Marshal(column.Name)

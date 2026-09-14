@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
@@ -82,10 +83,21 @@ func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 	}
 	t.Cleanup(columns.Close)
 
+	// Die laufende Erfassung desselben Prozesses: die Test-Tabelle ist
+	// gebunden, der real verarbeitete Antrag trägt seinen Ausschlussstand
+	// nach (`applyAdministrationRequest`, `ADR-0059` Teilfrage 3).
+	assembler, err := mapper.NewAssembler(sourceID, map[string]mapper.TableBinding{
+		"public." + testTable: {TableID: "tbl-admin-column-e2e", SchemaVersion: "sv-admin-column-e2e"},
+	}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
 	deps := administrationDeps{
 		requests:       requests,
 		excludeColumns: excludecolumn.NewExcludeColumnService(columns),
 		includeColumns: includecolumn.NewIncludeColumnService(columns),
+		assembler:      assembler,
 		log:            &recordingLog{},
 	}
 
@@ -109,6 +121,12 @@ func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 	if got := readAdministrationRequestStatus(t, ctx, pool, excludeID); got != "applied" {
 		t.Fatalf("Status exclude_column-Antrag = %q, wollen applied", got)
 	}
+	// Die Filterwirkung liegt an der laufenden Bindung: der reale Antrag
+	// trägt `secret` in den Ausschlussstand nach, ein folgender Change führt
+	// die Spalte nicht mehr.
+	if image := assemblerRowImage(t, assembler, 1, "public", testTable); image != `{"id":"1"}` {
+		t.Fatalf("Row Image nach dem real verarbeiteten exclude_column-Antrag = %s, wollen ohne den ausgeschlossenen Schlüssel secret", image)
+	}
 
 	// Negative-Fall: dieselbe Tabelle, eine nicht existierende Spalte.
 	var includeID string
@@ -129,6 +147,11 @@ func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 	}
 	if !strings.Contains(message, inbound.ErrSourceColumnMissing.Error()) {
 		t.Fatalf("Fehlertext = %q, wollen %q enthalten", message, inbound.ErrSourceColumnMissing.Error())
+	}
+	// Ein gescheiterter Einschluss-Antrag lässt den geführten Ausschluss
+	// stehen: der Fehler endet vor dem Assembler-Nachtrag.
+	if image := assemblerRowImage(t, assembler, 2, "public", testTable); image != `{"id":"1"}` {
+		t.Fatalf("Row Image nach dem gescheiterten include_column-Antrag = %s, wollen ohne den ausgeschlossenen Schlüssel secret", image)
 	}
 }
 
