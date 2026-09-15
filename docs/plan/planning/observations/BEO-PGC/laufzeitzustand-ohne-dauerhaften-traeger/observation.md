@@ -30,7 +30,7 @@ die Findings sind als Entscheidungen an Planner/Architect gereicht, Modul 8
 §Konflikt-Pfad). Der dauerhafte, tabellen-scoped Träger ist entschieden
 ([`ADR-0065`](../../../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)),
 der umsetzende Slice ist
-[`slice-075`](../../../open/slice-075-dauerhafter-ausschlussstand-wiedereinspielung.md)
+`slice-075`
 (`docs/plan/planning/open/`). Der Beleg trägt den Vorgang `review-slice-067`;
 `slice-067` und sein Review sind **eine** Gelegenheit, kein zweites
 Auftreten (Modul 6 §Ein Vorgang zählt einmal).

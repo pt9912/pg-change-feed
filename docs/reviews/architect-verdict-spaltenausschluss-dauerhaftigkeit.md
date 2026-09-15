@@ -35,7 +35,7 @@ ein Slice wechselt die Lifecycle-Ablage und ein Pfad-Link bräche mit)
   (Accepted, `Supersedes ADR-0059` — nur die Dauerhaftigkeits-Aussage aus
   Teilfrage 1 Option D und §Bestätigung), samt Index-Zeile in
   [`docs/plan/adr/README.md`](../plan/adr/README.md)
-- [`slice-075`](../plan/planning/open/slice-075-dauerhafter-ausschlussstand-wiedereinspielung.md)
+- ``slice-075``
   (`docs/plan/planning/open/`) — Adresse der Umsetzung
 - Registereintrag
   [`BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger`](../plan/planning/observations/BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/observation.md)
