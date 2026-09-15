@@ -14,7 +14,11 @@ Punkt 5 (die Naht ist zulässig und **design**-begründet, nicht zahlen-getriebe
 `spec/architecture.md` (die Schichten- und Ports-Ordnung, die den Adapter als
 austauschbare Schicht führt) · [`ADR-0041`](../../adr/0041-a-check-maschinenform-architekturpruefung.md)
 (die Schichten-Edges, die `.a-check.yml` prüft und die dieser Slice **nicht**
-ändert: die Naht liegt innerhalb des driven Adapters).
+ändert: die Naht liegt innerhalb des driven Adapters) ·
+[`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
+(die Neu-Bemessung der Rampe bei einem **Subjekt-Transfer** — er ist die
+Entscheidung, die dieser Slice ausgelöst hat, und ihre Umsetzung gehört in ihn,
+siehe §1 und §3).
 
 **Berührte Spec-Stellen:** — (die Sicht beschreibt Schichten und Ports; dieser
 Slice ändert **innerhalb** des driven Adapters, ohne Vertrag oder Sicht zu
@@ -45,6 +49,25 @@ und Zeilen-Übersetzung werden **reine Funktionen** mit eigenen Tests.
 Punkt 5): schmale Abhängigkeit statt konkreter Typ, Fehlerklassifikation als
 reine Funktion. Dass der Coverage-Wert danach steigt, ist **Folge** — wer ihn
 zum Zweck nimmt, hat den Gegenstand gewechselt.
+
+**In den Slice aufgenommen — die Umsetzung von [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md).**
+Die Naht **bewegt** die Messung: 138 Statements wandern aus dem Gegenstand der
+DB-Adapter-Coverage in den Unit-Gegenstand (788 → 650 bzw. 1679 → 1817), und die
+Quote der abfließenden Seite fällt (75,25 % → 73,38 %), weil 116 der verlagerten
+Statements überdurchschnittlich gedeckt waren. Der Architect hat das als
+**Subjekt-Transfer** entschieden und die Rampen neu bemessen (DB-Einstieg
+75 → 70 %, Unit-Einstieg 65 → 70 %, Endstufen unverändert 80 %); die Bindung,
+die das von einem Freibrief trennt: eine Quote, die bei **unverändertem** Nenner
+fällt, ist eine Regression — dann steht die Schwelle.
+
+**Warum das hierher gehört und nicht in einen eigenen Slice:** diese Umsetzung
+macht die DoD-Zeile „die reale Verdrahtung geht unverändert durch
+`make test-store`/`make test-replication` (Exit 0)" erst **wahr** — ohne sie
+bliebe der Slice dauerhaft rot an einer Kalibrierung, die seine eigene Bewegung
+ausgelöst hat —, und das WIP-Limit lässt keinen zweiten Slice daneben zu.
+**Wenn das Review das als Schnitt-Verstoß wertet**, ist der vorgesehene Weg die
+Rückführung `in-progress → next` mit einer Zerlegung in *Naht* und
+*Rampen-Nachzug*; §4 nennt die Rückführung vorab.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -104,7 +127,16 @@ vierter Punkt:
       über der netzlos prüfbaren Fläche) — nicht als Zweck: **69,70 % → 71,30 %**
       (`make coverage-gate`, beide Läufe Exit 0; Gegenstand 1679 → 1817
       Statements).
-- [x] `make gates` grün (Exit direkt, ungepiped) — Exit 0.
+- [ ] **Die Neu-Bemessung aus [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
+      ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
+      (`tools/harness/db-coverage.sh`, Zeile der Vorgabe), `THRESHOLD` 65 → 70
+      (`harness/mk/coverage.mk`), und die Träger-Doku
+      (`harness/sensors/db-adapter-coverage.md`,
+      `harness/sensors/coverage-gate.md`, `harness/README.md` §Sensors,
+      `AGENTS.md` §4) nennt die neuen Stufen. **Der Nenner-Nachweis** — die
+      Statement-Summe beider Gegenstände bleibt über den Zug hinweg konstant —
+      liegt als Beleg bei; er ist die Bedingung, unter der die Senkung trägt.
+- [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -130,6 +162,8 @@ Schnitt entsteht hier):
 | `internal/adapters/driven/postgresstorage/sqlexec/**` (`seam.go`, `statement.go`, `errors.go`, `translate.go`) | neu | die Naht selbst — `Executor`/`DB` mit minimalem `Rows` — plus die von ihr getragene Zeilen-Übersetzung und Fehlerklassifikation. Die Naht liegt **außerhalb** der drei DB-Pakete und damit im Gegenstand des Unit-Gates (`ADR-0071` Punkt 5) |
 | die sechs pool-tragenden Adapter-Dateien (`store`, `consumerstate`, `heartbeat`, `tableactivation`, `schemastore`, `administrationrequest`) · `schema.go` | refactor | sie hängen an `sqlexec.DB`/`sqlexec.Executor` statt an `*pgxpool.Pool`; `sqlexec.Classify`/`IsAbsent` ersetzen die inline gebildete Fehlerklasse und `errors.Is(err, pgx.ErrNoRows)` |
 | `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | neu | Fakes (`Rows`/`Row`/`Executor`) + die Fälle Erfolg · Fehlerklasse · Leerfall; **kein** Ersatz der realen DB-Tests |
+| `tools/harness/db-coverage.sh` · `harness/mk/coverage.mk` | update | die beiden Zahlen der Neu-Bemessung aus `ADR-0077`: `DB_COVERAGE_THRESHOLD` 75 → 70, `THRESHOLD` 65 → 70. Die Endstufen bleiben 80 |
+| `harness/sensors/db-adapter-coverage.md` · `harness/sensors/coverage-gate.md` · `harness/README.md` §Sensors · `AGENTS.md` §4 | update | sie tragen die geltenden Stufen und die Rampe; ohne sie stünde die Zahl im Werkzeug und eine andere in der Bindung |
 
 **Abweichung von der Träger-Liste — `postgresack/ack.go` und
 `receive/receive.go` bleiben unberührt.** Ihre Naht ist eine andere: beide
