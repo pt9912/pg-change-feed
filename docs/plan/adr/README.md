@@ -64,7 +64,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0051 | CI/CD-Pipeline über GitHub Actions | Accepted | 2026-09-13 | [0051-cicd-pipeline-github-actions.md](0051-cicd-pipeline-github-actions.md) |
 | ADR-0052 | Optionale YAML-Konfigurationsdatei ergänzt Umgebungsvariablen | Accepted | 2026-09-13 | [0052-optionale-yaml-konfigurationsdatei.md](0052-optionale-yaml-konfigurationsdatei.md) |
 | ADR-0053 | Retention-Löschausführung bindet an `cdc_admin` — `DELETE`-Grant-Ergänzung | Accepted | 2026-09-13 | [0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md](0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) |
-| ADR-0054 | Coverage-Gate mit Eskalationsklausel und Performance-Benchmark-Infrastruktur | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
+| ADR-0054 | Coverage-Gate und Benchmark-Infrastruktur (→ ADR-0071, teilweise) | Accepted | 2026-09-13 | [0054-coverage-gate-und-benchmark-infrastruktur.md](0054-coverage-gate-und-benchmark-infrastruktur.md) |
 | ADR-0055 | NATS-Change-Notification als Wecksignal (→ ADR-0056, teilweise) | Accepted | 2026-09-13 | [0055-nats-change-notification-wecksignal.md](0055-nats-change-notification-wecksignal.md) |
 | ADR-0056 | NATS-Wecksignal — tabellen-granulares Subjekt | Accepted | 2026-09-13 | [0056-nats-tabellen-granulares-subjekt.md](0056-nats-tabellen-granulares-subjekt.md) |
 | ADR-0057 | HTTP/JSON-API mit Token-Authn (Supersedes ADR-0020) | Accepted | 2026-09-14 | [0057-http-grpc-api.md](0057-http-grpc-api.md) |
@@ -81,3 +81,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0068 | Wegwerf-Harness-Clients (Supersedes ADR-0041, teilweise) | Accepted | 2026-09-14 | [0068-wegwerf-clients-begrenzte-import-berechtigung.md](0068-wegwerf-clients-begrenzte-import-berechtigung.md) |
 | ADR-0069 | commit-msg-Hook — einseitige Zusage (Supersedes ADR-0062; → ADR-0070, teilw.) | Accepted | 2026-09-15 | [0069-commit-msg-hook-einseitige-zusage.md](0069-commit-msg-hook-einseitige-zusage.md) |
 | ADR-0070 | Supersede-Reichweite und Klassengrenze (Supersedes ADR-0069, teilweise) | Accepted | 2026-09-15 | [0070-supersede-reichweite-und-klassengrenze.md](0070-supersede-reichweite-und-klassengrenze.md) |
+| ADR-0071 | Coverage-Gate — Messgegenstand netzlos prüfbare Fläche (Supersedes ADR-0054) | Accepted | 2026-09-15 | [0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md](0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
