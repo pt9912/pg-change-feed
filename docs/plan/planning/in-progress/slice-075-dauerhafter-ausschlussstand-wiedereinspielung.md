@@ -130,9 +130,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `cdc.changes`. Beleg: `make test-integration` Exit 0 (Zeile
       *Spaltenausschluss-Neustart-Beleg* in der Ausgabe).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-075.md`, `.harness/skills/reviewer.md`) —
+      Rollenwechsel nach Schritt 8 des Minimal Agent Workflow (`AGENTS.md` §6),
+      kein Self-Review (Modul 8).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge, Zeile `make
       test-integration`, um den neuen Beleg-Baustein ergänzt; dazu der
       `SPEC-019`-Fließtext zur Bedeutung des `applied`-Wertes (Folgepflicht
