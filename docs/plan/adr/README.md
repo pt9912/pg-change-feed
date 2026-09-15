@@ -79,4 +79,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0066 | Broadcaster — begrenzte Empfangswarteschlange (Supersedes ADR-0060; → ADR-0067) | Accepted | 2026-09-14 | [0066-broadcaster-begrenzte-empfangswarteschlange.md](0066-broadcaster-begrenzte-empfangswarteschlange.md) |
 | ADR-0067 | Publish-Einbindung — Fitness-Function-Zeile korrigiert (Supersedes ADR-0066) | Accepted | 2026-09-14 | [0067-capture-publish-einbindung-fitness-function-korrektur.md](0067-capture-publish-einbindung-fitness-function-korrektur.md) |
 | ADR-0068 | Wegwerf-Harness-Clients (Supersedes ADR-0041, teilweise) | Accepted | 2026-09-14 | [0068-wegwerf-clients-begrenzte-import-berechtigung.md](0068-wegwerf-clients-begrenzte-import-berechtigung.md) |
-| ADR-0069 | commit-msg-Hook — einseitige Zusage (Supersedes ADR-0062, teilweise) | Accepted | 2026-09-15 | [0069-commit-msg-hook-einseitige-zusage.md](0069-commit-msg-hook-einseitige-zusage.md) |
+| ADR-0069 | commit-msg-Hook — einseitige Zusage (Supersedes ADR-0062; → ADR-0070, teilw.) | Accepted | 2026-09-15 | [0069-commit-msg-hook-einseitige-zusage.md](0069-commit-msg-hook-einseitige-zusage.md) |
+| ADR-0070 | Supersede-Reichweite und Klassengrenze (Supersedes ADR-0069, teilweise) | Accepted | 2026-09-15 | [0070-supersede-reichweite-und-klassengrenze.md](0070-supersede-reichweite-und-klassengrenze.md) |
