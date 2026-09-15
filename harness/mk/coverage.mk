@@ -1,17 +1,18 @@
-# harness/mk/coverage.mk — Coverage-Gate-Fragment (ADR-0054).
+# harness/mk/coverage.mk — Coverage-Gate-Fragment (ADR-0054, ADR-0071).
 # Vierte Docker-Stage `coverage` (Dockerfile, nach `deps`) misst real die
-# Go-Test-Coverage ueber internal/...+cmd/... und prueft sie ueber
-# tools/coverage-gate.sh gegen THRESHOLD; haengt coverage-gate an
-# GATE_CHECKS — der Root-Aggregator faehrt es via make gates.
+# Go-Test-Coverage ueber die netzlos pruefbare Flaeche (internal/...+cmd/...
+# ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt) und
+# prueft sie ueber tools/coverage-gate.sh gegen THRESHOLD; haengt
+# coverage-gate an GATE_CHECKS — der Root-Aggregator faehrt es via make gates.
 #
-# Kalibrierungs-Bindung (harness/README.md §Sensors, ADR-0054): bootstrap-
+# Kalibrierungs-Bindung (harness/README.md §Sensors, ADR-0054 §(a)): bootstrap-
 # aware Gate. Die geltende Stufe ist THRESHOLD unten und steht ausschliesslich
-# an diesem Ort — die uebrigen Traeger nennen nur die Rampe (Einstieg 35 %,
+# an diesem Ort — die uebrigen Traeger nennen nur die Rampe (Einstieg 65 %,
 # Endstufe 80 % fest, Nutzer-Entscheidung). Hochschalt-Trigger „naechste
 # Coverage-Verbesserung schliesst die Luecke zur naechsten Stufe" bis 80 %
 # erreicht ist. Override: `make coverage-gate THRESHOLD=…`; Senkung unter die
 # hier geltende Stufe nur per ADR (AGENTS.md §3.6).
-THRESHOLD ?= 40
+THRESHOLD ?= 65
 
 # `--no-cache-filter coverage`: erzwingt die Neu-Auswertung der
 # Coverage-Stage, ohne den deps-Cache zu verlieren — ein stale Layer-Hash
@@ -19,7 +20,7 @@ THRESHOLD ?= 40
 NO_CACHE_FILTER_COV := --no-cache-filter coverage
 
 .PHONY: coverage-gate
-coverage-gate: ## Coverage-Schwelle (bootstrap-aware Rampe Einstieg 35 % -> Endstufe 80 %; Bindung in harness/README §Sensors)
+coverage-gate: ## Coverage-Schwelle (bootstrap-aware Rampe Einstieg 65 % -> Endstufe 80 %; Bindung in harness/README §Sensors)
 	docker build $(NO_CACHE_FILTER_COV) \
 	    --build-arg COVERAGE_THRESHOLD=$(THRESHOLD) \
 	    --target coverage -t pg-change-feed:coverage .

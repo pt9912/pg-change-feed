@@ -35,14 +35,18 @@ RUN apk add --no-cache protobuf-dev=31.1-r1 \
  && GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 \
  && GOBIN=/usr/local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 
-# --- coverage: Go-Test-Coverage ueber internal/...+cmd/..., Gate-Skript
-# gegen COVERAGE_THRESHOLD (ADR-0054; Kalibrierungs-Bindung harness/README.md
-# §Sensors). `-coverpkg` misst ueber die Paketgrenzen von internal/...+cmd/...
-# hinweg, sonst zaehlt nur paket-lokale Abdeckung. `test/integration/` bleibt
-# ausgeschlossen (eigene Black-Box-Paketwurzel gegen einen laufenden
-# Compose-Container, kein Unit-Coverage-Kandidat). Adapter-Tests ohne
-# gesetzte CDC_*_TEST_DSN-Variable skippen real in diesem netzlosen Lauf,
-# ohne den Build zu brechen. `pipefail` via SHELL, damit
+# --- coverage: Go-Test-Coverage ueber die netzlos pruefbare Flaeche des
+# Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071, ADR-0054;
+# Kalibrierungs-Bindung harness/README.md §Sensors). Die Flaeche ist
+# internal/...+cmd/... ohne die Pakete, deren Testlauf einen externen Dienst
+# voraussetzt — der Filter unten nennt die drei namentlich, die tragende
+# Regel ist die Eigenschaft, nicht die Liste; die Paketliste selbst kommt aus
+# `go list` und zieht neue Pakete mit. `-coverpkg` misst ueber die
+# Paketgrenzen hinweg, sonst zaehlt nur paket-lokale Abdeckung.
+# `test/integration/` bleibt ausgeschlossen (eigene Black-Box-Paketwurzel
+# gegen einen laufenden Compose-Container, kein Unit-Coverage-Kandidat).
+# Adapter-Tests ohne gesetzte CDC_*_TEST_DSN-Variable skippen real in diesem
+# netzlosen Lauf, ohne den Build zu brechen. `pipefail` via SHELL, damit
 # `go test … | tee` bzw. `go tool cover … | tee` den Exit-Code nicht maskiert. ---
 FROM deps AS coverage
 
@@ -58,11 +62,13 @@ ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
 
 COPY . .
 RUN mkdir -p /out && \
+    pkgs=( $(go list ./internal/... ./cmd/... \
+        | grep -vE '(^|/)(postgresstorage|postgresack|replication/receive)$') ) && \
     go test \
-        -coverpkg=./internal/...,./cmd/... \
+        -coverpkg="$(IFS=,; echo "${pkgs[*]}")" \
         -coverprofile=/out/coverage.out \
         -covermode=atomic \
-        ./internal/... ./cmd/... && \
+        "${pkgs[@]}" && \
     go tool cover -func=/out/coverage.out | tee /out/coverage-func.txt && \
     bash tools/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
 
