@@ -22,6 +22,8 @@ Läufe der betroffenen Slices)
 (dieses Zugs Entscheidung — die Aktivierung, ohne Ausnahme) ·
 [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
 (dieses Zugs zweite Entscheidung — die §3.5-Klasse) ·
+[`ADR-0074`](../plan/adr/0074-zitationsform-schwester-repo-hausform.md)
+(dieses Zugs dritte Entscheidung — die Hausform der Zitation) ·
 `AGENTS.md` §3.1, §3.5, §3.6, §3.7 · `.d-check.yml` (`modules`) ·
 `d-check.mk` (`DCHECK_DIGEST`) · `harness/sensors/docs-check.md` ·
 `docs/plan/adr/0051-cicd-pipeline-github-actions.md`,
@@ -29,8 +31,8 @@ Läufe der betroffenen Slices)
 betroffenen `Accepted` ADRs) · gepinntes Modul-Image `pt9912/d-check` `v0.75.0`
 (`internal/hexagon/core/rules/hostpaths.go`).
 
-**Erzeugte Artefakte dieses Zugs:** die Entscheidungen `ADR-0072` und
-`ADR-0073` + ihre Index-Zeilen; die Folgearbeit (Zielrolle, unten) ist als
+**Erzeugte Artefakte dieses Zugs:** die Entscheidungen `ADR-0072`, `ADR-0073`
+und `ADR-0074` + ihre Index-Zeilen; die Folgearbeit (Zielrolle, unten) ist als
 Adresse benannt, nicht als Slice angelegt — Priorisierung und Schnitt führt
 der Planner.
 
@@ -161,26 +163,43 @@ Leseordnung für die immutabile Entscheidungsschicht. Ein Commit allein genügt
 
 ## Verdikt 3 — Zielform des Zitats (eine für alle 31)
 
-Ein Schwester-Artefakt wird **besitzer-qualifiziert** zitiert:
+Die Form wird **nicht gesetzt, sondern am Bestand gemessen**. Das
+Schwester-Repo wird hier überwiegend als **blankes Inline-Code-Wort** genannt —
+`` `d-check` `` erscheint **89-mal** (ohne die vendored Baseline), sein
+Artefakt **relativ darin**, ohne Host- und ohne Owner-Präfix. Belegstellen:
 
-- **Kanonische Form:** `pt9912/<repo>` optional mit dem Pfad **im** Repo —
-  `pt9912/d-check/Dockerfile`, `pt9912/ai-harness-init/.golangci.yml`.
-- **Als Link** (wenn anklickbar gewünscht): zeigt auf
-  `https://github.com/pt9912/<repo>` bzw. `/blob/main/<pfad>` — die bereits
-  geübte Form (`docs/user/benutzerhandbuch.md` zitiert `pt9912/d-migrate` so).
-- **Zeilen-/Bereichs-Lokatoren** (`Zeilen 69–93`) werden durch den **stabilen
-  benannten Anker** ersetzt (`Stage coverage`, `bench:`-Target) — der Referent
-  bleibt derselbe.
+| Belegstelle | Form |
+|---|---|
+| `docs/plan/planning/done/welle-19-results.md` | `` `d-check`s `structure`-Regel `` · `` `d-check`s `commits`-Modul `` |
+| `docs/plan/planning/observations/BEO-PGC/plan-vorlagen-defekt/state.md` | `` (kein d-check-Modul erkennt Zeilen-Duplikate) `` |
+| `docs/plan/adr/0069-commit-msg-hook-einseitige-zusage.md` | `` `d-check`-Modul `commits` `` |
+
+**Hausform (kanonisch):** das blanke Repo-Wort plus der Pfad **relativ** darin —
+`` `d-check`s `tools/coverage-gate.sh` ``, `` im Repo `d-check`: `Dockerfile` ``.
+**Link-Variante:** wo ein anklickbarer Verweis gewünscht ist, zeigt er auf
+`https://github.com/pt9912/<repo>` (bzw. `/blob/main/<pfad>`) — wie
+`docs/user/benutzerhandbuch.md` es mit `d-migrate` tut; der Owner-Präfix ist
+damit verfügbar, aber nicht verlangt. **Zeilen-Lokatoren** (`Zeilen 69–93`)
+werden durch den stabilen benannten Anker ersetzt (`Stage coverage`,
+`bench:`-Target).
 
 Beispiel (Fence, weil die Regel sonst ihre eigene Aussage verletzte):
 
 ```text
 vorher:  Real geprüftes Vorbild: /Development/d-check/Makefile Zeile 84 (bench:-Target)
-nachher: Real geprüftes Vorbild: `pt9912/d-check/Makefile` (`bench:`-Target)
+nachher: Real geprüftes Vorbild: `d-check`s `Makefile` (`bench:`-Target)
 ```
 
-Eine Form, keine 31 Einzelfälle. Die drei Repos sind alle
-`github.com/pt9912/…` — die Form greift für alle.
+Eine Form, keine 31 Einzelfälle — und **belegbar aus dem Bestand** statt
+gesetzt. Dieser Punkt wurde nach der ersten Fassung nachgezogen: die nannte
+`pt9912/<repo>`; die Bestands-Messung zeigte die Hausform. Die Korrektur steht
+als Folge-ADR
+[`ADR-0074`](../plan/adr/0074-zitationsform-schwester-repo-hausform.md)
+(`Supersedes ADR-0072`, eine Klausel).
+
+**Gegenprobe (die Hausform selbst):** kein Vorkommen der Hausform steht *neben*
+einem host-lokalen Pfad, das nicht schon unter den 31 wäre — die Zählung bleibt
+**31**, es kommt keine 32. Stelle hinzu.
 
 ## Verdikt 4 — Legitimation der `done/`- und `docs/reviews/`-Korrekturen
 
@@ -246,7 +265,7 @@ Artefakt geprüft: `AGENTS.md` §3 endet bei §3.10 → **§3.11**.
 | Vorgang | Zielrolle | Art |
 |---|---|---|
 | `.d-check.yml`: `hostpaths` in `modules` | Implementer | ein Token, keine Ausnahme |
-| 31 Zitat-Korrekturen (2 lebend · 7 Belege · 11 `done/` · 11 `Accepted` ADRs) + 2 Skriptkommentare | Implementer | Doku, kein Produkt-Code |
+| 31 Zitat-Korrekturen (2 lebend · 7 Belege · 11 `done/` · 11 `Accepted` ADRs) + 2 Skriptkommentare — in der **Hausform** aus `ADR-0074` | Implementer | Doku, kein Produkt-Code |
 | je betroffener ADR **eine** §Geschichte-Zeile | Implementer | Belegform (`ADR-0073`) |
 | `AGENTS.md` §3.5 (Wortlaut) + §3.11 (Wortlaut aus `ADR-0072`) | Implementer | Hard Rules |
 | `docs/plan/adr/README.md` Kopf-Satz („Zitat-Korrektur ausgenommen") | Implementer | Index |
@@ -260,7 +279,8 @@ Artefakt geprüft: `AGENTS.md` §3 endet bei §3.10 → **§3.11**.
 
 - `docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md` (neu — die Aktivierung)
 - `docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md` (neu — die §3.5-Klasse)
-- `docs/plan/adr/README.md` (zwei neue Zeilen)
+- `docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md` (neu — die Hausform der Zitation)
+- `docs/plan/adr/README.md` (drei neue Zeilen; `ADR-0072`-Zeile annotiert)
 - diese Verdikt-Datei
 
 **Nicht geändert:** `.d-check.yml` (kein Modul aktiviert — Folgearbeit),
