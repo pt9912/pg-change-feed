@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -26,7 +27,7 @@ const administrationChannel = "cdc_administration"
 // in die Klasse `storage` über `outbound.ErrAdministrationStorage`.
 func administrationStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "administrationrequest: Datenbankfehler", "error", cause)
-	return fmt.Errorf("%w: %w", outbound.ErrAdministrationStorage, cause)
+	return sqlexec.Classify(outbound.ErrAdministrationStorage, cause)
 }
 
 // AdministrationRequestAdapter implementiert den
@@ -36,10 +37,11 @@ func administrationStorageFailure(ctx context.Context, log outbound.LogPort, cau
 // `ADR-0047`), getrennt vom dedizierten `LISTEN`-Verbindungsträger
 // (`AdministrationListener` unten) — Pool-Verbindungen sind für
 // `WaitForNotification` ungeeignet, weil jede Anfrage eine beliebige
-// Pool-Verbindung ziehen kann.
+// Pool-Verbindung ziehen kann. `db` trägt die Ausführung über die schmale
+// Naht (`sqlexec`, `ADR-0071` Punkt 5).
 type AdministrationRequestAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // NewAdministrationRequest baut den Verbindungspool gegen die Instanz und
@@ -56,42 +58,22 @@ func NewAdministrationRequest(ctx context.Context, dsn string, opts ...Option) (
 		return nil, administrationStorageFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "administrationrequest: verbunden")
-	return &AdministrationRequestAdapter{pool: pool, log: o.log}, nil
+	return &AdministrationRequestAdapter{db: pool, log: o.log}, nil
 }
 
 // Close schließt den Verbindungspool.
 func (a *AdministrationRequestAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.AdministrationRequestPort = (*AdministrationRequestAdapter)(nil)
 
 // ListPending liest die offenen Anträge in Anlage-Reihenfolge.
 func (a *AdministrationRequestAdapter) ListPending(ctx context.Context) ([]model.AdministrationRequest, error) {
-	rows, err := a.pool.Query(ctx, queries.SelectPendingAdministrationRequests)
-	if err != nil {
-		return nil, administrationStorageFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	requests := make([]model.AdministrationRequest, 0)
-	for rows.Next() {
-		var id, source, schema, table, column, kind string
-		if err := rows.Scan(&id, &source, &schema, &table, &column, &kind); err != nil {
-			return nil, administrationStorageFailure(ctx, a.log, err)
-		}
-		request, err := model.NewAdministrationRequest(
-			model.AdministrationRequestID(id), model.SourceID(source), schema, table, column, model.AdministrationRequestKind(kind),
-		)
-		if err != nil {
-			return nil, err
-		}
-		requests = append(requests, request)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, administrationStorageFailure(ctx, a.log, err)
-	}
-	return requests, nil
+	return sqlexec.ReadPendingRequests(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectPendingAdministrationRequests,
+		Fail: func(cause error) error { return administrationStorageFailure(ctx, a.log, cause) },
+	})
 }
 
 // MarkApplied vermerkt einen erfolgreich verarbeiteten Antrag; die
@@ -101,7 +83,7 @@ func (a *AdministrationRequestAdapter) MarkApplied(ctx context.Context, id model
 	if id == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
-	if _, err := a.pool.Exec(ctx, queries.UpdateAdministrationRequestApplied, string(id)); err != nil {
+	if _, err := a.db.Exec(ctx, queries.UpdateAdministrationRequestApplied, string(id)); err != nil {
 		return administrationStorageFailure(ctx, a.log, err)
 	}
 	a.log.Info(ctx, "administrationrequest: Antrag erledigt", "request_id", id)
@@ -113,7 +95,7 @@ func (a *AdministrationRequestAdapter) MarkFailed(ctx context.Context, id model.
 	if id == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
-	if _, err := a.pool.Exec(ctx, queries.UpdateAdministrationRequestFailed, string(id), message); err != nil {
+	if _, err := a.db.Exec(ctx, queries.UpdateAdministrationRequestFailed, string(id), message); err != nil {
 		return administrationStorageFailure(ctx, a.log, err)
 	}
 	a.log.Warn(ctx, "administrationrequest: Antrag gescheitert", "request_id", id, "error", message)

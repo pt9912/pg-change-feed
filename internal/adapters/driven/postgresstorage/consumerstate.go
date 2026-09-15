@@ -2,15 +2,13 @@ package postgresstorage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"math"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -26,10 +24,11 @@ import (
 // (`ADR-0043`) — die DDL des Store-Adapters (schema.sql) trägt die
 // Consumer-State-Tabellen nicht. `log` trägt die strukturierte
 // Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
+// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`. `db` trägt die
+// Ausführung über die schmale Naht (`sqlexec`, `ADR-0071` Punkt 5).
 type PostgresConsumerStateAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // NewConsumerState baut den Verbindungspool gegen die Instanz, die Quelle
@@ -47,7 +46,7 @@ func NewConsumerState(ctx context.Context, dsn string, opts ...Option) (*Postgre
 		return nil, stateStorageFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "consumerstate: verbunden")
-	return &PostgresConsumerStateAdapter{pool: pool, log: o.log}, nil
+	return &PostgresConsumerStateAdapter{db: pool, log: o.log}, nil
 }
 
 // stateStorageFailure trägt die Übersetzungsverantwortung dieses Adapters
@@ -62,12 +61,12 @@ func NewConsumerState(ctx context.Context, dsn string, opts ...Option) (*Postgre
 // (`store.go`).
 func stateStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "consumerstate: Datenbankfehler", "error", cause)
-	return fmt.Errorf("%w: %w", outbound.ErrConsumerStateStorage, cause)
+	return sqlexec.Classify(outbound.ErrConsumerStateStorage, cause)
 }
 
 // Close schließt den Verbindungspool.
 func (a *PostgresConsumerStateAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.ConsumerStatePort = (*PostgresConsumerStateAdapter)(nil)
@@ -84,11 +83,14 @@ func (a *PostgresConsumerStateAdapter) Register(ctx context.Context, consumer mo
 	if err != nil {
 		return false, err
 	}
-	tag, err := a.pool.Exec(ctx, queries.InsertConsumer, string(valid.ID), valid.Name)
+	registered, err := sqlexec.RegisterConsumer(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.InsertConsumer,
+		Args: []any{string(valid.ID), valid.Name},
+		Fail: func(cause error) error { return stateStorageFailure(ctx, a.log, cause) },
+	})
 	if err != nil {
-		return false, stateStorageFailure(ctx, a.log, err)
+		return false, err
 	}
-	registered := tag.RowsAffected() == 1
 	if registered {
 		a.log.Info(ctx, "consumerstate: Consumer registriert", "consumer_id", valid.ID)
 	}
@@ -105,23 +107,14 @@ func (a *PostgresConsumerStateAdapter) Position(ctx context.Context, consumer mo
 	if consumer == "" {
 		return model.ConsumerPosition{}, domainerrors.ErrEmptyIdentifier
 	}
-	var source string
-	var offset int64
 	// Der Lese trägt die Positions-Sperre nicht: er läuft als eigener
 	// Aufruf ohne Transaktion, die Zeilen-Sperre der Bestätigung
 	// (SelectConsumerPositionLocked) hält ihn nicht auf.
-	err := a.pool.QueryRow(ctx, queries.SelectConsumerPosition, string(consumer)).Scan(&source, &offset)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.ConsumerPosition{}, nil
-		}
-		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
-	}
-	position, err := mapper.ToPosition(source, offset)
-	if err != nil {
-		return model.ConsumerPosition{}, err
-	}
-	return model.ConsumerPosition{ConsumerID: consumer, Position: position}, nil
+	return sqlexec.ReadConsumerPosition(ctx, a.db, consumer, sqlexec.Statement{
+		SQL:  queries.SelectConsumerPosition,
+		Args: []any{string(consumer)},
+		Fail: func(cause error) error { return stateStorageFailure(ctx, a.log, cause) },
+	})
 }
 
 // Acknowledge trägt die bestätigte Position fort (`LH-FA-CON-004`): der
@@ -147,7 +140,7 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 		return model.ConsumerPosition{}, mapper.ErrPositionOutOfRange
 	}
 
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
@@ -155,7 +148,7 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 
 	var registered int
 	if err := tx.QueryRow(ctx, queries.SelectConsumer, string(position.ConsumerID)).Scan(&registered); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if sqlexec.IsAbsent(err) {
 			return model.ConsumerPosition{}, outbound.ErrConsumerUnregistered
 		}
 		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
@@ -164,7 +157,7 @@ func (a *PostgresConsumerStateAdapter) Acknowledge(ctx context.Context, position
 	var source string
 	var offset int64
 	err = tx.QueryRow(ctx, queries.SelectConsumerPositionLocked, string(position.ConsumerID)).Scan(&source, &offset)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil && !sqlexec.IsAbsent(err) {
 		return model.ConsumerPosition{}, stateStorageFailure(ctx, a.log, err)
 	}
 	stored, err := storedPosition(position.ConsumerID, source, offset, err)
@@ -200,47 +193,26 @@ func (a *PostgresConsumerStateAdapter) Positions(ctx context.Context, source mod
 	if source == "" {
 		return nil, domainerrors.ErrEmptyIdentifier
 	}
-	rows, err := a.pool.Query(ctx, queries.SelectConsumerPositionsBySource, string(source))
-	if err != nil {
-		return nil, stateStorageFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	positions := make([]model.ConsumerPosition, 0)
-	for rows.Next() {
-		var consumerID string
-		var offset int64
-		if err := rows.Scan(&consumerID, &offset); err != nil {
-			return nil, stateStorageFailure(ctx, a.log, err)
-		}
-		acknowledged, err := mapper.ToPosition(string(source), offset)
-		if err != nil {
-			return nil, err
-		}
-		positions = append(positions, model.ConsumerPosition{
-			ConsumerID: model.ConsumerID(consumerID),
-			Position:   acknowledged,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, stateStorageFailure(ctx, a.log, err)
-	}
-	return positions, nil
+	return sqlexec.ReadConsumerPositions(ctx, a.db, source, sqlexec.Statement{
+		SQL:  queries.SelectConsumerPositionsBySource,
+		Args: []any{string(source)},
+		Fail: func(cause error) error { return stateStorageFailure(ctx, a.log, cause) },
+	})
 }
 
 // storedPosition trägt den gesperrten Fortschritt aus dem Lese: eine
 // Zeile liest sich als Quellposition, ihre Abwesenheit als Nullwert des
-// Consumers — der Träger der ersten Bestätigung. `stateStorageFailure`
-// hier läuft ohne Port-Log (kein `log`/`ctx` in dieser Funktionssignatur):
+// Consumers — der Träger der ersten Bestätigung. `sqlexec.Classify` hier
+// läuft ohne Port-Log (kein `log`/`ctx` in dieser Funktionssignatur):
 // der einzige Fehlerpfad ist ein bereits von `Acknowledge` gelesener
 // Scan-Fehler, dessen Log-Aufruf am Lese-Aufruf selbst nicht dupliziert
 // werden soll — siehe Aufrufstelle.
 func storedPosition(consumer model.ConsumerID, source string, offset int64, scanErr error) (model.ConsumerPosition, error) {
-	if errors.Is(scanErr, pgx.ErrNoRows) {
+	if sqlexec.IsAbsent(scanErr) {
 		return model.NewConsumerPosition(consumer)
 	}
 	if scanErr != nil {
-		return model.ConsumerPosition{}, fmt.Errorf("%w: %w", outbound.ErrConsumerStateStorage, scanErr)
+		return model.ConsumerPosition{}, sqlexec.Classify(outbound.ErrConsumerStateStorage, scanErr)
 	}
 	stored, err := mapper.ToPosition(source, offset)
 	if err != nil {
@@ -258,7 +230,7 @@ func (a *PostgresConsumerStateAdapter) Remove(ctx context.Context, consumer mode
 	if consumer == "" {
 		return false, domainerrors.ErrEmptyIdentifier
 	}
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return false, stateStorageFailure(ctx, a.log, err)
 	}

@@ -2,13 +2,11 @@ package postgresstorage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -25,10 +23,11 @@ import (
 // Re-Versionierung im laufenden Erfassungspfad noch die
 // Typ-Kompatibilitätsprüfung gehören zu ihm. `log` trägt die strukturierte
 // Protokollierung über den injizierten `LogPort` (`LH-QA-OPS-004`,
-// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
+// `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`. `db` trägt die
+// Ausführung über die schmale Naht (`sqlexec`, `ADR-0071` Punkt 5).
 type PostgresSchemaStoreAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // NewSchemaStore baut den Verbindungspool gegen die Instanz und meldet
@@ -45,7 +44,7 @@ func NewSchemaStore(ctx context.Context, dsn string, opts ...Option) (*PostgresS
 		return nil, schemaStoreFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "schemastore: verbunden")
-	return &PostgresSchemaStoreAdapter{pool: pool, log: o.log}, nil
+	return &PostgresSchemaStoreAdapter{db: pool, log: o.log}, nil
 }
 
 // schemaStoreFailure trägt die Übersetzungsverantwortung dieses Adapters
@@ -55,12 +54,12 @@ func NewSchemaStore(ctx context.Context, dsn string, opts ...Option) (*PostgresS
 // `LH-QA-REL-001.a`) trägt dieser Port nicht.
 func schemaStoreFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "schemastore: Datenbankfehler", "error", cause)
-	return fmt.Errorf("%w: %w", outbound.ErrSchemaStoreStorage, cause)
+	return sqlexec.Classify(outbound.ErrSchemaStoreStorage, cause)
 }
 
 // Close schließt den Verbindungspool.
 func (a *PostgresSchemaStoreAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.SchemaStorePort = (*PostgresSchemaStoreAdapter)(nil)
@@ -79,9 +78,9 @@ func (a *PostgresSchemaStoreAdapter) CurrentVersion(ctx context.Context, table m
 	}
 	var id string
 	var version int64
-	err := a.pool.QueryRow(ctx, queries.SelectCurrentSchemaVersion, string(table)).Scan(&id, &version)
+	err := a.db.QueryRow(ctx, queries.SelectCurrentSchemaVersion, string(table)).Scan(&id, &version)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if sqlexec.IsAbsent(err) {
 			return model.SchemaVersion{}, false, nil
 		}
 		return model.SchemaVersion{}, false, schemaStoreFailure(ctx, a.log, err)
@@ -112,7 +111,7 @@ func (a *PostgresSchemaStoreAdapter) RegisterVersion(ctx context.Context, versio
 	if version.ID != schema.VersionID {
 		return false, outbound.ErrSchemaVersionMismatch
 	}
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return false, schemaStoreFailure(ctx, a.log, err)
 	}
@@ -155,26 +154,9 @@ func (a *PostgresSchemaStoreAdapter) TableSchema(ctx context.Context, versionID 
 	if versionID == "" {
 		return model.TableSchema{}, domainerrors.ErrEmptyIdentifier
 	}
-	rows, err := a.pool.Query(ctx, queries.SelectTableSchemaColumns, string(versionID))
-	if err != nil {
-		return model.TableSchema{}, schemaStoreFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	var columns []model.Column
-	for rows.Next() {
-		var name string
-		var oid int64
-		if err := rows.Scan(&name, &oid); err != nil {
-			return model.TableSchema{}, schemaStoreFailure(ctx, a.log, err)
-		}
-		columns = append(columns, model.Column{Name: name, OID: model.ColumnOID(oid)})
-	}
-	if err := rows.Err(); err != nil {
-		return model.TableSchema{}, schemaStoreFailure(ctx, a.log, err)
-	}
-	if len(columns) == 0 {
-		return model.TableSchema{}, outbound.ErrSchemaVersionUnknown
-	}
-	return model.NewTableSchema(versionID, columns)
+	return sqlexec.ReadTableSchema(ctx, a.db, versionID, sqlexec.Statement{
+		SQL:  queries.SelectTableSchemaColumns,
+		Args: []any{string(versionID)},
+		Fail: func(cause error) error { return schemaStoreFailure(ctx, a.log, cause) },
+	})
 }

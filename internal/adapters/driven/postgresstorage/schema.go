@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 )
 
 // schema.sql trägt die CDC-Tabellen-DDL (Pflichtenheft §2); sie wird
@@ -25,9 +25,11 @@ func SchemaSQL() string {
 // ändert diesen nicht. Der Aufrufer trägt die Registrierung von Quelle,
 // Tabelle und Schema-Version vor der ersten Persistenz — die
 // Fremdschlüssel der DDL setzen sie voraus (schema.sql, Kopf-Kommentar).
-func ApplySchema(ctx context.Context, pool *pgxpool.Pool) error {
+// Der Träger kommt über die schmale Ausführungs-Naht (`sqlexec`,
+// `ADR-0071` Punkt 5) — der reale Pool erfüllt sie ohne Vermittler.
+func ApplySchema(ctx context.Context, exec sqlexec.Executor) error {
 	for _, statement := range statements(schemaSQL) {
-		if _, err := pool.Exec(ctx, statement); err != nil {
+		if _, err := exec.Exec(ctx, statement); err != nil {
 			return err
 		}
 	}

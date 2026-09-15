@@ -2,11 +2,11 @@ package postgresstorage
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -21,9 +21,11 @@ import (
 // Abgrenzung wie bei den Consumer-State-Tabellen). `log` trägt die
 // strukturierte Protokollierung über den injizierten `LogPort`
 // (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`.
+// `db` trägt die Ausführung über die schmale Naht (`sqlexec`, `ADR-0071`
+// Punkt 5).
 type PostgresHeartbeatAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // NewHeartbeat baut den Verbindungspool gegen die Instanz, die Quelle und
@@ -44,7 +46,7 @@ func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHea
 		return nil, heartbeatStorageFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "heartbeat: verbunden")
-	return &PostgresHeartbeatAdapter{pool: pool, log: o.log}, nil
+	return &PostgresHeartbeatAdapter{db: pool, log: o.log}, nil
 }
 
 // heartbeatStorageFailure trägt die Übersetzungsverantwortung dieses
@@ -57,12 +59,12 @@ func NewHeartbeat(ctx context.Context, dsn string, opts ...Option) (*PostgresHea
 // wie `storageFailure` (`store.go`).
 func heartbeatStorageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "heartbeat: Datenbankfehler", "error", cause)
-	return fmt.Errorf("%w: %w", outbound.ErrHeartbeatStorage, cause)
+	return sqlexec.Classify(outbound.ErrHeartbeatStorage, cause)
 }
 
 // Close schließt den Verbindungspool.
 func (a *PostgresHeartbeatAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.HeartbeatPort = (*PostgresHeartbeatAdapter)(nil)
@@ -78,7 +80,7 @@ func (a *PostgresHeartbeatAdapter) Beat(ctx context.Context, source model.Source
 	if source == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
-	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
+	if _, err := a.db.Exec(ctx, queries.UpsertHeartbeat, string(source)); err != nil {
 		return heartbeatStorageFailure(ctx, a.log, err)
 	}
 	a.log.Debug(ctx, "heartbeat: Lebenszeichen geschrieben", "source", source)
@@ -98,7 +100,7 @@ func (a *PostgresHeartbeatAdapter) Fault(ctx context.Context, source model.Sourc
 	if err != nil {
 		return err
 	}
-	if _, err := a.pool.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
+	if _, err := a.db.Exec(ctx, queries.UpsertHeartbeatFault, string(source), string(validated)); err != nil {
 		return heartbeatStorageFailure(ctx, a.log, err)
 	}
 	a.log.Warn(ctx, "heartbeat: Fehlerzustand gemeldet", "source", source, "class", validated)

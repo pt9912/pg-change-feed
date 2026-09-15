@@ -2,14 +2,12 @@ package postgresstorage
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
@@ -22,10 +20,12 @@ import (
 // Adapterdetail (`ADR-0032`, rein Go, CGO-frei). `log` trägt die
 // strukturierte Protokollierung über den injizierten `LogPort`
 // (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default `outbound.NoopLog`,
-// kein Paket-globaler Logging-Zustand.
+// kein Paket-globaler Logging-Zustand. `db` trägt die Ausführung über die
+// schmale Naht (`sqlexec`, `ADR-0071` Punkt 5) — der Adapter baut den
+// konkreten Pool in `New`, hängt aber an keiner seiner Methoden.
 type PostgresChangeStoreAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // New baut den Verbindungspool gegen die CDC-Instanz und meldet eine
@@ -43,7 +43,7 @@ func New(ctx context.Context, dsn string, opts ...Option) (*PostgresChangeStoreA
 		return nil, storageFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "changestore: verbunden")
-	return &PostgresChangeStoreAdapter{pool: pool, log: o.log}, nil
+	return &PostgresChangeStoreAdapter{db: pool, log: o.log}, nil
 }
 
 // storageFailure trägt die Übersetzungsverantwortung des Adapters
@@ -56,14 +56,16 @@ func New(ctx context.Context, dsn string, opts ...Option) (*PostgresChangeStoreA
 // Übersetzungspunkt dieses Adapters *und* von `tableactivation.go`
 // (gleiches Paket), kein Log je Aufrufstelle; `log`/`ctx` reicht jeder
 // Aufrufer explizit durch (Konstruktoren: `o.log`, Methoden: `a.log`).
+// Die Klassen-Bildung selbst trägt `sqlexec.Classify` — dieselbe rein
+// prüfbare Funktion für jede Naht-Stelle dieses Pakets.
 func storageFailure(ctx context.Context, log outbound.LogPort, cause error) error {
 	log.Error(ctx, "postgresstorage: Datenbankfehler", "error", cause)
-	return fmt.Errorf("%w: %w", outbound.ErrStorage, cause)
+	return sqlexec.Classify(outbound.ErrStorage, cause)
 }
 
 // Close schließt den Verbindungspool.
 func (a *PostgresChangeStoreAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.ChangeStorePort = (*PostgresChangeStoreAdapter)(nil)
@@ -99,7 +101,7 @@ func (a *PostgresChangeStoreAdapter) PersistTransaction(ctx context.Context, tra
 		return err
 	}
 
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return storageFailure(ctx, a.log, err)
 	}
@@ -147,23 +149,17 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 		return nil, err
 	}
 
-	rows, err := a.pool.Query(ctx, queries.SelectChanges,
-		string(query.Source),
-		positionArgument(query.Start),
-		positionArgument(query.End),
-		tableArgument(query.Table),
-		query.Limit,
-	)
-	if err != nil {
-		return nil, storageFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	records, err := collectRecords(ctx, a.log, rows)
-	if err != nil {
-		return nil, err
-	}
-	return records, nil
+	return sqlexec.ReadChanges(ctx, a.db, sqlexec.Statement{
+		SQL: queries.SelectChanges,
+		Args: []any{
+			string(query.Source),
+			positionArgument(query.Start),
+			positionArgument(query.End),
+			tableArgument(query.Table),
+			query.Limit,
+		},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
 }
 
 // DeleteChanges entfernt physisch genau die übergebenen Changes
@@ -185,7 +181,7 @@ func (a *PostgresChangeStoreAdapter) DeleteChanges(ctx context.Context, changeID
 		ids[i] = string(id)
 	}
 
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return storageFailure(ctx, a.log, err)
 	}
@@ -248,52 +244,4 @@ func tableArgument(table *model.SourceTableID) any {
 		return nil
 	}
 	return string(*table)
-}
-
-// collectRecords trägt die Ergebnis-Zeilen in ChangeRecords; die
-// Commit-Position kommt von der Transaktion, der Change aus seiner Zeile.
-// Lese- und Scan-Fehler des Treibers tragen die Klasse `storage`; die
-// Domänen-Konstruktoren tragen ihre Invarianten-Sentinels selbst. `ctx`/
-// `log` reicht `ReadChanges` durch — diese Funktion trägt keinen
-// eigenen Empfänger.
-func collectRecords(ctx context.Context, log outbound.LogPort, rows pgx.Rows) ([]outbound.ChangeRecord, error) {
-	records := make([]outbound.ChangeRecord, 0)
-	for rows.Next() {
-		var row mapper.ChangeRow
-		var source string
-		var commitPosition int64
-		var committedAt time.Time
-		if err := rows.Scan(
-			&source,
-			&commitPosition,
-			&row.ChangeID,
-			&row.TransactionID,
-			&row.SourceTableID,
-			&row.Sequence,
-			&row.Operation,
-			&row.OldData,
-			&row.NewData,
-			&row.SchemaVersion,
-			&committedAt,
-		); err != nil {
-			return nil, storageFailure(ctx, log, err)
-		}
-		position, err := mapper.ToPosition(source, commitPosition)
-		if err != nil {
-			return nil, err
-		}
-		change, err := mapper.ToChange(row)
-		if err != nil {
-			return nil, err
-		}
-		records = append(records, outbound.ChangeRecord{
-			Position:    position,
-			Change:      change,
-			CommittedAt: model.NewTimePoint(committedAt.UnixNano()),
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, storageFailure(ctx, log, err)
-	}
-	return records, nil
 }

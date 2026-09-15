@@ -1,0 +1,728 @@
+// Die Tests dieses Pakets laufen netzlos: sie fahren die Verklebung der
+// Zeilen-Übersetzung gegen einen Träger, der die Naht erfüllt — den
+// Query-/Exec-Aufruf, die Scan-Schleife, den Leerfall und den Fehlerpfad.
+// Sie sind ausdrücklich **kein** Ersatz der realen Datenbank-Tests: das SQL
+// prüft weiterhin der PostgreSQL der Adapter-Tests (`make test-store`,
+// `make test-replication`).
+package sqlexec_test
+
+import (
+	"context"
+	stderrors "errors"
+	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
+
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
+)
+
+// --- Fakes der Naht ---
+
+// call trägt einen beobachteten Aufruf des Trägers: die Anweisung und ihre
+// Argumente — der Beleg, dass die Übersetzung den Query-/Exec-Aufruf
+// tatsächlich absetzt.
+type call struct {
+	sql  string
+	args []any
+}
+
+// fakeRows erfüllt `pgx.Rows` (und damit `sqlexec.Rows`) aus Werten im
+// Speicher. `scanErrs` trägt je Zeilenindex einen Scan-Fehler, `iterErr` den
+// Iterations-Fehler (`rows.Err()`).
+type fakeRows struct {
+	rows     [][]any
+	scanErrs map[int]error
+	iterErr  error
+	index    int
+	closed   bool
+}
+
+func (r *fakeRows) Next() bool {
+	if r.index < len(r.rows) {
+		r.index++
+		return true
+	}
+	return false
+}
+
+func (r *fakeRows) Scan(dest ...any) error {
+	if err, ok := r.scanErrs[r.index-1]; ok {
+		return err
+	}
+	if r.index == 0 || r.index > len(r.rows) {
+		return fmt.Errorf("fake: Scan ohne Zeile")
+	}
+	row := r.rows[r.index-1]
+	if len(dest) != len(row) {
+		return fmt.Errorf("fake: %d Ziele für %d Werte", len(dest), len(row))
+	}
+	for i := range dest {
+		if err := assign(dest[i], row[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *fakeRows) Err() error                    { return r.iterErr }
+func (r *fakeRows) Close()                        { r.closed = true }
+func (r *fakeRows) CommandTag() pgconn.CommandTag { return pgconn.CommandTag{} }
+func (r *fakeRows) FieldDescriptions() []pgconn.FieldDescription {
+	return nil
+}
+func (r *fakeRows) Values() ([]any, error) { return nil, nil }
+func (r *fakeRows) RawValues() [][]byte    { return nil }
+func (r *fakeRows) Conn() *pgx.Conn        { return nil }
+func (r *fakeRows) TypeMap() *pgtype.Map   { return nil }
+
+// fakeRow erfüllt `pgx.Row` aus Werten im Speicher oder aus einem
+// vorgegebenen Fehler (etwa `pgx.ErrNoRows`).
+type fakeRow struct {
+	values []any
+	err    error
+}
+
+func (r *fakeRow) Scan(dest ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+	if len(dest) != len(r.values) {
+		return fmt.Errorf("fake: %d Ziele für %d Werte", len(dest), len(r.values))
+	}
+	for i := range dest {
+		if err := assign(dest[i], r.values[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// fakeExecutor erfüllt `sqlexec.Executor` und nimmt jeden Aufruf auf.
+type fakeExecutor struct {
+	rows     *fakeRows
+	queryErr error
+	row      *fakeRow
+	tag      pgconn.CommandTag
+	execErr  error
+
+	queries    []call
+	queryRows  []call
+	executions []call
+	closed     bool
+}
+
+func (e *fakeExecutor) Query(_ context.Context, sql string, args ...any) (pgx.Rows, error) {
+	e.queries = append(e.queries, call{sql: sql, args: args})
+	if e.queryErr != nil {
+		return nil, e.queryErr
+	}
+	return e.rows, nil
+}
+
+func (e *fakeExecutor) QueryRow(_ context.Context, sql string, args ...any) pgx.Row {
+	e.queryRows = append(e.queryRows, call{sql: sql, args: args})
+	return e.row
+}
+
+func (e *fakeExecutor) Exec(_ context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+	e.executions = append(e.executions, call{sql: sql, args: args})
+	if e.execErr != nil {
+		return pgconn.CommandTag{}, e.execErr
+	}
+	return e.tag, nil
+}
+
+func (e *fakeExecutor) Begin(context.Context) (pgx.Tx, error) {
+	return nil, stderrors.New("fake: kein Transaktions-Träger in dieser Naht")
+}
+
+func (e *fakeExecutor) Close() { e.closed = true }
+
+// assign trägt einen Wert in das Ziel eines Scan-Aufrufs — das Verhalten des
+// Treibers, das die Fakes nachbilden.
+func assign(dest any, value any) error {
+	target := reflect.ValueOf(dest)
+	if target.Kind() != reflect.Pointer || target.IsNil() {
+		return fmt.Errorf("fake: Scan-Ziel ohne Zeiger")
+	}
+	if value == nil {
+		target.Elem().Set(reflect.Zero(target.Elem().Type()))
+		return nil
+	}
+	source := reflect.ValueOf(value)
+	if !source.Type().AssignableTo(target.Elem().Type()) {
+		return fmt.Errorf("fake: %s nicht nach %s zuweisbar", source.Type(), target.Elem().Type())
+	}
+	target.Elem().Set(source)
+	return nil
+}
+
+// --- Zusicherungen der Naht selbst ---
+
+func TestClassifyCarriesClassAndCause(t *testing.T) {
+	class := stderrors.New("Klasse storage")
+	cause := stderrors.New("Verbindung abgelehnt")
+
+	classified := sqlexec.Classify(class, cause)
+
+	if !stderrors.Is(classified, class) {
+		t.Fatalf("errors.Is(err, class) = false, Fehler: %v", classified)
+	}
+	if !stderrors.Is(classified, cause) {
+		t.Fatalf("errors.Is(err, cause) = false, Fehler: %v", classified)
+	}
+}
+
+func TestIsAbsentDistinguishesAbsenceFromErrors(t *testing.T) {
+	if !sqlexec.IsAbsent(pgx.ErrNoRows) {
+		t.Fatal("pgx.ErrNoRows muss als Abwesenheit gelten")
+	}
+	if !sqlexec.IsAbsent(fmt.Errorf("umhüllt: %w", pgx.ErrNoRows)) {
+		t.Fatal("die Abwesenheit muss durch die Wrappung lesbar bleiben")
+	}
+	if sqlexec.IsAbsent(stderrors.New("Verbindung abgelehnt")) {
+		t.Fatal("ein Treiber-Fehler ist keine Abwesenheit")
+	}
+	if sqlexec.IsAbsent(nil) {
+		t.Fatal("kein Fehler ist keine Abwesenheit")
+	}
+}
+
+// --- Zeilen-Übersetzung ---
+
+func changeRow(id string, sequence int64, position int64) []any {
+	return []any{
+		"src-1",
+		position,
+		id,
+		"tx-1",
+		"tbl-1",
+		sequence,
+		string(model.OperationInsert),
+		[]byte(nil),
+		[]byte(`{"name":"a"}`),
+		"sv-1",
+		time.Unix(100, 0),
+	}
+}
+
+// failRecorder trägt die Ursachen, die der Aufrufer klassifizieren würde —
+// die Stelle, an der die Adapter ihre Klasse und ihren Log führen.
+type failRecorder struct {
+	class  error
+	causes []error
+}
+
+func (f *failRecorder) fail(cause error) error {
+	f.causes = append(f.causes, cause)
+	return sqlexec.Classify(f.class, cause)
+}
+
+func TestReadChangesIssuesQueryAndTranslatesRows(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		changeRow("chg-1", 1, 42),
+		changeRow("chg-2", 2, 43),
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	records, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Args: []any{"src-1", int64(1), nil, nil, 100},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+
+	if len(exec.queries) != 1 {
+		t.Fatalf("erwartete 1 Query-Aufruf, gesehen %d", len(exec.queries))
+	}
+	if exec.queries[0].sql != "SELECT changes" {
+		t.Fatalf("SQL = %q", exec.queries[0].sql)
+	}
+	if !reflect.DeepEqual(exec.queries[0].args, []any{"src-1", int64(1), nil, nil, 100}) {
+		t.Fatalf("Argumente = %v", exec.queries[0].args)
+	}
+	if !exec.rows.closed {
+		t.Fatal("die Ergebnis-Menge muss geschlossen werden")
+	}
+	if len(records) != 2 {
+		t.Fatalf("erwartete 2 Records, gesehen %d", len(records))
+	}
+	if records[0].Change.ID != "chg-1" || records[1].Change.ID != "chg-2" {
+		t.Fatalf("Changes = %v", records)
+	}
+	if records[0].Position.Offset != 42 || records[0].Position.SourceID != "src-1" {
+		t.Fatalf("Position = %+v", records[0].Position)
+	}
+	if want := int64(time.Unix(100, 0).UnixNano()); records[0].CommittedAt.UnixNanos != want {
+		t.Fatalf("CommittedAt = %d, erwartet %d", records[0].CommittedAt.UnixNanos, want)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("der Erfolgsfall darf die Klasse nicht berühren: %v", recorder.causes)
+	}
+}
+
+func TestReadChangesEmptyResultIsNoError(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	records, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if records == nil || len(records) != 0 {
+		t.Fatalf("erwartete leere, gesetzte Rückgabe, gesehen %v", records)
+	}
+}
+
+func TestReadChangesClassifiesQueryFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Fehler trägt nicht die Klasse storage: %v", err)
+	}
+	if !stderrors.Is(err, cause) {
+		t.Fatalf("die technische Ursache muss lesbar bleiben: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadChangesClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows:     [][]any{changeRow("chg-1", 1, 42)},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Scan-Fehler trägt nicht die Klasse storage: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadChangesClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Iterations-Fehler trägt nicht die Klasse storage: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadChangesLeavesDomainFailureUnclassified(t *testing.T) {
+	// Die Zeile trägt die Commit-Position 0 — der Mapper lehnt sie ab; das
+	// ist ein Domänen-Fehler der Übersetzung, keine Treiber-Klasse.
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{changeRow("chg-1", 1, 0)}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidPosition) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+	if stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("ein Domänen-Fehler darf die Treiber-Klasse nicht tragen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("der Übersetzungspunkt darf hier nicht laufen: %v", recorder.causes)
+	}
+}
+
+func TestStatementWithoutClassReturnsCause(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+
+	_, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL: "SELECT requests",
+	})
+
+	if err != cause {
+		t.Fatalf("ohne Übersetzungspunkt muss die Ursache unverändert zurückkommen: %v", err)
+	}
+}
+
+func TestReadConsumerPositionReadsAcknowledgedPosition(t *testing.T) {
+	exec := &fakeExecutor{row: &fakeRow{values: []any{"src-1", int64(77)}}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	position, err := sqlexec.ReadConsumerPosition(context.Background(), exec, model.ConsumerID("consumer-1"), sqlexec.Statement{
+		SQL:  "SELECT position",
+		Args: []any{"consumer-1"},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadConsumerPosition: %v", err)
+	}
+	if position.ConsumerID != "consumer-1" {
+		t.Fatalf("ConsumerID = %q", position.ConsumerID)
+	}
+	if position.Position.Offset != 77 || position.Position.SourceID != "src-1" {
+		t.Fatalf("Position = %+v", position.Position)
+	}
+	if len(exec.queryRows) != 1 || exec.queryRows[0].sql != "SELECT position" {
+		t.Fatalf("QueryRow-Aufrufe = %v", exec.queryRows)
+	}
+}
+
+func TestReadConsumerPositionReadsAbsenceAsZero(t *testing.T) {
+	exec := &fakeExecutor{row: &fakeRow{err: pgx.ErrNoRows}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	position, err := sqlexec.ReadConsumerPosition(context.Background(), exec, model.ConsumerID("consumer-1"), sqlexec.Statement{
+		SQL:  "SELECT position",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("die Abwesenheit ist kein Fehler: %v", err)
+	}
+	if position.ConsumerID != "" || !position.Position.IsZero() {
+		t.Fatalf("erwartete den Nullwert, gesehen %+v", position)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("die Abwesenheit darf die Klasse nicht berühren: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionClassifiesReadFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{row: &fakeRow{err: cause}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPosition(context.Background(), exec, model.ConsumerID("consumer-1"), sqlexec.Statement{
+		SQL:  "SELECT position",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) {
+		t.Fatalf("Fehler trägt nicht die Klasse des Ports: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionsTranslatesRows(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"consumer-1", int64(10)},
+		{"consumer-2", int64(20)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	positions, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Args: []any{"src-1"},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadConsumerPositions: %v", err)
+	}
+	if len(positions) != 2 {
+		t.Fatalf("erwartete 2 Positionen, gesehen %d", len(positions))
+	}
+	if positions[1].ConsumerID != "consumer-2" || positions[1].Position.Offset != 20 {
+		t.Fatalf("Position = %+v", positions[1])
+	}
+	if positions[1].Position.SourceID != "src-1" {
+		t.Fatalf("die Quelle kommt aus dem Aufruf: %+v", positions[1].Position)
+	}
+}
+
+func TestReadConsumerPositionsEmptyResult(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	positions, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadConsumerPositions: %v", err)
+	}
+	if positions == nil || len(positions) != 0 {
+		t.Fatalf("erwartete leere, gesetzte Rückgabe, gesehen %v", positions)
+	}
+}
+
+func TestReadSourceTablesTranslatesRows(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"tbl-1", "src-1", "public", "feed"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	tables, err := sqlexec.ReadSourceTables(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT tables",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadSourceTables: %v", err)
+	}
+	if len(tables) != 1 {
+		t.Fatalf("erwartete 1 Tabelle, gesehen %d", len(tables))
+	}
+	if tables[0].QualifiedName() != "public.feed" || tables[0].SourceID != "src-1" {
+		t.Fatalf("Tabelle = %+v", tables[0])
+	}
+}
+
+func TestReadSourceTablesLeavesDomainFailureUnclassified(t *testing.T) {
+	// Die Zeile trägt keine Tabellen-Kennung — der Domänen-Konstruktor lehnt
+	// sie ab.
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"", "src-1", "public", "feed"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadSourceTables(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT tables",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+	if stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("ein Domänen-Fehler darf die Treiber-Klasse nicht tragen: %v", err)
+	}
+}
+
+func TestReadExcludedColumnsCarriesExclusionAndInclusion(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "secret"},
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "secret"},
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "token"},
+		{"public", "feed", string(model.AdministrationRequestEnable), "ignored"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	excluded, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadExcludedColumns: %v", err)
+	}
+	if got := excluded["public.feed"]; !reflect.DeepEqual(got, []string{"secret", "token"}) {
+		t.Fatalf("Ausschlussstand = %v", got)
+	}
+}
+
+func TestReadExcludedColumnsRemovesIncludedColumn(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "secret"},
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "token"},
+		{"public", "feed", string(model.AdministrationRequestIncludeColumn), "secret"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	excluded, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadExcludedColumns: %v", err)
+	}
+	if got := excluded["public.feed"]; !reflect.DeepEqual(got, []string{"token"}) {
+		t.Fatalf("Ausschlussstand = %v", got)
+	}
+}
+
+func TestReadExcludedColumnsLastInclusionRemovesEntry(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"public", "feed", string(model.AdministrationRequestExcludeColumn), "secret"},
+		{"public", "feed", string(model.AdministrationRequestIncludeColumn), "secret"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	excluded, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadExcludedColumns: %v", err)
+	}
+	if len(excluded) != 0 {
+		t.Fatalf("ein Stand ohne Ausschluss ist ein fehlender Eintrag: %v", excluded)
+	}
+}
+
+func TestReadTableSchemaTranslatesColumns(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"id", int64(23)},
+		{"name", int64(25)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrSchemaStoreStorage}
+
+	schema, err := sqlexec.ReadTableSchema(context.Background(), exec, model.SchemaVersionID("sv-1"), sqlexec.Statement{
+		SQL:  "SELECT columns",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadTableSchema: %v", err)
+	}
+	if schema.VersionID != "sv-1" {
+		t.Fatalf("VersionID = %q", schema.VersionID)
+	}
+	if len(schema.Columns) != 2 || schema.Columns[0].Name != "id" || schema.Columns[1].OID != 25 {
+		t.Fatalf("Spalten = %+v", schema.Columns)
+	}
+}
+
+func TestReadTableSchemaReportsUnknownVersion(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{}}
+	recorder := &failRecorder{class: outbound.ErrSchemaStoreStorage}
+
+	_, err := sqlexec.ReadTableSchema(context.Background(), exec, model.SchemaVersionID("sv-1"), sqlexec.Statement{
+		SQL:  "SELECT columns",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrSchemaVersionUnknown) {
+		t.Fatalf("erwartete den Sentinel der unbekannten Version, gesehen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("die leere Spaltenform ist kein Treiber-Fehler: %v", recorder.causes)
+	}
+}
+
+func TestReadPendingRequestsTranslatesRequests(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"req-1", "src-1", "public", "feed", "", string(model.AdministrationRequestEnable)},
+		{"req-2", "src-1", "public", "feed", "secret", string(model.AdministrationRequestExcludeColumn)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	requests, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT pending",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadPendingRequests: %v", err)
+	}
+	if len(requests) != 2 {
+		t.Fatalf("erwartete 2 Anträge, gesehen %d", len(requests))
+	}
+	if requests[1].Kind != model.AdministrationRequestExcludeColumn || requests[1].Column != "secret" {
+		t.Fatalf("Antrag = %+v", requests[1])
+	}
+}
+
+func TestReadPendingRequestsLeavesDomainFailureUnclassified(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"req-1", "src-1", "public", "feed", "", "unbekannt"},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	_, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT pending",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidAdministrationRequestKind) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+}
+
+func TestRegisterConsumerReportsOutcome(t *testing.T) {
+	exec := &fakeExecutor{tag: pgconn.NewCommandTag("INSERT 0 1")}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	registered, err := sqlexec.RegisterConsumer(context.Background(), exec, sqlexec.Statement{
+		SQL:  "INSERT consumer",
+		Args: []any{"consumer-1", "Name"},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("RegisterConsumer: %v", err)
+	}
+	if !registered {
+		t.Fatal("eine betroffene Zeile heißt registriert")
+	}
+	if len(exec.executions) != 1 || exec.executions[0].sql != "INSERT consumer" {
+		t.Fatalf("Exec-Aufrufe = %v", exec.executions)
+	}
+	if !reflect.DeepEqual(exec.executions[0].args, []any{"consumer-1", "Name"}) {
+		t.Fatalf("Argumente = %v", exec.executions[0].args)
+	}
+}
+
+func TestRegisterConsumerReportsRepeat(t *testing.T) {
+	exec := &fakeExecutor{tag: pgconn.NewCommandTag("INSERT 0 0")}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	registered, err := sqlexec.RegisterConsumer(context.Background(), exec, sqlexec.Statement{
+		SQL:  "INSERT consumer",
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("RegisterConsumer: %v", err)
+	}
+	if registered {
+		t.Fatal("keine betroffene Zeile heißt: war schon da")
+	}
+}
+
+func TestRegisterConsumerClassifiesExecFailure(t *testing.T) {
+	cause := stderrors.New("Fremdschlüssel verletzt")
+	exec := &fakeExecutor{execErr: cause}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.RegisterConsumer(context.Background(), exec, sqlexec.Statement{
+		SQL:  "INSERT consumer",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) {
+		t.Fatalf("Fehler trägt nicht die Klasse des Ports: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+// Die Naht selbst: der reale Pool erfüllt sie, ein Träger der Fakes ebenso —
+// die Zusicherung steht in `seam.go` (Kompilier-Beleg), dieser Test hält die
+// Fake-Seite dagegen.
+var _ sqlexec.Executor = (*fakeExecutor)(nil)
+
+var _ sqlexec.Rows = (*fakeRows)(nil)

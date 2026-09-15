@@ -2,14 +2,13 @@ package postgresstorage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/queries"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -38,10 +37,11 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // hängt nur an der Spalten-Prüfung, nicht an Bindungs-Zeilen oder
 // Publication. `log` trägt die strukturierte Protokollierung über den
 // injizierten `LogPort` (`LH-QA-OPS-004`, `ADR-0024`, `WithLog`) — Default
-// `outbound.NoopLog`.
+// `outbound.NoopLog`. `db` trägt die Ausführung über die schmale Naht
+// (`sqlexec`, `ADR-0071` Punkt 5).
 type TableActivationAdapter struct {
-	pool *pgxpool.Pool
-	log  outbound.LogPort
+	db  sqlexec.DB
+	log outbound.LogPort
 }
 
 // NewTableActivation baut den Verbindungspool gegen die Instanz und
@@ -58,12 +58,12 @@ func NewTableActivation(ctx context.Context, dsn string, opts ...Option) (*Table
 		return nil, storageFailure(ctx, o.log, err)
 	}
 	o.log.Info(ctx, "tableactivation: verbunden")
-	return &TableActivationAdapter{pool: pool, log: o.log}, nil
+	return &TableActivationAdapter{db: pool, log: o.log}, nil
 }
 
 // Close schließt den Verbindungspool.
 func (a *TableActivationAdapter) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
 
 var _ outbound.TableActivationPort = (*TableActivationAdapter)(nil)
@@ -87,7 +87,7 @@ func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table
 		return false, err
 	}
 	var count int
-	if err := a.pool.QueryRow(ctx, queries.SelectTableColumnExists, schema, table, column).Scan(&count); err != nil {
+	if err := a.db.QueryRow(ctx, queries.SelectTableColumnExists, schema, table, column).Scan(&count); err != nil {
 		return false, storageFailure(ctx, a.log, err)
 	}
 	return count > 0, nil
@@ -105,64 +105,11 @@ func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table
 // Tabellen-Antragsarten tragen keinen Stand; eine Quelle ohne
 // Spalten-Anträge liefert eine leere Map.
 func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source model.SourceID) (map[string][]string, error) {
-	rows, err := a.pool.Query(ctx, queries.SelectAppliedColumnRequests, string(source))
-	if err != nil {
-		return nil, storageFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	excluded := make(map[string][]string)
-	for rows.Next() {
-		var schema, table, kind, column string
-		if err := rows.Scan(&schema, &table, &kind, &column); err != nil {
-			return nil, storageFailure(ctx, a.log, err)
-		}
-		qualified := schema + "." + table
-		switch model.AdministrationRequestKind(kind) {
-		case model.AdministrationRequestExcludeColumn:
-			if !containsColumn(excluded[qualified], column) {
-				excluded[qualified] = append(excluded[qualified], column)
-			}
-		case model.AdministrationRequestIncludeColumn:
-			// Ein Einschluss, der den letzten geführten Namen nimmt, lässt
-			// keinen Eintrag stehen: ein Stand ohne Ausschluss ist ein
-			// fehlender Eintrag, keine leere Liste.
-			if remaining := removeColumn(excluded[qualified], column); len(remaining) == 0 {
-				delete(excluded, qualified)
-			} else {
-				excluded[qualified] = remaining
-			}
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, storageFailure(ctx, a.log, err)
-	}
-	return excluded, nil
-}
-
-// containsColumn meldet, ob ein Spaltenname in einem Ausschlussstand steht;
-// der Stand einer Tabelle bleibt klein, die lineare Suche damit ohne
-// eigenen Index.
-func containsColumn(columns []string, name string) bool {
-	for _, column := range columns {
-		if column == name {
-			return true
-		}
-	}
-	return false
-}
-
-// removeColumn liefert den Ausschlussstand ohne den übergebenen
-// Spaltennamen; die Rückgabe ist neu aufgebaut, damit kein Leser auf dem
-// Speicher der übergebenen Liste liegt.
-func removeColumn(columns []string, name string) []string {
-	remaining := make([]string, 0, len(columns))
-	for _, column := range columns {
-		if column != name {
-			remaining = append(remaining, column)
-		}
-	}
-	return remaining
+	return sqlexec.ReadExcludedColumns(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectAppliedColumnRequests,
+		Args: []any{string(source)},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
 }
 
 // TableExists prüft die physische Tabelle über den Katalog; die
@@ -176,7 +123,7 @@ func (a *TableActivationAdapter) TableExists(ctx context.Context, schema, table 
 		return false, err
 	}
 	var count int
-	if err := a.pool.QueryRow(ctx,
+	if err := a.db.QueryRow(ctx,
 		"SELECT count(*) FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2",
 		schema, table,
 	).Scan(&count); err != nil {
@@ -189,8 +136,8 @@ func (a *TableActivationAdapter) TableExists(ctx context.Context, schema, table 
 // der Zustand „nicht aktiviert" (`LH-FA-CFG-003` Boundary).
 func (a *TableActivationAdapter) Registered(ctx context.Context, source model.SourceID, schema, table string) (model.SourceTable, bool, error) {
 	var id string
-	if err := a.pool.QueryRow(ctx, queries.SelectSourceTable, string(source), schema, table).Scan(&id); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+	if err := a.db.QueryRow(ctx, queries.SelectSourceTable, string(source), schema, table).Scan(&id); err != nil {
+		if sqlexec.IsAbsent(err) {
 			return model.SourceTable{}, false, nil
 		}
 		return model.SourceTable{}, false, storageFailure(ctx, a.log, err)
@@ -217,7 +164,7 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 	if registered {
 		return false, nil
 	}
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return false, storageFailure(ctx, a.log, err)
 	}
@@ -253,13 +200,13 @@ func (a *TableActivationAdapter) Register(ctx context.Context, table model.Sourc
 // keine Schema-Version werden gelöscht.
 func (a *TableActivationAdapter) Unregister(ctx context.Context, table model.SourceTable) (outbound.ActivationRemoval, error) {
 	var hasChanges bool
-	if err := a.pool.QueryRow(ctx, queries.SelectSourceTableChanges, string(table.ID)).Scan(&hasChanges); err != nil {
+	if err := a.db.QueryRow(ctx, queries.SelectSourceTableChanges, string(table.ID)).Scan(&hasChanges); err != nil {
 		return "", storageFailure(ctx, a.log, err)
 	}
 	if hasChanges {
 		return outbound.ActivationRetained, nil
 	}
-	tx, err := a.pool.Begin(ctx)
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return "", storageFailure(ctx, a.log, err)
 	}
@@ -283,28 +230,11 @@ func (a *TableActivationAdapter) Unregister(ctx context.Context, table model.Sou
 // List liest die Bindungs-Zeilen der Quelle in Schema- und
 // Tabellen-Ordnung (`LH-FA-CFG-004`).
 func (a *TableActivationAdapter) List(ctx context.Context, source model.SourceID) ([]model.SourceTable, error) {
-	rows, err := a.pool.Query(ctx, queries.SelectSourceTables, string(source))
-	if err != nil {
-		return nil, storageFailure(ctx, a.log, err)
-	}
-	defer rows.Close()
-
-	tables := make([]model.SourceTable, 0)
-	for rows.Next() {
-		var id, tableSource, schema, table string
-		if err := rows.Scan(&id, &tableSource, &schema, &table); err != nil {
-			return nil, storageFailure(ctx, a.log, err)
-		}
-		entry, err := model.NewSourceTable(model.SourceTableID(id), model.SourceID(tableSource), schema, table)
-		if err != nil {
-			return nil, err
-		}
-		tables = append(tables, entry)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, storageFailure(ctx, a.log, err)
-	}
-	return tables, nil
+	return sqlexec.ReadSourceTables(ctx, a.db, sqlexec.Statement{
+		SQL:  queries.SelectSourceTables,
+		Args: []any{string(source)},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
 }
 
 // Publish trägt die Publication (`LH-FA-CFG-001.a`): eine fehlende
@@ -319,9 +249,9 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 		return err
 	}
 	var exists int
-	if err := a.pool.QueryRow(ctx, queries.SelectPublication, publication).Scan(&exists); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			if _, err := a.pool.Exec(ctx,
+	if err := a.db.QueryRow(ctx, queries.SelectPublication, publication).Scan(&exists); err != nil {
+		if sqlexec.IsAbsent(err) {
+			if _, err := a.db.Exec(ctx,
 				fmt.Sprintf("CREATE PUBLICATION %s FOR TABLE %s WITH (publish = 'insert, update, delete')",
 					publicationName, qualified),
 			); err != nil {
@@ -333,9 +263,9 @@ func (a *TableActivationAdapter) Publish(ctx context.Context, publication, schem
 		return storageFailure(ctx, a.log, err)
 	}
 	var member int
-	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			if _, err := a.pool.Exec(ctx,
+	if err := a.db.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
+		if sqlexec.IsAbsent(err) {
+			if _, err := a.db.Exec(ctx,
 				fmt.Sprintf("ALTER PUBLICATION %s ADD TABLE %s", publicationName, qualified),
 			); err != nil {
 				return storageFailure(ctx, a.log, err)
@@ -357,20 +287,20 @@ func (a *TableActivationAdapter) Unpublish(ctx context.Context, publication, sch
 		return err
 	}
 	var exists int
-	if err := a.pool.QueryRow(ctx, queries.SelectPublication, publication).Scan(&exists); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+	if err := a.db.QueryRow(ctx, queries.SelectPublication, publication).Scan(&exists); err != nil {
+		if sqlexec.IsAbsent(err) {
 			return nil
 		}
 		return storageFailure(ctx, a.log, err)
 	}
 	var member int
-	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+	if err := a.db.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
+		if sqlexec.IsAbsent(err) {
 			return nil
 		}
 		return storageFailure(ctx, a.log, err)
 	}
-	if _, err := a.pool.Exec(ctx,
+	if _, err := a.db.Exec(ctx,
 		fmt.Sprintf("ALTER PUBLICATION %s DROP TABLE %s", publicationName, qualified),
 	); err != nil {
 		return storageFailure(ctx, a.log, err)
@@ -393,8 +323,8 @@ func (a *TableActivationAdapter) Published(ctx context.Context, publication, sch
 		return false, err
 	}
 	var member int
-	if err := a.pool.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+	if err := a.db.QueryRow(ctx, queries.SelectPublicationMember, publication, schema, table).Scan(&member); err != nil {
+		if sqlexec.IsAbsent(err) {
 			return false, nil
 		}
 		return false, storageFailure(ctx, a.log, err)
