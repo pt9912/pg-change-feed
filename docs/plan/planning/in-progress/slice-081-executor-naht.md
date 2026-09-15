@@ -103,7 +103,6 @@ vierter Punkt:
       über der netzlos prüfbaren Fläche) — nicht als Zweck.
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
-- [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -242,7 +241,12 @@ und die Schichten-Konfiguration in **einem** Kürzel.
   Fortsetzung beim Aufrufer" und einen Retry-/Backoff-Aufschub. Dieser Slice
   ändert **nicht**, was der Aufrufer tut; er ändert, **woran** der Adapter hängt.
 
-**Kein** Eintrag erreicht mit diesem Slice die 3×-Schwelle.
+**Kein** Eintrag der Sichtung steht über der Schwelle, und **keiner** rückt mit
+ihm auf 3×. Das ist der Stand **dieser Planung**, kein Versprechen über den
+Lauf — erreicht einer die Schwelle doch, steht er in §7, und sein Ausgang fällt
+dem Lese-Schritt der laufenden Welle-Closure zu (Modul 6), nicht dieser Closure.
+Die Zählerstände der beiden Treffer sind am Register **nachgezählt**, nicht aus
+diesem Text übernommen (je 2×, `ls evidence/`).
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF (nur `*`/`PGC`)
 — kein Modus-Begründungsblock. Die vier Pflichtkriterien tragen dennoch:
