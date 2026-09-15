@@ -83,25 +83,28 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Naht existiert.**
 
-- [ ] Die Adapter hängen an einer **adapter-eigenen** Schnittstelle
+- [x] Die Adapter hängen an einer **adapter-eigenen** Schnittstelle
       (`Query`/`Exec` plus ein minimales `Rows`) statt an `*pgxpool.Pool`;
-      der reale Pool erfüllt sie.
+      der reale Pool erfüllt sie (`var _ sqlexec.DB = (*pgxpool.Pool)(nil)`,
+      `internal/adapters/driven/postgresstorage/sqlexec/seam.go`).
 - [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-store` und `make test-replication` (Exit 0) — der Beleg, dass
       die Naht die Ausführung nicht verschiebt.
 
 **Liefer-Punkt 2 — die reine Logik ist prüfbar.**
 
-- [ ] Fehlerklassifikation und Zeilen-Übersetzung sind **reine Funktionen** und
+- [x] Fehlerklassifikation und Zeilen-Übersetzung sind **reine Funktionen** und
       netzlos geprüft (Fälle: Erfolg, Fehlerklasse, leeres Ergebnis).
-- [ ] Die Fake-Seite fährt die **Verklebung** (Query/Exec-Aufruf, Scan-Schleife,
+- [x] Die Fake-Seite fährt die **Verklebung** (Query/Exec-Aufruf, Scan-Schleife,
       Fehlerpfad) — und ist ausdrücklich **kein** Ersatz der realen DB-Tests.
 
 **Liefer-Punkt 3 — die Wirkung ist benannt, nicht angestrebt.**
 
-- [ ] Der Coverage-Effekt wird **als Folge** dokumentiert (Zahl vorher/nachher
-      über der netzlos prüfbaren Fläche) — nicht als Zweck.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] Der Coverage-Effekt wird **als Folge** dokumentiert (Zahl vorher/nachher
+      über der netzlos prüfbaren Fläche) — nicht als Zweck: **69,70 % → 71,30 %**
+      (`make coverage-gate`, beide Läufe Exit 0; Gegenstand 1679 → 1817
+      Statements).
+- [x] `make gates` grün (Exit direkt, ungepiped) — Exit 0.
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -119,19 +122,41 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
 Aussagen-Berührung steht hier gar nicht.
 
+**Zuschnitt des Implementer-Laufs** (die Liste nennt die Träger; der genaue
+Schnitt entsteht hier):
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driven/postgresstorage/**` (die Adapter-Dateien) | refactor | die Abhängigkeit wird schmal: adapter-eigene Executor-Schnittstelle statt `*pgxpool.Pool` |
-| `internal/adapters/driven/postgresack/ack.go` · `internal/adapters/driving/replication/receive/receive.go` | refactor | dieselbe Naht, je Paket |
-| neue Test-Dateien (Fakes + reine Logik) | neu | die Verklebung netzlos: Query/Exec-Aufruf, Scan-Schleife, Fehlerklassifikation, Leerfall |
+| `internal/adapters/driven/postgresstorage/sqlexec/**` (`seam.go`, `statement.go`, `errors.go`, `translate.go`) | neu | die Naht selbst — `Executor`/`DB` mit minimalem `Rows` — plus die von ihr getragene Zeilen-Übersetzung und Fehlerklassifikation. Die Naht liegt **außerhalb** der drei DB-Pakete und damit im Gegenstand des Unit-Gates (`ADR-0071` Punkt 5) |
+| die sechs pool-tragenden Adapter-Dateien (`store`, `consumerstate`, `heartbeat`, `tableactivation`, `schemastore`, `administrationrequest`) · `schema.go` | refactor | sie hängen an `sqlexec.DB`/`sqlexec.Executor` statt an `*pgxpool.Pool`; `sqlexec.Classify`/`IsAbsent` ersetzen die inline gebildete Fehlerklasse und `errors.Is(err, pgx.ErrNoRows)` |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | neu | Fakes (`Rows`/`Row`/`Executor`) + die Fälle Erfolg · Fehlerklasse · Leerfall; **kein** Ersatz der realen DB-Tests |
 
-**Der genaue Datei-Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste
-nennt die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Punkte,
-≤ 2 Schichten — hier: **eine** Schicht, der driven Adapter).
+**Abweichung von der Träger-Liste — `postgresack/ack.go` und
+`receive/receive.go` bleiben unberührt.** Ihre Naht ist eine andere: beide
+hängen an `*pgconn.PgConn`, nicht an `*pgxpool.Pool`, und `receive` ruft
+`pglogrepl.StartReplication`/`CreateReplicationSlot` (Signatur: konkreter
+`*pgconn.PgConn`) — die in §1/§2 genannte Schnittstelle (`Query`/`Exec` plus
+minimales `Rows`) drückt diese Aufrufe nicht aus. Der Zug ist damit die
+Rückführung aus §4 („nach Paket, je Adapter ein Slice"), nicht ein stilles
+Weglassen: `postgresack` und `receive` gehören je in einen eigenen Vorgang.
+Berührte Träger dieses Laufs: **ein** Paket, **eine** Schicht; drei
+Liefer-Punkte, kein vierter.
 
-**Nicht in dieser Liste:** `queries` (die SQL-Texte bleiben unberührt),
-`.a-check.yml` (die Schichten-Edges ändern sich nicht: die Naht liegt
-**innerhalb** des Adapters), `spec/**`.
+**Nicht angefasst:** `queries` (die SQL-Texte bleiben unberührt — die Naht
+trägt sie als `sqlexec.Statement.SQL` durch), `.a-check.yml` (grün, 0 Befunde),
+`spec/**`.
+
+**Befund dieses Zugs, der nicht dem Implementer gehört:** Die Naht zieht die
+Übersetzung aus `postgresstorage` heraus — und damit **aus dem Gegenstand der
+DB-Adapter-Coverage** (`ADR-0071` Punkt 3), die genau dieses Paket misst. Der
+reale Lauf: `make test-store` grün, `make test-replication` **rot**
+(DB-Adapter-Coverage 75,25 % vorher → 73,38 % nachher, Stufe 75 %). Die Naht
+ist ohne Verhaltens-Change zu haben — die **Messung** aber nicht ohne
+Entscheidung: `ADR-0071` Re-Evaluierungs-Trigger (b) verlangt für das Ziehen
+der Naht die Neu-Bemessung der Rampe als **Folge-ADR** (Architect), und
+`AGENTS.md` §3.6 schließt eine Schwellen-Senkung durch den Implementer aus.
+Der Slice schließt mit diesem Zug deshalb **nicht**; die DoD-Häkchen unten
+stehen nur, wo ein Beleg vorliegt.
 
 ## 4. Trigger
 
