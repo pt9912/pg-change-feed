@@ -7,7 +7,7 @@ legt als Fitness Function fest, der Messgegenstand sei **frei** von den drei
 Paketen, deren Testlauf einen externen Dienst voraussetzt. Gewächtert wird das
 aber nur **genähert**: die Prozent-Schwelle fängt `postgresstorage` (52,3 %) und
 `replication/receive` (64,2 %) — **nicht `postgresack` allein**: käme es zurück
-in `-coverpkg`, ergäbe das `(1167 + 2) / (1679 + 23) = 68,7 %` ≥ 65, das Gate
+in `-coverpkg`, ergäbe das `(1171 + 2) / (1679 + 23) = 68,92 %` ≥ 65, das Gate
 bliebe grün. Die Gegenstands-Hälfte der Fitness Function hat damit **keinen
 Sensor**. Ihre Gegenseite, die Testpaket-Liste, ist überhaupt nicht beobachtbar —
 sie ändert die Zahl nicht. Beides ist als Grenzpunkt 4 und 5 in
