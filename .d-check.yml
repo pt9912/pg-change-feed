@@ -181,10 +181,13 @@ structure:
   # Link auf ihr Definitions-Dokument bleibt darunter, ebenso ein `Ort`
   # ohne `Datei:Zeile`-Form, ein leerer Nachweis und eine leere
   # Kurzbeschreibung. Kein Maximalwert: die Kurzbeschreibung ist der erste
-  # Satz des Doc-Kommentars und waechst mit ihm. Was die Regel NICHT
-  # traegt, ist ein falscher Nachweis — die tragende Garantie der Tabelle
-  # ist ihre Ableitung aus dem Quelltext (TestAbdeckungstabelleZeilen bzw.
-  # der Deklarations-Anker je Runner-Phase).
+  # Satz des ersten Absatzes eines Doc-Kommentars und waechst mit ihm. Was
+  # die Regel NICHT traegt, ist ein falscher Nachweis — die tragende
+  # Garantie der Tabelle ist ihre Ableitung aus dem Quelltext
+  # (TestAbdeckungstabelleZeilen bzw. der Deklarations-Anker je
+  # Runner-Phase). Die Regel rotet auch, solange die Datei fehlt
+  # (`section-missing`, "Regel trifft keine Datei") — das Erzeugnis gehoert
+  # in den Baum, nicht nur in den Lauf.
   - files: docs/user/e2e-abdeckung.md
     section: "# E2E-Abdeckung je Spec-Kennung"
     table:

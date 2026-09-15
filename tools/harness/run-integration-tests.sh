@@ -99,7 +99,10 @@ abdeckung_bash_zeilen=()
 # Der Anker ist ein wörtlicher Ausschnitt aus der Phase dahinter — der
 # Runner sucht ihn ab der Deklarations-Zeile im eigenen Quelltext und trägt
 # die gefundene Zeile als `Ort` ein; ein Anker, der in keiner späteren Zeile
-# mehr steht, beendet den Lauf.
+# mehr steht, beendet den Lauf. Die vier Argumente sind Shell-Wörter: ein
+# Backtick-Zeichen in Kurzbeschreibung oder Anker gehört escaped (`\``),
+# sonst ersetzt die Shell es samt Inhalt durch die Ausgabe eines Kommandos —
+# ohne Fehlermeldung, wenn dieses Kommando existiert.
 abdeckung_declare() {
   local nachweis=$1 kennungen=$2 kurzbeschreibung=$3 anker=$4
   local treffer
@@ -2134,7 +2137,7 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
-abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt `GET /changes/stream` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
+abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt \`GET /changes/stream\` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
 
 # SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061): ein Wegwerf-Client
 # (tools/harness/sseclient, per `go run` im Toolchain-Container) verbindet
