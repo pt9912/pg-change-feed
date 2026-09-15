@@ -100,34 +100,34 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — der Lesepfad trägt die Tabellen-Identität.**
 
-- [ ] Die Filterachse des Leseports ist **eine Form**, nicht zwei: `Schema`/
+- [x] Die Filterachse des Leseports ist **eine Form**, nicht zwei: `Schema`/
       `Table` als **Klartext** ersetzt `Table *model.SourceTableID`.
-- [ ] `SelectChanges` zieht den `cdc.source_table`-Join nach; `mapper.ToChange`
+- [x] `SelectChanges` zieht den `cdc.source_table`-Join nach; `mapper.ToChange`
       setzt `Schema`/`Table`, sodass die Antwort die Identität trägt.
-- [ ] Port-/Mapper-Tests decken die neue Achse (einzeln, kombiniert, leer).
+- [x] Port-/Mapper-Tests decken die neue Achse (einzeln, kombiniert, leer).
 
 **Liefer-Punkt 2 — der Use Case und sein Port.**
 
-- [ ] `ReadChangesUseCase` als Inbound Port, Transport-Typen **am Port**
+- [x] `ReadChangesUseCase` als Inbound Port, Transport-Typen **am Port**
       (`ADR-0042`); der Inbound Port importiert **nicht** outbound.
-- [ ] Die Filter: `source` **Pflicht**, `schema`/`table` optional und
+- [x] Die Filter: `source` **Pflicht**, `schema`/`table` optional und
       **unabhängig**, `from` inklusiv / `to` exklusiv, `limit` optional —
       **kein** Default-Limit.
-- [ ] Netzlose Tests am Use Case: Filterwirkung, Bereichs-Grenzen, Leerfall.
+- [x] Netzlose Tests am Use Case: Filterwirkung, Bereichs-Grenzen, Leerfall.
 
 **Liefer-Punkt 3 — der Endpunkt und sein Vertrag.**
 
-- [ ] `GET /changes` in der `reader`-Rechtsklasse, kollisionsfrei neben
+- [x] `GET /changes` in der `reader`-Rechtsklasse, kollisionsfrei neben
       `GET /changes/stream`; Fehler-Mapping `ErrNonPositiveLimit`/
       `ErrRangeInverted` → **400**, **unbekannter Query-Parameter → 400**
       (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter*
       änderte den Ergebnisstand still), **kein Treffer → 200 mit
       `{"changes": []}`**, nie 404.
-- [ ] Der Vertrag ist fortgeschrieben: `SPEC-018`s Satz nachgezogen, **`SPEC-022`**
+- [x] Der Vertrag ist fortgeschrieben: `SPEC-018`s Satz nachgezogen, **`SPEC-022`**
       angelegt (Endpunkt, Parameter, JSON-Schema in der Form der neun
       bestehenden), und das Handbuch nennt den Endpunkt in der
       Fähigkeits-Tabelle samt Querverweis aus seinem Lese-Abschnitt.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [x] Review durchgeführt, Report unter
       `docs/reviews/review-slice-086.md` liegt vor
@@ -135,11 +135,25 @@ vierter Punkt:
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Fixrunde gelaufen: 0 HIGH; F-2…F-5 geschlossen; F-1 mit `slice-087`
       adressiert.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-086.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig**; LP1-K1…LP3-K3 einzeln bestätigt, `tools/schema/**`
+      unberührt, §3.10 **geprüft und nicht ausgelöst** (kein
+      `.github/workflows/**` im Diff). Eigene Gegenproben des Verifiers: beide
+      Schwellen auf 99 → beide Gates rot; zwei eigene Mutationen (Projektions-
+      Ordnung, `source`-Pflicht) rot gesehen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — ein Beleg
+      ergänzt (`generierte-artefakte-ohne-sync-sensor`, damit **4×**) und ein
+      Verzeichnis **neu angelegt** (`negativtest-ohne-bindung-an-seine-eingabe`,
+      **1×**), **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — alle drei *entfallen,
+      gestrichen mit Begründung*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -210,13 +224,27 @@ dasteht.
 - **Es könnte ein zweiter Lesepfad entstehen.** Der Endpunkt darf nichts
   entscheiden, was die View nicht schon entscheidet. Wächter: derselbe Port,
   dieselbe Delegation, dieselbe Sortierung — das Review prüft es.
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: es gibt **eine**
+  Kette (`http → inbound → readchanges → ChangeStorePort → SelectChanges`); die
+  Sortierung ist unverändert, der Handler und der Use Case sortieren nichts,
+  und der Port wird **genau einmal** gerufen (`TestReadChangesTranslatesQueryToPort`).
+  Der Wächter hat getragen: **fünf** Mutationen an genau diesen Zusagen wurden
+  rot gesehen — Sortierung (Reviewer), Bereichsende inklusiv (Reviewer),
+  Tabellenfilter an Schema gekoppelt (Reviewer), Projektions-Ordnung vertauscht
+  (Verifier) — und die Projektion trägt **13 Spalten in der Ordnung der View**.
 - **Die Klartext-Identität könnte den View-Vertrag berühren.** `cdc.changes`
   bleibt **unverändert**; der Join lebt im **Lesepfad**, nicht in der View
-  (§4 nennt den Blockerfall). — **Ausgang:** <bei Closure>
+  (§4 nennt den Blockerfall). — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: `git diff b2d1cc2..HEAD -- tools/schema/` ist **leer** (Verifier
+  und Reviewer unabhängig), die View ist unberührt, und
+  `TestE2EChangesViewMatchesReadChanges` stellt den View-Zugriff gegen die
+  Store-Lesung — grün.
 - **Der Endpunkt könnte still begrenzen.** Kein Default-Limit, keine harte
   Obergrenze (`ADR-0081`) — eine eingebaute Grenze wäre ein eigener Beschluss.
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: weder Default noch
+  Obergrenze sind gebaut; die Gegenprobe „Default 500 im Use Case" wurde **rot**
+  gesehen (Implementer), und der Verifier hat beide **Schwellen** auf 99 gesetzt
+  und beide Gates **rot** gesehen — die Grenzen prüfen noch.
 
 ## 7. Closure-Notiz
 
@@ -235,18 +263,61 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** **Der Vertrag zuerst.** Der Befund („die API hat
+  keinen Lese-Endpunkt") ging zum Architect, und `ADR-0081` hat nicht nur den
+  Endpunkt entschieden, sondern die **Formen** fixiert — Port, Filterachse,
+  Projektion, Sortierung. Dadurch war die tragende Zusage („**kein zweiter
+  Lesepfad**") überhaupt prüfbar: nicht als Versprechen, sondern als Diff und
+  als Mutation. Der Verifier hat bestätigt, was zählt: **eine** Kette,
+  `tools/schema/**` leer, Projektion in der Spaltenordnung der View.
+  Und **die Rollen haben gehalten, wo der Auftrag falsch war**: der Reviewer hat
+  eine Zusage in `ADR-0081` gefunden, die keinen Träger hat; der Implementer hat
+  in der Fixrunde die **Richtung begründet** statt der Anweisung zu folgen —
+  F-2 (die Lücke saß im **Test**, nicht in der Ablehnung) und F-4 (die **Spec**
+  wurde gezogen, nicht der Code).
+- **Was ging anders als geplant:** (1) Der Slice ist **einmal über seine
+  §3-Liste hinausgewachsen** — vier Dateien (`wiring.go`,
+  `test/integration/integration_test.go`, `docs/user/e2e-abdeckung.md`,
+  `harness/image-hash.txt`), jede begründet und vom Reviewer einzeln geprüft.
+  **Benannt, nicht still.** (2) Der Review hat ein Loch gefunden, das **kein
+  Lesen** gezeigt hätte: `?limit=0` war nicht an seine Eingabe gebunden — die
+  Mutation ließ die Suite grün, obwohl der Endpunkt danach **still unbegrenzt**
+  liest. (3) `ADR-0081`s Fitness-Function-Zeile hat **keinen Träger** → eigene
+  Adresse `slice-087`. (4) **Meine eigenen Fehler in diesem Zug:** die Linktiefe
+  auf `spec/` zweimal falsch (`slice-083`, `slice-086`) und ein Vorlagen-Rest in
+  **drei** neuen Slices — gefangen von `d-check` bzw. von meinem Prüfmuster,
+  das ich nach dem ersten Fehlschlag auf das allgemeine `<…>`-Muster umgestellt
+  habe.
+- **Lerneintrag (geschärfte Regel):** *Ein Negativtest, der seine Ausgabe nicht
+  an seine **Eingabe** bindet, ist grün ohne Aussage.* Der Test `?limit=0 → 400`
+  stellte gegen einen Fake, der den Sentinel unabhängig von der Abfrage lieferte
+  — der Status hing an **keinem** Parameterwert. Sichtbar wurde das **nur** durch
+  Mutieren der **Eingabeseite**. Regel für den nächsten Fall: **jede Zusage wird
+  an ihrer Eingabeseite mutiert**, nicht nur an ihrer Ausgabeseite.
+  **Verkörperung offen** (Träger käme im Reviewer-Skill in Frage); als Kandidat
+  geführt, nicht behauptet.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Zwei
+  Registerbewegungen: `BEO-PGC/generierte-artefakte-ohne-sync-sensor` bekommt
+  einen weiteren Beleg (dieser Slice **erzeugt** die E2E-Abdeckungstabelle neu
+  und nimmt `tools/schema/plan.yaml` wieder von Hand zurück) → **4×**; **neu
+  angelegt** `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**1×**),
+  belegt durch Review F-2.
+- **Beobachtungs-Register (`../observations/`):** ein Beleg ergänzt
+  (`generierte-artefakte-ohne-sync-sensor/evidence/slice-086.md`, Zähler **4×**)
+  und ein Verzeichnis **neu angelegt**
+  (`negativtest-ohne-bindung-an-seine-eingabe/`, **1×**). **Kein Zähler
+  gesetzt** — er folgt aus den Dateien. **Benannt, nicht gezählt:** die Reibung,
+  dass ein frisch geschriebener `SPEC-*`-Abschnitt die tragende ADR nicht
+  zitieren darf (`matrix` verbietet `spec → adr`) — **beide** Läufe sind
+  darüber gestolpert. Das ist die **beabsichtigte** Referenzrichtung und kein
+  Defekt; sie kostet jeden Spec-Autor aber einen roten Lauf.
+- **Folge-Slices:** `slice-087` (E2E-Beleg für `GET /changes`) — die Adresse für
+  `ADR-0081`s Fitness-Function-Zeile (Review F-1, Verifikation V-1); liegt als
+  Datei in `open/`.
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung* — siehe §6.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

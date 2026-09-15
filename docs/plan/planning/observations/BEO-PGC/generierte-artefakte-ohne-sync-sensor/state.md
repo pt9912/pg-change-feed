@@ -6,8 +6,11 @@ Generator laufen lässt und `git diff --exit-code` gegen das committete Erzeugni
 prüft (für den Protobuf-Code: `make proto-generate` plus Diff auf
 `streamv1/`); das wäre ein eigener Sensor mit eigener Bindung und eigenem Aufwand
 pro `make gates` — deshalb keine spontane Ergänzung, sondern eine Entscheidung.
-Zähler (abgeleitet): **3×** (evidence/slice-069.md, evidence/slice-074.md,
-evidence/slice-082.md) — **Schwelle erreicht**. Die drei Träger: der
-Protobuf-Code (`slice-069`), die E2E-Abdeckungstabelle (`slice-074`) und
-`tools/schema/plan.yaml` (`slice-082`, dessen Rollout bei **jedem** Lauf die
-committete Datei verändert).
+Zähler (abgeleitet): **4×** (evidence/slice-069.md, evidence/slice-074.md,
+evidence/slice-082.md, evidence/slice-086.md) — **Schwelle erreicht**. Die drei
+Träger: der Protobuf-Code (`slice-069`), die E2E-Abdeckungstabelle (`slice-074`)
+und `tools/schema/plan.yaml` (`slice-082`, dessen Rollout bei **jedem** Lauf die
+committete Datei verändert). Der vierte Beleg ist ein weiterer Vorgang derselben
+Klasse und kein neuer Handlungsbedarf: `slice-086` **erzeugt** die
+Abdeckungstabelle neu (Teil seiner DoD) und nimmt `plan.yaml` wieder von Hand
+zurück — die Bindung ist weiterhin Disziplin, kein Sensor.
