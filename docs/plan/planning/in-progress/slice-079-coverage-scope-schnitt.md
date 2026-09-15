@@ -119,14 +119,26 @@ vierter Punkt:
       Lauf-zu-Lauf-Schwankung) → Exit ≠ 0.
 
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      **Drei** Läufe (`review-slice-079.md`, `…-fixrunde.md`, `…-fixrunde-2.md`),
+      0 HIGH / 0 MEDIUM. **Abweichung von der Konvention, benannt:** den letzten
+      LOW hat der **Planner** am Closure-Rand korrigiert statt einer vierten
+      Implementer-Runde; der Bestätigungslauf hatte ihn ausdrücklich als nicht
+      blockierend bewertet und den Closure-Ausgang zugelassen. Der **Verifier**
+      hat die Korrektur inhaltlich bestätigt (`verify-slice-079.md`); deshalb ist
+      diese Zeile gesetzt — nicht vom Reviewer getickt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — das Repo ist durchgehend Greenfield, die Datei existiert nicht (der Verifier hat es bestätigt).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+      Repo **mit** Wellen-Betrieb: die Prüfung trägt die **nächste
+      Welle-Closure** (`welle-20`), die auch Slices ohne Wellen-Zugehörigkeit
+      einsammelt (Baseline-Regelwerk `modul-06-roadmap.md`
+      §Wellen-Closure-Prozedur, Schritt 3). Die hier genannten Folge-Slices
+      `slice-080` und `slice-081` existieren als Dateien (s. §7).
 
 ## 3. Plan (vor Code)
 
@@ -192,17 +204,27 @@ dasteht.
   weg, steigt die Zahl weniger stark als gerechnet — der Schnitt behauptet dann
   eine Verbesserung, die teils aus weggezählten Erfolgen stammt. Die Antwort ist
   die **Bezifferung** (Liefer-Punkt 1, zweite Zeile): vorher/nachher im selben
-  Lauf, die wegfallenden Statements benannt. — **Ausgang:** <bei Closure>
+  Lauf, die wegfallenden Statements benannt. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: der Effekt **ist** beziffert (788 Statements, davon
+  44 gedeckt; die Block-Positionen außerhalb der drei vor und nach dem Schnitt
+  byte-identisch) — die Sorge, der Schnitt behaupte eine Verbesserung aus
+  weggezählten Erfolgen, ist damit beantwortet, nicht eingetreten.
 - **Die drei Pakete stehen danach ohne jede Zahl da.** `ADR-0071` Punkt 3 gibt
   ihnen eine eigene, subjekt-qualifizierte Messung — sie ist ein **eigener
   Vorgang**; bis er liegt, ist die Fläche ungemessen. Der Schnitt nimmt das in
   Kauf, weil das Gate sie schon vorher nicht gemessen hat: es hat sie
-  **mitgezählt**, ohne dass ihre Tests liefen. — **Ausgang:** <bei Closure>
+  **mitgezählt**, ohne dass ihre Tests liefen. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: das Gate hat die drei nie **gemessen** (ihre Tests
+  liefen netzlos nicht); es hat ihre 788 Statements nur in den Nenner gestellt.
+  Die Fläche verliert durch den Schnitt keine Zahl, die sie hatte.
 - **Die neue Stufe könnte unter der bisherigen liegen.** Das wäre eine
   Schwellen-Senkung und nach `AGENTS.md` §3.6 ADR-pflichtig. Bei fallendem Nenner
   und bleibendem Zähler kann sie nicht eintreten (49,3 % → ~69,7 %); tritt sie
   doch ein, ist etwas anderes geschnitten worden als beschlossen. — **Ausgang:**
-  <bei Closure>
+  *entfallen — gestrichen mit Begründung*: die neue Stufe (65) liegt **über** der
+  bisherigen (40); es wurde nichts gesenkt. Die Bedingung ist damit nicht
+  eingetreten — und sie kann nicht eintreten, solange nur der Nenner fällt und
+  der Zähler bleibt.
 
 ## 7. Closure-Notiz
 
@@ -221,18 +243,65 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** der **Mechanismus** und die **Bezifferung**. Die
+  Paketlisten sind nicht hartkodiert, sondern aus `go list` abgeleitet und
+  gefiltert — **ein** Ausdruck speist `-coverpkg` **und** die Testpaket-Liste,
+  künftige Pakete ziehen automatisch mit. Und der Effekt des Schnitts ist
+  beziffert: die Block-Positionen **außerhalb** der drei Pakete sind vor und
+  nach dem Schnitt byte-identisch — die stärkste Zusage des Slice, von drei
+  Kontexten unabhängig nachgebaut (Implementer, Reviewer, Verifier).
+- **Was ging anders als geplant:**
+  1. **Drei Review-Runden, und der Treiber war die Zahlbasis.** Vier Kontexte
+     haben vier Werte für „gedeckt" gemessen (1167 · 1171 · 1173 · 1217 — meine
+     eigene erste Inventur lag um denselben Fehlertyp daneben). Ursache: die
+     Deduplizierungsregel war nirgends **aufgeschrieben**. Sie steht jetzt in
+     `harness/sensors/coverage-gate.md` §Zählbasis — und mit ihr die Feststellung,
+     dass die **gedruckte** Prozentzeile **keine** eigene Größe ist, sondern
+     dieselbe Messung in anderer Ausgabepräzision.
+  2. **Ein Fix, der nur verschob statt schloss.** Die erste Korrektur
+     („der einzige ganz ungetestete Gegenstand") war unter der Lesart falsch, die
+     der Satz nicht trug; die zweite nennt fünf Pakete mit drei Rollen.
+  3. **Ein Planner-Nachzug am Closure-Rand:** die §Zählbasis-Mechanik und die
+     Zahlen meines Register-Belegs habe ich **selbst** korrigiert, nachdem der
+     Bestätigungslauf den Posten als nicht blockierend bewertet hatte und drei
+     Implementer-Runden gelaufen waren. Der Verifier hat die Korrektur inhaltlich
+     bestätigt und den Vorbehalt benannt: sie liegt **nach** dem letzten
+     Review-Fenster, ihr einziger unabhängiger Beleg ist sein Lauf.
+- **Steering-Loop-Eintrag:** *geschärfte Regel, verkörpert* — **eine Aussage,
+  die zählt, nennt ihre Zahlbasis.** Träger: `harness/sensors/coverage-gate.md`
+  §Zählbasis (welcher Lauf, welches Profil, welche Deduplizierung; die gedruckte
+  Zeile als dieselbe Basis in anderer Präzision) · seit slice-079. Dazu *ein
+  Register-Beleg* (s. u.) und *kein neuer Sensor*.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-079.md` in
+  `BEO-PGC/regel-weiter-als-ihr-sensor` (1× → **2×**): dieselbe Klasse wie der
+  Hostpfad-Fall aus `slice-078` — eine Zusage, die ihr Wächter nur annähert
+  (hier: die Gegenstands-Hälfte der `ADR-0071`-Fitness-Function; `postgresack`
+  allein zurück in `-coverpkg` ergäbe 68,92 % ≥ 65 → grün). **Versöhnung mit §8:**
+  die dortige Sichtung notierte „kein Treffer" — sie lief **vor** dem Fund; die
+  Closure erweitert die Identität des Eintrags um diesen Fall, statt ihn unter
+  einem alten Namen zu verbuchen.
+- **Folge-Slices:** `slice-080` (DB-Adapter-Coverage — `ADR-0071` Punkt 3) und
+  `slice-081` (Executor-Naht — Punkt 5), beide **wellenlos** und beide
+  ausdrücklich **nicht** Teil von `welle-20` (§6 der Welle schließt sie aus).
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung* — die
+  Begründungen stehen in §6 (die dritte entgegen dem ersten Augenschein nicht als
+  „nicht eingetreten", sondern als **entfallen**, weil ihre Bedingung strukturell
+  nicht eintreten kann).
+- **Drei Paarungen:** hier **nicht** geprüft — das Repo hat Wellen-Betrieb, und
+  die §2-Zeile verweist sie an die nächste Welle-Closure (`welle-20`), die auch
+  Slices ohne Wellen-Zugehörigkeit einsammelt. **Wellen-Besonderheit:** dieser
+  Slice ist der **Start-Trigger** von `welle-20`; mit seinem `done/` ist der
+  Trigger erfüllt und der erste Test-Slice der Welle schneidbar.
+- **Ein offener Befund, den ich benenne statt ihn zu verstecken (V-1):**
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  §Entscheidung Punkt 2 nennt „1215 Statements" neben „69,74 %" — 1215/1679 wäre
+  72,36 %; tragend ist **1171** (= 1215 − 44 ausgeschlossene gedeckte). Die
+  Entscheidung selbst ist davon unberührt, der Messwert in ihrer Begründung ist
+  falsch. In-place-Korrektur verbietet `AGENTS.md` §3.5, die Zitat-Klasse aus
+  `ADR-0073` deckt Zahlen nicht — der Ausgang ist eine **Folge-ADR** und gehört
+  in eine eigene Entscheidung, nicht in diesen Slice.
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+  (kein `*-archiv.zip` unter `done/`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
