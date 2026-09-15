@@ -132,8 +132,9 @@ vierter Punkt:
       Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei Belege
       ergänzt (`generierte-artefakte-ohne-sync-sensor`, damit 3×;
-      `github-actions-unverifizierbar-lokal`, damit 4×), kein neues Verzeichnis,
-      **kein Zähler gesetzt**.
+      `github-actions-unverifizierbar-lokal`, damit 4×) **und** ein Verzeichnis
+      neu angelegt (`dod-begruendung-unzutreffende-tatsachenbehauptung`, 2×),
+      **kein Zähler gesetzt** — er folgt aus den Dateien.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen) — R1/R2/R3 *entfallen*, R4 *weiter offen*.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
@@ -320,6 +321,16 @@ Backticks).
   `cdc.process_heartbeat` best-effort (`wiring.go:844`, `_ = port.Beat(...)`);
   nimmt man nur sie weg, bleibt der Tier-Lauf grün. Der Reviewer hat es mit
   einer eigenen Mutation aufgedeckt (Review F-1); der Wortlaut ist berichtigt.
+  **Vier weitere Fehler fand die Verifikation** (V-1…V-4), und sie lagen alle
+  bei mir — drei davon im Plan-Text. **V-1** ist die unangenehmste: die
+  Objektstand-Zählung „15 Tabellen, 6 Sichten, 4 Funktionen" war eine aus dem
+  **Review-Report übernommene, nie selbst gemessene** Zahl, und ich hatte sie in
+  ein **DoD-Kriterium** geschrieben; der Rollout-Report führt 10 Tabellen und
+  4 Sichten. Dieselbe Klasse wie F-1 — ein zweites Mal erzeugt, beim Beheben des
+  ersten. **V-2** ließ §8 der 3×-Schwelle widersprechen, **V-3** gab R4 zwei
+  Ausgangsbezeichnungen, **V-4** trug die F-1-Ungenauigkeit in §1 weiter. Alle
+  vier berichtigt; die Verifikation hat die Korrektur danach gegengeprüft und
+  den Slice für `git mv`-fähig erklärt.
 - **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Ein
   Eintrag hat mit ihm die 3×-Schwelle erreicht —
   `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`slice-069`, `slice-074`,
@@ -331,13 +342,21 @@ Backticks).
   zulässig und vorübergehend. **Korrektur meiner eigenen Ankündigung:** ich
   hatte diesen Zug als Teil *dieser* Closure angekündigt; das war die falsche
   Station.
-- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt, **kein**
-  neues Verzeichnis. `BEO-PGC/generierte-artefakte-ohne-sync-sensor/evidence/slice-082.md`
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt **und ein
+  neues Verzeichnis angelegt**. `BEO-PGC/generierte-artefakte-ohne-sync-sensor/evidence/slice-082.md`
   — Zähler damit **3×**, Schwelle erreicht, Ausgang folgt beim Lese-Schritt der
   Welle-Closure. `BEO-PGC/github-actions-unverifizierbar-lokal/evidence/slice-082.md`
   — Zähler **4×**; die bestehende Regel `AGENTS.md` §3.10 hat hier **gewirkt**:
   der Implementer hat die CI-Bestätigung als §6-Risiko geführt, statt den Slice
   für erledigt zu erklären, und sie wurde vor dem `git mv` nachgeholt.
+  **Neu angelegt:** `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/`
+  — Zähler **2×** (`evidence/slice-036.md`, `evidence/slice-082.md`). Die Klasse
+  trägt genau die Findings dieses Slice (Review F-1, Verifikation V-1: eine
+  **ungeprüft übernommene** Tatsachenbehauptung im DoD-Kriterium); ihr
+  Erstvorkommen bei `slice-036` wurde seinerzeit **ohne Kennung** notiert, hier
+  wird sie benannt und das erste über dasselbe Label zitiert. Beide Funde
+  **dieses** Vorgangs sind eine Gelegenheit, kein zweites Auftreten. Unter der
+  Schwelle, `offen`.
   **Zwei Klassen berührt, nicht gezählt:** `BEO-PGC/roter-test-ohne-leser`
   (1×, offen) — dieser Slice ist der Träger des Instanz-Fixes, und die Behebung
   ist kein zweites Auftreten. **Ein Rest bleibt und wird benannt:** eine künftige
@@ -395,8 +414,10 @@ ist nicht zu bilden: „Test-Infrastruktur" ist keine deklarierte Sub-Area.
 überholt (Verifikation V-2): `BEO-PGC/generierte-artefakte-ohne-sync-sensor`
 erreicht mit diesem Slice die **3×-Schwelle**, Beleg `evidence/slice-082.md`;
 sein Ausgang fällt dem Lese-Schritt der `welle-20`-Closure zu (Modul 6),
-**nicht** dieser Closure — siehe §7. Ein neues Verzeichnis entsteht nicht:
-beide Belege gehören zu bestehenden Einträgen.
+**nicht** dieser Closure — siehe §7. **Ein weiteres Verzeichnis entsteht** mit
+dem Lauf: `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/` (2×),
+getragen von Review F-1 und Verifikation V-1 dieses Slice — die Sichtung oben
+konnte es nicht sehen, weil die Klasse hier zum zweiten Mal auftrat.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF (nur `*`/`PGC`)
 — kein Modus-Begründungsblock. Die vier Pflichtkriterien tragen dennoch:
