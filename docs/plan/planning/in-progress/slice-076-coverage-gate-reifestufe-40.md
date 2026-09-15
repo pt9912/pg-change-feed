@@ -82,7 +82,7 @@ gehört zurück zur Zerlegung.
       Gate-Skript endet **1**, `make` meldet für den gescheiterten
       Bauprozess **2**; die Stufe prüft real und läuft nicht leer.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-076.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update: Kalibrierungs-Bindung in
