@@ -57,8 +57,13 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    eigene, subjekt-qualifizierte Messung aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand.
-   Real geprüft: kein Paket im Gegenstand ist ganz ohne Testdatei — die drei
-   `[no test files]`-Pakete (`postgresstorage/queries`,
+   **`cmd/pg-change-feed` ist der einzige ganz ungetestete Gegenstand des
+   Messbereichs.** Es liegt in `-coverpkg` und in der Testpaket-Liste, hat
+   keine Testdatei und trägt **49 Statements, alle mit `count = 0`** — es
+   steht damit im Nenner und gehört zu der 80-%-Arbeit, die `welle-20`
+   bündelt. Der Lauf weist es nicht als `[no test files]` aus, sondern als
+   `coverage: 0.0% of statements`; das ist die Aufrufform mit `-coverpkg`.
+   Die drei `[no test files]`-Pakete (`postgresstorage/queries`,
    `application/port/inbound`, `domain/errors`) tragen ausschließlich
    SQL-Textkonstanten bzw. Typ-/Sentinel-Deklarationen ohne ausführbare
    Statements.
@@ -68,6 +73,21 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 3. **Keine Zeilen-Ausnahme.** Das Gate hat strukturell keinen
    Suppression-Pfad (`AGENTS.md` §3.2) — die Gesamt-Coverage besteht oder
    scheitert als Zahl.
+4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
+   gewächtert.** Wird `postgresack` wieder in `-coverpkg` genommen, bleibt die
+   Stufe grün — `(1167 + 2) / (1679 + 23) = 68,7 %` ≥ 65; erst die Rücknahme
+   von `postgresstorage` (`1198 / 2289 = 52,3 %`) oder `replication/receive`
+   (`1178 / 1834 = 64,2 %`) färbt sie rot. **Der Wächter ist** damit allein die
+   Prozent-Schwelle, und sie trägt die Gegenstands-Hälfte der Fitness Function
+   aus [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+   („keine Block-Position im Profil liegt in …“) nicht vollständig: für einen
+   einzelnen Rücknahme-Fall gibt es keinen eigenen Sensor. Der
+   Re-Evaluierungs-Trigger (a) derselben ADR greift beim Kommen oder Gehen
+   eines Pakets, nicht bei der Rücknahme eines bereits ausgenommenen.
+5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die drei
+   ausgenommenen Pakete in der Testpaket-Liste stehen oder nicht, ändert die
+   Zahl nicht — ihre Testdateien überspringen netzlos ohnehin. **Der Wächter
+   ist**: keiner; die Einhaltung ist eine Aussage des Rezepts, keine Messung.
 
 ## Ausgabe und Ausgänge
 

@@ -91,9 +91,10 @@ vierter Punkt:
 **Liefer-Punkt 1 — der Messgegenstand ist geschnitten.**
 
 - [x] `-coverpkg` und die Testpaket-Liste der Coverage-Stufe führen die Pakete
-      nicht mehr, deren Testlauf einen **externen Dienst voraussetzt**; der Lauf
-      nennt real **1679** Statements als Nenner. Die drei Ausprägungen
-      (`postgresstorage` **ohne** `mapper`, `postgresack`,
+      nicht mehr, deren Testlauf einen **externen Dienst voraussetzt**; das
+      Profil führt real **1679** Statements als Nenner (dedupliziert über die
+      Block-Position — die Stage druckt nur die `total:`-Prozentzeile). Die
+      drei Ausprägungen (`postgresstorage` **ohne** `mapper`, `postgresack`,
       `replication/receive`) sind gegen die **Eigenschaft** geprüft, nicht
       abgeschrieben.
 - [x] Der Effekt ist **beziffert**: die Zahl vor und nach dem Schnitt ist im
