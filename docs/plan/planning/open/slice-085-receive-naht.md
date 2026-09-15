@@ -8,9 +8,12 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 **Welle:** ohne Welle — die Closure-Bedingung ist die eigene DoD (eine
 Struktur-Änderung mit eigenem Beleg), kein repo-weites *Mehr*.
 
-**Bezug:** [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+**Bezug:** [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+(die **Nahtform**: Treiber-Hülle plus schmale, fake-fähige Fläche, **im Paket** —
+sie beantwortet den Verdacht aus §6) ·
+[`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 Punkt 5 (schmale Abhängigkeit statt konkreter Typ) · [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
-(der **Transfer-Nachweis**, den diese Naht selbst führt) · `slice-084` (die
+(der Nachweis, den diese Naht als **Null-Befund** führt) · `slice-084` (die
 Geschwister-Naht in `postgresack`) ·
 [`ADR-0006`](../../adr/0006-replication-stream-driving-adapter.md) (der
 Replication-Stream als **driving** Adapter — die Schicht, in der diese Naht
@@ -41,19 +44,30 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** `internal/adapters/driving/replication/receive` hängt an einer
-**konkreten** `*pgconn.PgConn` — gemessene Fläche: `pgconn.ConnectConfig`,
-`pgconn.ErrorResponseToPgError`, `pgconn.ParseConfig`, `pgconn.PgConn` sowie
-**14** `pglogrepl`-Symbole (`StartReplication`, `CreateReplicationSlot`,
-`IdentifySystem`, `ParseXLogData`, `ParsePrimaryKeepaliveMessage`,
-`SendStandbyStatusUpdate`, `StandbyStatusUpdate`, …). Eine schmale,
-adapter-eigene **Empfangs-Naht** macht ihre Verklebung netzlos prüfbar.
+**konkreten** `*pgconn.PgConn` — gemessene Fläche (**18** Symbole):
+`pgconn.ConnectConfig`, `pgconn.ErrorResponseToPgError`, `pgconn.ParseConfig`,
+`pgconn.PgConn` sowie **14** `pglogrepl`-Symbole (`StartReplication`,
+`CreateReplicationSlot`, `IdentifySystem`, `ParseXLogData`,
+`ParsePrimaryKeepaliveMessage`, `SendStandbyStatusUpdate`, …). Die Naht macht
+ihre Verklebung netzlos prüfbar.
 
-**Das Design entscheidet der Architect beim Start dieses Slice** — dieser Plan
-zeichnet es **nicht** vor. Die Fläche ist hier eine **andere Größenordnung** als
-in `slice-084` (18 Symbole gegen 6), und ein Teil der Übersetzung ist bereits
-gezogen (`replication/decode`, `replication/mapper`) — was davon die Naht
-berührt, ist zu **entscheiden**, nicht zu behaupten. Der Architect-Verdikt zu
-`slice-081` hat das Design ausdrücklich offengelassen.
+**Die Nahtform ist entschieden** ([`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)):
+dieselbe Form wie in `slice-084`, **im Paket** — eine **Treiber-Hülle**
+(`connSession{conn *pgconn.PgConn}`) plus eine **schmale, fake-fähige Fläche**
+mit **sieben** Operationen (`IdentifySystem`, `CreateReplicationSlot`,
+`StartReplication`, `SendStandbyStatusUpdate`, `Exec → []*pgconn.Result`,
+`ReceiveMessage → pgproto3.BackendMessage`, `Close`). Der öffentliche Rand
+(`NewStream`, `Stream`, `WALRetentionChecker`) bleibt **unverändert**.
+
+**Der Verdacht dieses Plans ist gemessen — bestätigt im Buchstaben, widerlegt in
+seiner Folge.** §6 führte, `pglogrepl.StartReplication` und
+`CreateReplicationSlot` verlangten den konkreten Typ, die Naht trage deshalb
+nicht: das stimmt **wörtlich** (vier Paketfunktionen tragen `conn *pgconn.PgConn`
+in der Signatur) — die **Folge** tritt aber **nicht** ein, weil die Hülle den
+konkreten Typ **innen** hält und die Fläche nach außen fake-fähig macht. Der
+§4-Blockerfall ist damit **beantwortet**. **`slice-081`s Zusicherungsform trägt
+hier nicht** — der Typ erfüllt die Schnittstelle nicht selbst.
+`replication/decode` und `.../mapper` bleiben **draußen**.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -90,8 +104,10 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Naht existiert.**
 
-- [ ] Der Adapter hängt an einer **adapter-eigenen** Schnittstelle statt an der
-      konkreten `*pgconn.PgConn`.
+- [ ] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
+      (sieben Operationen); der **konkrete** `*pgconn.PgConn` bleibt in der Hülle
+      und im Dial. **Nicht** „statt der konkreten Verbindung": der Typ bleibt,
+      aber **hinter** der Naht (`ADR-0080`).
 - [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-replication` (Exit 0).
 
@@ -104,14 +120,16 @@ vierter Punkt:
 - [ ] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
       Ersatz der realen Tests.
 
-**Liefer-Punkt 3 — der Transfer-Nachweis ist geführt.**
+**Liefer-Punkt 3 — der Nachweis ist geführt, und er ist ein Null-Befund.**
 
-- [ ] Der **dreiteilige Transfer-Nachweis** aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
-      liegt vollständig bei: (a) die Arithmetik `k_auf ≥ k_ab`, die Differenz ist
-      **neuer** Code; (b) der **Paket-Diff** — nicht die aggregierte Summe;
-      (c) **kein Verhalten verloren**. **Greift der Regressions-Riegel**
-      (`k_auf < k_ab`), steht die Schwelle; die überschießende Löschung ist dann
-      eigens zu entscheiden.
+- [ ] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+      wird als **Null-Befund** geführt (`ADR-0080`): die Naht bleibt **im**
+      Paket, **kein Subjekt-Transfer** — `k_ab = 0`, der abfließende Nenner
+      (155 Statements) unberührt, **keine Neu-Bemessung**, Rampen unverändert.
+      Nachzuweisen sind dennoch alle drei Teile: **(a)** `k_ab = 0`; **(b)** der
+      **Paket-Diff** zeigt **keinen** Trägerwechsel; **(c)** kein Verhalten
+      verloren. **Benannte Grenze:** die neuen netzlosen Tests verdünnen den
+      DB-Nenner leicht — mit Trigger, nicht still.
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -139,16 +157,16 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driving/replication/receive/**` | refactor | die Empfangs-Naht; der genaue Schnitt folgt der Architect-Entscheidung |
-| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Aufruf, Meldungs-Zerlegung, Keepalive, Fehlerpfad |
+| `internal/adapters/driving/replication/receive/**` | refactor | **im Paket**: die Schnittstelle (sieben Operationen), die Treiber-Hülle `connSession`, der paket-interne Einstieg für die netzlosen Tests; `NewStream`/`Stream`/`WALRetentionChecker` unverändert |
+| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Empfangs-Schleife, Slot-/Publication-Auflösung, Katalog-Zeilen-Übersetzung, Rückstands-Messung; der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
 
-**Der genaue Datei-Zuschnitt entsteht nach der Architect-Entscheidung** (§1) —
-diese Liste nennt den **Gegenstand**, nicht den Schnitt.
+**Kein Paketwechsel, kein Unterpaket** (`ADR-0080`) — deshalb auch **keine**
+Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`.
 
 **Nicht in dieser Liste:** `internal/adapters/driven/postgresack/**`
 (→ `slice-084`); `internal/adapters/driving/replication/decode/**` und
-`.../mapper/**` bleiben außerhalb, **außer** die Architect-Entscheidung zieht sie
-in den Gegenstand; `spec/**`, `.a-check.yml`.
+`.../mapper/**` bleiben **außerhalb** (entschieden, `ADR-0080`); `spec/**`,
+`.a-check.yml`.
 
 ## 4. Trigger
 
@@ -161,12 +179,15 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): erweist sich die Naht
-  als breiter als **ein** Paket — etwa weil `decode`/`mapper` mit hinein müssen —
-  gehört sie zurück zur Zerlegung, nicht in einen wachsenden Sammelumbau.
+  als **Paket-/API-Umzug** — muss also etwas **aus** dem Paket heraus oder die
+  öffentliche API sich ändern —, gehört sie zurück zur Zerlegung, nicht in einen
+  wachsenden Sammelumbau. **`decode`/`mapper` sind entschieden draußen**
+  (`ADR-0080`); dieser Anlass ist verbraucht, ein neuer müsste benannt werden.
 - `in-progress` → `open` (blockiert — Carveout?): zeigt sich, dass die Naht ohne
   **Verhaltensänderung** nicht zu haben ist (die `pglogrepl`-Aufrufe verlangen
   den konkreten `*pgconn.PgConn`), ist das ein Blocker mit Entscheidung — genau
   der Fall, an dem `slice-081`s Abweichung diesen Vorgang ausgelöst hat.
+  **Vorab beantwortet:** `ADR-0080` hat ihn gemessen; die Hülle löst ihn.
 
 ## 5. Closure-Trigger
 
@@ -187,9 +208,12 @@ dasteht.
 
 - **Die Naht könnte hier nicht tragen.** `pglogrepl.StartReplication` und
   `CreateReplicationSlot` verlangen den **konkreten** `*pgconn.PgConn` — eine
-  schmale Schnittstelle drückt das womöglich nicht aus. Das ist der §4-Blockerfall
-  und der **Grund**, warum `slice-081` dieses Paket nicht mitgenommen hat.
-  — **Ausgang:** <bei Closure>
+  schmale Schnittstelle drückt das womöglich nicht aus. — **Ausgang:**
+  *entfallen — gestrichen mit Begründung*, **noch vor dem Start**: `ADR-0080`
+  hat den Verdacht gemessen. Er stimmt im **Buchstaben** (vier Paketfunktionen
+  tragen den konkreten Typ in der Signatur), tritt in seiner **Folge** aber
+  nicht ein — die Hülle hält den Typ **innen**, die Fläche ist nach außen
+  fake-fähig. Der §4-Blockerfall ist beantwortet, bevor er eintreten konnte.
 - **Der Umbau könnte ein Verhaltens-Change sein, der als Refactoring auftritt.**
   Wächter sind die **realen** Tests, nicht die neuen Fakes. — **Ausgang:** <bei Closure>
 - **Der Fake könnte grün sein, ohne etwas zu prüfen.** — **Ausgang:** <bei Closure>
@@ -264,6 +288,8 @@ kein Eintrag steht über der Schwelle, und keiner rückt mit diesem Slice auf 3�
 **Konventionen-Dichte** hoch (die Schichten-Edges prüft `.a-check.yml`, die
 Ports-und-Adapter-Ordnung führt `spec/architecture.md`; `ADR-0006` und
 `ADR-0049` verankern diesen Adapter), **Phase-Reife** hoch,
-**Evidenz-/Diskrepanz-Risiko** **hoch** — die Naht trägt hier womöglich **nicht**
-(§6), und das ist der Grund, warum sie ein eigener Vorgang ist —,
+**Evidenz-/Diskrepanz-Risiko** **niedrig** — der Verdacht aus §6 ist mit
+[`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md) gemessen
+und in seiner Folge widerlegt; was bleibt, ist ein Umbau innerhalb **eines**
+Pakets —,
 **Reconciliation-Aufwand** null.

@@ -8,10 +8,13 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 **Welle:** ohne Welle — die Closure-Bedingung ist die eigene DoD (eine
 Struktur-Änderung mit eigenem Beleg), kein repo-weites *Mehr*.
 
-**Bezug:** [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+**Bezug:** [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+(die **Nahtform** für die `*pgconn.PgConn`-förmigen Pakete: Treiber-Hülle plus
+schmale, fake-fähige Fläche, **im Paket**) ·
+[`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 Punkt 5 (schmale Abhängigkeit statt konkreter Typ, Fehlerklassifikation als
 reine Funktion) · [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
-(der **Transfer-Nachweis**, den diese Naht — wie jede weitere — selbst führt) ·
+(der Nachweis, den diese Naht als **Null-Befund** führt) ·
 `slice-081` (die Geschwister-Naht im pool-förmigen Adapter; aus ihrer Abweichung
 ist dieser Vorgang entstanden).
 
@@ -39,19 +42,27 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** `internal/adapters/driven/postgresack` hängt an einer **konkreten**
-`*pgconn.PgConn` — gemessene Fläche: `pgconn.ConnectConfig`,
+`*pgconn.PgConn` — gemessene Fläche (**6** Symbole): `pgconn.ConnectConfig`,
 `pgconn.ParseConfig`, `pgconn.PgConn` sowie `pglogrepl.LSN`,
-`pglogrepl.SendStandbyStatusUpdate`, `pglogrepl.StandbyStatusUpdate`. Eine
-schmale, adapter-eigene **Sender-Naht** (`Acknowledge`/`StandbyStatus` auf einem
-Minimal-Typ statt der konkreten Verbindung) macht seine Verklebung netzlos
-prüfbar — in derselben Form, in der `slice-081` es für die pool-förmigen
-Adapter getan hat.
+`pglogrepl.SendStandbyStatusUpdate`, `pglogrepl.StandbyStatusUpdate`. Die Naht
+macht seine Verklebung netzlos prüfbar.
 
-**Das Design entscheidet der Architect beim Start dieses Slice** — dieser Plan
-zeichnet es **nicht** vor. Der Architect-Verdikt zu `slice-081` hat das
-ausdrücklich offengelassen; die Naht ist **nicht** pool-förmig, und eine
-Query/Exec/Rows-Schnittstelle drückt sie nicht aus. Ein Plan, der hier ein
-Design behauptet, behauptete eine ungeprüfte Tatsache.
+**Die Nahtform ist entschieden** ([`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)):
+eine **adapter-eigene Treiber-Hülle** plus eine **schmale, fake-fähige Fläche**
+— **im Paket**, ohne Paketwechsel. Die Schnittstelle trägt **eine** Methode
+(`SendStandbyStatusUpdate(ctx, pglogrepl.StandbyStatusUpdate) error`); die Hülle
+(`connSender{conn *pgconn.PgConn}`) hält den konkreten Typ. `New(conn, opts…)`
+samt nil-Grenze und Composition-Root-Verdrahtung bleiben **unverändert**, dazu
+kommt ein paket-interner Einstieg für die netzlosen Tests.
+
+**Gemessen, nicht behauptet:** `pglogrepl.SendStandbyStatusUpdate` verlangt
+`conn *pgconn.PgConn` **in der Signatur** — der Typ erfüllt es also nicht; und
+die einzige direkt erfüllbare `Exec`-Form (`*pgconn.MultiResultReader`) ist
+**nicht fake-bar** (kein exportierter Konstruktor). „Fake kann den Treiber
+spielen" und „der konkrete Typ bleibt draußen" sind deshalb **nur über eine
+Hülle** zugleich zu haben (positiv belegt: Hülle und Fake erfüllen dieselbe
+Schnittstelle). **`slice-081`s Zusicherungsform trägt hier nicht** — sie setzte
+voraus, dass der reale Träger die Schnittstelle **selbst** erfüllt.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -90,8 +101,10 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Naht existiert.**
 
-- [ ] Der Adapter hängt an einer **adapter-eigenen** Schnittstelle statt an der
-      konkreten `*pgconn.PgConn`.
+- [ ] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
+      (eine Methode); der **konkrete** `*pgconn.PgConn` bleibt in der Hülle und
+      im Dial. **Nicht** „statt der konkreten Verbindung": der Typ bleibt, aber
+      **hinter** der Naht (`ADR-0080`).
 - [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-replication` (Exit 0).
 
@@ -102,14 +115,17 @@ vierter Punkt:
 - [ ] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
       Ersatz der realen Tests.
 
-**Liefer-Punkt 3 — der Transfer-Nachweis ist geführt.**
+**Liefer-Punkt 3 — der Nachweis ist geführt, und er ist ein Null-Befund.**
 
-- [ ] Der **dreiteilige Transfer-Nachweis** aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
-      liegt vollständig bei: (a) die Arithmetik `k_auf ≥ k_ab`, die Differenz
-      ist **neuer** Code; (b) der **Paket-Diff** — nicht die aggregierte Summe;
-      (c) **kein Verhalten verloren**. **Greift der Regressions-Riegel**
-      (`k_auf < k_ab`), steht die Schwelle: die überschießende Löschung ist
-      dann eigens zu entscheiden, nicht über diese Regel.
+- [ ] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+      wird als **Null-Befund** geführt (`ADR-0080`): die Naht bleibt **im**
+      Paket, es gibt **keinen Subjekt-Transfer** — `k_ab = 0`, der abfließende
+      Nenner ist unberührt, und es gibt **keine Neu-Bemessung**; die Rampen
+      (70 / 70, Endstufen 80 %) bleiben unverändert. Nachzuweisen sind die drei
+      Teile dennoch: **(a)** die Arithmetik zeigt `k_ab = 0`; **(b)** der
+      **Paket-Diff** zeigt **keinen** Trägerwechsel; **(c)** kein Verhalten
+      verloren. **Benannte Grenze:** die neuen netzlosen Tests verdünnen den
+      DB-Nenner leicht — mit Trigger, nicht still.
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -137,11 +153,12 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driven/postgresack/**` | refactor | die Sender-Naht; der genaue Schnitt folgt der Architect-Entscheidung |
-| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Aufruf, Meldungsaufbau, Fehlerpfad |
+| `internal/adapters/driven/postgresack/**` | refactor | **im Paket**: die Schnittstelle (eine Methode), die Treiber-Hülle `connSender`, der paket-interne Einstieg für die netzlosen Tests; `New` samt nil-Grenze und Composition-Root-Verdrahtung **unverändert** |
+| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Standby-Status-**Form**, Null-Positions-Grenze, Fehlerklassen-Wrapping; der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
 
-**Der genaue Datei-Zuschnitt entsteht nach der Architect-Entscheidung** (§1) —
-diese Liste nennt den **Gegenstand**, nicht den Schnitt.
+**Kein Paketwechsel, kein Unterpaket** (`ADR-0080`) — deshalb auch **keine**
+Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`: der DB-Gegenstand
+bleibt, wie er ist.
 
 **Nicht in dieser Liste:** `internal/adapters/driving/replication/receive/**`
 (→ `slice-085`), `spec/**`, `.a-check.yml`.
