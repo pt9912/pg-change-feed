@@ -51,8 +51,9 @@ doc-commits: ## Commit-Message-Traceability via Modul commits; RANGE=base..head 
 # Grenz-Hälfte (keine Struktur-ID im Betreff): der Shell-Sensor — das
 # commits-Modul kennt heute keine verbotene-Muster-Option; ein zweiter
 # Sensor über dieselbe Hälfte wäre eine zweite Quelle. Gate statt
-# commit-msg-Hook (ADR-0045, Alternativen): das Gate läuft im
-# `make gates`-Bündel und deckt Commits jedes Urhebers im Fenster.
+# commit-msg-Hook: das Gate läuft im `make gates`-Bündel und deckt Commits
+# jedes Urhebers im Fenster; die Hook-Politik trägt ADR-0069 (Supersedes
+# ADR-0062 Punkt 3).
 # RANGE=base..head überschreibt den Standing-Default (ADR-0045);
 # COMMIT_TRACE_RANGE trägt denselben Wert für die Aufrufe, die den
 # Standing-Default nicht berühren wollen.
