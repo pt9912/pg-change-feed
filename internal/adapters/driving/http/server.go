@@ -19,10 +19,10 @@ import (
 
 // Config trägt die Verdrahtungs-Eingabe des Adapters (`ADR-0057`
 // Folgepflicht): die Server-Adresse, die beiden Token-Klassen
-// (`ADR-0057` Teilfrage 3) und die neun Port-gedeckten Use Cases, die
-// dieser Adapter über die API erreichbar macht (`ADR-0057` §Umfang der
-// ersten API-Version) — Changes-Lesen und Diagnose/Health bleiben
-// außerhalb, siehe `ADR-0057` §Konsequenzen/Folgepflicht.
+// (`ADR-0057` Teilfrage 3) und die Port-gedeckten Use Cases, die dieser
+// Adapter über die API erreichbar macht — die neun aus `ADR-0057` §Umfang
+// der ersten API-Version und das Changes-Lesen (`ADR-0081`). Diagnose/Health
+// bleibt außerhalb, siehe `ADR-0081` §Entscheidung/Offen bleibt.
 type Config struct {
 	// Addr trägt die Horch-Adresse (`CDC_HTTP_ADDR`); die Composition
 	// Root entscheidet über den Start, dieser Typ trägt nur die Adresse.
@@ -51,6 +51,11 @@ type Config struct {
 	ListTables   inbound.ListTablesUseCase
 	// RunRetention trägt den Retention-Lauf (`LH-FA-RET-002`…`004`).
 	RunRetention inbound.RunRetentionUseCase
+	// ReadChanges trägt das Changes-Lesen über die API
+	// (`LH-FA-SST-006`, `LH-FA-REA-001` ff., `ADR-0081`) — eine dünne
+	// Fassade über demselben `ChangeStorePort`, den der View-Direktzugriff
+	// trägt.
+	ReadChanges inbound.ReadChangesUseCase
 	// Subscriber trägt den `Broadcaster`, von dem der SSE-Stream-Endpunkt
 	// seine Changes liest (`LH-FA-SST-008`, `ADR-0061` Teilfrage 1/2).
 	// Ohne ihn antwortet `GET /changes/stream` mit `503` (`sse.go`).
@@ -94,6 +99,8 @@ func New(cfg Config) *Server {
 		listTablesHandler(cfg.ListTables, log)))
 	mux.Handle("POST /retention/run", withToken(cfg.TokenReader, cfg.TokenAdmin, roleAdmin,
 		runRetentionHandler(cfg.RunRetention, log)))
+	mux.Handle("GET /changes", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
+		readChangesHandler(cfg.ReadChanges, log)))
 	mux.Handle("GET /changes/stream", withToken(cfg.TokenReader, cfg.TokenAdmin, roleReader,
 		streamChangesHandler(cfg.Subscriber, log)))
 	return &Server{

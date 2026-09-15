@@ -12,7 +12,9 @@ import (
 
 // writeDomainError bildet einen Use-Case-Fehler auf einen HTTP-Statuscode ab:
 // `inbound.ErrSourceTableMissing` trägt eine unbekannte Ressource an der
-// Quelle (`404`); die benannten Domänen-Invarianten (`ADR-0029`) tragen eine
+// Quelle (`404`); die benannten Domänen-Invarianten (`ADR-0029`) und die
+// Kontrakt-Sentinels des Leseports (`outbound.ErrNonPositiveLimit`,
+// `outbound.ErrRangeInverted`, `LH-FA-REA-001`/`003` Negative) tragen eine
 // ungültige Eingabe (`400`) — dieselbe Klasse wie
 // `domainerrors.ErrEmptyIdentifier` in `registerconsumer.go`; jeder übrige
 // (unbekannte) Fehler ist ein unerwarteter interner Fehler (`500`) und wird
@@ -26,7 +28,9 @@ func writeDomainError(ctx context.Context, w http.ResponseWriter, log outbound.L
 		errors.Is(err, domainerrors.ErrSourceMismatch),
 		errors.Is(err, domainerrors.ErrPositionRegression),
 		errors.Is(err, domainerrors.ErrNegativeDuration),
-		errors.Is(err, domainerrors.ErrNonPositiveVersion):
+		errors.Is(err, domainerrors.ErrNonPositiveVersion),
+		errors.Is(err, outbound.ErrNonPositiveLimit),
+		errors.Is(err, outbound.ErrRangeInverted):
 		writeError(w, http.StatusBadRequest, err.Error())
 	default:
 		log.Warn(ctx, "http: "+action+" fehlgeschlagen", "error", err)

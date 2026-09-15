@@ -53,6 +53,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/list"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/position"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/readchanges"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/register"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/remove"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/retention"
@@ -700,6 +701,18 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			return err
 		}
 		defer apiConsumerState.Close()
+		// Der lesende Endpunkt `GET /changes` liest über denselben
+		// `ChangeStorePort` wie der View-Direktzugriff (`ADR-0081`) — eine
+		// eigene Verbindung derselben Rolle `cdc_admin`, die als einzige
+		// `SELECT` auf `cdc.change`/`cdc.transaction` trägt
+		// (`tools/schema/nacharbeit-roles.sql`); `cdc_reader` liest
+		// ausschließlich die Views. Kein zweiter Lesepfad: derselbe
+		// Adapter-Typ, derselbe Port.
+		apiChangeStore, err := postgresstorage.New(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+		if err != nil {
+			return err
+		}
+		defer apiChangeStore.Close()
 		httpServer = apihttp.New(apihttp.Config{
 			Addr:                cfg.HTTPAddr,
 			TokenReader:         cfg.APITokenReader,
@@ -713,6 +726,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			GetStatus:           status.NewGetStatusService(activation),
 			ListTables:          list.NewListTablesService(activation),
 			RunRetention:        retentionUseCase,
+			ReadChanges:         readchanges.NewReadChangesService(apiChangeStore),
 			Subscriber:          changeBroadcaster,
 			Log:                 log,
 		})
