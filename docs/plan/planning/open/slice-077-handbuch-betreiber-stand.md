@@ -24,7 +24,7 @@ und [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
 `SPEC-020` (gRPC-Stream: Dienst, RPC, Metadata-Wertform, Zustellsemantik) —
 beide werden hier **beschrieben**, nicht geändert.
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf). **Datum:** 2026-09-14.
 
@@ -51,11 +51,11 @@ Betreiber-Oberfläche bringen: die drei fehlenden Umgebungsvariablen-Gruppen in
   `slice-071` (gRPC) und `slice-072` (HTTP/SSE) liefern die Wegwerf-Clients
   und die realen Belege; dieses Dokument beschreibt die *Oberfläche*, nicht
   die Testwerkzeuge.
-- **Die Dauerhaftigkeitslücke des Ausschlussstandes zu beheben** — das ist
-  `slice-075` (`ADR-0065`). Hier wird die geltende Grenze nur **benannt**
-  (Neustart und `disable`/`enable` verlieren den Ausschlussstand), damit ein
-  Betreiber sie kennt; das Nachziehen auf den behobenen Zustand gehört in
-  `slice-075`s Closure.
+- **Den dauerhaften Träger des Ausschlussstandes zu ändern** — der Stand ist
+  seit `slice-075` dauerhaft: der Prozessstart leitet ihn aus den
+  `applied`-Zeilen der Spalten-Antragsarten ab
+  ([`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)). Hier
+  wird er **beschrieben**; seine Mechanik zu ändern wäre ein anderer Vorgang.
 - **Änderungen an `SPEC-018`/`SPEC-020`** — die Verträge stehen bereits; ein
   Doku-Slice ändert keine Spec-Stelle, er beschreibt sie.
 
@@ -101,7 +101,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+      geprüft **von der Slice-Closure selbst**: die Roadmap führt keine offene
+      Welle, es gibt also keine Welle-Closure, die sie einsammeln könnte
+      (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose Betrieb
+      selbst auslöst).
 
 ## 3. Plan (vor Code)
 
@@ -155,10 +159,12 @@ dasteht.
   beschreiben (z. B. No-Op bei fehlender Adresse vs. Start-Abbruch bei
   fehlgeschlagener Verbindung) — dieselbe Verwechslung, die `slice-053` für
   `CDC_NATS_URL` behandelt hat. — **Ausgang:** <bei Closure>
-- Die Dauerhaftigkeitsgrenze des Ausschlussstandes (`ADR-0065`) könnte im
-  Handbuch als Dauerzustand beschrieben werden, obwohl `slice-075` sie
-  beseitigt — der Text muss den Ist-Zustand nennen und den Folge-Slice
-  benennen, nicht den Zielzustand vorwegnehmen. — **Ausgang:** <bei Closure>
+- Der Ausschlussstand könnte im Handbuch als **prozesslebensdauer-gebunden**
+  beschrieben werden. Er ist dauerhaft: der Prozessstart leitet ihn aus den
+  `applied`-Zeilen der Spalten-Antragsarten ab
+  ([`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)). Der
+  Text muss den **Ist-Zustand** nennen. —
+  **Ausgang:** <bei Closure>
 
 ## 7. Closure-Notiz
 
@@ -207,8 +213,15 @@ Drei Treffer: `BEO-PGC/handbuch-versionshistorie-uebersprungen` (verkörpert
 seit `slice-053`, verpflichtet dieses Vorhaben zur Versionsfortschreibung);
 `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (3×,
 dieser Slice ist sein Träger); `BEO-PGC/slice-pfad-als-link-in-berichten`
-(2×, betrifft die Verweisform auf Lifecycle-wandernde Artefakte — hier
-einschlägig, weil der Slice auf Slice-Kennungen verweist).
+(als Regel **verkörpert** seit `slice-075` — die Verweisform auf
+Lifecycle-wandernde Artefakte; hier einschlägig, weil dieser Plan auf
+Slice-Kennungen verweist) und `BEO-PGC/aufschub-adresse-verfaellt`
+(1×, **offen**) — **Treffer**: §2 dieses Plans verwies die Paarungen an „die
+nächste Welle-Closure", die es nicht mehr gibt; beim Priorisieren auf die
+Slice-Closure als Träger nachgezogen. Beleg bei Closure:
+`evidence/slice-077.md` — Zähler dann **3×** (`slice-074`, `slice-076`,
+`slice-077`), die Schwelle ist damit erreicht und der Lese-Schritt der Closure
+weist den Ausgang zu.
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
