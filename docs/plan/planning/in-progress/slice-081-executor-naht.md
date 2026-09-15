@@ -43,9 +43,26 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Die DB-Adapter hängen an einem **konkreten** `*pgxpool.Pool`. Eine
-schmale, adapter-eigene Executor-Schnittstelle (`Query`/`Exec` plus ein
-minimales `Rows`) macht ihre Verklebung netzlos prüfbar: Fehlerklassifikation
-und Zeilen-Übersetzung werden **reine Funktionen** mit eigenen Tests.
+adapter-eigene Executor-Schnittstelle (`Query`/`Exec` plus `QueryRow`) macht
+ihre Verklebung netzlos prüfbar: Fehlerklassifikation und Zeilen-Übersetzung
+werden **reine Funktionen** mit eigenen Tests.
+
+**Berichtigung des Vertrags** (Review `review-slice-081` F-2). Diese Sektion
+sagte zuerst „plus ein **minimales** `Rows`" **und** „der reale Pool erfüllt
+sie". Beides zugleich ist nicht zu haben — **compilerseitig gemessen**:
+`pgx.Rows` trägt **10** Methoden, die deklarierte `sqlexec.Rows` fordert **4**;
+`*pgxpool.Pool` erfüllt `Executor` **genau dann**, wenn `Query` `pgx.Rows`
+liefert (mit der minimalen `Rows` bricht die Zusicherung ab — `wrong type for
+method Query: have Query(...) (pgx.Rows, error), want Query(...) (minRows,
+error)`). Die Verengung wäre über einen Vermittler zu haben, der `pgx.Rows` auf
+vier Methoden eindampft; ihr Preis ist eine zusätzliche Schale **und** eine
+`DB`-Zusicherung, die dann nicht mehr der Pool trägt. **Entschieden: die
+Zusicherung bleibt** — der Zweck ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+Punkt 5) ist die **reine Funktion**, und die trägt; die Abhängigkeit auf den
+**konkreten Pool** ist gelöst. **Benannte Grenze:** der Fake muss deshalb
+**10** Methoden erfüllen statt vier (`translate_test.go`); die sechs
+überzähligen (`CommandTag`, `FieldDescriptions`, `Values`, `RawValues`, `Conn`,
+`TypeMap`) sind `nil`-Attrappen.
 
 **Die Rechtfertigung ist Design, nicht die Zahl**
 ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
@@ -129,9 +146,12 @@ vierter Punkt:
 **Liefer-Punkt 1 — die Naht existiert.**
 
 - [x] Die Adapter hängen an einer **adapter-eigenen** Schnittstelle
-      (`Query`/`Exec` plus ein minimales `Rows`) statt an `*pgxpool.Pool`;
-      der reale Pool erfüllt sie (`var _ sqlexec.DB = (*pgxpool.Pool)(nil)`,
-      `internal/adapters/driven/postgresstorage/sqlexec/seam.go`).
+      (`Query`/`Exec`/`QueryRow`) statt an `*pgxpool.Pool`; der reale Pool
+      erfüllt sie (`var _ sqlexec.DB = (*pgxpool.Pool)(nil)`,
+      `internal/adapters/driven/postgresstorage/sqlexec/seam.go`). **Die
+      Zeilen-Schnittstelle bleibt `pgx.Rows`** — die Verengung auf vier
+      Methoden verträgt sich nicht mit dieser Zusicherung (§1, compilerseitig
+      gemessen).
 - [x] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-store` und `make test-replication` (Exit 0) — der Beleg, dass
       die Naht die Ausführung nicht verschiebt.
