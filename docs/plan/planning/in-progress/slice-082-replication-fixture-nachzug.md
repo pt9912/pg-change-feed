@@ -35,13 +35,18 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** `make test-replication`s tier-weites `go test ./...` läuft **grün**. Das
-Fixture von `internal/bootstrap · TestWALRetentionThresholdEndToEnd` fährt heute
+Fixture von `internal/bootstrap · TestWALRetentionThresholdEndToEnd` fuhr
 `DROP SCHEMA cdc CASCADE` und ein eigenes `ApplySchema`, das die Tabellen
-`cdc.administration_request` und `cdc.process_heartbeat` nicht mitbringt — beide
-liest `bootstrap.Run` seit [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md).
-Der Test scheitert darum mit `42P01`, und weil `make test-replication` **weder im
-Gate noch in der CI** läuft, war das über viele Slices unsichtbar. Sichtbar wurde
-es erst, als die DB-Adapter-Coverage den Lauf als Träger aufrief.
+`cdc.administration_request` und `cdc.process_heartbeat` nicht mitbrachte. Beide
+braucht `bootstrap.Run` seit [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
+— aber **nicht auf dieselbe Weise**, und diese Ungenauigkeit trug der Plan
+zuerst (Review F-1, Verifikation V-4): `cdc.administration_request` **liest** er,
+sein Fehlen ist `42P01`-fatal; `cdc.process_heartbeat` **schreibt** er
+best-effort (`wiring.go:844`, `_ = port.Beat(...)`), gelesen wird es erst im
+`--healthcheck`-Pfad über die View `cdc.heartbeat`. Der Beleg scheiterte darum
+mit `42P01`, und weil `make test-replication` **weder im Gate noch in der CI**
+läuft, war das über viele Slices unsichtbar. Sichtbar wurde es erst, als die
+DB-Adapter-Coverage den Lauf als Träger aufrief.
 
 **Der Ist-Zustand ist belegt:** der Fehler reproduziert am **unveränderten**
 Runner (`9fa9be3`), er kann nicht aus einem späteren Diff stammen, und
@@ -92,14 +97,17 @@ vierter Punkt:
       zweite Liste ist genau die Drift, die diesen Befund erzeugt hat.
 - [x] Die zwei Tabellen, deren Fehlen belegt ist (`cdc.administration_request`,
       `cdc.process_heartbeat`), sind nach dem Nachzug **real** vorhanden — belegt
-      am **Objektstand** nach dem Rollout (15 Tabellen, 6 Sichten, 4 Funktionen),
-      nicht an einem Kommentar. **Der Lauf beweist sie nicht beide**, und das
-      steht hier so (Review F-1): `cdc.administration_request` ist für
-      `bootstrap.Run` **fatal** (`42P01` beendet den Lauf), `cdc.process_heartbeat`
-      dagegen **best-effort** (`wiring.go:844`, `_ = port.Beat(...)`) — nimmt man
-      nur sie weg, bleibt der Tier-Lauf grün. **Nachtrag zum Plan:** die vorige
-      Fassung sagte „der Lauf beweist es" für **beide** Tabellen; das war eine
-      unzutreffende Tatsachenbehauptung und ist hiermit berichtigt.
+      am **Objektstand** nach dem Rollout, nicht an einem Kommentar. **Benannt,
+      nicht gezählt:** der Rollout-Report (`tools/schema/plan.yaml`) führt
+      **10** Tabellen und **4** Sichten, beide belegten darunter. **Zwei
+      Aussagen sind hier berichtigt** (Review F-1, Verifikation V-1): die vorige
+      Fassung nannte „15 Tabellen, 6 Sichten, 4 Funktionen" — eine
+      weitergegebene, nie selbst gemessene Zahl — und sagte „der Lauf beweist
+      es" für **beide** Tabellen. **Der Lauf beweist sie nicht beide:**
+      `cdc.administration_request` ist für `bootstrap.Run` **fatal** (`42P01`
+      beendet den Lauf), `cdc.process_heartbeat` dagegen **best-effort**
+      (`wiring.go:844`, `_ = port.Beat(...)`) — nimmt man nur sie weg, bleibt der
+      Tier-Lauf grün.
 
 **Liefer-Punkt 2 — der Lauf ist grün.**
 
@@ -255,12 +263,12 @@ dasteht.
   Die lokalen Läufe tragen eine PostgreSQL-Fassung (der Digest des Testcontainers);
   die CI fährt zwei Legs über die in `SPEC-012` festgelegten Digests (17 und 18) im
   nicht-blockierenden `e2e`-Workflow. Ein lokales Grün beider Phasen ist kein Beleg
-  für den Post-Push-Lauf. — **Ausgang:** *weiter offen → Beobachtungs-Register*:
-  eingetragen als weiterer Beleg in
+  für den Post-Push-Lauf. — **Ausgang:** *weiter offen → Beobachtungs-Register*
+  — die **Klasse** bleibt offen (ein Docker-only-Sensor erreicht einen
+  gehosteten Runner nicht); eingetragen als weiterer Beleg in
   `BEO-PGC/github-actions-unverifizierbar-lokal` (3× → 4×), dessen Regel
-  `AGENTS.md` §3.10 trägt — die **Klasse** bleibt offen, ein Docker-only-Sensor
-  erreicht einen gehosteten Runner nicht.
-  **Nachmeldung (`AGENTS.md` §3.10) — eingetreten, vor dem `git mv` nach `done/`:**
+  `AGENTS.md` §3.10 trägt.
+  **Belegte Nachmeldung (§3.10), vor dem `git mv` nach `done/`:**
   `e2e` ist auf `2012a7f`, dem Commit mit dem Fixture-Fix, **grün auf beiden
   Legs** (`image + test-integration (PostgreSQL 17)` und `(PostgreSQL 18)`, je
   `completed/success`, Lauf `34971933133`); darin ist der zuvor rote Schritt
@@ -288,8 +296,9 @@ Backticks).
 
 - **Was hat funktioniert:** Die **eine Quelle** hat getragen —
   `tools/schema/apply-rollout.sh` ruft `make schema-rollout`, und der
-  Objektstand danach ist der volle Rollout-Stand (15 Tabellen, 6 Sichten,
-  4 Funktionen), kein Teilsatz; der Nachbartest
+  Objektstand danach ist der volle Rollout-Stand — der Report
+  (`tools/schema/plan.yaml`) führt **10** Tabellen und **4** Sichten, kein
+  Teilsatz; der Nachbartest
   (`administration_endtoend_test.go`) läuft auf demselben Weg. Und die
   **Mutation** als Beweismittel: nimmt man den Rollout-Aufruf aus dem
   Träger-Skript, werden genau zwei Tests rot — das Grün kommt aus dem Rollout,
@@ -331,7 +340,11 @@ Backticks).
   für erledigt zu erklären, und sie wurde vor dem `git mv` nachgeholt.
   **Zwei Klassen berührt, nicht gezählt:** `BEO-PGC/roter-test-ohne-leser`
   (1×, offen) — dieser Slice ist der Träger des Instanz-Fixes, und die Behebung
-  ist kein zweites Auftreten; `BEO-PGC/schema-rollout-braucht-compose-init`
+  ist kein zweites Auftreten. **Ein Rest bleibt und wird benannt:** eine künftige
+  Drift von `cdc.process_heartbeat` bliebe **wieder** unsichtbar — sein
+  Schreibzug ist best-effort (`wiring.go:844`), ein Ausfall beendet den Lauf
+  nicht (Review F-1; Verifikation: dieselbe Mutation endet Exit 0). Derselbe
+  Vorgang, also **kein** zweiter Beleg; `BEO-PGC/schema-rollout-braucht-compose-init`
   (1×, offen) — die Vorbedingung des Rollouts steht weiter in zwei Formen
   (Inline-SQL in `apply-rollout.sh`, Init-Skript `compose-init/01-cdc-schema.sql`),
   die zwei Zeilen sind aber **umgezogen**, nicht geschrieben (Review F-4).
@@ -378,8 +391,12 @@ ist nicht zu bilden: „Test-Infrastruktur" ist keine deklarierte Sub-Area.
   Treffer — dieser Slice erklärt keinen Werkzeug-Mechanismus; er zieht einen
   Schema-Aufbau nach.
 
-**Kein** Eintrag erreicht mit diesem Slice die 3×-Schwelle; es entsteht kein
-neues Verzeichnis.
+**Ergebnis** — die Sichtung oben ist die des Plan-Zeitpunkts und mit dem Lauf
+überholt (Verifikation V-2): `BEO-PGC/generierte-artefakte-ohne-sync-sensor`
+erreicht mit diesem Slice die **3×-Schwelle**, Beleg `evidence/slice-082.md`;
+sein Ausgang fällt dem Lese-Schritt der `welle-20`-Closure zu (Modul 6),
+**nicht** dieser Closure — siehe §7. Ein neues Verzeichnis entsteht nicht:
+beide Belege gehören zu bestehenden Einträgen.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF (nur `*`/`PGC`)
 — kein Modus-Begründungsblock. Die vier Pflichtkriterien tragen dennoch:
