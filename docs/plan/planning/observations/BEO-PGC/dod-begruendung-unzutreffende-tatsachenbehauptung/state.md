@@ -1,15 +1,25 @@
-Zustand: offen — unter der Schwelle, kein Ausgang zugewiesen. Ein Träger ist
-nicht vorgeschlagen: die Klasse betrifft die Form von DoD-Begründungen im
-Slice-Plan und wäre, wenn überhaupt, über den Planungs-Workflow adressierbar,
-nicht über einen Sensor auf dem Artefakt (eine „ungeprüfte Behauptung" ist an
-der Form nicht entscheidbar — genau das ist die Klasse).
+Zustand: **offen — 3× erreicht, Ausgang noch nicht zugewiesen.** Der
+Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
+Slice-Closure: Modul 6 lässt den Ausgang ab 3× der laufenden Welle-Closure
+zuweisen („Bei 3× wandert der Eintrag in die Steering-Loop-Einträge der
+laufenden Welle-Closure"). Bis dahin ist `offen` der zulässige, vorübergehende
+Stand — wie beim Schwester-Eintrag
+`BEO-PGC/generierte-artefakte-ohne-sync-sensor`.
 
-Zähler (abgeleitet): **2×** (evidence/slice-036.md, evidence/slice-082.md) —
-unter der 3×-Schwelle. Das Erstvorkommen (`slice-036`) wurde seinerzeit **ohne
+**Ein Träger ist inzwischen benannt, aber nicht gebaut:** der Architect-Zug zu
+`ADR-0078` hat für diese Wurzel eine Regel formuliert — *jeder Zahlenwert in
+einem `Accepted`-Dokument trägt seinen Ursprung* (gemessen / übernommen /
+**abgeleitet**); ein abgeleiteter Wert darf nie als gemessen erscheinen. Als
+Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
+§3.7. **Das Benennen ist nicht das Bauen** — die Verkörperung ist Planner-Arbeit
+und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
+`verkörpert` gesetzt.
+
+Zähler (abgeleitet): **3×** (evidence/slice-036.md, evidence/slice-082.md,
+evidence/slice-081.md). Das Erstvorkommen (`slice-036`) wurde seinerzeit **ohne
 Kennung** notiert: das Review nannte das Label, legte aber kein Verzeichnis an.
-Der Eintrag entsteht mit dem zweiten Auftreten und zitiert das erste über
-**dasselbe Label** — die Zuordnung ist belegt, nicht abgeleitet.
-
-Zwei Funde **im selben** Vorgang (`slice-082`: Review F-1 und Verifikation V-1)
-sind *eine* Gelegenheit, kein zweites Auftreten; der Zähler misst Wiederholung
-über Vorgänge, nicht die Zahl der Funde.
+Der Eintrag entstand mit dem zweiten Auftreten und zitiert das erste über
+**dasselbe Label** — die Zuordnung ist belegt, nicht abgeleitet. Zwei Funde **im
+selben** Vorgang (`slice-082`: Review F-1 und Verifikation V-1; `slice-081`:
+Review F-1 und die Berichtigung in §1/§2) sind je *eine* Gelegenheit — der
+Zähler misst Wiederholung über Vorgänge, nicht die Zahl der Funde.
