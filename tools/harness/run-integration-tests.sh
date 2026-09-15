@@ -88,8 +88,11 @@ die Go-Zeilen leitet das Testpaket aus seinem eigenen Quelltext ab
 (`TestAbdeckungstabelleZeilen` in `test/integration/integration_test.go`),
 die Bash-Zeilen deklariert jede Phase des Runners an Ort und Stelle über
 einen Anker. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
-Lauf-Beleg: sie ändert sich mit den Nachweis-Deklarationen, nicht mit jedem
-Lauf — der Runner schreibt sie nur bei inhaltlicher Abweichung. Die
+Lauf-Beleg: der Runner schreibt sie nur bei inhaltlicher Abweichung. Sie
+ändert sich mit den Nachweis-Deklarationen und mit dem Ort ihrer Quellen —
+die Spalte `Ort` bindet an `Datei:Zeile`, jede Einfügung oberhalb einer
+`func TestE2E*` oder einer Runner-Phase verschiebt die Zeilennummer und
+damit diese Tabelle, ohne dass sich an der Abdeckung etwas ändert. Die
 Beschreibungsspalte trägt keine Kennungen; die Aussage eines Nachweises steht
 über die Spalte `Ort` an ihrer Quelle.
 '

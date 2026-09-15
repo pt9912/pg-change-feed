@@ -177,10 +177,14 @@ structure:
   # (tools/harness/run-integration-tests.sh schreibt sie, das Testpaket
   # traegt die Go-Haelfte). Die Regel sichert die Zeilenform: Abschnitt
   # ueber die Kopfzeilen-Namen adressiert, je Zelle eine Mindestbreite.
-  # Die Mindestbreiten binden an die DARSTELLUNG — eine Kennungsspalte ohne
-  # Link auf ihr Definitions-Dokument bleibt darunter, ebenso ein `Ort`
-  # ohne `Datei:Zeile`-Form, ein leerer Nachweis und eine leere
-  # Kurzbeschreibung. Kein Maximalwert: die Kurzbeschreibung ist der erste
+  # Die Mindestbreiten binden an die DARSTELLUNG — sie fangen einen leeren
+  # Nachweis, eine leere Kurzbeschreibung und eine zu kurze Zelle, etwa
+  # einen `Ort` unter der Breite. Einen fehlenden Link traegt die Regel
+  # NICHT: eine Kennungsspalte ohne Link auf ihr Definitions-Dokument
+  # bleibt gruen, sobald ihre Darstellung die Mindestbreite erreicht (drei
+  # unverlinkte Kennungen sind 43 Zeichen bei `cell-min-chars: 40`); der
+  # Waechter fuer den fehlenden Link ist das `ids`-Modul (`id-unlinked`).
+  # Kein Maximalwert: die Kurzbeschreibung ist der erste
   # Satz des ersten Absatzes eines Doc-Kommentars und waechst mit ihm. Was
   # die Regel NICHT traegt, ist ein falscher Nachweis — die tragende
   # Garantie der Tabelle ist ihre Ableitung aus dem Quelltext

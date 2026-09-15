@@ -14,13 +14,17 @@ Berichten und der Register-Identität und die erzeugte
 E2E-Abdeckungstabelle). Die Module und ihre Grenzen stehen in `.d-check.yml`;
 die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
 
-Die `structure`-Regeln adressieren den ADR-Index, die
-Pflichtenheft-Defaults, zwei Architektur-Tabellen, die Closure-Notiz je
-`done/slice-*.md` (sie läuft seit der ersten Closure mit, `· seit
-slice-001`), die Verweisform auf wandernde Slice-Pläne in Berichten und
-Register-Identität sowie die erzeugte E2E-Abdeckungstabelle — jede über
-ihren Abschnitt und ihre Spalten-Mindestbreiten, keine über eine
-Zeilenzahl.
+Die `structure`-Regeln prüfen Abschnitts-Invarianten in ihren Trägerdateien:
+den ADR-Index, die Pflichtenheft-Defaults, zwei Architektur-Tabellen, die
+Closure-Notiz je `done/slice-*.md` (sie läuft seit der ersten Closure mit,
+`· seit slice-001`), die Verweisform auf wandernde Slice-Pläne in Berichten
+und Register-Identität sowie die erzeugte E2E-Abdeckungstabelle. Innerhalb
+dieser Familie adressieren die vier Tabellen-Regeln und die
+E2E-Abdeckungstabelle ihre Spalten über Mindestbreiten; die
+Closure-Notiz-Regel und die beiden Verweisform-Regeln tragen keinen
+Spalten-Knoten und prüfen nur Abschnitt und Muster
+(`non-empty`/`max-open-tasks`/`require-pattern`/`forbid-pattern`). Keine
+Regel zählt Zeilen.
 
 ## Grenze — was das Grün nicht abdeckt
 
