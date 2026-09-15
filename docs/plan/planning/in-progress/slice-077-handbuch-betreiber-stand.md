@@ -115,9 +115,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       beim Lesezugriffsweg bleibt.
 - [x] Versionshistorie fortgeschrieben (Version und Changelog-Zeile).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Erstlauf `docs/reviews/review-slice-077.md` (1 HIGH, F-1), Delta-Nachlauf
+      `docs/reviews/review-slice-077-delta.md` (Fixrunde `1cf5675`) — F-1
+      geschlossen, **0 HIGH** offen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. (Datei existiert in diesem Repo nicht — Item entfällt.)
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
