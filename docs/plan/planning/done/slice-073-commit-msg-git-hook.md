@@ -280,6 +280,22 @@ Ausgang `BEO-PGC/commit-traceability-kein-vorab-hook` (`geplant` →
 3×-Schwelle erreicht. Der Register-Stand ist **vor** dem `git mv` geschrieben;
 die Lage des Belegs prüft die Register-Paarung danach.
 
+**Paarungen (nach dem `git mv`):** *Anker* — der Herkunfts-Anker der
+verkörperten Regel steht an einem veränderlichen Träger, `harness/README.md`
+§Traceability rules (`· seit slice-073`); die Accepted-ADR
+[`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md) selbst kann
+ihn nicht nachtragen (Immutabilität, `AGENTS.md` §3.5) und ist deshalb
+Zielort, nicht Ankerträger. *Folge-Slice* — keiner genannt. *Register* — beide
+genannten Einträge existieren; die zweite Hälfte der Prüfung („jedes
+Verzeichnis trägt mindestens einen Beleg") fand **zwei Vorbestände** mit leerem
+`evidence/` trotz Ausgang `verkörpert`: `BEO-PGC/verwaltung-keine-sql-administration`
+und `BEO-PGC/retention-keine-loeschausfuehrung`. Beide Belege sind aus dem
+jeweils eigenen `state.md` rekonstruiert, das den auflösenden Vorgang selbst
+nennt, und nachgetragen (`evidence/slice-036.md`, `evidence/slice-043.md`).
+**Benannte Lücke:** für diese zweite Hälfte der Register-Paarung führt das Repo
+keinen Sensor — sie ist nur durch die Closure selbst geprüft, ein
+`verkörpert`-Eintrag ohne Beleg bleibt für jedes Gate unsichtbar.
+
 **Folge-Slices:** keine. Die vom Architect verworfene Option — den Hook
 nachziehen — wäre der einzige Folge-Schnitt gewesen; sie ist als Entscheidung
 ausgeschieden ([`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)
