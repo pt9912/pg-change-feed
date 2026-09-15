@@ -9,9 +9,14 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 die Closure-Bedingung dieses Slice ist die eigene DoD (ein Beispiel, das
 übersetzt und beide Schritte geht), kein repo-weites *Mehr*.
 
-**Bezug:** [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
-(die Beispiel-Clients unter `examples/` — er legt den Umfang auf **drei** fest;
-diesen vierten nimmt eine Folge-ADR auf) ·
+**Bezug:** [`ADR-0079`](../../adr/0079-nats-beispielclient-vierter-examples-client.md)
+(der **vierte** Beispiel-Client — er hebt `ADR-0076`s Festlegung auf drei
+Clients auf und nimmt `examples/nats-client` in unveränderter Form der drei
+anderen auf: nur öffentlicher Draht-Vertrag, kein `/internal/`-Import, keine
+neue `.a-check.yml`-**Kante**, Doku mit `make test`-Bindung, kein Lauf-Beleg) ·
+[`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+(die Beispiel-Clients unter `examples/` — Form, Kompilier-Bindung, die
+Gate-Scope-Gruppen) ·
 [`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md) (Core NATS,
 kein JetStream) · [`ADR-0056`](../../adr/0056-nats-tabellen-granulares-subjekt.md)
 (das tabellen-granulare Subjekt, Korrektur von `ADR-0055` Punkt 2).
@@ -21,7 +26,7 @@ Subjekt- und Nachrichtenform des Wecksignals (`spec/pflichtenheft.md` §2): das
 Subjekt-Schema und der **leere Payload** sind der Vertrag, den das Beispiel
 benutzt.
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-15.
 
@@ -67,8 +72,9 @@ nachsehen musst".
 - **Der `.a-check.yml`-Vertragsumzug** (`ADR-0076`s erster Zerlegungs-Slice):
   dieses Beispiel braucht **keine** `contract`-Kante — es importiert weder
   `gen/**` noch `internal/**`.
-- **Die Coverage-Rampen-Frage** (der Blocker von `slice-081`): eigener Vorgang,
-  eigene Entscheidung.
+- **Die Coverage-Rampen-Frage** ([`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md),
+  teilweise abgelöst durch [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)):
+  eigener Vorgang, dort entschieden — dieses Beispiel bewegt keinen Messgegenstand.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
 einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
@@ -117,8 +123,6 @@ vierter Punkt:
 - [ ] `docs/user/benutzerhandbuch.md` trägt einen Abschnitt zum Zugriff über das
       NATS-Wecksignal und **nennt das Beispiel beim Namen** — in der Form der
       bestehenden Zugriffs-Abschnitte der drei anderen Schnittstellen.
-- [ ] Die Folge-ADR zu [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
-      liegt `Accepted` vor und ist im ADR-Index eingetragen.
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -142,7 +146,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/nats-client/main.go` | neu | das eigenständige CLI: Verbindung, Subjekt-Ableitung, Subscription, Weckruf → HTTP-Abfrage, Ausgabe |
 | `examples/nats-client/subject.go` + `_test.go` | neu | die netzlos prüfbare Hälfte: Subjekt-Ableitung und Aufbau der Abfrage als **reine Funktionen** |
 | `docs/user/benutzerhandbuch.md` | update | der zitierbare Zugriffs-Abschnitt; das Beispiel wird beim Namen genannt |
-| `docs/plan/adr/00NN-…` + `docs/plan/adr/README.md` | neu/update | die Folge-ADR, die `ADR-0076`s Drei-Client-Umfang um diesen vierten erweitert |
+| `.a-check.yml` | update | die Gate-Scope-Gruppe `examples: ["examples/**"]` aus [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) Festlegung 4 — **ohne Kante**: ihr Objekt ist dieses Beispiel, und eine Kante entsteht dort erst mit ihrem eigenen Objekt (die `contract`-Kante erst mit dem gRPC-Beispiel). Ohne die Gruppe sind die Dateien „ohne Schicht" — nur ein Abdeckungs-Hinweis, kein Exit-Wechsel, aber die errichtete Abschottung fehlt |
 
 **Der genaue Datei-Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste
 nennt die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Punkte,
@@ -150,25 +154,26 @@ nennt die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Pun
 Entscheidung).
 
 **Nicht in dieser Liste:** `internal/**` (das Beispiel ist kein Harness-Client),
-`tools/harness/**` (die Wegwerf-Clients bleiben, `ADR-0076`), `.a-check.yml`
-(keine neue Kante nötig — das Beispiel importiert weder `gen/**` noch
-`internal/**`), `spec/**`.
+`tools/harness/**` (die Wegwerf-Clients bleiben, `ADR-0076`), `spec/**`
+(`SPEC-017` wird **benutzt**, nicht geändert) — und **keine neue `.a-check.yml`-Kante**:
+das Beispiel importiert weder `gen/**` noch `internal/**`, `nats.go` ist ein
+öffentliches Fremdmodul. Die `tooling→adapters`-Rücknahme und der `contract`-Umzug
+aus `ADR-0076`s Zerlegung bleiben **außerhalb**: sie haben hier kein Objekt.
 
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Trigger je Lifecycle-Übergang und WIP-Limit.
 
-**Start** (`next` → `in-progress`): die Folge-ADR zu [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
-liegt `Accepted` vor (sie nimmt den vierten Client in den Umfang auf),
-`Verantwortlich:` gesetzt, WIP-Limit frei (siehe Hinweis). **Nicht**
-vorausgesetzt: der `contract`-Umzug aus `ADR-0076`s Zerlegung — dieses Beispiel
-braucht ihn nicht.
+**Start** (`next` → `in-progress`): [`ADR-0079`](../../adr/0079-nats-beispielclient-vierter-examples-client.md)
+liegt `Accepted` vor — **erfüllt** —, `Verantwortlich:` gesetzt, WIP-Limit frei
+(siehe Hinweis). **Nicht** vorausgesetzt: der `contract`-Umzug aus `ADR-0076`s
+Zerlegung — dieses Beispiel braucht ihn nicht.
 
-**WIP-Hinweis:** Das Limit ist **1 Slice pro Rolleninhaber** (Modul 5). Dieser
-Slice darf deshalb erst beansprucht werden, wenn `slice-081` seinen Platz in
-`in-progress/` geräumt hat — auch wenn seine eigenen Vorbedingungen früher
-erfüllt sind.
+**WIP-Hinweis:** Das Limit ist **1 Slice pro Rolleninhaber** (Modul 5) — es gilt
+beim Beanspruchen, nicht beim Schneiden. `slice-081` liegt in `done/`,
+`in-progress/` ist leer: der Platz ist frei. Wer später einen zweiten Slice
+daneben beansprucht, hat keine Lifecycle, sondern ein Buffet.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
