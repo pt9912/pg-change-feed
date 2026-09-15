@@ -17,7 +17,7 @@ Replication-Stream als **driving** Adapter — die Schicht, in der diese Naht
 liegt) · [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md)
 (die Fehlerklassen und WAL-Rückstand-Schwellen dieses Empfangs).
 
-**Berührte Spec-Stellen:** — (die Naht liegt **innerhalb** des driven Adapters,
+**Berührte Spec-Stellen:** — (die Naht liegt **innerhalb** des driving Adapters,
 ohne Vertrag oder Sicht zu berühren).
 
 **Verantwortlich:** — (bis zur Priorisierung).
@@ -117,7 +117,10 @@ vierter Punkt:
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+- [ ] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
+      `harness/sensors/db-adapter-coverage.md` bzw.
+      `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
+      Schwellen-ADR (`ADR-0078`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.

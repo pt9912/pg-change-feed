@@ -269,7 +269,7 @@ um `k_auf` **152** (`1679 → 1831`). `k_auf ≥ k_ab` ist erfüllt; die Differe
 `Classify`/`IsAbsent`/`Statement.fail`), keine verlagerte Menge.
 
 **(b) Paket-Granularitäts-Diff — nicht die Summe.** Der Abfluss ist auf **einen**
-Träger **isoliert**: `git diff --name-only 252962b~1..8e9fe4f -- internal/` listet
+Träger **isoliert**: `git diff --name-only 4c7ea8a~1..8e9fe4f -- internal/` listet
 ausschließlich Dateien unter `internal/adapters/driven/postgresstorage/`; kein
 anderes Paket ist berührt, `postgresack` (23) und `replication/receive` (155)
 bleiben unverändert. Der Zuwachs erscheint in **einem Träger, den es vorher
@@ -285,7 +285,7 @@ welcher Fall vorliegt, zeigt allein der Paket-Schnitt.
 **(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe des
 abfließenden Gegenstands sind **grün** (`make test-store` Exit 0,
 `make test-replication` Exit 0, ungepiped), und **kein Testfall wurde entfernt**
-(`git diff --name-status 252962b~1..8e9fe4f -- '*_test.go'` zeigt genau eine **neue**
+(`git diff --name-status 4c7ea8a~1..8e9fe4f -- '*_test.go'` zeigt genau eine **neue**
 Datei, `sqlexec/translate_test.go` — keine Löschung).
 
 **Die Neu-Bemessung ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
