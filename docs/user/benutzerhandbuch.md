@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.15
+Version: 1.16
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-15
 
@@ -757,7 +757,9 @@ ersetzt diesen Zugriffsweg nicht.
 
 **Der zweiseitige Ablauf:** Auf das Subjekt lauschen → beim Weckruf die
 Änderung **selbst** über die [HTTP-/JSON-API](#zugriff-über-die-http-json-api)
-holen und ausgeben. Ein Beispielprogramm liegt unter `examples/nats-client`:
+holen und ausgeben — die Abfrage ist der `reader`-Endpunkt `GET /changes` mit
+den drei Filtern aus dem Subjekt (`source`, `schema`, `table`). Ein
+Beispielprogramm liegt unter `examples/nats-client`:
 `go run ./examples/nats-client -source <quelle> -schema <schema> -table
 <tabelle>`; Adresse und Token liest es aus `CDC_NATS_URL`, `CDC_HTTP_ADDR` und
 `CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern. Die Beispiele sind
@@ -956,3 +958,4 @@ MIT — siehe `LICENSE`.
 | 1.13 | 2026-09-15 | Betreiber-Oberfläche nachgezogen: §5 um die HTTP-Gruppe (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und `CDC_GRPC_ADDR` erweitert (je mit Aktivierungs-/No-Op-Semantik); §4 um „Spalte vom Ausschluss konfigurieren" (`cdc.exclude_column`/`cdc.include_column`, `LH-FA-CFG-005`, dauerhafter Ausschlussstand) und die drei Netzwerk-Zugriffswege (HTTP-/JSON-API `LH-FA-SST-006`, gRPC-Change-Stream und Server-Sent-Events `LH-FA-SST-008`) |
 | 1.14 | 2026-09-15 | Review-Nachzug: Rahmen-Aussage der HTTP-§4 auf die tatsächlich gelistete Fähigkeitsmenge gezogen (die Retention-Auslösung ist nicht CLI-/SQL-gleichwertig, sondern API-exklusiv); der gRPC-Abschnitt nennt die zehn Nachrichtenfelder, und der SSE-Abschnitt verweist darauf statt auf die Spaltenliste von `cdc.changes` |
 | 1.15 | 2026-09-15 | Changes-Lesen über die API ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0081`, slice-086): §4 Fähigkeits-Tabelle um `GET /changes` erweitert, Parameter-/Antwort-Beschreibung samt Fehlerfällen, „Änderungen lesen" verweist auf den Endpunkt, und die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
+| 1.16 | 2026-09-15 | Vierter Zugriffs-Abschnitt ergänzt: §4 „Zugriff über das NATS-Wecksignal" (`LH-FA-SST-007`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-083) — Subjekt-Schema, leerer Payload, Zustellsemantik und der zweiseitige Ablauf (lauschen, dann über `GET /changes` holen) samt Beispiel `examples/nats-client` |
