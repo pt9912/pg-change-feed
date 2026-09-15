@@ -47,7 +47,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Implementierung — beide Implementer-Läufe hatten dadurch keine
   Ermessensfragen mehr offen außer der real zu messenden Ist-Stand-Zahl
   selbst.
-- Das reale Kopiervorbild aus `/Development/d-check` (Coverage-Stage,
+- Das reale Kopiervorbild aus `d-check` (Coverage-Stage,
   Gate-Skript, Bench-Fixture-Stil) trug in beiden Slices fast
   unverändert — nur zwei Alpine/Compose-spezifische Anpassungen waren
   nötig, beide real gefunden und sauber registriert statt stillschweigend

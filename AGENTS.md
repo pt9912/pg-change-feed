@@ -296,6 +296,52 @@ siehe
 [`docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md`](docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md)
 · seit welle-17.
 
+### 3.11 Kein host-lokaler absoluter Pfad in der Doku
+
+Kein Markdown-Dokument dieses Repos nennt einen host-lokalen absoluten Pfad —
+das Maschinen-Layout eines Entwicklerrechners — in Prosa oder Inline-Code. Ein
+Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
+(`d-check`s `Dockerfile`), nicht über seinen Pfad auf einem Rechner. Die
+Präfixliste und die festen Windows-Muster definiert das `hostpaths`-Modul
+(`hostpaths.prefixes`); dieser Abschnitt wiederholt sie nicht.
+
+**Falsch** (der Pfad beginnt mit dem Wurzel-Segment eines Entwicklerrechners;
+der Platzhalter steht für dieses Segment, weil die Regel auch dieses Beispiel
+deckt):
+
+```text
+Real geprüftes Vorbild: <Host-Wurzel>/d-check/Dockerfile (Stage `coverage`)
+```
+
+**Richtig:**
+
+```text
+Real geprüftes Vorbild: `d-check`s `Dockerfile` (Stage `coverage`)
+```
+
+**Was der Sensor deckt — und was nicht.** Die durchsetzbare Hälfte trägt das
+`hostpaths`-Modul in `make docs-check` (`make gates`, Modulliste in
+`.d-check.yml`). Es deckt `.md`-Dateien unter `scan.roots` in Prosa und
+Inline-Code. Es deckt **nicht**: Fenced-Code-Blöcke (dort sind Beispiel-Pfade
+erlaubt — Modul-Design, ohne Opt-out-Marker), **relative** Pfade,
+**Nicht-Markdown** (die Skriptkommentare in `Makefile`, `tools/**` und
+`harness/mk/**` liest der Scan nicht), und Dateien unter `scan.ignore`. Die
+Zusage trägt damit genau die gescannte Markdown-Fläche; diese Ränder sind
+benannt, nicht überzogen.
+
+**Begründung:** Ein host-lokaler absoluter Pfad ist eine Aussage über einen
+Rechner, nicht über das Repo: nicht portabel, für Mitlesende unauflösbar, und
+er verrät das Maschinen-Layout.
+
+**Träger und Anker:** Die Regel wirkt über das `hostpaths`-Modul in
+`make docs-check`; die Entscheidung trägt
+[`ADR-0072`](docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md),
+die Zitationsform eines Schwester-Repos
+[`ADR-0074`](docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md). Die
+Modul-Semantik steht einmal in
+[`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) — dieser
+Abschnitt nennt sie nicht erneut (§3.7).
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.

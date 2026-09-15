@@ -29,10 +29,10 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Eine vierte Docker-Multi-Stage-Stufe `coverage` (nach `deps`,
-analog `/Development/d-check/Dockerfile`) misst real
+analog `d-check`s `Dockerfile`) misst real
 `go test -coverpkg=./internal/...,./cmd/... -coverprofile=… -covermode=atomic
 ./internal/... ./cmd/...`, prüft das Ergebnis über ein Gate-Skript nach dem
-Muster von `/Development/d-check/tools/coverage-gate.sh` gegen die in
+Muster von `d-check`s `tools/coverage-gate.sh` gegen die in
 [ADR-0054](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 festgelegte Schwelle (Endstufe 80 %, oder — falls der real gemessene
 Ist-Stand darunter liegt — eine dokumentierte, auf 5 % abgerundete
@@ -109,7 +109,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `Dockerfile` | update | neue `coverage`-Stage nach `deps` |
-| `tools/coverage-gate.sh` | neu | Schwellen-Prüfskript, Muster `/Development/d-check/tools/coverage-gate.sh` |
+| `tools/coverage-gate.sh` | neu | Schwellen-Prüfskript, Muster `d-check`s `tools/coverage-gate.sh` |
 | `Makefile` (bzw. `harness/mk/*.mk`) | update | `coverage-gate`-Target, Einbindung in `gates:` |
 | `harness/README.md` | update | §Sensors-Zeile für `make coverage-gate` |
 | `AGENTS.md` | update | §4 neue Zeile |
@@ -231,8 +231,8 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** Das Kopiervorbild `/Development/d-check/Dockerfile`
-  + `/Development/d-check/tools/coverage-gate.sh` trug fast unverändert:
+- **Was hat funktioniert:** Das Kopiervorbild `d-check`s `Dockerfile`
+  + `d-check`s `tools/coverage-gate.sh` trug fast unverändert:
   Stage-Reihenfolge, `SHELL`-Direktive, `-coverpkg`-Muster,
   Awk-Schwellenvergleich im Gate-Skript. Die Eskalationsklausel aus
   `ADR-0054` (statt eines erfundenen Ramp-Fahrplans) machte die

@@ -36,8 +36,8 @@ Laufs) sowie `AGENTS.md` §3 Hard Rules (§3.1, §3.7, §3.8) und `ADR-0045`
   `.github/dependabot.yml`, `harness/README.md`-Diff (vollständig),
   `slice-039`-Diff (vollständig)
 - Zum Vergleich herangezogen (Bestand, nicht Teil des Diffs, nur
-  Einordnung): `/Development/d-check/.github/workflows/ci.yml`,
-  `/Development/d-check/.github/dependabot.yml`
+  Einordnung): `d-check`s `.github/workflows/ci.yml`,
+  `d-check`s `.github/dependabot.yml`
 - `docs/reviews/review-slice-037.md` (Format-Vorlage)
 
 ---

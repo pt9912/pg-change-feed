@@ -35,7 +35,7 @@ ist Rollen-Arbeit eines anderen Kontexts und **nicht** Teil des Gegenstands.
 - `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md`
   (die vier Design-Vorgaben und ihre Herkunft)
 - `docs/user/benutzerhandbuch.md` (§1 Zielgruppe, §4 Aufgaben, §5 ENV)
-- Fremdquelle zum Modul: `/Development/d-check/internal/hexagon/core/rules/commits.go`
+- Fremdquelle zum Modul: `d-check`s `internal/hexagon/core/rules/commits.go`
   (`CheckCommitMessage`, `cleanCommitMessage`, `commitSubject`) — gelesen, um
   das Verhalten des **gepinnten** Images zu verstehen, nicht als
   Prüfgegenstand
@@ -86,7 +86,7 @@ ist Rollen-Arbeit eines anderen Kontexts und **nicht** Teil des Gegenstands.
   §Re-Evaluierungs-Trigger (b) · Slice-Plan §6 Risiko 1 · `harness/README.md:165`
   („meldet denselben Verstoß") · Modul `commits` des gepinnten Images,
   dessen Quelltext unter
-  `/Development/d-check/internal/hexagon/core/rules/commits.go`
+  `d-check`s `internal/hexagon/core/rules/commits.go`
   (`cleanCommitMessage`, `commitSubject`) liegt und dessen Modul-ADR als
   Fitness Function festhält: „`#`-Kommentar-only-Kennung zählt **nicht**
   (uniforme Bereinigung)" — die ID dieses Modul-ADRs gehört dem

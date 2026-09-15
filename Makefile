@@ -74,7 +74,7 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 
 # --- Performance-Benchmarks (kein Gate; ADR-0054 §(b)) ---
 # Drei eigenständige Skripte (LH-QA-PER-001…003), je ein Beleg, gebündelt
-# hinter diesem Ziel — analog /Development/d-check/Makefile Zeile 84
+# hinter diesem Ziel — analog `d-check`s `Makefile` Zeile 84
 # (`bench: build`); nicht Teil von `gates`/`ci`/`fullbuild`, weil kein
 # einzelner Schwellenwert existiert, gegen den Aufwand/Ergebnis
 # entscheiden würde (Kontrast zu coverage-gate). Braucht ein zuvor

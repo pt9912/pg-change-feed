@@ -66,15 +66,13 @@ Verteilung, unabhängig reproduziert:
 | Lauf-Belege | `docs/reviews/review-slice-036/039/049/073.md` | 7 | Review-Report ist Lauf-Beleg (Modul 10) — dito <!-- d-check:status-provenance --> |
 | lebende Doku | `harness/sensors/coverage-gate.md` | 2 | frei korrigierbar |
 
-Die 31 Stellen nennen drei Schwester-Artefakte über ihren Pfad auf einem
-Entwicklerrechner: `pt9912/d-check`, `pt9912/d-migrate`,
-`pt9912/ai-harness-init`. Die wörtliche Form (im Fence, weil die Regel sonst
-ihre eigene Aussage verletzte):
-
-```text
-Real geprüftes Vorbild: /Development/d-check/Dockerfile (Stage `coverage`, Zeilen 69–93)
-Die Musterquelle (/Development/d-check/.github/, gelesen, nicht kopiert) ...
-```
+Die 31 Stellen nennen drei Schwester-Repos über ihren Pfad auf einem
+Entwicklerrechner: `d-check` (27 Funde), `d-migrate` (2),
+`ai-harness-init` (1). Der Referent ist je Fundstelle derselbe unveränderte —
+`d-check`s `Dockerfile`, `d-check`s `tools/coverage-gate.sh`,
+`d-check`s `Makefile`, `d-check`s `.github/`, `ai-harness-init`s `.golangci.yml`
+—; die Datei:Zeile-Position zeigt der aktivierte Modul-Lauf, nicht dieses
+Dokument.
 
 ### Der Zwang
 
@@ -174,19 +172,20 @@ nicht —, und Dateien unter `scan.ignore` (`.harness/**` vendored Baseline,
 damit genau die **gescannte Markdown-Fläche**; Skript-Kommentare und
 Fenced-Beispiele sind benannte, nicht gedeckte Ränder.
 
-**Falsch** (der wörtliche Befund; er steht im Fence, weil die Regel ihre
-eigene Aussage sonst selbst verletzte):
+**Falsch** (Form: der Pfad beginnt mit dem Wurzel-Segment eines
+Entwicklerrechners; der Platzhalter steht für dieses Segment, weil die Regel
+auch das Beispiel deckt):
 
 ```text
-Real geprüftes Vorbild: /Development/d-check/Dockerfile (Stage `coverage`)
-Die Musterquelle (/Development/d-check/.github/, gelesen, nicht kopiert) ...
+Real geprüftes Vorbild: <Host-Wurzel>/d-check/Dockerfile (Stage `coverage`)
+Die Musterquelle (<Host-Wurzel>/d-check/.github/, gelesen, nicht kopiert) ...
 ```
 
 **Richtig:**
 
 ```text
-Real geprüftes Vorbild: `pt9912/d-check/Dockerfile` (Stage `coverage`)
-Die Musterquelle (`pt9912/d-check` `.github/`, gelesen, nicht kopiert) ...
+Real geprüftes Vorbild: `d-check`s `Dockerfile` (Stage `coverage`)
+Die Musterquelle (`d-check`s `.github/`, gelesen, nicht kopiert) ...
 ```
 
 **Begründung.** Ein host-lokaler absoluter Pfad ist eine Aussage über einen

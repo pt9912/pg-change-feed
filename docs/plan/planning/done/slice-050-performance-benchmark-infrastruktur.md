@@ -32,10 +32,10 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Drei eigenständige Bench-Skripte nach dem Stil von
-`/Development/d-check/tools/bench-fixture.sh`
+`d-check`s `tools/bench-fixture.sh`
 ([ADR-0054](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 §(b)), gebündelt hinter einem gemeinsamen `make bench`-Target (analog
-`/Development/d-check/Makefile`), das explizit **kein Gate** ist:
+`d-check`s `Makefile`), das explizit **kein Gate** ist:
 (1) `LH-QA-PER-001` Quell-Impact mit/ohne CDC (dieselbe Schreiblast auf
 die Quelltabelle, einmal mit aktivem Replication-Slot/Capture-Prozess,
 einmal ohne), (2) `LH-QA-PER-002` Skalierung über die drei
@@ -270,8 +270,8 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** Das Kopiervorbild `/Development/d-check/Makefile`
-  Zeile 84 + `/Development/d-check/tools/bench-fixture.sh` trug den
+- **Was hat funktioniert:** Das Kopiervorbild `d-check`s `Makefile`
+  Zeile 84 + `d-check`s `tools/bench-fixture.sh` trug den
   Grundriss (Fixture/Umgebung aufbauen, real messen, dokumentiertes
   Ergebnis auf stdout), angepasst um die `ADR-0054`-Vorgabe „drei
   eigenständige Skripte statt einer Kennzahl gegen eine Schwelle". Die

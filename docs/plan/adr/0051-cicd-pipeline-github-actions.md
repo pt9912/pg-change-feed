@@ -48,7 +48,7 @@ in `d-check` (`ci`, `release`, `image-scan`, `upstream-drift`,
 `hub-description`, plus `dependabot.yml`), mit vollem Umfang — **beide**
 Registries (GHCR und Docker Hub) als Release-Ziel.
 
-Die Musterquelle (`/Development/d-check/.github/`, gelesen, nicht kopiert)
+Die Musterquelle (`d-check`s `.github/`, gelesen, nicht kopiert)
 zeigt eine bewährte Form: Action-Pinning per SHA mit Tag-Kommentar,
 `permissions: {}` auf Workflow-Ebene mit gezielter Lockerung je Job,
 fail-open bei Nachtläufen (Netz-/Werkzeugausfall → Skip statt Rot; ein

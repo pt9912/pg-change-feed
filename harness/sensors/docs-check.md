@@ -11,8 +11,14 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 (`section-cell-*`, `section-forbidden` — Register-Spalten,
 Closure-Notiz-Guidance, die Verweisform auf wandernde Slice-Pläne in
 Berichten und der Register-Identität und die erzeugte
-E2E-Abdeckungstabelle). Die Module und ihre Grenzen stehen in `.d-check.yml`;
-die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
+E2E-Abdeckungstabelle), oder einen host-lokalen absoluten Pfad in Prosa oder
+Inline-Code (`hostpath-forbidden` — ein Schwester-Artefakt wird als blankes
+Repo-Wort mit relativem Pfad zitiert,
+[`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
+Die Module und ihre Grenzen stehen in `.d-check.yml`; die Konfiguration ist die
+Deklaration dieses Vertrags, nicht dieses Dokument. Der Ist-Zustand der
+Modulliste ist `links`, `anchors`, `ids`, `matrix`, `versions`, `structure`,
+`hostpaths`.
 
 Die `structure`-Regeln prüfen Abschnitts-Invarianten in ihren Trägerdateien:
 den ADR-Index, die Pflichtenheft-Defaults, zwei Architektur-Tabellen, die
@@ -95,6 +101,22 @@ Regel zählt Zeilen.
    Quelltext** (Go-Hälfte) und der **Anker je Phase** (Bash-Hälfte) — nicht
    das Doku-Gate.
 
+8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Das Modul
+   meldet host-lokale **absolute** Pfade in `.md`-Dateien unter `scan.roots`,
+   in Prosa und Inline-Code (`hostpath-forbidden`). Vier benannte Ränder:
+   **Fenced-Code-Blöcke** sind frei — dort sind Beispiel-Pfade erlaubt, und das
+   Modul kennt keinen Opt-out-Marker; **relative** Pfade sind ungeprüft (die
+   Zusage lautet nicht „kein Pfad verlässt das Repo"); die **Windows-Laufwerks-
+   und UNC-Muster** sind fest, nicht konfigurierbar; und **Nicht-Markdown** ist
+   ungelesen — die Skriptkommentare in `Makefile`, `tools/**` und
+   `harness/mk/**` erreicht der Scan nicht. Dateien unter `scan.ignore`
+   (`.harness/**`, `**/*.template.md`) liegen ebenfalls außerhalb. Die
+   Modul-Semantik steht **einmal** hier — `AGENTS.md` §3.11 nennt sie nicht
+   erneut (Träger:
+   [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)).
+   Die Aktivierung kennt **keinen**
+   Ausschlussblock: kein `scope`, kein `ignore`, kein `exempt-paths`.
+
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
 Vollständigkeits-Zeile „N Datei(en) geprüft, 0 Befund(e)“ sagt etwas über
@@ -125,4 +147,10 @@ Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichte
 3×, `seit slice-075`) · Form der erzeugten E2E-Abdeckungstabelle
 ([`LH-QA-POR-003`](../../spec/lastenheft.md) — die E2E-Kette ist ihr
 Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
-die Kennungsspalte) — `.d-check.yml` §structure.
+die Kennungsspalte) — `.d-check.yml` §structure · kein host-lokaler absoluter
+Pfad in der Doku (`hostpaths` in `modules`, ohne Ausschlussblock —
+[`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
+trägt die Aktivierung, die Zitationsform eines Schwester-Repos
+[`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md),
+die Zitat-Korrektur an immutablen Dokumenten
+[`ADR-0073`](../../docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)).

@@ -27,7 +27,7 @@ neuer Testfall `internal/adapters/driven/postgresstorage/administrationrequest_t
 - `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit/` (`observation.md`, `state.md`, alle fünf `evidence/*.md`-Dateien)
 - `harness/README.md` §Sensors/Werkzeuge (Zeile `make schema-rollout`)
 - `AGENTS.md` §3 Hard Rules, insbesondere §3.1, §3.3, §3.7
-- d-migrate-Quellcode (lokal verfügbar unter `/Development/d-migrate`,
+- d-migrate-Quellcode (lokal verfügbar unter `d-migrate`,
   Digest `sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89`,
   `hexagon/core/.../MigrationFingerprint.kt`, `RawSqlTextProjection.kt`) —
   zur unabhängigen Prüfung der d-migrate-Behauptung, nicht Teil des Diffs
@@ -130,7 +130,7 @@ neuer Testfall `internal/adapters/driven/postgresstorage/administrationrequest_t
 - geprüft, ohne Befund: **d-migrate-`POST_EXECUTE_DRIFT`-Behauptung ist
   zutreffend — verifiziert auf zwei unabhängigen Wegen, nicht aus dem
   Implementer-Bericht übernommen.**
-  1. **Quellcode-Analyse** (d-migrate liegt lokal unter `/Development/d-migrate`
+  1. **Quellcode-Analyse** (d-migrate liegt lokal unter `d-migrate`
      vor, exakt der gepinnte Digest): `MigrationFingerprint.appendFunctions`
      (`hexagon/core/.../MigrationFingerprint.kt:605-627`) nimmt
      `fn.body`/`fn.sourceDialect` **unverändert** in den Post-Compare-

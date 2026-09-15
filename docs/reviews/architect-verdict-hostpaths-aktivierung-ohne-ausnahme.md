@@ -73,15 +73,13 @@ Der Planner hat 31 Befunde gemeldet; dieser Zug hat **nachgemessen**, nicht
 | lebende Doku | `harness/sensors/coverage-gate.md` (2) | **2** |
 | **Summe** | | **31** |
 
-Zitate: `pt9912/d-check` (27), `pt9912/d-migrate` (2), `pt9912/ai-harness-init` (1),
-`pt9912/d-check/.github/` (1). Wörtlich:
-
-```text
-0054:41  Real geprüftes Vorbild: /Development/d-check/Dockerfile (Stage `coverage`, Zeilen 69–93)
-0051:51  Die Musterquelle (/Development/d-check/.github/, gelesen, nicht kopiert)
-review-slice-036:30  /Development/d-migrate
-0054:54  (/Development/KI/ai-harness-init/.golangci.yml, exclusions.rules ...)
-```
+Zitate: `d-check` (27), `d-migrate` (2), `ai-harness-init` (1),
+`d-check`s `.github/` (1). Der Referent je Fundstelle ist in Anzahl + Datei
+oben benannt: `d-check`s `Dockerfile`, `d-check`s `tools/coverage-gate.sh`,
+`d-check`s `Makefile`, `d-check`s `.github/`,
+`ai-harness-init`s `.golangci.yml`; die zitierte Form ist in allen Fällen
+derselbe host-lokale absolute Pfad, die Datei:Zeile-Position zeigt der
+Modul-Lauf.
 
 **Nachgeprüft, nicht übernommen (drei Modul-Eigenschaften):**
 
@@ -183,10 +181,11 @@ damit verfügbar, aber nicht verlangt. **Zeilen-Lokatoren** (`Zeilen 69–93`)
 werden durch den stabilen benannten Anker ersetzt (`Stage coverage`,
 `bench:`-Target).
 
-Beispiel (Fence, weil die Regel sonst ihre eigene Aussage verletzte):
+Beispiel (der Platzhalter steht für das Wurzel-Segment eines
+Entwicklerrechners, weil die Regel auch das Beispiel deckt):
 
 ```text
-vorher:  Real geprüftes Vorbild: /Development/d-check/Makefile Zeile 84 (bench:-Target)
+vorher:  Real geprüftes Vorbild: <Host-Wurzel>/d-check/Makefile Zeile 84 (bench:-Target)
 nachher: Real geprüftes Vorbild: `d-check`s `Makefile` (`bench:`-Target)
 ```
 

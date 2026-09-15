@@ -38,10 +38,10 @@ Roadmap-Zeile explizit die Ausfüllung von `AGENTS.md` §3.2
 (Suppression-Verbot), das in diesem Repo noch der unausgefüllte
 Template-Platzhalter ist.
 
-Real geprüftes Vorbild: `/Development/d-check/Dockerfile` (Stage `coverage`,
-Zeilen 69–93) und `/Development/d-check/tools/coverage-gate.sh` — eine knappe
+Real geprüftes Vorbild: `d-check`s `Dockerfile` (Stage `coverage`,
+Zeilen 69–93) und `d-check`s `tools/coverage-gate.sh` — eine knappe
 bash/awk-Prüfung der `total:`-Zeile aus `go tool cover -func=…`, ohne
-Ausnahme-Pfad. `/Development/d-check/Makefile` (Zeilen 35–39) zeigt zudem,
+Ausnahme-Pfad. `d-check`s `Makefile` (Zeilen 35–39) zeigt zudem,
 dass d-check selbst nie mit einem Direktsprung startete: Die heutige Schwelle
 93 % ist das Ergebnis einer Ramp (85 → 90 → 93, mit Carveout-Historie), nicht
 ihr Ausgangspunkt.
@@ -51,7 +51,7 @@ Template-Platzhalter (`<suppression>-gate`, `<zentraler
 Konfigurations-Datei>`). Dieses Repo hat **keinen Linter** — kein
 `.golangci.yml`, kein `lint`-Target in `Makefile` oder `harness/mk/*.mk`. Das
 in der Roadmap-Zeile genannte Referenzmuster
-(`/Development/KI/ai-harness-init/.golangci.yml`, `exclusions.rules` mit
+(`ai-harness-init`s `.golangci.yml`, `exclusions.rules` mit
 `Why:`-Begründung je Ausnahme statt Inline-`//nolint`) ist ein
 **Linter**-Suppressionsmuster und für ein Coverage-Gate nicht direkt
 übertragbar: d-checks Coverage-Gate hat strukturell **keinen** Ausnahme-Pfad
@@ -72,8 +72,8 @@ Benchmarks, keine einzelne Kennzahl. `LH-QA-PER-004` (Commit→CDC-Latenz) ist
 einzelner Vorher/Nachher-Beleg, keine systematische Infrastruktur — und bleibt
 außerhalb dieser ADR unverändert.
 
-Real geprüftes Vorbild: `/Development/d-check/Makefile` Zeile 84
-(`bench:`-Target) + `/Development/d-check/tools/bench-fixture.sh` — ein
+Real geprüftes Vorbild: `d-check`s `Makefile` Zeile 84
+(`bench:`-Target) + `d-check`s `tools/bench-fixture.sh` — ein
 deterministisches Fixture, N = 3 Läufe, Median gegen eine feste Schwelle
 (< 5 s). d-check misst damit **eine** Kennzahl gegen **eine** Schwelle; für
 PER-001…003 gibt es keine einzelne vergleichbare Schwelle — Benchmark ist
@@ -100,7 +100,7 @@ Bench-Skript-Familie nach d-check-Vorbild ohne Gate-Charakter.**
   im netzlosen Docker-Build zählt sie nicht gegen die Schwelle, ohne den Build
   zu brechen.
 - **Docker-Stage:** vierte Stage `coverage` nach `deps`, analog
-  `/Development/d-check/Dockerfile` — `SHELL ["/bin/bash", "-eo",
+  `d-check`s `Dockerfile` — `SHELL ["/bin/bash", "-eo",
   "pipefail", "-c"]` (load-bearing, damit `go tool cover | tee` den
   Exit-Code nicht maskiert), `ARG COVERAGE_THRESHOLD` mit `ENV`-Durchreichung,
   `go test -coverpkg=… -coverprofile=… -covermode=atomic ./internal/...
@@ -124,7 +124,7 @@ Bench-Skript-Familie nach d-check-Vorbild ohne Gate-Charakter.**
   80 %), mit Hochschalt-Trigger „nächste Coverage-Verbesserung schließt die
   Lücke zur nächsten Stufe" bis 80 % erreicht ist, dokumentiert als
   Kalibrierungs-Bindung in `harness/README.md` §Sensors — exakt das Muster,
-  das d-check selbst durchlief (85 → 90 → 93, `/Development/d-check/Makefile`
+  das d-check selbst durchlief (85 → 90 → 93, `d-check`s `Makefile`
   Zeile 35–38). Das ist **keine** Schwellen-Senkung (`AGENTS.md` §3.6
   bleibt unverletzt): Die Endstufe 80 % steht hier fest; nur der
   **Einstiegspunkt** in Richtung dieser Endstufe hängt vom noch unbekannten
@@ -148,10 +148,10 @@ Bench-Skript-Familie nach d-check-Vorbild ohne Gate-Charakter.**
 ### (b) Benchmark-Infrastruktur
 
 - **Muster:** je Beleg ein eigenes Bench-Skript nach dem Stil von
-  `/Development/d-check/tools/bench-fixture.sh` (deterministisches Setup,
+  `d-check`s `tools/bench-fixture.sh` (deterministisches Setup,
   mehrfache Läufe wo Median sinnvoll ist, Ergebnis auf stdout/Report-Datei),
   gebündelt hinter einem gemeinsamen `make bench`-Target analog
-  `/Development/d-check/Makefile` Zeile 84 — aber **drei** Skripte für drei
+  `d-check`s `Makefile` Zeile 84 — aber **drei** Skripte für drei
   unabhängige Belege (`LH-QA-PER-001` Quell-Impact mit/ohne CDC,
   `LH-QA-PER-002` Skalierung über die `SPEC-014`-Lastenstufen als feste
   Eingabeparameter, `LH-QA-PER-003` Batch- vs. Einzelabruf), statt eines

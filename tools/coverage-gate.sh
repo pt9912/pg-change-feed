@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # coverage-gate.sh — Go-Coverage-Gate (Kalibrierungs-Bindung: aktuelle
 # Schwelle und Historie in harness/README.md §Sensors; ADR-0054).
-# Muster: /Development/d-check/tools/coverage-gate.sh (gleiche Build-Familie).
+# Muster: `d-check`s `tools/coverage-gate.sh` (gleiche Build-Familie).
 #
 # Aufruf:
 #   coverage-gate.sh <coverage-func.txt> <threshold>

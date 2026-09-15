@@ -31,7 +31,7 @@ hat vorab entschieden: ein scope-eingeschränktes Coverage-Gate
 (`internal/...`+`cmd/...`, Endstufe 80 %, bedingte Eskalationsklausel je
 nach realem Ist-Stand) und eine Bench-Skript-Familie (drei eigenständige
 Belege, kein Gate) — beide nach dem real geprüften Vorbild aus
-`/Development/d-check`.
+`d-check`.
 
 **Das *Mehr* gegenüber den einzelnen Slice-DoDs:** Kein Slice-DoD allein
 beweist, dass `make gates` jetzt einen echten Coverage-Beleg trägt **und**

@@ -16,7 +16,7 @@ Review-Arten). Verifikation gegen DoD/Spec bleibt Verifier-Aufgabe.
 - `AGENTS.md` §3 (Hard Rules, insb. 3.1 Docker-only, 3.6 Gate-Lockerung nur
   per ADR, 3.7 Kommentar-Disziplin)
 - `harness/conventions.md` (MR-000 ID-Schema)
-- Vorbild-Repo `/Development/d-check` (Dockerfile `coverage`-Stage,
+- Vorbild-Repo `d-check` (Dockerfile `coverage`-Stage,
   `tools/coverage-gate.sh`, `Makefile`)
 
 ---

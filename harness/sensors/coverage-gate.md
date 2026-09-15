@@ -5,7 +5,7 @@
 Wird dieses Target rot, unterschreitet die Gesamt-Coverage über
 `./internal/...`+`./cmd/...` die aktuell gültige Schwelle (`THRESHOLD`).
 Vierte Docker-Multi-Stage-Stufe `coverage` (nach `deps`, analog
-`/Development/d-check/Dockerfile`): `go test -coverpkg=./internal/...,./cmd/...
+`d-check`s `Dockerfile`): `go test -coverpkg=./internal/...,./cmd/...
 -coverprofile=… -covermode=atomic ./internal/... ./cmd/...`, dann
 `go tool cover -func=…`, dann `tools/coverage-gate.sh` gegen `THRESHOLD`
 ([`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)).
@@ -32,7 +32,7 @@ Lauf bezeugen und nicht wandern (`AGENTS.md` §3.7) · seit slice-076.
 Lücke zur nächsten 5-%-Stufe (`THRESHOLD` in
 [`harness/mk/coverage.mk`](../mk/coverage.mk) anheben), bis 80 % erreicht
 ist — dieselbe Reifung, die d-check selbst durchlief (85 → 90 → 93,
-`/Development/d-check/Makefile`). Das ist **keine** Schwellen-Senkung
+`d-check`s `Makefile`). Das ist **keine** Schwellen-Senkung
 (`AGENTS.md` §3.6 bleibt unverletzt): Die Endstufe steht fest, nur der
 Einstiegspunkt hängt am real gemessenen Ist-Stand.
 

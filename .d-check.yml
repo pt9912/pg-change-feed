@@ -5,7 +5,7 @@ scan:
   # .harness/**: tool-interne Ablage (vendored Baseline, Sprachskelett) —
   # keine Adopter-Doku, vom Doc-Gate ausgenommen.
   ignore: ["**/*.template.md", ".tmp/**", ".harness/**"]
-modules: [links, anchors, ids, matrix, versions, structure]
+modules: [links, anchors, ids, matrix, versions, structure, hostpaths]
 ids:
   # Kennungs-Linkpflicht (id-unlinked): nackte Kennungen muessen auf ihr
   # Definitions-Dokument verlinken. Je Stratum ein Muster; das .a-Muster
