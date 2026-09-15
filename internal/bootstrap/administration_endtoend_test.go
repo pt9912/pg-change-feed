@@ -31,13 +31,11 @@ import (
 // laufenden Feed-Container liegt in `tools/harness/run-integration-tests.sh`
 // (`make test-integration`, `LH-FA-CFG-005`).
 //
-// Kopplung: diese Datei muss vor den Testdateien dieses Pakets laufen, die
-// das Schema per `DROP SCHEMA cdc CASCADE` samt hand-DDL-Neuaufbau
-// zurücksetzen (`replication_stream_test.go`, `walretention_endtoend_test.go`)
-// — deren Neuaufbau trägt weder `cdc.administration_request` noch die
-// Antrags-Funktionen. `go test` fährt die Testdateien eines Pakets in
-// Datei-Namensordnung; „administration_endtoend_test.go" sortiert vor beiden
-// (`a` < `r`/`w`) und läuft deshalb zuerst.
+// Kopplung: der Schema-Stand dieses Laufs kommt aus dem d-migrate-Rollout,
+// den der Lauf-Aufruf vor dem `internal/bootstrap`-Aufruf anwendet
+// (`tools/schema/apply-rollout.sh`) — er trägt `cdc.administration_request`
+// und die vier Antrags-Funktionen
+// (`tools/schema/nacharbeit-administration.sql`).
 func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 	dsn := os.Getenv("CDC_STORE_TEST_DSN")
 	if dsn == "" {

@@ -79,12 +79,10 @@ func TestRealPersistBeforeAck(t *testing.T) {
 		}
 	})
 
-	if _, err := pool.Exec(ctx, "DROP SCHEMA IF EXISTS cdc CASCADE"); err != nil {
-		t.Fatalf("Schema-Rückbau: %v", err)
-	}
-	if err := postgresstorage.ApplySchema(ctx, pool); err != nil {
-		t.Fatalf("ApplySchema: %v", err)
-	}
+	// Den Schema-Stand dieses Laufs trägt die eine Schema-Anwendung der
+	// Test-Läufe (`tools/schema/apply-rollout.sh`), die der Lauf-Aufruf vor
+	// dem Tier-Lauf ausführt — derselbe d-migrate-Rollout wie im Betrieb und
+	// in `make test-store`. Dieser Test trägt darin nur seine Referenz-Zeilen.
 	for _, statement := range []string{
 		fmt.Sprintf("INSERT INTO cdc.source (source_id, name) VALUES ('%s', 'Quelle')", wireSource),
 		fmt.Sprintf("INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ('%s', '%s', 'public', 'feed_wire_test')", wireTableID, wireSource),

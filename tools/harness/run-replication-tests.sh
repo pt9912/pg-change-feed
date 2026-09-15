@@ -20,9 +20,9 @@
 #             DB-Adapter-Coverage (kein Gate).
 #   tier    — der Tier-weite `go test ./...`.
 # Ohne Argument (make test-replication) laufen beide Phasen nacheinander.
-# Die Trennung ist noetig, weil der Tier-Lauf einen vorbestehenden roten Beleg
-# traegt (internal/bootstrap, TestWALRetentionThresholdEndToEnd) — im selben
-# Schritt verschluckte sein Exit das Verdikt der Messung.
+# Die Trennung haelt beide Verdikte lesbar: der Tier-Lauf fuehrt `go test ./...`
+# ueber den ganzen Baum — im selben Schritt verschluckte sein Exit das Verdikt
+# der Messung.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
@@ -106,8 +106,18 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
 fi
 
 # Phase `tier` — der Tier-weite `go test ./...`; der Exit dieses Aufrufs ist
-# das Verdikt dieser Phase.
+# das Verdikt dieser Phase. Der Schema-Stand dieses Laufs kommt aus derselben
+# Schema-Anwendung wie der Betrieb (tools/schema/apply-rollout.sh,
+# `make test-store`): die `internal/bootstrap`-Fixtures starten
+# `bootstrap.Run` real, und der liest `cdc.table_schema`
+# (`SchemaStorePort.CurrentVersion`), `cdc.administration_request`
+# (`ColumnExclusionPort.ExcludedColumns`, ADR-0050) und
+# `cdc.process_heartbeat` (HeartbeatPort). Die `measure`-Phase oben läuft
+# ohne diesen Schritt: ihr Gegenstand (`postgresack`,
+# `replication/receive`) bringt seine Tabellen selbst mit.
 if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
+  bash tools/schema/apply-rollout.sh "$PG_CONTAINER" "$PG_DB" "$PG_USER" "$NETWORK" "$DSN"
+
   docker run --rm --network "$NETWORK" \
     -v "$(pwd)":/src:ro \
     -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \

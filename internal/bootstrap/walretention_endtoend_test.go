@@ -10,7 +10,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/bootstrap"
@@ -89,30 +88,18 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 		}
 	})
 
-	if _, err := pool.Exec(ctx, "DROP SCHEMA IF EXISTS cdc CASCADE"); err != nil {
-		t.Fatalf("Schema-Rückbau: %v", err)
-	}
-	if err := postgresstorage.ApplySchema(ctx, pool); err != nil {
-		t.Fatalf("ApplySchema: %v", err)
-	}
-	// `cdc.table_schema` trägt `ApplySchema` (schema.sql) nicht — ihr Port
-	// (SchemaStorePort) liegt außerhalb dieses Store-Adapters, dieselbe
-	// Abgrenzung wie bei den Consumer-State-Tabellen
-	// (`schemastore_test.go`, `ADR-0015` Folgepflicht). Dieser Lauf
-	// verdrahtet `bootstrap.Run` real und durchläuft damit
-	// `mapper.Assembler.Consume`s Relation-Behandlung — anders als
-	// `cdc.consumer`/`cdc.consumer_position` liegt dieser Port im
-	// laufenden Erfassungspfad, die Tabelle muss deshalb hier bestehen.
-	if _, err := pool.Exec(ctx, `CREATE TABLE IF NOT EXISTS cdc.table_schema (
-		schema_version_id text NOT NULL REFERENCES cdc.schema_version (schema_version_id),
-		ordinal_position   bigint NOT NULL CHECK (ordinal_position >= 1),
-		column_name        text NOT NULL,
-		column_oid         bigint NOT NULL,
-		PRIMARY KEY (schema_version_id, ordinal_position),
-		UNIQUE (schema_version_id, column_name)
-	)`); err != nil {
-		t.Fatalf("cdc.table_schema anlegen: %v", err)
-	}
+	// Den Schema-Stand dieses Laufs trägt die eine Schema-Anwendung der
+	// Test-Läufe (`tools/schema/apply-rollout.sh`), die der Lauf-Aufruf vor
+	// dem Tier-Lauf ausführt — derselbe d-migrate-Rollout wie im Betrieb und
+	// in `make test-store`. Er trägt die Tabellen, die `bootstrap.Run` liest:
+	// `cdc.table_schema` (`SchemaStorePort.CurrentVersion`),
+	// `cdc.administration_request`
+	// (`ColumnExclusionPort.ExcludedColumns`, `ADR-0050`) und
+	// `cdc.process_heartbeat` (`HeartbeatPort`).
+	//
+	// Die Zeile `cdc.source` trägt der Aufrufer vor der Aktivierung
+	// (`TableActivationAdapter.Register`); dieser Lauf legt sie für seine
+	// Quelle an.
 	if _, err := pool.Exec(ctx,
 		"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'WAL-E2E-Quelle')", string(source),
 	); err != nil {
@@ -234,12 +221,11 @@ func awaitSlotExists(t *testing.T, pool *pgxpool.Pool, slot string, timeout time
 }
 
 // awaitPublishedChangeCount pollt `cdc.change`/`cdc.transaction` direkt
-// (`schema.sql`, `SPEC-001`/`SPEC-002`), bis mindestens `want` Changes der
-// Quelle sichtbar sind — der Beleg, dass der Capture-Betrieb tatsächlich
-// weiterläuft. Die Lese-Sicht `cdc.changes` (`LH-FA-SST-002`, genutzt in
-// `welle6_endtoend_test.go`) trägt `make schema-rollout` (d-migrate) und
-// steht unter `make test-replication` nicht zur Verfügung — dieser
-// Testlauf trägt nur `postgresstorage.ApplySchema` (Dateikommentar oben).
+// (`SPEC-001`/`SPEC-002`), bis mindestens `want` Changes der Quelle
+// sichtbar sind — der Beleg, dass der Capture-Betrieb tatsächlich
+// weiterläuft. Der Zählstand kommt damit aus den Persistenz-Tabellen
+// selbst und nicht aus der Projektion der Lese-Sicht `cdc.changes`
+// (`LH-FA-SST-002`).
 func awaitPublishedChangeCount(t *testing.T, pool *pgxpool.Pool, source model.SourceID, want int, timeout time.Duration) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
