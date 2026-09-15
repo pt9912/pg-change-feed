@@ -18,7 +18,10 @@ austauschbare Schicht führt) · [`ADR-0041`](../../adr/0041-a-check-maschinenfo
 [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
 (die Neu-Bemessung der Rampe bei einem **Subjekt-Transfer** — er ist die
 Entscheidung, die dieser Slice ausgelöst hat, und ihre Umsetzung gehört in ihn,
-siehe §1 und §3).
+siehe §1 und §3) ·
+[`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+(der **Transfer-Nachweis** anstelle der Summen-Konstanz — Teil-Supersede von
+`ADR-0077`, weil dessen tragende Bedingung gemessen nicht trug).
 
 **Berührte Spec-Stellen:** — (die Sicht beschreibt Schichten und Ports; dieser
 Slice ändert **innerhalb** des driven Adapters, ohne Vertrag oder Sicht zu
@@ -65,7 +68,14 @@ Schwelle.
 
 **Die Messung des zweiten Implementer-Laufs widerlegt die Voraussetzung dieser
 Entscheidung** (§3, *Befund des zweiten Laufs*): `k_aufnehmend` 152 ≠
-`k_abfließend` 138. Sie liegt dem Architect als Folge-ADR vor.
+`k_abfließend` 138. **Entschieden durch [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md):**
+die Summen-Konstanz war ein *hinreichender, aber weder notwendiger noch
+hinreichender* Stellvertreter — sie ließe eine Löschung-mit-Ersatz durch (nicht
+hinreichend) und verböte eine Generalisierung, die Code kostet (nicht
+notwendig). An ihre Stelle tritt der **dreiteilige Transfer-Nachweis**
+(§2, Liefer-Punkt 3). Der **Regressions-Riegel** bleibt unverändert scharf:
+fällt die Quote bei **unverändertem** Nenner, oder fällt der abfließende Nenner
+**ohne Ankunft** (`k_auf < k_ab`), steht die Schwelle.
 **Berichtigung einer eigenen Zahl:** die hier zuvor stehende Angabe
 `1679 → 1817` war die *abgeleitete* Summe `1679 + 138` — aus einem
 Implementer-Bericht **übernommen und nicht gemessen**; sie ist über meinen
@@ -140,18 +150,23 @@ vierter Punkt:
       (`make coverage-gate`, beide Läufe Exit 0; Gegenstand **1679 → 1831**
       Statements, gemessen im zweiten Lauf — §3).
 - [ ] **Die Neu-Bemessung aus [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
+      in der Fassung von [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
       ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
       (`tools/harness/db-coverage.sh`, Zeile der Vorgabe), `THRESHOLD` 65 → 70
       (`harness/mk/coverage.mk`), und die Träger-Doku
       (`harness/sensors/db-adapter-coverage.md`,
       `harness/sensors/coverage-gate.md`, `harness/README.md` §Sensors,
-      `AGENTS.md` §4) nennt die neuen Stufen. **Der Nenner-Nachweis** — die
-      Statement-Summe beider Gegenstände bleibt über den Zug hinweg konstant —
-      liegt als Beleg bei; er ist die Bedingung, unter der die Senkung trägt.
-      **Offen (zweiter Lauf):** gemessen ist die Summe **nicht** konstant
-      (2467 → 2481, +14). Ob die Paarung in abgeschwächter Form trägt, entscheidet
-      die Folge-ADR zu `ADR-0077`; bis dahin ist dieses Kriterium **nicht
-      erfüllbar** und die Senkung nicht umgesetzt (§3).
+      `AGENTS.md` §4) nennt die neuen Stufen.
+- [ ] **Der Transfer-Nachweis liegt vollständig bei — alle drei Belege**
+      (`ADR-0078` §Entscheidung): **(a) die Arithmetik** — `k_ab` 138, `k_auf`
+      152, `k_auf ≥ k_ab`, die Differenz 14 ist **neuer** Code; **(b) der
+      Paket-Diff**, der Abfluss ist auf den verlagerten Träger **isoliert**
+      (übrige Pakete byte-identisch), der Zuwachs erscheint im neuen Paket
+      `sqlexec`, und der verlagerte Code ist im abfließenden Gegenstand
+      **vollständig abgegangen** — die aggregierte Summe genügt dafür
+      ausdrücklich **nicht**; **(c) kein Verhalten verloren** — die realen,
+      dienst-gestützten Läufe des abfließenden Gegenstands sind grün, kein
+      Testfall entfernt.
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
