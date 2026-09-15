@@ -18,7 +18,8 @@ Token-Klassen), [`ADR-0059`](../../adr/0059-spaltenauswahl-mechanismus.md)
 (Spaltenausschluss-Mechanik), [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md)
 und [`ADR-0066`](../../adr/0066-broadcaster-begrenzte-empfangswarteschlange.md)
 (gRPC-Adresse und Zustellsemantik), [`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)
-(Dauerhaftigkeitsgrenze des Ausschlussstandes — Betriebs-Vorbehalt).
+(der **dauerhafte** Träger des Ausschlussstandes: der Prozessstart leitet ihn
+aus den `applied`-Zeilen der Spalten-Antragsarten ab).
 
 **Berührte Spec-Stellen:** `SPEC-018` (HTTP-Endpunkte, Token-Header-Form),
 `SPEC-020` (gRPC-Stream: Dienst, RPC, Metadata-Wertform, Zustellsemantik) —
@@ -84,8 +85,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `internal/bootstrap/wiring.go` (nicht aus dem Gedächtnis).
 - [ ] §4 trägt den Aufgaben-Abschnitt „Spalte vom Ausschluss konfigurieren"
       (`cdc.exclude_column`/`cdc.include_column`, Antrags-Queue mit
-      `status = 'applied'`-Poll wie bei `cdc.enable_table`) samt benannter
-      Dauerhaftigkeitsgrenze (`ADR-0065`).
+      `status = 'applied'`-Poll wie bei `cdc.enable_table`) samt dem
+      **dauerhaften** Träger des Ausschlussstandes (`ADR-0065`): der
+      Prozessstart leitet ihn aus den `applied`-Zeilen der Spalten-Antragsarten
+      ab — ein Neustart verliert ihn **nicht mehr**. **Nachtrag zum Plan:** die
+      Fassung, mit der priorisiert wurde, verlangte hier eine „benannte
+      Dauerhaftigkeitsgrenze"; die ist seit `slice-075` behoben, und der Text
+      beschreibt den Ist-Zustand, nicht die überholte Grenze.
 - [ ] §4 trägt die **drei** Netzwerk-Zugriffswege (HTTP/JSON-API, gRPC-Stream,
       HTTP/Server-Sent-Events `GET /changes/stream` — `SPEC-018`, `SPEC-020`,
       `SPEC-021`):
