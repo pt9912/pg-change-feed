@@ -141,6 +141,22 @@ Sicht-Stratum (Baseline-Regelwerk `modul-03-spec.md`
 Eine ADR mit Status `Accepted` wird nicht inhaltlich überschrieben.
 Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 
+Ausnahme ist die **Zitat-Korrektur**: eine Änderung ausschließlich am Zitat-
+und Verweisgerüst — host-lokale Pfade, gebrochene Linkziele, Formfehler der
+Zitation — bei unverändertem Referenten. Sie ist **kein** inhaltliches
+Überschreiben und in-place zulässig, wenn sie
+[`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+genügt. **Unberührbar** bleiben §Entscheidung, §Konsequenzen, §Verglichene
+Alternativen, §Status und die `Supersedes`-Kette; ihre Änderung ist eine neue
+ADR mit `Supersedes ADR-NNNN`, nie eine Zitat-Korrektur.
+
+**Beleg:** Die Commit-Message nennt
+[`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md);
+jede betroffene `Accepted` ADR
+erhält **eine** Zeile ihrer §Geschichte-Tabelle (Datum, Ereignis,
+Commit-Kennung). Records (`done/`, `docs/reviews/**`) tragen keine §Geschichte —
+bei ihnen ist die Commit-Kennung der Beleg.
+
 ### 3.6 Gates dürfen nicht ohne ADR gelockert werden
 
 Jede Schwellen-Senkung (Coverage, Linter-Strenge, Architekturregel)

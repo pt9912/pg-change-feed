@@ -139,7 +139,7 @@ dieselbe Entscheidung sanktioniert.
 
 - [x] §3.11 steht mit Aussage, Falsch/Richtig an **realen** Beispielen,
       Begründung, Grenzen und Rang-Zeiger auf das Modul.
-- [ ] §3.5 nennt die Zitat-Korrektur als Ausnahme zu „Korrekturen entstehen als
+- [x] §3.5 nennt die Zitat-Korrektur als Ausnahme zu „Korrekturen entstehen als
       neue ADR mit `Supersedes`"
       ([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)),
       und der Kopf-Satz des ADR-Index führt dieselbe Ausnahme. **Nachtrag zum

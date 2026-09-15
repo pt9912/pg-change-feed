@@ -4,7 +4,9 @@ Regeln dieser Datei: Neue ADRs ergänzen diesen Index (Baseline-Regelwerk
 `modul-04-adrs.md`; `AGENTS.md` §5). Eine Zeile je ADR-Datei; die Kennung
 ist `ADR-<NNNN>` (MR-000), der Datei-Name trägt dieselbe Nummer. Status:
 `Accepted`-ADRs sind inhaltlich immutable — Korrekturen als Folge-ADR mit
-`Supersedes` (`AGENTS.md` §3.5).
+`Supersedes` (`AGENTS.md` §3.5), eine **Zitat-Korrektur** am Zitat- und
+Verweisgerüst bei unverändertem Referenten ausgenommen
+([`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)).
 
 Quelle der Erst-Anlage: `architecture-decision-records.md` (Architektur-
 Entwurf, 2026-09-09 in Einzel-ADRs überführt).
