@@ -31,7 +31,7 @@ neuen Lesefähigkeit).
 [`ARC-004`](../../../../spec/architecture.md) (die Spalten-Prüfungs-Fähigkeit
 bekommt eine Lesefähigkeit für den Ausschlussstand).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Architect-Zug — dieser Plan trägt die Adresse der
 Verdikt-Auflage aus
