@@ -138,20 +138,24 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
       [`docs/reviews/review-slice-073-fixrunde.md`](../../../reviews/review-slice-073-fixrunde.md).
 - [x] Doku-Update: `harness/README.md` (Onboarding-Hinweis) trägt den neuen
       Opt-in-Schritt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; keine Beobachtung angefallen ist ebenfalls eine Antwort
-      und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      und wird in §7 notiert. Zwei neue Einträge
+      (`BEO-PGC/spiegelung-ist-approximation`,
+      `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`) und ein überführter
+      Ausgang (`BEO-PGC/commit-traceability-kein-vorab-hook`: `geplant` →
+      `verkörpert`).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen) — beide Ausgänge stehen in §6.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       im Repo **ohne** Wellen-Betrieb hier geprüft (dieser Slice trägt keine
-      Welle).
+      Welle); geprüft **nach** dem `git mv` nach `done/`.
 
 ## 3. Plan (vor Code)
 
@@ -192,16 +196,98 @@ DoD vollständig **und** `make gates` grün **und** Closure-Notiz geschrieben.
   d-check-Modul), ohne dass die andere nachgezogen wird, meldet der Hook
   fälschlich grün oder rot. `ADR-0062` benennt dies als bewusst
   dokumentiertes, nicht aufgelöstes Restrisiko (Re-Evaluierungs-Trigger
-  (b)). — **Ausgang:** <bei Closure zu füllen>
+  (b)). — **Ausgang:** *weiter offen → Beobachtungs-Register*: die
+  Prämisse des Risikos (zwei deckungsgleiche Implementierungen, die
+  auseinanderdriften können) ist durch die Messung widerlegt — die beiden
+  waren nie deckungsgleich; was bleibt, ist die gemessene Laxheit des Hooks
+  in den benannten Klassen, erreichbar und nicht geschlossen. Eingetragen als
+  `BEO-PGC/spiegelung-ist-approximation`, Wächter sind
+  [`ADR-0070`](../../adr/0070-supersede-reichweite-und-klassengrenze.md)
+  §Re-Evaluierungs-Trigger (a) und (c). Der Ausgang *eingetreten* trägt hier
+  nicht: er verlangt Carveout oder Folge-Slice, und die Auflösung ist eine
+  Fest-Schreibung, keine Ausnahme auf Zeit — der Architect hat die
+  nachziehende Option als eigene entschieden verworfen.
 - Der Hook ist per `--no-verify` umgehbar und aktiviert sich nicht
   automatisch bei einem neuen Klon/einer neuen Session (`core.hooksPath`
   ist lokale Konfiguration) — ein Nutzer, der den Aktivierungsschritt nie
   ausführt, bleibt ohne Vorab-Meldung und verlässt sich weiterhin
-  ausschließlich auf `make gates`. — **Ausgang:** <bei Closure zu füllen>
+  ausschließlich auf `make gates`. — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: der beschriebene Zustand ist die entschiedene Eigenschaft des
+  Hooks (lokaler Opt-in, kein Ersatz des Gates —
+  [`ADR-0062`](../../adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
+  Punkte 1 und 2), kein Risiko: die Zusage „der Hook ersetzt das
+  Standing-Gate nicht" deckt genau diesen Fall, es entsteht keine falsche
+  Sicherheit. `--no-verify` ist derselbe Weg und ebenso entschieden.
 
 ## 7. Closure-Notiz
 
-<…>
+**Geliefert:** der lokale, nicht-durchsetzende `commit-msg`-Hook
+(`.githooks/commit-msg`), seine Aktivierungs-Doku (`harness/README.md`
+§Traceability rules) und die Nachzüge aus dem Konflikt-Pfad. Der Hook meldet
+vor dem Commit-Abschluss und ersetzt das Standing-Gate nicht; seine Zusage ist
+**einseitig** (er weist keinen Commit zurück, den das Gate zulässt) und
+**nicht vollständig** — die Klassen, in denen er blind ist, sind benannt und am
+gepinnten Image gemessen
+([`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md),
+[`ADR-0070`](../../adr/0070-supersede-reichweite-und-klassengrenze.md)).
+
+**Closure-Kriterien** (§5): DoD vollständig, `make gates` grün, diese Notiz.
+Verifikation:
+[`docs/reviews/verify-slice-073.md`](../../../reviews/verify-slice-073.md) —
+DoD- und Entscheidungs-Konformität bestätigt, kein blockierender Befund;
+davor der Erstbefund
+[`review-slice-073.md`](../../../reviews/review-slice-073.md) und der
+Bestätigungslauf
+[`review-slice-073-fixrunde.md`](../../../reviews/review-slice-073-fixrunde.md).
+
+**Was funktionierte:** die Rollentrennung hat den Fall getragen. Der
+Implementer hat die Abweichung von der Entscheidung begründet statt still
+vorgenommen, der Reviewer hat sie nicht herabgestuft, sondern als HIGH mit
+Rollen-Widerspruch in den Konflikt-Pfad gegeben, und der Architect hat den
+Träger der Zusage von einer Plan-Zelle in eine Entscheidung verschoben. Der
+Bestätigungslauf hat die Fixrunde als **frisches Artefakt** geprüft statt als
+Bestätigung des eigenen Befunds — der Nachweis, dass die Hook-Logik unverändert
+ist, läuft dort über den `sha256` der Nicht-Kommentar-Zeilen.
+
+**Was anders lief — §4-Grund:** §4 nannte die Kongruenz-Frage vorab und
+verlangte ihre Klärung „bevor der Hook geschrieben wird". Die Bedingung trat
+ein (der Hook bildet die beiden Prüfungen nicht deckungsgleich ab); der Slice
+folgte ihr aber nicht durch `in-progress` → `next`, weil das Artefakt zu diesem
+Zeitpunkt bereits geschrieben war und die Deckungsgleichheit strukturell
+unerreichbar ist — der Hook läuft vor `git`s Cleanup. Die Antwort war eine
+Entscheidung, kein Neuschnitt; der Preis der Reihenfolge war der volle
+Konflikt-Pfad (zwei HIGH, zwei Review-Runden, zwei Folge-ADRs).
+
+**Steering-Loop-Einträge:**
+
+- *geschärfte Regel* — verkörpert in
+  [`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md): wer eine
+  bereits gate-getragene Regel außerhalb des Gates nachbaut, beansprucht keine
+  Fidelität, sondern formuliert seine Zusage einseitig und benennt die
+  Klassen, in denen er blind ist; der §Warum-die-Approximation-Absatz trägt
+  den Grund allgemein. Herkunfts-Anker `seit slice-073`.
+- *benannte Spec-Lücke* — §4 des Slice-Plans verlangt, die
+  Rückführungs-Bedingung vorab zu benennen, aber keine Stelle verlangt, sie
+  **beim Schreiben der Umsetzung** auszuwerten; gelesen wird sie erst bei der
+  Closure. Beobachtung: `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`.
+- *kein neuer Sensor* — die Divergenz ist am gepinnten Image messbar, aber der
+  Hook ist kein Gate-Ziel; ein Sensor müsste ihn aufrufen, was `ADR-0062`
+  Punkt 1 ausschließt.
+
+**Beobachtungs-Register:** zwei neue Einträge (s. o.) und der überführte
+Ausgang `BEO-PGC/commit-traceability-kein-vorab-hook` (`geplant` →
+`verkörpert`, derselbe Anker). Kein Eintrag hat mit diesem Slice die
+3×-Schwelle erreicht. Der Register-Stand ist **vor** dem `git mv` geschrieben;
+die Lage des Belegs prüft die Register-Paarung danach.
+
+**Folge-Slices:** keine. Die vom Architect verworfene Option — den Hook
+nachziehen — wäre der einzige Folge-Schnitt gewesen; sie ist als Entscheidung
+ausgeschieden ([`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)
+§Verglichene Alternativen, Option B).
+
+**Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+(kein `*-archiv.zip` unter `done/`); nach Modul 6 bleibt es ohne sie konform,
+und diese Feststellung ersetzt den Handlauf.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
