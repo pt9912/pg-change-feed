@@ -50,12 +50,12 @@ werden **reine Funktionen** mit eigenen Tests.
 **Berichtigung des Vertrags** (Review `review-slice-081` F-2). Diese Sektion
 sagte zuerst „plus ein **minimales** `Rows`" **und** „der reale Pool erfüllt
 sie". Beides zugleich ist nicht zu haben — **compilerseitig gemessen**:
-`pgx.Rows` trägt **10** Methoden, die deklarierte `sqlexec.Rows` fordert **4**;
-`*pgxpool.Pool` erfüllt `Executor` **genau dann**, wenn `Query` `pgx.Rows`
-liefert (mit der minimalen `Rows` bricht die Zusicherung ab — `wrong type for
-method Query: have Query(...) (pgx.Rows, error), want Query(...) (minRows,
-error)`). Die Verengung wäre über einen Vermittler zu haben, der `pgx.Rows` auf
-vier Methoden eindampft; ihr Preis ist eine zusätzliche Schale **und** eine
+`pgx.Rows` trägt **10** Methoden; `*pgxpool.Pool` erfüllt `Executor` **genau
+dann**, wenn `Query` `pgx.Rows` liefert (mit einer verengten Zeilen-Schnittstelle
+bricht die Zusicherung ab — `wrong type for method Query`). Die Verengung wäre
+über einen Vermittler zu haben, der `pgx.Rows` auf die vier Methoden eindampft,
+die die Naht wirklich braucht (`Next`/`Scan`/`Err`/`Close`); ihr Preis ist eine
+zusätzliche Schale **und** eine
 `DB`-Zusicherung, die dann nicht mehr der Pool trägt. **Entschieden: die
 Zusicherung bleibt** — der Zweck ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 Punkt 5) ist die **reine Funktion**, und die trägt; die Abhängigkeit auf den
@@ -224,8 +224,8 @@ Schnitt entsteht hier):
 `receive/receive.go` bleiben unberührt.** Ihre Naht ist eine andere: beide
 hängen an `*pgconn.PgConn`, nicht an `*pgxpool.Pool`, und `receive` ruft
 `pglogrepl.StartReplication`/`CreateReplicationSlot` (Signatur: konkreter
-`*pgconn.PgConn`) — die in §1/§2 genannte Schnittstelle (`Query`/`Exec` plus
-minimales `Rows`) drückt diese Aufrufe nicht aus. Der Zug ist damit die
+`*pgconn.PgConn`) — die in §1/§2 genannte Schnittstelle (`Query`/`Exec`/`QueryRow`;
+Zeilen als `pgx.Rows`) drückt diese Aufrufe nicht aus. Der Zug ist damit die
 Rückführung aus §4 („nach Paket, je Adapter ein Slice"), nicht ein stilles
 Weglassen: `postgresack` und `receive` gehören je in einen eigenen Vorgang —
 **und sie existieren als Dateien**, damit die Folge-Slice-Paarung auflöst
