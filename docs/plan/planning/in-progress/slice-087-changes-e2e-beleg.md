@@ -155,11 +155,24 @@ vierter Punkt:
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
       0 HIGH/0 MEDIUM, kein Rückgabe-Pfeil (F-1/F-2 INFO, F-3 LOW).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-087.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig**; `ADR-0081`s Fitness-Function-Zeile **eingelöst**. Der
+      Verifier hat die `READ`-Zeile aus **eigenem** vollem Lauf gesehen, die
+      Abdeckungstabelle **byte-gleich** nach dem Lauf bestätigt und eine eigene
+      Mutation gefahren (fabrizierte `change_id` → rot, gefangen von der Bindung
+      gegen `cdc.changes`).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — ein Beleg
+      ergänzt (`negativtest-ohne-bindung-an-seine-eingabe/evidence/slice-087.md`,
+      Zähler damit **2×**), **kein** neues Verzeichnis, **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — alle drei *entfallen,
+      gestrichen mit Begründung*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -228,16 +241,29 @@ dasteht.
 - **Der Beleg könnte sich selbst prüfen.** Prüft er nur seinen eigenen
   Exit-Code, ist er grün ohne Aussage — dieselbe Klasse wie ein Fake, der nichts
   prüft. Wächter: Liefer-Punkt 2 verlangt die **rote Gegenprobe**.
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: **zwei unabhängige**
+  Rot-Belege wurden gesehen. Der Implementer hat den Pfad mutiert (`404 page
+  not found`, Exit 2) — und im roten Lauf registrierte und listete der Client
+  **erfolgreich**, der Rot-Beleg trifft also das **Lesen**, nicht den Prozess.
+  Der Verifier hat eine **fabrizierte `change_id`** in die READ-Zeile gesetzt →
+  Exit 2, gefangen von der unabhängigen Bindung gegen `cdc.changes`
+  („nicht real über cdc.changes lesbar"). Die Zeile ist damit nicht
+  selbstgenügsam; der Netzwerk-Leseweg hängt am Store.
 - **Er könnte an der Zeitachse scheitern.** Der HTTP-Rundlauf läuft **spät** im
   E2E-Ablauf (nach dem NATS-Negative-Beleg); erzeugt zu diesem Zeitpunkt niemand
   mehr einen Change, findet das Lesen nichts. Der Beleg muss das einplanen —
   eine eigene Zeile erzeugen oder einen belegten Bestand lesen.
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: die Phase erzeugt ihr
+  Subjekt **selbst** (`INSERT` der Sentinel-Zeile) und pollt auf ihren
+  `commit_position`, bevor sie mit `[from, to)` genau darauf liest. Vier volle
+  Läufe, keine Bestandsabhängigkeit.
 - **Die Abdeckungstabelle könnte erneut driften.** Sie bindet an `Datei:Zeile`,
   und dieser Slice verschiebt **beides** (Client und Runner). Deshalb ist der
   volle Lauf Teil der DoD, nicht ein `cmp` gegen die alte Datei.
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: nach einem **vollen**
+  Lauf ist die committete Datei **byte-gleich** (sha256 unverändert, `git status`
+  leer) — sie **ist** das Generator-Erzeugnis, keine Behauptung darüber. Die
+  `Ort`-Werte wurden zusätzlich unabhängig nachgerechnet (24/24).
 
 ## 7. Closure-Notiz
 
@@ -256,14 +282,59 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
+- **Was hat funktioniert:** **Eine Zusage in einem unveränderlichen Dokument
+  hat jetzt ihren Träger.** Der Weg dorthin ist die eigentliche Leistung: der
+  Reviewer hat die ungetragene Fitness-Function-Zeile in
+  [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md) gefunden, der
+  Planner hat sie **nicht** in den laufenden Slice gezogen, sondern als eigenen
+  geschnitten (`slice-086` war schon einmal gewachsen), und der Implementer hat
+  sie gebaut **mit** roter Gegenprobe.
+  Und: der Verifier hat „die Tabelle ist das Erzeugnis" zu einer **Messung**
+  gemacht statt zu einer Aussage — nach einem vollen Lauf ist die Datei
+  **byte-gleich**, und die 24 Anker hat er unabhängig nachgerechnet.
+- **Was ging anders als geplant:** (1) Der Implementer hat unterwegs einen
+  **echten Fehler** gefunden und behoben: die Phase rief `x=$(docker run …)`
+  unter `set -e` — ein fehlgeschlagener `docker run` beendete die **Zuweisung**
+  selbst, die Statusprüfung lief nie, und der Lauf endete **rot ohne Ausgabe**.
+  Aufgedeckt hat das die Gegenprobe, nicht das Lesen. (2) Der Review hat mit
+  einer eigenen Mutation zwei **Grenzen der Aussagekraft** gefunden (F-1: der
+  Beleg bindet die **Filterachse** nicht — bei Bereichsbreite 1 ist „Filter
+  wirkt" von „Filter fehlt" ununterscheidbar; F-2: Ordnungs- und Limit-Prüfung
+  sind in dieser Aufruf-Form strukturell unausübbar). Beide **benannt**, keiner
+  closure-blockierend. (3) Die DoD nennt `coverage-gate 72,00 %`, der Verifier
+  maß **71,90 %** auf demselben Commit — beide über der Schwelle; die exakte
+  Zahl ist **lauf-gebunden**, und das ist benannt statt eingeebnet.
+- **Lerneintrag (geschärfte Regel):** *Ein Beleg, der seine Aussage nicht an
+  seine **Eingabeseite** bindet, ist grün ohne Aussage.* Das ist die **zweite**
+  Gelegenheit in zwei Tagen an einem **anderen Gegenstand** — `slice-086`: ein
+  **Negativtest**, dessen Ablehnung an keinem Eingabewert hing; `slice-087`:
+  ein **E2E-Beleg**, dessen Filterprüfung nicht am Filter hing. Beide Male hat
+  es **kein Lesen** gefunden, sondern nur das Mutieren der Eingabeseite. Die
+  Regel aus `slice-086` steht damit **über Vorgänge belegt**: jede Zusage wird
+  an ihrer Eingabeseite mutiert, nicht nur an ihrer Ausgabeseite.
+  **Verkörperung offen** (Träger käme im Reviewer-Skill in Frage); als Kandidat
+  geführt, nicht behauptet.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.**
+  Eine Registerbewegung: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  bekommt einen **zweiten Beleg** (`slice-087`) → **2×**. Dabei **benannt**:
+  der Eintrag ist **enger benannt als sein Gegenstand** — sein Name und seine
+  `observation.md` sprechen von einem *Negativtest*, der zweite Fall ist ein
+  *E2E-Beleg*. Der Zähler zählt den **Mechanismus**, die Benennung stammt vom
+  Erstauftreten und ist `observation.md`-unveränderlich; die Klarstellung steht
+  in `state.md`.
+- **Beobachtungs-Register (`../observations/`):** ein Beleg ergänzt
+  (`negativtest-ohne-bindung-an-seine-eingabe/evidence/slice-087.md`, Zähler
+  **2×**), **kein** neues Verzeichnis, **kein** Zähler gesetzt.
+  **Benannt, nicht gezählt:** die unter `set -e` unerreichbare Fehlerprüfung
+  (`slice-087`, im Slice gefunden und behoben, Erstauftreten) — sie gehört als
+  eigener Kandidat in die Closure, nicht in diesen Zähler.
+- **Folge-Slices:** keiner. F-1 und F-2 sind **Grenzen der Aussagekraft**, keine
+  fehlende Lieferung — sie sind benannt und gehen über die Finding-Klassen in
+  den Zähler.
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung* — siehe §6.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 - **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
 - **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
