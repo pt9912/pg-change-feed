@@ -155,7 +155,8 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 			string(query.Source),
 			positionArgument(query.Start),
 			positionArgument(query.End),
-			tableArgument(query.Table),
+			textArgument(query.Schema),
+			textArgument(query.Table),
 			query.Limit,
 		},
 		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
@@ -238,10 +239,12 @@ func positionArgument(position *model.SourcePosition) any {
 	return int64(position.Offset)
 }
 
-// tableArgument trägt den Tabellenfilter; nil filtert nicht.
-func tableArgument(table *model.SourceTableID) any {
-	if table == nil {
+// textArgument trägt einen optionalen Klartext-Filter (Schema oder
+// Tabellenname) als text-Argument; ein leerer Wert filtert nicht — dieselbe
+// NULL-Semantik wie bei `positionArgument`.
+func textArgument(value string) any {
+	if value == "" {
 		return nil
 	}
-	return string(*table)
+	return value
 }

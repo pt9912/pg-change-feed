@@ -32,10 +32,15 @@ ON CONFLICT (change_id) DO NOTHING`
 // Sortierung nach (Commit-Position der Quelltransaktion, Transaktions-ID,
 // Sequenz innerhalb der Transaktion). Der Start ist inklusive, das Ende
 // exklusiv (`LH-FA-REA-001`); NULL-Grenzen grenzen nicht ein, LIMIT NULL
-// liest unbegrenzt. Lesen trägt nur SELECT — gespeicherte Positionen
-// bleiben unverändert (`LH-FA-REA-002`). committed_at trägt den realen
-// Quell-Commit-Zeitpunkt der Transaktion (`LH-FA-ADM-004`) — die
-// zeitbasierte Retention (`LH-FA-RET-003`) liest ihr Alter dagegen.
+// liest unbegrenzt. Der Tabellenfilter läuft über die Klartext-Bezeichner
+// der Bindungs-Zeile (`st.schema_name`/`st.table_name`), je optional und
+// unabhängig; der Join auf `cdc.source_table` trägt dieselben Bezeichner
+// in die Projektion, damit die Rückgabe die Tabellen-Identität in Klartext
+// führt — dieselbe Projektion wie die View `cdc.changes`. Lesen trägt nur
+// SELECT — gespeicherte Positionen bleiben unverändert (`LH-FA-REA-002`).
+// committed_at trägt den realen Quell-Commit-Zeitpunkt der Transaktion
+// (`LH-FA-ADM-004`) — die zeitbasierte Retention (`LH-FA-RET-003`) liest
+// ihr Alter dagegen.
 const SelectChanges = `
 SELECT
     t.source_id,
@@ -48,16 +53,21 @@ SELECT
     c.old_data,
     c.new_data,
     c.schema_version,
+    st.schema_name,
+    st.table_name,
     t.committed_at
 FROM cdc.change AS c
 JOIN cdc.transaction AS t
     ON c.transaction_id = t.transaction_id
+JOIN cdc.source_table AS st
+    ON c.source_table_id = st.source_table_id
 WHERE t.source_id = $1
   AND ($2::bigint IS NULL OR t.commit_position >= $2)
   AND ($3::bigint IS NULL OR t.commit_position < $3)
-  AND ($4::text IS NULL OR c.source_table_id = $4)
+  AND ($4::text IS NULL OR st.schema_name = $4)
+  AND ($5::text IS NULL OR st.table_name = $5)
 ORDER BY t.commit_position, c.transaction_id, c.sequence
-LIMIT $5`
+LIMIT $6`
 
 // DeleteChanges entfernt genau die übergebenen Change-Zeilen
 // (`LH-FA-RET-002`…`004`); die Freigabe je Change trägt der aufrufende Use

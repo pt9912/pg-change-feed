@@ -78,3 +78,20 @@ func TestChangeQueryValidateRejectsMissingSource(t *testing.T) {
 		t.Fatalf("Validate = %v, wollen %v", err, domainerrors.ErrEmptyIdentifier)
 	}
 }
+
+// Die Klartext-Filterachse ist optional und unabhängig (`LH-FA-REA-006`,
+// `ADR-0081` Teilfrage 3): Schema und Tabelle sind keine
+// Kontrakt-Invariante — die Abfrage bleibt einzeln, kombiniert und leer
+// gültig, die Filterwirkung trägt der Lesepfad.
+func TestChangeQueryValidateAcceptsOptionalTextFilter(t *testing.T) {
+	for _, query := range []outbound.ChangeQuery{
+		{Source: "src-1"},
+		{Source: "src-1", Schema: "public"},
+		{Source: "src-1", Table: "orders"},
+		{Source: "src-1", Schema: "public", Table: "orders"},
+	} {
+		if err := query.Validate(); err != nil {
+			t.Fatalf("Validate(%+v) = %v, wollen keinen Fehler", query, err)
+		}
+	}
+}

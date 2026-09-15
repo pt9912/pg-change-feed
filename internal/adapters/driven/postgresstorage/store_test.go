@@ -130,19 +130,13 @@ func position(t *testing.T, offset uint64) *model.SourcePosition {
 	return &p
 }
 
-func query(t *testing.T, start, end *model.SourcePosition, table *model.SourceTableID, limit *int) outbound.ChangeQuery {
+func query(t *testing.T, start, end *model.SourcePosition, schema, table string, limit *int) outbound.ChangeQuery {
 	t.Helper()
-	q := outbound.ChangeQuery{Source: testSource, Start: start, End: end, Table: table, Limit: limit}
+	q := outbound.ChangeQuery{Source: testSource, Start: start, End: end, Schema: schema, Table: table, Limit: limit}
 	if err := q.Validate(); err != nil {
 		t.Fatalf("ChangeQuery: %v", err)
 	}
 	return q
-}
-
-func tableFilter(t *testing.T, id string) *model.SourceTableID {
-	t.Helper()
-	filter := model.SourceTableID(id)
-	return &filter
 }
 
 func limit(t *testing.T, n int) *int {
@@ -209,7 +203,7 @@ func TestPersistTransactionIsIdempotent(t *testing.T) {
 	if got := count(t, pool, "SELECT count(*) FROM cdc.change WHERE transaction_id = 't-1'"); got != 3 {
 		t.Fatalf("Change-Zeilen = %d, wollen 3", got)
 	}
-	records := readRecords(t, store, query(t, nil, nil, nil, nil))
+	records := readRecords(t, store, query(t, nil, nil, "", "", nil))
 	if len(records) != 3 {
 		t.Fatalf("Lesen trägt %d Changes, wollen 3 (keine Duplikate)", len(records))
 	}
@@ -246,7 +240,7 @@ func TestPersistCarriesEmptyCommittedTransaction(t *testing.T) {
 	if got := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE commit_position = 50"); got != 1 {
 		t.Fatalf("Transaktions-Zeilen an Position 50 = %d, wollen 1", got)
 	}
-	if records := readRecords(t, store, query(t, nil, nil, nil, nil)); len(records) != 0 {
+	if records := readRecords(t, store, query(t, nil, nil, "", "", nil)); len(records) != 0 {
 		t.Fatalf("Lesen trägt %v, wollen leer", records)
 	}
 }
@@ -268,7 +262,7 @@ func TestReadIsDeterministicallySorted(t *testing.T) {
 	third := committedTransaction(t, "t-mid", 200, 2, testTableMain, testSchemaMain)
 	persist(t, store, first, second, third)
 
-	q := query(t, nil, nil, nil, nil)
+	q := query(t, nil, nil, "", "", nil)
 	got := readRecords(t, store, q)
 	want := []string{
 		// Position 200: beide Changes von t-mid in Sequenz-Reihenfolge.
@@ -315,19 +309,19 @@ func TestReadCarriesPositionsAndRanges(t *testing.T) {
 	}
 	persist(t, store, transactions...)
 
-	got := readRecords(t, store, query(t, position(t, 100), position(t, 200), nil, nil))
+	got := readRecords(t, store, query(t, position(t, 100), position(t, 200), "", "", nil))
 	if len(got) != 1 || got[0] != "t-1-1@100:INSERT#1" {
 		t.Fatalf("Bereich [100,200) = %v, wollen genau t-1", got)
 	}
-	got = readRecords(t, store, query(t, position(t, 150), position(t, 200), nil, nil))
+	got = readRecords(t, store, query(t, position(t, 150), position(t, 200), "", "", nil))
 	if len(got) != 0 {
 		t.Fatalf("Leerer Bereich [150,200) = %v, wollen leer", got)
 	}
-	got = readRecords(t, store, query(t, position(t, 200), nil, nil, nil))
+	got = readRecords(t, store, query(t, position(t, 200), nil, "", "", nil))
 	if len(got) != 2 {
 		t.Fatalf("Lesen ab 200 = %v, wollen t-2 und t-3", got)
 	}
-	got = readRecords(t, store, query(t, position(t, 500), nil, nil, nil))
+	got = readRecords(t, store, query(t, position(t, 500), nil, "", "", nil))
 	if len(got) != 0 {
 		t.Fatalf("Lesen ab 500 = %v, wollen leer", got)
 	}
@@ -352,11 +346,11 @@ func TestReadCarriesLimit(t *testing.T) {
 	}
 	persist(t, store, transactions...)
 
-	got := readRecords(t, store, query(t, nil, nil, nil, limit(t, 2)))
+	got := readRecords(t, store, query(t, nil, nil, "", "", limit(t, 2)))
 	if len(got) != 2 || got[0] != "t-1-1@100:INSERT#1" || got[1] != "t-2-1@200:INSERT#1" {
 		t.Fatalf("Limit 2 = %v, wollen die zwei ersten in Ordnung", got)
 	}
-	got = readRecords(t, store, query(t, nil, nil, nil, limit(t, 50)))
+	got = readRecords(t, store, query(t, nil, nil, "", "", limit(t, 50)))
 	if len(got) != 5 {
 		t.Fatalf("Limit 50 trägt %d, wollen alle 5 verfügbaren", len(got))
 	}
@@ -368,22 +362,63 @@ func TestReadCarriesLimit(t *testing.T) {
 	}
 }
 
-// Tabellenfilter (`LH-FA-REA-006`): nur Changes der gefilterten Tabelle;
-// ein Filter ohne Treffer trägt eine leere Menge.
+// Tabellenfilter (`LH-FA-REA-006`, `ADR-0081` Teilfrage 3): die Filterachse
+// ist Klartext und **eine** Form — Schema und Tabelle je optional und
+// unabhängig. Der Test deckt die Achse einzeln (Schema, Tabelle),
+// kombiniert, leer und ohne Treffer; die Rückgabe trägt die
+// Klartext-Identität der Tabelle.
 func TestReadCarriesTableFilter(t *testing.T) {
 	store, pool := newTestStore(t)
 	seedReference(t, pool)
+	// `seedReference` bindet testTableMain an `public.a` und testTableOther
+	// an `public.b` — zwei Tabellen desselben Schemas, damit der
+	// Schema-Filter allein nicht von „kein Filter" ununterscheidbar bleibt.
 	first := committedTransaction(t, "t-1", 100, 2, testTableMain, testSchemaMain)
 	second := committedTransaction(t, "t-2", 200, 1, testTableOther, testSchemaOther)
 	persist(t, store, first, second)
 
-	got := readRecords(t, store, query(t, nil, nil, tableFilter(t, testTableMain), nil))
+	// Tabelle allein.
+	got := readRecords(t, store, query(t, nil, nil, "", "a", nil))
 	if len(got) != 2 {
-		t.Fatalf("Filter tbl-1 = %v, wollen nur seine 2 Changes", got)
+		t.Fatalf("Filter table=a = %v, wollen nur seine 2 Changes", got)
 	}
-	got = readRecords(t, store, query(t, nil, nil, tableFilter(t, "tbl-fehlt"), nil))
+	// Schema allein — deckt beide Tabellen der Quelle.
+	got = readRecords(t, store, query(t, nil, nil, "public", "", nil))
+	if len(got) != 3 {
+		t.Fatalf("Filter schema=public = %v, wollen alle 3 Changes", got)
+	}
+	// Kombiniert.
+	got = readRecords(t, store, query(t, nil, nil, "public", "b", nil))
+	if len(got) != 1 || !strings.HasPrefix(got[0], "t-2-1@200") {
+		t.Fatalf("Filter schema=public&table=b = %v, wollen genau t-2", got)
+	}
+	// Ohne Filter.
+	got = readRecords(t, store, query(t, nil, nil, "", "", nil))
+	if len(got) != 3 {
+		t.Fatalf("Ohne Filter = %v, wollen alle 3 Changes", got)
+	}
+	// Ohne Treffer — kein Fehler, sondern eine leere Menge
+	// (`LH-FA-REA-006` Boundary).
+	got = readRecords(t, store, query(t, nil, nil, "public", "fehlt", nil))
 	if len(got) != 0 {
 		t.Fatalf("Filter ohne Treffer = %v, wollen leer", got)
+	}
+	got = readRecords(t, store, query(t, nil, nil, "fehlt", "", nil))
+	if len(got) != 0 {
+		t.Fatalf("Schema ohne Treffer = %v, wollen leer", got)
+	}
+
+	// Die Rückgabe trägt die Tabellen-Identität in Klartext — der Join auf
+	// `cdc.source_table` läuft im Lesepfad.
+	records, err := store.ReadChanges(context.Background(), query(t, nil, nil, "public", "b", nil))
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if len(records) != 1 || records[0].Change.Schema != "public" || records[0].Change.Table != "b" {
+		t.Fatalf("Klartext-Identität = %+v, wollen public/b", records)
+	}
+	if records[0].Change.SourceTableID != testTableOther {
+		t.Fatalf("SourceTableID = %q, wollen %q", records[0].Change.SourceTableID, testTableOther)
 	}
 }
 
@@ -394,7 +429,7 @@ func TestReadLeavesPersistedStateUnchanged(t *testing.T) {
 	store, pool := newTestStore(t)
 	seedReference(t, pool)
 	persist(t, store, committedTransaction(t, "t-1", 100, 3, testTableMain, testSchemaMain))
-	q := query(t, nil, nil, nil, limit(t, 2))
+	q := query(t, nil, nil, "", "", limit(t, 2))
 
 	first := readRecords(t, store, q)
 	second := readRecords(t, store, q)
@@ -476,7 +511,7 @@ func TestDeleteChangesRemovesOnlyGivenChanges(t *testing.T) {
 		t.Fatalf("DeleteChanges: %v", err)
 	}
 
-	got := readRecords(t, store, query(t, nil, nil, nil, nil))
+	got := readRecords(t, store, query(t, nil, nil, "", "", nil))
 	want := []string{"t-1-2@100:INSERT#2", "t-2-1@200:INSERT#1"}
 	if len(got) != len(want) {
 		t.Fatalf("verbleibende Changes = %v, wollen %v", got, want)
@@ -569,7 +604,7 @@ func TestReadChangesCarriesCommittedAt(t *testing.T) {
 	}
 	persist(t, store, tx)
 
-	records, err := store.ReadChanges(context.Background(), query(t, nil, nil, nil, nil))
+	records, err := store.ReadChanges(context.Background(), query(t, nil, nil, "", "", nil))
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
 	}

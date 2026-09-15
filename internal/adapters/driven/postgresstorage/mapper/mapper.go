@@ -32,8 +32,10 @@ type TransactionRow struct {
 	CommittedAt    time.Time
 }
 
-// ChangeRow trägt eine Zeile aus `cdc.change` (`SPEC-002`); die Row Images
-// sind JSON-Bytes, NULL liest sich als nil (Abwesenheit).
+// ChangeRow trägt eine Zeile aus `cdc.change` (`SPEC-002`) samt den
+// Klartext-Bezeichnern der betroffenen Tabelle aus dem Join auf
+// `cdc.source_table`; die Row Images sind JSON-Bytes, NULL liest sich als
+// nil (Abwesenheit).
 type ChangeRow struct {
 	ChangeID      string
 	TransactionID string
@@ -43,6 +45,8 @@ type ChangeRow struct {
 	OldData       []byte
 	NewData       []byte
 	SchemaVersion string
+	Schema        string
+	Table         string
 }
 
 // NewTransactionRow trägt die `cdc.transaction`-Zeile einer committed
@@ -110,8 +114,11 @@ func ToPosition(source string, commitPosition int64) (model.SourcePosition, erro
 
 // ToChange trägt den Change aus einer `cdc.change`-Zeile; die Domänen-
 // Konstruktoren prüfen die Zeile über die Change-Invarianten (`ADR-0029`).
+// Schema und Tabelle setzt der Mapper aus den Klartext-Bezeichnern der
+// Zeile — sie sind keine Konstruktor-Invariante von `model.NewChange`
+// (`ADR-0081` Teilfrage 3), der Lesepfad trägt sie aber in der Rückgabe.
 func ToChange(row ChangeRow) (model.Change, error) {
-	return model.NewChange(
+	change, err := model.NewChange(
 		model.ChangeID(row.ChangeID),
 		model.TransactionID(row.TransactionID),
 		model.SourceTableID(row.SourceTableID),
@@ -121,4 +128,10 @@ func ToChange(row ChangeRow) (model.Change, error) {
 		row.NewData,
 		model.SchemaVersionID(row.SchemaVersion),
 	)
+	if err != nil {
+		return model.Change{}, err
+	}
+	change.Schema = row.Schema
+	change.Table = row.Table
+	return change, nil
 }

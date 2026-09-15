@@ -210,6 +210,8 @@ func changeRow(id string, sequence int64, position int64) []any {
 		[]byte(nil),
 		[]byte(`{"name":"a"}`),
 		"sv-1",
+		"public",
+		"feed",
 		time.Unix(100, 0),
 	}
 }
@@ -262,6 +264,12 @@ func TestReadChangesIssuesQueryAndTranslatesRows(t *testing.T) {
 	}
 	if records[0].Position.Offset != 42 || records[0].Position.SourceID != "src-1" {
 		t.Fatalf("Position = %+v", records[0].Position)
+	}
+	// Die Zeile trägt die Klartext-Identität der Tabelle (Join auf
+	// `cdc.source_table`); der Lesepfad setzt sie am Change (`ADR-0081`
+	// Teilfrage 3).
+	if records[0].Change.Schema != "public" || records[0].Change.Table != "feed" {
+		t.Fatalf("Schema/Table = %q/%q, wollen public/feed", records[0].Change.Schema, records[0].Change.Table)
 	}
 	if want := int64(time.Unix(100, 0).UnixNano()); records[0].CommittedAt.UnixNanos != want {
 		t.Fatalf("CommittedAt = %d, erwartet %d", records[0].CommittedAt.UnixNanos, want)

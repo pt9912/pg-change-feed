@@ -23,17 +23,25 @@ type ChangeRecord struct {
 
 // ChangeQuery trägt die Lese-Eingabe am `ChangeStorePort`: Bereich
 // (`LH-FA-REA-001`), Startposition (`LH-FA-REA-002`), Limit
-// (`LH-FA-REA-003`) und Tabellenfilter (`LH-FA-REA-006`). Nil-Felder
-// grenzen nicht ein: ohne Start liest der Aufruf ab dem ersten Change der
-// Quelle, ohne End bis zum letzten, ohne Limit unbegrenzt, ohne Tabellen-
-// filter über alle Tabellen der Quelle. Der Start ist inklusive, das Ende
-// exklusiv (`LH-FA-REA-001` Happy Path: Bereich `[p1, p2)` trägt den
-// Change an `p1`, nicht den an `p2`).
+// (`LH-FA-REA-003`) und den Tabellenfilter (`LH-FA-REA-006`). Nil- und
+// leere Felder grenzen nicht ein: ohne Start liest der Aufruf ab dem ersten
+// Change der Quelle, ohne End bis zum letzten, ohne Limit unbegrenzt, ohne
+// Schema-/Tabellenfilter über alle Tabellen der Quelle. Der Start ist
+// inklusive, das Ende exklusiv (`LH-FA-REA-001` Happy Path: Bereich
+// `[p1, p2)` trägt den Change an `p1`, nicht den an `p2`).
+//
+// Die Filterachse ist **eine** Form: `Schema` und `Table` als Klartext,
+// je optional und **unabhängig** — dieselbe Filter-Grammatik wie die
+// `WHERE`-Klausel des View-Zugriffs auf `cdc.changes`. Klartext ist die
+// Draht-Form: die opake `SourceTableID` ist kein Bezeichner, über den ein
+// Consumer dieselbe Tabelle stabil adressiert (`ADR-0056` Festlegung 1,
+// `ADR-0081` Teilfrage 3).
 type ChangeQuery struct {
 	Source model.SourceID
 	Start  *model.SourcePosition
 	End    *model.SourcePosition
-	Table  *model.SourceTableID
+	Schema string
+	Table  string
 	Limit  *int
 }
 

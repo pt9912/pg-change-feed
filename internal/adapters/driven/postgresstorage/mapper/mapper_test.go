@@ -131,3 +131,30 @@ func TestToPositionRejectsNonPositiveColumn(t *testing.T) {
 		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrInvalidPosition)
 	}
 }
+
+// Der Lesepfad trägt die Klartext-Identität der Tabelle in den Change
+// (`ADR-0081` Teilfrage 3): die Zeile trägt Schema- und Tabellenname aus
+// dem Join auf `cdc.source_table`, `ToChange` setzt beide am Ergebnis — die
+// opake `SourceTableID` bleibt daneben erhalten.
+func TestToChangeCarriesSchemaAndTable(t *testing.T) {
+	row := mapper.ChangeRow{
+		ChangeID:      "c-1",
+		TransactionID: "t-1",
+		SourceTableID: "tbl-1",
+		Sequence:      1,
+		Operation:     string(model.OperationInsert),
+		SchemaVersion: "sv-1",
+		Schema:        "public",
+		Table:         "orders",
+	}
+	change, err := mapper.ToChange(row)
+	if err != nil {
+		t.Fatalf("ToChange: %v", err)
+	}
+	if change.Schema != "public" || change.Table != "orders" {
+		t.Fatalf("Schema/Table = %q/%q, wollen public/orders", change.Schema, change.Table)
+	}
+	if change.SourceTableID != "tbl-1" {
+		t.Fatalf("SourceTableID = %q, wollen tbl-1", change.SourceTableID)
+	}
+}

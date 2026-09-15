@@ -64,14 +64,17 @@ const (
 )
 
 // e2eEnv trägt die Compose-seitige Testumgebung eines E2E-Laufs: die
-// Quell-Verbindung, den Store-Lese-Pfad und die Port-Kennung der
-// Feed-Tabelle, die der Test aus den CDC-Referenztabellen liest — der
-// Test führt die Bindungs-Kennungen nicht selbst.
+// Quell-Verbindung, den Store-Lese-Pfad, den Klartext-Tabellennamen der
+// Feed-Tabelle und ihre Port-Kennung, die der Test aus den
+// CDC-Referenztabellen liest — der Test führt die Bindungs-Kennungen nicht
+// selbst. Der Tabellenfilter des Leseports läuft über den Klartext-Namen
+// (`ADR-0081` Teilfrage 3).
 type e2eEnv struct {
 	dsn     string
 	pool    *pgxpool.Pool
 	store   *postgresstorage.PostgresChangeStoreAdapter
 	feed    string
+	table   string
 	tableID model.SourceTableID
 }
 
@@ -132,6 +135,7 @@ func newE2EEnv(t *testing.T, feedTable string) *e2eEnv {
 		pool:    pool,
 		store:   store,
 		feed:    "public." + feedTable,
+		table:   feedTable,
 		tableID: model.SourceTableID(tableID),
 	}
 }
@@ -145,7 +149,7 @@ func awaitPersistedChanges(t *testing.T, env *e2eEnv, limit int) []outbound.Chan
 	deadline := time.Now().Add(30 * time.Second)
 	for time.Now().Before(deadline) {
 		records, err := env.store.ReadChanges(context.Background(), outbound.ChangeQuery{
-			Source: e2eSource, Table: &env.tableID,
+			Source: e2eSource, Table: env.table,
 		})
 		if err != nil {
 			t.Fatalf("ReadChanges: %v", err)
@@ -156,7 +160,7 @@ func awaitPersistedChanges(t *testing.T, env *e2eEnv, limit int) []outbound.Chan
 		time.Sleep(100 * time.Millisecond)
 	}
 	records, err := env.store.ReadChanges(context.Background(), outbound.ChangeQuery{
-		Source: e2eSource, Table: &env.tableID,
+		Source: e2eSource, Table: env.table,
 	})
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
@@ -257,7 +261,7 @@ func TestE2ECaptureFlow(t *testing.T) {
 	// Das Wiederlesen desselben Bereichs trägt dieselben Changes in
 	// derselben Reihenfolge (`LH-FA-REA-004.a`, `LH-FA-REA-005`).
 	reread, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: e2eSource, Table: &env.tableID,
+		Source: e2eSource, Table: env.table,
 	})
 	if err != nil {
 		t.Fatalf("Wiederlesen: %v", err)
@@ -280,7 +284,7 @@ func TestE2ECaptureFlow(t *testing.T) {
 		t.Fatalf("Bereichs-Position: %v", err)
 	}
 	tail, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: e2eSource, Table: &env.tableID, Start: &after,
+		Source: e2eSource, Table: env.table, Start: &after,
 	})
 	if err != nil {
 		t.Fatalf("Bereichslesen: %v", err)
@@ -438,7 +442,7 @@ func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 		t.Fatalf("cdc.changes-Lesung: %d Zeilen (Erwartung: 3)", len(viewRows))
 	}
 
-	all, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{Source: e2eSource, Table: &env.tableID})
+	all, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{Source: e2eSource, Table: env.table})
 	if err != nil {
 		t.Fatalf("ReadChanges: %v", err)
 	}
@@ -796,7 +800,7 @@ func TestE2EDisableRetainedState(t *testing.T) {
 	// Test-Reihenfolge der Capture-Läufe. Der Bestand liest vor der
 	// Quelländerung, die Erwartung zählt ihn hoch.
 	before, err := env.store.ReadChanges(ctx, outbound.ChangeQuery{
-		Source: e2eSource, Table: &env.tableID,
+		Source: e2eSource, Table: env.table,
 	})
 	if err != nil {
 		t.Fatalf("Change-Bestand lesen: %v", err)

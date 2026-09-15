@@ -19,8 +19,9 @@ import (
 
 // ReadChanges setzt die Change-Abfrage ab (`SPEC-001`) und trägt die
 // Ergebnis-Zeilen in ChangeRecords: die Commit-Position kommt von der
-// Transaktion, der Change aus seiner Zeile. Die Reihenfolge der Rückgabe
-// trägt die SQL-Sortierung (`LH-FA-REA-004.a`).
+// Transaktion, der Change aus seiner Zeile samt den Klartext-Bezeichnern
+// der Tabelle aus dem Join. Die Reihenfolge der Rückgabe trägt die
+// SQL-Sortierung (`LH-FA-REA-004.a`).
 func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]outbound.ChangeRecord, error) {
 	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
 	if err != nil {
@@ -45,6 +46,8 @@ func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]out
 			&row.OldData,
 			&row.NewData,
 			&row.SchemaVersion,
+			&row.Schema,
+			&row.Table,
 			&committedAt,
 		); err != nil {
 			return nil, statement.fail(err)

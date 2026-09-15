@@ -28,14 +28,14 @@ const (
 // (`LH-FA-CAP-008`, Boundary) — der Konstruktor fordert deshalb kein Bild.
 //
 // Schema und Table tragen die Klartext-Bezeichner der betroffenen Tabelle
-// zusätzlich zur opaken SourceTableID (`ADR-0056`) — ausschließlich für den
-// NATS-Notify-Pfad (`ChangeNotificationPort`, tabellen-granulares
-// Subjekt). Sie sind bewusst keine Konstruktor-Invariante: Der
-// Driving-Adapter-Mapper kennt beide bereits vor dem Aufruf von `NewChange`
-// und setzt sie am Ergebnis; die Rekonstruktion eines persistierten Change
-// aus `cdc.change` (`postgresstorage/mapper.ToChange`) trägt keine eigenen
-// Schema-/Tabellen-Spalten und lässt die Felder leer — dieser Lesepfad
-// speist nie den Notify-Aufruf.
+// zusätzlich zur opaken SourceTableID: das tabellen-granulare Subjekt des
+// NATS-Wecksignals (`ChangeNotificationPort`, `ADR-0056`) und die Antwort
+// des lesenden API-Endpunkts (`GET /changes`, `ADR-0081`) adressieren die
+// Tabelle in Klartext. Sie sind bewusst keine Konstruktor-Invariante: der
+// füllende Pfad kennt beide bereits vor dem Aufruf von `NewChange` und
+// setzt sie am Ergebnis — der Driving-Adapter-Mapper aus dem
+// Replication-Ereignis, die Rekonstruktion eines persistierten Change
+// (`postgresstorage/mapper.ToChange`) aus dem Join auf `cdc.source_table`.
 type Change struct {
 	ID            ChangeID
 	TransactionID TransactionID
