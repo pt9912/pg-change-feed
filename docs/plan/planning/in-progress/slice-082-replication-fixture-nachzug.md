@@ -119,11 +119,19 @@ vierter Punkt:
       kein Self-Review (Modul 8). 0 HIGH; das MEDIUM liegt im Plan-Text und im
       DoD-Kriterium (Planner bzw. Verifier), deshalb ohne Rückgabe-Pfeil an den
       Implementer.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei Belege
+      ergänzt (`generierte-artefakte-ohne-sync-sensor`, damit 3×;
+      `github-actions-unverifizierbar-lokal`, damit 4×), kein neues Verzeichnis,
+      **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+      offen) — R1/R2/R3 *entfallen*, R4 *weiter offen*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**, die Prüfung fällt der `welle-20`-Closure zu (auch für
+      Slices ohne Wellen-Zugehörigkeit); hier nicht geprüft und hier nicht
+      fällig.
 
 ## 3. Plan (vor Code)
 
@@ -278,18 +286,67 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die **eine Quelle** hat getragen —
+  `tools/schema/apply-rollout.sh` ruft `make schema-rollout`, und der
+  Objektstand danach ist der volle Rollout-Stand (15 Tabellen, 6 Sichten,
+  4 Funktionen), kein Teilsatz; der Nachbartest
+  (`administration_endtoend_test.go`) läuft auf demselben Weg. Und die
+  **Mutation** als Beweismittel: nimmt man den Rollout-Aufruf aus dem
+  Träger-Skript, werden genau zwei Tests rot — das Grün kommt aus dem Rollout,
+  nicht aus einem Container-Rest. Der Reviewer hat das mit vier **eigenen**,
+  anders geschnittenen Mutationen nachgeprüft.
+- **Was ging anders als geplant:** Drei Dinge. (1) Der Zuschnitt wuchs um ein
+  **zweites Fixture**: `replication_stream_test.go` trägt dieselbe Form und
+  nimmt dem nachfolgenden Fixture im selben Paket das ausgerollte Schema weg —
+  eine Rückführung wäre hier ein Schnitt durch eine unteilbare Änderung
+  gewesen. (2) Die **Träger-Läufe** mussten berührt werden: der Go-Test läuft
+  im read-only gemounteten Toolchain-Container, ohne `docker` und ohne `make`
+  — der Rollout ist nur vom Aufrufer her erreichbar. (3) Die
+  **Bereitschafts-Prüfung** wurde nötig, weil `pg_isready` schon am temporären
+  Initdb-Server `accepting connections` meldet, während die Zieldatenbank noch
+  fehlt; ohne den Poll wäre der Beleg ein Lauf mit Glück gewesen.
+  **Und ein Fehler in meinem eigenen Text:** das DoD-Kriterium behauptete, der
+  Lauf beweise die reale Anwesenheit **beider** Tabellen. Er beweist eine —
+  `cdc.administration_request` ist für `bootstrap.Run` fatal,
+  `cdc.process_heartbeat` best-effort (`wiring.go:844`, `_ = port.Beat(...)`);
+  nimmt man nur sie weg, bleibt der Tier-Lauf grün. Der Reviewer hat es mit
+  einer eigenen Mutation aufgedeckt (Review F-1); der Wortlaut ist berichtigt.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Ein
+  Eintrag hat mit ihm die 3×-Schwelle erreicht —
+  `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (`slice-069`, `slice-074`,
+  `slice-082`) —, sein Ausgang wird aber **nicht hier** zugewiesen: Dieses Repo
+  führt Wellen-Betrieb, und der Lese-Schritt gehört der **laufenden
+  Welle-Closure** („Bei 3× wandert der Eintrag in die Steering-Loop-Einträge
+  der laufenden Welle-Closure"); dort trägt ihn der Planner → Architect →
+  Planner-Zug (Modul 8, Schritt 3b). Der Eintrag steht bis dahin `offen` —
+  zulässig und vorübergehend. **Korrektur meiner eigenen Ankündigung:** ich
+  hatte diesen Zug als Teil *dieser* Closure angekündigt; das war die falsche
+  Station.
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt, **kein**
+  neues Verzeichnis. `BEO-PGC/generierte-artefakte-ohne-sync-sensor/evidence/slice-082.md`
+  — Zähler damit **3×**, Schwelle erreicht, Ausgang folgt beim Lese-Schritt der
+  Welle-Closure. `BEO-PGC/github-actions-unverifizierbar-lokal/evidence/slice-082.md`
+  — Zähler **4×**; die bestehende Regel `AGENTS.md` §3.10 hat hier **gewirkt**:
+  der Implementer hat die CI-Bestätigung als §6-Risiko geführt, statt den Slice
+  für erledigt zu erklären, und sie wurde vor dem `git mv` nachgeholt.
+  **Zwei Klassen berührt, nicht gezählt:** `BEO-PGC/roter-test-ohne-leser`
+  (1×, offen) — dieser Slice ist der Träger des Instanz-Fixes, und die Behebung
+  ist kein zweites Auftreten; `BEO-PGC/schema-rollout-braucht-compose-init`
+  (1×, offen) — die Vorbedingung des Rollouts steht weiter in zwei Formen
+  (Inline-SQL in `apply-rollout.sh`, Init-Skript `compose-init/01-cdc-schema.sql`),
+  die zwei Zeilen sind aber **umgezogen**, nicht geschrieben (Review F-4).
+- **Folge-Slices:** keiner. Die übergeordnete Frage, ob `test-replication` ins
+  Gate-Bündel gehört, ist in §1 als eigener Vorgang ausgeschlossen und bleibt
+  der Klasse `roter-test-ohne-leser` zugeordnet — mit diesem Slice ist sie
+  **nicht** entschieden.
+- **Risiken aus §6:** alle vier mit Ausgang — R1/R2/R3 *entfallen, gestrichen
+  mit Begründung*; R4 *weiter offen → Beobachtungs-Register* (offen bleibt die
+  **Klasse**, die `AGENTS.md` §3.10 trägt; der konkrete Posten ist mit dem
+  grünen `e2e`-Lauf auf `2012a7f` — beide Legs, der zuvor rote Tier-Schritt
+  real gelaufen — **vor** diesem `git mv` nachgeholt).
+- **Drei Paarungen:** nicht hier — dieses Repo führt Wellen-Betrieb, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, „auch für
+  Slices ohne Wellen-Zugehörigkeit").
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
