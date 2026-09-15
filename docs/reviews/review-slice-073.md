@@ -371,7 +371,7 @@ Konformität prüft der Verifier separat (Modul 11).
 
 | Aufruf | Exit-Code | Beleg |
 |---|---|---|
-| `make gates` | 0 | `docs-check` 584 Dateien / 0 Befunde · `commit-traceability` OK (5 Commits) · `a-check` 0 Befunde · `coverage-gate` 49,30 % ≥ 35 % · `baseline-verify` OK |
+| `make gates` | 0 | zwei Läufe: vor diesem Report 584 Dateien, mit ihm 585 — beide 0 Befunde · `commit-traceability` OK (5 Commits) · `a-check` 0 Befunde · `coverage-gate` 49,30 % ≥ 35 % · `baseline-verify` OK |
 | `make commit-traceability` | 0 | `HEAD~5..HEAD`: d-check 0 Befunde · „Betreffs ohne Struktur-ID" |
 | vier Hook-Nachweise (eigene) | 1 / 1 / 0 / 0 | Wegwerf-Repository `/tmp/review073/repo`; s. Urteil 2 |
 | drei Mutationen (eigene) | 1→0 / 1→0 / 0→1 | Kopien des Skripts; s. Urteil 3 |
