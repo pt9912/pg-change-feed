@@ -91,8 +91,15 @@ vierter Punkt:
       (der Schema-Rollout), nicht aus einer zweiten, handgepflegten Liste. Eine
       zweite Liste ist genau die Drift, die diesen Befund erzeugt hat.
 - [x] Die zwei Tabellen, deren Fehlen belegt ist (`cdc.administration_request`,
-      `cdc.process_heartbeat`), sind nach dem Nachzug **real** vorhanden — der
-      Lauf beweist es, nicht der Kommentar.
+      `cdc.process_heartbeat`), sind nach dem Nachzug **real** vorhanden — belegt
+      am **Objektstand** nach dem Rollout (15 Tabellen, 6 Sichten, 4 Funktionen),
+      nicht an einem Kommentar. **Der Lauf beweist sie nicht beide**, und das
+      steht hier so (Review F-1): `cdc.administration_request` ist für
+      `bootstrap.Run` **fatal** (`42P01` beendet den Lauf), `cdc.process_heartbeat`
+      dagegen **best-effort** (`wiring.go:844`, `_ = port.Beat(...)`) — nimmt man
+      nur sie weg, bleibt der Tier-Lauf grün. **Nachtrag zum Plan:** die vorige
+      Fassung sagte „der Lauf beweist es" für **beide** Tabellen; das war eine
+      unzutreffende Tatsachenbehauptung und ist hiermit berichtigt.
 
 **Liefer-Punkt 2 — der Lauf ist grün.**
 
