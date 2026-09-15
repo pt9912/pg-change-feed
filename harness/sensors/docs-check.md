@@ -8,8 +8,9 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 (`id-unlinked`), verbotene Referenzrichtung zwischen Dokumentklassen
 (`matrix-forbidden` / `matrix-inactive`), abweichender Baseline-Pin
 (`version-stale`), Struktur-Verstoß im Abschnitt
-(`section-cell-*`, `section-forbidden` — Register-Spalten und
-Closure-Notiz-Guidance). Die Module und ihre Grenzen stehen in `.d-check.yml`;
+(`section-cell-*`, `section-forbidden` — Register-Spalten,
+Closure-Notiz-Guidance und die Verweisform auf wandernde Slice-Pläne in
+Berichten und der Register-Identität). Die Module und ihre Grenzen stehen in `.d-check.yml`;
 die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
 
 ## Grenze — was das Grün nicht abdeckt
@@ -32,6 +33,17 @@ die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
 5. **Vendored Bestand ausgenommen** — `.harness/**` und `**/*.template.md`
    sind vom Scan ausgenommen; die Baseline selbst prüft `baseline-verify`,
    die Templates sind Referenz-Form. Permanent (Setzung).
+
+6. **Verweisform auf wandernde Slice-Pläne — Textform, kein Link-Baum.** Die
+   beiden `structure`-Bedingungen über `docs/reviews/**` und
+   `docs/plan/planning/observations/**/observation.md` lesen den bereinigten
+   Abschnittstext: ein Lifecycle-Pfad in Inline-Code oder im Fence ist
+   unsichtbar — die zulässige Inline-Code-Form bleibt damit grün —, und
+   Reference-Style-Links umgehen die Textform. `state.md` und `evidence/*.md`
+   tragen keine Überschrift und haben deshalb keinen Abschnitts-Anker; dort
+   trägt die Selbstprüfung im Closure-Schritt. Die Wellen-Form (flaches
+   `planning/welle-NN.md` → `done/`) und der gleich-ordnerige Nachbar-Verweis
+   (Quell-Seite, `links.resolve-from`) sind Nachbar-Klassen, nicht gedeckt.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
@@ -58,6 +70,6 @@ Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 
 `harness/conventions.md` MR-000 (ID-Schema als Linkpflicht) · Decken-Regel
 (Baseline-Regelwerk Modul 5/6, abgebildet in `.d-check.yml` §matrix) ·
-Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten
-(`.d-check.yml` §structure, fünfte Regel auskommentiert bis zur ersten
-Closure).
+Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten und
+Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichten`,
+3×, `seit slice-075`) — `.d-check.yml` §structure.

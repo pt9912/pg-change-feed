@@ -144,6 +144,36 @@ structure:
     # · seit welle-19.
     forbid-pattern: "Wurde mit diesem Slice nichts verkörpert"
     hint: "Closure-Notiz je Slice (§7): Steering-Loop-Lerneintrag, keine offenen Aufgaben; Ausgaenge je Risiko im Slice-Plan."
+  # Sechste und siebte Regel — Verweisform auf wandernde Slice-Plaene, Traeger:
+  # BEO-PGC/slice-pfad-als-link-in-berichten · seit slice-075. Ein Slice-Plan
+  # wandert (open/ -> next/ -> in-progress/ -> done/); ein Markdown-Link mit
+  # festem Lifecycle-Verzeichnis loest am Ist-Ort auf und bricht erst beim
+  # naechsten `git mv` (`links` -> target-missing). Diese Regel meldet die
+  # Form VOR dem Move. Die Entscheidungs-Haelfte (ADR) traegt bereits die
+  # matrix-Regel `adr -> slice`; gedeckt sind hier die Berichte
+  # (Review, Verifikation, Architect-Verdikt) und die Register-Identitaet.
+  #
+  # Grenzen, benannt: (1) der Treffer ist eine Textform, kein Link-Baum —
+  # Reference-Style-Links und prozent-kodierte Pfade umgehen sie; (2) die
+  # Bedingungen lesen den BEREINIGTEN Abschnittstext, in dem Inline-Code-Spans
+  # geleert sind — ein Pfad in Backticks (die zulaessige Inline-Code-Form) und
+  # eine Illustration im Fence sind damit unsichtbar; (3) state.md und
+  # evidence/*.md tragen keine Ueberschrift und haben deshalb keinen
+  # Abschnitts-Anker — dort bleibt es Disziplin (implement-slice.md, Schritt 25);
+  # (4) gedeckt sind genau diese zwei Dateiklassen — nicht die ganze Doku
+  # (die Welle-Form `planning/welle-NN.md` -> `done/` und der gleich-ordnerige
+  # Nachbar-Verweis sind Nachbar-Klassen ohne Beleg und nicht gedeckt).
+  - files: "docs/reviews/**/*.md"
+    section-pattern: '^# '
+    sections: each
+    forbid-pattern: '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'
+    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv (links: target-missing). Stattdessen die Kennung zitieren (slice-<NNN>) oder einen Inline-Code-Pfad."
+  - files: "docs/plan/planning/observations/**/observation.md"
+    section-pattern: '^# '
+    sections: each
+    forbid-pattern: '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'
+    hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv. Stattdessen die Kennung zitieren (slice-<NNN>) oder einen Inline-Code-Pfad."
+
 reviews:
   # Review-Report-Deckung fuer done/-Slices mit Review-DoD-Haken —
   # aktiviert mit der ERSTEN Closure (slice-001/slice-002 in done/,
