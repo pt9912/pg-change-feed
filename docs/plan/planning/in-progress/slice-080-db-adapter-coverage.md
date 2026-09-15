@@ -109,11 +109,15 @@ vierter Punkt:
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       `docs/reviews/review-slice-080.md` · Fixrunde
       `docs/reviews/review-slice-080-fixrunde.md`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — das Repo ist durchgehend Greenfield, die Datei existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+      Repo **mit** Wellen-Betrieb: die Prüfung trägt die **nächste
+      Welle-Closure** (`welle-20` läuft und sammelt auch Slices ohne
+      Wellen-Zugehörigkeit ein). Der genannte Folge-Slice `slice-082` existiert
+      als Datei in `open/`.
 
 ## 3. Plan (vor Code)
 
@@ -207,13 +211,32 @@ dasteht.
 - **Die zwei Läufe tragen verschiedene Testbestände.** Ein gemeinsamer Nenner
   über beide kann eine Zahl erzeugen, die keinen der beiden Gegenstände
   beschreibt. Antwort: eine Zahl **je Lauf** oder ein ausdrücklich benannter
-  gemeinsamer Nenner samt Verfahren. — **Ausgang:** <bei Closure>
+  gemeinsamer Nenner samt Verfahren. — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: der gemeinsame Nenner **beschreibt** beide Gegenstände, weil die
+  zwei Läufe einander **nicht** überschneiden — die Dateimengen der Profile
+  schneiden sich leer, und `788 = 610 + 155 + 23` ist exakt die Größe, die
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  für den Gegenstand gemessen hat. Das Verfahren steht im Skript und in der
+  Sensor-Doku §Zählbasis.
 - **Die erste Kalibrierung könnte sehr niedrig liegen.** Das ist zulässig
   (bootstrap-aware: die Stufe folgt der Messung) — aber der Wert gehört
-  **benannt**, samt dem, was ihn drückt. — **Ausgang:** <bei Closure>
+  **benannt**, samt dem, was ihn drückt. — **Ausgang:** *entfallen — gestrichen
+  mit Begründung*: der erste Wert liegt bei **75,25 %** und damit nicht niedrig;
+  die Stufe (75) und das, was sie drückt (`tableactivation.go` 70,8 %,
+  `receive.go` 69,5 %, `administrationrequest.go` 66,7 %), sind benannt.
+  **Als benannte Grenze festgehalten** (nicht als Ausgang): die Stufe liegt nur
+  **2 Statements** über ihrer Schwelle (591 wären 75,0 %) — sie folgt der
+  Messung, und ein Testverlust kippt sie auf rot. Das ist die Mechanik, kein
+  Defekt.
 - **`postgresstorage/mapper` liegt in beiden Messungen** — es bleibt im
   Unit-Gegenstand. Die zwei Zahlen **überlappen** in diesem Paket; wer sie
-  addiert oder vergleicht, muss das wissen. — **Ausgang:** <bei Closure>
+  addiert oder vergleicht, muss das wissen. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: die **Prämisse des Risikos trifft nicht zu** —
+  `postgresstorage/mapper` ist aus dem DB-Subjekt **ausgeschlossen** (das Subjekt
+  führt `postgresstorage` **ohne** `mapper`), die zwei Zahlen überlappen also
+  nicht. Der Implementer hat das an den Profilen nachgewiesen, der Reviewer hat
+  es bestätigt. Ein Risiko, dessen Voraussetzung widerlegt ist, kann nicht
+  eintreten.
 
 ## 7. Closure-Notiz
 
@@ -232,18 +255,72 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die **Zählbasis** — der teuerste Teil von `slice-079`
+  trug hier sofort. Die Regel „gedeckt = mindestens ein Vorkommen `count > 0`"
+  ist bei diesem Slice **tragend**, nicht kosmetisch: ohne sie fiele
+  `replication/receive` von 112/155 auf **0/155** und der Wert auf 10,11 % —
+  unter jede Schwelle. Und der **Merge** ist keine Notlösung: die zwei Läufe
+  partitionieren die Subjekttests, ihre Profile schneiden sich leer, und der
+  gemeinsame Nenner (788) stimmt exakt mit dem überein, was
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  für den Gegenstand gemessen hat.
+- **Was ging anders als geplant:**
+  1. **Ein Risiko des Plans war falsch angesetzt.** §6 Risiko 3 nahm eine
+     Überlappung bei `mapper` an; `mapper` ist aus dem DB-Subjekt
+     **ausgeschlossen**. Der Implementer hat es an den Profilen widerlegt und
+     **gemeldet statt erfüllt** — der Ausgang ist damit *entfallen*, nicht
+     „nicht eingetreten".
+  2. **Ein vorbestehender roter Test wurde sichtbar** — nicht erzeugt, sondern
+     **aufgedeckt**: `make test-replication`s tier-weites `go test ./...`
+     scheitert seit `ADR-0050` an einem Fixture, das die seither gelesenen
+     Tabellen nicht mitbringt. Das Target ist **weder Gate noch CI**, deshalb
+     war es unsichtbar. Belegt am **unveränderten** Runner (Reviewer) und mit
+     der Mechanik am Artefakt (`walretention_endtoend_test.go`;
+     `administration_endtoend_test.go:37` dokumentiert die Lücke selbst).
+     Eingetragen als `BEO-PGC/roter-test-ohne-leser`; die **Adresse** ist
+     `slice-082`.
+  3. **Die neue Verdrahtung machte ihn in CI sichtbar.** Seit diesem Slice läuft
+     `e2e` rot (**nicht-blockierend**): rot ist der **Tier-Schritt**, grün der
+     **Mess-Schritt** — die Zahl ist in CI also beobachtbar, der Lauf als Ganzes
+     nicht. Das gehört zu 2. und wird von `slice-082` zurückgenommen, **ohne**
+     zu maskieren. **Zum Post-Push-Beleg (`AGENTS.md` §3.10):** der reale Lauf
+     liegt vor (`gh run view`, beide Matrix-Legs PostgreSQL 17/18), und die
+     **neuen** Schritte sind darin **grün** — die Workflow-Änderung ist damit in
+     ihrem eigenen Umfang bestätigt; offen ist allein der fremde Tier-Schritt.
+  4. **Eine Mechanismus-Erklärung war falsch** (Review F-1): „`-coverpkg`
+     instrumentiert in jeder Testbinary den ganzen Gegenstand" — real erscheint
+     nur das **verlinkte** Paket. Dieselbe Klasse wie in `slice-079`.
+- **Steering-Loop-Einträge:**
+  - *verkörperte Regel, angewandt und präzisiert*: die Zählbasis (`slice-079`) —
+    hier mit dem **richtigen** Grund für die Deduplizierung (Duplikat innerhalb
+    **eines** Profils, nicht über den ganzen Gegenstand).
+  - *zwei neue Register-Einträge*: `BEO-PGC/roter-test-ohne-leser` (1×) und
+    `BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg` (2× über zwei Vorgänge).
+  - *kein neuer Sensor* — beide Klassen haben ihren Wächter im Review.
+- **Beobachtungs-Register (`../observations/`):** zwei **neue** Verzeichnisse
+  (s. o.), je mit `evidence/`. `BEO-PGC/regel-weiter-als-ihr-sensor` bleibt bei
+  **2×**: dieser Slice fügt ihm keinen Beleg hinzu — die DB-Zahl ist eine
+  **dritte, eigene** Messung, keine Änderung der beiden dort geführten Zusagen.
+- **Folge-Slices:** `slice-082` (Replication-Fixture nachziehen) — die Adresse
+  für die Punkte 2 und 3; er liegt in `open/`.
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung*; die
+  **2-Statement-Marge** ist als benannte Grenze in §6 festgehalten, nicht als
+  Ausgang.
+- **Drei Paarungen:** hier **nicht** geprüft — die §2-Zeile verweist sie an die
+  nächste Welle-Closure (`welle-20` läuft und sammelt auch Slices ohne
+  Wellen-Zugehörigkeit ein).
+- **Zwei benannte Grenzen:** (a) der Kopf-Satz des `e2e`-Workflows („Kein
+  Workflow-Schritt enthält Inline-Shell-Logik, die eines dieser Ziele umgeht")
+  stand im Widerspruch zu den zwei neuen Zeilen und ist **nachgezogen**;
+  (b) **zwei Wege zum selben Skript** (`make test-replication` und die zwei
+  CI-Aufrufe) sind eine Divergenz-Fläche — eine spätere Rezeptur-Änderung
+  erreicht die CI-Schritte nicht. Benannt, nicht behoben.
+- **Eine Buchhaltungs-Lücke, benannt:**
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  §Fitness Function führt „neues Target (geplant)"; angelegt ist **kein** Target
+  — die Messung hängt an den bestehenden Träger-Läufen plus einem Hilfsskript.
+  Operativ konform, wörtlich nicht.
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

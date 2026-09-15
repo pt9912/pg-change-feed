@@ -24,8 +24,9 @@ name: e2e
 # DB-Adapter-Coverage werden direkt ueber das Traeger-Skript aufgerufen
 # (`tools/harness/run-replication-tests.sh measure|tier`) — dasselbe Skript, das
 # `make test-replication` implementiert, hier mit je eigenem Exit je Phase; ein
-# Make-Target je Phase gibt es nicht. Kein Workflow-Schritt enthaelt
-# Inline-Shell-Logik, die eines dieser Ziele umgeht oder dupliziert.
+# Make-Target je Phase gibt es nicht. Sonst enthaelt kein Workflow-Schritt
+# ziel-eigene Inline-Shell-Logik; die eine Ausnahme oben ruft dasselbe
+# Traeger-Skript wie `make test-replication` und dupliziert nichts.
 #
 # Timeout 60 Minuten (ci.yml: 30) — `make test-integration` traegt mehrere
 # feste Wartephasen (Retention-Alters-/Lag-Schwellen, NATS-Reconnect-Timing)
