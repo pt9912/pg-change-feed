@@ -84,6 +84,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0069 | commit-msg-Hook — einseitige Zusage (Supersedes ADR-0062; → ADR-0070, teilw.) | Accepted | 2026-09-15 | [0069-commit-msg-hook-einseitige-zusage.md](0069-commit-msg-hook-einseitige-zusage.md) |
 | ADR-0070 | Supersede-Reichweite und Klassengrenze (Supersedes ADR-0069, teilweise) | Accepted | 2026-09-15 | [0070-supersede-reichweite-und-klassengrenze.md](0070-supersede-reichweite-und-klassengrenze.md) |
 | ADR-0071 | Coverage-Gate — Messgegenstand netzlos prüfbare Fläche (Supersedes ADR-0054) | Accepted | 2026-09-15 | [0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md](0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
-| ADR-0072 | hostpaths aktiviert — kein Host-Pfad, ohne Ausnahme (→ ADR-0074, teilweise) | Accepted | 2026-09-15 | [0072-hostpaths-modul-aktiviert-ohne-ausnahme.md](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) |
+| ADR-0072 | hostpaths aktiviert — kein Host-Pfad, ohne Ausnahme (→ ADR-0074/0075, teilw.) | Accepted | 2026-09-15 | [0072-hostpaths-modul-aktiviert-ohne-ausnahme.md](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) |
 | ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | ADR-0074 | Zitationsform Schwester-Repo — Hausform (Supersedes ADR-0072, teilweise) | Accepted | 2026-09-15 | [0074-zitationsform-schwester-repo-hausform.md](0074-zitationsform-schwester-repo-hausform.md) |
+| ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator-Disposition | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
