@@ -192,6 +192,37 @@ der Naht die Neu-Bemessung der Rampe als **Folge-ADR** (Architect), und
 Der Slice schließt mit diesem Zug deshalb **nicht**; die DoD-Häkchen unten
 stehen nur, wo ein Beleg vorliegt.
 
+**Befund des zweiten Laufs — der Nenner-Nachweis trägt nicht.** Die Probe ist
+gemessen, nicht behauptet (gepinnte Toolchain- und PostgreSQL-Images;
+`make coverage-gate`, `make test-store`, `make test-replication` je Exit 0,
+ungepiped), einmal auf dem Vor-Naht-Stand und einmal auf dem Stand der Naht:
+
+| Gegenstand (Statements) | vor der Naht | nach der Naht | Δ |
+|---|---|---|---|
+| netzlos prüfbare Fläche (Unit) | 1679 (1171 gedeckt, 69,74 %) | 1831 (1306 gedeckt, 71,33 %) | **+152** |
+| DB-Adapter-Gegenstand | 788 (593 gedeckt, 75,25 %) | 650 (477 gedeckt, 73,38 %) | **−138** |
+| **Summe** | **2467** | **2481** | **+14** |
+
+Der Unit-Zuwachs ist genau das neue Paket `postgresstorage/sqlexec`
+(`errors.go` 2 · `statement.go` 3 · `translate.go` 147 = 152); jedes andere
+Unit-Paket ist unverändert. Der DB-Verlust ist `postgresstorage` (610 → 472);
+`postgresack` (23) und `receive` (155) sind unverändert. Damit ist die
+**Statement-Summe beider Gegenstände nicht konstant** — sie wächst um 14: der
+aufnehmende Gegenstand nimmt 152 auf, der abfließende gibt 138 ab. Die 14 sind
+neuer Code der Naht (die generalisierte Übersetzung samt
+`Classify`/`IsAbsent`/`Statement.fail`), keine verlagerte Menge; die Zahl aus
+§1 (`… 1679 → 1817`) ist die abgeleitete Summe `1679 + 138` und von der
+Messung widerlegt.
+
+[`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
+Festlegung 1 bindet die Neu-Bemessung an genau diese Nenner-Paarung. Sie ist
+**nicht erfüllt**; die beiden Einstiege werden deshalb in diesem Lauf **nicht**
+gesenkt (`DB_COVERAGE_THRESHOLD` bleibt 75, `THRESHOLD` bleibt 65), und
+`make test-replication` bleibt rot (73,38 % < 75 %). Ob die Voraussetzung den
+Naht-eigenen Zuwachs tragen soll, ist eine Architect-Frage (Folge-ADR); der
+Implementer senkt keine Schwelle ohne die tragende Voraussetzung
+(`AGENTS.md` §3.6).
+
 ## 4. Trigger
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
