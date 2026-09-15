@@ -107,12 +107,12 @@ jobs:
       # Traeger-Skript (seine Implementierung ist `make test-replication`, ein
       # eigenes Make-Target je Phase gibt es nicht): `measure` traegt das
       # Verdikt der Messung, `tier` den Tier-weiten `go test ./...`. Sie sind
-      # getrennt, weil der Tier-Lauf einen vorbestehenden roten Beleg traegt
-      # (internal/bootstrap · TestWALRetentionThresholdEndToEnd, Fixture ohne
-      # die seit ADR-0050 gelesenen cdc-Tabellen) — in einem gemeinsamen Schritt
-      # verschluckte dessen Exit das Verdikt der Messung. Der Tier-Schritt ist
-      # damit auf jedem Lauf rot, solange das Fixture nicht nachgezogen ist; die
-      # Messung darueber ist davon unabhaengig gueltig.
+      # getrennt, weil der Tier-Lauf `go test ./...` ueber den ganzen Baum
+      # fuehrt — in einem gemeinsamen Schritt verschluckte sein Exit das Verdikt
+      # der Messung. Der `tier`-Schritt rollt das CDC-Schema vor dem Lauf aus
+      # (tools/schema/apply-rollout.sh, ADR-0043), weil die
+      # internal/bootstrap-Fixtures `bootstrap.Run` real starten und dessen
+      # Lesezugriffe brauchen; die Messung darueber laeuft ohne diesen Schritt.
       - name: DB-Adapter-Coverage — Store-Teil (Profil)
         run: make test-store
 

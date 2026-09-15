@@ -101,12 +101,12 @@ nacheinander im selben Job:
 
 Die Schritte 2 und 3 rufen dasselbe Skript in seinen zwei Phasen (das Skript ist
 die Implementierung von `make test-replication`; ein eigenes Make-Target je Phase
-gibt es nicht). Die Trennung ist Absicht: der Tier-Lauf trägt einen
-vorbestehenden roten Beleg (§Grenze Punkt 6) — liefe er im selben Schritt wie die
-Messung, verschluckte sein Exit das Verdikt der Messung, und ein grünes
-`db-coverage: OK` ergäbe zusammen mit dem roten Tier **einen** roten Exit-Code.
-`make test-replication` ruft das Skript ohne Argument und fährt beide Phasen für
-einen lokalen Einzelaufruf.
+gibt es nicht). Die Trennung ist Absicht: der Tier-Lauf führt `go test ./...` über
+den ganzen Baum und trägt damit Fehlschläge außerhalb des Gegenstands — liefe er im
+selben Schritt wie die Messung, verschluckte sein Exit das Verdikt der Messung, und
+ein grünes `db-coverage: OK` ergäbe zusammen mit einem roten Paket außerhalb des
+Gegenstands **einen** roten Exit-Code. `make test-replication` ruft das Skript ohne
+Argument und fährt beide Phasen für einen lokalen Einzelaufruf.
 
 Die Profile liegen in `DB_COVERAGE_DIR` (Default
 `${TMPDIR:-/tmp}/pg-change-feed-db-coverage`), nicht im Arbeitsbaum.
@@ -131,18 +131,16 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
    über **alle** Vorkommen prüft oder nur das erste, entscheidet die Zahl, nicht
    ein Wächter — der einzige Träger der richtigen Basis ist `db-coverage.sh`
    selbst.
-6. **Der Replication-Tier-Lauf trägt einen vorbestehenden roten Beleg.** Der
-   Tier-weite `go test ./...` ist rot (`internal/bootstrap` ·
-   `TestWALRetentionThresholdEndToEnd`): dessen Fixture baut das `cdc`-Schema per
-   `DROP SCHEMA cdc CASCADE` + `ApplySchema` neu auf und trägt die von
-   `bootstrap.Run` gelesenen Tabellen (`cdc.administration_request`,
-   `cdc.process_heartbeat`) nicht, die seit
-   [`ADR-0050`](../../docs/plan/adr/0050-sql-administration-antragsqueue-und-live-reload.md)
-   dazugehören. **Folge für den Träger:** der Tier-Schritt des Workflows ist
-   damit auf **jedem** Lauf rot, solange das Fixture nicht nachgezogen ist. Die
-   Messung läuft als **eigener Schritt** davor (§Träger) und trägt ihr eigenes
-   Verdikt — der rote Tier-Schritt färbt die Zahl dieses Sensors **nicht**, und
-   die Zahl deckt den Tier-Lauf **nicht** ab.
+6. **Der Schema-Stand des Tier-Laufs liegt außerhalb dieser Messung.** Der
+   Tier-Schritt rollt das `cdc`-Schema vor dem Lauf aus
+   (`tools/schema/apply-rollout.sh`; derselbe d-migrate-Rollout wie der Betrieb,
+   [`ADR-0043`](../../docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md)), weil
+   die `internal/bootstrap`-Fixtures `bootstrap.Run` real starten und dessen
+   Lesezugriffe auf `cdc.table_schema`, `cdc.administration_request`
+   ([`ADR-0050`](../../docs/plan/adr/0050-sql-administration-antragsqueue-und-live-reload.md))
+   und `cdc.process_heartbeat` brauchen. Die Messung dieses Sensors läuft als
+   **eigener Schritt** ohne diesen Rollout (§Träger) — ein Fehler des Rollouts
+   färbt die Zahl **nicht**, und ihr Grün deckt den Tier-Lauf **nicht** ab.
 
 ## Ausgabe und Ausgänge
 
