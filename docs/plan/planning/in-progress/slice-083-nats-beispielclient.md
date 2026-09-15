@@ -99,31 +99,31 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — das Beispiel existiert und taugt als Vorbild.**
 
-- [ ] `examples/nats-client` ist ein **eigenständiges** CLI-Programm (eigenes
+- [x] `examples/nats-client` ist ein **eigenständiges** CLI-Programm (eigenes
       `main`, wie die drei anderen) und benutzt ausschließlich den öffentlichen
       Draht-Vertrag: **kein** Import aus `/internal/`.
-- [ ] Es benutzt `github.com/nats-io/nats.go` (bereits Modul-Abhängigkeit) und
+- [x] Es benutzt `github.com/nats-io/nats.go` (bereits Modul-Abhängigkeit) und
       die Standardbibliothek — **keine** neue Abhängigkeit.
 
 **Liefer-Punkt 2 — beide Schritte sind vollständig.**
 
-- [ ] Das **Lauschen**: das Subjekt wird aus `<source_id>.<schema>.<table>`
+- [x] Das **Lauschen**: das Subjekt wird aus `<source_id>.<schema>.<table>`
       **abgeleitet**, nicht handgetippt
       ([`SPEC-017`](../../../../spec/pflichtenheft.md)); der Client bezieht
       **keine** Daten aus dem Payload.
-- [ ] Die **nachfolgende HTTP-Abfrage**: beim Weckruf holt der Client die
+- [x] Die **nachfolgende HTTP-Abfrage**: beim Weckruf holt der Client die
       Änderung real über die HTTP-API und gibt sie aus. Ist `CDC_HTTP_ADDR`
       ungesetzt (API deaktiviert), **scheitert er sichtbar**, statt still
       nichts zu tun.
-- [ ] Die netzlos prüfbare Hälfte — Subjekt-Ableitung und Aufbau der Abfrage —
+- [x] Die netzlos prüfbare Hälfte — Subjekt-Ableitung und Aufbau der Abfrage —
       liegt als **reine Funktion** mit eigenen Tests vor.
 
 **Liefer-Punkt 3 — es ist zitierbar.**
 
-- [ ] `docs/user/benutzerhandbuch.md` trägt einen Abschnitt zum Zugriff über das
+- [x] `docs/user/benutzerhandbuch.md` trägt einen Abschnitt zum Zugriff über das
       NATS-Wecksignal und **nennt das Beispiel beim Namen** — in der Form der
       bestehenden Zugriffs-Abschnitte der drei anderen Schnittstellen.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -181,6 +181,21 @@ vorgezeichnet (ein `ReadChangesUseCase` samt Inbound Port).
 zwei Commits, kein Push). Er wird **nicht** verworfen: entscheidet die Folge-ADR,
 dass die API das Lesen bekommt, ist dieses Beispiel bereits richtig. Bis dahin
 ist es das Beispiel für einen Ablauf, den das System noch nicht kann.
+
+### Plan-Nachzug dieses Laufs — der Blocker ist gelöst
+
+[`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md) hat den
+Changes-Lese-Endpunkt entschieden, `slice-086` hat ihn geliefert: `GET /changes`
+in der Rechtsklasse `reader`, Filter `source`/`schema`/`table`/`from`/`to`/
+`limit` ([`SPEC-022`](../../../../spec/pflichtenheft.md)). Der Branch-Stand ist
+**unverändert** übernommen — `Subject`, `ChangesURL` und die Token-Quelle des
+Clients stimmen mit dem ausgelieferten Endpunkt überein (Pfad `/changes`,
+Query-Parameter `source`/`schema`/`table`, `Authorization: Bearer` mit
+`CDC_API_TOKEN_READER`). Nachzuziehen waren allein zwei Stellen:
+`docs/user/benutzerhandbuch.md` trägt die ausdrückliche Nennung des Endpunkts im
+Zugriffs-Abschnitt samt Versionshistorie (1.16). Die `.a-check.yml`-Gruppe
+`examples: ["examples/**"]` ist wie geplant **ohne** Kante; ein neuer Träger
+oder eine Nicht-Realisierung gegenüber dieser Tabelle liegt nicht vor.
 
 **Nicht in dieser Liste:** `internal/**` (das Beispiel ist kein Harness-Client),
 `tools/harness/**` (die Wegwerf-Clients bleiben, `ADR-0076`), `spec/**`
