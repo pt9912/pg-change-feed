@@ -14,6 +14,10 @@ Lese-Schritt-Träger entfällt hier: Der Lese-Schritt lief als Teil der
 laufenden `welle-15`-Closure (Modul 8 §Rollen-Sequenz für eine Welle,
 Schritt 3b).
 
-Zähler (abgeleitet): 3× (evidence/slice-058.md, evidence/slice-054.md,
-evidence/slice-055.md) — Schwelle erreicht, Ausgang im Lese-Schritt der
-`welle-15`-Closure zugewiesen.
+Zähler (abgeleitet): **4×** (evidence/slice-054.md, evidence/slice-055.md,
+evidence/slice-058.md, evidence/slice-078.md) — Schwelle erreicht, Ausgang im
+Lese-Schritt der `welle-15`-Closure zugewiesen. Der vierte Beleg liegt **nach**
+der Verkörperung und trifft die **geschärfte** Hälfte: nicht die maskierende
+Pipe, sondern die fehlende Konditionierung von Gate-Lauf und Folgehandlung über
+zwei Schritte. Die Regel steht; ihr Wächter bleibt Disziplin — kein Sensor fängt
+sie.

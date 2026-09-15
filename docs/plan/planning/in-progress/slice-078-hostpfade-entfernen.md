@@ -154,11 +154,14 @@ dieselbe Entscheidung sanktioniert.
       Erstlauf `docs/reviews/review-slice-078.md`, Delta-Nachlauf
       `docs/reviews/review-slice-078-delta.md`, N-1-Nachzug
       `docs/reviews/review-slice-078-nachzug.md` (Commit `859357b`) — 0 HIGH.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — das Repo ist durchgehend Greenfield (`*`/`PGC`), die Datei existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+      geprüft **von der Slice-Closure selbst**: die Roadmap führt keine offene
+      Welle (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose
+      Betrieb selbst auslöst).
 
 ## 3. Plan (vor Code)
 
@@ -233,18 +236,33 @@ dasteht.
   Dokument anfasst. Die Grenze steht in `ADR-0073`: nur das Zitatgerüst, nie
   Entscheidung, Konsequenzen, Alternativen, Status oder `Supersedes`-Kette; der
   Beleg ist die Commit-Kennung **plus** eine §Geschichte-Zeile je betroffener
-  ADR. — **Ausgang:** <bei Closure>
+  ADR. — **Ausgang:** *entfallen — gestrichen mit Begründung*: die Klasse hat
+  getragen (26 der 27 Stellen waren reines Zitatgerüst), und der **einzige**
+  Übergriff — `ADR-0072` §Entscheidung Punkt 5 — wurde nicht stillschweigend
+  vorgenommen, sondern im Konflikt-Pfad entschieden (`ADR-0075`) und als
+  beschlossener Text nachgezogen. Der benannte Wächter hat funktioniert: das
+  Review hat ihn gefunden.
 - **Die Form „Anzahl + Dateiname" verliert die konkrete Fundstelle.** Beabsichtigt
   — der Präfix ist Maschinen-Layout, keine Information — und re-derivierbar: das
   aktivierte Modul zeigt die Fundstellen jederzeit wieder. — **Ausgang:**
-  <bei Closure>
+  *entfallen — gestrichen mit Begründung*: die Fundstellen sind re-derivierbar,
+  und die Verifikation hat die Zählung (31 gescannt / 42 gesamt) unabhängig
+  nachgemessen.
 - **Beim Korrigieren neue erzeugen:** die Beschreibung der Funde zitiert die
   Funde. Die Regel „Zitat = Anzahl + Datei" verhindert es, der Abnahme-Grep
-  fängt es. — **Ausgang:** <bei Closure>
+  fängt es. — **Ausgang:** *entfallen — gestrichen mit Begründung*: der
+  repo-weite Grep steht bei 0, und zwei Gegenproben belegen die Regel — einer in
+  Prosa wird vom Modul gefangen, einer im Fence vom Grep. Die zwei
+  Selbstwidersprüche, die beim Formulieren entstanden (Delta-N-1), sind behoben.
 - **Zwei Stellen liegen außerhalb der Modul-Reichweite** (`Makefile`,
   `tools/coverage-gate.sh`): sie werden korrigiert, aber **kein** Sensor hält
   sie künftig — die Lücke wird in `harness/sensors/docs-check.md` benannt. —
-  **Ausgang:** <bei Closure>
+  **Ausgang:** *weiter offen → Beobachtungs-Register*: die Lücke ist gemessen
+  (ein Host-Pfad im Fence lässt das Modul grün, die Regel verbietet ihn), und
+  seit `ADR-0075` ist die Regel **weiter als ihr Sensor**. Eingetragen als
+  `BEO-PGC/regel-weiter-als-ihr-sensor` (1×, offen); ein Grenz-Hälften-Sensor
+  nach dem Muster von `make commit-traceability` würde sie schließen — die
+  Entscheidung darüber liegt beim Auftraggeber, nicht bei diesem Slice.
 
 ## 7. Closure-Notiz
 
@@ -263,18 +281,62 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die **Messung zuerst**. Die Feststellung „42
+  Vorkommen in 15 Dateien" kam aus einem Grep und einem Modul-Aufruf, nicht aus
+  einer Schätzung — und sie hat den ganzen Vorgang getragen: sie bestimmte den
+  Zuschnitt, sie machte die Abnahme prüfbar (0 Modul-Befunde, 0 Grep-Treffer),
+  und sie deckte die zwei Stellen auf, die der Modul nie sieht. Getragen hat
+  ebenso die **enge Klasse** aus `ADR-0073`: sie machte drei `Accepted` ADRs
+  korrigierbar, ohne die Immutabilität anzutasten — und ihr benannter Wächter
+  („Urteil, kein Sensor — das Review") hat genau den einen Übergriff gefunden,
+  den es zu finden gab.
+- **Was ging anders als geplant:**
+  1. **Der Umfang war größer als die Modul-Zahl.** Geplant waren die gescannten
+     Fundstellen (31); tatsächlich waren es **42 in 15 Dateien**. Die Differenz
+     von 11 ist vollständig aufgelöst: neun Zitate in **Fenced-Blöcken**
+     (`ADR-0072` 4, Architect-Verdikt 5) und zwei **Nicht-Markdown**-Stellen
+     (`Makefile`, `tools/coverage-gate.sh`). Beides korrigiert; die Verifikation
+     hat 31/42 unabhängig nachgemessen.
+  2. **Die Reichweite war zwei Mal formuliert.** Der Plan sagte „Fences
+     eingeschlossen", die Hard Rule und ihr Entwurf sagten „Fenced-Beispiele
+     erlaubt" — dieselbe Regel, zwei Aussagen. Entschieden im Konflikt-Pfad
+     (`ADR-0075`), festgezogen an der Hard Rule.
+  3. **Ein Plan-Ausschluss wurde überholt.** §1 schließt „Änderungen an
+     Entscheidungen" aus; `df47282` hat `ADR-0072` §Entscheidung Punkt 5
+     angefasst. Heute gedeckt (`ADR-0075` supersedet genau diese Klausel) — aber
+     der Plan wurde dadurch **geändert, nicht ergänzt**; die Verifikation hat
+     das als `V-1` festgehalten, und es steht hier statt glattgebügelt zu werden.
+  4. **Ein Fehler des Planners, belegt:** der Push des Delta-Reports lief auf
+     einem **roten** Gate-Lauf, weil Gate-Lauf und Folgehandlung in **einem**
+     Shell-Aufruf standen (die geschärfte Hälfte von `AGENTS.md` §3.9). Vierter
+     Beleg in `BEO-PGC/pipe-maskiert-make-exit-code`; die Ursache des roten
+     Laufs (eine unverlinkte Kennung im Report) ist im Folgeschritt behoben.
+- **Steering-Loop-Einträge:**
+  - *geschärfte Regel:* `AGENTS.md` §3.11 — keine host-lokalen absoluten Pfade;
+    Reichweite ist die ganze Markdown-Fläche **einschließlich** der
+    Fenced-Blöcke; verbotene Formen nur als Platzhalter. Träger: `ADR-0072`
+    (Aktivierung) und `ADR-0075` (Reichweite) · seit slice-078.
+  - *geschärfte Klasse:* `AGENTS.md` §3.5 trägt die Zitat-Korrektur als erste
+    in-place zulässige Ausnahme zur Immutabilität (`ADR-0073`), eng umrissen und
+    mit Belegpflicht.
+  - *kein neuer Sensor* — und zwei neue Register-Einträge (s. u.).
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-078.md` liegt
+  in **zwei neuen** Einträgen — `BEO-PGC/gate-modul-abgeschaltet-trotz-regel`
+  (1×, `verkörpert` → `ADR-0072`) und `BEO-PGC/regel-weiter-als-ihr-sensor`
+  (1×, offen) — sowie in `BEO-PGC/pipe-maskiert-make-exit-code` (3× → **4×**;
+  der Beleg liegt **nach** der Verkörperung und trifft die geschärfte Hälfte).
+- **Folge-Slices:** keiner aus diesem Slice. Der **Grenz-Hälften-Sensor** für
+  die ungedeckte Fläche (Fences, `Makefile`, `tools/**`) ist als Entscheidung
+  beim Auftraggeber und steht als offener Register-Eintrag — bewusst **nicht**
+  als benannte, aber leere Adresse.
+- **Risiken aus §6:** alle vier mit genau **einem** Ausgang — drei *entfallen,
+  gestrichen mit Begründung*, eines *weiter offen → Beobachtungs-Register*.
+- **Drei Paarungen:** hier geprüft — die Roadmap führt keine offene Welle, die
+  Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
+  `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+  (kein `*-archiv.zip` unter `done/`); nach Modul 6 bleibt es ohne sie konform,
+  und diese Feststellung ersetzt den Handlauf.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
