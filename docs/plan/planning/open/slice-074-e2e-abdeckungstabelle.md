@@ -25,7 +25,7 @@ Beleg-Semantik erzeugter Artefakte.
 E2E-Kette ist Messmethode des Lastenhefts, kein Element der Technik- oder
 Sicht-Strate).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912. **Datum:** 2026-09-14.
 
@@ -117,8 +117,8 @@ Doc-Kommentar (der Erzeuger entfernt sie): die Aussage steht über den
   `tools/schema/**`** — Schicht-Abgrenzung: das Erzeugnis dokumentiert die
   E2E-Kette; berührt sind `test/integration/**` (Testcode),
   `tools/harness/**` (Runner), `.d-check.yml`, `harness/sensors/**` und
-  `docs/user/**`. Damit bleibt auch die parallel laufende `slice-066`-Arbeit
-  in `internal/` und `tools/schema/` unberührt.
+  `docs/user/**`. `internal/**` und `tools/schema/**` bleiben damit
+  unberührt.
 - **Ein Ort für den Ist-Zustand der Sensordoku** *(mitgenommen, nicht
   ausgeschlossen):* `harness/sensors/docs-check.md` wird ohnehin um die neuen
   Grenzen erweitert; drei Zeilen darunter steht die Aussage, die fünfte
@@ -221,7 +221,11 @@ Runner; kein neues Skript, kein neues Binary).
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Repo **mit** Wellen-Betrieb (`welle-18` offen): die Prüfung läuft bei der nächsten Welle-Closure, auch ohne Wellen-Zugehörigkeit dieses Slice.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+      geprüft **von der Slice-Closure selbst**: die Roadmap führt derzeit keine
+      offene Welle, es gibt also keine Welle-Closure, die sie einsammeln
+      könnte (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose
+      Betrieb selbst auslöst).
 
 ## 3. Plan (vor Code)
 
@@ -251,10 +255,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Trigger je Lifecycle-Übergang und WIP-Limit.
 
 **Start** (`next` → `in-progress`): WIP-Limit frei (1 je Rolleninhaber der
-Implementer-Rolle) — die laufende `slice-066`-Arbeit belegt denselben Platz,
-wenn derselbe Rolleninhaber sie führt; und eine Umgebung, in der die
-Compose-Kette real läuft (Docker, `make test-integration` aufrufbar): die
-Belege (a)–(c) sind reale Läufe, kein Review-Argument.
+Implementer-Rolle) — `in-progress/` trägt keinen Slice; und eine Umgebung, in
+der die Compose-Kette real läuft (Docker, `make test-integration` aufrufbar):
+die Belege (a)–(c) sind reale Läufe, kein Review-Argument.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -356,9 +359,9 @@ Backticks).
   Slice-Kennung zugesagt; eine Kennung, die es nicht gibt, wäre eine leere
   Adresse.
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** Repo **mit** Wellen-Betrieb (`welle-18` offen) —
-  Prüfung läuft bei der nächsten Welle-Closure, auch für diesen Slice ohne
-  Wellen-Zugehörigkeit.
+- **Drei Paarungen:** hier geprüft — die Roadmap führt derzeit keine offene
+  Welle, die Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
+  `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
