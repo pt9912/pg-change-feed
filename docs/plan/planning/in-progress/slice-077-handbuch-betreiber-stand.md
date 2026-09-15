@@ -54,7 +54,11 @@ Betreiber-Oberfläche bringen: die drei fehlenden Umgebungsvariablen-Gruppen in
   die Testwerkzeuge.
 - **Verhaltensänderungen an den Listener-Starts** — dass ein gescheitertes
   Binden eines HTTP- oder gRPC-Listeners nur **geloggt** wird und den Lauf
-  nicht beendet, ist die geltende Entscheidung; die Regel dieses Slice ist der
+  nicht beendet, ist das **geltende Verhalten des Codes** (so implementiert, seit
+  diesem Slice auch so dokumentiert) — eine ADR trägt es **nicht**: `ADR-0060`
+  entscheidet die *Aktivierung* der Adresse (additive Variable, No-Op), nicht die
+  Fehlersemantik des Listeners. Delta-Review N-1 hat die lose Zuordnung
+  gefunden; sie ist hiermit berichtigt. Die Regel dieses Slice ist der
   **Kommentar**, der das Gegenteil behauptet, nicht der Code. Der Kommentar
   wird berichtigt (Review F-1), das Verhalten **nicht** — eine Umkehr wäre eine
   eigene Entscheidung. **Nachtrag zum Plan:** diese Abgrenzung war in der

@@ -14,8 +14,13 @@ Klasse, die das Gate fängt — ist nicht dieser Eintrag, sondern
 [`architect-verdict-commit-traceability-kein-vorab-hook.md`](../../../../../reviews/architect-verdict-commit-traceability-kein-vorab-hook.md),
 [`…-gegengeprueft.md`](../../../../../reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md).
 
-Zähler (abgeleitet): 3× (evidence/slice-038.md, evidence/review-slice-041.md,
-evidence/slice-059.md) — Ausgang zugewiesen im Lese-Schritt der
-`welle-16`-Closure (Baseline-Regelwerk `modul-08-agentenrollen.md`
-§Rollen-Sequenz für eine Welle, Planner → Architect → Planner-Zug);
-Herkunfts-Anker der Verkörperung: `seit slice-073`.
+Zähler (abgeleitet): **4×** (evidence/slice-038.md, evidence/review-slice-041.md,
+evidence/slice-059.md, evidence/slice-077.md) — Ausgang zugewiesen im
+Lese-Schritt der `welle-16`-Closure (Baseline-Regelwerk
+`modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle,
+Planner → Architect → Planner-Zug); Herkunfts-Anker der Verkörperung:
+`seit slice-073`. Der **vierte** Beleg liegt **nach** der Verkörperung und
+trifft deren schwächste Stelle: der Hook ist **Opt-in** (lokale Konfiguration),
+und in der Arbeitskopie, die ihn gebraucht hätte, war `core.hooksPath` nicht
+gesetzt — die Abhilfe existierte, ihr Träger fehlte. Kein Sensor fängt das; der
+Ausgang bleibt *verkörpert*, die Lücke ist benannt.

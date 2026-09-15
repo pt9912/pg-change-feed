@@ -119,6 +119,14 @@ Regel zählt Zeilen.
    [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md).
    Die Aktivierung kennt **keinen**
    Ausschlussblock: kein `scope`, kein `ignore`, kein `exempt-paths`.
+9. **Mehrzeilige Markdown-Links sind ungeprüft — `anchors` und `links`.** Geht
+   der **Linktext** oder das **Ziel** eines Links über einen Zeilenumbruch,
+   melden beide Module nichts: einzeilig gestellt kippt dieselbe Mutation rot
+   (`anchor-missing` bzw. `target-missing`), zweizeilig bleibt sie grün (Exit 0).
+   In `slice-077` mit sechs Mutationen gemessen; repo-weit betrifft es neun
+   Links in fünf Dateien (Stand `slice-077`), ihre Ziele waren von Hand prüfbar
+   und in Ordnung. Der Wächter dieser Form ist das Review, kein Gate. Träger des
+   Fundes: `docs/reviews/review-slice-077-delta.md` N-2.
 
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
