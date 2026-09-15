@@ -137,8 +137,8 @@ liest der Bootstrap etwas, das ein Fixture nicht mitbringen kann, ist das ein
 Befund, kein Auftrag), `tools/harness/db-coverage.sh`, `Makefile` (kein neuer
 Gate-Aufruf), `spec/**`.
 
-**Nachtrag des ersten Implementer-Laufs — der Zuschnitt am Artefakt.** Zwei
-Punkte weichen von der Vorfassung dieses Abschnitts ab, beide aus demselben
+**Nachtrag des ersten Implementer-Laufs — der Zuschnitt am Artefakt.** Drei
+Punkte weichen von der Vorfassung dieses Abschnitts ab, alle aus demselben
 Grund: der Schema-Stand kommt aus dem Rollout, und der Rollout ist nur vom
 Lauf-Aufruf her erreichbar (der Go-Test läuft im read-only gemounteten
 Toolchain-Container, ohne `docker` und ohne `make`).
@@ -219,6 +219,11 @@ dasteht.
 - **Der Beleg braucht mehrere reale Läufe** (Container-Aufbau je Lauf). Ein Lauf,
   der nur grün wird, weil ein Container-Rest stehen blieb, ist kein Beleg. —
   **Ausgang:** <bei Closure>
+- **Das Grün des CI-Schritts ist erst nach dem Push belegt** (`AGENTS.md` §3.10).
+  Die lokalen Läufe tragen eine PostgreSQL-Fassung (der Digest des Testcontainers);
+  die CI fährt zwei Legs über die in `SPEC-012` festgelegten Digests (17 und 18) im
+  nicht-blockierenden `e2e`-Workflow. Ein lokales Grün beider Phasen ist kein Beleg
+  für den Post-Push-Lauf. — **Ausgang:** <bei Closure>
 
 ## 7. Closure-Notiz
 
