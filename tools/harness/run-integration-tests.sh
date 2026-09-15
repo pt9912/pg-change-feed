@@ -70,6 +70,120 @@ HTTP_TOKEN_ADMIN=e2e-admin-token
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
+# --- E2E-Abdeckungstabelle (docs/user/e2e-abdeckung.md) --------------------
+# Das Erzeugnis dieses Laufs entsteht aus zwei Hälften: die Go-Zeilen aus dem
+# Quelltext des Testpakets (`TestAbdeckungstabelleZeilen`, go/parser), die
+# Bash-Zeilen deklariert jede Phase über ihren Anker (`abdeckung_declare`).
+# Findet der Runner einen Deklarations-Anker nicht mehr, bricht er ab, bevor
+# er die Datei anfasst; die Datei wird nur bei inhaltlicher Abweichung
+# geschrieben (Temp-Datei + cmp). Geschrieben wird auf dem Host — der
+# Toolchain-Container läuft gegen ein read-only Bind-Mount.
+ABDECKUNG_ZIEL=docs/user/e2e-abdeckung.md
+ABDECKUNG_QUELLE=$(realpath --relative-to="$(pwd)" "${BASH_SOURCE[0]}")
+ABDECKUNG_GO_ZEILEN=""
+ABDECKUNG_KOPF='# E2E-Abdeckung je Spec-Kennung
+
+Erzeugt von `make test-integration` über `tools/harness/run-integration-tests.sh`:
+die Go-Zeilen leitet das Testpaket aus seinem eigenen Quelltext ab
+(`TestAbdeckungstabelleZeilen` in `test/integration/integration_test.go`),
+die Bash-Zeilen deklariert jede Phase des Runners an Ort und Stelle über
+einen Anker. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
+Lauf-Beleg: sie ändert sich mit den Nachweis-Deklarationen, nicht mit jedem
+Lauf — der Runner schreibt sie nur bei inhaltlicher Abweichung. Die
+Beschreibungsspalte trägt keine Kennungen; die Aussage eines Nachweises steht
+über die Spalte `Ort` an ihrer Quelle.
+'
+abdeckung_bash_zeilen=()
+
+# abdeckung_declare <Nachweis> <Kennungen> <Kurzbeschreibung> <Anker>
+# Der Anker ist ein wörtlicher Ausschnitt aus der Phase dahinter — der
+# Runner sucht ihn ab der Deklarations-Zeile im eigenen Quelltext und trägt
+# die gefundene Zeile als `Ort` ein; ein Anker, der in keiner späteren Zeile
+# mehr steht, beendet den Lauf.
+abdeckung_declare() {
+  local nachweis=$1 kennungen=$2 kurzbeschreibung=$3 anker=$4
+  local treffer
+  treffer=$(awk -v ab="${BASH_LINENO[0]}" -v anker="$anker" \
+    'NR > ab && index($0, anker) { print NR; exit }' "$ABDECKUNG_QUELLE")
+  if [ -z "$treffer" ]; then
+    echo "run-integration-tests: Deklarations-Anker der E2E-Abdeckungstabelle nicht gefunden — Phase '$nachweis', Anker '$anker' (der Anker gehört in eine Zeile hinter dem Deklarations-Aufruf)" >&2
+    exit 1
+  fi
+  abdeckung_bash_zeilen+=("$ABDECKUNG_QUELLE|$treffer|$nachweis|$kennungen|$kurzbeschreibung")
+}
+
+# abdeckung_render liest `Quelldatei|Quellzeile|Nachweis|Kennungen|
+# Kurzbeschreibung` und schreibt daraus die Tabellenzeile; die Kennungsspalte
+# trägt je Kennung den Link auf ihr Definitionsdokument (`ids` des
+# Doku-Gates).
+abdeckung_render() {
+  local quelldatei zeile nachweis kennungen kurzbeschreibung kennung ziel spalte trenner
+  while IFS='|' read -r quelldatei zeile nachweis kennungen kurzbeschreibung; do
+    if [ -z "$nachweis" ]; then
+      continue
+    fi
+    spalte=""
+    trenner=""
+    for kennung in ${kennungen//,/ }; do
+      case "$kennung" in
+        LH-*.[a-z]) ziel="../../spec/pflichtenheft.md" ;;
+        SPEC-*) ziel="../../spec/pflichtenheft.md" ;;
+        *) ziel="../../spec/lastenheft.md" ;;
+      esac
+      spalte="${spalte}${trenner}[\`$kennung\`]($ziel)"
+      trenner=", "
+    done
+    printf '| %s | `%s` | `%s:%s` | %s |\n' "$spalte" "$nachweis" "$quelldatei" "$zeile" "$kurzbeschreibung"
+  done
+}
+
+# abdeckung_go_zeilen_lesen setzt ABDECKUNG_GO_ZEILEN; der Erzeuger läuft im
+# bestehenden Testpaket und endet sichtbar, wenn eine `func TestE2E*` keine
+# Spec-Kennung trägt.
+abdeckung_go_zeilen_lesen() {
+  local ausgabe
+  if ! ausgabe=$(docker run --rm --network "$NETWORK" \
+      -v "$(pwd)":/src:ro \
+      -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+      -w /src \
+      -e GOCACHE=/tmp/gocache \
+      "$TOOLCHAIN_IMAGE" go test -v -run '^TestAbdeckungstabelleZeilen$' ./test/integration/... 2>&1); then
+    echo "run-integration-tests: Erzeuger der E2E-Abdeckungstabelle (Go-Hälfte) endete mit einem Fehler: $ausgabe" >&2
+    exit 1
+  fi
+  ABDECKUNG_GO_ZEILEN=$(printf '%s\n' "$ausgabe" | sed -n 's/^.*ABDECKUNG|//p' | sort -t'|' -k1,1 -k2,2n)
+  if [ -z "$ABDECKUNG_GO_ZEILEN" ]; then
+    echo "run-integration-tests: Erzeuger der E2E-Abdeckungstabelle lieferte keine Go-Zeile (Testausgang ohne ABDECKUNG-Zeile)" >&2
+    exit 1
+  fi
+}
+
+# abdeckung_schreiben <Go-Zeilen> setzt beide Hälften zusammen — Go-Zeilen
+# nach Quelldatei und Quellzeile, dann Bash-Zeilen nach Runner-Zeile — und
+# schreibt nur bei inhaltlicher Abweichung.
+abdeckung_schreiben() {
+  local bash_zeilen="" temp
+  if [ "${#abdeckung_bash_zeilen[@]}" -gt 0 ]; then
+    bash_zeilen=$(printf '%s\n' "${abdeckung_bash_zeilen[@]}" | sort -t'|' -k2,2n)
+  fi
+  temp=$(mktemp)
+  {
+    printf '%s\n' "$ABDECKUNG_KOPF"
+    printf '| Spec-Kennung | Nachweis | Ort | Kurzbeschreibung |\n'
+    printf '| --- | --- | --- | --- |\n'
+    printf '%s\n' "$1" | abdeckung_render
+    printf '%s\n' "$bash_zeilen" | abdeckung_render
+  } > "$temp"
+  if [ -f "$ABDECKUNG_ZIEL" ] && cmp -s "$temp" "$ABDECKUNG_ZIEL"; then
+    rm -f "$temp"
+    echo "run-integration-tests: E2E-Abdeckungstabelle unverändert — $ABDECKUNG_ZIEL entspricht dem Quelltext-Stand"
+  else
+    chmod 0644 "$temp"
+    mv "$temp" "$ABDECKUNG_ZIEL"
+    echo "run-integration-tests: E2E-Abdeckungstabelle geschrieben — $ABDECKUNG_ZIEL"
+  fi
+}
+
 cleanup() {
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
@@ -96,6 +210,8 @@ fi
 # Pflicht-Report landet in tools/schema/plan.yaml, das Rollback-Artefakt in
 # tools/schema/down.sql.
 make schema-rollout SCHEMA_TARGET="db:$DSN" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+
+abdeckung_declare "Rollen-DSN-Verifikation" "LH-QA-SEC-001,LH-QA-SEC-002,LH-QA-SEC-003" "die drei Gruppenrollen real gegeneinander geprüft: ein Reader-Login scheitert am schreibenden Aufruf, eine Replication-Verbindung ohne REPLICATION-Attribut scheitert, dieselbe Verbindung mit der Capture-Rolle gelingt" "Rollen-DSN-Verifikation belegt — cdc_reader-Login-Identität schreibender Zugriff abgelehnt"
 
 # Rollen-DSN-Verifikation gegen den Compose-Stack (LH-QA-SEC-001…003,
 # ADR-0047, BEO-PGC/rollen-test-abdeckungsluecken): Die laufende
@@ -277,6 +393,14 @@ docker run --rm --network "$NETWORK" \
   -run '^(TestE2ECaptureFlow|TestE2EUpdateOldImageWithFullReplicaIdentity|TestE2EChangesViewMatchesReadChanges|TestE2ERetentionBlockersViewShowsFurthestBehindConsumer|TestE2EMetricsCarriesStorageBytes|TestE2EActivationState|TestE2EActiveTablesViewMatchesActivationState|TestE2EDisableRetainedState|TestE2ESchemaChangeAddColumn|TestE2EChangeTableMetadataExtensibility|TestE2EHeartbeatHealthy)$' \
   ./test/integration/...
 
+# Go-Hälfte der E2E-Abdeckungstabelle: derselbe Testlauf führt den Erzeuger
+# aus (eigener `-run`-Aufruf, dieselbe Toolchain) und legt seinen Zeilensatz
+# in ABDECKUNG_GO_ZEILEN ab; eine `func TestE2E*` ohne Spec-Kennung endet
+# hier sichtbar, bevor die Datei geschrieben wird.
+abdeckung_go_zeilen_lesen
+
+abdeckung_declare "Spaltenausschluss-Rundlauf" "LH-FA-CFG-005,LH-QA-SEC-004" "eine nicht gelistete Tabelle wird über den SQL-Antragsweg aktiviert, der Spaltenausschluss real verarbeitet — die danach erfasste Change trägt den Schlüssel nicht mehr im Row Image, die davor erfasste bleibt mit ihrem Wert unverändert lesbar" "Spaltenausschluss-Rundlauf (LH-FA-CFG-005 Happy Path, ADR-0059) belegt"
+
 # Spaltenausschluss-Rundlauf (LH-FA-CFG-005, ADR-0059): der reale Pfad
 # SQL-Antrag → Live-Reload → gefiltertes Row Image am laufenden
 # Feed-Container. Eine eigene, dedizierte Tabelle wird über dieselbe
@@ -436,6 +560,8 @@ fi
 
 echo "run-integration-tests: Spaltenausschluss-Rundlauf (LH-FA-CFG-005 Happy Path, ADR-0059) belegt — cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME) wurde ohne Neustart verarbeitet (status=applied), die danach erfasste Change (id=2) trägt $COLUMN_NAME nicht im Row Image und den Wert '$COLUMN_VALUE_AFTER' nirgends, die davor erfasste Change (id=1) bleibt mit '$COLUMN_VALUE_BEFORE' unverändert lesbar"
 
+abdeckung_declare "Spaltenausschluss-Neustart-Beleg" "LH-FA-CFG-005,LH-QA-SEC-004" "nach einem realen Container-Neustart leitet der Prozessstart den dauerhaften Ausschlussstand aus den applied-Zeilen der Spalten-Anträge ab — die danach erfasste Change trägt den Schlüssel nicht mehr, die nicht ausgeschlossene Spalte bleibt" "Spaltenausschluss-Neustart-Beleg (ADR-0065, LH-QA-SEC-004)"
+
 # Neustart-Beleg des dauerhaften Ausschlussstandes (ADR-0065): der
 # Prozessstart leitet den Stand aus den `applied`-Zeilen der beiden
 # Spalten-Antragsarten ab (`activatedTableBindings` → `ColumnExclusionPort.
@@ -509,6 +635,8 @@ fi
 
 echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg (ADR-0065, LH-QA-SEC-004) — der reale Container-Neustart ließ den dauerhaften Ausschlussstand wirksam werden: die danach erfasste Change (id=3) trägt $COLUMN_NAME nicht im Row Image und den Wert '$COLUMN_VALUE_RESTART' nirgends"
 
+abdeckung_declare "Spaltenausschluss-Negative-Beleg" "LH-FA-CFG-005" "der Ausschluss einer an der Quelle fehlenden Spalte endet real failed samt Fehlertext, nicht still applied" "Spaltenausschluss-Negative-Beleg (LH-FA-CFG-005) — cdc.exclude_column"
+
 # Negative-Beleg (LH-FA-CFG-005 Negative): der Ausschluss einer an der Quelle
 # nicht existierenden Spalte endet real `failed` samt Fehlertext — nicht
 # still `applied` (ErrSourceColumnMissing-Pfad).
@@ -552,6 +680,8 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: Spaltenausschluss-Negative-Beleg (LH-FA-CFG-005) — cdc.exclude_column($COLUMN_TABLE.nicht_vorhandene_spalte) endete real failed mit Fehlertext, der Feed-Container lief unverändert weiter"
+
+abdeckung_declare "Lasttest-Beleg cdc_capture_lag" "LH-FA-ADM-004" "cdc_capture_lag bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab: eine durch eine pausierte CDC-Runtime künstlich verzögerte Transaktion liegt über der ungehinderten" "Lasttest-Beleg cdc_capture_lag — Baseline"
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
 # bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
@@ -659,6 +789,8 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
+abdeckung_declare "Black-Box-CLI-Rundlauf" "LH-QA-POR-003" "register-consumer und acknowledge-consumer laufen ausschließlich als externe docker exec-Aufrufe gegen den Produktions-Binary, über einen simulierten Container-Neustart hinweg" "Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern"
+
 # Black-Box-CLI-Rundlauf (LH-QA-POR-003, ADR-0030 E2E-Tier): anders als der
 # Go-Testlauf oben (`go test ./test/integration/...`, der intern gegen
 # `postgresstorage`/`bootstrap` läuft) ruft dieser Abschnitt
@@ -675,6 +807,10 @@ fi
 exec_feed() {
   docker exec "$FEED_CONTAINER" /pg-change-feed "$@"
 }
+
+abdeckung_declare "Retention-Lebenszyklus-Rundlauf (Blocker-Sichtbarkeit)" "LH-FA-RET-005" "cdc.retention_blockers zeigt real den Consumer mit der am weitesten zurückliegenden bestätigten Position als aktuellen Blocker der Quelle — und nach der Bestätigung über die Position hinweg keinen mehr" "Retention-Lebenszyklus-Rundlauf — cdc.retention_blockers zeigt real"
+
+abdeckung_declare "Retention-Lebenszyklus-Rundlauf (kombiniert)" "LH-FA-RET-002,LH-FA-RET-003,LH-FA-RET-004,LH-FA-RET-005,LH-FA-RET-006" "eine isolierte Zeile und ein eigener Consumer durchlaufen real Blocker-Sichtbarkeit, Bestätigung über die Position hinweg, Löschung sowie die durchgehende numerische Lesbarkeit der Speichergröße" "Retention-Lebenszyklus-Rundlauf (kombiniert) — 'RetentionLifecycle'"
 
 # Retention-Lebenszyklus-Rundlauf (kombiniert, LH-FA-RET-002…006): eine
 # eigene, isolierte Zeile (id=210 auf feed_e2e_full) und ein eigener, neu
@@ -827,6 +963,8 @@ fi
 
 echo "run-integration-tests: Retention-Lebenszyklus-Rundlauf (kombiniert) — 'RetentionLifecycle' (id=210) real entfernt, cdc_storage_bytes durchgehend numerisch abfragbar (vorher $storage_bytes_before Bytes, nachher $storage_bytes_after Bytes; LH-FA-RET-002…006)"
 
+abdeckung_declare "Retention-Sichtbarkeits-Beleg (kein Blocker)" "LH-FA-RET-005,LH-FA-RET-006" "die diagnose-Ausgabe zeigt vor jeder Consumer-Bestätigung 'kein Blocker' und eine numerische Speichergröße" "Retention-Sichtbarkeits-Beleg (CLI, Zustand 1)"
+
 # Retention-Sichtbarkeits-Beleg (CLI), Zustand 1 — kein Blocker
 # (LH-FA-SST-003, deckt LH-FA-RET-005/006): an dieser Stelle hat noch kein
 # über register-consumer/acknowledge-consumer geführter Consumer gegen
@@ -976,6 +1114,8 @@ fi
 
 echo "run-integration-tests: Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern (docker exec), Fortsetzen nach simuliertem Neustart ab Position $first_position, Endposition $second_position"
 
+abdeckung_declare "Verarbeitungsrückstand-Beleg" "LH-FA-ADM-005" "cdc.consumer_status zeigt den realen Rückstand über eine reine SQL-Lesung und nach der zweiten Bestätigung null" "Verarbeitungsrückstand-Beleg cdc.consumer_status"
+
 # Verarbeitungsrückstand-Beleg (LH-FA-ADM-005, cdc.consumer_status): ein
 # über register-consumer/acknowledge-consumer geführter Consumer (extern,
 # docker exec — dasselbe Muster wie der Black-Box-CLI-Rundlauf oben)
@@ -1060,6 +1200,8 @@ fi
 
 echo "run-integration-tests: Verarbeitungsrückstand-Beleg cdc.consumer_status — Rückstand vor der zweiten Bestätigung $backlog_before, danach $backlog_after (LH-FA-ADM-005)"
 
+abdeckung_declare "CLI-Diagnose-Beleg (Normalbetrieb)" "LH-FA-SST-003,LH-FA-ADM-002,LH-FA-ADM-003,LH-FA-ADM-004,LH-FA-ADM-005" "der diagnose-Sondermodus trägt im Normalbetrieb alle vier Signale: Betriebsstatus, fehlenden Fehlerzustand, numerischen CDC-Abstand und die Rückstände der geführten Consumer" "CLI-Diagnose-Beleg (Normalbetrieb) —"
+
 # CLI-Diagnose-Beleg (LH-FA-SST-003, deckt LH-FA-ADM-002…005, slice-038):
 # der neue `diagnose`-Sondermodus liest denselben SQL-Zugriffsweg wie
 # `--healthcheck` oben (`cfg.ReaderDSN`) plus `cdc.metrics` und gibt alle
@@ -1114,6 +1256,8 @@ fi
 
 echo "run-integration-tests: CLI-Diagnose-Beleg (Normalbetrieb) — alle vier Signale (LH-FA-ADM-002…005) sowie der reale Blocker $CLI_CONSUMER und cdc_storage_bytes (LH-FA-RET-005/006) in der diagnose-Ausgabe sichtbar"
 
+abdeckung_declare "CLI-Diagnose-Beleg (Fehlerzustand)" "LH-FA-ADM-003" "ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand ist in der diagnose-Ausgabe von Normalbetrieb unterscheidbar, ohne den laufenden Feed-Container zu beenden" "CLI-Diagnose-Beleg (Fehlerzustand) —"
+
 # Fehlerzustand-Beleg (LH-FA-ADM-003 Boundary: „erkennbar von Normalbetrieb
 # unterscheidbar"). Ein real vom Erfassungspfad ausgelöster Fehlerzustand
 # beendet den Feed-Container-Prozess dauerhaft (`reportFault` läuft nur
@@ -1160,6 +1304,10 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
+
+abdeckung_declare "SQL-Administration Live-Reload (enable)" "LH-FA-ADM-001,LH-FA-CFG-001" "eine bewusst nicht in der Bindungsliste geführte Tabelle wird über den SQL-Antrag aktiviert und vom bereits laufenden Feed-Container ohne Neustart erfasst" "SQL-Administration Live-Reload-Beleg (enable)"
+
+abdeckung_declare "SQL-Administration Live-Reload (disable)" "LH-FA-CFG-002" "derselbe Antrags-Weg spiegelbildlich: die Deaktivierung beendet die Erfassung dieser Tabelle, der Prozess läuft weiter" "SQL-Administration Live-Reload-Beleg (disable)"
 
 # SQL-Administration Live-Reload-Beleg (ADR-0050, LH-FA-ADM-001,
 # LH-FA-CFG-001/002): `feed_e2e_sql_admin` ist bewusst NICHT Teil von
@@ -1283,6 +1431,8 @@ fi
 
 echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — cdc.disable_table($ADMIN_TABLE) verarbeitet, Änderung id=2 nicht erfasst, Feed-Container läuft unverändert weiter"
 
+abdeckung_declare "Publication-Entzug-Wirksamkeit" "LH-FA-CFG-002" "ein direkter Publication-Entzug per DDL trennt die PostgreSQL-seitige Filterung von der App-seitigen Assembler-Filterung: die Assembler-Bindung bleibt über den ganzen Beleg aktiv" "Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION"
+
 # Publication-Entzug-Wirksamkeit — isolierter Beleg (BEO-PGC/walsender-wirksamkeit,
 # LH-FA-CFG-002, ADR-0050, docs/reviews/architect-verdict-walsender-wirksamkeit.md):
 # Der SQL-Administration Live-Reload-Beleg (disable) oben prüft nur die
@@ -1385,6 +1535,8 @@ if [ "$feed_running" != "true" ]; then
   echo "run-integration-tests: Feed-Container lief nach dem Publication-Entzug-Wirksamkeit-Beleg nicht mehr weiter (kein Neustart erwartet)" >&2
   exit 1
 fi
+
+abdeckung_declare "Retention-Beleg (Alters- und Consumer-Freigabe)" "LH-FA-RET-002,LH-FA-RET-003,LH-FA-RET-004" "eine zurückdatierte Zeile bleibt erhalten, solange ein Consumer zurückhängt, und wird nach der Freigabe durch beide Consumer real entfernt; die zu junge Zeile bleibt durchgehend erhalten" "Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing"
 
 # Retention-Beleg (LH-FA-RET-002…004, ADR-0014): der Hintergrundzug
 # runRetentionCleanup ruft RunRetentionUseCase periodisch real auf
@@ -1499,6 +1651,12 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: Retention-Beleg — 'RetentionOld' (id=200) blieb erhalten, solange ein Consumer zurückhing (LH-FA-RET-004), und wurde nach Freigabe durch beide Consumer real entfernt (LH-FA-RET-003); 'RetentionYoung' (id=201, zu jung) blieb durchgehend erhalten"
+
+abdeckung_declare "NATS-Happy-Path-Beleg" "LH-FA-SST-007" "ein Test-Subscriber abonniert das tabellen-granulare Subjekt real vor der Change und empfängt danach real das leere Wecksignal" "NATS-Happy-Path-Beleg (LH-FA-SST-007)"
+
+abdeckung_declare "NATS-Boundary-Beleg" "LH-FA-SST-007" "eine Change ohne jeden auf dem Subjekt abonnierten Client bleibt vollständig über cdc.changes lesbar, und der Feed-Container läuft unverändert weiter" "NATS-Boundary-Beleg (LH-FA-SST-007)"
+
+abdeckung_declare "NATS-Negative-Beleg (Reconnect-Nachholen)" "LH-FA-SST-007" "ein real vom Compose-Netz getrennter Subscriber verpasst die Change ohne jedes Wecksignal; ein frischer Wiederverbindungs-Subscriber empfängt die nächste" "NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen)"
 
 # NATS-Happy-Path-Beleg (LH-FA-SST-007, ADR-0055, ADR-0056): compose.yaml
 # verdrahtet den Feed-Container mit CDC_NATS_URL=nats://nats:4222 (siehe
@@ -1781,6 +1939,8 @@ fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
 
+abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf, die Registrierung wird gegen cdc.consumer bestätigt" "HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt"
+
 # HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057): ein Wegwerf-Client
 # (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token und
 # ListTables mit dem reader-Token real per HTTP gegen den laufenden
@@ -1826,6 +1986,8 @@ if [ "$feed_running" != "true" ]; then
 fi
 
 echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
+
+abdeckung_declare "gRPC-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real über gRPC den Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status Unauthenticated" "gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt"
 
 # gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060): ein Wegwerf-Client
 # (tools/harness/grpcclient, per `go run` im Toolchain-Container) verbindet
@@ -1972,6 +2134,8 @@ fi
 
 echo "run-integration-tests: gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt — ein Wegwerf-Client (tools/harness/grpcclient) öffnete real über gRPC den Server-Stream gegen den laufenden Feed-Container ($GRPC_ADDR) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt server_test.go auf Unit-Ebene), deren change_id ($grpc_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit gRPC-Status Unauthenticated abgelehnt: $grpc_client_output"
 
+abdeckung_declare "SSE-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real per HTTP den Endpunkt `GET /changes/stream` gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Aufruf ohne gültiges Token endet mit HTTP-Status 401" "SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt"
+
 # SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061): ein Wegwerf-Client
 # (tools/harness/sseclient, per `go run` im Toolchain-Container) verbindet
 # sich real per HTTP mit dem laufenden Feed-Container, öffnet den
@@ -2113,6 +2277,8 @@ fi
 
 echo "run-integration-tests: SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt — ein Wegwerf-Client (tools/harness/sseclient) öffnete real per HTTP den SSE-Stream GET /changes/stream gegen den laufenden Feed-Container ($HTTP_BASE_URL) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt sse_test.go auf Unit-Ebene), deren change_id ($sse_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit HTTP-Status 401 abgelehnt: $sse_client_output"
 
+abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar, danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
+
 # Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
 # ADR-0058 Entscheidung 3): bildet den Mechanismus eines
 # Anwendungs-Upgrades nach — ein realer Container-Tausch über
@@ -2209,6 +2375,8 @@ if [ -z "$upgrade_after_position" ]; then
 fi
 
 echo "run-integration-tests: Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt — realer Container-Tausch über \$COMPOSE up -d --force-recreate --no-deps ($upgrade_feed_id_before -> $upgrade_feed_id_after), postgres/nats unberührt (--no-deps), Feed-Container danach healthy, Datenstand vor dem Tausch (id=250, Position $upgrade_before_position) identisch lesbar, danach eingefügte Zeile (id=251) weiterhin erfasst (Position $upgrade_after_position)"
+
+abdeckung_declare "Schema-Wiederanlauf nach der Spaltenentfernung" "LH-FA-SCH-003" "nach dem dauerhaften Ende des Erfassungspfads stellt der Runner einen sauberen Zustand wieder her: Replication-Slot neu angelegt, aktuelle Schema-Version nachgetragen, Feed-Container wieder healthy" "TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063) belegt"
 
 # TestE2ESchemaChangeDropColumn (LH-FA-SCH-003, ADR-0063 Supersedes
 # ADR-0058 Entscheidung 1) läuft als eigener go-test-Aufruf, NACH allem,
@@ -2320,3 +2488,10 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   -e CDC_INTEGRATION_DSN="$DSN" \
   "$TOOLCHAIN_IMAGE" go test -v -run '^TestE2ESchemaChangeIncompatibleTypeChange$' ./test/integration/...
+
+# Zusammensetzung der E2E-Abdeckungstabelle: erst Go-Zeilen nach Quelldatei
+# und Quellzeile, dann die Bash-Zeilen der deklarierten Phasen nach
+# Runner-Zeile. Die Deklarations-Anker sind an dieser Stelle bereits alle
+# gelaufen; eine fehlende Datei entsteht hier und bleibt sonst unangetastet.
+abdeckung_schreiben "$ABDECKUNG_GO_ZEILEN"
+echo "run-integration-tests: Lauf abgeschlossen — E2E-Abdeckungstabelle aus $(( $(printf '%s\n' "$ABDECKUNG_GO_ZEILEN" | grep -c .) )) Go-Zeilen und ${#abdeckung_bash_zeilen[@]} Bash-Zeilen"

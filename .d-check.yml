@@ -173,6 +173,30 @@ structure:
     sections: each
     forbid-pattern: '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'
     hint: "Slice-Plan als Markdown-Link mit festem Lifecycle-Verzeichnis: der Link bricht beim naechsten git mv. Stattdessen die Kennung zitieren (slice-<NNN>) oder einen Inline-Code-Pfad."
+  # Achte Regel — die erzeugte E2E-Abdeckungstabelle
+  # (tools/harness/run-integration-tests.sh schreibt sie, das Testpaket
+  # traegt die Go-Haelfte). Die Regel sichert die Zeilenform: Abschnitt
+  # ueber die Kopfzeilen-Namen adressiert, je Zelle eine Mindestbreite.
+  # Die Mindestbreiten binden an die DARSTELLUNG — eine Kennungsspalte ohne
+  # Link auf ihr Definitions-Dokument bleibt darunter, ebenso ein `Ort`
+  # ohne `Datei:Zeile`-Form, ein leerer Nachweis und eine leere
+  # Kurzbeschreibung. Kein Maximalwert: die Kurzbeschreibung ist der erste
+  # Satz des Doc-Kommentars und waechst mit ihm. Was die Regel NICHT
+  # traegt, ist ein falscher Nachweis — die tragende Garantie der Tabelle
+  # ist ihre Ableitung aus dem Quelltext (TestAbdeckungstabelleZeilen bzw.
+  # der Deklarations-Anker je Runner-Phase).
+  - files: docs/user/e2e-abdeckung.md
+    section: "# E2E-Abdeckung je Spec-Kennung"
+    table:
+      column:
+        - name: Spec-Kennung
+          cell-min-chars: 40
+        - name: Nachweis
+          cell-min-chars: 15
+        - name: Ort
+          cell-min-chars: 40
+        - name: Kurzbeschreibung
+          cell-min-chars: 60
 
 reviews:
   # Review-Report-Deckung fuer done/-Slices mit Review-DoD-Haken —

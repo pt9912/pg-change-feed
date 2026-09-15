@@ -30,7 +30,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
+	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -1186,5 +1195,360 @@ func TestE2ESchemaChangeIncompatibleTypeChange(t *testing.T) {
 	}
 	if len(rows) != 0 {
 		t.Fatalf("cdc.changes trägt id=11 nach dem gemeldeten schema-Fehler: %+v (Erwartung: der Erfassungspfad endete vor dem Commit dieser Transaktion)", rows)
+	}
+}
+
+// abdeckungZeilenPraefix kennzeichnet die Zeilen, die der Runner aus dem
+// Testausgang liest (`tools/harness/run-integration-tests.sh`): dahinter
+// steht ein über `|` getrennter Satz aus Quelldatei, Quellzeile, Nachweis,
+// Kennungen und Kurzbeschreibung. Der Präfix macht sie von der übrigen
+// Testausgabe unterscheidbar.
+const abdeckungZeilenPraefix = "ABDECKUNG|"
+
+// abdeckungKennungMuster trifft die Kennungen eines E2E-Doc-Kommentars:
+// die Vertrags- und Technik-Kennungen des Lastenhefts/Pflichtenhefts (samt
+// der Verfeinerungs-Form `…-001.a`) adressieren eine Zeile der
+// Abdeckungstabelle; die ADR- und Sicht-Kennungen stehen im Kommentar,
+// benennen aber eine Entscheidung statt einer Anforderung und fallen
+// deshalb aus der Beschreibungsspalte heraus.
+var abdeckungKennungMuster = regexp.MustCompile(`LH-(?:FA|QA)-[A-Z]{3}-\d{3}(?:\.[a-z])?|SPEC-\d{3}|ARC-\d{3}|ADR-\d{4}`)
+
+// abdeckungKurzformEinleitungen sind die Zeichen, mit denen ein
+// E2E-Kommentar eine Bereichs- oder Nachbar-Angabe hinter einer Kennung
+// einleitet (`…003`, `/`004``, `...005`). Hinter einer Kennung wird daraus
+// die fehlende Kennungs-Familie abgeleitet; eine Einleitung ohne laufende
+// Nummer ist eine Auslassung im Fließtext, keine Kurzform.
+var abdeckungKurzformEinleitungen = []string{"…", "...", "/"}
+
+// abdeckungFamilieMuster trennt eine Kennung in ihre Präfix-Familie und
+// ihre laufende Nummer (`LH-FA-CAP-001` -> `LH-FA-CAP`, 1).
+var abdeckungFamilieMuster = regexp.MustCompile(`^(.+)-(\d{3,4})$`)
+
+// abdeckungKurzformSpanne ist die größte Spanne, die eine Kurzform
+// aufspannen darf. Sie begrenzt einen Tippfehler in der Endzahl, damit aus
+// `…999` keine 998 erfundenen Zeilen werden.
+const abdeckungKurzformSpanne = 40
+
+// abdeckungAufraeumRegeln normalisieren die Kurzbeschreibung nach dem
+// Entfernen der Kennungen: Aufzählungs-Trenner, leere Klammern und die
+// Leerzeichen, die eine Kennung hinterlässt, fallen weg.
+var abdeckungAufraeumRegeln = []struct {
+	muster *regexp.Regexp
+	ersatz string
+}{
+	// Ein Aufzählungs-Trenner direkt hinter der öffnenden Klammer bleibt
+	// stehen, wenn die erste Kennung der Aufzählung wegfällt.
+	{regexp.MustCompile(`([(\[])\s*[,;]\s*`), "$1"},
+	// Leere Klammer und Klammer mit zurückgebliebenen Trennern.
+	{regexp.MustCompile(`\(\s*(?:[,;]\s*)*\)`), ""},
+	{regexp.MustCompile(`[,;]\s*\)`), ")"},
+	{regexp.MustCompile(`\s+([,.;:)\]])`), "$1"},
+	{regexp.MustCompile(`([(\[])\s+`), "$1"},
+	{regexp.MustCompile(`\s{2,}`), " "},
+	{regexp.MustCompile(`^[,;:]\s*`), ""},
+}
+
+// TestAbdeckungstabelleZeilen leitet den Go-Anteil der
+// E2E-Abdeckungstabelle (`docs/user/e2e-abdeckung.md`) aus dem Quelltext
+// dieses Pakets ab — nicht aus dem, was gelaufen ist: eine
+// `func TestE2E*`, die kein `-run`-Muster des Runners trifft, erscheint
+// trotzdem in der Tabelle (`BEO-PGC/test-runner-stiller-ausschluss`).
+// Funktionsname und Quellzeile kommen aus dem AST, die Spec-Kennungen und
+// die Kurzbeschreibung aus dem Doc-Kommentar. Eine `func TestE2E*` ohne
+// Spec-Kennung, ohne Doc-Kommentar oder mit einer nicht auflösbaren
+// Kurzform bricht den Erzeuger sichtbar ab, statt die Zeile
+// stillschweigend wegzulassen.
+func TestAbdeckungstabelleZeilen(t *testing.T) {
+	_, quelle, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("E2E-Abdeckungstabelle: Quelldatei dieses Pakets nicht auflösbar")
+	}
+	zeilen, err := abdeckungsZeilen(quelle)
+	if err != nil {
+		t.Fatalf("E2E-Abdeckungstabelle: %v", err)
+	}
+	if len(zeilen) == 0 {
+		t.Fatal("E2E-Abdeckungstabelle: kein func TestE2E* im Paket gefunden — der Zeilensatz wäre leer")
+	}
+	for _, zeile := range zeilen {
+		t.Log(abdeckungZeilenPraefix + zeile)
+	}
+}
+
+// abdeckungsZeilen liefert je `func TestE2E*` der Go-Dateien neben
+// quelleDatei eine Zeile `Quelldatei|Quellzeile|Nachweis|Kennungen|
+// Kurzbeschreibung`, in Datei- und Quellzeilen-Reihenfolge.
+func abdeckungsZeilen(quelleDatei string) ([]string, error) {
+	verzeichnis := filepath.Dir(quelleDatei)
+	eintraege, err := os.ReadDir(verzeichnis)
+	if err != nil {
+		return nil, err
+	}
+	zeilen := make([]string, 0)
+	for _, eintrag := range eintraege {
+		if eintrag.IsDir() || !strings.HasSuffix(eintrag.Name(), ".go") {
+			continue
+		}
+		datei := filepath.Join(verzeichnis, eintrag.Name())
+		quelldatei, err := abdeckungsModulpfad(datei)
+		if err != nil {
+			return nil, err
+		}
+		zeilen, err = abdeckungsZeilenEinerDatei(datei, quelldatei, zeilen)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return zeilen, nil
+}
+
+// abdeckungsZeilenEinerDatei hängt die Zeilen der `func TestE2E*` einer
+// Datei an zeilen an.
+func abdeckungsZeilenEinerDatei(datei, quelldatei string, zeilen []string) ([]string, error) {
+	baumsatz := token.NewFileSet()
+	geparst, err := parser.ParseFile(baumsatz, datei, nil, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+	for _, deklaration := range geparst.Decls {
+		funktion, ok := deklaration.(*ast.FuncDecl)
+		if !ok || funktion.Recv != nil || !strings.HasPrefix(funktion.Name.Name, "TestE2E") {
+			continue
+		}
+		zeile, err := abdeckungsZeile(baumsatz, quelldatei, funktion)
+		if err != nil {
+			return nil, err
+		}
+		zeilen = append(zeilen, zeile)
+	}
+	return zeilen, nil
+}
+
+// abdeckungsZeile baut die Zeile einer einzelnen Testfunktion; die
+// Spec-Kennung ist Pflicht, sonst wäre die Zeile nicht adressierbar.
+func abdeckungsZeile(baumsatz *token.FileSet, quelldatei string, funktion *ast.FuncDecl) (string, error) {
+	nachweis := funktion.Name.Name
+	if funktion.Doc == nil {
+		return "", fmt.Errorf("%s: kein Doc-Kommentar — die Zeile trägt sonst keine Spec-Kennung", nachweis)
+	}
+	kennungen, ohneKennungen, err := abdeckungsKennungen(nachweis, funktion.Doc.Text())
+	if err != nil {
+		return "", err
+	}
+	if len(kennungen) == 0 {
+		return "", fmt.Errorf("%s: keine Spec-Kennung im Doc-Kommentar — der Nachweis wäre keiner Anforderung zugeordnet", nachweis)
+	}
+	beschreibung, err := abdeckungsKurzbeschreibung(nachweis, ohneKennungen)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{
+		quelldatei,
+		strconv.Itoa(baumsatz.Position(funktion.Pos()).Line),
+		nachweis,
+		strings.Join(kennungen, ","),
+		beschreibung,
+	}, "|"), nil
+}
+
+// abdeckungsKennungen trennt den Doc-Kommentar in die adressierten
+// Spec-Kennungen (Lastenheft/Pflichtenheft, Kurzformen aufgelöst) und den
+// Text ohne jede Kennung — der Text ist die Quelle der Kurzbeschreibung.
+func abdeckungsKennungen(nachweis, kommentar string) ([]string, string, error) {
+	kennungen := make([]string, 0)
+	var rest strings.Builder
+	text := kommentar
+	for {
+		stelle := abdeckungKennungMuster.FindStringIndex(text)
+		if stelle == nil {
+			rest.WriteString(text)
+			break
+		}
+		anfang, ende := stelle[0], stelle[1]
+		kennung := text[anfang:ende]
+		// Ein Inline-Code-Span, der die Kennung trägt, fällt mit ihr weg:
+		// bliebe er stehen, entstünde eine leere Spanne, und ein
+		// halbierter Span (`` `LH-…`…003 ``) ließe ein unpaariges
+		// Backtick zurück.
+		if anfang > 0 && text[anfang-1] == '`' && ende < len(text) && text[ende] == '`' {
+			anfang--
+			ende++
+		}
+		weitere, kurzformLaenge, err := abdeckungsKurzform(nachweis, kennung, text[ende:])
+		if err != nil {
+			return nil, "", err
+		}
+		ende += kurzformLaenge
+		rest.WriteString(text[:anfang])
+		if abdeckungsAdressiert(kennung) {
+			kennungen = append(kennungen, kennung)
+			kennungen = append(kennungen, weitere...)
+		}
+		text = text[ende:]
+	}
+	if strings.Count(rest.String(), "`")%2 != 0 {
+		return nil, "", fmt.Errorf("%s: Doc-Kommentar hinterlässt nach dem Entfernen der Kennungen ein unpaariges Inline-Code-Zeichen", nachweis)
+	}
+	gesehen := make(map[string]bool, len(kennungen))
+	eindeutig := kennungen[:0]
+	for _, kennung := range kennungen {
+		if !gesehen[kennung] {
+			gesehen[kennung] = true
+			eindeutig = append(eindeutig, kennung)
+		}
+	}
+	return eindeutig, rest.String(), nil
+}
+
+// abdeckungsAdressiert sagt, ob eine Kennung in die Kennungsspalte gehört:
+// die Anforderungs-Kennungen der beiden Spec-Straten Vertrag und Technik.
+func abdeckungsAdressiert(kennung string) bool {
+	return strings.HasPrefix(kennung, "LH-") || strings.HasPrefix(kennung, "SPEC-")
+}
+
+// abdeckungsKurzform löst die Kurzform hinter einer Kennung auf und
+// liefert die dadurch zusätzlich adressierten Kennungen samt der Länge, die
+// die Kurzform im Kommentar einnimmt. Trägt die Kennung keine laufende
+// Nummer, liegt die Angabe nicht aufsteigend, sprengt sie die
+// Kurzform-Spanne oder bleibt der Inline-Code-Span der Nummer offen, bricht
+// der Erzeuger sichtbar ab, statt zu raten.
+func abdeckungsKurzform(nachweis, kennung, rest string) ([]string, int, error) {
+	laenge := 0
+	for _, einleitung := range abdeckungKurzformEinleitungen {
+		if strings.HasPrefix(rest, einleitung) {
+			laenge = len(einleitung)
+			break
+		}
+	}
+	if laenge == 0 {
+		return nil, 0, nil
+	}
+	zahlText := rest[laenge:]
+	umspannt := strings.HasPrefix(zahlText, "`")
+	if umspannt {
+		zahlText = zahlText[1:]
+	}
+	ziffern := 0
+	for ziffern < len(zahlText) && zahlText[ziffern] >= '0' && zahlText[ziffern] <= '9' {
+		ziffern++
+	}
+	if ziffern == 0 {
+		return nil, 0, nil
+	}
+	if ziffern != 3 {
+		return nil, 0, fmt.Errorf("%s: Kurzform %q hinter %s trägt keine dreistellige laufende Nummer", nachweis, rest[:laenge+ziffern], kennung)
+	}
+	gelesen := laenge + ziffern
+	if umspannt {
+		gelesen++
+		if !strings.HasPrefix(zahlText[ziffern:], "`") {
+			return nil, 0, fmt.Errorf("%s: Kurzform %q hinter %s öffnet einen Inline-Code-Span ohne Abschluss", nachweis, rest[:gelesen], kennung)
+		}
+		gelesen++
+	}
+	familie, anfangsZahl, err := abdeckungsFamilie(kennung)
+	if err != nil {
+		return nil, 0, fmt.Errorf("%s: Kurzform %q hinter %s ist nicht auflösbar (%v)", nachweis, rest[:gelesen], kennung, err)
+	}
+	endZahl, err := strconv.Atoi(zahlText[:ziffern])
+	if err != nil {
+		return nil, 0, fmt.Errorf("%s: Kurzform %q hinter %s trägt keine Zahl: %v", nachweis, rest[:gelesen], kennung, err)
+	}
+	if endZahl <= anfangsZahl || endZahl-anfangsZahl > abdeckungKurzformSpanne {
+		return nil, 0, fmt.Errorf("%s: Kurzform %q hinter %s nennt keine aufsteigende Nachbar-Familie", nachweis, rest[:gelesen], kennung)
+	}
+	weitere := make([]string, 0, endZahl-anfangsZahl)
+	for zahl := anfangsZahl + 1; zahl <= endZahl; zahl++ {
+		weitere = append(weitere, fmt.Sprintf("%s-%03d", familie, zahl))
+	}
+	return weitere, gelesen, nil
+}
+
+// abdeckungsFamilie zerlegt eine Kennung in Präfix-Familie und laufende
+// Nummer; eine Kennung ohne laufende Nummer (etwa die Verfeinerungs-Form
+// `…-001.a`) trägt keine Kurzform und endet hier sichtbar.
+func abdeckungsFamilie(kennung string) (string, int, error) {
+	teile := abdeckungFamilieMuster.FindStringSubmatch(kennung)
+	if teile == nil {
+		return "", 0, fmt.Errorf("die Kennung trägt keine laufende Nummer")
+	}
+	zahl, err := strconv.Atoi(teile[2])
+	if err != nil {
+		return "", 0, err
+	}
+	return teile[1], zahl, nil
+}
+
+// abdeckungsKommentarAbsatz liefert den ersten Absatz eines
+// Doc-Kommentars. Die Kurzbeschreibung bleibt damit beim
+// Zusammenfassungs-Absatz: eine anschließende nummerierte Aufzählung trägt
+// ihre Kennungen, aber nicht mehr ihren Fließtext in die Tabellenzelle.
+func abdeckungsKommentarAbsatz(kommentar string) string {
+	if trenner := strings.Index(kommentar, "\n\n"); trenner >= 0 {
+		return kommentar[:trenner]
+	}
+	return kommentar
+}
+
+// abdeckungsKurzbeschreibung normalisiert den kennungsfreien Kommentartext
+// zum ersten Satz seines ersten Absatzes.
+func abdeckungsKurzbeschreibung(nachweis, text string) (string, error) {
+	beschreibung := strings.Join(strings.Fields(abdeckungsKommentarAbsatz(text)), " ")
+	beschreibung = strings.TrimSpace(strings.TrimPrefix(beschreibung, nachweis))
+	if ende := abdeckungsSatzende(beschreibung); ende >= 0 {
+		beschreibung = beschreibung[:ende]
+	}
+	for _, regel := range abdeckungAufraeumRegeln {
+		beschreibung = regel.muster.ReplaceAllString(beschreibung, regel.ersatz)
+	}
+	beschreibung = strings.TrimSpace(beschreibung)
+	if beschreibung == "" {
+		return "", fmt.Errorf("%s: Doc-Kommentar trägt nach dem Entfernen der Kennungen keine Kurzbeschreibung", nachweis)
+	}
+	if strings.Count(beschreibung, "`")%2 != 0 {
+		return "", fmt.Errorf("%s: Kurzbeschreibung hinterlässt ein unpaariges Inline-Code-Zeichen", nachweis)
+	}
+	// Der Zeilensatz ist über `|` getrennt; ein Trennerzeichen im Text
+	// würde ihn zerlegen.
+	return strings.ReplaceAll(beschreibung, "|", "/"), nil
+}
+
+// abdeckungsSatzende liefert den Index hinter dem ersten Satzende — dem
+// ersten Punkt außerhalb eines Inline-Code-Spans, dem Leerraum oder das
+// Textende folgt und dem keine Ziffer vorausgeht (Aufzählungs- und
+// Zahlmarken wie „1." bleiben damit im Satz) — oder -1, wenn der Text kein
+// solches Ende trägt.
+func abdeckungsSatzende(text string) int {
+	imSpan := false
+	for i := 0; i < len(text); i++ {
+		switch {
+		case text[i] == '`':
+			imSpan = !imSpan
+		case text[i] == '.' && !imSpan:
+			if i > 0 && text[i-1] >= '0' && text[i-1] <= '9' {
+				continue
+			}
+			if i+1 == len(text) || text[i+1] == ' ' {
+				return i + 1
+			}
+		}
+	}
+	return -1
+}
+
+// abdeckungsModulpfad übersetzt einen absoluten Dateipfad in den
+// modul-relativen (Repository-) Pfad: der Aufstieg endet an der Datei
+// `go.mod`.
+func abdeckungsModulpfad(datei string) (string, error) {
+	verzeichnis := filepath.Dir(datei)
+	for {
+		if _, err := os.Stat(filepath.Join(verzeichnis, "go.mod")); err == nil {
+			return filepath.Rel(verzeichnis, datei)
+		}
+		uebergeordnet := filepath.Dir(verzeichnis)
+		if uebergeordnet == verzeichnis {
+			return "", fmt.Errorf("%s: kein go.mod im Aufstieg gefunden", datei)
+		}
+		verzeichnis = uebergeordnet
 	}
 }

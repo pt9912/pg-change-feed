@@ -9,9 +9,18 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 (`matrix-forbidden` / `matrix-inactive`), abweichender Baseline-Pin
 (`version-stale`), Struktur-Verstoß im Abschnitt
 (`section-cell-*`, `section-forbidden` — Register-Spalten,
-Closure-Notiz-Guidance und die Verweisform auf wandernde Slice-Pläne in
-Berichten und der Register-Identität). Die Module und ihre Grenzen stehen in `.d-check.yml`;
+Closure-Notiz-Guidance, die Verweisform auf wandernde Slice-Pläne in
+Berichten und der Register-Identität und die erzeugte
+E2E-Abdeckungstabelle). Die Module und ihre Grenzen stehen in `.d-check.yml`;
 die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
+
+Die `structure`-Regeln adressieren den ADR-Index, die
+Pflichtenheft-Defaults, zwei Architektur-Tabellen, die Closure-Notiz je
+`done/slice-*.md` (sie läuft seit der ersten Closure mit, `· seit
+slice-001`), die Verweisform auf wandernde Slice-Pläne in Berichten und
+Register-Identität sowie die erzeugte E2E-Abdeckungstabelle — jede über
+ihren Abschnitt und ihre Spalten-Mindestbreiten, keine über eine
+Zeilenzahl.
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -45,6 +54,43 @@ die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
    `planning/welle-NN.md` → `done/`) und der gleich-ordnerige Nachbar-Verweis
    (Quell-Seite, `links.resolve-from`) sind Nachbar-Klassen, nicht gedeckt.
 
+7. **Die erzeugte E2E-Abdeckungstabelle trägt keine Symbol-Prüfung.** Die
+   Tabelle `docs/user/e2e-abdeckung.md` ist ein Erzeugnis von
+   `make test-integration`: die Go-Zeilen leitet das Testpaket per
+   `go/parser` aus seinem eigenen Quelltext ab, die Bash-Zeilen deklariert
+   jede Phase des Runners über einen Anker, geschrieben wird nur bei
+   inhaltlicher Abweichung. Das Doku-Gate prüft an ihr die **Form** — die
+   Linkpflicht des `ids`-Moduls auf der Kennungsspalte und die
+   `structure`-Regel (Abschnitt, Spalten-Mindestbreiten) —, nicht den
+   Nachweis. Vier Grenzen sind daran real gemessen, nicht angenommen:
+
+   - **`ids` prüft den Link, nicht die Existenz.** Eine nackte Kennung ohne
+     Link meldet `id-unlinked`; eine **verlinkte, erfundene** Kennung bleibt
+     grün — das `ids`-Modul gleicht nicht gegen die Kennungen des
+     Definitions-Dokuments ab.
+   - **Inline-Code-Spans bleiben ungeprüft.** Eine Kennung in einem
+     Code-Span ist auch ohne Link grün; die Beschreibungsspalte der Tabelle
+     trägt deshalb **keine** Kennungen aus dem Doc-Kommentar (der Erzeuger
+     entfernt sie samt umgebendem Span). Was nur im Kennungsverweis des
+     Kommentars stand, bleibt über die Spalte `Ort` an seiner Quelle
+     erreichbar.
+   - **Kein Modul prüft einen Symbol- oder Funktionsnamen.** Ein Nachweis
+     darf einen Funktionsnamen tragen, den das Paket nicht kennt, ohne dass
+     ein Befund entsteht; `--trace` gibt die Requirements-Traceability-Matrix
+     aus und ist keine Code-Prüfung (die Tabelle speist sie auch nicht — der
+     Trace-Ausgang ist mit und ohne die Datei identisch), `codepaths` prüft
+     Pfade und Zeilenbereiche statt Symbole.
+   - **Die Bash-Hälfte ist deklariert, nicht abgeleitet.** Der
+     Deklarations-Anker deckt die eine Richtung („die Tabelle behauptet eine
+     Phase, die es nicht gibt" — der Lauf bricht ab), nicht die andere: eine
+     neue Runner-Phase, die niemand deklariert, fehlt still in der Tabelle.
+     Dieselbe Klasse führt `BEO-PGC/test-runner-stiller-ausschluss` für die
+     `-run`-Muster.
+
+   Die tragende Garantie der Tabelle ist deshalb die **Ableitung aus dem
+   Quelltext** (Go-Hälfte) und der **Anker je Phase** (Bash-Hälfte) — nicht
+   das Doku-Gate.
+
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
 Vollständigkeits-Zeile „N Datei(en) geprüft, 0 Befund(e)“ sagt etwas über
@@ -72,4 +118,7 @@ Reparatur-Pfad: `make doc-repair` (konservativ, nur `id-unlinked`/
 (Baseline-Regelwerk Modul 5/6, abgebildet in `.d-check.yml` §matrix) ·
 Baseline-Pin (`harness/conventions.md` §Baseline) · Register-Spalten und
 Verweisform auf wandernde Slice-Pläne (`BEO-PGC/slice-pfad-als-link-in-berichten`,
-3×, `seit slice-075`) — `.d-check.yml` §structure.
+3×, `seit slice-075`) · Form der erzeugten E2E-Abdeckungstabelle
+([`LH-QA-POR-003`](../../spec/lastenheft.md) — die E2E-Kette ist ihr
+Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
+die Kennungsspalte) — `.d-check.yml` §structure.
