@@ -23,10 +23,14 @@ Implementers oder des Reviewers wurde übernommen. Exit-Codes je in eigenem,
 ungepiptem Schritt gelesen (`AGENTS.md` §3.9); Gate-Lauf und Folgehandlung
 getrennt beauftragt. Die Baumänderung, die die schema-rollenden Testläufe an
 `tools/schema/plan.yaml` hinterlassen, wurde nach **jedem** Lauf real
-zurückgenommen; der Arbeitsbaum ist am Ende dieses Laufs unverändert
-(`git status --porcelain` leer). Ein für die Vor-Zahlen angelegter Worktree
-wurde real abgeräumt (`git worktree list` = nur der Hauptbaum). Eigene
-Testcontainer und Docker-Netze wurden durch die Skripte selbst abgeräumt.
+zurückgenommen; **dieser Lauf** hat keinen eigenen Baum-Rest hinterlassen. Ein
+für die Vor-Zahlen angelegter Worktree wurde real abgeräumt
+(`git worktree list` = nur der Hauptbaum). Eigene Testcontainer und Docker-Netze
+wurden durch die Skripte selbst abgeräumt. **Während** dieses Laufs hat ein
+**fremder** Prozess Dateien im Arbeitsbaum angelegt
+(`docs/plan/planning/observations/BEO-PGC/…` — Register-Fortschreibung, nicht
+Gegenstand dieses Berichts); sie wurden gelesen und **unangetastet** gelassen,
+nicht verifiziert und nicht committet.
 
 **Gegenstand:** `slice-081`
 (`docs/plan/planning/in-progress/slice-081-executor-naht.md`), geprüfter
