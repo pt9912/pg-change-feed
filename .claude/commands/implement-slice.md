@@ -279,4 +279,19 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     (`/close-welle`); läuft keine Welle, löst die Slice-Closure den Lese-Schritt selbst aus, und der
     Herkunfts-Anker lautet dann `seit slice-<NNN>` statt `seit welle-<NN>`.
 
+    **Verweisform auf wandernde Slice-Pläne · seit slice-075**
+    (`BEO-PGC/slice-pfad-als-link-in-berichten`, 3×; mechanisch getragen für
+    `docs/reviews/**` und `observation.md` durch die `structure`-Regeln in
+    `.d-check.yml`): Ein Slice-Plan wandert
+    (`open/` → `next/` → `in-progress/` → `done/`). Ein Markdown-Link mit festem
+    Verzeichnis (`…/planning/in-progress/slice-NNN-….md`) löst am Ist-Ort auf und
+    bricht erst beim nächsten `git mv` (`links` → `target-missing`). Stattdessen
+    die Kennung zitieren (`slice-NNN`) oder einen Inline-Code-Pfad. Kandidatenlauf
+    auf den **rohen** Zeilen der von diesem Lauf berührten Dokumente:
+    `git diff --name-only <Basis> -- 'docs/**' | xargs -r grep -nE '\]\([^)]*(open|next|in-progress)/slice-[0-9]{3}'`
+    — jeder Treffer wird zitiert statt verlinkt. **Grenze:** `state.md` und
+    `evidence/*.md` tragen keine Überschrift und damit keinen Abschnitts-Anker;
+    die `structure`-Regeln greifen dort nicht, dieser Schritt ist dort die
+    einzige Linie.
+
 Gates nicht überspringen. Keine Erfolgsmeldung ohne Command-Ausgabe.
