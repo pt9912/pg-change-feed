@@ -153,6 +153,35 @@ nennt die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Pun
 **eine** Schicht: das Beispiel; die Handbuch-Zeile ist Doku, die ADR ist
 Entscheidung).
 
+**Befund des Implementer-Laufs — der zweite Schritt hat keinen Vertrag.** Das
+Beispiel ist gebaut (CLI, Subjekt-Ableitung, Aufbau der HTTP-Abfrage, Tests;
+`make test` und `make gates` grün), aber sein zweiter Schritt ist gegen die
+**heutige** API nicht einlösbar: die HTTP-API führt **keinen**
+Changes-Lese-Endpunkt. Das ist **kein** Defekt dieses Slice und **kein**
+Implementer-Fehler — es ist die Source-Precedence-Frage dahinter:
+
+- `LH-FA-SST-006` (Lastenheft, **Rang 1**) verlangt in seiner Beschreibung, die
+  bestehenden Lese- und Verwaltungsfähigkeiten — „u. a. … **Changes lesen** …" —
+  über einen Netzwerkzugriffsweg bereitzustellen. Seine **Akzeptanzkriterien**
+  sind demgegenüber **exemplarisch** („eine unterstützte Fähigkeit (**z. B.**
+  Consumer-Registrierung)").
+- `ADR-0057` (**Rang 4**) hat Option B gewählt und Changes-Lesen „**bewusst
+  ausgeschlossen**" — mit benannter Folgepflicht: „Erweiterung um Changes-Lesen
+  oder Diagnose/Health braucht [eine eigene ADR]".
+- `SPEC-018` (**Rang 2**) hat die Verengung übernommen („Changes-Lesen … bleiben
+  außerhalb").
+
+**Die Frage gehört deshalb nicht hierher, sondern zum Architect**: ein ADR darf
+die Spezifikation schärfen, **nie das Lastenheft**; ob die Beschreibung oder die
+Akzeptanzkriterien binden, ist eine Entscheidung, keine Auslegung durch den
+Implementer. `ADR-0057` hat den Weg dorthin als **Option C** bereits
+vorgezeichnet (ein `ReadChangesUseCase` samt Inbound Port).
+
+**Der Arbeitsstand liegt auf dem Branch `slice-083-nats-beispielclient`** (lokal,
+zwei Commits, kein Push). Er wird **nicht** verworfen: entscheidet die Folge-ADR,
+dass die API das Lesen bekommt, ist dieses Beispiel bereits richtig. Bis dahin
+ist es das Beispiel für einen Ablauf, den das System noch nicht kann.
+
 **Nicht in dieser Liste:** `internal/**` (das Beispiel ist kein Harness-Client),
 `tools/harness/**` (die Wegwerf-Clients bleiben, `ADR-0076`), `spec/**`
 (`SPEC-017` wird **benutzt**, nicht geändert) — und **keine neue `.a-check.yml`-Kante**:
@@ -186,6 +215,15 @@ daneben beansprucht, hat keine Lifecycle, sondern ein Buffet.
   Weckruf-Bezug über die vorhandenen Endpunkte nicht auflösbar ist), ist das ein
   Blocker mit Entscheidung — die Zusage dieses Slice ist „zwei Schritte, kein
   neuer Vertrag".
+  **EINGETRETEN — der Grund, mit dem dieser Slice zurückgeht.** Der Fall ist
+  nicht „der Bezug ist nicht auflösbar", sondern größer: **die HTTP-API hat
+  keinen Changes-Lese-Endpunkt.** `internal/adapters/driving/http/server.go`
+  registriert **zehn** Routen — neun port-gedeckte plus `GET /changes/stream`;
+  ein `GET /changes` gibt es **nicht**. Der zweite Schritt des Beispiels zielt
+  damit auf einen Vertrag, den es nicht gibt; real antwortet der Abruf `404`.
+  Der Implementer hat **keinen** Endpunkt erfunden und `internal/**` unberührt
+  gelassen — richtig so: §1 schließt „ein neuer Vertrag" aus, und `AGENTS.md`
+  §3.6/Modul 8 lassen den Implementer keine Schnittstelle beschließen.
 
 ## 5. Closure-Trigger
 
@@ -207,7 +245,12 @@ dasteht.
 - **Das Beispiel könnte übersetzen, ohne zu laufen.** [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   hat entschieden, dass Beispiele **keinen** Lauf-Beleg tragen
   (Kompilier-Bindung statt E2E-Lauf). Ein Beispiel, das übersetzt, aber den
-  Weckruf→Abfrage-Weg falsch geht, bliebe damit unbemerkt. — **Ausgang:** <bei Closure>
+  Weckruf→Abfrage-Weg falsch geht, bliebe damit unbemerkt. — **Ausgang:**
+  *eingetreten*, und **schärfer als das Risiko**: nicht nur unbemerkt, sondern
+  **real nicht ausführbar** — der zweite Schritt hat keinen Vertrag (§3,
+  *Befund des Implementer-Laufs*). Der Träger der Behandlung ist die
+  **Folge-ADR zu [`ADR-0057`](../../adr/0057-http-grpc-api.md)**; der Slice geht
+  deshalb **zurück nach `open/`**, nicht nach `done/` (§4).
 - **Der Client könnte den Payload für Daten halten.** Das Signal ist per Vertrag
   leer ([`SPEC-017`](../../../../spec/pflichtenheft.md)); die Verwechslung ist
   der naheliegendste Fehler und machte
