@@ -187,13 +187,21 @@ dasteht.
 - Das Handbuch könnte die Aktivierungs-Semantik der neuen Variablen falsch
   beschreiben (z. B. No-Op bei fehlender Adresse vs. Start-Abbruch bei
   fehlgeschlagener Verbindung) — dieselbe Verwechslung, die `slice-053` für
-  `CDC_NATS_URL` behandelt hat. — **Ausgang:** <bei Closure>
+  `CDC_NATS_URL` behandelt hat. — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: die Semantik ist **zweimal unabhängig** gegen den Code geprüft
+  (Reviewer und Verifier, je mit eigenen Läufen) und trifft zu — „leer =
+  No-Op" für alle vier Variablen, und der Kontrast zu `CDC_NATS_URL`
+  (Start-Vorbedingung) ist ausdrücklich formuliert. Die Verwechslung ist nicht
+  eingetreten.
 - Der Ausschlussstand könnte im Handbuch als **prozesslebensdauer-gebunden**
   beschrieben werden. Er ist dauerhaft: der Prozessstart leitet ihn aus den
   `applied`-Zeilen der Spalten-Antragsarten ab
   ([`ADR-0065`](../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)). Der
   Text muss den **Ist-Zustand** nennen. —
-  **Ausgang:** <bei Closure>
+  **Ausgang:** *entfallen — gestrichen mit Begründung*: das Handbuch beschreibt
+  den dauerhaften Stand (der Verifier hat es Satz für Satz gegen
+  `SPEC-019`, `ADR-0065` und die Verdrahtung geprüft) — die überholte Grenze
+  steht dort nicht.
 
 ## 7. Closure-Notiz
 
