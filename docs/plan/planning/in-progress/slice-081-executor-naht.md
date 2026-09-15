@@ -196,11 +196,18 @@ vierter Punkt:
       `docs/reviews/review-slice-081-fixrunde.md` — 0 HIGH in der Fixrunde; die
       verbleibende LOW liegt im Plan-Text (§3/§1, Planner-Zug), deshalb ohne
       Rückgabe-Pfeil an den Implementer.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei Belege
+      ergänzt (`dod-begruendung-unzutreffende-tatsachenbehauptung`, damit **3×**;
+      `zahl-in-traeger-driftet-gegen-die-messung`, **neu**, 1×) und ein
+      Verzeichnis neu angelegt, **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — alle drei *entfallen,
+      gestrichen mit Begründung*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**, die Prüfung fällt der `welle-20`-Closure zu; hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -341,13 +348,29 @@ dasteht.
 - **Der Umbau könnte ein Verhaltens-Change sein, der als Refactoring auftritt.**
   Wächter sind die **realen** DB-Tests (`make test-store`,
   `make test-replication`): sie müssen unverändert grün sein — sie sind der
-  Beleg, nicht die neuen Fakes. — **Ausgang:** <bei Closure>
+  Beleg, nicht die neuen Fakes. — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: beide realen Läufe sind grün, **keine** Zusicherung wurde
+  entfernt, abgeschwächt oder übersprungen; der Diff der Naht fasst
+  ausschließlich Produktionscode und fügt eine Testdatei **hinzu**.
 - **Der Fake könnte grün sein, ohne etwas zu prüfen.** Er prüft die
   **Verklebung** (Aufruf, Scan-Schleife, Fehlerpfad), nicht das SQL — ein Fake,
-  der die DB-Tests ersetzt, hält die Zusage nicht. — **Ausgang:** <bei Closure>
-- **Die Zahl könnte den Umbau ziehen.** `ADR-0071` Punkt 5 schließt das
-  ausdrücklich aus: die Begründung muss **vor** dem Umbau stehen (Design), nicht
-  danach (Wirkung). — **Ausgang:** <bei Closure>
+  der die DB-Tests ersetzt, hält die Zusage nicht. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: **sieben** Mutationen wurden rot gesehen und
+  zurückgenommen — vier eigener Schnitt aus dem Review, zwei aus dessen
+  Fixrunde, zwei eigene des Verifiers (u. a. die Kompilier-Zusicherung
+  `var _ DB = (*pgxpool.Pool)(nil)` und die „letzter Einschluss streicht den
+  Eintrag"-Regel). Ein Fake, der nichts prüft, hätte keine dieser Mutationen
+  bemerkt.
+- **Die Zahl könnte den Umbau ziehen.** [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  Punkt 5 schließt das ausdrücklich aus: die Begründung muss **vor** dem Umbau
+  stehen (Design), nicht danach (Wirkung). — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: die Begründung stand vor dem Umbau (Design,
+  `ADR-0071` Punkt 5), und die Zahl hat ihn nicht gezogen — auf der
+  **abfließenden** Seite ist sie sogar **gefallen** (75,25 % → 73,38 %), das
+  Gegenteil eines coverage-getriebenen Umbaus. Was eintrat, ist ein **anderer**
+  Vorgang: die Rampe hielt die Closure auf, und die Antwort war eine
+  **Entscheidung** (`ADR-0077`, teilweise abgelöst durch `ADR-0078`) — keine
+  Anpassung an die Zahl.
 
 ## 7. Closure-Notiz
 
@@ -366,18 +389,78 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die **Bewegung wurde gemessen, statt sie zu
+  überschreiben.** Die Naht hat den Messgegenstand verschoben; der Implementer
+  hat das nicht mit einer Schwellen-Anpassung beantwortet, sondern die
+  **Verweigerung** begründet (`AGENTS.md` §3.6) — und als die Entscheidung dann
+  eine tragende Bedingung nannte, die seine Messung widerlegte, hat er **erneut**
+  abgebrochen. Zwei Verweigerungen, zwei Entscheidungen (`ADR-0077` →
+  `ADR-0078`).
+  Das Werkzeug hält: `ADR-0078`s dreiteiliger Transfer-Nachweis ist ausdrücklich
+  **gegen die aggregierte Summe** gerichtet — sie unterscheidet `−138 / +14 neu`
+  nicht von `−138 / 0`. Getragen hat der **Paket-Diff**: der Abfluss ist auf
+  **einen** Träger isoliert, der Zuwachs (152) erscheint in einem Träger, den es
+  vorher nicht gab (`sqlexec`, 147+3+2). Der Verifier hat das unabhängig
+  hergeleitet.
+  Und: **die Rollen haben gehalten, wo der Auftrag falsch war** — der Reviewer
+  hat meinen eigenen Vertrag überführt (F-2), der Verifier meinen DoD-Wortlaut.
+- **Was ging anders als geplant:** **Der Slice war zu groß, und ich habe es
+  selbst verschuldet.** Geschnitten als „≤ 3 Liefer-Punkte, in einem Lauf
+  abschließbar", wurden daraus zwei Gegenstände, zwei Entscheidungen und **drei**
+  Implementer-Läufe. Die Ursache steht in §1 im Klartext: ich habe die
+  Rampen-Neu-Bemessung mit der Begründung aufgenommen, *„das WIP-Limit lässt
+  keinen zweiten Slice daneben zu"* — und **das ist falsch**. Das WIP-Limit
+  beschränkt **gleichzeitige Ansprüche**; es zwingt keine fremde Arbeit in einen
+  laufenden Slice. Richtig wäre gewesen: `081` mit dokumentiertem Blocker
+  zurückführen, die Neu-Bemessung als **eigenen** kleinen Slice schneiden — die
+  Form, die `slice-084`/`slice-085` jetzt haben.
+  **Schärfer: ich habe das Wachstum bemerkt** — in §1 aufgeschrieben und das
+  Review ausdrücklich eingeladen, es als Schnitt-Verstoß zu werten. Ein Geruch,
+  dokumentiert statt behoben.
+  **Dazu eine Reihe eigener Fehler, alle vom selben Mechanismus** (ungeprüfte
+  Übernahme aus der Nachbarschaft): die Zahl `1817` aus einem Bericht in ein
+  **DoD-Kriterium** und über meinen Auftrag in `ADR-0077` §Kontext; eine
+  Beleg-Kennung zitiert, die ein späteres Rebase zur **Waise** gemacht hatte —
+  meine erste Korrektur hat es **verschlimmert**; ein Vorlagen-Rest in beiden
+  neuen Slices, weil mein eigenes Suchmuster `<Schnittstelle` nicht enthielt;
+  ein erfundenes `ADR-0066` als Bezug, das ein anderes Thema trägt. **Jeder
+  einzelne Fund kam von einer anderen Rolle, nie von mir.**
+- **Lerneintrag (die geschärfte Regel dieses Slice):** *Das WIP-Limit ist kein
+  Grund, fremde Arbeit in einen laufenden Slice aufzunehmen.* Trifft ein Slice
+  auf einen **zweiten** Gegenstand oder eine zweite Entscheidung, die er selbst
+  auslöst, gehört er mit dokumentiertem Blocker **zurückgeführt** und die neue
+  Arbeit als eigener Slice geschnitten — die Größenregel („in einem Lauf
+  abschließbar", Modul 5) steht über der Bequemlichkeit, den Platz zu behalten.
+  **Die Verkörperung steht aus**; als Träger kommt `.claude/commands/plan-welle.md`
+  oder der Nachschlag zu Modul 5/6 in Frage. Bis dahin: geführt, nicht behauptet.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.**
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` hat mit diesem
+  Vorgang die **3×-Schwelle erreicht** — sein Ausgang gehört dem Lese-Schritt der
+  laufenden `welle-20`-Closure (Modul 6), nicht dieser Closure. **Neu angelegt:**
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (1×), belegt durch F-1
+  (`db-coverage.sh` nennt 610, gemessen 472) und F-6 (`ADR-0071`, `welle-20`).
+  Für beide hat der Architect-Zug zu `ADR-0078` eine Regel **benannt, aber nicht
+  gebaut**: *jeder Zahlenwert in einem `Accepted`-Dokument trägt seinen
+  Ursprung* (gemessen / übernommen / **abgeleitet**) — **dieser Bau steht aus**
+  und ist der nächste Planner-Schritt.
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt **und ein
+  neues Verzeichnis angelegt**:
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-081.md`
+  (Zähler **3×**) und `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`
+  (**neu**, `evidence/slice-081.md`, **1×**). **Kein Zähler gesetzt** — er folgt
+  aus den Dateien. **Eine Zuordnung habe ich nicht übernommen:** der Review hatte
+  den `db-coverage.sh`-Fund dem Eintrag
+  `kommentar-behauptet-nicht-getragenen-fehlerpfad` zugeschlagen; dessen zwei
+  Vorgänger (`review-slice-070` F-2, `review-slice-077` F-1) handeln aber von
+  einem zugesagten **Fehlerpfad**, nicht von einer driftenden **Zahl** —
+  nachgelesen und getrennt geführt.
+- **Folge-Slices:** `slice-084` (postgresack-Naht) und `slice-085` (receive-Naht)
+  — beide liegen als Dateien in `open/`; sie sind die **Adressen** der Abweichung
+  in §3 (Review F-3).
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung* — siehe §6.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
