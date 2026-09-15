@@ -281,6 +281,7 @@ diese zwei entfallen, die Klasse selbst bleibt. Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Anordnung „`hostpaths` einbauen, ohne jede Ausnahme"; 31 Befunde eigenständig nachgemessen; Aktivierung ohne Ausschlussliste, Zitationsform, Hard-Rule-§3.11-Entwurf | `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` |
+| 2026-09-15 | Zitat-Korrektur — host-lokale Pfade ersetzt (`ADR-0073`) | `df47282` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

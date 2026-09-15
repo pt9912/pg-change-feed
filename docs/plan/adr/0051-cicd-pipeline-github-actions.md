@@ -317,6 +317,7 @@ dass die Grundentscheidungen erneut zu treffen sind.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-13 | Accepted — Anlass: Auftraggeber-Anforderung (pt9912) für eine GitHub-Actions-CI/CD-Pipeline analog zu `d-check`, mit GHCR **und** Docker Hub als Release-Ziele; Architect-Lauf vor jeder Implementierung (Modul 8) | Folge-Slices `slice-039`, `slice-040` (Planning-Stratum) <!-- d-check:status-provenance --> |
+| 2026-09-15 | Zitat-Korrektur — host-lokale Pfade ersetzt (`ADR-0073`) | `df47282` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

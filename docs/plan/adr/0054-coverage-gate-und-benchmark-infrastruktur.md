@@ -233,6 +233,7 @@ ausdrücklich nicht Gegenstand). Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-13 | Accepted — Anlass: Welle „Performance-Benchmarks & Test-Coverage-Gate" eröffnungsbereit (`slice-047` in `done/`); Architect-Lauf entscheidet Scope/Ramp/Suppression vor dem Slice-Schnitt | `docs/plan/planning/in-progress/roadmap.md` §Nächste Wellen | <!-- d-check:status-provenance -->
+| 2026-09-15 | Zitat-Korrektur — host-lokale Pfade ersetzt (`ADR-0073`) | `df47282` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
