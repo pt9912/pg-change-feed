@@ -67,8 +67,9 @@ Kurzbeschreibung aus dem Doc-Kommentar der Funktion — der Zeilensatz entsteht
 damit nicht aus dem, *was gelaufen ist*, sondern aus dem, *was im Paket
 steht*; eine Testfunktion ohne Spec-Kennung im Doc-Kommentar lässt den
 Erzeuger **sichtbar abbrechen**, statt sie stillschweigend wegzulassen. Die
-Bash-Hälfte (die Phasen des Runners: Rollen-DSN-Verifikation, Lasttest,
-Black-Box-CLI-Rundlauf, Diagnose, Retention-Lebenszyklus, Upgrade-Rundlauf)
+Bash-Hälfte (die Phasen des Runners — Rollen-DSN-Verifikation, Lasttest,
+Black-Box-CLI-Rundlauf, Diagnose, Retention-Lebenszyklus, Upgrade-Rundlauf,
+im Diff als **24** Deklarationen ausgeführt)
 **deklariert** der Runner an Ort und Stelle je Phase — mit einem wörtlichen
 Anker aus der Phase; findet der Runner diesen Anker nicht mehr, bricht er
 sichtbar ab. Zusammengesetzt (feste Reihenfolge: Go-Zeilen nach Quellzeile,
@@ -87,9 +88,13 @@ Spalten-Mindestbreiten). Was das Gate dabei **nicht** trägt, ist real gemessen
 und nicht aus der Modulbeschreibung geschlossen: `ids` prüft den Link, nicht
 die Existenz der Kennung in `spec/lastenheft.md` (eine verlinkte, erfundene
 Kennung bleibt grün), und Kennungen in Inline-Code-Spans bleiben ungeprüft.
-Die Beschreibungsspalte trägt deshalb **keine** Kennungen aus dem
+Die Beschreibungsspalte trägt deshalb **keine** Spec-Kennungen aus dem
 Doc-Kommentar (der Erzeuger entfernt sie): die Aussage steht über den
-`Ort`-Verweis auf die Testfunktion ohnehin an ihrer Quelle.
+`Ort`-Verweis auf die Testfunktion ohnehin an ihrer Quelle. **Nicht** entfernt
+werden Provenienz-Nennungen des Quelltextes — Register-Pfade und Verweise auf
+Planungsstellen; sie bleiben als Bestand stehen, der Erzeuger rät nicht, welche
+Wortformen das sind (Review F-3: die Spalte ist kennungsfrei gegenüber
+Spec-Kennungen, nicht gegenüber jedem Kennungs-artigen Wort).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -226,11 +231,11 @@ Runner; kein neues Skript, kein neues Binary).
       geprüft, nicht nur angenommen (der Slice verschärft kein bestehendes
       Gate; die `structure`-Regel ist eine Register-Invariante, keine neue
       Schwelle).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
       geprüft **von der Slice-Closure selbst**: die Roadmap führt derzeit keine
       offene Welle, es gibt also keine Welle-Closure, die sie einsammeln
       könnte (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose
@@ -259,7 +264,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Go-Hälfte liest **das Paket**, nicht nur die eigene Datei | Der Erzeuger parst alle `*.go` neben der Testdatei (Reihenfolge Datei, dann Quellzeile) | Eine `func TestE2E*` in einer zweiten Datei desselben Pakets fiele sonst still aus der Tabelle — dieselbe Klasse wie ein `-run`-Muster, das eine Funktion nicht trifft (`BEO-PGC/test-runner-stiller-ausschluss`), die dieser Slice sonst neu erzeugte |
 | Kurzbeschreibung: **erster Absatz, darin der erste Satz** | Satzende = erster Punkt außerhalb eines Inline-Code-Spans, dem Leerraum oder Textende folgt und dem keine Ziffer vorausgeht; danach Aufräum-Regeln für die Lücken, die entfernte Kennungen lassen | Der Plan ließ die Ableitung offen. Der Absatz-Bezug hält eine nummerierte Aufzählung aus der Zelle (eine reine Satzregel zöge den ersten Aufzählungspunkt mit herein); beide Regeln stehen als Kommentar am Erzeuger |
 | **Dritter Abbruch-Wächter**: unpaarige Inline-Code-Zeichen | Bricht der Doc-Kommentar bzw. die Kurzbeschreibung ein Backtick-Zeichen übrig, endet der Erzeuger sichtbar | Beim Bauen real gefeuert (der Kurzform-Tail wurde zunächst um ein Zeichen zu kurz entfernt): ein halbierter Span bleibt sonst stumm und formatiert den Rest der Zeile um |
-| Kurzform-Auflösung deckt **`` `NNN` ``-umschlossene** Nachbarnummern | `` `…-002`…`006` `` und `` `…-003`/`004` `` lösen auf; eine Einleitung ohne dreistellige Ziffernfolge ist eine Auslassung im Fließtext und bleibt stehen | Die real vorgefundenen Formen; ein Abbruch bei jeder Auslassung träfe auch Prosa |
+| Kurzform-Auflösung deckt **`` `NNN` ``-umschlossene** Nachbarnummern | `` `…-002`…`006` `` und `` `…-003`/`004` `` lösen auf; eine Einleitung **ohne jede** Ziffernfolge ist eine Auslassung im Fließtext und bleibt stehen; trägt sie eine Ziffernfolge, muss sie dreistellig sein — sonst bricht der Erzeuger sichtbar ab (`abdeckungsKurzform`) | Die real vorgefundenen Formen; ein Abbruch bei jeder Auslassung träfe auch Prosa |
 | Die `structure`-Regel ist die **achte** des Configs | Zählung folgt den vorhandenen Regel-Kommentaren; die Mindestbreiten binden an die Darstellung | Der Plan nennt keine Nummer |
 | `section-missing` bei fehlender Datei | Die Regel rotet, solange `docs/user/e2e-abdeckung.md` nicht im Baum liegt („Regel trifft keine Datei — das Gate liefe leer") | Real gemessen: die Datei muss committet sein, das Erzeugnis ist kein Nur-Lauf-Artefakt |
 | **Nicht-Realisierung** der Aussage über die fünfte `structure`-Regel | `harness/sensors/docs-check.md` trägt die Aussage „auskommentiert bis zur ersten Closure" **nicht** (gemessen mit `grep`); `.d-check.yml` führt dieselbe Regel bereits als „AKTIVIERT mit der ERSTEN Closure" | Der Plan nennt eine Aussage, die die Sensordoku nicht trägt; die Sensordoku nennt stattdessen **den Ist-Zustand aller `structure`-Regeln** — dieselbe Pflicht, anderer Träger |
@@ -323,7 +328,10 @@ dasteht.
   nur die Vorwärtsrichtung (*„die Tabelle behauptet eine Phase, die es nicht
   gibt"*); eine neue Runner-Phase, die niemand deklariert, fehlt still in der
   Tabelle — dieselbe Klasse, die `BEO-PGC/test-runner-stiller-ausschluss` für
-  die `-run`-Muster führt. — **Ausgang:** <bei Closure zuzuweisen>
+  die `-run`-Muster führt. — **Ausgang:** *weiter offen → Beobachtungs-Register*:
+  die Rückwärtsrichtung bleibt ungewächtert (eine neue Runner-Phase ohne
+  Deklaration fehlt still). Eingetragen als **zweiter Träger** in
+  `BEO-PGC/test-runner-stiller-ausschluss` (2×, unter der Schwelle).
 - **Kurzbeschreibungen gehen durch eine Normalisierung.** Der Doc-Kommentar
   einer Testfunktion nennt Kennungen (teils in Kurz- und Bereichsform) und
   trägt Inline-Code-Spans; roh in eine Tabellenzelle kopiert, kann sein Text
@@ -331,22 +339,37 @@ dasteht.
   dann meldet `ids` `id-unlinked`. Der Erzeuger entfernt Kennungen deshalb. Die
   Aussage, die nur im Kennungsverweis des Kommentars lag, steht danach nicht
   mehr in der Tabelle — erreichbar bleibt sie über die Spalte `Ort` an ihrer
-  Quelle. — **Ausgang:** <bei Closure zuzuweisen>
+  Quelle. — **Ausgang:** *entfallen — gestrichen mit Begründung*: die Gefahr
+  (unbalanced Spans, `id-unlinked`) ist nicht eingetreten — der Erzeuger
+  entfernt die Spec-Kennungen. Der verbleibende Rest (Provenienz-Wörter des
+  Quelltextes) ist die entschiedene Form und in §1 als Grenze benannt; die
+  Aussage selbst bleibt über `Ort` an ihrer Quelle erreichbar.
 - **Die Kurzformen der Doc-Kommentare.** Die E2E-Kommentare nennen Kennungen
   teils in Kurzform (`LH-FA-CAP-001`…`003` als Bereich, `LH-FA-CFG-003`/`004`
   als Nachbarnummern); der Erzeuger muss sie auflösen, sonst ist die Tabelle
   unvollständig. Die Antwort ist *sichtbarer Abbruch* statt Raten — ob sie
   alle im Repo benutzten Formen trägt, entscheidet der reale Lauf. —
-  **Ausgang:** <bei Closure zuzuweisen>
+  **Ausgang:** *entfallen — gestrichen mit Begründung*: der reale Lauf hat alle
+  vorgefundenen Formen aufgelöst (Bereich, Nachbarnummern, backtick-umschlossen;
+  vom Review und von der Verifikation unabhängig bestätigt), und eine nicht
+  auflösbare Form bricht **sichtbar** ab. Die Gefahr „die Tabelle ist still
+  unvollständig" kann damit nicht eintreten.
 - **`Ort` bindet an Quellzeilen.** Jede Änderung oberhalb einer Testfunktion
   verschiebt die Zeilennummer und damit den Diff der Datei; das ist gewollt
   (erzeugt, nicht handgepflegt), erzeugt aber einen Doku-Diff in PRs, die nur
-  Testcode ändern. — **Ausgang:** <bei Closure zuzuweisen>
+  Testcode ändern. — **Ausgang:** *entfallen — gestrichen mit Begründung*:
+  die Wirkung ist die entschiedene Form des Erzeugnisses (erzeugt, nicht
+  handgepflegt), kein unbeabsichtigter Nebeneffekt — und sie steht seit der
+  Fixrunde im Erzeugnis-Kopf (Review F-4). Sie ist damit benannt, wo sie
+  auftritt, und nicht mehr ein Risiko des Slice.
 - **Die Belege brauchen mehrere volle Compose-Läufe**, während ein anderer
   Vorgang parallel arbeitet; der Rot-Beleg (c) verlangt einen realen Eingriff
   in `test/integration/**` und seine reale Rücknahme. Ein Eingriff, der im
   Arbeitsbaum liegen bleibt, wandert in einen fremden Commit. — **Ausgang:**
-  <bei Closure zuzuweisen>
+  *entfallen — gestrichen mit Begründung*: die sechs realen Läufe
+  sind ohne Rest gefahren — vor jedem Commit war `git status --porcelain` leer,
+  und die Verifikation hat die Rücknahmen unabhängig bestätigt. Der Wächter ist
+  die stehende Prüfung vor dem Commit, nicht ein neues Werkzeug.
 
 ## 7. Closure-Notiz
 
@@ -365,24 +388,70 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure — erwartet: die drei neuen
-  `docs-check`-Grenzen sind benannte Spec-/Sensor-Grenzen, kein neuer Zähler;
-  verkörpert wird in diesem Slice nichts außerhalb von
-  `harness/sensors/docs-check.md`>.
-- **Beobachtungs-Register (`../observations/`):** <bei Closure — erwartet:
-  kein neues Verzeichnis; `evidence/slice-074.md` als **zweiter Träger** in
-  `BEO-PGC/test-runner-stiller-ausschluss` (die Deklarations-Hälfte der
-  Tabelle) **und** in `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (das
-  committete Erzeugnis ohne Sync-Sensor); Zähler dann je 2× — weiter unter der
-  Schwelle, Ausgang bleibt *weiter offen*. Präzedenz für den zweiten Träger:
-  slice-011 in `BEO-PGC/lese-doppelquelle`.>
+- **Was hat funktioniert:** die **Ableitung** hat die Zusage getragen — der
+  Zeilensatz entsteht aus dem Quelltext bzw. aus den Deklarationen, nicht aus
+  dem, was gelaufen ist; beide Drift-Richtungen sind damit per Konstruktion aus,
+  und Verifikation und Review konnten das Erzeugnis unabhängig reproduzieren
+  (jeweils gleicher `sha256` wie der committete Stand). Getragen hat ebenso die
+  Rollentrennung: der Reviewer hat die überdeckenden Zusagen und die
+  Normalisierungs-Grenze mit **eigenen** Messungen am gepinnten Image gefunden
+  (nicht aus der Modulbeschreibung geschlossen), und der Verifier hat einen
+  vollständigen `make test-integration` auf leerem Stand gefahren — dabei hat er
+  **meinen** Zählanspruch widerlegt (s. u.).
+- **Was ging anders als geplant:**
+  1. **Der Erzeugnis-Kopf ist eine zweite Änderungsursache** — in §6 nicht
+     vorhergesehen. Er ist mit der Fixrunde in den Kopf aufgenommen (Review F-4),
+     und die Wirkung trat im selben Commit real ein: drei Kopfzeilen im Runner
+     verschoben alle 24 Bash-`Ort`-Zellen um +3, die 13 Go-Zeilen blieben.
+  2. **Eine deklarierte Kurzbeschreibung kann ein Host-Kommando ausführen.** Der
+     erste reale Lauf führte über Backticks in einer doppelt gequoteten
+     Deklaration real `/usr/bin/GET` aus — ohne Fehlermeldung, sichtbar nur am
+     fehlenden Inline-Code im Erzeugnis. Behoben (escaped) und die Falle am
+     Helfer benannt; der Reviewer hat die Klasse auf Schwesterstellen geprüft und
+     keine gefunden. Diese Klasse stand nicht im Plan.
+  3. **Eine Doppelquelle, die der Plan trägt:** `abdeckung_render` bildet die
+     Kennungsform auf das Definitionsdokument ab — dieselbe Abbildung wie
+     `.d-check.yml` `ids.patterns`. Die Drift-Richtung ist gedeckt (`ids` färbt
+     falsche Links rot), aber erst **nach** einem erneuten Erzeugen: benannte
+     Grenze, kein stiller Zustand.
+  4. **Mein eigener Fehlschluss, zurückgenommen:** ich habe
+     `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` als mit diesem Slice die
+     3×-Schwelle erreichend angesetzt. Der Verifier hat das geprüft und
+     widerlegt — die Vorkommen dieser Klasse sind **Umfangs**-Fehler, hier lag
+     eine **verfallene** Adresse vor (beim Schreiben gültig, danach ohne Träger).
+     Das ist eine andere Klasse und wurde als eigener Eintrag
+     `BEO-PGC/aufschub-adresse-verfaellt` (1×) angelegt, nicht als dritter Beleg
+     dort gezählt.
+- **Steering-Loop-Eintrag:**
+  - *benannte Spec-/Sensor-Grenzen* (kein neuer Zähler): die neuen Grenzen in
+    `harness/sensors/docs-check.md` — kein Symbol-/Funktionsnamen-Check, die
+    zwei gemessenen `ids`-Grenzen (nur Link, nicht Existenz; Code-Spans
+    ungeprüft), `codepaths` aus (eigener Vorgang) und die deklarierte
+    Bash-Hälfte.
+  - *neuer Register-Eintrag:* `BEO-PGC/aufschub-adresse-verfaellt` (1×, offen) —
+    die verfallene Ereignis-Adresse, unterschieden von der Umfangs-Klasse.
+  - Verkörpert wird in diesem Slice nichts außerhalb von
+    `harness/sensors/docs-check.md`.
+- **Beobachtungs-Register (`../observations/`):** fortgeschrieben; kein neues
+  Verzeichnis außer dem oben genannten. `evidence/slice-074.md` liegt als
+  **zweiter Träger** in `BEO-PGC/test-runner-stiller-ausschluss` (die
+  Deklarations-Hälfte der Tabelle) **und** in
+  `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (das committete Erzeugnis ohne
+  Sync-Sensor) — je **2×**, weiter unter der Schwelle, Ausgang bleibt *weiter
+  offen*.
 - **Folge-Slices:** keine — die `codepaths`-Aktivierung ist in §1 als eigener
   **Vorgang** benannt (Gate-Verschärfung mit eigenem ADR-Pfad), nicht als
   Slice-Kennung zugesagt; eine Kennung, die es nicht gibt, wäre eine leere
   Adresse.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Randposten aus dem Review:** F-3 — die Beschreibungsspalte ist gegenüber
+  **Spec-Kennungen** kennungsfrei, nicht gegenüber jedem Kennungs-artigen Wort
+  (Register-Pfade, Verweis auf eine Planungsstelle); die Grenze steht in §1.
+  F-6 — das Erzeugnis hatte keinen lesenden Zug; `harness/README.md` §Sensors
+  nennt es jetzt in der Zeile der E2E-Kette, damit es auffindbar ist.
+- **Risiken aus §6:** alle fünf mit genau **einem** Ausgang — Risiko 1 *weiter
+  offen → Beobachtungs-Register* (`BEO-PGC/test-runner-stiller-ausschluss`,
+  zweiter Träger, 2×); die Risiken 2 bis 5 *entfallen, gestrichen mit
+  Begründung* (je in §6).
 - **Drei Paarungen:** hier geprüft — die Roadmap führt derzeit keine offene
   Welle, die Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
   `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
