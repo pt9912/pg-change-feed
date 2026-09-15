@@ -52,6 +52,16 @@ Betreiber-Oberfläche bringen: die drei fehlenden Umgebungsvariablen-Gruppen in
   `slice-071` (gRPC) und `slice-072` (HTTP/SSE) liefern die Wegwerf-Clients
   und die realen Belege; dieses Dokument beschreibt die *Oberfläche*, nicht
   die Testwerkzeuge.
+- **Verhaltensänderungen an den Listener-Starts** — dass ein gescheitertes
+  Binden eines HTTP- oder gRPC-Listeners nur **geloggt** wird und den Lauf
+  nicht beendet, ist die geltende Entscheidung; die Regel dieses Slice ist der
+  **Kommentar**, der das Gegenteil behauptet, nicht der Code. Der Kommentar
+  wird berichtigt (Review F-1), das Verhalten **nicht** — eine Umkehr wäre eine
+  eigene Entscheidung. **Nachtrag zum Plan:** diese Abgrenzung war in der
+  Fassung, mit der implementiert wurde, nicht ausgesprochen; der Implementer
+  hat den Fund deshalb als „eigenen Vorgang" gemeldet, und der Reviewer hat ihn
+  zu Recht als Finding **dieses** Slice zurückgegeben — der Kommentar ist der
+  Deklarationsort genau der Variablen, die §5 dokumentiert.
 - **Den dauerhaften Träger des Ausschlussstandes zu ändern** — der Stand ist
   seit `slice-075` dauerhaft: der Prozessstart leitet ihn aus den
   `applied`-Zeilen der Spalten-Antragsarten ab
@@ -83,6 +93,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und
       `CDC_GRPC_ADDR` — je mit Aktivierungs-/No-Op-Semantik, geprüft gegen
       `internal/bootstrap/wiring.go` (nicht aus dem Gedächtnis).
+- [ ] **Der Deklarationsort trägt die beschriebene Semantik:** die
+      Kommentar-Aussage zu `CDC_GRPC_ADDR` deckt sich mit dem Verhalten (Log
+      statt `Run`-Fehler) — und **dieselbe Behauptung** steht nicht an anderer
+      Stelle derselben Datei. Träger: Review F-1; dieselbe Klasse wie
+      `review-slice-070` F-2, dort an einem anderen Block derselben Datei.
 - [x] §4 trägt den Aufgaben-Abschnitt „Spalte vom Ausschluss konfigurieren"
       (`cdc.exclude_column`/`cdc.include_column`, Antrags-Queue mit
       `status = 'applied'`-Poll wie bei `cdc.enable_table`) samt dem
