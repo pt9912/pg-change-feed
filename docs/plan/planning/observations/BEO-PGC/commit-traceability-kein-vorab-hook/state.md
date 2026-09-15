@@ -1,5 +1,5 @@
 Zustand: **geplant** — Ausgang: **geplant** → Folge-Slice `slice-073`
-(`docs/plan/planning/open/slice-073-commit-msg-git-hook.md`), Architect-Verdikt
+(`slice-073`, Architect-Verdikt
 `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md`,
 gegengeprüft und in der ADR-Frage korrigiert durch
 `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md`
