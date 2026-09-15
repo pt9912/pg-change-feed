@@ -210,9 +210,9 @@ Schnitt entsteht hier):
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driven/postgresstorage/sqlexec/**` (`seam.go`, `statement.go`, `errors.go`, `translate.go`) | neu | die Naht selbst — `Executor`/`DB` mit minimalem `Rows` — plus die von ihr getragene Zeilen-Übersetzung und Fehlerklassifikation. Die Naht liegt **außerhalb** der drei DB-Pakete und damit im Gegenstand des Unit-Gates (`ADR-0071` Punkt 5) |
+| `internal/adapters/driven/postgresstorage/sqlexec/**` (`seam.go`, `statement.go`, `errors.go`, `translate.go`) | neu | die Naht selbst — `Executor`/`DB` (`Query`/`Exec`/`QueryRow`; Zeilen als **`pgx.Rows`**, §1) — plus die von ihr getragene Zeilen-Übersetzung und Fehlerklassifikation. Die Naht liegt **außerhalb** der drei DB-Pakete und damit im Gegenstand des Unit-Gates (`ADR-0071` Punkt 5) |
 | die sechs pool-tragenden Adapter-Dateien (`store`, `consumerstate`, `heartbeat`, `tableactivation`, `schemastore`, `administrationrequest`) · `schema.go` | refactor | sie hängen an `sqlexec.DB`/`sqlexec.Executor` statt an `*pgxpool.Pool`; `sqlexec.Classify`/`IsAbsent` ersetzen die inline gebildete Fehlerklasse und `errors.Is(err, pgx.ErrNoRows)` |
-| `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | neu | Fakes (`Rows`/`Row`/`Executor`) + die Fälle Erfolg · Fehlerklasse · Leerfall; **kein** Ersatz der realen DB-Tests |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | neu | Fakes (`pgx.Rows`/`pgx.Row`/`Executor`) + die Fälle Erfolg · Fehlerklasse · Leerfall; **kein** Ersatz der realen DB-Tests |
 | `tools/harness/db-coverage.sh` · `harness/mk/coverage.mk` | update | die beiden Zahlen der Neu-Bemessung aus `ADR-0077`: `DB_COVERAGE_THRESHOLD` 75 → 70, `THRESHOLD` 65 → 70. Die Endstufen bleiben 80 |
 | `harness/sensors/db-adapter-coverage.md` · `harness/sensors/coverage-gate.md` · `harness/README.md` §Sensors · `AGENTS.md` §4 | update | sie tragen die geltenden Stufen und die Rampe; ohne sie stünde die Zahl im Werkzeug und eine andere in der Bindung |
 
