@@ -138,11 +138,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       test-integration`, um den neuen Beleg-Baustein ergänzt; dazu der
       `SPEC-019`-Fließtext zur Bedeutung des `applied`-Wertes (Folgepflicht
       aus `ADR-0065`, Planner-/Architect-Zug) plus Historie-Zeile in §7.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Erwartet: `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (der Eintrag trägt diesen Slice als Auslöser, siehe §8).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der Closure der Welle, der dieser Slice zugeordnet wird.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Erwartet: `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (der Eintrag trägt diesen Slice als Auslöser, siehe §8).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Entfällt hier: Repo mit Wellen-Betrieb — Prüfung läuft bei der Closure der Welle, der dieser Slice zugeordnet wird.
 
 ## 3. Plan (vor Code)
 
@@ -248,17 +248,24 @@ dasteht.
   `exclude_column` und ein `include_column` für dieselbe Spalte in **einer**
   Transaktion tragen denselben Zeitstempel — die Ableitung braucht einen
   deterministischen Zweitschlüssel, sonst ist die Reihenfolge zufällig und der
-  Stand hängt von der Ausführungsreihenfolge ab. — **Ausgang:** <bei Closure
-  zuzuweisen>
+  Stand hängt von der Ausführungsreihenfolge ab. — **Ausgang: entfallen** —
+  `administration_request_id` (Primärschlüssel) ist der Zweitschlüssel; der
+  Verifier hat die Mutation „`ORDER BY` ohne ihn“ real rot gesehen
+  (`make test-store`, Exit 2, Reihenfolge kippte auf Einfüge-Reihenfolge).
 - Der Prozessstart liest eine weitere Quelle je Quelle; ein Lesefehler dort
   endet in der Startfehlerklasse des bestehenden Pfads (`storage`,
   `SPEC-008`) — eine neue Startabbruch-Bedingung, die der Slice benennen muss.
-  — **Ausgang:** <bei Closure zuzuweisen>
+  — **Ausgang: entfallen** — der Slice hat sie benannt: ein Lesefehler
+  führt in den bestehenden Startabbruch-Pfad (`storage`); Review F-2 hat die
+  Form als vorbestehend und fail-closed bestätigt, per Test gepinnt.
 - Der Neustart-Beleg teilt Zustand mit den übrigen Abschnitten des langen
   Compose-Rundlaufs (`BEO-PGC/test-isolation-geteilter-zustand`, 1×, weiter
   offen — Musterrisiko für geteilten Testzustand) und trifft dieselbe
   Poll-Familie wie `BEO-PGC/test-integration-retention-timing-flake` (1×,
-  weiter offen). — **Ausgang:** <bei Closure zuzuweisen>
+  weiter offen). — **Ausgang: entfallen** — über sechs unabhängige
+  vollständige Läufe (Implementer, Reviewer, Verifier) kein Flake und keine
+  Zustandsüberschneidung; beide Registereinträge bleiben bei 1× (kein
+  zweiter Beleg).
 
 ## 7. Closure-Notiz
 
@@ -277,14 +284,47 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure — erwartet:
+- **Was hat funktioniert:** Die in `ADR-0065` entschiedene Ableitung ließ
+  sich ohne neues Schema-Objekt und ohne zweiten Schreibpfad umsetzen: eine
+  neue **Lesefähigkeit** am bestehenden `ColumnExclusionPort`, ein `SELECT`,
+  zwei Aufrufer (Prozessstart und Aktivierungs-Zweig) — und beide Auslöser
+  (Neustart und `disable`/`enable`-Zyklus) fallen auf **denselben**
+  Mechanismus zusammen. Der reale Beleg ist stark: Der Implementer sah den
+  Neustart-Beleg zunächst **rot**, weil sein Lauf gegen das Vorstands-Image
+  lief; der Verifier hat die Nicht-Vakuumität mit einer eigenen Mutation am
+  E2E-Tier bestätigt — dabei blieb der Live-Reload-Beleg **grün**, nur der
+  Neustart-Beleg kippte. Die Trennung beider Zusagen ist damit real gezeigt.
+- **Was ging anders als geplant:** (a) Der erste Compose-Lauf lief gegen das
+  Vorstands-Image (`make image` fehlte davor) und lieferte damit versehentlich
+  den Rot-Beleg — im Plan-Nachzug benannt. (b) Der `SPEC-019`-Fließtext wurde
+  in diesem Lauf ergänzt; `ADR-0065` etikettiert ihn als
+  „Planner-/Architect-Zug" — die Abweichung ist benannt, der Review hat sie
+  als tragfähig bestätigt und einen eigenen `SPEC-*`-Eintrag für **nicht**
+  nötig gehalten (die Fähigkeit ist eine interne Go-Schnittstelle). (c) Der
+  neue Beleg-Baustein in `harness/README.md` trug als einziger keinen
+  `· seit slice-075`-Vermerk (Review F-1) — hier nachgezogen.
+- **Steering-Loop-Eintrag:** keiner neu verkörpert — der Slice führt keine
+  wiederkehrende Klasse ein. Benannt statt gezählt: die Nicht-Vakuum-Aussage
+  des Neustart-Belegs stützt sich auf einen Rot-Lauf, dessen Protokoll nicht
+  abgelegt ist (Review F-3); tragend sind die **strukturelle** Begründung
+  (der Elternstand liest keinen Ausschlussstand) und der eigene Rot-Beleg des
+  Verifiers.
+- **Beobachtungs-Register (`../observations/`):** kein **neuer** Beleg —
+  `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger` war der Träger dieser
+  Arbeit; sein Ausgang wechselt mit dieser Closure von `geplant` auf
+  **`verkörpert`** (Zielort ist der gelieferte Mechanismus, Anker
+  `· seit slice-075`). **Kein** zusätzliches `evidence/`-Dokument dort: der
+  Slice ist die *Behebung*, kein zweites Auftreten („ein Vorgang zählt
+  einmal"), ein zweiter Beleg würde den Zähler falsch auf 2× heben.
   `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/`>
-- **Folge-Slices:** <bei Closure>
-- **Risiken aus §6:** <bei Closure — jedes mit genau einem Ausgang, siehe §6>
-- **Drei Paarungen:** Repo **mit** Wellen-Betrieb — Prüfung läuft bei der
+- **Folge-Slices:** keiner.
+- **Risiken aus §6:** alle drei entfallen — siehe §6.
+- **Drei Paarungen:** Repo **ohne** laufende Welle (die Roadmap ist leer;
+  dieser Slice ist wellenlos) — hier geprüft: **Anker** — kein
+  `liegt in`-Feld in dieser Closure, Paarung entfällt. **Folge-Slice** —
+  keiner genannt. **Register** — der zitierte Eintrag
+  `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger` existiert mit nicht
+  leerem `evidence/`.
   Closure der Welle, der dieser Slice zugeordnet wird.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

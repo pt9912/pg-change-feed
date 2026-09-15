@@ -233,7 +233,7 @@ läuft grün (582 Dateien, 0 Befunde). Die **vorbestehende** Lücke — `cdc.exc
 `cdc.include_column` kommen im Handbuch nicht vor — bleibt bestehen und ist
 **kein** Finding dieses Laufs: sie ist der Beleg `evidence/slice-066.md` des
 bereits bei 3× verkörperten Eintrags
-`BEO-PGC/handbuch-nachgezogen-bei-neuer-betreiber-oberflaeche` mit
+`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` mit
 Remediation-Träger `slice-077`; hier ein zweiter Beleg wäre doppelte Zählung
 derselben Klasse für eine Oberfläche, die der Diff nicht anfasst.
 
