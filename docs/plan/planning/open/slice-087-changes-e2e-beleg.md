@@ -20,7 +20,7 @@ den dieser Slice erweitert) · [`LH-FA-SST-006`](../../../../spec/lastenheft.md)
 **Berührte Spec-Stellen:** — (dieser Slice baut einen **Beleg**; er ändert
 keinen Vertrag).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-15.
 
