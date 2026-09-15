@@ -34,9 +34,9 @@ type call struct {
 	args []any
 }
 
-// fakeRows erfüllt `pgx.Rows` (und damit `sqlexec.Rows`) aus Werten im
-// Speicher. `scanErrs` trägt je Zeilenindex einen Scan-Fehler, `iterErr` den
-// Iterations-Fehler (`rows.Err()`).
+// fakeRows erfüllt `pgx.Rows` aus Werten im Speicher. `scanErrs` trägt je
+// Zeilenindex einen Scan-Fehler, `iterErr` den Iterations-Fehler
+// (`rows.Err()`).
 type fakeRows struct {
 	rows     [][]any
 	scanErrs map[int]error
@@ -725,4 +725,4 @@ func TestRegisterConsumerClassifiesExecFailure(t *testing.T) {
 // Fake-Seite dagegen.
 var _ sqlexec.Executor = (*fakeExecutor)(nil)
 
-var _ sqlexec.Rows = (*fakeRows)(nil)
+var _ pgx.Rows = (*fakeRows)(nil)

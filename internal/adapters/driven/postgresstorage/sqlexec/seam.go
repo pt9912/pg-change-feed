@@ -15,16 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Rows trägt die minimale Lese-Fläche einer Ergebnis-Menge: genau die vier
-// Aufrufe, die die Übersetzungen dieses Pakets brauchen. `pgx.Rows` erfüllt
-// sie strukturell — ein Träger dieser Naht braucht nicht mehr als diese vier.
-type Rows interface {
-	Next() bool
-	Scan(dest ...any) error
-	Err() error
-	Close()
-}
-
 // Executor trägt die Ausführungs-Fläche der Adapter: eine Ergebnis-Menge
 // absetzen, eine einzelne Zeile lesen, eine Anweisung ausführen. Die
 // Methodensignaturen sind die des realen Pools — `*pgxpool.Pool` erfüllt sie
