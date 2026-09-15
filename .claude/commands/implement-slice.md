@@ -247,6 +247,20 @@ Hier endet die Implementation. Die übrigen Rollen laufen in **getrennten Kontex
     Folge-Slice mit ID · *entfallen* → gestrichen **mit Begründung** · *weiter offen* → wandert ins
     Beobachtungs-Register (Schritt 25). Ein Slice geht nicht nach `done/`, während ein Risiko ohne
     Ausgang dasteht.
+    **§7-Vorlagenrest beim Füllen entfernen · seit welle-19**
+    (`BEO-PGC/vorlagenrest-in-closure-notiz`, 4×; mechanisch getragen durch die
+    `structure`-Regel auf `done/slice-*.md` §7 in `.d-check.yml`): Die §7 wird aus
+    der Vorlage kopiert und behält deren Guidance für die Anker-Zeile — die
+    Teil-Zeile `— liegt in …`, die `Auslöser:`-Platzhalter-Zeile und den kursiven
+    Ausfüll-Hinweis. Wird mit dem Slice nichts verkörpert (der Normalfall), fällt
+    die Guidance **ersatzlos** weg; nur eine echte Verkörperung trägt
+    `— liegt in <Zielort>` mit Herkunfts-Anker. Kandidatenlauf vor dem `git mv`,
+    auf dem **rohen** Text (die `structure`-Regel liest den bereinigten, in dem
+    Backtick-Spans geleert sind):
+    `grep -nE 'Wurde mit diesem Slice nichts verkörpert|Auslöser: .BEO-<NNN>|— liegt in .<' <slice-datei>`
+    — jeder Treffer in §7 wird ersatzlos entfernt oder zu einem echten Zielort gefüllt.
+    **Grenze (wie oben):** derselbe schreibende Kontext, erste, nicht tragende
+    Linie; die tragende ist die `structure`-Regel (`.d-check.yml`).
 25. **Das Beobachtungs-Register fortschreiben** (`docs/plan/planning/observations/`, Modul 6) —
     der **Schreib**-Schritt, und er hängt an der Closure, nicht an der Implementation. Für jede
     Beobachtung aus der Closure-Notiz: führt das Register die Klasse schon, dann die vorhandene
