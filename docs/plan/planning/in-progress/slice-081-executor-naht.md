@@ -230,6 +230,11 @@ und PostgreSQL-Images; Läufe dieses Zugs, Exit-Codes ungepiped):
 | DB-Adapter-Gegenstand | 788 (593 gedeckt, 75,25 %) | 650 (477 gedeckt, 73,38 %) | **−138** |
 | Summe (Lesehilfe) | 2467 | 2481 | +14 |
 
+Die **gedeckte Zahl** des Unit-Gegenstands schwankt lauf-zu-lauf um wenige
+Statements (beobachtet ±2; ein `ctx`-abhängiger Pfad in
+`grpcstream/broadcaster.go` — hier 1306, im `make gates`-Lauf desselben Zugs
+1308); Nenner (1831) und Abstand zur Schwelle sind davon unberührt.
+
 **(a) Ankunft.** Der abfließende Gegenstand verliert `k_ab` **138** Statements
 (`postgresstorage` 610 → 472; je Baum netzlos gemessen), der aufnehmende wächst
 um `k_auf` **152** (`1679 → 1831`). `k_auf ≥ k_ab` ist erfüllt; die Differenz

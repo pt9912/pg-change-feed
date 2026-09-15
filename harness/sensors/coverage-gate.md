@@ -53,7 +53,11 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   jede Testbinary instrumentiert mit `-coverpkg` den ganzen Gegenstand, im
   gemergten Profil kommt dieselbe Block-Position darum mehrfach vor. „Gedeckt“
   heißt, dass **mindestens ein** Vorkommen `count > 0` trägt (dedupliziert:
-  1831 Statements, davon 1306 gedeckt = 71,33 %).
+  1831 Statements, davon 1306 gedeckt = 71,33 %). Die **gedeckte** Zahl
+  schwankt lauf-zu-lauf um wenige Statements (beobachtet ±2; ein
+  `ctx`-abhängiger Pfad in `internal/adapters/driven/grpcstream/broadcaster.go`
+  — `Publish` mit bereits beendetem `ctx`); der Nenner und der Abstand zur
+  Schwelle sind davon unberührt.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
   hier `71.3%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
