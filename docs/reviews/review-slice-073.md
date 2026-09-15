@@ -78,7 +78,7 @@ ist Rollen-Arbeit eines anderen Kontexts und **nicht** Teil des Gegenstands.
 - `klasse`: „Abweichung von einer Accepted-ADR ohne Folge-ADR — Träger ist ein
   Zeitdokument statt der Entscheidung"
 
-### F-2 — „Spiegelt exakt" ist gemessen unwahr: der Hook ist in vier belegten Klassen laxer als das Modul, und er kann grün melden, während das Gate rot färbt
+### F-2 — „Spiegelt exakt" ist gemessen unwahr: der Hook lässt in drei belegten Klassen durch, was das Standing-Gate danach verwirft
 
 - `kategorie`: HIGH
 - `quelle`: [`ADR-0062`](../plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
@@ -100,26 +100,28 @@ ist Rollen-Arbeit eines anderen Kontexts und **nicht** Teil des Gegenstands.
   gesamte Message" mit „der Hook darf die ganze Datei greppen" gleich; das
   Modul liest die **bereinigte** Message (alles ab der ersten
   scissors-Zeile `^#.*>8` und jede `#`-Zeile entfällt), der Hook die **rohe**
-  Datei, und für die Ausnahme liest das Modul die erste Zeile der bereinigten
-  Message wörtlich, der Hook die erste nicht-leere, nicht-`#`-Zeile ohne
-  führenden Whitespace. Am gepinnten Image gemessen (`--commit-msg` auf genau
-  die rohe Datei, die der Hook sieht) ergeben sich vier Klassen, in denen der
-  Hook grün ist und das Standing-Gate rot färbt — eine davon an einem **real
-  abgeschlossenen Commit** (`git commit -v`, die Kennung steht nur im
-  Verbose-Diff; Commit angelegt mit Exit 0, `commit-untraceable` bei
-  `make commit-traceability`): (a) Kennung nur in einer `#`-Kommentarzeile,
-  (b) Kennung nur hinter der scissors-Zeile/im Verbose-Diff, (c) Leerzeile vor
-  einem `Merge …`-Betreff (Modul-Betreff `""` → keine Ausnahme, der Hook nimmt
-  aus), (d) `SPEC-*` auf der Fortsetzungszeile des ersten Absatzes (git's `%s`
-  fügt den Absatz zusammen, der Shell-Sensor färbt rot, der Hook sieht nur die
-  erste Zeile). Die Richtung ist in allen gemessenen und analysierten Fällen
-  **laxer**; ein Fall, in dem der Hook einen Commit zurückweist, den das Gate
-  zulässt, wurde nicht gefunden — die Zusage der §3-Zelle trägt also, die
+  Datei — die Differenz ist genau der Kommentar-/scissors-Bereich. Am
+  gepinnten Image (`--commit-msg` auf genau die rohe Datei, die der Hook
+  sieht) und an je einem **realen Commit mit aktivem Hook**
+  (`core.hooksPath .githooks`, Commit angelegt mit Exit 0, das Gate danach
+  rot) sind drei Klassen belegt: (a) Kennung nur in einer `#`-Kommentarzeile
+  (`git commit -m '<Betreff>' -m '# ADR-…'`, die Zeile bleibt unter git's
+  Default-Cleanup `whitespace` in der gespeicherten Message, das Modul
+  bereinigt sie weg); (b) Kennung nur hinter der scissors-Zeile
+  (`git commit -v` bzw. `-F <datei> --cleanup=scissors` — das Modul bricht am
+  Cleanup an der scissors ab); (c) `SPEC-*` auf der Fortsetzungszeile des
+  ersten Absatzes (git's `%s` fügt den Absatz zusammen, der Shell-Sensor
+  färbt rot, der Hook sieht nur die erste Zeile). In allen drei Klassen ist
+  der Hook grün und `make commit-traceability` rot. Die Richtung ist in allen
+  belegten Klassen **laxer**; ein Fall, in dem der Hook einen Commit
+  zurückweist, den das Gate zulässt, wurde weder real noch im
+  Modul-Message-Modus gefunden — die Zusage der §3-Zelle trägt also, die
   ADR-Formulierung „exakt" und die README-Zeile „denselben Verstoß" nicht.
 - `verifizierbar`: ja — `make commit-traceability` bzw. `make gates` über die
-  betroffene Range; die vier Klassen sind per `docker run … --commit-msg
-  <rohe Message-Datei>` am gepinnten Image (Digest aus `d-check.mk`)
-  reproduzierbar, Klasse (b) zusätzlich als realer Commit mit `git commit -v`.
+  betroffene Range; alle drei Klassen sind als realer Commit mit aktivem Hook
+  reproduzierbar (keine Umgehung des Hooks nötig) und zusätzlich per
+  `docker run … --commit-msg <rohe Message-Datei>` am gepinnten Image
+  (Digest aus `d-check.mk`) isoliert.
 - `klasse`: „Spiegelung ist Approximation — belegte Divergenz-Klasse zwischen
   lokalem Hook und dem Modul, das die Regel trägt"
 
@@ -183,8 +185,8 @@ nein.** Drei getrennte Fragen, drei Antworten:
   `§1`/DoD-Zeile 2 des Plans brauchen danach denselben Nachzug, den §3
   bekommen hat.
 - *Trägt die Aufteilung technisch?* **Nein, nicht als „exakt"** — die
-  Betreff/Ganze-Datei-Teilung löst genau ein Divergenz-Muster ab und lässt
-  vier andere stehen (F-2). Der Kern: das Modul liest die **bereinigte**
+  Betreff/Ganze-Datei-Teilung löst genau ein Divergenz-Muster ab (die Kennung
+  im Body) und lässt drei andere stehen (F-2). Der Kern: das Modul liest die **bereinigte**
   Message, der Hook die **rohe** Datei; die Teilung „positive Hälfte = ganze
   Datei, Grenz-Hälfte = Betreff" beschreibt den Unterschied nicht.
 
@@ -260,36 +262,52 @@ der Prüfung stand (Urteil 2); die DoD-Zeile 2 formuliert allerdings weiterhin
 „im Betreff" und beschreibt damit nach dem §3-Nachzug nicht mehr, was der Hook
 tut (F-1).
 
-**8. Zusatz-Hypothese zum Modul `commits` (Quelltext-Lesung) — im Kern
-bestätigt, mit Folgen für §6.** Die drei vermuteten Divergenzklassen habe ich
-nicht geglaubt, sondern am **gepinnten Image** gemessen, und zwar mit dem
-Message-Modus des Moduls auf genau die rohe Datei, die der Hook liest
-(`--commit-msg`; das Image kennt den Modus, `--help` weist ihn als
-„Modul commits: eine Commit-Message aus <datei>" aus):
+**8. Zusatz-Hypothesen zum Modul `commits` (Quelltext-Lesung) — zwei
+bestätigt, eine widerlegt; Folgen für §6.** Die vermuteten Divergenzklassen habe ich nicht übernommen,
+sondern am **gepinnten Image** (Message-Modus `--commit-msg` auf genau die
+rohe Datei, die der Hook liest; das Image kennt den Modus, `--help` weist ihn
+als „Modul commits: eine Commit-Message aus <datei>" aus) **und** an realen
+Commits in einem Wegwerf-Repository (`/tmp/review073/repo`, **nicht** dieser
+Baum) mit **aktivem** Hook gemessen — die Kurz-`sha`s der Tabelle gehören
+diesem Wegwerf-Repository:
 
-| rohe Message | Hook | Modul `--commit-msg` | Klasse |
-|---|---|---|---|
-| Kennung nur hinter der scissors-Zeile/im Verbose-Diff | 0 | 1 (`commit-untraceable`) | H1 |
-| Kennung nur in einer `#`-Kommentarzeile | 0 | 1 (`commit-untraceable`) | H1 |
-| Leerzeile, dann `Merge branch 'x'` | 0 | 1 (Betreff `""`, keine Ausnahme) | H2 |
-| Kennung im Body, Betreff ohne Kennung | 0 | 0 | Implementer-Messung |
-| gar keine Kennung | 1 | 1 | Deckung |
+| Fall | Hook | Modul `--commit-msg` | Gate (Range) am realen Commit | Ergebnis |
+|---|---|---|---|---|
+| Kennung nur in einer `#`-Kommentarzeile | 0 | 1 | 1 — `commit-untraceable`, Commit-Exit 0 | Divergenz, real erreichbar |
+| Kennung nur hinter der scissors-Zeile/im Verbose-Diff | 0 | 1 | 1 — `commit-untraceable`, Commit-Exit 0 | Divergenz, real erreichbar |
+| Leerzeile vor `Merge branch 'x'` (Default-Cleanup) | 0 | 1 | **0** — git strippt die Leerzeile, `%s` = `Merge branch 'x'` | **widerlegt** (s. u.) |
+| Leerzeile vor `Merge branch 'x'` (`--cleanup=verbatim`) | 0 | 1 | 1 | Randfall **zugunsten** des Hooks |
+| Kennung im Body, Betreff ohne Kennung | 0 | 0 | 0 | Implementer-Messung bestätigt |
+| gar keine Kennung | 1 | 1 | 1 | Deckung |
+| `ADR-045` · `LH-FA-CFG-005.a` · `LH-FA-CFG-5` · `LH-QA-POR-001` | = | = | = | Muster-Äquivalenz, kein Befund |
 
-H1 und H2 treffen damit zu; H3 trifft in der gemessenen Form (d) zu — der
-Hook benutzt für beide Hälften dieselbe Betreff-Variable, und für die
-Grenz-Hälfte weicht sie von `git log --format='%s'` ab, für die positive
-Hälfte von der bereinigten Message des Moduls. **Zur Folge für §6:** die dort
-als „weiter offen" geführte Doppel-Implementierung ist damit nicht mehr nur
-das von `ADR-0062` §Konsequenzen bewusst akzeptierte Restrisiko — sie ist
-**belegt divergierend**, ohne dass eine der beiden Seiten geschärft wurde.
-`ADR-0062` §Re-Evaluierungs-Trigger (b) („der Hook und das Standing-Gate
-weichen real auseinander") ist damit faktisch eingetreten und braucht beim
-Trigger-Audit der Closure einen Ausgang (Vereinheitlichung oder Rückbau als
-Folge-ADR, Modul 6 §Trigger-Audit). Die *Härte* dieses Ergebnisses bleibt
-benannt: alle gemessenen Abweichungen laufen in die **laxe** Richtung, kein
-Fall weist einen Commit zurück, den das Gate zulässt — die §3-Zusage des
-Implementers trägt, die Wirkung des Hooks als Frühwarnung ist in diesen
-Klassen aber null.
+Zwei Divergenzklassen (Kommentarzeile · scissors/Verbose-Diff) treffen damit
+zu und sind an realen Commits erreichbar; die dritte vermutete (Leerzeile vor
+`Merge …`) ist im Default-Pfad **widerlegt**, und wo sie auftritt
+(`--cleanup=verbatim`, ein ausdrückliches „nicht bereinigen"), ist der Hook
+**git-treuer** als das Modul: git selbst setzt den Betreff auf
+`Merge branch 'x'`, ein Delegieren an den `--commit-msg`-Modus hätte diesen
+Commit fälschlich verworfen. Diese Klasse steht deshalb **nicht** als Finding,
+sondern als benannter Randfall **zugunsten** des Hooks. Die
+Subjekt-Variablen-Frage (eine Variable, zwei nötige Semantiken) bleibt als
+Mechanismus bestätigt, mit einem zusätzlichen Effekt **zuungunsten** des
+Hooks: `SPEC-*` auf der Fortsetzungszeile des ersten Absatzes (Realfall
+`521716b` desselben Wegwerf-Repositories, s. Klasse (c) in F-2). Die Regexe des Hooks sind zu den
+`id-patterns`/dem `exempt-pattern` des Moduls äquivalent — Stichproben in
+beiden Richtungen mit identischen Exit-Codes.
+
+**Zur Folge für §6:** die dort als „weiter offen" geführte
+Doppel-Implementierung ist nicht mehr nur das von `ADR-0062` §Konsequenzen
+bewusst akzeptierte Restrisiko — sie ist **belegt divergierend**, ohne dass
+eine der beiden Seiten geschärft wurde, und zwar auf drei real erreichbaren
+Pfaden. `ADR-0062` §Re-Evaluierungs-Trigger (b) („der Hook und das
+Standing-Gate weichen real auseinander") ist damit faktisch eingetreten und
+braucht beim Trigger-Audit der Closure einen Ausgang (Vereinheitlichung oder
+Rückbau als Folge-ADR, Modul 6 §Trigger-Audit). Die *Härte* des Ergebnisses
+bleibt benannt: die Abweichungen laufen in die **laxe** Richtung, die Zusage
+der §3-Zelle („weist keinen Commit zurück, den das Standing-Gate zulässt")
+ist in keinem Fall gebrochen — der Preis ist die Wirkung des Hooks als
+Frühwarnung in genau diesen Klassen.
 
 ---
 
@@ -337,7 +355,7 @@ Modul, das die Regel trägt" · „Nachweis ohne Isolierung der geprüften Hälf
 **Merge-blockierend:** ja — zwei HIGH. Beide hängen an **derselben** Stelle,
 `ADR-0062` §Entscheidung Punkt 3, aber an verschiedenen Hälften: F-1 an ihrem
 Wortlaut (positive Hälfte „im Betreff" vs. ganze Message-Datei), F-2 an ihrer
-Behauptung („spiegelt exakt" — vier gemessene Divergenzklassen). Was **nicht**
+Behauptung („spiegelt exakt" — drei belegte Divergenzklassen, s. Urteil 8). Was **nicht**
 blockiert und ausdrücklich bestätigt bleibt: der Hook ist
 nicht-durchsetzend in jeder geprüften Hinsicht (Urteil 4), er ersetzt das
 Standing-Gate nicht, er ruft kein Docker, er lässt sich per `--no-verify`
@@ -353,7 +371,7 @@ ist ausgeschlossen. Der nächste Zug ist der **Architect** mit den Verdikten 2
 oder 3 (Folge-ADR bzw. Nachtrag zu `ADR-0062` Punkt 3, plus Plan-Nachzug in
 §1 und DoD-Zeile 2) — erst danach entscheidet sich, ob der Implementer die
 Hälften-Semantik nachziehen muss (falls das Verdikt die „exakte" Spiegelung
-aufrechterhält, sind die vier Klassen aus Urteil 8 der Auftrag). F-3 und F-4
+aufrechterhält, sind die drei Klassen aus F-2/Urteil 8 der Auftrag). F-3 und F-4
 sind isoliert und brauchen keinen Rückgabe-Pfeil; sie gehen mit diesem Report
 in die Closure.
 
@@ -376,6 +394,8 @@ Konformität prüft der Verifier separat (Modul 11).
 | vier Hook-Nachweise (eigene) | 1 / 1 / 0 / 0 | Wegwerf-Repository `/tmp/review073/repo`; s. Urteil 2 |
 | drei Mutationen (eigene) | 1→0 / 1→0 / 0→1 | Kopien des Skripts; s. Urteil 3 |
 | `--commit-msg`-Messungen am Image | 1 / 1 / 1 / 0 / 1 | Urteil 8; rohe Message-Dateien, Digest `sha256:18e9cd85…` aus `d-check.mk` |
+| drei Divergenzklassen (eigene, mit **aktivem** Hook) | Commit 0 / Gate 1 (je) | Wegwerf-Repository: (a) `2c362ff` (b) `d1b4b32` (c) `521716b`; je Hook grün, das Gate danach rot |
+| „Leerzeile vor `Merge …`" Default vs. `--cleanup=verbatim` | Commit 0 / 0 | Wegwerf-Repository: `7c85cd6` Gate 0 (H2 widerlegt) · `b0dc4dc` Gate 1 nur unter `verbatim` |
 | `git commit --no-verify` bzw. Repo ohne `core.hooksPath` | 0 / 0 | Urteil 4 (Umgehungsweg und Opt-in) |
 
 Kein Lauf dieses Reports hat den Arbeitsbaum verändert (Messungen und
