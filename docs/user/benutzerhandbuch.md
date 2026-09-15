@@ -720,6 +720,50 @@ einen Empfänger an.
 über [Änderungen lesen](#änderungen-lesen) und die bestätigte
 Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar.
 
+### Zugriff über das NATS-Wecksignal
+
+Anders als die drei Abschnitte zuvor ist dieser Zugriffsweg **signal-tragend**,
+nicht **daten-tragend**: man *bekommt* hier keine Änderung, man *erfährt*, dass
+man nachsehen muss. Wer die Nachricht wie einen Datenstrom liest und Inhalt in
+ihr erwartet, benutzt sie falsch.
+
+**Erreichbarkeit:** optional über `CDC_NATS_URL`; ungesetzt bleibt das Feature
+vollständig deaktiviert — keine NATS-Verbindung, unverändertes
+Bestandsverhalten. Anders als `CDC_HTTP_ADDR` ist eine **gesetzte** URL eine
+**Start-Vorbedingung** des Feed-Containers: schlägt die Verbindung fehl, startet
+der Prozess nicht (Fehlerklasse `configuration`, siehe
+[Konfiguration](#5-konfiguration)). Eine gesetzte HTTP-Adresse ist das nicht.
+
+**Das Subjekt:** Ein Wecksignal wird je Transaktion und distinkter berührter
+Tabelle auf dem tabellen-granularen Subjekt
+`cdc.changes.<source_id>.<schema>.<table>` publiziert — `<source_id>` ist die
+konfigurierte `CDC_SOURCE_ID`, `<schema>`/`<table>` sind die
+Klartext-Bezeichner der Tabelle. Ein Consumer, der alle Tabellen einer Quelle
+verfolgt, abonniert die Wildcard `cdc.changes.<source_id>.>`; ein Consumer, der
+mehrere Quellen verfolgt, `cdc.changes.>`.
+
+**Der leere Payload:** Das Signal trägt **keine** Daten — keinen Change-Inhalt,
+keine Positionsangabe. Jede Nachricht bedeutet ausschließlich „lies erneut über
+den bestehenden Zugriffsweg"; Fehlen oder Verdopplung einer Nachricht trägt
+keine eigene Bedeutung.
+
+**Zustellsemantik und Nachvollziehbarkeit:** Es gibt **keine** Zustellgarantie
+(Core NATS, Fire-and-Forget) und kein Replay — ein nicht verbundener oder
+gerade getrennter Consumer verpasst das Signal ersatzlos. Verpasste Änderungen
+bleiben wie bei den Stream-Abschnitten über
+[Änderungen lesen](#änderungen-lesen) und die bestätigte Consumer-Position
+([Position bestätigen](#position-bestätigen)) nachholbar; das Wecksignal
+ersetzt diesen Zugriffsweg nicht.
+
+**Der zweiseitige Ablauf:** Auf das Subjekt lauschen → beim Weckruf die
+Änderung **selbst** über die [HTTP-/JSON-API](#zugriff-über-die-http-json-api)
+holen und ausgeben. Ein Beispielprogramm liegt unter `examples/nats-client`:
+`go run ./examples/nats-client -source <quelle> -schema <schema> -table
+<tabelle>`; Adresse und Token liest es aus `CDC_NATS_URL`, `CDC_HTTP_ADDR` und
+`CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern. Die Beispiele sind
+zum Lesen und Nachbauen gedacht; die E2E-Testclients des Harness liegen unter
+`tools/harness/` und sind kein Vorbild.
+
 ## 5. Konfiguration
 
 ### Umgebungsvariablen des Feed-Containers
