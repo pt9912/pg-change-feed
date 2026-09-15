@@ -454,7 +454,15 @@ Backticks).
   Begründung* (je in §6).
 - **Drei Paarungen:** hier geprüft — die Roadmap führt derzeit keine offene
   Welle, die Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
-  `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
+  `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst). Der
+  Ankerträger der verkörperten Grenzen ist `harness/sensors/docs-check.md`
+  (`· seit slice-074`); die beiden Register-Einträge stehen bei 2×, der neue bei
+  1×, und die Prüfung „jedes Verzeichnis trägt einen Beleg" hat **einen**
+  eigenen Fehler gefunden (dem neuen Eintrag fehlte der Beleg) und ist mit dem
+  Nachzug sauber.
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+  (kein `*-archiv.zip` unter `done/`); nach Modul 6 bleibt es ohne sie konform,
+  und diese Feststellung ersetzt den Handlauf.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
