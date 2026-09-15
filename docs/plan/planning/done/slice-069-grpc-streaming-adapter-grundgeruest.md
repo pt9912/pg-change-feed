@@ -313,9 +313,6 @@ Backticks).
   ohne Sync-Sensor (`F-6`) und (2) Deckung des generierten Codes in der
   Coverage-Messung (`F-7`) — beide als eigene Beobachtungen notiert, nicht
   als Beleg dieses Slice gezählt.
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
 - **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
   `BEO-PGC/generierte-artefakte-ohne-sync-sensor/` angelegt, Beleg
   `evidence/slice-069.md` (1×) — der erzeugte Protobuf-Code liegt

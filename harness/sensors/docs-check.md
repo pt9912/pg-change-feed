@@ -7,8 +7,9 @@ Referenz: lokaler Link oder Heading-Anker ins Leere (`target-missing`,
 `anchor-missing`), nackte Kennung ohne Link auf ihre Definition
 (`id-unlinked`), verbotene Referenzrichtung zwischen Dokumentklassen
 (`matrix-forbidden` / `matrix-inactive`), abweichender Baseline-Pin
-(`version-stale`), Struktur-Verstoß in Register-Spalten
-(`section-cell-*`). Die Module und ihre Grenzen stehen in `.d-check.yml`;
+(`version-stale`), Struktur-Verstoß im Abschnitt
+(`section-cell-*`, `section-forbidden` — Register-Spalten und
+Closure-Notiz-Guidance). Die Module und ihre Grenzen stehen in `.d-check.yml`;
 die Konfiguration ist die Deklaration dieses Vertrags, nicht dieses Dokument.
 
 ## Grenze — was das Grün nicht abdeckt

@@ -132,12 +132,17 @@ structure:
           cell-max-chars: 200
   # Fuenfte Regel — AKTIVIERT mit der ERSTEN Closure (slice-001/slice-002
   # in done/, 2026-09-09): Closure-Notiz je Slice vorhanden, gefuellt,
-  # Lerneintrag enthalten, keine offenen Aufgaben.
+  # Lerneintrag enthalten, keine offenen Aufgaben, ohne Vorlagen-Guidance.
   - files: "docs/plan/planning/done/slice-*.md"
     section: "## 7. Closure-Notiz"
     non-empty: true
     max-open-tasks: 0
     require-pattern: "Steering-Loop"
+    # Der Ausfuell-Hinweis der §7-Anker-Zeile ist Vorlagen-Guidance: in `open/`
+    # (noch ungefuellt) steht er zu Recht, in `done/` gehoert er nie — er faellt
+    # beim Fuellen ersatzlos weg. Traeger: BEO-PGC/vorlagenrest-in-closure-notiz
+    # · seit welle-19.
+    forbid-pattern: "Wurde mit diesem Slice nichts verkörpert"
     hint: "Closure-Notiz je Slice (§7): Steering-Loop-Lerneintrag, keine offenen Aufgaben; Ausgaenge je Risiko im Slice-Plan."
 reviews:
   # Review-Report-Deckung fuer done/-Slices mit Review-DoD-Haken —
