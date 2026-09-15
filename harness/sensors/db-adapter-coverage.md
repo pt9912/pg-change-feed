@@ -39,21 +39,29 @@ Der **einzige Träger** der Gegenstandsliste ist
 
 ## Zählbasis
 
-- **`-coverpkg` instrumentiert in jeder Testbinary den ganzen Gegenstand.** Im
-  gemergten Profil kommt dieselbe Block-Position darum **mehrfach** vor — im
-  Replication-Lauf trägt jede der beiden Testbinaries (`postgresack`,
-  `replication/receive`) jede Position einmal, eine davon mit `count = 0`.
-  **„Gedeckt" heißt: mindestens ein Vorkommen trägt `count > 0`.**
-  `db-coverage.sh` dedupliziert über die Block-Position und trägt je Position
-  1 (gedeckt) bzw. 0 — dieselbe Basis, die
+- **`-coverpkg` instrumentiert nur die in einem Testbinary verlinkten
+  Gegenstands-Pakete.** Der Lauf über `postgresstorage` allein trägt **610
+  Statements** für dieses Paket und **keine Zeile** für
+  `postgresack`/`replication/receive` — die beiden Pakete werden von
+  `postgresstorage` nicht verlinkt und darum nicht instrumentiert.
+- **Im Replication-Lauf erscheint jede Block-Position zweimal.** `go test`
+  testet dort **zwei** Pakete (`postgresack`, `replication/receive`); jedes der
+  beiden Testbinaries instrumentiert **beide** Gegenstands-Pakete, darum trägt
+  das Profil **132 Positionen × 2** — je Position eine Kopie mit ihrem
+  `count` und eine mit `0`. **„Gedeckt" heißt: mindestens ein Vorkommen trägt
+  `count > 0`.** `db-coverage.sh` dedupliziert über die Block-Position und
+  trägt je Position 1 (gedeckt) bzw. 0 — dieselbe Basis, die
   [`coverage-gate.md`](coverage-gate.md) §Zählbasis für die Unit-Zahl
-  beschreibt. Wer nur das erste Vorkommen zählt, bekommt einen zu niedrigen
-  Wert.
+  beschreibt. Ohne diese Regel (nur das erste Vorkommen gezählt) fällt
+  `replication/receive` von **112/155** auf **0/155** und das Replication-Profil
+  von 130/178 auf **18/178 = 10,11 %**.
 - Die beiden Läufe messen **verschiedene** Testbestände und partitionieren den
   Gegenstand: `postgresstorage` läuft nur mit `CDC_STORE_TEST_DSN`
   (`make test-store`), `postgresack`/`replication/receive` nur mit
-  `CDC_REPLICATION_TEST_DSN` (`make test-replication`). Die beiden Profile
-  tragen darum **disjunkte** Dateimengen; ihr Merge ist die Vereinigung.
+  `CDC_REPLICATION_TEST_DSN` (`make test-replication`). Jeder Lauf
+  instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
+  **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
+  Doppelzählung.
 - Der gemergte Nenner ist **788 Statements** (`postgresstorage` 610 · `postgresack`
   23 · `replication/receive` 155) — dieselbe Zahl, die
   [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
@@ -81,11 +89,27 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Träger
 
-Zwei Schritte in [`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml),
-nacheinander im selben Job: `make test-store` (legt `store.coverprofile` ab)
-und `make test-replication` (legt `replication.coverprofile` ab, mergt beide und
-prüft die Schwelle). Die Profile liegen in `DB_COVERAGE_DIR`
-(Default `${TMPDIR:-/tmp}/pg-change-feed-db-coverage`), nicht im Arbeitsbaum.
+Drei Schritte in [`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml),
+nacheinander im selben Job:
+
+1. `make test-store` — legt `store.coverprofile` ab (Store-Teil des Gegenstands).
+2. `tools/harness/run-replication-tests.sh measure` — legt
+   `replication.coverprofile` ab, mergt beide Profile und prüft die Schwelle.
+   **Der Exit dieses Schritts ist das Verdikt der Messung.**
+3. `tools/harness/run-replication-tests.sh tier` — der Tier-weite
+   `go test ./...`, als **eigener Schritt** mit eigenem Exit.
+
+Die Schritte 2 und 3 rufen dasselbe Skript in seinen zwei Phasen (das Skript ist
+die Implementierung von `make test-replication`; ein eigenes Make-Target je Phase
+gibt es nicht). Die Trennung ist Absicht: der Tier-Lauf trägt einen
+vorbestehenden roten Beleg (§Grenze Punkt 6) — liefe er im selben Schritt wie die
+Messung, verschluckte sein Exit das Verdikt der Messung, und ein grünes
+`db-coverage: OK` ergäbe zusammen mit dem roten Tier **einen** roten Exit-Code.
+`make test-replication` ruft das Skript ohne Argument und fährt beide Phasen für
+einen lokalen Einzelaufruf.
+
+Die Profile liegen in `DB_COVERAGE_DIR` (Default
+`${TMPDIR:-/tmp}/pg-change-feed-db-coverage`), nicht im Arbeitsbaum.
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -107,15 +131,18 @@ prüft die Schwelle). Die Profile liegen in `DB_COVERAGE_DIR`
    über **alle** Vorkommen prüft oder nur das erste, entscheidet die Zahl, nicht
    ein Wächter — der einzige Träger der richtigen Basis ist `db-coverage.sh`
    selbst.
-6. **Der Replication-Tier-Lauf trägt einen vorbestehenden roten Beleg.** `make
-   test-replication`s Tier-weiter `go test ./...` ist rot
-   (`internal/bootstrap` · `TestWALRetentionThresholdToEndToEnd`): dessen
-   Fixture baut das `cdc`-Schema per `DROP SCHEMA cdc CASCADE` + `ApplySchema`
-   neu auf und trägt die von `bootstrap.Run` gelesenen Tabellen
-   (`cdc.administration_request`, `cdc.process_heartbeat`) nicht. Die
-   **Messung** ist davon unabhängig (eigener `go test`-Aufruf über den
-   Gegenstand, vor dem Tier-Lauf) und kann grün sein, während der Tier-Lauf rot
-   endet; die Zahl dieses Sensors deckt den Tier-Lauf **nicht** ab.
+6. **Der Replication-Tier-Lauf trägt einen vorbestehenden roten Beleg.** Der
+   Tier-weite `go test ./...` ist rot (`internal/bootstrap` ·
+   `TestWALRetentionThresholdEndToEnd`): dessen Fixture baut das `cdc`-Schema per
+   `DROP SCHEMA cdc CASCADE` + `ApplySchema` neu auf und trägt die von
+   `bootstrap.Run` gelesenen Tabellen (`cdc.administration_request`,
+   `cdc.process_heartbeat`) nicht, die seit
+   [`ADR-0050`](../../docs/plan/adr/0050-sql-administration-antragsqueue-und-live-reload.md)
+   dazugehören. **Folge für den Träger:** der Tier-Schritt des Workflows ist
+   damit auf **jedem** Lauf rot, solange das Fixture nicht nachgezogen ist. Die
+   Messung läuft als **eigener Schritt** davor (§Träger) und trägt ihr eigenes
+   Verdikt — der rote Tier-Schritt färbt die Zahl dieses Sensors **nicht**, und
+   die Zahl deckt den Tier-Lauf **nicht** ab.
 
 ## Ausgabe und Ausgänge
 

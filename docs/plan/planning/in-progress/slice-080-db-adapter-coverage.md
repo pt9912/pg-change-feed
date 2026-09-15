@@ -139,20 +139,31 @@ Aussagen-Berührung steht hier gar nicht.
 **Nachzug aus dem ersten Implementer-Lauf:**
 
 - **Der Messlauf ist ein eigener `go test`-Aufruf über den Gegenstand**, nicht
-  der Tier-weite `./...`-Lauf: `-coverpkg` instrumentiert sonst auch die
-  Nicht-Gegenstands-Pakete, und der Replication-Tier-Lauf trägt ein
-  **vorbestehend rotes** Paket außerhalb des Gegenstands (s. u.). Der Store-Lauf
-  zieht `postgresstorage` aus dem `others`-Sammelaufruf heraus und führt es als
-  Messlauf **zuletzt** — seine Tests räumen das `cdc`-Schema ab und dürfen dem
-  vorgezogenen `bootstrap`-Aufruf nicht das ausgerollte Schema entziehen.
+  der Tier-weite `./...`-Lauf: so trägt die Messung einen eigenen Exit und ist
+  von dem vorbestehend roten Paket außerhalb des Gegenstands (s. u.) unabhängig.
+  `-coverpkg` instrumentiert dabei nur die in den Testbinaries **verlinkten**
+  Gegenstands-Pakete — der Store-Lauf trägt 610 Statements für
+  `postgresstorage` und **keine Zeile** für `postgresack`/`receive`; im
+  Replication-Lauf (zwei Testbinaries) erscheint jede Position **zweimal**.
+  Der Store-Lauf zieht `postgresstorage` aus dem `others`-Sammelaufruf heraus und
+  führt es als Messlauf **zuletzt** — seine Tests räumen das `cdc`-Schema ab und
+  dürfen dem vorgezogenen `bootstrap`-Aufruf nicht das ausgerollte Schema
+  entziehen.
 - **Vorbestehender roter Tier-Lauf, nicht durch diesen Slice verursacht:**
   `make test-replication`s Tier-weiter `go test ./...` ist rot
-  (`internal/bootstrap` · `TestWALRetentionThresholdToEndToEnd`): dessen Fixture
+  (`internal/bootstrap` · `TestWALRetentionThresholdEndToEnd`): dessen Fixture
   baut das `cdc`-Schema per `DROP SCHEMA cdc CASCADE` + `ApplySchema` neu auf
   und trägt die seit `ADR-0050` von `bootstrap.Run` gelesenen Tabellen
   (`cdc.administration_request`, `cdc.process_heartbeat`) nicht. Real belegt:
-  derselbe Fehlschlag auf dem **unveränderten** Runner-Skript. Die Messung ist
-  davon unabhängig (eigener Aufruf), der Tier-Lauf bleibt rot.
+  derselbe Fehlschlag auf dem **unveränderten** Runner-Skript.
+- **Der Träger-Schritt ist zweigeteilt** (Fixrunde F-3):
+  `tools/harness/run-replication-tests.sh` trägt zwei per Argument wählbare
+  Phasen — `measure` (Profil, Merge, Schwellen-Prüfung; ihr Exit ist das Verdikt
+  der Messung) und `tier` (`go test ./...`). Der Workflow führt sie als **zwei
+  Schritte**; im gemeinsamen Schritt verschluckte der rote Tier-Exit das Verdikt
+  der Messung. `make test-replication` ohne Argument fährt beide Phasen für
+  einen lokalen Einzelaufruf. Der Tier-Schritt bleibt rot, bis das Fixture
+  nachgezogen ist.
 
 ## 4. Trigger
 

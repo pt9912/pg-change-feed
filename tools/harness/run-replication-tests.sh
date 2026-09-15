@@ -12,13 +12,25 @@
 # Ausgang abgeräumt, das Modul-Cache-Volume bleibt als Vorbereitung für
 # netzlose `make test`-Läufe bestehen.
 #
-# Der Lauf erzeugt ein `-coverprofile` über den DB-Adapter-Gegenstand
-# (ADR-0071 Punkt 3) als `replication.coverprofile` in DB_COVERAGE_DIR; liegt
-# dort das `store.coverprofile` des vorangegangenen `make test-store`, mergt
-# tools/harness/db-coverage.sh beide zur subjekt-qualifizierten
-# DB-Adapter-Coverage und prüft sie gegen DB_COVERAGE_THRESHOLD. Kein Gate.
+# Das Skript traegt zwei Phasen, per Argument waehlbar:
+#   measure — erzeugt das `-coverprofile` des Replication-Teils des
+#             DB-Adapter-Gegenstands (ADR-0071 Punkt 3) als
+#             `replication.coverprofile` in DB_COVERAGE_DIR und ruft
+#             tools/harness/db-coverage.sh; dessen Exit ist das Verdikt der
+#             DB-Adapter-Coverage (kein Gate).
+#   tier    — der Tier-weite `go test ./...`.
+# Ohne Argument (make test-replication) laufen beide Phasen nacheinander.
+# Die Trennung ist noetig, weil der Tier-Lauf einen vorbestehenden roten Beleg
+# traegt (internal/bootstrap, TestWALRetentionThresholdEndToEnd) — im selben
+# Schritt verschluckte sein Exit das Verdikt der Messung.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+
+MODE=${1:-both}
+case "$MODE" in
+  measure|tier|both) ;;
+  *) echo "run-replication-tests: unbekannter Modus '$MODE' (erlaubt: measure, tier)" >&2; exit 2 ;;
+esac
 
 DB_COVERAGE_DIR=${DB_COVERAGE_DIR:-${TMPDIR:-/tmp}/pg-change-feed-db-coverage}
 mkdir -p "$DB_COVERAGE_DIR"
@@ -71,31 +83,36 @@ docker run --rm --network "$NETWORK" \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
 
-# DB-Adapter-Coverage (ADR-0071 Punkt 3): eigener Messlauf über den
-# Replication-Teil des Gegenstands (`postgresack`, `replication/receive`), mit
-# `-coverpkg` über die ganze Gegenstandsliste. Er steht VOR dem Tier-weiten
-# `go test ./...`: der Tier-Lauf führt auch `internal/bootstrap` (der dessen
-# eigene Verdrahtungs-E2E fährt) und ist unabhängig von dieser Messung.
-docker run --rm --network "$NETWORK" \
-  -v "$(pwd)":/src:ro \
-  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
-  -v "$DB_COVERAGE_DIR":/cov \
-  -w /src \
-  -e GOCACHE=/tmp/gocache \
-  -e CDC_REPLICATION_TEST_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test \
-    -coverpkg="$COVER_PKGS" \
-    -coverprofile=/cov/replication.coverprofile \
-    -covermode=atomic \
-    ./internal/adapters/driven/postgresack \
-    ./internal/adapters/driving/replication/receive
+# Phase `measure` — DB-Adapter-Coverage (ADR-0071 Punkt 3): eigener Messlauf
+# über den Replication-Teil des Gegenstands (`postgresack`,
+# `replication/receive`), mit `-coverpkg` über die ganze Gegenstandsliste. Der
+# Exit von db-coverage.sh ist das Verdikt dieser Phase.
+if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
+  docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -v "$DB_COVERAGE_DIR":/cov \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e CDC_REPLICATION_TEST_DSN="$DSN" \
+    "$TOOLCHAIN_IMAGE" go test \
+      -coverpkg="$COVER_PKGS" \
+      -coverprofile=/cov/replication.coverprofile \
+      -covermode=atomic \
+      ./internal/adapters/driven/postgresack \
+      ./internal/adapters/driving/replication/receive
 
-bash tools/harness/db-coverage.sh
+  bash tools/harness/db-coverage.sh
+fi
 
-docker run --rm --network "$NETWORK" \
-  -v "$(pwd)":/src:ro \
-  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
-  -w /src \
-  -e GOCACHE=/tmp/gocache \
-  -e CDC_REPLICATION_TEST_DSN="$DSN" \
-  "$TOOLCHAIN_IMAGE" go test ./...
+# Phase `tier` — der Tier-weite `go test ./...`; der Exit dieses Aufrufs ist
+# das Verdikt dieser Phase.
+if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
+  docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e CDC_REPLICATION_TEST_DSN="$DSN" \
+    "$TOOLCHAIN_IMAGE" go test ./...
+fi

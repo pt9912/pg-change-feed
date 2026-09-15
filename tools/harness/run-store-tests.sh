@@ -97,7 +97,8 @@ docker run --rm --network "$NETWORK" \
 # ausgerollte Schema unter dem laufenden Test entfernen. Der vorgezogene
 # Lauf steht auf dem frisch ausgerollten Schema, bevor ein anderes Paket
 # es berührt; der zweite Aufruf deckt die übrigen Pakete ab, `postgresstorage`
-# läuft darunter als eigener Messaufruf.
+# ist aus diesem Sammelaufruf ausgenommen und läuft weiter unten als eigener
+# Messaufruf.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \

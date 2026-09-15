@@ -10,18 +10,22 @@ name: e2e
 # reproduzierbar, ohne `ci.yml`s kurzes Signal durch den deutlich laengeren
 # Compose-Stack-Aufbau zu verzoegern).
 #
-# Ruft ausschliesslich bestehende `make`-Targets auf (AGENTS.md §3.1,
-# Docker-only): `make image` baut das lokale Image
-# (`ghcr.io/pt9912/pg-change-feed:dev`), das `compose.yaml` ohne eigenen
-# `build:`-Block referenziert (ADR-0044) — ohne diesen Schritt haette
-# `make test-integration` kein Image zum Laden und der Compose-Start
-# schluege fehl. `make test-integration` faehrt danach den vollen
+# Ruft die bestehenden `make`-Targets auf (AGENTS.md §3.1, Docker-only):
+# `make image` baut das lokale Image (`ghcr.io/pt9912/pg-change-feed:dev`), das
+# `compose.yaml` ohne eigenen `build:`-Block referenziert (ADR-0044) — ohne
+# diesen Schritt haette `make test-integration` kein Image zum Laden und der
+# Compose-Start schluege fehl. `make test-integration` faehrt danach den vollen
 # Compose-Stack samt Schema-Rollout und mehreren Testphasen (Rollen-DSN,
 # Retention-Lebenszyklus, Black-Box-CLI-Rundlauf, drei NATS-Testabschnitte)
 # — kein Gate ([`ADR-0030`](../../docs/plan/adr/0030-testpyramide.md)),
-# aber der konkreteste Beleg fuer LH-QA-POR-003. Kein Workflow-Schritt
-# enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
-# dupliziert.
+# aber der konkreteste Beleg fuer LH-QA-POR-003.
+#
+# Einzige Ausnahme von den `make`-Aufrufen: die beiden Replication-Phasen der
+# DB-Adapter-Coverage werden direkt ueber das Traeger-Skript aufgerufen
+# (`tools/harness/run-replication-tests.sh measure|tier`) — dasselbe Skript, das
+# `make test-replication` implementiert, hier mit je eigenem Exit je Phase; ein
+# Make-Target je Phase gibt es nicht. Kein Workflow-Schritt enthaelt
+# Inline-Shell-Logik, die eines dieser Ziele umgeht oder dupliziert.
 #
 # Timeout 60 Minuten (ci.yml: 30) — `make test-integration` traegt mehrere
 # feste Wartephasen (Retention-Alters-/Lag-Schwellen, NATS-Reconnect-Timing)
@@ -91,13 +95,28 @@ jobs:
 
       # DB-Adapter-Coverage (ADR-0071 Punkt 3, kein Gate): die zwei
       # Traeger-Laeufe erzeugen je ein -coverprofile ueber den
-      # DB-Adapter-Gegenstand; `make test-replication` mergt beide und prueft
-      # die Schwelle (tools/harness/db-coverage.sh, DB_COVERAGE_THRESHOLD).
-      # Reihenfolge store -> replication ist Bedingung des Merges. Die Schritte
-      # stehen NACH `make test-integration`, damit sie dessen Ergebnis nicht
-      # verdecken; `make test-store` braucht kein vorheriges `make image`.
+      # DB-Adapter-Gegenstand; die Replication-Phase `measure` mergt beide und
+      # prueft die Schwelle (tools/harness/db-coverage.sh,
+      # DB_COVERAGE_THRESHOLD). Reihenfolge store -> replication ist Bedingung
+      # des Merges. Die Schritte stehen NACH `make test-integration`, damit sie
+      # dessen Ergebnis nicht verdecken; `make test-store` braucht kein
+      # vorheriges `make image`.
+      #
+      # Die beiden Replication-Phasen laufen als ZWEI Schritte ueber das
+      # Traeger-Skript (seine Implementierung ist `make test-replication`, ein
+      # eigenes Make-Target je Phase gibt es nicht): `measure` traegt das
+      # Verdikt der Messung, `tier` den Tier-weiten `go test ./...`. Sie sind
+      # getrennt, weil der Tier-Lauf einen vorbestehenden roten Beleg traegt
+      # (internal/bootstrap · TestWALRetentionThresholdEndToEnd, Fixture ohne
+      # die seit ADR-0050 gelesenen cdc-Tabellen) — in einem gemeinsamen Schritt
+      # verschluckte dessen Exit das Verdikt der Messung. Der Tier-Schritt ist
+      # damit auf jedem Lauf rot, solange das Fixture nicht nachgezogen ist; die
+      # Messung darueber ist davon unabhaengig gueltig.
       - name: DB-Adapter-Coverage — Store-Teil (Profil)
         run: make test-store
 
       - name: DB-Adapter-Coverage — Replication-Teil, Merge + Schwelle
-        run: make test-replication
+        run: bash tools/harness/run-replication-tests.sh measure
+
+      - name: Replication-Tier (go test ./...)
+        run: bash tools/harness/run-replication-tests.sh tier

@@ -14,18 +14,25 @@
 # .github/workflows/e2e.yml, nicht `make gates` — das Gate laeuft bei jedem
 # Commit und bekommt keinen PostgreSQL-Container.
 #
-# Zaehlbasis: -coverpkg instrumentiert in JEDER Testbinary den ganzen
-# Gegenstand; dieselbe Block-Position kommt im gemergten Profil darum mehrfach
-# vor. "Gedeckt" heisst: mindestens ein Vorkommen traegt count > 0. Der Merge
-# unten dedupliziert ueber die Block-Position und traegt je Position 1 (gedeckt)
-# bzw. 0 — dieselbe Basis, die harness/sensors/coverage-gate.md §Zaehlbasis
-# fuer die Unit-Zahl beschreibt.
+# Zaehlbasis: -coverpkg instrumentiert nur die in einem Testbinary VERLINKTEN
+# Gegenstands-Pakete (der Lauf ueber postgresstorage allein traegt 610
+# Statements fuer dieses Paket und keine Zeile fuer postgresack/receive). Im
+# Replication-Lauf testet `go test` zwei Pakete (postgresack,
+# replication/receive); jedes der beiden Testbinaries instrumentiert beide
+# Gegenstands-Pakete, darum erscheint jede Block-Position dort ZWEIMAL —
+# einmal mit ihrem count, einmal mit 0. "Gedeckt" heisst: mindestens ein
+# Vorkommen traegt count > 0. Der Merge unten dedupliziert ueber die
+# Block-Position und traegt je Position 1 (gedeckt) bzw. 0 — dieselbe Basis,
+# die harness/sensors/coverage-gate.md §Zaehlbasis fuer die Unit-Zahl
+# beschreibt. Ohne diese Regel (nur das erste Vorkommen) faellt
+# replication/receive auf 0 von 155.
 #
 # Die beiden Laeufe messen VERSCHIEDENE Testbestaende und partitionieren das
 # Subject: postgresstorage laeuft nur mit CDC_STORE_TEST_DSN (make test-store),
 # postgresack/replication/receive nur mit CDC_REPLICATION_TEST_DSN (make
-# test-replication). Das Merge ist deshalb sinnvoll — die Vereinigung der
-# gedeckten Positionen beschreibt das ganze Subject; eine der beiden Laeufe
+# test-replication). Jeder Lauf instrumentiert dabei seinen Teil; die beiden
+# Dateimengen sind DISJUNKT. Das Merge ist deshalb sinnvoll — die Vereinigung
+# der gedeckten Positionen beschreibt das ganze Subject; eine der beiden Laeufe
 # allein traegt nur seine Haelfte.
 #
 # Aufruf:
