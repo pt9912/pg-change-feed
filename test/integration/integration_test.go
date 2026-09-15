@@ -1209,9 +1209,12 @@ const abdeckungZeilenPraefix = "ABDECKUNG|"
 // die Vertrags- und Technik-Kennungen des Lastenhefts/Pflichtenhefts (samt
 // der Verfeinerungs-Form `…-001.a`) adressieren eine Zeile der
 // Abdeckungstabelle; die ADR- und Sicht-Kennungen stehen im Kommentar,
-// benennen aber eine Entscheidung statt einer Anforderung und fallen
-// deshalb aus der Beschreibungsspalte heraus.
-var abdeckungKennungMuster = regexp.MustCompile(`LH-(?:FA|QA)-[A-Z]{3}-\d{3}(?:\.[a-z])?|SPEC-\d{3}|ARC-\d{3}|ADR-\d{4}`)
+// benennen aber eine Entscheidung statt einer Anforderung, und die
+// Lebenszyklus-Kennungen (`slice-NNN`, `welle-NN`) nennen einen Vorgang
+// statt eines Nachweises — beide fallen deshalb aus der
+// Beschreibungsspalte heraus: die Tabelle führt Nachweise, keine
+// Entstehungsgeschichte.
+var abdeckungKennungMuster = regexp.MustCompile(`LH-(?:FA|QA)-[A-Z]{3}-\d{3}(?:\.[a-z])?|SPEC-\d{3}|ARC-\d{3}|ADR-\d{4}|slice-\d{3}|welle-\d{1,2}`)
 
 // abdeckungKurzformEinleitungen sind die Zeichen, mit denen ein
 // E2E-Kommentar eine Bereichs- oder Nachbar-Angabe hinter einer Kennung

@@ -153,11 +153,11 @@ eine Tabelle `Spec-Kennung | Nachweis | Ort | Kurzbeschreibung`, je Zeile
 mindestens eine Spec-Kennung als Link auf ihr Definitionsdokument, `Ort` als
 `Datei:Zeile` in Inline-Code.
 
-- [ ] Die Datei liegt vor; ihr Inhalt entspricht der Ausgabe eines frischen
+- [x] Die Datei liegt vor; ihr Inhalt entspricht der Ausgabe eines frischen
       `make test-integration`-Laufs (nicht einem von Hand gepflegten Stand),
       und sie nennt in ihrem Kopf ihren Erzeuger und ihre Stabilitäts-Zusage
       (stabile Abdeckungs-Deklaration, kein Lauf-Beleg).
-- [ ] Jede Zeile trägt mindestens eine verlinkte Spec-Kennung; der
+- [x] Jede Zeile trägt mindestens eine verlinkte Spec-Kennung; der
       Nachweis der E2E-Kette ist auf beiden Trägern vertreten (eine
       `func TestE2E*` und mindestens eine Bash-Phase des Runners).
 
@@ -165,31 +165,31 @@ mindestens eine Spec-Kennung als Link auf ihr Definitionsdokument, `Ort` als
 die Go-Hälfte, Runner für die Bash-Hälfte, Zusammensetzung und Schreiben im
 Runner; kein neues Skript, kein neues Binary).
 
-- [ ] **Beleg (a) — Erzeugung:** ein realer `make test-integration`-Lauf auf
+- [x] **Beleg (a) — Erzeugung:** ein realer `make test-integration`-Lauf auf
       leerem Stand (Datei vorher entfernt) legt `docs/user/e2e-abdeckung.md`
       an; der Exit-Code des Laufs wird direkt und ungepiped festgestellt
       (`AGENTS.md` §3.9).
-- [ ] **Beleg (b) — Idempotenz:** ein zweiter realer Lauf mit unverändertem
+- [x] **Beleg (b) — Idempotenz:** ein zweiter realer Lauf mit unverändertem
       Testbestand lässt die Datei inhaltsgleich (`git diff --exit-code`,
       zusätzlich `cmp` gegen die Datei vor dem Lauf) — kein Churn im Diff.
-- [ ] **Beleg (c) — Rot-Beleg beider Richtungen:** eine real hinzugefügte
+- [x] **Beleg (c) — Rot-Beleg beider Richtungen:** eine real hinzugefügte
       `func TestE2E*`-Funktion erscheint als neue Zeile in der Datei, ihr
       reales Entfernen nimmt die Zeile wieder heraus; beides mit dem
       tatsächlichen Lauf gezeigt, nicht behauptet.
-- [ ] Die beiden Abbruch-Wächter greifen real: eine `func TestE2E*` ohne
+- [x] Die beiden Abbruch-Wächter greifen real: eine `func TestE2E*` ohne
       Spec-Kennung im Doc-Kommentar bzw. ein entfernter Deklarations-Anker
       einer Bash-Phase lässt den Erzeuger sichtbar fehlschlagen (Exit ≠ 0,
       Datei unverändert) — je einmal gezeigt.
-- [ ] `go test -race` grün (der Erzeuger läuft im bestehenden Testpaket).
+- [x] `go test -race` grün (der Erzeuger läuft im bestehenden Testpaket).
 
 **Liefer-Punkt 3 — der deklarierte Drift-Schutz.**
 
-- [ ] `.d-check.yml` trägt die `structure`-Regel für die Tabelle
+- [x] `.d-check.yml` trägt die `structure`-Regel für die Tabelle
       (Abschnitts-Adressierung über Kopfzeilen-Namen, Mindestbreiten je
       Spalte); `make docs-check` ist mit der neuen Regel grün, und die Grenze
       der Regel ist benannt (sie fängt leere/kaputte Zeilen, nicht einen
       falschen Nachweis).
-- [ ] Die Grenzen der beiden tragenden Doku-Regeln sind **real gemessen und
+- [x] Die Grenzen der beiden tragenden Doku-Regeln sind **real gemessen und
       notiert**, nicht angenommen: `ids` erzwingt den Link auf das
       Definitionsdokument, **nicht** die Existenz der Kennung in
       `spec/lastenheft.md` (eine verlinkte, erfundene Kennung ist grün), und
@@ -197,28 +197,28 @@ Runner; kein neues Skript, kein neues Binary).
       gepinnten Image real gezeigt, nicht aus der Modulbeschreibung
       geschlossen). Die tragende Garantie der Tabelle ist deshalb die
       **Ableitung aus dem Quelltext** und nicht das Doku-Gate.
-- [ ] `harness/sensors/docs-check.md` benennt die Grenzen dieses Erzeugnisses:
+- [x] `harness/sensors/docs-check.md` benennt die Grenzen dieses Erzeugnisses:
       keine Symbol-/Funktionsnamen-Prüfung (`--trace` ist ausdrücklich keine
       Code-Prüfung, `codepaths` prüft Pfade und Zeilenbereiche), die zwei
       gemessenen `ids`-Grenzen (nur Link, keine Existenz; Code-Spans
       ungeprüft), `codepaths` aus (Folge-Vorgang) und die deklarierte
       Bash-Hälfte; und die Aussage zur fünften `structure`-Regel nennt den
       Ist-Zustand (aktiv seit der ersten Closure).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/sensors/docs-check.md` (Liefer-Punkt 3) und
+- [x] Doku-Update: `harness/sensors/docs-check.md` (Liefer-Punkt 3) und
       `docs/user/e2e-abdeckung.md` sind die berührten Dokumente; ein neuer
       Eintrag in `harness/README.md` §Sensors ist **nicht** fällig — kein neues
       Target, kein neues Gate. Der Implementer bestätigt das oder begründet
       eine Abweichung im Plan-Nachzug.
-- [ ] `AGENTS.md` §4/`harness/README.md` §Sensors bleiben unverändert —
+- [x] `AGENTS.md` §4/`harness/README.md` §Sensors bleiben unverändert —
       geprüft, nicht nur angenommen (der Slice verschärft kein bestehendes
       Gate; die `structure`-Regel ist eine Register-Invariante, keine neue
       Schwelle).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
@@ -253,7 +253,8 @@ Aussagen-Berührung steht hier gar nicht.
 | Kurzform-Auflösung deckt **`` `NNN` ``-umschlossene** Nachbarnummern | `` `…-002`…`006` `` und `` `…-003`/`004` `` lösen auf; eine Einleitung ohne dreistellige Ziffernfolge ist eine Auslassung im Fließtext und bleibt stehen | Die real vorgefundenen Formen; ein Abbruch bei jeder Auslassung träfe auch Prosa |
 | Die `structure`-Regel ist die **achte** des Configs | Zählung folgt den vorhandenen Regel-Kommentaren; die Mindestbreiten binden an die Darstellung | Der Plan nennt keine Nummer |
 | `section-missing` bei fehlender Datei | Die Regel rotet, solange `docs/user/e2e-abdeckung.md` nicht im Baum liegt („Regel trifft keine Datei — das Gate liefe leer") | Real gemessen: die Datei muss committet sein, das Erzeugnis ist kein Nur-Lauf-Artefakt |
-| **Nicht-Realisierung** der Aussage über die fünfte `structure`-Regel | `harness/sensors/docs-check.md` trägt die Aussage „auskommentiert bis zur ersten Closure" **nicht** (gemessen mit `grep`); `.d-check.yml` führt die Regel bereits als „AKTIVIERT mit der ERSTEN Closure" | Der Plan beschrieb einen Stand, den `slice-075` bereits nachgezogen hat. Statt einer Korrektur nennt die Sensordoku jetzt **den Ist-Zustand aller `structure`-Regeln** — dieselbe Pflicht, anderer Träger |
+| **Nicht-Realisierung** der Aussage über die fünfte `structure`-Regel | `harness/sensors/docs-check.md` trägt die Aussage „auskommentiert bis zur ersten Closure" **nicht** (gemessen mit `grep`); `.d-check.yml` führt dieselbe Regel bereits als „AKTIVIERT mit der ERSTEN Closure" | Der Plan nennt eine Aussage, die die Sensordoku nicht trägt; die Sensordoku nennt stattdessen **den Ist-Zustand aller `structure`-Regeln** — dieselbe Pflicht, anderer Träger |
+| Lebenszyklus-Kennungen (`slice-NNN`, `welle-NN`) fallen **auch** aus der Beschreibungsspalte | Der Erzeuger entfernt sie samt Inline-Code-Span; die Kennungsspalte führt nur die Spec-Kennungen | §8 dieses Plans sagt zu, dass die Tabelle **keine** Slice-/Wellen-Chronik trägt. Der `step-20`-Kandidatenlauf fand eine solche Stelle (ein Doc-Kommentar trägt den Slice-Plan als Provenienz seiner Testfälle) — die Normierung macht die zugesagte Eigenschaft mechanisch wahr, statt die Quelle zu ändern |
 
 **Nicht in dieser Liste, mit Begründung:** `harness/README.md` §Sensors
 (kein neues Target, kein neues Gate — die Tabelle ist ein Erzeugnis der
