@@ -29,7 +29,7 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 
 | Stufe | Wert | Ereignis |
 |---|---|---|
-| Einstieg | **65 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche (69,70 %) — abgerundet auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a)) |
+| Einstieg | **65 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des Kalibrierungs-Laufs (69,70 %) —, abgerundet auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a); die Größe dieser Zeile: §Zählbasis) |
 | Endstufe | **80 %** | fest, Nutzer-Entscheidung ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md); `roadmap.md` §Nächste Wellen) |
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
@@ -46,6 +46,25 @@ ist — dieselbe Reifung, die d-check selbst durchlief (85 → 90 → 93,
 (`AGENTS.md` §3.6 bleibt unverletzt): Die Endstufe steht fest, nur der
 Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
+## Zählbasis der Zahlen dieser Datei
+
+- **Statement-Zahlen** stammen aus dem Profil der `coverage`-Stufe über den
+  Gegenstand (`/out/coverage.out`), **dedupliziert über die Block-Position**:
+  jede Testbinary instrumentiert mit `-coverpkg` den ganzen Gegenstand, im
+  gemergten Profil kommt dieselbe Block-Position darum mehrfach vor. „Gedeckt“
+  heißt, dass **mindestens ein** Vorkommen `count > 0` trägt (dedupliziert:
+  1679 Statements, davon 1171 gedeckt = 69,74 %).
+- Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
+  hier `69.7%`) ist eine eigene Größe: `go tool cover` führt sie über das
+  gemergte Profil, in dem jede Block-Position so oft zählt, wie sie vorkommt.
+  Das Verhältnis ist dadurch dasselbe, die absoluten Zahlen der gedruckten
+  Zeile sind es nicht — eine Statement-Zahl des Gegenstands ist nur die
+  deduplizierte.
+- Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
+  dem Profil des Gegenstands **vor** dem Schnitt — derselben Messung, die den
+  Nenner `2467 → 1679` beziffert (vorher 1215 gedeckt, davon 44 in den drei
+  Paketen).
+
 ## Grenze — was das Grün nicht abdeckt
 
 1. **Die DB-gestützte Fläche liegt außerhalb des Messgegenstands.** Die drei
@@ -56,17 +75,29 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    nicht in die Zahl dieses Gates gerechnet; ihre Netto-Abdeckung trägt die
    eigene, subjekt-qualifizierte Messung aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
-   Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand.
-   **`cmd/pg-change-feed` ist der einzige ganz ungetestete Gegenstand des
-   Messbereichs.** Es liegt in `-coverpkg` und in der Testpaket-Liste, hat
-   keine Testdatei und trägt **49 Statements, alle mit `count = 0`** — es
-   steht damit im Nenner und gehört zu der 80-%-Arbeit, die `welle-20`
-   bündelt. Der Lauf weist es nicht als `[no test files]` aus, sondern als
-   `coverage: 0.0% of statements`; das ist die Aufrufform mit `-coverpkg`.
-   Die drei `[no test files]`-Pakete (`postgresstorage/queries`,
-   `application/port/inbound`, `domain/errors`) tragen ausschließlich
-   SQL-Textkonstanten bzw. Typ-/Sentinel-Deklarationen ohne ausführbare
-   Statements.
+   Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand
+   (15 Statements, 12 gedeckt).
+
+   **Fünf Pakete des Gegenstands haben keine Testdatei** (`go list
+   -f '{{len .TestGoFiles}}'` über den Gegenstand). Sie tragen drei
+   verschiedene Rollen:
+
+   - **ohne ausführbare Statements** — im Profil kommen sie nicht vor:
+     `postgresstorage/queries` (SQL-Textkonstanten), `application/port/inbound`
+     (Schnittstellen-Deklarationen) und `domain/errors`
+     (Sentinel-Deklarationen);
+   - **über fremde Testpakete gedeckt** — `internal/adapters/driving/grpc/streamv1`
+     (die generierten `changestream*.pb.go`) trägt **86 Statements, 61 gedeckt
+     (70,9 %)**; sie zählen, weil andere Testpakete mit `-coverpkg` über die
+     Paketgrenze messen;
+   - **vollständig ungedeckt** — `cmd/pg-change-feed` trägt **49 Statements,
+     alle mit `count = 0`**. Es ist damit das **einzige Paket des Gegenstands
+     ohne ein einziges gedecktes Statement** und gehört zu der 80-%-Arbeit, die
+     `welle-20` bündelt.
+
+   Die beiden Pakete mit Statements weist der Lauf nicht als `[no test files]`
+   aus, sondern als `coverage: 0.0% of statements`; das ist die Aufrufform mit
+   `-coverpkg`.
 2. **Docker-Layer-Caching.** `--no-cache-filter coverage` erzwingt die
    Neu-Auswertung der Stage bei jedem `make coverage-gate`-Lauf — ohne
    diesen Flag könnte ein Cache-Hit einen veralteten Lauf überleben lassen.
@@ -74,12 +105,18 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    Suppression-Pfad (`AGENTS.md` §3.2) — die Gesamt-Coverage besteht oder
    scheitert als Zahl.
 4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
-   gewächtert.** Wird `postgresack` wieder in `-coverpkg` genommen, bleibt die
-   Stufe grün — `(1167 + 2) / (1679 + 23) = 68,7 %` ≥ 65; erst die Rücknahme
-   von `postgresstorage` (`1198 / 2289 = 52,3 %`) oder `replication/receive`
-   (`1178 / 1834 = 64,2 %`) färbt sie rot. **Der Wächter ist** damit allein die
-   Prozent-Schwelle, und sie trägt die Gegenstands-Hälfte der Fitness Function
-   aus [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+   gewächtert.** **Rückrechnung** aus den gemessenen Paket-Zahlen
+   (§Zählbasis: 1171 gedeckt von 1679 Statements im Gegenstand; 2/23, 31/610,
+   11/155 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
+   wieder in `-coverpkg` genommen, bleibt die Stufe grün —
+   `(1171 + 2) / (1679 + 23) = 68,92 %` ≥ 65; erst die Rücknahme von
+   `postgresstorage` (`1202 / 2289 = 52,51 %`) oder `replication/receive`
+   (`1182 / 1834 = 64,45 %`) färbt sie rot. Die drei Ausgänge liegen mit
+   +3,9 / −12,5 / −0,6 Prozentpunkten weit genug von der Schwelle, dass die
+   Lauf-zu-Lauf-Schwankung (wenige Statements) sie nicht umkehrt. **Der
+   Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
+   Gegenstands-Hälfte der Fitness Function aus
+   [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    („keine Block-Position im Profil liegt in …“) nicht vollständig: für einen
    einzelnen Rücknahme-Fall gibt es keinen eigenen Sensor. Der
    Re-Evaluierungs-Trigger (a) derselben ADR greift beim Kommen oder Gehen
@@ -97,7 +134,8 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 | 1 | Gesamt-Coverage < `THRESHOLD` (`coverage-gate: FAIL`) |
 | 2 | Coverage-Eingabe fehlt/leer, `total:`-Zeile fehlt, oder Prozentwert nicht parsbar |
 
-Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)):
+Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
+die beiden Prozente sind die **gedruckten** Zeilen der Läufe, §Zählbasis):
 `THRESHOLD=75` (über dem Ist-Stand) lässt die Stage real scheitern
 (`coverage-gate: FAIL — Coverage 69.70% unter Schwelle 75%`) — das Gate-Skript
 endet Exit 1, `make` meldet für den gescheiterten Bauprozess Exit 2;
