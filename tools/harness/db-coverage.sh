@@ -15,7 +15,7 @@
 # Commit und bekommt keinen PostgreSQL-Container.
 #
 # Zaehlbasis: -coverpkg instrumentiert nur die in einem Testbinary VERLINKTEN
-# Gegenstands-Pakete (der Lauf ueber postgresstorage allein traegt 610
+# Gegenstands-Pakete (der Lauf ueber postgresstorage allein traegt 472
 # Statements fuer dieses Paket und keine Zeile fuer postgresack/receive). Im
 # Replication-Lauf testet `go test` zwei Pakete (postgresack,
 # replication/receive); jedes der beiden Testbinaries instrumentiert beide

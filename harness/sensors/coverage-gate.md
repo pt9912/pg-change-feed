@@ -123,10 +123,10 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    `postgresstorage` (`1337 / 2303 = 58,05 %`) oder `replication/receive`
    (`1317 / 1986 = 66,31 %`) färbt sie rot. Die zwei roten Ausgänge liegen mit
    −11,95 / −3,69 Prozentpunkten weit genug von der Schwelle, dass die
-   Lauf-zu-Lauf-Schwankung (wenige Statements) sie nicht umkehrt; der grüne
+   Lauf-zu-Lauf-Schwankung (±2 Statements) sie nicht umkehrt; der grüne
    `postgresack`-Ausgang liegt mit **+0,55** Prozentpunkten dagegen nahe an der
-   Schwelle — dort kann eine Schwankung um wenige Statements das Vorzeichen
-   umkehren. **Der
+   Schwelle — die gemessene Schwankung von ±2 Statements (±0,11 pp auf diesem
+   Nenner) kehrt ihn nicht um, zum Kippen wären ≈11 Statements nötig. **Der
    Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
    Gegenstands-Hälfte der Fitness Function aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
