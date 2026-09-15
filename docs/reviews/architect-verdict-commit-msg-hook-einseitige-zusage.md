@@ -70,9 +70,10 @@ Der Reviewer stellt zwei Wege gegenüber. **Gewählt ist Weg 2:**
   einem Artefakt, dessen ganze Rechtfertigung „bash-only, keine Latenz" war.
 - **Weg 2 — die Approximation ist festschreibbar** (gewählt): Die Zusage des
   Hooks wird als **einseitig** formuliert — *er weist keinen Commit zurück, den
-  das Standing-Gate zulässt* (diese Richtung ist strukturell erfüllt: jede
-  Hook-Hälfte prüft eine Obermenge des Textes ihrer Gate-Gegenhälfte). Der
-  Hook ist **nicht** vollständig; die drei Klassen (a) `#`-Kommentarzeile,
+  das Standing-Gate zulässt*. Diese Richtung trägt der Zuschnitt (jede Hook-Hälfte
+  liest einen Text, der den Text ihrer Gate-Gegenhälfte enthält); die benannte
+  Kante ist der leere Vor-scissors-Text unter `--cleanup=scissors`. Der Hook ist
+  **nicht** vollständig; die drei Klassen (a) `#`-Kommentarzeile,
   (b) scissors/Verbose-Diff, (c) Struktur-ID auf der Fortsetzungszeile des
   ersten Absatzes bleiben **benannt offen**. Das Gate bleibt die durchsetzende
   Instanz.
