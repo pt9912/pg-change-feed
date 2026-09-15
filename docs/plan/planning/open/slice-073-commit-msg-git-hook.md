@@ -24,7 +24,7 @@ derselben Regel, kein neuer Vertrag.
 **Berührte Spec-Stellen:** — (kein Vertrags-/Technik-Bezug, reine
 Entwickler-Werkzeugkette).
 
-**Verantwortlich:** —
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner-Lauf, Architect-Verdikt vorausgehend; Plan
 korrigiert durch einen unabhängigen, gegenprüfenden Architect-Zug,
