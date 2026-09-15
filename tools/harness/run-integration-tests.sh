@@ -436,6 +436,79 @@ fi
 
 echo "run-integration-tests: Spaltenausschluss-Rundlauf (LH-FA-CFG-005 Happy Path, ADR-0059) belegt — cdc.exclude_column($COLUMN_TABLE.$COLUMN_NAME) wurde ohne Neustart verarbeitet (status=applied), die danach erfasste Change (id=2) trägt $COLUMN_NAME nicht im Row Image und den Wert '$COLUMN_VALUE_AFTER' nirgends, die davor erfasste Change (id=1) bleibt mit '$COLUMN_VALUE_BEFORE' unverändert lesbar"
 
+# Neustart-Beleg des dauerhaften Ausschlussstandes (ADR-0065): der
+# Prozessstart leitet den Stand aus den `applied`-Zeilen der beiden
+# Spalten-Antragsarten ab (`activatedTableBindings` → `ColumnExclusionPort.
+# ExcludedColumns`) und trägt ihn in die Bindungen des Assemblers; ohne
+# diesen Schritt erfasst der neu gestartete Prozess die Spalte wieder. Der
+# `docker restart` durchläuft einen echten Prozess-Neustart (SIGTERM,
+# derselbe Container, Slot und Publication auf der PostgreSQL-Seite
+# unberührt). Die Tabelle ist in keinem `CDC_TABLES`-Eintrag — ihr
+# Bindungs-Stand kommt aus `cdc.source_table`, ihr Ausschlussstand allein
+# über den hier geprüften Weg. Läuft vor der Container-Ende-Grenze unten
+# (TestE2ESchemaChangeDropColumn/-IncompatibleTypeChange).
+COLUMN_VALUE_RESTART=ColumnAfterRestartSentinel
+
+docker restart "$FEED_CONTAINER" >/dev/null
+
+column_restart_healthy=0
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+  if [ "$health" = "healthy" ]; then
+    column_restart_healthy=1
+    break
+  fi
+  sleep 1
+done
+if [ "$column_restart_healthy" -ne 1 ]; then
+  echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg — Feed-Container meldet nach dem Neustart Health-Status ${health:-fehlt}, wollen healthy" >&2
+  exit 1
+fi
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$COLUMN_TABLE (id, name, $COLUMN_NAME) VALUES (3, 'ColumnAfterRestart', '$COLUMN_VALUE_RESTART');
+SQL
+
+column_restart_present=""
+for _ in $(seq 1 120); do
+  column_restart_present=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '3'")
+  if [ "$column_restart_present" = "1" ]; then
+    break
+  fi
+  sleep 0.25
+done
+if [ "$column_restart_present" != "1" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg — die nach dem Neustart erfasste Change (id=3, $COLUMN_TABLE) wurde nicht innerhalb der Zeitspanne über cdc.changes gelesen — die Erfassung hat den Neustart nicht fortgesetzt" >&2
+  exit 1
+fi
+
+# Dieselben drei Aussagen wie nach dem Live-Reload, jetzt über den
+# Neustart hinweg: der ausgeschlossene Schlüssel fehlt, die nicht
+# ausgeschlossene Spalte bleibt (Kontrolle gegen ein leeres Row Image), und
+# der ausgeschlossene Wert steht im ganzen persistierten Change nicht
+# (LH-QA-SEC-004).
+column_restart_key=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT jsonb_exists(new_data, '$COLUMN_NAME') FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '3'")
+column_restart_name=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT new_data->>'name' FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '3'")
+column_restart_leak=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT (coalesce(new_data::text, '') LIKE '%$COLUMN_VALUE_RESTART%') OR (coalesce(old_data::text, '') LIKE '%$COLUMN_VALUE_RESTART%') FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$COLUMN_TABLE' AND new_data->>'id' = '3'")
+if [ "$column_restart_key" != "f" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg — die nach dem Neustart erfasste Change (id=3, $COLUMN_TABLE) trägt den ausgeschlossenen Spaltenschlüssel $COLUMN_NAME weiterhin im Row Image (der Ausschlussstand wurde beim Prozessstart nicht wiederhergestellt)" >&2
+  exit 1
+fi
+if [ "$column_restart_name" != "ColumnAfterRestart" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg — die nach dem Neustart erfasste Change (id=3, $COLUMN_TABLE) trägt die nicht ausgeschlossene Spalte name='${column_restart_name:-leer}', wollen 'ColumnAfterRestart'" >&2
+  exit 1
+fi
+if [ "$column_restart_leak" != "f" ]; then
+  echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg — der ausgeschlossene Wert '$COLUMN_VALUE_RESTART' steht im nach dem Neustart persistierten Change (id=3, $COLUMN_TABLE) (LH-QA-SEC-004)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Spaltenausschluss-Neustart-Beleg (ADR-0065, LH-QA-SEC-004) — der reale Container-Neustart ließ den dauerhaften Ausschlussstand wirksam werden: die danach erfasste Change (id=3) trägt $COLUMN_NAME nicht im Row Image und den Wert '$COLUMN_VALUE_RESTART' nirgends"
+
 # Negative-Beleg (LH-FA-CFG-005 Negative): der Ausschluss einer an der Quelle
 # nicht existierenden Spalte endet real `failed` samt Fehlertext — nicht
 # still `applied` (ErrSourceColumnMissing-Pfad).

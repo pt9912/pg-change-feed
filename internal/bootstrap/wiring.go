@@ -335,8 +335,20 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // (widerspräche `TableActivationPort.Register`s Vertrag: beide Zeilen in
 // einem Commit) bleibt ohne Bindung — keine Erfassung ohne
 // Interpretationsgrundlage.
-func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, source model.SourceID) (map[string]mapper.TableBinding, error) {
+//
+// Der Ausschlussstand kommt aus seiner dauerhaften Herkunft
+// (`ColumnExclusionPort.ExcludedColumns`, `ADR-0065`) und geht je Tabelle
+// in die Bindung ein — der Bindungs-Neuaufbau trägt damit auch einen
+// früher beantragten Spaltenausschluss. Die Lese-Fähigkeit trägt dieselbe
+// Adapter-Instanz wie die Aktivierung (im MVP eine Instanz, `ARC-004`);
+// ein Lesefehler endet vor dem Stream-Start in der Startfehlerklasse des
+// bestehenden Pfads (`storage`, `SPEC-008`).
+func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
 	registered, err := activation.List(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	excluded, err := columnExclusion.ExcludedColumns(ctx, source)
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +361,11 @@ func activatedTableBindings(ctx context.Context, activation outbound.TableActiva
 		if !found {
 			continue
 		}
-		tables[table.QualifiedName()] = mapper.TableBinding{TableID: table.ID, SchemaVersion: current.ID}
+		tables[table.QualifiedName()] = mapper.TableBinding{
+			TableID:         table.ID,
+			SchemaVersion:   current.ID,
+			ExcludedColumns: excluded[table.QualifiedName()],
+		}
 	}
 	return tables, nil
 }
@@ -521,13 +537,16 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	}
 
 	// Der laufende Bindungsstand des Assemblers trägt sich aus der
-	// Datenbank fort (`TableActivationPort.List`/`SchemaStorePort.CurrentVersion`),
-	// nicht ausschließlich aus `cfg.Tables`: `CDC_TABLES` bleibt der
-	// Erstaktivierungs-Seed oben (schreibt eine leere Datenbank fort), die
-	// Grundlage des Stream-Starts ist der committed Stand — ein
-	// Prozess-Neustart verliert damit keine zwischenzeitlich per SQL
-	// aktivierte Tabelle, deren Kennung `CDC_TABLES` nicht trägt.
-	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, cfg.Source)
+	// Datenbank fort (`TableActivationPort.List`/`SchemaStorePort.CurrentVersion`
+	// samt `ColumnExclusionPort.ExcludedColumns`), nicht ausschließlich aus
+	// `cfg.Tables`: `CDC_TABLES` bleibt der Erstaktivierungs-Seed oben
+	// (schreibt eine leere Datenbank fort), die Grundlage des Stream-Starts
+	// ist der committed Stand — ein Prozess-Neustart verliert damit weder
+	// eine zwischenzeitlich per SQL aktivierte Tabelle, deren Kennung
+	// `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
+	// Spaltenausschluss (`ADR-0065`). Die Aktivierungs-Instanz trägt beide
+	// Lese-Fähigkeiten (`ARC-004`).
+	assemblerTables, err := activatedTableBindings(ctx, activation, schemaStore, activation, cfg.Source)
 	if err != nil {
 		return err
 	}
@@ -628,18 +647,19 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	go func() {
 		defer administrationDone.Done()
 		runAdministration(administrationCtx, administrationDeps{
-			requests:       adminRequests,
-			listener:       adminListener,
-			activation:     activation,
-			enableTables:   enableTables,
-			disableTables:  disableTables,
-			excludeColumns: excludeColumns,
-			includeColumns: includeColumns,
-			schemaStore:    schemaStore,
-			assembler:      stream.Assembler(),
-			publication:    cfg.Publication,
-			pollInterval:   administrationPollInterval,
-			log:            log,
+			requests:        adminRequests,
+			listener:        adminListener,
+			activation:      activation,
+			enableTables:    enableTables,
+			disableTables:   disableTables,
+			excludeColumns:  excludeColumns,
+			includeColumns:  includeColumns,
+			schemaStore:     schemaStore,
+			columnExclusion: activation,
+			assembler:       stream.Assembler(),
+			publication:     cfg.Publication,
+			pollInterval:    administrationPollInterval,
+			log:             log,
 		})
 	}()
 
@@ -1022,10 +1042,15 @@ type administrationDeps struct {
 	excludeColumns inbound.ExcludeColumnUseCase
 	includeColumns inbound.IncludeColumnUseCase
 	schemaStore    outbound.SchemaStorePort
-	assembler      *mapper.Assembler
-	publication    string
-	pollInterval   time.Duration
-	log            outbound.LogPort
+	// columnExclusion trägt die dauerhafte Herkunft des Ausschlussstandes
+	// (`ADR-0065`): der Aktivierungs-Zweig liest sie und trägt sie in die
+	// neu angelegte `Assembler`-Bindung — derselbe Mechanismus wie der
+	// Prozessstart (`activatedTableBindings`).
+	columnExclusion outbound.ColumnExclusionPort
+	assembler       *mapper.Assembler
+	publication     string
+	pollInterval    time.Duration
+	log             outbound.LogPort
 }
 
 // runAdministration verarbeitet offene Anträge der Antrags-Queue
@@ -1106,6 +1131,13 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // oder Publication-Menge, die die beiden Tabellen-Antragsarten tragen
 // (`ADR-0059` Teilfrage 3). Die Nachträge greifen unter `tablesMu` —
 // derselbe synchronisierte Schreibpfad wie `AddBinding`/`RemoveBinding`.
+//
+// Der Aktivierungs-Zweig liest den dauerhaften Ausschlussstand der Tabelle
+// (`ADR-0065`) und übergibt ihn an `AddBinding`: `RemoveBinding` hat den
+// Bindungs-Eintrag samt Ausschlussstand entfernt, dieser Zweig legt beide
+// über die Herkunft neu an — der Stand überlebt den `disable`/`enable`-Zyklus
+// ohne Neustart. Der Lese-Fehler endet wie jeder Antrags-Fehler im
+// `failed`-Vermerk (`processAdministrationRequests`).
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1136,7 +1168,15 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		if !found {
 			return fmt.Errorf("Aktivierung ohne registrierte Schema-Version: %s", qualified)
 		}
-		deps.assembler.AddBinding(qualified, mapper.TableBinding{TableID: registered.ID, SchemaVersion: current.ID})
+		excluded, err := deps.columnExclusion.ExcludedColumns(ctx, request.Source)
+		if err != nil {
+			return err
+		}
+		deps.assembler.AddBinding(qualified, mapper.TableBinding{
+			TableID:         registered.ID,
+			SchemaVersion:   current.ID,
+			ExcludedColumns: excluded[qualified],
+		})
 		return nil
 	case model.AdministrationRequestDisable:
 		if _, err := deps.disableTables.Disable(ctx, inbound.DisableTableCommand{

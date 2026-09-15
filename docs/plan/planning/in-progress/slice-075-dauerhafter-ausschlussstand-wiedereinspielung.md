@@ -105,30 +105,38 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Der Ausschlussstand einer Tabelle wird aus den `applied`-Zeilen der
+- [x] Der Ausschlussstand einer Tabelle wird aus den `applied`-Zeilen der
       beiden Spalten-Antragsarten abgeleitet und bei jedem Anlegen einer
       Bindung mitgeführt — im Prozessstart (`activatedTableBindings`) und im
       Aktivierungs-Zweig (`AddBinding`). Beleg: Test in
       `internal/bootstrap/`, der den Bindungs-Neuaufbau und einen
       `disable`/`enable`-Zyklus real nachbildet und danach prüft, dass der
-      ausgeschlossene Spaltenname im Row Image fehlt.
-- [ ] Die Ableitung liegt hinter einer neuen Lesefähigkeit am Outbound Port
+      ausgeschlossene Spaltenname im Row Image fehlt
+      (`TestActivatedTableBindingsCarriesExcludedColumns`,
+      `TestProcessAdministrationRequestsDisableEnableCycleRestoresExclusion`,
+      dazu `TestProcessAdministrationRequestsMarksFailedWhenExclusionReadFails`);
+      `make test` Exit 0, beide Zusagen einzeln rot gesehen (Mutationen 1/2).
+- [x] Die Ableitung liegt hinter einer neuen Lesefähigkeit am Outbound Port
       (`ARC-004`, Fähigkeits-Zuschnitt nach `ADR-0034`), gegen die reale
       PostgreSQL erprobt (`make test-store`) — inklusive der deterministischen
-      Reihenfolge bei gleichem `requested_at`.
-- [ ] E2E-Beleg (`LH-QA-SEC-004`): ein simulierter Container-Neustart im
+      Reihenfolge bei gleichem `requested_at`. Beleg:
+      `TestTableActivationExcludedColumnsDerivesAppliedColumnRequests`,
+      `make test-store` Exit 0; Zweitschlüssel und `include_column`-Wirkung
+      einzeln rot gesehen (Mutationen 3/4).
+- [x] E2E-Beleg (`LH-QA-SEC-004`): ein simulierter Container-Neustart im
       bestehenden Rundlauf (`tools/harness/run-integration-tests.sh`) lässt
       einen zuvor per `cdc.exclude_column` beantragten Ausschluss wirksam —
       ein danach eingefügter Change trägt den Spaltenwert nicht in
-      `cdc.changes`. Beleg: `make test-integration` real grün.
-- [ ] `make gates` grün.
+      `cdc.changes`. Beleg: `make test-integration` Exit 0 (Zeile
+      *Spaltenausschluss-Neustart-Beleg* in der Ausgabe).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge, Zeile `make
+- [x] Doku-Update: `harness/README.md` §Werkzeuge, Zeile `make
       test-integration`, um den neuen Beleg-Baustein ergänzt; dazu der
       `SPEC-019`-Fließtext zur Bedeutung des `applied`-Wertes (Folgepflicht
-      aus `ADR-0065`, Planner-/Architect-Zug).
+      aus `ADR-0065`, Planner-/Architect-Zug) plus Historie-Zeile in §7.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. Entfällt: Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `PGC`), `../reconciliation.md` existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. Erwartet: `evidence/slice-075.md` in `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (der Eintrag trägt diesen Slice als Auslöser, siehe §8).
@@ -151,6 +159,49 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/bootstrap/*_test.go` | update | Belege für Bindungs-Neuaufbau und `disable`/`enable`-Zyklus |
 | `tools/harness/run-integration-tests.sh` | update | Neustart-Beleg des Ausschlussstandes im bestehenden Rundlauf |
 | `harness/README.md` | update | Werkzeuge-Zeile `make test-integration` um den neuen Beleg-Baustein ergänzt |
+
+**Plan-Nachzug (Implementer, 2026-09-15) — Pfad der SQL-Texte.** Die Tabelle
+nennt `internal/adapters/driven/postgresstorage/queries.go`; die SQL-Texte
+liegen im Unterpaket (`internal/adapters/driven/postgresstorage/queries/queries.go`,
+`ADR-0042`-Paketstruktur). Die neue Abfrage steht dort, nicht im Adapter.
+
+**Plan-Nachzug (Implementer, 2026-09-15) — Form der Lesefähigkeit.** Die
+Fähigkeit liest **je Quelle** (`ExcludedColumns(ctx, source) (map[string][]string, error)`,
+Schlüssel `schema.table`) statt je Tabelle: `ADR-0065` beziffert den
+Startpfad-Zusatzaufwand ausdrücklich mit „eine Abfrage je Quelle, nicht je
+Tabelle", und beide Aufrufer — `activatedTableBindings` (alle Tabellen der
+Quelle) und der Aktivierungs-Zweig (eine Tabelle) — bedient dieselbe Rückgabe.
+Der Ausschlussstand einer Tabelle ohne geführten Namen trägt **keinen**
+Map-Eintrag, keine leere Liste.
+
+**Plan-Nachzug (Implementer, 2026-09-15) — drei weitere Test-Orte.** Über
+`internal/bootstrap/*_test.go` hinaus: (a)
+`internal/adapters/driven/postgresstorage/administrationrequest_test.go`
+trägt den realen PostgreSQL-Beleg der Ableitung samt deterministischem
+Zweitschlüssel (DoD-Punkt 2, `make test-store`); (b)/(c)
+`internal/application/usecase/excludecolumn/service_test.go` und
+`.../includecolumn/service_test.go` tragen die neue Methode in ihren
+`ColumnExclusionPort`-Fakes nach — die Fähigkeit sitzt am bestehenden
+Port-Zuschnitt (`ADR-0034`), ihre Fakes müssen den erweiterten Vertrag
+erfüllen, ohne ihn zu nutzen.
+
+**Plan-Nachzug (Implementer, 2026-09-15) — `spec/pflichtenheft.md`.** Der
+DoD-Punkt *Doku-Update* nennt neben `harness/README.md` den
+`SPEC-019`-Fließtext zur Bedeutung von `applied`; die §3-Tabelle führte ihn
+nicht. Der Satz steht jetzt in `SPEC-019` (dauerhaft vermerkter Stand, eine
+Herkunft, Wirksamkeit sobald die Tabelle erfasst wird) samt Zeile in §7
+Historie. **Abweichung zum ADR-Wortlaut, benannt:** `ADR-0065`s Folgepflicht
+etikettiert diesen Text als „Planner-/Architect-Zug"; der Slice-DoD ordnet
+ihn diesem Lauf zu. Inhaltlich entscheidet der Slice nichts — er schreibt den
+in `ADR-0065` festgelegten Wortlaut der Bedeutung aus.
+
+**Plan-Nachzug (Implementer, 2026-09-15) — `harness/image-hash.txt`.** Der
+Diff ändert Build-Kontext-Dateien (`internal/**`); `compose.yaml`
+referenziert das lokal gebaute Image ohne eigenen `build:`-Block, `make
+test-integration` lief deshalb erst nach einem `make image` gegen den neuen
+Digest (der alte Lauf traf noch den Vorstand und färbte den Neustart-Beleg
+rot — siehe Bericht). Der neue Digest reist mit dem Diff mit
+(`ADR-0044`).
 
 ## 4. Trigger
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/includecolumn"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // fakeColumnExclusion trägt den `ColumnExclusionPort` als Fake (`ADR-0030`)
@@ -21,6 +22,12 @@ type fakeColumnExclusion struct {
 func (f *fakeColumnExclusion) ColumnExists(ctx context.Context, schema, table, column string) (bool, error) {
 	f.calls++
 	return f.exists, f.err
+}
+
+// ExcludedColumns bleibt ungenutzt: der Use Case liest die Spaltenexistenz;
+// den dauerhaften Ausschlussstand trägt die Verdrahtung (`ADR-0065`).
+func (f *fakeColumnExclusion) ExcludedColumns(ctx context.Context, source model.SourceID) (map[string][]string, error) {
+	return nil, nil
 }
 
 // TestIncludeColumnChecksSourceColumn trägt den Happy Path (`LH-FA-CFG-005`):

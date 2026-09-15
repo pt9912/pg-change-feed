@@ -93,6 +93,78 @@ func (a *TableActivationAdapter) ColumnExists(ctx context.Context, schema, table
 	return count > 0, nil
 }
 
+// ExcludedColumns liest den dauerhaften Ausschlussstand je Tabelle einer
+// Quelle (`LH-FA-CFG-005`, `ADR-0065`): die `applied`-Zeilen der beiden
+// Spalten-Antragsarten in `cdc.administration_request`, in
+// `requested_at`-Ordnung mit der Antrags-ID als deterministischem
+// Zweitschlüssel (Query-Kommentar). `exclude_column` trägt den
+// Spaltennamen ein, `include_column` nimmt ihn wieder heraus — derselbe
+// Schreibpfad wie der Live-Reload (`ADR-0059` Teilfrage 5), nur über die
+// dauerhafte Herkunft statt über den Prozessspeicher. Eine nicht
+// vermerkte (`pending`/`failed`) Zeile und eine Zeile einer der beiden
+// Tabellen-Antragsarten tragen keinen Stand; eine Quelle ohne
+// Spalten-Anträge liefert eine leere Map.
+func (a *TableActivationAdapter) ExcludedColumns(ctx context.Context, source model.SourceID) (map[string][]string, error) {
+	rows, err := a.pool.Query(ctx, queries.SelectAppliedColumnRequests, string(source))
+	if err != nil {
+		return nil, storageFailure(ctx, a.log, err)
+	}
+	defer rows.Close()
+
+	excluded := make(map[string][]string)
+	for rows.Next() {
+		var schema, table, kind, column string
+		if err := rows.Scan(&schema, &table, &kind, &column); err != nil {
+			return nil, storageFailure(ctx, a.log, err)
+		}
+		qualified := schema + "." + table
+		switch model.AdministrationRequestKind(kind) {
+		case model.AdministrationRequestExcludeColumn:
+			if !containsColumn(excluded[qualified], column) {
+				excluded[qualified] = append(excluded[qualified], column)
+			}
+		case model.AdministrationRequestIncludeColumn:
+			// Ein Einschluss, der den letzten geführten Namen nimmt, lässt
+			// keinen Eintrag stehen: ein Stand ohne Ausschluss ist ein
+			// fehlender Eintrag, keine leere Liste.
+			if remaining := removeColumn(excluded[qualified], column); len(remaining) == 0 {
+				delete(excluded, qualified)
+			} else {
+				excluded[qualified] = remaining
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, storageFailure(ctx, a.log, err)
+	}
+	return excluded, nil
+}
+
+// containsColumn meldet, ob ein Spaltenname in einem Ausschlussstand steht;
+// der Stand einer Tabelle bleibt klein, die lineare Suche damit ohne
+// eigenen Index.
+func containsColumn(columns []string, name string) bool {
+	for _, column := range columns {
+		if column == name {
+			return true
+		}
+	}
+	return false
+}
+
+// removeColumn liefert den Ausschlussstand ohne den übergebenen
+// Spaltennamen; die Rückgabe ist neu aufgebaut, damit kein Leser auf dem
+// Speicher der übergebenen Liste liegt.
+func removeColumn(columns []string, name string) []string {
+	remaining := make([]string, 0, len(columns))
+	for _, column := range columns {
+		if column != name {
+			remaining = append(remaining, column)
+		}
+	}
+	return remaining
+}
+
 // TableExists prüft die physische Tabelle über den Katalog; die
 // Negative-Pfade der Aktivierung, Deaktivierung und Status-Abfrage enden
 // über die Abwesenheit sichtbar (`LH-FA-CFG-001`/`002`/`003`).

@@ -298,6 +298,25 @@ FROM cdc.administration_request
 WHERE status = 'pending'
 ORDER BY requested_at`
 
+// SelectAppliedColumnRequests liest die `applied`-Zeilen der beiden
+// Spalten-Antragsarten einer Quelle (`LH-FA-CFG-005`, `ADR-0065`): der
+// Adapter wertet sie zur Reihenfolge aus und trägt damit den dauerhaften
+// Ausschlussstand. `requested_at` trägt den Transaktionszeitstempel
+// (`current_timestamp` der schreibenden Funktion) und ist zwischen zwei
+// Anträgen derselben Transaktion nicht unterscheidend — deshalb der
+// deterministische Zweitschlüssel `administration_request_id`: dieselbe
+// Antrags-Menge trägt damit unabhängig von der Ausführungsreihenfolge
+// genau eine Reihenfolge. Die beiden Tabellen-Antragsarten bleiben außen
+// vor; `COALESCE` normalisiert das für sie NULL-bare `column_name` wie in
+// SelectPendingAdministrationRequests.
+const SelectAppliedColumnRequests = `
+SELECT schema_name, table_name, request_kind, COALESCE(column_name, '')
+FROM cdc.administration_request
+WHERE source_id = $1
+  AND status = 'applied'
+  AND request_kind IN ('exclude_column', 'include_column')
+ORDER BY requested_at, administration_request_id`
+
 // UpdateAdministrationRequestApplied vermerkt einen erfolgreich
 // verarbeiteten Antrag; die WHERE-Klausel trägt die Idempotenz — ein
 // bereits vermerkter Antrag (nicht mehr `pending`) bleibt unverändert und

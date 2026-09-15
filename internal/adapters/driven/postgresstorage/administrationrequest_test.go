@@ -421,6 +421,94 @@ func TestAdministrationRequestAdapterMarkAppliedIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestTableActivationExcludedColumnsDerivesAppliedColumnRequests trägt die
+// Ableitung des dauerhaften Ausschlussstandes gegen die reale PostgreSQL
+// (`LH-FA-CFG-005`, `ADR-0065`): die `applied`-Zeilen der beiden
+// Spalten-Antragsarten tragen den Stand, `exclude_column` trägt einen Namen
+// ein, `include_column` nimmt ihn wieder heraus. Der Test setzt die
+// Antrags-Zeilen direkt (`requested_at` und Antrags-ID sind hier
+// Prüfgegenstand); die schreibenden Funktionen und ihren `pending`-Ausgang
+// decken die Tests dieses Pakets darüber ab.
+//
+// Die beiden ersten Zeilen tragen denselben `requested_at`: die eingefügte
+// Reihenfolge wäre `b-exclude` vor `a-include` (nicht ausgeschlossen), die
+// `administration_request_id` als Zweitschlüssel dreht das um (ausgeschlossen)
+// — der Test belegt damit die deterministische Ordnung, nicht nur ihr
+// Ergebnis.
+func TestTableActivationExcludedColumnsDerivesAppliedColumnRequests(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	adapter, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewTableActivation: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	const (
+		table        = "orders_exclusion_derivation"
+		otherTable   = "orders_exclusion_other"
+		insertColumn = `INSERT INTO cdc.administration_request
+    (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, requested_at, status)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+	)
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(),
+			"DELETE FROM cdc.administration_request WHERE administration_request_id LIKE 'exclusion-derivation-%'")
+	})
+
+	tiedAt := time.Date(2026, 9, 15, 12, 0, 0, 0, time.UTC)
+	insert := func(id, targetTable, kind, column, status string, requestedAt time.Time) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, insertColumn,
+			id, administrationRequestSource, "public", targetTable, column, kind, requestedAt, status,
+		); err != nil {
+			t.Fatalf("Antrags-Zeile %q schreiben: %v", id, err)
+		}
+	}
+
+	// Reihenfolge-Eins: dieselbe Spalte, derselbe Zeitstempel.
+	insert("exclusion-derivation-b-exclude", table, "exclude_column", "secret", "applied", tiedAt)
+	insert("exclusion-derivation-a-include", table, "include_column", "secret", "applied", tiedAt)
+	// Zeilen ohne Anteil am Stand: fremde Tabelle, andere Antragsart,
+	// anderer Ausgang.
+	insert("exclusion-derivation-e-other-table", otherTable, "exclude_column", "tenant", "applied", tiedAt)
+	insert("exclusion-derivation-f-enable", table, "enable", "", "applied", tiedAt)
+	insert("exclusion-derivation-g-pending", table, "exclude_column", "pending_column", "pending", tiedAt)
+	insert("exclusion-derivation-h-failed", table, "exclude_column", "failed_column", "failed", tiedAt)
+
+	excluded, err := adapter.ExcludedColumns(ctx, administrationRequestSource)
+	if err != nil {
+		t.Fatalf("ExcludedColumns: %v", err)
+	}
+	if got := excluded["public."+table]; len(got) != 1 || got[0] != "secret" {
+		t.Fatalf("Ausschlussstand public.%s = %v, wollen [secret] (include_column hebt den früheren exclude_column desselben Zeitstempels auf)", table, got)
+	}
+	if got := excluded["public."+otherTable]; len(got) != 1 || got[0] != "tenant" {
+		t.Fatalf("Ausschlussstand public.%s = %v, wollen [tenant]", otherTable, got)
+	}
+
+	// Einschluss nach dem Ausschluss: der Stand fällt weg — kein Eintrag,
+	// keine leere Liste.
+	insert("exclusion-derivation-c-include", table, "include_column", "secret", "applied", tiedAt.Add(time.Second))
+	excluded, err = adapter.ExcludedColumns(ctx, administrationRequestSource)
+	if err != nil {
+		t.Fatalf("ExcludedColumns nach dem Einschluss: %v", err)
+	}
+	if got, present := excluded["public."+table]; present {
+		t.Fatalf("Ausschlussstand public.%s = %v, wollen keinen Eintrag (include_column hat den letzten Namen genommen)", table, got)
+	}
+
+	// Eine Quelle ohne Antrag trägt keinen Stand.
+	excluded, err = adapter.ExcludedColumns(ctx, model.SourceID("src-administration-ohne-antraege"))
+	if err != nil {
+		t.Fatalf("ExcludedColumns ohne Anträge: %v", err)
+	}
+	if len(excluded) != 0 {
+		t.Fatalf("Ausschlussstand einer Quelle ohne Anträge = %v, wollen leer", excluded)
+	}
+}
+
 // TestAdministrationListenerWaitForNotification trägt die
 // `LISTEN`-Wecksignal-Fähigkeit real: ein `NOTIFY` löst die Rückkehr aus,
 // eine ausbleibende Benachrichtigung endet über den Timeout des

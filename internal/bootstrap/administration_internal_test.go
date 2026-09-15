@@ -154,12 +154,14 @@ func (f *fakeIncludeColumnUseCase) Include(ctx context.Context, command inbound.
 
 var _ inbound.IncludeColumnUseCase = (*fakeIncludeColumnUseCase)(nil)
 
-// fakeTableActivationPort trägt nur `Registered` mit echtem Verhalten — die
-// übrigen Methoden bleiben ungenutzte Nullwerte, `applyAdministrationRequest`
-// ruft ausschließlich `Registered` auf (Enable-Zweig, nach `Enable` frisch
-// zurückgelesene Bindung, `wiring.go`-Kommentar an `applyAdministrationRequest`).
+// fakeTableActivationPort trägt `Registered` und `List` mit echtem
+// Verhalten — `List` bedient den Bindungs-Neuaufbau
+// (`activatedTableBindings`), `Registered` den Enable-Zweig von
+// `applyAdministrationRequest` (dort frisch zurückgelesene Bindung,
+// `wiring.go`-Kommentar).
 type fakeTableActivationPort struct {
 	registered map[string]model.SourceTable
+	listed     []model.SourceTable
 }
 
 func (f *fakeTableActivationPort) TableExists(ctx context.Context, schema, table string) (bool, error) {
@@ -180,7 +182,7 @@ func (f *fakeTableActivationPort) Unregister(ctx context.Context, table model.So
 }
 
 func (f *fakeTableActivationPort) List(ctx context.Context, source model.SourceID) ([]model.SourceTable, error) {
-	return nil, nil
+	return f.listed, nil
 }
 
 func (f *fakeTableActivationPort) Publish(ctx context.Context, publication, schema, table string) error {
@@ -217,6 +219,29 @@ func (f *fakeSchemaStorePort) TableSchema(ctx context.Context, versionID model.S
 }
 
 var _ outbound.SchemaStorePort = (*fakeSchemaStorePort)(nil)
+
+// fakeColumnExclusionPort trägt den dauerhaften Ausschlussstand als
+// In-Memory-Stub des `outbound.ColumnExclusionPort` (`ADR-0065`): beide
+// Lesepfade — Bindungs-Neuaufbau und Aktivierungs-Zweig — greifen auf
+// dieselbe Rückgabe zu. `ColumnExists` bleibt ungenutzt; die Spaltenprüfung
+// des Spalten-Zweigs deckt der reale Adapter-Test ab.
+type fakeColumnExclusionPort struct {
+	excluded map[string][]string
+	err      error
+}
+
+func (f *fakeColumnExclusionPort) ColumnExists(ctx context.Context, schema, table, column string) (bool, error) {
+	return true, nil
+}
+
+func (f *fakeColumnExclusionPort) ExcludedColumns(ctx context.Context, source model.SourceID) (map[string][]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.excluded, nil
+}
+
+var _ outbound.ColumnExclusionPort = (*fakeColumnExclusionPort)(nil)
 
 // assemblerCapturesQualified belegt den Bindungs-Zustand eines Assemblers
 // über seine öffentliche `Consume`-Schnittstelle (kein Zugriff auf
@@ -269,14 +294,15 @@ func TestProcessAdministrationRequestsEnableAppliesAndBindsAssembler(t *testing.
 	}
 	enableTables := &fakeEnableTableUseCase{}
 	deps := administrationDeps{
-		requests:      requests,
-		activation:    activation,
-		enableTables:  enableTables,
-		disableTables: &fakeDisableTableUseCase{},
-		schemaStore:   schemaStore,
-		assembler:     assembler,
-		publication:   "cdc_pub",
-		log:           &recordingLog{},
+		requests:        requests,
+		activation:      activation,
+		enableTables:    enableTables,
+		disableTables:   &fakeDisableTableUseCase{},
+		schemaStore:     schemaStore,
+		columnExclusion: &fakeColumnExclusionPort{},
+		assembler:       assembler,
+		publication:     "cdc_pub",
+		log:             &recordingLog{},
 	}
 
 	processAdministrationRequests(ctx, deps)
@@ -660,16 +686,17 @@ func TestRunAdministrationLogsWarnOnListenerErrorAndKeepsPolling(t *testing.T) {
 	}
 	log := &recordingLog{}
 	deps := administrationDeps{
-		requests:      requests,
-		listener:      &fakeAdministrationListener{err: stderrors.New("connection refused")},
-		activation:    activation,
-		enableTables:  &fakeEnableTableUseCase{},
-		disableTables: &fakeDisableTableUseCase{},
-		schemaStore:   schemaStore,
-		assembler:     assembler,
-		publication:   "cdc_pub",
-		pollInterval:  time.Millisecond,
-		log:           log,
+		requests:        requests,
+		listener:        &fakeAdministrationListener{err: stderrors.New("connection refused")},
+		activation:      activation,
+		enableTables:    &fakeEnableTableUseCase{},
+		disableTables:   &fakeDisableTableUseCase{},
+		schemaStore:     schemaStore,
+		columnExclusion: &fakeColumnExclusionPort{},
+		assembler:       assembler,
+		publication:     "cdc_pub",
+		pollInterval:    time.Millisecond,
+		log:             log,
 	}
 
 	done := make(chan struct{})
@@ -702,5 +729,153 @@ func TestRunAdministrationLogsWarnOnListenerErrorAndKeepsPolling(t *testing.T) {
 	log.mu.Unlock()
 	if warns == 0 {
 		t.Fatal("kein Warn-Log für den gestörten Listener trotz Fehler auf jedem Wecksignal-Versuch")
+	}
+}
+
+// TestActivatedTableBindingsCarriesExcludedColumns trägt den Startpfad des
+// dauerhaften Ausschlussstandes (`ADR-0065`): der Bindungs-Neuaufbau liest
+// den Stand aus seiner dauerhaften Herkunft und übergibt ihn je Tabelle an
+// die Bindung — ohne diesen Schritt erfasst ein neu gestarteter Prozess die
+// zuvor ausgeschlossene Spalte wieder, obwohl der Antrag `applied` trägt.
+// Der Test führt den Neuaufbau bis in die Filterwirkung: das Row Image der
+// neu gebauten Bindung lässt den geführten Spaltennamen weg.
+func TestActivatedTableBindingsCarriesExcludedColumns(t *testing.T) {
+	ctx := context.Background()
+	const (
+		source  = model.SourceID("src-restart")
+		tableID = model.SourceTableID("tbl-restart")
+	)
+	activation := &fakeTableActivationPort{listed: []model.SourceTable{
+		{ID: tableID, SourceID: source, Schema: "public", Table: "orders_restart"},
+	}}
+	schemaStore := &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: "sv-restart", SourceTableID: tableID, Version: 1},
+	}}
+	exclusions := &fakeColumnExclusionPort{excluded: map[string][]string{
+		"public.orders_restart": {"secret"},
+	}}
+
+	tables, err := activatedTableBindings(ctx, activation, schemaStore, exclusions, source)
+	if err != nil {
+		t.Fatalf("activatedTableBindings = %v, wollen nil", err)
+	}
+	binding, found := tables["public.orders_restart"]
+	if !found {
+		t.Fatalf("Bindungs-Stand trägt public.orders_restart nicht: %+v", tables)
+	}
+	if len(binding.ExcludedColumns) != 1 || binding.ExcludedColumns[0] != "secret" {
+		t.Fatalf("ExcludedColumns = %v, wollen [secret]", binding.ExcludedColumns)
+	}
+
+	assembler, err := mapper.NewAssembler(source, tables, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	if image := assemblerRowImage(t, assembler, 1, "public", "orders_restart"); image != `{"id":"1"}` {
+		t.Fatalf("Row Image der neu gebauten Bindung = %s, wollen ohne den ausgeschlossenen Schlüssel secret", image)
+	}
+}
+
+// TestProcessAdministrationRequestsDisableEnableCycleRestoresExclusion trägt
+// den zweiten Auslöser des Stand-Verlusts (`ADR-0065`): die Deaktivierung
+// entfernt den Bindungs-Eintrag samt Ausschlussstand, der Aktivierungs-Zweig
+// legt ihn über die dauerhafte Herkunft neu an. Ohne die Ableitung im
+// Aktivierungs-Zweig stünde nach `disable` → `enable` eine Bindung ohne
+// Ausschluss, und die Spalte würde wieder erfasst — derselbe Verlust wie
+// beim Prozess-Neustart, ohne Neustart.
+func TestProcessAdministrationRequestsDisableEnableCycleRestoresExclusion(t *testing.T) {
+	ctx := context.Background()
+	const table = "orders_cycle"
+	tableID := administrationTableID("public", table)
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{ID: "req-cycle-disable", Source: "src-admin", Schema: "public", Table: table, Kind: model.AdministrationRequestDisable},
+	}}
+	activation := &fakeTableActivationPort{registered: map[string]model.SourceTable{
+		"public." + table: {ID: tableID, SourceID: "src-admin", Schema: "public", Table: table},
+	}}
+	schemaStore := &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
+	}}
+	// Der laufende Prozess trägt den Ausschluss bis zur Deaktivierung.
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{
+		"public." + table: {TableID: tableID, SchemaVersion: administrationSchemaVersionID(tableID), ExcludedColumns: []string{"secret"}},
+	}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	deps := administrationDeps{
+		requests:        requests,
+		activation:      activation,
+		enableTables:    &fakeEnableTableUseCase{},
+		disableTables:   &fakeDisableTableUseCase{},
+		schemaStore:     schemaStore,
+		columnExclusion: &fakeColumnExclusionPort{excluded: map[string][]string{"public." + table: {"secret"}}},
+		assembler:       assembler,
+		publication:     "cdc_pub",
+		log:             &recordingLog{},
+	}
+
+	processAdministrationRequests(ctx, deps)
+	if assemblerCapturesQualified(t, assembler, 1, "public", table) {
+		t.Fatal("Assembler trägt nach Disable weiterhin eine Bindung für " + table)
+	}
+
+	requests.mu.Lock()
+	requests.pending = []model.AdministrationRequest{{
+		ID: "req-cycle-enable", Source: "src-admin", Schema: "public", Table: table, Kind: model.AdministrationRequestEnable,
+	}}
+	requests.mu.Unlock()
+	processAdministrationRequests(ctx, deps)
+
+	if !assemblerCapturesQualified(t, assembler, 2, "public", table) {
+		t.Fatal("Assembler trägt nach Enable keine Bindung für " + table + " — AddBinding hat nicht nachgetragen")
+	}
+	if image := assemblerRowImage(t, assembler, 3, "public", table); image != `{"id":"1"}` {
+		t.Fatalf("Row Image nach dem disable/enable-Zyklus = %s, wollen ohne den ausgeschlossenen Schlüssel secret", image)
+	}
+}
+
+// TestProcessAdministrationRequestsMarksFailedWhenExclusionReadFails trägt
+// den Fehlerpfad der dauerhaften Herkunft im Aktivierungs-Zweig: ein
+// Lesefehler des Ausschlussstandes endet im `failed`-Vermerk, statt eine
+// Bindung ohne den geführten Stand anzulegen — der stille Verlust, den
+// `ADR-0065` ausschließt.
+func TestProcessAdministrationRequestsMarksFailedWhenExclusionReadFails(t *testing.T) {
+	ctx := context.Background()
+	const table = "orders_read_fail"
+	tableID := administrationTableID("public", table)
+	wantErr := stderrors.New("Antrags-Historie nicht lesbar")
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{ID: "req-exclusion-read-fail", Source: "src-admin", Schema: "public", Table: table, Kind: model.AdministrationRequestEnable},
+	}}
+	activation := &fakeTableActivationPort{registered: map[string]model.SourceTable{
+		"public." + table: {ID: tableID, SourceID: "src-admin", Schema: "public", Table: table},
+	}}
+	schemaStore := &fakeSchemaStorePort{versions: map[model.SourceTableID]model.SchemaVersion{
+		tableID: {ID: administrationSchemaVersionID(tableID), SourceTableID: tableID, Version: 1},
+	}}
+	assembler, err := mapper.NewAssembler("src-admin", map[string]mapper.TableBinding{}, nil)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	deps := administrationDeps{
+		requests:        requests,
+		activation:      activation,
+		enableTables:    &fakeEnableTableUseCase{},
+		disableTables:   &fakeDisableTableUseCase{},
+		schemaStore:     schemaStore,
+		columnExclusion: &fakeColumnExclusionPort{err: wantErr},
+		assembler:       assembler,
+		publication:     "cdc_pub",
+		log:             &recordingLog{},
+	}
+
+	processAdministrationRequests(ctx, deps)
+
+	if requests.appliedCount() != 0 {
+		t.Fatalf("applied = %d, wollen 0 (Ausschlussstand nicht lesbar)", requests.appliedCount())
+	}
+	if assemblerCapturesQualified(t, assembler, 1, "public", table) {
+		t.Fatal("Assembler trägt nach gescheitertem Ausschlussstand-Lesen eine Bindung — sie trüge den geführten Ausschluss nicht")
 	}
 }

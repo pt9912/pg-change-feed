@@ -336,6 +336,21 @@ Quelle", gefolgt von der Adresse `schema.table.column`, getrennt durch
 Punkte). Die beiden Tabellen-Antragsarten tragen unverändert Bindungs-Zeilen
 und Publication nach.
 
+Für die beiden Spalten-Antragsarten trägt `applied` darüber hinaus eine
+zweite Bedeutung: der Stand ist **dauerhaft vermerkt**. Ihre
+`applied`-Zeilen sind die einzige Herkunft des Ausschlussstandes einer
+Tabelle — ausgewertet in der Reihenfolge `requested_at`, bei gleichem
+Zeitstempel deterministisch nach `administration_request_id`;
+`exclude_column` trägt den Spaltennamen ein, `include_column` nimmt ihn
+wieder heraus. Jeder Pfad, der eine Erfassungs-Bindung anlegt, trägt den so
+abgeleiteten Stand der adressierten Tabelle mit — der Prozessstart **und**
+der Aktivierungs-Zweig der Antrags-Verarbeitung; eine Deaktivierung mit
+anschließender Aktivierung stellt ihn damit ebenso her wie ein Neustart. Ein
+Antrag gegen eine existierende Spalte einer Tabelle ohne laufende Bindung
+endet deshalb `applied`, nicht `failed`: er wirkt, sobald die Tabelle erfasst
+wird. Die Antrags-Zeilen dieser beiden Arten sind dadurch tragend — eine
+Bereinigung der Tabelle verlöre den Stand.
+
 ### SPEC-020 — gRPC-Live-Change-Stream (Nachrichtenschema, RPC-Name, Stream-Semantik)
 
 Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md): ein
@@ -473,3 +488,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-14 | SPEC-019 ergänzt: Feldform von `cdc.administration_request` — Spalte `column_name`, erweiterte `request_kind`-Menge `enable`/`disable`/`exclude_column`/`include_column`, `failed`-Fehlertext der fehlenden Spalte |
 | 2026-09-14 | SPEC-020 ergänzt: gRPC-Live-Change-Stream — Dienst `ChangeStream` mit Server-Streaming-RPC `StreamChanges`, Protobuf-Nachrichtenschema der Change-Nachricht, Fire-and-Forget-Zustellsemantik ohne Stream-internes Replay, Authentifizierung über den Metadata-Eintrag `authorization` (`Bearer`-Form, dieselben Token-Klassen wie SPEC-018), Aktivierung über `CDC_GRPC_ADDR`; externe-Verträge-Zeile in §6 |
 | 2026-09-15 | `SPEC-021` ergänzt: HTTP-Server-Sent-Events für den Live-Change-Stream — Endpunkt `GET /changes/stream` (`text/event-stream`), Event-Typ `change`, JSON-Nachrichtenschema mit denselben zehn Change-Feldern, kein Stream-internes Replay (der `Last-Event-ID`-Header bleibt ungenutzt), Fire-and-Forget-Zustellsemantik, Aktivierung über `CDC_HTTP_ADDR` samt `503`-Pfad ohne verdrahteten `Broadcaster` (aus `SPEC-018` herausgelöst — jener Abschnitt gilt den neun Port-gedeckten Fähigkeiten aus `LH-FA-SST-006`) |
+| 2026-09-15 | SPEC-019 Fließtext ergänzt: `applied` heißt für `exclude_column`/`include_column` dauerhaft vermerkt — die `applied`-Zeilen sind die einzige Herkunft des Ausschlussstandes einer Tabelle, abgeleitet in `requested_at`-Ordnung mit `administration_request_id` als Zweitschlüssel, mitgeführt bei jedem Anlegen einer Erfassungs-Bindung; der Antrag gegen eine Tabelle ohne laufende Bindung endet `applied` statt `failed` |
