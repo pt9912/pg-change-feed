@@ -142,9 +142,9 @@ Eine ADR mit Status `Accepted` wird nicht inhaltlich überschrieben.
 Korrekturen entstehen als neue ADR mit `Supersedes ADR-NNNN`.
 
 Ausnahme ist die **Zitat-Korrektur**: eine Änderung ausschließlich am Zitat-
-und Verweisgerüst — host-lokale Pfade, gebrochene Linkziele, Formfehler der
-Zitation — bei unverändertem Referenten. Sie ist **kein** inhaltliches
-Überschreiben und in-place zulässig, wenn sie
+und Verweisgerüst — host-lokale Pfade, Linkziele, Zeilen-Lokatoren, die Form
+einer gebrochenen Referenz — bei unverändertem Referenten. Sie ist **kein**
+inhaltliches Überschreiben und in-place zulässig, wenn sie
 [`ADR-0073`](docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
 genügt. **Unberührbar** bleiben §Entscheidung, §Konsequenzen, §Verglichene
 Alternativen, §Status und die `Supersedes`-Kette; ihre Änderung ist eine neue
@@ -314,12 +314,13 @@ siehe
 
 ### 3.11 Kein host-lokaler absoluter Pfad in der Doku
 
-Kein Markdown-Dokument dieses Repos nennt einen host-lokalen absoluten Pfad —
-das Maschinen-Layout eines Entwicklerrechners — in Prosa oder Inline-Code. Ein
-Schwester-Artefakt wird als blankes Repo-Wort mit relativem Pfad zitiert
-(`d-check`s `Dockerfile`), nicht über seinen Pfad auf einem Rechner. Die
-Präfixliste und die festen Windows-Muster definiert das `hostpaths`-Modul
-(`hostpaths.prefixes`); dieser Abschnitt wiederholt sie nicht.
+Kein Markdown-Dokument dieses Repos nennt an irgendeiner Stelle — Prosa,
+Inline-Code oder Fenced-Code-Block — einen host-lokalen absoluten Pfad: ein
+Wurzel-Segment eines Entwicklerrechners (Präfixliste `hostpaths.prefixes`) oder
+ein Windows-Laufwerks-/UNC-Muster. Ein Schwester-Artefakt wird in der Hausform
+zitiert (`d-check`s `Dockerfile`), nicht über seinen Pfad auf einem Rechner.
+Eine verbotene Form zeigt ein Dokument **nur als Platzhalter** — `<Host-Wurzel>`
+für das Wurzel-Segment; die reale Form steht nirgends, auch nicht im Fence.
 
 **Falsch** (der Pfad beginnt mit dem Wurzel-Segment eines Entwicklerrechners;
 der Platzhalter steht für dieses Segment, weil die Regel auch dieses Beispiel
@@ -338,26 +339,28 @@ Real geprüftes Vorbild: `d-check`s `Dockerfile` (Stage `coverage`)
 **Was der Sensor deckt — und was nicht.** Die durchsetzbare Hälfte trägt das
 `hostpaths`-Modul in `make docs-check` (`make gates`, Modulliste in
 `.d-check.yml`). Es deckt `.md`-Dateien unter `scan.roots` in Prosa und
-Inline-Code. Es deckt **nicht**: Fenced-Code-Blöcke (dort sind Beispiel-Pfade
-erlaubt — Modul-Design, ohne Opt-out-Marker), **relative** Pfade,
-**Nicht-Markdown** (die Skriptkommentare in `Makefile`, `tools/**` und
-`harness/mk/**` liest der Scan nicht), und Dateien unter `scan.ignore`. Die
-Zusage trägt damit genau die gescannte Markdown-Fläche; diese Ränder sind
-benannt, nicht überzogen.
+Inline-Code. Es deckt **nicht**: Fenced-Code-Blöcke (Modul-Design, ohne
+Opt-out-Marker), **relative** Pfade, **Nicht-Markdown** (die Skriptkommentare
+in `Makefile`, `tools/**` und `harness/mk/**` liest der Scan nicht), und
+Dateien unter `scan.ignore`. **Die Fenced-Fläche deckt die Regel voll, der
+Sensor nicht** — diese Lücke ist benannt, nicht still; der Wächter dort ist
+das Review, kein Gate.
 
 **Begründung:** Ein host-lokaler absoluter Pfad ist eine Aussage über einen
 Rechner, nicht über das Repo: nicht portabel, für Mitlesende unauflösbar, und
 er verrät das Maschinen-Layout.
 
 **Träger und Anker:** Die Regel wirkt über das `hostpaths`-Modul in
-`make docs-check`; die Entscheidung trägt
+`make docs-check`; ihre Reichweite trägt
+[`ADR-0075`](docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md), die
+Aktivierung
 [`ADR-0072`](docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md),
 die Zitationsform eines Schwester-Repos
 [`ADR-0074`](docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md). Die
-Modul-Grenzen (Fence-Behandlung, Windows-Muster, ungescannte Flächen) stehen
-einmal in [`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) —
-dieser Abschnitt nennt sie nicht erneut (§3.7); die Präfixliste führt allein
-das Modul (`hostpaths.prefixes`).
+Modul-Grenzen stehen einmal in
+[`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) — dieser
+Abschnitt nennt sie nicht erneut (§3.7); die Präfixliste führt allein das
+Modul (`hostpaths.prefixes`).
 
 ## 4. Quality Gates
 

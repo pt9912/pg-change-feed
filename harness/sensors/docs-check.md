@@ -16,9 +16,7 @@ Inline-Code (`hostpath-forbidden` — ein Schwester-Artefakt wird als blankes
 Repo-Wort mit relativem Pfad zitiert,
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md)).
 Die Module und ihre Grenzen stehen in `.d-check.yml`; die Konfiguration ist die
-Deklaration dieses Vertrags, nicht dieses Dokument. Der Ist-Zustand der
-Modulliste ist `links`, `anchors`, `ids`, `matrix`, `versions`, `structure`,
-`hostpaths`.
+Deklaration dieses Vertrags, nicht dieses Dokument.
 
 Die `structure`-Regeln prüfen Abschnitts-Invarianten in ihren Trägerdateien:
 den ADR-Index, die Pflichtenheft-Defaults, zwei Architektur-Tabellen, die
@@ -104,16 +102,20 @@ Regel zählt Zeilen.
 8. **`hostpaths` — die gescannte Markdown-Fläche, nicht das Repo.** Das Modul
    meldet host-lokale **absolute** Pfade in `.md`-Dateien unter `scan.roots`,
    in Prosa und Inline-Code (`hostpath-forbidden`). Vier benannte Ränder:
-   **Fenced-Code-Blöcke** sind frei — dort sind Beispiel-Pfade erlaubt, und das
-   Modul kennt keinen Opt-out-Marker; **relative** Pfade sind ungeprüft (die
-   Zusage lautet nicht „kein Pfad verlässt das Repo"); die **Windows-Laufwerks-
-   und UNC-Muster** sind fest, nicht konfigurierbar; und **Nicht-Markdown** ist
-   ungelesen — die Skriptkommentare in `Makefile`, `tools/**` und
-   `harness/mk/**` erreicht der Scan nicht. Dateien unter `scan.ignore`
-   (`.harness/**`, `**/*.template.md`) liegen ebenfalls außerhalb. Die
-   Modul-Semantik steht **einmal** hier — `AGENTS.md` §3.11 nennt sie nicht
-   erneut (Träger:
-   [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)).
+   **Fenced-Code-Blöcke** prüft es nicht — einen Opt-out-Marker kennt es
+   nicht; **relative** Pfade sind ungeprüft (die Zusage lautet nicht „kein
+   Pfad verlässt das Repo"); die **Windows-Laufwerks- und UNC-Muster** sind
+   fest, nicht konfigurierbar; und **Nicht-Markdown** ist ungelesen — die
+   Skriptkommentare in `Makefile`, `tools/**` und `harness/mk/**` erreicht der
+   Scan nicht. Dateien unter `scan.ignore` (`.harness/**`, `**/*.template.md`)
+   liegen ebenfalls außerhalb. **Die Regel deckt die Fenced-Fläche voll, dieses
+   Modul nicht** — ihre Reichweite und diese benannte Lücke stehen in
+   `AGENTS.md` §3.11; der Wächter dort ist das Review, kein Gate. Die
+   Modul-Grenzen stehen **einmal** hier — §3.11 nennt sie nicht erneut. Träger:
+   die Reichweite
+   [`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md),
+   die Aktivierung
+   [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md).
    Die Aktivierung kennt **keinen**
    Ausschlussblock: kein `scope`, kein `ignore`, kein `exempt-paths`.
 
@@ -150,7 +152,9 @@ Erzeuger; die `structure`-Regel sichert die Zeilenform, die `ids`-Linkpflicht
 die Kennungsspalte) — `.d-check.yml` §structure · kein host-lokaler absoluter
 Pfad in der Doku (`hostpaths` in `modules`, ohne Ausschlussblock —
 [`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)
-trägt die Aktivierung, die Zitationsform eines Schwester-Repos
+trägt die Aktivierung, die Reichweite der Regel
+[`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md),
+die Zitationsform eines Schwester-Repos
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md),
 die Zitat-Korrektur an immutablen Dokumenten
 [`ADR-0073`](../../docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)).
