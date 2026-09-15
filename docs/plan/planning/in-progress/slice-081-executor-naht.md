@@ -189,9 +189,13 @@ vierter Punkt:
       Testfall entfernt. Träger: §3.
 - [x] `make gates` grün (Exit direkt, ungepiped).
 
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-081.md` · Fixrunde
+      `docs/reviews/review-slice-081-fixrunde.md` — 0 HIGH in der Fixrunde; die
+      verbleibende LOW liegt im Plan-Text (§3/§1, Planner-Zug), deshalb ohne
+      Rückgabe-Pfeil an den Implementer.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
