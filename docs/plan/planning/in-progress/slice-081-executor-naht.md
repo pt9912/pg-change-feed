@@ -203,7 +203,14 @@ hängen an `*pgconn.PgConn`, nicht an `*pgxpool.Pool`, und `receive` ruft
 `*pgconn.PgConn`) — die in §1/§2 genannte Schnittstelle (`Query`/`Exec` plus
 minimales `Rows`) drückt diese Aufrufe nicht aus. Der Zug ist damit die
 Rückführung aus §4 („nach Paket, je Adapter ein Slice"), nicht ein stilles
-Weglassen: `postgresack` und `receive` gehören je in einen eigenen Vorgang.
+Weglassen: `postgresack` und `receive` gehören je in einen eigenen Vorgang —
+**und sie existieren als Dateien**, damit die Folge-Slice-Paarung auflöst
+(Review `review-slice-081` F-3):
+`slice-084` (`../open/slice-084-postgresack-naht.md`) und
+`slice-085` (`../open/slice-085-receive-naht.md`).
+**Gemessen, nicht pauschal:** `postgresack` berührt **6**
+`pgconn`/`pglogrepl`-Symbole, `receive` **18** — die Flächen sind eine andere
+Größenordnung, deshalb zwei Vorgänge und nicht einer.
 Berührte Träger dieses Laufs: **ein** Paket, **eine** Schicht; drei
 Liefer-Punkte, kein vierter.
 
@@ -242,7 +249,7 @@ um `k_auf` **152** (`1679 → 1831`). `k_auf ≥ k_ab` ist erfüllt; die Differe
 `Classify`/`IsAbsent`/`Statement.fail`), keine verlagerte Menge.
 
 **(b) Paket-Granularitäts-Diff — nicht die Summe.** Der Abfluss ist auf **einen**
-Träger **isoliert**: `git diff --name-only main..HEAD -- internal/` listet
+Träger **isoliert**: `git diff --name-only 252962b~1..8e9fe4f -- internal/` listet
 ausschließlich Dateien unter `internal/adapters/driven/postgresstorage/`; kein
 anderes Paket ist berührt, `postgresack` (23) und `replication/receive` (155)
 bleiben unverändert. Der Zuwachs erscheint in **einem Träger, den es vorher
@@ -258,7 +265,7 @@ welcher Fall vorliegt, zeigt allein der Paket-Schnitt.
 **(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe des
 abfließenden Gegenstands sind **grün** (`make test-store` Exit 0,
 `make test-replication` Exit 0, ungepiped), und **kein Testfall wurde entfernt**
-(`git diff --name-status main..HEAD -- '*_test.go'` zeigt genau eine **neue**
+(`git diff --name-status 252962b~1..8e9fe4f -- '*_test.go'` zeigt genau eine **neue**
 Datei, `sqlexec/translate_test.go` — keine Löschung).
 
 **Die Neu-Bemessung ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
