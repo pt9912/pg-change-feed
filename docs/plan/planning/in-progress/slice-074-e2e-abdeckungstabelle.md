@@ -242,12 +242,26 @@ Aussagen-Berührung steht hier gar nicht.
 | `.d-check.yml` | update | `structure`-Regel für die Tabelle (Abschnitt + Spalten-Mindestbreiten) — der `ids`-Abschnitt bleibt unverändert, er trägt die Linkpflicht schon |
 | `harness/sensors/docs-check.md` | update | neue Grenzen (keine Symbol-Prüfung; `codepaths` aus → Folge-Vorgang; Bash-Hälfte deklariert statt abgeleitet) und der Ist-Zustand der `structure`-Regeln |
 
+**Nachzug aus der Implementierung** (`implement-slice.md` Schritt 14) — was
+über diesen Plan hinausging oder von ihm abwich:
+
+| Punkt | Was gilt | Begründung |
+|---|---|---|
+| Go-Hälfte liest **das Paket**, nicht nur die eigene Datei | Der Erzeuger parst alle `*.go` neben der Testdatei (Reihenfolge Datei, dann Quellzeile) | Eine `func TestE2E*` in einer zweiten Datei desselben Pakets fiele sonst still aus der Tabelle — dieselbe Klasse wie ein `-run`-Muster, das eine Funktion nicht trifft (`BEO-PGC/test-runner-stiller-ausschluss`), die dieser Slice sonst neu erzeugte |
+| Kurzbeschreibung: **erster Absatz, darin der erste Satz** | Satzende = erster Punkt außerhalb eines Inline-Code-Spans, dem Leerraum oder Textende folgt und dem keine Ziffer vorausgeht; danach Aufräum-Regeln für die Lücken, die entfernte Kennungen lassen | Der Plan ließ die Ableitung offen. Der Absatz-Bezug hält eine nummerierte Aufzählung aus der Zelle (eine reine Satzregel zöge den ersten Aufzählungspunkt mit herein); beide Regeln stehen als Kommentar am Erzeuger |
+| **Dritter Abbruch-Wächter**: unpaarige Inline-Code-Zeichen | Bricht der Doc-Kommentar bzw. die Kurzbeschreibung ein Backtick-Zeichen übrig, endet der Erzeuger sichtbar | Beim Bauen real gefeuert (der Kurzform-Tail wurde zunächst um ein Zeichen zu kurz entfernt): ein halbierter Span bleibt sonst stumm und formatiert den Rest der Zeile um |
+| Kurzform-Auflösung deckt **`` `NNN` ``-umschlossene** Nachbarnummern | `` `…-002`…`006` `` und `` `…-003`/`004` `` lösen auf; eine Einleitung ohne dreistellige Ziffernfolge ist eine Auslassung im Fließtext und bleibt stehen | Die real vorgefundenen Formen; ein Abbruch bei jeder Auslassung träfe auch Prosa |
+| Die `structure`-Regel ist die **achte** des Configs | Zählung folgt den vorhandenen Regel-Kommentaren; die Mindestbreiten binden an die Darstellung | Der Plan nennt keine Nummer |
+| `section-missing` bei fehlender Datei | Die Regel rotet, solange `docs/user/e2e-abdeckung.md` nicht im Baum liegt („Regel trifft keine Datei — das Gate liefe leer") | Real gemessen: die Datei muss committet sein, das Erzeugnis ist kein Nur-Lauf-Artefakt |
+| **Nicht-Realisierung** der Aussage über die fünfte `structure`-Regel | `harness/sensors/docs-check.md` trägt die Aussage „auskommentiert bis zur ersten Closure" **nicht** (gemessen mit `grep`); `.d-check.yml` führt die Regel bereits als „AKTIVIERT mit der ERSTEN Closure" | Der Plan beschrieb einen Stand, den `slice-075` bereits nachgezogen hat. Statt einer Korrektur nennt die Sensordoku jetzt **den Ist-Zustand aller `structure`-Regeln** — dieselbe Pflicht, anderer Träger |
+
 **Nicht in dieser Liste, mit Begründung:** `harness/README.md` §Sensors
 (kein neues Target, kein neues Gate — die Tabelle ist ein Erzeugnis der
 bestehenden E2E-Kette), `d-check.mk` (kein neues Target), `AGENTS.md` (keine
 neue Hard Rule; die Erzeuger-Disziplin ist Implementer-Wissen und steht im
 erzeugenden Code und in dieser Plan-Datei — verkörpert wird sie erst, wenn der
-Zähler sie verlangt, §7).
+Zähler sie verlangt, §7). Beide bestätigt-gemessen: `git diff --name-only`
+führt weder `harness/README.md` noch `AGENTS.md` noch `d-check.mk`.
 
 ## 4. Trigger
 
