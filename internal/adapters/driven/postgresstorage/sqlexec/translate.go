@@ -41,13 +41,13 @@ func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]out
 			&row.ChangeID,
 			&row.TransactionID,
 			&row.SourceTableID,
+			&row.Schema,
+			&row.Table,
 			&row.Sequence,
 			&row.Operation,
 			&row.OldData,
 			&row.NewData,
 			&row.SchemaVersion,
-			&row.Schema,
-			&row.Table,
 			&committedAt,
 		); err != nil {
 			return nil, statement.fail(err)

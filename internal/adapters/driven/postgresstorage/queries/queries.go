@@ -48,13 +48,13 @@ SELECT
     c.change_id,
     c.transaction_id,
     c.source_table_id,
+    st.schema_name,
+    st.table_name,
     c.sequence,
     c.operation,
     c.old_data,
     c.new_data,
     c.schema_version,
-    st.schema_name,
-    st.table_name,
     t.committed_at
 FROM cdc.change AS c
 JOIN cdc.transaction AS t

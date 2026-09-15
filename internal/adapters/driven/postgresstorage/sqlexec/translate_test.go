@@ -198,6 +198,9 @@ func TestIsAbsentDistinguishesAbsenceFromErrors(t *testing.T) {
 
 // --- Zeilen-Übersetzung ---
 
+// changeRow trägt eine Ergebnis-Zeile der Change-Abfrage in der
+// Projektions-Ordnung von `queries.SelectChanges` — dieselbe Ordnung wie
+// die View `cdc.changes` (`tools/schema/schema.yaml`).
 func changeRow(id string, sequence int64, position int64) []any {
 	return []any{
 		"src-1",
@@ -205,13 +208,13 @@ func changeRow(id string, sequence int64, position int64) []any {
 		id,
 		"tx-1",
 		"tbl-1",
+		"public",
+		"feed",
 		sequence,
 		string(model.OperationInsert),
 		[]byte(nil),
 		[]byte(`{"name":"a"}`),
 		"sv-1",
-		"public",
-		"feed",
 		time.Unix(100, 0),
 	}
 }
