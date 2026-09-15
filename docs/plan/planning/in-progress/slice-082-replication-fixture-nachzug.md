@@ -86,28 +86,26 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — der Fixture-Aufbau kommt aus einer Quelle.**
 
-- [ ] Das Fixture der betroffenen Testdatei bringt den Schema-Stand mit, den
+- [x] Das Fixture der betroffenen Testdatei bringt den Schema-Stand mit, den
       `bootstrap.Run` liest — und zwar aus **derselben** Quelle wie der Betrieb
       (der Schema-Rollout), nicht aus einer zweiten, handgepflegten Liste. Eine
       zweite Liste ist genau die Drift, die diesen Befund erzeugt hat.
-- [ ] Die zwei Tabellen, deren Fehlen belegt ist (`cdc.administration_request`,
+- [x] Die zwei Tabellen, deren Fehlen belegt ist (`cdc.administration_request`,
       `cdc.process_heartbeat`), sind nach dem Nachzug **real** vorhanden — der
       Lauf beweist es, nicht der Kommentar.
 
 **Liefer-Punkt 2 — der Lauf ist grün.**
 
-- [ ] `make test-replication` (die **Tier**-Hälfte) läuft real **Exit 0** —
+- [x] `make test-replication` (die **Tier**-Hälfte) läuft real **Exit 0** —
       Exit-Code direkt gelesen und ungepiped (`AGENTS.md` §3.9).
-- [ ] **Keine Maskierung:** der Test ist unverändert in seiner Zusicherung, kein
+- [x] **Keine Maskierung:** der Test ist unverändert in seiner Zusicherung, kein
       `|| true`, kein `t.Skip` als Ersatz für den Nachzug.
 
 **Liefer-Punkt 3 — der Beleg ist wieder lesbar.**
 
-- [ ] Der CI-Schritt (`measure` **und** `tier`) ist damit **grün beobachtbar**;
+- [x] Der CI-Schritt (`measure` **und** `tier`) ist damit **grün beobachtbar**;
       die DB-Adapter-Coverage-Zahl bleibt unverändert (sie war nie rot).
-- [ ] `make gates` grün.
-
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -126,14 +124,49 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/bootstrap/**` (die betroffene Testdatei samt Fixture) | update | der Schema-Aufbau kommt aus der einen Quelle statt aus einer eigenen Teilmenge |
-| `tools/schema/**` — **nur falls** der Nachzug eine geteilte Schema-Anwendung braucht | update | dann gehört sie an eine Stelle, die Betrieb und Test gemeinsam nutzen; der Implementer entscheidet es am Artefakt und begründet es |
+| `internal/bootstrap/walretention_endtoend_test.go` | update | das Fixture trägt den Schema-Stand nicht mehr selbst: `DROP SCHEMA cdc CASCADE`, `postgresstorage.ApplySchema` und das handgebaute `cdc.table_schema` entfallen |
+| `internal/bootstrap/replication_stream_test.go` | update | dieselbe Form im selben Paket — sein `DROP SCHEMA` + `ApplySchema` nähme das ausgerollte Schema vor dem nachfolgenden Fixture wieder weg |
+| `internal/bootstrap/administration_endtoend_test.go` | update | seine Kopplungs-Notiz beschreibt den `DROP SCHEMA`-Neuaufbau der beiden Geschwister-Fixtures; sie trägt jetzt die Vorbedingung des Laufs |
+| `tools/schema/apply-rollout.sh` (neu) | add | die eine Schema-Anwendung der Test-Läufe: `CREATE SCHEMA cdc` + `search_path` + `make schema-rollout` — derselbe d-migrate-Rollout wie der Betrieb |
+| `tools/harness/run-replication-tests.sh` | update | ruft die eine Schema-Anwendung vor der Tier-Phase auf; die `measure`-Phase bleibt unberührt |
+| `tools/harness/run-store-tests.sh` | update | nutzt dieselbe Stelle statt einer eigenen Kopie derselben zwei Schritte |
+| `.github/workflows/e2e.yml`, `harness/sensors/db-adapter-coverage.md`, `harness/README.md` | update | sie tragen den geänderten Zustand: der Tier-Schritt ist nicht mehr rot, und sein Schema-Stand kommt aus dem Rollout |
 
 **Nicht in dieser Liste:** `internal/bootstrap/wiring.go` (Produktionscode —
 liest der Bootstrap etwas, das ein Fixture nicht mitbringen kann, ist das ein
-Befund, kein Auftrag), `tools/harness/db-coverage.sh` und die
-Träger-Läufe aus `slice-080` (ihre Zahl und ihre Schwelle bleiben), `Makefile`
-(kein neuer Gate-Aufruf), `spec/**`.
+Befund, kein Auftrag), `tools/harness/db-coverage.sh`, `Makefile` (kein neuer
+Gate-Aufruf), `spec/**`.
+
+**Nachtrag des ersten Implementer-Laufs — der Zuschnitt am Artefakt.** Zwei
+Punkte weichen von der Vorfassung dieses Abschnitts ab, beide aus demselben
+Grund: der Schema-Stand kommt aus dem Rollout, und der Rollout ist nur vom
+Lauf-Aufruf her erreichbar (der Go-Test läuft im read-only gemounteten
+Toolchain-Container, ohne `docker` und ohne `make`).
+
+- **Die Träger-Läufe werden berührt.** `run-replication-tests.sh` ruft die eine
+  Schema-Anwendung vor der Tier-Phase auf, `run-store-tests.sh` dieselbe Stelle
+  statt ihrer eigenen Kopie. Unberührt bleibt die **Messung**: die
+  `measure`-Phasen, `tools/harness/db-coverage.sh`, die Zahl und die Schwelle.
+- **Ein zweites Fixture gehört dazu.** `replication_stream_test.go` trägt
+  dieselbe Form und setzt das Schema im selben Paket zurück. Eine Rückführung
+  „nach Fixture" wäre hier ein Schnitt durch eine unteilbare Änderung: beide
+  zusammen sind der eine Vorgang, der den Tier-Lauf grün macht.
+- **Die Schema-Anwendung wartet auf eine echte Verbindung.** Die
+  Bereitschafts-Prüfung des Replication-Runners ruft `pg_isready`, und das
+  antwortet schon am temporären Server der Initdb-Phase (der Store-Runner prüft
+  zusätzlich mit einer echten Abfrage). Fällt die Schema-Anwendung unmittelbar
+  hinter diese Prüfung, trifft ihr `psql` gelegentlich ein Fenster ohne Socket —
+  real beobachtet (`EXIT=2`, `No such file or directory`). `apply-rollout.sh`
+  pollt deshalb selbst auf eine echte Abfrage; ohne diesen Schritt wäre der
+  Beleg ein Lauf mit Glück.
+
+**Beobachtung aus dem Lauf — kein Liefer-Punkt.** `make schema-rollout` schreibt
+seinen Pflicht-Report nach `tools/schema/plan.yaml` und trägt darin das
+Rollout-Ziel des Aufrufs. Jeder Lauf-Aufruf hinterlässt diese committete Datei
+damit geändert (Ziel-DSN des Testcontainers statt des Compose-Dienstes); sie ist
+vor dem Commit auf den committeten Stand zurückzunehmen. Der Schreibpfad gehört
+dem make-Target, nicht diesem Slice — die `make test-store`-Kette trägt ihn
+ohnehin. Für das Beobachtungs-Register ist das ein Kandidat (§7).
 
 **Der genaue Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste nennt
 die Träger, nicht jede Zeile.
