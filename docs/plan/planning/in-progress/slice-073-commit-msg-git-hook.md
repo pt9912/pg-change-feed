@@ -37,13 +37,22 @@ korrigiert durch einen unabhängigen, gegenprüfenden Architect-Zug,
 ## 1. Ziel und Abgrenzung
 
 **Ziel:** Ein lokaler, opt-in `commit-msg`-Git-Hook (`.githooks/commit-msg`)
-weist einen Commit bereits vor seinem Abschluss zurück, wenn sein Betreff
-keine `LH-*`-/`ADR-*`-Kennung trägt oder eine `SPEC-*`-/`ARC-*`-Struktur-ID
-enthält — dieselben zwei Regeln, die `make commit-traceability`
-(`tools/harness/commit-traceability.sh` + d-check-Modul `commits`) heute
-erst nachträglich meldet — **inklusive** der Merge-/Revert-Ausnahme, die
-die d-check-Positiv-Hälfte bereits trägt (`.d-check.yml`
-`exempt-pattern: '^(Merge |Revert )'`, siehe DoD und Plan-Tabelle unten).
+weist einen Commit bereits vor seinem Abschluss zurück, wenn die Message
+keine `LH-*`-/`ADR-*`-Kennung trägt (**message-weit** — die ganze rohe
+Message-Datei, nicht nur der Betreff) oder wenn der Betreff eine
+`SPEC-*`-/`ARC-*`-Struktur-ID enthält — dieselben zwei Regeln, die
+`make commit-traceability` (`tools/harness/commit-traceability.sh` +
+d-check-Modul `commits`) heute erst nachträglich meldet — **inklusive** der
+Merge-/Revert-Ausnahme, die die d-check-Positiv-Hälfte bereits trägt
+(`.d-check.yml` `exempt-pattern: '^(Merge |Revert )'`, siehe DoD und
+Plan-Tabelle unten).
+
+Die Zusage des Hooks ist **einseitig**
+([`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)): er weist
+keinen Commit zurück, den das Standing-Gate zulässt; **vollständig** ist er
+nicht — drei Divergenz-Klassen zum Modul bleiben offen (Kennung nur in einer
+`#`-Kommentarzeile · Kennung nur hinter der scissors-Zeile/im Verbose-Diff ·
+Struktur-ID auf der Fortsetzungszeile des ersten Absatzes).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -83,9 +92,13 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 - [x] `.githooks/commit-msg` weist real einen Commit-Versuch mit
       `SPEC-*`/`ARC-*`-Struktur-ID im Betreff zurück (nicht-Null-Exit vor
-      Commit-Abschluss) — real ausgeführt, nicht nur am Skripttext behauptet.
+      Commit-Abschluss) — real ausgeführt, nicht nur am Skripttext behauptet;
+      der Nachweis führt einen **isolierenden** Input (Kennung **und**
+      Struktur-ID, `docs: update SPEC-012 table (ADR-0045)`), den allein die
+      Grenz-Hälfte zurückweist — die positive Hälfte passiert ihn.
 - [x] `.githooks/commit-msg` weist real einen Commit-Versuch ganz ohne
-      `LH-*`-/`ADR-*`-Kennung im Betreff zurück — real ausgeführt.
+      `LH-*`-/`ADR-*`-Kennung in der Message zurück (message-weit) — real
+      ausgeführt.
 - [x] Ein regulärer, konformer Commit-Versuch läuft real ungehindert durch
       den Hook — real ausgeführt (kein Fehlalarm auf einem gültigen
       Betreff).
@@ -127,7 +140,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.githooks/commit-msg` | neu | bash-only Hook, spiegelt die zwei Regeln aus `tools/harness/commit-traceability.sh`/d-check-Modul `commits` als Regex-Abgleich auf `$1`, **inklusive** der Merge-/Revert-Ausnahme (`^(Merge |Revert )`) der d-check-Positiv-Hälfte — ohne sie liefe der Hook bei jedem Merge-Commit strukturell anders als das Standing-Gate. **Plan-Nachzug (Implementer-Lauf):** Die positive Hälfte prüft die ganze Message-Datei, nicht nur den Betreff (das d-check-Modul `commits` liest die gesamte Message — am gepinnten Image gemessen); die Grenz-Hälfte prüft den Betreff; die Merge-/Revert-Ausnahme waivet nur die positive Hälfte. So weist der Hook keinen Commit zurück, den das Standing-Gate zulässt |
+| `.githooks/commit-msg` | neu | bash-only Hook, Regex-Abgleich auf `$1`; die getragene Zusage, die Prüf-Weiten der beiden Hälften (positiv message-weit, Grenze betreff-scoped) und die drei bewusst offenen Divergenz-Klassen trägt [`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md) |
 | `harness/README.md` | update | Onboarding-Hinweis: optionaler `core.hooksPath`-Aktivierungsschritt |
 | `docs/plan/adr/0045-commit-traceability-standing-gate.md` | keine Änderung | `Accepted`-ADR bleibt unverändert (`AGENTS.md` §3.5); die zuvor kollidierende Klausel „Kein commit-msg-Hook" ist bereits durch `ADR-0062` (Supersedes, nur diese Klausel) korrigiert — kein weiterer Eingriff in diesem Slice |
 | `docs/plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md` | bereits vorhanden | von der unabhängigen Architect-Gegenprüfung vorab geschrieben, nicht Teil der Implementer-Arbeit dieses Slice |
