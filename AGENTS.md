@@ -338,9 +338,10 @@ er verrät das Maschinen-Layout.
 [`ADR-0072`](docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md),
 die Zitationsform eines Schwester-Repos
 [`ADR-0074`](docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md). Die
-Modul-Semantik steht einmal in
-[`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) — dieser
-Abschnitt nennt sie nicht erneut (§3.7).
+Modul-Grenzen (Fence-Behandlung, Windows-Muster, ungescannte Flächen) stehen
+einmal in [`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) —
+dieser Abschnitt nennt sie nicht erneut (§3.7); die Präfixliste führt allein
+das Modul (`hostpaths.prefixes`).
 
 ## 4. Quality Gates
 
