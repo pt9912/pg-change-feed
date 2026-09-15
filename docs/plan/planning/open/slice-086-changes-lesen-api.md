@@ -25,7 +25,7 @@ View-Direktzugriff des SQL-Kanals — **unberührt**) ·
 Endpunkt-Familie, deren Satz das Changes-Lesen ausgrenzt) · **neu `SPEC-022`**
 (die Ausgestaltung dieses Endpunkts).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-15.
 
