@@ -111,34 +111,34 @@ vierter Punkt:
 Dateien (§3) sind entfernt; Zitatstellen nennen Anzahl und Datei, Verweise auf
 Schwester-Repos die Hausform.
 
-- [ ] **Abnahme: 0** — der Modul-Aufruf über das Repo (Präfix-Liste aus dem
+- [x] **Abnahme: 0** — der Modul-Aufruf über das Repo (Präfix-Liste aus dem
       Modul gezogen, hier nicht wiederholt) als eigener, ungepipeter Schritt
       (`AGENTS.md` §3.9), plus die zwei korrigierten Stellen außerhalb seiner
       Reichweite.
-- [ ] Beide Formen sind belegt: kein Fence-Zitat trägt mehr einen Host-Präfix,
+- [x] Beide Formen sind belegt: kein Fence-Zitat trägt mehr einen Host-Präfix,
       und jeder Schwester-Verweis nennt das Repo als Inline-Code-Wort.
-- [ ] Die zwei Stellen, die der Modul **nicht** liest (`Makefile`,
+- [x] Die zwei Stellen, die der Modul **nicht** liest (`Makefile`,
       `tools/coverage-gate.sh`), sind mitgezogen.
 
 **Liefer-Punkt 2 — das Modul greift.** `hostpaths` steht in `modules` **ohne**
 Ausschlussblock; die Sensors-Doku trägt den erweiterten Vertrag.
 
-- [ ] `.d-check.yml`: `modules: […, hostpaths]`, **kein** `scope`, **kein**
+- [x] `.d-check.yml`: `modules: […, hostpaths]`, **kein** `scope`, **kein**
       `ignore`, **kein** `exempt-paths`; der Modul-Aufruf liefert **0**.
-- [ ] `harness/README.md` §Sensors-Zeile `make docs-check` nennt `hostpaths` —
+- [x] `harness/README.md` §Sensors-Zeile `make docs-check` nennt `hostpaths` —
       sie listet die Module auf und behauptete sonst einen anderen Vertrag als
       das Gate hat.
-- [ ] `harness/sensors/docs-check.md` benennt die Grenzen: Fenced-Blöcke frei,
+- [x] `harness/sensors/docs-check.md` benennt die Grenzen: Fenced-Blöcke frei,
       Windows-Muster fest, **relative** Pfade ungeprüft, `Makefile`, `tools/**`
       und `harness/mk/**` ungescannt.
 
 **Liefer-Punkt 3 — die Regel ist verkörpert.** `AGENTS.md` §3.11 trägt die Hard
 Rule nach dem Entwurf in `ADR-0072`.
 
-- [ ] §3.11 steht mit Aussage, Falsch/Richtig an **realen** Beispielen,
+- [x] §3.11 steht mit Aussage, Falsch/Richtig an **realen** Beispielen,
       Begründung, Grenzen und Rang-Zeiger auf das Modul.
 
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
