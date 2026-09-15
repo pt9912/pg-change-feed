@@ -72,23 +72,25 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**; mehr heißt: der Slice ist zu groß und
 gehört zurück zur Zerlegung.
 
-- [ ] `THRESHOLD` in `harness/mk/coverage.mk` steht auf **40**, sein
+- [x] `THRESHOLD` in `harness/mk/coverage.mk` steht auf **40**, sein
       Kopf-Kommentar beschreibt den Ist-Zustand; die geltende Stufe steht
       widerspruchsfrei an **einem** beweglichen Ort und wird an den übrigen
       Stellen nur als Rampe bzw. als Verweis genannt (`AGENTS.md` §3.7).
-- [ ] Realer **Grün**-Beleg auf der neuen Stufe: `make coverage-gate` Exit 0.
-- [ ] Realer **Rot**-Beleg unmittelbar über der neuen Stufe
-      (`THRESHOLD=50`, nicht am Rand der Messung — s. §6) Exit 1 — die Stufe
-      prüft real und läuft nicht leer.
-- [ ] `make gates` grün.
+- [x] Realer **Grün**-Beleg auf der neuen Stufe: `make coverage-gate` Exit 0.
+- [x] Realer **Rot**-Beleg unmittelbar über der neuen Stufe
+      (`THRESHOLD=50`, nicht am Rand der Messung — s. §6) Exit ≠ 0 — das
+      Gate-Skript endet **1**, `make` meldet für den gescheiterten
+      Bauprozess **2**; die Stufe prüft real und läuft nicht leer.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: Kalibrierungs-Bindung in
-      `harness/sensors/coverage-gate.md` (geltende Stufe, Beleg-Zeile) und
-      die `harness/README.md` §Sensors-Zeile `make coverage-gate`.
+- [x] Doku-Update: Kalibrierungs-Bindung in
+      `harness/sensors/coverage-gate.md` (Rampe/Verweis auf den beweglichen
+      Ort, Beleg-Zeile) und die `harness/README.md` §Sensors-Zeile
+      `make coverage-gate`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: das
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: das
       Repo ist durchgehend Greenfield (`harness/conventions.md`
       §Modus-Deklaration `*`/`PGC`), die Datei existiert nicht.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -106,13 +108,21 @@ gehört zurück zur Zerlegung.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `harness/mk/coverage.mk` | update | `THRESHOLD ?= 40`; Kopf-Kommentar auf den Ist-Zustand umstellen (Stufe, Endstufe, Trigger) — keine Stufen-Chronik (§3.7) |
-| `harness/sensors/coverage-gate.md` | update | §Kalibrierungs-Bindung: geltende Stufe 40 %, Endstufe 80 % fest; die Beleg-Zeile dieser Sektion auf die neu gemessenen Werte nachziehen |
-| `harness/README.md` | update | §Sensors-Zeile `make coverage-gate`: geltende Stufe statt Einstiegsstufe |
-| `AGENTS.md` | update | §4-Zeile: die **Rampe** nennen (Einstieg 35 % → Endstufe 80 %), den beweglichen Wert **nicht** doppeln — er hat mit `harness/mk/coverage.mk` und der Sensor-Definition bereits zwei Orte, ein dritter driftet |
+| `harness/mk/coverage.mk` | update | `THRESHOLD ?= 40` — der **eine bewegliche Ort**; Kopf-Kommentar auf den Ist-Zustand umstellen (geltende Stufe an diesem Ort, Rampe, Endstufe, Trigger) statt der Einstiegs-Herleitung — keine Stufen-Chronik (§3.7); dieselbe Umstellung an der `## help`-Zeile |
+| `harness/sensors/coverage-gate.md` | update | §Kalibrierungs-Bindung: Rampe (Einstieg 35 %, Endstufe 80 %) und Trigger bleiben, die **geltende Stufe** wird dort nur als **Verweis** auf `harness/mk/coverage.mk` geführt; die Beleg-Zeile dieser Sektion auf die neu gemessenen Werte nachgezogen |
+| `harness/README.md` | update | §Sensors-Zeile `make coverage-gate`: die **Rampe** (Einstieg 35 % → Endstufe 80 %) plus Verweis auf den einen beweglichen Ort, statt eine Einzelstufe zu nennen |
+| `AGENTS.md` | — (keine Änderung) | §4-Zeile nennt bereits nur die Rampe (`Einstiegsstufe 35 % → Endstufe 80 %`) und keinen beweglichen Wert — die Vorgabe ist dort erfüllt; ein Edit wäre Wortlaut-Churn |
 
 Kein weiterer Ort führt die geltende Stufe; der Slice schließt die Dopplung,
 die der Trigger-Audit sichtbar gemacht hat, statt sie zu vermehren.
+
+**Nachzug — der eine bewegliche Ort.** Der Plan führt die geltende Stufe an
+genau **einem** Ort: `THRESHOLD` in `harness/mk/coverage.mk`, dem mechanisch
+wirksamen Wert. Sensor-Doku, `harness/README.md` und `AGENTS.md` nennen die
+feste Rampe (Einstieg 35 %, Endstufe 80 %) samt Trigger und verweisen auf ihn —
+damit ist die DoD-Zeile aus §2 („an einem beweglichen Ort, an den übrigen nur
+Rampe bzw. Verweis") wörtlich erfüllt. Der `AGENTS.md`-Edit entfällt: die
+Zeile führt die Rampe bereits und keinen beweglichen Wert (grep-verifiziert).
 
 ## 4. Trigger
 
@@ -156,10 +166,13 @@ dasteht.
   drücken, und das Gate wäre auf der neuen Stufe rot. Die Antwort ist dann Test-Arbeit bzw. der
   Reifestufen-Zweig (§4), **keine** stille Senkung (§3.6). — **Ausgang:**
   <bei Closure zuzuweisen>
-- Die geltende Stufe wird an vier Orten genannt (`THRESHOLD` in
+- Die Kalibrierungs-Bindung steht an vier Orten (`THRESHOLD` in
   `harness/mk/coverage.mk`, `harness/sensors/coverage-gate.md`,
   `harness/README.md` §Sensors, `AGENTS.md` §4) und kann auseinanderlaufen —
-  genau die Dopplung, die §3.7 für Zustandswerte ausschließt. — **Ausgang:**
+  genau die Dopplung, die §3.7 für Zustandswerte ausschließt. Der **bewegliche**
+  Wert steht an genau **einem** dieser Orte (`THRESHOLD` in
+  `harness/mk/coverage.mk`); die übrigen drei nennen die rampenfesten Werte
+  (Einstieg 35 %, Endstufe 80 %) bzw. den Verweis darauf. — **Ausgang:**
   <bei Closure zuzuweisen>
 - Der Rot-Beleg muss **über** der neuen Stufe liegen, nicht an ihrem Rand: bei
   `THRESHOLD=46` beträgt der Abstand zum Ist-Stand 0,2 Prozentpunkte und liegt
