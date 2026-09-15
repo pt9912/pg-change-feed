@@ -212,18 +212,38 @@ dasteht.
   erzeugt hat: ein Test-Aufbau, der den Schema-Stand selbst pflegt, driftet
   gegen den Betrieb. Die Antwort ist die **eine** Quelle (der Schema-Rollout);
   bleibt daneben eine zweite Liste stehen, ist der Befund nur verschoben. —
-  **Ausgang:** <bei Closure>
+  **Ausgang:** *entfallen — gestrichen mit Begründung*: die betroffenen Fixtures
+  bauen **kein** Schema mehr — der Diff entfernt `DROP SCHEMA cdc CASCADE`,
+  `ApplySchema` und das handgebaute `cdc.table_schema` restlos (`grep` über
+  `internal/bootstrap/` bleibt leer). Eine zweite Liste **bleibt** stehen
+  (`postgresstorage/schema.sql`, für die Eigen-Tests dieses Adapters) — sie ist
+  der im `Makefile` benannte Überführungs-Rand aus `ADR-0043`, außerhalb dieses
+  Slice und nicht von ihm erzeugt.
 - **Die Grüne könnte durch Abschwächen entstehen.** In §1 ausgeschlossen; der
   Wächter ist das Review (Liefer-Punkt 2 verlangt die unveränderte Zusicherung).
-  — **Ausgang:** <bei Closure>
+  — **Ausgang:** *entfallen — gestrichen mit Begründung*: der Diff entfernt
+  ausschließlich **Setup**-Zeilen (Schema-Rückbau, `ApplySchema`,
+  `table_schema`); keine Zusicherung des Tests ist entfernt, abgeschwächt oder
+  übersprungen, und kein `|| true` steht in den neuen Zeilen. Das Review hat
+  jedes Hunk darauf geprüft.
 - **Der Beleg braucht mehrere reale Läufe** (Container-Aufbau je Lauf). Ein Lauf,
   der nur grün wird, weil ein Container-Rest stehen blieb, ist kein Beleg. —
-  **Ausgang:** <bei Closure>
+  **Ausgang:** *entfallen — gestrichen mit Begründung*: die Mutation hat es
+  entschieden — nimmt man den Rollout-Aufruf aus dem Runner, werden **zwei**
+  Tests rot (`relation "cdc.source" does not exist`). Das Grün kommt also aus dem
+  Rollout und nicht aus einem Container-Rest; die Rücknahme ist mit
+  `sha256sum -c` belegt.
 - **Das Grün des CI-Schritts ist erst nach dem Push belegt** (`AGENTS.md` §3.10).
   Die lokalen Läufe tragen eine PostgreSQL-Fassung (der Digest des Testcontainers);
   die CI fährt zwei Legs über die in `SPEC-012` festgelegten Digests (17 und 18) im
   nicht-blockierenden `e2e`-Workflow. Ein lokales Grün beider Phasen ist kein Beleg
-  für den Post-Push-Lauf. — **Ausgang:** <bei Closure>
+  für den Post-Push-Lauf. — **Ausgang:** *weiter offen → Beobachtungs-Register*:
+  die CI-Bestätigung wird **nach dem Push** nachgetragen (grüner Lauf auf beiden
+  Legs oder roter Befund mit Folgemaßnahme) und ist bis dahin kein erledigter
+  Posten; eingetragen als weiterer Beleg in
+  `BEO-PGC/github-actions-unverifizierbar-lokal` (3× → 4×), dessen Regel
+  `AGENTS.md` §3.10 trägt. Der Slice schließt mit dieser **offen benannten**
+  Bestätigung, nicht mit einem vorweggenommenen Grün.
 
 ## 7. Closure-Notiz
 
