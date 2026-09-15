@@ -55,11 +55,14 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   heißt, dass **mindestens ein** Vorkommen `count > 0` trägt (dedupliziert:
   1679 Statements, davon 1171 gedeckt = 69,74 %).
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
-  hier `69.7%`) ist eine eigene Größe: `go tool cover` führt sie über das
-  gemergte Profil, in dem jede Block-Position so oft zählt, wie sie vorkommt.
-  Das Verhältnis ist dadurch dasselbe, die absoluten Zahlen der gedruckten
-  Zeile sind es nicht — eine Statement-Zahl des Gegenstands ist nur die
-  deduplizierte.
+  hier `69.7%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
+  gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
+  Testbinaries ändert dieses Prädikat nicht, und damit auch nicht das Verhältnis
+  gedeckter zu instrumentierten **Statements**. Sie ist deshalb **keine eigene
+  Größe**, sondern dieselbe Messung in anderer Ausgabepräzision: `go tool cover`
+  druckt eine Nachkommastelle, `tools/coverage-gate.sh` formatiert `%.2f` —
+  daraus werden `69.7%` und `69.70%`. Eine absolute Statement-Zahl trägt nur die
+  deduplizierte Auswertung; die gedruckte Zeile trägt keine.
 - Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
   dem Profil des Gegenstands **vor** dem Schnitt — derselben Messung, die den
   Nenner `2467 → 1679` beziffert (vorher 1215 gedeckt, davon 44 in den drei
