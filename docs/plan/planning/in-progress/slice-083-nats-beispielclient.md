@@ -60,8 +60,11 @@ nachsehen musst".
   sondern ein Fehler mit Kommentar.
 - **Eine Änderung an den drei beschlossenen Clients**
   ([`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)):
-  HTTP-, SSE- und gRPC-Beispiel bleiben, wie sie entschieden sind; dieser Slice
-  fügt hinzu, er schneidet nicht um.
+  HTTP-, SSE- und gRPC-Beispiel **bleiben, wie sie entschieden sind** — und sie
+  sind **entschieden, nicht gebaut** (Review `review-slice-083` F-1); dieser
+  Slice legt sie **nicht** an und schneidet nichts um. Ihre Slices sind nicht
+  geschnitten; wer sie will, schneidet sie (§Zerlegung der
+  [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)).
 - **Eine zweite NATS-Abhängigkeit.** `github.com/nats-io/nats.go` ist bereits
   Modul-Abhängigkeit (`natsnotify`-Adapter, `go.mod`); das Beispiel benutzt
   dieselbe.
@@ -100,8 +103,12 @@ vierter Punkt:
 **Liefer-Punkt 1 — das Beispiel existiert und taugt als Vorbild.**
 
 - [x] `examples/nats-client` ist ein **eigenständiges** CLI-Programm (eigenes
-      `main`, wie die drei anderen) und benutzt ausschließlich den öffentlichen
-      Draht-Vertrag: **kein** Import aus `/internal/`.
+      `main`) und benutzt ausschließlich den öffentlichen Draht-Vertrag:
+      **kein** Import aus `/internal/`. **Es ist das erste Beispiel im Repo** —
+      die drei von [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+      beschlossenen Clients (`http-client`, `sse-client`, `grpc-client`) sind
+      **entschieden, aber nicht gebaut**; ihre Slices sind nicht geschnitten
+      (Review `review-slice-083` F-1).
 - [x] Es benutzt `github.com/nats-io/nats.go` (bereits Modul-Abhängigkeit) und
       die Standardbibliothek — **keine** neue Abhängigkeit.
 
@@ -273,9 +280,12 @@ dasteht.
   der naheliegendste Fehler und machte
   das Beispiel zum Anti-Vorbild. Wächter: §1 schließt es aus, das Review prüft
   es. — **Ausgang:** <bei Closure>
-- **Er könnte die drei anderen Clients nachziehen.** `ADR-0076`s Entscheidung
-  begründet deren Form; ein „angleichender" Umbau wäre eine Änderung an
-  entschiedener Sache. — **Ausgang:** <bei Closure>
+- **Er könnte Arbeit an den drei von [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  beschlossenen Clients mitnehmen.** Diese drei (`http-client`, `sse-client`,
+  `grpc-client`) existieren **nicht** — dieser Slice darf sie weder anlegen
+  (eigene Slices, nicht geschnitten) noch ihre Form „angleichen". Das Risiko
+  zielt damit auf einen **Bestand, den es noch nicht gibt**; es ist als
+  Abgrenzung formuliert, nicht als Gefahr. — **Ausgang:** <bei Closure>
 - **Die Folge-ADR könnte ausbleiben.** Ohne sie stünde ein vierter Client neben
   einer `Accepted`-Entscheidung, die drei sagt. — **Ausgang:** <bei Closure>
 
