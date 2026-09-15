@@ -118,7 +118,7 @@ Kein Übergriff.
 - `kategorie`: INFO
 - `quelle`: Maintainability (ADR-Index-Konvention, `docs/plan/adr/README.md` Kopf)
 - `pfad`: `docs/plan/adr/README.md:90` (vs. `:89`)
-- `befund`: `ADR-0074`s Zeile trägt „(Supersedes ADR-0072, teilweise)";
+- `befund`: `ADR-0074`s Zeile trägt „(Supersedes [`ADR-0072`](../plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md), teilweise)";
   `ADR-0075`s Zeile trägt nur den Titel. Die Lineage ist über Zeile 87
   (`ADR-0072 … (→ ADR-0074/0075, teilw.)`) und `ADR-0075` §Status dennoch
   auffindbar; die `structure`-Regel (`cell-max-chars: 80` für `Titel`) begrenzt
