@@ -121,9 +121,12 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 - [x] `make gates` grün (der Hook selbst ist kein Gate-Ziel und wird von
       `make gates` nicht aufgerufen — er läuft ausschließlich lokal vor
       `git commit`).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Erstbefund [`docs/reviews/review-slice-073.md`](../../../reviews/review-slice-073.md),
+      Bestätigungslauf nach der Fixrunde
+      [`docs/reviews/review-slice-073-fixrunde.md`](../../../reviews/review-slice-073-fixrunde.md).
 - [x] Doku-Update: `harness/README.md` (Onboarding-Hinweis) trägt den neuen
       Opt-in-Schritt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
