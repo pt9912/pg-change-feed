@@ -361,7 +361,7 @@ Dieser Abschnitt trägt die **Regel und ihre Reichweite**; die Präfixliste
 führt allein das Modul (`hostpaths.prefixes`), und was der Sensor deckt und
 was nicht, führt
 [`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) aus seiner
-Sicht.
+Sicht · seit slice-078.
 
 ## 4. Quality Gates
 
