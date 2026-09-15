@@ -9,16 +9,13 @@ Zähler (abgeleitet): 3× (evidence/slice-005.md, evidence/slice-008.md,
 evidence/slice-009.md).
 
 Nachtrag (`welle-19`-Closure, 2026-09-15): Dieselbe Erscheinung — ein
-unaufgelöster Vorlagenrest, den kein Gate fängt — trat in drei weiteren
-Vorgängen an **anderer** Stelle auf: `slice-070`, `slice-071` und `slice-072`
-ließen die Vorlagen-Zeile des §7-Ankerfeldes (`— liegt in <…>`) samt
-Ausfüll-Hinweis stehen; sichtbar wurde sie erst bei der Anker-Paarung, die
-genau dieses Feld auslöst. Die drei sind **benannt, nicht gezählt**:
-`observation.md` ist auf §2 und den Fill der Wellen-Eröffnung verengt (und
-unveränderlich ab Anlage), der Zielort der Verkörperung
-(`.claude/commands/plan-welle.md` §2-Form-Prüfung) reicht nicht in die
-§7-Closure-Notiz. Ob der Zielort um die §7-Form erweitert wird oder ein
-eigener Eintrag entsteht, ist eine **Verkörperungs-Entscheidung**
-(Planner → Architect → Planner, Modul 8 Schritt 3b) und in der
-`welle-19`-Closure als offen benannt; ohne Ausgang entsteht kein eigener
-Eintrag.
+unaufgelöster Vorlagenrest, den kein Gate fängt — trat an **anderer** Stelle
+auf: `slice-069`…`slice-072` ließen den Vorlagen-Guidance-Block des
+§7-Ankerfeldes (Teil-Zeile `— liegt in …`, `Auslöser:`-Zeile, kursiver
+Ausfüll-Hinweis) stehen. Bei `slice-069` blieb nur der Hinweis — die Form,
+die die Anker-Paarung nicht sieht, weil sie allein über das Feld `liegt in`
+auslöst. Dieser Eintrag bleibt auf §2 und den Fill der Wellen-Eröffnung
+verengt (unveränderlich ab Anlage); die §7-Variante trägt seit dem
+Architect-Zug des Lese-Schritts den eigenen Eintrag
+`BEO-PGC/vorlagenrest-in-closure-notiz` (Ausgang `verkörpert`,
+Herkunfts-Anker `seit welle-19`, Zähler 4×).
