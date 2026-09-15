@@ -10,10 +10,15 @@ Slice, kein *Mehr* jenseits ihrer (Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht).
 
 **Bezug:** [`ADR-0062`](../../adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
-(bindend — korrigiert `ADR-0045`s Klausel „Kein commit-msg-Hook" und
-erlaubt diesen Slice erst; ohne `ADR-0062` widerspräche dieser Slice
-`ADR-0045` stillschweigend, siehe
-`docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md`),
+(bindend in ihren Punkten 1, 2 und 4 — das Standing-Gate bleibt die
+durchsetzende Instanz, die Aktivierung bleibt lokaler Opt-in, `--no-verify`
+bleibt ein gültiger Umgehungsweg; sie korrigiert `ADR-0045`s Klausel „Kein
+commit-msg-Hook" und erlaubt diesen Slice erst; ihr Punkt 3 ist durch
+`ADR-0069` ersetzt),
+[`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)
+(Teil-Supersede von `ADR-0062` Punkt 3 — einseitige Zusage des Hooks:
+message-weite positive Hälfte, drei benannte offene Divergenz-Klassen,
+Hook-Logik unverändert),
 [`ADR-0045`](../../adr/0045-commit-traceability-standing-gate.md)
 (weiterhin bindend für alles außer der von `ADR-0062` korrigierten
 Klausel — Standing-Gate, Fenster-Semantik, Werkzeug-Aufteilung); die
