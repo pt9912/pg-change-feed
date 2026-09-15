@@ -271,8 +271,9 @@ ausschließlich beim bestehenden Lesezugriffsweg
 
 Technische Ausgestaltung von [`LH-FA-SST-006`](lastenheft.md): Endpunkt,
 Methode, JSON-Schema und Token-Header-Form für alle neun Port-gedeckten
-Fähigkeiten des HTTP-Adapters. Changes-Lesen
-([`LH-FA-REA-*`](lastenheft.md)) und Diagnose/Health bleiben außerhalb.
+Fähigkeiten des HTTP-Adapters. Das Changes-Lesen
+([`LH-FA-REA-*`](lastenheft.md)) ist in `SPEC-022` ausgestaltet;
+Diagnose/Health bleibt außerhalb.
 
 **Authn-Header** (für alle Endpunkte gleich): `Authorization: Bearer
 <token>` — fehlend oder einer nicht konfigurierten Klasse entsprechend →
@@ -390,6 +391,37 @@ Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), zweiter Zustellwe
 | Replay | kein Stream-internes Replay; der `Last-Event-ID`-Header wird weder gesendet noch ausgewertet |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server. Ist die Adresse gesetzt, aber kein `Broadcaster` verdrahtet, antwortet der Endpunkt mit `503` |
 
+### SPEC-022 — HTTP-API: Changes lesen (`GET /changes`)
+
+Technische Ausgestaltung von [`LH-FA-SST-006`](lastenheft.md) für das
+**Changes-Lesen** ([`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)):
+der lesende Netzwerkzugriffsweg über denselben `ChangeStorePort`, den der
+SQL-View-Direktzugriff auf `cdc.changes` trägt — **kein** zweiter
+Lesepfad, dieselbe Bereichs-, Limit- und Filtersemantik, dieselbe
+deterministische Sortierung (`LH-FA-SST-006` Boundary). Eigener Eintrag
+statt einer Erweiterung von `SPEC-018`, weil jener Abschnitt die neun
+Port-gedeckten Fähigkeiten ausgestaltet.
+
+| Fähigkeit | Endpunkt | Rechtsklasse | Request | Response |
+|---|---|---|---|---|
+| `ReadChanges` ([`LH-FA-SST-006`](lastenheft.md), [`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `GET /changes` | `reader` oder `admin` | Query-Parameter `source` (**Pflicht**), `schema`, `table` (je optional und **unabhängig**), `from`, `to` (optional, `commit_position`-Werte ≥ 1, `from` **inklusiv** / `to` **exklusiv**), `limit` (optional, ≥ 1) — **kein** Default-Limit | `200`: `{"changes": [{"commit_position": <int64>, "change_id": "<string>", "transaction_id": "<string>", "source_table_id": "<string>", "schema": "<string>", "table": "<string>", "sequence": <int64>, "operation": "<INSERT\|UPDATE\|DELETE>", "old_image": <eingebettetes JSON \| null>, "new_image": <eingebettetes JSON \| null>, "schema_version": "<string>", "committed_at": "<RFC 3339 mit Nanosekunden, UTC>"}, …]}` — kein Treffer → leere Liste, **nie `404`** |
+
+Die Feldnamen folgen dem API-Vokabular, nicht dem Spaltenvokabular der
+View: `schema`/`table` statt `schema_name`/`table_name` (wie
+`listTablesResponse`), `old_image`/`new_image` statt `old_data`/`new_data`
+(wie der gRPC- und der SSE-Stream, `SPEC-020`/`SPEC-021`). `source_table_id`
+steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
+über `table_id` (`POST /tables/enable`).
+
+| Merkmal | Festlegung |
+|---|---|
+| Reihenfolge | deterministisch nach (`commit_position`, `transaction_id`, `sequence`) — [`LH-FA-REA-004`](lastenheft.md); die Fortsetzung ist `from = <letzte gelieferte commit_position> + 1` |
+| Leere Menge | `{"changes": []}`, nie `null` — ohne Treffer (unbekannte Quelle, unbekanntes Schema, unbekannte Tabelle, leerer Bereich) endet der Aufruf `200`; ein leerer Bestand ist kein Fehler ([`LH-FA-REA-006`](lastenheft.md) Boundary) |
+| Fehler-Antwortform | unverändert `{"error": "<Klartext>"}` (`SPEC-018`); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
+| Noch nicht begrenzt | Kein Default-Limit und **keine** harte Obergrenze: ohne `limit` liest der Aufruf unbegrenzt, wie der View-Direktzugriff. Eine eingebaute Grenze wäre eine eigene Festlegung dieses Abschnitts |
+| Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server |
+
+
 
 ---
 
@@ -489,3 +521,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-14 | SPEC-020 ergänzt: gRPC-Live-Change-Stream — Dienst `ChangeStream` mit Server-Streaming-RPC `StreamChanges`, Protobuf-Nachrichtenschema der Change-Nachricht, Fire-and-Forget-Zustellsemantik ohne Stream-internes Replay, Authentifizierung über den Metadata-Eintrag `authorization` (`Bearer`-Form, dieselben Token-Klassen wie SPEC-018), Aktivierung über `CDC_GRPC_ADDR`; externe-Verträge-Zeile in §6 |
 | 2026-09-15 | `SPEC-021` ergänzt: HTTP-Server-Sent-Events für den Live-Change-Stream — Endpunkt `GET /changes/stream` (`text/event-stream`), Event-Typ `change`, JSON-Nachrichtenschema mit denselben zehn Change-Feldern, kein Stream-internes Replay (der `Last-Event-ID`-Header bleibt ungenutzt), Fire-and-Forget-Zustellsemantik, Aktivierung über `CDC_HTTP_ADDR` samt `503`-Pfad ohne verdrahteten `Broadcaster` (aus `SPEC-018` herausgelöst — jener Abschnitt gilt den neun Port-gedeckten Fähigkeiten aus `LH-FA-SST-006`) |
 | 2026-09-15 | SPEC-019 Fließtext ergänzt: `applied` heißt für `exclude_column`/`include_column` dauerhaft vermerkt — die `applied`-Zeilen sind die einzige Herkunft des Ausschlussstandes einer Tabelle, abgeleitet in `requested_at`-Ordnung mit `administration_request_id` als Zweitschlüssel, mitgeführt bei jedem Anlegen einer Erfassungs-Bindung; der Antrag gegen eine Tabelle ohne laufende Bindung endet `applied` statt `failed` |
+| 2026-09-15 | `SPEC-022` ergänzt: HTTP-API `GET /changes` — Query-Parameter `source` (Pflicht), `schema`/`table` (optional, unabhängig), `from`/`to` (`commit_position` ≥ 1, Start inklusiv/Ende exklusiv), `limit` (optional, kein Default-Limit), JSON-Antwortform der Changes samt Klartext-Identität der Tabelle, deterministische Reihenfolge, leere Liste statt `404`, `400` für Parameter außerhalb der Liste; `SPEC-018`s Abgrenzungssatz trägt das Changes-Lesen nicht mehr als außerhalb |

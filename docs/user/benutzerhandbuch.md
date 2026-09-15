@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.14
+Version: 1.15
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-15
 
@@ -385,6 +385,11 @@ LIMIT 500;
 `old_data`/`new_data` sind `jsonb`; bei `INSERT` ist `old_data` NULL, bei
 `DELETE` ist `new_data` NULL.
 
+Dieselben Änderungen sind ohne SQL-Direktzugriff über die API lesbar:
+`GET /changes` — derselbe Lesezugriff mit denselben Filtern und derselben
+Reihenfolge (siehe
+[Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)).
+
 ### Aufbewahrung (Retention)
 
 Der Feed-Container bereinigt `cdc.change`-Zeilen automatisch über einen
@@ -613,15 +618,33 @@ fixierte Rolle. Fehlerantworten tragen die Form `{"error": "<Klartext>"}`.
 | Tabelle deaktivieren | `POST /tables/disable` | `admin` |
 | Tabellen-Status | `GET /tables/status` | `reader` |
 | Tabellen auflisten | `GET /tables` | `reader` |
+| Änderungen lesen | `GET /changes` | `reader` |
 | Aufbewahrung auslösen | `POST /retention/run` | `admin` |
 
 Die lesenden Endpunkte sind mit dem Admin-Token ebenso erreichbar; mit dem
 Reader-Token sind die administrativen Endpunkte nicht erreichbar (`403`).
 
+**Changes lesen:** `GET /changes?source=<quelle-id>` liefert persistierte
+Änderungen einer Quelle — optional gefiltert über `schema` und `table`
+(je einzeln oder zusammen), eingegrenzt über `from` (inklusive) und `to`
+(exklusive, jeweils ein `commit_position`-Wert) und begrenzt über `limit`
+(≥ 1). Ohne `limit` liest der Aufruf unbegrenzt. Die Antwort trägt je
+Änderung `commit_position`, `change_id`, `transaction_id`,
+`source_table_id`, `schema`, `table`, `sequence`, `operation`,
+`old_image`, `new_image`, `schema_version` und `committed_at` (RFC 3339,
+UTC) — dieselbe Sicht wie der SQL-Zugriff auf `cdc.changes`. Die
+Reihenfolge ist deterministisch; die Fortsetzung liest ab
+`from = <letzte gelieferte commit_position> + 1`. Ein Aufruf ohne Treffer
+endet `200` mit leerer Liste (`{"changes": []}`), nie `404`; ein Parameter
+außerhalb der genannten Liste endet `400`, ebenso ein fehlendes `source`,
+eine nicht lesbare Zahl, `from`/`to` unter 1, `limit` unter 1 und
+`from > to`.
+
 **Zustellsemantik:** Diese Fähigkeiten sind synchrone Anfrage/Antwort — die
 Antwort trägt das Ergebnis des Aufrufs, es gibt keine Warteschlange
 dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
-unten), der die Verbindung offen hält.
+unten), der die Verbindung offen hält — `GET /changes` ist demgegenüber die
+nicht streamende Form desselben Gegenstands.
 
 ### Zugriff über den gRPC-Change-Stream
 
@@ -888,3 +911,4 @@ MIT — siehe `LICENSE`.
 | 1.12 | 2026-09-14 | Diagnose-Beispielausgabe (§4) auf den umbenannten E2E-Quellnamen `src-e2e` aktualisiert (reines Namensrelikt aus der ursprünglichen MVP-Testumgebung, slice-057) |
 | 1.13 | 2026-09-15 | Betreiber-Oberfläche nachgezogen: §5 um die HTTP-Gruppe (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und `CDC_GRPC_ADDR` erweitert (je mit Aktivierungs-/No-Op-Semantik); §4 um „Spalte vom Ausschluss konfigurieren" (`cdc.exclude_column`/`cdc.include_column`, `LH-FA-CFG-005`, dauerhafter Ausschlussstand) und die drei Netzwerk-Zugriffswege (HTTP-/JSON-API `LH-FA-SST-006`, gRPC-Change-Stream und Server-Sent-Events `LH-FA-SST-008`) |
 | 1.14 | 2026-09-15 | Review-Nachzug: Rahmen-Aussage der HTTP-§4 auf die tatsächlich gelistete Fähigkeitsmenge gezogen (die Retention-Auslösung ist nicht CLI-/SQL-gleichwertig, sondern API-exklusiv); der gRPC-Abschnitt nennt die zehn Nachrichtenfelder, und der SSE-Abschnitt verweist darauf statt auf die Spaltenliste von `cdc.changes` |
+| 1.15 | 2026-09-15 | Changes-Lesen über die API ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0081`, slice-086): §4 Fähigkeits-Tabelle um `GET /changes` erweitert, Parameter-/Antwort-Beschreibung samt Fehlerfällen, „Änderungen lesen" verweist auf den Endpunkt, und die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
