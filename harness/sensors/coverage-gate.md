@@ -24,8 +24,9 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
 [`harness/mk/coverage.mk`](../mk/coverage.mk) (`THRESHOLD`) — diese Sektion
-beschreibt die Bindung (Rampe, Endstufe, Trigger) und führt den beweglichen
-Wert nicht (`AGENTS.md` §3.7).
+beschreibt die Bindung (Rampe, Endstufe, Trigger) und führt ihn als **Träger**
+nicht; sie zitiert ihn nur in den **Belegen** weiter unten, die einen konkreten
+Lauf bezeugen und nicht wandern (`AGENTS.md` §3.7) · seit slice-076.
 
 **Hochschalt-Trigger:** die nächste Coverage-Verbesserung schließt die
 Lücke zur nächsten 5-%-Stufe (`THRESHOLD` in

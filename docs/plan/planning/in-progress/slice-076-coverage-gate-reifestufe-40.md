@@ -89,16 +89,16 @@ gehört zurück zur Zerlegung.
       `harness/sensors/coverage-gate.md` (Rampe/Verweis auf den beweglichen
       Ort, Beleg-Zeile) und die `harness/README.md` §Sensors-Zeile
       `make coverage-gate`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: das
       Repo ist durchgehend Greenfield (`harness/conventions.md`
       §Modus-Deklaration `*`/`PGC`), die Datei existiert nicht.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
       geprüft **von der Slice-Closure selbst**: die Roadmap führt keine offene
       Welle, es gibt also keine Welle-Closure, die sie einsammeln könnte
       (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose Betrieb
@@ -135,7 +135,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): zeigt sich, dass die
-  geltende Stufe an **mehr** Orten geführt wird als den drei geplanten und die
+  geltende Stufe an **mehr** Orten geführt wird als den in §3 aufgeführten und die
   Angleichung weiter reicht (etwa in ein weiteres Sensor- oder
   Workflow-Dokument), gehört das zurück zum Schneiden.
 - `in-progress` → `open` (blockiert — Carveout?): liegt der real gemessene
@@ -165,7 +165,9 @@ dasteht.
   zwischen Entscheidung und Umsetzung gemergter Slice kann ihn unter 40 %
   drücken, und das Gate wäre auf der neuen Stufe rot. Die Antwort ist dann Test-Arbeit bzw. der
   Reifestufen-Zweig (§4), **keine** stille Senkung (§3.6). — **Ausgang:**
-  <bei Closure zuzuweisen>
+  *entfallen — gestrichen mit Begründung*: der Ist-Stand liegt real bei
+  49,30 % und damit 9,3 Prozentpunkte über der neuen Stufe; der Rot-Beleg
+  (`THRESHOLD=50`) zeigt, dass die Stufe real prüft und nicht leer läuft.
 - Die Kalibrierungs-Bindung steht an vier Orten (`THRESHOLD` in
   `harness/mk/coverage.mk`, `harness/sensors/coverage-gate.md`,
   `harness/README.md` §Sensors, `AGENTS.md` §4) und kann auseinanderlaufen —
@@ -173,13 +175,20 @@ dasteht.
   Wert steht an genau **einem** dieser Orte (`THRESHOLD` in
   `harness/mk/coverage.mk`); die übrigen drei nennen die rampenfesten Werte
   (Einstieg 35 %, Endstufe 80 %) bzw. den Verweis darauf. — **Ausgang:**
-  <bei Closure zuzuweisen>
+  *entfallen — gestrichen mit Begründung*: der Schnitt hat die Dopplung
+  **geschlossen** statt vermehrt — der bewegliche Wert steht an genau einem
+  Ort und ist dort mechanisch wirksam (Mutationen des Reviewers: den Wert in
+  `harness/README.md` divergieren lassen → `docs-check` bleibt grün, also keine
+  zweite Quelle; `THRESHOLD` ändern → Gate rot). Die verbleibende Lücke — kein
+  Sensor über die Wert-Dopplung — ist benannt, nicht behoben.
 - Der Rot-Beleg muss **über** der neuen Stufe liegen, nicht an ihrem Rand: bei
-  `THRESHOLD=46` beträgt der Abstand zum Ist-Stand 0,2 Prozentpunkte und liegt
-  damit innerhalb der dokumentierten Lauf-zu-Lauf-Schwankung
-  (`verify-slice-049.md` §2: 39,6 % vs. 39,8 %) — ein solcher Lauf könnte
-  grün ausfallen und den Beleg umkehren. Deshalb `THRESHOLD=50`. —
-  **Ausgang:** <bei Closure zuzuweisen>
+  `THRESHOLD=46` beträgt der Abstand zum Ist-Stand (49,30 %) 3,3
+  Prozentpunkte — ein solcher Lauf wäre **grün**, der Beleg also umgekehrt.
+  Deshalb `THRESHOLD=50`: Abstand 0,70 Prozentpunkte, noch über der einzigen
+  dokumentierten Lauf-zu-Lauf-Schwankung (`verify-slice-049.md` §2: 39,6 % vs.
+  39,8 %). — **Ausgang:** *entfallen — gestrichen mit Begründung*: der Beleg
+  ist real bei 50 rot gesehen (Skript-Exit 1, `make` 2), und die Herleitung ist
+  auf den Ist-Stand gezogen.
 
 ## 7. Closure-Notiz
 
@@ -191,23 +200,61 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure>
-- **Was ging anders als geplant:** <bei Closure>
-- **Steering-Loop-Eintrag:** <bei Closure — erwartet: keiner; der Fall ist
-  mit dem Architect-Verdikt benannt, nicht gezählt. Wird der Trigger bei einer
-  künftigen Wellen-Closure erneut offen geführt, ist das der zweite Fall
-  derselben Klasse und ein Registerkandidat.>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure — erwartet:
-  keine Beobachtung angefallen; der Registereintrag
-  `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` wird nicht berührt
-  (andere Klasse, s. §8)>
-- **Folge-Slices:** <bei Closure — erwartet: keiner. Die nächste
-  Hochschaltung ist an ihren Trigger gebunden (Ist-Stand ≥ 45 %), nicht an
-  einen jetzt anzulegenden Slice.>
-- **Risiken aus §6:** <bei Closure — jedes mit genau einem Ausgang, siehe §6>
+- **Was hat funktioniert:** der Schnitt hat die Dopplung **geschlossen** statt
+  vermehrt. Der Plan verlangte einen beweglichen Ort; der Implementer hat ihn
+  auf `THRESHOLD` gelegt und die drei übrigen Träger auf Rampe plus Verweis
+  gezogen — und `AGENTS.md` **nicht** angefasst, weil dort schon nur die Rampe
+  stand (ein Edit wäre Wortlaut-Churn gewesen). Getragen hat ebenso die
+  Rollentrennung: der Reviewer hat die Selbstaussage der Sensordoku am eigenen
+  Beleg widerlegt und die benannte Lücke („kein Sensor über die Wert-Dopplung")
+  als real bestätigt statt sie zu glauben; der Verifier hat die DoD-Zeilen in
+  einem **sauberen Klon** auf dem Slice-Stand geprüft, weil sich der Hauptbaum
+  während seines Laufs durch einen fremden Vorgang bewegte.
+- **Was ging anders als geplant:**
+  1. **Der Rot-Beleg liefert `make`-Exit 2, nicht 1** — GNU make maskiert den
+     Rezept-Fehlschlag, das Gate-Skript selbst endet mit 1. Der Plan hatte
+     „Exit 1" formuliert; die Zeile ist auf „Exit ≠ 0 — Skript 1, `make` 2"
+     nachgezogen.
+  2. **Drei Herleitungen standen auf einem überholten Messstand** (45,80 % aus
+     dem Verdikt statt 49,30 %): §6 Risiko 3 rechnete mit 0,2 Prozentpunkten
+     Abstand zu `THRESHOLD=46` (real 3,3 pp — der Lauf wäre **grün**, nicht
+     „vielleicht grün"), und §4 maß gegen „die drei geplanten" Orte, während §3
+     vier Zeilen führt. Beides ist nachgezogen, nachdem Review und Verifikation
+     es unabhängig gefunden hatten.
+  3. **Ein Befund ohne §6-Eintrag:** die Sensordoku sagte „führt den beweglichen
+     Wert nicht", während ihr eigener Beleg drei Zeilen tiefer `THRESHOLD=40`
+     zitiert. Kein Selbstwiderspruch — Träger und Beleg sind verschieden —, aber
+     der Satz war über-absolut; er trennt jetzt ausdrücklich.
+- **Steering-Loop-Eintrag:** *geschärfte Regel mit bestehendem Träger* — die
+  Kalibrierungs-Bindung führt den beweglichen Wert an **genau einer** Stelle
+  (`harness/mk/coverage.mk`) und verweist von den übrigen Trägern darauf;
+  verkörpert in `harness/sensors/coverage-gate.md` §Kalibrierungs-Bindung
+  · seit slice-076. Dazu *ein neuer Register-Eintrag* (s. u.) und *kein neuer
+  Sensor*: die verbleibende Lücke — kein Wächter über die Wert-Dopplung — ist
+  benannt; ein Textmuster-Sensor wäre dieselbe Werkzeugklasse, die für die
+  Chronik-Klasse geprüft und verworfen wurde.
+- **Beobachtungs-Register (`../observations/`):** fortgeschrieben —
+  `evidence/slice-076.md` in `BEO-PGC/aufschub-adresse-verfaellt` (1× → **2×**,
+  weiter unter der Schwelle, Ausgang bleibt *weiter offen*) und ein **neuer
+  Eintrag** `BEO-PGC/endstufe-unter-eigenem-messgegenstand-unerreichbar`
+  (1×, `verkörpert`; Zielort
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)).
+  Der Eintrag `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` wird
+  **nicht** berührt (andere Klasse, s. §8).
+- **Folge-Slices:** keine **aus diesem Slice**. Die nächste Hochschaltung ist
+  an ihren Trigger gebunden (Ist-Stand ≥ 45 %, heute erfüllt) und wäre ein
+  eigener Mini-Slice; die vier Posten aus dem Architect-Verdikt — Scope-Schnitt
+  und Neukalibrierung, Messung der DB-Ebene, Executor-Naht, die Welle „80 % der
+  netzlos prüfbaren Fläche" — sind **eigene Vorgänge** und werden als solche
+  geschnitten, nicht als Beigabe.
+- **Risiken aus §6:** alle drei mit genau **einem** Ausgang — je *entfallen,
+  gestrichen mit Begründung*; die Begründungen stehen in §6.
 - **Drei Paarungen:** hier geprüft — die Roadmap führt keine offene Welle, die
   Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
   `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+  (kein `*-archiv.zip` unter `done/`); nach Modul 6 bleibt es ohne sie konform,
+  und diese Feststellung ersetzt den Handlauf.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
