@@ -279,7 +279,7 @@ diesem Wegwerf-Repository:
 | Leerzeile vor `Merge branch 'x'` (`--cleanup=verbatim`) | 0 | 1 | 1 | Randfall **zugunsten** des Hooks |
 | Kennung im Body, Betreff ohne Kennung | 0 | 0 | 0 | Implementer-Messung bestätigt |
 | gar keine Kennung | 1 | 1 | 1 | Deckung |
-| `ADR-045` · `LH-FA-CFG-005.a` · `LH-FA-CFG-5` · `LH-QA-POR-001` | = | = | = | Muster-Äquivalenz, kein Befund |
+| Muster-Stichproben `ADR-045` / `LH-FA-CFG-005.a` / `LH-FA-CFG-5` / `LH-QA-POR-001` | 1 / 0 / 1 / 0 | 1 / 0 / 1 / 0 | — | Muster-Äquivalenz, kein Befund |
 
 Zwei Divergenzklassen (Kommentarzeile · scissors/Verbose-Diff) treffen damit
 zu und sind an realen Commits erreichbar; die dritte vermutete (Leerzeile vor
@@ -293,8 +293,8 @@ Subjekt-Variablen-Frage (eine Variable, zwei nötige Semantiken) bleibt als
 Mechanismus bestätigt, mit einem zusätzlichen Effekt **zuungunsten** des
 Hooks: `SPEC-*` auf der Fortsetzungszeile des ersten Absatzes (Realfall
 `521716b` desselben Wegwerf-Repositories, s. Klasse (c) in F-2). Die Regexe des Hooks sind zu den
-`id-patterns`/dem `exempt-pattern` des Moduls äquivalent — Stichproben in
-beiden Richtungen mit identischen Exit-Codes.
+`id-patterns`/dem `exempt-pattern` des Moduls äquivalent — eigene Stichproben
+mit identischen Exit-Codes in beiden Richtungen (Tabellenzeile).
 
 **Zur Folge für §6:** die dort als „weiter offen" geführte
 Doppel-Implementierung ist nicht mehr nur das von `ADR-0062` §Konsequenzen
