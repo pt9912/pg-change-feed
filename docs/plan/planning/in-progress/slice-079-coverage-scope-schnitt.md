@@ -78,17 +78,6 @@ Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
 Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 **geändert**, nicht nur ergänzt.
 
-**Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
-einer mit vier erfundenen; die vier Klassen sind ein Suchraster, keine
-Ausfüll-Liste. Suchreihenfolge: Was übernimmt ein **Folge-Slice** (mit
-Kennung — und die Kennung muss den Punkt auch annehmen)? Was bleibt als
-**Bestand** bewusst stehen (mit Begründung)? Was wäre ein **anderer Vorgang**?
-Welche **Schicht** rührt der Slice nicht an?
-
-Was hier steht, ist die Grenze, an der ein wachsender Slice sich messen lässt:
-Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
-**geändert**, nicht nur ergänzt.
-
 ## 2. Definition of Done
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
@@ -291,12 +280,3 @@ neues Verzeichnis.
 Sensors-Bindung), **Phase-Reife** hoch (79 Slices, 20 Wellen), **Evidenz-/Diskrepanz-Risiko**
 niedrig — die Aussage wird nicht gegen einen Bestand inventarisiert, sondern
 **gemessen**, und der Schnitt wird beziffert —, **Reconciliation-Aufwand** null.
-
-**Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
-Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
-Hinweis *"alle berührten Sub-Areas GF"*; bei reinem Refactor ohne neue
-Sub-Area-Berührung entfällt **er** — nicht der Abschnitt.
-
-Kein Modus-Begründungsblock — alle berührten Sub-Areas GF (die vier
-Pflichtkriterien stehen oben, weil sie hier tragen und nicht nur behauptet
-sind).
