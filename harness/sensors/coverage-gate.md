@@ -22,6 +22,11 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 | Einstieg | **35 %** | real gemessener Ist-Stand beim ersten Lauf: 39,6 % — abgerundet auf den nächsten vollen 5-%-Schritt (`ADR-0054`) |
 | Endstufe | **80 %** | fest, Nutzer-Entscheidung (`roadmap.md` §Nächste Wellen) |
 
+**Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
+[`harness/mk/coverage.mk`](../mk/coverage.mk) (`THRESHOLD`) — diese Sektion
+beschreibt die Bindung (Rampe, Endstufe, Trigger) und führt den beweglichen
+Wert nicht (`AGENTS.md` §3.7).
+
 **Hochschalt-Trigger:** die nächste Coverage-Verbesserung schließt die
 Lücke zur nächsten 5-%-Stufe (`THRESHOLD` in
 [`harness/mk/coverage.mk`](../mk/coverage.mk) anheben), bis 80 % erreicht
@@ -61,10 +66,11 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 | 2 | Coverage-Eingabe fehlt/leer, `total:`-Zeile fehlt, oder Prozentwert nicht parsbar |
 
 Rot-/Grün-Beleg (real, [ADR-0054](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)):
-`THRESHOLD=45` (über dem Ist-Stand) scheitert real mit Exit 1
-(`coverage-gate: FAIL — Coverage 39.60% unter Schwelle 45%`); `THRESHOLD=35`
-(Einstiegsstufe) besteht real (`coverage-gate: OK — Coverage 39.60% erfüllt
-Schwelle 35%`).
+`THRESHOLD=50` (über dem Ist-Stand) lässt die Stage real scheitern
+(`coverage-gate: FAIL — Coverage 49.30% unter Schwelle 50%`) — das Gate-Skript
+endet Exit 1, `make` meldet für den gescheiterten Bauprozess Exit 2;
+`THRESHOLD=40` besteht real (`coverage-gate: OK — Coverage 49.30% erfüllt
+Schwelle 40%`, Exit 0).
 
 ## Bindung
 

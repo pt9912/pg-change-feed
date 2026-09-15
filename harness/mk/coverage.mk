@@ -5,13 +5,13 @@
 # GATE_CHECKS — der Root-Aggregator faehrt es via make gates.
 #
 # Kalibrierungs-Bindung (harness/README.md §Sensors, ADR-0054): bootstrap-
-# aware Gate — Einstiegsstufe 35 % (realer Ist-Stand beim ersten Lauf:
-# 39.6 %, abgerundet auf den naechsten vollen 5-%-Schritt). Endstufe 80 %
-# steht fest; Hochschalt-Trigger „naechste Coverage-Verbesserung schliesst
-# die Luecke zur naechsten Stufe" bis 80 % erreicht ist. Override: `make
-# coverage-gate THRESHOLD=…`; Senkung unter die hier gueltige Stufe nur per
-# ADR (AGENTS.md §3.6).
-THRESHOLD ?= 35
+# aware Gate. Die geltende Stufe ist THRESHOLD unten und steht ausschliesslich
+# an diesem Ort — die uebrigen Traeger nennen nur die Rampe (Einstieg 35 %,
+# Endstufe 80 % fest, Nutzer-Entscheidung). Hochschalt-Trigger „naechste
+# Coverage-Verbesserung schliesst die Luecke zur naechsten Stufe" bis 80 %
+# erreicht ist. Override: `make coverage-gate THRESHOLD=…`; Senkung unter die
+# hier geltende Stufe nur per ADR (AGENTS.md §3.6).
+THRESHOLD ?= 40
 
 # `--no-cache-filter coverage`: erzwingt die Neu-Auswertung der
 # Coverage-Stage, ohne den deps-Cache zu verlieren — ein stale Layer-Hash
@@ -19,7 +19,7 @@ THRESHOLD ?= 35
 NO_CACHE_FILTER_COV := --no-cache-filter coverage
 
 .PHONY: coverage-gate
-coverage-gate: ## Coverage-Schwelle (Kalibrierungs-Bindung: bootstrap-aware 35 % -> 80 %, Historie in harness/README §Sensors)
+coverage-gate: ## Coverage-Schwelle (bootstrap-aware Rampe Einstieg 35 % -> Endstufe 80 %; Bindung in harness/README §Sensors)
 	docker build $(NO_CACHE_FILTER_COV) \
 	    --build-arg COVERAGE_THRESHOLD=$(THRESHOLD) \
 	    --target coverage -t pg-change-feed:coverage .
