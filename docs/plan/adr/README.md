@@ -92,3 +92,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0077 | Coverage-Rampen — Neu-Bemessung bei Subjekt-Transfer (→ ADR-0078, teilweise) | Accepted | 2026-09-15 | [0077-coverage-rampen-neu-bemessung-subjekt-transfer.md](0077-coverage-rampen-neu-bemessung-subjekt-transfer.md) |
 | ADR-0078 | Coverage-Rampen — Transfer-Nachweis statt Summen-Konstanz | Accepted | 2026-09-15 | [0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md](0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md) |
 | ADR-0079 | NATS-Beispielclient — vierter `examples/`-Client (Supersedes ADR-0076, teilw.) | Accepted | 2026-09-15 | [0079-nats-beispielclient-vierter-examples-client.md](0079-nats-beispielclient-vierter-examples-client.md) |
+| ADR-0080 | Nähte der pgconn-Adapter — Treiber-Hülle, kein Subjekt-Transfer | Accepted | 2026-09-15 | [0080-nahtform-pgconn-adapter-treiberhuelle.md](0080-nahtform-pgconn-adapter-treiberhuelle.md) |
