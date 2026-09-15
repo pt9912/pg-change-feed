@@ -255,15 +255,38 @@ func TestReadChangesPositionUnterEinsEndetMit400(t *testing.T) {
 	}
 }
 
-// TestReadChangesNichtpositivesLimitEndetMit400 trägt die Mapping-Hälfte
-// des Port-Kontrakts (`LH-FA-REA-003` Negative): `outbound.ErrNonPositiveLimit`
-// endet als `400`, nicht als `500`.
+// TestReadChangesNichtpositivesLimitEndetMit400 trägt die zwei Hälften des
+// Adapter-Anteils an `LH-FA-REA-003` Negative. Ein nicht positives Limit
+// wird **unverändert** an den Port weitergereicht — der Adapter verwirft es
+// nicht, sonst läse der Aufruf still unbegrenzt statt zu enden; die Grenze
+// selbst trägt der Port-Kontrakt (`outbound.ChangeQuery.Validate`), dessen
+// Sentinel `outbound.ErrNonPositiveLimit` der Adapter auf `400` abbildet.
 func TestReadChangesNichtpositivesLimitEndetMit400(t *testing.T) {
-	ts := newReadChangesServer(t, &fakeReadChangesUseCase{err: outbound.ErrNonPositiveLimit})
-	resp := getChanges(t, ts, testReaderToken, "/changes?source=src-1&limit=0")
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Fatalf("Status: %d (Erwartung: 400)", resp.StatusCode)
+	for _, tc := range []struct {
+		path  string
+		limit int
+	}{
+		{path: "/changes?source=src-1&limit=0", limit: 0},
+		{path: "/changes?source=src-1&limit=-5", limit: -5},
+	} {
+		useCase := &fakeReadChangesUseCase{err: outbound.ErrNonPositiveLimit}
+		ts := newReadChangesServer(t, useCase)
+		resp := getChanges(t, ts, testReaderToken, tc.path)
+		status := resp.StatusCode
+		resp.Body.Close()
+		if status != http.StatusBadRequest {
+			t.Fatalf("%s: Status %d (Erwartung: 400)", tc.path, status)
+		}
+		if len(useCase.queries) != 1 {
+			t.Fatalf("%s: Use-Case-Aufrufe = %d, wollen 1", tc.path, len(useCase.queries))
+		}
+		got := useCase.queries[0].Limit
+		if got == nil {
+			t.Fatalf("%s: Limit ist nicht gesetzt — der Adapter verwarf den Wert, statt ihn dem Port-Kontrakt zu übergeben", tc.path)
+		}
+		if *got != tc.limit {
+			t.Fatalf("%s: Limit = %d, wollen %d", tc.path, *got, tc.limit)
+		}
 	}
 }
 
@@ -352,7 +375,7 @@ func TestReadChangesLeererParameterBestandIstGueltig(t *testing.T) {
 	}
 }
 
-// TestReadChangesHandlerOhneUseCaseTraegtDerFehlerpfad hält fest, dass der
+// TestReadChangesOhneVerdrahtungEndetVorDemHandler hält fest, dass der
 // Endpunkt ohne verdrahteten Use Case an der Middleware endet (`401`),
 // bevor der Handler läuft: die Verdrahtung trägt den Use Case, dieser Test
 // belegt nur die Reihenfolge.
