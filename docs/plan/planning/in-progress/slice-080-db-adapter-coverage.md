@@ -80,30 +80,30 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Messung existiert.**
 
-- [ ] Die beiden Träger-Läufe erzeugen **je ein** `-coverprofile` für ihren
+- [x] Die beiden Träger-Läufe erzeugen **je ein** `-coverprofile` für ihren
       Testbestand; die Profile werden **gemergt** und als **eine** Zahl
       ausgegeben — das Merge-Verfahren ist benannt.
-- [ ] Die **Herkunft der Zahl** steht dabei (welcher Lauf, welches Profil,
+- [x] Die **Herkunft der Zahl** steht dabei (welcher Lauf, welches Profil,
       welche Deduplizierung): die Zählbasis-Regel, die `slice-079` für die
       Unit-Zahl verkörpert hat, gilt hier analog.
 
 **Liefer-Punkt 2 — die Schwelle ist kalibriert.**
 
-- [ ] Der erste reale Wert wird **gemessen** und die Stufe nach dem
+- [x] Der erste reale Wert wird **gemessen** und die Stufe nach dem
       bootstrap-aware-Muster gesetzt (Ist-Stand, abgerundet auf die volle
       5-%-Stufe; `ADR-0054` §(a)) — keine erfundene Zahl, keine Senkung.
-- [ ] Ihr **Träger** ist der nicht-blockierende Workflow
+- [x] Ihr **Träger** ist der nicht-blockierende Workflow
       (`.github/workflows/e2e.yml`), **nicht** `make gates`; die Zahl trägt ihr
       Subjekt im Namen und heißt nie „die Coverage".
 
 **Liefer-Punkt 3 — der Beleg.**
 
-- [ ] Ein **realer** Lauf zeigt die Zahl, Exit direkt gelesen und ungepiped
+- [x] Ein **realer** Lauf zeigt die Zahl, Exit direkt gelesen und ungepiped
       (`AGENTS.md` §3.9).
-- [ ] `make gates` bleibt **unverändert** grün — kein Container dort, keine
+- [x] `make gates` bleibt **unverändert** grün — kein Container dort, keine
       zweite Schwelle im Bündel.
 
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -122,10 +122,12 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/harness/run-store-tests.sh` | update | `-coverprofile` für den Store-Testbestand, Merge, Ausgabe der Zahl |
-| `tools/harness/run-replication-tests.sh` | update | dito für den Replication-Testbestand |
-| `harness/sensors/` (neue Datei) | neu | die Bindung dieser **zweiten** Zahl: Subjekt, Schwelle, Träger, Grenzen |
-| `harness/README.md` §Werkzeuge | update | die beiden Läufe nennen die Zahl, die sie erzeugen |
+| `tools/harness/run-store-tests.sh` | update | `-coverprofile` für den Store-Testbestand, Ausgabe der Teilzahl |
+| `tools/harness/run-replication-tests.sh` | update | dito für den Replication-Testbestand; Merge beider Profile + Schwellen-Prüfung |
+| `tools/harness/db-coverage.sh` | **neu** | der Merge der zwei Profile zur **einen** Zahl, ihre Zählbasis (Dedup über die Block-Position), die Träger-Subjektliste (`--coverpkg`) und `DB_COVERAGE_THRESHOLD` als **ein** beweglicher Ort |
+| `harness/sensors/db-adapter-coverage.md` | **neu** | die Bindung dieser **zweiten** Zahl: Subjekt, Schwelle, Träger, Zählbasis, Grenzen |
+| `harness/sensors/coverage-gate.md` §Grenze | update | die Unit-Sensor-Doku verweist auf die eigene Messung und hält fest, dass `mapper` **nicht** in beiden Gegenständen liegt |
+| `harness/README.md` §Werkzeuge | update | die beiden Läufe nennen die Zahl, die sie erzeugen, samt Sensor-Verweis |
 | `.github/workflows/e2e.yml` | update | der Träger: die Messung läuft dort, nicht in `make gates` |
 
 **Nicht in dieser Liste:** `Makefile` (kein neues Gate-Target), `internal/**`
@@ -133,6 +135,24 @@ Aussagen-Berührung steht hier gar nicht.
 
 **Der genaue Zuschnitt der Runner-Änderungen entsteht im ersten Implementer-Lauf**
 — die Liste nennt die Träger, nicht jede Zeile.
+
+**Nachzug aus dem ersten Implementer-Lauf:**
+
+- **Der Messlauf ist ein eigener `go test`-Aufruf über den Gegenstand**, nicht
+  der Tier-weite `./...`-Lauf: `-coverpkg` instrumentiert sonst auch die
+  Nicht-Gegenstands-Pakete, und der Replication-Tier-Lauf trägt ein
+  **vorbestehend rotes** Paket außerhalb des Gegenstands (s. u.). Der Store-Lauf
+  zieht `postgresstorage` aus dem `others`-Sammelaufruf heraus und führt es als
+  Messlauf **zuletzt** — seine Tests räumen das `cdc`-Schema ab und dürfen dem
+  vorgezogenen `bootstrap`-Aufruf nicht das ausgerollte Schema entziehen.
+- **Vorbestehender roter Tier-Lauf, nicht durch diesen Slice verursacht:**
+  `make test-replication`s Tier-weiter `go test ./...` ist rot
+  (`internal/bootstrap` · `TestWALRetentionThresholdToEndToEnd`): dessen Fixture
+  baut das `cdc`-Schema per `DROP SCHEMA cdc CASCADE` + `ApplySchema` neu auf
+  und trägt die seit `ADR-0050` von `bootstrap.Run` gelesenen Tabellen
+  (`cdc.administration_request`, `cdc.process_heartbeat`) nicht. Real belegt:
+  derselbe Fehlschlag auf dem **unveränderten** Runner-Skript. Die Messung ist
+  davon unabhängig (eigener Aufruf), der Tier-Lauf bleibt rot.
 
 ## 4. Trigger
 

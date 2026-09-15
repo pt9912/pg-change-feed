@@ -88,3 +88,16 @@ jobs:
 
       - name: Compose-Integrationstest (Black-Box-E2E)
         run: make test-integration
+
+      # DB-Adapter-Coverage (ADR-0071 Punkt 3, kein Gate): die zwei
+      # Traeger-Laeufe erzeugen je ein -coverprofile ueber den
+      # DB-Adapter-Gegenstand; `make test-replication` mergt beide und prueft
+      # die Schwelle (tools/harness/db-coverage.sh, DB_COVERAGE_THRESHOLD).
+      # Reihenfolge store -> replication ist Bedingung des Merges. Die Schritte
+      # stehen NACH `make test-integration`, damit sie dessen Ergebnis nicht
+      # verdecken; `make test-store` braucht kein vorheriges `make image`.
+      - name: DB-Adapter-Coverage — Store-Teil (Profil)
+        run: make test-store
+
+      - name: DB-Adapter-Coverage — Replication-Teil, Merge + Schwelle
+        run: make test-replication

@@ -76,10 +76,13 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    `internal/adapters/driving/replication/receive` setzen in ihren
    Testläufen einen externen Dienst voraus (PostgreSQL) und werden deshalb
    nicht in die Zahl dieses Gates gerechnet; ihre Netto-Abdeckung trägt die
-   eigene, subjekt-qualifizierte Messung aus
+   eigene, subjekt-qualifizierte Messung
+   ([`db-adapter-coverage.md`](db-adapter-coverage.md)) aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand
-   (15 Statements, 12 gedeckt).
+   (15 Statements, 12 gedeckt) — und ist damit **nicht** Teil der
+   DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
+   die zwei Zahlen überlappen nicht.
 
    **Fünf Pakete des Gegenstands haben keine Testdatei** (`go list
    -f '{{len .TestGoFiles}}'` über den Gegenstand). Sie tragen drei

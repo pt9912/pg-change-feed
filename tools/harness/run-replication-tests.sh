@@ -11,8 +11,18 @@
 # Arbeitsbaum); der Testcontainer und das Docker-Netz werden in jedem
 # Ausgang abgeräumt, das Modul-Cache-Volume bleibt als Vorbereitung für
 # netzlose `make test`-Läufe bestehen.
+#
+# Der Lauf erzeugt ein `-coverprofile` über den DB-Adapter-Gegenstand
+# (ADR-0071 Punkt 3) als `replication.coverprofile` in DB_COVERAGE_DIR; liegt
+# dort das `store.coverprofile` des vorangegangenen `make test-store`, mergt
+# tools/harness/db-coverage.sh beide zur subjekt-qualifizierten
+# DB-Adapter-Coverage und prüft sie gegen DB_COVERAGE_THRESHOLD. Kein Gate.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
+
+DB_COVERAGE_DIR=${DB_COVERAGE_DIR:-${TMPDIR:-/tmp}/pg-change-feed-db-coverage}
+mkdir -p "$DB_COVERAGE_DIR"
+COVER_PKGS="$(bash tools/harness/db-coverage.sh --coverpkg)"
 
 TOOLCHAIN_IMAGE=${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125}
 PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd500bec6d046fa851dc81340d838f0347e616107e8}
@@ -60,6 +70,27 @@ docker run --rm --network "$NETWORK" \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go mod download
+
+# DB-Adapter-Coverage (ADR-0071 Punkt 3): eigener Messlauf über den
+# Replication-Teil des Gegenstands (`postgresack`, `replication/receive`), mit
+# `-coverpkg` über die ganze Gegenstandsliste. Er steht VOR dem Tier-weiten
+# `go test ./...`: der Tier-Lauf führt auch `internal/bootstrap` (der dessen
+# eigene Verdrahtungs-E2E fährt) und ist unabhängig von dieser Messung.
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -v "$DB_COVERAGE_DIR":/cov \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_REPLICATION_TEST_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test \
+    -coverpkg="$COVER_PKGS" \
+    -coverprofile=/cov/replication.coverprofile \
+    -covermode=atomic \
+    ./internal/adapters/driven/postgresack \
+    ./internal/adapters/driving/replication/receive
+
+bash tools/harness/db-coverage.sh
 
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
