@@ -9,7 +9,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 DoD (ein einzelner, konfigurations- und doku-seitiger Slice), kein repo-weites
 *Mehr* wie bei den `welle-NN`-Bündeln (Baseline-Regelwerk
 `modul-06-roadmap.md` §Wann Arbeit eine Welle braucht). Insbesondere ist er
-**nicht** Teil des `welle-18`-Closure-Triggers.
+keinem Wellen-Bündel zugeordnet.
 
 **Bezug:** [`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 (bindend — seine Eskalationsklausel §(a) verlangt diesen Schritt und
@@ -17,9 +17,9 @@ beschreibt ihn; die ADR bleibt `Accepted` und unverändert, **kein**
 `Supersedes`), `AGENTS.md` §3.6 (Schwellen-**Senkung** nur per ADR — die
 Hochschaltung ist die von `ADR-0054` selbst vorgesehene Bewegung), §3.7
 (Kommentar/Zustandsfeld nennt den Ist-Zustand). Die Entscheidung selbst liegt
-in `architect-verdict-coverage-gate-reifestufe` (Kennung statt Pfad-Link —
-`BEO-PGC/slice-pfad-als-link-in-berichten` steht bei 2×; der Slice ist nicht
-ihr Gegenstand, sie fällt in den Reifestufen-Zweig der `welle-18`-Closure).
+in `architect-verdict-coverage-gate-reifestufe` (die Kennung trägt den Verweis;
+`BEO-PGC/slice-pfad-als-link-in-berichten` ist als Regel verkörpert, und ein
+Pfad-Link auf einen wandernden Slice-Plan wäre genau seine Klasse).
 
 **Berührte Spec-Stellen:** — (Prozess-/Tooling-Vertrag ohne Spec-Stratum;
 `LH-QA-PER-001`…`003` und die `SPEC-014`-Lastenstufen bleiben unberührt, die
@@ -96,9 +96,11 @@ gehört zurück zur Zerlegung.
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
-      Repo **mit** Wellen-Betrieb von der nächsten Welle-Closure geprüft
-      (auch für einen wellenlosen Slice).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+      geprüft **von der Slice-Closure selbst**: die Roadmap führt keine offene
+      Welle, es gibt also keine Welle-Closure, die sie einsammeln könnte
+      (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose Betrieb
+      selbst auslöst).
 
 ## 3. Plan (vor Code)
 
@@ -149,9 +151,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
 dasteht.
 
-- Der Ist-Stand (45,80 %) ist eine Momentaufnahme: ein zwischen Entscheidung
-  und Umsetzung gemergter Slice kann ihn unter 40 % drücken, und das Gate
-  wäre auf der neuen Stufe rot. Die Antwort ist dann Test-Arbeit bzw. der
+- Der Ist-Stand (49,30 %, zuletzt gemessen) ist eine Momentaufnahme: ein
+  zwischen Entscheidung und Umsetzung gemergter Slice kann ihn unter 40 %
+  drücken, und das Gate wäre auf der neuen Stufe rot. Die Antwort ist dann Test-Arbeit bzw. der
   Reifestufen-Zweig (§4), **keine** stille Senkung (§3.6). — **Ausgang:**
   <bei Closure zuzuweisen>
 - Die geltende Stufe wird an vier Orten genannt (`THRESHOLD` in
@@ -190,8 +192,9 @@ Backticks).
   Hochschaltung ist an ihren Trigger gebunden (Ist-Stand ≥ 45 %), nicht an
   einen jetzt anzulegenden Slice.>
 - **Risiken aus §6:** <bei Closure — jedes mit genau einem Ausgang, siehe §6>
-- **Drei Paarungen:** Repo **mit** Wellen-Betrieb — Prüfung läuft bei der
-  Closure der nächsten Welle (auch für wellenlose Slices).
+- **Drei Paarungen:** hier geprüft — die Roadmap führt keine offene Welle, die
+  Prüfung trägt damit die Slice-Closure selbst (Baseline-Regelwerk
+  `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst auslöst).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -212,8 +215,14 @@ fügt **keine** Docker-Stage hinzu und ändert weder `Dockerfile` noch
 berührt und nicht verschärft. Kein anderer Registereintrag betrifft die
 Gate-Kalibrierung; die Gate-bezogenen Einträge `BEO-PGC/a-check-null-abdeckung`
 (verkörpert seit `welle-1`) und `BEO-PGC/test-runner-stiller-ausschluss`
-(1×, weiter offen) liegen in anderen Klassen und anderen Werkzeugen. **Keine
-weiteren Treffer.**
+(2×, weiter offen) liegen in anderen Klassen und anderen Werkzeugen.
+- `BEO-PGC/aufschub-adresse-verfaellt` (1×, **offen**) — **Treffer**: §2 und §7
+  dieses Plans verwiesen die drei Paarungen an „die nächste Welle-Closure",
+  während die Roadmap keine offene Welle mehr führt; die Adresse war beim
+  Schreiben gültig und ist es nicht mehr. Beim Priorisieren auf die
+  Slice-Closure als Träger nachgezogen; Beleg bei Closure:
+  `evidence/slice-076.md`, Zähler dann 2× — weiter unter der Schwelle, Ausgang
+  bleibt *weiter offen*. **Kein weiterer Treffer.**
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
