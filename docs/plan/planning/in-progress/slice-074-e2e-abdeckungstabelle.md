@@ -211,9 +211,12 @@ Runner; kein neues Skript, kein neues Binary).
       Bash-Hälfte; und die Aussage zur fünften `structure`-Regel nennt den
       Ist-Zustand (aktiv seit der ersten Closure).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Erstbefund [`docs/reviews/review-slice-074.md`](../../../reviews/review-slice-074.md),
+      Bestätigungslauf nach der Fixrunde
+      [`docs/reviews/review-slice-074-fixrunde.md`](../../../reviews/review-slice-074-fixrunde.md).
 - [x] Doku-Update: `harness/sensors/docs-check.md` (Liefer-Punkt 3) und
       `docs/user/e2e-abdeckung.md` sind die berührten Dokumente; ein neuer
       Eintrag in `harness/README.md` §Sensors ist **nicht** fällig — kein neues
