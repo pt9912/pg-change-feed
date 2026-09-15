@@ -66,8 +66,8 @@ unverändert 80 %); die Bindung, die das von einem Freibrief trennt: eine Quote,
 die bei **unverändertem** Nenner fällt, ist eine Regression — dann steht die
 Schwelle.
 
-**Die Messung des zweiten Implementer-Laufs widerlegt die Voraussetzung dieser
-Entscheidung** (§3, *Befund des zweiten Laufs*): `k_aufnehmend` 152 ≠
+**Die Messung widerlegt die Voraussetzung dieser
+Entscheidung** (§3, *Der Transfer-Nachweis*): `k_aufnehmend` 152 ≠
 `k_abfließend` 138. **Entschieden durch [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md):**
 die Summen-Konstanz war ein *hinreichender, aber weder notwendiger noch
 hinreichender* Stellvertreter — sie ließe eine Löschung-mit-Ersatz durch (nicht
@@ -132,7 +132,7 @@ vierter Punkt:
       (`Query`/`Exec` plus ein minimales `Rows`) statt an `*pgxpool.Pool`;
       der reale Pool erfüllt sie (`var _ sqlexec.DB = (*pgxpool.Pool)(nil)`,
       `internal/adapters/driven/postgresstorage/sqlexec/seam.go`).
-- [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
+- [x] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-store` und `make test-replication` (Exit 0) — der Beleg, dass
       die Naht die Ausführung nicht verschiebt.
 
@@ -148,8 +148,8 @@ vierter Punkt:
 - [x] Der Coverage-Effekt wird **als Folge** dokumentiert (Zahl vorher/nachher
       über der netzlos prüfbaren Fläche) — nicht als Zweck: **69,70 % → 71,30 %**
       (`make coverage-gate`, beide Läufe Exit 0; Gegenstand **1679 → 1831**
-      Statements, gemessen im zweiten Lauf — §3).
-- [ ] **Die Neu-Bemessung aus [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
+      Statements — §3).
+- [x] **Die Neu-Bemessung aus [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
       in der Fassung von [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
       ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
       (`tools/harness/db-coverage.sh`, Zeile der Vorgabe), `THRESHOLD` 65 → 70
@@ -157,7 +157,7 @@ vierter Punkt:
       (`harness/sensors/db-adapter-coverage.md`,
       `harness/sensors/coverage-gate.md`, `harness/README.md` §Sensors,
       `AGENTS.md` §4) nennt die neuen Stufen.
-- [ ] **Der Transfer-Nachweis liegt vollständig bei — alle drei Belege**
+- [x] **Der Transfer-Nachweis liegt vollständig bei — alle drei Belege**
       (`ADR-0078` §Entscheidung): **(a) die Arithmetik** — `k_ab` 138, `k_auf`
       152, `k_auf ≥ k_ab`, die Differenz 14 ist **neuer** Code; **(b) der
       Paket-Diff**, der Abfluss ist auf den verlagerten Träger **isoliert**
@@ -166,8 +166,8 @@ vierter Punkt:
       **vollständig abgegangen** — die aggregierte Summe genügt dafür
       ausdrücklich **nicht**; **(c) kein Verhalten verloren** — die realen,
       dienst-gestützten Läufe des abfließenden Gegenstands sind grün, kein
-      Testfall entfernt.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+      Testfall entfernt. Träger: §3.
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -211,48 +211,58 @@ Liefer-Punkte, kein vierter.
 trägt sie als `sqlexec.Statement.SQL` durch), `.a-check.yml` (grün, 0 Befunde),
 `spec/**`.
 
-**Befund dieses Zugs, der nicht dem Implementer gehört:** Die Naht zieht die
+**Befund des ersten Laufs — die Naht bewegt die Messung.** Die Naht zieht die
 Übersetzung aus `postgresstorage` heraus — und damit **aus dem Gegenstand der
 DB-Adapter-Coverage** (`ADR-0071` Punkt 3), die genau dieses Paket misst. Der
 reale Lauf: `make test-store` grün, `make test-replication` **rot**
-(DB-Adapter-Coverage 75,25 % vorher → 73,38 % nachher, Stufe 75 %). Die Naht
-ist ohne Verhaltens-Change zu haben — die **Messung** aber nicht ohne
-Entscheidung: `ADR-0071` Re-Evaluierungs-Trigger (b) verlangt für das Ziehen
-der Naht die Neu-Bemessung der Rampe als **Folge-ADR** (Architect), und
-`AGENTS.md` §3.6 schließt eine Schwellen-Senkung durch den Implementer aus.
-Der Slice schließt mit diesem Zug deshalb **nicht**; die DoD-Häkchen unten
-stehen nur, wo ein Beleg vorliegt.
+(DB-Adapter-Coverage 75,25 % vorher → 73,38 % nachher, Stufe 75 %).
+`ADR-0071` Re-Evaluierungs-Trigger (b) verlangt für das Ziehen der Naht die
+Neu-Bemessung der Rampe als **Folge-ADR** (Architect); `AGENTS.md` §3.6
+schließt eine Schwellen-Senkung durch den Implementer aus.
 
-**Befund des zweiten Laufs — der Nenner-Nachweis trägt nicht.** Die Probe ist
-gemessen, nicht behauptet (gepinnte Toolchain- und PostgreSQL-Images;
-`make coverage-gate`, `make test-store`, `make test-replication` je Exit 0,
-ungepiped), einmal auf dem Vor-Naht-Stand und einmal auf dem Stand der Naht:
+**Der Transfer-Nachweis — alle drei Belege** ([`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+§Entscheidung). Die Zahlen sind gemessen, nicht behauptet (gepinnte Toolchain-
+und PostgreSQL-Images; Läufe dieses Zugs, Exit-Codes ungepiped):
 
 | Gegenstand (Statements) | vor der Naht | nach der Naht | Δ |
 |---|---|---|---|
 | netzlos prüfbare Fläche (Unit) | 1679 (1171 gedeckt, 69,74 %) | 1831 (1306 gedeckt, 71,33 %) | **+152** |
 | DB-Adapter-Gegenstand | 788 (593 gedeckt, 75,25 %) | 650 (477 gedeckt, 73,38 %) | **−138** |
-| **Summe** | **2467** | **2481** | **+14** |
+| Summe (Lesehilfe) | 2467 | 2481 | +14 |
 
-Der Unit-Zuwachs ist genau das neue Paket `postgresstorage/sqlexec`
-(`errors.go` 2 · `statement.go` 3 · `translate.go` 147 = 152); jedes andere
-Unit-Paket ist unverändert. Der DB-Verlust ist `postgresstorage` (610 → 472);
-`postgresack` (23) und `receive` (155) sind unverändert. Damit ist die
-**Statement-Summe beider Gegenstände nicht konstant** — sie wächst um 14: der
-aufnehmende Gegenstand nimmt 152 auf, der abfließende gibt 138 ab. Die 14 sind
-neuer Code der Naht (die generalisierte Übersetzung samt
-`Classify`/`IsAbsent`/`Statement.fail`), keine verlagerte Menge; die Zahl aus
-§1 (`… 1679 → 1817`) ist die abgeleitete Summe `1679 + 138` und von der
-Messung widerlegt.
+**(a) Ankunft.** Der abfließende Gegenstand verliert `k_ab` **138** Statements
+(`postgresstorage` 610 → 472; je Baum netzlos gemessen), der aufnehmende wächst
+um `k_auf` **152** (`1679 → 1831`). `k_auf ≥ k_ab` ist erfüllt; die Differenz
+**14** ist der **neue** Code des Zugs (die generalisierte Übersetzung samt
+`Classify`/`IsAbsent`/`Statement.fail`), keine verlagerte Menge.
 
-[`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
-Festlegung 1 bindet die Neu-Bemessung an genau diese Nenner-Paarung. Sie ist
-**nicht erfüllt**; die beiden Einstiege werden deshalb in diesem Lauf **nicht**
-gesenkt (`DB_COVERAGE_THRESHOLD` bleibt 75, `THRESHOLD` bleibt 65), und
-`make test-replication` bleibt rot (73,38 % < 75 %). Ob die Voraussetzung den
-Naht-eigenen Zuwachs tragen soll, ist eine Architect-Frage (Folge-ADR); der
-Implementer senkt keine Schwelle ohne die tragende Voraussetzung
-(`AGENTS.md` §3.6).
+**(b) Paket-Granularitäts-Diff — nicht die Summe.** Der Abfluss ist auf **einen**
+Träger **isoliert**: `git diff --name-only main..HEAD -- internal/` listet
+ausschließlich Dateien unter `internal/adapters/driven/postgresstorage/`; kein
+anderes Paket ist berührt, `postgresack` (23) und `replication/receive` (155)
+bleiben unverändert. Der Zuwachs erscheint in **einem Träger, den es vorher
+nicht gab** — das neue Paket `postgresstorage/sqlexec` (`errors.go` 2 ·
+`statement.go` 3 · `translate.go` 147 = **152**); jedes andere Paket des
+Unit-Gegenstands ist unverändert. Der verlagerte Code ist im abfließenden
+Gegenstand **vollständig abgegangen** (kein Rest der Übersetzung: kein
+`collectRecords`/`pgx.Rows` in den DB-Gegenstands-Paketen — kein Treffer). Die
+**aggregierte Summe** (2467 → 2481) trägt diesen Nachweis **nicht**: sie
+unterscheidet `−138 abgewandert / +14 neu` nicht von `−138 abgewandert / 0 neu`;
+welcher Fall vorliegt, zeigt allein der Paket-Schnitt.
+
+**(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe des
+abfließenden Gegenstands sind **grün** (`make test-store` Exit 0,
+`make test-replication` Exit 0, ungepiped), und **kein Testfall wurde entfernt**
+(`git diff --name-status main..HEAD -- '*_test.go'` zeigt genau eine **neue**
+Datei, `sqlexec/translate_test.go` — keine Löschung).
+
+**Die Neu-Bemessung ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
+(`tools/harness/db-coverage.sh`), `THRESHOLD` 65 → 70 (`harness/mk/coverage.mk`);
+die Träger-Doku nennt die neuen Stufen. Die **Rot-Gegenprobe** zeigt, dass die
+neue Schwelle weiter prüft: `DB_COVERAGE_THRESHOLD=75` gegen denselben Stand
+endet `db-coverage: FAIL — DB-Adapter-Coverage 73.38% unter Schwelle 75%`,
+**Exit 1**. Der Regressions-Riegel (`ADR-0078` Entscheidung 2) bleibt scharf:
+eine Quote, die bei **unverändertem** Nenner fällt, ist eine Regression.
 
 ## 4. Trigger
 

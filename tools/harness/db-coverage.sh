@@ -51,7 +51,7 @@ DB_COVERAGE_DIR=${DB_COVERAGE_DIR:-${TMPDIR:-/tmp}/pg-change-feed-db-coverage}
 # Rampe und den Verweis auf diesen Ort. Override: DB_COVERAGE_THRESHOLD=…
 # (Hochschalt-Trigger: die naechste Ausbau-Stufe schliesst die Luecke zur
 # naechsten vollen 5-%-Stufe).
-DB_COVERAGE_THRESHOLD=${DB_COVERAGE_THRESHOLD:-75}
+DB_COVERAGE_THRESHOLD=${DB_COVERAGE_THRESHOLD:-70}
 
 if [[ "${1:-}" == "--coverpkg" ]]; then
   printf '%s\n' "$DB_COVERAGE_PKGS"

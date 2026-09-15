@@ -29,7 +29,7 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 
 | Stufe | Wert | Ereignis |
 |---|---|---|
-| Einstieg | **65 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des Kalibrierungs-Laufs (69,70 %) —, abgerundet auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a); die Größe dieser Zeile: §Zählbasis) |
+| Einstieg | **70 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des Laufs (71,3 %) —, angehoben auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a), Anhebung durch den Subjekt-Transfer aus [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md); die Größe dieser Zeile: §Zählbasis) |
 | Endstufe | **80 %** | fest, Nutzer-Entscheidung ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md); `roadmap.md` §Nächste Wellen) |
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
@@ -53,20 +53,20 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   jede Testbinary instrumentiert mit `-coverpkg` den ganzen Gegenstand, im
   gemergten Profil kommt dieselbe Block-Position darum mehrfach vor. „Gedeckt“
   heißt, dass **mindestens ein** Vorkommen `count > 0` trägt (dedupliziert:
-  1679 Statements, davon 1171 gedeckt = 69,74 %).
+  1831 Statements, davon 1306 gedeckt = 71,33 %).
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
-  hier `69.7%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
+  hier `71.3%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
   Testbinaries ändert dieses Prädikat nicht, und damit auch nicht das Verhältnis
   gedeckter zu instrumentierten **Statements**. Sie ist deshalb **keine eigene
   Größe**, sondern dieselbe Messung in anderer Ausgabepräzision: `go tool cover`
   druckt eine Nachkommastelle, `tools/coverage-gate.sh` formatiert `%.2f` —
-  daraus werden `69.7%` und `69.70%`. Eine absolute Statement-Zahl trägt nur die
+  daraus werden `71.3%` und `71.33%`. Eine absolute Statement-Zahl trägt nur die
   deduplizierte Auswertung; die gedruckte Zeile trägt keine.
 - Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
   dem Profil des Gegenstands **vor** dem Schnitt — derselben Messung, die den
-  Nenner `2467 → 1679` beziffert (vorher 1215 gedeckt, davon 44 in den drei
-  Paketen).
+  Nenner `2481 → 1831` beziffert (über beide Gegenstände 1350 gedeckt, davon 44
+  in den drei Paketen).
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -112,14 +112,17 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    scheitert als Zahl.
 4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
    gewächtert.** **Rückrechnung** aus den gemessenen Paket-Zahlen
-   (§Zählbasis: 1171 gedeckt von 1679 Statements im Gegenstand; 2/23, 31/610,
+   (§Zählbasis: 1306 gedeckt von 1831 Statements im Gegenstand; 2/23, 31/472,
    11/155 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
    wieder in `-coverpkg` genommen, bleibt die Stufe grün —
-   `(1171 + 2) / (1679 + 23) = 68,92 %` ≥ 65; erst die Rücknahme von
-   `postgresstorage` (`1202 / 2289 = 52,51 %`) oder `replication/receive`
-   (`1182 / 1834 = 64,45 %`) färbt sie rot. Die drei Ausgänge liegen mit
-   +3,9 / −12,5 / −0,6 Prozentpunkten weit genug von der Schwelle, dass die
-   Lauf-zu-Lauf-Schwankung (wenige Statements) sie nicht umkehrt. **Der
+   `(1306 + 2) / (1831 + 23) = 70,55 %` ≥ 70; die Rücknahme von
+   `postgresstorage` (`1337 / 2303 = 58,05 %`) oder `replication/receive`
+   (`1317 / 1986 = 66,31 %`) färbt sie rot. Die zwei roten Ausgänge liegen mit
+   −11,95 / −3,69 Prozentpunkten weit genug von der Schwelle, dass die
+   Lauf-zu-Lauf-Schwankung (wenige Statements) sie nicht umkehrt; der grüne
+   `postgresack`-Ausgang liegt mit **+0,55** Prozentpunkten dagegen nahe an der
+   Schwelle — dort kann eine Schwankung um wenige Statements das Vorzeichen
+   umkehren. **Der
    Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
    Gegenstands-Hälfte der Fitness Function aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
@@ -143,10 +146,10 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
 die beiden Prozente sind die **gedruckten** Zeilen der Läufe, §Zählbasis):
 `THRESHOLD=75` (über dem Ist-Stand) lässt die Stage real scheitern
-(`coverage-gate: FAIL — Coverage 69.70% unter Schwelle 75%`) — das Gate-Skript
+(`coverage-gate: FAIL — Coverage 71.30% unter Schwelle 75%`) — das Gate-Skript
 endet Exit 1, `make` meldet für den gescheiterten Bauprozess Exit 2;
-`THRESHOLD=65` besteht real (`coverage-gate: OK — Coverage 69.70% erfüllt
-Schwelle 65%`, Exit 0).
+`THRESHOLD=70` besteht real (`coverage-gate: OK — Coverage 71.30% erfüllt
+Schwelle 70%`, Exit 0).
 
 ## Bindung
 
