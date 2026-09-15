@@ -1,10 +1,11 @@
-Stand: **offen** (1×, unter der Schwelle) — kein Ausgang. Dieser Eintrag ist
-**nicht** als dritter Beleg von
-`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` gezählt: dort ist der
-**Umfang** der Adresse falsch (falscher Folge-Slice, zu enger
-DoD-Ausschnitt), hier das **Eintreten** ihres Trägers — zwei verschiedene
-Regeln, deshalb zwei Einträge statt eines Zählers. Gelesen wird der Eintrag im
-Sichtungs-Schritt der Slice-Planung
-(`docs/plan/planning/observations/README.md`). Zähler (abgeleitet): **2×**
-(evidence/slice-074.md, evidence/slice-076.md) — unter der 3×-Schwelle; beide
-Belege sind Pläne aus derselben Sitzung, die dieselbe Adresse trugen.
+Zustand: **verkörpert** — die Regel steht: „Ereignis-Adresse muss eintreten
+können", mit dem Ersatz-Träger (die Slice-Closure selbst, wenn die Roadmap keine
+offene Welle führt); Zielort `.claude/commands/plan-welle.md` Schritt 6 · seit
+slice-077. Entschieden im Architect-Zug des Lese-Schritts dieser Closure
+(`docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md`) — **ohne** ADR:
+eine Instruktions-Schärfung, kein Architektur- oder Vertragsgegenstand. Die
+Abgrenzung zum verwandten Eintrag bleibt: dort ist der **Umfang** der Adresse
+falsch, hier das **Eintreten** ihres Trägers — zwei Regeln, zwei Einträge, zwei
+Zählräume. Zähler (abgeleitet): **3×** (evidence/slice-074.md,
+evidence/slice-076.md, evidence/slice-077.md) — Schwelle erreicht, Ausgang im
+Lese-Schritt dieser Closure zugewiesen.

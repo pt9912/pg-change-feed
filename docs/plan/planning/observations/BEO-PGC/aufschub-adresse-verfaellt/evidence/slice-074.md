@@ -12,5 +12,6 @@ ist der **Umfang** der Adresse falsch, hier das **Eintreten** ihres Trägers.
 Aufgefallen ist es beim Priorisieren (der Plan wurde auf den Ist-Stand
 gezogen), nicht beim Abarbeiten der Adresse.
 
-Quelle: Slice-Plan `slice-074` §2/§7 vor dem Nachzug · Commit `f4164a9`
-(Nachzug auf die Slice-Closure als Träger).
+Quelle: Slice-Plan `slice-074` §2/§7 vor dem Nachzug · Commit `a6cbed9`
+(Priorisierung: Plan auf den Ist-Stand, dort wurde die Paarungs-Zeile auf die
+Slice-Closure als Träger gezogen).

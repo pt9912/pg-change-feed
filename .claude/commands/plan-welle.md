@@ -78,6 +78,24 @@ die Antwort und wird notiert.
    Fill-Fehler) und wurde erst je einzeln im Review/bei der Verifikation
    gefunden (review-slice-005 F-11 · review-slice-008 F-8 · review-slice-009
    F-6 · verify-slice-010 V-1).
+   **Ereignis-Adresse muss eintreten können · seit slice-077**
+   (`BEO-PGC/aufschub-adresse-verfaellt`, 3×; Architect-Zug des Lese-Schritts,
+   Modul 6): Wird ein Aufschub oder eine Closure-Pflicht an einen Träger
+   gebunden, **der ein Ereignis ist** — „die nächste Welle-Closure", „mit dem
+   nächsten Release" —, dann muss dieses Ereignis noch **eintreten können**. Ein
+   Ereignis-Träger ohne gesichertes Eintreten ist **keine Adresse**: die Form war
+   beim Schreiben zulässig und verfällt still, wenn das Ereignis ausbleibt. So
+   traf es die §2/§7-Paarungszeile der Slice-Pläne, solange sie „die nächste
+   Welle-Closure" nannte und die Roadmap keine offene Welle mehr führte.
+   **Ersatz-Träger, wenn er fehlt:** Führt die Roadmap *Offene Wellen* keine
+   Welle, trägt die **Slice-Closure selbst** die drei Paarungen
+   (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose Betrieb selbst
+   auslöst); §2/§7 nennt dann „die Slice-Closure selbst" statt „die nächste
+   Welle-Closure". **Kandidatenlauf beim Füllen:** einen Blick in die Roadmap
+   *Offene Wellen* werfen — führt sie keine Welle, ist „die nächste
+   Welle-Closure" keine Adresse. **Grenze:** dieselbe Selbstprüfung im selben
+   schreibenden Kontext — erste, nicht tragende Linie; die tragende ist der
+   unabhängige Reviewer (`.harness/skills/reviewer.md`).
 
 ## Welle-Plan per cp anlegen und füllen (der Kern-Schritt)
 

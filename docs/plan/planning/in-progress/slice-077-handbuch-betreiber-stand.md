@@ -125,11 +125,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Erstlauf `docs/reviews/review-slice-077.md` (1 HIGH, F-1), Delta-Nachlauf
       `docs/reviews/review-slice-077-delta.md` (Fixrunde `1cf5675`) — F-1
       geschlossen, **0 HIGH** offen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. (Datei existiert in diesem Repo nicht — Item entfällt.)
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier
       geprüft **von der Slice-Closure selbst**: die Roadmap führt keine offene
       Welle, es gibt also keine Welle-Closure, die sie einsammeln könnte
       (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose Betrieb
@@ -214,18 +214,66 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** die **Prüfung am Code** statt am Gedächtnis. Die
+  Semantik der vier Variablen ist zweimal unabhängig gegen die Verdrahtung
+  gelesen worden (Reviewer und Verifier) — und genau dort konnte dieser Slice
+  falsch werden: die Verwechslung „No-Op" gegen „Start-Abbruch", die `slice-053`
+  für `CDC_NATS_URL` schon einmal behandelt hat. Getragen hat ebenso die
+  Rollentrennung: der Implementer hat einen Fund **gemeldet** statt ihn
+  mitzuerledigen, der Reviewer hat ihn zu Recht als Finding **dieses** Slice
+  zurückgegeben, und der Verifier hat die eine unerfüllte Zusage des Plans (§8)
+  gefunden, die sonst erst nach dem `git mv` aufgefallen wäre.
+- **Was ging anders als geplant:**
+  1. **Ein Plan-Nachzug wurde zum Fund.** §1 sprach die Abgrenzung „Verhalten
+     bleibt, Kommentar wird berichtigt" nicht aus; der Implementer meldete den
+     Kommentar-Drift deshalb als „eigenen Vorgang". Der Reviewer hat
+     nachgezogen, **woran** er hing: der Kommentar ist der Deklarationsort genau
+     der Variablen, die §5 dokumentiert. Plan nachgezogen, Kommentar berichtigt,
+     kein Verhaltens-Change.
+  2. **Drei überholte Voraussetzungen im Plan:** er beschrieb den
+     Ausschlussstand als grenzbegrenzt (`slice-075` hat ihn dauerhaft gemacht),
+     verwies die Paarungen an eine Welle-Closure, die nicht mehr eintritt, und
+     nannte das Listener-Verhalten „die geltende Entscheidung", obwohl keine ADR
+     es trägt. Die ersten zwei vor dem Start nachgezogen, die dritte nach dem
+     Delta-Review (N-1).
+  3. **Ein Fehler des Planners, mit Folgen:** ein Plan-Nachzug-Commit
+     veröffentlichte eine Message **ohne Kennung**; der Hauptzweig war sechs
+     Commits lang rot, der Auftraggeber hat einen Rewrite abgelehnt. Der
+     `commit-msg`-Hook war in der Arbeitskopie **nicht aktiviert** — er ist es
+     jetzt, und rot gesehen. Beleg:
+     `BEO-PGC/commit-traceability-kein-vorab-hook` (→ 4×).
+  4. **Eine falsche Zählung in meiner Auftragseingabe:** der verwandte
+     Register-Eintrag steht bei 2× und **offen**, nicht bei „3×, verkörpert" —
+     der Architect hat es am `state.md` korrigiert, bevor er darauf entschied.
+- **Steering-Loop-Einträge:**
+  - *geschärfte Regel*: „Ereignis-Adresse muss eintreten können" — Zielort
+    `.claude/commands/plan-welle.md` Schritt 6, Herkunfts-Anker `seit
+    slice-077`; entstanden aus dem 3×-Übertritt von
+    `BEO-PGC/aufschub-adresse-verfaellt` (Architect-Zug des Lese-Schritts,
+    `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md`). Der Slice
+    hat sie **verkörpert**, nicht nur gezählt.
+  - *neuer Register-Eintrag*:
+    `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (2× über zwei
+    Vorgänge).
+  - *kein neuer Sensor* — beide Klassen betreffen Kommentar- bzw. Adress-Form;
+    ihr Wächter ist das Review.
+- **Beobachtungs-Register (`../observations/`):** `evidence/slice-077.md` in
+  **drei** Einträgen — `BEO-PGC/aufschub-adresse-verfaellt` (2× → **3×**,
+  `verkörpert`), `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`
+  (**neu**, 2×) und `BEO-PGC/commit-traceability-kein-vorab-hook` (3× → **4×**,
+  der Beleg liegt **nach** der Verkörperung). Dazu eine Zitat-Korrektur im Beleg
+  von `slice-074` (`a6cbed9` statt `f4164a9`).
+- **Folge-Slices:** keiner aus diesem Slice. **Offen als Entscheidung des
+  Auftraggebers:** der Grenz-Hälften-Sensor für die host-lokalen Pfade
+  (`BEO-PGC/regel-weiter-als-ihr-sensor`) — benannt, nicht zugesagt.
+- **Risiken aus §6:** beide *entfallen, gestrichen mit Begründung* (in §6).
+- **Drei Paarungen:** hier geprüft — die Roadmap führt keine offene Welle, die
+  Prüfung trägt damit die Slice-Closure selbst. Die §2-Zeile nennt sie bereits
+  so; **genau diese Nachzug-Form ist jetzt die verkörperte Regel dieses
+  Vorgangs**.
+- **Archivierung:** nicht ausgeführt — das Repo führt kein Archivierungswerkzeug
+  (kein `*-archiv.zip` unter `done/`); nach Modul 6 bleibt es ohne sie konform,
+  und diese Feststellung ersetzt den Handlauf.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
