@@ -74,11 +74,10 @@ Der Planner hat 31 Befunde gemeldet; dieser Zug hat **nachgemessen**, nicht
 | **Summe** | | **31** |
 
 Zitate: `d-check` (27), `d-migrate` (2), `ai-harness-init` (1),
-`d-check`s `.github/` (1). Der Referent je Fundstelle ist in Anzahl + Datei
-oben benannt: `d-check`s `Dockerfile`, `d-check`s `tools/coverage-gate.sh`,
-`d-check`s `Makefile`, `d-check`s `.github/`,
-`ai-harness-init`s `.golangci.yml`; die zitierte Form ist in allen Fällen
-derselbe host-lokale absolute Pfad, die Datei:Zeile-Position zeigt der
+`d-check`s `.github/` (1) — je Fundstelle ein Artefakt darin (`Dockerfile`,
+`tools/coverage-gate.sh`, `Makefile`, `.github/`, `.golangci.yml`). Der
+Referent ist in Anzahl + Datei oben benannt; die zitierte Form ist in allen
+Fällen derselbe host-lokale absolute Pfad, die Datei:Zeile-Position zeigt der
 Modul-Lauf.
 
 **Nachgeprüft, nicht übernommen (drei Modul-Eigenschaften):**

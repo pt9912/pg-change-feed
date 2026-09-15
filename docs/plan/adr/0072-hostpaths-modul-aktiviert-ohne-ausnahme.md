@@ -67,12 +67,10 @@ Verteilung, unabhängig reproduziert:
 | lebende Doku | `harness/sensors/coverage-gate.md` | 2 | frei korrigierbar |
 
 Die 31 Stellen nennen drei Schwester-Repos über ihren Pfad auf einem
-Entwicklerrechner: `d-check` (27 Funde), `d-migrate` (2),
-`ai-harness-init` (1). Der Referent ist je Fundstelle derselbe unveränderte —
-`d-check`s `Dockerfile`, `d-check`s `tools/coverage-gate.sh`,
-`d-check`s `Makefile`, `d-check`s `.github/`, `ai-harness-init`s `.golangci.yml`
-—; die Datei:Zeile-Position zeigt der aktivierte Modul-Lauf, nicht dieses
-Dokument.
+Entwicklerrechner: `d-check`, `d-migrate`, `ai-harness-init` — je Fundstelle
+ein Artefakt darin (`Dockerfile`, `tools/coverage-gate.sh`, `Makefile`,
+`.github/`, `.golangci.yml`). Der Referent ist unverändert; die
+Datei:Zeile-Position zeigt der aktivierte Modul-Lauf, nicht dieses Dokument.
 
 ### Der Zwang
 
