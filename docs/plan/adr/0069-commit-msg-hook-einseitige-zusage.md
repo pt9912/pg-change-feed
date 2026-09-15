@@ -83,14 +83,17 @@ Wir korrigieren `ADR-0062`s Punkt 3 und fassen die Zusage des Hooks als
 **einseitige Approximation** — nicht als exakte Spiegelung. Die
 Festschreibung hat zwei Hälften, und nur eine davon gilt:
 
-1. **Sicherheits-Zusage (gilt, strukturell).** Der Hook weist keinen Commit
+1. **Sicherheits-Zusage (gilt).** Der Hook weist keinen Commit
    zurück, den das Standing-Gate zulässt: jede Hook-Rückweisung ist auch eine
-   Gate-Rückweisung. Diese Richtung ist keine Messung, sondern eine
-   Eigenschaft des Zuschnitts — beide Hook-Hälften prüfen eine **Obermenge**
-   des Textes, den ihre Gate-Gegenhälfte liest (die positive Hälfte die rohe
-   Datei ⊇ die bereinigte Message; die Grenz-Hälfte die erste Zeile ⊆ `%s`,
-   den ersten Absatz). Eine Rückweisung kann deshalb nur entstehen, wo das
-   Gate ebenfalls rot ist.
+   Gate-Rückweisung. Der Zuschnitt trägt das — beide Hook-Hälften lesen einen
+   Text, der den Text ihrer Gate-Gegenhälfte enthält (die positive Hälfte die
+   rohe Datei ⊇ die bereinigte Message; die Grenz-Hälfte die erste Zeile ⊆
+   `%s`, den ersten Absatz) —, aber er trägt es nicht ausnahmslos: liest der
+   Hook unter `--cleanup=scissors` hinter der scissors-Zeile, die `git` später
+   verwirft, kann seine Betreff-Zeile Text sein, den das Gate nicht mehr
+   liest. Diese Kante ist eng — sie setzt einen **leeren** Vor-scissors-Text
+   voraus, den `git` im Default ohnehin abweist —, und ist bislang nicht real
+   aufgetreten; sie wird hier **benannt statt behauptet**.
 2. **Vollständigkeits-Zusage (gilt NICHT).** Der Hook ist **nicht**
    vollständig: er fängt nicht jede Verletzung, die das Standing-Gate fängt.
    Die drei oben benannten Divergenz-Klassen (a), (b), (c) bleiben offen und
@@ -113,7 +116,7 @@ Alternativen, Option B).
   Merge-/Revert-Ausnahme lautet: „ohne diese Ausnahme würde der Hook jeden
   Merge-Commit fälschlich zurückweisen, den das bestehende Gate zulässt". Die
   Zusage zielt auf **Fehlrückweisung**, nicht auf Vollständigkeit. Diese eine
-  Richtung ist mit dem Hook-Zuschnitt erfüllt; Vollständigkeit war nie die
+  Richtung ist in allen gemessenen Fällen erfüllt; Vollständigkeit war nie die
   Anforderung, nur die überzogene Formulierung „exakt".
 - **Vollständigkeit wäre nur durch Nachbau zweier verschiedener Bereinigungen
   erreichbar** — der `#`-/scissors-Bereinigung des Moduls für die positive
@@ -180,7 +183,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 |---|---|---|
 | `d-check` Modul `commits` via `--commit-msg <rohe Message-Datei>` (Digest aus `d-check.mk`) | positive Hälfte liest die **bereinigte** Message: Kennung nur in einer `#`-Zeile (a) oder hinter der scissors-Zeile (b) ⇒ Befund (Exit ≠ 0), der Hook lässt durch — die Klasse ist reproduzierbar | kein Gate — Messung (der Hook ist kein `make`-Ziel) |
 | `tools/harness/commit-traceability.sh` über eine Range (`%s`) | Grenz-Hälfte liest den **ersten Absatz**: Struktur-ID auf der Fortsetzungszeile ⇒ Exit ≠ 0, der Hook lässt durch — Klasse (c) | `make commit-traceability` |
-| `.githooks/commit-msg` | **Sicherheits-Zusage:** jede Rückweisung des Hooks ist auch eine Rückweisung des Gates (einseitig). **Nicht** vollständig: die Klassen (a)/(b)/(c) bleiben offen | kein Gate — lokaler Hook, außerhalb von `make gates`/`record-gates` (`ADR-0062` Punkt 1) |
+| `.githooks/commit-msg` | **Sicherheits-Zusage:** jede Rückweisung des Hooks ist auch eine Rückweisung des Gates (einseitig, im belegten Zuschnitt; benannte Kante: leerer Vor-scissors-Text unter `--cleanup=scissors`). **Nicht** vollständig: die Klassen (a)/(b)/(c) bleiben offen | kein Gate — lokaler Hook, außerhalb von `make gates`/`record-gates` (`ADR-0062` Punkt 1) |
 
 ## Re-Evaluierungs-Trigger
 
