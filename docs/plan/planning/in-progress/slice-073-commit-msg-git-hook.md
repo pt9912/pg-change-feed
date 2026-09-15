@@ -81,35 +81,35 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 ## 2. Definition of Done
 
-- [ ] `.githooks/commit-msg` weist real einen Commit-Versuch mit
+- [x] `.githooks/commit-msg` weist real einen Commit-Versuch mit
       `SPEC-*`/`ARC-*`-Struktur-ID im Betreff zurück (nicht-Null-Exit vor
       Commit-Abschluss) — real ausgeführt, nicht nur am Skripttext behauptet.
-- [ ] `.githooks/commit-msg` weist real einen Commit-Versuch ganz ohne
+- [x] `.githooks/commit-msg` weist real einen Commit-Versuch ganz ohne
       `LH-*`-/`ADR-*`-Kennung im Betreff zurück — real ausgeführt.
-- [ ] Ein regulärer, konformer Commit-Versuch läuft real ungehindert durch
+- [x] Ein regulärer, konformer Commit-Versuch läuft real ungehindert durch
       den Hook — real ausgeführt (kein Fehlalarm auf einem gültigen
       Betreff).
-- [ ] Ein Merge-Commit-Versuch (Betreff nach dem Muster `Merge …`, ohne
+- [x] Ein Merge-Commit-Versuch (Betreff nach dem Muster `Merge …`, ohne
       `LH-*`/`ADR-*`-Kennung) läuft real ungehindert durch den Hook —
       real ausgeführt; der Hook spiegelt hier dieselbe Ausnahme wie die
       d-check-Positiv-Hälfte (`.d-check.yml` `exempt-pattern:
       '^(Merge |Revert )'`), sonst wiese er jeden regulären
       `git merge`-Commit fälschlich zurück, den das bestehende Gate
       zulässt (`ADR-0062` Entscheidung Punkt 3).
-- [ ] Aktivierung dokumentiert (`harness/README.md` oder
+- [x] Aktivierung dokumentiert (`harness/README.md` oder
       `AGENTS.md`-Onboarding-Hinweis): einmaliger, expliziter
       `git config core.hooksPath .githooks`-Schritt, keine automatische
       Aktivierung.
-- [ ] `make gates` grün (der Hook selbst ist kein Gate-Ziel und wird von
+- [x] `make gates` grün (der Hook selbst ist kein Gate-Ziel und wird von
       `make gates` nicht aufgerufen — er läuft ausschließlich lokal vor
       `git commit`).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` (Onboarding-Hinweis) trägt den neuen
+- [x] Doku-Update: `harness/README.md` (Onboarding-Hinweis) trägt den neuen
       Opt-in-Schritt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: Repo
       ist GF (`harness/conventions.md` Modus-Deklaration `PGC`), keine
       `reconciliation.md` vorhanden.
@@ -127,7 +127,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.githooks/commit-msg` | neu | bash-only Hook, spiegelt die zwei Regeln aus `tools/harness/commit-traceability.sh`/d-check-Modul `commits` als Regex-Abgleich auf `$1`, **inklusive** der Merge-/Revert-Ausnahme (`^(Merge |Revert )`) der d-check-Positiv-Hälfte — ohne sie liefe der Hook bei jedem Merge-Commit strukturell anders als das Standing-Gate |
+| `.githooks/commit-msg` | neu | bash-only Hook, spiegelt die zwei Regeln aus `tools/harness/commit-traceability.sh`/d-check-Modul `commits` als Regex-Abgleich auf `$1`, **inklusive** der Merge-/Revert-Ausnahme (`^(Merge |Revert )`) der d-check-Positiv-Hälfte — ohne sie liefe der Hook bei jedem Merge-Commit strukturell anders als das Standing-Gate. **Plan-Nachzug (Implementer-Lauf):** Die positive Hälfte prüft die ganze Message-Datei, nicht nur den Betreff (das d-check-Modul `commits` liest die gesamte Message — am gepinnten Image gemessen); die Grenz-Hälfte prüft den Betreff; die Merge-/Revert-Ausnahme waivet nur die positive Hälfte. So weist der Hook keinen Commit zurück, den das Standing-Gate zulässt |
 | `harness/README.md` | update | Onboarding-Hinweis: optionaler `core.hooksPath`-Aktivierungsschritt |
 | `docs/plan/adr/0045-commit-traceability-standing-gate.md` | keine Änderung | `Accepted`-ADR bleibt unverändert (`AGENTS.md` §3.5); die zuvor kollidierende Klausel „Kein commit-msg-Hook" ist bereits durch `ADR-0062` (Supersedes, nur diese Klausel) korrigiert — kein weiterer Eingriff in diesem Slice |
 | `docs/plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md` | bereits vorhanden | von der unabhängigen Architect-Gegenprüfung vorab geschrieben, nicht Teil der Implementer-Arbeit dieses Slice |

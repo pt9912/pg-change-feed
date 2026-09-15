@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# commit-msg — lokale Vorab-Meldung der Commit-Traceability-Regel
+# (AGENTS.md §5, harness/README.md §Traceability rules).
+#
+# Kopplung: spiegelt die zwei Haelften des Standing-Gates
+# `make commit-traceability` (ADR-0045) vor dem Commit-Abschluss — die
+# positive Haelfte des d-check-Moduls `commits` (id-patterns und
+# exempt-pattern aus .d-check.yml) und die Betreff-Grenze aus
+# tools/harness/commit-traceability.sh.
+# Abgrenzung: kein Gate-Ziel und kein Ersatz fuer `make commit-traceability`
+# (ADR-0062). Die Aktivierung ist lokale Konfiguration
+# (`git config core.hooksPath .githooks`); `git commit --no-verify` umgeht den
+# Hook. Kein Docker-Aufruf.
+#
+# Git uebergibt den Pfad der Message-Datei als $1; Exit != 0 bricht den
+# Commit ab.
+set -u
+
+msg_file="${1:-}"
+# Ohne lesbare Message-Datei gibt es nichts zu pruefen — der Hook bleibt
+# nicht-durchsetzend (ADR-0062) und bricht hier nicht ab.
+if [ -z "${msg_file}" ] || [ ! -r "${msg_file}" ]; then
+  exit 0
+fi
+
+# Betreff: erste nicht-leere Zeile ohne Kommentarzeichen — der Kommentarkopf,
+# den git bei einer editierten Message vor dem Commit wegschneidet.
+subject="$(awk '
+  /^[[:space:]]*#/ { next }
+  /^[[:space:]]*$/ { next }
+  { sub(/^[[:space:]]+/, ""); print; exit }
+' "${msg_file}")"
+
+# Muster der beiden Haelften (ERE):
+#   exempt_re    — exempt-pattern der d-check-Positiv-Haelfte (.d-check.yml)
+#   structure_re — verbotene Struktur-ID im Betreff
+#                  (tools/harness/commit-traceability.sh)
+#   contract_re  — id-patterns der d-check-Positiv-Haelfte (.d-check.yml)
+exempt_re='^(Merge |Revert )'
+structure_re='(SPEC|ARC)-[0-9]{3}'
+contract_re='(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}(\.[a-z])?)'
+
+# Grenz-Haelfte: keine Struktur-ID im Betreff — fuer jeden Betreff, auch
+# Merge/Revert; tools/harness/commit-traceability.sh kennt keine Ausnahme.
+if [[ "${subject}" =~ ${structure_re} ]]; then
+  echo "commit-msg: Struktur-ID im Betreff — SPEC-*/ARC-* gehoeren nicht in die Commit-Message (AGENTS.md §5):" >&2
+  echo "            ${subject}" >&2
+  echo "commit-msg: Commit abgebrochen (Umgehung: git commit --no-verify)." >&2
+  exit 1
+fi
+
+# Positive Haelfte: mindestens eine Vertrags-Kennung je Message — Merge-/
+# Revert-Betreffe ausgenommen (exempt-pattern der d-check-Positiv-Haelfte).
+# Geprueft wird die ganze Message-Datei, nicht nur der Betreff: das
+# d-check-Modul `commits` liest die gesamte Message, und der Hook weist keinen
+# Commit zurueck, den das Standing-Gate zulaesst (ADR-0062).
+if ! [[ "${subject}" =~ ${exempt_re} ]]; then
+  if ! grep -qE "${contract_re}" "${msg_file}"; then
+    echo "commit-msg: keine LH-*/ADR-*-Kennung in der Commit-Message (AGENTS.md §5):" >&2
+    echo "            ${subject}" >&2
+    echo "commit-msg: Commit abgebrochen (Umgehung: git commit --no-verify)." >&2
+    exit 1
+  fi
+fi
+
+exit 0
