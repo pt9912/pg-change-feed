@@ -52,6 +52,12 @@ die Drift-Richtung *„die Tabelle behauptet einen Nachweis, den es nicht
 gibt"* **per Konstruktion** — und ebenso die Gegenrichtung *„ein Nachweis
 existiert, fehlt aber in der Tabelle"*.
 
+**Nicht gedeckt ist eine dritte Richtung**, und sie wird benannt statt
+mitgemeint: *„die Quelle hat sich geändert, der Erzeuger ist nicht gelaufen"* —
+die Tabelle kann veralten. Die `structure`-Regel sichert nur, dass die Datei
+**existiert**; inhaltlich hält kein Sensor sie ohne den vollen E2E-Lauf gegen
+ihre Quelle (`BEO-PGC/generierte-artefakte-ohne-sync-sensor`).
+
 **Erzeugungsweg — entschieden, mit seinen zwei Hälften.** Der Erzeuger ist
 eine Erweiterung der **bestehenden** E2E-Kette, kein neues Werkzeug. Die
 Go-Hälfte (die `func TestE2E*` in `test/integration/integration_test.go`)
@@ -363,12 +369,12 @@ Backticks).
   verkörpert wird in diesem Slice nichts außerhalb von
   `harness/sensors/docs-check.md`>.
 - **Beobachtungs-Register (`../observations/`):** <bei Closure — erwartet:
-  kein neues Verzeichnis; `evidence/slice-074.md` in
-  `BEO-PGC/test-runner-stiller-ausschluss` als **zweiter Träger derselben
-  Klasse** (die Deklarations-Hälfte der Tabelle; Präzedenz: slice-011s zweiter
-  Träger in `BEO-PGC/lese-doppelquelle`), Zähler dann 2× — weiter unter der
-  Schwelle, Ausgang bleibt *weiter offen*. Keine Beobachtung angefallen ist
-  ebenfalls eine Antwort und wird hier notiert.>
+  kein neues Verzeichnis; `evidence/slice-074.md` als **zweiter Träger** in
+  `BEO-PGC/test-runner-stiller-ausschluss` (die Deklarations-Hälfte der
+  Tabelle) **und** in `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (das
+  committete Erzeugnis ohne Sync-Sensor); Zähler dann je 2× — weiter unter der
+  Schwelle, Ausgang bleibt *weiter offen*. Präzedenz für den zweiten Träger:
+  slice-011 in `BEO-PGC/lese-doppelquelle`.>
 - **Folge-Slices:** keine — die `codepaths`-Aktivierung ist in §1 als eigener
   **Vorgang** benannt (Gate-Verschärfung mit eigenem ADR-Pfad), nicht als
   Slice-Kennung zugesagt; eine Kennung, die es nicht gibt, wäre eine leere
@@ -439,10 +445,19 @@ Bezug zu diesem Vorhaben:
   Instruktion (`.harness/skills/reviewer.md`, `implement-slice.md` Schritt 20)
   wirkt im Implementer-Lauf — **kein neuer Beleg**, kein neues Auftreten.
 
+- `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (1×, **offen**) — der Slice
+  fügt genau dieser Klasse ein neues committetes Erzeugnis hinzu:
+  `docs/user/e2e-abdeckung.md` wird vom Erzeuger geschrieben, aber kein Sensor
+  hält es ohne den vollen E2E-Lauf gegen seine Quelle; die `structure`-Regel
+  sichert die **Existenz**, nicht den Inhalt (§1, dritte Richtung). Beleg bei
+  Closure: `evidence/slice-074.md` als **zweiter Träger derselben Klasse**,
+  Zähler dann 2× — weiter unter der Schwelle, Ausgang bleibt *weiter offen*.
+
 Kein weiterer Eintrag des Registers berührt die Sub-Area dieses Slice; kein
 Eintrag erreicht mit diesem Slice die Schwelle 3×, und es wird kein neues
 Verzeichnis angelegt. Die Antwort je Eintrag steht oben — *keine Treffer* wäre
-hier falsch gewesen, `test-runner-stiller-ausschluss` ist ein Treffer.
+hier falsch gewesen: `test-runner-stiller-ausschluss` und
+`generierte-artefakte-ohne-sync-sensor` sind Treffer.
 
 **Modus-Begründungsblock — Umfang.** Pflicht, sobald mindestens eine berührte
 Sub-Area BF oder Hybrid ist — einer pro Sub-Area. Bei reinem GF genügt der
