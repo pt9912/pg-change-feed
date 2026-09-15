@@ -88,3 +88,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | ADR-0074 | Zitationsform Schwester-Repo — Hausform (Supersedes ADR-0072, teilweise) | Accepted | 2026-09-15 | [0074-zitationsform-schwester-repo-hausform.md](0074-zitationsform-schwester-repo-hausform.md) |
 | ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator-Disposition | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
+| ADR-0076 | Beispiel-Clients unter `examples/` (Supersedes ADR-0060/0068, teilw.) | Accepted | 2026-09-15 | [0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md](0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) |
