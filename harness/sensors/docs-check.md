@@ -110,8 +110,9 @@ Regel zählt Zeilen.
    Scan nicht. Dateien unter `scan.ignore` (`.harness/**`, `**/*.template.md`)
    liegen ebenfalls außerhalb. **Die Regel deckt die Fenced-Fläche voll, dieses
    Modul nicht** — ihre Reichweite und diese benannte Lücke stehen in
-   `AGENTS.md` §3.11; der Wächter dort ist das Review, kein Gate. Die
-   Modul-Grenzen stehen **einmal** hier — §3.11 nennt sie nicht erneut. Träger:
+   `AGENTS.md` §3.11; der Wächter dort ist das Review, kein Gate. Dieser
+   Abschnitt trägt, **was der Sensor deckt und was nicht**; die Reichweite der
+   Regel steht in `AGENTS.md` §3.11. Träger:
    die Reichweite
    [`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md),
    die Aktivierung

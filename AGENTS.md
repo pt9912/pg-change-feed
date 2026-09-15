@@ -356,11 +356,12 @@ er verrät das Maschinen-Layout.
 Aktivierung
 [`ADR-0072`](docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md),
 die Zitationsform eines Schwester-Repos
-[`ADR-0074`](docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md). Die
-Modul-Grenzen stehen einmal in
-[`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) — dieser
-Abschnitt nennt sie nicht erneut (§3.7); die Präfixliste führt allein das
-Modul (`hostpaths.prefixes`).
+[`ADR-0074`](docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md).
+Dieser Abschnitt trägt die **Regel und ihre Reichweite**; die Präfixliste
+führt allein das Modul (`hostpaths.prefixes`), und was der Sensor deckt und
+was nicht, führt
+[`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) aus seiner
+Sicht.
 
 ## 4. Quality Gates
 
