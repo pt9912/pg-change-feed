@@ -248,12 +248,18 @@ dasteht.
   die CI fährt zwei Legs über die in `SPEC-012` festgelegten Digests (17 und 18) im
   nicht-blockierenden `e2e`-Workflow. Ein lokales Grün beider Phasen ist kein Beleg
   für den Post-Push-Lauf. — **Ausgang:** *weiter offen → Beobachtungs-Register*:
-  die CI-Bestätigung wird **nach dem Push** nachgetragen (grüner Lauf auf beiden
-  Legs oder roter Befund mit Folgemaßnahme) und ist bis dahin kein erledigter
-  Posten; eingetragen als weiterer Beleg in
+  eingetragen als weiterer Beleg in
   `BEO-PGC/github-actions-unverifizierbar-lokal` (3× → 4×), dessen Regel
-  `AGENTS.md` §3.10 trägt. Der Slice schließt mit dieser **offen benannten**
-  Bestätigung, nicht mit einem vorweggenommenen Grün.
+  `AGENTS.md` §3.10 trägt — die **Klasse** bleibt offen, ein Docker-only-Sensor
+  erreicht einen gehosteten Runner nicht.
+  **Nachmeldung (`AGENTS.md` §3.10) — eingetreten, vor dem `git mv` nach `done/`:**
+  `e2e` ist auf `2012a7f`, dem Commit mit dem Fixture-Fix, **grün auf beiden
+  Legs** (`image + test-integration (PostgreSQL 17)` und `(PostgreSQL 18)`, je
+  `completed/success`, Lauf `34971933133`); darin ist der zuvor rote Schritt
+  `Replication-Tier (go test ./...)` real gelaufen (`success`, nicht
+  übersprungen). Derselbe Workflow endete auf `677b2b4`, dem Stand vor dem
+  Nachzug, **rot**. Damit ist der Posten geschlossen — nicht durch ein
+  vorweggenommenes, sondern durch ein nachgeholtes Grün.
 
 ## 7. Closure-Notiz
 
