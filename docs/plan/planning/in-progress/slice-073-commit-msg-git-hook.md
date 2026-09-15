@@ -17,8 +17,12 @@ commit-msg-Hook" und erlaubt diesen Slice erst; ihr Punkt 3 ist durch
 `ADR-0069` ersetzt),
 [`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)
 (Teil-Supersede von `ADR-0062` Punkt 3 — einseitige Zusage des Hooks:
-message-weite positive Hälfte, drei benannte offene Divergenz-Klassen,
-Hook-Logik unverändert),
+message-weite positive Hälfte, Hook-Logik unverändert; die Klassengrenze ist
+nachgezogen durch
+[`ADR-0070`](../../adr/0070-supersede-reichweite-und-klassengrenze.md) —
+drei benannte Divergenz-Klassen (a)/(b)/(c) sind **gemessen, nicht
+erschöpfend**; eine vierte ist benannt: führende Leerzeile vor einem
+`Merge …`-Betreff unter `--cleanup=verbatim`),
 [`ADR-0045`](../../adr/0045-commit-traceability-standing-gate.md)
 (weiterhin bindend für alles außer der von `ADR-0062` korrigierten
 Klausel — Standing-Gate, Fenster-Semantik, Werkzeug-Aufteilung); die
@@ -55,9 +59,14 @@ Plan-Tabelle unten).
 Die Zusage des Hooks ist **einseitig**
 ([`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md)): er weist
 keinen Commit zurück, den das Standing-Gate zulässt; **vollständig** ist er
-nicht — drei Divergenz-Klassen zum Modul bleiben offen (Kennung nur in einer
-`#`-Kommentarzeile · Kennung nur hinter der scissors-Zeile/im Verbose-Diff ·
-Struktur-ID auf der Fortsetzungszeile des ersten Absatzes).
+nicht — drei benannte Divergenz-Klassen (a)/(b)/(c) zum Modul bleiben offen
+(Kennung nur in einer `#`-Kommentarzeile · Kennung nur hinter der
+scissors-Zeile/im Verbose-Diff · Struktur-ID auf der Fortsetzungszeile des
+ersten Absatzes). Die drei Klassen sind **gemessen, nicht erschöpfend**
+([`ADR-0070`](../../adr/0070-supersede-reichweite-und-klassengrenze.md));
+eine vierte, ebenfalls laxere Klasse ist benannt — eine führende Leerzeile vor
+einem `Merge …`-Betreff, nur unter `--cleanup=verbatim` erreichbar: der Hook
+lässt durch, das Modul färbt rot.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -148,7 +157,7 @@ Wer später etwas mitnimmt, das hier ausgeschlossen war, hat den Plan
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.githooks/commit-msg` | neu | bash-only Hook, Regex-Abgleich auf `$1`; die getragene Zusage, die Prüf-Weiten der beiden Hälften (positiv message-weit, Grenze betreff-scoped) und die drei bewusst offenen Divergenz-Klassen trägt [`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md) |
+| `.githooks/commit-msg` | neu | bash-only Hook, Regex-Abgleich auf `$1`; die getragene Zusage, die Prüf-Weiten der beiden Hälften (positiv message-weit, Grenze betreff-scoped) und die drei bewusst offenen Divergenz-Klassen trägt [`ADR-0069`](../../adr/0069-commit-msg-hook-einseitige-zusage.md); die Klassen sind **gemessen, nicht erschöpfend** — eine vierte ist benannt (führende Leerzeile vor `Merge …` unter `--cleanup=verbatim`), [`ADR-0070`](../../adr/0070-supersede-reichweite-und-klassengrenze.md) |
 | `harness/README.md` | update | Onboarding-Hinweis: optionaler `core.hooksPath`-Aktivierungsschritt |
 | `docs/plan/adr/0045-commit-traceability-standing-gate.md` | keine Änderung | `Accepted`-ADR bleibt unverändert (`AGENTS.md` §3.5); die zuvor kollidierende Klausel „Kein commit-msg-Hook" ist bereits durch `ADR-0062` (Supersedes, nur diese Klausel) korrigiert — kein weiterer Eingriff in diesem Slice |
 | `docs/plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md` | bereits vorhanden | von der unabhängigen Architect-Gegenprüfung vorab geschrieben, nicht Teil der Implementer-Arbeit dieses Slice |
