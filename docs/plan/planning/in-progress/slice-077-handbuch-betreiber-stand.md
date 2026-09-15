@@ -79,11 +79,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] §5 („Umgebungsvariablen des Feed-Containers") trägt die HTTP-Gruppe
+- [x] §5 („Umgebungsvariablen des Feed-Containers") trägt die HTTP-Gruppe
       (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und
       `CDC_GRPC_ADDR` — je mit Aktivierungs-/No-Op-Semantik, geprüft gegen
       `internal/bootstrap/wiring.go` (nicht aus dem Gedächtnis).
-- [ ] §4 trägt den Aufgaben-Abschnitt „Spalte vom Ausschluss konfigurieren"
+- [x] §4 trägt den Aufgaben-Abschnitt „Spalte vom Ausschluss konfigurieren"
       (`cdc.exclude_column`/`cdc.include_column`, Antrags-Queue mit
       `status = 'applied'`-Poll wie bei `cdc.enable_table`) samt dem
       **dauerhaften** Träger des Ausschlussstandes (`ADR-0065`): der
@@ -92,19 +92,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Fassung, mit der priorisiert wurde, verlangte hier eine „benannte
       Dauerhaftigkeitsgrenze"; die ist seit `slice-075` behoben, und der Text
       beschreibt den Ist-Zustand, nicht die überholte Grenze.
-- [ ] §4 trägt die **drei** Netzwerk-Zugriffswege (HTTP/JSON-API, gRPC-Stream,
+- [x] §4 trägt die **drei** Netzwerk-Zugriffswege (HTTP/JSON-API, gRPC-Stream,
       HTTP/Server-Sent-Events `GET /changes/stream` — `SPEC-018`, `SPEC-020`,
       `SPEC-021`):
       Erreichbarkeit, Authentifizierung (`Authorization: Bearer` bzw.
       Metadata), Zustellsemantik und der Hinweis, dass die Nachvollziehbarkeit
       beim Lesezugriffsweg bleibt.
-- [ ] Versionshistorie fortgeschrieben (Version und Changelog-Zeile).
-- [ ] `make gates` grün.
+- [x] Versionshistorie fortgeschrieben (Version und Changelog-Zeile).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. (Datei existiert in diesem Repo nicht — Item entfällt.)
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — hier

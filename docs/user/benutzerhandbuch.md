@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.12
+Version: 1.13
 Software-Version: 0.2.0-verdrahtung
-Stand: 2026-09-14
+Stand: 2026-09-15
 
 ## 1. Einleitung
 
@@ -245,6 +245,63 @@ WHERE administration_request_id = '<zurückgegebene-id>';
 einen Tabelle; der Feed-Container läuft für alle übrigen aktivierten
 Tabellen unverändert weiter — kein Neustart, keine Unterbrechung des
 laufenden Prozesses.
+
+### Spalte vom Ausschluss konfigurieren
+
+**Voraussetzung:** eine Login-Identität mit `cdc_admin`-Mitgliedschaft,
+verbunden über `CDC_ADMIN_DSN` (siehe [Zugriff und Rollen](#zugriff-und-rollen));
+die physische Tabelle existiert an der Quelle.
+
+**Vorgehen:** Derselbe Antrags-Weg wie bei der Live-Aktivierung, adressiert
+eine einzelne Spalte einer Tabelle:
+
+```sql
+SELECT cdc.exclude_column('<source_id>', '<schema>', '<tabelle>', '<spalte>');
+```
+
+**Ergebnis:** Der Aufruf ist asynchron: Er schreibt einen Antrag nach
+`cdc.administration_request` (Status `pending`) und gibt dessen Kennung
+zurück — die Spalte ist damit noch nicht ausgeschlossen. Die
+Administrations-Goroutine des laufenden Feed-Containers verarbeitet offene
+Anträge (`LISTEN`/`NOTIFY`-Weckung mit periodischem Fallback-Poll) und wirkt
+bei Erfolg auf den Ausschlusszustand der laufenden Erfassung. Den Fortschritt
+prüfen Sie über den Antrags-Status:
+
+```sql
+SELECT status, error_message
+FROM cdc.administration_request
+WHERE administration_request_id = '<zurückgegebene-id>';
+```
+
+`status` wechselt von `pending` zu `applied` (Erfolg) oder `failed`
+(Fehlertext in `error_message`). Nach `applied` trägt jede danach erfasste
+Änderung dieser Tabelle den ausgeschlossenen Spaltenschlüssel nicht mehr im
+Row Image und den Wert nirgends; die nicht ausgeschlossenen Spalten bleiben
+enthalten. Ein Ausschluss gegen eine an der Quelle nicht existierende Spalte
+endet `failed` mit einem Fehlertext, der die Adresse `schema.tabelle.spalte`
+nennt.
+
+**Den Ausschluss wieder aufheben:** spiegelbildlich über
+`cdc.include_column('<source_id>', '<schema>', '<tabelle>', '<spalte>')` —
+derselbe Antrags-Weg und Status-Poll; nach `applied` wird die Spalte wieder
+erfasst.
+
+**Dauerhaftigkeit:** Der Ausschlussstand ist **dauerhaft** und hängt nicht an
+der Prozesslebensdauer. Die `applied`-Zeilen der beiden Spalten-Antragsarten
+sind die einzige Herkunft des Standes einer Tabelle (`SPEC-019`); jeder Pfad,
+der eine Erfassungs-Bindung anlegt — der Prozessstart **und** die laufende
+Aktivierung — trägt den abgeleiteten Stand mit. Ein Neustart des
+Feed-Containers verliert den Ausschluss deshalb **nicht**, und eine
+Deaktivierung mit anschließender Aktivierung stellt ihn ebenso wieder her.
+Die Antrags-Zeilen dieser beiden Arten sind damit tragend: Eine Bereinigung
+von `cdc.administration_request` verlöre den Stand.
+
+**Betriebs-Hinweis:** Ein Ausschluss gegen eine existierende Spalte einer
+Tabelle **ohne laufende Erfassung** endet trotzdem `applied`, nicht `failed`
+— er wirkt, sobald die Tabelle erfasst wird. Anders als die beiden
+Tabellen-Antragsarten (`enable`/`disable`), die Bindungs- und
+Publication-Zeilen tragen, wirkt diese Antrags-Art allein auf den
+Filterzustand der laufenden Erfassung.
 
 ### Aktivierte Tabellen auflisten
 
@@ -522,6 +579,105 @@ make schema-rollout SCHEMA_TARGET="db:<ihre-postgres-dsn>"
 Der Lauf erzeugt einen Pflicht-Report (`tools/schema/plan.yaml`) und ein
 Rollback-Artefakt (`tools/schema/down.sql`).
 
+### Zugriff über die HTTP-/JSON-API
+
+Die API stellt dieselben Fähigkeiten, die auch über CLI und SQL erreichbar
+sind, zusätzlich als Netzwerkzugriffsweg bereit — fachlich gleichwertig, kein
+Zweitpfad.
+
+**Erreichbarkeit:** aktiv, sobald `CDC_HTTP_ADDR` gesetzt ist (`host:port`,
+siehe [Konfiguration](#5-konfiguration)); ungesetzt bleibt sie vollständig
+deaktiviert — kein Server, kein Port.
+
+**Authentifizierung:** Jeder Aufruf trägt den Header
+`Authorization: Bearer <token>`. Es gibt zwei Token-Klassen:
+`CDC_API_TOKEN_READER` (lesend) und `CDC_API_TOKEN_ADMIN`
+(administrativ/schreibend), wobei das Admin-Token die lesende Klasse implizit
+mit abdeckt. Ein fehlender oder keinem konfigurierten Token entsprechender
+Wert endet `401`, ein bekanntes Token mit unzureichender Klasse `403`. Die
+Token-Klassen entscheiden an der API-Schicht, welche Fähigkeit erreichbar
+ist; die Datenbankverbindung darunter trägt weiterhin die bei der Verdrahtung
+fixierte Rolle. Fehlerantworten tragen die Form `{"error": "<Klartext>"}`.
+
+| Fähigkeit | Methode und Pfad | Rechtsklasse |
+|---|---|---|
+| Consumer registrieren | `POST /consumers` | `admin` |
+| Position bestätigen | `POST /consumers/acknowledge` | `admin` |
+| Consumer-Position lesen | `GET /consumers/position` | `reader` |
+| Consumer entfernen | `POST /consumers/remove` | `admin` |
+| Tabelle aktivieren | `POST /tables/enable` | `admin` |
+| Tabelle deaktivieren | `POST /tables/disable` | `admin` |
+| Tabellen-Status | `GET /tables/status` | `reader` |
+| Tabellen auflisten | `GET /tables` | `reader` |
+| Aufbewahrung auslösen | `POST /retention/run` | `admin` |
+
+Die lesenden Endpunkte sind mit dem Admin-Token ebenso erreichbar; mit dem
+Reader-Token sind die administrativen Endpunkte nicht erreichbar (`403`).
+
+**Zustellsemantik:** Diese Fähigkeiten sind synchrone Anfrage/Antwort — die
+Antwort trägt das Ergebnis des Aufrufs, es gibt keine Warteschlange
+dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
+unten), der die Verbindung offen hält.
+
+### Zugriff über den gRPC-Change-Stream
+
+**Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
+ungesetzt bleibt der Streaming-Server vollständig deaktiviert — kein
+Listener.
+
+**Authentifizierung:** derselbe Token-Wert wie bei der HTTP-API, übertragen
+als gRPC-Metadata-Eintrag `authorization` in der Form `Bearer <token>`.
+Fehlt er oder entspricht er keiner konfigurierten Klasse, endet der Aufruf
+mit dem gRPC-Status `Unauthenticated` — nicht mit einem stillen, leeren
+Stream.
+
+**Der Stream:** Der Server-Streaming-RPC `ChangeStream/StreamChanges`
+(gRPC über HTTP/2 mit Protobuf) überträgt jedem verbundenen Consumer jeden
+committed Change mit vollständigem Inhalt — eine Nachricht je Zeilen-Änderung
+mit denselben Feldern wie bei [Änderungen lesen](#änderungen-lesen). Eine
+Filterung nach Tabelle ist nicht Teil dieser Version.
+
+**Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
+verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
+Empfangswarteschlange; ist sie voll, weil der Client langsamer liest als
+Changes eintreffen, werden die betroffenen Nachrichten **verworfen**, statt
+gepuffert zu werden. Ein nicht verbundener oder zu langsam lesender Consumer
+verpasst sie damit ersatzlos — ein Replay innerhalb des Streams gibt es
+nicht. Der Erzeuger hält nie auf einen Empfänger an: Ein langsamer oder
+hängender Abonnent stoppt den Erfassungsbetrieb nicht.
+
+**Nachvollziehbarkeit:** Verpasste Changes bleiben über den Lesezugriffsweg
+[Änderungen lesen](#änderungen-lesen) und über die bestätigte
+Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar —
+der Stream ersetzt diesen Zugriffsweg nicht.
+
+### Zugriff über Server-Sent-Events
+
+**Erreichbarkeit:** derselbe HTTP-Server wie oben — aktiv, sobald
+`CDC_HTTP_ADDR` gesetzt ist; der Endpunkt ist `GET /changes/stream`, seine
+Rechtsklasse `reader` oder `admin`.
+
+**Authentifizierung:** wie die übrigen Endpunkte der HTTP-API über
+`Authorization: Bearer <token>`; ein fehlender oder unbekannter Token endet
+`401`, bevor das erste Event läuft.
+
+**Der Stream:** Die Antwort trägt `Content-Type: text/event-stream`; je
+Change ein Event `event: change`, dessen `data:` ein JSON-Objekt mit
+denselben zehn Feldern wie bei [Änderungen lesen](#änderungen-lesen) trägt
+(ein fehlendes Row Image ist `null`). Jedes Event wird sofort ausgeliefert.
+Ist die Adresse gesetzt, aber kein Live-Stream-Träger verdrahtet, antwortet
+der Endpunkt mit `503`.
+
+**Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
+verbundener oder langsamer lesender Client verpasst die betroffenen
+Änderungen ersatzlos. Der `Last-Event-ID`-Header wird weder gesendet noch
+ausgewertet — es gibt kein Stream-internes Replay. Der Erzeuger hält nie auf
+einen Empfänger an.
+
+**Nachvollziehbarkeit:** wie beim gRPC-Stream — verpasste Changes bleiben
+über [Änderungen lesen](#änderungen-lesen) und die bestätigte
+Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar.
+
 ## 5. Konfiguration
 
 ### Umgebungsvariablen des Feed-Containers
@@ -537,6 +693,10 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 | `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
 | `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload, `ADR-0056`); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`) |
+| `CDC_HTTP_ADDR` | nein | Horch-Adresse der HTTP-/JSON-API (`host:port`); ungesetzt bleibt die API vollständig deaktiviert — kein Server, keine zusätzliche Verbindung. Anders als `CDC_NATS_URL` ist die Adresse **keine** Start-Vorbedingung: Ist sie gesetzt, öffnet der Prozess den Server in eigener Goroutine und läuft unverändert weiter; scheitert das Binden der Adresse (z. B. belegter Port), meldet er das im Log und der Erfassungsbetrieb bleibt davon unberührt |
+| `CDC_API_TOKEN_READER` | nein | Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API; ungesetzt (leer) ist die Klasse nicht konfiguriert — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
+| `CDC_API_TOKEN_ADMIN` | nein | Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dieselbe Deaktivierung wie bei `CDC_API_TOKEN_READER` |
+| `CDC_GRPC_ADDR` | nein | Horch-Adresse des gRPC-Streaming-Servers (`host:port`); ungesetzt bleibt der Streaming-Server vollständig deaktiviert — kein Listener. Wie `CDC_HTTP_ADDR` keine Start-Vorbedingung |
 | `CDC_CONFIG_FILE` | nein | Pfad zu einer optionalen YAML-Konfigurationsdatei (siehe unten) |
 
 Fehlt eine Pflichtvariable und liefert auch keine Konfigurationsdatei
@@ -707,3 +867,4 @@ MIT — siehe `LICENSE`.
 | 1.10 | 2026-09-13 | `diagnose`-Ausgabe um Retention-Sichtbarkeit erweitert (`LH-FA-SST-003`, deckt `LH-FA-RET-005`/`006`, slice-047): §4 „Diagnose ausführen" trägt jetzt den aktuell blockierenden Consumer je Quelle (inkl. „kein Blocker"-Fall) und `cdc_storage_bytes` |
 | 1.11 | 2026-09-13 | `CDC_NATS_URL`-Zeile (§5) auf das tabellen-granulare Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>` korrigiert (`ADR-0056`, slice-058) |
 | 1.12 | 2026-09-14 | Diagnose-Beispielausgabe (§4) auf den umbenannten E2E-Quellnamen `src-e2e` aktualisiert (reines Namensrelikt aus der ursprünglichen MVP-Testumgebung, slice-057) |
+| 1.13 | 2026-09-15 | Betreiber-Oberfläche nachgezogen: §5 um die HTTP-Gruppe (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und `CDC_GRPC_ADDR` erweitert (je mit Aktivierungs-/No-Op-Semantik); §4 um „Spalte vom Ausschluss konfigurieren" (`cdc.exclude_column`/`cdc.include_column`, `LH-FA-CFG-005`, dauerhafter Ausschlussstand) und die drei Netzwerk-Zugriffswege (HTTP-/JSON-API `LH-FA-SST-006`, gRPC-Change-Stream und Server-Sent-Events `LH-FA-SST-008`) |
