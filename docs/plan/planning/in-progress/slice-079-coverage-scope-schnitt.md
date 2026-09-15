@@ -101,34 +101,34 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — der Messgegenstand ist geschnitten.**
 
-- [ ] `-coverpkg` und die Testpaket-Liste der Coverage-Stufe führen die Pakete
+- [x] `-coverpkg` und die Testpaket-Liste der Coverage-Stufe führen die Pakete
       nicht mehr, deren Testlauf einen **externen Dienst voraussetzt**; der Lauf
       nennt real **1679** Statements als Nenner. Die drei Ausprägungen
       (`postgresstorage` **ohne** `mapper`, `postgresack`,
       `replication/receive`) sind gegen die **Eigenschaft** geprüft, nicht
       abgeschrieben.
-- [ ] Der Effekt ist **beziffert**: die Zahl vor und nach dem Schnitt ist im
+- [x] Der Effekt ist **beziffert**: die Zahl vor und nach dem Schnitt ist im
       Bericht mit demselben Lauf vergleichbar (die wegfallenden Statements sind
       benannt) — sonst ist nicht belegt, dass nur Ausgeschlossenes wegfiel.
 
 **Liefer-Punkt 2 — die Stufe ist neu kalibriert.**
 
-- [ ] Der Ist-Stand über dem neuen Nenner ist **real gemessen** und die geltende
+- [x] Der Ist-Stand über dem neuen Nenner ist **real gemessen** und die geltende
       Stufe auf die abgerundete volle 5-%-Stufe gesetzt (Mechanismus aus
       `ADR-0054` §(a)); die **Endstufe bleibt 80**.
-- [ ] Die Kalibrierungs-Bindung trägt den neuen Wert: **ein** beweglicher Ort,
+- [x] Die Kalibrierungs-Bindung trägt den neuen Wert: **ein** beweglicher Ort,
       die übrigen nennen Rampe bzw. Verweis (die Form aus `slice-076`), und die
       Sensor-Doku nennt den **Messgegenstand** — nicht nur die Zahl.
 
 **Liefer-Punkt 3 — die Belege.**
 
-- [ ] Grün auf der neuen Stufe (`make coverage-gate` Exit 0), Exit **direkt**
+- [x] Grün auf der neuen Stufe (`make coverage-gate` Exit 0), Exit **direkt**
       gelesen und ungepiped (`AGENTS.md` §3.9).
-- [ ] Rot **unmittelbar über** der Endstufe dieses Schnitts: `THRESHOLD=75`
+- [x] Rot **unmittelbar über** der Endstufe dieses Schnitts: `THRESHOLD=75`
       (Abstand zum Ist-Stand > 5 Prozentpunkte, also **nicht** im Bereich der
       Lauf-zu-Lauf-Schwankung) → Exit ≠ 0.
 
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
