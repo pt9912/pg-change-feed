@@ -91,31 +91,64 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — der Client kann das Lesen.**
 
-- [ ] `tools/harness/httpclient` ruft zusätzlich `GET /changes` gegen die
+- [x] `tools/harness/httpclient` ruft zusätzlich `GET /changes` gegen die
       Basis-URL — mit `source` und optional `schema`/`table`, `from`/`to`,
       `limit` — und prüft die Antwort **inhaltlich**, nicht nur ihren Status.
-- [ ] Er bleibt **ein** Client (`ADR-0068`): kein zweites Programm, keine
+      — Beleg: `readChanges` (`tools/harness/httpclient/main.go`) baut die
+      Abfrage aus `source`/`schema`/`table`/`from`/`to`/`limit` (leerer Wert
+      lässt den Parameter weg) und prüft: gesetzte, nicht leere
+      `changes`-Liste; je Eintrag nicht leere `change_id`, bekannter
+      Operationswert (`INSERT`/`UPDATE`/`DELETE`), `commit_position` ≥ 1 und
+      die zum Filter passende Klartext-Identität (`schema`/`table`); die
+      Einträge in nicht absteigender `commit_position`.
+- [x] Er bleibt **ein** Client (`ADR-0068`): kein zweites Programm, keine
       zweite Import-Berechtigung, kein neuer Eintrag in `.a-check.yml`.
+      — Beleg: derselbe `tools/harness/httpclient`; der neue `net/url`-Import
+      ist Standardbibliothek unter dem bestehenden Glob
+      `tooling: ["tools/harness/**"]`, `.a-check.yml` unberührt.
 
 **Liefer-Punkt 2 — der Rundlauf beweist es.**
 
-- [ ] Die HTTP-Rundlauf-Phase des Runners ruft ihn real gegen den **laufenden**
+- [x] Die HTTP-Rundlauf-Phase des Runners ruft ihn real gegen den **laufenden**
       Feed-Container und wertet das Ergebnis aus; scheitert er, endet die Phase
-      **rot**.
-- [ ] `abdeckung_declare` trägt den erweiterten Nachweis — Anker und
-      Kurzbeschreibung nennen das Lesen.
-- [ ] **Eine rote Gegenprobe:** der Beleg wird **rot gesehen**, wenn der
+      **rot**. — Beleg: der volle `make test-integration`-Lauf ist auf Exit 0
+      gelaufen; die Phase fügt eine eigene Zeile (`id=285`,
+      `HttpChangesReadE2ESentinel`) ein, wartet ihre Erfassung über
+      `cdc.changes` ab und liest sie dann über `GET /changes`
+      (`READ changes=1 table=feed_e2e_full schema=public operation=INSERT …`),
+      deren `change_id` unabhängig gegen `cdc.changes` gehalten wird. `set +e`
+      um den Client-Aufruf macht den Ausgang auswertbar — sonst beendete ein
+      fehlgeschlagenes `docker run` die Zuweisung selbst und die Phase endete
+      rot **ohne Ausgabe**.
+- [x] `abdeckung_declare` trägt den erweiterten Nachweis — Anker und
+      Kurzbeschreibung nennen das Lesen. — Beleg: Anker ist die Echo-Zeile der
+      Phase (`… GET /changes real per HTTP mit reader-Token (die eigens
+      eingefügte Zeile …`), die Kurzbeschreibung nennt das Lesen; die erzeugte
+      Zeile steht in `docs/user/e2e-abdeckung.md`.
+- [x] **Eine rote Gegenprobe:** der Beleg wird **rot gesehen**, wenn der
       Endpunkt nicht antwortet (etwa ein falscher Pfad) — der Beweis, dass der
-      Beleg den **Endpunkt** prüft und nicht sich selbst.
+      Beleg den **Endpunkt** prüft und nicht sich selbst. — Beleg: mit
+      `GET /changes` → `/changes-gegenprobe` im Client endete der volle Lauf
+      rot (Exit 2; `httpclient: GET /changes (reader) fehlgeschlagen: status
+      404 (erwartet 200): 404 page not found` → `endete mit Ausgang 1`),
+      danach zurückgenommen und grün wiederholt.
 
 **Liefer-Punkt 3 — der Beleg ist sichtbar.**
 
-- [ ] Die E2E-Abdeckungstabelle (`docs/user/e2e-abdeckung.md`) ist durch ein
+- [x] Die E2E-Abdeckungstabelle (`docs/user/e2e-abdeckung.md`) ist durch ein
       volles `make test-integration` real **neu erzeugt** und trägt den
-      Nachweis; die Zeilen-Drift ist mitgezogen.
-- [ ] `harness/README.md` nennt den Beleg in der Aufzählung des
+      Nachweis; die Zeilen-Drift ist mitgezogen. — Beleg: der finale Lauf
+      (Exit 0) hat die Tabelle geschrieben (`13 Go-Zeilen und 24
+      Bash-Zeilen`); die HTTP-Zeile zeigt auf
+      `tools/harness/run-integration-tests.sh:2061` und ihre
+      Kurzbeschreibung nennt das Lesen.
+- [x] `harness/README.md` nennt den Beleg in der Aufzählung des
       `make test-integration`-Ziels — dort steht heute **jeder** E2E-Nachweis.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+      — Beleg: die Zeile des `make test-integration`-Ziels trägt den
+      Lese-Beleg des Wegwerf-Clients (`· seit slice-087`).
+- [x] `make gates` grün (Exit direkt, ungepiped). — Beleg: `make gates`
+      Exit 0 (baseline-verify, docs-check, a-check, commit-traceability,
+      coverage-gate 72,00 % ≥ 70 %, Nachweis-Stempel).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des

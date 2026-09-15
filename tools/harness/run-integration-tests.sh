@@ -1945,26 +1945,69 @@ fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
 
-abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf, die Registrierung wird gegen cdc.consumer bestätigt" "HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt"
+abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
 
-# HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057): ein Wegwerf-Client
-# (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token und
-# ListTables mit dem reader-Token real per HTTP gegen den laufenden
-# Feed-Container auf — ein echter Netzwerk-Request, kein `docker exec` und
-# kein Mock. `feed_e2e_full` bleibt über den ganzen Lauf aktiviert (siehe
-# Lasttest-Beleg oben), ihr Auftreten in der ListTables-Antwort belegt
-# einen realen, nicht leeren Rückgabewert. Muss vor der abschließenden
-# Schema-Negative-Testfunktion unten laufen, weil diese den Feed-Container
-# dauerhaft beendet.
+# HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057, ADR-0081): ein Wegwerf-Client
+# (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token,
+# ListTables mit dem reader-Token und `GET /changes` mit dem reader-Token
+# real per HTTP gegen den laufenden Feed-Container auf — ein echter
+# Netzwerk-Request, kein `docker exec` und kein Mock. `feed_e2e_full` bleibt
+# über den ganzen Lauf aktiviert (siehe Lasttest-Beleg oben), ihr Auftreten
+# in der ListTables-Antwort belegt einen realen, nicht leeren Rückgabewert.
+#
+# Der Changes-Lese-Beleg läuft spät im Ablauf (nach dem NATS-Negative-Beleg);
+# `feed_e2e_full` trägt zu diesem Zeitpunkt bereits erfasste Changes, die der
+# Client als Bestand lesen kann. Damit der Beleg eine bestimmte, unmittelbar
+# zuvor erfasste Änderung prüft, fügt der Runner eine eigene Zeile ein und
+# wartet ihre Erfassung über cdc.changes ab, BEVOR der Client sie über den
+# Endpunkt liest; ihre commit_position geht als Bereich `[from, to)` in den
+# Aufruf ein (ADR-0081 Teilfrage 2), ihre change_id wird unabhängig gegen
+# denselben Lesezugriffsweg gehalten.
+#
+# Muss vor der abschließenden Schema-Negative-Testfunktion unten laufen,
+# weil diese den Feed-Container dauerhaft beendet.
 HTTP_CONSUMER=http-e2e-consumer
+HTTP_READ_SCHEMA=public
+HTTP_READ_TABLE=feed_e2e_full
+HTTP_READ_SENTINEL=HttpChangesReadE2ESentinel
+HTTP_READ_ID=285
+HTTP_READ_LIMIT=100
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$HTTP_READ_TABLE (id, name) VALUES ($HTTP_READ_ID, '$HTTP_READ_SENTINEL');
+SQL
+
+http_read_position=""
+for _ in $(seq 1 60); do
+  http_read_position=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$HTTP_READ_TABLE' AND new_data->>'id' = '$HTTP_READ_ID'" 2>/dev/null || true)
+  if [ -n "$http_read_position" ]; then
+    break
+  fi
+  sleep 0.5
+done
+if [ -z "$http_read_position" ]; then
+  echo "run-integration-tests: Changes-Lese-Beleg — die eigens eingefügte Zeile (id=$HTTP_READ_ID, $HTTP_READ_TABLE) wurde nicht innerhalb der Zeitspanne über cdc.changes erfasst" >&2
+  exit 1
+fi
+http_read_to=$((http_read_position + 1))
+
+# `set +e` um den Client-Aufruf: der Ausgang des Clients wird von der
+# `http_status`-Prüfung ausgewertet und über die folgende Fehlerzeile
+# gemeldet; unter `set -e` beendet ein fehlgeschlagenes `docker run` schon
+# die Zuweisung selbst und die Phase endet rot ohne Ausgabe (AGENTS.md §3.9:
+# Exit-Code direkt ausgewertet, hier mit sichtbarem Grund).
+set +e
 http_output=$(docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
   -w /src \
   -e GOCACHE=/tmp/gocache \
   "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient \
-  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$HTTP_TOKEN_READER" "$HTTP_CONSUMER" "HTTP E2E Consumer" src-e2e pub_pgc_e2e 2>&1)
+  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$HTTP_TOKEN_READER" "$HTTP_CONSUMER" "HTTP E2E Consumer" src-e2e pub_pgc_e2e \
+  "$HTTP_READ_SCHEMA" "$HTTP_READ_TABLE" "$http_read_position" "$http_read_to" "$HTTP_READ_LIMIT" 2>&1)
 http_status=$?
+set -e
 if [ "$http_status" -ne 0 ]; then
   echo "run-integration-tests: HTTP-API-Rundlauf (httpclient) endete mit Ausgang $http_status: $http_output" >&2
   exit 1
@@ -1977,11 +2020,35 @@ if ! printf '%s' "$http_output" | grep -qE '"table":"feed_e2e_full"'; then
   echo "run-integration-tests: HTTP-API-Rundlauf — ListTables (reader-Token) trägt die dauerhaft aktivierte Tabelle feed_e2e_full nicht: $http_output" >&2
   exit 1
 fi
+if ! printf '%s' "$http_output" | grep -qE '^READ changes=[0-9]+ table=feed_e2e_full schema=public '; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — keine READ-Zeile des Changes-Lese-Aufrufs (reader-Token, GET /changes, Bereich [$http_read_position,$http_read_to)): $http_output" >&2
+  exit 1
+fi
+if ! printf '%s' "$http_output" | grep -qF "$HTTP_READ_SENTINEL"; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — die READ-Zeile trägt die eigens eingefügte Zeile (id=$HTTP_READ_ID, $HTTP_READ_SENTINEL) nicht: $http_output" >&2
+  exit 1
+fi
 
 registered_via_http=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT consumer_id FROM cdc.consumer WHERE consumer_id = '$HTTP_CONSUMER'")
 if [ "$registered_via_http" != "$HTTP_CONSUMER" ]; then
   echo "run-integration-tests: cdc.consumer trägt $HTTP_CONSUMER nicht nach dem realen HTTP-RegisterConsumer-Aufruf" >&2
+  exit 1
+fi
+
+# Unabhängiger SQL-Beleg, dass genau die über den Endpunkt gelesene Änderung
+# real erfasst wurde: die change_id der sentinel-tragenden READ-Zeile steht
+# über den bestehenden Lesezugriffsweg in cdc.changes — der Netzwerk-Leseweg
+# ist damit keine erfundene Ausgabe des Clients.
+http_read_change_id=$(printf '%s' "$http_output" | grep -F "$HTTP_READ_SENTINEL" | grep -oE 'change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+if [ -z "$http_read_change_id" ]; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — die sentinel-tragende READ-Zeile trägt keine change_id: $http_output" >&2
+  exit 1
+fi
+http_read_captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$http_read_change_id' AND table_name = '$HTTP_READ_TABLE' AND new_data->>'name' = '$HTTP_READ_SENTINEL'")
+if [ -z "$http_read_captured" ] || [ "$http_read_captured" -lt 1 ]; then
+  echo "run-integration-tests: HTTP-API-Rundlauf — die über GET /changes gelesene Änderung (change_id=$http_read_change_id, $HTTP_READ_SENTINEL) ist nicht real über cdc.changes lesbar (count=${http_read_captured:-leer})" >&2
   exit 1
 fi
 
@@ -1991,7 +2058,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort): $http_output"
+echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten): $http_output"
 
 abdeckung_declare "gRPC-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real über gRPC den Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status Unauthenticated" "gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt"
 
