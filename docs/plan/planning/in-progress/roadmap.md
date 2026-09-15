@@ -79,7 +79,16 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Struktur: fünf Abschnitte, Bullet *Nächste Wellen* — die Abhängigkeit
 steht als beobachtbare Bedingung in der `Trigger`-Spalte **und** als gerichtete
 Kante hier; eine Welle, die ohne fertige Vorgängerin nicht starten kann, ist
-eine Phantom-Welle.
+eine Phantom-Welle. **Die Kante trägt das Trigger-Objekt**, nicht zwingend die
+Vorgänger-Welle: ein Knoten ohne Wellen-Charakter (ein wellenloser Slice, ein
+`Accepted`-ADR) steht als eigener Knoten daneben. Wo der Trigger kein
+Wellen-Objekt nennt, wird **keine** Wellen-Kette gezogen — die Kante behauptete
+sonst eine Abhängigkeit, die der Trigger nicht trägt. **Eine benannte Abweichung
+steht in der Kette bis `welle-16`:** deren letzte Kante (`W15 --> W16`) trägt
+kein Trigger-Objekt — `welle-16`s Trigger ist `ADR-0057`, nicht `welle-15`. Sie
+bleibt als Reihenfolge-Kante stehen und ist damit die einzige Stelle des
+Graphen, die der Regel oben nicht genügt; sie wird **benannt**, nicht still
+gezogen und nicht still getilgt.
 
 ```mermaid
 flowchart LR
@@ -103,6 +112,20 @@ flowchart LR
     W16[welle-16: HTTP/JSON-API mit Token-Authn]
 
     W1 --> W2 --> W3 --> W4 --> W5 --> W6 --> W7 --> W8 --> W9 --> W9B --> W10 --> W10B --> W11 --> S047 --> W13 --> S051 --> W15 --> W16
+
+    A58[ADR-0058 Accepted]
+    A59[ADR-0059 Accepted]
+    A6061[ADR-0060 + ADR-0061 Accepted]
+    S079[wellenlos: slice-079 Scope-Schnitt des Coverage-Gates]
+    W17[welle-17: E2E-Testbelege für fünf testfreie Lastenheft-Kennungen]
+    W18[welle-18: Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung]
+    W19[welle-19: Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE]
+    W20[welle-20: Coverage 80 % über der netzlos prüfbaren Fläche]
+
+    A58 --> W17
+    A59 --> W18
+    A6061 --> W19
+    S079 --> W20
 ```
 
 ## Abgeschlossene Wellen
