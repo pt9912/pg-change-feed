@@ -133,10 +133,19 @@ Ausschlussblock; die Sensors-Doku trägt den erweiterten Vertrag.
       und `harness/mk/**` ungescannt.
 
 **Liefer-Punkt 3 — die Regel ist verkörpert.** `AGENTS.md` §3.11 trägt die Hard
-Rule nach dem Entwurf in `ADR-0072`.
+Rule nach dem Entwurf in `ADR-0072` — und `AGENTS.md` §3.5 trägt die Ausnahme
+der Zitat-Klasse, damit die Hard Rule nicht gegen die Korrektur steht, die
+dieselbe Entscheidung sanktioniert.
 
 - [x] §3.11 steht mit Aussage, Falsch/Richtig an **realen** Beispielen,
       Begründung, Grenzen und Rang-Zeiger auf das Modul.
+- [ ] §3.5 nennt die Zitat-Korrektur als Ausnahme zu „Korrekturen entstehen als
+      neue ADR mit `Supersedes`"
+      ([`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)),
+      und der Kopf-Satz des ADR-Index führt dieselbe Ausnahme. **Nachtrag zum
+      Plan:** beide Stellen standen nicht in der Fassung, mit der implementiert
+      wurde — sie sind die Folgepflicht aus `ADR-0073`, und ihr Fehlen war ein
+      Plan-Versäumnis, kein Auftragsverzicht.
 
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -168,7 +177,8 @@ Aussagen-Berührung steht hier gar nicht.
 | `harness/sensors/coverage-gate.md` (2) | update | lebende Doku → Hausform |
 | `Makefile` (1) · `tools/coverage-gate.sh` (1) | update | vom Modul **nicht** gelesen; trotzdem korrigiert, damit die Zusage dieses Repos trägt |
 | `.d-check.yml` | update | `hostpaths` in `modules`, **ohne** Ausschlussblock |
-| `AGENTS.md` | update | Hard Rule §3.11 nach dem Entwurf in `ADR-0072` |
+| `AGENTS.md` | update | Hard Rule §3.11 nach dem Entwurf in `ADR-0072`; **und** §3.5 trägt die Ausnahme der Zitat-Klasse (`ADR-0073`) |
+| `docs/plan/adr/README.md` | update | der Kopf-Satz nennt dieselbe Ausnahme — sonst lehrt der Index die abgelöste Fassung |
 | `harness/README.md` | update | §Sensors-Zeile `make docs-check` nennt das Modul |
 | `harness/sensors/docs-check.md` | update | Grenzen des Moduls, Ist-Zustand der Modulliste |
 
@@ -203,8 +213,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
-DoD vollständig **und** der Abnahme-Grep ergibt **0** **und** `make gates` grün
-mit aktivem `hostpaths` **ohne** Ausschlussblock **und** Closure-Notiz
+DoD vollständig **und** die Abnahme-Messung ergibt **0** (Modul-Aufruf über das
+Repo, plus die zwei Stellen außerhalb seiner Reichweite) **und** `make gates`
+grün mit aktivem `hostpaths` **ohne** Ausschlussblock **und** die Closure-Notiz
 geschrieben.
 
 ## 6. Risiken und offene Punkte
