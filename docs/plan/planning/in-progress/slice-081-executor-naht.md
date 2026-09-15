@@ -51,14 +51,26 @@ reine Funktion. Dass der Coverage-Wert danach steigt, ist **Folge** — wer ihn
 zum Zweck nimmt, hat den Gegenstand gewechselt.
 
 **In den Slice aufgenommen — die Umsetzung von [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md).**
-Die Naht **bewegt** die Messung: 138 Statements wandern aus dem Gegenstand der
-DB-Adapter-Coverage in den Unit-Gegenstand (788 → 650 bzw. 1679 → 1817), und die
-Quote der abfließenden Seite fällt (75,25 % → 73,38 %), weil 116 der verlagerten
-Statements überdurchschnittlich gedeckt waren. Der Architect hat das als
-**Subjekt-Transfer** entschieden und die Rampen neu bemessen (DB-Einstieg
-75 → 70 %, Unit-Einstieg 65 → 70 %, Endstufen unverändert 80 %); die Bindung,
-die das von einem Freibrief trennt: eine Quote, die bei **unverändertem** Nenner
-fällt, ist eine Regression — dann steht die Schwelle.
+Die Naht **bewegt** die Messung: der Gegenstand der DB-Adapter-Coverage schrumpft
+um 138 Statements (788 → 650), und die Quote der abfließenden Seite fällt
+(75,25 % → 73,38 %), weil 116 der verlagerten überdurchschnittlich gedeckt waren.
+**Der aufnehmende Gegenstand wächst aber um 152, nicht um 138** (1679 → **1831**):
+die Naht *fügt* 14 Statements neuen Code hinzu (die generalisierte Übersetzung
+samt `Classify`/`IsAbsent`) — die Summe ist damit **nicht** konstant
+(2467 → 2481). Der Architect hat das als **Subjekt-Transfer** entschieden und die
+Rampen neu bemessen (DB-Einstieg 75 → 70 %, Unit-Einstieg 65 → 70 %, Endstufen
+unverändert 80 %); die Bindung, die das von einem Freibrief trennt: eine Quote,
+die bei **unverändertem** Nenner fällt, ist eine Regression — dann steht die
+Schwelle.
+
+**Die Messung des zweiten Implementer-Laufs widerlegt die Voraussetzung dieser
+Entscheidung** (§3, *Befund des zweiten Laufs*): `k_aufnehmend` 152 ≠
+`k_abfließend` 138. Sie liegt dem Architect als Folge-ADR vor.
+**Berichtigung einer eigenen Zahl:** die hier zuvor stehende Angabe
+`1679 → 1817` war die *abgeleitete* Summe `1679 + 138` — aus einem
+Implementer-Bericht **übernommen und nicht gemessen**; sie ist über meinen
+Auftrag an den Architect auch in `ADR-0077` §Kontext eingegangen und dort
+ebenfalls falsch (siehe §7).
 
 **Warum das hierher gehört und nicht in einen eigenen Slice:** diese Umsetzung
 macht die DoD-Zeile „die reale Verdrahtung geht unverändert durch
@@ -125,8 +137,8 @@ vierter Punkt:
 
 - [x] Der Coverage-Effekt wird **als Folge** dokumentiert (Zahl vorher/nachher
       über der netzlos prüfbaren Fläche) — nicht als Zweck: **69,70 % → 71,30 %**
-      (`make coverage-gate`, beide Läufe Exit 0; Gegenstand 1679 → 1817
-      Statements).
+      (`make coverage-gate`, beide Läufe Exit 0; Gegenstand **1679 → 1831**
+      Statements, gemessen im zweiten Lauf — §3).
 - [ ] **Die Neu-Bemessung aus [`ADR-0077`](../../adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
       ist umgesetzt:** `DB_COVERAGE_THRESHOLD` 75 → 70
       (`tools/harness/db-coverage.sh`, Zeile der Vorgabe), `THRESHOLD` 65 → 70
@@ -136,6 +148,10 @@ vierter Punkt:
       `AGENTS.md` §4) nennt die neuen Stufen. **Der Nenner-Nachweis** — die
       Statement-Summe beider Gegenstände bleibt über den Zug hinweg konstant —
       liegt als Beleg bei; er ist die Bedingung, unter der die Senkung trägt.
+      **Offen (zweiter Lauf):** gemessen ist die Summe **nicht** konstant
+      (2467 → 2481, +14). Ob die Paarung in abgeschwächter Form trägt, entscheidet
+      die Folge-ADR zu `ADR-0077`; bis dahin ist dieses Kriterium **nicht
+      erfüllbar** und die Senkung nicht umgesetzt (§3).
 - [ ] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
