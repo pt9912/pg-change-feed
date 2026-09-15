@@ -110,8 +110,9 @@ const (
 	// `envHTTPAddr` ist sie keine Start-Vorbedingung — ungesetzt bleibt der
 	// Streaming-Server vollständig deaktiviert, kein Listener wird geöffnet
 	// (additiv, unverändertes Bestandsverhalten, `ADR-0060` Teilfrage 6).
-	// Ein gesetzter Wert trägt denselben Listener-Fehler ins Ergebnis von
-	// `Run` wie jeder andere Adapter-Startfehler.
+	// Ein gesetzter Wert öffnet den Listener in eigener Goroutine (`Run`
+	// unten); ein Startfehler wird dort über `log.Error` gemeldet und geht
+	// nicht in das Ergebnis von `Run` ein.
 	envGRPCAddr = "CDC_GRPC_ADDR"
 )
 

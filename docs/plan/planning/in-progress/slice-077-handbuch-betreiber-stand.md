@@ -93,7 +93,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und
       `CDC_GRPC_ADDR` — je mit Aktivierungs-/No-Op-Semantik, geprüft gegen
       `internal/bootstrap/wiring.go` (nicht aus dem Gedächtnis).
-- [ ] **Der Deklarationsort trägt die beschriebene Semantik:** die
+- [x] **Der Deklarationsort trägt die beschriebene Semantik:** die
       Kommentar-Aussage zu `CDC_GRPC_ADDR` deckt sich mit dem Verhalten (Log
       statt `Run`-Fehler) — und **dieselbe Behauptung** steht nicht an anderer
       Stelle derselben Datei. Träger: Review F-1; dieselbe Klasse wie
@@ -139,6 +139,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `docs/user/benutzerhandbuch.md` | update | die drei Liefer-Punkte oben, je in einem eigenen Abschnitt |
+| `internal/bootstrap/wiring.go` | update | Review F-1: der Kommentar zu `CDC_GRPC_ADDR` behauptet einen `Run`-Startfehler, den die Listener-Goroutine nicht trägt — Kommentar an die Nachbarblöcke angeglichen, **kein** Verhaltens-Change |
 
 ## 4. Trigger
 

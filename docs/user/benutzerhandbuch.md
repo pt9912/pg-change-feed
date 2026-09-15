@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.13
+Version: 1.14
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-15
 
@@ -581,9 +581,13 @@ Rollback-Artefakt (`tools/schema/down.sql`).
 
 ### Zugriff über die HTTP-/JSON-API
 
-Die API stellt dieselben Fähigkeiten, die auch über CLI und SQL erreichbar
-sind, zusätzlich als Netzwerkzugriffsweg bereit — fachlich gleichwertig, kein
-Zweitpfad.
+Die API stellt die Verwaltungsfähigkeiten des Feed-Containers zusätzlich als
+Netzwerkzugriffsweg bereit. Wo dieselbe Fähigkeit auch über CLI oder SQL
+erreichbar ist, führt sie dieselbe Domänenlogik aus und ist fachlich
+gleichwertig — kein Zweitpfad. Eine Ausnahme ist das Auslösen der
+Aufbewahrung: Dafür gibt es keinen CLI-/SQL-Zugriffsweg — die API ist der
+einzige manuelle Auslöser, und der automatische Hintergrundzug läuft
+unabhängig davon (siehe [Aufbewahrung (Retention)](#aufbewahrung-retention)).
 
 **Erreichbarkeit:** aktiv, sobald `CDC_HTTP_ADDR` gesetzt ist (`host:port`,
 siehe [Konfiguration](#5-konfiguration)); ungesetzt bleibt sie vollständig
@@ -633,9 +637,23 @@ Stream.
 
 **Der Stream:** Der Server-Streaming-RPC `ChangeStream/StreamChanges`
 (gRPC über HTTP/2 mit Protobuf) überträgt jedem verbundenen Consumer jeden
-committed Change mit vollständigem Inhalt — eine Nachricht je Zeilen-Änderung
-mit denselben Feldern wie bei [Änderungen lesen](#änderungen-lesen). Eine
-Filterung nach Tabelle ist nicht Teil dieser Version.
+committed Change mit vollständigem Inhalt — eine Nachricht je Zeilen-Änderung.
+Jede Nachricht trägt zehn Felder:
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `change_id` | string | Kennung des Changes |
+| `transaction_id` | string | Kennung der Quelltransaktion |
+| `source_table_id` | string | Kennung der aktivierten Tabelle |
+| `sequence` | int64 | Reihenfolge der Zeilen-Änderung in der Transaktion |
+| `operation` | string | `INSERT`, `UPDATE` oder `DELETE` |
+| `old_image` | bytes | Row Image vor der Änderung; bei `INSERT` leer |
+| `new_image` | bytes | Row Image nach der Änderung; bei `DELETE` leer |
+| `schema_version` | string | Schema-Version des Changes |
+| `schema` | string | Schema-Name der Tabelle |
+| `table` | string | Tabellenname |
+
+Eine Filterung nach Tabelle ist nicht Teil dieser Version.
 
 **Zustellsemantik:** Es gibt **keine** Zustellgarantie (Fire-and-Forget,
 verlustbehaftet). Je Abonnent trägt der Server eine begrenzte
@@ -663,10 +681,11 @@ Rechtsklasse `reader` oder `admin`.
 
 **Der Stream:** Die Antwort trägt `Content-Type: text/event-stream`; je
 Change ein Event `event: change`, dessen `data:` ein JSON-Objekt mit
-denselben zehn Feldern wie bei [Änderungen lesen](#änderungen-lesen) trägt
-(ein fehlendes Row Image ist `null`). Jedes Event wird sofort ausgeliefert.
-Ist die Adresse gesetzt, aber kein Live-Stream-Träger verdrahtet, antwortet
-der Endpunkt mit `503`.
+denselben zehn Feldern wie der gRPC-Stream trägt (siehe
+[Zugriff über den gRPC-Change-Stream](#zugriff-über-den-grpc-change-stream));
+ein fehlendes Row Image ist `null`. Jedes Event wird sofort ausgeliefert. Ist
+die Adresse gesetzt, aber kein Live-Stream-Träger verdrahtet, antwortet der
+Endpunkt mit `503`.
 
 **Zustellsemantik:** keine Zustellgarantie (Fire-and-Forget): Ein nicht
 verbundener oder langsamer lesender Client verpasst die betroffenen
@@ -868,3 +887,4 @@ MIT — siehe `LICENSE`.
 | 1.11 | 2026-09-13 | `CDC_NATS_URL`-Zeile (§5) auf das tabellen-granulare Subjekt-Schema `cdc.changes.<source_id>.<schema>.<table>` korrigiert (`ADR-0056`, slice-058) |
 | 1.12 | 2026-09-14 | Diagnose-Beispielausgabe (§4) auf den umbenannten E2E-Quellnamen `src-e2e` aktualisiert (reines Namensrelikt aus der ursprünglichen MVP-Testumgebung, slice-057) |
 | 1.13 | 2026-09-15 | Betreiber-Oberfläche nachgezogen: §5 um die HTTP-Gruppe (`CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) und `CDC_GRPC_ADDR` erweitert (je mit Aktivierungs-/No-Op-Semantik); §4 um „Spalte vom Ausschluss konfigurieren" (`cdc.exclude_column`/`cdc.include_column`, `LH-FA-CFG-005`, dauerhafter Ausschlussstand) und die drei Netzwerk-Zugriffswege (HTTP-/JSON-API `LH-FA-SST-006`, gRPC-Change-Stream und Server-Sent-Events `LH-FA-SST-008`) |
+| 1.14 | 2026-09-15 | Review-Nachzug: Rahmen-Aussage der HTTP-§4 auf die tatsächlich gelistete Fähigkeitsmenge gezogen (die Retention-Auslösung ist nicht CLI-/SQL-gleichwertig, sondern API-exklusiv); der gRPC-Abschnitt nennt die zehn Nachrichtenfelder, und der SSE-Abschnitt verweist darauf statt auf die Spaltenliste von `cdc.changes` |
