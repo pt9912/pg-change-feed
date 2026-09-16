@@ -25,6 +25,9 @@ nach `done/` ist **nicht** erfolgt. Der Diff ist **Doku + Rollen-Skill +
 Workflow-Schritt**: keine Testdatei, kein Produktionscode, keine
 `.github/workflows/**`-Datei, `harness/README.md` **unberührt**.
 
+**Nachtrag:** §10 beurteilt den Korrektur-Commit `7079484` zu **V-1** und
+**V-2** — **kein** neuer Vollauf; §1–§9 stehen als Stand `f492b0c`.
+
 ---
 
 ## 1. Eigene Messungen dieses Laufs
@@ -124,13 +127,13 @@ der Übergabe, in keinem Artefakt.
 
 **Ein Punkt zur Vollständigkeit des Trägers (keine DoD-Verletzung):** `ADR-0083`
 §Entscheidung 4 nennt für Instanz B **zwei** durchsetzende Hälften — den
-**Verifier** *und* den **Planner als Verfasser** (Tabelle, `:184`). §3.12 nennt
+**Verifier** *und* den **Planner als Verfasser** (Tabelle, `:184`). §3.12 nannte
 für Instanz B nur den Verifier (`:407–408`). Die DoD-Zeile verlangt das nicht
 („beide Instanzen, wörtlich" + Grenze), und die vollständige Fassung bleibt
 einen Link entfernt; als **Träger einer Hard Rule** ist die Aufzählung der
 durchsetzenden Leser dort aber unvollständig, und die Verfasser-Seite ist genau
 die, die `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (4×)
-adressiert.
+adressiert. — **Erledigt in `7079484`** (§10).
 
 ---
 
@@ -177,10 +180,10 @@ Delta-Review, also von keiner Review gesehen):
 - `pfad`: `docs/plan/planning/observations/BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/observation.md:15–24`
   (Kopf) gegen `…/evidence/slice-084.md` und
   [`verify-slice-084.md`](verify-slice-084.md) V-1
-- `befund`: Der Kopf sagt „Belegt an zwei abgeschlossenen Vorgängen" und nennt
+- `befund`: Der Kopf sagte „Belegt an zwei abgeschlossenen Vorgängen" und nannte
   als erste Zeile **`slice-079`** mit „(Verifikation `verify-slice-084` V-1)";
-  das `evidence/` führt stattdessen **`slice-084.md`** — und diese Datei behauptet
-  ihrerseits („Vorgang: `slice-084` … Gefunden hat es der Verifier als
+  das `evidence/` führte stattdessen **`slice-084.md`** — und diese Datei
+  behauptete ihrerseits („Vorgang: `slice-084` … Gefunden hat es der Verifier als
   `verify-slice-084` **V-1**"), die `go list`-Stelle sei die V-1 jener
   Verifikation. **Sie ist es nicht:** `verify-slice-084` V-1
   (`:301–317`) betrifft einen **anderen** Befehl in einem **anderen** Dokument
@@ -191,39 +194,41 @@ Delta-Review, also von keiner Review gesehen):
   selbst als **Alt-Bestand aus `slice-079` (`65aead2`)** eingeordnet — der Satz
   wurde in `slice-079` *eingeführt* (Messung 9), dort aber **nicht** gefunden;
   `slice-079` ist damit der **Ursprung** der Stelle, kein Vorgang, in dem die
-  Klasse beobachtet wurde. Zwei Folgen: (a) **Kopf und Belegliste stimmen
+  Klasse beobachtet wurde. Zwei Folgen: (a) **Kopf und Belegliste stimmten
   nicht überein** — `{slice-079, slice-085}` gegen `{slice-084.md,
-  slice-085.md}`; (b) der Eintrag liest sich durch seine **eigene** Formulierung
+  slice-085.md}`; (b) der Eintrag las sich durch seine **eigene** Formulierung
   („derselbe Satz, derselbe Befehl") als Klasse *über die `go list`-Stelle* — in
-  dieser Lesart hat er **einen** tragenden Beleg (`slice-085`), nicht zwei, und
-  steht mit `2×` über der Schwelle, die er nicht erreicht.
+  dieser Lesart hätte er **einen** tragenden Beleg (`slice-085`), nicht zwei, und
+  stünde mit `2×` über der Schwelle, die er nicht erreicht.
 - `verifizierbar`: ja — `grep -n "go list\|TestGo" verify-slice-084.md
   review-slice-084.md review-slice-085.md`; `sed -n '296,318p'
   verify-slice-084.md`; `sed -n '355,362p' verify-slice-085.md`;
   `ls …/beleg-befehl-traegt-seinen-satz-nicht/evidence/`
 - `urteil`: **vor der Closure zu beheben.** Die **Form** des Belegs ist in
   Ordnung (Verzeichnis existiert, `evidence/` ist nicht leer, Dateinamen sind
-  Vorgangs-Kennungen) — die **Paarung (c)** läuft also grün; was nicht trägt,
+  Vorgangs-Kennungen) — die **Paarung (c)** läuft also grün; was nicht trug,
   ist die **Zuordnung**, und die entscheidet der Lese-Schritt als **Urteil**
-  (Modul 6). Es gibt eine Auflösung, die den Zähler rettet: lautet die Identität
-  des Eintrags „Beleg-Befehl trägt seinen Satz nicht" als **Klasse**, dann zählt
-  `verify-slice-084` V-1 als *erste* Instanz (der `git diff`-Befehl) und
-  `verify-slice-085` V-3 als zweite — dann müssen aber **beide** Beschreibungen
-  (Kopf *und* `evidence/slice-084.md`) auf **diesen** Fund umgeschrieben werden,
-  und `slice-079` darf nicht als Beleg-Vorgang dastehen.
+  (Modul 6). Auflösung: lautet die Identität des Eintrags „Beleg-Befehl trägt
+  seinen Satz nicht" als **Klasse**, dann zählt `verify-slice-084` V-1 als
+  *erste* Instanz (der `git diff`-Befehl) und `verify-slice-085` V-3 als zweite
+  — dann müssen aber **beide** Beschreibungen (Kopf *und*
+  `evidence/slice-084.md`) auf **diesen** Fund umgeschrieben werden, und
+  `slice-079` darf nicht als Beleg-Vorgang dastehen. — **So umgesetzt in
+  `7079484`** (§10).
 
 ### V-2 — Die neue Evidence-Datei nennt für die `welle-20`-Berichtigung einen Commit, der sie nicht trägt
 
 - `pfad`: `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-089.md`
   (Quellen-Zeile) gegen `git show b6b2ce4 --stat`
-- `befund`: Die Quelle-Zeile sagt „`docs/plan/planning/welle-20.md` (berichtigt
+- `befund`: Die Quelle-Zeile sagte „`docs/plan/planning/welle-20.md` (berichtigt
   in **`b6b2ce4`**)". `b6b2ce4` hat **genau eine** Datei angefasst — den
   Slice-Plan (Messung 10); `welle-20.md` wurde in `93d64dc` berichtigt (F-2) und
-  in `f492b0c` nochmals (Messung 11). Der genannte Anker trägt den Satz nicht —
+  in `f492b0c` nochmals (Messung 11). Der genannte Anker trug den Satz nicht —
   die Klasse, die der Slice verkörpert, in ihrer eigenen Register-Arbeit
   (Instanz B: „nennt den **Beleg-Anker**, an dem sie geprüft wurde").
   Der zweite Teil derselben Zeile (`slice-089`-Plan §8, „berichtigt in
-  `c206762`") **hält** (`c206762` = Planner-F-3).
+  `c206762`") **hält** (`c206762` = Planner-F-3). — **Behoben in `7079484`**
+  (§10).
 - `verifizierbar`: ja — `git show b6b2ce4 --stat`; `git log --oneline
   93d64dc..HEAD -- docs/plan/planning/welle-20.md`
 
@@ -231,12 +236,13 @@ Delta-Review, also von keiner Review gesehen):
 ist in **`f492b0c`** geändert worden — einem Commit, dessen Betreff nur die
 Register-Arbeit nennt. Der Delta-Review hatte für seinen Gegenstand „vier
 Dateien" festgestellt und `welle-20.md` auf dem Stand `93d64dc` beurteilt; die
-jetzt gelesene Fassung (Cluster-Tabelle auf §*Was daraus für die Slices folgt*
+seitdem gelesene Fassung (Cluster-Tabelle auf §*Was daraus für die Slices folgt*
 verortet, `60 von 60` als zweite Spalte erklärt) ist damit **unreviewed**. Ich
 habe sie selbst gegen die Anker geprüft (Messung 7) — sie **trägt**; sie behebt
 sogar genau den Locator-Rest, den der Delta-Review als **D-1** (INFO) geführt
 hatte. Festgehalten, weil die Aussage „verifikationsreif" des Delta-Reports für
-den Stand `b6b2ce4` galt, nicht für `f492b0c`.
+den Stand `b6b2ce4` galt, nicht für `f492b0c`. — **Reist als §7-Notiz mit
+(Planner-Entscheidung).**
 
 **Nachrangige Beobachtung 2:** `welle-20.md:125–129` sagt zu den zwei Werten des
 widerlegten Vorschlags „`591`, `327` … **nicht** als Messung;
@@ -244,7 +250,8 @@ widerlegten Vorschlags „`591`, `327` … **nicht** als Messung;
 widerlegt sie". `327` steht dort (`:277`), `591` **nicht** — widerlegt ist der
 Vorschlag als Ganzes. Die beiden Werte tragen ihren Ursprung als **Zitat**
 (dieselbe Sektion nennt ihre Herkunft), die Behauptung „widerlegt sie" trägt für
-`591` keinen Beleg-Anker. Kein DoD-Bezug; als Instanz-B-Rest benannt.
+`591` keinen Beleg-Anker. Kein DoD-Bezug; als Instanz-B-Rest benannt. —
+**Reist als §7-Notiz mit (Planner-Entscheidung).**
 
 **Nachrangige Beobachtung 3:** die Sichtung in §8 des Plans („Register
 durchgegangen; die Zähler sind am Register nachgezählt und mit ihrem Stand
@@ -252,7 +259,8 @@ benannt") führt **fünf** der **60** Einträge, ohne das Auswahlkriterium zu
 nennen — und zwei Einträge, die dieser Slice tatsächlich berührt
 (`mechanismus-erklaerung-ohne-werkzeugbeleg`, `beleg-befehl-…`), stehen nicht in
 der Liste. Die fünf genannten Stände stimmen mit `ls evidence/` überein; die
-Auswahl ist für einen Dritten nicht reproduzierbar.
+Auswahl ist für einen Dritten nicht reproduzierbar. — **Reist als §7-Notiz mit
+(Planner-Entscheidung).**
 
 ---
 
@@ -282,8 +290,8 @@ genannten Belege stehen. Die LP3-Zeile („§Grenze Punkt 1 **und die zwei
 
 **Das neue Verzeichnis ist vollständig** (Messung 12): `observation.md`,
 `state.md` und `evidence/` mit **zwei** Dateien (`slice-084.md`, `slice-085.md`)
-— Paarung (c) erfüllt (Existenz + nicht-leeres `evidence/`). Inhaltlich
-**fehlerhaft** ist die Zuordnung der ersten Datei (V-1).
+— Paarung (c) erfüllt (Existenz + nicht-leeres `evidence/`). Inhaltlich war die
+Zuordnung der ersten Datei fehlerhaft (V-1; in `7079484` berichtigt, §10).
 
 **Die zwei nachgezogenen Zähler — Kopf, Zähler-Zeile und Belegliste stimmen
 überein** (jede Zahl gegen `ls evidence/`):
@@ -292,7 +300,7 @@ genannten Belege stehen. Die LP3-Zeile („§Grenze Punkt 1 **und die zwei
 |---|---|---|---|---|
 | `mechanismus-erklaerung-ohne-werkzeugbeleg` | `offen (3×, Schwelle erreicht)` | `2× …, dazu der dritte … — **3×**` | 3 | **stimmig** |
 | `zahl-in-traeger-driftet-gegen-die-messung` | `offen — 5× erreicht` | `**5×** (…, slice-089.md)` | 5 | **stimmig** |
-| `beleg-befehl-traegt-seinen-satz-nicht` (neu) | `offen (**2×**)` | `**2×** (evidence/slice-084.md, evidence/slice-085.md)` | 2 | Zahlen stimmen mit der Liste; die **Liste** selbst trägt V-1 |
+| `beleg-befehl-traegt-seinen-satz-nicht` (neu) | `offen (**2×**)` | `**2×** (evidence/slice-084.md, evidence/slice-085.md)` | 2 | Zahlen stimmen mit der Liste; die **Liste** selbst trug V-1 (in `7079484` berichtigt, §10) |
 
 Der Zähler ist in allen drei Einträgen als **abgeleitet** gekennzeichnet und
 steht unmittelbar neben seiner Belegliste — die Form vermeidet die „zweite
@@ -322,8 +330,8 @@ Auflösung:
   ist dem **Beleg-Befehl**-Eintrag zugeordnet und steht **nicht** im
   `mechanismus`-Eintrag (dessen dritte Evidence ist `slice-089`, nicht
   `slice-085`). Die drei Einträge teilen sich die vier Funde ohne Überlappung —
-  **außer** in V-1, wo die *Beschreibung* einen Fund in zwei Vorgänge legt, die
-  ihn nicht tragen.
+  **außer** in V-1, wo die *Beschreibung* einen Fund in zwei Vorgänge legte, die
+  ihn nicht tragen (in `7079484` berichtigt, §10).
 
 ---
 
@@ -335,6 +343,7 @@ Auflösung:
   `· seit slice-089` plus Leerzeile — im **§4**-Bereich ist **keine** Zeile
   hinzugefügt oder geändert (Messung 14). Das Sync-Gate aus `ADR-0084` wird in
   keiner der beiden Stellen genannt — die Sensors-Zeile entsteht mit dem Gate.
+  (Der Hunk in `7079484` liegt in §3.12, nicht in §4 — §10.)
 - **§3.10 greift nicht:** der Diff berührt **keine** `.github/workflows/**`-Datei
   (Messung 14). Kein Post-Push-Lauf nötig, kein Workflow-§6-Risiko.
 - **Die im Rollen-Beschrieb genannten Sensoren `make doc-commits` und
@@ -374,7 +383,7 @@ Auflösung:
 
 ---
 
-## 9. Verdikt
+## 9. Verdikt (Stand `f492b0c`)
 
 **Die drei Liefer-Punkte tragen.** §3.12 steht mit **byte-identischen** Wortlauten
 beider Instanzen (Messung 2), die Grenze ist benannt, der Träger-Anker gesetzt;
@@ -386,29 +395,88 @@ Erweiterungen über die §3-Liste tragen (ADR-Folgepflicht bzw. V-1 §4.2), sie 
 **kein** Überlauf. §4 und `§Sensors` sind unberührt, §3.10 ist nicht ausgelöst.
 
 **Zwei Stellen aber setzen die Regel in ihrer eigenen Einführung nicht durch:**
-**V-1** (der neue Register-Eintrag belegt seinen ersten Vorgang mit einem Fund,
-der in `verify-slice-084` V-1 **nicht** steht, und Kopf und Belegliste nennen
-verschiedene Vorgänge — die Belegliste trägt den `2×`-Zähler nicht) und **V-2**
-(eine neue Evidence-Datei nennt `b6b2ce4` als Commit der `welle-20`-Berichtigung,
-der ihn nicht trägt). Beide liegen in **`f492b0c`**, also in Trägern, die nach
+**V-1** (der neue Register-Eintrag belegte seinen ersten Vorgang mit einem Fund,
+der in `verify-slice-084` V-1 **nicht** steht, und Kopf und Belegliste nannten
+verschiedene Vorgänge — die Belegliste trug den `2×`-Zähler nicht) und **V-2**
+(eine neue Evidence-Datei nannte `b6b2ce4` als Commit der `welle-20`-Berichtigung,
+der ihn nicht trug). Beide lagen in **`f492b0c`**, also in Trägern, die nach
 dem Delta-Review entstanden sind und die **keine** Review gesehen hat — die Art
-Verstoß, die für Tests und für ein diff-skopiertes Review unsichtbar ist.
+Verstoß, die für Tests und für ein diff-skopiertes Review unsichtbar ist. **Beide
+sind in `7079484` berichtigt und in §10 beurteilt.**
 
 **Closure-Fähigkeit:** Die **Liefer-Punkte** sind verifiziert und die
-DoD-Häkchen LP1–LP3, Gate und Review zu Recht gesetzt. **Nicht
-closure-fähig** ist der Slice in zwei Punkten:
+DoD-Häkchen LP1–LP3, Gate und Review zu Recht gesetzt. Offen waren zwei Punkte:
+**V-1/V-2** (in §10 abgeschlossen bzw. mit einem Rest) und die vier
+**Closure-Pflichten** (Closure-Notiz §7, die drei §6-Risiko-Ausgänge, die drei
+Paarungen, das Register-Häkchen). Nach Behebung des V-3-Restes aus §10 und den
+Closure-Pflichten ist der Slice `done/`-fähig.
 
-1. **V-1 ist vor der Closure zu beheben** — nicht nur, weil die Paarung (c) sonst
-   grün wäre, ohne etwas zu prüfen (das Verzeichnis existiert ja), sondern weil
-   der Lese-Schritt sonst eine **Zählung** auf eine Zuordnung stützt, die die
-   Artefakte nicht tragen; `slice-079` darf als Beleg-Vorgang nicht stehenbleiben
-   (Ursprung ≠ Vorkommen), und die Beschreibung des ersten Belegs muss auf den
-   Fund lauten, mit dem sie belegt wird. **V-2** ist eine Ein-Zeilen-Korrektur.
-2. Die vier **Closure-Pflichten** sind offen (Closure-Notiz §7, die drei
-   §6-Risiko-Ausgänge, die drei Paarungen, das Register-Häkchen), und die
-   nachrangigen Beobachtungen aus §4 gehören in §7 (die Planner-Lücke in §3.12;
-   der unreviewed `welle-20`-Absatz aus `f492b0c`, den ich hier selbst geprüft
-   habe; das nicht genannte Auswahlkriterium der §8-Sichtung).
+---
 
-Nach Behebung von V-1/V-2 und den Closure-Pflichten ist der Slice
-`done/`-fähig.
+## 10. Delta-Nachlauf — die Korrekturen aus `7079484` (2026-09-16)
+
+**Kein neuer Vollauf:** beurteilt wurden **nur** die sechs Dateien des
+Korrektur-Commits `7079484` (fünf Register-/Regel-Artefakte, `AGENTS.md`)
+gegen **V-1** und **V-2** aus §4. §1–§9 bleiben der Stand `f492b0c`.
+
+| # | Lauf | Exit | Ergebnis |
+|---|---|---|---|
+| D-1 | `git diff --name-only fb6adf6..4035ee7` | **0** | **5 Pfade**: der Plan, `harness/image-hash.txt`, die drei `postgresack`-Dateien — die Beschreibung der neuen `evidence/slice-084.md` trifft wörtlich |
+| D-2 | `git diff --name-only fb6adf6..4035ee7 -- internal/ ':!internal/adapters/driven/postgresack/'` | **0** | **leer** (0 Pfade) — „die Gegenrichtung, leer" trägt |
+| D-3 | `git show a3cb2c4 --stat` | **0** | 1 Datei, `slice-084-postgresack-naht.md`, Betreff „Beleg-Range in §3 nachgetragen" — „Range nachgetragen, Pathspec fehlt" trägt |
+| D-4 | `git log --oneline -S':!internal/adapters/driven/postgresack/' --all -- 'docs/plan/planning/*/slice-084-postgresack-naht.md'` | **0** | **`4387523`** — die §3(b)-Berichtigung kam im **slice-084-Closure-Commit**; **`11ba45b`** ist es **nicht** |
+| D-5 | `git show 11ba45b --stat` | **0** | **eine** Datei: `slice-088-coverage-tail-uebersetzung.md` (33+/24-) — ein slice-088-Commit |
+| D-6 | Wörtlich-Probe am neuen Stand (Zitat-Zeilen aus §3.12 gegen `ADR-0083:143–167`) | **0** | **21 zu 21, leerer `diff`** — die Planner-Zusage steht **außerhalb** der Zitate, beide Wortlaute bleiben byte-identisch |
+| D-7 | `make gates` (> Log, Exit in eigener Datei) | **0** | `baseline-verify` OK · d-check **734** Dateien / **0** Befunde · commit-traceability OK · coverage-gate OK 74.70% |
+| D-8 | `ls …/beleg-befehl-…/evidence/` + Kopf/Zähler-Zeile | **0** | 2 Dateien; `Zustand: offen (**2×**)` und `Zähler (abgeleitet): **2×**` — **stimmig** |
+
+### V-1 — **trägt**, mit einer Ausnahme in derselben Datei
+
+Die neuen Beschreibungen sind gegen die Quellen richtig: beide Instanzen sind
+jetzt **zwei verschiedene Befehle** (`git diff` ohne Pathspec | `go list` ohne
+zweites Test-Datei-Feld), jede mit ihrem eigenen Fund-Beleg (D-1, D-2, D-3), und
+**Ursprung ≠ Vorkommen** ist ausdrücklich benannt (`slice-079`/`65aead2` als
+Ursprung, `slice-085` als Vorkommen). **Der `2×`-Zähler hält damit**: er ruht
+auf zwei Befehlen in zwei abgeschlossenen Vorgängen, nicht auf einer doppelten
+Beschreibung desselben Fundes. Kopf, Zähler-Zeile und Belegliste sind stimmig
+(D-8). Die Entry-Identität ist dabei zulässig angefasst: `Bezeichnung` und
+`Sub-Area` — die nach Modul 6 unveränderliche Hälfte — sind unberührt.
+
+**V-3 (offen): ein falscher Commit-Anker in der korrigierten `evidence/slice-084.md`.**
+Die Quelle-Zeile nennt „`docs/plan/planning/done/slice-084-postgresack-naht.md`
+§3(b) (**berichtigt in `11ba45b`**, nachgeprüft)". `11ba45b` hat **genau eine**
+Datei angefasst — den `slice-088`-Plan (D-5); die §3(b)-Berichtigung (Pathspec
+**und** Gegenrichtung) kam in **`4387523`**, dem slice-084-Closure-Commit (D-4).
+Es ist **dieselbe Klasse wie V-2** (Beleg-Anker trägt seinen Satz nicht), eine
+Datei weiter — in dem Artefakt, das V-1 behebt. Ein-Zeilen-Korrektur:
+`11ba45b` → `4387523`; der Rest der Zeile hält (Zielort existiert im `done/`,
+V-1-Zitat stimmt).
+
+**Klein, nicht blockierend (beides optional):** `evidence/slice-085.md` sagt, der
+Implementer habe den Fund „mit **Adresse**" liegen gelassen — `verify-slice-085`
+(`:252`) nennt den **Weg** („eigener kleiner Zug"), die konkrete Kennung entstand
+erst in `b6b2ce4` (der Review `review-slice-089` F-5 hielt fest, dass eine
+Adresse **fehlte**); „Adresse" ist also einen Grad zu stark. Und in
+`observation.md` steht der Gegenrichtungs-Befehl verkürzt
+(`-- internal/:!…/postgresack/`) — als Zitat nicht wörtlich ausführbar; die volle
+Form trägt die Evidence-Datei.
+
+### V-2 — **trägt**
+
+Die Quelle-Zeile nennt jetzt `welle-20.md` „(berichtigt in `93d64dc` und
+`f492b0c`)" — beide Commits haben den Träger real angefasst, der zweite ist der
+hier selbst gemessene (Messung 11). Der Beleg-Anker trägt seinen Satz.
+
+### Der §3.12-Nachtrag — **trägt**, und mein §3-Punkt ist geschlossen
+
+Der Abschnitt nennt für Instanz B jetzt auch den **Planner als Verfasser**
+(„der sie beim Schreiben an ihren Anker bindet") — genau die zweite Hälfte aus
+`ADR-0083` §Entscheidung 4 Tabelle. Die Ergänzung liegt **außerhalb** der zwei
+Zitate (D-6: 21 zu 21, leerer `diff`), das DoD-Kriterium „wörtlich" ist damit
+unberührt, und der Hunk liegt in §3.12, nicht in §4 (§7 bleibt gültig).
+
+**Verdikt des Deltas:** **V-1 und V-2 tragen**; die vom Korrektur-Commit
+behauptete Zuordnung ist an ihren eigenen Befehlen nachgemessen und richtig, und
+der `2×`-Zähler des neuen Eintrags hält. **Offen bleibt allein V-3** (der
+`11ba45b`-Anker) plus die vier Closure-Pflichten und die zwei vereinbarten
+§7-Notizen. Nach V-3 ist der Slice `done/`-fähig.
