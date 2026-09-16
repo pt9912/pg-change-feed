@@ -113,10 +113,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       unbekannte Spalte, ungültige Dauer), ist die Ablehnung an **den
       Eingabewert** gebunden, der sie auslösen soll — nicht an einen Fake, der
       sie unabhängig von der Abfrage liefert. Auslöser:
-      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**5×** — unter den
-      sieben in §8 genannten die zweithäufigste; über das **ganze** Register
-      geteilt-vierte von sechs Klassen mit 5× oder mehr, und die Use-Cases sind
-      ihr wahrscheinlichster Ort).
+      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**5×** bei der Planung,
+      **6×** nach diesem Slice — der Rang über das Register hängt am Stand und
+      steht darum nicht hier, sondern in §8; die Use-Cases sind ihr
+      wahrscheinlichster Ort).
 - [x] **LP3 — die unerreichbaren Statements sind benannt.** Jedes Paket, das
       danach noch ungedeckte Statements hat, nennt sie **einzeln mit dem Grund**.
       „Rest nicht erreichbar" ohne Namen gilt als **nicht erfüllt**.
@@ -258,7 +258,10 @@ Backticks).
 
 - **Was hat funktioniert:** D1 ist **vollständig** — alle 13 Use-Case-Pakete und
   `domain/model` stehen bei `uncovered = 0`, und der Zuwachs ist **genau** die
-  geplanten 24 Statements (22 + 2), als Block-Positionen benannt. Die Schätzung
+  geplanten 24 Statements (22 + 2), als Block-Positionen benannt (Lauf `slice-092`).
+  Die erreichte Quote: der `make gates`-Lauf dieses Stands druckte **78,60 %**; über
+  sechs eigene Profil-Läufe lag die gedeckte Zahl bei **1493** oder **1495** von
+  **1903** (gedruckt `78.5%`/`78.6%`, Band 78,5–78,6 %). Die Schätzung
   des Plans war keine Über-Schätzung. Wie in `slice-091` war die **Mutation**
   das Rückgrat: 21 Proben des Implementers, 32 des Reviews, 6 der Verifikation —
   und sie hat die zwei vorbestehenden Spaltenbindungen gefunden, die **grün**
@@ -308,7 +311,8 @@ Backticks).
 - **Risiken aus §6:** vier, je ein Ausgang — R1 *entfallen* (die 22/2 hielten
   exakt), R2 *eingetreten und behoben* (an zwei **vorbestehenden** Tests), R3
   *entfallen* (gemessen über 59 Mutationsproben), R4 *eingetreten und begrenzt*
-  (vier Träger mit dem Glob-Fehler; das Sensor-Dokument wird nicht zahl-falsch).
+  (der Glob-Fehler stand in **zwei** Trägern — der Slice-Plan an fünf Stellen,
+  `welle-20.md` an einer; das Sensor-Dokument wird nicht zahl-falsch).
 - **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
   `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die zwei ergänzten
   Register-Adressen existieren als Verzeichnis und tragen ein nicht leeres
