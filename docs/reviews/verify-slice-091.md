@@ -567,3 +567,253 @@ Auswertung waren **zwei** Schritte, sein Exit-Code wurde aus einer separaten
 Datei gelesen, nie durch eine Pipe (§3.9). Die Mutationsproben liefen auf
 **Arbeitsbaum-Kopien außerhalb des Repos**; der Baum ist nach diesem Bericht
 sauber, **kein** Commit, keine Änderung an Artefakten des Slice.
+
+## Nachtrag — Abschluss-Prüfung nach Closure und vierter Runde · 2026-09-16
+
+**Auftrag:** enger Nachtrag zu **einem** Durchgang — die vierte Runde, das
+D-2-Band, die Closure-Inhalte (vier §6-Ausgänge, Register-Zähler, §7-Zahlen)
+und ein letztes Verdikt. §1–§9 dieses Berichts bleiben der Stand `f9cd5e4`.
+
+**Stand:** `HEAD` = `58ff54e`, Baum sauber (`git status --porcelain` leer — vor
+und nach jedem Lauf). Neue Commits seit §9: `a7d7f7b` (dritte Runde: W-1
+Flap-Ursache, W-2 `streamv1`-Bild, W-3 sechster Test), `7e21e1b`
+(**Delta-Review** `review-slice-091-delta.md` über `f9cd5e4` + `a7d7f7b`),
+`af3ea9f` (vierte Runde: D-1), `58ff54e` (Closure: §6, §7, Häkchen, Register).
+`git diff --name-only f9cd5e4..58ff54e` = **14 Pfade**, davon **13** Markdown
+und **eine** Go-Datei: `internal/adapters/driving/http/server_test.go` (W-3).
+Produktcode ist weiterhin **keine** Zeile berührt.
+
+### N-1 Eigene Messungen dieses Nachtrags
+
+| # | Lauf | Exit | Ergebnis |
+|---|---|---|---|
+| N-1.1 | `make gates` am Stand `58ff54e` (Log in Datei, Exit **danach** aus eigener Datei) | **0** | `baseline-verify v6.5.0 OK — 54 Dateien` · `coverage-gate: OK — Coverage 77.20% erfüllt Schwelle 70%` · `d-check: 756 Datei(en) geprüft, 0 Befund(e)` · `commit-traceability: OK — 5 Commit(s), Betreffs ohne Struktur-ID` · `generated-sync: OK` · `a-check: gesamt: 0 Befund(e)`; danach Status leer |
+| N-1.2 | `go list -f '{{.ImportPath}} Test={{len .TestGoFiles}} XTest={{len .XTestGoFiles}}'` über den Gegenstand (Arbeitsbaum-Kopie von `58ff54e`) | **0** | **31** Pakete; `Test=0 XTest=0`: **4** (`postgresstorage/queries`, `application/port/inbound`, `domain/errors`, `cmd/pg-change-feed`); `TestGoFiles=0`: **23**; davon `XTest>0`: **19** — 23 = 4 + 19 |
+| N-1.3 | `streamv1` **eigener** Lauf (`-coverpkg` auf das Paket bzw. ohne), am Stand `58ff54e` | **0 / 0** | beide **`total: 52.3 %`** = **45 von 86** |
+| N-1.4 | dieselbe Fläche im **Gegenstand** (volle Paketliste, `-coverpkg` über den Gegenstand) | **0** | `streamv1` **76 von 86** gedeckt (10 ungedeckt), **88,4 %** (abgeleitet aus 76/86); Gesamt in diesem Lauf `77.3 %` |
+| N-1.5 | die Lauf-Ausgabe der Gegenstands-Pakete | **0** | `[no test files]` genau für die drei Pakete `queries`, `port/inbound`, `domain/errors`; `coverage: 0.0% of statements` **genau einmal** — `cmd/pg-change-feed`; `streamv1` steht als `ok … coverage: 2.4%` (= 45/1903) |
+| N-1.6 | `go test -race -count=20` über die vier Cluster-C-Pakete | **0** | 4 × `ok`, **keine** Frist gefeuert (`http` 5,585 s · `grpc` 1,413 s · `streamv1` 1,013 s · `natsnotify` 1,052 s für alle zwanzig Iterationen) |
+| N-1.7 | Register-Zähler gegen `ls evidence/ \| wc -l` (sieben Einträge) | **0** | `test-integration-retention-timing-flake` **3** (`slice-057/090/091`) · `beleg-befehl-traegt-seinen-satz-nicht` **3** (`slice-084/085/091`) · `negativtest-ohne-bindung-an-seine-eingabe` **5** (`slice-083/086/087/088/091`) · `arbeit-ueberholt-stehenden-traeger` **1** (neu, `slice-091`) · `zahl-in-traeger-driftet-gegen-die-messung` **6** (unverändert) |
+| N-1.8 | DoD-Häkchen am Stand `58ff54e` / Zahl der DoD-Zeilen am verifizierten Stand `f9cd5e4` | **0** | **11 von 11** gesetzt; die Zeilen-Zahl war **11**, nicht 12 (siehe **N-6**) |
+| N-1.9 | `grep -l af3ea9f docs/reviews/*.md` · `grep -n 'Fünf\|fünf' harness/sensors/coverage-gate.md` · Chronik-Wörter in den `+`-Zeilen von `af3ea9f` | **1 / 1 / 1** | kein Review nennt `af3ea9f`; **kein** Rest „Fünf/fünf" im Sensor-Dokument; **keine** Chronik-Wendung in seinen `+`-Zeilen → **N-1** |
+
+### N-2 Die vierte Runde — die Zahlen tragen, und die neue Rolle ist substanziiert
+
+**Alle Zahlen der neuen Fassung sind nachgemessen und halten** (N-1.2…N-1.5):
+**4** Pakete mit `Test=0 XTest=0` — genau die vier genannten, in den zwei
+Rollen (drei ohne ausführbare Statements, `cmd/pg-change-feed` vollständig
+ungedeckt) —, **23** mit `TestGoFiles=0`, **19** davon ausschließlich mit
+externem Testpaket. Die Gruppe ist damit mechanisch, und die Begründung nennt
+die Zahl, die sie erzeugt.
+
+**Trägt die neue Rolle von `streamv1`, oder ist sie umbenannt?** Sie **trägt**,
+und die Unterscheidung ist gemessen, nicht behauptet: das Paket führt ein
+**eigenes** externes Testpaket (`XTestGoFiles = 1`, `TestGoFiles = 0`) und hat
+damit einen **eigenen Testlauf**, in dem es **45 von 86** Statements trägt
+(`52,3 %`) — im **Gegenstand** sind es zugleich **76 von 86** (**88,4 %**, abgeleitet aus 76/86), weil
+andere Testbinaries mit `-coverpkg` über die Paketgrenze messen. Die zwei
+Zahlen sind verschieden **und** beide gemessen; „weder ohne Testdatei noch
+allein über fremde Testpakete gedeckt" ist damit eine Eigenschaft, keine
+Etikettierung. Zwei Nebenbelege: die Lauf-Ausgabe weist `streamv1` als
+`ok … coverage: 2.4 %` aus (= 45/1903, dieselbe 45), und `coverage: 0.0% of
+statements` trägt im Lauf **genau eine** Zeile — `cmd/pg-change-feed`
+(N-1.5). Die zwei Nachbarsätze, die D-1 als mit diesem Slice falsch geworden
+benannt hat, sind also beide berichtigt: die Überschrift führt **vier** Pakete
+(kein „fünf" mehr im Dokument, N-1.9), und der `0.0 %`-Satz ist auf `cmd`
+begrenzt.
+
+### N-3 D-2 — die zwei Bänder: unterscheidbar, und die Ein-Wort-Frage
+
+**Sie sind unterscheidbar** — beide Bänder tragen ihren Lauf-Marker
+(„Lauf `slice-084`; im Lauf `slice-085` erneut beobachtet" bzw. „…, Lauf
+`slice-091`"), und sie liegen ~100 Statements auseinander, weil sie **zwei
+verschiedene Code-Stände** beschreiben. **Der schwache Punkt ist ein anderer:**
+beide werden mit „**desselben** Stands" eingeleitet — einmal „desselben Stands"
+(1369/1371), einmal „desselben **Produktionsstands**" (1468–1471) —, und beide
+Male ist ein **anderer** Referent gemeint. Dass die Zahlen um ~100 steigen, hat
+einen Grund (die Zwischenstände haben die Quote gehoben), und der Grund steht
+nicht da.
+
+**Ist die angebotene Ein-Wort-Umformulierung nötig?** **Für `done/`-fähig:
+nein. Gerechtfertigt: ja.** Der Leser, der sich verwechselt, nimmt 1369
+(71,9 %) für den heutigen Deckungsstand — 5 pp daneben, und genau diese Größe
+entscheidet über den Abstand zur 80-%-Rampe. Die Form ist deshalb richtig (das
+**Band** statt eines Einzelwerts), ihre Kennzeichnung ist vollständig, und die
+Verwendung in §Grenze Punkt 4 ist in beiden Lesarten die konservative Richtung
+(mit 1469 statt 1369 werden alle drei Rückrechnungs-Quotienten **höher**, die
+Aussage „zwei bleiben grün" also eher bestätigt). Wenn etwas geändert wird,
+dann **nicht mehr als das eine Wort** — den zweiten Referenten markieren
+(etwa „Über acht Läufe am Stand **dieses Vorgangs**"). Eine Umformulierung
+mehr wäre die Überholung an einer Stelle, die nicht driftet.
+
+### N-4 Die Closure-Inhalte — §6, Register, §7
+
+**Die vier §6-Ausgänge — Substanz geprüft:**
+
+| Risiko | Ausgang (§6) | Mein Befund |
+|---|---|---|
+| **R1** die ≈52 sind eine Über-Schätzung | *eingetreten — und begrenzt:* real **47**, Puffer 13 → **8** | **trägt.** 47 ist meine eigene Messung (`62 → 15`); die **fünf** Differenz-Statements sind mit **denselben** Block-Positionen benannt, die ich in §1 Nr. 6 erhoben habe (`readchanges.go:181.3,182.1`, `retention.go:47.4,49.1`, `notify.go:136.2,137.12`); 47/52 = 90 % ist richtig gerechnet und trägt die Aussage „nicht *weit* unter ≈52". Die **8** ist eine **abgeleitete** Differenz (13 − 5): die 13 ist zitiert (`ADR-0082`), die 5 gemessen, die Subtraktion korrekt — als abgeleitet ist sie nicht gekennzeichnet, und sie unterstellt B (liegt in `done/`) und D (noch nicht geschnitten) auf ihren ADR-Zahlen → **N-4-Notiz** unten |
+| **R2** ein Test wird zeitabhängig | *entfallen für die Tests — und bestätigt für den Bestand* | **trägt, und es ist die ehrliche Form.** `-race -count=20` über die vier Pakete: **Exit 0, 4 × ok, keine Frist gefeuert** (N-1.6) → für *die Tests* ist das Risiko entfallen. Dass die **Zahl** trotzdem schwankt (77,20 gegen 77,30 %; 2/1903 = **0,105 pp** — nachgerechnet), ist dem **Bestand** zugeordnet und nicht diesem Slice: derselbe Gegenstand, zwei Träger, sauber getrennt. Die Klasse trifft damit **nicht** in diesem Slice ein, und das wird nicht verschwiegen |
+| **R3** ein Negativtest bindet an den Fake | *eingetreten — und behoben, zweimal* | **Substanz trägt, die Klassenzuordnung des ersten Falls nicht** → **N-2** |
+| **R4** Coverage-Theater | *entfallen — gemessen:* Review **24** Proben (20 rot), Verifier **13** (13 rot) | **trägt.** Meine **13** in-diff-Proben waren sämtlich rot (§6/Negativbefunde), und die Zerlegung ist intern konsistent (24 + 13 = **37** Proben, 20 + 13 = **33** rot — genau die Zahlen der Commit-Message). Hinweis zur Lesart: die 37 sind die Proben **zweier** Berichte, nicht aller vier Runden (die Delta-Runden prüften weitere acht); die Untergrenze ist damit **konservativ**, aber „37" sollte niemand als Gesamtzahl lesen |
+
+**Die Register-Zähler stimmen mit `ls evidence/` überein** (N-1.7): 3 · 3 · 5 ·
+1 (neu) — und `zahl-in-traeger-driftet-gegen-die-messung` bleibt bei **6**,
+was §7 auch nicht anders behauptet. Der neue Eintrag
+`arbeit-ueberholt-stehenden-traeger` liegt vollständig vor
+(`observation.md` ✓ mit Sub-Area-Angabe · `state.md` ✓ · `evidence/slice-091.md`
+✓), und sein Beleg führt den Parent-Stand **als Messung** (`git archive
+f90c3f4^` + `go list`) — die Aussage „die Liste *war* mechanisch" ist damit
+datiert und nicht behauptet. Der Beleg zu `negativtest-…/evidence/slice-091.md`
+nennt als Vorkommen korrekt **V-7** und trennt „Ursprung (`7b6b253`, `slice-061`)
+≠ Vorkommen" — genau die Zuordnung, die §6 R3 offenlässt (**N-2**).
+Die Paarungen-Vorprüfung in §7 hält: alle vier genannten Register-Adressen
+existieren und führen ein nicht leeres `evidence/`.
+
+**Nennt §7 eine Zahl ohne ihren Lauf oder ohne ihr Band?** **Das Band steht**
+(„die Prozentzahl ist ein **Band** (77,1–77,3 %)") — das ist die richtige Form
+für die bewegliche Zahl, und sie ist gegen meine 47 Läufe gedeckt. **Der Lauf
+fehlt**, und zwar in einem Satz, der das Gegenteil behauptet: §7 schließt mit
+„… und **beide Zahlen tragen ihren Lauf**", während im **ganzen Plan** kein
+Lauf-Marker steht (gemessen: `grep` über den Plan → kein Treffer für
+`Lauf slice-091`). Die Zahlen selbst sind richtig (62 → 15 ist meine Messung und
+**stabil**; das Band deckt meine 47 Läufe) — falsch ist die Aussage **über** die
+Notiz → **N-3**.
+
+### N-5 Findings dieses Nachtrags
+
+**N-1 — `af3ea9f` ist von keinem Review gedeckt (V-4 rezidiviert, schwächer).**
+*Kategorie:* LOW. *Pfad:* `docs/reviews/` (drei Berichte, keiner nennt
+`af3ea9f`) gegen `harness/sensors/coverage-gate.md` und §2 des Slice-Plans.
+*Befund:* Der Delta-Review `7e21e1b` erklärt `f9cd5e4` **und** `a7d7f7b` zu
+seinem Gegenstand und verlangt für D-1 einen Rückgabe-Pfeil („Ein-Stelle-
+Korrektur …: die Gruppe auf ihren mechanischen Bestand bringen … und den
+`0.0%`-Schlusssatz auf `cmd/pg-change-feed` begrenzen"); die vierte Runde
+`af3ea9f` führt **genau diese** zwei Teile aus (+36/−26, zwei Träger) — geprüft
+in N-2 —, und dieselbe Runde setzt in §2 die Häkchen **LP1, LP2, LP3,
+`make gates`, Review, Verifikation, Reconciliation**. Für ihren Stand existiert
+**kein** Review-Artefakt, obwohl der Delta-Review sein eigenes Verdikt mit
+„DoD-Häkchen … **bleibt offen** — der Slice braucht eine (kurze) Fixrunde"
+geschlossen hat. *Warum LOW und nicht MEDIUM wie `verify-slice-090`s
+gleichnamige V-2:* dort änderte die Fixrunde den **Kern des Lieferwerts** und
+legte einen neuen Träger an; hier führt sie eine vom Reviewer **wörtlich
+vorgeschriebene** Korrektur in einem Zahlen-Träger aus, deren Zahlen dieser
+Nachtrag vollständig nachgemessen hat (4 / 23 / 19 · 45/86 · 76/86 · die
+Lauf-Zeilen), und deren neue Sätze ich als letzter Leser geprüft habe (kein
+„fünf" mehr, keine Chronik-Wendung, Lauf-Marker vorhanden, N-1.9).
+*Verifizierbar:* ja — `grep -l af3ea9f docs/reviews/*.md`;
+`git diff --name-status f90c3f4^..58ff54e`. *Urteil:* **eine Zeile fehlt, nicht
+eine Runde.** Entweder ein kurzes Delta auf `af3ea9f` (Präzedenz `slice-089`)
+oder die ausdrückliche §7-Zeile „die vierte Runde führt die vorgeschriebene
+Ein-Stelle-Korrektur aus; ihre Zahlen sind im Verifikations-Nachtrag geprüft,
+ein weiteres Delta entfällt deshalb". Still bleiben darf es nicht.
+
+**N-2 — §6 R3 zählt „zweimal" und nimmt F-1 in eine Klasse, die die erste Review
+ausdrücklich außerhalb ihres Buchstabens verortet hat.**
+*Kategorie:* LOW. *Pfad:* §6 R3 gegen `review-slice-091.md` §Antwort (2) und
+`observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/evidence/slice-091.md`.
+*Befund:* R3 sagt „eingetreten — und behoben, **zweimal**" und führt als ersten
+Fall F-1 (`notify_test.go`: die `LogPort`-Weitergabe war nur bis zum ersten
+Kettenglied gebunden). Die erste Review schreibt genau dazu: „der einzige Fund
+dieser Achse (F-1) liegt **außerhalb des Buchstabens der Klasse**: die
+Eingabeseiten-Mutation färbt dort rot — es fehlt das **mittlere** Kettenglied,
+nicht die Eingabeseite" — und führt F-1 unter `beleg-befehl-traegt-seinen-satz-nicht`.
+Der Register-Beleg dieses Slice sagt dasselbe („dass sie im selben Zug an einem
+neuen Test (**F-1, dort als `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`
+geführt**) und an diesem vorbestehenden auftrat"): die **Evidenz-Datei ist
+präziser als der §6-Ausgang**. Die Substanz von R3 ist wahr (zwei Defekte
+gefunden, beide gebunden, beide mutationsbelegt), die **Klassenzuordnung** des
+ersten Falls ist es nicht. *Wirkung auf den Zähler:* **keine** — das Register
+zählt Vorgänge, und `negativtest-…` steht zu Recht bei **5×** (das Vorkommen ist
+V-7, N-1.7). *Verifizierbar:* ja — die beiden Zitatstellen; §6 R3. *Urteil:*
+Klassenzuordnung der ersten Hälfte auf `beleg-befehl-…` umstellen (F-1 dort
+belassen, wo der Register-Beleg es schon führt) oder „zweimal" fallenlassen.
+
+**N-3 — §7 behauptet von zwei Zahlen, sie trügen ihren Lauf; im Plan steht
+kein Lauf-Marker.** *Kategorie:* LOW. *Pfad:* §7
+(`docs/plan/planning/in-progress/slice-091-coverage-cluster-c.md`, die
+Lerneintrag-Zeile „Was hat funktioniert"). *Befund:* Der Satz nennt
+**62 → 15** (ungedeckt) und das Band **77,1–77,3 %** und schließt mit „und
+**beide Zahlen tragen ihren Lauf**". Gemessen enthält der **ganze** Plan keinen
+Lauf-Marker (`grep 'Lauf slice-091'` → kein Treffer); die Zahlen sind ohne ihn
+nicht auf einen Lauf zurückführbar — der Leser kann den Zeitpunkt nicht raten
+(§3.12 Instanz A). Die **Substanz** ist in Ordnung: die Band-Form ist die
+richtige Antwort auf die bewegliche Zahl, der Träger
+`harness/sensors/coverage-gate.md` nennt für sein Band `Lauf slice-091`, und
+`62 → 15` ist meine eigene, in 47 Läufen **stabile** Messung.
+*Verifizierbar:* ja — `grep -n 'Lauf' …/slice-091-coverage-cluster-c.md`.
+*Urteil:* einen Lauf-Marker in den Satz (etwa „… tragen ihren Lauf
+(`slice-091`)") **oder** die Behauptung streichen und die Beobachtung als das
+formulieren, was sie ist (die Trennung von Zustand und Lauf hat getragen).
+
+**N-4 — der Puffer „13 → 8" ist eine abgeleitete Differenz ohne Kennzeichnung.**
+*Kategorie:* INFO. *Pfad:* §6 R1, letzter Satz. *Befund:* Die 13 ist aus
+`ADR-0082` zitiert, die 5 ist die gemessene Differenz (≈52 − 47), die Subtraktion
+ist korrekt — die **8** wird aber als Tatsache vorgetragen, nicht als
+**abgeleiteter** Wert (§3.12 Instanz A nennt Differenzen ausdrücklich), und sie
+steht unter der Annahme, dass B (in `done/`) und D (noch nicht geschnitten) ihre
+ADR-Zahlen liefern. *Urteil:* ein Wort („rechnerisch") genügt; kein Blocker.
+
+**N-5 — „37 Mutationsproben" ist die Summe zweier Berichte, nicht aller vier
+Runden.** *Kategorie:* INFO. *Pfad:* §6 R4 und §7 (erstes Element). *Befund:*
+§6 legt die Zusammensetzung offen (Review **24**, Verifier **13**); die
+Delta-Runden haben darüber hinaus geprüft (F-1: drei, F-2: drei, W-3: zwei).
+Die Summe ist damit eine **Untergrenze** — konservativ, aber wer sie später als
+Gesamtzahl des Vorgangs liest, zählt zu niedrig. *Urteil:* keine Änderung nötig;
+die Zerlegung steht ja daneben.
+
+**N-6 — Korrektur an meinem eigenen Bericht: es waren 11 DoD-Zeilen, nicht 12.**
+*Kategorie:* INFO (Selbstkorrektur, `AGENTS.md` §3.12). *Pfad:* §1 Nr. 15, §2,
+V-5 und §9 dieses Berichts („0 von **12** Häkchen"). *Befund:* Gemessen am
+verifizierten Stand `f9cd5e4` trägt der Plan **11** DoD-Zeilen
+(`grep -c '^ *- \['` → **11**), von denen **keine** gesetzt war; gesetzt sind
+jetzt **11 von 11** (N-1.8). Die Zahl in diesem Bericht stammt nicht aus einer
+Zählung, sondern aus dem Nachbarbericht — genau die Übernahme, gegen die §3.12
+geschrieben ist. *Urteil:* **Lauf-Belege werden nicht rückdatiert** — die
+Korrektur steht hier, der Bericht bleibt, wie er war. Der Slice-090-Vergleich
+in V-5 bleibt in der Sache richtig.
+
+**N-7 — die untere Kante des Bands ist selten, und das steht nicht dabei.**
+*Kategorie:* INFO. *Pfad:* `harness/sensors/coverage-gate.md` §Zählbasis (der
+Acht-Läufe-Absatz). *Befund:* Die Form ist richtig (Band, nicht Einzelwert) und
+sie trägt ihren Lauf; die untere Kante **1468** trat in meinen 47 Läufen der
+vollen Fläche **einmal** auf, in den 54 Läufen des Delta-Reviews **keinmal** —
+die Formulierung „über **acht** Läufe … zwischen 1468 und 1471" ist als
+Lauf-Beleg zulässig (sie ist ihrer), lässt aber offen, dass ihr unteres Ende ein
+~1-%-Fall ist. *Urteil:* optional ein Halbsatz; **kein** Drift (die Zahl ist
+nicht als Dauerwert ausgegeben). D-2s Substanz ist damit erledigt.
+
+### N-8 Verdikt des Nachtrags
+
+**Die vierte Runde trägt, und die neue Rolle von `streamv1` ist substanziiert.**
+Alle Zahlen sind an **einem** Stand (`58ff54e`) unabhängig nachgemessen:
+**4** Pakete `Test=0 XTest=0` (genau die vier genannten), **23** mit
+`TestGoFiles=0`, **19** davon mit externem Testpaket; `streamv1` **45 von 86**
+(`52,3 %`) im **eigenen** Lauf gegen **76 von 86** (`88,4 %`) im **Gegenstand**;
+die Lauf-Ausgabe stützt beides (`[no test files]` genau für die drei
+statement-losen Pakete, `coverage: 0.0% of statements` genau einmal für `cmd`).
+Die zwei von D-1 benannten Nachbarsätze sind berichtigt, kein „fünf" mehr im
+Dokument, kein Chronik-Ton in den `+`-Zeilen. **D-1 ist damit erledigt.**
+
+**Die Closure-Inhalte tragen** — die drei Liefer-Punkte unverändert (§2), die
+vier §6-Risiken mit je **einem** Ausgang, die Register-Zähler deckungsgleich mit
+`ls evidence/` (3 · 3 · 5 · 1 neu, `zahl-in-traeger-…` unverändert 6), das
+Häkchen-Bild vollständig (11/11), und `make gates` am Closure-Stand **Exit 0**
+(`77.20 %`, d-check 756 Dateien, 0 Befunde).
+
+**Offen sind drei Ein-Zeilen-Nachträge** — `af3ea9f` ohne Review-Artefakt
+(**N-1**, LOW), die Klassenzuordnung in §6 R3 (**N-2**, LOW) und der fehlende
+Lauf-Marker in §7 (**N-3**, LOW) —, dazu zwei INFO-Nuancen (N-4, N-7) und eine
+Selbstkorrektur (N-6). Keiner ist ein Liefer-Defekt, keiner rührt an Zahlen,
+die tragen, und keiner berührt Produktcode oder Schwelle.
+
+**`done/`-fähig: ja** — mit der Auflage, dass die drei LOW-Nachträge **als
+Text** geschrieben werden, bevor der Slice schließt: N-2 und N-3 gehören in die
+Closure-Notiz (sie wandert mit nach `done/`), N-1 braucht eine Entscheidung —
+kurzes Delta auf `af3ea9f` **oder** die ausdrückliche Zeile in §7. Alles drei
+ist Ein-Zeilen-Arbeit an vorhandenen Trägern; keine neue Runde, kein neues
+Artefakt, keine Messung.
+
+**Offen über diesen Slice hinaus** (unverändert aus §8): der reale Post-Push-Lauf
+und die Stabilität der Zahl bei `THRESHOLD=80` — die `welle-20`-Closure misst
+dort, nicht hier.

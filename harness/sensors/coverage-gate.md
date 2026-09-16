@@ -65,8 +65,10 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   2 Statements — er feuert nur, wenn der Tick vor dem Kontext-Ende liegt,
   [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
   §Kontext (2)) und dem Kontext-Ende-Zweig von `runAdministration`
-  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe desselben
-  Produktionsstands (`go test -count=1 -coverpkg=… -covermode=atomic`,
+  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe **desselben, hier
+  gegenständlichen** Produktionsstands — *nicht* der oben genannte: die beiden
+  Bänder gehören zu zwei verschiedenen Code-Ständen ~100 Statements auseinander
+  (`go test -count=1 -coverpkg=… -covermode=atomic`,
   Auswertung über die Block-Position, Lauf `slice-091`) lag die gedeckte Zahl
   zwischen **1468** und **1471**, die gedruckte Zeile zwischen `77.1%` und
   `77.3%`; der Takt-Zweig trug in **einem** dieser Läufe `count > 0`, der

@@ -235,13 +235,16 @@ dasteht.
 - **Ein Negativtest bindet die Ablehnung an den Fake statt an die Eingabe** —
   der Test ist grün, egal was der Adapter mit dem Wert macht, und die Zahl
   steigt trotzdem. Das ist die Klasse mit **4×** und der wahrscheinlichste
-  Fehler dieses Slice. — **Ausgang: eingetreten — und behoben, zweimal.** Der
-  Review fand die Form an einem **neuen** Test (`notify_test.go`, die
-  `LogPort`-Weitergabe war nur bis zum ersten Kettenglied gebunden; die im
-  Kommentar **genannte** Mutation ließ Test und Paket grün), die Verifikation
-  ein zweites Mal an einem **vorbestehenden** (`server_test.go:161`, der
-  sechste `…UngueltigesJSONEndetMit400`). Beide sind gebunden und durch
-  Mutation belegt (rot) mit Kontrolle (grün).
+  Fehler dieses Slice. — **Ausgang: eingetreten — und behoben.** Die Verifikation
+  fand die Form an einem **vorbestehenden** Test (`server_test.go:161`, der
+  sechste `…UngueltigesJSONEndetMit400`: grün bei zerstörter Zusage); er ist
+  gebunden und durch Mutation belegt (rot) mit Kontrolle (grün).
+  **Nicht dieses Risiko, sondern sein Nachbar** ist der zweite Fund derselben
+  Runde: der `LogPort`-Test (`notify_test.go`) behauptete mehr, als er band —
+  dort trägt der **Beleg** seinen Satz nicht
+  (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`), nicht die Ablehnung ihren
+  Eingabewert. Die zwei Klassen liegen dicht beieinander und wurden deshalb
+  getrennt geführt, nicht als ein Fall gezählt.
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
   prüfen: Die Zahl steigt, die Prüf-Kraft nicht, und die Welle hätte ihr Ziel
   formal erreicht. — **Ausgang: entfallen — gemessen, nicht behauptet.** Der
@@ -276,7 +279,10 @@ Backticks).
   — was zwei Kommentare als unwahr entlarvte. Zweitens: die Trennung von
   **Zustand** und **Lauf** hat getragen — Cluster C ist **62 → 15** ungedeckt
   (eine Statement-Differenz, stabil), während die Prozentzahl ein **Band** ist
-  (77,1–77,3 %), und beide Zahlen tragen ihren Lauf.
+  (77,1–77,3 %; die Enden aus dem Lauf `slice-091` und den 47 Läufen der
+  Verifikation), und beide Zahlen tragen ihren Lauf. Die **untere Kante** des
+  Bands ist ein **seltener** Fall (1 von 47 Läufen der Verifikation, 0 von 54 im
+  Delta-Review); die typischen Enden sind 77,2 und 77,3 %.
 - **Was ging anders als geplant:** **Vier** Runden statt einer, und der Grund
   liegt nicht im Slice, sondern in seiner Umgebung. Die schärfste Beobachtung:
   **dieser Slice hat drei Sätze in einem Dokument falsch gemacht, das er nie
@@ -290,6 +296,14 @@ Backticks).
   waren real **47**. Drittens: die Ersetzung der falschen Flap-Ursache hat einen
   **zweiten** Flapper gefunden, der das dritte, unkolokalisierte Ende der
   Verifikation erklärt — der Fund kam erst durch die Korrektur.
+  **Und eine Form-Lücke, die dieser Slice nicht mehr schließt:** `a7d7f7b` und
+  `af3ea9f` sind von **keinem** Delta-Review gedeckt. Der Report über die zwei
+  Fixrunden (`review-slice-091-delta`) prüfte `f9cd5e4` und `a7d7f7b`; die
+  vierte Runde (`af3ea9f`) führt wörtlich die vom Delta-Review vorgeschriebene
+  Ein-Stelle-Korrektur aus, und ihre Zahlen sind von der Verifikation geprüft —
+  die **Form** des zweiten Delta-Pfeils fehlt trotzdem. Das ist dieselbe Lücke,
+  die `slice-090` als V-2 führte und dort geschlossen hat; hier bleibt sie
+  **benannt** statt still.
 - **Steering-Loop-Eintrag:** **kein neuer Träger — die Leser-Hälfte hat
   getragen.** Die Regel, die alle vier Runden deckt, steht
   (`AGENTS.md` §3.12 Instanz A und B), und ihre durchsetzenden Leser sind
@@ -319,8 +333,10 @@ Backticks).
 - **Risiken aus §6:** vier, je ein Ausgang — R1 *eingetreten und begrenzt*
   (47 statt ≈52, Puffer 13 → 8), R2 *entfallen für die Tests dieses Slice*
   (`-race -count=20`, keine Frist gefeuert), R3 *eingetreten und behoben*
-  (zweimal: ein neuer und ein vorbestehender Test), R4 *entfallen* (gemessen
-  über 37 Mutationsproben).
+  (ein vorbestehender Test; der zweite Fund derselben Runde gehört zur
+  Nachbar-Klasse), R4 *entfallen* (gemessen über 37 Mutationsproben — die Zahl
+  ist eine **Untergrenze**: sie zählt die zwei großen Berichte, die
+  Delta-Runden prüften acht weitere Proben).
 - **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
   `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die vier
   Register-Adressen dieses Slice existieren als Verzeichnis, und **jedes** der
