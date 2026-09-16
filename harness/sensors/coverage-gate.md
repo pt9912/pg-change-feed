@@ -125,27 +125,32 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
    die zwei Zahlen überlappen nicht.
 
-   **Vier Pakete des Gegenstands führen keine Testdatei** — kein eigenes und
+   **Drei Pakete des Gegenstands führen keine Testdatei** — kein eigenes und
    kein externes Testpaket. Die Gruppierung ist mechanisch, nicht gezählt nach
    einem Einzelmaß: `go list -f '{{.ImportPath}} Test={{len .TestGoFiles}}
-   XTest={{len .XTestGoFiles}}'` über den Gegenstand liefert für **genau vier**
-   Pakete `Test=0 XTest=0` (Lauf `slice-091`) — `TestGoFiles` allein trifft
-   **23** der 31 Pakete und ist darum **keine** Gruppierungsregel: die 23
-   zerfallen in diese vier und **19**, die ausschließlich ein externes Testpaket
-   führen (Lauf `slice-091`). Die vier tragen zwei Rollen:
+   XTest={{len .XTestGoFiles}}'` über den Gegenstand liefert für **genau drei**
+   Pakete `Test=0 XTest=0` (Lauf `slice-094`) — `TestGoFiles` allein trifft
+   **22** der 31 Pakete und ist darum **keine** Gruppierungsregel: die 22
+   zerfallen in diese drei und **19**, die ausschließlich ein externes Testpaket
+   führen (Lauf `slice-094`). Die drei tragen **keine ausführbaren Statements** —
+   im Profil kommen sie nicht vor, der Lauf weist sie als `[no test files]` aus:
+   `postgresstorage/queries` (SQL-Textkonstanten), `application/port/inbound`
+   (Schnittstellen-Deklarationen) und `domain/errors`
+   (Sentinel-Deklarationen).
 
-   - **ohne ausführbare Statements** — im Profil kommen sie nicht vor, der Lauf
-     weist sie als `[no test files]` aus: `postgresstorage/queries`
-     (SQL-Textkonstanten), `application/port/inbound`
-     (Schnittstellen-Deklarationen) und `domain/errors`
-     (Sentinel-Deklarationen);
-   - **vollständig ungedeckt** — `cmd/pg-change-feed` trägt **49 Statements,
-     alle mit `count = 0`** (Lauf `slice-089`). Es ist damit das **einzige Paket des Gegenstands
-     ohne ein einziges gedecktes Statement** und gehört zu der 80-%-Arbeit, die
-     `welle-20` bündelt. Es ist zugleich das **einzige** Paket, dessen Zeile im
-     Lauf `coverage: 0.0% of statements` lautet (Lauf `slice-091`).
+   **`cmd/pg-change-feed` steht nicht in dieser Gruppe.** Das Paket führt ein
+   eigenes Testpaket (`TestGoFiles` = **1**, `XTestGoFiles` = **0**; Lauf
+   `slice-094`) — den Re-Exec-Harness des Argument-Dispatchs: der Test startet
+   dasselbe Binary mit anderen Argumenten und wertet Exit-Code, stdout und
+   stderr des Kindprozesses, ohne Naht im Produktionscode
+   ([`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+   §Kontext (4a)). Das Paket trägt damit **45 von 49** Statements gedeckt (Lauf
+   `slice-094`); die vier offenen sind je **ein** Aufruf eines
+   dienstgebundenen Sondermodus und liegen außerhalb des netzlosen Tiers —
+   `main.go:44` (`Healthcheck`), `:62` (`RegisterConsumer`), `:86`
+   (`AcknowledgeConsumer`), `:101` (`Diagnose`).
 
-   **`internal/adapters/driving/grpc/streamv1` steht in keiner dieser Rollen.**
+   **`internal/adapters/driving/grpc/streamv1` ist keins dieser drei Pakete.**
    Das Paket (die generierten `changestream*.pb.go`) führt ein **eigenes**,
    externes Testpaket (`changestream_test.go`, `package streamv1_test`;
    `XTestGoFiles` = **1**, `TestGoFiles` = **0**) und hat damit einen eigenen
@@ -156,9 +161,10 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    fremde Testpakete gedeckt".
 
    Die drei Pakete ohne ausführbare Statements weist der Lauf als
-   `[no test files]` aus; ein Paket **mit** Statements ohne eigenen Testlauf
-   trägt stattdessen die Zeile `coverage: 0.0% of statements` — das ist die
-   Aufrufform mit `-coverpkg` (Lauf `slice-091`).
+   `[no test files]` aus. Kein Paket des Gegenstands trägt in derselben
+   Aufrufform mit `-coverpkg` die Zeile `coverage: 0.0% of statements`, und kein
+   Paket **mit** ausführbaren Statements trägt null gedeckte Statements (Lauf
+   `slice-094`).
 2. **Docker-Layer-Caching.** `--no-cache-filter coverage` erzwingt die
    Neu-Auswertung der Stage bei jedem `make coverage-gate`-Lauf — ohne
    diesen Flag könnte ein Cache-Hit einen veralteten Lauf überleben lassen.
@@ -206,6 +212,17 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    [`ADR-0085`](../../docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md);
    **der Wächter ist**: keiner — die Klasse ist ein Zweck-Urteil, und ihr
    Entdecker ist der rote Bau (Lauf `slice-093`).
+7. **Die Deckung von `cmd/pg-change-feed` hängt an einer Weitergabe, die keine
+   Testzusage trägt.** Der Re-Exec-Harness des Argument-Dispatchs zählt im
+   Profil nur, weil er `GOCOVERDIR` an die Kindprozesse durchreicht: `go test`
+   setzt die Variable, die Kindprozesse schreiben ihre Zähler-Dateien dorthin,
+   und `go test` mergt sie in dasselbe Profil. Fällt die Weitergabe weg, bleiben
+   **alle** Tests dieses Pakets grün und seine Deckung fällt auf **0 von 49**
+   zurück; die Gesamt-Coverage fällt mit ihr auf **1532 von 1903 = 80,50 %**,
+   gedruckt `80.5%` (Lauf `slice-094`, netzlos, dedupliziert über die
+   Block-Position). **Der Wächter ist**: keiner — die Bindung ist eine Zeile in
+   `kindUmgebung` (`cmd/pg-change-feed/main_test.go`), und ihr Entdecker ist der
+   Vergleich zweier Profile.
 
 ## Ausgabe und Ausgänge
 

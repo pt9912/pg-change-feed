@@ -94,22 +94,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Der Argument-Dispatch
+- [x] **LP1 — die Tests existieren und sind netzlos grün.** Der Argument-Dispatch
       und der `Run`-Fehlerpfad sind über Tests gedeckt, die der Gate-Lauf
       **wirklich fährt**; `make gates` ist grün. **Der Zuwachs wird als Zahl mit
       ihrem Lauf genannt** und die erreichte Quote **mit ihrem Band** — und
       **mit den zwei Rampen-Belegen** (`THRESHOLD=80` grün, `THRESHOLD=85` rot).
-- [ ] **LP2 — die Prozess-Verträge werden am **Exit-Code** geprüft, nicht am
+- [x] **LP2 — die Prozess-Verträge werden am **Exit-Code** geprüft, nicht am
       Text.** Ein Sondermodus-Test prüft, dass der Prozess mit dem **vereinbarten**
       Exit-Code endet und die Ausgabe das trägt, was der Vertrag zusagt — nicht,
       dass irgendein Text irgendwo vorkommt. Auslöser:
       `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (**4×**) — die Klasse, in
       der ein Träger seinen Satz nicht trägt; hier wäre es ein Test, der eine
       Ausgabezeile prüft, die auch aus einem anderen Pfad käme.
-- [ ] **LP3 — die unerreichbaren Statements sind benannt.** Jede Stelle, die
+- [x] **LP3 — die unerreichbaren Statements sind benannt.** Jede Stelle, die
       netzlos nicht erreichbar ist, wird **einzeln mit Grund** genannt — die 189
       hinter dem `Ping`-Riegel namentlich als Block, und jede weitere einzeln.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -117,7 +117,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-094.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
