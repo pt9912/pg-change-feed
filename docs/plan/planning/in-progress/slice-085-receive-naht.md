@@ -178,9 +178,19 @@ bleibt, wie er ist.
 **Nicht angefasst:** `internal/bootstrap/wiring.go` (die Composition Root ruft
 `receive.NewStream`/`stream.Conn()`/`receive.NewWALRetentionChecker` unverändert),
 `Dockerfile` (Stufe `coverage`, Paket-Filter), `tools/harness/db-coverage.sh`
-(`DB_COVERAGE_PKGS`), `harness/mk/coverage.mk` (`THRESHOLD`),
-`harness/sensors/**`, `.a-check.yml`, `spec/**`. `stream_test.go` (die realen
-Tests) ist **unverändert** — kein Testfall entfernt.
+(**die Logik**; `DB_COVERAGE_PKGS`), `harness/mk/coverage.mk` (`THRESHOLD`),
+`.a-check.yml`, `spec/**`. `stream_test.go` (die realen Tests) ist
+**unverändert** — kein Testfall entfernt.
+**Und eine Grenze dieser Liste selbst:** sie bindet den **ersten** Lauf, nicht
+die Fixrunden. Die drei Fixrunden dieses Slice haben sehr wohl
+`harness/sensors/db-adapter-coverage.md`, `harness/sensors/coverage-gate.md` und
+die **Kommentar-Zahlen** in `tools/harness/db-coverage.sh` berührt — getragen
+vom Review-Pfeil (F-1) und je ausdrücklich als Auftragserweiterung, nicht als
+stille Ausweitung. Die **operative** Hälfte jener Zeilen (`DB_COVERAGE_PKGS`,
+`THRESHOLD`, der Paket-Filter) blieb unberührt; die Rampe hat sich **nicht**
+bewegt (kein Transfer), also ist die LP3-Zeile oben *nicht eingetreten* und
+diese Berührungen sind Zahlen- und Beleg-Korrekturen — die Klasse
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (mit diesem Vorgang **3×**).
 
 **Nicht in dieser Liste:** `internal/adapters/driven/postgresack/**`
 (→ `slice-084`); `internal/adapters/driving/replication/decode/**` und
