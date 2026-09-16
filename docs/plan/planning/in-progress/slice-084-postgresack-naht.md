@@ -138,11 +138,29 @@ vierter Punkt:
       `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
       Schwellen-ADR (`ADR-0078`). *(Kein Transfer — die Naht bleibt im Paket;
       die Bedingung ist nicht eingetreten, siehe §3.)*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-084.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig**; alle Liefer-Kriterien bestätigt. Der Verifier hat den
+      **Null-Befund am Parent-Commit** nachgebaut (Wegwerf-Worktree auf
+      `fb6adf6`: derselbe Unit-Nenner **1903**, **null**
+      `postgresack`/`receive`-Zeilen in beiden Profilen), die Zahlenträger
+      einzeln gegen seine eigene Messung gehalten, die neue Beobachtung
+      bestätigt (`postgresack` **30/32** netzlos) und zwei eigene Mutationen rot
+      gesehen (`ackLSN` Offset+1, doppelter Fehler-Log). Seine **V-1** (mein
+      Beleg (b) trug ohne Pathspec nicht) ist berichtigt und **nachgeprüft**.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — ein Beleg
+      ergänzt (`zahl-in-traeger-driftet-gegen-die-messung`, damit **2×**) und
+      **ein Verzeichnis neu angelegt**
+      (`db-gegenstand-enthaelt-netzlos-geprueften-code`, **1×**), **kein Zähler
+      gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — alle drei *entfallen,
+      gestrichen mit Begründung*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -205,13 +223,18 @@ paket-internen Einstiegs, der reinen Funktionen und der Hülle; `k_ab = 0` ist
 damit die Null-Hälfte der Arithmetik, nicht eine Behauptung.
 
 **(b) Paket-Diff — kein Trägerwechsel.** Die Änderung ist auf **ein** Paket
-isoliert: `git diff --name-only fb6adf6..4035ee7` listet ausschließlich Dateien
-unter `internal/adapters/driven/postgresack/`; die Gegenstands-Listen sind
-unberührt (`git diff fb6adf6..4035ee7 -- Dockerfile tools/harness/db-coverage.sh
+isoliert, und der Beleg braucht **beides — Range *und* Pathspec**:
+`git diff --name-only fb6adf6..4035ee7 -- internal/adapters/driven/postgresack/`
+listet die drei geänderten Dateien; und die **Gegenrichtung** trägt den Rest:
+`git diff --name-only fb6adf6..4035ee7 -- internal/ ':!internal/adapters/driven/postgresack/'`
+ist **leer**. Die Gegenstands-Listen sind unberührt
+(`git diff fb6adf6..4035ee7 -- Dockerfile tools/harness/db-coverage.sh
 harness/mk/coverage.mk` ist leer), ebenso `.a-check.yml` und die Composition
 Root. Kein Paket wechselt zwischen den zwei Gegenständen.
-**Die Range gehört in den Beleg** (Review `review-slice-084` F-2): ein `git
-diff` **ohne** sie ist auf sauberem Baum leer und trägt die Aussage nicht.
+**Beides gehört in den Beleg** (Review `review-slice-084` F-2, Verifikation
+desselben Slice **V-1**): ein `git diff` **ohne Range** ist auf sauberem Baum
+leer, und eines **ohne Pathspec** listet mehr als das Behauptete — die erste
+Fassung dieses Belegs trug aus beiden Gründen nicht.
 
 **(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe sind grün
 (`make test-store` Exit 0, `make test-replication` Exit 0, `make test`
@@ -271,12 +294,29 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 dasteht.
 
 - **Der Umbau könnte ein Verhaltens-Change sein, der als Refactoring auftritt.**
-  Wächter sind die **realen** Tests, nicht die neuen Fakes. — **Ausgang:** <bei Closure>
+  Wächter sind die **realen** Tests, nicht die neuen Fakes. — **Ausgang:**
+  *entfallen — gestrichen mit Begründung*: `make test-store` und
+  `make test-replication` sind grün, `ack_test.go` ist **byte-identisch**, kein
+  `t.Skip`, kein `|| true`, keine Zusicherung abgeschwächt. Und der Wächter hat
+  **gebissen**: die Mutation „nicht delegierende Hülle" bleibt netzlos grün und
+  wird vom **realen Tier** gefangen (`TestAcknowledgeOnClosedConnection`,
+  Exit 1) — die Wächter-Rolle liegt genau dort, wo der Plan sie verortet.
 - **Der Fake könnte grün sein, ohne etwas zu prüfen.** Er prüft die
-  **Verklebung**, nicht das Protokoll. — **Ausgang:** <bei Closure>
+  **Verklebung**, nicht das Protokoll. — **Ausgang:** *entfallen — gestrichen
+  mit Begründung*: **sechs** Mutationen wurden rot gesehen — zwei des
+  Implementers (`WALApplyPosition: 0`, `replicationClass` ohne Wrapping) und
+  **vier** eigene des Reviewers (nil-Grenze, Aufrufzähler, `New`-nil, die nicht
+  delegierende Hülle). Die letzte zeigt zusätzlich die **Arbeitsteilung**: was
+  der Fake nicht fangen kann, fängt der reale Lauf.
 - **Die Naht könnte die Messung bewegen** — wie bei `slice-081`. Dann gilt
   `ADR-0078`s Transfer-Nachweis; eine Schwellen-Frage entsteht daraus **nicht**
-  erneut (§3). — **Ausgang:** <bei Closure>
+  erneut (§3). — **Ausgang:** *entfallen — gestrichen mit Begründung*: der
+  **Null-Befund** ist geführt (`k_ab = 0`, Unit-Nenner 1903 → 1903, Paket-Diff
+  nur `postgresack/**`) — **kein** Subjekt-Transfer, **keine** Neu-Bemessung.
+  **Aber die Zahl hat sich bewegt** (73,38 % → 74,51 %, der Nenner **wuchs** um
+  9) — das ist **keine** Schwellen-Frage, sondern eine **neue Beobachtung**:
+  der DB-Gegenstand enthält jetzt netzlos geprüften Code
+  (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`, **neu**).
 
 ## 7. Closure-Notiz
 
@@ -295,14 +335,65 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
+- **Was hat funktioniert:** **Die Nahtform aus [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+  hat getragen** — und der Slice hat sie nicht behauptet, sondern **ausgeführt**:
+  der `Null-Befund` ist geführt (`k_ab = 0`, Unit-Nenner 1903 → 1903, Paket-Diff
+  nur `postgresack/**`), nicht zugesagt.
+  Und **die Arbeitsteilung der Wächter** ist sichtbar geworden: die Mutation
+  „nicht delegierende Hülle" bleibt **netzlos grün** und wird erst vom **realen
+  Tier** gefangen (`TestAcknowledgeOnClosedConnection`, Exit 1). Das ist der
+  Beweis, dass „der Fake prüft die Verklebung" nicht „der Fake ersetzt die
+  realen Tests" heißt — genau der Satz, den §1 als Ausschluss führt.
+- **Was ging anders als geplant:** (1) Die Fixrunde musste **vier** driftende
+  Zahlen in **zwei** Sensor-Dokumenten nachziehen; **zwei** davon stammten aus
+  **anderen** Vorgängen und wurden mitgezogen, weil sie sonst in derselben Datei
+  gegen die eigene Messung stünden. (2) Daraus entstand eine **Form**, die der
+  Slice vorher nicht hatte (§3): der **Nenner** ist Zustand, die **gedeckte
+  Zahl** ist Beleg eines konkreten Laufs. (3) **Der wichtigste Befund liegt
+  neben dem Slice:** von den **32** Statements des Pakets sind **30** netzlos
+  gedeckt — der DB-Gegenstand enthält jetzt Code, der keine Verbindung braucht.
+  Das ist das **Spiegelbild** zu `slice-081` (dort *dräniert* ein Transfer den
+  Nenner, hier *wächst* er) und eine **neue** Register-Klasse. (4) **Mein
+  Fehler, zweimal derselbe:** mein Auftrag hat dem Implementer den Slice-Plan
+  entzogen und damit die DoD-Box „Review durchgeführt" mitbetroffen, die
+  `implement-slice` Schritt 21 der Fixrunde zuweist. Er hat es **beide Male
+  gemeldet statt still abzuweichen**; ab jetzt schreibe ich die Randbedingung
+  enger.
+- **Lerneintrag (geschärfte Regel):** *Eine Messung, deren Zahl sich bewegt,
+  ohne dass sich ihr Gegenstand bewegt, ist nur bedingt lesbar — und die
+  Bewegung kann in **beide** Richtungen irreführen.* `slice-081` hat das nach
+  **unten** gezeigt (Transfer, 75,25 % → 73,38 %), dieser Slice nach **oben**
+  (Netzlos-Code, 73,38 % → 74,51 %). `ADR-0078` hält für die Abwärtsbewegung
+  einen Riegel bereit; für die Aufwärtsbewegung gibt es keinen — sie ist als
+  Beobachtung geführt.
+  **Dazu die Form-Regel für Zahlenträger:** der **Nenner** steht als Zustand,
+  die **gedeckte Zahl** als **Beleg eines konkreten Laufs** — sie nennt ihren
+  Lauf, nie „der Ist-Stand". Beide Regeln sind **Verkörperungs-Kandidaten** (die
+  zweite ist die *Benennung* der Herkunfts-Regel, die `ADR-0078` formuliert und
+  niemand gebaut hat); geführt, nicht behauptet.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Zwei
+  Registerbewegungen: `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  +`slice-084` → **2×**; **neu angelegt**
+  `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (**1×**).
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt
+  (`zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-084.md`) und **ein
+  Verzeichnis neu angelegt**
+  (`db-gegenstand-enthaelt-netzlos-geprueften-code/`, mit
+  `evidence/slice-084.md`), **kein Zähler gesetzt**.
+- **Mitgaben der Verifikation (INFO, nicht behoben):** **V-2** — eine
+  zweideutige Klammer in `harness/sensors/db-adapter-coverage.md` („die geltende
+  Größe des Gegenstands: §Zählbasis") direkt neben dem eingefrorenen „477 von
+  650". **V-3** — zwei Rot-/Grün-Belege ebenda **ohne Lauf-Benennung**, während
+  die von diesem Slice eingeführte Form sie verlangt. **Beide benannt, nicht
+  behoben**: sie sind INFO und nicht blockierend, und die zwei Belege sind
+  ausdrücklich **eingefrorene Einzelläufe**. Sie durchzusetzen heißt, die
+  Beleg-Zeilen anzufassen — ein eigener kleiner Zug, kein Anhang dieser Closure.
+- **Folge-Slices:** `slice-085` (die Geschwister-Naht in `replication/receive`)
+  — liegt als Datei in `open/`.
+- **Risiken aus §6:** alle drei *entfallen, gestrichen mit Begründung* — siehe §6.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 - **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
 - **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
