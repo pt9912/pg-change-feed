@@ -95,3 +95,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0080 | Nähte der pgconn-Adapter — Treiber-Hülle, kein Subjekt-Transfer | Accepted | 2026-09-15 | [0080-nahtform-pgconn-adapter-treiberhuelle.md](0080-nahtform-pgconn-adapter-treiberhuelle.md) |
 | ADR-0081 | Changes-Lesen über die HTTP-API (Supers. ADR-0057, teilw.) | Accepted | 2026-09-15 | [0081-changes-lesen-ueber-die-http-api.md](0081-changes-lesen-ueber-die-http-api.md) |
 | ADR-0082 | Coverage 80 % — Schnittmaß; Composition Root netzlos nicht prüfbar | Accepted | 2026-09-16 | [0082-coverage-schnittmass-composition-root-nicht-netzlos.md](0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| ADR-0083 | Herkunft von Aussagen in Trägern — Zahlenwert und Tatsachenbehauptung | Accepted | 2026-09-16 | [0083-herkunft-von-aussagen-in-traegern.md](0083-herkunft-von-aussagen-in-traegern.md) |
+| ADR-0084 | Sync-Gate nur für das Erzeugnis mit einer netzlosen, deterministischen Quelle | Accepted | 2026-09-16 | [0084-sync-gate-fuer-generierte-artefakte.md](0084-sync-gate-fuer-generierte-artefakte.md) |
