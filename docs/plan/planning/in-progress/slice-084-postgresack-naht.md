@@ -160,6 +160,7 @@ Schnitt entsteht hier):
 | `internal/adapters/driven/postgresack/seam.go` | neu | die Naht (`ADR-0080`): `standbySender` (eine Methode), die Treiber-Hülle `connSender` über `*pgconn.PgConn`, die Kompilier-Zusicherung `var _ standbySender = connSender{}` |
 | `internal/adapters/driven/postgresack/ack.go` | refactor | die Logik hängt an der Naht; `ackLSN` (Null-Positions-Grenze, LSN-Form), `standbyStatus` (Standby-Status-Form) und `replicationClass` (Fehlerklassen-Wrapping) sind reine Funktionen; `New` behält seinen Signatur-Vertrag und reicht die Hülle durch, `newOnSender` ist der **paket-interne** Einstieg der netzlosen Tests |
 | `internal/adapters/driven/postgresack/seam_test.go` | neu | Fake und Log-Träger; die Verklebung netzlos: abgesetzte Meldung, Null-Positions-Grenze ohne Absetzen, Fehlerpfad der Naht — der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
+| `harness/image-hash.txt` | update | der Zug ändert Build-Kontext-Dateien; `make image` stempelt den Digest des Laufs (`ADR-0044`) — `sha256:f4475e1e…` → `sha256:4bd43435…` |
 
 **Kein Paketwechsel, kein Unterpaket** (`ADR-0080`) — deshalb auch **keine**
 Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`: der DB-Gegenstand
