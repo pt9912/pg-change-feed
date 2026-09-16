@@ -18,7 +18,7 @@ Schichten-Ordnung).
 **Berührte Spec-Stellen:** — (der Slice fügt **Tests** hinzu; er ändert keinen
 Vertrag).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-16.
 
