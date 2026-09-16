@@ -196,6 +196,16 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    ausgenommenen Pakete in der Testpaket-Liste stehen oder nicht, ändert die
    Zahl nicht — ihre Testdateien überspringen netzlos ohnehin. **Der Wächter
    ist**: keiner; die Einhaltung ist eine Aussage des Rezepts, keine Messung.
+6. **Was der Build-Kontext der Stufe nicht enthält, kann kein Test der Stufe
+   lesen.** Ein Test, der ein **reales Artefakt** außerhalb von `cmd/`,
+   `internal/`, `go.mod` und `go.sum` prüfen soll — die Form, die
+   [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+   als Kern dieser Welle verlangt —, braucht eine benannte Ausnahme in
+   `.dockerignore`. Deren **Klasse** (gelesen, nicht gebaut · genau eine Datei ·
+   der Leser steht dabei · Image unberührt mit Beleg) führt
+   [`ADR-0085`](../../docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md);
+   **der Wächter ist**: keiner — die Klasse ist ein Zweck-Urteil, und ihr
+   Entdecker ist der rote Bau (Lauf `slice-093`).
 
 ## Ausgabe und Ausgänge
 
