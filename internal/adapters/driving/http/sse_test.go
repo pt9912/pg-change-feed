@@ -345,6 +345,16 @@ func TestStreamAbgemeldeterClientGibtSubskriptionFrei(t *testing.T) {
 	}
 }
 
+// haengeFrist trägt den Hänge-Schutz der Tests, deren Handler sein Ende nur
+// über ein Signal meldet: sie unterscheidet „hängengeblieben" von „fertig"
+// und ist kein Urteil über eine Uhr
+// (`BEO-PGC/test-integration-retention-timing-flake`). Ihre Größe ist gegen
+// die Laufzeit abgesetzt — `go test -race -count=20` läuft über dieses Paket
+// für alle zwanzig Iterationen zusammen in wenigen Sekunden durch, die Frist
+// steht bei 30 s je einzelnem Handler und greift deshalb nur bei einem realen
+// Hänger.
+const haengeFrist = 30 * time.Second
+
 // responseWriterOhneFlusher verbirgt die `Flush`-Fähigkeit des eingebetteten
 // Writers: die eingebettete `http.ResponseWriter`-Schnittstelle trägt kein
 // `Flush`, weitergegeben werden nur ihre drei Methoden. Der Writer steht für
@@ -397,7 +407,7 @@ func TestStreamOhneFlusherEndetMit500(t *testing.T) {
 
 	select {
 	case <-fertig:
-	case <-time.After(3 * time.Second):
+	case <-time.After(haengeFrist):
 		t.Fatal("der Handler endete ohne http.Flusher nicht sichtbar")
 	}
 	if rec.Code != http.StatusInternalServerError {
@@ -435,7 +445,7 @@ func TestStreamNichtKodierbareChangeBeendetDenStream(t *testing.T) {
 
 	select {
 	case <-fertig:
-	case <-time.After(3 * time.Second):
+	case <-time.After(haengeFrist):
 		t.Fatal("der Stream endete auf eine nicht kodierbare Change nicht")
 	}
 	if body := rec.Body.String(); strings.Contains(body, "event:") {
@@ -472,7 +482,7 @@ func TestStreamSchreibfehlerBeendetDenStream(t *testing.T) {
 
 	select {
 	case <-fertig:
-	case <-time.After(3 * time.Second):
+	case <-time.After(haengeFrist):
 		t.Fatal("der Stream endete auf einen Schreibfehler nicht")
 	}
 	if writer.status != http.StatusOK {

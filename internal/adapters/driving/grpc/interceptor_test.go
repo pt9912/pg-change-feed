@@ -54,9 +54,14 @@ func TestStreamChangesLeereTokenKonfigurationEndetMitUnauthenticated(t *testing.
 // (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
 //
 // Rot färbende Mutation: in `credentialToken` an der Stelle ohne eingehende
-// Metadata einen Wert statt `""` zurückgeben — dann wird der Handler erreicht.
-// Das bloße Entfernen des `!ok`-Zweigs färbt diesen Test **nicht** rot: der
-// Nullwert der Metadata trägt die leere Kennung auf demselben Weg.
+// Metadata einen **gültigen** Token-Wert statt `""` zurückgeben
+// (`return "reader-token"`) — dann ordnet `classifyToken` den Aufruf
+// `roleReader` zu, der Handler wird erreicht und dieser Test färbt rot. Ein
+// **unbekannter** Wert an derselben Stelle färbt ihn nicht rot:
+// `classifyToken` ordnet ihn `roleNone` zu wie den leeren Token, der Handler
+// bleibt unerreicht. Das bloße Entfernen des `!ok`-Zweigs färbt diesen Test
+// ebenfalls **nicht** rot: der Nullwert der Metadata trägt die leere Kennung
+// auf demselben Weg.
 func TestAuthStreamInterceptorOhneEingehendeMetadataEndetMitUnauthenticated(t *testing.T) {
 	interceptor := authStreamInterceptor(testReaderToken, testAdminToken)
 	info := &grpc.StreamServerInfo{FullMethod: streamv1.ChangeStream_StreamChanges_FullMethodName}

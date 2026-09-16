@@ -277,6 +277,15 @@ func (f fakeChangeServerStream) Send(*streamv1.Change) error { return f.sendErr 
 
 var _ grpc.ServerStreamingServer[streamv1.Change] = fakeChangeServerStream{}
 
+// haengeFrist trägt den Hänge-Schutz des Tests, dessen Server-Stream sein
+// Ende nur über ein Ergebnis-Signal meldet: sie unterscheidet
+// „hängengeblieben" von „fertig" und ist kein Urteil über eine Uhr
+// (`BEO-PGC/test-integration-retention-timing-flake`). Ihre Größe ist gegen
+// die Laufzeit abgesetzt — `go test -race -count=20` läuft über dieses Paket
+// für alle zwanzig Iterationen zusammen in wenigen Sekunden durch, die Frist
+// steht bei 30 s und greift deshalb nur bei einem realen Hänger.
+const haengeFrist = 30 * time.Second
+
 // TestServeMeldetListenerFehler trägt den Fehlerausgang von `serve`: ein
 // Listener, der keine Verbindungen mehr annimmt, endet sichtbar als Fehler —
 // nicht in einem stillen Lauf ohne Empfänger. `grpc.ErrServerStopped` bleibt
@@ -323,7 +332,7 @@ func TestStreamChangesSendefehlerWirdWeitergereicht(t *testing.T) {
 		if !errors.Is(err, sendefehler) {
 			t.Fatalf("StreamChanges: %v (Erwartung: der injizierte Sendefehler %v)", err, sendefehler)
 		}
-	case <-time.After(3 * time.Second):
+	case <-time.After(haengeFrist):
 		t.Fatal("StreamChanges endete nach einem Sendefehler nicht")
 	}
 }
