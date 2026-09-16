@@ -157,13 +157,30 @@ func TestRegisterConsumerAdminTokenIstIdempotent(t *testing.T) {
 }
 
 // TestRegisterConsumerUngueltigesJSONEndetMit400 trägt die Formgrenze des
-// Request-Bodys.
+// Request-Bodys an der Eingabeseite: derselbe Use Case liefert für einen
+// **erreichbaren** Aufruf `500` (`inbound.ErrSourceTableMissing` — dieser
+// Handler kennt nur `ErrEmptyIdentifier` als `400` und führt jeden anderen
+// Fehler über seinen `500`-Zweig), der nicht dekodierbare Body endet dagegen
+// mit `400` — der Status folgt dem Body, nicht dem Fake
+// (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`). Ohne diesen Bezug
+// trägt der Test seine Zusage nicht: mit abgeschaltetem `Decode`-Zweig liefe
+// der Nullwert-Request weiter und endete am Use-Case-Aufruf ebenfalls mit `500`
+// — nur eben nicht mit `400`.
+// Rot färbende Mutation: in `registerconsumer.go` den `Decode`-Fehlerzweig
+// fallenlassen — dann liefert der Gegenproben-Fake `500` statt `400`.
 func TestRegisterConsumerUngueltigesJSONEndetMit400(t *testing.T) {
-	ts := newTestServer(t, newFakeRegisterConsumerUseCase())
+	ts := newTestServer(t, fakeFailingUseCase{err: inbound.ErrSourceTableMissing})
+
 	resp := postConsumer(t, ts, testAdminToken, `{nicht-json`)
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
-		t.Fatalf("Status: %d (Erwartung: 400)", resp.StatusCode)
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := postConsumer(t, ts, testAdminToken, `{"consumer_id":"c1","name":"Consumer 1"}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 500 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
 	}
 }
 

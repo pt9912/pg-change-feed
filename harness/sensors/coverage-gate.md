@@ -56,13 +56,22 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   ist die **Zustandsgröße** dieses Gegenstands: **1903 Statements** — sie hängt
   am Code-Stand, nicht am Lauf, ist darum **kein** Dauerwert und trägt den Lauf
   mit, in dem sie gemessen wurde (Lauf `slice-085`). Die **gedeckte** Zahl ist
-  dagegen **kein** Zustand — sie trägt den Beleg **eines** Laufs und schwankt
-  lauf-zu-lauf um ±2 Statements (ein `ctx`-abhängiger Pfad in
-  `internal/adapters/driven/grpcstream/broadcaster.go` — `Publish` mit bereits
-  beendetem `ctx`): **1369 von 1903** (**71,94 %**, gedruckt `71.90%`) und
-  **1371** (**72,04 %**, gedruckt `72.00%`) sind die zwei beobachteten Enden
-  desselben Stands (Lauf `slice-084`; im Lauf `slice-085` erneut beobachtet).
-  Nenner und Abstand zur Schwelle sind von der Schwankung unberührt.
+  dagegen **kein** Zustand — sie trägt den Beleg **eines** Laufs: **1369 von
+  1903** (**71,94 %**, gedruckt `71.90%`) und **1371** (**72,04 %**, gedruckt
+  `72.00%`) sind die zwei beobachteten Enden desselben Stands (Lauf
+  `slice-084`; im Lauf `slice-085` erneut beobachtet). Der Träger der
+  Schwankung liegt in `internal/bootstrap/wiring.go` und ist in **zwei** Blöcken
+  gemessen: dem Takt-Zweig von `runWALRetentionCheck` (`:991.5,992.13`,
+  2 Statements — er feuert nur, wenn der Tick vor dem Kontext-Ende liegt,
+  [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+  §Kontext (2)) und dem Kontext-Ende-Zweig von `runAdministration`
+  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe desselben
+  Produktionsstands (`go test -count=1 -coverpkg=… -covermode=atomic`,
+  Auswertung über die Block-Position, Lauf `slice-091`) lag die gedeckte Zahl
+  zwischen **1468** und **1471**, die gedruckte Zeile zwischen `77.1%` und
+  `77.3%`; der Takt-Zweig trug in **einem** dieser Läufe `count > 0`, der
+  `runAdministration`-Zweig fiel in **einem** auf `count = 0`. Nenner und
+  Abstand zur Schwelle sind von der Schwankung unberührt.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
   hier `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
@@ -107,10 +116,13 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
      (Schnittstellen-Deklarationen) und `domain/errors`
      (Sentinel-Deklarationen);
    - **über fremde Testpakete gedeckt** — `internal/adapters/driving/grpc/streamv1`
-     (die generierten `changestream*.pb.go`) trägt **86 Statements, 61 gedeckt**
-     (**70,9 %**, abgeleitet aus 61/86; Lauf `slice-089`); sie zählen, weil andere
-     Testpakete mit `-coverpkg` über die
-     Paketgrenze messen;
+     (die generierten `changestream*.pb.go`) trägt **86 Statements, 76 gedeckt**
+     (**88,4 %**, abgeleitet aus 76/86; Lauf `slice-091`); sie zählen, weil Testpakete
+     mit `-coverpkg` über die Paketgrenze messen. Das Paket führt daneben ein
+     **eigenes**, externes Testpaket (`changestream_test.go`, `package
+     streamv1_test`) — die Zählung `go list -f '{{len .TestGoFiles}}'` führt es
+     darum weiter unter den Paketen ohne Testdatei, obwohl `XTestGoFiles` **1**
+     trägt (Lauf `slice-091`);
    - **vollständig ungedeckt** — `cmd/pg-change-feed` trägt **49 Statements,
      alle mit `count = 0`** (Lauf `slice-089`). Es ist damit das **einzige Paket des Gegenstands
      ohne ein einziges gedecktes Statement** und gehört zu der 80-%-Arbeit, die
@@ -137,7 +149,8 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    Prozent-Schwelle unsichtbar. Rot färbt sie nur die Rücknahme von
    `postgresstorage` (`(1369 + 31) / (1903 + 472) = 1400 / 2375 = 58,95 %`).
    Alle drei Ausgänge liegen weiter als die Lauf-zu-Lauf-Schwankung
-   (±2 Statements = ±0,10 pp auf dem Gegenstands-Nenner) von der Schwelle
+   (dem in §Zählbasis gemessenen Band von 3 Statements = 0,16 pp auf dem
+   Gegenstands-Nenner, abgeleitet aus 3/1903) von der Schwelle
    entfernt: `postgresstorage` mit −11,05 Prozentpunkten darunter, die beiden
    grünen mit **+2,30** (`postgresack`) und **+0,86** Prozentpunkten
    (`replication/receive`) darüber — zum Kippen wären dort ≈45 bzw. ≈18
