@@ -33,10 +33,11 @@ verlassen den Nenner — der Ist-Stand sprang real von 49,3 % auf ~69,7 %,
 **ohne eine Zeile Test**) und danach **Test-Arbeit** an dem, was ungedeckt
 bleibt (Abschnitt *Slices in dieser Welle*). **Die Zahlen dieses Absatzes sind
 der Planstand der Eröffnung** — `internal/bootstrap` 327 ungedeckt,
-`cmd/pg-change-feed` 49, Rest-Tail — und **kein Ist-Stand**: §4 derselben Datei
-weist die 327 bereits als gemessen falsch aus (336), und `slice-094` hat `cmd`
-auf **0** offene Statements gebracht. Die erreichten Zahlen führt die
-Closure-Notiz, mit ihrem Lauf. Getragen wird das Maß von
+`cmd/pg-change-feed` 49, Rest-Tail — und **kein Ist-Stand**. Die 327 hat §4
+derselben Datei bereits als gemessen falsch ausgewiesen (dort: 336, ADR-Stand);
+am heutigen Stand führt `internal/bootstrap` **299** (Lauf `slice-094`), und
+`slice-094` hat `cmd` auf **0** offene Statements gebracht (Lauf `slice-094`).
+Die erreichten Zahlen führt die Closure-Notiz, mit ihrem Lauf. Getragen wird das Maß von
 `make coverage-gate` gegen `THRESHOLD`; die Schwelle wandert nach dem
 unveränderten bootstrap-aware-Mechanismus ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 §(a)) stufenweise bis 80. **Die gelten Stufen heute:** Einstieg **70 %**

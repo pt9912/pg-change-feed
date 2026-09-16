@@ -173,7 +173,7 @@ func TestVorbedingungFehltTraegtJeModusIhrenAusgang(t *testing.T) {
 }
 
 // TestSondermodiMitVollstaendigerUmgebungNennenIhreRolle trägt den
-// vierten Dispatch-Zweig jeder Modus-Verzweigung: die vier Sondermodi mit
+// Zweig, der die vier Sondermodi durchlässt statt sie abzuweisen: mit
 // vollständiger Umgebung und nicht erreichbarer Instanz. Der **Aufruf**
 // ist netzlos — nur der Rumpf der Modi braucht eine erreichbare Instanz.
 //
@@ -182,7 +182,7 @@ func TestVorbedingungFehltTraegtJeModusIhrenAusgang(t *testing.T) {
 // Lese-Modi den aus `CDC_READER_DSN`, die zwei Verwaltungs-Modi den aus
 // `CDC_ADMIN_DSN`; der Name der je anderen Rolle und der aus
 // `CDC_CAPTURE_DSN` darf darin nicht vorkommen. Die Zeile wird zusätzlich
-// auf die moduseigene Präfix-Form geprüft, nicht auf den Modus-Namen.
+// auf die moduseigene Präfix-Form geprüft, nicht auf den blossen Modus-Namen.
 func TestSondermodiMitVollstaendigerUmgebungNennenIhreRolle(t *testing.T) {
 	for _, fall := range []struct {
 		modus string

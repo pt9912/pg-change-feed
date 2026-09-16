@@ -163,8 +163,9 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    fremde Testpakete gedeckt".
 
    Die drei Pakete ohne ausführbare Statements weist der Lauf als
-   `[no test files]` aus. Kein Paket des Gegenstands trägt in derselben
-   Aufrufform mit `-coverpkg` die Zeile `coverage: 0.0% of statements`, und kein
+   `[no test files]` aus. In der Aufrufform der Stufe (`-coverpkg` über den
+   ganzen Gegenstand) trägt **kein** Paket die Zeile
+   `coverage: 0.0% of statements`, und kein
    Paket **mit** ausführbaren Statements trägt null gedeckte Statements (Lauf
    `slice-094`).
 2. **Docker-Layer-Caching.** `--no-cache-filter coverage` erzwingt die
