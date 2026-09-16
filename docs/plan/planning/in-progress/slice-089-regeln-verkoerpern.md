@@ -274,7 +274,9 @@ Backticks).
   §6 Risiko 3): `db-adapter-coverage.md` §Zählbasis Punkt 2 — die Lesart
   „132 Positionen × 2" gilt für den Kalibrierungs-Stand `fb6adf6`, am
   `slice-085`-HEAD sind es **168** (`verify-slice-085.md` §5(a)) → Adresse
-  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`;
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` — dort als Fundstelle des
+  `slice-085`-Vorgangs **benannt, nicht gezählt** (der Beleg dieses Vorgangs
+  liegt dort schon);
   `coverage-gate.md` §Grenze Punkt 1 — der zitierte
   `go list -f '{{len .TestGoFiles}}'` trägt seinen Satz nicht (25 statt fünf)
   → Adresse `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (im Schreib-Schritt
