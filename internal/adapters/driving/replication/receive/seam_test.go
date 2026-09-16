@@ -349,7 +349,9 @@ func TestQuerySingleReportsCatalogFailure(t *testing.T) {
 }
 
 // TestSlotLSNQueryNamesTheSlot trägt die Abfrage des Slot-Stands: sie
-// fragt den logischen Slot beim gegebenen Namen ab.
+// fragt den logischen Slot beim gegebenen Namen ab. Der Fake beantwortet
+// jeden SQL-Text gleich — das Prädikat `slot_type` dieser Abfrage deckt
+// der Test damit nicht ab.
 func TestSlotLSNQueryNamesTheSlot(t *testing.T) {
 	query := slotLSNQuery("slot_pgc_test")
 	if !strings.Contains(query, "'slot_pgc_test'") || !strings.Contains(query, "confirmed_flush_lsn") {
