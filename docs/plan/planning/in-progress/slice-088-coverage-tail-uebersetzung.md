@@ -53,12 +53,15 @@ Tests an Stellen, die noch keinen haben.
 | `postgresstorage/sqlexec` | `ReadConsumerPositions` 4/20 · `ReadExcludedColumns` 3/22 · `ReadTableSchema` 3/19 · `ReadSourceTables` 3/19 · `ReadPendingRequests` 2/19 · `ReadChanges` 1/25 · `ReadConsumerPosition` 1/10 | 17 |
 | `postgresstorage/mapper` | `JSONImage` **3/3** · `ToChange` 1/6 | 4 |
 
-**Die Paket-Zuordnung ist nachgemessen, nicht geschätzt** (Implementer-Befund):
-eine frühere Fassung dieser Tabelle stellte fünf Funktionen ins falsche Paket —
-`JSONImage`/`ToChange` gehören in `postgresstorage/mapper`, `IncludeColumn`/
-`removeExcluded`/`setSchemaVersion`/`qualifiedNames` in `replication/mapper`.
-**Die Spalte „Summe" ist die Gegenprobe**: sie muss je Paket aufgehen, und die
-falsche Fassung tat das nicht.
+**Die Paket-Zuordnung ist nachgemessen, nicht geschätzt** (Implementer-Befund,
+Review `review-slice-088` F-2): eine frühere Fassung dieser Tabelle stellte
+**acht** Funktionen ins falsche Paket — `observeRelation`, `oldTupleValues`,
+`tupleValues`, `JSONImage`, `IncludeColumn`, `setSchemaVersion`,
+`removeExcluded`, `qualifiedNames`. **Die Spalte „Summe" ist die Gegenprobe:**
+sie muss je Paket aufgehen (14/25/17/4 = 60), und die falsche Fassung tat das
+nicht. **Die Zahl „fünf" in einer früheren Fassung dieses Absatzes war selbst
+wieder eine ungezählte Übernahme** — sie nannte sechs Namen und traf acht; sie
+steht hier als berichtigte Zahl.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -291,24 +294,30 @@ repo-weite Default-Sub-Area `*`/`PGC` — sie deckt die vier Trägerpakete und d
 Testpyramide in **einem** Kürzel.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register
-(`../observations/BEO-PGC/`) durchgegangen; Zähler am Register **nachgezählt**:
+(`../observations/BEO-PGC/`) durchgegangen; die Zähler sind am Register
+**nachgezählt und mit ihrem Stand benannt** — nicht aus diesem Text übernommen
+(Review `review-slice-088` F-3: eine frühere Fassung dieses Absatzes behauptete
+das und nannte zwei **veraltete** Stände; die Sichtung stammt vom Anlegen des
+Plans, die Zähler liefen mit `slice-084`/`085` weiter):
 
-- `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**3×**, Schwelle erreicht
-  — Ausgang beim Lese-Schritt der `welle-20`-Closure): **Treffer, und ein
-  genauer.** Dieser Slice besteht **aus** Zusagen an ihre Eingabeseite: er fügt
-  Tests hinzu, deren einziger Zweck es ist, eine Aussage an einen Eingabewert zu
-  binden. Die Klasse ist damit **Auftrag** dieses Slice, nicht nur Beobachtung —
-  *ein Test, der eine Funktion aufruft und nichts behauptet, ist grün ohne
-  Aussage.*
-- `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (1×, offen): **kein**
-  Treffer — sie betrifft den **DB**-Gegenstand, dieser Slice den **Unit**-Gegenstand.
-- `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (2×, offen):
-  **benachbart** — die Zahl dieses Slice (≈60) ist eine **Erwartung** aus einer
-  Messung; die Closure führt den gemessenen Ist-Wert daneben, nicht an ihrer
-  Stelle.
+- `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**3×**, Stand
+  2026-09-16, Schwelle erreicht — Ausgang beim Lese-Schritt der
+  `welle-20`-Closure): **Treffer, und ein genauer.** Dieser Slice besteht
+  **aus** Zusagen an ihre Eingabeseite: er fügt Tests hinzu, deren einziger
+  Zweck es ist, eine Aussage an einen Eingabewert zu binden. Die Klasse ist
+  damit **Auftrag** dieses Slice, nicht nur Beobachtung — *ein Test, der eine
+  Funktion aufruft und nichts behauptet, ist grün ohne Aussage.*
+- `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (**2×**, Stand
+  2026-09-16): **kein** Treffer — sie betrifft den **DB**-Gegenstand, dieser
+  Slice den **Unit**-Gegenstand.
+- `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (**3×**, Stand
+  2026-09-16, Schwelle erreicht): **benachbart** — die Zahl dieses Slice (≈60
+  erwartet, **52 geliefert**, §6) ist eine **Erwartung** aus einer Messung; die
+  Closure führt den gemessenen Ist-Wert daneben, nicht an ihrer Stelle.
 
-**Ergebnis** (Stand: Anlage dieses Plans): kein Eintrag rückt mit diesem Slice
-über die 3×-Schwelle.
+**Ergebnis** (Stand: Anlage dieses Plans): kein Eintrag **rückt** mit diesem
+Slice über die 3×-Schwelle — zwei stehen bereits darüber, und der Ausgang
+gehört dem Lese-Schritt der `welle-20`-Closure.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF (nur `*`/`PGC`)
 — kein Modus-Begründungsblock. Die vier Pflichtkriterien tragen dennoch:
