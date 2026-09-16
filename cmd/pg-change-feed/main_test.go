@@ -78,9 +78,11 @@ func ohneVorbedingung(vollstaendig []string, name string) []string {
 	return gefiltert
 }
 
-// kindUmgebung setzt die Umgebung des Kindprozesses vollständig selbst —
-// kein Element der Eltern-Umgebung reist mit, die Vorbedingungen stellen
-// die Testfälle. `GOCOVERDIR` wird durchgereicht, sobald es gesetzt ist:
+// kindUmgebung setzt die Umgebung des Kindprozesses selbst zusammen: die
+// Vorbedingungen stellen die Testfälle, `PATH` wird aus der
+// Eltern-Umgebung übernommen — daran löst ein nicht absoluter
+// `os.Args[0]` auf. Jede weitere Variable der Eltern-Umgebung reist
+// nicht mit. `GOCOVERDIR` wird durchgereicht, sobald es gesetzt ist:
 // der Kindprozess ist dasselbe instrumentierte Binary, und `go test`
 // mergt die Zähler-Dateien aller Prozesse, die es tragen, in das Profil
 // des Gate-Laufs; ohne die Weitergabe bleibt der Kindprozess ungezählt
@@ -170,23 +172,71 @@ func TestVorbedingungFehltTraegtJeModusIhrenAusgang(t *testing.T) {
 	}
 }
 
+// TestSondermodiMitVollstaendigerUmgebungNennenIhreRolle trägt den
+// vierten Dispatch-Zweig jeder Modus-Verzweigung: die vier Sondermodi mit
+// vollständiger Umgebung und nicht erreichbarer Instanz. Der **Aufruf**
+// ist netzlos — nur der Rumpf der Modi braucht eine erreichbare Instanz.
+//
+// Gebunden an die Eingabeseite: jeder Modus erreicht seine **eigene**
+// Rolle (`ADR-0047`) und die Zeile trägt deren Datenbanknamen — die zwei
+// Lese-Modi den aus `CDC_READER_DSN`, die zwei Verwaltungs-Modi den aus
+// `CDC_ADMIN_DSN`; der Name der je anderen Rolle und der aus
+// `CDC_CAPTURE_DSN` darf darin nicht vorkommen. Die Zeile wird zusätzlich
+// auf die moduseigene Präfix-Form geprüft, nicht auf den Modus-Namen.
+func TestSondermodiMitVollstaendigerUmgebungNennenIhreRolle(t *testing.T) {
+	for _, fall := range []struct {
+		modus string
+		args  []string
+		rolle string
+		fremd string
+		nennt string
+	}{
+		{"--healthcheck", []string{"--healthcheck"}, "reader-db", "admin-db", "healthcheck: Instanz nicht erreichbar"},
+		{"register-consumer", []string{"register-consumer", "c-1"}, "admin-db", "reader-db", "register-consumer: Fehlerklasse storage"},
+		{"acknowledge-consumer", []string{"acknowledge-consumer", "c-1", "42"}, "admin-db", "reader-db", "acknowledge-consumer: Fehlerklasse storage"},
+		{"diagnose", []string{"diagnose"}, "reader-db", "admin-db", "diagnose: Instanz nicht erreichbar"},
+	} {
+		t.Run(fall.modus, func(t *testing.T) {
+			lauf := fahreProzess(t, starteVollstaendig(), fall.args...)
+
+			if lauf.ausgang != 1 {
+				t.Errorf("%s: Ausgang = %d, wollen 1 (nicht erreichbare Instanz); stderr = %q",
+					fall.modus, lauf.ausgang, lauf.stderr)
+			}
+			if !strings.Contains(lauf.stderr, fall.nennt) {
+				t.Errorf("%s: stderr = %q, wollen die moduseigene Zeile %q", fall.modus, lauf.stderr, fall.nennt)
+			}
+			if !strings.Contains(lauf.stderr, fall.rolle) {
+				t.Errorf("%s: stderr = %q, wollen den Datenbanknamen der eigenen Rolle (%q)",
+					fall.modus, lauf.stderr, fall.rolle)
+			}
+			if strings.Contains(lauf.stderr, fall.fremd) || strings.Contains(lauf.stderr, "capture-db") {
+				t.Errorf("%s: stderr = %q, wollen keine fremde Rolle — erwartet nur %q",
+					fall.modus, lauf.stderr, fall.rolle)
+			}
+		})
+	}
+}
+
 // TestArgumentFehlerEndenMitAusgang2 trägt die Argument-Fehler des
 // Dispatches: fehlende, überzählige und nicht deutbare Argumente enden
-// vor jedem Dienst-Zugriff mit Ausgang 2. Die zwei Position-Fälle prüfen
-// die Ausgabe an der **Eingabeseite** — die Zeile nennt den Wert, der
-// nicht deutbar war, in ihrer eigenen Formulierung (`Position "…" ist
-// kein gültiger Offset`); der Wert allein genügt nicht als Prüfung, weil
-// ihn auch die Ursache des Deutungsfehlers trägt.
+// vor jedem Dienst-Zugriff mit Ausgang 2. Die Ausgabe-Hälfte ist an die
+// **Eingabeseite** gebunden: jede Zeile wird auf ihre eigene, den
+// konkreten Verstoß nennende Formulierung geprüft — der blosse
+// Modus-Name genügt nicht als Prüfung, weil ihn auch die generische
+// Zeile für ein unbekanntes Argument trägt (`main.go:104`), und der
+// nicht deutbare Wert allein genügt nicht, weil ihn auch die Ursache des
+// Deutungsfehlers trägt.
 func TestArgumentFehlerEndenMitAusgang2(t *testing.T) {
 	for _, fall := range []struct {
 		name  string
 		args  []string
 		nennt string
 	}{
-		{"register-consumer ohne Namen", []string{"register-consumer"}, "register-consumer"},
-		{"register-consumer mit zwei Namen", []string{"register-consumer", "a", "b"}, "register-consumer"},
-		{"acknowledge-consumer ohne Position", []string{"acknowledge-consumer", "c-1"}, "acknowledge-consumer"},
-		{"acknowledge-consumer mit überzähligem Argument", []string{"acknowledge-consumer", "c-1", "42", "x"}, "acknowledge-consumer"},
+		{"register-consumer ohne Namen", []string{"register-consumer"}, "register-consumer erwartet genau einen Namen als Argument"},
+		{"register-consumer mit zwei Namen", []string{"register-consumer", "a", "b"}, "register-consumer erwartet genau einen Namen als Argument"},
+		{"acknowledge-consumer ohne Position", []string{"acknowledge-consumer", "c-1"}, "acknowledge-consumer erwartet Consumer-Kennung und Position als Argumente"},
+		{"acknowledge-consumer mit überzähligem Argument", []string{"acknowledge-consumer", "c-1", "42", "x"}, "acknowledge-consumer erwartet Consumer-Kennung und Position als Argumente"},
 		{"acknowledge-consumer mit nicht deutbarer Position", []string{"acknowledge-consumer", "c-1", "42x"}, `"42x" ist kein gültiger Offset`},
 		{"acknowledge-consumer mit leerer Position", []string{"acknowledge-consumer", "c-1", ""}, `"" ist kein gültiger Offset`},
 		{"unbekanntes Argument", []string{"--unbekannt"}, "unbekanntes Argument"},
@@ -206,12 +256,14 @@ func TestArgumentFehlerEndenMitAusgang2(t *testing.T) {
 
 // TestLaufMitNichtErreichbarerQuelleEndetMitAusgang1 trägt den
 // argumentlosen Lauf bis in die Verdrahtung: die Vorbedingungen sind
-// vollständig, `bootstrap.Run` scheitert am ersten Konstruktor, `main`
+// vollständig, `bootstrap.Run` scheitert am Verbindungsaufbau, `main`
 // reicht den Fehler als Diagnose-Zeile weiter und endet mit Ausgang 1
 // (ein Adapter-Fehler beendet den Prozess-Aufrufer mit Ausgang 1).
-// Gebunden an die Eingabeseite: die Zeile trägt den Datenbanknamen aus
-// `CDC_CAPTURE_DSN` und nicht den aus `CDC_ADMIN_DSN` — der Prozess
-// bleibt am ersten Konstruktor stehen.
+// Gebunden ist hier, **welche Rolle** der Lauf erreicht: die Zeile trägt
+// den Datenbanknamen aus `CDC_CAPTURE_DSN` und nicht den aus
+// `CDC_ADMIN_DSN` — der Prozess bleibt vor dem Aktivierungs-Pool stehen.
+// Dass er schon am **ersten** Konstruktor endet, bindet der
+// Schwester-Test `run_test.go` über den Sentinel.
 func TestLaufMitNichtErreichbarerQuelleEndetMitAusgang1(t *testing.T) {
 	lauf := fahreProzess(t, starteVollstaendig())
 
@@ -225,6 +277,6 @@ func TestLaufMitNichtErreichbarerQuelleEndetMitAusgang1(t *testing.T) {
 		t.Errorf("Lauf ohne erreichbare Quelle: stderr = %q, wollen den Datenbanknamen aus CDC_CAPTURE_DSN", lauf.stderr)
 	}
 	if strings.Contains(lauf.stderr, "admin-db") {
-		t.Errorf("Lauf ohne erreichbare Quelle: stderr = %q, wollen den Abbruch am ersten Konstruktor", lauf.stderr)
+		t.Errorf("Lauf ohne erreichbare Quelle: stderr = %q, wollen keinen Zugriff über den Aktivierungs-Pool", lauf.stderr)
 	}
 }

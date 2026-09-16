@@ -23,11 +23,13 @@ import (
 // Gebunden an die Eingabeseite: die drei DSNs tragen je einen **eigenen**
 // Datenbanknamen, und die Fehlerzeile wird auf den Namen aus
 // `cfg.CaptureDSN` geprüft — der Name aus `cfg.AdminDSN` (`admin-db`)
-// darf darin nicht vorkommen. Ein `Run`, das den Fehler des ersten
-// Konstruktors verschluckt und weiter verdrahtet, endet am
-// Aktivierungs-Konstruktor über `cfg.AdminDSN` und färbt diesen Test rot;
-// die Fehlerklasse `storage` (`outbound.ErrStorage`) kommt vom
-// Konstruktor, nicht von `Run`.
+// darf darin nicht vorkommen: der Lauf erreicht den Aktivierungs-Pool
+// nicht. Die tragende Bindung an den **ersten** Konstruktor ist der
+// Sentinel: ein `Run`, das seinen Fehler verschluckt, endet eine Stufe
+// später am Schema-Store — **derselbe** `cfg.CaptureDSN`, eigener
+// Sentinel (`outbound.ErrSchemaStoreStorage`) — und färbt diesen Test
+// über die Klassen-Prüfung rot. Die Klasse `storage`
+// (`outbound.ErrStorage`) kommt vom ersten Konstruktor, nicht von `Run`.
 func TestRunScheitertAmErstenKonstruktorOhneErreichbareQuelle(t *testing.T) {
 	const (
 		nichtErreichbar = "postgres://x:x@127.0.0.1:1/%s?sslmode=disable&connect_timeout=1"
@@ -55,6 +57,6 @@ func TestRunScheitertAmErstenKonstruktorOhneErreichbareQuelle(t *testing.T) {
 		t.Fatalf("Run-Fehler = %v, wollen den Datenbanknamen aus cfg.CaptureDSN (%q)", err, captureDB)
 	}
 	if strings.Contains(err.Error(), adminDB) {
-		t.Fatalf("Run-Fehler = %v, wollen den Abbruch am ersten Konstruktor — %q gehört zum Aktivierungs-Pool", err, adminDB)
+		t.Fatalf("Run-Fehler = %v, wollen keinen Zugriff über den Aktivierungs-Pool (%q)", err, adminDB)
 	}
 }

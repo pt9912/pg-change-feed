@@ -143,12 +143,14 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    `slice-094`) — den Re-Exec-Harness des Argument-Dispatchs: der Test startet
    dasselbe Binary mit anderen Argumenten und wertet Exit-Code, stdout und
    stderr des Kindprozesses, ohne Naht im Produktionscode
-   ([`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
-   §Kontext (4a)). Das Paket trägt damit **45 von 49** Statements gedeckt (Lauf
-   `slice-094`); die vier offenen sind je **ein** Aufruf eines
-   dienstgebundenen Sondermodus und liegen außerhalb des netzlosen Tiers —
-   `main.go:44` (`Healthcheck`), `:62` (`RegisterConsumer`), `:86`
-   (`AcknowledgeConsumer`), `:101` (`Diagnose`).
+   ([`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
+   Das Paket trägt **49 von 49** Statements gedeckt (Lauf `slice-094`): auch die
+   vier Sondermodi werden gefahren, mit vollständiger Umgebung und nicht
+   erreichbarer Instanz, und enden am Verbindungsaufbau ihrer eigenen Rolle
+   (`ADR-0047`, `ReaderDSN` bzw. `AdminDSN`) — die Aufrufe `main.go:44`
+   (`Healthcheck`), `:62` (`RegisterConsumer`), `:86` (`AcknowledgeConsumer`)
+   und `:101` (`Diagnose`) sind netzlos erreichbar. Dienstgebunden ist der
+   **Rumpf** dieser vier Funktionen, nicht ihr Aufruf.
 
    **`internal/adapters/driving/grpc/streamv1` ist keins dieser drei Pakete.**
    Das Paket (die generierten `changestream*.pb.go`) führt ein **eigenes**,
