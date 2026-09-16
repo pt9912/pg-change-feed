@@ -16,8 +16,9 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md) (die zwei
 Zustell-Oberflächen, deren Pakete hier liegen) ·
 [`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md)
-(`natsnotify`) · `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (4×) und
-`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (6×).
+(`natsnotify`) · `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` und
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Zähler-Stände führen die
+Einträge selbst — ein Verweis braucht keine Zahl, die altern kann).
 
 **Berührte Spec-Stellen:** `LH-FA-SST-006`, `LH-FA-SST-007`, `LH-FA-SST-008` —
 die Zusagen, die die vier Pakete tragen; dieser Slice prüft sie zusätzlich, er
@@ -122,11 +123,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-091.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
 
 ## 3. Plan (vor Code)
 
@@ -210,18 +211,44 @@ dasteht.
 - **Die ≈52 sind eine Über-Schätzung** — dann liefert C weniger als die Welle
   veranschlagt, und das Budget aus B+C+D hat nur **13 Statements Puffer**
   ([`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
-  — **Ausgang:** <…>
+  — **Ausgang: eingetreten — und begrenzt.** Real erreichbar waren **47** statt
+  ≈52; die fünf Differenz-Statements sind **einzeln benannt** (drei tote
+  defensive Doppelprüfungen in `driving/http`: `readchanges.go:181.3,182.1` und
+  `retention.go:47.4,49.1`, die eine Invariante erneut prüfen, die der Aufrufer
+  schon erzwungen hat; zwei im Publish-Erfolgspfad von `natsnotify`,
+  `notify.go:136.2,137.12`). Die Rückführung `in-progress → open` greift
+  **nicht**: §4 bindet sie an „real weit unter ≈52", 47 von 52 sind **90 %**.
+  Wirkung auf die Welle: der Puffer B+C+D sinkt von 13 auf **8** Statements —
+  eine Planner-/Wellen-Entscheidung, kein Befund dieses Slice.
 - **Ein Test wird zeitabhängig** — dann flappt die Zahl, und der Flap ist für
   Tests und diff-skopiertes Review unsichtbar
   (`BEO-PGC/test-integration-retention-timing-flake`, 2×; der `slice-090`-Beleg
-  fand denselben Gegenstand an der Coverage-Zahl). — **Ausgang:** <…>
+  fand denselben Gegenstand an der Coverage-Zahl). — **Ausgang: entfallen für
+  die Tests dieses Slice — und bestätigt für den Bestand.** Gemessen:
+  `go test -race -count=20` über die vier Pakete, 4 × `ok`, **keine** Frist
+  gefeuert; die vier neuen Fristen sind als **Hänge-Schutze** gesetzt (30 s
+  gegen ≈0,29 s je Iteration) und nicht als Zusicherung über eine Uhr. Der
+  **vorbestehende** Flake hat sich in diesem Vorgang trotzdem gezeigt — zwischen
+  zwei Läufen **desselben** Commits (77,20 gegen 77,30 %; 2/1903 = 0,105 pp) —;
+  er ist nicht Gegenstand dieses Slice, sondern wandert als Beleg in den
+  Register-Eintrag.
 - **Ein Negativtest bindet die Ablehnung an den Fake statt an die Eingabe** —
   der Test ist grün, egal was der Adapter mit dem Wert macht, und die Zahl
   steigt trotzdem. Das ist die Klasse mit **4×** und der wahrscheinlichste
-  Fehler dieses Slice. — **Ausgang:** <…>
+  Fehler dieses Slice. — **Ausgang: eingetreten — und behoben, zweimal.** Der
+  Review fand die Form an einem **neuen** Test (`notify_test.go`, die
+  `LogPort`-Weitergabe war nur bis zum ersten Kettenglied gebunden; die im
+  Kommentar **genannte** Mutation ließ Test und Paket grün), die Verifikation
+  ein zweites Mal an einem **vorbestehenden** (`server_test.go:161`, der
+  sechste `…UngueltigesJSONEndetMit400`). Beide sind gebunden und durch
+  Mutation belegt (rot) mit Kontrolle (grün).
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
   prüfen: Die Zahl steigt, die Prüf-Kraft nicht, und die Welle hätte ihr Ziel
-  formal erreicht. — **Ausgang:** <…>
+  formal erreicht. — **Ausgang: entfallen — gemessen, nicht behauptet.** Der
+  Review hat **24** Mutationsproben gefahren (20 rot), der Verifier **13** an
+  der Produktionsseite (**13 rot**); jede neue Zusage dieses Slice färbt bei
+  Zerstörung ihrer Produktionsseite rot. Ein Test, der nur die Zahl hebt, wäre
+  in dieser Probe grün geblieben.
 
 ## 7. Closure-Notiz
 
@@ -240,18 +267,64 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die **Mutation** war das Rückgrat dieses Slice — nicht
+  der Zähler. Der Review hat **24** Proben gefahren, der Verifier **13** an der
+  Produktionsseite; diese Methode hat (a) die zwei Bindungs-Lücken gefunden
+  (einen neuen und einen vorbestehenden Negativtest, die grün blieben, wenn man
+  ihre Zusage zerstört), (b) das vierte §6-Risiko *widerlegt* statt es zu
+  beschwichtigen, und (c) die Reproduzierbarkeit der Mutationsangaben erzwungen
+  — was zwei Kommentare als unwahr entlarvte. Zweitens: die Trennung von
+  **Zustand** und **Lauf** hat getragen — Cluster C ist **62 → 15** ungedeckt
+  (eine Statement-Differenz, stabil), während die Prozentzahl ein **Band** ist
+  (77,1–77,3 %), und beide Zahlen tragen ihren Lauf.
+- **Was ging anders als geplant:** **Vier** Runden statt einer, und der Grund
+  liegt nicht im Slice, sondern in seiner Umgebung. Die schärfste Beobachtung:
+  **dieser Slice hat drei Sätze in einem Dokument falsch gemacht, das er nie
+  angefasst hat.** Er gab `streamv1` eine Testdatei — damit wurde die stehende
+  Liste „Fünf Pakete … haben keine Testdatei", ihr Schlusssatz (`coverage: 0.0%`)
+  und die Gruppierung selbst falsch, ohne dass jemand diese Datei im Diff hatte.
+  Gefunden hat das erst der **Delta-Review**, nach zwei Runden; die *Behebung*
+  hat dann zunächst eine **falsche Zählung** tragend gemacht (D-1), weil sie die
+  Gruppe mit `TestGoFiles` begründete, das 23 von 31 Paketen trifft. Zweitens:
+  die ≈52 aus [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+  waren real **47**. Drittens: die Ersetzung der falschen Flap-Ursache hat einen
+  **zweiten** Flapper gefunden, der das dritte, unkolokalisierte Ende der
+  Verifikation erklärt — der Fund kam erst durch die Korrektur.
+- **Steering-Loop-Eintrag:** **kein neuer Träger — die Leser-Hälfte hat
+  getragen.** Die Regel, die alle vier Runden deckt, steht
+  (`AGENTS.md` §3.12 Instanz A und B), und ihre durchsetzenden Leser sind
+  Reviewer und Verifier. Was hier **neu** hinzukommt, ist eine Beobachtung ohne
+  Zielort: **die Arbeit überholt einen Träger, den sie nicht anfasst.** Wer eine
+  *gemessene Eigenschaft* eines Gegenstands bewegt (hier: ob ein Paket eine
+  Testdatei hat), macht die Träger falsch, die diese Eigenschaft **beschreiben**
+  — und die stehen nicht im Diff und werden von keinem Sensor gelesen. Sie steht
+  als `BEO-PGC/arbeit-ueberholt-stehenden-traeger` im Register (1×), **nicht**
+  als verkörperte Regel: ein Gate müsste dafür wissen, welche Sätze von welcher
+  Eigenschaft abhängen, und das weiß es nicht.
+  Auslöser: `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (`slice-091` — 1×).
+- **Beobachtungs-Register (`../observations/`):** **ein Verzeichnis neu
+  angelegt** (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, 1×) und **drei
+  Belege** ergänzt: `test-integration-retention-timing-flake` → **3×**
+  (Schwelle erreicht), `beleg-befehl-traegt-seinen-satz-nicht` → **3×**
+  (Schwelle erreicht), `negativtest-ohne-bindung-an-seine-eingabe` → **5×**.
+  **Kein Zähler wird gesetzt** — jeder folgt aus der Zahl der Dateien unter
+  `evidence/`. Die zwei neuen Schwellen-Einträge weist der **Lese-Schritt der
+  `welle-20`-Closure** zu (Modul 6), nicht dieser Slice.
+- **Folge-Slices:** keine Datei in `open/` — die Cluster **D** und **A** sind
+  die nächsten Schnitte **derselben Welle** ([`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md));
+  sie entstehen nach dem Maß, wenn dieser liegt. `ADR-0082`s
+  Folge-Slice-Vorschlag (eine Quelle für Erzeuger und Prüfer der
+  E2E-Abdeckungstabelle) bleibt **unadressiert** — die ADR nennt ihn ohne
+  Kennung, und sein Re-Evaluierungs-Trigger ist nicht eingetreten.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *eingetreten und begrenzt*
+  (47 statt ≈52, Puffer 13 → 8), R2 *entfallen für die Tests dieses Slice*
+  (`-race -count=20`, keine Frist gefeuert), R3 *eingetreten und behoben*
+  (zweimal: ein neuer und ein vorbestehender Test), R4 *entfallen* (gemessen
+  über 37 Mutationsproben).
+- **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
+  `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die vier
+  Register-Adressen dieses Slice existieren als Verzeichnis, und **jedes** der
+  vier ergänzten führt ein nicht leeres `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -278,7 +351,9 @@ wäre für jede erfüllt, ohne etwas zu trennen. Die Deklaration `*`/`PGC` gilt.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen
 (`observations/BEO-PGC/`). Für die Fläche dieses Slice — **Test-Arbeit an
-Adapter-Paketen** — sechs Treffer:
+Adapter-Paketen** — sechs Treffer. Die genannten Zähler-Stände sind der Stand
+**bei dieser Planung**; sie sind nach diesem Slice teilweise höher (der Zähler
+folgt den `evidence/`-Dateien, nicht dieser Zeile).
 
 - `negativtest-ohne-bindung-an-seine-eingabe` — **4×**, `offen`. **Der
   schärfste Treffer:** er beschreibt genau die Form, die ein Test in `driving/grpc`

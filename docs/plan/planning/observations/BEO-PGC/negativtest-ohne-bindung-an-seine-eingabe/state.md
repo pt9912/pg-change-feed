@@ -10,8 +10,13 @@ gehörte in den Reviewer-Skill (`.harness/skills/reviewer.md`), wo die
 Mutations-Pflicht bereits steht — aber **ohne diese Richtung**. Als
 Verkörperungs-Kandidat geführt, nicht behauptet.
 
-Zähler (abgeleitet): **4×** (evidence/slice-086.md, evidence/slice-087.md,
-evidence/slice-083.md, evidence/slice-088.md) — **Schwelle erreicht**.
+Zähler (abgeleitet): **5×** (evidence/slice-086.md, evidence/slice-087.md,
+evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md) —
+**Schwelle erreicht**. Der fünfte Beleg (`slice-091`) ist der erste, bei dem die
+Klasse **an einem vorbestehenden Test** gefunden wurde, während dieselbe
+Erscheinung im **selben** Vorgang an einem **neu geschriebenen** Test auftrat —
+und der Vorgang hat sie vorhergesagt („der wahrscheinlichste Fehler dieses
+Slice"): beide wurden durch Mutation gefunden, nicht durch Lesen.
 
 **Der Eintrag ist enger benannt als sein Gegenstand.** Name und
 `observation.md` sprechen von einem **Negativtest**; der zweite Beleg
