@@ -227,6 +227,39 @@ func decodeErr(t *testing.T, payload []byte) error {
 	return err
 }
 
+// decodeErrOn dekodiert mit einem bestehenden Decoder — die Form der
+// Fehlerpfad-Tests, die einen gefüllten Relation-Katalog brauchen.
+func decodeErrOn(t *testing.T, decoder *decode.Decoder, payload []byte) error {
+	t.Helper()
+	_, err := decoder.Decode(payload)
+	if err == nil {
+		t.Fatalf("Decode endete ohne Fehler")
+	}
+	return err
+}
+
+// decoderWithRelation trägt einen Decoder, dessen Katalog die Relation
+// bereits führt — die gemeinsame Ausgangslage der Fehlerpfad-Tests, die
+// erst hinter der Auflösung scheitern.
+func decoderWithRelation(t *testing.T, oid uint32, columns ...testColumn) *decode.Decoder {
+	t.Helper()
+	decoder := decode.NewDecoder()
+	if _, err := decoder.Decode(relationPayload(oid, "public", "feed", columns...)); err != nil {
+		t.Fatalf("Relation: %v", err)
+	}
+	return decoder
+}
+
+// binaryTuple trägt ein Tupel mit einem Binär-Wert (`b`): die Verbindung
+// streamt im Text-Format, ein Binär-Tupel ist damit nicht sicher
+// interpretierbar (Klasse `schema`, `SPEC-008`).
+func binaryTuple(value string) []byte {
+	tuple := appendUint16(nil, 1)
+	tuple = append(tuple, 'b')
+	tuple = appendUint32(tuple, uint32(len(value)))
+	return append(tuple, []byte(value)...)
+}
+
 func pointerValue(value *string) string {
 	if value == nil {
 		return "<nil>"
@@ -491,5 +524,120 @@ func TestDecodeFlowToCapture(t *testing.T) {
 	}
 	if len(changes) != 1 || string(changes[0].NewImage) != `{"id":"5"}` {
 		t.Fatalf("Changes: %+v", changes)
+	}
+}
+
+// Ein Insert-Tupel mit einer anderen Spaltenzahl als die Relation ist nicht
+// sicher interpretierbar (Klasse `schema`, `SPEC-008`): die Übersetzung endet
+// sichtbar, statt Werte positionsgleich zu erfinden.
+func TestDecodeInsertRejectsMismatchedTuple(t *testing.T) {
+	decoder := decoderWithRelation(t, 30100,
+		testColumn{name: "id", flags: 1}, testColumn{name: "name"})
+
+	err := decodeErrOn(t, decoder, insertPayload(30100, textTuple(text("7"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Insert mit einem Wert für zwei Spalten: %v", err)
+	}
+}
+
+// Eine Update-Nachricht vor der zugehörigen Relation-Nachricht ist nicht
+// auflösbar (`LH-FA-SCH-004.a`).
+func TestDecodeUpdateBeforeRelation(t *testing.T) {
+	err := decodeErr(t, updatePayloadKey(30101,
+		textTuple(text("7")), textTuple(text("7"), text("neu"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Update ohne Relation-Nachricht: %v", err)
+	}
+}
+
+// Ein Update-Neu-Tupel mit anderer Spaltenzahl als die Relation endet
+// sichtbar (Klasse `schema`).
+func TestDecodeUpdateRejectsMismatchedNewTuple(t *testing.T) {
+	decoder := decoderWithRelation(t, 30102,
+		testColumn{name: "id", flags: 1}, testColumn{name: "name"})
+
+	err := decodeErrOn(t, decoder, updatePayloadKey(30102,
+		textTuple(text("7")), textTuple(text("7"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Update mit zu wenigen Neu-Tupel-Werten: %v", err)
+	}
+}
+
+// Ein Schlüssel-Tupel (`K`) trägt nur die Schlüssel-Spalten; trägt es mehr
+// Werte, als die Relation Spalten hat, ist es nicht sicher
+// interpretierbar (Klasse `schema`).
+func TestDecodeUpdateRejectsOversizedKeyTuple(t *testing.T) {
+	decoder := decoderWithRelation(t, 30103,
+		testColumn{name: "id", flags: 1}, testColumn{name: "name"})
+
+	err := decodeErrOn(t, decoder, updatePayloadKey(30103,
+		textTuple(text("7"), text("8"), text("9")),
+		textTuple(text("7"), text("neu"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Schlüssel-Tupel mit drei Werten für zwei Spalten: %v", err)
+	}
+}
+
+// Eine Delete-Nachricht vor der zugehörigen Relation-Nachricht ist nicht
+// auflösbar (`LH-FA-SCH-004.a`).
+func TestDecodeDeleteBeforeRelation(t *testing.T) {
+	err := decodeErr(t, deletePayloadKey(30104, textTuple(text("7"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Delete ohne Relation-Nachricht: %v", err)
+	}
+}
+
+// Dasselbe für den alten Tupel einer Delete-Nachricht: mehr Werte als
+// Relation-Spalten enden sichtbar (Klasse `schema`).
+func TestDecodeDeleteRejectsOversizedKeyTuple(t *testing.T) {
+	decoder := decoderWithRelation(t, 30105,
+		testColumn{name: "id", flags: 1}, testColumn{name: "name"})
+
+	err := decodeErrOn(t, decoder, deletePayloadKey(30105,
+		textTuple(text("7"), text("8"), text("9"))))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Delete-Schlüssel-Tupel mit drei Werten für zwei Spalten: %v", err)
+	}
+}
+
+// Eine TRUNCATE-Nachricht über eine Relation ohne vorherige
+// Relation-Nachricht ist nicht auflösbar (`LH-FA-SCH-004.a`).
+func TestDecodeTruncateBeforeRelation(t *testing.T) {
+	decoder := decoderWithRelation(t, 30106, testColumn{name: "id", flags: 1})
+
+	err := decodeErrOn(t, decoder, truncatePayload(30106, 30107))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("TRUNCATE mit unbekannter Relation: %v", err)
+	}
+}
+
+// Ein Binär-Wert in einem Insert-Tupel ist nicht sicher interpretierbar,
+// weil die Verbindung im Text-Format streamt (`SPEC-008`, Klasse `schema`).
+func TestDecodeInsertRejectsBinaryTupleValue(t *testing.T) {
+	decoder := decoderWithRelation(t, 30108, testColumn{name: "id", flags: 1})
+
+	err := decodeErrOn(t, decoder, insertPayload(30108, binaryTuple("7")))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Insert mit Binär-Tupel-Wert: %v", err)
+	}
+}
+
+// Dasselbe für einen Binär-Wert in einer Schlüssel-Spalte des alten Tupels
+// (`oldTupleValues`, `SPEC-008`).
+func TestDecodeDeleteRejectsBinaryKeyValue(t *testing.T) {
+	decoder := decoderWithRelation(t, 30109, testColumn{name: "id", flags: 1})
+
+	err := decodeErrOn(t, decoder, deletePayloadKey(30109, binaryTuple("7")))
+
+	if !stderrors.Is(err, decode.ErrSchema) {
+		t.Fatalf("Delete mit Binär-Wert in der Schlüssel-Spalte: %v", err)
 	}
 }

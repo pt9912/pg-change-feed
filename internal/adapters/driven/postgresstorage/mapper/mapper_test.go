@@ -158,3 +158,40 @@ func TestToChangeCarriesSchemaAndTable(t *testing.T) {
 		t.Fatalf("SourceTableID = %q, wollen tbl-1", change.SourceTableID)
 	}
 }
+
+// Ein fehlendes Bild und ein leeres Byte-Slice sind Abwesenheit und lesen
+// sich beide als NULL; ein nicht-leeres Bild geht als JSON-Text in die
+// `jsonb`-Spalte (`SPEC-002`, `LH-FA-CAP-008` Boundary).
+func TestJSONImageCarriesAbsenceAndText(t *testing.T) {
+	if got := mapper.JSONImage(nil); got != nil {
+		t.Fatalf("JSONImage(nil) = %v, wollen nil (Abwesenheit)", got)
+	}
+	if got := mapper.JSONImage([]byte{}); got != nil {
+		t.Fatalf("JSONImage(leeres Bild) = %v, wollen nil (kein gültiges JSON)", got)
+	}
+	image := []byte(`{"name":"a"}`)
+	got, isText := mapper.JSONImage(image).(string)
+	if !isText || got != string(image) {
+		t.Fatalf("JSONImage(%q) = %v (%T), wollen den Text-Stand", image, got, got)
+	}
+}
+
+// Eine Zeile außerhalb der Change-Invarianten endet über den
+// Domänen-Konstruktor (`ADR-0029`): die Sequenz unter 1 trägt keinen Change,
+// der Fehler kommt unverändert zurück.
+func TestToChangeRejectsRowOutsideInvariants(t *testing.T) {
+	row := mapper.ChangeRow{
+		ChangeID:      "c-1",
+		TransactionID: "t-1",
+		SourceTableID: "tbl-1",
+		Sequence:      0,
+		Operation:     string(model.OperationInsert),
+		SchemaVersion: "sv-1",
+		Schema:        "public",
+		Table:         "orders",
+	}
+
+	if _, err := mapper.ToChange(row); err != domainerrors.ErrNonPositiveSequence {
+		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrNonPositiveSequence)
+	}
+}

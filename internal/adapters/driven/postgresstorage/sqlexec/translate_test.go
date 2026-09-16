@@ -731,6 +731,340 @@ func TestRegisterConsumerClassifiesExecFailure(t *testing.T) {
 	}
 }
 
+// Der Change der Zeile endet außerhalb der Change-Invarianten (Sequenz 0):
+// der Domänen-Konstruktor lehnt ihn ab, der Übersetzungspunkt des Aufrufers
+// bleibt unberührt (`ADR-0029`) — der Fehler trägt seine Klasse schon selbst.
+func TestReadChangesLeavesChangeTranslationFailureUnclassified(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{changeRow("chg-1", 0, 42)}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT changes",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrNonPositiveSequence) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("der Übersetzungspunkt darf hier nicht laufen: %v", recorder.causes)
+	}
+}
+
+// Eine bestätigte Position der Spalte 0 ist keine Position (`SPEC-003`): der
+// Mapper lehnt sie ab, der Übersetzungspunkt bleibt unberührt — derselbe
+// Domänen-Fehler wie im Lesepfad, keine Treiber-Klasse.
+func TestReadConsumerPositionRejectsNonPositiveColumn(t *testing.T) {
+	exec := &fakeExecutor{row: &fakeRow{values: []any{"src-1", int64(0)}}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPosition(context.Background(), exec, model.ConsumerID("consumer-1"), sqlexec.Statement{
+		SQL:  "SELECT position",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidPosition) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("der Übersetzungspunkt darf hier nicht laufen: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionsClassifiesQueryFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionsClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows:     [][]any{{"consumer-1", int64(10)}},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionsLeavesDomainFailureUnclassified(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"consumer-1", int64(10)},
+		{"consumer-2", int64(0)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidPosition) {
+		t.Fatalf("erwartete die Domänen-Invariante, gesehen: %v", err)
+	}
+	if stderrors.Is(err, outbound.ErrConsumerStateStorage) {
+		t.Fatalf("ein Domänen-Fehler darf die Treiber-Klasse nicht tragen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("der Übersetzungspunkt darf hier nicht laufen: %v", recorder.causes)
+	}
+}
+
+func TestReadConsumerPositionsClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrConsumerStateStorage}
+
+	_, err := sqlexec.ReadConsumerPositions(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT positions",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrConsumerStateStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadSourceTablesClassifiesQueryFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadSourceTables(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT tables",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadSourceTablesClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows:     [][]any{{"tbl-1", "src-1", "public", "feed"}},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadSourceTables(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT tables",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadSourceTablesClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadSourceTables(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT tables",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadExcludedColumnsClassifiesQueryFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadExcludedColumnsClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows: [][]any{
+			{"public", "feed", string(model.AdministrationRequestExcludeColumn), "secret"},
+		},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadExcludedColumnsClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadExcludedColumns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT applied column requests",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadTableSchemaClassifiesQueryFailure(t *testing.T) {
+	cause := stderrors.New("Verbindung abgelehnt")
+	exec := &fakeExecutor{queryErr: cause}
+	recorder := &failRecorder{class: outbound.ErrSchemaStoreStorage}
+
+	_, err := sqlexec.ReadTableSchema(context.Background(), exec, model.SchemaVersionID("sv-1"), sqlexec.Statement{
+		SQL:  "SELECT columns",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrSchemaStoreStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadTableSchemaClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows:     [][]any{{"id", int64(23)}},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrSchemaStoreStorage}
+
+	_, err := sqlexec.ReadTableSchema(context.Background(), exec, model.SchemaVersionID("sv-1"), sqlexec.Statement{
+		SQL:  "SELECT columns",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrSchemaStoreStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadTableSchemaClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrSchemaStoreStorage}
+
+	_, err := sqlexec.ReadTableSchema(context.Background(), exec, model.SchemaVersionID("sv-1"), sqlexec.Statement{
+		SQL:  "SELECT columns",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrSchemaStoreStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadPendingRequestsClassifiesScanFailure(t *testing.T) {
+	cause := stderrors.New("Spaltentyp passt nicht")
+	exec := &fakeExecutor{rows: &fakeRows{
+		rows: [][]any{
+			{"req-1", "src-1", "public", "feed", "", string(model.AdministrationRequestEnable)},
+		},
+		scanErrs: map[int]error{0: cause},
+	}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	_, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT pending",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrAdministrationStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
+func TestReadPendingRequestsClassifiesIterationFailure(t *testing.T) {
+	cause := stderrors.New("Ergebnis-Menge abgebrochen")
+	exec := &fakeExecutor{rows: &fakeRows{iterErr: cause}}
+	recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+	_, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT pending",
+		Fail: recorder.fail,
+	})
+
+	if !stderrors.Is(err, outbound.ErrAdministrationStorage) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler trägt nicht Klasse und Ursache: %v", err)
+	}
+	if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+		t.Fatalf("Übersetzungspunkt gesehen: %v", recorder.causes)
+	}
+}
+
 // Die Naht selbst: der reale Pool erfüllt sie, ein Träger der Fakes ebenso —
 // die Zusicherung steht in `seam.go` (Kompilier-Beleg), dieser Test hält die
 // Fake-Seite dagegen.

@@ -929,3 +929,370 @@ func TestAssemblerLiveReloadIsRaceFree(t *testing.T) {
 	}()
 	wg.Wait()
 }
+
+// stubSchemaStore trägt einen SchemaStorePort, dessen drei Zugriffe je
+// einen vorgegebenen Wert oder Fehler liefern — die gemeinsame Form der
+// Fehlerpfad-Tests der dynamischen Re-Versionierung (`observeRelation`).
+type stubSchemaStore struct {
+	current     model.SchemaVersion
+	found       bool
+	currentErr  error
+	schema      model.TableSchema
+	schemaErr   error
+	registerErr error
+}
+
+func (s *stubSchemaStore) CurrentVersion(context.Context, model.SourceTableID) (model.SchemaVersion, bool, error) {
+	return s.current, s.found, s.currentErr
+}
+
+func (s *stubSchemaStore) RegisterVersion(context.Context, model.SchemaVersion, model.TableSchema) (bool, error) {
+	return false, s.registerErr
+}
+
+func (s *stubSchemaStore) TableSchema(context.Context, model.SchemaVersionID) (model.TableSchema, error) {
+	return s.schema, s.schemaErr
+}
+
+// Ein COMMIT ohne Offset trägt keine Quellposition (`SPEC-003`): die
+// Übersetzung endet über den Domänen-Konstruktor sichtbar, statt eine
+// Position 0 in die Transaktion zu schreiben.
+func TestConsumeCommitWithoutOffsetReportsPositionError(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 7}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+
+	_, err := assembler.Consume(ctx, decode.Commit{CommitLSN: 0})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidPosition) {
+		t.Fatalf("COMMIT ohne Offset: %v, wollen ErrInvalidPosition", err)
+	}
+}
+
+// Eine Änderung mit einem Operationstyp außerhalb der drei dekodierten
+// endet als sichtbarer Domänen-Fehler (`LH-FA-DAT-003`) — kein stilles
+// Überspringen.
+func TestConsumeChangeWithUnknownOperation(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 8}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+
+	_, err := assembler.Consume(ctx, decode.Change{
+		Relation:  relation("public", "feed", decode.Column{Name: "id", Key: true}),
+		Operation: decode.Operation(99),
+		New:       []*string{pointer("1")},
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidOperation) {
+		t.Fatalf("unbekannte Operation: %v, wollen ErrInvalidOperation", err)
+	}
+}
+
+// Ein Ereignis außerhalb des Capture-Pfads trägt keine Änderung: der
+// Assembler meldet weder einen Aufruf noch einen Fehler.
+func TestConsumeIgnoresEventOutsideCapturePath(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+
+	command, err := assembler.Consume(ctx, nil)
+
+	if err != nil || command != nil {
+		t.Fatalf("Consume(nil) = %v, %v, wollen nil, nil", command, err)
+	}
+}
+
+// Eine Bindung ohne Tabellen-Kennung trägt keine Change-Invariante
+// (`AddBinding` prüft die Kennungen nicht): der Domänen-Konstruktor lehnt
+// den übersetzten Change ab (`ADR-0029`, Regel 7), statt ihn mit leerer
+// Tabellen-Referenz anzuhängen.
+func TestConsumeChangeOutsideChangeInvariants(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{})
+	assembler.AddBinding("public.feed", mapper.TableBinding{SchemaVersion: "sv-1"})
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 5}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+
+	_, err := assembler.Consume(ctx, decode.Change{
+		Relation:  relation("public", "feed", decode.Column{Name: "id", Key: true}),
+		Operation: decode.OpInsert,
+		New:       []*string{pointer("1")},
+	})
+
+	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Change über eine Bindung ohne Tabellen-Kennung: %v", err)
+	}
+}
+
+// TRUNCATE nennt die betroffenen Relationen qualifiziert (`Schema.Name`,
+// getrennt durch Komma und Leerzeichen) — die Meldung adressiert die
+// Tabelle, nicht die Relation-Id des Protokolls (`LH-FA-CFG-001.a`).
+func TestConsumeTruncateNamesQualifiedRelations(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+
+	_, err := assembler.Consume(ctx, decode.Truncate{
+		Relations: []*decode.Relation{
+			relation("public", "feed"),
+			relation("public", "orders"),
+		},
+	})
+
+	if !stderrors.Is(err, mapper.ErrTruncateUnsupported) {
+		t.Fatalf("TRUNCATE: %v, wollen ErrTruncateUnsupported", err)
+	}
+	if !strings.Contains(err.Error(), "public.feed, public.orders") {
+		t.Fatalf("Meldung = %q, wollen die qualifizierten Namen beider Relationen", err.Error())
+	}
+}
+
+// Eine Relation-Nachricht für eine nicht aktivierte Tabelle bleibt
+// wirkungslos (`LH-FA-CFG-001`): ohne Bindung gibt es keine Schema-Version
+// nachzutragen.
+func TestConsumeRelationOnUnboundTableStaysNoop(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{
+		current: model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1},
+		found:   true,
+		schema:  model.TableSchema{VersionID: "sv-1", Columns: []model.Column{{Name: "id", OID: 23}}},
+	}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "orders", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+
+	if err != nil {
+		t.Fatalf("Relation außerhalb der Aktivierungen: %v, wollen wirkungslos", err)
+	}
+}
+
+// Ein Fehler des Schema-Stores beim Versions-Lesen endet sichtbar, statt
+// eine unbekannte Version als „keine Form" zu deuten.
+func TestConsumeRelationReportsCurrentVersionFailure(t *testing.T) {
+	ctx := context.Background()
+	cause := stderrors.New("Katalog nicht lesbar")
+	store := &stubSchemaStore{currentErr: cause}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+
+	if !stderrors.Is(err, cause) {
+		t.Fatalf("Relation bei Store-Fehler: %v, wollen die Ursache", err)
+	}
+}
+
+// Eine Tabelle ohne über diesen Port registrierte Version bleibt
+// wirkungslos: die statische Erstaktivierung trägt ihren Stand selbst.
+func TestConsumeRelationWithoutRegisteredVersionStaysNoop(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{found: false}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+
+	if err != nil {
+		t.Fatalf("Relation ohne registrierte Version: %v, wollen wirkungslos", err)
+	}
+}
+
+// Der Backfill der fehlenden Spaltenform lehnt eine Relation ohne Spalten
+// ab (`ADR-0029`): die Version bekommt keine leere Form nachgetragen.
+func TestConsumeRelationBackfillRejectsEmptyColumnForm(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{
+		current:   model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1},
+		found:     true,
+		schemaErr: outbound.ErrSchemaVersionUnknown,
+	}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed"))
+
+	if !stderrors.Is(err, domainerrors.ErrEmptyColumns) {
+		t.Fatalf("Backfill ohne Spalten: %v, wollen ErrEmptyColumns", err)
+	}
+}
+
+// Ein Store-Fehler beim Lesen der Spaltenform, der nicht die Abwesenheit
+// trägt, endet unverändert — er wird nicht als Backfill-Anlass gedeutet.
+func TestConsumeRelationReportsTableSchemaFailure(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{
+		current:   model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1},
+		found:     true,
+		schemaErr: outbound.ErrSchemaStoreStorage,
+	}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+
+	if !stderrors.Is(err, outbound.ErrSchemaStoreStorage) {
+		t.Fatalf("Relation bei Store-Fehler: %v, wollen ErrSchemaStoreStorage", err)
+	}
+}
+
+// Eine kompatible Erweiterung über eine Bindung ohne Tabellen-Kennung
+// endet am Domänen-Konstruktor der neuen Version (`ADR-0029`): die
+// Kennung der neuen Version trägt dann keine Tabellen-Kennung mehr.
+func TestConsumeRelationReportsVersionConstructionFailure(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{
+		current: model.SchemaVersion{ID: "sv-empty", Version: 1},
+		found:   true,
+		schema:  model.TableSchema{VersionID: "sv-empty", Columns: []model.Column{{Name: "id", OID: 23}}},
+	}
+	assembler, err := mapper.NewAssembler("src-1", map[string]mapper.TableBinding{}, store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+	assembler.AddBinding("public.feed", mapper.TableBinding{SchemaVersion: "sv-1"})
+
+	_, err = assembler.Consume(ctx, relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "extra", TypeOID: 25}))
+
+	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("kompatible Erweiterung ohne Tabellen-Kennung: %v", err)
+	}
+}
+
+// Die Spaltenform der neuen Version endet am Domänen-Konstruktor, wenn die
+// eingehende Relation eine Spalte ohne Namen trägt (`ADR-0029`): die
+// Erweiterung wird nicht mit leerem Spaltennamen registriert.
+func TestConsumeRelationReportsColumnFormConstructionFailure(t *testing.T) {
+	ctx := context.Background()
+	store := &stubSchemaStore{
+		current: model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1},
+		found:   true,
+		schema:  model.TableSchema{VersionID: "sv-1", Columns: []model.Column{{Name: "id", OID: 23}}},
+	}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "", TypeOID: 25}))
+
+	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+		t.Fatalf("Erweiterung mit leerem Spaltennamen: %v", err)
+	}
+}
+
+// Ein abgelehnter Store-Schreibzugriff endet sichtbar: die Bindung wird
+// nicht auf eine nicht registrierte Version gehoben.
+func TestConsumeRelationReportsRegistrationFailure(t *testing.T) {
+	ctx := context.Background()
+	cause := stderrors.New("Schreibzugriff abgelehnt")
+	store := &stubSchemaStore{
+		current:     model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1},
+		found:       true,
+		schema:      model.TableSchema{VersionID: "sv-1", Columns: []model.Column{{Name: "id", OID: 23}}},
+		registerErr: cause,
+	}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "extra", TypeOID: 25}))
+
+	if !stderrors.Is(err, cause) {
+		t.Fatalf("abgelehnte Registrierung: %v, wollen die Ursache", err)
+	}
+}
+
+// Eine bekannte Spaltenform mit doppeltem Spaltennamen ist keine Obermenge:
+// die eingehende Relation trägt weniger Spalten als die bekannte Form und
+// endet deshalb über `relationOther` (`LH-FA-SCH-004.a`) — trotz passender
+// Namen und Typ-OIDs.
+func TestConsumeRelationClassifiesDuplicateKnownColumnsAsOther(t *testing.T) {
+	ctx := context.Background()
+	store := newFakeSchemaStore()
+	store.versions["tbl-1"] = model.SchemaVersion{ID: "sv-1", SourceTableID: "tbl-1", Version: 1}
+	store.schemas["sv-1"] = model.TableSchema{VersionID: "sv-1", Columns: []model.Column{
+		{Name: "id", OID: 23}, {Name: "id", OID: 23},
+	}}
+	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
+	if err != nil {
+		t.Fatalf("NewAssembler: %v", err)
+	}
+
+	_, err = assembler.Consume(ctx, relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23}))
+
+	if !stderrors.Is(err, mapper.ErrIncompatibleSchemaChange) {
+		t.Fatalf("doppelte bekannte Spalte: %v, wollen ErrIncompatibleSchemaChange", err)
+	}
+	if store.registrations != 0 {
+		t.Fatalf("registrations = %d, wollen 0 (kein Store-Schreibzugriff bei relationOther)", store.registrations)
+	}
+}
+
+// Der Einschluss einer Spalte ohne getragene Bindung bleibt wirkungslos —
+// derselbe idempotente Vertrag wie bei `ExcludeColumn`: es entsteht kein
+// Filterzustand, den eine später nachgetragene Bindung erben würde.
+func TestIncludeColumnOnUnboundTableStaysNoop(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{})
+	relationEvent := relation("public", "orders",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"})
+
+	assembler.IncludeColumn("public.orders", "secret")
+	assembler.AddBinding("public.orders", mapper.TableBinding{
+		TableID: "tbl-orders", SchemaVersion: "sv-orders", ExcludedColumns: []string{"secret"},
+	})
+
+	change := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim")},
+	})
+	if string(change.NewImage) != `{"id":"1"}` {
+		t.Fatalf("Neu-Image = %s, wollen ohne secret (der Einschluss ohne Bindung legt keinen Zustand an)", change.NewImage)
+	}
+}
+
+// Ein Einschluss nimmt genau den genannten Namen aus dem Ausschlussstand;
+// die übrigen bleiben geführt (`LH-FA-CFG-005`).
+func TestIncludeColumnKeepsRemainingExclusions(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, map[string]mapper.TableBinding{
+		"public.feed": {TableID: "tbl-1", SchemaVersion: "sv-1", ExcludedColumns: []string{"secret", "token"}},
+	})
+	relationEvent := relation("public", "feed",
+		decode.Column{Name: "id", Key: true},
+		decode.Column{Name: "secret"},
+		decode.Column{Name: "token"})
+
+	assembler.IncludeColumn("public.feed", "secret")
+
+	change := consumedChange(t, ctx, assembler, 1, decode.Change{
+		Relation: relationEvent, Operation: decode.OpInsert,
+		New: []*string{pointer("1"), pointer("geheim"), pointer("marke")},
+	})
+	if string(change.NewImage) != `{"id":"1","secret":"geheim"}` {
+		t.Fatalf("Neu-Image = %s, wollen id und secret, aber weiterhin ohne token", change.NewImage)
+	}
+}
