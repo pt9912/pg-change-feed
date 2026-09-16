@@ -58,19 +58,29 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   mit, in dem sie gemessen wurde (Lauf `slice-085`). Die **gedeckte** Zahl ist
   dagegen **kein** Zustand — sie trägt den Beleg **eines** Laufs: **1369 von
   1903** (**71,94 %**, gedruckt `71.90%`) und **1371** (**72,04 %**, gedruckt
-  `72.00%`) sind die zwei beobachteten Enden desselben Stands (Lauf
-  `slice-084`; im Lauf `slice-085` erneut beobachtet). Der Träger der
-  Schwankung liegt in `internal/bootstrap/wiring.go` und ist in **zwei** Blöcken
-  gemessen: dem Takt-Zweig von `runWALRetentionCheck` (`:991.5,992.13`,
-  2 Statements — er feuert nur, wenn der Tick vor dem Kontext-Ende liegt,
+  `72.00%`) sind die zwei beobachteten Enden des Stands der Läufe `slice-084`
+  und `slice-085`. Der Träger der Schwankung liegt in
+  `internal/bootstrap/wiring.go`; von den zwei Blöcken, die die
+  Acht-Lauf-Messung unten benennt, trägt sie nach dem Stand von `slice-093`
+  nur noch **einer**: der Kontext-Ende-Zweig von `runAdministration`
+  (`:1091.4,1092.1`, 1 Statement). Den zweiten — den Fehlerzweig der
+  WAL-Rückstands-Messung in `runWALRetentionCheck` (`:991.5,992.13`,
+  2 Statements), den
   [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
-  §Kontext (2)) und dem Kontext-Ende-Zweig von `runAdministration`
-  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe desselben
-  Produktionsstands (`go test -count=1 -coverpkg=… -covermode=atomic`,
+  §Kontext (2) als Takt-Zweig benennt — fährt der netzlose Test
+  `TestRunWALRetentionCheckProtokolliertMessfehlerUndLaeuftWeiter`
+  (`internal/bootstrap/wiring_rest_internal_test.go`) deterministisch: er
+  liefert dem Messer einen Fehler, statt auf das Kontext-Ende zu warten, und
+  der Block trug `count > 0` in jedem der vier Läufe von `slice-093`. Die
+  gedeckte Zahl kann damit nur noch um das eine Statement des
+  `runAdministration`-Zweigs wandern (**abgeleitet**, kein eigener Lauf).
+  Über **acht** Läufe des Test-Stands von `slice-091`
+  (`go test -count=1 -coverpkg=… -covermode=atomic`,
   Auswertung über die Block-Position, Lauf `slice-091`) lag die gedeckte Zahl
   zwischen **1468** und **1471**, die gedruckte Zeile zwischen `77.1%` und
   `77.3%`; der Takt-Zweig trug in **einem** dieser Läufe `count > 0`, der
-  `runAdministration`-Zweig fiel in **einem** auf `count = 0`. Nenner und
+  `runAdministration`-Zweig fiel in **einem** auf `count = 0`. Das ist die
+  Messung jenes Test-Stands, nicht die des geltenden; Nenner und
   Abstand zur Schwelle sind von der Schwankung unberührt.
 
   Das hier gemessene Band ist **nicht** das oben genannte: der **Nenner** ist an
@@ -81,7 +91,7 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   (**abgeleitet**, nicht gemessen: 1468/1471 gegen 1369/1371) beträgt je nach
   Paarung 97 bis 102 Statements.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
-  hier `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
+  z. B. `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
   Testbinaries ändert dieses Prädikat nicht, und damit auch nicht das Verhältnis
   gedeckter zu instrumentierten **Statements**. Sie ist deshalb **keine eigene
@@ -167,8 +177,9 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    Prozent-Schwelle unsichtbar. Rot färbt sie nur die Rücknahme von
    `postgresstorage` (`(1369 + 31) / (1903 + 472) = 1400 / 2375 = 58,95 %`).
    Alle drei Ausgänge liegen weiter als die Lauf-zu-Lauf-Schwankung
-   (dem in §Zählbasis gemessenen Band von 3 Statements = 0,16 pp auf dem
-   Gegenstands-Nenner, abgeleitet aus 3/1903) von der Schwelle
+   (dem in §Zählbasis geführten Band — nach `slice-093` höchstens **1**
+   Statement = 0,05 pp auf dem Gegenstands-Nenner, abgeleitet aus 1/1903,
+   weil der zweite Block dort deterministisch gedeckt ist —) von der Schwelle
    entfernt: `postgresstorage` mit −11,05 Prozentpunkten darunter, die beiden
    grünen mit **+2,30** (`postgresack`) und **+0,86** Prozentpunkten
    (`replication/receive`) darüber — zum Kippen wären dort ≈45 bzw. ≈18

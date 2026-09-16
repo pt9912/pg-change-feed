@@ -37,11 +37,21 @@ type fakeAdministrationRequestPort struct {
 	pending []model.AdministrationRequest
 	applied []model.AdministrationRequestID
 	failed  map[model.AdministrationRequestID]string
+	// listErr/markAppliedErr/markFailedErr tragen die drei Fehlerzweige
+	// des Ports (`processAdministrationRequests`): der Lesefehler beendet
+	// den Durchlauf, die beiden Vermerk-Fehler bleiben best-effort und
+	// werden protokolliert.
+	listErr        error
+	markAppliedErr error
+	markFailedErr  error
 }
 
 func (f *fakeAdministrationRequestPort) ListPending(ctx context.Context) ([]model.AdministrationRequest, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
 	pending := f.pending
 	f.pending = nil
 	return pending, nil
@@ -50,6 +60,9 @@ func (f *fakeAdministrationRequestPort) ListPending(ctx context.Context) ([]mode
 func (f *fakeAdministrationRequestPort) MarkApplied(ctx context.Context, id model.AdministrationRequestID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.markAppliedErr != nil {
+		return f.markAppliedErr
+	}
 	f.applied = append(f.applied, id)
 	return nil
 }
@@ -57,6 +70,9 @@ func (f *fakeAdministrationRequestPort) MarkApplied(ctx context.Context, id mode
 func (f *fakeAdministrationRequestPort) MarkFailed(ctx context.Context, id model.AdministrationRequestID, message string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.markFailedErr != nil {
+		return f.markFailedErr
+	}
 	if f.failed == nil {
 		f.failed = map[model.AdministrationRequestID]string{}
 	}
@@ -162,6 +178,11 @@ var _ inbound.IncludeColumnUseCase = (*fakeIncludeColumnUseCase)(nil)
 type fakeTableActivationPort struct {
 	registered map[string]model.SourceTable
 	listed     []model.SourceTable
+	// registeredErr/listErr tragen die beiden Lese-Fehlerzweige
+	// (`applyAdministrationRequest`s Rücklesen der Bindung,
+	// `activatedTableBindings`s committed Stand).
+	registeredErr error
+	listErr       error
 }
 
 func (f *fakeTableActivationPort) TableExists(ctx context.Context, schema, table string) (bool, error) {
@@ -169,6 +190,9 @@ func (f *fakeTableActivationPort) TableExists(ctx context.Context, schema, table
 }
 
 func (f *fakeTableActivationPort) Registered(ctx context.Context, source model.SourceID, schema, table string) (model.SourceTable, bool, error) {
+	if f.registeredErr != nil {
+		return model.SourceTable{}, false, f.registeredErr
+	}
 	entry, found := f.registered[schema+"."+table]
 	return entry, found, nil
 }
@@ -182,6 +206,9 @@ func (f *fakeTableActivationPort) Unregister(ctx context.Context, table model.So
 }
 
 func (f *fakeTableActivationPort) List(ctx context.Context, source model.SourceID) ([]model.SourceTable, error) {
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
 	return f.listed, nil
 }
 
@@ -203,9 +230,16 @@ var _ outbound.TableActivationPort = (*fakeTableActivationPort)(nil)
 // `applyAdministrationRequest` ruft ausschließlich diese Methode auf.
 type fakeSchemaStorePort struct {
 	versions map[model.SourceTableID]model.SchemaVersion
+	// err trägt den Lese-Fehlerzweig (beide Aufrufer:
+	// `applyAdministrationRequest`s Enable-Zweig und
+	// `activatedTableBindings`).
+	err error
 }
 
 func (f *fakeSchemaStorePort) CurrentVersion(ctx context.Context, table model.SourceTableID) (model.SchemaVersion, bool, error) {
+	if f.err != nil {
+		return model.SchemaVersion{}, false, f.err
+	}
 	version, found := f.versions[table]
 	return version, found, nil
 }

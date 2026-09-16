@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -126,11 +127,14 @@ func (f *fakeWALRetentionMeasurer) Measure(ctx context.Context) (int64, error) {
 
 // recordingLog trägt jeden Log-Aufruf zur Prüfung, welche Stufe geloggt
 // wurde — `Debug` bleibt ungenutzt (kein Aufrufer dieses Tests nutzt ihn).
+// `messages` trägt die Zeilen in der Form `STUFE: Nachricht`, damit ein
+// Test den konkreten Pfad belegen kann statt nur die Stufe.
 type recordingLog struct {
-	mu    sync.Mutex
-	warns int
-	errs  int
-	infos int
+	mu       sync.Mutex
+	warns    int
+	errs     int
+	infos    int
+	messages []string
 }
 
 func (r *recordingLog) Debug(ctx context.Context, msg string, args ...any) {}
@@ -138,16 +142,33 @@ func (r *recordingLog) Info(ctx context.Context, msg string, args ...any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.infos++
+	r.messages = append(r.messages, "INFO: "+msg)
 }
 func (r *recordingLog) Warn(ctx context.Context, msg string, args ...any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.warns++
+	r.messages = append(r.messages, "WARN: "+msg)
 }
 func (r *recordingLog) Error(ctx context.Context, msg string, args ...any) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.errs++
+	r.messages = append(r.messages, "ERROR: "+msg)
+}
+
+// contains meldet, ob eine der protokollierten Zeilen die Form
+// `STUFE: Nachricht` trägt — der Nachrichten-Teil wird auf Enthaltensein
+// geprüft, damit der Test nicht an der Attribut-Liste klebt.
+func (r *recordingLog) contains(prefix, fragment string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, message := range r.messages {
+		if strings.HasPrefix(message, prefix+": ") && strings.Contains(message, fragment) {
+			return true
+		}
+	}
+	return false
 }
 
 var _ outbound.LogPort = (*recordingLog)(nil)

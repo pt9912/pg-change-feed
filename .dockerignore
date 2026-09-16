@@ -1,11 +1,16 @@
 # Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
 # Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
-# wandern). tools/coverage-gate.sh ist die Coverage-Gate-Zusatzausnahme
-# (ADR-0054, coverage-Stage): das Runtime-Image bleibt unberührt, die
-# Ausnahme gilt nur der Coverage-Stage im selben Dockerfile.
+# wandern). Zwei Ausnahmen trägt die `coverage`-Stage (ADR-0054):
+# tools/coverage-gate.sh ist die Schwellen-Prüfung der Stage;
+# tools/schema/nacharbeit-roles.sql ist der ausgerollte Grant-Text, gegen
+# den `internal/bootstrap/roles_rollout_file_internal_test.go` den
+# Rollenschnitt hält (ADR-0047/ADR-0048, BEO-PGC/rollen-test-abdeckungsluecken).
+# Das Runtime-Image bleibt unberührt — die Ausnahmen gelten nur den Stages
+# desselben Dockerfile, `runtime` übernimmt ausschließlich das Binary.
 *
 !cmd/
 !internal/
 !go.mod
 !go.sum
 !tools/coverage-gate.sh
+!tools/schema/nacharbeit-roles.sql
