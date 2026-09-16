@@ -70,7 +70,8 @@ zu `LH-FA-SST-008`).
   stille Umdeutung einer `Accepted`-ADR.
 - **Eine Änderung an `make proto-generate`.** Das bestehende Ziel schreibt
   **in-place** in den Bind-Mount und bleibt der **Generator**; das Gate erzeugt
-  in ein **Temp-Verzeichnis** (`ADR-0084` Festlegung 1) und ist damit **nicht**
+  in ein **Temp-Verzeichnis** ([`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md)
+  Festlegung 1, erste Bedingung) und ist damit **nicht**
   sein Aufrufer.
 
 **Keine Mindestzahl.** Ein Slice mit *einem* echten Ausschluss ist besser als
@@ -93,35 +94,37 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — das Gate existiert und hängt am Aggregat.** Ein `make`-Ziel läuft den
+- [x] **LP1 — das Gate existiert und hängt am Aggregat.** Ein `make`-Ziel läuft den
       gepinnten Generator gegen `proto/cdc/stream/v1/changestream.proto`, vergleicht
       mit dem committeten Erzeugnis und ist über `GATE_CHECKS` in `make gates`
       eingebunden; `make gates` ist grün.
-- [ ] **LP2 — das Gate schreibt den Arbeitsbaum nicht.** Es erzeugt in ein
+- [x] **LP2 — das Gate schreibt den Arbeitsbaum nicht.** Es erzeugt in ein
       Temp-Verzeichnis; **`git status --porcelain` ist nach dem Lauf leer — auch
       beim zweiten Lauf hintereinander.** Der Nachweis ist die Doppelung: ein Gate,
       das erst schreibt und dann `git diff` liest, wäre beim ersten Lauf rot und
-      beim zweiten grün (`ADR-0084` Festlegung 1).
-- [ ] **LP3 — ein roter Befund nennt die Abweichung.** Der Rot-Fall ist **real
+      beim zweiten grün ([`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md)
+      Festlegung 1, erste Bedingung).
+- [x] **LP3 — ein roter Befund nennt die Abweichung.** Der Rot-Fall ist **real
       gesehen**, nicht behauptet: die committete `.pb.go` wird gegen den Generator
       verändert (oder die `.proto`), der Lauf wird rot, und die Ausgabe nennt
       **Datei und Zeile**; danach wird die Änderung zurückgenommen. Ein Befund
       „Erzeugnis nicht synchron" ohne Datei gilt als **nicht erfüllt**
-      (`ADR-0084` Festlegung 2).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      ([`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md)
+      Festlegung 1, zweite Bedingung).
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: das neue Ziel steht in `harness/README.md` §Sensors (Gate-Tabelle,
+- [x] Doku-Update: das neue Ziel steht in `harness/README.md` §Sensors (Gate-Tabelle,
       mit Bindung) **und** in `AGENTS.md` §4 (Target-Liste); `make proto-generate`
       behält seine Zeile als **Werkzeug**.
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-090.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-090.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. **`state.md` wird hier nicht geschrieben:** den Ausgang von `BEO-PGC/generierte-artefakte-ohne-sync-sensor` weist der **Lese-Schritt der `welle-20`-Closure** zu (Modul 6) — der Träger steht mit diesem Slice, der Ausgang folgt dort.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. **`state.md` wird hier nicht geschrieben:** den Ausgang von `BEO-PGC/generierte-artefakte-ohne-sync-sensor` weist der **Lese-Schritt der `welle-20`-Closure** zu (Modul 6) — der Träger steht mit diesem Slice, der Ausgang folgt dort.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
 
 ## 3. Plan (vor Code)
 
@@ -162,7 +165,9 @@ Beides ist ohne Rückfrage feststellbar.
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): wenn der Vergleich eine
   Änderung an `make proto-generate` oder an der Dockerfile-Stufe `proto` verlangt.
   Dann wäre das Gate kein reiner **Prüf**-Schritt mehr, sondern bewegte den
-  Generator — das ist ein anderer Schnitt (`ADR-0084` Festlegung 1).
+  Generator — das ist ein anderer Schnitt
+  ([`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md) Festlegung 1,
+  erste Bedingung).
 - `in-progress` → `open` (blockiert — Carveout?): wenn das committete `.pb.go` gegen
   den gepinnten Generator **nicht** reproduzierbar ist (etwa ein Versions- oder
   Zeitstempel im Dateikopf). Dann ist die Paarung „committetes Erzeugnis = Ausgabe"
@@ -202,14 +207,40 @@ dasteht.
 
 - **Das Erzeugnis ist nicht reproduzierbar** (Versions-/Zeitstempel im Dateikopf der
   `.pb.go`) — das Gate wäre **dauerhaft rot** und blockierte jeden `make gates`-Lauf.
-  — **Ausgang:** <…>
+  — **Ausgang: entfallen.** Gemessen ist das Erzeugnis byte-gleich reproduzierbar:
+  `generated-sync: OK — das committete Erzeugnis ist byte-gleich der Ausgabe des
+  gepinnten Generators (Stufe proto)` in jedem Lauf, und die Mutations-Proben
+  (Zeile 1/102/226/260, Löschung, Anhang) zeigen Abweichungen genau dort, wo sie
+  gesetzt wurden — kein Rauschen. Zwei Läufe hintereinander ließen den Baum
+  unberührt (`git status --porcelain` leer).
 - **Der Generator-Lauf braucht Netz.** Die Dockerfile-Stufe `proto` wird aus einem
   Basis-Image gebaut; ohne Netz und ohne lokalen Cache scheitert schon der Build, und
-  das Gate wäre im netzlosen Lauf **nicht ausführbar**. — **Ausgang:** <…>
+  das Gate wäre im netzlosen Lauf **nicht ausführbar**. — **Ausgang: eingetreten —
+  und begrenzt.** Der erste Lauf mit kaltem Layer-Cache baut real mit Netz (`apk add`
+  und zwei `go install`; die gedruckte Zeile `#9 DONE 8.5s`), mit warmem Cache läuft
+  er netzlos und braucht gemessen `0,93 s` (`real 0m0,941s` / `real 0m0,928s`). Die
+  **Bedingung** ist damit real; der befürchtete Ausfall ist es nicht. Was daraus
+  folgt, ist kein Gate-Defekt, sondern eine offene Bestätigung — siehe das vierte
+  Risiko.
 - **Die Modul-Layout-Relation ist im Temp-Verzeichnis falsch abgebildet.** Ohne die
   Entsprechung zu `--go_opt=module=…` landen die erzeugten Dateien unter einem
   anderen Pfad, und der Vergleich meldete **Drift, wo keine ist** — ein falsch-positiver
-  Befund, der die Paarung verfehlt. — **Ausgang:** <…>
+  Befund, der die Paarung verfehlt. — **Ausgang: entfallen.** Der Fall ist
+  **strukturell** ausgeschlossen, nicht nur ungetestet: bei nicht passendem Präfix
+  bricht `protoc-gen-go` selbst ab (`--go_out: …: generated file does not match
+  prefix "example.com/other"`, Exit 1, **kein** Ausgabefile) — die Ausgabe landet
+  also auf keinem falschen Pfad. Den dafür zunächst gebauten Wächter hat der
+  Implementer deshalb **wieder entfernt**: er war unerreichbar, und unerreichbarer
+  Code behauptet eine Prüfung, die nie stattfindet.
+- **Die CI-Wirksamkeit des neuen Gates ist unbelegt** — *während der Arbeit
+  aufgefallen, nicht im Plan gestanden.* `ci.yml` fährt `make gates` auf einem
+  frischen Runner, also **ohne** warmen Layer-Cache: ob die `proto`-Stufe dort kalt
+  und mit Netz baut und innerhalb des Zeitlimits bleibt, ist lokal nicht prüfbar
+  (`AGENTS.md` §3.1). — **Ausgang: weiter offen → `BEO-PGC/github-actions-unverifizierbar-lokal`**
+  (Beleg `evidence/slice-090.md`). `AGENTS.md` §3.10 ist dem Buchstaben nach **nicht**
+  ausgelöst — dieser Slice ändert am Workflow nur einen Schrittnamen und
+  Kommentarzeilen —, sein **Grund** aber trifft zu: der Beleg ist der erste reale
+  Post-Push-Lauf.
 
 ## 7. Closure-Notiz
 
@@ -228,18 +259,64 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Das Gate trägt seine zwei Festlegungen **real**, nicht
+  behauptet — der Baum bleibt unberührt (`git status --porcelain` nach **zwei**
+  Läufen hintereinander leer, im Wegwerf-Klon literal leer), und der rote Befund
+  nennt **Datei und Zeile**, wobei die Zeile die abweichende ist (eigene Mutation
+  Zeile 102 → Befund 102; vor der Korrektur hätte er 99 gesagt, den Hunk-Anfang).
+  Die Bindung ist **eine** Deklaration (`GATE_CHECKS += generated-sync` im
+  Fragment, `include harness/mk/*.mk` zieht es ein) — `make -p` löst sechs Ziele
+  auf, keine zweite Stelle im `Makefile`.
+  **Und der Steering Loop hat getragen:** die erste Fixrunde war von Review und
+  Verifikation gedeckt, ihre **zwei neuen** falschen Aussagen fand der
+  **Delta-Review** — ein frischer Kontext, der sie nicht suchte, sondern das
+  zitierte Dokument aufschlug.
+- **Was ging anders als geplant:** Es brauchte **zwei** Fixrunden statt einer, und
+  die erste hat zwei Findings behoben und dabei **zwei neue falsche Aussagen
+  erzeugt** — beide in der Datei, die sie selbst anlegte
+  (`harness/sensors/generated-sync.md`). **Der Fehler kehrt in seiner Korrektur
+  wieder** — dieselbe Lektion wie in `slice-089`, eine Runde später: dort am Ende
+  der eigenen Arbeit erkannt, hier von einem fremden Kontext gefangen. Ebenfalls
+  anders: aus §6 sind **vier** Risiken geworden (das vierte fiel während der
+  Arbeit auf), und ich habe dem Implementer einen Report als Lesequelle genannt,
+  den ich zu dem Zeitpunkt noch **nicht geschrieben** hatte — er hat den fehlenden
+  Träger gemeldet statt ihn zu erfinden.
+- **Steering-Loop-Eintrag:** **kein neuer Träger — die Leser-Hälfte hat
+  getragen.** Die Regel, die den Fall deckt, steht seit `slice-089`
+  (`AGENTS.md` §3.12 Instanz B: was aus Bericht oder Nachbardokument stammt, wird
+  nachgemessen oder als *übernommen* gekennzeichnet), und ihr durchsetzender
+  Leser ist der Reviewer. Was hier fehlte, war die **Anwendung an einer neuen
+  Stelle**: der **Kopf** eines Berichts sieht wie eine Quelle aus und ist eine
+  Zusammenfassung. Das ist eine **geschärfte Formulierung ohne neuen Zielort** —
+  sie steht als Beobachtung im Register
+  (`BEO-PGC/zitat-nennt-die-falsche-stelle`) und wird **nicht** als verkörperte
+  Regel geführt. Ein Sensor ist auch hier nicht die Antwort: ob ein Verweis die
+  Aussage trägt, die er stützt, ist eine Lese-Handlung am Original; ein Gate
+  hätte die Form des Zitats zu prüfen und nicht seinen Inhalt.
+  Auslöser: `BEO-PGC/zitat-nennt-die-falsche-stelle` (`slice-090` — 1×).
+- **Beobachtungs-Register (`../observations/`):** **ein Verzeichnis neu angelegt**
+  (`BEO-PGC/zitat-nennt-die-falsche-stelle`, 1×) und **vier Belege** ergänzt:
+  `test-integration-retention-timing-flake` → **2×**, `dod-checkbox-nachzug` →
+  **4×**, `zahl-in-traeger-driftet-gegen-die-messung` → **6×**,
+  `github-actions-unverifizierbar-lokal` → **5×**. **Kein Zähler wird gesetzt** —
+  jeder folgt aus der Zahl der Dateien unter `evidence/`.
+- **Folge-Slices:** keine Datei in `open/` — der Ausgang von
+  `BEO-PGC/generierte-artefakte-ohne-sync-sensor` ist mit diesem Slice
+  **verkörpert** (der Träger steht); den Ausgang selbst weist der Lese-Schritt der
+  `welle-20`-Closure zu. Der Vorschlag aus
+  [`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md) Festlegung 2
+  (eine Quelle für Erzeuger und Prüfer der E2E-Abdeckungstabelle) bleibt
+  **unadressiert** — die ADR nennt ihn ausdrücklich ohne Kennung, und eine
+  Adresse, die die Sendung nicht annehmen kann, ist keine.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *entfallen* (Reproduzierbarkeit
+  gemessen), R2 *eingetreten — und begrenzt* (Netz nur auf kaltem Cache), R3
+  *entfallen* (strukturell ausgeschlossen, der Wächter dafür entfernt), R4
+  *weiter offen* → `BEO-PGC/github-actions-unverifizierbar-lokal`.
+- **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
+  `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices ohne
+  Wellen-Zugehörigkeit). Vorab geprüft: **beide** Register-Adressen dieses Slice
+  existieren als Verzeichnis, und **jedes** der vier ergänzten führt ein nicht
+  leeres `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
