@@ -67,7 +67,10 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   §Kontext (2)) und dem Kontext-Ende-Zweig von `runAdministration`
   (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe **desselben**
   Produktionsstands — *nicht* der oben genannte: die beiden
-  Bänder gehören zu zwei verschiedenen Code-Ständen ~100 Statements auseinander
+  Bänder gehören zu zwei verschiedenen Code-Ständen — **abgeleitet** aus der
+  Differenz der gedeckten Zahlen (1468/1471 gegen 1369/1371), ~99–100
+  Statements auseinander; gemessen ist die Differenz, die Aussage über die
+  Code-Stände ist ihre Deutung
   (`go test -count=1 -coverpkg=… -covermode=atomic`,
   Auswertung über die Block-Position, Lauf `slice-091`) lag die gedeckte Zahl
   zwischen **1468** und **1471**, die gedruckte Zeile zwischen `77.1%` und
