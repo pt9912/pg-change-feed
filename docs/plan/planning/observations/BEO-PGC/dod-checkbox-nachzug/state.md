@@ -4,8 +4,13 @@ Pflicht-Zeile im Implementer-Workflow, Zielort
 DoD-Checkbox-Nachzug im selben Lauf; Schritt 21: Fixrunden-Checkbox-Nachzug
 nach Reviewer-Findings) — Architect-Verdikt
 [`architect-review-welle-5.md`](../../../../../reviews/architect-review-welle-5.md)
-Zug 2 · seit welle-5. Zähler (abgeleitet): 3× (evidence/slice-015.md,
-evidence/slice-016.md, evidence/slice-017.md). Nachrichtlich: Vier weitere
+Zug 2 · seit welle-5. Zähler (abgeleitet): **4×** (evidence/slice-015.md,
+evidence/slice-016.md, evidence/slice-017.md, evidence/slice-090.md).
+`slice-090` traf die Klasse im **fixrunden**-Fall: der Reviewer ließ das Häkchen
+„Review durchgeführt" ausdrücklich offen („der Slice braucht eine Fixrunde"), der
+Implementer ließ es offen, weil ihm die Runde gehörte, die es setzt — die
+Zuständigkeit wanderte, die Arbeit blieb liegen; alle zwölf §2-Zeilen standen
+nach zwei Fixrunden noch auf `[ ]`. Nachrichtlich: Vier weitere
 Vorkommen derselben Klasse innerhalb bereits gezählter oder nachfolgender
 Slices (`verify-slice-015.md` V-1, `verify-slice-016.md` VF-2,
 `verify-slice-017.md` VF-1, `verify-slice-019.md` VF-2) bestätigen die

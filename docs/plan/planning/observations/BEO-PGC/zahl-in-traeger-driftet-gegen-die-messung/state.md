@@ -22,8 +22,9 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **5×** (evidence/slice-081.md, evidence/slice-084.md,
-evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md) — **Schwelle erreicht**. Die Fundstellen je Vorgang
+Zähler (abgeleitet): **6×** (evidence/slice-081.md, evidence/slice-084.md,
+evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
+evidence/slice-090.md) — **Schwelle erreicht**. Die Fundstellen je Vorgang
 liegen **im selben** Vorgang und sind damit je *eine* Gelegenheit — der Zähler
 misst Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
 **vier** driftende Werte in zwei Sensor-Dokumenten; zwei davon stammten aus
@@ -31,7 +32,10 @@ misst Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
 gegen die eigene Messung stünden. `slice-085` hat die Form dann **an sich selbst
 gebrochen** (der Nenner, den die Vorgänger-Fixrunde zum Zustand erklärt hatte,
 blieb stehen) — der Grund, warum die Durchsetzung ein Träger und kein Vorsatz
-sein muss.
+sein muss. `slice-090` hat die Klasse dann **in ihrer eigenen Behebung**
+getroffen: der Satz, der die falsche Zeilenangabe (`review-slice-090` F-2)
+ersetzte, trug eine neue falsche Abstands-Angabe („eine Zeile voraus" gegen
+gemessen 0/1/2/3).
 
 Ein Sensor ist **nicht** vorgeschlagen: verlangte er, dass jede Zahl ihren
 Ursprung trägt, wäre er eine Formpflicht auf Prosa und erzeugte

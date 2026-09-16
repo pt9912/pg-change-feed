@@ -16,12 +16,14 @@ Lese-Schritt lief als Teil der laufenden `welle-17`-Closure (Modul 8
 §Rollen-Sequenz für eine Welle, Schritt 3b, Planner → Architect →
 Planner-Zug).
 
-Zähler (abgeleitet): **4×** (evidence/slice-039.md, evidence/slice-056.md,
-evidence/slice-064.md, evidence/slice-082.md) — Schwelle erreicht, Ausgang
-zugewiesen. Der vierte Beleg ist ein weiterer Vorgang derselben Klasse und kein
-neuer Handlungsbedarf: er zeigt die Regel **wirkend** (der Implementer hat die
-CI-Bestätigung von `slice-082` selbst als §6-Risiko geführt statt den Slice für
-erledigt zu erklären).
+Zähler (abgeleitet): **5×** (evidence/slice-039.md, evidence/slice-056.md,
+evidence/slice-064.md, evidence/slice-082.md, evidence/slice-090.md) — Schwelle
+erreicht, Ausgang zugewiesen. Der fünfte Beleg fällt **außerhalb** der Regel
+an, die sie verkörpert: `slice-090` ändert am Workflow nur einen Schrittnamen
+und Kommentarzeilen, `AGENTS.md` §3.10 ist dem Buchstaben nach **nicht**
+ausgelöst — sein Grund aber trifft zu, weil `ci.yml` mit `make gates` jetzt
+einen Schritt fährt, dessen kalter Layer-Cache auf dem Runner lokal nicht
+prüfbar ist. Der Beleg hält den Unterschied fest, statt die Regel zu dehnen.
 
 (Hinweis, vom Verifier bei `slice-065` gefunden,
 `docs/reviews/verify-slice-065.md`: Die vorige Kopfzeile dieser Datei
