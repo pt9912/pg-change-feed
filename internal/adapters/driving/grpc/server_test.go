@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"net"
 	"sync"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
@@ -246,5 +248,82 @@ func TestStartLiefertFehlerBeiUngueltigerAdresse(t *testing.T) {
 	srv := New(Config{Addr: "127.0.0.1:-1", Subscriber: newFakeSubscriber()})
 	if err := srv.Start(); err == nil {
 		t.Fatal("Start mit ungültiger Horch-Adresse liefert keinen Fehler")
+	}
+}
+
+// fakeServerStream trägt einen `grpc.ServerStream`-Doppel: er liefert den
+// übergebenen Kontext und die injizierten Sende-/Empfangsfehler, ohne dass
+// ein Transport im Spiel ist.
+type fakeServerStream struct {
+	ctx     context.Context
+	sendErr error
+	recvErr error
+}
+
+func (f *fakeServerStream) SetHeader(metadata.MD) error  { return nil }
+func (f *fakeServerStream) SendHeader(metadata.MD) error { return nil }
+func (f *fakeServerStream) SetTrailer(metadata.MD)       {}
+func (f *fakeServerStream) Context() context.Context     { return f.ctx }
+func (f *fakeServerStream) SendMsg(any) error            { return nil }
+func (f *fakeServerStream) RecvMsg(any) error            { return f.recvErr }
+
+var _ grpc.ServerStream = (*fakeServerStream)(nil)
+
+// fakeChangeServerStream erfüllt `grpc.ServerStreamingServer[streamv1.Change]`
+// auf demselben Doppel.
+type fakeChangeServerStream struct{ *fakeServerStream }
+
+func (f fakeChangeServerStream) Send(*streamv1.Change) error { return f.sendErr }
+
+var _ grpc.ServerStreamingServer[streamv1.Change] = fakeChangeServerStream{}
+
+// TestServeMeldetListenerFehler trägt den Fehlerausgang von `serve`: ein
+// Listener, der keine Verbindungen mehr annimmt, endet sichtbar als Fehler —
+// nicht in einem stillen Lauf ohne Empfänger. `grpc.ErrServerStopped` bleibt
+// davon getrennt: es trägt den regulären Ausgang eines `Shutdown`
+// (`TestStartUndShutdown`), dieser Fall trägt den unerwarteten.
+// Rot färbende Mutation: in `serve` den `err != nil`-Zweig zu `return nil`
+// machen.
+func TestServeMeldetListenerFehler(t *testing.T) {
+	srv := New(Config{Addr: "unused:0", Subscriber: newFakeSubscriber()})
+	listener := bufconn.Listen(1024)
+	if err := listener.Close(); err != nil {
+		t.Fatalf("Listener schließen: %v", err)
+	}
+	if err := srv.serve(listener); err == nil {
+		t.Fatal("serve auf einem geschlossenen Listener liefert keinen Fehler")
+	}
+}
+
+// TestStreamChangesSendefehlerWirdWeitergereicht trägt den Fehlerausgang des
+// Streams: scheitert `Send`, endet der RPC mit **genau diesem** Fehler statt
+// still weiterzulaufen (`LH-FA-SST-008` Negative). Die Ablehnung hängt am
+// injizierten Sendefehler — der zurückgegebene Wert wird gegen ihn geprüft,
+// nicht gegen „irgendein Fehler".
+// Rot färbende Mutation: den `Send`-Fehler verwerfen und `nil` zurückgeben.
+func TestStreamChangesSendefehlerWirdWeitergereicht(t *testing.T) {
+	sendefehler := errors.New("transport weg")
+	subscriber := newFakeSubscriber()
+	service := &changeStreamService{subscriber: subscriber, log: outbound.NoopLog}
+	stream := fakeChangeServerStream{&fakeServerStream{ctx: context.Background(), sendErr: sendefehler}}
+
+	ergebnis := make(chan error, 1)
+	go func() {
+		ergebnis <- service.StreamChanges(&streamv1.StreamChangesRequest{}, stream)
+	}()
+
+	change, err := model.NewChange("change-1", "tx-1", "table-1", 1, model.OperationInsert, nil, nil, "table-1-v1")
+	if err != nil {
+		t.Fatalf("Change bauen: %v", err)
+	}
+	subscriber.changes <- &change
+
+	select {
+	case err := <-ergebnis:
+		if !errors.Is(err, sendefehler) {
+			t.Fatalf("StreamChanges: %v (Erwartung: der injizierte Sendefehler %v)", err, sendefehler)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("StreamChanges endete nach einem Sendefehler nicht")
 	}
 }

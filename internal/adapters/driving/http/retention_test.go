@@ -100,3 +100,28 @@ func TestRunRetentionInternerFehlerEndetMit500(t *testing.T) {
 		t.Fatalf("Status: %d (Erwartung: 500)", resp.StatusCode)
 	}
 }
+
+// TestRunRetentionUngueltigesJSONEndetMit400 trägt die Formgrenze des
+// Request-Bodys an der Eingabeseite: derselbe Use Case liefert für einen
+// **erreichbaren** Aufruf `404` (`inbound.ErrSourceTableMissing`), der nicht
+// dekodierbare Body endet dagegen mit `400` — der Status folgt dem Body,
+// nicht dem Fake (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
+// Rot färbende Mutation: den `Decode`-Fehlerzweig fallenlassen und mit dem
+// Nullwert weiterlaufen — dann liefert der Gegenproben-Fake `404` statt `400`.
+func TestRunRetentionUngueltigesJSONEndetMit400(t *testing.T) {
+	useCase := fakeRunRetentionFailingUseCase{err: inbound.ErrSourceTableMissing}
+	ts := newDefaultTestServer(t, Config{RunRetention: useCase})
+
+	resp := doRequest(t, ts, http.MethodPost, "/retention/run", testAdminToken, `{nicht-json`)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := doRequest(t, ts, http.MethodPost, "/retention/run", testAdminToken,
+		`{"source":"src-1","min_age_nanos":0}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusNotFound {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 404 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
+	}
+}

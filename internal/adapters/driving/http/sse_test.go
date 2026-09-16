@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -341,5 +342,140 @@ func TestStreamAbgemeldeterClientGibtSubskriptionFrei(t *testing.T) {
 	case <-subscriber.cancelled:
 	case <-time.After(3 * time.Second):
 		t.Fatal("der Handler gab seine Subskription nach dem Verbindungsende nicht frei")
+	}
+}
+
+// responseWriterOhneFlusher verbirgt die `Flush`-Fähigkeit des eingebetteten
+// Writers: die eingebettete `http.ResponseWriter`-Schnittstelle trägt kein
+// `Flush`, weitergegeben werden nur ihre drei Methoden. Der Writer steht für
+// einen Antwort-Writer, der kein `http.Flusher` ist.
+type responseWriterOhneFlusher struct{ http.ResponseWriter }
+
+// schreibfehlerWriter trägt einen Antwort-Writer, dessen `Write` scheitert:
+// die Antwort-Header werden gesetzt, das Event selbst kommt nicht mehr an.
+type schreibfehlerWriter struct {
+	header http.Header
+	status int
+}
+
+func newSchreibfehlerWriter() *schreibfehlerWriter {
+	return &schreibfehlerWriter{header: http.Header{}}
+}
+
+func (w *schreibfehlerWriter) Header() http.Header       { return w.header }
+func (w *schreibfehlerWriter) WriteHeader(status int)    { w.status = status }
+func (w *schreibfehlerWriter) Flush()                    {}
+func (w *schreibfehlerWriter) Write([]byte) (int, error) { return 0, errors.New("verbindung weg") }
+
+// TestStreamOhneFlusherEndetMit500 trägt die Abgrenzung zum 503 ohne
+// Broadcaster (`ADR-0061` Teilfrage 5): der Endpunkt braucht einen
+// Antwort-Writer, der `http.Flusher` ist, um Events sofort auszuliefern —
+// ein Writer ohne diese Fähigkeit endet sichtbar mit `500`, statt eine
+// Verbindung offenzuhalten, auf der nie ein Event ankommt. Die Ablehnung
+// hängt am übergebenen Writer: derselbe Handler antwortet mit einem
+// `Flusher`-fähigen Writer `200` (`TestStreamReaderTokenOeffnetTraegtChange`).
+// Rot färbende Mutation: den `ok`-Zweig fallenlassen und `flusher.Flush()`
+// auf dem Null-Interface rufen — dann endet der Handler nicht mit `500`.
+func TestStreamOhneFlusherEndetMit500(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(1)
+	srv := New(Config{
+		Addr:        "unused:0",
+		TokenReader: testReaderToken,
+		TokenAdmin:  testAdminToken,
+		Subscriber:  subscriber,
+	})
+	req := httptest.NewRequest(http.MethodGet, "/changes/stream", nil)
+	req.Header.Set("Authorization", "Bearer "+testReaderToken)
+
+	rec := httptest.NewRecorder()
+	writer := &responseWriterOhneFlusher{ResponseWriter: rec}
+	fertig := make(chan struct{})
+	go func() {
+		srv.Handler().ServeHTTP(writer, req)
+		close(fertig)
+	}()
+
+	select {
+	case <-fertig:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Handler endete ohne http.Flusher nicht sichtbar")
+	}
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("Status: %d (Erwartung: 500 — der Writer trägt kein http.Flusher)", rec.Code)
+	}
+}
+
+// TestStreamNichtKodierbareChangeBeendetDenStream trägt die Grenze der
+// Event-Form: ein Change, dessen Row Image kein gültiges JSON ist, wird
+// nicht als kaputtes Event zugestellt — der Stream endet sichtbar. Die
+// Eingabeseite ist das Row Image des zugestellten Changes.
+// Rot färbende Mutation: nach dem `json.Marshal`-Fehler weiterlaufen statt
+// zurückzukehren — dann endet der Handler nicht und der Test läuft in die Frist.
+func TestStreamNichtKodierbareChangeBeendetDenStream(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(1)
+	change := neuerStreamTestChange(t)
+	change.NewImage = []byte("{kein-json")
+	subscriber.changes <- &change
+
+	srv := New(Config{
+		Addr:        "unused:0",
+		TokenReader: testReaderToken,
+		TokenAdmin:  testAdminToken,
+		Subscriber:  subscriber,
+	})
+	req := httptest.NewRequest(http.MethodGet, "/changes/stream", nil)
+	req.Header.Set("Authorization", "Bearer "+testReaderToken)
+
+	rec := httptest.NewRecorder()
+	fertig := make(chan struct{})
+	go func() {
+		srv.Handler().ServeHTTP(rec, req)
+		close(fertig)
+	}()
+
+	select {
+	case <-fertig:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream endete auf eine nicht kodierbare Change nicht")
+	}
+	if body := rec.Body.String(); strings.Contains(body, "event:") {
+		t.Fatalf("Antwort trägt ein Event für eine nicht kodierbare Change: %q", body)
+	}
+}
+
+// TestStreamSchreibfehlerBeendetDenStream trägt dieselbe Grenze für den
+// Schreibweg: scheitert `Write` beim Ausliefern eines Events, endet der
+// Stream — statt weiterzulaufen und jede weitere Change an eine tote
+// Verbindung zu schreiben. Die Eingabeseite ist der schreibende Writer.
+// Rot färbende Mutation: den `Fprintf`-Fehler verwerfen und die Schleife
+// fortsetzen — dann endet der Handler nicht und der Test läuft in die Frist.
+func TestStreamSchreibfehlerBeendetDenStream(t *testing.T) {
+	subscriber := newFakeChangeSubscriber(1)
+	change := neuerStreamTestChange(t)
+	subscriber.changes <- &change
+
+	srv := New(Config{
+		Addr:        "unused:0",
+		TokenReader: testReaderToken,
+		TokenAdmin:  testAdminToken,
+		Subscriber:  subscriber,
+	})
+	req := httptest.NewRequest(http.MethodGet, "/changes/stream", nil)
+	req.Header.Set("Authorization", "Bearer "+testReaderToken)
+
+	writer := newSchreibfehlerWriter()
+	fertig := make(chan struct{})
+	go func() {
+		srv.Handler().ServeHTTP(writer, req)
+		close(fertig)
+	}()
+
+	select {
+	case <-fertig:
+	case <-time.After(3 * time.Second):
+		t.Fatal("der Stream endete auf einen Schreibfehler nicht")
+	}
+	if writer.status != http.StatusOK {
+		t.Fatalf("Status: %d (Erwartung: 200 — die Header sind vor dem Schreibfehler gesetzt)", writer.status)
 	}
 }

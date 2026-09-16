@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -294,5 +295,110 @@ func TestListTablesFehlendeParameterEndetMit400(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("Status: %d (Erwartung: 400)", resp.StatusCode)
+	}
+}
+
+// fakeEnableTableFailingUseCase trägt einen injizierten Fehler statt eines
+// Aktivierungs-Ergebnisses — die Eingabeseite der Fehlerklassen-Abbildung
+// dieses Endpunkts (`writeDomainError`).
+type fakeEnableTableFailingUseCase struct{ err error }
+
+func (f fakeEnableTableFailingUseCase) Enable(context.Context, inbound.EnableTableCommand) (inbound.EnableTableResult, error) {
+	return inbound.EnableTableResult{}, f.err
+}
+
+var _ inbound.EnableTableUseCase = (*fakeEnableTableFailingUseCase)(nil)
+
+// fakeDisableTableFailingUseCase trägt denselben injizierten Fehler für die
+// Deaktivierung.
+type fakeDisableTableFailingUseCase struct{ err error }
+
+func (f fakeDisableTableFailingUseCase) Disable(context.Context, inbound.DisableTableCommand) (inbound.DisableTableResult, error) {
+	return inbound.DisableTableResult{}, f.err
+}
+
+var _ inbound.DisableTableUseCase = (*fakeDisableTableFailingUseCase)(nil)
+
+// fakeListTablesFailingUseCase trägt denselben injizierten Fehler für die
+// Tabellen-Liste.
+type fakeListTablesFailingUseCase struct{ err error }
+
+func (f fakeListTablesFailingUseCase) ListTables(context.Context, inbound.ListTablesQuery) (inbound.ListTablesResult, error) {
+	return inbound.ListTablesResult{}, f.err
+}
+
+var _ inbound.ListTablesUseCase = (*fakeListTablesFailingUseCase)(nil)
+
+// TestEnableTableUngueltigesJSONEndetMit400 trägt die Formgrenze des
+// Request-Bodys an der Eingabeseite: derselbe Use Case liefert für einen
+// **erreichbaren** Aufruf `404` (`inbound.ErrSourceTableMissing`), der nicht
+// dekodierbare Body endet dagegen mit `400` — der Status folgt dem Body,
+// nicht dem Fake (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
+// Rot färbende Mutation: den `Decode`-Fehlerzweig fallenlassen und mit dem
+// Nullwert weiterlaufen — dann liefert der Gegenproben-Fake `404` statt `400`.
+func TestEnableTableUngueltigesJSONEndetMit400(t *testing.T) {
+	useCase := fakeEnableTableFailingUseCase{err: inbound.ErrSourceTableMissing}
+	ts := newDefaultTestServer(t, Config{EnableTable: useCase})
+
+	resp := doRequest(t, ts, http.MethodPost, "/tables/enable", testAdminToken, `{nicht-json`)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := doRequest(t, ts, http.MethodPost, "/tables/enable", testAdminToken,
+		`{"source":"src-1","schema":"public","table":"orders","table_id":"tbl-1","schema_version_id":"sv-1","version":1,"publication":"cdc_pub"}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusNotFound {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 404 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
+	}
+}
+
+// TestDisableTableUngueltigesJSONEndetMit400 trägt dieselbe Eingabeseite für
+// die Deaktivierung.
+// Rot färbende Mutation: den `Decode`-Fehlerzweig fallenlassen.
+func TestDisableTableUngueltigesJSONEndetMit400(t *testing.T) {
+	useCase := fakeDisableTableFailingUseCase{err: inbound.ErrSourceTableMissing}
+	ts := newDefaultTestServer(t, Config{DisableTable: useCase})
+
+	resp := doRequest(t, ts, http.MethodPost, "/tables/disable", testAdminToken, `{nicht-json`)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := doRequest(t, ts, http.MethodPost, "/tables/disable", testAdminToken,
+		`{"source":"src-1","schema":"public","table":"orders","publication":"cdc_pub"}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusNotFound {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 404 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
+	}
+}
+
+// TestListTablesFehlerWirdNachKlasseAbgebildet trägt die
+// Fehlerklassen-Abbildung des Tabellen-Listen-Endpunkts: drei verschiedene
+// Fehler-Werte an derselben Aufrufstelle enden in drei verschiedenen
+// Statuscodes.
+// Rot färbende Mutation: in `writeDomainError` alle Fälle auf `500` legen
+// oder im Handler nach dem `err != nil`-Zweig weiterlaufen.
+func TestListTablesFehlerWirdNachKlasseAbgebildet(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"unbekannte Tabelle an der Quelle", inbound.ErrSourceTableMissing, http.StatusNotFound},
+		{"ungültige Eingabe", domainerrors.ErrEmptyIdentifier, http.StatusBadRequest},
+		{"unerwarteter interner Fehler", errors.New("speicher nicht erreichbar"), http.StatusInternalServerError},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := newDefaultTestServer(t, Config{ListTables: fakeListTablesFailingUseCase{err: tc.err}})
+			resp := doRequest(t, ts, http.MethodGet, "/tables?source=src-1&publication=cdc_pub", testReaderToken, "")
+			defer resp.Body.Close()
+			if resp.StatusCode != tc.want {
+				t.Fatalf("Status: %d (Erwartung: %d für %v)", resp.StatusCode, tc.want, tc.err)
+			}
+		})
 	}
 }

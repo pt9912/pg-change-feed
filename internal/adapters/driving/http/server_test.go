@@ -233,3 +233,39 @@ func TestServerHandlerOhneStartLiefertRouting(t *testing.T) {
 		t.Fatalf("Status: %d (Erwartung: 401 — kein Token gesetzt)", rec.Code)
 	}
 }
+
+// TestServerStartMeldetBindfehler trägt den Bind-Fehlerpfad des
+// Lebenszyklus (`SPEC-008`): eine unbrauchbare Horch-Adresse endet als
+// Fehler von `Start`, nicht in einem stillen Lauf ohne Listener. `net.Listen`
+// weist die Adresse ohne Port zurück, bevor irgendein Socket entsteht — der
+// Test läuft deshalb netzlos.
+// Rot färbende Mutation: in `Start` das `err != nil` verwerfen und immer
+// `nil` zurückgeben.
+func TestServerStartMeldetBindfehler(t *testing.T) {
+	srv := New(Config{Addr: "127.0.0.1", TokenReader: testReaderToken, TokenAdmin: testAdminToken})
+	err := srv.Start()
+	if err == nil {
+		t.Fatal("Start mit unbrauchbarer Horch-Adresse liefert keinen Fehler")
+	}
+	if !strings.Contains(err.Error(), "127.0.0.1") {
+		t.Fatalf("Fehler nennt die Horch-Adresse nicht: %v", err)
+	}
+}
+
+// TestServerShutdownVorStartIstRegulaererAusgang trägt die zweite Hälfte des
+// Lebenszyklus: `http.ErrServerClosed` ist der reguläre Ausgang eines
+// geordneten `Shutdown`, keine Fehlerklasse (`SPEC-008`). Ein vor dem Start
+// beendeter Server kehrt aus `Start` deshalb ohne Fehler zurück — der Test
+// braucht dafür keinen Socket und keinen zweiten Lauf.
+// Rot färbende Mutation: in `Start` `err != nil` statt
+// `err != http.ErrServerClosed` prüfen — dann wird `ErrServerClosed` als
+// Fehler zurückgegeben.
+func TestServerShutdownVorStartIstRegulaererAusgang(t *testing.T) {
+	srv := New(Config{Addr: "127.0.0.1:0", TokenReader: testReaderToken, TokenAdmin: testAdminToken})
+	if err := srv.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown ohne laufenden Server: %v", err)
+	}
+	if err := srv.Start(); err != nil {
+		t.Fatalf("Start nach Shutdown: %v (Erwartung: kein Fehler — ErrServerClosed ist kein Fehlerausgang)", err)
+	}
+}

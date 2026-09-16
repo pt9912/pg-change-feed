@@ -295,3 +295,124 @@ func TestRemoveConsumerUnbekannteKennungBleibtIdempotent(t *testing.T) {
 		t.Fatalf("Antwort: %+v (Erwartung: removed=false)", decoded)
 	}
 }
+
+// fakeGetConsumerPositionFailingUseCase trägt einen injizierten Fehler statt
+// einer Position — die Eingabeseite der Fehlerklassen-Abbildung
+// (`writeDomainError`): der Status der Antwort folgt dem Wert dieses Feldes.
+type fakeGetConsumerPositionFailingUseCase struct{ err error }
+
+func (f fakeGetConsumerPositionFailingUseCase) Position(context.Context, inbound.GetConsumerPositionQuery) (inbound.GetConsumerPositionResult, error) {
+	return inbound.GetConsumerPositionResult{}, f.err
+}
+
+var _ inbound.GetConsumerPositionUseCase = (*fakeGetConsumerPositionFailingUseCase)(nil)
+
+// fakeRemoveConsumerFailingUseCase trägt denselben injizierten Fehler für
+// die administrative Entfernung.
+type fakeRemoveConsumerFailingUseCase struct{ err error }
+
+func (f fakeRemoveConsumerFailingUseCase) Remove(context.Context, inbound.RemoveConsumerCommand) (inbound.RemoveConsumerResult, error) {
+	return inbound.RemoveConsumerResult{}, f.err
+}
+
+var _ inbound.RemoveConsumerUseCase = (*fakeRemoveConsumerFailingUseCase)(nil)
+
+// TestAcknowledgeConsumerUngueltigesJSONEndetMit400 trägt die Formgrenze des
+// Request-Bodys an der Eingabeseite: derselbe Use Case liefert für einen
+// **erreichbaren** Aufruf `404` (`inbound.ErrSourceTableMissing`), der nicht
+// dekodierbare Body endet dagegen mit `400`. Der Status folgt damit dem Body,
+// nicht dem Fake (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
+// Rot färbende Mutation: den `Decode`-Fehlerzweig fallenlassen und mit dem
+// Nullwert weiterlaufen — dann liefert der Gegenproben-Fake `404` statt `400`.
+func TestAcknowledgeConsumerUngueltigesJSONEndetMit400(t *testing.T) {
+	useCase := fakeAcknowledgeFailingUseCase{err: inbound.ErrSourceTableMissing}
+	ts := newDefaultTestServer(t, Config{AcknowledgeConsumer: useCase})
+
+	resp := doRequest(t, ts, http.MethodPost, "/consumers/acknowledge", testAdminToken, `{nicht-json`)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := doRequest(t, ts, http.MethodPost, "/consumers/acknowledge", testAdminToken,
+		`{"consumer_id":"c1","source_id":"src-1","offset":1}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusNotFound {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 404 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
+	}
+}
+
+// TestGetConsumerPositionFehlerWirdNachKlasseAbgebildet trägt die
+// Fehlerklassen-Abbildung des Positions-Endpunkts: drei verschiedene
+// Fehler-Werte an derselben Aufrufstelle enden in drei verschiedenen
+// Statuscodes — der Ausgang folgt dem eingegebenen Fehler, nicht einem
+// pauschalen `500`.
+// Rot färbende Mutation: in `writeDomainError` alle Fälle auf `500` legen
+// oder im Handler nach dem `err != nil`-Zweig weiterlaufen.
+func TestGetConsumerPositionFehlerWirdNachKlasseAbgebildet(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"unbekannte Tabelle an der Quelle", inbound.ErrSourceTableMissing, http.StatusNotFound},
+		{"ungültige Eingabe", domainerrors.ErrInvalidPosition, http.StatusBadRequest},
+		{"unerwarteter interner Fehler", errors.New("speicher nicht erreichbar"), http.StatusInternalServerError},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := newDefaultTestServer(t, Config{GetConsumerPosition: fakeGetConsumerPositionFailingUseCase{err: tc.err}})
+			resp := doRequest(t, ts, http.MethodGet, "/consumers/position?consumer_id=c1", testReaderToken, "")
+			defer resp.Body.Close()
+			if resp.StatusCode != tc.want {
+				t.Fatalf("Status: %d (Erwartung: %d für %v)", resp.StatusCode, tc.want, tc.err)
+			}
+		})
+	}
+}
+
+// TestRemoveConsumerUngueltigesJSONEndetMit400 trägt dieselbe Eingabeseite
+// für die administrative Entfernung: der Fake liefert `404`, der nicht
+// dekodierbare Body `400`.
+// Rot färbende Mutation: den `Decode`-Fehlerzweig fallenlassen.
+func TestRemoveConsumerUngueltigesJSONEndetMit400(t *testing.T) {
+	useCase := fakeRemoveConsumerFailingUseCase{err: inbound.ErrSourceTableMissing}
+	ts := newDefaultTestServer(t, Config{RemoveConsumer: useCase})
+
+	resp := doRequest(t, ts, http.MethodPost, "/consumers/remove", testAdminToken, `{nicht-json`)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Status: %d (Erwartung: 400 für einen nicht dekodierbaren Body)", resp.StatusCode)
+	}
+
+	gegenprobe := doRequest(t, ts, http.MethodPost, "/consumers/remove", testAdminToken, `{"consumer_id":"c1"}`)
+	defer gegenprobe.Body.Close()
+	if gegenprobe.StatusCode != http.StatusNotFound {
+		t.Fatalf("Gegenprobe-Status: %d (Erwartung: 404 — dieser Fake wird für einen gültigen Body erreicht)", gegenprobe.StatusCode)
+	}
+}
+
+// TestRemoveConsumerFehlerWirdNachKlasseAbgebildet trägt die
+// Fehlerklassen-Abbildung des Entfernungs-Endpunkts.
+// Rot färbende Mutation: in `writeDomainError` alle Fälle auf `500` legen.
+func TestRemoveConsumerFehlerWirdNachKlasseAbgebildet(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"unbekannte Tabelle an der Quelle", inbound.ErrSourceTableMissing, http.StatusNotFound},
+		{"ungültige Eingabe", domainerrors.ErrEmptyIdentifier, http.StatusBadRequest},
+		{"unerwarteter interner Fehler", errors.New("speicher nicht erreichbar"), http.StatusInternalServerError},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := newDefaultTestServer(t, Config{RemoveConsumer: fakeRemoveConsumerFailingUseCase{err: tc.err}})
+			resp := doRequest(t, ts, http.MethodPost, "/consumers/remove", testAdminToken, `{"consumer_id":"c1"}`)
+			defer resp.Body.Close()
+			if resp.StatusCode != tc.want {
+				t.Fatalf("Status: %d (Erwartung: %d für %v)", resp.StatusCode, tc.want, tc.err)
+			}
+		})
+	}
+}

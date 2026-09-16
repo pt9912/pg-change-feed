@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -168,5 +169,41 @@ func TestNotifyPublishesEmptyPayloadOnSubject(t *testing.T) {
 	}
 	if len(msg.Data) != 0 {
 		t.Fatalf("Payload = %q, wollen leer (SPEC-017: kein Change-Inhalt)", msg.Data)
+	}
+}
+
+// recordingLog trägt den `LogPort` der Tests (`LH-QA-OPS-004`, `ADR-0024`):
+// er hält die Aufrufe fest, ohne sie auszugeben.
+type recordingLog struct {
+	infos []string
+}
+
+func (l *recordingLog) Debug(context.Context, string, ...any) {}
+func (l *recordingLog) Info(_ context.Context, msg string, _ ...any) {
+	l.infos = append(l.infos, msg)
+}
+func (l *recordingLog) Warn(context.Context, string, ...any)  {}
+func (l *recordingLog) Error(context.Context, string, ...any) {}
+
+var _ outbound.LogPort = (*recordingLog)(nil)
+
+// TestNewWithLogReichtDenLogPortDurch trägt die Wirkung der Konstruktions-
+// Option (`ADR-0024`, `LH-QA-OPS-004`): der über `WithLog` übergebene
+// `LogPort` ist der, über den der Adapter protokolliert — die
+// Konstruktionszeile wird über **diesen** Wert aufgezeichnet, nicht über den
+// Default `outbound.NoopLog`. Die Aussage hängt damit am eingegebenen Wert:
+// protokollierte der Adapter über den Default, bliebe die Aufzeichnung leer.
+// Rot färbende Mutation: in `newOptions` die Options-Schleife fallenlassen
+// oder in `New` den Log auf `outbound.NoopLog` festlegen.
+func TestNewWithLogReichtDenLogPortDurch(t *testing.T) {
+	log := &recordingLog{}
+	if _, err := natsnotify.New(newDisconnectedConn(t), natsnotify.WithLog(log)); err != nil {
+		t.Fatalf("New mit WithLog: %v", err)
+	}
+	if len(log.infos) != 1 {
+		t.Fatalf("Aufzeichnung des injizierten LogPort: %q (Erwartung: genau die Konstruktionszeile)", log.infos)
+	}
+	if !strings.Contains(log.infos[0], "natsnotify") {
+		t.Fatalf("Konstruktionszeile = %q", log.infos[0])
 	}
 }
