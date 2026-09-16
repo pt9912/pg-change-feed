@@ -22,9 +22,12 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **6×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **7×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
-evidence/slice-090.md) — **Schwelle erreicht**. Die Fundstellen je Vorgang
+evidence/slice-090.md, evidence/slice-092.md) — **Schwelle erreicht**. Der
+siebte Beleg trifft die Klasse **im Korrektur-Vorgang selbst**: Glob-Fehler →
+vier Zahlen für einen Gegenstand → Zähl-Wort über vier Größen → invertiertes
+Herkunfts-Etikett, vier Runden an Sätzen über Zahlen. Die Fundstellen je Vorgang
 liegen **im selben** Vorgang und sind damit je *eine* Gelegenheit — der Zähler
 misst Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
 **vier** driftende Werte in zwei Sensor-Dokumenten; zwei davon stammten aus

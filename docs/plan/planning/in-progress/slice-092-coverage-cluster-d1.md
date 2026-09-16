@@ -17,9 +17,10 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 [`ADR-0024`](../../adr/0024-observability-ausserhalb-der-domain.md) und
 [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
 (die Zusagen, die die Use-Cases tragen) ·
-`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**5×**) und
-`BEO-PGC/arbeit-ueberholt-stehenden-traeger` (**1×**, Erstauftreten in
-`slice-091`).
+`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` und
+`BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Erstauftreten in `slice-091`; die
+Zähler-Stände führen die Einträge selbst — ein Verweis braucht keine Zahl, die
+altern kann).
 
 **Berührte Spec-Stellen:** `LH-FA-ADM-*`, `LH-FA-CFG-*`, `LH-FA-RET-*` — die
 Zusagen der Verwaltungs-, Konfigurations- und Retention-Use-Cases; dieser Slice
@@ -103,11 +104,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Für die **12** geänderten
+- [x] **LP1 — die Tests existieren und sind netzlos grün.** Für die **12** geänderten
       Use-Case-Pakete und `domain/model` liegen Tests vor, die der Gate-Lauf
       **wirklich fährt**; `make gates` ist grün. **Der Zuwachs wird als Zahl mit
       ihrem Lauf genannt**, nicht als „deutlich besser".
-- [ ] **LP2 — die Negativtests binden ihre Ablehnung an die Eingabe.** Wo ein
+- [x] **LP2 — die Negativtests binden ihre Ablehnung an die Eingabe.** Wo ein
       Use-Case-Test prüft, dass ein Antrag **abgelehnt** wird (fremde Tabelle,
       unbekannte Spalte, ungültige Dauer), ist die Ablehnung an **den
       Eingabewert** gebunden, der sie auslösen soll — nicht an einen Fake, der
@@ -116,22 +117,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       sieben in §8 genannten die zweithäufigste; über das **ganze** Register
       geteilt-vierte von sechs Klassen mit 5× oder mehr, und die Use-Cases sind
       ihr wahrscheinlichster Ort).
-- [ ] **LP3 — die unerreichbaren Statements sind benannt.** Jedes Paket, das
+- [x] **LP3 — die unerreichbaren Statements sind benannt.** Jedes Paket, das
       danach noch ungedeckte Statements hat, nennt sie **einzeln mit dem Grund**.
       „Rest nicht erreichbar" ohne Namen gilt als **nicht erfüllt**.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       **Weist der Review eine Fixrunde aus, deckt ein Delta-Review sie ab** —
       die Lehre aus `slice-090` (V-2) und `slice-091` (N-1).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-092.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-092.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
 
 ## 3. Plan (vor Code)
 
@@ -207,17 +208,36 @@ dasteht.
 
 - **Die `22`/`2` sind eine Über-Schätzung** — dann liefert D1 weniger als
   veranschlagt, und das Budget B+C+D hat nach `slice-091` nur noch **8
-  Statements** Puffer. — **Ausgang:** <…>
+  Statements** Puffer. — **Ausgang: entfallen.** Gemessen hielten sie **exakt**:
+  der Zuwachs sind **24** Statements (22 in `usecase/*/service.go`, 2 in
+  `domain/model`), als Block-Positionen benannt. Netto **+22**, weil im selben
+  Lauf **ein** Block neu ungedeckt wurde — `internal/bootstrap/wiring.go:991.5,992.13`,
+  der benannte Takt-Zweig, nicht D1.
 - **Ein Negativtest bindet die Ablehnung an den Fake statt an die Eingabe** —
   die Klasse mit **5×**, und die Use-Cases sind ihr wahrscheinlichster Ort: ein
   Antrag wird abgelehnt, weil der **Fake** es so sagt, nicht weil der Wert es
-  erzwingt. — **Ausgang:** <…>
+  erzwingt. — **Ausgang: eingetreten — und behoben.** Nicht an den neuen Tests:
+  an **zwei vorbestehenden**. `TestExcludeColumnRejectsMissingSourceColumn` und
+  `TestIncludeColumnRejectsMissingSourceColumn` standen gegen einen Fake, der
+  `exists = false` **unabhängig von der Abfrage** lieferte — die Suite blieb
+  grün, wenn der Use Case die falsche Spalte prüfte. Beide sind an die
+  Spaltenadresse gebunden; die Mutation färbt sie jetzt rot, am Parent blieben
+  sie grün (nachgemessen).
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
-  prüfen. — **Ausgang:** <…>
+  prüfen. — **Ausgang: entfallen — gemessen.** Der Review hat **32** eigene
+  Mutationsproben gefahren (32 × rot), der Verifier **6** an den neuen Tests
+  (6 × rot, mit Kontrolle), der Implementer **21**. Alle 24 neu gedeckten
+  Block-Positionen sind über je eine rot färbende Zusage gebunden.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt die
   Deckung von elf Paketen; ob ein anderes Dokument eine dieser Eigenschaften
   beschreibt, weiß der Diff nicht (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
-  1×). — **Ausgang:** <…>
+  1×). — **Ausgang: eingetreten — und begrenzt.** Der beauftragte `grep` fand
+  **vier** Träger mit einer Fehlzählung des Globs („zehn Pakete" statt **13**),
+  alle von der Planung dieses Slice. Berichtigt — und die Berichtigung hat
+  **selbst** einen Fehler erzeugt (ein Dokument, vier Zahlen für einen
+  Gegenstand; F-1), dessen Behebung wieder einen (das Zähl-Wort; D-1).
+  **Nicht** eingetreten: das Sensor-Dokument wird durch diesen Slice **nicht**
+  zahl-falsch (jede Zahl nachgemessen, kein Drift).
 
 ## 7. Closure-Notiz
 
@@ -236,18 +256,70 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** D1 ist **vollständig** — alle 13 Use-Case-Pakete und
+  `domain/model` stehen bei `uncovered = 0`, und der Zuwachs ist **genau** die
+  geplanten 24 Statements (22 + 2), als Block-Positionen benannt. Die Schätzung
+  des Plans war keine Über-Schätzung. Wie in `slice-091` war die **Mutation**
+  das Rückgrat: 21 Proben des Implementers, 32 des Reviews, 6 der Verifikation —
+  und sie hat die zwei vorbestehenden Spaltenbindungen gefunden, die **grün**
+  waren und richtig aussahen. Zweitens hat die **Planungs-Disziplin** getragen:
+  gemessen wurde **vor** dem Schneiden (13 Pakete, 10 mit Rest, 22 Statements),
+  und die Teilung von D lag damit auf einer Naht, die die Messung zeigte, nicht
+  auf einer, die der Plan behauptete.
+- **Was ging anders als geplant:** Es brauchte **drei** Runden, und die zwei
+  Korrekturrunden haben **selbst** Fehler erzeugt — beide an derselben Stelle,
+  beide in **meinen** Trägern. Die Reihe ist instruktiv, weil sie **nicht**
+  verschiedene Fehler sind: ein **Zähl-Wort** („Drei Zahlen" über vier), ein
+  **Herkunfts-Etikett** (die Differenz als „gemessen"), eine **Deixis** („hier
+  gegenständlichen", binnen einer Runde gealtert) und ein **Zählfehler des
+  Globs** („zehn Pakete" statt 13). Vier Runden an Zahlen — und keine davon war
+  eine Rechenaufgabe; jede war ein **Satz über** eine Zahl. Zweitens: die
+  `arbeit-ueberholt`-Frage hat sich **bezahlt** — der beauftragte `grep` fand
+  den Glob-Fehler in vier Trägern, den niemand sonst gesucht hätte.
+- **Steering-Loop-Eintrag:** **kein neuer Träger — und der geprüfte Kandidat
+  wurde verworfen.** Die Frage, ob die alternde **Deixis** („hier
+  gegenständlichen") ein zweites Vorkommen von
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` ist, hat der Delta-Review
+  **widerlegt**: dort war der Satz bei Niederschrift **wahr** und wurde durch die
+  Arbeit falsch (die `streamv1`-Liste); hier **half §3.12** — die Wendung hat eine
+  Lauf-Größe als „der Ist-Stand" vorgeführt, und das ist bei Niederschrift
+  verboten. Der Eintrag bleibt bei **1×**; die Grenze ist damit **geschärft**,
+  nicht der Zähler erhöht.
+  Die **geschärfte Formulierung**, die dieser Slice beiträgt und die **keinen
+  neuen Träger** bekommt: **selbstbezügliche Formen — ein Zähl-Wort über einer
+  Liste, eine Ortsangabe („hier", „aktuell"), ein Etikett an einer eigenen
+  Herleitung — sind die Stellen, an denen eine Korrektur sich selbst widerlegt.**
+  Sie beschreiben den Text, nicht die Welt, und darum prüft sie niemand gegen
+  eine Messung. Ein Gate kann das nicht: es müsste wissen, worauf „hier" zeigt.
+  Auslöser: `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (`slice-091`, 1×) —
+  hier **geprüft und abgelehnt**.
+- **Beobachtungs-Register (`../observations/`):** **kein neues Verzeichnis** und
+  **zwei Belege ergänzt**: `negativtest-ohne-bindung-an-seine-eingabe` → **6×**
+  (die zwei vorbestehenden Spaltenbindungen),
+  `zahl-in-traeger-driftet-gegen-die-messung` → **7×** (ein Vorgang, mehrere
+  Funde: F-1, D-1, D-2). `BEO-PGC/arbeit-ueberholt-stehenden-traeger` bleibt
+  **1×** — der Kandidat ist begründet abgelehnt, und die Ablehnung steht in
+  seinem `state.md`. **Kein Zähler wird gesetzt** — jeder folgt aus der Zahl der
+  Dateien unter `evidence/`.
+- **Folge-Slices:** keine Datei in `open/` — **D2** (`bootstrap`-Rest und
+  `telemetry`, ≈28–30) und danach **A** (`cmd/pg-change-feed`, 49 + der
+  `Run`-Fehlerpfad) sind die nächsten Schnitte **derselben Welle**; sie entstehen
+  nach dem Maß, wenn dieser liegt.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *entfallen* (die 22/2 hielten
+  exakt), R2 *eingetreten und behoben* (an zwei **vorbestehenden** Tests), R3
+  *entfallen* (gemessen über 59 Mutationsproben), R4 *eingetreten und begrenzt*
+  (vier Träger mit dem Glob-Fehler; das Sensor-Dokument wird nicht zahl-falsch).
+- **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
+  `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die zwei ergänzten
+  Register-Adressen existieren als Verzeichnis und tragen ein nicht leeres
+  `evidence/`.
+- **Die §3-Bedingung ist zu eng — und die Entscheidung gehört in §7.** Die Zeile
+  erlaubt dem Slice einen Träger-Update „**nur falls** eine Zahl dort gegen die
+  Messung driftet". Gemessen driftete **keine** Zahl, und die Datei wurde trotzdem
+  angefasst (F-2: die Deixis). Die Bedingung kennt nur den **Zahl**-Drift und
+  nicht die Stelle, die **bei Niederschrift** eine bewegliche Größe als Ist-Stand
+  führt. Der Fix ist damit **innerhalb** der Absicht, aber **außerhalb** des
+  Buchstabens der Zeile; benannt, nicht still.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
