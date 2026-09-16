@@ -933,6 +933,10 @@ func TestAssemblerLiveReloadIsRaceFree(t *testing.T) {
 // stubSchemaStore trägt einen SchemaStorePort, dessen drei Zugriffe je
 // einen vorgegebenen Wert oder Fehler liefern — die gemeinsame Form der
 // Fehlerpfad-Tests der dynamischen Re-Versionierung (`observeRelation`).
+// Jeder Zugriff trägt die empfangenen Kennungen mit (`readTables`,
+// `readVersions`, `registrations`): eine Zusage, die auf der Abwesenheit
+// eines Fehlers beruht, hängt daran, ob und womit der Store überhaupt
+// befragt wurde.
 type stubSchemaStore struct {
 	current     model.SchemaVersion
 	found       bool
@@ -940,17 +944,24 @@ type stubSchemaStore struct {
 	schema      model.TableSchema
 	schemaErr   error
 	registerErr error
+
+	readTables    []model.SourceTableID
+	readVersions  []model.SchemaVersionID
+	registrations []model.SchemaVersion
 }
 
-func (s *stubSchemaStore) CurrentVersion(context.Context, model.SourceTableID) (model.SchemaVersion, bool, error) {
+func (s *stubSchemaStore) CurrentVersion(_ context.Context, table model.SourceTableID) (model.SchemaVersion, bool, error) {
+	s.readTables = append(s.readTables, table)
 	return s.current, s.found, s.currentErr
 }
 
-func (s *stubSchemaStore) RegisterVersion(context.Context, model.SchemaVersion, model.TableSchema) (bool, error) {
+func (s *stubSchemaStore) RegisterVersion(_ context.Context, version model.SchemaVersion, _ model.TableSchema) (bool, error) {
+	s.registrations = append(s.registrations, version)
 	return false, s.registerErr
 }
 
-func (s *stubSchemaStore) TableSchema(context.Context, model.SchemaVersionID) (model.TableSchema, error) {
+func (s *stubSchemaStore) TableSchema(_ context.Context, version model.SchemaVersionID) (model.TableSchema, error) {
+	s.readVersions = append(s.readVersions, version)
 	return s.schema, s.schemaErr
 }
 
@@ -1052,7 +1063,9 @@ func TestConsumeTruncateNamesQualifiedRelations(t *testing.T) {
 
 // Eine Relation-Nachricht für eine nicht aktivierte Tabelle bleibt
 // wirkungslos (`LH-FA-CFG-001`): ohne Bindung gibt es keine Schema-Version
-// nachzutragen.
+// nachzutragen — der Schema-Store wird in diesem Fall gar nicht befragt,
+// auch wenn die eingehende Relation eine Spalte über die bekannte Form
+// hinaus trägt (die Re-Versionierung setzt die Aktivierung voraus).
 func TestConsumeRelationOnUnboundTableStaysNoop(t *testing.T) {
 	ctx := context.Background()
 	store := &stubSchemaStore{
@@ -1065,10 +1078,16 @@ func TestConsumeRelationOnUnboundTableStaysNoop(t *testing.T) {
 		t.Fatalf("NewAssembler: %v", err)
 	}
 
-	_, err = assembler.Consume(ctx, relation("public", "orders", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+	_, err = assembler.Consume(ctx, relation("public", "orders",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "note", TypeOID: 25}))
 
 	if err != nil {
 		t.Fatalf("Relation außerhalb der Aktivierungen: %v, wollen wirkungslos", err)
+	}
+	if len(store.readTables) != 0 || len(store.readVersions) != 0 || len(store.registrations) != 0 {
+		t.Fatalf("Store-Zugriffe außerhalb der Aktivierungen: CurrentVersion %q, TableSchema %q, RegisterVersion %v — wollen keinen",
+			store.readTables, store.readVersions, store.registrations)
 	}
 }
 
@@ -1091,19 +1110,34 @@ func TestConsumeRelationReportsCurrentVersionFailure(t *testing.T) {
 }
 
 // Eine Tabelle ohne über diesen Port registrierte Version bleibt
-// wirkungslos: die statische Erstaktivierung trägt ihren Stand selbst.
+// wirkungslos: die statische Erstaktivierung trägt ihren Stand selbst —
+// nach der Auskunft „keine Version" wird keine Spaltenform gelesen und
+// keine Version nachgetragen, auch nicht bei einer Relation über die
+// bekannte Form hinaus.
 func TestConsumeRelationWithoutRegisteredVersionStaysNoop(t *testing.T) {
 	ctx := context.Background()
-	store := &stubSchemaStore{found: false}
+	store := &stubSchemaStore{
+		found:  false,
+		schema: model.TableSchema{VersionID: "sv-1", Columns: []model.Column{{Name: "id", OID: 23}}},
+	}
 	assembler, err := mapper.NewAssembler("src-1", testTables(), store)
 	if err != nil {
 		t.Fatalf("NewAssembler: %v", err)
 	}
 
-	_, err = assembler.Consume(ctx, relation("public", "feed", decode.Column{Name: "id", Key: true, TypeOID: 23}))
+	_, err = assembler.Consume(ctx, relation("public", "feed",
+		decode.Column{Name: "id", Key: true, TypeOID: 23},
+		decode.Column{Name: "note", TypeOID: 25}))
 
 	if err != nil {
 		t.Fatalf("Relation ohne registrierte Version: %v, wollen wirkungslos", err)
+	}
+	if len(store.readTables) != 1 || store.readTables[0] != "tbl-1" {
+		t.Fatalf("CurrentVersion-Aufrufe = %q, wollen genau die gebundene Tabellen-Kennung tbl-1", store.readTables)
+	}
+	if len(store.readVersions) != 0 || len(store.registrations) != 0 {
+		t.Fatalf("Zugriffe ohne registrierte Version: TableSchema %q, RegisterVersion %v — wollen keinen",
+			store.readVersions, store.registrations)
 	}
 }
 
