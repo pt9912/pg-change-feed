@@ -53,14 +53,16 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   jede Testbinary instrumentiert mit `-coverpkg` den ganzen Gegenstand, im
   gemergten Profil kommt dieselbe Block-Position darum mehrfach vor. „Gedeckt“
   heißt, dass **mindestens ein** Vorkommen `count > 0` trägt. Der **Nenner**
-  ist die **Zustandsgröße** dieses Gegenstands: **1903 Statements**. Die
-  **gedeckte** Zahl ist dagegen **kein** Zustand — sie trägt den Beleg **eines**
-  Laufs und schwankt lauf-zu-lauf um ±2 Statements (ein `ctx`-abhängiger Pfad in
+  ist die **Zustandsgröße** dieses Gegenstands: **1903 Statements** — sie hängt
+  am Code-Stand, nicht am Lauf, ist darum **kein** Dauerwert und trägt den Lauf
+  mit, in dem sie gemessen wurde (Lauf `slice-085`). Die **gedeckte** Zahl ist
+  dagegen **kein** Zustand — sie trägt den Beleg **eines** Laufs und schwankt
+  lauf-zu-lauf um ±2 Statements (ein `ctx`-abhängiger Pfad in
   `internal/adapters/driven/grpcstream/broadcaster.go` — `Publish` mit bereits
-  beendetem `ctx`): ein Lauf dieses Stands deckt **1369 von 1903** (**71,94 %**,
-  gedruckt `71.90%`), ein zweiter Lauf desselben Stands **1371** (**72,04 %**,
-  gedruckt `72.00%`). Nenner und Abstand zur Schwelle sind von der Schwankung
-  unberührt.
+  beendetem `ctx`): **1369 von 1903** (**71,94 %**, gedruckt `71.90%`) und
+  **1371** (**72,04 %**, gedruckt `72.00%`) sind die zwei beobachteten Enden
+  desselben Stands (Lauf `slice-084`; im Lauf `slice-085` erneut beobachtet).
+  Nenner und Abstand zur Schwelle sind von der Schwankung unberührt.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
   hier `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
@@ -72,7 +74,8 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   deduplizierte Auswertung; die gedruckte Zeile trägt keine.
 - Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
   einer eigenen Messung mit `-coverpkg` über **alle** Pakete (die drei
-  eingeschlossen, netzlos) — die Stufe dieses Gates nimmt sie aus und
+  eingeschlossen, netzlos) — **30/32**, **31/472** und **112/187**, Lauf
+  `slice-085`; die Stufe dieses Gates nimmt die drei Pakete aus und
   instrumentiert sie darum nicht.
 
 ## Grenze — was das Grün nicht abdeckt
@@ -120,20 +123,26 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
    gewächtert.** **Rückrechnung** aus den gemessenen Paket-Zahlen
    (§Zählbasis: 1369 gedeckt von 1903 Statements im Gegenstand; 30/32, 31/472,
-   11/155 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
+   112/187 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
    wieder in `-coverpkg` genommen, bleibt die Stufe grün —
-   `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; die Rücknahme von
-   `postgresstorage` (`1400 / 2375 = 58,95 %`) oder `replication/receive`
-   (`1380 / 2058 = 67,06 %`) färbt sie rot. Alle drei Ausgänge liegen weiter von
-   der Schwelle als die Lauf-zu-Lauf-Schwankung (±2 Statements = ±0,10 pp auf
-   diesem Nenner): die beiden roten mit −11,05 / −2,94 Prozentpunkten darunter,
-   der grüne `postgresack`-Ausgang mit **+2,30** Prozentpunkten darüber — zum
-   Kippen wären dort ≈45 Statements nötig. **Der
+   `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; dasselbe gilt für die Rücknahme
+   von `replication/receive`
+   (`(1369 + 112) / (1903 + 187) = 1481 / 2090 = 70,86 %` ≥ 70) — dessen
+   netzlose Deckung von **112 von 187 (59,89 %)** macht die Rücknahme für die
+   Prozent-Schwelle unsichtbar. Rot färbt sie nur die Rücknahme von
+   `postgresstorage` (`(1369 + 31) / (1903 + 472) = 1400 / 2375 = 58,95 %`).
+   Alle drei Ausgänge liegen weiter als die Lauf-zu-Lauf-Schwankung
+   (±2 Statements = ±0,10 pp auf dem Gegenstands-Nenner) von der Schwelle
+   entfernt: `postgresstorage` mit −11,05 Prozentpunkten darunter, die beiden
+   grünen mit **+2,30** (`postgresack`) und **+0,86** Prozentpunkten
+   (`replication/receive`) darüber — zum Kippen wären dort ≈45 bzw. ≈18
+   Statements nötig. **Der
    Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
    Gegenstands-Hälfte der Fitness Function aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
-   („keine Block-Position im Profil liegt in …“) nicht vollständig: für einen
-   einzelnen Rücknahme-Fall gibt es keinen eigenen Sensor. Der
+   („keine Block-Position im Profil liegt in …“) nicht vollständig: einen
+   eigenen Sensor hat kein Rücknahme-Fall, und die Schwelle fängt nur einen der
+   drei — **zwei** bleiben grün. Der
    Re-Evaluierungs-Trigger (a) derselben ADR greift beim Kommen oder Gehen
    eines Pakets, nicht bei der Rücknahme eines bereits ausgenommenen.
 5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die drei
