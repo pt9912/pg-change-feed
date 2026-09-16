@@ -58,10 +58,8 @@ Review `review-slice-088` F-2): eine frühere Fassung dieser Tabelle stellte
 **acht** Funktionen ins falsche Paket — `observeRelation`, `oldTupleValues`,
 `tupleValues`, `JSONImage`, `IncludeColumn`, `setSchemaVersion`,
 `removeExcluded`, `qualifiedNames`. **Die Spalte „Summe" ist die Gegenprobe:**
-sie muss je Paket aufgehen (14/25/17/4 = 60), und die falsche Fassung tat das
-nicht. **Die Zahl „fünf" in einer früheren Fassung dieses Absatzes war selbst
-wieder eine ungezählte Übernahme** — sie nannte sechs Namen und traf acht; sie
-steht hier als berichtigte Zahl.
+sie muss je Paket aufgehen (14/25/17/4 = 60) — eine Zuordnung, die sie nicht
+erfüllt, ist falsch, ohne dass jemand die Pakete nachschlagen muss.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -110,8 +108,9 @@ vierter Punkt:
       `classifyRelationColumns`, `IncludeColumn`, `removeExcluded`,
       `setSchemaVersion`, `qualifiedNames` (mapper) — **netzlos**, ohne externe
       Dienste.
-- [x] `JSONImage` (heute **3/3 ungedeckt**) ist dabei der erste Fall: eine
-      Funktion ohne jede Abdeckung.
+- [x] **`JSONImage`** (heute **3/3 ungedeckt**) ist der erste Fall einer
+      Funktion **ohne jede Abdeckung** — sie liegt in `postgresstorage/mapper`
+      und ist dort unter Liefer-Punkt 3 geführt.
 
 **Liefer-Punkt 2 — die SQL-Übersetzung ist gedeckt.**
 

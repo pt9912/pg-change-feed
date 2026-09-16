@@ -1,4 +1,4 @@
-Zustand: **offen — 3× erreicht, Ausgang noch nicht zugewiesen.** Der
+Zustand: **offen — 4× erreicht, Ausgang noch nicht zugewiesen.** Der
 Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
 Slice-Closure: Modul 6 lässt den Ausgang ab 3× der laufenden Welle-Closure
 zuweisen („Bei 3× wandert der Eintrag in die Steering-Loop-Einträge der

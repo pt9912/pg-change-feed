@@ -1,4 +1,4 @@
-Zustand: offen (1×) — unter der Schwelle, kein Ausgang zugewiesen. Ein Träger
+Zustand: offen (**2×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein Träger
 ist **nicht** vorgeschlagen: die naheliegende Antwort wäre eine Neudefinition
 des Gegenstands (nur Code, dessen Test eine Verbindung braucht), und das ist
 eine **Entscheidung** über eine Messfläche — `ADR-0071` Punkt 3 trägt sie, und
