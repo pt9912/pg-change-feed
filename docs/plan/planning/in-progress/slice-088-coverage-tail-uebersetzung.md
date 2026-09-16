@@ -130,13 +130,21 @@ vierter Punkt:
 - [x] `make gates` grün (Exit direkt, ungepiped).
 
 **Die bezifferte Wirkung, gemessen** (`make coverage-gate`, Exit 0 in beiden
-Läufen): **72,0 % → 74,8 %**, Nenner **1903** unverändert; gedeckt
-**1371 → 1424** (+53). Davon **+52** in den vier Trägerpaketen (die 60
+Läufen) — **mit beiden Enden**, weil die Zahl an der Schwankung hängt:
+
+| | gedeckt | Nenner | Quote |
+|---|---|---|---|
+| **vorher** (Stand `3de7fb1`) | 1369 / **1371** | 1903 | 71,9 % / **72,0 %** |
+| **nachher** | **1422** / 1424 | 1903 | **74,70 %** / 74,8 % |
+
+**Das Delta ist von der Endenwahl unabhängig: +53** (1369+53=1422 · 1371+53=1424)
+— die von [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+§Kontext (2) dokumentierte ±2-Schwankung von `runWALRetentionCheck` (vorher
+16/16, nachher 14/16). Davon **+52** in den vier Trägerpaketen (die 60
 gemessenen Statements dieses Slice, **8** davon sind über die öffentliche
 Fläche **nicht erreichbar** — siehe §6) und **+1** mittelbar in
-`domain/model` (`NewSchemaVersion`); der frühere Lauf desselben Stands druckte
-71,9 % — die von [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
-§Kontext (2) dokumentierte ±2-Schwankung von `runWALRetentionCheck`.
+`domain/model` (`NewSchemaVersion`). **Eine Zahl ohne ihr Ende ist hier keine
+Angabe** — die Klasse `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`.
 
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -144,11 +152,31 @@ Fläche **nicht erreichbar** — siehe §6) und **+1** mittelbar in
       Report: `docs/reviews/review-slice-088.md` (0 HIGH, 3 MEDIUM, 1 INFO,
       merge-blockierend) — F-1 im Fixrunden-Commit behoben, F-2/F-3 als
       Plan-Defekte berichtigt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-088.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig**; kein Kriterium „nicht bestätigt". Der Verifier hat
+      **beide Enden selbst gebaut** (`git archive 3de7fb1` → `docker build
+      --target coverage`): 1903/**1371**/72,0441 % → 1903/**1422**/74,7241 %,
+      Positionsmengen identisch (1252) — das **+53** ist von der ±2-Schwankung
+      unabhängig. Er hat den **8-Statements-Befund analytisch** bestätigt (für
+      `decode.go:224` in der gepinnten Treiberquelle; für die
+      `json.Marshal`-Zeilen 12 Eingaben empirisch), **M4/M5 selbst reproduziert**
+      und **zwei eigene Mutationen** an bisher unmutierten Zusagen gefahren
+      (`tupleValues`-`default`, `qualifiedNames`-Argument) — beide
+      Einzelpunkt-Sonden, beide rot.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **zwei**
+      Belege ergänzt (`negativtest-ohne-bindung-an-seine-eingabe`, damit **4×**;
+      `zahl-in-traeger-driftet-gegen-die-messung`, damit **4×**), **kein** neues
+      Verzeichnis, **kein Zähler gesetzt** — und **zwei Register-Köpfe**
+      berichtigt, die ihrer eigenen Belegliste widersprachen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — R1 und R2 *entfallen,
+      gestrichen mit Begründung*; R3 *eingetreten — und behoben*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -242,12 +270,31 @@ dasteht.
   `mapper` `change` 235/239 und `rowImage` 537/541
   (`json.Marshal` eines `string` endet nie im Fehler). Der Zuschnitt bleibt:
   kein Umbau (Modul 9, §1 dieser Datei); die Zahl der gedeckten Statements
-  dieser vier Pakete ist damit **52**, nicht 60. — **Ausgang:** <bei Closure>
+  dieser vier Pakete ist damit **52**, nicht 60. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*, in der **Funktions**-Lesart: **keine** der 21
+  Funktionen ist unprüfbar, jede trägt Tests — das war der Gegenstand des
+  Risikos. Der **Statement**-Rest (8) ist ein Befund **unterhalb** der
+  Funktionsgrenze und **vollständig benannt**; die Verifikation hat ihn
+  bestätigt, zwei der acht **analytisch** (für `decode.go:224` in der gepinnten
+  Treiberquelle: `pglogrepl.Parse` führt genau zehn Typen, sonst
+  `errMsgNotSupported` **vor** dem Switch) und zwei **empirisch**. Sein Ort ist
+  das **Schnittmaß** der Welle (`ADR-0082` rechnet die Decke ohnehin ohne die
+  unbeweglichen Funktionen), nicht dieser Slice — und **kein Test fehlt**.
 - **Der Slice könnte den Produktionscode anfassen.** Die Zusage ist „Tests,
-  kein Umbau"; ein Umbau wäre ein **anderer Vorgang**. — **Ausgang:** <bei Closure>
+  kein Umbau"; ein Umbau wäre ein **anderer Vorgang**. — **Ausgang:** *entfallen
+  — gestrichen mit Begründung*: `git diff 3de7fb1..8506539 -- '*.go'
+  ':!*_test.go'` ist **leer** (Verifier, eigener Lauf), die sieben Mutationen des
+  Laufs sind sämtlich zurückgenommen.
 - **Die Tests könnten die Zahl heben, ohne etwas zu prüfen.** Ein Test, der eine
   Funktion aufruft und nichts behauptet, ist grün ohne Aussage — die Klasse
-  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**3×**). — **Ausgang:** <bei Closure>
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**3×**). — **Ausgang:**
+  ***eingetreten — und behoben***: der Reviewer hat es **an zwei** der neuen
+  Tests nachgewiesen (`TestConsumeRelationOnUnboundTableStaysNoop`,
+  `…WithoutRegisteredVersionStaysNoop` — Fehler-Abwesenheit gegen einen
+  argument-ignorierenden Stub; M4/M5 ließen `go test` **Exit 0**), die Fixrunde
+  hat beide an ihre Eingabeseite gebunden, und der Verifier hat **M4 und M5
+  selbst reproduziert** (Exit 1, je genau der betroffene Test). Der Slice hat
+  damit seinen eigenen Gegenstand **an sich selbst** gefunden.
 
 ## 7. Closure-Notiz
 
@@ -266,18 +313,76 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** **Der Slice hat seinen eigenen Gegenstand an sich
+  selbst gefunden.** Er ist aus Zusagen gebaut, die an ihrer Eingabeseite hängen
+  müssen — und der Reviewer hat an **zwei** seiner neuen Tests nachgewiesen,
+  dass sie es **nicht** taten (Fehler-Abwesenheit gegen einen
+  argument-ignorierenden Stub; zwei Mutationen ließen die Suite grün). Der
+  Implementer hatte **fünf** eigene Mutationen gefahren und alle rot gesehen —
+  die zwei löchrigen waren die, die er für selbstverständlich hielt. Das ist die
+  Regel aus Modul 8 in Reinform: derselbe Kontext findet dieselben blinden
+  Flecken.
+  **Und die drei Rollen haben verschieden tief gemessen:** der Implementer
+  empirisch, der Reviewer durch Mutieren der **Eingabeseite**, der Verifier
+  **analytisch** — für die tote `default:`-Zeile ist er in die gepinnte
+  Treiberquelle gegangen (`pglogrepl.Parse` führt genau zehn Typen, sonst
+  `errMsgNotSupported` vor dem Switch), für die `json.Marshal`-Zeilen hat er
+  12 Eingaben durchgespielt. Die acht sind damit **bewiesen** unerreichbar,
+  nicht plausibilisiert.
+- **Was ging anders als geplant:** (1) **Cluster B liefert 52 statt 60.** Für
+  die Welle heißt das: der Puffer von B+C+D schrumpft von 13 auf **5**
+  Statements — Cluster A ist nicht mehr „wahrscheinlich", sondern **notwendig**.
+  (2) **Vier Planner-Kanten-Findings** (Review F-2/F-3, Delta D-1/D-2) und
+  **zwei Register-Köpfe** (D-3 und ein zweiter) — alle **meine**, und alle
+  dieselbe Bewegung: eine **ungezählte Übernahme**. Die schärfste: §8 behauptete,
+  die Zähler „am Register nachgezählt" zu haben, und nannte zwei Stände, die
+  **schon beim Schreiben** veraltet waren — die Sichtung stammt vom Anlegen des
+  Plans, die Zähler liefen mit `084`/`085` weiter, und die Behauptung blieb
+  stehen.
+  **Und mein eigener Klassen-Check produzierte einen Fehlalarm:** er meldete
+  `aufschub-adresse-nimmt-sendung-nicht-an` mit „Kopf sagt 3×", weil das Muster
+  `[0-9]+×` in *„**Bei** 3× wäre zu prüfen …"* griff — ein **Konditional**, kein
+  Stand. Ich habe nachgesehen und gemeldet, dass es keiner ist, statt ihn zu
+  beheben.
+- **Lerneintrag (geschärfte Regel):** ***Nennt ein Finding eine Stelle, steht
+  derselbe Fehler meist in ihren Geschwistern — geprüft wird die Klasse, nicht
+  die genannte Stelle.*** Dreimal an einem Tag: der Vorlagen-Rest (behoben, wo
+  er gemeldet war, nicht wo er auch stand), die Linktiefe (in einer Datei
+  korrigiert, in der nächsten wieder falsch), die Paket-Gruppierung (§1
+  berichtigt, §1s LP1/LP2 stehen gelassen). **Und die Gegenprobe, die den ersten
+  Fall gefangen hätte:** die **Summen-Spalte** in §1 (14/25/17/4 = 60) — eine
+  Zuordnung, die sie nicht erfüllt, ist falsch, ohne dass jemand die Pakete
+  nachschlagen muss. **Verkörperung offen**; als Kandidat geführt.
+  **Zweite Regel:** *eine Zahl ohne ihr Ende ist keine Angabe* — die
+  ±2-Schwankung ist belegt, also nennt jeder Bezug beide Enden (Verifikation
+  dieses Slice).
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Zwei
+  Registerbewegungen: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  +`slice-088` → **4×** (der Slice **ist** die Klasse und hat sie an sich selbst
+  gefunden); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` +`slice-088`
+  → **4×** (die vier Planner-Kanten-Findings und die zwei Register-Köpfe).
+  **Benannt, nicht gezählt:** der Chronik-Satz in meinem eigenen §1-Text
+  (Delta D-1; die Historie hält `git`) — Zuordnung zur Klasse
+  `BEO-PGC/slice-chronik-in-code-kommentar` **nicht** vorgenommen, weil ihr Name
+  auf Code-Kommentare zeigt und die Prosa-Hälfte dort nicht ausdrücklich steht;
+  das ist eine Zuordnungs-Frage für den Lese-Schritt, nicht für eine schnelle
+  Zeile.
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt, **kein**
+  neues Verzeichnis, **kein Zähler gesetzt**. **Zwei Register-Köpfe** sind
+  berichtigt (`db-gegenstand-enthaelt-netzlos-geprueften-code`: `Zustand: 1×` →
+  **2×**, während der `Zähler`-Absatz derselben Datei schon 2× sagte;
+  `dod-begruendung-unzutreffende-tatsachenbehauptung`: `3× erreicht` → **4×**).
+  Beide waren **Selbstwidersprüche einer Datei** — der Register-Entwurf sagt,
+  der Zähler werde *abgeleitet*; eine **gespeicherte** Zahl daneben ist eine
+  zweite Quelle, und sie driftete.
+- **Folge-Slices:** keiner aus diesem Slice. Die drei übrigen Cluster der Welle
+  (`ADR-0082`: C, D, A) entstehen **nach** ihm — geschnitten nach der Messung,
+  nicht auf Vorrat (Modul 5).
+- **Risiken aus §6:** R1 und R2 *entfallen, gestrichen mit Begründung*; R3
+  *eingetreten — und behoben*.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
