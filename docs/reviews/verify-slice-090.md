@@ -458,3 +458,110 @@ Punkte sind Übergebenes, keine gebrochene Zusage.
 einer separaten Datei gelesen, nie durch eine Pipe (§3.9). Der Baum ist nach
 diesem Bericht sauber bis auf diese Datei; **kein** Commit, keine Änderung an
 Artefakten des Slice.
+
+---
+
+## Nachtrag — Delta-Prüfung der zweiten Fixrunde (`81f1fff`) · 2026-09-16
+
+**Auftrag:** Behebt `81f1fff` die Findings D-1…D-9 des Delta-Reviews
+([`review-slice-090-delta.md`](review-slice-090-delta.md)) — **und driften die
+neuen Texte selbst?** §1–§9 dieses Berichts bleiben der Stand `8a9387d`; jede
+Aussage hier stammt aus eigenen Läufen, unabhängig von den Messungen des
+Delta-Reviews. Prüfgegenstand: `81f1fff` — `harness/sensors/generated-sync.md`,
+`harness/README.md`, `.claude/agents/{implementer,verifier}.md`, die eine
+Plan-Zeile und `tools/harness/generated-sync.sh`, dort **ausschließlich
+Kommentarzeilen** (an der Logik kein Byte).
+
+### Befund je Finding
+
+| Finding | Status | Eigene Messung |
+|---|---|---|
+| D-1 Zitat nennt die falsche Festlegung | **behoben** | `ADR-0084` §Entscheidung: `**1.` Protobuf-Gate (die zwei Bedingungen als **Unterpunkte**), `**2.` E2E-Tabelle, `**3.` `plan.yaml`/`down.sql`, `**4.` `image-hash.txt`; das ADR zitiert sich selbst richtig (`:215`, `:267`, `:297` = Festlegung 2, `:301` = Festlegung 3). Der neue Text sagt „Festlegung 1, erste Bedingung" (`:14`) und „Festlegung 1 — der Protobuf-Code bekommt ein Gate; ihre zwei Bedingungen: Erzeugung in ein Temp-Verzeichnis, Befund mit Datei und Zeile" (`:114`) — deckungsgleich mit dem Original |
+| D-2 „der Kontext-Nummerierung eine Zeile voraus" | **behoben** | Formel nachgemessen in **13 Mutationen**, beide Zweige. Änderung Z. 1/2/3/4/5/40 → Befund 1/2/3/4/5/40, `-u`-Kopf 1/1/1/1/2/37 → Abstände **0/1/2/3/3/3**; Löschung Z. 1/2/3/5/40/226 → Abstände **0/1/2/3/3/3**. Deckungsgleich mit „0 in Zeile 1, 1 in Zeile 2, 2 in Zeile 3, 3 ab Zeile 4" und mit `S = max(1, R − 3)` |
+| D-3 Exit-Tabelle nicht überschneidungsfrei | **behoben** | Skript direkt aufgerufen: leere Quelle → **EC 2** mit **einer** eigenen `FAIL`-Zeile; kein Modulpfad (Klon, `go.mod` ohne `module`-Zeile) → **EC 2**, `FAIL — kein Modulpfad …`; Modulpfad falsch → **EC 1**, **0** `FAIL`-Zeilen; Quelle außerhalb, **absolut und relativ** → **EC 1**, 0 `FAIL`; Stufen-Build absichtlich gebrochen → **EC 1**, 0 `FAIL`. Die beiden `exit 2` liegen quelltextlich **vor** jedem Docker-Aufruf. Über `make`: script-1-Fall → **2**, script-2-Fall → **2** |
+| D-4 Vorbedingung des Quell-Overrides | **behoben** | Die Zeile nennt „nur für ein Verzeichnis **im** Arbeitsbaum … der Container mountet ausschließlich die Baum-Wurzel als `/src`"; Messung absolut und relativ: `Could not make proto path relative: …` bei `EC 1` |
+| D-5 Umbruch-Artefakt im Skriptkopf | **behoben** | `:22–28` liest sich als durchlaufender Absatz, keine abgerissene Restzeile |
+| D-6 Sperre im Grenze-Abschnitt | **behoben** | §Grenze führt jetzt **vier** Punkte (1–3 Deckungsgrenzen, 4 = „Der Generator selbst ist nicht Gegenstand"); der Netz-Punkt steht als **zweiter** Punkt in §Sperren (`:103`) |
+| D-7 Plan-Zeile nennt die falsche Zelle | **behoben** | Die Zeile sagt „der Link … steht in der **Bindung**-Spalte"; `harness/README.md:118` trägt ihn im dritten Feld |
+| D-8 Vertragszelle assertiert einen Ist-Zustand | **behoben** | Zelle beginnt „**prüft, dass** der committete … byte-gleich … ist"; Länge **239** (vorher 227, davor 440), Nachbarzellen 286 / 295 |
+| D-9 dritte Fassung der Gate-Liste | **behoben** | Beide Briefings nennen die **sechs** Gate-Ziele (deckungsgleich mit `make -p`) und die **sieben** `.d-check.yml`-Module. Die **zwei** Ziele der Folgezeilen (`doc-commits`, `doc-immutable`) existieren real (Wurzel `d-check.mk:38`, `:42`; `make -n …` je **Exit 0**) — nachgesehen, statt die ältere Gegen-Aussage zu übernehmen |
+
+### Neue Texte — zwei Stellen driften (beide INFO, kein Blocker)
+
+**N-1 — `§Der Befund` ist keine Sektion.** Die neue Exit-1-Zelle
+(`harness/sensors/generated-sync.md:42`) verweist auf „§Der Befund". Die Datei
+hat die Überschriften *Vertrag · Ausgabe und Ausgänge · Overrides · Grenze ·
+Sperren · Bindung*; „Der Befund nennt Datei und Zeile" ist ein
+**Fettsatz-Anfang** in §Ausgabe und Ausgänge. Wie es aussehen soll, zeigt die
+Hauspraxis: `coverage-gate.md` verweist auf `§Zählbasis` — und das **ist** eine
+Überschrift (`## Zählbasis der Zahlen dieser Datei`). Der Verweis ist bereits
+**weitergereist**: `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-090.md:28`
+zitiert denselben `§Der Befund`. Das ist die Klasse aus D-1 eine Ebene tiefer —
+Adresse ohne Ziel, kein falscher Satz. Ein-Wort-Korrektur: Fettsatz zur
+Überschrift machen oder auf `§Ausgabe und Ausgänge` verweisen.
+
+**N-2 — „die Korrektur steht in §7" löst in §7 nicht auf.** Der neue Beleg
+`docs/plan/planning/observations/BEO-PGC/zitat-nennt-die-falsche-stelle/evidence/slice-090.md`
+schließt mit „die Korrektur steht in §7 der Closure-Notiz". Gemessen trägt §7
+die **Klasse** und die Adresse des neuen Register-Eintrags, aber **keine**
+Aussage der berichtigten Nummer; dort steht die Kurzform „seine zwei
+Festlegungen" (`:262`), die das ADR *Bedingungen* nennt. Die berichtigte
+Zuordnung steht im Plan-Kopf („vier Festlegungen"), in §2 (`Festlegung 1,
+erste/zweite Bedingung`) und im Sensor-Dokument. Kein Widerspruch — eine
+Auflösung, die eine Sektion daneben liegt.
+
+**Hinweis (kein Finding) — der Sektions-Umzug hat Zitat-Adressen in Belegen
+entwertet.** Der Netz-Punkt war „§Grenze 4" und ist jetzt **§Sperren, zweiter
+Punkt** (`harness/sensors/generated-sync.md:103`). Betroffen sind **dieser**
+Bericht (§5-Zeile „Sensor-Dokument §Grenze 4", §8 „§Grenze 4 und §6-Risiko 2")
+und der Delta-Review (`:266`, `:288`, `:321`; sein D-6-Pfad `:88–94`).
+Lauf-Belege sind stand-gebunden und werden nicht rückdatiert — die Korrektur
+steht hier. §Grenze 2 und §Grenze 3 (TMPDIR) haben ihre Nummern behalten und
+stimmen weiter.
+
+### Die zwei offenen Punkte aus §9
+
+**V-1 (flappende Coverage-Zahl) — so ausreichend, ja.** §7 nennt **keine**
+Coverage-Zahl (gemessen: 0 Treffer für `74[,.]…` bzw. `Coverage` in §7) — eine
+Zahl, die nicht dasteht, kann nicht driften; das ist die stärkere Antwort als
+eine Zahl mit Lauf-Nennung. Die Substanz steht im Register:
+`BEO-PGC/test-integration-retention-timing-flake` → **2×** (Belege gezählt, nicht
+übernommen), und `evidence/slice-090.md` nennt Lauf (`74,80 %` im Aggregat gegen
+`74,70 %` zweimal im Einzellauf), Ursache (`runWALRetentionCheck`,
+`internal/bootstrap/wiring.go:981`: 7× 87,5 % / 1× 100,0 % bei durchweg grünen
+Tests), die Unsichtbarkeit für Tests und diff-skopiertes Review **und** das
+Vorwärts-Risiko der Rampe (`ADR-0077`, Endstufe 80 % → flappende
+Gate-Entscheidung). Dritter Datenpunkt dieses Nachtrags: der Klon-Lauf des
+Aggregats gibt **74.70 %**. Es fehlt nichts; **optional** wäre ein Zeiger in
+`harness/mk/coverage.mk` am Hochschalt-Trigger — eine Träger-Frage der Rampe,
+nicht dieses Slice.
+
+**V-3 (DoD-Häkchen) — erledigt, mit einer Randnotiz.** An `81f1fff` waren
+**0 von 12** Häkchen gesetzt (also auch in dem Fixrunden-Commit, den Schritt 21
+nennt); im Baum stehen jetzt **12 von 12** (Closure-Commit `c090823` samt
+Arbeitsstand). Die Klasse ist mit dieser Closure bei
+`BEO-PGC/dod-checkbox-nachzug` → **4×** registriert. Die Randnotiz bleibt: eine
+Fixrunde, die einen offenen DoD-Punkt auflöst, trägt ihr Häkchen **im
+Fixrunden-Commit**, nicht erst in der Closure.
+
+### Verdikt des Nachtrags
+
+**Alle neun D-Findings sind behoben — gemessen, nicht gelesen.** Die beiden
+MEDIUM-Aussagen (D-1, D-2) sind gegen die **Originale** geprüft, nicht gegen
+Berichte: die Festlegungs-Nummern gegen die vier `**N.`-Überschriften des ADR,
+die Abstands-Formel gegen 13 eigene Mutationen in beiden Zweigen. Die
+Exit-Tabelle (D-3) hält in **allen** sechs gemessenen Lagen (4× Exit 1 **ohne**
+`FAIL`-Zeile, 2× Exit 2 **mit** eigener `FAIL`-Zeile) samt der Aussage über die
+`make`-Ebene. Die Form-Findings D-4…D-9 sitzen.
+
+**Der Fehlermodus „die Korrektur erzeugt den nächsten Fehler" hat sich nicht
+wiederholt.** Die neuen Texte sind bis auf **N-1** und **N-2** (beide INFO,
+Ein-Satz-Korrekturen) deckungsgleich mit dem Gemessenen. Der Stufen-Umzug hat
+keine Aussage entwertet, nur Zitat-Adressen in Belegen (Hinweis).
+
+**`done/`-fähig: ja.** Der Stand hält: `make gates` **Exit 0** im isolierten
+Klon auf dem Commit-Stand (sechs Checks, `d-check 746 Datei(en), 0 Befund(e)`,
+`generated-sync: OK — byte-gleich`, `commit-traceability: OK`, danach
+`git status --porcelain` leer). N-1 und N-2 sind Nachträge ohne Lieferbezug —
+sie können mit der Closure mitgehen oder als benannte Reste stehen bleiben; ein
+Blocker sind sie nicht.

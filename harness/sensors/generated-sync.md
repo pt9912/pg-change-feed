@@ -39,7 +39,7 @@ richtig beschreibt (die Belege zu
 | Exit | Bedeutung |
 |---|---|
 | 0 | committetes Erzeugnis byte-gleich der Generatorausgabe; der Erfolgstext nennt Quelle und geprüfte Dateien |
-| 1 | der Lauf ist rot — entweder die Abweichung (Befund mit Datei und Zeile, §Der Befund) **oder** ein Schritt davor: fehlgeschlagener Stufen-Build, vom Generator abgelehnter Modulpfad, für den Container unerreichbare Quelle. In den drei letzten Fällen steht die Meldung des abgebrochenen Schrittes und **keine** eigene `FAIL`-Zeile (gemessen: Stufen-Build `EC=1` ohne `FAIL`-Zeile; `GENERATED_SYNC_MODULE=example.com/other` → `EC=1`, `generated file does not match prefix`; Quelle außerhalb des Baums → `EC=1`, `Could not make proto path relative`) |
+| 1 | der Lauf ist rot — entweder die Abweichung (Befund mit Datei und Zeile, §Ausgabe und Ausgänge) **oder** ein Schritt davor: fehlgeschlagener Stufen-Build, vom Generator abgelehnter Modulpfad, für den Container unerreichbare Quelle. In den drei letzten Fällen steht die Meldung des abgebrochenen Schrittes und **keine** eigene `FAIL`-Zeile (gemessen: Stufen-Build `EC=1` ohne `FAIL`-Zeile; `GENERATED_SYNC_MODULE=example.com/other` → `EC=1`, `generated file does not match prefix`; Quelle außerhalb des Baums → `EC=1`, `Could not make proto path relative`) |
 | 2 | die zwei eigenen Abbruch-Bedingungen des Skripts: kein Modulpfad (`go.mod` ohne `module`-Zeile) oder keine `.proto`-Quelle unter dem Quellverzeichnis — je mit eigener `FAIL`-Zeile |
 
 Über `make` kommen **beide** Fehlercodes als `2` an — das ist der Code, den

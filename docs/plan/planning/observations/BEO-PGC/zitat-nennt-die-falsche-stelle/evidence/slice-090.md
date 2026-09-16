@@ -25,7 +25,10 @@ aufgeschlagen und die vier Überschriften gezählt; weder das diff-skopierte
 Review der ersten Runde noch der Verifier der ersten Runde hatten einen Anlass,
 die Nummer zu prüfen — sie stand in einem neuen Satz, der eine **alte** Aussage
 zu beheben schien. Beide Berichte sind als Lauf-Belege **nicht** rückdatiert;
-die Korrektur steht in §7 der Closure-Notiz.
+die Korrektur steht in **zwei** Trägern — im Sensor-Dokument §Bindung (Commit
+`81f1fff`) und im Slice-Plan an vier Stellen (§1, §2 LP2/LP3, §4; Commit
+`c090823`). §7 der Closure-Notiz **nennt** die Klasse und diese Eintrags-Adresse,
+führt die berichtigte Nummer aber nicht selbst.
 
 Quelle: `docs/reviews/review-slice-090-delta.md` (D-1) ·
 `docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md` §Entscheidung ·

@@ -25,4 +25,5 @@ Aussage falsch; sie steht in
 `BEO-PGC/test-integration-retention-timing-flake`.
 
 Quelle: `docs/reviews/review-slice-090-delta.md` (D-2) ·
-`harness/sensors/generated-sync.md` §Der Befund.
+`harness/sensors/generated-sync.md` §Ausgabe und Ausgänge (der Satz über den
+Abstand, berichtigt in `81f1fff`).
