@@ -405,8 +405,10 @@ in [`.harness/skills/reviewer.md`](.harness/skills/reviewer.md) — die vier
 belegten Fälle stehen in
 `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`,
 er hat sie durch eigenes Nachmessen gefunden), der **Verifier**
-für Instanz B („Prüfe die **Belege**, nicht die Behauptung"). Für Träger
-**außerhalb** des Diffs bleibt als Leser allein die Messung.
+für Instanz B („Prüfe die **Belege**, nicht die Behauptung") — und **der
+Planner als Verfasser** der Begründung selbst, der sie beim Schreiben an ihren
+Anker bindet. Für Träger **außerhalb** des Diffs bleibt als Leser allein die
+Messung.
 
 **Benachbarte Regel — und die Abgrenzung zu ihr.** §3.7 bleibt die Regel für
 den **Kommentar** und das **Zustandsfeld**; ihre Kernaussage ist eine

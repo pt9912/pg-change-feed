@@ -12,16 +12,26 @@ ist die **Stütze**. Das macht den Fall schwer zu sehen: Wer den Satz liest,
 findet ihn plausibel; wer den Befehl ausführt, findet etwas anderes — und nur
 der zweite Blick deckt es auf.
 
-Belegt an zwei abgeschlossenen Vorgängen:
+Belegt an zwei abgeschlossenen Vorgängen — **zwei verschiedene Befehle**:
 
-- **`slice-079`** (Verifikation `verify-slice-084` V-1): `harness/sensors/coverage-gate.md`
-  §Grenze Punkt 1 zitiert `go list -f '{{len .TestGoFiles}}'` als Beleg für
-  „fünf Pakete ohne Testdatei". Mit dieser Formel liefert der Lauf **25** — die
-  externen Testpakete (`XTestGoFiles`) zählt sie nicht mit; erst
-  `TestGoFiles` **und** `XTestGoFiles` ergeben genau die fünf genannten.
-- **`slice-085`** (Verifikation `verify-slice-085` V-3): derselbe Satz, derselbe
-  Befehl — beim zweiten Vorgang erneut als ungedeckter Beleg gefunden und
-  **bewusst liegen gelassen** (mit Adresse), weil er nicht zum Zuschnitt gehörte.
+- **`slice-084`** (Verifikation `verify-slice-084` V-1): der Slice-Plan §3(b)
+  nennt als Beleg für „die Änderung ist auf **ein** Paket isoliert" den Befehl
+  `git diff --name-only fb6adf6..4035ee7` — **ohne Pathspec**. Auf dem sauberen
+  Baum listet er **fünf** Pfade (Plan, `image-hash.txt` und die drei
+  Paketdateien), während der Satz „ausschließlich Dateien unter
+  `postgresack/`" behauptet. Die **Range** war nachgetragen, der **Pathspec**
+  fehlte; die Ergänzung `-- internal/:!…/postgresack/` trägt die Aussage.
+- **`slice-085`** (Verifikation `verify-slice-085` V-3):
+  `harness/sensors/coverage-gate.md` §Grenze Punkt 1 zitiert
+  `go list -f '{{len .TestGoFiles}}'` als Beleg für „fünf Pakete ohne
+  Testdatei". Mit dieser Formel liefert der Lauf **25** — die externen
+  Testpakete (`XTestGoFiles`) zählt sie nicht mit; erst beide Felder ergeben
+  genau die fünf genannten.
+
+**Ursprung und Vorkommen sind zwei Dinge.** Der zweite Beleg ist
+**Alt-Bestand**: Den Satz eingeführt hat `slice-079` (`65aead2`) — **gefunden**
+wurde er erst in `verify-slice-085`. `slice-079` ist damit der **Ursprung**, kein
+Beleg-Vorgang; der Zähler zählt die Vorgänge, in denen der Fund **auftrat**.
 
 **Warum das zählt:** Ein Beleg ist die Prüf-Form einer Aussage. Trägt er sie
 nicht, prüft ein späterer Leser gegen etwas anderes als das Behauptete — und die

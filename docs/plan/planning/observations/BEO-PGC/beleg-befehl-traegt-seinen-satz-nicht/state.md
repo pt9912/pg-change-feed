@@ -9,8 +9,12 @@ Lese-Pflicht).
 
 Zähler (abgeleitet): **2×** (evidence/slice-084.md, evidence/slice-085.md) —
 unter der Schwelle. Die zwei Belege sind zwei abgeschlossene Vorgänge
-(`verify-slice-084` V-1, `verify-slice-085` V-3) **desselben Satzes**: derselbe
-Fund, in zwei Verifikationen unabhängig gemeldet.
+(`verify-slice-084` V-1, `verify-slice-085` V-3) — **und zwei verschiedene
+Befehle**: dort ein `git diff` ohne Pathspec, hier ein `go list` ohne das
+zweite Test-Datei-Feld. **Ursprung und Vorkommen sind getrennt:** der zweite
+Satz stammt aus `slice-079` (`65aead2`), gefunden wurde er in `slice-085`; der
+Zähler folgt den **Vorkommen**.
+
 
 **Nicht zu verwechseln** mit `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
 (dort driftet der **Wert** gegen die Messung, die Aussage ist falsch) und mit
