@@ -39,8 +39,10 @@ Agenten-Werkzeugs führt dieses Repo **keinen Wächter**; die Rollen-Achse ruht 
 Disziplin.
 
 **Deine repo-spezifischen Sensoren (neben `make gates`).**
-- `make gates` — baseline-verify + d-check über `.d-check.yml` (links, anchors,
-  ids, matrix, versions, structure)
+- `make gates` — die sechs Gate-Ziele (`baseline-verify`, `docs-check`, `a-check`,
+  `commit-traceability`, `coverage-gate`, `generated-sync`); `docs-check` prüft
+  über `.d-check.yml` die Module links, anchors, ids, matrix, versions,
+  structure, hostpaths
 - `make doc-commits RANGE=base..head` — Traceability-Kennung (`LH-*`/`ADR-*`)
   je Commit-Message
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge

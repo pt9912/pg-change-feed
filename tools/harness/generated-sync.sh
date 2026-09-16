@@ -22,10 +22,10 @@
 # Der Befund traegt den Diff: je abweichender Datei die erste abweichende Stelle
 # im committeten Erzeugnis und darunter den Unified-Diff mit Kontext. Die Zeile
 # kommt aus dem Hunk-Kopf eines `diff -U0` (ohne Kontext) — bei einer Einfuegung
-# (`-N,0`) nennt der Befund N+1, weil die Abweichung erst hinter Zeile N
-# beginnt. Die gepinnte Stufe laeuft ohne
-# `--no-cache-filter`: ihren Layer-Cache kann kein Urteil maskieren, weil das
-# Urteil ausserhalb der Stufe faellt — im Vergleich dieses Laufs.
+# (`-N,0`) nennt der Befund N+1, weil die Abweichung erst hinter Zeile N beginnt.
+# Die gepinnte Stufe laeuft ohne `--no-cache-filter`: ihren Layer-Cache kann
+# kein Urteil maskieren, weil das Urteil ausserhalb der Stufe faellt — im
+# Vergleich dieses Laufs.
 #
 # Aufruf: `make generated-sync` (haengt an GATE_CHECKS).
 # Overrides: GENERATED_SYNC_IMAGE, GENERATED_SYNC_SOURCE_DIR,

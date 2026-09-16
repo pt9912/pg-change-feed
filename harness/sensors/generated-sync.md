@@ -11,7 +11,7 @@ Gegenstand ist genau **eine Paarung**: committetes Erzeugnis = Generatorausgabe
 aus der committeten Quelle. Erzeugt wird in ein Temp-Verzeichnis, der Baum
 hängt als `:ro`-Bind-Mount im Generator-Container — das Ziel schreibt den
 Arbeitsbaum also nicht ([`ADR-0084`](../../docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md)
-Festlegung 1). Das unterscheidet es von `make proto-generate`, das in-place in
+Festlegung 1, erste Bedingung). Das unterscheidet es von `make proto-generate`, das in-place in
 den Bind-Mount erzeugt und deshalb kein Prüf-Schritt ist.
 
 Verglichen wird in **beiden Richtungen**: jede erzeugte Datei gegen ihren
@@ -39,8 +39,11 @@ richtig beschreibt (die Belege zu
 | Exit | Bedeutung |
 |---|---|
 | 0 | committetes Erzeugnis byte-gleich der Generatorausgabe; der Erfolgstext nennt Quelle und geprüfte Dateien |
-| 1 | Abweichung: Inhalt, fehlende Datei im Baum, oder ein gekennzeichnetes Erzeugnis ohne Quelle |
-| 2 | Lauf nicht ausführbar: kein Modulpfad (`go.mod` ohne `module`-Zeile) oder keine `.proto`-Quelle unter dem Quellverzeichnis |
+| 1 | der Lauf ist rot — entweder die Abweichung (Befund mit Datei und Zeile, §Der Befund) **oder** ein Schritt davor: fehlgeschlagener Stufen-Build, vom Generator abgelehnter Modulpfad, für den Container unerreichbare Quelle. In den drei letzten Fällen steht die Meldung des abgebrochenen Schrittes und **keine** eigene `FAIL`-Zeile (gemessen: Stufen-Build `EC=1` ohne `FAIL`-Zeile; `GENERATED_SYNC_MODULE=example.com/other` → `EC=1`, `generated file does not match prefix`; Quelle außerhalb des Baums → `EC=1`, `Could not make proto path relative`) |
+| 2 | die zwei eigenen Abbruch-Bedingungen des Skripts: kein Modulpfad (`go.mod` ohne `module`-Zeile) oder keine `.proto`-Quelle unter dem Quellverzeichnis — je mit eigener `FAIL`-Zeile |
+
+Über `make` kommen **beide** Fehlercodes als `2` an — das ist der Code, den
+`make` für ein gescheitertes Rezept meldet (für beide gemessen).
 
 **Der Befund nennt Datei und Zeile.** Je abweichender Datei steht eine Zeile der
 Form
@@ -51,20 +54,22 @@ generated-sync: FAIL — <Datei> weicht von der Generatorausgabe ab (erste abwei
 
 darunter der Unified-Diff mit Kontext (`committet:` / `Generatorausgabe:`).
 `<N>` kommt aus dem Hunk-Kopf eines `diff -U0` — **ohne** Kontext, weil der
-Hunk-Kopf bei `diff -u` den Kontext-Anfang nennt und die Abweichung
-systematisch ein bis drei Zeilen darunter liegt. Beginnt der erste Hunk mit
-einer Einfügung (`-N,0`, die Generatorausgabe hat dort Zeilen, die das
-committete Erzeugnis nicht hat), nennt der Befund `N+1`: die erste Zeile, deren
-Inhalt auseinanderläuft. Die Nummerierung ist damit der des **Kontext**-Diffs
-eine Zeile voraus, dessen Hunk-Kopf unverändert bleibt — der Diff darunter ist
-die lesbare Form, die Zahl die genaue Stelle.
+Hunk-Kopf bei `diff -u` den Kontext-Anfang nennt: bei drei Zeilen Kontext
+beginnt der `-u`-Hunk bei `max(1, N − 3)`, der Abstand beider Angaben hängt
+also von der Lage ab — gemessen mit `diff -u` gegen `diff -U0` über dieselben
+Dateipaare, im Änderungs- und im Einfügungs-Zweig, Lagen 1, 2, 3, 4, 5, 40 und
+226: **0** in Zeile 1, **1** in Zeile 2, **2** in Zeile 3, **3** ab Zeile 4.
+Beginnt der erste Hunk mit einer Einfügung (`-N,0`, die Generatorausgabe hat
+dort Zeilen, die das committete Erzeugnis nicht hat), nennt der Befund `N+1`:
+die erste Zeile, deren Inhalt auseinanderläuft. Der Diff darunter ist die
+lesbare Form mit Kontext, die Zahl die genaue Stelle.
 
 ## Overrides
 
 | Variable | Wirkung |
 |---|---|
 | `GENERATED_SYNC_IMAGE` | Tag des Generator-Bildes (Default `pg-change-feed:proto-sync`). Der Lauf baut die Stufe `proto` **immer** aus dem lokalen `Dockerfile` und taggt sie neu — der Override kann keinen ungepinnten Generator unterschieben. |
-| `GENERATED_SYNC_SOURCE_DIR` | ersetzt die **verglichene Quelle** (Default `proto`). Er kann den Vergleich gegen eine andere Quelle grün werden lassen; der Erfolgstext nennt die benutzte Quelle (`generated-sync:   Quelle: …`), der Ausgang ist damit nicht still, und wer die committete Quelle prüfen will, ruft ohne Override. Dasselbe Haus-Muster wie `make commit-traceability`, das seinen Bereichs-Override `RANGE=base..head` in seiner Vertrags-Zelle nennt. |
+| `GENERATED_SYNC_SOURCE_DIR` | ersetzt die **verglichene Quelle** (Default `proto`). Er greift nur für ein Verzeichnis **im** Arbeitsbaum: der Container mountet ausschließlich die Baum-Wurzel als `/src`, ein Pfad außerhalb ist für ihn nicht vorhanden — der Lauf bricht dann ab (gemessen absolut und relativ: `EC=1`, `Could not make proto path relative: …`). In-Tree kann er den Vergleich gegen eine andere Quelle grün werden lassen; der Erfolgstext nennt die benutzte Quelle (`generated-sync:   Quelle: …`), der Ausgang ist damit nicht still, und wer die committete Quelle prüfen will, ruft ohne Override. Dasselbe Haus-Muster wie `make commit-traceability`, das seinen Bereichs-Override `RANGE=base..head` in seiner Vertrags-Zelle nennt. |
 | `GENERATED_SYNC_MODULE` | Modulpfad für `--go_opt=module=…` (Default: `module`-Zeile aus `go.mod`). |
 | `GENERATED_SYNC_RUN_USER` | `uid:gid` des Generator-Containers (Default: der Aufrufer), damit er in das Temp-Verzeichnis schreiben darf. |
 
@@ -85,27 +90,29 @@ die lesbare Form, die Zahl die genaue Stelle.
    das Temp-Verzeichnis danach weg, und `git status --porcelain` ist
    anschließend leer — die Zusage aus Festlegung 1 hält auch in diesem Fall.
    **Der Wächter ist:** keiner; es ist eine benannte Grenze.
-4. **Der Generator-Build braucht Netz auf kaltem Layer-Cache.** Die Stufe
-   `proto` installiert `protobuf-dev=31.1-r1` und die beiden `protoc-gen-*`-
-   Plugins (`apk add`, `go install`); der **Lauf** selbst ist netzlos
-   (`--network none`, `ADR-0084` §Konsequenzen). Gemessen in diesem Zug: der
-   erste Lauf mit neuem Tag baute die Stufe real mit Netz (gedruckte
-   Build-Zeile `#9 DONE 8.5s`), ab dem zweiten Lauf bediente sie sich aus dem
-   Layer-Cache (`time make generated-sync` → `real 0m0,941s` / `real 0m0,928s`).
-5. **Der Generator selbst ist nicht Gegenstand.** Eine Pin-Hebung der Stufe
+4. **Der Generator selbst ist nicht Gegenstand.** Eine Pin-Hebung der Stufe
    `proto` ändert den Vergleichsmaßstab; sie ist eine bewusste Änderung am
    `Dockerfile` (`ADR-0060`), kein Fall dieses Gates.
 
 ## Sperren
 
-Der Lauf braucht einen Docker-Daemon und das lokale `Dockerfile` mit der Stufe
-`proto`. Fehlt eines, scheitert schon der Build und der Vergleich läuft nicht
-(Exit ungleich 0, Meldung des Builds).
+- **Docker-Daemon und lokales `Dockerfile`** mit der Stufe `proto`. Fehlt eines,
+  scheitert schon der Build und der Vergleich läuft nicht (Exit 1, Meldung des
+  Builds, keine eigene `FAIL`-Zeile — so gemessen mit einer Stufe, deren `apk`-
+  Paketversion es nicht gibt).
+- **Netz für den Build auf kaltem Layer-Cache.** Die Stufe `proto` installiert
+  `protobuf-dev=31.1-r1` und die beiden `protoc-gen-*`-Plugins (`apk add`,
+  `go install`); der **Lauf** selbst ist netzlos (`--network none`,
+  `ADR-0084` §Konsequenzen). Gemessen in diesem Zug: der erste Lauf mit neuem Tag
+  baute die Stufe real mit Netz (gedruckte Build-Zeile `#9 DONE 8.5s`), ab dem
+  zweiten Lauf bediente sie sich aus dem Layer-Cache
+  (`time make generated-sync` → `real 0m0,941s` / `real 0m0,928s`).
 
 ## Bindung
 
 [`ADR-0084`](../../docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md)
-(Festlegung 1 = der Baum wird nicht geschrieben; Festlegung 2 = der Befund nennt
-Datei und Zeile) · [`ADR-0060`](../../docs/plan/adr/0060-grpc-streaming-mechanismus.md)
+(Festlegung 1 — der Protobuf-Code bekommt ein Gate; ihre zwei Bedingungen:
+Erzeugung in ein Temp-Verzeichnis, Befund mit Datei und Zeile)
+· [`ADR-0060`](../../docs/plan/adr/0060-grpc-streaming-mechanismus.md)
 (der Generator und seine Folgepflicht) · `tools/harness/generated-sync.sh` ·
 `harness/mk/generated-sync.mk` · seit slice-090.
