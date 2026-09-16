@@ -105,19 +105,21 @@ vierter Punkt:
 **Liefer-Punkt 1 — die Stream-Übersetzung ist gedeckt.**
 
 - [x] `replication/decode` und `replication/mapper` haben Tests für die
-      gemessenen Lücken (`Decode`, `observeRelation`, `Consume`, `change`,
-      `JSONImage`, `oldTupleValues`, `tupleValues`, `rowImage`,
-      `classifyRelationColumns`) — **netzlos**, ohne externe Dienste.
+      gemessenen Lücken — `Decode`, `oldTupleValues`, `tupleValues` (decode);
+      `observeRelation`, `Consume`, `change`, `rowImage`,
+      `classifyRelationColumns`, `IncludeColumn`, `removeExcluded`,
+      `setSchemaVersion`, `qualifiedNames` (mapper) — **netzlos**, ohne externe
+      Dienste.
 - [x] `JSONImage` (heute **3/3 ungedeckt**) ist dabei der erste Fall: eine
       Funktion ohne jede Abdeckung.
 
 **Liefer-Punkt 2 — die SQL-Übersetzung ist gedeckt.**
 
 - [x] `postgresstorage/sqlexec` hat Tests für die gemessenen Lücken
-      (`ReadChanges`, `ReadConsumerPosition(s)`, `ReadSourceTables`,
-      `ReadExcludedColumns`, `ReadTableSchema`, `ReadPendingRequests`,
-      `IncludeColumn`, `removeExcluded`, `setSchemaVersion`) — über den
-      **bestehenden** Fake der Naht aus [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md).
+      (`ReadConsumerPositions`, `ReadExcludedColumns`, `ReadTableSchema`,
+      `ReadSourceTables`, `ReadPendingRequests`, `ReadChanges`,
+      `ReadConsumerPosition`) — über den **bestehenden** Fake der Naht aus
+      [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md).
 
 **Liefer-Punkt 3 — die Wirkung ist gemessen, nicht angestrebt.**
 
