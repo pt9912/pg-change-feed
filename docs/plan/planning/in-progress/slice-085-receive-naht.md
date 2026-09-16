@@ -249,12 +249,19 @@ DB-Adapter-Coverage mit und decken dort Statements, die keine
 PostgreSQL-Instanz berührt hat — `replication/receive` steht deshalb bei
 **153 von 187** gedeckten Statements (vorher 112/155), und `stream_test.go`
 ist byte-identisch: der Zuwachs stammt ausschließlich aus `seam_test.go`. Die
-Zahl heißt weiterhin richtig „Coverage des DB-Gegenstands"; die Verdünnung ist
-benannt und hat den Trigger aus
+Verdünnung ist damit keine Randgröße: **ohne** jede PostgreSQL-Verbindung
+gedeckt sind in `replication/receive` **112 von 187 (59,89 %)** statt vorher
+**11 von 155 (7,10 %)**; im Gegenstand insgesamt steigt der netzlos gedeckte
+Anteil der gedeckten Statements von **41 von 491 (8,35 %)** auf **142 von 532
+(26,69 %)** — je ein `go test -coverpkg` ohne `CDC_REPLICATION_TEST_DSN` an
+beiden Enden der Range, Block-Position-dedupliziert. Das ist die Größe des
+Triggers aus
 [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
-(§„Die benannte Grenze"). **Keine Rampe bewegt:** `DB_COVERAGE_THRESHOLD`
-bleibt 70, `THRESHOLD` bleibt 70, die Endstufen bleiben 80 % — eine
-Schwellen-ADR wird nicht fällig.
+(§„Die benannte Grenze") — die Zahl, die seinen Buchstaben entscheidet, ist
+der Anteil, nicht der Nenner. Die Zahl heißt weiterhin
+richtig „Coverage des DB-Gegenstands". **Keine Rampe bewegt:**
+`DB_COVERAGE_THRESHOLD` bleibt 70, `THRESHOLD` bleibt 70, die Endstufen bleiben
+80 % — eine Schwellen-ADR wird nicht fällig.
 
 ## 4. Trigger
 
