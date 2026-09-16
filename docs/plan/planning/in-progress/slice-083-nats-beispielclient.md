@@ -137,11 +137,28 @@ vierter Punkt:
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       0 HIGH; das MEDIUM liegt im Plan-Text (F-1), nicht im Code.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-083.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig in der Sache**; LP1…LP3 einzeln bestätigt, die drei
+      `ADR-0076`-Clients existieren **wirklich nicht** (F-1-Text wahr), der
+      Vertrag deckungsgleich mit `server.go:102`/`SPEC-022`/`ADR-0081`, §3.10
+      **geprüft und nicht ausgelöst**. Der Verifier hat zwei eigene
+      Gegenproben an unberührten Zusagen gefahren (Token-Herkunft,
+      `CDC_HTTP_ADDR`-Wächter — beide **ungebunden**, als Grenze benannt) und
+      eine Positiv-Kontrolle (`Scheme` → rot). Seine **V-1** (überholte
+      Blocker-Erzählung in §4/§6) ist in `56f5aee` bzw. `§6` berichtigt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
+- [x] Reconciliation-Register (`../reconciliation.md`) — **entfällt**: dieses
+      Repo führt die Datei nicht (Greenfield-Bootstrap, kein Inventur-Fund).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **zwei**
+      Belege ergänzt (`dod-begruendung-unzutreffende-tatsachenbehauptung`,
+      damit **4×**; `negativtest-ohne-bindung-an-seine-eingabe`, damit **3×**),
+      **kein** neues Verzeichnis, **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — R1 *eingetreten und behoben*;
+      R2/R3/R4 *entfallen, gestrichen mit Begründung*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -239,7 +256,7 @@ daneben beansprucht, hat keine Lifecycle, sondern ein Buffet.
   Weckruf-Bezug über die vorhandenen Endpunkte nicht auflösbar ist), ist das ein
   Blocker mit Entscheidung — die Zusage dieses Slice ist „zwei Schritte, kein
   neuer Vertrag".
-  **EINGETRETEN — der Grund, mit dem dieser Slice zurückgeht.** Der Fall ist
+  **EINGETRETEN — der Grund, mit dem dieser Slice zurückging.** Der Fall ist
   nicht „der Bezug ist nicht auflösbar", sondern größer: **die HTTP-API hat
   keinen Changes-Lese-Endpunkt.** `internal/adapters/driving/http/server.go`
   registriert **zehn** Routen — neun port-gedeckte plus `GET /changes/stream`;
@@ -248,6 +265,12 @@ daneben beansprucht, hat keine Lifecycle, sondern ein Buffet.
   Der Implementer hat **keinen** Endpunkt erfunden und `internal/**` unberührt
   gelassen — richtig so: §1 schließt „ein neuer Vertrag" aus, und `AGENTS.md`
   §3.6/Modul 8 lassen den Implementer keine Schnittstelle beschließen.
+  **Und wieder aufgelöst:** [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md)
+  hat den Vertrag entschieden, **`slice-086`** hat ihn gebaut; der Slice wurde
+  danach **neu beansprucht** und schließt über `done/`. Die Rückführung war eine
+  **Station**, kein Ende — wer §4 als Vorhersage liest, liest sie richtig; wer
+  sie als Zustand liest, liest sie falsch (§3 trägt den aktuellen Stand,
+  Verifikation `verify-slice-083` V-1).
 
 ## 5. Closure-Trigger
 
@@ -270,24 +293,35 @@ dasteht.
   hat entschieden, dass Beispiele **keinen** Lauf-Beleg tragen
   (Kompilier-Bindung statt E2E-Lauf). Ein Beispiel, das übersetzt, aber den
   Weckruf→Abfrage-Weg falsch geht, bliebe damit unbemerkt. — **Ausgang:**
-  *eingetreten*, und **schärfer als das Risiko**: nicht nur unbemerkt, sondern
-  **real nicht ausführbar** — der zweite Schritt hat keinen Vertrag (§3,
-  *Befund des Implementer-Laufs*). Der Träger der Behandlung ist die
-  **Folge-ADR zu [`ADR-0057`](../../adr/0057-http-grpc-api.md)**; der Slice geht
-  deshalb **zurück nach `open/`**, nicht nach `done/` (§4).
+  *eingetreten — und behoben.* Der scharfe Teil ist eingetreten und **nicht
+  mehr**: der zweite Schritt hatte **keinen Vertrag** (§4, *EINGETRETEN*), der
+  Slice ging deshalb nach `open/` zurück; [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md)
+  hat den Vertrag entschieden, **`slice-086`** hat ihn gebaut. Was **bleibt**,
+  ist die **entschiedene** Grenze aus
+  [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  und `ADR-0079` Festlegung 3 — Kompilier-Bindung statt Lauf-Beleg; der Slice
+  **weist sie als Grenze aus** und verkauft sie nicht als Beleg (Verifikation
+  `docs/reviews/verify-slice-083.md`).
 - **Der Client könnte den Payload für Daten halten.** Das Signal ist per Vertrag
   leer ([`SPEC-017`](../../../../spec/pflichtenheft.md)); die Verwechslung ist
   der naheliegendste Fehler und machte
   das Beispiel zum Anti-Vorbild. Wächter: §1 schließt es aus, das Review prüft
-  es. — **Ausgang:** <bei Closure>
+  es. — **Ausgang:** *entfallen — gestrichen mit Begründung*: der Client liest
+  den Payload **nicht aus** — er zählt nur seine Länge (`len(msg.Data)`), und
+  die Verifikation hat es am Code bestätigt.
 - **Er könnte Arbeit an den drei von [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   beschlossenen Clients mitnehmen.** Diese drei (`http-client`, `sse-client`,
   `grpc-client`) existieren **nicht** — dieser Slice darf sie weder anlegen
   (eigene Slices, nicht geschnitten) noch ihre Form „angleichen". Das Risiko
   zielt damit auf einen **Bestand, den es noch nicht gibt**; es ist als
-  Abgrenzung formuliert, nicht als Gefahr. — **Ausgang:** <bei Closure>
+  Abgrenzung formuliert, nicht als Gefahr. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: der Diff setzt ausschließlich
+  `examples/nats-client/**` hinzu; `examples/` führt nach dem Zug genau dieses
+  eine Programm.
 - **Die Folge-ADR könnte ausbleiben.** Ohne sie stünde ein vierter Client neben
-  einer `Accepted`-Entscheidung, die drei sagt. — **Ausgang:** <bei Closure>
+  einer `Accepted`-Entscheidung, die drei sagt. — **Ausgang:** *entfallen —
+  gestrichen mit Begründung*: [`ADR-0079`](../../adr/0079-nats-beispielclient-vierter-examples-client.md)
+  liegt `Accepted` vor und hebt die Drei-Klausel der `ADR-0076` auf.
 
 ## 7. Closure-Notiz
 
@@ -306,14 +340,60 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
+- **Was hat funktioniert:** **Der zweiseitige Aufbau hat die Frage erzwungen,
+  die zählte.** Weil das Beispiel „Weckruf → Abfrage" geht, fiel auf, dass die
+  Abfrage **keinen Vertrag** hatte — sichtbar, statt still: der Implementer hat
+  abgebrochen, statt einen Endpunkt zu erfinden. Und der Slice wurde danach
+  **wiederverwendet statt neu geschrieben**: der Branch-Stand von vor dem Bau
+  ließ sich konfliktfrei rebasieren, und die Behauptung „unverändert lauffähig"
+  wurde gegen den **ausgelieferten** Endpunkt geprüft (`server.go:102`,
+  `ADR-0081`, `SPEC-022`) — nicht gegen den Bericht.
+  Und **die Kette hat gehalten**: der Reviewer hat einen **Planner**-Fehler
+  gefunden (F-1: der Plan berief sich auf Beispiel-Clients, die es nicht gibt),
+  der Verifier einen zweiten (V-1: §4/§6 trugen nach dem Unblock die überholte
+  Blocker-Erzählung).
+- **Was ging anders als geplant:** (1) Der Slice wurde **blockiert**, nach
+  `open/` **zurückgeführt** und nach `ADR-0081`/`slice-086` **neu beansprucht** —
+  die Rückführung war eine Station, kein Ende (§4). (2) **Mein Fehler (F-1):**
+  §1 und §2 verwiesen auf „die drei anderen" Beispiel-Clients, als gäbe es sie;
+  `ADR-0076` hat sie **entschieden, nicht gebaut**. Das Häkchen stützte sich
+  darauf. (3) **Mein Fehler (V-1):** nach dem Unblock blieb die Blocker-Erzählung
+  in §4/§6 stehen. (4) **F-2:** `subject_test.go` trägt einen Kommentar, der
+  eine Eigenschaft zusagt, die die Funktion nicht hat (gemessen:
+  `ChangesURL("https://feed:8080", …)` → `http://https:%2F%2Ffeed:8080/…`), und
+  der Test übt den Fall nicht aus. (5) Der Verifier hat **zwei weitere
+  ungebundene Zusagen** gefunden (Token-Herkunft, `CDC_HTTP_ADDR`-Wächter:
+  mutiert bleibt die Suite grün) — **kein** DoD-Verstoß, aber als Grenze benannt.
+- **Lerneintrag (geschärfte Regel):** *Eine Aussage, die nicht an ihre
+  **Eingabeseite** gebunden ist, ist grün ohne Aussage.* **Dritte Gelegenheit in
+  drei Tagen, drei Gegenstände:** ein Negativtest (`slice-086`), ein E2E-Beleg
+  (`slice-087`), ein Kommentar samt Test (`slice-083`, F-2). Die Regel steht:
+  **jede Zusage wird an ihrer Eingabeseite mutiert**, nicht nur an ihrer
+  Ausgabeseite. **Verkörperung offen** (Träger: der Reviewer-Skill, wo die
+  Mutations-Pflicht schon steht, ohne diese Richtung); als Kandidat geführt.
+  **Zweite Regel (F-1, meine):** *ein Plan darf entschiedene, aber nicht gebaute
+  Artefakte nicht wie vorhandene behandeln.* Wer Nachbarn zitiert, prüft, dass
+  sie da sind — `ls` genügt.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Zwei
+  Registerbewegungen, und beide **erreichen die Schwelle**:
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` +`slice-083`
+  → **4×**; `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` +`slice-083`
+  → **3×** (**Schwelle erreicht** — der Ausgang gehört dem Lese-Schritt der
+  laufenden `welle-20`-Closure, Modul 6).
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt, **kein**
+  neues Verzeichnis, **kein Zähler gesetzt**. **Benannt, nicht gezählt:** die
+  zwei ungebundenen Zusagen des Verifiers (Token-Herkunft, `CDC_HTTP_ADDR`)
+  — sie liegen im selben Vorgang wie F-2 und sind damit *eine* Gelegenheit, und
+  sie sind **keine** DoD-Verstöße, sondern Grenzen.
+- **Folge-Slices:** keiner. Die drei von [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  beschlossenen Clients (`http-client`, `sse-client`, `grpc-client`) sind
+  **entschieden, aber nicht geschnitten** — wer sie will, schneidet sie; sie
+  sind hier **nicht** angelegt (F-1).
+- **Risiken aus §6:** R1 *eingetreten — und behoben*; R2, R3 und R4 *entfallen,
+  gestrichen mit Begründung* — siehe §6.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 - **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
 - **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>

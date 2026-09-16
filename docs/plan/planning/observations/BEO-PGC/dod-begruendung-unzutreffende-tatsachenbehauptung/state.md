@@ -15,8 +15,12 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **3×** (evidence/slice-036.md, evidence/slice-082.md,
-evidence/slice-081.md). Das Erstvorkommen (`slice-036`) wurde seinerzeit **ohne
+Zähler (abgeleitet): **4×** (evidence/slice-036.md, evidence/slice-082.md,
+evidence/slice-081.md, evidence/slice-083.md) — **Schwelle erreicht**, Ausgang
+beim Lese-Schritt der `welle-20`-Closure. Der vierte Beleg ist ein weiterer
+Vorgang derselben Klasse und kein neuer Handlungsbedarf: `slice-083` berief sich
+auf **nicht existierende** Nachbar-Clients („wie die drei anderen"), und der
+Verfasser war der Planner. Das Erstvorkommen (`slice-036`) wurde seinerzeit **ohne
 Kennung** notiert: das Review nannte das Label, legte aber kein Verzeichnis an.
 Der Eintrag entstand mit dem zweiten Auftreten und zitiert das erste über
 **dasselbe Label** — die Zuordnung ist belegt, nicht abgeleitet. Zwei Funde **im
