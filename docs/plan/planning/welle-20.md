@@ -35,7 +35,7 @@ bleibt (Abschnitt *Slices in dieser Welle*). **Die Zahlen dieses Absatzes sind
 der Planstand der Eröffnung** — `internal/bootstrap` 327 ungedeckt,
 `cmd/pg-change-feed` 49, Rest-Tail — und **kein Ist-Stand**: §4 derselben Datei
 weist die 327 bereits als gemessen falsch aus (336), und `slice-094` hat `cmd`
-auf **4** offene Statements gebracht. Die erreichten Zahlen führt die
+auf **0** offene Statements gebracht. Die erreichten Zahlen führt die
 Closure-Notiz, mit ihrem Lauf. Getragen wird das Maß von
 `make coverage-gate` gegen `THRESHOLD`; die Schwelle wandert nach dem
 unveränderten bootstrap-aware-Mechanismus ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
