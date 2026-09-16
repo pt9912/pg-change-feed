@@ -296,8 +296,8 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	// der beiden schreibenden Rollen hält, ist ein Schreibpfad-Objekt und
 	// gehört nicht in den Leseumfang (LH-QA-SEC-003; die Definer-Semantik
 	// der Views trägt den Lesezugriff, nicht ein Grant auf der Basistabelle).
-	// Ausgenommen ist allein der Schema-USAGE-Grant — und die Ausnahme ist
-	// einelementig, weil (6a) jedes Schema-Objekt auf `USAGE` festhält.
+	// Ausgenommen ist ein Schema-Objekt: (6a) hält jedes von ihnen auf
+	// `USAGE` fest, und die Vorbedingung beider Seiten ist kein Objektzugriff.
 	for _, schreibend := range []string{"cdc_capture", "cdc_admin"} {
 		for objekt := range rechte["cdc_reader"] {
 			if strings.HasPrefix(objekt, "schema ") {

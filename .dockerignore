@@ -1,8 +1,9 @@
 # Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
 # Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
-# wandern). Die zwei Negationen unten VERGRÖSSERN den Kontext, sie verkleinern
-# ihn nicht — sie heben den Ausschluss für genau diese Dateien auf, und sie
-# gelten für den ganzen Kontext, nicht für eine einzelne Stage (jede
+# wandern). Die beiden `!`-Zeilen für `tools/coverage-gate.sh` und
+# `tools/schema/nacharbeit-roles.sql` VERGRÖSSERN den Kontext, sie verkleinern
+# ihn nicht — eine Negation hebt den Ausschluss für genau diese Datei auf, und
+# sie gilt für den ganzen Kontext, nicht für eine einzelne Stage (jede
 # `COPY . .`-Stufe sieht sie). Jede nennt ihren Leser:
 # tools/coverage-gate.sh ist die Schwellen-Prüfung der `coverage`-Stufe
 # (ADR-0054); tools/schema/nacharbeit-roles.sql ist der ausgerollte Grant-Text,
