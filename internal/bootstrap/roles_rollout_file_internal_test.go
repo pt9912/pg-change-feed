@@ -173,7 +173,7 @@ func istKlassenGrant(objekt string) bool {
 // die andere Hälfte derselben Zusage — dass der ausgerollte Grant sie
 // trägt.
 //
-// Vier Prüfungen sind **Regeln über den geparsten Grant-Bestand**, keine
+// Drei Prüfungen sind **Regeln über den geparsten Grant-Bestand**, keine
 // Namenslisten: (6) kein Rollen-Grant über eine ganze Objektklasse,
 // (6a) auf einem Schema-Objekt nur `USAGE` und (7) der Leser teilt kein
 // Objekt mit einer schreibenden Rolle. Eine Namensliste könnte das nicht
