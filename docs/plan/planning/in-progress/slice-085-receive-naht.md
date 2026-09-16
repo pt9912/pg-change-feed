@@ -136,19 +136,40 @@ vierter Punkt:
       Zahlen dieses Laufs in §3.)
 - [x] `make gates` grün (Exit direkt, ungepiped).
 
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-085.md`, `.harness/skills/reviewer.md`) —
+      Rollenwechsel nach Schritt 8 des Minimal Agent Workflow (`AGENTS.md` §6),
+      kein Self-Review (Modul 8). **Zwei Fixrunden** (`dd29d83`/`61bb5cf`,
+      `b83217c`): 0 HIGH, 0 MEDIUM; F-1…F-4 geschlossen. **Das Häkchen setzt
+      der Planner**: `implement-slice` Schritt 21 weist es der Fixrunde zu, und
+      meine Auftragsform hat es dem Implementer **dreimal** entzogen — der
+      Fehler liegt bei mir, nicht bei ihm (er hat ihn beide Male gemeldet).
 - [x] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
       `harness/sensors/db-adapter-coverage.md` bzw.
       `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
       Schwellen-ADR (`ADR-0078`). *(Kein Transfer — die Naht bleibt im Paket;
       die Bedingung ist nicht eingetreten, siehe §3.)*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-085.md` liegt vor (Modul 11, frischer Kontext) —
+      **closure-fähig**; alle Liefer-Kriterien bestätigt. Der Verifier hat den
+      **Null-Befund am Parent-Commit** nachgebaut (Unit 1903 → 1903, DB
+      491/659 → 532/691, `receive` 112/155 → 153/187, `k_ab = 0`),
+      `stream_test.go` **byte-identisch** geprüft (SHA256),
+      **drei eigene Mutationen** gefahren (alle rot) und **gegen die Form
+      gesucht** — gefunden: sie ist **nicht vollständig durchgesetzt** (V-1;
+      benannt, nicht behoben, siehe §7).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(**Entfällt**: dieses Repo führt die Datei nicht — Greenfield-Bootstrap, kein Inventur-Fund.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **zwei**
+      Belege ergänzt (`zahl-in-traeger-driftet-gegen-die-messung`, damit **3×**
+      — Schwelle erreicht; `db-gegenstand-enthaelt-netzlos-geprueften-code`,
+      damit **2×**), **kein** neues Verzeichnis, **kein Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — R1…R4 *entfallen, gestrichen mit
+      Begründung*; R4s Verdünnungs-Hälfte ist als **Trigger-Entscheidung** an die
+      Wellen-Closure weitergereicht.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu, hier nicht
+      geprüft und hier nicht fällig.
 
 ## 3. Plan (vor Code)
 
@@ -320,11 +341,32 @@ dasteht.
   nicht ein — die Hülle hält den Typ **innen**, die Fläche ist nach außen
   fake-fähig. Der §4-Blockerfall ist beantwortet, bevor er eintreten konnte.
 - **Der Umbau könnte ein Verhaltens-Change sein, der als Refactoring auftritt.**
-  Wächter sind die **realen** Tests, nicht die neuen Fakes. — **Ausgang:** <bei Closure>
-- **Der Fake könnte grün sein, ohne etwas zu prüfen.** — **Ausgang:** <bei Closure>
+  Wächter sind die **realen** Tests, nicht die neuen Fakes. — **Ausgang:**
+  *entfallen — gestrichen mit Begründung*: `make test-store`,
+  `make test-replication` und `make test` sind grün, `stream_test.go` ist
+  **byte-identisch** (SHA256, vom Verifier selbst geprüft), keine Zusicherung
+  abgeschwächt, **exportierte Symbole und Methodensignaturen identisch**. Und
+  der Wächter hat **gebissen**: die Mutation „nicht delegierendes
+  `connSession.Exec`" bleibt netzlos grün und färbt `make test-replication`
+  **rot** — **genau sieben** reale Fälle (Verifier reproduziert).
+- **Der Fake könnte grün sein, ohne etwas zu prüfen.** — **Ausgang:**
+  *entfallen — gestrichen mit Begründung*: **acht** Mutationen wurden rot
+  gesehen — fünf des Implementers (bestehender Slot ignoriert, Katalog-Wert verfälscht,
+  `WALApplyPosition: 0`, neutrale Meldungs-Zerlegung, nicht delegierendes `Exec`)
+  und **drei** eigene des Verifiers (`parseLSN`-Fehlerklasse, `Run`-CopyDone,
+  `ensurePublication`-Grenze invertiert). Der Fake deckt die **Verklebung** —
+  und genau die, keine Zeile mehr.
 - **Die Naht könnte die Messung bewegen** — wie bei `slice-081`. Dann gilt
   `ADR-0078`s Transfer-Nachweis; eine Schwellen-Frage entsteht daraus **nicht**
-  erneut. — **Ausgang:** <bei Closure>
+  erneut. — **Ausgang:** *entfallen — gestrichen mit Begründung*: der
+  **Null-Befund** ist geführt (`k_ab = 0`, Unit-Nenner 1903 → 1903, Paket-Diff
+  nur `receive/**`, ohne Trägerwechsel) — **kein Subjekt-Transfer**, **keine
+  Neu-Bemessung**. **Aber die Verdünnung ist materiell geworden:** der
+  netzlos gedeckte Anteil des DB-Gegenstands stieg **8,35 % → 26,69 %**, und der
+  **Hochschalt-Trigger liest sich als fällig** (76,99 % ≥ 75 %). Das ist
+  **keine** Schwellen-Frage *dieses* Slice, sondern eine **Trigger-Entscheidung
+  der Wellen-Closure** — geführt in
+  `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (**2×**).
 
 ## 7. Closure-Notiz
 
@@ -343,14 +385,66 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
+- **Was hat funktioniert:** **Die Form.** Der Vorgang hat nicht nur Zahlen
+  nachgezogen, sondern eine **Regel** formuliert, die ihre Vorgängerin schärft:
+  *jede Zahl eines Doku-Trägers trägt ihren **Ursprung**; ist sie eine Messung,
+  zusätzlich den **Zeitpunkt***. Und sie trennt die zwei beweglichen Sorten nach
+  dem, **woran** sie hängen — der **Nenner** am Code-Stand, die **gedeckte Zahl**
+  am Lauf. Das ist mehr wert als der Slice selbst: die Klasse stand bei 3×, und
+  ihr Ausgang ist jetzt benennbar.
+  **Und die Arbeitsteilung der Wächter ist zweifach belegt:** beide Naht-Slices
+  (`084`, `085`) haben unabhängig gemessen, dass eine **nicht delegierende
+  Hülle netzlos grün** bleibt und erst der **reale Tier** sie fängt. Der Fake
+  deckt die Verklebung — und **genau die, keine Zeile mehr**.
+  **Und die Verifikation hat gegen die eigene Form gesucht** statt für sie: sie
+  hat die Fundstellen gefunden, an denen sie noch nicht durchgesetzt ist (V-1).
+- **Was ging anders als geplant:** (1) **Drei** Runden nach dem Review (F-1s
+  Form-Entscheidung, eine vom Planner beauftragte **Ausweitung**, ein §3-Nachtrag)
+  — der Slice war insofern größer als sein Plan. (2) **Der Implementer hat seine
+  eigene, eine Slice alte Regel gebrochen:** den Nenner, den die
+  `slice-084`-Fixrunde ausdrücklich zum **Zustand** erklärt hatte, ließ er
+  stehen. Genau deshalb braucht die Form einen **Träger** und keinen Vorsatz.
+  (3) **Die Ausweitung war nötig, weil eine Schlussfolgerung kippte:** die
+  Rückrechnung „`replication/receive` entzogen ⇒ rot" rechnet sich mit dem neuen
+  netzlos gedeckten `receive` zu **grün** — eine veraltete Zahl hätte man
+  nachziehen können, eine **gekippte Richtung** prüft gegen etwas, das nicht
+  mehr gilt.
+- **Lerneintrag (geschärfte Regel):** *Jede Zahl eines Doku-Trägers trägt ihren
+  **Ursprung**; ist sie eine Messung, zusätzlich den **Zeitpunkt*** — und die
+  zwei Sorten unterscheiden sich darin, **woran** sie hängen (Nenner: Code-Stand;
+  gedeckte Zahl: Lauf). Die Begründung liefert der Vorgang selbst: den Ursprung
+  alter Zahlen musste der Implementer per `git log -S` **rekonstruieren**, und
+  der Träger war bei seiner Geburt uneindeutig datiert — *der Schreiber setzt den
+  Zeitpunkt, der Leser kann ihn nicht erraten.* **Die Verkörperung steht aus**;
+  Träger-Kandidat ist `AGENTS.md` §3.7 (Geschwister-Ort) oder der Kopf des
+  ADR-Index. Die Durchsetzung ist **nicht vollständig** (V-1) — der Ausgang des
+  Register-Eintrags muss beides tragen: die Regel **und** die verbleibenden
+  Träger.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice.** Zwei
+  Registerbewegungen, eine davon über die Schwelle:
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` +`slice-085` → **3×**
+  (**Schwelle erreicht** — Ausgang beim Lese-Schritt der `welle-20`-Closure;
+  Ausgangs-**Kandidat** ist genau diese Form);
+  `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` +`slice-085` → **2×**,
+  und mit ihm der **materiell gewordene** Trigger (a) aus `ADR-0080`.
+- **Beobachtungs-Register (`../observations/`):** zwei Belege ergänzt, **kein**
+  neues Verzeichnis, **kein Zähler gesetzt**. **Benannt, nicht gezählt:**
+  `coverage-gate.md` §Grenze Punkt 1 zitiert einen **Beleg-Befehl, der seinen
+  Satz nicht trägt** (`go list {{len .TestGoFiles}}` liefert 25 statt fünf) —
+  **Altbestand aus `slice-079`**, nicht diesem Vorgang zuzurechnen, und als
+  Finding benannt; `db-adapter-coverage.md`s „132 Positionen × 2" **war** am
+  Kalibrierungs-Stand korrekt (Verifier: `fb6adf6` = 132), der Rest ist die
+  Lesart im Indikativ.
+- **Folge-Slices:** `slice-088` (Coverage-Tail „Reine Übersetzung") — geschnitten
+  aus [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md),
+  liegt als Datei in `open/`. Die drei weiteren Cluster entstehen **nach** ihm.
+- **Risiken aus §6:** alle vier mit Ausgang — R1 *entfallen* (vorab durch
+  `ADR-0080` beantwortet), R2/R3/R4 *entfallen, gestrichen mit Begründung*;
+  R4s Verdünnungs-Hälfte ist als Trigger-Entscheidung an die Wellen-Closure
+  weitergereicht.
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit).
 - **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
 - **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>

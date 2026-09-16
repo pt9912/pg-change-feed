@@ -5,7 +5,16 @@ eine **Entscheidung** über eine Messfläche — `ADR-0071` Punkt 3 trägt sie, 
 `ADR-0080` hat die Verdünnung als Trigger benannt. Sie gehört als
 Architect-Frage behandelt, nicht als Notiz.
 
-Zähler (abgeleitet): **1×** (evidence/slice-084.md). Ein Vorgang, ein Beleg.
+Zähler (abgeleitet): **2×** (evidence/slice-084.md, evidence/slice-085.md) —
+unter der Schwelle. **Ein zweiter Slug wäre die verbotene Umformulierung:** es
+ist **eine** Beobachtung, nur die Größenordnung hat sich geändert (netzlos
+gedeckter Anteil im Gegenstand **8,35 % → 26,69 %**).
+
+**Der Trigger (a) aus [`ADR-0080`](../../../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+ist damit materiell geworden — und der DB-Hochschalt-Trigger liest sich als
+fällig** (76,99 % ≥ 75 %). Nach dem Buchstaben ja, nach der Property nein: der
+Anstieg ist Verdünnung, kein Ausbau. **Diese Entscheidung gehört dem
+Trigger-Audit der Wellen-Closure** (Modul 6 Schritt 2), nicht einem Slice.
 
 **Verwandt, aber entschieden:** die **Dränage**-Hälfte (`slice-081`, ein
 Transfer *aus* dem Gegenstand) ist mit `ADR-0077`/`ADR-0078` beantwortet und
