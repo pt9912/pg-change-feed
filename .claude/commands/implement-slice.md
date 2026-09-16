@@ -182,8 +182,11 @@ ist eine Lifecycle-Rücksprungkante (11).
     (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, 4×; Architect-Verdikt
     [`architect-verdict-negativtest-eingabeseite-4x.md`](../../docs/reviews/architect-verdict-negativtest-eingabeseite-4x.md)):
     Der Satz oben sagt **dass** mutiert wird, nicht **wo** — in `slice-088` war die Pflicht
-    ausgeführt (fünf Mutationen, alle rot gesehen) und ließ zwei Aussagen trotzdem ungebunden,
-    weil mutiert wurde, was der Test **zurückgibt**. Die Richtung gehört dazu: *Eine Zusage ist
+    ausgeführt (fünf Mutationen, alle rot gesehen) und ließ zwei Aussagen trotzdem ungebunden:
+    es waren die zwei, die der Implementer für selbstverständlich hielt, und ihre Tests stellen
+    Fehler-Abwesenheit gegen einen Stub, der seine Argumente ignoriert (`review-slice-088.md`
+    F-1; `evidence/slice-088.md` in `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
+    Die Richtung gehört dazu: *Eine Zusage ist
     nur dann gebunden, wenn der Test an ihrer **Eingabeseite** rot werden kann: mutiere den
     **Eingabewert**, nicht nur die Ausgabeseite. Wer nur den Fake oder den Rückgabewert mutiert,
     prüft den Fake — die Aussage bleibt grün, egal was der Adapter mit der Eingabe tut. Fehlt die

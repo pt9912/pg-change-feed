@@ -69,9 +69,13 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   Testbinaries ändert dieses Prädikat nicht, und damit auch nicht das Verhältnis
   gedeckter zu instrumentierten **Statements**. Sie ist deshalb **keine eigene
   Größe**, sondern dieselbe Messung in anderer Ausgabepräzision: `go tool cover`
-  druckt eine Nachkommastelle, `tools/coverage-gate.sh` formatiert `%.2f` —
-  daraus werden `71.9%` und `71.94%`. Eine absolute Statement-Zahl trägt nur die
-  deduplizierte Auswertung; die gedruckte Zeile trägt keine.
+  druckt eine Nachkommastelle (`71.9%`), `tools/coverage-gate.sh` liest genau
+  diese gedruckte Zeile und gibt sie mit `%.2f` aus (`71.90%`; Lauf `slice-084`,
+  im Lauf `slice-085` erneut gedruckt). Die zwei Nachkommastellen der
+  **Rechnung** (`1369 von 1903` = `71,94 %`, erster Punkt oben) sind die
+  **deduplizierte** Auswertung, keine gedruckte Zeile. Eine absolute
+  Statement-Zahl trägt nur die deduplizierte Auswertung; die gedruckte Zeile
+  trägt keine.
 - Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
   einer eigenen Messung mit `-coverpkg` über **alle** Pakete (die drei
   eingeschlossen, netzlos) — **30/32**, **31/472** und **112/187**, Lauf

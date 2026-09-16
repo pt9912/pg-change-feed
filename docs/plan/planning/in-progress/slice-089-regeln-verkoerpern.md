@@ -127,9 +127,13 @@ vierter Punkt:
       weitere bewegliche Zahlen neben dem Nenner sind datiert.
 - [x] `make gates` grün (Exit direkt, ungepiped).
 
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report `review-slice-089.md` (1 HIGH, 2 MEDIUM, 2 INFO —
+      merge-blockierend); **Fixrunde 1**: F-1 (gedruckte Zeile vs. Rechnung),
+      F-2 (Herkunfts-Erklärung) und F-4 (Behauptung ohne Beleg-Anker)
+      nachgezogen, F-5 adressiert, F-3 hatte der Planner berichtigt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -168,6 +172,17 @@ tragen denselben Lauf wie ihr §Ausgabe-Beleg — die Zelle und ihr Beleg stamme
 aus **einem** Lauf. **Nicht** nachgezogen: die übrigen V-1-Fundstellen (die
 `§Zählbasis`-Lesart „132 Positionen × 2" und der `go list`-Befehl aus **V-3**)
 — eigene Fund-Klassen, als Fund gemeldet, nicht in diesen Zug (§6 Risiko 3).
+
+**Fixrunde 1 (Review `review-slice-089`).** Drei Funde in **bereits
+gelisteten** Trägern sind nachgezogen, **kein** neuer Träger: `harness/sensors/coverage-gate.md`
+§Zählbasis (F-1 — die gedruckte Zeile des Gate-Skripts ist `71.90%`, `71,94 %`
+ist die deduplizierte Rechnung), `docs/plan/planning/welle-20.md` §4 (F-2 — die
+Herkunfts-Erklärung auf die Zahlen des Abschnitts gebracht) und
+`.claude/commands/implement-slice.md` Schritt 19 (F-4 — die kausale Hälfte
+verankert). Die zwei liegen gelassenen Fundstellen tragen ihre **Adressen** in
+§7 (F-5); die dritte, bei der Sichtung nicht geführte (die F-1-Zeile selbst),
+ist in dieser Fixrunde berichtigt. Der Zuschnitt (drei Liefer-Punkte) ist
+unberührt.
 
 **Der genaue Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste nennt
 die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Punkte).
@@ -255,6 +270,18 @@ Backticks).
 - **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
 - **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
 - **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Liegen gelassen — benannt, mit Adresse** (Review `review-slice-089` F-5;
+  §6 Risiko 3): `db-adapter-coverage.md` §Zählbasis Punkt 2 — die Lesart
+  „132 Positionen × 2" gilt für den Kalibrierungs-Stand `fb6adf6`, am
+  `slice-085`-HEAD sind es **168** (`verify-slice-085.md` §5(a)) → Adresse
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`;
+  `coverage-gate.md` §Grenze Punkt 1 — der zitierte
+  `go list -f '{{len .TestGoFiles}}'` trägt seinen Satz nicht (25 statt fünf)
+  → Adresse `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (im Schreib-Schritt
+  der Closure anzulegen; die Klasse tragen `verify-slice-084` V-1 und
+  `verify-slice-085` V-3). Die dritte Fundstelle, die `§Zählbasis`-Zeile in
+  `coverage-gate.md`, ist **erledigt** — ihre Adresse ist diese Fixrunde
+  (`slice-089`, F-1).
 - **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
