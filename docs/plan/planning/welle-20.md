@@ -78,6 +78,17 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 |---|---|---|
 | `slice-079` | Coverage-Gate: Scope-Schnitt und Neukalibrierung | [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
 | `slice-088` | Coverage-Tail „Reine Übersetzung" — Cluster B | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-091` | Coverage Cluster C — Zustell- und Betriebs-Rand | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-092` | Coverage Cluster D1 — Anwendungs-Kern | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-093` | Coverage Cluster D2 — Bootstrap-Rest und Telemetrie | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) · [`ADR-0085`](../adr/0085-build-kontext-ausnahme-test-only-zweck.md) |
+| `slice-094` | Coverage Cluster A — Prozess-Rand | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+
+**Die Liste ist vollständig, und sie wächst mit dem Schnitt** — jede Zeile entsteht
+mit ihrer Slice-Datei, im selben Zug. Sie ist keine zweite Zustandsquelle (§Lifecycle:
+der Zustand bleibt das Verzeichnis) und trägt darum **keinen** Status; sie ist der
+Überblick, welche Slices diese Welle beansprucht. **Der Nachzug dieser vier Zeilen
+war überfällig** — die Liste stand seit Cluster C bei den ersten zwei, während die
+Cluster gearbeitet wurden.
 
 **Das Schnittmaß steht — und es hat den ersten Vorschlag dieser Welle
 widerlegt** ([`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
