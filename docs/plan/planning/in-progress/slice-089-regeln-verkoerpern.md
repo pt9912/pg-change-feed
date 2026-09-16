@@ -134,11 +134,29 @@ vierter Punkt:
       merge-blockierend); **Fixrunde 1**: F-1 (gedruckte Zeile vs. Rechnung),
       F-2 (Herkunfts-Erklärung) und F-4 (Behauptung ohne Beleg-Anker)
       nachgezogen, F-5 adressiert, F-3 hatte der Planner berichtigt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Verifikation durchgeführt, Report unter
+      `docs/reviews/verify-slice-089.md` liegt vor (Modul 11, frischer Kontext).
+      **Erstlauf: nicht closure-fähig** — die Liefer-Punkte **verifiziert**, aber
+      **V-1** (die Beleg-Vorgänge des neuen Register-Eintrags) und **V-2** (ein
+      Commit-Anker) zu beheben; beide in `7079484` berichtigt, und die Korrektur
+      hat sich dabei **einen neuen Anker derselben Klasse** eingehandelt
+      (**V-3**: `11ba45b` statt `4387523`, mit `git log -S` gemessen) — in
+      `d00c29e` berichtigt. Der Verifier hat **V-1 eigenständig nachgemessen**
+      (der `git diff`-Befehl liefert exakt fünf Pfade, die Gegenrichtung ist
+      leer; `a3cb2c4` trug die Range ohne Pathspec), die **Zähler** (2×/3×/5×
+      stimmig) und die **Wörtlich-Probe** (21 zu 21, leerer `diff`) bestätigt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (§7).
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **ein
+      Verzeichnis neu angelegt** (`beleg-befehl-traegt-seinen-satz-nicht`, 2×)
+      und **zwei Belege** ergänzt (`mechanismus-erklaerung-ohne-werkzeugbeleg`
+      → **3×**; `zahl-in-traeger-driftet-gegen-die-messung` → **5×**), **kein
+      Zähler gesetzt**.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — R1/R2 *entfallen*; R3
+      *eingetreten — und begrenzt*.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) — dieses Repo führt
+      **Wellen-Betrieb**; die Prüfung fällt der `welle-20`-Closure zu. **Beide
+      im Feld *Liegen gelassen* genannten Adressen existieren** als Verzeichnis.
 
 ## 3. Plan (vor Code)
 
@@ -232,15 +250,32 @@ dasteht.
 - **Die Regel könnte beim Schreiben verwässern.** Der Wortlaut ist in
   `ADR-0083` entschieden; eine „geglättete" Fassung an der Trägerstelle wäre
   eine **Änderung der Entscheidung** durch den Ausführenden. Wächter: das
-  Review vergleicht wörtlich. — **Ausgang:** <bei Closure>
+  Review vergleicht wörtlich. — **Ausgang:** *entfallen — gestrichen mit
+  Begründung*: **mechanisch belegt** (Verifier, eigene Probe: `sed` der
+  `ADR-0083`-Zeilen gegen die `>`-Zeilen aus §3.12 → **21 zu 21, leerer
+  `diff`**). Die **Arrangements** sind Form: die ADR-Regie-Zeile fällt weg (in
+  `AGENTS.md` **ist** §3.12 der Abschnitt), die Grenze ist aus zwei ADR-Stellen
+  zusammengezogen, und der Halbsatz „und wird nicht als künftiger bestellt" ist
+  ausgelassen — eine **Auslassung**, kein widersprechender Satz.
 - **Die Mutations-Richtung könnte zur Pflichterfüllung werden.** Ein
   „mutiere die Eingabeseite" als Satz, den niemand anwendet, ist die Form ohne
   Wirkung. Wächter: der Träger ist eine **Prüf-Handlung** an einem
   bestehenden Punkt (Schritt 19, Reviewer-HIGH), kein neuer Absatz. — **Ausgang:**
-  <bei Closure>
+  *entfallen — gestrichen mit Begründung*: die Richtung sitzt an **zwei
+  bestehenden** Prüf-Handlungen, nicht in einem neuen Absatz — und ihre
+  **Wirkung** ist kein Risiko dieses Slice, sondern eine **Beobachtung**: sie
+  trägt [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
+  §Re-Evaluierungs-Trigger (b).
 - **Der Slice könnte zu einem Berichtigungs-Zug über fremde Dokumente werden.**
   LP3 zieht **zwei** bekannte Träger nach; weitere Funde gehören als eigene
-  Adresse geführt, nicht in einen wachsenden Zug. — **Ausgang:** <bei Closure>
+  Adresse geführt, nicht in einen wachsenden Zug. — **Ausgang:** *eingetreten —
+  und begrenzt*: **ein** Träger über die §3-Liste hinaus wurde angefasst
+  (`harness/sensors/db-adapter-coverage.md`, begründet aus Verifikation
+  `verify-slice-085` **V-1** §4.2, der ihn namentlich nennt — die DoD-Zeile ist
+  damit erfüllt, kein Überlauf). Die weiteren bekannten Fundstellen sind
+  **liegen gelassen** und tragen eine **Adresse**: `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (existiert) und `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (in `f492b0c`
+  angelegt).
 
 ## 7. Closure-Notiz
 
@@ -259,17 +294,64 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Was hat funktioniert:** **Der mechanische Beleg für „wörtlich".** Statt zu
+  versichern, dass der Wortlaut übernommen sei, hat der Implementer ihn
+  **gegengeprüft**: `sed` der `ADR-0083`-Zeilen gegen die `>`-Zeilen aus §3.12 →
+  **21 zu 21, leerer `diff`**. Der Verifier hat die Probe **zweimal** gefahren —
+  sie *kann* rot werden, und sie lief leer. **Und die Selbstanwendung hat
+  getragen:** der Implementer hat **zwei** eigene Verstöße gegen die Regel, die
+  er gerade schrieb, vor dem Commit gefunden (ein Satz ohne Beleg-Anker, zwei als
+  „übernommen" klassifizierte **widerlegte** Werte) — und `welle-20` §4 trägt
+  jetzt einen Herkunfts-Absatz, der jede Zahl als *übernommen*, *abgeleitet* oder
+  *Zitat* ausweist.
+- **Was ging anders als geplant:** (1) **Das Review war merge-blockierend**
+  (1 HIGH, 2 MEDIUM): die Regel, die dieser Slice einführt, war von **seiner
+  eigenen Arbeit an vier Stellen verletzt** — F-1 (zwei verschiedene gedruckte
+  Zeilen für denselben Stand), F-2 (Zahlen klassifiziert, die in der Datei nicht
+  vorkommen), F-3 (mein Plan-§8: „Treffer" mit „über der Schwelle" verwechselt),
+  F-4 (eine Aussage ohne auflösbaren Anker). Gefunden hat die vier **nur der
+  zweite Kontext**. (2) **Mein Zuordnungsfehler (Verifikation V-1):** ich habe im
+  **neuen Register-Eintrag** die Beleg-Vorgänge `slice-084`/`slice-085` vom
+  Reviewer **übernommen**, ohne sie nachzusehen; der Verifier hat sie am
+  Artefakt widerlegt — `verify-slice-084`s V-1 ist ein **anderer Befehl**. Der
+  `2×`-Zähler hielt (es sind zwei echte Fälle), falsch waren die
+  **Beschreibungen** — **in dem Eintrag, der genau diese Klasse dokumentiert**.
+  (3) **Und der Fehler kehrte in der Korrektur wieder (V-3):** meine V-2-Korrektur
+  nannte für die §3(b)-Berichtigung den Commit `11ba45b` (der eine
+  slice-088-Datei angefasst hat); richtig ist `4387523`, mit `git log -S`
+  gemessen. Und schon vorher ergänzte mein erster Pathspec-Fix (`a3cb2c4`) die
+  **Range** und ließ den **Pathspec** weg.
+- **Lerneintrag (geschärfte Regel):** ***Der Fehler kehrt in seiner Korrektur
+  wieder — die Korrektur wird gegen ihren eigenen Gegenstand geprüft, nicht
+  gegen ihre Absicht.*** Dreimal in diesem Vorgang: der Pathspec, der Anker
+  (`11ba45b` statt `4387523`), die Beschreibung. Die Prüf-Form ist dieselbe wie
+  bei einer Zusage: **mutier den Gegenstand der Korrektur** — lösche die Zahl,
+  den Pathspec, den Anker und sieh, ob der Satz noch trägt. Der Verifier hat
+  genau diese Proben gefahren (A–D). **Zweite Regel:** die Herkunfts-Regel
+  braucht einen **Leser** — `AGENTS.md` §3.12 benennt jetzt beide (Reviewer für
+  Instanz A; Verifier **und der Planner als Verfasser** für Instanz B); ein
+  Sensor ist dort ausdrücklich abgelehnt.
+- **Steering-Loop-Eintrag:** **keine Verkörperung durch diesen Slice** — er
+  **ist** die Verkörperung, aber der Ausgang wird vom **Lese-Schritt** der
+  `welle-20`-Closure zugewiesen (Modul 6). Drei Registerbewegungen:
+  **neu angelegt** `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (**2×**:
+  `verify-slice-084` V-1 = ein `git diff` **ohne Pathspec**; `verify-slice-085`
+  V-3 = ein `go list` **ohne das zweite Test-Datei-Feld**);
+  `BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg` +`slice-089` → **3×**
+  (Schwelle erreicht); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  +`slice-089` → **5×**.
+- **Beobachtungs-Register (`../observations/`):** **ein Verzeichnis neu
+  angelegt**, zwei Belege ergänzt, **kein Zähler gesetzt**. **Benannt, nicht
+  gezählt:** die zwei von der Verifikation benannten Punkte — die
+  `welle-20:591`-Formulierung (der Vorschlag ist als **Ganzes** widerlegt, die
+  Zahl steht dort nicht) und die **Auswahl** der fünf genannten Register-Einträge
+  in §8 (kein Kriterium benannt); beide reisen als Notiz mit, nicht als Fix.
+- **Folge-Slices:** das **Sync-Gate** aus [`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md)
+  — der einzige Teil dieser Verkörperung mit Bauaufwand und deshalb ein eigener
+  Slice; er wird als Datei in `open/` angelegt, hier steht **keine erfundene
+  Kennung**.
+- **Risiken aus §6:** R1 und R2 *entfallen, gestrichen mit Begründung*; R3
+  *eingetreten — und begrenzt*.
 - **Liegen gelassen — benannt, mit Adresse** (Review `review-slice-089` F-5;
   §6 Risiko 3): `db-adapter-coverage.md` §Zählbasis Punkt 2 — die Lesart
   „132 Positionen × 2" gilt für den Kalibrierungs-Stand `fb6adf6`, am
@@ -284,7 +366,11 @@ Backticks).
   `verify-slice-085` V-3). Die dritte Fundstelle, die `§Zählbasis`-Zeile in
   `coverage-gate.md`, ist **erledigt** — ihre Adresse ist diese Fixrunde
   (`slice-089`, F-1).
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Drei Paarungen:** nicht hier — dieses Repo führt **Wellen-Betrieb**, die
+  Prüfung fällt der `welle-20`-Closure zu (Modul 6 Schritt 3c, auch für Slices
+  ohne Wellen-Zugehörigkeit). **Anmerkung:** beide in diesem Feld genannten
+  Adressen existieren inzwischen als Verzeichnis (`f492b0c`) — die Paarung (c)
+  ist formal bedienbar.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
