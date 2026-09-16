@@ -101,23 +101,23 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Naht existiert.**
 
-- [ ] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
+- [x] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
       (eine Methode); der **konkrete** `*pgconn.PgConn` bleibt in der Hülle und
       im Dial. **Nicht** „statt der konkreten Verbindung": der Typ bleibt, aber
       **hinter** der Naht (`ADR-0080`).
-- [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
+- [x] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-replication` (Exit 0).
 
 **Liefer-Punkt 2 — die reine Logik ist prüfbar.**
 
-- [ ] Der netzlos prüfbare Teil (Aufbau der Standby-Status-Meldung, LSN-Form)
+- [x] Der netzlos prüfbare Teil (Aufbau der Standby-Status-Meldung, LSN-Form)
       liegt als **reine Funktion** mit eigenen Tests vor.
-- [ ] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
+- [x] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
       Ersatz der realen Tests.
 
 **Liefer-Punkt 3 — der Nachweis ist geführt, und er ist ein Null-Befund.**
 
-- [ ] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+- [x] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
       wird als **Null-Befund** geführt (`ADR-0080`): die Naht bleibt **im**
       Paket, es gibt **keinen Subjekt-Transfer** — `k_ab = 0`, der abfließende
       Nenner ist unberührt, und es gibt **keine Neu-Bemessung**; die Rampen
@@ -126,15 +126,16 @@ vierter Punkt:
       **Paket-Diff** zeigt **keinen** Trägerwechsel; **(c)** kein Verhalten
       verloren. **Benannte Grenze:** die neuen netzlosen Tests verdünnen den
       DB-Nenner leicht — mit Trigger, nicht still.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
+- [x] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
       `harness/sensors/db-adapter-coverage.md` bzw.
       `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
-      Schwellen-ADR (`ADR-0078`).
+      Schwellen-ADR (`ADR-0078`). *(Kein Transfer — die Naht bleibt im Paket;
+      die Bedingung ist nicht eingetreten, siehe §3.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -151,17 +152,84 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
 Aussagen-Berührung steht hier gar nicht.
 
+**Zuschnitt des Implementer-Laufs** (die Liste nennt die Träger; der genaue
+Schnitt entsteht hier):
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driven/postgresack/**` | refactor | **im Paket**: die Schnittstelle (eine Methode), die Treiber-Hülle `connSender`, der paket-interne Einstieg für die netzlosen Tests; `New` samt nil-Grenze und Composition-Root-Verdrahtung **unverändert** |
-| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Standby-Status-**Form**, Null-Positions-Grenze, Fehlerklassen-Wrapping; der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
+| `internal/adapters/driven/postgresack/seam.go` | neu | die Naht (`ADR-0080`): `standbySender` (eine Methode), die Treiber-Hülle `connSender` über `*pgconn.PgConn`, die Kompilier-Zusicherung `var _ standbySender = connSender{}` |
+| `internal/adapters/driven/postgresack/ack.go` | refactor | die Logik hängt an der Naht; `ackLSN` (Null-Positions-Grenze, LSN-Form), `standbyStatus` (Standby-Status-Form) und `replicationClass` (Fehlerklassen-Wrapping) sind reine Funktionen; `New` behält seinen Signatur-Vertrag und reicht die Hülle durch, `newOnSender` ist der **paket-interne** Einstieg der netzlosen Tests |
+| `internal/adapters/driven/postgresack/seam_test.go` | neu | Fake und Log-Träger; die Verklebung netzlos: abgesetzte Meldung, Null-Positions-Grenze ohne Absetzen, Fehlerpfad der Naht — der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
 
 **Kein Paketwechsel, kein Unterpaket** (`ADR-0080`) — deshalb auch **keine**
 Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`: der DB-Gegenstand
 bleibt, wie er ist.
 
+**Nicht angefasst:** `internal/bootstrap/wiring.go` (die Composition Root ruft
+`postgresack.New(stream.Conn(), …)` unverändert), `Dockerfile` (Stufe
+`coverage`, Paket-Filter), `tools/harness/db-coverage.sh` (`DB_COVERAGE_PKGS`),
+`harness/mk/coverage.mk` (`THRESHOLD`), `harness/sensors/**`, `.a-check.yml`,
+`spec/**`, `internal/adapters/driving/replication/receive/**` (→ `slice-085`).
+`ack_test.go` (die realen Tests) ist **unverändert** — kein Testfall entfernt.
+
 **Nicht in dieser Liste:** `internal/adapters/driving/replication/receive/**`
 (→ `slice-085`), `spec/**`, `.a-check.yml`.
+
+**Der Null-Befund — alle drei Teile, mit den Zahlen dieses Laufs**
+([`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+§Entscheidung 4, [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+§Entscheidung 1). Gemessen in den gepinnten Images, Exit-Codes ungepiped; die
+Zahlen je Gegenstand aus den beiden `-coverprofile` des Laufs nach der
+Dedup-Regel aus `tools/harness/db-coverage.sh`:
+
+| Gegenstand (Statements) | vor dem Zug | nach dem Zug | Δ |
+|---|---|---|---|
+| netzlos prüfbare Fläche (Unit) | 1903 (1369 gedeckt, `coverage-gate` 71,90 %) | 1903 (1371 gedeckt, `coverage-gate` 72,00 %) | **0** |
+| DB-Adapter-Gegenstand | 650 (477 gedeckt, 73,38 %) | **659** (491 gedeckt, 74,51 %) | **+9** |
+| davon `postgresack` | 23 (18 gedeckt) | 32 (32 gedeckt) | **+9** |
+| davon `postgresstorage` | 472 | 472 | 0 |
+| davon `replication/receive` | 155 | 155 | 0 |
+
+Die **gedeckte** Zahl der Unit-Fläche bewegt sich lauf-zu-lauf (`internal/bootstrap`
+262 → 264, beobachtet ±2 — `slice-081` §3 beschreibt dieselbe Schwankung);
+Nenner (1903) und jedes Paket-Statement sind davon unberührt.
+
+**(a) `k_ab = 0`.** Kein Gegenstand gibt Statements ab: der Unit-Nenner steht
+unverändert bei 1903 (die Naht liegt **im** ausgenommenen Paket), und innerhalb
+des DB-Gegenstands sind `postgresstorage` (472) und `replication/receive` (155)
+byte-stabil. Der DB-Nenner **wächst** um **+9** — die neuen Statements des
+paket-internen Einstiegs, der reinen Funktionen und der Hülle; `k_ab = 0` ist
+damit die Null-Hälfte der Arithmetik, nicht eine Behauptung.
+
+**(b) Paket-Diff — kein Trägerwechsel.** Die Änderung ist auf **ein** Paket
+isoliert (`git diff --name-only` listet ausschließlich Dateien unter
+`internal/adapters/driven/postgresack/`); die Gegenstands-Listen sind
+unberührt (`git diff` gegen `Dockerfile` und `tools/harness/db-coverage.sh` ist
+leer), ebenso `.a-check.yml` und die Composition Root. Kein Paket wechselt
+zwischen den zwei Gegenständen.
+
+**(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe sind grün
+(`make test-store` Exit 0, `make test-replication` Exit 0, `make test`
+Exit 0 — je ungepiped), und **kein Testfall wird entfernt**: `ack_test.go`
+ist unverändert, `git diff --name-status -- '*_test.go'` zeigt genau **eine
+neue** Datei (`seam_test.go`).
+
+**Rot-Gegenprobe an der Zusage — einmal gesehen.** Auf einer Wegwerf-Kopie
+brachen zwei Mutationen je ihre Prüfung: `WALApplyPosition: 0` in
+`standbyStatus` färbt `TestStandbyStatusCarriesPositionInAllThreeLSNs` und
+`TestAcknowledgeSendsStandbyStatus` rot (`go test` Exit 1 — die Form-Zusage),
+und `replicationClass` ohne die Wrappung (`return cause`) färbt
+`TestReplicationClassWrapsCause` und `TestAcknowledgeWrapsSenderFailure` rot
+(die Fehlerklassen-Zusage).
+
+**Benannte Grenze:** die neuen netzlosen Tests laufen im Messlauf der
+DB-Adapter-Coverage mit und decken dort Statements, die keine PostgreSQL-Instanz
+berührt hat — `postgresack` steht deshalb bei 32 von 32 gedeckten Statements.
+Die Zahl heißt weiterhin richtig „Coverage des DB-Gegenstands"; die Verdünnung
+ist benannt und hat den Trigger aus `ADR-0080`
+(§„Die benannte Grenze"). **Keine Rampe bewegt:** `DB_COVERAGE_THRESHOLD`
+bleibt 70, `THRESHOLD` bleibt 70, die Endstufen bleiben 80 % — eine
+Schwellen-ADR wird nicht fällig.
 
 ## 4. Trigger
 
