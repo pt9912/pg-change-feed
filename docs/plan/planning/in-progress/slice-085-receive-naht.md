@@ -104,43 +104,48 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Naht existiert.**
 
-- [ ] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
+- [x] Die **Logik** des Adapters hängt an einer **adapter-eigenen** Schnittstelle
       (sieben Operationen); der **konkrete** `*pgconn.PgConn` bleibt in der Hülle
       und im Dial. **Nicht** „statt der konkreten Verbindung": der Typ bleibt,
-      aber **hinter** der Naht (`ADR-0080`).
-- [ ] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
+      aber **hinter** der Naht (`ADR-0080`). (`driverSession`/`connSession`,
+      `seam.go`; `Stream.session`, `WALRetentionChecker.session`.)
+- [x] **Kein Verhaltens-Change:** die reale Verdrahtung geht unverändert durch
       `make test-replication` (Exit 0).
 
 **Liefer-Punkt 2 — die reine Logik ist prüfbar.**
 
-- [ ] Der netzlos prüfbare Teil (Meldungs-Zerlegung, LSN-Form,
+- [x] Der netzlos prüfbare Teil (Meldungs-Zerlegung, LSN-Form,
       Keepalive-Behandlung) liegt als **reine Funktion** mit eigenen Tests vor —
       **soweit er nicht schon in `replication/decode`/`mapper` liegt**; was
-      dorthin gehört, entscheidet der Architect (§1).
-- [ ] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
+      dorthin gehört, entscheidet der Architect (§1). (`parseXLogData`,
+      `parseKeepalive`, `parseLSN`, `firstRow`, `standbyStatus`, `slotLSNQuery`
+      — je mit eigenem Test in `seam_test.go`.)
+- [x] Die Fake-Seite fährt die **Verklebung** — und ist ausdrücklich **kein**
       Ersatz der realen Tests.
 
 **Liefer-Punkt 3 — der Nachweis ist geführt, und er ist ein Null-Befund.**
 
-- [ ] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+- [x] Der Nachweis aus [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
       wird als **Null-Befund** geführt (`ADR-0080`): die Naht bleibt **im**
       Paket, **kein Subjekt-Transfer** — `k_ab = 0`, der abfließende Nenner
       (155 Statements) unberührt, **keine Neu-Bemessung**, Rampen unverändert.
       Nachzuweisen sind dennoch alle drei Teile: **(a)** `k_ab = 0`; **(b)** der
       **Paket-Diff** zeigt **keinen** Trägerwechsel; **(c)** kein Verhalten
       verloren. **Benannte Grenze:** die neuen netzlosen Tests verdünnen den
-      DB-Nenner leicht — mit Trigger, nicht still.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+      DB-Nenner leicht — mit Trigger, nicht still. (Alle drei Teile mit den
+      Zahlen dieses Laufs in §3.)
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
+- [x] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
       `harness/sensors/db-adapter-coverage.md` bzw.
       `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
-      Schwellen-ADR (`ADR-0078`).
+      Schwellen-ADR (`ADR-0078`). *(Kein Transfer — die Naht bleibt im Paket;
+      die Bedingung ist nicht eingetreten, siehe §3.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(**Entfällt**: dieses Repo führt die Datei nicht — Greenfield-Bootstrap, kein Inventur-Fund.)*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -155,18 +160,101 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 nicht die Antwort: Pfad-Berührung ist nicht hinreichend, und eine
 Aussagen-Berührung steht hier gar nicht.
 
+**Zuschnitt des Implementer-Laufs** (die Liste nennt die Träger; der genaue
+Schnitt entsteht hier):
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/adapters/driving/replication/receive/**` | refactor | **im Paket**: die Schnittstelle (sieben Operationen), die Treiber-Hülle `connSession`, der paket-interne Einstieg für die netzlosen Tests; `NewStream`/`Stream`/`WALRetentionChecker` unverändert |
-| neue Test-Dateien (reine Logik + Fake) | neu | die Verklebung netzlos: Empfangs-Schleife, Slot-/Publication-Auflösung, Katalog-Zeilen-Übersetzung, Rückstands-Messung; der Fake erfüllt dieselbe Schnittstelle wie die Hülle |
+| `internal/adapters/driving/replication/receive/seam.go` | neu | die Naht (`ADR-0080`): `driverSession` (sieben Operationen), die Treiber-Hülle `connSession` über `*pgconn.PgConn`, die Kompilier-Zusicherung `var _ driverSession = connSession{}` |
+| `internal/adapters/driving/replication/receive/receive.go` | refactor | die Logik hängt an der Naht (`Stream.session`); reine Funktionen `firstRow` (Katalog-Zeilen-Übersetzung), `parseLSN` (LSN-Form), `standbyStatus` (Standby-Form), `parseXLogData` und `parseKeepalive` (Meldungs-Zerlegung) sowie `slotLSNQuery`; die Verklebung `querySingle`, `ensureSlot`, `ensurePublication` und `handleCopyData` fährt der Fake; `newStreamOnSession` ist der **paket-interne** Einstieg; `NewStream`, `Stream.Conn/Run/Assembler/BindCapture` unverändert |
+| `internal/adapters/driving/replication/receive/walretention.go` | refactor | `WALRetentionChecker.session` statt `conn`; `Measure`, `Close` und `reconnectAfterError` laufen über die Naht; `newWALRetentionCheckerOnSession` als **paket-interner** Einstieg; `NewWALRetentionChecker` unverändert |
+| `internal/adapters/driving/replication/receive/seam_test.go` | neu | der Fake und die netzlosen Tests: Meldungs-Zerlegung, Empfangs-Schleife, Slot-/Publication-Auflösung, Katalog-Zeilen-Übersetzung, Rückstands-Messung — der Fake erfüllt **dieselbe** Schnittstelle wie die Hülle |
+| `harness/image-hash.txt` | update | der Zug ändert Build-Kontext-Dateien; `make image` stempelt den Digest des Laufs (`ADR-0044`) — `sha256:4bd43435…` → `sha256:84bdca56…` |
 
 **Kein Paketwechsel, kein Unterpaket** (`ADR-0080`) — deshalb auch **keine**
-Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`.
+Änderung am `Dockerfile`-Filter oder an `DB_COVERAGE_PKGS`: der DB-Gegenstand
+bleibt, wie er ist.
+
+**Nicht angefasst:** `internal/bootstrap/wiring.go` (die Composition Root ruft
+`receive.NewStream`/`stream.Conn()`/`receive.NewWALRetentionChecker` unverändert),
+`Dockerfile` (Stufe `coverage`, Paket-Filter), `tools/harness/db-coverage.sh`
+(`DB_COVERAGE_PKGS`), `harness/mk/coverage.mk` (`THRESHOLD`),
+`harness/sensors/**`, `.a-check.yml`, `spec/**`. `stream_test.go` (die realen
+Tests) ist **unverändert** — kein Testfall entfernt.
 
 **Nicht in dieser Liste:** `internal/adapters/driven/postgresack/**`
 (→ `slice-084`); `internal/adapters/driving/replication/decode/**` und
 `.../mapper/**` bleiben **außerhalb** (entschieden, `ADR-0080`); `spec/**`,
 `.a-check.yml`.
+
+**Der Null-Befund — alle drei Teile, mit den Zahlen dieses Laufs**
+([`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+§Entscheidung 4, [`ADR-0078`](../../adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md)
+§Entscheidung 1). Gemessen in den gepinnten Images, Exit-Codes ungepiped; die
+Zahlen je Gegenstand aus den beiden `-coverprofile` des Laufs nach der
+Dedup-Regel aus `tools/harness/db-coverage.sh`:
+
+| Gegenstand (Statements) | vor dem Zug | nach dem Zug | Δ |
+|---|---|---|---|
+| netzlos prüfbare Fläche (Unit) | 1903 (1369 gedeckt, 71,90 %) | 1903 (1369 gedeckt, 71,90 %) | **0** |
+| DB-Adapter-Gegenstand | 659 (491 gedeckt, 74,51 %) | **691** (532 gedeckt, 76,99 %) | **+32** |
+| davon `postgresstorage` | 472 | 472 | 0 |
+| davon `postgresack` | 32 | 32 | 0 |
+| davon `replication/receive` | 155 | **187** | **+32** |
+
+**(a) `k_ab = 0`.** Kein Gegenstand gibt Statements ab: der Unit-Nenner steht
+unverändert bei 1903 (die Naht liegt **im** ausgenommenen Paket — der Lauf
+deckt dieselben 1369 Statements), und innerhalb des DB-Gegenstands sind
+`postgresstorage` (472) und `postgresack` (32) **byte-stabil**. Der DB-Nenner
+**wächst** um **+32** — die neuen Statements der sieben Hüllen-Methoden, der
+reinen Funktionen und des paket-internen Einstiegs; `k_ab = 0` ist damit die
+Null-Hälfte der Arithmetik, nicht eine Behauptung.
+
+**(b) Paket-Diff — kein Trägerwechsel.** Die Änderung ist auf **ein** Paket
+isoliert, und der Beleg braucht **beides — Range *und* Pathspec**:
+`git diff --name-only 95480a5..610751c -- internal/adapters/driving/replication/receive/`
+listet **vier** geänderte Dateien (`seam.go`, `seam_test.go`, `receive.go`,
+`walretention.go`); und die **Gegenrichtung** trägt den Rest:
+`git diff --name-only 95480a5..610751c -- internal/ ':!internal/adapters/driving/replication/receive/'`
+ist **leer**. Die Gegenstands-Listen sind unberührt
+(`git diff 95480a5..610751c -- Dockerfile tools/harness/db-coverage.sh harness/mk/coverage.mk`
+ist leer), ebenso `.a-check.yml` und die Composition Root. Kein Paket wechselt
+zwischen den zwei Gegenständen. **Beides gehört in den Beleg**
+(`review-slice-084` F-2, Verifikation desselben Slice **V-1**): ein `git diff`
+**ohne Range** ist auf sauberem Baum leer, und eines **ohne Pathspec** listet
+mehr als das Behauptete.
+
+**(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe sind grün
+(`make test-replication` Exit 0, `make test` Exit 0 — je ungepiped), und **kein
+Testfall wird entfernt**: `stream_test.go` ist unverändert,
+`git diff --name-status 95480a5..610751c -- '*_test.go'` zeigt genau **eine
+neue** Datei (`seam_test.go`).
+
+**Rot-Gegenprobe an der Zusage — einmal gesehen.** Auf einer Wegwerf-Kopie
+brachen **vier** Mutationen je ihre Prüfung: die Slot-Auflösung ohne den
+bestehenden Slot (`if exists && false`) färbt
+`TestEnsureSlotResumesExistingSlot` rot; die Katalog-Zeilen-Übersetzung mit
+einem verfälschten Wert färbt `TestFirstRowTranslatesCatalogRow` rot; die
+Standby-Form ohne den Apply-Stand färbt
+`TestStandbyStatusCarriesPositionInAllThreeLSNs` **und**
+`TestRunAnswersKeepaliveWithAcknowledgedPosition` rot; die neutralisierte
+Meldungs-Zerlegung färbt die drei Keepalive-/XLogData-Tests rot. Und **die
+Hülle selbst fängt nicht der Fake, sondern der reale Tier**: eine
+nicht-delegierende `connSession.Exec` bleibt in den neuen netzlosen Tests
+**grün** und färbt `make test-replication` rot (sieben reale Fälle,
+Exit 2) — die Wächter-Rolle liegt genau dort, wo §1 sie verortet.
+
+**Benannte Grenze:** die neuen netzlosen Tests laufen im Messlauf der
+DB-Adapter-Coverage mit und decken dort Statements, die keine
+PostgreSQL-Instanz berührt hat — `replication/receive` steht deshalb bei
+**153 von 187** gedeckten Statements (vorher 112/155), und `stream_test.go`
+ist byte-identisch: der Zuwachs stammt ausschließlich aus `seam_test.go`. Die
+Zahl heißt weiterhin richtig „Coverage des DB-Gegenstands"; die Verdünnung ist
+benannt und hat den Trigger aus
+[`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+(§„Die benannte Grenze"). **Keine Rampe bewegt:** `DB_COVERAGE_THRESHOLD`
+bleibt 70, `THRESHOLD` bleibt 70, die Endstufen bleiben 80 % — eine
+Schwellen-ADR wird nicht fällig.
 
 ## 4. Trigger
 
