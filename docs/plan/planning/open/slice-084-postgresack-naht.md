@@ -21,7 +21,7 @@ ist dieser Vorgang entstanden).
 **Berührte Spec-Stellen:** — (die Naht liegt **innerhalb** des driven Adapters,
 ohne Vertrag oder Sicht zu berühren).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-15.
 
