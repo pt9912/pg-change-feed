@@ -65,18 +65,21 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   2 Statements — er feuert nur, wenn der Tick vor dem Kontext-Ende liegt,
   [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
   §Kontext (2)) und dem Kontext-Ende-Zweig von `runAdministration`
-  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe **desselben**
-  Produktionsstands — *nicht* der oben genannte: die beiden
-  Bänder gehören zu zwei verschiedenen Code-Ständen — **abgeleitet** aus der
-  Differenz der gedeckten Zahlen (1468/1471 gegen 1369/1371), ~99–100
-  Statements auseinander; gemessen ist die Differenz, die Aussage über die
-  Code-Stände ist ihre Deutung
-  (`go test -count=1 -coverpkg=… -covermode=atomic`,
+  (`:1091.4,1092.1`, 1 Statement). Über **acht** Läufe desselben
+  Produktionsstands (`go test -count=1 -coverpkg=… -covermode=atomic`,
   Auswertung über die Block-Position, Lauf `slice-091`) lag die gedeckte Zahl
   zwischen **1468** und **1471**, die gedruckte Zeile zwischen `77.1%` und
   `77.3%`; der Takt-Zweig trug in **einem** dieser Läufe `count > 0`, der
   `runAdministration`-Zweig fiel in **einem** auf `count = 0`. Nenner und
   Abstand zur Schwelle sind von der Schwankung unberührt.
+
+  Das hier gemessene Band ist **nicht** das oben genannte: der **Nenner** ist an
+  beiden Ständen **1903** und im Messgegenstand hat sich zwischen ihnen **kein**
+  Produktcode bewegt (`git diff` über `internal`/`cmd` ohne Testdateien und ohne
+  das ausgenommene `replication/receive` → leer) — die zwei Bänder liegen auf
+  zwei **Test**-Ständen **desselben** Produktionsstands. Ihre Differenz
+  (**abgeleitet**, nicht gemessen: 1468/1471 gegen 1369/1371) beträgt je nach
+  Paarung 97 bis 102 Statements.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
   hier `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die

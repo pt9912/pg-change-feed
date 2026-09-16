@@ -48,7 +48,7 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 **Ziel:** Der **Anwendungs-Kern** wird über netzlose Tests gedeckt:
 `internal/application/usecase/*` und `internal/domain/model`.
 
-**Drei Zahlen, drei Dinge — sie sind nicht austauschbar:** der Glob führt
+**Vier Zahlen, vier Dinge — sie sind nicht austauschbar:** der Glob führt
 **13** Use-Case-Pakete; **10** davon trugen ungedeckte Statements (die **22**)
 und **12** haben Tests bekommen (`readchanges` war bereits vollständig gedeckt);
 die **Deckung bewegt** hat dieser Slice bei **11** Paketen (die zehn plus
@@ -112,9 +112,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       unbekannte Spalte, ungültige Dauer), ist die Ablehnung an **den
       Eingabewert** gebunden, der sie auslösen soll — nicht an einen Fake, der
       sie unabhängig von der Abfrage liefert. Auslöser:
-      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**5×** — die
-      zweithäufigste Klasse des Registers, und die Use-Cases sind ihr
-      wahrscheinlichster Ort).
+      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**5×** — unter den
+      sieben in §8 genannten die zweithäufigste; über das **ganze** Register
+      geteilt-vierte von sechs Klassen mit 5× oder mehr, und die Use-Cases sind
+      ihr wahrscheinlichster Ort).
 - [ ] **LP3 — die unerreichbaren Statements sind benannt.** Jedes Paket, das
       danach noch ungedeckte Statements hat, nennt sie **einzeln mit dem Grund**.
       „Rest nicht erreichbar" ohne Namen gilt als **nicht erfüllt**.
