@@ -97,6 +97,8 @@ Messung** (`ADR-0082` §Schnittmaß):
 | **B — Reine Übersetzung** | `replication/decode`, `replication/mapper`, `postgresstorage/sqlexec`, `postgresstorage/mapper` | 60 |
 | **C — Zustell- und Betriebs-Rand** | `driving/http`, `driving/grpc`, `driven/natsnotify`, `driving/grpc/streamv1` | 62 |
 | **D — Anwendungs-Kern und Bootstrap-Rest** | Use-Cases, `domain/model`, `telemetry`, `bootstrap`-Rest | 53–55 |
+| ↳ **D1 — Anwendungs-Kern** | `application/usecase/*` (10 Pakete), `domain/model` | 24 |
+| ↳ **D2 — Bootstrap-Rest und Telemetrie** | `bootstrap`-Rest, `adapters/driven/telemetry` | 30 |
 | **A — Prozess-Rand (Puffer)** | `cmd/pg-change-feed` (`main`-Dispatch), `bootstrap` (`Run`-Fehlerpfad) | ≈54 |
 | | **Summe** | **229–231** |
 
@@ -127,6 +129,15 @@ dieselbe Zahl kann in [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-
 dieses Vorschlags — **nicht** als Messung;
 [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 widerlegt sie.
+
+**Cluster D ist geteilt — der Trigger der ADR ist eingetreten.** `ADR-0082`
+sieht vor: „bei Schicht-Überschreitung wird Cluster D an seiner Grenze geteilt
+(fünf)". D trägt vier Träger in **vier Schichten** (Application, Domain, Driven
+Adapter, Composition Root) — gemessen bei der Planung von `slice-092`, über die
+Block-Position dedupliziert: `application/usecase/*` **22**,
+`domain/model` **2**, `adapters/driven/telemetry` **2**, `bootstrap`-Rest
+**≈28**, Summe **54** (die `53–55` der ADR hält). Die Naht liegt dort, wo auch
+der **Test-Stil** wechselt: D1 fährt einen Fake-Port, D2 baut die Verdrahtung.
 
 **Geschnitten wird nach dem Maß, nicht auf Vorrat** (Modul 5: Plan und
 Implementation alternieren): Cluster B zuerst — er ist der reinste (60 von 60
