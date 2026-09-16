@@ -3,9 +3,6 @@ package receive
 import (
 	"context"
 	"fmt"
-
-	"github.com/jackc/pglogrepl"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // WALRetentionChecker misst den WAL-Rückstand eines Logical-Replication-
@@ -22,9 +19,12 @@ import (
 // — `dsn` bleibt deshalb erhalten, damit `Measure` eine so gestörte
 // Verbindung selbst ersetzen kann.
 type WALRetentionChecker struct {
-	dsn  string
-	conn *pgconn.PgConn
-	slot string
+	dsn string
+	// session ist dieselbe Naht wie die des Stream-Adapters (`ADR-0080`):
+	// die eigene Verbindung hinter der Treiber-Hülle, damit die
+	// Rückstands-Messung netzlos fahrbar ist.
+	session driverSession
+	slot    string
 }
 
 // NewWALRetentionChecker baut die eigene Verbindung auf (dieselbe
@@ -40,12 +40,20 @@ func NewWALRetentionChecker(ctx context.Context, dsn, slot string) (*WALRetentio
 	if err != nil {
 		return nil, err
 	}
-	return &WALRetentionChecker{dsn: dsn, conn: conn, slot: slot}, nil
+	return newWALRetentionCheckerOnSession(connSession{conn: conn}, dsn, slot), nil
+}
+
+// newWALRetentionCheckerOnSession verdrahtet den Checker auf eine Naht —
+// der paket-interne Einstieg der netzlosen Tests, die einen Fake anstelle
+// des Treibers fahren; `NewWALRetentionChecker` reicht die Treiber-Hülle
+// durch. `dsn` bleibt der Neuaufbau-Träger von `reconnectAfterError`.
+func newWALRetentionCheckerOnSession(session driverSession, dsn, slot string) *WALRetentionChecker {
+	return &WALRetentionChecker{dsn: dsn, session: session, slot: slot}
 }
 
 // Close schließt die eigene Verbindung.
 func (c *WALRetentionChecker) Close(ctx context.Context) error {
-	return c.conn.Close(ctx)
+	return c.session.Close(ctx)
 }
 
 // Measure liefert den WAL-Rückstand des Slots in Bytes: die Differenz
@@ -59,13 +67,12 @@ func (c *WALRetentionChecker) Close(ctx context.Context) error {
 // Replication-Protokolls und braucht nur das `REPLICATION`-Attribut, das
 // `cdc_capture` bereits trägt.
 func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
-	current, err := pglogrepl.IdentifySystem(ctx, c.conn)
+	current, err := c.session.IdentifySystem(ctx)
 	if err != nil {
 		c.reconnectAfterError(ctx)
 		return 0, fmt.Errorf("%w: IDENTIFY_SYSTEM: %v", ErrReplication, err)
 	}
-	values, exists, err := querySingle(ctx, c.conn,
-		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = '"+c.slot+"' AND slot_type = 'logical'")
+	values, exists, err := querySingle(ctx, c.session, slotLSNQuery(c.slot))
 	if err != nil {
 		c.reconnectAfterError(ctx)
 		return 0, err
@@ -73,9 +80,9 @@ func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
 	if !exists || values[0] == "" {
 		return 0, fmt.Errorf("%w: Slot %q trägt keine confirmed_flush_lsn", ErrReplication, c.slot)
 	}
-	confirmed, err := pglogrepl.ParseLSN(values[0])
+	confirmed, err := parseLSN("confirmed_flush_lsn", values[0])
 	if err != nil {
-		return 0, fmt.Errorf("%w: confirmed_flush_lsn %q: %v", ErrReplication, values[0], err)
+		return 0, err
 	}
 	return int64(current.XLogPos - confirmed), nil
 }
@@ -92,8 +99,8 @@ func (c *WALRetentionChecker) Measure(ctx context.Context) (int64, error) {
 // und versucht wieder — kein Aufgeben, aber auch kein
 // Endlos-Reconnect-Loop innerhalb eines einzigen Aufrufs.
 func (c *WALRetentionChecker) reconnectAfterError(ctx context.Context) {
-	_ = c.conn.Close(ctx)
+	_ = c.session.Close(ctx)
 	if conn, err := connectReplication(ctx, c.dsn); err == nil {
-		c.conn = conn
+		c.session = connSession{conn: conn}
 	}
 }

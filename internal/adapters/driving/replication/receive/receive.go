@@ -88,7 +88,15 @@ type Config struct {
 // Replication-Verbindung und streamt committed Quelltransaktionen in den
 // Capture-Pfad.
 type Stream struct {
-	conn      *pgconn.PgConn
+	// conn trägt den konkreten Treiber-Typ für den öffentlichen Rand
+	// `Conn()` — Stream und ACK sind getrennte Rollen an **einer**
+	// technischen Verbindung (`ADR-0007`, Option C).
+	conn *pgconn.PgConn
+	// session ist die Naht, an der die Logik dieses Adapters hängt
+	// (`ADR-0080`): dieselbe Verbindung hinter der Treiber-Hülle, damit
+	// die Empfangs-Schleife und die Slot-/Publication-Auflösung netzlos
+	// fahrbar sind.
+	session   driverSession
 	decoder   *decode.Decoder
 	assembler *mapper.Assembler
 	capture   inbound.CaptureInboundPort
@@ -122,12 +130,13 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	if err != nil {
 		return nil, err
 	}
-	startLSN, err := ensureSlot(ctx, log, conn, cfg.Slot)
+	session := connSession{conn: conn}
+	startLSN, err := ensureSlot(ctx, log, session, cfg.Slot)
 	if err != nil {
 		conn.Close(ctx)
 		return nil, err
 	}
-	if err := ensurePublication(ctx, conn, cfg.Publication); err != nil {
+	if err := ensurePublication(ctx, session, cfg.Publication); err != nil {
 		conn.Close(ctx)
 		return nil, err
 	}
@@ -136,7 +145,7 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 		conn.Close(ctx)
 		return nil, fmt.Errorf("%w: %v", ErrConfiguration, err)
 	}
-	if err := pglogrepl.StartReplication(ctx, conn, cfg.Slot, startLSN, pglogrepl.StartReplicationOptions{
+	if err := session.StartReplication(ctx, cfg.Slot, startLSN, pglogrepl.StartReplicationOptions{
 		Mode: pglogrepl.LogicalReplication,
 		PluginArgs: []string{
 			"proto_version '1'",
@@ -148,13 +157,26 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	}
 	log.Info(ctx, "replication: Stream gestartet",
 		"source", cfg.Source, "publication", cfg.Publication, "slot", cfg.Slot)
+	return newStreamOnSession(session, conn, assembler, cfg.Capture, log), nil
+}
+
+// newStreamOnSession verdrahtet den Stream auf eine Naht — der
+// paket-interne Einstieg der netzlosen Tests, die einen Fake anstelle des
+// Treibers fahren; `NewStream` reicht die Treiber-Hülle durch. Ungesetztes
+// `log` (`nil`) fällt auf `outbound.NoopLog` zurück; `conn` trägt der
+// netzlose Aufruf nicht (er bedient allein den öffentlichen Rand `Conn()`).
+func newStreamOnSession(session driverSession, conn *pgconn.PgConn, assembler *mapper.Assembler, capture inbound.CaptureInboundPort, log outbound.LogPort) *Stream {
+	if log == nil {
+		log = outbound.NoopLog
+	}
 	return &Stream{
 		conn:      conn,
+		session:   session,
 		decoder:   decode.NewDecoder(),
 		assembler: assembler,
-		capture:   cfg.Capture,
+		capture:   capture,
 		log:       log,
-	}, nil
+	}
 }
 
 // validateConfig trägt die Konfigurationsgrenzen vor dem
@@ -216,22 +238,50 @@ func connectReplication(ctx context.Context, dsn string) (*pgconn.PgConn, error)
 	return conn, nil
 }
 
-// querySingle trägt die erste Zeile einer Katalogabfrage; ohne Zeile
-// meldet der zweite Ausgang die Abwesenheit.
-func querySingle(ctx context.Context, conn *pgconn.PgConn, sql string) ([]string, bool, error) {
-	results, err := conn.Exec(ctx, sql).ReadAll()
+// slotLSNQuery trägt die Katalogabfrage des Slot-Stands
+// (`LH-FA-CFG-001.a`): `confirmed_flush_lsn` des logischen Slots. Der
+// Slot-Name trägt das Bezeichner-Alphabet (`identifierShape`) und geht
+// deshalb als Bezeichner-Literal in die Abfrage.
+func slotLSNQuery(slot string) string {
+	return "SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = '" + slot + "' AND slot_type = 'logical'"
+}
+
+// querySingle trägt die erste Zeile einer Katalogabfrage über die Naht;
+// ohne Zeile meldet der zweite Ausgang die Abwesenheit.
+func querySingle(ctx context.Context, session driverSession, sql string) ([]string, bool, error) {
+	results, err := session.Exec(ctx, sql)
 	if err != nil {
 		return nil, false, fmt.Errorf("%w: Katalogabfrage: %v", ErrReplication, err)
 	}
+	values, exists := firstRow(results)
+	return values, exists, nil
+}
+
+// firstRow trägt die Katalog-Zeilen-Übersetzung: die erste Zeile des
+// ersten Ergebnisses in Textwerte übersetzt; ohne Zeile meldet der zweite
+// Ausgang die Abwesenheit.
+func firstRow(results []*pgconn.Result) ([]string, bool) {
 	if len(results) == 0 || len(results[0].Rows) == 0 {
-		return nil, false, nil
+		return nil, false
 	}
 	row := results[0].Rows[0]
 	values := make([]string, len(row))
 	for i, value := range row {
 		values[i] = string(value)
 	}
-	return values, true, nil
+	return values, true
+}
+
+// parseLSN trägt die LSN-Übersetzung eines Katalogwerts in die
+// Positionsform (`ADR-0005`); ein unlesbarer Wert endet über die
+// Fehlerklasse `replication` (`SPEC-008`). `what` benennt die Quelle des
+// Werts in der Fehlermeldung.
+func parseLSN(what, text string) (pglogrepl.LSN, error) {
+	lsn, err := pglogrepl.ParseLSN(text)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %s %q: %v", ErrReplication, what, text, err)
+	}
+	return lsn, nil
 }
 
 // ensureSlot legt den Logical Replication Slot an, wenn er fehlt
@@ -239,9 +289,8 @@ func querySingle(ctx context.Context, conn *pgconn.PgConn, sql string) ([]string
 // `pgoutput`), und trägt die Startposition: der Stand von
 // confirmed_flush_lsn des bestehenden Slots bzw. der konsistente Punkt
 // des neu angelegten.
-func ensureSlot(ctx context.Context, log outbound.LogPort, conn *pgconn.PgConn, slot string) (pglogrepl.LSN, error) {
-	values, exists, err := querySingle(ctx, conn,
-		"SELECT confirmed_flush_lsn::text FROM pg_replication_slots WHERE slot_name = '"+slot+"' AND slot_type = 'logical'")
+func ensureSlot(ctx context.Context, log outbound.LogPort, session driverSession, slot string) (pglogrepl.LSN, error) {
+	values, exists, err := querySingle(ctx, session, slotLSNQuery(slot))
 	if err != nil {
 		return 0, err
 	}
@@ -249,23 +298,23 @@ func ensureSlot(ctx context.Context, log outbound.LogPort, conn *pgconn.PgConn, 
 		if values[0] == "" {
 			return 0, fmt.Errorf("%w: Slot %q trägt keine confirmed_flush_lsn", ErrReplication, slot)
 		}
-		startLSN, err := pglogrepl.ParseLSN(values[0])
+		startLSN, err := parseLSN("confirmed_flush_lsn", values[0])
 		if err != nil {
-			return 0, fmt.Errorf("%w: confirmed_flush_lsn %q: %v", ErrReplication, values[0], err)
+			return 0, err
 		}
 		log.Debug(ctx, "replication: bestehender Slot fortgesetzt", "slot", slot, "start_lsn", startLSN)
 		return startLSN, nil
 	}
-	created, err := pglogrepl.CreateReplicationSlot(ctx, conn, slot, outputPlugin, pglogrepl.CreateReplicationSlotOptions{
+	created, err := session.CreateReplicationSlot(ctx, slot, outputPlugin, pglogrepl.CreateReplicationSlotOptions{
 		Mode:           pglogrepl.LogicalReplication,
 		SnapshotAction: "NOEXPORT_SNAPSHOT",
 	})
 	if err != nil {
 		return 0, fmt.Errorf("%w: CREATE_REPLICATION_SLOT: %v", ErrReplication, err)
 	}
-	startLSN, err := pglogrepl.ParseLSN(created.ConsistentPoint)
+	startLSN, err := parseLSN("ConsistentPoint", created.ConsistentPoint)
 	if err != nil {
-		return 0, fmt.Errorf("%w: ConsistentPoint %q: %v", ErrReplication, created.ConsistentPoint, err)
+		return 0, err
 	}
 	log.Info(ctx, "replication: Slot angelegt", "slot", slot, "start_lsn", startLSN)
 	return startLSN, nil
@@ -274,8 +323,8 @@ func ensureSlot(ctx context.Context, log outbound.LogPort, conn *pgconn.PgConn, 
 // ensurePublication verlangt die Publication (`LH-FA-CFG-001.a`): ihr
 // Bestand liegt an der Aktivierung der Tabellen; der Stream-Adapter
 // startet nicht ohne sie und legt sie nicht still an.
-func ensurePublication(ctx context.Context, conn *pgconn.PgConn, publication string) error {
-	_, exists, err := querySingle(ctx, conn,
+func ensurePublication(ctx context.Context, session driverSession, publication string) error {
+	_, exists, err := querySingle(ctx, session,
 		"SELECT 1 FROM pg_publication WHERE pubname = '"+publication+"'")
 	if err != nil {
 		return err
@@ -305,7 +354,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 	if s.capture == nil {
 		return fmt.Errorf("%w: CaptureInboundPort fehlt", ErrConfiguration)
 	}
-	defer s.conn.Close(ctx)
+	defer s.session.Close(ctx)
 	// Ein Log je Rückkehr des Stream-Laufs (`LH-QA-OPS-004`) — der
 	// benannte Rückgabewert `err` trägt den Ausgang über alle
 	// `return`-Stellen unten hinweg zu diesem einen `defer`, dasselbe
@@ -318,7 +367,7 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 		s.log.Info(ctx, "replication: Stream regulär beendet")
 	}()
 	for {
-		rawMessage, err := s.conn.ReceiveMessage(ctx)
+		rawMessage, err := s.session.ReceiveMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil
@@ -327,36 +376,8 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 		}
 		switch message := rawMessage.(type) {
 		case *pgproto3.CopyData:
-			if len(message.Data) == 0 {
-				return fmt.Errorf("%w: leeres CopyData", ErrReplication)
-			}
-			switch message.Data[0] {
-			case pglogrepl.XLogDataByteID:
-				xlogData, err := pglogrepl.ParseXLogData(message.Data[1:])
-				if err != nil {
-					return fmt.Errorf("%w: XLogData: %v", ErrReplication, err)
-				}
-				if err := s.process(ctx, xlogData.WALData); err != nil {
-					return err
-				}
-			case pglogrepl.PrimaryKeepaliveMessageByteID:
-				keepalive, err := pglogrepl.ParsePrimaryKeepaliveMessage(message.Data[1:])
-				if err != nil {
-					return fmt.Errorf("%w: Keepalive: %v", ErrReplication, err)
-				}
-				if keepalive.ReplyRequested {
-					// Die Keepalive-Antwort meldet die letzte
-					// bestätigte Position — nie den Empfangsstand;
-					// die Bestätigung entscheidet die Application
-					// nach Persistenz (`ADR-0007`, `LH-QA-REL-001.a`).
-					if err := pglogrepl.SendStandbyStatusUpdate(ctx, s.conn, pglogrepl.StandbyStatusUpdate{
-						WALWritePosition: s.lastAcked,
-						WALFlushPosition: s.lastAcked,
-						WALApplyPosition: s.lastAcked,
-					}); err != nil {
-						return fmt.Errorf("%w: Keepalive-Antwort: %v", ErrReplication, err)
-					}
-				}
+			if err := s.handleCopyData(ctx, message.Data); err != nil {
+				return err
 			}
 		case *pgproto3.CopyDone:
 			// Der Stream ist regulär beendet.
@@ -367,6 +388,75 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 			// Übrige Backend-Nachrichten (NoticeResponse u. a.) tragen
 			// keine Stream-Änderung.
 		}
+	}
+}
+
+// handleCopyData trägt die Meldungs-Zerlegung des CopyData-Payloads
+// (`ADR-0006`): eine XLogData-Nachricht läuft über `process` in den
+// Capture-Pfad, eine Primary-Keepalive-Nachricht mit `ReplyRequested`
+// wird mit der letzten bestätigten Position beantwortet, ein leeres
+// CopyData ist ein sichtbarer Fehler. Unbekannte Byte-IDs tragen keine
+// Stream-Änderung.
+func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
+	if len(data) == 0 {
+		return fmt.Errorf("%w: leeres CopyData", ErrReplication)
+	}
+	switch data[0] {
+	case pglogrepl.XLogDataByteID:
+		payload, err := parseXLogData(data)
+		if err != nil {
+			return err
+		}
+		return s.process(ctx, payload)
+	case pglogrepl.PrimaryKeepaliveMessageByteID:
+		replyRequested, err := parseKeepalive(data)
+		if err != nil {
+			return err
+		}
+		if !replyRequested {
+			return nil
+		}
+		// Die Keepalive-Antwort meldet die letzte bestätigte Position —
+		// nie den Empfangsstand; die Bestätigung entscheidet die
+		// Application nach Persistenz (`ADR-0007`, `LH-QA-REL-001.a`).
+		if err := s.session.SendStandbyStatusUpdate(ctx, standbyStatus(s.lastAcked)); err != nil {
+			return fmt.Errorf("%w: Keepalive-Antwort: %v", ErrReplication, err)
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
+// parseXLogData trägt die Zerlegung einer XLogData-Nachricht: der
+// Kopfsatz mit der Byte-ID wird geprüft, der Rückgabewert ist der
+// `pgoutput`-Payload (`SPEC-010`).
+func parseXLogData(data []byte) ([]byte, error) {
+	xlogData, err := pglogrepl.ParseXLogData(data[1:])
+	if err != nil {
+		return nil, fmt.Errorf("%w: XLogData: %v", ErrReplication, err)
+	}
+	return xlogData.WALData, nil
+}
+
+// parseKeepalive trägt die Zerlegung einer Primary-Keepalive-Nachricht:
+// der Rückgabewert meldet, ob die Quelle eine Antwort verlangt.
+func parseKeepalive(data []byte) (bool, error) {
+	keepalive, err := pglogrepl.ParsePrimaryKeepaliveMessage(data[1:])
+	if err != nil {
+		return false, fmt.Errorf("%w: Keepalive: %v", ErrReplication, err)
+	}
+	return keepalive.ReplyRequested, nil
+}
+
+// standbyStatus trägt die Standby-Status-Form der Keepalive-Antwort: die
+// drei Positionen tragen denselben Stand, damit der Slot ihn als
+// confirmed_flush_lsn trägt (`LH-QA-REL-001.a`).
+func standbyStatus(lsn pglogrepl.LSN) pglogrepl.StandbyStatusUpdate {
+	return pglogrepl.StandbyStatusUpdate{
+		WALWritePosition: lsn,
+		WALFlushPosition: lsn,
+		WALApplyPosition: lsn,
 	}
 }
 
