@@ -22,10 +22,19 @@ import (
 // beiden Methodenrümpfe ließe den Betreiber die beiden Lagen nicht mehr
 // unterscheiden, ohne den Testlauf zu stören.
 //
-// Rot färbende Mutation: den Rumpf von `Warn` auf
-// `a.logger.InfoContext(ctx, msg, attrs...)` umstellen — dann trägt die
-// Warn-Zeile `level` `INFO` statt `WARN` und dieser Test bricht. Dieselbe
-// Probe greift für `Error` gegen `Warn`.
+// Rot färbende Mutationen, beide real gefahren, mit **verschiedener**
+// Wirkung — die erste ist der Beleg dieser Datei:
+//   - `Warn` auf `ErrorContext` umstellen: die Zeile wird geschrieben und
+//     trägt `level` `ERROR`; der Test bricht an der `level`-Prüfung
+//     („level-Feld: ERROR, wollen WARN"), also an genau der hier
+//     aufgeschriebenen Zusage.
+//   - `Warn` auf `InfoContext` umstellen: die Zeile wird **gar nicht**
+//     geschrieben — der Handler steht auf `slog.LevelWarn`, ein INFO-Record
+//     fällt unter diese Stufe, der Puffer bleibt leer, und der Test bricht
+//     schon an der JSON-Prüfung („Log-Zeile ist kein gültiges JSON:
+//     unexpected end of JSON input"). Rot, aber **nicht** über
+//     `decoded["level"]`: dieser Handler filtert die Zeile weg, bevor sie
+//     die Prüfung erreicht.
 func TestNewWithWriterWarnAndErrorCarryTheirLevel(t *testing.T) {
 	cases := []struct {
 		name      string

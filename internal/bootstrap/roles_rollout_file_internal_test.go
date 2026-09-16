@@ -29,6 +29,37 @@ import (
 // `ADR-0043`); er prüft, dass der **Grant-Text, den der Rollout ausrollt**,
 // die Rechte trägt, die die Verdrahtung je Rolle voraussetzt
 // (`ADR-0047`, `ADR-0048`, `ADR-0014`, `LH-QA-SEC-001`…`003`).
+//
+// **Benannte Grenzen dieses Tests — was er strukturell nicht sieht.** Der
+// Parser liest literale `GRANT … ;`-Anweisungen der Datei (Zeilenanfang,
+// Kommentare vorher entfernt). Drei Stellen bleiben damit außerhalb seiner
+// Reichweite, und keine davon ist still:
+//
+//   - **Der dynamische Grant im `DO $$ … $$;`-Block** (`nacharbeit-roles.sql`
+//     §„CREATE PUBLICATION/ALTER PUBLICATION"): `EXECUTE format('GRANT CREATE
+//     ON DATABASE %I TO cdc_admin', current_database())` ist eine zur
+//     Laufzeit zusammengesetzte Zeichenkette, keine Anweisung der Datei; der
+//     Datenbankname steht erst im Rollout fest. Der Parser trifft sie
+//     bewusst nicht — ein Mustertreffer auf `GRANT` innerhalb eines
+//     `format(...)`-Strings wäre kein Beleg für einen ausgerollten Grant.
+//     Der Grant trägt `CREATE PUBLICATION`/`ALTER PUBLICATION` (ADR-0047);
+//     sein realer Beleg ist der DB-gestützte Tier (`roles_test.go`).
+//   - **Ein Lesegrant auf einem Objekt, das keine schreibende Rolle hält**
+//     (z. B. ein zusätzliches `GRANT SELECT ON cdc.<fremd> TO cdc_reader`):
+//     die Regel unten fängt solche Grants nur, wenn eine schreibende Rolle
+//     dasselbe Objekt trägt. „Ist dieses Objekt eine View oder eine
+//     Basistabelle?" ist hier nicht entscheidbar — die Klassifikation steht
+//     im `views:`-Knoten von `tools/schema/schema.yaml`, und die liegt
+//     **nicht** im Build-Kontext der `coverage`-Stufe. Die DDL in
+//     `internal/adapters/driven/postgresstorage/schema.sql` liegt dort, trägt
+//     aber nur die Store-Seite (fünf Tabellen, keine View, kein
+//     `cdc.metrics`) und taugt darum nicht als Klassifikator.
+//   - **Grants, die eine andere Rollout-Datei ausrollt** (etwa `cdc.metrics`
+//     in `nacharbeit-observability.sql`): Gegenstand dieses Tests ist genau
+//     eine Datei.
+//
+// Eine benannte Lücke ist zulässig, eine stille nicht — die drei stehen
+// deshalb hier und nicht in der Stille.
 
 // rolloutDateiPfad löst `tools/schema/nacharbeit-roles.sql` über die Lage
 // dieser Testdatei auf — unabhängig vom Arbeitsverzeichnis des Testlaufs.
@@ -124,6 +155,16 @@ func rechteVon(rechte map[string]map[string]map[string]bool, rolle, objekt strin
 	return map[string]bool{}
 }
 
+// istKlassenGrant meldet, ob eine Grant-Objektklausel nicht **ein** Objekt
+// benennt, sondern eine ganze Objektklasse (`ALL TABLES IN SCHEMA cdc`,
+// `ALL SEQUENCES IN SCHEMA …`). Der Schema-USAGE-Grant trägt die Form
+// `SCHEMA cdc` und ist damit **keine** Klasse — er ist die Vorbedingung
+// jedes Objektzugriffs und wird von der Regel unten nicht getroffen.
+func istKlassenGrant(objekt string) bool {
+	return strings.HasPrefix(objekt, "all ") || strings.Contains(" "+objekt+" ", " all ") ||
+		strings.Contains(objekt, " in schema ")
+}
+
 // TestRolloutDateiTraegtDieRechteDerVerdrahtung ist der Kern dieser Datei:
 // je geprüfter Rolle die Rechte, die die Verdrahtung auf dem Objekt
 // voraussetzt, gegen den **Rollout-Text** gehalten. Die Rolle-Zuordnung
@@ -132,13 +173,32 @@ func rechteVon(rechte map[string]map[string]map[string]bool, rolle, objekt strin
 // die andere Hälfte derselben Zusage — dass der ausgerollte Grant sie
 // trägt.
 //
-// Rot färbende Mutationen (real gefahren, Exit-Code im Closure-Bericht):
+// Zwei Prüfungen sind **Regeln über den geparsten Grant-Bestand**, keine
+// Namenslisten: (6) kein Rollen-Grant über eine ganze Objektklasse und
+// (7) der Leser teilt kein Objekt mit einer schreibenden Rolle. Die zweite
+// ersetzt eine frühere Acht-Namen-Liste von Basistabellen — sie war
+// handverlesen und ließ jedes neunte Objekt durch.
+//
+// Rot färbende Mutationen (real gefahren, Exit-Codes im Lauf-Bericht):
 // `SELECT` aus dem `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen
 // (der von `ADR-0048` korrigierte Ursprungstext) · den `DELETE`-Grant auf
 // `cdc.transaction`/`cdc.change` für `cdc_admin` entfernen · `DELETE` an
-// `cdc_capture` auf `cdc.change` ergänzen.
+// `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
+// entfernen · die Lese-View `cdc.retention_blockers` aus dem Reader-Grant
+// streichen · `GRANT ALL ON ALL TABLES IN SCHEMA cdc TO cdc_reader`
+// anhängen.
 func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	rechte, _ := rolloutRechte(t, rolloutDateiPfad(t))
+
+	// (0) Die Vorbedingung jedes anderen Grants der Datei: ohne `USAGE` auf
+	// dem Schema kann **keine** der drei Rollen ein Objekt darin berühren —
+	// ein entzogener USAGE-Grant färbt alle Pfade der Verdrahtung rot, nicht
+	// nur einen. Der Grant trägt die Form `SCHEMA cdc`.
+	for _, rolle := range []string{"cdc_capture", "cdc_admin", "cdc_reader"} {
+		if !rechteVon(rechte, rolle, "schema cdc")["usage"] {
+			t.Fatalf("%s fehlt USAGE auf dem Schema cdc im Rollout-Text — ohne ihn ist jeder andere Grant dieser Datei wirkungslos (LH-QA-SEC-001)", rolle)
+		}
+	}
 
 	// (1) Heartbeat-Pfad — `runHeartbeat` → `postgresstorage.NewHeartbeat`
 	// über `cfg.AdminDSN`. `UpsertHeartbeat` schreibt
@@ -183,21 +243,44 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 		t.Fatalf("cdc_capture trägt Rechte auf cdc.process_heartbeat im Rollout-Text: %v — die Tabelle gehört zum Admin-Pfad", privilegien)
 	}
 
-	// (5) Lesepfad — `cdc_reader` liest ausschließlich über die Views
-	// (`LH-FA-SST-002`), kein Grant auf einer Basistabelle (LH-QA-SEC-003:
-	// die Definer-Semantik der Views trägt den Lesezugriff).
-	for _, basis := range []string{
-		"cdc.change", "cdc.transaction", "cdc.source_table", "cdc.schema_version",
-		"cdc.consumer", "cdc.consumer_position", "cdc.process_heartbeat", "cdc.table_schema",
+	// (5) Lesepfad — `cdc_reader` liest über die **vier** Lese-Views der
+	// Datei (`LH-FA-SST-002`; `retention_blockers` seit `LH-FA-RET-005`
+	// dabei). Die vier sind der erklärte Lese-Umfang des Rollouts; fehlt
+	// eine, scheitert der jeweilige Lesezugriffsweg real.
+	for _, view := range []string{
+		"cdc.active_tables", "cdc.consumer_status", "cdc.changes", "cdc.retention_blockers",
 	} {
-		if privilegien := rechteVon(rechte, "cdc_reader", basis); len(privilegien) != 0 {
-			t.Fatalf("cdc_reader trägt Rechte auf der Basistabelle %s: %v — der Lesezugriff läuft über die Views", basis, privilegien)
-		}
-	}
-	leseViews := []string{"cdc.active_tables", "cdc.consumer_status", "cdc.changes"}
-	for _, view := range leseViews {
 		if !rechteVon(rechte, "cdc_reader", view)["select"] {
 			t.Fatalf("cdc_reader fehlt select auf der Lese-View %s im Rollout-Text — der Lesezugriffsweg (LH-FA-SST-002) scheitert real", view)
+		}
+	}
+
+	// (6) Keine Rolle bekommt Rechte über eine ganze Objektklasse: eine
+	// `ALL TABLES IN SCHEMA`-Zeile ist keine Aufzählung, sondern eine
+	// Rundum-Vergabe — sie hebt jeden geprüften Objekt-Grant auf, weil sie
+	// auch jede künftige Tabelle mitnimmt (LH-QA-SEC-001).
+	for rolle, objekte := range rechte {
+		for objekt := range objekte {
+			if istKlassenGrant(objekt) {
+				t.Fatalf("%s trägt im Rollout-Text einen Grant über eine ganze Objektklasse (%q) — der Rollenschnitt (LH-QA-SEC-001) ist damit aufgehoben", rolle, objekt)
+			}
+		}
+	}
+
+	// (7) Der Leser teilt kein Objekt mit einer schreibenden Rolle: was eine
+	// der beiden schreibenden Rollen hält, ist ein Schreibpfad-Objekt und
+	// gehört nicht in den Leseumfang (LH-QA-SEC-003; die Definer-Semantik
+	// der Views trägt den Lesezugriff, nicht ein Grant auf der Basistabelle).
+	// Ausgenommen ist allein der Schema-USAGE-Grant — er ist die
+	// Vorbedingung beider Seiten, kein Objektzugriff.
+	for _, schreibend := range []string{"cdc_capture", "cdc_admin"} {
+		for objekt := range rechte["cdc_reader"] {
+			if strings.HasPrefix(objekt, "schema ") {
+				continue
+			}
+			if _, geteilt := rechte[schreibend][objekt]; geteilt {
+				t.Fatalf("cdc_reader und %s tragen beide Rechte auf %s — der Leseumfang (LH-QA-SEC-003) ist nicht mehr vom Schreibpfad getrennt", schreibend, objekt)
+			}
 		}
 	}
 }
