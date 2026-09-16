@@ -203,17 +203,19 @@ paket-internen Einstiegs, der reinen Funktionen und der Hülle; `k_ab = 0` ist
 damit die Null-Hälfte der Arithmetik, nicht eine Behauptung.
 
 **(b) Paket-Diff — kein Trägerwechsel.** Die Änderung ist auf **ein** Paket
-isoliert (`git diff --name-only` listet ausschließlich Dateien unter
-`internal/adapters/driven/postgresack/`); die Gegenstands-Listen sind
-unberührt (`git diff` gegen `Dockerfile` und `tools/harness/db-coverage.sh` ist
-leer), ebenso `.a-check.yml` und die Composition Root. Kein Paket wechselt
-zwischen den zwei Gegenständen.
+isoliert: `git diff --name-only fb6adf6..4035ee7` listet ausschließlich Dateien
+unter `internal/adapters/driven/postgresack/`; die Gegenstands-Listen sind
+unberührt (`git diff fb6adf6..4035ee7 -- Dockerfile tools/harness/db-coverage.sh
+harness/mk/coverage.mk` ist leer), ebenso `.a-check.yml` und die Composition
+Root. Kein Paket wechselt zwischen den zwei Gegenständen.
+**Die Range gehört in den Beleg** (Review `review-slice-084` F-2): ein `git
+diff` **ohne** sie ist auf sauberem Baum leer und trägt die Aussage nicht.
 
 **(c) Kein Verhalten verloren.** Die realen, dienst-gestützten Läufe sind grün
 (`make test-store` Exit 0, `make test-replication` Exit 0, `make test`
 Exit 0 — je ungepiped), und **kein Testfall wird entfernt**: `ack_test.go`
-ist unverändert, `git diff --name-status -- '*_test.go'` zeigt genau **eine
-neue** Datei (`seam_test.go`).
+ist unverändert, `git diff --name-status fb6adf6..4035ee7 -- '*_test.go'` zeigt
+genau **eine neue** Datei (`seam_test.go`).
 
 **Rot-Gegenprobe an der Zusage — einmal gesehen.** Auf einer Wegwerf-Kopie
 brachen zwei Mutationen je ihre Prüfung: `WALApplyPosition: 0` in
