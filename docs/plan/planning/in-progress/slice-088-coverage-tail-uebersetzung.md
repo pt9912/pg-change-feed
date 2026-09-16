@@ -217,7 +217,7 @@ dasteht.
 
 - **Eine Funktion könnte netzlos nicht prüfbar sein.** Dann trägt sie zum
   Gegenstand bei, ohne für dieses Ziel erreichbar zu sein — [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
-  hat das für `Run` gemessen. — **Ausgang:** <bei Closure>
+  hat das für `Run` gemessen.
   **Beobachtet in diesem Lauf** (gemessen am Profil der `coverage`-Stufe,
   dedupliziert über die Block-Position): **keine** der 21 Funktionen ist
   unprüfbar — jede trägt Tests. **8 der 60 Statements** sind aber über die
@@ -227,9 +227,9 @@ dasteht.
   158/172/191 (`NewOpenTransaction`/`Commit`/`AppendChange` — ihre Grenzen
   sind an einem Assembler, den `NewAssembler` erzeugt, nicht herstellbar),
   `mapper` `change` 235/239 und `rowImage` 537/541
-  (`json.Marshal` eines `string` endet nie im Fehler).** Der Zuschnitt bleibt:
+  (`json.Marshal` eines `string` endet nie im Fehler). Der Zuschnitt bleibt:
   kein Umbau (Modul 9, §1 dieser Datei); die Zahl der gedeckten Statements
-  dieser vier Pakete ist damit **52**, nicht 60.
+  dieser vier Pakete ist damit **52**, nicht 60. — **Ausgang:** <bei Closure>
 - **Der Slice könnte den Produktionscode anfassen.** Die Zusage ist „Tests,
   kein Umbau"; ein Umbau wäre ein **anderer Vorgang**. — **Ausgang:** <bei Closure>
 - **Die Tests könnten die Zahl heben, ohne etwas zu prüfen.** Ein Test, der eine
