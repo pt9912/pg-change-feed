@@ -22,7 +22,7 @@ Sync-Gate — **eigener** Slice, nicht dieser) ·
 
 **Berührte Spec-Stellen:** — (Regel-Träger; kein Spec-Stratum berührt).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-16.
 
