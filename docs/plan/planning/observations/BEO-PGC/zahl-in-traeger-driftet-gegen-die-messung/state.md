@@ -1,4 +1,4 @@
-Zustand: **offen — 4× erreicht, Ausgang noch nicht zugewiesen.** Der
+Zustand: **offen — 5× erreicht, Ausgang noch nicht zugewiesen.** Der
 Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
 Slice-Closure (Modul 6). Bis dahin ist `offen` der zulässige, vorübergehende
 Stand.
@@ -22,8 +22,8 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **4×** (evidence/slice-081.md, evidence/slice-084.md,
-evidence/slice-085.md, evidence/slice-088.md) — **Schwelle erreicht**. Die Fundstellen je Vorgang
+Zähler (abgeleitet): **5×** (evidence/slice-081.md, evidence/slice-084.md,
+evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md) — **Schwelle erreicht**. Die Fundstellen je Vorgang
 liegen **im selben** Vorgang und sind damit je *eine* Gelegenheit — der Zähler
 misst Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
 **vier** driftende Werte in zwei Sensor-Dokumenten; zwei davon stammten aus

@@ -109,14 +109,18 @@ Rot-Beleg bei `THRESHOLD=85` ist damit **notwendig** rot.
 
 **Herkunft der Zahlen dieses Abschnitts** (`AGENTS.md` §3.12 gilt für die
 Zahlen dieses Plans mit): die **ungedeckten** Statement-Zahlen der
-Cluster-Tabelle, die Paket- und Funktions-Werte (`336`, `308`, `26–28`, `198`,
-`0 von 198`) und der Nenner `1903` stehen in
-[`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
-§Kontext (2)–(5) — dort **gemessen** in zwei Läufen über denselben Quelltext,
-dedupliziert über die Block-Position, ADR-Stand 2026-09-16; der
-Vorgänger-Nenner `1679` steht in §1 und stammt aus `slice-079`. Die **Summen,
-Differenzen und Prozente** dieses Abschnitts (`229–231`, `1523`, `154`, `13`,
-`63`, `3,3 pp`, `81,2 %`, `84,1 %`) sind **gerechnet**, nicht gemessen —
+Cluster-Tabelle (**62**, **53–55**, **≈54** und ihre Summe **229–231**) stehen
+in [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+§*Was daraus für die Slices folgt*; die Paket- und Funktions-Werte (`336`,
+`308`, `26–28`, `198`, `0 von 198`) und der Nenner `1903` stehen in §Kontext
+(2)–(5) — dort **gemessen** in zwei Läufen über denselben Quelltext,
+dedupliziert über die Block-Position, ADR-Stand 2026-09-16. Die Zahl **60** der
+ersten Cluster-Zeile ist die **ungedeckte** (`60`), während die Angabe
+„**60 von 60** erreichbar" weiter unten die **zweite** Spalte derselben Tabelle
+liest (`netzlos erreichbar`) — zwei verschiedene Größen, beide aus derselben
+Quelle. Der Vorgänger-Nenner `1679` steht in §1 und stammt aus `slice-079`.
+Die **Summen, Differenzen und Prozente** dieses Abschnitts (`1523`, `154`,
+`13`, `63`, `3,3 pp`, `81,2 %`, `84,1 %`) sind **gerechnet**, nicht gemessen —
 dieselbe Zahl kann in [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 §Kontext (5) stehen, gerechnet ist sie dort ebenso. Die zwei Werte des
 **widerlegten** Vorschlags im Satz darüber (`591`, `327`) stehen als Zitat
