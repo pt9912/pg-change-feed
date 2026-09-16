@@ -1,4 +1,4 @@
-Zustand: offen (**4×**) — Schwelle erreicht; den Ausgang weist der **Lese-Schritt
+Zustand: offen (**5×**) — Schwelle erreicht; den Ausgang weist der **Lese-Schritt
 der `welle-20`-Closure** zu. Ein
 Träger ist **nicht** vorgeschlagen: die Klasse wäre über einen Sensor schwer zu
 fassen — ein Beleg-Befehl läuft netzlos und liefert ein Ergebnis; ob dieses
@@ -8,8 +8,11 @@ nennt den **Beleg-Anker** und ist damit prüfbar — was fehlt, ist die
 **Gegenprobe am genannten Befehl** (der Reviewer-Skill trägt sie als
 Lese-Pflicht).
 
-Zähler (abgeleitet): **4×** (evidence/slice-084.md, evidence/slice-085.md,
-evidence/slice-091.md, evidence/slice-093.md) — **Schwelle erreicht**. Der
+Zähler (abgeleitet): **5×** (evidence/slice-084.md, evidence/slice-085.md,
+evidence/slice-091.md, evidence/slice-093.md, evidence/slice-094.md) —
+**Schwelle erreicht**. Der fünfte Beleg ist der erste, in dem der Beleg eine
+**Assertion** ist: die Ausgabe-Hälfte von vier Fällen prüfte eine Zeichenkette,
+die auch aus einem anderen Pfad kam. Der
 vierte Beleg trifft die Klasse an einer **Adresse**: ein Testkopf verwies auf
 Exit-Codes „im Lauf-Bericht", und dieses Artefakt existiert im Repo nicht.
 Dazu ein Fall, in dem die **Wirkung** wahr war und nur die **Begründung**

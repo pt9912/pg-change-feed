@@ -110,17 +110,17 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       netzlos nicht erreichbar ist, wird **einzeln mit Grund** genannt — die 189
       hinter dem `Ping`-Riegel namentlich als Block, und jede weitere einzeln.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       **Weist der Review eine Fixrunde aus, deckt ein Delta-Review sie ab.**
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-094.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-094.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
 
 ## 3. Plan (vor Code)
 
@@ -179,7 +179,7 @@ Naheliegender Kandidat: dieser Slice liefert den **Puffer**, auf dem der
 Grün-Beleg bei `THRESHOLD=80` ruht — ob daraus eine Aussage über die Rampe wird
 (die Stufe hängt an **einem** Statement), entscheidet der Lauf.
 
-## 6. Risiken und offene Punkte## 6. Risiken und offene Punkte
+## 6. Risiken und offene Punkte
 
 <!-- BEDIENHINWEIS: Was koennte schief gehen? Welche Carveouts entstehen
 ggf.? Die drei Ausgaenge stehen als Form in der Zeile darunter. -->
@@ -189,20 +189,53 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **einen** Ausgang, und kein Slice geht nach `done/`, während eines ohne Ausgang
 dasteht.
 
-- **Die ≈54 sind eine Fehl-Schätzung** — dann trägt A die Rampe nicht, und der
-  Grün-Beleg bei `THRESHOLD=80` bliebe auf **einem** Statement Abstand. —
-  **Ausgang:** <…>
+- **Die ≈54 sind eine Fehl-Schätzung** — dann trägt A die Rampe nicht. —
+  **Ausgang: entfallen.** Gemessen lieferte A **+58** Statements (abgeleitet:
+  `1581 − 1523`; das untere Bandende ergibt 57): `cmd/pg-change-feed` **0 → 49**
+  — es waren **nicht** nur die 45 der ADR-Schätzung erreichbar (s. R3) — und
+  `wiring.go` **213 → 222**. Die Schätzung traf auf **einen** Punkt genau, und
+  der Puffer gegen `THRESHOLD=80` liegt bei **~59 Statements** statt bei dem
+  einen, den `slice-093` hinterließ.
 - **Der Re-Exec-Harness ist nicht netzlos** (das Binary braucht eine Umgebung
-  oder einen Dienst). — **Ausgang:** <…>
+  oder einen Dienst). — **Ausgang: entfallen — gemessen.** Der Harness läuft
+  `--network none`, ruft **das Test-Binary selbst** (`os.Args[0]`) mit
+  vollständig **selbst gesetzter** Kind-Umgebung auf und wartet auf das
+  **Prozess-Ende** (kein `Sleep`, kein Timeout, kein `WaitGroup`-Warten). Fünf
+  Profil-Läufe über denselben Stand sind **identisch**, `-count=20` und
+  `make test -race` sind grün — die 3×-Klasse
+  `BEO-PGC/test-integration-retention-timing-flake` ist **nicht** getroffen.
+  **Benannte Grenze** (Verifikation V-3): es gibt **keinen Watchdog** — ein
+  Kindprozess, der nie endet, ließe den Gate-Lauf **hängen** statt scheitern;
+  die einzige Annahme ist, dass auf Port 1 kein Listener lauscht.
 - **Ein Test prüft eine Ausgabezeile statt den Exit-Code** — die Klasse mit
-  **4×**, und bei einem Prozess-Rand der wahrscheinlichste Fehler: dieselbe Zeile
-  kann aus einem anderen Pfad kommen. — **Ausgang:** <…>
+  **4×**, und bei einem Prozess-Rand der wahrscheinlichste Fehler: dieselbe
+  Zeile kann aus einem anderen Pfad kommen. — **Ausgang: eingetreten — und
+  behoben — und dabei eine zweite Grenze gefunden.** Der Review fand (F-2), dass
+  die **Ausgabe-Hälfte** von vier Argument-Fehler-Fällen nicht band: die
+  geprüfte Zeichenkette (der Modus-Name) steht auch in der **generischen**
+  Fallback-Zeile. Der Test bindet die Meldung jetzt an ihren **konkreten
+  Verstoß**; die Probe des Reviewers (moduseigene Meldung durch den Fallback
+  ersetzt) färbt **rot**, vorher war sie **grün**. Die **zweite** Grenze ist die
+  wertvollere: die **Coverage-Zusage dieses Slice ist selbst nicht testgewahrt**
+  — wer die `GOCOVERDIR`-Weitergabe an die Kindprozesse entfernt, lässt **alle**
+  Tests grün und `cmd` auf **0 von 49** zurückfallen (Gesamt **80,50 %**). Sie
+  steht als **§Grenze 7** im Sensor-Dokument, mit „Wächter: keiner" — benannt,
+  nicht still.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt die
   Deckung von `cmd/` und `bootstrap`; ob ein anderes Dokument eine dieser
   Eigenschaften beschreibt, weiß der Diff nicht
-  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, 2×). — **Ausgang:** <…>
+  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, 2×). — **Ausgang: eingetreten —
+  und behoben, an vier Stellen.** Der beauftragte `grep` fand **drei Sätze** in
+  `harness/sensors/coverage-gate.md` §Grenze 1, die am Parent **wahr** waren und
+  durch die Arbeit **falsch** wurden („vier Pakete ohne Testdatei" → drei;
+  „`TestGoFiles` allein trifft 23 der 31" → 22; „`cmd` trägt 49 … das
+  **einzige** Paket ohne gedecktes Statement" → 49 von 49) — alle drei vom
+  Review nachgemessen. Die **vierte** Stelle fand der Implementer **selbst**: die
+  49 als *ungedeckt* in `welle-20.md` §1 — und meldete sie, statt meine Datei
+  anzufassen. Die **fünfte** war die Reparatur selbst: mein Nachzug setzte
+  **zwei Herkünfte** (ein Zitat und einen Messwert) in **eine** Klammer.
 
-## 7. Closure-Notiz## 7. Closure-Notiz
+## 7. Closure-Notiz
 
 <!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg (README.md
 §Verwendung, Schritt 5) und darf deshalb nichts Tragendes halten. Reihenfolge:
@@ -219,18 +252,86 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Der **Re-Exec-Harness** — und die ADR hatte ihn
+  vorausgesagt. `main` endet in `os.Exit`; der Test ruft **dasselbe Binary** mit
+  anderen Argumenten auf und wertet Exit-Code und Ausgabe aus. **Keine Zeile
+  Produktionscode** für 49 Statements — das ist die Bedingung, die
+  `ADR-0082` §Konsequenzen verfügt, und sie ist eingehalten. Zweitens: die
+  **Messung vor der Arbeit** (die ≈54 traf ein) und die **Mutation** als
+  Rückgrat, zum fünften Mal in dieser Welle. Drittens, und am meisten: der
+  **`grep`-Auftrag aus dem Register**. Er hat in diesem Slice **vier** Stellen
+  gefunden, die niemand sonst gesucht hätte — drei in der Sensor-Doku (vom
+  Review nachgemessen) und eine in der Welle (vom Implementer gemeldet, statt
+  eine fremde Datei anzufassen). **Ein Register-Eintrag, der einen Auftrag
+  erzeugt, ist mehr wert als einer, der einen Zähler trägt.**
+- **Was ging anders als geplant:** Es brauchte **zwei** Runden — und der Fund der
+  ersten war der schärfste dieses Zuges, weil er **mein Denken** traf, nicht den
+  Code. Ich hatte `ADR-0082`s **„≈45 netzlos erreichbar"** — eine **Schätzung
+  mit Tilde** — im Slice-Plan als **Grenze** gelesen („die restlichen sind nicht
+  erreichbar"), und der Implementer hat sie übernommen. Der Reviewer hat sie
+  **gemessen**: die vier sind erreichbar, `cmd` steht bei **49 von 49**. Eine
+  Schätzung ist dadurch zur Decke geworden, dass **zwei Rollen sie nacheinander
+  als Tatsache weitergereicht haben** — keine von beiden hat sie gemessen, weil
+  beide sie für ein Zitat hielten. Zweitens: **die Verifikation dieses Slice hat
+  zuerst nicht stattgefunden** — ich habe eine Verifier-Aufgabe an den
+  **Reviewer**-Agenten geschickt, weil sein Kontext noch lebte; er hat die Rolle
+  **nicht** gewechselt, sondern den fehlenden Lauf als Blocker benannt. Und
+  drittens: **meine Korrektur eines veralteten Werts war binnen einer Runde
+  selbst veraltet** (die „4 offenen Statements" in `welle-20.md` §1, die die
+  Fixrunde auf 0 brachte).
+- **Steering-Loop-Eintrag:** **kein neuer Träger — und eine neue Beobachtung.**
+  Die Regel, die alle Funde dieses Slice deckt, steht (`AGENTS.md` §3.12 Instanz
+  B und A), und ihre Leser haben getragen: **jeder** Fund kam von einem fremden
+  Kontext. Was hier **neu** ist, hat keinen Zielort und steht als
+  `BEO-PGC/geschaetzter-wert-als-grenze` im Register (**1×**): *ein geschätzter
+  Wert, der durch Weitergabe hart wird* — die Tilde fällt auf dem Weg vom
+  Nachbardokument in den Plan und vom Plan in die Umsetzung weg, und keine der
+  Stationen fühlt sich zuständig, weil jede ihn für ein Zitat hält. Ein Sensor
+  ist nicht die Antwort (er müsste Schätzungen von Zitaten unterscheiden); die
+  Antwort ist die **Messung an der letzten Station**.
+  Die **geschärfte Formulierung** ohne neuen Träger: *eine Zahl, die zwei wahre
+  Bedeutungen hat, ist so lange harmlos, wie beide dasselbe sagen* — meine
+  **299** in `welle-20.md` §1 ist heute beides (`internal/bootstrap` trägt 598
+  Statements: 299 gedeckt **und** 299 offen), und sie kippt still, sobald ein
+  Zug eine der beiden bewegt. Die Closure-Notiz nennt darum das Paar
+  **299/598**.
+  Auslöser: `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (2×, hier **dritter**
+  Fall) und `BEO-PGC/geschaetzter-wert-als-grenze` (`slice-094` — 1×).
+- **Beobachtungs-Register (`../observations/`):** **ein Verzeichnis neu
+  angelegt** (`geschaetzter-wert-als-grenze`, **1×**) und **zwei Belege**
+  ergänzt: `arbeit-ueberholt-stehenden-traeger` → **3×** (Schwelle erreicht;
+  den Ausgang weist der Lese-Schritt der `welle-20`-Closure zu) und
+  `beleg-befehl-traegt-seinen-satz-nicht` → **5×** (F-2: die Ausgabe-Hälfte
+  band nicht, weil die geprüfte Zeichenkette auch aus einem anderen Pfad kam).
+  **Kein Zähler wird gesetzt** — jeder folgt aus den Dateien unter `evidence/`.
+- **Die Zahlen dieses Slice — mit Ursprung und Band** (Verifikation §3.12):
+  **gemessen** (Lauf `slice-094`): `cmd` **49/49** (Band 0 — stabil), `wiring.go`
+  **222/521** (Band bis **221**), `internal/bootstrap` **299/598**, Gesamt
+  **1581/1903** (Band **1580–1581**, ein Statement), die gedruckte Zeile
+  `83.1%` (zehn Läufe) bzw. `83.0%` (einer). **abgeleitet:** `+58`
+  (`1581 − 1523`; das untere Bandende ergibt 57), `83,08 %` (die zweistellige
+  Fassung von 83,0793 %). **Die zwei Rampen-Belege, je eigener Lauf, mit ihrer
+  Schwelle:** `make coverage-gate THRESHOLD=80` → **EC 0**,
+  `OK — Coverage 83.10% erfüllt Schwelle 80%`; `THRESHOLD=85` → **Skript-EC 1 /
+  make-EC 2**, `FAIL — Coverage 83.10% unter Schwelle 85%`.
+- **LP3, in gemessener Form:** **134** ungedeckte Blöcke, **299** Statements,
+  Verteilung **189 / 73 / 14 / 13 / 10** (`Run`, `Diagnose`, `Healthcheck`,
+  `RegisterConsumer`, `AcknowledgeConsumer`) — außerhalb der fünf Funktionen
+  **0**. In `cmd/pg-change-feed` ist **keine** Stelle mehr offen; die vier
+  Aufrufe, die der Plan für unerreichbar hielt, tragen `count > 0`.
+- **Folge-Slices:** keine Datei in `open/` — **A war der letzte Schnitt dieser
+  Welle**. Nach der Closure dieses Slice liegen **alle** Slices von `welle-20`
+  in `done/`; die Welle selbst ist bereit für ihre Closure mit dem Lese-Schritt
+  und der Rampe.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *entfallen* (die ≈54 trafen ein,
+  real +58), R2 *entfallen* (netzlos, deterministisch, end-gebunden; die
+  Watchdog-Lücke benannt), R3 *eingetreten und behoben* (die Ausgabe-Hälfte von
+  vier Fällen, plus die zweite Grenze §Grenze 7), R4 *eingetreten und behoben*
+  (vier Stellen, drei vom Review, eine vom Implementer).
+- **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
+  `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die zwei ergänzten
+  und das neue Register-Verzeichnis existieren, und jedes trägt ein nicht leeres
+  `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

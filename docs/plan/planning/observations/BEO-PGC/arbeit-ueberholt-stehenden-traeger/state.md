@@ -1,9 +1,13 @@
-Zustand: offen (**2×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein
+Zustand: offen (**3×**) — **Schwelle erreicht**; den Ausgang weist der
+**Lese-Schritt der `welle-20`-Closure** zu. Ein
 Träger ist **nicht** vorgeschlagen: ob ein stehender Satz von der Eigenschaft
 abhängt, die eine Arbeit bewegt, ist eine Lese-Handlung am Gegenstand, und die
 Abhängigkeit steht in Prosa — ein Gate müsste sie kennen, um sie zu prüfen.
 
-Zähler (abgeleitet): **2×** (evidence/slice-091.md, evidence/slice-093.md).
+Zähler (abgeleitet): **3×** (evidence/slice-091.md, evidence/slice-093.md,
+evidence/slice-094.md). Der dritte Vorgang trifft **vier** Stellen in **zwei**
+Dateien — und die letzte ist eine **Korrektur**, die eine andere Stelle
+derselben Klasse beheben sollte (zwei Herkünfte in einer Klammer).
 `slice-093` ist der erste **angenommene** Fall: der Satz in
 `harness/sensors/coverage-gate.md` war am Parent **wahr** und wurde durch die
 Arbeit **falsch** (der neue netzlose Test fährt einen der zwei genannten Blöcke
