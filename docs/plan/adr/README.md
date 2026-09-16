@@ -94,3 +94,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0079 | NATS-Beispielclient — vierter `examples/`-Client (Supersedes ADR-0076, teilw.) | Accepted | 2026-09-15 | [0079-nats-beispielclient-vierter-examples-client.md](0079-nats-beispielclient-vierter-examples-client.md) |
 | ADR-0080 | Nähte der pgconn-Adapter — Treiber-Hülle, kein Subjekt-Transfer | Accepted | 2026-09-15 | [0080-nahtform-pgconn-adapter-treiberhuelle.md](0080-nahtform-pgconn-adapter-treiberhuelle.md) |
 | ADR-0081 | Changes-Lesen über die HTTP-API (Supers. ADR-0057, teilw.) | Accepted | 2026-09-15 | [0081-changes-lesen-ueber-die-http-api.md](0081-changes-lesen-ueber-die-http-api.md) |
+| ADR-0082 | Coverage 80 % — Schnittmaß; Composition Root netzlos nicht prüfbar | Accepted | 2026-09-16 | [0082-coverage-schnittmass-composition-root-nicht-netzlos.md](0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
