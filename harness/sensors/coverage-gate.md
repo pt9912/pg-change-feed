@@ -29,7 +29,7 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 
 | Stufe | Wert | Ereignis |
 |---|---|---|
-| Einstieg | **70 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des Laufs (71,3 %) —, angehoben auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a), Anhebung durch den Subjekt-Transfer aus [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md); die Größe dieser Zeile: §Zählbasis) |
+| Einstieg | **70 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des **Kalibrierungs-Laufs** (71,3 %) —, angehoben auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a), Anhebung durch den Subjekt-Transfer aus [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md); die Größe dieser Zeile: §Zählbasis) |
 | Endstufe | **80 %** | fest, Nutzer-Entscheidung ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md); `roadmap.md` §Nächste Wellen) |
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
@@ -52,25 +52,28 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
   Gegenstand (`/out/coverage.out`), **dedupliziert über die Block-Position**:
   jede Testbinary instrumentiert mit `-coverpkg` den ganzen Gegenstand, im
   gemergten Profil kommt dieselbe Block-Position darum mehrfach vor. „Gedeckt“
-  heißt, dass **mindestens ein** Vorkommen `count > 0` trägt (dedupliziert:
-  1831 Statements, davon 1306 gedeckt = 71,33 %). Die **gedeckte** Zahl
-  schwankt lauf-zu-lauf um wenige Statements (beobachtet ±2; ein
-  `ctx`-abhängiger Pfad in `internal/adapters/driven/grpcstream/broadcaster.go`
-  — `Publish` mit bereits beendetem `ctx`); der Nenner und der Abstand zur
-  Schwelle sind davon unberührt.
+  heißt, dass **mindestens ein** Vorkommen `count > 0` trägt. Der **Nenner**
+  ist die **Zustandsgröße** dieses Gegenstands: **1903 Statements**. Die
+  **gedeckte** Zahl ist dagegen **kein** Zustand — sie trägt den Beleg **eines**
+  Laufs und schwankt lauf-zu-lauf um ±2 Statements (ein `ctx`-abhängiger Pfad in
+  `internal/adapters/driven/grpcstream/broadcaster.go` — `Publish` mit bereits
+  beendetem `ctx`): ein Lauf dieses Stands deckt **1369 von 1903** (**71,94 %**,
+  gedruckt `71.90%`), ein zweiter Lauf desselben Stands **1371** (**72,04 %**,
+  gedruckt `72.00%`). Nenner und Abstand zur Schwelle sind von der Schwankung
+  unberührt.
 - Die von der Stufe **gedruckte** Prozentzeile (`total: (statements) XX.X%`,
-  hier `71.3%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
+  hier `71.9%`) ruht auf **derselben** Basis: auch dort zählt ein Block als
   gedeckt, wenn er ein Vorkommen mit `count > 0` trägt — die Summierung über die
   Testbinaries ändert dieses Prädikat nicht, und damit auch nicht das Verhältnis
   gedeckter zu instrumentierten **Statements**. Sie ist deshalb **keine eigene
   Größe**, sondern dieselbe Messung in anderer Ausgabepräzision: `go tool cover`
   druckt eine Nachkommastelle, `tools/coverage-gate.sh` formatiert `%.2f` —
-  daraus werden `71.3%` und `71.33%`. Eine absolute Statement-Zahl trägt nur die
+  daraus werden `71.9%` und `71.94%`. Eine absolute Statement-Zahl trägt nur die
   deduplizierte Auswertung; die gedruckte Zeile trägt keine.
 - Die Zahlen der **drei ausgenommenen Pakete** (§Grenze Punkt 4) stammen aus
-  dem Profil des Gegenstands **vor** dem Schnitt — derselben Messung, die den
-  Nenner `2481 → 1831` beziffert (über beide Gegenstände 1350 gedeckt, davon 44
-  in den drei Paketen).
+  einer eigenen Messung mit `-coverpkg` über **alle** Pakete (die drei
+  eingeschlossen, netzlos) — die Stufe dieses Gates nimmt sie aus und
+  instrumentiert sie darum nicht.
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -84,7 +87,7 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    ([`db-adapter-coverage.md`](db-adapter-coverage.md)) aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand
-   (15 Statements, 12 gedeckt) — und ist damit **nicht** Teil der
+   (20 Statements, 16 gedeckt) — und ist damit **nicht** Teil der
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
    die zwei Zahlen überlappen nicht.
 
@@ -116,17 +119,16 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    scheitert als Zahl.
 4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
    gewächtert.** **Rückrechnung** aus den gemessenen Paket-Zahlen
-   (§Zählbasis: 1306 gedeckt von 1831 Statements im Gegenstand; 2/23, 31/472,
+   (§Zählbasis: 1369 gedeckt von 1903 Statements im Gegenstand; 30/32, 31/472,
    11/155 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
    wieder in `-coverpkg` genommen, bleibt die Stufe grün —
-   `(1306 + 2) / (1831 + 23) = 70,55 %` ≥ 70; die Rücknahme von
-   `postgresstorage` (`1337 / 2303 = 58,05 %`) oder `replication/receive`
-   (`1317 / 1986 = 66,31 %`) färbt sie rot. Die zwei roten Ausgänge liegen mit
-   −11,95 / −3,69 Prozentpunkten weit genug von der Schwelle, dass die
-   Lauf-zu-Lauf-Schwankung (±2 Statements) sie nicht umkehrt; der grüne
-   `postgresack`-Ausgang liegt mit **+0,55** Prozentpunkten dagegen nahe an der
-   Schwelle — die gemessene Schwankung von ±2 Statements (±0,11 pp auf diesem
-   Nenner) kehrt ihn nicht um, zum Kippen wären ≈11 Statements nötig. **Der
+   `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; die Rücknahme von
+   `postgresstorage` (`1400 / 2375 = 58,95 %`) oder `replication/receive`
+   (`1380 / 2058 = 67,06 %`) färbt sie rot. Alle drei Ausgänge liegen weiter von
+   der Schwelle als die Lauf-zu-Lauf-Schwankung (±2 Statements = ±0,10 pp auf
+   diesem Nenner): die beiden roten mit −11,05 / −2,94 Prozentpunkten darunter,
+   der grüne `postgresack`-Ausgang mit **+2,30** Prozentpunkten darüber — zum
+   Kippen wären dort ≈45 Statements nötig. **Der
    Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
    Gegenstands-Hälfte der Fitness Function aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)

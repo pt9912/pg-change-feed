@@ -5,6 +5,7 @@
 // realen Tests: dass der Treiber die Meldung als confirmed_flush_lsn
 // trägt, prüft weiterhin der PostgreSQL der Adapter-Tests
 // (`make test-replication`, `ADR-0030`).
+
 package postgresack
 
 import (

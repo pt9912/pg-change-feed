@@ -62,10 +62,12 @@ Der **einzige Träger** der Gegenstandsliste ist
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **650 Statements** (`postgresstorage` 472 · `postgresack`
-  23 · `replication/receive` 155). Der Nenner entsteht aus dem Profil,
-  nicht aus einer gepflegten Konstante; die Größe des `postgresstorage`-Anteils
-  hängt an der Naht aus
+- Der gemergte Nenner ist **659 Statements** (`postgresstorage` 472 · `postgresack`
+  32 · `replication/receive` 155) — die **Zustandsgröße** dieses Gegenstands,
+  aus dem Profil entstanden, nicht aus einer gepflegten Konstante. Die
+  **gedeckte** Zahl daneben ist dagegen **kein** Zustand: sie trägt den Beleg
+  eines konkreten Laufs und wandert mit ihm — jeder Beleg dieses Dokuments
+  nennt darum seinen Lauf. Die Größe **eines** Anteils hängt an seiner Naht
   [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   Punkt 5 — der Gegenstand bleibt an seinen **Paketen** verankert, nicht an
   einer Statement-Zahl
@@ -76,7 +78,7 @@ Der **einzige Träger** der Gegenstandsliste ist
 
 | Stufe | Wert | Ereignis |
 |---|---|---|
-| Einstieg | **70 %** | real gemessener Ist-Stand **73,38 %** (477 von 650 Statements) auf dem Stand der Naht aus [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 5, abgerundet auf die nächste volle 5-%-Stufe ([`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(a), Mechanik über [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3, Neu-Bemessung über [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)) |
+| Einstieg | **70 %** | die vom Träger **gedruckte** Prozentzeile des **Kalibrierungs-Laufs** — **477 von 650 Statements = 73,38 %** (die geltende Größe des Gegenstands: §Zählbasis) —, abgerundet auf die nächste volle 5-%-Stufe ([`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(a), Mechanik über [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3, Neu-Bemessung über [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)) |
 | Endstufe | **80 %** | fest — dieselbe Endstufe wie der Unit-Wert ([`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(a); die Eskalationsklausel gilt für diese Messung unverändert weiter) |
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
@@ -156,7 +158,7 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
 
 Rot-/Grün-Beleg (real, gepinntes Toolchain-Image
 `golang:1.27-alpine@sha256:cf6fca66…`, PostgreSQL-Testcontainer, Stand der
-Naht): der Lauf misst **477 von 650 Statements = 73,38 %**
+Naht aus [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 5): der Lauf misst **477 von 650 Statements = 73,38 %**
 (`db-coverage: OK — DB-Adapter-Coverage 73.38% erfuellt Schwelle 70%`, Exit 0).
 Die Gegenprobe hebt die Schwelle auf `DB_COVERAGE_THRESHOLD=75`: derselbe Stand
 endet **`db-coverage: FAIL — DB-Adapter-Coverage 73.38% unter Schwelle 75%`,
