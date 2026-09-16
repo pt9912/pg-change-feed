@@ -46,8 +46,14 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Der **Anwendungs-Kern** wird über netzlose Tests gedeckt:
-`internal/application/usecase/*` (**13** Pakete; **10** davon trugen ungedeckte
-Statements) und `internal/domain/model`.
+`internal/application/usecase/*` und `internal/domain/model`.
+
+**Drei Zahlen, drei Dinge — sie sind nicht austauschbar:** der Glob führt
+**13** Use-Case-Pakete; **10** davon trugen ungedeckte Statements (die **22**)
+und **12** haben Tests bekommen (`readchanges` war bereits vollständig gedeckt);
+die **Deckung bewegt** hat dieser Slice bei **11** Paketen (die zehn plus
+`domain/model`).
+
 Das Maß ist das der Welle, bei der Planung dieses Slice **selbst gemessen**
 (über die Block-Position dedupliziert, wie
 [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
@@ -97,7 +103,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Für die zehn
+- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Für die **12** geänderten
       Use-Case-Pakete und `domain/model` liegen Tests vor, die der Gate-Lauf
       **wirklich fährt**; `make gates` ist grün. **Der Zuwachs wird als Zahl mit
       ihrem Lauf genannt**, nicht als „deutlich besser".
@@ -184,7 +190,7 @@ Zuwachs als Zahl samt ihrem Lauf.
 **Lerneintrag:** geschärfte Regel, neuer Sensor oder benannte Spec-Lücke in §7.
 Der naheliegende Kandidat ist der **jüngste** Eintrag des Registers:
 `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (1×, Erstauftreten in `slice-091`)
-— dieser Slice bewegt eine gemessene Eigenschaft von dreizehn Paketen, also stellt
+— dieser Slice bewegt eine gemessene Eigenschaft von elf Paketen, also stellt
 sich die Frage nach den Trägern, die sie **beschreiben**, zum zweiten Mal. Ob
 daraus mehr als eine Wiederholung wird, entscheidet der Lauf.
 
@@ -208,7 +214,7 @@ dasteht.
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
   prüfen. — **Ausgang:** <…>
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt die
-  Deckung von dreizehn Paketen; ob ein anderes Dokument eine dieser Eigenschaften
+  Deckung von elf Paketen; ob ein anderes Dokument eine dieser Eigenschaften
   beschreibt, weiß der Diff nicht (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
   1×). — **Ausgang:** <…>
 
