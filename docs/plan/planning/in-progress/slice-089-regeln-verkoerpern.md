@@ -292,9 +292,14 @@ Reviewer-Skill, den Workflow-Schritt und die Sensor-Doku in **einem** Kürzel.
 - `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (**2×**, unter der
   Schwelle): **kein** Treffer.
 
-**Ergebnis** (Stand: Anlage dieses Plans): drei Einträge stehen **über** der
-Schwelle, und dieser Slice trägt ihre Ausgänge; **kein** Eintrag **rückt** mit
-ihm über die Schwelle.
+**Ergebnis** (Stand: Anlage dieses Plans): **vier** der genannten Einträge
+stehen **über** der Schwelle (die Liste darüber markiert sie so), und **drei**
+davon sind **Treffer** dieses Slice — ihre Ausgänge trägt er; der vierte
+(`generierte-artefakte-ohne-sync-sensor`) gehört dem Sync-Gate-Slice. **Kein**
+Eintrag **rückt** mit ihm über die Schwelle.
+**Treffer und „über der Schwelle" sind zwei Zahlen** (Review
+`review-slice-089` F-3): die erste zählt, was dieser Slice trägt, die zweite,
+was der Lese-Schritt liest.
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas GF (nur `*`/`PGC`)
 — kein Modus-Begründungsblock. Die vier Pflichtkriterien tragen dennoch:
