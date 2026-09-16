@@ -21,4 +21,5 @@ Belegform mit Rest, nicht als Substanzfehler.
 
 Quelle: `docs/reviews/verify-slice-084.md` (V-1) ·
 `docs/plan/planning/done/slice-084-postgresack-naht.md` §3(b) (berichtigt in
-`11ba45b`, nachgeprüft) · `git diff --name-only fb6adf6..4035ee7`.
+`4387523`, dem Closure-Commit des Vorgangs) ·
+`git diff --name-only fb6adf6..4035ee7`.

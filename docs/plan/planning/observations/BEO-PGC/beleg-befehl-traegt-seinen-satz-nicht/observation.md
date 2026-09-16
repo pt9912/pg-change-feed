@@ -20,7 +20,9 @@ Belegt an zwei abgeschlossenen Vorgängen — **zwei verschiedene Befehle**:
   Baum listet er **fünf** Pfade (Plan, `image-hash.txt` und die drei
   Paketdateien), während der Satz „ausschließlich Dateien unter
   `postgresack/`" behauptet. Die **Range** war nachgetragen, der **Pathspec**
-  fehlte; die Ergänzung `-- internal/:!…/postgresack/` trägt die Aussage.
+  fehlte; die Ergänzung
+  `git diff --name-only fb6adf6..4035ee7 -- internal/ ':!internal/adapters/driven/postgresack/'`
+  trägt die Aussage (die Gegenrichtung ist leer).
 - **`slice-085`** (Verifikation `verify-slice-085` V-3):
   `harness/sensors/coverage-gate.md` §Grenze Punkt 1 zitiert
   `go list -f '{{len .TestGoFiles}}'` als Beleg für „fünf Pakete ohne

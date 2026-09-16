@@ -15,7 +15,9 @@ ist der **Ursprung** des Belegs, kein Beleg-Vorgang. **Gefunden** wurde er in
 
 **Der Fund wurde korrekt behandelt und zählt trotzdem:** er lag außerhalb des
 Slice-Zuschnitts, und der Implementer hat ihn **bewusst liegen gelassen** statt
-ihn mitzunehmen — mit Adresse. Der Zähler misst Wiederholung über **Vorgänge**,
+ihn mitzunehmen — mit einem **benannten Weg** („eigener kleiner Zug"); eine
+Kennung entstand erst mit `review-slice-089` F-5, das denselben Umstand als
+*fehlende Adresse* festhielt. Der Zähler misst Wiederholung über **Vorgänge**,
 nicht über Zuständigkeiten: derselbe Satz wird nicht dadurch seltener falsch,
 dass er niemandes Auftrag war.
 
