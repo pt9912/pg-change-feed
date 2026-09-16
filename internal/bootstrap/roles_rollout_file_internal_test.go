@@ -173,20 +173,25 @@ func istKlassenGrant(objekt string) bool {
 // die andere Hälfte derselben Zusage — dass der ausgerollte Grant sie
 // trägt.
 //
-// Zwei Prüfungen sind **Regeln über den geparsten Grant-Bestand**, keine
-// Namenslisten: (6) kein Rollen-Grant über eine ganze Objektklasse und
-// (7) der Leser teilt kein Objekt mit einer schreibenden Rolle. Die zweite
-// ersetzt eine frühere Acht-Namen-Liste von Basistabellen — sie war
-// handverlesen und ließ jedes neunte Objekt durch.
+// Vier Prüfungen sind **Regeln über den geparsten Grant-Bestand**, keine
+// Namenslisten: (6) kein Rollen-Grant über eine ganze Objektklasse,
+// (6a) auf einem Schema-Objekt nur `USAGE` und (7) der Leser teilt kein
+// Objekt mit einer schreibenden Rolle. Eine Namensliste könnte das nicht
+// tragen: sie müsste die Objekte kennen, die es geben **darf**, und ließe
+// jedes nicht aufgeführte Objekt durch — auch das, welches eine schreibende
+// Rolle hält. Die Regeln leiten den Umfang aus dem Rollen-Bild der Datei
+// selbst ab und ziehen damit mit jedem Objekt mit; geprüft wird, was ein
+// Grant **tut**, nicht wie er heißt.
 //
-// Rot färbende Mutationen (real gefahren, Exit-Codes im Lauf-Bericht):
-// `SELECT` aus dem `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen
-// (der von `ADR-0048` korrigierte Ursprungstext) · den `DELETE`-Grant auf
+// Rot färbende Mutationen (real gefahren; die Exit-Codes führt §7 der
+// Closure-Notiz von `slice-093`): `SELECT` aus dem
+// `cdc.process_heartbeat`-Grant für `cdc_admin` entfernen (der von
+// `ADR-0048` korrigierte Ursprungstext) · den `DELETE`-Grant auf
 // `cdc.transaction`/`cdc.change` für `cdc_admin` entfernen · `DELETE` an
 // `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
 // entfernen · die Lese-View `cdc.retention_blockers` aus dem Reader-Grant
 // streichen · `GRANT ALL ON ALL TABLES IN SCHEMA cdc TO cdc_reader`
-// anhängen.
+// anhängen · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` anhängen.
 func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	rechte, _ := rolloutRechte(t, rolloutDateiPfad(t))
 
@@ -244,9 +249,9 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	}
 
 	// (5) Lesepfad — `cdc_reader` liest über die **vier** Lese-Views der
-	// Datei (`LH-FA-SST-002`; `retention_blockers` seit `LH-FA-RET-005`
-	// dabei). Die vier sind der erklärte Lese-Umfang des Rollouts; fehlt
-	// eine, scheitert der jeweilige Lesezugriffsweg real.
+	// Datei (`LH-FA-SST-002`, mit `retention_blockers` aus
+	// `LH-FA-RET-005`). Die vier sind der erklärte Lese-Umfang des Rollouts;
+	// fehlt eine, scheitert der jeweilige Lesezugriffsweg real.
 	for _, view := range []string{
 		"cdc.active_tables", "cdc.consumer_status", "cdc.changes", "cdc.retention_blockers",
 	} {
@@ -257,8 +262,11 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 
 	// (6) Keine Rolle bekommt Rechte über eine ganze Objektklasse: eine
 	// `ALL TABLES IN SCHEMA`-Zeile ist keine Aufzählung, sondern eine
-	// Rundum-Vergabe — sie hebt jeden geprüften Objekt-Grant auf, weil sie
-	// auch jede künftige Tabelle mitnimmt (LH-QA-SEC-001).
+	// Rundum-Vergabe über jedes zu diesem Zeitpunkt existierende Objekt des
+	// Schemas — auch über jedes Schreibpfad-Objekt. Sie lässt die übrigen
+	// Zeilen der Datei stehen; aufgehoben ist die **Trennung**, die (7)
+	// prüft, weil der Umfang des Lesers dann nicht mehr an seinen vier
+	// Views hängt (LH-QA-SEC-001).
 	for rolle, objekte := range rechte {
 		for objekt := range objekte {
 			if istKlassenGrant(objekt) {
@@ -267,12 +275,29 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 		}
 	}
 
+	// (6a) Auf einem Schema-Objekt trägt **keine** Rolle mehr als `USAGE`:
+	// das Schema-Objekt ist die Vorbedingung jedes Objektzugriffs, kein
+	// Objekt selbst — `CREATE` oder `ALL` darauf ist die Rundum-Vergabe über
+	// das ganze Schema, nicht ein Zugriff auf eines seiner Objekte.
+	for rolle, objekte := range rechte {
+		for objekt, privilegien := range objekte {
+			if !strings.HasPrefix(objekt, "schema ") {
+				continue
+			}
+			for privileg := range privilegien {
+				if privileg != "usage" {
+					t.Fatalf("%s trägt %s auf dem Schema-Objekt %s im Rollout-Text — über `USAGE` hinaus ist das eine Rundum-Vergabe über das ganze Schema (LH-QA-SEC-001)", rolle, strings.ToUpper(privileg), objekt)
+				}
+			}
+		}
+	}
+
 	// (7) Der Leser teilt kein Objekt mit einer schreibenden Rolle: was eine
 	// der beiden schreibenden Rollen hält, ist ein Schreibpfad-Objekt und
 	// gehört nicht in den Leseumfang (LH-QA-SEC-003; die Definer-Semantik
 	// der Views trägt den Lesezugriff, nicht ein Grant auf der Basistabelle).
-	// Ausgenommen ist allein der Schema-USAGE-Grant — er ist die
-	// Vorbedingung beider Seiten, kein Objektzugriff.
+	// Ausgenommen ist allein der Schema-USAGE-Grant — und die Ausnahme ist
+	// einelementig, weil (6a) jedes Schema-Objekt auf `USAGE` festhält.
 	for _, schreibend := range []string{"cdc_capture", "cdc_admin"} {
 		for objekt := range rechte["cdc_reader"] {
 			if strings.HasPrefix(objekt, "schema ") {
