@@ -94,16 +94,16 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Stream-Übersetzung ist gedeckt.**
 
-- [ ] `replication/decode` und `replication/mapper` haben Tests für die
+- [x] `replication/decode` und `replication/mapper` haben Tests für die
       gemessenen Lücken (`Decode`, `observeRelation`, `Consume`, `change`,
       `JSONImage`, `oldTupleValues`, `tupleValues`, `rowImage`,
       `classifyRelationColumns`) — **netzlos**, ohne externe Dienste.
-- [ ] `JSONImage` (heute **3/3 ungedeckt**) ist dabei der erste Fall: eine
+- [x] `JSONImage` (heute **3/3 ungedeckt**) ist dabei der erste Fall: eine
       Funktion ohne jede Abdeckung.
 
 **Liefer-Punkt 2 — die SQL-Übersetzung ist gedeckt.**
 
-- [ ] `postgresstorage/sqlexec` hat Tests für die gemessenen Lücken
+- [x] `postgresstorage/sqlexec` hat Tests für die gemessenen Lücken
       (`ReadChanges`, `ReadConsumerPosition(s)`, `ReadSourceTables`,
       `ReadExcludedColumns`, `ReadTableSchema`, `ReadPendingRequests`,
       `IncludeColumn`, `removeExcluded`, `setSchemaVersion`) — über den
@@ -111,13 +111,22 @@ vierter Punkt:
 
 **Liefer-Punkt 3 — die Wirkung ist gemessen, nicht angestrebt.**
 
-- [ ] `postgresstorage/mapper`s Lücken (`ToChange`, `qualifiedNames`) sind
+- [x] `postgresstorage/mapper`s Lücken (`ToChange`, `qualifiedNames`) sind
       gedeckt.
-- [ ] **Der Effekt ist beziffert:** die Gate-Zahl vorher/nachher, gemessen über
+- [x] **Der Effekt ist beziffert:** die Gate-Zahl vorher/nachher, gemessen über
       `make coverage-gate` — **erwartet ≈60 Statements**, und der Nenner bleibt
       **1903** (dieser Slice fügt **keinen** Produktionscode hinzu; wächst er,
       ist etwas anderes passiert und gehört in den Bericht).
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] `make gates` grün (Exit direkt, ungepiped).
+
+**Die bezifferte Wirkung, gemessen** (`make coverage-gate`, Exit 0 in beiden
+Läufen): **72,0 % → 74,8 %**, Nenner **1903** unverändert; gedeckt
+**1371 → 1424** (+53). Davon **+52** in den vier Trägerpaketen (die 60
+gemessenen Statements dieses Slice, **8** davon sind über die öffentliche
+Fläche **nicht erreichbar** — siehe §6) und **+1** mittelbar in
+`domain/model` (`NewSchemaVersion`); der frühere Lauf desselben Stands druckte
+71,9 % — die von [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+§Kontext (2) dokumentierte ±2-Schwankung von `runWALRetentionCheck`.
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -148,6 +157,17 @@ Aussagen-Berührung steht hier gar nicht.
 nennt die Träger. **Produktionscode wird nicht geändert**; erweist sich eine
 Funktion als netzlos nicht prüfbar, ist das ein **Befund** und gehört in den
 Bericht (§6), nicht in einen Umbau.
+
+**Der Zuschnitt dieses Laufs** — sechs Dateien, alle **Tests**:
+
+| Datei | Änderungs-Art | Trägt |
+|---|---|---|
+| `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | update | die 17 Fehlerzweige der Zeilen-Übersetzung |
+| `internal/adapters/driven/postgresstorage/mapper/mapper_test.go` | update | `JSONImage`, `ToChange` |
+| `internal/adapters/driving/replication/decode/decode_test.go` | update | die 9 erreichbaren Zweige von `Decode` |
+| `internal/adapters/driving/replication/decode/tuplevalues_internal_test.go` | neu (Whitebox) | die Abwesenheits-Grenze von `tupleValues`/`oldTupleValues` |
+| `internal/adapters/driving/replication/mapper/mapper_test.go` | update | die 17 erreichbaren Zweige von `Consume`/`change`/`observeRelation`/`IncludeColumn`/`removeExcluded`/`qualifiedNames` |
+| `internal/adapters/driving/replication/mapper/schemaversion_internal_test.go` | neu (Whitebox) | der idempotente Vertrag von `setSchemaVersion` |
 
 **Nicht in dieser Liste:** `internal/bootstrap/**`, `cmd/**`, `internal/driving/http/**`,
 `.../grpc/**`, `.../natsnotify/**` (Cluster A, C, D — eigene Slices); der
@@ -198,6 +218,18 @@ dasteht.
 - **Eine Funktion könnte netzlos nicht prüfbar sein.** Dann trägt sie zum
   Gegenstand bei, ohne für dieses Ziel erreichbar zu sein — [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
   hat das für `Run` gemessen. — **Ausgang:** <bei Closure>
+  **Beobachtet in diesem Lauf** (gemessen am Profil der `coverage`-Stufe,
+  dedupliziert über die Block-Position): **keine** der 21 Funktionen ist
+  unprüfbar — jede trägt Tests. **8 der 60 Statements** sind aber über die
+  öffentliche Fläche nicht **erreichbar**, bleiben also ungedeckt:
+  `decode` `Decode` 224 (der `default:`-Zweig — `pglogrepl.Parse` liefert nur
+  Nachrichtentypen, die die Fallunterscheidung führt), `mapper` `Consume`
+  158/172/191 (`NewOpenTransaction`/`Commit`/`AppendChange` — ihre Grenzen
+  sind an einem Assembler, den `NewAssembler` erzeugt, nicht herstellbar),
+  `mapper` `change` 235/239 und `rowImage` 537/541
+  (`json.Marshal` eines `string` endet nie im Fehler).** Der Zuschnitt bleibt:
+  kein Umbau (Modul 9, §1 dieser Datei); die Zahl der gedeckten Statements
+  dieser vier Pakete ist damit **52**, nicht 60.
 - **Der Slice könnte den Produktionscode anfassen.** Die Zusage ist „Tests,
   kein Umbau"; ein Umbau wäre ein **anderer Vorgang**. — **Ausgang:** <bei Closure>
 - **Die Tests könnten die Zahl heben, ohne etwas zu prüfen.** Ein Test, der eine
