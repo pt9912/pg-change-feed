@@ -20,15 +20,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 **„Die Coverage" dieses Repos erreicht 80 %** — die Gate-getragene Unit-Zahl
 über der **netzlos prüfbaren Fläche** ([`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
-1679 Statements, und „die Coverage" ohne Subjekt-Zusatz meint genau diese Zahl,
-nie die DB-Adapter-Coverage). Der Weg dorthin hat zwei Hälften: zuerst eine
-**Präzisierung des Gegenstands** (`slice-079`: die drei Pakete, deren Tests ohne
-externen Dienst überspringen, verlassen den Nenner — der Ist-Stand springt real
-von 49,3 % auf ~69,7 %, **ohne eine Zeile Test**) und danach **Test-Arbeit** an
-dem, was ungedeckt bleibt. Getragen wird das Maß von `make coverage-gate` gegen
-`THRESHOLD`; die Schwelle wandert nach dem unveränderten
-bootstrap-aware-Mechanismus ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
-§(a)) stufenweise bis 80.
+und „die Coverage" ohne Subjekt-Zusatz meint genau diese Zahl, nie die
+DB-Adapter-Coverage). **Der Nenner ist eine Zustandsgröße, die sich mit jedem
+Zug bewegt:** `slice-079` hat ihn auf **1679** geschnitten, seither ist er durch
+die Nähte und Endpunkte der folgenden Slices auf **1903** gewachsen (zuletzt
+`slice-084`, +9). Wer den Fortschritt dieser Welle liest, liest die **Quote**,
+nicht eine eingefrorene Statement-Zahl — die Klasse
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` steht genau dafür.
+Der Weg zum Ziel hat zwei Hälften: die **Präzisierung des Gegenstands**
+(`slice-079`: die drei Pakete, deren Tests ohne externen Dienst überspringen,
+verlassen den Nenner — der Ist-Stand sprang real von 49,3 % auf ~69,7 %,
+**ohne eine Zeile Test**) und danach **Test-Arbeit** an dem, was ungedeckt
+bleibt (Abschnitt *Slices in dieser Welle*: `internal/bootstrap` 327 ungedeckt,
+`cmd/pg-change-feed` 49, Rest-Tail). Getragen wird das Maß von
+`make coverage-gate` gegen `THRESHOLD`; die Schwelle wandert nach dem
+unveränderten bootstrap-aware-Mechanismus ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
+§(a)) stufenweise bis 80. **Die gelten Stufen heute:** Einstieg **70 %**
+(angehoben durch den Subjekt-Transfer aus `slice-081`) → Endstufe **80 %**.
 
 ## 2. Trigger (Welle startet)
 
@@ -39,8 +47,8 @@ werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - `slice-079` (Scope-Schnitt und Neukalibrierung des Coverage-Gates) liegt in
-  `done/` — **noch nicht erfüllt.** Ohne ihn misst die Welle gegen einen Nenner,
-  den [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  `done/` — **erfüllt.** Ohne ihn misst die Welle gegen einen Nenner, den
+  [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   ersetzt hat, und ihr eigener Fortschritt wäre nicht belegbar.
 - [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   ist `Accepted` — **erfüllt** (der Gegenstand ist entschieden).
