@@ -161,7 +161,7 @@ nicht einen: die Zahlen-Hälfte ist Folgepflicht aus
 [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
 §Entscheidung 4/§Konsequenzen. (2)
 `harness/sensors/db-adapter-coverage.md` zieht nach: V-1 §4.2 — der als Beleg
-dieser Liefer-Punktes genannte Fund — nennt **zwei** §Ausgabe-Abschnitte,
+dieses Liefer-Punktes genannte Fund — nennt **zwei** §Ausgabe-Abschnitte,
 `73,38 %` (sein eigener) und `71,30 %` (`coverage-gate.md`); beide sind
 derselbe Fund, nicht zwei Vorgänge. (3) die zwei §Kalibrierungs-Bindung-Zellen
 tragen denselben Lauf wie ihr §Ausgabe-Beleg — die Zelle und ihr Beleg stammen

@@ -109,14 +109,17 @@ Rot-Beleg bei `THRESHOLD=85` ist damit **notwendig** rot.
 
 **Herkunft der Zahlen dieses Abschnitts** (`AGENTS.md` §3.12 gilt für die
 Zahlen dieses Plans mit): die **ungedeckten** Statement-Zahlen der
-Cluster-Tabelle, die Paket- und Funktions-Werte (`591`, `327`, `336`, `308`,
-`26–28`, `198`, `0 von 198`) und die Nenner (`1679`, `1903`) sind
+Cluster-Tabelle, die Paket- und Funktions-Werte (`336`, `308`, `26–28`, `198`,
+`0 von 198`) und die Nenner (`1679`, `1903`) sind
 **übernommen** aus [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 §Kontext (2)–(5) — dort **gemessen** in zwei Läufen über denselben Quelltext,
 dedupliziert über die Block-Position, ADR-Stand 2026-09-16. Die **Summen,
 Differenzen und Prozente** dieser Sektion (`229–231`, `175–177`, `165–167`,
 `1523`, `154`, `13`, `63`, `3,3 pp`, `81,2 %`, `84,1 %`, `83,6 %`) sind daraus
-**abgeleitet**, nicht gemessen.
+**abgeleitet**, nicht gemessen. Die zwei Werte des **widerlegten** Vorschlags
+im Satz darüber (`591`, `327`) stehen als Zitat dieses Vorschlags — **nicht**
+als Messung; [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+widerlegt sie.
 
 **Geschnitten wird nach dem Maß, nicht auf Vorrat** (Modul 5: Plan und
 Implementation alternieren): Cluster B zuerst — er ist der reinste (60 von 60
