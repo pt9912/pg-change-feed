@@ -128,9 +128,11 @@ vierter Punkt:
       DB-Nenner leicht — mit Trigger, nicht still.
 - [x] `make gates` grün (Exit direkt, ungepiped).
 
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`docs/reviews/review-slice-084.md`, `.harness/skills/reviewer.md`) —
+      Rollenwechsel nach Schritt 8 des Minimal Agent Workflow (`AGENTS.md` §6),
+      kein Self-Review (Modul 8). **Fixrunde gelaufen:** 0 HIGH, 0 MEDIUM;
+      F-1 und F-3 geschlossen, F-2 vom Planner (`a3cb2c4`), F-4 kein Fix.
 - [x] **Falls dieser Zug die Rampe bewegt:** der Transfer-Nachweis ist in
       `harness/sensors/db-adapter-coverage.md` bzw.
       `harness/sensors/coverage-gate.md` nachgezogen — **ohne** neue
