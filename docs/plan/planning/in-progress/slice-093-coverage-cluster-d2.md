@@ -101,13 +101,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Für den
+- [x] **LP1 — die Tests existieren und sind netzlos grün.** Für den
       `bootstrap`-Rest und `telemetry` liegen Tests vor, die der Gate-Lauf
       **wirklich fährt**; `make gates` ist grün. **Der Zuwachs wird als Zahl mit
       ihrem Lauf genannt** — und die erreichte Quote **mit ihrem Band**, weil sie
       über denselben Baum schwankt (`BEO-PGC/test-integration-retention-timing-flake`,
       **3×**, Schwelle erreicht).
-- [ ] **LP2 — ein Test misst den verdrahteten Gegenstand, nicht seinen eigenen
+- [x] **LP2 — ein Test misst den verdrahteten Gegenstand, nicht seinen eigenen
       Aufbau.** Wo ein Test eine Zusage der **Verdrahtung** prüft, ist sie an das
       **reale Artefakt** gebunden (die Rollout-Datei, die Signatur, den
       übergebenen Port) und nicht an etwas, das der Test selbst herstellt oder
@@ -118,24 +118,24 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (**2×**). **Das ist
       der Kern dieses Slice** — und der teuerste Fehler, weil die Zahl dabei
       steigt.
-- [ ] **LP3 — die unerreichbaren Statements sind benannt.** Die fünf
+- [x] **LP3 — die unerreichbaren Statements sind benannt.** Die fünf
       dienstgebundenen Funktionen und jede weitere unerreichbare Stelle werden
       **einzeln mit Grund** genannt. „Rest nicht erreichbar" ohne Namen gilt als
       **nicht erfüllt**.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       **Weist der Review eine Fixrunde aus, deckt ein Delta-Review sie ab** —
       `slice-092` hat das dreimal gekostet; die Zeile steht hier, damit sie
       greift, bevor sie jemand herleiten muss.
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-093.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-093.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
 
 ## 3. Plan (vor Code)
 
@@ -209,16 +209,41 @@ dasteht.
 
 - **Die ≈28 sind eine Fehl-Schätzung** — dann liefert D2 weniger als
   veranschlagt, und nach `slice-092` (24 statt geplant 24, aber C mit 47 statt
-  ≈52) ist der Puffer der Welle dünn. — **Ausgang:** <…>
+  ≈52) ist der Puffer der Welle dünn. — **Ausgang: entfallen.** Gemessen lieferte D2
+  **+30** Statements — `internal/bootstrap` **336 → 308**, `telemetry` **2 → 0**;
+  die ≈28 der ADR ist damit gehalten (sie spannt 26–28 für den bootstrap-Rest,
+  D2 traf 28). Nenner unverändert **1903**.
 - **Ein Test misst seinen eigenen Aufbau statt den verdrahteten Gegenstand** —
   die Klasse mit **2×** und der teuerste Fehler dieses Clusters: die Zahl steigt,
-  und die Zusage der Verdrahtung hat keinen Träger. — **Ausgang:** <…>
+  und die Zusage der Verdrahtung hat keinen Träger. — **Ausgang: eingetreten — und
+  behoben.** Genau dieser Fall war Punkt 1 von `BEO-PGC/rollen-test-abdeckungsluecken`:
+  der Heartbeat-Grant-Test entzog und erteilte die Rechte **selbst** und las nie die
+  Rollout-Datei. Der neue Test liest sie und bindet sieben Zusagen an ihren Inhalt;
+  eine Mutation in der Datei färbt **Test und Gate** (Bau-EC 1). Die erste Fassung
+  band allerdings nur eine **handverlesene Objektliste** — der Review fand fünf
+  Regressionen, die grün blieben (darunter `GRANT USAGE ON SCHEMA cdc`, die
+  Vorbedingung jedes anderen Grants). Behoben durch **Regeln statt Namenslisten**
+  (6), (6a), (7) — und die zweite Fassung band die Ausnahme von (7) **weiter** als ihr
+  Satz; auch das ist behoben.
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
-  prüfen. — **Ausgang:** <…>
+  prüfen. — **Ausgang: entfallen — gemessen.** Der Review hat **20** Mutationsproben
+  gefahren (14 rot, 5 grün = der F-2-Befund, 1 verworfen), der Delta-Review **18**
+  LP2-Läufe (11 rot, 6 grün — die grünen sind die drei benannten Grenzen und zwei von
+  (6a) geschlossene), der Verifier **7** am realen Artefakt (alle rot). Kein Test läuft
+  bloß durch: jede neue Zusage färbt bei Zerstörung ihrer Eingabeseite rot.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt die
   Deckung von `bootstrap` und `telemetry`; ob ein anderes Dokument eine dieser
   Eigenschaften beschreibt, weiß der Diff nicht
-  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`). — **Ausgang:** <…>
+  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`). — **Ausgang: eingetreten — und
+  behoben.** Der beauftragte `grep` fand einen **echten** Fall: der Satz in
+  `harness/sensors/coverage-gate.md` („der Träger der Schwankung ist in **zwei**
+  Blöcken gemessen“) war am Parent **wahr** (`wiring.go:991.5,992.13` trug `count = 0`)
+  und ist durch die Arbeit **falsch** geworden — der neue netzlose Test fährt diesen
+  Block deterministisch (`count > 0` in 6 von 6 Läufen der Verifikation). Berichtigt,
+  mit Herkunfts-Anker `slice-093`, und die Verifikation hat beide Richtungen geprüft:
+  der Satz wird wirklich falsch, und die Korrektur macht nichts Neues falsch. Das ist
+  der **erste angenommene** Fall dieses Eintrags — der Kandidat aus `slice-092` war
+  vom Delta-Review als Überdehnung **abgelehnt** worden.
 
 ## 7. Closure-Notiz
 
@@ -237,18 +262,81 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die **Messung vor dem Bauen** — der Implementer hat die
+  ≈28 der ADR selbst nachgemessen und den Test **an das reale Artefakt** gebunden,
+  statt die Zahl zu übernehmen. Ergebnis: `internal/bootstrap` **336 → 308**,
+  `telemetry` **2 → 0** (**+30** Statements), Nenner unverändert **1903**, und das
+  Gate druckt **80,00 %** — die **Zielzahl der Welle**, erreicht durch Test-Arbeit
+  bei gleichem Gegenstand. Zweitens: die **Mutation** als Rückgrat, zum vierten Mal
+  in dieser Welle — 20 Proben des ersten Reviews, 18 des Delta-Reviews, 7 des
+  Verifiers. Und drittens: die **Regeln statt Namenslisten**. Der erste Review hat
+  fünf grüne Regressionen gefunden, weil die Objektliste handverlesen war; die
+  Antwort war keine längere Liste, sondern (6), (6a) und (7) — und der Delta-Review
+  hat nachgemessen, dass (7) damit auch ein **neuntes** Objekt fängt, das die alte
+  Liste durchgelassen hätte.
+- **Was ging anders als geplant:** Es brauchte **vier Runden**, und die drei
+  Korrekturrunden haben **selbst** Fehler erzeugt — **jedes Mal in Sätzen, nie im
+  Mechanismus**. Das ist die Beobachtung dieses Slice: der Mechanismus ist ab der
+  ersten Fassung richtig (die Mutation färbt das Gate, die Bindung ist echt), und
+  was bricht, sind die **Aussagen darüber** — ein Kommentar beschrieb den abwesenden
+  Text der Vorgänger-Fassung; eine Ausnahme war im Code weiter als im Satz; eine
+  Begründung hatte ein Subjekt, das die Messung ausschließt; ein Beleg-Adressat
+  löste nicht auf. Sechs Vorkommen in vier Runden, alle an derselben Art von Stelle.
+  Zweitens: **der Wellen-Puffer ist aufgebraucht** — 1523 ist exakt der 80-%-Bedarf,
+  und das Band reicht bis **1522**, was noch `80.0%` druckt; erst **1521** druckt
+  `79.9%`. Der Puffer bei `THRESHOLD=80` ist damit **genau ein Statement**, getragen
+  von `internal/bootstrap/wiring.go:1091.4,1092.1`. Drittens: die
+  `.dockerignore`-Ausnahme war eine **undokumentierte Lockerung** — sie hat einen
+  Architect-Zug ausgelöst, der sie als **Klasse** fasst (`ADR-0085`).
+- **Steering-Loop-Eintrag:** **kein neuer Träger — und eine geschärfte Grenze.** Die
+  Regel, die alle vier Runden deckt, steht (`AGENTS.md` §3.7 für Kommentare/Prosa,
+  §3.12 Instanz B für Belege), und ihre Leser haben getragen: **jeder** der drei
+  Funde der Korrekturrunden kam von einem fremden Kontext, keiner von einem Gate.
+  Der Versuch, dieses Muster als eigenen Eintrag zu fassen, ist am Delta-Review
+  **gescheitert** (`arbeit-ueberholt-stehenden-traeger`, Kandidat `slice-092`):
+  dort half §3.12, der Defekt war latent. Der Lerneintrag ist damit die
+  **Bestätigung einer Grenze**, nicht ihre Verschiebung.
+  Was dieser Slice **verkörpert** hat, steht woanders: `ADR-0085` (die
+  Kontext-Ausnahme als Klasse) und der neue §Grenze-Punkt 6 in
+  [`harness/sensors/coverage-gate.md`](../../../../harness/sensors/coverage-gate.md).
+  Auslöser: `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (`slice-091`, 1× — hier
+  **angenommen**: der Satz wird wirklich durch die Arbeit falsch).
+- **Beobachtungs-Register (`../observations/`):** **zwei Belege ergänzt**:
+  `arbeit-ueberholt-stehenden-traeger` → **2×** (der erste angenommene Fall),
+  `beleg-befehl-traegt-seinen-satz-nicht` → **4×** (F-3: der Kommentar nannte eine
+  Mutation als rot färbend, die über einen anderen Pfad färbt; dazu D-3, eine Adresse
+  ohne Artefakt). **`rollen-test-abdeckungsluecken` (2×) wird nicht erhöht** — der
+  Slice **schließt** seinen Punkt 1, statt ihn erneut zu treffen; das steht in
+  seinem `state.md`. `coverage-stage-dockerignore-blockiert-tooling` → **2×** (die
+  `.dockerignore`-Zeile, der Auslöser des Architect-Zugs).
+  **Kein Zähler wird gesetzt** — jeder folgt aus den Dateien unter `evidence/`.
+- **Die sieben Mutationen dieses Tests und ihre Exit-Codes** — die Adresse, die der
+  Testkopf nennt (V-4); alle real gefahren, alle **EC = 1**, Kontrolle **EC = 0**:
+  `SELECT` aus dem `cdc_admin`-Heartbeat-Grant entfernt · `DELETE`-Grant auf
+  `cdc.transaction`/`cdc.change` für `cdc_admin` entfernt · `DELETE` an `cdc_capture`
+  auf `cdc.change` ergänzt · Schema-USAGE-Grant entfernt · `cdc.retention_blockers`
+  aus dem Reader-Grant gestrichen · `GRANT ALL ON ALL TABLES IN SCHEMA cdc TO
+  cdc_reader` angehängt · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` angehängt.
+  Nicht rot färbend und **als Grenzen benannt**: der dynamische Grant im
+  `DO`-Block, ein Lesegrant auf einem Objekt ohne schreibende Rolle, Grants anderer
+  Rollout-Dateien.
+- **Die zwei Wellen-Belege — mit ihrer Schwelle, je eigener Lauf:** `make coverage-gate
+  THRESHOLD=80` → **EC 0**, `coverage-gate: OK — Coverage 80.00% erfüllt Schwelle 80%`;
+  `make coverage-gate THRESHOLD=85` → **FAIL**, Skript-EC 1 / `make`-EC 2. Die
+  erreichte Quote über sechs Läufe desselben Stands: **1522–1523 von 1903**, an beiden
+  Enden gedruckt `80.0%`.
+- **Folge-Slices:** keine Datei in `open/` — **Cluster A** (`cmd/pg-change-feed`, 49
+  Statements und der `Run`-Fehlerpfad) ist der letzte Schnitt dieser Welle und ihr
+  **Puffer**: aus B+C+D allein bleibt nach diesem Slice **ein** Statement Abstand zur
+  Schwelle.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *entfallen* (die ≈28 hielten: +30),
+  R2 *eingetreten und behoben* (zweimal: die handverlesene Liste, dann die zu weite
+  Ausnahme), R3 *entfallen* (gemessen über 45 Mutationsproben), R4 *eingetreten und
+  behoben* (der erste angenommene Fall dieses Register-Eintrags).
+- **Drei Paarungen:** dieses Repo führt **Wellen-Betrieb**; die Prüfung fällt der
+  `welle-20`-Closure zu (Modul 6 Schritt 3c). Vorab geprüft: die zwei ergänzten
+  Register-Adressen existieren als Verzeichnis und tragen ein nicht leeres
+  `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

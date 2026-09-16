@@ -3,7 +3,13 @@ Träger ist **nicht** vorgeschlagen: ob ein stehender Satz von der Eigenschaft
 abhängt, die eine Arbeit bewegt, ist eine Lese-Handlung am Gegenstand, und die
 Abhängigkeit steht in Prosa — ein Gate müsste sie kennen, um sie zu prüfen.
 
-Zähler (abgeleitet): **1×** (evidence/slice-091.md). Das Erstauftreten fiel im
+Zähler (abgeleitet): **2×** (evidence/slice-091.md, evidence/slice-093.md).
+`slice-093` ist der erste **angenommene** Fall: der Satz in
+`harness/sensors/coverage-gate.md` war am Parent **wahr** und wurde durch die
+Arbeit **falsch** (der neue netzlose Test fährt einen der zwei genannten Blöcke
+deterministisch). Gefunden hat ihn der Implementer auf den `grep`-Auftrag hin,
+der aus diesem Eintrag stammt — der Eintrag hat sich damit zum ersten Mal
+**bezahlt**. Das Erstauftreten fiel im
 Delta-Review zu `slice-091` auf: der Slice gab `driving/grpc/streamv1` eine
 Testdatei und machte damit drei Sätze in `harness/sensors/coverage-gate.md`
 falsch, die niemand im Diff hatte. Die **Reparatur** hat den Fall zunächst
