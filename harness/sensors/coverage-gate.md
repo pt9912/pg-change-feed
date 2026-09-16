@@ -107,30 +107,40 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
    die zwei Zahlen überlappen nicht.
 
-   **Fünf Pakete des Gegenstands haben keine Testdatei** (`go list
-   -f '{{len .TestGoFiles}}'` über den Gegenstand). Sie tragen drei
-   verschiedene Rollen:
+   **Vier Pakete des Gegenstands führen keine Testdatei** — kein eigenes und
+   kein externes Testpaket. Die Gruppierung ist mechanisch, nicht gezählt nach
+   einem Einzelmaß: `go list -f '{{.ImportPath}} Test={{len .TestGoFiles}}
+   XTest={{len .XTestGoFiles}}'` über den Gegenstand liefert für **genau vier**
+   Pakete `Test=0 XTest=0` (Lauf `slice-091`) — `TestGoFiles` allein trifft
+   **23** der 31 Pakete und ist darum **keine** Gruppierungsregel: die 23
+   zerfallen in diese vier und **19**, die ausschließlich ein externes Testpaket
+   führen (Lauf `slice-091`). Die vier tragen zwei Rollen:
 
-   - **ohne ausführbare Statements** — im Profil kommen sie nicht vor:
-     `postgresstorage/queries` (SQL-Textkonstanten), `application/port/inbound`
+   - **ohne ausführbare Statements** — im Profil kommen sie nicht vor, der Lauf
+     weist sie als `[no test files]` aus: `postgresstorage/queries`
+     (SQL-Textkonstanten), `application/port/inbound`
      (Schnittstellen-Deklarationen) und `domain/errors`
      (Sentinel-Deklarationen);
-   - **über fremde Testpakete gedeckt** — `internal/adapters/driving/grpc/streamv1`
-     (die generierten `changestream*.pb.go`) trägt **86 Statements, 76 gedeckt**
-     (**88,4 %**, abgeleitet aus 76/86; Lauf `slice-091`); sie zählen, weil Testpakete
-     mit `-coverpkg` über die Paketgrenze messen. Das Paket führt daneben ein
-     **eigenes**, externes Testpaket (`changestream_test.go`, `package
-     streamv1_test`) — die Zählung `go list -f '{{len .TestGoFiles}}'` führt es
-     darum weiter unter den Paketen ohne Testdatei, obwohl `XTestGoFiles` **1**
-     trägt (Lauf `slice-091`);
    - **vollständig ungedeckt** — `cmd/pg-change-feed` trägt **49 Statements,
      alle mit `count = 0`** (Lauf `slice-089`). Es ist damit das **einzige Paket des Gegenstands
      ohne ein einziges gedecktes Statement** und gehört zu der 80-%-Arbeit, die
-     `welle-20` bündelt.
+     `welle-20` bündelt. Es ist zugleich das **einzige** Paket, dessen Zeile im
+     Lauf `coverage: 0.0% of statements` lautet (Lauf `slice-091`).
 
-   Die beiden Pakete mit Statements weist der Lauf nicht als `[no test files]`
-   aus, sondern als `coverage: 0.0% of statements`; das ist die Aufrufform mit
-   `-coverpkg`.
+   **`internal/adapters/driving/grpc/streamv1` steht in keiner dieser Rollen.**
+   Das Paket (die generierten `changestream*.pb.go`) führt ein **eigenes**,
+   externes Testpaket (`changestream_test.go`, `package streamv1_test`;
+   `XTestGoFiles` = **1**, `TestGoFiles` = **0**) und hat damit einen eigenen
+   Testlauf — zugleich läuft seine **Deckung** weiter über die Paketgrenze: der
+   eigene Lauf trägt **45 von 86** Statements (**52,3 %**, Lauf `slice-091`), im
+   Gegenstand mit `-coverpkg` sind es **76 von 86** (**88,4 %**, abgeleitet aus
+   76/86; Lauf `slice-091`). Es ist weder „ohne Testdatei" noch allein „über
+   fremde Testpakete gedeckt".
+
+   Die drei Pakete ohne ausführbare Statements weist der Lauf als
+   `[no test files]` aus; ein Paket **mit** Statements ohne eigenen Testlauf
+   trägt stattdessen die Zeile `coverage: 0.0% of statements` — das ist die
+   Aufrufform mit `-coverpkg` (Lauf `slice-091`).
 2. **Docker-Layer-Caching.** `--no-cache-filter coverage` erzwingt die
    Neu-Auswertung der Stage bei jedem `make coverage-gate`-Lauf — ohne
    diesen Flag könnte ein Cache-Hit einen veralteten Lauf überleben lassen.

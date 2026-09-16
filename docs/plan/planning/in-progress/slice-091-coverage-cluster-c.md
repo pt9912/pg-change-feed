@@ -98,32 +98,32 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die Tests existieren und sind netzlos grün.** Für die vier Pakete
+- [x] **LP1 — die Tests existieren und sind netzlos grün.** Für die vier Pakete
       des Clusters C liegen Tests vor, die der Gate-Lauf **wirklich fährt**
       (`make test`, netzlos); `make gates` ist grün. **Der Zuwachs wird als Zahl
       mit ihrem Lauf genannt**, nicht als „deutlich besser" — ein DoD-Kriterium,
       das eine ungemessene Zahl behauptet, ist der Fehler aus
       `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (4×).
-- [ ] **LP2 — die Negativtests binden ihre Ablehnung an die Eingabe.** Wo ein
+- [x] **LP2 — die Negativtests binden ihre Ablehnung an die Eingabe.** Wo ein
       Test eine Ablehnung prüft (`401`, `Unauthenticated`, verweigerte
       Publikation), ist sie an **den Eingabewert** gebunden, der sie auslösen
       soll — nicht an einen Fake, der sie unabhängig von der Abfrage liefert.
       Auslöser: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (**4×**).
-- [ ] **LP3 — die unerreichbaren Statements sind benannt.** Jedes der vier
+- [x] **LP3 — die unerreichbaren Statements sind benannt.** Jedes der vier
       Pakete, das danach noch ungedeckte Statements hat, nennt sie **einzeln mit
       dem Grund**, warum sie netzlos nicht erreichbar sind (lebender Dienst,
       Zeitabhängigkeit). „Rest nicht erreichbar" ohne Namen gilt als **nicht
       erfüllt** ([`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
       nennt für C 62 ungedeckt gegen ≈52 erreichbar — die Differenz ist die
       benannte Lücke, nicht die stille).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-091.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-091.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der `welle-20`-Closure zu.
