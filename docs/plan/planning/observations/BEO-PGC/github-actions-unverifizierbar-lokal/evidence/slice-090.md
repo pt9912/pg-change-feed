@@ -25,5 +25,5 @@ dasselbe.
 
 Quelle: `docs/reviews/verify-slice-090.md` (V-5) ·
 `docs/reviews/review-slice-090-delta.md` (Negativbefunde, `#6`–`#9 CACHED`) ·
-`docs/plan/planning/in-progress/slice-090-sync-gate-protobuf.md` §6 (viertes
+`docs/plan/planning/done/slice-090-sync-gate-protobuf.md` §6 (viertes
 Risiko) · `.github/workflows/ci.yml`.

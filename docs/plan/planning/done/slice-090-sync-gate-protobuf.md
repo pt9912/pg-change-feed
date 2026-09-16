@@ -317,6 +317,15 @@ Backticks).
   Wellen-Zugehörigkeit). Vorab geprüft: **beide** Register-Adressen dieses Slice
   existieren als Verzeichnis, und **jedes** der vier ergänzten führt ein nicht
   leeres `evidence/`.
+- **Benannte Grenze — der Pfad in den Belegen.** Der Beleg wird **vor** dem
+  `git mv` geschrieben (Modul 6), trägt also beim Schreiben den
+  `in-progress/`-Pfad. Die Hauspraxis ist hier **gemischt**: ältere Belege
+  zitieren den damaligen Pfad, der bei ihrer Schließung tot war; `slice-084`
+  zitiert bereits `done/`. Dieser Slice folgt dem auflösenden Pfad — **ein
+  Verweis, der nicht auflöst, ist genau der Gegenstand, den er beobachtet.** Die
+  beiden **Review-Reports** bleiben davon unberührt: ihre `pfad:`-Felder nennen,
+  wo der Gegenstand zur Zeit des Laufs lag, und sind Lauf-Belege. Die
+  Divergenz ist damit gewählt, nicht übersehen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
