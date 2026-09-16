@@ -135,9 +135,9 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `harness/mk/generated-sync.mk` (Name des Ziels führt der Implementer) | neu | Das Gate als eigenes Modul, im Haus-Muster von `baseline.mk`/`doc-gate.mk`: `GATE_CHECKS += <ziel>` und die Invocation in **einer** Datei. |
+| `harness/mk/generated-sync.mk` (Ziel `generated-sync`) | neu | Das Gate als eigenes Modul, im Haus-Muster von `baseline.mk`/`doc-gate.mk`: `GATE_CHECKS += <ziel>` und die Invocation in **einer** Datei. |
 | `tools/harness/generated-sync.sh` | neu | Der Vergleich selbst: Generator in ein Temp-Verzeichnis, `diff` gegen den Baum, Befund mit Datei und Zeile. Ein Shell-Lauf statt einer Inline-Rezeptur, weil die Ausgabe das Urteil tragen muss (LP3). |
-| `Makefile` | update | Das neue Ziel deklarieren (Docker-only, wie `proto-generate` es tut) — die Dockerfile-Stufe `proto` ist die gepinnte Generator-Quelle und wird **nicht** geändert. |
+| `Makefile` | **nicht** | Das Ziel deklariert das Fragment selbst — `include harness/mk/*.mk` zieht es in den Aggregator ein, Ziel und `GATE_CHECKS`-Anhang stehen damit in **einer** Datei (Haus-Muster von `coverage.mk`). Eine Zeile im Root-Makefile wäre eine zweite Deklaration desselben Ziels. |
 | `harness/README.md` §Sensors | update | Die Bindung des neuen Gates (Gate-Tabelle, mit `ADR-0084`), damit das Ziel nicht in der Werkzeug-Tabelle steht. |
 | `AGENTS.md` §4 | update | Target-Liste um das Gate-Ziel ergänzen. |
 | `docs/plan/planning/observations/BEO-PGC/generierte-artefakte-ohne-sync-sensor/state.md` | **nicht** | Der Träger entsteht mit diesem Slice; den **Ausgang** weist der Lese-Schritt der `welle-20`-Closure zu (Modul 6, Schritt 3a/3b) — ihn hier zu setzen wäre ein vorgezogener Lese-Schritt ohne Wellen-Closure. |
