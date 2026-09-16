@@ -17,6 +17,12 @@ import (
 type fakeState struct {
 	stored model.ConsumerPosition
 
+	// positionErrFor bindet den Port-Fehler an die gelesene Consumer-Kennung
+	// (LP2): der Fake scheitert genau für diese Kennung und trägt jede
+	// andere — so folgt der Ausgang der Abfrage und nicht dem Fake.
+	positionErrFor model.ConsumerID
+	positionErr    error
+
 	registerCalls    int
 	positionCalls    int
 	acknowledgeCalls int
@@ -32,6 +38,9 @@ func (f *fakeState) Register(ctx context.Context, consumer model.Consumer) (bool
 func (f *fakeState) Position(ctx context.Context, consumer model.ConsumerID) (model.ConsumerPosition, error) {
 	f.positionCalls++
 	f.lastConsumer = consumer
+	if f.positionErrFor != "" && consumer == f.positionErrFor {
+		return model.ConsumerPosition{}, f.positionErr
+	}
 	return f.stored, nil
 }
 
@@ -111,5 +120,29 @@ func TestPositionInvalidCommand(t *testing.T) {
 	}
 	if fake.positionCalls != 0 {
 		t.Fatalf("ungültige Eingabe trägt Lese-Züge: %d", fake.positionCalls)
+	}
+}
+
+// TestPositionStateErrorFollowsConsumer trägt den Fehlerpfad des Positions-
+// Lesens: ein Fehler des `ConsumerStatePort` wird unverändert durchgereicht.
+// Die Ablehnung ist an den Eingabewert gebunden — derselbe Fake liest für
+// eine andere Consumer-Kennung ohne Fehler, der Ausgang folgt also der
+// Abfrage und nicht dem Fake.
+func TestPositionStateErrorFollowsConsumer(t *testing.T) {
+	wantErr := stderrors.New("Consumer-State nicht erreichbar")
+	fake := &fakeState{positionErrFor: "c-boom", positionErr: wantErr}
+	service := position.NewGetConsumerPositionService(fake)
+
+	_, err := service.Position(context.Background(), inbound.GetConsumerPositionQuery{Consumer: "c-boom"})
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	result, err := service.Position(context.Background(), inbound.GetConsumerPositionQuery{Consumer: "c-1"})
+	if err != nil {
+		t.Fatalf("Lese der Kennung c-1: %v", err)
+	}
+	if result.Position.Acknowledged() || fake.lastConsumer != "c-1" {
+		t.Fatalf("Rückkehr %+v, Port-Eingabe %q", result, fake.lastConsumer)
 	}
 }

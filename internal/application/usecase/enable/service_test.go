@@ -14,12 +14,17 @@ import (
 
 // fakeActivation trägt den Aktivierungs-Port als Fake (`ADR-0030`); die
 // Aktivierungs- und Publication-Züge melden ihre Aufrufe, die Stubs der
-// übrigen Operationen tragen die Schnittstelle.
+// übrigen Operationen tragen die Schnittstelle. Die drei `…ErrFor`-Tabellen
+// binden einen Port-Fehler an genau den Eingabewert, auf den er antwortet
+// (LP2): jede andere Adresse, Kennung oder Publication trägt derselbe Fake.
 type fakeActivation struct {
 	exists        bool
-	existsErr     error
-	registerErr   error
 	alreadyActive bool
+
+	existsNotFor   map[string]bool  // schema.table → existiert nicht
+	existsErrFor   map[string]error // schema.table → Fehler
+	registerErrFor map[string]error // Bindungs-Zeilen-Kennung → Fehler
+	publishErrFor  map[string]error // Publication → Fehler
 
 	registerCalls int
 	publishCalls  int
@@ -28,7 +33,14 @@ type fakeActivation struct {
 }
 
 func (f *fakeActivation) TableExists(ctx context.Context, schema, table string) (bool, error) {
-	return f.exists, f.existsErr
+	address := schema + "." + table
+	if err, ok := f.existsErrFor[address]; ok {
+		return false, err
+	}
+	if f.existsNotFor[address] {
+		return false, nil
+	}
+	return f.exists, nil
 }
 
 func (f *fakeActivation) Registered(ctx context.Context, source model.SourceID, schema, table string) (model.SourceTable, bool, error) {
@@ -39,8 +51,8 @@ func (f *fakeActivation) Register(ctx context.Context, table model.SourceTable, 
 	f.registerCalls++
 	f.lastTable = table
 	f.lastVersion = version
-	if f.registerErr != nil {
-		return false, f.registerErr
+	if err, ok := f.registerErrFor[string(table.ID)]; ok {
+		return false, err
 	}
 	return !f.alreadyActive, nil
 }
@@ -55,6 +67,9 @@ func (f *fakeActivation) List(ctx context.Context, source model.SourceID) ([]mod
 
 func (f *fakeActivation) Publish(ctx context.Context, publication, schema, table string) error {
 	f.publishCalls++
+	if err, ok := f.publishErrFor[publication]; ok {
+		return err
+	}
 	return nil
 }
 
@@ -128,25 +143,117 @@ func TestEnableIdempotent(t *testing.T) {
 
 // TestEnableMissingTable trägt den Negative-Pfad (`LH-FA-CFG-001`):
 // eine nicht existierende Tabelle endet sichtbar, ohne Bindungs-Zeilen
-// oder Publication zu tragen.
+// oder Publication zu tragen. Die Ablehnung ist an den Eingabewert
+// gebunden: der Fake kennt genau die fehlende Adresse, dieselbe Anlage
+// trägt die vorhandene Adresse durch.
 func TestEnableMissingTable(t *testing.T) {
-	fake := &fakeActivation{exists: false}
+	fake := &fakeActivation{exists: true, existsNotFor: map[string]bool{"public.missing": true}}
 	service := enable.NewEnableTableService(fake)
 
-	_, err := service.Enable(context.Background(), inbound.EnableTableCommand{
-		Source:          "src-1",
-		Schema:          "public",
-		Table:           "t1",
-		TableID:         "tbl-1",
-		SchemaVersionID: "sv-1",
-		Version:         1,
-		Publication:     "pub-1",
-	})
+	_, err := service.Enable(context.Background(), enableCommand("missing"))
 	if !stderrors.Is(err, inbound.ErrSourceTableMissing) {
 		t.Fatalf("fehlende Tabelle: %v (Erwartung: ErrSourceTableMissing)", err)
 	}
 	if fake.registerCalls != 0 || fake.publishCalls != 0 {
 		t.Fatalf("fehlende Tabelle trägt Aktivierungs-Züge: Register %d, Publish %d", fake.registerCalls, fake.publishCalls)
+	}
+
+	if _, err := service.Enable(context.Background(), enableCommand("t1")); err != nil {
+		t.Fatalf("vorhandene Tabelle: %v", err)
+	}
+	if fake.registerCalls != 1 || fake.publishCalls != 1 {
+		t.Fatalf("Aktivierungs-Züge der vorhandenen Tabelle: Register %d, Publish %d (Erwartung: je 1)", fake.registerCalls, fake.publishCalls)
+	}
+}
+
+// TestEnableTableExistsErrorFollowsAddress trägt den Fehlerpfad der
+// Existenz-Prüfung: ein Fehler des Aktivierungs-Ports wird unverändert
+// durchgereicht, ohne Bindungs-Zeilen oder Publication zu tragen. Die
+// Ablehnung ist an die Kommando-Adresse gebunden — derselbe Fake trägt eine
+// andere Adresse durch.
+func TestEnableTableExistsErrorFollowsAddress(t *testing.T) {
+	wantErr := stderrors.New("Katalog nicht lesbar")
+	fake := &fakeActivation{exists: true, existsErrFor: map[string]error{"public.kaputt": wantErr}}
+	service := enable.NewEnableTableService(fake)
+
+	_, err := service.Enable(context.Background(), enableCommand("kaputt"))
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+	if fake.registerCalls != 0 || fake.publishCalls != 0 {
+		t.Fatalf("Existenz-Fehler trägt Aktivierungs-Züge: Register %d, Publish %d", fake.registerCalls, fake.publishCalls)
+	}
+
+	if _, err := service.Enable(context.Background(), enableCommand("t1")); err != nil {
+		t.Fatalf("Adresse public.t1: %v", err)
+	}
+}
+
+// TestEnableRegisterErrorFollowsTableID trägt den Fehlerpfad des
+// Bindungs-Zeilen-Schreibens: ein Fehler von `Register` wird unverändert
+// durchgereicht, die Publication läuft danach nicht. Die Ablehnung ist an
+// die Tabellen-Kennung des Kommandos gebunden — derselbe Fake schreibt eine
+// andere Kennung.
+func TestEnableRegisterErrorFollowsTableID(t *testing.T) {
+	wantErr := stderrors.New("Bindungs-Zeile nicht schreibbar")
+	fake := &fakeActivation{exists: true, registerErrFor: map[string]error{"tbl-kaputt": wantErr}}
+	service := enable.NewEnableTableService(fake)
+
+	command := enableCommand("t1")
+	command.TableID = "tbl-kaputt"
+	_, err := service.Enable(context.Background(), command)
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+	if fake.publishCalls != 0 {
+		t.Fatalf("fehlgeschlagenes Register trägt die Publication: %d", fake.publishCalls)
+	}
+
+	if _, err := service.Enable(context.Background(), enableCommand("t1")); err != nil {
+		t.Fatalf("Tabellen-Kennung tbl-1: %v", err)
+	}
+	if fake.lastTable.ID != "tbl-1" {
+		t.Fatalf("Bindungs-Zeile trägt Kennung %q (Erwartung: tbl-1)", fake.lastTable.ID)
+	}
+}
+
+// TestEnablePublishErrorFollowsPublication trägt den Fehlerpfad der
+// Publication (`LH-FA-CFG-001.a`): ein Fehler von `Publish` wird
+// unverändert durchgereicht; die zuvor geschriebene Bindungs-Zeile bleibt
+// stehen (ein erneuter Aufruf trägt die Publication nach). Die Ablehnung ist
+// an die Publication des Kommandos gebunden — derselbe Fake trägt eine
+// andere Publication durch.
+func TestEnablePublishErrorFollowsPublication(t *testing.T) {
+	wantErr := stderrors.New("Publication nicht schreibbar")
+	fake := &fakeActivation{exists: true, publishErrFor: map[string]error{"pub-kaputt": wantErr}}
+	service := enable.NewEnableTableService(fake)
+
+	command := enableCommand("t1")
+	command.Publication = "pub-kaputt"
+	_, err := service.Enable(context.Background(), command)
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+	if fake.registerCalls != 1 {
+		t.Fatalf("Publication-Fehler ohne Bindungs-Zeile: Register %d (Erwartung: 1)", fake.registerCalls)
+	}
+
+	if _, err := service.Enable(context.Background(), enableCommand("t1")); err != nil {
+		t.Fatalf("Publication pub-1: %v", err)
+	}
+}
+
+// enableCommand trägt die Aktivierung der Tabelle `public.<table>` an der
+// Quelle `src-1`; der Test variiert über die Adresse.
+func enableCommand(table string) inbound.EnableTableCommand {
+	return inbound.EnableTableCommand{
+		Source:          "src-1",
+		Schema:          "public",
+		Table:           table,
+		TableID:         "tbl-1",
+		SchemaVersionID: "sv-1",
+		Version:         1,
+		Publication:     "pub-1",
 	}
 }
 

@@ -15,11 +15,15 @@ import (
 // fakeActivation trägt den Aktivierungs-Port als Fake (`ADR-0030`); die
 // Liste liest den Bindungs-Zeilen-Bestand und die
 // Publication-Mitgliedschaft je Tabelle, die übrigen Operationen tragen
-// die Schnittstelle.
+// die Schnittstelle. Die beiden `…ErrFor`-Tabellen binden einen Port-Fehler
+// an genau den Eingabewert, auf den er antwortet (LP2): jede andere Quelle
+// bzw. Publication-plus-Adresse trägt derselbe Fake.
 type fakeActivation struct {
 	tables    []model.SourceTable
 	published map[string]bool
-	listErr   error
+
+	listErrFor      map[model.SourceID]error // Quell-Kennung → Fehler
+	publishedErrFor map[string]error         // publication + " " + schema.table → Fehler
 }
 
 func (f *fakeActivation) TableExists(ctx context.Context, schema, table string) (bool, error) {
@@ -39,7 +43,10 @@ func (f *fakeActivation) Unregister(ctx context.Context, table model.SourceTable
 }
 
 func (f *fakeActivation) List(ctx context.Context, source model.SourceID) ([]model.SourceTable, error) {
-	return f.tables, f.listErr
+	if err, ok := f.listErrFor[source]; ok {
+		return nil, err
+	}
+	return f.tables, nil
 }
 
 func (f *fakeActivation) Publish(ctx context.Context, publication, schema, table string) error {
@@ -51,6 +58,9 @@ func (f *fakeActivation) Unpublish(ctx context.Context, publication, schema, tab
 }
 
 func (f *fakeActivation) Published(ctx context.Context, publication, schema, table string) (bool, error) {
+	if err, ok := f.publishedErrFor[publication+" "+schema+"."+table]; ok {
+		return false, err
+	}
 	return f.published[schema+"."+table], nil
 }
 
@@ -134,6 +144,69 @@ func TestListTablesEmptyQuery(t *testing.T) {
 	_, err := service.ListTables(context.Background(), inbound.ListTablesQuery{})
 	if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
 		t.Fatalf("leere Eingabe: %v (Erwartung: ErrEmptyIdentifier)", err)
+	}
+}
+
+// TestListTablesListErrorFollowsSource trägt den Fehlerpfad des
+// Bindungs-Zeilen-Lesens: ein Fehler von `List` wird unverändert
+// durchgereicht. Die Ablehnung ist an die Quell-Kennung gebunden — derselbe
+// Fake liest eine andere Quelle ohne Fehler.
+func TestListTablesListErrorFollowsSource(t *testing.T) {
+	wantErr := stderrors.New("Bindungs-Zeilen nicht lesbar")
+	fake := &fakeActivation{listErrFor: map[model.SourceID]error{"src-kaputt": wantErr}}
+	service := list.NewListTablesService(fake)
+
+	query := listQuery()
+	query.Source = "src-kaputt"
+	_, err := service.ListTables(context.Background(), query)
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	result, err := service.ListTables(context.Background(), listQuery())
+	if err != nil {
+		t.Fatalf("Quelle src-1: %v", err)
+	}
+	if result.Tables == nil || len(result.Tables) != 0 || result.Retained == nil || len(result.Retained) != 0 {
+		t.Fatalf("Tabellen-Liste: %+v (Erwartung: leere Listen)", result)
+	}
+}
+
+// TestListTablesPublishedErrorFollowsPublication trägt den Fehlerpfad der
+// Publication-Mitgliedschaft: ein Fehler von `Published` wird unverändert
+// durchgereicht. Die Ablehnung ist an die Publication und die Adresse der
+// gelesenen Bindungs-Zeile gebunden — derselbe Fake trägt dieselbe
+// Bindungs-Zeile in einer anderen Publication durch.
+func TestListTablesPublishedErrorFollowsPublication(t *testing.T) {
+	first, err := model.NewSourceTable("tbl-1", "src-1", "public", "t1")
+	if err != nil {
+		t.Fatalf("Tabelle: %v", err)
+	}
+	second, err := model.NewSourceTable("tbl-2", "src-1", "public", "t2")
+	if err != nil {
+		t.Fatalf("Tabelle: %v", err)
+	}
+	wantErr := stderrors.New("Publication nicht lesbar")
+	fake := &fakeActivation{
+		tables:          []model.SourceTable{first, second},
+		published:       map[string]bool{"public.t1": true, "public.t2": true},
+		publishedErrFor: map[string]error{"pub-1 public.t2": wantErr},
+	}
+	service := list.NewListTablesService(fake)
+
+	_, err = service.ListTables(context.Background(), listQuery())
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	other := listQuery()
+	other.Publication = "pub-2"
+	result, err := service.ListTables(context.Background(), other)
+	if err != nil {
+		t.Fatalf("Publication pub-2: %v", err)
+	}
+	if len(result.Tables) != 2 || len(result.Retained) != 0 {
+		t.Fatalf("Tabellen-Liste: %d aktiviert, %d Herkunft (Erwartung: 2 und 0)", len(result.Tables), len(result.Retained))
 	}
 }
 

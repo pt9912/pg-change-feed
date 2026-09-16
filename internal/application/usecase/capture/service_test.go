@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -685,5 +686,57 @@ func TestCapturePublishOhneRueckkehrHaeltKritischeKetteNichtAn(t *testing.T) {
 	close(stream.freigabe)
 	if err := <-fertig; err != nil {
 		t.Fatalf("Capture: %v, wollen keinen Fehler", err)
+	}
+}
+
+// fakeLog trägt den `LogPort` (`ADR-0024`) als Aufzeichnung: er merkt sich
+// die Warn-Zeilen samt Nachricht und Attributen, damit der Test belegt, über
+// welchen Port die Best-Effort-Fehlerpfade melden.
+type fakeLog struct {
+	warnings []string
+}
+
+func (f *fakeLog) Debug(ctx context.Context, msg string, attrs ...any) {}
+func (f *fakeLog) Info(ctx context.Context, msg string, attrs ...any)  {}
+
+func (f *fakeLog) Warn(ctx context.Context, msg string, attrs ...any) {
+	f.warnings = append(f.warnings, fmt.Sprintf("%s %v", msg, attrs))
+}
+
+func (f *fakeLog) Error(ctx context.Context, msg string, attrs ...any) {}
+
+var _ outbound.LogPort = (*fakeLog)(nil)
+
+// TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort trägt `ADR-0024`
+// (strukturiertes Logging bleibt Infrastruktur und wird über den Outbound
+// Port substituiert): beide Best-Effort-Fehlerpfade — Wecksignal (`ADR-0055`)
+// und Stream-Publish (`ADR-0060` Teilfrage 2) — melden ihren Fehlschlag über
+// den injizierten `LogPort`; das Attribut der Warn-Zeile trägt die
+// gescheiterte Tabelle bzw. den gescheiterten Change.
+func TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events, notifyErr: stderrors.New("NATS nicht erreichbar")}
+	stream := &fakeStream{events: &events, publishErr: stderrors.New("Stream nicht verfügbar")}
+	log := &fakeLog{}
+	service := capture.NewCaptureService(store, ack,
+		capture.WithChangeNotification(notify),
+		capture.WithChangeStream(stream),
+		capture.WithLog(log),
+	)
+	tx := committedTransaction(t, "t-1", 100, 1)
+
+	if _, err := service.Capture(context.Background(), capture.CaptureCommand{Transaction: tx}); err != nil {
+		t.Fatalf("Capture: %v, wollen keinen Fehler trotz fehlschlagender Best-Effort-Ports", err)
+	}
+	if len(log.warnings) != 2 {
+		t.Fatalf("Warn-Zeilen = %v, wollen 2 (Wecksignal und Stream-Publish)", log.warnings)
+	}
+	if !strings.Contains(log.warnings[0], "Wecksignal fehlgeschlagen") || !strings.Contains(log.warnings[0], "tbl-1") {
+		t.Fatalf("Wecksignal-Warnzeile = %q, wollen Nachricht und Tabelle", log.warnings[0])
+	}
+	if !strings.Contains(log.warnings[1], "Stream-Publish fehlgeschlagen") || !strings.Contains(log.warnings[1], "t-1-1") {
+		t.Fatalf("Stream-Warnzeile = %q, wollen Nachricht und Change-Kennung", log.warnings[1])
 	}
 }

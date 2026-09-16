@@ -97,7 +97,7 @@ Messung** (`ADR-0082` §Schnittmaß):
 | **B — Reine Übersetzung** | `replication/decode`, `replication/mapper`, `postgresstorage/sqlexec`, `postgresstorage/mapper` | 60 |
 | **C — Zustell- und Betriebs-Rand** | `driving/http`, `driving/grpc`, `driven/natsnotify`, `driving/grpc/streamv1` | 62 |
 | **D — Anwendungs-Kern und Bootstrap-Rest** | Use-Cases, `domain/model`, `telemetry`, `bootstrap`-Rest | 53–55 |
-| ↳ **D1 — Anwendungs-Kern** | `application/usecase/*` (10 Pakete), `domain/model` | 24 |
+| ↳ **D1 — Anwendungs-Kern** | `application/usecase/*` (13 Pakete, 10 davon mit ungedeckten Statements), `domain/model` | 24 |
 | ↳ **D2 — Bootstrap-Rest und Telemetrie** | `bootstrap`-Rest, `adapters/driven/telemetry` | 30 |
 | **A — Prozess-Rand (Puffer)** | `cmd/pg-change-feed` (`main`-Dispatch), `bootstrap` (`Run`-Fehlerpfad) | ≈54 |
 | | **Summe** | **229–231** |

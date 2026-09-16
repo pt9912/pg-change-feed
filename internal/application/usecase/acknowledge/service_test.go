@@ -18,6 +18,13 @@ type fakeState struct {
 	stored       model.ConsumerPosition
 	lastPosition model.ConsumerPosition
 
+	// ackErrFor bindet den Port-Fehler an die Consumer-Kennung der
+	// Bestätigung (LP2): der Fake scheitert genau für diese Kennung und
+	// trägt jede andere — so folgt der Ausgang der Kommando-Eingabe und
+	// nicht dem Fake.
+	ackErrFor model.ConsumerID
+	ackErr    error
+
 	registerCalls    int
 	positionCalls    int
 	acknowledgeCalls int
@@ -37,6 +44,9 @@ func (f *fakeState) Position(ctx context.Context, consumer model.ConsumerID) (mo
 func (f *fakeState) Acknowledge(ctx context.Context, position model.ConsumerPosition) (model.ConsumerPosition, error) {
 	f.acknowledgeCalls++
 	f.lastPosition = position
+	if f.ackErrFor != "" && position.ConsumerID == f.ackErrFor {
+		return model.ConsumerPosition{}, f.ackErr
+	}
 	return position, nil
 }
 
@@ -102,5 +112,35 @@ func TestAcknowledgeInvalidCommand(t *testing.T) {
 	}
 	if fake.acknowledgeCalls != 0 {
 		t.Fatalf("ungültige Eingabe trägt Bestätigungs-Züge: %d", fake.acknowledgeCalls)
+	}
+}
+
+// TestAcknowledgeStateErrorFollowsConsumer trägt den Fehlerpfad des
+// Zustands-Schreibens: ein Fehler des `ConsumerStatePort` wird unverändert
+// durchgereicht. Die Ablehnung ist an den Eingabewert gebunden — derselbe
+// Fake trägt für eine andere Consumer-Kennung denselben Aufruf ohne Fehler,
+// der Ausgang folgt also dem Kommando und nicht dem Fake.
+func TestAcknowledgeStateErrorFollowsConsumer(t *testing.T) {
+	wantErr := stderrors.New("Consumer-State nicht erreichbar")
+	fake := &fakeState{ackErrFor: "c-boom", ackErr: wantErr}
+	service := acknowledge.NewAcknowledgeConsumerService(fake)
+
+	_, err := service.Acknowledge(context.Background(), inbound.AcknowledgeConsumerCommand{
+		Consumer: "c-boom",
+		Position: position(t, 100),
+	})
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	result, err := service.Acknowledge(context.Background(), inbound.AcknowledgeConsumerCommand{
+		Consumer: "c-1",
+		Position: position(t, 100),
+	})
+	if err != nil {
+		t.Fatalf("Bestätigung der Kennung c-1: %v", err)
+	}
+	if result.Position.Position.Offset != 100 || fake.lastPosition.ConsumerID != "c-1" {
+		t.Fatalf("Rückkehr %+v, Port-Eingabe %+v", result, fake.lastPosition)
 	}
 }

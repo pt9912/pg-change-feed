@@ -15,8 +15,13 @@ import (
 // Entfernung meldet ihren Ausgang, die Stubs der übrigen Operationen
 // tragen die Schnittstelle.
 type fakeState struct {
-	exists    bool
-	removeErr error
+	exists bool
+
+	// removeErrFor bindet den Port-Fehler an die entfernte Consumer-Kennung
+	// (LP2): der Fake scheitert genau für diese Kennung und entfernt jede
+	// andere — so folgt der Ausgang der Kommando-Eingabe und nicht dem Fake.
+	removeErrFor model.ConsumerID
+	removeErr    error
 
 	registerCalls    int
 	positionCalls    int
@@ -43,7 +48,7 @@ func (f *fakeState) Acknowledge(ctx context.Context, position model.ConsumerPosi
 func (f *fakeState) Remove(ctx context.Context, consumer model.ConsumerID) (bool, error) {
 	f.removeCalls++
 	f.lastConsumer = consumer
-	if f.removeErr != nil {
+	if f.removeErrFor != "" && consumer == f.removeErrFor {
 		return false, f.removeErr
 	}
 	return f.exists, nil
@@ -108,5 +113,29 @@ func TestRemoveInvalidCommand(t *testing.T) {
 	}
 	if fake.removeCalls != 0 {
 		t.Fatalf("ungültige Eingabe trägt Entfernungs-Züge: %d", fake.removeCalls)
+	}
+}
+
+// TestRemoveStateErrorFollowsConsumer trägt den Fehlerpfad des Entfernens:
+// ein Fehler des `ConsumerStatePort` wird unverändert durchgereicht. Die
+// Ablehnung ist an den Eingabewert gebunden — derselbe Fake entfernt eine
+// andere Kennung ohne Fehler, der Ausgang folgt also dem Kommando und nicht
+// dem Fake.
+func TestRemoveStateErrorFollowsConsumer(t *testing.T) {
+	wantErr := stderrors.New("Consumer-State nicht erreichbar")
+	fake := &fakeState{exists: true, removeErrFor: "c-boom", removeErr: wantErr}
+	service := remove.NewRemoveConsumerService(fake)
+
+	_, err := service.Remove(context.Background(), inbound.RemoveConsumerCommand{Consumer: "c-boom"})
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	result, err := service.Remove(context.Background(), inbound.RemoveConsumerCommand{Consumer: "c-1"})
+	if err != nil {
+		t.Fatalf("Entfernung der Kennung c-1: %v", err)
+	}
+	if !result.Removed || fake.lastConsumer != "c-1" {
+		t.Fatalf("Rückkehr %+v, Port-Eingabe %q", result, fake.lastConsumer)
 	}
 }

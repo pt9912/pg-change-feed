@@ -16,7 +16,13 @@ import (
 // tragen die Schnittstelle.
 type fakeState struct {
 	alreadyRegistered bool
-	registerErr       error
+
+	// registerErrFor bindet den Port-Fehler an die Consumer-Kennung der
+	// Registrierung (LP2): der Fake scheitert genau für diese Kennung und
+	// registriert jede andere — so folgt der Ausgang der Kommando-Eingabe
+	// und nicht dem Fake.
+	registerErrFor model.ConsumerID
+	registerErr    error
 
 	registerCalls    int
 	lastConsumer     model.Consumer
@@ -28,7 +34,7 @@ type fakeState struct {
 func (f *fakeState) Register(ctx context.Context, consumer model.Consumer) (bool, error) {
 	f.registerCalls++
 	f.lastConsumer = consumer
-	if f.registerErr != nil {
+	if f.registerErrFor != "" && consumer.ID == f.registerErrFor {
 		return false, f.registerErr
 	}
 	return !f.alreadyRegistered, nil
@@ -119,5 +125,33 @@ func TestRegisterInvalidCommand(t *testing.T) {
 	}
 	if fake.registerCalls != 0 {
 		t.Fatalf("ungültige Eingabe trägt Registrierungs-Züge: %d", fake.registerCalls)
+	}
+}
+
+// TestRegisterStateErrorFollowsConsumer trägt den Fehlerpfad des
+// Zustands-Schreibens: ein Fehler des `ConsumerStatePort` wird unverändert
+// durchgereicht. Die Ablehnung ist an den Eingabewert gebunden — derselbe
+// Fake registriert eine andere Kennung ohne Fehler, der Ausgang folgt also
+// dem Kommando und nicht dem Fake.
+func TestRegisterStateErrorFollowsConsumer(t *testing.T) {
+	wantErr := stderrors.New("Consumer-State nicht erreichbar")
+	fake := &fakeState{registerErrFor: "c-boom", registerErr: wantErr}
+	service := register.NewRegisterConsumerService(fake)
+
+	_, err := service.Register(context.Background(), inbound.RegisterConsumerCommand{
+		Consumer: "c-boom", Name: "Lese-Consumer",
+	})
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Port-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+
+	result, err := service.Register(context.Background(), inbound.RegisterConsumerCommand{
+		Consumer: "c-1", Name: "Lese-Consumer",
+	})
+	if err != nil {
+		t.Fatalf("Registrierung der Kennung c-1: %v", err)
+	}
+	if result.Consumer.ID != "c-1" || fake.lastConsumer.ID != "c-1" {
+		t.Fatalf("Rückkehr %+v, Port-Eingabe %+v", result.Consumer, fake.lastConsumer)
 	}
 }

@@ -37,6 +37,43 @@ func TestValueObjectConstructorsRejectInvariantViolations(t *testing.T) {
 			t.Fatalf("Fehler = %v, wollen ErrEmptyIdentifier", err)
 		}
 	})
+	t.Run("ChangeTransaction ohne Kennung", func(t *testing.T) {
+		if _, err := NewOpenTransaction("", "src-1"); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+			t.Fatalf("Fehler = %v, wollen ErrEmptyIdentifier", err)
+		}
+		if _, err := NewOpenTransaction("t-1", ""); !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+			t.Fatalf("Fehler = %v, wollen ErrEmptyIdentifier", err)
+		}
+	})
+}
+
+// NewSource trägt Kennung und Name der Quelle (`SPEC-001`, Tabelle
+// `cdc.source`) — der Rückgabe-Pfad des Konstruktors, den der Paket-Kommentar
+// als den einzigen geprüften Weg zum gültigen Wert nennt (`ADR-0029`).
+func TestNewSourceCarriesIdentifierAndName(t *testing.T) {
+	source, err := NewSource("src-1", "quelle")
+	if err != nil {
+		t.Fatalf("NewSource: %v", err)
+	}
+	if source.ID != "src-1" || source.Name != "quelle" {
+		t.Fatalf("Quelle = %+v, wollen Kennung src-1 und Name quelle", source)
+	}
+}
+
+// NewOpenTransaction liefert eine offene Transaktion (`LH-FA-CAP-005`): sie
+// trägt noch keine Commit-Position — konsumierbar wird sie erst über `Commit`
+// (`LH-FA-CAP-006`).
+func TestNewOpenTransactionCarriesNoCommitPosition(t *testing.T) {
+	tx, err := NewOpenTransaction("t-1", "src-1")
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	if tx.ID != "t-1" || tx.SourceID != "src-1" {
+		t.Fatalf("Transaktion = %+v, wollen Kennung t-1 und Quelle src-1", tx)
+	}
+	if position, committed := tx.CommitPosition(); committed || position.Offset != 0 {
+		t.Fatalf("offene Transaktion trägt Position %+v (committed=%v)", position, committed)
+	}
 }
 
 // LH-FA-DAT-002: die Quelltabelle ist über Schema und Tabellenname

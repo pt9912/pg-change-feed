@@ -46,7 +46,8 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Der **Anwendungs-Kern** wird über netzlose Tests gedeckt:
-`internal/application/usecase/*` (zehn Pakete) und `internal/domain/model`.
+`internal/application/usecase/*` (**13** Pakete; **10** davon trugen ungedeckte
+Statements) und `internal/domain/model`.
 Das Maß ist das der Welle, bei der Planung dieses Slice **selbst gemessen**
 (über die Block-Position dedupliziert, wie
 [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
@@ -137,7 +138,7 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/application/usecase/*/**_test.go` (zehn Pakete) | Test neu/update | Cluster D1, Hauptteil — 22 ungedeckte Statements, gemessen bei der Planung. |
+| `internal/application/usecase/*/**_test.go` (**12** der **13** Pakete) | Test neu/update | Cluster D1, Hauptteil — 22 ungedeckte Statements, gemessen bei der Planung. |
 | `internal/domain/model/**_test.go` | Test neu/update | Cluster D1 — 2 ungedeckte Statements. |
 | `harness/sensors/coverage-gate.md` | update, **nur falls** eine Zahl dort gegen die Messung driftet | Der Sensor-Träger des Messgegenstands. **Und prüfend, nicht nur nachziehend:** dieser Slice bewegt eine gemessene Eigenschaft der Use-Case-Pakete; ob ein **anderer** Träger sie beschreibt, ist die Frage aus `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Erstauftreten in `slice-091`). |
 | `docs/plan/planning/welle-20.md` §4 | **nicht** | Die Cluster-Tabelle trägt die **Soll**-Zahlen; die erreichte Zahl gehört in die Closure-Notiz dieses Slice, mit ihrem Lauf. |
@@ -183,7 +184,7 @@ Zuwachs als Zahl samt ihrem Lauf.
 **Lerneintrag:** geschärfte Regel, neuer Sensor oder benannte Spec-Lücke in §7.
 Der naheliegende Kandidat ist der **jüngste** Eintrag des Registers:
 `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (1×, Erstauftreten in `slice-091`)
-— dieser Slice bewegt eine gemessene Eigenschaft von zehn Paketen, also stellt
+— dieser Slice bewegt eine gemessene Eigenschaft von dreizehn Paketen, also stellt
 sich die Frage nach den Trägern, die sie **beschreiben**, zum zweiten Mal. Ob
 daraus mehr als eine Wiederholung wird, entscheidet der Lauf.
 
@@ -207,7 +208,7 @@ dasteht.
 - **Coverage-Theater** — Tests, die Statements durchlaufen, ohne eine Zusage zu
   prüfen. — **Ausgang:** <…>
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt die
-  Deckung von zehn Paketen; ob ein anderes Dokument eine dieser Eigenschaften
+  Deckung von dreizehn Paketen; ob ein anderes Dokument eine dieser Eigenschaften
   beschreibt, weiß der Diff nicht (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
   1×). — **Ausgang:** <…>
 
@@ -255,7 +256,7 @@ in **jedem** Slice-Plan — sie hängen weder am Modus noch am Slice-Typ. Beding
 ist allein der Modus-Begründungsblock am Ende; deshalb nennt der Titel beide
 Hälften.
 
-**Vorgelagert — Sub-Area-Wahl prüfen:** Berührt sind die zehn
+**Vorgelagert — Sub-Area-Wahl prüfen:** Berührt sind die **13**
 Use-Case-Pakete und `domain/model` — durchweg die repo-weite Default-Sub-Area
 `*`/`PGC` aus der Modus-Deklaration in
 [`harness/conventions.md`](../../../../harness/conventions.md). Eine feinere
