@@ -46,12 +46,19 @@ Tests an Stellen, die noch keinen haben.
 
 **Die Gegenstände, gemessen** (ungedeckt / gesamt):
 
-| Paket | Funktionen |
-|---|---|
-| `replication/decode` | `Decode` 8/50 · `observeRelation` 8/35 |
-| `replication/mapper` | `Consume` 6/32 · `change` 4/27 · `JSONImage` **3/3** · `oldTupleValues` 3/17 · `tupleValues` 3/11 · `rowImage` 2/22 · `classifyRelationColumns` 1/11 |
-| `postgresstorage/sqlexec` | `ReadConsumerPositions` 4/20 · `ReadExcludedColumns` 3/22 · `ReadTableSchema` 3/19 · `ReadSourceTables` 3/19 · `ReadPendingRequests` 2/19 · `ReadChanges` 1/25 · `ReadConsumerPosition` 1/10 · `IncludeColumn` 1/7 · `setSchemaVersion` 1/7 · `removeExcluded` 1/5 |
-| `postgresstorage/mapper` | `ToChange` 1/6 · `qualifiedNames` 1/6 |
+| Paket | Funktionen | Summe |
+|---|---|---|
+| `replication/decode` | `Decode` 8/50 · `oldTupleValues` 3/17 · `tupleValues` 3/11 | 14 |
+| `replication/mapper` | `observeRelation` 8/35 · `Consume` 6/32 · `change` 4/27 · `rowImage` 2/22 · `classifyRelationColumns` 1/11 · `IncludeColumn` 1/7 · `setSchemaVersion` 1/7 · `qualifiedNames` 1/6 · `removeExcluded` 1/5 | 25 |
+| `postgresstorage/sqlexec` | `ReadConsumerPositions` 4/20 · `ReadExcludedColumns` 3/22 · `ReadTableSchema` 3/19 · `ReadSourceTables` 3/19 · `ReadPendingRequests` 2/19 · `ReadChanges` 1/25 · `ReadConsumerPosition` 1/10 | 17 |
+| `postgresstorage/mapper` | `JSONImage` **3/3** · `ToChange` 1/6 | 4 |
+
+**Die Paket-Zuordnung ist nachgemessen, nicht geschätzt** (Implementer-Befund):
+eine frühere Fassung dieser Tabelle stellte fünf Funktionen ins falsche Paket —
+`JSONImage`/`ToChange` gehören in `postgresstorage/mapper`, `IncludeColumn`/
+`removeExcluded`/`setSchemaVersion`/`qualifiedNames` in `replication/mapper`.
+**Die Spalte „Summe" ist die Gegenprobe**: sie muss je Paket aufgehen, und die
+falsche Fassung tat das nicht.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -111,8 +118,7 @@ vierter Punkt:
 
 **Liefer-Punkt 3 — die Wirkung ist gemessen, nicht angestrebt.**
 
-- [x] `postgresstorage/mapper`s Lücken (`ToChange`, `qualifiedNames`) sind
-      gedeckt.
+- [x] `postgresstorage/mapper`s Lücken (`JSONImage`, `ToChange`) sind gedeckt.
 - [x] **Der Effekt ist beziffert:** die Gate-Zahl vorher/nachher, gemessen über
       `make coverage-gate` — **erwartet ≈60 Statements**, und der Nenner bleibt
       **1903** (dieser Slice fügt **keinen** Produktionscode hinzu; wächst er,
@@ -151,7 +157,7 @@ Aussagen-Berührung steht hier gar nicht.
 |---|---|---|
 | `internal/adapters/driving/replication/decode/*_test.go` · `.../mapper/*_test.go` | neu | Tests für die gemessenen Lücken; beide Pakete sind netzlos prüfbar |
 | `internal/adapters/driven/postgresstorage/sqlexec/*_test.go` | update/neu | Tests über den **bestehenden** Fake der Naht (`slice-081`) |
-| `internal/adapters/driven/postgresstorage/mapper/*_test.go` | neu | `ToChange`, `qualifiedNames` |
+| `internal/adapters/driven/postgresstorage/mapper/*_test.go` | neu | `JSONImage`, `ToChange` |
 
 **Der genaue Datei-Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste
 nennt die Träger. **Produktionscode wird nicht geändert**; erweist sich eine
