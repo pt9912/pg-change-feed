@@ -1,4 +1,4 @@
-Zustand: offen (**1×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein
+Zustand: offen (**2×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein
 Träger ist **nicht** vorgeschlagen: ob ein stehender Satz von der Eigenschaft
 abhängt, die eine Arbeit bewegt, ist eine Lese-Handlung am Gegenstand, und die
 Abhängigkeit steht in Prosa — ein Gate müsste sie kennen, um sie zu prüfen.

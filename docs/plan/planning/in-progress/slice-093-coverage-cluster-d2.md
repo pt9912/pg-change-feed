@@ -281,7 +281,9 @@ Backticks).
   was bricht, sind die **Aussagen darüber** — ein Kommentar beschrieb den abwesenden
   Text der Vorgänger-Fassung; eine Ausnahme war im Code weiter als im Satz; eine
   Begründung hatte ein Subjekt, das die Messung ausschließt; ein Beleg-Adressat
-  löste nicht auf. Sechs Vorkommen in vier Runden, alle an derselben Art von Stelle.
+  löste nicht auf. **Neun** Sätze dieser Art über vier Runden — die Berichte
+  dieses Slice führen sie einzeln (F-1 bis F-5, V-2/V-3, D-1 bis D-4, Delta-2
+  D-1/D-2); die vier oben sind die schwersten. Alle an derselben Art von Stelle.
   Zweitens: **der Wellen-Puffer ist aufgebraucht** — 1523 ist exakt der 80-%-Bedarf,
   und das Band reicht bis **1522**, was noch `80.0%` druckt; erst **1521** druckt
   `79.9%`. Der Puffer bei `THRESHOLD=80` ist damit **genau ein Statement**, getragen

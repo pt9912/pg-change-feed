@@ -540,3 +540,224 @@ wurde **nicht** angefasst (nach jeder Probe gegen das Original geprüft), das
 temporäre Image-Tag ist entfernt. Der Baum ist nach diesem Bericht sauber,
 **kein** Commit, keine Änderung an Artefakten des Slice, an `THRESHOLD`, an
 Produktcode oder an einem Träger außerhalb dieses Berichts.
+
+---
+
+## Nachtrag — Abschluss-Prüfung nach Delta-2, V-2/V-3-Fix und Closure · 2026-09-16
+
+**Rolle:** Verifier (Modul 11), **ein** Durchgang, **frischer** Kontext für diesen
+Nachtrag. Auftrag: die zwei nach dem Delta-2 korrigierten Sätze, die Auflösung
+von **V-4**, ein letztes Verdikt. **Nicht** gegen realen Bedarf (Validator, nicht
+ausgelöst).
+
+**Stand:** `HEAD` = `fc762ed`, Zweig `main`, Baum sauber. Neue Commits seit §1 des
+Hauptberichts: `9f9bffc` (**V-2/V-3**), `a41a9de` (**Closure**: §6-Ausgänge, §7,
+elf Häkchen, Register, dieser Bericht), `5662f78` (Delta-2-Report), `fc762ed`
+(zwei Weiten aus dem Delta-2). Der Slice liegt weiter in `in-progress/`; der
+`git mv` nach `done/` ist **nicht** erfolgt. Exit-Codes sind je **ungepiped** und
+in eigenem Schritt gelesen; die Mutationsproben liefen auf Arbeitsbaum-Kopien
+**außerhalb** des Repos.
+
+### N-1 Eigene Messungen des Nachtrags
+
+| # | Lauf | Exit | Ergebnis |
+|---|---|---|---|
+| N-1.1 | `make gates` am Stand `fc762ed` (Log in Datei, Exit **danach** aus eigener Datei) | **0** | sechs Checks: `baseline-verify v6.5.0 OK — 54 Dateien` · `coverage-gate: OK — Coverage 80.00% erfüllt Schwelle 70%` (gedruckte `total:`-Zeile: `80.0%`) · `d-check: 772 Datei(en) geprüft, 0 Befund(e)` · `commit-traceability: OK — 5 Commit(s)` · `generated-sync: OK`; `a-check: gesamt: 0 Befund(e)`; Baum danach leer |
+| N-1.2 | die **sieben** im Testkopf und in §7 genannten Mutationen, je einzeln (Containerkopie, `--network none`), plus Baseline | Baseline **0**, Proben je **1** | **7 × rot, jede mit ihrer Regel**: `SELECT` aus dem Heartbeat-Grant (`:215`, (1)) · `DELETE`-Grant für `cdc_admin` (`:224`, (2)) · `DELETE` an `cdc_capture` (`:239`, (3)) · Schema-USAGE entfernt (`:204`, (0)) · `retention_blockers` gestrichen (`:259`, (5)) · `ALL TABLES IN SCHEMA` angehängt (`:273`, (6)) · `GRANT CREATE ON SCHEMA cdc` angehängt (`:289`, (6a)) |
+| N-1.3 | **zwei** Schema-`USAGE`-Grants: `… ON SCHEMA public TO cdc_reader` angehängt (die Mutation, die der Delta-2 als grün meldet) | **0** | **grün** — die Ausnahme von (7) überspringt **zwei** Elemente; reproduziert, ohne neuen Fatal |
+| N-1.4 | dasselbe Paar, aber mit `CREATE`: `GRANT USAGE, CREATE ON SCHEMA public TO cdc_reader;` angehängt | **1** | rot an `:289`, Regel **(6a)**, Fatal nennt `schema public` — „(6a) hält **jedes** von ihnen auf `USAGE`" trägt auch für das **zweite** Schema-Objekt |
+| N-1.5 | `GRANT USAGE ON SCHEMA public TO cdc_capture, cdc_reader;` (Schema **beider** Seiten) | **0** | grün — die Ausnahme greift klassenweit; (6a) hält das Objekt bei `[usage]` |
+| N-1.6 | **Regel (6) deaktiviert** (`if false && istKlassenGrant(objekt)`), dazu `GRANT SELECT ON ALL TABLES IN SCHEMA cdc TO cdc_reader;` | **0** | **grün, kein Fatal** — der rote Fall kommt **allein aus (6)**; (7) erreicht ihn nicht (Bestätigung von Delta-2 **D-3**, INFO) |
+| N-1.7 | `grep -c '^!' .dockerignore` · Kontext-Ableitung | **0** | **6** Negationen; die zwei Negationen der Ausnahme-Klasse sind benannt (`tools/coverage-gate.sh`, `tools/schema/nacharbeit-roles.sql`); 166 + `go.mod`/`go.sum` + 2 = **170** (ohne die neue Negation **169**) |
+| N-1.8 | V-4: Adresse des Testkopfes gegen **§7** (committed in `a41a9de`) | **0** | §7 `:313-322` führt die **sieben** Mutationen in **derselben Reihenfolge** wie der Testkopf und sagt „alle real gefahren, alle **EC = 1**, Kontrolle **EC = 0**" — **deckungsgleich** mit N-1.2, Zeile für Zeile geprüft |
+| N-1.9 | Register-Paarung (c): jedes Verzeichnis unter `observations/BEO-PGC/` gegen sein `evidence/` | **0** | **eines** von 63 ohne Beleg-Datei — `architect-verdikt-ablageort-uneinheitlich`, und dessen `state.md` trägt `gestrichen` **mit Begründung** (Modul 6: gestrichen heißt nicht gelöscht) → **kein Defekt**; die vier in §7 genannten Einträge tragen **2 / 4 / 2 / 2** Belege; `open/` ist leer (§7s Folge-Slice-Aussage) |
+
+### N-2 Die zwei neuen Sätze
+
+**`.dockerignore:3-7` (`fc762ed`) — trägt.** Der Kopf benennt das Paar, das er
+meint, **namentlich** („Die beiden `!`-Zeilen für `tools/coverage-gate.sh` und
+`tools/schema/nacharbeit-roles.sql`"), die Richtung stimmt (**VERGRÖSSERN**;
+abgeleitet **169 → 170**, eigene Zählung der Negationen **6**, ohne Vorwärts-Deixis),
+und die Singular-Form („**eine** Negation hebt den Ausschluss für **genau diese
+Datei** auf") trifft die Klasse, deren Merkmal (ii) **genau eine** Datei je
+Ausnahme verlangt. Die tragenden Aussagen (kontextweit statt stage-gebunden ·
+jeder Eintrag nennt seinen Leser · Runtime-Image unberührt) sind unverändert und
+waren schon in der Vorprüfung gemessen.
+
+**`roles_rollout_file_internal_test.go:299-300` (`fc762ed`) — trägt, mit einer
+benannten Rest-Weite.** Der Satz lautet jetzt:
+
+```text
+299 	// Ausgenommen ist ein Schema-Objekt: (6a) hält jedes von ihnen auf
+300 	// `USAGE` fest, und die Vorbedingung beider Seiten ist kein Objektzugriff.
+```
+
+- **Nicht mehr (keine Über-Behauptung):** die falsche Kardinalitäts-Begründung
+  („einelementig, weil (6a) …") ist **weg**; der Satz behauptet **keine** Anzahl.
+- **Beide Hälften messen sich:** „(6a) hält **jedes** von ihnen auf `USAGE` fest"
+  hält auch für das **zweite** Schema-Objekt (N-1.4 rot an (6a), Fatal nennt
+  `schema public`) — die Aussage ist also nicht auf `schema cdc` beschränkt; und
+  „die Vorbedingung beider Seiten ist kein Objektzugriff" ist für den
+  `cdc`-Grant wahr (drei Rollen halten `USAGE`, kein Objektzugriff).
+- **Nicht weniger — die Weite:** die Ausnahme im **Code** ist klassenweit (jedes
+  Objekt mit Präfix `schema `), und der **Satz** benennt genau diese Klasse
+  („ein Schema-Objekt") — die benannte Ausnahme ist damit so weit wie die im
+  Code, anders als in den zwei Vorfassungen. Was der Satz **nicht** ausspricht:
+  dass ein Schema-Objekt **ohne** die Eigenschaft „Vorbedingung **beider**
+  Seiten" mit übersprungen wird — gemessen (N-1.3, N-1.5) bleibt
+  `GRANT USAGE ON SCHEMA public TO cdc_reader` (und dieselbe Zeile an beide
+  Rollen) **grün**. Das ist **keine** least-privilege-Lücke ((6a) hält jedes
+  Schema-Objekt bei `[usage]`; ein Schema-`USAGE` ist kein Objektzugriff), aber
+  es ist eine **unbenannte Grenze der Begründung** — festgehalten, damit sie
+  nicht still bleibt.
+
+### N-3 V-4 löst auf — die Adresse trägt die Codes, und sie stimmen
+
+§7 führt seit `a41a9de` die sieben Mutationen **mit ihren Exit-Codes** („alle
+real gefahren, alle **EC = 1**, Kontrolle **EC = 0**") und die **zwei
+Wellen-Belege mit ihrer Schwelle** (`THRESHOLD=80` → EC 0 · `THRESHOLD=85` →
+Skript-EC 1 / `make`-EC 2) sowie die Zahlen mit Lauf und Band (**+30**,
+`bootstrap` **336 → 308**, `telemetry` **2 → 0**, Nenner **1903**, Quote
+**1522–1523 von 1903**, beide Enden gedruckt `80.0%`) — das sind genau die
+Angaben, die der Hauptbericht §5 für §7 verlangt hatte. Gegen meine eigenen
+Läufe gehalten: **sieben von sieben** Zeilen stimmen (N-1.2 gegen N-1.8), und
+die Listen in Testkopf und §7 sind **dieselben sieben in derselben
+Reihenfolge**. **V-4 ist damit erfüllt**; die Adresse zeigt auf eine
+**committete**, ausgefüllte Sektion.
+
+### N-4 Findings des Nachtrags
+
+#### N-A — Drei Zustands-Zeilen im Beobachtungs-Register tragen eine Zahl, die der abgeleitete Zähler derselben Datei widerlegt
+
+- `kategorie`: **LOW**
+- `quelle`: `AGENTS.md` §3.12 Instanz A · Modul 6 („Der Zähler wird **abgeleitet**,
+  nicht geführt … Ein gespeicherter Zähler neben einer Belegliste sind zwei
+  Quellen für denselben Zustand") · Klasse
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (**7×**)
+- `pfad`: `docs/plan/planning/observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/state.md:1`
+  · `…/beleg-befehl-traegt-seinen-satz-nicht/state.md:1` ·
+  `…/rollen-test-abdeckungsluecken/state.md:1-6` gegen die `Zähler`-Zeile
+  derselben Dateien
+- `befund`: drei Stellen, alle in **Registern**, die die Closure `a41a9de`
+  angefasst hat:
+  - `arbeit-ueberholt-stehenden-traeger` — Kopfzeile „Zustand: offen (**1×**) —
+    unter der Schwelle"; die Zähler-Zeile derselben Datei sagt **2×**
+    (`evidence/slice-091.md`, `evidence/slice-093.md`). Die Kopfzeile war bei
+    ihrer Niederschrift richtig; die Closure hat den Zähler erhöht und die
+    Kopfzeile stehen gelassen.
+  - `beleg-befehl-traegt-seinen-satz-nicht` — Kopfzeile „Zustand: offen
+    (**2×**) — unter der Schwelle, **kein Ausgang zugewiesen**"; die
+    Zähler-Zeile sagt **4×** und „**Schwelle erreicht**", der Absatz darunter
+    weist den Ausgang dem Lese-Schritt der `welle-20`-Closure zu. Die Kopfzeile
+    widerspricht damit **beiden** Hälften des Ist-Zustands (Zahl **und**
+    Schwellen-Lage) und ist schon vor diesem Vorgang stale gewesen.
+  - `rollen-test-abdeckungsluecken` — die Kopfzeile („Zustand: offen — Ausgang:
+    **weiter offen** → ein Test, der den tatsächlichen
+    `nacharbeit-roles.sql`-Inhalt liest (**Punkt 1**), sowie … (**Punkt 2**)")
+    führt **Punkt 1** weiter als offene Arbeit auf, während derselbe
+    `state.md`-Absatz zwei Zeilen später schreibt: „**Punkt 1 ist mit
+    `slice-093` geschlossen**". Der *Zustand* des Eintrags (offen, weiter offen)
+    bleibt richtig — Punkt 2 trägt ihn —, die **Aufzählung** ist überholt.
+- `verifizierbar`: ja — `head -12` je `state.md`;
+  `ls …/evidence/ | wc -l` je Eintrag (**2 · 4 · 2**);
+  `git show a41a9de -- …/state.md`
+- `urteil`: **eine Zeile je Datei**, keine Messung nötig — Zahl bzw. Aufzählung
+  auf den abgeleiteten Stand ziehen. **Nicht blockierend:** der Zähler folgt in
+  allen drei Fällen den Dateien und ist dort richtig; die veraltete Kopie steht
+  daneben. Es ist aber **dieselbe Klasse**, die der Slice in vier Runden
+  bekämpft hat, und zwei der drei Stellen hat die Closure selbst erzeugt bzw.
+  verschärft.
+
+#### N-B — „Sechs Vorkommen in vier Runden" (§7) ist eine Zahl ohne genannte Basis — und die Reports dieses Slice dokumentieren neun
+
+- `kategorie`: **LOW**
+- `quelle`: `AGENTS.md` §3.12 Instanz A (jede Zahl eines Doku-Trägers trägt
+  ihren Ursprung, und eine abgeleitete trägt ihre Rechnung) · dieselbe Klasse
+  wie **V-2** des Hauptberichts
+- `pfad`: `docs/plan/planning/in-progress/slice-093-coverage-cluster-d2.md:284`
+- `befund`: Der Satz „… ein Beleg-Adressat löste nicht auf. **Sechs Vorkommen in
+  vier Runden**, alle an derselben Art von Stelle." steht am Ende einer
+  Aufzählung, die **vier** Beispiele nennt (abwesender Text · Ausnahme im Code
+  weiter als im Satz · Begründung mit unzutreffendem Subjekt · Adressat ohne
+  Artefakt). Welche Menge die **sechs** sind, sagt der Satz nicht; die Reports
+  dieses Vorgangs dokumentieren **neun** Sätze dieser Art — `review-slice-093`
+  F-3 · `review-slice-093-delta` D-1, D-2, D-3, D-4 · dieser Bericht V-2, V-3 ·
+  `review-slice-093-delta-2` D-1, D-2 (die INFO-Fälle D-5/Δ1 und D-3/D-4/Δ2
+  nicht mitgezählt). Eine Lesart, unter der die Sechs aufgeht (Δ1 D-1…D-4 +
+  V-2 + V-3), ist möglich — sie ist aber **nicht benannt**, und mit den zwei
+  Sätzen des Delta-2 ist sie auf **acht** gewachsen.
+- `verifizierbar`: ja — `sed -n '278,286p' <Slice-Plan>`;
+  `grep -nE "^### (F|D|V)-[0-9]" docs/reviews/review-slice-093*.md docs/reviews/verify-slice-093.md`
+- `urteil`: **ein Zusatz** — die Basis nennen („…, die beiden Delta-Reports und
+  dieser Bericht zusammen") oder die Zahl auf den Ist-Stand ziehen. Nicht
+  blockierend; die Aussage **hinter** der Zahl („alle an derselben Art von
+  Stelle") trägt und ist der eigentliche Lerneintrag.
+
+#### N-C — Die zwei INFO-Zeilen des Delta-2 bleiben unverändert im Baum — und **D-3** ist nachgemessen
+
+- `kategorie`: **INFO**
+- `quelle`: `review-slice-093-delta-2.md` D-3/D-4 (beide INFO, „kein
+  Rückgabe-Pfeil") · `AGENTS.md` §3.12 Instanz B
+- `pfad`: `internal/bootstrap/roles_rollout_file_internal_test.go:267` (D-3) und
+  `:264-266` (D-4)
+- `befund`: `fc762ed` hat **D-1 und D-2** des Delta-2 aufgenommen (die zwei
+  Sätze aus **N-2**); **D-3** („aufgehoben ist die **Trennung, die (7) prüft**")
+  und **D-4** („**jedes** zu diesem Zeitpunkt existierende Objekt des Schemas"
+  — `ALL TABLES IN SCHEMA` deckt tabellenartige Objekte, nicht Sequenzen)
+  stehen unverändert. **D-3 habe ich selbst nachgemessen** (N-1.6): mit
+  deaktivierter Regel (6) und angehängtem `GRANT SELECT ON ALL TABLES IN SCHEMA
+  cdc TO cdc_reader` bleibt der Test **grün**, kein Fatal — der rote Fall kommt
+  allein aus (6), die Attribution an (7) ist damit **widerlegt**.
+- `verifizierbar`: ja — `sed -n '263,270p' <Testdatei>`; N-1.6
+- `urteil`: **keine Reparatur verlangt** — der Delta-2 führt beide ausdrücklich
+  als **INFO** ohne Rückgabe-Pfeil, und beide sind Weiten von Begründungen ohne
+  Wirkung auf die Bindung (jede der drei Regeln färbt in allen Proben rot). Sie
+  stehen hier, damit sie vor der Closure **nicht still** bleiben; will die
+  Planner-Runde sie mitnehmen, ist es je eine Wendung.
+
+### N-5 Verdikt des Nachtrags
+
+**Der Slice ist `done/`-fähig — die Lieferung trägt, die Closure ist
+vollständig, und die vier Punkte des Hauptberichts sind erledigt.**
+
+- **V-1 erfüllt:** der zweite Delta-Review deckt `e140363` **und** `9f9bffc`
+  (sein Gegenstand sind beide Commits), Verdikt „die Runde trägt", **0 HIGH,
+  0 MEDIUM**, kein Rückgabe-Pfeil.
+- **V-2 und V-3 behoben und nachgeprüft:** „Drei" statt „Vier" (`:176`) ist mit
+  der Aufzählung (6), (6a), (7) deckungsgleich; der `.dockerignore`-Kopf nennt
+  das Paar und die Richtung (N-2).
+- **V-4 eingelöst:** §7 trägt die sieben Exit-Codes, und sie stimmen mit meinen
+  eigenen sieben Läufen **Zeile für Zeile** (N-3).
+- **DoD:** **11 von 11** Häkchen; §6 trägt vier Ausgänge (R1 *entfallen*, R2
+  *eingetreten und behoben*, R3 *entfallen*, R4 *eingetreten und behoben*); §7
+  trägt Zahlen mit Lauf, das Band, beide Wellen-Belege und die Codes; das
+  Register ist fortgeschrieben (drei Belege, `rollen-test-abdeckungsluecken`
+  **ohne** neuen — der Slice **schließt** dessen Punkt 1); `make gates` am
+  Stand `fc762ed` **EC 0** (N-1.1).
+- **Entscheidungs-Konformität unverändert:** kein Produktcode, `THRESHOLD ?= 70`,
+  `tools/schema/` unberührt; die zwei neuen Commits ändern einen Kommentar, eine
+  Konfigurationszeile und Doku.
+- **Rest, nicht blockierend:** **N-A** (drei Zustands-Zeilen im Register),
+  **N-B** (die Zahl „sechs" in §7), **N-C** (die zwei INFO-Weiten des Delta-2).
+  Alle drei sind **Ein-Zeilen-Nachträge** ohne neue Messung; **N-A** und **N-B**
+  empfehle ich **vor** dem `git mv` bzw. im selben Zug — die Registerdateien
+  wandern nicht mit, der Slice-Plan **schon**.
+- **Offen über diesen Slice hinaus** (unverändert): die `welle-20`-Closure misst
+  die Rampenstufe bei `THRESHOLD=80` — der Puffer ist **ein Statement** — und
+  führt die drei Paarungen; **Cluster A** (`cmd/pg-change-feed`) ist der letzte
+  Schnitt der Welle; `open/` ist leer (N-1.9).
+
+**Nicht gefahren:** `make test-store`/`-replication`/`-integration`/`-notify`
+(kein Gate, kein Gegenstand dieses Nachtrags), `make image` (kein
+Image-Eingriff in den zwei neuen Commits — `Dockerfile` und der Bau-Kontext
+sind unberührt) und die Paarungen (der `welle-20`-Closure zugewiesen).
+
+**Beleg-Lage dieses Nachtrags:** jede Zahl stammt aus einem der Läufe N-1.1…N-1.9,
+je in eigener Werkzeug-Beauftragung; der Gate-Lauf (N-1.1) und seine Auswertung
+waren **zwei** Schritte, sein Exit-Code wurde aus einer separaten Datei gelesen,
+nie durch eine Pipe (`AGENTS.md` §3.9). Die Mutationsproben liefen auf
+Arbeitsbaum-Kopien **außerhalb** des Repos; `tools/schema/nacharbeit-roles.sql`
+und die Testdatei sind im Repo unverändert (nach jeder Probe gegen das Original
+geprüft). `make docs-check` über den Stand **mit** diesem Nachtrag: **EC 0**,
+**772** Dateien, **0** Befunde. Der Baum trägt nach diesem Nachtrag allein die
+Änderung an diesem Bericht — **kein** Commit.

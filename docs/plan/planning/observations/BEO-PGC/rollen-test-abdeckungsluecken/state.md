@@ -1,5 +1,5 @@
-Zustand: offen — Ausgang: **weiter offen** → ein Test, der den
-tatsächlichen `nacharbeit-roles.sql`-Inhalt liest (Punkt 1), sowie eine
+Zustand: offen — **Punkt 1 ist geschlossen** (`slice-093`, s. unten), **Punkt 2
+bleibt offen**; Ausgang: **weiter offen** → eine
 Rollen-Vertauschungsprüfung, die real die Replication-Stream-/ACK-Adapter
 (`receive.NewStream`/`postgresack.New`) mit rollenbeschränkten
 Verbindungen aufruft (Punkt 2 — `slice-028` schloss nur die

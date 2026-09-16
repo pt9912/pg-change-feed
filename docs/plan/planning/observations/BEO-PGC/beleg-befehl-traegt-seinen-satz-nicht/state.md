@@ -1,4 +1,5 @@
-Zustand: offen (**2×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein
+Zustand: offen (**4×**) — Schwelle erreicht; den Ausgang weist der **Lese-Schritt
+der `welle-20`-Closure** zu. Ein
 Träger ist **nicht** vorgeschlagen: die Klasse wäre über einen Sensor schwer zu
 fassen — ein Beleg-Befehl läuft netzlos und liefert ein Ergebnis; ob dieses
 Ergebnis **den Satz stützt**, ist eine Lese-Handlung. Die naheliegende Antwort
