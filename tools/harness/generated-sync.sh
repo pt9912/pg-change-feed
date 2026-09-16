@@ -19,8 +19,11 @@
 # kein Pruef-Schritt — ein Gate, das erst schreibt und dann vergleicht, laesst
 # den Baum schmutzig zurueck und ist beim zweiten Lauf gruen.
 #
-# Der Befund traegt den Diff: je abweichender Datei die committete Zeile der
-# ersten Abweichung und der Unified-Diff. Die gepinnte Stufe laeuft ohne
+# Der Befund traegt den Diff: je abweichender Datei die erste abweichende Stelle
+# im committeten Erzeugnis und darunter den Unified-Diff mit Kontext. Die Zeile
+# kommt aus dem Hunk-Kopf eines `diff -U0` (ohne Kontext) — bei einer Einfuegung
+# (`-N,0`) nennt der Befund N+1, weil die Abweichung erst hinter Zeile N
+# beginnt. Die gepinnte Stufe laeuft ohne
 # `--no-cache-filter`: ihren Layer-Cache kann kein Urteil maskieren, weil das
 # Urteil ausserhalb der Stufe faellt — im Vergleich dieses Laufs.
 #
@@ -69,11 +72,19 @@ docker run --rm --user "$RUN_USER" --network none \
     "${proto_sources[@]}"
 
 report_diff() {
-  local rel=$1 generated=$2 committed=$3 diff_text first_line
+  local rel=$1 generated=$2 committed=$3 diff_text zero_ctx first_line
   diff_text=$(diff -u --label "committet: $rel" --label "Generatorausgabe: $rel" \
     "$committed" "$generated" || true)
-  first_line=$(printf '%s\n' "$diff_text" | sed -n 's/^@@ -\([0-9]\{1,\}\).*/\1/p' | sed -n '1p')
-  printf 'generated-sync: FAIL — %s weicht von der Generatorausgabe ab (erste Abweichung: committete Zeile %s)\n' \
+  zero_ctx=$(diff -U0 "$committed" "$generated" || true)
+  first_line=$(printf '%s\n' "$zero_ctx" | awk '
+    /^@@ / {
+      split($2, p, ",")
+      start = p[1]; sub(/^-/, "", start)
+      count = (p[2] == "" ? 1 : p[2] + 0)
+      print (count == 0 ? start + 1 : start)
+      exit
+    }')
+  printf 'generated-sync: FAIL — %s weicht von der Generatorausgabe ab (erste abweichende Stelle im committeten Erzeugnis: Zeile %s)\n' \
     "$rel" "${first_line:-unbekannt}" >&2
   printf '%s\n' "$diff_text" >&2
 }

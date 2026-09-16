@@ -7,8 +7,9 @@ name: ci
 # aus, kein Doppellauf.
 #
 # Ruft ausschliesslich bestehende `make`-Targets auf (AGENTS.md §3.1,
-# Docker-only): `make gates` deckt baseline-verify, docs-check, a-check und
-# commit-traceability ab (harness/README.md §Sensors), `make test` ergaenzt
+# Docker-only): `make gates` deckt baseline-verify, docs-check, a-check,
+# commit-traceability, coverage-gate und generated-sync ab
+# (harness/README.md §Sensors), `make test` ergaenzt
 # den Race-Detector-Unit-Test-Lauf (kein Gate, ADR-0030). Kein Workflow-
 # Schritt enthaelt Inline-Shell-Logik, die eines dieser Ziele umgeht oder
 # dupliziert.
@@ -62,7 +63,7 @@ jobs:
           test "$(uname -s)" = "Linux"
           test "$(go env GOOS)" = "linux"
 
-      - name: Gates (baseline-verify, docs-check, a-check, commit-traceability)
+      - name: Gates (baseline-verify, docs-check, a-check, commit-traceability, coverage-gate, generated-sync)
         run: make gates
 
       - name: Go-Module in den Volume-Cache laden

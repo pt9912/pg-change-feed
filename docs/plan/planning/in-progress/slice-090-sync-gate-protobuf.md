@@ -138,8 +138,10 @@ Aussagen-Berührung steht hier gar nicht.
 | `harness/mk/generated-sync.mk` (Ziel `generated-sync`) | neu | Das Gate als eigenes Modul, im Haus-Muster von `baseline.mk`/`doc-gate.mk`: `GATE_CHECKS += <ziel>` und die Invocation in **einer** Datei. |
 | `tools/harness/generated-sync.sh` | neu | Der Vergleich selbst: Generator in ein Temp-Verzeichnis, `diff` gegen den Baum, Befund mit Datei und Zeile. Ein Shell-Lauf statt einer Inline-Rezeptur, weil die Ausgabe das Urteil tragen muss (LP3). |
 | `Makefile` | **nicht** | Das Ziel deklariert das Fragment selbst — `include harness/mk/*.mk` zieht es in den Aggregator ein, Ziel und `GATE_CHECKS`-Anhang stehen damit in **einer** Datei (Haus-Muster von `coverage.mk`). Eine Zeile im Root-Makefile wäre eine zweite Deklaration desselben Ziels. |
-| `harness/README.md` §Sensors | update | Die Bindung des neuen Gates (Gate-Tabelle, mit `ADR-0084`), damit das Ziel nicht in der Werkzeug-Tabelle steht. |
-| `AGENTS.md` §4 | update | Target-Liste um das Gate-Ziel ergänzen. |
+| `harness/README.md` §Sensors | update | Die Bindung des neuen Gates: die **Target-Zelle wird zum Link** auf `harness/sensors/generated-sync.md` — der Kommentar-Block der Sektion nennt genau diesen Ort für einen Überhang über einen Satz hinaus (Deckungsgrenze, Ausgabe-Bedeutung, Exit-Codes); das Ziel steht damit nicht in der Werkzeug-Tabelle. |
+| `harness/sensors/generated-sync.md` | neu | Der Vertrags-Träger des Gates: Deckungsgrenze und beide Vergleichsrichtungen, Ausgabe-Form (Datei und Zeile, Herleitung aus `diff -U0`), Exit-Codes, Overrides, benannte Grenzen, Bindung. |
+| `AGENTS.md` §4 | update | Target-Liste um das Gate-Ziel ergänzen — dort eine Zeile, weil die Liste eine Aufzählung ist, kein Vertrag. |
+| `.github/workflows/ci.yml` | update | **Nur zwei Textstellen** (Kommentarzeile und Schrittname): beide führen die Gate-Enumeration als zweite Fassung und nennen vier der sechs Namen, die `GATE_CHECKS` auflöst — `coverage-gate` und `generated-sync` fehlten. Keine Stufe, keine Matrix, keine Abhängigkeit, kein Semantik-Wechsel. |
 | `docs/plan/planning/observations/BEO-PGC/generierte-artefakte-ohne-sync-sensor/state.md` | **nicht** | Der Träger entsteht mit diesem Slice; den **Ausgang** weist der Lese-Schritt der `welle-20`-Closure zu (Modul 6, Schritt 3a/3b) — ihn hier zu setzen wäre ein vorgezogener Lese-Schritt ohne Wellen-Closure. |
 | `docs/user/e2e-abdeckung.md` | **nicht** | Wandert nur, wenn `make test-integration` läuft; dieser Slice braucht das nicht. |
 
