@@ -97,6 +97,39 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   Schließungen und erreichte Meilensteine. Kein Gate fängt das (siehe
   Baseline-Regelwerk `grundlagen-harness-dateien.md` §Was ein Kommentar trägt,
   *Dieselbe Regel für Zustandsfelder*)
+- **Zahl im Träger ohne Ursprung — oder gegen die Messung driftend** — ein
+  Doku-Träger (Sensor-Doku, ADR, Slice-Plan, README-Tabelle, Bericht) nennt
+  eine Zahl über den Gegenstand, ohne ihren **Ursprung** zu tragen (gemessen ·
+  übernommen · abgeleitet) und, wo sie eine Messung ist, ohne den **Lauf**;
+  oder ein übernommener Wert driftet gegen die eigene Messung. Kein Gate fängt
+  das: es gibt **keinen** Sensor, und der Verzicht ist entschieden — eine
+  Formpflicht auf Prosa erzeugte Pflichterfüllung (`AGENTS.md` §3.12, siehe
+  [`ADR-0083`](../../docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md)
+  §Die benannte Grenze). Die Probe ist das **Nachmessen**, nicht das Lesen der
+  Form. Träger **außerhalb** des Diffs haben nur einen Leser — die Messung —
+  und bleiben INFO. Herkunft:
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (4×,
+  `slice-081`/`-084`/`-085`/`-088` — alle vier vom Reviewer durch eigenes
+  Nachmessen gefunden) · seit slice-089.
+- **Zusage ohne Bindung an ihre Eingabeseite — „grün ohne Aussage"** — eine
+  Zusage (Test, Negativtest, Filter-/Limit-Prüfung) ist **vorhanden** und läuft
+  grün, kann aber an ihrer **Eingabeseite** nicht rot werden: mutiert wurde nur
+  die Ausgabeseite (der Fake, der Rückgabewert), nicht der **Eingabewert**.
+  *Eine Zusage ist nur dann gebunden, wenn der Test an ihrer Eingabeseite rot
+  werden kann: mutiere den Eingabewert, nicht nur die Ausgabeseite. Wer nur den
+  Fake oder den Rückgabewert mutiert, prüft den Fake — die Aussage bleibt grün,
+  egal was der Adapter mit der Eingabe tut. Fehlt die Mutation der Eingabeseite,
+  ist die Zusage grün ohne Aussage: ein Befund, kein Formfehler.* Abgrenzung zur
+  MEDIUM-Klasse „fehlende Negativtests bei neuem öffentlichem Vertrag": dort
+  **fehlt** die Abdeckung, hier steht eine vorhandene Zusage ohne Bindung — die
+  Kategorie entscheidet über die Fixrunde. Kein Gate fängt das: ein
+  Mutations-Harness gibt es in diesem Repo nicht, die Prüfung **ist** die
+  Mutation. Herkunft: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (4×,
+  `slice-083`/`-086`/`-087`/`-088`; in drei der vier Fälle fand der Reviewer die
+  Klasse durch Mutieren der Eingabeseite), Architect-Verdikt
+  [`architect-verdict-negativtest-eingabeseite-4x.md`](../../docs/reviews/architect-verdict-negativtest-eingabeseite-4x.md)
+  · seit slice-089. Die Träger-Seite derselben Regel steht in
+  `.claude/commands/implement-slice.md` Schritt 19.
 - **Traceability-/ID-Schema-Verstoß** — Commit oder PR nennt keine
   `LH-*`- oder `ADR-*`-Kennung; oder eine Kennung nutzt ein Präfix, das MR-000
   nicht deklariert (`LH-FA/QA-<BEREICH>-<NNN>`, `SPEC-<NNN>`, `ARC-<NNN>`,

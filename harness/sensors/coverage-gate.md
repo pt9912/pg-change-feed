@@ -29,7 +29,7 @@ E2E-Tier) — kein Unit-Coverage-Kandidat.
 
 | Stufe | Wert | Ereignis |
 |---|---|---|
-| Einstieg | **70 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des **Kalibrierungs-Laufs** (71,3 %) —, angehoben auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a), Anhebung durch den Subjekt-Transfer aus [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md); die Größe dieser Zeile: §Zählbasis) |
+| Einstieg | **70 %** | real gemessener Ist-Stand auf der netzlos prüfbaren Fläche — die von der Stufe **gedruckte** Prozentzeile des **Kalibrierungs-Laufs** (71,3 %, Lauf `slice-081`) —, angehoben auf die nächste volle 5-%-Stufe ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), Mechanik `ADR-0054` §(a), Anhebung durch den Subjekt-Transfer aus [`ADR-0077`](../../docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md); die Größe dieser Zeile: §Zählbasis) |
 | Endstufe | **80 %** | fest, Nutzer-Entscheidung ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md); `roadmap.md` §Nächste Wellen) |
 
 **Geltende Stufe:** Der bewegliche Wert dieser Rampe steht ausschließlich in
@@ -90,7 +90,7 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    ([`db-adapter-coverage.md`](db-adapter-coverage.md)) aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand
-   (20 Statements, 16 gedeckt) — und ist damit **nicht** Teil der
+   (20 Statements, 20 gedeckt, Lauf `slice-089`) — und ist damit **nicht** Teil der
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
    die zwei Zahlen überlappen nicht.
 
@@ -103,11 +103,12 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
      (Schnittstellen-Deklarationen) und `domain/errors`
      (Sentinel-Deklarationen);
    - **über fremde Testpakete gedeckt** — `internal/adapters/driving/grpc/streamv1`
-     (die generierten `changestream*.pb.go`) trägt **86 Statements, 61 gedeckt
-     (70,9 %)**; sie zählen, weil andere Testpakete mit `-coverpkg` über die
+     (die generierten `changestream*.pb.go`) trägt **86 Statements, 61 gedeckt**
+     (**70,9 %**, abgeleitet aus 61/86; Lauf `slice-089`); sie zählen, weil andere
+     Testpakete mit `-coverpkg` über die
      Paketgrenze messen;
    - **vollständig ungedeckt** — `cmd/pg-change-feed` trägt **49 Statements,
-     alle mit `count = 0`**. Es ist damit das **einzige Paket des Gegenstands
+     alle mit `count = 0`** (Lauf `slice-089`). Es ist damit das **einzige Paket des Gegenstands
      ohne ein einziges gedecktes Statement** und gehört zu der 80-%-Arbeit, die
      `welle-20` bündelt.
 
@@ -159,7 +160,9 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 | 2 | Coverage-Eingabe fehlt/leer, `total:`-Zeile fehlt, oder Prozentwert nicht parsbar |
 
 Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
-die beiden Prozente sind die **gedruckten** Zeilen der Läufe, §Zählbasis):
+die beiden Prozente sind die **gedruckten** Zeilen **eines** Laufs — Lauf `slice-081`,
+beide Kommandos real gefahren in
+[`verify-slice-081.md`](../../docs/reviews/verify-slice-081.md), Zählbasis §Zählbasis):
 `THRESHOLD=75` (über dem Ist-Stand) lässt die Stage real scheitern
 (`coverage-gate: FAIL — Coverage 71.30% unter Schwelle 75%`) — das Gate-Skript
 endet Exit 1, `make` meldet für den gescheiterten Bauprozess Exit 2;

@@ -363,6 +363,64 @@ was nicht, führt
 [`harness/sensors/docs-check.md`](harness/sensors/docs-check.md) aus seiner
 Sicht · seit slice-078.
 
+### 3.12 Eine Aussage, die als Beleg gelesen wird, trägt ihren Ursprung
+
+Regeln dieser Sektion: [`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md)
+— dort die Entscheidung, ihre Begründung, ihre Grenze und ihr Geltungsbereich.
+
+**Instanz A — Zahlenwert in einem Träger.**
+
+> **Aussage.** Jede Zahl eines Doku-Trägers trägt ihren **Ursprung**: ob sie
+> **gemessen**, **übernommen** oder **abgeleitet** ist. Ist sie eine Messung,
+> trägt sie zusätzlich den **Lauf**, aus dem sie stammt (die gedruckte Zeile).
+> Ein aus Bericht oder Nachbardokument übernommener Wert wird nachgemessen
+> oder als **übernommen** gekennzeichnet; ein **abgeleiteter** Wert (Summe,
+> Produkt, Differenz, Prozent) wird als **abgeleitet** gekennzeichnet — nie
+> als gemessen ausgegeben.
+>
+> **Bewegliche Zahlen.** Der **Nenner** hängt am Code-Stand und ist eine
+> **Zustandsgröße**; die **gedeckte** Zahl hängt am Lauf und ist der **Beleg
+> eines konkreten Laufs** — sie nennt ihn und nie „der Ist-Stand". Der
+> Schreiber setzt den Zeitpunkt; der Leser kann ihn nicht erraten.
+
+**Instanz B — Tatsachenbehauptung in Plan oder Begründung.**
+
+> **Aussage.** Eine Begründung, die eine **Tatsache über den Gegenstand**
+> behauptet — ein DoD-Kriterium („beweist …"), ein Plan-Satz („wie die drei
+> anderen"), eine Konsequenz —, nennt den **Beleg-Anker**, an dem sie geprüft
+> wurde (Befehl, Datei, Abfrage), **oder** sie ist als **erwartet** formuliert
+> („zu belegen durch …"). Eine ungeprüfte Übernahme steht nie als geprüfte
+> Aussage im Text: was aus Bericht, Nachbardokument oder Erinnerung stammt,
+> wird nachgemessen oder als **übernommen** gekennzeichnet. Ein Kriterium, das
+> erst nach der Arbeit belegt werden kann, ist eine **Zusage** — es ist als
+> solche formuliert und nicht als Feststellung.
+
+**Was diese Regel nicht hat — die benannte Grenze.** Ein Sensor ist **nicht**
+Teil der Entscheidung: verlangte er, dass jede Zahl ihren Ursprung trägt, wäre
+er eine **Formpflicht auf Prosa**, erzeugte Pflichterfüllung und hätte genau
+die Klasse, die er prüfen soll. Die verfügbare **Falsifikation ist die Messung
+selbst**. Die durchsetzenden Leser existieren bereits und sind Rollen, kein
+Werkzeug: der **Reviewer** für Instanz A (diff-skopiert; eigener HIGH-Unterpunkt
+in [`.harness/skills/reviewer.md`](.harness/skills/reviewer.md) — die vier
+belegten Fälle stehen in
+`docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`,
+er hat sie durch eigenes Nachmessen gefunden), der **Verifier**
+für Instanz B („Prüfe die **Belege**, nicht die Behauptung"). Für Träger
+**außerhalb** des Diffs bleibt als Leser allein die Messung.
+
+**Benachbarte Regel — und die Abgrenzung zu ihr.** §3.7 bleibt die Regel für
+den **Kommentar** und das **Zustandsfeld**; ihre Kernaussage ist eine
+geschlossene Liste von Kommentar-Klassen, die der Reviewer-Skill namentlich
+adressiert. Dieser Abschnitt gilt für die **Aussage** in einem Doku-Träger und
+ist §3.7s Geschwister-Ort, nicht seine Erweiterung. Der **Geltungsbereich** —
+Doku-Träger samt den Begründungen in ihnen, **nicht** Testausgaben, Lauf-Logs
+und `git`-Historie — steht in
+[`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md).
+
+**Träger und Anker:** Diese Regel wirkt durch **Lesen** (Reviewer · Verifier),
+nicht durch ein Gate; ihre Begründung führt
+[`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md) · seit slice-089.
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.

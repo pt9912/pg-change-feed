@@ -178,6 +178,22 @@ ist eine Lifecycle-Rücksprungkante (11).
     ist, gehört sie in den Mutations-Sensor deines Repos (falls vorhanden); wo sie einmalig ist, in
     den Bericht. **Keine Antwort ist ein Befund**, kein Formfehler — die Klasse „Zusage greift
     weiter als Abdeckung" ist in der Praxis teuer erkauft.
+    **Die Richtung der Mutation · seit slice-089**
+    (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, 4×; Architect-Verdikt
+    [`architect-verdict-negativtest-eingabeseite-4x.md`](../../docs/reviews/architect-verdict-negativtest-eingabeseite-4x.md)):
+    Der Satz oben sagt **dass** mutiert wird, nicht **wo** — in `slice-088` war die Pflicht
+    ausgeführt (fünf Mutationen, alle rot gesehen) und ließ zwei Aussagen trotzdem ungebunden,
+    weil mutiert wurde, was der Test **zurückgibt**. Die Richtung gehört dazu: *Eine Zusage ist
+    nur dann gebunden, wenn der Test an ihrer **Eingabeseite** rot werden kann: mutiere den
+    **Eingabewert**, nicht nur die Ausgabeseite. Wer nur den Fake oder den Rückgabewert mutiert,
+    prüft den Fake — die Aussage bleibt grün, egal was der Adapter mit der Eingabe tut. Fehlt die
+    Mutation der Eingabeseite, ist die Zusage **grün ohne Aussage**: ein Befund, kein Formfehler.*
+    **Enumerations-Pflicht statt Erinnerung** (dieselbe Form wie Schritt 20): **je Zusage eine
+    benannte Eingabeseiten-Mutation** — die Liste lautet *Zusage · mutierte Eingabe · gesehenes
+    Rot*, und wo sie leer bleibt, steht der Grund. Die bloße **Zahl** der gefahrenen Mutationen
+    trägt nicht (`slice-088`: fünf gefahren, zwei Aussagen ungebunden, `review-slice-088.md`
+    F-1). Der Finder-Träger derselben Regel ist der HIGH-Unterpunkt
+    „Zusage ohne Bindung an ihre Eingabeseite" in `.harness/skills/reviewer.md`.
 20. **Jeden in diesem Lauf neu geschriebenen oder geänderten Kommentar gegen `AGENTS.md` §3.7
     prüfen** (Code, Konfiguration, Skripte). Die Probe: beschreibt der Satz den **Ist-Zustand**
     (indikativ, auflösbar), oder trägt er eine Slice-Nummer als Begründung, ein „(… , entschieden)"

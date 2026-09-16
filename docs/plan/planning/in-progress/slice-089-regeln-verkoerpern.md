@@ -100,38 +100,38 @@ vierter Punkt:
 
 **Liefer-Punkt 1 — die Herkunfts-Regel steht.**
 
-- [ ] `AGENTS.md` trägt einen **neuen §3.12** mit **beiden** Instanzen aus
+- [x] `AGENTS.md` trägt einen **neuen §3.12** mit **beiden** Instanzen aus
       [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
       (Zahlenwert · Tatsachenbehauptung), **wörtlich** wie dort entschieden.
-- [ ] Der Abschnitt nennt die **Grenze**: kein Sensor (Formpflicht auf Prosa
+- [x] Der Abschnitt nennt die **Grenze**: kein Sensor (Formpflicht auf Prosa
       erzeugt Pflichterfüllung); Falsifikation bleibt die **Messung**.
-- [ ] Der Träger-Anker steht: `· seit slice-089` — dieselbe Form wie §3.11.
+- [x] Der Träger-Anker steht: `· seit slice-089` — dieselbe Form wie §3.11.
 
 **Liefer-Punkt 2 — die Mutations-Richtung steht an ihren zwei Trägern.**
 
-- [ ] `.harness/skills/reviewer.md` trägt einen **HIGH-Unterpunkt**: eine Zusage
+- [x] `.harness/skills/reviewer.md` trägt einen **HIGH-Unterpunkt**: eine Zusage
       ist nur gebunden, wenn der Test an ihrer **Eingabeseite** rot werden kann
       (Eingabewert mutieren, nicht nur Ausgabeseite/Fake/Rückgabewert).
-- [ ] `.claude/commands/implement-slice.md` **Schritt 19** trägt dieselbe
+- [x] `.claude/commands/implement-slice.md` **Schritt 19** trägt dieselbe
       Richtung — dort steht die Mutations-Pflicht heute **ohne** sie.
-- [ ] **Kein** neuer Sensor, **keine** ADR — der Verdikt-Zug hat beides
+- [x] **Kein** neuer Sensor, **keine** ADR — der Verdikt-Zug hat beides
       ausdrücklich abgelehnt (Skill + Workflow-Schritt sind die Träger).
 
 **Liefer-Punkt 3 — die zwei bekannten Träger sind regelkonform.**
 
-- [ ] `harness/sensors/coverage-gate.md` §Grenze Punkt 1 und die zwei
+- [x] `harness/sensors/coverage-gate.md` §Grenze Punkt 1 und die zwei
       §Ausgabe-Abschnitte tragen für ihre beweglichen Werte **Ursprung und
       Lauf** (Verifikation `verify-slice-085` **V-1**: dort stehen Messwerte
       ohne Zeitpunkt).
-- [ ] `docs/plan/planning/welle-20.md` ist unter derselben Regel geprüft —
+- [x] `docs/plan/planning/welle-20.md` ist unter derselben Regel geprüft —
       weitere bewegliche Zahlen neben dem Nenner sind datiert.
-- [ ] `make gates` grün (Exit direkt, ungepiped).
+- [x] `make gates` grün (Exit direkt, ungepiped).
 
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. *(entfällt: die Datei führt dieses Repo nicht — Greenfield-Bootstrap.)*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -149,10 +149,25 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `AGENTS.md` | update | **neuer §3.12** mit beiden Instanzen — Wortlaut aus [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md); Geschwister-Ort neben §3.7, **nicht** dessen Erweiterung (§3.7 trägt eine geschlossene Liste von Kommentar-Klassen, die der Reviewer-Skill namentlich adressiert) |
-| `.harness/skills/reviewer.md` | update | der **HIGH-Unterpunkt** zur Mutations-Richtung (heute steht die Pflicht dort ohne sie) |
+| `.harness/skills/reviewer.md` | update | **zwei** HIGH-Unterpunkte: die Mutations-Richtung — der Skill führt sie nicht (die Pflicht steht in `.claude/commands/implement-slice.md` Schritt 19, auf der Implementer-Seite) — **und** die Zahlen-Hälfte der Herkunfts-Regel — [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) §Entscheidung 4 nennt den Reviewer-Unterpunkt als durchsetzende Hälfte von Instanz A; ohne ihn hat die Zahlen-Hälfte **keinen** Leser, weil diese ADR ausdrücklich keinen Sensor bestellt |
 | `.claude/commands/implement-slice.md` | update | **Schritt 19** trägt dieselbe Richtung — er ist der Ort, an dem die Mutations-Pflicht heute steht |
-| `harness/sensors/coverage-gate.md` | update | §Grenze Punkt 1 und zwei §Ausgabe-Abschnitte: bewegliche Werte mit **Ursprung und Lauf** (Verifikation `verify-slice-085` V-1) |
+| `harness/sensors/coverage-gate.md` | update | §Grenze Punkt 1 und der §Ausgabe-/Rot-Grün-Beleg: bewegliche Werte mit **Ursprung und Lauf** (Verifikation `verify-slice-085` V-1); dazu die §Kalibrierungs-Bindung — derselbe Kalibrierungs-Lauf trägt dort seinen Lauf |
+| `harness/sensors/db-adapter-coverage.md` | update | der **zweite** §Ausgabe-Abschnitt aus V-1 §4.2 — dort namentlich mit `73,38 %` geführt; dazu die §Kalibrierungs-Bindung desselben Laufs. Gleicher Fund, gleiche Klasse: V-1 nennt **zwei** §Ausgabe-Abschnitte, dieser ist der andere (Nachzug, s. u.) |
 | `docs/plan/planning/welle-20.md` | update | bewegliche Zahlen neben dem Nenner datiert, soweit sie die Regel verletzen |
+
+**Nachzug im ersten Implementer-Lauf (Schritt 14) — drei Punkte über die erste
+Liste hinaus.** (1) `.harness/skills/reviewer.md` trägt **zwei** Unterpunkte,
+nicht einen: die Zahlen-Hälfte ist Folgepflicht aus
+[`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md)
+§Entscheidung 4/§Konsequenzen. (2)
+`harness/sensors/db-adapter-coverage.md` zieht nach: V-1 §4.2 — der als Beleg
+dieser Liefer-Punktes genannte Fund — nennt **zwei** §Ausgabe-Abschnitte,
+`73,38 %` (sein eigener) und `71,30 %` (`coverage-gate.md`); beide sind
+derselbe Fund, nicht zwei Vorgänge. (3) die zwei §Kalibrierungs-Bindung-Zellen
+tragen denselben Lauf wie ihr §Ausgabe-Beleg — die Zelle und ihr Beleg stammen
+aus **einem** Lauf. **Nicht** nachgezogen: die übrigen V-1-Fundstellen (die
+`§Zählbasis`-Lesart „132 Positionen × 2" und der `go list`-Befehl aus **V-3**)
+— eigene Fund-Klassen, als Fund gemeldet, nicht in diesen Zug (§6 Risiko 3).
 
 **Der genaue Zuschnitt entsteht im ersten Implementer-Lauf** — die Liste nennt
 die Träger. Wer sie erweitert, prüft die Größenregel (≤ 3 Liefer-Punkte).

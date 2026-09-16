@@ -24,7 +24,7 @@ und „die Coverage" ohne Subjekt-Zusatz meint genau diese Zahl, nie die
 DB-Adapter-Coverage). **Der Nenner ist eine Zustandsgröße, die sich mit jedem
 Zug bewegt:** `slice-079` hat ihn auf **1679** geschnitten, seither ist er durch
 die Nähte und Endpunkte der folgenden Slices auf **1903** gewachsen (zuletzt
-`slice-084`, +9). Wer den Fortschritt dieser Welle liest, liest die **Quote**,
+`slice-084`, +9; eigener Messstand: Lauf `slice-089`). Wer den Fortschritt dieser Welle liest, liest die **Quote**,
 nicht eine eingefrorene Statement-Zahl — die Klasse
 `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` steht genau dafür.
 Der Weg zum Ziel hat zwei Hälften: die **Präzisierung des Gegenstands**
@@ -106,6 +106,17 @@ A: 63 Statements, 3,3 pp). Die Decke ohne die sechs unbeweglichen Funktionen
 liegt bei **81,2 %**, mit den Präfixen bei **84,1 %** — die Endstufe 80 % ist
 über dem **unveränderten** Gegenstand erreichbar, und der unten verlangte
 Rot-Beleg bei `THRESHOLD=85` ist damit **notwendig** rot.
+
+**Herkunft der Zahlen dieses Abschnitts** (`AGENTS.md` §3.12 gilt für die
+Zahlen dieses Plans mit): die **ungedeckten** Statement-Zahlen der
+Cluster-Tabelle, die Paket- und Funktions-Werte (`591`, `327`, `336`, `308`,
+`26–28`, `198`, `0 von 198`) und die Nenner (`1679`, `1903`) sind
+**übernommen** aus [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+§Kontext (2)–(5) — dort **gemessen** in zwei Läufen über denselben Quelltext,
+dedupliziert über die Block-Position, ADR-Stand 2026-09-16. Die **Summen,
+Differenzen und Prozente** dieser Sektion (`229–231`, `175–177`, `165–167`,
+`1523`, `154`, `13`, `63`, `3,3 pp`, `81,2 %`, `84,1 %`, `83,6 %`) sind daraus
+**abgeleitet**, nicht gemessen.
 
 **Geschnitten wird nach dem Maß, nicht auf Vorrat** (Modul 5: Plan und
 Implementation alternieren): Cluster B zuerst — er ist der reinste (60 von 60
