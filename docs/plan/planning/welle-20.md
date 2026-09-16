@@ -77,14 +77,41 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | Slice | Titel | Bezug |
 |---|---|---|
 | `slice-079` | Coverage-Gate: Scope-Schnitt und Neukalibrierung | [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
+| `slice-088` | Coverage-Tail „Reine Übersetzung" — Cluster B | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
 
-**Als Nächstes zu schneiden — der Schnitt folgt der Messung.** Erst wenn
-`slice-079` liegt, steht die Zahl über dem neuen Nenner; dann entstehen die
-Test-Slices nach dem **Größenmaß aus dem Schnittvorschlag des Verdikts**
-(Statement-Anteil): `internal/bootstrap` 591 Statements / 327 ungedeckt (der
-Hebel, ggf. zwei Slices — der zweite erst nach dem ersten), `cmd/pg-change-feed`
-49 / 49, Rest-Tail ~130. **Ihre Kennungen entstehen mit ihren Dateien** — kein
-Name ohne Adresse, die die Sendung annimmt (die Klasse aus
+**Das Schnittmaß steht — und es hat den ersten Vorschlag dieser Welle
+widerlegt** ([`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
+Diese Sektion nannte `internal/bootstrap` „den Hebel" (591 Statements, 327
+ungedeckt, „ggf. zwei Slices"). **Gemessen ist das falsch:** bootstrap hat 336
+ungedeckte Statements, davon sitzen **308 in fünf Funktionen, die kein
+Test-Slice bewegt** — netzlos prüfbar sind dort nur **26–28**. Und `Run` (198
+Statements) ist **netzlos gar nicht prüfbar**: 0 von 198 im Gate-Profil, weil
+jeder `postgresstorage.New*` ein `pgxpool.New` **plus `pool.Ping`** ist und
+`receive.NewStream`/`nats.Connect` ebenso einen lebenden Dienst verlangen.
+
+**Das Maß ist der Tail** — vier Cluster, je ein Slice, geschnitten **nach der
+Messung** (`ADR-0082` §Schnittmaß):
+
+| Cluster | Träger | ungedeckt |
+|---|---|---|
+| **B — Reine Übersetzung** | `replication/decode`, `replication/mapper`, `postgresstorage/sqlexec`, `postgresstorage/mapper` | 60 |
+| **C — Zustell- und Betriebs-Rand** | `driving/http`, `driving/grpc`, `driven/natsnotify`, `driving/grpc/streamv1` | 62 |
+| **D — Anwendungs-Kern und Bootstrap-Rest** | Use-Cases, `domain/model`, `telemetry`, `bootstrap`-Rest | 53–55 |
+| **A — Prozess-Rand (Puffer)** | `cmd/pg-change-feed` (`main`-Dispatch), `bootstrap` (`Run`-Fehlerpfad) | ≈54 |
+| | **Summe** | **229–231** |
+
+**B + C + D tragen die 154 fehlenden Statements** (Ziel 1523 von 1903) — aber
+nur mit **13 Statements Puffer**; **A ist kein Beiwerk, sondern der Puffer** (mit
+A: 63 Statements, 3,3 pp). Die Decke ohne die sechs unbeweglichen Funktionen
+liegt bei **81,2 %**, mit den Präfixen bei **84,1 %** — die Endstufe 80 % ist
+über dem **unveränderten** Gegenstand erreichbar, und der unten verlangte
+Rot-Beleg bei `THRESHOLD=85` ist damit **notwendig** rot.
+
+**Geschnitten wird nach dem Maß, nicht auf Vorrat** (Modul 5: Plan und
+Implementation alternieren): Cluster B zuerst — er ist der reinste (60 von 60
+erreichbar) und trägt am wenigsten Kopplung; die folgenden entstehen, wenn er
+liegt. **Ihre Adresse ist dieses Maß** (`ADR-0082`), ihre Kennungen entstehen mit
+ihren Dateien — kein Name ohne Adresse, die die Sendung annimmt (die Klasse aus
 `BEO-PGC/aufschub-adresse-verfaellt`).
 
 ## 5. Abhängigkeiten
