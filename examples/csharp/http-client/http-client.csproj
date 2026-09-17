@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CdcExamples.Http</RootNamespace>
+    <AssemblyName>http-client</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Der SDK-Style-Glob nimmt sonst auch die Testquellen des Unterordners
+       auf (HttpClient.Tests/ liegt innerhalb dieses Projektverzeichnisses) —
+       das Testprojekt referenziert diese Klassen bereits über
+       ProjectReference. -->
+  <ItemGroup>
+    <Compile Remove="HttpClient.Tests/**" />
+  </ItemGroup>
+
+</Project>
