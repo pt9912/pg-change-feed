@@ -2,8 +2,9 @@
 
 **Fund:** `docs/reviews/review-slice-104.md:34` trug eine nackte
 `ADR-0060`-Kennung ohne Link/Backticks im Fließtext (Zitat einer
-Dockerfile-Kommentarzeile: „…siehe ADR-0060" — die schließende Anführung
-folgte direkt auf die nackte Kennung; alle sechs anderen `ADR-0060`-Stellen
+Dockerfile-Kommentarzeile: „…siehe `ADR-0060`" — im ursprünglichen Report
+folgte die schließende Anführung direkt auf die nackte Kennung, ohne
+Backticks; alle sechs anderen `ADR-0060`-Stellen
 desselben Reports standen korrekt in Backticks). Der Verifier fand den Fund
 über seinen eigenen `make gates`-Lauf (`docs-check` brach mit `id-unlinked`
 ab, Exit 2) und dokumentierte ihn als Blocker, bevor die DoD-Zeile

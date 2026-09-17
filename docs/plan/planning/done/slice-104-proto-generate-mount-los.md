@@ -139,7 +139,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       bewegt, zieht ihre Träger nach; `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
       steht bereits bei 5× und ist in `AGENTS.md` §3.13 verkörpert).
 - [x] `make gates` grün — **eigener Lauf des Planners nach dem Blocker-Fix**
-      (Commit `aabbe01`, „unverlinkte ADR-0060-Erwaehnung gebacktickt"),
+      (Commit `aabbe01`, „unverlinkte `ADR-0060`-Erwaehnung gebacktickt"),
       ungepiped geprüft, Exit 0. Zeitachse: Implementer (`338cfe0`,
       `59d5b53`) → Reviewer (`c7fa290`, 0 HIGH/1 MEDIUM/1 LOW) → Verifier
       (`170b1f0`) fand `make gates` zum eigenen Laufzeitpunkt **rot** (Exit
@@ -377,7 +377,7 @@ Backticks).
     eingetragen (`evidence/slice-104.md`); die Regel ist bereits seit
     `slice-063` in `AGENTS.md` §3.9 verkörpert, dieser Beleg bestätigt sie
     und löst keinen neuen Lese-Schritt aus.
-  - **F-1 (Reviewer+Verifier übereinstimmend, LOW):** ADR-0060-Zitat im
+  - **F-1 (Reviewer+Verifier übereinstimmend, LOW):** `ADR-0060`-Zitat im
     Dockerfile-Kommentar mehrdeutig platziert (suggeriert eine
     ADR-Bindung des Bind-Mount-Mechanismus, die nicht existiert) — geprüft
     gegen `BEO-PGC/zitat-nennt-die-falsche-stelle` (2×, `slice-090`,
