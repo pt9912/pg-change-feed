@@ -97,9 +97,13 @@ frischer Klon mit `target-missing` bricht.
       dieser Einzel-DoD): sobald `slice-d-check-trace-rtm` ebenfalls in
       `.d-check.yml` geschrieben hat, ein gemeinsamer `make gates`-Lauf ohne
       Config-Kollision.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Ausgangs-Report [`review-slice-d-check-tracked-modul.md`](../../../reviews/review-slice-d-check-tracked-modul.md)
+      (2 HIGH, 1 MEDIUM, 1 INFO), Delta-Review der Fixrunde
+      [`review-slice-d-check-tracked-modul-fixrunde.md`](../../../reviews/review-slice-d-check-tracked-modul-fixrunde.md)
+      (0 HIGH, nicht merge-blockierend).
 - [x] Doku-Update: `harness/sensors/docs-check.md` (siehe LP2); `.d-check.yml`
       eigener Kommentarblock.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
