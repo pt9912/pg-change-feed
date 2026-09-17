@@ -328,7 +328,7 @@ Backticks).
   F-1, in dieser Closure behoben). Siehe §6 für die volle Begründung je
   Zeile.
 - **Drei Paarungen:** Repo ohne Wellen-Betrieb — geprüft nach dem `git mv`
-  nach `done/` (siehe Commit-Historie). **Anker-Paarung:** entfällt — kein
+  nach `done/` (`6e6d873`). **Anker-Paarung:** entfällt — kein
   `liegt in`-Feld in dieser Notiz, mit diesem Slice wurde keine neue Regel
   verkörpert (beide berührten Klassen waren bereits vor diesem Slice
   verkörpert). **Folge-Slice-Paarung:** entfällt — keine Folge-Slices
