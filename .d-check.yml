@@ -5,7 +5,7 @@ scan:
   # .harness/**: tool-interne Ablage (vendored Baseline, Sprachskelett) —
   # keine Adopter-Doku, vom Doc-Gate ausgenommen.
   ignore: ["**/*.template.md", ".tmp/**", ".harness/**"]
-modules: [links, anchors, ids, matrix, versions, structure, hostpaths]
+modules: [links, anchors, ids, matrix, versions, structure, hostpaths, tracked]
 ids:
   # Kennungs-Linkpflicht (id-unlinked): nackte Kennungen muessen auf ihr
   # Definitions-Dokument verlinken. Je Stratum ein Muster; das .a-Muster
@@ -209,6 +209,15 @@ structure:
           cell-min-chars: 40
         - name: Kurzbeschreibung
           cell-min-chars: 60
+
+tracked:
+  # Getrackt-Status aufloesbarer, existierender Link-/Bild-Ziele gegen den
+  # git-Index: ein existierendes, aber untracked/gitignoriertes Ziel waere
+  # auf einem frischen Klon target-missing, obwohl `links`/`anchors` beim
+  # Erzeuger gruen bleiben (sie lesen das Dateisystem, nicht den Index).
+  # Teil des `modules:`-Buendels, zusaetzlich weiter ueber das eigene
+  # `doc-tracked`-Einzel-Target isoliert aufrufbar (d-check.mk).
+  exempt-targets: []   # keine absichtlich untrackten, aber verlinkten Ziele im Bestand (geprueft)
 
 reviews:
   # Review-Report-Deckung fuer done/-Slices mit Review-DoD-Haken —
