@@ -92,31 +92,24 @@ bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokume
 # Plugins; die Folgestufe `proto-export` (seit slice-104) kopiert die
 # `.proto`-Quelle per COPY hinein und erzeugt den Code **zur Build-Zeit**
 # (kein Bind-Mount, kein `--user`-Workaround) — ihr ENTRYPOINT gibt das
-# Erzeugnis als `tar`-Stream ueber stdout aus. Dieses Ziel baut die Stufe
-# und extrahiert host-seitig; der erzeugte Go-Code liegt committet im Baum
-# und wird von `make test`/`make image` mitkompiliert. Kein Gate: der
-# Generator laeuft nur, wenn sich die `.proto`-Quelle aendert.
+# Erzeugnis als `tar`-Stream ueber stdout aus. Der erzeugte Go-Code liegt
+# committet im Baum und wird von `make test`/`make image` mitkompiliert.
+# Kein Gate: der Generator laeuft nur, wenn sich die `.proto`-Quelle aendert.
 #
-# Die Extraktion laeuft zweistufig statt gepiped (`docker run … | tar -x`):
-# ein `docker run`-Fehlschlag wuerde hinter einem erfolgreichen, aber leeren
-# `tar -x` verschwinden (`AGENTS.md` §3.9 — Exit-Code einer Pipe ist der des
-# letzten Glieds). Stattdessen schreibt `docker run` zunaechst in eine Datei
-# (reine Ausgabe-Umleitung, kein Pipe-Glied — ihr Exit-Code ist der von
-# `docker run` selbst und stoppt das Rezept-Zeile-fuer-Zeile beim ersten
-# Fehlschlag, GNU-Make-Default); erst danach extrahiert `tar` aus der Datei.
-# Das Rezept laeuft unter `/bin/sh` (kein SHELL-Override im Makefile) — auf
-# diesem Host `dash`, das `set -o pipefail` nicht traegt; der Zwischendatei-Weg
-# braucht dieses Feature nicht.
+# Die Logik steht in `tools/harness/proto-generate.sh` (wie die uebrigen
+# `tools/harness/*.sh`-Gates) statt inline im Rezept: das Skript laeuft
+# explizit unter bash und setzt `pipefail`, wodurch die Pipe
+# `docker run | tar -x` sicher wird (`AGENTS.md` §3.9 — ohne `pipefail`
+# verschwindet ein `docker run`-Fehlschlag hinter einem erfolgreichen, aber
+# leeren `tar -x`). Das Makefile-Rezept selbst liefe unter `/bin/sh`
+# (`make`-Default, hier `dash`, kein `pipefail`) — der explizite
+# `bash`-Aufruf loest das, ohne einen globalen `SHELL`-Override im Makefile
+# zu brauchen.
 PROTO_IMAGE ?= pg-change-feed:proto-export
-PROTO_GENERATE_TARBALL := .proto-generate.tar
 
 .PHONY: proto-generate
 proto-generate: ## Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.proto erzeugen (Docker-only, Build-Zeit-Erzeugung, Host-Extraktion)
-	docker build --target proto-export -t $(PROTO_IMAGE) .
-	rm -f $(PROTO_GENERATE_TARBALL)
-	docker run --rm --network none $(PROTO_IMAGE) > $(PROTO_GENERATE_TARBALL)
-	tar -xf $(PROTO_GENERATE_TARBALL) -C .
-	rm -f $(PROTO_GENERATE_TARBALL)
+	PROTO_IMAGE=$(PROTO_IMAGE) bash tools/harness/proto-generate.sh
 
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der

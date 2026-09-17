@@ -41,12 +41,14 @@ RUN apk add --no-cache protobuf-dev=31.1-r1 \
 # vormals `docker run -v` in den Bind-Mount des Arbeitsbaums, siehe
 # ADR-0060). Die `.proto`-Quelle kommt per `COPY` (Build-Kontext) statt per
 # Mount in die Stufe; `protoc` laeuft als `RUN`-Schritt, das Erzeugnis liegt
-# im Image-Layer unter `/out`. `make proto-generate` baut diese Stufe und
-# liest ihr `ENTRYPOINT` per `docker run --rm --network none <image>` aus:
-# Es gibt `/out` als `tar`-Stream ueber stdout aus, die Extraktion laeuft
-# host-seitig (`tar -xf`) — kein `docker run -v`, kein `--user`-Workaround,
-# die extrahierten Dateien gehoeren dadurch automatisch dem aufrufenden
-# Nutzer (Host-Prozess, kein Container-Schreibzugriff auf den Baum). ---
+# im Image-Layer unter `/out`. `tools/harness/proto-generate.sh` baut diese
+# Stufe und liest ihr `ENTRYPOINT` per `docker run --rm --network none
+# <image> | tar -x -C .` aus: Es gibt `/out` als `tar`-Stream ueber stdout
+# aus, die Extraktion laeuft host-seitig — kein `docker run -v`, kein
+# `--user`-Workaround, die extrahierten Dateien gehoeren dadurch automatisch
+# dem aufrufenden Nutzer (Host-Prozess, kein Container-Schreibzugriff auf
+# den Baum). Die Pipe laeuft unter `bash`/`set -o pipefail` im Skript, nicht
+# unter dem `make`-Default `/bin/sh` (`AGENTS.md` §3.9). ---
 FROM proto AS proto-export
 COPY proto/ proto/
 RUN mkdir -p /out && \
