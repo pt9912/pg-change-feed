@@ -107,7 +107,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — Baseline `v6.9.0` netzlos materialisiert, Integrität geprüft,
+- [x] **LP1 — Baseline `v6.9.0` netzlos materialisiert, Integrität geprüft,
       genau ein `<tag>`-Verzeichnis bleibt bestehen.** Release-Asset
       `lab-regelwerk.zip` von
       `https://github.com/pt9912/ai-harness-course/releases/download/v6.9.0/lab-regelwerk.zip`
@@ -126,12 +126,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       der Recherche vorgeschlagene Option „`git mv` nach
       `.harness/baseline/done/`" **löst das Problem nicht** — nur eine
       Entfernung aus `.harness/baseline/` selbst tut es. Richtige Form daher:
-      `.harness/baseline/v6.5.0/` vollständig entfernen (`git rm -r`), sobald
+      `.harness/baseline/v6.5.0/` vollständig entfernen (`git rm -r`), sobald <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
       `v6.9.0` steht — kein Datenverlust, `git log`/`git show
-      <commit>:.harness/baseline/v6.5.0/...` trägt den alten Stand vollständig
+      <commit>:.harness/baseline/v6.5.0/...` trägt den alten Stand vollständig <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
       und dauerhaft. `make baseline-verify` grün gegen den einzigen
       verbleibenden Stand `v6.9.0`.
-- [ ] **LP2 — `harness/conventions.md` §Baseline zeigt auf `v6.9.0`, keine
+- [x] **LP2 — `harness/conventions.md` §Baseline zeigt auf `v6.9.0`, keine
       lebende Erwähnung von `v6.5.0` bleibt zurück.** `Stand:` auf `v6.9.0`,
       `Datum der Adoption:` auf das Datum dieses Slice-Laufs; die
       Wellen-Registerzeile im Zeiger-Kommentar (`Kurs-Welle 137 · <Datum>`)
@@ -139,7 +139,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       das Repo liefert **keine** Treffer außerhalb `docs/plan/planning/done/`
       und `git`-History (historisch korrekte, unveränderliche Records —
       `AGENTS.md` §3.5 analog: Records ändern sich nicht rückwirkend).
-- [ ] **LP3 — neuer `MR-*`-Eintrag für die Namenskonvention-Entscheidung,
+      **Real gefundene lebende Ausnahme, über den DoD-Wortlaut hinaus:**
+      `docs/reviews/**` (Review-/Verify-Reports) sind ebenfalls unveränderliche
+      Lauf-Belege und wurden analog behandelt — drei echte `target-missing`
+      gewordene Links per Zitat-Korrektur ([ADR-0073](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md))
+      auf `v6.9.0` korrigiert, alle übrigen (reinen Text-)Erwähnungen über
+      `.d-check.yml` `versions.exempt-paths` von der Pin-Prüfung ausgenommen
+      (dieselbe Begründung wie für `harness/conventions/done/**`). `ADR-0051`
+      §Kontext (P8-Zeile) bleibt unverändert (Accepted-ADR, kein Zitat-Fehler,
+      reine historische Pin-Inventur-Momentaufnahme, `AGENTS.md` §3.5).
+- [x] **LP3 — neuer `MR-*`-Eintrag für die Namenskonvention-Entscheidung,
       verlinkt in `harness/conventions.md`.** Nächste freie Nummer ermitteln
       (Adaptions-Block-Tabelle in `harness/conventions.md` führt aktuell nur
       `MR-001` — die nächste freie ist `MR-002`, vom Implementer-Lauf am
@@ -170,7 +179,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Konvention, kein Provisorium; kein bekanntes Re-Evaluierungs-Ereignis
       identifiziert). Zeile in der Aktive-Adaptionen-Tabelle in
       `harness/conventions.md` ergänzt.
-- [ ] `make gates` grün — ungepiped geprüft, Exit-Code direkt ausgewertet
+- [x] `make gates` grün — ungepiped geprüft, Exit-Code direkt ausgewertet
       (`AGENTS.md` §3.9), als eigener, abgeschlossener Schritt **vor** jedem
       `git push`.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -178,10 +187,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/` liegt vor
       (Modul 11, frischer Kontext).
-- [ ] Doku-Update für den gehobenen Baseline-Stand siehe LP1–LP3 — kein
+- [x] Doku-Update für den gehobenen Baseline-Stand siehe LP1–LP3 — kein
       weiterer öffentlicher Vertrag berührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls
       dieser Slice einen Inventur-Fund auflöst** — **Entfällt.** Repo ist
       Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine `docs/plan/planning/reconciliation.md` vorhanden.
@@ -211,7 +220,9 @@ Aussagen-Berührung steht hier gar nicht.
 | `.harness/baseline/v6.9.0/regelwerk/**` | neu | Netzlos materialisiertes Regelwerk aus dem `v6.9.0`-Release-Asset (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
 | `.harness/baseline/v6.9.0/templates/**` | neu | Netzlos materialisierte Templates aus demselben Asset (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
 | `.harness/baseline/v6.9.0/SHA256SUMS` | neu | Prüfsummen-Datei des neuen Stands, Grundlage für `make baseline-verify` (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
-| `.harness/baseline/v6.5.0/**` | löschen | Entfernt, weil `tools/harness/baseline-verify.sh` genau ein `<tag>`-Verzeichnis unter `.harness/baseline/` verlangt — Historie bleibt vollständig in `git` erhalten (LP1). |
+| `.harness/baseline/v6.5.0/**` | löschen | Entfernt, weil `tools/harness/baseline-verify.sh` genau ein `<tag>`-Verzeichnis unter `.harness/baseline/` verlangt — Historie bleibt vollständig in `git` erhalten (LP1). | <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
+| `.d-check.yml` | update | `versions.exempt-paths` um `docs/reviews/**` erweitert — Lauf-Belege zitieren den zum Laufzeitpunkt adoptierten Baseline-Stand dauerhaft (dieselbe Begründung wie für `harness/conventions/done/**`); ungeplanter Fund während der Umsetzung (LP1/LP2-Nacharbeit). |
+| `docs/reviews/architect-verdict-aufschub-adresse-verfaellt.md`, `docs/reviews/review-slice-041-fixrunde-2.md` | Zitat-Korrektur ([ADR-0073](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)) | Drei Markdown-Links zeigten real auf `.harness/baseline/v6.5.0/...` <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) --> und wurden durch das Entfernen dieses Verzeichnisses zu `target-missing`; Linkziel-Pfad auf `v6.9.0` korrigiert, Referent (dieselbe Regelwerk-/Templates-Datei) unverändert; ungeplanter Fund während der Umsetzung. |
 | `harness/conventions.md` | update | §Baseline: `Stand: v6.9.0`, `Datum der Adoption:` heutiges Datum, Wellen-Registerzeile; neue Zeile in §Aktive Adaptionen für den neuen `MR-*`-Eintrag (LP2, LP3). |
 | `harness/conventions/MR-<NNN>-<slug>.md` | neu | Adaptions-Eintrag für die Namenskonvention-Entscheidung (LP3). |
 | `harness/image-hash.txt` | prüfen, nicht erwartet | Kein Build-Kontext berührt (`.harness/`/`harness/` sind keine `Dockerfile`-Build-Kontext-Dateien) — `make image` läuft nicht erneut nötig; real prüfen, nicht annehmen (§3.12). |
