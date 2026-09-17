@@ -99,6 +99,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0084 | Sync-Gate nur für das Erzeugnis mit einer netzlosen, deterministischen Quelle | Accepted | 2026-09-16 | [0084-sync-gate-fuer-generierte-artefakte.md](0084-sync-gate-fuer-generierte-artefakte.md) |
 | ADR-0085 | Build-Kontext-Ausnahme — `test-only` auf den Zweck (Supers. ADR-0082, teilw.) | Accepted | 2026-09-16 | [0085-build-kontext-ausnahme-test-only-zweck.md](0085-build-kontext-ausnahme-test-only-zweck.md) |
 | ADR-0086 | Herkunft von Aussagen — Schwere folgt der Konsequenz (Supers. ADR-0083 teilw.) | Accepted | 2026-09-17 | [0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md](0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md) |
-| ADR-0087 | Beispiel-Clients C#/Kotlin — Werkzeugkette (Supers. ADR-0076, teilw.) | Accepted | 2026-09-17 | [0087-beispiel-clients-csharp-kotlin.md](0087-beispiel-clients-csharp-kotlin.md) |
+| ADR-0087 | Beispiel-Clients C#/Kotlin — Werkzeugkette (Supers. ADR-0076; → ADR-0090) | Accepted | 2026-09-17 | [0087-beispiel-clients-csharp-kotlin.md](0087-beispiel-clients-csharp-kotlin.md) |
 | ADR-0088 | Konfigurationsdatei — Feldmenge, Zugangsdaten-Klasse (Supers. ADR-0052, teilw.) | Accepted | 2026-09-17 | [0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) |
 | ADR-0089 | Feldmengen-Paarung — kein Sensor, Wächter Review (Supers. ADR-0088, teilw.) | Accepted | 2026-09-17 | [0089-feldmengen-paarung-kein-sensor-review-waechter.md](0089-feldmengen-paarung-kein-sensor-review-waechter.md) |
+| ADR-0090 | Beispiel-Clients — volle Matrix (Supers. ADR-0087, teilw.) | Accepted | 2026-09-17 | [0090-beispiel-clients-volle-matrix.md](0090-beispiel-clients-volle-matrix.md) |
