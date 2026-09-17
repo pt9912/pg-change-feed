@@ -135,9 +135,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       GitHub-Actions-Workflow (Vorschlag: `.github/workflows/examples.yml`)
       fährt das Ziel auf jeden PR/Push, ohne Required-Status-Check.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: `docs/reviews/review-slice-098.md` (0 HIGH/MEDIUM/LOW, 2 INFO,
+      keine Fixrunde).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-098.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
