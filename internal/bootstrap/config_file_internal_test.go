@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -48,19 +49,54 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 	}
 }
 
-// TestConfigFromFileLehntDSNAb trägt `ADR-0052` Entscheidung 6 — die
-// wichtigste Einzelentscheidung: jeder der drei DSN-Schlüssel in der Datei
-// bricht das Laden ab, unabhängig vom strikten Decoding.
-func TestConfigFromFileLehntDSNAb(t *testing.T) {
-	for _, key := range []string{"capture_dsn", "admin_dsn", "reader_dsn"} {
-		path := writeConfigFile(t, key+": postgres://sollte-nicht-hier-stehen\n")
-		_, err := ConfigFromFile(path)
-		if err == nil {
-			t.Fatalf("%s: Datei mit DSN-Schlüssel lädt", key)
-		}
-		if !errors.Is(err, ErrConfiguration) {
-			t.Fatalf("%s: Fehlerklasse configuration erwartet, erhalten: %v", key, err)
-		}
+// TestConfigFromFileLehntZugangsdatenAb trägt `ADR-0088` Festlegung 1/4 —
+// die zugangsdaten-tragende Klasse: jeder ihrer sechs Schlüssel in der Datei
+// bricht das Laden ab, unabhängig vom strikten Decoding. Die Fehlerzeile
+// benennt den Schlüssel **und** den Grund; damit ist sie von der
+// generischen „unbekannter Schlüssel"-Meldung des strikten Decodings
+// unterscheidbar (`ADR-0088` Festlegung 4).
+//
+// Rot färbende Mutation: einen Schlüssel aus
+// `forbiddenFileCredentialKeys` streichen — dann fällt er auf das strikte
+// Decoding zurück, die Meldung verliert den Grund und genau dieser Fall
+// wird rot.
+func TestConfigFromFileLehntZugangsdatenAb(t *testing.T) {
+	for _, key := range []string{
+		"capture_dsn", "admin_dsn", "reader_dsn",
+		"api_token_reader", "api_token_admin", "nats_url",
+	} {
+		t.Run(key, func(t *testing.T) {
+			path := writeConfigFile(t, key+": sollte-nicht-hier-stehen\n")
+			_, err := ConfigFromFile(path)
+			if err == nil {
+				t.Fatalf("%s: Datei mit Zugangsdaten-Schlüssel lädt", key)
+			}
+			if !errors.Is(err, ErrConfiguration) {
+				t.Fatalf("%s: Fehlerklasse configuration erwartet, erhalten: %v", key, err)
+			}
+			if !strings.Contains(err.Error(), key) {
+				t.Fatalf("%s: Fehlerzeile benennt den Schlüssel nicht: %v", key, err)
+			}
+			if !strings.Contains(err.Error(), "Zugangsdaten bleiben env-var-exklusiv") {
+				t.Fatalf("%s: Fehlerzeile benennt den Grund nicht — sie liest sich wie ein unbekannter Schlüssel: %v", key, err)
+			}
+		})
+	}
+}
+
+// TestConfigFromFileUnbekannterSchluesselOhneZugangsdatenGrund trägt die
+// Abgrenzung der zwei Zustände aus `ADR-0088` Festlegung 4: ein
+// Tippfehler-Schlüssel bleibt „unbekannt" und trägt die Begründung der
+// Zugangsdaten-Klasse **nicht** — die zwei Aussagen *unbekannt* und
+// *unzulässig* sind an der Meldung unterscheidbar.
+func TestConfigFromFileUnbekannterSchluesselOhneZugangsdatenGrund(t *testing.T) {
+	path := writeConfigFile(t, "http_adr: ':8090'\n")
+	_, err := ConfigFromFile(path)
+	if !errors.Is(err, ErrConfiguration) {
+		t.Fatalf("unbekannter Schlüssel: Fehlerklasse configuration erwartet, erhalten: %v", err)
+	}
+	if strings.Contains(err.Error(), "Zugangsdaten bleiben env-var-exklusiv") {
+		t.Fatalf("unbekannter Schlüssel: Fehlerzeile trägt die Begründung der Zugangsdaten-Klasse: %v", err)
 	}
 }
 
@@ -301,4 +337,207 @@ wal_retention_error_bytes: 222
 	if cfg.WALRetentionWarnBytes != 111 || cfg.WALRetentionErrorBytes != 222 {
 		t.Fatalf("WAL-Retention-Overrides: warn=%d error=%d, Erwartung: 111/222", cfg.WALRetentionWarnBytes, cfg.WALRetentionErrorBytes)
 	}
+}
+
+// dateiOhneAdressen trägt eine gültige Konfigurationsdatei ohne
+// Oberflächen-Adressen — die Grundlage der Durchleitungs-Tests: jede
+// gesetzte Oberflächen-Variable lässt sich damit eindeutig auf ihre
+// Env-Herkunft zurückführen.
+const dateiOhneAdressen = `
+source_id: src-1
+publication: pub_1
+slot: slot_1
+tables:
+  public.t1:
+    table_id: tbl-1
+    schema_version: sv-1
+`
+
+// envMitDatei trägt die vollständigen Vorbedingungen inklusive
+// `CDC_CONFIG_FILE`; `zusatz` legt die jeweils geprüfte Variable darüber.
+func envMitDatei(path string, zusatz map[string]string) map[string]string {
+	values := map[string]string{
+		"CDC_CAPTURE_DSN": "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_ADMIN_DSN":   "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_READER_DSN":  "postgres://postgres:postgres@quelle:5432/cdc?sslmode=disable",
+		"CDC_CONFIG_FILE": path,
+	}
+	for name, wert := range zusatz {
+		values[name] = wert
+	}
+	return values
+}
+
+// TestMergeConfigOberflaechenVariablenAusEnvUnterDatei trägt `ADR-0088`
+// Festlegung 3 — die Durchleitung: unter gesetzter `CDC_CONFIG_FILE` wirkt
+// jede der fünf Oberflächen-Variablen aus ihrer Env-Herkunft. Je Variable
+// ein eigener Fall mit genau einer gesetzten Variablen, damit der Wert
+// eindeutig aus ihr stammt und nicht aus einer Nachbar-Variablen.
+//
+// Rot färbende Mutation: die Zuweisung der jeweiligen Variablen in
+// `mergeConfig` streichen — dann bleibt ihr `Config`-Feld leer und genau
+// dieser Fall wird rot.
+func TestMergeConfigOberflaechenVariablenAusEnvUnterDatei(t *testing.T) {
+	path := writeConfigFile(t, dateiOhneAdressen)
+	cases := []struct {
+		env  string
+		wert string
+		lies func(Config) string
+	}{
+		{"CDC_NATS_URL", "nats://nats:4222", func(c Config) string { return c.NatsURL }},
+		{"CDC_HTTP_ADDR", ":8090", func(c Config) string { return c.HTTPAddr }},
+		{"CDC_GRPC_ADDR", ":9090", func(c Config) string { return c.GRPCAddr }},
+		{"CDC_API_TOKEN_READER", "token-reader-env", func(c Config) string { return c.APITokenReader }},
+		{"CDC_API_TOKEN_ADMIN", "token-admin-env", func(c Config) string { return c.APITokenAdmin }},
+	}
+	for _, c := range cases {
+		t.Run(c.env, func(t *testing.T) {
+			values := envMitDatei(path, map[string]string{c.env: c.wert})
+			cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+			if err != nil {
+				t.Fatalf("%s gesetzt unter Datei: %v", c.env, err)
+			}
+			if got := c.lies(cfg); got != c.wert {
+				t.Fatalf("%s: Feld trägt %q, Erwartung aus der Env-Herkunft: %q", c.env, got, c.wert)
+			}
+		})
+	}
+}
+
+// TestMergeConfigAdressFelderPrecedence trägt `ADR-0088` Festlegung 2/3 für
+// die zwei neuen Datei-Felder in beiden Richtungen: eine gesetzte
+// Umgebungsvariable schlägt den Datei-Wert, eine leere lässt ihn stehen.
+// Der Datei-Wert ist in jedem Fall die Basis, auf der die Vorrang-Regel
+// greift — deshalb steht er in jedem Fall in der Datei.
+//
+// Rot färbende Mutation: `overrideString` bei den zwei Feldern durch ein
+// direktes `getenv(...)` ersetzen — dann fällt der Datei-Wert bei leerer
+// Umgebungsvariable weg und der jeweilige Fall wird rot.
+func TestMergeConfigAdressFelderPrecedence(t *testing.T) {
+	path := writeConfigFile(t, `
+source_id: src-1
+publication: pub_1
+slot: slot_1
+tables:
+  public.t1:
+    table_id: tbl-1
+    schema_version: sv-1
+http_addr: ":8090"
+grpc_addr: ":9090"
+`)
+	cases := []struct {
+		name string
+		env  string
+		wert string
+		lies func(Config) string
+		want string
+	}{
+		{"http_addr ohne Env-Variable", "", "", func(c Config) string { return c.HTTPAddr }, ":8090"},
+		{"http_addr mit gesetzter Env-Variable", "CDC_HTTP_ADDR", ":18090", func(c Config) string { return c.HTTPAddr }, ":18090"},
+		{"grpc_addr ohne Env-Variable", "", "", func(c Config) string { return c.GRPCAddr }, ":9090"},
+		{"grpc_addr mit gesetzter Env-Variable", "CDC_GRPC_ADDR", ":19090", func(c Config) string { return c.GRPCAddr }, ":19090"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			zusatz := map[string]string{}
+			if c.env != "" {
+				zusatz[c.env] = c.wert
+			}
+			values := envMitDatei(path, zusatz)
+			cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+			if err != nil {
+				t.Fatalf("%s: %v", c.name, err)
+			}
+			if got := c.lies(cfg); got != c.want {
+				t.Fatalf("%s: Feld trägt %q, Erwartung: %q", c.name, got, c.want)
+			}
+		})
+	}
+}
+
+// TestMergeConfigOberflaechenUnterDateiAktiv trägt den zweiten Teil von
+// `ADR-0088` Festlegung 3 — nicht „im Struct gesetzt", sondern an den
+// Verzweigungs-Prädikaten des Verdrahtungspfads: `Run` konstruiert den
+// Broadcaster und startet die zwei Server genau dann, wenn die Adressen
+// nicht leer sind (`changeStreamEnabled`, `cfg.HTTPAddr != ""`,
+// `cfg.GRPCAddr != ""`), und öffnet die NATS-Verbindung genau dann, wenn
+// `cfg.NatsURL != ""` ist. Der Zug fährt beide Richtungen: mit einer
+// Adresse — aus der Datei **oder** aus der Umgebung — stehen die Prädikate
+// auf „an"; trägt keine der beiden Quellen eine Adresse, bleiben alle
+// Oberflächen aus.
+//
+// Grenze: der Nachweis endet an den Prädikaten, die `Run` verzweigt — ein
+// laufender Server braucht eine erreichbare PostgreSQL-Instanz (der Store
+// wird vor ihm konstruiert). Für die Datei-Herkunft trägt ihn kein Lauf mit
+// realem Server: weder `compose.yaml` noch `tools/` noch `test/` setzen
+// `CDC_CONFIG_FILE`.
+func TestMergeConfigOberflaechenUnterDateiAktiv(t *testing.T) {
+	t.Run("Adressen aus der Datei, Tokens und NATS aus der Umgebung: alle Oberflächen an", func(t *testing.T) {
+		path := writeConfigFile(t, `
+source_id: src-1
+publication: pub_1
+slot: slot_1
+tables:
+  public.t1:
+    table_id: tbl-1
+    schema_version: sv-1
+http_addr: ":8090"
+grpc_addr: ":9090"
+`)
+		values := envMitDatei(path, map[string]string{
+			"CDC_NATS_URL":         "nats://nats:4222",
+			"CDC_API_TOKEN_READER": "token-reader-env",
+			"CDC_API_TOKEN_ADMIN":  "token-admin-env",
+		})
+		cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+		if err != nil {
+			t.Fatalf("Datei mit Adressen: %v", err)
+		}
+		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+			t.Fatalf("changeStreamEnabled(%q, %q) = false — der Broadcaster entstünde nicht", cfg.GRPCAddr, cfg.HTTPAddr)
+		}
+		if cfg.HTTPAddr == "" || cfg.GRPCAddr == "" {
+			t.Fatalf("Adressen unter geladener Datei leer: http=%q grpc=%q — kein Server würde starten", cfg.HTTPAddr, cfg.GRPCAddr)
+		}
+		if cfg.NatsURL == "" {
+			t.Fatal("NatsURL unter geladener Datei leer — die NATS-Verbindung entstünde nicht")
+		}
+		if cfg.APITokenReader == "" || cfg.APITokenAdmin == "" {
+			t.Fatalf("Token-Klassen unter geladener Datei leer: reader=%q admin=%q", cfg.APITokenReader, cfg.APITokenAdmin)
+		}
+	})
+
+	t.Run("Adressen nur aus der Umgebung: dieselben Prädikate an", func(t *testing.T) {
+		path := writeConfigFile(t, dateiOhneAdressen)
+		values := envMitDatei(path, map[string]string{
+			"CDC_HTTP_ADDR": ":8090",
+			"CDC_GRPC_ADDR": ":9090",
+		})
+		cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+		if err != nil {
+			t.Fatalf("Adressen aus der Umgebung: %v", err)
+		}
+		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+			t.Fatalf("changeStreamEnabled(%q, %q) = false — der Broadcaster entstünde nicht", cfg.GRPCAddr, cfg.HTTPAddr)
+		}
+		if cfg.HTTPAddr != ":8090" || cfg.GRPCAddr != ":9090" {
+			t.Fatalf("Adressen aus der Env-Herkunft: http=%q grpc=%q", cfg.HTTPAddr, cfg.GRPCAddr)
+		}
+	})
+
+	t.Run("keine Adresse in beiden Quellen: alle Oberflächen aus", func(t *testing.T) {
+		path := writeConfigFile(t, dateiOhneAdressen)
+		values := envMitDatei(path, nil)
+		cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+		if err != nil {
+			t.Fatalf("Datei ohne Adressen: %v", err)
+		}
+		if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+			t.Fatalf("changeStreamEnabled(%q, %q) = true ohne Adresse in beiden Quellen", cfg.GRPCAddr, cfg.HTTPAddr)
+		}
+		if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" || cfg.NatsURL != "" ||
+			cfg.APITokenReader != "" || cfg.APITokenAdmin != "" {
+			t.Fatalf("Oberflächen-Felder ohne Herkunft gesetzt: %+v", cfg)
+		}
+	})
 }

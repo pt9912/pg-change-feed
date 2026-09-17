@@ -1,10 +1,11 @@
 // config_file.go trägt den optionalen Datei-Ladepfad der Verdrahtung
 // (`ADR-0052`): eine YAML-Konfigurationsdatei ergänzt `ConfigFromEnv`
 // additiv, mit Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence
-// (`ADR-0052` Entscheidung 2) und env-var-exklusiven DSNs (`ADR-0052`
-// Entscheidung 6). Der Zugriffsweg ist ausschließlich `CDC_CONFIG_FILE`
-// (`ADR-0052` Entscheidung 5) — ein `--config`-CLI-Flag ist Folgepflicht,
-// nicht Teil dieses Standes.
+// (`ADR-0052` Entscheidung 2). Env-var-exklusiv sind die
+// zugangsdaten-tragenden Felder (`ADR-0088` Festlegung 1); die zulässige
+// Feldmenge trägt `ADR-0088` Festlegung 2. Der Zugriffsweg ist
+// ausschließlich `CDC_CONFIG_FILE` (`ADR-0052` Entscheidung 5) — ein
+// `--config`-CLI-Flag ist Folgepflicht, nicht Teil dieses Standes.
 package bootstrap
 
 import (
@@ -26,14 +27,20 @@ import (
 // der Env-only-Pfad (`ConfigFromEnv`) bleibt unverändert Default.
 const envConfigFile = "CDC_CONFIG_FILE"
 
-// forbiddenFileDSNKeys trägt die drei Schlüssel, die in der
-// Konfigurationsdatei nicht vorkommen dürfen (`ADR-0052` Entscheidung 6 —
-// die wichtigste Einzelentscheidung dieser ADR: Secrets bleiben
-// env-var-exklusiv, `LH-QA-SEC-001`/`002`). Ein Treffer bricht das Laden
-// mit einer eigenen, den Secret-Grund benennenden Fehlerzeile ab, statt
-// nur als generischer „unbekannter Schlüssel" des strikten Decodings unten
-// zu erscheinen.
-var forbiddenFileDSNKeys = []string{"capture_dsn", "admin_dsn", "reader_dsn"}
+// forbiddenFileCredentialKeys trägt die Schlüssel der
+// zugangsdaten-tragenden Klasse, die in der Konfigurationsdatei nicht
+// vorkommen dürfen (`ADR-0088` Festlegung 1: Secrets bleiben
+// env-var-exklusiv, `LH-QA-SEC-001`/`002`). Die Klasse umfasst die drei
+// DSN-Schlüssel, die zwei Token-Schlüssel und `nats_url` — dessen URL-Form
+// Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr` gehören
+// ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann. Ein
+// Treffer bricht das Laden mit einer eigenen, den Grund benennenden
+// Fehlerzeile ab, statt nur als generischer „unbekannter Schlüssel" des
+// strikten Decodings unten zu erscheinen.
+var forbiddenFileCredentialKeys = []string{
+	"capture_dsn", "admin_dsn", "reader_dsn",
+	"api_token_reader", "api_token_admin", "nats_url",
+}
 
 // fileTableBinding trägt eine einzelne Tabellen-Aktivierung der
 // Konfigurationsdatei als YAML-Mapping (`ADR-0052` Entscheidung 6) — anders
@@ -45,17 +52,25 @@ type fileTableBinding struct {
 }
 
 // fileConfig trägt die in der Konfigurationsdatei zulässigen Felder
-// (`ADR-0052` Entscheidung 6): nur die nicht credential-tragenden Felder.
-// `CaptureDSN`/`AdminDSN`/`ReaderDSN` bleiben env-var-exklusiv und haben
-// hier bewusst kein Gegenstück — ein Treffer auf einen der drei
-// DSN-Schlüssel wird vor dem Decoding in diesen Typ abgefangen
-// (`forbiddenFileDSNKeys`).
+// (`ADR-0088` Festlegung 2): nur die nicht credential-tragenden Felder.
+// Die DSNs, die zwei Token-Schlüssel und `nats_url` bleiben
+// env-var-exklusiv und haben hier bewusst kein Gegenstück — ein Treffer auf
+// einen dieser Schlüssel wird vor dem Decoding in diesen Typ abgefangen
+// (`forbiddenFileCredentialKeys`).
 type fileConfig struct {
 	SourceID    string                      `yaml:"source_id"`
 	Publication string                      `yaml:"publication"`
 	Slot        string                      `yaml:"slot"`
 	Tables      map[string]fileTableBinding `yaml:"tables"`
 	LogLevel    string                      `yaml:"log_level"`
+	// HTTPAddr und GRPCAddr tragen die Horch-Adressen der beiden
+	// Oberflächen in der Form `host:port` (`SPEC-016`); sie tragen dieselbe
+	// Feld-für-Feld-Precedence wie `source_id`/`publication`/`slot` —
+	// eine gesetzte Umgebungsvariable schlägt den Datei-Wert, eine leere
+	// lässt ihn stehen (`ADR-0088` Festlegung 3). Ein leeres Feld heißt
+	// wie eine leere Umgebungsvariable: die Oberfläche bleibt deaktiviert.
+	HTTPAddr string `yaml:"http_addr"`
+	GRPCAddr string `yaml:"grpc_addr"`
 	// WALRetentionWarnBytes und WALRetentionErrorBytes tragen dieselben
 	// SPEC-013-Overrides wie `Config.WALRetentionWarnBytes`/
 	// `WALRetentionErrorBytes` — ohne Umgebungs-Gegenstück (siehe dort):
@@ -65,17 +80,17 @@ type fileConfig struct {
 	WALRetentionErrorBytes int64 `yaml:"wal_retention_error_bytes"`
 }
 
-// ConfigFromFile lädt die optionale Konfigurationsdatei. Einer der drei
-// DSN-Schlüssel (`forbiddenFileDSNKeys`) wird auf dem roh eingelesenen
-// Dokument geprüft und liefert — im aktuellen Kontrollfluss immer zuerst —
-// `ErrConfiguration` mit einer eigenen, den Secret-Grund benennenden
-// Fehlerzeile (`ADR-0052` Entscheidung 6). Jeder andere unbekannte
-// Schlüssel liefert `ErrConfiguration` über striktes YAML-Decoding
-// (`yaml.Decoder.KnownFields(true)`, `ADR-0052` Entscheidung 1); da
-// `fileConfig` auch keines der drei DSN-Felder deklariert, würde
-// `KnownFields` sie ebenfalls ablehnen, sollte der explizite Check je
-// entfallen — im jetzigen Kontrollfluss ist dieser Pfad für die drei
-// DSN-Schlüssel nicht erreichbar, weil der explizite Check vorher
+// ConfigFromFile lädt die optionale Konfigurationsdatei. Ein Schlüssel der
+// zugangsdaten-tragenden Klasse (`forbiddenFileCredentialKeys`) wird auf
+// dem roh eingelesenen Dokument geprüft und liefert — im aktuellen
+// Kontrollfluss immer zuerst — `ErrConfiguration` mit einer eigenen, den
+// Grund benennenden Fehlerzeile (`ADR-0088` Festlegung 4). Jeder andere
+// unbekannte Schlüssel liefert `ErrConfiguration` über striktes
+// YAML-Decoding (`yaml.Decoder.KnownFields(true)`, `ADR-0052`
+// Entscheidung 1); da `fileConfig` auch keinen Schlüssel dieser Klasse
+// deklariert, würde `KnownFields` sie ebenfalls ablehnen, sollte der
+// explizite Check je entfallen — im jetzigen Kontrollfluss ist dieser Pfad
+// für die Klasse nicht erreichbar, weil der explizite Check vorher
 // zurückkehrt. Eine leere Datei (kein YAML-Dokument, z. B. nur
 // Kommentare) liefert die Nullwerte zurück, keinen Fehler — sie trägt
 // dann keine Datei-Basis, jedes Feld bleibt der Env-var-Seite von
@@ -90,9 +105,9 @@ func ConfigFromFile(path string) (fileConfig, error) {
 	if err := yaml.Unmarshal(data, &raw); err != nil {
 		return fileConfig{}, fmt.Errorf("%w: Konfigurationsdatei %q trägt kein gültiges YAML: %v", ErrConfiguration, path, err)
 	}
-	for _, key := range forbiddenFileDSNKeys {
+	for _, key := range forbiddenFileCredentialKeys {
 		if _, found := raw[key]; found {
-			return fileConfig{}, fmt.Errorf("%w: Konfigurationsdatei %q trägt den Schlüssel %q — DSNs bleiben env-var-exklusiv (ADR-0052 Entscheidung 6)", ErrConfiguration, path, key)
+			return fileConfig{}, fmt.Errorf("%w: Konfigurationsdatei %q trägt den Schlüssel %q — Zugangsdaten bleiben env-var-exklusiv (ADR-0088 Festlegung 1, SPEC-016)", ErrConfiguration, path, key)
 		}
 	}
 
@@ -141,10 +156,14 @@ func overrideString(fileValue, envValue string) string {
 // mergeConfig überschreibt die Datei-Basis Feld für Feld mit jeder
 // gesetzten Umgebungsvariable (`ADR-0052` Entscheidung 2) und validiert die
 // Vorbedingung danach — dieselben sechs Pflichtfelder wie `ConfigFromEnv`,
-// hier über beide Quellen hinweg geprüft. Die drei DSNs bleiben
-// env-var-exklusiv (`ADR-0052` Entscheidung 6): sie haben kein
-// Datei-Gegenstück und werden unverändert direkt gelesen, wie in
-// `ConfigFromEnv`.
+// hier über beide Quellen hinweg geprüft. Die zugangsdaten-tragenden
+// Schlüssel bleiben env-var-exklusiv (`ADR-0088` Festlegung 1): die drei
+// DSNs, die zwei Token-Klassen und `NatsURL` haben kein Datei-Gegenstück
+// und werden auf beiden Pfaden direkt aus der Umgebung gelesen
+// (`ADR-0088` Festlegung 3) — „kein Datei-Feld" heißt nicht „die
+// Umgebungsvariable wird ignoriert". `HTTPAddr`/`GRPCAddr` tragen ein
+// Datei-Gegenstück und damit dieselbe `overrideString`-Precedence wie
+// `Source`/`Publication`/`Slot` (`ADR-0088` Festlegung 2/3).
 func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	cfg := Config{
 		CaptureDSN: getenv(envCaptureDSN),
@@ -188,6 +207,16 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 
 	cfg.WALRetentionWarnBytes = file.WALRetentionWarnBytes
 	cfg.WALRetentionErrorBytes = file.WALRetentionErrorBytes
+
+	cfg.HTTPAddr = overrideString(file.HTTPAddr, getenv(envHTTPAddr))
+	cfg.GRPCAddr = overrideString(file.GRPCAddr, getenv(envGRPCAddr))
+
+	// Die env-exklusive Klasse der Oberflächen-Variablen wirkt auch unter
+	// geladener Datei: ihr Wert kommt aus der Umgebung, die Datei kann ihn
+	// weder setzen noch überschreiben (`ADR-0088` Festlegung 1/3, `SPEC-016`).
+	cfg.NatsURL = getenv(envNatsURL)
+	cfg.APITokenReader = getenv(envAPITokenReader)
+	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
 
 	return cfg, nil
 }

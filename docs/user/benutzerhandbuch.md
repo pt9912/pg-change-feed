@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.17
+Version: 1.18
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-17
 
@@ -804,12 +804,19 @@ einen Wert für dasselbe Feld, startet der Container nicht (Fehlerklasse
 
 ### Optionale YAML-Konfigurationsdatei (`CDC_CONFIG_FILE`)
 
-Additiv zu den Umgebungsvariablen (`ADR-0052`, `SPEC-016`): Ist
+Additiv zu den Umgebungsvariablen (`ADR-0052`, `ADR-0088`, `SPEC-016`): Ist
 `CDC_CONFIG_FILE` gesetzt, liest der Container zusätzlich eine
 YAML-Datei unter diesem Pfad (read-only in den Container gemountet). Jede
 gesetzte Umgebungsvariable überschreibt das gleichnamige Feld der Datei
 einzeln — Env-Var schlägt Datei, Feld für Feld. Ist `CDC_CONFIG_FILE`
 nicht gesetzt, ändert sich am Env-only-Betrieb oben nichts.
+
+Die zwei Oberflächen-Adressen sind Datei-Felder: `http_addr` und
+`grpc_addr` tragen je eine Horch-Adresse in der Form `host:port` und
+entsprechen `CDC_HTTP_ADDR` bzw. `CDC_GRPC_ADDR` — mit demselben
+Feld-für-Feld-Vorrang. Trägt keine der beiden Quellen eine Adresse, bleibt
+die jeweilige Oberfläche deaktiviert (dieselbe No-Op-Semantik wie bei der
+entsprechenden Umgebungsvariable oben).
 
 ```yaml
 source_id: quelle-1
@@ -823,15 +830,27 @@ tables:
     table_id: tbl-customers
     schema_version: sv-customers-1
 log_level: info
+http_addr: ":8090"
+grpc_addr: ":9090"
 ```
 
-**Wichtig — Secrets bleiben env-var-exklusiv:** `CDC_CAPTURE_DSN`,
-`CDC_ADMIN_DSN` und `CDC_READER_DSN` dürfen in dieser Datei **nicht**
-vorkommen (Schlüssel `capture_dsn`/`admin_dsn`/`reader_dsn`). Ein Treffer
-bricht das Laden ab (Fehlerklasse `configuration`) — eine
+**Wichtig — Zugangsdaten bleiben env-var-exklusiv:** Die Schlüssel
+`capture_dsn`, `admin_dsn`, `reader_dsn`, `api_token_reader`,
+`api_token_admin` und `nats_url` dürfen in dieser Datei **nicht**
+vorkommen. Ein Treffer bricht das Laden mit einer eigenen, den Grund
+nennenden Zeile ab (Fehlerklasse `configuration`) — eine
 Konfigurationsdatei landet typischerweise in Kanälen (Repository,
-ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Ein
-unbekannter Schlüssel bricht das Laden ebenfalls ab (striktes Decoding).
+ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Die Grenze
+ist die **Form** des Feldes, nicht sein Wert: `http_addr`/`grpc_addr` sind
+`host:port` und können keine Zugangsdaten tragen, `nats_url` ist eine URL
+und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`).
+Ein unbekannter Schlüssel bricht das Laden ebenfalls ab (striktes Decoding).
+
+Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_API_TOKEN_READER` und
+`CDC_API_TOKEN_ADMIN` werden **auch unter geladener Datei** aus der
+Umgebung gelesen — sie haben kein Datei-Gegenstück, ihre Herkunft ist die
+Umgebungsvariable auf beiden Wegen; die Datei kann sie weder setzen noch
+überschreiben.
 
 Ist sowohl `CDC_TABLES` als auch `tables` in der Datei gesetzt, schlägt
 `CDC_TABLES` die gesamte Datei-Tabellenliste vollständig — es findet keine
@@ -971,3 +990,4 @@ MIT — siehe `LICENSE`.
 | 1.15 | 2026-09-15 | Changes-Lesen über die API ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0081`, slice-086): §4 Fähigkeits-Tabelle um `GET /changes` erweitert, Parameter-/Antwort-Beschreibung samt Fehlerfällen, „Änderungen lesen" verweist auf den Endpunkt, und die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
 | 1.16 | 2026-09-15 | Vierter Zugriffs-Abschnitt ergänzt: §4 „Zugriff über das NATS-Wecksignal" (`LH-FA-SST-007`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-083) — Subjekt-Schema, leerer Payload, Zustellsemantik und der zweiseitige Ablauf (lauschen, dann über `GET /changes` holen) samt Beispiel `examples/nats-client` |
 | 1.17 | 2026-09-17 | Beispiel-Programme der HTTP-Familie in den Zugriffs-Abschnitten ergänzt (`ADR-0076`, slice-095): §4 „Zugriff über die HTTP-/JSON-API" nennt `examples/http-client` samt Startbefehl, „Zugriff über Server-Sent-Events" nennt `examples/sse-client`; beide lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |
+| 1.18 | 2026-09-17 | Konfigurationsdatei nachgezogen (`ADR-0088`, `SPEC-016`, slice-096): §5.2 führt die zwei neuen Datei-Felder `http_addr`/`grpc_addr` samt Precedence, die Zugangsdaten-Klasse auf sechs Schlüssel gezogen (`capture_dsn`/`admin_dsn`/`reader_dsn`/`api_token_reader`/`api_token_admin`/`nats_url`, Grenze ist die Feld-Form) und festgehalten, dass `CDC_NATS_URL` und die zwei Token-Klassen auch unter geladener Datei aus der Umgebung wirken |

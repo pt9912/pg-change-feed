@@ -13,8 +13,8 @@
 // Publication, Slot-Name und die Tabellen-Aktivierungen (`ConfigFromEnv`).
 // Eine optionale YAML-Konfigurationsdatei ergänzt das additiv, mit
 // Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence und
-// env-var-exklusiven DSNs (`ConfigFromEnvAndFile`, `config_file.go`,
-// `ADR-0052`).
+// env-var-exklusiven Zugangsdaten (`ConfigFromEnvAndFile`, `config_file.go`,
+// `ADR-0052`, `ADR-0088`).
 package bootstrap
 
 import (
@@ -217,23 +217,29 @@ type Config struct {
 	WALRetentionErrorBytes int64
 	// NatsURL trägt die optionale NATS-Server-URL des
 	// Change-Notification-Wecksignals (`envNatsURL`, `ADR-0055`); leer
-	// heißt Feature deaktiviert.
+	// heißt Feature deaktiviert. Seine Herkunft ist auf beiden Ladepfaden
+	// die Umgebungsvariable: die URL-Form kann Zugangsdaten einbetten und
+	// gehört damit zur env-var-exklusiven Klasse (`ADR-0088` Festlegung 1).
 	NatsURL string
 	// HTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
-	// Adapters (`envHTTPAddr`, `ADR-0057`); leer heißt Feature
-	// deaktiviert — derselbe additive Zuschnitt wie `NatsURL`.
+	// Adapters; leer heißt Feature deaktiviert — derselbe additive
+	// Zuschnitt wie `NatsURL`. Herkunft ist `envHTTPAddr` oder das
+	// Datei-Feld `http_addr`, mit Feld-für-Feld-Vorrang der
+	// Umgebungsvariable (`ADR-0088` Festlegung 2/3).
 	HTTPAddr string
 	// APITokenReader und APITokenAdmin tragen die beiden Rechtsklassen
 	// der Token-Middleware (`envAPITokenReader`/`envAPITokenAdmin`,
 	// `ADR-0057` Teilfrage 3); leer heißt die jeweilige Klasse
-	// deaktiviert.
+	// deaktiviert. Beide sind Zugangsdaten und damit auf beiden
+	// Ladepfaden env-var-exklusiv (`ADR-0088` Festlegung 1).
 	APITokenReader string
 	APITokenAdmin  string
 	// GRPCAddr trägt die optionale Horch-Adresse des
-	// gRPC-Streaming-Driving-Adapters (`envGRPCAddr`, `ADR-0060`); leer
-	// heißt Feature deaktiviert — derselbe additive Zuschnitt wie
-	// `HTTPAddr`. Der Adapter trägt dieselben beiden Token-Klassen wie der
-	// HTTP-Adapter (`ADR-0060` Teilfrage 4).
+	// gRPC-Streaming-Driving-Adapters; leer heißt Feature deaktiviert —
+	// derselbe additive Zuschnitt wie `HTTPAddr`, mit derselben Herkunft
+	// aus `envGRPCAddr` oder dem Datei-Feld `grpc_addr`. Der Adapter trägt
+	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
+	// Teilfrage 4).
 	GRPCAddr string
 }
 
