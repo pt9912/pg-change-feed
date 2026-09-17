@@ -14,9 +14,9 @@
 # Auflösung.
 
 # Stufe `build`: `./gradlew test`/`installDist` im gepinnten JDK-Image, für
-# **beide** Module dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
-# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier zwei Programme
-# statt eines). Der Paket-Bezug (Maven Central, Gradle Plugin Portal, der
+# **alle drei** Module dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
+# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier drei Programme
+# statt zweier). Der Paket-Bezug (Maven Central, Gradle Plugin Portal, der
 # Gradle-Distributions-Download selbst) braucht Netz — deshalb bleibt `make
 # examples-kotlin` ein Werkzeug, kein Gate (ADR-0090 Festlegung 5). Die Tests
 # selbst sind reine Funktionen ohne externen Dienst (netzlos prüfbar im Sinn
@@ -35,12 +35,14 @@ COPY gradle/ gradle/
 COPY settings.gradle.kts build.gradle.kts ./
 COPY http-client/build.gradle.kts http-client/build.gradle.kts
 COPY sse-client/build.gradle.kts sse-client/build.gradle.kts
+COPY nats-client/build.gradle.kts nats-client/build.gradle.kts
 RUN chmod +x ./gradlew && ./gradlew --no-daemon help >/dev/null
 
 COPY http-client/src http-client/src
 COPY sse-client/src sse-client/src
-RUN ./gradlew --no-daemon :http-client:test :sse-client:test
-RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist
+COPY nats-client/src nats-client/src
+RUN ./gradlew --no-daemon :http-client:test :sse-client:test :nats-client:test
+RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist :nats-client:installDist
 
 # Stufe `runtime-sse`: startbares Image des SSE-Clients (ADR-0090, LP2). Ein
 # eigener, benannter Zielstufen-Tag statt eines dispatchenden ENTRYPOINTs im
@@ -50,6 +52,14 @@ FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a
 WORKDIR /app
 COPY --from=build /src/sse-client/build/install/sse-client ./
 ENTRYPOINT ["/app/bin/sse-client"]
+
+# Stufe `runtime-nats`: startbares Image des NATS-Clients (ADR-0090, LP2,
+# slice-101) — derselbe Grund für den eigenen, benannten Zielstufen-Tag wie
+# bei `runtime-sse`.
+FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-nats
+WORKDIR /app
+COPY --from=build /src/nats-client/build/install/nats-client ./
+ENTRYPOINT ["/app/bin/nats-client"]
 
 # Stufe `runtime`: startbares Image des HTTP-Clients (ADR-0087 Festlegung 3 —
 # die Startform ist ein Container-Aufruf, kein Host-`gradle run`). Bleibt die
