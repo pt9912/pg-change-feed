@@ -98,7 +98,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die neue Dockerfile-Stufe erzeugt zur Build-Zeit und gibt über
+- [x] **LP1 — die neue Dockerfile-Stufe erzeugt zur Build-Zeit und gibt über
       stdout aus.** Eine neue Stufe (Name führt der umsetzende Zug; baut auf
       der bestehenden `proto`-Stufe auf, die `protoc`/die beiden
       `protoc-gen-*`-Plugins gepinnt trägt) kopiert die `.proto`-Quelle
@@ -108,7 +108,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       jetzt für den Build-Schritt selbst), und trägt ein
       Kommando/Entrypoint, das das Erzeugnis via `tar -cf - -C <verzeichnis> .`
       über stdout ausgibt.
-- [ ] **LP2 — `make proto-generate` extrahiert host-seitig, kein
+- [x] **LP2 — `make proto-generate` extrahiert host-seitig, kein
       `docker run -v` mehr.** Das Rezept baut die neue Stufe und ruft sie
       ohne Bind-Mount auf (`docker run --rm --network none $(PROTO_IMAGE) |
       tar -x -C .`); die Extraktions-Pipe sichert ihren Exit-Code gegen das
@@ -123,7 +123,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Träger; der Implementer-Suchlauf prüft das eigenständig erneut,
       §3.13). `make generated-sync` bleibt grün (unverändertes,
       byte-gleiches Erzeugnis).
-- [ ] **LP3 — Träger-Nachzug: die Präsens-Beschreibungen des heutigen
+- [x] **LP3 — Träger-Nachzug: die Präsens-Beschreibungen des heutigen
       Bind-Mount-Mechanismus.** Gefunden (Suchlauf `grep -rn
       "proto-generate" --include="*.md" --include="*.sh" --include="Makefile"
       --include="Dockerfile" .`, `done/`/`docs/reviews/` ausgenommen): `harness/README.md`
@@ -138,18 +138,37 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       mitgezogen werden (§3.13 — Arbeit, die eine beschriebene Eigenschaft
       bewegt, zieht ihre Träger nach; `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
       steht bereits bei 5× und ist in `AGENTS.md` §3.13 verkörpert).
-- [ ] `make gates` grün.
+- [x] `make gates` grün — **eigener Lauf des Planners nach dem Blocker-Fix**
+      (Commit `aabbe01`, „unverlinkte ADR-0060-Erwaehnung gebacktickt"),
+      ungepiped geprüft, Exit 0. Zeitachse: Implementer (`338cfe0`,
+      `59d5b53`) → Reviewer (`c7fa290`, 0 HIGH/1 MEDIUM/1 LOW) → Verifier
+      (`170b1f0`) fand `make gates` zum eigenen Laufzeitpunkt **rot** (Exit
+      2, `docs-check` `id-unlinked` auf `docs/reviews/review-slice-104.md:34`
+      — eine nackte `ADR-0060`-Erwähnung im Review-Report selbst, außerhalb
+      Inline-Code) → Blocker-Fix außerhalb der reinen
+      Implementer→Reviewer→Verifier-Sequenz (`aabbe01`) → dieser
+      Closure-Lauf bestätigt Exit 0 eigenständig neu. Dieser Zustand war dem
+      Verifier zum Zeitpunkt seines Laufs nicht mehr sichtbar.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Siehe [`docs/reviews/review-slice-104.md`](../../../reviews/review-slice-104.md)
       (0 HIGH, 1 MEDIUM, 1 LOW — keine Fixrunde am Implementer).
-- [ ] Doku-Update für den geänderten Mechanismus siehe LP3 — kein weiterer
+- [x] Verifikation durchgeführt, Report unter
+      [`docs/reviews/verify-slice-104.md`](../../../reviews/verify-slice-104.md)
+      liegt vor (Modul 11, frischer Kontext) — der Bericht selbst ist
+      vollständig, die inhaltlichen Prüfungen (LP1/LP2 gemessen erfüllt,
+      LP3 für die fünf geplanten Träger vollständig, F-1/F-2 unabhängig
+      bestätigt) sind gültig. Sein **Verdikt zum Laufzeitpunkt** war „noch
+      nicht DoD-konform" wegen des unten dokumentierten, seither behobenen
+      `make gates`-Blockers — kein Widerspruch zur jetzigen Closure, sondern
+      ein Zustand, der zeitlich vor dem Fix lag.
+- [x] Doku-Update für den geänderten Mechanismus siehe LP3 — kein weiterer
       öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. **Entfällt** — Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF), keine `docs/plan/planning/reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. **Entfällt** — Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF), keine `docs/plan/planning/reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -245,7 +264,11 @@ dasteht.
   `make generated-sync` vergleicht **byte-genau** (`cmp`). Muss real
   geprüft werden, bevor der Slice schließt (ein Lauf von
   `make proto-generate`, gefolgt von `make generated-sync`). —
-  **Ausgang:** <bei Closure einzutragen>
+  **Ausgang: entfallen.** Reviewer und Verifier bestätigen unabhängig
+  voneinander real: extrahierte Dateien byte-identisch zum vorherigen
+  Stand (`diff`/`cmp` gegen eine Kopie vor dem Lauf), Eigentümer real der
+  aufrufende Nutzer (kein `root`), `make generated-sync` bleibt nach dem
+  Umbau grün (Exit 0, „byte-gleich"). Nicht eingetreten.
 - **Die Extraktions-Pipe kann den Exit-Code von `docker run` maskieren.**
   `docker run … | tar -x -C .` folgt genau dem in `AGENTS.md` §3.9
   beschriebenen Muster: Der Gesamt-Exit-Code der Pipe ist der von `tar`
@@ -258,13 +281,32 @@ dasteht.
   roten Laufs). Muss durch `PIPESTATUS`/`pipefail` oder einen zweistufigen
   Aufruf (Stream erst in eine Datei, Exit-Code prüfen, dann extrahieren)
   abgesichert und real mit einem absichtlich fehlschlagenden Lauf getestet
-  werden. — **Ausgang:** <bei Closure einzutragen>
+  werden. — **Ausgang: entfallen.** Implementer, Reviewer und Verifier
+  bestätigen übereinstimmend eine strukturell andere Lösung als die beiden
+  im Risiko genannten Optionen: keine Pipe, sondern eine reine
+  Ausgabe-Umleitung (`> $(PROTO_GENERATE_TARBALL)`) gefolgt von einem
+  separaten `tar -xf`-Schritt — das GNU-Make-Default stoppt die
+  Rezeptzeile bereits am Exit-Code des `docker run`-Schritts, bevor
+  `tar -xf` überhaupt läuft. Real mit zwei unabhängigen Fehlschlag-Proben
+  belegt (Reviewer: isoliertes Testrezept, Exit 125 propagiert, leere
+  Zwischendatei bleibt liegen; Verifier: eigene Wiederholung derselben
+  Probe plus ein zweites, `make`-natives Testrezept, Exit 2/125,
+  `tar -xf`-Zeile nachweislich nicht erreicht) — das Risiko ist damit nicht
+  nur gemildert, sondern durch die gewählte Architektur strukturell
+  vermieden.
 - **Ein unvollständiger Träger-Suchlauf lässt eine Präsens-Beschreibung
   stehen.** Fünf Träger sind in LP3 benannt; ob der Implementer-Suchlauf
   einen sechsten findet oder einen der fünf übersieht, ist offen —
   dieselbe Klasse wie `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (bereits
-  5× belegt, in `AGENTS.md` §3.13 verkörpert). — **Ausgang:** <bei Closure
-  einzutragen>
+  5× belegt, in `AGENTS.md` §3.13 verkörpert). — **Ausgang: entfallen.**
+  Reviewer (eigener, breiterer Suchlauf) und Verifier (Lauf 12, eigener
+  breiterer Suchlauf) finden unabhängig voneinander keinen sechsten
+  lebenden Träger, der den alten Mechanismus im Präsens beschreibt; die
+  zwei einzigen weiteren Fundstellen (`docs/plan/adr/0085-…md`,
+  `docs/plan/adr/0076-…md`) sind unberührt korrekt — eine historische
+  `Accepted`-ADR-Zeile (immutabel, `AGENTS.md` §3.5) bzw. eine
+  mechanismus-freie Namensnennung. Alle fünf geplanten Träger sind
+  vollständig nachgezogen.
 
 ## 7. Closure-Notiz
 
@@ -283,13 +325,81 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <bei Closure auszufüllen>
-- **Was ging anders als geplant:** <bei Closure auszufüllen>
-- **Steering-Loop-Eintrag:** <bei Closure auszufüllen — oder „keiner, der
-  Normalfall"; siehe §5 Kandidaten>
-- **Beobachtungs-Register (`../observations/`):** <bei Closure auszufüllen>
-- **Folge-Slices:** <bei Closure auszufüllen — voraussichtlich keine>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
+- **Was hat funktioniert:** Die zweistufige Extraktions-Lösung (reine
+  Ausgabe-Umleitung `> Datei` gefolgt von separatem `tar -xf`, statt der im
+  Plan §6 skizzierten `docker run … | tar -x`-Pipe) trug real und
+  vollständig — sie vermeidet das §3.9-Pipe-Maskierungs-Muster
+  strukturell, statt es nur abzusichern. Zwei Rollen (Reviewer, Verifier)
+  haben das **unabhängig voneinander** mit je eigenen, absichtlich
+  fehlschlagenden Läufen (`docker run` gegen ein nicht-existentes Image,
+  isoliertes Testrezept) real bestätigt: Der Exit-Code propagiert sichtbar,
+  `tar -xf` läuft nachweislich nicht. Der Implementer-eigene §3.13-Suchlauf
+  (LP3) fand und zog alle fünf geplanten Träger korrekt nach; kein sechster
+  im Sinn von LP3 blieb stehen (zwei Rollen bestätigen das eigenständig).
+- **Was ging anders als geplant:** Ein docs-check-Fund traf **den
+  Review-Report selbst**, nicht den produktiven Diff — eine nackte
+  `ADR-0060`-Kennung in `docs/reviews/review-slice-104.md:34`, außerhalb
+  Inline-Code. Zeitachse: Implementer (`338cfe0`, `59d5b53`) → Reviewer
+  (`c7fa290`, F-1/F-2 wie oben) → Verifier (`170b1f0`) fand den Fund über
+  den eigenen `make gates`-Lauf (Exit 2) und verweigerte zu Recht das
+  Anhaken der DoD-Zeile „`make gates` grün" → Fix außerhalb der reinen
+  Implementer→Reviewer→Verifier-Sequenz (`aabbe01`, Backticks ergänzt) →
+  dieser Closure-Lauf bestätigt `make gates` eigenständig erneut grün
+  (Exit 0). Das ist eine Instanz einer Klasse, die noch keinen eigenen
+  Namen trägt: ein **Review-/Verifikationsartefakt selbst** kann zum
+  Gate-Blocker werden, nicht nur der produktive Diff — hier hat die
+  Disziplin (Verifier verweigert das Häkchen, bis der Fund behoben ist)
+  sichtbar getragen; siehe Beobachtungs-Register unten.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Hard Rule
+  — die tragende Disziplin (Verifier verweigert DoD-Häkchen bei rotem
+  Gate, auch wenn der Fund im eigenen Berichtsökosystem liegt) hat real
+  funktioniert. Der Hauptertrag dieser Closure sind zwei
+  Beobachtungs-Register-Entscheidungen (siehe unten): eine neue, bewusst
+  von einer bestehenden Klasse abgegrenzte Beobachtung (F-2) und eine
+  Klärung, warum ein LOW-Fund (F-1) **nicht** in eine bestehende Klasse
+  gehört, obwohl er oberflächlich ähnlich aussieht.
+- **Beobachtungs-Register (`../observations/`):**
+  - **F-2 (Reviewer+Verifier übereinstimmend):** Der `!proto/`-Fund
+    (`.dockerignore`-Default-Deny blockiert ein neues, bisher ungelistetes
+    Quellverzeichnis) ist **nicht** die dritte Instanz von
+    `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` — jener Eintrag
+    ist über Pfad und Text eng auf „ein Skript unter `tools/`" gezogen,
+    dieser Fund betrifft `proto/` als Quellverzeichnis einer neuen
+    Erzeugungsstufe. Neuer, eigenständiger Eintrag angelegt:
+    `BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad/` — Erstbeleg
+    (`evidence/slice-104.md`), Stand `offen`, 1×.
+  - **Der Verifier-Blocker selbst** (nackte `ADR-0060`-Kennung in
+    `docs/reviews/review-slice-104.md:34`): strukturell derselbe
+    **Basis**-Fehler wie in `BEO-PGC/report-nackte-id-ohne-link/observation.md`
+    ursprünglich benannt (nackte Kennung im Fließtext eines Reports) —
+    **keine** Sequenzierungs-Verletzung wie bei den Belegen 4/5 (der rote
+    Exit-Code blockierte hier tatsächlich, bis behoben). Als 6. Beleg
+    eingetragen (`evidence/slice-104.md`); die Regel ist bereits seit
+    `slice-063` in `AGENTS.md` §3.9 verkörpert, dieser Beleg bestätigt sie
+    und löst keinen neuen Lese-Schritt aus.
+  - **F-1 (Reviewer+Verifier übereinstimmend, LOW):** ADR-0060-Zitat im
+    Dockerfile-Kommentar mehrdeutig platziert (suggeriert eine
+    ADR-Bindung des Bind-Mount-Mechanismus, die nicht existiert) — geprüft
+    gegen `BEO-PGC/zitat-nennt-die-falsche-stelle` (2×, `slice-090`,
+    `slice-102`). **Kein Eintrag dort:** Beide bisherigen Belege sind
+    Adressierungs-Fehler — eine falsche Abschnittsnummer bzw. eine falsche
+    Slice-Kennung, d. h. der Verweis zeigt auf die **falsche Stelle**. Hier
+    zeigt der Verweis auf die **richtige** Stelle (`ADR-0060` existiert,
+    ist der korrekte Bezug des Slice) — das Problem ist die mehrdeutige
+    **Platzierung** neben einer Aussage, die dieses richtig zitierte
+    Dokument nicht trägt. Das ist ein anderer Fehlermechanismus
+    (Platzierungs-Mehrdeutigkeit vs. falsche Adresse), keine Erweiterung
+    der bestehenden, engen Klasse. Da es sich um einen einzelnen LOW-Fund
+    handelt, der sich nicht klar von den bestehenden zwei Belegen der
+    Nachbarklasse unterscheidet **in der Form, die eine neue Klasse
+    rechtfertigt** — kein zweiter Beleg dieser genauen Form liegt vor —,
+    wird **keine** neue Registerklasse angelegt. Benannt, nicht gezählt.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** alle drei **entfallen** — siehe §6 für die
+  Einzelbegründungen (Datei-Attribute/Zeilenenden: nicht eingetreten,
+  byte-identisch bestätigt; Extraktions-Pipe: durch die gewählte
+  Umleitungs-Architektur strukturell vermieden statt nur abgesichert;
+  Träger-Suchlauf: vollständig, kein sechster Fund im Sinn von LP3).
 - **Drei Paarungen:** <Repo ohne Wellen-Betrieb — nach dem `git mv` nach
   `done/` zu prüfen>
 
