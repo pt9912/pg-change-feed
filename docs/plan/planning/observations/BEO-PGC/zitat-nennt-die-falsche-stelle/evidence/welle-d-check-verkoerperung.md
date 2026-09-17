@@ -25,5 +25,5 @@ verkörperten Regel unmittelbar: Sie hätte diesen eigenen Fehler gefangen,
 wäre sie beim Schreiben angewendet worden.
 
 Quelle: `docs/reviews/review-welle-d-check-verkoerperung.md` ·
-`AGENTS.md:451-454` (korrigiert) ·
+`AGENTS.md:451-455` (korrigiert) ·
 `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7.
