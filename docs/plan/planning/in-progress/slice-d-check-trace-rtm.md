@@ -77,17 +77,17 @@ verbleibenden 7 Waisen).
 
 ## 2. Definition of Done
 
-- [ ] **LP1:** `.d-check.yml` trägt `trace.requirements.id-pattern:
+- [x] **LP1:** `.d-check.yml` trägt `trace.requirements.id-pattern:
       'LH-(FA|QA)-[A-Z]{3}-\d{3}'`. `make doc-trace` läuft real gegen den
       Bestand (Exit 0, advisory) und zeigt die volle RTM auf stdout — nicht
       die Planungs-Vorabmessung übernehmen, sondern den Lauf im
       Implementer-Kontext erneut ausführen (`AGENTS.md` §3.12).
-- [ ] **LP2:** `.d-check.yml` ergänzt `trace.coverage: [{files:
+- [x] **LP2:** `.d-check.yml` ergänzt `trace.coverage: [{files:
       [docs/user/e2e-abdeckung.md], label: E2E}]`. `make doc-trace` erneut
       laufen lassen: Coverage-Spalte erscheint, Waisenzahl sinkt gegenüber
       LP1 (real geprüft, nicht angenommen) — Vergleich beider Läufe im
       Bericht dokumentieren.
-- [ ] **LP3:** Träger-Nachzug: `harness/README.md` §Werkzeuge bekommt eine
+- [x] **LP3:** Träger-Nachzug: `harness/README.md` §Werkzeuge bekommt eine
       Zeile für `make doc-trace` (advisory, analog `make image-stale`) mit
       Bindung auf diesen Slice; `harness/sensors/docs-check.md` erwähnt die
       jetzt konfigurierte RTM-Quellen-Abweichung vom Default (§Grenze/
@@ -99,7 +99,7 @@ verbleibenden 7 Waisen).
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
       §3.9).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe LP3);
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe LP3);
       `harness/sensors/docs-check.md` falls dort der bessere Trägerort ist.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
