@@ -449,9 +449,11 @@ sich unverändert wiederholt. Er trifft nicht zuverlässig **Zahlen**: ein
 Zeilen-Lokator oder eine Abschnittsnummer verschiebt sich mit jeder
 Nachbaränderung, ohne im Text eine wiederholbare Spur zu hinterlassen, nach
 der zu suchen wäre. Diese Hälfte bleibt beim **Reviewer** als Leser des
-Diffs — real bereits so geschlossen: `docs/reviews/review-slice-096.md` F-2
-fand über den vierten Anker einen Zeilen-Lokator, den der
-Implementer-Suchlauf übersehen hatte. Diese Regel verlangt deshalb **keine**
+Diffs — real bereits so geschlossen: Der `slice-096`-Suchlauf fand den
+Symbolnamen; der nachfolgende Review fand zusätzlich zwei Zeilen-Lokatoren
+und einen weiteren Anker, die der Implementer-Suchlauf übersehen hatte
+(`docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7 „Was
+hat funktioniert", dritter Punkt). Diese Regel verlangt deshalb **keine**
 Erweiterung der Suchform selbst — eine `grep`-Form, die Zahlen mit
 derselben Verlässlichkeit wie Symbolnamen träfe, bräuchte eine
 Semantik-Entscheidung, welche Zahl zu welcher Eigenschaft gehört; dieselbe
