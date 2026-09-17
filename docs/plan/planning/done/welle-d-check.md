@@ -8,7 +8,7 @@ Datei:** Sie stehen in der Roadmap unter *Nächste Wellen* und nirgends sonst �
 zwei Positionen, nicht drei.
 
 **Namensform** nach
-[`harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md`](../../../harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md)
+[`harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md`](../../../../harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md)
 — die erste **namensbasierte** Welle dieses Repos (`welle-1`…`welle-20` bleiben
 nummeriert, Bestandsschutz).
 

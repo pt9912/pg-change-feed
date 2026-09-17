@@ -8,7 +8,7 @@ Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 **Welle:** `welle-d-check` — Closure-Bedingung ist ein **kombinierter**
 `make gates`-Lauf mit diesem Slice **und** `slice-d-check-trace-rtm`
 gleichzeitig aktiv in derselben `.d-check.yml` (siehe
-[`welle-d-check.md`](../welle-d-check.md) §1/§3); das geht über die eigene
+[`welle-d-check.md`](welle-d-check.md) §1/§3); das geht über die eigene
 DoD dieses Slice hinaus.
 
 **Bezug:** kein einschlägiges `LH-*`, `ADR-*` oder `CO-*` — reine
