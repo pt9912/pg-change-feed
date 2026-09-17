@@ -21,7 +21,7 @@ nachfolgende Slices mit noch zu vergebenden Namen (siehe §1 Abgrenzung).
 
 **Berührte Spec-Stellen:** — (geprüft: `grep -n "baseline\|MR-\|slice-" spec/lastenheft.md spec/pflichtenheft.md spec/architecture.md` liefert keine Treffer zum Harness-Regelwerk selbst; reiner Harness-/Prozess-Vorgang ohne Vertrags- oder Draht-Bezug).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
