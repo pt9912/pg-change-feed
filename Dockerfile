@@ -25,15 +25,36 @@ RUN go mod download && go mod verify
 # (`ADR-0060` Folgepflicht, `LH-FA-SST-008`). `protoc` und die beiden
 # `protoc-gen-*`-Plugins laufen ausschliesslich hier (`AGENTS.md` §3.1: kein
 # Host-`protoc`/`buf`); die Plugin-Versionen sind gepinnt, die Basis ist der
-# bereits digest-gepinnte Toolchain-Stand aus `deps`. Das Ziel
-# `make proto-generate` baut diese Stufe und ruft `protoc` ueber den
-# Bind-Mount des Arbeitsbaums auf. Der normale Build (`make image`) braucht
-# sie nicht — der erzeugte Go-Code liegt committet im Baum und wird von
-# `build`/`coverage` mitkompiliert. ---
+# bereits digest-gepinnte Toolchain-Stand aus `deps`. Diese Stufe traegt nur
+# das Werkzeug; die eigentliche Erzeugung liegt in der Folgestufe
+# `proto-export`. Der normale Build (`make image`) braucht sie nicht — der
+# erzeugte Go-Code liegt committet im Baum und wird von `build`/`coverage`
+# mitkompiliert. `make generated-sync` baut diese Stufe eigenstaendig
+# (`tools/harness/generated-sync.sh`) und vergleicht in einem eigenen
+# Temp-Verzeichnis, ohne den Arbeitsbaum zu schreiben. ---
 FROM deps AS proto
 RUN apk add --no-cache protobuf-dev=31.1-r1 \
  && GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 \
  && GOBIN=/usr/local/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+
+# --- proto-export: erzeugt den Go-/gRPC-Code zur Build-Zeit (seit slice-104;
+# vormals `docker run -v` in den Bind-Mount des Arbeitsbaums, siehe
+# ADR-0060). Die `.proto`-Quelle kommt per `COPY` (Build-Kontext) statt per
+# Mount in die Stufe; `protoc` laeuft als `RUN`-Schritt, das Erzeugnis liegt
+# im Image-Layer unter `/out`. `make proto-generate` baut diese Stufe und
+# liest ihr `ENTRYPOINT` per `docker run --rm --network none <image>` aus:
+# Es gibt `/out` als `tar`-Stream ueber stdout aus, die Extraktion laeuft
+# host-seitig (`tar -xf`) — kein `docker run -v`, kein `--user`-Workaround,
+# die extrahierten Dateien gehoeren dadurch automatisch dem aufrufenden
+# Nutzer (Host-Prozess, kein Container-Schreibzugriff auf den Baum). ---
+FROM proto AS proto-export
+COPY proto/ proto/
+RUN mkdir -p /out && \
+    protoc -I proto \
+      --go_out=/out --go_opt=module=github.com/pt9912/pg-change-feed \
+      --go-grpc_out=/out --go-grpc_opt=module=github.com/pt9912/pg-change-feed \
+      proto/cdc/stream/v1/changestream.proto
+ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 
 # --- coverage: Go-Test-Coverage ueber die netzlos pruefbare Flaeche des
 # Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071, ADR-0054;

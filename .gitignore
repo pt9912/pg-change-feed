@@ -2,5 +2,10 @@
 # - .tmp/: Commit-Message-Dateien des Implementer-Workflows (git commit -F)
 # - image-hash.raw: transientes Zwischenprodukt des make image-Laufs
 #   (--metadata-file); der Beleg ist das finale harness/image-hash.txt
+# - .proto-generate.tar: transientes Zwischenprodukt von `make proto-generate`
+#   (seit slice-104) — das `docker run`-Ergebnis landet erst in dieser Datei,
+#   bevor `tar -xf` extrahiert; bei einem Fehlschlag zwischen den beiden
+#   Schritten bleibt sie zu Debug-Zwecken liegen (AGENTS.md §3.9)
 .tmp/
 harness/image-hash.raw
+.proto-generate.tar

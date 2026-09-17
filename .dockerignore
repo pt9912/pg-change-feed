@@ -1,6 +1,6 @@
 # Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
 # Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
-# wandern). Die beiden `!`-Zeilen für `tools/coverage-gate.sh` und
+# wandern). Die `!`-Zeilen für `tools/coverage-gate.sh` und
 # `tools/schema/nacharbeit-roles.sql` VERGRÖSSERN den Kontext, sie verkleinern
 # ihn nicht — eine Negation hebt den Ausschluss für genau diese Datei auf, und
 # sie gilt für den ganzen Kontext, nicht für eine einzelne Stage (jede
@@ -9,13 +9,25 @@
 # (ADR-0054); tools/schema/nacharbeit-roles.sql ist der ausgerollte Grant-Text,
 # gegen den `internal/bootstrap/roles_rollout_file_internal_test.go` den
 # Rollenschnitt hält (ADR-0047/ADR-0048). Das Runtime-Image bleibt unberührt,
-# weil `runtime` ausschließlich das Binary übernimmt; die Klasse dieser
+# weil `runtime` ausschließlich das Binary übernimmt; die Klasse dieser beiden
 # Ausnahmen (gelesen, nicht gebaut; genau eine Datei; der Leser steht dabei;
 # Image unberührt mit Beleg) führt [`ADR-0085`](docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md).
+#
+# `!proto/` trägt eine andere Klasse und ist **nicht** Teil von `ADR-0085`:
+# Die `proto-export`-Stufe (seit slice-104) kopiert die `.proto`-Quelle zur
+# Build-Zeit hinein und lässt `protoc` darüber laufen — gelesen **und**
+# gebaut, ein ganzes Verzeichnis statt einer Datei. Ihr Leser ist die
+# `proto`-Stufenfamilie ([`ADR-0060`](docs/plan/adr/0060-grpc-streaming-mechanismus.md)
+# legt den Generator und seine Existenz fest, nicht seinen Mount-Mechanismus —
+# der Wechsel von Bind-Mount auf Build-Zeit-`COPY` ist eine
+# Umsetzungsentscheidung dieses Slice, keine neue `§Entscheidung`). Das
+# Runtime-Image bleibt unberührt, aus demselben strukturellen Grund wie oben:
+# `runtime` hängt nicht von `proto`/`proto-export` ab.
 *
 !cmd/
 !internal/
 !gen/
+!proto/
 !go.mod
 !go.sum
 !tools/coverage-gate.sh

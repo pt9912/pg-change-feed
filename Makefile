@@ -89,24 +89,34 @@ bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokume
 # Protobuf-/gRPC-Codegenerierung laeuft ausschliesslich im gepinnten
 # Toolchain-Container (`AGENTS.md` §3.1) — kein Host-protoc/-buf. Die
 # Dockerfile-Stufe `proto` traegt protoc und die beiden protoc-gen-*-
-# Plugins; dieses Ziel ruft protoc ueber den Bind-Mount des Arbeitsbaums
-# auf, der erzeugte Go-Code liegt committet im Baum und wird von
-# `make test`/`make image` mitkompiliert. Kein Gate: der Generator laeuft
-# nur, wenn sich die `.proto`-Quelle aendert.
-PROTO_IMAGE ?= pg-change-feed:proto
-# Der Generator schreibt in den Bind-Mount des Arbeitsbaums; laeuft der
-# Container als root, gehoeren die erzeugten .pb.go-Dateien root statt dem
-# Aufrufer (derselbe Grund wie D_MIGRATE_RUN_USER).
-PROTO_RUN_USER ?= $(shell id -u):$(shell id -g)
+# Plugins; die Folgestufe `proto-export` (seit slice-104) kopiert die
+# `.proto`-Quelle per COPY hinein und erzeugt den Code **zur Build-Zeit**
+# (kein Bind-Mount, kein `--user`-Workaround) — ihr ENTRYPOINT gibt das
+# Erzeugnis als `tar`-Stream ueber stdout aus. Dieses Ziel baut die Stufe
+# und extrahiert host-seitig; der erzeugte Go-Code liegt committet im Baum
+# und wird von `make test`/`make image` mitkompiliert. Kein Gate: der
+# Generator laeuft nur, wenn sich die `.proto`-Quelle aendert.
+#
+# Die Extraktion laeuft zweistufig statt gepiped (`docker run … | tar -x`):
+# ein `docker run`-Fehlschlag wuerde hinter einem erfolgreichen, aber leeren
+# `tar -x` verschwinden (`AGENTS.md` §3.9 — Exit-Code einer Pipe ist der des
+# letzten Glieds). Stattdessen schreibt `docker run` zunaechst in eine Datei
+# (reine Ausgabe-Umleitung, kein Pipe-Glied — ihr Exit-Code ist der von
+# `docker run` selbst und stoppt das Rezept-Zeile-fuer-Zeile beim ersten
+# Fehlschlag, GNU-Make-Default); erst danach extrahiert `tar` aus der Datei.
+# Das Rezept laeuft unter `/bin/sh` (kein SHELL-Override im Makefile) — auf
+# diesem Host `dash`, das `set -o pipefail` nicht traegt; der Zwischendatei-Weg
+# braucht dieses Feature nicht.
+PROTO_IMAGE ?= pg-change-feed:proto-export
+PROTO_GENERATE_TARBALL := .proto-generate.tar
 
 .PHONY: proto-generate
-proto-generate: ## Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.proto erzeugen (Docker-only, gepinnte Stufe)
-	docker build --target proto -t $(PROTO_IMAGE) .
-	docker run --rm --user "$(PROTO_RUN_USER)" --network none -v "$(CURDIR)":/src -w /src $(PROTO_IMAGE) \
-	  sh -c 'protoc -I proto \
-	    --go_out=. --go_opt=module=github.com/pt9912/pg-change-feed \
-	    --go-grpc_out=. --go-grpc_opt=module=github.com/pt9912/pg-change-feed \
-	    proto/cdc/stream/v1/changestream.proto'
+proto-generate: ## Protobuf-/gRPC-Go-Code aus proto/cdc/stream/v1/changestream.proto erzeugen (Docker-only, Build-Zeit-Erzeugung, Host-Extraktion)
+	docker build --target proto-export -t $(PROTO_IMAGE) .
+	rm -f $(PROTO_GENERATE_TARBALL)
+	docker run --rm --network none $(PROTO_IMAGE) > $(PROTO_GENERATE_TARBALL)
+	tar -xf $(PROTO_GENERATE_TARBALL) -C .
+	rm -f $(PROTO_GENERATE_TARBALL)
 
 # --- Schemamigrationen (kein Gate; d-migrate, ADR-0043) ---
 # Das neutrale Schema-YAML (tools/schema/schema.yaml) ist die Quelle der
