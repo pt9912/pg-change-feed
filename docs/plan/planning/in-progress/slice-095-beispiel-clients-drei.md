@@ -103,7 +103,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Versionshistorie-Zeile. Auslöser: die zwei Register-Einträge, die mit
       **je 3×** genau diesen Nachzug tragen.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor — **weist er eine Fixrunde aus, deckt ein Delta-Review sie ab.**
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor — **weist er eine Fixrunde aus, deckt ein Delta-Review sie ab.** ([`review-slice-095.md`](../../../reviews/review-slice-095.md), 0 HIGH/MEDIUM, keine Fixrunde)
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-095.md` liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) — *(entfällt: Greenfield-Bootstrap.)*
