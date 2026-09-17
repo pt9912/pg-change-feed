@@ -139,9 +139,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       bewegt, zieht ihre Träger nach; `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
       steht bereits bei 5× und ist in `AGENTS.md` §3.13 verkörpert).
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Siehe [`docs/reviews/review-slice-104.md`](../../../reviews/review-slice-104.md)
+      (0 HIGH, 1 MEDIUM, 1 LOW — keine Fixrunde am Implementer).
 - [ ] Doku-Update für den geänderten Mechanismus siehe LP3 — kein weiterer
       öffentlicher Vertrag berührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
