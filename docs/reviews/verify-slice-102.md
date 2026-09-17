@@ -204,7 +204,7 @@ eigenen, cache-unabhängigen `docker build --no-cache`-Gegenprobe, die belegt,
 dass der C#-Stub real im Bau aus der über den Zusatzkontext gelesenen `.proto`
 entsteht und alle vier Testsuiten (inkl. `GrpcClient.Tests` 7/7) real grün
 laufen. `make gates` läuft unkontaminiert grün (Exit 0, sechs Checks). Die
-ADR-0090-Zusagen (Festlegung 2/3/4, §Fitness Function) sind eingehalten, die
+`ADR-0090`-Zusagen (Festlegung 2/3/4, §Fitness Function) sind eingehalten, die
 `ADR-0060`-TLS-Wahl (`Http2UnencryptedSupport`, analog zu
 `insecure.NewCredentials()`) ist unabhängig gegengeprüft und bestätigt. Damit
 liefert dieser Slice genau den Beleg, den `ADR-0090` selbst als offen
