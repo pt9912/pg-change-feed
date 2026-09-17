@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Gepinnte Paketversionen (ADR-0087 Festlegung 3, ADR-0090 Festlegung 4):
+       exakte Versionen, keine Bereiche — dasselbe Prinzip wie die
+       Digest-Pinnung der Basis-Images im Dockerfile. Pin-Hebung ist ein
+       bewusster Commit, keine stille Auflösung. Diese drei Pakete tragen
+       ausschließlich den Testlauf (xUnit); der Client selbst (LP2) braucht
+       kein Fremdmodul — er liest JSON/HTTP aus der .NET-Runtime. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+
+</Project>
