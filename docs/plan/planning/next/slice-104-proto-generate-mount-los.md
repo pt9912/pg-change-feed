@@ -24,7 +24,7 @@ beschreiben, siehe §3).
 
 **Berührte Spec-Stellen:** — (geprüft: `grep -n "proto-generate\|protoc\|Bind-Mount" spec/lastenheft.md spec/pflichtenheft.md` ist leer; reiner Werkzeug-/Toolchain-Mechanismus ohne Vertrags- oder Draht-Bezug).
 
-**Verantwortlich:** — (bis zur Priorisierung `open` → `next`).
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
