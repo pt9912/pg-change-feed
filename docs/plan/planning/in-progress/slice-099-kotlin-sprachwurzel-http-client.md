@@ -113,20 +113,20 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — Sprach-Wurzel, Werkzeugkette, Ziel.** `examples/kotlin/Dockerfile`
+- [x] **LP1 — Sprach-Wurzel, Werkzeugkette, Ziel.** `examples/kotlin/Dockerfile`
       mit digest-gepinnter JVM-Basis (Kandidat `eclipse-temurin:21-jdk`,
       Existenz gemessen in [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
       Festlegung 4 — Digest-Zeile gehört dem umsetzenden Zug), gepinntes
       Build-Werkzeug samt Prüfsumme, `make`-Ziel `examples-kotlin` in
       `Makefile`/`harness/mk/*.mk` — der Bau kompiliert netzlos prüfbar (kein
       laufender Dienst nötig).
-- [ ] **LP2 — der HTTP-Client.** `examples/kotlin/http-client/` ruft real
+- [x] **LP2 — der HTTP-Client.** `examples/kotlin/http-client/` ruft real
       `GET /tables` mit dem `reader`-Token auf, gibt die Antwort aus, liest
       Adresse/Token aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER` mit
       Flag-/Umgebungs-Übersteuerung (Form-Vorbild: `examples/http-client` in
       Go); seine netzlos prüfbaren Teile sind getestet und laufen über
       `examples-kotlin`.
-- [ ] **LP3 — die Träger samt Workflow.** `docs/user/benutzerhandbuch.md`
+- [x] **LP3 — die Träger samt Workflow.** `docs/user/benutzerhandbuch.md`
       §4 „Zugriff über die HTTP-/JSON-API": der `**Beispiele:**`-Block (seit
       `slice-098` mit Go- und C#-Zeile) bekommt die **dritte** Zeile (Kotlin)
       samt Änderungshistorie-Zeile; `harness/README.md` §Werkzeuge trägt
@@ -135,14 +135,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `examples-kotlin` — der Carrier wächst mit seinem Umfang
       ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
       Festlegung 5).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-099.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
+- [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -164,13 +164,16 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `examples/kotlin/Dockerfile` | neu | Eigener, digest-gepinnter Bau-Kontext = Sprach-Wurzel (`ADR-0087` Festlegung 3, bestätigt). |
-| `examples/kotlin/<Build-Manifest>` (Name/Form gehört dem umsetzenden Zug, z. B. `build.gradle.kts`/`gradle/wrapper`) | neu | Gepinntes Build-Werkzeug samt Prüfsumme — Pin-Hebung ist ein bewusster Commit (`SPEC-023`). |
-| `examples/kotlin/http-client/**` | neu | Der Anfrage/Antwort-Client, Form-Vorbild `examples/http-client` (Go). |
-| `Makefile` / `harness/mk/*.mk` | update | Neues Ziel `examples-kotlin` (Werkzeug, kein Gate). |
-| `.github/workflows/examples.yml` | update | Zweiter Job für `examples-kotlin`, neben dem in `slice-098` angelegten C#-Job. |
-| `docs/user/benutzerhandbuch.md` | update | §4 „Zugriff über die HTTP-/JSON-API": dritte Zeile (Kotlin) im `**Beispiele:**`-Block; Änderungshistorie-Zeile. |
+| `examples/kotlin/Dockerfile` | neu | Eigener, digest-gepinnter Bau-Kontext = Sprach-Wurzel (`ADR-0087` Festlegung 3, bestätigt); zwei Stufen (`build`: `eclipse-temurin:21-jdk`, `runtime`: `eclipse-temurin:21-jre`), Digests real gemessen (`docker manifest inspect`, amd64/linux). |
+| `examples/kotlin/{gradlew,gradlew.bat,gradle/wrapper/*}` | neu | Gradle-Wrapper 8.14 (erzeugt über den gepinnten `gradle:8.14-jdk21`-Image-Digest), `distributionSha256Sum` in `gradle-wrapper.properties` ergänzt — Pin-Hebung ist ein bewusster Commit (`SPEC-023`). |
+| `examples/kotlin/{settings.gradle.kts,build.gradle.kts}` | neu | Wurzelprojekt (ein Modul `http-client`), Kotlin-Gradle-Plugin-Version 2.4.20 einmal gepinnt. |
+| `examples/kotlin/http-client/build.gradle.kts` | neu | Programm-Manifest — kein Fremdmodul für den Client selbst (`java.net.http`), gepinnte Testabhängigkeiten (`kotlin-test-junit5:2.4.20`, `junit-platform-launcher:6.1.3`). |
+| `examples/kotlin/http-client/src/**` | neu | Der Anfrage/Antwort-Client (`Main.kt`, `Config.kt`, `Cli.kt`, `TablesClient.kt`, `TablesUrlBuilder.kt`) und seine netzlos prüfbaren Tests, Form-Vorbild `examples/http-client` (Go) und `examples/csharp/http-client` (C#). |
+| `Makefile` / `harness/mk/examples.mk` | update | Neues Ziel `examples-kotlin` (Werkzeug, kein Gate) neben dem bestehenden `examples-csharp`. |
+| `.github/workflows/examples.yml` | update | Zweiter Job `examples-kotlin`, neben dem in `slice-098` angelegten C#-Job (`examples-csharp` umbenannt für die Job-Symmetrie, kein Verhaltenswechsel). |
+| `docs/user/benutzerhandbuch.md` | update | §4 „Zugriff über die HTTP-/JSON-API": dritte Zeile (Kotlin) im `**Beispiele:**`-Block; Änderungshistorie-Zeile 1.21. |
 | `harness/README.md` §Werkzeuge | update | Zeile für `examples-kotlin`, kein Gate, nicht in `GATE_CHECKS`. |
+| `spec/pflichtenheft.md` `SPEC-023` „Sprachen und Umfang“ | update (Plan-Nachzug) | Nicht im ursprünglichen Plan-Umfang, aber als offene, adresslose `ADR-0090`-Folgepflicht seit `slice-098` gemessen (`BEO-PGC/adr-folgepflicht-ohne-traeger-slice`, 1×, offen) — in diesem Zug auf die volle Matrix nachgezogen, samt §7-Historie-Zeile; Entscheidung im Bericht begründet. |
 
 ## 4. Trigger
 

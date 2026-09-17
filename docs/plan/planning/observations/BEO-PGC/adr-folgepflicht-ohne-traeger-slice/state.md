@@ -1,11 +1,14 @@
-Zustand: offen — Ausgang noch nicht zugewiesen (unter der 3×-Schwelle).
-`SPEC-023` "Sprachen und Umfang" trägt weiterhin den `ADR-0087`-Wortlaut,
-den `ADR-0090` als eigene Folgepflicht auflösen wollte. `slice-103` hat sie
-bereits als bedingten Prüfpunkt in seinem §6 vorgemerkt; ob dieser Punkt sie
-tatsächlich schließt oder die Lücke ein weiteres Mal an einem der
-dazwischenliegenden Matrix-Slices (`099`–`102`) vorbeiläuft, entscheidet der
-nächste Lese-Schritt. Bei 3× wäre zu prüfen, ob eine `Accepted`-ADR ihre
-eigenen "Folgepflicht (…-Zug)"-Zeilen künftig mit einer Slice- oder
+Zustand: offen — Ausgang noch nicht zugewiesen (unter der 3×-Schwelle). Die
+konkrete Manifestation ist geschlossen: `slice-099` hat `SPEC-023` „Sprachen
+und Umfang" auf die volle Matrix gezogen (`spec/pflichtenheft.md`,
+Historie-Zeile) — die adresslose Folgepflicht aus `ADR-0090` ist damit
+eingelöst, keiner der dazwischenliegenden Matrix-Slices (`100`–`102`) oder
+`slice-103` muss sie noch aufgreifen. Die **allgemeine** Beobachtungsklasse
+(eine `Accepted`-ADR benennt eine Folgepflicht ohne Slice-/ADR-Kennung)
+bleibt davon unberührt offen — ihr Zähler bewegt sich durch das Schließen
+dieser einen Manifestation nicht, weil eine Auflösung kein zweites Auftreten
+ist. Bei 3× wäre zu prüfen, ob eine `Accepted`-ADR ihre eigenen
+"Folgepflicht (…-Zug)"-Zeilen künftig mit einer Slice- oder
 Trigger-Kennung versehen muss, statt sie adresslos zu benennen.
 
 Zähler (abgeleitet): 1× (evidence/slice-098.md).

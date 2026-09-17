@@ -16,14 +16,18 @@ name: examples
 # gruener PR an der Erreichbarkeit einer fremden Registry, nicht nur am
 # eigenen Repo-Zustand.
 #
-# Ruft ausschliesslich das bestehende `make`-Target auf (AGENTS.md §3.1,
-# Docker-only): `make examples-csharp` baut das Werkzeugketten-Image der
-# C#-Sprach-Wurzel und faehrt darin `dotnet restore`/`build`/`test`
-# (harness/README.md §Werkzeuge). Kein Workflow-Schritt enthaelt
-# ziel-eigene Inline-Shell-Logik, die dieses Ziel umgeht oder dupliziert.
+# Ein Job je Sprache, jeweils ausschliesslich das bestehende `make`-Target
+# aufrufend (AGENTS.md §3.1, Docker-only): `make examples-csharp` baut das
+# Werkzeugketten-Image der C#-Sprach-Wurzel und faehrt darin `dotnet
+# restore`/`build`/`test`, `make examples-kotlin` das der Kotlin-Sprach-Wurzel
+# (Gradle-Wrapper `test`/`installDist`) — beide in `harness/README.md`
+# §Werkzeuge. Kein Workflow-Schritt enthaelt ziel-eigene Inline-Shell-Logik,
+# die eines dieser Ziele umgeht oder dupliziert. Die zwei Jobs laufen
+# unabhaengig und parallel (kein `needs:`) — ein roter C#-Bau haelt den
+# Kotlin-Job nicht auf und umgekehrt.
 #
 # Sein Abschluss haengt nach AGENTS.md §3.10 am ersten realen, gruenen
-# Post-Push-Lauf — bis dahin bleibt das betroffene Risiko offen
+# Post-Push-Lauf **je Job** — bis dahin bleibt das betroffene Risiko offen
 # (BEO-PGC/github-actions-unverifizierbar-lokal,
 # BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit).
 #
@@ -42,8 +46,8 @@ name: examples
 permissions: {}
 
 jobs:
-  examples:
-    name: Beispiel-Client-Sprachwurzeln
+  examples-csharp:
+    name: Beispiel-Client-Sprachwurzel (C#)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -54,3 +58,16 @@ jobs:
 
       - name: C#-Sprachwurzel bauen + testen
         run: make examples-csharp
+
+  examples-kotlin:
+    name: Beispiel-Client-Sprachwurzel (Kotlin)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Kotlin-Sprachwurzel bauen + testen
+        run: make examples-kotlin
