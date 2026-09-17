@@ -211,13 +211,20 @@ gehalten, bis die Transaktion committed und dauerhaft persistiert ist
 
 Feldform der optionalen YAML-Konfigurationsdatei: additiv zu den
 Umgebungsvariablen, mit Umgebungsvariable-schlägt-Datei-Feld-für-Feld-
-Precedence; die drei DSN-Schlüssel (`capture_dsn`/`admin_dsn`/
-`reader_dsn`) sind **nicht zulässig** und brechen das Laden über die
-Fehlerklasse `configuration` ab
+Precedence; additiv heißt: eine gesetzte Umgebungsvariable wirkt auch
+unter geladener Datei, und ein Feld **ohne** Datei-Gegenstück fällt
+dadurch nicht weg. Felder, die Zugangsdaten tragen **können**, sind
+**nicht zulässig** und brechen das Laden über die Fehlerklasse
+`configuration` mit einer eigenen, den Grund nennenden Fehlerzeile ab
 ([`LH-QA-SEC-001`](lastenheft.md)/[`LH-QA-SEC-002`](lastenheft.md):
 Least-Privilege/Secret-Trennung — eine Konfigurationsdatei ist für andere
-Aufbewahrungs-/Verteilwege bestimmt als eine Umgebungsvariable). Striktes
-Decoding (unbekannter Schlüssel → Fehlerklasse `configuration`).
+Aufbewahrungs-/Verteilwege bestimmt als eine Umgebungsvariable). Die
+Klasse umfasst die drei DSN-Schlüssel (`capture_dsn`/`admin_dsn`/
+`reader_dsn`), die zwei Token-Schlüssel (`api_token_reader`/
+`api_token_admin`) und `nats_url`: die URL-Formen dieser Klasse können
+Benutzer/Passwort einbetten, und die Abwesenheit von Zugangsdaten in einem
+konkreten Wert ist keine Eigenschaft des Feldes. Striktes Decoding (jeder
+andere unbekannte Schlüssel → Fehlerklasse `configuration`).
 
 | Schlüssel | Typ | Entspricht (Env-Var) | Pflicht in der Datei |
 |---|---|---|---|
@@ -226,6 +233,8 @@ Decoding (unbekannter Schlüssel → Fehlerklasse `configuration`).
 | `slot` | string | `CDC_SLOT` | nein — Pflichtfeld nach Merge (Datei oder Env) |
 | `tables` | Mapping `<schema.tabelle>: {table_id, schema_version}` | `CDC_TABLES` (Zeichenkettenform, unverändert bestehen) | nein — Pflichtfeld nach Merge (Datei oder Env) |
 | `log_level` | string (`debug`/`info`/`warn`/`error`) | `CDC_LOG_LEVEL` | nein, Default `info` |
+| `http_addr` | string (`host:port`) | `CDC_HTTP_ADDR` | nein — ungesetzt bleibt die HTTP-/JSON-API deaktiviert |
+| `grpc_addr` | string (`host:port`) | `CDC_GRPC_ADDR` | nein — ungesetzt bleibt der gRPC-Stream deaktiviert |
 | `wal_retention_warn_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
 | `wal_retention_error_bytes` | int64 | — (kein Env-Gegenstück) | nein, Default SPEC-013 |
 
@@ -241,6 +250,7 @@ tables:
     table_id: tbl-customers
     schema_version: sv-customers-1
 log_level: info
+http_addr: ":8090"
 ```
 
 `tables` als Feld wird **als Ganzes** ersetzt, nicht Zeile für Zeile
@@ -249,6 +259,11 @@ Datei-`tables`-Mapping vollständig, ohne Vermischung einzelner Tabellen aus
 beiden Quellen. `CDC_CONFIG_FILE` selbst trägt den Dateipfad; leer/unbenannt
 bedeutet kein Dateizugriff, der bestehende Env-only-Pfad bleibt unverändert
 Default.
+
+Die env-exklusiven Variablen (`CDC_NATS_URL`, `CDC_API_TOKEN_READER`,
+`CDC_API_TOKEN_ADMIN`) werden auch unter geladener Datei aus der Umgebung
+gelesen — sie haben kein Datei-Gegenstück, ihre Herkunft ist die
+Umgebungsvariable auf beiden Pfaden.
 
 ### SPEC-017 — NATS-Wecksignal (Subjekt- und Nachrichtenform)
 
@@ -421,6 +436,30 @@ steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
 | Noch nicht begrenzt | Kein Default-Limit und **keine** harte Obergrenze: ohne `limit` liest der Aufruf unbegrenzt, wie der View-Direktzugriff. Eine eingebaute Grenze wäre eine eigene Festlegung dieses Abschnitts |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server |
 
+### SPEC-023 — Beispiel-Clients
+
+Technische Ausgestaltung der **öffentlichen Zugriffswege für Integratoren**:
+die Klasse der Beispiel-Clients, die einen dokumentierten Draht real
+ansprechen. Eigener Eintrag statt einer Erweiterung der Draht-Festlegungen
+(`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`), weil die Beispiele keine
+davon ausgestalten: sie **benutzen** sie, laufen nicht im Feed und tragen
+keine Anforderung des Lastenhefts. Der Eintrag trägt die Form für **alle**
+Sprachen — die Clients, die es gibt, sind damit verankert, nicht nur die,
+die hinzukommen.
+
+| Merkmal | Festlegung |
+|---|---|
+| Klasse | Ein Beispiel-Client ist ein eigenständiges Programm, das **eine** dokumentierte Zugriffs-Oberfläche real anspricht und ihre Antwort ausgibt. Er ist **Vorbild** — lesbar, kopierbar, startbar —, nicht Belegträger: die E2E-Belege des Repos tragen die Wegwerf-Clients des Harness. Er trägt **keine** Zustandsmaschine (Reconnect, Deduplizierung, Rückstand) |
+| Verhältnis zum Draht | Das Beispiel **benutzt** die Festlegungen dieses Dokuments (`SPEC-018` HTTP-Endpunkte, `SPEC-020` gRPC-Stream, `SPEC-021` SSE, `SPEC-022` Changes lesen) und fügt ihnen nichts hinzu. Verlangt ein Beispiel eine Vertragsänderung, ist das eine Spec-Änderung, kein Beispiel-Umbau |
+| Ort und Form | `examples/` auf der Repo-Wurzel; **je Client ein Verzeichnis mit einem Programm und einem Einstiegspunkt**; die Namen tragen `-client`. Verlangt die Werkzeugkette einer Sprache ein Projektverzeichnis, liegt der Client unter einem **Sprach-Wurzelverzeichnis** (`examples/<sprache>/<client>/`); Go verlangt das nicht und bleibt flach (`examples/<client>/`) |
+| Import-Grenze | Ausschließlich die Standardbibliothek/Runtime der Sprache und **öffentliche** Fremdmodule; **kein** Import eines privaten Baums dieses Repositories. Die Quelle bleibt außerhalb dieses Repositories kopierbar, übersetzbar bzw. nachbaubar — ein Beispiel, das nur hier baubar ist, verfehlt seinen einzigen Leser |
+| Laufzeit und Startform | **Docker-only**: kein Host-Compiler. Jede Sprache wird aus einem **digest-gepinnten** Basis-Image gebaut, Abhängigkeiten sind auf feste Versionen gepinnt, und die Startform ist ein Container-Aufruf. Adresse, Token und die fachlichen Parameter kommen aus denselben Umgebungsvariablen, die §5 führt, und lassen sich per Flag übersteuern |
+| Bau- und Prüfweg | **Je Sprache ein Bau-/Testziel**, das die Beispiele der Sprache übersetzt und die **netzlos** prüfbaren Teile testet (Aufbau der Anfrage, Zerlegen eines Stream-Frames). Das Ziel ist **Werkzeug, kein Gate**: die Gate-Kette des Repos bleibt netzlos, ein Bauziel hängt nicht an ihr |
+| Verhältnis zur Konfigurationsdatei | Beispiele lesen `CDC_CONFIG_FILE` **nicht**: sie beziehen ihre Eingaben aus Umgebungsvariablen und Flags. Die Konfigurationsdatei ist der Deployment-Eingang des Feeds, nicht der eines Integrator-Programms (`SPEC-016`) |
+| Handbuch | Jedes Beispiel wird im Zugriffs-Abschnitt **seiner** Oberfläche namentlich mit Programm-Pfad und Startform genannt; die Änderungshistorie des Handbuchs trägt die Zeile. Beispiel und Handbuch-Zeile gehören in **denselben** Zug |
+| Sprachen und Umfang | Das Repo führt Beispiel-Clients in **Go**, **C#** und **Kotlin**. Go führt die vier Zugriffs-Oberflächen (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`), C# und Kotlin die **HTTP-Familie** — HTTP-/JSON (`SPEC-022`) und SSE (`SPEC-021`). Die weiteren Oberflächen je Sprache sind **perspektivisch**: ein gRPC-Client braucht eine eigene Festlegung für die aus der Protobuf-Quelle erzeugten Stubs, ein NATS-Client je Sprache eine Client-Bibliothek |
+| Kein Belegträger | Beispiele erscheinen **nicht** in der E2E-Abdeckungstabelle; sie sind Doku mit Bau-Bindung. Was sie nicht leisten — „übersetzt" ist nicht „holt am laufenden Feed eine Änderung" — bleibt eine benannte Grenze, deren Wächter das Review ist |
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -496,6 +535,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-015` | Eigenständiges Executable (Deployment-Form neben SPEC-011) | Cross-Compile: Linux amd64/arm64 (primär, [`LH-QA-POR-002`](lastenheft.md)); darwin/amd64, darwin/arm64, windows/amd64 perspektivisch; `CGO_ENABLED=0` | — (Deployment-Artefakt; Cross-Compile in CI/CD) |
 | `SPEC-017` | NATS Core (Wecksignal, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` | — (Vertrag steht in diesem Dokument, §2 SPEC-017) |
 | `SPEC-020` | gRPC Server-Streaming (HTTP/2 mit Protobuf) | gRPC-Go `google.golang.org/grpc`, Protobuf-Runtime `google.golang.org/protobuf` | — (Vertrag steht in diesem Dokument, §2 SPEC-020) |
+| `SPEC-023` | Beispiel-Client-Werkzeugketten (Go, C#/.NET, Kotlin/JVM) | digest-gepinnte Basis-Images, auf feste Versionen gepinnte Abhängigkeiten (Pin-Hebung = bewusster Commit) | — (Vertrag steht in diesem Dokument, §2 SPEC-023; die Werkzeugketten-Dateien liegen im jeweiligen Sprach-Wurzelverzeichnis) |
 
 ---
 
@@ -521,3 +561,5 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-15 | SPEC-019 Fließtext ergänzt: `applied` heißt für `exclude_column`/`include_column` dauerhaft vermerkt — die `applied`-Zeilen sind die einzige Herkunft des Ausschlussstandes einer Tabelle, abgeleitet in `requested_at`-Ordnung mit `administration_request_id` als Zweitschlüssel, mitgeführt bei jedem Anlegen einer Erfassungs-Bindung; der Antrag gegen eine Tabelle ohne laufende Bindung endet `applied` statt `failed` |
 | 2026-09-15 | `SPEC-022` ergänzt: HTTP-API `GET /changes` — Query-Parameter `source` (Pflicht), `schema`/`table` (optional, unabhängig), `from`/`to` (`commit_position` ≥ 1, Start inklusiv/Ende exklusiv), `limit` (optional, kein Default-Limit), JSON-Antwortform der Changes samt Klartext-Identität der Tabelle, deterministische Reihenfolge, leere Liste statt `404`, `400` für Parameter außerhalb der Liste; `SPEC-018`s Abgrenzungssatz trägt das Changes-Lesen nicht mehr als außerhalb |
 | 2026-09-15 | `SPEC-022` Antwort-Zelle präzisiert: `committed_at` trägt RFC 3339 in UTC mit Bruchteil-Sekunden bis zu neun Stellen — abschließende Nullen im Bruchteil entfallen |
+| 2026-09-17 | `SPEC-016` nachgezogen: Feldmenge um `http_addr`/`grpc_addr` erweitert (additiv, Env schlägt feldweise), Ausschlussklausel von der Drei-Schlüssel-Liste auf die **Klasse der zugangsdaten-tragenden Felder** gezogen (drei DSN-Schlüssel, zwei Token-Schlüssel, `nats_url`) samt eigener, den Grund nennender Fehlerzeile, und klargestellt, dass die env-exklusiven Variablen unter geladener Datei aus der Umgebung wirken |
+| 2026-09-17 | `SPEC-023` ergänzt: Beispiel-Clients — Klasse (Vorbild, kein Belegträger, keine Zustandsmaschine), Verhältnis zum Draht, Ort und Form samt Sprach-Wurzel, Import-Grenze, Docker-only-Startform, Bau-/Testziel je Sprache als Werkzeug, kein Lesen der Konfigurationsdatei, Handbuch-Bindung, Sprachen und Umfang (Go: vier Oberflächen; C#/Kotlin: HTTP-Familie), kein Eintrag in der E2E-Abdeckung; externe-Verträge-Zeile in §6 |
