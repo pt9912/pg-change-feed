@@ -35,5 +35,6 @@ einem konkreten Liefer-Punkt zuweist.
 Quelle: `docs/reviews/review-slice-098.md` F-1 ·
 `docs/plan/planning/in-progress/slice-098-csharp-sprachwurzel-http-client.md`
 §6 (fünfte Risiko-Zeile) · `docs/plan/adr/0090-beispiel-clients-volle-matrix.md`
-§Konsequenzen (Folgepflicht Spec-Zug) · `spec/pflichtenheft.md` §SPEC-023 ·
+§Konsequenzen (Folgepflicht Spec-Zug) · `spec/pflichtenheft.md` `SPEC-023`
+§Sprachen und Umfang ·
 `docs/plan/planning/open/slice-103-grpc-client-kotlin.md` §6.
