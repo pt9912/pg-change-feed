@@ -136,8 +136,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
       Festlegung 5).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-099.md`
+      liegt vor (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-099.md`
       liegt vor (Modul 11, frischer Kontext).
