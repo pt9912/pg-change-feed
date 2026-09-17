@@ -101,3 +101,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0086 | Herkunft von Aussagen — Schwere folgt der Konsequenz (Supers. ADR-0083 teilw.) | Accepted | 2026-09-17 | [0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md](0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md) |
 | ADR-0087 | Beispiel-Clients C#/Kotlin — Werkzeugkette (Supers. ADR-0076, teilw.) | Accepted | 2026-09-17 | [0087-beispiel-clients-csharp-kotlin.md](0087-beispiel-clients-csharp-kotlin.md) |
 | ADR-0088 | Konfigurationsdatei — Feldmenge, Zugangsdaten-Klasse (Supers. ADR-0052, teilw.) | Accepted | 2026-09-17 | [0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) |
+| ADR-0089 | Feldmengen-Paarung — kein Sensor, Wächter Review (Supers. ADR-0088, teilw.) | Accepted | 2026-09-17 | [0089-feldmengen-paarung-kein-sensor-review-waechter.md](0089-feldmengen-paarung-kein-sensor-review-waechter.md) |

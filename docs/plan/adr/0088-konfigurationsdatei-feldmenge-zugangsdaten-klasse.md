@@ -37,8 +37,9 @@ und die zwei Token-Klassen), [`ADR-0055`](0055-nats-change-notification-wecksign
 (`CDC_GRPC_ADDR`), [`SPEC-008`](../../../spec/pflichtenheft.md)
 (Fehlerklasse `configuration`), [`AGENTS.md`](../../../AGENTS.md)
 §3.5/§3.12, `internal/bootstrap/wiring.go` (`ConfigFromEnv`, `Config`),
-`internal/bootstrap/config_file.go` (`fileConfig`, `forbiddenFileDSNKeys`,
-`mergeConfig`), `internal/bootstrap/config_file_internal_test.go`,
+`internal/bootstrap/config_file.go` (`fileConfig`,
+`forbiddenFileCredentialKeys`, `mergeConfig`),
+`internal/bootstrap/config_file_internal_test.go`,
 `internal/bootstrap/config_file_rest_internal_test.go`,
 `compose.yaml`, `docs/user/benutzerhandbuch.md` (§5.1 Env-Variablen,
 §5.2 Konfigurationsdatei)
@@ -79,10 +80,10 @@ Haupt-Klausel von `SPEC-016` lautet: „additiv zu den Umgebungsvariablen, mit
 Umgebungsvariable-schlägt-Datei-Feld-für-Feld-Precedence". Für fünf
 Variablen ist sie heute **falsch**:
 
-- `ConfigFromEnv` liest sie — `wiring.go:276-280`:
+- `ConfigFromEnv` liest sie — `wiring.go:282-286`:
   `cfg.NatsURL = getenv(envNatsURL)`, `cfg.HTTPAddr`, `cfg.APITokenReader`,
   `cfg.APITokenAdmin`, `cfg.GRPCAddr`.
-- `mergeConfig` (`config_file.go:148-193`) — der Pfad, den
+- `mergeConfig` (`config_file.go:167-222`) — der Pfad, den
   `ConfigFromEnvAndFile` bei gesetztem `CDC_CONFIG_FILE` nimmt, und den
   `cmd/pg-change-feed/main.go` für den Betriebslauf aufruft — **liest keine
   dieser fünf**. Er setzt die fünf `Config`-Felder nicht, sie bleiben leer.
@@ -99,7 +100,7 @@ entschieden.
 der entscheidenden Stelle.** Die zwei Token-Schlüssel werden heute
 abgewiesen, aber nur durch `KnownFields(true)` als *unbekannter* Schlüssel —
 ohne den Grund zu nennen. Die drei DSN-Schlüssel dagegen haben eine eigene,
-den Secret-Grund nennende Fehlerzeile (`forbiddenFileDSNKeys`). Der
+den Secret-Grund nennende Fehlerzeile (`forbiddenFileCredentialKeys`). Der
 Unterschied ist nicht kosmetisch: die heutige Meldung sagt „unbekannt" statt
 „unzulässig, weil Zugangsdaten" — und der Satz in `SPEC-016` liest sich
 dadurch so, als seien die Token-Felder **bloß noch nicht eingetragen**, statt
@@ -364,6 +365,7 @@ Umgebungsvariable wirkt unabhängig davon, ob eine Datei geladen wird.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
+| 2026-09-17 | Zitat-Korrektur — vier gebrochene Anker nachgezogen (`ADR-0073`): `forbiddenFileDSNKeys` → `forbiddenFileCredentialKeys` (§Bezug, §Kontext (4)), `wiring.go:276-280` → `:282-286` und `config_file.go:148-193` → `:167-222` (§Kontext (3)) | `docs/reviews/review-slice-096.md` <!-- d-check:status-provenance --> |
 | 2026-09-17 | Accepted — Anlass: Nutzerhinweis vom 2026-09-17, das Konfigfile sei bei den gewachsenen Umgebungsvariablen nicht nachgezogen. Gemessen in diesem Zug: die übereinstimmende Lücke über `SPEC-016`, Handbuch §5.2 und `fileConfig` (7 Felder, 3 ausgeschlossene Schlüssel) **und** ein zweiter Defekt — `mergeConfig` liest die fünf Oberflächen-Variablen nicht, die `ConfigFromEnv` liest, sodass bei gesetztem `CDC_CONFIG_FILE` HTTP-API, gRPC-Stream, NATS-Wecksignal und beide Token-Klassen still ausfallen. Entscheidet: Diskriminator „kann das Feld Zugangsdaten tragen?", `http_addr`/`grpc_addr` als Datei-Felder, `nats_url` und die zwei Token-Schlüssel env-exklusiv mit eigener Fehlerzeile, Durchleitung der fünf Variablen; supersedes die Feld-Aufzählung in [`ADR-0052`](0052-optionale-yaml-konfigurationsdatei.md) Festlegung 6, alles Übrige dort bestätigt | [`ADR-0052`](0052-optionale-yaml-konfigurationsdatei.md) Festlegung 6 · `internal/bootstrap/wiring.go` (`ConfigFromEnv`, `Config`) · `internal/bootstrap/config_file.go` (`fileConfig`, `forbiddenFileDSNKeys`, `mergeConfig`) · `spec/pflichtenheft.md` `SPEC-016` · `docs/user/benutzerhandbuch.md` §5.1/§5.2 · `compose.yaml` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
