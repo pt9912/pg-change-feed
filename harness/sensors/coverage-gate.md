@@ -175,17 +175,26 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    Suppression-Pfad (`AGENTS.md` §3.2) — die Gesamt-Coverage besteht oder
    scheitert als Zahl.
 4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
-   gewächtert.** **Rückrechnung** aus den gemessenen Paket-Zahlen
-   (§Zählbasis: 1369 gedeckt von 1903 Statements im Gegenstand; 30/32, 31/472,
-   112/187 in den drei Ausgenommenen) — kein eigener Lauf: wird `postgresack`
-   wieder in `-coverpkg` genommen, bleibt die Stufe grün —
-   `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; dasselbe gilt für die Rücknahme
-   von `replication/receive`
+   gewächtert.** **Rückrechnung, datiert** — *kein eigener Lauf*, und die drei
+   Paket-Zahlen stammen aus dem Stand von `slice-085`: wird `postgresack`
+   wieder in `-coverpkg` genommen, blieb die Stufe **damals** (`THRESHOLD=70`)
+   grün — `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; dasselbe galt für die
+   Rücknahme von `replication/receive`
    (`(1369 + 112) / (1903 + 187) = 1481 / 2090 = 70,86 %` ≥ 70) — dessen
    netzlose Deckung von **112 von 187 (59,89 %)** macht die Rücknahme für die
-   Prozent-Schwelle unsichtbar. Rot färbt sie nur die Rücknahme von
+   Prozent-Schwelle unsichtbar. Rot färbte sie nur die Rücknahme von
    `postgresstorage` (`(1369 + 31) / (1903 + 472) = 1400 / 2375 = 58,95 %`).
+   **Auf dem heutigen Stand und der heutigen Stufe** (`Endstufe 80`,
+   `slice-094`-Lauf: 1581 von 1903; die drei Paket-Zahlen weiter aus
+   `slice-085` — **gemischter Stand, deshalb abgeleitet, nicht gemessen**)
+   ergibt dieselbe Rechnung **83,26 %** (`postgresack`), **81,00 %**
+   (`replication/receive`) und **67,87 %** (`postgresstorage`): die
+   **Schlussfolgerung hält** — nur die Rücknahme von `postgresstorage` färbt
+   die Stufe rot —, und die zwei grünen Fälle liegen jetzt **weiter** darüber
+   als damals. **Die datierte Fassung und die heutige sind beide gültig; wer
+   nur eine liest, liest die andere Stufe mit.**
    Alle drei Ausgänge liegen weiter als die Lauf-zu-Lauf-Schwankung
+
    (dem in §Zählbasis geführten Band — nach `slice-093` höchstens **1**
    Statement = 0,05 pp auf dem Gegenstands-Nenner, abgeleitet aus 1/1903,
    weil der zweite Block dort deterministisch gedeckt ist —) von der Schwelle
