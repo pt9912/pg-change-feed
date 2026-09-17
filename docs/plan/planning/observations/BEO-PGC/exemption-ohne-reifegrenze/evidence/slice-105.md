@@ -1,6 +1,6 @@
 # Beleg: slice-105
 
-Vorgang: `slice-105` — Baseline `v6.9.0` materialisiert, `.harness/baseline/v6.5.0/`
+Vorgang: `slice-105` — Baseline `v6.9.0` materialisiert, `.harness/baseline/v6.5.0/` <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
 entfernt, `.d-check.yml` `versions.exempt-paths` um `docs/reviews/**`
 erweitert.
 

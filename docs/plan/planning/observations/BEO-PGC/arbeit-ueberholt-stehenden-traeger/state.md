@@ -11,7 +11,7 @@ evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md,
 evidence/slice-102.md, evidence/slice-103.md, evidence/slice-105.md). Der
 elfte Vorgang (`slice-105`) trifft dieselbe Klasse über die
 Baseline-Versionierung statt über ein Runtime-Image: das Entfernen von
-`.harness/baseline/v6.5.0/` überholte drei Links in `docs/reviews/**` —
+`.harness/baseline/v6.5.0/` überholte drei Links in `docs/reviews/**` — <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
 gefunden vom Implementer über denselben §3.13-Suchlauf, im selben Commit
 per Zitat-Korrektur (`ADR-0073`) behoben, dieselbe Erfolgsform wie bei den
 vorigen Vorgängen. Der zehnte Vorgang

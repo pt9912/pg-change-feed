@@ -348,7 +348,7 @@ dasteht.
   gegengeprüft (kein widersprechender Treffer). Nicht eingetreten.
 - **Nachträglich ergänzt (vom Implementer selbst während der Umsetzung
   gefunden, kein Platzhalter im ursprünglichen Plan): Entfernen von
-  `.harness/baseline/v6.5.0/` macht Links/Text-Erwähnungen in bestehenden
+  `.harness/baseline/v6.5.0/` macht Links/Text-Erwähnungen in bestehenden <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
   Records (`docs/reviews/**`, ADRs) stale.** Drei Markdown-Links in
   `docs/reviews/**` zeigten real auf den entfernten Pfad und wurden durch
   `git rm -r` zu `target-missing`; eine unbekannte Zahl reiner
@@ -398,7 +398,7 @@ Nummer.
   zeichengenau (von zwei Rollen unabhängig gegengelesen) und ist für den
   Regelfall (nächster Slice) selbsttragend.
 - **Was ging anders als geplant:** Das Entfernen von
-  `.harness/baseline/v6.5.0/` machte drei echte Links in `docs/reviews/**`
+  `.harness/baseline/v6.5.0/` machte drei echte Links in `docs/reviews/**` <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
   zu `target-missing` und ließ 21 weitere reine Text-Erwähnungen desselben
   Pfads stehen — im ursprünglichen Plan-§6 nicht als eigenes Risiko
   antizipiert (nachträglich dort ergänzt, siehe §6). Beide Klassen wurden
