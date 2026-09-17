@@ -457,20 +457,21 @@ grpc_addr: ":9090"
 
 // TestMergeConfigOberflaechenUnterDateiAktiv trägt den zweiten Teil von
 // `ADR-0088` Festlegung 3 — nicht „im Struct gesetzt", sondern an den
-// Verzweigungs-Prädikaten des Verdrahtungspfads: `Run` konstruiert den
-// Broadcaster und startet die zwei Server genau dann, wenn die Adressen
-// nicht leer sind (`changeStreamEnabled`, `cfg.HTTPAddr != ""`,
-// `cfg.GRPCAddr != ""`), und öffnet die NATS-Verbindung genau dann, wenn
-// `cfg.NatsURL != ""` ist. Der Zug fährt beide Richtungen: mit einer
-// Adresse — aus der Datei **oder** aus der Umgebung — stehen die Prädikate
-// auf „an"; trägt keine der beiden Quellen eine Adresse, bleiben alle
-// Oberflächen aus.
+// Prädikaten, die über den Start der Oberflächen entscheiden. Der Zug fährt
+// beide Richtungen: mit einer Adresse — aus der Datei **oder** aus der
+// Umgebung — stehen die Prädikate auf „an"; trägt keine der beiden Quellen
+// eine Adresse, bleiben alle Oberflächen aus.
 //
-// Grenze: der Nachweis endet an den Prädikaten, die `Run` verzweigt — ein
-// laufender Server braucht eine erreichbare PostgreSQL-Instanz (der Store
-// wird vor ihm konstruiert). Für die Datei-Herkunft trägt ihn kein Lauf mit
-// realem Server: weder `compose.yaml` noch `tools/` noch `test/` setzen
-// `CDC_CONFIG_FILE`.
+// Zwei benannte Grenzen. (1) Gebunden ist `changeStreamEnabled`s Körper —
+// `Run` entscheidet über die Streaming-Fähigkeit mit demselben Aufruf; die
+// Leer-Prüfungen der fünf Felder wertet dieser Test dagegen als **eigene**
+// Ausdrücke über `cfg` aus, die `!= ""`-Grenzen in `Run`s drei
+// Start-Zweigen (`NatsURL`, `HTTPAddr`, `GRPCAddr`) selbst sind damit
+// nicht gebunden. (2) Der Nachweis endet vor einem laufenden Server: `Run`
+// konstruiert den Store vor dem HTTP-Server und braucht dafür eine
+// erreichbare PostgreSQL-Instanz. Für die Datei-Herkunft trägt ihn kein
+// Lauf mit realem Server: weder `compose.yaml` noch `tools/` noch `test/`
+// setzen `CDC_CONFIG_FILE`.
 func TestMergeConfigOberflaechenUnterDateiAktiv(t *testing.T) {
 	t.Run("Adressen aus der Datei, Tokens und NATS aus der Umgebung: alle Oberflächen an", func(t *testing.T) {
 		path := writeConfigFile(t, `
