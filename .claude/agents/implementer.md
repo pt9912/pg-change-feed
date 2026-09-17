@@ -42,7 +42,7 @@ Disziplin.
 - `make gates` — die sechs Gate-Ziele (`baseline-verify`, `docs-check`, `a-check`,
   `commit-traceability`, `coverage-gate`, `generated-sync`); `docs-check` prüft
   über `.d-check.yml` die Module links, anchors, ids, matrix, versions,
-  structure, hostpaths
+  structure, hostpaths, tracked
 - `make doc-commits RANGE=base..head` — Traceability-Kennung (`LH-*`/`ADR-*`)
   je Commit-Message
 - `make doc-immutable RANGE=base..head` bzw. `STAGED=1` — MR-Einträge

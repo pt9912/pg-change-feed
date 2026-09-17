@@ -162,9 +162,12 @@ nicht von diesem Slice allein.
 
 - **Die Aufnahme in `modules:` verlangt eine eigene ADR, die dieser Slice
   nicht mitliefert** (Präzedenz `ADR-0072`/`ADR-0075` für `hostpaths`). —
-  **Ausgang:** <bei Priorisierung durch Architect-Zug entschieden — eingetreten:
-  Folge-ADR-Nummer nachtragen / entfallen: Begründung, warum der
-  Präzedenz-Verweis genügt>
+  **Ausgang: entfallen** — der nachträgliche Architect-Zug
+  ([`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`](../../../reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md))
+  hat die Frage geklärt: keine eigene ADR nötig, tragender Präzedenzfall ist
+  Commit `f9e5a3c` (`structure`-Modul-Aktivierung), nicht `ADR-0072`/`ADR-0075`
+  (die belegen den gegenteiligen Fall — eine Aktivierung mit realen Befunden,
+  Korrektur an `Accepted`-ADRs und neuer Hard Rule).
 - **`exempt-targets` bleibt bei Planung unbekannt** — der reale Umfang
   auflösbarer, existierender Link-/Bild-Ziele könnte beim vollen `modules:`-Lauf
   (statt der isolierten `--enable tracked`-Planungsmessung) anders ausfallen,

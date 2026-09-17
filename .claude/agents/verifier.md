@@ -37,9 +37,9 @@ Disziplin.
 **Deine repo-spezifischen Sensor-Belege.**
 - `make gates` — die sechs Gate-Ziele (`baseline-verify`, `docs-check`, `a-check`,
   `commit-traceability`, `coverage-gate`, `generated-sync`), darunter `docs-check`
-  über die sieben `.d-check.yml`-Module (links, anchors, ids, matrix, versions,
-  structure, hostpaths): fahre die Belege **selbst**, behauptete Läufe zählen
-  nicht; die Ausgabe muss sichtbar sein
+  über die acht `.d-check.yml`-Module (links, anchors, ids, matrix, versions,
+  structure, hostpaths, tracked): fahre die Belege **selbst**, behauptete Läufe
+  zählen nicht; die Ausgabe muss sichtbar sein
 - je Slice-Umfang: `make doc-commits RANGE=base..head` (Traceability je Commit)
   und `make doc-immutable` (MR-Immutabilität)
 - Bericht-Ort: `docs/reviews/` (Gerüst: `review-report.template.md`)

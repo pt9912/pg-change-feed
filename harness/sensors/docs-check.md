@@ -173,6 +173,7 @@ die Zitat-Korrektur an immutablen Dokumenten
 [`ADR-0073`](../../docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md))
 · Getrackt-Status auflösbarer, existierender Link-/Bild-Ziele gegen den
 git-Index (`tracked` in `modules`, Konfiguration `.d-check.yml` §tracked,
-`exempt-targets: []` — keine eigene ADR, Präzedenzmuster
-[`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)/[`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md)
-für `hostpaths` · seit slice-d-check-tracked-modul).
+`exempt-targets: []` — keine eigene ADR, Präzedenzmuster Commit `f9e5a3c`
+(`structure`-Modul-Aktivierung, 2026-09-09), siehe
+[`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`](../../docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md)
+· seit slice-d-check-tracked-modul).
