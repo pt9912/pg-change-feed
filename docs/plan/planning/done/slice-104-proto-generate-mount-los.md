@@ -169,7 +169,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. **Entfällt** — Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF), keine `docs/plan/planning/reconciliation.md` vorhanden.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -400,8 +400,17 @@ Backticks).
   byte-identisch bestätigt; Extraktions-Pipe: durch die gewählte
   Umleitungs-Architektur strukturell vermieden statt nur abgesichert;
   Träger-Suchlauf: vollständig, kein sechster Fund im Sinn von LP3).
-- **Drei Paarungen:** <Repo ohne Wellen-Betrieb — nach dem `git mv` nach
-  `done/` zu prüfen>
+- **Drei Paarungen:** Anker-Paarung entfällt (keine neue Verkörperung durch
+  diesen Slice — der neu angelegte Registereintrag bleibt unter der
+  Schwelle, `report-nackte-id-ohne-link` war bereits verkörpert). Folge-
+  Slice-Paarung entfällt (keine neuen Folge-Slices). Register-Paarung
+  grün — beide bei dieser Closure zitierten/geänderten Verzeichnisse
+  (`BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad/`,
+  `BEO-PGC/report-nackte-id-ohne-link/`) sowie die beiden zum Vergleich
+  herangezogenen bestehenden Verzeichnisse
+  (`BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/`,
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/`) existieren mit nicht leerem
+  `evidence/`. Letztes DoD-Häkchen bestätigt gegen den mv-Commit `c57720e`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
