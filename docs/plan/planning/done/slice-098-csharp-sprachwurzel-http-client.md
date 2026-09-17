@@ -153,7 +153,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
@@ -334,8 +334,19 @@ Backticks).
   (nicht-blockierender Workflow → `BEO-PGC/github-actions-unverifizierbar-
   lokal`, 6×; überholter Fremdträger → neuer Eintrag
   `BEO-PGC/adr-folgepflicht-ohne-traeger-slice`, 1×). Details je Zeile in §6.
-- **Drei Paarungen:** im Repo ohne Wellen-Betrieb hier geprüft (Commit 3,
-  nach dem `git mv` nach `done/`).
+- **Drei Paarungen:** Repo ohne Wellen-Betrieb — geprüft nach dem `git mv`
+  nach `done/` (`2b34328`). **Anker-Paarung:** entfällt — kein `liegt in`-Feld
+  in dieser Notiz, mit diesem Slice wurde keine neue Regel verkörpert (der
+  neue Register-Eintrag steht bei 1×, offen). **Folge-Slice-Paarung:**
+  entfällt — keine Folge-Slices genannt (der Folge-Hinweis auf `slice-103`
+  ist ein Register-Vermerk, kein Risiko-Ausgang „eingetreten → Folge-Slice").
+  **Register-Paarung:** grün — beide in dieser Notiz zitierten Verzeichnisse
+  existieren mit nicht leerem `evidence/`:
+  `docs/plan/planning/observations/BEO-PGC/github-actions-unverifizierbar-lokal/evidence/`
+  (`slice-039.md`, `slice-056.md`, `slice-064.md`, `slice-082.md`,
+  `slice-090.md`, `slice-098.md`) und
+  `docs/plan/planning/observations/BEO-PGC/adr-folgepflicht-ohne-traeger-slice/evidence/`
+  (`slice-098.md`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
