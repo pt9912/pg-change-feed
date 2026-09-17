@@ -443,6 +443,21 @@ gegen eine Schwelle, `generated-sync` Bytes. Falsch werden sie trotzdem, und
 zwar in dem Moment, in dem die Arbeit landet. Der billigste Wächter ist die
 Frage „welche Träger beschreiben das, was ich hier gerade geändert habe?".
 
+**Grenze — was der Suchlauf nicht fängt.** `grep` über die Träger trifft
+zuverlässig **Symbolnamen** — einen Funktions-, Paket- oder Feldnamen, der
+sich unverändert wiederholt. Er trifft nicht zuverlässig **Zahlen**: ein
+Zeilen-Lokator oder eine Abschnittsnummer verschiebt sich mit jeder
+Nachbaränderung, ohne im Text eine wiederholbare Spur zu hinterlassen, nach
+der zu suchen wäre. Diese Hälfte bleibt beim **Reviewer** als Leser des
+Diffs — real bereits so geschlossen: `docs/reviews/review-slice-096.md` F-2
+fand über den vierten Anker einen Zeilen-Lokator, den der
+Implementer-Suchlauf übersehen hatte. Diese Regel verlangt deshalb **keine**
+Erweiterung der Suchform selbst — eine `grep`-Form, die Zahlen mit
+derselben Verlässlichkeit wie Symbolnamen träfe, bräuchte eine
+Semantik-Entscheidung, welche Zahl zu welcher Eigenschaft gehört; dieselbe
+Art Sensor-Unmöglichkeit, mit der `harness/sensors/coverage-gate.md`
+§Grenze Punkt 4 die Prozent-Schwelle als Proxy statt als Beweis führt.
+
 **Benachbarte Regel — und die Abgrenzung zu ihr.** §3.12 bleibt die Regel für
 die **Aussage**, die ihren Ursprung trägt: dort fehlt der Ursprung, oder ein
 Wert driftet gegen die Messung. Hier trug die Aussage ihren Ursprung
@@ -465,10 +480,18 @@ Ständen und der abgelehnte Kandidat stehen in den Beleg-Dateien des Eintrags.
 Ergebnis in den Bericht; der **Planner** benennt ihn dort, wo die bewegte
 Eigenschaft schon bei der Planung bekannt ist; der **Reviewer** und der
 **Verifier** prüfen das **berichtete Ergebnis**, nicht die Behauptung, gesucht
-zu haben.
+zu haben. Der Lauf-Bericht allein trägt das Ergebnis nur bis zum
+Rollenwechsel: der Implementer hält Gefundenes **und** Nichtgefundenes
+zusätzlich in einem committeten Feld des Slice-Plans selbst fest, bevor er
+die Closure-Notiz (§7) schreibt — eine Closure-Notiz allein ist ex post und
+narrativ und trägt den rohen Suchlauf-Befund nur dann weiter, wenn ihn
+jemand später noch für erwähnenswert hält.
 
 **Träger und Anker:** Diese Regel wirkt durch **Ausführen** und **Messen**,
-nicht durch ein Gate · seit welle-20.
+nicht durch ein Gate · seit welle-20 · geschärft seit welle-d-check
+(`BEO-PGC/regel-weiter-als-ihr-sensor`, 3×,
+`slice-078`/`slice-079`/`slice-096`;
+[Architect-Verdikt](docs/reviews/architect-verdict-welle-d-check-lese-schritt.md)).
 
 ## 4. Quality Gates
 
