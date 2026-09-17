@@ -38,8 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [`welle-20` — Coverage 80 % über die netzlos prüfbare Fläche](../welle-20.md)
-
 Nichts in Arbeit.
 
 
@@ -156,6 +154,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-17 — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`) | 2026-09-14 | [welle-17-results.md](../done/welle-17-results.md) |
 | welle-18 — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`LH-FA-CFG-005`, `ADR-0059`) | 2026-09-14 | [welle-18-results.md](../done/welle-18-results.md) |
 | welle-19 — Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE (`LH-FA-SST-008`, `ADR-0060`, `ADR-0061`) | 2026-09-15 | [welle-19-results.md](../done/welle-19-results.md) |
+| welle-20 — Coverage 80 % über der netzlos prüfbaren Fläche (`ADR-0071`, `ADR-0082`) | 2026-09-17 | [welle-20-results.md](../done/welle-20-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
