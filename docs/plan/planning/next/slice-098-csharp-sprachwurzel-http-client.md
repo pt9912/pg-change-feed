@@ -29,7 +29,7 @@ Sprache übertragen) · `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-
 **Berührte Spec-Stellen:** `LH-FA-SST-006` (die HTTP-/JSON-API) — dieser
 Slice **zeigt** sie in einer weiteren Sprache, er ändert sie nicht.
 
-**Verantwortlich:** — *(bis zur Priorisierung `open` → `next`)*.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
