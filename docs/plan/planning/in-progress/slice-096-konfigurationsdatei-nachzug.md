@@ -100,7 +100,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `CDC_GRPC_ADDR` — je aus ihrer Env-Herkunft, und **Env schlägt Datei
       Feld für Feld**. Je Variable ein Test **und** ein rot gesehenes
       Gegenbeispiel (Mutation am Durchreichen), plus der Nachweis, dass die
-      Oberflächen unter geladener Datei **wirklich an** sind.
+      Oberflächen unter geladener Datei **wirklich an** sind — **an den
+      Prädikaten, die über den Start entscheiden**, nicht an einem laufenden
+      Server: `Run` konstruiert vorher den Store und braucht eine erreichbare
+      PostgreSQL-Instanz. Die Grenze steht im Testkommentar.
 - [ ] **LP2 — die Feldmenge und die Zugangsdaten-Klasse.** `http_addr` und
       `grpc_addr` sind Datei-Felder (`host:port`, nicht credential-tragend);
       `nats_url` und die zwei Tokens sind **env-exklusiv** und enden in
@@ -114,7 +117,6 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.

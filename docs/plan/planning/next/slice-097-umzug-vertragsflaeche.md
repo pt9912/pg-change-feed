@@ -56,10 +56,14 @@ option go_package = "github.com/pt9912/pg-change-feed/internal/adapters/driving/
 Damit kann **kein** Programm außerhalb dieses Repositories den Draht ansprechen —
 und **kein** Beispiel-Client im eigenen Haus ihn importieren, ohne die
 `wrong-direction`-Kante zu reißen (`make a-check`, gemessen: Exit 2). **Das ist
-der Grund, warum `examples/grpc-client/` seit `slice-095` nicht lieferbar ist —
-und warum auch die gRPC-Clients in C# und Kotlin darauf stehen: sie erzeugen ihre
-Stubs aus der `.proto` und brauchen einen **erreichbaren** Vertrag, keinen, der
-unter `internal/` liegt.
+der Grund, warum `examples/grpc-client/` seit `slice-095` nicht lieferbar ist.
+**Und nur dafür:** der Umzug ist die Voraussetzung für **genau eine** der drei
+`grpc`-Zellen der Matrix — die **Go**-Zelle. Die C#- und Kotlin-Clients stehen
+**nicht** darauf: sie erzeugen ihre Stubs aus der `.proto`, die **nicht** umzieht,
+und was ihnen fehlt, ist die `.proto` **in ihrem Bau-Kontext**
+([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 2 —
+gemessen: `buildx --build-context` erreicht sie, der heutige Sprach-Wurzelkontext
+nicht).
 
 **Der Rahmen (Nutzerentscheidung vom 2026-09-17): die volle Matrix.** Die
 Beispiel-Clients werden über **(alle Clients) × (C#, Go, Kotlin)** geführt — die
@@ -90,13 +94,12 @@ den erzeugten Code **aus** dem Gegenstand, der **Nenner** bewegt sich).
 - **Alle zwölf Clients der Matrix — sie gehören zum Ziel, nicht in diesen Zug.**
   Nutzerentscheidung: die Beispiel-Clients werden über **(alle Clients) ×
   (C#, Go, Kotlin)** geführt — vier Oberflächen in drei Sprachen. **Die Pflicht,
-  die daraus hier erwächst:** dieser Umzug ist die Voraussetzung für die **drei**
-  `grpc`-Programme und darf keinen von ihnen verbauen. Die C#-/Kotlin-Clients
-  erzeugen ihre Stubs **aus der `.proto`** — die **nicht** umzieht —, aber ihre
-  Dockerfile-Kontexte sind **eigene**
-  ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)); ob sie die
-  `.proto` **erreichen**, ist dort zu beantworten und hier als **Folgepflicht**
-  zu benennen, nicht stillschweigend anzunehmen.
+  die daraus hier erwächst:** dieser Umzug ist die Voraussetzung für die
+  **Go**-Zelle der Matrix und darf sie nicht verbauen. Die C#-/Kotlin-Clients
+  erzeugen ihre Stubs **aus der `.proto`** — die **nicht** umzieht —, und ihre
+  Bau-Kontexte erreichen sie heute **nicht**; die Form dagegen steht gemessen in
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 2
+  (ein benannter Zusatz-Kontext).
   **Die Grenze:** dieser Slice baut **keinen** Client — der Umzug soll nach
   [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   §3 **allein stehen**, weil bei einem roten `a-check` sonst nicht zu sagen ist,
