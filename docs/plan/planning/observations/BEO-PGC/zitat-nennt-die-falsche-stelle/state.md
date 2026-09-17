@@ -1,12 +1,23 @@
-Zustand: offen (**3×, Schwelle erreicht**) — Ausgang noch nicht zugewiesen. Ein
-Träger ist **nicht** vorgeschlagen: ob ein Verweis die Aussage trägt, die er
-stützt, ist eine Lese-Handlung am Original. Die Antwort, die bereits steht, ist
-`AGENTS.md` §3.12 **Instanz B** — eine Aussage nennt den **Beleg-Anker** und ist
-damit prüfbar; was fehlt, ist die **Gegenprobe am genannten Anker** (der
-Reviewer-Skill trägt sie als Lese-Pflicht).
+Zustand: **verkörpert** — Ausgang zugewiesen beim Lese-Schritt der
+`welle-d-check`-Closure (Architect-Verdikt
+`docs/reviews/architect-verdict-welle-d-check-lese-schritt.md` §2): Kein
+neuer HIGH-Punkt — der bestehende Punkt „Beleg trägt seinen Satz nicht" in
+`.harness/skills/reviewer.md` ist um die Verweis-Form („einen Verweis auf
+eine Stelle eines anderen Dokuments — eine Abschnittsnummer, eine
+ADR-Festlegung, eine Slice-/Welle-Kennung") und eine explizite
+Gegenprobe-Pflicht am Original erweitert (statt einer Zusammenfassung/
+Berichts-Kopfzeile), Herkunfts-Anker `seit welle-d-check`. `AGENTS.md` §3.12
+**Instanz B** trägt das Prinzip weiterhin auf der Schreiber-Seite; die
+Erweiterung schließt die Leser-seitige Lücke beim Reviewer.
 
-Zähler (abgeleitet): **3×** (evidence/slice-090.md, evidence/slice-102.md,
-evidence/slice-d-check-tracked-modul.md) — **Schwelle erreicht**. Das
+Ein vierter Beleg (`welle-d-check-verkoerperung`) traf **denselben Commit**,
+der diese Verkörperung schrieb — bestätigt den Wert der Regel unmittelbar
+(siehe evidence-Datei).
+
+Zähler (abgeleitet): **4×** (evidence/slice-090.md, evidence/slice-102.md,
+evidence/slice-d-check-tracked-modul.md,
+evidence/welle-d-check-verkoerperung.md) — **verkörpert**, weitere Belege
+zählen weiter, ohne die Verkörperung erneut auszulösen. Das
 Erstauftreten fiel in `slice-090` beim Übergang **in einen stehenden Träger**
 auf: aus der Kopfzeile eines Review-Reports wurde eine Abschnittsnummer
 übernommen und in `harness/sensors/generated-sync.md` gesetzt. Der zweite
