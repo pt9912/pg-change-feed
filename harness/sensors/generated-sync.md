@@ -11,8 +11,10 @@ Gegenstand ist genau **eine Paarung**: committetes Erzeugnis = Generatorausgabe
 aus der committeten Quelle. Erzeugt wird in ein Temp-Verzeichnis, der Baum
 hängt als `:ro`-Bind-Mount im Generator-Container — das Ziel schreibt den
 Arbeitsbaum also nicht ([`ADR-0084`](../../docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md)
-Festlegung 1, erste Bedingung). Das unterscheidet es von `make proto-generate`, das in-place in
-den Bind-Mount erzeugt und deshalb kein Prüf-Schritt ist.
+Festlegung 1, erste Bedingung). Das unterscheidet es von `make proto-generate`, das seit
+slice-104 zur Build-Zeit erzeugt (Stufe `proto-export`, `COPY` statt Mount) und das
+Erzeugnis per Host-seitiger `tar`-Extraktion committet, statt nur zu vergleichen — und
+deshalb ebenfalls kein Prüf-Schritt ist.
 
 Verglichen wird in **beiden Richtungen**: jede erzeugte Datei gegen ihren
 committeten Gegenpart (Inhalt und Vorhandensein) **und** jede committete Datei,

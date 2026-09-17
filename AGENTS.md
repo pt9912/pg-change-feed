@@ -487,7 +487,7 @@ Halluzinierte Gates sind die häufigste Form von Harness-Lüge
 | `make gates` | alle inneren Gates (mandatory vor PR), Nachweis-Stempel zuletzt |
 | `make image` | baut das OCI-Image, Image-Hash-Beleg (kein Gate) |
 | `make image-stale` | advisory: Base-Image-Drift (kein Gate, braucht Netz) |
-| `make proto-generate` | Protobuf-/gRPC-Go-Code aus `proto/cdc/stream/v1/changestream.proto` erzeugen; Docker-only über die gepinnte Dockerfile-Stufe `proto` ([ADR-0060](docs/plan/adr/0060-grpc-streaming-mechanismus.md), kein Gate) |
+| `make proto-generate` | Protobuf-/gRPC-Go-Code aus `proto/cdc/stream/v1/changestream.proto` erzeugen; Docker-only über die gepinnten Dockerfile-Stufen `proto`/`proto-export` — Erzeugung zur Build-Zeit, Host-Extraktion aus einem `tar`-Stream über stdout (seit slice-104, kein Bind-Mount mehr) ([ADR-0060](docs/plan/adr/0060-grpc-streaming-mechanismus.md), kein Gate) |
 | `<make-target>` | volle Closure (vor Welle-Merge) |
 
 Diese Tabelle **listet auf**; definiert wird hier nichts. Die *Bindung* eines

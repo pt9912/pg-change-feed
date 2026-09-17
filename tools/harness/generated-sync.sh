@@ -15,8 +15,10 @@
 # Option her, die `make proto-generate` setzt (`--go_opt=module=<Modulpfad>`):
 # der Generator legt seine Ausgabe damit unter dem Temp-Wurzel genau unter den
 # Pfaden ab, unter denen das Erzeugnis im Baum liegt. Das Ziel
-# `make proto-generate` schreibt in den Bind-Mount des Baums und ist deshalb
-# kein Pruef-Schritt — ein Gate, das erst schreibt und dann vergleicht, laesst
+# `make proto-generate` erzeugt seit slice-104 zur Build-Zeit (Stufe
+# `proto-export`, COPY statt Mount) und committet ueber eine Host-seitige
+# `tar`-Extraktion — es vergleicht nicht, sondern schreibt, und ist deshalb
+# kein Pruef-Schritt: ein Gate, das erst schreibt und dann vergleicht, laesst
 # den Baum schmutzig zurueck und ist beim zweiten Lauf gruen.
 #
 # Der Befund traegt den Diff: je abweichender Datei die erste abweichende Stelle
@@ -44,7 +46,9 @@ GENERATED_SYNC_IMAGE=${GENERATED_SYNC_IMAGE:-pg-change-feed:proto-sync}
 # Pfad, sondern der Lauf ist an dieser Stelle rot.
 GENERATED_SYNC_MODULE=${GENERATED_SYNC_MODULE:-$(awk '$1 == "module" { print $2; exit }' go.mod || true)}
 # Der Generator laeuft als Aufrufer-uid, damit er in das Temp-Verzeichnis
-# schreiben darf (dasselbe Muster wie PROTO_RUN_USER im Makefile).
+# schreiben darf (dieses Gate mountet weiterhin; `make proto-generate` braucht
+# seit slice-104 keinen `--user`-Workaround mehr — es schreibt nicht in einen
+# Mount, sondern extrahiert host-seitig aus einem `tar`-Stream).
 RUN_USER=${GENERATED_SYNC_RUN_USER:-$(id -u):$(id -g)}
 
 if [ -z "$GENERATED_SYNC_MODULE" ]; then
