@@ -26,7 +26,7 @@ beide treffen den Handbuch-Nachzug dieses Slice.
 SSE) — dieser Slice **zeigt** ihn in zwei weiteren Sprachen, er ändert ihn
 nicht.
 
-**Verantwortlich:** — *(bis zur Priorisierung `open` → `next`)*.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
