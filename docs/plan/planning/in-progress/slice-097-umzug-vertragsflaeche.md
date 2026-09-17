@@ -81,8 +81,15 @@ belegt, nicht geschätzt): die `go_package`-Zeile **und** der erzeugte Baum;
 `interceptor_test.go`, `tools/harness/grpcclient/main.go`); die
 `.a-check.yml`-Gruppe `tooling` (sie darf den Stub heute ansprechen — `ADR-0068`)
 und die **neue** Gruppe `contract` samt ihren Kanten; und die
-**Coverage-Messfläche** (`go list ./internal/... ./cmd/...` — der Umzug nimmt
-den erzeugten Code **aus** dem Gegenstand, der **Nenner** bewegt sich).
+**Coverage-Paketliste** (`go list ./internal/... ./cmd/...` — der Umzug nimmt
+den erzeugten Code aus der **Liste**; der **Messgegenstand bleibt derselbe**,
+weil `./gen/...` in der `go list`-Zeile der Stufe `coverage` wieder aufgenommen
+wird — die Entscheidung ist **geschlossen**, kein offener Punkt, siehe LP3 und
+Architect-Verdikt `docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md`).
+**Zwei Bau-Kontext-Träger, die diese Aufnahme voraussetzt** und die der
+ursprüngliche Plan nicht nannte: `.dockerignore` (`!gen/`) und
+`harness/sensors/generated-sync.md` §Vertrag (nennt den alten Pfad im
+Präsens) — beide in §3.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -146,12 +153,20 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       damit gegenstandslos wird. **Die Zurücknahme ist zu benennen**, nicht still
       zu lassen.
 - [ ] **LP3 — die Coverage-Fläche und ihre Träger sind nachgezogen.** Der
-      erzeugte Code verlässt den Messgegenstand (`go list ./internal/...
-      ./cmd/...`): **der Nenner bewegt sich** — die erreichte Quote **mit ihrem
-      Lauf und ihrem Band** nennen, die betroffenen Träger
-      (`harness/sensors/coverage-gate.md`, `harness/mk/coverage.mk`) prüfen und
-      **die Entscheidung** festhalten, ob der erzeugte Code **im** Gegenstand
-      bleibt (dann nimmt die Paketliste ihn wieder auf) oder **draußen**.
+      erzeugte Code verlässt die **Paketliste**
+      (`go list ./internal/... ./cmd/...`); er verlässt den **Messgegenstand
+      nicht** — die tragende Regel ist die **Eigenschaft**, nicht die Liste
+      ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+      Punkt 1), und
+      [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+      §Konsequenzen schreibt die Aufnahme vor (Architect-Verdikt,
+      `docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md`,
+      Verdikt-Fall 1). Die Stufe `coverage` führt deshalb **`./gen/...`** in
+      der `go list`-Zeile, mit unveränderter Filterregel. Der Nenner **bleibt**
+      beim Wert des `slice-097`-Laufs — gemessen **1936** (`out` wäre
+      **1850**, nicht mehr verwendet), Quote 83,3–83,4 % (Band 1 Statement) —
+      und wird mit seinem Lauf im Bericht genannt. Nachzuziehen sind die
+      Träger aus dem Verdikt §6 (siehe §3 dieser Datei).
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -180,7 +195,12 @@ Aussagen-Berührung steht hier gar nicht.
 | `internal/adapters/driving/grpc/{server,server_test,interceptor_test}.go` | update | Drei Importstellen. |
 | `tools/harness/grpcclient/main.go` | update | Die vierte Importstelle — der E2E-Belegträger des Streams. |
 | `.a-check.yml` | update | Die neue Gruppe `contract`, ihre Kanten, und die **Rücknahme** der `tooling → adapters`-Berechtigung. |
-| `harness/sensors/coverage-gate.md` · `harness/mk/coverage.mk` | update, **falls** eine Zahl driftet oder die Paketliste sich ändert | Der Messgegenstand bewegt sich mit dem Umzug. |
+| `Dockerfile`, Stufe `coverage` | update | `./gen/...` in die `go list`-Zeile **aufnehmen** (LP3, Verdikt „in"), Filter unverändert; Kommentarblock über der Stufe nachziehen. |
+| `harness/sensors/coverage-gate.md` · `harness/mk/coverage.mk` | update | Nicht mehr bedingt — die Paketliste ändert sich sicher: §Vertrag (Pfadausdruck), §Grenze Punkt 1 (der `streamv1`-Absatz mit dem alten Pfad), §Zählbasis (Nenner **1936**, siehe LP3). |
+| `harness/README.md` §Sensors · `AGENTS.md` §4 | update | Je Zeile `make coverage-gate` nennt den Pfadausdruck. |
+| `.dockerignore` | update | **`!gen/` fehlt** — ohne die Zeile ist `gen/` nicht im Bau-Kontext der Stufen `coverage`/`build`, `COPY . .` legt es nicht nach `/src`. Ein Bau-Eingang derselben Art wie `!internal/`/`!cmd/` — **keine** Ausnahme nach [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md) Festlegung 3 (die verlangt „gelesen, nicht gebaut" und „genau eine Datei"); ein Kommentar, der hier `ADR-0085` zitiert, wäre eine Fehl-Zitation. |
+| `harness/image-hash.txt` | update, erwartet | `.dockerignore` ist eine Build-Kontext-Datei — `make image` läuft vor der Closure ([`ADR-0044`](../../adr/0044-image-beleg-semantik.md) Punkt 3); weicht der Digest ab, ist der Digest-Commit Teil des Slice. |
+| `harness/sensors/generated-sync.md` §Vertrag | update | Nennt den alten Pfad im **Präsens** — nach dem Umzug falsch (§3.13-Träger). |
 | `docs/user/benutzerhandbuch.md` | update, **falls** ein Pfad genannt wird | Prüfen, nicht annehmen. |
 
 ## 4. Trigger
