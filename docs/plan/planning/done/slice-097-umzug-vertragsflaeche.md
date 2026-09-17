@@ -182,7 +182,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF), keine `docs/plan/planning/reconciliation.md` vorhanden.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -387,12 +387,17 @@ Backticks).
   unabhängig verifiziert) · *entfallen* (C#-/Kotlin-Weg unberührt) ·
   *eingetreten* (überholter Träger `next/slice-095`, direkt korrigiert). Siehe
   §6 für die volle Begründung je Zeile.
-- **Drei Paarungen:** Repo ohne Wellen-Betrieb — hier geprüft, nach dem `git
-  mv` nach `done/` (siehe Commit 3 dieser Closure). Ergebnis wird nach
-  Ausführung ergänzt: Anker-Paarung entfällt (kein `liegt in`-Feld, da nichts
-  verkörpert wurde), Folge-Slice-Paarung entfällt (keine Folge-Slices
-  genannt), Register-Paarung prüft `BEO-PGC/git-mv-und-inhalt-in-einem-commit`
-  und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` gegen ihre `evidence/`.
+- **Drei Paarungen:** Repo ohne Wellen-Betrieb — geprüft nach dem `git mv`
+  nach `done/` (`e2ea931`). **Anker-Paarung:** entfällt — kein `liegt in`-Feld
+  in dieser Notiz, da mit diesem Slice nichts verkörpert wurde (der neue
+  Register-Eintrag steht bei 1×, offen). **Folge-Slice-Paarung:** entfällt —
+  keine Folge-Slices genannt. **Register-Paarung:** grün — beide in dieser
+  Notiz zitierten Verzeichnisse existieren mit nicht leerem `evidence/`:
+  `docs/plan/planning/observations/BEO-PGC/git-mv-und-inhalt-in-einem-commit/evidence/`
+  (`slice-097.md`) und
+  `docs/plan/planning/observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/`
+  (`slice-091.md`, `slice-093.md`, `slice-094.md`, `slice-096.md`,
+  `slice-097.md`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
