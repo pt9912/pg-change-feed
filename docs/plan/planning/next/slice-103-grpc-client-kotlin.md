@@ -30,7 +30,7 @@ verkörpert) — beide treffen den Handbuch-Nachzug dieses Slice.
 gRPC) — dieser Slice **zeigt** ihn in der letzten der zwölf Zellen, er ändert
 ihn nicht.
 
-**Verantwortlich:** — *(bis zur Priorisierung `open` → `next`)*.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
