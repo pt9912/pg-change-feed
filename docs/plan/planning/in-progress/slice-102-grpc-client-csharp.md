@@ -137,8 +137,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Block (Go seit `slice-095`) bekommt die C#-Zeile, samt
       Änderungshistorie-Zeile.
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-102.md`
+      liegt vor (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-102.md`
       liegt vor (Modul 11, frischer Kontext).
