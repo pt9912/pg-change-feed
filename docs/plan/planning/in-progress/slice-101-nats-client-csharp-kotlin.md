@@ -107,21 +107,27 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Block (Go seit `slice-095`) bekommt zwei weitere Zeilen (C#, Kotlin),
       samt Änderungshistorie-Zeile.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-101.md`
-      liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Bericht: `docs/reviews/review-slice-101.md` (1 HIGH, 1 MEDIUM), über
+      den Konflikt-Pfad (Modul 8) an
+      `docs/reviews/architect-verdict-slice-101-jnats-bouncycastle.md`
+      übergeben — beide zusammen sind die vollständige Review-Übergabe
+      dieses Slice.
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-101.md`
+      liegt vor (Modul 11, frischer Kontext) — DoD-konform, mit zwei
+      benannten, nicht-blockierenden Einschränkungen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
@@ -195,21 +201,68 @@ dasteht.
 
 - **Der Registry-/Digest-Pin einer der beiden Bibliotheken ist zum Zeitpunkt
   des Baus nicht mehr auflösbar** (Paket zurückgezogen, Version gelöscht). —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Beide `--no-cache`-Bauproben des Verifiers lösten
+  real gegen NuGet (`NATS.Net`) bzw. Maven Central (`io.nats:jnats`) auf
+  (`docs/reviews/verify-slice-101.md` #4/#6, #11/#12) — beide Pakete sind
+  zusätzlich real die neuesten stabilen Versionen.
 - **Eine der beiden Werkzeugketten verlangt eine nicht-öffentliche Quelle**
   ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 3). — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 3). — **Ausgang: entfallen.** Beide Bauten
+  liefen ausschließlich gegen öffentliche Registries (NuGet, Maven
+  Central), ohne Zugangsdaten (`docs/reviews/verify-slice-101.md` #4, #6,
+  §5).
 - **Der nicht-blockierende Workflow trägt seinen Umfang nicht mehr** (ein
   drittes Bau-Ziel je Sprache im selben Workflow) — §Re-Evaluierungs-
   Trigger 4, `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` (1×,
-  offen), `BEO-PGC/github-actions-unverifizierbar-lokal` (5×, verkörpert in
-  `AGENTS.md` §3.10). — **Ausgang:** <…>
+  offen), `BEO-PGC/github-actions-unverifizierbar-lokal` (7×, verkörpert in
+  `AGENTS.md` §3.10). — **Ausgang: weiter offen**, ohne neue Evidenz in
+  einem der beiden zitierten Register-Einträge. Der Verifier hat gemessen
+  (`docs/reviews/verify-slice-101.md` #14): `git diff 03337c9..HEAD --stat
+  -- .github/workflows/` ist **leer** — dieser Slice ändert
+  `.github/workflows/examples.yml` nicht strukturell, `AGENTS.md` §3.10
+  wird nicht neu ausgelöst (wie schon bei `slice-100`). Die oben zitierte
+  Zahl „7×" ist bereits die vom Verifier korrigierte — der Slice-Kopf/§8
+  dieses Plans zitierte ursprünglich „5×", real bereits 7× zum
+  Niederschrift-Zeitpunkt (`docs/reviews/verify-slice-101.md` §5); Korrektur
+  siehe fünfter Risiko-Punkt unten und §8. `nicht-blockierender-workflow-
+  alarmmuedigkeit` bleibt bei 1×.
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
   Registereinträgen; sie ist der einzige Teil dieses Slice, den **kein**
-  Kompilat erzwingt. — **Ausgang:** <…>
+  Kompilat erzwingt. — **Ausgang: entfallen.** Reviewer (Negativbefund) und
+  Verifier (#17, direkte Lektüre) bestätigen unabhängig den
+  `**Beispiele:**`-Block mit drei Zeilen (Go/C#/Kotlin) und die
+  Änderungshistorie-Zeile 1.23. Beide Registereinträge
+  (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`) sind **eingelöst**, nicht
+  verletzt — keine neue Evidenzdatei, beide bleiben bei 3×.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
   (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, verkörpert in `AGENTS.md`
-  §3.13 — Suchlauf-Pflicht). — **Ausgang:** <…>
+  §3.13 — Suchlauf-Pflicht). — **Ausgang: eingetreten, direkt behoben — und
+  ein zweiter, davon unterschiedener Fund derselben Closure.** (a) Der
+  Implementer-eigene §3.13-Suchlauf fand eine stale Aussage in
+  `harness/README.md` §Sensors („zwei Images" → „drei Images" je
+  Sprachziel, ausgelöst durch das dritte Runtime-Image je Sprache) und
+  korrigierte sie im selben Commit (`79dbd5d`). Reviewer und Verifier
+  bestätigen die Korrektur als vollständig
+  (`docs/reviews/review-slice-101.md` Negativbefund ·
+  `docs/reviews/verify-slice-101.md` #18). Neue Evidenzdatei
+  `evidence/slice-101.md` bei `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+  Zähler **7× → 8×** — kein neuer Schwellen-Übertritt, die Regel
+  (`AGENTS.md` §3.13) steht bereits seit `welle-20`. (b) Ein zweiter, davon
+  unabhängiger Fund gehört **nicht** zu diesem Register-Eintrag, sondern zu
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`: Der Slice-Kopf/§8
+  dieses Plans zitierten `github-actions-unverifizierbar-lokal` mit „5×" —
+  real bereits 7× zum Zeitpunkt der Plan-Niederschrift, vom Verifier
+  gefunden (`docs/reviews/verify-slice-101.md` §5). Anders als bei (a)
+  überholt hier nicht die Arbeit dieses Slice einen fremden, bei
+  Niederschrift noch korrekten Träger — die Zahl war bereits **bei ihrer
+  eigenen Niederschrift** veraltet, keine Drift durch diesen Slice selbst
+  (dieselbe Unterscheidung, die der dortige Register-Eintrag selbst
+  zieht). Neue Evidenzdatei `evidence/slice-101.md` bei
+  `zahl-in-traeger-driftet-gegen-die-messung`, Zähler **9× → 10×** (bereits
+  verkörpert, kein neuer Schwellen-Übertritt). Beide Fundstellen im Plan
+  (dieser Risiko-Punkt und §8) sind im Rahmen dieser Closure auf „7×"
+  korrigiert.
 
 ## 7. Closure-Notiz
 
@@ -221,13 +274,96 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Die Rollen-Sequenz aus Modul 8 hat einen realen
+  Prozessfehler aufgefangen, ohne dass am Ende etwas inhaltlich Falsches im
+  Repo landete: Reviewer eskalierte F-1 (HIGH) korrekt über den
+  Konflikt-Pfad statt als stille Fixrunde am Implementer
+  (`docs/reviews/review-slice-101.md`); der Architect prüfte in eigenem
+  Kontext eigenständig nach — mit größerer Tiefe als der Review selbst
+  (drei zusätzliche Advisories über NVD gefunden,
+  `docs/reviews/architect-verdict-slice-101-jnats-bouncycastle.md`); der
+  Verifier hat die Architect-Zahlen ein drittes Mal, unabhängig
+  reproduziert (`docs/reviews/verify-slice-101.md` #7–#9) und bestätigt.
+  Beide Sprachen bauen und testen real — der Verifier fuhr zusätzlich zwei
+  eigene, cache-lose `docker build --no-cache`-Bauproben, die alle drei
+  Programme je Sprache real neu bauen und testen.
+- **Was ging anders als geplant:** Der Implementer erkannte den in §4
+  vorab deterministisch benannten Rückführungs-Trigger (transitive
+  `bcprov-lts8on`-Abhängigkeit über `io.nats:jnats`), bewertete ihn aber
+  selbst — statt den Konflikt-Pfad auszulösen — und belegte dabei nur die
+  Lizenz-Hälfte vollständig, die Sicherheits-Historie-Hälfte nur als
+  unbelegte Reputationsaussage (Review F-1 HIGH, F-2 MEDIUM). Der Architect
+  hat den Trigger nachträglich vollständig geprüft (fünf Advisories über
+  vier unabhängige Quellen, alle vor oder exakt bei der gepinnten Version
+  `2.73.12.1` behoben — die Version **ist** sogar der Fix-Commit für die
+  jüngste, `CVE-2026-15997`) und „Fortsetzen ohne Rückführung" verfügt: Die
+  geforderte Bewertung trägt inhaltlich, der Prozessfehler bleibt trotzdem
+  eigenständig bestehen und wird nicht durch das gute Ergebnis geheilt.
+- **Steering-Loop-Eintrag:** `BEO-PGC/vorab-bedingung-nach-umsetzung-
+  geprueft` erreicht mit diesem Slice **2×** (weiterhin unter der
+  3×-Schwelle — kein Ausgang fällig, bleibt `offen`) — zweite, unabhängige
+  Instanz derselben Klasse wie `slice-073`: eine §4-Bedingung, deren
+  Klärung vor die Umsetzung gehört, wird erst nach dem Schreiben des
+  Artefakts ausgewertet. Anders als bei `slice-073` deckte die
+  nachträgliche Prüfung hier keine Diskrepanz auf, sondern bestätigte das
+  bereits (unvollständig belegt) behauptete Ergebnis — die Klasse selbst
+  ist trotzdem identisch. Zusätzlich benannt, noch nicht verkörpert: Der
+  Architect hat Modul 8 §Konflikt-Pfad — dem Wortlaut nach für
+  ADR-Konflikte geschrieben — hier erstmals explizit auf einen
+  Plan-Trigger-Konflikt übertragen und die Übertragung begründet; der
+  Verifier hat das als plausible, aber nicht zwingende
+  Auslegungsentscheidung benannt (`docs/reviews/verify-slice-101.md` §3.1).
+  Beides wird hier festgehalten, damit ein dritter Fall — auf
+  `vorab-bedingung-nach-umsetzung-geprueft`, oder eine zweite Anwendung der
+  Konflikt-Pfad-Übertragung — nicht erneut bei null herleiten muss.
+- **Beobachtungs-Register (`../observations/`):** Drei Einträge
+  fortgeschrieben: `arbeit-ueberholt-stehenden-traeger` jetzt **8×**
+  (`evidence/slice-101.md`, `harness/README.md`-Zahlenwort-Fund, bereits
+  verkörpert, kein neuer Schwellen-Übertritt); `vorab-bedingung-nach-
+  umsetzung-geprueft` jetzt **2×** (`evidence/slice-101.md`, Rollen-Verstoß
+  aus Review F-1, weiterhin `offen`, unter der Schwelle);
+  `zahl-in-traeger-driftet-gegen-die-messung` jetzt **10×**
+  (`evidence/slice-101.md`, die im eigenen Plan-Kopf/§8 veraltet zitierte
+  „5×" für `github-actions-unverifizierbar-lokal`, bereits verkörpert,
+  kein neuer Schwellen-Übertritt). Zwei Einträge eingelöst, keine neue
+  Evidenzdatei: `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+  (bleibt 3×) und `handbuch-versionshistorie-uebersprungen` (bleibt 3×).
+  Zwei Einträge bewusst **nicht** fortgeschrieben, obwohl im
+  Slice-Kopf/§8 zitiert: `github-actions-unverifizierbar-lokal` (bleibt
+  7×, real bereits korrekt gezählt, nur der Plan zitierte veraltet) und
+  `nicht-blockierender-workflow-alarmmuedigkeit` (bleibt 1×) — Begründung
+  in §6, Risiko 3: dieser Slice ändert `.github/workflows/examples.yml`
+  nicht strukturell, `AGENTS.md` §3.10 wird nicht neu ausgelöst.
+- **Folge-Slices:** keine neuen. `slice-102`/`-103` existierten bereits vor
+  dieser Closure in `open/`.
+- **Risiken aus §6:** fünf Zeilen, fünf Ausgänge — drei **entfallen**
+  (Registry-/Digest-Pin gemessen auflösbar; keine nicht-öffentliche
+  Quelle, da beide Bauten ausschließlich öffentliche Registries nutzten;
+  Handbuch-Nachzug gemessen vollständig), eines **weiter offen**
+  (nicht-blockierender Workflow — ohne neue Registerevidenz, da dieser
+  Slice den Workflow nicht strukturell ändert) und eines **eingetreten,
+  direkt behoben, mit einem zweiten, davon unterschiedenen Fund**
+  (`harness/README.md`-Zahlenwort-Fund →
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, jetzt 8×; eigene, im
+  Plan-Kopf/§8 veraltet zitierte Zahl →
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, jetzt 10×). Details
+  je Zeile in §6.
+- **Drei Paarungen:** Anker-Paarung entfällt (keine neue Verkörperung durch
+  diesen Slice — beide fortgeschriebenen, bereits verkörperten
+  Register-Einträge waren schon vor diesem Slice verkörpert;
+  `vorab-bedingung-nach-umsetzung-geprueft` bleibt unter der Schwelle).
+  Folge-Slice-Paarung entfällt (keine neuen Folge-Slices; `slice-102`/`-103`
+  existierten bereits vor dieser Closure in `open/`). Register-Paarung
+  **grün** — alle sieben zitierten Beobachtungs-Verzeichnisse
+  (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`,
+  `nicht-blockierender-workflow-alarmmuedigkeit`,
+  `github-actions-unverifizierbar-lokal`,
+  `arbeit-ueberholt-stehenden-traeger`,
+  `vorab-bedingung-nach-umsetzung-geprueft`,
+  `zahl-in-traeger-driftet-gegen-die-messung`) existieren mit nicht leerem
+  `evidence/`. Letztes DoD-Häkchen wird gegen den mv-Commit bestätigt
+  (Commit 3).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -254,11 +390,14 @@ Treffer: `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (**3×**,
 verkörpert) und `handbuch-versionshistorie-uebersprungen` (**3×**,
 verkörpert) — beide als LP3 in die DoD gezogen; `nicht-blockierender-
 workflow-alarmmuedigkeit` (**1×**, offen) und `github-actions-
-unverifizierbar-lokal` (**5×**, verkörpert in `AGENTS.md` §3.10) — beide
-treffen den weiter wachsenden Workflow, als Risiko in §6. Kein Treffer zu
-NATS.Net/jnats/NuGet/Maven selbst (gemessen: `grep -rli
-"nats\.net\|jnats\|nuget\|maven" docs/plan/planning/observations/` → kein
-Fund).
+unverifizierbar-lokal` (**7×** — bei Niederschrift dieses Plans fälschlich
+als „5×" zitiert, von `docs/reviews/verify-slice-101.md` §5 korrigiert und
+bei dieser Closure nachgezogen, siehe §6 letzter Risiko-Punkt sowie
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-101.md`;
+verkörpert in `AGENTS.md` §3.10) — beide treffen den weiter wachsenden
+Workflow, als Risiko in §6. Kein Treffer zu NATS.Net/jnats/NuGet/Maven
+selbst (gemessen: `grep -rli "nats\.net\|jnats\|nuget\|maven"
+docs/plan/planning/observations/` → kein Fund).
 
 **Modus-Begründungsblock — Umfang.** Alle berührten Sub-Areas sind **GF**.
 Der Block pro Sub-Area entfällt; der **Abschnitt** bleibt.

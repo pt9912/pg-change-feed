@@ -12,5 +12,13 @@ versperrt, weil das Artefakt bereits existiert, und der tatsächliche Weg ist
 der Konflikt-Pfad.
 
 Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung
-(`docs/plan/planning/observations/README.md`). Zähler (abgeleitet): 1×
-(evidence/slice-073.md).
+(`docs/plan/planning/observations/README.md`). Zähler (abgeleitet): **2×**
+(evidence/slice-073.md, evidence/slice-101.md) — weiterhin unter der
+3×-Schwelle, Stand bleibt `offen`. Der zweite Beleg (`slice-101`) betrifft
+denselben Mechanismus an einer anderen Fundstelle: Statt einer
+Kongruenz-Prüfung (Hook vs. Prüfungen, `slice-073`) ist es hier eine
+transitive Abhängigkeit samt Lizenz-/Sicherheits-Bewertung
+(`io.nats:jnats` → `bcprov-lts8on`); anders als bei `slice-073` deckte die
+nachträgliche Prüfung diesmal **keine** Diskrepanz auf, sondern bestätigte
+das bereits (unvollständig belegt) behauptete Ergebnis — siehe
+`evidence/slice-101.md`.

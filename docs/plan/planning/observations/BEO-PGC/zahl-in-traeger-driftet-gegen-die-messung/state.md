@@ -24,10 +24,16 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **9×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **10×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
-evidence/slice-099.md) — **Schwelle erreicht**. Der siebte Beleg trifft die
+evidence/slice-099.md, evidence/slice-101.md) — **Schwelle erreicht**
+(bereits verkörpert, kein neuer Schwellen-Übertritt). Der zehnte Beleg
+(`slice-101`) trifft dieselbe Form wie `slice-099`: kein Drift durch
+fortschreitende Arbeit, sondern eine im Plan-Kopf/§6/§8 selbst zitierte
+Zahl (`BEO-PGC/github-actions-unverifizierbar-lokal`, „5×"), die bereits
+bei ihrer eigenen Niederschrift veraltet war (real 7×) — gefunden vom
+Verifier durch eigene Neuzählung, nicht übernommen. Der siebte Beleg trifft die
 Klasse **im Korrektur-Vorgang selbst**: Glob-Fehler → vier Zahlen für einen
 Gegenstand → Zähl-Wort über vier Größen → invertiertes Herkunfts-Etikett,
 vier Runden an Sätzen über Zahlen. Die Fundstellen je Vorgang liegen **im

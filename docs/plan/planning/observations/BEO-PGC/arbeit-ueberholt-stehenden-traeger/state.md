@@ -5,14 +5,19 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **7×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **8×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
-evidence/slice-095.md, evidence/slice-100.md). Der siebte Vorgang
-(`slice-100`) trifft `harness/README.md` §Sensors erneut (Singular→Plural
-bei den `make examples-csharp`/`make examples-kotlin`-Zeilen, ausgelöst
-durch das zweite Runtime-Image je Sprache) — gefunden vom Implementer über
-den vorgeschriebenen §3.13-Suchlauf selbst und im selben Commit behoben,
-dieselbe Erfolgsform wie bei `slice-093`/`slice-094`. Der sechste Vorgang
+evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md). Der
+achte Vorgang (`slice-101`) trifft `harness/README.md` §Sensors ein
+drittes Mal (Zahlenwort „zwei"→„drei" bei den `make examples-csharp`/
+`make examples-kotlin`-Zeilen, ausgelöst durch das dritte Runtime-Image je
+Sprache) — wieder gefunden vom Implementer über den vorgeschriebenen
+§3.13-Suchlauf selbst und im selben Commit behoben, dieselbe Erfolgsform
+wie bei `slice-093`/`slice-094`/`slice-100`. Derselbe Slice trug einen
+zweiten, davon unterschiedenen Fund (eine im Plan-Kopf/§6/§8 selbst
+zitierte, bereits bei Niederschrift veraltete Zahl) — der zählt **nicht**
+hier, sondern bei `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+(siehe dortiger Eintrag, Abgrenzung). Der siebte Vorgang
 (`slice-095`, 2. Durchlauf) ist
 die erste **selbstreferentielle** Variante: die Plan-Datei, die die
 überholende Arbeit selbst trägt (§3-Begründung „keine Kante", durch die
