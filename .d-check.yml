@@ -242,3 +242,16 @@ commits:
     - 'ADR-\d{4}'
     - 'LH-(FA|QA)-[A-Z]{3}-\d{3}(\.[a-z])?'
   exempt-pattern: '^(Merge |Revert )'
+trace:
+  # KEIN Modul — steuert nur `--trace`/`--require-complete` (`make doc-trace`/
+  # `make doc-complete`, advisory, nicht in modules:/GATE_CHECKS). Verdrahtet
+  # die RTM auf die Kennungskonvention dieses Repos (`harness/README.md`
+  # §Werkzeuge, `make doc-trace`).
+  requirements:
+    id-pattern: 'LH-(FA|QA)-[A-Z]{3}-\d{3}'
+  coverage:
+    # Kuratierte Coverage-Dimension: Anforderungen, deren einziger Nachweis
+    # ein E2E-Test ist (nicht ADR oder Slice), erscheinen sonst faelschlich
+    # als WAISE.
+    - files: [docs/user/e2e-abdeckung.md]
+      label: E2E
