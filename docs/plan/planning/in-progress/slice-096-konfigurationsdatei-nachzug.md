@@ -134,7 +134,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/bootstrap/config_file.go` (`fileConfig`, `mergeConfig`) | update | Zwei Felder, die Durchleitung der fünf, die Zugangsdaten-Klasse samt Fehlerzeile. |
-| `internal/bootstrap/config_file_test.go` | Test neu/update | Je Feld und je Vorrangsrichtung; je Zugangsdaten-Klasse ein Ablehnungsfall. |
+| `internal/bootstrap/config_file_internal_test.go` | Test neu/update | Je Feld und je Vorrangsrichtung; je Zugangsdaten-Klasse ein Ablehnungsfall. |
 | `docs/user/benutzerhandbuch.md` §5.2 | update | Feldmenge, env-exklusive Namen mit Begründung, Versionshistorie. |
 | `harness/sensors/coverage-gate.md` | **nicht** | Kein Messgegenstand berührt. |
 | `spec/pflichtenheft.md` | **nicht** | `SPEC-016` ist mit [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) bereits nachgezogen — der Code folgt der Spec (GF-Modus). |
