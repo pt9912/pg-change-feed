@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.19
+Version: 1.20
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-17
 
@@ -646,11 +646,16 @@ dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
 unten), der die Verbindung offen hält — `GET /changes` ist demgegenüber die
 nicht streamende Form desselben Gegenstands.
 
-**Beispiel:** Ein Beispielprogramm liegt unter `examples/http-client`:
-`go run ./examples/http-client -source <quelle> -publication <publication>` —
-es ruft den `reader`-Endpunkt `GET /tables` auf und gibt die Antwort aus;
-Adresse und Token liest es aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und
-lässt sich per Flag übersteuern.
+**Beispiele:** Jede Sprache ruft denselben `reader`-Endpunkt `GET /tables`
+auf und gibt die Antwort aus; Adresse und Token liest jedes Beispiel aus
+`CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und lässt sich per Flag
+übersteuern.
+
+- **Go:** `examples/http-client` —
+  `go run ./examples/http-client -source <quelle> -publication <publication>`
+- **C#:** `examples/csharp/http-client` — Container-Aufruf gegen das mit
+  `make examples-csharp` gebaute Image:
+  `docker run --rm -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp --source <quelle> --publication <publication>`
 
 ### Zugriff über den gRPC-Change-Stream
 
@@ -998,3 +1003,4 @@ MIT — siehe `LICENSE`.
 | 1.17 | 2026-09-17 | Beispiel-Programme der HTTP-Familie in den Zugriffs-Abschnitten ergänzt (`ADR-0076`, slice-095): §4 „Zugriff über die HTTP-/JSON-API" nennt `examples/http-client` samt Startbefehl, „Zugriff über Server-Sent-Events" nennt `examples/sse-client`; beide lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |
 | 1.18 | 2026-09-17 | Konfigurationsdatei nachgezogen (`ADR-0088`, `SPEC-016`, slice-096): §5.2 führt die zwei neuen Datei-Felder `http_addr`/`grpc_addr` samt Precedence, die Zugangsdaten-Klasse auf sechs Schlüssel gezogen (`capture_dsn`/`admin_dsn`/`reader_dsn`/`api_token_reader`/`api_token_admin`/`nats_url`, Grenze ist die Feld-Form) und festgehalten, dass `CDC_NATS_URL` und die zwei Token-Klassen auch unter geladener Datei aus der Umgebung wirken |
 | 1.19 | 2026-09-17 | Beispiel-Programm der gRPC-Familie ergänzt (`ADR-0076`, `ADR-0060`, slice-095): „Zugriff über den gRPC-Change-Stream" nennt `examples/grpc-client` samt Startbefehl; es liest Adresse und Token aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` |
+| 1.20 | 2026-09-17 | Erster C#-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-098): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#) statt eines einzelnen `**Beispiel:**`-Absatzes — die Ziel-Form für die volle Matrix; `examples/csharp/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-csharp`) |

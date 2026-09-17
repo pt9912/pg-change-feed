@@ -1,0 +1,56 @@
+---
+name: examples
+
+# Beispiel-Client-Sprachwurzeln (ADR-0087, ADR-0090): faehrt die
+# `make examples-<sprache>`-Werkzeuge auf jeden Pull Request und jeden
+# Branch-Push, wie `ci.yml`/`e2e.yml` (Tag-Pushes ausgenommen,
+# `tags-ignore: ['**']`). Anders als `ci.yml` ist dieser Workflow bewusst
+# **kein** Required-Status-Check (Repository-Einstellung, nicht Teil dieser
+# Datei) — ein roter Lauf ist sichtbar, blockiert aber keinen Merge
+# (ADR-0090 Festlegung 5, Muster `e2e.yml`).
+#
+# Grund fuer den eigenen, nicht-blockierenden Workflow statt eines Schritts
+# in `ci.yml`: die Sprachziele brauchen Netz (NuGet-/Maven-Paketbezug) und
+# sind deshalb keine Gates (`make gates` bleibt vollstaendig netzlos,
+# AGENTS.md §3.1/§3.9) — waeren sie ein Required-Status-Check, haenge ein
+# gruener PR an der Erreichbarkeit einer fremden Registry, nicht nur am
+# eigenen Repo-Zustand.
+#
+# Ruft ausschliesslich das bestehende `make`-Target auf (AGENTS.md §3.1,
+# Docker-only): `make examples-csharp` baut das Werkzeugketten-Image der
+# C#-Sprach-Wurzel und faehrt darin `dotnet restore`/`build`/`test`
+# (harness/README.md §Werkzeuge). Kein Workflow-Schritt enthaelt
+# ziel-eigene Inline-Shell-Logik, die dieses Ziel umgeht oder dupliziert.
+#
+# Sein Abschluss haengt nach AGENTS.md §3.10 am ersten realen, gruenen
+# Post-Push-Lauf — bis dahin bleibt das betroffene Risiko offen
+# (BEO-PGC/github-actions-unverifizierbar-lokal,
+# BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar — derselbe SHA wie in ci.yml/e2e.yml (actions/checkout@v7.0.1).
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  examples:
+    name: Beispiel-Client-Sprachwurzeln
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: C#-Sprachwurzel bauen + testen
+        run: make examples-csharp
