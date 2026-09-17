@@ -115,9 +115,12 @@ Bindung eines Targets … steht in `harness/README.md` §Sensors").
       Befund(e)`, `EXIT=0`.
 - [x] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
       §3.9): `EXIT=0`.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      **Report:** `docs/reviews/review-slice-gate-index-konsolidierung.md`
+      (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO; kein Informationsverlust bestätigt,
+      keine Fixrunde nötig).
 - [ ] Doku-Update: `AGENTS.md` §4 (siehe LP1); `harness/README.md` bleibt
       inhaltlich unverändert (bereits die vollständige Fassung).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
