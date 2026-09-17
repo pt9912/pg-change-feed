@@ -9,10 +9,10 @@
 # aware Gate. Die geltende Stufe ist THRESHOLD unten und steht ausschliesslich
 # an diesem Ort — die uebrigen Traeger nennen nur die Rampe (Einstieg 70 %,
 # Endstufe 80 % fest, Nutzer-Entscheidung). Hochschalt-Trigger „naechste
-# Coverage-Verbesserung schliesst die Luecke zur naechsten Stufe" bis 80 %
-# erreicht ist. Override: `make coverage-gate THRESHOLD=…`; Senkung unter die
-# hier geltende Stufe nur per ADR (AGENTS.md §3.6).
-THRESHOLD ?= 70
+# Coverage-Verbesserung schliesst die Luecke zur naechsten Stufe" — mit der
+# Endstufe ist er ausgeschoepft. Override: `make coverage-gate THRESHOLD=…`;
+# Senkung unter die hier geltende Stufe nur per ADR (AGENTS.md §3.6).
+THRESHOLD ?= 80
 
 # `--no-cache-filter coverage`: erzwingt die Neu-Auswertung der
 # Coverage-Stage, ohne den deps-Cache zu verlieren — ein stale Layer-Hash
