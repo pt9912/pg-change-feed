@@ -21,7 +21,7 @@ Spec, sondern ein Lesewerkzeug außerhalb der Source-Precedence-Kette.
 Heading-Form von `spec/lastenheft.md`, ändert sie nicht; kein Schreibzugriff
 auf eine Spec-Stelle).
 
-**Verantwortlich:** —.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
