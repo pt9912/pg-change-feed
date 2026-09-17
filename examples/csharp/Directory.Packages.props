@@ -8,12 +8,28 @@
        exakte Versionen, keine Bereiche — dasselbe Prinzip wie die
        Digest-Pinnung der Basis-Images im Dockerfile. Pin-Hebung ist ein
        bewusster Commit, keine stille Auflösung. Diese drei Pakete tragen
-       ausschließlich den Testlauf (xUnit); der Client selbst (LP2) braucht
-       kein Fremdmodul — er liest JSON/HTTP aus der .NET-Runtime. -->
+       ausschließlich den Testlauf (xUnit); http-client und sse-client
+       brauchen kein Fremdmodul — sie lesen JSON/HTTP aus der .NET-Runtime. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+
+  <!-- NATS.Net: die gepinnte, öffentliche Client-Bibliothek des
+       nats-client-Programms (ADR-0090 Festlegung 4, LP1 des Slice-Plans) —
+       Abonnement des Wecksignal-Subjekts, zweiseitiger Ablauf
+       (ADR-0055/ADR-0056/ADR-0079). Meta-Paket, gemessen am 2026-09-17
+       (NuGet v3-flatcontainer/registration5-semver1
+       api.nuget.org/v3/catalog0/…/nats.net.3.2.0.json): neueste stabile
+       Version 3.2.0 (kein Prerelease, isPrerelease=false), Ziel-Framework
+       net10.0. Für net10.0 zieht es transitiv ausschließlich eigene
+       (NATS.Client.*) und Microsoft.Extensions.*-Pakete nach — keine
+       zusätzliche, eigenständig zu bewertende Fremdabhängigkeit (anders als
+       beim Kotlin-Pendant, siehe
+       examples/kotlin/nats-client/build.gradle.kts). -->
+  <ItemGroup>
+    <PackageVersion Include="NATS.Net" Version="3.2.0" />
   </ItemGroup>
 
 </Project>
