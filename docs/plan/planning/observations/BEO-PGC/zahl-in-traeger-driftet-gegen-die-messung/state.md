@@ -24,17 +24,23 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **11×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **12×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
-evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md) —
+evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md,
+evidence/slice-103.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt).
-Der elfte Beleg (`slice-102`) trifft exakt dieselbe Fundstelle wie der
-zehnte (`slice-101`) — beide Pläne entstanden praktisch zeitgleich und
-übernahmen dieselbe, bei ihrer jeweiligen Niederschrift bereits veraltete
-Zahl „5×" für `BEO-PGC/github-actions-unverifizierbar-lokal` (real 7×),
-beide vom Verifier durch eigene Neuzählung gefunden, nicht übernommen. Der
-zehnte Beleg (`slice-101`) trifft dieselbe Form wie `slice-099`: kein Drift
+Der zwölfte Beleg (`slice-103`) trifft exakt dieselbe Fundstelle wie die
+beiden vorigen (`slice-101`, `slice-102`) — alle drei Pläne entstanden in
+rascher Folge und übernahmen dieselbe, bei ihrer jeweiligen Niederschrift
+bereits veraltete Zahl „5×" für `BEO-PGC/github-actions-unverifizierbar-lokal`
+(real 7×), jedes Mal vom Verifier durch eigene Neuzählung gefunden, nicht
+übernommen. Der elfte Beleg (`slice-102`) trifft exakt dieselbe Fundstelle
+wie der zehnte (`slice-101`) — beide Pläne entstanden praktisch zeitgleich
+und übernahmen dieselbe, bei ihrer jeweiligen Niederschrift bereits
+veraltete Zahl „5×" für `BEO-PGC/github-actions-unverifizierbar-lokal`
+(real 7×), beide vom Verifier durch eigene Neuzählung gefunden, nicht
+übernommen. Der zehnte Beleg (`slice-101`) trifft dieselbe Form wie `slice-099`: kein Drift
 durch fortschreitende Arbeit, sondern eine im Plan-Kopf/§6/§8 selbst
 zitierte Zahl, die bereits bei ihrer eigenen Niederschrift veraltet war.
 Der siebte Beleg trifft die

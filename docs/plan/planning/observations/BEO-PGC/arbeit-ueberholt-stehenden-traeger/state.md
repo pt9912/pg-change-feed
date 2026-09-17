@@ -5,10 +5,19 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **9×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **10×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
 evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md,
-evidence/slice-102.md). Der neunte Vorgang (`slice-102`) trifft
+evidence/slice-102.md, evidence/slice-103.md). Der zehnte Vorgang
+(`slice-103`, letzter der sechs C#/Kotlin-Matrix-Slices) trifft dieselbe
+Klasse ein zweites Mal in derselben Kotlin-Fortsetzung: (a) `harness/
+README.md` „drei"→„vier" Images (`examples-kotlin`), direkt behoben in
+`111f1cb`, dieselbe Form wie beim neunten Vorgang; (b) `slice-097`s §1, das
+beim neunten Vorgang bereits als „für C# überholt, für Kotlin weiterhin
+richtig" gemeldet wurde, ist jetzt — mit der Kotlin-Zelle geliefert — für
+**beide** Sprachen überholt. Beide Funde entstammen demselben Vorgang und
+zählen als **eine** Evidenzdatei (`evidence/slice-103.md`), kein neuer
+Schwellen-Übertritt. Der neunte Vorgang (`slice-102`) trifft
 `harness/README.md` §Sensors ein viertes Mal (Zahlenwort „drei"→„vier" bei
 der `make examples-csharp`-Zeile, ausgelöst durch das vierte Runtime-Image)
 — wieder gefunden vom Implementer über den vorgeschriebenen §3.13-Suchlauf
