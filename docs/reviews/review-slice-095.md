@@ -39,7 +39,7 @@ Durchlauf geliefert und akzeptiert und ist **nicht** erneut geprüft.
   in diesem Durchlauf tatsächlich gelieferte Änderung fügt genau eine neue
   Kante hinzu (`{from: examples, to: contract}`), korrekt begründet mit dem
   seit `slice-097` öffentlichen Pfad `gen/cdc/stream/v1` und konsistent mit
-  ADR-0076/ADR-0090. Die Zeile in §3 wurde bei der Rückführung/dem zweiten
+  `ADR-0076`/`ADR-0090`. Die Zeile in §3 wurde bei der Rückführung/dem zweiten
   Anlauf nicht nachgezogen und ist jetzt eine stehengebliebene, falsche
   Tatsachenbehauptung im Plan-Dokument selbst (nicht im gelieferten Code).
 - `verifizierbar`: nein — reine Lese-Prüfung des Plan-Texts, kein Gate-Bezug.
@@ -52,7 +52,7 @@ Durchlauf geliefert und akzeptiert und ist **nicht** erneut geprüft.
   `google.golang.org/grpc/credentials/insecure`,
   `google.golang.org/grpc/metadata`, `gen/cdc/stream/v1` (eigener `grep -rn
   "internal/" examples/grpc-client/*.go` liefert keinen Treffer). Kein
-  `/internal/`-Import, ADR-0076 §2 Festlegung eingehalten.
+  `/internal/`-Import, `ADR-0076` §2 Festlegung eingehalten.
 - geprüft, ohne Befund: repo-weiter `grep -rn
   "internal/adapters/driving/grpc/streamv1"` — alle verbleibenden Treffer
   liegen in `.a-check.yml`-Kommentaren („umgezogen von …"),
@@ -68,7 +68,7 @@ Durchlauf geliefert und akzeptiert und ist **nicht** erneut geprüft.
 - geprüft, ohne Befund: `ADR-0090` §6/Festlegung 2/3 — die dort verlangte
   Umformulierung des `examples`-Gruppenkommentars auf eine explizite
   „Go-Aussage" (nicht-Go-Quellen mechanisch ungeprüft, Fremdsprachen-Stubs
-  nicht im Baum) ist laut ADR-0090s eigener Slice-Schnitt-Empfehlung (Zeile
+  nicht im Baum) ist laut `ADR-0090`s eigener Slice-Schnitt-Empfehlung (Zeile
   7, LP2) **nicht** Teil dieses Slices — Zeile 7 verlangt für den
   Go-gRPC-Client nur „die Kante in `.a-check.yml` mit ihrem Objekt", die
   breitere Reformulierung ist an die Slices gebunden, die tatsächlich einen
