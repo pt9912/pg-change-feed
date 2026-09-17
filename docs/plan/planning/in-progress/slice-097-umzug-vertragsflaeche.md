@@ -168,9 +168,10 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       und wird mit seinem Lauf im Bericht genannt. Nachzuziehen sind die
       Träger aus dem Verdikt §6 (siehe §3 dieser Datei).
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: `docs/reviews/review-slice-097.md` (1 HIGH, keine Fixrunde).
 - [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
