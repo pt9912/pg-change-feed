@@ -98,3 +98,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0083 | Herkunft von Aussagen in Trägern — Zahlenwert und Tatsachenbehauptung | Accepted | 2026-09-16 | [0083-herkunft-von-aussagen-in-traegern.md](0083-herkunft-von-aussagen-in-traegern.md) |
 | ADR-0084 | Sync-Gate nur für das Erzeugnis mit einer netzlosen, deterministischen Quelle | Accepted | 2026-09-16 | [0084-sync-gate-fuer-generierte-artefakte.md](0084-sync-gate-fuer-generierte-artefakte.md) |
 | ADR-0085 | Build-Kontext-Ausnahme — `test-only` auf den Zweck (Supers. ADR-0082, teilw.) | Accepted | 2026-09-16 | [0085-build-kontext-ausnahme-test-only-zweck.md](0085-build-kontext-ausnahme-test-only-zweck.md) |
+| ADR-0086 | Herkunft von Aussagen — Schwere folgt der Konsequenz (Supers. ADR-0083 teilw.) | Accepted | 2026-09-17 | [0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md](0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md) |
