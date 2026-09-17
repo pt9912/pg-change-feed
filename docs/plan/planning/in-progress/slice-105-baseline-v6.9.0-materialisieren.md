@@ -182,9 +182,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] `make gates` grün — ungepiped geprüft, Exit-Code direkt ausgewertet
       (`AGENTS.md` §3.9), als eigener, abgeschlossener Schritt **vor** jedem
       `git push`.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Beleg: `docs/reviews/review-slice-105.md` (0 HIGH, 1 MEDIUM, 0 LOW,
+      1 INFO — keine Fixrunde nötig).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/` liegt vor
       (Modul 11, frischer Kontext).
 - [x] Doku-Update für den gehobenen Baseline-Stand siehe LP1–LP3 — kein
