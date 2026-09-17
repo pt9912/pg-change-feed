@@ -1,10 +1,7 @@
-Zustand: **offen — 4× erreicht, Ausgang noch nicht zugewiesen.** Der
-Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
-Slice-Closure: Modul 6 lässt den Ausgang ab 3× der laufenden Welle-Closure
-zuweisen („Bei 3× wandert der Eintrag in die Steering-Loop-Einträge der
-laufenden Welle-Closure"). Bis dahin ist `offen` der zulässige, vorübergehende
-Stand — wie beim Schwester-Eintrag
-`BEO-PGC/generierte-artefakte-ohne-sync-sensor`.
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.12 **Instanz B**;
+Leser sind Verifier und Planner · seit slice-089. Der **Lese-Schritt der
+`welle-20`-Closure** hat zwei frühere Kandidaten **verworfen** (§3.7 und der
+ADR-Index-Kopf) — beide hat `ADR-0083` §Entscheidung Festlegung 3 ausgeschlossen.
 
 **Ein Träger ist inzwischen benannt, aber nicht gebaut:** der Architect-Zug zu
 `ADR-0078` hat für diese Wurzel eine Regel formuliert — *jeder Zahlenwert in

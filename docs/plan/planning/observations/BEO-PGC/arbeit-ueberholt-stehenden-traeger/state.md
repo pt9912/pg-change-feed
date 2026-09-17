@@ -1,8 +1,9 @@
-Zustand: offen (**3×**) — **Schwelle erreicht**; den Ausgang weist der
-**Lese-Schritt der `welle-20`-Closure** zu. Ein
-Träger ist **nicht** vorgeschlagen: ob ein stehender Satz von der Eigenschaft
-abhängt, die eine Arbeit bewegt, ist eine Lese-Handlung am Gegenstand, und die
-Abhängigkeit steht in Prosa — ein Gate müsste sie kennen, um sie zu prüfen.
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13** (neu:
+*„Eine Arbeit, die eine beschriebene Eigenschaft bewegt, zieht ihre Träger nach“*)
+· seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat die Regel
+**geschrieben**: kein Sensor (die Träger stehen nicht im Diff), aber ein
+bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
+auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (abgeleitet): **3×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md). Der dritte Vorgang trifft **vier** Stellen in **zwei**

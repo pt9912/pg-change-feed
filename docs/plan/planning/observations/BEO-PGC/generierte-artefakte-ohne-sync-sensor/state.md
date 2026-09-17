@@ -1,7 +1,8 @@
-Zustand: offen — der Ausgang wird im Lese-Schritt der **laufenden
-Welle-Closure** (`welle-20`) zugewiesen; dort trägt ihn der Planner → Architect
-→ Planner-Zug (Modul 6, „Bei 3× … laufende Welle-Closure"; Modul 8 Schritt 3b).
-Bis dahin ist `offen` der zulässige, vorübergehende Stand. Ein Träger wäre ein `make`-Ziel, das den
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `make generated-sync`
+(harness/mk/generated-sync.mk, tools/harness/generated-sync.sh,
+harness/sensors/generated-sync.md), in `make gates` · seit slice-090. Der
+**Lese-Schritt der `welle-20`-Closure** hat den Ausgang zugewiesen; in seinem
+Lauf ist das Gate grün (das committete Erzeugnis ist byte-gleich). Ein Träger wäre ein `make`-Ziel, das den
 Generator laufen lässt und `git diff --exit-code` gegen das committete Erzeugnis
 prüft (für den Protobuf-Code: `make proto-generate` plus Diff auf
 `streamv1/`); das wäre ein eigener Sensor mit eigener Bindung und eigenem Aufwand

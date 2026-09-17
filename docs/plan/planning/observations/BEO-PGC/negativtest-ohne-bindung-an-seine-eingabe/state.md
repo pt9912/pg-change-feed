@@ -1,14 +1,9 @@
-Zustand: **offen — 6× erreicht, Ausgang noch nicht zugewiesen.** Der
-Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
-Slice-Closure (Modul 6: „Bei 3× wandert der Eintrag in die Steering-Loop-Einträge
-der laufenden Welle-Closure"). Bis dahin ist `offen` der zulässige,
-vorübergehende Stand.
-
-**Der Träger ist benannt, aber nicht gebaut:** die Regel „jede Zusage wird an
-ihrer **Eingabeseite** mutiert" ist eine **Prüf-Handlung**, kein Sensor. Sie
-gehörte in den Reviewer-Skill (`.harness/skills/reviewer.md`), wo die
-Mutations-Pflicht bereits steht — aber **ohne diese Richtung**. Als
-Verkörperungs-Kandidat geführt, nicht behauptet.
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/reviewer.md`
+(HIGH-Punkt „Zusage ohne Bindung an ihre Eingabeseite — „grün ohne Aussage““, Wortlaut
+*„mutiere den Eingabewert, nicht nur die Ausgabeseite“*) und
+`.claude/commands/implement-slice.md` Schritt 19 · seit slice-089.
+**Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
+gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
 Zähler (abgeleitet): **6×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,

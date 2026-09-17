@@ -423,6 +423,53 @@ und `git`-Historie — steht in
 nicht durch ein Gate; ihre Begründung führt
 [`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-traegern.md) · seit slice-089.
 
+### 3.13 Eine Arbeit, die eine beschriebene Eigenschaft bewegt, zieht ihre Träger nach
+
+**Aussage.** Wer eine Änderung landet, die eine **Eigenschaft eines Gegenstands
+bewegt**, die anderswo **beschrieben** steht — eine Deckungszahl, eine Anzahl,
+eine Liste, eine Gruppierung —, sucht diese Träger und zieht sie nach. Der
+Suchlauf ist eine **Handlung**, keine Erinnerung: `grep` über die Träger nach
+der **bewegten Eigenschaft** und nicht über den eigenen Diff, **beide Stände
+gemessen** (Parent und Diff). Sein Ergebnis steht im Bericht des Slice — mit
+dem, was er fand, **und** mit dem, was er nicht fand. Ein Träger, der eine
+fremde Datei betrifft, wird **gemeldet** statt still mitgeändert: die Meldung
+ist das Übergabe-Artefakt, die stille Mitänderung der blinde Übergang
+(Baseline-Regelwerk `modul-08-agentenrollen.md` §Die neun Übergaben).
+
+**Warum diese Regel einen Träger braucht und keinen Vorsatz.** Die Träger, die
+eine bewegte Eigenschaft beschreiben, stehen **nicht im Diff**, und **kein
+Sensor liest sie**: `docs-check` prüft Referenzen, `coverage-gate` eine Zahl
+gegen eine Schwelle, `generated-sync` Bytes. Falsch werden sie trotzdem, und
+zwar in dem Moment, in dem die Arbeit landet. Der billigste Wächter ist die
+Frage „welche Träger beschreiben das, was ich hier gerade geändert habe?".
+
+**Benachbarte Regel — und die Abgrenzung zu ihr.** §3.12 bleibt die Regel für
+die **Aussage**, die ihren Ursprung trägt: dort fehlt der Ursprung, oder ein
+Wert driftet gegen die Messung. Hier trug die Aussage ihren Ursprung
+**korrekt** und war zum Zeitpunkt ihrer Niederschrift **wahr** — falsch wird
+sie erst **durch diese Arbeit**, und die Arbeit selbst war richtig. Die Grenze
+zwischen beiden Regeln ist der **Zeitpunkt**, nicht die Form des Satzes. Der
+Grund, den diese Regel trägt, ist zugleich der einzige, den
+[`ADR-0085`](docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md)
+§Entscheidung 2 außerhalb der zwei Bäume und der drei Messgrößen zulässt.
+
+**Kein Sensor.** Ein Sensor müsste wissen, welche Sätze von welcher Eigenschaft
+abhängen; die Abhängigkeit steht in Prosa. Die verfügbare Falsifikation ist die
+**Messung** an beiden Ständen.
+
+**Belegte Fälle (Herkunft).** `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
+(3×, `slice-091`/`-093`/`-094`) — die Fundstellen, ihre Messungen an beiden
+Ständen und der abgelehnte Kandidat stehen in den Beleg-Dateien des Eintrags.
+
+**Wer sie liest:** der **Implementer** führt den Suchlauf und trägt sein
+Ergebnis in den Bericht; der **Planner** benennt ihn dort, wo die bewegte
+Eigenschaft schon bei der Planung bekannt ist; der **Reviewer** und der
+**Verifier** prüfen das **berichtete Ergebnis**, nicht die Behauptung, gesucht
+zu haben.
+
+**Träger und Anker:** Diese Regel wirkt durch **Ausführen** und **Messen**,
+nicht durch ein Gate · seit welle-20.
+
 ## 4. Quality Gates
 
 Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.

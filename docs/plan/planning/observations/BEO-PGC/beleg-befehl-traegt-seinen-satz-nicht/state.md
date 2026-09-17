@@ -1,12 +1,10 @@
-Zustand: offen (**5×**) — Schwelle erreicht; den Ausgang weist der **Lese-Schritt
-der `welle-20`-Closure** zu. Ein
-Träger ist **nicht** vorgeschlagen: die Klasse wäre über einen Sensor schwer zu
-fassen — ein Beleg-Befehl läuft netzlos und liefert ein Ergebnis; ob dieses
-Ergebnis **den Satz stützt**, ist eine Lese-Handlung. Die naheliegende Antwort
-ist die Regel, die `AGENTS.md` §3.12 **Instanz B** bereits trägt: eine Aussage
-nennt den **Beleg-Anker** und ist damit prüfbar — was fehlt, ist die
-**Gegenprobe am genannten Befehl** (der Reviewer-Skill trägt sie als
-Lese-Pflicht).
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/reviewer.md`,
+neuer HIGH-Punkt **„Beleg trägt seinen Satz nicht“** (wer einen Beleg nennt, **fährt**
+ihn: den Befehl ausführen, die Adresse auflösen, die Mutation setzen, die Zählung
+nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat die Regel
+**geschrieben**: vier Formen in fünf Vorgängen (Befehl, Testkommentar, Adresse,
+Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
+gültiger Leser.
 
 Zähler (abgeleitet): **5×** (evidence/slice-084.md, evidence/slice-085.md,
 evidence/slice-091.md, evidence/slice-093.md, evidence/slice-094.md) —

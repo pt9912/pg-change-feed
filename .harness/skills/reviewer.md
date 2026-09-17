@@ -111,6 +111,26 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (4×,
   `slice-081`/`-084`/`-085`/`-088` — alle vier vom Reviewer durch eigenes
   Nachmessen gefunden) · seit slice-089.
+- **Beleg trägt seinen Satz nicht** — ein Träger nennt einen **Beleg** als
+  Stütze einer Aussage — einen Befehl, eine Abfrage, einen Pfad, eine Adresse,
+  eine Mutationsangabe oder eine Assertion —, und der genannte Beleg trägt die
+  Aussage **nicht**: er misst etwas anderes, zählt etwas anderes oder liefert
+  ein anderes Ergebnis als das behauptete. *Wer einen Beleg nennt, fährt ihn:
+  den genannten Befehl ausführen, die genannte Adresse auflösen, die genannte
+  Mutation setzen, die genannte Zählung nachfahren. Die Aussage darf dabei wahr
+  sein — geprüft wird die Stütze, nicht der Satz.* Die Probe ist mechanisch und
+  billig und wird genau deshalb übersehen: der Satz ist plausibel, erst der
+  ausgeführte Beleg zeigt etwas anderes. Abgrenzung zu **„Zahl im Träger ohne
+  Ursprung"** (dort trägt die **Aussage** nicht, hier trägt sie und ihre Stütze
+  nicht) und zu **„Zusage ohne Bindung an ihre Eingabeseite"** (dort ist die
+  Zusage nicht rot zu färben, hier ist der genannte Weg zur Prüfung der falsche).
+  Kein Gate fängt das: ein Beleg-Befehl läuft netzlos und liefert ein Ergebnis —
+  ob dieses Ergebnis **den Satz stützt**, ist eine Lese-Handlung am Ergebnis.
+  Herkunft: `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (5×,
+  `slice-084`/`-085`/`-091`/`-093`/`-094`; die Fundstellen sind ein `git diff`
+  ohne Pathspec, ein `go list` ohne das zweite Test-Datei-Feld, ein
+  Testkommentar, eine Adresse auf ein Artefakt, das es nicht gibt, und eine
+  Assertion, die auch aus einem anderen Pfad hält) · seit welle-20.
 - **Zusage ohne Bindung an ihre Eingabeseite — „grün ohne Aussage"** — eine
   Zusage (Test, Negativtest, Filter-/Limit-Prüfung) ist **vorhanden** und läuft
   grün, kann aber an ihrer **Eingabeseite** nicht rot werden: mutiert wurde nur

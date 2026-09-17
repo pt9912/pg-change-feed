@@ -1,7 +1,9 @@
-Zustand: **offen — 5× erreicht, Ausgang noch nicht zugewiesen.** Der
-Lese-Schritt gehört der **laufenden Welle-Closure** (`welle-20`), nicht der
-Slice-Closure (Modul 6). Bis dahin ist `offen` der zulässige, vorübergehende
-Stand.
+Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.12 Instanz A und
+`.harness/skills/reviewer.md` (HIGH-Punkt „Zahl im Träger ohne Ursprung — oder gegen
+die Messung driftend“) · seit slice-089. Der **Lese-Schritt der `welle-20`-Closure**
+hat den Ausgang zugewiesen: der Träger trägt die **drei** Vorkommen nach der
+Verkörperung (`slice-089`, `-090`, `-092`) — alle drei von **Lesern** gefunden,
+keines von einem Sensor.
 
 **Die Form ist entschieden — und sie ist der Ausgangs-Kandidat.** Der
 `slice-085`-Vorgang hat sie formuliert und in zwei Dokumenten angewandt:
