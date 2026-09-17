@@ -42,7 +42,7 @@ Ausschlusses stehen in **eben diesem Abschnitt** des Baseline-Regelwerks,
 zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Die vendored Kurs-Baseline dieses Repos wird von `v6.5.0` auf
-`v6.9.0` gehoben (`.harness/baseline/v6.9.0/{regelwerk,templates}/`, netzlos
+`v6.9.0` gehoben (`.harness/baseline/v6.9.0/{regelwerk,templates}/`, netzlos <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
 materialisiert, `SHA256SUMS`-geprüft aus dem Release-Asset
 `https://github.com/pt9912/ai-harness-course/releases/download/v6.9.0/lab-regelwerk.zip`),
 `harness/conventions.md` §Baseline zeigt danach auf den neuen Stand, und die
@@ -115,7 +115,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (Vorgehen: `modul-02-harness-bootstrap.md` §Bootstrap — in der **neuen**
       v6.9.0-Fassung nachlesen, sobald sie vorliegt, falls sich der
       Bootstrap-Ablauf zwischen den Ständen geändert hat), nach
-      `.harness/baseline/v6.9.0/{regelwerk,templates}/` entpacken.
+      `.harness/baseline/v6.9.0/{regelwerk,templates}/` entpacken. <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
       **Geklärt (Recherche dieses Plans, siehe `tools/harness/baseline-verify.sh`):**
       Der Sensor verlangt zwingend **genau ein** Verzeichnis direkt unter
       `.harness/baseline/` (`dirs=("$base"/*/)`, `exit 1` bei `${#dirs[@]}`
@@ -146,7 +146,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       dann aktuellen Stand erneut zu bestätigen, falls zwischenzeitlich ein
       weiterer `MR-*` gezogen wurde). Eigene Datei
       `harness/conventions/MR-<NNN>-<slug>.md`, kopiert aus der
-      Eintrags-Vorlage (`.harness/baseline/v6.9.0/templates/harness/conventions/MR-NNN-titel.template.md`,
+      Eintrags-Vorlage (`.harness/baseline/v6.9.0/templates/harness/conventions/MR-NNN-titel.template.md`, <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
       falls unverändert gegenüber `v6.5.0/templates/harness/conventions/MR-NNN-titel.template.md`
       — real vergleichen, nicht annehmen). Pflichtfelder: Datum,
       Geltungsbereich (`harness/conventions.md` §Aktive Adaptionen; alle
@@ -208,9 +208,9 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.harness/baseline/v6.9.0/regelwerk/**` | neu | Netzlos materialisiertes Regelwerk aus dem `v6.9.0`-Release-Asset (LP1). |
-| `.harness/baseline/v6.9.0/templates/**` | neu | Netzlos materialisierte Templates aus demselben Asset (LP1). |
-| `.harness/baseline/v6.9.0/SHA256SUMS` | neu | Prüfsummen-Datei des neuen Stands, Grundlage für `make baseline-verify` (LP1). |
+| `.harness/baseline/v6.9.0/regelwerk/**` | neu | Netzlos materialisiertes Regelwerk aus dem `v6.9.0`-Release-Asset (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
+| `.harness/baseline/v6.9.0/templates/**` | neu | Netzlos materialisierte Templates aus demselben Asset (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
+| `.harness/baseline/v6.9.0/SHA256SUMS` | neu | Prüfsummen-Datei des neuen Stands, Grundlage für `make baseline-verify` (LP1). | <!-- d-check:ignore (Ziel-Stand dieses Migrationsplans, noch nicht adoptiert — kein Baseline-Pin-Fund) -->
 | `.harness/baseline/v6.5.0/**` | löschen | Entfernt, weil `tools/harness/baseline-verify.sh` genau ein `<tag>`-Verzeichnis unter `.harness/baseline/` verlangt — Historie bleibt vollständig in `git` erhalten (LP1). |
 | `harness/conventions.md` | update | §Baseline: `Stand: v6.9.0`, `Datum der Adoption:` heutiges Datum, Wellen-Registerzeile; neue Zeile in §Aktive Adaptionen für den neuen `MR-*`-Eintrag (LP2, LP3). |
 | `harness/conventions/MR-<NNN>-<slug>.md` | neu | Adaptions-Eintrag für die Namenskonvention-Entscheidung (LP3). |
