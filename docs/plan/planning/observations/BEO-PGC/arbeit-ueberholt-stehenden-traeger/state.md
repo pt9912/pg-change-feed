@@ -5,10 +5,15 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **4×** (evidence/slice-091.md, evidence/slice-093.md,
-evidence/slice-094.md). Der dritte Vorgang trifft **vier** Stellen in **zwei**
-Dateien — und die letzte ist eine **Korrektur**, die eine andere Stelle
-derselben Klasse beheben sollte (zwei Herkünfte in einer Klammer).
+Zähler (abgeleitet): **5×** (evidence/slice-091.md, evidence/slice-093.md,
+evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md). Der
+dritte Vorgang trifft **vier** Stellen in **zwei** Dateien — und die letzte
+ist eine **Korrektur**, die eine andere Stelle derselben Klasse beheben
+sollte (zwei Herkünfte in einer Klammer). Der fünfte Vorgang
+(`slice-097`) traf einen Träger **außerhalb** der vom Implementer-Suchlauf
+durchsuchten Liste (`next/slice-095`, ein Planning-Dokument, kein
+Code-/Harness-Träger) — gefunden erst durch einen zweiten, unabhängigen
+Suchlauf (Reviewer).
 `slice-093` ist der erste **angenommene** Fall: der Satz in
 `harness/sensors/coverage-gate.md` war am Parent **wahr** und wurde durch die
 Arbeit **falsch** (der neue netzlose Test fährt einen der zwei genannten Blöcke

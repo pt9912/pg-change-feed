@@ -144,20 +144,33 @@ Nachzug beauftragt. Ohne Rückfrage feststellbar.
   der Schnitt falsch — ein Beispiel, das den Vertrag ändern müsste, ist ein
   anderer Vorgang.
 
-  **Eingetreten — der Übergang ist vollzogen.** Der **gRPC-Client (LP2) ist
-  nach diesem Schnitt nicht lieferbar**, und beide Routen sind real gemessen:
-  der Import des internen Stubs (`internal/adapters/driving/grpc/streamv1`) ist
-  `wrong-direction` (`make a-check` **Exit 2**), und die **öffentliche
-  Vertragsfläche** (`gen/cdc/stream/v1`) **existiert nicht** (`no required
-  module provides package …`, **Exit 1**). Die Voraussetzung ist
+  **Eingetreten — der Übergang ist vollzogen.** Zum Zeitpunkt dieser
+  Rückführung war der **gRPC-Client (LP2) nicht lieferbar**, und beide Routen
+  waren real gemessen: der Import des internen Stubs
+  (`internal/adapters/driving/grpc/streamv1`) war `wrong-direction`
+  (`make a-check` **Exit 2**), und die **öffentliche Vertragsfläche**
+  (`gen/cdc/stream/v1`) **existierte nicht** (`no required module provides
+  package …`, **Exit 1**). Die Voraussetzung war
   [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   §3 samt seiner Schnitt-Empfehlung **1** („**Der Umzug zuerst** … er soll
-  allein stehen") — dieser Vorgänger ist **nie geschnitten** worden, und dieser
-  Plan hat die Empfehlungen **2 und 3** gebündelt und **1 ausgeschlossen**.
-  Der Schnitt war also falsch, nicht die Arbeit: LP1 und LP3 sind geliefert
-  (Commit mit den zwei HTTP-Familien-Clients und den zwei Trägern) und tragen
-  dem Nachfolger. `docs/plan/planning/observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-083.md`
+  allein stehen") — dieser Vorgänger war zum Zeitpunkt der Rückführung **nie
+  geschnitten**, und dieser Plan hatte die Empfehlungen **2 und 3** gebündelt
+  und **1 ausgeschlossen**. Der Schnitt war also falsch, nicht die Arbeit: LP1
+  und LP3 sind geliefert (Commit mit den zwei HTTP-Familien-Clients und den
+  zwei Trägern) und tragen dem Nachfolger. `docs/plan/planning/observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-083.md`
   hielt den fehlenden Vorgänger bereits fest.
+
+  **Inzwischen aufgelöst.** `slice-097` hat den Umzug geliefert: die
+  öffentliche Vertragsfläche `gen/cdc/stream/v1` existiert seit `1c1d937`
+  real, `make generated-sync` bleibt grün. Die zweite gemessene Route
+  (`wrong-direction` beim internen Stub) ist damit gegenstandslos — der
+  Import läuft jetzt über den öffentlichen Pfad. Diese Zeile bleibt als
+  **historischer Beleg** für den `in-progress`→`next`-Übergang stehen
+  (Modul 5: der *Grund* wird beim Übergang selbst nachgetragen, nicht
+  rückwirkend gelöscht); der **Start**-Trigger unten war zum Zeitpunkt dieser
+  Korrektur bereits erfüllt. Fund und Korrektur:
+  [`review-slice-097.md`](../../../reviews/review-slice-097.md) (Beobachtung
+  außerhalb des Diffs), `BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/slice-097.md`.
 - `in-progress` → `open` (blockiert): wenn ein Client **ohne** einen laufenden
   Dienst nicht einmal **kompilierbar** ist. Dann gehört die Frage nach der Form
   (Build-Tag? eigenes Modul?) in eine Entscheidung, nicht in diesen Slice.

@@ -140,19 +140,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — der Stub liegt öffentlich und wird erzeugt.** Die
+- [x] **LP1 — der Stub liegt öffentlich und wird erzeugt.** Die
       `go_package`-Zeile zeigt auf einen Pfad **außerhalb** von `internal/`; der
       erzeugte Baum liegt dort; `make proto-generate` erzeugt ihn reproduzierbar
       (und `make generated-sync` bleibt grün — der Sync ist seit `slice-090` ein
       Gate). **Der neue Pfadname gehört dem umsetzenden Zug.**
-- [ ] **LP2 — alle Aufrufer ziehen mit.** Die vier Importstellen kompilieren
+- [x] **LP2 — alle Aufrufer ziehen mit.** Die vier Importstellen kompilieren
       (`make test`), und `.a-check.yml` trägt die **neue** Gruppe `contract`
       samt ihren Kanten — **und** die `tooling`-Gruppe spricht den Stub nicht
       mehr über `adapters` an, weil die Kante
       ([`ADR-0068`](../../adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md))
       damit gegenstandslos wird. **Die Zurücknahme ist zu benennen**, nicht still
       zu lassen.
-- [ ] **LP3 — die Coverage-Fläche und ihre Träger sind nachgezogen.** Der
+- [x] **LP3 — die Coverage-Fläche und ihre Träger sind nachgezogen.** Der
       erzeugte Code verlässt die **Paketliste**
       (`go list ./internal/... ./cmd/...`); er verlässt den **Messgegenstand
       nicht** — die tragende Regel ist die **Eigenschaft**, nicht die Liste
@@ -167,16 +167,21 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       **1850**, nicht mehr verwendet), Quote 83,3–83,4 % (Band 1 Statement) —
       und wird mit seinem Lauf im Bericht genannt. Nachzuziehen sind die
       Träger aus dem Verdikt §6 (siehe §3 dieser Datei).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Beleg: `docs/reviews/review-slice-097.md` (1 HIGH, keine Fixrunde).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Doku-Update für die öffentliche Vertragsfläche (`gen/cdc/stream/v1`) —
+      berührte Träger: `harness/README.md` §Sensors (Pfadausdruck von
+      `make coverage-gate`), `AGENTS.md` §4 (dieselbe Zeile), sowie
+      `harness/sensors/{coverage-gate,generated-sync}.md` (§Vertrag/§Grenze/
+      §Zählbasis) — alle in `57d2566`/`1c1d937` nachgezogen und vom Reviewer
+      (`de0f356`) und Verifier (`b30f2f1`) unabhängig bestätigt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. **Entfällt** — Repo ist Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF), keine `docs/plan/planning/reconciliation.md` vorhanden.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -262,17 +267,46 @@ dasteht.
   (`streamv1`, **86** Statements, davon **76** gedeckt — Lauf `slice-091`) fällt
   aus dem Gegenstand; bei einer überdurchschnittlich gedeckten Teilmenge **sinkt**
   die Gesamtquote. Die Rampe steht seit `welle-20` auf der **Endstufe 80**. —
-  **Ausgang:** <…>
+  **Ausgang: eingetreten, aufgefangen.** Der literale Mechanismus trat ein — der
+  erzeugte Code verließ die Paketliste `./internal/... ./cmd/...` real (Umzug
+  nach `gen/`). Die Konsequenz (Quoteneinbruch) trat **nicht** ein, weil LP3 —
+  Teil desselben Slice, nicht eine nachträgliche Rettung — `./gen/...` in die
+  `go list`-Zeile der Stufe `coverage` zurückholt (Architect-Verdikt „in",
+  `docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md`). Gemessen
+  (Verifier, `b30f2f1`, #4/#5): `coverage-gate` druckt 83.40 % ≥ Schwelle 80 %.
+  Kein Carveout, kein Folge-Slice — die Auffangmaßnahme ist bereits geliefert.
 - **Die vier Importstellen sind nicht alle.** Gemessen sind vier; ob der Umzug
-  weitere Aufrufer hat (Tests, Tools, Beispiele), weiß der Diff nicht. — **Ausgang:** <…>
+  weitere Aufrufer hat (Tests, Tools, Beispiele), weiß der Diff nicht. —
+  **Ausgang: entfallen.** Der Verifier hat unabhängig per eigenem `grep` über
+  das **ganze** Repo (nicht nur `internal/`+`cmd/`, auch `test/`, `examples/`)
+  nach `gen/cdc/stream/v1` gesucht (`verify-slice-097.md` #10) und fand exakt
+  vier Treffer — dieselben vier, keinen fünften. Die Unsicherheit, die das
+  Risiko benannte, ist damit unabhängig geschlossen.
 - **Der Umzug verbaut den C#-/Kotlin-Weg.** Ihre gRPC-Clients erzeugen ihre Stubs
   aus der `.proto`, die **nicht** umzieht — aber ihre Bau-Kontexte sind eigene
   ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)), und ob sie
-  die `.proto` erreichen, entscheidet sich dort. — **Ausgang:** <…>
+  die `.proto` erreichen, entscheidet sich dort. — **Ausgang: entfallen.**
+  Geprüft (Reviewer- und Verifier-Negativbefund): die `.proto` selbst ändert
+  sich um genau eine Zeile (`option go_package`), kein Nachrichten-/Feld-Inhalt;
+  C#/Kotlin erzeugen ihre Stubs unverändert aus derselben Quelle und erreichen
+  sie über einen eigenen Bau-Kontext
+  ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 2,
+  gemessen: `buildx --build-context`). Dieser Umzug hat daran nichts bewegt —
+  die Entscheidungsfähigkeit von `ADR-0087`/`ADR-0090` bleibt unverändert.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt den
   **Ort** des Erzeugnisses; welche Dokumente den **alten** Pfad nennen, weiß der
   Diff nicht (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, **3×**, seit
-  `welle-20` eine Hard Rule mit `grep`-Pflicht). — **Ausgang:** <…>
+  `welle-20` eine Hard Rule mit `grep`-Pflicht). — **Ausgang: eingetreten.**
+  Der Reviewer fand per eigenem `grep` (unabhängig vom Implementer-Suchlauf)
+  einen realen Treffer:
+  `docs/plan/planning/next/slice-095-beispiel-clients-drei.md:149–152`
+  behauptete im Präsens, `gen/cdc/stream/v1` „existiere nicht" — seit diesem
+  Umzug falsch. Direkt korrigiert in dieser Closure (siehe §7) — kein Carveout,
+  kein Folge-Slice nötig, weil sofort behebbar. Zusätzlich als **fünftes**
+  Auftreten der bereits verkörperten Klasse `arbeit-ueberholt-stehenden-traeger`
+  vermerkt (§7) — der Implementer-Suchlauf dieses Slice fand diesen Treffer
+  **nicht** (er lag außerhalb der von ihm durchsuchten Träger-Klassen), ein
+  zweiter, unabhängiger Suchlauf (Reviewer) fand ihn.
 
 ## 7. Closure-Notiz
 
@@ -291,18 +325,74 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die Rollen-Sequenz Architect → Planner
+  (Plan-Diff) → Implementer → Reviewer → Verifier lief mit einem
+  Übergabe-Artefakt je Übergang durch: Architect-Verdikt
+  (`1eb3feb`) → Plan-Diff (`4f39cd5`) → drei Implementer-Commits
+  (`1c1d937`, `57d2566`, `068f26e`) → Review (`de0f356`, 1 HIGH, kein
+  Self-Review) → Verifikation (`b30f2f1`). Jede Rolle hat eigene, frische
+  Messungen gefahren statt Vorgänger-Zahlen zu übernehmen (§3.12) — Reviewer
+  und Verifier fanden je einen unabhängigen Fund (Commit-Struktur bzw.
+  überholter Träger), den die vorherige Rolle nicht hatte.
+- **Was ging anders als geplant:** LP3 stand im Ausgangsplan fälschlich als
+  offene Entscheidung („im Gegenstand bleiben oder draußen"), obwohl
+  `ADR-0071` Punkt 1 und `ADR-0076` §Konsequenzen sie bereits geschlossen
+  hatten — ein Architect-Zug (Modul-8-Konflikt-Pfad, Verdikt-Fall 1) korrigierte
+  den Plan vor der Implementierung. Der Implementer-Suchlauf für §3.13
+  (bewegte Eigenschaft, Träger nachziehen) fand die sieben Träger aus dem
+  Architect-Verdikt vollständig, verfehlte aber einen achten, außerhalb dieser
+  Liste liegenden Träger (`next/slice-095`) — den fand erst ein zweiter,
+  unabhängiger Suchlauf (Reviewer).
+- **Steering-Loop-Eintrag:** `AGENTS.md` §3.3 (git mv + Inhaltsänderung = zwei
+  Commits) wurde in Commit `1c1d937` verletzt (Umbenennung dreier erzeugter
+  Dateien und Inhaltsänderung an zwei davon plus sechs weiteren Dateien im
+  selben Commit) — vom Reviewer als HIGH F-1 erkannt, bewusst nicht
+  fix-pflichtig gestellt (Rename-Detection griff trotzdem, `git log --follow`
+  bleibt funktionsfähig), vom Verifier bestätigt. Für diese **bereits
+  verkörperte** Regel gab es noch keinen Beobachtungs-Eintrag für den Fall
+  „Verstoß gegen eine bestehende Regel" (anderer Beobachtungstyp als „Regel
+  entsteht nach 3×") — neu angelegt als
+  `BEO-PGC/git-mv-und-inhalt-in-einem-commit/`, Beleg
+  `evidence/slice-097.md`. Zähler: **1×**, Zustand `offen` — mit diesem Slice
+  wurde nichts verkörpert (der Normalfall bei 1×), die Teil-Zeile `— liegt
+  in …` entfällt.
+- **Beobachtungs-Register (`../observations/`):** Zwei Bewegungen.
+  (1) `BEO-PGC/git-mv-und-inhalt-in-einem-commit/` **neu angelegt**, Beleg
+  `evidence/slice-097.md` — siehe Steering-Loop-Eintrag oben.
+  (2) `evidence/slice-097.md` in `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`
+  **ergänzt** — Zähler steht damit bei **5×** (bereits seit `welle-20` in
+  `AGENTS.md` §3.13 verkörpert; dieser Fund ist ein weiteres, dokumentiertes
+  Auftreten derselben Klasse, kein neuer Steering-Loop-Kandidat). Der
+  überholte Satz in `docs/plan/planning/next/slice-095-beispiel-clients-drei.md`
+  §4 ist in diesem Commit direkt korrigiert (Planner-Trägerpflege, kein
+  fremder Code — der Melde-Schritt war bereits im Review-Report geschehen).
+  Zwei im Plan zitierte Register-Einträge **geprüft, keine neue Instanz**:
+  `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` (weiter **2×**) — §1 dieses
+  Slice schließt den gRPC-Client und die volle Matrix aus, ohne eine
+  Folge-Slice-**Kennung** zu nennen (nur `ADR-0076`/`ADR-0090` als
+  Ziel-Entscheidungen); das ist kein „Aufschub mit Adresse, die die Sendung
+  nicht annimmt" im Sinn dieser Klasse, weil hier **keine** Adresse behauptet
+  wird, die fehlschlagen könnte — die Klasse trifft eine falsche oder zu enge
+  Adresse, nicht das ehrliche Fehlen einer Adresse für einen bewusst noch
+  nicht geschnittenen Folge-Vorgang. `BEO-PGC/aufschub-adresse-verfaellt`
+  (bereits **verkörpert** seit `slice-077`) — dieser Slice bindet keinen
+  Aufschub an ein Ereignis; die drei Paarungen laufen in dieser wellenlosen
+  Closure selbst (§7 unten), nicht an eine unsichere künftige Welle-Closure.
+- **Folge-Slices:** keine — der gRPC-Beispiel-Client und die volle
+  Client-Matrix bleiben Ziel (`ADR-0076` §3, `ADR-0090`), aber ohne
+  Slice-Kennung, weil bewusst noch nicht geschnitten (siehe
+  Beobachtungs-Register oben).
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — *eingetreten, aufgefangen*
+  (Nenner/Quote, durch LP3 kompensiert) · *entfallen* (vier Importstellen,
+  unabhängig verifiziert) · *entfallen* (C#-/Kotlin-Weg unberührt) ·
+  *eingetreten* (überholter Träger `next/slice-095`, direkt korrigiert). Siehe
+  §6 für die volle Begründung je Zeile.
+- **Drei Paarungen:** Repo ohne Wellen-Betrieb — hier geprüft, nach dem `git
+  mv` nach `done/` (siehe Commit 3 dieser Closure). Ergebnis wird nach
+  Ausführung ergänzt: Anker-Paarung entfällt (kein `liegt in`-Feld, da nichts
+  verkörpert wurde), Folge-Slice-Paarung entfällt (keine Folge-Slices
+  genannt), Register-Paarung prüft `BEO-PGC/git-mv-und-inhalt-in-einem-commit`
+  und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` gegen ihre `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
