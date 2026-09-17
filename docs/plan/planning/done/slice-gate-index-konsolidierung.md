@@ -133,8 +133,16 @@ Bindung eines Targets … steht in `harness/README.md` §Sensors").
       offen) — siehe §7.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen). Siehe §6 unten — alle vier Risiken entfallen.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      geprüft in dieser Closure (Repo ohne Wellen-Betrieb).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      geprüft in dieser Closure (Repo ohne Wellen-Betrieb). **Anker-Paarung:**
+      entfällt — dieser Slice verkörpert keine Regel an einem neuen Zielort
+      (der Steering-Loop-Eintrag ist eine Bestätigung von `MR-002`, kein
+      `liegt in`-Feld fällig). **Folge-Slice-Paarung:** entfällt — die beiden
+      in §7 genannten Themen tragen ausdrücklich noch keine Kennung.
+      **Register-Paarung:** `BEO-PGC/bindung-spalte-uneinheitlich-tief/`
+      existiert mit nicht-leerem `evidence/`
+      (`evidence/slice-gate-index-konsolidierung.md`) — geprüft nach dem
+      `git mv` nach `done/`.
 
 ## 3. Plan (vor Code)
 
@@ -261,7 +269,11 @@ kennungen-sind-namen.md` (`slice-105` war der letzte nummerierte).
 - **Risiken aus §6:** alle vier Risiken **entfallen** — keines ist real
   eingetreten (Einzelbegründungen siehe §6 oben, jeweils von mindestens
   zwei Rollen unabhängig geprüft).
-- **Drei Paarungen:** *(nach dem `git mv` nach `done/`, siehe Commit 3)*
+- **Drei Paarungen:** Anker-Paarung entfällt (kein neuer Zielort
+  verkörpert). Folge-Slice-Paarung entfällt (beide genannten Themen ohne
+  Kennung). Register-Paarung: `BEO-PGC/bindung-spalte-uneinheitlich-tief/`
+  existiert mit nicht-leerem `evidence/` — geprüft nach dem `git mv` nach
+  `done/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
