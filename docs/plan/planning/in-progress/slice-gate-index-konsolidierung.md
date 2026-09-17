@@ -80,12 +80,12 @@ Bindung eines Targets … steht in `harness/README.md` §Sensors").
 
 ## 2. Definition of Done
 
-- [ ] **LP1:** `AGENTS.md` §4 gekürzt auf Regel („kein behauptetes Gate ohne
+- [x] **LP1:** `AGENTS.md` §4 gekürzt auf Regel („kein behauptetes Gate ohne
       Deckung in `harness/README.md` §Sensors") + Zeiger dorthin — keine
       Vertragsdetails (ADR-Links, Schwellen, Docker-Stufen) mehr dupliziert;
       die Warnung „nur real existierende Targets, keine Halluzination"
       bleibt sinngemäß erhalten (gilt jetzt für die Zieltabelle).
-- [ ] **LP2:** Vollständigkeits-Grep über `.github/workflows/*.yml` erneut
+- [x] **LP2:** Vollständigkeits-Grep über `.github/workflows/*.yml` erneut
       selbst ausgeführt (nicht nur aus dieser Planung übernommen,
       `AGENTS.md` §3.12/§3.13) — geprüft, ob eine **dritte** Fassung
       derselben Gate-Zählung existiert (Kurs-Welle 129 fand eine solche im
@@ -97,8 +97,24 @@ Bindung eines Targets … steht in `harness/README.md` §Sensors").
       Implementer-Lauf denselben Befund bestätigt: keine Änderung an
       `.github/workflows/*.yml` nötig, aber die Bestätigung selbst gehört in
       den Bericht.
-- [ ] **LP3:** `make docs-check` grün — vor der Kürzung `grep -rn "AGENTS.md.*§4\|AGENTS\.md#" .` (ohne `.harness/baseline/`) laufen lassen: alle gefundenen Verweise sind Prosa-Erwähnungen des Abschnitts, keine Anker-Hyperlinks auf einzelne Tabellenzeilen — die Abschnittsnummer `§4` bleibt nach der Kürzung erhalten, daher keine Broken-Anchor-Erwartung; trotzdem nach der Änderung erneut `make docs-check` laufen lassen statt es anzunehmen.
-- [ ] `make gates` grün.
+      **Implementer-Lauf bestätigt (2026-09-17):** eigenständiger Grep über
+      alle drei Workflow-Dateien (`ci.yml`, `e2e.yml`, **und** `examples.yml`,
+      das über die reine Planungs-Vorprüfung hinausgeht) — kein Treffer einer
+      dritten Vertragsdetail-Fassung; nur Namens-/ADR-Kommentare mit Verweis
+      auf `harness/README.md` §Sensors. Zusätzlich `Makefile`,
+      `harness/mk/*.mk` und `docs/user/*.md` gegrept — kein Treffer einer
+      weiteren Gate-Tabelle.
+- [x] **LP3:** `make docs-check` grün — vor der Kürzung `grep -rn "AGENTS.md.*§4\|AGENTS\.md#" .` (ohne `.harness/baseline/`) laufen lassen: alle gefundenen Verweise sind Prosa-Erwähnungen des Abschnitts, keine Anker-Hyperlinks auf einzelne Tabellenzeilen — die Abschnittsnummer `§4` bleibt nach der Kürzung erhalten, daher keine Broken-Anchor-Erwartung; trotzdem nach der Änderung erneut `make docs-check` laufen lassen statt es anzunehmen.
+      **Implementer-Lauf:** Vorab-Grep fand ausschließlich Prosa-Erwähnungen
+      in `done/**`- und `docs/reviews/**`-Records (Out-of-Scope, §1) sowie in
+      bereits `Accepted` ADRs (§3.5-immutabel, historische Folgepflicht-
+      Beschreibungen zum jeweiligen ADR-Zeitpunkt) und eine Zeile in
+      `.claude/agents/implementer.md`, die weiterhin trägt (§6 Risiko 4). Kein
+      Anker-Hyperlink auf eine Tabellenzeile gefunden. `make docs-check` nach
+      der Kürzung erneut ausgeführt: `d-check: 867 Datei(en) geprüft, 0
+      Befund(e)`, `EXIT=0`.
+- [x] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
+      §3.9): `EXIT=0`.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).

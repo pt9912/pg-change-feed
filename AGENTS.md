@@ -472,28 +472,13 @@ nicht durch ein Gate · seit welle-20.
 
 ## 4. Quality Gates
 
-Regeln dieser Sektion: Nur Targets aufzählen, die im Makefile **existieren**.
-Halluzinierte Gates sind die häufigste Form von Harness-Lüge
-(Baseline-Regelwerk `modul-13-quality-gates.md`).
-
-| Target | Zweck |
-|---|---|
-| `make baseline-verify` | vendored Baseline unverändert (Integrität + Vollständigkeit) |
-| `make docs-check` | kaputte Referenzen in der Markdown-Doku (d-check) |
-| `make a-check` | Hexagon-Schichten-Edges gegen `.a-check.yml` |
-| `make commit-traceability` | Commit-Message-Traceability: je Message ≥ 1 `LH-*`/`ADR-*`, keine `SPEC-*`/`ARC-*` im Betreff; Standing-Gate über die letzten 5 Commits ([ADR-0045](docs/plan/adr/0045-commit-traceability-standing-gate.md)) |
-| `make coverage-gate` | Go-Test-Coverage über die netzlos prüfbare Fläche (`./internal/...`+`./cmd/...`+`./gen/...` ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt) gegen `THRESHOLD`; bootstrap-aware Gate, Einstiegsstufe 70 % → Endstufe 80 % ([ADR-0071](docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), [ADR-0054](docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md), [ADR-0077](docs/plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md), [`harness/sensors/coverage-gate.md`](harness/sensors/coverage-gate.md)) |
-| `make generated-sync` | Sync-Gate: der committete Protobuf-/gRPC-Code ist byte-gleich der Ausgabe des gepinnten Generators (Dockerfile-Stufe `proto`) aus der committeten `.proto`-Quelle ([ADR-0084](docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md), [ADR-0060](docs/plan/adr/0060-grpc-streaming-mechanismus.md)) |
-| `make gates` | alle inneren Gates (mandatory vor PR), Nachweis-Stempel zuletzt |
-| `make image` | baut das OCI-Image, Image-Hash-Beleg (kein Gate) |
-| `make image-stale` | advisory: Base-Image-Drift (kein Gate, braucht Netz) |
-| `make proto-generate` | Protobuf-/gRPC-Go-Code aus `proto/cdc/stream/v1/changestream.proto` erzeugen; Docker-only über die gepinnten Dockerfile-Stufen `proto`/`proto-export` — Erzeugung zur Build-Zeit, Host-Extraktion aus einem `tar`-Stream über stdout (seit slice-104, kein Bind-Mount mehr) ([ADR-0060](docs/plan/adr/0060-grpc-streaming-mechanismus.md), kein Gate) |
-| `<make-target>` | volle Closure (vor Welle-Merge) |
-
-Diese Tabelle **listet auf**; definiert wird hier nichts. Die *Bindung* eines
-Targets — welche Anforderung oder Entscheidung es durchsetzt — steht in
-`harness/README.md` §Sensors; von dort führt der Weg zur `LH-*`-ID, zur ADR
-oder zum Carveout.
+**Der Gate-Index steht einmal, und zwar in [`harness/README.md`](harness/README.md)
+§Sensors** — dort stehen Target, Vertrag und Bindung (inkl. ADR-Links,
+Schwellen, Carveout-Verweise) vollständig, keine Zweitliste hier. Diese
+Sektion trägt nur die Regel: **kein behauptetes Gate ohne Deckung dort.**
+Ein Target, das in `harness/README.md` §Sensors nicht als real im Makefile
+existierendes Ziel geführt wird, ist halluziniert — die häufigste Form von
+Harness-Lüge (Baseline-Regelwerk `modul-13-quality-gates.md`).
 
 ## 5. Dokumentations-Regeln
 
