@@ -18,8 +18,9 @@ Abhängigkeit") · [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md
 Festlegung 2/3 — **bestätigt, nicht superseded für diesen Teil**: der
 Bau-Kontext ist das Sprach-Wurzelverzeichnis, ein eigenes digest-gepinntes
 Dockerfile, kein Gate — dieser Slice ist der erste reale Bau, der diese Form
-einlöst (ADR-0087 selbst: eine Sprache, die zum ersten Mal auftritt, **steht
-allein**, sie beweist die Form) · [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+einlöst (derselbe ADR-Text selbst: eine Sprache, die zum ersten Mal auftritt,
+**steht allein**, sie beweist die Form) ·
+[`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
 (der nicht-blockierende Workflow als Träger-Muster, hier auf eine zweite
 Sprache übertragen) · `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
 (**3×**, verkörpert) und `BEO-PGC/handbuch-versionshistorie-uebersprungen`

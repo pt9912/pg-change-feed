@@ -16,7 +16,7 @@ braucht). Dieses Repo führt derzeit **keine** offene Welle
 `NATS.Net` (NuGet) und `io.nats:jnats` (Maven Central), Registry-Existenz
 gemessen 2026-09-17; §Slice-Schnitt-Empfehlung, Zeile 4: „**NATS-Client in C#
 und Kotlin** … Abhängigkeit 1, 2") · [`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md)
-und [`ADR-0056`](../../adr/0056-nats-subjekt-schema.md) (das Wecksignal und
+und [`ADR-0056`](../../adr/0056-nats-tabellen-granulares-subjekt.md) (das Wecksignal und
 sein Subjekt-Schema, dessen Form der Client anspricht) ·
 [`ADR-0079`](../../adr/0079-nats-beispielclient-vierter-examples-client.md)
 (Form-Vorbild `examples/nats-client` in Go, samt zweiseitigem Ablauf:
@@ -75,7 +75,7 @@ Handbuch-Zeilen bleiben bei drei Liefer-Punkten.
   <table>`; verlangt er eine Vertragsänderung, ist das eine Spec-Änderung,
   kein Beispiel-Umbau (`SPEC-023`, `SPEC-017`).
 - **Eine Zustandsmaschine (Reconnect, Deduplizierung, Rückstand-Tracking).**
-  [`SPEC-023`](../../../spec/pflichtenheft.md) schließt das für **jeden**
+  [`SPEC-023`](../../../../spec/pflichtenheft.md) schließt das für **jeden**
   Beispiel-Client aus — Vorbild, kein Belegträger.
 - **`.a-check.yml`.** Unverändert aus denselben Gründen wie in den
   vorangegangenen Sprach-Slices: keine C#-/Kotlin-Schicht in diesem Repo.
