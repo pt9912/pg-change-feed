@@ -143,6 +143,21 @@ Nachzug beauftragt. Ohne Rückfrage feststellbar.
   braucht oder eine Zusage der API sich als nicht bedienbar erweist. Dann ist
   der Schnitt falsch — ein Beispiel, das den Vertrag ändern müsste, ist ein
   anderer Vorgang.
+
+  **Eingetreten — der Übergang ist vollzogen.** Der **gRPC-Client (LP2) ist
+  nach diesem Schnitt nicht lieferbar**, und beide Routen sind real gemessen:
+  der Import des internen Stubs (`internal/adapters/driving/grpc/streamv1`) ist
+  `wrong-direction` (`make a-check` **Exit 2**), und die **öffentliche
+  Vertragsfläche** (`gen/cdc/stream/v1`) **existiert nicht** (`no required
+  module provides package …`, **Exit 1**). Die Voraussetzung ist
+  [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  §3 samt seiner Schnitt-Empfehlung **1** („**Der Umzug zuerst** … er soll
+  allein stehen") — dieser Vorgänger ist **nie geschnitten** worden, und dieser
+  Plan hat die Empfehlungen **2 und 3** gebündelt und **1 ausgeschlossen**.
+  Der Schnitt war also falsch, nicht die Arbeit: LP1 und LP3 sind geliefert
+  (Commit mit den zwei HTTP-Familien-Clients und den zwei Trägern) und tragen
+  dem Nachfolger. `docs/plan/planning/observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-083.md`
+  hielt den fehlenden Vorgänger bereits fest.
 - `in-progress` → `open` (blockiert): wenn ein Client **ohne** einen laufenden
   Dienst nicht einmal **kompilierbar** ist. Dann gehört die Frage nach der Form
   (Build-Tag? eigenes Modul?) in eine Entscheidung, nicht in diesen Slice.
