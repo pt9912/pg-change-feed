@@ -107,9 +107,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Block (Go seit `slice-095`) bekommt zwei weitere Zeilen (C#, Kotlin),
       samt Änderungshistorie-Zeile.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Bericht: `docs/reviews/review-slice-100.md` (0 HIGH/MEDIUM/LOW, 1 INFO,
+      keine Fixrunde nötig).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-100.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
