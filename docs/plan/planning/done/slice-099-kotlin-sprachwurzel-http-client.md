@@ -152,7 +152,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
@@ -371,8 +371,18 @@ Backticks).
   `BEO-PGC/adr-folgepflicht-ohne-traeger-slice`, weiterhin 1×, konkrete
   Manifestation aufgelöst innerhalb dieses Slice-Diffs). Details je Zeile
   in §6.
-- **Drei Paarungen:** im Repo ohne Wellen-Betrieb hier geprüft (Commit 3,
-  nach dem `git mv` nach `done/`).
+- **Drei Paarungen:** Anker-Paarung entfällt (keine neue Verkörperung durch
+  diesen Slice — beide fortgeschriebenen Register-Einträge waren bereits
+  vor diesem Slice verkörpert, `adr-folgepflicht-ohne-traeger-slice` steht
+  weiter bei 1×/offen). Folge-Slice-Paarung entfällt (keine neuen
+  Folge-Slices; `slice-100`–`103` existierten bereits vor dieser Closure in
+  `open/`). Register-Paarung **grün** — alle fünf zitierten
+  Beobachtungs-Verzeichnisse (`github-actions-unverifizierbar-lokal`,
+  `zahl-in-traeger-driftet-gegen-die-messung`,
+  `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`,
+  `adr-folgepflicht-ohne-traeger-slice`) existieren mit nicht leerem
+  `evidence/`. Letztes DoD-Häkchen bestätigt gegen den mv-Commit `2f7db8c`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
