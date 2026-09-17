@@ -40,13 +40,17 @@ Regel zählt Zeilen.
 2. **`codepaths` aus** — Pfade in Inline-Code werden nicht auf Existenz
    geprüft; Bedingung in `.d-check.yml` (alle referenzierten Pfade
    existieren). Heilbar.
-3. **Opt-in-Module nicht im Bündel** — `planning`, `tracked`, `vcs`,
-   `commits`, `reviews` laufen nur über ihre `doc-*`-Einzel-Targets mit
+3. **Opt-in-Module nicht im Bündel** — `planning`, `vcs`, `commits`,
+   `reviews` laufen nur über ihre `doc-*`-Einzel-Targets mit
    `--enable`; `make gates` belegt sie nicht. Heilbar je Aktivierungs-
-   bedingung (in `.d-check.yml` kommentiert).
+   bedingung (in `.d-check.yml` kommentiert). `tracked` ist seit
+   `slice-d-check-tracked-modul` Teil des `modules:`-Bündels und läuft
+   damit in `make docs-check`/`make gates` mit; sein eigenes
+   `doc-tracked`-Einzel-Target bleibt zusätzlich isoliert aufrufbar.
 4. **`MR-*` nicht linkpflichtig** — das `ids`-Muster deckt LH/SPEC/ARC/ADR,
-   nicht MR; Adaptions-Verweise werden nur vom `tracked`-Modul geprüft
-   (opt-in). Permanent bis zur Muster-Erweiterung.
+   nicht MR; Adaptions-Verweise werden vom `tracked`-Modul auf ihren
+   Getrackt-Status geprüft (seit dessen Aktivierung Teil des Bündels, kein
+   Opt-in mehr) — nicht auf Linkpflicht. Permanent bis zur Muster-Erweiterung.
 5. **Vendored Bestand ausgenommen** — `.harness/**` und `**/*.template.md`
    sind vom Scan ausgenommen; die Baseline selbst prüft `baseline-verify`,
    die Templates sind Referenz-Form. Permanent (Setzung).
@@ -166,4 +170,9 @@ trägt die Aktivierung, die Reichweite der Regel
 die Zitationsform eines Schwester-Repos
 [`ADR-0074`](../../docs/plan/adr/0074-zitationsform-schwester-repo-hausform.md),
 die Zitat-Korrektur an immutablen Dokumenten
-[`ADR-0073`](../../docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)).
+[`ADR-0073`](../../docs/plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md))
+· Getrackt-Status auflösbarer, existierender Link-/Bild-Ziele gegen den
+git-Index (`tracked` in `modules`, Konfiguration `.d-check.yml` §tracked,
+`exempt-targets: []` — keine eigene ADR, Präzedenzmuster
+[`ADR-0072`](../../docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md)/[`ADR-0075`](../../docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md)
+für `hostpaths` · seit slice-d-check-tracked-modul).
