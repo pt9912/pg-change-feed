@@ -121,16 +121,18 @@ Bindung eines Targets … steht in `harness/README.md` §Sensors").
       **Report:** `docs/reviews/review-slice-gate-index-konsolidierung.md`
       (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO; kein Informationsverlust bestätigt,
       keine Fixrunde nötig).
-- [ ] Doku-Update: `AGENTS.md` §4 (siehe LP1); `harness/README.md` bleibt
+- [x] Doku-Update: `AGENTS.md` §4 (siehe LP1); `harness/README.md` bleibt
       inhaltlich unverändert (bereits die vollständige Fassung).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. Siehe §7.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-PGC/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; kein Zähler wird gesetzt, er folgt aus den Dateien. Keine
       Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
-      notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      notiert. **Beleg:** neues Verzeichnis
+      `BEO-PGC/bindung-spalte-uneinheitlich-tief/` (Reviewer F-1, INFO, 1×,
+      offen) — siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen). Siehe §6 unten — alle vier Risiken entfallen.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       geprüft in dieser Closure (Repo ohne Wellen-Betrieb).
 
@@ -173,34 +175,93 @@ Lerneintrag geschrieben — kein Datum, keine externe Bedingung.
 
 - **Die Kürzung verliert echte, nirgendwo sonst stehende Information aus
   `AGENTS.md` §4** (z. B. eine Nuance, die der Implementer beim genauen
-  Vergleich übersieht). — **Ausgang:** <bei Closure eintragen>
+  Vergleich übersieht). — **Ausgang: entfallen.** Zwei unabhängige
+  Zeile-für-Zeile-Vergleiche (Reviewer: alle zehn gestrichenen Zeilen gegen
+  `harness/README.md` §Sensors; Verifier: eigener Stichproben-Vergleich an
+  drei weiteren, selbst gewählten Zeilen) finden keinen Informationsverlust
+  — jedes Gegenstück ist inhaltsgleich oder detaillierter. Nicht eingetreten.
 - **Eine dritte Fassung derselben Gate-Zählung wird übersehen** (Kurs-Welle
   129 fand eine in `.github/workflows/checks.yml` des Ursprungs-Repos;
   dieses Repo könnte eine analoge Stelle außerhalb der bereits geprüften
   `.github/workflows/*.yml` haben, z. B. `Makefile`-Kommentare,
-  `docs/user/*`). — **Ausgang:** <bei Closure eintragen>
+  `docs/user/*`). — **Ausgang: entfallen.** Implementer, Reviewer und
+  Verifier haben je eigenständig per `grep` über
+  `.github/workflows/*.yml` (inkl. `examples.yml`), `Makefile`,
+  `harness/mk/*.mk` und `docs/user/*.md` geprüft — kein Treffer einer
+  dritten Vertragsdetail-Fassung, nur Namens-/Kommentar-Nennungen mit
+  Verweis auf `harness/README.md` §Sensors. Nicht eingetreten.
 - **Der Reviewer-Skill hat keine eigene HIGH-Regel für „zwei
   Doku-Tabellen, die denselben Vertrag beschreiben" außerhalb der bereits
   bestehenden Zwei-Quellen-Drift-Klasse** — geprüft, ob diese Klasse
   (`.harness/skills/reviewer.md` §HIGH) den Fall bereits deckt oder ob eine
-  Schärfung nötig ist. — **Ausgang:** <bei Closure eintragen>
+  Schärfung nötig ist. — **Ausgang: entfallen.** Die bestehende HIGH-Klasse
+  „Zwei-Quellen-Drift" deckt den Fall bereits; dieser Slice löst genau
+  diese Klasse strukturell auf (eine Volltabelle statt zwei), statt eine
+  neue Regel zu brauchen — von Reviewer (§8 Sichtungs-Schritt) und Verifier
+  (§7) übereinstimmend bestätigt. Nichts zu schärfen, nicht eingetreten.
 - **Referenz-Bruch in `.claude/agents/implementer.md`** (nennt
   `AGENTS.md` §4 als Beleg für „halluzinierte Targets sind verboten") — die
   Regel bleibt nach der Kürzung sinngemäß erhalten (Pointer statt Tabelle),
   eine Prüfung, ob die dortige Formulierung noch trägt, ist trotzdem nötig.
-  — **Ausgang:** <bei Closure eintragen>
+  — **Ausgang: entfallen.** Verifier hat Zeile 52 eigenständig geprüft: die
+  Regel trägt sinngemäß weiter, die neue §4-Fassung führt sie sogar
+  prominenter. Kein Referenzbruch, nicht eingetreten.
 
 ## 7. Closure-Notiz
 
-*(wird bei Übergang nach `done/` vor dem `git mv` gefüllt)*
+**Besonderes Gewicht:** Dies ist der **erste** Slice-Plan mit
+namensbasierter Kennung nach `harness/conventions/MR-002-slice-welle-
+kennungen-sind-namen.md` (`slice-105` war der letzte nummerierte).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Die neue Namenskonvention aus `MR-002` trug
+  in ihrem ersten Anwendungsfall ohne jede Reibung. Der Slug
+  `slice-gate-index-konsolidierung` war eindeutig, kollisionsfrei und ohne
+  Nachschlagen einer nächsten freien Nummer vergeben — genau der Vorteil,
+  den `MR-002` als Begründung nennt (Doppelvergabe wird an der Namensform
+  selbst unwahrscheinlicher, nicht nur an durchgehaltener Disziplin). Der
+  Name blieb über den gesamten Rollen-Durchlauf (Implementer, Reviewer,
+  Verifier) stabil referenzierbar, ohne dass irgendeine Rolle ihn
+  verwechselte oder eine numerische Nebenform bildete. Die inhaltliche
+  Konsolidierung selbst (Regel + Zeiger statt Doppel-Tabelle) lief ebenso
+  reibungslos: Implementer, Reviewer und Verifier haben unabhängig
+  voneinander per Zeile-für-Zeile-Vergleich bzw. Stichprobe bestätigt, dass
+  keine Information verloren ging.
+- **Was ging anders als geplant:** Der Reviewer fand eine vorbestehende,
+  von diesem Diff nicht verursachte Asymmetrie in `harness/README.md`
+  §Sensors — die `Bindung`-Spalte von `generated-sync` verlinkt nur die
+  Sensor-Datei statt die beiden ADRs inline zu tragen wie die übrigen
+  Gates (F-1, INFO, kein Befund gegen diesen Diff). Nicht im Plan
+  antizipiert, weil sie außerhalb des eigentlichen Änderungsgegenstands
+  liegt; als eigenständige, kleine Beobachtung festgehalten (siehe unten),
+  statt sie stillschweigend zu übergehen oder überzubewerten.
+- **Steering-Loop-Eintrag:** Die neue Namenskonvention (`MR-002`) hat sich
+  im ersten Anwendungsfall bewährt — kein Kollisions-, Lesbarkeits- oder
+  Verwechslungsproblem trat auf. Das ist keine Regelschärfung und kein
+  neuer Sensor (die Regel selbst ist unverändert richtig), sondern die
+  erste reale Bestätigung einer bereits getroffenen Adaptions-Entscheidung.
+  Kein neuer Zielort verkörpert — kein `liegt in`-Feld fällig
+  (Baseline-Regelwerk `modul-06-roadmap.md`: das Feld steht nur, wenn mit
+  diesem Slice wirklich etwas verkörpert wurde).
+- **Beobachtungs-Register (`../observations/`):** Register auf eine
+  passende bestehende Klasse geprüft
+  (`grep -rli "generated-sync\|bindung-spalte\|inline.*adr-link"
+  docs/plan/planning/observations/`) — keine passende Beobachtung
+  gefunden. Neues Verzeichnis angelegt:
+  `BEO-PGC/bindung-spalte-uneinheitlich-tief/` — Erstbeleg
+  (`evidence/slice-gate-index-konsolidierung.md`), Stand `offen`, 1×. Kein
+  Informationsverlust (beide ADRs über den Sensor-Link erreichbar), daher
+  bewusst niedrigschwellig registriert statt als Risiko geführt.
+- **Folge-Slices:** **Keine automatisch angelegt.** Zwei mögliche, noch
+  nicht angelegte Folge-Themen aus dem laufenden Nutzer-Dialog, ohne eigene
+  Kennung — Vergabe ist Sache der nächsten Planungs-Runde:
+  (a) eine „Bewusstes Brechen"-Regel für DoD-Testbehauptungen (Kurs-Welle
+  135, dritter Migrations-Folge-Slice aus §1 Abgrenzung), (b) möglicherweise
+  ein Slice zur Aktivierung eines `tracked`-Moduls — gerade erst im
+  Nutzer-Dialog besprochen, noch nicht bestätigt.
+- **Risiken aus §6:** alle vier Risiken **entfallen** — keines ist real
+  eingetreten (Einzelbegründungen siehe §6 oben, jeweils von mindestens
+  zwei Rollen unabhängig geprüft).
+- **Drei Paarungen:** *(nach dem `git mv` nach `done/`, siehe Commit 3)*
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
