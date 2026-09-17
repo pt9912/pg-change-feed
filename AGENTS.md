@@ -26,7 +26,7 @@ Das **Regelwerk der adoptierten Baseline** ist die **präsente,
 nachschlagbare Vertiefung** zu diesem Briefing: ein self-navigierbares
 **Modul-Bundle** (`README.md` = Index). Beim Bootstrap wird das
 self-contained Release-ZIP
-(<https://github.com/pt9912/ai-harness-course/releases/download/v6.5.0/lab-regelwerk.zip>)
+(<https://github.com/pt9912/ai-harness-course/releases/download/v6.9.0/lab-regelwerk.zip>)
 **committet vendored** unter `.harness/baseline/<tag>/{regelwerk,templates}/`
 (Regelwerk *und* Templates parallel, netzlos materialisiert samt `SHA256SUMS`
 — Vorgehen siehe

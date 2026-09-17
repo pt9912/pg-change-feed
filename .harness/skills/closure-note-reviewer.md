@@ -15,7 +15,7 @@ Was der Reviewer *immer* mitbringt, bevor er urteilt:
 
 - alle `closure_note`-Abschnitte der Slices in `docs/plan/planning/done/`
 - das Slice-Template
-  `.harness/baseline/v6.5.0/templates/docs/plan/planning/slice.template.md`
+  `.harness/baseline/v6.9.0/templates/docs/plan/planning/slice.template.md`
   §"Closure-Notiz" (welche drei Inhalte Pflicht sind)
 - die Lifecycle-Pflicht — *warum* Closure-Notes existieren (Auditierbarkeit,
   Lernsignal; Modul 5: Übergang nach `done/` ohne Lerneintrag ist Ablage,

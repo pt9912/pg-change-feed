@@ -42,5 +42,5 @@ Disziplin.
 - Report-Gerüst: `docs/reviews/review-report.template.md`; ein Report je Lauf,
   Folgeläufe als neue Datei
 - ID-Schema und Adaptionen: `harness/conventions.md` (MR-000, MR-001)
-- Baseline-Bestand: `.harness/baseline/v6.5.0/regelwerk/modul-10-review-harness.md`
+- Baseline-Bestand: `.harness/baseline/v6.9.0/regelwerk/modul-10-review-harness.md`
   — nur die benötigten Abschnitte laden (README ist der Index)

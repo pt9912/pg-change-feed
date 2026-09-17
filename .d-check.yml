@@ -55,9 +55,14 @@ versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in
   # conventions.md §Baseline, alle abweichenden Pins sind ein Befund.
+  # docs/reviews/** sind Lauf-Belege (Modul 10): ein Review-/Verify-Report
+  # zitiert den zum Laufzeitpunkt adoptierten Baseline-Stand dauerhaft — er
+  # wird nie auf einen spaeteren Stand nachgezogen (Record-Einfrierung ist
+  # zeitlich, nicht Status-basiert, ADR-0073), dieselbe Begruendung wie fuer
+  # harness/conventions/done/** oben · seit slice-105.
   pin-pattern: '\.harness/baseline/(v\d+\.\d+\.\d+)/'
   current-from: harness/conventions.md#baseline
-  exempt-paths: ["harness/conventions/done/**"]
+  exempt-paths: ["harness/conventions/done/**", "docs/reviews/**"]
 vcs:
   # Append-only der Adaptions-Eintraege (Modul vcs; Target `doc-immutable`
   # mit Commit-Range). Der Core einer MR-Datei bleibt ueber die Range

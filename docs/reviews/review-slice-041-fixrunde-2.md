@@ -112,7 +112,7 @@ mitgeprüft und für unauffällig befunden.
   `review-slice-041.md`), der zwei Funde innerhalb desselben Laufs bündelt
   (F-1 HIGH, F-4 LOW). Nach der Register-Regel "Ein Vorgang zählt
   einmal — zwei Funde im selben Vorgang sind eine Gelegenheit, kein
-  zweites Auftreten" ([Modul 6](../../.harness/baseline/v6.5.0/regelwerk/modul-06-roadmap.md#das-beobachtungs-register-modul-6))
+  zweites Auftreten" ([Modul 6](../../.harness/baseline/v6.9.0/regelwerk/modul-06-roadmap.md#das-beobachtungs-register-modul-6))
   ist das korrekt **eine** Evidence-Datei für F-1+F-4 zusammen, nicht
   zwei.
 - `evidence/review-slice-041-fixrunde.md` — ein zweiter, eigenständiger
@@ -120,7 +120,7 @@ mitgeprüft und für unauffällig befunden.
   Lauf), der das dritte Vorkommen fand.
 
 Zähler (abgeleitet aus der Zahl der Evidence-Dateien): **2** — unter der
-3×-Schwelle aus [Modul 6 §Das Beobachtungs-Register](../../.harness/baseline/v6.5.0/regelwerk/modul-06-roadmap.md#das-beobachtungs-register-modul-6).
+3×-Schwelle aus [Modul 6 §Das Beobachtungs-Register](../../.harness/baseline/v6.9.0/regelwerk/modul-06-roadmap.md#das-beobachtungs-register-modul-6).
 Damit ist `state.md`s Eintrag "Zustand: offen … kein Ausgang fällig"
 korrekt: Ein dritter *Vorgang* (dritte Evidence-Datei) läge erst vor,
 wenn eine künftige, unabhängige Prüfung ein weiteres Vorkommen fände.

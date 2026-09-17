@@ -111,7 +111,7 @@ Der **Schreiber** der Adresse ist der Planner, wenn er §2/§7 eines Slice-Plans
 füllt. Genau dort reicht ihn `plan-welle.md` an — Schritt 6 trägt bereits die
 „§2-Form-Prüfung nach dem Füllen · seit slice-010", dieselbe Bauform (eine
 dateiskopierte Selbstprüfung mit Herkunfts-Anker). Die vendorte
-[Slice-Vorlage](../../.harness/baseline/v6.5.0/templates/docs/plan/planning/slice.template.md)
+[Slice-Vorlage](../../.harness/baseline/v6.9.0/templates/docs/plan/planning/slice.template.md)
 scheidet aus: sie ist Teil der vendorten Baseline, von `make baseline-verify`
 gegen `SHA256SUMS` gepinnt, und eine In-Place-Änderung färbte das Gate rot —
 dieselbe Begründung wie beim

@@ -31,8 +31,8 @@ damit spätere Adaptionen einen Bezugspunkt haben.
 
 - **Konvention:** AI-Harness-Kurs (Baseline-Regelwerk, als Release-Asset
   vendored unter `.harness/baseline/`)
-- **Stand:** v6.5.0
-- **Datum der Adoption:** 2026-09-09
+- **Stand:** v6.9.0
+- **Datum der Adoption:** 2026-09-17
 
 <!--
 Der Stand ist eine VERSION, kein Datum: Er ist der Bezugspunkt, gegen den ein
@@ -56,12 +56,11 @@ ist derivativ — bei Konflikt gilt das Lehrmaterial.
 - **Extern (Lehrmaterial):** <Pfad oder URL>
 - **Vendored Baseline (Regelwerk + Templates):** aus dem self-contained
   Release-Asset
-  https://github.com/pt9912/ai-harness-course/releases/download/v6.5.0/lab-regelwerk.zip
+  https://github.com/pt9912/ai-harness-course/releases/download/v6.9.0/lab-regelwerk.zip
   nach `.harness/baseline/<tag>/{regelwerk,templates}/` entpackt (netzlos,
-  `SHA256SUMS`) — adoptierten Stand notieren (Stand-Zeile in
-  `regelwerk/README.md`, z. B. „Kurs-Welle 24 · 2026-07-16"; Wellen-Register:
-  CHANGELOG.md im Kurs-Repo); für harte Reproduzierbarkeit das Asset eines Tags
-  ziehen statt `latest`.
+  `SHA256SUMS`) — adoptierter Stand: Kurs-Welle 137 · 2026-09-16 (Stand-Zeile
+  in `regelwerk/README.md`; Wellen-Register: CHANGELOG.md im Kurs-Repo); für
+  harte Reproduzierbarkeit das Asset eines Tags ziehen statt `latest`.
 - **In-Repo (verkörperte Form):** <Pfade zu deinen kopiert-und-ausgefüllten
   Artefakten> — die vendored `.harness/baseline/<tag>/templates/` sind die
   Referenz-Form („Ziel-Form" des Regelwerks); deine eigenen Dateien sind daraus
@@ -124,6 +123,7 @@ sie gilt für jeden Lauf.
 | MR | Titel | Geltungsbereich | Ersetzt-Baseline-Regel |
 |---|---|---|---|
 | MR-001 <a id="mr-001"></a> | [Technik-Dokument heißt Pflichtenheft](conventions/MR-001-technik-dokument-heisst-pflichtenheft.md) | `spec/pflichtenheft.md` (vormals `spezifikation.md`), `harness/README.md`, `AGENTS.md`, `spec/lastenheft.md` | `grundlagen-source-precedence.md` §Spec-Straten (Rang-2-Datei-Name) |
+| MR-002 <a id="mr-002"></a> | [Slice-/Welle-Kennungen sind Namen, nicht Nummern (ab slice-105 exklusive)](conventions/MR-002-slice-welle-kennungen-sind-namen.md) | `harness/conventions.md` §Aktive Adaptionen; alle nach `slice-105` neu angelegten Slice-/Welle-Plan-Dateien | `grundlagen-source-precedence.md` §Vergabe (Bestandsschutz für `slice-001`–`slice-105`) |
 
 ### Aufgelöste Adaptionen
 

@@ -9,7 +9,7 @@ Regeln dieser Datei: Pflichtfelder sind Datum, Geltungsbereich,
   §Guides, `AGENTS.md` §2 und §5, `spec/lastenheft.md` (Verweise auf das
   Technik-Dokument)
 - **Ersetzt-Baseline-Regel:** [grundlagen-source-precedence.md
-  §Spec-Straten](../../.harness/baseline/v6.5.0/regelwerk/grundlagen-source-precedence.md#spec-straten-mehr-als-ein-spec-dokument)
+  §Spec-Straten](../../.harness/baseline/v6.9.0/regelwerk/grundlagen-source-precedence.md#spec-straten-mehr-als-ein-spec-dokument)
   — der Datei-Name des Rang-2-Dokuments (`spec/spezifikation.md`)
 - **Adaption:** Das Rang-2-Dokument heißt
   `spec/pflichtenheft.md` statt `spec/spezifikation.md`. Inhalt und Struktur

@@ -44,4 +44,4 @@ Kein Netz; das Skript läuft mit bash + coreutils ohne Fremd-Laufzeit.
 ## Bindung
 
 `harness/conventions.md` §Baseline (Adoptions-Erklärung, MR-000) — der
-adoptierte Stand `v6.5.0` ist die Referenz gegen die diese Prüfung gilt.
+adoptierte Stand `v6.9.0` ist die Referenz gegen die diese Prüfung gilt.
