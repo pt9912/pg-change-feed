@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.16
+Version: 1.17
 Software-Version: 0.2.0-verdrahtung
-Stand: 2026-09-15
+Stand: 2026-09-17
 
 ## 1. Einleitung
 
@@ -646,6 +646,12 @@ dazwischen. Die Ausnahme ist der Live-Stream auf `GET /changes/stream` (siehe
 unten), der die Verbindung offen hält — `GET /changes` ist demgegenüber die
 nicht streamende Form desselben Gegenstands.
 
+**Beispiel:** Ein Beispielprogramm liegt unter `examples/http-client`:
+`go run ./examples/http-client -source <quelle> -publication <publication>` —
+es ruft den `reader`-Endpunkt `GET /tables` auf und gibt die Antwort aus;
+Adresse und Token liest es aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und
+lässt sich per Flag übersteuern.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -719,6 +725,11 @@ einen Empfänger an.
 **Nachvollziehbarkeit:** wie beim gRPC-Stream — verpasste Changes bleiben
 über [Änderungen lesen](#änderungen-lesen) und die bestätigte
 Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar.
+
+**Beispiel:** Ein Beispielprogramm liegt unter `examples/sse-client`:
+`go run ./examples/sse-client` — es öffnet `GET /changes/stream` und gibt
+jedes Event aus; Adresse und Token liest es aus `CDC_HTTP_ADDR` und
+`CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern.
 
 ### Zugriff über das NATS-Wecksignal
 
@@ -959,3 +970,4 @@ MIT — siehe `LICENSE`.
 | 1.14 | 2026-09-15 | Review-Nachzug: Rahmen-Aussage der HTTP-§4 auf die tatsächlich gelistete Fähigkeitsmenge gezogen (die Retention-Auslösung ist nicht CLI-/SQL-gleichwertig, sondern API-exklusiv); der gRPC-Abschnitt nennt die zehn Nachrichtenfelder, und der SSE-Abschnitt verweist darauf statt auf die Spaltenliste von `cdc.changes` |
 | 1.15 | 2026-09-15 | Changes-Lesen über die API ergänzt (`LH-FA-SST-006`, `LH-FA-REA-001`…`006`, `ADR-0081`, slice-086): §4 Fähigkeits-Tabelle um `GET /changes` erweitert, Parameter-/Antwort-Beschreibung samt Fehlerfällen, „Änderungen lesen" verweist auf den Endpunkt, und die Zustellsemantik nennt die nicht streamende Form neben dem Live-Stream |
 | 1.16 | 2026-09-15 | Vierter Zugriffs-Abschnitt ergänzt: §4 „Zugriff über das NATS-Wecksignal" (`LH-FA-SST-007`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-083) — Subjekt-Schema, leerer Payload, Zustellsemantik und der zweiseitige Ablauf (lauschen, dann über `GET /changes` holen) samt Beispiel `examples/nats-client` |
+| 1.17 | 2026-09-17 | Beispiel-Programme der HTTP-Familie in den Zugriffs-Abschnitten ergänzt (`ADR-0076`, slice-095): §4 „Zugriff über die HTTP-/JSON-API" nennt `examples/http-client` samt Startbefehl, „Zugriff über Server-Sent-Events" nennt `examples/sse-client`; beide lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |

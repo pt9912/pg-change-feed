@@ -21,12 +21,14 @@ layers:
   # `examples` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der öffentlichen Beispiel-Clients unter `examples/**`
   # (ADR-0076/ADR-0079). Ihre Clients benutzen ausschließlich die
-  # Standardbibliothek und öffentliche Fremdmodule — der NATS-Client
-  # `examples/nats-client` spricht das Wecksignal über `github.com/nats-io/nats.go`
-  # und die Änderung über die HTTP-API an, ohne einen Bereich dieses Baums zu
-  # importieren. Die Gruppe trägt deshalb keine Kante (ADR-0079 Festlegung 1);
-  # ein Import aus `domain`, `ports`, `app` oder `adapters` in `examples/**`
-  # bleibt `wrong-direction`.
+  # Standardbibliothek und öffentliche Fremdmodule: `examples/http-client`
+  # ruft den `reader`-Endpunkt `GET /tables` an, `examples/sse-client` den
+  # Endpunkt `GET /changes/stream`, und `examples/nats-client` spricht das
+  # Wecksignal über `github.com/nats-io/nats.go` samt nachfolgender
+  # HTTP-Abfrage an — ohne einen Bereich dieses Baums zu importieren. Die
+  # Gruppe trägt deshalb keine Kante (ADR-0079 Festlegung 1); ein Import aus
+  # `domain`, `ports`, `app` oder `adapters` in `examples/**` bleibt
+  # `wrong-direction`.
   examples: ["examples/**"]
 edges:
   # Abhängigkeiten zeigen nach innen (ADR-0002): Ports und Use Cases
