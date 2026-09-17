@@ -25,12 +25,14 @@ layers:
   # (ADR-0076/ADR-0079). Ihre Clients benutzen ausschließlich die
   # Standardbibliothek und öffentliche Fremdmodule: `examples/http-client`
   # ruft den `reader`-Endpunkt `GET /tables` an, `examples/sse-client` den
-  # Endpunkt `GET /changes/stream`, und `examples/nats-client` spricht das
-  # Wecksignal über `github.com/nats-io/nats.go` samt nachfolgender
-  # HTTP-Abfrage an — ohne einen Bereich dieses Baums zu importieren. Die
-  # Gruppe trägt deshalb keine Kante (ADR-0079 Festlegung 1); ein Import aus
-  # `domain`, `ports`, `app` oder `adapters` in `examples/**` bleibt
-  # `wrong-direction`.
+  # Endpunkt `GET /changes/stream`, `examples/grpc-client` öffnet den
+  # Server-Stream `ChangeStream/StreamChanges` über den erzeugten Protokoll-
+  # Stub der Vertragsfläche (`gen/cdc/stream/v1`, Gruppe `contract`), und
+  # `examples/nats-client` spricht das Wecksignal über
+  # `github.com/nats-io/nats.go` samt nachfolgender HTTP-Abfrage an — ohne
+  # einen Bereich von `domain`, `ports`, `app` oder `adapters` zu
+  # importieren. Ein Import aus einer dieser vier Gruppen in `examples/**`
+  # bleibt `wrong-direction`.
   examples: ["examples/**"]
   # `contract` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der erzeugten Vertragsfläche unter `gen/**` (`slice-097`,
@@ -55,6 +57,10 @@ edges:
   # `tooling` → `contract` (neu, `slice-097`): `tools/harness/grpcclient`
   # importiert denselben Stub vom öffentlichen Pfad.
   - {from: tooling,  to: contract}
+  # `examples` → `contract` (neu, `slice-095`): `examples/grpc-client`
+  # importiert den erzeugten Protokoll-Stub vom öffentlichen Pfad
+  # `gen/cdc/stream/v1`, genau wie `adapters` und `tooling` es bereits tun.
+  - {from: examples, to: contract}
   # `tooling` → `adapters` ist mit `slice-097` ZURÜCKGENOMMEN: Die Kante
   # (ADR-0068) trug ausschließlich den Zugriff auf den Protokoll-Stub, der
   # damals unter `internal/adapters/driving/grpc/streamv1` lag. Der Stub

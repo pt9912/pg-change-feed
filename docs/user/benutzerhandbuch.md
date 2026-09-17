@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.18
+Version: 1.19
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-17
 
@@ -698,6 +698,12 @@ hängender Abonnent stoppt den Erfassungsbetrieb nicht.
 Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar —
 der Stream ersetzt diesen Zugriffsweg nicht.
 
+**Beispiel:** Ein Beispielprogramm liegt unter `examples/grpc-client`:
+`go run ./examples/grpc-client` — es öffnet `ChangeStream/StreamChanges` und
+gibt jede empfangene Nachricht aus; Adresse und Token liest es aus
+`CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` und lässt sich per Flag
+übersteuern.
+
 ### Zugriff über Server-Sent-Events
 
 **Erreichbarkeit:** derselbe HTTP-Server wie oben — aktiv, sobald
@@ -991,3 +997,4 @@ MIT — siehe `LICENSE`.
 | 1.16 | 2026-09-15 | Vierter Zugriffs-Abschnitt ergänzt: §4 „Zugriff über das NATS-Wecksignal" (`LH-FA-SST-007`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-083) — Subjekt-Schema, leerer Payload, Zustellsemantik und der zweiseitige Ablauf (lauschen, dann über `GET /changes` holen) samt Beispiel `examples/nats-client` |
 | 1.17 | 2026-09-17 | Beispiel-Programme der HTTP-Familie in den Zugriffs-Abschnitten ergänzt (`ADR-0076`, slice-095): §4 „Zugriff über die HTTP-/JSON-API" nennt `examples/http-client` samt Startbefehl, „Zugriff über Server-Sent-Events" nennt `examples/sse-client`; beide lesen Adresse und Token aus `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` |
 | 1.18 | 2026-09-17 | Konfigurationsdatei nachgezogen (`ADR-0088`, `SPEC-016`, slice-096): §5.2 führt die zwei neuen Datei-Felder `http_addr`/`grpc_addr` samt Precedence, die Zugangsdaten-Klasse auf sechs Schlüssel gezogen (`capture_dsn`/`admin_dsn`/`reader_dsn`/`api_token_reader`/`api_token_admin`/`nats_url`, Grenze ist die Feld-Form) und festgehalten, dass `CDC_NATS_URL` und die zwei Token-Klassen auch unter geladener Datei aus der Umgebung wirken |
+| 1.19 | 2026-09-17 | Beispiel-Programm der gRPC-Familie ergänzt (`ADR-0076`, `ADR-0060`, slice-095): „Zugriff über den gRPC-Change-Stream" nennt `examples/grpc-client` samt Startbefehl; es liest Adresse und Token aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` |

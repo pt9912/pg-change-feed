@@ -87,22 +87,22 @@ gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst —
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 
-- [ ] **LP1 — die zwei HTTP-Familien-Clients.** `examples/http-client/` und
+- [x] **LP1 — die zwei HTTP-Familien-Clients.** `examples/http-client/` und
       `examples/sse-client/` liegen vor, sind über `make test` **kompiliert und
       getestet**, und ihr Verhalten trägt, was
       [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
       §Entscheidung zusagt (echter Aufruf gegen die Verwaltungs-API bzw. offenes
       `GET /changes/stream`, jedes Event ausgegeben).
-- [ ] **LP2 — der gRPC-Client.** `examples/grpc-client/` liegt vor, ist über
+- [x] **LP2 — der gRPC-Client.** `examples/grpc-client/` liegt vor, ist über
       `make test` kompiliert und getestet, und öffnet den **Server-Stream**
       `ChangeStream/StreamChanges`.
-- [ ] **LP3 — die zwei Träger sind nachgezogen.** `.a-check.yml` nennt **alle
+- [x] **LP3 — die zwei Träger sind nachgezogen.** `.a-check.yml` nennt **alle
       vier** Clients (heute nur den NATS-Client), und
       `docs/user/benutzerhandbuch.md` führt sie an ihren
       Zugriffs-Abschnitten **namentlich** — mit der Startform und der
       Versionshistorie-Zeile. Auslöser: die zwei Register-Einträge, die mit
       **je 3×** genau diesen Nachzug tragen.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor — **weist er eine Fixrunde aus, deckt ein Delta-Review sie ab.**
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-095.md` liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
