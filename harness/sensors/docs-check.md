@@ -132,6 +132,19 @@ Regel zählt Zeilen.
    und in Ordnung. Der Wächter dieser Form ist das Review, kein Gate. Träger des
    Fundes: `docs/reviews/review-slice-077-delta.md` N-2.
 
+10. **`trace:` ist kein Modul und läuft nicht in `docs-check`/`make gates`.**
+    `.d-check.yml`s `trace:`-Block konfiguriert ausschließlich die
+    Requirements Traceability Matrix hinter `--trace`/`--require-complete`
+    (`make doc-trace`/`make doc-complete`, `harness/README.md` §Werkzeuge) —
+    dasselbe Konfigurationsprinzip wie die Opt-in-Module aus Punkt 3, aber
+    ohne selbst eines zu sein: `trace.requirements.id-pattern` weicht bewusst
+    von d-checks generischem Default ab und ist auf die
+    `LH-(FA|QA)-[A-Z]{3}-\d{3}`-Kennungskonvention dieses Repos verdrahtet,
+    `trace.coverage` liest zusätzlich `docs/user/e2e-abdeckung.md` als
+    kuratierte Coverage-Dimension. Ein grünes `make docs-check`/`make gates`
+    sagt über die RTM nichts aus — sie bleibt advisory, ihr Exit-Code steht
+    unabhängig neben dem Gate · seit slice-d-check-trace-rtm.
+
 **Wie groß der Ausschnitt ist, sagt das Kommando, nicht diese Datei:**
 `docker run … d-check` über `scan.roots: ["."]` mit `scan.ignore`; die
 Vollständigkeits-Zeile „N Datei(en) geprüft, 0 Befund(e)“ sagt etwas über
