@@ -211,9 +211,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       weiter offen). Siehe §6 unten — drei ursprüngliche Risiken entfallen,
       ein viertes (nachträglich in §6 ergänzt) ist eingetreten und direkt
       behoben.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der
       nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+      **Anker-Paarung:** `harness/conventions/MR-002-slice-welle-kennungen-
+      sind-namen.md` existiert (Adaptions-Einträge tragen keinen
+      `seit slice-<NNN>`-Anker, siehe `MR-001`-Vorbild; Herkunft steht im
+      `Bezug:`-Feld des Slice-Kopfs). **Folge-Slice-Paarung:** entfällt —
+      die beiden in §1/§7 angekündigten Folge-Slices existieren
+      ausdrücklich noch nicht als Datei, das ist zulässig. **Register-
+      Paarung:** beide bei dieser Closure angelegten/erweiterten
+      Verzeichnisse (`BEO-PGC/exemption-ohne-reifegrenze/`,
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`) existieren mit
+      nicht-leerem `evidence/` — geprüft nach dem `git mv` nach `done/`.
 
 ## 3. Plan (vor Code)
 
