@@ -111,7 +111,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — Sprach-Wurzel, Werkzeugkette, Ziel.** `examples/csharp/Dockerfile`
+- [x] **LP1 — Sprach-Wurzel, Werkzeugkette, Ziel.** `examples/csharp/Dockerfile`
       mit digest-gepinnter .NET-SDK-Basis (Kandidat
       `mcr.microsoft.com/dotnet/sdk:10.0`, Existenz gemessen in
       [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung
@@ -119,13 +119,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Projekt-/Paket-Manifest, `make`-Ziel `examples-csharp` in
       `Makefile`/`harness/mk/*.mk` — der Bau kompiliert netzlos prüfbar (kein
       laufender Dienst nötig).
-- [ ] **LP2 — der HTTP-Client.** `examples/csharp/http-client/` ruft real
+- [x] **LP2 — der HTTP-Client.** `examples/csharp/http-client/` ruft real
       `GET /tables` mit dem `reader`-Token auf, gibt die Antwort aus, liest
       Adresse/Token aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER` mit
       Flag-Übersteuerung (Form-Vorbild: `examples/http-client` in Go); seine
       netzlos prüfbaren Teile (Aufbau der Anfrage, Fehlerpfad ohne
       erreichbaren Host) sind getestet und laufen über `examples-csharp`.
-- [ ] **LP3 — die Träger samt Workflow.** `docs/user/benutzerhandbuch.md`
+- [x] **LP3 — die Träger samt Workflow.** `docs/user/benutzerhandbuch.md`
       §4 „Zugriff über die HTTP-/JSON-API": der bestehende `**Beispiel:**`-
       Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit **einer Zeile
       je Sprache** (Go, C#) — die im ADR festgelegte Ziel-Form
@@ -134,14 +134,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       §Werkzeuge trägt `examples-csharp`; ein neuer, **nicht-blockierender**
       GitHub-Actions-Workflow (Vorschlag: `.github/workflows/examples.yml`)
       fährt das Ziel auf jeden PR/Push, ohne Required-Status-Check.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-098.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
+- [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -170,6 +170,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `.github/workflows/examples.yml` (Name Vorschlag) | neu | Nicht-blockierender Workflow für `examples-csharp` — kein Required-Status-Check. |
 | `docs/user/benutzerhandbuch.md` | update | §4 „Zugriff über die HTTP-/JSON-API": `**Beispiel:**` → `**Beispiele:**`-Block mit Go- und C#-Zeile; Änderungshistorie-Zeile. |
 | `harness/README.md` §Werkzeuge | update | Zeile für `examples-csharp`, kein Gate, nicht in `GATE_CHECKS`. |
+| `examples/csharp/.gitignore` | neu (**Plan-Nachzug, Umsetzung**) | Schützt nur gegen einen versehentlichen lokalen `dotnet build` (`bin/`/`obj/`); nicht im ursprünglichen Plan einzeln benannt, weil unter der Sammel-Zeile `examples/csharp/http-client/**` an keiner Stelle explizit aufgeführt — hier nachgetragen, da eigenständige Datei außerhalb dieses Pfads. |
 
 ## 4. Trigger
 
