@@ -132,7 +132,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (Kotlin), samt Änderungshistorie-Zeile — die volle Matrix ist damit im
       Handbuch vollständig.
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter
+      `docs/reviews/review-slice-103.md` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-103.md`
