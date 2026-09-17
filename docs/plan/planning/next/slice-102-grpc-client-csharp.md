@@ -32,7 +32,7 @@ Abhängigkeit 1") · [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md)
 gRPC) — dieser Slice **zeigt** ihn in einer weiteren Sprache, er ändert ihn
 nicht.
 
-**Verantwortlich:** — *(bis zur Priorisierung `open` → `next`)*.
+**Verantwortlich:** pt9912.
 
 **Autor:** pt9912 (Planner). **Datum:** 2026-09-17.
 
