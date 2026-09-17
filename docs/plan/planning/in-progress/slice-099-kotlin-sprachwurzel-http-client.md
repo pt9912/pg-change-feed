@@ -139,18 +139,18 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/review-slice-099.md`
       liegt vor (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-099.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-099.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
@@ -226,25 +226,71 @@ dasteht.
 
 - **Die digest-gepinnte JVM-Basis ist zum Zeitpunkt des Baus nicht mehr
   auflösbar** (Tag zurückgezogen, Registry-Digest verschoben). —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Beide Basen (`eclipse-temurin:21-jdk`,
+  `eclipse-temurin:21-jre`) waren zum Bau-Zeitpunkt auflösbar — Implementer-
+  und Verifier-Läufe (inkl. einer unabhängigen `docker build --no-cache`-
+  Gegenprobe, `docs/reviews/verify-slice-099.md` #4) ziehen beide erfolgreich,
+  und der Verifier hat den JDK-Digest zusätzlich eigenständig gegen die
+  Registry nachgemessen (#1). **Nebenbefund, der den Ausgang selbst nicht
+  ändert:** Derselbe Lauf deckte auf, dass `ADR-0087`s eigene
+  Digest-Pinning-Tabelle für genau diesen Digest einen strukturell
+  ungültigen, 63- statt 64-stelligen Wert nennt (Review F-1) — der
+  tatsächlich im Dockerfile gepinnte und gebaute Wert war davon nie
+  betroffen und die ganze Zeit korrekt. Aufgelöst über die Folge-ADR
+  `ADR-0093` (Architect-Zug, parallel zu diesem Slice), siehe
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (neue Evidenz unten).
 - **Die Kotlin-Werkzeugkette verlangt eine nicht-öffentliche Quelle**
   (privates Maven-Repository, Zugangsdaten in der Auflösung) —
   [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 3. — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 3. — **Ausgang: entfallen.** Der Gradle-Wrapper
+  bezieht die Distribution über die öffentlichen Gradle-Services, das
+  Kotlin-Gradle-Plugin und die Testabhängigkeiten (`kotlin-test-junit5`,
+  `junit-platform-launcher`) ausschließlich über Maven Central/das Gradle
+  Plugin Portal; der Bau lief ohne Zugangsdaten
+  (`docs/reviews/verify-slice-099.md` Zeile „Werkzeugkette verlangt
+  nicht-öffentliche Quelle" — nicht eingetreten).
 - **Der nicht-blockierende Workflow trägt seinen Umfang nicht mehr** (zwei
   Jobs statt einem, Laufzeit über dem Runner-Budget, oder ein dauerhaft
   roter, überlesener Lauf) — §Re-Evaluierungs-Trigger 4,
   `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` (1×, offen),
   `BEO-PGC/github-actions-unverifizierbar-lokal` (5×, verkörpert in
-  `AGENTS.md` §3.10). — **Ausgang:** <…>
+  `AGENTS.md` §3.10). — **Ausgang: weiter offen**, bis ein realer
+  Post-Push-Lauf sichtbar wird — kein `git push` in dieser Session möglich,
+  dieselbe strukturelle Grenze wie bei den sechs vorherigen Belegen
+  (`AGENTS.md` §3.10, `docs/reviews/verify-slice-099.md` §5: „korrekt
+  geführt"). Wandert in `BEO-PGC/github-actions-unverifizierbar-lokal`
+  (jetzt **7×**, `evidence/slice-099.md`); die Regel selbst ist bereits
+  verkörpert, kein neuer Schwellen-Übertritt.
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
   Registereinträgen (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-
   oberflaeche`, `handbuch-versionshistorie-uebersprungen`); sie ist der
-  einzige Teil dieses Slice, den **kein** Kompilat erzwingt. — **Ausgang:** <…>
+  einzige Teil dieses Slice, den **kein** Kompilat erzwingt. — **Ausgang:
+  entfallen.** Reviewer (Negativbefund) und Verifier (#11, direkte Lektüre)
+  bestätigen unabhängig voneinander die dritte Zeile (Kotlin) im
+  `**Beispiele:**`-Block und die Änderungshistorie-Zeile 1.21. Beide
+  Registereinträge sind durch diesen Slice **eingelöst**, nicht verletzt —
+  keine neue Evidenzdatei dort.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
   (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, verkörpert in `AGENTS.md`
   §3.13 — Suchlauf-Pflicht; besonders der Workflow aus `slice-098`, den
-  dieser Slice erweitert). — **Ausgang:** <…>
+  dieser Slice erweitert). — **Ausgang: eingetreten, direkt behoben.** Der
+  Reviewer und der Verifier bestätigen (Negativbefunde) den
+  `.a-check.yml`-Diff als leer und den C#-Job als unangetastet — gegen
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` selbst ist damit **nichts**
+  eingetreten. Der tatsächliche Treffer liegt bei der **benachbarten**
+  Beobachtung `BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (1×, aus der
+  `slice-098`-Closure): `spec/pflichtenheft.md` `SPEC-023` „Sprachen und
+  Umfang" trug seit `ADR-0090`s Annahme weiterhin den `ADR-0087`-Wortlaut.
+  Dieser Slice hat die konkrete Manifestation **selbst, im eigenen
+  Plan-Nachzug** (§3, letzte Zeile) aufgelöst — die Zeile ist jetzt auf die
+  volle Matrix gezogen, Reviewer und Verifier bestätigen dies
+  (Negativbefund bzw. #12). Weil die Auflösung **innerhalb desselben
+  Slice-Diffs** erfolgte, bleibt kein offener Rest: keine Carveout- oder
+  Folge-Slice-Adresse nötig. Der Registereintrag selbst trägt die Auflösung
+  bereits in seiner `state.md` (vom Implementer eingetragen, geprüft von
+  Reviewer und Verifier, hier nur bestätigt) — der Zähler bewegt sich
+  **nicht** (bleibt 1×, `evidence/slice-098.md`), weil eine Auflösung kein
+  zweites Auftreten der allgemeinen Beobachtungsklasse ist.
 
 ## 7. Closure-Notiz
 
@@ -256,13 +302,77 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Die zweite reale Bauprobe der
+  [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)-Sprachform
+  trägt unverändert — Sprach-Wurzelverzeichnis, eigenes digest-gepinntes
+  Dockerfile, gepinnte Werkzeugkette, `make`-Ziel als Werkzeug ohne Gate,
+  parallel und unabhängig zu `slice-098`. Der Verifier hat sie zusätzlich zur
+  normalen `make examples-kotlin`-Prüfung mit einer unabhängigen,
+  cache-losen `docker build --no-cache`-Gegenprobe belegt (Gradle-Task real
+  neu gelaufen, „BUILD SUCCESSFUL"). Die Rollen-Sequenz lief sauber trotz
+  eines **parallelen** Architect-Zugs (Folge-ADR `ADR-0093` für das
+  Reviewer-Finding F-1): Implementer-, Reviewer- und Verifier-Arbeit blockte
+  sich gegenseitig nicht — der Verifier hat die durch den parallelen
+  `ADR-0093`-Commit ausgelöste `make gates`-Kontamination auf `HEAD` korrekt
+  erkannt und stattdessen den Gegenstand in einer isolierten Kopie auf dem
+  Slice-Tip geprüft.
+- **Was ging anders als geplant:** Der `ADR-0087`-Digest-Fehler war
+  unerwartet — ein Vorbild-ADR (`Accepted`, seit `slice-097`/`-098` als Bau-
+  Kontext-Beleg zitiert) hatte selbst einen nie gegen die reale Registry
+  verifizierten Tabellenwert, der erst beim zweiten realen Bau dieser Form
+  auffiel. Der real gebaute Code war davon nie betroffen — nur die
+  ADR-Tabelle als künftiger Kopier-Beleg war unzuverlässig. Zweitens: Der
+  im Plan §3 vorgesehene `SPEC-023`-Nachzug (Reaktion auf
+  `BEO-PGC/adr-folgepflicht-ohne-traeger-slice`) lief wie geplant und ohne
+  Überraschung.
+- **Steering-Loop-Eintrag:** Kein neuer Sensor, keine neue Regel — beide
+  Fund-Klassen dieses Slices sind bereits verkörpert. Die einzige
+  benannte Erweiterung: `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (verkörpert seit `slice-089` in `AGENTS.md` §3.12 Instanz A und
+  `.harness/skills/reviewer.md`) deckte bisher nur Zahlen, die **durch
+  spätere Arbeit** stale wurden; dieser Slice zeigt eine Variante, die die
+  bestehende Regel bereits trägt, aber bisher nicht real belegt hatte —
+  ein Tabellenwert, der **seit der Annahme der ADR nie** korrekt war. Kein
+  neuer Sensor vorgeschlagen: `ADR-0093`s eigene Fitness-Function-Tabelle
+  hält fest, dass kein Werkzeug Digest-Korrektheit einer ADR-Tabellenzelle
+  gegen die Registry prüft — die verfügbare Falsifikation bleibt die
+  Messung selbst, wie beim Rest dieser Registerklasse. **Benannte, nicht
+  verfolgte Lücke:** Ob künftige ADRs, die einen Registry-Digest pinnen,
+  eine Pflicht zur Zeichenlängen-Prüfung (64 Hex-Zeichen für sha256) im
+  Review-Schritt tragen sollten, entscheidet nicht dieser Slice — es ist
+  ein einzelner Beleg, keine dritte Wiederholung.
+- **Beobachtungs-Register (`../observations/`):** Zwei bereits verkörperte
+  Einträge durch diesen Slice **eingelöst**, nicht erneut verletzt — keine
+  neue Evidenzdatei: `handbuch-nicht-nachgezogen-bei-neuer-betreiber-
+  oberflaeche` (weiter 3×) und `handbuch-versionshistorie-uebersprungen`
+  (weiter 3×). Zwei bestehende Einträge fortgeschrieben:
+  `github-actions-unverifizierbar-lokal` (`AGENTS.md` §3.10, `seit
+  welle-17`) jetzt **7×** (`evidence/slice-099.md`) und
+  `zahl-in-traeger-driftet-gegen-die-messung` (`AGENTS.md` §3.12 Instanz A,
+  `seit slice-089`) jetzt **9×** (`evidence/slice-099.md`) — beide kein
+  neuer Schwellen-Übertritt, die Regeln stehen bereits.
+  `adr-folgepflicht-ohne-traeger-slice` bleibt bei **1×** — die konkrete
+  Manifestation (`SPEC-023`) ist durch diesen Slice aufgelöst (in seiner
+  `state.md` bereits vermerkt), die allgemeine Beobachtungsklasse bleibt
+  offen und unbewegt, weil eine Auflösung kein zweites Auftreten ist. Keine
+  neue Beobachtung angelegt: Der Digest-Fehler in `ADR-0087` fällt unter
+  eine bereits bestehende, verkörperte Klasse (siehe Steering-Loop-Eintrag
+  oben) — eine eigene, engere Beobachtung wäre ein zweiter Name für
+  dieselbe Sache gewesen.
+- **Folge-Slices:** keine neuen. `slice-100`–`103` sind bereits als eigene
+  Pläne in `open/` angelegt.
+- **Risiken aus §6:** fünf Zeilen, fünf Ausgänge — zwei **entfallen**
+  (JVM-Basis-Digest-Auflösbarkeit gemessen, samt Nebenbefund zum
+  `ADR-0087`-Tabellenfehler; öffentliche Gradle-/Maven-Central-Quelle
+  gemessen), eines **entfallen** (Handbuch-Nachzug gemessen vollständig),
+  eines **weiter offen** (nicht-blockierender Workflow →
+  `BEO-PGC/github-actions-unverifizierbar-lokal`, 7×) und eines
+  **eingetreten, direkt behoben** (Fremdträger `SPEC-023` →
+  `BEO-PGC/adr-folgepflicht-ohne-traeger-slice`, weiterhin 1×, konkrete
+  Manifestation aufgelöst innerhalb dieses Slice-Diffs). Details je Zeile
+  in §6.
+- **Drei Paarungen:** im Repo ohne Wellen-Betrieb hier geprüft (Commit 3,
+  nach dem `git mv` nach `done/`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

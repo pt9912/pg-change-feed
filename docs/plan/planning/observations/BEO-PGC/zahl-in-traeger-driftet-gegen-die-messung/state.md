@@ -24,14 +24,15 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **8×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **9×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
-evidence/slice-090.md, evidence/slice-092.md) — **Schwelle erreicht**. Der
-siebte Beleg trifft die Klasse **im Korrektur-Vorgang selbst**: Glob-Fehler →
-vier Zahlen für einen Gegenstand → Zähl-Wort über vier Größen → invertiertes
-Herkunfts-Etikett, vier Runden an Sätzen über Zahlen. Die Fundstellen je Vorgang
-liegen **im selben** Vorgang und sind damit je *eine* Gelegenheit — der Zähler
-misst Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
+evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
+evidence/slice-099.md) — **Schwelle erreicht**. Der siebte Beleg trifft die
+Klasse **im Korrektur-Vorgang selbst**: Glob-Fehler → vier Zahlen für einen
+Gegenstand → Zähl-Wort über vier Größen → invertiertes Herkunfts-Etikett,
+vier Runden an Sätzen über Zahlen. Die Fundstellen je Vorgang liegen **im
+selben** Vorgang und sind damit je *eine* Gelegenheit — der Zähler misst
+Wiederholung über Vorgänge, nicht die Zahl der Funde. `slice-084` trug
 **vier** driftende Werte in zwei Sensor-Dokumenten; zwei davon stammten aus
 **anderen** Vorgängen und wurden mitgezogen, weil sie sonst in derselben Datei
 gegen die eigene Messung stünden. `slice-085` hat die Form dann **an sich selbst
@@ -40,7 +41,15 @@ blieb stehen) — der Grund, warum die Durchsetzung ein Träger und kein Vorsatz
 sein muss. `slice-090` hat die Klasse dann **in ihrer eigenen Behebung**
 getroffen: der Satz, der die falsche Zeilenangabe (`review-slice-090` F-2)
 ersetzte, trug eine neue falsche Abstands-Angabe („eine Zeile voraus" gegen
-gemessen 0/1/2/3).
+gemessen 0/1/2/3). `slice-096` traf **zwei** falsche Zahlen in zwei am selben
+Tag entstandenen ADRs, in einer Runde gefunden. `slice-099` erweitert die
+Reichweite der Klasse: Ein Digest-Tabellenwert in einer bereits `Accepted`-ADR
+(`ADR-0087`) war **seit ihrer Annahme nie** korrekt (63 statt 64 Hex-Zeichen)
+— kein Drift durch spätere Arbeit, sondern ein von Anfang an fehlerhafter,
+nie gegen die reale Registry nachgeprüfter Wert; der real gebaute Code war
+davon nie betroffen. Aufgelöst über die engräumige Folge-ADR `ADR-0093`
+(`Supersedes ADR-0087` für die eine Tabellenzelle) — kein neuer Sensor,
+`ADR-0093`s eigene Fitness-Function-Tabelle hält das ausdrücklich fest.
 
 Ein Sensor ist **nicht** vorgeschlagen: verlangte er, dass jede Zahl ihren
 Ursprung trägt, wäre er eine Formpflicht auf Prosa und erzeugte
