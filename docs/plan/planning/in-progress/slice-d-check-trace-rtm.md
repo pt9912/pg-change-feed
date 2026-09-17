@@ -94,9 +94,12 @@ verbleibenden 7 Waisen).
       Bindung, je nachdem wo es besser trägt). Explizit vermerken: `doc-complete`
       ist **nicht** in `GATE_CHECKS`/`make gates` aufgenommen (Begründung:
       §1 Abgrenzung, reale 7-Waisen-Messung).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report [`review-slice-d-check-trace-rtm.md`](../../../reviews/review-slice-d-check-trace-rtm.md)
+      (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO), nicht merge-blockierend — DoD-Nachzug
+      ohne Fixrunde (Reviewer-Skill §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [ ] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
       §3.9).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe LP3);
