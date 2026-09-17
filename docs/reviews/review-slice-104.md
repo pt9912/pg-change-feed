@@ -31,7 +31,7 @@ Slice `docs/plan/planning/in-progress/slice-104-proto-generate-mount-los.md`.
 - `pfad`: `Dockerfile:40-41`
 - `befund`: Der Kommentar über der neuen Stufe `proto-export` schreibt
   „vormals `docker run -v` in den Bind-Mount des Arbeitsbaums, siehe
-  ADR-0060" — die Zitat-Platzierung direkt hinter der Bind-Mount-Aussage
+  `ADR-0060`" — die Zitat-Platzierung direkt hinter der Bind-Mount-Aussage
   legt nahe, `ADR-0060` beschreibe oder verlange den Bind-Mount-Mechanismus.
   Tatsächlich enthält `ADR-0060` keine Erwähnung von Bind-Mount/`docker run
   -v` (`grep -in "bind.mount\|docker run.*-v\|mount"
