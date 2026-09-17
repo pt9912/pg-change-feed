@@ -5,9 +5,16 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **5×** (evidence/slice-091.md, evidence/slice-093.md,
-evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md). Der
-dritte Vorgang trifft **vier** Stellen in **zwei** Dateien — und die letzte
+Zähler (abgeleitet): **6×** (evidence/slice-091.md, evidence/slice-093.md,
+evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
+evidence/slice-095.md). Der sechste Vorgang (`slice-095`, 2. Durchlauf) ist
+die erste **selbstreferentielle** Variante: die Plan-Datei, die die
+überholende Arbeit selbst trägt (§3-Begründung „keine Kante", durch die
+eigene, spätere LP3-Lieferung desselben Slice falsch geworden), statt eines
+externen Trägers — gefunden vom Reviewer (F-1), nicht vom §3.13-Suchlauf des
+Implementers, der auf `grep`-Treffer über interne Code-Pfade beschränkt war
+und diese Plan-Prosa-Zeile deshalb nicht erfasste. Der dritte Vorgang
+trifft **vier** Stellen in **zwei** Dateien — und die letzte
 ist eine **Korrektur**, die eine andere Stelle derselben Klasse beheben
 sollte (zwei Herkünfte in einer Klammer). Der fünfte Vorgang
 (`slice-097`) traf einen Träger **außerhalb** der vom Implementer-Suchlauf

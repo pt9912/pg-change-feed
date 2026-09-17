@@ -12,9 +12,14 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **4×** (evidence/slice-036.md, evidence/slice-082.md,
-evidence/slice-081.md, evidence/slice-083.md) — **Schwelle erreicht**, Ausgang
-beim Lese-Schritt der `welle-20`-Closure. Der vierte Beleg ist ein weiterer
+Zähler (abgeleitet): **5×** (evidence/slice-036.md, evidence/slice-082.md,
+evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md) —
+**Schwelle erreicht**, Ausgang beim Lese-Schritt der `welle-20`-Closure. Der
+fünfte Beleg (`slice-095`, 2. Durchlauf) ist ein weiterer Vorgang derselben
+Klasse und kein neuer Handlungsbedarf: eine §2-DoD-Zeile behauptete
+ungeprüft „dieses Repo führt Wellen-Betrieb", ein unangepasster
+Vorlagen-Standardtext, der dem eigenen Slice-Kopf widersprach — bei der
+Slice-Closure gefunden und korrigiert. Der vierte Beleg ist ein weiterer
 Vorgang derselben Klasse und kein neuer Handlungsbedarf: `slice-083` berief sich
 auf **nicht existierende** Nachbar-Clients („wie die drei anderen"), und der
 Verfasser war der Planner. Das Erstvorkommen (`slice-036`) wurde seinerzeit **ohne

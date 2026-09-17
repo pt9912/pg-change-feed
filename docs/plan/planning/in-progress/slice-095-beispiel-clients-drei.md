@@ -104,12 +104,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       **je 3×** genau diesen Nachzug tragen.
 - [x] `make gates` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor — **weist er eine Fixrunde aus, deckt ein Delta-Review sie ab.** ([`review-slice-095.md`](../../../reviews/review-slice-095.md), 0 HIGH/MEDIUM, keine Fixrunde)
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-095.md` liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *(entfällt: Greenfield-Bootstrap.)*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt.**
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen — dieses Repo führt Wellen-Betrieb; die Prüfung fällt der nächsten Welle-Closure zu.
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-095.md` liegt vor (Modul 11, frischer Kontext). ([`verify-slice-095.md`](../../../reviews/verify-slice-095.md), Verdikt: konform)
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) — *(entfällt: Greenfield-Bootstrap.)*
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — **kein Zaehler wird gesetzt.**
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen — im Repo ohne Wellen-Betrieb hier geprüft, nach dem `git mv` nach `done/`.
 
 ## 3. Plan (vor Code)
 
@@ -124,7 +124,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/http-client/**` | neu | Der Anfrage/Antwort-Client (`ADR-0076`), Form-Vorbild `examples/nats-client` (`slice-083`). |
 | `examples/sse-client/**` | neu | Der SSE-Client (`ADR-0076`, `ADR-0061`). |
 | `examples/grpc-client/**` | neu | Der gRPC-Server-Stream-Client (`ADR-0076`, `ADR-0060`). |
-| `.a-check.yml` | update | Der Kommentar der `examples`-Gruppe nennt heute **nur** den NATS-Client; er trägt die vier und ihre Gemeinsamkeit (nur Standardbibliothek und öffentliche Fremdmodule, keine Kante — `ADR-0079` Festlegung 1). |
+| `.a-check.yml` | update | Der Kommentar der `examples`-Gruppe nennt heute **nur** den NATS-Client; er trägt die vier und ihre Gemeinsamkeit (nur Standardbibliothek und öffentliche Fremdmodule). Der gRPC-Client führt zusätzlich eine neue Kante `{from: examples, to: contract}` — seit `slice-097`s Umzug auf den öffentlichen Pfad `gen/cdc/stream/v1` nötig und mit ihm begründet; die drei anderen Clients bleiben ohne Kante (`ADR-0079` Festlegung 1). **Korrigiert bei Closure (2. Durchlauf):** diese Zeile behauptete bis dahin für alle vier Clients „keine Kante" — stehen geblieben aus dem ersten `in-progress`-Durchlauf, vor `slice-097`s Umzug (Review-Finding F-1, `BEO-PGC/arbeit-ueberholt-stehenden-traeger`). |
 | `docs/user/benutzerhandbuch.md` | update | Die Zugriffs-Abschnitte nennen die Clients namentlich (heute nur `examples/nats-client`) **und** die Versionshistorie bekommt ihre Zeile. |
 
 ## 4. Trigger
@@ -200,14 +200,50 @@ dasteht.
 
 
 - **Ein Client braucht mehr als die Standardbibliothek** (z. B. eine SSE-Bibliothek).
-  — **Ausgang:** <…>
+  — **Ausgang: entfallen.** Der gRPC-Client importiert real
+  `google.golang.org/grpc` und dessen Unterpakete — der literale Import ist
+  also da, aber kein Risiko im Sinn dieser Zeile: `ADR-0076` §2 benennt
+  öffentliche Fremdmodule wie `google.golang.org/grpc` namentlich als
+  zulässige Klasse, das Modul war bereits seit `ADR-0060` gepinnt, und
+  `go.mod`/`go.sum` sind in diesem Diff unverändert (Verifier #10, Reviewer
+  Negativbefund). Es entstand kein *ungeplanter* Bedarf, den die Zeile
+  meinte — die Ausnahme war bereits vor diesem Slice entschieden.
 - **Ein Client ist ohne laufenden Dienst nicht kompilierbar** (Import einer
-  internen Schnittstelle, die den Composition Root zieht). — **Ausgang:** <…>
+  internen Schnittstelle, die den Composition Root zieht). — **Ausgang:
+  entfallen.** `make test` kompiliert und testet `examples/grpc-client` ohne
+  laufenden Dienst (Verifier #1, Reviewer-Negativbefund); die
+  Streamöffnung scheitert — falls überhaupt — erst zur Laufzeit, nicht beim
+  Build. Der Import zeigt auf den öffentlichen, statisch vorhandenen Stub
+  `gen/cdc/stream/v1`, nicht auf einen internen, Bootstrap-ziehenden Pfad.
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
   Einträgen; sie ist der einzige Teil dieses Slice, den **kein** Kompilat
-  erzwingt. — **Ausgang:** <…>
+  erzwingt. — **Ausgang: entfallen.** Reviewer und Verifier bestätigen
+  unabhängig voneinander: der `**Beispiel:**`-Absatz für `grpc-client` steht
+  an der erwarteten Stelle im Handbuch, die Versionshistorie ist lückenlos
+  (`…1.16, 1.17, 1.18, 1.19`), der Versionskopf ist mitgezogen. Beide
+  Register-Einträge (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `BEO-PGC/handbuch-versionshistorie-uebersprungen`) waren bereits vor diesem
+  Slice bei 3× verkörpert; dieser Slice **löst** die Regel ein, statt sie zu
+  verletzen — keine neue Evidenzdatei (siehe §7).
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
-  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, 3×). — **Ausgang:** <…>
+  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, 3×). — **Ausgang:
+  eingetreten, direkt korrigiert.** Der `§3.13`-`grep`-Suchlauf für
+  interne Pfad-Referenzen (Implementer/Reviewer) fand nichts Neues — alle
+  verbleibenden `internal/adapters/driving/grpc/streamv1`-Erwähnungen sind
+  historisch korrekt formuliert. Der Reviewer fand aber unabhängig davon
+  (F-1) einen zweiten, engeren Fall derselben Klasse: Die eigene Plan-Zeile
+  §3 dieser Datei begründete die `.a-check.yml`-Änderung weiterhin mit
+  „keine Kante — `ADR-0079` Festlegung 1", während dieser Durchlauf real
+  eine neue Kante liefert (`{from: examples, to: contract}`, seit dem
+  öffentlichen Pfad ab `slice-097` nötig und korrekt begründet). Die
+  Plan-Zeile war bei ihrer ursprünglichen Niederschrift wahr und wurde durch
+  die eigene, spätere Lieferung dieses Slice falsch, ohne dass diese
+  Lieferung die Zeile selbst anfasste — derselbe Mechanismus wie bei
+  `slice-097`s Fund am eigenen `next/slice-095`-Träger, hier
+  selbstreferentiell innerhalb desselben Plan-Dokuments. In diesem Commit
+  direkt korrigiert (siehe §3); kein Carveout, kein Folge-Slice nötig, weil
+  sofort behebbar (Formvorbild `slice-097` §6). Neue Evidenzdatei
+  `arbeit-ueberholt-stehenden-traeger/evidence/slice-095.md` (siehe §7).
 
 ## 7. Closure-Notiz
 
@@ -226,13 +262,86 @@ Backticks).
   einem harten Merkmal: die Datei trug **0** der **8** „Regeln dieser Sektion"-
   Zeilen, die die Vorlage und die Nachbar-Slices tragen. Nachgezogen. Der Rest
   des Berichts folgt bei der Closure.
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Der zweite Anlauf nach der Rückführung
+  (`in-progress` → `next` → `in-progress`) lief sauber durch die volle
+  Rollen-Sequenz mit je einem Übergabe-Artefakt: Implementer (`d953356`
+  Code, `1812e36` Träger-Nachzug) → Reviewer (`117b9d9`, 0 HIGH/MEDIUM,
+  1 LOW ohne Fixrunde, eigener Nachvollzug statt Übernahme) → Verifier
+  (`d4f4356`, frischer Kontext, eigene Läufe, Verdikt konform) → Planner
+  (diese Closure). Beide fälligen Register-Einträge (Handbuch-Nachzug,
+  Versionshistorie) wurden **eingelöst**, nicht erneut verletzt — der
+  zuvor 3×-verkörperte Mechanismus hat hier sichtbar gegriffen.
+- **Was ging anders als geplant:** Die Rückführung hinterließ zwei stehen
+  gebliebene Textstellen im Plan-Dokument selbst, die kein Kompilat und kein
+  DoD-Häkchen erzwang: §2s Paarungs-Zeile behauptete weiterhin „dieses Repo
+  führt Wellen-Betrieb" — falsch seit Anlage (der Kopf dieser Datei nennt
+  „Welle: ohne Welle", `harness/conventions.md` deklariert keinen
+  Wellen-Betrieb), vermutlich ein unangepasster Vorlagen-Standardtext aus dem
+  in der Selbst-Fund-Notiz oben bereits vermerkten `cp`-Überschreiben. Und
+  §3s Begründung für die `.a-check.yml`-Änderung blieb bei „keine Kante",
+  obwohl der zweite Durchlauf real eine neue Kante liefert (Review-Finding
+  F-1) — hier war der Text bei ursprünglicher Niederschrift korrekt und
+  wurde erst durch `slice-097`s zwischenzeitlichen Umzug und die eigene
+  Lieferung dieses Durchlaufs falsch. Beide Stellen sind bei dieser Closure
+  korrigiert (§2, §3).
+- **Steering-Loop-Eintrag:** Kein neuer, dritter Beobachtungs-Eintrag für
+  „Rückführung/Wiederaufnahme braucht vollständigen Textnachzug" — geprüft,
+  aber bewusst nicht angelegt: Beide real gefundenen Stellen fallen bereits
+  in **existierende**, längst verkörperte Klassen (siehe unten), und ein
+  neuer Eintrag würde dieselbe Beobachtung ein drittes Mal benennen, ohne
+  einen neuen Mechanismus zu tragen — die Klassen selbst decken den Fall
+  „stehen gebliebener Text nach einer Rückführung" bereits ab (§2 als
+  ungeprüfte Vorlagen-Übernahme, §3 als durch eigene spätere Arbeit
+  überholter Träger).
+- **Beobachtungs-Register (`../observations/`):** Zwei Bewegungen, zwei
+  geprüfte Nicht-Treffer.
+  1. **`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-095.md`
+     neu angelegt** — die §2-Paarungs-Zeile behauptete „dieses Repo führt
+     Wellen-Betrieb", eine ungeprüfte, aus der Vorlage übernommene
+     Tatsachenbehauptung in einem DoD-Kriterium selbst, die dem eigenen
+     Slice-Kopf (`Welle: ohne Welle`) und `harness/conventions.md`
+     widersprach. Zähler damit **5×**, weiterhin `verkörpert` (kein neuer
+     Schwellen-Übertritt).
+  2. **`BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/slice-095.md`
+     neu angelegt** — Review-Finding F-1: die §3-Begründung „keine Kante"
+     wurde durch die eigene, spätere LP3-Lieferung dieses Slice (die neue
+     Kante `{from: examples, to: contract}`) falsch, ohne dass diese
+     Lieferung die Begründungszeile selbst anfasste — derselbe Mechanismus
+     wie bei `slice-097`s Fund am `next/slice-095`-Träger, hier
+     selbstreferentiell innerhalb desselben Dokuments. Zähler damit **6×**,
+     weiterhin `verkörpert` (`AGENTS.md` §3.13, kein neuer
+     Schwellen-Übertritt).
+  3. **Geprüft, keine neue Instanz:** `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+     und `BEO-PGC/handbuch-versionshistorie-uebersprungen` (beide bereits vor
+     diesem Slice bei 3× verkörpert, als LP3 in die DoD gezogen) — dieser
+     Slice **löst** den Nachzug ein (Handbuch nennt alle vier Clients,
+     Versionshistorie lückenlos `…1.18, 1.19`), verletzt die Regel nicht
+     erneut. Beide Zähler bleiben bei 3×, keine neue Evidenzdatei.
+- **Folge-Slices:** keine neuen — die sechs Matrix-Slices (`slice-098`–`103`)
+  sind bereits als eigene Pläne in `open/` angelegt und referenzieren
+  `slice-095`/`ADR-0090` selbst.
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — *entfallen* (Fremdmodul-
+  Bedarf durch `ADR-0076` §2 bereits gedeckt, kein ungeplanter Bedarf) ·
+  *entfallen* (ohne laufenden Dienst kompilierbar, gemessen) · *entfallen*
+  (Handbuch-Nachzug nicht vergessen, gemessen lückenlos) · *eingetreten,
+  direkt korrigiert* (überholter Träger — die eigene §3-Begründung, Review
+  F-1, in dieser Closure behoben). Siehe §6 für die volle Begründung je
+  Zeile.
+- **Drei Paarungen:** Repo ohne Wellen-Betrieb — geprüft nach dem `git mv`
+  nach `done/` (siehe Commit-Historie). **Anker-Paarung:** entfällt — kein
+  `liegt in`-Feld in dieser Notiz, mit diesem Slice wurde keine neue Regel
+  verkörpert (beide berührten Klassen waren bereits vor diesem Slice
+  verkörpert). **Folge-Slice-Paarung:** entfällt — keine Folge-Slices
+  genannt. **Register-Paarung:** grün — alle in dieser Notiz zitierten
+  Verzeichnisse existieren mit nicht leerem `evidence/`:
+  `dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/`
+  (`slice-036.md`, `slice-081.md`, `slice-082.md`, `slice-083.md`,
+  `slice-095.md`), `arbeit-ueberholt-stehenden-traeger/evidence/`
+  (`slice-091.md`, `slice-093.md`, `slice-094.md`, `slice-096.md`,
+  `slice-097.md`, `slice-095.md`),
+  `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche/evidence/`
+  und `handbuch-versionshistorie-uebersprungen/evidence/` (unverändert,
+  je 3 Dateien).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
