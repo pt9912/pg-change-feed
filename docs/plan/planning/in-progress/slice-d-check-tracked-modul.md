@@ -75,7 +75,7 @@ frischer Klon mit `target-missing` bricht.
 
 ## 2. Definition of Done
 
-- [ ] **LP1:** `.d-check.yml` trägt einen `tracked:`-Block
+- [x] **LP1:** `.d-check.yml` trägt einen `tracked:`-Block
       (`exempt-targets: []`, oder konkrete Globs, falls der Implementer-Lauf
       reale `target-untracked`-Befunde findet, die bewusst ausgenommen werden
       sollen — mit Begründung je Glob) **und** `tracked` steht in der
@@ -83,7 +83,7 @@ frischer Klon mit `target-missing` bricht.
       geprüft, `AGENTS.md` §3.9) bleibt grün — real erneut laufen lassen,
       nicht die Planungs-Vorabmessung übernehmen (`AGENTS.md` §3.12: eine
       Messung, kein „wird schon").
-- [ ] **LP2:** `harness/sensors/docs-check.md` §Grenze Punkt 3
+- [x] **LP2:** `harness/sensors/docs-check.md` §Grenze Punkt 3
       („Opt-in-Module nicht im Bündel") nachgezogen — `tracked` verlässt
       diese Aufzählung (es läuft jetzt im Bündel), die verbleibenden
       (`planning`, `vcs`, `commits`, `reviews`) bleiben stehen; die
@@ -92,7 +92,7 @@ frischer Klon mit `target-missing` bricht.
       `hostpaths`-Eintrag. `.d-check.yml`s eigener Kommentar zur
       `tracked`-Sektion wird ergänzt (Aktivierungsstand, nicht mehr nur
       als Beispiel-Kommentar).
-- [ ] **LP3:** `make gates` grün — Exit-Code direkt und ungepiped geprüft
+- [x] **LP3:** `make gates` grün — Exit-Code direkt und ungepiped geprüft
       (`AGENTS.md` §3.9). Zusätzlich (Closure-Trigger der Welle, nicht Teil
       dieser Einzel-DoD): sobald `slice-d-check-trace-rtm` ebenfalls in
       `.d-check.yml` geschrieben hat, ein gemeinsamer `make gates`-Lauf ohne
@@ -100,7 +100,7 @@ frischer Klon mit `target-missing` bricht.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/sensors/docs-check.md` (siehe LP2); `.d-check.yml`
+- [x] Doku-Update: `harness/sensors/docs-check.md` (siehe LP2); `.d-check.yml`
       eigener Kommentarblock.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -125,6 +125,7 @@ frischer Klon mit `target-missing` bricht.
 |---|---|---|
 | `.d-check.yml` | update | `tracked:`-Block + Aufnahme in `modules:`-Liste (§1 Ziel) |
 | `harness/sensors/docs-check.md` | update | §Grenze Punkt 3 nachziehen, `tracked`-Bindung ergänzen (LP2) |
+| `harness/README.md` | update | **Plan-Nachzug:** `make doc-tracked` als Werkzeug (kein Gate) in §Sensors ergänzt, analog `make image-stale` — nicht im ursprünglichen §3, aber Träger-Nachzug derselben Aktivierung |
 | `docs/plan/planning/observations/BEO-PGC/` | ggf. neues Verzeichnis oder `evidence/`-Ergänzung | siehe §8 Sichtungs-Schritt und §7 Closure-Notiz |
 
 ## 4. Trigger
