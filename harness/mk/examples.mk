@@ -18,11 +18,16 @@ examples-csharp: ## C#-Sprachwurzel bauen + testen (examples/csharp, Werkzeug, k
 	docker build -t pg-change-feed-examples:csharp examples/csharp
 	docker build --target runtime-sse -t pg-change-feed-examples:csharp-sse examples/csharp
 
-# `examples-kotlin` baut das Werkzeugketten-Image der Kotlin-Sprach-Wurzel
+# `examples-kotlin` baut die Werkzeugketten-Images der Kotlin-Sprach-Wurzel
 # (Bau-Kontext examples/kotlin/, ADR-0087 Festlegung 3): der Gradle-Wrapper
-# fährt `test`/`installDist` in der Docker-Stufe `build`; ein roter Test
-# bricht den `docker build` mit Exit != 0 ab — derselbe Exit-Code-Lesepfad
-# wie bei jedem anderen Ziel (AGENTS.md §3.9).
+# fährt `test`/`installDist` für **beide** Module (http-client, sse-client)
+# in der gemeinsamen Docker-Stufe `build` (ADR-0090 Festlegung 5); ein roter
+# Test bricht den `docker build` mit Exit != 0 ab, bevor der zweite Aufruf
+# überhaupt den `build`-Layer-Cache erreicht — derselbe Exit-Code-Lesepfad
+# wie bei jedem anderen Ziel (AGENTS.md §3.9). Der zweite Aufruf
+# (`--target runtime-sse`) trifft auf den bereits ausgeführten
+# `build`-Layer-Cache und baut nur noch das zweite Runtime-Image.
 .PHONY: examples-kotlin
 examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeug, kein Gate; ADR-0087/ADR-0090)
 	docker build -t pg-change-feed-examples:kotlin examples/kotlin
+	docker build --target runtime-sse -t pg-change-feed-examples:kotlin-sse examples/kotlin
