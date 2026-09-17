@@ -5,10 +5,16 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **10×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **11×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
 evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md,
-evidence/slice-102.md, evidence/slice-103.md). Der zehnte Vorgang
+evidence/slice-102.md, evidence/slice-103.md, evidence/slice-105.md). Der
+elfte Vorgang (`slice-105`) trifft dieselbe Klasse über die
+Baseline-Versionierung statt über ein Runtime-Image: das Entfernen von
+`.harness/baseline/v6.5.0/` überholte drei Links in `docs/reviews/**` —
+gefunden vom Implementer über denselben §3.13-Suchlauf, im selben Commit
+per Zitat-Korrektur (`ADR-0073`) behoben, dieselbe Erfolgsform wie bei den
+vorigen Vorgängen. Der zehnte Vorgang
 (`slice-103`, letzter der sechs C#/Kotlin-Matrix-Slices) trifft dieselbe
 Klasse ein zweites Mal in derselben Kotlin-Fortsetzung: (a) `harness/
 README.md` „drei"→„vier" Images (`examples-kotlin`), direkt behoben in

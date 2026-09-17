@@ -187,22 +187,30 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Beleg: `docs/reviews/review-slice-105.md` (0 HIGH, 1 MEDIUM, 0 LOW,
       1 INFO — keine Fixrunde nötig).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/` liegt vor
-      (Modul 11, frischer Kontext).
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/` liegt vor
+      (Modul 11, frischer Kontext). Beleg: `docs/reviews/verify-slice-105.md`
+      (DoD-konform für LP1–LP3, teilt die F-1-MEDIUM-Einstufung mit eigener
+      Begründung, bestätigt F-2 INFO, findet und mitigiert-bestätigt ein
+      viertes, im Plan nicht vorab benanntes Risiko).
 - [x] Doku-Update für den gehobenen Baseline-Stand siehe LP1–LP3 — kein
       weiterer öffentlicher Vertrag berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls
       dieser Slice einen Inventur-Fund auflöst** — **Entfällt.** Repo ist
       Greenfield (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine `docs/plan/planning/reconciliation.md` vorhanden.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
-      notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      notiert. Beleg: neues Verzeichnis
+      `BEO-PGC/exemption-ohne-reifegrenze/` (F-1, 1×, offen) und eine weitere
+      `evidence/slice-105.md` in `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`
+      (bereits verkörpert, 11×).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen). Siehe §6 unten — drei ursprüngliche Risiken entfallen,
+      ein viertes (nachträglich in §6 ergänzt) ist eingetreten und direkt
+      behoben.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der
       nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -302,15 +310,20 @@ dasteht.
   Hash des `lab-regelwerk.zip`-Assets für `v6.9.0` stimmt nicht mit dem
   heruntergeladenen Artefakt überein, oder das Release ist zwischenzeitlich
   zurückgezogen/verändert worden. Muss vor jedem Entpacken geprüft werden
-  (LP1). — *Ausgang bei Closure einzutragen.*
+  (LP1). — **Ausgang: entfallen.** Implementer, Reviewer und Verifier haben
+  je einen eigenen, unabhängigen Download durchgeführt; alle drei Hashes
+  (`8a4e0aaf597a9c67404cb7a350a6fba992f0c98195e011e025c073660ee55cce`) sind
+  identisch. Nicht eingetreten.
 - **`make baseline-verify` verträgt strukturell keinen Versionswechsel.**
   Die Recherche dieses Plans hat das Skript bereits gelesen
   (`tools/harness/baseline-verify.sh`) und als generisch über `$base/*/`
   befunden — kein hartkodierter `v6.5.0`-Pfad. Das Risiko besteht dennoch
   fort, bis der reale Lauf gegen `v6.9.0` bestätigt, dass kein anderer,
   bisher unbemerkter Pfad-Bezug (z. B. in `.d-check.yml` oder einem anderen
-  Sensor) den alten Tag literal referenziert. — *Ausgang bei Closure
-  einzutragen.*
+  Sensor) den alten Tag literal referenziert. — **Ausgang: entfallen.** Drei
+  Rollen bestätigen `make baseline-verify` eigenständig grün gegen genau ein
+  verbleibendes `v6.9.0`-Verzeichnis; kein weiterer Sensor referenziert den
+  alten Tag literal (Reviewer- und Verifier-Gegen-Grep). Nicht eingetreten.
 - **Freshness-Audit findet zusätzliche relevante Wellen, die die
   ursprüngliche Recherche übersah — wie beim Namenskonvention-Fund selbst.**
   Die Migrations-Recherche (`/tmp/regelwerk-migration-v6.5.0-zu-v6.9.0.md`)
@@ -319,9 +332,27 @@ dasteht.
   wurde. Es ist nicht auszuschließen, dass ein weiterer Fund derselben Art
   (falsch als „nicht anwendbar" markiert) in den Wellen 129/132/133/134/136/137
   steckt und erst beim realen Materialisieren/Lesen der `v6.9.0`-Fassung
-  auffällt. — *Ausgang bei Closure einzutragen*; ein hier neu gefundener
-  Punkt braucht ggf. einen weiteren Folge-Slice mit eigenem Namen (die neue
-  Konvention gilt für ihn bereits, siehe §1).
+  auffällt. — **Ausgang: entfallen.** Kein weiterer Kategorienfehler
+  gefunden; §7 „Zur Kenntnis" listet 132/133/134/136/137 mit Begründung
+  „kein Handlungsbedarf", vom Verifier eigenständig per Register-Gegen-Grep
+  gegengeprüft (kein widersprechender Treffer). Nicht eingetreten.
+- **Nachträglich ergänzt (vom Implementer selbst während der Umsetzung
+  gefunden, kein Platzhalter im ursprünglichen Plan): Entfernen von
+  `.harness/baseline/v6.5.0/` macht Links/Text-Erwähnungen in bestehenden
+  Records (`docs/reviews/**`, ADRs) stale.** Drei Markdown-Links in
+  `docs/reviews/**` zeigten real auf den entfernten Pfad und wurden durch
+  `git rm -r` zu `target-missing`; eine unbekannte Zahl reiner
+  Text-Erwähnungen (kein Link) blieb daneben stehen. — **Ausgang:
+  eingetreten, direkt behoben.** Drei echte Links per Zitat-Korrektur nach
+  [ADR-0073](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+  auf `v6.9.0` korrigiert (Referent unverändert); 21 reine Text-Erwähnungen
+  über eine neue `.d-check.yml`-`versions.exempt-paths`-Zeile für
+  `docs/reviews/**` von der Pin-Prüfung ausgenommen. Reviewer und Verifier
+  bestätigen unabhängig voneinander: kein verbliebener kaputter Link
+  (`make gates` grün, eigener repo-weiter Gegen-Grep). Die gewählte
+  Mitigationsform selbst (Ausnahme statt engerer Reifegrenze) ist der
+  Gegenstand von Review-Finding F-1 (MEDIUM) — siehe §7 und
+  Beobachtungs-Register.
 
 ## 7. Closure-Notiz
 
@@ -340,8 +371,96 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-*Wird beim Umsetzungslauf gefüllt — noch offen (Plan-Anlage, kein Code, keine
-Implementierung).*
+**Besonderes Gewicht:** Dies ist der letzte Slice mit einer nummerierten
+Kennung. Ab dem nächsten neu angelegten Slice gilt `MR-002`
+(`harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md`): Name statt
+Nummer.
+
+- **Was hat funktioniert:** Die Baseline-Umstellung selbst lief mechanisch
+  sauber — Download, `SHA256SUMS`-Prüfung, Materialisierung, Entfernen des
+  alten Stands, `MR-002`-Anlage. Der SHA256 des `v6.9.0`-Release-Assets
+  (`8a4e0aaf597a9c67404cb7a350a6fba992f0c98195e011e025c073660ee55cce`) wurde
+  von **drei unabhängigen Rollen** (Implementer, Reviewer, Verifier) je
+  eigenständig heruntergeladen und geprüft, mit identischem Ergebnis; der
+  entpackte Inhalt ist byte-identisch zum committeten Baum (Verifier,
+  eigener `diff -r`). `make baseline-verify` läuft grün gegen genau ein
+  verbleibendes `v6.9.0`-Verzeichnis. `MR-002` zitiert die Baseline-Regel
+  zeichengenau (von zwei Rollen unabhängig gegengelesen) und ist für den
+  Regelfall (nächster Slice) selbsttragend.
+- **Was ging anders als geplant:** Das Entfernen von
+  `.harness/baseline/v6.5.0/` machte drei echte Links in `docs/reviews/**`
+  zu `target-missing` und ließ 21 weitere reine Text-Erwähnungen desselben
+  Pfads stehen — im ursprünglichen Plan-§6 nicht als eigenes Risiko
+  antizipiert (nachträglich dort ergänzt, siehe §6). Beide Klassen wurden
+  mit bereits etablierten Mechanismen gelöst: Zitat-Korrektur nach
+  `ADR-0073` für die echten Links, eine neue
+  `.d-check.yml`-`versions.exempt-paths`-Zeile für die Text-Erwähnungen
+  (dieselbe Begründungsform wie für `harness/conventions/done/**`). Der
+  Reviewer hat diese Ausnahme als breiter als ihr genanntes Vorbild
+  eingestuft (F-1, MEDIUM) — sie schützt ab dem ersten Commit, nicht erst
+  ab einem Abschluss-Ereignis wie beim Vorbild; der Verifier teilt die
+  Einstufung mit eigener, unabhängiger Begründung (das Schadenspotential
+  ist strukturell begrenzt, weil `docs/reviews/**` als Lauf-Beleg über
+  Läufe hinweg nicht wieder gelesen wird — Modul 10). Beide empfehlen, den
+  Trade-off als Steering-Loop-Kandidat festzuhalten statt ihn nur „zu
+  entscheiden" offenzulassen.
+- **Steering-Loop-Eintrag:** Der bedeutendste Lerneintrag dieser Closure ist
+  nicht technischer, sondern struktureller Natur: Mit diesem Slice wechselt
+  die Namenskonvention für Slice-/Welle-Kennungen von Nummern auf Namen —
+  `slice-001`–`slice-105` bleiben Bestandsschutz, ab dem nächsten neu
+  angelegten Slice gilt `MR-002`s Regel (Name trägt das Präfix eines
+  vorhandenen Ankers, wenn einer existiert, sonst ein freier Slug). **Liegt
+  in** `harness/conventions/MR-002-slice-welle-kennungen-sind-namen.md`
+  · seit slice-105.
+- **Beobachtungs-Register (`../observations/`):**
+  - **F-1 (Reviewer MEDIUM + Verifier übereinstimmend, eigene Begründung):**
+    Register auf eine passende bestehende Klasse geprüft
+    (`grep -ril "ausnahme.*breit|d-check.*exempt|version.*ausnahme|
+    exemption"`, zusätzlich `BEO-PGC/regel-weiter-als-ihr-sensor` und
+    `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger` inhaltlich geprüft) —
+    keine passt: `regel-weiter-als-ihr-sensor` betrifft eine Regel, die
+    weiter reicht als ihr Sensor (der Sensor deckt zu wenig); hier deckt
+    der Sensor **zu viel Ausnahme** — eine Exemption, die ab Anlage statt
+    ab Abschluss gilt und dadurch künftige echte Funde strukturell
+    verdecken kann. Neue Beobachtung angelegt:
+    `BEO-PGC/exemption-ohne-reifegrenze/` — Erstbeleg
+    (`evidence/slice-105.md`), Stand `offen`, 1×.
+  - **Das vierte, unerwartete Risiko (stale Records durch Baseline-Wechsel):**
+    strukturell dieselbe Klasse wie `BEO-PGC/arbeit-ueberholt-stehenden-
+    traeger` (`AGENTS.md` §3.13, bereits verkörpert seit `welle-20`,
+    zuletzt 10×) — Arbeit bewegt eine beschriebene Eigenschaft (hier:
+    welche Baseline-Version vendored ist) und überholt damit Aussagen, die
+    das nicht selbst anfassen (hier: Links/Text in `docs/reviews/**` und
+    ADRs). Als weitere Evidenzdatei eingetragen
+    (`evidence/slice-105.md`) — Zähler jetzt **11×**; die Regel ist bereits
+    verkörpert, dieser Beleg bestätigt sie und löst keinen neuen
+    Lese-Schritt aus.
+- **Folge-Slices:** Die beiden anderen Migrations-Folge-Slices aus der
+  Recherche (`/tmp/regelwerk-migration-v6.5.0-zu-v6.9.0.md`) sind weiterhin
+  ausstehend und tragen ab jetzt **Namen statt Nummern** (`MR-002`):
+  voraussichtlich `slice-gate-index-konsolidierung` (Kurs-Welle 129:
+  `AGENTS.md` §4 auf Regel + Zeiger kürzen) und
+  `slice-dod-rot-vor-gruen-beleg` (Kurs-Welle 135: DoD-Rot-vor-Grün-Regel +
+  E2E-Gate-Typ-Abgrenzung) — endgültige Slugs werden bei ihrer eigenen
+  Planung vergeben, nicht hier vorweggenommen. Beide existieren noch nicht
+  als Datei; das ist zulässig, `slice-105` §1 lässt „noch zu vergebende
+  Namen" ausdrücklich offen.
+- **Risiken aus §6:** drei ursprünglich geplante Risiken **entfallen**
+  (SHA256SUMS-Prüfung, `make baseline-verify`-Strukturfähigkeit,
+  Freshness-Audit-Vollständigkeit — keines eingetreten, siehe §6 für die
+  Einzelbegründungen); ein viertes, nachträglich ergänztes Risiko (stale
+  Records) ist **eingetreten und direkt behoben**.
+- **Drei Paarungen:** Anker-Paarung — `MR-002` (Zielort) trägt keinen
+  `seit slice-<NNN>`-Anker (Adaptions-Einträge tragen ihn nicht, siehe
+  `MR-001`-Vorbild; Herkunft steht im `Bezug:`-Feld des Slice-Kopfs), der
+  Steering-Loop-Eintrag oben trägt `liegt in` mit Anker-Angabe. Folge-
+  Slice-Paarung: die beiden angekündigten Folge-Slices existieren
+  ausdrücklich noch nicht als Datei — zulässig, kein Blocker (siehe oben).
+  Register-Paarung: beide bei dieser Closure angelegten/erweiterten
+  Verzeichnisse (`BEO-PGC/exemption-ohne-reifegrenze/`,
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`) existieren mit
+  nicht-leerem `evidence/` — vollständig geprüft im Commit nach dem
+  `git mv` (siehe unten).
 
 **Zur Kenntnis (aus der Migrations-Recherche, keine eigene Umsetzung dieses
 Slice):** Kurs-Welle 132 (Tests-Zeile an Akzeptanzkriterien der
