@@ -740,10 +740,17 @@ einen Empfänger an.
 über [Änderungen lesen](#änderungen-lesen) und die bestätigte
 Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar.
 
-**Beispiel:** Ein Beispielprogramm liegt unter `examples/sse-client`:
-`go run ./examples/sse-client` — es öffnet `GET /changes/stream` und gibt
-jedes Event aus; Adresse und Token liest es aus `CDC_HTTP_ADDR` und
+**Beispiele:** Jede Sprache öffnet `GET /changes/stream` und gibt jedes Event
+aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
 `CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern.
+
+- **Go:** `examples/sse-client` — `go run ./examples/sse-client`
+- **C#:** `examples/csharp/sse-client` — Container-Aufruf gegen das mit
+  `make examples-csharp` gebaute Image:
+  `docker run --rm -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp-sse`
+- **Kotlin:** `examples/kotlin/sse-client` — Container-Aufruf gegen das mit
+  `make examples-kotlin` gebaute Image:
+  `docker run --rm -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:kotlin-sse`
 
 ### Zugriff über das NATS-Wecksignal
 
@@ -1008,3 +1015,4 @@ MIT — siehe `LICENSE`.
 | 1.19 | 2026-09-17 | Beispiel-Programm der gRPC-Familie ergänzt (`ADR-0076`, `ADR-0060`, slice-095): „Zugriff über den gRPC-Change-Stream" nennt `examples/grpc-client` samt Startbefehl; es liest Adresse und Token aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER` |
 | 1.20 | 2026-09-17 | Erster C#-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-098): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#) statt eines einzelnen `**Beispiel:**`-Absatzes — die Ziel-Form für die volle Matrix; `examples/csharp/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-csharp`) |
 | 1.21 | 2026-09-17 | Erster Kotlin-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-099): §4 „Zugriff über die HTTP-/JSON-API" — dritte Zeile im `**Beispiele:**`-Block; `examples/kotlin/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-kotlin`) |
+| 1.22 | 2026-09-17 | C#- und Kotlin-SSE-Client ergänzt (`ADR-0090`, slice-100): §4 „Zugriff über Server-Sent-Events" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/sse-client` und `examples/kotlin/sse-client` öffnen denselben Endpunkt `GET /changes/stream` über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-sse`/`:kotlin-sse`) |

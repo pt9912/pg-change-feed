@@ -95,25 +95,25 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — der C#-SSE-Client.** `examples/csharp/sse-client/` öffnet real
+- [x] **LP1 — der C#-SSE-Client.** `examples/csharp/sse-client/` öffnet real
       `GET /changes/stream` mit dem `reader`-Token, gibt jedes Event aus,
       liest Adresse/Token aus `CDC_HTTP_ADDR`/`CDC_API_TOKEN_READER`; seine
       netzlos prüfbaren Teile (Zerlegen eines SSE-Frames) sind getestet und
       laufen über `examples-csharp`.
-- [ ] **LP2 — der Kotlin-SSE-Client.** `examples/kotlin/sse-client/` — dieselbe
+- [x] **LP2 — der Kotlin-SSE-Client.** `examples/kotlin/sse-client/` — dieselbe
       Zusage, über `examples-kotlin`.
-- [ ] **LP3 — die zwei Handbuch-Zeilen.** `docs/user/benutzerhandbuch.md` §4
+- [x] **LP3 — die zwei Handbuch-Zeilen.** `docs/user/benutzerhandbuch.md` §4
       „Zugriff über Server-Sent-Events": der bestehende `**Beispiele:**`-
       Block (Go seit `slice-095`) bekommt zwei weitere Zeilen (C#, Kotlin),
       samt Änderungshistorie-Zeile.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-100.md`
       liegt vor (Modul 11, frischer Kontext).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
+- [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -138,6 +138,11 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/csharp/sse-client/**` | neu | SSE-Client, Standardbibliothek (`System.Net.ServerSentEvents` oder `HttpClient`-Streaming), Form-Vorbild `examples/sse-client` (Go). |
 | `examples/kotlin/sse-client/**` | neu | SSE-Client, Standardbibliothek (`java.net.http.HttpClient` mit streamendem Body-Handler). |
 | `docs/user/benutzerhandbuch.md` | update | §4 „Zugriff über Server-Sent-Events": zwei weitere Zeilen (C#, Kotlin) im `**Beispiele:**`-Block; Änderungshistorie-Zeile. |
+| `examples/csharp/Dockerfile` (Plan-Nachzug) | update | Ohne Fremdmodul (Entscheidung dieses Zuges, §5) hätte der SSE-Client keinen eigenen Bau-Zusatz gebraucht — die zweite Zelle (`sse-client`) läuft aber im selben Container-Kontext wie `http-client`, deshalb erweitert die gemeinsame `build`-Stufe um Restore/Build/Test/Publish des zweiten Programms; zwei neue `runtime-*`-Stufen (`runtime-sse` vor der unverändert letzten `runtime`) halten den bestehenden `pg-change-feed-examples:csharp`-Tag byte-gleich. |
+| `examples/kotlin/Dockerfile` (Plan-Nachzug) | update | Dasselbe Muster: gemeinsame `build`-Stufe um `:sse-client:test`/`:sse-client:installDist` erweitert, neue `runtime-sse`-Stufe vor der unverändert letzten `runtime`-Stufe. |
+| `examples/kotlin/settings.gradle.kts` (Plan-Nachzug) | update | `include("sse-client")` — Multi-Modul-Registrierung des zweiten Gradle-Moduls, nicht im ursprünglichen Plan einzeln benannt. |
+| `harness/mk/examples.mk` (Plan-Nachzug) | update | Beide Ziele bauen jetzt **zwei** Runtime-Images je Sprache (zweiter `docker build --target runtime-sse`-Aufruf) statt eines. |
+| `harness/README.md` §Sensors (Plan-Nachzug, §3.13-Fund) | update | Der §3.13-Suchlauf fand zwei Sätze, die dieser Zug falsch macht: beide Zeilen beschrieben „das Werkzeugketten-Image" (Singular) je Sprache — jetzt zwei Images je Sprache, Zeilen korrigiert und Image-Tags benannt. |
 
 ## 4. Trigger
 
