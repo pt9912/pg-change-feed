@@ -790,13 +790,24 @@ ersetzt diesen Zugriffsweg nicht.
 **Der zweiseitige Ablauf:** Auf das Subjekt lauschen → beim Weckruf die
 Änderung **selbst** über die [HTTP-/JSON-API](#zugriff-über-die-http-json-api)
 holen und ausgeben — die Abfrage ist der `reader`-Endpunkt `GET /changes` mit
-den drei Filtern aus dem Subjekt (`source`, `schema`, `table`). Ein
-Beispielprogramm liegt unter `examples/nats-client`:
-`go run ./examples/nats-client -source <quelle> -schema <schema> -table
-<tabelle>`; Adresse und Token liest es aus `CDC_NATS_URL`, `CDC_HTTP_ADDR` und
-`CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern. Die Beispiele sind
-zum Lesen und Nachbauen gedacht; die E2E-Testclients des Harness liegen unter
-`tools/harness/` und sind kein Vorbild.
+den drei Filtern aus dem Subjekt (`source`, `schema`, `table`).
+
+**Beispiele:** Jede Sprache abonniert dasselbe Subjekt und holt die Änderung
+über denselben `GET /changes`-Aufruf; NATS-URL, Adresse und Token liest jedes
+Beispiel aus `CDC_NATS_URL`, `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und
+lässt sich per Flag übersteuern.
+
+- **Go:** `examples/nats-client` —
+  `go run ./examples/nats-client -source <quelle> -schema <schema> -table <tabelle>`
+- **C#:** `examples/csharp/nats-client` — Container-Aufruf gegen das mit
+  `make examples-csharp` gebaute Image:
+  `docker run --rm -e CDC_NATS_URL -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp-nats --source <quelle> --schema <schema> --table <tabelle>`
+- **Kotlin:** `examples/kotlin/nats-client` — Container-Aufruf gegen das mit
+  `make examples-kotlin` gebaute Image:
+  `docker run --rm -e CDC_NATS_URL -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:kotlin-nats --source <quelle> --schema <schema> --table <tabelle>`
+
+Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
+Harness liegen unter `tools/harness/` und sind kein Vorbild.
 
 ## 5. Konfiguration
 
@@ -1016,3 +1027,4 @@ MIT — siehe `LICENSE`.
 | 1.20 | 2026-09-17 | Erster C#-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-098): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#) statt eines einzelnen `**Beispiel:**`-Absatzes — die Ziel-Form für die volle Matrix; `examples/csharp/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-csharp`) |
 | 1.21 | 2026-09-17 | Erster Kotlin-Beispiel-Client ergänzt (`ADR-0087`, `ADR-0090`, slice-099): §4 „Zugriff über die HTTP-/JSON-API" — dritte Zeile im `**Beispiele:**`-Block; `examples/kotlin/http-client` ruft denselben `reader`-Endpunkt `GET /tables` über einen Container-Aufruf (`make examples-kotlin`) |
 | 1.22 | 2026-09-17 | C#- und Kotlin-SSE-Client ergänzt (`ADR-0090`, slice-100): §4 „Zugriff über Server-Sent-Events" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/sse-client` und `examples/kotlin/sse-client` öffnen denselben Endpunkt `GET /changes/stream` über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-sse`/`:kotlin-sse`) |
+| 1.23 | 2026-09-17 | C#- und Kotlin-NATS-Client ergänzt (`ADR-0090`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-101): §4 „Zugriff über das NATS-Wecksignal" — Fließtext-Absatz wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/nats-client` und `examples/kotlin/nats-client` lauschen auf dasselbe tabellen-granulare Subjekt und holen die Änderung über denselben `GET /changes`-Aufruf, über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-nats`/`:kotlin-nats`) |

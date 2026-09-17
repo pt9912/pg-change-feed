@@ -92,21 +92,21 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — der C#-NATS-Client samt Pin.** `NATS.Net` gepinnt im
+- [x] **LP1 — der C#-NATS-Client samt Pin.** `NATS.Net` gepinnt im
       Projekt-/Paket-Manifest von `examples/csharp/`, mit Leser-Zeile
       („wofür sie da ist"); `examples/csharp/nats-client/` lauscht real,
       gibt das Ereignis aus, holt die Änderung über `GET /changes`; netzlos
       prüfbare Teile (Subjekt-Aufbau) sind getestet und laufen über
       `examples-csharp`.
-- [ ] **LP2 — der Kotlin-NATS-Client samt Pin.** `io.nats:jnats` gepinnt im
+- [x] **LP2 — der Kotlin-NATS-Client samt Pin.** `io.nats:jnats` gepinnt im
       Build-Manifest von `examples/kotlin/`, mit Leser-Zeile;
       `examples/kotlin/nats-client/` — dieselbe Zusage, über
       `examples-kotlin`.
-- [ ] **LP3 — die zwei Handbuch-Zeilen.** `docs/user/benutzerhandbuch.md` §4
+- [x] **LP3 — die zwei Handbuch-Zeilen.** `docs/user/benutzerhandbuch.md` §4
       „Zugriff über das NATS-Wecksignal": der bestehende `**Beispiele:**`-
       Block (Go seit `slice-095`) bekommt zwei weitere Zeilen (C#, Kotlin),
       samt Änderungshistorie-Zeile.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -140,6 +140,11 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/kotlin/<Build-Manifest>` | update | Pin von `io.nats:jnats`, mit Leser-Zeile. |
 | `examples/kotlin/nats-client/**` | neu | NATS-Client, zweiseitiger Ablauf. |
 | `docs/user/benutzerhandbuch.md` | update | §4 „Zugriff über das NATS-Wecksignal": zwei weitere Zeilen (C#, Kotlin) im `**Beispiele:**`-Block; Änderungshistorie-Zeile. |
+| `examples/csharp/Dockerfile` | update | **Plan-Nachzug:** drittes Programm in der gemeinsamen `build`-Stufe (restore/build/test/publish) plus neue Stufe `runtime-nats` — dieselbe Form wie `runtime-sse`, notwendig, damit der Pin überhaupt einen Bau-Beleg hat. |
+| `examples/kotlin/settings.gradle.kts` | update | **Plan-Nachzug:** `include("nats-client")` — ohne das Modul ist der Pin im `build.gradle.kts` des neuen Moduls für Gradle unsichtbar. |
+| `examples/kotlin/Dockerfile` | update | **Plan-Nachzug:** drittes Modul in der gemeinsamen `build`-Stufe (test/installDist) plus neue Stufe `runtime-nats`, dieselbe Form wie `runtime-sse`. |
+| `harness/mk/examples.mk` | update | **Plan-Nachzug:** dritter `docker build --target runtime-nats`-Aufruf je Sprachziel — ohne ihn baut `make examples-csharp`/`make examples-kotlin` das dritte Programm zwar mit, aber taggt kein eigenes Image dafür. |
+| `harness/README.md` | update | **Plan-Nachzug:** Sensors-Zeilen `make examples-csharp`/`make examples-kotlin` von „zwei Images“ auf „drei Images“ gezogen (§3.13-Suchlauf-Fund, siehe §7). |
 
 ## 4. Trigger
 
