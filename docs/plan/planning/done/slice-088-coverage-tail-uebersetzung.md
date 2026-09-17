@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [`welle-20`](../welle-20.md) („die Coverage erreicht 80 % über der
+**Welle:** [`welle-20`](welle-20.md) („die Coverage erreicht 80 % über der
 netzlos prüfbaren Fläche") — **Cluster B** ihres Schnittmaßes.
 
 **Bezug:** [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)

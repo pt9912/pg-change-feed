@@ -190,3 +190,10 @@ Anker (Hash, Lauf, Zahl).
 - **Rot-Beleg unmittelbar darüber:** `make coverage-gate THRESHOLD=85` → **Exit 2**
   (`83.10% unter Schwelle 85%`) — die Stufe prüft real.
 - **Offene Carveouts: keine.**
+- **Archivierung (Schritt 4): nicht eingetreten.** Dieses Repo führt das
+  Werkzeug nicht, das die Zeitdokumente der Welle einsammelt (`tools/harness/`
+  trägt kein Archiv-Skript, `Makefile`/`harness/mk/` kein Ziel). Die Bedingung
+  ist damit nicht eingetreten — die Feststellung steht hier, statt einen
+  Handlauf zu erfinden (Baseline-Regelwerk `modul-06-roadmap.md`
+  §Wellen-Closure-Prozedur, Schritt 4). Der Geltungsbereich der Sensoren ist
+  deshalb **nicht** zu prüfen: es wurde nichts bewegt.

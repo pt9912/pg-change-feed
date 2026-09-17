@@ -19,7 +19,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 **„Die Coverage" dieses Repos erreicht 80 %** — die Gate-getragene Unit-Zahl
-über der **netzlos prüfbaren Fläche** ([`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
+über der **netzlos prüfbaren Fläche** ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
 und „die Coverage" ohne Subjekt-Zusatz meint genau diese Zahl, nie die
 DB-Adapter-Coverage). **Der Nenner ist eine Zustandsgröße, die sich mit jedem
 Zug bewegt:** `slice-079` hat ihn auf **1679** geschnitten, seither ist er durch
@@ -39,7 +39,7 @@ am heutigen Stand führt `internal/bootstrap` **299** (Lauf `slice-094`), und
 `slice-094` hat `cmd` auf **0** offene Statements gebracht (Lauf `slice-094`).
 Die erreichten Zahlen führt die Closure-Notiz, mit ihrem Lauf. Getragen wird das Maß von
 `make coverage-gate` gegen `THRESHOLD`; die Schwelle wandert nach dem
-unveränderten bootstrap-aware-Mechanismus ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
+unveränderten bootstrap-aware-Mechanismus ([`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
 §(a)) stufenweise bis 80. **Die gelten Stufen heute:** Einstieg **70 %**
 (angehoben durch den Subjekt-Transfer aus `slice-081`) → Endstufe **80 %**.
 
@@ -53,9 +53,9 @@ dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
 - `slice-079` (Scope-Schnitt und Neukalibrierung des Coverage-Gates) liegt in
   `done/` — **erfüllt.** Ohne ihn misst die Welle gegen einen Nenner, den
-  [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   ersetzt hat, und ihr eigener Fortschritt wäre nicht belegbar.
-- [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+- [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   ist `Accepted` — **erfüllt** (der Gegenstand ist entschieden).
 
 ## 3. Closure-Trigger (Welle schließt)
@@ -81,12 +81,12 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| `slice-079` | Coverage-Gate: Scope-Schnitt und Neukalibrierung | [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
-| `slice-088` | Coverage-Tail „Reine Übersetzung" — Cluster B | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
-| `slice-091` | Coverage Cluster C — Zustell- und Betriebs-Rand | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
-| `slice-092` | Coverage Cluster D1 — Anwendungs-Kern | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
-| `slice-093` | Coverage Cluster D2 — Bootstrap-Rest und Telemetrie | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) · [`ADR-0085`](../adr/0085-build-kontext-ausnahme-test-only-zweck.md) |
-| `slice-094` | Coverage Cluster A — Prozess-Rand | [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-079` | Coverage-Gate: Scope-Schnitt und Neukalibrierung | [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) |
+| `slice-088` | Coverage-Tail „Reine Übersetzung" — Cluster B | [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-091` | Coverage Cluster C — Zustell- und Betriebs-Rand | [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-092` | Coverage Cluster D1 — Anwendungs-Kern | [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
+| `slice-093` | Coverage Cluster D2 — Bootstrap-Rest und Telemetrie | [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) · [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md) |
+| `slice-094` | Coverage Cluster A — Prozess-Rand | [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) |
 
 **Die Liste ist vollständig, und sie wächst mit dem Schnitt** — jede Zeile entsteht
 mit ihrer Slice-Datei, im selben Zug. Sie ist keine zweite Zustandsquelle (§Lifecycle:
@@ -96,7 +96,7 @@ war überfällig** — die Liste stand seit Cluster C bei den ersten zwei, währ
 Cluster gearbeitet wurden.
 
 **Das Schnittmaß steht — und es hat den ersten Vorschlag dieser Welle
-widerlegt** ([`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
+widerlegt** ([`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)).
 Diese Sektion nannte `internal/bootstrap` „den Hebel" (591 Statements, 327
 ungedeckt, „ggf. zwei Slices"). **Gemessen ist das falsch:** bootstrap hat 336
 ungedeckte Statements, davon sitzen **308 in fünf Funktionen, die kein
@@ -128,7 +128,7 @@ Rot-Beleg bei `THRESHOLD=85` ist damit **notwendig** rot.
 **Herkunft der Zahlen dieses Abschnitts** (`AGENTS.md` §3.12 gilt für die
 Zahlen dieses Plans mit): die **ungedeckten** Statement-Zahlen der
 Cluster-Tabelle (**62**, **53–55**, **≈54** und ihre Summe **229–231**) stehen
-in [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+in [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 §*Was daraus für die Slices folgt*; die Paket- und Funktions-Werte (`336`,
 `308`, `26–28`, `198`, `0 von 198`) und der Nenner `1903` stehen in §Kontext
 (2)–(5) — dort **gemessen** in zwei Läufen über denselben Quelltext,
@@ -139,11 +139,11 @@ liest (`netzlos erreichbar`) — zwei verschiedene Größen, beide aus derselben
 Quelle. Der Vorgänger-Nenner `1679` steht in §1 und stammt aus `slice-079`.
 Die **Summen, Differenzen und Prozente** dieses Abschnitts (`1523`, `154`,
 `13`, `63`, `3,3 pp`, `81,2 %`, `84,1 %`) sind **gerechnet**, nicht gemessen —
-dieselbe Zahl kann in [`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+dieselbe Zahl kann in [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 §Kontext (5) stehen, gerechnet ist sie dort ebenso. Die zwei Werte des
 **widerlegten** Vorschlags im Satz darüber (`591`, `327`) stehen als Zitat
 dieses Vorschlags — **nicht** als Messung;
-[`ADR-0082`](../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
+[`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
 widerlegt sie.
 
 **Cluster D ist geteilt — der Trigger der ADR ist eingetreten.** `ADR-0082`
@@ -168,7 +168,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Struktur: fünf Abschnitte.
 
 - **Wird blockiert von:** `slice-079` (der Scope-Schnitt) — ohne ihn misst die
-  Welle gegen einen Nenner, den [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  Welle gegen einen Nenner, den [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   ersetzt hat.
 - **Blockiert:** nichts.
 - **Verwandt, aber nicht Teil:** die DB-gestützte Messung (`ADR-0071` Punkt 3)
@@ -183,8 +183,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
-- **Die Endstufe 80 % selbst** — sie steht ([`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md),
-  [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md));
+- **Die Endstufe 80 % selbst** — sie steht ([`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md),
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md));
   sie zu ändern wäre eine Schwellen-Senkung und nach `AGENTS.md` §3.6
   ADR-pflichtig. Diese Welle **erreicht** sie, sie verhandelt sie nicht.
 - **Die DB-gestützte Ebene** (`ADR-0071` Punkt 3): eigene, subjekt-qualifizierte
