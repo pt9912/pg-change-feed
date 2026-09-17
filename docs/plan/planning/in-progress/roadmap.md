@@ -40,6 +40,8 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [`welle-20` — Coverage 80 % über die netzlos prüfbare Fläche](../welle-20.md)
 
+Nichts in Arbeit.
+
 
 ## Nächste Wellen
 
