@@ -717,6 +717,10 @@ und lässt sich per Flag übersteuern.
   `.proto`, über einen zusätzlichen, benannten Bau-Kontext gelesen —
   `ADR-0090`):
   `docker run --rm -e CDC_GRPC_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp-grpc`
+- **Kotlin:** `examples/kotlin/grpc-client` — Container-Aufruf gegen das mit
+  `make examples-kotlin` gebaute Image (derselbe Stub-im-Bau-Mechanismus wie
+  beim C#-Client, übertragen auf die Kotlin-Werkzeugkette — `ADR-0090`):
+  `docker run --rm -e CDC_GRPC_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:kotlin-grpc`
 
 ### Zugriff über Server-Sent-Events
 
@@ -1035,3 +1039,4 @@ MIT — siehe `LICENSE`.
 | 1.22 | 2026-09-17 | C#- und Kotlin-SSE-Client ergänzt (`ADR-0090`, slice-100): §4 „Zugriff über Server-Sent-Events" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/sse-client` und `examples/kotlin/sse-client` öffnen denselben Endpunkt `GET /changes/stream` über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-sse`/`:kotlin-sse`) |
 | 1.23 | 2026-09-17 | C#- und Kotlin-NATS-Client ergänzt (`ADR-0090`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-101): §4 „Zugriff über das NATS-Wecksignal" — Fließtext-Absatz wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/nats-client` und `examples/kotlin/nats-client` lauschen auf dasselbe tabellen-granulare Subjekt und holen die Änderung über denselben `GET /changes`-Aufruf, über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-nats`/`:kotlin-nats`) |
 | 1.24 | 2026-09-17 | Erster C#-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-102): §4 „Zugriff über den gRPC-Change-Stream" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#); `examples/csharp/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-csharp`, Image-Tag `pg-change-feed-examples:csharp-grpc`) — der C#-Stub entsteht dabei im Bau aus der `.proto`, gelesen über einen zusätzlichen, benannten Bau-Kontext (erste reale Bauprobe dieser Form, bislang nur isoliert gemessen) |
+| 1.25 | 2026-09-17 | Kotlin-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-103): §4 „Zugriff über den gRPC-Change-Stream" — dritte und letzte Zeile im `**Beispiele:**`-Block; `examples/kotlin/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-kotlin`, Image-Tag `pg-change-feed-examples:kotlin-grpc`) — der Kotlin-Stub entsteht dabei im Bau aus der `.proto`, gelesen über denselben zusätzlichen, benannten Bau-Kontext, jetzt auf die Kotlin-Werkzeugkette übertragen (`protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin`). Mit dieser Zeile ist die volle Matrix (vier Zugriffs-Oberflächen × drei Sprachen, zwölf Programme) im Handbuch vollständig |
