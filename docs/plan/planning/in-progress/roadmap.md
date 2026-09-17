@@ -41,8 +41,6 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 - [`welle-d-check.md`](../welle-d-check.md) — `d-check`-Erweiterung
   (`tracked`-Modul, `--trace`/RTM inkl. `trace.coverage`).
 
-Nichts in Arbeit.
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
