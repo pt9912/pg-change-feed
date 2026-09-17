@@ -154,7 +154,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
 
 ## 3. Plan (vor Code)
@@ -381,8 +381,8 @@ Backticks).
   `github-actions-unverifizierbar-lokal`,
   `arbeit-ueberholt-stehenden-traeger`,
   `zahl-in-traeger-driftet-gegen-die-messung`, `zitat-nennt-die-falsche-
-  stelle`) existieren mit nicht leerem `evidence/`. Letztes DoD-Häkchen wird
-  gegen den mv-Commit bestätigt (Commit 3).
+  stelle`) existieren mit nicht leerem `evidence/`. Letztes DoD-Häkchen
+  bestätigt gegen den mv-Commit `564ac52`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
