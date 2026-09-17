@@ -56,7 +56,19 @@ option go_package = "github.com/pt9912/pg-change-feed/internal/adapters/driving/
 Damit kann **kein** Programm außerhalb dieses Repositories den Draht ansprechen —
 und **kein** Beispiel-Client im eigenen Haus ihn importieren, ohne die
 `wrong-direction`-Kante zu reißen (`make a-check`, gemessen: Exit 2). **Das ist
-der Grund, warum `examples/grpc-client/` seit `slice-095` nicht lieferbar ist.**
+der Grund, warum `examples/grpc-client/` seit `slice-095` nicht lieferbar ist —
+und warum auch die gRPC-Clients in C# und Kotlin darauf stehen: sie erzeugen ihre
+Stubs aus der `.proto` und brauchen einen **erreichbaren** Vertrag, keinen, der
+unter `internal/` liegt.
+
+**Der Rahmen (Nutzerentscheidung vom 2026-09-17): die volle Matrix.** Die
+Beispiel-Clients werden über **(alle Clients) × (C#, Go, Kotlin)** geführt — die
+vier Oberflächen `http`, `sse`, `grpc` und `nats` in **jeder** der drei Sprachen.
+Das **erweitert** [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)
+(Go die vier, C# und Kotlin bisher nur die HTTP-Familie); die Erweiterung ist eine
+eigene Entscheidung und läuft als Folge-ADR. **Für diesen Slice ändert das nur
+eine Pflicht:** der Umzug ist die Voraussetzung für **drei** der zwölf Programme
+(`grpc` in jeder Sprache) und darf keinen von ihnen verbauen.
 
 **Gemessene Folgepflichten** (vom Implementer von `slice-095` an beiden Routen
 belegt, nicht geschätzt): die `go_package`-Zeile **und** der erzeugte Baum;
@@ -75,13 +87,20 @@ den erzeugten Code **aus** dem Gegenstand, der **Nenner** bewegt sich).
   [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   §3 sagt es selbst: der Umzug **soll allein stehen**. Ein Zug, der beides tut,
   kann bei einem roten `a-check` nicht sagen, welche Hälfte schuld ist.
-- **Die gRPC-Clients in C# und Kotlin.** Sie erzeugen ihre Stubs **aus der
-  `.proto`** — nicht aus dem Go-Binding — und brauchen darum **keinen** Umzug;
-  was sie brauchen, ist die `.proto` **in ihrem Bau-Kontext**, und ihre
-  Dockerfiles haben eigene Kontexte
-  ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)). Das ist eine
-  Frage **jener** Slices; hier wird nur festgehalten, dass dieser Umzug sie
-  **nicht verbaut**.
+- **Alle zwölf Clients der Matrix — sie gehören zum Ziel, nicht in diesen Zug.**
+  Nutzerentscheidung: die Beispiel-Clients werden über **(alle Clients) ×
+  (C#, Go, Kotlin)** geführt — vier Oberflächen in drei Sprachen. **Die Pflicht,
+  die daraus hier erwächst:** dieser Umzug ist die Voraussetzung für die **drei**
+  `grpc`-Programme und darf keinen von ihnen verbauen. Die C#-/Kotlin-Clients
+  erzeugen ihre Stubs **aus der `.proto`** — die **nicht** umzieht —, aber ihre
+  Dockerfile-Kontexte sind **eigene**
+  ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)); ob sie die
+  `.proto` **erreichen**, ist dort zu beantworten und hier als **Folgepflicht**
+  zu benennen, nicht stillschweigend anzunehmen.
+  **Die Grenze:** dieser Slice baut **keinen** Client — der Umzug soll nach
+  [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  §3 **allein stehen**, weil bei einem roten `a-check` sonst nicht zu sagen ist,
+  welche Hälfte schuld ist.
 - **Der Inhalt der `.proto`.** Der Draht-Vertrag ist
   [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md)s Gegenstand; dieser
   Slice ändert **eine** Zeile an ihrem Ziel, keine Nachricht, kein Feld.
