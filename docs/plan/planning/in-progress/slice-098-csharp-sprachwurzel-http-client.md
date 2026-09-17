@@ -140,18 +140,18 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Beleg: `docs/reviews/review-slice-098.md` (0 HIGH/MEDIUM/LOW, 2 INFO,
       keine Fixrunde).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-098.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-098.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
@@ -223,23 +223,56 @@ dasteht.
 
 - **Die digest-gepinnte .NET-SDK-Basis ist zum Zeitpunkt des Baus nicht mehr
   auflösbar** (Tag zurückgezogen, Registry-Digest verschoben). —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Beide Basen (SDK `sha256:60a2b2230a...`, Runtime
+  `sha256:e6541e52ae...`) waren zum Bau-Zeitpunkt auflösbar — Implementer-
+  und Verifier-Läufe (inkl. einer unabhängigen `docker build --no-cache`-
+  Gegenprobe, `docs/reviews/verify-slice-098.md` #2) ziehen beide erfolgreich
+  — und deckungsgleich mit dem in `ADR-0087`/`ADR-0090` bereits gemessenen
+  Digest-Kandidaten.
 - **Die C#-Werkzeugkette verlangt eine nicht-öffentliche Quelle** (privater
   NuGet-Feed, Zugangsdaten in der Auflösung) —
   [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 3. — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 3. — **Ausgang: entfallen.**
+  `Directory.Packages.props` trägt ausschließlich Pakete aus öffentlichem
+  NuGet (`Microsoft.NET.Test.Sdk`, `xunit`, `xunit.runner.visualstudio`);
+  der Bau lief ohne Zugangsdaten (`docs/reviews/verify-slice-098.md` #10).
 - **Der nicht-blockierende Workflow trägt seinen Umfang nicht mehr** (Laufzeit
   über dem Runner-Budget, oder ein dauerhaft roter, überlesener Lauf) —
   §Re-Evaluierungs-Trigger 4, `BEO-PGC/nicht-blockierender-workflow-
   alarmmuedigkeit` (1×, offen), `BEO-PGC/github-actions-unverifizierbar-lokal`
-  (5×, verkörpert in `AGENTS.md` §3.10). — **Ausgang:** <…>
+  (5×, verkörpert in `AGENTS.md` §3.10). — **Ausgang: weiter offen**, bis ein
+  realer Post-Push-Lauf sichtbar wird — kein `git push` in dieser Session
+  möglich, dieselbe strukturelle Grenze wie bei den fünf vorherigen Belegen.
+  Wandert in `BEO-PGC/github-actions-unverifizierbar-lokal` (jetzt **6×**,
+  `evidence/slice-098.md`); die Regel selbst ist bereits verkörpert
+  (`AGENTS.md` §3.10), kein neuer Schwellen-Übertritt.
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
   Registereinträgen (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-
   oberflaeche`, `handbuch-versionshistorie-uebersprungen`); sie ist der
-  einzige Teil dieses Slice, den **kein** Kompilat erzwingt. — **Ausgang:** <…>
+  einzige Teil dieses Slice, den **kein** Kompilat erzwingt. — **Ausgang:
+  entfallen.** Der Reviewer hat den `**Beispiele:**`-Block (Go/C#-Zeile) und
+  die Änderungshistorie-Zeile 1.20 geprüft und bestätigt (Negativbefunde,
+  `docs/reviews/review-slice-098.md`); der Verifier hat es unabhängig
+  gegengelesen (#8). Beide Registereinträge sind durch diesen Slice
+  **eingelöst**, nicht verletzt.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
   (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, verkörpert in `AGENTS.md`
-  §3.13 — Suchlauf-Pflicht). — **Ausgang:** <…>
+  §3.13 — Suchlauf-Pflicht). — **Ausgang: weiter offen.** Der Reviewer fand
+  (F-1) eine echte Lücke — `spec/pflichtenheft.md` `SPEC-023` „Sprachen und
+  Umfang" trägt weiterhin den `ADR-0087`-Wortlaut, obwohl `ADR-0090` genau
+  das als eigene Folgepflicht benennt —, ordnete sie aber ausdrücklich
+  **nicht** diesem Slice-Diff zu, sondern `ADR-0090`s eigenem
+  Annahme-Commit (`72d026b`): `git diff 9b6b4fe..HEAD --
+  spec/pflichtenheft.md` ist leer, die Zeile war bereits vor Beginn dieses
+  Slice falsch, nicht **durch** dieses Slice geworden (Voraussetzung von
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`/`AGENTS.md` §3.13). Es ist
+  damit eine andere, bislang unbenannte Klasse — „ADR-Folgepflicht ohne
+  zugewiesenen Träger-Slice" —, für die dieser Slice **nicht** verantwortlich
+  ist (§1 grenzt „Eine Änderung an der HTTP-API selbst" ausdrücklich aus).
+  Sie wandert als neue Beobachtung `BEO-PGC/adr-folgepflicht-ohne-traeger-
+  slice` (1×, `evidence/slice-098.md`) ins Register, mit Folge-Hinweis:
+  `slice-103` (letzter Matrix-Slice, `open/`) benennt `SPEC-023` bereits als
+  bedingten Prüfpunkt in seinem eigenen §6.
 
 ## 7. Closure-Notiz
 
@@ -251,13 +284,58 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Die erste reale C#-Bauprobe der
+  [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md)-Sprachform
+  trägt unverändert — Sprach-Wurzelverzeichnis, eigenes digest-gepinntes
+  Dockerfile, gepinntes Paket-Manifest, `make`-Ziel als Werkzeug ohne Gate.
+  Der Verifier hat sie zusätzlich zur normalen `make examples-csharp`-Prüfung
+  mit einer unabhängigen, cache-losen `docker build --no-cache`-Gegenprobe
+  belegt (8/8 Tests real neu gelaufen) — die Form hält auch ohne den
+  Docker-Layer-Cache, der eine falsch-positive Bauprobe verdecken könnte.
+  Reviewer (0 HIGH/MEDIUM/LOW, 2 INFO) und Verifier (Verdikt: konform)
+  fanden unabhängig voneinander keinen Grund zur Fixrunde.
+- **Was ging anders als geplant:** Zwei kleine, nicht merge-blockierende
+  Abweichungen. Erstens (Review F-2): `Uri.EscapeDataString` kodiert ein
+  Leerzeichen als `%20`, während das Go-Formvorbild (`url.QueryEscape`) `+`
+  verwendet — beide Formen sind gültige, von Standard-Parsern gleich
+  dekodierte Query-Kodierungen; kein Funktionsfehler, nur eine
+  Formvorbild-Divergenz auf Sprachebene (jede Sprache bringt ihre eigene
+  Standardbibliotheks-Kodierung mit, das war beim Schnitt nicht antizipiert,
+  ändert aber nichts an LP2). Zweitens (Review F-1, siehe Risiken unten):
+  eine bereits vor diesem Slice bestehende Lücke zwischen `ADR-0090` und
+  `SPEC-023` wurde beim Lesen sichtbar, ohne dass dieser Slice sie verursacht
+  oder zu verantworten hätte.
+- **Steering-Loop-Eintrag:** Kein neuer Sensor, keine geschärfte Regel aus
+  diesem Slice selbst — die tragende Sprachform (`ADR-0087`) ist mit dem
+  ersten realen Bau bestätigt, nicht geschärft. Die eine benannte
+  Spec-Lücke steht unten unter Risiken/Register:
+  `BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (neu, 1×) — eine
+  `Accepted`-ADR, die ihre eigene Folgepflicht ohne Slice-/ADR-Kennung
+  benennt, bleibt adresslos liegen; ob daraus ab 3× eine geschärfte Regel
+  wird (z. B. „Folgepflicht-Zeilen tragen künftig eine Kennung"), entscheidet
+  der nächste Lese-Schritt.
+- **Beobachtungs-Register (`../observations/`):** Zwei bereits verkörperte
+  Einträge durch diesen Slice **eingelöst**, nicht erneut verletzt — keine
+  neue Evidenzdatei: `handbuch-nicht-nachgezogen-bei-neuer-betreiber-
+  oberflaeche` (weiter 3×) und `handbuch-versionshistorie-uebersprungen`
+  (weiter 3×). Ein bestehender Eintrag fortgeschrieben:
+  `github-actions-unverifizierbar-lokal` liegt in `AGENTS.md` §3.10
+  (`seit welle-17`), jetzt **6×** (`evidence/slice-098.md`) — kein neuer
+  Schwellen-Übertritt, die Regel steht bereits. Ein neuer Eintrag angelegt:
+  `adr-folgepflicht-ohne-traeger-slice` liegt **noch nirgends** — Zustand
+  offen, **1×** (`evidence/slice-098.md`), Sub-Area `*`/`PGC`.
+- **Folge-Slices:** keine neuen. `slice-099`–`103` sind bereits als eigene
+  Pläne in `open/` angelegt und referenzieren `ADR-0090` selbst; der
+  Folge-Hinweis zu `SPEC-023` liegt im neuen Register-Eintrag, nicht in
+  einem eigenen Slice.
+- **Risiken aus §6:** fünf Zeilen, fünf Ausgänge — drei **entfallen**
+  (Digest-Auflösbarkeit gemessen; öffentliche NuGet-Quelle gemessen;
+  Handbuch-Nachzug gemessen vollständig), zwei **weiter offen**
+  (nicht-blockierender Workflow → `BEO-PGC/github-actions-unverifizierbar-
+  lokal`, 6×; überholter Fremdträger → neuer Eintrag
+  `BEO-PGC/adr-folgepflicht-ohne-traeger-slice`, 1×). Details je Zeile in §6.
+- **Drei Paarungen:** im Repo ohne Wellen-Betrieb hier geprüft (Commit 3,
+  nach dem `git mv` nach `done/`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -16,14 +16,18 @@ Lese-Schritt lief als Teil der laufenden `welle-17`-Closure (Modul 8
 §Rollen-Sequenz für eine Welle, Schritt 3b, Planner → Architect →
 Planner-Zug).
 
-Zähler (abgeleitet): **5×** (evidence/slice-039.md, evidence/slice-056.md,
-evidence/slice-064.md, evidence/slice-082.md, evidence/slice-090.md) — Schwelle
-erreicht, Ausgang zugewiesen. Der fünfte Beleg fällt **außerhalb** der Regel
-an, die sie verkörpert: `slice-090` ändert am Workflow nur einen Schrittnamen
-und Kommentarzeilen, `AGENTS.md` §3.10 ist dem Buchstaben nach **nicht**
-ausgelöst — sein Grund aber trifft zu, weil `ci.yml` mit `make gates` jetzt
-einen Schritt fährt, dessen kalter Layer-Cache auf dem Runner lokal nicht
-prüfbar ist. Der Beleg hält den Unterschied fest, statt die Regel zu dehnen.
+Zähler (abgeleitet): **6×** (evidence/slice-039.md, evidence/slice-056.md,
+evidence/slice-064.md, evidence/slice-082.md, evidence/slice-090.md,
+evidence/slice-098.md) — Schwelle erreicht, Ausgang zugewiesen. Der fünfte
+Beleg fällt **außerhalb** der Regel an, die sie verkörpert: `slice-090` ändert
+am Workflow nur einen Schrittnamen und Kommentarzeilen, `AGENTS.md` §3.10 ist
+dem Buchstaben nach **nicht** ausgelöst — sein Grund aber trifft zu, weil
+`ci.yml` mit `make gates` jetzt einen Schritt fährt, dessen kalter
+Layer-Cache auf dem Runner lokal nicht prüfbar ist. Der Beleg hält den
+Unterschied fest, statt die Regel zu dehnen. Der sechste Beleg (`slice-098`)
+ist wieder der Regelfall: ein strukturell neuer Workflow
+(`.github/workflows/examples.yml`), `AGENTS.md` §3.10 dem Buchstaben nach
+ausgelöst, korrekt an allen drei Trägern als offen geführt.
 
 (Hinweis, vom Verifier bei `slice-065` gefunden,
 `docs/reviews/verify-slice-065.md`: Die vorige Kopfzeile dieser Datei
