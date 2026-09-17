@@ -106,18 +106,13 @@ frischer Klon mit `target-missing` bricht.
       (0 HIGH, nicht merge-blockierend).
 - [x] Doku-Update: `harness/sensors/docs-check.md` (siehe LP2); `.d-check.yml`
       eigener Kommentarblock.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis `BEO-PGC/<slug>/` oder eine weitere Datei in dessen
-      `evidence/`; kein Zähler wird gesetzt, er folgt aus den Dateien. Keine
-      Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
-      notiert. Insbesondere prüfen: trägt dieser Vorgang eine weitere
-      `evidence/`-Datei zu `BEO-PGC/gate-modul-abgeschaltet-trotz-regel`
-      (bislang 1×, `hostpaths`) — ist die Aktivierung eines vormals
-      abgeschalteten, aber gewollten Moduls dieselbe Beobachtungsklasse, oder
-      eine andere (dort: Modul fehlte trotz gewollter Regel; hier: Modul war
-      bewusst opt-in dokumentiert)?
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §7.
+      Insbesondere geklärt: dieser Vorgang trägt **keine** weitere
+      `evidence/`-Datei zu `BEO-PGC/gate-modul-abgeschaltet-trotz-regel` —
+      andere Beobachtungsklasse (dort: Modul fehlte trotz gewollter Regel;
+      hier: Modul war bewusst opt-in dokumentiert, keine stille Abschaltung).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       geprüft von der **Welle-Closure** (`welle-d-check`), nicht hier
@@ -175,15 +170,21 @@ nicht von diesem Slice allein.
 - **`exempt-targets` bleibt bei Planung unbekannt** — der reale Umfang
   auflösbarer, existierender Link-/Bild-Ziele könnte beim vollen `modules:`-Lauf
   (statt der isolierten `--enable tracked`-Planungsmessung) anders ausfallen,
-  weil andere Module denselben Scan-Baum anders beschneiden. — **Ausgang:**
-  <weiter offen: → BEO-PGC im Register, falls beim Implementer-Lauf
-  abweichende Befunde auftreten / entfallen: Implementer-Lauf bestätigt
-  identisches Ergebnis>
+  weil andere Module denselben Scan-Baum anders beschneiden. —
+  **Ausgang: entfallen** — sowohl der isolierte `make doc-tracked`-Lauf als
+  auch der volle `make docs-check`/`make gates`-Bündel-Lauf melden über alle
+  Stände dieses Slice-Laufs (Implementer, Review, Delta-Review, Verifikation:
+  875→876→877→878 geprüfte Dateien, je nach neu hinzugekommenen Dateien im
+  selben Lauf) durchgehend **0 Befunde** — identisches Ergebnis, kein
+  `exempt-targets`-Eintrag nötig.
 - **`harness/sensors/docs-check.md`s Grenze-Aufzählung (Punkt 3) wird nicht
   vollständig nachgezogen**, weil sie an mehreren Stellen der Datei referenziert
-  wird (z. B. auch implizit im Bindung-Abschnitt). — **Ausgang:** <Reviewer
-  prüft Vollständigkeit gegen die ganze Datei, nicht nur Punkt 3 — eingetreten:
-  Fix im selben Slice / entfallen: einziger Fundort bestätigt>
+  wird (z. B. auch implizit im Bindung-Abschnitt). —
+  **Ausgang: entfallen** — der Reviewer hat die Vollständigkeit gegen die
+  ganze Datei geprüft (Ausgangs-Review, Negativbefund): §Grenze Punkt 3/4
+  konsistent nachgezogen, einziger echter Fehler war der Präzedenz-Beleg in
+  §Bindung (F-2, separat als eigenes Risiko behandelt und über den
+  Architect-Zug behoben).
 
 ## 7. Closure-Notiz
 
@@ -194,14 +195,44 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln.
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt: was genau>
-  — liegt in `<…>`. Auslöser: `BEO-<KUERZEL>/<slug>` (<Belege> — N×).
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <von der Welle-Closure `welle-d-check` geprüft>
+- **Was hat funktioniert:** Die reale Grün-Messung vor der Priorisierung
+  (872/875 Dateien, 0 Befunde am Planungsstand) hat sich über den ganzen
+  Slice-Lauf hinweg bestätigt — `tracked` lief an jedem gemessenen Stand
+  (Implementer, Review, Delta-Review, Verifikation: 875→878 Dateien) mit 0
+  Befunden. Der Reviewer hat eigenständig recherchiert und den korrekten
+  Präzedenzfall (`structure`-Modul, Commit `f9e5a3c`) gefunden, statt nur den
+  falschen Implementer-Beleg zurückzuweisen (F-4) — das hat die
+  Architect-Fixrunde erheblich beschleunigt.
+- **Was ging anders als geplant:** Der Architect-Zug, den §4 Trigger
+  explizit zur Start-Bedingung machte, wurde beim `next→in-progress`-Übergang
+  übersprungen (Commit `262bcda`); der Implementer hat die ADR-Frage
+  selbst beantwortet und dabei den falschen Präzedenzfall
+  (`ADR-0072`/`ADR-0075`, tragen die gegenteilige Aussage) zitiert. Das löste
+  eine volle Fixrunde aus: nachträglicher Architect-Zug → Implementer-Fix
+  (Träger-Nachzug + Zitat-Korrektur) → Delta-Review (0 Findings) → Verifikation.
+  Ohne den übersprungenen Architect-Zug wäre die Zitat-Korrektur vermutlich
+  vor dem ersten Review-Lauf bereits richtig gestanden.
+- **Steering-Loop-Eintrag:** Keine neue Regel geschärft — alle drei
+  betroffenen Beobachtungsklassen liegen noch unter der 3×-Schwelle
+  (`start-trigger-ohne-uebergabe-artefakt`, 1×) oder ihr Lese-Schritt gehört
+  der Welle-Closure (`zitat-nennt-die-falsche-stelle`, 3×, Schwelle erreicht,
+  Ausgang bei `welle-d-check`-Closure). `arbeit-ueberholt-stehenden-traeger`
+  ist bereits seit `welle-20` in `AGENTS.md` §3.13 verkörpert — dieser Vorgang
+  ist ein weiterer Beleg für eine bereits geschriebene Regel, kein neuer
+  Steering-Loop-Auslöser.
+- **Beobachtungs-Register (`../observations/`):** Drei Einträge fortgeschrieben:
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (weiterer Beleg, bereits
+  verkörpert) · `BEO-PGC/zitat-nennt-die-falsche-stelle` (dritter Beleg,
+  Schwelle erreicht, Ausgang bei Welle-Closure) · neu angelegt:
+  `BEO-PGC/start-trigger-ohne-uebergabe-artefakt` (1×, Erstauftreten: der
+  Architect-Zug als Plan-Start-Bedingung fand nicht statt). Keine Beobachtung
+  zu `BEO-PGC/gate-modul-abgeschaltet-trotz-regel` — andere Klasse
+  (dokumentiertes Opt-in statt stiller Abschaltung, siehe §2 DoD).
+- **Folge-Slices:** keine — die ADR-Frage ist über den Architect-Zug
+  abschließend geklärt (keine ADR nötig), keine offene Arbeit verbleibt.
+- **Risiken aus §6:** alle drei mit Ausgang „entfallen" — siehe §6.
+- **Drei Paarungen:** von der Welle-Closure `welle-d-check` geprüft (Repo mit
+  Wellen-Betrieb für diese Welle, Modul 6 §Wann Arbeit eine Welle braucht).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

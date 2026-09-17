@@ -1,19 +1,26 @@
-Zustand: offen (**1×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein
+Zustand: offen (**3×, Schwelle erreicht**) — Ausgang noch nicht zugewiesen. Ein
 Träger ist **nicht** vorgeschlagen: ob ein Verweis die Aussage trägt, die er
 stützt, ist eine Lese-Handlung am Original. Die Antwort, die bereits steht, ist
 `AGENTS.md` §3.12 **Instanz B** — eine Aussage nennt den **Beleg-Anker** und ist
 damit prüfbar; was fehlt, ist die **Gegenprobe am genannten Anker** (der
 Reviewer-Skill trägt sie als Lese-Pflicht).
 
-Zähler (abgeleitet): **2×** (evidence/slice-090.md, evidence/slice-102.md) —
-weiterhin unter der 3×-Schwelle, Stand bleibt `offen`. Das Erstauftreten fiel
-in `slice-090` beim Übergang **in einen stehenden Träger** auf: aus der
-Kopfzeile eines Review-Reports wurde eine Abschnittsnummer übernommen und in
-`harness/sensors/generated-sync.md` gesetzt. Der zweite Beleg (`slice-102`)
-trifft eine andere Form derselben Klasse: kein Zahlen-, sondern ein
-Slice-Kennungs-Zitat — der Plan verwies auf „`slice-095`s §1" für eine
-Aussage, die tatsächlich in `slice-097` §1 steht (Reviewer F-3, vom Verifier
-unabhängig reproduziert).
+Zähler (abgeleitet): **3×** (evidence/slice-090.md, evidence/slice-102.md,
+evidence/slice-d-check-tracked-modul.md) — **Schwelle erreicht**. Das
+Erstauftreten fiel in `slice-090` beim Übergang **in einen stehenden Träger**
+auf: aus der Kopfzeile eines Review-Reports wurde eine Abschnittsnummer
+übernommen und in `harness/sensors/generated-sync.md` gesetzt. Der zweite
+Beleg (`slice-102`) trifft eine andere Form derselben Klasse: kein Zahlen-,
+sondern ein Slice-Kennungs-Zitat — der Plan verwies auf „`slice-095`s §1" für
+eine Aussage, die tatsächlich in `slice-097` §1 steht (Reviewer F-3, vom
+Verifier unabhängig reproduziert). Der dritte Beleg
+(`slice-d-check-tracked-modul`) trifft eine dritte Form: kein Zahlen- oder
+Kennungs-Zitat, sondern eine **Entscheidungslage** (zwei ADRs als
+Präzedenzmuster, die die gegenteilige Aussage tragen) — der Reviewer hat dort
+selbst den korrekten Präzedenzfall recherchiert (F-4), das Architect-Verdikt
+hat ihn eigenständig bestätigt. Der Lese-Schritt (Ausgang zuweisen) gehört der
+Closure von `welle-d-check` (Modul 6/8), da dieser dritte Beleg-Vorgang einer
+offenen Welle angehört, nicht dem wellenlosen Pfad.
 
 **Nicht zu verwechseln** mit `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
 (dort driftet ein **Wert** gegen die Messung) und mit
