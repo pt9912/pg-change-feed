@@ -14,9 +14,11 @@ layers:
   adapters: ["internal/adapters/**"]
   # `tooling` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der Wegwerf-Clients unter `tools/harness/**`. Sie sprechen den
-  # gRPC-Stream über den erzeugten Protokoll-Stub des Adapters
-  # (`internal/adapters/driving/grpc/streamv1`) real über das Netz an und
-  # verdrahten nichts (ADR-0068).
+  # gRPC-Stream über den erzeugten Protokoll-Stub der Vertragsfläche
+  # (`gen/cdc/stream/v1`, Gruppe `contract`) real über das Netz an und
+  # verdrahten nichts (ADR-0068; der Stub zog mit `slice-097` von
+  # `internal/adapters/driving/grpc/streamv1` an diesen öffentlichen Pfad um —
+  # `ADR-0076`).
   tooling:  ["tools/harness/**"]
   # `examples` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der öffentlichen Beispiel-Clients unter `examples/**`
@@ -30,6 +32,14 @@ layers:
   # `domain`, `ports`, `app` oder `adapters` in `examples/**` bleibt
   # `wrong-direction`.
   examples: ["examples/**"]
+  # `contract` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
+  # Gruppe der erzeugten Vertragsfläche unter `gen/**` (`slice-097`,
+  # `ADR-0076`): der aus `proto/cdc/stream/v1/changestream.proto` erzeugte
+  # Go-Code, umgezogen vom privaten `internal/adapters/driving/grpc/streamv1`
+  # an diesen öffentlichen Pfad, damit sowohl `adapters` als auch `tooling`
+  # ihn referenzieren können, ohne dass eine der beiden Gruppen die andere
+  # referenziert.
+  contract: ["gen/**"]
 edges:
   # Abhängigkeiten zeigen nach innen (ADR-0002): Ports und Use Cases
   # referenzieren die Domain; Adapter referenzieren Ports und Domain-Typen
@@ -39,10 +49,19 @@ edges:
   - {from: app,      to: ports}
   - {from: adapters, to: ports}
   - {from: adapters, to: domain}
-  # `tooling` → `adapters` ist die einzige Berechtigung dieser Gruppe: der
-  # Zugriff auf den Protokoll-Stub. Ein Import aus `app`, `ports` oder
-  # `domain` in `tools/harness/**` bleibt `wrong-direction` (ADR-0068).
-  - {from: tooling,  to: adapters}
+  # `adapters` → `contract` (neu, `slice-097`): `server.go` importiert den
+  # erzeugten Protokoll-Stub jetzt vom öffentlichen Pfad `gen/cdc/stream/v1`.
+  - {from: adapters, to: contract}
+  # `tooling` → `contract` (neu, `slice-097`): `tools/harness/grpcclient`
+  # importiert denselben Stub vom öffentlichen Pfad.
+  - {from: tooling,  to: contract}
+  # `tooling` → `adapters` ist mit `slice-097` ZURÜCKGENOMMEN: Die Kante
+  # (ADR-0068) trug ausschließlich den Zugriff auf den Protokoll-Stub, der
+  # damals unter `internal/adapters/driving/grpc/streamv1` lag. Der Stub
+  # liegt jetzt unter `gen/cdc/stream/v1` (Gruppe `contract`, siehe oben) —
+  # die Kante ist damit gegenstandslos und entfällt. Ein Import aus `app`,
+  # `ports`, `domain` oder `adapters` in `tools/harness/**` bleibt
+  # `wrong-direction`.
 # Composition Root (`ADR-0026`): die Verdrahtung konkreter Adapter lebt in
 # `internal/bootstrap` und `cmd` — und in den Verdrahtungs-Tests, die
 # denselben Aufbau als Test tragen (MVP-Integrationstest gegen die

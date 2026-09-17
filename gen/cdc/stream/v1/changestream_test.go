@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1"
+	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
 )
 
 // fakeClientConn trägt einen `grpc.ClientConnInterface`-Doppel: er liefert

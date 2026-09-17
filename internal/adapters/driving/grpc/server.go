@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1"
+	"github.com/pt9912/pg-change-feed/gen/cdc/stream/v1"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )

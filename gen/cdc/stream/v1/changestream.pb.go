@@ -206,7 +206,7 @@ const file_cdc_stream_v1_changestream_proto_rawDesc = "" +
 	" \x01(\tR\x05table\"\x16\n" +
 	"\x14StreamChangesRequest2]\n" +
 	"\fChangeStream\x12M\n" +
-	"\rStreamChanges\x12#.cdc.stream.v1.StreamChangesRequest\x1a\x15.cdc.stream.v1.Change0\x01BSZQgithub.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1;streamv1b\x06proto3"
+	"\rStreamChanges\x12#.cdc.stream.v1.StreamChangesRequest\x1a\x15.cdc.stream.v1.Change0\x01B=Z;github.com/pt9912/pg-change-feed/gen/cdc/stream/v1;streamv1b\x06proto3"
 
 var (
 	file_cdc_stream_v1_changestream_proto_rawDescOnce sync.Once

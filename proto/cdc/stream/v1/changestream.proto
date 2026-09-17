@@ -7,7 +7,7 @@ syntax = "proto3";
 
 package cdc.stream.v1;
 
-option go_package = "github.com/pt9912/pg-change-feed/internal/adapters/driving/grpc/streamv1;streamv1";
+option go_package = "github.com/pt9912/pg-change-feed/gen/cdc/stream/v1;streamv1";
 
 // Change trägt einen einzelnen erfassten Change (`SPEC-020`) mit denselben
 // Feldern wie der Domain-Typ (`internal/domain/model.Change`, `SPEC-002`).

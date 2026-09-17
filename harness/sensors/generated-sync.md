@@ -3,7 +3,7 @@
 ## Vertrag
 
 Wird dieses Target rot, ist der committete Protobuf-/gRPC-Code
-(`internal/adapters/driving/grpc/streamv1/*.pb.go`) nicht mehr die Ausgabe des
+(`gen/cdc/stream/v1/*.pb.go`) nicht mehr die Ausgabe des
 **gepinnten** Generators (Dockerfile-Stufe `proto`) aus den committeten
 `.proto`-Quellen unter `proto/` (`tools/harness/generated-sync.sh`).
 
