@@ -94,7 +94,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1 — die fünf Variablen werden durchgereicht.** Unter gesetzter
+- [x] **LP1 — die fünf Variablen werden durchgereicht.** Unter gesetzter
       `CDC_CONFIG_FILE` trägt `Config` die Werte aus `CDC_NATS_URL`,
       `CDC_HTTP_ADDR`, `CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN` und
       `CDC_GRPC_ADDR` — je aus ihrer Env-Herkunft, und **Env schlägt Datei
@@ -104,24 +104,24 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Prädikaten, die über den Start entscheiden**, nicht an einem laufenden
       Server: `Run` konstruiert vorher den Store und braucht eine erreichbare
       PostgreSQL-Instanz. Die Grenze steht im Testkommentar.
-- [ ] **LP2 — die Feldmenge und die Zugangsdaten-Klasse.** `http_addr` und
+- [x] **LP2 — die Feldmenge und die Zugangsdaten-Klasse.** `http_addr` und
       `grpc_addr` sind Datei-Felder (`host:port`, nicht credential-tragend);
       `nats_url` und die zwei Tokens sind **env-exklusiv** und enden in
       `ErrConfiguration` mit einer **eigenen, den Grund nennenden Zeile** —
       nicht als „unbekannter Schlüssel". Je Klasse ein Test.
-- [ ] **LP3 — der Träger zieht nach.** `docs/user/benutzerhandbuch.md` §5.2
+- [x] **LP3 — der Träger zieht nach.** `docs/user/benutzerhandbuch.md` §5.2
       führt die zwei neuen Felder und die env-exklusiven Namen mit ihrer
       Begründung, **und die Versionshistorie bekommt ihre Zeile** (verkörperte
       Regel aus `BEO-PGC/handbuch-versionshistorie-uebersprungen`).
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
 
@@ -196,17 +196,38 @@ dasteht.
 
 - **Die Durchleitung ist eine Verhaltensänderung.** Deployments mit gesetzter
   `CDC_CONFIG_FILE` betreiben die Oberflächen heute **still aus**; nach diesem
-  Slice sind sie **an**. — **Ausgang:** <…>
+  Slice sind sie **an**. — **Ausgang: eingetreten — und begrenzt, gemessen.**
+  Die Änderung ist real und beabsichtigt. **Kein Lauf dieses Repos ist
+  betroffen:** `git grep CDC_CONFIG_FILE` findet Treffer nur in `docs/**` und
+  `internal/bootstrap/**` — nicht in `compose.yaml`, `tools/`, `test/` oder
+  `.github/`. Betroffen sind **fremde** Deployments; die Wirkung ist in
+  `docs/user/benutzerhandbuch.md` §5.2 beschrieben (Version 1.18).
 - **Die Zugangsdaten-Klasse greift zu weit** — ein legitim credential-freies Feld
   wird abgewiesen, weil seine Form (URL) auch Zugangsdaten tragen *könnte. —
-  **Ausgang:** <…>
+  **Ausgang: entfallen — gemessen.** Die Klasse hat **sechs** Schlüssel und
+  greift genau die gemeinten: drei DSN, zwei Token, `nats_url`. `http_addr` und
+  `grpc_addr` sind **Datei-Felder** und werden **nicht** abgewiesen; die
+  Gegenprobe (`TestConfigFromFileUnbekannterSchluesselOhneZugangsdatenGrund`)
+  zeigt, dass ein gewöhnlicher Tippfehler-Schlüssel **ohne** die
+  Klassen-Begründung abgewiesen wird.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst** — er bewegt, welche
   Variablen unter einer Datei wirksam sind; welche Dokumente das beschreiben, weiß
   der Diff nicht (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, **3×**, seit
-  `welle-20` eine Hard Rule). — **Ausgang:** <…>
+  `welle-20` eine Hard Rule). — **Ausgang: eingetreten — und behoben, an vier
+  Stellen.** Der §3.13-Lauf hat den **Symbolnamen** gefunden, den die Umbenennung
+  ungültig machte (`ADR-0088` §Bezug, gemeldet und per Zitat-Korrektur gezogen);
+  **drei weitere** Stellen fand erst der Review — zwei **Zeilen-Lokatoren** in
+  `ADR-0088` §Kontext und ein vierter Zitat-Anker, den der Architect beim
+  Nachziehen entdeckte. **Und die Klasse traf die Träger-Aussagen selbst:**
+  `ADR-0088` nannte die Klasse „fünf" statt sechs, `ADR-0089`s Ersatztext war für
+  die Feldmenge zu weit — beide als Folge-ADR (`0091`, `0092`). **Die Lehre steht
+  in §7.**
 - **Die Lücke ist größer als die fünf** — die Messung des Vorgänger-Zugs nennt
   genau fünf; ob weitere Felder `mergeConfig` nicht erreichen, ist **nicht**
-  gemessen. — **Ausgang:** <…>
+  gemessen. — **Ausgang: entfallen — gemessen.** Der Implementer hat die Zahl
+  **syntaktisch** nachgezählt (`Config`-Struct gegen die `cfg.X =`-Zuweisungen in
+  `mergeConfig`), am Parent **und** am Diff-Stand: **15** Felder, am Parent **10**
+  erreicht, jetzt **15 von 15**. Die Differenz ist **genau** die genannten fünf.
 
 ## 7. Closure-Notiz
 
@@ -225,18 +246,59 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor> <geschärft/ergänzt>: <was genau>
-  — liegt in `<AGENTS.md §X | Makefile:<target> | .harness/skills/…>`.
-  Auslöser: `BEO-<NNN>` (<slice-NNN>, <slice-MMM>, <slice-KKK> — 3×).
-  *(Wurde mit diesem Slice nichts verkörpert — der Normalfall —, entfällt die
-  Teil-Zeile `— liegt in …` ersatzlos. Der Eintrag ist dann gezählt, nicht
-  verkörpert.)*
-- **Beobachtungs-Register (`../observations/`):** <`BEO-<KUERZEL>/<slug>/` neu angelegt, Beleg `evidence/slice-NNN.md` | `evidence/slice-NNN.md` in `BEO-<KUERZEL>/<slug>/` ergaenzt — Zaehler steht damit bei <N>x | keine Beobachtung angefallen>
-- **Folge-Slices:** <slice-NNN (<Titel>) — ist eine Datei in `open/`>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <nur im Repo ohne Wellen-Betrieb — Anker · Folge-Slice · Register, Ergebnis>
+- **Was hat funktioniert:** Die **Zählung vor dem Bauen** — der Implementer hat die
+  Zahl des Vorgänger-Zugs nicht übernommen, sondern **syntaktisch nachgezählt**
+  (`Config`-Struct gegen die `cfg.X =`-Zuweisungen) und kam auf **15/10/15**: die
+  fünf, genau benannt, an beiden Ständen gemessen. Zweitens: **jede Zusage mit
+  ihrer Grenze** — die zwei Kommentar-Hälften (was gebunden ist / was nicht) sind
+  je durch eine Mutation belegt, und die Prüfung hat sie für **alle drei**
+  Zweige bestätigt. Drittens: **die Kette** — der §3.13-Lauf fand den
+  Symbolnamen, der Review zwei Lokatoren und einen vierten Anker, und der
+  Architect-Zug fand die zwei **falschen Zahlen in den ADRs selbst**. Vier Runden,
+  jeder Fund an einer anderen Stelle, **kein** Fund im Mechanismus.
+- **Was ging anders als geplant:** **Der Nachzug war mehr als ein Nachzug.** Erwartet
+  war eine Feldtabelle, die drei Variablen nicht führt; gefunden wurde ein
+  **stiller Defekt** — `mergeConfig` ließ fünf Variablen fallen, und ein
+  Deployment mit Konfigurationsdatei betrieb HTTP-API, gRPC-Stream und
+  NATS-Wecksignal **ohne Fehler, ohne Log, ohne Test** aus. Zweitens: **die
+  ADRs dieses Tages rattern** — `0087` wurde von `0090`, `0088` von `0091`,
+  `0089` von `0092` abgelöst, **alle am selben Tag**, jede wegen einer Zahl oder
+  einer Reichweite, die nicht stimmte. Und die **Korrektur ist selbst eine ADR**,
+  die irren kann: Das Behebungs-Werkzeug trägt dasselbe Risiko wie sein
+  Gegenstand. Drittens: **der §3.13-Lauf war unvollständig** (drei gebrochene
+  Anker, einer gemeldet) — der Suchlauf findet **Symbolnamen**; Lokatoren sind
+  Zahlen und fallen durch. Und sein Ergebnis steht in **einem Bericht**, der
+  keinen Repo-Träger hat.
+- **Steering-Loop-Eintrag:** **eine geschärfte Regel — an ihrem Gegenstand
+  gemessen.** `AGENTS.md` §3.13 ist seit der `welle-20`-Closure verkörpert; dieser
+  Slice ist ihr **erster Fall** und hat **zwei Grenzen** gezeigt: (1) der
+  Suchlauf greift **Symbolnamen**, nicht **Zahlen** — Zeilen-Lokatoren und
+  Nummern in Sätzen fallen durch, obwohl sie dieselbe Klasse sind; (2) das
+  Ergebnis gehört in einen **Träger im Repo**, nicht in einen Handoff-Bericht —
+  sonst ist der Lauf selbst nicht nachlesbar. Beides ist als Beobachtung
+  eingetragen (`BEO-PGC/regel-weiter-als-ihr-sensor` → **3×**, Schwelle erreicht)
+  und wird **nicht** in diesem Zug verkörpert: eine Hard Rule zu ändern ist ein
+  Architect-Zug. Auslöser: `BEO-PGC/regel-weiter-als-ihr-sensor` (`slice-096`).
+- **Beobachtungs-Register (`../observations/`):** **drei Belege** ergänzt —
+  `zahl-in-traeger-driftet-gegen-die-messung` → **8×** (die zwei falschen Zahlen
+  in `ADR-0088`/`ADR-0089`, **ein** Vorgang); `arbeit-ueberholt-stehenden-traeger`
+  → **4×** (der §3.13-Lauf und die vier Ankerstellen); `regel-weiter-als-ihr-sensor`
+  → **3×** (**Schwelle erreicht** — den Ausgang weist der Lese-Schritt der
+  nächsten Wellen-Closure zu, Modul 6). **Kein Zähler wird gesetzt.**
+- **Folge-Slices:** **keine Datei in `open/`.** Die sieben Slices der Client-Matrix
+  sind von [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
+  **empfohlen** und noch nicht geschnitten — sie hier zu nennen wäre „genannt
+  ohne angelegt", dieselbe Klasse wie ein halluziniertes Gate. Ihre Adresse ist
+  die ADR; `slice-097` (der Umzug) und `slice-095` liegen in `next/`.
+- **Risiken aus §6:** vier, je ein Ausgang — R1 *eingetreten und begrenzt*
+  (kein Lauf dieses Repos setzt `CDC_CONFIG_FILE`), R2 *entfallen* (die Klasse
+  greift genau die sechs), R3 *eingetreten und behoben* (vier Ankerstellen, zwei
+  falsche ADR-Zahlen), R4 *entfallen* (15/10/15 nachgezählt).
+- **Drei Paarungen:** Dieses Repo führt Wellen-Betrieb, aber es ist **keine Welle
+  offen** (`welle-20` ist geschlossen, `open/` und der flache Planning-Pfad
+  tragen keine Welle-Datei) — die Prüfung fällt der **nächsten** Wellen-Closure
+  zu. Vorab geprüft: die drei berührten Register-Adressen existieren als
+  Verzeichnis und tragen ein nicht leeres `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

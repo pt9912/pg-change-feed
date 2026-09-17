@@ -24,7 +24,7 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **7×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **8×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md) — **Schwelle erreicht**. Der
 siebte Beleg trifft die Klasse **im Korrektur-Vorgang selbst**: Glob-Fehler →

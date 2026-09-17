@@ -5,7 +5,7 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **3×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **4×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md). Der dritte Vorgang trifft **vier** Stellen in **zwei**
 Dateien — und die letzte ist eine **Korrektur**, die eine andere Stelle
 derselben Klasse beheben sollte (zwei Herkünfte in einer Klammer).
