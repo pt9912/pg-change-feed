@@ -140,18 +140,19 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/review-slice-102.md`
       liegt vor (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-102.md`
-      liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-102.md`
+      liegt vor (Modul 11, frischer Kontext) — DoD-konform, mit zwei benannten,
+      nicht-blockierenden Einschränkungen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
@@ -223,30 +224,73 @@ dasteht.
 - **Der benannte Zusatzkontext trägt im realen Sprach-Bau nicht** (nur die
   isolierte `buildx`-Probe aus [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
   ist bislang gemessen, nicht der offizielle `examples-csharp`-Bau). —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Implementer und Verifier bestätigen unabhängig
+  voneinander, dass die isolierte Probe unverändert trägt: der Bau bricht
+  ohne den benannten Zusatzkontext real mit Exit 1 ab
+  (`docs/reviews/verify-slice-102.md` #1) und erzeugt den Stub mit ihm real,
+  auch bei einer unabhängigen `--no-cache`-Gegenprobe (#3).
 - **Eine der drei gRPC-/Protobuf-Bibliotheken ist zum Zeitpunkt des Baus
   nicht mehr auflösbar** (Paket zurückgezogen, Version gelöscht). —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Alle drei Pakete lösten in der `--no-cache`-Probe
+  des Verifiers real gegen NuGet auf und sind zusätzlich die aktuell
+  neuesten stabilen Versionen, exakt die gepinnten
+  (`docs/reviews/verify-slice-102.md` #3/#5).
 - **Die C#-gRPC-Werkzeugkette verlangt eine nicht-öffentliche Quelle**
   ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 3). — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 3). — **Ausgang: entfallen.** Beide Bauproben des
+  Verifiers liefen ausschließlich gegen die öffentliche NuGet-Registry, ohne
+  Zugangsdaten (`docs/reviews/verify-slice-102.md` #3, #5).
 - **Der fremdsprachige gRPC-Bau kann seinen Stub nicht mehr aus der `.proto`
   erzeugen**, weil der Vertrag eine Einfuhr aus einem anderen Verzeichnis
   verlangt oder Codegen-Optionen den Vertrag selbst berühren müssten —
   [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 2. — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 2. — **Ausgang: entfallen.** Der Bau erzeugt den
+  Stub real und reproduzierbar; die unabhängige `--no-cache`-Gegenprobe des
+  Verifiers lief fehlerfrei durch, alle sieben `GrpcClient.Tests` real neu
+  gelaufen (`docs/reviews/verify-slice-102.md` #3).
 - **Der nicht-blockierende Workflow trägt seinen Umfang nicht mehr** (ein
   vierter, teurerer Bau-Schritt je Sprache — Generator-Lauf braucht Zeit) —
   §Re-Evaluierungs-Trigger 4, `BEO-PGC/nicht-blockierender-workflow-
   alarmmuedigkeit` (1×, offen), `BEO-PGC/github-actions-unverifizierbar-lokal`
-  (5×, verkörpert in `AGENTS.md` §3.10). — **Ausgang:** <…>
+  (7×, verkörpert in `AGENTS.md` §3.10). — **Ausgang: weiter offen**, ohne
+  neue Evidenz in einem der beiden zitierten Register-Einträge. Implementer
+  und Verifier bestätigen unabhängig: `.github/workflows/examples.yml`
+  selbst ist von diesem Slice **nicht** strukturell geändert (Implementer:
+  „`.github/workflows/examples.yml` itself was not touched"), `AGENTS.md`
+  §3.10 wird nicht neu ausgelöst — wie bereits bei `slice-100`/`slice-101`.
+  `nicht-blockierender-workflow-alarmmuedigkeit` bleibt bei 1×,
+  `github-actions-unverifizierbar-lokal` bleibt bei real 7× (die im Plan
+  selbst zitierte „5×" war eine bei Niederschrift bereits veraltete
+  Übernahme, siehe Korrektur oben und
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-102.md`
+  — kein Drift durch die Arbeit *dieses* Risikos).
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
-  Registereinträgen. — **Ausgang:** <…>
+  Registereinträgen. — **Ausgang: entfallen.** Reviewer (Negativbefund) und
+  Verifier (`docs/reviews/verify-slice-102.md` #9) bestätigen unabhängig den
+  `**Beispiele:**`-Block mit der C#-Zeile und die Änderungshistorie-Zeile
+  1.24. Beide Registereinträge
+  (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`) sind **eingelöst**, nicht
+  verletzt — keine neue Evidenzdatei, beide bleiben bei 3×.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
   (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, verkörpert in `AGENTS.md`
-  §3.13 — Suchlauf-Pflicht; besonders `slice-095`s §1, das den C#-/
+  §3.13 — Suchlauf-Pflicht; besonders `slice-097`s §1, das den C#-/
   Kotlin-Weg als „ihre Bau-Kontexte erreichen sie heute nicht" beschreibt und
-  mit diesem Slice teilweise überholt wird). — **Ausgang:** <…>
+  mit diesem Slice teilweise überholt wird). — **Ausgang: eingetreten, direkt
+  behoben — mit einem zweiten, unterschiedenen Fund derselben Klasse.** (a)
+  Der Implementer-eigene §3.13-Suchlauf fand eine stale Aussage in
+  `harness/README.md` §Sensors („drei Images" → „vier Images" je Sprachziel,
+  ausgelöst durch das vierte Runtime-Image im C#-Bau) und korrigierte sie im
+  selben Commit (`a71b425`). (b) `slice-097`s §1 (`done/`, immutabel) trägt
+  seit diesem Slice eine **teilweise** überholte Aussage — „ihre
+  Bau-Kontexte erreichen sie heute nicht" gilt seit `slice-102` für C#
+  nicht mehr, für Kotlin weiterhin. Das ist kein Zitat-Korrektur-Fall nach
+  `ADR-0073` (die Aussage war bei ihrer Niederschrift wahr, wird erst durch
+  spätere Arbeit überholt) und keine Editier-Gelegenheit — `AGENTS.md`
+  §3.13 verlangt hier **Melden, nicht Ändern**. Beide Funde gehören zum
+  selben Vorgang (`slice-102`) und damit zu **einer** Evidenzdatei
+  (`evidence/slice-102.md`), Zähler **8× → 9×** (kein neuer
+  Schwellen-Übertritt, die Regel steht bereits seit `welle-20`).
 
 ## 7. Closure-Notiz
 
@@ -258,13 +302,87 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Die isolierte `buildx`-Probe aus
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) §Kontext trug
+  unverändert im offiziellen `examples-csharp`-Sprachbau — sowohl die
+  negative Probe (Bau bricht ohne den benannten Zusatzkontext real ab,
+  `docs/reviews/verify-slice-102.md` #1) als auch die positive, cache-lose
+  Gegenprobe (Stub-Erzeugung + alle vier Testsuiten real neu gelaufen, #3).
+  Das bestätigt die Form für `slice-103`, der sie unverändert auf Kotlin
+  überträgt.
+- **Was ging anders als geplant:** Der benannte Zusatzkontext wurde nicht nur
+  für den `grpc`-Aufrufpfad zwingend, sondern strukturell für **alle vier**
+  `docker build`-Aufrufe von `examples-csharp` (Review F-1) — eine
+  Nebenwirkung der gemeinsamen `build`-Stufe, die der Implementer innerhalb
+  des vorgegebenen Dockerfile-Musters nicht vermeiden konnte, ohne die Stufe
+  je Programm aufzuspalten. Reviewer und Verifier stufen das als akzeptabel
+  und transparent dokumentiert ein, es ist aber eine Abweichung von der
+  engeren Wortlaut-Erwartung „für grpc zusätzlich" in `ADR-0090` §Fitness
+  Function.
+- **Steering-Loop-Eintrag:** Die Docker-Fehlermeldung bei fehlendem
+  Zusatzkontext („pull access denied … `docker.io/library/proto:latest`")
+  ist irreführend (Review F-2) — sie deutet ohne Vorwissen auf ein
+  Registry-/Auth-Problem statt auf einen fehlenden Bau-Kontext. Entscheidung:
+  **keine neue Hard Rule/kein neuer Sensor** — die Milderung existiert
+  bereits als erklärender Kommentar direkt über der `COPY`-Zeile in
+  `examples/csharp/Dockerfile` sowie in `harness/mk/examples.mk`/
+  `harness/README.md`, und dieses Muster überträgt sich naturgemäß, sobald
+  `slice-103` dieselbe Dockerfile-Form auf Kotlin kopiert. Bleibt eine
+  **Notiz für `slice-103`** (dort ergänzt, siehe Folge-Slices), kein
+  Registereintrag — die Fehlermeldung selbst ist Docker-Verhalten, nicht
+  reparierbar, nur dokumentierbar.
+- **Beobachtungs-Register (`../observations/`):** Drei Einträge
+  fortgeschrieben: `arbeit-ueberholt-stehenden-traeger` jetzt **9×**
+  (`evidence/slice-102.md`, zwei Funde desselben Vorgangs — (a)
+  `harness/README.md` „drei"→„vier" Images, direkt behoben in `a71b425`,
+  (b) `slice-097`s §1, teilweise überholt, gemeldet statt geändert, da
+  `done/`-immutabel; beide zählen als **eine** Gelegenheit); `zahl-in-
+  traeger-driftet-gegen-die-messung` jetzt **11×** (`evidence/slice-102.md`,
+  die im eigenen Plan-Kopf/§6/§8 bei Niederschrift bereits veraltete „5×"
+  für `github-actions-unverifizierbar-lokal`, real 7×, vom Verifier
+  gefunden und in diesem Zug korrigiert); `zitat-nennt-die-falsche-stelle`
+  jetzt **2×** (`evidence/slice-102.md`, Review-F-3: Plan zitierte
+  `slice-095` statt `slice-097` als Beleg für „Bau-Kontexte erreichen sie
+  heute nicht" — weiterhin unter der 3×-Schwelle, bleibt `offen`). Zwei
+  Einträge eingelöst, keine neue Evidenzdatei:
+  `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (bleibt 3×)
+  und `handbuch-versionshistorie-uebersprungen` (bleibt 3×). Zwei Einträge
+  bewusst **nicht** fortgeschrieben: `github-actions-unverifizierbar-lokal`
+  (bleibt real 7×, nur der Plan zitierte veraltet — siehe oben) und
+  `nicht-blockierender-workflow-alarmmuedigkeit` (bleibt 1×) — Begründung in
+  §6, Risiko 5: dieser Slice ändert `.github/workflows/examples.yml` nicht
+  strukturell.
+- **Folge-Slices:** keine neuen. `slice-103` existierte bereits vor dieser
+  Closure in `open/`; sein Plan enthält bereits die konkrete
+  Docker-Befehlsform (§1, Bullet 1: `docker buildx build --build-context
+  <name>=<proto-Verzeichnis> …`, `COPY --from=<name> …`) und wurde um einen
+  knappen Hinweis ergänzt, den erklärenden Dockerfile-Kommentar über der
+  `COPY`-Zeile (siehe Steering-Loop-Eintrag oben) beim Übertragen auf Kotlin
+  mitzuführen.
+- **Risiken aus §6:** sieben Zeilen, sieben Ausgänge — fünf **entfallen**
+  (Zusatzkontext trägt real; alle drei Bibliotheken auflösbar; keine
+  nicht-öffentliche Quelle; Stub-Erzeugung real und reproduzierbar;
+  Handbuch-Nachzug gemessen vollständig), eines **weiter offen**
+  (nicht-blockierender Workflow — ohne neue Registerevidenz, da dieser
+  Slice den Workflow nicht strukturell ändert) und eines **eingetreten,
+  direkt behoben, mit einem zweiten, gemeldeten (nicht geänderten) Fund**
+  derselben Klasse (`harness/README.md` sowie `slice-097`s §1 →
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, jetzt 9×). Details je Zeile
+  in §6.
+- **Drei Paarungen:** Anker-Paarung entfällt (keine neue Verkörperung durch
+  diesen Slice — alle drei fortgeschriebenen Register-Einträge waren entweder
+  bereits verkörpert oder bleiben unter der Schwelle). Folge-Slice-Paarung
+  entfällt (keine neuen Folge-Slices; `slice-103` existierte bereits vor
+  dieser Closure in `open/`). Register-Paarung **grün** — alle sieben
+  zitierten Beobachtungs-Verzeichnisse
+  (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`,
+  `nicht-blockierender-workflow-alarmmuedigkeit`,
+  `github-actions-unverifizierbar-lokal`,
+  `arbeit-ueberholt-stehenden-traeger`,
+  `zahl-in-traeger-driftet-gegen-die-messung`, `zitat-nennt-die-falsche-
+  stelle`) existieren mit nicht leerem `evidence/`. Letztes DoD-Häkchen wird
+  gegen den mv-Commit bestätigt (Commit 3).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
@@ -292,10 +410,14 @@ Treffer: `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (**3×**,
 verkörpert) und `handbuch-versionshistorie-uebersprungen` (**3×**,
 verkörpert) — beide als LP3 in die DoD gezogen; `nicht-blockierender-
 workflow-alarmmuedigkeit` (**1×**, offen) und `github-actions-
-unverifizierbar-lokal` (**5×**, verkörpert in `AGENTS.md` §3.10) — beide
+unverifizierbar-lokal` (**7×** — bei Niederschrift dieses Plans fälschlich
+als „5×" zitiert, dieselbe Klasse wie `slice-101`, siehe §6 letzter
+Risiko-Punkt sowie
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/slice-102.md`;
+verkörpert in `AGENTS.md` §3.10) — beide
 treffen den weiter wachsenden Workflow, als Risiko in §6;
 `arbeit-ueberholt-stehenden-traeger` (verkörpert in `AGENTS.md` §3.13) — als
-Risiko in §6, weil dieser Slice `slice-095`s Aussage zum C#-/Kotlin-Weg
+Risiko in §6, weil dieser Slice `slice-097`s Aussage zum C#-/Kotlin-Weg
 teilweise überholt. Kein Treffer zu `Grpc.Tools`/`Grpc.Net.Client`/
 `Google.Protobuf`/`buildx`-Zusatzkontext selbst (gemessen: `grep -rli
 "grpc\.tools\|grpc\.net\|buildx" docs/plan/planning/observations/` → kein
@@ -309,10 +431,10 @@ Der Block pro Sub-Area entfällt; der **Abschnitt** bleibt.
 - **Modus:** GF
 - **Konventionen-Dichte:** `harness/conventions.md` Modus-Deklaration setzt
   GF für das gesamte Repo (Doc führt, Code folgt).
-- **Phase-Reife:** Phase 4 (Form entschieden, real gemessen als isolierte
-  Probe — noch nicht im offiziellen Sprach-Bau belegt) — dieser Slice hebt
-  die Zelle `csharp`×`grpc` auf Phase 5, sobald `examples-csharp` den Bau
-  real trägt.
+- **Phase-Reife:** Phase 5 (etabliert) — bei Plan-Niederschrift Phase 4 (nur
+  isolierte Probe); dieser Slice hat die Zelle `csharp`×`grpc` mit dem
+  realen `examples-csharp`-Bau (`docs/reviews/verify-slice-102.md` #1/#3)
+  auf Phase 5 gehoben.
 - **Evidenz-/Diskrepanz-Risiko:** niedrig bis mittel — GF, Doc führt; das
   einzige Diskrepanz-Risiko ist, dass die isolierte `buildx`-Probe nicht 1:1
   auf den offiziellen Sprach-Bau überträgt (siehe §6, erstes Risiko).

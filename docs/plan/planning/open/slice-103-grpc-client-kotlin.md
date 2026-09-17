@@ -56,7 +56,12 @@ unabhängig neu zu erfinden:
    denselben Mechanismus wie `examples/csharp/Dockerfile` in `slice-102`
    (`docker buildx build --build-context <name>=<proto-Verzeichnis> …`,
    `COPY --from=<name> …`) — der Bau-Kontext selbst bleibt das
-   Sprach-Wurzelverzeichnis, unverändert.
+   Sprach-Wurzelverzeichnis, unverändert. Die Fehlermeldung bei fehlendem
+   Kontext ist irreführend (Docker meldet „pull access denied" statt eines
+   fehlenden Bau-Kontexts, `slice-102` Review-F-2) — der erklärende
+   Kommentar direkt über der `COPY`-Zeile in `examples/csharp/Dockerfile`
+   ist die Milderung dafür und wird beim Übertragen auf
+   `examples/kotlin/Dockerfile` mitgeführt.
 2. **Der Generator.** `io.grpc:protoc-gen-grpc-kotlin` erzeugt den Stub **im
    Bau** aus der kopierten `.proto`; `io.grpc:grpc-kotlin-stub` und
    `io.grpc:grpc-netty-shaded` tragen die Laufzeit. Der Stub liegt **nicht**

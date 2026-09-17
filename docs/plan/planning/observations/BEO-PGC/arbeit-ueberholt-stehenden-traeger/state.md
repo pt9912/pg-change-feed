@@ -5,10 +5,24 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **8×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **9×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
-evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md). Der
-achte Vorgang (`slice-101`) trifft `harness/README.md` §Sensors ein
+evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md,
+evidence/slice-102.md). Der neunte Vorgang (`slice-102`) trifft
+`harness/README.md` §Sensors ein viertes Mal (Zahlenwort „drei"→„vier" bei
+der `make examples-csharp`-Zeile, ausgelöst durch das vierte Runtime-Image)
+— wieder gefunden vom Implementer über den vorgeschriebenen §3.13-Suchlauf
+selbst und im selben Commit behoben, dieselbe Erfolgsform wie bei
+`slice-093`/`slice-094`/`slice-100`/`slice-101`. Derselbe Vorgang trägt einen
+**zweiten** Fund derselben Klasse, aber mit anderer Behandlungsform: `slice-
+097`s §1 (`done/`, immutabel) wird durch `slice-102` teilweise überholt
+(„ihre Bau-Kontexte erreichen sie heute nicht" gilt seither für C# nicht
+mehr, für Kotlin weiterhin) — kein Zitat-Korrektur-Fall nach `ADR-0073`,
+keine Editier-Gelegenheit, sondern der Regelfall von `AGENTS.md` §3.13:
+gemeldet statt geändert. Beide Funde entstammen demselben Vorgang und
+zählen als **eine** Evidenzdatei (`evidence/slice-102.md`), kein neuer
+Schwellen-Übertritt. Der achte Vorgang (`slice-101`) trifft
+`harness/README.md` §Sensors ein
 drittes Mal (Zahlenwort „zwei"→„drei" bei den `make examples-csharp`/
 `make examples-kotlin`-Zeilen, ausgelöst durch das dritte Runtime-Image je
 Sprache) — wieder gefunden vom Implementer über den vorgeschriebenen
