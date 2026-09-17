@@ -100,19 +100,21 @@ verbleibenden 7 Waisen).
       Report [`review-slice-d-check-trace-rtm.md`](../../../reviews/review-slice-d-check-trace-rtm.md)
       (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO), nicht merge-blockierend — DoD-Nachzug
       ohne Fixrunde (Reviewer-Skill §DoD-Checkbox-Nachzug ohne Fixrunde).
-- [ ] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
-      §3.9).
+- [x] `make gates` grün — Exit-Code direkt und ungepiped geprüft (`AGENTS.md`
+      §3.9). Eigenständig vom Verifier reproduziert
+      (`docs/reviews/verify-slice-d-check-trace-rtm.md` §A), formal hier
+      nachgezogen.
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe LP3);
       `harness/sensors/docs-check.md` falls dort der bessere Trägerort ist.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis `BEO-PGC/<slug>/` oder eine weitere Datei in dessen
-      `evidence/`; kein Zähler wird gesetzt, er folgt aus den Dateien. Keine
-      Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
-      notiert. Insbesondere die 7 realen Waisen als eigene, benannte
-      Beobachtung erwägen (nicht Risiko dieses Slice, da außerhalb seines
-      Lieferumfangs, aber ein Fund, der sonst nirgends steht).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei neue
+      Verzeichnisse: `BEO-PGC/anforderung-ohne-erkennbaren-nachweis/` (1×,
+      die 7 realen Waisen tragen jetzt einen Träger, der bei der nächsten
+      Slice-Planung gesichtet wird) und
+      `BEO-PGC/konfigurierter-pfad-ohne-umbenennungs-schutz/` (1×, §6
+      Risiko 1 — hartcodierter `trace.coverage`-Pfad ohne
+      Umbenennungs-Schutz).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       geprüft von der **Welle-Closure** (`welle-d-check`), nicht hier
@@ -160,18 +162,31 @@ geprüft, nicht von diesem Slice allein.
 - **`trace.coverage`s `files:`-Liste veraltet, sobald `docs/user/
   e2e-abdeckung.md` umbenannt oder verschoben wird** (das Erzeugnis von
   `make test-integration`, `BEO-PGC/generierte-artefakte-ohne-sync-sensor`).
-  — **Ausgang:** <weiter offen: → BEO-PGC im Register, als Kopplung
-  vermerkt / entfallen: Pfad ist stabil, kein Änderungsanlass erkennbar>
+  — **Ausgang: weiter offen** — der Pfad bleibt eine Kopplung an einen
+  anderen Lauf, keine vom Plan selbst kontrollierte Konstante; kein
+  Umbenennungs-Anlass aktuell erkennbar, aber keine strukturelle Garantie
+  gegen künftige Drift (Verifikation §C Risiko 1). Wandert ins
+  Beobachtungs-Register als eigener, neuer Eintrag
+  (`BEO-PGC/konfigurierter-pfad-ohne-umbenennungs-schutz`, 1×) — geprüft
+  gegen `BEO-PGC/generierte-artefakte-ohne-sync-sensor` (dort: erzeugter
+  Inhalt läuft gegen seine Quelle auseinander) und für **nicht**
+  deckungsgleich befunden: hier geht es um einen hartcodierten Pfad, nicht
+  um Inhalts-Drift.
 - **Die Waisenzahl (9 → 7) verschiebt sich beim vollen Implementer-Lauf**,
   weil andere `d-check`-Module (z. B. `matrix`, `ids`) den gescannten Baum
-  anders beschneiden als die isolierte Planungsmessung. — **Ausgang:**
-  <entfallen: Implementer-Lauf bestätigt identische Zahlen / weiter offen:
-  Abweichung dokumentiert, Ursache nicht in diesem Slice auflösbar>
+  anders beschneiden als die isolierte Planungsmessung. —
+  **Ausgang: entfallen** — Implementer-, Review- und Verifikations-Lauf
+  bestätigen unabhängig dieselben Zahlen (76/9 ohne, 76/7 mit
+  `trace.coverage`), keine Abweichung durch das volle Modul-Bündel
+  (Verifikation §C Risiko 2).
 - **Ein zukünftiger Reviewer oder Verifier liest `--trace`s Advisory-Status
   falsch als bereits durchgesetztes Gate** (Verwechslungsgefahr zwischen
-  `doc-trace` und `doc-complete`). — **Ausgang:** <entfallen: LP3s expliziter
-  Vermerk in `harness/README.md` genügt / weiter offen: zusätzliche
-  Reviewer-Skill-Ergänzung nötig>
+  `doc-trace` und `doc-complete`). —
+  **Ausgang: entfallen** — `harness/README.md:129` und
+  `harness/sensors/docs-check.md` Punkt 10 tragen beide den expliziten
+  Vermerk „kein Gate", `doc-complete`/`--require-complete` nicht in
+  `GATE_CHECKS`/`make gates` (Verifikation §C Risiko 3, zwei unabhängige,
+  disambiguierende Träger).
 
 ## 7. Closure-Notiz
 
@@ -182,14 +197,40 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker für
 Steering-Loop-Regeln.
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt: was genau>
-  — liegt in `<…>`. Auslöser: `BEO-<KUERZEL>/<slug>` (<Belege> — N×).
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>
-- **Drei Paarungen:** <von der Welle-Closure `welle-d-check` geprüft>
+- **Was hat funktioniert:** Der Plan war bereits bei Priorisierung
+  vollständig ausgearbeitet (reale Vorabmessung, klare Abgrenzung) — der
+  Implementer-Lauf hatte keine offene Architekturfrage abzuwarten (anders
+  als der Schwester-Slice) und lief ohne Fixrunde durch: 0 HIGH-Findings im
+  Review, DoD-Konformität vom Verifier vollständig bestätigt. Die im Plan
+  vorab benannte Methode (isolierte Doppelmessung mit/ohne
+  `trace.coverage`) wurde von Implementer, Reviewer UND Verifier
+  unabhängig reproduziert und lieferte jedes Mal identische Zahlen
+  (76 Anforderungen, 9→7 Waisen, exakte Differenzmenge
+  `LH-FA-CAP-002`/`LH-FA-CAP-003`) — ein sauberes Beispiel für AGENTS.md
+  §3.12 in der Praxis.
+- **Was ging anders als geplant:** Nichts Wesentliches — beide
+  Rückführungs-Trigger (§4) traten nicht ein, keine Rückkante nötig.
+- **Steering-Loop-Eintrag:** Keine neue Regel geschärft — beide neuen
+  Beobachtungen liegen bei 1×, unter der 3×-Schwelle.
+- **Beobachtungs-Register (`../observations/`):** Zwei neue Einträge:
+  `BEO-PGC/anforderung-ohne-erkennbaren-nachweis` (1×, die 7 realen Waisen
+  — echte Lücke oder fehlende Zitierung ist eine inhaltliche Prüfung pro
+  Anforderung, kein Konfigurationsvorgang, deshalb bewusst nicht in diesem
+  Slice aufgelöst) und `BEO-PGC/konfigurierter-pfad-ohne-umbenennungs-schutz`
+  (1×, §6 Risiko 1 — geprüft gegen `BEO-PGC/generierte-artefakte-ohne-sync-sensor`
+  und als eigene Klasse befunden, kein Duplikat).
+- **Folge-Slices:** keine unmittelbar ausgelöst — ein künftiger Slice zur
+  inhaltlichen Prüfung der 7 Waisen ist ein Kandidat, aber kein
+  benannter Auftrag dieses Slices.
+- **Risiken aus §6:** Risiko 1 „weiter offen" (Register-Eintrag oben),
+  Risiko 2 und Risiko 3 „entfallen" — siehe §6 für die Begründung je
+  Risiko.
+- **Drei Paarungen:** von der Welle-Closure `welle-d-check` geprüft — die
+  welle-weite Bedingung (kombinierter `make gates`-Lauf mit
+  `slice-d-check-tracked-modul` gleichzeitig aktiv) ist durch den
+  Verifikations-Lauf faktisch bereits erfüllt (`.d-check.yml` trägt zum
+  Zeitpunkt dieser Closure sowohl `tracked` im `modules:`-Bündel als auch
+  den `trace:`-Block gleichzeitig, `make gates` lief grün).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
