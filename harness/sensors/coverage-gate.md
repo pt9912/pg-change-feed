@@ -3,8 +3,11 @@
 ## Vertrag
 
 Wird dieses Target rot, unterschreitet die Gesamt-Coverage über der
-**netzlos prüfbaren Fläche** — `./internal/...`+`./cmd/...` **ohne** die
-Pakete, deren Testlauf einen externen Dienst voraussetzt — die aktuell
+**netzlos prüfbaren Fläche** — `./internal/...`+`./cmd/...`+`./gen/...`
+(`./gen/...` seit `slice-097`: der Umzug der erzeugten Vertragsfläche,
+`ADR-0076`, bewegt den Träger, nicht den Gegenstand — Architect-Verdikt
+`docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md`) **ohne**
+die Pakete, deren Testlauf einen externen Dienst voraussetzt — die aktuell
 gültige Schwelle (`THRESHOLD`). Vierte Docker-Multi-Stage-Stufe `coverage`
 (nach `deps`, analog `d-check`s `Dockerfile`): `go test -coverpkg=<Pakete>
 -coverprofile=… -covermode=atomic <Pakete>`, dann `go tool cover -func=…`,
@@ -47,6 +50,18 @@ ist — dieselbe Reifung, die d-check selbst durchlief (85 → 90 → 93,
 Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
+
+**Der aktuelle Nenner ist 1936, nicht 1903** (Lauf `slice-097`, Architect-Verdikt
+`docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md` §2/§5) — die
+Differenz trägt zwei Ursachen: `slice-096` bewegte Produktionscode in
+`internal/bootstrap/{config_file,wiring}.go` (+33, abgeleitet), und `slice-097`
+zog die erzeugte Vertragsfläche (`gen/cdc/stream/v1`, vormals
+`internal/adapters/driving/grpc/streamv1`) an einen öffentlichen Pfad um und
+nahm `./gen/...` wieder in die `go list`-Zeile auf — derselbe Gegenstand, kein
+neuer (86 Statements, unverändert). Quote am `slice-097`-Stand: **83,3–83,4 %**
+(Band 1 Statement = 0,05 pp). **Die 1903-Werte unten bleiben als datierte
+Messung des `slice-085`-Laufs gültig** — sie sind kein Dauerwert und waren es
+nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
 
 - **Statement-Zahlen** stammen aus dem Profil der `coverage`-Stufe über den
   Gegenstand (`/out/coverage.out`), **dedupliziert über die Block-Position**:
@@ -152,7 +167,7 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
    und `:101` (`Diagnose`) sind netzlos erreichbar. Dienstgebunden ist der
    **Rumpf** dieser vier Funktionen, nicht ihr Aufruf.
 
-   **`internal/adapters/driving/grpc/streamv1` ist keins dieser drei Pakete.**
+   **`gen/cdc/stream/v1` ist keins dieser drei Pakete.**
    Das Paket (die generierten `changestream*.pb.go`) führt ein **eigenes**,
    externes Testpaket (`changestream_test.go`, `package streamv1_test`;
    `XTestGoFiles` = **1**, `TestGoFiles` = **0**) und hat damit einen eigenen

@@ -38,11 +38,15 @@ RUN apk add --no-cache protobuf-dev=31.1-r1 \
 # --- coverage: Go-Test-Coverage ueber die netzlos pruefbare Flaeche des
 # Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071, ADR-0054;
 # Kalibrierungs-Bindung harness/README.md §Sensors). Die Flaeche ist
-# internal/...+cmd/... ohne die Pakete, deren Testlauf einen externen Dienst
-# voraussetzt — der Filter unten nennt die drei namentlich, die tragende
-# Regel ist die Eigenschaft, nicht die Liste; die Paketliste selbst kommt aus
-# `go list` und zieht neue Pakete mit. `-coverpkg` misst ueber die
-# Paketgrenzen hinweg, sonst zaehlt nur paket-lokale Abdeckung.
+# internal/...+cmd/...+gen/... ohne die Pakete, deren Testlauf einen externen
+# Dienst voraussetzt — der Filter unten nennt die drei namentlich, die
+# tragende Regel ist die Eigenschaft, nicht die Liste; die Paketliste selbst
+# kommt aus `go list` und zieht neue Pakete mit. `gen/...` ist seit
+# `slice-097` Teil der Liste: der Umzug der erzeugten Vertragsflaeche
+# (`ADR-0076`) bewegt den Traeger, nicht den Gegenstand — die Eigenschaft
+# (netzlos pruefbar, `ADR-0071` Punkt 1) bleibt erfuellt, siehe
+# architect-verdict-slice-097-coverage-gegenstand.md. `-coverpkg` misst ueber
+# die Paketgrenzen hinweg, sonst zaehlt nur paket-lokale Abdeckung.
 # `test/integration/` bleibt ausgeschlossen (eigene Black-Box-Paketwurzel
 # gegen einen laufenden Compose-Container, kein Unit-Coverage-Kandidat).
 # Adapter-Tests ohne gesetzte CDC_*_TEST_DSN-Variable skippen real in diesem
@@ -62,7 +66,7 @@ ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
 
 COPY . .
 RUN mkdir -p /out && \
-    pkgs=( $(go list ./internal/... ./cmd/... \
+    pkgs=( $(go list ./internal/... ./cmd/... ./gen/... \
         | grep -vE '(^|/)(postgresstorage|postgresack|replication/receive)$') ) && \
     go test \
         -coverpkg="$(IFS=,; echo "${pkgs[*]}")" \

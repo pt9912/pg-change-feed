@@ -1,8 +1,8 @@
 # harness/mk/coverage.mk — Coverage-Gate-Fragment (ADR-0054, ADR-0071).
 # Vierte Docker-Stage `coverage` (Dockerfile, nach `deps`) misst real die
 # Go-Test-Coverage ueber die netzlos pruefbare Flaeche (internal/...+cmd/...
-# ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt) und
-# prueft sie ueber tools/coverage-gate.sh gegen THRESHOLD; haengt
+# +gen/... ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt)
+# und prueft sie ueber tools/coverage-gate.sh gegen THRESHOLD; haengt
 # coverage-gate an GATE_CHECKS — der Root-Aggregator faehrt es via make gates.
 #
 # Kalibrierungs-Bindung (harness/README.md §Sensors, ADR-0054 §(a)): bootstrap-

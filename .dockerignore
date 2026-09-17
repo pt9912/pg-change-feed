@@ -15,6 +15,7 @@
 *
 !cmd/
 !internal/
+!gen/
 !go.mod
 !go.sum
 !tools/coverage-gate.sh
