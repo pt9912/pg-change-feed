@@ -68,7 +68,7 @@ host-lokaler absoluter Pfad in diesem Bericht.
 | 13 | Lektüre `docs/user/benutzerhandbuch.md` Z. 700–704 | — | `**Beispiel:**`-Absatz unter „Zugriff über den gRPC-Change-Stream" nennt `examples/grpc-client`, Startbefehl, `CDC_GRPC_ADDR`/`CDC_API_TOKEN_READER` |
 | 14 | `grep -n "^| 1\." docs/user/benutzerhandbuch.md` (Versionshistorie) | — | lückenlose Folge `…1.16, 1.17, 1.18, 1.19` — `1.19` trägt genau diesen Durchlauf |
 | 15 | Beobachtungs-Register: vier im Plan zitierte Pfade | — | `BEO-PGC/{handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche,handbuch-versionshistorie-uebersprungen,dod-begruendung-unzutreffende-tatsachenbehauptung,arbeit-ueberholt-stehenden-traeger}/` existieren, je mit nicht leerem `evidence/` |
-| 16 | ADR-0090 §Slice-Schnitt-Empfehlung, Zeile 7 gelesen | — | „**Go-gRPC-Client** … LP2 die Kante in `.a-check.yml`" — bestätigt: die breitere „Go-Aussage"-Reformulierung (§6) ist Folgepflicht des **Träger-Zugs**, nicht an Zeile 7/diesen Slice gebunden |
+| 16 | `ADR-0090` §Slice-Schnitt-Empfehlung, Zeile 7 gelesen | — | „**Go-gRPC-Client** … LP2 die Kante in `.a-check.yml`" — bestätigt: die breitere „Go-Aussage"-Reformulierung (§6) ist Folgepflicht des **Träger-Zugs**, nicht an Zeile 7/diesen Slice gebunden |
 
 ---
 
