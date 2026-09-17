@@ -112,18 +112,18 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
       Bericht: `docs/reviews/review-slice-100.md` (0 HIGH/MEDIUM/LOW, 1 INFO,
       keine Fixrunde nötig).
-- [ ] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-100.md`
+- [x] Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-100.md`
       liegt vor (Modul 11, frischer Kontext).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) — *entfällt: Greenfield-
       Bootstrap (`harness/conventions.md` Modus-Deklaration `*`/`PGC` = GF),
       keine Datei vorhanden.*
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7
       notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im
       Repo **ohne** Wellen-Betrieb hier geprüft.
@@ -198,21 +198,77 @@ dasteht.
   `System.Net.ServerSentEvents` bei einer älteren .NET-Basis als angenommen,
   oder `okhttp-sse` statt `java.net.http`) — Registry-/Digest-Pin dieses
   Fremdmoduls nicht mehr auflösbar wäre die Folge-Ausprägung. —
-  **Ausgang:** <…>
+  **Ausgang: entfallen.** Implementer und Verifier haben unabhängig
+  voneinander gemessen (`grep -rn "ServerSentEvents|okhttp"` über beide
+  Client-Bäume, Lektüre von `Directory.Packages.props` und aller
+  `build.gradle.kts`-Dateien): kein Treffer außer Kommentarzeilen, die den
+  **nicht** gewählten Weg benennen; C# nutzt `HttpClient` mit
+  Zeilen-Parsing, Kotlin `java.net.http.HttpClient`/`BodyHandlers.ofLines()`
+  — beide ohne neues Paket
+  (`docs/reviews/verify-slice-100.md` #9–#13). Die `ADR-0090`-Annahme
+  (Festlegung 1) trägt für beide Zellen real.
 - **Die Werkzeugkette einer Sprache verlangt eine nicht-öffentliche Quelle**
   ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)
-  §Re-Evaluierungs-Trigger 3). — **Ausgang:** <…>
+  §Re-Evaluierungs-Trigger 3). — **Ausgang: entfallen.** Beide `--no-cache`-
+  Bauproben liefen ausschließlich gegen NuGet bzw. Maven Central/Gradle
+  Plugin Portal, ohne Zugangsdaten (`docs/reviews/verify-slice-100.md` #2,
+  #5) — keine neue Abhängigkeit überhaupt, also auch keine nicht-öffentliche
+  Quelle.
 - **Der nicht-blockierende Workflow trägt seinen Umfang nicht mehr** (zwei
   weitere Bau-Ziele im selben Workflow, Laufzeit über dem Runner-Budget) —
   §Re-Evaluierungs-Trigger 4, `BEO-PGC/nicht-blockierender-workflow-
   alarmmuedigkeit` (1×, offen), `BEO-PGC/github-actions-unverifizierbar-lokal`
-  (5×, verkörpert in `AGENTS.md` §3.10). — **Ausgang:** <…>
+  (7×, verkörpert in `AGENTS.md` §3.10). — **Ausgang: weiter offen**, aber
+  **ohne neue Evidenz in einem der beiden zitierten Register-Einträge**.
+  Der Verifier hat gemessen (`docs/reviews/verify-slice-100.md` #16):
+  `git diff 35f7eba..d4b8034 --stat -- .github/workflows/` ist **leer** —
+  dieser Slice ändert `.github/workflows/examples.yml` selbst nicht
+  strukturell, die bestehenden Jobs rufen unverändert `make
+  examples-csharp`/`make examples-kotlin` auf, die jetzt intern zwei
+  Images statt eines bauen. `AGENTS.md` §3.10 (Träger von
+  `github-actions-unverifizierbar-lokal`) verlangt einen „neuen oder
+  strukturell geänderten" Workflow — dieser Slice liefert keinen von
+  beiden, anders als `slice-098`/`-099` (neuer C#- bzw. Kotlin-Job). Der
+  Eintrag bleibt deshalb bei **7×** stehen, kein achter Beleg. Ebenso keine
+  neue Evidenz bei `nicht-blockierender-workflow-alarmmuedigkeit` (bleibt
+  **1×**): Diese Beobachtung trackt einen dauerhaft roten, überlesenen
+  Lauf — den hat dieser Slice nicht erzeugt, nur bestehende Bau-Ziele
+  intern erweitert. **Weiter offen** bleibt der Risiko-Punkt trotzdem: Ob
+  die jetzt verdoppelte Bauzeit je Sprache innerhalb des
+  Runner-Zeitbudgets bleibt, zeigt erst ein realer Post-Push-Lauf
+  (`AGENTS.md` §3.9/§3.10-Grenze, kein `git push` in dieser Session
+  möglich) — die beiden Register-Pfade bleiben die richtige Adresse, falls
+  sich das Risiko künftig materialisiert, tragen aber für **diesen** Slice
+  keinen neuen Beleg.
 - **Der Handbuch-Nachzug wird vergessen** — die Klasse mit **je 3×** in zwei
   Registereinträgen; sie ist der einzige Teil dieses Slice, den **kein**
-  Kompilat erzwingt. — **Ausgang:** <…>
+  Kompilat erzwingt. — **Ausgang: entfallen.** Reviewer (Negativbefund) und
+  Verifier (#19, direkte Lektüre) bestätigen unabhängig voneinander den
+  `**Beispiele:**`-Block mit drei Zeilen (Go/C#/Kotlin) und die
+  Änderungshistorie-Zeile 1.22. Beide Registereinträge
+  (`handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
+  `handbuch-versionshistorie-uebersprungen`) sind durch diesen Slice
+  **eingelöst**, nicht verletzt — keine neue Evidenzdatei, beide bleiben
+  bei 3×.
 - **Ein Träger wird überholt, den dieser Slice nicht anfasst**
   (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, verkörpert in `AGENTS.md`
-  §3.13 — Suchlauf-Pflicht). — **Ausgang:** <…>
+  §3.13 — Suchlauf-Pflicht). — **Ausgang: eingetreten, direkt behoben.**
+  Der Implementer-eigene §3.13-Suchlauf fand zwei stale Sätze in
+  `harness/README.md` §Sensors (Singular „baut das Werkzeugketten-Image"
+  je Sprache, seit `slice-098`/`-099` falsch, weil dieser Slice pro
+  Sprache ein zweites Runtime-Image einführt) und korrigierte sie im
+  selben Commit (`7484fc3`) auf Plural mit benannten Image-Tags. Reviewer
+  und Verifier bestätigen die Korrektur als vollständig und
+  nicht-überschießend (`docs/reviews/review-slice-100.md` Negativbefund,
+  `docs/reviews/verify-slice-100.md` #15). **Zählt als neues Auftreten**,
+  nicht nur als Beleg dafür, dass die Regel wirkt: Der Registereintrag
+  zählt bereits mehrfach Fälle, die der Implementer über genau diesen
+  vorgeschriebenen Suchlauf selbst fand (`slice-093`, `slice-094`) — der
+  Zähler misst, wie oft eine Arbeit einen stehenden Träger überholt, nicht,
+  ob der Fund durch Zufall oder durch Disziplin gelang. Neue Evidenzdatei
+  `evidence/slice-100.md`, Zähler **6× → 7×** — kein neuer
+  Schwellen-Übertritt, die Regel (`AGENTS.md` §3.13) steht bereits seit
+  `welle-20`.
 
 ## 7. Closure-Notiz
 
@@ -224,13 +280,70 @@ Feld `liegt in` steht **nur**, wenn mit diesem Slice wirklich etwas verkörpert
 wurde; Feld und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der
 Backticks).
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
-- **Drei Paarungen:** <…>
+- **Was hat funktioniert:** Zwei Sprachen in einem Slice, ohne dass eine
+  neue Abhängigkeit nötig wurde — die `ADR-0090`-Annahme (Festlegung 1)
+  hat jetzt zum zweiten Mal in Folge getragen (`slice-098`/`-099` für
+  HTTP, dieser Slice für SSE): Implementer und Verifier haben je eigens
+  nachgemessen (`grep` gegen beide Paket-Manifeste), kein Fremdmodul in
+  keiner der beiden Sprachen. Der Verifier hat zusätzlich vier eigene,
+  cache-lose `docker build --no-cache`-Bauproben gefahren, die real
+  bestätigen, dass beide Programme je Sprache (`http-client` und
+  `sse-client`) unabhängig voneinander bauen und testen — die geteilte
+  `build`-Stufe je Dockerfile bricht die bestehende `http-client`-Zusage
+  nicht.
+- **Was ging anders als geplant:** Der Implementer-eigene §3.13-Suchlauf
+  fand real zwei stale Sätze in `harness/README.md` §Sensors (Singular
+  „das Werkzeugketten-Image" je Sprache) und korrigierte sie im selben
+  Zug — ein Plan-Nachzug (§3, vorletzte Zeile), nicht ursprünglich als
+  eigene §3-Zeile benannt. Das Review-Finding (INFO, SSE-Frame-Parsing
+  deckt nur den Trivialfall) ist keine Abweichung vom Plan: Der Slice-Plan
+  bindet die Implementierung ausdrücklich an das Go-Form-Vorbild und
+  schließt eine Endpunkt-/Schema-Änderung aus (§1) — die Lücke ist
+  vorbestehend im Vorbild und wurde plangemäß mitportiert, keine neue
+  Lücke dieses Diffs.
+- **Steering-Loop-Eintrag:** keiner. Beide Fund-Klassen dieses Slices
+  (Handbuch-Nachzug, überholter Träger) sind bereits verkörpert
+  (`AGENTS.md` §3.13 seit `welle-20`, die beiden Handbuch-Register-
+  Einträge seit `slice-069`/`-053`); das Review-INFO (SSE-Parsing-
+  Trivialfall) ist eine geerbte, vom Plan bewusst akzeptierte Eigenschaft
+  des Form-Vorbilds, keine neue Finding-Klasse, die einen dritten Beleg
+  bräuchte.
+- **Beobachtungs-Register (`../observations/`):** Zwei bereits verkörperte
+  Einträge durch diesen Slice **eingelöst**, keine neue Evidenzdatei:
+  `handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche` (bleibt 3×)
+  und `handbuch-versionshistorie-uebersprungen` (bleibt 3×). Ein Eintrag
+  fortgeschrieben: `arbeit-ueberholt-stehenden-traeger` jetzt **7×**
+  (`evidence/slice-100.md`) — kein neuer Schwellen-Übertritt, `AGENTS.md`
+  §3.13 steht bereits seit `welle-20`. Zwei Einträge bewusst **nicht**
+  fortgeschrieben, obwohl im Slice-Kopf/§8 zitiert:
+  `github-actions-unverifizierbar-lokal` (bleibt 7×) und
+  `nicht-blockierender-workflow-alarmmuedigkeit` (bleibt 1×) — Begründung
+  in §6, Risiko 3: dieser Slice ändert `.github/workflows/examples.yml`
+  nicht strukturell (leerer Diff, Verifier #16), löst `AGENTS.md` §3.10
+  deshalb nicht neu aus und erzeugt keinen dauerhaft roten, überlesenen
+  Lauf.
+- **Folge-Slices:** keine neuen. `slice-101`–`103` existierten bereits vor
+  dieser Closure in `open/`.
+- **Risiken aus §6:** fünf Zeilen, fünf Ausgänge — zwei **entfallen**
+  (kein Fremdmodul in keiner Runtime, gemessen; keine nicht-öffentliche
+  Quelle, da keine neue Abhängigkeit überhaupt), eines **entfallen**
+  (Handbuch-Nachzug gemessen vollständig), eines **weiter offen** (nicht-
+  blockierender Workflow — ohne neue Registerevidenz, da dieser Slice den
+  Workflow nicht strukturell ändert) und eines **eingetreten, direkt
+  behoben** (`harness/README.md`-Singular/Plural-Fund →
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, jetzt 7×). Details je
+  Zeile in §6.
+- **Drei Paarungen:** Anker-Paarung entfällt (keine neue Verkörperung
+  durch diesen Slice — der fortgeschriebene Register-Eintrag war bereits
+  vor diesem Slice verkörpert). Folge-Slice-Paarung entfällt (keine neuen
+  Folge-Slices; `slice-101`–`103` existierten bereits vor dieser Closure
+  in `open/`). Register-Paarung **grün** — alle fünf zitierten
+  Beobachtungs-Verzeichnisse (`handbuch-nicht-nachgezogen-bei-neuer-
+  betreiber-oberflaeche`, `handbuch-versionshistorie-uebersprungen`,
+  `nicht-blockierender-workflow-alarmmuedigkeit`, `github-actions-
+  unverifizierbar-lokal`, `arbeit-ueberholt-stehenden-traeger`) existieren
+  mit nicht leerem `evidence/`. Letztes DoD-Häkchen wird gegen den
+  mv-Commit bestätigt (Commit 3).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

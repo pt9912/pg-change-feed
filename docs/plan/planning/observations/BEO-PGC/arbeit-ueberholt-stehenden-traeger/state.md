@@ -5,9 +5,15 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **6×** (evidence/slice-091.md, evidence/slice-093.md,
+Zähler (abgeleitet): **7×** (evidence/slice-091.md, evidence/slice-093.md,
 evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
-evidence/slice-095.md). Der sechste Vorgang (`slice-095`, 2. Durchlauf) ist
+evidence/slice-095.md, evidence/slice-100.md). Der siebte Vorgang
+(`slice-100`) trifft `harness/README.md` §Sensors erneut (Singular→Plural
+bei den `make examples-csharp`/`make examples-kotlin`-Zeilen, ausgelöst
+durch das zweite Runtime-Image je Sprache) — gefunden vom Implementer über
+den vorgeschriebenen §3.13-Suchlauf selbst und im selben Commit behoben,
+dieselbe Erfolgsform wie bei `slice-093`/`slice-094`. Der sechste Vorgang
+(`slice-095`, 2. Durchlauf) ist
 die erste **selbstreferentielle** Variante: die Plan-Datei, die die
 überholende Arbeit selbst trägt (§3-Begründung „keine Kante", durch die
 eigene, spätere LP3-Lieferung desselben Slice falsch geworden), statt eines
