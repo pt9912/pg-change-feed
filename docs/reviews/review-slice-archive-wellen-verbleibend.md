@@ -117,3 +117,15 @@ vor" ist mit diesem Report erfüllt.
 Dieser Report ersetzt keine Verifikation — DoD-/Spec-Konformität prüft der
 Verifier separat (Modul 11), sofern dieser Slice eine eigene Verifikation
 vorsieht.
+
+## Nachtrag (nach diesem Report)
+
+`welle-18` war versehentlich aus der realen `WAVES`-Liste ausgelassen
+worden (siehe Slice-Plan §7 Nachtrag) — dieser Report deckt **nur** die
+ursprünglichen 17 Läufe ab, nicht den separaten Zwei-Commit-Nachtrag für
+`welle-18` (`00c48e0`, `4ab7596`) und dessen Titelkorrektur (`502e60f`).
+Der Nachtrag wandte dieselbe, hier bereits geprüfte Technik unverändert an
+(kein neues Risiko) und zeigte real denselben, hier bereits als F-1
+dokumentierten Stub-Titel-Fehler — kein neuer Reviewer-Zug nötig für eine
+mechanische Wiederholung eines bereits geprüften Musters an einem Record
+(`AGENTS.md` §3.5 letzter Absatz: Commit-Kennung ist der Beleg).
