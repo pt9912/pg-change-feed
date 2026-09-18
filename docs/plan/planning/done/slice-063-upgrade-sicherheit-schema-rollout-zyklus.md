@@ -50,7 +50,7 @@ erfasst.
   den Zeitpunkt, sobald eine echte Release-Historie existiert
   ([ADR-0051](../../adr/0051-cicd-pipeline-github-actions.md) Folgepflicht:
   `slice-039` liegt bereits in `done/`,
-  [`docs/plan/planning/done/slice-039-ci-workflow-dependabot.md`](../done/slice-039-ci-workflow-dependabot.md);
+  [`docs/plan/planning/done/altbestand/slice-039-ci-workflow-dependabot.md`](../done/altbestand/slice-039-ci-workflow-dependabot.md);
   `slice-040`, Release-Pipeline/Tags, ist noch nicht angelegt) — ohne
   Git-Tags/Releases wäre jeder frühere Commit als „Vorgängerversion"
   willkürlich gewählt.

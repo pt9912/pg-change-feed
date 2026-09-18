@@ -17,7 +17,7 @@ vorigen Lauf).
 
 - das Review zur `d-check`-Verkörperungs-Welle F-1 (das zu behebende
   HIGH-Finding)
-- `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7 (die
+- `docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7 (die
   primäre Quelle, dritter Punkt unter „Was hat funktioniert")
 - das Review zu `slice-096` F-2 (das ursprünglich fehlzitierte
   Original)

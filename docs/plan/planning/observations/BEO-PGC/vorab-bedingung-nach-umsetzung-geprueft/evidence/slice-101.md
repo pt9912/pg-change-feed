@@ -39,7 +39,7 @@ geschrieben — hier erstmals explizit auf einen Plan-Trigger-Konflikt
 eigenständige, plausible aber nicht die einzig mögliche
 Auslegungsentscheidung benannt (Verifikationsbericht zu `slice-101`, §3.1).
 
-Quelle: `docs/plan/planning/done/slice-101-nats-client-csharp-kotlin.md`
+Quelle: `docs/plan/planning/done/altbestand/slice-101-nats-client-csharp-kotlin.md`
 §4/§7 · Review zu `slice-101`, F-1/F-2 ·
 der Architect-Verdikt zu jnats/Bouncy-Castle bei `slice-101` ·
 Verifikationsbericht zu `slice-101`, §3.

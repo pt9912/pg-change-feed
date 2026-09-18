@@ -11,4 +11,4 @@ geplant"), aber kein Registereintrag angelegt — diese Lücke trägt
 `slice-103` nach.
 
 Quelle: Review zu `slice-102`, F-1 ·
-`docs/plan/planning/done/slice-102-grpc-client-csharp.md` §7.
+`docs/plan/planning/done/altbestand/slice-102-grpc-client-csharp.md` §7.

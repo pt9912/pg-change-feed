@@ -20,5 +20,5 @@ korrekte Form: „im Repo ohne Wellen-Betrieb hier geprüft, nach dem `git mv`
 nach `done/`" — Formvorbild `slice-097` §2 letzte DoD-Zeile.
 
 Quelle: `docs/plan/planning/in-progress/slice-095-beispiel-clients-drei.md`
-§2 (berichtigt bei dieser Closure) · `docs/plan/planning/done/slice-097-umzug-vertragsflaeche.md`
+§2 (berichtigt bei dieser Closure) · `docs/plan/planning/done/altbestand/slice-097-umzug-vertragsflaeche.md`
 §2 (Formvorbild) · `harness/conventions.md` §Modus-Deklaration.

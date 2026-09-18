@@ -13,7 +13,7 @@
 
 - `docs/plan/planning/in-progress/slice-028-integrationstest-nachzug-rollen-mvp.md` (§1 Ziel/Abgrenzung, §2 DoD, §3 Plan)
 - `docs/plan/adr/0047-rollenspezifische-dsn-verdrahtung.md` (Accepted)
-- `docs/plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md` und dessen Closure-Notiz §7
+- `docs/plan/planning/done/altbestand/slice-023-rollen-spezifische-dsn-verdrahtung.md` und dessen Closure-Notiz §7
 - Review zu `slice-023` (Vorgänger-Review, INFO-1)
 - `docs/plan/planning/observations/BEO-PGC/rollen-test-abdeckungsluecken/` (observation.md, state.md, evidence/slice-023.md)
 - `spec/lastenheft.md` (`LH-QA-SEC-001`…`003`)

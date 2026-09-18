@@ -452,7 +452,7 @@ der zu suchen wäre. Diese Hälfte bleibt beim **Reviewer** als Leser des
 Diffs — real bereits so geschlossen: Der `slice-096`-Suchlauf fand den
 Symbolnamen; der nachfolgende Review fand zusätzlich zwei Zeilen-Lokatoren
 und einen weiteren Anker, die der Implementer-Suchlauf übersehen hatte
-(`docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7 „Was
+(`docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7 „Was
 hat funktioniert", dritter Punkt). Diese Regel verlangt deshalb **keine**
 Erweiterung der Suchform selbst — eine `grep`-Form, die Zahlen mit
 derselben Verlässlichkeit wie Symbolnamen träfe, bräuchte eine

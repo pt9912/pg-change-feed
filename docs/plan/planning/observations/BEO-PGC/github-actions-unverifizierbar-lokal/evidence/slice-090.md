@@ -25,5 +25,5 @@ dasselbe.
 
 Quelle: Verifikationsbericht zu `slice-090` (V-5) ·
 Review zu `slice-090`, Delta-Review (Negativbefunde, `#6`–`#9 CACHED`) ·
-`docs/plan/planning/done/slice-090-sync-gate-protobuf.md` §6 (viertes
+`docs/plan/planning/done/altbestand/slice-090-sync-gate-protobuf.md` §6 (viertes
 Risiko) · `.github/workflows/ci.yml`.

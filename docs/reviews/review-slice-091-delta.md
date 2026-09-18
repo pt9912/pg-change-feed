@@ -195,7 +195,7 @@ der Wortlaut der ADR. Der Mechanismus selbst ist gegen den Code geprüft:
 (`walretention_internal_test.go:112-125`) — der Block ist der Messfehler-Zweig
 **innerhalb** des Takt-Zweigs, genau der Wettlauf, den die ADR beschreibt. Die
 übrigen drei Stellen mit der alten Ursache sind **Records**
-(das Review zu `slice-081`, `done/slice-081-executor-naht.md`) und damit
+(das Review zu `slice-081`, `done/altbestand/slice-081-executor-naht.md`) und damit
 außerhalb der Träger-Pflege; **kein stehender Träger** außer dieser Datei führt
 sie.
 

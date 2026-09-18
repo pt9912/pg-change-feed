@@ -21,7 +21,7 @@ nicht" wird hier reflexiv auf den eigenen Commit angewendet).
   (Vorzustand und Nachzustand)
 - das Review zu `slice-096` F-2 (das zitierte Original)
 - `docs/plan/planning/observations/BEO-PGC/regel-weiter-als-ihr-sensor/evidence/slice-096.md`
-  und `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7
+  und `docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7
   (die Herkunft der Formulierung „vierter Anker")
 - `harness/sensors/coverage-gate.md` §Grenze Punkt 4
 - `AGENTS.md` §3.9 (Exit-Code-Disziplin für den eigenen `make gates`-Lauf)

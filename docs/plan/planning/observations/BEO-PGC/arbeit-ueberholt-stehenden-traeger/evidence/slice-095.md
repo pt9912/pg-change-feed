@@ -34,5 +34,5 @@ Carveout, kein Folge-Slice nötig, weil sofort behebbar (Formvorbild
 Quelle: Review zu `slice-095`, F-1 ·
 `docs/plan/planning/in-progress/slice-095-beispiel-clients-drei.md` §3
 (berichtigt bei dieser Closure) ·
-`docs/plan/planning/done/slice-097-umzug-vertragsflaeche.md` §6/§7
+`docs/plan/planning/done/altbestand/slice-097-umzug-vertragsflaeche.md` §6/§7
 (Formvorbild) · `AGENTS.md` §3.13.

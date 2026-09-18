@@ -18,4 +18,4 @@ blieb liegen. Genau der Fall, den die verkörperte Regel adressiert.
 
 Quelle: Verifikationsbericht zu `slice-090` (V-3) ·
 Review zu `slice-090` (Verdikt, letzter Absatz) ·
-`docs/plan/planning/done/slice-090-sync-gate-protobuf.md` §2.
+`docs/plan/planning/done/altbestand/slice-090-sync-gate-protobuf.md` §2.

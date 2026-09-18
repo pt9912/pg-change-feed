@@ -101,7 +101,7 @@ unmechanisierbar, sie ist bislang **nirgends benannt**. Zwei Fixes:
    ein Implementer-Bericht ist ein Handoff, über Läufe hinweg nicht
    nachlesbar (bestätigt: kein Träger in `slice-096`s Closure-Notiz nennt
    den rohen Suchlauf-Befund, nur die *nachträglich gefundene* Lücke
-   selbst, `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md`
+   selbst, `docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md`
    §7 Punkt „Steering-Loop-Eintrag"). Zielort: `AGENTS.md` §3.13, Absatz
    „Wer sie liest" — ergänzt um die Pflicht, dass das Suchergebnis
    (Gefundenes **und** Nichtgefundenes) in einem strukturell vorgesehenen,

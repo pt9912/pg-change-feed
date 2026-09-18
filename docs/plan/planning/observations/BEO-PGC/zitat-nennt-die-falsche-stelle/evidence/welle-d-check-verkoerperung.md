@@ -16,7 +16,7 @@ widersprachen sich.
 
 **Vierter Vorgang, direkt nach Embodiment.** Korrigiert durch Gegenprobe an
 der primären, autoritativen Quelle
-(`docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7,
+(`docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7,
 dritter Punkt: „der §3.13-Lauf fand den Symbolnamen, der Review zwei
 Lokatoren und einen vierten Anker, und der Architect-Zug fand die zwei
 falschen Zahlen in den ADRs selbst") statt der zweiten Hand
@@ -26,4 +26,4 @@ wäre sie beim Schreiben angewendet worden.
 
 Quelle: Delta-Review dieser Verkörperungs-Fixrunde ·
 `AGENTS.md:451-455` (korrigiert) ·
-`docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7.
+`docs/plan/planning/done/altbestand/slice-096-konfigurationsdatei-nachzug.md` §7.

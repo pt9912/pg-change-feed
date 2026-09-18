@@ -29,5 +29,5 @@ bereits verkörpert), gehört aber zur selben Klasse wie `slice-099`
 Closure auf „7×" korrigiert.
 
 Quelle: Verifikationsbericht zu `slice-101`, §5 (Abschnitt „Abweichung bei
-§3.12") · `docs/plan/planning/done/slice-101-nats-client-csharp-kotlin.md`
+§3.12") · `docs/plan/planning/done/altbestand/slice-101-nats-client-csharp-kotlin.md`
 §6/§8.

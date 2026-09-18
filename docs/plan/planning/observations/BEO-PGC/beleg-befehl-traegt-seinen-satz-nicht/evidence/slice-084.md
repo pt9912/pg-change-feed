@@ -20,6 +20,6 @@ Gefunden hat es der Verifier im Verifikationsbericht zu `slice-084` als
 **V-1** — ausdrücklich als Belegform mit Rest, nicht als Substanzfehler.
 
 Quelle: Verifikationsbericht zu `slice-084` (V-1) ·
-`docs/plan/planning/done/slice-084-postgresack-naht.md` §3(b) (berichtigt in
+`docs/plan/planning/done/altbestand/slice-084-postgresack-naht.md` §3(b) (berichtigt in
 `4387523`, dem Closure-Commit des Vorgangs) ·
 `git diff --name-only fb6adf6..4035ee7`.

@@ -38,5 +38,5 @@ Quelle: Implementer-Commit `111f1cb` (§3.13-Suchlauf, Fund a) ·
 Review zu `slice-103` (Negativbefund „`harness/README.md`") ·
 Verifikationsbericht zu `slice-103` (#10) · Planner-Closure-Sichtung (Fund
 b, Vervollständigung von `evidence/slice-102.md` Fund b) ·
-`docs/plan/planning/done/slice-097-umzug-vertragsflaeche.md:107` ·
+`docs/plan/planning/done/altbestand/slice-097-umzug-vertragsflaeche.md:107` ·
 `AGENTS.md` §3.13.
