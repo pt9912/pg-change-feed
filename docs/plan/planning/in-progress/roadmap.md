@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-nats-drittstream.md](../welle-nats-drittstream.md) — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming (`LH-FA-SST-008`, `ADR-0100`).
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
