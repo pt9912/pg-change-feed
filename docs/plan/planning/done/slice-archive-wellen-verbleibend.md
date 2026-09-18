@@ -226,7 +226,11 @@ Lerneintrag geschrieben.
   Damit sind 18 der 20 Wellen archiviert, nicht 17 — die Zahlen in §1-§6
   oben spiegeln den Stand **zum Zeitpunkt dieser Slice-Closure** und werden
   nicht rückwirkend geändert (Record, keine Chronik-Überschreibung);
-  dieser Nachtrag trägt die Korrektur.
+  dieser Nachtrag trägt die Korrektur. Abschließende Gegenprobe nach dem
+  Nachtrag: voller Sweep über `docs/plan/planning/done/welle-{1..20}.md` —
+  genau `welle-1` und `welle-12` liegen noch flach (nicht archiviert), alle
+  18 übrigen tragen ein `archiv.zip`; `--vorschau` bestätigt für beide
+  verbleibenden weiterhin genau eine unveränderte `[haenger]`-Sperre.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
