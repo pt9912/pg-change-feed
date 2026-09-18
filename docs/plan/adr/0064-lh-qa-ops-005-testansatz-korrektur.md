@@ -20,7 +20,7 @@ Neustart-Test), [`ADR-0058`](0058-testansatz-fuenf-luecken.md) (korrigierte
 Entscheidung 3), [`ADR-0043`](0043-schemamigrationen-mit-d-migrate.md)
 (d-migrate-Werkzeug-Kontext, Re-Evaluierungs-Trigger),
 `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`
-(strukturelle Ursache, bleibt offen), `docs/reviews/blocker-slice-063.md` <!-- d-check:status-provenance -->
+(strukturelle Ursache, bleibt offen), das Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance -->
 (reale Erst-Reproduktion durch den Implementer-Lauf),
 `docs/plan/planning/open/slice-063-upgrade-sicherheit-schema-rollout-zyklus.md` <!-- d-check:status-provenance -->
 (Umsetzungs-Slice, aktuell in `open/`), `tools/harness/run-integration-tests.sh`
@@ -56,7 +56,7 @@ zu `cdc.heartbeat`/`cdc.metrics` (Views) auch `cdc.disable_table`/
 `cdc.enable_table` (Funktionen, seit `slice-036` <!-- d-check:status-provenance -->/`ADR-0050`, ebenfalls über
 eine `nacharbeit-*.sql`-Datei statt den deklarativen `schema.yaml`-Knoten
 eingespielt). Drei Umgehungen wurden geprüft und verworfen
-(`docs/reviews/blocker-slice-063.md` <!-- d-check:status-provenance -->): `--allow-destructive` (real
+(das Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance -->): `--allow-destructive` (real
 destruktiv — löscht die vier Objekte, ein Zyklus aus Abbau/Neuanlage bei
 jedem zweiten Rollout, kein idempotenter Rollout), ein
 Objekt-Ausschluss-Flag (existiert in `schema migrate --help` nicht), die
@@ -168,7 +168,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 |---|---|---|
 | A — nichts tun; `ADR-0058`s Mechanismus bleibt bestehen, `slice-063` <!-- d-check:status-provenance --> wartet in `open/` | keine neue ADR | real geprüft strukturell nicht lauffähig (Exit 8, mit UND ohne `--execute`) — `LH-QA-OPS-005` bleibt unbefristet ungetestet, ohne dass sich daran etwas ändern würde |
 | B — Carveout: `LH-QA-OPS-005` bleibt vorerst ungetestet, Folge-Slice bindet an die Auflösung von `BEO-PGC/schema-rollout-fremdobjekte` als Vorbedingung | ehrlich benannte Lücke, kein erzwungener Testansatz gegen eine strukturell blockierte Abhängigkeit | verschiebt einen bereits heute lösbaren Test unnötig auf eine andere, unabhängige und noch ungelöste Lücke (die Fremdobjekt-Modellierung ist ein `d-migrate`/`schema.yaml`-Problem, kein Upgrade-Test-Problem); `LH-QA-OPS-005` bliebe ohne Not länger offen als nötig |
-| C — `--allow-destructive` im Testkontext akzeptieren (der Rollout löscht/legt die vier Fremdobjekte bei jedem zweiten Lauf neu an) | kein Mechanismus-Wechsel gegenüber `ADR-0058` nötig | bereits vom Implementer real geprüft und verworfen (`docs/reviews/blocker-slice-063.md` <!-- d-check:status-provenance -->): kein idempotenter Rollout, sondern ein Abbau-/Neuanlage-Zyklus; genau der im Auftrag ausdrücklich verbotene verdeckte Workaround |
+| C — `--allow-destructive` im Testkontext akzeptieren (der Rollout löscht/legt die vier Fremdobjekte bei jedem zweiten Lauf neu an) | kein Mechanismus-Wechsel gegenüber `ADR-0058` nötig | bereits vom Implementer real geprüft und verworfen (das Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance -->): kein idempotenter Rollout, sondern ein Abbau-/Neuanlage-Zyklus; genau der im Auftrag ausdrücklich verbotene verdeckte Workaround |
 | **D — Container-Tausch über `$COMPOSE up -d --force-recreate --no-deps` statt Migrationsschritt (gewählt)** | löst den real blockierten Migrationsschritt vollständig auf; realisiert `ADR-0058`s eigene Differenzierung („Container tauscht sich aus") erstmals mechanisch; nutzt ausschließlich bereits im Skript definierte Bausteine (`$COMPOSE`); kein neues Werkzeug, kein neuer Pin | kein Migrationsschritt mehr im Testpfad — die ursprüngliche Absicht „Upgrade bringt typischerweise auch einen Schema-Wandel mit" ist in diesem Test nicht mehr abgebildet (unten unter Konsequenzen benannt, nicht verschwiegen) |
 
 ## Konsequenzen
@@ -233,7 +233,8 @@ Zwei Trigger, beide unverändert bzw. neu — keiner davon macht den anderen
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-14 | Accepted — Anlass: `slice-063` <!-- d-check:status-provenance -->-Implementer-Lauf reproduzierte real, dass `ADR-0058` Entscheidung 3s Migrationsschritt strukturell blockiert (Exit 8, vier statt zwei Fremdobjekte) und stoppte korrekt über die Rückführung `in-progress` → `open`, statt den Befund zu umgehen (Modul 8 §Konflikt-Pfad); unabhängiger Architect-Zug bestätigte den Blocker zusätzlich gegen `--dry-run` (derselbe Exit 8 ohne `--execute`) und korrigiert den Mechanismus | `slice-063` <!-- d-check:status-provenance --> (in `open/`), `docs/reviews/blocker-slice-063.md` <!-- d-check:status-provenance --> (Implementer-Reproduktion), `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/` (strukturelle Ursache, bleibt offen) |
+| 2026-09-14 | Accepted — Anlass: `slice-063` <!-- d-check:status-provenance -->-Implementer-Lauf reproduzierte real, dass `ADR-0058` Entscheidung 3s Migrationsschritt strukturell blockiert (Exit 8, vier statt zwei Fremdobjekte) und stoppte korrekt über die Rückführung `in-progress` → `open`, statt den Befund zu umgehen (Modul 8 §Konflikt-Pfad); unabhängiger Architect-Zug bestätigte den Blocker zusätzlich gegen `--dry-run` (derselbe Exit 8 ohne `--execute`) und korrigiert den Mechanismus | `slice-063` <!-- d-check:status-provenance --> (in `open/`), das Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance --> (Implementer-Reproduktion), `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/` (strukturelle Ursache, bleibt offen) |
+| 2026-09-18 | Zitat-Korrektur — Pfad zum Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance --> durch Kennung ersetzt (`ADR-0073`) | `PENDING_COMMIT` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
