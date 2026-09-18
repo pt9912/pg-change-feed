@@ -94,7 +94,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - **Wird blockiert von:** einem separaten, bereits laufenden Vorgang außerhalb
   dieser Welle — einer ADR-Zitat-Korrektur-Runde (`AGENTS.md` §3.5, Ausnahme
-  nach [`ADR-0073`](../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md))
+  nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md))
   an den `Accepted`-ADRs, die heute Review-Reports referenzieren, welche ein
   Altbestands-Archivlauf ersatzlos löschen würde (`[haenger]`-Sperre, real
   gemessen: u. a. `ADR-0062`, `ADR-0069`, `ADR-0070`, `ADR-0075`, `ADR-0083`,

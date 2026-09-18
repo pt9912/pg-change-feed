@@ -5,7 +5,7 @@ Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`, siehe
 Baseline-Regelwerk `modul-05-planning-harness.md` §Lifecycle als State Machine.
 
-**Welle:** [welle-archive-altbestand](../welle-archive-altbestand.md) —
+**Welle:** [welle-archive-altbestand](welle-archive-altbestand.md) —
 zweiter von zwei Slices: vollzieht, was `slice-archive-altbestand-adr`
 entscheidet.
 
