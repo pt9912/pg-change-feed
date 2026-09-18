@@ -40,6 +40,8 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-nats-drittstream.md](../welle-nats-drittstream.md) — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming (`LH-FA-SST-008`, `ADR-0100`).
 
+Nichts in Arbeit.
+
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
