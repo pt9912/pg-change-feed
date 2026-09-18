@@ -35,11 +35,10 @@ Implementer-/Reviewer-/Verifier-Läufe der 25 betroffenen ADRs — Modul 8
 (die Klasse „Zitat-Korrektur" und ihre Grenze) · Baseline-Regelwerk
 `modul-06-roadmap.md` §Wellen-Closure-Prozedur (Review-Reports ohne Stub) ·
 Baseline-Regelwerk `modul-08-agentenrollen.md` §Rollen-Regeln (Architect
-schreibt, Accepted-ADRs überschreibt niemand) · `/Development/KI/ai-harness-init`
+schreibt, Accepted-ADRs überschreibt niemand) · ai-harness-init's
 `internal/archive/scan.go` (der Hänger-Mechanismus, gelesen in diesem Zug) ·
-`/Development/d-check` `docs/user/benutzerhandbuch.md` §4.7/§5 und
-`spec/spezifikation.md` `DC-FA-MTX-001`…`003` (Modul `matrix`, gelesen in
-diesem Zug)
+d-check's `docs/user/benutzerhandbuch.md` §4.7/§5 und `spec/spezifikation.md`
+`DC-FA-MTX-001`…`003` (Modul `matrix`, gelesen in diesem Zug)
 
 **Geltungsbereich dieses Verdikts:** Es trifft **kein** ADR-Textänderung.
 Es liefert der nachfolgenden Implementer-Fixrunde die vollständige
@@ -95,7 +94,7 @@ die Baseline-ADR-Vorlage) für jede Statusänderung einen Beleg verlangt.
 
 ## 2. Technischer Befund — was der Hänger-Scan tatsächlich erkennt
 
-`internal/archive/scan.go` (`/Development/KI/ai-harness-init`) läuft **rein
+ai-harness-init's `internal/archive/scan.go` läuft **rein
 über Basisnamen-Teilstring-Vergleich**, nicht über Link-Auflösung:
 
 ```go
@@ -173,7 +172,7 @@ Ausnahme.** Begründung:
   zusammenzufassen, und die Korrektur müsste die Zusammenfassung als
   neuen Inhalt hinzufügen" — tritt **nicht** ein. Selbst die knappsten
   Belege (`ADR-0047` `§Bezug`: „Architect-Verdikt
-  [`architect-review-welle-6.md`](...) Zug 2 (`BEO-PGC/rollen-verdrahtung`,
+  `[architect-review-welle-6.md](Pfad)` Zug 2 (`BEO-PGC/rollen-verdrahtung`,
   3×, Ausgang `geplant` → `slice-023`)") tragen die Kennung („Zug 2" +
   BEO-Registereintrag) bereits **neben** dem Link — die Korrektur streicht
   den Pfad, nicht die Aussage.
@@ -252,8 +251,8 @@ Stattdessen:
   `<!-- d-check:status-provenance -->`-Marker, wo die bestehende
   `matrix`-Regel ihn verlangt.
   Beispiel (`ADR-0044`, `§Kontext`): statt
-  „[`review-slice-005 F-7`](../../../docs/reviews/review-slice-005.md)
-  widerlegt die Formel …" neu: „Review zu `slice-005`, Finding F-7,
+  „`[review-slice-005 F-7](Pfad-auf-review-slice-005.md)` widerlegt
+  die Formel …" neu: „Review zu `slice-005`, Finding F-7,
   widerlegt die Formel …".
 - **Architect-Verdikte ohne Slice-Nummer**
   (`architect-verdict-<thema>.md`, `architect-review-welle-N.md`):
@@ -261,7 +260,7 @@ Stattdessen:
   Commit-Hash oder BEO-Registereintrag, wenn einer bereits im Text steht
   (kein neuer Inhalt — nur die bereits vorhandene Kennung bleibt, der Pfad
   entfällt). Beispiel (`ADR-0053`, `§Bezug`): statt „Architect-Verdikt
-  [`architect-verdict-retention-loeschausfuehrung.md`](...)  (Frage 1 —
+  `[architect-verdict-retention-loeschausfuehrung.md](Pfad)` (Frage 1 —
   prüfte …)" neu: „der vorausgehende Architect-Verdikt zur
   Retention-Löschausführung (Frage 1 — prüfte …)".
 - **`§Geschichte`-Verweis-Spalte:** Kennung statt Pfad, wahlweise ergänzt
@@ -292,8 +291,8 @@ Hand bereinigen.
 
 ### 7.1 Modul-Semantik geprüft
 
-Gelesen: `/Development/d-check/docs/user/benutzerhandbuch.md` §4.7/§5,
-`/Development/d-check/spec/spezifikation.md` `DC-FA-MTX-001`…`003`. Ergebnis:
+Gelesen: d-check's `docs/user/benutzerhandbuch.md` §4.7/§5,
+d-check's `spec/spezifikation.md` `DC-FA-MTX-001`…`003`. Ergebnis:
 
 - Eine `matrix.classes[]`-Klasse **ohne `token`** ist zulässig — bereits
   Präzedenz in diesem Repo (`spec`-Klasse in `.d-check.yml` trägt keinen
