@@ -85,7 +85,7 @@ unter einem Unterverzeichnis verlässt diesen Prüfbereich.
 
 ## 2. Definition of Done
 
-- [ ] **LP1:** ADR geschrieben und `Accepted` — mindestens drei Alternativen
+- [x] **LP1:** ADR geschrieben und `Accepted` — mindestens drei Alternativen
       mit Pro/Contra, entscheidet Schlüssel und Verhältnis zu `welle-d-check`,
       benennt den `structure`-Modul-Blindfleck als Folgepflicht oder
       akzeptiertes Negativ. ADR-Index (`docs/plan/adr/README.md`) aktualisiert.
