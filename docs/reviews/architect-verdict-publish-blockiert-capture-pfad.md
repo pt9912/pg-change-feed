@@ -5,7 +5,7 @@
 **Anlass:** Finding F-1 (MEDIUM, `SPEC-020`/Port-Godoc pinnen nur die
 Hälfte der Zustellsemantik), F-5 (INFO, Godoc-Satz ohne Deckung) und das im
 Verdikt-Abschnitt ausdrücklich als **echt** bestätigte Broadcaster-Risiko aus
-[`review-slice-069.md`](review-slice-069.md). Der Reviewer hat das Risiko
+dem Review zu `slice-069`. Der Reviewer hat das Risiko
 nicht als Finding gegen den Code geführt, sondern als **Entscheidung**
 gereicht, die in `slice-070` <!-- d-check:status-provenance --> fällig und dort
 sichtbar zu machen ist — damit läuft der Rollenwechsel Reviewer → Architect →
@@ -263,7 +263,7 @@ einen gleichzeitigen `Publish`-Send träfe. Ziel-Wortlaut für `Subscribe`:
   („Zustellsemantik nur halb gepinnt") gehört in die **Slice-Closure** §7 von
   `slice-069` <!-- d-check:status-provenance -->, wie der Reviewer sie bereits
   dorthin reicht (Modul 6: Eintrag bei der Slice-Closure; Beleg
-  `evidence/review-slice-069.md`). Ein Registereintrag aus dem Architect-Zug
+  im Review zu `slice-069`). Ein Registereintrag aus dem Architect-Zug
   heraus wäre eine zweite Schreibstelle für denselben Zähler.
 
 ---

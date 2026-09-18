@@ -3,7 +3,7 @@
 **Review-Art:** Verifikation — *wogegen*: Slice-Plan §2 (Definition of
 Done, 10 Punkte), §3 (Plan-vs-Code inkl. Plan-Nachzug), §6 (Risiko-Ausgänge,
 aktuell noch offen), §8 (Sub-Area-Prüfung), sowie die von
-[`review-slice-029.md`](review-slice-029.md) ausdrücklich an den Verifier
+dem Review zu `slice-029` ausdrücklich an den Verifier
 delegierte **Prüfgrenze**: die vom Implementer behauptete Mutationsprobe
 (`old_data`/`new_data` in der `changes`-View-Spaltenprojektion vertauscht)
 ließ sich aus dem Repo-Zustand allein nicht nachvollziehen und war deshalb
@@ -15,7 +15,7 @@ Verhaltensänderung).
 
 **Grundsatz:** Keine Behauptung übernommen — jeder Beleg unten wurde in
 diesem Lauf selbst gelesen oder ausgeführt: Slice-Plan (Volltext),
-`docs/reviews/review-slice-029.md` (Volltext), `git show 7b7ca3c`/
+das Review zu `slice-029` (Volltext), `git show 7b7ca3c`/
 `7f6456e`/`f96eff3` (Volltext-Diffs), `tools/schema/schema.yaml`
 (`changes`-View), `tools/schema/plan.yaml` (generierte `CREATE VIEW`-SQL,
 zur Bestätigung, dass keine explizite Spaltenliste auf dem View-Statement
@@ -38,7 +38,7 @@ grünen Baseline vor der Mutation), `make gates` selbst gestartet,
 
 - Slice-Plan §1–§8 am aktuellen Stand
   (`in-progress/slice-029-black-box-lesepfad-cdc-changes.md`)
-- `docs/reviews/review-slice-029.md` (Volltext, 0 HIGH/MEDIUM, 1 LOW F-1,
+- das Review zu `slice-029` (Volltext, 0 HIGH/MEDIUM, 1 LOW F-1,
   Prüfgrenze zur Mutationsprobe explizit an den Verifier delegiert)
 - `git show 7b7ca3c`/`7f6456e`/`f96eff3` (Volltext-Diffs)
 - `tools/schema/schema.yaml` (View `changes`, Zeilen 227–261)
@@ -137,7 +137,7 @@ Reviewer benannte Prüfgrenze ist aufgelöst.**
 | 1 | `LH-FA-REA-002` erfüllt: Testfall liest real über `cdc.changes` (rohes SQL) | **bestätigt** | `git show 7b7ca3c`: `queryChangesView` nutzt ausschließlich `env.pool.Query` (rohes pgx-SQL), kein `postgresstorage`-Import auf dieser Seite (eigener Grep, s. u.) |
 | 2 | Vertragstest belegt Übereinstimmung, inkl. realem Mutationstest | **bestätigt, eigenständig reproduziert** | siehe zentraler Verifikationsschritt oben — 5 eigene Compose-Läufe |
 | 3 | `make gates` grün, `make test-integration` dreimal grün | **bestätigt, eigenständig reproduziert** | `make gates`: alle vier Gates 0 Befunde (Sensor-Tabelle unten); drei eigene grüne Läufe nach Revert (Schritt 5 oben) |
-| 4 | Review durchgeführt, Report liegt vor | **materiell erfüllt, Checkbox nicht nachgezogen — siehe V-1** | `docs/reviews/review-slice-029.md` existiert (`82826b8`), F-1 behoben (`f96eff3`); DoD-Checkbox in §2 steht weiterhin `[ ]` |
+| 4 | Review durchgeführt, Report liegt vor | **materiell erfüllt, Checkbox nicht nachgezogen — siehe V-1** | das Review zu `slice-029` existiert (`82826b8`), F-1 behoben (`f96eff3`); DoD-Checkbox in §2 steht weiterhin `[ ]` |
 | 5 | Doku-Update, falls Vertrag berührt | **bestätigt** | `git show --stat` über alle drei Content-Commits: nur `test/integration/integration_test.go` geändert, kein Guide/Sensor/Vertrag berührt — Begründung „keiner berührt" trägt |
 | 6 | Closure-Notiz mit Lerneintrag | **korrekt offen** | §7 trägt weiterhin Platzhalter-Text — Planner-Arbeit vor `git mv`, Slice liegt noch in `in-progress/` |
 | 7 | Reconciliation-Register, falls einschlägig | **entfällt — korrekt geprüft** | `docs/plan/planning/reconciliation.md` existiert nicht (eigene Prüfung); Sub-Area `*`/`PGC` durchgehend Greenfield |
@@ -152,7 +152,7 @@ reproduziert, nicht nur gelesen), 1 Item korrekt entfallen
 Planner-/Welle-Closure-Arbeit (Closure-Notiz, Beobachtungs-Register,
 Paarungen bei `welle-9`), 1 Item materiell erfüllt mit
 Checkbox-Diskrepanz (V-1, wiederkehrendes Muster aus
-`verify-slice-024`…`028`).**
+den Verifikationsberichten zu `slice-024`…`028`).**
 
 ## Plan-vs-Code-Diff (§3, gegen `7b7ca3c`/`7f6456e`/`f96eff3`)
 
@@ -257,10 +257,10 @@ DoD verlangt die Ausgangs-Zuweisung bei Closure, nicht hier.
 
 - `kategorie`: LOW
 - `pfad`: `docs/plan/planning/in-progress/slice-029-black-box-lesepfad-cdc-changes.md:101-103`
-  (Checkbox weiterhin `[ ]`) vs. `docs/reviews/review-slice-029.md`
+  (Checkbox weiterhin `[ ]`) vs. dem Review zu `slice-029`
   (existiert, `82826b8`) und `f96eff3` (F-1 behoben)
-- `befund`: Derselbe wiederkehrende Musterbefund wie in
-  `verify-slice-024.md`…`verify-slice-028.md` (dort V-1/V-2): die DoD-Zeile
+- `befund`: Derselbe wiederkehrende Musterbefund wie in den
+  Verifikationsberichten zu `slice-024`…`slice-028` (dort V-1/V-2): die DoD-Zeile
   ist materiell bereits erfüllt (Review-Report liegt vor, einziges Finding
   behoben), die Checkbox wird erst beim nächsten Planning-Commit gesetzt.
   Diese Finding-Klasse ist bereits in `BEO-PGC/dod-checkbox-nachzug` als

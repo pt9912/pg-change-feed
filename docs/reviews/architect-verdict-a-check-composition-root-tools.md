@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8)
 
 **Anlass:** Finding F-1 (HIGH) aus
-[`review-slice-071.md`](review-slice-071.md). Der Reviewer hat die Änderung
+Review zu `slice-071`. Der Reviewer hat die Änderung
 nicht als Code-Defekt, sondern als **Entscheidung** gereicht, die in
 `slice-071` fällig ist — drei rückfragefrei entscheidbare Antworten sind in
 seinem Abschnitt *Zum `.a-check.yml`-Verdikt* ausformuliert. Damit läuft der

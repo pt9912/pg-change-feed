@@ -56,7 +56,7 @@ Kein Fremd-Commit im Range.
   `harness/sensors/a-check.md`
 - Vorgänger: `docs/plan/planning/done/slice-069-grpc-streaming-adapter-grundgeruest.md`
   (lokal deklariertes `changeSubscriber`), `…/done/slice-070-grpc-capture-integration.md`,
-  `…/done/slice-071-grpc-beispielclient-e2e.md`, [`review-slice-071`](review-slice-071.md)
+  `…/done/slice-071-grpc-beispielclient-e2e.md`, das Review zu `slice-071`
   (F-2 Assertions-Bindung, F-4 Aufschub-Adresse)
 - `docs/plan/planning/open/slice-077-handbuch-betreiber-stand.md` (§1 Ziel,
   §1 Abgrenzung, §2 DoD — die benannte Aufschub-Adresse),
@@ -111,7 +111,7 @@ Kein Fremd-Commit im Range.
   `grep -n "Stream\|HTTP" docs/user/benutzerhandbuch.md` zeigt, dass kein
   Netzwerk-Zugriffsweg dort bislang beschrieben ist.
 - `klasse`: „Aufschub-Adresse nimmt die Sendung nicht an" (2× — erstes
-  Auftreten [`review-slice-071`](review-slice-071.md) F-4)
+  Auftreten Review zu `slice-071` F-4)
 
 ### F-2 — Der `503`-Pfad des SSE-Endpunkts ist über `Run` strukturell unerreichbar; DoD und `SPEC-018` beschreiben ihn als Bootstrap-Zustand, der Unit-Test erreicht ihn nur über die direkte `Config`-Konstruktion
 
@@ -146,7 +146,7 @@ Kein Fremd-Commit im Range.
   belegt diesen Zustand nicht).
 - `klasse`: „Adapter-Unit-Test konstruiert einen Zustand, den der Bootstrap
   nicht herstellt" (2× — `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`,
-  erstes Auftreten [`review-slice-061`](review-slice-061.md) F-1)
+  erstes Auftreten Review zu `slice-061` F-1)
 
 ### F-3 — `TestStreamOhneVerbundenenClientBlockiertNicht` kann in seiner zweiten Hälfte nicht fehlschlagen
 
@@ -326,7 +326,7 @@ nachgefahren. Die DoD-/Beleg-Konformität dieses Punktes prüft der Verifier.
   und die `401`-Ablehnung wird real gefordert (Client-Ausgang 0 **und**
   `REJECTED code=401` in den Logs, `:1968-1975`, `:1993-1996`). Der Client
   abonniert vor dem Header-Flush (Handler: `Subscribe()` vor `WriteHeader`),
-  die `READY`-Zeile ist damit kein Frühstart — [`review-slice-071`](review-slice-071.md)
+  die `READY`-Zeile ist damit kein Frühstart — das Review zu `slice-071`
   F-6 findet hier keine Entsprechung.
 - **Betriebs-Oberfläche:** kein neues `CDC_*`-Feld, keine Änderung an
   `compose.yaml`, keine Änderung an `docs/user/benutzerhandbuch.md` — die

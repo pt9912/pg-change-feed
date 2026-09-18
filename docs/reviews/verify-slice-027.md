@@ -6,7 +6,7 @@ Done, 10 Punkte), §3 (Plan-vs-Code inkl. des Plan-Nachzug-Blocks), §6
 Entscheidungs-Konformität gegen
 [`ADR-0030`](../plan/adr/0030-testpyramide.md) (Testpyramide, E2E-Tier) und
 die Reviewer-Negativbefunde aus
-[`review-slice-027.md`](review-slice-027.md) (0 HIGH/MEDIUM/LOW/INFO).
+dem Review zu `slice-027` (0 HIGH/MEDIUM/LOW/INFO).
 Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über die DoD-Punkte
 hinaus (Reviewer-Aufgabe, bereits erledigt), realer Bedarf (Validator —
 hier nicht einschlägig, reine Testinfrastruktur ohne Verhaltensänderung).
@@ -35,7 +35,7 @@ DoD-Nachzug), `ec914ad` (Review-Report, 0 HIGH/MEDIUM/LOW/INFO).
   (`in-progress/slice-027-black-box-e2e-test-cli.md`)
 - `docs/plan/planning/welle-8.md` §1–§4 (Welle-Ziel, Trigger, Closure-Trigger,
   Slice-Reihenfolge `slice-027` vor `slice-028`)
-- `docs/reviews/review-slice-027.md` (0 HIGH/0 MEDIUM/0 LOW/0 INFO)
+- das Review zu `slice-027` (0 HIGH/0 MEDIUM/0 LOW/0 INFO)
 - `tools/harness/run-integration-tests.sh` (Volltext, 387 Zeilen, inkl. des
   neuen Abschnitts „Black-Box-CLI-Rundlauf", Zeilen 254–387)
 - `cmd/pg-change-feed/main.go` (Volltext CLI-Einstiegspunkt,
@@ -76,7 +76,7 @@ DoD-Nachzug), `ec914ad` (Review-Report, 0 HIGH/MEDIUM/LOW/INFO).
 | 1 | `LH-QA-POR-003` erfüllt: Black-Box-Aufruf, kein Go-Paket-Import | **bestätigt** | `exec_feed()` (Zeile 267–269) ruft ausschließlich `docker exec "$FEED_CONTAINER" /pg-change-feed "$@"`; beide Aufrufstellen (Zeile 274 `register-consumer "$CLI_CONSUMER"`, Zeile 304/375 `acknowledge-consumer "$CLI_CONSUMER" "$position"`) laufen ausschließlich darüber. Signaturen gegen `cmd/pg-change-feed/main.go:45-85` gegengelesen: `register-consumer <name>` (genau 1 Argument, Zeile 52-61), `acknowledge-consumer <consumer-id> <position>` (genau 2 Argumente, Zeile 71-85) — deckungsgleich mit den Aufrufen im Skript. Exit-Code-Pfad eigenständig verfolgt: `bootstrap.RegisterConsumer`/`AcknowledgeConsumer` (`wiring.go:647-705`) liefern 0 bei Erfolg (auch bei Idempotenz-Fällen: bereits registriert / wiederholte Bestätigung), 1 bei Fehler — `os.Exit()` trägt diesen Wert unverändert, `exec_feed` im Skript (`if ! exec_feed …`) prüft ihn direkt ohne Pipe/Subshell dazwischen |
 | 2 | Voller Rundlauf real bewiesen inkl. Rot-Grün-Beleg | **bestätigt, eigene Rot-Grün-Gegenprobe wiederholt** | Eigene Mutation exakt an der im Beleg genannten Stelle (`>` → `>=`, Zeile 369) reproduziert real dieselbe Fehlerausgabe wie behauptet; Positions-Prüfung liest `restored_position` frisch aus `cdc.consumer_position` (Zeile 361-362), nicht die im Skript gehaltene `$first_position`-Variable — ein echter „neu gestarteter Consumer"-Beleg, kein Zirkelschluss |
 | 3 | `make gates` grün, `make test-integration` dreimal grün | **bestätigt, dreifach selbst ausgeführt** | Sensor-Tabelle oben: drei eigene `make test-integration`-Läufe grün (dazwischen die eine kontrollierte rote Gegenprobe), `make gates` einmal grün mit 0 Befunden in allen vier Gates |
-| 4 | Review durchgeführt, Report liegt vor, kein Self-Review | **materiell erfüllt, Checkbox nicht nachgezogen — siehe V-1** | `docs/reviews/review-slice-027.md` existiert real (`ec914ad`), 0 HIGH/0 MEDIUM/0 LOW/0 INFO, „nicht merge-blockierend"; Rollenwechsel fand statt. Plan-Checkbox in §2 (Zeile 108) steht weiterhin `[ ]` |
+| 4 | Review durchgeführt, Report liegt vor, kein Self-Review | **materiell erfüllt, Checkbox nicht nachgezogen — siehe V-1** | das Review zu `slice-027` existiert real (`ec914ad`), 0 HIGH/0 MEDIUM/0 LOW/0 INFO, „nicht merge-blockierend"; Rollenwechsel fand statt. Plan-Checkbox in §2 (Zeile 108) steht weiterhin `[ ]` |
 | 5 | Doku-Update `harness/README.md` | **bestätigt** | `git show 6daa232 -- harness/README.md`: die aktualisierte `make test-integration`-Zeile nennt exakt den neuen Umfang (`docker exec`, kein Go-Paket-Import, simulierter Neustart, Fortsetzen über `cdc.changes`) und benennt den Lesezugriffsweg korrekt als bestehenden SQL-Weg, nicht als Black-Box-Lesen — keine Überzeichnung |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **korrekt offen** | §7 trägt weiterhin vollständig den Platzhalter-Vorlagentext — Planner-Arbeit, noch nicht fällig vor `git mv` |
 | 7 | Reconciliation-Register, falls einschlägig | **entfällt — korrekt geprüft** | `docs/plan/planning/reconciliation.md` existiert nicht; Sub-Area `*`/`PGC` durchgehend Greenfield (`harness/conventions.md` §Modus-Deklaration) |
@@ -92,7 +92,7 @@ Greenfield), 4 Items regulär offen als Planner-/Welle-Closure-Arbeit
 letztere laufen turnusgemäß mit der `welle-8`-Closure nach `slice-028`).
 Punkt 4 trägt einen eigenen Befund (V-1): materiell erfüllt, Checkbox nicht
 nachgezogen — derselbe wiederkehrende Musterbefund wie in
-`verify-slice-024.md`/`verify-slice-025.md`/`verify-slice-026.md`.**
+den Verifikationsberichten zu `slice-024`/`slice-025`/`slice-026`.**
 
 ## Eigene Rot-Grün-Gegenprobe (Detailprotokoll)
 
@@ -251,10 +251,10 @@ materiell beantwortbar (Planner-Urteil bleibt formal zuständig):
 
 - `kategorie`: LOW
 - `pfad`: `docs/plan/planning/in-progress/slice-027-black-box-e2e-test-cli.md:108-110`
-  (Checkbox weiterhin `[ ]`) vs. `docs/reviews/review-slice-027.md`
+  (Checkbox weiterhin `[ ]`) vs. dem Review zu `slice-027`
   (Report existiert, 0 HIGH/0 MEDIUM/0 LOW/0 INFO, „nicht merge-blockierend")
-- `befund`: Derselbe Musterbefund wie `verify-slice-024.md`/
-  `verify-slice-025.md`/`verify-slice-026.md` V-1: Die DoD-Zeile „Review
+- `befund`: Derselbe Musterbefund wie in den Verifikationsberichten zu
+  `slice-024`/`slice-025`/`slice-026` V-1: Die DoD-Zeile „Review
   durchgeführt, Report unter `docs/reviews/` liegt vor … kein Self-Review"
   ist materiell erfüllt (Rollenwechsel fand statt, Report liegt vor, 0
   HIGH/MEDIUM/LOW/INFO), die Checkbox wurde im Review-Commit (`ec914ad`)

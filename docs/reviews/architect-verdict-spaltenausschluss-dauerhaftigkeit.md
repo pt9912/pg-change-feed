@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8)
 
 **Anlass:** Die zwei MEDIUM-Findings F-1 und F-2 aus
-[`docs/reviews/review-slice-067.md`](review-slice-067.md). Der Reviewer hat
+dem Review zu `slice-067`. Der Reviewer hat
 sie ausdrücklich als **Entscheidungen** an Planner/Architect gereicht (kein
 Implementer-Pfeil, keine Fixrunde) — damit läuft der Rollenwechsel
 Planner → Architect → Planner aus Modul 8 §Konflikt-Pfad, Verdikt 2/3
@@ -39,7 +39,7 @@ ein Slice wechselt die Lifecycle-Ablage und ein Pfad-Link bräche mit)
   (`docs/plan/planning/open/`) — Adresse der Umsetzung
 - Registereintrag
   [`BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger`](../plan/planning/observations/BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/observation.md)
-  mit Beleg `evidence/review-slice-067.md`
+  mit Beleg im Review zu `slice-067`
 
 ---
 
@@ -187,7 +187,7 @@ gefallen, der Träger ist benannt); die Beobachtung braucht die 3×-Schwelle
 nicht, dieselbe direkte Auflösung unter der Schwelle wie
 `BEO-PGC/schema-evolution-nicht-dynamisch` und
 `BEO-PGC/retention-keine-loeschausfuehrung`. Der Beleg trägt den Vorgang
-`review-slice-067`; `slice-067` und sein Review sind **eine** Gelegenheit —
+des Reviews zu `slice-067`; `slice-067` und sein Review sind **eine** Gelegenheit —
 ein zweiter Beleg für `slice-067` bei der Slice-Closure wäre ein zweites
 Auftreten derselben Gelegenheit und gehört nicht angelegt.
 
@@ -204,7 +204,7 @@ Auftreten derselben Gelegenheit und gehört nicht angelegt.
   (neu — Adresse der Verdikt-Auflage; die endgültige Planung führt der
   Planner)
 - `docs/plan/planning/observations/BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/`
-  (neu: `observation.md`, `state.md`, `evidence/review-slice-067.md`)
+  (neu: `observation.md`, `state.md`, Beleg im Review zu `slice-067`)
 - diese Verdikt-Datei
 
 **Nicht geändert:** `internal/**` (kein Code-Eingriff), `spec/**`,

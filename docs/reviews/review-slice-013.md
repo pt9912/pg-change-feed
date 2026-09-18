@@ -31,7 +31,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
   (SQL-Driving-Adapter Kategorie C), [`ADR-0044`](../plan/adr/README.md)
   (Image-Beleg-Semantik), Architect-Verdikt
-  [`architect-review-slice-011.md`](architect-review-slice-011.md)
+  der Architect-Review zu `slice-011`
   (Präzedenzfall für eine vergleichbare Scope-Reduktion)
 - `AGENTS.md` §3 Hard Rules (§3.1 Docker-only, §3.2 Suppression-Verbot,
   §3.3 Move/Inhalt-Trennung, §3.7 Kommentar-Klassen) ·
@@ -46,7 +46,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   gegen §4/§6/§1 der Plan-Behauptung geprüft; bestehende Einträge
   `lese-doppelquelle` (2×) und `d-migrate-nacharbeit` (2×) gegen §8 der
   Planung geprüft
-- vorherige Reports: `review-slice-011.md`/`review-slice-012.md`
+- vorherige Reports: Review zu `slice-011`/Review zu `slice-012`
   (Präzedenz für Plan-Nachzug-Disziplin und Architect-Verdikt-Pfad)
 
 ---
@@ -79,7 +79,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   Scope umschreibt, trägt zudem **kein** unabhängiges Rollen-Artefakt —
   anders als der herangezogene Präzedenzfall slice-011, dessen
   vergleichbare Scope-Reduktion über einen dokumentierten
-  Architect-Verdikt lief (`architect-review-slice-011.md`, ausgelöst
+  Architect-Verdikt lief (der Architect-Review zu `slice-011`, ausgelöst
   durch einen Reviewer-Befund). Alle 13 Commits dieser Sequenz — von
   `32ce363` (open→next) bis `7e72c67` (Register-Eintrag), Implementer-
   und „Planner"-Rolle gleichermaßen — tragen denselben
@@ -136,7 +136,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   Dateien auch `tools/schema/plan.yaml` und `tools/schema/down.sql`
   (laut Commit-Body selbst benannt: „plan.yaml/down.sql sind der
   reguläre schema-rollout-Report"); beide fehlen in der §3-Tabelle.
-  Dieselbe Lücke trug bereits `review-slice-012.md` F-3 als „2.
+  Dieselbe Lücke trug bereits das Review zu `slice-012` F-3 als „2.
   benanntes Auftreten" vor (dort mit Verweis auf einen noch früheren
   Fall vor slice-012) — dies ist damit das **dritte** Auftreten
   derselben Klasse, die Schwelle aus dem Skill-Pflege-Abschnitt
@@ -255,7 +255,7 @@ PR-Merge-Stopp im klassischen Sinn), aber der `in-progress → done`-
 F-1 ein HIGH mit Rollen-Bezug ist, greift der Konflikt-Pfad aus Modul 8
 §Konflikt-Pfad als Rollen-Sequenz: die Klärung braucht ein
 Architect-Verdikt als Übergabe-Artefakt (vergleichbar
-`architect-review-slice-011.md`) — nicht die erneute Selbstbestätigung
+der Architect-Review zu `slice-011`) — nicht die erneute Selbstbestätigung
 derselben Implementer-/Planner-Kette. F-2 und F-3 sind kein
 Closure-Stopp per Skill-Default, gehören aber vor der Closure-Notiz
 adressiert oder mit Begründung zurückgestellt; F-3 hat mit diesem Lauf

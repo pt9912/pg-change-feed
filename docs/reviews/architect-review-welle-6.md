@@ -7,8 +7,8 @@
 [`docs/plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md`](../plan/planning/done/slice-021-consumer-registrierung-zugriffsweg.md),
 [`docs/plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md`](../plan/planning/done/slice-022-consumer-bestaetigung-zugriffsweg.md)
 (je §6–§8) ·
-[`docs/plan/adr/architect-review-slice-021.md`](architect-review-slice-021.md) ·
-[`docs/reviews/verify-slice-022.md`](verify-slice-022.md)
+der Architect-Review zu `slice-021` ·
+der Verifikationsbericht zu `slice-022`
 (V-1, V-2) · [`ADR-0019`](../plan/adr/0019-cli-driving-adapter.md) (Accepted,
 `permanent`) · [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) (Accepted, Trigger
 „beobachtbarer API-Consumer-Bedarf") · [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
@@ -30,7 +30,7 @@ Baseline-Regelwerk `modul-06-roadmap.md` §Wellen-Closure-Prozedur
    `LH-FA-SST-006` **wörtlich eingetreten** — Re-Evaluierung durchgeführt,
    Verdikt **bestätigt** (kein Folge-ADR; Begründung in Zug 1c).
    `LH-FA-SST-007` löst **keinen** ADR-Trigger aus (unabhängig bestätigt,
-   deckt sich mit `verify-slice-022.md` V-2). `ADR-0019`/`ADR-0046`:
+   deckt sich mit dem Verifikationsbericht zu `slice-022` V-2). `ADR-0019`/`ADR-0046`:
    beide `permanent`, unverändert bestätigt.
 2. **Beobachtungs-Register — Lese-Schritt (Modul 6, Closure-Schritt
    3a/3b):** `BEO-PGC/rollen-verdrahtung` erreicht mit
@@ -60,7 +60,7 @@ Planner-Arbeit.
 
 `docs/plan/carveouts/` enthält ausschließlich `.gitkeep` — kein aktiver
 Carveout im Repo, damit auch keiner mit Bezug zu `welle-6`. Beide
-Verifier-Läufe dieser Welle (`verify-slice-021.md`, `verify-slice-022.md`)
+Verifier-Läufe dieser Welle (die Verifikationsberichte zu `slice-021` und `slice-022`)
 liefen `make gates` eigenständig mit Exit 0. **Feststellung: 0 offen.**
 
 ### 1b. Bootstrap-aware Gate (Modul 13)
@@ -129,13 +129,13 @@ Folge-ADR mit `supersedes`" trägt hier nicht, aus drei Gründen:
 **Verdikt 1c(i): `ADR-0020` erneut bestätigt, Wortlaut unverändert, kein
 Folge-ADR.** Re-Evaluierung fand statt (Trigger-Eintritt korrekt erkannt,
 nicht übergangen); ihr Ergebnis ist Bestätigung, nicht Supersession. Für den
-Planner als Vormerkung (kein Blocker, analog `architect-review-slice-021.md`
+Planner als Vormerkung (kein Blocker, analog dem Architect-Review zu `slice-021`
 §4): Sobald ein Slice `LH-FA-SST-006` tatsächlich umsetzt, braucht **dieser**
 Slice eine eigene, neue Architect-Entscheidung (Protokoll-/Endpunktwahl) —
 keine Änderung an `ADR-0020`.
 
 **`LH-FA-SST-007` (NATS-Benachrichtigung, Commit `9f5030d`) — unabhängige
-Prüfung, deckt sich mit `verify-slice-022.md` V-2.** Eigene Durchsicht aller
+Prüfung, deckt sich mit dem Verifikationsbericht zu `slice-022` V-2.** Eigene Durchsicht aller
 ADR-Dateien (`grep -ril` über `nats|benachrichtig|publish.?subscribe|pub/sub`
 in `docs/plan/adr/*.md`) liefert **keinen Treffer** — kein bestehendes ADR
 trägt einen Wortlaut, der auf einen Publish-/Subscribe- oder
@@ -152,7 +152,7 @@ eigener Belegquelle.
 (`9936e82`, `9f5030d`) landeten während laufender `slice-021`/`slice-022`-
 Commit-Fenster auf `main`, ohne Bezug zum jeweiligen Slice. Das ist das
 zweite und dritte Auftreten desselben Musters „Lastenheft-CR im laufenden
-Slice-Diff-Fenster" (`verify-slice-021.md` V-1, `verify-slice-022.md`
+Slice-Diff-Fenster" (Verifikationsbericht zu `slice-021` V-1, Verifikationsbericht zu `slice-022`
 V-2) — an sich kein ADR-Trigger-Gegenstand, aber ein Hinweis für den
 Planner: Erreicht dieses Muster mit einem vierten Auftreten die
 3×-Schwelle als eigene Beobachtungs-Register-Beobachtung (bislang nicht
@@ -163,12 +163,12 @@ der bereits im Verifier-Bericht angelegten Beobachtung.
 
 **Sonstige berührte ADRs.** `ADR-0019` (CLI-Driving-Adapter, `permanent`):
 beide Slices wenden sie kanalgenerisch an (bereits durch
-`architect-review-slice-021.md` §1 hergeleitet); ihr Trigger ist
+den Architect-Review zu `slice-021` §1 hergeleitet); ihr Trigger ist
 `permanent` und nicht ereignisgebunden — **bestätigt, unverändert.**
 `ADR-0046` (SQL-Rollenspaltung, `permanent`, Trigger „technische
 FDW-/`dblink`-Brücke eingeführt"): Keine dieser Welle zugehörige Änderung
 führt eine solche Brücke ein (beide Slices sind CLI-Zugriffswege, kein
-SQL-Artefakt geändert, wie `verify-slice-022.md` „Entscheidungs-Konformität"
+SQL-Artefakt geändert, wie der Verifikationsbericht zu `slice-022` „Entscheidungs-Konformität"
 bereits real geprüft hat) — **bestätigt, unverändert.**
 
 ---
@@ -186,7 +186,7 @@ docs/plan/planning/observations/BEO-PGC/rollen-verdrahtung/evidence/`
 liefert genau drei Dateien — Schwelle real erreicht, nicht nur behauptet.
 `state.md` trägt korrekt „Zähler (abgeleitet): 3×" mit Ausgang bislang
 `weiter offen` — dem Lese-Schritt dieser Welle-Closure zugeordnet, exakt
-der Punkt, an dem dieser Zug greift (`verify-slice-022.md` V-1 hatte diese
+der Punkt, an dem dieser Zug greift (der Verifikationsbericht zu `slice-022` V-1 hatte diese
 Zuordnung bereits empfohlen, nicht selbst vorweggenommen).
 
 ### Prüfung: trägt „verkörpert" (geschärfte Regel statt Fix)?
@@ -271,7 +271,7 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 | Aktiver Carveout mit Bezug zu `welle-6`? | Nein — 0 aktiv im gesamten Repo |
 | Reifestufe (Bootstrap-aware Gate) hochzuschalten? | Nein — durchgehend Greenfield, keine Stufe vorhanden |
 | `ADR-0020`-Trigger gegen `LH-FA-SST-006` eingetreten? | **Ja**, wörtlich — Re-Evaluierung durchgeführt, Verdikt: **bestätigt**, kein Folge-ADR (Entscheidungssatz widerspruchsfrei mit `LH-FA-SST-006`; künftige Protokollwahl ist eine neue, parallele ADR, keine Supersession) |
-| `LH-FA-SST-007` löst einen bestehenden ADR-Trigger aus? | Nein — eigenständig geprüft (Volltextsuche über alle ADR-Dateien), deckungsgleich mit `verify-slice-022.md` V-2 |
+| `LH-FA-SST-007` löst einen bestehenden ADR-Trigger aus? | Nein — eigenständig geprüft (Volltextsuche über alle ADR-Dateien), deckungsgleich mit dem Verifikationsbericht zu `slice-022` V-2 |
 | `ADR-0019`/`ADR-0046` fällig? | Nein — beide `permanent`, in dieser Welle nur angewendet |
 | `BEO-PGC/rollen-verdrahtung` (3×) — Ausgang | **geplant** → [`slice-023`](../plan/planning/done/altbestand/slice-023-rollen-spezifische-dsn-verdrahtung.md) (Skelett angelegt) |
 | Warum nicht „verkörpert"? | Physische Verdrahtungslücke im Bootstrap-Code, kein Workflow-Disziplin-Defizit; eine Regel löst das bestehende, dreifach reproduzierte Defizit nicht auf |
@@ -288,8 +288,8 @@ Register-`state.md`-Fortschreibung (Planner-Arbeit): `seit welle-6`.
 | [`LH-FA-SST-006`](../../spec/lastenheft.md) ist eine `muss`-Anforderung, Version 0.3.0→0.4.0 | `spec/lastenheft.md` §Versionshistorie 0.4.0 |
 | `ADR-0020`-Trigger-Wortlaut, Konsequenzen-Vorwegnahme | [`ADR-0020`](../plan/adr/0020-http-grpc-optional.md) §Re-Evaluierungs-Trigger, §Konsequenzen |
 | Kein ADR mit Pub/Sub-/Benachrichtigungs-Trigger | eigene Volltextsuche `docs/plan/adr/*.md` (keine Treffer für `nats\|benachrichtig\|publish.?subscribe\|pub/sub`) |
-| `ADR-0019`/`ADR-0046` `permanent`, unberührt | jeweiliges ADR §Re-Evaluierungs-Trigger; `verify-slice-022.md` §Entscheidungs-Konformität |
+| `ADR-0019`/`ADR-0046` `permanent`, unberührt | jeweiliges ADR §Re-Evaluierungs-Trigger; der Verifikationsbericht zu `slice-022` §Entscheidungs-Konformität |
 | Zähler `rollen-verdrahtung` = 3× | `evidence/{slice-011,slice-021,slice-022}.md`, `state.md` |
 | Least-Privilege ist Soll-Anforderung, bereits als DDL+Test erfüllt, Laufzeit-Verdrahtung offen | [`LH-QA-SEC-001`](../../spec/lastenheft.md)…003; `observation.md` |
 | Folge-Slice-Skelett angelegt | [`slice-023`](../plan/planning/done/altbestand/slice-023-rollen-spezifische-dsn-verdrahtung.md) |
-| Präzedenzfall „verkörpert" zum Vergleich (Workflow-Disziplin, nicht Architektur-Lücke) | `architect-review-welle-5.md` Zug 2 |
+| Präzedenzfall „verkörpert" zum Vergleich (Workflow-Disziplin, nicht Architektur-Lücke) | der Architect-Review zu `welle-5` Zug 2 |

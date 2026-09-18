@@ -18,7 +18,7 @@ gegen reale PostgreSQL, Targets `make test`/`make test-store`, Plan-§3-Nachzug)
 
 **Skill:** `.harness/skills/reviewer.md` (Stand 2026-09-09, geschärft: vier
 repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
-`docs/reviews/review-report.template.md` (Form wie `review-slice-003.md`).
+`docs/reviews/review-report.template.md` (Form wie das Review zu `slice-003`).
 
 **Modell:** Claude Code (glm-5.3-flash) · **Datum:** 2026-09-09
 
@@ -63,7 +63,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 - `quelle`: Slice-Plan §1/§3/§7 · Modul 5 („Wer später mitnimmt …, hat den
   Plan **geändert**, nicht nur ergänzt"; „Was nicht ausdrücklich
   ausgeschlossen ist, wandert im Zweifel hinein") · laufende Konflikt-Sequenz
-  (Modul 8 — drittes Auftreten in review-slice-003 F-2)
+  (Modul 8 — drittes Auftreten im Review zu `slice-003` F-2)
 - `pfad`: `docs/plan/planning/in-progress/slice-004-postgres-store-adapter.md`
   (§1-Ausschlüsse unverändert, §3 um vier Zeilen ergänzt — in `193716e`, mit
   dem Code, nicht vor ihm; §7 ungefüllt — Closure steht aus) gegen
@@ -89,7 +89,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
   nachgezogen (Port-Zeile in `193716e`, allerdings mit dem Code im selben
   Commit statt vor ihm); **(a)** ist als Vorbestand bestätigt (siehe
   Design-Entscheidungen). Die Klasse steht damit beim **vierten** Auftreten —
-  die Konflikt-Sequenz (Modul 8) läuft bereits seit review-slice-003; die
+  die Konflikt-Sequenz (Modul 8) läuft bereits seit dem Review zu `slice-003`; die
   Plan-Nachzüge (b/d) gehen als Übergabe-Artefakt an den Planner, nicht als
   informelle Handoff-Notiz.
 - `verifizierbar`: ja — `SPEC-001`-Tabellen-Menge gegen die DDL; §1-Ausschlüsse
@@ -145,7 +145,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 
 - `kategorie`: LOW
 - `quelle`: AGENTS.md §5 / Traceability-Regeln („keine superseded-ADR-Referenzen"
-  als Negativbefund-Prüfpflicht seit review-slice-003) · [`ADR-0042`](../plan/adr/README.md)
+  als Negativbefund-Prüfpflicht seit dem Review zu `slice-003`) · [`ADR-0042`](../plan/adr/README.md)
   (Rest-Fortgeltung des [`ADR-0039`](../plan/adr/README.md)-Bestands)
 - `pfad`: Plan-§3-Zeilen (neu in `193716e`: „je [`ADR-0039`](../plan/adr/README.md)" für
   row-Typen/queries/mapper; „[`ADR-0038`](../plan/adr/README.md) bleibt fortgeltend"),
@@ -168,7 +168,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 
 - `kategorie`: LOW
 - `quelle`: Maintainability (Datei-Abschluss, 2. Auftreten der Klasse — F-6
-  review-slice-001) · Testcontainer-Hygiene
+  Review zu `slice-001`) · Testcontainer-Hygiene
 - `pfad`: `tools/harness/run-store-tests.sh:63` (Datei endet ohne
   Zeilenumbruch) · `run-store-tests.sh:16-26` (`cleanup()` räumt nur den
   Container, nicht das Netz `cdc-store-test`)
@@ -219,7 +219,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 ### F-8 — Leere committed Transaktion: Grenze am Adapter-Test getragen, Port-Kontrakt-Zeile nennt sie nicht
 
 - `kategorie`: INFO
-- `quelle`: review-slice-003 F-4 („unbenannte Grenze am öffentlichen Vertrag")
+- `quelle`: Review zu `slice-003` F-4 („unbenannte Grenze am öffentlichen Vertrag")
   · `LH-FA-CAP-006.a`
 - `pfad`: `internal/adapters/driven/postgresstorage/store_test.go` (Test
   `TestPersistCarriesEmptyCommittedTransaction`) ·
@@ -266,7 +266,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst:
 
 | ADR | Aussage | Träger im Diff |
 |---|---|---|
-| [`ADR-0011`](../plan/adr/README.md) | Persist-before-ACK; idempotente Persistenz ist Pflicht | getragen — Transaktion + Changes in EINEM Store-Commit; ON CONFLICT DO NOTHING auf beiden Primärschlüsseln; Idempotenz jetzt **auch am Port-Kontrakt** (`changestore.go:87-91` — F-6 aus review-slice-003 ist aufgelöst); Mutations-Probe belegt die Tests |
+| [`ADR-0011`](../plan/adr/README.md) | Persist-before-ACK; idempotente Persistenz ist Pflicht | getragen — Transaktion + Changes in EINEM Store-Commit; ON CONFLICT DO NOTHING auf beiden Primärschlüsseln; Idempotenz jetzt **auch am Port-Kontrakt** (`changestore.go:87-91` — F-6 aus dem Review zu `slice-003` ist aufgelöst); Mutations-Probe belegt die Tests |
 | [`ADR-0009`](../plan/adr/README.md) | Ein Fähigkeits-Port für Lesen und Schreiben (Option C) | getragen — `ReadChanges` am `ChangeStorePort`, keine zweite Persistenz-Grenze; Port-Vertrag erweitert, Fakes nachgezogen |
 | [`ADR-0010`](../plan/adr/README.md)/[`ADR-0032`](../plan/adr/README.md) | PostgreSQL als Store, Adapterdetail | getragen — pgx/v5-Typen bleiben im Adapter (pgxpool, pgx.Rows); Core sieht keinen Treibertyp |
 | [`ADR-0032`](../plan/adr/README.md)-Fortgeltung ([`ADR-0038`](../plan/adr/README.md)-Kette) | nativer Go-Stack, CGO-frei | getragen — pgx/v5 v5.11.0, rein Go; Dockerfile `CGO_ENABLED=0` unverändert; Referenz-Hygiene F-4 |
@@ -354,7 +354,7 @@ steht hier nicht zur Prüfung an.
   ([`LH-FA-REA-001`](../../spec/lastenheft.md)…006, [`LH-FA-DAT-002`](../../spec/lastenheft.md)/004, [`LH-FA-CAP-006`](../../spec/lastenheft.md)/008, [`LH-FA-RET-001`](../../spec/lastenheft.md),
   [`LH-FA-SCH-005`](../../spec/lastenheft.md), [`LH-QA-REL-001`](../../spec/lastenheft.md)/002, [`ADR-0009`](../plan/adr)/0010/0011/0032/0038/0039/0042);
   **keine `SPEC-*`-/`ARC-*`-Kennung in einer der drei Commit-Messagen** — die
-  F-3-Klasse aus review-slice-003 tritt hier **nicht** erneut auf (4.
+  F-3-Klasse aus dem Review zu `slice-003` tritt hier **nicht** erneut auf (4.
   Zählstand bleibt stehen); keine undeklarierten Präfixe (die
   superseded-Referenzen sind F-4, kein Präfix-Verstoß)
 - geprüft, ohne Befund: **Spec-Stratum** — der Diff berührt keine Spec-Datei;
@@ -374,7 +374,7 @@ steht hier nicht zur Prüfung an.
 - geprüft, ohne Befund: **Zwei-Quellen-Drift im Beobachtungs-Register** —
   `BEO-PGC/a-check-null-abdeckung/state.md` trägt den Zähler abgeleitet
   („Zähler (abgeleitet): … 3×, Ausgang im Lese-Schritt der Welle-1-Closure
-  zugewiesen"); der Defekt F-7 aus review-slice-003 ist bei der Closure
+  zugewiesen"); der Defekt F-7 aus dem Review zu `slice-003` ist bei der Closure
   berichtigt. Neue Beobachtung aus diesem Diff angefallen: keine (kein
   zweites Auftreten einer neuen Klasse unter der Schwelle)
 - geprüft, ohne Befund: **slice-003-F-6 (Idempotenz-Pflicht ohne

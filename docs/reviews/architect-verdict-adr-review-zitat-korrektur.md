@@ -314,12 +314,12 @@ d-check's `spec/spezifikation.md` `DC-FA-MTX-001`…`003`. Ergebnis:
 `find docs/reviews -type d` → **keine Unterverzeichnisse** (flach, ein
 Level). `ls docs/reviews | grep -vE
 '^(review-|verify-|architect-verdict-|architect-review-)'` → genau **eine**
-Ausnahme, `blocker-slice-063.md` (kein Review-Report im engeren Sinn,
+Ausnahme, das Blocker-Protokoll zu `slice-063` (kein Review-Report im engeren Sinn,
 sondern ein Blocker-Protokoll). Ein `paths`-Glob `["docs/reviews/*.md"]`
 (ohne Präfix-Enumeration) erfasst **alle** 291 Dateien des Verzeichnisses
 flach und robust gegen künftige Namensvarianten — dieselbe Glob-Form wie
 die bestehenden `spec`/`adr`/`slice`-Klassen. Eine Enumeration der vier
-Präfixe wäre enger, aber unnötig eng: `blocker-slice-063.md` ist ebenfalls
+Präfixe wäre enger, aber unnötig eng: das Blocker-Protokoll zu `slice-063` ist ebenfalls
 ein Lauf-Beleg ohne Stub-Anspruch und gehört in dieselbe Archivierungs-Klasse.
 
 ### 7.3 Konkreter Diff-Vorschlag (nicht angewendet — Implementer-Fixrunde)
@@ -437,6 +437,6 @@ Fixrunde wie die `.d-check.yml`-Änderung.
 |---|---|
 | `grep -rln "reviews/review-\|reviews/verify-\|reviews/architect-verdict-\|reviews/architect-review-" docs/plan/adr/*.md \| wc -l` | 25 (verifiziert in diesem Zug) |
 | `find docs/reviews -type d` | keine Unterverzeichnisse (verifiziert) |
-| `ls docs/reviews \| grep -vE '^(review-\|verify-\|architect-verdict-\|architect-review-)'` | genau `blocker-slice-063.md` (verifiziert) |
+| `ls docs/reviews \| grep -vE '^(review-\|verify-\|architect-verdict-\|architect-review-)'` | genau das Blocker-Protokoll zu `slice-063` (verifiziert) |
 | `internal/archive/scan.go` `Haenger`/`treffer` | reiner Basisnamen-Teilstring-Vergleich, kein Link-Parsing, Suchraum ohne ADR-Ausnahme (gelesen, §2) |
 | `.d-check.yml` matrix-Erweiterung angewendet | **nein** — Vorschlag für die Implementer-Fixrunde (§7.3) |

@@ -3,7 +3,7 @@
 **Rolle:** Verifier (Modul 11) — Prüfung „Bauen wir es richtig?" gegen Plan
 (`slice-053` §1 Ziel/Abgrenzung, §2 DoD, §3 Plan, §4 Trigger, §6 Risiken, §8
 Sub-Area) und die bindenden `ADR-0055`/`ADR-0056` — nicht gegen Diff
-(Reviewer-Aufgabe, bereits abgeschlossen: `docs/reviews/review-slice-053.md`,
+(Reviewer-Aufgabe, bereits abgeschlossen: das Review zu `slice-053`,
 vollständig gelesen) und nicht gegen realen Bedarf (Validator, hier nicht
 ausgelöst — kein MVP-Meilenstein-Slice, additive Fähigkeit auf bereits
 fertigem Port/Adapter).
@@ -43,7 +43,7 @@ rückwärts ohne Artefakt.
 | 2 | `compose.yaml` trägt real einen digest-gepinnten NATS-Service samt `CDC_NATS_URL` für den Feed-Container | **erfüllt, selbst reproduziert** | `compose.yaml:42-53` real gelesen: `image: nats:2-alpine@sha256:065e8355…` (identisch zum in `ADR-0055` Punkt 5 festgelegten Digest), Healthcheck `wget … /healthz`, `depends_on: nats: condition: service_healthy` beim Feed-Container (Zeile 97-101). Eigener `make test-integration`-Lauf zeigt real `Container cdc-test-nats Healthy` vor `Container cdc-test-feed Starting` — die Startreihenfolge-Absicherung greift real, nicht nur auf dem Papier. `CDC_NATS_URL: nats://nats:4222` real in der Feed-Container-Umgebung gelesen. |
 | 3 | `LH-FA-SST-007` Happy Path real erfüllt: Testclient abonniert `cdc.changes.<source_id>`, empfängt real ein Wecksignal | **erfüllt, selbst reproduziert** | Eigener `make test-integration`-Lauf (dritte Ausführung, sauber, Exit 0): `run-integration-tests: NATS-Happy-Path-Beleg (LH-FA-SST-007) — Test-Subscriber (cdc.changes.src-mvp) abonnierte real vor der Change (id=230, feed_mvp_full) und empfing danach real das leere Wecksignal: READY / RECEIVED subject=cdc.changes.src-mvp payload_len=0`. `tools/harness/natssub/main.go` real gelesen: `SubscribeSync` → `conn.Flush()` (serverseitige Bestätigung) → `"READY"` auf stdout → `NextMsg` — Subscribe-vor-Change strukturell erzwungen, `run-integration-tests.sh` wartet real auf die `READY`-Zeile in `docker logs`, bevor die auslösende Change eingefügt wird (Zeile 1230-1240 real gelesen). |
 | 4 | `make gates` grün, `make test-integration` grün | **erfüllt, selbst reproduziert — mit einer Beobachtung** | Eigener vollständiger `make gates`-Lauf (Exit 0, siehe §2 unten). `make test-integration`: **erster** eigener Lauf brach mit einem Fehler in einem *retention-lifecycle*-Testabschnitt ab (`LH-FA-RET-004 Consumer-Block`, Zeile weit **vor** dem NATS-Abschnitt im Skript) — zwei direkt anschließende Wiederholungsläufe liefen beide sauber durch (Exit 0), inkl. desselben NATS-Happy-Path-Belegs. Dieser Abschnitt ist nicht Teil des slice-053-Diffs (`git diff 3854762..9d89bcd -- tools/harness/run-integration-tests.sh` zeigt nur den NATS-Anhang ab Zeile ~1206; der Retention-Abschnitt ist unverändert). Bewertung: kein DoD-Mangel dieses Slice, aber ein reales, bislang nicht im Beobachtungs-Register geführtes Timing-Flake außerhalb des NATS-Gegenstands — siehe §3/Verdikt für die Einordnung. |
-| 5 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **erfüllt** | `docs/reviews/review-slice-053.md` vollständig gelesen: 0 HIGH, 1 MEDIUM (F-1, ohne Fixrunde), 2 INFO (F-2, F-3). DoD-Zeile im selben Commit (`ec46b4d`, Review-Commit) korrekt nachgezogen. |
+| 5 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **erfüllt** | das Review zu `slice-053` vollständig gelesen: 0 HIGH, 1 MEDIUM (F-1, ohne Fixrunde), 2 INFO (F-2, F-3). DoD-Zeile im selben Commit (`ec46b4d`, Review-Commit) korrekt nachgezogen. |
 | 6 | Doku-Update `docs/user/benutzerhandbuch.md` §„Umgebungsvariablen des Feed-Containers" | **erfüllt** | `docs/user/benutzerhandbuch.md:539` real gelesen: `CDC_NATS_URL`-Zeile korrekt mit Subjekt-Schema, Payload-Form und Fehlerklasse benannt. |
 | 7 | Closure-Notiz mit Steering-Loop-Lerneintrag (§7) | **korrekt offen** | §7 trägt noch ausschließlich Platzhalter (`<…>`) — Planner-Closure-Arbeit, die laut Rollen-Sequenz (Modul 8) erst **nach** diesem Bericht beginnt (`Vf-->>P: DoD-/ADR-Konformität` → `P->>P: Closure`). Kein DoD-Mangel an dieser Stelle. |
 | 8 | Reconciliation-Register — falls Inventur-Fund | **korrekt entfällt** | `docs/plan/planning/reconciliation.md` real geprüft: existiert nicht — Repo durchgehend GF (`harness/conventions.md` Modus-Deklaration `*`/`PGC`). |
@@ -60,12 +60,12 @@ Risiken tragen den Platzhalter `<bei Closure einzutragen>`, keinen der drei
 zulässigen Ausgänge. Das ist exakt die in Modul 11 benannte Verifier-Falle
 („Behauptung ohne Bestätigung") — hier auf der Seite der Aufgabenstellung
 selbst, nicht des Implementer-Berichts. Der tatsächliche Repo-Zustand ist
-mit dem etablierten Muster dieses Repos konsistent (siehe `verify-slice-052.md`:
+mit dem etablierten Muster dieses Repos konsistent (siehe den Verifikationsbericht zu `slice-052`:
 dieselben vier Closure-Punkte waren dort zum Verifikationszeitpunkt ebenso
 korrekt offen) — es handelt sich **nicht** um einen DoD-Verstoß, sondern um
 ausstehende, dem Verifier nachgelagerte Planner-Closure-Arbeit. Ich trage
 unten (§3) eine eigene Einschätzung zu beiden Ausgängen bei, **als Vorschlag
-an den Planner, nicht als gesetzten Wert** — exakt wie in `verify-slice-052.md`
+an den Planner, nicht als gesetzten Wert** — exakt wie im Verifikationsbericht zu `slice-052`
 gehandhabt.
 
 ## 2. Sensor-Läufe (selbst ausgeführt)
@@ -120,7 +120,7 @@ ungesetzt" real durchläuft.
   sondern ein realer struktureller Zwang (Core NATS liefert nichts nach,
   `ADR-0055` Punkt 1), dem aktiv durch das Handshake-Design begegnet wurde —
   **plausibler wäre der Ausgang „eingetreten, gelöst im Slice"** (analog zum
-  Muster in `verify-slice-050.md` §3, zweites Risiko) statt „entfallen": Das
+  Muster im Verifikationsbericht zu `slice-050` §3, zweites Risiko) statt „entfallen": Das
   Risiko war real, es wurde durch eine bewusste Design-Entscheidung
   innerhalb dieses Slice aufgelöst, nicht durch äußere Umstände gegenstandslos.
   Beides ist vertretbar (die Testinfrastruktur selbst ist kein
@@ -128,7 +128,7 @@ ungesetzt" real durchläuft.
   ohne Begründung würde den realen Konstruktionsaufwand (eigenständiger
   Testclient-Prozess, Plan-Nachzug in §3) unsichtbar machen.
 - **Ein drittes, im Review benanntes Risiko fehlt in §6 noch ganz:** F-1 aus
-  `review-slice-053.md` (MEDIUM) — die parallel gelandete `ADR-0056`
+  dem Review zu `slice-053` (MEDIUM) — die parallel gelandete `ADR-0056`
   (Subjekt-Schema-Korrektur) ist in §6 bislang nicht als eigener Punkt
   geführt, obwohl `ADR-0056` selbst den Nachzug explizit der Planungsebene
   zuweist. Meine eigene, unabhängige Prüfung (§4 unten) bestätigt: Dieser

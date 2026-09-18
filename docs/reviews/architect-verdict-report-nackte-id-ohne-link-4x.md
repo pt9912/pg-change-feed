@@ -2,9 +2,8 @@
 
 **Rolle:** Architect (Modul 8)
 **Anlass:** `docs/plan/planning/observations/BEO-PGC/report-nackte-id-ohne-link`
-— nach dem `gestrichen`-Verdikt bei 3× (`architect-verdict-report-nackte-id-ohne-link.md`)
-tritt die Klasse ein viertes Mal auf: `slice-063` (Blocker-Report,
-`docs/reviews/blocker-slice-063.md`), real committet und gepusht mit drei
+— nach dem `gestrichen`-Verdikt bei 3× (der erste Architect-Verdikt zu report-nackte-id-ohne-link)
+tritt die Klasse ein viertes Mal auf: `slice-063` (das Blocker-Protokoll zu `slice-063`), real committet und gepusht mit drei
 nackten `ADR-*`-Kennungen ohne Link (`evidence/slice-063-blocker.md`). Der
 Fehlerpfad unterscheidet sich real von allen drei vorherigen Belegen —
 weder Pipe-Maskierung (`slice-054`) noch Selbstkorrektur vor Commit
@@ -18,16 +17,16 @@ siehe `docs/plan/adr/0064-lh-qa-ops-005-testansatz-korrektur.md`).
 **Bezug:** [`AGENTS.md`](../../AGENTS.md) §3.9 (die hier geschärfte Regel),
 Modul 8 §Kernidee und §Konflikt-Pfad als Rollen-Sequenz, Modul 6 §Das
 Beobachtungs-Register,
-[`architect-verdict-report-nackte-id-ohne-link.md`](architect-verdict-report-nackte-id-ohne-link.md)
+der erste Architect-Verdikt zu report-nackte-id-ohne-link
 (3×-Verdikt, hier neu bewertet),
-[`architect-verdict-slice-chronik-in-code-kommentar-4x.md`](architect-verdict-slice-chronik-in-code-kommentar-4x.md)
+der Architect-Verdikt-Nachtrag zur Slice-Chronik in Code-Kommentaren (4x)
 (Präzedenzfall für ein 4.-Auftreten-Verdikt, dort: Status quo bestätigt +
 zwei gezielte Verkörperungen; hier: Prämisse widerlegt + eine gezielte
 Verkörperung),
-[`architect-verdict-pipe-maskiert-make-exit-code.md`](architect-verdict-pipe-maskiert-make-exit-code.md)
+der Architect-Verdikt dazu, dass eine Pipe den `make`-Exit-Code maskiert
 (Ursprungs-Verkörperung von `AGENTS.md` §3.9, hier ergänzt, nicht
 ersetzt), `docs/plan/planning/observations/BEO-PGC/report-nackte-id-ohne-link/`,
-`docs/reviews/blocker-slice-063.md`.
+das Blocker-Protokoll zu `slice-063`.
 
 ---
 

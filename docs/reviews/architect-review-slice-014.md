@@ -1,14 +1,14 @@
 # Architect-Review slice-014 — Verdikt zu F-1 (globaler `slog`-Singleton vs. `ADR-0024`)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-10.
-**Eingang:** [`docs/reviews/review-slice-014.md`](review-slice-014.md)
+**Eingang:** Review zu `slice-014`
 F-1 (HIGH, Rollen-Widerspruch) · Slice-Plan
 [`docs/plan/planning/done/slice-014-strukturiertes-logging.md`](../plan/planning/done/slice-014-strukturiertes-logging.md)
 §1/§3 · [`ADR-0024`](../plan/adr/0024-observability-ausserhalb-der-domain.md) (Accepted,
 permanent) · [`ADR-0026`](../plan/adr/0026-composition-root.md) (Accepted, permanent) ·
 `spec/architecture.md` `ARC-011` (Telemetrie-Backend) · `spec/lastenheft.md`
 `LH-QA-OPS-003`/`LH-QA-OPS-004` · Präzedenzfall
-[`architect-review-slice-011.md`](architect-review-slice-011.md) (Heartbeat-
+der Architect-Review zu `slice-011` (Heartbeat-
 Persistenz als Erweiterung derselben `ADR-0024`-Fläche) · Baseline-Regelwerk
 `modul-08-agentenrollen.md` §Konflikt-Pfad als Rollen-Sequenz.
 **Ausgang:** Übergabe-Artefakt an Planner/Implementer — **kein Folge-ADR,
@@ -48,7 +48,7 @@ Vier voneinander unabhängige Textstellen tragen dieselbe Aussage:
    Klasse. Dass nur zwei Portnamen fallen (`MetricsPort`, `EventSinkPort`) und
    kein explizites `LogPort`, ist eine Frage der **Umsetzung** dieses
    Mechanismus, keine Einschränkung seines **Geltungsbereichs** — dieselbe
-   Lesart, die schon `architect-review-slice-011.md` für die
+   Lesart, die schon der Architect-Review zu `slice-011` für die
    Heartbeat-Persistenz trug („dieselbe Klasse trägt eine
    Heartbeat-Persistenz", kein neuer Adapter-Typ nötig).
 4. **`ADR-0024` `Schärft:`-Feld** nennt `ARC-011` ausdrücklich. `ARC-011`
@@ -151,7 +151,7 @@ bereits (Port + Driven Adapter); **welche konkrete Portform** — Erweiterung
 von `EventSinkPort`, ein eigenständiger neuer Port für Log-Zeilen, oder ein
 gemeinsamer Telemetrie-Port für Metriken und Logs — ist eine
 **Umsetzungsfrage unter bereits Entschiedenem**, keine neue
-Architekturentscheidung (Präzedenz: `architect-review-slice-011.md`,
+Architekturentscheidung (Präzedenz: der Architect-Review zu `slice-011`,
 Heartbeat-Persistenz als Erweiterung derselben `ADR-0024`-Fläche ohne neuen
 Adapter-Typ). Sollte der Refactor zusammen mit einer neuen Port-Definition
 die verbliebene Slice-Größe sprengen (Port-Definition in
@@ -174,4 +174,4 @@ beim Implementer/Planner im nächsten Zug, nicht bei diesem Verdikt.
 | Globaler Singleton + paketweite Aufrufe, kein Port | `internal/bootstrap/wiring.go:213`, `internal/adapters/driven/postgresack/ack.go:37,50`, `internal/adapters/driven/postgresstorage/{store,heartbeat,consumerstate,tableactivation}.go`, `internal/adapters/driving/replication/receive/receive.go` |
 | Kein `EventSinkPort`/`MetricsPort` im Repo | `grep -rn "EventSinkPort\|MetricsPort" internal/` → kein Treffer |
 | `ADR-0026` betrifft fachliche Verdrahtung, nicht Cross-Cutting-Infra | `docs/plan/adr/0026-composition-root.md` Kontext/Entscheidung/Alternative B |
-| Präzedenz „Port-Erweiterung statt neuer Adapter-Typ" | `docs/reviews/architect-review-slice-011.md` §Prüfung: Schreib-Seite |
+| Präzedenz „Port-Erweiterung statt neuer Adapter-Typ" | der Architect-Review zu `slice-011` §Prüfung: Schreib-Seite |

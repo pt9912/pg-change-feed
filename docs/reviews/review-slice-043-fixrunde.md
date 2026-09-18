@@ -2,7 +2,7 @@
 
 **Review-Art:** Code — Bestätigungslauf zu einer Fixrunde nach eigenem
 Vorbefund. Geprüft gegen den eigenen vorherigen Report
-(`review-slice-043.md`, Findings F-1/F-2), den Plan-Nachzug in
+(das Review zu `slice-043`, Findings F-1/F-2), den Plan-Nachzug in
 `slice-043-changestoreport-loeschmethode.md` §3 Punkt 7/8, `ADR-0014`,
 `ADR-0029`, `ADR-0005` und `AGENTS.md` §3 Hard Rules (§3.5, §3.7) —
 Rollentrennung Modul 8: diese Prüfung läuft eigenständig gegen Code und
@@ -22,7 +22,7 @@ geklärt (LH-FA-RET-004, review-slice-043 F-1/F-2)`) — geändert:
 
 **Eingangs-Kontext** (die Verträge, gegen die geprüft wurde):
 
-- `docs/reviews/review-slice-043.md` (vollständig — eigener Vorbefund F-1/F-2)
+- das Review zu `slice-043` (vollständig — eigener Vorbefund F-1/F-2)
 - Vollständiger `git show 193c47b` (alle 5 Dateien)
 - `internal/adapters/driven/postgresstorage/store.go`,
   `internal/adapters/driven/postgresstorage/queries/queries.go` (vollständig
@@ -115,7 +115,7 @@ Dokumentation klar, mit einer neuen Randbeobachtung
   (`internal/domain/model/consumer.go:53-55`, unverändert in diesem Diff)
   und wird dort — selbst mit loser Passung — `ADR-0005` zugeordnet, nicht
   `ADR-0029`. Repo-weit ist die Zuordnung „Regel 2 = Monotonie" etabliert
-  und konsistent (`consumer.go:51`, `review-slice-009.md:225/299`,
+  und konsistent (`consumer.go:51`, dem Review zu `slice-009` Zeilen 225/299,
   `retention_test.go:11` nutzt Regel 5 für eine andere Zusage) — der
   neue Fix ist die erste Stelle, die Regel 2 für die Bindungs-Eigenschaft
   statt für die Vorwärts-Monotonie beansprucht. Die *Entscheidung* selbst

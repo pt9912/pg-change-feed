@@ -28,7 +28,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   (Capture Application Service, permanent),
   [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md)
   (SQL-Driving-Adapter: Lese-Views direkt, Kategorie C), und das
-  Übergabe-Artefakt [`architect-review-slice-011.md`](architect-review-slice-011.md)
+  Übergabe-Artefakt der Architect-Review zu `slice-011`
   (Architect-Verdikt: Heartbeat-Muster ohne Folge-ADR trägt)
 - `AGENTS.md` §3 Hard Rules (§3.1 Docker-only, §3.2 Suppression-Verbot, §3.7
   Kommentar-Klassen) · `harness/conventions.md` (MR-000/MR-001, genau eine
@@ -40,8 +40,8 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   `d-migrate-nacharbeit` (2×, `evidence/slice-006.md` +
   `evidence/slice-010.md`), `rollen-verdrahtung` (1×, nicht berührt) —
   Plan-Behauptung real bestätigt
-- vorherige Reports: `review-slice-011.md` (F-1/F-2 → Architect-Verdikt,
-  Konflikt-Pfad Modul 8, zweiter Praxistest), `review-slice-010.md`
+- vorherige Reports: Review zu `slice-011` (F-1/F-2 → Architect-Verdikt,
+  Konflikt-Pfad Modul 8, zweiter Praxistest), Review zu `slice-010`
   (Ursprung von `ADR-0046`)
 
 ---
@@ -151,7 +151,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
   konsumierbare Schnittstelle — er ist ein `CMD`-Exec-Aufruf desselben
   Binarys durch Docker selbst, kein Driving Adapter im Sinne der ADR
   (HTTP/gRPC). Das deckt sich mit dem Architect-Verdikt
-  (`architect-review-slice-011.md` §„Berührt das `ADR-0020`-Sperrfeld?
+  (der Architect-Review zu `slice-011` §„Berührt das `ADR-0020`-Sperrfeld?
   Nein."), das exakt diese Grenze bereits für das Heartbeat-Muster
   gezogen hat. (3) *Scope*: Der Compose-Healthcheck-Umbau stand bereits in
   der **ursprünglichen** (nicht nachgetragenen) §3-Zeile „`compose.yaml` |

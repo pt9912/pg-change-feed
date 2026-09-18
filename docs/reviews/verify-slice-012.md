@@ -8,9 +8,9 @@ Entscheidungs-Konformität ([`ADR-0020`](../plan/adr/0020-http-grpc-optional.md)
 [`ADR-0027`](../plan/adr/0027-capture-application-service.md) ·
 [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) ·
 [`ADR-0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) ·
-Architect-Verdikt [`architect-review-slice-011.md`](architect-review-slice-011.md)).
+Architect-Verdikt (der Architect-Review zu `slice-011`).
 Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über die
-F-1…F-4-Dispositionen hinaus (Reviewer, `review-slice-012.md`, Verdikt
+F-1…F-4-Dispositionen hinaus (Reviewer, das Review zu `slice-012`, Verdikt
 dort), realer Bedarf (Validator).
 
 **Gegenstand:** Implementer-/Fix-Range `c30c624..64c90c1` (Claim-Commit
@@ -37,13 +37,13 @@ bestätigt); die einzige Schreibaktion dieses Laufs ist dieser Report.
 **Eingangs-Kontext:**
 
 - Slice-Plan §1–§8 am geprüften Stand (`in-progress/slice-012-…md`) ·
-  `review-slice-012.md` (F-1 HIGH, F-2 MEDIUM, F-3/F-4 LOW, committet
+  das Review zu `slice-012` (F-1 HIGH, F-2 MEDIUM, F-3/F-4 LOW, committet
   `7cdf220`/`b809cae`)
 - `spec/lastenheft.md` (`LH-FA-ADM-002`, `LH-QA-OPS-002`, `LH-FA-ADM-003`,
   `LH-QA-REL-001.a`) · `spec/pflichtenheft.md` (`SPEC-001`-Zeile
   `cdc.process_heartbeat`, `SPEC-007` unverändert)
 - `ADR-0020`, `ADR-0024`, `ADR-0027`, `ADR-0046` im Volltext,
-  `architect-review-slice-011.md`
+  der Architect-Review zu `slice-011`
 - `docs/plan/planning/observations/BEO-PGC/health-endpoint-heartbeat/`
   (Zustand `offen`/„weiter offen", 1×) und `BEO-PGC/d-migrate-nacharbeit/`
   (2×) im Volltext
@@ -100,7 +100,7 @@ gelesen und plausibilisiert, nicht neu gebaut).
 | 1 | Heartbeat-Schreiber im Capture-Prozess (Timer, Bootstrap-Verdrahtung) — Teil-Beleg `LH-FA-ADM-002` | **bestätigt** | `runHeartbeat` (`wiring.go:270-281`) läuft über einen `time.Ticker` in eigener Goroutine (`wiring.go:249-259`), eigener Verbindungspool (`postgresstorage.NewHeartbeat`, getrennt von Store-/Aktivierungs-Pool); `HeartbeatPort`/`PostgresHeartbeatAdapter` real vorhanden und über `make test-store` grün belegt (`TestBeatWritesHeartbeatRow`, `TestBeatIsIdempotentAndAdvancesTimestamp`) |
 | 2 | `cdc.process_heartbeat`-View (`cdc.heartbeat`) + `make test-store`-Beleg — Teil-Beleg `LH-QA-OPS-002` | **bestätigt** | `tools/schema/nacharbeit-heartbeat.sql` erzeugt `cdc.heartbeat` als reine Projektion (`source_id`, `heartbeat_at`, `age_seconds`), real ausgerollt im `test-store`-Lauf, `TestHeartbeatViewProjectsAge` grün gegen reale PostgreSQL |
 | 3 | `make gates` grün | **bestätigt** | Exit 0 in diesem Lauf (Sensor-Tabelle oben) |
-| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **bestätigt** | `review-slice-012.md` committet (`7cdf220`, Linkfix `b809cae`); alle vier Findings F-1…F-4 in Folge-Commits disponiert (siehe Dispositions-Prüfung unten) |
+| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **bestätigt** | das Review zu `slice-012` committet (`7cdf220`, Linkfix `b809cae`); alle vier Findings F-1…F-4 in Folge-Commits disponiert (siehe Dispositions-Prüfung unten) |
 | 5 | Doku-Update für `compose.yaml` (Healthcheck liest den Heartbeat statt nur den Prozess-Start) | **bestätigt** | `compose.yaml:69-79` trägt den `--healthcheck`-Aufruf und einen indikativen Kommentar (nach F-1-Fix ohne Historien-Satz); real am Compose-Container bestätigt (`.State.Health.Status` `starting`→`healthy`, Log-Einträge zeigen den `cdc.heartbeat`-Bezug) |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **noch offen** | §7 trägt am geprüften Stand weiterhin die Vorlagen-Platzhalter (`<…>`) — korrekt, da die Verifikation vor der Closure läuft; kein Defekt, regulärer Vor-Closure-Zustand |
 | 7 | Reconciliation-Register, falls Inventur-Fund | **entfällt — korrekt geprüft** | `docs/plan/planning/reconciliation.md` existiert nicht (Repo ohne Brownfield-Bootstrap, `harness/conventions.md`: Sub-Area `PGC` durchgehend Greenfield) |
@@ -131,7 +131,7 @@ Lebenszeichen … noch nie geschlagen"), der zweite bereits grün — der
 Heartbeat-Zug lief unabhängig vom restlichen Verdrahtungsstart weiter,
 kein Blockieren des Feed-Containers.
 
-## F-1…F-4-Dispositionsprüfung (`review-slice-012.md`)
+## F-1…F-4-Dispositionsprüfung (Review zu `slice-012`)
 
 | Finding | Fix-Commit | Verdikt |
 |---|---|---|
@@ -150,7 +150,7 @@ git diff --name-only c30c624..64c90c1
 
 liefert: `cmd/pg-change-feed/main.go`, `compose.yaml`,
 `docs/plan/planning/in-progress/slice-012-health-endpoint-heartbeat.md`,
-`docs/reviews/review-slice-012.md`, `harness/image-hash.txt`,
+das Review zu `slice-012`, `harness/image-hash.txt`,
 `internal/adapters/driven/postgresstorage/heartbeat.go`,
 `internal/adapters/driven/postgresstorage/heartbeat_test.go`,
 `internal/adapters/driven/postgresstorage/queries/queries.go`,
@@ -166,7 +166,7 @@ liefert: `cmd/pg-change-feed/main.go`, `compose.yaml`,
 Die sechs ursprünglichen §3-Zeilen und die zehn Nachzug-Zeilen (nach
 beiden Nachzügen `91ee305`/`4eb2298`) decken 19 der 20 tatsächlich
 berührten Dateien — `docs/plan/planning/…md` und
-`docs/reviews/review-slice-012.md` selbst zählen nicht als Liefer-Punkt
+das Review zu `slice-012` selbst zählen nicht als Liefer-Punkt
 (Plan-/Review-Artefakte), `harness/image-hash.txt` ist Lauf-Beleg
 (`ADR-0044`, kein eigener Liefer-Punkt). **Eine Datei fehlt in §3 vollständig:
 `internal/bootstrap/healthcheck_test.go`** — siehe **V-1**.
@@ -176,7 +176,7 @@ berührten Dateien — `docs/plan/planning/…md` und
 ### V-1 — `internal/bootstrap/healthcheck_test.go` fehlt vollständig in §3 (weiteres Auftreten derselben Klasse wie F-3, in dessen eigenem Fix-Lauf entstanden)
 
 - `kategorie`: LOW
-- `quelle`: Baseline-Regelwerk `modul-09-implementierung.md` (Plan-Nachzug-Pflicht) · dieselbe Klasse wie `review-slice-012.md` F-3
+- `quelle`: Baseline-Regelwerk `modul-09-implementierung.md` (Plan-Nachzug-Pflicht) · dieselbe Klasse wie das Review zu `slice-012` F-3
 - `pfad`: `docs/plan/planning/in-progress/slice-012-health-endpoint-heartbeat.md` §3 (weder Original- noch Nachzug-Tabelle) vs. `internal/bootstrap/healthcheck_test.go` (neu, Commit `5904fff`)
 - `befund`: Der F-2-Fix-Commit `5904fff` legt die neue Datei
   `internal/bootstrap/healthcheck_test.go` an (81 Zeilen, zwei neue

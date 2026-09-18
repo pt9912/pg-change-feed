@@ -31,7 +31,7 @@ neuer Testfall `internal/adapters/driven/postgresstorage/administrationrequest_t
   Digest `sha256:862dfb04c34dd17278b1bab46961363c12eeb8d464cf1776565d6285603d2c89`,
   `hexagon/core/.../MigrationFingerprint.kt`, `RawSqlTextProjection.kt`) —
   zur unabhängigen Prüfung der d-migrate-Behauptung, nicht Teil des Diffs
-- `docs/reviews/review-slice-035.md` (Format-Vorlage)
+- das Review zu `slice-035` (Format-Vorlage)
 
 ---
 

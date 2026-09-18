@@ -31,9 +31,9 @@ unverändert seit der letzten Schärfung 2026-09-13).
   `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit` (Registerstand,
   `observation.md`/`state.md`), `BEO-PGC/slice-chronik-in-code-kommentar`
   (`state.md`, `evidence/`), `BEO-PGC/dod-checkbox-nachzug`
-- vorherige Findings am gleichen Modul: `docs/reviews/review-slice-060.md`
-  (F-1 Chronik-Klasse), `docs/reviews/review-slice-062.md`,
-  `docs/reviews/review-slice-065.md`
+- vorherige Findings am gleichen Modul: das Review zu `slice-060`
+  (F-1 Chronik-Klasse), das Review zu `slice-062`,
+  das Review zu `slice-065`
 - `spec/lastenheft.md` (`LH-FA-CFG-005`, `LH-QA-SEC-004`, `LH-FA-ADM-001`),
   `spec/architecture.md` (`ARC-002`/`ARC-004`/`ARC-005`), `spec/pflichtenheft.md`
   (`SPEC-019`)
@@ -92,7 +92,7 @@ Auf einer wegwerfbaren `postgres:18-alpine`-Instanz (Digest wie im Makefile),
 - `quelle`: `AGENTS.md` §3.7 (Hard Rule „Ein Kommentar beschreibt, was da
   ist") · `.harness/skills/reviewer.md` §Klassifikation (HIGH-Bullet
   „Slice-/Wellen-Chronik in Produktionscode-Kommentar") · Präzedenzfall
-  `docs/reviews/review-slice-052.md` F-1 und `docs/reviews/review-slice-060.md`
+  das Review zu `slice-052` F-1 und das Review zu `slice-060`
   F-1 · `BEO-PGC/slice-chronik-in-code-kommentar` (5 Belege, „verkörpert")
 - `pfad`: `internal/domain/model/administrationrequest.go:51`
 - `befund`: Der Godoc-Block über dem **Produktionscode**-Konstruktor
@@ -101,13 +101,13 @@ Auf einer wegwerfbaren `postgres:18-alpine`-Instanz (Digest wie im Makefile),
   Review-Fund samt Slice-Kennung: „… wie es die Architektur-Sicht für
   Domänenobjekte und ihre Invarianten vorsieht (`Review-Finding F-4`,
   `review-slice-037.md`)". Satzsubjekt ist der Produktionscode-Pfad, nicht ein
-  Testfall — genau die in `review-slice-052.md` F-1 etablierte Probe. Die
+  Testfall — genau die im Review zu `slice-052` F-1 etablierte Probe. Die
   Zeile ist in diesem Diff eine **`+`-Zeile**: derselbe Block wurde
   umgeschrieben (zwei andere Chronik-Stellen — „bislang die einzige Ausnahme
   davon" und „lag zuvor … trägt sie jetzt" — sind dabei korrekt entfernt
   worden), die Fund-Referenz ist als einzige stehen geblieben. Kein Gate
   fängt das; der repo-weite Textmuster-Sensor wurde geprüft und verworfen
-  (Architect-Verdikt `architect-verdict-slice-chronik-in-code-kommentar.md`).
+  (der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren).
 - `verifizierbar`: nein — kein Gate prüft Kommentar-Klassen
 - `klasse`: „Slice-Chronik in Produktionscode-Kommentar"
 
@@ -600,11 +600,11 @@ geänderten Hunks hinaus ist damit die vorgeschriebene Form, kein Scope-Creep.
 - `pfad`: `docs/plan/planning/in-progress/slice-066-spaltenausschluss-sql-funktionen.md:201`
 - `befund`: Der Satz „Beleg (real gemessen, PostgreSQL 18, d-migrate 1.3.1)"
   übernimmt die Exit-8-/Exit-0-Werte aus der Nachmessung dieses Reports
-  (`docs/reviews/review-slice-066.md`), nennt diese Quelle aber nicht — weder
+  (diesem Review zu `slice-066`), nennt diese Quelle aber nicht — weder
   im Plan noch in der Commit-Message. Ein späterer Leser ordnet die Messung
   damit dem umsetzenden Lauf zu, in dem sie nicht entstanden ist; die
   Zahlen selbst sind mit meiner Messung deckungsgleich.
-- `verifizierbar`: ja — `grep` nach `docs/reviews/review-slice-066.md` in
+- `verifizierbar`: ja — `grep` nach dem Dateibasisnamen dieses Reports in
   Plan und Commit-Message liefert keinen Treffer
 - `klasse`: „Übernommener Beleg ohne genannte Quelle"
 

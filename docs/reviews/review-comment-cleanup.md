@@ -2,8 +2,8 @@
 
 **Review-Art:** Code — gegen Plan/Konventionen (Hard Rule 3.7, `AGENTS.md`
 §3.7 „Ein Kommentar beschreibt, was da ist"), nachträglich ausgelöst durch
-Verifier-Finding VF-2 (`docs/reviews/verify-slice-018.md`): `ca61cfb` lag
-nach Review-Schluss von `review-slice-018.md` und wurde von keinem
+Verifier-Finding VF-2 (dem Verifikationsbericht zu `slice-018`): `ca61cfb` lag
+nach Review-Schluss des Reviews zu `slice-018` und wurde von keinem
 Reviewer-Auge geprüft, bevor es in Richtung Closure ging.
 
 **Gegenstand:** Commit `199396a` (3 Dateien) und Commit `ca61cfb`
@@ -17,7 +17,7 @@ aber nicht Teil von dessen ursprünglicher Diff-Range (`f35a94d`).
 **Eingangs-Kontext:**
 
 - Diff `git show 199396a`, `git show ca61cfb` (vollständig gelesen, nicht nur Stat)
-- `docs/reviews/verify-slice-018.md` (VF-2 — Auslöser dieses Nachtrags-Reviews)
+- der Verifikationsbericht zu `slice-018` (VF-2 — Auslöser dieses Nachtrags-Reviews)
 - `internal/adapters/driven/postgresstorage/queries/queries.go` (`InsertTransaction`),
   `store.go`, `mapper/mapper.go` (realer Code-Stand, gegen den die korrigierte
   Aussage in `nacharbeit-observability.sql` geprüft wurde)
@@ -157,6 +157,6 @@ Konflikt-Sequenz nach Modul 8 nötig. Dieser Report selbst ist Lauf-Beleg
 und wird über Läufe hinweg nicht wieder gelesen; die Finding-Klassen gehen
 bei Bedarf in die Slice-Closure §7 und von dort in den
 Beobachtungs-Register-Zähler. Der Report ersetzt keine Verifikation — die
-DoD-/Spec-Konformität von slice-018 selbst ist bereits in
-`docs/reviews/verify-slice-018.md` geprüft; dieser Lauf deckt ausschließlich
+DoD-/Spec-Konformität von slice-018 selbst ist bereits im
+Verifikationsbericht zu `slice-018` geprüft; dieser Lauf deckt ausschließlich
 die von VF-2 benannte Lücke (Review-Abdeckung von `ca61cfb`).

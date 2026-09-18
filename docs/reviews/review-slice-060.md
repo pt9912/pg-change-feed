@@ -33,9 +33,9 @@ und Handbuch-Versionshistorie-Regel)
 - `docs/plan/planning/done/slice-059-http-api-adapter-grundgeruest-registerconsumer.md`
   als Vorbild/Baseline (§1 Out-of-Scope benennt bereits alle acht
   Fähigkeiten als `slice-060`-Scope)
-- `docs/reviews/review-slice-059.md` — etablierter Qualitätsstandard dieses
+- das Review zu `slice-059` — etablierter Qualitätsstandard dieses
   Adapters
-- `docs/reviews/review-slice-052.md` — Präzedenzfall für die
+- das Review zu `slice-052` — Präzedenzfall für die
   Chronik-in-Produktionscode-Regel (F-1 dort)
 - `LH-FA-SST-006`, `LH-FA-CON-003/004/006`, `LH-FA-CFG-001…004`,
   `LH-FA-RET-002…004` (`spec/lastenheft.md`), `SPEC-018`
@@ -89,7 +89,7 @@ Nachvollziehbarkeit unschädlich ist, da §2 die Abweichung bereits erklärt.
 - `quelle`: `AGENTS.md` §3.7 (Hard Rule „Ein Kommentar beschreibt, was da
   ist") · `.harness/skills/reviewer.md` §Klassifikation (HIGH-Bullet
   „Slice-/Wellen-Chronik in Produktionscode-Kommentar") · Präzedenzfall
-  `docs/reviews/review-slice-052.md` F-1 und
+  das Review zu `slice-052` F-1 und
   `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar/`
   (4× gezählt, Architect-Verdikt vom 2026-09-13)
 - `pfad`: `internal/adapters/driving/http/errors.go:13-21`
@@ -104,8 +104,8 @@ Nachvollziehbarkeit unschädlich ist, da §2 die Abweichung bereits erklärt.
   Bewertung oben; `consumer.go:105-106` schreibt „(`slice-060` §2 DoD: der
   Use Case behandelt die Entfernung als Idempotenz …)" als Begründung für
   das `Removed`-Feld. Satzsubjekt ist in beiden Fällen der
-  Produktionscode-Pfad, nicht ein Testfall — exakt die in
-  `review-slice-052.md` F-1 etablierte Unterscheidung. Kein Gate fängt das.
+  Produktionscode-Pfad, nicht ein Testfall — exakt die im Review zu
+  `slice-052` F-1 etablierte Unterscheidung. Kein Gate fängt das.
 - `verifizierbar`: nein — kein Gate prüft Kommentar-Klassen
 - `klasse`: „Slice-Chronik in Produktionscode-Kommentar"
 

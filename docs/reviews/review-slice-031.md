@@ -1,7 +1,7 @@
 # Review-Report: slice-031 — 2026-09-12
 
 **Review-Art:** Code — geprüft gegen Plan (`slice-031`, §1/§2/§3) und
-`ADR-0015` (`docs/reviews/architect-verdict-slice-030-adr-0015.md`
+`ADR-0015` (der Architect-Verdikt zu `slice-030`/`ADR-0015`
 §Umsetzungsskizze, Schritte 1–3) sowie `AGENTS.md` §3 Hard Rules (Modul 10
 §Drei Review-Arten).
 
@@ -15,7 +15,7 @@ Postgres-Adapter), `cebc273` (DoD-Häkchen, Plan-Nachzug).
 
 - `docs/plan/planning/in-progress/slice-031-schema-persistenz-faehigkeit.md` (§1 Ziel/Abgrenzung, §2 DoD, §3 Plan/Plan-Nachzug, §6 Risiken, §8 Register-Sichtung)
 - `docs/plan/adr/0015-schema-evolution.md` (Accepted, `permanent`)
-- `docs/reviews/architect-verdict-slice-030-adr-0015.md` (§Umsetzungsskizze Schritte 1–3, Prüfmaßstab dieses Slices; Schritte 4–7 ausdrücklich nicht Gegenstand)
+- der Architect-Verdikt zu `slice-030`/`ADR-0015` (§Umsetzungsskizze Schritte 1–3, Prüfmaßstab dieses Slices; Schritte 4–7 ausdrücklich nicht Gegenstand)
 - `spec/lastenheft.md` (`LH-FA-SCH-004`, `LH-FA-SCH-005`), `spec/pflichtenheft.md` (`SPEC-004`)
 - `internal/adapters/driving/replication/mapper/mapper.go`, `internal/application/usecase/enable/service.go`, `internal/bootstrap/wiring.go` (Abgrenzungs-Prüfung: laufender Erfassungspfad unberührt)
 - `internal/adapters/driven/postgresstorage/tableactivation.go` (statische Erstaktivierung, Version 1)
@@ -47,7 +47,7 @@ Postgres-Adapter), `cebc273` (DoD-Häkchen, Plan-Nachzug).
   (`slice-032`, `slice-033`)" (`outbound/schemastore.go:42-43`, wortgleich
   in `postgresstorage/schemastore.go:27`). Der Port-Kommentar verweist
   zusätzlich auf einen Review-Report-Pfad
-  (`docs/reviews/architect-verdict-slice-030-adr-0015.md`,
+  (den Architect-Verdikt zu `slice-030`/`ADR-0015`,
   `outbound/schemastore.go:37`) — ein Lauf-Beleg, der laut
   `.harness/skills/reviewer.md` „über Läufe hinweg nicht gelesen" wird und
   damit als Dauerverweis im Produktionscode ungeeignet ist. Die

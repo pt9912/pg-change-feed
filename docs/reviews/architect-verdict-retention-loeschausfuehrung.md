@@ -22,7 +22,7 @@ Trigger `welle-12` liegt in `done/`), Größe **L**
 
 **Beide Fragen: bestehende Entscheidungen/Muster tragen bereits — keine neue
 ADR.** Dieselbe Konstellation wie beim `slice-030`/`ADR-0015`-Präzedenzfall
-(`docs/reviews/architect-verdict-slice-030-adr-0015.md`): Eine
+(der Architect-Verdikt zu `slice-030`/`ADR-0015`): Eine
 `Accepted`/`permanent` ADR benennt die Fähigkeit bereits als
 **Folgepflicht**, die schlicht noch nicht umgesetzt wurde. Es ist keine
 Architektur-*Entscheidung* zu treffen, sondern eine bereits getroffene

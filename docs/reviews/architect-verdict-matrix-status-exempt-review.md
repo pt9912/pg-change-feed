@@ -18,10 +18,10 @@ d-check: 903 Datei(en) geprüft, 58 Befund(e)
 ```
 
 Alle 58 Befunde tragen den Code `matrix-inactive`, alle liegen unter
-`docs/reviews/**` (Beispiele: `architect-review-slice-011.md`,
-`architect-review-welle-1.md` — 20 Treffer allein dort —,
-`verify-slice-001.md` bis `verify-slice-010.md`, `review-slice-008.md`,
-`review-slice-010.md`).
+`docs/reviews/**` (Beispiele: der Architect-Review zu `slice-011`,
+der Architect-Review zu `welle-1` — 20 Treffer allein dort —,
+die Verifikationsberichte zu `slice-001` bis `slice-010`, Review zu `slice-008`,
+Review zu `slice-010`).
 
 Ohne den `.d-check.yml`-Diff (per `git stash push -- .d-check.yml`, dann
 `make docs-check`, dann `git stash pop`), am unveränderten Bestand:
@@ -76,7 +76,7 @@ d-check: 903 Datei(en) geprüft, 0 Befund(e)
 
 Gegenprobe — schwächt die Ergänzung die `adr → review`-Regel aus
 `ADR-0094`? Ein Testverstoß eingefügt (`docs/plan/adr/0094-*.md` verweist
-live auf `docs/reviews/review-slice-001.md`), `make docs-check` mit der
+live auf das Review zu `slice-001`), `make docs-check` mit der
 `exempt-paths`-Ergänzung erneut gelaufen:
 
 ```

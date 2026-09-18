@@ -145,7 +145,7 @@ eines Kopplungs-Kommentars.
   unabhängig vom Implementer-Bericht unbestätigt. Eine eigenständige
   Reproduktion von `make test-integration` (braucht eine laufende
   Compose-Umgebung) ist zudem Verifier-Aufgabe (Modul 8/11), nicht Teil
-  dieses Maintainability-Reviews — konsistent mit `review-slice-028.md`.
+  dieses Maintainability-Reviews — konsistent mit dem Review zu `slice-028`.
 
 ## Summary
 

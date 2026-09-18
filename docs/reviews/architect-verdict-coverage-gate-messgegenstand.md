@@ -65,7 +65,7 @@ ungededupliziert zählt `numStmt` mehrfach).
 | Prozent (dedupliziert) | **49,25 %** | 49,33 % | **49,30 %** |
 
 Die Spanne 49,25/49,30/49,33 liegt innerhalb der dokumentierten
-Lauf-zu-Lauf-Schwankung (`verify-slice-049.md` §2: 39,6 % vs. 39,8 %) — die
+Lauf-zu-Lauf-Schwankung (der Verifikationsbericht zu `slice-049` §2: 39,6 % vs. 39,8 %) — die
 zwei Statement-Differenzen sitzen ausschließlich in `internal/bootstrap`
 (ein goroutine-naher Block, dessen Coverage-Lauf schwankt). **Die
 Grundaussage ist damit unabhängig bestätigt.**

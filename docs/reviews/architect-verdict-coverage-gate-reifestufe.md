@@ -21,8 +21,8 @@ Läufe von `slice-068` und als der Implementer-Lauf von `slice-049`)
 [`harness/sensors/coverage-gate.md`](../../harness/sensors/coverage-gate.md)
 §Kalibrierungs-Bindung · `harness/mk/coverage.mk` · `AGENTS.md` §3.6 (Gates
 ohne ADR), §3.7 (Ist-Zustand) · `welle-14-results.md` (Präzedenz-Lesart
-desselben Triggers) · `verify-slice-049.md` §2 (dokumentierte
-Lauf-zu-Lauf-Schwankung) · `verify-slice-068.md` §2 (45,80 % unabhängig
+desselben Triggers) · der Verifikationsbericht zu `slice-049` §2 (dokumentierte
+Lauf-zu-Lauf-Schwankung) · der Verifikationsbericht zu `slice-068` §2 (45,80 % unabhängig
 bestätigt) · `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling`
 (Registereintrag derselben Sub-Area, 1×)
 
@@ -71,7 +71,7 @@ Lifecycle-Ablage, und die Klasse
 | `make coverage-gate THRESHOLD=40` (eigener, ungepiped ermittelter Lauf; Exit-Code in eigenem Schritt geprüft) | `coverage-gate: OK — Coverage 45.80% erfüllt Schwelle 40%`, Exit **0** |
 
 Der Ist-Stand **45,80 %** ist damit in diesem Lauf real gemessen und deckt
-sich mit der unabhängigen Bestätigung aus `verify-slice-068.md` §2 und mit
+sich mit der unabhängigen Bestätigung aus dem Verifikationsbericht zu `slice-068` §2 und mit
 der Zahl, die `welle-18` §Verifikation führt. Der Hochschalt-Kandidat ist zum
 Zeitpunkt der Entscheidung **grün** — die Eskalation kann das Gate nicht
 selbst rot färben. Genau das garantiert die Klausel-Bedingung „Ist-Stand ≥
@@ -127,7 +127,7 @@ reale Ist-Stand real von 39,6 % auf 45,80 % gestiegen ist.
 |---|---|---|
 | A — nichts tun: `THRESHOLD` bleibt 35 % | kein Eingriff; das Gate ist auf jeden Fall grün | das Gate verliert seine Wirkung: der Ist-Stand liegt **10,8 Prozentpunkte** über der Schwelle — ein Slice könnte mehr als zwei volle Stufen Coverage verlieren, ohne dass ein Gate rot wird. Das ist genau die „stehengebliebene Reifestufe", die Modul 6 §Wellen-Closure-Prozedur Schritt 2 als unzulässigen Wellen-Abschluss nennt. |
 | B — nichts tun, aber als Carveout dokumentieren | macht die Nicht-Bewegung sichtbar | ein Carveout ist die Ausnahme für **unerreichbare** Ziele (Modul 7). Hier ist das Ziel erreichbar und der Beleg liegt vor (eigener Grün-Lauf auf 40 %) — der Carveout hätte kein Objekt. |
-| **C — ein Schritt auf 40 % (gewählt)** | exakt der Wortlaut „die **nächste** Stufe"; jeder Schritt trägt seinen eigenen Beleg („keinen Freibrief"); 5,8 Prozentpunkte Puffer — rund 29× die einzige dokumentierte Schwankungsquelle (`verify-slice-049.md` §2: 39,6 % vs. 39,8 % bei identischem Code) → die Stufe hält ohne eigene Stabilitätsbedingung; der Schritt ist im Moment seines Vollzugs real grün (eigene Messung, s. o.); folgt der d-check-Reifung, die ebenfalls schrittweise lief (85 → 90 → 93) | ein Schritt weniger, als der Ist-Stand heute trägt — die Schwelle bleibt vorerst unterhalb von `floor(Ist-Stand)` |
+| **C — ein Schritt auf 40 % (gewählt)** | exakt der Wortlaut „die **nächste** Stufe"; jeder Schritt trägt seinen eigenen Beleg („keinen Freibrief"); 5,8 Prozentpunkte Puffer — rund 29× die einzige dokumentierte Schwankungsquelle (der Verifikationsbericht zu `slice-049` §2: 39,6 % vs. 39,8 % bei identischem Code) → die Stufe hält ohne eigene Stabilitätsbedingung; der Schritt ist im Moment seines Vollzugs real grün (eigene Messung, s. o.); folgt der d-check-Reifung, die ebenfalls schrittweise lief (85 → 90 → 93) | ein Schritt weniger, als der Ist-Stand heute trägt — die Schwelle bleibt vorerst unterhalb von `floor(Ist-Stand)` |
 | D — auf 45 % (die Stufe, die der Ist-Stand heute trägt) | entspricht der Einstiegsformel, auf heute angewandt (`45,80 → 45`) | 0,8 Prozentpunkte Puffer; ein einzelner Slice mit Coverage-Verlust färbt das Gate rot, und die dann fällige Antwort ist **nicht** die Senkung (§3.6) — die Klausel hebt stufenweise an („nächste Stufe", „jede Stufe … ihren eigenen Beleg"), nicht auf den Grenzwert; die d-check-Reifung sprang nie zwei Stufen |
 | E — mehrere Stufen bis 80 % in einem Zug | schnellstes Erreichen der Endstufe | der Direktsprung ist die von `ADR-0054` **verworfene** Option B ihrer eigenen Alternativen-Tabelle („ein Direktsprung ohne Kenntnis des Ist-Stands kann das Gate bei jedem ersten Lauf dauerhaft rot färben"); mit Ist 45,80 % wäre 80 % sofort rot |
 
@@ -148,7 +148,7 @@ derselben Prozedur fällig** — dann wieder über den Reifestufen-Zweig.
   Grün-Lauf liegt aus diesem Zug bereits vor (Exit 0, s. §Befundlage).
 - **Trägt der Puffer ohne Bedingung? Ja.** 45,80 − 40 = 5,8 Prozentpunkte
   gegen eine dokumentierte Lauf-zu-Lauf-Schwankung von ±0,2 Prozentpunkten
-  (`verify-slice-049.md` §2). Eine Bindung „hochschalten erst nach N stabilen
+  (der Verifikationsbericht zu `slice-049` §2). Eine Bindung „hochschalten erst nach N stabilen
   Läufen" wäre eine Bedingung ohne Objekt — und sie stünde nicht in der
   Klausel (Frage 1, W2).
 - **Wenn ein künftiger Slice Coverage verliert:** Die Stufe ist **Boden**.

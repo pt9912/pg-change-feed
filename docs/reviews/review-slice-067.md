@@ -32,9 +32,9 @@ Review-Zeitpunkt, unverändert seit der letzten Schärfung 2026-09-13).
   [`LH-FA-DAT-005`](../../spec/lastenheft.md),
   [`LH-FA-SCH-003`](../../spec/lastenheft.md)/`LH-FA-SCH-004.a`
 - `welle-18` §3/§4/§6 (Slice-Zuschnitt, Wellen-Out-of-Scope)
-- Vorgänger `slice-066` (in `done/`) samt `review-slice-066.md`;
-  vorherige Findings am gleichen Modul: `review-slice-060.md`,
-  `review-slice-062.md`, `review-slice-065.md`
+- Vorgänger `slice-066` (in `done/`) samt dem Review zu `slice-066`;
+  vorherige Findings am gleichen Modul: das Review zu `slice-060`,
+  das Review zu `slice-062`, das Review zu `slice-065`
 - `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar`
   (6 Belege, `verkörpert`) — Anlass für den Kommentar-Grep
 
@@ -158,7 +158,7 @@ tragend, keiner ist Dekoration — C allein bleibt grün, weil der Merge in
 
 - `kategorie`: LOW
 - `quelle`: `AGENTS.md` §3.7 (Kommentar-Klasse „Kopplung" beschreibt, was da
-  ist) · Präzedenzfall `review-slice-066.md` F-5 (dieselbe Klasse)
+  ist) · Präzedenzfall Review zu `slice-066` F-5 (dieselbe Klasse)
 - `pfad`: `internal/bootstrap/administration_internal_test.go:342-347`
 - `befund`: Der Test-Doc sagt weiterhin „die beiden Spalten-Antragsarten tragen
   keine `Assembler`-Bindung nach" — seit diesem Diff tragen sie sehr wohl
@@ -305,8 +305,8 @@ Plan-/ADR-Korrektur vor Neu-Implementierung).
   („für eine bislang nicht aktivierte Tabelle" — Satzsubjekt ist der
   Aufruf-Zustand der Tabelle, nicht die Historie des Code-Pfads),
   `mapper_test.go:629`/`:643` und `administration_internal_test.go:429`/`:445`
-  (Testfall-Szenario und Mutations-Hypothese; dieselbe Form ist in
-  `review-comment-cleanup.md` §4 als unauffällig bewertet). **Kein** Treffer
+  (Testfall-Szenario und Mutations-Hypothese; dieselbe Form ist im
+  Review-Bericht zur Kommentar-Bereinigung im Umfeld von `slice-018` §4 als unauffällig bewertet). **Kein** Treffer
   der Klasse `BEO-PGC/slice-chronik-in-code-kommentar` in diesem Diff — die
   bei `slice-066` sechste real aufgetretene Klasse wiederholt sich hier nicht.
 - **geprüft, ohne Befund: Punkt 8 (Scope-Fidelity).**
