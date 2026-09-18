@@ -38,7 +38,7 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-nats-drittstream.md](../welle-nats-drittstream.md) — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming (`LH-FA-SST-008`, `ADR-0100`).
+Keine offene Welle.
 
 ## Nächste Wellen
 
@@ -157,6 +157,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-d-check — `d-check`-Erweiterung: Getrackt-Status und Requirements-Traceability-Matrix | 2026-09-17 | [welle-d-check-results.md](../done/welle-d-check-results.md) |
 | welle-archive-altbestand — Erste Archivierung dieses Repos (wellenloser Altbestand + `welle-d-check`) | 2026-09-18 | [welle-archive-altbestand-results.md](../done/welle-archive-altbestand-results.md) |
 | welle-beispiele-start-ueber-make — Beispiel-Clients: Start über `make`/Dockerfile statt `go run`, echter Start-Make-Target, Demo-Umgebung mit Bootstrapping (`ADR-0098`) | 2026-09-18 | [welle-beispiele-start-ueber-make-results.md](../done/welle-beispiele-start-ueber-make-results.md) |
+| welle-nats-drittstream — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming, volle Drei-Sprachen-Matrix (`LH-FA-SST-008`, `ADR-0100`) | 2026-09-18 | [welle-nats-drittstream-results.md](../done/welle-nats-drittstream-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

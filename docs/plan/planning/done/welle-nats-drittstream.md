@@ -16,9 +16,9 @@ Verzeichnis-Position — kein Status-Feld.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`LH-FA-SST-008`](../../../spec/lastenheft.md) bekommt einen **dritten**,
+[`LH-FA-SST-008`](../../../../spec/lastenheft.md) bekommt einen **dritten**,
 unabhängig nutzbaren Zustellweg für vollständige Change-Inhalte —
-[`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) hat die
+[`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) hat die
 Entscheidung bereits `Accepted` getroffen (Publisher als dritter
 `Broadcaster`-Abonnent, eigener Subjekt-Namensraum `cdc.stream.<source_id>.<schema>.<table>`,
 Core NATS ohne Replay, ein geteilter, opt-in-pflichtiger Verbindungs-Token
@@ -39,15 +39,15 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) trägt
+- [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) trägt
   Status `Accepted` (bereits eingetreten — ein anderer Mensch liest den
   Status-Header der Datei).
 - `welle-beispiele-start-ueber-make` liegt in `done/` — die Beispiel-Client-
   Startform (`make example-run-go/-csharp/-kotlin SURFACE=…`,
-  [`ADR-0098`](../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md))
+  [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md))
   existiert bereits und wird von dieser Welle nur um einen vierten
   `SURFACE`-Wert erweitert, nicht neu geschaffen (bereits eingetreten —
-  [`welle-beispiele-start-ueber-make-results.md`](done/welle-beispiele-start-ueber-make-results.md)).
+  [`welle-beispiele-start-ueber-make-results.md`](welle-beispiele-start-ueber-make-results.md)).
 
 ## 3. Closure-Trigger (Welle schließt)
 
@@ -60,7 +60,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   `slice-nats-drittstream-example-csharp-kotlin`) liegen in `done/`.
 - `make gates` grün.
 - Ein realer `make test-integration`-Lauf zeigt **beide** Belege aus
-  [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md)s Fitness
+  [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md)s Fitness
   Function in einem Durchlauf: ein Client mit gültigem
   `CDC_NATS_STREAM_TOKEN` empfängt eine vollständige Change über
   `cdc.stream.<source_id>.<schema>.<table>`, ein Client ohne/mit falschem
@@ -76,9 +76,9 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-nats-drittstream-core | `natsstream.Publisher` (dritter `Broadcaster`-Abonnent), Bootstrap-Verdrahtung (`CDC_NATS_STREAM_TOKEN`, Zwei-Bedingungen-Aktivierung), `compose.yaml`-NATS-Auth, Wegwerf-Belegträger, `make test-integration`-Erweiterung | [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
-| slice-nats-drittstream-example-go | `examples/nats-stream-client` (Go), `harness/mk/examples.mk`-Erweiterung um `SURFACE=nats-stream` für `example-run-go`, Doku-Nachzug | [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
-| slice-nats-drittstream-example-csharp-kotlin | `examples/csharp/nats-stream-client`, `examples/kotlin/nats-stream-client`, `harness/mk/examples.mk`-Erweiterung um `SURFACE=nats-stream` für `example-run-csharp`/`-kotlin`, `examples-csharp`/`examples-kotlin`-Bau-Erweiterung, Demo-Umgebung (`examples/compose.yaml`, `examples/.env`), Doku-Nachzug | [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
+| slice-nats-drittstream-core | `natsstream.Publisher` (dritter `Broadcaster`-Abonnent), Bootstrap-Verdrahtung (`CDC_NATS_STREAM_TOKEN`, Zwei-Bedingungen-Aktivierung), `compose.yaml`-NATS-Auth, Wegwerf-Belegträger, `make test-integration`-Erweiterung | [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
+| slice-nats-drittstream-example-go | `examples/nats-stream-client` (Go), `harness/mk/examples.mk`-Erweiterung um `SURFACE=nats-stream` für `example-run-go`, Doku-Nachzug | [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
+| slice-nats-drittstream-example-csharp-kotlin | `examples/csharp/nats-stream-client`, `examples/kotlin/nats-stream-client`, `harness/mk/examples.mk`-Erweiterung um `SURFACE=nats-stream` für `example-run-csharp`/`-kotlin`, `examples-csharp`/`examples-kotlin`-Bau-Erweiterung, Demo-Umgebung (`examples/compose.yaml`, `examples/.env`), Doku-Nachzug | [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) |
 
 ## 5. Abhängigkeiten
 
@@ -96,7 +96,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   unabhängig** — beide hängen ausschließlich an
   `slice-nats-drittstream-core`, nicht aneinander (dieselbe Form wie
   `slice-beispiele-go-dockerfile-start`/`slice-beispiele-csharp-kotlin-start-target`
-  in [`welle-beispiele-start-ueber-make`](done/welle-beispiele-start-ueber-make.md)
+  in [`welle-beispiele-start-ueber-make`](welle-beispiele-start-ueber-make.md)
   §5) und können parallel laufen.
 - Wird blockiert von: nichts außerhalb dieser Welle — `ADR-0100` liegt bereits
   `Accepted` vor, `ADR-0060`/`ADR-0061` (Broadcaster-Ursprung) liegen in
@@ -111,7 +111,7 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - **Jede Änderung an `ADR-0055`/`ADR-0056` (NATS-Wecksignal) oder an
-  `internal/adapters/driven/natsnotify/`** — [`ADR-0100`](../adr/0100-nats-dritter-vollinhalts-zustellweg.md)
+  `internal/adapters/driven/natsnotify/`** — [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md)
   hält beide ausdrücklich unverändert und byte-identisch in Kraft; ein
   Zeilen-Diff dort außerhalb der reinen Client-Options-Erweiterung an der
   gemeinsamen `nats.Connect`-Aufrufstelle (Teilfrage 5) wäre ein
