@@ -90,9 +90,10 @@ unter einem Unterverzeichnis verlässt diesen Prüfbereich.
       benennt den `structure`-Modul-Blindfleck als Folgepflicht oder
       akzeptiertes Negativ. ADR-Index (`docs/plan/adr/README.md`) aktualisiert.
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Report: `docs/reviews/review-slice-archive-altbestand-adr.md`, 0 HIGH.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §8.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang.
