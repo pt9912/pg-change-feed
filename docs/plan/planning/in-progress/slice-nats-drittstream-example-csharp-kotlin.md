@@ -72,7 +72,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       `**Beispiele:**`-Block wird um beide Sprachen komplettiert, die
       Aggregat-Aussage „vier Zugriffsarten × drei Sprachen" wird auf „fünf …
       fünfzehn Programme" gehoben (jetzt erst wahr) — zusätzlich
-      `spec/pflichtenheft.md` `SPEC-023` nachgezogen (Plan-Nachzug, §3).
+      `spec/pflichtenheft.md` [`SPEC-023`](../../../../spec/pflichtenheft.md) nachgezogen (Plan-Nachzug, §3).
 - [x] `make gates` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -84,11 +84,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - [x] Doku-Update: `examples/README.md` (C#-/Kotlin-Zeilen, Aggregatzahlen),
       `docs/user/benutzerhandbuch.md`s `**Beispiele:**`-Block komplettiert
       (siehe §2 dritter Liefer-Punkt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. — **entfällt**: Datei existiert in diesem Repo nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. — keine Beobachtung angefallen (§7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). — dieses Repo läuft Wellen-Betrieb: geprüft von der Closure von `welle-nats-drittstream`, nicht hier.
 
 ## 3. Plan (vor Code)
 
@@ -105,7 +105,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 | `harness/mk/examples.mk` | update | fünfter `docker build --target runtime-nats-stream`-Aufruf je Sprache in `examples-csharp`/`examples-kotlin`; `nats-stream` in beiden `example-run-*`-Filtern |
 | `examples/README.md` | update | neue Tabellenzeilen in `## C#` und `## Kotlin`; Intro-Zahlen „vier × drei" → „fünf × drei", „zwölf" → „fünfzehn" |
 | `docs/user/benutzerhandbuch.md` | update | C#-/Kotlin-Zeilen im von `slice-nats-drittstream-example-go` angelegten Abschnitt, neue Versionshistorie-Zeile, Änderungshistorie-Zeile zur vollständigen Matrix |
-| `spec/pflichtenheft.md` | update | **Plan-Nachzug** (im ursprünglichen Plan übersehen): `SPEC-023` Zeile *Sprachen und Umfang* trug noch „vier Zugriffs-Oberflächen" — mit der vollständigen 3-Sprachen-Matrix des fünften Wegs jetzt stale; auf „fünf" gezogen samt `SPEC-024`-Verweis und einer Klarstellung zur optionalen JSON-Bibliothek (siehe Ansatz unten), neue Historie-Zeile |
+| `spec/pflichtenheft.md` | update | **Plan-Nachzug** (im ursprünglichen Plan übersehen): [`SPEC-023`](../../../../spec/pflichtenheft.md) Zeile *Sprachen und Umfang* trug noch „vier Zugriffs-Oberflächen" — mit der vollständigen 3-Sprachen-Matrix des fünften Wegs jetzt stale; auf „fünf" gezogen samt `SPEC-024`-Verweis und einer Klarstellung zur optionalen JSON-Bibliothek (siehe Ansatz unten), neue Historie-Zeile |
 
 **Ansatz — Plan-Korrektur:** Der ursprüngliche Plan nahm eine **rein
 mechanische** Übertragung des `nats-client`-Musters an (Verbindung, aber auch
@@ -168,13 +168,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
   getrennten `slice-102`/`slice-103` für gRPC) — falls C# und Kotlin
   unerwartet divergieren (z. B. ein Kotlin-Gradle-Problem analog zu
   `BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad`), könnte der
-  Slice zu groß werden. — **Ausgang:** <bei Closure ausfüllen; bei
-  Bedarf Aufspaltung in zwei Folge-Slices>.
+  Slice zu groß werden. — **Ausgang: entfallen.** Beide Sprachen bauten und
+  testeten beim ersten realen Docker-Lauf grün (`make examples-csharp`/
+  `make examples-kotlin`, je Exit 0), keine Aufspaltung nötig. Eine reale,
+  aber beherrschbare Divergenz trat auf anderer Ebene auf (siehe §3
+  Ansatz-Korrektur): Kotlin brauchte eine neue JSON-Bibliothek
+  (`com.google.code.gson:gson`), C# nicht (`System.Text.Json` bereits in
+  der BCL) — das blieb eine dokumentierte Asymmetrie innerhalb dieses
+  Slice, kein Grund für eine Trennung.
 - **Aggregat-Zahlen an mehreren Stellen** (`examples/README.md` Intro,
   Handbuch-Header, falls vorhanden) — ein Nachzug-Fund könnte eine Stelle
-  übersehen (`AGENTS.md` §3.13, Suchlauf-Pflicht). — **Ausgang:** <bei
-  Closure ausfüllen; Suchlauf-Ergebnis (gefunden/nicht gefunden) im §7
-  dieses Slice dokumentiert>.
+  übersehen (`AGENTS.md` §3.13, Suchlauf-Pflicht). — **Ausgang: entfallen.**
+  Suchlauf durchgeführt (`grep` über `docs/user/benutzerhandbuch.md`,
+  `examples/README.md`, `spec/pflichtenheft.md` nach
+  „vier Zugriffs(arten\|-Oberflächen)"/„zwölf"): drei lebende Träger
+  gefunden und alle im selben Zug nachgezogen —
+  `examples/README.md` (Intro „vier × drei" → „fünf × drei", „zwölf
+  Beispiel-Programme" → „fünfzehn"), `docs/user/benutzerhandbuch.md`
+  (Versionshistorie-Zeile, `**Beispiele:**`-Block), und zusätzlich
+  die Zeile *Sprachen und Umfang* von
+  [`SPEC-023`](../../../../spec/pflichtenheft.md) (nicht im
+  ursprünglichen Plan gelistet, siehe §3 Plan-Nachzug) — der Suchlauf fand
+  diesen vierten Träger erst durch die erweiterte Grep-Formulierung
+  („Zugriffs-Oberflächen" statt nur „Zugriffsarten"). Keine weitere
+  Fundstelle offen.
 
 ## 7. Closure-Notiz
 
@@ -197,8 +214,27 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-*(bei Closure zu füllen — inklusive des Suchlauf-Ergebnisses aus §6
-zweitem Risiko, `AGENTS.md` §3.13.)*
+**Ergebnis:** `examples/csharp/nats-stream-client` und
+`examples/kotlin/nats-stream-client` liefern den zweiten und dritten
+Beispiel-Client für den dritten, vollinhaltstragenden NATS-Zustellweg
+(`LH-FA-SST-008`, `ADR-0100`) — real gegen die Demo-Umgebung geprüft (§2
+DoD-Punkt 1). Mit diesem Slice ist die volle Beispiel-Client-Matrix
+(fünf Zugriffsarten × drei Sprachen, fünfzehn Programme) zum ersten Mal
+tatsächlich vollständig — die Aggregat-Aussage in `examples/README.md`
+und `docs/user/benutzerhandbuch.md` ist jetzt wahr, nicht mehr nur
+angekündigt.
+
+**Steering-Loop-Lerneintrag:** Keine neue Beobachtung — die einzige reale
+Abweichung dieses Slice-Laufs (der Plan nahm eine rein mechanische
+Übertragung des `nats-client`-Musters an, real gebraucht wurde eine
+Vorbild-Mischung aus `nats-client` und `grpc-client`, siehe §3
+Ansatz-Korrektur) wurde über den bereits institutionalisierten
+Plan-Nachzug-Schritt (`BEO-PGC/plan-nachzug`, `verkörpert` seit
+slice-009) im selben Implementer-Lauf aufgefangen, kein neuer
+Beobachtungs-Bedarf. Der einzige Review-Fund (F-1, LOW: ein
+kopiereingefügter doppelter Absatz beim Vervollständigen des
+`**Beispiele:**`-Blocks in `docs/user/benutzerhandbuch.md`) war ein
+Einzelfall ohne erkennbares Wiederholungsmuster — kein Eintrag.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
