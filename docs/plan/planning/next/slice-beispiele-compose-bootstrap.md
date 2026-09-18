@@ -32,7 +32,7 @@ eigenen `build:`-Block, wie die Wurzel-`compose.yaml`).
 Leser-Erzeugnis, keine neue Zusage; falls die ADR `SPEC-023` um den
 Umgebungsdatei-Kontrakt ergänzt, trägt jener Slice die Folgepflicht).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912.
 
 **Autor:** Planner-Rolle. **Datum:** 2026-09-18.
 
