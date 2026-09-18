@@ -116,7 +116,7 @@ repo-spezifische HIGH-Regeln)
   kein `**`, `.d-check.yml:153`), archivierte Stubs liegen außerhalb, (3)
   die `[haenger]`-Bereinigung (`a12c62a`, `22aacd9` u. a.) liegt vollständig
   vor dem Start dieses Slices (`6dab665`)
-- geprüft, ohne Befund: ADR-0096-Konformität — Schlüsselwahl `altbestand`
+- geprüft, ohne Befund: [`ADR-0096`](../plan/adr/0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md)-Konformität — Schlüsselwahl `altbestand`
   umgesetzt wie entschieden, die zwei Hand-Dokumente
   (`altbestand.md`/`altbestand-results.md`) vor dem realen Lauf angelegt
   (`587f24d` vor `b96e3e7`), `welle-d-check` unangetastet als eigener,
