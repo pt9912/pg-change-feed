@@ -103,8 +103,8 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0088 | Konfigurationsdatei — Feldmenge, Zugangsdaten-Klasse (Supers. ADR-0052, teilw.) | Accepted | 2026-09-17 | [0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) |
 | ADR-0089 | Feldmengen-Paarung — kein Sensor, Wächter Review (Supers. ADR-0088; → ADR-0092) | Accepted | 2026-09-17 | [0089-feldmengen-paarung-kein-sensor-review-waechter.md](0089-feldmengen-paarung-kein-sensor-review-waechter.md) |
 | ADR-0090 | Beispiel-Clients — volle Matrix (Supers. ADR-0087, teilw.) | Accepted | 2026-09-17 | [0090-beispiel-clients-volle-matrix.md](0090-beispiel-clients-volle-matrix.md) |
-| ADR-0091 | Zugangsdaten-Klasse — sechs Schlüssel (Supers. ADR-0088, teilw.) | Accepted | 2026-09-17 | [0091-zugangsdaten-klasse-sechs-schluessel.md](0091-zugangsdaten-klasse-sechs-schluessel.md) |
-| ADR-0092 | Feldmengen-Paarung — Reichweite der drei Träger (Supers. ADR-0089, teilw.) | Accepted | 2026-09-17 | [0092-feldmengen-paarung-reichweite-der-drei-traeger.md](0092-feldmengen-paarung-reichweite-der-drei-traeger.md) |
+| ADR-0091 | Zugangsdaten-Klasse — sechs Schlüssel (Supers. ADR-0088; → ADR-0101) | Accepted | 2026-09-17 | [0091-zugangsdaten-klasse-sechs-schluessel.md](0091-zugangsdaten-klasse-sechs-schluessel.md) |
+| ADR-0092 | Feldmengen-Paarung — Reichweite der drei Träger (Supers. ADR-0089; → ADR-0101) | Accepted | 2026-09-17 | [0092-feldmengen-paarung-reichweite-der-drei-traeger.md](0092-feldmengen-paarung-reichweite-der-drei-traeger.md) |
 | ADR-0093 | Digest-Korrektur — ADR-0087s Kotlin-Basis-Image-Zeile (Supers. ADR-0087, teilw.) | Accepted | 2026-09-17 | [0093-digest-korrektur-adr-0087-kotlin-basis-image.md](0093-digest-korrektur-adr-0087-kotlin-basis-image.md) |
 | ADR-0094 | Review-Matrixklasse — Kennung statt Adresse (ergänzt ADR-0073) | Accepted | 2026-09-18 | [0094-review-matrixklasse-kennung-statt-adresse.md](0094-review-matrixklasse-kennung-statt-adresse.md) |
 | ADR-0095 | Review-Klasse — Status-Ausnahme (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0095-review-klasse-exempt-status-check.md](0095-review-klasse-exempt-status-check.md) |
@@ -113,3 +113,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0098 | Beispiel-Clients — Startform `make`/Dockerfile (Supers. ADR-0076, teilw.) | Accepted | 2026-09-18 | [0098-beispiel-clients-start-ueber-make-dockerfile.md](0098-beispiel-clients-start-ueber-make-dockerfile.md) |
 | ADR-0099 | `slice`/`welle → review` zurückgenommen (Supers. ADR-0097, teilw.) | Accepted | 2026-09-18 | [0099-slice-welle-review-regel-zurueckgenommen.md](0099-slice-welle-review-regel-zurueckgenommen.md) |
 | ADR-0100 | NATS — dritter Vollinhalts-Zustellweg für Live-Streaming | Accepted | 2026-09-18 | [0100-nats-dritter-vollinhalts-zustellweg.md](0100-nats-dritter-vollinhalts-zustellweg.md) |
+| ADR-0101 | Zugangsdaten-Klasse — sieben Schlüssel (Supers. ADR-0088/0091/0092, teilw.) | Accepted | 2026-09-18 | [0101-zugangsdaten-klasse-sieben-schluessel.md](0101-zugangsdaten-klasse-sieben-schluessel.md) |

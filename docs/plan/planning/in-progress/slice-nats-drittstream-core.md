@@ -218,7 +218,9 @@ dasteht.
   Lauf braucht Docker/DB-Zugang, den nicht jeder Ausführungskontext hat).
 - **`AGENTS.md` §3.13-Suchlauf (bewegte Eigenschaft: Feldmenge der
   zugangsdaten-tragenden Klasse, `SPEC-016`/Handbuch §5.2/Code-Prüfung —
-  „von Hand nachzuzählen", `ADR-0089`):** Der Suchlauf dieses Slice lief
+  „von Hand nachzuzählen",
+  [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)
+  §Fitness Function Zeile 1):** Der Suchlauf dieses Slice lief
   als `grep` über `spec/`, `docs/user/` und `docs/plan/adr/` nach
   `nats_url`/„sechs Schlüssel"/„zwei Token-Schlüssel" und fand in diesen
   Wurzeln **zwei** lebende Träger — `spec/pflichtenheft.md` `§SPEC-016` und
@@ -254,18 +256,35 @@ dasteht.
   `docs/user/e2e-abdeckung.md`, alle nachgezogen; **nicht** gefunden:
   weitere Nennungen der Zeichenkette außerhalb der `done/`-Protokolle.
   Zusätzlicher
-  Fund, **nicht** still nachgezogen: [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md)
-  ist `Accepted` und nennt „sechs Schlüssel" im Titel und in ihrer
-  §Entscheidung als abschließende Aufzählung derselben Klasse — durch
-  diesen Slice auf sieben gewachsen. `AGENTS.md` §3.5 schließt eine
+  Fund, **nicht** still nachgezogen — und in der Meldung zunächst
+  unvollständig benannt: `Accepted` und mit der alten Zahl belastet sind
+  **zwei** Dokumente.
+  [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md)
+  nennt „sechs Schlüssel" im Titel und in ihrer §Entscheidung als
+  abschließende Aufzählung derselben Klasse — durch diesen Slice auf sieben
+  gewachsen. Der **heute tragende** Träger ist aber
+  [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md):
+  seine §Fitness Function Zeile 1 ist die aktive Fassung der
+  Träger-Paarung und nennt dieselbe Sechs (ihre §Kontext (2), ihre
+  §Konsequenzen und ihre §Verglichene-Alternativen-Zeile tragen sie
+  ebenfalls); die Meldung hatte hier auf die von `ADR-0092` supersedierte
+  `ADR-0089` gezeigt (Review-Befund F-4). `AGENTS.md` §3.5 schließt eine
   In-place-Korrektur einer `Accepted`-ADR aus; eine Supersedes-ADR ist ein
   Architect-Zug, außerhalb der Implementer-Rolle dieses Slice (`AGENTS.md`
   §3.13: „ein Träger, der eine fremde Datei betrifft, wird gemeldet statt
-  still mitgeändert"). — **Ausgang:** weiter offen — Meldung an
-  Review/Architect, ob eine Folge-ADR (`Supersedes ADR-0091`) den
-  gewachsenen Schlüssel-Zähler nachträgt oder die Drift bei der bereits
-  etablierten benannten Grenze (`ADR-0089`, kein Sensor, Wächter Review)
-  bleibt.
+  still mitgeändert"). — **Ausgang:** eingetreten und mit dem Architect-Zug
+  [`ADR-0101`](../../adr/0101-zugangsdaten-klasse-sieben-schluessel.md)
+  eingelöst: er supersedet die Zahl-Aussagen der
+  [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md), der
+  [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)
+  und der
+  [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md)
+  namentlich und klauselweise; was in diesen Dokumenten Aufzeichnung ist
+  (§Geschichte, §Verglichene Alternativen, datierte Messzeilen, Titel),
+  bleibt stehen. Eine Folge-ADR allein gegen `ADR-0091` hätte
+  [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)s
+  aktive Zeile stehen lassen — dieselbe Fehlannahme, die der Review-Befund
+  F-4 benennt.
 
 ## 7. Closure-Notiz
 
