@@ -89,6 +89,22 @@ keine neue Klasse.
   dadurch zunächst fehl, bis die Umgebung neu hochgefahren wurde. Neue
   Beobachtung, siehe unten.
 
+## Trigger-Audit
+
+Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
+§Wellen-Closure-Prozedur, Schritt 2 — drei Artefaktklassen, je eine
+belegte Feststellung.
+
+- **Carveouts (Modul 7):** 0 offen — kein Carveout referenziert `ADR-0100`
+  oder eine dieser drei Slices.
+- **Bootstrap-aware Gates (Modul 13):** 0 betroffen — keiner der drei
+  Slices berührt `make coverage-gate`s Rampe oder eine andere
+  reifegestufte Schwelle.
+- **Entscheidung/ADR:** `ADR-0100`s Re-Evaluierungs-Trigger (echte
+  Subjekt-scoped NATS-Zugriffskontrolle oder Stream-internes Replay/
+  JetStream) ist nicht eingetreten — bleibt `permanent` unbeobachtet
+  fällig.
+
 ## Steering-Loop-Einträge
 
 Kein Eintrag über der 3×-Schwelle in dieser Welle. Zwei neue Beobachtungen
@@ -110,6 +126,12 @@ Kein Ausgang in dieser Welle fällig (beide neuen Einträge 1×, siehe oben).
 Keine — `ADR-0100`s Re-Evaluierungs-Trigger (echte Subjekt-scoped
 NATS-Zugriffskontrolle, Stream-internes Replay/JetStream) ist nicht
 eingetreten, bleibt `permanent` unbeobachtet fällig.
+
+## Archivierung
+
+Dieses Repo führt kein Archivierungs-Werkzeug für Wellen-Zeitdokumente
+(kein `archiv`-Ziel in `Makefile`/`harness/mk/*.mk`) — die Bedingung für
+Schritt 4 ist nicht eingetreten, keine Handarbeit als Ersatz.
 
 ## Verifikation
 
