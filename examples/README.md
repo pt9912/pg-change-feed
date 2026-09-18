@@ -15,10 +15,10 @@ Teil des Root-Moduls, kein eigener Bau-Schritt nötig:
 
 | Zugriffsart | Verzeichnis | Start |
 |---|---|---|
-| HTTP-/JSON-API | [`http-client`](http-client) | `go run ./examples/http-client ...` |
-| gRPC-Change-Stream | [`grpc-client`](grpc-client) | `go run ./examples/grpc-client ...` |
-| Server-Sent-Events | [`sse-client`](sse-client) | `go run ./examples/sse-client ...` |
-| NATS-Wecksignal | [`nats-client`](nats-client) | `go run ./examples/nats-client ...` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`http-client`](http-client) | `go run ./examples/http-client ...` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`grpc-client`](grpc-client) | `go run ./examples/grpc-client ...` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`sse-client`](sse-client) | `go run ./examples/sse-client ...` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`nats-client`](nats-client) | `go run ./examples/nats-client ...` |
 
 ## C#
 
@@ -28,13 +28,14 @@ Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
 
 | Zugriffsart | Verzeichnis | Image |
 |---|---|---|
-| HTTP-/JSON-API | [`csharp/http-client`](csharp/http-client) | `pg-change-feed-examples:csharp` |
-| gRPC-Change-Stream | [`csharp/grpc-client`](csharp/grpc-client) | `pg-change-feed-examples:csharp-grpc` |
-| Server-Sent-Events | [`csharp/sse-client`](csharp/sse-client) | `pg-change-feed-examples:csharp-sse` |
-| NATS-Wecksignal | [`csharp/nats-client`](csharp/nats-client) | `pg-change-feed-examples:csharp-nats` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`csharp/http-client`](csharp/http-client) | `pg-change-feed-examples:csharp` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`csharp/grpc-client`](csharp/grpc-client) | `pg-change-feed-examples:csharp-grpc` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`csharp/sse-client`](csharp/sse-client) | `pg-change-feed-examples:csharp-sse` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`csharp/nats-client`](csharp/nats-client) | `pg-change-feed-examples:csharp-nats` |
 
 Start je Image per `docker run --rm <ENV-Variablen> <Image> <Argumente>` —
-die konkrete ENV-/Argument-Form je Zugriffsart steht im Benutzerhandbuch.
+die konkrete ENV-/Argument-Form je Zugriffsart steht in der oben verlinkten
+Handbuch-Sektion.
 
 ## Kotlin
 
@@ -44,13 +45,14 @@ Eigene Sprach-Wurzel [`kotlin/`](kotlin), gebaut über
 
 | Zugriffsart | Verzeichnis | Image |
 |---|---|---|
-| HTTP-/JSON-API | [`kotlin/http-client`](kotlin/http-client) | `pg-change-feed-examples:kotlin` |
-| gRPC-Change-Stream | [`kotlin/grpc-client`](kotlin/grpc-client) | `pg-change-feed-examples:kotlin-grpc` |
-| Server-Sent-Events | [`kotlin/sse-client`](kotlin/sse-client) | `pg-change-feed-examples:kotlin-sse` |
-| NATS-Wecksignal | [`kotlin/nats-client`](kotlin/nats-client) | `pg-change-feed-examples:kotlin-nats` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`kotlin/http-client`](kotlin/http-client) | `pg-change-feed-examples:kotlin` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`kotlin/grpc-client`](kotlin/grpc-client) | `pg-change-feed-examples:kotlin-grpc` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`kotlin/sse-client`](kotlin/sse-client) | `pg-change-feed-examples:kotlin-sse` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`kotlin/nats-client`](kotlin/nats-client) | `pg-change-feed-examples:kotlin-nats` |
 
 Start je Image per `docker run --rm <ENV-Variablen> <Image> <Argumente>` —
-die konkrete ENV-/Argument-Form je Zugriffsart steht im Benutzerhandbuch.
+die konkrete ENV-/Argument-Form je Zugriffsart steht in der oben verlinkten
+Handbuch-Sektion.
 
 ## Abgrenzung
 
