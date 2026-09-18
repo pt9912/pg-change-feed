@@ -119,7 +119,7 @@ berührt — er bleibt, wie die `welle-19`-Closure ihn festgestellt hat.
    ergänzt, mit Herkunfts-Anker `· seit welle-19` im Kommentar. Umgesetzt.
 2. `.claude/commands/implement-slice.md` Schritt 24 — die Selbstprüfung mit
    Kandidatenlauf. Umgesetzt.
-3. `docs/plan/planning/done/slice-069-grpc-streaming-adapter-grundgeruest.md`
+3. `docs/plan/planning/done/welle-19/slice-069-grpc-streaming-adapter-grundgeruest.md`
    — der restliche Hinweis entfernt (dieselbe Klasse wie `041dc0c`; reine
    Guidance, nichts Tragendes). Umgesetzt.
 4. Register — Neuanlage `BEO-PGC/vorlagenrest-in-closure-notiz` mit vier

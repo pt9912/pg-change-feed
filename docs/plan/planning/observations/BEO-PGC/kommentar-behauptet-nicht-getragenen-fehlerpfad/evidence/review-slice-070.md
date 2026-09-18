@@ -14,4 +14,4 @@ Gegenteil nahe. Behoben in jenem Slice („eine Zeile, kein Verhalten"), aber an
 (s. den Beleg zum Review von `slice-077`).
 
 Quelle: Review zu `slice-070`, F-2 ·
-`docs/plan/planning/done/slice-070-grpc-capture-integration.md`.
+`docs/plan/planning/done/welle-19/slice-070-grpc-capture-integration.md`.
