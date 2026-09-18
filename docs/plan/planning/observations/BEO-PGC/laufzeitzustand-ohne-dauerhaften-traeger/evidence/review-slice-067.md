@@ -1,7 +1,6 @@
 # Beleg: review-slice-067 (Review-Report als abgeschlossener Vorgang)
 
-**Vorgang:** [`docs/reviews/review-slice-067.md`](../../../../../../reviews/review-slice-067.md)
-(Reviewer-Lauf zu `slice-067`).
+**Vorgang:** Review zu `slice-067` (Reviewer-Lauf zu `slice-067`).
 
 **Fund:** Der Reviewer stellte am Code des `Assembler`-Ausschlussstandes
 fest, dass der Stand keiner dauerhaften Quelle zugeordnet ist: der

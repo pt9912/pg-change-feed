@@ -12,7 +12,8 @@ Namensschemata, statt an einem konsistenten Ort:
 - 9 Dateien unter `docs/plan/adr/architect-review-slice-NNN.md` bzw.
   `architect-review-welle-NN.md` (`slice-011`, `slice-013`, `slice-014`,
   `slice-015`, `slice-016`, `slice-021`, `welle-1`, `welle-5`, `welle-6`).
-- 1 Datei unter `docs/reviews/architect-verdict-slice-030-adr-0015.md`.
+- 1 Datei mit dem Namensschema `architect-verdict-` unter `docs/reviews/`
+  (der Architect-Verdikt zu `slice-030`/`ADR-0015`).
 
 Beide Gruppen sind derselbe Artefakt-Typ (Architect-Verdikt, Modul 8
 §Konflikt-Pfad als Rollen-Sequenz) — kein ADR selbst, deshalb korrekt

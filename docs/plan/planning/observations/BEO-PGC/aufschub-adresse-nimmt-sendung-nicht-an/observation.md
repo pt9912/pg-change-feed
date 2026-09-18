@@ -14,4 +14,4 @@ auffindbar wird er erst, wenn jemand beim Abarbeiten der Adresse den
 Gegenstand vermisst.
 
 Deklaration: `slice-071` F-4 und `slice-072` F-1
-(`docs/reviews/review-slice-071.md`, `docs/reviews/review-slice-072.md`).
+(Review zu `slice-071`, Review zu `slice-072`).

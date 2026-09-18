@@ -14,6 +14,6 @@ Slice trägt eine Abweichung, ein Review muss sie prüfen, und die Korrektur
 geht über eine Folge-ADR (`AGENTS.md` §3.5 verbietet die in-place-Korrektur).
 
 Deklaration: `slice-070` (Review-Finding F-1,
-`docs/reviews/review-slice-070.md`; entschieden über
+Review zu `slice-070`; entschieden über
 [`ADR-0067`](../../../../adr/0067-capture-publish-einbindung-fitness-function-korrektur.md),
 `Supersedes ADR-0066`, nur die dritte Fitness-Function-Zeile).

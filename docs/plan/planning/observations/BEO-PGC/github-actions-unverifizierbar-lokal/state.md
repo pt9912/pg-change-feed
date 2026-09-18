@@ -1,8 +1,8 @@
 Zustand: **verkörpert** — Ausgang: **verkörpert** → neue Hard Rule
 `AGENTS.md` §3.10 („Ein neuer oder strukturell geänderter
 GitHub-Actions-Workflow gilt erst nach einem realen, grünen
-Post-Push-Lauf als abgeschlossen“) · seit welle-17. Architect-Verdikt:
-[`architect-verdict-github-actions-unverifizierbar-lokal-3x.md`](../../../../../reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md)
+Post-Push-Lauf als abgeschlossen“) · seit welle-17. Der Architect-Verdikt
+zu github-actions-unverifizierbar-lokal (3×)
 (Diagnose: anders als beim Nackte-Kennung-Präzedenzfall ist hier kein
 Sensor möglich — GitHub Actions ist ein externer, gehosteter Dienst, den
 ein Docker-only/netzloser Sensor strukturell nicht erreichen kann —, aber
@@ -32,7 +32,7 @@ dem Buchstaben nach ausgelöst, korrekt an allen drei Trägern als offen
 geführt — kein neuer Schwellen-Übertritt, die Regel steht bereits.
 
 (Hinweis, vom Verifier bei `slice-065` gefunden,
-`docs/reviews/verify-slice-065.md`: Die vorige Kopfzeile dieser Datei
+Verifikationsbericht zu `slice-065`: Die vorige Kopfzeile dieser Datei
 trug „weiter offen“ als Ausgangsbezeichnung — das ist die
 Ausgangsbezeichnung für ein Slice-§6-Risiko (Modul 5), nicht einer der
 drei gültigen Register-Ausgänge ab 3× (verkörpert/geplant/gestrichen,

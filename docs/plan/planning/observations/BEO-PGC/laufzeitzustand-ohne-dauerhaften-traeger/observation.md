@@ -25,7 +25,7 @@ nicht zurückholbar; die Zusage von `LH-QA-SEC-004` hängt damit an der
 Prozesslebensdauer.
 
 Deklaration: `slice-067` (Review-Findings F-1 und F-2,
-[`docs/reviews/review-slice-067.md`](../../../../../reviews/review-slice-067.md);
+Review zu `slice-067`;
 die Findings sind als Entscheidungen an Planner/Architect gereicht, Modul 8
 §Konflikt-Pfad). Der dauerhafte, tabellen-scoped Träger ist entschieden
 ([`ADR-0065`](../../../../adr/0065-spaltenausschluss-dauerhafter-traeger.md)),

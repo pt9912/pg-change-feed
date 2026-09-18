@@ -16,6 +16,6 @@ einzige real erprobte Weg ist der Testharness-interne Mechanismus aus
 `cdc.table_schema` plus Slot-Neuanlage, `tools/harness/run-integration-tests.sh`)
 — nicht als Betriebsdokumentation für Endnutzer gedacht oder geeignet.
 
-Deklaration: `slice-062` (Review-Finding F-1, `docs/reviews/review-slice-062.md`;
+Deklaration: `slice-062` (Review-Finding F-1, Review zu `slice-062`;
 Verifier bestätigte die Einschätzung unabhängig,
-`docs/reviews/verify-slice-062.md`).
+Verifikationsbericht zu `slice-062`).

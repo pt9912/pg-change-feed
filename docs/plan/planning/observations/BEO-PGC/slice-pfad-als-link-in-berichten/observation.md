@@ -13,6 +13,6 @@ Gate-Lauf wird rot, ohne dass sich am Inhalt etwas geändert hätte. Die
 Repo-Konvention ist die **Kennungs-Zitierung** (`` `slice-NNN` ``) oder ein
 Inline-Code-Pfad; nur echte, lage-stabile Ziele werden verlinkt.
 
-Deklaration: `docs/reviews/review-slice-068.md`/`verify-slice-068.md` sowie
-`docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md` (beide
+Deklaration: Review und Verifikationsbericht zu `slice-068` sowie
+der Architect-Verdikt zur Spaltenausschluss-Dauerhaftigkeit (beide
 Fälle in derselben Sitzung real aufgetreten und vom Doku-Gate gefangen).

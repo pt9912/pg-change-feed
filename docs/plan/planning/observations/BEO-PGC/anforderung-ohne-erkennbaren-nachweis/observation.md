@@ -26,7 +26,7 @@ außerhalb des eigenen Lieferumfangs). Sieben konkrete Kennungen (Stand
 `LH-FA-CFG-006`, `LH-FA-CON-002`, `LH-FA-DAT-002`, `LH-FA-DAT-003`,
 `LH-FA-SST-001`, `LH-FA-SST-005`, `LH-QA-REL-004`. Keine der sieben hat eine
 Erwähnung in `docs/user/e2e-abdeckung.md` (eigene Gegenprobe des Verifiers,
-`docs/reviews/verify-slice-d-check-trace-rtm.md` §A).
+Verifikationsbericht zu `slice-d-check-trace-rtm`, §A).
 
 **Warum das zählt:** Ohne diese Beobachtung verschwindet der Fund im
 `make doc-trace`-Output eines einzelnen Laufs — das Werkzeug ist advisory,

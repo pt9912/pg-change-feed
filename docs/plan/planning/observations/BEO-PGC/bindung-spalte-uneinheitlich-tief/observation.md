@@ -14,7 +14,7 @@ den Sensor-Link erreichbar. Die Asymmetrie ist eine Formfrage, keine
 Deckungslücke.
 
 Gefunden vom Reviewer bei `slice-gate-index-konsolidierung`
-(`docs/reviews/review-slice-gate-index-konsolidierung.md` F-1, INFO) beim
+(Review zu `slice-gate-index-konsolidierung`, F-1, INFO) beim
 Zeile-für-Zeile-Abgleich von `AGENTS.md` §4 (vor der Kürzung) gegen
 `harness/README.md` §Sensors. Die Asymmetrie bestand bereits **vor** diesem
 Diff — `harness/README.md` war nicht Teil des geänderten Umfangs — und ist

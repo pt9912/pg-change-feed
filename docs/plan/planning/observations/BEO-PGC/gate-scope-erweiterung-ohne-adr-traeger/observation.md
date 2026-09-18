@@ -14,7 +14,7 @@ Unterschied — **Verfeinerung** (ADR-frei) gegen **Erweiterung**
 (ADR-pflichtig) — war vor `ADR-0068` nirgends gezogen.
 
 Deklaration: `slice-071` (Review-Finding F-1,
-`docs/reviews/review-slice-071.md`; entschieden über
+Review zu `slice-071`; entschieden über
 `ADR-0068`, `Supersedes ADR-0041` nur die Änderungs-Ausnahmeklausel).
 Verwandt, aber Gegenrichtung: `BEO-PGC/a-check-null-abdeckung` (Dateien in
 **keiner** Schicht) — hier ist es eine Gruppe, die **zu weit** reicht.

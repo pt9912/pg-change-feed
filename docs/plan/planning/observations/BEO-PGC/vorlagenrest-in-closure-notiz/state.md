@@ -7,7 +7,7 @@ stehengebliebener Ausfüll-Hinweis färbt `make docs-check` als
 `section-forbidden` rot. Erste, nicht tragende Linie: die datei-skopierte
 Selbstprüfung im Planner-Closure-Schritt
 (`.claude/commands/implement-slice.md` Schritt 24) auf dem **rohen** Text.
-Architect-Verdikt: `docs/reviews/architect-verdict-vorlagenrest-in-closure-notiz.md`.
+Der Architect-Verdikt zum Vorlagenrest in der Closure-Notiz trägt die Details.
 
 Herkunfts-Anker `seit welle-19`: Die Klasse erreicht die Schwelle mit den
 Slices dieser Welle (`slice-069`…`slice-072`); der Anker löst über

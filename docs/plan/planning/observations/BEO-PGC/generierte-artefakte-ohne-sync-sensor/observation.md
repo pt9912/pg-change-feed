@@ -16,6 +16,6 @@ kompilierbar, aber Quelle und Erzeugnis laufen auseinander — und `make
 gates` bliebe grün. Die Bindung ist bisher Disziplin (der erzeugende Lauf
 wird vor der Closure gefahren), nicht Mechanik.
 
-Deklaration: `slice-069` (Review-Finding F-6, `docs/reviews/review-slice-069.md`;
+Deklaration: `slice-069` (Review-Finding F-6, Review zu `slice-069`;
 der Verifier teilte die Einordnung als „Klasse gehört ins Register",
-`docs/reviews/verify-slice-069.md`).
+Verifikationsbericht zu `slice-069`).

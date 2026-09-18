@@ -24,11 +24,11 @@ selbst — die Trigger-Bedingung des Plans — nicht eingelöst, nicht nur ihr
 DoD-Beleg.
 
 Deklaration: `slice-d-check-tracked-modul` (Review-Finding F-3, MEDIUM,
-`docs/reviews/review-slice-d-check-tracked-modul.md`): Der Slice-Plan §4
+Review zu `slice-d-check-tracked-modul`): Der Slice-Plan §4
 Trigger macht den Architect-Zug explizit zur Start-Bedingung; der reale
 `next → in-progress`-Commit (`262bcda`, „WIP-Limit frei. Erster Slice der
 Welle welle-d-check.") trägt keines. Nachträglich geheilt durch einen
 Architect-Zug **nach** Implementierungsbeginn
-(`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`) —
+(der Architect-Verdikt zur ADR-Frage von slice-d-check-tracked-modul) —
 die Sequenz-Verletzung selbst bleibt als Record im Slice-Plan stehen, sie
 wird durch den Nachtrag nicht rückwirkend geheilt (Verdikt §7).

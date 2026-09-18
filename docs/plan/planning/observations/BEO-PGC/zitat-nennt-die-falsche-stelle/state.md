@@ -1,6 +1,6 @@
 Zustand: **verkörpert** — Ausgang zugewiesen beim Lese-Schritt der
-`welle-d-check`-Closure (Architect-Verdikt
-`docs/reviews/architect-verdict-welle-d-check-lese-schritt.md` §2): Kein
+`welle-d-check`-Closure (der Architect-Verdikt zum welle-d-check-Lese-Schritt,
+§2): Kein
 neuer HIGH-Punkt — der bestehende Punkt „Beleg trägt seinen Satz nicht" in
 `.harness/skills/reviewer.md` ist um die Verweis-Form („einen Verweis auf
 eine Stelle eines anderen Dokuments — eine Abschnittsnummer, eine

@@ -16,8 +16,8 @@ Lücke erst beim ersten echten End-to-End-Aufruf gegen den vollständig
 bootstrap-verdrahteten Prozess (hier: `slice-061`s
 `make test-integration`-Rundlauf).
 
-Deklaration: `slice-061` (Review-Finding F-1, `docs/reviews/review-slice-061.md`;
+Deklaration: `slice-061` (Review-Finding F-1, Review zu `slice-061`;
 Verifier bestätigte die Einschätzung unabhängig,
-`docs/reviews/verify-slice-061.md`). Betroffener Vorgang der eigentlichen
+Verifikationsbericht zu `slice-061`). Betroffener Vorgang der eigentlichen
 Lücke: `slice-059`/`slice-060` (Bootstrap-Verdrahtung unvollständig,
 behoben in `slice-061`s Commit `82e4898`).

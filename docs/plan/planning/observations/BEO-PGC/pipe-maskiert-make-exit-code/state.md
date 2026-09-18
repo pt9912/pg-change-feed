@@ -2,8 +2,8 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → neue Hard Rule
 `AGENTS.md` §3.9 („Exit-Code eines Gate-Laufs wird direkt geprüft, nie
 durch eine Pipe/einen Wrapper hindurch"), plus Kurzverweis darauf in
 `AGENTS.md` §6 Schritt 6 und `harness/README.md` §Minimal agent workflow
-Schritt 6 — verkörpert `seit welle-15`. Architect-Verdikt:
-`docs/reviews/architect-verdict-pipe-maskiert-make-exit-code.md`
+Schritt 6 — verkörpert `seit welle-15`. Der Architect-Verdikt zu
+pipe-maskiert-make-exit-code
 (Diagnose: strukturell anders als die Chronik-/Handbuch-Präzedenzfälle —
 der Fehler entsteht in der Shell-Ausführung selbst, hinterlässt kein
 zweites, unabhängig einsehbares Artefakt, das eine zweite Rolle prüfen

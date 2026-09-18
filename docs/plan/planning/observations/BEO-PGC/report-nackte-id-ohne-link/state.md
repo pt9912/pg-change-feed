@@ -4,8 +4,8 @@ sind zwei Schritte, nicht einer" · `seit slice-063`. Zähler (abgeleitet):
 6× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
 evidence/slice-063-blocker.md, evidence/slice-068.md, evidence/slice-104.md).
 
-Der ursprüngliche `gestrichen`-Ausgang (3×,
-[`architect-verdict-report-nackte-id-ohne-link.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link.md))
+Der ursprüngliche `gestrichen`-Ausgang (3×, der erste Architect-Verdikt zu
+report-nackte-id-ohne-link)
 beruhte auf: „der einzige Weg, den roten Befund zu ignorieren
 (maskierter Exit-Code), ist bereits verschlossen" (`AGENTS.md` §3.9,
 Pipe-/Wrapper-Fall). Der vierte Beleg (`slice-063-blocker`,
@@ -15,8 +15,8 @@ selben Arbeitsschritt-Batch, bevor der bereits sichtbare rote Wert die
 Aktion tatsächlich blockierte — eine andere Fehlerklasse als die drei
 vorherigen Belege (Mess-Ebene korrekt, Sequenzierungs-Ebene nicht). Ein
 neuer Architect-Zug hat deshalb geprüft, ob eine Verkörperung jetzt doch
-trägt, und `AGENTS.md` §3.9 um einen eigenen Absatz geschärft: Details in
-[`architect-verdict-report-nackte-id-ohne-link-4x.md`](../../../../../reviews/architect-verdict-report-nackte-id-ohne-link-4x.md).
+trägt, und `AGENTS.md` §3.9 um einen eigenen Absatz geschärft: Details im
+zweiten Architect-Verdikt zu report-nackte-id-ohne-link (4×).
 Kein neuer Sensor (Begründung wie beim Ursprungsfall von §3.9: die
 Verletzung liegt in der Ausführung, nicht im committeten Ergebnis).
 

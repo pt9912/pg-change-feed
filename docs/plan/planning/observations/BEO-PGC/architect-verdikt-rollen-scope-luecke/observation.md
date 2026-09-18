@@ -7,7 +7,7 @@ Die Beobachtung: Ein Architect-Verdikt, das eine neue Fähigkeit gegen
 bestehende ADRs prüft (Domain-/Port-/Use-Case-Ebene), prüft nicht
 durchgängig auch die Rollen-/Grant-Konsequenz eines neuen physischen
 Schreib- oder Löschpfads auf PostgreSQL-Ebene (`ADR-0047`). Konkretes
-Beispiel: `docs/reviews/architect-verdict-retention-loeschausfuehrung.md`
+Beispiel: der Architect-Verdikt zur Retention-Löschausführung
 Frage 1 prüft `ADR-0009`/`0011`/`0012`/`0014`/`0029` und stellt fest,
 dass die neue `ChangeStorePort`-Löschmethode keiner dieser Entscheidungen
 widerspricht — die Frage, ob die Rolle, über die dieser physische
@@ -21,7 +21,7 @@ kein stiller Fortschritt dieser Welle" wäre — real geprüft (`grep` gegen
 `cdc_admin` vor `slice-044` ein `DELETE`-Grant auf diesen beiden
 Tabellen.
 
-Deklaration: `docs/reviews/architect-verdict-retention-loeschausfuehrung.md`
+Deklaration: der Architect-Verdikt zur Retention-Löschausführung
 (Frage 1, keine Rollen-/Grant-Prüfung), `slice-044`-Plan-Nachzug §3
 (Fund, Grant-Ergänzung ohne separaten Architect-Zug in eigenem Kontext —
 Implementer-Session ohne getrennte Architect-Rolle verfügbar).

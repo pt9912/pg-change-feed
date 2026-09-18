@@ -11,8 +11,8 @@ Kontext übersehen, der den fachlichen Inhalt schreibt) bereits belegt:
 Selbstprüfung allein trägt nicht, der unabhängige Reviewer ist die
 tragende Linie (empirisch 4/4 dort). Diese generelle Lehre anzuwenden,
 statt einen erneuten empirischen Beweis für denselben Mechanismus
-abzuwarten, ist der Sinn des Steering Loop. Architect-Verdikt:
-[`docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../../../../reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)
+abzuwarten, ist der Sinn des Steering Loop. Der Architect-Verdikt zur
+übersprungenen Handbuch-Versionshistorie
 · seit slice-053. Wellenloser Architect-Zug, Lese-Schritt ausgelöst durch
 die `slice-053`-Evidence (dritter Beleg), außerhalb einer laufenden
 Slice-Closure (Modul 6 „Träger im Repo ohne Wellen").

@@ -1,7 +1,7 @@
 # Beleg: review-slice-079
 
 Vorgang: das Review von `slice-079` — gefunden im Bestätigungslauf
-(`docs/reviews/review-slice-079-fixrunde-2.md`, F-1).
+(Review zu `slice-079`, Fixrunde 2, F-1).
 
 Fund: Die neue Sektion §Zählbasis in `harness/sensors/coverage-gate.md` erklärte
 die **gedruckte** Prozentzeile mit einem Mechanismus, den das Werkzeug nicht hat
@@ -11,4 +11,4 @@ gegen die Duplikate **invariant**; die per-Zeile-Naivsumme ergäbe 3,95 % statt
 69,9 %. Korrigiert: die gedruckte Zeile ist **keine** eigene Größe, sondern
 dieselbe Messung in anderer Ausgabepräzision.
 
-Quelle: `docs/reviews/review-slice-079-fixrunde-2.md` F-1 · Commit `0dd531d`.
+Quelle: Review zu `slice-079`, Fixrunde 2, F-1 · Commit `0dd531d`.

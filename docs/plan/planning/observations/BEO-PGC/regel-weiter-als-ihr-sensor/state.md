@@ -1,6 +1,6 @@
 Stand: **verkörpert** (teilweise) — Ausgang zugewiesen beim Lese-Schritt der
-`welle-d-check`-Closure (Architect-Verdikt
-`docs/reviews/architect-verdict-welle-d-check-lese-schritt.md` §1): Die drei
+`welle-d-check`-Closure (der Architect-Verdikt zum welle-d-check-Lese-Schritt,
+§1): Die drei
 Manifestationen liegen in zu verschiedenen technischen Domänen für eine
 gemeinsame Verkörperung. **Verkörpert** wird nur die self-referentielle
 dritte (`slice-096`, `AGENTS.md` §3.13 selbst) — `AGENTS.md` §3.13 trägt

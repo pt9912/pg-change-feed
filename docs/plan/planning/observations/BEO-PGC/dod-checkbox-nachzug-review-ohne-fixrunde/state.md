@@ -4,8 +4,7 @@ kommt der Reviewer im eigenen Verdikt zu „keine Fixrunde nötig", zieht er
 die DoD-Checkbox „Review durchgeführt" im Slice-Plan im selben Commit
 selbst nach (mit Link auf den eigenen Report) — liegt in
 `.harness/skills/reviewer.md §DoD-Checkbox-Nachzug ohne Fixrunde` · seit
-slice-047. Architect-Verdikt:
-[`docs/reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md`](../../../../../reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md)
+slice-047. Der Architect-Verdikt zum DoD-Checkbox-Nachzug ohne Fixrunde
 (geschärfte Instruktion statt mechanischem Sensor — dieselbe
 Verdikt-Struktur wie bei `BEO-PGC/slice-chronik-in-code-kommentar`, hier
 am Reviewer statt am Implementer verankert, weil der Reviewer als
