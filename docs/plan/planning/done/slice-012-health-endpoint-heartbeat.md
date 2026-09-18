@@ -36,8 +36,8 @@ zusammen mit der Begründungs-Pflicht je Punkt.
 
 **Ziel:** Health-Endpoint real: der Capture-Prozess schreibt periodisch
 seinen Lebenszeichen-Zustand in eine `cdc.process_heartbeat`-Tabelle, eine
-vierte SQL-Lese-View macht ihn automatisiert abfragbar (Architect-Verdikt
-[`docs/plan/adr/architect-review-slice-011.md`](../../../reviews/architect-review-slice-011.md):
+vierte SQL-Lese-View macht ihn automatisiert abfragbar (der Architect-Review
+zu `slice-011`:
 kein neuer Driving-Adapter, keine neue ADR nötig).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
@@ -120,9 +120,9 @@ Aussagen-Berührung steht hier gar nicht.
 | `spec/pflichtenheft.md` | update | [`SPEC-001`](../../../../spec/pflichtenheft.md)-Tabellenzeile: die dort bereits vorgesehene, nie detaillierte `cdc.capture_state`-Zeile („Betriebs-/Capture-Zustand") wird durch die jetzt realisierte `cdc.process_heartbeat` ersetzt — sonst zwei Namen für denselben Zweck (Fund beim Plan-vs-Bestand-Abgleich, Schritt 12 des Implementer-Workflows) |
 | `cmd/pg-change-feed/main.go` | update | `--healthcheck`-Modus — der einzig ausführbare Compose-Healthcheck-Befehl im distroless Runtime-Image (kein Shell, kein `psql`, `Dockerfile`); ohne ihn bliebe der geplante `compose.yaml`-DoD-Punkt eine Doku-Behauptung ohne Wirkung |
 | `tools/harness/run-integration-tests.sh` | update | Docker-Health-Status-Wartepunkt (`docker inspect .State.Health.Status`) — Beleg des Compose-Healthcheck-Vertrags am realen Container, nicht nur am Binary-Exit-Code |
-| `tools/schema/plan.yaml` | update | generierter Pflicht-Report des `schema-rollout`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md)) — Folge der `schema.yaml`-Änderung, kein eigener Liefer-Punkt (Review-Finding F-3, `docs/reviews/review-slice-012.md`) |
+| `tools/schema/plan.yaml` | update | generierter Pflicht-Report des `schema-rollout`-Laufs ([`ADR-0043`](../../../../docs/plan/adr/README.md)) — Folge der `schema.yaml`-Änderung, kein eigener Liefer-Punkt (Review-Finding F-3, Review zu `slice-012`) |
 | `tools/schema/down.sql` | update | generiertes Rollback-Artefakt desselben `schema-rollout`-Laufs — dieselbe Begründung wie `plan.yaml` |
-| `internal/bootstrap/healthcheck_test.go` | neu | Test-Beleg für F-2 (Review-Finding, `docs/reviews/review-slice-012.md`) — fünf unterscheidbare stderr-Diagnosen je Fehlerklasse; in der ersten Plan-Nachzug-Runde übersehen (Verifier-Finding V-1, `docs/reviews/verify-slice-012.md`) |
+| `internal/bootstrap/healthcheck_test.go` | neu | Test-Beleg für F-2 (Review-Finding, Review zu `slice-012`) — fünf unterscheidbare stderr-Diagnosen je Fehlerklasse; in der ersten Plan-Nachzug-Runde übersehen (Verifier-Finding V-1, der Verifikationsbericht zu `slice-012`) |
 
 ## 4. Trigger
 

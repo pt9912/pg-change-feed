@@ -39,7 +39,7 @@ funktionierte · was anders lief. Mit ID-Bezug, wo es einen gibt.
   (`$COMPOSE up -d --force-recreate --no-deps pg-change-feed`, realer
   Container-Tausch) statt des in `ADR-0058` ursprünglich vorgesehenen
   zweiten `make schema-rollout`-Laufs, der real mit Exit 8 auf vier
-  Fremdobjekten blockierte (`docs/reviews/blocker-slice-063.md`).
+  Fremdobjekten blockierte (das Blocker-Protokoll zu `slice-063`).
 - `slice-064`: `compose.yaml`s `postgres`-Image ist auf eine
   `${PG_TEST_IMAGE}`-Interpolation umgestellt;
   `.github/workflows/e2e.yml` trägt eine `strategy: matrix:` über die
@@ -130,8 +130,9 @@ und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der Backticks; die
   nach einem realen, grünen Post-Push-Lauf als abgeschlossen" — liegt in
   `AGENTS.md §3.10`. Kein neuer Sensor (strukturell nicht möglich:
   externer, gehosteter Dienst, Docker-only/netzloser Geltungsbereich
-  schließt den Gegenstand aus, `AGENTS.md` §3.1) — Architect-Verdikt:
-  `docs/reviews/architect-verdict-github-actions-unverifizierbar-lokal-3x.md`.
+  schließt den Gegenstand aus, `AGENTS.md` §3.1) — der Architect-Verdikt
+  dazu, dass sich GitHub-Actions-Workflows nicht lokal verifizieren lassen
+  (3×).
   Auslöser: `BEO-PGC/github-actions-unverifizierbar-lokal`
   (`slice-039`, `slice-056`, `slice-064` — 3×).
 - **Bereits vor dieser Welle-Closure verkörpert, nur bestätigend
@@ -215,7 +216,7 @@ Anker (Hash, Lauf, Zahl).
     (PostgreSQL 17, PostgreSQL 18) `completed`/`success`.
   - **Planner-Koordinator:** per `gh run view` unabhängig bestätigt
     (siehe `slice-064` §6 Risiken).
-  - **Verifier** (`docs/reviews/verify-slice-064.md`): eigener,
+  - **Verifier** (der Verifikationsbericht zu `slice-064`): eigener,
     unabhängiger `gh run view`/`gh run list`-Abruf desselben Laufs,
     identisches Ergebnis.
   - Kein neuer Testlauf in dieser Closure nötig — der vorliegende,

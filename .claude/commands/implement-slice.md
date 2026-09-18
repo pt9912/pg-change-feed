@@ -119,8 +119,8 @@ ist eine Lifecycle-Rücksprungkante (11).
 
 17. Doku, ADR-Index und README aktualisieren, falls ein öffentlicher Vertrag berührt ist.
     **Handbuch-Versionshistorie im selben Diff · seit slice-053**
-    (`BEO-PGC/handbuch-versionshistorie-uebersprungen`, 3×; Architect-Verdikt
-    [`architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)):
+    (`BEO-PGC/handbuch-versionshistorie-uebersprungen`, 3×; der Architect-Verdikt
+    zur übersprungenen Handbuch-Versionshistorie):
     Berührt dieser Lauf `docs/user/benutzerhandbuch.md` inhaltlich (neuer
     Abschnitt, neue Umgebungsvariable, geänderte Beschreibung — nicht nur eine
     reine Versions-/Historie-Korrektur), zieht derselbe Diff **zwingend** den
@@ -179,12 +179,12 @@ ist eine Lifecycle-Rücksprungkante (11).
     den Bericht. **Keine Antwort ist ein Befund**, kein Formfehler — die Klasse „Zusage greift
     weiter als Abdeckung" ist in der Praxis teuer erkauft.
     **Die Richtung der Mutation · seit slice-089**
-    (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, 4×; Architect-Verdikt
-    [`architect-verdict-negativtest-eingabeseite-4x.md`](../../docs/reviews/architect-verdict-negativtest-eingabeseite-4x.md)):
+    (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, 4×; der Architect-Verdikt
+    zur Zusage ohne Bindung an ihre Eingabeseite):
     Der Satz oben sagt **dass** mutiert wird, nicht **wo** — in `slice-088` war die Pflicht
     ausgeführt (fünf Mutationen, alle rot gesehen) und ließ zwei Aussagen trotzdem ungebunden:
     es waren die zwei, die der Implementer für selbstverständlich hielt, und ihre Tests stellen
-    Fehler-Abwesenheit gegen einen Stub, der seine Argumente ignoriert (`review-slice-088.md`
+    Fehler-Abwesenheit gegen einen Stub, der seine Argumente ignoriert (Review zu `slice-088`
     F-1; `evidence/slice-088.md` in `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
     Die Richtung gehört dazu: *Eine Zusage ist
     nur dann gebunden, wenn der Test an ihrer **Eingabeseite** rot werden kann: mutiere den
@@ -194,7 +194,7 @@ ist eine Lifecycle-Rücksprungkante (11).
     **Enumerations-Pflicht statt Erinnerung** (dieselbe Form wie Schritt 20): **je Zusage eine
     benannte Eingabeseiten-Mutation** — die Liste lautet *Zusage · mutierte Eingabe · gesehenes
     Rot*, und wo sie leer bleibt, steht der Grund. Die bloße **Zahl** der gefahrenen Mutationen
-    trägt nicht (`slice-088`: fünf gefahren, zwei Aussagen ungebunden, `review-slice-088.md`
+    trägt nicht (`slice-088`: fünf gefahren, zwei Aussagen ungebunden, Review zu `slice-088`
     F-1). Der Finder-Träger derselben Regel ist der HIGH-Unterpunkt
     „Zusage ohne Bindung an ihre Eingabeseite" in `.harness/skills/reviewer.md`.
 20. **Jeden in diesem Lauf neu geschriebenen oder geänderten Kommentar gegen `AGENTS.md` §3.7
@@ -206,8 +206,7 @@ ist eine Lifecycle-Rücksprungkante (11).
     `· seit slice-<NNN>`) — alles andere ist Zustand, keine Chronik, und wird vor der Übergabe
     umformuliert statt mitgeschleift.
     **Enumerations-Pflicht statt Erinnerung** (`BEO-PGC/slice-chronik-in-code-kommentar`, 3×;
-    Architect-Verdikt
-    `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`): ein visueller Scan hat
+    der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren): ein visueller Scan hat
     real eine von mehreren Fundstellen im selben Commit übersehen, nachdem zwei andere bereits
     korrigiert waren — eine Enumerations-Lücke, keine Verständnis-Lücke. Deshalb vor der Übergabe
     zusätzlich einen **diff-skopierten** (nicht repo-weiten) Kandidatenlauf gegen genau die in
@@ -223,8 +222,8 @@ ist eine Lifecycle-Rücksprungkante (11).
     unzulässig)? Nur Letzteres wird umformuliert. Kein Sensor/Gate dafür (geprüft und verworfen,
     Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
     dieser Schritt bleibt Disziplin.
-    **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, Architect-Verdikt-Nachtrag
-    `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`): Dieser Schritt
+    **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, der Architect-Verdikt-Nachtrag
+    zur Slice-Chronik in Code-Kommentaren, 4. Auftreten): Dieser Schritt
     läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,
     vor der Modul 8 §Kernidee warnt („wer geschrieben hat, reviewt nicht“). Er bleibt Pflicht,
     weil er nachweislich die Zahl der Fixrunden senkt, ist aber **nicht** die tragende

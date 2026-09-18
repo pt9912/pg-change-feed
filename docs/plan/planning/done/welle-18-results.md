@@ -91,7 +91,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   die über den ursprünglichen Review-Befund hinausgingen.
 - Zwei unabhängige Belege statt einer Behauptung beim Closure-Trigger: der
   Verifier hat den realen E2E-Rundlauf in eigener Sitzung reproduziert
-  (`docs/reviews/verify-slice-068.md` §2/§3) und den Slice als
+  (der Verifikationsbericht zu `slice-068` §2/§3) und den Slice als
   DoD-konform und `welle-18`-closure-reif gemeldet.
 
 ## Was ging anders als geplant?
@@ -185,8 +185,8 @@ Sektion ist ein Zeiger und trägt keine Daten.
 
 Der Bestand liegt in [`../observations/`](../observations/)`BEO-PGC/`.
 In dieser Welle **neu angelegt**: `laufzeitzustand-ohne-dauerhaften-traeger`
-(Ausgang `geplant`, Träger `slice-075`; Beleg
-`evidence/review-slice-067.md`, angelegt vom Architect-Zug — Kennung bewusst
+(Ausgang `geplant`, Träger `slice-075`; Beleg zum Review zu `slice-067`
+unter `evidence/`, angelegt vom Architect-Zug — Kennung bewusst
 als **Klasse** formuliert, nicht als Instanz) und
 `slice-pfad-als-link-in-berichten` (2×, Ausgang noch nicht zugewiesen,
 unter der Schwelle). In dieser Welle **fortgeschrieben, weiter über der
@@ -206,8 +206,8 @@ aus `welle-17` und früher.
 
 **Benannt, nicht gezählt — ein Punkt dieser Welle, ohne eigenen
 abgeschlossenen Vorgang:** Die Verweisform auf den **Welle**-Plan.
-`verify-slice-068.md` und
-`architect-verdict-spaltenausschluss-dauerhaftigkeit.md` adressierten
+Der Verifikationsbericht zu `slice-068` und
+der Architect-Verdikt zur Spaltenausschluss-Dauerhaftigkeit adressierten
 `welle-18` als Markdown-Link mit festem Verzeichnis, ebenso die
 `**Welle:**`-Kopfzeile der drei Slice-Pläne dieser Welle. Diese Closure hat
 die Fälle aufgelöst (Kennungs-Zitierung bzw. ein Verzeichnis tiefer), so
@@ -215,7 +215,7 @@ dass kein Gate real rot lief. Sie sind der **verwandten** Klasse von
 `BEO-PGC/slice-pfad-als-link-in-berichten` zuzuordnen, aber **kein neuer
 Beleg**: die registrierte Beobachtung handelt von **Slice**-Plänen in
 Berichten und Entscheidungen (2×, `slice-068`,
-`architect-verdict-spaltenausschluss-dauerhaftigkeit`), während hier ein
+der Architect-Verdikt zur Spaltenausschluss-Dauerhaftigkeit), während hier ein
 **Welle**-Plan adressiert ist und die beiden betroffenen Berichte bereits
 gezählten Vorgängen angehören. Träte die Klasse bei einem künftigen
 Übergang erneut aus einem **Bericht** auf, wäre sie belegfähig.
@@ -265,7 +265,7 @@ Anker (Hash, Lauf, Zahl).
   - **Implementer/Reviewer** (`slice-068` §2/§5, `welle-18` §3): `make
     test-integration` Exit 0; Implementer und Reviewer haben je eigene
     Mutationen gesetzt und rot gesehen.
-  - **Verifier** (`docs/reviews/verify-slice-068.md` §2/§3): eigener,
+  - **Verifier** (der Verifikationsbericht zu `slice-068` §2/§3): eigener,
     unabhängiger `make test-integration`-Lauf Exit 0, dazu zwei **eigene**
     Mutationen (Happy Path und Negative) — beide erwartet rot,
     Rücknahme über `git checkout` mit unverändertem Blob-Hash belegt.

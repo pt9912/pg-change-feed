@@ -118,14 +118,14 @@ und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der Backticks; die
   ein lokaler `commit-msg`-Git-Hook, der die beiden bestehenden
   Commit-Traceability-Regeln (`ADR-0045`) vor dem `git commit`-Abschluss
   statt erst über `make gates` meldet — Design-Vorgaben (bash-only, kein
-  Docker-Aufruf im Hook, Opt-in-Aktivierung) im Architect-Verdikt bereits
-  festgelegt: `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md`.
+  Docker-Aufruf im Hook, Opt-in-Aktivierung) im Architect-Verdikt zur
+  Commit-Traceability ohne Vorab-Hook bereits festgelegt.
   Kein Ein-Zug-Fix, weil ein neues, lauffähiges Skript mit eigenen
   Fehlerfällen und Duplikations-Risiko entsteht (anders als die beiden
   bisherigen Prosa-Präzedenzfälle dieser Beobachtungsklasse) — Umsetzung
   in `slice-073` (`open/`).
   Auslöser: `BEO-PGC/commit-traceability-kein-vorab-hook` (`slice-038`,
-  `review-slice-041`, `slice-059` — 3×, Lese-Schritt dieser
+  Review zu `slice-041`, `slice-059` — 3×, Lese-Schritt dieser
   Welle-Closure).
 - **Bereits verkörpert, keine neue Aktion dieser Welle** (Feststellung,
   kein neuer Eintrag): `BEO-PGC/slice-chronik-in-code-kommentar` erreichte
@@ -133,7 +133,8 @@ und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der Backticks; die
   `slice-052`/`welle-15` bereits als eigener HIGH-Punkt in
   `.harness/skills/reviewer.md` und als Grenz-Klarstellung in
   `.claude/commands/implement-slice.md` Schritt 20 verkörpert
-  (`seit slice-052`, siehe `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`);
+  (`seit slice-052`, siehe der Architect-Verdikt-Nachtrag zur Slice-Chronik
+  in Code-Kommentaren, 4. Auftreten);
   dieses Auftreten bestätigt nur, dass die tragende Verteidigungslinie
   (unabhängiger Reviewer) weiterhin trägt — kein weiterer Architect-Zug
   nötig.
@@ -196,11 +197,11 @@ Anker (Hash, Lauf, Zahl).
   - **Implementer-Behauptung:** `tools/harness/run-integration-tests.sh`s
     neuer HTTP-Block ruft `RegisterConsumer` real per HTTP mit
     `admin`-Token und `ListTables` real per HTTP mit `reader`-Token auf.
-  - **Reviewer** (`docs/reviews/review-slice-061.md`): eigene Lektüre von
+  - **Reviewer** (Review zu `slice-061`): eigene Lektüre von
     `tools/harness/httpclient/main.go` und des Skript-Diffs, eigener
     `make gates`/`make test-integration`-Lauf (Exit 0, ungepipt), realer
     Log-Auszug geprüft (`REGISTERED …`, `LISTED … "feed_e2e_full" …`).
-  - **Verifier** (`docs/reviews/verify-slice-061.md` §2/§4/§6): eigener,
+  - **Verifier** (der Verifikationsbericht zu `slice-061` §2/§4/§6): eigener,
     unabhängiger `make gates`/`make test-integration`-Lauf (Exit 0,
     ungepipt), eigene Code-Lektüre von `httpclient/main.go`,
     `compose.yaml`-Diff und dem `run-integration-tests.sh`-Diff, explizite
@@ -232,7 +233,7 @@ Anker (Hash, Lauf, Zahl).
 - Drei Paarungen (Anker · Folge-Slice · Register): **Anker** — der eine
   Steering-Loop-Eintrag mit `liegt in`-artigem Verweis
   (Architect-Verdikt-Datei) existiert real
-  (`docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md`).
+  (der Architect-Verdikt zur Commit-Traceability ohne Vorab-Hook).
   **Folge-Slice** — `slice-073` existiert real als Datei in `open/`
   (`docs/plan/planning/open/slice-073-commit-msg-git-hook.md`). **Register**
   — beide in dieser Welle berührten Verzeichnisse

@@ -41,7 +41,7 @@ Port `SchemaStorePort` (aktuelle Schema-Version einer Tabelle lesen, neue
 Version registrieren, `TableSchema` zu einer Version lesen) und ein
 Postgres-Adapter, der ihn über eine neue Tabelle `cdc.table_schema`
 (ausgerollt über d-migrate, `ADR-0043`) real persistiert. Architect-Skizze:
-[`docs/reviews/architect-verdict-slice-030-adr-0015.md`](../../../reviews/architect-verdict-slice-030-adr-0015.md)
+der Architect-Verdikt zu `slice-030`/`ADR-0015`
 §Umsetzungsskizze, Schritte 1–3.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
@@ -104,11 +104,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      Beleg: [`docs/reviews/review-slice-031.md`](../../../reviews/review-slice-031.md)
+      Beleg: das Review zu `slice-031`
       (2 HIGH, 1 MEDIUM), Fixrunde behoben in Commit `100ff2b`, bestätigt
-      in [`docs/reviews/review-slice-031-fixrunde.md`](../../../reviews/review-slice-031-fixrunde.md)
-      (alle drei Findings behoben, keine Regression). Verifikation in
-      [`docs/reviews/verify-slice-031.md`](../../../reviews/verify-slice-031.md)
+      im Review-Report zur Fixrunde von `slice-031`
+      (alle drei Findings behoben, keine Regression). Verifikation im
+      Verifikationsbericht zu `slice-031`
       (DoD eigenständig nachgeprüft, real reproduziert).
 - [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und begründet
@@ -200,7 +200,7 @@ Aussagen-Berührung steht hier gar nicht.
   eingelöst; das ist eine bewusste Abweichung vom Vorab-Plan, keine
   stillschweigende.
 
-### Fixrunde nach Review (`docs/reviews/review-slice-031.md`, F-1/F-2/F-3)
+### Fixrunde nach Review (Review zu `slice-031`, F-1/F-2/F-3)
 
 - **F-1 (HIGH, Kommentar-Chronik):** Die Vorwärtsverweise auf `slice-032`/
   `slice-033` und der Review-Report-Pfad in den Doc-Kommentaren von
@@ -279,7 +279,7 @@ dasteht.
   (Typ-Auswertung) als unpassend erweisen und eine Nacharbeit an diesem
   Slice erzwingen. **Ausgang: entfallen** — der Reviewer hat die Form
   (`Column{Name, OID}`) eigenständig als Grundlage für `slice-033`
-  geprüft (`docs/reviews/review-slice-031.md`, Negativbefund): eine
+  geprüft (Review zu `slice-031`, Negativbefund): eine
   PostgreSQL-OID identifiziert den exakten Datentyp eindeutig und ist
   ausreichendes Rohmaterial für eine spätere Typ-Kompatibilitätsprüfung.
 - Eine neue Tabelle `cdc.table_schema` im neutralen Schema könnte mit

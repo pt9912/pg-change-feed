@@ -20,8 +20,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 Die in welle-3 bewusst zurückgestellte Observability-Basis wird
-vervollständigt: Health-Endpoint (per Heartbeat-Pattern, Architect-Verdikt
-aus slice-011 liegt bereits vor — `docs/reviews/architect-review-slice-011.md`),
+vervollständigt: Health-Endpoint (per Heartbeat-Pattern, der Architect-Review
+zu `slice-011` liegt bereits vor),
 sichtbare Fehlerzustände, messbarer CDC-Abstand und strukturiertes Logging.
 Damit schließen [`LH-FA-ADM-002`](../../../../spec/lastenheft.md)…004,
 [`LH-QA-OPS-002`](../../../../spec/lastenheft.md)…004 sowie der Rest von

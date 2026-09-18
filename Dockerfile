@@ -7,8 +7,8 @@
 # kein Inhalts-Fingerabdruck; ein Digest-Vergleich über Umgebungen oder
 # Läufe entscheidet Staleness nicht. Inhalts-Streits werden über den
 # sha256 des extrahierten Binaries entschieden (Container-Export;
-# Verfahren: docs/reviews/verify-slice-004.md F-2-Schiedsspruch,
-# docs/reviews/review-slice-005.md F-7).
+# Verfahren: der Verifikationsbericht zu `slice-004` F-2-Schiedsspruch,
+# Review zu `slice-005` F-7).
 # Base-Image-Update = bewusster Commit, der nur die Digest-Zeile anhebt.
 
 # go.mod/go.sum liegen seit dem Go-Modul-Bootstrap im Baum; die

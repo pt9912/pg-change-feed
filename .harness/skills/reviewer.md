@@ -51,14 +51,14 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   `· seit slice-<NNN>` (`AGENTS.md` §3.7). Abgrenzung zur **zulässigen**
   Testfall-Provenienz („`TestXyz` trägt/deckt … aus `review-slice-NNN.md`
   F-x“ — Subjekt ist der Test, nicht der Produktionscode-Pfad, siehe
-  [`architect-verdict-slice-chronik-in-code-kommentar.md`](../../docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md)):
+  dem Architect-Verdikt zur Slice-Chronik in Code-Kommentaren):
   Probe ist das **Satzsubjekt** — die Funktion/der Code-Pfad (Chronik,
   unzulässig) oder der Testfall (Provenienz, zulässig). Kein Gate fängt das
   (repo-weiter Textmuster-Sensor geprüft und verworfen, s.o.). Erstes
   benanntes Auftreten als eigener HIGH-Punkt: Review F-1
-  (`review-slice-052.md`, 2026-09-13) — vierter gezählter Beleg von
-  `BEO-PGC/slice-chronik-in-code-kommentar`, Architect-Verdikt-Nachtrag
-  [`architect-verdict-slice-chronik-in-code-kommentar-4x.md`](../../docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md).
+  (Review zu `slice-052`, 2026-09-13) — vierter gezählter Beleg von
+  `BEO-PGC/slice-chronik-in-code-kommentar`, der Architect-Verdikt-Nachtrag
+  zur Slice-Chronik in Code-Kommentaren (4. Auftreten).
 - **Handbuch-Versionshistorie nicht fortgeschrieben** — ein Diff ändert
   `docs/user/benutzerhandbuch.md` inhaltlich (neuer Abschnitt, neue
   Umgebungsvariable, geänderte Beschreibung), ohne im selben Diff den
@@ -70,8 +70,8 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   dreimal übersehen (`slice-045`, `-046`, `-053` — jedes Mal erst bei
   einem späteren Slice bemerkt), bevor sie geschärft wurde — dieselbe
   Struktur wie beim Chronik-Fall oben. Erstes benanntes Auftreten als
-  eigener HIGH-Punkt: Architect-Verdikt
-  [`architect-verdict-handbuch-versionshistorie-uebersprungen.md`](../../docs/reviews/architect-verdict-handbuch-versionshistorie-uebersprungen.md)
+  eigener HIGH-Punkt: der Architect-Verdikt zur übersprungenen
+  Handbuch-Versionshistorie
   (3× `BEO-PGC/handbuch-versionshistorie-uebersprungen`) · seit slice-053.
 - **Neue Betreiber-Oberfläche ohne Handbuch-Zug** — ein Diff führt eine neue
   Betreiber-Oberfläche ein (eine `CDC_*`-Umgebungsvariable des
@@ -156,8 +156,8 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   Mutations-Harness gibt es in diesem Repo nicht, die Prüfung **ist** die
   Mutation. Herkunft: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (4×,
   `slice-083`/`-086`/`-087`/`-088`; in drei der vier Fälle fand der Reviewer die
-  Klasse durch Mutieren der Eingabeseite), Architect-Verdikt
-  [`architect-verdict-negativtest-eingabeseite-4x.md`](../../docs/reviews/architect-verdict-negativtest-eingabeseite-4x.md)
+  Klasse durch Mutieren der Eingabeseite), der Architect-Verdikt zur Zusage
+  ohne Bindung an ihre Eingabeseite
   · seit slice-089. Die Träger-Seite derselben Regel steht in
   `.claude/commands/implement-slice.md` Schritt 19.
 - **Traceability-/ID-Schema-Verstoß** — Commit oder PR nennt keine
@@ -266,8 +266,8 @@ Checkbox offen; sie wird dann regulär bei Schritt 21 des
 Implementer-Workflows nachgezogen.
 
 Herkunft: `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde` (3×,
-`slice-045`/`slice-046`/`slice-047`), Architect-Verdikt
-[`architect-verdict-dod-checkbox-review-ohne-fixrunde.md`](../../docs/reviews/architect-verdict-dod-checkbox-review-ohne-fixrunde.md)
+`slice-045`/`slice-046`/`slice-047`), der Architect-Verdikt zur
+DoD-Checkbox „Review durchgeführt" ohne Fixrunde
 · seit slice-047.
 
 ## Pflege (Steering-Loop)
@@ -281,4 +281,4 @@ Bei dreimaligem Auftreten desselben Findings:
 
 Diese Skill-Datei wird **nicht** überschrieben, sondern versioniert
 (ADR-Hard-Rule, Modul 4). Erste Schärfung 2026-09-09 aus dem
-Eröffnungs-Review `docs/reviews/review-lastenheft-pflichtenheft.md`.
+Eröffnungs-Review zu Lastenheft und Pflichtenheft.

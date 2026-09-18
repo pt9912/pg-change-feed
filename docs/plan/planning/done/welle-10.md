@@ -31,8 +31,8 @@ Boundary (zwei Changes vor/nach einer Schemaänderung müssen sich anhand
 ihrer Schema-Version unterscheiden lassen) und
 [`LH-FA-SCH-004`](../../../../spec/lastenheft.md)s Negative-Fall (eine
 inkompatible Typänderung muss erkennbar gemeldet werden, keine stille
-Fehlinterpretation). Ein Architect-Verdikt
-(`docs/reviews/architect-verdict-slice-030-adr-0015.md`) bestätigte:
+Fehlinterpretation). Der Architect-Verdikt zu `slice-030`/`ADR-0015`
+bestätigte:
 `ADR-0015` gilt unverändert fort, die Auflösung ist eine fehlende
 Umsetzung nachzuliefern, nicht die ADR zu korrigieren.
 

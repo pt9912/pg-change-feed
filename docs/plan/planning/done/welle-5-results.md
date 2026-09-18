@@ -52,7 +52,7 @@ die daraus schon gezogen wurde (Folge-Slice, Spec-Version).
   Nutzer während der Arbeit an slice-018 konkret für `tools/schema/
   schema.yaml` und Quellcode scharf gestellt) betraf 18 Dateien
   außerhalb der ursprünglichen Slice-Pläne — eine gezielte Nachprüfung
-  (`docs/reviews/review-comment-cleanup.md`) bestätigte die Änderungen
+  (das Review zur Kommentar-Bereinigung) bestätigte die Änderungen
   als rein kommentar-ändernd und fachlich korrekt; Konsequenz: keine, war
   ein einmaliger Bereinigungsauftrag.
 - `docs/user/benutzerhandbuch.md` (Plan-Nachzug slice-019) und
@@ -134,11 +134,11 @@ Anker (Hash, Lauf, Zahl).
 - Ende-zu-Ende-Lasttest (`make test-integration`, Welle-Closure-Trigger):
   Baseline ≈0,1–0,16 s, verzögert (1 s künstliche Pause) ≈1,15–1,25 s —
   real erbracht und von Implementer, Reviewer und Verifier unabhängig
-  reproduziert (`docs/reviews/review-slice-019.md`,
-  `docs/reviews/verify-slice-019.md`).
+  reproduziert (Review zu `slice-019`,
+  der Verifikationsbericht zu `slice-019`).
 - Trigger-Audit der Welle (Carveout · bootstrap-aware Gate · ADR): alle
   drei Klassen „0 fällig"/permanent bestätigt
-  (`docs/reviews/architect-review-welle-5.md`).
+  (der Architect-Review zu `welle-5`).
 
 ## Archivierung
 

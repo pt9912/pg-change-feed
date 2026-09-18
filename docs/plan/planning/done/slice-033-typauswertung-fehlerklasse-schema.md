@@ -115,11 +115,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      Beleg: [`docs/reviews/review-slice-033.md`](../../../reviews/review-slice-033.md)
+      Beleg: das Review zu `slice-033`
       (1 HIGH, 1 MEDIUM), Fixrunde behoben in Commit `ef16e38`, bestätigt
-      in [`docs/reviews/review-slice-033-fixrunde.md`](../../../reviews/review-slice-033-fixrunde.md).
-      Verifikation in
-      [`docs/reviews/verify-slice-033.md`](../../../reviews/verify-slice-033.md)
+      im Review-Report zur Fixrunde von `slice-033`.
+      Verifikation im
+      Verifikationsbericht zu `slice-033`
       (DoD eigenständig nachgeprüft, `LH-FA-SCH-004` dreifach real gegen
       PostgreSQL bestätigt).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —
@@ -250,7 +250,7 @@ dasteht.
   Nebenwirkung, sondern eine bereits in §1 bewusst dokumentierte
   Design-Grenze („Änderung der Klassifikationslogik selbst" bleibt
   bestehen): die konservative Binär-Entscheidung entspricht exakt der
-  Architect-Skizze (`docs/reviews/architect-verdict-slice-030-adr-0015.md`)
+  Architect-Skizze (der Architect-Verdikt zu `slice-030`/`ADR-0015`)
   und ist keine unbeabsichtigte Überreaktion.
 - Der bestehende Fehlerbehandlungspfad (wie ein `schema`-Fehler aus
   `Consume` den Erfassungspfad tatsächlich beendet/meldet) könnte

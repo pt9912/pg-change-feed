@@ -131,7 +131,7 @@ Anker (Hash, Lauf, Zahl).
   drei Klassen „0 fällig", mit einer Ausnahme, die real geprüft und
   aufgelöst wurde: `ADR-0015`s `permanent`-Re-Evaluierungs-Trigger wurde
   durch den `slice-030`-Fund faktisch aufgerufen (ADR-Verstoß behauptet) —
-  Architect-Verdikt (`docs/reviews/architect-verdict-slice-030-adr-0015.md`)
+  der Architect-Verdikt zu `slice-030`/`ADR-0015`
   bestätigt die ADR unverändert, kein Folge-ADR-`supersedes` nötig. Kein
   Carveout in dieser Welle. Kein bootstrap-aware Gate berührt. `ADR-0030`
   und `ADR-0047` permanent/unverändert, keine weiteren fälligen Trigger.
@@ -144,7 +144,7 @@ Anker (Hash, Lauf, Zahl).
   `schema-evolution-nicht-dynamisch`) existieren als Verzeichnis, beide mit
   nicht leerem `evidence/` (Register-Paarung für
   `schema-evolution-nicht-dynamisch` bereits unabhängig vom Verifier bei
-  `slice-030`s Closure bestätigt, `docs/reviews/verify-slice-030.md`).
+  `slice-030`s Closure bestätigt, der Verifikationsbericht zu `slice-030`).
 
 ## Archivierung
 
