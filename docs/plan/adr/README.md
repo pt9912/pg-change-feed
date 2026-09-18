@@ -106,3 +106,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0091 | Zugangsdaten-Klasse — sechs Schlüssel (Supers. ADR-0088, teilw.) | Accepted | 2026-09-17 | [0091-zugangsdaten-klasse-sechs-schluessel.md](0091-zugangsdaten-klasse-sechs-schluessel.md) |
 | ADR-0092 | Feldmengen-Paarung — Reichweite der drei Träger (Supers. ADR-0089, teilw.) | Accepted | 2026-09-17 | [0092-feldmengen-paarung-reichweite-der-drei-traeger.md](0092-feldmengen-paarung-reichweite-der-drei-traeger.md) |
 | ADR-0093 | Digest-Korrektur — ADR-0087s Kotlin-Basis-Image-Zeile (Supers. ADR-0087, teilw.) | Accepted | 2026-09-17 | [0093-digest-korrektur-adr-0087-kotlin-basis-image.md](0093-digest-korrektur-adr-0087-kotlin-basis-image.md) |
+| ADR-0094 | Review-Matrixklasse — Kennung statt Adresse (ergänzt ADR-0073) | Accepted | 2026-09-18 | [0094-review-matrixklasse-kennung-statt-adresse.md](0094-review-matrixklasse-kennung-statt-adresse.md) |
