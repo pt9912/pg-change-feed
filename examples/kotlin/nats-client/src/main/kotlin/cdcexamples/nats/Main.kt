@@ -24,10 +24,15 @@ import kotlin.system.exitProcess
  * (C#). Dieses Programm trägt keine Zustandsmaschine: eine
  * Reconnect-/Dedup-/Rückstand-Logik ist bewusst nicht seine Aufgabe
  * (`SPEC-023`). Das Warten auf das Wecksignal benutzt
- * [io.nats.client.Subscription.nextMessage] mit [Duration.ZERO]
- * (unbegrenztes Warten, dieselbe Semantik wie `sub.NextMsg(0)` im
- * Go-Vorbild); die gepinnte Client-Bibliothek ist `io.nats:jnats`
- * (`ADR-0090` Festlegung 4).
+ * [io.nats.client.Subscription.nextMessage] mit [Duration.ZERO] — jnats
+ * wartet damit real unbegrenzt (`MessageQueueBase#poll`,
+ * `io.nats:jnats`-Quelltext, `ADR-0090` Festlegung 4). **Keine** dieselbe
+ * Semantik wie `sub.NextMsg(0)` im Go-Vorbild: `nats.go` startet bei einem
+ * Timeout-Wert von `0` einen sofort ablaufenden Timer statt unbegrenzt zu
+ * warten — das Go-Beispiel braucht deshalb einen expliziten, endlichen
+ * `waitTimeout` (siehe dortigen Kommentar). Beide Beispiele erreichen im
+ * Ergebnis ein praktisch unbegrenztes Warten, aber über unterschiedliche
+ * Bibliotheks-Semantik, nicht über identische Aufrufformen.
  */
 fun main(args: Array<String>) {
     val cfg = try {
