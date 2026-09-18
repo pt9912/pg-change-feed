@@ -14,5 +14,5 @@ sie ändert die Zahl nicht. Beides ist als Grenzpunkt 4 und 5 in
 `harness/sensors/coverage-gate.md` §Grenze **benannt**: benannt, nicht
 gewächtert.
 
-Quelle: `docs/reviews/review-slice-079.md` F-2 (mit der Arithmetik) ·
+Quelle: Review zu `slice-079` F-2 (mit der Arithmetik) ·
 `ADR-0071` §Fitness Function · `harness/sensors/coverage-gate.md` §Grenze.

@@ -18,4 +18,4 @@ Ausführungsreihenfolge umgehen.
 Deklaration: `internal/adapters/driven/postgresstorage/sqlviews_test.go`
 (Dateinamen-Sortierung erzwingt eine Ausführungsreihenfolge gegen
 `store_test.go`), `tools/harness/run-store-tests.sh` (paketweise
-Vorzieh-Isolierung für `internal/bootstrap`, `review-slice-022.md` F-2).
+Vorzieh-Isolierung für `internal/bootstrap`, Review zu `slice-022` F-2).

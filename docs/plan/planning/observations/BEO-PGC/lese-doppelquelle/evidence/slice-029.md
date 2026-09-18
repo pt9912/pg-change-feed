@@ -9,8 +9,8 @@ Go-Adapter `ReadChanges` und vergleicht beide auf Reihenfolge
 (`commit_position`, `sequence`) und Feldinhalt (`operation`,
 `old_data`/`new_data`, `schema_version`).
 
-Der Sensor ist real scharf, nicht nur behauptet: Verifikation
-(`docs/reviews/verify-slice-029.md`) hat die `changes`-View-Spaltenprojektion
+Der Sensor ist real scharf, nicht nur behauptet: der
+Verifikationsbericht zu `slice-029` hat die `changes`-View-Spaltenprojektion
 testweise vertauscht und bestätigt, dass **ausschließlich** dieser Testfall
 rot wird, während die übrigen vier Testfälle grün bleiben.
 

@@ -5,12 +5,12 @@ Vorgang: `slice-092` — Coverage Cluster D1 (Anwendungs-Kern).
 Fund: **Drei Funde desselben Vorgangs**, alle an **Sätzen über** Zahlen, keiner
 an einer Rechnung:
 
-- **F-1** (`review-slice-092`, MEDIUM): Ein Dokument, **vier Zahlen für denselben
+- **F-1** (Review zu `slice-092`, MEDIUM): Ein Dokument, **vier Zahlen für denselben
   Gegenstand** (10 · 11 · 12 · 13 an verschiedenen Stellen, zwei davon an einer
   Aussage, die eine andere Größe meint). Entstanden durch einen
   Berichtigungs-Zug, der einen Glob-Fehler beheben sollte — und dabei die Zahlen
   an Stellen setzte, die **andere** Aussagen tragen.
-- **D-1** (`review-slice-092-delta`, MEDIUM): Die Überschrift der Behebung sagte
+- **D-1** (Delta-Review zu `slice-092`, MEDIUM): Die Überschrift der Behebung sagte
   „**Drei** Zahlen, drei Dinge" und führte **vier**. Dritte Runde an derselben
   Stelle.
 - **D-2** (ebd., MEDIUM): Der Herkunfts-Marker war **invertiert** — die vier
@@ -31,8 +31,8 @@ Berichtigung einer Zahl erzeugt die nächste falsche Zahl, und zwar in der
 Reihenfolge Glob-Fehler → vier Zahlen → Zähl-Wort → invertiertes Etikett. Vier
 Runden, jede an einem Satz, der eine Zahl erklärt.
 
-Quelle: `docs/reviews/review-slice-092.md` (F-1) ·
-`docs/reviews/review-slice-092-delta.md` (D-1, D-2) ·
-`docs/reviews/verify-slice-092.md` (V-1, V-2) ·
+Quelle: Review zu `slice-092` (F-1) ·
+Delta-Review zu `slice-092` (D-1, D-2) ·
+Verifikationsbericht zu `slice-092` (V-1, V-2) ·
 `docs/plan/planning/done/slice-092-coverage-cluster-d1.md` §1 ·
 `harness/sensors/coverage-gate.md` §Zählbasis (berichtigt in `1d0d11e`).

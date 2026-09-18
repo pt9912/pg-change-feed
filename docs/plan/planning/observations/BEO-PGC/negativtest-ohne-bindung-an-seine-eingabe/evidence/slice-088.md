@@ -27,7 +27,7 @@ Der Fall ist damit ein **vierter Vorgang** derselben Klasse, und er zeigt ihre
 scharfe Kante: sie trifft nicht die Zusagen, die man mutiert, sondern die, die
 man übersieht.
 
-Quelle: `docs/reviews/review-slice-088.md` (F-1, mit eigener Messung) ·
-`docs/reviews/review-slice-088-delta.md` (Reproduktion M4–M7) ·
-`docs/reviews/verify-slice-088.md` (eigene Reproduktion) ·
+Quelle: Review zu `slice-088` (F-1, mit eigener Messung) ·
+Delta-Review zu `slice-088` (Reproduktion M4–M7) ·
+Verifikationsbericht zu `slice-088` (eigene Reproduktion) ·
 `internal/adapters/driving/replication/mapper/mapper_test.go`.

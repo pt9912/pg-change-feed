@@ -20,7 +20,7 @@ bestandenen, der wie seine Nachbarn aussah.
 **Ursprung ≠ Vorkommen.** Eingeführt wurden die zwei Tests von einem früheren
 Vorgang als diesem (die Spaltenausschluss-Use-Cases entstanden mit
 `LH-FA-CFG-005`); das ist der **Ursprung** der Form. **Gefunden** wurden sie in
-`slice-092`s Implementer-Lauf und in der Verifikation `verify-slice-092` (V-2
+`slice-092`s Implementer-Lauf und im Verifikationsbericht zu `slice-092` (V-2
 P-7, dort am Parent gegengeprüft); das ist das Vorkommen, das dieser Beleg
 dateit.
 
@@ -28,7 +28,7 @@ dateit.
 trägt eine echte Zusage. Nur die Mutation trennt ihn von ihnen — und die Zusage
 „diese Spalte wird abgelehnt" hatte bis dahin keinen Träger.
 
-Quelle: `docs/reviews/verify-slice-092.md` (P-7, am Parent gegengeprüft) ·
-`docs/reviews/review-slice-092.md` · Commit `3de9547` (die Bindung) ·
+Quelle: Verifikationsbericht zu `slice-092` (P-7, am Parent gegengeprüft) ·
+Review zu `slice-092` · Commit `3de9547` (die Bindung) ·
 `internal/application/usecase/excludecolumn/service_test.go`,
 `internal/application/usecase/includecolumn/service_test.go`.

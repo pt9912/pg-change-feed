@@ -16,4 +16,4 @@ Modul 6) läuft regulär bei der `welle-6`-Closure, da `slice-022` einer
 Welle angehört.
 
 Quelle: `docs/plan/planning/in-progress/slice-022-consumer-bestaetigung-zugriffsweg.md`
-§6, `docs/reviews/verify-slice-022.md` V-1.
+§6, Verifikationsbericht zu `slice-022` V-1.

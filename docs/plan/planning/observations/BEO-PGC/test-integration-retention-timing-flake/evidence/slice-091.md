@@ -35,7 +35,7 @@ das nichts; bei der Endstufe 80 rückt die gemessene Zahl an die Schwelle. Die
 Verifikation hat dafür **47 Läufe** gefahren — eine Arbeit, die keine DoD
 verlangt und kein Gate leisten kann.
 
-Quelle: `docs/reviews/verify-slice-091.md` (V-1) ·
-`docs/reviews/review-slice-091-delta.md` (D-2, Negativbefunde) ·
+Quelle: Verifikationsbericht zu `slice-091` (V-1) ·
+Delta-Review zu `slice-091` (D-2, Negativbefunde) ·
 `harness/sensors/coverage-gate.md` §Zählbasis (berichtigt in `a7d7f7b`) ·
 `internal/bootstrap/wiring.go:991.5,992.13` und `:1091.4,1092.1`.

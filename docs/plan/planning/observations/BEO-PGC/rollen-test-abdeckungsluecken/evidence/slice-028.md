@@ -24,5 +24,5 @@ vollständige Abschluss von Punkt (2) wurde nicht erreicht. Punkt (1)
 `nacharbeit-roles.sql`-Inhalt) blieb unverändert außerhalb des Scopes
 dieses Slices.
 
-Quelle: `docs/reviews/review-slice-028.md` F-1, `docs/reviews/verify-slice-028.md`
+Quelle: Review zu `slice-028` F-1, Verifikationsbericht zu `slice-028`
 (unabhängig bestätigt).

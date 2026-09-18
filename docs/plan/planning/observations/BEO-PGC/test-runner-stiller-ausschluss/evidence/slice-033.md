@@ -8,7 +8,7 @@ der von diesem Slice gemeldete `schema`-Fehler beendet den geteilten
 Feed-Container dauerhaft (`restart: "no"`), ein gemeinsamer Testlauf
 hätte nachfolgende Tests mitgerissen.
 
-Der Reviewer (`docs/reviews/review-slice-033.md`, F-2 MEDIUM) fand dabei,
+Der Reviewer (Review zu `slice-033`, F-2 MEDIUM) fand dabei,
 dass dieser Split real das Risiko eines stillen Ausschlusses künftiger
 Testfunktionen trägt: `go test -run` meldet keinen Fehler, wenn eine neue
 Testfunktion in keinem der beiden Muster auftaucht, solange andere

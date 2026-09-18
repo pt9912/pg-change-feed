@@ -7,4 +7,4 @@ unaufgelöster Vorlagen-Platzhalter `<Schnittstelle X>` (1. Auftreten) —
 Fill-Fehler der welle-3-Eröffnung, betrifft alle vier Slices dieser
 Welle gleichzeitig.
 
-Quelle: docs/reviews/review-slice-008.md F-8.
+Quelle: Review zu `slice-008` F-8.

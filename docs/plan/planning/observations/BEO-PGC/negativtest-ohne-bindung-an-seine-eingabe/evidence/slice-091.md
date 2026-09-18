@@ -2,7 +2,7 @@
 
 Vorgang: `slice-091` — Coverage Cluster C (Zustell- und Betriebs-Rand).
 
-Fund: In der Verifikation `verify-slice-091` **V-7** blieb ein **sechster** Test
+Fund: Im Verifikationsbericht zu `slice-091` **V-7** blieb ein **sechster** Test
 derselben Form grün, wenn man seine Zusage zerstört:
 `internal/adapters/driving/http/server_test.go:161`,
 `TestRegisterConsumerUngueltigesJSONEndetMit400`. Er prüft, dass ein nicht
@@ -18,7 +18,7 @@ grün.
 
 **Ursprung ≠ Vorkommen.** Eingeführt hat ihn `7b6b253` (`slice-061`, das
 HTTP-Adapter-Grundgerüst) — das ist der **Ursprung** der Form, kein
-Beleg-Vorgang. **Gefunden** wurde er in `verify-slice-091`, und das ist das
+Beleg-Vorgang. **Gefunden** wurde er im Verifikationsbericht zu `slice-091`, und das ist das
 Vorkommen, das dieser Beleg dateit. Die Klasse trifft damit zum fünften Mal; dass
 sie **im selben Zug** an einem neuen Test (F-1, dort als
 `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` geführt) und an diesem
@@ -30,8 +30,8 @@ Geschwister; nur die Mutation trennt sie. Ein Bestand, der so aussieht wie die
 neu geschriebene Hälfte, wird bei der nächsten Prüfung mitgezählt, ohne geprüft
 zu werden.
 
-Quelle: `docs/reviews/verify-slice-091.md` (V-7) ·
-`docs/reviews/review-slice-091-delta.md` (Negativbefunde, W-3) ·
+Quelle: Verifikationsbericht zu `slice-091` (V-7) ·
+Delta-Review zu `slice-091` (Negativbefunde, W-3) ·
 `internal/adapters/driving/http/server_test.go:161` (berichtigt in `a7d7f7b`) ·
 `git log --diff-filter=A -S 'TestRegisterConsumerUngueltigesJSONEndetMit400'`
 (`7b6b253`, Ursprung).

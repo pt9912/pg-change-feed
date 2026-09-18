@@ -9,6 +9,6 @@ Bindung, nicht das Capture-Zeitverhalten — Review-F-3 (slice-008),
 bestätigt durch Verifier V-4 (kein Test zählt Changes nach der
 Deaktivierung am live laufenden Stream).
 
-Quelle: docs/reviews/review-slice-008.md (F-3),
-docs/reviews/verify-slice-008.md (V-4), Implementer-Bericht (Rest-
+Quelle: Review zu `slice-008` (F-3),
+Verifikationsbericht zu `slice-008` (V-4), Implementer-Bericht (Rest-
 Risiko 1).

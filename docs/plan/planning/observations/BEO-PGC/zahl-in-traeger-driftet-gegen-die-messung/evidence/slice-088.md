@@ -27,8 +27,8 @@ während die Stände alterten: die Form, die `slice-085` gerade entschieden hatt
 **Vierter Vorgang:** `slice-081` (F-1, F-6), `slice-084` (F-1, vier Träger),
 `slice-085` (F-1, die Form), `slice-088` (sechs Funde in einem Zug).
 
-Quelle: `docs/reviews/review-slice-088.md` (F-2, F-3) ·
-`docs/reviews/review-slice-088-delta.md` (D-1, D-2, D-3) ·
+Quelle: Review zu `slice-088` (F-2, F-3) ·
+Delta-Review zu `slice-088` (D-1, D-2, D-3) ·
 `docs/plan/planning/in-progress/slice-088-coverage-tail-uebersetzung.md`
 (berichtigt in `11ba45b`, `eb68126`, `8506539`) ·
 `docs/plan/planning/observations/BEO-PGC/*/state.md`.

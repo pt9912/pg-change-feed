@@ -23,5 +23,5 @@ unberührt und weiterhin hart abbrechend.
 Fehlerklasse ist damit real gebaut, nicht mehr nur beschrieben — die Lücke
 zwischen Spec und Code aus `slice-020`s Fund ist geschlossen.
 
-Quelle: `docs/reviews/review-slice-026.md`, `docs/reviews/verify-slice-026.md`,
+Quelle: Review zu `slice-026`, Verifikationsbericht zu `slice-026`,
 [`ADR-0049`](../../../../../adr/0049-replication-fehlerklassen-schwellen.md).

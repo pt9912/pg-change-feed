@@ -10,4 +10,4 @@ Erst-Registrierung). Die Verkörperung als Pflicht-Regel im
 Implementer-Workflow ist der Ausgang der Architekt-Sequenz (Verdikt
 2026-09-10).
 
-Quelle: docs/reviews/review-slice-009.md (F-1).
+Quelle: Review zu `slice-009` (F-1).

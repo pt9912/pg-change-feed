@@ -7,4 +7,4 @@ Stufe erreicht) und unaufgelöster Vorlagen-Platzhalter
 `<Schnittstelle X>` (2. Auftreten) — derselbe Fill-Fehler der
 welle-3-Eröffnung.
 
-Quelle: docs/reviews/review-slice-009.md F-6.
+Quelle: Review zu `slice-009` F-6.

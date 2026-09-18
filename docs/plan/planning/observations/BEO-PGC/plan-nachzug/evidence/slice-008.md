@@ -9,5 +9,5 @@ committen — Review-F-1 (8. Auftreten der Klasse); der Nachzug kam als
 Planner-Commit `81fc8f2` (Verifikation bestätigt: Plan-vs-Code
 abgedeckt, Rest V-2: `replication/receive/receive.go` ohne §3-Zeile).
 
-Quelle: docs/reviews/review-slice-008.md (F-1),
-docs/reviews/verify-slice-008.md (V-2).
+Quelle: Review zu `slice-008` (F-1),
+Verifikationsbericht zu `slice-008` (V-2).

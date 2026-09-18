@@ -2,7 +2,7 @@
 
 Vorgang: slice-022 (zweiter Slice von `welle-6`).
 
-Fund: `review-slice-022.md` F-2 — mehrere `postgresstorage`-Tests
+Fund: Review zu `slice-022` F-2 — mehrere `postgresstorage`-Tests
 (`consumerstate_test.go`, `store_test.go`, `tableactivation_test.go`)
 mutieren den geteilten `cdc`-Schema-/Tabellen-Zustand unskopiert. Mit
 dem unveränderten `run-store-tests.sh` (alle Pakete in einem `go test
@@ -19,4 +19,4 @@ Beobachtung entstanden — nachrichtlich, nicht gezählt).
 `DELETE`/`DROP SCHEMA CASCADE` in den Adapter-Tests selbst) berührt
 mehrere bestehende Testdateien zugleich; kein Slice dafür existiert.
 
-Quelle: `docs/reviews/review-slice-022.md` F-2, `docs/reviews/verify-slice-022.md`.
+Quelle: Review zu `slice-022` F-2, Verifikationsbericht zu `slice-022`.
