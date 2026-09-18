@@ -118,13 +118,13 @@ Regressionsbeleg dafür ist Lauf 3 von
       ADR nicht editierbar ist (§3.5), trägt §3.14 jetzt einen reinen
       Rang-Zeiger-Absatz (keine Regel), der den Verweis auflösbar hält,
       statt die Nummer ersatzlos verwaist zu lassen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register
       (`docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`)
-      fortgeschrieben — Ausgang von `geplant` auf den tatsächlichen
-      Liefer-Zustand.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+      fortgeschrieben — Ausgang von `geplant` auf `verkörpert`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen
+      (Prüfung läuft nach dem `git mv` nach `done/`, siehe Template-Hinweis §7).
 
 ## 3. Plan (vor Code)
 
@@ -200,10 +200,69 @@ Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt — siehe Template-Hinweis, entfällt beim
-Kopieren nicht, weil dieser Plan direkt in `open/` geschrieben wurde statt
-über die Vorlage kopiert; die Struktur folgt trotzdem
-`.harness/baseline/v6.9.0/templates/docs/plan/planning/slice.template.md`.)*
+- **Was hat funktioniert:** Die im Beobachtungs-Register skizzierte dritte
+  Option (zentrale, blocker-klassifizierende Wache statt Aufrufer-seitiger
+  Existenz-Checks) war real umsetzbar — eine kleine, unit-getestete
+  Go-Komponente (`tools/schema/rolloutguard`) neben den bestehenden
+  `nacharbeit-*.sql`-Dateien, keine neue Werkzeugkette. Die vorab
+  durchgeführte empirische Verifikation gegen das gepinnte d-migrate-Image
+  (welcher Blocker real entsteht, bevor die Testform gebaut wurde)
+  verhinderte einen falsch konstruierten DoD-Negativtest.
+- **Was ging anders als geplant:** Der erste Entwurf (`--execute`
+  komplett überspringen bei ausschließlich bekannten Blockern) erwies
+  sich als korrektheitsverletzend — noch innerhalb dieses Slice per
+  Gegenprobe gefunden und korrigiert, vor jedem Reviewer-Zug (§1, §3).
+  Der Reviewer fand danach 2 HIGH (F-1 Chronik-Sprache in zwei
+  Kommentaren, F-2 eine durch die §3.14-Streichung verwaiste
+  Analogie-Referenz in der `Accepted`-`ADR-0100`) — beide in einer
+  zweiten Fixrunde behoben, ohne die ADR selbst zu berühren (§3.5-konform:
+  ein Rang-Zeiger-Absatz in `AGENTS.md` §3.14 statt eines ADR-Eingriffs).
+  Der Verifier fand danach eine dritte, außerhalb des Review-Diffs
+  liegende Instanz derselben Chronik-Sprache in `harness/README.md` —
+  Doku-Prosa statt Produktionscode, außerhalb des wörtlichen Skopus des
+  Reviewer-HIGH-Punkts (siehe Steering-Loop-Eintrag) — ebenfalls vor
+  Closure behoben.
+- **Steering-Loop-Eintrag:** Der Reviewer-Skill-HIGH-Punkt
+  „Slice-/Wellen-Chronik in Produktionscode-Kommentar"
+  (`BEO-PGC/slice-chronik-in-code-kommentar`, jetzt 7× belegt) fängt
+  weiterhin jede Produktionscode-Instanz vor Merge — bestätigt, nicht
+  geschärft. Neu benannt (Randbefund, noch nicht verkörpert, da 1×):
+  dieselbe Chronik-Klasse tritt auch in Doku-Prosa (`harness/README.md`)
+  auf, außerhalb des wörtlichen HIGH-Punkt-Skopus „Produktionscode-
+  Kommentar" — dort fing sie der Verifier, nicht der Reviewer. Auslöser:
+  `BEO-PGC/slice-chronik-in-code-kommentar`
+  (`evidence/slice-schema-rollout-zentrale-idempotenz-wache.md`).
+- **Beobachtungs-Register (`../observations/`):**
+  `evidence/slice-schema-rollout-zentrale-idempotenz-wache.md` in
+  `BEO-PGC/slice-chronik-in-code-kommentar/` ergänzt (7. Beleg plus
+  Doku-Randbefund). `BEO-PGC/schema-rollout-fremdobjekte` von `geplant`
+  auf **verkörpert** fortgeschrieben — Träger ist dieser Slice
+  (`Makefile`, `tools/schema/rolloutguard/`).
+- **Folge-Slices:** keine — kein Punkt aus §1 „Ausdrücklich NICHT in
+  diesem Slice" benennt eine konkrete Folge-Slice-Kennung; die
+  Fremdobjekt-Überführung ins neutrale Modell bleibt an das
+  `POST_EXECUTE_DRIFT`-Upstream-Verhalten gebunden
+  (`BEO-PGC/d-migrate-nacharbeit`, unverändert offen, nicht Gegenstand
+  dieses Slice).
+- **Risiken aus §6:** drei Risiken, drei Ausgänge — (1) „kein gezielter
+  Bestätigungs-Mechanismus" → **eingetreten**, Konsequenz ist das
+  TOCTOU-Fenster aus Review-Fund F-3 (MEDIUM), als Grenze-Kommentar im
+  Makefile-Target dokumentiert, kein Root-Cause-Fix möglich, Risiko im
+  Nutzungskontext dieses Repos hinnehmbar; (2) „Kolokations-Konvention
+  eines siebten `nacharbeit-*.sql`-Skripts" → **weiter offen**, kein
+  Sensor erzwingt die Nähe der beiden Änderungen mechanisch, bleibt
+  Review-/`commit-traceability`-Disziplin; (3) „Mischfall-Maskierung" →
+  **eingetreten**, noch innerhalb dieses Slice gefunden und korrigiert
+  (siehe „Was ging anders als geplant").
+- **Drei Paarungen:** Anker — der Steering-Loop-Eintrag trägt keinen
+  `liegt in`-Feld (kein neuer Sensor/keine neue Regel verkörpert, nur ein
+  bestehender HIGH-Punkt bestätigt plus ein Randbefund benannt), also
+  kein Anker zu prüfen. Folge-Slice — keine benannt (siehe oben), nichts
+  zu prüfen. Register — `BEO-PGC/schema-rollout-fremdobjekte` und
+  `BEO-PGC/slice-chronik-in-code-kommentar` existieren beide als
+  Verzeichnis mit nicht-leerem `evidence/`; `BEO-PGC/d-migrate-nacharbeit`
+  (§1 referenziert) existiert ebenfalls mit nicht-leerem `evidence/`. Alle
+  drei tragen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

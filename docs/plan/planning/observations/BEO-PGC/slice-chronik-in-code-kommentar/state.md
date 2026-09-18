@@ -67,3 +67,14 @@ Enumerationslaufs: er fand vier weitere Produktionscode-Stellen derselben
 Klasse in `postgresstorage/administrationrequest.go` und
 `bootstrap/wiring.go`, die über den ursprünglichen Review-Befund
 hinausgingen.
+
+Beleg 7 (`slice-schema-rollout-zentrale-idempotenz-wache`, evidence-Datei):
+zwei Produktionscode-Stellen (`Makefile`, `guard.go`) — Reviewer fing beide
+vor Merge, bestätigt die Diagnose erneut. **Zusätzlich eine neue Grenze
+real gefunden:** eine dritte, wortidentische Instanz in `harness/README.md`
+(Doku-Prosa, kein Code-Kommentar) lag außerhalb des wörtlichen Skopus des
+Reviewer-HIGH-Punkts („Produktionscode-Kommentar") und wurde erst vom
+Verifier gefunden, nicht vom Reviewer. Ausgang bleibt **verkörpert** für die
+Produktionscode-Hälfte; die Doku-Hälfte ist ein offener Randbefund für den
+nächsten Lese-Schritt (Skopus-Erweiterung des HIGH-Punkts erwägen), kein
+eigener Zähler-Eintrag, da bislang nur 1× beobachtet.

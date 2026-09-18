@@ -1,7 +1,7 @@
 # Review-Report: schema-rollout-zentrale-idempotenz-wache — 2026-09-18
 
 **Review-Art:** Code — geprüft gegen Slice-Plan
-(`docs/plan/planning/in-progress/schema-rollout-zentrale-idempotenz-wache.md`),
+`schema-rollout-zentrale-idempotenz-wache`,
 [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) und
 `AGENTS.md` Hard Rules (nicht gegen DoD — Verifier-Aufgabe).
 
@@ -14,7 +14,7 @@ Versions-Tag) · **Modell:** claude-sonnet-5 · **Datum:** 2026-09-18
 
 **Eingangs-Kontext:**
 
-- `docs/plan/planning/in-progress/schema-rollout-zentrale-idempotenz-wache.md`
+- Slice-Plan `schema-rollout-zentrale-idempotenz-wache`
   (§1, §2, §3, §6 vollständig gelesen)
 - [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md)
 - `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/state.md`

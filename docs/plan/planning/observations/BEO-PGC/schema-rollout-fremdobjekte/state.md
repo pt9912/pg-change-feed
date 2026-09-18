@@ -1,4 +1,16 @@
-Zustand: **geplant** → Träger `docs/plan/planning/open/schema-rollout-zentrale-idempotenz-wache.md`.
+Zustand: **verkörpert** → `Makefile` (`schema-rollout`-Target) und
+`tools/schema/rolloutguard/` (`schema-rollout-zentrale-idempotenz-wache`,
+[`ADR-0043`](../../../../adr/0043-schemamigrationen-mit-d-migrate.md)).
+Ein vorgelagerter `--plan-only`-Lauf klassifiziert jeden Blocker gegen die
+sechs bekannten Fremdobjekte; sind ausschließlich sie betroffen, läuft
+`--execute` zusätzlich mit `--allow-destructive` — jeder andere Fall
+bricht weiterhin mit Exit 8 ab. Real geprüft mit vier DB-Läufen
+(`tools/harness/run-schema-rollout-guard-test.sh`, inkl. eines
+Regressionsbelegs für eine echte, gleichzeitig anstehende Änderung).
+`AGENTS.md` §3.14 trägt seither keine eigene Regel mehr, nur einen
+Rang-Zeiger-Absatz (eine `Accepted`-ADR zitiert die Nummer namentlich).
+
+Vorheriger Zustand (dieser Eintrag, vor `schema-rollout-zentrale-idempotenz-wache`): **geplant** → Träger `docs/plan/planning/open/schema-rollout-zentrale-idempotenz-wache.md`.
 
 Vorheriger Zustand (Commit `7d0bf05`): `verkörpert` → `AGENTS.md` §3.14
 ("Ein Aufrufer von `make schema-rollout` gegen ein möglicherweise bereits
@@ -81,13 +93,11 @@ plausibel bessere Lösung — geteilte statt verteilte Brüchigkeit, an genau
 der Stelle behoben, die jeder neue Fremdobjekt-Zug ohnehin schon anfasst.
 Sie ist aber real recherche- und implementierungsgebunden (d-migrates
 Bestätigungs-Mechanismus ist ungeklärt) und damit kein Nachtrag zu dieser
-Beobachtung, sondern ein eigener Slice:
-`docs/plan/planning/open/schema-rollout-zentrale-idempotenz-wache.md`.
-`AGENTS.md` §3.14 bleibt bis zu dessen Lieferung die geltende
-Zwischenlösung — sie schützt real, auch wenn sie nicht die
-architektonisch beste Endform ist, und wird bei Closure jenes Slice
-angepasst oder gestrichen.
+Beobachtung, sondern ein eigener Slice: `schema-rollout-zentrale-idempotenz-wache`.
+`AGENTS.md` §3.14 blieb bis zu dessen Lieferung die geltende
+Zwischenlösung — sie schützte real, auch wenn sie nicht die
+architektonisch beste Endform war.
 
 Zähler (abgeleitet): 3× (evidence/slice-016.md, evidence/slice-063.md,
 evidence/slice-beispiele-compose-bootstrap.md) — Schwelle erreicht;
-Ausgang jetzt `geplant` statt `verkörpert` (Träger siehe oben).
+Ausgang jetzt **verkörpert** (Träger siehe oben, Zustand-Zeile 1).
