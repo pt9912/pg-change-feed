@@ -38,7 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-Keine offene Welle.
+Keine offene Welle — `in-progress/` trägt einen wellenlosen Slice
+(`schema-rollout-zentrale-idempotenz-wache`, kein Welle-Bezug).
 
 ## Nächste Wellen
 

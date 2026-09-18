@@ -78,7 +78,7 @@ in keinem der drei Implementer-Slices ein HIGH- oder MEDIUM-Finding.
   bereits dreifach wirksame **Zwischenlösung** bestehen (kein Rückbau), die
   eigentliche Root-Cause-Behebung — ein zentraler, Blocker-klassifizierender
   Guard am geteilten Target — ist jetzt als eigener, wellenloser Slice
-  [`schema-rollout-zentrale-idempotenz-wache`](../open/schema-rollout-zentrale-idempotenz-wache.md)
+  `schema-rollout-zentrale-idempotenz-wache`
   terminiert. Die erste Runde ist unabhängig review-bestätigt (0 HIGH, 0
   MEDIUM, ein MEDIUM-Finding zur übersehenen Alternative löste die
   Fixrunde aus); die zweite Runde (dieser Ausgang) durchläuft denselben
@@ -98,7 +98,7 @@ Ausgang zugewiesen während dieser Welle: `BEO-PGC/schema-rollout-fremdobjekte`
 
 ## Folge-Slices
 
-[`schema-rollout-zentrale-idempotenz-wache`](../open/schema-rollout-zentrale-idempotenz-wache.md)
+`schema-rollout-zentrale-idempotenz-wache`
 (wellenlos, aus dem Lese-Schritt oben) — kein direkter Bezug zum
 Beispiele-Gegenstand dieser Welle, aber während ihrer Closure terminiert.
 
