@@ -184,7 +184,7 @@ func TestDiagnoseReportsErrorState(t *testing.T) {
 // Lesefehlers — real gegen PostgreSQL (`make test-store`). Anders als
 // `Healthcheck` kehrt `Diagnose` hier mit Exit 0 zurück, weil ein
 // fehlendes Lebenszeichen Berichtsinhalt ist, kein Befehlsfehler
-// (review-slice-038 F-1).
+// (Review zu `slice-038` F-1).
 func TestDiagnoseReportsNoHeartbeat(t *testing.T) {
 	dsn := os.Getenv("CDC_STORE_TEST_DSN")
 	if dsn == "" {
@@ -284,7 +284,7 @@ func newDiagnoseNullLagFixture(t *testing.T) *pgxpool.Pool {
 
 // TestDiagnoseReportsUnknownLagForSourceWithoutTransactions belegt den
 // NULL-sicheren Scan über `*float64` für `cdc_consumer_lag`
-// (review-slice-038 F-1): ein Consumer mit bestätigter Position, dessen
+// (Review zu `slice-038` F-1): ein Consumer mit bestätigter Position, dessen
 // Quelle noch nie eine Transaktion trug, meldet „unbekannt“ statt eines
 // irreführenden numerischen Rückstands oder eines Scan-Fehlers.
 func TestDiagnoseReportsUnknownLagForSourceWithoutTransactions(t *testing.T) {
@@ -305,7 +305,7 @@ func TestDiagnoseReportsUnknownLagForSourceWithoutTransactions(t *testing.T) {
 }
 
 // TestDiagnoseReportsNoConfirmedConsumer belegt den `!found`-Zweig von
-// `Diagnose` (review-slice-038 F-1): die `cdc_consumer_lag`-Abfrage trägt
+// `Diagnose` (Review zu `slice-038` F-1): die `cdc_consumer_lag`-Abfrage trägt
 // keinen Quellenfilter (`cdc.metrics`, `nacharbeit-observability.sql` —
 // reine Aggregation über `cdc.consumer_status`), der Zweig ist deshalb
 // nur beobachtbar, wenn system-weit kein Consumer eine bestätigte
