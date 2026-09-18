@@ -182,7 +182,7 @@ Hooks als Folge-ADR prüfen. Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: unabhängige Architect-Gegenprüfung des ersten Architect-Verdikts zur Commit-Traceability (kein Vorab-Hook) deckte auf, dass `slice-073` einer bereits in `ADR-0045` getroffenen Entscheidung ohne Folge-ADR widersprochen hätte; Verdikt 2 aus Modul 8 §Konflikt-Pfad (Folge-ADR statt stiller Lockerung) | der Architect-Verdikt dieses Zugs (Gegenprüfung), `slice-073` (`open/`) | <!-- d-check:status-provenance -->
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

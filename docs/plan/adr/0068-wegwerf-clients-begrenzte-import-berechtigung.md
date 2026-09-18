@@ -255,7 +255,7 @@ Werkzeug-Clients.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: Review `slice-071`<!-- d-check:status-provenance --> F-1 (HIGH) belegt, dass die Aufnahme `tools/**` in `composition_root` in [`ADR-0041`](0041-a-check-maschinenform-architekturpruefung.md) keine Deckung hat und dem Werkzeug-Baum unbeschränktes Importrecht gibt. Unabhängiger Architect-Zug nimmt die Zeile zurück, führt die begrenzte Gruppe `tooling` + Kante `tooling → adapters` ein und schärft die ADR-freie Änderungsklasse (Modul 8 §Konflikt-Pfad: Lockerung legitim, aber falsch zugeschnitten → ADR, die den Gegenstand der Ausnahme benennt) | Review zu `slice-071` |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

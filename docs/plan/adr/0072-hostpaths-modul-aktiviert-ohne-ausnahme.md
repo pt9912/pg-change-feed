@@ -279,7 +279,7 @@ diese zwei entfallen, die Klasse selbst bleibt. Andernfalls permanent.
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Anordnung „`hostpaths` einbauen, ohne jede Ausnahme"; 31 Befunde eigenständig nachgemessen; Aktivierung ohne Ausschlussliste, Zitationsform, Hard-Rule-§3.11-Entwurf | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme) |
 | 2026-09-15 | Zitat-Korrektur — host-lokale Pfade ersetzt (`ADR-0073`) | `df47282` |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

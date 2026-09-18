@@ -184,7 +184,7 @@ trägt oder durch eine Lease-basierte Variante ersetzt wird. Sonst
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-12 | Accepted — Anlass: `BEO-PGC/rollen-verdrahtung` 3× (Architect-Verdikt zur Rollen-Verdrahtung, `welle-6`, Zug 2), Ausgang `geplant` → `slice-023`; diese ADR ist die dort angeforderte Architect-Entscheidung vor Implementierungsbeginn | `slice-023` (in `in-progress/`) <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

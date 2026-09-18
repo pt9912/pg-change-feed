@@ -186,7 +186,7 @@ permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Review zu `slice-078` F-1 (Klassengrenze in §Entscheidung) und F-3 (Reichweite der Regel undeclared), F-2 (Disposition der Lokator-Klausel); Reichweite Fences eingeschlossen, §3.11-Entwurf Fassung 2, Lokator-Klausel supersedet-nicht-restitiert | der Architect-Verdikt dieses Zugs (Konflikt-Pfad `slice-078`) <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

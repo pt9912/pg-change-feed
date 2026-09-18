@@ -200,7 +200,7 @@ fällig — „eine vierte CDC-Rolle mit eigenem Aufgabenschnitt"). Sonst
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-13 | Accepted — Anlass: `BEO-PGC/architect-verdikt-rollen-scope-luecke` (1×, unter der 3×-Schwelle, aber realer Rollen-Konflikt nach Modul 8 §Konflikt-Pfad), Commit `824e001` (Implementer-Fund + Grant-Ergänzung ohne separaten Architect-Zug, transparent dokumentiert); Verdikt 2 aus Modul 8 §Konflikt-Pfad (Folge-ADR statt stille Implementer-Lockerung, analog `ADR-0048`) | `slice-044` (in `in-progress/`) <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

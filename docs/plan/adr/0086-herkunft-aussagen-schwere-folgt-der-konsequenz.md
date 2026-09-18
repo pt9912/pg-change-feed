@@ -350,7 +350,7 @@ Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-17 | Accepted — Anlass: der ADR-Zweig des Trigger-Audits der `welle-20`-Closure hat `ADR-0083` §Re-Evaluierungs-Trigger (b) als eingetreten gemeldet. <!-- d-check:status-provenance --> Nachgemessen: nach dem Bau (`· seit slice-089`) trägt der Eintrag <!-- d-check:status-provenance --> `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` zwei weitere Vorgänge (`slice-090`, `slice-092` — je MEDIUM), keines als HIGH; die Gegenlesart (`slice-094` F-1, HIGH, unter dem neuen Eintrag `geschaetzter-wert-als-grenze`) ist mit der Vergabestelle des Registers entschieden. Entscheidet: vier Lagen im Unterpunkt (HIGH: deklarierte Träger-Liste · Folgerung · zweiter Träger; MEDIUM: im Diff; LOW: außerhalb, vom Zug falsch gemacht; INFO: außerhalb, unberührt) plus ein diff-skopierter Kandidatenlauf; kein Sensor. Supersedes `ADR-0083` in einer Klausel (dem Wort „HIGH-Unterpunkt“), alles Übrige bleibt | die sieben Beleg-Dateien des Eintrags (`state.md`, Zähler 7×), Review zu `slice-084` F-1 und Review zu `slice-085` F-1 (die Regel, vom Leser selbst formuliert), <!-- d-check:status-provenance --> Review zu `slice-090`, Delta, D-2, Review zu `slice-092` F-1, <!-- d-check:status-provenance --> Review zu `slice-094` F-1, `BEO-PGC/geschaetzter-wert-als-grenze/observation.md` (die Klassenabgrenzung) |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

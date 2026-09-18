@@ -353,7 +353,7 @@ Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-16 | Accepted — Anlass: die zwei Register-Einträge `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` und `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` stehen bei 4×; `slice-088` hat allein sechs Funde dieser Klassen erzeugt. <!-- d-check:status-provenance --> Entscheidet: **eine** Hard Rule `AGENTS.md` §3.12 für beide Instanzen (Zahlenwert: Ursprung + Lauf, Nenner als Zustand, gedeckte Zahl als Lauf-Beleg; Tatsachenbehauptung: Beleg-Anker oder „erwartet"), durchgesetzt vom Reviewer (Instanz A) und Verifier (Instanz B) statt von einem Sensor; `Accepted`-Dokumente nur vorwärts (Folge-ADR). Baut die in `ADR-0078` §Fitness Function Zeile 3 benannte und dort offengelassene Verkörperung, ohne jene ADR abzulösen | die vier Beleg-Dateien je Eintrag (sie nennen ihre Läufe), Review zu `slice-088` F-2/F-3, Review zu `slice-088`, Delta, D-1, Verifikationsbericht zu `slice-085` V-1 <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

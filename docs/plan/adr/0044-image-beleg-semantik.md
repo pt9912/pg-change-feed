@@ -134,7 +134,7 @@ ist nach Accepted immutable). Sonst `permanent`.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-09 | Accepted — Anlass: Review zu `slice-005`, Finding F-7 (Binary an beiden Range-Grenzen bit-identisch `43c3aec0…`, Digest wechselte `447eab36…` → `9ac4a9fb…`); korrigiert die `96c47af`-Deklaration („genau dann"-Äquivalenz), gestützt auf den F-2-Schiedsspruch (Verifikationsbericht zu `slice-004`) | — <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

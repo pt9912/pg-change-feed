@@ -304,7 +304,7 @@ Zustellwege und vom Nachrichtenvolumen.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: `slice-069` <!-- d-check:status-provenance -->-Review (F-1, F-5 und das Broadcaster-Risiko) bestätigt real, dass ein registrierter, nicht lesender Empfänger `Publish` und damit den `Receive` jeder weiteren Transaktion anhält; unabhängiger Architect-Zug entscheidet die Entkopplung im `Broadcaster` und superseded `ADR-0060`s Puffer-Klausel (Teilfrage 3 Option A, Design-Zeile Teilfrage 2) | Review zu `slice-069`, der Architect-Verdikt zu Publish blockiert den Capture-Pfad |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

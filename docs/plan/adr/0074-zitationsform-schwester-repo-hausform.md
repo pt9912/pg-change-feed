@@ -154,7 +154,7 @@ wechselt die Hausform (die Mehrheit der Nennungen wird besitzer-qualifiziert)
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Messung am Bestand (89 blanke `d-check`-Nennungen, Artefakte relativ benannt); korrigiert `ADR-0072` §Entscheidung Punkt 3 (Zitationsform) | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme), eigene Bestands-Messung |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

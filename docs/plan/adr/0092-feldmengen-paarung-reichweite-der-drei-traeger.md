@@ -241,7 +241,7 @@ Paarung zwischen ihnen trägt das Review.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-17 | Accepted — Anlass: Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance -->, V-2 (LOW): der Ersatztext der Träger-Paarung aus [`ADR-0089`](0089-feldmengen-paarung-kein-sensor-review-waechter.md) sagt „dieselben Namen". Eigene Messung an HEAD `825d5fd`: das Handbuch §5.2 nennt **sieben** der neun zulässigen Schlüssel (die zwei `wal_retention_*` fehlen), die Zugangsdaten-Klasse (sechs) dagegen vollständig; `SPEC-016` und der Code sind mengengleich (neun). Unabhängiger Architect-Zug ersetzt die Reichweiten-Aussage samt ihren drei Wiederholungen; das Handbuch §5.2 bleibt unverändert | Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

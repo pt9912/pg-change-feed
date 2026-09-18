@@ -281,7 +281,7 @@ Nachrichtenvolumen und von der Zahl der Zustellwege.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: `slice-070` <!-- d-check:status-provenance -->-Review F-1 (HIGH) belegt den Widerspruch zwischen §Entscheidung, Option B und der dritten Fitness-Function-Zeile der [`ADR-0066`](0066-broadcaster-begrenzte-empfangswarteschlange.md); F-7 belegt real, dass die Klammer-Hälfte an der Capture-Schicht unerreichbar ist (`make a-check` `app-impurity`, Exit 2). Unabhängiger Architect-Zug bestätigt die Entscheidung (synchroner Aufruf, keine caller-seitige Goroutine) und ersetzt die dritte Fitness-Function-Zeile (Verdikt 1, Modul 8 §Konflikt-Pfad) | Review zu `slice-070` |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

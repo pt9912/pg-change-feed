@@ -252,7 +252,7 @@ sind von keinem der beiden betroffen:
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: `slice-067` <!-- d-check:status-provenance -->-Review führt F-1 (Ausschlussstand ohne dauerhaften Träger, über Prozess-Neustart **und** `disable`/`enable`-Zyklus) und F-2 (stiller Erfolg eines nie wirksamen Antrags) als Entscheidungen an Planner → Architect (Modul 8 §Konflikt-Pfad); unabhängiger Architect-Zug entscheidet den dauerhaften Träger und korrigiert die Dauerhaftigkeits-Aussage in [`ADR-0059`](0059-spaltenauswahl-mechanismus.md) | Review zu `slice-067`, der Architect-Verdikt zur Spaltenausschluss-Dauerhaftigkeit |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

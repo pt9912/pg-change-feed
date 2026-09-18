@@ -207,7 +207,7 @@ permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Review zu `slice-073` F-1/F-2 (zwei HIGH mit Rollen-Widerspruch gegen `ADR-0062` Punkt 3) → Konflikt-Pfad, Verdikt 2; korrigiert `ADR-0062` Punkt 3 auf die einseitige Zusage | Review zu `slice-073`, der Architect-Verdikt dieses Zugs <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

@@ -189,7 +189,7 @@ bleibt. Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Auftrag „alle host-lokalen Pfade entfernen, ohne Ausnahme"; 11 Befunde in zwei `Accepted` ADRs; Zitat-Korrektur als Klasse, §3.5 klassenweise nachgezogen | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme) |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

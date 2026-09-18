@@ -230,7 +230,7 @@ permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Nutzerfrage „netzlos prüfbare Fläche oder ganzer Baum?"; der Selbstwiderspruch der Endstufe 80 % (Decke 68,06 %) real nachgemessen; korrigiert `ADR-0054` §(a) Scope-, Schwelle- und Fitness-Function-Klausel | der Architect-Verdikt dieses Zugs (Coverage-Gate-Messgegenstand), eigene Messung (`coverage`-Stage, gepinntes Toolchain-Image) |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

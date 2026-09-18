@@ -131,7 +131,7 @@ gemessen) läuft über `ADR-0087`s eigenen Trigger 4, nicht über diese ADR.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-17 | Accepted — Anlass: Reviewer-Finding F-1 im Review zu `slice-099` (Commit `a65bf29`); Architect-Rolle verifiziert den Fehler eigenständig (`docker manifest inspect eclipse-temurin:21-jdk`, Zeichenzählung) und korrigiert `ADR-0087`s Digest-Pinning-Tabelle per Folge-ADR (Modul 8 §Konflikt-Pfad, Fall „ADR wird per Folge-ADR supersedet") | Review zu `slice-099` F-1; `docker manifest inspect eclipse-temurin:21-jdk` (amd64/linux, 2026-09-17) <!-- d-check:status-provenance --> |
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

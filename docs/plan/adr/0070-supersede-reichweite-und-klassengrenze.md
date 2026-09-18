@@ -176,7 +176,7 @@ Andernfalls permanent.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-15 | Accepted — Anlass: Trigger-Audit der `slice-073`-Closure (Modul 6 §Wellen-Closure-Prozedur Schritt 2, ADR-Zweig); korrigiert `ADR-0069`s Supersede-Reichweite und Klassengrenze | Review zu `slice-073`, Fixrunde, F-5/F-7, Verifikationsbericht zu `slice-073`, §7 | <!-- d-check:status-provenance -->
-| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | `c2bc868` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
