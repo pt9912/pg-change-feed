@@ -42,6 +42,12 @@
 # Modul-Cache-Volume bleibt als Vorbereitung für netzlose `make test`-Läufe
 # bestehen.
 set -euo pipefail
+# Vor dem cd unten einfangen: BASH_SOURCE[0] ist relativ zum AUFRUF-Verzeichnis
+# (z. B. `../tools/harness/run-integration-tests.sh` bei Aufruf aus einem
+# Unterverzeichnis) — nach dem cd zur Repo-Wurzel würde derselbe relative
+# Ausdruck etwas anderes bezeichnen. `pwd -P` löst Symlinks physisch auf
+# (POSIX, GNU wie BSD/macOS identisch).
+EIGENER_PFAD_ABS="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)/$(basename -- "${BASH_SOURCE[0]}")"
 cd "$(git rev-parse --show-toplevel)"
 
 TOOLCHAIN_IMAGE=${TOOLCHAIN_IMAGE:-golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125}
@@ -79,7 +85,11 @@ DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 # geschrieben (Temp-Datei + cmp). Geschrieben wird auf dem Host — der
 # Toolchain-Container läuft gegen ein read-only Bind-Mount.
 ABDECKUNG_ZIEL=docs/user/e2e-abdeckung.md
-ABDECKUNG_QUELLE=$(realpath --relative-to="$(pwd)" "${BASH_SOURCE[0]}")
+# Portabel statt `realpath --relative-to` (GNU-only, BSD/macOS-realpath kennt
+# das Flag nicht): EIGENER_PFAD_ABS wurde oben VOR dem cd zur Repo-Wurzel
+# eingefangen (Zeile ~50) — der aktuelle `pwd -P` ist jetzt die Repo-Wurzel,
+# der Präfix-Abzug liefert den repo-relativen Pfad dieses Skripts.
+ABDECKUNG_QUELLE="${EIGENER_PFAD_ABS#$(pwd -P)/}"
 ABDECKUNG_GO_ZEILEN=""
 ABDECKUNG_KOPF='# E2E-Abdeckung je Spec-Kennung
 

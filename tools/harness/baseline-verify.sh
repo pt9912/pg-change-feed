@@ -73,7 +73,16 @@ fi
 
 # 1) Integritaet der gelisteten Dateien (geaendert/geloescht). Kein --quiet
 # (GNU-only) — stattdessen Output unterdruecken, nur der Exit-Code zaehlt.
-if ! sha256sum -c SHA256SUMS >/dev/null 2>&1; then
+# sha256sum ist GNU-Coreutils (Linux, WSL); macOS traegt es nicht, wohl aber
+# das im Manifest-Format und im -c-Pruefmodus kompatible shasum (Perl, Teil
+# der Basisinstallation seit jeher — keine Fremd-Laufzeit im Sinne von
+# node/jq/python).
+if command -v sha256sum >/dev/null 2>&1; then
+  pruefe_summen() { sha256sum -c SHA256SUMS; }
+else
+  pruefe_summen() { shasum -a 256 -c SHA256SUMS; }
+fi
+if ! pruefe_summen >/dev/null 2>&1; then
   echo "FEHLER: Baseline $tag weicht von SHA256SUMS ab (geaenderte oder fehlende Datei)." >&2
   exit 1
 fi
