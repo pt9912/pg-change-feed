@@ -53,11 +53,16 @@ abonniert und eine empfangene Change lesbar ausgibt.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] `examples/nats-stream-client` (Go) existiert, verbindet mit
+- [x] `examples/nats-stream-client` (Go) existiert, verbindet mit
       `CDC_NATS_STREAM_TOKEN`, abonniert `cdc.stream.>` und gibt eine
       empfangene Change lesbar aus; `make example-run-go SURFACE=nats-stream`
       baut und startet ihn real gegen die Demo-Umgebung
-      ([`LH-FA-SST-008`](../../../../spec/lastenheft.md)).
+      ([`LH-FA-SST-008`](../../../../spec/lastenheft.md)) — real ausgeführt
+      gegen eine frisch hochgefahrene Demo-Umgebung (`make example-demo-down`
+      dann `-up`, weil der zuvor laufende Feed-Container älter war als die
+      `CDC_NATS_STREAM_TOKEN`-Verdrahtung von `slice-nats-drittstream-core`):
+      `nats-stream-client: change_id=804-1 table=public.orders
+      operation=INSERT new_image={"id":"2","customer":"nats-stream-smoke-test","amount":"42.50"}`.
 - [x] `harness/mk/examples.mk`s drei `$(filter …)`-Prüfungen für
       `example-run-go` (und die zugehörige `$(error …)`-Meldung) tragen
       `nats-stream` als vierten zulässigen Wert (`ADR-0100` Teilfrage 6) —
