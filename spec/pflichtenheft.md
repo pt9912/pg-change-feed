@@ -460,6 +460,28 @@ die hinzukommen.
 | Sprachen und Umfang | Das Repo führt Beispiel-Clients in **Go**, **C#** und **Kotlin** über die **volle Matrix**: alle vier Zugriffs-Oberflächen (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`) in jeder der drei Sprachen. Ein fremdsprachiger gRPC-Client erreicht die `.proto`-Quelle über **einen** zusätzlichen, benannten Bau-Kontext (das Sprach-Wurzelverzeichnis bleibt der Bau-Kontext); die daraus erzeugten Fremdsprachen-Stubs entstehen **im Bau** und werden **nicht** committet — `gen/**` bleibt die Go-Bindung. Ein NATS-Client bekommt je Sprache eine gepinnte öffentliche Client-Bibliothek |
 | Kein Belegträger | Beispiele erscheinen **nicht** in der E2E-Abdeckungstabelle; sie sind Doku mit Bau-Bindung. Was sie nicht leisten — „übersetzt" ist nicht „holt am laufenden Feed eine Änderung" — bleibt eine benannte Grenze, deren Wächter das Review ist |
 
+### SPEC-024 — NATS-Vollinhalts-Stream für Live-Streaming (Subjekt- und Nachrichtenform)
+
+Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), dritter
+Zustellweg neben dem gRPC-Stream (`SPEC-020`) und SSE (`SPEC-021`): derselbe
+`Broadcaster` bekommt einen dritten Abonnenten, der jeden Change zusätzlich
+über NATS Core veröffentlicht. Eigenständig von [`SPEC-017`](pflichtenheft.md)
+(NATS-Wecksignal für [`LH-FA-SST-007`](lastenheft.md)) — beide Fähigkeiten
+laufen über denselben Server und dieselbe Verbindung, aber mit
+unterschiedlichem Subjekt-Namensraum, unterschiedlichem Nachrichteninhalt
+und unterschiedlicher Kardinalität; `SPEC-017` bleibt durch diesen Eintrag
+unverändert.
+
+| Merkmal | Festlegung |
+|---|---|
+| Subjekt-Schema | `cdc.stream.<source_id>.<schema>.<table>` — ein Subjekt je Tabelle einer Quelle, strukturell wie `SPEC-017`s Wecksignal-Subjekt, aber mit dem Wurzel-Token `cdc.stream` statt `cdc.changes`, um `SPEC-017`s leeren Payload nicht zu berühren. Ein Consumer mit Tabelleninteresse abonniert das vollständige vierstufige Subjekt; `cdc.stream.<source_id>.>` deckt alle Tabellen einer Quelle, `cdc.stream.>` alle Quellen |
+| Nachrichteninhalt | JSON-Objekt mit denselben zehn Feldern wie `SPEC-021`s SSE-Event: `change_id`, `transaction_id`, `source_table_id`, `sequence`, `operation` (`INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version`, `schema`, `table` — dasselbe Nachrichtenschema, kein drittes |
+| Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, wie `SPEC-020`/`SPEC-021` — **nicht** `SPEC-017`s Tabellen-Dedup-Kardinalität |
+| Zustellgarantie | keine (Core NATS, Fire-and-Forget) — ein nicht verbundener oder langsamer Consumer verpasst Nachrichten ersatzlos; Nachholen ausschließlich über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) |
+| Erzeuger-Blockade | keine: Der Publisher liest ausschließlich aus dem bereits vom `Broadcaster` isolierten Kanal, dieselbe Fehlerisolation wie `SPEC-020`/`SPEC-021` |
+| Authentifizierung | Verbindungsebene: Der NATS-Server verlangt einen Token, sobald `CDC_NATS_STREAM_TOKEN` konfiguriert ist — ein Verbindungsversuch ohne oder mit falschem Token wird vom Server abgelehnt. Dieser Token gilt serverweit (auch für die bislang anonyme `SPEC-017`-Verbindung), sobald er konfiguriert ist |
+| Aktivierung | optional, **beide** Bedingungen: `CDC_NATS_URL` **und** `CDC_NATS_STREAM_TOKEN` gesetzt. Nur `CDC_NATS_URL` gesetzt bedeutet unverändertes `SPEC-017`-Bestandsverhalten, kein dritter Weg. `CDC_NATS_STREAM_TOKEN` gesetzt ohne `CDC_NATS_URL` ist ein Konfigurationsfehler beim Start (`configuration`, `SPEC-008`) |
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -536,6 +558,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-017` | NATS Core (Wecksignal, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` | — (Vertrag steht in diesem Dokument, §2 SPEC-017) |
 | `SPEC-020` | gRPC Server-Streaming (HTTP/2 mit Protobuf) | gRPC-Go `google.golang.org/grpc`, Protobuf-Runtime `google.golang.org/protobuf` | — (Vertrag steht in diesem Dokument, §2 SPEC-020) |
 | `SPEC-023` | Beispiel-Client-Werkzeugketten (Go, C#/.NET, Kotlin/JVM) | digest-gepinnte Basis-Images, auf feste Versionen gepinnte Abhängigkeiten (Pin-Hebung = bewusster Commit) | — (Vertrag steht in diesem Dokument, §2 SPEC-023; die Werkzeugketten-Dateien liegen im jeweiligen Sprach-Wurzelverzeichnis) |
+| `SPEC-024` | NATS Core (Vollinhalts-Stream, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` (bereits im Baum, `SPEC-017`) | — (Vertrag steht in diesem Dokument, §2 SPEC-024) |
 
 ---
 
@@ -564,3 +587,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-17 | `SPEC-016` nachgezogen: Feldmenge um `http_addr`/`grpc_addr` erweitert (additiv, Env schlägt feldweise), Ausschlussklausel von der Drei-Schlüssel-Liste auf die **Klasse der zugangsdaten-tragenden Felder** gezogen (drei DSN-Schlüssel, zwei Token-Schlüssel, `nats_url`) samt eigener, den Grund nennender Fehlerzeile, und klargestellt, dass die env-exklusiven Variablen unter geladener Datei aus der Umgebung wirken |
 | 2026-09-17 | `SPEC-023` ergänzt: Beispiel-Clients — Klasse (Vorbild, kein Belegträger, keine Zustandsmaschine), Verhältnis zum Draht, Ort und Form samt Sprach-Wurzel, Import-Grenze, Docker-only-Startform, Bau-/Testziel je Sprache als Werkzeug, kein Lesen der Konfigurationsdatei, Handbuch-Bindung, Sprachen und Umfang (Go: vier Oberflächen; C#/Kotlin: HTTP-Familie), kein Eintrag in der E2E-Abdeckung; externe-Verträge-Zeile in §6 |
 | 2026-09-17 | `SPEC-023` Zeile *Sprachen und Umfang* auf die volle Matrix gezogen (vier Zugriffs-Oberflächen in Go, C# und Kotlin statt der HTTP-Familie in C#/Kotlin), samt dem benannten Zusatzkontext für einen fremdsprachigen gRPC-Bau und dem Ort der erzeugten Stubs (im Bau, nicht committet) |
+| 2026-09-18 | `SPEC-024` ergänzt: NATS-Vollinhalts-Stream — Subjekt-Schema (`cdc.stream.<source_id>.<schema>.<table>`, eigener Namensraum neben `SPEC-017`s Wecksignal-Subjekt), JSON-Nachrichtenschema identisch zu `SPEC-021`, Granularität je Zeilen-Change, Fire-and-Forget ohne Replay, Authentifizierung über einen serverweiten NATS-Verbindungs-Token (`CDC_NATS_STREAM_TOKEN`), Aktivierung nur bei gesetztem `CDC_NATS_URL` **und** `CDC_NATS_STREAM_TOKEN`; externe-Verträge-Zeile in §6 |
