@@ -18,13 +18,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 Der Auftraggeber hat drei Entscheidungen getroffen, die den bestehenden
 Beispiel-Client-Bestand (`examples/**`,
-[`ADR-0076`](../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md),
-[`ADR-0087`](../adr/0087-beispiel-clients-csharp-kotlin.md),
-[`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md)) überholen:
+[`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md),
+[`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md),
+[`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)) überholen:
 
 1. **Die Go-Beispiele werden über `make` + Dockerfile gebaut und gestartet**,
    nicht über `go run ./examples/<name>`. Das widerspricht wörtlich
-   [`ADR-0076`](../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+   [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
    §Entscheidung Festlegung 1 dritter Bullet („**Startform**: je Programm ein
    `go run ./examples/<name>` … Damit zitiert das Handbuch **eine**
    Befehlsform, die innerhalb und außerhalb des Compose-Netzes
@@ -42,7 +42,7 @@ Beispiel-Client-Bestand (`examples/**`,
    `docs/user/benutzerhandbuch.md` (z. B. §4 „Zugriff über
    Server-Sent-Events", Zeilen „**C#:**"/„**Kotlin:**"). Für Go gibt es
    bislang gar keinen `make`-Bau; die zwölf Programme
-   ([`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md) §Entscheidung
+   ([`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) §Entscheidung
    Festlegung 1) sind heute uneinheitlich baubar/startbar (Go: `go run`;
    C#/Kotlin: `make`-Bau + manueller `docker run`).
 3. **Eine Demo-Umgebung unter `examples/` mit Bootstrapping.** Eine eigene
@@ -62,7 +62,7 @@ Beispiel-Client-Bestand (`examples/**`,
    anderem Betreiber (der Integrator, nicht der Testlauf).
 
    **Das „config-file" — von Slice 1 bestätigt, mit einer Korrektur**
-   ([`ADR-0098`](../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+   ([`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
    Festlegung 3): die Planner-Lesart trifft zu — eine gemeinsame
    Umgebungsdatei, die **sowohl** die neue Compose-Datei (`env_file:`) **als
    auch** jeder Start-Make-Target-Aufruf (`--env-file`) liest, statt Werte
@@ -71,7 +71,7 @@ Beispiel-Client-Bestand (`examples/**`,
    `examples/.env.example`) — die Datei wird **committet und sofort
    nutzbar**, keine Kopiervorlage, weil sie keine echten Zugangsdaten trägt
    (isoliertes Docker-Netzwerk `cdc-examples`,
-   [`ADR-0098`](../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+   [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
    Festlegung 4). Die
    Variablennamen sind die bereits im Handbuch dokumentierten `CDC_*`-Namen,
    bewusst identisch mit der Produktions-Vokabel — die Trennung liegt in der
@@ -93,7 +93,7 @@ sowohl die Demo-Compose-Datei als auch beide Start-Target-Implementierungen
 schreiben. Keine der drei Implementierungs-Hälften ist ohne diese
 Entscheidung unabhängig lieferbar — sie ist der gemeinsame Träger, den kein
 Einzel-Slice-DoD abdeckt, und der Grund, warum eine `Accepted`-Immutable-ADR
-([`ADR-0076`](../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md))
+([`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md))
 hier nicht durch einen Implementer-Slice, sondern nur durch eine neue
 Architect-Entscheidung bewegt werden kann (`AGENTS.md` §3.5).
 
@@ -147,10 +147,10 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-beispiele-start-architect-entscheidung | Architect-Entscheidung: Supersedes-ADR zu `ADR-0076` Festlegung 1 (Go-Startform) + Ausgestaltung des Start-Make-Targets + Umgebungsdatei-Kontrakt der Demo-Umgebung | [`ADR-0076`](../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md), [`ADR-0087`](../adr/0087-beispiel-clients-csharp-kotlin.md), [`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md) |
-| slice-beispiele-compose-bootstrap | Demo-Umgebung: `examples/compose.yaml` (PostgreSQL/Feed/NATS) + gemeinsame Umgebungsdatei + Bootstrapping (Schema-Rollout, Beispiel-Quelle/-Tabelle) | [`LH-QA-OPS-001`](../../../spec/lastenheft.md) |
-| slice-beispiele-go-dockerfile-start | Go-Beispiele: Dockerfile(s) + `make`-Bau-Target + `make`-Start-Target (vier Programme) | [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`LH-FA-SST-007`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
-| slice-beispiele-csharp-kotlin-start-target | C#/Kotlin: echter Start-Make-Target ergänzt (acht Programme, zwei Sprachen) | [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`LH-FA-SST-007`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
+| slice-beispiele-start-architect-entscheidung | Architect-Entscheidung: Supersedes-ADR zu `ADR-0076` Festlegung 1 (Go-Startform) + Ausgestaltung des Start-Make-Targets + Umgebungsdatei-Kontrakt der Demo-Umgebung | [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md), [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md), [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) |
+| slice-beispiele-compose-bootstrap | Demo-Umgebung: `examples/compose.yaml` (PostgreSQL/Feed/NATS) + gemeinsame Umgebungsdatei + Bootstrapping (Schema-Rollout, Beispiel-Quelle/-Tabelle) | [`LH-QA-OPS-001`](../../../../spec/lastenheft.md) |
+| slice-beispiele-go-dockerfile-start | Go-Beispiele: Dockerfile(s) + `make`-Bau-Target + `make`-Start-Target (vier Programme) | [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`LH-FA-SST-007`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
+| slice-beispiele-csharp-kotlin-start-target | C#/Kotlin: echter Start-Make-Target ergänzt (acht Programme, zwei Sprachen) | [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`LH-FA-SST-007`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge — explizit:** `slice-beispiele-start-architect-entscheidung`
 zuerst und blockierend für alle drei anderen — ohne die ADR gibt es weder
@@ -186,22 +186,22 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - **Keine neuen Zugriffs-Oberflächen oder Sprachen.** Die Matrix bleibt, was
-  [`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md) festgelegt hat
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) festgelegt hat
   (vier Oberflächen × drei Sprachen, zwölf Programme) — diese Welle ändert
   **wie** gebaut/gestartet/demonstriert wird, nicht **was** existiert.
 - **Kein Gate.** Die Bau-/Start-Ziele bleiben Werkzeuge
-  ([`ADR-0087`](../adr/0087-beispiel-clients-csharp-kotlin.md) Festlegung 4,
-  [`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 5) —
+  ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md) Festlegung 4,
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 5) —
   ob das für Go unverändert gilt, entscheidet Slice 1, aber „neues Gate" ist
   in keinem Zuschnitt dieser Welle vorgesehen.
 - **Kein realer Compose-/E2E-Lauf der Beispiele als Beleg für `make gates`.**
   Der Draht-Beleg bleibt bei `make test-integration` über die
-  Wegwerf-Clients ([`ADR-0076`](../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
+  Wegwerf-Clients ([`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
   Festlegung 5) — die neue Demo-Umgebung ist ein **Leser**-Erzeugnis, kein
   zusätzlicher Gate-Beleg, und ersetzt `tools/harness/run-integration-tests.sh`
   nicht.
 - **Der `.proto`-Weg und `gen/**`** bleiben, was
-  [`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 2/3
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) Festlegung 2/3
   entschieden hat — unverändert, sofern Slice 1 nichts anderes entscheidet
   (nicht erwartet: kein neuer Konsument der `.proto` entsteht durch einen
   Start-Mechanismus oder die Demo-Umgebung).
