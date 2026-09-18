@@ -99,12 +99,13 @@ Slice schließt genau diese drei echten Lücken mit neuen E2E-Belegen in
       `harness/README.md` `make doc-trace`-Zeile (Waisen-Zahl real
       nachgemessen: 76 Anforderungen, 55 ohne `trace.coverage`, 21 mit —
       war zuvor auf einem veralteten Stand „9/7").
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben — voraussichtlich „keine
-      Beobachtung angefallen" (kein neues Muster, reguläre
-      Feature-/Test-Arbeit).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben — **Plan-Korrektur**: doch
+      zwei neue Beobachtungen angefallen (Review-Fund F-1 und F-2, siehe
+      §7), nicht „keine" wie ursprünglich erwartet.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen
+      (Prüfung läuft nach dem `git mv` nach `done/`, siehe Template-Hinweis §7).
 
 ## 3. Plan (vor Code)
 
@@ -162,7 +163,51 @@ Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Die vorab durchgeführte Klassifikation der
+  24 RTM-Waisen (Tag-Lücke / anderer Test-Tier / echte Lücke) hat den
+  Umfang dieses Slice präzise auf drei Anforderungen eingegrenzt, bevor
+  ein einziger Test geschrieben wurde — kein Nacharbeiten am Scope
+  nötig. Die reale Scratch-DB-Verifikation der beiden neuen
+  SQL-Metriken **vor** dem vollen `test-integration`-Lauf fing die
+  Korrektheit der Ausdrücke billig, bevor der teure volle Lauf lief.
+- **Was ging anders als geplant:** Der Reviewer fand zwei LOW/INFO-Funde
+  (F-1: der neue Metriken-Beleg prüft nur den positiven Fall, nicht den
+  Boundary-Fall; F-2: eine implizite Vorher/Nachher-Formulierung in
+  einem Bash-Kommentar außerhalb des Produktionscode-HIGH-Skopus) —
+  beide ohne Fixrunde, aber laut Reviewer-Übergabe ins
+  Beobachtungs-Register zu tragen (siehe unten), entgegen der
+  ursprünglichen Plan-Annahme „voraussichtlich keine Beobachtung
+  angefallen" (§2). Der Verifier lief zusätzlich einen dritten, vollen
+  `make test-integration`-Lauf (statt sich auf die vorhandene Log-Evidenz
+  und den Scratch-DB-Beleg des Reviewers zu verlassen) und bestätigte
+  identische Werte — das stärkste verfügbare Signal, mit realem
+  Mehraufwand statt bloßer Übernahme.
+- **Steering-Loop-Eintrag:** Kein neuer Sensor, keine geschärfte Regel —
+  beide Funde sind erste Belege (1×) neuer, noch unentschiedener
+  Beobachtungsklassen, keine Verkörperung.
+- **Beobachtungs-Register (`../observations/`):** zwei neue Verzeichnisse
+  angelegt — `BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt/`
+  (Beleg `evidence/slice-e2e-drei-rtm-luecken.md`, 1×, Review-Fund F-1)
+  und `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar/`
+  (Beleg `evidence/slice-e2e-drei-rtm-luecken.md`, 1×, Review-Fund F-2).
+  Beide `Zustand: offen`, unter der 3×-Schwelle für eine
+  Architect-Entscheidung.
+- **Folge-Slices:** keine mit eigener Kennung — die zwölf Tag-Lücken und
+  neun bewusst-außerhalb-des-Scopes-Anforderungen aus §1 „Ausdrücklich
+  NICHT in diesem Slice" bleiben ein benannter, aber noch nicht als
+  Slice angelegter Folge-Vorgang.
+- **Risiken aus §6:** drei Risiken, drei Ausgänge — (1) Subquery-Kosten
+  → **entfallen** (keine Performance-Zusage, kein billigerer
+  Alternativ-Ausdruck in derselben View); (2) `cdc_errors_total` nur
+  current-state, kein historisches Log → **entfallen** für diesen Slice
+  (Auftraggeber-Entscheidung deckte den Bau aus dem vorhandenen
+  Zustand, nicht ein neues Log); (3) `logcheck` ohne `--since`-Cutoff →
+  **weiter offen**, aktuell real unproblematisch (314 Zeilen), Ein-
+  Zeilen-Fix falls der Testlauf wesentlich wächst.
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld (kein neuer
+  Sensor/keine neue Regel verkörpert). Folge-Slice — keiner benannt,
+  nichts zu prüfen. Register — beide neuen `BEO-PGC`-Verzeichnisse
+  existieren mit nicht-leerem `evidence/` (siehe oben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
