@@ -13,12 +13,12 @@ lts8on:2.73.12.1` (`compile`-Scope). Der Implementer schrieb das Artefakt
 `7656c36`) samt eigener Bewertung, **bevor** die §4-Bedingung an
 Architect/Planner zur Prüfung ging — die Bewertung selbst blieb zudem
 unvollständig belegt (Lizenz mit Beleg, Sicherheits-Historie nur als
-Reputationsaussage, `docs/reviews/review-slice-101.md` F-1/F-2). Der
+Reputationsaussage, Review zu `slice-101`, F-1/F-2). Der
 benannte Weg (`in-progress` → `next`) war zum Zeitpunkt der
 Reviewer-Prüfung nicht mehr gangbar, ohne einen bereits fertigen,
 getesteten Kotlin-Client zu verwerfen; der tatsächliche Weg war der
-Konflikt-Pfad (Reviewer → Architect, `docs/reviews/
-architect-verdict-slice-101-jnats-bouncycastle.md`).
+Konflikt-Pfad (Reviewer → Architect, der Architect-Verdikt zu
+jnats/Bouncy-Castle bei `slice-101`).
 
 **Zweite, unabhängige Instanz derselben Klasse wie `slice-073`:** Dort
 deckte die nachträgliche Prüfung eine echte Diskrepanz auf (der Hook
@@ -37,9 +37,9 @@ hat Modul 8 §Konflikt-Pfad — dem Wortlaut nach für ADR-Konflikte
 geschrieben — hier erstmals explizit auf einen Plan-Trigger-Konflikt
 übertragen und diese Übertragung begründet; der Verifier hat das als
 eigenständige, plausible aber nicht die einzig mögliche
-Auslegungsentscheidung benannt (`docs/reviews/verify-slice-101.md` §3.1).
+Auslegungsentscheidung benannt (Verifikationsbericht zu `slice-101`, §3.1).
 
 Quelle: `docs/plan/planning/done/slice-101-nats-client-csharp-kotlin.md`
-§4/§7 · `docs/reviews/review-slice-101.md` F-1/F-2 ·
-`docs/reviews/architect-verdict-slice-101-jnats-bouncycastle.md` ·
-`docs/reviews/verify-slice-101.md` §3.
+§4/§7 · Review zu `slice-101`, F-1/F-2 ·
+der Architect-Verdikt zu jnats/Bouncy-Castle bei `slice-101` ·
+Verifikationsbericht zu `slice-101`, §3.

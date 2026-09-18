@@ -12,4 +12,4 @@ Umgebung vorher frisch hoch). Bewusst nicht in slice-016 behoben —
 anderer Vorgang (§1-Klasse 3): beträfe `nacharbeit-observability.sql`/
 `nacharbeit-heartbeat.sql`, nicht die Views-Ausweichform dieses Slices.
 
-Quelle: `docs/reviews/review-slice-016.md`, `docs/reviews/verify-slice-016.md`.
+Quelle: Review zu `slice-016`, Verifikationsbericht zu `slice-016`.

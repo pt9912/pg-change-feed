@@ -1,6 +1,6 @@
 **Vorgang:** slice-104
 
-**Fund:** `docs/reviews/review-slice-104.md:34` trug eine nackte
+**Fund:** Der Review-Report zu `slice-104` trug an Zeile 34 eine nackte
 `ADR-0060`-Kennung ohne Link/Backticks im Fließtext (Zitat einer
 Dockerfile-Kommentarzeile: „…siehe `ADR-0060`" — im ursprünglichen Report
 folgte die schließende Anführung direkt auf die nackte Kennung, ohne
@@ -22,5 +22,5 @@ im Fließtext eines neu geschriebenen Review-/Verifikationsberichts. Zählt als
 6. Beleg; löst **keinen** neuen Lese-Schritt aus — die Regel ist bereits seit
 `slice-063` in `AGENTS.md` §3.9 verkörpert, dieser Beleg bestätigt sie.
 
-Quelle: `docs/reviews/verify-slice-104.md` §1 (Lauf 6), §4 · Commit `aabbe01`
+Quelle: Verifikationsbericht zu `slice-104` §1 (Lauf 6), §4 · Commit `aabbe01`
 · Planner-Closure-Entscheidung.

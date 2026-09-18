@@ -34,6 +34,6 @@ statt ihn zu glauben.
 Architect-Zug (Modul 8). Der Eintrag steht damit auf der **Schwelle**; den
 Ausgang weist der **Lese-Schritt der nächsten Wellen-Closure** zu (Modul 6).
 
-Quelle: `docs/reviews/verify-slice-096.md` (V-5) ·
-`AGENTS.md` §3.13 · `docs/reviews/review-slice-096.md` (F-2) ·
+Quelle: Verifikationsbericht zu `slice-096` (V-5) ·
+`AGENTS.md` §3.13 · Review zu `slice-096` (F-2) ·
 `BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/slice-096.md`.

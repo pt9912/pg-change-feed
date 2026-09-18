@@ -5,8 +5,7 @@ siehe Architect-Verdikt) als Pflicht-Ergänzung in
 `grep`-Kandidatenlauf gegen die in diesem Lauf geänderten
 `.go`-/`tools/schema/*.sql`-Dateien, plus die explizite
 Unterscheidungsprobe Testfall-Provenienz vs. Produktionsverhalten-Chronik.
-Architect-Verdikt:
-`docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`
+Architect-Verdikt zur Slice-Chronik in Code-Kommentaren
 (empirischer Befund: über 30 bereits gemergte, akzeptierte
 `slice-\d+`/`welle-\d+`-Zitate in `_test.go`-Godoc-Kommentaren als
 etablierte Testfall-Provenienz — strukturell ununterscheidbar von den drei
@@ -19,8 +18,9 @@ selbst (obiger Verdikt-Pfad), analog zu
 `BEO-PGC/architect-verdikt-ablageort-uneinheitlich`s wellenloser
 Behebung direkt aus einer Nutzerfrage.
 
-Zähler (abgeleitet): 6× (evidence/review-slice-041.md,
-evidence/review-slice-041-fixrunde.md, evidence/review-slice-044.md,
+Zähler (abgeleitet): 6× (dem Beleg zum Review zu `slice-041`,
+dem Beleg zum Review-Report zur Fixrunde von `slice-041`, dem Beleg zum
+Review zu `slice-044`,
 evidence/slice-052.md, evidence/slice-060.md, evidence/slice-066.md) —
 Schwelle erreicht, Ausgang im Lese-Schritt dieses Architect-Zugs
 zugewiesen (wellenlos, siehe Modul 6 „Träger im Repo ohne Wellen": der
@@ -38,12 +38,12 @@ Klassifikations-Frage (Testfall-Provenienz vs. Chronik). Tritt die Klasse
 trotz der geschärften Instruktion ein viertes Mal auf, ist das ein
 Signal, dass Enumeration allein nicht trägt — neue Beobachtung oder
 Zähler-Fortschreibung, Urteil beim nächsten Lese-Schritt.
-Vorgezogene Antwort auf das Restrisiko (4. Beleg, `slice-052` F-1,
-`docs/reviews/review-slice-052.md`/`review-slice-052-fixrunde.md`; formal
+Vorgezogene Antwort auf das Restrisiko (4. Beleg, `slice-052` F-1, Review
+zu `slice-052` samt Fixrunde; formal
 noch nicht als `evidence/slice-052.md` gezählt — das ist reguläre
 Slice-Closure-Arbeit des Planners, `slice-052` liegt noch in
-`in-progress/`): Architect-Verdikt-Nachtrag
-`docs/reviews/architect-verdict-slice-chronik-in-code-kommentar-4x.md`.
+`in-progress/`): Architect-Verdikt-Nachtrag zur Slice-Chronik in
+Code-Kommentaren (4x).
 Diagnose: kein neuer Enumerations-Fall (das bestehende Pattern hätte den
 Fund getroffen), sondern Bestätigung, dass Schritt 20 strukturell nur die
 erste, nicht die tragende Verteidigungslinie sein kann (Modul 8 §Kernidee)

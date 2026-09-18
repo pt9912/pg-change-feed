@@ -1,7 +1,7 @@
 # Beleg: slice-023 (Rollen-spezifische DSN-Verdrahtung)
 
-Vorgang: slice-023 — der laut Architect-Verdikt (`architect-review-welle-6.md`
-Zug 2, Ausgang `geplant`) zugewiesene Folge-Slice.
+Vorgang: slice-023 — der laut Architect-Verdikt zu `welle-6`
+(Zug 2, Ausgang `geplant`) zugewiesene Folge-Slice.
 
 Fund: `internal/bootstrap/wiring.go` verdrahtet jetzt jeden Aufrufer über
 die zur Aufgabe passende Rolle (`cdc_capture`/`cdc_admin`/`cdc_reader`,
@@ -15,4 +15,4 @@ Mutationstests gegengeprüft).
 aufgelöst — die gemeinsame Instanz-DSN existiert nicht mehr, jeder
 Aufrufer ist auf sein Least-Privilege beschränkt.
 
-Quelle: `docs/reviews/review-slice-023.md`, `docs/reviews/verify-slice-023.md`.
+Quelle: Review zu `slice-023`, Verifikationsbericht zu `slice-023`.

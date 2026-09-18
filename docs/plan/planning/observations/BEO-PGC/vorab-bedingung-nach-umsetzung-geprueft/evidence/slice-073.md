@@ -17,4 +17,4 @@ statt als Neuschnitt. Der Preis der Reihenfolge war der volle Konflikt-Pfad:
 zwei HIGH aus dem Review, zwei Review-Runden, zwei Folge-ADRs.
 
 Quelle: `docs/plan/planning/done/slice-073-commit-msg-git-hook.md` §4/§7 ·
-`docs/reviews/review-slice-073.md` · `docs/reviews/review-slice-073-fixrunde.md` Urteil 6.
+Review zu `slice-073` · Review-Report zur Fixrunde von `slice-073`, Urteil 6.

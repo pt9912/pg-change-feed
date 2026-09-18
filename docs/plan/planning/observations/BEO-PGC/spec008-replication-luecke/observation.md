@@ -13,5 +13,5 @@ direkt bis zum Prozessende (`os.Exit(1)`). `docs/user/benutzerhandbuch.md`
 Diskrepanz liegt zwischen `SPEC-008`s Ziel-Zustand und der tatsächlichen
 Implementierung, nicht zwischen Handbuch und Code.
 
-Deklaration: `docs/reviews/review-slice-020.md` F-1,
-`docs/reviews/verify-slice-020.md` (unabhängig bestätigt).
+Deklaration: Review zu `slice-020`, F-1,
+Verifikationsbericht zu `slice-020` (unabhängig bestätigt).

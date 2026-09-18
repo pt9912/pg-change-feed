@@ -3,7 +3,7 @@
 Vorgang: slice-023.
 
 Fund: Der Verifier bestätigte beim zweiten Durchgang
-(`verify-slice-023.md` Nachtrag) real und unabhängig, dass die
+(Verifikationsbericht zu `slice-023`, Nachtrag) real und unabhängig, dass die
 Fixrunde `eed73e7` die ursprünglichen Findings V-1/V-2 schließt, deckte
 dabei aber zwei eigene, engere Zusatzbefunde auf: der
 Heartbeat-Grant-Test ist vom tatsächlichen `nacharbeit-roles.sql`-Inhalt
@@ -17,4 +17,4 @@ Closure-Blocker für `slice-023` selbst.
 Inhalt liest, und Rollen-Test-Fixtures für den Replication-Testpfad
 sind eigenständiger Aufwand, kein Ein-Zeilen-Fix.
 
-Quelle: `docs/reviews/verify-slice-023.md` (Nachtrag).
+Quelle: Verifikationsbericht zu `slice-023` (Nachtrag).

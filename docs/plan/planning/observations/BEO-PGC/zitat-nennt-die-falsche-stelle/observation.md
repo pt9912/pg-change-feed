@@ -23,7 +23,7 @@ antwortet.
 
 Belegt an einem abgeschlossenen Vorgang:
 
-- **`slice-090`** (Delta-Review `review-slice-090-delta` D-1): Das in diesem Zug
+- **`slice-090`** (Delta-Review zu `slice-090`, D-1): Das in diesem Zug
   neu angelegte `harness/sensors/generated-sync.md` schrieb „(Festlegung 1 = der
   Baum wird nicht geschrieben; **Festlegung 2 = der Befund nennt Datei und
   Zeile**)". `ADR-0084` §Entscheidung führt **vier** Festlegungen: **1** „Der
@@ -31,8 +31,8 @@ Belegt an einem abgeschlossenen Vorgang:
   *Datei und Zeile*) sind ihre **Unterpunkte** —, **2** „Die E2E-Abdeckungstabelle
   bekommt heute kein Gate", **3** `plan.yaml`/`down.sql`, **4** `image-hash.txt`.
   Die zitierte Stelle trug die Aussage also nicht. Der Ursprung der falschen
-  Nummer ist die **Kopfzeile** von `review-slice-090.md` (dort dieselbe
-  Kurzform, ebenso in `verify-slice-090.md`) — ein Bericht ist **Lauf-Beleg**,
+  Nummer ist die **Kopfzeile** des Reviews zu `slice-090` (dort dieselbe
+  Kurzform, ebenso in der Verifikation zu `slice-090`) — ein Bericht ist **Lauf-Beleg**,
   kein Zitat-Träger; übernommen wurde er ungeprüft in einen **stehenden** Träger
   und von dort in einen zweiten.
 

@@ -13,10 +13,10 @@ Bedingung**. Das ADR zitiert sich in seinen Re-Evaluierungs-Triggern selbst
 war die ganze Zeit korrekt.
 
 **Der Ursprung ist eine Zusammenfassung.** Die falsche Nummer stammt aus der
-**Kopfzeile** von `review-slice-090.md:22` („Festlegung 1 = Baum nicht
+**Kopfzeile** des Reviews zu `slice-090`, Zeile 22 („Festlegung 1 = Baum nicht
 schreiben; Festlegung 2 = Befund nennt Datei und Zeile"), die ihrerseits aus dem
-Delta-Review als übernommen benannt wird; dieselbe Kurzform steht in
-`verify-slice-090.md:6`. Ein Bericht ist **Lauf-Beleg**, kein Zitat-Träger —
+Delta-Review als übernommen benannt wird; dieselbe Kurzform steht in der
+Verifikation zu `slice-090`, Zeile 6. Ein Bericht ist **Lauf-Beleg**, kein Zitat-Träger —
 gelesen wurde er hier wie eine Quelle, und die Wiedergabe wanderte in einen
 **stehenden** Träger.
 
@@ -30,7 +30,7 @@ die Korrektur steht in **zwei** Trägern — im Sensor-Dokument §Bindung (Commi
 `c090823`). §7 der Closure-Notiz **nennt** die Klasse und diese Eintrags-Adresse,
 führt die berichtigte Nummer aber nicht selbst.
 
-Quelle: `docs/reviews/review-slice-090-delta.md` (D-1) ·
+Quelle: Delta-Review zu `slice-090` (D-1) ·
 `docs/plan/adr/0084-sync-gate-fuer-generierte-artefakte.md` §Entscheidung ·
-`docs/reviews/review-slice-090.md:22` (Ursprung der Nummer) ·
+Review zu `slice-090`, Zeile 22 (Ursprung der Nummer) ·
 `harness/sensors/generated-sync.md` §Bindung (berichtigt in `81f1fff`).

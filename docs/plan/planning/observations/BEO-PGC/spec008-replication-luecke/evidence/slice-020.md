@@ -20,4 +20,4 @@ Capture-Pfad) oder erfordert eine Korrektur von `SPEC-008` selbst, falls
 das Ziel nicht mehr verfolgt wird — beides eine bewusste Entscheidung,
 kein Ein-Zeilen-Fix.
 
-Quelle: `docs/reviews/review-slice-020.md` F-1, `docs/reviews/verify-slice-020.md`.
+Quelle: Review zu `slice-020`, F-1, Verifikationsbericht zu `slice-020`.

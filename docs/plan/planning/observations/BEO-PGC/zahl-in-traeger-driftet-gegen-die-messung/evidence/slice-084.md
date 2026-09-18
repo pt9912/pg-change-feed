@@ -29,6 +29,6 @@ Sensor**. „Welche Änderung macht das rot?" hat hier kein Objekt — die
 verfügbare Falsifikation ist die **Messung** selbst, und sie hat vier Werte im
 Baum widerlegt. Das ist die Klasse dieses Eintrags in einem Satz.
 
-Quelle: `docs/reviews/review-slice-084.md` (F-1) · Implementer-Bericht der
+Quelle: Review zu `slice-084` (F-1) · Implementer-Bericht der
 Fixrunde (Commit `db42231`, mit der Form-Begründung) ·
 `harness/sensors/db-adapter-coverage.md`, `harness/sensors/coverage-gate.md`.

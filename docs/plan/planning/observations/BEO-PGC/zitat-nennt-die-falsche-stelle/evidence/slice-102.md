@@ -12,8 +12,8 @@ nur in `slice-097:107`): Der Satz steht wörtlich in `slice-097` §1
 `slice-095` (done) enthält weder das Wort „erreichen" noch „Kotlin".
 
 Gefunden hat es der Reviewer (F-3,
-`docs/reviews/review-slice-102.md`), unabhängig reproduziert vom Verifier
-(`docs/reviews/verify-slice-102.md` #11). Anders als beim Erstauftreten
+Review zu `slice-102`), unabhängig reproduziert vom Verifier
+(Verifikationsbericht zu `slice-102`, #11). Anders als beim Erstauftreten
 (`slice-090`, Übernahme aus einer Bericht-Kopfzeile) ist der Ursprung hier
 nicht eindeutig rekonstruiert — plausibel ist eine Verwechslung zweier
 benachbarter, thematisch ähnlicher `done/`-Slices aus derselben Matrix-Serie
@@ -22,7 +22,7 @@ benachbarter, thematisch ähnlicher `done/`-Slices aus derselben Matrix-Serie
 **Behoben:** Beide Fundstellen im Slice-Plan (§6, §8) sind im Rahmen dieser
 Closure auf „`slice-097`" korrigiert.
 
-Quelle: `docs/reviews/review-slice-102.md` F-3 ·
-`docs/reviews/verify-slice-102.md` #11 ·
+Quelle: Review zu `slice-102`, F-3 ·
+Verifikationsbericht zu `slice-102`, #11 ·
 `docs/plan/planning/done/slice-097-umzug-vertragsflaeche.md:107` ·
 `docs/plan/planning/done/slice-102-grpc-client-csharp.md` §6/§8.

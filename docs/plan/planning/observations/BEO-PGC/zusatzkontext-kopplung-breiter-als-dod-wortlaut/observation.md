@@ -19,9 +19,9 @@ Defekt.
 
 Zwei unabhängige Vorgänge, dieselbe strukturelle Ursache: `slice-102`
 (Review-F-1, C#-Zelle) und `slice-103` (Review-F-1, Kotlin-Zelle,
-ausdrücklich als „Fortsetzung von `review-slice-102.md` F-1" geführt).
+ausdrücklich als „Fortsetzung von F-1 des Reviews zu `slice-102`" geführt).
 
-Deklaration: Reviewer, `slice-103`-Review (`docs/reviews/review-slice-103.md`
-F-1), Anlage durch den Planner bei der `slice-103`-Closure — `slice-102`s
+Deklaration: Reviewer, Review zu `slice-103`
+(F-1), Anlage durch den Planner bei der `slice-103`-Closure — `slice-102`s
 eigene Instanz desselben Fundes wurde in dessen Closure-Notiz nur als Prosa
 behandelt, nie als eigener Registereintrag angelegt.

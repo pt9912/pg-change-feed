@@ -22,5 +22,5 @@ Korrektur außerhalb des Review-Prozesses — Kommentare in `queries.go`,
 „seit slice-018"/„nur noch". Vor dieser Registrierung, deshalb nicht im
 Zähler.
 
-Deklaration: `docs/reviews/review-slice-041.md` (F-1, F-4),
-`docs/reviews/review-slice-041-fixrunde.md` (drittes Vorkommen).
+Deklaration: Review zu `slice-041` (F-1, F-4),
+Review-Report zur Fixrunde von `slice-041` (drittes Vorkommen).

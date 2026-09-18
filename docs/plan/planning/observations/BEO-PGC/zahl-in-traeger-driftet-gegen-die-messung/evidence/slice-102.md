@@ -6,7 +6,7 @@ Fund: Der Slice-Plan selbst (§6 letzter Risiko-Punkt vor der Closure-Fassung
 und §8 „Vorgelagert — offene Beobachtungen sichten") zitierte
 `BEO-PGC/github-actions-unverifizierbar-lokal` mit „**5×**". Der Verifier hat
 den abgeleiteten Zähler eigenständig nachgemessen
-(`docs/reviews/verify-slice-102.md` #10, `ls evidence/`) und real **7×**
+(Verifikationsbericht zu `slice-102`, #10, `ls evidence/`) und real **7×**
 gefunden (`evidence/slice-039.md`, `-056.md`, `-064.md`, `-082.md`,
 `-090.md`, `-098.md`, `-099.md`) — bereits zum Zeitpunkt der
 Plan-Niederschrift (2026-09-17, nach `slice-098`/`-099`), also eine
@@ -28,6 +28,6 @@ gehört aber zur selben Klasse wie `slice-099`/`slice-101`.
 **Behoben:** Beide Fundstellen im Slice-Plan (§6, §8) sind im Rahmen dieser
 Closure auf „7×" korrigiert.
 
-Quelle: `docs/reviews/verify-slice-102.md` §3 (Abschnitt „Abweichung bei
+Quelle: Verifikationsbericht zu `slice-102`, §3 (Abschnitt „Abweichung bei
 `AGENTS.md` §3.12") · `docs/plan/planning/done/slice-102-grpc-client-
 csharp.md` §6/§8.

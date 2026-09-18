@@ -20,5 +20,5 @@ ist keiner.** Das ist die Umkehrung der Klasse aus
 `BEO-PGC/regel-weiter-als-ihr-sensor` (dort ist der Sensor enger als die Regel,
 hier ist der Lauf da und wird von keinem Gate abgeholt).
 
-Quelle: `docs/reviews/review-slice-080.md` F-2/F-4 (mit dem unabhängigen Nachweis
+Quelle: Review zu `slice-080`, F-2/F-4 (mit dem unabhängigen Nachweis
 am unveränderten Runner) · `.github/workflows/e2e.yml` · `tools/harness/run-replication-tests.sh`.

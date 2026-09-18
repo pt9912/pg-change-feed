@@ -24,7 +24,7 @@ nicht ihren **Ursprung** — ob sie gemessen, übernommen oder abgeleitet ist. D
 Zahl `610` war eine Messung, die der Gegenstand überholt hat; die `1679` war
 eine Messung, die der Transfer überholt hat.
 
-Quelle: `docs/reviews/review-slice-081.md` (F-1, F-6, mit eigenen Messungen des
+Quelle: Review zu `slice-081` (F-1, F-6, mit eigenen Messungen des
 Reviewers) · `harness/sensors/db-adapter-coverage.md:43` (der richtige Träger
 derselben Zahl) · `internal/adapters/driven/postgresstorage/sqlexec/` (der
 Gegenstand, der sich bewegt hat).

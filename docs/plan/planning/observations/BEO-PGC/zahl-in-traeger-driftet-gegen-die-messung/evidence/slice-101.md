@@ -11,7 +11,7 @@ gefunden (`evidence/slice-039.md`, `-056.md`, `-064.md`, `-082.md`,
 `-090.md`, `-098.md`, `-099.md`) — bereits zum Zeitpunkt der
 Plan-Niederschrift (2026-09-17, nach `slice-098`/`-099`), also eine
 **übernommene, nicht neu gemessene Zahl** statt einer Ableitung aus den
-tatsächlich vorhandenen Belegdateien (`docs/reviews/verify-slice-101.md`
+tatsächlich vorhandenen Belegdateien (Verifikationsbericht zu `slice-101`,
 §5).
 
 **Abgrenzung zu `BEO-PGC/arbeit-ueberholt-stehenden-traeger`:** Dort
@@ -28,6 +28,6 @@ bereits verkörpert), gehört aber zur selben Klasse wie `slice-099`
 **Behoben:** Beide Fundstellen im Slice-Plan (§6, §8) sind im Rahmen dieser
 Closure auf „7×" korrigiert.
 
-Quelle: `docs/reviews/verify-slice-101.md` §5 (Abschnitt „Abweichung bei
+Quelle: Verifikationsbericht zu `slice-101`, §5 (Abschnitt „Abweichung bei
 §3.12") · `docs/plan/planning/done/slice-101-nats-client-csharp-kotlin.md`
 §6/§8.

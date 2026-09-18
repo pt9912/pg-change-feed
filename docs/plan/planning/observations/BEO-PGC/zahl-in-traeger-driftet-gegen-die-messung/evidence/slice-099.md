@@ -7,10 +7,10 @@ Fund: `ADR-0087`s Digest-Pinning-Tabelle (§Entscheidung Festlegung 3, Zeile
 254) nennt für `eclipse-temurin:21-jdk` einen sha256-Wert mit **63** statt
 64 Hex-Zeichen (fehlendes „d“) — strukturell ungültig, nie real auflösbar.
 Der Reviewer hat den Fund selbst unter genau der Klasse dieses Eintrags
-eingeordnet (`docs/reviews/review-slice-099.md` F-1, `klasse`: „Zahl im
+eingeordnet (Review zu `slice-099`, F-1, `klasse`: „Zahl im
 Träger ohne Ursprung — oder gegen die Messung driftend“), der Verifier hat
 ihn per eigener, unabhängiger `docker manifest inspect`-Messung bestätigt
-(`docs/reviews/verify-slice-099.md` #1).
+(Verifikationsbericht zu `slice-099`, #1).
 
 **Abweichende Form gegenüber den bisherigen sieben Belegen:** Hier hat sich
 der Gegenstand nicht *bewegt* (kein Drift durch fortschreitende Arbeit) —
@@ -37,5 +37,5 @@ erweitert ihre Reichweite auf ADR-Tabellenwerte, die eine ADR selbst nie
 gegen ihre reale Quelle nachprüfte, statt nur auf Zahlen, die durch
 spätere Arbeit stale wurden.
 
-Quelle: `docs/reviews/review-slice-099.md` F-1 · `docs/reviews/verify-slice-099.md`
+Quelle: Review zu `slice-099`, F-1 · Verifikationsbericht zu `slice-099`,
 #1 · `docs/plan/adr/0093-digest-korrektur-adr-0087-kotlin-basis-image.md`.

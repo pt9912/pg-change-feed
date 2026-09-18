@@ -1,7 +1,7 @@
 **Vorgang:** slice-103
 
-**Fund:** Review-F-1 (`docs/reviews/review-slice-103.md`, ausdrücklich als
-„Fortsetzung von `review-slice-102.md` F-1" geführt): eigener Nachbau
+**Fund:** Review-F-1 (Review zu `slice-103`, ausdrücklich als
+„Fortsetzung von F-1 des Reviews zu `slice-102`" geführt): eigener Nachbau
 bestätigt denselben Effekt auf `examples/kotlin/Dockerfile` —
 `docker build examples/kotlin` ohne `--build-context proto=proto` bricht
 bereits beim Auflösen der `docker.io/library/proto:latest`-Referenz ab,
@@ -13,4 +13,4 @@ bei der `slice-103`-Closure (Reviewer-Empfehlung: „Empfehlung an die
 Planner-Closure: neues Verzeichnis
 `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut/` … anlegen").
 
-Quelle: `docs/reviews/review-slice-103.md` F-1.
+Quelle: Review zu `slice-103`, F-1.

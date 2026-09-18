@@ -19,7 +19,7 @@ ihrer reinsten Form. Besonders beim ersten: die Erklärung war gerade deshalb
 geschrieben worden, um die Herkunft der Zahlen zu sichern, und erfand dabei
 Zahlen.
 
-Quelle: `docs/reviews/review-slice-089.md` (F-2, F-3) ·
+Quelle: Review zu `slice-089` (F-2, F-3) ·
 `docs/plan/planning/welle-20.md` (berichtigt in `93d64dc` und `f492b0c`) ·
 `docs/plan/planning/in-progress/slice-089-regeln-verkoerpern.md` §8 (berichtigt
 in `c206762`).

@@ -2,11 +2,11 @@
 
 Vorgang: Delta-Review der Verkörperungs-Fixrunde (Commit `4da1ad8`), die
 diesen Registereintrag selbst in `.harness/skills/reviewer.md` einbettet
-(Architect-Verdikt `architect-verdict-welle-d-check-lese-schritt.md`).
+(der Architect-Verdikt zum Lese-Schritt der `welle-d-check`-Verkörperung).
 
 Fund (Review-Finding, HIGH,
-`docs/reviews/review-welle-d-check-verkoerperung.md`): Der neue Grenz-Absatz
-in `AGENTS.md` §3.13 zitierte `docs/reviews/review-slice-096.md` F-2 mit
+im Delta-Review dieser Verkörperungs-Fixrunde): Der neue Grenz-Absatz
+in `AGENTS.md` §3.13 zitierte das Review zu `slice-096`, F-2, mit
 einer Zählung, die das Original nicht trägt — F-2 berichtet **zwei**
 Zeilen-Lokatoren, der Satz sprach von „**einen** Zeilen-Lokator". Der
 verwendete Begriff „vierter Anker" kam in F-2 gar nicht vor; er stammte aus
@@ -24,6 +24,6 @@ falschen Zahlen in den ADRs selbst") statt der zweiten Hand
 verkörperten Regel unmittelbar: Sie hätte diesen eigenen Fehler gefangen,
 wäre sie beim Schreiben angewendet worden.
 
-Quelle: `docs/reviews/review-welle-d-check-verkoerperung.md` ·
+Quelle: Delta-Review dieser Verkörperungs-Fixrunde ·
 `AGENTS.md:451-455` (korrigiert) ·
 `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7.

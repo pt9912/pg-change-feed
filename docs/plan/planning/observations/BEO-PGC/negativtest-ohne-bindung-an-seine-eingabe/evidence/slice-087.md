@@ -10,13 +10,13 @@ unterscheiden.
 
 Gefunden hat es der Reviewer **nicht durch Lesen, sondern durch Mutieren der
 Eingabeseite**: die Mutation „Filterachse entfällt" ließ den vollen
-`make test-integration` **grün** (Review `review-slice-087` F-1, Mutation C).
+`make test-integration` **grün** (Review zu `slice-087`, F-1, Mutation C).
 
 Damit ist dies die **zweite Gelegenheit desselben Mechanismus an einem anderen
 Gegenstand**: `slice-086` betraf einen **Negativtest** (die Ablehnung hing an
 keinem Eingabewert), `slice-087` einen **E2E-Beleg** (die Filterprüfung hing
 nicht am Filter). Beide Male war der Beleg grün, egal was die Eingabe tat.
 
-Quelle: `docs/reviews/review-slice-087.md` (F-1 mit eigener Mutation C) ·
+Quelle: Review zu `slice-087` (F-1 mit eigener Mutation C) ·
 `tools/harness/run-integration-tests.sh` (die HTTP-Phase) ·
 `tools/harness/httpclient/main.go` (der Lese-Aufruf).

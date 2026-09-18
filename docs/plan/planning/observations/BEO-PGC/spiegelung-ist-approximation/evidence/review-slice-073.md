@@ -1,8 +1,8 @@
-# Beleg: review-slice-073
+# Beleg: Review zu `slice-073`
 
 Vorgang: das Review von `slice-073` und sein Bestätigungslauf
-(`docs/reviews/review-slice-073.md` F-2 und Urteil 8,
-`docs/reviews/review-slice-073-fixrunde.md`).
+(Review zu `slice-073`, F-2 und Urteil 8,
+Review-Report zur Fixrunde von `slice-073`).
 
 Fund: Der lokale `commit-msg`-Hook beanspruchte in
 [`ADR-0062`](../../../../../adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
@@ -18,5 +18,6 @@ Teil-Supersede von `ADR-0062` Punkt 3) und die Grenz-Liste gemessen statt
 erschöpfend gefasst
 ([`ADR-0070`](../../../../../adr/0070-supersede-reichweite-und-klassengrenze.md)).
 
-Quelle: `docs/reviews/review-slice-073.md` F-2 · `docs/reviews/review-slice-073-fixrunde.md`
-F-2 und F-7 · `docs/reviews/verify-slice-073.md` · `docs/reviews/architect-verdict-commit-msg-hook-einseitige-zusage.md`.
+Quelle: Review zu `slice-073`, F-2 · Review-Report zur Fixrunde von `slice-073`,
+F-2 und F-7 · Verifikationsbericht zu `slice-073` · der Architect-Verdikt zur
+einseitigen Zusage des Commit-Msg-Hooks.

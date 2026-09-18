@@ -11,7 +11,7 @@ verbietet; der repo-weite Grep findet ihn. Die Lücke ist an beiden Trägern
 benannt und der Wächter dort ist das Review — sie ist damit kein stiller
 Zustand, aber auch **kein Gate**.
 
-Quelle: `docs/reviews/verify-slice-078.md` (Mutation M-1) ·
-`docs/reviews/review-slice-078-delta.md` (Mutation A/B) ·
+Quelle: Verifikationsbericht zu `slice-078` (Mutation M-1) ·
+Review zu `slice-078`, Delta-Fassung (Mutation A/B) ·
 `docs/plan/adr/0075-hostpaths-reichweite-und-wortlaut.md` ·
 `AGENTS.md` §3.11 · `harness/sensors/docs-check.md` §Grenze Punkt 8.

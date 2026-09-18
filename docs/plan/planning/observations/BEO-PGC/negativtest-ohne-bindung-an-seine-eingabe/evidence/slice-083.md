@@ -10,7 +10,7 @@ Schema auf einen bereits absoluten Wert". Gemessen liefert
 der Test **übt den Fall nicht aus** (einziger Input `localhost:9090`, schema-los),
 also bindet nichts die Zusage an ihre Eingabeseite.
 
-Gefunden hat es der Reviewer (Review `review-slice-083` F-2) und der Verifier
+Gefunden hat es der Reviewer (Review zu `slice-083`, F-2) und der Verifier
 hat es unabhängig reproduziert. Der Fall berührt **kein** DoD-Kriterium.
 
 **Dritter Gegenstand in drei Tagen:** `slice-086` ein **Negativtest** (die
@@ -20,6 +20,6 @@ Filterprüfung hing nicht am Filter), `slice-083` ein **Kommentar samt Test**
 *eine Aussage, die nicht an ihre Eingabeseite gebunden ist, ist grün ohne
 Aussage.*
 
-Quelle: `docs/reviews/review-slice-083.md` (F-2) ·
-`docs/reviews/verify-slice-083.md` (unabhängig reproduziert) ·
+Quelle: Review zu `slice-083` (F-2) ·
+Verifikationsbericht zu `slice-083` (unabhängig reproduziert) ·
 `examples/nats-client/subject_test.go`, `subject.go`.

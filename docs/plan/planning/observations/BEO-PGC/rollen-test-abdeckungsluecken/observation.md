@@ -16,4 +16,4 @@ testgesichert, weil `tools/harness/run-replication-tests.sh` keine
 rollenbeschränkten Login-Test-Identitäten bereitstellt.
 
 Deklaration: `internal/bootstrap/roles_wiring_test.go` (Code-Kommentar),
-`docs/reviews/verify-slice-023.md` (Nachtrag, V-1/V-2-Zusatzbefunde).
+Verifikationsbericht zu `slice-023` (Nachtrag, V-1/V-2-Zusatzbefunde).

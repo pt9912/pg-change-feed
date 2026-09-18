@@ -5,7 +5,7 @@ Vorgang: `slice-085` — die Naht in `replication/receive`.
 Fund: **Derselbe Träger, zum dritten Mal.** `harness/sensors/db-adapter-coverage.md`
 führt den Nenner seit der **`slice-084`-Fixrunde** ausdrücklich als
 **Zustandsgröße** — und dieser Vorgang hat ihn **nicht** mitgezogen: dort stand
-`659` / `receive 155`, gemessen war `691` / `187` (Review `review-slice-085`
+`659` / `receive 155`, gemessen war `691` / `187` (Review zu `slice-085`,
 F-1). Der Implementer hat also **seine eigene, eine Slice alte Regel** nicht
 angewandt.
 
@@ -34,8 +34,8 @@ setzt den Zeitpunkt, der Leser kann ihn nicht erraten."*
 **gegen** sie gesucht und Fundstellen ohne Zeitpunkt gefunden
 (`coverage-gate.md` §Grenze Punkt 1, zwei §Ausgabe-Abschnitte) — **V-1**.
 
-Quelle: `docs/reviews/review-slice-085.md` (F-1) ·
-`docs/reviews/verify-slice-085.md` (V-1, eigene Suche gegen die Form) ·
+Quelle: Review zu `slice-085` (F-1) ·
+Verifikationsbericht zu `slice-085` (V-1, eigene Suche gegen die Form) ·
 Implementer-Bericht der Fixrunde (`dd29d83`, `61bb5cf`) und der
 Auftragserweiterung (`b83217c`) ·
 `harness/sensors/db-adapter-coverage.md`, `harness/sensors/coverage-gate.md`,

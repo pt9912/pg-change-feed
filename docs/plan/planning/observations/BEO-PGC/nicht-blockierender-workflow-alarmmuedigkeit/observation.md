@@ -15,4 +15,4 @@ tritt es erstmals auf einen PR-Trigger-Workflow übertragen auf, dessen
 Rot-Zustand deutlich häufiger sichtbar würde als ein nächtlicher.
 
 Deklaration: `slice-056-e2e-workflow-in-ci.md` §6, vom Verifier
-(`docs/reviews/verify-slice-056.md`) empfohlen.
+(Verifikationsbericht zu `slice-056`) empfohlen.

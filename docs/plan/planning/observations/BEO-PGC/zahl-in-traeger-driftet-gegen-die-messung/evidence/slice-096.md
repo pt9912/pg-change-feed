@@ -32,7 +32,7 @@ Zitat-Korrektur **ausnimmt**.
 (`slice-096`) — der Zähler bewegt sich **einmal**, obwohl zwei ADRs betroffen
 sind.
 
-Quelle: `docs/reviews/verify-slice-096.md` (V-1, V-2) ·
+Quelle: Verifikationsbericht zu `slice-096` (V-1, V-2) ·
 `docs/plan/adr/0091-zugangsdaten-klasse-sechs-schluessel.md` ·
 `docs/plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md` ·
 `internal/bootstrap/config_file.go` (`forbiddenFileCredentialKeys`) ·
