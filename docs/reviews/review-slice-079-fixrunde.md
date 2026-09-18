@@ -124,7 +124,7 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 - geprüft, ohne Befund: erster Report F-1 **(c)** — kein lebender Träger führt
   die alte Behauptung mehr (repo-weiter `grep` über `*.md` außerhalb
   `.harness/baseline/`). Im eingefrorenen Closure-Artefakt
-  `docs/plan/planning/done/slice-049-test-coverage-gate.md:133` steht der alte
+  `docs/plan/planning/done/welle-14/slice-049-test-coverage-gate.md:133` steht der alte
   Wortlaut weiter („Kein Paket ganz ohne Testdatei mit Fachlogik: die drei
   …“) — `done/`-Bestand, kein Träger dieses Slice, nicht korrigiert; benannt
   für die Closure.
