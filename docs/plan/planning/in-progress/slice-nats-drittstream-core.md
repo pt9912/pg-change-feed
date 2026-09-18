@@ -269,9 +269,10 @@ dasteht.
   gewachsen. Der **heute tragende** Träger ist aber
   [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md):
   seine §Fitness Function Zeile 1 ist die aktive Fassung der
-  Träger-Paarung und nennt dieselbe Sechs (ihre §Kontext (2), ihre
-  §Konsequenzen und ihre §Verglichene-Alternativen-Zeile tragen sie
-  ebenfalls); die Meldung hatte hier auf die von `ADR-0092` supersedierte
+  Träger-Paarung und nannte zum Fundzeitpunkt dieselbe Sechs — ihre
+  §Kontext (2) und ihre §Konsequenzen sind inzwischen ersetzt, ihre
+  §Verglichene-Alternativen-Zeile trägt die Zahl weiterhin als
+  Aufzeichnung; die Meldung hatte hier auf die von `ADR-0092` supersedierte
   `ADR-0089` gezeigt (Review-Befund F-4). `AGENTS.md` §3.5 schließt eine
   In-place-Korrektur einer `Accepted`-ADR aus; eine Supersedes-ADR ist ein
   Architect-Zug, außerhalb der Implementer-Rolle dieses Slice (`AGENTS.md`

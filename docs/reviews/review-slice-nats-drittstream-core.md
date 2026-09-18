@@ -204,3 +204,59 @@ durchgeführt" ist **nicht** nachgezogen, der Slice bleibt in `in-progress/`.
   Produktionskommentaren.
 - Traceability — Commit-Betreff trägt `LH-FA-SST-008` und `ADR-0100`;
   `make commit-traceability` OK.
+
+---
+
+## Nachtrag — Fixrunde und Re-Reviews (nach dem Bericht oben)
+
+**Nachtrag 1 — Fixrunde `0c490da`.** Alle vier HIGH, beide MEDIUM und das
+LOW des Berichts oben wurden adressiert; jede Wache mit echter
+Falsifikationsprobe (Aufruf/Guard entfernt → Test rot, restauriert). Drei
+Punkte gingen über die gemeldeten Stellen hinaus: der §3.13-Suchlauf fand
+zwei weitere lebende Träger der Zugangsdaten-Zahl in `internal/bootstrap/`,
+die reale Probe der bestehenden C#-/Kotlin-Wecksignal-Demos unter der neuen
+Server-Auth wurde nachgeholt (beide Exit 0), und die Ablehnungshälfte „ohne
+Token" wurde ergänzt. Der Report oben selbst trug eine unverlinkte
+`ADR-0089`-Kennung und war damit `id-unlinked` — behoben, ohne Substanz-
+verlust.
+
+**Nachtrag 2 — Re-Review zu `0c490da`/`05f9d52` (kein eigener Report).**
+Alle Code-Findings bestätigt gelöst (F-6 und F-7 zusätzlich falsifiziert).
+Neu: **F-4 nur teilweise gelöst** — die Pauschal-Klausel der `ADR-0101`
+bestätigte mit den nicht genannten Klauseln auch Stellen, die die alte Zahl
+weiter trugen; und **F-12 neu** — der §6-Absatz des Slice nannte „zwei
+Dokumente", gemessen sind vier.
+
+**Nachtrag 3 — Architect-Zug `c4e4e7d` (`ADR-0102`) und Re-Review dazu.**
+`ADR-0102` supersedet genau **eine** Klausel der `ADR-0101` (§Status-
+Supersede-Erklärung) und ersetzt die Aufzählung durch eine **Regel über
+einen definierten Umfang**; es fand zusätzlich `ADR-0089:73` als weitere
+überfahrene lebende Stelle. Der Re-Review bestätigt F-12 und F-13 als
+vollständig eingelöst und die Substanz von F-4 als gelöst. Offen blieben
+zwei Genauigkeiten: **F-1 (HIGH)** — die in `ADR-0102` §Kontext (2) genannte
+Beleg-Angabe nannte ein Suchmuster, das drei der aufgeführten Fundstellen
+nicht erzeugt (Markdown-Emphasis und Wortstellung zerlegen die engere Form);
+**F-2 (LOW)** — die Regel der `ADR-0102` ist form-gebunden, eine dritte Form
+einer Klassen-Zahl-Aussage (`ADR-0088:176`, „fünf") liegt außerhalb ihres
+Scopes, trägt aber heute keinen falschen Geltungswert.
+
+**Nachtrag 4 — Zitat-Korrektur.** F-1 wurde als **Zitat-Korrektur** nach
+[`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+behoben: die Beleg-Angabe in §Kontext (2) nennt jetzt das gemessene weite
+Muster samt Trefferzahlen je Dokument; der Referent — die Liste der ersetzten
+Stellen und der Supersede-Umfang — ist unverändert. Die gleichlautende
+Angabe in der `ADR-0102`-§Geschichte-Zeile bleibt als Aufzeichnung stehen
+und ist durch die neue Zeile als überholt gekennzeichnet.
+
+**Nachtrag 5 — d-check-Pin (`36d7960`).** Unabhängig von den Findings auf
+`v0.77.0` gehoben; real verifiziert (Image-Pull, Digest-Vergleich gegen das
+veröffentlichte Manifest, `make gates` am neuen Pin Exit 0). Kein Befund,
+der unter `v0.75.0` nicht erschienen wäre.
+
+**Verbleibend ohne Handlung:** F-2 (LOW, oben), und die INFO-Punkte
+`ADR-0051`s P7-Zeile (datierter Schnappschuss, keine lebende Aussage),
+der auf die Gate-Fläche zu weite Changelog-Bezug der Pin-Commit-Message
+(`0.76.1`/`0.76.2` betreffen `vcs`, das in keinem Gate läuft), und dass die
+neue `allow-if-same-id`-Fähigkeit des Pins von diesem Repo noch nicht
+genutzt wird (`ADR-0099`s Trigger knüpft an Fremd-Zitat-Fälle, nicht an die
+Verfügbarkeit des Mechanismus).
