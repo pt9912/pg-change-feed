@@ -67,8 +67,8 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # kommt aus `go list` und zieht neue Pakete mit. `gen/...` ist seit
 # `slice-097` Teil der Liste: der Umzug der erzeugten Vertragsflaeche
 # (`ADR-0076`) bewegt den Traeger, nicht den Gegenstand — die Eigenschaft
-# (netzlos pruefbar, `ADR-0071` Punkt 1) bleibt erfuellt, siehe
-# architect-verdict-slice-097-coverage-gegenstand.md. `-coverpkg` misst ueber
+# (netzlos pruefbar, `ADR-0071` Punkt 1) bleibt erfuellt, siehe den
+# Architect-Verdikt zum Coverage-Messgegenstand von slice-097. `-coverpkg` misst ueber
 # die Paketgrenzen hinweg, sonst zaehlt nur paket-lokale Abdeckung.
 # `test/integration/` bleibt ausgeschlossen (eigene Black-Box-Paketwurzel
 # gegen einen laufenden Compose-Container, kein Unit-Coverage-Kandidat).

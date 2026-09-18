@@ -130,7 +130,7 @@ Regel zählt Zeilen.
    In `slice-077` mit sechs Mutationen gemessen; repo-weit betrifft es neun
    Links in fünf Dateien (Stand `slice-077`), ihre Ziele waren von Hand prüfbar
    und in Ordnung. Der Wächter dieser Form ist das Review, kein Gate. Träger des
-   Fundes: `docs/reviews/review-slice-077-delta.md` N-2.
+   Fundes: Review zu `slice-077`, Delta-Review, N-2.
 
 10. **`trace:` ist kein Modul und läuft nicht in `docs-check`/`make gates`.**
     `.d-check.yml`s `trace:`-Block konfiguriert ausschließlich die

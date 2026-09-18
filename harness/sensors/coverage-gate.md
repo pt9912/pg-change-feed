@@ -5,8 +5,8 @@
 Wird dieses Target rot, unterschreitet die Gesamt-Coverage über der
 **netzlos prüfbaren Fläche** — `./internal/...`+`./cmd/...`+`./gen/...`
 (`./gen/...` seit `slice-097`: der Umzug der erzeugten Vertragsfläche,
-`ADR-0076`, bewegt den Träger, nicht den Gegenstand — Architect-Verdikt
-`docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md`) **ohne**
+`ADR-0076`, bewegt den Träger, nicht den Gegenstand — der Architect-Verdikt
+zum Coverage-Messgegenstand von `slice-097`) **ohne**
 die Pakete, deren Testlauf einen externen Dienst voraussetzt — die aktuell
 gültige Schwelle (`THRESHOLD`). Vierte Docker-Multi-Stage-Stufe `coverage`
 (nach `deps`, analog `d-check`s `Dockerfile`): `go test -coverpkg=<Pakete>
@@ -51,8 +51,8 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der aktuelle Nenner ist 1936, nicht 1903** (Lauf `slice-097`, Architect-Verdikt
-`docs/reviews/architect-verdict-slice-097-coverage-gegenstand.md` §2/§5) — die
+**Der aktuelle Nenner ist 1936, nicht 1903** (Lauf `slice-097`, der
+Architect-Verdikt zum Coverage-Messgegenstand von `slice-097` §2/§5) — die
 Differenz trägt zwei Ursachen: `slice-096` bewegte Produktionscode in
 `internal/bootstrap/{config_file,wiring}.go` (+33, abgeleitet), und `slice-097`
 zog die erzeugte Vertragsfläche (`gen/cdc/stream/v1`, vormals
@@ -261,8 +261,8 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
 
 Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
 die beiden Prozente sind die **gedruckten** Zeilen **eines** Laufs — Lauf `slice-081`,
-beide Kommandos real gefahren in
-[`verify-slice-081.md`](../../docs/reviews/verify-slice-081.md), Zählbasis §Zählbasis):
+beide Kommandos real gefahren im Verifikationsbericht zu `slice-081`,
+Zählbasis §Zählbasis):
 `THRESHOLD=75` (über dem Ist-Stand) lässt die Stage real scheitern
 (`coverage-gate: FAIL — Coverage 71.30% unter Schwelle 75%`) — das Gate-Skript
 endet Exit 1, `make` meldet für den gescheiterten Bauprozess Exit 2;

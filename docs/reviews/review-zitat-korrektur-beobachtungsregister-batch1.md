@@ -21,12 +21,12 @@ unter `docs/plan/planning/observations/BEO-PGC/*`.
 
 ## Findings
 
-### F-1 — `evidence/review-slice-041.md`: Vorgang-Feld benennt jetzt einen Commit statt der Datei, Referent leicht mehrdeutig
+### F-1 — Evidence-Datei zum Review-Zug `slice-041`: Vorgang-Feld benennt jetzt einen Commit statt der Datei, Referent leicht mehrdeutig
 
 - `kategorie`: LOW
 - `quelle`: Maintainability
-- `pfad`: `docs/plan/planning/observations/BEO-PGC/commit-traceability-kein-vorab-hook/evidence/review-slice-041.md:3`
-- `befund`: Die Zeile "Vorgang: docs/reviews/review-slice-041.md
+- `pfad`: `docs/plan/planning/observations/BEO-PGC/commit-traceability-kein-vorab-hook/evidence/` (Evidence-Datei zum Review-Zug `slice-041`), Zeile 3
+- `befund`: Die Zeile „Vorgang: <Review-Report zu `slice-041`>
   (Reviewer-Lauf zu slice-041)" wurde zu "Vorgang: der Commit, der den
   Review-Report zu slice-041 abschloss (Reviewer-Lauf zu slice-041)".
   Git-Historie zeigt zwei Commits für diese Datei (`f98b0b3` erstellt sie,
@@ -57,15 +57,14 @@ unter `docs/plan/planning/observations/BEO-PGC/*`.
   Aussage in jedem Fall unverändert, nur Adressform (Basisname →
   Prosa-Adressierung, teils Markdown-Link → Fließtext) ersetzt.
 - geprüft, ohne Befund: die vier Dateien, deren Dateiname selbst Gegenstand
-  der jeweiligen Beobachtung ist
-  (`commit-traceability-kein-vorab-hook/evidence/review-slice-041.md`,
-  `kommentar-behauptet-nicht-getragenen-fehlerpfad/evidence/review-slice-070.md`,
-  `.../review-slice-077.md`,
-  `mechanismus-erklaerung-ohne-werkzeugbeleg/evidence/review-slice-080.md`)
+  der jeweiligen Beobachtung ist — Evidence-Dateien zu den Review-Zügen
+  `slice-041` (unter `commit-traceability-kein-vorab-hook`), `slice-070` und
+  `slice-077` (unter `kommentar-behauptet-nicht-getragenen-fehlerpfad`) sowie
+  `slice-080` (unter `mechanismus-erklaerung-ohne-werkzeugbeleg`)
   — Dateiname selbst unverändert (kein `git mv`, korrekt: der Dateiname ist
   keine "Adresse" im Sinne von `ADR-0073`, nur ihr Inhalt zitiert
   Basisnamen), Überschrift und Fließtext auf Prosa-Form umgestellt; einzige
-  Auffälligkeit F-1 oben (review-slice-041.md).
+  Auffälligkeit F-1 oben (Review-Zug `slice-041`).
 - geprüft, ohne Befund: die zwei bewusst unveränderten
   `docs/reviews/**`-Erwähnungen
   (`arbeit-ueberholt-stehenden-traeger/evidence/slice-105.md`,

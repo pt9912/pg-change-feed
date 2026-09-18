@@ -47,7 +47,7 @@
   `AGENTS.md` §3.13) enthielt ihrerseits ein HIGH-Finding derselben Klasse,
   die sie gerade in `.harness/skills/reviewer.md` einbettete
   (`zitat-nennt-die-falsche-stelle`, 4. Beleg) — eine falsche Zählung und
-  Zuschreibung beim Zitieren von `review-slice-096.md` F-2. Direkt korrigiert
+  Zuschreibung beim Zitieren des Reviews zu `slice-096` F-2. Direkt korrigiert
   gegen die primäre Quelle, unabhängig delta-reviewt.
 - **`slice-d-check-trace-rtm`** lief dagegen ohne jede Rückkante — 0
   HIGH-Findings im Review, DoD vom Verifier ohne Einschränkung bestätigt.

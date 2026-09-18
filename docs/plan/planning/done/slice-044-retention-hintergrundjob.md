@@ -326,7 +326,7 @@ Backticks).
   geschärft: diff-skopierte Chronik-Enumerationspflicht — liegt in
   `.claude/commands/implement-slice.md` Schritt 20.
   Auslöser: `BEO-PGC/slice-chronik-in-code-kommentar`
-  (`review-slice-041.md`, `review-slice-041-fixrunde.md`,
+  (Review zu `slice-041`, Review zu `slice-041`, Fixrunde,
   `review-slice-044.md` — 3×).
 - **Beobachtungs-Register (`../observations/`):**
   `BEO-PGC/slice-chronik-in-code-kommentar` erreichte mit diesem Slice

@@ -95,7 +95,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       rohem `psql`. Er ruft **nicht** die tatsächlichen Replication-Stream-/
       ACK-Adapter (`receive.NewStream`/`postgresack.New`) auf und bleibt vom
       laufenden Feed-Container entkoppelt (der ohnehin mit Superuser-DSNs
-      verdrahtet ist, `BEO`/`review-slice-023.md` INFO-1, unverändert seit
+      verdrahtet ist, `BEO`/Review zu `slice-023` INFO-1, unverändert seit
       `slice-023`). Er schließt `BEO-PGC/rollen-test-abdeckungsluecken`
       Punkt (2) damit **nicht vollständig** — nur die PostgreSQL-Ebene der
       Rollentrennung, nicht die Adapter-Ebene. Beleg:
@@ -125,7 +125,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Beleg: [`docs/reviews/review-slice-028.md`](../../../reviews/review-slice-028.md)
       (1 MEDIUM F-1 — DoD-Überzeichnung, oben per Planner-Korrektur behoben;
       1 INFO F-2 — Superuser-Verdrahtung real bestätigt, aber unverändert
-      seit `slice-023`/`review-slice-023.md` INFO-1, keine Eskalation
+      seit `slice-023` (Review zu `slice-023` INFO-1), keine Eskalation
       gerechtfertigt), unabhängig bestätigt durch
       [`docs/reviews/verify-slice-028.md`](../../../reviews/verify-slice-028.md)
       (Planner-Korrektur als akkurat bestätigt, 2× LOW V-1/V-2, siehe §7).
