@@ -9,6 +9,11 @@ gRPC-Change-Stream", „Zugriff über Server-Sent-Events" und „Zugriff über d
 NATS-Wecksignal". Diese Datei dupliziert deren Inhalt nicht, sondern zeigt
 nur, wo welches Programm liegt und wie es gebaut/gestartet wird.
 
+**Voraussetzung:** ein laufender Feed-Container gegen eine erreichbare
+PostgreSQL-Quelle (Image bauen, Container starten) — siehe
+[`docs/user/benutzerhandbuch.md`](../docs/user/benutzerhandbuch.md)
+§3 „Erste Schritte".
+
 ## Go
 
 Teil des Root-Moduls, kein eigener Bau-Schritt nötig:
