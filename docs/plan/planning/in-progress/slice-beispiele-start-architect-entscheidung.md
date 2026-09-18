@@ -87,30 +87,39 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1** — Neue ADR mit `Supersedes ADR-0076` in genau der
-      Startform-Klausel geschrieben, mindestens drei Alternativen für die
-      Go-Bauform verglichen (Pro/Contra), `Accepted`, ADR-Index
-      (`docs/plan/adr/README.md`) aktualisiert.
-- [ ] **LP2** — Start-Make-Target-Form für alle drei Sprachen entschieden
-      und begründet (mindestens drei Alternativen verglichen), inklusive der
+- [x] **LP1** — Neue ADR [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+      mit `Supersedes ADR-0076` in genau der Startform-Klausel geschrieben,
+      vier Alternativen für die Go-Bauform verglichen (Pro/Contra), `Accepted`,
+      ADR-Index (`docs/plan/adr/README.md`) aktualisiert.
+- [x] **LP2** — Start-Make-Target-Form für alle drei Sprachen entschieden
+      und begründet (vier Alternativen verglichen, §B der ADR), inklusive der
       Fitness-Function-Zeile (welches `make`-Ziel/welcher Aufruf startet
       welches Programm).
-- [ ] **LP3** — Umgebungsdatei-/Variablen-Kontrakt der Demo-Umgebung
+- [x] **LP3** — Umgebungsdatei-/Variablen-Kontrakt der Demo-Umgebung
       entschieden (Dateiname/-pfad, Variablen-Namen, wer sie liest:
-      Compose-Datei und/oder Start-Targets) samt Bestätigung oder Korrektur
-      der Slice-Schnitt-Empfehlung für die drei Folge-Slices.
-- [ ] `make gates` grün.
+      Compose-Datei und/oder Start-Targets) samt Bestätigung (mit einer
+      Namens-Korrektur, `examples/.env` statt `examples/.env.example`) der
+      Slice-Schnitt-Empfehlung für die drei Folge-Slices.
+- [x] `make gates` grün (ungepiped Exit-Code geprüft, `AGENTS.md` §3.9 —
+      siehe Bericht).
 - [ ] Review durchgeführt (Konsistenzprüfung der neuen ADR gegen
       `ADR-0076`/`ADR-0087`/`ADR-0090`), Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: keiner erwartet (kein öffentlicher Vertrag geändert — die
-      ADR ist das Erzeugnis); falls die ADR `SPEC-023` schärft, trägt sie
-      selbst die Folgepflicht-Zeile für den umsetzenden Zug.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+      **Offen** — dieser Zug ist die Architect-Rolle selbst; der
+      Rollenwechsel zum Reviewer ist der nächste Schritt, kein
+      Self-Review-Ersatz. Der `git mv` nach `done/` steht deshalb noch aus.
+- [x] Doku-Update: keiner erwartet (kein öffentlicher Vertrag geändert — die
+      ADR ist das Erzeugnis); die ADR trägt selbst die Folgepflicht-Zeile für
+      `SPEC-023` (umsetzender Zug).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag — siehe §7 (Notiz
+      vorbereitet; die eigentliche Lifecycle-Closure folgt nach dem
+      Reviewer-Pass).
+- [x] Reconciliation-Register (`../reconciliation.md`) — Datei existiert in
+      diesem Repo nicht (kein Brownfield-Bootstrap); Item entfällt.
+- [x] Beobachtungs-Register (`../observations/`) — keine Beobachtung
+      angefallen, siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -180,15 +189,24 @@ dasteht.
 - Die Go-Bauform-Entscheidung könnte einen vollständigen Strukturumbau der
   drei bestehenden Go-Beispiele auf das C#/Kotlin-Sprach-Wurzel-Muster nach
   sich ziehen (breiter als ein einzelner Folge-Slice tragen kann) —
-  **Ausgang:** <bei Closure ausfüllen; falls eingetreten, benennt die ADR
-  selbst die zusätzlichen Slices in ihrer Slice-Schnitt-Empfehlung>.
+  **Ausgang: entfallen.** `ADR-0098` Festlegung 1/§A wählt bewusst die
+  **leichtere**, Go-spezifische Form (ein `examples/Dockerfile`, Wurzel-Kontext,
+  dateispezifisches Ignore) statt des Sprach-Wurzel-Umzugs (Option A3
+  verworfen) — kein Strukturumbau der drei bestehenden Go-Beispiele nötig.
 - Ein einzelnes, parametrisiertes Start-Target könnte über drei so
   unterschiedliche Bauformen (Go-Binary, C#/Kotlin-Container-Images) nicht
   einheitlich funktionieren und müsste doch je Sprache aufgeteilt werden —
-  **Ausgang:** <bei Closure ausfüllen>.
+  **Ausgang: eingetreten**, und in der ADR selbst aufgelöst. Die reale Probe
+  im Zug bestätigte genau dieses Risiko (§B der ADR, Option B2 verworfen):
+  `ADR-0098` Festlegung 2 wählt **ein Ziel je Sprache** mit Pflicht-Argument
+  `SURFACE=`, kein sprachübergreifend parametrisiertes Ziel.
 - Der Umgebungsdatei-Kontrakt könnte mit bestehenden, bereits dokumentierten
   `CDC_*`-Variablennamen kollidieren (Doppeldeutigkeit Demo-Default vs.
-  Produktions-Konfiguration) — **Ausgang:** <bei Closure ausfüllen>.
+  Produktions-Konfiguration) — **Ausgang: entfallen.** `ADR-0098`
+  Festlegung 3 stellt fest: die Wiederverwendung derselben `CDC_*`-Namen ist
+  **Absicht**, keine Kollision — die Trennung zwischen Demo und Produktion
+  liegt in der Netzwerk-Isolation (Festlegung 4, eigenes Docker-Netzwerk
+  `cdc-examples`), nicht im Variablennamen.
 
 ## 7. Closure-Notiz
 
@@ -204,7 +222,47 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-*(bei Closure zu füllen — die Welle ist gerade erst eröffnet)*
+**Gegenstand:** vollständig geliefert — dieser Slice bleibt zunächst in
+`in-progress/`, nicht `done/`: die Lifecycle-Closure (§5) verlangt einen
+Review-Report, und dieser Zug ist die Architect-Rolle selbst
+(Modul 8 §Rollen-Regeln, kein Self-Review). Der `git mv` nach `done/` folgt,
+sobald der Reviewer-Pass gegen
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+vorliegt.
+
+**Ergebnis:** [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+(`Accepted`, `Supersedes ADR-0076` in genau der Startform-Klausel)
+entscheidet: (1) Go-Beispiele bauen/starten künftig über ein eigenes
+`examples/Dockerfile` (Wurzel-Kontext, dateispezifisches
+`examples/Dockerfile.dockerignore` — Isolationsmechanismus real gemessen in
+diesem Zug, `docker` v29.8.0, kein Eingriff in die Wurzel-`Dockerfile`/
+`.dockerignore`); (2) alle drei Sprachen bekommen einen echten
+Start-Make-Target — ein Ziel je Sprache (`example-run-go`,
+`example-run-csharp`, `example-run-kotlin`) mit Pflicht-Argument `SURFACE=`,
+gegen ein festes, benanntes Docker-Netzwerk `cdc-examples`; (3) die
+gemeinsame Umgebungsdatei heißt `examples/.env` (committet, sofort nutzbar,
+bestehende `CDC_*`-Namen — die Planner-Lesart war richtig, der Dateiname
+wurde korrigiert). Die drei Folge-Slices (`slice-beispiele-compose-bootstrap`,
+`slice-beispiele-go-dockerfile-start`,
+`slice-beispiele-csharp-kotlin-start-target`) sind mit den festen Namen aus
+der ADR nachgezogen; ihr Schnitt (drei unabhängige, parallele Slices) bleibt
+bestätigt.
+
+**Steering-Loop-Lerneintrag:** Ein `Accepted`-ADR-Widerruf durch den
+Auftraggeber ist kein Sonderfall, den die Immutabilitäts-Regel schwächt —
+er ist der Regelfall, für den `Supersedes` existiert (`AGENTS.md` §3.5). Die
+reale Docker-Probe (dateispezifisches `.dockerignore`, real gemessen statt
+nur dokumentiert zitiert) war der Unterschied zwischen einer plausiblen und
+einer geprüften Bauform-Entscheidung — dieselbe Disziplin, die
+`ADR-0090` bereits für den `.proto`-Zusatzkontext vorgemacht hat, hier zum
+ersten Mal auf den Go-Bauweg angewendet.
+
+**Beobachtungs-Register:** keine Beobachtung angefallen — die drei
+entschiedenen Fragen sind Einzelfall-Entscheidungen dieses Zugs, keine
+wiederkehrende Musterlücke, die einen neuen `BEO-PGC/*`-Eintrag rechtfertigt.
+
+**Risiken (§6):** alle drei mit Ausgang versehen (zwei entfallen, eines
+eingetreten und in der ADR selbst aufgelöst) — siehe §6.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

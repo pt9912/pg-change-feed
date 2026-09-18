@@ -15,11 +15,14 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 [`LH-FA-SST-007`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Scope: die Oberflächen,
 die die vier Go-Beispiele zeigen), die neue Supersedes-ADR aus
-`slice-beispiele-start-architect-entscheidung` (Go-Bauform,
-Start-Target-Form, Umgebungsdatei-Kontrakt — Kennung wird beim Füllen dieses
-Slice nach Closure jenes Slice nachgetragen),
+`slice-beispiele-start-architect-entscheidung`:
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+(Go-Bauform: `examples/Dockerfile` + `examples/Dockerfile.dockerignore`,
+Start-Target-Form: `example-run-go` mit Pflicht-`SURFACE=`,
+Umgebungsdatei-Kontrakt: `examples/.env`),
 [`ADR-0076`](../../adr/0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md)
-(Rest bestätigt: Ort, Import-Grenze, Kompilierpfad),
+(Rest bestätigt: Ort, Import-Grenze, Kompilierpfad; Startform-Bullet von
+`ADR-0098` superseded),
 [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) (der
 Go-gRPC-Client und seine Kante `examples → contract`, unverändert).
 
@@ -112,8 +115,9 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `examples/Dockerfile` (Arbeitsname; Form von der ADR) | neu | Bauform für die vier Go-Beispiele |
-| `harness/mk/examples.mk` | update | neue Ziele `examples-go`/`example-run-go-*` (Arbeitsnamen, Form von der ADR) |
+| `examples/Dockerfile` (fest, `ADR-0098` Festlegung 1) | neu | Bauform für die vier Go-Beispiele (Wurzel-Kontext, vier `runtime-<surface>`-Stufen) |
+| `examples/Dockerfile.dockerignore` (fest, `ADR-0098` Festlegung 1) | neu | isoliert den Bau-Kontext (`go.mod`/`go.sum`/`gen/`/`examples/`), Wurzel-`.dockerignore` bleibt byte-gleich |
+| `harness/mk/examples.mk` | update | neues Ziel `example-run-go` mit Pflicht-Argument `SURFACE=http|sse|grpc|nats` (`ADR-0098` Festlegung 2) |
 | `Makefile` | update, falls neue `.PHONY`-Einbindung nötig | Ziel-Verdrahtung |
 | `examples/README.md` | update | Go-Tabelle: Startform-Spalte auf die neue Form |
 | `docs/user/benutzerhandbuch.md` | update | vier `**Beispiele:**`-Blöcke, Go-Zeile |
@@ -144,8 +148,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Closure- und Lerneintrag-Regeln — zwei beobachtbare Kriterien **und** ein
 Lerneintrag; ohne ihn ist der Slice nur abgelegt.
 
-- `make example-run-go-<protokoll>` (Arbeitsname) startet real ein Go-Beispiel
-  gegen eine laufende Umgebung (Demo-Compose oder Compose-Testumgebung).
+- `make example-run-go SURFACE=<surface>` (`ADR-0098` Festlegung 2) startet
+  real ein Go-Beispiel gegen eine laufende Umgebung (Demo-Compose oder
+  Compose-Testumgebung).
 - `make gates` grün, Review-Report vorliegt, Closure-Notiz mit Lerneintrag
   geschrieben.
 

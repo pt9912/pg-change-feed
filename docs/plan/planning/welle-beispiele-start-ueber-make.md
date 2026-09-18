@@ -61,18 +61,24 @@ Beispiel-Client-Bestand (`examples/**`,
    **Leser-Quickstart-Umgebung** für `examples/` mit anderem Zweck und
    anderem Betreiber (der Integrator, nicht der Testlauf).
 
-   **Das „config-file", Planner-Lesart (zu bestätigen durch Slice 1):** eine
-   gemeinsame, committete Umgebungsdatei (Arbeitsname
-   `examples/.env.example`) mit den DSNs/Tokens/Tabellen-Zuordnung/
-   NATS-URL, die **sowohl** die neue Compose-Datei (`env_file:`) **als auch**
-   jeder Start-Make-Target-Aufruf (Flag/`--env-file`/Export) liest — eine
-   einzige Quelle der Wahrheit für die Demo-Umgebung, statt Werte von Hand
-   zwischen Compose-Datei und jedem Beispiel-Aufruf zu kopieren. Eine
-   andere Lesart (z. B. dass „das config-file" allein
-   `tools/schema/schema.yaml` meint, das der Schema-Rollout ohnehin schon
-   benutzt) ist **nicht ausgeschlossen** — Slice 1 entscheidet das
-   verbindlich, diese Welle geht mit der oben genannten Lesart in die
-   Slice-Planung.
+   **Das „config-file" — von Slice 1 bestätigt, mit einer Korrektur**
+   ([`ADR-0098`](../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+   Festlegung 3): die Planner-Lesart trifft zu — eine gemeinsame
+   Umgebungsdatei, die **sowohl** die neue Compose-Datei (`env_file:`) **als
+   auch** jeder Start-Make-Target-Aufruf (`--env-file`) liest, statt Werte
+   von Hand zwischen Compose-Datei und jedem Beispiel-Aufruf zu kopieren. Die
+   Korrektur: **fester Dateiname `examples/.env`** (nicht
+   `examples/.env.example`) — die Datei wird **committet und sofort
+   nutzbar**, keine Kopiervorlage, weil sie keine echten Zugangsdaten trägt
+   (isoliertes Docker-Netzwerk `cdc-examples`,
+   [`ADR-0098`](../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+   Festlegung 4). Die
+   Variablennamen sind die bereits im Handbuch dokumentierten `CDC_*`-Namen,
+   bewusst identisch mit der Produktions-Vokabel — die Trennung liegt in der
+   Netzwerk-Isolation, nicht im Namen. Die verworfene Lesart
+   (`tools/schema/schema.yaml` als „config-file") ist damit ausgeschlossen:
+   jene Datei bleibt der Schema-Rollout-Eingang, unberührt von dieser
+   Entscheidung.
 
 **Das *Mehr* gegenüber den einzelnen Slice-DoDs** ist die **gemeinsame
 Design-Entscheidung**, die alle drei Hälften trägt und die noch nicht

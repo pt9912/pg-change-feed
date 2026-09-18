@@ -88,7 +88,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0073 | Zitat-Korrektur an immutablen Dokumenten — die Klasse für §3.5 | Accepted | 2026-09-15 | [0073-zitat-korrektur-an-immutablen-dokumenten.md](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | ADR-0074 | Zitationsform Schwester-Repo — Hausform (Supersedes ADR-0072, teilweise) | Accepted | 2026-09-15 | [0074-zitationsform-schwester-repo-hausform.md](0074-zitationsform-schwester-repo-hausform.md) |
 | ADR-0075 | `hostpaths`-Regel — Reichweite, §3.11-Entwurf, Lokator-Disposition | Accepted | 2026-09-15 | [0075-hostpaths-reichweite-und-wortlaut.md](0075-hostpaths-reichweite-und-wortlaut.md) |
-| ADR-0076 | Beispiel-Clients unter `examples/` (Supers. ADR-0060/0068, teilw.; → ADR-0079) | Accepted | 2026-09-15 | [0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md](0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) |
+| ADR-0076 | Beispiel-Clients `examples/` (Supers. ADR-0060/0068, teilw.; → ADR-0079/0098) | Accepted | 2026-09-15 | [0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md](0076-beispiel-clients-examples-oeffentlicher-draht-vertrag.md) |
 | ADR-0077 | Coverage-Rampen — Neu-Bemessung bei Subjekt-Transfer (→ ADR-0078, teilweise) | Accepted | 2026-09-15 | [0077-coverage-rampen-neu-bemessung-subjekt-transfer.md](0077-coverage-rampen-neu-bemessung-subjekt-transfer.md) |
 | ADR-0078 | Coverage-Rampen — Transfer-Nachweis statt Summen-Konstanz | Accepted | 2026-09-15 | [0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md](0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md) |
 | ADR-0079 | NATS-Beispielclient — vierter `examples/`-Client (Supersedes ADR-0076, teilw.) | Accepted | 2026-09-15 | [0079-nats-beispielclient-vierter-examples-client.md](0079-nats-beispielclient-vierter-examples-client.md) |
@@ -110,3 +110,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0095 | Review-Klasse — Status-Ausnahme (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0095-review-klasse-exempt-status-check.md](0095-review-klasse-exempt-status-check.md) |
 | ADR-0096 | Altbestand-Schlüssel für wellenlosen Archiv-Bestand | Accepted | 2026-09-18 | [0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md](0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md) |
 | ADR-0097 | `observation`-Matrixklasse — Review verboten (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0097-observation-matrixklasse-review-verboten.md](0097-observation-matrixklasse-review-verboten.md) |
+| ADR-0098 | Beispiel-Clients — Startform `make`/Dockerfile (Supers. ADR-0076, teilw.) | Accepted | 2026-09-18 | [0098-beispiel-clients-start-ueber-make-dockerfile.md](0098-beispiel-clients-start-ueber-make-dockerfile.md) |

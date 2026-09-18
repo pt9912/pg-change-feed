@@ -15,8 +15,11 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 [`LH-FA-SST-007`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Scope: die Oberflächen,
 die die acht C#/Kotlin-Beispiele zeigen), die neue Supersedes-ADR aus
-`slice-beispiele-start-architect-entscheidung` (Start-Target-Form,
-Umgebungsdatei-Kontrakt — Kennung wird nach deren Closure nachgetragen),
+`slice-beispiele-start-architect-entscheidung`:
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+(Start-Target-Form: `example-run-csharp`/`example-run-kotlin` mit
+Pflicht-`SURFACE=`, Umgebungsdatei-Kontrakt: `examples/.env`, festes
+Docker-Netzwerk `cdc-examples`),
 [`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md),
 [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md) (Bestand:
 Sprach-Wurzel, eigenes Dockerfile je Sprache, `make examples-csharp`/
@@ -112,7 +115,7 @@ Aussagen-Berührung steht hier gar nicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `harness/mk/examples.mk` | update | neue Ziele (Arbeitsnamen: `example-run-csharp-*`/`example-run-kotlin-*` oder parametrisiert, Form von der ADR) |
+| `harness/mk/examples.mk` | update | neue Ziele `example-run-csharp`/`example-run-kotlin`, je mit Pflicht-Argument `SURFACE=http|sse|grpc|nats` (`ADR-0098` Festlegung 2) |
 | `examples/README.md` | update | C#-/Kotlin-Tabellen, Startform-Spalte |
 | `docs/user/benutzerhandbuch.md` | update | vier `**Beispiele:**`-Blöcke, C#-/Kotlin-Zeilen |
 | `harness/README.md` | update | §Werkzeuge, neue Zeile(n) |

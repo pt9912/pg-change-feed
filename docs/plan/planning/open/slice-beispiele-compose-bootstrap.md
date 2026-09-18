@@ -17,8 +17,11 @@ demselben Container-Betriebsmodell), [`LH-FA-SST-006`](../../../../spec/lastenhe
 [`LH-FA-SST-007`](../../../../spec/lastenheft.md)/
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (die Oberflächen, gegen die
 die Demo-Umgebung reale Daten bereitstellt), die neue Supersedes-ADR aus
-`slice-beispiele-start-architect-entscheidung` (Umgebungsdatei-/Kontrakt-
-Entscheidung — Kennung wird nach deren Closure nachgetragen),
+`slice-beispiele-start-architect-entscheidung`:
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+(Umgebungsdatei-Kontrakt: `examples/.env`, committet statt Vorlage; festes
+Docker-Netzwerk `cdc-examples`, Adressen als Compose-Servicenamen statt
+`localhost`),
 [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
 (Schema-Rollout über d-migrate — derselbe Weg, den diese Demo-Umgebung
 treibt), [`ADR-0044`](../../adr/0044-image-beleg-semantik.md) (Image-Beleg —
@@ -50,9 +53,13 @@ hoch und treibt danach automatisch den Schema-Rollout (d-migrate,
 `tools/schema/schema.yaml`) sowie die Registrierung/Aktivierung einer
 Beispiel-Quelle und -Tabelle, so dass jedes der zwölf Beispiel-Programme
 sofort gegen echte Daten laufen kann. Eine gemeinsame, committete
-Umgebungsdatei (Arbeitsname `examples/.env.example`, Format von der ADR)
-trägt die DSNs/Tokens/Tabellen-Zuordnung/NATS-URL als einzige Quelle der
-Wahrheit für diese Demo-Umgebung.
+Umgebungsdatei (**fest: `examples/.env`**, `ADR-0098` Festlegung 3 — committet
+und sofort nutzbar, **keine** `.env.example`-Vorlage) trägt die
+DSNs/Tokens/Tabellen-Zuordnung/NATS-URL unter den bereits im Handbuch
+dokumentierten `CDC_*`-Namen als einzige Quelle der Wahrheit für diese
+Demo-Umgebung. Das Docker-Netzwerk der Compose-Datei heißt **fest
+`cdc-examples`** (`ADR-0098` Festlegung 4); Adressen in `examples/.env` sind
+Compose-Servicenamen (z. B. `pg-change-feed:8090`), nicht `localhost`.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -92,8 +99,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`cdc.source`/`cdc.enable_table` oder gleichwertig), belegt durch einen
       realen Lauf, der zeigt: nach dem Hochfahren liefert `GET /changes`
       (oder gleichwertig) Daten für die Beispiel-Tabelle.
-- [ ] **LP3** — `examples/.env.example` (Arbeitsname) trägt den von der ADR
-      entschiedenen Kontrakt; die Compose-Datei liest sie (`env_file:`);
+- [ ] **LP3** — `examples/.env` (fest, `ADR-0098` Festlegung 3) trägt den
+      von der ADR entschiedenen Kontrakt; die Compose-Datei liest sie
+      (`env_file:`);
       Träger nachgezogen: `examples/README.md` (neuer Abschnitt „Demo-Umgebung"),
       `harness/README.md` §Werkzeuge (kein Gate).
 - [ ] `make gates` grün.
@@ -122,7 +130,7 @@ Aussagen-Berührung steht hier gar nicht.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `examples/compose.yaml` (Arbeitsname) | neu | Demo-Umgebung (PostgreSQL, Feed, NATS) |
-| `examples/.env.example` (Arbeitsname) | neu | gemeinsamer Umgebungsdatei-Kontrakt |
+| `examples/.env` (fest, `ADR-0098` Festlegung 3) | neu | gemeinsamer Umgebungsdatei-Kontrakt, committet und sofort nutzbar |
 | `examples/bootstrap.sh` oder gleichwertig (Arbeitsname) | neu | Schema-Rollout + Beispiel-Quelle/-Tabelle-Registrierung |
 | `examples/README.md` | update | neuer Abschnitt „Demo-Umgebung" |
 | `harness/README.md` | update | §Werkzeuge, falls ein `make`-Ziel die Umgebung kapselt |
@@ -168,12 +176,16 @@ dasteht.
 
 - Zwei Compose-Dateien im selben Repo (Wurzel + `examples/`) könnten
   Netzwerk-/Container-Namen kollidieren, wenn beide gleichzeitig laufen —
-  **Ausgang:** <bei Closure ausfüllen; vermutlich durch eigenen
-  Projekt-/Netzwerknamen der Demo-Umgebung vermieden>.
-- Committete Beispiel-Zugangsdaten in `examples/.env.example` könnten als
+  bereits durch `ADR-0098` Festlegung 4 entschieden (fester, eigener
+  Netzwerkname `cdc-examples`, getrennt von `cdc-feed-test` der
+  Wurzel-`compose.yaml`) — **Ausgang:** <bei Closure ausfüllen; belegt durch
+  den realen Parallellauf beider Compose-Umgebungen>.
+- Committete Beispiel-Zugangsdaten in `examples/.env` könnten als
   Sicherheits-Anti-Pattern gelesen werden, obwohl sie nur gegen die isolierte
-  Demo-Umgebung gelten — **Ausgang:** <bei Closure ausfüllen; Klartext-Warnung
-  im Datei-Kommentar erwartet>.
+  Demo-Umgebung gelten — bereits durch `ADR-0098` Festlegung 3 entschieden
+  (committet statt Vorlage, weil keine echten Secrets; Klartext-Kopfkommentar
+  zur Netzwerk-Grenze ist Pflicht) — **Ausgang:** <bei Closure ausfüllen;
+  Kopfkommentar-Wortlaut belegen>.
 - Das Bootstrapping könnte nicht idempotent sein (zweiter `up`-Lauf schlägt
   fehl, weil die Beispiel-Quelle/-Tabelle schon existiert) — **Ausgang:**
   <bei Closure ausfüllen>.
