@@ -57,3 +57,34 @@ examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeu
 	docker build --build-context proto=proto --target runtime-sse -t pg-change-feed-examples:kotlin-sse examples/kotlin
 	docker build --build-context proto=proto --target runtime-nats -t pg-change-feed-examples:kotlin-nats examples/kotlin
 	docker build --build-context proto=proto --target runtime-grpc -t pg-change-feed-examples:kotlin-grpc examples/kotlin
+
+# `example-run-go` startet real ein Go-Beispiel gegen die Demo-Umgebung
+# (ADR-0098 Festlegung 1/2, Supersedes ADR-0076 Festlegung 1/Startform-Bullet
+# in genau dieser Klausel): baut (falls nötig — Docker-Layer-Cache greift bei
+# unverändertem `examples/Dockerfile`-Kontext) das je Oberfläche passende
+# Image aus `examples/Dockerfile` (Wurzel-Bau-Kontext, isoliert über
+# `examples/Dockerfile.dockerignore`) und startet es real per
+# `docker run --rm --network cdc-examples --env-file examples/.env`. `SURFACE=`
+# ist ein Pflicht-Argument (`http`, `sse`, `grpc` oder `nats`); ein fehlendes
+# oder unbekanntes `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker
+# build`/`docker run` versucht wird (kein halb gestarteter Zustand). `ARGS=`
+# trägt die Flag-Übersteuerung, die ADR-0076 Festlegung 1 bereits für alle
+# Beispiele vorsieht (z. B. `ARGS="-source demo -publication demo_pub"`).
+# `SURFACE=http` liefert das `runtime`-Image ohne `--target` (mirror der
+# ADR-0087-Konvention); die anderen drei Oberflächen adressieren ihre
+# `runtime-<surface>`-Stufe explizit. Das Docker-Netzwerk `cdc-examples` und
+# `examples/.env` legt `slice-beispiele-compose-bootstrap` an — dieses Ziel
+# referenziert beide nur, ohne sie zu erzeugen; ein Aufruf ohne sie schlägt
+# real und sichtbar am `docker run` fehl (kein stiller Fallback). Exit-Code
+# jedes Aufrufs wird direkt gelesen, wie bei jedem anderen Ziel (AGENTS.md
+# §3.9); kein Host-`go build`/`go run` (`AGENTS.md` §3.1) — auch der
+# Go-Startweg läuft über ein Image. Kein Gate (Werkzeug, wie
+# `examples-csharp`/`examples-kotlin`): der Start braucht das benannte
+# Docker-Netzwerk, `make gates` bleibt netzlos.
+.PHONY: example-run-go
+example-run-go: ## Go-Beispiel bauen+starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats),)
+	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-go SURFACE=http)
+endif
+	docker build -f examples/Dockerfile $(if $(filter $(SURFACE),http),,--target runtime-$(SURFACE)) -t pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) .
+	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)

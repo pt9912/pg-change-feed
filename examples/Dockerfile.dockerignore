@@ -1,0 +1,11 @@
+# examples/Dockerfile.dockerignore — dateispezifische Ignore-Datei
+# (Docker-Mechanismus: `<Dockerfile>.dockerignore`), wirkt AUSSCHLIESSLICH
+# für Bauten, die `examples/Dockerfile` über `-f` referenzieren (ADR-0098
+# Festlegung 1). Ein Bau mit `-f Dockerfile .` (der ausgelieferte Bau,
+# `make image`) sieht diese Datei nicht und bleibt beim bisherigen,
+# byte-gleichen Kontext der Wurzel-`.dockerignore`.
+*
+!go.mod
+!go.sum
+!gen/
+!examples/

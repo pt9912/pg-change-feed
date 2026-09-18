@@ -77,31 +77,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1** — Dockerfile(s) für die vier Go-Beispiele in der von der ADR
+- [x] **LP1** — Dockerfile(s) für die vier Go-Beispiele in der von der ADR
       entschiedenen Form (ein gemeinsames oder je Programm), digest-gepinnte
       Basis, `make`-Bau-Ziel baut alle vier.
-- [ ] **LP2** — `make`-Start-Ziel(e) starten je Programm real gegen die im
+- [x] **LP2** — `make`-Start-Ziel(e) starten je Programm real gegen die im
       Umgebungsdatei-Kontrakt vereinbarten Variablen (Flag-Override bleibt
       erhalten); Exit-Code-Disziplin nach `AGENTS.md` §3.9.
-- [ ] **LP3** — Träger nachgezogen: `examples/README.md` (Go-Tabelle,
+- [x] **LP3** — Träger nachgezogen: `examples/README.md` (Go-Tabelle,
       Startform-Spalte), die vier Zugriffs-Abschnitte in
       `docs/user/benutzerhandbuch.md` (Go-Zeile der `**Beispiele:**`-Blöcke),
       `harness/README.md` §Werkzeuge (neue Ziele benannt, kein Gate).
-- [ ] [`LH-FA-SST-006`](../../../../spec/lastenheft.md)/[`LH-FA-SST-007`](../../../../spec/lastenheft.md)/[`LH-FA-SST-008`](../../../../spec/lastenheft.md)
+- [x] [`LH-FA-SST-006`](../../../../spec/lastenheft.md)/[`LH-FA-SST-007`](../../../../spec/lastenheft.md)/[`LH-FA-SST-008`](../../../../spec/lastenheft.md)
       weiterhin gezeigt (kein Verhaltens-, nur
       Bau-/Start-Mechanismus-Wechsel) — `make test` übersetzt die vier
       Beispiele unverändert.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für die Go-Startform (öffentlicher Vertrag: das Handbuch
+- [x] Doku-Update für die Go-Startform (öffentlicher Vertrag: das Handbuch
       zitiert eine Befehlsform) — siehe LP3.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`, oder „keine Beobachtung
       angefallen" in §7.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind von der
       nächsten Welle-Closure getragen.
@@ -118,7 +118,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `examples/Dockerfile` (fest, `ADR-0098` Festlegung 1) | neu | Bauform für die vier Go-Beispiele (Wurzel-Kontext, vier `runtime-<surface>`-Stufen) |
 | `examples/Dockerfile.dockerignore` (fest, `ADR-0098` Festlegung 1) | neu | isoliert den Bau-Kontext (`go.mod`/`go.sum`/`gen/`/`examples/`), Wurzel-`.dockerignore` bleibt byte-gleich |
 | `harness/mk/examples.mk` | update | neues Ziel `example-run-go` mit Pflicht-Argument `SURFACE=http|sse|grpc|nats` (`ADR-0098` Festlegung 2) |
-| `Makefile` | update, falls neue `.PHONY`-Einbindung nötig | Ziel-Verdrahtung |
+| `Makefile` | **nicht realisiert** — kein Änderungsbedarf | `harness/mk/*.mk` wird per `include` bereits vollständig eingebunden (Zeile 17 der Wurzel-`Makefile`); `example-run-go` steht damit ohne weitere Verdrahtung in `make help`/`make gates`-Kontext zur Verfügung, real geprüft (`make help` listet das Ziel, `make -n example-run-go SURFACE=<x>` löst korrekt auf) |
 | `examples/README.md` | update | Go-Tabelle: Startform-Spalte auf die neue Form |
 | `docs/user/benutzerhandbuch.md` | update | vier `**Beispiele:**`-Blöcke, Go-Zeile |
 | `harness/README.md` | update | §Werkzeuge, neue Zeile(n) |
@@ -163,11 +163,21 @@ dasteht.
 
 - Ein neues Go-Dockerfile könnte versehentlich denselben Namen/Kontext wie
   die Wurzel-`Dockerfile` kollidieren lassen (Bau-Kontext-Verwechslung) —
-  **Ausgang:** <bei Closure ausfüllen>.
+  **Ausgang: entfallen.** `examples/Dockerfile` liegt unter `examples/`, nicht
+  an der Wurzel; `examples/Dockerfile.dockerignore` wirkt laut Docker-Mechanismus
+  ausschließlich für Bauten mit `-f examples/Dockerfile`. Real gemessen in
+  diesem Zug: `git diff --stat -- Dockerfile .dockerignore` bleibt leer nach
+  der Implementierung, und ein `docker build -f Dockerfile .` (der
+  ausgelieferte Bau) lädt weiterhin dieselbe Wurzel-`.dockerignore`
+  (`load .dockerignore: 1.97kB`, unverändert) — keine Kollision.
 - Der Start-Mechanismus könnte den bestehenden `go run`-Kompilierpfad
   (`make test`) versehentlich aus `go test ./...` herausnehmen (z. B. durch
-  ein zweites `go.mod`) — **Ausgang:** <bei Closure ausfüllen; die ADR
-  verbietet das voraussichtlich explizit, siehe `ADR-0076` Festlegung 5>.
+  ein zweites `go.mod`) — **Ausgang: entfallen.** Kein zweites `go.mod`
+  entstanden; `examples/**` bleibt Teil des Wurzelmoduls. Real gemessen: ein
+  frischer `make test`-Lauf (Race-Detector, gepinnter Toolchain-Container)
+  endet Exit 0 und listet alle vier Beispiel-Pakete explizit als `ok`
+  (`examples/http-client`, `examples/sse-client`, `examples/grpc-client`,
+  `examples/nats-client`).
 
 ## 7. Closure-Notiz
 
@@ -175,7 +185,45 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-*(bei Closure zu füllen)*
+**Entwurf (Implementer-Rolle, vor Review/Verifikation — Planner übernimmt
+oder korrigiert bei tatsächlicher Closure):**
+
+**Gegenstand:** vollständig geliefert — `make gates` grün (dieser Zug), der
+unabhängige Reviewer-Pass gegen
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+steht noch aus; der `git mv` nach `done/` folgt erst danach.
+
+**Ergebnis:** Die vier Go-Beispiele bauen/starten jetzt über
+`examples/Dockerfile` (Wurzel-Bau-Kontext, isoliert über
+`examples/Dockerfile.dockerignore`, Basis-Digests aus der Wurzel-`Dockerfile`
+wiederverwendet — real gebaut, alle vier Ziel-Stufen, in diesem Zug) und
+`make example-run-go SURFACE=http|sse|grpc|nats` (Pflicht-Argument, `$(error
+…)` bei fehlendem/unbekanntem Wert, real per `make -n`/Fehlerprobe geprüft).
+Die Wurzel-`Dockerfile`/`.dockerignore` bleiben byte-gleich (`git diff`
+leer nach der Implementierung). `examples/README.md`, die vier
+`**Beispiele:**`-Blöcke in `docs/user/benutzerhandbuch.md` (samt
+Versionshistorie) und `harness/README.md` §Werkzeuge zitieren die neue
+Startform; `go run ./examples/<name>` bleibt technisch funktionsfähig
+(`make test` real gelaufen, alle vier Beispiel-Pakete `ok`), ist aber nicht
+mehr die zitierte Form. `example-run-csharp`/`example-run-kotlin` und
+`examples/.env` bleiben bewusst außerhalb dieses Slices (Geschwister-Slices).
+
+**Steering-Loop-Lerneintrag:** Die dateispezifische
+`<Dockerfile>.dockerignore`-Isolation, die
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+für den Go-Bau real gemessen hat, trägt real auch in der Umsetzung —
+`docker build -f Dockerfile .` (der ausgelieferte Bau) lädt weiterhin
+dieselbe Wurzel-`.dockerignore` unverändert, ein `docker build -f
+examples/Dockerfile .` sieht zusätzlich `examples/Dockerfile.dockerignore`.
+Kein neuer Mechanismus nötig, keine Überraschung gegenüber der ADR-Probe.
+
+**Beobachtungs-Register:** keine Beobachtung angefallen — die Umsetzung
+folgte den vier Festlegungen der ADR ohne Abweichung, die eine neue oder
+zitierbare `BEO-PGC/*`-Musterlücke begründen würde.
+
+**Risiken (§6):** beide mit Ausgang „entfallen" versehen, real gemessen
+(byte-gleiche Wurzel-Dateien, `make test` grün mit allen vier
+Beispiel-Paketen) — siehe §6.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -16,14 +16,22 @@ PostgreSQL-Quelle (Image bauen, Container starten) — siehe
 
 ## Go
 
-Teil des Root-Moduls, kein eigener Bau-Schritt nötig:
+Teil des Root-Moduls (`go test ./...` bleibt der Anti-Verrottungs-Träger,
+`go run ./examples/<name> ...` bleibt technisch funktionsfähig), gebaut/gestartet
+über `examples/Dockerfile` (Bau-Kontext Repo-Wurzel, isoliert über
+`examples/Dockerfile.dockerignore`) und `make example-run-go`:
 
 | Zugriffsart | Verzeichnis | Start |
 |---|---|---|
-| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`http-client`](http-client) | `go run ./examples/http-client ...` |
-| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`grpc-client`](grpc-client) | `go run ./examples/grpc-client ...` |
-| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`sse-client`](sse-client) | `go run ./examples/sse-client ...` |
-| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`nats-client`](nats-client) | `go run ./examples/nats-client ...` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`http-client`](http-client) | `make example-run-go SURFACE=http ARGS="-source <quelle> -publication <publication>"` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`grpc-client`](grpc-client) | `make example-run-go SURFACE=grpc` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`sse-client`](sse-client) | `make example-run-go SURFACE=sse` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`nats-client`](nats-client) | `make example-run-go SURFACE=nats ARGS="-source <quelle> -schema <schema> -table <tabelle>"` |
+
+`make example-run-go` baut bei Bedarf `pg-change-feed-examples:go[-<surface>]`
+und startet den Container real gegen das Docker-Netzwerk `cdc-examples` mit
+`--env-file examples/.env` (Umgebungsdatei-Kontrakt und Netzwerk legt
+`slice-beispiele-compose-bootstrap` an).
 
 ## C#
 

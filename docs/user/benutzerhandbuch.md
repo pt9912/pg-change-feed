@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.20
+Version: 1.26
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-17
 
@@ -651,8 +651,9 @@ auf und gibt die Antwort aus; Adresse und Token liest jedes Beispiel aus
 `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und lässt sich per Flag
 übersteuern.
 
-- **Go:** `examples/http-client` —
-  `go run ./examples/http-client -source <quelle> -publication <publication>`
+- **Go:** `examples/http-client` — Container-Aufruf über
+  `make example-run-go SURFACE=http ARGS="-source <quelle> -publication <publication>"`
+  (baut bei Bedarf `pg-change-feed-examples:go` aus `examples/Dockerfile`)
 - **C#:** `examples/csharp/http-client` — Container-Aufruf gegen das mit
   `make examples-csharp` gebaute Image:
   `docker run --rm -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp --source <quelle> --publication <publication>`
@@ -711,7 +712,9 @@ der Stream ersetzt diesen Zugriffsweg nicht.
 und Token liest jedes Beispiel aus `CDC_GRPC_ADDR` und `CDC_API_TOKEN_READER`
 und lässt sich per Flag übersteuern.
 
-- **Go:** `examples/grpc-client` — `go run ./examples/grpc-client`
+- **Go:** `examples/grpc-client` — Container-Aufruf über
+  `make example-run-go SURFACE=grpc` (baut bei Bedarf
+  `pg-change-feed-examples:go-grpc` aus `examples/Dockerfile`)
 - **C#:** `examples/csharp/grpc-client` — Container-Aufruf gegen das mit
   `make examples-csharp` gebaute Image (der Stub entsteht im Bau aus der
   `.proto`, über einen zusätzlichen, benannten Bau-Kontext gelesen —
@@ -754,7 +757,9 @@ Consumer-Position ([Position bestätigen](#position-bestätigen)) nachholbar.
 aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
 `CDC_API_TOKEN_READER` und lässt sich per Flag übersteuern.
 
-- **Go:** `examples/sse-client` — `go run ./examples/sse-client`
+- **Go:** `examples/sse-client` — Container-Aufruf über
+  `make example-run-go SURFACE=sse` (baut bei Bedarf
+  `pg-change-feed-examples:go-sse` aus `examples/Dockerfile`)
 - **C#:** `examples/csharp/sse-client` — Container-Aufruf gegen das mit
   `make examples-csharp` gebaute Image:
   `docker run --rm -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp-sse`
@@ -807,8 +812,9 @@ den drei Filtern aus dem Subjekt (`source`, `schema`, `table`).
 Beispiel aus `CDC_NATS_URL`, `CDC_HTTP_ADDR` und `CDC_API_TOKEN_READER` und
 lässt sich per Flag übersteuern.
 
-- **Go:** `examples/nats-client` —
-  `go run ./examples/nats-client -source <quelle> -schema <schema> -table <tabelle>`
+- **Go:** `examples/nats-client` — Container-Aufruf über
+  `make example-run-go SURFACE=nats ARGS="-source <quelle> -schema <schema> -table <tabelle>"`
+  (baut bei Bedarf `pg-change-feed-examples:go-nats` aus `examples/Dockerfile`)
 - **C#:** `examples/csharp/nats-client` — Container-Aufruf gegen das mit
   `make examples-csharp` gebaute Image:
   `docker run --rm -e CDC_NATS_URL -e CDC_HTTP_ADDR -e CDC_API_TOKEN_READER pg-change-feed-examples:csharp-nats --source <quelle> --schema <schema> --table <tabelle>`
@@ -1040,3 +1046,4 @@ MIT — siehe `LICENSE`.
 | 1.23 | 2026-09-17 | C#- und Kotlin-NATS-Client ergänzt (`ADR-0090`, `ADR-0055`/`ADR-0056`/`ADR-0079`, slice-101): §4 „Zugriff über das NATS-Wecksignal" — Fließtext-Absatz wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#, Kotlin); `examples/csharp/nats-client` und `examples/kotlin/nats-client` lauschen auf dasselbe tabellen-granulare Subjekt und holen die Änderung über denselben `GET /changes`-Aufruf, über einen Container-Aufruf (`make examples-csharp`/`make examples-kotlin`, Image-Tags `pg-change-feed-examples:csharp-nats`/`:kotlin-nats`) |
 | 1.24 | 2026-09-17 | Erster C#-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-102): §4 „Zugriff über den gRPC-Change-Stream" — `**Beispiel:**`-Absatz (nur Go) wird zu einem `**Beispiele:**`-Block mit einer Zeile je Sprache (Go, C#); `examples/csharp/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-csharp`, Image-Tag `pg-change-feed-examples:csharp-grpc`) — der C#-Stub entsteht dabei im Bau aus der `.proto`, gelesen über einen zusätzlichen, benannten Bau-Kontext (erste reale Bauprobe dieser Form, bislang nur isoliert gemessen) |
 | 1.25 | 2026-09-17 | Kotlin-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-103): §4 „Zugriff über den gRPC-Change-Stream" — dritte und letzte Zeile im `**Beispiele:**`-Block; `examples/kotlin/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-kotlin`, Image-Tag `pg-change-feed-examples:kotlin-grpc`) — der Kotlin-Stub entsteht dabei im Bau aus der `.proto`, gelesen über denselben zusätzlichen, benannten Bau-Kontext, jetzt auf die Kotlin-Werkzeugkette übertragen (`protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin`). Mit dieser Zeile ist die volle Matrix (vier Zugriffs-Oberflächen × drei Sprachen, zwölf Programme) im Handbuch vollständig |
+| 1.26 | 2026-09-18 | Go-Startform auf `make`+Dockerfile umgestellt (`ADR-0098`, Supersedes `ADR-0076` Startform-Bullet, slice-beispiele-go-dockerfile-start): alle vier Go-Zeilen der `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-go SURFACE=<oberfläche>` (baut bei Bedarf `pg-change-feed-examples:go[-<surface>]` aus dem neuen `examples/Dockerfile`) statt `go run ./examples/<name>`; `go run` bleibt technisch funktionsfähig, ist aber nicht mehr die zitierte Startform |
