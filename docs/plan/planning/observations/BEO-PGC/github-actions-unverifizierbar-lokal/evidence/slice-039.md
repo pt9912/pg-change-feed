@@ -21,4 +21,4 @@ Registry-Secrets brauchen, die vor dem ersten echten Lauf ebenfalls
 ungeprüft bleiben.
 
 Quelle: `docs/plan/planning/in-progress/slice-039-ci-workflow-dependabot.md`
-§6, `docs/reviews/verify-slice-039.md`.
+§6, Verifikationsbericht zu `slice-039`.

@@ -2,7 +2,7 @@
 
 Vorgang: `slice-098` — C#-Sprachwurzel und HTTP-Client.
 
-Fund (Review-Finding F-1, `docs/reviews/review-slice-098.md`):
+Fund (Review zu `slice-098`, F-1):
 `spec/pflichtenheft.md` `SPEC-023` Zeile *Sprachen und Umfang* trägt weiterhin
 den `ADR-0087`-Wortlaut ("C# und Kotlin die **HTTP-Familie** … weitere
 Oberflächen **perspektivisch**"), obwohl `ADR-0090` (Accepted, 2026-09-17, vor
@@ -32,7 +32,7 @@ Prüfpunkt in seinem eigenen §6; einer der dazwischenliegenden Slices
 (`099`–`102`) kann die Zeile ebenso früher nachziehen, sobald ein Planner sie
 einem konkreten Liefer-Punkt zuweist.
 
-Quelle: `docs/reviews/review-slice-098.md` F-1 ·
+Quelle: Review zu `slice-098`, F-1 ·
 `docs/plan/planning/in-progress/slice-098-csharp-sprachwurzel-http-client.md`
 §6 (fünfte Risiko-Zeile) · `docs/plan/adr/0090-beispiel-clients-volle-matrix.md`
 §Konsequenzen (Folgepflicht Spec-Zug) · `spec/pflichtenheft.md` `SPEC-023`

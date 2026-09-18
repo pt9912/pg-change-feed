@@ -1,10 +1,11 @@
-# Beleg: review-slice-041 (Review-Report als abgeschlossener Vorgang)
+# Beleg: Review-Report-Commit zu `slice-041` (abgeschlossener Vorgang)
 
-Vorgang: `docs/reviews/review-slice-041.md` (Reviewer-Lauf zu `slice-041`).
+Vorgang: der Commit, der den Review-Report zu `slice-041` abschloss
+(Reviewer-Lauf zu `slice-041`).
 
-Fund: Der Commit „docs(reviews): review-slice-041 `SPEC-016`-Erwähnungen
-verlinkt (`ADR-0052`)" (`4e4c7bb`) trug die verbotene Struktur-ID
-`SPEC-016` im Betreff (`commit-traceability.sh`s Muster
+Fund: Der Commit, der den Review-Report zu `slice-041` mit
+`SPEC-016`-Erwähnungen verlinkt (`ADR-0052`) beitrug (`4e4c7bb`), trug die
+verbotene Struktur-ID `SPEC-016` im Betreff (`commit-traceability.sh`s Muster
 `(SPEC|ARC)-\d{3}`) und wurde bereits gepusht, bevor `make gates` den
 Verstoß meldete. Anders als beim ersten Vorfall (`evidence/slice-038.md`)
 konnte dieser nicht per einfachem `git commit --amend` auf `HEAD`

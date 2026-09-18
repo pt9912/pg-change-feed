@@ -11,7 +11,7 @@ Folge-Gegenstands: die Zahl stand auch in `ADR-0077` §Kontext, wohin sie über 
 Auftrag des Planners an den Architect gelangt war, und widersprach dort der
 Prozentzeile derselben Tabelle (`1306/1817 = 71,9 %`, gedruckt `71,3 %`).
 
-Quelle: `docs/reviews/review-slice-081.md` (Review) ·
+Quelle: Review zu `slice-081` ·
 `docs/plan/planning/in-progress/slice-081-executor-naht.md` §1/§2 (Berichtigung) ·
 `docs/plan/adr/0078-coverage-rampen-transfer-nachweis-statt-summen-konstanz.md`
 (Entscheidung 4: die Berichtigung reitet in der Folge-ADR, weil `ADR-0073`s

@@ -13,8 +13,8 @@ Der Implementer-eigene §3.13-Suchlauf fand beide Sätze und korrigierte sie
 im selben Commit (`79dbd5d`) auf „drei Images" mit benannten Image-Tags
 (`:csharp-nats`/`:kotlin-nats`). Reviewer und Verifier bestätigen die
 Korrektur unabhängig als vollständig und nicht-überschießend
-(`docs/reviews/review-slice-101.md` Negativbefund „`harness/README.md`" ·
-`docs/reviews/verify-slice-101.md` #18). Wie bei `slice-093`/`slice-094`/
+(Review zu `slice-101`, Negativbefund „`harness/README.md`" ·
+Verifikationsbericht zu `slice-101`, #18). Wie bei `slice-093`/`slice-094`/
 `slice-100` ist dies ein Fall, in dem der vorgeschriebene Suchlauf selbst
 den Fund lieferte — das zählt als Auftreten der zugrunde liegenden
 Beobachtung, nicht nur als Beleg dafür, dass die Regel wirkt.
@@ -27,5 +27,5 @@ dieses Slice (wie hier), sie war bereits *bei Niederschrift* veraltet —
 das ist die Form von `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`,
 eigene Evidenzdatei dort.
 
-Quelle: `docs/reviews/review-slice-101.md` (Negativbefund) ·
-`docs/reviews/verify-slice-101.md` (#18) · `AGENTS.md` §3.13.
+Quelle: Review zu `slice-101` (Negativbefund) ·
+Verifikationsbericht zu `slice-101` (#18) · `AGENTS.md` §3.13.

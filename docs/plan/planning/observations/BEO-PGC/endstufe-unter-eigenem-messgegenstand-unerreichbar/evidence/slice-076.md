@@ -19,5 +19,5 @@ Quelle: eigene Messung je Paket (Auswertung über die Block-Position
 dedupliziert; ungededupliziert zählt `numStmt` je Testbinary mehrfach und ergibt
 ~2,5 % statt 49 %) · unabhängig reproduziert von zwei weiteren Kontexten
 (Verifikation 49,25 %, Architect-Zug 49,25 %; Decke 68,06 % beide, gegen
-`go tool cover` an fünf Teilmengen validiert) · `docs/reviews/verify-slice-076.md`
-§5 · `docs/reviews/architect-verdict-coverage-gate-messgegenstand.md`.
+`go tool cover` an fünf Teilmengen validiert) · Verifikationsbericht zu `slice-076`
+§5 · der Architect-Verdikt zum Coverage-Gate-Messgegenstand.

@@ -15,7 +15,7 @@ es hier **gar keine** Adresse, an der ein späterer Slice die Pflicht
 zwangsläufig finden würde. Sie bleibt so lange liegen, bis ein Reviewer oder
 Verifier sie beim Lesen des betroffenen Trägers zufällig wiederfindet.
 
-Deklaration: `slice-098` (Review-Finding F-1, `docs/reviews/review-slice-098.md`):
+Deklaration: `slice-098` (Review zu `slice-098`, F-1):
 `ADR-0090`s eigener Annahme-Commit (`72d026b`) benennt
 `spec/pflichtenheft.md` `SPEC-023` Zeile *Sprachen und Umfang* als
 "Folgepflicht (Spec-Zug) … ohne ADR-/Slice-Kennung im Spec-Text", ändert die

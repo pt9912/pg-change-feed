@@ -12,7 +12,7 @@ prüfen (kein `git push`, kein Runner-Zugriff) — dieselbe strukturelle Grenze,
 die die fünf vorherigen Belege bereits zeigen. Alle drei Träger (Slice-Plan
 §5, Slice-Plan §6, der Kommentar in `examples.yml` selbst) führen den Punkt
 korrekt als offen, keiner behauptet einen bereits erfolgten Lauf
-(`docs/reviews/verify-slice-098.md` §5).
+(Verifikationsbericht zu `slice-098`, §5).
 
 **Ausgang bei dieser Closure: weiter offen**, bis ein realer Post-Push-Lauf
 sichtbar wird — kein neuer Träger, derselbe verkörperte Mechanismus
@@ -20,4 +20,4 @@ sichtbar wird — kein neuer Träger, derselbe verkörperte Mechanismus
 
 Quelle: `docs/plan/planning/in-progress/slice-098-csharp-sprachwurzel-http-client.md`
 §6 (dritte Risiko-Zeile, berichtigt bei dieser Closure) ·
-`docs/reviews/verify-slice-098.md` §5.
+Verifikationsbericht zu `slice-098`, §5.

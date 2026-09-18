@@ -28,6 +28,6 @@ Schwelle"); für die **Aufwärtsbewegung** gibt es keinen.
 `ADR-0080` hat die **Verdünnung** des DB-Nenners für dieses Paket ausdrücklich
 als Trigger benannt; sie ist mit diesem Vorgang **eingetreten**.
 
-Quelle: `docs/reviews/review-slice-084.md` (Schwerpunkt 4, mit eigener Messung
+Quelle: Review zu `slice-084` (Schwerpunkt 4, mit eigener Messung
 30/32) · Implementer-Bericht `slice-084` (unabhängige Messung im vollen
 `-coverpkg`-Lauf) · `harness/sensors/db-adapter-coverage.md` §Zählbasis.

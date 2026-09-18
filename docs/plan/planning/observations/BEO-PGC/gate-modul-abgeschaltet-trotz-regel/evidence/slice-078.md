@@ -12,6 +12,6 @@ sichtbar wurden sie erst, als der Auftraggeber das Modul einforderte. Belegt mit
 dem Modul-Aufruf über den Basisstand (31 gescannte Fundstellen) und einem
 repo-weiten Grep (42 Vorkommen in 15 Dateien).
 
-Quelle: `docs/reviews/architect-verdict-slice-078-konfliktpfad.md` ·
+Quelle: der Architect-Verdikt zum Konfliktpfad in `slice-078` ·
 `docs/plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md` ·
-`docs/reviews/verify-slice-078.md` (eigene Zählung, 31/42).
+Verifikationsbericht zu `slice-078` (eigene Zählung, 31/42).

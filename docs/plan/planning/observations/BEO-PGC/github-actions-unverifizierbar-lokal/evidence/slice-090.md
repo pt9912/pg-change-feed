@@ -23,7 +23,7 @@ läuft. Lokal ist das belegt; auf dem Runner ist es das nicht. Wer den Slice
 danach liest, soll die Grenze sehen und nicht annehmen, `make gates` sei überall
 dasselbe.
 
-Quelle: `docs/reviews/verify-slice-090.md` (V-5) ·
-`docs/reviews/review-slice-090-delta.md` (Negativbefunde, `#6`–`#9 CACHED`) ·
+Quelle: Verifikationsbericht zu `slice-090` (V-5) ·
+Review zu `slice-090`, Delta-Review (Negativbefunde, `#6`–`#9 CACHED`) ·
 `docs/plan/planning/done/slice-090-sync-gate-protobuf.md` §6 (viertes
 Risiko) · `.github/workflows/ci.yml`.

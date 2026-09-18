@@ -23,8 +23,8 @@ der Nachzug hängen könnte).
 ## Benannt, nicht gezählt
 
 Dieselbe Symptom-Klasse trat bereits bei `slice-039`, `slice-043` und
-`slice-044` auf (`verify-slice-039.md`, `verify-slice-043.md`,
-`verify-slice-044.md`, jeweils ein sauberes oder bereits fixrunden-
+`slice-044` auf (Verifikationsberichte zu `slice-039`, `slice-043` und
+`slice-044`, jeweils ein sauberes oder bereits fixrunden-
 abgeschlossenes Review, Checkbox dennoch offen) — alle drei liegen vor der
 Anlage dieses Eintrags und zählen laut Präzedenzfall `BEO-PGC/plan-nachzug`
 nicht mit (historische Vorkommen vor Registrierung zählen nicht).

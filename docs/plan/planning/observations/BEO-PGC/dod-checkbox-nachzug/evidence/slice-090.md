@@ -2,7 +2,7 @@
 
 Vorgang: `slice-090` — das Sync-Gate des generierten Protobuf-Codes.
 
-Fund: In der Verifikation `verify-slice-090` **V-3** standen alle **zwölf**
+Fund: Im Verifikationsbericht zu `slice-090` **V-3** standen alle **zwölf**
 DoD-Zeilen der §2 auf `[ ]`, obwohl die Liefer-Punkte LP1–LP3 real belegt waren
 (das Gate hing am Aggregat, `git status --porcelain` war nach zwei Läufen leer,
 der Rot-Fall war mit Datei und Zeile gesehen) und der Review-Report vorlag. Der
@@ -16,6 +16,6 @@ braucht eine Fixrunde"), und der Implementer hat es offen gelassen, weil ihm die
 Runde gehörte, die das Häkchen setzt — die Zuständigkeit wanderte, die Arbeit
 blieb liegen. Genau der Fall, den die verkörperte Regel adressiert.
 
-Quelle: `docs/reviews/verify-slice-090.md` (V-3) ·
-`docs/reviews/review-slice-090.md` (Verdikt, letzter Absatz) ·
+Quelle: Verifikationsbericht zu `slice-090` (V-3) ·
+Review zu `slice-090` (Verdikt, letzter Absatz) ·
 `docs/plan/planning/done/slice-090-sync-gate-protobuf.md` §2.

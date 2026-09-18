@@ -29,8 +29,8 @@ Zahlen der Dokumente, die sie beschreiben.
 trafen je Träger in einem Dokument; dieser trifft **vier** Stellen in **zwei**
 ADRs und dazu zwei falsche Zahlen in eben diesen ADRs.
 
-Quelle: `docs/reviews/verify-slice-096.md` (V-5) ·
-`docs/reviews/review-slice-096.md` (F-2) ·
+Quelle: Verifikationsbericht zu `slice-096` (V-5) ·
+Review zu `slice-096` (F-2) ·
 `docs/plan/adr/0091-zugangsdaten-klasse-sechs-schluessel.md` ·
 `docs/plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md` ·
 `AGENTS.md` §3.13.

@@ -22,6 +22,6 @@ liegenden Beobachtung (ein stehender Träger wurde real überholt), nicht nur
 als Beleg dafür, dass die Regel wirkt: Gezählt wird, wie oft Arbeit einen
 stehenden Träger überholt, nicht, wer den Fund machte.
 
-Quelle: `docs/reviews/review-slice-100.md` (Negativbefund „`harness/
-README.md`-Korrektur") · `docs/reviews/verify-slice-100.md` (#15) ·
+Quelle: Review zu `slice-100` (Negativbefund „`harness/
+README.md`-Korrektur") · Verifikationsbericht zu `slice-100` (#15) ·
 `AGENTS.md` §3.13.

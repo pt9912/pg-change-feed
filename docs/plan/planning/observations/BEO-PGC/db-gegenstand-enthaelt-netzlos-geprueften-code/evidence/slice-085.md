@@ -30,6 +30,6 @@ es ist **eine** Beobachtung — der Mechanismus (netzlos geprüfter Code im
 DB-Gegenstand) ist derselbe, nur die Größenordnung hat sich geändert. Der Zähler
 zählt beide Vorgänge.
 
-Quelle: `docs/reviews/review-slice-085.md` (Schwerpunkt 5, eigenes Urteil) ·
-`docs/reviews/verify-slice-085.md` (eigene Messung des Anteils) ·
+Quelle: Review zu `slice-085` (Schwerpunkt 5, eigenes Urteil) ·
+Verifikationsbericht zu `slice-085` (eigene Messung des Anteils) ·
 `harness/sensors/db-adapter-coverage.md` §Zählbasis.

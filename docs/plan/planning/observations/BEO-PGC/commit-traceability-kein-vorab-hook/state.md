@@ -11,11 +11,12 @@ Zuvor stand dieser Eintrag auf `geplant` mit Träger `slice-073`, der mit dessen
 Closure eingelöst ist. Die verbleibende Grenze — der Hook fängt nicht jede
 Klasse, die das Gate fängt — ist nicht dieser Eintrag, sondern
 `BEO-PGC/spiegelung-ist-approximation`. Verdikt und unabhängige Gegenprüfung:
-[`architect-verdict-commit-traceability-kein-vorab-hook.md`](../../../../../reviews/architect-verdict-commit-traceability-kein-vorab-hook.md),
-[`…-gegengeprueft.md`](../../../../../reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md).
+der Architect-Verdikt zum fehlenden Vorab-Hook bei der Commit-Traceability,
+gegengeprüft in einer zweiten, unabhängigen Fassung desselben Verdikts.
 
-Zähler (abgeleitet): **4×** (evidence/slice-038.md, evidence/review-slice-041.md,
-evidence/slice-059.md, evidence/slice-077.md) — Ausgang zugewiesen im
+Zähler (abgeleitet): **4×** (evidence/slice-038.md, dem Beleg zum
+Review-Report-Commit zu `slice-041`, evidence/slice-059.md,
+evidence/slice-077.md) — Ausgang zugewiesen im
 Lese-Schritt der `welle-16`-Closure (Baseline-Regelwerk
 `modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle,
 Planner → Architect → Planner-Zug); Herkunfts-Anker der Verkörperung:

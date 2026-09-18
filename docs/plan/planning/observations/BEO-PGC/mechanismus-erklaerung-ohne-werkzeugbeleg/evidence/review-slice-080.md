@@ -1,4 +1,4 @@
-# Beleg: review-slice-080
+# Beleg: Review zu `slice-080`
 
 Vorgang: das Review von `slice-080` (F-1).
 
@@ -11,4 +11,4 @@ Grund: im Replication-Profil erscheint jede Position 2× (einmal mit
 `count > 0`, einmal mit 0), und ohne die Regel „mindestens ein Vorkommen" fiele
 `receive` von 112/155 auf 0/155.
 
-Quelle: `docs/reviews/review-slice-080.md` F-1 · `docs/plan/planning/in-progress/slice-080-db-adapter-coverage.md`.
+Quelle: Review zu `slice-080`, F-1 · `docs/plan/planning/in-progress/slice-080-db-adapter-coverage.md`.

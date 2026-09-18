@@ -17,8 +17,8 @@ Eintrag zählt **Verstöße gegen eine bestehende Regel**, nicht Wiederholungen,
 aus denen erst eine Regel entstehen soll. Das ist ein anderer
 Beobachtungstyp als die 3×-Schwelle für neue Regeln.
 
-Deklaration: `slice-097`, Review-Report F-1 (`docs/reviews/review-slice-097.md`)
-und Verifikationsbericht (`docs/reviews/verify-slice-097.md` §4) — beide
+Deklaration: `slice-097`, Review-Report F-1 (Review zu `slice-097`)
+und Verifikationsbericht (Verifikationsbericht zu `slice-097`, §4) — beide
 bestätigen den Verstoß unabhängig voneinander, beide stufen ihn als
 nicht-merge-blockierend und nicht-fix-pflichtig ein (Git erkannte die
 Umbenennung trotzdem, `git log --follow` bleibt funktionsfähig).

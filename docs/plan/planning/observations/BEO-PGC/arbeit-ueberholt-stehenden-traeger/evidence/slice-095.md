@@ -14,7 +14,7 @@ begründet (Commit `1812e36`), aber sie fasste die eigene §3-Begründungszeile
 des Plans nicht an. Die Zeile blieb stehen und behauptete weiterhin „keine
 Kante" für alle vier Clients, obwohl der gRPC-Client jetzt eine hat.
 
-Gefunden hat es der Reviewer (F-1, LOW, `review-slice-095.md`) — nicht der
+Gefunden hat es der Reviewer (F-1, LOW, Review zu `slice-095`) — nicht der
 Implementer-Suchlauf für §3.13 (der war auf `grep`-Treffer für interne
 Pfad-Referenzen im Code beschränkt und fand hier nichts, weil dieser Fund
 kein Code-Pfad, sondern eine Plan-Prosa-Zeile ist).
@@ -31,7 +31,7 @@ In dieser Closure direkt korrigiert (Planner-Trägerpflege, Commit 1) — kein
 Carveout, kein Folge-Slice nötig, weil sofort behebbar (Formvorbild
 `slice-097` §6, dort ebenfalls „eingetreten, direkt korrigiert").
 
-Quelle: `docs/reviews/review-slice-095.md` F-1 ·
+Quelle: Review zu `slice-095`, F-1 ·
 `docs/plan/planning/in-progress/slice-095-beispiel-clients-drei.md` §3
 (berichtigt bei dieser Closure) ·
 `docs/plan/planning/done/slice-097-umzug-vertragsflaeche.md` §6/§7

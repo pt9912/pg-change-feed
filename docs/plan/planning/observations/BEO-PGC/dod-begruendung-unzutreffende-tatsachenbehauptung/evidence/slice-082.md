@@ -17,5 +17,5 @@ ihn nicht.
    Rollout-Report (`tools/schema/plan.yaml`) führt **10** Tabellen und **4**
    Sichten.
 
-Quelle: `docs/reviews/review-slice-082.md` F-1 · `docs/reviews/verify-slice-082.md`
+Quelle: Review zu `slice-082`, F-1 · Verifikationsbericht zu `slice-082`,
 V-1 · `tools/schema/plan.yaml` (Report des Rollouts) · `internal/bootstrap/wiring.go:844`.

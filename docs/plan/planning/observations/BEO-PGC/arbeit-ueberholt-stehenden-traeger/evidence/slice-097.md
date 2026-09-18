@@ -14,9 +14,9 @@ benannten Träger vollständig (`Dockerfile`, `.dockerignore`,
 `harness/mk/coverage.mk`, `harness/README.md`, `AGENTS.md`), verfehlte aber
 `next/slice-095` — ein Träger außerhalb dieser Liste, in einem anderen
 Planning-Verzeichnis. Gefunden hat ihn erst ein zweiter, unabhängiger
-Suchlauf des Reviewers (`docs/reviews/review-slice-097.md`, Abschnitt
+Suchlauf des Reviewers (Review zu `slice-097`, Abschnitt
 „Beobachtung außerhalb des Diffs"). In dieser Closure direkt korrigiert
 (Planner-Trägerpflege).
 
-Quelle: `docs/reviews/review-slice-097.md` (Beobachtung außerhalb des Diffs) ·
-`docs/reviews/verify-slice-097.md` (§3) · `AGENTS.md` §3.13.
+Quelle: Review zu `slice-097` (Beobachtung außerhalb des Diffs) ·
+Verifikationsbericht zu `slice-097` (§3) · `AGENTS.md` §3.13.

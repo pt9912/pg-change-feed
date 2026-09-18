@@ -11,7 +11,7 @@ formatiert **sie** (`:47`): `71.9` → `71.90%`. `71.94 %` ist die
 gedruckt `71.90%`" — die Zeile warf zwei verschiedene Dinge in einen Topf und
 nannte damit **zwei verschiedene gedruckte Zeilen für denselben Stand**.
 
-Gefunden als `review-slice-089` **F-1 (HIGH)**. **Das Werkzeug lag vor** — die
+Gefunden im Review zu `slice-089` als **F-1 (HIGH)**. **Das Werkzeug lag vor** — die
 Erklärung stand in einem Dokument über genau dieses Skript, und ein Blick in
 `tools/coverage-gate.sh:35/:47` hätte sie widerlegt.
 
@@ -19,5 +19,5 @@ Erklärung stand in einem Dokument über genau dieses Skript, und ein Blick in
 (`AGENTS.md` §3.12) einführt — die Regel gegen den ungeprüften Mechanismus-Satz
 ist damit **an ihrer eigenen Einführung** fällig geworden.
 
-Quelle: `docs/reviews/review-slice-089.md` (F-1) · `tools/coverage-gate.sh`
+Quelle: Review zu `slice-089` (F-1) · `tools/coverage-gate.sh`
 (`:35` parst, `:47` formatiert) · `harness/sensors/coverage-gate.md` §Zählbasis.

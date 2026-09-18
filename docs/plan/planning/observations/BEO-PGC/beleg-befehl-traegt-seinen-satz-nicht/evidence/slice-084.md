@@ -16,10 +16,10 @@ Range, ließ aber den Pathspec weg — dieselbe Klasse, eine Runde später. Erst
 `-- internal/ ':!internal/adapters/driven/postgresack/'` (die Gegenrichtung,
 leer) trägt die Aussage.
 
-Gefunden hat es der Verifier als `verify-slice-084` **V-1** — ausdrücklich als
-Belegform mit Rest, nicht als Substanzfehler.
+Gefunden hat es der Verifier im Verifikationsbericht zu `slice-084` als
+**V-1** — ausdrücklich als Belegform mit Rest, nicht als Substanzfehler.
 
-Quelle: `docs/reviews/verify-slice-084.md` (V-1) ·
+Quelle: Verifikationsbericht zu `slice-084` (V-1) ·
 `docs/plan/planning/done/slice-084-postgresack-naht.md` §3(b) (berichtigt in
 `4387523`, dem Closure-Commit des Vorgangs) ·
 `git diff --name-only fb6adf6..4035ee7`.

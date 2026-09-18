@@ -15,6 +15,6 @@ unabhängig nachvollzogen): ein testweise unter `docs/reviews/**` eingefügter
 ggf. an, `version-stale` nicht), derselbe Pfad außerhalb der Ausnahme
 (`harness/README.md`) färbt korrekt rot.
 
-Quelle: `docs/reviews/review-slice-105.md` F-1 (MEDIUM, Klasse „Exemption
-ohne Reifegrenze") · `docs/reviews/verify-slice-105.md` §5 (eigene,
+Quelle: Review zu `slice-105`, F-1 (MEDIUM, Klasse „Exemption
+ohne Reifegrenze") · Verifikationsbericht zu `slice-105`, §5 (eigene,
 unabhängige Begründung, teilt die Einstufung) · `.d-check.yml:61`.
