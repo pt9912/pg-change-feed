@@ -1440,7 +1440,7 @@ echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (disable) — 
 abdeckung_declare "Publication-Entzug-Wirksamkeit" "LH-FA-CFG-002" "ein direkter Publication-Entzug per DDL trennt die PostgreSQL-seitige Filterung von der App-seitigen Assembler-Filterung: die Assembler-Bindung bleibt über den ganzen Beleg aktiv" "Publication-Entzug-Wirksamkeit — nach ALTER PUBLICATION"
 
 # Publication-Entzug-Wirksamkeit — isolierter Beleg (BEO-PGC/walsender-wirksamkeit,
-# LH-FA-CFG-002, ADR-0050, docs/reviews/architect-verdict-walsender-wirksamkeit.md):
+# LH-FA-CFG-002, ADR-0050, der Architect-Verdikt zur Walsender-Wirksamkeit):
 # Der SQL-Administration Live-Reload-Beleg (disable) oben prüft nur die
 # App-seitige Assembler-Filterung — RemoveBinding läuft synchron mit
 # cdc.disable_table und verwirft jede Änderung der Tabelle, unabhängig
@@ -2358,7 +2358,7 @@ abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005" "ein realer Con
 # `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
 # in ADR-0058 vorgesehenen, real blockierten zweiten
 # `make schema-rollout`-Lauf (BEO-PGC/schema-rollout-fremdobjekte, Exit 8
-# auf vier Fremdobjekten, docs/reviews/blocker-slice-063.md). Läuft hier,
+# auf vier Fremdobjekten, das Blocker-Protokoll zu `slice-063`). Läuft hier,
 # solange der Feed-Container noch unversehrt und gesund ist — vor
 # TestE2ESchemaChangeDropColumn/TestE2ESchemaChangeIncompatibleTypeChange
 # unten, die ihn beide dauerhaft beenden. `feed_e2e_full` bleibt über den

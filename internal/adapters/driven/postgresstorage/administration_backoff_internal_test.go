@@ -7,7 +7,7 @@ import (
 
 // TestNextAdministrationReconnectBackoffDoublesFromZeroAndCaps trägt den
 // Backoff-Verlauf des `LISTEN`-Wiederverbindungspfads (Review-Finding F-3,
-// `review-slice-037.md`): 0 (noch kein Fehlschlag) springt auf die
+// Review zu `slice-037`): 0 (noch kein Fehlschlag) springt auf die
 // Initial-Backoff, jeder weitere Fehlschlag verdoppelt, die Obergrenze
 // deckelt. Rot färbende Mutation: `doubled > administrationReconnectMaxBackoff`
 // durch `doubled >= administrationReconnectMaxBackoff` ersetzen — dann

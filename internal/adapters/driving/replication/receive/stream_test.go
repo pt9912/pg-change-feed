@@ -529,7 +529,7 @@ func TestWALRetentionMeasuresGrowingBytes(t *testing.T) {
 }
 
 // TestWALRetentionMeasureInvalidSlotName trägt einen der drei
-// Fehlerpfade aus `review-slice-025.md` F-1 (ungültiger Slot):
+// Fehlerpfade aus dem Review zu `slice-025` F-1 (ungültiger Slot):
 // `NewWALRetentionChecker` weist einen Slot-Namen außerhalb des
 // Bezeichner-Alphabets ab, bevor überhaupt eine Verbindung versucht wird
 // — kein Testcontainer nötig, dieser Zweig läuft vor jeder DB-Interaktion.
@@ -541,7 +541,7 @@ func TestWALRetentionMeasureInvalidSlotName(t *testing.T) {
 }
 
 // TestWALRetentionMeasureConnectionRefusedFails trägt den
-// Verbindungsfehler-Pfad aus `review-slice-025.md` F-1: ein nicht
+// Verbindungsfehler-Pfad aus dem Review zu `slice-025` F-1: ein nicht
 // erreichbarer Host scheitert am Verbindungsaufbau selbst, sichtbar als
 // `ErrReplication` — kein Testcontainer nötig, der Verbindungsversuch
 // scheitert bereits am Transport (Port 1 trägt keinen Listener).
@@ -556,7 +556,7 @@ func TestWALRetentionMeasureConnectionRefusedFails(t *testing.T) {
 }
 
 // TestWALRetentionMeasureMissingSlot trägt den `!exists`-Fehlerpfad aus
-// `review-slice-025.md` F-1 (fehlender Slot): ein syntaktisch gültiger,
+// dem Review zu `slice-025` F-1 (fehlender Slot): ein syntaktisch gültiger,
 // aber nie angelegter Slot-Name liefert einen sichtbaren
 // `ErrReplication`-Fehler statt eines stillen Nullwerts.
 func TestWALRetentionMeasureMissingSlot(t *testing.T) {
@@ -622,7 +622,7 @@ func terminateBackend(t *testing.T, pool *pgxpool.Pool, applicationName string) 
 }
 
 // TestWALRetentionMeasureReconnectsAfterConnectionLoss trägt sowohl den
-// IDENTIFY_SYSTEM-Fehlerpfad aus `review-slice-025.md` F-1 als auch den
+// IDENTIFY_SYSTEM-Fehlerpfad aus dem Review zu `slice-025` F-1 als auch den
 // Reconnect-Pfad aus F-2: Ein serverseitig beendetes Backend (simuliert
 // einen dauerhaften Idle-Timeout zwischen zwei Ticks, anders als die
 // Stream-Verbindung mit ihrem Keepalive-Verkehr) lässt die laufende

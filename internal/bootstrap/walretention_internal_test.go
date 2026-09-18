@@ -23,7 +23,7 @@ import (
 
 // TestResolveWALRetentionThresholdsDefaultsToSpec013 belegt den
 // Zero-Value-Fallback von `Config.WALRetentionWarnBytes`/
-// `WALRetentionErrorBytes` (Review-Finding F-1, `review-slice-026.md`): ein
+// `WALRetentionErrorBytes` (Review-Finding F-1, Review zu `slice-026`): ein
 // unbesetzter (0 oder negativer) Override übernimmt die
 // SPEC-013-Startwerte (100 MiB/1 GiB), nicht eine Schwelle von 0 — ein
 // über `ConfigFromEnv` gestarteter Produktionsprozess erreicht `Run` immer

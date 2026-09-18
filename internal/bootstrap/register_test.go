@@ -125,7 +125,7 @@ func TestRegisterConsumerReportsStorageFailure(t *testing.T) {
 
 // TestRegisterConsumerReportsDomainFailure trägt den zweiten,
 // unabhängigen Fehler-Zweig in `RegisterConsumer` — den nach
-// `register.Register(...)` (`review-slice-021.md` F-1): eine leere
+// `register.Register(...)` (Review zu `slice-021` F-1): eine leere
 // Consumer-Kennung scheitert an `model.NewConsumer`
 // (`domainerrors.ErrEmptyIdentifier`), bevor der Consumer-State-Port
 // berührt wird — real gegen PostgreSQL (`make test-store`), weil der

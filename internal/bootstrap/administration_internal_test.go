@@ -24,7 +24,7 @@ import (
 // Feed-Container erfasst/stoppt ohne Neustart) liegt in
 // `tools/harness/run-integration-tests.sh` (`make test-integration`); diese
 // Datei belegt die Fehlerpfade und die Assembler-Bindungs-Nachtragung ohne
-// reale PostgreSQL-Instanz (Review-Finding F-2, `review-slice-037.md`).
+// reale PostgreSQL-Instanz (Review-Finding F-2, Review zu `slice-037`).
 
 // fakeAdministrationRequestPort trägt einen In-Memory-Stub des
 // `outbound.AdministrationRequestPort`: `pending` wird bei `ListPending`

@@ -171,7 +171,7 @@ func TestAcknowledgeConsumerReportsUnregistered(t *testing.T) {
 }
 
 // TestAcknowledgeConsumerReportsInvalidPosition trägt einen der zwei
-// externen Domänenfehler-Pfade aus `review-slice-022.md` F-1: ein Offset
+// externen Domänenfehler-Pfade aus dem Review zu `slice-022` F-1: ein Offset
 // von 0 scheitert an `model.NewSourcePosition`
 // (`domainerrors.ErrInvalidPosition`), bevor der Consumer-State-Port
 // berührt wird — real gegen PostgreSQL (`make test-store`), weil der
@@ -203,7 +203,7 @@ func TestAcknowledgeConsumerReportsInvalidPosition(t *testing.T) {
 }
 
 // TestAcknowledgeConsumerReportsEmptyIdentifier trägt den zweiten der
-// zwei externen Domänenfehler-Pfade aus `review-slice-022.md` F-1: eine
+// zwei externen Domänenfehler-Pfade aus dem Review zu `slice-022` F-1: eine
 // leere Consumer-Kennung scheitert an `AcknowledgeConsumerService.Acknowledge`
 // (`domainerrors.ErrEmptyIdentifier`), noch vor der Positions-Prüfung und
 // bevor der Consumer-State-Port berührt wird — real gegen PostgreSQL
