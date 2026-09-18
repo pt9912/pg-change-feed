@@ -58,19 +58,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       empfangene Change lesbar aus; `make example-run-go SURFACE=nats-stream`
       baut und startet ihn real gegen die Demo-Umgebung
       ([`LH-FA-SST-008`](../../../../spec/lastenheft.md)).
-- [ ] `harness/mk/examples.mk`s drei `$(filter …)`-Prüfungen für
+- [x] `harness/mk/examples.mk`s drei `$(filter …)`-Prüfungen für
       `example-run-go` (und die zugehörige `$(error …)`-Meldung) tragen
       `nats-stream` als vierten zulässigen Wert (`ADR-0100` Teilfrage 6) —
       **nur** die `example-run-go`-Zeile in diesem Slice, die beiden anderen
       (`example-run-csharp`/`-kotlin`) trägt der Folge-Slice.
-- [ ] Doku-Nachzug: `examples/README.md` bekommt den vierten Zugriffs-
+- [x] Doku-Nachzug: `examples/README.md` bekommt den vierten Zugriffs-
       Abschnitt, `docs/user/benutzerhandbuch.md`s `**Beispiele:**`-Block für
       den neuen Weg trägt die Go-Zeile.
 - [ ] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `examples/README.md`, neuer Handbuch-Abschnitt „Zugriff
+- [x] Doku-Update: `examples/README.md`, neuer Handbuch-Abschnitt „Zugriff
       über den NATS-Vollinhalts-Stream" (siehe §2 dritter Liefer-Punkt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -85,10 +85,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `examples/nats-stream-client/main.go` | neu | verbindet mit `CDC_NATS_STREAM_TOKEN`, abonniert `cdc.stream.>`, gibt jede empfangene Change (10-Feld-JSON, `SPEC-021`-Schema) lesbar aus — Vorbild `examples/nats-client` |
+| `examples/nats-stream-client/main.go`, `format.go`, `format_test.go` | neu | verbindet mit `CDC_NATS_STREAM_TOKEN`, abonniert `cdc.stream.>` (Wurzel-Wildcard, keine Quelle/Schema/Tabelle-Filterung nötig — anders als `examples/nats-client`, weil der Vollinhalts-Stream keinen zweiten HTTP-Holschritt braucht), gibt jede empfangene Change (10-Feld-JSON, `SPEC-024`-Schema) in einer Endlosschleife lesbar aus — Vorbild `examples/grpc-client`s `main.go`/`format.go`-Aufteilung, Nachrichtenschema/-dekodierung wie `internal/adapters/driven/natsstream` |
+| `examples/Dockerfile` | update | **Plan-Nachzug** (im ursprünglichen Plan übersehen, gegen den Ist-Zustand nachgezogen vor dem Sensor-Lauf): vierter Build-Aufruf (`-o /out/nats-stream-client`) und neue Stufe `runtime-nats-stream` — ohne sie bräche `make example-run-go SURFACE=nats-stream` am `docker build --target runtime-nats-stream` ab |
 | `harness/mk/examples.mk` | update | die `example-run-go`-Ziel-Zeile (`$(filter $(SURFACE),http sse grpc nats)` → `… nats nats-stream`, `$(error …)`-Text) trägt `nats-stream` |
 | `examples/README.md` | update | neue Tabellenzeile in `## Go` |
-| `docs/user/benutzerhandbuch.md` | update | neuer §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" mit `**Beispiele:**`-Block (zunächst nur Go-Zeile), neue Versionshistorie-Zeile |
+| `docs/user/benutzerhandbuch.md` | update | **Plan-Korrektur**: der §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" existiert bereits (`slice-nats-drittstream-core`, mit einem Platzhalter-Absatz „Beispiele: folgen…"); dieser Slice ersetzt den Platzhalter durch den `**Beispiele:**`-Block (zunächst nur Go-Zeile), keine neue Sektion. Neue Versionshistorie-Zeile |
 
 **Ansatz:** Der neue Handbuch-Abschnitt entsteht als eigener Abschnitt nach
 dem Vorbild „Zugriff über das NATS-Wecksignal" — Betreiber-Doku zu Aktivierung

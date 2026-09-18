@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.28
+Version: 1.29
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-18
 
@@ -865,12 +865,20 @@ ein Verbindungsversuch ohne oder mit falschem Token wird vom Server selbst
 abgelehnt (Verbindungsebene, nicht Anwendungsebene) — dieselbe Aussage wie
 gRPCs `Unauthenticated` oder SSEs `401`, nur eine Ebene tiefer verortet.
 
-**Beispiele:** folgen in einem eigenen Folge-Vorgang (Go/C#/Kotlin,
-`slice-nats-drittstream-example-go`,
-`slice-nats-drittstream-example-csharp-kotlin`) — dieser Zugriffsweg selbst ist
-bereits nutzbar. Bis dahin trägt `tools/harness/natsstreamsub` den
-E2E-Testbeleg (`make test-integration`); er ist wie die übrigen
-Harness-Testclients unter `tools/harness/` kein Vorbild zum Nachbauen.
+**Beispiele:** Jede Sprache abonniert den Vollinhalts-Namensraum
+`cdc.stream.>` und gibt jede empfangene Change aus; NATS-URL und Token liest
+jedes Beispiel aus `CDC_NATS_URL` und `CDC_NATS_STREAM_TOKEN` und lässt sich
+per Flag übersteuern.
+
+- **Go:** `examples/nats-stream-client` — Container-Aufruf über
+  `make example-run-go SURFACE=nats-stream` (baut bei Bedarf
+  `pg-change-feed-examples:go-nats-stream` aus `examples/Dockerfile`)
+- **C#/Kotlin:** folgen in einem eigenen Folge-Vorgang
+  (`slice-nats-drittstream-example-csharp-kotlin`).
+
+Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
+Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
+Vorbild.
 
 ## 5. Konfiguration
 
@@ -1099,3 +1107,4 @@ MIT — siehe `LICENSE`.
 | 1.26 | 2026-09-18 | Go-Startform auf `make`+Dockerfile umgestellt (`ADR-0098`, Supersedes `ADR-0076` Startform-Bullet, slice-beispiele-go-dockerfile-start): alle vier Go-Zeilen der `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-go SURFACE=<oberfläche>` (baut bei Bedarf `pg-change-feed-examples:go[-<surface>]` aus dem neuen `examples/Dockerfile`) statt `go run ./examples/<name>`; `go run` bleibt technisch funktionsfähig, ist aber nicht mehr die zitierte Startform |
 | 1.27 | 2026-09-18 | C#-/Kotlin-Startform auf echte Start-Make-Ziele umgestellt (`ADR-0098` Festlegung 2, slice-beispiele-csharp-kotlin-start-target): alle acht C#-/Kotlin-Zeilen der vier `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-csharp SURFACE=<oberfläche>`/`make example-run-kotlin SURFACE=<oberfläche>` statt des rohen `docker run --rm -e … <Image> …`-Aufrufs; beide Ziele bauen nichts, sie starten den bereits von `make examples-csharp`/`make examples-kotlin` gebauten Image-Tag |
 | 1.28 | 2026-09-18 | Dritter, vollinhaltstragender NATS-Zustellweg ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-core): neuer §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" (Subjekt-Namensraum `cdc.stream.<...>`, dasselbe Nachrichtenschema wie SSE, Zwei-Bedingungen-Aktivierung, serverweite Auth-Nebenwirkung auf das Wecksignal); §5 trägt die neue Variable `CDC_NATS_STREAM_TOKEN` und die auf sieben Schlüssel (drei DSN, drei Token, `nats_url`) gewachsene Zugangsdaten-Klasse der Konfigurationsdatei (`nats_stream_token` neu) |
+| 1.29 | 2026-09-18 | Erster Go-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-go): §4 „Zugriff über den NATS-Vollinhalts-Stream" — der Platzhalter-Absatz wird zu einem `**Beispiele:**`-Block (zunächst nur Go); `examples/nats-stream-client` abonniert `cdc.stream.>` und gibt jede empfangene Change aus, über einen Container-Aufruf (`make example-run-go SURFACE=nats-stream`, Image-Tag `pg-change-feed-examples:go-nats-stream`) |

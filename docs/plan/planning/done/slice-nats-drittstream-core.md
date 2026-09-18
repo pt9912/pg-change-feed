@@ -419,11 +419,9 @@ neuer Eintrag) und `BEO-PGC/beispiel-client-falsche-payload-laenge` (neu,
 
 ## Folge-Slices
 
-[`slice-nats-drittstream-example-go`](../open/slice-nats-drittstream-example-go.md)
-und
-[`slice-nats-drittstream-example-csharp-kotlin`](../open/slice-nats-drittstream-example-csharp-kotlin.md)
-— beide hängen an diesem Slice als Voraussetzung und liefern die
-Beispiel-Clients unter `examples/`.
+`slice-nats-drittstream-example-go` und
+`slice-nats-drittstream-example-csharp-kotlin` — beide hängen an diesem
+Slice als Voraussetzung und liefern die Beispiel-Clients unter `examples/`.
 
 ## Verifikation
 

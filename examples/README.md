@@ -56,6 +56,7 @@ Teil des Root-Moduls (`go test ./...` bleibt der Anti-Verrottungs-Träger,
 | [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`grpc-client`](grpc-client) | `make example-run-go SURFACE=grpc` |
 | [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`sse-client`](sse-client) | `make example-run-go SURFACE=sse` |
 | [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`nats-client`](nats-client) | `make example-run-go SURFACE=nats ARGS="-source <quelle> -schema <schema> -table <tabelle>"` |
+| [NATS-Vollinhalts-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-nats-vollinhalts-stream) | [`nats-stream-client`](nats-stream-client) | `make example-run-go SURFACE=nats-stream` |
 
 `make example-run-go` baut bei Bedarf `pg-change-feed-examples:go[-<surface>]`
 und startet den Container real gegen das Docker-Netzwerk `cdc-examples` mit

@@ -65,13 +65,14 @@ examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeu
 # Image aus `examples/Dockerfile` (Wurzel-Bau-Kontext, isoliert über
 # `examples/Dockerfile.dockerignore`) und startet es real per
 # `docker run --rm --network cdc-examples --env-file examples/.env`. `SURFACE=`
-# ist ein Pflicht-Argument (`http`, `sse`, `grpc` oder `nats`); ein fehlendes
-# oder unbekanntes `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker
+# ist ein Pflicht-Argument (`http`, `sse`, `grpc`, `nats` oder `nats-stream`,
+# der vierte Zugriffsweg seit ADR-0100); ein fehlendes oder unbekanntes
+# `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker
 # build`/`docker run` versucht wird (kein halb gestarteter Zustand). `ARGS=`
 # trägt die Flag-Übersteuerung, die ADR-0076 Festlegung 1 bereits für alle
 # Beispiele vorsieht (z. B. `ARGS="-source demo -publication demo_pub"`).
 # `SURFACE=http` liefert das `runtime`-Image ohne `--target` (mirror der
-# ADR-0087-Konvention); die anderen drei Oberflächen adressieren ihre
+# ADR-0087-Konvention); die anderen vier Oberflächen adressieren ihre
 # `runtime-<surface>`-Stufe explizit. Das Docker-Netzwerk `cdc-examples` und
 # `examples/.env` legt `slice-beispiele-compose-bootstrap` an — dieses Ziel
 # referenziert beide nur, ohne sie zu erzeugen; ein Aufruf ohne sie schlägt
@@ -82,9 +83,9 @@ examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeu
 # `examples-csharp`/`examples-kotlin`): der Start braucht das benannte
 # Docker-Netzwerk, `make gates` bleibt netzlos.
 .PHONY: example-run-go
-example-run-go: ## Go-Beispiel bauen+starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; Werkzeug, kein Gate; ADR-0098)
-ifeq ($(filter $(SURFACE),http sse grpc nats),)
-	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-go SURFACE=http)
+example-run-go: ## Go-Beispiel bauen+starten (Pflicht: SURFACE=http|sse|grpc|nats|nats-stream, optional ARGS=…; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats nats-stream),)
+	$(error SURFACE muss http, sse, grpc, nats oder nats-stream sein, z.B. make example-run-go SURFACE=http)
 endif
 	docker build -f examples/Dockerfile $(if $(filter $(SURFACE),http),,--target runtime-$(SURFACE)) -t pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) .
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)

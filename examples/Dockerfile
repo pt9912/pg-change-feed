@@ -30,7 +30,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
       -o /out/grpc-client ./examples/grpc-client && \
     CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
-      -o /out/nats-client ./examples/nats-client
+      -o /out/nats-client ./examples/nats-client && \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+      -o /out/nats-stream-client ./examples/nats-stream-client
 
 # --- runtime-sse: startbares Image des SSE-Clients ---
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab AS runtime-sse
@@ -49,6 +51,12 @@ FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c
 COPY --from=build /out/nats-client /nats-client
 USER nonroot
 ENTRYPOINT ["/nats-client"]
+
+# --- runtime-nats-stream: startbares Image des NATS-Vollinhalts-Stream-Clients ---
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab AS runtime-nats-stream
+COPY --from=build /out/nats-stream-client /nats-stream-client
+USER nonroot
+ENTRYPOINT ["/nats-stream-client"]
 
 # --- runtime: startbares Image des HTTP-Clients. Bleibt die letzte Stufe der
 # Datei, damit ein `docker build` ohne `--target` (mirror der ADR-0087-
