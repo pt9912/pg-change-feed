@@ -103,9 +103,14 @@ weist das als F-4 (HIGH) aus, und die bestätigende Klausel der
 [`ADR-0101`](0101-zugangsdaten-klasse-sieben-schluessel.md) verschärft es: sie
 bestätigt mit „Alles Übrige" genau die nicht genannten Stellen als geltend.
 
-**(2) Die eigene Messung dieses Zugs** (2026-09-18, HEAD `2fc3499`; `grep` über
-die vier `Accepted`-Dokumente nach „sechs Schlüssel" / „zwei Token-Schlüssel" /
-„er führt sechs" und Lesen jeder Fundstelle im Zusammenhang):
+**(2) Die eigene Messung dieses Zugs** (2026-09-18, HEAD `2fc3499`; `grep -nE`
+über die vier `Accepted`-Dokumente nach **„sechs"** und **„zwei
+Token-Schlüssel"** — bewusst die weiten Muster: die engere Form „sechs
+Schlüssel" zerlegt sich an mehreren Fundstellen an Markdown-Emphasis und
+Wortstellung (`0091:80` „sechs *Schlüssel*", `0091:97` „fünf statt sechs",
+`0089:73` „sechs env-exklusive") und findet sie nicht; Treffer je Dokument:
+`0088` 6, `0089` 3, `0091` 22, `0092` 6 — und Lesen jeder Fundstelle im
+Zusammenhang):
 
 | Dokument | Stelle (Sektion, Zeile am HEAD) | Trägt heute | Nach dieser ADR |
 |---|---|---|---|
@@ -310,6 +315,7 @@ Sonst permanent: die Zugangsdaten-Klasse der Konfigurationsdatei umfasst
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-18 | Accepted — Anlass: Re-Review zu `slice-nats-drittstream-core` <!-- d-check:status-provenance -->, F-4 (HIGH) und F-12 (HIGH). Eigene Messung an HEAD `2fc3499` (`grep` über die vier `Accepted`-Dokumente nach „sechs Schlüssel"/„zwei Token-Schlüssel"/„er führt sechs"): die §Status-Aufzählung der [`ADR-0101`](0101-zugangsdaten-klasse-sieben-schluessel.md) nennt den §Entscheidung-Kopfsatz und den §Konsequenzen-Bullet der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md), deren §Kontext (4), die §Entscheidung Festlegung 1 und die §Kontext (1)/(3)/(4) der [`ADR-0091`](0091-zugangsdaten-klasse-sechs-schluessel.md) sowie die §Entscheidung Festlegung 1 und die §Kontext (2) der [`ADR-0089`](0089-feldmengen-paarung-kein-sensor-review-waechter.md) nicht; die bestätigende Klausel hätte sie geltend bestätigt. Unabhängiger Architect-Zug ersetzt die Aufzählung durch die verifizierte Liste samt der Regel, die die Klasse schließt; die Substanz der [`ADR-0101`](0101-zugangsdaten-klasse-sieben-schluessel.md) und die drei lebenden Träger bleiben unverändert | Re-Review zu `slice-nats-drittstream-core` <!-- d-check:status-provenance --> F-4/F-12 |
+| 2026-09-18 | Zitat-Korrektur nach [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md): die Beleg-Angabe des Suchlaufs in §Kontext (2) nannte ein Muster, das drei der aufgeführten Fundstellen nicht erzeugt (`0091:80` „sechs *Schlüssel*", `0091:97` „fünf statt sechs", `0089:73` „sechs env-exklusive" — Markdown-Emphasis und Wortstellung zerlegen die engere Form); ersetzt durch das gemessene weite Muster samt Trefferzahlen je Dokument. Referent unverändert: die Liste der ersetzten Stellen und der Supersede-Umfang bleiben wie sie sind. Die gleichlautende Angabe in der Zeile darüber bleibt als Aufzeichnung stehen und ist damit als überholt gekennzeichnet | Re-Review zu `slice-nats-drittstream-core` <!-- d-check:status-provenance --> F-1 |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
