@@ -34,6 +34,7 @@ import (
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/grpcstream"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsnotify"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsstream"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
@@ -92,6 +93,21 @@ const (
 	// Fehlschlag) — anders als `envLogLevel`, dessen Fehlerfall die
 	// Erfassung selbst nicht gefährdet.
 	envNatsURL = "CDC_NATS_URL"
+	// envNatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
+	// dritten, vollinhaltstragenden Zustellwegs (`ADR-0100` Teilfrage 4/5,
+	// `LH-FA-SST-008`): eine gesetzte `CDC_NATS_STREAM_TOKEN` aktiviert —
+	// zusammen mit `envNatsURL` — sowohl den `natsstream.Publisher` als
+	// auch eine Token-Client-Option an der bestehenden
+	// `nats.Connect`-Aufrufstelle. Ist nur `envNatsURL` gesetzt (heutiger
+	// Zustand jeder bestehenden Installation), bleibt das Wecksignal
+	// unverändert aktiv und der dritte Weg unkonstruiert — die
+	// Zwei-Bedingungen-Form (`natsStreamEnabled`) schützt bewusst gegen
+	// eine versehentliche Ein-Bedingungs-Aktivierung. Ist die Variable
+	// gesetzt, aber `envNatsURL` leer, ist das ein Konfigurationsfehler
+	// beim Start (`ErrConfiguration`, `validateNatsStreamTokenRequiresURL`)
+	// — ein Betreiber, der den dritten Weg aktiviert, aber kein
+	// Verbindungsziel angibt, soll das beim Start bemerken.
+	envNatsStreamToken = "CDC_NATS_STREAM_TOKEN"
 	// envHTTPAddr trägt die optionale Horch-Adresse des HTTP/JSON-Driving-
 	// Adapters (`ADR-0057`, `LH-FA-SST-006`): anders als die sechs
 	// Vorbedingungen oben ist sie keine Start-Vorbedingung — ungesetzt
@@ -241,6 +257,12 @@ type Config struct {
 	// dieselben beiden Token-Klassen wie der HTTP-Adapter (`ADR-0060`
 	// Teilfrage 4).
 	GRPCAddr string
+	// NatsStreamToken trägt den optionalen NATS-Verbindungs-Token des
+	// dritten, vollinhaltstragenden Zustellwegs (`envNatsStreamToken`,
+	// `ADR-0100` Teilfrage 4/5); leer heißt der dritte Weg deaktiviert. Er
+	// trägt Zugangsdaten und ist damit auf beiden Ladepfaden env-var-exklusiv
+	// (`ADR-0088` Festlegung 1), wie `NatsURL`/`APITokenReader`/`APITokenAdmin`.
+	NatsStreamToken string
 }
 
 // ConfigFromEnv liest die Verdrahtungs-Vorbedingungen über die
@@ -284,7 +306,36 @@ func ConfigFromEnv(getenv func(string) string) (Config, error) {
 	cfg.APITokenReader = getenv(envAPITokenReader)
 	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
 	cfg.GRPCAddr = getenv(envGRPCAddr)
+	cfg.NatsStreamToken = getenv(envNatsStreamToken)
+	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
+		return Config{}, err
+	}
 	return cfg, nil
+}
+
+// validateNatsStreamTokenRequiresURL trägt `ADR-0100` Teilfrage 5s
+// Konfigurationsfehler-Zweig: eine gesetzte `CDC_NATS_STREAM_TOKEN` ohne
+// `CDC_NATS_URL` ist kein stiller Halbzustand — ein Betreiber, der den
+// dritten Zustellweg aktiviert, aber kein Verbindungsziel angibt, bemerkt
+// das beim Start. Geteilt zwischen `ConfigFromEnv` und `mergeConfig`
+// (`config_file.go`): beide Ladepfade lesen beide Felder ausschließlich aus
+// der Umgebung (`ADR-0088` Festlegung 1), die Vorbedingung gilt auf beiden
+// gleich.
+func validateNatsStreamTokenRequiresURL(natsURL, natsStreamToken string) error {
+	if natsStreamToken != "" && natsURL == "" {
+		return fmt.Errorf("%w: %s gesetzt, aber %s fehlt", ErrConfiguration, envNatsStreamToken, envNatsURL)
+	}
+	return nil
+}
+
+// natsStreamEnabled meldet, ob der dritte, vollinhaltstragende
+// NATS-Zustellweg aktiv ist (`ADR-0100` Teilfrage 5): **beide** Bedingungen
+// müssen gesetzt sein — `CDC_NATS_URL` und `CDC_NATS_STREAM_TOKEN`. Ist nur
+// eine der beiden gesetzt, bleibt der Weg deaktiviert — Regressionsschutz
+// gegen eine versehentliche Ein-Bedingungs-Aktivierung (`ADR-0100`
+// §Fitness Function).
+func natsStreamEnabled(natsURL, natsStreamToken string) bool {
+	return natsURL != "" && natsStreamToken != ""
 }
 
 // parseLogLevel liest den Log-Level der strukturierten Ausgabe
@@ -391,14 +442,17 @@ func splitQualifiedName(qualified string) (string, string, error) {
 }
 
 // changeStreamEnabled meldet, ob die Live-Streaming-Fähigkeit aktiv ist
-// (`ADR-0061` Teilfrage 5): Der `Broadcaster` wird konstruiert und über
-// `CaptureService.WithChangeStream` verdrahtet, sobald mindestens einer der
-// beiden Zustellwege aktiv ist — `CDC_GRPC_ADDR` oder `CDC_HTTP_ADDR`
-// gesetzt. Sind beide leer, bleibt die Fähigkeit vollständig deaktiviert:
-// kein Broadcaster, kein Stream-Publish-Schritt, unverändertes
+// (`ADR-0061` Teilfrage 5, um eine dritte Oder-Bedingung erweitert durch
+// `ADR-0100` Teilfrage 5): Der `Broadcaster` wird konstruiert und über
+// `CaptureService.WithChangeStream` verdrahtet, sobald mindestens einer von
+// drei Zustellwegen aktiv ist — `CDC_GRPC_ADDR` gesetzt, `CDC_HTTP_ADDR`
+// gesetzt, oder `natsStreamActive` (beide `CDC_NATS_URL` und
+// `CDC_NATS_STREAM_TOKEN` gesetzt, `natsStreamEnabled`). Sind alle drei
+// Bedingungen falsch, bleibt die Fähigkeit vollständig deaktiviert: kein
+// Broadcaster, kein Stream-Publish-Schritt, unverändertes
 // Bestandsverhalten.
-func changeStreamEnabled(grpcAddr, httpAddr string) bool {
-	return grpcAddr != "" || httpAddr != ""
+func changeStreamEnabled(grpcAddr, httpAddr string, natsStreamActive bool) bool {
+	return grpcAddr != "" || httpAddr != "" || natsStreamActive
 }
 
 // Run verdrahtet die Pipeline (`ADR-0026`) und trägt den Stream-Lauf bis
@@ -576,21 +630,24 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		return err
 	}
 
-	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5) ist die eine
-	// Stelle, an der die Zustellwege zusammenlaufen: beide Driving-Adapter
-	// (gRPC-Server und SSE-Endpunkt) lesen aus ihm, der `CaptureService`
-	// schreibt über den Outbound Port `ChangeStreamPort` in ihn. Er wird
-	// konstruiert, sobald mindestens einer der beiden Zustellwege aktiv ist
-	// (`changeStreamEnabled`, `ADR-0061` Teilfrage 5); sind beide Adressen
-	// leer, entsteht kein Broadcaster und der `CaptureService` trägt keinen
-	// Stream-Publish-Schritt (additiv, unverändertes Bestandsverhalten). Die
-	// Bindung ist keine Start-Vorbedingung: die Server starten weiter unten
-	// in eigener Goroutine, ein Startfehler wird dort über `log.Error`
-	// gemeldet und geht nicht in das Ergebnis von `Run` ein — wie beim
-	// HTTP-Adapter.
+	// Der In-Prozess-`Broadcaster` (`ADR-0060` Teilfrage 2/5, dritter
+	// Abonnent seit `ADR-0100`) ist die eine Stelle, an der die Zustellwege
+	// zusammenlaufen: die beiden Driving-Adapter (gRPC-Server und
+	// SSE-Endpunkt) und seit `ADR-0100` zusätzlich der Driven-Adapter
+	// `natsstream.Publisher` lesen aus ihm, der `CaptureService` schreibt
+	// über den Outbound Port `ChangeStreamPort` in ihn. Er wird
+	// konstruiert, sobald mindestens einer der drei Zustellwege aktiv ist
+	// (`changeStreamEnabled`, `ADR-0061` Teilfrage 5, `ADR-0100`
+	// Teilfrage 5); sind alle drei Bedingungen falsch, entsteht kein
+	// Broadcaster und der `CaptureService` trägt keinen Stream-Publish-
+	// Schritt (additiv, unverändertes Bestandsverhalten). Die Bindung ist
+	// keine Start-Vorbedingung: die Server starten weiter unten in eigener
+	// Goroutine, ein Startfehler wird dort über `log.Error` gemeldet und
+	// geht nicht in das Ergebnis von `Run` ein — wie beim HTTP-Adapter.
+	natsStreamActive := natsStreamEnabled(cfg.NatsURL, cfg.NatsStreamToken)
 	var changeBroadcaster *grpcstream.Broadcaster
 	captureOpts := []capture.Option{capture.WithLog(log)}
-	if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+	if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr, natsStreamActive) {
 		changeBroadcaster = grpcstream.New()
 		captureOpts = append(captureOpts, capture.WithChangeStream(changeBroadcaster))
 	}
@@ -603,9 +660,21 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Verbindungsfehler an dieser Stelle die Klasse `configuration`
 	// (`ErrConfiguration`) — ein Betreiber, der das Feature einschaltet,
 	// aber die Server-Adresse falsch trägt, soll das beim Start bemerken,
-	// nicht durch ein unauffällig ausbleibendes Wecksignal.
+	// nicht durch ein unauffällig ausbleibendes Wecksignal. Dieselbe
+	// Verbindung trägt seit `ADR-0100` zusätzlich den dritten,
+	// vollinhaltstragenden Zustellweg — keine zweite Verbindung (Teilfrage
+	// 5 Option B): eine gesetzte `CDC_NATS_STREAM_TOKEN` erweitert diesen
+	// `nats.Connect`-Aufruf um eine Token-Client-Option, die der NATS-Server
+	// serverweit erzwingt (bewusst benannter Nebeneffekt, `ADR-0100`
+	// §Konsequenzen) — auch für diese bislang anonyme Wecksignal-Verbindung.
+	stopNatsStreamPublisher := func() {}
+	var natsStreamPublisherDone sync.WaitGroup
 	if cfg.NatsURL != "" {
-		natsConn, err := nats.Connect(cfg.NatsURL)
+		var natsConnOpts []nats.Option
+		if cfg.NatsStreamToken != "" {
+			natsConnOpts = append(natsConnOpts, nats.Token(cfg.NatsStreamToken))
+		}
+		natsConn, err := nats.Connect(cfg.NatsURL, natsConnOpts...)
 		if err != nil {
 			return fmt.Errorf("%w: %s (%s) fehlgeschlagen: %v", ErrConfiguration, envNatsURL, cfg.NatsURL, err)
 		}
@@ -615,6 +684,31 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			return err
 		}
 		captureOpts = append(captureOpts, capture.WithChangeNotification(notify))
+
+		// Der `natsstream.Publisher` (`ADR-0100` Teilfrage 1/5) entsteht nur
+		// unter beiden Bedingungen (`natsStreamActive`) — dieselbe
+		// Zwei-Bedingungen-Form wie `changeStreamEnabled` oben. Er
+		// abonniert denselben `changeBroadcaster`, den `changeStreamEnabled`
+		// bereits für genau diesen Fall konstruiert hat, und läuft als
+		// eigener Hintergrund-Zug (eigene Goroutine, eigener WaitGroup-
+		// Eintrag) — dieselbe Struktur wie Heartbeat/Administration/
+		// Retention: kein Eingriff in die kritische Sektion des
+		// Capture-Persist-ACK-Pfads (`LH-QA-REL-001.a`), weil er
+		// ausschließlich aus dem bereits isolierten Broadcaster-Kanal
+		// liest, nicht aus dem `CaptureService` selbst.
+		if natsStreamActive {
+			publisher, err := natsstream.New(natsConn, changeBroadcaster, string(cfg.Source), natsstream.WithLog(log))
+			if err != nil {
+				return err
+			}
+			natsStreamCtx, cancel := context.WithCancel(ctx)
+			stopNatsStreamPublisher = cancel
+			natsStreamPublisherDone.Add(1)
+			go func() {
+				defer natsStreamPublisherDone.Done()
+				publisher.Run(natsStreamCtx)
+			}()
+		}
 	}
 	if err := stream.BindCapture(capture.NewCaptureService(store, ack, captureOpts...)); err != nil {
 		return err
@@ -833,6 +927,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	administrationDone.Wait()
 	stopRetention()
 	retentionDone.Wait()
+	stopNatsStreamPublisher()
+	natsStreamPublisherDone.Wait()
 	if httpServer != nil {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		_ = httpServer.Shutdown(shutdownCtx)

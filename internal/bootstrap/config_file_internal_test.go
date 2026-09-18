@@ -63,7 +63,7 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 func TestConfigFromFileLehntZugangsdatenAb(t *testing.T) {
 	for _, key := range []string{
 		"capture_dsn", "admin_dsn", "reader_dsn",
-		"api_token_reader", "api_token_admin", "nats_url",
+		"api_token_reader", "api_token_admin", "nats_url", "nats_stream_token",
 	} {
 		t.Run(key, func(t *testing.T) {
 			path := writeConfigFile(t, key+": sollte-nicht-hier-stehen\n")
@@ -390,6 +390,22 @@ func TestMergeConfigOberflaechenVariablenAusEnvUnterDatei(t *testing.T) {
 		{"CDC_API_TOKEN_READER", "token-reader-env", func(c Config) string { return c.APITokenReader }},
 		{"CDC_API_TOKEN_ADMIN", "token-admin-env", func(c Config) string { return c.APITokenAdmin }},
 	}
+	// CDC_NATS_STREAM_TOKEN braucht zusätzlich eine gesetzte CDC_NATS_URL
+	// (`validateNatsStreamTokenRequiresURL`) — ein eigener Fall statt eines
+	// Eintrags in der obigen Liste, die je Fall nur eine Variable setzt.
+	t.Run("CDC_NATS_STREAM_TOKEN", func(t *testing.T) {
+		values := envMitDatei(path, map[string]string{
+			"CDC_NATS_URL":          "nats://nats:4222",
+			"CDC_NATS_STREAM_TOKEN": "s3cr3t",
+		})
+		cfg, err := ConfigFromEnvAndFile(func(name string) string { return values[name] })
+		if err != nil {
+			t.Fatalf("CDC_NATS_STREAM_TOKEN gesetzt unter Datei: %v", err)
+		}
+		if cfg.NatsStreamToken != "s3cr3t" {
+			t.Fatalf("NatsStreamToken: Feld trägt %q, Erwartung aus der Env-Herkunft: %q", cfg.NatsStreamToken, "s3cr3t")
+		}
+	})
 	for _, c := range cases {
 		t.Run(c.env, func(t *testing.T) {
 			values := envMitDatei(path, map[string]string{c.env: c.wert})
@@ -494,7 +510,7 @@ grpc_addr: ":9090"
 		if err != nil {
 			t.Fatalf("Datei mit Adressen: %v", err)
 		}
-		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr, natsStreamEnabled(cfg.NatsURL, cfg.NatsStreamToken)) {
 			t.Fatalf("changeStreamEnabled(%q, %q) = false — der Broadcaster entstünde nicht", cfg.GRPCAddr, cfg.HTTPAddr)
 		}
 		if cfg.HTTPAddr == "" || cfg.GRPCAddr == "" {
@@ -518,7 +534,7 @@ grpc_addr: ":9090"
 		if err != nil {
 			t.Fatalf("Adressen aus der Umgebung: %v", err)
 		}
-		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+		if !changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr, natsStreamEnabled(cfg.NatsURL, cfg.NatsStreamToken)) {
 			t.Fatalf("changeStreamEnabled(%q, %q) = false — der Broadcaster entstünde nicht", cfg.GRPCAddr, cfg.HTTPAddr)
 		}
 		if cfg.HTTPAddr != ":8090" || cfg.GRPCAddr != ":9090" {
@@ -533,10 +549,10 @@ grpc_addr: ":9090"
 		if err != nil {
 			t.Fatalf("Datei ohne Adressen: %v", err)
 		}
-		if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr) {
+		if changeStreamEnabled(cfg.GRPCAddr, cfg.HTTPAddr, natsStreamEnabled(cfg.NatsURL, cfg.NatsStreamToken)) {
 			t.Fatalf("changeStreamEnabled(%q, %q) = true ohne Adresse in beiden Quellen", cfg.GRPCAddr, cfg.HTTPAddr)
 		}
-		if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" || cfg.NatsURL != "" ||
+		if cfg.HTTPAddr != "" || cfg.GRPCAddr != "" || cfg.NatsURL != "" || cfg.NatsStreamToken != "" ||
 			cfg.APITokenReader != "" || cfg.APITokenAdmin != "" {
 			t.Fatalf("Oberflächen-Felder ohne Herkunft gesetzt: %+v", cfg)
 		}

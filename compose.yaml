@@ -50,8 +50,14 @@ services:
     container_name: cdc-test-nats
     # -m 8222 aktiviert den HTTP-Monitor-Port ausschließlich für den
     # Healthcheck unten (/healthz); der Client-Port 4222 bleibt der
-    # einzige Verbindungsweg des Feed-Containers (CDC_NATS_URL).
-    command: ["-m", "8222"]
+    # einzige Verbindungsweg des Feed-Containers (CDC_NATS_URL). --auth
+    # trägt den serverweiten Verbindungs-Token des dritten,
+    # vollinhaltstragenden NATS-Zustellwegs (ADR-0100 Teilfrage 4/5): jede
+    # Verbindung — auch die bislang anonyme Wecksignal-Verbindung — braucht
+    # ihn, sobald er hier gesetzt ist (bewusst benannter Nebeneffekt,
+    # ADR-0100 §Konsequenzen). Fester Test-Token, kein Secret — dieselbe
+    # Klasse wie CDC_API_TOKEN_READER/CDC_API_TOKEN_ADMIN unten.
+    command: ["-m", "8222", "--auth", "e2e-nats-stream-token"]
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8222/healthz | grep -q ok"]
       interval: 2s
@@ -97,6 +103,15 @@ services:
       # LH-FA-SST-007): gesetzt in dieser Compose-Umgebung, damit der
       # Happy-Path-Beleg real läuft (tools/harness/run-integration-tests.sh).
       CDC_NATS_URL: nats://nats:4222
+      # Dritter, vollinhaltstragender NATS-Zustellweg (ADR-0100,
+      # LH-FA-SST-008): gesetzt zusammen mit CDC_NATS_URL — die
+      # Zwei-Bedingungen-Aktivierung (ADR-0100 Teilfrage 5) konstruiert den
+      # natsstream.Publisher und trägt dieselbe Token-Client-Option an die
+      # nats-Verbindung wie der Server-seitige --auth-Wert oben. Derselbe
+      # Wert dient dem realen Erfolgs- und Ablehnungs-Beleg
+      # (tools/harness/run-integration-tests.sh,
+      # tools/harness/natsstreamsub).
+      CDC_NATS_STREAM_TOKEN: e2e-nats-stream-token
       # Optionaler HTTP/JSON-Driving-Adapter (ADR-0057, LH-FA-SST-006):
       # gesetzt in dieser Compose-Umgebung, damit der reale HTTP-Rundlauf
       # (tools/harness/run-integration-tests.sh, tools/harness/httpclient)

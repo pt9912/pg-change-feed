@@ -30,16 +30,19 @@ const envConfigFile = "CDC_CONFIG_FILE"
 // forbiddenFileCredentialKeys trägt die Schlüssel der
 // zugangsdaten-tragenden Klasse, die in der Konfigurationsdatei nicht
 // vorkommen dürfen (`ADR-0088` Festlegung 1: Secrets bleiben
-// env-var-exklusiv, `LH-QA-SEC-001`/`002`). Die Klasse umfasst die drei
-// DSN-Schlüssel, die zwei Token-Schlüssel und `nats_url` — dessen URL-Form
-// Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr` gehören
-// ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann. Ein
-// Treffer bricht das Laden mit einer eigenen, den Grund benennenden
-// Fehlerzeile ab, statt nur als generischer „unbekannter Schlüssel" des
-// strikten Decodings unten zu erscheinen.
+// env-var-exklusiv, `LH-QA-SEC-001`/`002`; `SPEC-016`). Die Klasse umfasst
+// die drei DSN-Schlüssel, die drei Token-Schlüssel und `nats_url` — dessen
+// URL-Form Benutzer und Passwort einbetten kann; `http_addr`/`grpc_addr`
+// gehören ihr nicht an, weil `host:port` keine Zugangsdaten tragen kann.
+// `nats_stream_token` trägt den Verbindungs-Token des dritten,
+// vollinhaltstragenden NATS-Zustellwegs (`ADR-0100` Teilfrage 4/5,
+// Folgepflicht zu `SPEC-016`) — derselbe Zugangsdaten-Charakter wie die
+// beiden API-Token-Schlüssel. Ein Treffer bricht das Laden mit einer
+// eigenen, den Grund benennenden Fehlerzeile ab, statt nur als generischer
+// „unbekannter Schlüssel" des strikten Decodings unten zu erscheinen.
 var forbiddenFileCredentialKeys = []string{
 	"capture_dsn", "admin_dsn", "reader_dsn",
-	"api_token_reader", "api_token_admin", "nats_url",
+	"api_token_reader", "api_token_admin", "nats_url", "nats_stream_token",
 }
 
 // fileTableBinding trägt eine einzelne Tabellen-Aktivierung der
@@ -217,6 +220,10 @@ func mergeConfig(file fileConfig, getenv func(string) string) (Config, error) {
 	cfg.NatsURL = getenv(envNatsURL)
 	cfg.APITokenReader = getenv(envAPITokenReader)
 	cfg.APITokenAdmin = getenv(envAPITokenAdmin)
+	cfg.NatsStreamToken = getenv(envNatsStreamToken)
+	if err := validateNatsStreamTokenRequiresURL(cfg.NatsURL, cfg.NatsStreamToken); err != nil {
+		return Config{}, err
+	}
 
 	return cfg, nil
 }

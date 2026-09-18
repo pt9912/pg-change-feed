@@ -49,10 +49,13 @@ services:
       - cdc-examples
 
   nats:
-    # Digest-Pin identisch zur Wurzel-compose.yaml (ADR-0055).
+    # Digest-Pin identisch zur Wurzel-compose.yaml (ADR-0055). --auth trägt
+    # denselben serverweiten Verbindungs-Token wie die Wurzel-compose.yaml
+    # (ADR-0100 Teilfrage 4/5) — dieselbe Demo-Zugangsdaten-Klasse wie die
+    # übrigen Werte in examples/.env, kein Secret.
     image: nats:2-alpine@sha256:065e8355c20a5575b3c77224be1855e8103fd148b68fba05130b9b8ddfa40ccc
     container_name: cdc-examples-nats
-    command: ["-m", "8222"]
+    command: ["-m", "8222", "--auth", "demo-nats-stream-token"]
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8222/healthz | grep -q ok"]
       interval: 2s

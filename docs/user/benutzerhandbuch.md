@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.27
+Version: 1.28
 Software-Version: 0.2.0-verdrahtung
 Stand: 2026-09-18
 
@@ -825,6 +825,53 @@ lässt sich per Flag übersteuern.
 Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
 Harness liegen unter `tools/harness/` und sind kein Vorbild.
 
+### Zugriff über den NATS-Vollinhalts-Stream
+
+Anders als das Wecksignal im vorigen Abschnitt ist dieser Zugriffsweg
+**daten-tragend**: jede Nachricht trägt den vollständigen Change-Inhalt, kein
+reines Trigger-Signal. Er ist ein dritter, unabhängig nutzbarer Zustellweg
+neben gRPC und SSE — dasselbe Nachrichtenschema wie beim
+[SSE-Stream](#zugriff-über-server-sent-events), hier über NATS statt HTTP
+zugestellt.
+
+**Erreichbarkeit:** Zwei-Bedingungen-Aktivierung — **sowohl** `CDC_NATS_URL`
+**als auch** `CDC_NATS_STREAM_TOKEN` müssen gesetzt sein. Ist nur
+`CDC_NATS_URL` gesetzt (das bestehende Wecksignal, siehe oben), bleibt dieser
+dritte Weg deaktiviert; ist nur `CDC_NATS_STREAM_TOKEN` gesetzt, startet der
+Feed-Container nicht (Fehlerklasse `configuration`).
+
+**Das Subjekt:** Ein vollständiges Change-Ereignis wird je Zeilen-Änderung auf
+dem tabellen-granularen Subjekt `cdc.stream.<source_id>.<schema>.<table>`
+publiziert — derselbe vierstufige Aufbau wie beim Wecksignal, aber ein
+eigener Wurzel-Token (`cdc.stream` statt `cdc.changes`): beide Fähigkeiten
+bleiben unabhängig voneinander abonnierbar.
+
+**Die Nachrichtenform:** Dasselbe JSON-Schema wie beim SSE-Stream (zehn
+Felder: `change_id`, `transaction_id`, `source_table_id`, `sequence`,
+`operation`, `old_image`, `new_image`, `schema_version`, `schema`, `table`)
+als Bytes des JSON-Dokuments — kein drittes Nachrichtenschema für dieselben
+Daten.
+
+**Zustellsemantik:** Core NATS, Fire-and-Forget, kein Replay — dieselbe
+Zusicherung wie gRPC und SSE: ein nicht verbundener oder gerade getrennter
+Consumer verpasst die Änderung ersatzlos und holt sie über
+[Änderungen lesen](#änderungen-lesen) nach.
+
+**Die Auth-Nebenwirkung — wichtig beim Einschalten:** Ein gesetzter
+`CDC_NATS_STREAM_TOKEN` verlangt vom NATS-Server denselben Token **serverweit**
+— auch für die bislang anonyme Wecksignal-Verbindung. Wer diesen dritten Weg
+aktiviert, betreibt den NATS-Server danach nicht mehr ohne Verbindungs-Token;
+ein Verbindungsversuch ohne oder mit falschem Token wird vom Server selbst
+abgelehnt (Verbindungsebene, nicht Anwendungsebene) — dieselbe Aussage wie
+gRPCs `Unauthenticated` oder SSEs `401`, nur eine Ebene tiefer verortet.
+
+**Beispiele:** folgen in einem eigenen Folge-Vorgang (Go/C#/Kotlin,
+`slice-nats-drittstream-example-go`,
+`slice-nats-drittstream-example-csharp-kotlin`) — dieser Zugriffsweg selbst ist
+bereits nutzbar. Bis dahin trägt `tools/harness/natsstreamsub` den
+E2E-Testbeleg (`make test-integration`); er ist wie die übrigen
+Harness-Testclients unter `tools/harness/` kein Vorbild zum Nachbauen.
+
 ## 5. Konfiguration
 
 ### Umgebungsvariablen des Feed-Containers
@@ -839,7 +886,8 @@ Harness liegen unter `tools/harness/` und sind kein Vorbild.
 | `CDC_SLOT` | ja | Name des Logical-Replication-Slots |
 | `CDC_TABLES` | ja, falls keine Konfigurationsdatei dieselbe Aktivierung trägt | Aktivierte Tabellen, Format `schema.tabelle=tabelle-id:schema-version-id`, kommagetrennt |
 | `CDC_LOG_LEVEL` | nein | Log-Level des strukturierten JSON-Loggers (Default `info`) |
-| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload, `ADR-0056`); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`) |
+| `CDC_NATS_URL` | nein | NATS-Server-URL für das Change-Notification-Wecksignal (`cdc.changes.<source_id>.<schema>.<table>`, tabellen-granular, leerer Payload, `ADR-0056`); ungesetzt bleibt das Feature vollständig deaktiviert, gesetzt ist eine erfolgreiche Verbindung Vorbedingung des Starts (Fehlerklasse `configuration`). Zusammen mit `CDC_NATS_STREAM_TOKEN` aktiviert dieselbe Variable zusätzlich den dritten, vollinhaltstragenden NATS-Zustellweg (`ADR-0100`, siehe [Zugriff über den NATS-Vollinhalts-Stream](#zugriff-über-den-nats-vollinhalts-stream)) |
+| `CDC_NATS_STREAM_TOKEN` | nein | Verbindungs-Token des dritten, vollinhaltstragenden NATS-Zustellwegs (`ADR-0100`); wirkt nur zusammen mit gesetztem `CDC_NATS_URL` — ist nur `CDC_NATS_STREAM_TOKEN` gesetzt, aber `CDC_NATS_URL` leer, startet der Container nicht (Fehlerklasse `configuration`). Ein gesetzter Wert verlangt vom NATS-Server denselben Token **serverweit**, auch für die Wecksignal-Verbindung (siehe dortiger Abschnitt) |
 | `CDC_HTTP_ADDR` | nein | Horch-Adresse der HTTP-/JSON-API (`host:port`); ungesetzt bleibt die API vollständig deaktiviert — kein Server, keine zusätzliche Verbindung. Anders als `CDC_NATS_URL` ist die Adresse **keine** Start-Vorbedingung: Ist sie gesetzt, öffnet der Prozess den Server in eigener Goroutine und läuft unverändert weiter; scheitert das Binden der Adresse (z. B. belegter Port), meldet er das im Log und der Erfassungsbetrieb bleibt davon unberührt |
 | `CDC_API_TOKEN_READER` | nein | Bearer-Token der lesenden Rechtsklasse der HTTP- und gRPC-API; ungesetzt (leer) ist die Klasse nicht konfiguriert — ein Aufruf mit einem Token, das keiner konfigurierten Klasse entspricht, endet `401` |
 | `CDC_API_TOKEN_ADMIN` | nein | Bearer-Token der administrativen Rechtsklasse der HTTP- und gRPC-API (deckt die lesende Klasse implizit mit ab); leer bedeutet dieselbe Deaktivierung wie bei `CDC_API_TOKEN_READER` |
@@ -884,21 +932,23 @@ grpc_addr: ":9090"
 
 **Wichtig — Zugangsdaten bleiben env-var-exklusiv:** Die Schlüssel
 `capture_dsn`, `admin_dsn`, `reader_dsn`, `api_token_reader`,
-`api_token_admin` und `nats_url` dürfen in dieser Datei **nicht**
-vorkommen. Ein Treffer bricht das Laden mit einer eigenen, den Grund
-nennenden Zeile ab (Fehlerklasse `configuration`) — eine
+`api_token_admin`, `nats_url` und `nats_stream_token` dürfen in dieser
+Datei **nicht** vorkommen. Ein Treffer bricht das Laden mit einer eigenen,
+den Grund nennenden Zeile ab (Fehlerklasse `configuration`) — eine
 Konfigurationsdatei landet typischerweise in Kanälen (Repository,
 ConfigMap, Backup), die für Zugangsdaten nicht vorgesehen sind. Die Grenze
 ist die **Form** des Feldes, nicht sein Wert: `http_addr`/`grpc_addr` sind
 `host:port` und können keine Zugangsdaten tragen, `nats_url` ist eine URL
-und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`).
-Ein unbekannter Schlüssel bricht das Laden ebenfalls ab (striktes Decoding).
+und kann Benutzer sowie Passwort einbetten (`nats://benutzer:passwort@host:4222`),
+`nats_stream_token` trägt denselben Zugangsdaten-Charakter wie die beiden
+API-Token-Schlüssel (`ADR-0100`). Ein unbekannter Schlüssel bricht das
+Laden ebenfalls ab (striktes Decoding).
 
-Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_API_TOKEN_READER` und
-`CDC_API_TOKEN_ADMIN` werden **auch unter geladener Datei** aus der
-Umgebung gelesen — sie haben kein Datei-Gegenstück, ihre Herkunft ist die
-Umgebungsvariable auf beiden Wegen; die Datei kann sie weder setzen noch
-überschreiben.
+Die env-exklusiven Variablen `CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
+`CDC_API_TOKEN_READER` und `CDC_API_TOKEN_ADMIN` werden **auch unter
+geladener Datei** aus der Umgebung gelesen — sie haben kein
+Datei-Gegenstück, ihre Herkunft ist die Umgebungsvariable auf beiden Wegen;
+die Datei kann sie weder setzen noch überschreiben.
 
 Ist sowohl `CDC_TABLES` als auch `tables` in der Datei gesetzt, schlägt
 `CDC_TABLES` die gesamte Datei-Tabellenliste vollständig — es findet keine
@@ -1048,3 +1098,4 @@ MIT — siehe `LICENSE`.
 | 1.25 | 2026-09-17 | Kotlin-gRPC-Client ergänzt (`ADR-0090`, `ADR-0060`, slice-103): §4 „Zugriff über den gRPC-Change-Stream" — dritte und letzte Zeile im `**Beispiele:**`-Block; `examples/kotlin/grpc-client` öffnet denselben Server-Streaming-RPC `ChangeStream/StreamChanges` über einen Container-Aufruf (`make examples-kotlin`, Image-Tag `pg-change-feed-examples:kotlin-grpc`) — der Kotlin-Stub entsteht dabei im Bau aus der `.proto`, gelesen über denselben zusätzlichen, benannten Bau-Kontext, jetzt auf die Kotlin-Werkzeugkette übertragen (`protoc-gen-grpc-java`/`protoc-gen-grpc-kotlin`). Mit dieser Zeile ist die volle Matrix (vier Zugriffs-Oberflächen × drei Sprachen, zwölf Programme) im Handbuch vollständig |
 | 1.26 | 2026-09-18 | Go-Startform auf `make`+Dockerfile umgestellt (`ADR-0098`, Supersedes `ADR-0076` Startform-Bullet, slice-beispiele-go-dockerfile-start): alle vier Go-Zeilen der `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-go SURFACE=<oberfläche>` (baut bei Bedarf `pg-change-feed-examples:go[-<surface>]` aus dem neuen `examples/Dockerfile`) statt `go run ./examples/<name>`; `go run` bleibt technisch funktionsfähig, ist aber nicht mehr die zitierte Startform |
 | 1.27 | 2026-09-18 | C#-/Kotlin-Startform auf echte Start-Make-Ziele umgestellt (`ADR-0098` Festlegung 2, slice-beispiele-csharp-kotlin-start-target): alle acht C#-/Kotlin-Zeilen der vier `**Beispiele:**`-Blöcke zitieren jetzt `make example-run-csharp SURFACE=<oberfläche>`/`make example-run-kotlin SURFACE=<oberfläche>` statt des rohen `docker run --rm -e … <Image> …`-Aufrufs; beide Ziele bauen nichts, sie starten den bereits von `make examples-csharp`/`make examples-kotlin` gebauten Image-Tag |
+| 1.28 | 2026-09-18 | Dritter, vollinhaltstragender NATS-Zustellweg ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-core): neuer §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" (Subjekt-Namensraum `cdc.stream.<...>`, dasselbe Nachrichtenschema wie SSE, Zwei-Bedingungen-Aktivierung, serverweite Auth-Nebenwirkung auf das Wecksignal); §5 trägt die neue Variable `CDC_NATS_STREAM_TOKEN` und die auf sieben Schlüssel (drei DSN, drei Token, `nats_url`) gewachsene Zugangsdaten-Klasse der Konfigurationsdatei (`nats_stream_token` neu) |

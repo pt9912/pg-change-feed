@@ -220,11 +220,14 @@ dadurch nicht weg. Felder, die Zugangsdaten tragen **können**, sind
 Least-Privilege/Secret-Trennung — eine Konfigurationsdatei ist für andere
 Aufbewahrungs-/Verteilwege bestimmt als eine Umgebungsvariable). Die
 Klasse umfasst die drei DSN-Schlüssel (`capture_dsn`/`admin_dsn`/
-`reader_dsn`), die zwei Token-Schlüssel (`api_token_reader`/
-`api_token_admin`) und `nats_url`: die URL-Formen dieser Klasse können
-Benutzer/Passwort einbetten, und die Abwesenheit von Zugangsdaten in einem
-konkreten Wert ist keine Eigenschaft des Feldes. Striktes Decoding (jeder
-andere unbekannte Schlüssel → Fehlerklasse `configuration`).
+`reader_dsn`), die drei Token-Schlüssel (`api_token_reader`/
+`api_token_admin`/`nats_stream_token`) und `nats_url`: die URL-Formen
+dieser Klasse können Benutzer/Passwort einbetten, und die Abwesenheit von
+Zugangsdaten in einem konkreten Wert ist keine Eigenschaft des Feldes.
+`nats_stream_token` trägt den Verbindungs-Token des dritten,
+vollinhaltstragenden NATS-Zustellwegs (`SPEC-024`) — derselbe
+Zugangsdaten-Charakter wie die beiden API-Token-Schlüssel. Striktes
+Decoding (jeder andere unbekannte Schlüssel → Fehlerklasse `configuration`).
 
 | Schlüssel | Typ | Entspricht (Env-Var) | Pflicht in der Datei |
 |---|---|---|---|
@@ -260,10 +263,10 @@ beiden Quellen. `CDC_CONFIG_FILE` selbst trägt den Dateipfad; leer/unbenannt
 bedeutet kein Dateizugriff, der bestehende Env-only-Pfad bleibt unverändert
 Default.
 
-Die env-exklusiven Variablen (`CDC_NATS_URL`, `CDC_API_TOKEN_READER`,
-`CDC_API_TOKEN_ADMIN`) werden auch unter geladener Datei aus der Umgebung
-gelesen — sie haben kein Datei-Gegenstück, ihre Herkunft ist die
-Umgebungsvariable auf beiden Pfaden.
+Die env-exklusiven Variablen (`CDC_NATS_URL`, `CDC_NATS_STREAM_TOKEN`,
+`CDC_API_TOKEN_READER`, `CDC_API_TOKEN_ADMIN`) werden auch unter geladener
+Datei aus der Umgebung gelesen — sie haben kein Datei-Gegenstück, ihre
+Herkunft ist die Umgebungsvariable auf beiden Pfaden.
 
 ### SPEC-017 — NATS-Wecksignal (Subjekt- und Nachrichtenform)
 
@@ -588,3 +591,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-17 | `SPEC-023` ergänzt: Beispiel-Clients — Klasse (Vorbild, kein Belegträger, keine Zustandsmaschine), Verhältnis zum Draht, Ort und Form samt Sprach-Wurzel, Import-Grenze, Docker-only-Startform, Bau-/Testziel je Sprache als Werkzeug, kein Lesen der Konfigurationsdatei, Handbuch-Bindung, Sprachen und Umfang (Go: vier Oberflächen; C#/Kotlin: HTTP-Familie), kein Eintrag in der E2E-Abdeckung; externe-Verträge-Zeile in §6 |
 | 2026-09-17 | `SPEC-023` Zeile *Sprachen und Umfang* auf die volle Matrix gezogen (vier Zugriffs-Oberflächen in Go, C# und Kotlin statt der HTTP-Familie in C#/Kotlin), samt dem benannten Zusatzkontext für einen fremdsprachigen gRPC-Bau und dem Ort der erzeugten Stubs (im Bau, nicht committet) |
 | 2026-09-18 | `SPEC-024` ergänzt: NATS-Vollinhalts-Stream — Subjekt-Schema (`cdc.stream.<source_id>.<schema>.<table>`, eigener Namensraum neben `SPEC-017`s Wecksignal-Subjekt), JSON-Nachrichtenschema identisch zu `SPEC-021`, Granularität je Zeilen-Change, Fire-and-Forget ohne Replay, Authentifizierung über einen serverweiten NATS-Verbindungs-Token (`CDC_NATS_STREAM_TOKEN`), Aktivierung nur bei gesetztem `CDC_NATS_URL` **und** `CDC_NATS_STREAM_TOKEN`; externe-Verträge-Zeile in §6 |
+| 2026-09-18 | `SPEC-016` nachgezogen: `nats_stream_token` in die Klasse der zugangsdaten-tragenden Felder aufgenommen (jetzt drei Token-Schlüssel statt zwei) und in die Liste der env-exklusiven, auch unter geladener Datei aus der Umgebung wirkenden Variablen ergänzt |

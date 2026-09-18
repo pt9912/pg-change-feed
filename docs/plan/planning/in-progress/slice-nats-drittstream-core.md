@@ -198,6 +198,27 @@ dasteht.
   bestätigt ist (`AGENTS.md` §3.10 trägt dieselbe Struktur für
   GitHub-Actions-Läufe außerhalb der lokalen Umgebung — hier: der reale
   Lauf braucht Docker/DB-Zugang, den nicht jeder Ausführungskontext hat).
+- **`AGENTS.md` §3.13-Suchlauf (bewegte Eigenschaft: Feldmenge der
+  zugangsdaten-tragenden Klasse, `SPEC-016`/Handbuch §5.2/Code-Prüfung —
+  „von Hand nachzuzählen", `ADR-0089`):** `grep` über `spec/`, `docs/user/`
+  und `docs/plan/adr/` nach `nats_url`/„sechs Schlüssel"/„zwei
+  Token-Schlüssel" fand alle drei lebenden Träger (`spec/pflichtenheft.md`
+  `§SPEC-016`, `docs/user/benutzerhandbuch.md` §5, `internal/bootstrap/config_file.go`
+  `forbiddenFileCredentialKeys`) — alle drei in diesem Diff auf
+  `nats_stream_token` nachgezogen und von Hand gegeneinander gezählt
+  (jetzt sieben Schlüssel: drei DSN, drei Token, `nats_url`). Zusätzlicher
+  Fund, **nicht** still nachgezogen: [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md)
+  ist `Accepted` und nennt „sechs Schlüssel" im Titel und in ihrer
+  §Entscheidung als abschließende Aufzählung derselben Klasse — durch
+  diesen Slice auf sieben gewachsen. `AGENTS.md` §3.5 schließt eine
+  In-place-Korrektur einer `Accepted`-ADR aus; eine Supersedes-ADR ist ein
+  Architect-Zug, außerhalb der Implementer-Rolle dieses Slice (`AGENTS.md`
+  §3.13: „ein Träger, der eine fremde Datei betrifft, wird gemeldet statt
+  still mitgeändert"). — **Ausgang:** weiter offen — Meldung an
+  Review/Architect, ob eine Folge-ADR (`Supersedes ADR-0091`) den
+  gewachsenen Schlüssel-Zähler nachträgt oder die Drift bei der bereits
+  etablierten benannten Grenze (`ADR-0089`, kein Sensor, Wächter Review)
+  bleibt.
 
 ## 7. Closure-Notiz
 
