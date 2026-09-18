@@ -8,8 +8,7 @@ sichtbar im eigenen Tool-Output), aber die nachfolgende `git push`-Aktion
 lief im selben Arbeitsschritt, ohne dass der bereits sichtbare rote
 Exit-Code die Aktion tatsächlich blockierte — der Push geschah, bevor der
 Fehler bemerkt wurde. Das widerspricht der Prämisse des
-`gestrichen`-Architect-Verdikts dieser Beobachtung
-(der Architect-Verdikt zu report-nackte-id-ohne-link): „solange er
+`gestrichen`-Architect-Verdikts zu `report-nackte-id-ohne-link`: „solange er
 weiterhin vor jeder folgenreichen Konsequenz vom Sensor gefangen wird" —
 hier war die Konsequenz (Push auf `main`) bereits eingetreten, als der
 Fund bemerkt wurde. Viertes Auftreten, nach `gestrichen` bei 3×; die

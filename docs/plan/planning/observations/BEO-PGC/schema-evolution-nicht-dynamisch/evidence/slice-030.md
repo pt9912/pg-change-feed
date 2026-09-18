@@ -10,6 +10,6 @@ inkompatible Typänderung.
 
 Reviewer (Review zu `slice-030`, F-1, HIGH) hat den Fund
 unabhängig am Code verifiziert. Der Architect-Verdikt zu `slice-030`
-und `ADR-0015` bestätigt: `ADR-0015` gilt unverändert fort, die
+bestätigt: `ADR-0015` gilt unverändert fort, die
 Folgepflicht wurde nie eingeplant — kein früherer Slice hat sie
 fälschlich als geliefert behauptet.
