@@ -29,10 +29,12 @@ layers:
   # Server-Stream `ChangeStream/StreamChanges` über den erzeugten Protokoll-
   # Stub der Vertragsfläche (`gen/cdc/stream/v1`, Gruppe `contract`), und
   # `examples/nats-client` spricht das Wecksignal über
-  # `github.com/nats-io/nats.go` samt nachfolgender HTTP-Abfrage an — ohne
-  # einen Bereich von `domain`, `ports`, `app` oder `adapters` zu
-  # importieren. Ein Import aus einer dieser vier Gruppen in `examples/**`
-  # bleibt `wrong-direction`.
+  # `github.com/nats-io/nats.go` samt nachfolgender HTTP-Abfrage an, und
+  # `examples/nats-stream-client` (seit ADR-0100) abonniert über dasselbe
+  # Fremdmodul den dritten, vollinhaltstragenden Zustellweg — ohne einen
+  # Bereich von `domain`, `ports`, `app` oder `adapters` zu importieren. Ein
+  # Import aus einer dieser vier Gruppen in `examples/**` bleibt
+  # `wrong-direction`.
   examples: ["examples/**"]
   # `contract` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der erzeugten Vertragsfläche unter `gen/**` (`slice-097`,
