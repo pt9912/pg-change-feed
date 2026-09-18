@@ -139,7 +139,7 @@ abdeckung_render() {
       spalte="${spalte}${trenner}[\`$kennung\`]($ziel)"
       trenner=", "
     done
-    printf '| %s | `%s` | `%s:%s` | %s |\n' "$spalte" "$nachweis" "$quelldatei" "$zeile" "$kurzbeschreibung"
+    printf '| %s | %s | `%s` | `%s:%s` |\n' "$spalte" "$kurzbeschreibung" "$nachweis" "$quelldatei" "$zeile"
   done
 }
 
@@ -175,7 +175,7 @@ abdeckung_schreiben() {
   temp=$(mktemp)
   {
     printf '%s\n' "$ABDECKUNG_KOPF"
-    printf '| Spec-Kennung | Nachweis | Ort | Kurzbeschreibung |\n'
+    printf '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |\n'
     printf '| --- | --- | --- | --- |\n'
     printf '%s\n' "$1" | abdeckung_render
     printf '%s\n' "$bash_zeilen" | abdeckung_render
