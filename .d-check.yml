@@ -34,10 +34,14 @@ matrix:
     - name: slice
       paths: ["docs/plan/planning/**/slice-*.md"]
       token: 'slice-\d{3}'
+    - name: review
+      paths: ["docs/reviews/*.md"]
+      token: 'docs/reviews/[\w.-]+\.md'
   rules:
     - {from: spec, to: adr, allow: false}
     - {from: spec, to: slice, allow: false}
     - {from: adr, to: slice, allow: false}
+    - {from: adr, to: review, allow: false}
   status:
     forbidden: [superseded, deprecated]
     # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel
@@ -50,7 +54,12 @@ matrix:
   # ADR-0041; ADR-0041:47 → ADR-0039, seit ADR-0042) — in-place-Korrektur
   # einer Accepted-ADR ist verboten (AGENTS.md §3.5); die Nachfolge-Kette
   # trägt der ADR-Index.
-  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md"]
+  # docs/reviews/*.md: Lauf-Belege referenzieren den zum Laufzeitpunkt
+  # aktiven ADR-Stand dauerhaft (Record-Einfrierung ist zeitlich, nicht
+  # Status-basiert, ADR-0073/ADR-0095) — dieselbe Begruendung wie im
+  # versions-Modul unten fuer denselben Pfad; die adr -> review-Regel
+  # oben bleibt davon unberuehrt.
+  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md", "docs/reviews/*.md"]
 versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in
