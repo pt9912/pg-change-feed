@@ -80,11 +80,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       freigegeben.
 - [x] Doku-Update: `examples/README.md`, neuer Handbuch-Abschnitt „Zugriff
       über den NATS-Vollinhalts-Stream" (siehe §2 dritter Liefer-Punkt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item. — **entfällt**: `docs/plan/planning/reconciliation.md` existiert in diesem Repo nicht.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert. — zwei neue Verzeichnisse, siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). — dieses Repo läuft Wellen-Betrieb: geprüft von der Closure von `welle-nats-drittstream`, nicht hier.
 
 ## 3. Plan (vor Code)
 
@@ -150,12 +150,19 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - **`slice-nats-drittstream-core` liefert einen anderen Aktivierungspfad als
   hier angenommen** (z. B. der Config-Loader-Umbau verschiebt die
   `SPEC-016`-Feldliste in eine andere Datei) — dieser Slice läse dann gegen
-  eine veraltete Annahme. — **Ausgang:** <bei Closure ausfüllen>.
+  eine veraltete Annahme. — **Ausgang: entfallen.** `slice-nats-drittstream-core`
+  liefert exakt den in `ADR-0100` festgelegten Aktivierungspfad
+  (`CDC_NATS_STREAM_TOKEN` + `CDC_NATS_URL`, Zwei-Bedingungen); real bestätigt
+  durch den Closure-Rundlauf (§2 DoD-Punkt 1) gegen eine frisch
+  hochgefahrene Demo-Umgebung.
 - **Der neue Handbuch-Abschnitt kollidiert mit der bestehenden
   Abschnitts-Reihenfolge** (vier Streaming-/Zugriffs-Abschnitte, neuer
   fünfter) — Ankertext-Kollision mit `docs-check`s `ids`/`anchors`-Modulen
   ist unwahrscheinlich (neuer, eindeutiger Anker), aber ungeprüft. —
-  **Ausgang:** <bei Closure ausfüllen>.
+  **Ausgang: entfallen.** Der Abschnitt existierte bereits (angelegt von
+  `slice-nats-drittstream-core`); dieser Slice ersetzte nur seinen
+  Platzhalter-Absatz, legte keinen neuen Anker an. Mehrfache grüne
+  `make gates`-Läufe (`ids`/`anchors`-Module) bestätigen keine Kollision.
 
 ## 7. Closure-Notiz
 
@@ -178,9 +185,33 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-*(bei Closure zu füllen — Hinweis für den Implementer: die Aggregat-Aussage
-„vier Zugriffsarten × drei Sprachen" bleibt bewusst unverändert, bis
-`slice-nats-drittstream-example-csharp-kotlin` schließt.)*
+**Ergebnis:** `examples/nats-stream-client` (Go) liefert den ersten
+Beispiel-Client für den dritten, vollinhaltstragenden NATS-Zustellweg
+(`LH-FA-SST-008`, `ADR-0100`) — real gegen die Demo-Umgebung geprüft
+(§2 DoD-Punkt 1). Die Aggregat-Aussage „vier Zugriffsarten × drei Sprachen"
+bleibt wie geplant unverändert, bis `slice-nats-drittstream-example-csharp-kotlin`
+schließt.
+
+**Steering-Loop-Lerneintrag:** Zwei neue Beobachtungen — beide `offen`
+(1× je Klasse, unter der 3×-Schwelle):
+
+1. `BEO-PGC/image-digest-nichtdeterminismus-erzeugt-merge-konflikt` — ein
+   fälschlich begründeter `harness/image-hash.txt`-Digest-Commit während
+   der Implementierung (Review-Fund F-1, real widerlegt gegen
+   `.dockerignore`) legte offen, dass ein solcher Digest-Diff generell
+   Merge-Rauschen ohne Inhaltswert erzeugt — vom Auftraggeber unabhängig
+   davon als Störung benannt. Ein Lösungs-Kandidat (Datei-Inhalt auf
+   `sha256` des extrahierten Binaries umstellen, `ADR-0044` Option B) ist
+   in der Beobachtung mitgeführt, aber nicht entschieden — Architect-
+   Zuständigkeit für eine mögliche Folge-ADR.
+2. `BEO-PGC/lang-laufende-demo-umgebung-verpasst-neue-umgebungsvariable` —
+   der reale Closure-Rundlauf scheiterte zunächst, weil der seit Stunden
+   laufende `cdc-examples-feed`-Container noch die `CDC_NATS_STREAM_TOKEN`-
+   Verdrahtung von `slice-nats-drittstream-core` fehlte; erst `make image`
+   + `make example-demo-down`/`-up` stellte den erwarteten Zustand her. Kein
+   Sensor/keine Warnung deckt das bislang.
+
+Keine dritte Beobachtung angefallen.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
