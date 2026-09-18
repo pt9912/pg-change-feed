@@ -1,11 +1,11 @@
 # Architect-Review welle-5 — Trigger-Audit (Carveout · Bootstrap-aware Gate · ADR-Re-Evaluierung) und Beobachtungs-Register-Verkörperung (BEO-PGC/dod-checkbox-nachzug, 3×)
 
 **Rolle:** Architect (Modul 8). **Datum:** 2026-09-12.
-**Eingang:** [`docs/plan/planning/welle-5.md`](../plan/planning/done/welle-5.md) (§1–§3,
+**Eingang:** [`docs/plan/planning/welle-5.md`](../plan/planning/done/welle-5/welle-5.md) (§1–§3,
 Closure-Trigger noch offen zum Zeitpunkt dieses Laufs) ·
-[`docs/plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`](../plan/planning/done/slice-017-commit-zeitstempel-decoder-mapper-domaene.md),
-[`docs/plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md`](../plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md),
-[`docs/plan/planning/done/slice-019-cdc-capture-lag-ablösen.md`](../plan/planning/done/slice-019-cdc-capture-lag-ablösen.md)
+[`docs/plan/planning/done/welle-5/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`](../plan/planning/done/welle-5/slice-017-commit-zeitstempel-decoder-mapper-domaene.md),
+[`docs/plan/planning/done/welle-5/slice-018-commit-zeitstempel-store-adapter.md`](../plan/planning/done/welle-5/slice-018-commit-zeitstempel-store-adapter.md),
+[`docs/plan/planning/done/welle-5/slice-019-cdc-capture-lag-ablösen.md`](../plan/planning/done/welle-5/slice-019-cdc-capture-lag-ablösen.md)
 (je §1–§8) ·
 Review zu `slice-017`, Review zu `slice-018`, Review zu `slice-019` ·
 Verifikationsbericht zu `slice-017`, zu `slice-018`, zu `slice-019` ·
