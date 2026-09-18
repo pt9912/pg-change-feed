@@ -106,7 +106,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `ADR-0076`/`ADR-0087`/`ADR-0090`), Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      [`review-slice-beispiele-start-architect-entscheidung.md`](../../../reviews/review-slice-beispiele-start-architect-entscheidung.md) —
+      `review-slice-beispiele-start-architect-entscheidung.md` —
       0 HIGH, 0 MEDIUM, 1 LOW (Netzwerk-Ordering-Lücke, an die
       Folge-Slices weitergegeben), 3 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update: keiner erwartet (kein öffentlicher Vertrag geändert — die
@@ -225,7 +225,7 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 **Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
 liegt vor
-([`review-slice-beispiele-start-architect-entscheidung.md`](../../../reviews/review-slice-beispiele-start-architect-entscheidung.md),
+(`review-slice-beispiele-start-architect-entscheidung.md`,
 0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)

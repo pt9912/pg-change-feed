@@ -108,7 +108,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      [`review-slice-beispiele-compose-bootstrap.md`](../../../reviews/review-slice-beispiele-compose-bootstrap.md) —
+      `review-slice-beispiele-compose-bootstrap.md` —
       0 HIGH, 0 MEDIUM, 1 LOW, 2 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update: `examples/README.md` neuer Abschnitt, ggf. ein Quickstart-
       Absatz in `docs/user/benutzerhandbuch.md` (Detail des umsetzenden
@@ -225,7 +225,7 @@ für Steering-Loop-Regeln.
 **Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
 liegt vor
-([`review-slice-beispiele-compose-bootstrap.md`](../../../reviews/review-slice-beispiele-compose-bootstrap.md),
+(`review-slice-beispiele-compose-bootstrap.md`,
 0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
 `examples/compose.yaml` (eigenes
 Netzwerk `cdc-examples`, eigene PostgreSQL/NATS-Instanzen, referenziert das

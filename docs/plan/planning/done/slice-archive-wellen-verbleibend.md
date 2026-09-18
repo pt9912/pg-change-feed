@@ -105,7 +105,7 @@ ausdrücklich unangetastet.
       geschoben, siehe §7.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
-      [`review-slice-archive-wellen-verbleibend.md`](../../../reviews/review-slice-archive-wellen-verbleibend.md) —
+      `review-slice-archive-wellen-verbleibend.md` —
       0 HIGH, 1 MEDIUM (F-1 Stub-Titel, behoben in `301ea0c`), 1 INFO.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §7.

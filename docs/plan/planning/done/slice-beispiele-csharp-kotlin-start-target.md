@@ -95,7 +95,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      [`review-slice-beispiele-csharp-kotlin-start-target.md`](../../../reviews/review-slice-beispiele-csharp-kotlin-start-target.md) —
+      `review-slice-beispiele-csharp-kotlin-start-target.md` —
       0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update für die C#/Kotlin-Startform (öffentlicher Vertrag) — siehe
       LP3.
@@ -182,7 +182,7 @@ für Steering-Loop-Regeln.
 **Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
 (Festlegung 2) liegt vor
-([`review-slice-beispiele-csharp-kotlin-start-target.md`](../../../reviews/review-slice-beispiele-csharp-kotlin-start-target.md),
+(`review-slice-beispiele-csharp-kotlin-start-target.md`,
 0 HIGH, 0 MEDIUM, 0 LOW), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** `harness/mk/examples.mk` trägt zwei neue `.PHONY`-Ziele,

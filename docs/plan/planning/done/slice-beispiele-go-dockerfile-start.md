@@ -95,7 +95,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      [`review-slice-beispiele-go-dockerfile-start.md`](../../../reviews/review-slice-beispiele-go-dockerfile-start.md) —
+      `review-slice-beispiele-go-dockerfile-start.md` —
       0 HIGH, 0 MEDIUM, 3 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update für die Go-Startform (öffentlicher Vertrag: das Handbuch
       zitiert eine Befehlsform) — siehe LP3.
@@ -190,7 +190,7 @@ für Steering-Loop-Regeln.
 **Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
 liegt vor
-([`review-slice-beispiele-go-dockerfile-start.md`](../../../reviews/review-slice-beispiele-go-dockerfile-start.md),
+(`review-slice-beispiele-go-dockerfile-start.md`,
 0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** Die vier Go-Beispiele bauen/starten jetzt über
