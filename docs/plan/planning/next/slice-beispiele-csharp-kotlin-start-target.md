@@ -29,7 +29,7 @@ ergänzt nur den Start).
 **Berührte Spec-Stellen:** [`SPEC-023`](../../../../spec/pflichtenheft.md)
 (Beispiel-Clients — Startform-Zeile, falls die ADR sie dort verankert).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** pt9912.
 
 **Autor:** Planner-Rolle. **Datum:** 2026-09-18.
 
