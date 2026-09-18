@@ -16,8 +16,8 @@ selbst trägt keine `SPEC-*`/`ARC-*`-Kennung).
 
 **Verantwortlich:** — bis zur Priorisierung.
 
-**Autor:** Architect (Fixrunde zu Reviewer-Fund MEDIUM-1 gegen Commit
-`7d0bf05`, siehe
+**Autor:** Architect (Fixrunde zu Reviewer-Fund F-1 des Architect-Verdikts
+zum Lese-Schritt gegen Commit `7d0bf05`, siehe
 `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/state.md`).
 **Datum:** 2026-09-18.
 

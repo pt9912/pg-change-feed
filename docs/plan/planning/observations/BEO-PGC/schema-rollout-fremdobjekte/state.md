@@ -2,8 +2,8 @@ Zustand: **geplant** → Träger `docs/plan/planning/open/schema-rollout-zentral
 
 Vorheriger Zustand (Commit `7d0bf05`): `verkörpert` → `AGENTS.md` §3.14
 ("Ein Aufrufer von `make schema-rollout` gegen ein möglicherweise bereits
-migriertes Ziel trägt seine eigene Idempotenz-Wache"). Ein unabhängiger
-Reviewer fand real, dass diese Entscheidung nur zwei Optionen gegeneinander
+migriertes Ziel trägt seine eigene Idempotenz-Wache"). Der Architect-Verdikt
+zum Lese-Schritt (F-1) fand real, dass diese Entscheidung nur zwei Optionen gegeneinander
 abgewogen hatte — (a) Fremdobjekte ins neutrale Modell überführen (an
 `POST_EXECUTE_DRIFT`/Exit 5 gebunden, bleibt korrekt verworfen) und (b) ein
 generisches `--allow-destructive`-Handling (zu grobkörnig, bleibt korrekt
@@ -38,11 +38,18 @@ verworfen) — nicht aber eine dritte: die Idempotenz-Wache **zentral im
   aktuellen Aufrufer (`tools/harness/run-integration-tests.sh`,
   `tools/bench-lib.sh`, `tools/schema/apply-rollout.sh`) fahren ohnehin
   gegen eine frisch angelegte, leere Ziel-DB (`$COMPOSE down -v` o. ä.
-  vor jedem Lauf) — nur die beiden persistenten Demo-/Bootstrap-Aufrufer
-  brauchen den Skip. Diese einfache Variante bliebe also heute
-  folgenlos, ist aber als **dauerhafte** Eigenschaft eines geteilten
-  Ziels riskanter als der Nutzen für die aktuell zwei betroffenen
-  Aufrufer rechtfertigt — kein Ein-Zeilen-Fix ohne Nebenwirkung.
+  vor jedem Lauf) — real geprüft (`grep -rn "to_regclass" --include="*.sh"
+  --include="Makefile" --include="*.mk" .`): nur **ein** persistenter
+  Aufrufer trägt heute den Skip-Bedarf, `examples/bootstrap.sh`
+  (`make example-demo-up`) — die drei anderen realen `example-run-*`-Ziele
+  starten nur bereits gebaute Images gegen dieselbe, von
+  `example-demo-up` verwaltete Umgebung, kein zweiter unabhängiger
+  Aufrufer. Diese einfache Variante bliebe also heute folgenlos, ist aber
+  als **dauerhafte** Eigenschaft eines geteilten Ziels riskanter als der
+  Nutzen für den aktuell einen betroffenen Aufrufer rechtfertigt — kein
+  Ein-Zeilen-Fix ohne Nebenwirkung, unabhängig von der genauen
+  Aufruferzahl (ein geteiltes Target würde auch für jeden **künftigen**
+  Aufrufer zum stillen No-op).
 - **Die vom Reviewer skizzierte Klassifikations-Variante** (nur überspringen,
   wenn *alle* Blocker exakt die bekannte Liste sind, sonst wie bisher
   Exit 8) trägt diesen Nachteil nicht, weil sie nicht pauschal überspringt,
