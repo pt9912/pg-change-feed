@@ -175,10 +175,12 @@ Lerneintrag geschrieben.
   `--vorschau`-Rescan vor dem Vollzug (statt Verlass auf den alten,
   100-Datei-Scan aus der Zitat-Korrektur-Planung) deckte real auf, dass
   eine der ursprünglich für „sperrenfrei" gehaltenen Wellen
-  (`welle-18`) noch eine behebbare Namenskollision trug (`evidence/review-slice-067.md`
-  vs. `docs/reviews/review-slice-067.md`) — behoben durch Umbenennung auf
-  die im Register etablierte Form `evidence/slice-067.md` (Commits
-  `b427a8e`, `49d8801`), bevor der eigentliche Archivierungslauf begann.
+  (`welle-18`) noch eine behebbare Namenskollision trug — eine lokale
+  Beleg-Datei zu `slice-067` im Beobachtungs-Register trug denselben
+  Basisnamen wie der Review-Bericht zu `slice-067`, der beim Archivieren
+  verschwindet — behoben durch Umbenennung der Beleg-Datei auf die im
+  Register etablierte Form `evidence/slice-067.md` (Commits `b427a8e`,
+  `49d8801`), bevor der eigentliche Archivierungslauf begann.
 - **Was ging anders als geplant:** Ein erster Versuch, dies als
   Hintergrund-Implementer-Zug mit Gate-Prüfung **nach jeder einzelnen
   Welle** durchzuführen, brach beim zweiten Lauf korrekt ab, statt die

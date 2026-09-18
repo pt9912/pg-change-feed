@@ -1,4 +1,4 @@
-# Beleg: review-slice-067 (Review-Report als abgeschlossener Vorgang)
+# Beleg: slice-067 (Review-Report als abgeschlossener Vorgang)
 
 **Vorgang:** Review zu `slice-067` (Reviewer-Lauf zu `slice-067`).
 

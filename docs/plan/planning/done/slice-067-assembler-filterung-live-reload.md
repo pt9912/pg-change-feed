@@ -303,7 +303,7 @@ Backticks).
   Registereintrag geführt (unten), der Ausgang ist `geplant`.
 - **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
   `BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger/` (Zustand `geplant`,
-  Träger `slice-075`), Beleg `evidence/review-slice-067.md` — angelegt vom
+  Träger `slice-075`), Beleg `evidence/slice-067.md` — angelegt vom
   Architect-Zug; Kennung bewusst als **Klasse** formuliert statt als
   Instanz (`spaltenausschluss-nur-prozesslebensdauer` hätte einen zweiten
   Fall derselben Klasse gespalten).
