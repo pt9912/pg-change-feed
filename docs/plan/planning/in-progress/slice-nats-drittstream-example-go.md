@@ -71,10 +71,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 - [x] Doku-Nachzug: `examples/README.md` bekommt den vierten Zugriffs-
       Abschnitt, `docs/user/benutzerhandbuch.md`s `**Beispiele:**`-Block für
       den neuen Weg trägt die Go-Zeile.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8) —
+      `docs/reviews/review-slice-nats-drittstream-example-go.md`, 4 Findings
+      (1 HIGH, 1 MEDIUM, 2 LOW) in einer Fixrunde behoben, Re-Check
+      freigegeben.
 - [x] Doku-Update: `examples/README.md`, neuer Handbuch-Abschnitt „Zugriff
       über den NATS-Vollinhalts-Stream" (siehe §2 dritter Liefer-Punkt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
