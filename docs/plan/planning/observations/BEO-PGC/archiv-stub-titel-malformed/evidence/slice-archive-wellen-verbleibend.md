@@ -18,4 +18,9 @@ betroffen. Inhalt, Archiv-Zeiger und Fußzeilen waren bei allen 17 korrekt;
 betroffen war ausschließlich die erste Zeile. Behoben durch direkte
 Titelzeilen-Korrektur in derselben Closure-Runde (Review-Finding F-1).
 
-Quelle: Review zu `slice-archive-wellen-verbleibend` F-1 · Commit `301ea0c`.
+Nachtrag: Der versehentlich ausgelassene 18. Lauf (`welle-18`, in einem
+eigenen Nachtrag nachgeholt) zeigte denselben Fehler ein weiteres Mal —
+14 von 18 insgesamt.
+
+Quelle: Review zu `slice-archive-wellen-verbleibend` F-1 · Commit `301ea0c`
+· Nachtrag-Commit `502e60f`.

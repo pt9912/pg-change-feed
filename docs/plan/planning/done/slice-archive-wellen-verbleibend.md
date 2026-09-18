@@ -214,6 +214,19 @@ Lerneintrag geschrieben.
 - **Risiken aus §6:** drei „entfallen", eines „eingetreten, aufgelöst",
   eines „weiter offen" — siehe §6.
 - **Drei Paarungen:** wellenlos, hier geprüft — kein Welle-Bezug.
+- **Nachtrag (nach Closure):** Die reale `WAVES`-Liste in §2 LP2 ließ
+  `welle-18` versehentlich aus, obwohl der `--vorschau`-Rescan (§2 LP1) sie
+  bereits als sperrenfrei auswies (die Namenskollisions-Behebung für
+  `welle-18` war Teil dieses Slices, der eigentliche Archivierungslauf
+  dafür nicht). Ein Nutzerhinweis nach Abschluss dieses Slices
+  („aber in `docs/reviews` liegen noch viele Dokumente") deckte die Lücke
+  auf. Nachgeholt in einem eigenen, kleinen Nachtrag: dieselbe Technik,
+  zwei Commits (`00c48e0` Move, `4ab7596` Inhalt), derselbe Stub-Titel-Fehler
+  trat auch hier auf (verdoppelte Nummer) und wurde direkt korrigiert.
+  Damit sind 18 der 20 Wellen archiviert, nicht 17 — die Zahlen in §1-§6
+  oben spiegeln den Stand **zum Zeitpunkt dieser Slice-Closure** und werden
+  nicht rückwirkend geändert (Record, keine Chronik-Überschreibung);
+  dieser Nachtrag trägt die Korrektur.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
