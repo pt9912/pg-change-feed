@@ -32,10 +32,23 @@ ausschließlich auf den bekannten Fremdobjekten blockiert (die beiden seit
 aktuell sechs Objekte: vier SQL-Funktionen aus
 `nacharbeit-administration.sql`, siehe
 `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`),
-und behandelt diesen Fall als bereits erfüllt statt mit Exit 8
-abzubrechen — ohne echte destruktive Änderungen (Spalten-/Tabellenabbau,
-neue Fremdobjekte außerhalb der bekannten Liste) ununterscheidbar
-durchzulassen.
+und lässt den nachfolgenden `--execute`-Schritt in diesem Fall zusätzlich
+mit `--allow-destructive` laufen, statt mit Exit 8 abzubrechen — ohne
+echte destruktive Änderungen (Spalten-/Tabellenabbau, neue Fremdobjekte
+außerhalb der bekannten Liste) ununterscheidbar durchzulassen.
+**Fixrunde innerhalb dieses Slice (noch vor dem ersten Reviewer-Zug):**
+der ursprünglich gebaute Entwurf — bei ausschließlich bekannten Blockern
+den `--execute`-Schritt komplett überspringen — erwies sich als falsch:
+er hätte eine echte, gleichzeitig anstehende, nicht-destruktive
+Schema-Änderung (z. B. eine von `schema.yaml` weiterhin deklarierte, aber
+außerhalb von d-migrate entfernte Spalte) stillschweigend verloren, weil
+sie im selben Plan wie die sechs bekannten Blocker steht. Korrigiert:
+`--execute` läuft **immer**; `--allow-destructive` wird nur zusätzlich
+gesetzt, wenn der vorgelagerte `--plan-only`-Report bestätigt, dass
+ausschließlich bekannte Fremdobjekt-Blocker vorliegen — jede echte
+anstehende Änderung im selben Plan wird dadurch weiterhin angewendet. Der
+Regressionsbeleg dafür ist Lauf 3 von
+`tools/harness/run-schema-rollout-guard-test.sh` (siehe DoD).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -64,8 +77,17 @@ durchzulassen.
       real migrierte Ziel-DB durch (Exit 0 bei beiden Läufen) — real
       geprüft mit dem vollen `nacharbeit-*.sql`-Bestand (aktuell: roles,
       observability, heartbeat, administration): `tools/harness/run-schema-rollout-guard-test.sh`
-      Lauf 1 (frisch) und Lauf 2 (Skip-Pfad, Ausgabe enthält
-      „--execute uebersprungen") beide Exit 0.
+      Lauf 1 (frisch) und Lauf 2 (--allow-destructive-Pfad, Ausgabe enthält
+      „--execute laeuft mit --allow-destructive") beide Exit 0.
+- [x] Eine echte, gleichzeitig anstehende, nicht-destruktive Schema-Änderung
+      bleibt wirksam, auch wenn sie im selben Plan wie die sechs bekannten
+      Blocker steht — der Regressionsbeleg für den in §1 beschriebenen,
+      innerhalb dieses Slice gefundenen und korrigierten Fehler: eine von
+      `schema.yaml` weiterhin deklarierte, nullable Spalte
+      (`administration_request.error_message`) wird außerhalb von
+      d-migrate per `ALTER TABLE … DROP COLUMN` entfernt; der nächste
+      `make schema-rollout`-Lauf bringt sie real zurück — real geprüft
+      (`tools/harness/run-schema-rollout-guard-test.sh` Lauf 3).
 - [x] Ein **künstlich eingefügtes**, nicht auf der bekannten Liste
       stehendes destruktives Ziel bricht weiterhin mit Exit 8 ab — der
       Beleg, dass die Wache nicht pauschal durchlässt. **Plan-Korrektur:**
@@ -79,7 +101,7 @@ durchzulassen.
       hinzugefügte, **nicht** in `schema.yaml` deklarierte Spalte erzeugt
       einen unbekannten `DropColumn`-Blocker neben den sechs bekannten —
       real geprüft (`tools/harness/run-schema-rollout-guard-test.sh` Lauf
-      3, `make: *** [schema-rollout] Error 8`).
+      4, `make: *** [schema-rollout] Error 8`).
 - [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
@@ -106,6 +128,7 @@ durchzulassen.
 | `AGENTS.md` §3.14 | streichen | Ersatzlos entfernt (kein dünnerer Hinweis nötig, siehe DoD-Punkt 2 oben). |
 | `tools/harness/run-schema-rollout-guard-test.sh` | neu | Realer Drei-Läufe-Beleg (frisch → Skip-Pfad → Negativ-Abbruch) gegen eine eigenständige, abgeräumte Ziel-DB — kein Unit-Test, weil DB-/d-migrate-Zugriff nötig ist; läuft im selben Docker-only-Rahmen wie `tools/harness/run-store-tests.sh`. Kein neues Make-Target (Werkzeug, `bash`-Aufruf direkt, wie in der Pre-completion-Checkliste dieses Slice-Laufs dokumentiert). |
 | `.gitignore` | update | **Plan-Nachzug**: `tools/schema/rollout-precheck.yaml` ist ein transientes Vorlauf-Artefakt, kein Bestand. |
+| `Makefile`, `tools/schema/rolloutguard/{guard.go,main.go,report.go,guard_test.go}` | Fixrunde (Plan-Nachzug) | Der Mischfall aus §6 (dritter Risikopunkt) trat real ein, noch innerhalb dieses Slice, vor jedem Reviewer-Zug: der erste Entwurf überspringt `--execute` komplett bei ausschließlich bekannten Blockern und hätte dadurch eine echte, gleichzeitig anstehende, nicht-destruktive Änderung verloren (empirisch verifiziert). Korrektur: `--execute` läuft immer; `decide()`/`main.go` liefern jetzt `allowDestructive` statt `skip`, das Makefile-Target setzt `--allow-destructive` nur zusätzlich, wenn `decide()` es erlaubt. `guard_test.go`-Namen/-Kommentare entsprechend nachgezogen; kein Verhaltensunterschied für die fünf bestehenden Unit-Tests (reine Allowlist-Prüfung unverändert), aber neue Semantik der Rückgabe. Regressionsbeleg: Lauf 3 von `tools/harness/run-schema-rollout-guard-test.sh`. |
 
 **Real gefundenes, außerhalb des Scopes liegendes Risiko:** `tools/schema/plan.yaml`/`down.sql` sind geteilte, feste Schreibziele — **jeder** Aufrufer von `make schema-rollout` (auch gegen eine völlig unabhängige Test-/Scratch-DB) überschreibt den committeten Pflicht-Report der letzten echten Produktions-/CI-Rollout mit seinem eigenen Ergebnis. Real aufgetreten: ein Lauf von `tools/harness/run-schema-rollout-guard-test.sh` hinterließ eine geänderte `tools/schema/plan.yaml` im Arbeitsbaum (zurückgesetzt, nicht committet). Vorbestehend (jeder heutige Aufrufer, u. a. `tools/schema/apply-rollout.sh`, trägt dasselbe Risiko) und nicht Gegenstand dieses Slice — siehe Beobachtungs-Register.
 
@@ -145,10 +168,16 @@ Lerneintrag geschrieben.
   `commit-traceability`/Review auffallen (derselbe Aufrufer editiert
   ohnehin das Makefile für die neue Invocation-Zeile), aber kein Sensor
   erzwingt die Nähe der beiden Änderungen mechanisch.
-- Die zentrale Wache maskiert einen Mischfall (ein Teil der Blocker ist
-  bekannt, ein Teil ist eine echte neue destruktive Änderung) unklar —
-  **Ausgang:** weiter offen, DoD-Punkt 2 oben ist der Testfall dafür; wird
-  bei Umsetzung real geklärt, nicht vorab angenommen.
+- Die zentrale Wache maskiert einen Mischfall (bekannte Blocker neben
+  einer echten anstehenden Änderung) unklar — **Ausgang: eingetreten**,
+  noch innerhalb dieses Slice, vor dem ersten Reviewer-Zug. Der erste
+  Entwurf (Skip von `--execute` bei ausschließlich bekannten Blockern)
+  hätte eine echte, nicht-destruktive Änderung im selben Plan
+  stillschweigend verloren; korrigiert auf „`--execute` läuft immer,
+  `--allow-destructive` nur zusätzlich bei bestätigt bekannten Blockern"
+  (siehe §1, §3 Fixrunden-Zeile). Der Fund kam aus einer bewussten
+  Gegenprobe (Mischfall-Simulation), nicht aus einem Sensor — kein neuer
+  Sensor daraus, der Regressionsbeleg ist Lauf 3 des Test-Skripts.
 
 ## 7. Closure-Notiz
 

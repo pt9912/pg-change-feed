@@ -183,27 +183,38 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # BEO-PGC/schema-rollout-fremdobjekte): Ein zweiter Lauf gegen ein bereits
 # migriertes Ziel blockiert sonst mit Exit 8, weil die sechs Fremdobjekte
 # aus den vier nacharbeit-*.sql-Dateien außerhalb des neutralen Modells
-# liegen und d-migrate ihren Abbau plant. Ein vorgelagerter --plan-only-Lauf
-# (kein --execute, liest nur) schreibt denselben Report nach
-# tools/schema/rollout-precheck.yaml (eigene Datei, damit der committete
-# Pflicht-Report tools/schema/plan.yaml ausschließlich echte --execute-Läufe
-# belegt); endet er blockierend (Exit 8), entscheidet
+# liegen und d-migrate ihren Abbau plant — real unabhängig davon, ob dieser
+# Lauf sonst inhaltlich nichts oder eine echte neue Schema-Änderung trägt.
+# Ein vorgelagerter --plan-only-Lauf (kein --execute, liest nur) schreibt
+# denselben Report nach tools/schema/rollout-precheck.yaml (eigene Datei,
+# damit der committete Pflicht-Report tools/schema/plan.yaml ausschließlich
+# echte --execute-Läufe belegt); endet er blockierend (Exit 8), entscheidet
 # tools/schema/rolloutguard anhand des strukturierten Reports, ob
-# ausschließlich die sechs bekannten Objekte blockieren. Nur dann wird der
-# --execute-Schritt übersprungen — jeder andere Fall (kein Blocker, ein
-# unbekannter Blocker, eine andere Blocker-Klasse) fällt auf den
-# ursprünglichen --execute-Lauf zurück, der den echten Report/Rollback nach
-# tools/schema/plan.yaml/down.sql schreibt und bei einer echten neuen
-# destruktiven Änderung weiterhin mit Exit 8 abbricht.
+# ausschließlich die sechs bekannten Objekte blockieren. Nur dann läuft der
+# reguläre --execute-Schritt zusätzlich mit --allow-destructive — sicher,
+# weil der Precheck bereits bestätigt hat, dass kein anderer destruktiver
+# Blocker im Spiel ist; jede echte neue Schema-Änderung im selben Lauf wird
+# dadurch weiterhin angewendet, statt beim bloßen Überspringen von
+# --execute verlustig zu gehen (real geprüft: eine per ALTER TABLE …
+# entfernte, von schema.yaml weiterhin deklarierte Spalte kam bei einem
+# reinen Skip nicht zurück). Die vier nacharbeit-*.sql-Schritte laufen
+# danach unverändert und legen die sechs bekannten Objekte sofort wieder
+# an (CREATE OR REPLACE, dieselbe Idempotenz wie bei jedem anderen Lauf) —
+# ihr kurzes reales Fehlen zwischen --execute und dem ersten
+# nacharbeit-Schritt bleibt folgenlos. Jeder andere Fall (kein Blocker, ein
+# unbekannter Blocker, eine andere Blocker-Klasse) läuft ohne
+# --allow-destructive und bricht bei einer echten neuen destruktiven
+# Änderung weiterhin mit Exit 8 ab.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	@docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --plan-only --report tools/schema/rollout-precheck.yaml; \
 	plan_exit=$$?; \
+	allow_destructive=""; \
 	if [ "$$plan_exit" = "8" ] && docker run --rm --network none -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go run ./tools/schema/rolloutguard tools/schema/rollout-precheck.yaml; then \
-	  echo "schema-rollout: Ziel bereits vollstaendig ausgerollt (nur bekannte Fremdobjekt-Blocker, ADR-0043) - --execute uebersprungen"; \
-	else \
-	  docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql; \
-	fi
+	  echo "schema-rollout: nur bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
+	  allow_destructive="--allow-destructive"; \
+	fi; \
+	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute $$allow_destructive --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-roles.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-observability.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-heartbeat.sql

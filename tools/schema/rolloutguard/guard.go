@@ -28,19 +28,26 @@ var knownForeignObjects = map[foreignObject]bool{
 // pauschalen Fehlers meldet (real gemessen, --plan-only-Report).
 const destructiveConfirmationReason = "DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION"
 
-// decide meldet, ob der nachfolgende `--execute`-Schritt übersprungen
-// werden darf: nur wenn der Report überhaupt blockiert war und JEDE
-// Blocker-Operation (a) den Grund destructiveConfirmationReason trägt und
-// (b) auf der Liste knownForeignObjects steht. Ein einziger unbekannter
+// decide meldet, ob der nachfolgende `--execute`-Schritt zusätzlich mit
+// `--allow-destructive` laufen darf: nur wenn der Report überhaupt
+// blockiert war und JEDE Blocker-Operation (a) den Grund
+// destructiveConfirmationReason trägt und (b) auf der Liste
+// knownForeignObjects steht. Das Ergebnis entscheidet bewusst NICHT, ob
+// `--execute` überhaupt läuft — es läuft immer, damit eine echte,
+// gleichzeitig anstehende Schema-Änderung (z. B. eine neue Spalte) nicht
+// verlustig geht, nur weil die sechs bekannten Fremdobjekte ebenfalls im
+// Plan stehen (real geprüft: ein reines Überspringen von `--execute` ließ
+// eine per ALTER TABLE … DROP COLUMN entfernte, von schema.yaml weiterhin
+// deklarierte Spalte nicht zurückkommen). Ein einziger unbekannter
 // Blocker — real geprüft mit einer künstlich per ALTER TABLE … ADD COLUMN
 // hinzugefügten, nicht deklarierten Spalte, die d-migrate als
 // unbekannten DropColumn-Blocker neben den sechs bekannten meldet — lässt
-// decide false liefern, und der Aufrufer fällt auf den echten
-// `--execute`-Lauf zurück (der denselben Blocker erneut findet und mit
-// Exit 8 abbricht).
-func decide(r report) (skip bool, reason string) {
+// decide false liefern; der `--execute`-Lauf läuft dann ohne
+// `--allow-destructive` und bricht mit demselben Blocker real mit Exit 8
+// ab.
+func decide(r report) (allowDestructive bool, reason string) {
 	if len(r.Blockers) == 0 {
-		return false, "kein Blocker im Report — kein Skip-Grund"
+		return false, "kein Blocker im Report — kein Grund fuer --allow-destructive"
 	}
 
 	opByID := make(map[string]foreignObject, len(r.Operations))
@@ -62,5 +69,5 @@ func decide(r report) (skip bool, reason string) {
 			}
 		}
 	}
-	return true, "alle Blocker auf der bekannten Fremdobjekt-Liste (ADR-0043)"
+	return true, "alle Blocker auf der bekannten Fremdobjekt-Liste (ADR-0043) — --allow-destructive ist sicher"
 }

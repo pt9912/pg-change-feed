@@ -23,11 +23,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	skip, reason := decide(r)
-	if skip {
-		fmt.Fprintf(os.Stdout, "rolloutguard: %s — --execute wird uebersprungen\n", reason)
+	allowDestructive, reason := decide(r)
+	if allowDestructive {
+		fmt.Fprintf(os.Stdout, "rolloutguard: %s\n", reason)
 		os.Exit(0)
 	}
-	fmt.Fprintf(os.Stderr, "rolloutguard: %s — --execute laeuft regulaer\n", reason)
+	fmt.Fprintf(os.Stderr, "rolloutguard: %s — --execute laeuft ohne --allow-destructive\n", reason)
 	os.Exit(1)
 }

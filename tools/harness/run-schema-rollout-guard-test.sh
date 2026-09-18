@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 # run-schema-rollout-guard-test — realer Beleg der zentralen
 # `make schema-rollout`-Idempotenz-Wache (ADR-0043, tools/schema/rolloutguard,
-# BEO-PGC/schema-rollout-fremdobjekte): drei Läufe gegen dieselbe,
+# BEO-PGC/schema-rollout-fremdobjekte): vier Läufe gegen dieselbe,
 # eigenständige Ziel-DB.
 #
 #   1. Frischer Rollout (kein Blocker) — muss durchlaufen.
-#   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — muss
-#      erneut Exit 0 liefern UND den Skip-Pfad des Guards nehmen (stdout
-#      trägt die Skip-Meldung), nicht nur zufällig Exit 0 aus anderem Grund.
-#   3. Ein künstlich per `ALTER TABLE … ADD COLUMN` hinzugefügtes, nicht
+#   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — trägt
+#      ausschließlich die sechs bekannten Fremdobjekt-Blocker — muss erneut
+#      Exit 0 liefern UND den --allow-destructive-Pfad des Guards nehmen
+#      (stdout trägt die Meldung), nicht nur zufällig Exit 0 aus anderem
+#      Grund.
+#   3. Eine echte, gleichzeitig anstehende, NICHT-destruktive Schema-Änderung
+#      neben den sechs bekannten Blockern: eine von schema.yaml weiterhin
+#      deklarierte, nullable Spalte (administration_request.error_message —
+#      trägt keine View-/Funktions-Abhängigkeit, anders als
+#      process_heartbeat.error_class, das die Sicht cdc.heartbeat trägt) wird
+#      per `ALTER TABLE … DROP COLUMN` außerhalb von d-migrate entfernt — der
+#      nächste Rollout-Lauf muss sie real zurückbringen. Das ist der
+#      Regressionsschutz für den konkret gefundenen Fehler: ein reines
+#      Überspringen von `--execute` bei bekannten Blockern ließ eine solche
+#      echte Änderung verlustig gehen.
+#   4. Ein künstlich per `ALTER TABLE … ADD COLUMN` hinzugefügtes, nicht
 #      deklariertes Objekt — muss weiterhin mit Exit 8 abbrechen (der
 #      Beleg, dass die Wache nicht pauschal durchlässt).
 #
@@ -58,27 +70,44 @@ docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "CREATE SCHEMA IF NOT EXISTS cdc" \
   -c "ALTER ROLE $USER IN DATABASE $DB SET search_path = cdc"
 
-echo "run-schema-rollout-guard-test: Lauf 1/3 (frischer Rollout, muss durchlaufen)"
+echo "run-schema-rollout-guard-test: Lauf 1/4 (frischer Rollout, muss durchlaufen)"
 make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
-echo "run-schema-rollout-guard-test: Lauf 2/3 (Idempotenz — muss den Skip-Pfad nehmen)"
+echo "run-schema-rollout-guard-test: Lauf 2/4 (Idempotenz — muss den --allow-destructive-Pfad nehmen)"
 out=$(make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)
 echo "$out"
-if ! grep -q "execute uebersprungen" <<<"$out"; then
-  echo "run-schema-rollout-guard-test: FEHLER — Lauf 2 hat den Skip-Pfad nicht genommen (Skip-Meldung fehlt in der Ausgabe)" >&2
+if ! grep -q -- "--allow-destructive" <<<"$out"; then
+  echo "run-schema-rollout-guard-test: FEHLER — Lauf 2 hat den --allow-destructive-Pfad nicht genommen (Meldung fehlt in der Ausgabe)" >&2
   exit 1
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 3/3 (unbekannter Blocker, muss mit Exit 8 abbrechen)"
+echo "run-schema-rollout-guard-test: Lauf 3/4 (echte anstehende Änderung neben den sechs bekannten Blockern — muss real zurückkommen)"
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
+  -c "ALTER TABLE cdc.administration_request DROP COLUMN error_message"
+still_missing=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
+  "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name='error_message'")
+if [ "$still_missing" != "0" ]; then
+  echo "run-schema-rollout-guard-test: FEHLER — Vorbedingung fehlgeschlagen, error_message ist nach DROP COLUMN noch da" >&2
+  exit 1
+fi
+make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+restored=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
+  "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name='error_message'")
+if [ "$restored" != "1" ]; then
+  echo "run-schema-rollout-guard-test: FEHLER — Lauf 3 hat die echte anstehende Spalten-Wiederherstellung nicht angewendet (Regression des behobenen Fehlers)" >&2
+  exit 1
+fi
+
+echo "run-schema-rollout-guard-test: Lauf 4/4 (unbekannter Blocker, muss mit Exit 8 abbrechen)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.source ADD COLUMN _rolloutguard_test_col text"
 set +e
 make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
-run3_exit=$?
+run4_exit=$?
 set -e
-if [ "$run3_exit" -eq 0 ]; then
-  echo "run-schema-rollout-guard-test: FEHLER — Lauf 3 lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag" >&2
+if [ "$run4_exit" -eq 0 ]; then
+  echo "run-schema-rollout-guard-test: FEHLER — Lauf 4 lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag" >&2
   exit 1
 fi
 
-echo "run-schema-rollout-guard-test: OK — beide DoD-Belege real erbracht (Idempotenz-Skip, Negativ-Abbruch Exit $run3_exit)"
+echo "run-schema-rollout-guard-test: OK — alle drei DoD-Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, Negativ-Abbruch Exit $run4_exit)"

@@ -36,13 +36,14 @@ func knownBlockedReport() report {
 	return r
 }
 
-// TestDecideSkipsWhenAllBlockersKnown prüft den Regelfall: ein zweiter Lauf
-// gegen ein bereits vollständig migriertes Ziel trägt ausschließlich die
-// sechs bekannten Fremdobjekt-Blocker — decide erlaubt den Skip.
-func TestDecideSkipsWhenAllBlockersKnown(t *testing.T) {
-	skip, reason := decide(knownBlockedReport())
-	if !skip {
-		t.Fatalf("decide() skip = false, reason %q — wollte true", reason)
+// TestDecideAllowsDestructiveWhenAllBlockersKnown prüft den Regelfall: ein
+// zweiter Lauf gegen ein bereits vollständig migriertes Ziel trägt
+// ausschließlich die sechs bekannten Fremdobjekt-Blocker — decide erlaubt
+// --allow-destructive.
+func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
+	allow, reason := decide(knownBlockedReport())
+	if !allow {
+		t.Fatalf("decide() allowDestructive = false, reason %q — wollte true", reason)
 	}
 }
 
@@ -50,8 +51,9 @@ func TestDecideSkipsWhenAllBlockersKnown(t *testing.T) {
 // (Slice-Plan §2 zweiter Punkt): eine künstlich per ALTER TABLE … ADD
 // COLUMN hinzugefügte, nicht deklarierte Spalte erzeugt real einen
 // zusätzlichen, unbekannten DropColumn-Blocker neben den sechs bekannten
-// (gemessen gegen das gepinnte d-migrate-Image) — decide verweigert den
-// Skip, auch im Mischfall mit sechs sonst bekannten Blockern.
+// (gemessen gegen das gepinnte d-migrate-Image) — decide verweigert
+// --allow-destructive, auch im Mischfall mit sechs sonst bekannten
+// Blockern.
 func TestDecideRefusesUnknownDestructiveBlocker(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].OperationIDs = append(r.Blockers[0].OperationIDs, "DropColumn:COLUMN:g1:g2")
@@ -62,9 +64,9 @@ func TestDecideRefusesUnknownDestructiveBlocker(t *testing.T) {
 		Path       []string `json:"path"`
 	}{ID: "DropColumn:COLUMN:g1:g2", Kind: "DropColumn", ObjectType: "COLUMN", Path: []string{"source", "_scratch_test_col"}})
 
-	skip, _ := decide(r)
-	if skip {
-		t.Fatal("decide() skip = true — wollte false, weil ein Blocker nicht auf der bekannten Liste steht")
+	allow, _ := decide(r)
+	if allow {
+		t.Fatal("decide() allowDestructive = true — wollte false, weil ein Blocker nicht auf der bekannten Liste steht")
 	}
 }
 
@@ -75,9 +77,9 @@ func TestDecideRefusesUnknownBlockerReason(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].Reason = "SOME_OTHER_REASON"
 
-	skip, _ := decide(r)
-	if skip {
-		t.Fatal("decide() skip = true — wollte false bei unbekannter Blocker-Klasse")
+	allow, _ := decide(r)
+	if allow {
+		t.Fatal("decide() allowDestructive = true — wollte false bei unbekannter Blocker-Klasse")
 	}
 }
 
@@ -88,19 +90,19 @@ func TestDecideRefusesMissingOperation(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].OperationIDs = append(r.Blockers[0].OperationIDs, "DropTable:TABLE:zz:zz")
 
-	skip, _ := decide(r)
-	if skip {
-		t.Fatal("decide() skip = true — wollte false bei einer operationId ohne Eintrag in operations[]")
+	allow, _ := decide(r)
+	if allow {
+		t.Fatal("decide() allowDestructive = true — wollte false bei einer operationId ohne Eintrag in operations[]")
 	}
 }
 
 // TestDecideRefusesEmptyBlockers prüft die Randbedingung: ein Report ohne
-// jeden Blocker trägt keinen Skip-Grund — dieser Fall entsteht in der
-// Praxis nicht (der Aufrufer ruft decide nur bei Exit 8 auf), bleibt aber
-// eine explizite Zusage der Funktion selbst.
+// jeden Blocker trägt keinen Grund für --allow-destructive — dieser Fall
+// entsteht in der Praxis nicht (der Aufrufer ruft decide nur bei Exit 8
+// auf), bleibt aber eine explizite Zusage der Funktion selbst.
 func TestDecideRefusesEmptyBlockers(t *testing.T) {
-	skip, _ := decide(report{Status: "ok"})
-	if skip {
-		t.Fatal("decide() skip = true — wollte false bei leerem Blockers[]")
+	allow, _ := decide(report{Status: "ok"})
+	if allow {
+		t.Fatal("decide() allowDestructive = true — wollte false bei leerem Blockers[]")
 	}
 }
