@@ -104,8 +104,12 @@ Slice schließt genau diese drei echten Lücken mit neuen E2E-Belegen in
       zwei neue Beobachtungen angefallen (Review-Fund F-1 und F-2, siehe
       §7), nicht „keine" wie ursprünglich erwartet.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen
-      (Prüfung läuft nach dem `git mv` nach `done/`, siehe Template-Hinweis §7).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      geprüft in `done/`: kein Anker zu prüfen (kein neuer Sensor/keine
+      neue Regel), keine Folge-Slice benannt,
+      `BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt` und
+      `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`
+      existieren beide mit nicht-leerem `evidence/` (siehe §7).
 
 ## 3. Plan (vor Code)
 
