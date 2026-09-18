@@ -89,8 +89,11 @@ internal static class Program
         var msg = subscription.Current;
 
         // Der Payload trägt keine Änderungsdaten (`SPEC-017`); die Änderung
-        // kommt ausschließlich über den HTTP-Lesezugriff.
-        Console.WriteLine($"nats-client: Weckruf auf {msg.Subject} (Payload {msg.Size} Byte) — hole die Aenderung ueber HTTP");
+        // kommt ausschließlich über den HTTP-Lesezugriff. Gedruckt wird die
+        // Nutzdaten-Länge (`Data`), nicht `NatsMsg.Size` — das ist die
+        // Protokoll-Größe des Rahmens (Subjekt + Nutzdaten) und damit für
+        // einen leeren Payload nicht 0.
+        Console.WriteLine($"nats-client: Weckruf auf {msg.Subject} (Payload {msg.Data?.Length ?? 0} Byte) — hole die Aenderung ueber HTTP");
 
         using var httpClient = new System.Net.Http.HttpClient { Timeout = RequestTimeout };
         try

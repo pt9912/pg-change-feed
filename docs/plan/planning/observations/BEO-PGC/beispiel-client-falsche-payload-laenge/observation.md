@@ -18,13 +18,19 @@ Kotlin:  nats-client: Weckruf auf cdc.changes.demo-source.public.orders (Payload
 ```
 
 Beide Clients holten die Änderung anschließend real über `GET /changes`
-(C#: `change_id 899-1`, Kotlin: `change_id 911-1`) — der Defekt betrifft
-allein die **gemeldete Zahl**, nicht die Funktion. Zwei Deutungen sind
-möglich und unentschieden: Der C#-Client misst etwas anderes als die
-Payload-Länge (z. B. eine Puffer- oder Kopfgröße), oder seine
-NATS-Bibliotheks-Anbindung liefert an dieser Stelle tatsächlich einen
-gefüllten Rumpf, obwohl der Absender leer publiziert. Die zweite Deutung
-wäre die ernstere und ist mit dem Bestand nicht ausgeschlossen.
+(C#: `change_id 899-1`, Kotlin: `change_id 911-1`) — der Defekt betraf
+allein die **gemeldete Zahl**, nicht die Funktion.
+
+Aufgeklärt am 2026-09-18: es war keine Transport-Abweichung, sondern ein
+**Etikett**. `NATS.Client.Core` v3.2.0 füllt `NatsMsg.Size` aus dem
+30-Bit-Größenfeld des NATS-Protokoll-Headers — das ist die Rahmen-Größe
+(Subjekt **plus** Nutzdaten), nicht der Nutzdaten-Anteil; die gemessenen
+37 Byte sind exakt die Zeichenzahl des Subjekts
+`cdc.changes.demo-source.public.orders`. Kotlin (`msg.data.size`) und Go
+(`len(msg.Data)`) druckten dagegen schon die Nutzdaten-Länge. Behoben durch
+Vereinheitlichung auf die Nutzdaten-Länge (`msg.Data?.Length ?? 0`); real
+nachgemessen: der C#-Client meldet danach `Payload 0 Byte` auf demselben
+leeren Wecksignal.
 
 Kein Gate liest die Ausgabe eines Beispiel-Clients (`make example-run-*` ist
 Werkzeug, kein Gate; `make examples-*` fährt keinen echten NATS-Server) —
