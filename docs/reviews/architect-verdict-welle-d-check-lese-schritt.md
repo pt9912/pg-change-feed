@@ -91,7 +91,7 @@ unmechanisierbar, sie ist bislang **nirgends benannt**. Zwei Fixes:
    Regel einen Träger braucht und keinen Vorsatz" — er benennt die Grenze
    explizit (Vorbild: `harness/sensors/coverage-gate.md` §Grenze), nennt
    die Reviewer-Rolle als Schließer des Rests (real bereits so gelaufen,
-   siehe `docs/reviews/review-slice-096.md` F-2, vierter Anker), und
+   siehe das Review zu `slice-096` F-2, vierter Anker), und
    verlangt **keine** Erweiterung der Suchform selbst — eine `grep`-Form,
    die zuverlässig „dieselbe Klasse" auf Zahlen anwendet, bräuchte eine
    Semantik-Entscheidung, welche Zahl zu welcher Eigenschaft gehört
@@ -127,8 +127,8 @@ offene Frage mehr.
 ### 2.1 Eigene Prüfung der drei Belege und ihrer Klassifikation
 
 Gelesen: `observation.md`, `state.md`, alle drei `evidence/*.md`,
-`docs/reviews/review-slice-090-delta.md` D-1, `docs/reviews/review-slice-102.md`
-F-3, `docs/reviews/review-slice-d-check-tracked-modul.md` F-2,
+der Delta-Review zu `slice-090` D-1, das Review zu `slice-102`
+F-3, das Review zur `d-check`-Tracked-Modul-Welle F-2,
 `AGENTS.md` §3.12, `.harness/skills/reviewer.md` (voll gelesen).
 
 Die drei Belege bestätigen sich inhaltlich. Auffällig — und für die

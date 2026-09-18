@@ -3,8 +3,8 @@
 **Rolle:** Verifier (Modul 11) — Prüfung „Bauen wir es richtig?" gegen Plan
 (`slice-045` §1/§2 DoD/§3 Plan-Nachzug/§4/§6/§8), `welle-13` und
 `ADR-0046`/den Architect-Verdikt
-`architect-verdict-retention-loeschausfuehrung.md`, nicht gegen Diff
-(Reviewer-Aufgabe, bereits abgeschlossen: `review-slice-045.md`, vollständig
+zur Retention-Löschausführung, nicht gegen Diff
+(Reviewer-Aufgabe, bereits abgeschlossen: das Review zu `slice-045`, vollständig
 gelesen) und nicht gegen realen Bedarf (Validator, hier nicht ausgelöst —
 kein MVP-Meilenstein-Slice).
 
@@ -32,7 +32,7 @@ selbst geprüft (`git log --oneline 5d36fea^..dfe02b0`): Move → Implementierun
 | 1 | Neue SQL-View zeigt je Quelle real den am weitesten zurückliegenden unbestätigten Consumer, real gegen ≥2 Consumer getestet (einer blockiert, einer nicht) | **erfüllt** | `tools/schema/schema.yaml` selbst gelesen: `retention_blockers` liest `cdc.consumer_position INNER JOIN cdc.consumer`, `DISTINCT ON (cp.source_id) ORDER BY cp.source_id, cp.acknowledged_position ASC, c.consumer_id ASC` — liefert real höchstens eine Zeile je Quelle, die mit der kleinsten `acknowledged_position` (genau die Position, die `RetentionPolicy.AllowsDeletion` als bindende Untergrenze behandelt). `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer` (`test/integration/integration_test.go`) selbst gelesen und real ausgeführt (siehe Punkt 3): registriert zwei Consumer direkt über `ConsumerStatePort`, bestätigt beide auf unterschiedliche reale Positionen, prüft `len(blockers) == 1`, `consumerID == behindConsumer`, `backlog > 0` und explizit, dass der weiter bestätigende Consumer **nicht** erscheint — reale Zwei-Consumer-Unterscheidung, kein Mock |
 | 2 | `LH-FA-RET-005` real erfüllt | **erfüllt — mit Präzisierung, siehe §2 unten** | Lastenheft selbst gelesen (`spec/lastenheft.md:719-730`): Happy Path „gegeben `c1` blockiert, ist erkennbar welcher Consumer blockiert und bis zu welcher Position" — durch `cdc.retention_blockers` + o.g. Test real belegt. Boundary „mehrere blockierende Consumer … alle einzeln erkennbar" wird **nicht** von der neuen View allein getragen (sie liefert bewusst nur eine Zeile je Quelle), sondern von der bereits bestehenden `cdc.consumer_status`/`cdc_consumer_lag`-Kette — eigenständig nachgeprüft, siehe §2 |
 | 3 | `make gates` grün, `make test-integration` grün; `make test-store` grün | **erfüllt, selbst reproduziert** | `make gates` selbst ausgeführt gegen `HEAD = dfe02b0`: `baseline-verify` (v6.5.0, 54 Dateien) OK, `d-check` Struktur (358 Dateien, 0 Befunde), `d-check` Commits (`HEAD~5..HEAD`, 0 Befunde), `commit-traceability.sh` (5 Commits, Betreffs ohne Struktur-ID) OK, `a-check` (0 Befunde). `make test-integration` selbst ausgeführt: alle Go-Testfälle inkl. `TestMVPRetentionBlockersViewShowsFurthestBehindConsumer` `PASS`, anschließender Compose-Rundlauf inkl. des bestehenden Retention-Belegs (`RetentionOld` real entfernt nach Freigabe, `RetentionYoung` blieb erhalten) ebenfalls grün — kein Interferenz-Effekt durch den neuen Testfall (Cleanup-Fix aus Plan-Nachzug Punkt 5 wirkt). `make test-store` selbst ausgeführt: alle Pakete `ok`, insbesondere `postgresstorage` (4.12s, enthält `TestCdcReaderRoleReadsViewsNotBaseTables` mit der neuen `cdc.retention_blockers`-Zeile) |
-| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **inhaltlich erfüllt, Formular-Diskrepanz — siehe Finding V-1** | `review-slice-045.md` vollständig gelesen: 0 HIGH/MEDIUM/LOW, 1 INFO (F-1), Verdikt „nicht merge-blockierend". Die Bedingung ist damit tatsächlich erfüllt. Checkbox in §2 (Zeile 91) steht aber weiterhin auf `- [ ]` — der Review-Commit `dfe02b0` ändert ausschließlich `docs/reviews/review-slice-045.md` (`git show --stat dfe02b0`), die Plan-Datei nicht |
+| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **inhaltlich erfüllt, Formular-Diskrepanz — siehe Finding V-1** | Das Review zu `slice-045` vollständig gelesen: 0 HIGH/MEDIUM/LOW, 1 INFO (F-1), Verdikt „nicht merge-blockierend". Die Bedingung ist damit tatsächlich erfüllt. Checkbox in §2 (Zeile 91) steht aber weiterhin auf `- [ ]` — der Review-Commit `dfe02b0` ändert ausschließlich das Review zu `slice-045` (`git show --stat dfe02b0`), die Plan-Datei nicht |
 | 5 | Doku-Update `docs/user/benutzerhandbuch.md` | **erfüllt** | Abschnitt „Blockierende Consumer erkennen" (Zeile 362ff.) selbst gelesen: korrekt unter „Aufbewahrung (Retention)" platziert (Überschriften-Reihenfolge geprüft), SQL-Beispiel stimmt mit der realen View-Signatur überein, Abwesenheits-Lesart korrekt dokumentiert; `cdc_reader`-Zeile der Rollen-Tabelle (Zeile 77) nennt `cdc.retention_blockers` |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **offen — korrekt unbeansprucht** | Planner-Closure-Arbeit (Modul 8); §7 ist noch die Bedienhinweis-Vorlage. Kein Verifikations-Gegenstand dieser Prüfung |
 | 7 | Reconciliation-Register fortgeschrieben, falls einschlägig | **entfällt strukturell** | Kein `docs/plan/planning/reconciliation.md` — `harness/conventions.md` §Modus-Deklaration führt ausschließlich `*`/`PGC` im Modus Greenfield |
@@ -158,8 +158,8 @@ MVP-Meilenstein-Slice, kein Validator-Zug ausgelöst).
 
 - **Klasse:** Verifier-only — für Tests und Review unsichtbar; nur ein Blick
   auf den Formular-Zustand *nach* dem Review deckt die Lücke auf. Dieselbe
-  Klasse wie `V-1` in `verify-slice-043.md`/`verify-slice-044.md` und
-  ursprünglich `verify-slice-039.md` — bereits als `BEO-PGC/dod-checkbox-nachzug`
+  Klasse wie `V-1` in den Verifikationsberichten zu `slice-043`/`slice-044` und
+  ursprünglich zu `slice-039` — bereits als `BEO-PGC/dod-checkbox-nachzug`
   verkörpert (Pflicht-Zeile in `.claude/commands/implement-slice.md` Schritt
   18, seit `welle-5`) **und** trotzdem wiederholt aufgetreten (`slice-039`,
   `slice-043`, `slice-044`, jetzt `slice-045`) — ein Hinweis, dass die

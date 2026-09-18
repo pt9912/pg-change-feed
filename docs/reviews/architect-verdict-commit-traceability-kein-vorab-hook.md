@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8)
 **Anlass:** `docs/plan/planning/observations/BEO-PGC/commit-traceability-kein-vorab-hook`
 erreicht mit `slice-059` real 3× (`evidence/slice-038.md`,
-`evidence/review-slice-041.md`, `evidence/slice-059.md`) — Lese-Schritt der
+dem Beleg zum Review-Report-Commit zu `slice-041`, `evidence/slice-059.md`) — Lese-Schritt der
 laufenden `welle-16`-Closure (Modul 6 §Wellen-Closure-Prozedur, Schritt 3;
 Modul 8 §Rollen-Sequenz für eine Welle, Schritt 3b Verkörperung,
 Planner → Architect → Planner-Zug).
@@ -16,9 +16,9 @@ zu den Präzedenzfällen unten)
 Hook spiegeln soll), `tools/harness/commit-traceability.sh` (Sensor-Muster,
 Negativ-Hälfte, bash-only ohne Docker), `harness/mk/d-check.mk`s
 `commits`-Modul (Positiv-Hälfte, Docker-gebunden),
-[`docs/reviews/architect-verdict-pipe-maskiert-make-exit-code.md`](architect-verdict-pipe-maskiert-make-exit-code.md)
+der Architect-Verdikt dazu, dass eine Pipe den `make`-Exit-Code maskiert
 (Präzedenzfall „ein Fehler ohne zweites, unabhängig einsehbares Artefakt"),
-[`docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`](architect-verdict-slice-chronik-in-code-kommentar.md)
+der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren
 (Präzedenzfall „mechanischer Sensor geprüft und verworfen"),
 `AGENTS.md` §3.1 (Docker-only),
 `docs/plan/planning/observations/BEO-PGC/commit-traceability-kein-vorab-hook`.

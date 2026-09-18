@@ -57,31 +57,31 @@ Analyse-Tabellen), **(b)** `§Geschichte`-Zeile (Ereignis-Text und/oder
 
 | ADR | Fundort(e) | Aktuelle Form (Kurzfassung) |
 |---|---|---|
-| [`0044`](../plan/adr/0044-image-beleg-semantik.md) | (a) `§Bezug`, `§Kontext` (2×), `§Entscheidung` Punkt 4 (2×) · (b) Geschichte-Ereignistext (2 Links) | Markdown-Links `[docs/reviews/verify-slice-004.md](...)`, `[docs/reviews/review-slice-005.md](...)`, `[review-slice-005 F-7](...)`, `[verify-slice-004.md](...)` (relativer Pfad `../../../docs/reviews/...`) |
-| [`0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) | (a) `§Kontext` · (b) Geschichte-Verweis-Spalte | Markdown-Link `[docs/reviews/review-slice-010.md](../../reviews/review-slice-010.md)`, je mit `<!-- d-check:status-provenance -->` |
-| [`0047`](../plan/adr/0047-rollenspezifische-dsn-verdrahtung.md) | (a) `§Bezug` | Markdown-Link `[architect-review-welle-6.md](../../reviews/architect-review-welle-6.md)` + Text „Zug 2" |
-| [`0053`](../plan/adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) | (a) `§Bezug` (2×), `§Kontext` (Prosa, kein Link) | Markdown-Links `[architect-verdict-retention-loeschausfuehrung.md](...)`, `[architect-verdict-slice-044-rollen-grant.md](...)`; in `§Kontext` derselbe Pfad als Inline-Code-Bare-Pfad `(docs/reviews/architect-verdict-retention-loeschausfuehrung.md)` |
-| [`0062`](../plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md) | (a) `§Kontext` (2×, Inline-Code-Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Inline-Code-Bare-Pfad) | `` `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md` `` (Bare-Pfad, kein Link), Geschichte nennt eine **abweichende** Datei `-gegengeprueft.md` |
-| [`0065`](../plan/adr/0065-spaltenausschluss-dauerhafter-traeger.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (2 Bare-Pfade) | `` `docs/reviews/review-slice-067.md` ``, `` `docs/reviews/architect-verdict-spaltenausschluss-dauerhaftigkeit.md` `` |
-| [`0066`](../plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md) | (a) `§Bezug` (Bare-Pfad), `§Konsequenzen` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (2 Bare-Pfade) | `` `docs/reviews/review-slice-069.md` ``, `` `docs/reviews/architect-verdict-publish-blockiert-capture-pfad.md` `` |
-| [`0067`](../plan/adr/0067-capture-publish-einbindung-fitness-function-korrektur.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/review-slice-070.md` `` |
-| [`0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md) | (a) `§Bezug` (Bare-Pfad), `§Kontext` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/review-slice-071.md` `` |
-| [`0069`](../plan/adr/0069-commit-msg-hook-einseitige-zusage.md) | (a) `§Bezug` (Link + Bare-Pfad) · (b) Geschichte-Ereignistext (Link) und Verweis-Spalte (Link + Bare-Pfad) | `[docs/reviews/review-slice-073.md](../../reviews/review-slice-073.md)`, `` `docs/reviews/architect-verdict-commit-msg-hook-einseitige-zusage.md` `` |
-| [`0070`](../plan/adr/0070-supersede-reichweite-und-klassengrenze.md) | (a) `§Bezug` (2 Bare-Pfade), `§Kontext` (2 Bare-Pfade) · (b) Geschichte-Verweis-Spalte (2 Links) | `` `docs/reviews/review-slice-073-fixrunde.md` ``, `` `docs/reviews/verify-slice-073.md` ``; Geschichte-Zeile nutzt Links auf dieselben Dateien |
-| [`0071`](../plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/architect-verdict-coverage-gate-messgegenstand.md` `` |
-| [`0072`](../plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) | (a) `§Bezug` (Bare-Pfad), `§Kontext`-Messtabelle (komprimierte Bare-Pfad-Notation „`review-slice-036/039/049/073.md`") · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` `` |
-| [`0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` `` — **Vorsicht:** diese ADR selbst definiert die Zitat-Korrektur-Klasse; ihre eigene Korrektur ist ein Selbstanwendungsfall (s. u. §4) |
-| [`0074`](../plan/adr/0074-zitationsform-schwester-repo-hausform.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` `` |
-| [`0075`](../plan/adr/0075-hostpaths-reichweite-und-wortlaut.md) | (a) `§Bezug` (2 Links), `§Kontext` (Link) · (b) Geschichte-Ereignistext (Link) und Verweis-Spalte (Link) | `[review-slice-078](../../reviews/review-slice-078.md)`, `[architect-verdict-slice-078-konfliktpfad.md](...)` |
-| [`0083`](../plan/adr/0083-herkunft-von-aussagen-in-traegern.md) | (a) `§Bezug` (4 Bare-Pfade) · (b) Geschichte-Ereignistext (2 Bare-Pfade) und Verweis-Spalte (3 Bare-Pfade) | `` `docs/reviews/review-slice-081.md` ``, `` `-084.md` ``, `` `verify-slice-085.md` ``, `` `review-slice-088.md` ``, `` `review-slice-088-delta.md` `` |
-| [`0084`](../plan/adr/0084-sync-gate-fuer-generierte-artefakte.md) | (a) `§Bezug` (3 Bare-Pfade) · (b) Geschichte-Ereignistext/Verweis-Spalte (2 Bare-Pfade) | `` `docs/reviews/review-slice-069.md` ``, `` `verify-slice-069.md` ``, `` `review-slice-074.md` `` |
-| [`0085`](../plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/review-slice-093.md` `` |
-| [`0086`](../plan/adr/0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md) | (a) `§Bezug` (7 Bare-Pfade) · (b) Geschichte-Ereignistext/Verweis-Spalte (5 Bare-Pfade) | `` `docs/reviews/review-slice-081.md` `` … `` `review-slice-094.md` `` (sieben Reports) |
-| [`0087`](../plan/adr/0087-beispiel-clients-csharp-kotlin.md) | (b) Geschichte-Ereignistext, zweite Zeile (Digest-Korrektur) | `docs/reviews/review-slice-099.md F-1` (Bare-Pfad, kein Backtick) |
-| [`0089`](../plan/adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/review-slice-096.md` `` |
-| [`0091`](../plan/adr/0091-zugangsdaten-klasse-sechs-schluessel.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/verify-slice-096.md` `` |
-| [`0092`](../plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | `` `docs/reviews/verify-slice-096.md` `` |
-| [`0093`](../plan/adr/0093-digest-korrektur-adr-0087-kotlin-basis-image.md) | (a) `§Autor`-Feld (Bare-Pfad), `§Kontext` (Bare-Pfad) · (b) Geschichte-Ereignistext (Bare-Pfad) | `` `docs/reviews/review-slice-099.md` `` |
+| [`0044`](../plan/adr/0044-image-beleg-semantik.md) | (a) `§Bezug`, `§Kontext` (2×), `§Entscheidung` Punkt 4 (2×) · (b) Geschichte-Ereignistext (2 Links) | Markdown-Links auf den Verifikationsbericht zu `slice-004`, das Review zu `slice-005`, „Review zu `slice-005`, F-7", erneut den Verifikationsbericht zu `slice-004` (relativer Pfad in den `docs/reviews/`-Ordner) |
+| [`0046`](../plan/adr/0046-sql-driving-adapter-lese-schreib-trennung.md) | (a) `§Kontext` · (b) Geschichte-Verweis-Spalte | Markdown-Link auf das Review zu `slice-010`, je mit `<!-- d-check:status-provenance -->` |
+| [`0047`](../plan/adr/0047-rollenspezifische-dsn-verdrahtung.md) | (a) `§Bezug` | Markdown-Link auf den Architect-Review zu `welle-6` + Text „Zug 2" |
+| [`0053`](../plan/adr/0053-retention-loeschausfuehrung-cdc-admin-delete-grant.md) | (a) `§Bezug` (2×), `§Kontext` (Prosa, kein Link) | Markdown-Links auf den Architect-Verdikt zur Retention-Löschausführung, den Architect-Verdikt zu den Rollen-Grants in `slice-044`; in `§Kontext` derselbe Bezug als Inline-Code-Bare-Pfad |
+| [`0062`](../plan/adr/0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md) | (a) `§Kontext` (2×, Inline-Code-Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Inline-Code-Bare-Pfad) | der Architect-Verdikt zum fehlenden Vorab-Hook bei der Commit-Traceability (Bare-Pfad, kein Link), Geschichte nennt eine **abweichende** Datei — dessen gegengeprüfte Fassung |
+| [`0065`](../plan/adr/0065-spaltenausschluss-dauerhafter-traeger.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (2 Bare-Pfade) | das Review zu `slice-067`, der Architect-Verdikt zur Spaltenausschluss-Dauerhaftigkeit |
+| [`0066`](../plan/adr/0066-broadcaster-begrenzte-empfangswarteschlange.md) | (a) `§Bezug` (Bare-Pfad), `§Konsequenzen` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (2 Bare-Pfade) | das Review zu `slice-069`, der Architect-Verdikt zum blockierenden Publish im Capture-Pfad |
+| [`0067`](../plan/adr/0067-capture-publish-einbindung-fitness-function-korrektur.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | das Review zu `slice-070` |
+| [`0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md) | (a) `§Bezug` (Bare-Pfad), `§Kontext` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | das Review zu `slice-071` |
+| [`0069`](../plan/adr/0069-commit-msg-hook-einseitige-zusage.md) | (a) `§Bezug` (Link + Bare-Pfad) · (b) Geschichte-Ereignistext (Link) und Verweis-Spalte (Link + Bare-Pfad) | Link auf das Review zu `slice-073`, der Architect-Verdikt zur einseitigen Zusage des Commit-Msg-Hooks |
+| [`0070`](../plan/adr/0070-supersede-reichweite-und-klassengrenze.md) | (a) `§Bezug` (2 Bare-Pfade), `§Kontext` (2 Bare-Pfade) · (b) Geschichte-Verweis-Spalte (2 Links) | der Review-Report zur Fixrunde von `slice-073`, der Verifikationsbericht zu `slice-073`; Geschichte-Zeile nutzt Links auf dieselben Dateien |
+| [`0071`](../plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | der Architect-Verdikt zum Coverage-Gate-Messgegenstand |
+| [`0072`](../plan/adr/0072-hostpaths-modul-aktiviert-ohne-ausnahme.md) | (a) `§Bezug` (Bare-Pfad), `§Kontext`-Messtabelle (komprimierte Bare-Pfad-Notation, Sammelzitat der Reviews zu den Slices `036`/`039`/`049`/`073`) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | der Architect-Verdikt zur Hostpaths-Aktivierung ohne Ausnahme |
+| [`0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | der Architect-Verdikt zur Hostpaths-Aktivierung ohne Ausnahme — **Vorsicht:** diese ADR selbst definiert die Zitat-Korrektur-Klasse; ihre eigene Korrektur ist ein Selbstanwendungsfall (s. u. §4) |
+| [`0074`](../plan/adr/0074-zitationsform-schwester-repo-hausform.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Verweis-Spalte (Bare-Pfad) | der Architect-Verdikt zur Hostpaths-Aktivierung ohne Ausnahme |
+| [`0075`](../plan/adr/0075-hostpaths-reichweite-und-wortlaut.md) | (a) `§Bezug` (2 Links), `§Kontext` (Link) · (b) Geschichte-Ereignistext (Link) und Verweis-Spalte (Link) | das Review zu `slice-078`, der Architect-Verdikt zum Konfliktpfad in `slice-078` |
+| [`0083`](../plan/adr/0083-herkunft-von-aussagen-in-traegern.md) | (a) `§Bezug` (4 Bare-Pfade) · (b) Geschichte-Ereignistext (2 Bare-Pfade) und Verweis-Spalte (3 Bare-Pfade) | die Reviews zu `slice-081`, `slice-084`, der Verifikationsbericht zu `slice-085`, das Review zu `slice-088` samt Delta-Review |
+| [`0084`](../plan/adr/0084-sync-gate-fuer-generierte-artefakte.md) | (a) `§Bezug` (3 Bare-Pfade) · (b) Geschichte-Ereignistext/Verweis-Spalte (2 Bare-Pfade) | das Review zu `slice-069`, der Verifikationsbericht zu `slice-069`, das Review zu `slice-074` |
+| [`0085`](../plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | das Review zu `slice-093` |
+| [`0086`](../plan/adr/0086-herkunft-aussagen-schwere-folgt-der-konsequenz.md) | (a) `§Bezug` (7 Bare-Pfade) · (b) Geschichte-Ereignistext/Verweis-Spalte (5 Bare-Pfade) | die Reviews zu `slice-081` … `slice-094` (sieben Reports) |
+| [`0087`](../plan/adr/0087-beispiel-clients-csharp-kotlin.md) | (b) Geschichte-Ereignistext, zweite Zeile (Digest-Korrektur) | Review zu `slice-099`, F-1 (Bare-Pfad, kein Backtick) |
+| [`0089`](../plan/adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | das Review zu `slice-096` |
+| [`0091`](../plan/adr/0091-zugangsdaten-klasse-sechs-schluessel.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | der Verifikationsbericht zu `slice-096` |
+| [`0092`](../plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md) | (a) `§Bezug` (Bare-Pfad) · (b) Geschichte-Ereignistext/Verweis-Spalte (Bare-Pfad) | der Verifikationsbericht zu `slice-096` |
+| [`0093`](../plan/adr/0093-digest-korrektur-adr-0087-kotlin-basis-image.md) | (a) `§Autor`-Feld (Bare-Pfad), `§Kontext` (Bare-Pfad) · (b) Geschichte-Ereignistext (Bare-Pfad) | das Review zu `slice-099` |
 
 **Ergebnis der Zählung:** 25/25 tragen Fundort (b) — jede betroffene ADR
 zitiert den auslösenden Review in ihrer eigenen `§Geschichte`-Zeile (Beleg
@@ -171,8 +171,8 @@ Ausnahme.** Begründung:
   Grenzverletzung — „eine ADR verlinkt NUR, ohne den Inhalt
   zusammenzufassen, und die Korrektur müsste die Zusammenfassung als
   neuen Inhalt hinzufügen" — tritt **nicht** ein. Selbst die knappsten
-  Belege (`ADR-0047` `§Bezug`: „Architect-Verdikt
-  `[architect-review-welle-6.md](Pfad)` Zug 2 (`BEO-PGC/rollen-verdrahtung`,
+  Belege (`ADR-0047` `§Bezug`: „Architect-Verdikt,
+  Link auf den Architect-Review zu `welle-6`, Zug 2 (`BEO-PGC/rollen-verdrahtung`,
   3×, Ausgang `geplant` → `slice-023`)") tragen die Kennung („Zug 2" +
   BEO-Registereintrag) bereits **neben** dem Link — die Korrektur streicht
   den Pfad, nicht die Aussage.
@@ -201,16 +201,16 @@ vor. Zwei Stellen verdienen dennoch redaktionelle Sorgfalt beim
 Umschreiben (kein Grenzfall, aber eine Fußnote):
 
 1. **`ADR-0062`** (§Geschichte): Die Geschichte-Zeile nennt eine
-   **andere** Datei (`architect-verdict-…-gegengeprueft.md`) als der
-   `§Bezug`/`§Kontext` (`architect-verdict-…-kein-vorab-hook.md`, ohne
-   `-gegengeprueft`). Das ist ein bereits **bestehender** inhaltlicher
+   **andere** Datei (die gegengeprüfte Fassung des Architect-Verdikts) als der
+   `§Bezug`/`§Kontext` (der ursprüngliche Architect-Verdikt zum fehlenden
+   Vorab-Hook, ohne Gegenprüfung). Das ist ein bereits **bestehender** inhaltlicher
    Unterschied (zwei verschiedene Architect-Verdikt-Dokumente im selben
    Konflikt-Pfad), keine Folge der Zitat-Korrektur — der Implementer hält
    die Unterscheidung in der Kennung-Form aufrecht (z. B. „Architect-Verdikt,
    erster Zug" vs. „…, Gegenprüfung"), ändert an der Tatsache selbst
    nichts.
 2. **`ADR-0072`** (§Kontext-Tabelle, Zeile 66): Die komprimierte Notation
-   „`review-slice-036/039/049/073.md`" ist bereits eine Abkürzung für vier
+   des Sammelzitats der vier Reviews ist bereits eine Abkürzung für vier
    Dateien (keine reale Pfadangabe). Die Zitat-Korrektur ersetzt sie durch
    die vier Slice-Kennungen (`slice-036`, `-039`, `-049`, `-073`) ohne
    `review-`-Präfix und ohne `.md`-Endung — dieselbe Information (vier
@@ -250,18 +250,18 @@ Stattdessen:
   V-`N`" — der `slice-NNN`-Teil trägt (wie bisher) den
   `<!-- d-check:status-provenance -->`-Marker, wo die bestehende
   `matrix`-Regel ihn verlangt.
-  Beispiel (`ADR-0044`, `§Kontext`): statt
-  „`[review-slice-005 F-7](Pfad-auf-review-slice-005.md)` widerlegt
-  die Formel …" neu: „Review zu `slice-005`, Finding F-7,
+  Beispiel (`ADR-0044`, `§Kontext`): statt einem Link auf „Review zu
+  `slice-005`, Finding F-7" mit eigenem Pfadziel, der die Formel widerlegte,
+  neu: „Review zu `slice-005`, Finding F-7,
   widerlegt die Formel …".
 - **Architect-Verdikte ohne Slice-Nummer**
   (`architect-verdict-<thema>.md`, `architect-review-welle-N.md`):
   zitiert über ihr **Thema in Prosa**, ggf. ergänzt um den zugehörigen
   Commit-Hash oder BEO-Registereintrag, wenn einer bereits im Text steht
   (kein neuer Inhalt — nur die bereits vorhandene Kennung bleibt, der Pfad
-  entfällt). Beispiel (`ADR-0053`, `§Bezug`): statt „Architect-Verdikt
-  `[architect-verdict-retention-loeschausfuehrung.md](Pfad)` (Frage 1 —
-  prüfte …)" neu: „der vorausgehende Architect-Verdikt zur
+  entfällt). Beispiel (`ADR-0053`, `§Bezug`): statt „Architect-Verdikt"
+  mit eigenem Link auf den Verdikt zur Retention-Löschausführung
+  (Frage 1 — prüfte …)" neu: „der vorausgehende Architect-Verdikt zur
   Retention-Löschausführung (Frage 1 — prüfte …)".
 - **`§Geschichte`-Verweis-Spalte:** Kennung statt Pfad, wahlweise ergänzt
   um den Commit-Hash der Korrektur, exakt wie in `ADR-0072`s eigener
@@ -352,8 +352,8 @@ matrix:
   archiviert (Slice bekommt einen Stub, sein Review-Report wandert
   zeitgleich mit ihm ins Archiv), kein Hänger-Risiko.
 - `review → review`: Delta-Reviews verweisen auf ihren Ausgangs-Report
-  (`review-slice-088-delta.md` → `review-slice-088.md`); beide liegen in
-  derselben Archiv-Einheit.
+  (der Delta-Review zu `slice-088` verweist auf sein Ausgangs-Review zu
+  `slice-088`); beide liegen in derselben Archiv-Einheit.
 - `adr → adr` bleibt unverändert erlaubt (Supersedes-Kette,
   Bezug-Verweise).
 

@@ -10,7 +10,7 @@ Planner-Closure, Modul 11/6).
 Dateien: `docs/plan/…/slice-079-…md` (aus `0aa4d37`, Planner) und
 `harness/sensors/coverage-gate.md` (aus `5d3ac6d`, Implementer). **Frisch
 geprüft, nicht als Bestätigung des ersten Reports gelesen** — jede Aussage der
-Fixrunde ist an der Messung nachgeprüft. Vorgänger: `review-slice-079.md`
+Fixrunde ist an der Messung nachgeprüft. Vorgänger: das Review zu `slice-079`
 (derselbe Lauf, eigene Datei je Lauf).
 
 **Skill:** `.harness/skills/reviewer.md` @ `68d2ebd` · **Modell:**
@@ -20,13 +20,13 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 
 - Fixrunde `5d3ac6d` und Plan-Fix `0aa4d37` vollständig, dazu der
   Plan-Stand `a34f7c6..5d3ac6d`
-- Erster Report dieses Slice (`review-slice-079.md`, 0 HIGH / 3 LOW / 5 INFO)
+- Erster Report dieses Slice (das Review zu `slice-079`, 0 HIGH / 3 LOW / 5 INFO)
 - [`ADR-0071`](../plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   §Entscheidung Punkte 1–3, §Fitness Function, §Re-Evaluierungs-Trigger ·
   [`ADR-0054`](../plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(a)
 - `AGENTS.md` §3.1, §3.7, §3.9, §4 · `harness/mk/coverage.mk` (`THRESHOLD ?= 65`)
 - `docs/plan/planning/welle-20.md` §1 (Träger der Test-Arbeit)
-- Klassen-Vorgänger: `docs/reviews/review-slice-076.md` F-1
+- Klassen-Vorgänger: das Review zu `slice-076` F-1
   (dokument-interner Zahlen-Widerspruch) und F-4 (benannte Lücke)
 
 ---
@@ -52,7 +52,7 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 - `kategorie`: LOW
 - `quelle`: Maintainability · Slice-Plan §3 (die Sensor-Doku trägt den
   Messgegenstand) · `AGENTS.md` §3.7 · **zweites Vorkommen** der Klasse aus
-  `docs/reviews/review-slice-079.md` F-1 (dort LOW, an derselben Stelle)
+  dem Review zu `slice-079` F-1 (dort LOW, an derselben Stelle)
 - `pfad`: `harness/sensors/coverage-gate.md:60-64`
 - `befund`: Die Pakete **ohne jede Testdatei** im Messbereich sind fünf, nicht
   vier: `postgresstorage/queries`, `application/port/inbound`,
@@ -77,7 +77,7 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 
 - `kategorie`: LOW
 - `quelle`: Maintainability · `AGENTS.md` §3.7 (ein Wert, ein Ort; Ist-Zustand)
-  · verwandte Klasse: `docs/reviews/review-slice-076.md` F-1
+  · verwandte Klasse: das Review zu `slice-076` F-1
 - `pfad`: `harness/sensors/coverage-gate.md:78-84` gegen `:32` (Ist-Stand) und
   `:80-85` (Beleg-Zeile)
 - `befund`: Nachgerechnet stimmen alle drei Verhältnisse für die Basis 1167 —
@@ -101,7 +101,7 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 - `kategorie`: INFO
 - `quelle`: Maintainability · Rollen-Zeiger: die DoD-Bewertung liegt beim
   **Verifier** (Modul 11) · Vorgänger dieses Punktes:
-  `docs/reviews/review-slice-079.md` F-8 (INFO, geschlossen)
+  das Review zu `slice-079` F-8 (INFO, geschlossen)
 - `pfad`: `docs/plan/planning/in-progress/slice-079-coverage-scope-schnitt.md:93-97`
 - `befund`: „das Profil führt real **1679** Statements als Nenner
   (dedupliziert über die Block-Position — die Stage druckt nur die
@@ -195,9 +195,9 @@ deepseek-v4.1-flash:cloud[1m] · **Datum:** 2026-09-15.
 | INFO | 1 |
 
 **Finding-Klassen dieses Laufs:** „Messgegenstands-Aussage übertrifft die reale
-Paketlage“ (**2. Vorkommen**, Vorgänger `docs/reviews/review-slice-079.md`
+Paketlage“ (**2. Vorkommen**, Vorgänger das Review zu `slice-079`
 F-1) · „Rechnung nennt eine Basis, die die eigene Ist-Stand-Zeile nicht trägt“
-(verwandt `docs/reviews/review-slice-076.md` F-1) · „Klammer untertreibt die
+(verwandt das Review zu `slice-076` F-1) · „Klammer untertreibt die
 Ausgabemenge (benannt)“
 
 ## Verdikt

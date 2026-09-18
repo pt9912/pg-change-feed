@@ -6,7 +6,7 @@
 (§Konsequenzen „test-only" und „Proto-Runtime-Interna" · §Kontext (2) die
 `±2`-Schwankung · die Cluster-Tabelle) sowie die Hard Rules `AGENTS.md` §3.1,
 §3.6, §3.7, §3.9, §3.11, §3.12. **Nicht** gegen den Diff als solchen
-(Reviewer-Aufgabe, mit [`review-slice-091.md`](review-slice-091.md)
+(Reviewer-Aufgabe, mit dem Review zu `slice-091`
 abgeschlossen) und **nicht** gegen realen Bedarf (Validator, nicht ausgelöst).
 
 **Frischer Kontext:** Diese Sitzung hat den Slice-Plan am Stand `HEAD` gelesen,
@@ -47,7 +47,7 @@ kein Zustand (§3.12 Instanz A, Befund aus §5).
 | 7 | `internal/bootstrap` isoliert, **2 × 8 Läufe** | **0 / 0** | `runWALRetentionCheck` (`internal/bootstrap/wiring.go:981`) **87,5 % in 13 Läufen**, **100,0 % in 3 Läufen**; der instabile Block ist `internal/bootstrap/wiring.go:991.5,992.13` und trägt **2 Statements** |
 | 8 | `internal/adapters/driven/grpcstream` isoliert, **8 Läufe** | **0** (8 ×) | `broadcaster.go:96 Publish` **100,0 % in allen acht Läufen** — der Flap liegt **nicht** dort (siehe V-2) |
 | 9 | volle Fläche, **47 Läufe** (Serien 5 + 10 + 14 + 16, plus #3 und #1) | **0** (je) | ungedeckt **434** (250 ungedeckte Blöcke, `runWALRetentionCheck` 87,5 %) oder **432** (249 Blöcke, 100,0 %) — **in genau einem Lauf 435** (`77.1 %`, `runWALRetentionCheck` 87,5 %); in den **40** Läufen mit Blockmitschnitt war der `wiring.go`-Block der **einzige** instabile |
-| 10 | Umfang des Vorgangs: `git diff --name-only f90c3f4^..f9cd5e4` | **0** | **10 Pfade**: neun `*_test.go` + `docs/reviews/review-slice-091.md`; **kein** Produktcode; `harness/mk/coverage.mk` unberührt (`THRESHOLD ?= 70`) |
+| 10 | Umfang des Vorgangs: `git diff --name-only f90c3f4^..f9cd5e4` | **0** | **10 Pfade**: neun `*_test.go` + das Review zu `slice-091`; **kein** Produktcode; `harness/mk/coverage.mk` unberührt (`THRESHOLD ?= 70`) |
 | 11 | `make doc-commits RANGE=f90c3f4^..f9cd5e4` | **0** | `d-check: 748 Datei(en) geprüft, 0 Befund(e)` |
 | 12 | `make doc-immutable RANGE=f90c3f4^..f9cd5e4` | **0** | 0 Befunde. Derselbe Aufruf **ohne** `RANGE` endet **Exit 2** (`flag needs an argument: --range`) — die MR-Immutabilitäts-Prüfung braucht die Range, sie hat hier kein Objekt (der Vorgang berührt keine `MR-*`-Datei) |
 | 13 | `+`-Zeilen der Go-Dateien des Vorgangs: `slice-[0-9]\|welle-[0-9]` · `t.Parallel` · host-lokale Pfadform | **0 / 0 / 0** | 0 · 0 · 0 (ein grobes Pfad-Muster trifft 15 ×, das sind **HTTP-URL-Pfade** in Testaufrufen wie `/consumers/acknowledge` — keine Dateisystem-Pfade) |
@@ -94,8 +94,8 @@ kein Zustand (§3.12 Instanz A, Befund aus §5).
 | Kriterium (§2) | Befund |
 |---|---|
 | `make gates` grün | **erfüllt** (#1) |
-| Review durchgeführt, Report unter `docs/reviews/`, kein Self-Review | **formell erfüllt, Substanz offen** — `review-slice-091.md` liegt vor (0 HIGH, 1 MEDIUM, 1 LOW, 2 INFO) und prüft `f90c3f4`; die **Fixrunde `f9cd5e4` hat keine Review** → **V-4** |
-| Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-091.md` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#15) |
+| Review durchgeführt, Report unter `docs/reviews/`, kein Self-Review | **formell erfüllt, Substanz offen** — das Review zu `slice-091` liegt vor (0 HIGH, 1 MEDIUM, 1 LOW, 2 INFO) und prüft `f90c3f4`; die **Fixrunde `f9cd5e4` hat keine Review** → **V-4** |
+| Verifikation durchgeführt, Report unter `docs/reviews/` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#15) |
 | Closure-Notiz mit Steering-Loop-Lerneintrag | **nicht erfüllt** — §7 trägt in allen sechs Inhaltszeilen Platzhalter (#15) |
 | Reconciliation-Register fortgeschrieben *(entfällt …)* | **entfällt nachweislich** (#16) |
 | Beobachtungs-Register fortgeschrieben | **nicht erfüllt** — im Vorgang keine Registerdatei (#17). Meine Läufe liefern **kein** drittes Auftreten von `test-integration-retention-timing-flake` (alle Läufe grün, kein Ergebniswechsel bei unverändertem Stand) und **kein** weiteres der Klasse `negativtest-…` aus dem Diff — der Fund V-7 gehört **benannt**, nicht gezählt |
@@ -138,7 +138,7 @@ Plan-Änderung, #10; ein Vergleich gegen einen Vorstand ist damit nicht nötig).
 | `internal/adapters/driven/natsnotify/**` — Test neu | `notify_test.go` | **Plan eingehalten** |
 | `internal/adapters/driving/grpc/streamv1/**` — Test neu, **falls** dort prüfbarer Code liegt; „der generierte Stub ist **nicht** Gegenstand" | `changestream_test.go` | **Plan eingehalten** — der Test prüft Verhalten, nicht den erzeugten Text; `make generated-sync` bleibt grün (#1), die neue Testdatei ist nicht als Erzeugnis gekennzeichnet |
 | `harness/sensors/coverage-gate.md` — „update, nur falls …" | nicht angefasst | **Plan eingehalten** mit benannter Folge-Entscheidung (§3, V-2, V-6) |
-| — | `docs/reviews/review-slice-091.md` (neu) | **kein Plan-Bruch**: der Report ist das Übergabe-Artefakt der Reviewer-Rolle (Modul 8), kein Liefer-Punkt |
+| — | das Review zu `slice-091` (neu) | **kein Plan-Bruch**: der Report ist das Übergabe-Artefakt der Reviewer-Rolle (Modul 8), kein Liefer-Punkt |
 
 **Was der Diff nicht enthält, obwohl der Plan es nennt:** nichts. Der Vorgang
 ist vollständig durch die vier Testzeilen gedeckt.
@@ -249,7 +249,7 @@ ergab. Wird der Gate-**Zähler**-Zuwachs genannt, trägt er den Hinweis auf die
 - `pfad`: `internal/adapters/driving/http/readchanges.go:181`,
   `internal/adapters/driving/http/retention.go:47–49`,
   `internal/adapters/driven/natsnotify/notify.go:136–137` gegen §7 des
-  Slice-Plans (Platzhalter) und `docs/reviews/review-slice-091.md`
+  Slice-Plans (Platzhalter) und dem Review zu `slice-091`
 - `befund`: LP3 verlangt, dass jedes Paket seine verbleibenden ungedeckten
   Statements **einzeln mit Grund** nennt. Für `streamv1` steht das **im
   Träger** (Kopfkommentar von `changestream_test.go`, mit `ADR-0082`
@@ -270,7 +270,7 @@ ergab. Wird der Gate-**Zähler**-Zuwachs genannt, trägt er den Hinweis auf die
 ### V-4 — Die Fixrunde `f9cd5e4` ist von **keiner** Review gedeckt
 
 - `kategorie`: MEDIUM
-- `pfad`: `docs/reviews/` (nur `review-slice-091.md`) gegen
+- `pfad`: `docs/reviews/` (nur das Review zu `slice-091`) gegen
   `internal/adapters/driven/natsnotify/notify_test.go`,
   `internal/adapters/driving/grpc/interceptor_test.go`,
   `internal/adapters/driving/grpc/server_test.go`,
@@ -282,9 +282,9 @@ ergab. Wird der Gate-**Zähler**-Zuwachs genannt, trägt er den Hinweis auf die
   darunter die **Semantik** eines Tests (F-1: der Test prüft jetzt ein
   zweites Kettenglied; das ist eine neue Zusage, keine Textkorrektur) und die
   Form von vier Fristen (F-3: 3 s → 30 s). Für diesen Stand existiert **kein**
-  Review-Artefakt: `ls docs/reviews/` kennt nur `review-slice-091.md`. Der
+  Review-Artefakt: `ls docs/reviews/` kennt nur das Review zu `slice-091`. Der
   Haus-Präzedenzfall `slice-089` hatte für seine Fixrunde einen eigenen
-  Delta-Report (`review-slice-089-delta.md`). Die **Substanz** der drei
+  Delta-Report (dem Delta-Review zu `slice-089`). Die **Substanz** der drei
   Fixrunden-Angaben habe ich unabhängig bestätigt (§6/Negativbefunde: eine
   Probe rot, zwei grün, die zwei natsnotify-Proben rot) — die Klassen
   §3.7-Kommentarform und die **neue** Zusage in `natsnotify` hat aber kein
@@ -577,7 +577,7 @@ und ein letztes Verdikt. §1–§9 dieses Berichts bleiben der Stand `f9cd5e4`.
 **Stand:** `HEAD` = `58ff54e`, Baum sauber (`git status --porcelain` leer — vor
 und nach jedem Lauf). Neue Commits seit §9: `a7d7f7b` (dritte Runde: W-1
 Flap-Ursache, W-2 `streamv1`-Bild, W-3 sechster Test), `7e21e1b`
-(**Delta-Review** `review-slice-091-delta.md` über `f9cd5e4` + `a7d7f7b`),
+(**Delta-Review** zu `slice-091` über `f9cd5e4` + `a7d7f7b`),
 `af3ea9f` (vierte Runde: D-1), `58ff54e` (Closure: §6, §7, Häkchen, Register).
 `git diff --name-only f9cd5e4..58ff54e` = **14 Pfade**, davon **13** Markdown
 und **eine** Go-Datei: `internal/adapters/driving/http/server_test.go` (W-3).
@@ -694,7 +694,7 @@ in N-2 —, und dieselbe Runde setzt in §2 die Häkchen **LP1, LP2, LP3,
 `make gates`, Review, Verifikation, Reconciliation**. Für ihren Stand existiert
 **kein** Review-Artefakt, obwohl der Delta-Review sein eigenes Verdikt mit
 „DoD-Häkchen … **bleibt offen** — der Slice braucht eine (kurze) Fixrunde"
-geschlossen hat. *Warum LOW und nicht MEDIUM wie `verify-slice-090`s
+geschlossen hat. *Warum LOW und nicht MEDIUM wie beim Verifikationsbericht zu `slice-090`s
 gleichnamige V-2:* dort änderte die Fixrunde den **Kern des Lieferwerts** und
 legte einen neuen Träger an; hier führt sie eine vom Reviewer **wörtlich
 vorgeschriebene** Korrektur in einem Zahlen-Träger aus, deren Zahlen dieser
@@ -710,7 +710,7 @@ ein weiteres Delta entfällt deshalb". Still bleiben darf es nicht.
 
 **N-2 — §6 R3 zählt „zweimal" und nimmt F-1 in eine Klasse, die die erste Review
 ausdrücklich außerhalb ihres Buchstabens verortet hat.**
-*Kategorie:* LOW. *Pfad:* §6 R3 gegen `review-slice-091.md` §Antwort (2) und
+*Kategorie:* LOW. *Pfad:* §6 R3 gegen das Review zu `slice-091` §Antwort (2) und
 `observations/BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe/evidence/slice-091.md`.
 *Befund:* R3 sagt „eingetreten — und behoben, **zweimal**" und führt als ersten
 Fall F-1 (`notify_test.go`: die `LogPort`-Weitergabe war nur bis zum ersten

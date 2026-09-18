@@ -16,9 +16,9 @@ repo-spezifische HIGH-Regeln)
 
 **Eingangs-Kontext:**
 
-- `docs/reviews/review-slice-d-check-tracked-modul.md` (Ausgangs-Report:
+- das Review zur `d-check`-Tracked-Modul-Welle (Ausgangs-Report:
   F-1 HIGH, F-2 HIGH, F-3 MEDIUM, F-4 INFO)
-- `docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`
+- der Architect-Verdikt zur ADR-Frage der `d-check`-Tracked-Modul-Welle
   (Architect-Verdikt, `702e114`)
 - `git show 5800a83` (Fixrunden-Diff)
 - `AGENTS.md` §3.9, §3.13
@@ -55,11 +55,11 @@ die **Verifikation bestehender** Findings handelt, nicht um neu entdeckte.
     Aktivierungszeitpunkt von `hostpaths` — unveränderlicher Record
     (`AGENTS.md` §3.5), kein lebender Träger.
   - `docs/plan/adr/0089-…md:64`: `Accepted`-ADR, gleiche Klasse.
-  - `docs/reviews/verify-slice-096.md`, `verify-slice-098.md`,
-    `verify-slice-099.md`, `verify-slice-074.md`, `verify-slice-078.md`,
-    `review-slice-078-delta.md`, `review-slice-096.md`,
-    `architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md`,
-    `review-slice-d-check-tracked-modul.md` selbst: alles Records unter
+  - die Verifikationsberichte zu `slice-096`, `slice-098`,
+    `slice-099`, `slice-074`, `slice-078`,
+    der Delta-Review zu `slice-078`, das Review zu `slice-096`,
+    der Architect-Verdikt zur Hostpaths-Aktivierung ohne Ausnahme,
+    das Review zur `d-check`-Tracked-Modul-Welle selbst: alles Records unter
     `docs/reviews/**` — per Reviewer-Skill „Records … tragen keine
     §Geschichte — bei ihnen ist die Commit-Kennung der Beleg", eingefrorene
     Lauf-Belege zum jeweiligen historischen Stand, kein lebender Träger.
@@ -80,8 +80,8 @@ die **Verifikation bestehender** Findings handelt, nicht um neu entdeckte.
 - `harness/sensors/docs-check.md:174-179` (aktueller Wortlaut, selbst
   gelesen): „… keine eigene ADR, Präzedenzmuster Commit `f9e5a3c`
   (`structure`-Modul-Aktivierung, 2026-09-09), siehe
-  [architect-verdict-slice-d-check-tracked-modul-adr-frage.md], · seit
-  slice-d-check-tracked-modul)." `ADR-0072`/`ADR-0075` sind aus diesem
+  den Architect-Verdikt zur ADR-Frage der `d-check`-Tracked-Modul-Welle,
+  seit slice-d-check-tracked-modul)." `ADR-0072`/`ADR-0075` sind aus diesem
   Absatz vollständig entfernt (nicht nur ergänzt).
 - Eigene Prüfung des Commit-Datums: `git show -s --format='%h %ad %s'
   --date=short f9e5a3c` → `f9e5a3c 2026-09-09 docs(harness):
@@ -96,19 +96,19 @@ die **Verifikation bestehender** Findings handelt, nicht um neu entdeckte.
 
 - `docs/plan/planning/in-progress/slice-d-check-tracked-modul.md:163-170`
   §6 Risiko 1 trägt „**Ausgang: entfallen**" mit Link auf
-  `../../../reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`
+  den Architect-Verdikt zur ADR-Frage der `d-check`-Tracked-Modul-Welle
   und der übernommenen Kurzbegründung (Commit `f9e5a3c` statt
   `ADR-0072`/`ADR-0075`).
 - Eigene Pfadauflösung statt Vertrauen auf die Implementer-Behauptung eines
   bereits korrigierten Zwischenstands: `cd
   docs/plan/planning/in-progress && realpath -m
-  "../../../reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md"`
-  löst exakt auf
-  `/…/docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`
-  auf, die Datei existiert dort (9729 Bytes, `git ls-files` bestätigt sie
+  <Linkziel>` löst exakt auf
+  die Datei dieses Architect-Verdikts unter `docs/reviews/` auf, die Datei
+  existiert dort (9729 Bytes, `git ls-files` bestätigt sie
   als getrackt). Ebenso der neue Link in `harness/sensors/docs-check.md`
-  (`../../docs/reviews/…`) — löst korrekt auf dieselbe Datei auf.
-- Das Architect-Verdikt selbst (`docs/reviews/architect-verdict-…md` §7)
+  (relativer Pfad in denselben Ordner) — löst korrekt auf dieselbe Datei auf.
+- Das Architect-Verdikt selbst (§7 des Architect-Verdikts zur ADR-Frage der
+  `d-check`-Tracked-Modul-Welle)
   benennt sich explizit als „der fehlende Zug, nachträglich vollzogen" und
   schließt sowohl §6 Risiko 1 des Plans als auch F-3 — ein benennbares
   Übergabe-Artefakt liegt vor, kein mündlicher/impliziter Übergang.

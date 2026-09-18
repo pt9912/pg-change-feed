@@ -2,31 +2,31 @@
 
 **Review-Art:** Code — Bestätigungslauf zu einer Fixrunde nach eigenem
 Vorbefund. Geprüft gegen den eigenen vorherigen Report
-(`review-slice-044.md`, Finding F-1), den Fix-Commit `e800d9d`, den
+(Review zu `slice-044`, Finding F-1), den Fix-Commit `e800d9d`, den
 Architect-Zug `bd78dc6` zur 3×-Schwelle von
 `BEO-PGC/slice-chronik-in-code-kommentar`, und `AGENTS.md` §3.7
 (Kommentar-Disziplin) — Rollentrennung Modul 8: diese Prüfung läuft
 eigenständig gegen Code und Belege, nicht als Übernahme der
 Implementer-Zusammenfassung oder des Architect-Verdikts.
 
-**Gegenstand:** Commit `e800d9d` (`fix(bootstrap): drittes
-Chronik-Vorkommen in Testkommentar behoben (ADR-0014, review-slice-044
-F-1)`) — geändert: `internal/bootstrap/retention_internal_test.go` (1
-Zeile). Zusätzlich geprüft: Commit `bd78dc6` (`docs(planning):
-Architect-Verdikt BEO-PGC/slice-chronik-in-code-kommentar (ADR-0014)`) —
+**Gegenstand:** Commit `e800d9d` (Commit-Message: drittes
+Chronik-Vorkommen in Testkommentar behoben, `ADR-0014`, Review zu `slice-044`
+F-1) — geändert: `internal/bootstrap/retention_internal_test.go` (1
+Zeile). Zusätzlich geprüft: Commit `bd78dc6` (Commit-Message:
+Architect-Verdikt `BEO-PGC/slice-chronik-in-code-kommentar`, `ADR-0014`) —
 geändert: `.claude/commands/implement-slice.md`,
 `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar/state.md`,
-neu: `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`.
+neu: der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren.
 
 **Skill:** `.harness/skills/reviewer.md` @ HEAD (Accepted, geschärft 2026-09-09)
 **Modell:** claude-sonnet-5 · **Datum:** 2026-09-13
 
 **Eingangs-Kontext** (die Verträge, gegen die geprüft wurde):
 
-- `docs/reviews/review-slice-044.md` (vollständig — eigener Vorbefund F-1)
+- Review zu `slice-044` (vollständig — eigener Vorbefund F-1)
 - Vollständiger `git show e800d9d` (die eine geänderte Datei, mit Kontext)
 - Vollständiger `git show bd78dc6` (alle drei Dateien)
-- `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`
+- der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren
   (vollständig — Frage, Verdikt, empirischer Befund, Verkörperungs-Form)
 - `.claude/commands/implement-slice.md` Schritt 20 (vollständig, im
   Kontext der Schritte 19–21)
@@ -91,7 +91,7 @@ internal/bootstrap/wiring.go` weist die neu eingefügten Zeilen konkret
 aus — Zeile 643 gehört nicht dazu; ihr letzter ändernder Commit ist
 `29a49ead` vom 2026-09-12, einen Tag vor der ersten slice-044-Commit
 (bestätigt per `git log -L 643,643:internal/bootstrap/wiring.go`). Das
-deckt sich mit der Einordnung aus `review-slice-044.md`
+deckt sich mit der Einordnung aus dem Review zu `slice-044`
 („wiring.go:643 … datieren vor der Registrierung/Schärfung der Regel …
 und sind historischer Bestand, kein Gegenstand dieses Diffs") — kein
 neuer Befund, keine widersprüchliche Einordnung. Kein weiterer Treffer
@@ -136,9 +136,9 @@ in den fünf Dateien; insbesondere `retention_internal_test.go` und
   trotz geschärfter Instruktion wäre ein Signal, dass Enumeration allein
   nicht trägt — ist ehrlich benannt statt verschwiegen.
 - **Formale Prüfung des Zähler-/Ausgang-Eintrags:** `state.md` weist
-  korrekt drei Belege aus (`evidence/review-slice-041.md`,
-  `evidence/review-slice-041-fixrunde.md`,
-  `evidence/review-slice-044.md`), ordnet den Ausgang *verkörpert* zu und
+  korrekt drei Belege aus (dem Beleg zum Review-Report-Commit zu `slice-041`,
+  dem Beleg zum Review-Report-Commit zur Fixrunde von `slice-041`,
+  dem Beleg zum Review-Report-Commit zu `slice-044`), ordnet den Ausgang *verkörpert* zu und
   nennt den Zielort (`implement-slice.md` Schritt 20) sowie den
   Herkunfts-Anker (den Architect-Zug selbst, wellenlos — analog zum im
   Eintrag zitierten Präzedenzfall `BEO-PGC/architect-verdikt-ablageort-uneinheitlich`).

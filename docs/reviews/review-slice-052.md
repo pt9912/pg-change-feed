@@ -31,11 +31,11 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen)
 - Referenz-Adapter `internal/adapters/driven/postgresack/ack.go`
 - `AGENTS.md` §3 Hard Rules (insb. 3.1, 3.3, 3.7, 3.8), §6 Workflow
 - `harness/conventions.md` (MR-000 ID-Schema)
-- Vorherige Findings am gleichen Modul: `docs/reviews/review-slice-050.md`,
-  `docs/reviews/review-slice-051.md`
+- Vorherige Findings am gleichen Modul: Review zu `slice-050`,
+  Review zu `slice-051`
 - `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar/`
   (`observation.md`, `state.md`) und
-  `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`
+  der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren
   (Architect-Verdikt, 3× gezählt, verkörpert als geschärfte
   Selbstprüf-Instruktion)
 

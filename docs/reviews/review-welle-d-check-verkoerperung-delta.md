@@ -15,11 +15,11 @@ vorigen Lauf).
 
 **Eingangs-Kontext:**
 
-- `docs/reviews/review-welle-d-check-verkoerperung.md` F-1 (das zu behebende
+- das Review zur `d-check`-Verkörperungs-Welle F-1 (das zu behebende
   HIGH-Finding)
 - `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7 (die
   primäre Quelle, dritter Punkt unter „Was hat funktioniert")
-- `docs/reviews/review-slice-096.md` F-2 (das ursprünglich fehlzitierte
+- das Review zu `slice-096` F-2 (das ursprünglich fehlzitierte
   Original)
 - `docs/plan/planning/observations/BEO-PGC/regel-weiter-als-ihr-sensor/evidence/slice-096.md`
   (die widersprechende Zweithand-Quelle, Attribution „Architect")
@@ -58,12 +58,12 @@ vorigen Lauf).
   (`slice-096-konfigurationsdatei-nachzug.md` §7, dritter Punkt: „der Review
   zwei Lokatoren und einen vierten Anker"). Die vorige Fassung sprach
   fälschlich von „**einen** Zeilen-Lokator"; das ist behoben.
-- **Gegenprobe an `review-slice-096.md` F-2 bestätigt die Zahl.** F-2 selbst
+- **Gegenprobe am Review zu `slice-096` F-2 bestätigt die Zahl.** F-2 selbst
   berichtet „Nicht gemeldet: die zwei Zeilen-Lokatoren derselben ADR" — die
   im Fix verwendete Zahl (zwei) stimmt mit dem Original überein, unabhängig
   von der Frage, welche Quelle zitiert wird.
 - **Attributions-Streit umschifft statt verschärft.** Der Fix zitiert nicht
-  mehr `review-slice-096.md` F-2 für den Begriff „vierter Anker" (der dort
+  mehr das Review zu `slice-096` F-2 für den Begriff „vierter Anker" (der dort
   gar nicht vorkommt), sondern ausschließlich die primäre Quelle (Closure-
   Notiz §7) und übernimmt deren Zuschreibung („der Review … einen vierten
   Anker") in der abgeschwächten, aber sachlich gedeckten Form „einen
@@ -84,7 +84,7 @@ vorigen Lauf).
   Reports, der die Zähler-Bestätigung ausdrücklich der nächsten
   Wellen-Closure zuweist, nicht dieser Fixrunde.
 - **Out-of-Scope-Disziplin.** `git show 81610f9 --stat` zeigt genau zwei
-  Dateien; keine Änderung an `review-slice-096.md`, an der
+  Dateien; keine Änderung am Review zu `slice-096`, an der
   widersprechenden Zweithand-Evidence-Datei oder an `.harness/skills/reviewer.md`
   (dort war im Vorgänger-Commit bereits alles Nötige verkörpert).
 - **`make gates`.** Eigener Lauf, Exit-Code direkt und ungepiped geprüft:
@@ -94,7 +94,7 @@ vorigen Lauf).
 
 - geprüft, ohne Befund: `.harness/skills/reviewer.md` (unverändert in
   diesem Commit)
-- geprüft, ohne Befund: `docs/reviews/review-slice-096.md` (unverändert;
+- geprüft, ohne Befund: das Review zu `slice-096` (unverändert;
   F-2-Zahl „zwei" bestätigt als Original-Quelle)
 - geprüft, ohne Befund:
   `docs/plan/planning/observations/BEO-PGC/regel-weiter-als-ihr-sensor/`
@@ -122,12 +122,12 @@ vorigen Lauf).
 ## Verdikt
 
 **Merge-blockierend: nein.** Das ursprüngliche HIGH-Finding
-(`review-welle-d-check-verkoerperung.md` F-1) ist behoben: Die Zählung
+(Review zur `d-check`-Verkörperungs-Welle F-1) ist behoben: Die Zählung
 stimmt jetzt mit der primären Quelle
 (`slice-096-konfigurationsdatei-nachzug.md` §7, dritter Punkt) überein
 („zwei Zeilen-Lokatoren und einen weiteren Anker" statt „einen
 Zeilen-Lokator"), und der Begriff „vierter Anker" wird nicht mehr fälschlich
-`review-slice-096.md` F-2 zugeschrieben, sondern korrekt der Closure-Notiz
+dem Review zu `slice-096` F-2 zugeschrieben, sondern korrekt der Closure-Notiz
 entnommen und in der abgeschwächten, gedeckten Form „weiteren Anker"
 verwendet. Das einzige neue Finding (LOW) ist ein um eine Zeile zu kurzer
 Locator in der neuen Evidence-Datei selbst — inhaltlich folgenlos, da die

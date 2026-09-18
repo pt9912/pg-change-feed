@@ -2,7 +2,7 @@
 
 **Review-Art:** Code — Bestätigungslauf zu einer Fixrunde nach eigenem
 Vorbefund. Geprüft gegen den eigenen vorherigen Report
-(`review-slice-052.md`, Findings F-1 HIGH und F-2 MEDIUM) und den
+(Review zu `slice-052`, Findings F-1 HIGH und F-2 MEDIUM) und den
 Fix-Commit `14e790e` — Rollentrennung Modul 8: diese Prüfung liest die
 geänderten Dateien direkt und läuft `make gates`/`make test` eigenständig,
 nicht als Übernahme der Implementer-Zusammenfassung aus der Commit-Message.
@@ -17,7 +17,7 @@ Kommentar-Korrekturen (ADR-0055)`) — geändert:
 
 **Eingangs-Kontext** (die Verträge, gegen die geprüft wurde):
 
-- `docs/reviews/review-slice-052.md` (vollständig — eigener Vorbefund
+- Review zu `slice-052` (vollständig — eigener Vorbefund
   F-1/F-2)
 - Vollständiger `git show 14e790e` (beide geänderten Dateien, mit Kontext)
 - Referenz-Adapter `internal/adapters/driven/postgresack/ack.go`
@@ -55,9 +55,9 @@ Kommentar-Korrekturen (ADR-0055)`) — geändert:
 
 **Beobachtungs-Register — 4. Beleg.** Dies ist das **vierte** Auftreten
 der Klasse `BEO-PGC/slice-chronik-in-code-kommentar` (nach den drei, die
-den bestehenden Architect-Verdikt auslösten: `review-slice-041.md`,
-`review-slice-041-fixrunde.md`, `review-slice-044.md`, siehe `state.md`).
-Der eigene Vorbefund (`review-slice-052.md`) hatte dies bereits als
+den bestehenden Architect-Verdikt auslösten: das Review zu `slice-041`,
+der Review-Report zur Fixrunde von `slice-041`, das Review zu `slice-044`, siehe `state.md`).
+Der eigene Vorbefund (Review zu `slice-052`) hatte dies bereits als
 Signal an den Planner benannt — unabhängig vom Fixrunden-Ausgang, denn
 das Auftreten selbst zählt, nicht seine Behebung. Das Anlegen von
 `evidence/slice-052.md` ist **nicht** Aufgabe dieses Reports: Es ist

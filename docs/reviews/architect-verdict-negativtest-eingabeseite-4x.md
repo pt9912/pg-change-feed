@@ -12,13 +12,13 @@ der Register-Ausgang durch den Planner stehen noch aus
 **Datum:** 2026-09-16
 **Bezug:** die vier Beleg-Dateien des Eintrags
 (`evidence/slice-083.md`, `evidence/slice-086.md`, `evidence/slice-087.md`,
-`evidence/slice-088.md`), [`review-slice-086`](review-slice-086.md) (F-2, mit
-eigener Mutation D), [`review-slice-087`](review-slice-087.md) (F-1, Mutation
-C), [`review-slice-083`](review-slice-083.md) (F-2) und
-[`verify-slice-083`](verify-slice-083.md),
-[`review-slice-088`](review-slice-088.md) (F-1),
-[`review-slice-088-delta`](review-slice-088-delta.md) (M4–M7),
-[`verify-slice-088`](verify-slice-088.md) (eigene Reproduktion) ·
+`evidence/slice-088.md`), Review zu `slice-086` (F-2, mit
+eigener Mutation D), Review zu `slice-087` (F-1, Mutation
+C), Review zu `slice-083` (F-2) und
+Verifikationsbericht zu `slice-083`,
+Review zu `slice-088` (F-1),
+Delta-Review zu `slice-088` (M4–M7),
+Verifikationsbericht zu `slice-088` (eigene Reproduktion) ·
 `.harness/skills/reviewer.md` (Vorschlags-Träger des Eintrags),
 `.claude/commands/implement-slice.md` Schritt 19 (die Mutations-Pflicht),
 `.claude/agents/verifier.md` („Prüfe die Belege, nicht die Behauptung") ·
@@ -59,7 +59,7 @@ grün ohne Aussage.*
 **Der schärfste Beleg ist `slice-088`, und er entscheidet den Träger.** Der
 Implementer hat in diesem Vorgang **fünf** eigene Mutationen gefahren und alle
 rot gesehen; die zwei löchrigen Tests waren genau die, die er für
-selbstverständlich hielt (`review-slice-088`, F-1). Die Mutations-Pflicht
+selbstverständlich hielt (Review zu `slice-088`, F-1). Die Mutations-Pflicht
 (`implement-slice.md` Schritt 19) war also **ausgeführt** und hat die Klasse
 trotzdem nicht gefangen. Das ist keine Compliance-Lücke, sondern eine
 **Richtungs**-Lücke: mutiert wurde die **Ausgabeseite** — der Rückgabewert, der
@@ -146,8 +146,8 @@ die Mutation**, und sie hat die Klasse in allen vier Vorgängen widerlegt.
 
 - Es schreibt **keine** ADR: kein Hard Rule in `AGENTS.md`, kein Gate, keine
   Schwelle. Die Verkörperung ist ein Rollen-Skill und ein Workflow-Schritt —
-  die Hausform dafür ist ein Verdikt, kein Beschluss (Vergleich:
-  `architect-verdict-slice-chronik-in-code-kommentar-4x.md`).
+  die Hausform dafür ist ein Verdikt, kein Beschluss (Vergleich: der
+  Architect-Verdikt-Nachtrag zur Slice-Chronik in Code-Kommentaren, 4x).
 - Es legt **keinen** Eintrag in `evidence/` an und bumpt **keinen** Zähler. Der
   Ausgang wird regulär beim Lese-Schritt der `welle-20`-Closure durch den
   Planner ins Register geschrieben (Modul 6).

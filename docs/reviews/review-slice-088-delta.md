@@ -9,7 +9,7 @@ Reports.
 `internal/adapters/driving/replication/mapper/mapper_test.go` und die eine
 DoD-Zeile des Slice-Plans) und der Plan-Nachzug **`11ba45b`**
 (F-2/F-3 des Erstlaufs). Beide als **frisches Artefakt** gelesen, nicht als
-Bestätigung des Erstlaufs; der Erstlauf-Report `review-slice-088` wurde nur als
+Bestätigung des Erstlaufs; der Erstlauf-Report, das Review zu `slice-088`, wurde nur als
 Verweis benutzt. Kein neuer Vollauf: die drei übrigen Testdateien und die
 Produktionsseite sind unberührt.
 
@@ -23,13 +23,13 @@ damit nicht gewandert sein; die Gate-Zahl des Erstlaufs gilt unverändert.
 
 **Eingangs-Kontext:**
 
-- Erstlauf-Report `docs/reviews/review-slice-088.md` (0 HIGH, F-1 MEDIUM,
+- Erstlauf-Report, Review zu `slice-088` (0 HIGH, F-1 MEDIUM,
   F-2/F-3 MEDIUM, F-4 INFO)
 - Slice-Plan `slice-088` §1/§2/§3/§8 im Stand `eb68126`
 - `ADR-0082`, `ADR-0080`, `ADR-0029`, `ADR-0059` Teilfrage 3;
   `LH-FA-CFG-001`, `LH-FA-CFG-005`
 - `AGENTS.md` §3.7, §3.9; Beobachtungs-Register `BEO-PGC/` (Zähler-Stände)
-- Form-Vorlage des Nachlaufs: `docs/reviews/review-slice-077-delta.md`
+- Form-Vorlage des Nachlaufs: der Delta-Review zu `slice-077`
 
 ---
 

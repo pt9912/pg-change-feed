@@ -2,11 +2,11 @@
 
 **Rolle:** Architect (Modul 8)
 **Anlass:** `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar`
-— nach dem 3×-Verdikt (`architect-verdict-slice-chronik-in-code-kommentar.md`,
+— nach dem 3×-Verdikt (der Architect-Verdikt zur Slice-Chronik in Code-Kommentaren,
 verkörpert als geschärfte Selbstprüf-Instruktion in
 `.claude/commands/implement-slice.md` Schritt 20) tritt die Klasse im
 *ersten* Slice nach der Schärfung erneut auf: `slice-052`
-(`docs/reviews/review-slice-052.md` F-1 HIGH,
+(Review zu `slice-052` F-1 HIGH,
 `internal/adapters/driven/natsnotify/notify.go`). Die eigene
 Eskalationsnotiz in `state.md` hatte dieses Szenario vorab benannt: „Tritt
 die Klasse trotz der geschärften Instruktion ein viertes Mal auf, ist das
@@ -20,10 +20,10 @@ aus, siehe §Was dieses Verdikt NICHT tut).
 **Datum:** 2026-09-13
 **Bezug:** [AGENTS.md](../../AGENTS.md) §3.7, Modul 8 §Kernidee („wer
 geschrieben hat, reviewt nicht") und §Konflikt-Pfad als Rollen-Sequenz,
-Modul 6 §Das Beobachtungs-Register, vorheriger Architect-Verdikt
-[`architect-verdict-slice-chronik-in-code-kommentar.md`](architect-verdict-slice-chronik-in-code-kommentar.md),
-`docs/reviews/review-slice-052.md` (F-1, Erstbefund),
-`docs/reviews/review-slice-052-fixrunde.md` (Bestätigung + 4.-Beleg-Notiz),
+Modul 6 §Das Beobachtungs-Register, vorheriger
+Architect-Verdikt zur Slice-Chronik in Code-Kommentaren,
+das Review zu `slice-052` (F-1, Erstbefund),
+der Review-Report zur Fixrunde von `slice-052` (Bestätigung + 4.-Beleg-Notiz),
 `.harness/skills/reviewer.md`, `.claude/commands/implement-slice.md`
 Schritt 20, `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar/`.
 
@@ -40,10 +40,10 @@ zwischen Implementer-Selbstprüfung und Reviewer)?
 ## Empirischer Befund: 4/4 vor Merge gefangen, 0/4 in `main`
 
 Der entscheidende Unterschied zu den ersten drei Belegen: **keiner der
-vier Fälle hat je gemergten Code erreicht.** `review-slice-041.md`,
-`review-slice-041-fixrunde.md` und `review-slice-044.md` wurden allesamt
-vor Merge korrigiert; `review-slice-052.md` F-1 ebenso — Fixrunde
-`14e790e`, bestätigt in `review-slice-052-fixrunde.md`, danach
+vier Fälle hat je gemergten Code erreicht.** Das Review zu `slice-041`,
+der Review-Report zur Fixrunde von `slice-041` und das Review zu `slice-044` wurden allesamt
+vor Merge korrigiert; Review zu `slice-052` F-1 ebenso — Fixrunde
+`14e790e`, bestätigt im Review-Report zur Fixrunde von `slice-052`, danach
 Verifikation (`461973e`). Die Hard Rule `AGENTS.md` §3.7 wurde in `main`
 zu keinem Zeitpunkt verletzt. Das Zwei-Schichten-Design — Implementer-
 Selbstprüfung als erste, Reviewer als unabhängige zweite Instanz — hat in
@@ -63,7 +63,7 @@ Pattern aus Schritt 20 (`slice-[0-9]+|welle-[0-9]+|…`) hätte
 „Folge-Slice `slice-053`" im geänderten `notify.go` zweifelsfrei
 getroffen — es gab in diesem Commit auch keine zweite, vom Kandidatenlauf
 unentdeckte Chronik-Stelle, die die Enumerationslogik hätte überfordern
-können (F-2 aus `review-slice-052.md` ist eine andere Klasse: ein
+können (F-2 aus dem Review zu `slice-052` ist eine andere Klasse: ein
 ephemerer Artefakt-Verweis, keine Slice-Chronik). Der einzig plausible
 Befund ist: **der Kandidatenlauf wurde in diesem Implementer-Durchlauf
 nicht (oder nicht wirksam) ausgeführt** — eine Compliance-Lücke in der

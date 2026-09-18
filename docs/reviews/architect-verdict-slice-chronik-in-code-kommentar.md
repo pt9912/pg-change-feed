@@ -2,8 +2,9 @@
 
 **Rolle:** Architect (Modul 8)
 **Anlass:** `docs/plan/planning/observations/BEO-PGC/slice-chronik-in-code-kommentar`
-erreicht 3× (`evidence/review-slice-041.md`, `evidence/review-slice-041-fixrunde.md`,
-`evidence/review-slice-044.md`) — Lese-Schritt des wellenlosen Betriebs
+erreicht 3× (dem Beleg zum Review-Report-Commit zu `slice-041`, dem Beleg
+zum Review-Report-Commit zur Fixrunde von `slice-041`,
+dem Beleg zum Review-Report-Commit zu `slice-044`) — Lese-Schritt des wellenlosen Betriebs
 (Modul 6 „Träger im Repo ohne Wellen"), ausgelöst direkt aus der
 `slice-044`-Closure, ohne hostende Welle. Planner → Architect-Zug.
 **Rolleninhaber:** pt9912 (Claude Sonnet 5, dieser Lauf)
@@ -32,7 +33,7 @@ in `.claude/commands/implement-slice.md` Schritt 20 — Begründung unten. Der
 bereits existierende Prosa-Schritt 20 war nicht falsch, nur unvollständig:
 Er nennt die Probe (Ist-Zustand vs. Chronik), verlangt aber keine
 **Enumeration** der Kandidatenstellen. Das dritte Vorkommen
-(`review-slice-044.md` F-1) trat ein, obwohl derselbe Implementer im
+(Review zu `slice-044` F-1) trat ein, obwohl derselbe Implementer im
 selben Commit bereits zwei andere Chronik-Stellen selbst korrigiert
 hatte — ein visueller Scan hat eine von mehreren Stellen übersehen. Das
 ist eine Enumerations-Lücke, keine Verständnis-Lücke, und dafür ist die
@@ -49,13 +50,13 @@ durchweg Godoc-Kommentare direkt über `Test*`-Funktionen, die
 begründen, **warum ein bestimmter Testfall existiert**: Beispiele
 `internal/bootstrap/acknowledge_test.go:174`
 („TestAcknowledgeConsumerReportsInvalidPosition trägt einen der zwei
-externen Domänenfehler-Pfade aus `review-slice-022.md` F-1"),
+externen Domänenfehler-Pfade aus dem Review zu `slice-022` F-1"),
 `internal/bootstrap/diagnose_test.go:152`
 („… siehe Plan-Nachzug slice-038 §3, Risiko 1 aus §6"),
 `internal/adapters/driving/replication/receive/stream_test.go:532/544/559/625`
-(vier Vorkommen aus `review-slice-025.md` F-1),
+(vier Vorkommen aus dem Review zu `slice-025` F-1),
 `internal/adapters/driven/postgresstorage/administrationrequest.go:138/214`
-(`review-slice-037.md` F-3). Diese Zitierform — „dieser Testfall deckt
+(Review zu `slice-037` F-3). Diese Zitierform — „dieser Testfall deckt
 Finding X aus Review Y ab" — ist **etablierte, zulässige
 Regressionstest-Provenienz**, keine Chronik über Produktionsverhalten;
 sie ist über 15+ Dateien hinweg konsistent und wird mit jedem künftigen
@@ -80,7 +81,7 @@ Prosa-Verständnis, kein Zeichenketten-Muster.
 
 **Die implizite Variante (Vorher/Nachher-Sprache ohne Ziffer, z. B.
 „zeigt identisches Verhalten wie vor diesem Slice" aus
-`review-slice-041-fixrunde.md`) ist noch schlechter geeignet:** Das Wort
+dem Review-Report zur Fixrunde von `slice-041`) ist noch schlechter geeignet:** Das Wort
 „Slice" allein kollidiert mit Gos eingebautem Datentyp
 (`[]byte`-„Slice", „Byte-Slice" etc.) — in einer Go-Codebasis ein
 hochfrequentes, harmloses Wort. Ein Muster ohne Ziffernbindung

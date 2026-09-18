@@ -14,7 +14,7 @@
 - `docs/plan/planning/in-progress/slice-028-integrationstest-nachzug-rollen-mvp.md` (§1 Ziel/Abgrenzung, §2 DoD, §3 Plan)
 - `docs/plan/adr/0047-rollenspezifische-dsn-verdrahtung.md` (Accepted)
 - `docs/plan/planning/done/slice-023-rollen-spezifische-dsn-verdrahtung.md` und dessen Closure-Notiz §7
-- `docs/reviews/review-slice-023.md` (Vorgänger-Review, INFO-1)
+- Review zu `slice-023` (Vorgänger-Review, INFO-1)
 - `docs/plan/planning/observations/BEO-PGC/rollen-test-abdeckungsluecken/` (observation.md, state.md, evidence/slice-023.md)
 - `spec/lastenheft.md` (`LH-QA-SEC-001`…`003`)
 - `compose.yaml`, `internal/bootstrap/roles_wiring_test.go`
@@ -29,7 +29,7 @@
 - `kategorie`: MEDIUM
 - `quelle`: Maintainability — Genauigkeit des Beobachtungs-Register-Belegs
   (`BEO-PGC/rollen-test-abdeckungsluecken`), DoD-Checkbox-Ehrlichkeit
-  (dieselbe Prüfkategorie, die `review-slice-023.md` bereits anwandte)
+  (dieselbe Prüfkategorie, die das Review zu `slice-023` bereits anwandte)
 - `pfad`: `tools/harness/run-integration-tests.sh:67-142` (neuer Abschnitt
   „Rollen-DSN-Verifikation gegen den Compose-Stack", Commit `ba508ed`);
   `docs/plan/planning/in-progress/slice-028-integrationstest-nachzug-rollen-mvp.md:88-95`
@@ -79,7 +79,7 @@
   der vier hier geprüften Commits (`632ddca`/`ba508ed`/`9a84407`/`f8ce37b`)
   fasst `compose.yaml` an. Der Zustand wurde bereits bei `slice-023`
   real geprüft und dort als `INFO-1` klassifiziert
-  (`docs/reviews/review-slice-023.md`, „Rollentrennung im
+  (Review zu `slice-023`, „Rollentrennung im
   Compose-Integrationslauf nicht real exerziert"). Eine Eskalation auf
   HIGH ist nach eigener Prüfung nicht gedeckt: `ADR-0047` selbst schließt
   die Frage „wie der Betreiber Login-Identitäten anlegt" ausdrücklich aus
@@ -104,7 +104,7 @@
   `a32a2c9` (slice-023), nicht in einem der vier geprüften Commits.
 - `klasse`: „Least-Privilege nur in Unit-/Rollen-Tests, nicht im
   End-to-End-Referenzlauf belegt" (identisch mit der Klasse aus
-  `review-slice-023.md` INFO-1 — dasselbe Muster, kein neues Auftreten)
+  dem Review zu `slice-023` INFO-1 — dasselbe Muster, kein neues Auftreten)
 
 ## Negativbefunde
 
@@ -200,7 +200,7 @@ Stelle bewertet).
 Möglichkeit, F-2 als eigenständiges HIGH-Finding zu werten. Nach Prüfung
 von `ADR-0047` (Kontext-Befund 1, Geltungsbereichs-Ausschluss),
 `git log --follow -- compose.yaml` (Ursprung in `slice-023`, nicht in
-diesem Diff) und `docs/reviews/review-slice-023.md` (bereits als INFO-1
+diesem Diff) und dem Review zu `slice-023` (bereits als INFO-1
 klassifiziert) wird diese Einschätzung hier **nicht** übernommen — siehe
 Begründung unter F-2. Dies ist eine eigenständige, gegenprüfte
 Einschätzung dieses Laufs, keine unreflektierte Übernahme der

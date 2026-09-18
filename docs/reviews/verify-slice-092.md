@@ -8,7 +8,7 @@
 (Messgegenstand), [`ADR-0077`](../plan/adr/0077-coverage-rampen-neu-bemessung-subjekt-transfer.md)
 (Rampe) sowie die Hard Rules `AGENTS.md` §3.1, §3.6, §3.7, §3.9, §3.11,
 §3.12. **Nicht** gegen den Diff als solchen (Reviewer-Aufgabe, mit
-[`review-slice-092.md`](review-slice-092.md) abgeschlossen) und **nicht**
+dem Review zu `slice-092` abgeschlossen) und **nicht**
 gegen realen Bedarf (Validator, nicht ausgelöst).
 
 **Frischer Kontext.** Der Slice-Plan wurde am Stand `HEAD` vollständig
@@ -101,8 +101,8 @@ eines konkreten Laufs; wo ich einen Prozentwert aus einer Statement-Zahl
 | Kriterium (§2) | Befund |
 |---|---|
 | `make gates` grün | **erfüllt** (#1) |
-| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review bei Fixrunde** | **nicht erfüllt** — `review-slice-092.md` liegt vor (0 HIGH / 1 MEDIUM / 2 INFO) und beurteilt `3de9547`; der Review weist mit F-1 eine **Fixrunde** aus („Merge-blockierend: ja", Rückgabe-Pfeil nötig, „die Fixrunde deckt nach §2 des Plans ein **Delta-Review** ab"), und `ad95444` führt sie aus — für diesen Stand existiert **kein** Review-Artefakt (`ls docs/reviews/ | grep 092` → nur `review-slice-092.md`) → **V-2** |
-| Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-092.md` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#18) |
+| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review bei Fixrunde** | **nicht erfüllt** — das Review zu `slice-092` liegt vor (0 HIGH / 1 MEDIUM / 2 INFO) und beurteilt `3de9547`; der Review weist mit F-1 eine **Fixrunde** aus („Merge-blockierend: ja", Rückgabe-Pfeil nötig, „die Fixrunde deckt nach §2 des Plans ein **Delta-Review** ab"), und `ad95444` führt sie aus — für diesen Stand existiert **kein** Review-Artefakt (`ls docs/reviews/ | grep 092` → nur das Review zu `slice-092`) → **V-2** |
+| Verifikation durchgeführt, Report unter `docs/reviews/` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#18) |
 | Closure-Notiz mit Steering-Loop-Lerneintrag | **nicht erfüllt** — §7 trägt in **6 von 6** Inhaltszeilen Platzhalter (#18) |
 | Reconciliation-Register fortgeschrieben *(entfällt …)* | **entfällt nachweislich** (#16) |
 | Beobachtungs-Register fortgeschrieben — **kein Zähler wird gesetzt** | **nicht erfüllt** — im Vorgang ist **keine** Registerdatei geändert (#15). Die **Substanz** liefert dieser Lauf: `arbeit-ueberholt-stehenden-traeger` hat mit diesem Vorgang seine **zweite** Gelegenheit (F-1: vier Träger trugen eine Fehlzählung; F-2: ein Deixis-Satz im Sensor-Träger), `negativtest-ohne-bindung-an-seine-eingabe` einen **Reparatur-Vorgang** (§2/LP2). Beides gehört als Beleg-Entscheidung in die Closure — der Zähler folgt den Dateien, §7 notiert ihn |
@@ -145,7 +145,7 @@ geltende Fassung, nicht gegen einen Vorstand).
 | `internal/domain/model/**_test.go` — Test neu/update | `validation_test.go` (#12) | **Plan eingehalten** |
 | `harness/sensors/coverage-gate.md` — update, **nur falls** eine Zahl driftet | angefasst in `ad95444` (2 Zeilen, Deixis), **keine** Zahl geändert | **Abweichung von der Bedingung**, benannt → **V-1** |
 | `docs/plan/planning/welle-20.md` §4 — **nicht** | eine **Soll**-Zeile berichtigt, **keine** erreichte Zahl | **Plan eingehalten** (die Zeile trägt Soll-Zahlen; die erreichte Zahl fehlt dort, #17) |
-| — | `docs/reviews/review-slice-092.md` (neu) | **kein Plan-Bruch**: Übergabe-Artefakt der Reviewer-Rolle (Modul 8), kein Liefer-Punkt |
+| — | das Review zu `slice-092` (neu) | **kein Plan-Bruch**: Übergabe-Artefakt der Reviewer-Rolle (Modul 8), kein Liefer-Punkt |
 
 **Was der Diff nicht enthält, obwohl der Plan es nennt:** nichts. Die drei
 Test-Zeilen sind vollständig geliefert; Produktcode, `THRESHOLD` und die
@@ -248,7 +248,7 @@ Cluster A/B/D2 sind pfadmäßig unberührt.
   eine Fixrunde aus, deckt ein Delta-Review sie ab** — die Lehre aus
   `slice-090` (V-2) und `slice-091` (N-1)" · der Review selbst: „**Merge-blockierend: ja**
   — 1 MEDIUM (F-1) … die Fixrunde deckt nach §2 des Plans ein **Delta-Review** ab"
-- `pfad`: `docs/reviews/` (nur `review-slice-092.md`) gegen `ad95444`
+- `pfad`: `docs/reviews/` (nur das Review zu `slice-092`) gegen `ad95444`
   (`docs/plan/planning/in-progress/slice-092-coverage-cluster-d1.md:49-58`
   §1 neu geschrieben, `:106` LP1, `:193` §5, `:217` §6, `:297` §8;
   `harness/sensors/coverage-gate.md` zwei Zeilen)
@@ -258,7 +258,7 @@ Cluster A/B/D2 sind pfadmäßig unberührt.
   eine **neue, vorher nicht dagewesene Prosa-Passage** (§1 „Drei Zahlen, drei
   Dinge", 8 Zeilen), nicht bloß ein Zahl-Austausch. Für diesen Stand existiert
   **kein** Review-Artefakt; die Präzedenz dieses Repos ist ein eigener
-  Delta-Report (`review-slice-089-delta.md`, `review-slice-091-delta.md`). Der
+  Delta-Report (den Delta-Reviews zu `slice-089`, `slice-091`). Der
   Review hat die Fixrunde damit selbst als nötig bezeichnet, und die
   Hausform für „Fixrunde nach Review" ist die **Delta**-Prüfung — wer
   geschrieben hat, reviewt nicht (Modul 8).

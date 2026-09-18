@@ -100,7 +100,7 @@ dabei (`AGENTS.md` §3.12 Instanz A).
 | Kriterium (§2) | Befund |
 |---|---|
 | `make gates` grün | **erfüllt** (#1) |
-| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review bei Fixrunde** | **nicht erfüllt** — `review-slice-093.md` (`014f29c`) und `review-slice-093-delta.md` (`4298c4c`) liegen vor; der Delta-Review weist mit D-1 (HIGH) und D-2 (MEDIUM) eine **weitere** Fixrunde aus („Rückgabe-Pfeil … nötig"), `e140363` führt sie aus — für diesen Stand existiert **kein** Review-Artefakt → **V-1** |
+| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review bei Fixrunde** | **nicht erfüllt** — das Review zu `slice-093` (`014f29c`) und der Delta-Review zu `slice-093` (`4298c4c`) liegen vor; der Delta-Review weist mit D-1 (HIGH) und D-2 (MEDIUM) eine **weitere** Fixrunde aus („Rückgabe-Pfeil … nötig"), `e140363` führt sie aus — für diesen Stand existiert **kein** Review-Artefakt → **V-1** |
 | Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-093.md` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#18) |
 | Closure-Notiz mit Steering-Loop-Lerneintrag | **nicht erfüllt** — §7 trägt in **6 von 6** Inhaltszeilen Platzhalter (#18); Material liefert §6 dieses Berichts |
 | Reconciliation-Register fortgeschrieben *(entfällt …)* | **entfällt nachweislich** — `docs/plan/planning/reconciliation.md` existiert nicht (Greenfield-Bootstrap) |
@@ -218,7 +218,7 @@ Diffs, 8 Läufe, netzlos):** gedeckt **1469** (7 ×) / **1471** (1 ×); der Bloc
 Hälfte „der Takt-Zweig trug in **einem** dieser Läufe `count > 0`" des
 berichtigten Absatzes ist damit **reproduziert**. Das untere Ende **1468** habe
 ich in acht Läufen **nicht** gesehen (es braucht beide Blöcke ungedeckt; belegt
-ist es in `verify-slice-091.md` #9 mit **einem** Lauf von 47) — der Satz ist
+ist es im Verifikationsbericht zu `slice-091` #9 mit **einem** Lauf von 47) — der Satz ist
 damit nicht widerlegt, sein unteres Ende aber auch nicht von mir bestätigt. Die
 Probe gehört nicht in die Zählung dieses Slice.
 
@@ -233,9 +233,9 @@ Probe gehört nicht in die Zählung dieses Slice.
   `docs/reviews/` liegt vor … **Weist der Review eine Fixrunde aus, deckt ein
   Delta-Review sie ab** — `slice-092` hat das dreimal gekostet; die Zeile steht
   hier, damit sie greift, bevor sie jemand herleiten muss" · Präzedenz
-  `verify-slice-092.md` V-2 (MEDIUM), `verify-slice-091.md` V-4
-- `pfad`: `docs/reviews/` (nur `review-slice-093.md` und
-  `review-slice-093-delta.md`) gegen `e140363`
+  im Verifikationsbericht zu `slice-092` V-2 (MEDIUM), Verifikationsbericht zu `slice-091` V-4
+- `pfad`: `docs/reviews/` (nur das Review zu `slice-093` und
+  der Delta-Review zu `slice-093`) gegen `e140363`
   (`internal/bootstrap/roles_rollout_file_internal_test.go`, +41/−16)
 - `befund`: Der Delta-Review beurteilt **`4298c4c`** und weist mit **D-1
   (HIGH)** und **D-2 (MEDIUM)** eine **weitere** Fixrunde aus („**Merge-blockierend: ja**
@@ -245,8 +245,8 @@ Probe gehört nicht in die Zählung dieses Slice.
   Report die Kennung `e140363` (`grep -rl e140363 docs/reviews/` → leer), und
   `git log 6b7a5a6..HEAD` führt **genau einen** Commit. Die Hausform dieses
   Repos für „Fixrunde nach Review" ist ein **eigener Delta-Report** — die
-  Präzedenz ist zweifach belegt (`review-slice-089-delta.md`,
-  `review-slice-091-delta.md`, `review-slice-092-delta.md`).
+  Präzedenz ist zweifach belegt (den Delta-Reviews zu `slice-089`,
+  `slice-091`, `slice-092`).
 - `verifizierbar`: ja — `ls docs/reviews/ | grep 093`; `grep -rln e140363
   docs/reviews/`; `git log --oneline 6b7a5a6..HEAD`; `git show e140363`
 - `urteil`: **Substanz geprüft, Artefakt fehlt.** Ich habe die Runde unabhängig
@@ -437,7 +437,7 @@ Probe gehört nicht in die Zählung dieses Slice.
   nicht überprüfbar.
 - **Das untere Ende `1468` des `slice-091`-Bands.** Meine 8 Läufe am Stand
   `f90c3f4` erreichen **1469/1471**; der Zustand `1468` braucht beide Blöcke
-  ungedeckt und ist in `verify-slice-091.md` #9 mit **einem** Lauf von **47**
+  ungedeckt und ist im Verifikationsbericht zu `slice-091` #9 mit **einem** Lauf von **47**
   belegt. Der Satz ist damit nicht widerlegt — aber von mir auch nicht
   bestätigt. **Außerhalb** dieses Diffs.
 - **`make test-store`, `make test-replication`, `make test-integration`,
@@ -680,9 +680,9 @@ Reihenfolge**. **V-4 ist damit erfüllt**; die Adresse zeigt auf eine
   Aufzählung, die **vier** Beispiele nennt (abwesender Text · Ausnahme im Code
   weiter als im Satz · Begründung mit unzutreffendem Subjekt · Adressat ohne
   Artefakt). Welche Menge die **sechs** sind, sagt der Satz nicht; die Reports
-  dieses Vorgangs dokumentieren **neun** Sätze dieser Art — `review-slice-093`
-  F-3 · `review-slice-093-delta` D-1, D-2, D-3, D-4 · dieser Bericht V-2, V-3 ·
-  `review-slice-093-delta-2` D-1, D-2 (die INFO-Fälle D-5/Δ1 und D-3/D-4/Δ2
+  dieses Vorgangs dokumentieren **neun** Sätze dieser Art — dem Review zu `slice-093`
+  F-3 · dem Delta-Review zu `slice-093` D-1, D-2, D-3, D-4 · dieser Bericht V-2, V-3 ·
+  der zweiten Delta-Review-Runde zu `slice-093` D-1, D-2 (die INFO-Fälle D-5/Δ1 und D-3/D-4/Δ2
   nicht mitgezählt). Eine Lesart, unter der die Sechs aufgeht (Δ1 D-1…D-4 +
   V-2 + V-3), ist möglich — sie ist aber **nicht benannt**, und mit den zwei
   Sätzen des Delta-2 ist sie auf **acht** gewachsen.
@@ -696,7 +696,7 @@ Reihenfolge**. **V-4 ist damit erfüllt**; die Adresse zeigt auf eine
 #### N-C — Die zwei INFO-Zeilen des Delta-2 bleiben unverändert im Baum — und **D-3** ist nachgemessen
 
 - `kategorie`: **INFO**
-- `quelle`: `review-slice-093-delta-2.md` D-3/D-4 (beide INFO, „kein
+- `quelle`: der zweiten Delta-Review-Runde zu `slice-093` D-3/D-4 (beide INFO, „kein
   Rückgabe-Pfeil") · `AGENTS.md` §3.12 Instanz B
 - `pfad`: `internal/bootstrap/roles_rollout_file_internal_test.go:267` (D-3) und
   `:264-266` (D-4)

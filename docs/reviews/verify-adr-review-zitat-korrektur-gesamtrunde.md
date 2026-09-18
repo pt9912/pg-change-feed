@@ -3,10 +3,10 @@
 **Rolle:** Verifier (Modul 8/11) — „Bauen wir es richtig?" gegen das
 eigentliche Ziel der Runde: entsperrt sie `archive-welle` für die 25
 korrigierten ADRs? Geprüft gegen den vorausgehenden Architect-Verdikt
-([`architect-verdict-adr-review-zitat-korrektur.md`](architect-verdict-adr-review-zitat-korrektur.md)
-§8) und [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
+zur ADR-Review-Zitat-Korrektur
+(§8) und [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md)
 (Zitat-Korrektur-Grenze). **Nicht** Gegenstand: der Diff selbst (Reviewer-Aufgabe,
-bereits erledigt — [`review-adr-review-zitat-korrektur-gesamtrunde.md`](review-adr-review-zitat-korrektur-gesamtrunde.md),
+bereits erledigt — das Review zur ADR-Review-Zitat-Korrektur-Gesamtrunde,
 0 HIGH) — und **nicht** realer Bedarf (Validator, nicht ausgelöst).
 
 **Gegenstand:** Diff `df673da..HEAD` (9 Commits: `9543b13`, `5679f57`,
@@ -31,7 +31,7 @@ Schritt gelesen (`AGENTS.md` §3.9).
 | 1 | `git worktree add … df673da`, Binary `.harness/state/bin/ai-harness-init` hineinkopiert (gitignored, lokal gebaut, durch diesen reinen Doku-Diff unverändert) | — | „Vorher"-Stand für den Vorschau-Vergleich hergestellt |
 | 2 | `ai-harness-init archive-welle --vorschau welle-d-check` auf `df673da` | — | Sperren: 2 (`[untergrenze]`, `[haenger]`); Hänger-Liste 217 Kanten, davon **20** mit `docs/plan/adr/*.md` als Quelle |
 | 3 | dieselbe `--vorschau`-Zeile auf `HEAD` | — | Sperren: 2 (`[untergrenze]`, `[haenger]`); Hänger-Liste 208 Kanten, davon **0** mit `docs/plan/adr/*.md` als Quelle |
-| 4 | `comm -23`/`comm -13` sortierter Hänger-Listen (vorher/nachher) | — | 20 Kanten verschwunden (alle `docs/plan/adr/*.md → docs/reviews/*.md`), 11 neu hinzugekommen (alle `docs/reviews/architect-verdict-adr-review-zitat-korrektur.md → docs/reviews/*.md`) |
+| 4 | `comm -23`/`comm -13` sortierter Hänger-Listen (vorher/nachher) | — | 20 Kanten verschwunden (alle `docs/plan/adr/*.md → docs/reviews/*.md`), 11 neu hinzugekommen (alle mit dem Architect-Verdikt zur ADR-Review-Zitat-Korrektur als Quelle, Ziel je eine `docs/reviews/*.md`-Datei) |
 | 5 | `git diff c2bc868~1 c2bc868 -- docs/plan/adr/0053-*.md docs/plan/adr/0066-*.md docs/plan/adr/0085-*.md docs/plan/adr/0091-*.md` (eigene Stichprobe, andere 4 ADRs als der Reviewer-Report) | — | in allen vier Fällen ausschließlich Pfad/Link → Kennung ersetzt; §Entscheidung, §Konsequenzen, Zahlen, Findings, Datum/Autor unverändert |
 | 6 | `grep -c PENDING_COMMIT docs/plan/adr/*.md` (repo-weit) | — | 0 Treffer — der Platzhalter ist überall durch den echten Hash `c2bc868` ersetzt (auch in den vier Stichproben-ADRs bestätigt) |
 | 7 | `grep -rln "reviews/review-\|reviews/verify-\|reviews/architect-verdict-\|reviews/architect-review-" docs/plan/adr/*.md \| wc -l` (eigener Nachvollzug der Architect-Verdikt-Zahl) | — | 0 — kein einziges lebendes Adress-Zitat mehr im gesamten ADR-Bestand |
@@ -71,14 +71,14 @@ Zwei unabhängige Ursachen:
 1. **Vorbestehend, außerhalb dieser Runde:** Der Altbestand an
    `done/`-Records und `BEO-PGC/evidence/*.md`-Dateien, die
    Review-Basisnamen bare erwähnen (z. B.
-   `docs/plan/planning/done/slice-028-*.md → review-slice-023.md`,
+   `docs/plan/planning/done/slice-028-*.md` zitiert das Review zu `slice-023`,
    `docs/plan/planning/observations/BEO-PGC/**/evidence/*.md → review-slice-*.md`)
    — unverändert vorher wie nachher, nie Gegenstand dieser Runde.
 2. **Neu, selbst-erzeugt durch diese Runde:** Der Architect-Verdikt dieser
-   Runde selbst (`docs/reviews/architect-verdict-adr-review-zitat-korrektur.md`)
+   Runde selbst (der Architect-Verdikt zur ADR-Review-Zitat-Korrektur)
    zitiert in seiner eigenen Bestands-Tabelle (§1) mehrere Review-Basisnamen
-   als bare Text-Erwähnung (`review-slice-078`, `review-slice-081`,
-   `verify-slice-096`, etc.) — das ist eine `docs/reviews/** → docs/reviews/**`-Kante,
+   als bare Text-Erwähnung (Reviews zu `slice-078`, `slice-081`,
+   Verifikationsbericht zu `slice-096`, etc.) — das ist eine `docs/reviews/** → docs/reviews/**`-Kante,
    für die `.d-check.yml`s neue `review`-Klasse bewusst **keine** Matrix-Regel
    trägt (§7.3 des Verdikts: „review → review" ist als unproblematisch
    eingestuft, weil beide Dateien gemeinsam archiviert werden könnten) —
@@ -96,7 +96,7 @@ Zwei unabhängige Ursachen:
 |---|---|---|---|
 | Hänger-Kanten gesamt | 217 | 208 | −9 |
 | davon Quelle `docs/plan/adr/*.md` | 20 | 0 | −20 |
-| davon Quelle `docs/reviews/architect-verdict-adr-review-zitat-korrektur.md` | 0 | 11 | +11 |
+| davon Quelle: der Architect-Verdikt zur ADR-Review-Zitat-Korrektur | 0 | 11 | +11 |
 | Sperren (`archive-welle --vorschau welle-d-check`) | 2 (`[untergrenze]`, `[haenger]`) | 2 (`[untergrenze]`, `[haenger]`) | unverändert |
 
 ## 4. Check 3 — `AGENTS.md` §3.12 (Herkunft von Aussagen)
@@ -133,10 +133,10 @@ zehn im Reviewer-Report bereits gediffeten ADRs `0044, 0047, 0062, 0065,
 individuell gegen ihre Vorversion gediffed).
 
 In allen vier Fällen (Lauf 5): ausschließlich Pfad/Link durch Kennung
-ersetzt (z. B. `ADR-0053`: „Architect-Verdikt
-`[architect-verdict-retention-loeschausfuehrung.md](Pfad)`" → „der
+ersetzt (z. B. `ADR-0053`: „Architect-Verdikt" mit eigenem Link auf den
+Verdikt zur Retention-Löschausführung → „der
 vorausgehende Architect-Verdikt zur Retention-Löschausführung"; `ADR-0066`:
-„`docs/reviews/review-slice-069.md`" → „Review zu `slice-069`"). §Entscheidung,
+Link auf das Review zu `slice-069` → „Review zu `slice-069`"). §Entscheidung,
 §Konsequenzen, §Verglichene Alternativen, §Status, Datum/Autor und jede
 übernommene Zahl/Finding-Aussage bleiben wortgleich. Jede der vier ADRs
 trägt zusätzlich die neue `§Geschichte`-Zeile „Zitat-Korrektur —

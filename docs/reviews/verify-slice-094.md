@@ -117,7 +117,7 @@ nach jedem Lauf sauber (`git status --porcelain` leer).
 | Kriterium (§2) | Befund |
 |---|---|
 | `make gates` grün | **erfüllt** (#1, #24) |
-| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review deckt eine Fixrunde ab** | **nicht erfüllt** — `review-slice-094.md` (`32b8b9d`) und `review-slice-094-delta.md` (`8292766`) liegen vor; der Delta-Review weist mit D-1 und D-2 und dem **offenen F-7** eine weitere Runde aus („Fixrunde: **ja**"), `d839975` führt sie aus — für **diesen** Stand existiert **kein** Review-Artefakt → **V-1** |
+| Review durchgeführt, Report unter `docs/reviews/`, **Delta-Review deckt eine Fixrunde ab** | **nicht erfüllt** — das Review zu `slice-094` (`32b8b9d`) und der Delta-Review zu `slice-094` (`8292766`) liegen vor; der Delta-Review weist mit D-1 und D-2 und dem **offenen F-7** eine weitere Runde aus („Fixrunde: **ja**"), `d839975` führt sie aus — für **diesen** Stand existiert **kein** Review-Artefakt → **V-1** |
 | Verifikation durchgeführt, Report unter `docs/reviews/verify-slice-094.md` | **erfüllt** mit diesem Bericht; das Häkchen ist offen (#21) |
 | Closure-Notiz mit Steering-Loop-Lerneintrag | **nicht erfüllt** — §7 trägt in **7 von 7** Inhaltszeilen Platzhalter (#21); Material für die Zahlen liefert §5, für den Register-Teil §6 |
 | Reconciliation-Register fortgeschrieben *(entfällt …)* | **entfällt nachweislich** — `docs/plan/planning/reconciliation.md` existiert nicht (#21) |
@@ -167,7 +167,7 @@ Verglichen gegen die §3-Liste des Plans am Stand `HEAD`.
 | `harness/sensors/coverage-gate.md` — update, nur unter der Bedingung | zweimal angefasst (`32b8b9d`, `d839975`) — beide Anlässe benannt (§3) | **Plan eingehalten** |
 | `docs/plan/planning/welle-20.md` §4 — **nicht** | §4 nicht angefasst; **ein** Hunk in §1 (`3b7f8c7`, `f64794b`) | **Plan eingehalten** (§1 ist nicht die ausgeschlossene Stelle; die Änderung ist ein Planner-Zug nach Review F-5) |
 | — | Slice-Plan `§2` (fünf Häkchen, `32b8b9d`) | **kein Plan-Bruch**: Pflege des eigenen Plans |
-| — | `docs/reviews/review-slice-094.md`, `…-delta.md` (neu) | **kein Plan-Bruch**: Übergabe-Artefakte der Reviewer-Rolle (Modul 8), keine Liefer-Punkte |
+| — | das Review zu `slice-094` und dessen Delta-Review (neu) | **kein Plan-Bruch**: Übergabe-Artefakte der Reviewer-Rolle (Modul 8), keine Liefer-Punkte |
 
 **Was der Diff nicht enthält, obwohl der Plan es nennt:** nichts. Die zwei
 Test-Zeilen sind vollständig geliefert; Produktcode, `THRESHOLD`, `tools/` und
@@ -278,10 +278,10 @@ der den **Parent-Stand** mit Lauf-Label führt und als `Accepted`-ADR nach
 - `kategorie`: **MEDIUM**
 - `quelle`: §2 des Slice-Plans, Zeile „Review durchgeführt, Report unter
   `docs/reviews/` liegt vor … **Weist der Review eine Fixrunde aus, deckt ein
-  Delta-Review sie ab**" · Präzedenz `verify-slice-092.md` V-2 (MEDIUM),
-  `verify-slice-093.md` V-1 (MEDIUM)
-- `pfad`: `docs/reviews/` (nur `review-slice-094.md` und
-  `review-slice-094-delta.md`) gegen `d839975`
+  Delta-Review sie ab**" · Präzedenz im Verifikationsbericht zu `slice-092` V-2 (MEDIUM),
+  Verifikationsbericht zu `slice-093` V-1 (MEDIUM)
+- `pfad`: `docs/reviews/` (nur das Review zu `slice-094` und
+  dessen Delta-Review) gegen `d839975`
   (`cmd/pg-change-feed/main_test.go` 4 Zeilen, `welle-20.md` 9 Zeilen,
   `harness/sensors/coverage-gate.md` 5 Zeilen)
 - `befund`: Der Delta-Review beurteilt **`8292766`** und weist mit **D-1**
@@ -294,9 +294,9 @@ der den **Parent-Stand** mit Lauf-Label führt und als `Accepted`-ADR nach
   F-7 … Und mein Wellen-Nachzug … zwei Herkünfte"). Für **diesen** Stand
   existiert **kein** Review-Artefakt: `ls docs/reviews/ | grep 094` liefert
   **zwei** Dateien (#21), und die Hausform dieses Repos für „Fixrunde nach
-  Review" ist ein **eigener** Nachtrag (Präzedenz `review-slice-089-delta.md`,
-  `review-slice-091-delta.md`, `review-slice-092-delta.md`,
-  `review-slice-093-delta-2.md`).
+  Review" ist ein **eigener** Nachtrag (Präzedenz bei den Delta-Reviews zu `slice-089`,
+  `slice-091`, `slice-092`,
+  und der zweiten Delta-Review-Runde zu `slice-093`).
 - `verifizierbar`: ja — `ls docs/reviews/ | grep 094`;
   `git log --oneline 4ba09ff..HEAD`; `git show d839975`; das Verdikt des
   Delta-Reviews (`## Verdikt`, Zeile „Fixrunde")

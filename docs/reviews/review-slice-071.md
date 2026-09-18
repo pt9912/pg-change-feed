@@ -53,7 +53,7 @@ Handbuch-Zug` liegt **vor** dem Implementer-Lauf 22:18).
   (`MR-000`); `harness/sensors/a-check.md`; `a-check.mk`; `.dockerignore`
 - `docs/plan/planning/done/slice-069-grpc-streaming-adapter-grundgeruest.md`
   (§3 Handbuch-Abgrenzung), `…/done/slice-070-grpc-capture-integration.md`,
-  [`review-slice-069`](review-slice-069.md), [`review-slice-070`](review-slice-070.md)
+  Review zu `slice-069`, Review zu `slice-070`
 - `.a-check.yml` samt seiner Vorgeschichte (`174ae63`, `8d23352`, `b835dde`),
   `internal/adapters/driving/grpc/server.go` und `…/server_test.go`,
   `…/interceptor.go`, `tools/harness/httpclient/main.go`,
@@ -298,8 +298,8 @@ Präzedenzfall entstanden (09-09 vs. 09-10) und hat `composition_root` in der
 Ausnahmeklausel gerade nicht mitgeführt — der Präzedenzfall ist keine
 Entscheidung über die Klausel, er beschreibt sie stillschweigend fort.
 Die Reviews der Slices, die ihn erwähnen
-([`review-slice-007`](review-slice-007.md), [`review-slice-008`](review-slice-008.md),
-`architect-review-welle-1.md`), behandeln `composition_root` durchweg als
+(Review zu `slice-007`, Review zu `slice-008`,
+der Architect-Review zu `welle-1`), behandeln `composition_root` durchweg als
 **Faktum** („`test/integration` ist `composition_root`"), nie als
 entschiedene Ausnahme.
 
@@ -511,7 +511,7 @@ Implementer-Lauf trägt. Der Nachzug gehört in den regulären Mechanismus
 `harness/README.md`, Slice-Plan — real gelesen) und `e051071` (Architect-Zug:
 `.a-check.yml`, [`ADR-0068`](../plan/adr/0068-wegwerf-clients-begrenzte-import-berechtigung.md),
 ADR-Index, `harness/sensors/a-check.md`,
-[`architect-verdict-a-check-composition-root-tools.md`](architect-verdict-a-check-composition-root-tools.md)).
+der Architect-Verdikt zu `composition_root` und den Wegwerf-Werkzeugen im `a-check`).
 F-1 ist **nicht** vom Implementer umgesetzt, sondern von einem unabhängigen
 Architect-Zug entschieden und umgesetzt (Modul 8 §Konflikt-Pfad, Verdikt 3 —
 „Erweiterung zulässig, aber falsch zugeschnitten").

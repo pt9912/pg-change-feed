@@ -7,7 +7,7 @@ Entscheidungs-Konformität gegen
 [`ADR-0040`](../plan/adr/0040-clockport.md) (`internal/domain` importiert
 `time` nicht). Nicht geprüft: Diff gegen Plan/Hard Rules im Detail über
 die DoD-Punkte hinaus (Reviewer-Aufgabe, bereits erledigt, siehe
-[`review-slice-017.md`](review-slice-017.md)), realer Bedarf (Validator).
+das Review zu `slice-017`), realer Bedarf (Validator).
 
 **Gegenstand:** `3fa7e5d` (Implementierung: Commit-Zeitstempel durch
 Decoder, Mapper, Domäne), `c60f1fd` (Review-Report, F-1 MEDIUM/F-2 LOW,
@@ -29,7 +29,7 @@ zurückgesetzt; `git status` danach sauber.
 
 - Slice-Plan §1–§8 am aktuellen Stand
   (`in-progress/slice-017-commit-zeitstempel-decoder-mapper-domaene.md`)
-- `review-slice-017.md` (F-1 MEDIUM, F-2 LOW, committet `c60f1fd`, kein
+- das Review zu `slice-017` (F-1 MEDIUM, F-2 LOW, committet `c60f1fd`, kein
   offenes HIGH)
 - [`ADR-0040`](../plan/adr/0040-clockport.md) im Volltext
   (`ClockPort`, Fitness Function "Gate geplant", `permanent`)
@@ -147,7 +147,7 @@ im Repo weiterlebt und korrigiert werden müsste.
 | 1 | `decode.Commit` trägt `CommitTime`, real gegen dekodierte COMMIT-Nachricht getestet | **bestätigt** | `TestDecodeBeginCommit`, eigener `make test`-Lauf PASS |
 | 2 | Mapper übergibt Zeitstempel an Domäne, Zugriff bereitgestellt, Invarianten unverändert grün | **bestätigt** | `mapper.go:120`, `transaction.go` `SourceCommittedAt()`, eigene Prüfung der Invarianten-Tests + eigene Mutationsprobe (3 rote Tests) |
 | 3 | `make gates` grün | **bestätigt** | eigener Lauf, Exit 0, alle vier inneren Gates |
-| 4 | Review durchgeführt, Report liegt vor, kein offenes HIGH | **bestätigt** | `review-slice-017.md` liegt vor (`c60f1fd`), 0 HIGH, F-1 MEDIUM/F-2 LOW korrekt disponiert |
+| 4 | Review durchgeführt, Report liegt vor, kein offenes HIGH | **bestätigt** | das Review zu `slice-017` liegt vor (`c60f1fd`), 0 HIGH, F-1 MEDIUM/F-2 LOW korrekt disponiert |
 | 5 | Doku-Update falls öffentlicher Vertrag berührt | **bestätigt entfällt** | `ChangeStorePort` (`internal/application/port/outbound/changestore.go`) zuletzt in `46fbf33` (slice-004) geändert, von diesem Diff nicht berührt — eigene Prüfung |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **korrekt offen** | §7 trägt weiterhin Platzhalter `<…>` — Planner-Closure-Arbeit |
 | 7 | Reconciliation-Register, falls Inventur-Fund | **entfällt — korrekt geprüft** | `docs/plan/planning/reconciliation.md` existiert nicht (Repo durchgehend GF, eigene Prüfung) |
@@ -164,10 +164,10 @@ entfallen (Items 7, 10), 3 korrekt noch offen als Planner-Closure-Arbeit
 ## Plan-vs-Code-Diff (gegen Plan-§3)
 
 ```
-git diff --stat 51454e1..HEAD -- internal/ docs/plan/planning/in-progress/slice-017-*.md docs/reviews/review-slice-017.md
+git diff --stat 51454e1..HEAD -- internal/ docs/plan/planning/in-progress/slice-017-*.md docs/reviews/review-slice-017*.md
 ```
 
-liefert elf geänderte Dateien: Plan-Datei, `docs/reviews/review-slice-017.md`
+liefert elf geänderte Dateien: Plan-Datei, das Review zu `slice-017`
 (neu), `internal/adapters/driven/postgresstorage/store_test.go`,
 `internal/adapters/driving/replication/decode/{decode.go,decode_test.go}`,
 `internal/adapters/driving/replication/mapper/{mapper.go,mapper_test.go}`,
@@ -195,8 +195,8 @@ Test-Fixture-Zeile).
 
 - `kategorie`: LOW
 - `pfad`: `docs/plan/planning/in-progress/slice-017-commit-zeitstempel-decoder-mapper-domaene.md` §2, Zeilen 71–90 (Punkte 1, 2, 3, 5, 7)
-- `befund`: Dieselbe Klasse wie `verify-slice-016.md` VF-2 (und davor
-  `verify-slice-015.md` V-1): fünf Punkte (1, 2, 3, 5, 7) sind laut dieser
+- `befund`: Dieselbe Klasse wie der Verifikationsbericht zu `slice-016` VF-2 (und davor
+  der Verifikationsbericht zu `slice-015` V-1): fünf Punkte (1, 2, 3, 5, 7) sind laut dieser
   Verifikation real erledigt bzw. korrekt entfallen, die Checkboxen bleiben
   aber sämtlich `[ ]`.
 - `verifizierbar`: nein.

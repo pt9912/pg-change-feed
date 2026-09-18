@@ -31,9 +31,9 @@ Spec-Datei.
   §4 (Gate-Tabelle), §5 (Doku-Regeln)
 - `harness/conventions.md` (MR-000 ID-Schema), `.d-check.yml`
   (`reviews`-/`ids`-/`hostpaths`-Regeln)
-- Vorherige Läufe am gleichen Gegenstand: `docs/reviews/review-slice-076.md`
+- Vorherige Läufe am gleichen Gegenstand: das Review zu `slice-076`
   (derselbe Kalibrierungs-Mechanismus, 3 LOW) und
-  `docs/reviews/architect-verdict-coverage-gate-messgegenstand.md` (Anlass des
+  der Architect-Verdikt zum Coverage-Gate-Messgegenstand (Anlass des
   Schnitts)
 
 ---

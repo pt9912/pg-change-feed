@@ -69,7 +69,7 @@ Der Planner hat 31 Befunde gemeldet; dieser Zug hat **nachgemessen**, nicht
 |---|---|---|
 | `Accepted` ADRs | `0051-…md` (1), `0054-…md` (10) | **11** |
 | Zeitdokumente in `done/` | `slice-049-…md` (5), `slice-050-…md` (4), `welle-14.md` (1), `welle-14-results.md` (1) | **11** |
-| Lauf-Belege | `review-slice-036.md` (2), `review-slice-039.md` (2), `review-slice-049.md` (1), `review-slice-073.md` (2) | **7** |
+| Lauf-Belege | Reviews zu `slice-036` (2), `slice-039` (2), `slice-049` (1), `slice-073` (2) | **7** |
 | lebende Doku | `harness/sensors/coverage-gate.md` (2) | **2** |
 | **Summe** | | **31** |
 

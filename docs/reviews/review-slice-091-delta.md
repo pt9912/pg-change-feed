@@ -20,15 +20,15 @@ sauber):
 HIGH-Unterpunkte (u. a. „Zahl im Träger", „Zusage ohne Bindung an ihre
 Eingabeseite") gehören zum Prüfraster · **Datum:** 2026-09-16.
 
-**Eingangs-Kontext:** `review-slice-091.md` (F-1…F-4) · `verify-slice-091.md`
+**Eingangs-Kontext:** das Review zu `slice-091` (F-1…F-4) · der Verifikationsbericht zu `slice-091`
 (V-1…V-8) · Slice-Plan `slice-091-coverage-cluster-c` §1/§3 (Zeile 148:
 `harness/sensors/coverage-gate.md` „update, **nur falls** eine Zahl dort gegen
 die Messung driftet") · `ADR-0082` §Kontext (2), §Konsequenzen, §Fitness
 Function `:350`, §Re-Evaluierungs-Trigger (a)–(e) · `ADR-0071`, `ADR-0077`,
 `ADR-0055`, `ADR-0057`/`ADR-0060`, `ADR-0024` · `AGENTS.md` §3.1, §3.3, §3.5,
 §3.6, §3.7, §3.9, §3.11, §3.12 · `harness/conventions.md` (MR-000) ·
-`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` · Nachbar-Delta
-`review-slice-090-delta.md`.
+`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` · Nachbar-Delta,
+der Delta-Review zu `slice-090`.
 
 ---
 
@@ -195,7 +195,7 @@ der Wortlaut der ADR. Der Mechanismus selbst ist gegen den Code geprüft:
 (`walretention_internal_test.go:112-125`) — der Block ist der Messfehler-Zweig
 **innerhalb** des Takt-Zweigs, genau der Wettlauf, den die ADR beschreibt. Die
 übrigen drei Stellen mit der alten Ursache sind **Records**
-(`docs/reviews/review-slice-081.md`, `done/slice-081-executor-naht.md`) und damit
+(das Review zu `slice-081`, `done/slice-081-executor-naht.md`) und damit
 außerhalb der Träger-Pflege; **kein stehender Träger** außer dieser Datei führt
 sie.
 

@@ -9,7 +9,7 @@ gebaut) · **Architect (dieser Zug, entscheidet)** · Planner (Closure,
 Plan-Nachzug). Verifier und Validator sind **nicht** beteiligt — sie kommen
 erst nach der Auflösung.
 
-**Übergabe-Artefakt:** `docs/reviews/review-slice-073.md` (committet,
+**Übergabe-Artefakt:** das Review zu `slice-073` (committet,
 HEAD `5d8b7cf`): Findings F-1 (HIGH), F-2 (HIGH), F-3 (LOW), F-4 (INFO) und
 die Urteile 1–8.
 
@@ -142,8 +142,8 @@ Herkunfts-Anker sind Planner-Closure-Arbeit, **nicht** dieser Zug.
 
 ### Vorschlag für eine neue Beobachtungsklasse — nicht eingetragen
 
-**Vorschlag:** `BEO-PGC/spiegelung-ist-approximation` (**1×** belegt in
-`docs/reviews/review-slice-073.md` F-2). Klasse: *Eine nachgebaute,
+**Vorschlag:** `BEO-PGC/spiegelung-ist-approximation` (**1×** belegt im
+Review zu `slice-073`, F-2). Klasse: *Eine nachgebaute,
 nicht-kanonische Implementierung einer bereits gate-getragenen Regel
 beansprucht in ihrem Entscheidungstext Fidelität („spiegelt exakt"), die ihr
 Träger strukturell nicht liefern kann — ihre Eingabe ist das

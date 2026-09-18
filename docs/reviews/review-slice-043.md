@@ -1,8 +1,7 @@
 # Review-Report: slice-043 — 2026-09-13
 
 **Review-Art:** Code — geprüft gegen Plan (`slice-043`, §1/§2/§3/§4/§6/§8),
-`welle-13`, den Architect-Verdikt
-(`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`) und
+`welle-13`, den Architect-Verdikt zur Retention-Löschausführung und
 `ADR-0009`/`0011`/`0012`/`0014` (alle `Accepted`, nur umgesetzt) sowie
 `AGENTS.md` §3 Hard Rules (§3.1, §3.5, §3.7) — Rollentrennung Modul 8: diese
 Prüfung läuft gegen Plan/ADR/Hard Rules (Maintainability), nicht gegen DoD
@@ -30,7 +29,7 @@ und deren Tests, fünf Fake-Nachzieh-Patches in bestehenden Use-Case-Tests
   Trigger, §6 Risiken, §8)
 - `docs/plan/planning/welle-13.md` (vollständig — Welle-Ziel,
   Closure-Trigger, Out-of-Scope, Abhängigkeiten)
-- `docs/reviews/architect-verdict-retention-loeschausfuehrung.md`
+- der Architect-Verdikt zur Retention-Löschausführung
   (vollständig — bindende Architektur-Grundlage dieser Welle)
 - `AGENTS.md` §3.1 (Docker-only), §3.5 (ADR-Immutabilität), §3.7
   (Kommentar-Disziplin — `BEO-PGC/slice-chronik-in-code-kommentar`, 2× vor
@@ -47,7 +46,7 @@ und deren Tests, fünf Fake-Nachzieh-Patches in bestehenden Use-Case-Tests
   `cdc.consumer_position` (FK-Kanten, Indizes)
 - Vollständiger `git show de3ff8c` (alle 17 Dateien, nicht nur die
   Implementer-Zusammenfassung)
-- `docs/reviews/review-slice-039.md` (Format-Vorlage)
+- Review zu `slice-039` (Format-Vorlage)
 
 ---
 

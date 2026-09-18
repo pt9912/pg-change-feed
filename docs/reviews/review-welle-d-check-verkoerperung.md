@@ -14,12 +14,12 @@ nicht" wird hier reflexiv auf den eigenen Commit angewendet).
 
 **Eingangs-Kontext:**
 
-- `docs/reviews/architect-verdict-welle-d-check-lese-schritt.md` (der
+- der Architect-Verdikt zum Lese-Schritt der `d-check`-Welle (der
   beauftragende Architect-Zug, §1.2/§2.3/§3 „Folgearbeit")
 - `AGENTS.md` §3.13 (Vorzustand und Nachzustand)
 - `.harness/skills/reviewer.md` HIGH-Punkt „Beleg trägt seinen Satz nicht"
   (Vorzustand und Nachzustand)
-- `docs/reviews/review-slice-096.md` F-2 (das zitierte Original)
+- das Review zu `slice-096` F-2 (das zitierte Original)
 - `docs/plan/planning/observations/BEO-PGC/regel-weiter-als-ihr-sensor/evidence/slice-096.md`
   und `docs/plan/planning/done/slice-096-konfigurationsdatei-nachzug.md` §7
   (die Herkunft der Formulierung „vierter Anker")
@@ -30,15 +30,15 @@ nicht" wird hier reflexiv auf den eigenen Commit angewendet).
 
 ## Findings
 
-### F-1 — Der neue Grenz-Absatz in `AGENTS.md` §3.13 zitiert `review-slice-096.md` F-2 mit einer Zählung und einem Begriff, die das Original nicht trägt
+### F-1 — Der neue Grenz-Absatz in `AGENTS.md` §3.13 zitiert das Review zu `slice-096` F-2 mit einer Zählung und einem Begriff, die das Original nicht trägt
 
 - `kategorie`: **HIGH**
 - `quelle`: Skill HIGH „Beleg trägt seinen Satz nicht" (Nachbarform „Verweis
   auf eine Stelle eines anderen Dokuments", genau die Erweiterung, die dieser
   Commit selbst einführt) · `BEO-PGC/zitat-nennt-die-falsche-stelle`
-- `pfad`: `AGENTS.md:443-446` gegen `docs/reviews/review-slice-096.md:49-61` (F-2)
+- `pfad`: `AGENTS.md:443-446` gegen Zeilen 49-61 des Reviews zu `slice-096` (F-2)
 - `befund`: Der neue Satz lautet: „real bereits so geschlossen:
-  `docs/reviews/review-slice-096.md` F-2 fand über den vierten Anker **einen**
+  das Review zu `slice-096` F-2 fand über den vierten Anker **einen**
   Zeilen-Lokator, den der Implementer-Suchlauf übersehen hatte." Das Original
   (F-2, Titel: „**Drei** Anker in `ADR-0088` lösen … nicht mehr auf") berichtet
   explizit **zwei** Zeilen-Lokatoren („Nicht gemeldet: **die zwei**
@@ -58,7 +58,7 @@ nicht" wird hier reflexiv auf den eigenen Commit angewendet).
   Lücke schloss, die der Implementer-Suchlauf offen ließ — ist in der Sache
   richtig; die **Stütze**, die für sie zitiert wird, trägt die exakte Form der
   Aussage nicht.
-- `verifizierbar`: ja — `docs/reviews/review-slice-096.md` F-2 im Original
+- `verifizierbar`: ja — das Review zu `slice-096` F-2 im Original
   aufschlagen (nicht in einer Zusammenfassung), Zählung „zwei" vs. „einen"
   liegt offen; `evidence/slice-096.md:17` und die Closure-Notiz `§7`
   gegeneinanderhalten zeigt den Attributions-Widerspruch.
@@ -155,7 +155,7 @@ Out-of-Scope-Disziplin ist eingehalten (keine Änderung an
 `coverage-gate.md`, `AGENTS.md` §3.11 oder einer ADR), `make gates` läuft
 grün. Der eine gefundene HIGH-Defekt liegt ausgerechnet in dem Satz, der die
 Beleg-Genauigkeit des neuen HIGH-Punkts illustrieren soll: die zitierte
-Stelle (`review-slice-096.md` F-2) trägt die genannte Zählung („einen"
+Stelle (Review zu `slice-096` F-2) trägt die genannte Zählung („einen"
 Zeilen-Lokator) nicht — sie berichtet zwei — und der verwendete Begriff
 „vierter Anker" wird in den vorhandenen Quelldokumenten uneinheitlich
 zugeschrieben (Review vs. Architect). Das ist inhaltlich keine Katastrophe

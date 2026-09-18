@@ -5,7 +5,7 @@ Done, 10 Punkte, aktueller Stand nach Planner-Korrektur `ee627bd`), §3
 (Plan-vs-Code inkl. Plan-Nachzug), §6 (Risiko-Ausgänge), §8
 (Sub-Area-Prüfung), sowie Entscheidungs-Konformität gegen
 [`ADR-0047`](../plan/adr/0047-rollenspezifische-dsn-verdrahtung.md) und die
-Reviewer-Findings aus [`review-slice-028.md`](review-slice-028.md) (1
+Reviewer-Findings aus dem Review zu `slice-028` (1
 MEDIUM F-1, 1 INFO F-2). Nicht geprüft: Diff gegen Plan/Hard Rules im
 Detail über die DoD-Punkte hinaus (Reviewer-Aufgabe, bereits erledigt),
 realer Bedarf (Validator — hier nicht einschlägig, reine
@@ -15,7 +15,7 @@ Testinfrastruktur ohne Verhaltensänderung).
 diesem Lauf selbst gelesen oder ausgeführt: `tools/harness/run-integration-tests.sh`
 (neuer Abschnitt „Rollen-DSN-Verifikation gegen den Compose-Stack",
 Volltext), `tools/schema/nacharbeit-roles.sql` (Grants je Rolle),
-`compose.yaml` (Env-Block, Healthcheck), `docs/reviews/review-slice-023.md`
+`compose.yaml` (Env-Block, Healthcheck), das Review zu `slice-023`
 INFO-1 (Volltext), `git log --follow -- compose.yaml`/`git show a32a2c9`,
 `git show --stat -M` für den reinen `git mv`, `grep -rn mvp_test\.go` über
 das gesamte Repo, `make gates` selbst gestartet, `make test-integration`
@@ -33,12 +33,12 @@ das gesamte Repo, `make gates` selbst gestartet, `make test-integration`
 
 - Slice-Plan §1–§8 am aktuellen Stand
   (`in-progress/slice-028-integrationstest-nachzug-rollen-mvp.md`, nach `ee627bd`)
-- `docs/reviews/review-slice-028.md` (1 MEDIUM F-1, 1 INFO F-2)
+- das Review zu `slice-028` (1 MEDIUM F-1, 1 INFO F-2)
 - `tools/harness/run-integration-tests.sh` (Volltext, 470 Zeilen, inkl. des
   neuen Abschnitts Zeilen 71–147)
 - `tools/schema/nacharbeit-roles.sql` (Grant-Tabelle je Rolle)
 - `compose.yaml` (Env-Block `pg-change-feed`, Zeilen 53–74)
-- `docs/reviews/review-slice-023.md` (INFO-1, Volltext)
+- das Review zu `slice-023` (INFO-1, Volltext)
 - `git log --follow -- compose.yaml`, `git show a32a2c9 --stat`
 - `docs/plan/planning/observations/BEO-PGC/rollen-test-abdeckungsluecken/`
   (`observation.md`, `state.md`, `evidence/slice-023.md`)
@@ -62,7 +62,7 @@ das gesamte Repo, `make gates` selbst gestartet, `make test-integration`
 
 Drei unabhängige grüne Läufe bestätigen die DoD-Behauptung „dreimal in
 Folge grün" **selbst** — der Reviewer hatte diesen Lauf ausdrücklich nicht
-reproduziert (`review-slice-028.md`, Negativbefund-Zeile „nicht
+reproduziert (das Review zu `slice-028`, Negativbefund-Zeile „nicht
 reproduziert in dieser Review-Sitzung"). Keine Anzeichen von Flakiness
 über die drei Läufe (Timing-Werte für `cdc_capture_lag` variierten nur
 geringfügig, alle drei innerhalb der erwarteten Toleranzen).
@@ -134,11 +134,11 @@ nicht Adapter-Ebene" impliziert.
   in der Dateiliste dieses Commits. Keiner der vier slice-028-Commits
   (`632ddca`/`ba508ed`/`9a84407`/`f8ce37b`) fasst `compose.yaml` an
   (eigene `git show --stat` je Commit, oben bereits protokolliert).
-- `docs/reviews/review-slice-023.md` INFO-1 (Zeilen 155–173) dokumentiert
+- Das Review zu `slice-023` INFO-1 (Zeilen 155–173) dokumentiert
   exakt denselben Zustand mit derselben Begründung (`ADR-0047`
   Kontext-Befund 1) bereits am `slice-023`-Commit — Wortlaut und Klasse
   („Least-Privilege nur in Unit-nahen Tests, nicht im End-to-End-Lauf
-  belegt") stimmen mit `review-slice-028.md` F-2 überein.
+  belegt") stimmen mit dem Review zu `slice-028` F-2 überein.
 
 **Verdikt Prüfpunkt F-2:** Kein neuer Befund dieses Slices, korrekt als
 INFO ohne Eskalationsbedarf eingestuft. Keine Regression.
@@ -180,7 +180,7 @@ halten. Das ist der Gegenstand von V-1.
 | 1 | `LH-QA-SEC-001`…`003` teilweise erfüllt, Punkt (2) von `BEO-PGC/rollen-test-abdeckungsluecken` **nicht vollständig** geschlossen (Planner-Korrektur) | **bestätigt, Korrektur akkurat** | Prüfpunkt 0 oben — eigene Volltext-Lektüre, kein Aufruf von `receive.NewStream`/`postgresack.New`, Grants gegen `nacharbeit-roles.sql` verifiziert, drei eigene grüne Läufe |
 | 2 | `mvp_test.go` → `integration_test.go`, Doku/Helptext nachgezogen | **bestätigt** | `git show --stat -M 632ddca`: reiner Rename (0/0), Similarity 100 % erkannt. `grep -rn mvp_test\.go` repo-weit: nur noch in historischen `done/`-/Review-/Verify-Dateien und im eigenen Vor-/Nachher-Text von `slice-028` selbst — keine lebende Referenz. `Makefile` Zeile 56, `harness/README.md` Zeile 129 tragen den neuen Wortlaut. `AGENTS.md` trägt keine „MVP"-Erwähnung (eigener `grep`, kein Treffer) — „kein Änderungsbedarf" bestätigt |
 | 3 | `make gates` grün, `make test-integration` dreimal grün | **bestätigt, dreifach selbst ausgeführt** | Sensor-Tabelle oben: drei eigene `make test-integration`-Läufe grün, `make gates` zweimal grün mit 0 Befunden |
-| 4 | Review durchgeführt, Report liegt vor, kein Self-Review | **bestätigt** | `docs/reviews/review-slice-028.md` existiert (`ffe9ac8`), 1 MEDIUM/1 INFO, Verdikt „merge-blockierend: ja (F-1)" — durch Planner-Korrektur (`ee627bd`) behoben; Checkbox korrekt `[x]` mit Verweis auf die Korrektur |
+| 4 | Review durchgeführt, Report liegt vor, kein Self-Review | **bestätigt** | das Review zu `slice-028` existiert (`ffe9ac8`), 1 MEDIUM/1 INFO, Verdikt „merge-blockierend: ja (F-1)" — durch Planner-Korrektur (`ee627bd`) behoben; Checkbox korrekt `[x]` mit Verweis auf die Korrektur |
 | 5 | Doku-Update `harness/README.md`/`AGENTS.md` | **bestätigt** | `git show 9a84407 -- harness/README.md`: aktualisierte Zeile deckungsgleich mit tatsächlichem Skript-Inhalt (auch die Rollen-DSN-Verifikation korrekt beschrieben); `AGENTS.md` unberührt, korrekt begründet |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **korrekt offen** | §7 trägt weiterhin den Platzhalter-Vorlagentext — Planner-Arbeit, noch nicht fällig vor `git mv` |
 | 7 | Reconciliation-Register, falls einschlägig | **entfällt — korrekt geprüft** | `docs/plan/planning/reconciliation.md` existiert nicht (eigene Prüfung); Sub-Area `*`/`PGC` durchgehend Greenfield |
@@ -195,7 +195,7 @@ und eigener `git log --follow`-Prüfung des F-2-Ursprungs), 1 Item korrekt
 entfallen (Reconciliation-Register, Greenfield), 3 Items regulär offen als
 Planner-/Welle-Closure-Arbeit (Closure-Notiz, Beobachtungs-Register,
 Paarungen bei `welle-8`), 1 Item materiell erfüllt mit
-Checkbox-Diskrepanz (V-2, wie in `verify-slice-024`…`027` bereits
+Checkbox-Diskrepanz (V-2, wie in den Verifikationsberichten zu `slice-024`…`027` bereits
 wiederkehrend).**
 
 ## Plan-vs-Code-Diff (§3, gegen `632ddca`/`ba508ed`/`9a84407`/`f8ce37b`)
@@ -296,8 +296,8 @@ geschlossenen Menge (eingetreten/entfallen/weiter offen).
 - `pfad`: `docs/plan/planning/in-progress/slice-028-integrationstest-nachzug-rollen-mvp.md:136`
   (Checkbox weiterhin `[ ]`) vs. §6 (alle drei Risiken tragen bereits
   einen Ausgang)
-- `befund`: Derselbe wiederkehrende Musterbefund wie in
-  `verify-slice-024.md`…`verify-slice-027.md` (V-1 dort): die DoD-Zeile
+- `befund`: Derselbe wiederkehrende Musterbefund wie in den
+  Verifikationsberichten zu `slice-024`…`slice-027` (V-1 dort): die DoD-Zeile
   ist materiell bereits erfüllt, die Checkbox wird erst bei der formalen
   Closure gesetzt. Diese Finding-Klasse ist bereits in
   `BEO-PGC/dod-checkbox-nachzug` als **verkörpert** geführt (3× erreicht,

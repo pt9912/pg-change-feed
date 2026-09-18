@@ -3,7 +3,7 @@
 **Rolle:** Architect (Modul 8)
 **Anlass:** `docs/plan/planning/observations/BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`
 erreicht mit `slice-047` real 3× (`evidence/slice-045.md`,
-`evidence/slice-046.md`, Finding VF-4 in `docs/reviews/verify-slice-047.md`,
+`evidence/slice-046.md`, Finding VF-4 im Verifikationsbericht zu `slice-047`,
 drittes eigenständiges Auftreten) — Lese-Schritt des wellenlosen Betriebs
 (Modul 6 „Träger im Repo ohne Wellen"), ausgelöst direkt aus der
 `slice-047`-Closure, ohne hostende Welle. Planner → Architect-Zug.
@@ -11,9 +11,9 @@ drittes eigenständiges Auftreten) — Lese-Schritt des wellenlosen Betriebs
 **Datum:** 2026-09-13
 **Bezug:** `LH-FA-SST-003` (thematisch nächste Kennung — die Beobachtung
 wurde durch `slice-047` zum 3×-Übertritt gebracht, ist selbst aber keine
-Retention-/Diagnose-Entscheidung), `docs/reviews/verify-slice-047.md`
+Retention-/Diagnose-Entscheidung), der Verifikationsbericht zu `slice-047`
 Finding VF-4, `docs/plan/planning/observations/BEO-PGC/dod-checkbox-nachzug`
-(Präzedenzfall, verkörpert seit welle-5, `architect-review-welle-5.md` Zug 2),
+(Präzedenzfall, verkörpert seit welle-5, der Architect-Review zu `welle-5`, Zug 2),
 `docs/plan/planning/observations/BEO-PGC/dod-checkbox-nachzug-architect-pfad`
 (verwandte, aber eigenständige Beobachtung — 1×, unter der Schwelle, hier
 nicht Gegenstand), `.claude/commands/implement-slice.md` Schritt 18/21
@@ -105,8 +105,8 @@ nicht:
    Reine Datei-Existenz unterscheidet diese beiden Fälle nicht — dafür
    müsste der Sensor den **Verdikt-Text** des Reports parsen („keine
    Fixrunde … nötig" o. ä.), und dieser Wortlaut ist in den bisher
-   geprüften Reports uneinheitlich formuliert (`review-slice-045.md`:
-   „keine Findings"; `review-slice-047.md`: „keine Fixrunde am Code
+   geprüften Reports uneinheitlich formuliert (Review zu `slice-045`:
+   „keine Findings"; Review zu `slice-047`: „keine Fixrunde am Code
    nötig"; andere Reports mit HIGH-Findings formulieren die
    Rückgabe an den Implementer wieder anders). Ein Sensor, der auf einem
    Prosa-Satz im Report keilt, ist dieselbe Art Klassifikations-Aufgabe,

@@ -7,12 +7,8 @@ Closure-Trigger noch offen zum Zeitpunkt dieses Laufs) ·
 [`docs/plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md`](../plan/planning/done/slice-018-commit-zeitstempel-store-adapter.md),
 [`docs/plan/planning/done/slice-019-cdc-capture-lag-ablösen.md`](../plan/planning/done/slice-019-cdc-capture-lag-ablösen.md)
 (je §1–§8) ·
-[`docs/reviews/review-slice-017.md`](review-slice-017.md),
-[`docs/reviews/review-slice-018.md`](review-slice-018.md),
-[`docs/reviews/review-slice-019.md`](review-slice-019.md) ·
-[`docs/reviews/verify-slice-017.md`](verify-slice-017.md),
-[`docs/reviews/verify-slice-018.md`](verify-slice-018.md),
-[`docs/reviews/verify-slice-019.md`](verify-slice-019.md) ·
+Review zu `slice-017`, Review zu `slice-018`, Review zu `slice-019` ·
+Verifikationsbericht zu `slice-017`, zu `slice-018`, zu `slice-019` ·
 [`ADR-0040`](../plan/adr/0040-clockport.md) (Accepted, `permanent`) ·
 `docs/plan/carveouts/` (nur `.gitkeep`) ·
 `harness/conventions.md` §Modus-Deklaration (`PGC`, Greenfield, gesamtes
@@ -59,7 +55,7 @@ Paarungen, Archivierung, Roadmap-Fortschreibung) bleibt Planner-Arbeit.
 Carveout im Repo, damit auch keiner mit Bezug zu `welle-5`. Kein Gate lief
 in dieser Welle rot: `make gates` wurde in jedem der drei
 Verifier-Läufe eigenständig ausgeführt und lieferte durchgehend Exit 0
-(`verify-slice-017.md`, `verify-slice-018.md`, `verify-slice-019.md`, je
+(Verifikationsberichte zu `slice-017`, `slice-018`, `slice-019`, je
 Sensor-Tabelle). **Feststellung: 0 offen** — weder aufzulösen noch zu
 verlängern, weil keiner existiert.
 
@@ -100,7 +96,7 @@ unabhängig bestätigt. **Feststellung: kein Trigger eingetreten, `ADR-0040`
 bleibt `Accepted`, `permanent`, unverändert. Kein Folge-ADR.**
 
 **Sonstige in dieser Welle berührte ADRs.** `ADR-0011` (Persist-before-ACK)
-wurde in `review-slice-018.md` als Kontext für das Idempotenz-Risiko
+wurde im Review zu `slice-018` als Kontext für das Idempotenz-Risiko
 (§6-Risiko-2) herangezogen — ihr Re-Evaluierungs-Trigger ist `permanent`
 („die Invariante trägt die Vertragszusage `LH-QA-REL-001`"), und die Welle
 liefert keinen Beleg, der diese Invariante infrage stellt; im Gegenteil,
@@ -135,16 +131,16 @@ liefert genau drei Dateien. `state.md` sagt korrekt „Zähler (abgeleitet):
 Verifier-Reports dieser Welle dieselbe Klasse zusätzlich, ohne den Zähler
 erneut zu erhöhen (Modul 6: „Ein Vorgang zählt einmal"):
 
-- `verify-slice-017.md` VF-1: fünf von zehn DoD-Checkboxen unchecked trotz
+- Verifikationsbericht zu `slice-017` VF-1: fünf von zehn DoD-Checkboxen unchecked trotz
   materieller Erledigung — explizit als „dieselbe Klasse wie
-  `verify-slice-016.md` VF-2 (und davor `verify-slice-015.md` V-1)"
+  Verifikationsbericht zu `slice-016` VF-2 (und davor Verifikationsbericht zu `slice-015` V-1)"
   benannt, dies **ist** der dritte Beleg (`evidence/slice-017.md`).
-- `verify-slice-018.md` (Zusammenfassung DoD, VF-1/VF-2 zu anderen
+- Verifikationsbericht zu `slice-018` (Zusammenfassung DoD, VF-1/VF-2 zu anderen
   Themen; DoD-Checkboxen dort explizit als „regulär noch unchecked, da
   Datei in `in-progress/`" gewertet — kein neuer Fund, weil zum
   Prüfzeitpunkt noch keine Closure stattfand) — bestätigt indirekt, dass
   das Muster nur beim `git mv` nach `done/` sichtbar wird.
-- `verify-slice-019.md` VF-2: „DoD-Checkbox „Review durchgeführt" bleibt
+- Verifikationsbericht zu `slice-019` VF-2: „DoD-Checkbox „Review durchgeführt" bleibt
   unchecked, obwohl Review und Fixrunde bereits abgeschlossen sind" —
   ausdrücklich als „exakt die Musterklasse der bereits registrierten
   Beobachtung `BEO-PGC/dod-checkbox-nachzug` … kein neuer Fund" markiert,
@@ -206,8 +202,8 @@ desselben Workflow-Dokuments ergänzt (Details siehe Commit-Diff):
 2. **Schritt 21** (Übergabe an den Reviewer, Fixrunde nach Findings): Löst
    eine Fixrunde einen bislang offenen Punkt auf (typischerweise „Review
    durchgeführt … kein offenes HIGH"), wird die zugehörige Checkbox im
-   Fixrunden-Commit mitgesetzt — das schließt exakt die von
-   `verify-slice-019.md` VF-2 benannte Lücke (Checkbox blieb nach
+   Fixrunden-Commit mitgesetzt — das schließt exakt die vom
+   Verifikationsbericht zu `slice-019` VF-2 benannte Lücke (Checkbox blieb nach
    abgeschlossener Fixrunde `[ ]`).
 
 Zielort: [`.claude/commands/implement-slice.md`](../../.claude/commands/implement-slice.md).
@@ -235,10 +231,10 @@ Herkunfts-Anker: `seit welle-5`.
 |---|---|
 | 0 aktive Carveouts | `docs/plan/carveouts/` (nur `.gitkeep`) |
 | Durchgehend Greenfield, keine Reifestufe | `harness/conventions.md` §Modus-Deklaration; slice-017/018/019 §8 je „Reiner GF-Hinweis genügt" |
-| [`ADR-0040`](../plan/adr/0040-clockport.md) real eingehalten, alle drei Slices | `verify-slice-017.md` „`ADR-0040`-Konformität (eigenständig verifiziert)"; `verify-slice-018.md` dieselbe Sektion; `review-slice-017.md`/`review-slice-018.md` Prüfung 1 |
+| [`ADR-0040`](../plan/adr/0040-clockport.md) real eingehalten, alle drei Slices | Verifikationsbericht zu `slice-017` „`ADR-0040`-Konformität (eigenständig verifiziert)"; Verifikationsbericht zu `slice-018` dieselbe Sektion; Review zu `slice-017`/`slice-018` Prüfung 1 |
 | `ADR-0040`-Trigger `permanent` | [`ADR-0040`](../plan/adr/0040-clockport.md) §Re-Evaluierungs-Trigger |
-| `ADR-0011`/`ADR-0044` nur angewendet, nicht belastet | `review-slice-018.md` Prüfung 4 (Idempotenz/`ADR-0011`); `verify-slice-019.md` Sensor-Tabelle + Prüfung 4 (`ADR-0044`-Digest-Commit) |
+| `ADR-0011`/`ADR-0044` nur angewendet, nicht belastet | Review zu `slice-018` Prüfung 4 (Idempotenz/`ADR-0011`); Verifikationsbericht zu `slice-019` Sensor-Tabelle + Prüfung 4 (`ADR-0044`-Digest-Commit) |
 | Zähler `dod-checkbox-nachzug` = 3× | `BEO-PGC/dod-checkbox-nachzug/evidence/{slice-015,slice-016,slice-017}.md`, `state.md` |
-| Wiederholtes Auftreten über die drei Belege hinaus (kein neuer Zähler-Beitrag) | `verify-slice-017.md` VF-1, `verify-slice-019.md` VF-2 |
+| Wiederholtes Auftreten über die drei Belege hinaus (kein neuer Zähler-Beitrag) | Verifikationsbericht zu `slice-017` VF-1, Verifikationsbericht zu `slice-019` VF-2 |
 | Keine mechanische Prüfbarkeit von Checkbox-Wahrheit | Modul 6 §Das Beobachtungs-Register, Abschnitt „Grenze: Die *Existenz* der Datei wird nicht verlangt …" (analoge Argumentationsform) |
 | Präzedenzfall „Workflow-Disziplin statt Gate" | `BEO-PGC/plan-nachzug/state.md` (verkörpert seit slice-009, `.claude/commands/implement-slice.md` Schritt 14) |

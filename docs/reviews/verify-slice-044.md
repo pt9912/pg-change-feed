@@ -3,13 +3,13 @@
 **Rolle:** Verifier (Modul 11) — Prüfung „Bauen wir es richtig?" gegen Plan
 (`slice-044` §1/§2 DoD/§3 Plan-Nachzug/§4/§6/§8), `welle-13` §6 und
 `ADR-0014`/`ADR-0047`/`ADR-0048`/`ADR-0053`, nicht gegen Diff (Reviewer-
-Aufgabe, bereits abgeschlossen: `review-slice-044.md` + `review-slice-044-
-fixrunde.md`, beide vollständig gelesen) und nicht gegen realen Bedarf
+Aufgabe, bereits abgeschlossen: das Review zu `slice-044` und der
+Review-Report zur Fixrunde von `slice-044`, beide vollständig gelesen) und nicht gegen realen Bedarf
 (Validator, hier nicht ausgelöst — kein MVP-Meilenstein-Slice).
 
 **Frischer Kontext:** Diese Prüfung liest den vollständigen, aktuellen
 Slice-Plan, `ADR-0053`, den Architect-Verdikt
-`architect-verdict-slice-044-rollen-grant.md`, `welle-13.md` §6, beide
+zu den Rollen-Grants in `slice-044`, `welle-13.md` §6, beide
 Review-Reports und den tatsächlichen Code selbst — keine Behauptung aus
 einem Bericht wird ungeprüft übernommen; jeder unten genannte Sensor-Lauf
 wurde in dieser Sitzung **selbst** ausgeführt, nicht aus den Reports
@@ -41,7 +41,7 @@ rückwärts ohne Übergabe-Artefakt.
 | 1 | `runRetentionCleanup`-Hintergrundzug verdrahtet, Muster identisch zu `runHeartbeat`/`runWALRetentionCheck`/`runAdministration`, ruft periodisch `RunRetentionUseCase` real auf | **erfüllt** | `internal/bootstrap/wiring.go` selbst gelesen: eigener Pool je Aufgabe (`retentionStore`, `retentionConsumerState`, beide `cfg.AdminDSN`), eigener `context.WithCancel` (`retentionCtx`/`stopRetention`), eigene `sync.WaitGroup` (`retentionDone`), Goroutine-Start und Shutdown-Reihenfolge (`stopRetention(); retentionDone.Wait()`) exakt an derselben Stelle wie die drei Vorbild-Züge. `runRetentionCleanup` (Zeile 774ff.) ruft `useCase.Run` in einer `for`-Schleife mit `interval`-Ticker auf, Best-effort-Fehlerbehandlung (Log + `continue`) spiegelt `runWALRetentionCheck`. `retentionInterval = 10s`, `retentionMinAge = 24h` als unexportierte Konstanten im Stil von `heartbeatInterval` — §1 schließt Laufzeit-Konfiguration bereits aus |
 | 2 | Realer E2E-Beleg (`run-integration-tests.sh`): freigegebene Zeile real entfernt, nicht freigegebene (zu jung ODER Consumer hängt zurück) bleibt real erhalten, beides ohne Neustart | **erfüllt, dreifach selbst reproduziert** | `tools/harness/run-integration-tests.sh` gelesen: `RetentionOld` (id=200) real auf `committed_at = now() - 25h` zurückdatiert (direkter `UPDATE`, kein Warten — dieselbe Technik wie der bestehende Heartbeat-Fehlerzustand-Beleg), `RetentionYoung` (id=201) bleibt real jung. Beide Consumer (`CLI_CONSUMER`, `BACKLOG_CONSUMER`) blockieren strukturell zunächst, ein erster Poll belegt reale Nichtlöschung trotz erfülltem Alter (`LH-FA-RET-004`), nach Bestätigung beider Consumer belegt ein zweiter Poll reale Löschung von `RetentionOld` und reales Erhaltenbleiben von `RetentionYoung` (`LH-FA-RET-003`). **Selbst dreimal in Folge ausgeführt** (`make test-integration`, je ca. 1m17s–1m26s): alle drei Läufe enden mit identischer Beleg-Zeile „`RetentionOld` … blieb erhalten, solange ein Consumer zurückhing … und wurde nach Freigabe … real entfernt; `RetentionYoung` … blieb durchgehend erhalten“ und mit `PASS`/`ok`; der Feed-Container läuft über den gesamten Testlauf durch (kein `docker restart` im Skript, `docker exec` läuft gegen denselben laufenden Container wie beim Black-Box-CLI-Rundlauf davor) |
 | 3 | `make gates` grün, `make test-integration` grün (inkl. des neuen Belegs) | **erfüllt, selbst reproduziert** | `make gates` selbst ausgeführt gegen `HEAD = b2255d5`: `baseline-verify` (v6.5.0, 54 Dateien) OK, `d-check` Struktur (356 Dateien, 0 Befunde), `d-check` Commits (`HEAD~5..HEAD`, 0 Befunde), `commit-traceability.sh` (5 Commits, Betreffs ohne Struktur-ID) OK, `a-check` (0 Befunde). `make test-integration` dreimal in Folge grün (siehe Punkt 2). Zusätzlich `make test -race` selbst ausgeführt: alle Pakete `ok`, insbesondere `internal/bootstrap` (1.041s) und das neue `internal/adapters/driven/systemclock` (1.016s) |
-| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **inhaltlich erfüllt, Formular-Diskrepanz — siehe Finding V-1** | Beide Reports vollständig gelesen: `review-slice-044.md` (1 HIGH, F-1 Slice-Chronik-Kommentar, drittes Auftreten) und `review-slice-044-fixrunde.md` (F-1 bestätigt behoben, Architect-Zug `bd78dc6` geprüft und für nachvollziehbar befunden, 0 HIGH/MEDIUM/LOW/INFO im Endstand). Die Bedingung ist damit tatsächlich erfüllt. Checkbox in §2 (Zeile 92) steht aber weiterhin auf `- [ ]` — kein Commit von `2a4ff05` bis `b2255d5` hat sie auf `[x]` gesetzt (`git log -p f8949a4..HEAD` gegen die Plan-Datei geprüft: nur die Punkte 1/2/3/6 wurden je auf `[x]` gesetzt) |
+| 4 | Review durchgeführt, Report unter `docs/reviews/` liegt vor | **inhaltlich erfüllt, Formular-Diskrepanz — siehe Finding V-1** | Beide Reports vollständig gelesen: das Review zu `slice-044` (1 HIGH, F-1 Slice-Chronik-Kommentar, drittes Auftreten) und der Review-Report zur Fixrunde von `slice-044` (F-1 bestätigt behoben, Architect-Zug `bd78dc6` geprüft und für nachvollziehbar befunden, 0 HIGH/MEDIUM/LOW/INFO im Endstand). Die Bedingung ist damit tatsächlich erfüllt. Checkbox in §2 (Zeile 92) steht aber weiterhin auf `- [ ]` — kein Commit von `2a4ff05` bis `b2255d5` hat sie auf `[x]` gesetzt (`git log -p f8949a4..HEAD` gegen die Plan-Datei geprüft: nur die Punkte 1/2/3/6 wurden je auf `[x]` gesetzt) |
 | 5 | Doku-Update `docs/user/benutzerhandbuch.md`, falls Betriebs-Aspekt entsteht | **erfüllt** | Abschnitt „Aufbewahrung (Retention)“ (Zeile 331ff.) selbst gelesen: Takt (10s) und Mindestalter (24h) stimmen mit `wiring.go`s Konstanten überein, Consumer-Abwesenheits-Lesart korrekt wiedergegeben; `cdc_admin`-Zeile der Rollen-Tabelle (Zeile 76) nennt „Retention-Löschausführung“ als neuen Verwaltungszugriff |
 | 6 | Closure-Notiz mit Steering-Loop-Lerneintrag | **offen — korrekt unbeansprucht** | Planner-Closure-Arbeit (Modul 8); §7 ist noch die Bedienhinweis-Vorlage. Kein Verifikations-Gegenstand dieser Prüfung |
 | 7 | Reconciliation-Register fortgeschrieben, falls einschlägig | **entfällt strukturell** | Kein `docs/plan/planning/reconciliation.md` — `harness/conventions.md` §Modus-Deklaration führt ausschließlich `*`/`PGC` im Modus Greenfield, kein Brownfield-Bootstrap |
@@ -54,8 +54,8 @@ rückwärts ohne Übergabe-Artefakt.
 - **Klasse:** Verifier-only — für Tests und Review unsichtbar, weil beide
   Rollen ihre eigene Arbeit erledigt haben; nur ein Blick auf den
   *Formular-Zustand nach* der vollständigen Review-Sequenz (Erstlauf +
-  Fixrunde) deckt die Lücke auf. Dieselbe Klasse wie `V-1` in
-  `verify-slice-043.md` — bereits ein zweites Auftreten in dieser Repo-
+  Fixrunde) deckt die Lücke auf. Dieselbe Klasse wie `V-1` im
+  Verifikationsbericht zu `slice-043` — bereits ein zweites Auftreten in dieser Repo-
   Historie (Steering-Loop-Signal: 1× notieren · 2× Symptom, noch keine
   Lücke).
 - **Befund:** DoD-Punkt 4 in `slice-044-retention-hintergrundjob.md:92`
@@ -90,7 +90,7 @@ rückwärts ohne Übergabe-Artefakt.
   inhaltliche Aussage) — kein Commit dieses Slice berührt die Datei.
 - **ADR-Index:** `docs/plan/adr/README.md` selbst geprüft — `ADR-0053`
   eingetragen, `ADR-0047`s Zeile trägt den `→ ADR-0053`-Zeiger.
-- **Architect-Verdikt (`architect-verdict-slice-044-rollen-grant.md`):**
+- **Architect-Verdikt (zu den Rollen-Grants in `slice-044`):**
   vollständig gelesen. Verdikt 2 (Folge-ADR) wird nachvollziehbar
   begründet und von Verdikt 1/3 sauber abgegrenzt (Verdikt 1 trägt nicht,
   weil `welle-13` §6 die Bedingung korrekt offen formuliert hatte, keine
@@ -120,8 +120,9 @@ Verletzung.
 
 - **Register (`state.md`):** selbst gelesen — Zustand *verkörpert*, Ausgang
   *verkörpert*, drei Belege ausgewiesen
-  (`evidence/review-slice-041.md`, `evidence/review-slice-041-fixrunde.md`,
-  `evidence/review-slice-044.md`) — `ls .../evidence/` bestätigt exakt
+  (dem Beleg zum Review-Report-Commit zu `slice-041`, dem Beleg zum
+  Review-Report-Commit zur Fixrunde von `slice-041`,
+  dem Beleg zum Review-Report-Commit zu `slice-044`) — `ls .../evidence/` bestätigt exakt
   diese drei Dateien, kein viertes oder fehlendes Element. Zielort
   benannt (`implement-slice.md` Schritt 20), Herkunfts-Anker (der
   Architect-Zug selbst, wellenlos) korrekt als eine der drei zulässigen

@@ -18,7 +18,7 @@ Aktivierungs-Zeilen. Keine DoD-Prüfung — das ist der Verifier (Modul 11).
 
 **Skill:** `.harness/skills/reviewer.md` (Stand 2026-09-09, vier repo-spezifische
 HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst: `docs/reviews/review-report.template.md`
-(Form wie `review-slice-007.md`).
+(Form wie das Review zu `slice-007`).
 
 **Modell:** Claude Code (glm-5.3-flash) · **Datum:** 2026-09-10
 
@@ -43,8 +43,8 @@ HIGH-Regeln, drei MEDIUM-Klassen) · Gerüst: `docs/reviews/review-report.templa
   `harness/conventions.md` (MR-000), Vorbestand `internal/adapters/driving/
   replication/receive/receive.go` (Bezeichner-Alphabet, Publication-Prüfung),
   `internal/adapters/driving/replication/mapper/mapper.go` (Binding-Semantik)
-- vorherige Reports `review-slice-005.md` (F-6/F-9/F-11-Klassen),
-  `review-slice-006.md` (F-3-Klasse), `review-slice-007.md`
+- vorherige Reviews zu `slice-005` (F-6/F-9/F-11-Klassen),
+  `slice-006` (F-3-Klasse), `slice-007`
   (F-1/F-2/F-4/F-6/F-7-Klassen-Zählstände)
 
 **Gate- und Probe-Läufe (am Range-Head `4d072c9`):** `make test` grün
@@ -64,8 +64,8 @@ Publication-Idempotenz) ist am Test-Bestand gelesen, nicht nachgefahren.
 - `kategorie`: MEDIUM
 - `quelle`: Slice-Plan §3 · Modul 5 („Wer später mitnimmt …, hat den Plan
   **geändert**, nicht nur ergänzt") · laufende Konflikt-Sequenz (Modul 8 — seit
-  review-slice-003 F-1; 6. Auftreten review-slice-006 F-3, 7. Auftreten
-  review-slice-007 F-1)
+  dem Review zu `slice-003` F-1; 6. Auftreten Review zu `slice-006` F-3, 7. Auftreten
+  Review zu `slice-007` F-1)
 - `pfad`: `docs/plan/planning/in-progress/slice-008-cdc-verwaltung-use-cases.md`
   §3 (drei Zeilen: `verwaltung.go`, `usecase/{enable,disable}/*.go`,
   `run-integration-tests.sh`) gegen die gelieferte Datei-Menge des Ranges
@@ -140,7 +140,7 @@ Publication-Idempotenz) ist am Test-Bestand gelesen, nicht nachgefahren.
   Register/Unregister/Publish/Unpublish/List/Missing-Table, die Use-Case-Tests
   nur die leeren Kennungen, der Integrationstest nur gültige Bezeichner
   (`grep` nach `ErrActivationConfiguration` in Tests: ohne Treffer). Dasselbe
-  Muster lief bereits zweimal LOW (review-slice-005 F-9, review-slice-007 F-6) —
+  Muster lief bereits zweimal LOW (Review zu `slice-005` F-9, Review zu `slice-007` F-6) —
   drittes Auftreten auf der MEDIUM-Stufe des Skills.
 - `verifizierbar`: ja — `go test` mit ungültigem Bezeichner gegen den Adapter
   (Klasse `configuration`, kein SQL-Aufruf)
@@ -212,8 +212,8 @@ Publication-Idempotenz) ist am Test-Bestand gelesen, nicht nachgefahren.
   folgt in späteren Wellen" — Ausschluss-Klasse 1 ohne `slice-<NNN>`-Kennung) ·
   §2 Zeile 66 (`StatusUseCase` gegen den [`ADR-0028`](../plan/adr/README.md)-Kanon `GetStatusUseCase`)
 - `befund`: Vier Plan-Form-Defekte, alle Planner-Sache, der Diff berührt den
-  Plan nicht. Die Dup-DoD-Klasse stand bereits (review-slice-005 F-11), der
-  Ausschluss-ohne-Adresse-Defekt ebenfalls (review-slice-007 F-7) — beide
+  Plan nicht. Die Dup-DoD-Klasse stand bereits (Review zu `slice-005` F-11), der
+  Ausschluss-ohne-Adresse-Defekt ebenfalls (Review zu `slice-007` F-7) — beide
   zählen hier ihr zweites Auftreten. Der Code folgt beim Use-Case-Namen
   korrekt dem ADR (der Plan-Text ist die Abweichung); `ListTablesUseCase`
   selbst ist F-5.
@@ -291,7 +291,7 @@ Publication-Idempotenz) ist am Test-Bestand gelesen, nicht nachgefahren.
   (Quell-Tabellen, Quelle-Zeile); die dreifache Kennungs-Fixtur aus slice-007
   reduziert sich auf zweifache (compose-ENV, Test-Konstanten) — die
   Bindungs-Zeilen entstehen an genau einer Stelle (Verdrahtung). Das tote
-  `PUBLICATION`-Fixtur-Element aus review-slice-007 F-4 ist mit dem Seed-SQL
+  `PUBLICATION`-Fixtur-Element aus dem Review zu `slice-007` F-4 ist mit dem Seed-SQL
   entfallen — Klasse erledigt. Kein Befund.
 - **`TestMVPActivationState` liest über Status-/Listen-Use-Cases statt SQL:**
   *Richtung richtig.* Der Test verdrahtet Adapter + Use Cases am
@@ -360,7 +360,7 @@ Adapter-Probe mit folgendem Capture-Lauf).
   mindestens eine `LH-*`-/`ADR-*`-Kennung, alle IDs lösen auf
   ([`LH-FA-CFG-001`](../../spec/lastenheft.md)…003, [`ADR-0028`](../plan/adr),
   0010, 0026, 0044); **keine Struktur-ID im Betreff** (Klasse bleibt beim
-  Stand von review-slice-007: kein weiteres Auftreten);
+  Stand des Reviews zu `slice-007`: kein weiteres Auftreten);
   `commit-traceability`-Standing-Gate läuft grün
 - geprüft, ohne Befund: **§3.3 mv/content-Trennung** — kein `git mv` im Range
   (Plan-Berührung fehlt, F-1); `296faee` liegt vor dem Range
@@ -371,9 +371,9 @@ Adapter-Probe mit folgendem Capture-Lauf).
   Rang-Zeiger; die eine Konjunktiv-Klausel ist F-7
 - geprüft, ohne Befund: **Datei-Abschluss-Zeilenumbrüche** — alle elf neu
   berührten Textdateien enden mit `\n` (`tail -c1`-Probe; die F-3-Klasse aus
-  review-slice-007 bleibt nach der `11d9472`-Reparatur ohne Wiederholung)
+  dem Review zu `slice-007` bleibt nach der `11d9472`-Reparatur ohne Wiederholung)
 - geprüft, ohne Befund: **totes Fixtur-Element** — die `PUBLICATION`-Variable
-  ist aus dem Runner entfernt (review-slice-007 F-4-Klasse erledigt); `SLOT`
+  ist aus dem Runner entfernt (F-4-Klasse aus dem Review zu `slice-007` erledigt); `SLOT`
   bleibt im Wächter genutzt
 - geprüft, ohne Befund: **Idempotenz-Semantik an Port und Adapter** —
   Register/Unregister/Publish/Unpublish je Boundary-Pfad, drei Entzugs-Ausgänge
@@ -411,7 +411,7 @@ Verbindungs-Pool-Grenze unbenannt · Schema-Version-Konvention nur im Kommentar
 **Sequenz-Beobachtung (Steering-Loop):** die Klasse „Plan-Erweiterung ohne
 Plan-Nachzug" steht hier beim **achten** Auftreten — die Konflikt-Sequenz
 (Modul 8, Pflicht ab dem dritten gleichen Konflikttyp) läuft seit
-review-slice-003 F-1 und hat ihren Übergang über den **Architect** noch nicht
+dem Review zu `slice-003` F-1 und hat ihren Übergang über den **Architect** noch nicht
 genommen. Dieser Lauf liefert das Übergabe-Artefakt (F-1 + F-8); bleibt der
 Nachzug beim nächsten Vorgang erneut ungetragen, ist die Sequenz über den
 Architect zu führen, nicht ein weiteres LOW/MEDIUM-Weiterzählen.

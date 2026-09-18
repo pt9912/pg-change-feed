@@ -2,7 +2,7 @@
 
 **Review-Art:** Code — geprüft gegen Plan (`slice-044`, §1/§2/§3/§4/§6/§8),
 `welle-13` (inkl. des nachgetragenen §6-Absatzes), den Architect-Verdikt
-`docs/reviews/architect-verdict-slice-044-rollen-grant.md`, `ADR-0053` und
+zu den Rollen-Grants in `slice-044`, `ADR-0053` und
 `ADR-0040`/`ADR-0047`/`ADR-0048` sowie `AGENTS.md` §3 Hard Rules (§3.1,
 §3.5, §3.7) — Rollentrennung Modul 8: diese Prüfung läuft gegen
 Plan/ADR/Hard Rules (Maintainability), nicht gegen DoD (Verifier-Aufgabe).
@@ -19,8 +19,8 @@ Disziplin angepasst`), `3a2f457` (`docs(adr): Architect-Verdikt slice-044
 Rollen-Grant — Folge-ADR-0053`) — neu: `internal/adapters/driven/
 systemclock/{systemclock,systemclock_test}.go`, `internal/bootstrap/
 retention_internal_test.go`, `docs/plan/adr/0053-retention-
-loeschausfuehrung-cdc-admin-delete-grant.md`, `docs/reviews/architect-
-verdict-slice-044-rollen-grant.md`, zwei Beobachtungs-Register-Dateien
+loeschausfuehrung-cdc-admin-delete-grant.md`, der Architect-Verdikt
+zu den Rollen-Grants in `slice-044`, zwei Beobachtungs-Register-Dateien
 (`BEO-PGC/architect-verdikt-rollen-scope-luecke/`); geändert:
 `internal/bootstrap/wiring.go`, `internal/bootstrap/roles_wiring_test.go`,
 `tools/schema/nacharbeit-roles.sql`, `tools/harness/run-integration-
@@ -40,7 +40,7 @@ hash.txt`.
   Trigger, §6 Risiken, §8)
 - `docs/plan/planning/welle-13.md` (vollständig, inkl. des nachgetragenen
   §6-Absatzes zum Rollen-Konflikt)
-- `docs/reviews/architect-verdict-slice-044-rollen-grant.md` (vollständig
+- der Architect-Verdikt zu den Rollen-Grants in `slice-044` (vollständig
   — Konflikt-Pfad-Verdikt, Modul 8)
 - `docs/plan/adr/0053-retention-loeschausfuehrung-cdc-admin-delete-
   grant.md` (vollständig — Kontext, Entscheidung, Verglichene
@@ -64,7 +64,7 @@ hash.txt`.
 - Vollständiger `git show` für `33e2d35`, `824e001`, `48a34a2`, `3a2f457`
   (alle Dateien, nicht nur die Implementer-Zusammenfassung); `fd28a61`,
   `5a4c71e`, `2a4ff05`, `d59f670` ergänzend gelesen
-- `docs/reviews/review-slice-043.md` (Format-Vorlage)
+- Review zu `slice-043` (Format-Vorlage)
 - `grep -rn "slice-0[0-9]"` über alle in diesem Diff neuen/geänderten
   `.go`-Dateien (vollständiger Durchlauf, nicht stichprobenartig)
 
@@ -86,8 +86,8 @@ hash.txt`.
   tests.sh` …". Der Kommentar nennt explizit die Slice-Kennung
   `slice-044` neben der ADR als Beleg-Quelle einer Aussage über den
   Code — dasselbe Muster, das in diesem Repo bereits zweimal HIGH
-  eingestuft wurde (`review-slice-041.md` F-1, bestätigt in
-  `review-slice-041-fixrunde.md`; beide als Evidence in
+  eingestuft wurde (Review zu `slice-041` F-1, bestätigt im
+  Review-Report zur Fixrunde von `slice-041`; beide als Evidence in
   `BEO-PGC/slice-chronik-in-code-kommentar/evidence/` geführt, Zähler vor
   diesem Lauf bei 2×). Ein Slice-Plan ist kein dauerhaftes Artefakt — er
   wandert bei Welle-Closure nach `done/` und kann später archiviert
@@ -228,8 +228,8 @@ Verhaltensänderung, und der Implementer hat in `d59f670` bereits gezeigt,
 dass er dieselbe Korrektur-Disziplin anwendet, sobald sie benannt ist.
 **Aber Closure-blockierend:** F-1 ist HIGH und muss vor `git mv` nach
 `done/` behoben sein (Kommentar auf Ist-Zustand + `ADR-0014`-Verweis
-umformulieren, `slice-044` streichen) — dieselbe Behandlung wie bei
-`review-slice-041.md` F-1. Zusätzlich: Da dies das **dritte** Auftreten
+umformulieren, `slice-044` streichen) — dieselbe Behandlung wie beim
+Review zu `slice-041` F-1. Zusätzlich: Da dies das **dritte** Auftreten
 ist, verlangt Modul 6 bei der Slice-Closure einen Ausgang für
 `BEO-PGC/slice-chronik-in-code-kommentar` (verkörpert/geplant/gestrichen)
 statt eines weiteren offenen Zählers — die Closure-Notiz sollte diesen

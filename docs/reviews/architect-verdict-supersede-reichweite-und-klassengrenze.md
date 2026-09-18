@@ -8,15 +8,15 @@ Schritt 2, ADR-Zweig; im wellenlosen Betrieb trägt ihn die Slice-Closure,
 Modul 6 §Was der wellenlose Betrieb selbst auslöst).
 
 **Beteiligte Rollen:** Verifier (hat die zwei Reviewer-Befunde unabhängig
-reproduziert, `docs/reviews/verify-slice-073.md` §7) · Reviewer (hat F-5,
-F-6, F-7 gemeldet, `docs/reviews/review-slice-073-fixrunde.md`) ·
+reproduziert, Verifikationsbericht zu `slice-073` §7) · Reviewer (hat F-5,
+F-6, F-7 gemeldet, Review-Report zur Fixrunde von `slice-073`) ·
 **Architect (dieser Zug, entscheidet)** · Implementer (Folgearbeit,
 siehe unten) · Planner (Closure: §7-Notiz, Register, §6-Risiko-Ausgänge,
 drei Paarungen). Verifier und Validator waren am Konflikt selbst **nicht**
 beteiligt; der Verifier-Beleg reist nur als Eingang mit.
 
-**Übergabe-Artefakt:** `docs/reviews/review-slice-073-fixrunde.md`
-(Commit `bac2bbc`) zusammen mit `docs/reviews/verify-slice-073.md`
+**Übergabe-Artefakt:** der Review-Report zur Fixrunde von `slice-073`
+(Commit `bac2bbc`) zusammen mit dem Verifikationsbericht zu `slice-073`
 (Commit `15d5ac1`).
 
 **Rolleninhaber dieses Zugs:** der unabhängige Architect-Lauf, der dieses
@@ -45,7 +45,7 @@ Begründung, mit einer Präzisierung:
   und das Standing-Gate weichen real auseinander". Das ist gemessen — vier
   Divergenz-Klassen (a), (b), (c) und die hier neu bestätigte vierte, alle in
   die **laxe** Richtung (Hook lässt durch, das Gate verwirft), belegt
-  `docs/reviews/verify-slice-073.md` §6 und F-7.
+  dem Verifikationsbericht zu `slice-073` §6 und F-7.
 - **Der Ausgang trägt.** Die vom Trigger verlangte Folge ist „Vereinheitlichung
   oder Rückbau des Hooks als Folge-ADR prüfen". Genau das ist `ADR-0069`: eine
   Accepted-Folge-ADR, die beide genannten Wege als Optionen ausweist und
@@ -95,7 +95,7 @@ nicht, sie benennt den einen Punkt, an dem die Sicherheits-Zusage brechen
 könnte, und markiert ihn als vorsichtig. Der Bestätigungslauf hat sie in drei
 Konstruktionen nicht erreicht gemacht und den Grund als **strukturell**
 beschrieben — aber selbst benannt als **kein Unmöglichkeitsbeweis**
-(`review-slice-073-fixrunde.md` F-6, `verify-slice-073.md` §6). Drei nicht
+(Review-Report zur Fixrunde von `slice-073` F-6, Verifikationsbericht zu `slice-073` §6). Drei nicht
 erreichte Konstruktionen plus Quelltext-Lesen tragen keine Streichung: die
 Kante auf dieser Grundlage zu entfernen wäre die **Überbehauptung**, gegen
 die `ADR-0069` gerade geschrieben ist. Die vorsichtige Benennung ist die
