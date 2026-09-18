@@ -86,13 +86,15 @@ matrix:
   # Status-basiert, ADR-0073/ADR-0095) — dieselbe Begruendung wie im
   # versions-Modul unten fuer denselben Pfad; die adr -> review-Regel
   # oben bleibt davon unberuehrt.
-  # docs/plan/planning/done/**: dieselbe Record-Einfrierung gilt fuer
-  # geschlossene Slice-/Wellen-Zeitdokumente (AGENTS.md §3.5 letzter
-  # Absatz: "Records (done/, docs/reviews/**) tragen keine §Geschichte")
-  # — eine Closure-Notiz erzaehlt reale Geschichte zum Laufzeitpunkt
-  # (z. B. welle-3-results.md nennt den ADR-0018-Verstoss, der ADR-0046
-  # ausloeste); sie waechst nicht rueckwirkend mit dem ADR-Stand mit.
-  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md", "docs/reviews/*.md", "docs/plan/planning/done/**"]
+  # welle-3-results.md: dieselbe Record-Einfrierung wie bei docs/reviews/*.md
+  # (AGENTS.md §3.5 letzter Absatz: "Records (done/, docs/reviews/**) tragen
+  # keine §Geschichte") — die Closure-Notiz nennt den ADR-0018-Verstoss, der
+  # ADR-0046 ausloeste, als reale Geschichte zum Laufzeitpunkt. Dateispezifisch
+  # wie die beiden ADR-Grandfather-Eintraege oben, NICHT als "docs/plan/
+  # planning/done/**"-Freibrief: jede andere done/-Datei bleibt voll geprueft
+  # — eine pauschale Ausnahme wuerde echte kuenftige Drift in genau den
+  # Dateien verstecken, die diese Regel eigentlich fangen soll.
+  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md", "docs/reviews/*.md", "docs/plan/planning/done/welle-3-results.md"]
 versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in
