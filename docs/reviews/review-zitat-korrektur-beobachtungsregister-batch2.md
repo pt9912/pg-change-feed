@@ -61,7 +61,7 @@ Beobachtungs-Register-Dateien umschreiben, (2) `.d-check.yml` um die
 `observation`-Matrixklasse/-Regel ergänzen, (3) `make gates` grün. Zum
 Zeitpunkt dieses Reviews trägt `.d-check.yml` **noch keine**
 `observation`-Klasse/-Regel (Stand geprüft: letzte Änderung an der Datei ist
-Commit `248b1fc`, vor `faccc97`/`af9e7af`). Schritt (2) der ADR-0097-Folgepflicht
+Commit `248b1fc`, vor `faccc97`/`af9e7af`). Schritt (2) der `ADR-0097`-Folgepflicht
 ist damit noch offen — das ist **kein** HIGH gegen diesen Commit (`af9e7af`
 selbst berührt `.d-check.yml` nicht und behauptet auch nicht, die Folgepflicht
 abzuschließen), aber ein Hinweis für die laufende Serie: Batch 1 und Batch 2
