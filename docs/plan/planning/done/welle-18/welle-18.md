@@ -1,4 +1,4 @@
-# welle-18 — 18: Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`ADR-0059`)
+# welle-18 — Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung, E2E-Beleg (`ADR-0059`)
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-18/archiv.zip docs/plan/planning/done/welle-18/welle-18.md`
