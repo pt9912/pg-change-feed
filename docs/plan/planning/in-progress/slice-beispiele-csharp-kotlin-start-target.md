@@ -92,13 +92,14 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Start-Mechanismus-Wechsel) — `make examples-csharp`/
       `make examples-kotlin` bleiben unverändert grün.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      [`review-slice-beispiele-csharp-kotlin-start-target.md`](../../../reviews/review-slice-beispiele-csharp-kotlin-start-target.md) —
+      0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update für die C#/Kotlin-Startform (öffentlicher Vertrag) — siehe
       LP3.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. *(Entwurf in §7 vorbereitet,
-      wird nach dem Review-Pass finalisiert.)*
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`, oder „keine Beobachtung
       angefallen" in §7.
@@ -178,13 +179,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-**Entwurf — wird nach dem unabhängigen Reviewer-Pass finalisiert (Modul 8,
-kein Self-Review).**
-
-**Gegenstand:** Implementierung abgeschlossen, wartet auf den unabhängigen
-Reviewer-Pass gegen
+**Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
-(Festlegung 2); der `git mv` nach `done/` folgt erst danach.
+(Festlegung 2) liegt vor
+([`review-slice-beispiele-csharp-kotlin-start-target.md`](../../../reviews/review-slice-beispiele-csharp-kotlin-start-target.md),
+0 HIGH, 0 MEDIUM, 0 LOW), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** `harness/mk/examples.mk` trägt zwei neue `.PHONY`-Ziele,
 `example-run-csharp` und `example-run-kotlin` — Pflicht-Argument `SURFACE=
