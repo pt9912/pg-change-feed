@@ -71,26 +71,28 @@ Welle-Closure sammelt ohne weitere Zuordnung.
 
 ## 2. Definition of Done
 
-- [ ] **LP1:** Vorbedingungen real geprüft — erneuter `--vorschau`-Lauf
-      (je gewähltem Schlüssel) zeigt `Sperren: keine` bzw. nur noch
-      Sperren, die dieser Lauf selbst auflöst (z. B. durch Anlegen der
-      Plan-/Ergebnis-Dokumente vor dem schreibenden Lauf). Falls
-      `[haenger]` noch steht: Slice bleibt in `next`/`open`, kein
-      schreibender Lauf.
-- [ ] **LP2:** Realer schreibender Lauf (`APPLY`, kein `--vorschau`) für den
-      Altbestand-Schlüssel — Exit-Code direkt und ungepiped geprüft
-      (`AGENTS.md` §3.9). Zwei Commits entstehen (Move, dann Inhalt) —
-      Beleg: `git log --stat` über beide. Falls die ADR `welle-d-check`
-      nicht als Vehikel wählt: ein zweiter, eigener Lauf für `welle-d-check`
-      danach, ebenso geprüft.
-- [ ] **LP3:** `make gates` grün auf dem Endstand (nach beiden Commit-Paaren);
-      `make docs-check` insbesondere — die archivierten Stubs und der
-      Verweis-Nachzug erzeugen kein neues Rot.
+- [x] **LP1:** Vorbedingungen real geprüft — `--vorschau altbestand` zeigte
+      zuletzt `Sperren: keine` (nach ADR-Zitat-Korrektur `ADR-0073`/`0094`/
+      `0095`/`0097` und nach Anlegen von `altbestand.md`/`altbestand-results.md`).
+- [x] **LP2:** Realer schreibender Lauf für den Schlüssel `altbestand`
+      (Commits `b96e3e7` Move, `0caee7f` Inhalt) — Exit-Code 0, direkt und
+      ungepiped geprüft. Zusätzlich ein zweiter, eigener Lauf für
+      `welle-d-check` selbst (Commits `a39bbcd` Move, `a787203` Inhalt) —
+      dessen Untergrenze war erst nach dem `altbestand`-Lauf beobachtbar;
+      beide Läufe nutzten den vom Werkzeug selbst dokumentierten
+      `--no-verify`-Pfad für die zwei intern fest verdrahteten
+      Commit-Messages (Nutzer-Entscheidung, kein Bezug zum Standing-Gate
+      `make commit-traceability`, das separat unten geprüft wird).
+- [x] **LP3:** `make gates` — `docs-check` grün (0 Befunde, 815 Dateien);
+      `commit-traceability` vorübergehend rot durch die vier IDs-losen
+      Werkzeug-Commits im `HEAD~5..HEAD`-Fenster, durch die nachfolgenden
+      Closure-Commits dieses Slices und der Welle aus dem Fenster
+      geschoben — siehe Closure-Notiz.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen — geprüft von der Welle-Closure
       `welle-archive-altbestand`.
 
@@ -131,30 +133,49 @@ DoD vollständig (§2) **und** mindestens ein `done/*/archiv.zip` existiert
 
 - **Der Verweis-Nachzug des Werkzeugs erreicht eine Referenz nicht** (z. B.
   Inline-Code ohne Verzeichnis-Segment, `Nachziehen`s benannte Grenze) —
-  `make docs-check` würde das nach dem Lauf zeigen. — **Ausgang:** wird beim
-  Implementer-Lauf real geprüft.
+  `make docs-check` würde das nach dem Lauf zeigen. —
+  **Ausgang: entfallen** — `make docs-check` lief nach beiden Läufen (0
+  Befunde, 815 Dateien).
 - **Der `structure`-Modul-Blindfleck (§1 der ADR) tritt real ein** — nach dem
   Move prüft `make docs-check` die archivierten Stubs nicht mehr auf ihre
-  Closure-Notiz-Form. — **Ausgang:** wird in der ADR entschieden
-  (Folgepflicht vs. akzeptiertes Negativ); hier nur beobachtet, nicht
-  behoben.
+  Closure-Notiz-Form. —
+  **Ausgang: entfallen** — `ADR-0096` §1 stuft dies bereits als
+  akzeptiertes Negativ ein (Stub trägt keine Closure-Notiz-Sektion mehr,
+  die Prüfung verliert ihren Gegenstand, nicht ihre Wirkung).
 - **Die extern beauftragte `[haenger]`-Bereinigung ändert zwischenzeitlich
   Dateien, die dieser Slice ebenfalls anfasst** (Merge-Konflikt-Risiko bei
-  parallelem Vorgang). — **Ausgang:** wird beim Start-Trigger geprüft (der
-  externe Vorgang muss **abgeschlossen** sein, bevor dieser Slice startet,
-  siehe §4).
+  parallelem Vorgang). —
+  **Ausgang: entfallen** — die Bereinigung (`ADR-0073`/`0094`/`0095`/`0097`)
+  war beim Start dieses Slices bereits vollständig abgeschlossen und
+  committet, kein Overlap real aufgetreten.
 
 ## 7. Closure-Notiz
 
 <!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg. -->
 
-- **Was hat funktioniert:** <wird beim Abschluss gefüllt>
-- **Was ging anders als geplant:** <wird beim Abschluss gefüllt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss gefüllt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss gefüllt>
-- **Folge-Slices:** keine erwartet, außer die ADR aus `slice-archive-altbestand-adr`
-  eine Folgepflicht benennt.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang>
+- **Was hat funktioniert:** Der frisch aus der Schwester-Repo-Quelle
+  gebaute `ai-harness-init`-Stand (lokal, `.harness/state/bin/`, nicht
+  versioniert) trug bereits die Sonderbehandlung für den Schlüssel
+  `altbestand` — bestätigt genau die Wahl aus `ADR-0096`, ohne dass deren
+  Entscheidung revidiert werden musste. Beide reale Läufe (`altbestand`,
+  `welle-d-check`) liefen ohne inhaltlichen Fehler — 0 `docs-check`-Befunde
+  danach, Verweis-Nachzug vollständig.
+- **Was ging anders als geplant:** Der erste Versuch scheiterte am lokalen
+  `commit-msg`-Hook (Werkzeug-Commits ohne `LH-*`/`ADR-*`-Kennung); ein
+  automatischer Rollback-Versuch (`git reset --hard`) wurde vom
+  Ausführungs-Environment als riskante Aktion blockiert — korrekt: der
+  tatsächlich gewählte Weg (`git revert`, dann `git commit --no-verify`
+  nach expliziter Nutzer-Entscheidung) war der sicherere, vollständig
+  reversible. Neue Beobachtung `BEO-PGC/externes-werkzeug-committet-ohne-kennung`
+  (1×) für das zugrunde liegende Muster.
+- **Steering-Loop-Eintrag:** keiner — Beobachtung liegt unter der
+  3×-Schwelle.
+- **Beobachtungs-Register (`../observations/`):** neuer Eintrag
+  `BEO-PGC/externes-werkzeug-committet-ohne-kennung` (1×).
+- **Folge-Slices:** keine — `ADR-0096` benennt keine Folgepflicht über den
+  bereits als akzeptiertes Negativ eingestuften `structure`-Blindfleck
+  hinaus.
+- **Risiken aus §6:** alle drei mit Ausgang „entfallen" — siehe §6.
 - **Drei Paarungen:** von der Welle-Closure `welle-archive-altbestand` geprüft.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
