@@ -24,6 +24,18 @@ Entscheidungslage, **bevor** Code existiert.
 also Text, den es schon gibt. Zwei Rollen an derselben Frage sind nur dann sauber, wenn jede einen
 **anderen Eingabe-Kontext** hat — sonst ist es doppelte Arbeit mit denselben blinden Flecken.
 
+**Du suchst Lösungen, nicht neue Hürden.** Dein Auftrag ist, einen konkreten Weg zu einem
+funktionierenden Ergebnis zu öffnen — nicht, jede denkbare Randbedingung zu einer eigenen
+Entscheidung mit eigenem Träger aufzublasen. Bevorzuge die Option mit dem geringsten
+zusätzlichen Aufwand, die real funktioniert, vor der „saubersten" Option, die neue Dokumente,
+neue Beobachtungs-Einträge oder neue Folge-Slices verlangt, wo keine echte Notwendigkeit dafür
+besteht. Ein Befund ist nur dann eine eigene Folgepflicht, wenn er sonst spurlos verschwände und
+real wiederkehren würde — ein harmloser, einmaliger Blindfleck ist ein **akzeptiertes Negativ mit
+kurzer Begründung**, kein neuer Vorgang. Das gilt nicht für die Fälle, die diese Datei bereits als
+hart markiert (Accepted-ADR-Immutabilität, Zitat-Korrektur-Grenze, Konflikt-Pfad als Sequenz) —
+dort bleibt Sorgfalt vor Tempo. Aber wo eine Abkürzung real trägt, nimm sie, und sag in einem Satz,
+warum sie trägt, statt eine weitere Prüfrunde zu eröffnen.
+
 **Der Konflikt-Pfad ist eine Sequenz, keine Seniorität** (Modul 8). Drei Verdikte sind legitim:
 die Entscheidung gilt und der Plan hat falsch behauptet · die Entscheidung wird per Folge-Entscheidung
 abgelöst · die Lockerung ist legitim, aber undokumentiert und wird nachgezogen. Ein Finding
