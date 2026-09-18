@@ -1,10 +1,11 @@
 // Command natsstreamsub ist ein Wegwerf-Testclient für den dritten,
 // vollinhaltstragenden NATS-Zustellweg (LH-FA-SST-008, ADR-0100): er belegt
-// zuerst, dass ein Verbindungsversuch mit einem falschen Token vom
-// NATS-Server bereits auf Verbindungsebene abgelehnt wird ("REJECTED",
-// ADR-0100 Teilfrage 4) — unabhängig vom Subjekt-Namensraum, weil Core NATS
-// den Token serverweit prüft. Danach verbindet er sich real mit dem
-// gültigen Token, abonniert das tabellen-granulare Subjekt
+// beide Ablehnungshälften von `ADR-0100` Teilfrage 4 — einen
+// Verbindungsversuch **ohne** Token ("REJECTED-NO-TOKEN") und einen mit
+// einem **falschen** Token ("REJECTED-WRONG-TOKEN") lehnt der NATS-Server
+// bereits auf Verbindungsebene ab, unabhängig vom Subjekt-Namensraum, weil
+// Core NATS den Token serverweit prüft. Danach verbindet er sich real mit
+// dem gültigen Token, abonniert das tabellen-granulare Subjekt
 // cdc.stream.<source_id>.<schema>.<table>, bevor die auslösende Change
 // entsteht ("READY"), und meldet den Empfang eines vollständigen
 // JSON-Change-Events ("RECEIVED") — dieselbe Zeilenform wie
@@ -53,11 +54,17 @@ func main() {
 	}
 	url, subject, token := os.Args[1], os.Args[2], os.Args[3]
 
-	if err := assertConnectRejectedWithWrongToken(url); err != nil {
-		fmt.Fprintf(os.Stderr, "natsstreamsub: %v\n", err)
+	if err := assertConnectRejected(url); err != nil {
+		fmt.Fprintf(os.Stderr, "natsstreamsub: Verbindung ohne Token: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("REJECTED")
+	fmt.Println("REJECTED-NO-TOKEN")
+
+	if err := assertConnectRejected(url, nats.Token(wrongToken)); err != nil {
+		fmt.Fprintf(os.Stderr, "natsstreamsub: Verbindung mit falschem Token: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("REJECTED-WRONG-TOKEN")
 
 	conn, err := nats.Connect(url, nats.Token(token))
 	if err != nil {
@@ -99,22 +106,24 @@ func main() {
 		change.ChangeID, change.Table, change.Operation, change.NewImage)
 }
 
-// assertConnectRejectedWithWrongToken versucht real eine NATS-Verbindung
-// mit einem falschen Token; der NATS-Server lehnt jede Verbindung ohne den
-// konfigurierten Token bereits auf Verbindungsebene ab (`ADR-0100`
+// assertConnectRejected versucht real eine NATS-Verbindung mit den
+// übergebenen Optionen und erwartet, dass der NATS-Server sie ablehnt. Mit
+// leerer Optionsliste trägt der Versuch **keinen** Token, mit
+// `nats.Token(wrongToken)` einen falschen; in beiden Fällen lehnt der
+// Server die Verbindung bereits auf Verbindungsebene ab (`ADR-0100`
 // Teilfrage 4), nicht erst beim Abonnieren eines Subjekts — die Ablehnung
 // ist deshalb unabhängig vom Subjekt-Namensraum testbar, real gegen den
-// laufenden Compose-NATS-Server geprüft (`docker run` mit einem falschen
-// Token gegen `--auth <test-token>`).
-func assertConnectRejectedWithWrongToken(url string) error {
-	conn, err := nats.Connect(url,
-		nats.Token(wrongToken),
+// laufenden Compose-NATS-Server geprüft (`docker run` gegen `--auth
+// <test-token>`).
+func assertConnectRejected(url string, opts ...nats.Option) error {
+	opts = append(opts,
 		nats.RetryOnFailedConnect(false),
 		nats.Timeout(5*time.Second),
 	)
+	conn, err := nats.Connect(url, opts...)
 	if err == nil {
 		conn.Close()
-		return fmt.Errorf("Verbindungsversuch mit falschem Token wurde vom NATS-Server akzeptiert")
+		return fmt.Errorf("Verbindungsversuch wurde vom NATS-Server akzeptiert")
 	}
 	return nil
 }

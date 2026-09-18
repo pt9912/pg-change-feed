@@ -202,14 +202,23 @@ func subjectFor(sourceID, schema, table string) string {
 }
 
 // publish veröffentlicht einen einzelnen Change als vollständiges
-// JSON-Event (`ADR-0100` Teilfrage 2/3): ein Schema-/Tabellenname mit
-// NATS-reserviertem Zeichen oder Whitespace, ein Kodierfehler oder ein
-// Publish-Fehlschlag bleiben lokal — kein Rückgabewert, kein propagierter
-// Fehler: derselbe Fire-and-Forget-Vertrag wie der `Broadcaster` selbst
-// (`ADR-0060` Teilfrage 3). Ein Publish-Fehlschlag erreicht weder den
+// JSON-Event (`ADR-0100` Teilfrage 2/3): ein leerer Schema-/Tabellenname,
+// ein Name mit NATS-reserviertem Zeichen oder Whitespace, ein Kodierfehler
+// oder ein Publish-Fehlschlag bleiben lokal — kein Rückgabewert, kein
+// propagierter Fehler: derselbe Fire-and-Forget-Vertrag wie der
+// `Broadcaster` selbst (`ADR-0060` Teilfrage 3). Die Leerwert- und
+// Zeichen-Grenze entspricht `natsnotify.Notify` (`ADR-0056` Folgepflicht):
+// ohne die Leerwert-Prüfung entstünde aus einem leeren Relationsnamen ein
+// verkürztes Subjekt (`cdc.stream.<source>.<schema>.`), das still
+// publiziert würde. Ein Publish-Fehlschlag erreicht weder den
 // `CaptureService` noch den kritischen Erfassungspfad — der Aufrufer liest
 // ausschließlich aus dem bereits isolierten Broadcaster-Kanal.
 func (p *Publisher) publish(ctx context.Context, change *model.Change) {
+	if change.Schema == "" || change.Table == "" {
+		p.log.Warn(ctx, "natsstream: Schema oder Tabelle leer — Publish übersprungen",
+			"schema", change.Schema, "table", change.Table)
+		return
+	}
 	if containsReservedSubjectToken(change.Schema) || containsReservedSubjectToken(change.Table) {
 		p.log.Warn(ctx, "natsstream: Schema/Tabelle trägt ein NATS-reserviertes Zeichen (.,*,>) oder Whitespace — Publish übersprungen",
 			"schema", change.Schema, "table", change.Table)

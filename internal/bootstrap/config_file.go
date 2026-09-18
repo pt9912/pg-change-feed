@@ -56,7 +56,7 @@ type fileTableBinding struct {
 
 // fileConfig trägt die in der Konfigurationsdatei zulässigen Felder
 // (`ADR-0088` Festlegung 2): nur die nicht credential-tragenden Felder.
-// Die DSNs, die zwei Token-Schlüssel und `nats_url` bleiben
+// Die DSNs, die drei Token-Schlüssel und `nats_url` bleiben
 // env-var-exklusiv und haben hier bewusst kein Gegenstück — ein Treffer auf
 // einen dieser Schlüssel wird vor dem Decoding in diesen Typ abgefangen
 // (`forbiddenFileCredentialKeys`).
@@ -161,7 +161,8 @@ func overrideString(fileValue, envValue string) string {
 // Vorbedingung danach — dieselben sechs Pflichtfelder wie `ConfigFromEnv`,
 // hier über beide Quellen hinweg geprüft. Die zugangsdaten-tragenden
 // Schlüssel bleiben env-var-exklusiv (`ADR-0088` Festlegung 1): die drei
-// DSNs, die zwei Token-Klassen und `NatsURL` haben kein Datei-Gegenstück
+// DSNs, die drei Token-Klassen (`APITokenReader`/`APITokenAdmin`/
+// `NatsStreamToken`) und `NatsURL` haben kein Datei-Gegenstück
 // und werden auf beiden Pfaden direkt aus der Umgebung gelesen
 // (`ADR-0088` Festlegung 3) — „kein Datei-Feld" heißt nicht „die
 // Umgebungsvariable wird ignoriert". `HTTPAddr`/`GRPCAddr` tragen ein

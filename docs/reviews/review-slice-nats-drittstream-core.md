@@ -89,7 +89,7 @@ durchgeführt" ist **nicht** nachgezogen, der Slice bleibt in `in-progress/`.
 - **befund:** Die Meldung nennt als „zusätzlichen Fund" nur `ADR-0091` und
   verweist für den Wächter auf `ADR-0089`. `ADR-0089` ist durch
   [**`ADR-0092`**](../plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)
-  (Accepted, „Supersedes ADR-0089") ersetzt; der heute tragende Träger ist
+  (Accepted, „Supersedes [`ADR-0089`](../plan/adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md)") ersetzt; der heute tragende Träger ist
   `ADR-0092`, und er sagt in seiner aktiven Fitness-Function-Zeile genau die
   jetzt falsche Sechs. Dieselbe Zahl steht bei `ADR-0092:165` und `:80`.
   `ADR-0091` führt zusätzlich eine zweite veraltete Zeile (:201; der Test

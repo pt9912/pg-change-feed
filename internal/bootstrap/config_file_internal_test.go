@@ -50,7 +50,7 @@ func TestConfigFromFileStriktesDecoding(t *testing.T) {
 }
 
 // TestConfigFromFileLehntZugangsdatenAb trägt `ADR-0088` Festlegung 1/4 —
-// die zugangsdaten-tragende Klasse: jeder ihrer sechs Schlüssel in der Datei
+// die zugangsdaten-tragende Klasse: jeder ihrer sieben Schlüssel in der Datei
 // bricht das Laden ab, unabhängig vom strikten Decoding. Die Fehlerzeile
 // benennt den Schlüssel **und** den Grund; damit ist sie von der
 // generischen „unbekannter Schlüssel"-Meldung des strikten Decodings

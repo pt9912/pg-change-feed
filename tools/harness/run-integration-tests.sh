@@ -2366,14 +2366,15 @@ fi
 
 echo "run-integration-tests: SSE-Stream-Rundlauf (LH-FA-SST-008, ADR-0061) belegt — ein Wegwerf-Client (tools/harness/sseclient) öffnete real per HTTP den SSE-Stream GET /changes/stream gegen den laufenden Feed-Container ($HTTP_BASE_URL) und empfing eine danach committete Änderung (Tabelle, Operation und Spaltenwert real am Stream; die Feldvollständigkeit trägt sse_test.go auf Unit-Ebene), deren change_id ($sse_change_id) unabhängig über cdc.changes lesbar ist; ein Stream-Öffnungsversuch ohne gültiges Token wurde mit HTTP-Status 401 abgelehnt: $sse_client_output"
 
-abdeckung_declare "NATS-Vollinhalts-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client verbindet sich real über NATS mit gültigem Token, abonniert cdc.stream.<...> und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt; das bestehende Wecksignal (natssub) funktioniert mit demselben Test-Token unverändert weiter" "NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt"
+abdeckung_declare "NATS-Vollinhalts-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client verbindet sich real über NATS mit gültigem Token, abonniert cdc.stream.<...> und empfängt eine danach committete Änderung als vollständiges JSON-Event; ein Verbindungsversuch ohne und einer mit falschem Token werden vom NATS-Server abgelehnt; das bestehende Wecksignal (natssub) funktioniert mit demselben Test-Token unverändert weiter" "NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt"
 
 # NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100): ein
 # Wegwerf-Client (tools/harness/natsstreamsub, per `go run` im
-# Toolchain-Container) belegt zuerst, dass ein Verbindungsversuch mit einem
-# falschen Token vom NATS-Server bereits auf Verbindungsebene abgelehnt
-# wird ("REJECTED", ADR-0100 Teilfrage 4) — compose.yaml betreibt den
-# nats-Service seit dieser ADR mit `--auth $NATS_STREAM_TOKEN` (serverweit,
+# Toolchain-Container) belegt beide Ablehnungshälften — ein
+# Verbindungsversuch ohne Token ("REJECTED-NO-TOKEN") und einer mit einem
+# falschen Token ("REJECTED-WRONG-TOKEN") werden vom NATS-Server bereits auf
+# Verbindungsebene abgelehnt (ADR-0100 Teilfrage 4) — compose.yaml betreibt
+# den nats-Service seit dieser ADR mit `--auth $NATS_STREAM_TOKEN` (serverweit,
 # bewusst benannter Nebeneffekt, ADR-0100 §Konsequenzen). Danach verbindet
 # er sich real mit dem gültigen Token, abonniert das tabellen-granulare
 # Subjekt cdc.stream.src-e2e.public.feed_e2e_full, bevor die auslösende
@@ -2386,8 +2387,9 @@ abdeckung_declare "NATS-Vollinhalts-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwer
 # bestehende Wecksignal (natssub, oben bereits real gegen denselben Token
 # geführt) unverändert funktioniert — dieselbe Verbindung, zwei Fähigkeiten
 # (ADR-0100 Teilfrage 5). `feed_e2e_full` bleibt über den ganzen Lauf
-# aktiviert (siehe Lasttest-Beleg oben); die IDs 280ff. liegen in einem
-# eigenen Wertebereich. Läuft vor dem Upgrade-Sicherheits-Container-Tausch
+# aktiviert (siehe Lasttest-Beleg oben); die Retry-IDs 301–305 belegt keine
+# andere Phase derselben Tabelle (261–265 gRPC, 271–275 SSE, 285 der
+# HTTP-Lese-Beleg). Läuft vor dem Upgrade-Sicherheits-Container-Tausch
 # (der den Feed-Container ersetzt) und vor der Container-Ende-Grenze der
 # beiden Schema-Negative-Testfunktionen unten.
 NATS_STREAM_CLIENT_CONTAINER=cdc-e2e-natsstreamsub
@@ -2420,11 +2422,21 @@ if [ "$nats_stream_client_ready" -ne 1 ]; then
   exit 1
 fi
 
-nats_stream_client_rejected=0
-if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED"; then
-  nats_stream_client_rejected=1
+nats_stream_client_rejected_no_token=0
+if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-NO-TOKEN"; then
+  nats_stream_client_rejected_no_token=1
 fi
-if [ "$nats_stream_client_rejected" -ne 1 ]; then
+if [ "$nats_stream_client_rejected_no_token" -ne 1 ]; then
+  echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch ohne Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
+  docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  exit 1
+fi
+
+nats_stream_client_rejected_wrong_token=0
+if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-WRONG-TOKEN"; then
+  nats_stream_client_rejected_wrong_token=1
+fi
+if [ "$nats_stream_client_rejected_wrong_token" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch mit falschem Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
   docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
@@ -2434,11 +2446,11 @@ fi
 # dieselbe Broadcaster-Grenze wie bei gRPC/SSE oben): zwischen „Client hat
 # abonniert" und „Publisher hat den Empfänger am Broadcaster registriert"
 # liegt ein kurzes Fenster. Der Rundlauf committet deshalb eine begrenzte
-# Folge eindeutiger Zeilen, bis der Client genau eine davon real empfangen
-# hat.
+# Folge von Zeilen mit IDs aus dem sonst unbelegten Bereich 301–305 (siehe
+# Kommentar oben), bis der Client genau eine davon real empfangen hat.
 nats_stream_received=0
 for nats_stream_attempt in $(seq 1 5); do
-  nats_stream_id=$((280 + nats_stream_attempt))
+  nats_stream_id=$((300 + nats_stream_attempt))
   docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
 INSERT INTO public.$NATS_STREAM_TABLE (id, name) VALUES ($nats_stream_id, '$NATS_STREAM_SENTINEL');
 SQL
@@ -2491,7 +2503,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt — ein Wegwerf-Client (tools/harness/natsstreamsub) verband sich real mit gültigem Token über NATS, empfing eine danach committete Änderung als vollständiges JSON-Event über $NATS_STREAM_SUBJECT (Tabelle, Operation und Spaltenwert real am Event; die Feldvollständigkeit trägt publisher_test.go auf Unit-Ebene), deren change_id ($nats_stream_change_id) unabhängig über cdc.changes lesbar ist; ein Verbindungsversuch mit falschem Token wurde vom NATS-Server abgelehnt, und das bestehende Wecksignal (natssub) funktionierte mit demselben Test-Token unverändert weiter (siehe NATS-Happy-Path-/Negative-Belege oben): $nats_stream_client_output"
+echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt — ein Wegwerf-Client (tools/harness/natsstreamsub) verband sich real mit gültigem Token über NATS, empfing eine danach committete Änderung als vollständiges JSON-Event über $NATS_STREAM_SUBJECT (Tabelle, Operation und Spaltenwert real am Event; die Feldvollständigkeit trägt publisher_test.go auf Unit-Ebene), deren change_id ($nats_stream_change_id) unabhängig über cdc.changes lesbar ist; Verbindungsversuche ohne und mit falschem Token wurden vom NATS-Server abgelehnt, und das bestehende Wecksignal (natssub) funktionierte mit demselben Test-Token unverändert weiter (siehe NATS-Happy-Path-/Negative-Belege oben): $nats_stream_client_output"
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar, danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 

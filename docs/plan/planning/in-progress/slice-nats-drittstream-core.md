@@ -182,9 +182,27 @@ dasteht.
   Wecksignal): dessen `CDC_NATS_URL` in `examples/.env` braucht dann
   denselben Token eingebettet (`nats://<token>@host:4222` oder gleichwertig),
   sonst bricht die bereits ausgelieferte Wecksignal-Demo. —
-  **Ausgang:** <bei Closure ausfüllen; erwartet: verkörpert im selben
-  Handbuch-Absatz wie die Aktivierung, `examples/.env` real gegen beide
-  Demo-Clients (Wecksignal und Stream) geprüft, vom Review bestätigt>.
+  **Ausgang:** weiter offen bis Closure — die Wecksignal-Hälfte ist real
+  eingelöst, die Stream-Hälfte nicht. Real belegt am 2026-09-18 mit
+  `make example-demo-up` (Exit 0) gegen die Demo-Umgebung aus
+  `examples/compose.yaml`: `make example-run-csharp SURFACE=nats
+  ARGS="--source demo-source --schema public --table orders"` und
+  `make example-run-kotlin SURFACE=nats ARGS="…"` verbanden sich beide über
+  die URL-eingebettete Kennung (`nats://demo-nats-stream-token@nats:4222`,
+  Server-Auth `--auth demo-nats-stream-token`), meldeten „lauscht auf
+  `cdc.changes.demo-source.public.orders`" und holten nach einer real
+  eingefügten Zeile in `public.orders` das Wecksignal und die Änderung
+  über `GET /changes` (C#-Lauf: Exit 0, `change_id 811-1`; Kotlin-Lauf:
+  Exit 0, `change_id 821-1`); `make example-demo-down` (Exit 0) räumte
+  Container und Netzwerk ab. Gelaufen sind die beiden `runtime-nats`-Images
+  aus dem aktuellen Baum (neu gebaut aus `examples/csharp/Dockerfile` bzw.
+  `examples/kotlin/Dockerfile` mit `--build-context proto=proto`; der
+  C#-Bau ergab denselben Image-Digest wie das vorhandene Tag, der
+  Kotlin-Bau einen neuen — das zuvor vorhandene Kotlin-Tag war älter als
+  der letzte Client-Commit). Offen bleibt die im Erwartungssatz
+  mitgenannte **Stream**-Client-Hälfte: einen `nats-stream-client` gibt es
+  heute nicht, er gehört zu `slice-nats-drittstream-example-*`. Die
+  Handbuch-Hälfte liegt im selben §5-Absatz wie die Aktivierung.
 - **`compose.yaml`-NATS-Server-Image ohne praktikablen Auth-Mechanismus:**
   siehe §4 Rückführung „`in-progress` → `open`". —
   **Ausgang:** <bei Closure ausfüllen>.
@@ -200,13 +218,42 @@ dasteht.
   Lauf braucht Docker/DB-Zugang, den nicht jeder Ausführungskontext hat).
 - **`AGENTS.md` §3.13-Suchlauf (bewegte Eigenschaft: Feldmenge der
   zugangsdaten-tragenden Klasse, `SPEC-016`/Handbuch §5.2/Code-Prüfung —
-  „von Hand nachzuzählen", `ADR-0089`):** `grep` über `spec/`, `docs/user/`
-  und `docs/plan/adr/` nach `nats_url`/„sechs Schlüssel"/„zwei
-  Token-Schlüssel" fand alle drei lebenden Träger (`spec/pflichtenheft.md`
-  `§SPEC-016`, `docs/user/benutzerhandbuch.md` §5, `internal/bootstrap/config_file.go`
-  `forbiddenFileCredentialKeys`) — alle drei in diesem Diff auf
-  `nats_stream_token` nachgezogen und von Hand gegeneinander gezählt
-  (jetzt sieben Schlüssel: drei DSN, drei Token, `nats_url`). Zusätzlicher
+  „von Hand nachzuzählen", `ADR-0089`):** Der Suchlauf dieses Slice lief
+  als `grep` über `spec/`, `docs/user/` und `docs/plan/adr/` nach
+  `nats_url`/„sechs Schlüssel"/„zwei Token-Schlüssel" und fand in diesen
+  Wurzeln **zwei** lebende Träger — `spec/pflichtenheft.md` `§SPEC-016` und
+  `docs/user/benutzerhandbuch.md` §5, beide in diesem Diff auf
+  `nats_stream_token` nachgezogen und von Hand gegeneinander gezählt (jetzt
+  sieben Schlüssel: drei DSN, drei Token, `nats_url`). **Die dritte lebende
+  Stelle — `internal/bootstrap/config_file.go` — lag außerhalb dieser
+  Wurzeln und wurde deshalb übersehen:** `forbiddenFileCredentialKeys`
+  trägt sieben Einträge, aber der `fileConfig`-Kommentar 15 Zeilen darunter
+  blieb auf „die zwei Token-Schlüssel" stehen, während der Kommentar über
+  der Liste bereits „drei Token-Schlüssel" sagt (Review-Befund F-2). Die
+  Fixrunde hat den Suchlauf über `internal/` nachgeholt; er fand an
+  derselben bewegten Eigenschaft zusätzlich den `mergeConfig`-Kommentar
+  („die zwei Token-Klassen", `config_file.go`) und den Kommentar von
+  `TestConfigFromFileLehntZugangsdatenAb` („jeder ihrer sechs Schlüssel",
+  während die Liste sieben iteriert, `config_file_internal_test.go`) — beide
+  nachgezogen. **Nicht** gefunden hat der nachgeholte Lauf weitere lebende
+  Träger der Klasse: die „beiden Token-Klassen" in
+  `internal/bootstrap/wiring.go`, den beiden Server-Adaptern und
+  `docs/user/benutzerhandbuch.md` §4 meinen die zwei API-Klassen, nicht die
+  Zugangsdaten-Klasse der Konfigurationsdatei, und bleiben unverändert
+  richtig; die datierten Zeilen in den Historie-Tabellen von
+  `spec/pflichtenheft.md` und `docs/user/benutzerhandbuch.md` beschreiben
+  ihren jeweiligen Änderungsstand. Dieselbe Fixrunde hat zwei weitere
+  bewegte Eigenschaften desselben Slice-Suchlaufs geprüft: die
+  Retry-ID-Spanne des neuen Rundlaufs (`run-integration-tests.sh`,
+  280–285 → 301–305) — Träger gefunden: die zwei Kommentare im Skript
+  selbst, korrigiert; **nicht** gefunden: weitere Träger, nur der
+  Review-Report nennt als Protokoll die alte `id=285` — und die
+  Ablehnungs-Zeilenform des Belegträgers (`REJECTED` →
+  `REJECTED-NO-TOKEN`/`REJECTED-WRONG-TOKEN`) — Träger gefunden: der Runner,
+  das neue `harness/README.md`-Segment und das vom Lauf regenerierte
+  `docs/user/e2e-abdeckung.md`, alle nachgezogen; **nicht** gefunden:
+  weitere Nennungen der Zeichenkette außerhalb der `done/`-Protokolle.
+  Zusätzlicher
   Fund, **nicht** still nachgezogen: [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md)
   ist `Accepted` und nennt „sechs Schlüssel" im Titel und in ihrer
   §Entscheidung als abschließende Aufzählung derselben Klasse — durch

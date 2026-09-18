@@ -218,24 +218,42 @@ func TestRunSkipsNilChange(t *testing.T) {
 	}
 }
 
-// TestPublishSkipsReservedSubjectToken trägt dieselbe defensive Validierung
-// wie `natsnotify` (`ADR-0056` Folgepflicht): ein Schema/Tabellenname mit
-// NATS-reserviertem Zeichen wird ohne Publish-Versuch übersprungen und
-// protokolliert, statt das Subjekt unbeabsichtigt aufzuspalten.
-func TestPublishSkipsReservedSubjectToken(t *testing.T) {
-	log := &recordingLog{}
-	sub := newFakeSubscriber()
-	p, err := New(newDisconnectedConn(t), sub, "src-1", WithLog(log))
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-	change := testChange(t)
-	change.Table = "tbl.name"
+// TestPublishSkipsUnusableSubjectName trägt dieselbe defensive Validierung
+// wie `natsnotify` (`ADR-0056` Folgepflicht): ein Schema-/Tabellenname mit
+// NATS-reserviertem Zeichen **oder** ein leerer Name wird ohne
+// Publish-Versuch übersprungen und protokolliert, statt ein aufgespaltenes
+// beziehungsweise verkürztes Subjekt zu publizieren.
+//
+// Rot färbende Mutation: die Leerwert-Prüfung in `publish` streichen — die
+// beiden Leerwert-Fälle färben rot, weil dann ein verkürztes Subjekt
+// publiziert würde.
+func TestPublishSkipsUnusableSubjectName(t *testing.T) {
+	for _, testcase := range []struct {
+		name        string
+		schema      string
+		table       string
+		wantWarning string
+	}{
+		{name: "reserviertes Zeichen in der Tabelle", schema: "public", table: "tbl.name", wantWarning: "reserviertes Zeichen"},
+		{name: "leere Tabelle", schema: "public", table: "", wantWarning: "leer"},
+		{name: "leeres Schema", schema: "", table: "orders", wantWarning: "leer"},
+	} {
+		t.Run(testcase.name, func(t *testing.T) {
+			log := &recordingLog{}
+			p, err := New(newDisconnectedConn(t), newFakeSubscriber(), "src-1", WithLog(log))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+			change := testChange(t)
+			change.Schema = testcase.schema
+			change.Table = testcase.table
 
-	p.publish(context.Background(), change)
+			p.publish(context.Background(), change)
 
-	if len(log.warns) != 1 || !strings.Contains(log.warns[0], "reserviertes Zeichen") {
-		t.Fatalf("Warn-Aufzeichnung: %q (Erwartung: Hinweis auf reserviertes Zeichen)", log.warns)
+			if len(log.warns) != 1 || !strings.Contains(log.warns[0], testcase.wantWarning) {
+				t.Fatalf("Warn-Aufzeichnung: %q (Erwartung: Hinweis auf %q)", log.warns, testcase.wantWarning)
+			}
+		})
 	}
 }
 
