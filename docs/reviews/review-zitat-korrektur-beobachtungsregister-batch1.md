@@ -1,11 +1,9 @@
 # Review-Report: Zitat-Korrektur Beobachtungsregister Batch 1 (`faccc97`) — 2026-09-18
 
-**Review-Art:** Code — geprüft gegen `ADR-0073` (Zitat-Korrektur an
-immutablen Dokumenten), `ADR-0094`/`ADR-0097` (Kontext der
-Batch-Aufteilung), `AGENTS.md` §3.5.
+**Review-Art:** Code — geprüft gegen [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) (Zitat-Korrektur an immutablen Dokumenten), `ADR-0094`/[`ADR-0097`](../plan/adr/0097-observation-matrixklasse-review-verboten.md) (Kontext der Batch-Aufteilung), `AGENTS.md` §3.5.
 
 **Gegenstand:** Commit `faccc97` — "docs(observations): Zitat-Korrektur
-Review-/Verify-/Verdikt-Adressen (ADR-0073)", 42 Beobachtungsregister-Dateien
+Review-/Verify-/Verdikt-Adressen ([`ADR-0073`](../plan/adr))", 42 Beobachtungsregister-Dateien
 unter `docs/plan/planning/observations/BEO-PGC/*`.
 
 **Skill:** `.harness/skills/reviewer.md` @ Arbeitsbaum-Stand 2026-09-18
@@ -13,8 +11,8 @@ unter `docs/plan/planning/observations/BEO-PGC/*`.
 
 **Eingangs-Kontext:**
 
-- `ADR-0073` (Zitat-Korrektur-Erlaubnis und ihre Grenze)
-- `ADR-0094`, `ADR-0097` (Kontext: warum 42 von insgesamt mehr Dateien in
+- [`ADR-0073`](../plan/adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) (Zitat-Korrektur-Erlaubnis und ihre Grenze)
+- `ADR-0094`, [`ADR-0097`](../plan/adr/0097-observation-matrixklasse-review-verboten.md) (Kontext: warum 42 von insgesamt mehr Dateien in
   diesem Batch laufen)
 - `AGENTS.md` §3.5 (ADR-Immutabilität, Zitat-Korrektur-Ausnahme)
 - Commit `faccc97` selbst (Diff, Commit-Message)
@@ -33,11 +31,11 @@ unter `docs/plan/planning/observations/BEO-PGC/*`.
   Review-Report zu slice-041 abschloss (Reviewer-Lauf zu slice-041)".
   Git-Historie zeigt zwei Commits für diese Datei (`f98b0b3` erstellt sie,
   `4e4c7bb` — der im nachfolgenden "Fund"-Absatz beschriebene
-  SPEC-016-Verstoß — ergänzt nur Links). "der Commit, der … abschloss" ist
+  [SPEC-016](../../spec/pflichtenheft.md)-Verstoß — ergänzt nur Links). "der Commit, der … abschloss" ist
   dadurch nicht eindeutig demselben Commit zuordenbar, der im Fund-Absatz
   als Verstoß genannt wird — der ursprüngliche Dateipfad war als Referenz
   eindeutiger, auch wenn er als Adresse jetzt unerwünscht ist. Der Referent
-  selbst (die Tatsache, dass `4e4c7bb` der SPEC-016-Verstoß ist) bleibt in
+  selbst (die Tatsache, dass `4e4c7bb` der [SPEC-016](../../spec/pflichtenheft.md)-Verstoß ist) bleibt in
   "Fund" unverändert korrekt.
 - `verifizierbar`: nein — reine Lese-/Interpretationsfrage, kein Gate prüft
   Referenz-Eindeutigkeit in Prosa.
@@ -90,12 +88,12 @@ Beobachtungsregister-Dateien zwei weitere Änderungen, die nicht zur
 "Zitat-Korrektur"-Aufgabe gehören: eine neue Datei
 `docs/plan/adr/0097-observation-matrixklasse-review-verboten.md` und eine
 Index-Zeile in `docs/plan/adr/README.md`. Der unmittelbar folgende Commit
-`bc49fab` ("ADR-0097-Index-Zeile und Datei aus letztem Commit entfernt")
+`bc49fab` ("[`ADR-0097`](../plan/adr)-Index-Zeile und Datei aus letztem Commit entfernt")
 nimmt beides zurück mit der Begründung: "Der vorige Commit hat versehentlich
 zwei nicht zu diesem Auftrag gehoerende, parallel in Arbeit befindliche
 Aenderungen mitgenommen … stammen aus einem parallelen Bearbeitungsschritt".
-Ein weiterer Commit `a9508b3` fügt ADR-0097 danach sauber isoliert wieder
-ein. Der aktuelle Arbeitsbaum ist dadurch unauffällig (ADR-0097 korrekt
+Ein weiterer Commit `a9508b3` fügt [`ADR-0097`](../plan/adr/0097-observation-matrixklasse-review-verboten.md) danach sauber isoliert wieder
+ein. Der aktuelle Arbeitsbaum ist dadurch unauffällig ([`ADR-0097`](../plan/adr/0097-observation-matrixklasse-review-verboten.md) korrekt
 vorhanden, keine Doppelung) — dies ist **kein** Befund am geprüften Commit
 selbst mehr, sondern die reale Bestätigung des Risikos, vor dem die
 Aufgabenstellung dieses Reviews warnt (`git add -A` in einem parallel
