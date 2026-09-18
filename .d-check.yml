@@ -37,11 +37,14 @@ matrix:
     - name: review
       paths: ["docs/reviews/*.md"]
       token: 'docs/reviews/[\w.-]+\.md'
+    - name: observation
+      paths: ["docs/plan/planning/observations/**/*.md"]
   rules:
     - {from: spec, to: adr, allow: false}
     - {from: spec, to: slice, allow: false}
     - {from: adr, to: slice, allow: false}
     - {from: adr, to: review, allow: false}
+    - {from: observation, to: review, allow: false}
   status:
     forbidden: [superseded, deprecated]
     # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel
