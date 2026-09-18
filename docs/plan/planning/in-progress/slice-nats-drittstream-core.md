@@ -258,7 +258,11 @@ dasteht.
   Zusätzlicher
   Fund, **nicht** still nachgezogen — und in der Meldung zunächst
   unvollständig benannt: `Accepted` und mit der alten Zahl belastet sind
-  **zwei** Dokumente.
+  **vier** Dokumente —
+  [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md),
+  [`ADR-0089`](../../adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md),
+  [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md) und
+  [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md).
   [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md)
   nennt „sechs Schlüssel" im Titel und in ihrer §Entscheidung als
   abschließende Aufzählung derselben Klasse — durch diesen Slice auf sieben
@@ -272,16 +276,23 @@ dasteht.
   In-place-Korrektur einer `Accepted`-ADR aus; eine Supersedes-ADR ist ein
   Architect-Zug, außerhalb der Implementer-Rolle dieses Slice (`AGENTS.md`
   §3.13: „ein Träger, der eine fremde Datei betrifft, wird gemeldet statt
-  still mitgeändert"). — **Ausgang:** eingetreten und mit dem Architect-Zug
-  [`ADR-0101`](../../adr/0101-zugangsdaten-klasse-sieben-schluessel.md)
-  eingelöst: er supersedet die Zahl-Aussagen der
-  [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md), der
+  still mitgeändert"). — **Ausgang:** eingetreten und mit den Architect-Zügen
+  [`ADR-0101`](../../adr/0101-zugangsdaten-klasse-sieben-schluessel.md) und
+  [`ADR-0102`](../../adr/0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md)
+  eingelöst: [`ADR-0101`](../../adr/0101-zugangsdaten-klasse-sieben-schluessel.md)
+  supersedet die Zahl-Aussagen der
+  [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md),
+  [`ADR-0091`](../../adr/0091-zugangsdaten-klasse-sechs-schluessel.md) und
   [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)
-  und der
-  [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md)
-  namentlich und klauselweise; was in diesen Dokumenten Aufzeichnung ist
-  (§Geschichte, §Verglichene Alternativen, datierte Messzeilen, Titel),
-  bleibt stehen. Eine Folge-ADR allein gegen `ADR-0091` hätte
+  dem Grunde nach. Seine §Status-Aufzählung war unvollständig: der Re-Review
+  maß als F-4 weitere Stellen — auch in der
+  [`ADR-0089`](../../adr/0089-feldmengen-paarung-kein-sensor-review-waechter.md)
+  —, die
+  [`ADR-0102`](../../adr/0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md)
+  vollständig einzieht und die Aufzählung durch eine Regel schließt. Was in
+  diesen Dokumenten Aufzeichnung ist (§Geschichte, §Verglichene Alternativen,
+  datierte Messzeilen, Titel), bleibt stehen. Eine Folge-ADR allein gegen
+  `ADR-0091` hätte
   [`ADR-0092`](../../adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md)s
   aktive Zeile stehen lassen — dieselbe Fehlannahme, die der Review-Befund
   F-4 benennt.
