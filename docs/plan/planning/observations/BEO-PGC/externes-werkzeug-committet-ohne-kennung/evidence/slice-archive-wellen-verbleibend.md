@@ -19,6 +19,13 @@ Slices. Die Räumungskosten sind konstant (die Fenstergröße des Standing-Gates
 Erkenntnis, die der erste Beleg bereits als offene Frage aufwarf, ist hiermit
 real bestätigt.
 
+Nachtrag: Der versehentlich ausgelassene und nachgeholte 18. Lauf
+(`welle-18`) fügte zwei weitere kennungslose Commits hinzu (`00c48e0`,
+`4ab7596`) — dieselbe Fenster-Räumung (mehrere Closure-Commits am Ende)
+schob auch diese aus dem `HEAD~5..HEAD`-Fenster, ohne eine neue Technik zu
+brauchen.
+
 Quelle: `docs/plan/planning/done/slice-archive-wellen-verbleibend.md` §2/§6/§7 ·
 Commits `82647c4`…`96b313b` (34 Commits, siehe Slice-Plan §2 LP2 für die
-vollständige Paar-Liste) · Closure-Commits dieses Slices.
+vollständige Paar-Liste), `00c48e0`/`4ab7596` (Nachtrag `welle-18`) ·
+Closure-Commits dieses Slices.
