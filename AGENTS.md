@@ -552,6 +552,29 @@ drei Zeilen) und dort verortet, wo die nötige Information — läuft dieser
 Aufruf möglicherweise ein zweites Mal gegen dasselbe Ziel? — tatsächlich
 bekannt ist · seit welle-beispiele-start-ueber-make.
 
+**Zwischenlösung, kein Endzustand.** Eine dritte Option wurde ernsthaft
+geprüft — nicht verworfen, sondern eingeplant als eigener, größerer
+Vorgang statt hier miterledigt: die Wache zentral im
+`schema-rollout`-Makefile-Target selbst zu verankern, statt sie bei jedem
+Aufrufer einzeln zu verlangen. Sie ist plausibel die bessere Endform —
+geteilte statt verteilte Brüchigkeit an der Stelle, die jeder neue
+Fremdobjekt-Zug ohnehin schon anfasst —, aber recherche- und
+implementierungsgebunden (d-migrates Fähigkeit, einzelne Blocker gezielt
+zu bestätigen, ist ungeklärt) und deshalb kein Nachtrag hier, sondern ein
+eigener Slice:
+`docs/plan/planning/open/schema-rollout-zentrale-idempotenz-wache.md`
+(volle Abwägung in `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/state.md`).
+Diese Regel bleibt bis zu dessen Lieferung die geltende Wache und wird bei
+dessen Closure angepasst oder gestrichen.
+
+**Träger und Anker:** Diese Regel wirkt durch **Disziplin am Aufrufer**,
+kein Sensor prüft sie — dieselbe Art Grenze wie §3.9 (Ausführungsdisziplin,
+kein Gate). Ihr Anlass trägt
+[`ADR-0043`](docs/plan/adr/0043-schemamigrationen-mit-d-migrate.md); die
+Beobachtung mit den drei unabhängigen Funden steht unter
+`docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/` ·
+seit welle-beispiele-start-ueber-make.
+
 ## 4. Quality Gates
 
 **Der Gate-Index steht einmal, und zwar in [`harness/README.md`](harness/README.md)
