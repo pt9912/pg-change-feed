@@ -18,5 +18,5 @@ ist pro Anforderung zu klären, kein Konfigurationsvorgang. Damit bleibt der
 Fund ohne diesen Register-Eintrag ohne jeden weiteren Leser — `--trace` ist
 advisory, kein Gate liest die sieben Kennungen ein zweites Mal.
 
-Quelle: `docs/plan/planning/done/slice-d-check-trace-rtm.md` §1/§2 ·
+Quelle: `docs/plan/planning/done/welle-d-check/slice-d-check-trace-rtm.md` §1/§2 ·
 `docs/reviews/verify-slice-d-check-trace-rtm.md` §A/§G.
