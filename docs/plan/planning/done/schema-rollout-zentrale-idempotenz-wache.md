@@ -123,8 +123,11 @@ Regressionsbeleg dafür ist Lauf 3 von
       (`docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`)
       fortgeschrieben — Ausgang von `geplant` auf `verkörpert`.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen
-      (Prüfung läuft nach dem `git mv` nach `done/`, siehe Template-Hinweis §7).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      geprüft in `done/`: kein Anker zu prüfen (kein neuer Sensor/keine
+      neue Regel), keine Folge-Slice benannt, `BEO-PGC/schema-rollout-fremdobjekte`
+      und `BEO-PGC/slice-chronik-in-code-kommentar` existieren beide mit
+      nicht-leerem `evidence/` (siehe §7).
 
 ## 3. Plan (vor Code)
 
