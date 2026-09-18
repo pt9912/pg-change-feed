@@ -86,7 +86,13 @@ matrix:
   # Status-basiert, ADR-0073/ADR-0095) — dieselbe Begruendung wie im
   # versions-Modul unten fuer denselben Pfad; die adr -> review-Regel
   # oben bleibt davon unberuehrt.
-  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md", "docs/reviews/*.md"]
+  # docs/plan/planning/done/**: dieselbe Record-Einfrierung gilt fuer
+  # geschlossene Slice-/Wellen-Zeitdokumente (AGENTS.md §3.5 letzter
+  # Absatz: "Records (done/, docs/reviews/**) tragen keine §Geschichte")
+  # — eine Closure-Notiz erzaehlt reale Geschichte zum Laufzeitpunkt
+  # (z. B. welle-3-results.md nennt den ADR-0018-Verstoss, der ADR-0046
+  # ausloeste); sie waechst nicht rueckwirkend mit dem ADR-Stand mit.
+  exempt-paths: ["docs/plan/adr/0039-*.md", "docs/plan/adr/0041-*.md", "docs/reviews/*.md", "docs/plan/planning/done/**"]
 versions:
   # Baseline-Pin gegen Tag-Drift: jeder Verweis in die vendored Baseline
   # traegt deren Version im Pfad; der adoptierte Stand steht einmal in
