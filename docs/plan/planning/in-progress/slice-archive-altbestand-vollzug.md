@@ -78,11 +78,22 @@ Welle-Closure sammelt ohne weitere Zuordnung.
       (Commits `b96e3e7` Move, `0caee7f` Inhalt) — Exit-Code 0, direkt und
       ungepiped geprüft. Zusätzlich ein zweiter, eigener Lauf für
       `welle-d-check` selbst (Commits `a39bbcd` Move, `a787203` Inhalt) —
-      dessen Untergrenze war erst nach dem `altbestand`-Lauf beobachtbar;
-      beide Läufe nutzten den vom Werkzeug selbst dokumentierten
-      `--no-verify`-Pfad für die zwei intern fest verdrahteten
-      Commit-Messages (Nutzer-Entscheidung, kein Bezug zum Standing-Gate
-      `make commit-traceability`, das separat unten geprüft wird).
+      dessen Untergrenze war erst nach dem `altbestand`-Lauf beobachtbar.
+      Nutzer-Entscheidung („Commit mit --no-verify"): Der lokale, optionale
+      `commit-msg`-Hook (`ADR-0062`) lehnte die fest einprogrammierten
+      Werkzeug-Commit-Messages (keine `LH-*`/`ADR-*`-Kennung) beim ersten
+      Versuch ab; dieser Versuch (Commit `f46526e`, nur der Move-Teil, das
+      Werkzeug selbst hatte danach abgebrochen) wurde per `git revert`
+      zurückgenommen (sicher, keine Zerstörung, Revert-Betreff selbst
+      hook-exempt). Die beiden hier verbuchten realen Läufe (`altbestand`,
+      `welle-d-check`) liefen jeweils **in einem Stück** über eine
+      prozess-scoped `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath
+      GIT_CONFIG_VALUE_0=/dev/null`-Umgebungsvariable vor dem
+      Werkzeug-Aufruf — sie überschreibt `core.hooksPath` nur für den einen
+      Subprozessbaum, ohne die Repo-Konfiguration selbst anzufassen, und
+      lässt beide interne Commits des Werkzeugs (Move, dann Inhalt)
+      durchlaufen. Kein Bezug zum Standing-Gate `make commit-traceability`,
+      das separat unten geprüft wird.
 - [x] **LP3:** `make gates` — `docs-check` grün (0 Befunde, 815 Dateien);
       `commit-traceability` vorübergehend rot durch die vier IDs-losen
       Werkzeug-Commits im `HEAD~5..HEAD`-Fenster, durch die nachfolgenden

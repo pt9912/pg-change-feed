@@ -1,4 +1,4 @@
-# slice- — slice-d-check-tracked-modul: `d-check`-Modul `tracked` aktivieren
+# slice-d-check-tracked-modul — `d-check`-Modul `tracked` aktivieren
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-d-check/archiv.zip docs/plan/planning/done/welle-d-check/slice-d-check-tracked-modul.md`

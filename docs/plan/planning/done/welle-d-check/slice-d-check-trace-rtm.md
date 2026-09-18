@@ -1,4 +1,4 @@
-# slice- — slice-d-check-trace-rtm: `d-check --trace`/Requirements Traceability Matrix verdrahten
+# slice-d-check-trace-rtm — `d-check --trace`/Requirements Traceability Matrix verdrahten
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-d-check/archiv.zip docs/plan/planning/done/welle-d-check/slice-d-check-trace-rtm.md`

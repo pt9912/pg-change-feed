@@ -1,4 +1,4 @@
-# slice- — slice-gate-index-konsolidierung: `AGENTS.md` §4 auf Regel + Zeiger kürzen
+# slice-gate-index-konsolidierung — `AGENTS.md` §4 auf Regel + Zeiger kürzen
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/altbestand/archiv.zip docs/plan/planning/done/altbestand/slice-gate-index-konsolidierung.md`
