@@ -89,14 +89,15 @@ unter einem Unterverzeichnis verlässt diesen Prüfbereich.
       mit Pro/Contra, entscheidet Schlüssel und Verhältnis zu `welle-d-check`,
       benennt den `structure`-Modul-Blindfleck als Folgepflicht oder
       akzeptiertes Negativ. ADR-Index (`docs/plan/adr/README.md`) aktualisiert.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
       Report: `docs/reviews/review-slice-archive-altbestand-adr.md`, 0 HIGH.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §8.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — keine
+      Beobachtung angefallen (siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) — geprüft von der
       Welle-Closure `welle-archive-altbestand` (Repo mit Wellen-Betrieb für
       diese Welle).
@@ -132,29 +133,44 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 - **Die ADR wählt einen dedizierten Schlüssel, dessen Plan-/Ergebnis-Dokumente
   eine Form brauchen, die kein bestehendes Template exakt trägt** (ein
-  „Welle"-Plan für einen Nicht-Welle-Schlüssel). — **Ausgang:** wird beim
-  Implementer-Lauf des Folge-Slice real geprüft; diese ADR entscheidet nur
-  die Zuordnung, nicht die exakte Dokument-Form.
+  „Welle"-Plan für einen Nicht-Welle-Schlüssel). —
+  **Ausgang: eingetreten → Folge-Slice `slice-archive-altbestand-vollzug`**
+  (liegt in `open/`) — er prüft die exakte Dokument-Form real beim
+  Implementer-Lauf.
 - **Der Acceptance-Trigger der ADR verlangt eine Reviewer-Runde, die einen
-  blockierenden Befund meldet** — verzögert die Welle. — **Ausgang:** wird
-  in der Closure-Notiz nachgetragen (eingetreten/entfallen).
+  blockierenden Befund meldet** — verzögert die Welle. —
+  **Ausgang: entfallen** — Review (`docs/reviews/review-slice-archive-altbestand-adr.md`)
+  meldet 0 HIGH/MEDIUM/LOW, 1 INFO, nicht merge-blockierend.
 - **Die `[haenger]`-Bereinigung (externer Vorgang) schließt vor dieser ADR ab
   und macht einen Teil ihrer Kontext-Messung veraltet** (z. B. eine andere
-  Liste betroffener ADRs). — **Ausgang:** entfallen, wenn die ADR ihre
-  Messung zum eigenen Schreibzeitpunkt datiert und referenziert
-  (`AGENTS.md` §3.12); weiter offen sonst.
+  Liste betroffener ADRs). —
+  **Ausgang: entfallen** — `ADR-0096` datiert ihre Messungen auf
+  2026-09-18 (`AGENTS.md` §3.12), keine Übernahme eines späteren Standes
+  behauptet.
 
 ## 7. Closure-Notiz
 
 <!-- BEDIENHINWEIS — keine Norm; faellt beim Kopieren weg. -->
 
-- **Was hat funktioniert:** <wird beim Abschluss gefüllt>
-- **Was ging anders als geplant:** <wird beim Abschluss gefüllt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss gefüllt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss gefüllt>
+- **Was hat funktioniert:** Die reale Messung vor der Entscheidung
+  (`--vorschau altbestand`/`--vorschau welle-d-check` gegenprobend
+  ausgeführt, 41+2=43 Vorgänge nachgezählt) hat die Wahl zwischen den drei
+  Alternativen schnell und eindeutig gemacht — kein Grenzfall, keine
+  Nachbesserung im Review nötig (0 HIGH).
+- **Was ging anders als geplant:** Der erste Architect-Durchlauf drohte,
+  eine zusätzliche Folgepflicht (eigener Beobachtungs-Eintrag für den
+  `structure`-Blindfleck) zu erzeugen, obwohl der Befund real harmlos ist
+  (der Stub verliert die geprüfte Eigenschaft, nicht die Prüfung eine
+  Lücke). Auf ausdrücklichen Nutzer-Hinweis („Lösungen finden, keine neuen
+  Hürden") pragmatisch als akzeptiertes Negativ ohne neuen Träger
+  entschieden.
+- **Steering-Loop-Eintrag:** keiner — reine Einzelfall-Entscheidung, keine
+  wiederkehrende Regel geschärft.
+- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
+  angefallen — auch das ist eine Antwort (Register durchgesehen, §8).
 - **Folge-Slices:** `slice-archive-altbestand-vollzug` — liegt als Datei in
   `open/`.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang>
+- **Risiken aus §6:** alle drei mit Ausgang versehen — siehe §6.
 - **Drei Paarungen:** von der Welle-Closure `welle-archive-altbestand` geprüft.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
