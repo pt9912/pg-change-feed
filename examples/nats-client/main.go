@@ -30,6 +30,14 @@ import (
 // Warten auf ein Wecksignal ist davon nicht betroffen.
 const readTimeout = 10 * time.Second
 
+// waitTimeout begrenzt das Warten auf das nächste Wecksignal. `NextMsg`
+// blockiert NICHT unbegrenzt, wenn ihr `0` übergeben wird — die
+// nats.go-Implementierung startet in diesem Fall einen Timer der Dauer `0`,
+// der praktisch sofort abläuft (`ErrTimeout`), statt auf einen Weckruf zu
+// warten. Ein großzügiger, aber endlicher Wert hält das Beispiel trotzdem
+// terminierend (kein echtes „für immer").
+const waitTimeout = 24 * time.Hour
+
 // config trägt die Laufzeit-Eingabe des Beispiels: die beiden Draht-Adressen,
 // das Token der lesenden Rechtsklasse und die drei Bestandteile des
 // Subjekts. Adresse und Token kommen aus denselben Umgebungsvariablen, die
@@ -93,7 +101,7 @@ func main() {
 	fmt.Printf("nats-client: lauscht auf %s — beim nächsten Weckruf wird die Änderung über %s geholt\n",
 		subject, cfg.addr)
 
-	msg, err := sub.NextMsg(0)
+	msg, err := sub.NextMsg(waitTimeout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "nats-client: Empfang des Wecksignals fehlgeschlagen: %v\n", err)
 		os.Exit(1)
