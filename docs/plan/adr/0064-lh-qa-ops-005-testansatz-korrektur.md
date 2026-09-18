@@ -234,7 +234,7 @@ Zwei Trigger, beide unverändert bzw. neu — keiner davon macht den anderen
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-14 | Accepted — Anlass: `slice-063` <!-- d-check:status-provenance -->-Implementer-Lauf reproduzierte real, dass `ADR-0058` Entscheidung 3s Migrationsschritt strukturell blockiert (Exit 8, vier statt zwei Fremdobjekte) und stoppte korrekt über die Rückführung `in-progress` → `open`, statt den Befund zu umgehen (Modul 8 §Konflikt-Pfad); unabhängiger Architect-Zug bestätigte den Blocker zusätzlich gegen `--dry-run` (derselbe Exit 8 ohne `--execute`) und korrigiert den Mechanismus | `slice-063` <!-- d-check:status-provenance --> (in `open/`), das Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance --> (Implementer-Reproduktion), `docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/` (strukturelle Ursache, bleibt offen) |
-| 2026-09-18 | Zitat-Korrektur — Pfad zum Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance --> durch Kennung ersetzt (`ADR-0073`) | `PENDING_COMMIT` |
+| 2026-09-18 | Zitat-Korrektur — Pfad zum Blocker-Protokoll zu `slice-063` <!-- d-check:status-provenance --> durch Kennung ersetzt (`ADR-0073`) | `e4e981a` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
