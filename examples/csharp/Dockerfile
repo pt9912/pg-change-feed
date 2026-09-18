@@ -23,9 +23,9 @@
 # Auflösung.
 
 # Stufe `build`: `dotnet restore`/`build`/`test` im gepinnten SDK-Image, für
-# **alle vier** Programme dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
-# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier vier Programme
-# statt dreier seit slice-102). Der Paket-Bezug (NuGet) braucht Netz —
+# **alle fünf** Programme dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
+# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier fünf Programme
+# seit ADR-0100). Der Paket-Bezug (NuGet) braucht Netz —
 # deshalb bleibt `make examples-csharp` ein Werkzeug, kein Gate (ADR-0090
 # Festlegung 5). Die Tests selbst sind reine Funktionen ohne externen Dienst
 # (netzlos prüfbar im Sinn von ADR-0087 Festlegung 4); ein `RUN dotnet test`,
@@ -48,6 +48,8 @@ COPY nats-client/nats-client.csproj nats-client/nats-client.csproj
 COPY nats-client/NatsClient.Tests/NatsClient.Tests.csproj nats-client/NatsClient.Tests/NatsClient.Tests.csproj
 COPY grpc-client/grpc-client.csproj grpc-client/grpc-client.csproj
 COPY grpc-client/GrpcClient.Tests/GrpcClient.Tests.csproj grpc-client/GrpcClient.Tests/GrpcClient.Tests.csproj
+COPY nats-stream-client/nats-stream-client.csproj nats-stream-client/nats-stream-client.csproj
+COPY nats-stream-client/NatsStreamClient.Tests/NatsStreamClient.Tests.csproj nats-stream-client/NatsStreamClient.Tests/NatsStreamClient.Tests.csproj
 RUN dotnet restore http-client/http-client.csproj && \
     dotnet restore http-client/HttpClient.Tests/HttpClient.Tests.csproj && \
     dotnet restore sse-client/sse-client.csproj && \
@@ -55,12 +57,15 @@ RUN dotnet restore http-client/http-client.csproj && \
     dotnet restore nats-client/nats-client.csproj && \
     dotnet restore nats-client/NatsClient.Tests/NatsClient.Tests.csproj && \
     dotnet restore grpc-client/grpc-client.csproj && \
-    dotnet restore grpc-client/GrpcClient.Tests/GrpcClient.Tests.csproj
+    dotnet restore grpc-client/GrpcClient.Tests/GrpcClient.Tests.csproj && \
+    dotnet restore nats-stream-client/nats-stream-client.csproj && \
+    dotnet restore nats-stream-client/NatsStreamClient.Tests/NatsStreamClient.Tests.csproj
 
 COPY http-client/ http-client/
 COPY sse-client/ sse-client/
 COPY nats-client/ nats-client/
 COPY grpc-client/ grpc-client/
+COPY nats-stream-client/ nats-stream-client/
 
 # Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (ADR-0090
 # Festlegung 2) — diese COPY-Zeile ist der Punkt, an dem der Bau ohne den
@@ -80,6 +85,9 @@ RUN dotnet publish nats-client/nats-client.csproj -c Release --no-restore -o /ap
 RUN dotnet build grpc-client/grpc-client.csproj -c Release --no-restore
 RUN dotnet test grpc-client/GrpcClient.Tests/GrpcClient.Tests.csproj -c Release --no-restore
 RUN dotnet publish grpc-client/grpc-client.csproj -c Release --no-restore -o /app/publish-grpc
+RUN dotnet build nats-stream-client/nats-stream-client.csproj -c Release --no-restore
+RUN dotnet test nats-stream-client/NatsStreamClient.Tests/NatsStreamClient.Tests.csproj -c Release --no-restore
+RUN dotnet publish nats-stream-client/nats-stream-client.csproj -c Release --no-restore -o /app/publish-nats-stream
 
 # Stufe `runtime-sse`: startbares Image des SSE-Clients (ADR-0090, LP1). Ein
 # eigener, benannter Zielstufen-Tag statt eines dispatchenden ENTRYPOINTs im
@@ -108,6 +116,15 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a663
 WORKDIR /app
 COPY --from=build /app/publish-grpc ./
 ENTRYPOINT ["dotnet", "grpc-client.dll"]
+
+# Stufe `runtime-nats-stream`: startbares Image des Clients für den
+# dritten, vollinhaltstragenden NATS-Zustellweg (ADR-0100) — derselbe Grund
+# für den eigenen, benannten Zielstufen-Tag wie bei den übrigen
+# `runtime-*`-Stufen.
+FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:e6541e52aeab4e412012178d66a6637b65252cca2ad15ada7cd1849d7d702c3d AS runtime-nats-stream
+WORKDIR /app
+COPY --from=build /app/publish-nats-stream ./
+ENTRYPOINT ["dotnet", "nats-stream-client.dll"]
 
 # Stufe `runtime`: startbares Image des HTTP-Clients (ADR-0087 Festlegung 3 —
 # die Startform ist ein Container-Aufruf, kein Host-`dotnet run`). Bleibt die

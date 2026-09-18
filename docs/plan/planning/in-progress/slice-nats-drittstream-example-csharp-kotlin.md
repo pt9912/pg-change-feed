@@ -51,27 +51,33 @@ vierten Zugriffsweg ist damit vollständig ([`ADR-0090`](../../adr/0090-beispiel
 Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 §Ziel-Form: Slice — **≤ 3 Liefer-Punkte**.
 
-- [ ] `examples/csharp/nats-stream-client` und
+- [x] `examples/csharp/nats-stream-client` und
       `examples/kotlin/nats-stream-client` existieren, verbinden mit
       `CDC_NATS_STREAM_TOKEN`, abonnieren `cdc.stream.>` und geben eine
       empfangene Change lesbar aus; `make examples-csharp`/
       `make examples-kotlin` bauen+testen beide netzlos
-      ([`LH-FA-SST-008`](../../../../spec/lastenheft.md)).
-- [ ] `harness/mk/examples.mk`: `examples-csharp`/`examples-kotlin` bekommen
+      ([`LH-FA-SST-008`](../../../../spec/lastenheft.md)) — real ausgeführt,
+      beide Exit 0. Real gegen die Demo-Umgebung geprüft (Closure-Trigger):
+      C# `change_id=1714-1 table=public.orders operation=INSERT
+      new_image={"id":"4","customer":"csharp-nats-stream-smoke-test","amount":"55.55"}`,
+      Kotlin `change_id=1721-1 table=public.orders operation=INSERT
+      new_image={"id":"5","customer":"kotlin-nats-stream-smoke-test","amount":"66.66"}`.
+- [x] `harness/mk/examples.mk`: `examples-csharp`/`examples-kotlin` bekommen
       je einen vierten `docker build --target runtime-nats-stream`-Aufruf;
       `example-run-csharp`/`example-run-kotlin`s `$(filter …)`-Prüfungen
       tragen `nats-stream` als vierten zulässigen Wert (`ADR-0100`
       Teilfrage 6).
-- [ ] Doku-Nachzug: `examples/README.md` bekommt die C#-/Kotlin-Zeilen im
+- [x] Doku-Nachzug: `examples/README.md` bekommt die C#-/Kotlin-Zeilen im
       neuen Zugriffs-Abschnitt, `docs/user/benutzerhandbuch.md`s
       `**Beispiele:**`-Block wird um beide Sprachen komplettiert, die
       Aggregat-Aussage „vier Zugriffsarten × drei Sprachen" wird auf „fünf …
-      fünfzehn Programme" gehoben (jetzt erst wahr).
-- [ ] `make gates` grün.
+      fünfzehn Programme" gehoben (jetzt erst wahr) — zusätzlich
+      `spec/pflichtenheft.md` `SPEC-023` nachgezogen (Plan-Nachzug, §3).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `examples/README.md` (C#-/Kotlin-Zeilen, Aggregatzahlen),
+- [x] Doku-Update: `examples/README.md` (C#-/Kotlin-Zeilen, Aggregatzahlen),
       `docs/user/benutzerhandbuch.md`s `**Beispiele:**`-Block komplettiert
       (siehe §2 dritter Liefer-Punkt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -87,19 +93,37 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-bootstrap.md`
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `examples/csharp/nats-stream-client/*.csproj`, `Program.cs`, `NatsStreamClient.Tests/` | neu | analog zu `examples/csharp/nats-client`, Token-Verbindung statt anonym |
-| `examples/csharp/Dockerfile` | update | neue `COPY`/`RUN dotnet restore/build/test/publish`-Zeilen für `nats-stream-client` in der `build`-Stufe, neue Stufe `runtime-nats-stream` (Vorbild: die bestehende `runtime-nats`-Stufe, Zeile ~93) |
-| `examples/kotlin/nats-stream-client/` (Gradle-Modul) | neu | analog zu `examples/kotlin/nats-client` |
+| `examples/csharp/nats-stream-client/*.csproj`, `Program.cs`, `Config.cs`, `Cli.cs`, `Format.cs`, `NatsStreamClient.Tests/` | neu | Vorbild-Mischung statt reiner `nats-client`-Übertragung (Plan-Nachzug, siehe Ansatz unten): Verbindung/Token wie `nats-client`, aber Endlosschleife + strukturierte Feldausgabe (`change_id`/`table`/`operation`/`new_image`) wie `examples/csharp/grpc-client` |
+| `examples/csharp/Dockerfile` | update | neue `COPY`/`RUN dotnet restore/build/test/publish`-Zeilen für `nats-stream-client` in der `build`-Stufe, neue Stufe `runtime-nats-stream` (Vorbild: die bestehende `runtime-nats`-Stufe) |
+| `examples/kotlin/nats-stream-client/` (Gradle-Modul) | neu | dieselbe Vorbild-Mischung wie beim C#-Pendant (Verbindung wie `nats-client`, Endlosschleife/Feldausgabe wie `grpc-client`) |
+| `examples/kotlin/settings.gradle.kts` | update | **Plan-Nachzug** (im ursprünglichen Plan übersehen): `include("nats-stream-client")` — ohne diese Zeile sieht Gradle das neue Modul nicht |
 | `examples/kotlin/Dockerfile` | update | neues Gradle-Modul in der `build`-Stufe, neue Stufe `runtime-nats-stream` |
-| `harness/mk/examples.mk` | update | vierter `docker build --target runtime-nats-stream`-Aufruf je Sprache in `examples-csharp`/`examples-kotlin`; `nats-stream` in beiden `example-run-*`-Filtern |
-| `examples/README.md` | update | neue Tabellenzeilen in `## C#` und `## Kotlin`; Intro-Zahlen „vier × drei" → „fünf × drei" |
-| `docs/user/benutzerhandbuch.md` | update | C#-/Kotlin-Zeilen im von `slice-nats-drittstream-example-go` angelegten Abschnitt, neue Versionshistorie-Zeile, Header-Aggregatzahlen falls vorhanden |
+| `harness/mk/examples.mk` | update | fünfter `docker build --target runtime-nats-stream`-Aufruf je Sprache in `examples-csharp`/`examples-kotlin`; `nats-stream` in beiden `example-run-*`-Filtern |
+| `examples/README.md` | update | neue Tabellenzeilen in `## C#` und `## Kotlin`; Intro-Zahlen „vier × drei" → „fünf × drei", „zwölf" → „fünfzehn" |
+| `docs/user/benutzerhandbuch.md` | update | C#-/Kotlin-Zeilen im von `slice-nats-drittstream-example-go` angelegten Abschnitt, neue Versionshistorie-Zeile, Änderungshistorie-Zeile zur vollständigen Matrix |
+| `spec/pflichtenheft.md` | update | **Plan-Nachzug** (im ursprünglichen Plan übersehen): `SPEC-023` Zeile *Sprachen und Umfang* trug noch „vier Zugriffs-Oberflächen" — mit der vollständigen 3-Sprachen-Matrix des fünften Wegs jetzt stale; auf „fünf" gezogen samt `SPEC-024`-Verweis und einer Klarstellung zur optionalen JSON-Bibliothek (siehe Ansatz unten), neue Historie-Zeile |
 
-**Ansatz:** Mechanische Übertragung des bestehenden `nats-client`-Musters
-(beide Sprachwurzeln) auf einen neuen Client mit anderem Subjekt-Filter
-(`cdc.stream.>` statt `cdc.changes.>`), anderer Umgebungsvariable
-(`CDC_NATS_STREAM_TOKEN` statt anonym) und anderem Nachrichtenschema
-(10-Feld-JSON statt leerer Payload) — kein neuer Bau-Mechanismus, keine
+**Ansatz — Plan-Korrektur:** Der ursprüngliche Plan nahm eine **rein
+mechanische** Übertragung des `nats-client`-Musters an (Verbindung, aber auch
+Ablauf und Ausgabeform). Real weicht das ab, weil `examples/nats-stream-client`
+(Go, bereits `done/`) **nicht** das zweiseitige, einmalige `nats-client`-Muster
+trägt, sondern — wie `grpc-client`/`sse-client` — eine Endlosschleife mit
+strukturierter Feldausgabe (`change_id`, `table`, `operation`, `new_image`),
+weil der Vollinhalts-Stream selbstständig ist (kein zweiter HTTP-Holschritt
+nötig). C#/Kotlin übernehmen deshalb **zwei** Vorbilder statt eines: die
+Verbindungs-/Token-Verdrahtung von `nats-client`, den Schleifen-/Ausgabe-Stil
+von `grpc-client`. Für Kotlin folgt daraus eine echte Abweichung vom
+„kein neuer Bau-Mechanismus"-Vorsatz: Weder `io.nats:jnats` noch die
+JDK-Standardbibliothek tragen einen öffentlichen JSON-Decoder, und keines der
+bestehenden Kotlin-Beispiele braucht bislang einen (sie reichen HTTP-/SSE-
+Antworten unverändert als Text durch) — `com.google.code.gson:gson:2.14.0`
+ist die dafür gepinnte, öffentliche Client-Bibliothek (Maven Central
+maven-metadata.xml, gemessen 2026-09-18: `2.14.0` neueste stabile Version;
+Apache-2.0, genau eine transitive `compile`-Abhängigkeit,
+`error_prone_annotations`, reine Annotationen ohne Laufzeit-Logik — Details
+im Kommentar von `examples/kotlin/nats-stream-client/build.gradle.kts`). C#
+braucht dafür **keine** neue Bibliothek — `System.Text.Json` liegt bereits in
+der .NET-BCL. Ansonsten unverändert: kein neuer Bau-Mechanismus, keine
 `--build-context proto=proto`-Berührung (kein Protobuf-Bezug).
 
 ## 4. Trigger

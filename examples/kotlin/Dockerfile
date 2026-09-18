@@ -23,9 +23,9 @@
 # Auflösung.
 
 # Stufe `build`: `./gradlew test`/`installDist` im gepinnten JDK-Image, für
-# **alle vier** Module dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
-# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier vier Programme
-# statt dreier seit slice-103). Der Paket-Bezug (Maven Central, Gradle Plugin
+# **alle fünf** Module dieser Sprach-Wurzel (ADR-0090 Festlegung 1/5 — ein
+# `make`-Ziel je Sprache trägt den wachsenden Umfang, hier fünf Programme
+# seit ADR-0100). Der Paket-Bezug (Maven Central, Gradle Plugin
 # Portal, der Gradle-Distributions-Download selbst) braucht Netz — deshalb
 # bleibt `make examples-kotlin` ein Werkzeug, kein Gate (ADR-0090
 # Festlegung 5). Die Tests selbst sind reine Funktionen ohne externen Dienst
@@ -49,12 +49,14 @@ COPY http-client/build.gradle.kts http-client/build.gradle.kts
 COPY sse-client/build.gradle.kts sse-client/build.gradle.kts
 COPY nats-client/build.gradle.kts nats-client/build.gradle.kts
 COPY grpc-client/build.gradle.kts grpc-client/build.gradle.kts
+COPY nats-stream-client/build.gradle.kts nats-stream-client/build.gradle.kts
 RUN chmod +x ./gradlew && ./gradlew --no-daemon help >/dev/null
 
 COPY http-client/src http-client/src
 COPY sse-client/src sse-client/src
 COPY nats-client/src nats-client/src
 COPY grpc-client/src grpc-client/src
+COPY nats-stream-client/src nats-stream-client/src
 
 # Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (ADR-0090
 # Festlegung 2) — diese COPY-Zeile ist der Punkt, an dem der Bau ohne den
@@ -66,8 +68,8 @@ COPY grpc-client/src grpc-client/src
 # frei wählt.
 COPY --from=proto cdc/stream/v1/changestream.proto grpc-client/src/main/proto/changestream.proto
 
-RUN ./gradlew --no-daemon :http-client:test :sse-client:test :nats-client:test :grpc-client:test
-RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist :nats-client:installDist :grpc-client:installDist
+RUN ./gradlew --no-daemon :http-client:test :sse-client:test :nats-client:test :grpc-client:test :nats-stream-client:test
+RUN ./gradlew --no-daemon :http-client:installDist :sse-client:installDist :nats-client:installDist :grpc-client:installDist :nats-stream-client:installDist
 
 # Stufe `runtime-sse`: startbares Image des SSE-Clients (ADR-0090, LP2). Ein
 # eigener, benannter Zielstufen-Tag statt eines dispatchenden ENTRYPOINTs im
@@ -96,6 +98,15 @@ FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a
 WORKDIR /app
 COPY --from=build /src/grpc-client/build/install/grpc-client ./
 ENTRYPOINT ["/app/bin/grpc-client"]
+
+# Stufe `runtime-nats-stream`: startbares Image des Clients für den
+# dritten, vollinhaltstragenden NATS-Zustellweg (ADR-0100) — derselbe Grund
+# für den eigenen, benannten Zielstufen-Tag wie bei den übrigen
+# `runtime-*`-Stufen.
+FROM eclipse-temurin:21-jre@sha256:ca7551d4f36647207812e3c8c8596c89fd4e5226a061a5b8c8629839fe8969f6 AS runtime-nats-stream
+WORKDIR /app
+COPY --from=build /src/nats-stream-client/build/install/nats-stream-client ./
+ENTRYPOINT ["/app/bin/nats-stream-client"]
 
 # Stufe `runtime`: startbares Image des HTTP-Clients (ADR-0087 Festlegung 3 —
 # die Startform ist ein Container-Aufruf, kein Host-`gradle run`). Bleibt die

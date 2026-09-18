@@ -3,7 +3,8 @@
 // Ein Modul je Client (mirror der C#-Sprach-Wurzel, `examples/csharp/`):
 // `http-client`, `sse-client`, `nats-client` (`ADR-0090`
 // §Slice-Schnitt-Empfehlung, Zeile 4, slice-101), `grpc-client` (Zeile 6,
-// slice-103). `dependencyResolutionManagement` zentralisiert die
+// slice-103), `nats-stream-client` (vierter Zugriffsweg, ADR-0100).
+// `dependencyResolutionManagement` zentralisiert die
 // Paket-Quelle für alle Module — Netz ist ohnehin Voraussetzung
 // (NuGet-/Maven-Paketbezug, ADR-0090 Festlegung 5), `make gates` bleibt
 // davon unberührt. `gradlePluginPortal()` trägt zusätzlich das
@@ -28,3 +29,4 @@ include("http-client")
 include("sse-client")
 include("nats-client")
 include("grpc-client")
+include("nats-stream-client")

@@ -5,17 +5,17 @@
 #
 # `examples-csharp` baut die Werkzeugketten-Images der C#-Sprach-Wurzel
 # (Bau-Kontext examples/csharp/, ADR-0087 Festlegung 3): `dotnet
-# restore`/`build`/`test` für **alle vier** Programme (http-client,
-# sse-client, nats-client, grpc-client seit slice-102) laufen in der
-# gemeinsamen Docker-Stufe `build` (ADR-0090 Festlegung 5 — ein Ziel je
-# Sprache trägt den wachsenden Umfang); ein roter Test bricht den
-# `docker build` mit Exit != 0 ab, bevor der nächste Aufruf überhaupt den
-# `build`-Layer-Cache erreicht — der Exit-Code jedes Aufrufs wird wie bei
-# jedem anderen Ziel direkt gelesen, nie durch eine Pipe (AGENTS.md §3.9).
-# Der zweite, dritte und vierte Aufruf
-# (`--target runtime-sse`/`runtime-nats`/`runtime-grpc`) treffen auf den
-# bereits ausgeführten `build`-Layer-Cache und bauen nur noch das jeweilige
-# Runtime-Image.
+# restore`/`build`/`test` für **alle fünf** Programme (http-client,
+# sse-client, nats-client, grpc-client seit slice-102, nats-stream-client
+# seit ADR-0100) laufen in der gemeinsamen Docker-Stufe `build` (ADR-0090
+# Festlegung 5 — ein Ziel je Sprache trägt den wachsenden Umfang); ein
+# roter Test bricht den `docker build` mit Exit != 0 ab, bevor der nächste
+# Aufruf überhaupt den `build`-Layer-Cache erreicht — der Exit-Code jedes
+# Aufrufs wird wie bei jedem anderen Ziel direkt gelesen, nie durch eine
+# Pipe (AGENTS.md §3.9). Der zweite bis fünfte Aufruf
+# (`--target runtime-sse`/`runtime-nats`/`runtime-grpc`/`runtime-nats-stream`)
+# treffen auf den bereits ausgeführten `build`-Layer-Cache und bauen nur
+# noch das jeweilige Runtime-Image.
 #
 # Jeder Aufruf trägt **zwingend** `--build-context proto=proto`: grpc-client
 # liest die `.proto` über diesen zusätzlichen, benannten Bau-Kontext
@@ -30,18 +30,20 @@ examples-csharp: ## C#-Sprachwurzel bauen + testen (examples/csharp, Werkzeug, k
 	docker build --build-context proto=proto --target runtime-sse -t pg-change-feed-examples:csharp-sse examples/csharp
 	docker build --build-context proto=proto --target runtime-nats -t pg-change-feed-examples:csharp-nats examples/csharp
 	docker build --build-context proto=proto --target runtime-grpc -t pg-change-feed-examples:csharp-grpc examples/csharp
+	docker build --build-context proto=proto --target runtime-nats-stream -t pg-change-feed-examples:csharp-nats-stream examples/csharp
 
 # `examples-kotlin` baut die Werkzeugketten-Images der Kotlin-Sprach-Wurzel
 # (Bau-Kontext examples/kotlin/, ADR-0087 Festlegung 3): der Gradle-Wrapper
-# fährt `test`/`installDist` für **alle vier** Module (http-client,
-# sse-client, nats-client, grpc-client seit slice-103) in der gemeinsamen
-# Docker-Stufe `build` (ADR-0090 Festlegung 5); ein roter Test bricht den
-# `docker build` mit Exit != 0 ab, bevor der nächste Aufruf überhaupt den
-# `build`-Layer-Cache erreicht — derselbe Exit-Code-Lesepfad wie bei jedem
-# anderen Ziel (AGENTS.md §3.9). Der zweite, dritte und vierte Aufruf
-# (`--target runtime-sse`/`runtime-nats`/`runtime-grpc`) treffen auf den
-# bereits ausgeführten `build`-Layer-Cache und bauen nur noch das jeweilige
-# Runtime-Image.
+# fährt `test`/`installDist` für **alle fünf** Module (http-client,
+# sse-client, nats-client, grpc-client seit slice-103, nats-stream-client
+# seit ADR-0100) in der gemeinsamen Docker-Stufe `build` (ADR-0090
+# Festlegung 5); ein roter Test bricht den `docker build` mit Exit != 0 ab,
+# bevor der nächste Aufruf überhaupt den `build`-Layer-Cache erreicht —
+# derselbe Exit-Code-Lesepfad wie bei jedem anderen Ziel (AGENTS.md §3.9).
+# Der zweite bis fünfte Aufruf
+# (`--target runtime-sse`/`runtime-nats`/`runtime-grpc`/`runtime-nats-stream`)
+# treffen auf den bereits ausgeführten `build`-Layer-Cache und bauen nur
+# noch das jeweilige Runtime-Image.
 #
 # Der vierte Aufruf trägt **zwingend** `--build-context proto=proto`:
 # grpc-client liest die `.proto` über diesen zusätzlichen, benannten
@@ -57,6 +59,7 @@ examples-kotlin: ## Kotlin-Sprachwurzel bauen + testen (examples/kotlin, Werkzeu
 	docker build --build-context proto=proto --target runtime-sse -t pg-change-feed-examples:kotlin-sse examples/kotlin
 	docker build --build-context proto=proto --target runtime-nats -t pg-change-feed-examples:kotlin-nats examples/kotlin
 	docker build --build-context proto=proto --target runtime-grpc -t pg-change-feed-examples:kotlin-grpc examples/kotlin
+	docker build --build-context proto=proto --target runtime-nats-stream -t pg-change-feed-examples:kotlin-nats-stream examples/kotlin
 
 # `example-run-go` startet real ein Go-Beispiel gegen die Demo-Umgebung
 # (ADR-0098 Festlegung 1/2, Supersedes ADR-0076 Festlegung 1/Startform-Bullet
@@ -90,37 +93,37 @@ endif
 	docker build -f examples/Dockerfile $(if $(filter $(SURFACE),http),,--target runtime-$(SURFACE)) -t pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) .
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
 
-# `example-run-csharp`/`example-run-kotlin` starten real eines der vier
+# `example-run-csharp`/`example-run-kotlin` starten real eines der fünf
 # bereits gebauten C#-/Kotlin-Beispiele gegen die Demo-Umgebung (ADR-0098
 # Festlegung 2). Anders als `example-run-go` bauen sie **nichts**: der Bau
 # liegt bei `make examples-csharp`/`make examples-kotlin` (ADR-0087
 # Festlegung 3, ADR-0090) — dieses Ziel startet nur den bereits vorhandenen
 # Image-Tag `pg-change-feed-examples:csharp[-<surface>]`/`:kotlin[-<surface>]`.
 # `SURFACE=` ist wie bei `example-run-go` ein Pflicht-Argument (`http`,
-# `sse`, `grpc` oder `nats`); ein fehlendes oder unbekanntes `SURFACE` bricht
-# mit `$(error …)` ab, BEVOR ein `docker run` versucht wird. `ARGS=` trägt
-# dieselbe Flag-Übersteuerung wie bei den anderen beiden Sprachen (ADR-0076
-# Festlegung 1). Läuft der Bau-Schritt noch nicht (kein `make
-# examples-csharp`/`make examples-kotlin` zuvor), scheitert `docker run` real
-# und sichtbar mit einem Docker-eigenen "image not found" — kein stiller
-# Vorab-Bau und keine stille Fallback-Meldung dieses Ziels selbst; das
-# Docker-Netzwerk `cdc-examples` und `examples/.env` legt
+# `sse`, `grpc`, `nats` oder `nats-stream`); ein fehlendes oder unbekanntes
+# `SURFACE` bricht mit `$(error …)` ab, BEVOR ein `docker run` versucht
+# wird. `ARGS=` trägt dieselbe Flag-Übersteuerung wie bei den anderen
+# beiden Sprachen (ADR-0076 Festlegung 1). Läuft der Bau-Schritt noch nicht
+# (kein `make examples-csharp`/`make examples-kotlin` zuvor), scheitert
+# `docker run` real und sichtbar mit einem Docker-eigenen "image not
+# found" — kein stiller Vorab-Bau und keine stille Fallback-Meldung dieses
+# Ziels selbst; das Docker-Netzwerk `cdc-examples` und `examples/.env` legt
 # `slice-beispiele-compose-bootstrap` an, dieses Ziel referenziert beide nur,
 # ohne sie zu erzeugen. Exit-Code jedes Aufrufs wird direkt gelesen, wie bei
 # jedem anderen Ziel (AGENTS.md §3.9). Kein Gate (Werkzeug, wie
 # `examples-csharp`/`examples-kotlin`/`example-run-go`): der Start braucht
 # das benannte Docker-Netzwerk, `make gates` bleibt netzlos.
 .PHONY: example-run-csharp
-example-run-csharp: ## C#-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; braucht vorherigen make examples-csharp; Werkzeug, kein Gate; ADR-0098)
-ifeq ($(filter $(SURFACE),http sse grpc nats),)
-	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-csharp SURFACE=http)
+example-run-csharp: ## C#-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats|nats-stream, optional ARGS=…; braucht vorherigen make examples-csharp; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats nats-stream),)
+	$(error SURFACE muss http, sse, grpc, nats oder nats-stream sein, z.B. make example-run-csharp SURFACE=http)
 endif
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:csharp$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
 
 .PHONY: example-run-kotlin
-example-run-kotlin: ## Kotlin-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; braucht vorherigen make examples-kotlin; Werkzeug, kein Gate; ADR-0098)
-ifeq ($(filter $(SURFACE),http sse grpc nats),)
-	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-kotlin SURFACE=http)
+example-run-kotlin: ## Kotlin-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats|nats-stream, optional ARGS=…; braucht vorherigen make examples-kotlin; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats nats-stream),)
+	$(error SURFACE muss http, sse, grpc, nats oder nats-stream sein, z.B. make example-run-kotlin SURFACE=http)
 endif
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:kotlin$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
 

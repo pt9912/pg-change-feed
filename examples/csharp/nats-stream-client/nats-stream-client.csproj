@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CdcExamples.NatsStream</RootNamespace>
+    <AssemblyName>nats-stream-client</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Der SDK-Style-Glob nimmt sonst auch die Testquellen des Unterordners
+       auf (NatsStreamClient.Tests/ liegt innerhalb dieses Projektverzeichnisses)
+       — das Testprojekt referenziert diese Klassen bereits über
+       ProjectReference. Muster: examples/csharp/http-client/http-client.csproj. -->
+  <ItemGroup>
+    <Compile Remove="NatsStreamClient.Tests/**" />
+  </ItemGroup>
+
+  <!-- NATS.Net trägt denselben, bereits gepinnten Verbindungsweg wie
+       examples/csharp/nats-client (ADR-0090 Festlegung 4) — kein neuer Pin. -->
+  <ItemGroup>
+    <PackageReference Include="NATS.Net" />
+  </ItemGroup>
+
+</Project>

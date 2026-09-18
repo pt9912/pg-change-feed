@@ -1,13 +1,14 @@
 # Beispiel-Clients
 
 Index der Beispiel-Programme, die den Zugriff auf `pg-change-feed` in drei
-Sprachen zeigen — vier Zugriffsarten × drei Sprachen. Die volle Beschreibung
+Sprachen zeigen — fünf Zugriffsarten × drei Sprachen. Die volle Beschreibung
 je Zugriffsart (Voraussetzungen, Umgebungsvariablen, erwartete Ausgabe) steht
 in [`docs/user/benutzerhandbuch.md`](../docs/user/benutzerhandbuch.md) §4,
 Abschnitte „Zugriff über die HTTP-/JSON-API", „Zugriff über den
-gRPC-Change-Stream", „Zugriff über Server-Sent-Events" und „Zugriff über das
-NATS-Wecksignal". Diese Datei dupliziert deren Inhalt nicht, sondern zeigt
-nur, wo welches Programm liegt und wie es gebaut/gestartet wird.
+gRPC-Change-Stream", „Zugriff über Server-Sent-Events", „Zugriff über das
+NATS-Wecksignal" und „Zugriff über den NATS-Vollinhalts-Stream". Diese Datei
+dupliziert deren Inhalt nicht, sondern zeigt nur, wo welches Programm liegt
+und wie es gebaut/gestartet wird.
 
 **Voraussetzung:** ein laufender Feed-Container gegen eine erreichbare
 PostgreSQL-Quelle (Image bauen, Container starten) — siehe
@@ -25,7 +26,7 @@ lesbare Demo-Daten bereit: Schema-Rollout über d-migrate
 über `CDC_TABLES` beim Feed-Start automatisch aktiviert. Danach liefert
 `GET /changes?source=demo-source` (Token `demo-reader-token`, Adresse
 `pg-change-feed:8090` — siehe `examples/.env`) die Demo-Zeile, und jedes der
-zwölf Beispiel-Programme kann sofort gegen echte Daten laufen (z. B. `make
+fünfzehn Beispiel-Programme kann sofort gegen echte Daten laufen (z. B. `make
 example-run-go SURFACE=http ARGS="-source demo-source -publication
 pub_demo"`).
 
@@ -75,6 +76,7 @@ Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
 | [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`csharp/grpc-client`](csharp/grpc-client) | `make example-run-csharp SURFACE=grpc` |
 | [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`csharp/sse-client`](csharp/sse-client) | `make example-run-csharp SURFACE=sse` |
 | [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`csharp/nats-client`](csharp/nats-client) | `make example-run-csharp SURFACE=nats ARGS="--source <quelle> --schema <schema> --table <tabelle>"` |
+| [NATS-Vollinhalts-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-nats-vollinhalts-stream) | [`csharp/nats-stream-client`](csharp/nats-stream-client) | `make example-run-csharp SURFACE=nats-stream` |
 
 `make example-run-csharp` baut **nicht** — es startet den bereits von
 `make examples-csharp` gebauten Image-Tag
@@ -94,6 +96,7 @@ Eigene Sprach-Wurzel [`kotlin/`](kotlin), gebaut über
 | [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`kotlin/grpc-client`](kotlin/grpc-client) | `make example-run-kotlin SURFACE=grpc` |
 | [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`kotlin/sse-client`](kotlin/sse-client) | `make example-run-kotlin SURFACE=sse` |
 | [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`kotlin/nats-client`](kotlin/nats-client) | `make example-run-kotlin SURFACE=nats ARGS="--source <quelle> --schema <schema> --table <tabelle>"` |
+| [NATS-Vollinhalts-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-nats-vollinhalts-stream) | [`kotlin/nats-stream-client`](kotlin/nats-stream-client) | `make example-run-kotlin SURFACE=nats-stream` |
 
 `make example-run-kotlin` baut **nicht** — es startet den bereits von
 `make examples-kotlin` gebauten Image-Tag
