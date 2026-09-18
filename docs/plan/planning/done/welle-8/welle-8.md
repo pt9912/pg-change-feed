@@ -1,4 +1,4 @@
-# welle-8 — 8: Black-Box-E2E und Integrationstest-Nachzug
+# welle-8 — Black-Box-E2E und Integrationstest-Nachzug
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-8/archiv.zip docs/plan/planning/done/welle-8/welle-8.md`

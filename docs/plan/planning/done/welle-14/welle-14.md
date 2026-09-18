@@ -1,4 +1,4 @@
-# welle-14 — 14: Performance-Benchmarks & Test-Coverage-Gate
+# welle-14 — Performance-Benchmarks & Test-Coverage-Gate
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-14/archiv.zip docs/plan/planning/done/welle-14/welle-14.md`

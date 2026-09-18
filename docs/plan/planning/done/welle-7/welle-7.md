@@ -1,4 +1,4 @@
-# welle-7 — 7: Replication-Schwellen-Überwachung
+# welle-7 — Replication-Schwellen-Überwachung
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-7/archiv.zip docs/plan/planning/done/welle-7/welle-7.md`

@@ -1,4 +1,4 @@
-# welle-17 — 17: E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`)
+# welle-17 — E2E-Testbelege für fünf testfreie Lastenheft-Kennungen (`ADR-0058`)
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-17/archiv.zip docs/plan/planning/done/welle-17/welle-17.md`

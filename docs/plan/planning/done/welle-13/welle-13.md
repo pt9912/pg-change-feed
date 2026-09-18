@@ -1,4 +1,4 @@
-# welle-13 — 13: Retention-Löschausführung
+# welle-13 — Retention-Löschausführung
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-13/archiv.zip docs/plan/planning/done/welle-13/welle-13.md`

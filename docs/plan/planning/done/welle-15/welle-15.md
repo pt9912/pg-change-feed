@@ -1,4 +1,4 @@
-# welle-15 — 15: NATS-Change-Notification
+# welle-15 — NATS-Change-Notification
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-15/archiv.zip docs/plan/planning/done/welle-15/welle-15.md`

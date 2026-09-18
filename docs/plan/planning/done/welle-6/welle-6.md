@@ -1,4 +1,4 @@
-# welle-6 — 6: Consumer-Zugriffsweg
+# welle-6 — Consumer-Zugriffsweg
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-6/archiv.zip docs/plan/planning/done/welle-6/welle-6.md`

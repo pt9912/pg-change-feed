@@ -1,4 +1,4 @@
-# welle-16 — 16: HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`)
+# welle-16 — HTTP/JSON-API mit Token-Authn (`LH-FA-SST-006`)
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-16/archiv.zip docs/plan/planning/done/welle-16/welle-16.md`

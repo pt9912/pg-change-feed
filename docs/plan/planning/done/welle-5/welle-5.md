@@ -1,4 +1,4 @@
-# welle-5 — 5: Realer CDC-Capture-Lag
+# welle-5 — Realer CDC-Capture-Lag
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-5/archiv.zip docs/plan/planning/done/welle-5/welle-5.md`

@@ -1,4 +1,4 @@
-# welle-11 — 11: E2E-Abdeckung — Verwaltung & Observability
+# welle-11 — E2E-Abdeckung — Verwaltung & Observability
 
 > **ARCHIVIERT** — Volltext:
 > `unzip -p docs/plan/planning/done/welle-11/archiv.zip docs/plan/planning/done/welle-11/welle-11.md`
