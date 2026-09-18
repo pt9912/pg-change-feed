@@ -91,16 +91,22 @@ ausdrücklich unangetastet.
       `78ce1a8`/`9dec44c` (welle-17), `b8ae34e`/`64cc8d1` (welle-19),
       `f5b4a5d`/`96b313b` (welle-20).
 - [x] **LP3:** `make docs-check` grün nach allen 17 Läufen (0 Befunde, 699
-      Dateien) — der bekannte Stub-Titel-Fehler (numerisches vs.
-      Namens-Schema, `MR-002`) trat nicht auf, da alle Mitglieder-Slices
-      dieser 17 Wellen vor `slice-105` liegen und rein numerisch sind
-      (real geprüft: `grep -rl "^# slice- —" docs/plan/planning/done/welle-*/*.md`
-      — kein Treffer). `make gates` insgesamt vorübergehend rot
-      (`commit-traceability`, 34 kennungslose Werkzeug-Commits im
-      gleitenden `HEAD~5..HEAD`-Fenster) — durch die nachfolgenden
-      Closure-Commits dieses Slices aus dem Fenster geschoben, siehe §7.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      Dateien) — der bekannte Stub-Titel-Fehler für **namensbasierte**
+      Slice-Kennungen (`MR-002`) trat nicht auf (real geprüft: `grep -rl
+      "^# slice- —" docs/plan/planning/done/welle-*/*.md` — kein Treffer),
+      wohl aber eine **zweite, eigenständige** Auslösebedingung derselben
+      Werkzeug-Schwäche auf **Welle-Ebene**: 13 von 17 Wellen-Stub-Titeln
+      trugen eine verdoppelte Wellennummer (Review-Finding F-1, behoben in
+      Commit `301ea0c`, neuer Beobachtungs-Register-Eintrag
+      `BEO-PGC/archiv-stub-titel-malformed`). `make gates` insgesamt
+      vorübergehend rot (`commit-traceability`, 34 kennungslose
+      Werkzeug-Commits im gleitenden `HEAD~5..HEAD`-Fenster) — durch die
+      nachfolgenden Closure-Commits dieses Slices aus dem Fenster
+      geschoben, siehe §7.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
+      [`review-slice-archive-wellen-verbleibend.md`](../../../reviews/review-slice-archive-wellen-verbleibend.md) —
+      0 HIGH, 1 MEDIUM (F-1 Stub-Titel, behoben in `301ea0c`), 1 INFO.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §7.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
@@ -141,8 +147,12 @@ Lerneintrag geschrieben.
   Präzedenzfalls) — **Ausgang: entfallen** — `make docs-check` lief nach
   allen 17 Läufen grün (0 Befunde, 699 Dateien).
 - **Der bekannte Stub-Titel-Fehler (`MR-002`-Namensform) tritt bei einer der
-  17 Wellen auf** — **Ausgang: entfallen** — alle Mitglieder-Slices dieser
-  Wellen sind rein numerisch (vor `slice-105`), real geprüft, kein Treffer.
+  17 Wellen auf** — **Ausgang: entfallen** für diese konkrete Form (alle
+  Mitglieder-Slices sind rein numerisch, vor `slice-105`, kein Treffer);
+  **eingetreten, behoben** für eine zweite, beim Schneiden dieses Slices
+  nicht vorhergesehene Auslösebedingung derselben Werkzeug-Schwäche —
+  13 von 17 Wellen-Stub-Titeln trugen eine verdoppelte Wellennummer
+  (Review-Finding F-1, Commit `301ea0c`, `BEO-PGC/archiv-stub-titel-malformed`).
 - **`commit-traceability` bleibt dauerhaft rot**, weil 34 statt vormals 4
   kennungslose Commits das gleitende Fenster füllen — **Ausgang:
   eingetreten, in der Closure aufgelöst** — dieselbe Fenster-Verschiebung
@@ -180,6 +190,10 @@ Lerneintrag geschrieben.
   mechanischen Läufe zuerst (nur `docs-check` je Lauf, nicht das volle
   `make gates`), dann **eine** gebündelte Closure mit den nötigen
   Kennung-tragenden Commits am Ende, statt 17 einzelne Remediation-Runden.
+  Der unabhängige Reviewer-Pass fand zusätzlich eine zweite, beim Schneiden
+  nicht vorhergesehene Auslösebedingung des bereits aus dem Präzedenzfall
+  bekannten Stub-Titel-Fehlers (13 von 17 Wellen-Stub-Titeln mit
+  verdoppelter Nummer, F-1) — direkt behoben, siehe §6.
 - **Steering-Loop-Eintrag:** Ein Standing-Gate mit gleitendem Fenster
   (`commit-traceability`, `HEAD~5..HEAD`) braucht bei einer Serie
   gleichartiger, extern committierter Läufe **eine** Fenster-Räumung am
