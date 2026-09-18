@@ -40,4 +40,4 @@ benannt; die Beobachtung braucht die 3×-Schwelle nicht (dieselbe direkte
 Auflösung unter der Schwelle wie
 `BEO-PGC/schema-evolution-nicht-dynamisch` und
 `BEO-PGC/retention-keine-loeschausfuehrung`). Zähler (abgeleitet): 1×
-(evidence/review-slice-067.md).
+(evidence/slice-067.md).
