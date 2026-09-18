@@ -109,4 +109,3 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0094 | Review-Matrixklasse — Kennung statt Adresse (ergänzt ADR-0073) | Accepted | 2026-09-18 | [0094-review-matrixklasse-kennung-statt-adresse.md](0094-review-matrixklasse-kennung-statt-adresse.md) |
 | ADR-0095 | Review-Klasse — Status-Ausnahme (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0095-review-klasse-exempt-status-check.md](0095-review-klasse-exempt-status-check.md) |
 | ADR-0096 | Altbestand-Schlüssel für wellenlosen Archiv-Bestand | Accepted | 2026-09-18 | [0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md](0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md) |
-| ADR-0097 | `observation`-Matrixklasse — Review verboten (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0097-observation-matrixklasse-review-verboten.md](0097-observation-matrixklasse-review-verboten.md) |
