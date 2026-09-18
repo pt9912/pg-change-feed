@@ -91,8 +91,9 @@ Slice schließt genau diese drei echten Lücken mit neuen E2E-Belegen in
       `cdc_changes_pending`=33 für einen eigenen, zurückliegenden
       Consumer, `cdc_errors_total`=1 für Klasse `internal`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review — `docs/reviews/review-slice-e2e-drei-rtm-luecken.md`
+      (0 HIGH/MEDIUM, keine Fixrunde).
 - [x] Doku-Update: `docs/user/e2e-abdeckung.md` (generiert, `make test-integration`),
       `tools/schema/nacharbeit-observability.sql`-Kopfkommentar,
       `harness/README.md` `make doc-trace`-Zeile (Waisen-Zahl real
