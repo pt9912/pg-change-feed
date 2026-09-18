@@ -105,9 +105,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Träger nachgezogen: `examples/README.md` (neuer Abschnitt „Demo-Umgebung"),
       `harness/README.md` §Werkzeuge (kein Gate).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      [`review-slice-beispiele-compose-bootstrap.md`](../../../reviews/review-slice-beispiele-compose-bootstrap.md) —
+      0 HIGH, 0 MEDIUM, 1 LOW, 2 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update: `examples/README.md` neuer Abschnitt, ggf. ein Quickstart-
       Absatz in `docs/user/benutzerhandbuch.md` (Detail des umsetzenden
       Zuges, ob dort oder nur in `examples/README.md`) — Entscheidung: nur
@@ -220,10 +222,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-**Entwurf (Implementer-Rolle) — Reviewer-/Verifier-Pass steht noch aus,
-Lifecycle-Übergang nach `done/` folgt erst danach.**
-
-**Gegenstand:** vollständig geliefert — `examples/compose.yaml` (eigenes
+**Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+liegt vor
+([`review-slice-beispiele-compose-bootstrap.md`](../../../reviews/review-slice-beispiele-compose-bootstrap.md),
+0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
+`examples/compose.yaml` (eigenes
 Netzwerk `cdc-examples`, eigene PostgreSQL/NATS-Instanzen, referenziert das
 per `make image` geladene Image ohne `build:`-Block), `examples/bootstrap.sh`
 (Schema-Rollout über d-migrate, Beispiel-Quelle/-Tabelle-Registrierung,
