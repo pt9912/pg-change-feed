@@ -102,13 +102,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Slice-Schnitt-Empfehlung für die drei Folge-Slices.
 - [x] `make gates` grün (ungepiped Exit-Code geprüft, `AGENTS.md` §3.9 —
       siehe Bericht).
-- [ ] Review durchgeführt (Konsistenzprüfung der neuen ADR gegen
+- [x] Review durchgeführt (Konsistenzprüfung der neuen ADR gegen
       `ADR-0076`/`ADR-0087`/`ADR-0090`), Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      **Offen** — dieser Zug ist die Architect-Rolle selbst; der
-      Rollenwechsel zum Reviewer ist der nächste Schritt, kein
-      Self-Review-Ersatz. Der `git mv` nach `done/` steht deshalb noch aus.
+      [`review-slice-beispiele-start-architect-entscheidung.md`](../../../reviews/review-slice-beispiele-start-architect-entscheidung.md) —
+      0 HIGH, 0 MEDIUM, 1 LOW (Netzwerk-Ordering-Lücke, an die
+      Folge-Slices weitergegeben), 3 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update: keiner erwartet (kein öffentlicher Vertrag geändert — die
       ADR ist das Erzeugnis); die ADR trägt selbst die Folgepflicht-Zeile für
       `SPEC-023` (umsetzender Zug).
@@ -222,13 +222,11 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-**Gegenstand:** vollständig geliefert — dieser Slice bleibt zunächst in
-`in-progress/`, nicht `done/`: die Lifecycle-Closure (§5) verlangt einen
-Review-Report, und dieser Zug ist die Architect-Rolle selbst
-(Modul 8 §Rollen-Regeln, kein Self-Review). Der `git mv` nach `done/` folgt,
-sobald der Reviewer-Pass gegen
+**Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
-vorliegt.
+liegt vor
+([`review-slice-beispiele-start-architect-entscheidung.md`](../../../reviews/review-slice-beispiele-start-architect-entscheidung.md),
+0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
 (`Accepted`, `Supersedes ADR-0076` in genau der Startform-Klausel)
