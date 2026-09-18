@@ -104,13 +104,13 @@ Beispiele-Gegenstand dieser Welle, aber während ihrer Closure terminiert.
 
 ## Verifikation
 
-- Review zu `slice-beispiele-start-architect-entscheidung`
+- `docs/reviews/review-slice-beispiele-start-architect-entscheidung.md`
   (0 HIGH, 0 MEDIUM, 1 LOW, 3 INFO).
-- Review zu `slice-beispiele-go-dockerfile-start` (0 HIGH,
+- `docs/reviews/review-slice-beispiele-go-dockerfile-start.md` (0 HIGH,
   0 MEDIUM, 3 INFO).
-- Review zu `slice-beispiele-compose-bootstrap` (0 HIGH,
+- `docs/reviews/review-slice-beispiele-compose-bootstrap.md` (0 HIGH,
   0 MEDIUM, 1 LOW, 2 INFO).
-- Review zu `slice-beispiele-csharp-kotlin-start-target`
+- `docs/reviews/review-slice-beispiele-csharp-kotlin-start-target.md`
   (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO).
 - `make gates`: grün auf dem Endstand (alle sechs Gates,
   `commit-traceability` eingeschlossen).

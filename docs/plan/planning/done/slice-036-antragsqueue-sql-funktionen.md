@@ -106,10 +106,12 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      Beleg: Review zu `slice-036` (3 MEDIUM, kein Merge-Blocker), Fixrunde
-      behoben in Commit `3f57e8d`, bestätigt in der Fixrunde des
-      Review-Berichts zu `slice-036`.
-      Verifikation im Verifikationsbericht zu `slice-036`
+      Beleg: [`docs/reviews/review-slice-036.md`](../../../reviews/review-slice-036.md)
+      (3 MEDIUM, kein Merge-Blocker), Fixrunde behoben in Commit
+      `3f57e8d`, bestätigt in
+      [`docs/reviews/review-slice-036-fixrunde.md`](../../../reviews/review-slice-036-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-036.md`](../../../reviews/verify-slice-036.md)
       (DoD eigenständig nachgeprüft, alle drei Testfälle real reproduziert).
 - [x] Doku-Update für `harness/README.md` §Sensors/`AGENTS.md`, falls ein
       neuer Sensor/Vertrag entsteht — Implementer entscheidet und

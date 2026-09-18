@@ -51,7 +51,10 @@ matrix:
       # Dieselbe Enge wie bei "slice" oben, aus demselben Grund. Eine
       # Welle-Plan-Datei liegt flach unter docs/plan/planning/ (offen),
       # unter done/ (geschlossen) oder unter done/<welle-id>/ (archiviert,
-      # als Stub neben ihren archivierten Slices).
+      # als Stub neben ihren archivierten Slices). Klasse ohne eigene
+      # to-review-Regel (siehe unten, ADR-0099) — sie existiert fuer die
+      # korrekte Abgrenzung gegen "slice"/"observation", nicht als Traeger
+      # einer Verbots-Regel.
       paths:
         - "docs/plan/planning/welle-*.md"
         - "docs/plan/planning/done/welle-*.md"
@@ -67,8 +70,17 @@ matrix:
     - {from: adr, to: slice, allow: false}
     - {from: adr, to: review, allow: false}
     - {from: observation, to: review, allow: false}
-    - {from: slice, to: review, allow: false}
-    - {from: welle, to: review, allow: false}
+    # Bewusst KEINE Regel fuer {from: slice, to: review} oder
+    # {from: welle, to: review} (ADR-0099, Supersedes ADR-0097 auf diesem
+    # Punkt; bestaetigt ADR-0094s urspruengliche Begruendung): ein Slice
+    # zitiert routinemaessig seinen eigenen Review-Report, eine Welle
+    # routinemaessig die Reviews ihrer eigenen Slices/ihren eigenen
+    # Welle-Review — beide archivieren gemeinsam in dieselbe
+    # done/<welle-id>/archiv.zip (modul-06-roadmap.md §Wellen-Closure-
+    # Prozedur Schritt 4), kein Haenger-Risiko. Eine kurzlebige
+    # Zwischenfassung dieser Datei erzwang genau diese Umschreibung fuer
+    # 11 reale, ausnahmslos Selbst-Zitat-Faelle (7 slice-, 5 welle-Dateien)
+    # ohne Supersedes-ADR; ADR-0099 macht sie rueckgaengig.
   status:
     forbidden: [superseded, deprecated]
     # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel

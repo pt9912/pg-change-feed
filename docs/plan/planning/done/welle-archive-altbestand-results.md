@@ -59,8 +59,8 @@ Keine.
 
 ## Verifikation
 
-- Review zu `slice-archive-altbestand-adr` (0 HIGH).
-- Review zu `slice-archive-altbestand-vollzug` (0 HIGH, 2
+- `docs/reviews/review-slice-archive-altbestand-adr.md` (0 HIGH).
+- `docs/reviews/review-slice-archive-altbestand-vollzug.md` (0 HIGH, 2
   MEDIUM — behoben, siehe Folge-Commit).
 - `make gates`: grün auf dem Endstand (alle sechs Gates, `commit-traceability`
   eingeschlossen).

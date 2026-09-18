@@ -111,3 +111,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0096 | Altbestand-Schlüssel für wellenlosen Archiv-Bestand | Accepted | 2026-09-18 | [0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md](0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md) |
 | ADR-0097 | `observation`-Matrixklasse — Review verboten (ergänzt ADR-0094) | Accepted | 2026-09-18 | [0097-observation-matrixklasse-review-verboten.md](0097-observation-matrixklasse-review-verboten.md) |
 | ADR-0098 | Beispiel-Clients — Startform `make`/Dockerfile (Supers. ADR-0076, teilw.) | Accepted | 2026-09-18 | [0098-beispiel-clients-start-ueber-make-dockerfile.md](0098-beispiel-clients-start-ueber-make-dockerfile.md) |
+| ADR-0099 | `slice`/`welle → review` zurückgenommen (Supers. ADR-0097, teilw.) | Accepted | 2026-09-18 | [0099-slice-welle-review-regel-zurueckgenommen.md](0099-slice-welle-review-regel-zurueckgenommen.md) |

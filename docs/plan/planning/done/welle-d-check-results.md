@@ -85,16 +85,15 @@ inhaltliche Prüfung der 7 realen RTM-Waisen (`BEO-PGC/anforderung-ohne-erkennba
 
 ## Verifikation
 
-- Slice-Verifikationen: der Verifikationsbericht zu `slice-d-check-tracked-modul`,
-  der Verifikationsbericht zu `slice-d-check-trace-rtm` — beide DoD erfüllt.
+- Slice-Verifikationen: `docs/reviews/verify-slice-d-check-tracked-modul.md`,
+  `docs/reviews/verify-slice-d-check-trace-rtm.md` — beide DoD erfüllt.
 - Welle-weiter Verifikations-Beleg (Schritt 1, das *Mehr* über die
-  Einzel-DoDs hinaus): der Verifikationsbericht zu `welle-d-check` — kombinierter
+  Einzel-DoDs hinaus): `docs/reviews/verify-welle-d-check.md` — kombinierter
   `make gates`-Lauf grün, `tracked` und `trace:` gleichzeitig aktiv, keine
   Config-Kollision, `make doc-trace` Exit 0 (76 Anforderungen, 7 Waisen),
   `make doc-tracked` Exit 0 (892 Dateien, 0 Befunde) im `trace:`-aktiven
   Stand.
-- Architect-Verdikte: der Architect-Verdikt zur ADR-Frage von
-  `slice-d-check-tracked-modul`, der Architect-Verdikt zum Lese-Schritt
-  von `welle-d-check`.
+- Architect-Verdikte: `docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`,
+  `docs/reviews/architect-verdict-welle-d-check-lese-schritt.md`.
 - `make gates`: grün über den gesamten Wellen-Verlauf, Exit-Code jeweils
   direkt und ungepiped geprüft (`AGENTS.md` §3.9).

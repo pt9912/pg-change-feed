@@ -16,5 +16,10 @@ Unterschied — **Verfeinerung** (ADR-frei) gegen **Erweiterung**
 Deklaration: `slice-071` (Review-Finding F-1,
 Review zu `slice-071`; entschieden über
 `ADR-0068`, `Supersedes ADR-0041` nur die Änderungs-Ausnahmeklausel).
+Zweite Deklaration: ein wellenloser Architect-Zug fand dieselbe Klasse in
+`.d-check.yml` statt `.a-check.yml` — eine Matrix-Regel-Erweiterung
+(`{from: slice/welle, to: review}`) kam per Config-Commit ohne ADR und im
+Widerspruch zu zwei bereits `Accepted` ADRs; aufgelöst über `ADR-0099`
+(`Supersedes ADR-0097`, teilweise).
 Verwandt, aber Gegenrichtung: `BEO-PGC/a-check-null-abdeckung` (Dateien in
 **keiner** Schicht) — hier ist es eine Gruppe, die **zu weit** reicht.

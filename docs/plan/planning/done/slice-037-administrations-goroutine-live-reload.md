@@ -137,10 +137,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      Beleg: Review zu `slice-037`
+      Beleg: [`docs/reviews/review-slice-037.md`](../../../reviews/review-slice-037.md)
       (1 HIGH, 3 MEDIUM), Fixrunde behoben in Commit `c78aa1d`, bestätigt
-      in der Fixrunde des Review-Berichts zu `slice-037`.
-      Verifikation im Verifikationsbericht zu `slice-037`
+      in [`docs/reviews/review-slice-037-fixrunde.md`](../../../reviews/review-slice-037-fixrunde.md).
+      Verifikation in
+      [`docs/reviews/verify-slice-037.md`](../../../reviews/verify-slice-037.md)
       (DoD eigenständig nachgeprüft, Race-Freiheit real diskriminierend
       reproduziert, End-zu-End-Beleg dreifach real reproduziert).
 - [x] Doku-Update, falls ein öffentlicher Vertrag berührt wird —

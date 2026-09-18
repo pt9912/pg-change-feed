@@ -136,7 +136,7 @@ Aussagen-Berührung steht hier gar nicht.
 | `.gitignore` | neu | *Plan-Nachzug (V-2):* `.tmp/` + `harness/image-hash.raw` ignoriert (Review F-5) |
 | `tools/harness/image-stale.sh` | update | *Plan-Nachzug (V-2):* Major-Drift-Erkennung ergänzt (golang:1.27-alpine existiert, MAJOR-DRIFT gemeldet) |
 | `harness/sensors/*.md` | neu | *Plan-Nachzug (V-2):* Sensor-Dateien nach gate.template.md ([`ADR-0041`](../../adr)-Zug) |
-| die Review-Report-Vorlage (unter `docs/reviews/`) | neu | *Plan-Nachzug (V-2):* aus der vendored Referenz-Form wiederhergestellt (Review F-8) |
+| `docs/reviews/review-report.template.md` | neu | *Plan-Nachzug (V-2):* aus der vendored Referenz-Form wiederhergestellt (Review F-8) |
 | `harness/image-hash.txt` (erneuert) | update | *Plan-Nachzug (V-1):* Beleg am HEAD erneuert (`be405e4`) — der committete Beleg trug den f932022-Digest, der Zeilenenden-Fix (F-6) änderte den Build-Kontext ohne Re-Build |
 | `cmd/pg-change-feed/main.go`, `go.mod` | update | *Plan-Nachzug (V-2):* Datei-Ende-Zeilenumbrüche (Review F-6) |
 
