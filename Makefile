@@ -23,7 +23,7 @@ include harness/mk/*.mk
 include a-check.mk
 
 .PHONY: image
-image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (Modul 14)
+image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (lokal, nicht committet — ADR-0103)
 	docker buildx build --load --metadata-file harness/image-hash.raw -t ghcr.io/pt9912/pg-change-feed:dev . && grep -o '"containerimage.digest":[[:space:]]*"sha256:[0-9a-f]*' harness/image-hash.raw | head -1 | grep -o 'sha256:[0-9a-f]*' > harness/image-hash.txt && rm harness/image-hash.raw
 
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
