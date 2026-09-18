@@ -183,28 +183,32 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # BEO-PGC/schema-rollout-fremdobjekte): Ein zweiter Lauf gegen ein bereits
 # migriertes Ziel blockiert sonst mit Exit 8, weil die sechs Fremdobjekte
 # aus den vier nacharbeit-*.sql-Dateien außerhalb des neutralen Modells
-# liegen und d-migrate ihren Abbau plant — real unabhängig davon, ob dieser
-# Lauf sonst inhaltlich nichts oder eine echte neue Schema-Änderung trägt.
-# Ein vorgelagerter --plan-only-Lauf (kein --execute, liest nur) schreibt
+# liegen und d-migrate ihren Abbau plant — unabhängig davon, ob dieser Lauf
+# sonst inhaltlich nichts oder eine echte neue Schema-Änderung trägt. Ein
+# vorgelagerter --plan-only-Lauf (kein --execute, liest nur) schreibt
 # denselben Report nach tools/schema/rollout-precheck.yaml (eigene Datei,
 # damit der committete Pflicht-Report tools/schema/plan.yaml ausschließlich
 # echte --execute-Läufe belegt); endet er blockierend (Exit 8), entscheidet
 # tools/schema/rolloutguard anhand des strukturierten Reports, ob
 # ausschließlich die sechs bekannten Objekte blockieren. Nur dann läuft der
-# reguläre --execute-Schritt zusätzlich mit --allow-destructive — sicher,
-# weil der Precheck bereits bestätigt hat, dass kein anderer destruktiver
-# Blocker im Spiel ist; jede echte neue Schema-Änderung im selben Lauf wird
-# dadurch weiterhin angewendet, statt beim bloßen Überspringen von
-# --execute verlustig zu gehen (real geprüft: eine per ALTER TABLE …
-# entfernte, von schema.yaml weiterhin deklarierte Spalte kam bei einem
-# reinen Skip nicht zurück). Die vier nacharbeit-*.sql-Schritte laufen
-# danach unverändert und legen die sechs bekannten Objekte sofort wieder
-# an (CREATE OR REPLACE, dieselbe Idempotenz wie bei jedem anderen Lauf) —
-# ihr kurzes reales Fehlen zwischen --execute und dem ersten
-# nacharbeit-Schritt bleibt folgenlos. Jeder andere Fall (kein Blocker, ein
-# unbekannter Blocker, eine andere Blocker-Klasse) läuft ohne
-# --allow-destructive und bricht bei einer echten neuen destruktiven
-# Änderung weiterhin mit Exit 8 ab.
+# reguläre --execute-Schritt zusätzlich mit --allow-destructive. --execute
+# selbst läuft in jedem Fall, damit jede echte, gleichzeitig anstehende
+# Schema-Änderung im selben Lauf wirksam bleibt (Regressionsbeleg:
+# tools/harness/run-schema-rollout-guard-test.sh Lauf 3). Die vier
+# nacharbeit-*.sql-Schritte laufen danach unverändert und legen die sechs
+# bekannten Objekte sofort wieder an (CREATE OR REPLACE, dieselbe
+# Idempotenz wie bei jedem anderen Lauf) — ihr kurzes reales Fehlen
+# zwischen --execute und dem ersten nacharbeit-Schritt bleibt folgenlos.
+# Jeder andere Fall (kein Blocker, ein unbekannter Blocker, eine andere
+# Blocker-Klasse) läuft ohne --allow-destructive und bricht bei einer
+# echten neuen destruktiven Änderung weiterhin mit Exit 8 ab.
+#
+# Grenze: Der Precheck- und der --execute-Lauf sind zwei unabhängige,
+# sequenzielle docker-run-Aufrufe gegen denselben lebenden Ziel-Zustand —
+# kein d-migrate-Flag liest einen zuvor geprüften Plan zur Ausführung
+# wieder ein. Ein zwischen beiden Läufen neu entstehender destruktiver
+# Blocker würde vom Precheck nicht erfasst, liefe aber unter dem bereits
+# gesetzten --allow-destructive durch (enges, aber reales Fenster).
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	@docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --plan-only --report tools/schema/rollout-precheck.yaml; \

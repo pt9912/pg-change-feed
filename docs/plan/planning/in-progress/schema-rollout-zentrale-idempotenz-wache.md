@@ -103,13 +103,21 @@ Regressionsbeleg dafür ist Lauf 3 von
       real geprüft (`tools/harness/run-schema-rollout-guard-test.sh` Lauf
       4, `make: *** [schema-rollout] Error 8`).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review —
+      `docs/reviews/review-slice-schema-rollout-zentrale-idempotenz-wache.md`,
+      2 HIGH (F-1, F-2) in der Fixrunde behoben, 1 MEDIUM (F-3) dokumentiert
+      (kein Code-Fix möglich, siehe §6), 2 LOW (F-5, F-6) behoben/notiert.
 - [x] `AGENTS.md` §3.14 angepasst oder gestrichen (Architect-Entscheidung
-      bei Closure, siehe §1 Abgrenzung). — gestrichen (ersatzlos): der
-      Negativtest (siehe oben) belegt, dass die zentrale Wache auch den
-      Mischfall (bekannt + unbekannt) korrekt auflöst, keine Restlücke für
-      einen dünneren Hinweis.
+      bei Closure, siehe §1 Abgrenzung). **Fixrunde (Reviewer-Fund F-2):**
+      die ursprüngliche ersatzlose Streichung verletzte `AGENTS.md` §3.13 —
+      [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md)
+      §Teilfrage 4 (`Accepted`, unberührbar per §3.5) zitiert „`AGENTS.md`
+      §3.14" namentlich als Analogie und wurde beim Nachzugs-Suchlauf
+      übersehen. Da die Verglichene-Alternativen-Sektion einer `Accepted`
+      ADR nicht editierbar ist (§3.5), trägt §3.14 jetzt einen reinen
+      Rang-Zeiger-Absatz (keine Regel), der den Verweis auflösbar hält,
+      statt die Nummer ersatzlos verwaist zu lassen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register
       (`docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`)
@@ -125,10 +133,11 @@ Regressionsbeleg dafür ist Lauf 3 von
 | `Makefile` (`schema-rollout`-Target) | update | Vorlauf-Schritt vor `--execute`: `--plan-only`-Lauf gegen dasselbe Ziel (eigener Report-Pfad `tools/schema/rollout-precheck.yaml`, damit der committete Pflicht-Report `tools/schema/plan.yaml` ausschließlich echte `--execute`-Läufe belegt), Guard-Aufruf, bedingter Fallback auf den echten `--execute`-Lauf. |
 | `tools/schema/rolloutguard/{main.go,report.go,guard.go,guard_test.go}` | neu | **Plan-Nachzug** (Ort jetzt entschieden): Go statt eines neuen `jq`-artigen Werkzeugs — derselbe Docker-only-Weg wie `tools/harness/*` (gepinnter Toolchain-Container, `go run`), keine neue Werkzeugkette. Liest den `--plan-only`-Report, vergleicht jede Blocker-Operation (über `kind`/`objectType`/`path`, nicht über die inhaltsabhängigen `id`-Hashes) gegen die feste Liste der sechs bekannten Fremdobjekte — direkt neben den `nacharbeit-*.sql`-Dateien (Kolokation). Unit-getestet, netzlos, läuft unter `make test`. |
 | `d-migrate`-Image (`D_MIGRATE_IMAGE`) | Recherche | Durchgeführt: `docker run … schema migrate --help` zeigt **keinen** gezielten Bestätigungs-Mechanismus je Operation (`--allow-destructive` bleibt pauschal). Das gewählte Verfahren braucht ihn aber nicht — `--plan-only` allein liefert die für die Klassifikation nötige Struktur; kein partieller Rollout nötig, weil der Skip-Fall (alle Blocker bekannt) laut Definition ohnehin nichts Neues auszurollen hat. |
-| `AGENTS.md` §3.14 | streichen | Ersatzlos entfernt (kein dünnerer Hinweis nötig, siehe DoD-Punkt 2 oben). |
+| `AGENTS.md` §3.14 | streichen | Ursprünglich ersatzlos entfernt; in der Reviewer-Fixrunde (F-2) auf einen Rang-Zeiger-Absatz korrigiert, siehe DoD-Punkt „AGENTS.md §3.14" und die Fixrunden-Zeile unten. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | neu | Realer Drei-Läufe-Beleg (frisch → Skip-Pfad → Negativ-Abbruch) gegen eine eigenständige, abgeräumte Ziel-DB — kein Unit-Test, weil DB-/d-migrate-Zugriff nötig ist; läuft im selben Docker-only-Rahmen wie `tools/harness/run-store-tests.sh`. Kein neues Make-Target (Werkzeug, `bash`-Aufruf direkt, wie in der Pre-completion-Checkliste dieses Slice-Laufs dokumentiert). |
 | `.gitignore` | update | **Plan-Nachzug**: `tools/schema/rollout-precheck.yaml` ist ein transientes Vorlauf-Artefakt, kein Bestand. |
 | `Makefile`, `tools/schema/rolloutguard/{guard.go,main.go,report.go,guard_test.go}` | Fixrunde (Plan-Nachzug) | Der Mischfall aus §6 (dritter Risikopunkt) trat real ein, noch innerhalb dieses Slice, vor jedem Reviewer-Zug: der erste Entwurf überspringt `--execute` komplett bei ausschließlich bekannten Blockern und hätte dadurch eine echte, gleichzeitig anstehende, nicht-destruktive Änderung verloren (empirisch verifiziert). Korrektur: `--execute` läuft immer; `decide()`/`main.go` liefern jetzt `allowDestructive` statt `skip`, das Makefile-Target setzt `--allow-destructive` nur zusätzlich, wenn `decide()` es erlaubt. `guard_test.go`-Namen/-Kommentare entsprechend nachgezogen; kein Verhaltensunterschied für die fünf bestehenden Unit-Tests (reine Allowlist-Prüfung unverändert), aber neue Semantik der Rückgabe. Regressionsbeleg: Lauf 3 von `tools/harness/run-schema-rollout-guard-test.sh`. |
+| `Makefile`, `tools/schema/rolloutguard/{guard.go,report.go}`, `AGENTS.md` | Fixrunde (Reviewer F-1, F-2, F-5) | F-1 (HIGH): Vorher/Nachher-Chronik-Prosa in beiden Kommentaren („statt beim bloßen Überspringen von --execute…", „ein reines Überspringen … ließ … nicht zurückkommen") auf reinen Ist-Zustand mit Anker auf den Regressionstest umgeschrieben (`BEO-PGC/slice-chronik-in-code-kommentar`, 5./6. Auftreten). F-2 (HIGH): `AGENTS.md` §3.14 trägt jetzt einen Rang-Zeiger-Absatz statt leer zu bleiben, weil [`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md) §Teilfrage 4 (`Accepted`) die Nummer namentlich zitiert — die ADR selbst bleibt unangetastet (§3.5, Verglichene-Alternativen-Sektion ist kein Zitat-Korrektur-Fall). F-5 (LOW): Grenze-Kommentar zu `foreignObject`s Schlüssel-Kollisionsannahme (Single-Schema, punktfreie Pfadsegmente) ergänzt. |
 
 **Real gefundenes, außerhalb des Scopes liegendes Risiko:** `tools/schema/plan.yaml`/`down.sql` sind geteilte, feste Schreibziele — **jeder** Aufrufer von `make schema-rollout` (auch gegen eine völlig unabhängige Test-/Scratch-DB) überschreibt den committeten Pflicht-Report der letzten echten Produktions-/CI-Rollout mit seinem eigenen Ergebnis. Real aufgetreten: ein Lauf von `tools/harness/run-schema-rollout-guard-test.sh` hinterließ eine geänderte `tools/schema/plan.yaml` im Arbeitsbaum (zurückgesetzt, nicht committet). Vorbestehend (jeder heutige Aufrufer, u. a. `tools/schema/apply-rollout.sh`, trägt dasselbe Risiko) und nicht Gegenstand dieses Slice — siehe Beobachtungs-Register.
 
@@ -159,9 +168,19 @@ Lerneintrag geschrieben.
 ## 6. Risiken und offene Punkte
 
 - d-migrate bietet keinen gezielten Bestätigungs-Mechanismus je Operation,
-  nur pauschal `--execute`/kein `--execute` — **Ausgang:** weiter offen,
-  klärt sich in der Recherche von §3 Zeile 3; falls zutreffend, greift die
-  `in-progress` → `next`-Rückführung aus §4.
+  nur pauschal `--execute`/kein `--execute` — **Ausgang: eingetreten**
+  (Recherche in §3 Zeile 3 bestätigt: kein solcher Mechanismus existiert).
+  Konsequenz, real gefunden im Review (F-3, MEDIUM): `--plan-only` und
+  `--execute --allow-destructive` sind zwei unabhängige, sequenzielle
+  Docker-Läufe gegen denselben lebenden Ziel-Zustand — ein zwischen beiden
+  Läufen neu entstehender destruktiver Blocker würde vom Precheck nicht
+  erfasst, liefe aber unter dem bereits gesetzten `--allow-destructive`
+  durch (enges, aber reales Fenster, dokumentiert als Grenze-Kommentar im
+  Makefile-Target). Kein Root-Cause-Fix möglich ohne ein d-migrate-Flag,
+  das einen geprüften Plan zur Ausführung wieder einliest — dieses Flag
+  existiert laut Recherche nicht; die `in-progress` → `next`-Rückführung
+  aus §4 griff hier bewusst nicht, weil das Risiko klein und für den
+  Single-Operator-/CI-Nutzungsfall dieses Repos hinnehmbar ist.
 - Ein siebtes `nacharbeit-*.sql`-Skript wird angelegt, ohne die
   Kolokations-Konvention (Makefile-Zeile + Allowlist-Eintrag im selben
   Commit) einzuhalten — **Ausgang:** weiter offen, sollte über

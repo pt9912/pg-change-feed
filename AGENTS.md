@@ -495,6 +495,19 @@ nicht durch ein Gate · seit welle-20 · geschärft seit welle-d-check
 `slice-078`/`slice-079`/`slice-096`;
 [Architect-Verdikt](docs/reviews/architect-verdict-welle-d-check-lese-schritt.md)).
 
+### 3.14 (Nummer bewusst gehalten — Rang-Zeiger, keine Regel)
+
+Diese Nummer trug bis `schema-rollout-zentrale-idempotenz-wache` die Regel
+„Ein Aufrufer von `make schema-rollout` trägt seine eigene
+Idempotenz-Wache". Die zentrale Wache im Makefile-Target `schema-rollout`
+(`tools/schema/rolloutguard`, siehe `harness/README.md` §Sensors,
+`make schema-rollout`-Zeile) deckt den Fall jetzt vollständig ab; diese
+Sektion trägt keine eigene Regel mehr. Die Nummer bleibt reserviert, weil
+[`ADR-0100`](docs/plan/adr/0100-nats-dritter-vollinhalts-zustellweg.md)
+§Teilfrage 4 (`Accepted`, unberührbar) „`AGENTS.md` §3.14" namentlich als
+Analogie zitiert — dieser Absatz hält den Verweis auflösbar, ohne die
+gestrichene Regel wiederherzustellen.
+
 ## 4. Quality Gates
 
 **Der Gate-Index steht einmal, und zwar in [`harness/README.md`](harness/README.md)

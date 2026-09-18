@@ -32,7 +32,10 @@ type report struct {
 
 // foreignObject identifiziert eine Blocker-Operation stabil über Kind,
 // Objekttyp und Pfad — nicht über die id-Hashes des Reports, die sich mit
-// dem Inhalt der betroffenen Routine/View ändern können.
+// dem Inhalt der betroffenen Routine/View ändern können. Grenze: path
+// trägt strings.Join(op.Path, ".") — kollisionsfrei nur, solange kein
+// Pfadsegment selbst einen Punkt enthält und alle Objekte im einen
+// Ziel-Schema `cdc` liegen (beides für den aktuellen Bestand der Fall).
 type foreignObject struct {
 	kind       string
 	objectType string

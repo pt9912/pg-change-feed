@@ -33,18 +33,16 @@ const destructiveConfirmationReason = "DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATI
 // blockiert war und JEDE Blocker-Operation (a) den Grund
 // destructiveConfirmationReason trägt und (b) auf der Liste
 // knownForeignObjects steht. Das Ergebnis entscheidet bewusst NICHT, ob
-// `--execute` überhaupt läuft — es läuft immer, damit eine echte,
-// gleichzeitig anstehende Schema-Änderung (z. B. eine neue Spalte) nicht
-// verlustig geht, nur weil die sechs bekannten Fremdobjekte ebenfalls im
-// Plan stehen (real geprüft: ein reines Überspringen von `--execute` ließ
-// eine per ALTER TABLE … DROP COLUMN entfernte, von schema.yaml weiterhin
-// deklarierte Spalte nicht zurückkommen). Ein einziger unbekannter
-// Blocker — real geprüft mit einer künstlich per ALTER TABLE … ADD COLUMN
-// hinzugefügten, nicht deklarierten Spalte, die d-migrate als
-// unbekannten DropColumn-Blocker neben den sechs bekannten meldet — lässt
-// decide false liefern; der `--execute`-Lauf läuft dann ohne
-// `--allow-destructive` und bricht mit demselben Blocker real mit Exit 8
-// ab.
+// `--execute` überhaupt läuft — der Aufrufer (Makefile-Target
+// schema-rollout) lässt `--execute` in jedem Fall laufen, damit eine
+// echte, gleichzeitig anstehende Schema-Änderung im selben Plan wirksam
+// bleibt (Regressionsbeleg: tools/harness/run-schema-rollout-guard-test.sh
+// Lauf 3). Ein einziger unbekannter Blocker — real geprüft mit einer
+// künstlich per ALTER TABLE … ADD COLUMN hinzugefügten, nicht
+// deklarierten Spalte, die d-migrate als unbekannten DropColumn-Blocker
+// neben den sechs bekannten meldet — lässt decide false liefern; der
+// `--execute`-Lauf läuft dann ohne `--allow-destructive` und bricht mit
+// demselben Blocker real mit Exit 8 ab.
 func decide(r report) (allowDestructive bool, reason string) {
 	if len(r.Blockers) == 0 {
 		return false, "kein Blocker im Report — kein Grund fuer --allow-destructive"
