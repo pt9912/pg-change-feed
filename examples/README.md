@@ -66,35 +66,39 @@ und startet den Container real gegen das Docker-Netzwerk `cdc-examples` mit
 
 Eigene Sprach-Wurzel [`csharp/`](csharp), gebaut über
 `make examples-csharp` (Docker, digest-gepinntes Dockerfile, Bau-Kontext
-`examples/csharp/`):
+`examples/csharp/`), gestartet über `make example-run-csharp`:
 
-| Zugriffsart | Verzeichnis | Image |
+| Zugriffsart | Verzeichnis | Start |
 |---|---|---|
-| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`csharp/http-client`](csharp/http-client) | `pg-change-feed-examples:csharp` |
-| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`csharp/grpc-client`](csharp/grpc-client) | `pg-change-feed-examples:csharp-grpc` |
-| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`csharp/sse-client`](csharp/sse-client) | `pg-change-feed-examples:csharp-sse` |
-| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`csharp/nats-client`](csharp/nats-client) | `pg-change-feed-examples:csharp-nats` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`csharp/http-client`](csharp/http-client) | `make example-run-csharp SURFACE=http ARGS="--source <quelle> --publication <publication>"` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`csharp/grpc-client`](csharp/grpc-client) | `make example-run-csharp SURFACE=grpc` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`csharp/sse-client`](csharp/sse-client) | `make example-run-csharp SURFACE=sse` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`csharp/nats-client`](csharp/nats-client) | `make example-run-csharp SURFACE=nats ARGS="--source <quelle> --schema <schema> --table <tabelle>"` |
 
-Start je Image per `docker run --rm <ENV-Variablen> <Image> <Argumente>` —
-die konkrete ENV-/Argument-Form je Zugriffsart steht in der oben verlinkten
-Handbuch-Sektion.
+`make example-run-csharp` baut **nicht** — es startet den bereits von
+`make examples-csharp` gebauten Image-Tag
+`pg-change-feed-examples:csharp[-<surface>]` real gegen das Docker-Netzwerk
+`cdc-examples` mit `--env-file examples/.env` (Umgebungsdatei-Kontrakt und
+Netzwerk legt `slice-beispiele-compose-bootstrap` an).
 
 ## Kotlin
 
 Eigene Sprach-Wurzel [`kotlin/`](kotlin), gebaut über
 `make examples-kotlin` (Docker, digest-gepinntes Dockerfile, Bau-Kontext
-`examples/kotlin/`):
+`examples/kotlin/`), gestartet über `make example-run-kotlin`:
 
-| Zugriffsart | Verzeichnis | Image |
+| Zugriffsart | Verzeichnis | Start |
 |---|---|---|
-| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`kotlin/http-client`](kotlin/http-client) | `pg-change-feed-examples:kotlin` |
-| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`kotlin/grpc-client`](kotlin/grpc-client) | `pg-change-feed-examples:kotlin-grpc` |
-| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`kotlin/sse-client`](kotlin/sse-client) | `pg-change-feed-examples:kotlin-sse` |
-| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`kotlin/nats-client`](kotlin/nats-client) | `pg-change-feed-examples:kotlin-nats` |
+| [HTTP-/JSON-API](../docs/user/benutzerhandbuch.md#zugriff-über-die-http-json-api) | [`kotlin/http-client`](kotlin/http-client) | `make example-run-kotlin SURFACE=http ARGS="--source <quelle> --publication <publication>"` |
+| [gRPC-Change-Stream](../docs/user/benutzerhandbuch.md#zugriff-über-den-grpc-change-stream) | [`kotlin/grpc-client`](kotlin/grpc-client) | `make example-run-kotlin SURFACE=grpc` |
+| [Server-Sent-Events](../docs/user/benutzerhandbuch.md#zugriff-über-server-sent-events) | [`kotlin/sse-client`](kotlin/sse-client) | `make example-run-kotlin SURFACE=sse` |
+| [NATS-Wecksignal](../docs/user/benutzerhandbuch.md#zugriff-über-das-nats-wecksignal) | [`kotlin/nats-client`](kotlin/nats-client) | `make example-run-kotlin SURFACE=nats ARGS="--source <quelle> --schema <schema> --table <tabelle>"` |
 
-Start je Image per `docker run --rm <ENV-Variablen> <Image> <Argumente>` —
-die konkrete ENV-/Argument-Form je Zugriffsart steht in der oben verlinkten
-Handbuch-Sektion.
+`make example-run-kotlin` baut **nicht** — es startet den bereits von
+`make examples-kotlin` gebauten Image-Tag
+`pg-change-feed-examples:kotlin[-<surface>]` real gegen das Docker-Netzwerk
+`cdc-examples` mit `--env-file examples/.env` (Umgebungsdatei-Kontrakt und
+Netzwerk legt `slice-beispiele-compose-bootstrap` an).
 
 ## Abgrenzung
 

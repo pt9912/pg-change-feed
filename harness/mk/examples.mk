@@ -89,6 +89,40 @@ endif
 	docker build -f examples/Dockerfile $(if $(filter $(SURFACE),http),,--target runtime-$(SURFACE)) -t pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) .
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
 
+# `example-run-csharp`/`example-run-kotlin` starten real eines der vier
+# bereits gebauten C#-/Kotlin-Beispiele gegen die Demo-Umgebung (ADR-0098
+# Festlegung 2). Anders als `example-run-go` bauen sie **nichts**: der Bau
+# liegt bei `make examples-csharp`/`make examples-kotlin` (ADR-0087
+# Festlegung 3, ADR-0090) — dieses Ziel startet nur den bereits vorhandenen
+# Image-Tag `pg-change-feed-examples:csharp[-<surface>]`/`:kotlin[-<surface>]`.
+# `SURFACE=` ist wie bei `example-run-go` ein Pflicht-Argument (`http`,
+# `sse`, `grpc` oder `nats`); ein fehlendes oder unbekanntes `SURFACE` bricht
+# mit `$(error …)` ab, BEVOR ein `docker run` versucht wird. `ARGS=` trägt
+# dieselbe Flag-Übersteuerung wie bei den anderen beiden Sprachen (ADR-0076
+# Festlegung 1). Läuft der Bau-Schritt noch nicht (kein `make
+# examples-csharp`/`make examples-kotlin` zuvor), scheitert `docker run` real
+# und sichtbar mit einem Docker-eigenen "image not found" — kein stiller
+# Vorab-Bau und keine stille Fallback-Meldung dieses Ziels selbst; das
+# Docker-Netzwerk `cdc-examples` und `examples/.env` legt
+# `slice-beispiele-compose-bootstrap` an, dieses Ziel referenziert beide nur,
+# ohne sie zu erzeugen. Exit-Code jedes Aufrufs wird direkt gelesen, wie bei
+# jedem anderen Ziel (AGENTS.md §3.9). Kein Gate (Werkzeug, wie
+# `examples-csharp`/`examples-kotlin`/`example-run-go`): der Start braucht
+# das benannte Docker-Netzwerk, `make gates` bleibt netzlos.
+.PHONY: example-run-csharp
+example-run-csharp: ## C#-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; braucht vorherigen make examples-csharp; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats),)
+	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-csharp SURFACE=http)
+endif
+	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:csharp$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
+
+.PHONY: example-run-kotlin
+example-run-kotlin: ## Kotlin-Beispiel starten (Pflicht: SURFACE=http|sse|grpc|nats, optional ARGS=…; braucht vorherigen make examples-kotlin; Werkzeug, kein Gate; ADR-0098)
+ifeq ($(filter $(SURFACE),http sse grpc nats),)
+	$(error SURFACE muss http, sse, grpc oder nats sein, z.B. make example-run-kotlin SURFACE=http)
+endif
+	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:kotlin$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
+
 # `example-demo-up`/`example-demo-down` kapseln die Demo-/Quickstart-
 # Umgebung unter examples/ (LH-QA-OPS-001, ADR-0098 Festlegung 3/4,
 # slice-beispiele-compose-bootstrap): ein Nutzer fährt `postgres`+`nats`+

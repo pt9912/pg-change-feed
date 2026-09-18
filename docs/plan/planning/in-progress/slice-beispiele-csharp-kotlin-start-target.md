@@ -79,29 +79,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1** — Start-Make-Ziel(e) für die vier C#-Programme in der von der
+- [x] **LP1** — Start-Make-Ziel(e) für die vier C#-Programme in der von der
       ADR entschiedenen Form, gegen die im Umgebungsdatei-Kontrakt
       vereinbarten Variablen.
-- [ ] **LP2** — dieselbe Form für die vier Kotlin-Programme.
-- [ ] **LP3** — Träger nachgezogen: `examples/README.md` (C#/Kotlin-Tabellen,
+- [x] **LP2** — dieselbe Form für die vier Kotlin-Programme.
+- [x] **LP3** — Träger nachgezogen: `examples/README.md` (C#/Kotlin-Tabellen,
       Startform-Spalte auf `make`-Aufruf statt rohem `docker run`), die vier
       Zugriffs-Abschnitte in `docs/user/benutzerhandbuch.md` (C#-/Kotlin-Zeilen
       der `**Beispiele:**`-Blöcke), `harness/README.md` §Werkzeuge.
-- [ ] [`LH-FA-SST-006`](../../../../spec/lastenheft.md)/[`LH-FA-SST-007`](../../../../spec/lastenheft.md)/[`LH-FA-SST-008`](../../../../spec/lastenheft.md)
+- [x] [`LH-FA-SST-006`](../../../../spec/lastenheft.md)/[`LH-FA-SST-007`](../../../../spec/lastenheft.md)/[`LH-FA-SST-008`](../../../../spec/lastenheft.md)
       weiterhin gezeigt (kein Verhaltens-, nur
       Start-Mechanismus-Wechsel) — `make examples-csharp`/
       `make examples-kotlin` bleiben unverändert grün.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für die C#/Kotlin-Startform (öffentlicher Vertrag) — siehe
+- [x] Doku-Update für die C#/Kotlin-Startform (öffentlicher Vertrag) — siehe
       LP3.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. *(Entwurf in §7 vorbereitet,
+      wird nach dem Review-Pass finalisiert.)*
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`, oder „keine Beobachtung
       angefallen" in §7.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind von der
       nächsten Welle-Closure getragen.
@@ -158,12 +159,18 @@ dasteht.
 
 - Ein Start-Target, das `docker run` fest verdrahtet, könnte mit einem
   künftigen Netzwerk-Alias-Kontrakt der Demo-Compose-Datei kollidieren
-  (Adresse `localhost` vs. Compose-Service-Name) — **Ausgang:** <bei Closure
-  ausfüllen>.
+  (Adresse `localhost` vs. Compose-Service-Name) — **Ausgang:** entfallen.
+  `ADR-0098` Festlegung 3/4 legt `examples/.env` bereits auf
+  Compose-Servicenamen fest (`CDC_HTTP_ADDR=pg-change-feed:8090`, nicht
+  `localhost`); real gegen die laufende Demo-Umgebung geprüft —
+  `make example-run-csharp SURFACE=http ARGS="--source demo-source
+  --publication pub_demo"` und dieselbe Kotlin-Form liefern real die
+  registrierte Tabelle über `cdc-examples`, kein Adress-Konflikt.
 - Acht Programme über zwei Sprachen könnten die Drei-Liefer-Punkte-Grenze
   real sprengen, falls die Start-Target-Form pro Programm statt pro Sprache
-  verdrahtet werden muss — **Ausgang:** <bei Closure ausfüllen; siehe
-  Rückführung in §4>.
+  verdrahtet werden muss — **Ausgang:** entfallen. `ADR-0098` Festlegung 2
+  entscheidet ein Ziel je Sprache mit Pflicht-`SURFACE=`; die Umsetzung
+  bleibt bei zwei neuen `.PHONY`-Zielen (LP1/LP2), keine Zerlegung nötig.
 
 ## 7. Closure-Notiz
 
@@ -171,7 +178,54 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-*(bei Closure zu füllen)*
+**Entwurf — wird nach dem unabhängigen Reviewer-Pass finalisiert (Modul 8,
+kein Self-Review).**
+
+**Gegenstand:** Implementierung abgeschlossen, wartet auf den unabhängigen
+Reviewer-Pass gegen
+[`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
+(Festlegung 2); der `git mv` nach `done/` folgt erst danach.
+
+**Ergebnis:** `harness/mk/examples.mk` trägt zwei neue `.PHONY`-Ziele,
+`example-run-csharp` und `example-run-kotlin` — Pflicht-Argument `SURFACE=
+http|sse|grpc|nats`, `$(error …)` bei fehlendem/unbekanntem Wert (real
+geprüft: beide Ziele brechen mit Exit 2 ab, bevor ein `docker run`
+versucht wird). Anders als `example-run-go` bauen sie **nichts** — sie
+starten den bereits von `make examples-csharp`/`make examples-kotlin`
+gebauten Image-Tag `pg-change-feed-examples:csharp[-<surface>]`/
+`:kotlin[-<surface>]` real gegen das Docker-Netzwerk `cdc-examples` mit
+`--env-file examples/.env`. Real gegen die laufende Demo-Umgebung
+(`make example-demo-up`) verifiziert: `make example-run-csharp SURFACE=http
+ARGS="--source demo-source --publication pub_demo"` und dieselbe
+Kotlin-Form liefern beide real `{"tables":[{"table_id":"tbl-orders",…}]}`
+von `GET /tables` gegen den laufenden Feed-Container; `SURFACE=sse` startet
+für beide Sprachen real einen laufenden Container gegen `cdc-examples`
+(Tag-Auflösung auf `*-sse` bestätigt). `make examples-csharp`/
+`make examples-kotlin` real neu gebaut (Layer-Cache-Treffer, Exit 0) —
+unverändert. `examples/README.md` (C#-/Kotlin-Tabellen, Spalte „Start" auf
+`make example-run-*`-Aufruf statt rohem `docker run`), die vier
+`**Beispiele:**`-Blöcke in `docs/user/benutzerhandbuch.md` (samt
+Versionshistorie, 1.26 → 1.27) und `harness/README.md` §Werkzeuge (neue
+Zeile, die vormalige „noch nicht implementiert"-Notiz bei `example-run-go`
+entfernt) zitieren die neue Startform. `make gates` zweimal grün gelaufen
+(vor und nach den Doku-Änderungen, Exit-Code beide Male direkt und
+ungepiped geprüft).
+
+**Steering-Loop-Lerneintrag:** Der von `example-run-go` etablierte
+Pflicht-`SURFACE=`-Guard (`ifeq $(filter …) $(error …)`) trägt unverändert,
+wenn das Ziel — wie hier — keinen eigenen Bau-Schritt hat: die Guard-Zeile
+bleibt identisch, nur der `docker build`-Aufruf entfällt. Ein fehlender
+Bau-Schritt scheitert erwartungsgemäß real und sichtbar am `docker
+run`-eigenen „image not found", statt eines stillen Vorab-Baus — kein neuer
+Mechanismus nötig, keine Überraschung gegenüber der ADR-Festlegung.
+
+**Beobachtungs-Register:** keine Beobachtung angefallen — die Umsetzung
+folgte Festlegung 2 der ADR ohne Abweichung, die eine neue oder zitierbare
+`BEO-PGC/*`-Musterlücke begründen würde.
+
+**Risiken (§6):** beide mit Ausgang „entfallen" versehen, real gemessen
+(Compose-Servicename statt `localhost` in `examples/.env`, zwei Ziele statt
+Zerlegung) — siehe §6.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
