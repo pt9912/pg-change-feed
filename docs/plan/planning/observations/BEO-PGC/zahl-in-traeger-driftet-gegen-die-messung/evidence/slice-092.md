@@ -34,5 +34,5 @@ Runden, jede an einem Satz, der eine Zahl erklärt.
 Quelle: Review zu `slice-092` (F-1) ·
 Delta-Review zu `slice-092` (D-1, D-2) ·
 Verifikationsbericht zu `slice-092` (V-1, V-2) ·
-`docs/plan/planning/done/slice-092-coverage-cluster-d1.md` §1 ·
+`docs/plan/planning/done/welle-20/slice-092-coverage-cluster-d1.md` §1 ·
 `harness/sensors/coverage-gate.md` §Zählbasis (berichtigt in `1d0d11e`).

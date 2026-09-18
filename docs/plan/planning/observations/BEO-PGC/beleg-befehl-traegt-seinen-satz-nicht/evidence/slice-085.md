@@ -24,4 +24,4 @@ dass er niemandes Auftrag war.
 Quelle: Verifikationsbericht zu `slice-085` (V-3) ·
 Review zu `slice-089` (F-5: die liegen gelassenen Fundstellen) ·
 `harness/sensors/coverage-gate.md` §Grenze Punkt 1 ·
-`docs/plan/planning/done/slice-079-coverage-scope-schnitt.md` (Ursprung).
+`docs/plan/planning/done/welle-20/slice-079-coverage-scope-schnitt.md` (Ursprung).

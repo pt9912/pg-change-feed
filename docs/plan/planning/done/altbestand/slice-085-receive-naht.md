@@ -5,4 +5,4 @@
 
 **Welle:** ohne Welle
 **Archiviert mit:** altbestand · **Geschlossen:** 2026-09-18
-**Hervorgegangen:** [slice-088](../slice-088-coverage-tail-uebersetzung.md)
+**Hervorgegangen:** [slice-088](../welle-20/slice-088-coverage-tail-uebersetzung.md)

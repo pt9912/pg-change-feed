@@ -38,7 +38,7 @@ Testdatei, vier Statements.
 
 Quelle: Review zu `slice-094` (F-1, HIGH) ·
 `docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md`
-§Kontext (4a) · `docs/plan/planning/done/slice-094-coverage-cluster-a.md` §1/§2
+§Kontext (4a) · `docs/plan/planning/done/welle-20/slice-094-coverage-cluster-a.md` §1/§2
 (der Plan ist nach der Closure in `done/`; die Fassung bei der Planung trug die
 Decke in `in-progress/`) ·
 `harness/sensors/coverage-gate.md` §Grenze Punkt 1 (berichtigt in `8292766`).
