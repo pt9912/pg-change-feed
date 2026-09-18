@@ -4,7 +4,7 @@
 (`.harness/skills/reviewer.md`, Modul 10).
 
 **Gegenstand:** `git show 64a138b` (17 Dateien, +1190/−109) gegen
-`docs/plan/planning/in-progress/slice-nats-drittstream-core.md` (Plan) und
+der Slice-Plan zu `slice-nats-drittstream-core` (bei diesem Lauf unter `in-progress/`) und
 [`ADR-0100`](../plan/adr/0100-nats-dritter-vollinhalts-zustellweg.md)
 (`Accepted`).
 
@@ -82,8 +82,8 @@ durchgeführt" ist **nicht** nachgezogen, der Slice bleibt in `in-progress/`.
 ### F-4 — §3.13-Meldung nennt die superseded Stelle und lässt den heute tragenden Träger aus
 
 - **klasse:** Zitat nennt die falsche Stelle; §3.13-Meldung unvollständig
-- **pfad:** `docs/plan/planning/in-progress/slice-nats-drittstream-core.md`
-  §6; gemessene Träger:
+- **pfad:** der Slice-Plan zu `slice-nats-drittstream-core`, §6;
+  gemessene Träger:
   `docs/plan/adr/0092-feldmengen-paarung-reichweite-der-drei-traeger.md:80,129,165,179,209`,
   `docs/plan/adr/0091-zugangsdaten-klasse-sechs-schluessel.md:201`
 - **befund:** Die Meldung nennt als „zusätzlichen Fund" nur `ADR-0091` und

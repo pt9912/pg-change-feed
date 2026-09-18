@@ -36,4 +36,4 @@ einen definierten Umfang** und fand dabei eine weitere überfahrene Stelle
 Quelle: Review zu `slice-nats-drittstream-core` F-2/F-3/F-4 ·
 `docs/plan/adr/0101-zugangsdaten-klasse-sieben-schluessel.md` ·
 `docs/plan/adr/0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md` ·
-`docs/plan/planning/in-progress/slice-nats-drittstream-core.md` §6.
+der Slice-Plan zu `slice-nats-drittstream-core` §6.
