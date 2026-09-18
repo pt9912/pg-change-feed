@@ -10,9 +10,9 @@ wiederholt)
 **Datum:** 2026-09-14
 
 **Autor:** pt9912 (Architect-Rolle, Modul 8 — unabhängiger Architect-Zug,
-gegenprüfend zu `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md`,
-der als Rollenspiel im Planner-Kontext lief und diesen Konflikt nicht
-gegen den vollständigen Text von `ADR-0045` geprüft hatte)
+gegenprüfend zum ersten Architect-Verdikt zur Commit-Traceability
+(kein Vorab-Hook), der als Rollenspiel im Planner-Kontext lief und diesen
+Konflikt nicht gegen den vollständigen Text von `ADR-0045` geprüft hatte)
 
 **Bezug:** [`ADR-0045`](0045-commit-traceability-standing-gate.md)
 (korrigierte Klausel), `AGENTS.md` §5 / `harness/README.md`
@@ -49,7 +49,7 @@ erreichte mit `slice-059` real 3× (Verstöße, die erst nach dem `git push` <!-
 durch `make gates` auffielen, teils nicht mehr per `git commit --amend`
 korrigierbar) und schlug als Lösung genau das vor, was `ADR-0045` bereits
 abgelehnt hatte: einen lokalen `commit-msg`-Hook. Ein erster
-Architect-Zug (`docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md`,
+Architect-Zug (Architect-Verdikt zur Commit-Traceability, kein Vorab-Hook,
 2026-09-14) prüfte diesen Vorschlag, zitierte `ADR-0045` in seinem
 Bezugs-Feld als „bindend", stellte aber nicht fest, dass `ADR-0045`s
 eigener Entscheidungstext einen Hook explizit ausschließt — er kam zum
@@ -131,7 +131,7 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — nichts tun; `ADR-0045`s Ablehnung bleibt bestehen, `slice-073` wird verworfen oder gestrichen | keine neue ADR nötig; kein Duplikations-Risiko zwischen Hook und Standing-Gate | die belegte 3×-Beobachtung (`BEO-PGC/commit-traceability-kein-vorab-hook`) bleibt ungelöst — Verstöße bleiben weiterhin erst nach `git push` sichtbar, teils nicht mehr per `--amend` korrigierbar (`evidence/review-slice-041.md`); die Register-Schwelle fordert einen Ausgang, „entfallen" träfe nur mit Begründung zu, die hier nicht vorliegt (die Beobachtung ist real, nicht obsolet) | <!-- d-check:status-provenance -->
+| A — nichts tun; `ADR-0045`s Ablehnung bleibt bestehen, `slice-073` wird verworfen oder gestrichen | keine neue ADR nötig; kein Duplikations-Risiko zwischen Hook und Standing-Gate | die belegte 3×-Beobachtung (`BEO-PGC/commit-traceability-kein-vorab-hook`) bleibt ungelöst — Verstöße bleiben weiterhin erst nach `git push` sichtbar, teils nicht mehr per `--amend` korrigierbar (Review zu `slice-041`); die Register-Schwelle fordert einen Ausgang, „entfallen" träfe nur mit Begründung zu, die hier nicht vorliegt (die Beobachtung ist real, nicht obsolet) | <!-- d-check:status-provenance -->
 | B — `ADR-0045` vollständig neu fassen (ganze ADR Superseded, nicht nur eine Klausel) | ein einziges, vollständiges Nachfolge-Dokument statt zweier ADRs, die zusammengelesen werden müssen | unverhältnismäßig — 95 % von `ADR-0045`s Inhalt (Standing-Gate, Fenster, Werkzeug-Teilung) bleiben unverändert richtig; eine volle Neufassung dupliziert stabilen Text und ist genau das Muster, von dem `ADR-0048` (partielle Korrektur von `ADR-0047`, nur ein Grant-Text) bereits abweicht |
 | C — Hook ruft d-check/Docker direkt auf (keine Duplikat-Implementierung) | eine einzige Implementierung der Regeln, kein Drift-Risiko zwischen Hook und Standing-Gate | jeder lokale `git commit` bräuchte einen vollen Containerstart (mehrere Sekunden) — zieht die Docker-Abhängigkeit in einen Pfad, der bislang bewusst ohne sie auskam; bereits im vorausgehenden Architect-Zug „geprüft und verworfen" |
 | **D — Klausel-Korrektur per Folge-ADR: Hook zulässig, aber strukturell nicht-durchsetzend (gewählt)** | löst die belegte 3×-Beobachtung (schnellere Vorab-Meldung); respektiert `ADR-0045`s Kernargument vollständig (Hook ersetzt nie das Standing-Gate, Gate-Nachweis bleibt hook-blind); folgt dem im Repo bereits etablierten Muster einer engen Klausel-Korrektur (`ADR-0048` Supersedes `ADR-0047`) | zwei ADRs (`0045`+`0062`) müssen zusammengelesen werden, um die volle Hook-Politik zu verstehen — mildert die Immutabilitäts-Regel bewusst nicht ab, sondern befolgt sie (keine stille Bearbeitung von `ADR-0045`) |
@@ -181,7 +181,8 @@ Hooks als Folge-ADR prüfen. Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-14 | Accepted — Anlass: unabhängige Architect-Gegenprüfung von `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook.md` deckte auf, dass `slice-073` einer bereits in `ADR-0045` getroffenen Entscheidung ohne Folge-ADR widersprochen hätte; Verdikt 2 aus Modul 8 §Konflikt-Pfad (Folge-ADR statt stiller Lockerung) | `docs/reviews/architect-verdict-commit-traceability-kein-vorab-hook-gegengeprueft.md`, `slice-073` (`open/`) | <!-- d-check:status-provenance -->
+| 2026-09-14 | Accepted — Anlass: unabhängige Architect-Gegenprüfung des ersten Architect-Verdikts zur Commit-Traceability (kein Vorab-Hook) deckte auf, dass `slice-073` einer bereits in `ADR-0045` getroffenen Entscheidung ohne Folge-ADR widersprochen hätte; Verdikt 2 aus Modul 8 §Konflikt-Pfad (Folge-ADR statt stiller Lockerung) | der Architect-Verdikt dieses Zugs (Gegenprüfung), `slice-073` (`open/`) | <!-- d-check:status-provenance -->
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

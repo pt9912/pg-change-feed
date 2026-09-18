@@ -24,8 +24,8 @@ Implementer-/Reviewer-/Verifier-Läufe von `slice-049`/`slice-076`) <!-- d-check
 Widerspruch), `harness/mk/coverage.mk` (`THRESHOLD`), `Makefile`
 (`test-store`/`test-replication`/`test-notify`/`test-integration`),
 `.github/workflows/e2e.yml` (nicht-blockierender Träger der DB-gestützten
-Tier-Messung), `docs/reviews/architect-verdict-coverage-gate-messgegenstand.md`
-(Verdikt dieses Zugs), `docs/plan/planning/in-progress/slice-076-coverage-gate-reifestufe-40.md` <!-- d-check:status-provenance -->
+Tier-Messung), der Architect-Verdikt dieses Zugs (Coverage-Gate-Messgegenstand),
+`docs/plan/planning/in-progress/slice-076-coverage-gate-reifestufe-40.md` <!-- d-check:status-provenance -->
 (dessen Kalibrierung dieser Schnitt neu bemisst).
 
 **Schärft:** — (Prozess-/Tooling-ADR ohne Spec-Stratum, wie `ADR-0054`)
@@ -229,7 +229,8 @@ permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: Nutzerfrage „netzlos prüfbare Fläche oder ganzer Baum?"; der Selbstwiderspruch der Endstufe 80 % (Decke 68,06 %) real nachgemessen; korrigiert `ADR-0054` §(a) Scope-, Schwelle- und Fitness-Function-Klausel | `docs/reviews/architect-verdict-coverage-gate-messgegenstand.md`, eigene Messung (`coverage`-Stage, gepinntes Toolchain-Image) |
+| 2026-09-15 | Accepted — Anlass: Nutzerfrage „netzlos prüfbare Fläche oder ganzer Baum?"; der Selbstwiderspruch der Endstufe 80 % (Decke 68,06 %) real nachgemessen; korrigiert `ADR-0054` §(a) Scope-, Schwelle- und Fitness-Function-Klausel | der Architect-Verdikt dieses Zugs (Coverage-Gate-Messgegenstand), eigene Messung (`coverage`-Stage, gepinntes Toolchain-Image) |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

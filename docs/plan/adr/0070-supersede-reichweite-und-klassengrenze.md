@@ -17,8 +17,8 @@ als Rollen-Sequenz und §Rollen-Sequenz für eine Welle, ADR-Zweig)
 **Bezug:** [`ADR-0069`](0069-commit-msg-hook-einseitige-zusage.md) (in drei
 Klauseln korrigiert), [`ADR-0062`](0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
 (Punkt 3 bleibt für zwei Aussagen in Kraft), [`ADR-0045`](0045-commit-traceability-standing-gate.md)
-(bleibt bindend), `docs/reviews/review-slice-073-fixrunde.md` (F-5, F-7), <!-- d-check:status-provenance -->
-`docs/reviews/verify-slice-073.md` (§7), `.githooks/commit-msg`, <!-- d-check:status-provenance -->
+(bleibt bindend), Review zu `slice-073`, Fixrunde (F-5, F-7), <!-- d-check:status-provenance -->
+Verifikationsbericht zu `slice-073` (§7), `.githooks/commit-msg`, <!-- d-check:status-provenance -->
 `.d-check.yml` (`commits`-Abschnitt), `docs/plan/planning/in-progress/slice-073-commit-msg-git-hook.md` <!-- d-check:status-provenance -->
 (Umsetzungs-Slice).
 
@@ -38,8 +38,8 @@ einseitige Form um und erklärt im Kopf „Supersedes `ADR-0062` (nur deren
 Entscheidung **Punkt 3**, „der Hook … spiegelt exakt die zwei bestehenden
 Regeln")". An zwei Stellen trägt dieser Text die Aussage nicht, die er tragen
 soll. Beide sind im Bestätigungslauf der Fixrunde gemessen
-(`docs/reviews/review-slice-073-fixrunde.md` F-5, F-7) und in der <!-- d-check:status-provenance -->
-Verifikation unabhängig reproduziert (`docs/reviews/verify-slice-073.md` §7). <!-- d-check:status-provenance -->
+(Review zu `slice-073`, Fixrunde, F-5, F-7) und in der <!-- d-check:status-provenance -->
+Verifikation unabhängig reproduziert (Verifikationsbericht zu `slice-073`, §7). <!-- d-check:status-provenance -->
 
 1. **Die Reichweite des Teil-Supersedes ist zweideutig.** `ADR-0062` Punkt 3
    trägt drei Aussagen: (i) „der Hook ist bash-only (kein Docker-Aufruf,
@@ -175,7 +175,8 @@ Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: Trigger-Audit der `slice-073`-Closure (Modul 6 §Wellen-Closure-Prozedur Schritt 2, ADR-Zweig); korrigiert `ADR-0069`s Supersede-Reichweite und Klassengrenze | [`docs/reviews/review-slice-073-fixrunde.md`](../../reviews/review-slice-073-fixrunde.md) F-5/F-7, [`docs/reviews/verify-slice-073.md`](../../reviews/verify-slice-073.md) §7 | <!-- d-check:status-provenance -->
+| 2026-09-15 | Accepted — Anlass: Trigger-Audit der `slice-073`-Closure (Modul 6 §Wellen-Closure-Prozedur Schritt 2, ADR-Zweig); korrigiert `ADR-0069`s Supersede-Reichweite und Klassengrenze | Review zu `slice-073`, Fixrunde, F-5/F-7, Verifikationsbericht zu `slice-073`, §7 | <!-- d-check:status-provenance -->
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

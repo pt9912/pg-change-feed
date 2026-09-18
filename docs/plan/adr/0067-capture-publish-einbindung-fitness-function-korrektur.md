@@ -29,7 +29,7 @@ Capture-kritische Pfad ist unantastbar), [`ADR-0011`](0011-persist-before-ack.md
 [`LH-FA-SST-008`](../../../spec/lastenheft.md) (Happy Path, Boundary),
 [`SPEC-020`](../../../spec/pflichtenheft.md) (Zeilen *Zustellgarantie*,
 *Erzeuger-Blockade*, *Fehler bei Publish-Fehlschlag* — unberührt),
-`docs/reviews/review-slice-070.md` <!-- d-check:status-provenance --> (Anlass:
+Review zu `slice-070` <!-- d-check:status-provenance --> (Anlass:
 F-1 und F-7), `docs/plan/planning/in-progress/slice-070-grpc-capture-integration.md` <!-- d-check:status-provenance -->
 (§2-Fußnote, §3 Implementer-Abweichung), `.a-check.yml` (Schicht-Edges —
 `app → adapters` fehlt), `internal/adapters/driven/grpcstream/broadcaster_test.go`
@@ -280,7 +280,8 @@ Nachrichtenvolumen und von der Zahl der Zustellwege.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-14 | Accepted — Anlass: `slice-070` <!-- d-check:status-provenance -->-Review F-1 (HIGH) belegt den Widerspruch zwischen §Entscheidung, Option B und der dritten Fitness-Function-Zeile der [`ADR-0066`](0066-broadcaster-begrenzte-empfangswarteschlange.md); F-7 belegt real, dass die Klammer-Hälfte an der Capture-Schicht unerreichbar ist (`make a-check` `app-impurity`, Exit 2). Unabhängiger Architect-Zug bestätigt die Entscheidung (synchroner Aufruf, keine caller-seitige Goroutine) und ersetzt die dritte Fitness-Function-Zeile (Verdikt 1, Modul 8 §Konflikt-Pfad) | `docs/reviews/review-slice-070.md` |
+| 2026-09-14 | Accepted — Anlass: `slice-070` <!-- d-check:status-provenance -->-Review F-1 (HIGH) belegt den Widerspruch zwischen §Entscheidung, Option B und der dritten Fitness-Function-Zeile der [`ADR-0066`](0066-broadcaster-begrenzte-empfangswarteschlange.md); F-7 belegt real, dass die Klammer-Hälfte an der Capture-Schicht unerreichbar ist (`make a-check` `app-impurity`, Exit 2). Unabhängiger Architect-Zug bestätigt die Entscheidung (synchroner Aufruf, keine caller-seitige Goroutine) und ersetzt die dritte Fitness-Function-Zeile (Verdikt 1, Modul 8 §Konflikt-Pfad) | Review zu `slice-070` |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

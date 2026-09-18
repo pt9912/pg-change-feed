@@ -30,7 +30,7 @@ Tabellen, die der `PostgresChangeStoreAdapter` (`ARC-006`, Driven) verwaltet
 — ohne einen Inbound Port aufzurufen. Weder der Plankopf noch die
 Implementer-Commits referenzierten `ADR-0018`, obwohl eine frühere
 Closure-Notiz genau diese Lieferung dorthin verwiesen hatte
-(Review-Report: [`docs/reviews/review-slice-010.md`](../../reviews/review-slice-010.md) <!-- d-check:status-provenance -->,
+(Review zu `slice-010` <!-- d-check:status-provenance -->,
 Finding F-1, HIGH).
 
 **Physikalischer Befund, der `ADR-0018` beim Schreiben nicht auflöste:** Eine
@@ -156,7 +156,8 @@ reiner SQL-Views besteht unabhängig vom Datenbestand.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-10 | Accepted — Anlass: Review-Finding F-1 (Konflikt-Pfad, Modul 8); Verdikt 2 (Folge-ADR `supersedes`) <!-- d-check:status-provenance --> | [`docs/reviews/review-slice-010.md`](../../reviews/review-slice-010.md) <!-- d-check:status-provenance --> |
+| 2026-09-10 | Accepted — Anlass: Review-Finding F-1 (Konflikt-Pfad, Modul 8); Verdikt 2 (Folge-ADR `supersedes`) <!-- d-check:status-provenance --> | Review zu `slice-010` <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

@@ -39,12 +39,12 @@ Folge-ADR statt In-place) ·
 scharfgestellt wird)** · `.harness/skills/reviewer.md` (der Unterpunkt, um
 dessen Klassifikation es geht) · `.claude/commands/implement-slice.md`
 Schritt 20 (das Muster *Enumerations-Pflicht statt Erinnerung*) ·
-`docs/reviews/review-slice-081.md` (F-1, F-6), `docs/reviews/review-slice-084.md` <!-- d-check:status-provenance -->
-(F-1), `docs/reviews/review-slice-085.md` (F-1), <!-- d-check:status-provenance -->
-`docs/reviews/review-slice-088.md` (F-2, F-3), `docs/reviews/review-slice-089.md` <!-- d-check:status-provenance -->
-(F-2, F-3), `docs/reviews/review-slice-090-delta.md` (D-2), <!-- d-check:status-provenance -->
-`docs/reviews/review-slice-092.md` (F-1), `docs/reviews/review-slice-092-delta.md` <!-- d-check:status-provenance -->
-(D-1, D-2) und `docs/reviews/review-slice-094.md` (F-1) · <!-- d-check:status-provenance -->
+Review zu `slice-081` (F-1, F-6), Review zu `slice-084` <!-- d-check:status-provenance -->
+(F-1), Review zu `slice-085` (F-1), <!-- d-check:status-provenance -->
+Review zu `slice-088` (F-2, F-3), Review zu `slice-089` <!-- d-check:status-provenance -->
+(F-2, F-3), Review zu `slice-090`, Delta (D-2), <!-- d-check:status-provenance -->
+Review zu `slice-092` (F-1), Review zu `slice-092`, Delta <!-- d-check:status-provenance -->
+(D-1, D-2) und Review zu `slice-094` (F-1) · <!-- d-check:status-provenance -->
 `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`
 (der Eintrag, 7 Belege) und <!-- d-check:status-provenance -->
 `docs/plan/planning/observations/BEO-PGC/geschaetzter-wert-als-grenze/`
@@ -73,10 +73,10 @@ der Unterpunkt in `.harness/skills/reviewer.md` — beide mit dem Herkunfts-Anke
 **(2) Nachgemessen: die Bedingung ist erfüllt.** Nach dem Bau hat der
 Register-Eintrag
 `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`
-**zwei** weitere Vorgänge angelegt — `slice-090` (`review-slice-090-delta.md:78`, <!-- d-check:status-provenance -->
-**MEDIUM**) und `slice-092` (`review-slice-092.md:52`, **MEDIUM**, dort mit <!-- d-check:status-provenance -->
+**zwei** weitere Vorgänge angelegt — `slice-090` (Review zu `slice-090`, Delta, <!-- d-check:status-provenance -->
+**MEDIUM**) und `slice-092` (Review zu `slice-092`, **MEDIUM**, dort mit <!-- d-check:status-provenance -->
 `quelle: AGENTS.md §3.12 Instanz A` und der ausdrücklichen Präzedenz „für
-Plan-Zahlen … je MEDIUM"), daneben `review-slice-092-delta.md` (D-1 und D-2, je <!-- d-check:status-provenance -->
+Plan-Zahlen … je MEDIUM"), daneben Review zu `slice-092`, Delta (D-1 und D-2, je <!-- d-check:status-provenance -->
 MEDIUM). **Kein** Vorkommen dieser Klasse ist nach dem Bau als HIGH geführt
 worden. Der Zähler des Eintrags steht bei **7×** — eigener Lauf:
 `ls docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/evidence/`
@@ -130,10 +130,10 @@ Zwei Zeilen sind durch die Lage **allein** nicht erklärt: `slice-081` F-1 und <
 `472` in `db-adapter-coverage.md:43`), einmal eine **Folgerung** („liegen
 außerhalb des netzlosen Tiers“ als Grund eines Liefer-Punkts). Und die Regel ist
 **nicht von diesem Zug erfunden**: der Reviewer hat sie selbst ausgesprochen —
-in `review-slice-084.md` F-1 (*„Die Kategorie bleibt **LOW**, nicht HIGH wie <!-- d-check:status-provenance -->
-`review-slice-081` F-1: dort stand der Träger in der **deklarierten** <!-- d-check:status-provenance -->
+im Review zu `slice-084` F-1 (*„Die Kategorie bleibt **LOW**, nicht HIGH wie <!-- d-check:status-provenance -->
+`slice-081` F-1: dort stand der Träger in der **deklarierten** <!-- d-check:status-provenance -->
 Datei-Liste des Slice und wurde nur an der Zahl [nicht angefasst]“*) und
-bestätigend in `review-slice-085.md` F-1 (*„Unterschied zu `084`: dort war der <!-- d-check:status-provenance -->
+bestätigend im Review zu `slice-085` F-1 (*„Unterschied zu `084`: dort war der <!-- d-check:status-provenance -->
 Träger eine Zahl, die der Zug *falsch gemacht* hatte“*). Ein Report ist
 **Lauf-Beleg** und wird über Läufe hinweg nicht gelesen (Modul 10); die Regel
 musste an jeder Fundstelle neu hergeleitet werden. Wer dagegen nur den Skill
@@ -248,11 +248,11 @@ Entscheidungsprotokoll, und im Review nicht verteidigbar (Baseline-Regelwerk
 
 | Option | Pro | Contra |
 |---|---|---|
-| A — nichts tun; der Unterpunkt bleibt ein HIGH-Eintrag, die Praxis bleibt ungeschrieben | kein Schreibaufwand, kein Teil-Supersedes | der Gegenstand des Triggers bleibt offen: die Leiter müsste an jeder Fundstelle neu hergeleitet werden, und ihre einzige geschriebene Spur steht in Lauf-Belegen (`review-slice-084.md` F-1), die über Läufe hinweg nicht gelesen werden (Modul 10); „im Diff ⇒ HIGH" bleibt die naheliegende Lesart — dieselbe Fundstelle könnte beim nächsten Lauf als HIGH und damit als Fixrunden-Pflicht gelten, ohne dass jemand sie falsch nennen könnte | <!-- d-check:status-provenance -->
+| A — nichts tun; der Unterpunkt bleibt ein HIGH-Eintrag, die Praxis bleibt ungeschrieben | kein Schreibaufwand, kein Teil-Supersedes | der Gegenstand des Triggers bleibt offen: die Leiter müsste an jeder Fundstelle neu hergeleitet werden, und ihre einzige geschriebene Spur steht in Lauf-Belegen (Review zu `slice-084`, F-1), die über Läufe hinweg nicht gelesen werden (Modul 10); „im Diff ⇒ HIGH" bleibt die naheliegende Lesart — dieselbe Fundstelle könnte beim nächsten Lauf als HIGH und damit als Fixrunden-Pflicht gelten, ohne dass jemand sie falsch nennen könnte | <!-- d-check:status-provenance -->
 | B — die Klasse ganz auf die **MEDIUM**-Liste setzen („im Diff" ist der Regelfall) | trifft die Mehrheit der sieben gemessenen Fälle; eine Liste weniger | die zwei verschärften Lagen verlieren ihren **Fundort** — `slice-094` F-1 wurde als HIGH gefunden, weil der Leser den Unterpunkt unter HIGH gelesen hat; und der INFO-Satz hängt an dieser Stelle: aus der MEDIUM-Liste heraus gelesen verlöre ein Träger außerhalb des Diffs seine Abgrenzung | <!-- d-check:status-provenance -->
 | C — die Schwere ganz an den generischen Anker **„ADR-Verstoß (Hard Rule)"** delegieren (`AGENTS.md` §3.12 *ist* eine Hard Rule); der Unterpunkt wird reine Fundhilfe | kein zweiter Klassifikations-Ort im Skill, kürzester Text | macht jede §3.12-Berührung zum HIGH — **widerlegt durch sieben der neun gemessenen Fälle** (LOW · MEDIUM · MEDIUM · MEDIUM · MEDIUM · INFO · INFO); die zwei verschärften Lagen wären nicht mehr von den übrigen unterschieden, und die Zweideutigkeit bliebe, nur in der Gegenrichtung |
 | D — nur den Kandidatenlauf aus Trigger (b) nachtragen, ohne Leiter | genau die vom Trigger benannte Handlung; kleinster Eingriff | der Lauf enumeriert die **Kandidaten**, nicht ihre Schwere — die Zweideutigkeit, die den Trigger ausgelöst hat, bliebe stehen; ein Kandidatenlauf ohne Schwere-Regel erzeugt im nächsten Fall dieselbe Frage nach der Fixrunde |
-| **E — vier Lagen im Unterpunkt (Leiter) plus der Kandidatenlauf, in einer Folge-ADR, die `ADR-0083` in der einen Klausel ablöst (gewählt)** | die Schwere ist entschieden und zitierbar; die Leiter ist **gemessen** (sieben Fälle, und der Leser hat sie in `review-slice-084.md` F-1 und `review-slice-085.md` F-1 selbst formuliert); der Fundort der HIGH-Lagen bleibt; der Lauf nimmt die Erinnerungs-Last ab; kein Sensor, keine Schwelle, kein Gate berührt | zwei Dokumente müssen zusammengelesen werden (`ADR-0083` für die Regel, `ADR-0086` für die Schwere); `ADR-0083`s Text trägt an drei Stellen weiter das alte Wort — der Nachfolger steht im Index; die zwei Grenzen der Leiter bleiben Urteil (Festlegung 4) und sind damit nicht mechanisch prüfbar | <!-- d-check:status-provenance -->
+| **E — vier Lagen im Unterpunkt (Leiter) plus der Kandidatenlauf, in einer Folge-ADR, die `ADR-0083` in der einen Klausel ablöst (gewählt)** | die Schwere ist entschieden und zitierbar; die Leiter ist **gemessen** (sieben Fälle, und der Leser hat sie im Review zu `slice-084`, F-1 und Review zu `slice-085`, F-1 selbst formuliert); der Fundort der HIGH-Lagen bleibt; der Lauf nimmt die Erinnerungs-Last ab; kein Sensor, keine Schwelle, kein Gate berührt | zwei Dokumente müssen zusammengelesen werden (`ADR-0083` für die Regel, `ADR-0086` für die Schwere); `ADR-0083`s Text trägt an drei Stellen weiter das alte Wort — der Nachfolger steht im Index; die zwei Grenzen der Leiter bleiben Urteil (Festlegung 4) und sind damit nicht mechanisch prüfbar | <!-- d-check:status-provenance -->
 
 **Fazit:** E. A lässt den Trigger-Gegenstand stehen, B zerstört den Fundort der
 HIGH-Lagen, C ist durch die eigene Messung widerlegt, D trägt die Hälfte der
@@ -349,7 +349,8 @@ Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-17 | Accepted — Anlass: der ADR-Zweig des Trigger-Audits der `welle-20`-Closure hat `ADR-0083` §Re-Evaluierungs-Trigger (b) als eingetreten gemeldet. <!-- d-check:status-provenance --> Nachgemessen: nach dem Bau (`· seit slice-089`) trägt der Eintrag <!-- d-check:status-provenance --> `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` zwei weitere Vorgänge (`slice-090`, `slice-092` — je MEDIUM), keines als HIGH; die Gegenlesart (`slice-094` F-1, HIGH, unter dem neuen Eintrag `geschaetzter-wert-als-grenze`) ist mit der Vergabestelle des Registers entschieden. Entscheidet: vier Lagen im Unterpunkt (HIGH: deklarierte Träger-Liste · Folgerung · zweiter Träger; MEDIUM: im Diff; LOW: außerhalb, vom Zug falsch gemacht; INFO: außerhalb, unberührt) plus ein diff-skopierter Kandidatenlauf; kein Sensor. Supersedes `ADR-0083` in einer Klausel (dem Wort „HIGH-Unterpunkt“), alles Übrige bleibt | die sieben Beleg-Dateien des Eintrags (`state.md`, Zähler 7×), `docs/reviews/review-slice-084.md` F-1 und `docs/reviews/review-slice-085.md` F-1 (die Regel, vom Leser selbst formuliert), <!-- d-check:status-provenance --> `docs/reviews/review-slice-090-delta.md` D-2, `docs/reviews/review-slice-092.md` F-1, <!-- d-check:status-provenance --> `docs/reviews/review-slice-094.md` F-1, `BEO-PGC/geschaetzter-wert-als-grenze/observation.md` (die Klassenabgrenzung) |
+| 2026-09-17 | Accepted — Anlass: der ADR-Zweig des Trigger-Audits der `welle-20`-Closure hat `ADR-0083` §Re-Evaluierungs-Trigger (b) als eingetreten gemeldet. <!-- d-check:status-provenance --> Nachgemessen: nach dem Bau (`· seit slice-089`) trägt der Eintrag <!-- d-check:status-provenance --> `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` zwei weitere Vorgänge (`slice-090`, `slice-092` — je MEDIUM), keines als HIGH; die Gegenlesart (`slice-094` F-1, HIGH, unter dem neuen Eintrag `geschaetzter-wert-als-grenze`) ist mit der Vergabestelle des Registers entschieden. Entscheidet: vier Lagen im Unterpunkt (HIGH: deklarierte Träger-Liste · Folgerung · zweiter Träger; MEDIUM: im Diff; LOW: außerhalb, vom Zug falsch gemacht; INFO: außerhalb, unberührt) plus ein diff-skopierter Kandidatenlauf; kein Sensor. Supersedes `ADR-0083` in einer Klausel (dem Wort „HIGH-Unterpunkt“), alles Übrige bleibt | die sieben Beleg-Dateien des Eintrags (`state.md`, Zähler 7×), Review zu `slice-084` F-1 und Review zu `slice-085` F-1 (die Regel, vom Leser selbst formuliert), <!-- d-check:status-provenance --> Review zu `slice-090`, Delta, D-2, Review zu `slice-092` F-1, <!-- d-check:status-provenance --> Review zu `slice-094` F-1, `BEO-PGC/geschaetzter-wert-als-grenze/observation.md` (die Klassenabgrenzung) |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

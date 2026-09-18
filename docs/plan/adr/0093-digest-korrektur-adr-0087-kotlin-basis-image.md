@@ -11,8 +11,8 @@ die von dieser Korrektur unberührt bleiben.
 **Datum:** 2026-09-17
 
 **Autor:** pt9912 (Architect-Rolle, Modul 8 §Konflikt-Pfad, Fall „ADR wird
-per Folge-ADR supersedet"; Übergabe-Artefakt für das Reviewer-Finding F-1 in
-`docs/reviews/review-slice-099.md`, Commit `a65bf29`) <!-- d-check:status-provenance -->
+per Folge-ADR supersedet"; Übergabe-Artefakt für das Reviewer-Finding F-1 im
+Review zu `slice-099`, Commit `a65bf29`) <!-- d-check:status-provenance -->
 
 **Bezug:** [`ADR-0087`](0087-beispiel-clients-csharp-kotlin.md) (die
 korrigierte Zeile), [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md)
@@ -31,7 +31,7 @@ Aussage ist ein Digest-Wert innerhalb einer ADR, keine Spec-Stelle)*
 Der Reviewer von `slice-099` hat beim Prüfen von `examples/kotlin/Dockerfile` <!-- d-check:status-provenance -->
 gegen `ADR-0087`s Digest-Pinning-Tabelle (§Entscheidung, Festlegung 3,
 Zeile 254) eine Diskrepanz gefunden
-(`docs/reviews/review-slice-099.md`, Finding F-1, Commit `a65bf29`): der dort <!-- d-check:status-provenance -->
+(Review zu `slice-099`, Finding F-1, Commit `a65bf29`): der dort <!-- d-check:status-provenance -->
 für `eclipse-temurin:21-jdk` genannte Wert
 
 ```
@@ -130,7 +130,8 @@ gemessen) läuft über `ADR-0087`s eigenen Trigger 4, nicht über diese ADR.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-17 | Accepted — Anlass: Reviewer-Finding F-1 in `docs/reviews/review-slice-099.md` (Commit `a65bf29`); Architect-Rolle verifiziert den Fehler eigenständig (`docker manifest inspect eclipse-temurin:21-jdk`, Zeichenzählung) und korrigiert `ADR-0087`s Digest-Pinning-Tabelle per Folge-ADR (Modul 8 §Konflikt-Pfad, Fall „ADR wird per Folge-ADR supersedet") | `docs/reviews/review-slice-099.md` F-1; `docker manifest inspect eclipse-temurin:21-jdk` (amd64/linux, 2026-09-17) <!-- d-check:status-provenance --> |
+| 2026-09-17 | Accepted — Anlass: Reviewer-Finding F-1 im Review zu `slice-099` (Commit `a65bf29`); Architect-Rolle verifiziert den Fehler eigenständig (`docker manifest inspect eclipse-temurin:21-jdk`, Zeichenzählung) und korrigiert `ADR-0087`s Digest-Pinning-Tabelle per Folge-ADR (Modul 8 §Konflikt-Pfad, Fall „ADR wird per Folge-ADR supersedet") | Review zu `slice-099` F-1; `docker manifest inspect eclipse-temurin:21-jdk` (amd64/linux, 2026-09-17) <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

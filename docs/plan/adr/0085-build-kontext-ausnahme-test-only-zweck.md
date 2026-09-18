@@ -34,7 +34,7 @@ nur per ADR), §3.7 (Ist-Zustand), §3.12 (Herkunft von Aussagen) · `Dockerfile
 `harness/mk/coverage.mk` (`THRESHOLD`) · `tools/coverage-gate.sh` ·
 `harness/sensors/coverage-gate.md` · `harness/README.md` §Sensors/§Werkzeuge
 (`make coverage-gate`, `make image`) · `harness/image-hash.txt` ·
-`docs/plan/planning/welle-20.md` · `docs/reviews/review-slice-093.md` <!-- d-check:status-provenance -->
+`docs/plan/planning/welle-20.md` · Review zu `slice-093` <!-- d-check:status-provenance -->
 (F-1) · `docs/plan/planning/in-progress/slice-093-coverage-cluster-d2.md` <!-- d-check:status-provenance -->
 (§1, §3) · `docs/plan/planning/observations/BEO-PGC/coverage-stage-dockerignore-blockiert-tooling/observation.md` ·
 `docs/plan/planning/observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/observation.md` ·
@@ -346,7 +346,8 @@ weiter, unabhängig davon, wie viele Test-Slices die Welle noch schneidet.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-16 | Accepted — Anlass: Review zu `slice-093` <!-- d-check:status-provenance --> (F-1, HIGH) belegt, dass eine Zeile in `.dockerignore` die Folgepflicht „test-only" aus `ADR-0082` im Wortlaut bricht, und gibt das Verdikt „Lockerung legitim, aber undokumentiert" an die Architect-Rolle (Modul 8 §Konflikt-Pfad, drittes Verdikt). Entscheidet: die Folgepflicht wird auf ihren Zweck geschärft (keine Änderung unter `internal/**`/`cmd/**` außer `_test.go`; Messfläche, Messmechanismus und Schwelle unverändert), die Ausnahme wird eine benannte Klasse mit vier Merkmalen, ihr Träger bleibt die `.dockerignore`-Negation; der Bind-Mount des Arbeitsbaums (Option D) ist mit Trigger (a)/(d) vertagt. `ADR-0082`s §Entscheidung und alle übrigen Klauseln bestätigt | `docs/reviews/review-slice-093.md` F-1 <!-- d-check:status-provenance --> (Bau-EC 1 ohne die Ausnahme; Kontext 169 → 170; Digest und Binär-sha256 unverändert) · eigene Ableitung des Kontext-Umfangs aus dem Muster (166 + 2 + 2 = 170; `git ls-tree -r 014f29c`) · `grep` über die Träger der Klausel (Kontext (6)) | <!-- d-check:status-provenance -->
+| 2026-09-16 | Accepted — Anlass: Review zu `slice-093` <!-- d-check:status-provenance --> (F-1, HIGH) belegt, dass eine Zeile in `.dockerignore` die Folgepflicht „test-only" aus `ADR-0082` im Wortlaut bricht, und gibt das Verdikt „Lockerung legitim, aber undokumentiert" an die Architect-Rolle (Modul 8 §Konflikt-Pfad, drittes Verdikt). Entscheidet: die Folgepflicht wird auf ihren Zweck geschärft (keine Änderung unter `internal/**`/`cmd/**` außer `_test.go`; Messfläche, Messmechanismus und Schwelle unverändert), die Ausnahme wird eine benannte Klasse mit vier Merkmalen, ihr Träger bleibt die `.dockerignore`-Negation; der Bind-Mount des Arbeitsbaums (Option D) ist mit Trigger (a)/(d) vertagt. `ADR-0082`s §Entscheidung und alle übrigen Klauseln bestätigt | Review zu `slice-093` F-1 <!-- d-check:status-provenance --> (Bau-EC 1 ohne die Ausnahme; Kontext 169 → 170; Digest und Binär-sha256 unverändert) · eigene Ableitung des Kontext-Umfangs aus dem Muster (166 + 2 + 2 = 170; `git ls-tree -r 014f29c`) · `grep` über die Träger der Klausel (Kontext (6)) | <!-- d-check:status-provenance -->
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

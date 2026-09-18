@@ -31,7 +31,7 @@ Werkzeug am selben Träger: eine enge Klausel-Korrektur an einer
 [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md) §Entscheidung 1
 (nimmt §Entscheidung von der Zitat-Korrektur aus — deshalb Folge-ADR statt
 in-place) · `AGENTS.md` §3.5 · §3.12 Instanz A ·
-`docs/reviews/verify-slice-096.md` <!-- d-check:status-provenance --> (Befund
+Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance --> (Befund
 V-1 samt eigener Messung) · [`SPEC-016`](../../../spec/pflichtenheft.md)
 (Klassen-Satz und Feldtabelle) · `docs/user/benutzerhandbuch.md` §5.2 ·
 `internal/bootstrap/config_file.go` (`forbiddenFileCredentialKeys`) ·
@@ -232,7 +232,8 @@ unberührt.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-17 | Accepted — Anlass: Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance -->, V-1 (MEDIUM): die §Entscheidung Festlegung 2 der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) zählt die Zugangsdaten-Klasse als „fünf". Eigene Messung an HEAD `825d5fd`: **sechs** in `forbiddenFileCredentialKeys`, in `SPEC-016`, im Handbuch §5.2 und in `ADR-0088` Festlegung 1. Unabhängiger Architect-Zug ersetzt den Schlusssatz des Bullets (sechs, mit der Namensliste); die Fünf der Festlegung 3 meint die Oberflächen-**Variablen** und bleibt richtig | `docs/reviews/verify-slice-096.md` <!-- d-check:status-provenance --> |
+| 2026-09-17 | Accepted — Anlass: Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance -->, V-1 (MEDIUM): die §Entscheidung Festlegung 2 der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) zählt die Zugangsdaten-Klasse als „fünf". Eigene Messung an HEAD `825d5fd`: **sechs** in `forbiddenFileCredentialKeys`, in `SPEC-016`, im Handbuch §5.2 und in `ADR-0088` Festlegung 1. Unabhängiger Architect-Zug ersetzt den Schlusssatz des Bullets (sechs, mit der Namensliste); die Fünf der Festlegung 3 meint die Oberflächen-**Variablen** und bleibt richtig | Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

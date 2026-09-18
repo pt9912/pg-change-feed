@@ -34,7 +34,7 @@ wird namentlich superseded) ·
 [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md) §Entscheidung 1
 (nimmt die Fitness-Function-Regeln von der Zitat-Korrektur aus — deshalb
 Folge-ADR) · `AGENTS.md` §3.5 · §3.12 Instanz B ·
-`docs/reviews/verify-slice-096.md` <!-- d-check:status-provenance --> (Befund
+Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance --> (Befund
 V-2 samt eigener Messung) · [`SPEC-016`](../../../spec/pflichtenheft.md)
 (Feldtabelle und Klassen-Satz) · `docs/user/benutzerhandbuch.md` §5.2 ·
 `internal/bootstrap/config_file.go` (`fileConfig`,
@@ -240,7 +240,8 @@ Paarung zwischen ihnen trägt das Review.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-17 | Accepted — Anlass: Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance -->, V-2 (LOW): der Ersatztext der Träger-Paarung aus [`ADR-0089`](0089-feldmengen-paarung-kein-sensor-review-waechter.md) sagt „dieselben Namen". Eigene Messung an HEAD `825d5fd`: das Handbuch §5.2 nennt **sieben** der neun zulässigen Schlüssel (die zwei `wal_retention_*` fehlen), die Zugangsdaten-Klasse (sechs) dagegen vollständig; `SPEC-016` und der Code sind mengengleich (neun). Unabhängiger Architect-Zug ersetzt die Reichweiten-Aussage samt ihren drei Wiederholungen; das Handbuch §5.2 bleibt unverändert | `docs/reviews/verify-slice-096.md` <!-- d-check:status-provenance --> |
+| 2026-09-17 | Accepted — Anlass: Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance -->, V-2 (LOW): der Ersatztext der Träger-Paarung aus [`ADR-0089`](0089-feldmengen-paarung-kein-sensor-review-waechter.md) sagt „dieselben Namen". Eigene Messung an HEAD `825d5fd`: das Handbuch §5.2 nennt **sieben** der neun zulässigen Schlüssel (die zwei `wal_retention_*` fehlen), die Zugangsdaten-Klasse (sechs) dagegen vollständig; `SPEC-016` und der Code sind mengengleich (neun). Unabhängiger Architect-Zug ersetzt die Reichweiten-Aussage samt ihren drei Wiederholungen; das Handbuch §5.2 bleibt unverändert | Verifikationsbericht zu `slice-096` <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

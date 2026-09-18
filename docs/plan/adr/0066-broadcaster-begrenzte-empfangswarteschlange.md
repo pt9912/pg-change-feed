@@ -36,8 +36,8 @@ Punkt 4 (der Capture-kritische Pfad ist unantastbar),
 [`ADR-0027`](0027-capture-application-service.md) (Persist-before-ACK-Kette
 `Receive → Decode → Persist → COMMIT Store → ACK Source`),
 [`ADR-0034`](0034-ports-nach-faehigkeiten.md) (Port-Zuschnitt nach Fähigkeit),
-`docs/reviews/review-slice-069.md` <!-- d-check:status-provenance --> (Anlass: F-1, F-5 und das
-Broadcaster-Risiko) <!-- d-check:status-provenance -->,
+Review zu `slice-069` <!-- d-check:status-provenance --> (Anlass: F-1, F-5 und das
+Broadcaster-Risiko),
 `docs/plan/planning/in-progress/slice-069-grpc-streaming-adapter-grundgeruest.md` <!-- d-check:status-provenance -->
 (Umsetzung: Fixrunde des noch offenen Slice), `docs/plan/planning/open/slice-070-grpc-capture-integration.md` <!-- d-check:status-provenance -->
 (der Aufrufer, der die Zustellsemantik vorfindet)
@@ -261,8 +261,8 @@ Entscheidung offengelassen; diese ADR entscheidet sie.
   nichts nachgeliefert, und lässt die Erzeuger-Blockade aus).
 - Folgepflicht: `SPEC-020` ([`SPEC-020`](../../../spec/pflichtenheft.md))
   pinnt die blockierende Hälfte der Zustellsemantik (Zeile *Zustellgarantie*
-  plus eine Zeile *Erzeuger-Blockade*). Die Sätze stehen im Verdikt
-  `docs/reviews/architect-verdict-publish-blockiert-capture-pfad.md`.
+  plus eine Zeile *Erzeuger-Blockade*). Die Sätze stehen im vorausgehenden
+  Architect-Verdikt zu Publish blockiert den Capture-Pfad.
 - Folgepflicht: `slice-070` <!-- d-check:status-provenance --> bleibt bei
   synchronem `Publish` ohne caller-seitige Goroutine; sein Plan-Vermerk trägt
   den Verweis auf diese ADR.
@@ -303,7 +303,8 @@ Zustellwege und vom Nachrichtenvolumen.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-14 | Accepted — Anlass: `slice-069` <!-- d-check:status-provenance -->-Review (F-1, F-5 und das Broadcaster-Risiko) bestätigt real, dass ein registrierter, nicht lesender Empfänger `Publish` und damit den `Receive` jeder weiteren Transaktion anhält; unabhängiger Architect-Zug entscheidet die Entkopplung im `Broadcaster` und superseded `ADR-0060`s Puffer-Klausel (Teilfrage 3 Option A, Design-Zeile Teilfrage 2) | `docs/reviews/review-slice-069.md`, `docs/reviews/architect-verdict-publish-blockiert-capture-pfad.md` |
+| 2026-09-14 | Accepted — Anlass: `slice-069` <!-- d-check:status-provenance -->-Review (F-1, F-5 und das Broadcaster-Risiko) bestätigt real, dass ein registrierter, nicht lesender Empfänger `Publish` und damit den `Receive` jeder weiteren Transaktion anhält; unabhängiger Architect-Zug entscheidet die Entkopplung im `Broadcaster` und superseded `ADR-0060`s Puffer-Klausel (Teilfrage 3 Option A, Design-Zeile Teilfrage 2) | Review zu `slice-069`, der Architect-Verdikt zu Publish blockiert den Capture-Pfad |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

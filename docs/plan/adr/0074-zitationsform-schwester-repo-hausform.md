@@ -21,8 +21,8 @@ Folge-ADR), §3.7 (Ist-Zustand) ·
 `docs/plan/planning/done/welle-19-results.md` (Belegstelle der Hausform) ·
 `docs/plan/planning/observations/BEO-PGC/plan-vorlagen-defekt/state.md`
 (Belegstelle) · `docs/user/benutzerhandbuch.md` (Link-Variante mit
-`d-migrate`) · `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md`
-(Verdikt dieses Zugs)
+`d-migrate`) · der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne
+Ausnahme)
 
 **Schärft:** — (Prozess-/Tooling-ADR ohne Spec-Stratum, wie
 [`ADR-0072`](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md))
@@ -153,7 +153,8 @@ wechselt die Hausform (die Mehrheit der Nennungen wird besitzer-qualifiziert)
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: Messung am Bestand (89 blanke `d-check`-Nennungen, Artefakte relativ benannt); korrigiert `ADR-0072` §Entscheidung Punkt 3 (Zitationsform) | `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md`, eigene Bestands-Messung |
+| 2026-09-15 | Accepted — Anlass: Messung am Bestand (89 blanke `d-check`-Nennungen, Artefakte relativ benannt); korrigiert `ADR-0072` §Entscheidung Punkt 3 (Zitationsform) | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme), eigene Bestands-Messung |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

@@ -34,7 +34,7 @@ Erzeugnisse — die verworfene Alternative D) ·
 Entscheidung) · `AGENTS.md` §3.12 Instanz B (die tragende Regel) · §3.13 (die
 Regel, die den fremden Träger gemeldet statt still geändert hat) · §3.6 · §4 ·
 §5 · `.d-check.yml` (`modules:`) · [`harness/sensors/docs-check.md`](../../../harness/sensors/docs-check.md)
-§Grenze 7 · `docs/reviews/review-slice-096.md` <!-- d-check:status-provenance -->
+§Grenze 7 · Review zu `slice-096` <!-- d-check:status-provenance -->
 (Anlass, F-1) · `Makefile` (`test:` — der Mount `$(CURDIR):/src:ro`) ·
 `spec/pflichtenheft.md` `SPEC-016` · `docs/user/benutzerhandbuch.md` §5.2 ·
 `internal/bootstrap/config_file.go`
@@ -282,7 +282,8 @@ Paarung zwischen ihnen trägt das Review.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-17 | Accepted — Anlass: Review zu `slice-096` <!-- d-check:status-provenance -->, F-1 (HIGH): die dritte Fitness-Function-Zeile der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) nennt `make docs-check` als Träger der Feldmengen-Paarung. Eigene Messung an HEAD `b261dc3`: der Lauf ist mit und ohne die Paarung grün (789 Dateien, 0 Befunde, Exit 0); auch mit **allen** optionalen Modulen kein Befund zu den drei Trägern. Unabhängiger Architect-Zug ersetzt die Zeile (Verdikt 1, Modul 8 §Konflikt-Pfad): die Paarung ist Review-Prüfpflicht mit benannter Lücke, die Code-Hälfte bleibt bei den Zeilen 1/2 der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) | `docs/reviews/review-slice-096.md` <!-- d-check:status-provenance --> |
+| 2026-09-17 | Accepted — Anlass: Review zu `slice-096` <!-- d-check:status-provenance -->, F-1 (HIGH): die dritte Fitness-Function-Zeile der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) nennt `make docs-check` als Träger der Feldmengen-Paarung. Eigene Messung an HEAD `b261dc3`: der Lauf ist mit und ohne die Paarung grün (789 Dateien, 0 Befunde, Exit 0); auch mit **allen** optionalen Modulen kein Befund zu den drei Trägern. Unabhängiger Architect-Zug ersetzt die Zeile (Verdikt 1, Modul 8 §Konflikt-Pfad): die Paarung ist Review-Prüfpflicht mit benannter Lücke, die Code-Hälfte bleibt bei den Zeilen 1/2 der [`ADR-0088`](0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) | Review zu `slice-096` <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

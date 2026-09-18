@@ -21,9 +21,8 @@ einer Klausel supersedet), [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokum
 (die Hausform; Supersedes von `ADR-0072` Punkt 3) · `AGENTS.md` §3.5
 (Accepted-ADRs immutable — Folge-ADR), §3.7 (Ist-Zustand), §3.11 (der Entwurf)
 · [`harness/sensors/docs-check.md`](../../../harness/sensors/docs-check.md)
-(Modul-Semantik und Grenzen) · [`review-slice-078`](../../reviews/review-slice-078.md)
-(Anlass) · [`architect-verdict-slice-078-konfliktpfad.md`](../../reviews/architect-verdict-slice-078-konfliktpfad.md)
-(Verdikt dieses Zugs)
+(Modul-Semantik und Grenzen) · Review zu `slice-078` <!-- d-check:status-provenance -->
+(Anlass) · der Architect-Verdikt dieses Zugs (Konflikt-Pfad `slice-078`) <!-- d-check:status-provenance -->
 
 **Schärft:** — (Prozess-/Tooling-ADR ohne Spec-Stratum, wie
 [`ADR-0072`](0072-hostpaths-modul-aktiviert-ohne-ausnahme.md))
@@ -37,7 +36,7 @@ einer Klausel supersedet), [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokum
 Die Regel „kein host-lokaler absoluter Pfad in der Doku" ist ausgeliefert: das
 `hostpaths`-Modul ist ohne Ausschlussblock aktiv, die Korrektur ergibt 0
 Befunde. Die Review des auslösenden Vorgangs
-([`review-slice-078`](../../reviews/review-slice-078.md)) stellt drei
+(Review zu `slice-078`) <!-- d-check:status-provenance --> stellt drei
 Regelfragen, die keine Implementer-Frage sind.
 
 **Erstens — die Reichweite.** Der Slice-Plan (ein Zeitdokument, Modul 5/6)
@@ -186,7 +185,8 @@ permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: [`review-slice-078`](../../reviews/review-slice-078.md) F-1 (Klassengrenze in §Entscheidung) und F-3 (Reichweite der Regel undeclared), F-2 (Disposition der Lokator-Klausel); Reichweite Fences eingeschlossen, §3.11-Entwurf Fassung 2, Lokator-Klausel supersedet-nicht-restitiert | [`architect-verdict-slice-078-konfliktpfad.md`](../../reviews/architect-verdict-slice-078-konfliktpfad.md) |
+| 2026-09-15 | Accepted — Anlass: Review zu `slice-078` F-1 (Klassengrenze in §Entscheidung) und F-3 (Reichweite der Regel undeclared), F-2 (Disposition der Lokator-Klausel); Reichweite Fences eingeschlossen, §3.11-Entwurf Fassung 2, Lokator-Klausel supersedet-nicht-restitiert | der Architect-Verdikt dieses Zugs (Konflikt-Pfad `slice-078`) <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

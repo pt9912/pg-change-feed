@@ -15,8 +15,7 @@ der betroffenen Slices — `modul-08-agentenrollen.md` §Rollen-Regeln)
 für Accepted-ADRs · `modul-10-review-harness.md` (Review-Reports sind
 Lauf-Belege) · `modul-06-roadmap.md`/`modul-05-planning-harness.md`
 (Zeitdokumente) · `docs/plan/adr/README.md` (Index-Kopf trägt denselben Satz)
-· `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md`
-(Verdikt dieses Zugs)
+· der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme)
 
 **Schärft:** — (Prozess-ADR ohne Spec-Stratum, wie `ADR-0045`, `ADR-0069`,
 [`ADR-0071`](0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md))
@@ -189,7 +188,8 @@ bleibt. Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: Auftrag „alle host-lokalen Pfade entfernen, ohne Ausnahme"; 11 Befunde in zwei `Accepted` ADRs; Zitat-Korrektur als Klasse, §3.5 klassenweise nachgezogen | `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` |
+| 2026-09-15 | Accepted — Anlass: Auftrag „alle host-lokalen Pfade entfernen, ohne Ausnahme"; 11 Befunde in zwei `Accepted` ADRs; Zitat-Korrektur als Klasse, §3.5 klassenweise nachgezogen | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme) |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

@@ -16,9 +16,9 @@ Reviewer-Lauf, der die beiden HIGH fand)
 
 **Bezug:** [`ADR-0062`](0062-lokaler-commit-msg-hook-ergaenzt-standing-gate.md)
 (korrigierter Punkt 3), [`ADR-0045`](0045-commit-traceability-standing-gate.md)
-(bleibt für alles außer der Hook-Klausel bindend), [`docs/reviews/review-slice-073.md`](../../reviews/review-slice-073.md)
-(Übergabe-Artefakt, Findings F-1/F-2) und `docs/reviews/architect-verdict-commit-msg-hook-einseitige-zusage.md`
-(Verdikt dieses Zugs), `.githooks/commit-msg` (das Artefakt),
+(bleibt für alles außer der Hook-Klausel bindend), Review zu `slice-073` <!-- d-check:status-provenance -->
+(Übergabe-Artefakt, Findings F-1/F-2) und der Architect-Verdikt dieses Zugs
+(commit-msg-Hook — einseitige Zusage), `.githooks/commit-msg` (das Artefakt),
 `tools/harness/commit-traceability.sh` und `.d-check.yml` (`commits`-Abschnitt)
 (die zwei Gate-Hälften), `docs/plan/planning/in-progress/slice-073-commit-msg-git-hook.md` <!-- d-check:status-provenance -->
 (Umsetzungs-Slice), `harness/README.md` §Traceability rules.
@@ -206,7 +206,8 @@ permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: [`docs/reviews/review-slice-073.md`](../../reviews/review-slice-073.md) F-1/F-2 (zwei HIGH mit Rollen-Widerspruch gegen `ADR-0062` Punkt 3) → Konflikt-Pfad, Verdikt 2; korrigiert `ADR-0062` Punkt 3 auf die einseitige Zusage | [`docs/reviews/review-slice-073.md`](../../reviews/review-slice-073.md), `docs/reviews/architect-verdict-commit-msg-hook-einseitige-zusage.md` |
+| 2026-09-15 | Accepted — Anlass: Review zu `slice-073` F-1/F-2 (zwei HIGH mit Rollen-Widerspruch gegen `ADR-0062` Punkt 3) → Konflikt-Pfad, Verdikt 2; korrigiert `ADR-0062` Punkt 3 auf die einseitige Zusage | Review zu `slice-073`, der Architect-Verdikt dieses Zugs <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

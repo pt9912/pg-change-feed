@@ -33,8 +33,8 @@ E2E-Abdeckungstabelle, `abdeckung_declare`/`abdeckung_go_zeilen_lesen`/
 `docs/user/e2e-abdeckung.md`) ·
 `docs/plan/planning/observations/BEO-PGC/generierte-artefakte-ohne-sync-sensor/`
 <!-- d-check:status-provenance -->
-(die vier Belege) · `docs/reviews/review-slice-069.md` (F-6), <!-- d-check:status-provenance -->
-`docs/reviews/verify-slice-069.md`, `docs/reviews/review-slice-074.md` <!-- d-check:status-provenance -->
+(die vier Belege) · Review zu `slice-069` (F-6), <!-- d-check:status-provenance -->
+Verifikationsbericht zu `slice-069`, Review zu `slice-074` <!-- d-check:status-provenance -->
 
 **Schärft:** — (Prozess-/Tooling-ADR ohne Spec-Stratum, wie `ADR-0043`,
 `ADR-0044`, `ADR-0054`, `ADR-0071`)
@@ -320,7 +320,8 @@ Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-16 | Accepted — Anlass: `BEO-PGC/generierte-artefakte-ohne-sync-sensor` steht bei 4× (`slice-069`, `-074`, `-082`, `-086`). Entscheidet: ein Sync-Gate **nur** für den Protobuf-Code (netzlos im Lauf, pin-genau, deterministisch, eine Quelle; Erzeugung in ein Temp-Verzeichnis, damit das Gate den Baum nicht schreibt); die E2E-Abdeckungstabelle **ohne** Gate (Zwei-Quellen-Positionalität — die Bauform des künftigen Wächters ist benannt und als Folge-Slice-Vorschlag geführt); `plan.yaml`/`down.sql` **ohne** Gate (Umgebungsanteil im Erzeugnis → Diff-Check wäre falsch-positiv); `harness/image-hash.txt` **ohne** Gate (Lauf-Beleg per `ADR-0044`). Löst die Folgepflicht des Generators aus `ADR-0060` ein und berührt `ADR-0043`/`ADR-0044` nicht | die vier Beleg-Dateien des Eintrags, `docs/reviews/review-slice-069.md` F-6, `docs/reviews/verify-slice-069.md` <!-- d-check:status-provenance -->, `Makefile`/`Dockerfile` (gelesen, nicht gemessen) |
+| 2026-09-16 | Accepted — Anlass: `BEO-PGC/generierte-artefakte-ohne-sync-sensor` steht bei 4× (`slice-069`, `-074`, `-082`, `-086`). Entscheidet: ein Sync-Gate **nur** für den Protobuf-Code (netzlos im Lauf, pin-genau, deterministisch, eine Quelle; Erzeugung in ein Temp-Verzeichnis, damit das Gate den Baum nicht schreibt); die E2E-Abdeckungstabelle **ohne** Gate (Zwei-Quellen-Positionalität — die Bauform des künftigen Wächters ist benannt und als Folge-Slice-Vorschlag geführt); `plan.yaml`/`down.sql` **ohne** Gate (Umgebungsanteil im Erzeugnis → Diff-Check wäre falsch-positiv); `harness/image-hash.txt` **ohne** Gate (Lauf-Beleg per `ADR-0044`). Löst die Folgepflicht des Generators aus `ADR-0060` ein und berührt `ADR-0043`/`ADR-0044` nicht | die vier Beleg-Dateien des Eintrags, Review zu `slice-069` F-6, Verifikationsbericht zu `slice-069` <!-- d-check:status-provenance -->, `Makefile`/`Dockerfile` (gelesen, nicht gemessen) |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

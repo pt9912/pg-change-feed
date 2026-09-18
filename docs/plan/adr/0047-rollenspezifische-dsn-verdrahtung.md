@@ -12,8 +12,7 @@ Berechtigbarkeit), [`LH-QA-SEC-003`](../../../spec/lastenheft.md)
 (Beschränkbarkeit von CDC-Datenzugriffen),
 [ADR-0026](0026-composition-root.md) (Composition Root),
 [ADR-0043](0043-schemamigrationen-mit-d-migrate.md) (Nacharbeit-Ausweichform
-für Rollen-DDL), Architect-Verdikt
-[`architect-review-welle-6.md`](../../reviews/architect-review-welle-6.md) Zug 2
+für Rollen-DDL), der Architect-Verdikt zur Rollen-Verdrahtung (`welle-6`, Zug 2)
 (`BEO-PGC/rollen-verdrahtung`, 3×, Ausgang `geplant` →
 `slice-023`) <!-- d-check:status-provenance -->
 
@@ -49,8 +48,8 @@ Diese Trennung wird von der Verdrahtung nicht genutzt — jeder Aufrufer
 bekäme dieselben (impliziten) Rechte, weil es nur eine Konfigurationsquelle
 gibt. `BEO-PGC/rollen-verdrahtung` hat mit `slice-011`, `slice-021`, <!-- d-check:status-provenance -->
 `slice-022` dreimal denselben Befund reproduziert (physische <!-- d-check:status-provenance -->
-Verdrahtungslücke, kein Workflow-Defizit — Architect-Verdikt
-`architect-review-welle-6.md` Zug 2) und ist damit `geplant → slice-023`. <!-- d-check:status-provenance -->
+Verdrahtungslücke, kein Workflow-Defizit — der Architect-Verdikt zur
+Rollen-Verdrahtung, `welle-6`, Zug 2) und ist damit `geplant → slice-023`. <!-- d-check:status-provenance -->
 `slice-023` benennt die Entscheidung selbst als Blocker für <!-- d-check:status-provenance -->
 `in-progress → open` (§4): „Der Konfigurationsvertrag … braucht eine
 eigene Architect-Entscheidung, bevor die Verdrahtung beginnen kann." Diese
@@ -184,7 +183,8 @@ trägt oder durch eine Lease-basierte Variante ersetzt wird. Sonst
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-12 | Accepted — Anlass: `BEO-PGC/rollen-verdrahtung` 3× (`architect-review-welle-6.md` Zug 2), Ausgang `geplant` → `slice-023`; diese ADR ist die dort angeforderte Architect-Entscheidung vor Implementierungsbeginn | `slice-023` (in `in-progress/`) <!-- d-check:status-provenance --> |
+| 2026-09-12 | Accepted — Anlass: `BEO-PGC/rollen-verdrahtung` 3× (Architect-Verdikt zur Rollen-Verdrahtung, `welle-6`, Zug 2), Ausgang `geplant` → `slice-023`; diese ADR ist die dort angeforderte Architect-Entscheidung vor Implementierungsbeginn | `slice-023` (in `in-progress/`) <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

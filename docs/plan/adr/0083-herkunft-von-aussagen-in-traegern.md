@@ -30,10 +30,10 @@ Zitat-Korrektur-Klasse deckt eine **inhaltliche** Zahl nicht),
 Zustandsfelder — der Geschwister-Ort) · **§3.12 (der Entwurf dieser ADR)** ·
 `.harness/skills/reviewer.md` (die durchsetzende Hälfte, Instanz A) ·
 `.claude/agents/verifier.md` („Prüfe die Belege, nicht die Behauptung" — die
-durchsetzende Hälfte, Instanz B) · `docs/reviews/review-slice-081.md` (F-1, <!-- d-check:status-provenance -->
-F-6), `docs/reviews/review-slice-084.md` (F-1), `docs/reviews/verify-slice-085.md` <!-- d-check:status-provenance -->
-(V-1), `docs/reviews/review-slice-088.md` (F-2, F-3) und <!-- d-check:status-provenance -->
-`docs/reviews/review-slice-088-delta.md` (D-1) · <!-- d-check:status-provenance -->
+durchsetzende Hälfte, Instanz B) · Review zu `slice-081` (F-1, <!-- d-check:status-provenance -->
+F-6), Review zu `slice-084` (F-1), Verifikationsbericht zu `slice-085` <!-- d-check:status-provenance -->
+(V-1), Review zu `slice-088` (F-2, F-3) und <!-- d-check:status-provenance -->
+Review zu `slice-088`, Delta (D-1) · <!-- d-check:status-provenance -->
 `docs/plan/planning/observations/BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung/`
 und
 `docs/plan/planning/observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/`
@@ -94,9 +94,9 @@ Zeitpunkt, der Leser kann ihn nicht erraten."*
 `slice-085` hat den Nenner, den die Vorgänger-Fixrunde gerade zur <!-- d-check:status-provenance -->
 Zustandsgröße erklärt hatte, nicht mitgezogen (Beleg `evidence/slice-085.md`); <!-- d-check:status-provenance -->
 `slice-088` hat sechs Funde in einem Zug erzeugt, darunter ein <!-- d-check:status-provenance -->
-Vorher/Nachher über den Text selbst (`review-slice-088-delta.md` D-1) und die <!-- d-check:status-provenance -->
+Vorher/Nachher über den Text selbst (Review zu `slice-088`, Delta, D-1) und die <!-- d-check:status-provenance -->
 Behauptung, die Zähler am Register *nachgezählt* zu haben, während die Stände
-alterten (`review-slice-088.md` F-3). Das ist der Grund, warum die <!-- d-check:status-provenance -->
+alterten (Review zu `slice-088`, F-3). Das ist der Grund, warum die <!-- d-check:status-provenance -->
 Durchsetzung ein Träger sein muss und kein Vorsatz.
 
 **(3) Die Tatsachen-Hälfte hat ebenfalls vier Belege — und sie zeigen zwei
@@ -301,8 +301,8 @@ nennt die zwei bereits vorhandenen Leser und die Grenze.
   4×, `slice-081`/`-084`/`-085`/`-088`) und einem Herkunfts-Anker. <!-- d-check:status-provenance -->
 - Folgepflicht (Planner-Zug): die verbleibenden Träger gegen die neue Regel
   **prüfen, nicht kampagnenhaft**: namentlich `harness/sensors/coverage-gate.md`
-  §Grenze Punkt 1 und die zwei §Ausgabe-Abschnitte (die `V-1`-Fundstellen aus
-  `verify-slice-085`) sowie `docs/plan/planning/welle-20.md` (eine bewegliche <!-- d-check:status-provenance -->
+  §Grenze Punkt 1 und die zwei §Ausgabe-Abschnitte (die `V-1`-Fundstellen aus dem
+  Verifikationsbericht zu `slice-085`) sowie `docs/plan/planning/welle-20.md` (eine bewegliche <!-- d-check:status-provenance -->
   Zahl im Welle-Text). Ein lebendes Dokument ist nachziehbar; eine angenommene
   ADR ist es nicht (Festlegung 5).
 - Folgepflicht (Planner-Zug, Register): die zwei Einträge erhalten im
@@ -352,7 +352,8 @@ Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-16 | Accepted — Anlass: die zwei Register-Einträge `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` und `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` stehen bei 4×; `slice-088` hat allein sechs Funde dieser Klassen erzeugt. <!-- d-check:status-provenance --> Entscheidet: **eine** Hard Rule `AGENTS.md` §3.12 für beide Instanzen (Zahlenwert: Ursprung + Lauf, Nenner als Zustand, gedeckte Zahl als Lauf-Beleg; Tatsachenbehauptung: Beleg-Anker oder „erwartet"), durchgesetzt vom Reviewer (Instanz A) und Verifier (Instanz B) statt von einem Sensor; `Accepted`-Dokumente nur vorwärts (Folge-ADR). Baut die in `ADR-0078` §Fitness Function Zeile 3 benannte und dort offengelassene Verkörperung, ohne jene ADR abzulösen | die vier Beleg-Dateien je Eintrag (sie nennen ihre Läufe), `docs/reviews/review-slice-088.md` F-2/F-3, `docs/reviews/review-slice-088-delta.md` D-1, `docs/reviews/verify-slice-085.md` V-1 <!-- d-check:status-provenance --> |
+| 2026-09-16 | Accepted — Anlass: die zwei Register-Einträge `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` und `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` stehen bei 4×; `slice-088` hat allein sechs Funde dieser Klassen erzeugt. <!-- d-check:status-provenance --> Entscheidet: **eine** Hard Rule `AGENTS.md` §3.12 für beide Instanzen (Zahlenwert: Ursprung + Lauf, Nenner als Zustand, gedeckte Zahl als Lauf-Beleg; Tatsachenbehauptung: Beleg-Anker oder „erwartet"), durchgesetzt vom Reviewer (Instanz A) und Verifier (Instanz B) statt von einem Sensor; `Accepted`-Dokumente nur vorwärts (Folge-ADR). Baut die in `ADR-0078` §Fitness Function Zeile 3 benannte und dort offengelassene Verkörperung, ohne jene ADR abzulösen | die vier Beleg-Dateien je Eintrag (sie nennen ihre Läufe), Review zu `slice-088` F-2/F-3, Review zu `slice-088`, Delta, D-1, Verifikationsbericht zu `slice-085` V-1 <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

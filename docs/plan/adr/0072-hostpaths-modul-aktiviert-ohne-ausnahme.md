@@ -18,8 +18,7 @@ Entwurf dieser ADR) · [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumente
 `.d-check.yml` (`modules`) · `d-check.mk` (`DCHECK_DIGEST`) · gepinntes
 Modul-Image `pt9912/d-check` `v0.75.0`
 (`internal/hexagon/core/rules/hostpaths.go` — Modul-Semantik) ·
-`docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md`
-(Verdikt dieses Zugs)
+der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme)
 
 **Schärft:** — (Prozess-/Tooling-ADR ohne Spec-Stratum, wie
 [`ADR-0054`](0054-coverage-gate-und-benchmark-infrastruktur.md) und
@@ -63,7 +62,7 @@ Verteilung, unabhängig reproduziert:
 |---|---|---|---|
 | `Accepted` ADRs | `docs/plan/adr/0051-…md`, `docs/plan/adr/0054-…md` | 11 | `AGENTS.md` §3.5 verbietet die In-place-Korrektur — bis [`ADR-0073`](0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | Zeitdokumente in `done/` | `slice-049-…md`, `slice-050-…md`, `welle-14.md`, `welle-14-results.md` | 11 | Closure-Record — die Konvention friert den Beleg, nicht sein Zitat <!-- d-check:status-provenance --> |
-| Lauf-Belege | `docs/reviews/review-slice-036/039/049/073.md` | 7 | Review-Report ist Lauf-Beleg (Modul 10) — dito <!-- d-check:status-provenance --> |
+| Lauf-Belege | Reviews zu `slice-036`, `-039`, `-049`, `-073` | 7 | Review-Report ist Lauf-Beleg (Modul 10) — dito <!-- d-check:status-provenance --> |
 | lebende Doku | `harness/sensors/coverage-gate.md` | 2 | frei korrigierbar |
 
 Die 31 Stellen nennen drei Schwester-Repos über ihren Pfad auf einem
@@ -278,8 +277,9 @@ diese zwei entfallen, die Klasse selbst bleibt. Andernfalls permanent.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-15 | Accepted — Anlass: Anordnung „`hostpaths` einbauen, ohne jede Ausnahme"; 31 Befunde eigenständig nachgemessen; Aktivierung ohne Ausschlussliste, Zitationsform, Hard-Rule-§3.11-Entwurf | `docs/reviews/architect-verdict-hostpaths-aktivierung-ohne-ausnahme.md` |
+| 2026-09-15 | Accepted — Anlass: Anordnung „`hostpaths` einbauen, ohne jede Ausnahme"; 31 Befunde eigenständig nachgemessen; Aktivierung ohne Ausschlussliste, Zitationsform, Hard-Rule-§3.11-Entwurf | der Architect-Verdikt dieses Zugs (hostpaths-Aktivierung ohne Ausnahme) |
 | 2026-09-15 | Zitat-Korrektur — host-lokale Pfade ersetzt (`ADR-0073`) | `df47282` |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

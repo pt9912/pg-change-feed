@@ -7,11 +7,8 @@
 **Autor:** pt9912
 
 **Bezug:** [`ADR-0042`](0042-transport-typen-am-port.md) (Bindungs-Anker der
-`make image`-Werkzeuge-Zeile); Belege:
-[`docs/reviews/verify-slice-004.md`](../../../docs/reviews/verify-slice-004.md)
-(F-2-Schiedsspruch),
-[`docs/reviews/review-slice-005.md`](../../../docs/reviews/review-slice-005.md)
-(F-7)
+`make image`-Werkzeuge-Zeile); Belege: Verifikationsbericht zu `slice-004` <!-- d-check:status-provenance -->
+(F-2-Schiedsspruch), Review zu `slice-005` (F-7) <!-- d-check:status-provenance -->
 
 **Schärft:** — *(Prozess-ADR ohne Spec-Stratum; die Semantik des Belegs
 tragen kein `SPEC-*`/`ARC-*`-Anker, sondern die Verkabelung — der
@@ -35,13 +32,13 @@ wenn sich das exportierte Image ändert; deps-Layer-Änderungen ohne
 Binary-Import ließen ihn unverändert (Dockerfile-Kopf
 `Dockerfile:5-10`, Werkzeuge-Zeile in `harness/README.md`).
 
-[`review-slice-005 F-7`](../../../docs/reviews/review-slice-005.md) widerlegt
+Review zu `slice-005`, Finding F-7, widerlegt <!-- d-check:status-provenance -->
 die Formel am Verhalten des Ranges: Das Binary — mit exakt den
 Dockerfile-Flags (`-trimpath -ldflags="-s -w"`, `CGO_ENABLED=0`) gebaut — ist
 an beiden Range-Grenzen **bit-identisch** (sha256 `43c3aec0…`), und der
 Digest wechselte trotzdem (`447eab36…` in `423cc5a` → `9ac4a9fb…` in
 `cf3c57a`). Der F-2-Schiedsspruch des Verifiers
-([`verify-slice-004.md`](../../../docs/reviews/verify-slice-004.md)) und die
+(Verifikationsbericht zu `slice-004`) und die <!-- d-check:status-provenance -->
 Implementer-Probe zeigen dieselbe Richtung: Ein Re-Build am Aufzeichnungs-
 Commit in einer anderen Umgebung lieferte `01b46e36…` statt des eingetragenen
 `447eab36…` — der Digest ist **builder- und lauf-gebunden**; Provenance-
@@ -74,11 +71,9 @@ Entscheidungs-Größe.**
    ein gültiger Befund.
 4. **Der Binary-Extraktions-Mechanismus ist der belegbare Weg:** Export des
    gebauten Images als Container, sha256 des extrahierten Binaries —
-   dokumentiert als Muster in
-   [`verify-slice-004.md`](../../../docs/reviews/verify-slice-004.md)
+   dokumentiert als Muster im Verifikationsbericht zu `slice-004` <!-- d-check:status-provenance -->
    (F-2-Schiedsspruch, Builds A/B/C mit `docker buildx build --load
-   --metadata-file`, `/tmp`-Worktree) und
-   [`review-slice-005.md`](../../../docs/reviews/review-slice-005.md)
+   --metadata-file`, `/tmp`-Worktree) und im Review zu `slice-005` <!-- d-check:status-provenance -->
    (F-7, Probe an beiden Range-Grenzen).
 
 ## Verglichene Alternativen
@@ -138,7 +133,8 @@ ist nach Accepted immutable). Sonst `permanent`.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-09 | Accepted — Anlass: [`review-slice-005 F-7`](../../../docs/reviews/review-slice-005.md) (Binary an beiden Range-Grenzen bit-identisch `43c3aec0…`, Digest wechselte `447eab36…` → `9ac4a9fb…`); korrigiert die `96c47af`-Deklaration („genau dann"-Äquivalenz), gestützt auf den [`F-2-Schiedsspruch`](../../../docs/reviews/verify-slice-004.md) | — |
+| 2026-09-09 | Accepted — Anlass: Review zu `slice-005`, Finding F-7 (Binary an beiden Range-Grenzen bit-identisch `43c3aec0…`, Digest wechselte `447eab36…` → `9ac4a9fb…`); korrigiert die `96c47af`-Deklaration („genau dann"-Äquivalenz), gestützt auf den F-2-Schiedsspruch (Verifikationsbericht zu `slice-004`) | — <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

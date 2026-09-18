@@ -26,7 +26,7 @@ Ausnahmeklausel superseded), [`ADR-0026`](0026-composition-root.md)
 (Zeilen [`ARC-005`](../../../spec/architecture.md), [`ARC-007`](../../../spec/architecture.md)),
 [`ADR-0060`](0060-grpc-streaming-mechanismus.md) (der gRPC-Stream, dessen
 Protokoll-Stub der Client konsumiert),
-`docs/reviews/review-slice-071.md` <!-- d-check:status-provenance --> (Anlass:
+Review zu `slice-071` <!-- d-check:status-provenance --> (Anlass:
 F-1, HIGH), `docs/plan/planning/in-progress/slice-071-grpc-beispielclient-e2e.md` <!-- d-check:status-provenance -->
 (§3 Plan-Nachzug), `.a-check.yml` (`composition_root`, `layers`, `edges`),
 `tools/harness/grpcclient/main.go` (importiert genau ein Paket),
@@ -56,7 +56,7 @@ Baum war rot.
 
 Der Implementer-Lauf hat daraufhin `tools/**` in `composition_root`
 aufgenommen (`.a-check.yml`, Commit `b835dde`). Der Review dieses Slices
-(`docs/reviews/review-slice-071.md` <!-- d-check:status-provenance -->, F-1, HIGH)
+(Review zu `slice-071` <!-- d-check:status-provenance -->, F-1, HIGH)
 hat die Aufnahme an drei Stellen als nicht gedeckt befundet:
 
 1. **Die Rolle trägt nicht.** `composition_root` bedeutet in diesem Repo
@@ -254,7 +254,8 @@ Werkzeug-Clients.
 
 | Datum | Ereignis | Verweis |
 |---|---|---|
-| 2026-09-14 | Accepted — Anlass: Review `slice-071`<!-- d-check:status-provenance --> F-1 (HIGH) belegt, dass die Aufnahme `tools/**` in `composition_root` in [`ADR-0041`](0041-a-check-maschinenform-architekturpruefung.md) keine Deckung hat und dem Werkzeug-Baum unbeschränktes Importrecht gibt. Unabhängiger Architect-Zug nimmt die Zeile zurück, führt die begrenzte Gruppe `tooling` + Kante `tooling → adapters` ein und schärft die ADR-freie Änderungsklasse (Modul 8 §Konflikt-Pfad: Lockerung legitim, aber falsch zugeschnitten → ADR, die den Gegenstand der Ausnahme benennt) | `docs/reviews/review-slice-071.md` |
+| 2026-09-14 | Accepted — Anlass: Review `slice-071`<!-- d-check:status-provenance --> F-1 (HIGH) belegt, dass die Aufnahme `tools/**` in `composition_root` in [`ADR-0041`](0041-a-check-maschinenform-architekturpruefung.md) keine Deckung hat und dem Werkzeug-Baum unbeschränktes Importrecht gibt. Unabhängiger Architect-Zug nimmt die Zeile zurück, führt die begrenzte Gruppe `tooling` + Kante `tooling → adapters` ein und schärft die ADR-freie Änderungsklasse (Modul 8 §Konflikt-Pfad: Lockerung legitim, aber falsch zugeschnitten → ADR, die den Gegenstand der Ausnahme benennt) | Review zu `slice-071` |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

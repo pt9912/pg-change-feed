@@ -20,10 +20,10 @@ CDC-Datenzugriffen), [ADR-0014](0014-retention-domain-policy.md)
 vollständig, weil die Retention-Löschausführung zum Zeitpunkt von `ADR-0047`
 noch kein realer Aufrufer war), [ADR-0048](0048-heartbeat-grant-korrektur-select-ergaenzung.md)
 (Präzedenzfall: Grant-Korrektur an `ADR-0047` per Folge-ADR, nicht per
-stiller Implementer-Lockerung), Architect-Verdikt
-[`architect-verdict-retention-loeschausfuehrung.md`](../../reviews/architect-verdict-retention-loeschausfuehrung.md)
+stiller Implementer-Lockerung), der vorausgehende Architect-Verdikt zur
+Retention-Löschausführung
 (Frage 1 — prüfte Domain-/Port-/ADR-Ebene, nicht die Rollen-/Grant-Konsequenz),
-Architect-Verdikt [`architect-verdict-slice-044-rollen-grant.md`](../../reviews/architect-verdict-slice-044-rollen-grant.md)
+der Architect-Verdikt zu `slice-044` und dem Rollen-Grant <!-- d-check:status-provenance -->
 (dieser Konflikt-Pfad, Modul 8), `docs/plan/planning/welle-13.md` §6,
 `docs/plan/planning/in-progress/slice-044-retention-hintergrundjob.md` §3 <!-- d-check:status-provenance -->
 Plan-Nachzug Punkt 6, `docs/plan/planning/observations/BEO-PGC/architect-verdikt-rollen-scope-luecke`,
@@ -55,8 +55,8 @@ Consumer-Registrierung, Healthcheck) — die Retention-Löschausführung fehlt
 darin vollständig, weil `RunRetentionUseCase` zu diesem Zeitpunkt noch nicht
 existierte (er entstand erst mit `slice-043`, einen Tag später). <!-- d-check:status-provenance -->
 
-Der Architect-Verdikt vor Eröffnung von `welle-13`
-(`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`) prüfte in
+Der Architect-Verdikt zur Retention-Löschausführung, vor Eröffnung von
+`welle-13`, prüfte in
 Frage 1 ausführlich, ob die neue `ChangeStorePort`-Delete-Methode und
 `RunRetentionUseCase` gegen `ADR-0009`/`0011`/`0012`/`0014`/`0029` bestehen
 — auf **Domain-/Port-/Anwendungsfall-Ebene**. Er prüfte **nicht**, unter
@@ -200,6 +200,7 @@ fällig — „eine vierte CDC-Rolle mit eigenem Aufgabenschnitt"). Sonst
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-13 | Accepted — Anlass: `BEO-PGC/architect-verdikt-rollen-scope-luecke` (1×, unter der 3×-Schwelle, aber realer Rollen-Konflikt nach Modul 8 §Konflikt-Pfad), Commit `824e001` (Implementer-Fund + Grant-Ergänzung ohne separaten Architect-Zug, transparent dokumentiert); Verdikt 2 aus Modul 8 §Konflikt-Pfad (Folge-ADR statt stille Implementer-Lockerung, analog `ADR-0048`) | `slice-044` (in `in-progress/`) <!-- d-check:status-provenance --> |
+| 2026-09-18 | Zitat-Korrektur — `docs/reviews/**`-Pfade durch Kennung ersetzt (`ADR-0073`) | PENDING_COMMIT |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
