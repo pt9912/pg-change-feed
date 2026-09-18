@@ -11,11 +11,11 @@ Fehlerklasse wie bei `slice-045`/`046`. Der Lückenschluss fiel erst bei
 `slice-058`s Implementierung auf (dessen eigener Commit `29ac256` die
 Zeile ohnehin inhaltlich korrigieren musste und dabei den `Version:`-Kopf
 korrekt auf 1.11 samt Changelog-Zeile fortschrieb — real bestätigt vom
-Reviewer per `git log -p --follow`, `docs/reviews/review-slice-058.md`
+Reviewer per `git log -p --follow`, Review zu `slice-058`
 F-1).
 
 Dies ist ein eigener Vorgang (dritter Beleg dieser Klasse, nach
 `evidence/slice-045.md` und `evidence/slice-046.md`) — die Schwelle (3×)
 ist damit erreicht.
 
-Quelle: `docs/reviews/review-slice-058.md` F-1.
+Quelle: Review zu `slice-058` F-1.

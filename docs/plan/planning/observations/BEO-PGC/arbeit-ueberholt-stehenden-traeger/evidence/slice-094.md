@@ -35,8 +35,8 @@ einem Träger, den er nicht anfasste, eine in einem, den er bewusst liegen ließ
 `slice-093`) trafen je einen Satz in der Sensor-Doku; dieser trifft vier
 Stellen in **zwei** Dateien, und die letzte ist eine Korrektur.
 
-Quelle: `docs/reviews/review-slice-094.md` (F-5) ·
-`docs/reviews/review-slice-094-delta.md` (Schwerpunkt 5) ·
-`docs/reviews/verify-slice-094.md` (R4) ·
+Quelle: Review zu `slice-094` (F-5) ·
+Delta-Review zu `slice-094` (Schwerpunkt 5) ·
+Verifikationsbericht zu `slice-094` (R4) ·
 `harness/sensors/coverage-gate.md` §Grenze 1 (berichtigt in `8292766`) ·
 `docs/plan/planning/welle-20.md` §1 (berichtigt in `f64794b` und `d839975`).

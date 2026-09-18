@@ -10,4 +10,4 @@ Runtime-Zwang) sind real geliefert und real getestet (`make test-store`,
 `make test-integration` mit echtem Docker-Health-Übergang
 `starting`→`healthy`).
 
-Quelle: docs/reviews/review-slice-012.md, docs/reviews/verify-slice-012.md.
+Quelle: Review zu `slice-012`, Verifikationsbericht zu `slice-012`.

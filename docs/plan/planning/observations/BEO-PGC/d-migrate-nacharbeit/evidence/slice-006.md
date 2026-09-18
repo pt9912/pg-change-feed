@@ -9,5 +9,5 @@ d-migrate-1.2.0-Konvergenz-Grenze (`raw-sql-text-drift`, Exit 7 Drift /
 E012 Autorenform — beide Formen im Implementer-Lauf rot gesehen); der
 Constraint lebt als berichtete Nacharbeit im Rollout-Target.
 
-Quelle: docs/reviews/review-slice-006.md (F-4/F-5), Implementer-Bericht
+Quelle: Review zu `slice-006` (F-4/F-5), Implementer-Bericht
 (slice-006, Zentraler Befund am Erstversatz).

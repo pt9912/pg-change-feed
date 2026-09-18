@@ -2,9 +2,9 @@
 
 Vorgang: slice-024.
 
-Fund: Der Verifier (`docs/reviews/verify-slice-024.md`, V-1) stellte fest,
+Fund: Der Verifier (Verifikationsbericht zu `slice-024`, V-1) stellte fest,
 dass die DoD-Zeile „Review durchgeführt" trotz real abgeschlossenem, sauberem
-Review (`docs/reviews/review-slice-024.md`, 0 HIGH/MEDIUM/LOW, 1 INFO) auf
+Review (0 HIGH/MEDIUM/LOW, 1 INFO) auf
 `[ ]` stehen blieb. Dieselbe Symptom-Klasse wie
 `BEO-PGC/dod-checkbox-nachzug`, aber über einen anderen Pfad: Dieser Slice
 lief über die Architect-Rolle (ADR + Spec-Präzisierung), nicht über den
@@ -19,4 +19,4 @@ Sensor, der DoD-Checkboxen gegen vorhandene Review-/Verify-Reports
 gegenprüft, unabhängig von der liefernden Rolle), ist eine Entscheidung, kein
 Ein-Zeilen-Fix.
 
-Quelle: `docs/reviews/verify-slice-024.md` V-1.
+Quelle: Verifikationsbericht zu `slice-024` V-1.

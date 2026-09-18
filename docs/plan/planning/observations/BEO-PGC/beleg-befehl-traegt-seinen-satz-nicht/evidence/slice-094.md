@@ -29,7 +29,7 @@ zurückfallen (Gesamt 80,50 %). Die Coverage-Zusage dieses Slice ist damit
 **nicht testgewahrt** — sie steht als **§Grenze 7** im Sensor-Dokument, mit
 „Wächter: keiner". Benannt, nicht still.
 
-Quelle: `docs/reviews/review-slice-094.md` (F-2) ·
-`docs/reviews/review-slice-094-delta.md` (Negativbefunde, Messungen 4 und 5) ·
+Quelle: Review zu `slice-094` (F-2) ·
+Delta-Review zu `slice-094` (Negativbefunde, Messungen 4 und 5) ·
 `cmd/pg-change-feed/main_test.go` (berichtigt in `8292766`) ·
 `harness/sensors/coverage-gate.md` §Grenze Punkt 7.

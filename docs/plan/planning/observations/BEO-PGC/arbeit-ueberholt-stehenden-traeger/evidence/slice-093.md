@@ -32,7 +32,7 @@ diesem Eintrag stammt (Erstauftreten `slice-091`). Damit hat die Beobachtung sic
 zum ersten Mal **bezahlt**: sie hat einen Fehler gefunden, den weder Review noch
 Verifikation gesucht hätten, weil beide auf die Stellen ihres Auftrags sahen.
 
-Quelle: `docs/reviews/verify-slice-093.md` (Richtung 1 und 2) ·
+Quelle: Verifikationsbericht zu `slice-093` (Richtung 1 und 2) ·
 `harness/sensors/coverage-gate.md` §Zählbasis (berichtigt, Herkunfts-Anker
 `slice-093`) · `internal/bootstrap/wiring_rest_internal_test.go` ·
 `docs/plan/planning/observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/state.md`

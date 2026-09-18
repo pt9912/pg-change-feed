@@ -7,5 +7,5 @@ keine neue ADR nötig ist (Heartbeat-Pattern deckt den Bedarf), aber der
 Umsetzungs-Zug selbst (Application-/Bootstrap-Schicht) ist noch nicht
 geschnitten.
 
-Quelle: docs/reviews/review-slice-011.md (F-1),
-docs/reviews/architect-review-slice-011.md.
+Quelle: Review zu `slice-011` (F-1),
+Architect-Review zu `slice-011`.

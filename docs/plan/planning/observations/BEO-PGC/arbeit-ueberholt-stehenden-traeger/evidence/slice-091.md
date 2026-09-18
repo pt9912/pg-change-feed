@@ -27,14 +27,14 @@ Die Arbeit hat sie es nicht mehr sein lassen.
 trifft diese Zählung **23** der 31 Pakete des Gegenstands (darunter `natsnotify`
 0/1, `port/outbound` 0/3, **13** `usecase/*` 0/1) und ist damit keine
 Gruppierungsregel; sie ist für **jedes** Paket mit externem Testpaket wahr.
-Gefunden hat das der **Delta-Review** (`review-slice-091-delta` D-1) — nicht das
+Gefunden hat das der **Delta-Review** zu `slice-091` (D-1) — nicht das
 Review und nicht die Verifikation: beide hatten keinen Anlass, eine Datei zu
 öffnen, die nicht im Diff lag. Die vierte Runde hat die Gruppe dann auf ihren
 mechanischen Bestand gebracht (vier Pakete mit `Test=0 XTest=0`) und `streamv1`
 eine **eigene**, substanziierte Rolle gegeben (45 von 86 Statements aus dem
 eigenen Testlauf gegen 76 von 86 im Gegenstand).
 
-Quelle: `docs/reviews/review-slice-091-delta.md` (D-1) ·
+Quelle: Delta-Review zu `slice-091` (D-1) ·
 `harness/sensors/coverage-gate.md` §Grenze Punkt 1 (berichtigt in `af3ea9f`) ·
 `git archive f90c3f4^` + `go list` (Parent-Stand, gemessen) ·
-`docs/reviews/verify-slice-091.md` (V-6).
+Verifikationsbericht zu `slice-091` (V-6).

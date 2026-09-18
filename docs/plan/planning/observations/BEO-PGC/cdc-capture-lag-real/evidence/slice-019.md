@@ -16,4 +16,4 @@ reproduziert).
 aufgelöst — `LH-FA-ADM-004` liefert jetzt einen realen, nicht nur
 angenäherten CDC-Abstand.
 
-Quelle: `docs/reviews/review-slice-019.md`, `docs/reviews/verify-slice-019.md`.
+Quelle: Review zu `slice-019`, Verifikationsbericht zu `slice-019`.

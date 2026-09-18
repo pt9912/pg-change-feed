@@ -11,5 +11,5 @@ Glob-Lücken deuten") tritt damit in der umgekehrten Form auf: keine
 Hinweise, aber auch kein Layer-Prüfbereich — der Ausgang „weiter offen"
 wird durch den echten Content der Slices 002/003 bewertet.
 
-Quelle: `docs/reviews/verify-slice-001.md` (Beleg: Implementer-Handoff
+Quelle: Verifikationsbericht zu `slice-001` (Beleg: Implementer-Handoff
 Risiko (b), Verifier-Prüfung der GATE_CHECKS-Verkabelung).

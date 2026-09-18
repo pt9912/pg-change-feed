@@ -36,7 +36,7 @@ keine Liste wurde. Ein Vorfall, der zweimal auftritt — einmal als Werkzeug-Feh
 einmal als Lockerung —, ist kein Ärgernis mehr, sondern eine Stelle, an der das
 Repo eine Form braucht.
 
-Quelle: `docs/reviews/review-slice-093.md` (F-1, HIGH) ·
+Quelle: Review zu `slice-093` (F-1, HIGH) ·
 `docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md` ·
-`docs/reviews/verify-slice-093.md` (Entscheidungs-Konformität) ·
+Verifikationsbericht zu `slice-093` (Entscheidungs-Konformität) ·
 `.dockerignore` · `tools/schema/nacharbeit-roles.sql`.

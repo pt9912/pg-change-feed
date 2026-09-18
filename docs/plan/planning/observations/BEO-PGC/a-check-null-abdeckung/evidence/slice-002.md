@@ -10,5 +10,5 @@ Globs. **Die Null-Abdeckung gilt weiter für `app` (`usecase/**`) und
 `adapters`** — beide matchen null Dateien bis slice-003; die
 Beobachtungsklasse ist damit teils entkräftet, nicht abgeschlossen.
 
-Quelle: `docs/reviews/verify-slice-002.md` (a-check im Gate-Bündel,
+Quelle: Verifikationsbericht zu `slice-002` (a-check im Gate-Bündel,
 Kante `ports → domain` per `a-check-graph` bestätigt).

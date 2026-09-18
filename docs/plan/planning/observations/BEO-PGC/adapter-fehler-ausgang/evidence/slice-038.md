@@ -24,5 +24,5 @@ Prozess zum Beobachten übrig lässt. Der Ersatzbeleg ist damit nicht
 Testschwäche dieses Slice, sondern eine erneute reale Bestätigung der seit
 `slice-007` offenen Beobachtung.
 
-Quelle: `docs/reviews/review-slice-038.md` (F-3), Plan-Nachzug §3
+Quelle: Review zu `slice-038` (F-3), Plan-Nachzug §3
 (`docs/plan/planning/in-progress/slice-038-cli-diagnose.md`).

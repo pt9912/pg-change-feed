@@ -22,7 +22,7 @@ Der Weg, Station für Station:
    je **ein** Aufruf eines dienstgebundenen Sondermodus und **liegen außerhalb
    des netzlosen Tiers**." — Die Decke ist jetzt eine **Grenze** in einem
    stehenden Träger.
-4. **Review** (`review-slice-094` F-1, HIGH): gemessen — ein Test, der dieselben
+4. **Review** zu `slice-094` (F-1, HIGH): gemessen — ein Test, der dieselben
    vier Modi mit **vollständigem** ENV fährt, deckt sie **alle vier**: `cmd`
    **49 von 49**, Gesamt **1581/1903 = 83,08 %**, netzlos, EC 0.
 
@@ -36,7 +36,7 @@ Und jeder Träger trug seinen Satz — er zitiert nur nicht als Zitat.
 **letzten Station** gemessen — dort, wo der Wert zur Grenze wurde. Eine
 Testdatei, vier Statements.
 
-Quelle: `docs/reviews/review-slice-094.md` (F-1, HIGH) ·
+Quelle: Review zu `slice-094` (F-1, HIGH) ·
 `docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md`
 §Kontext (4a) · `docs/plan/planning/done/slice-094-coverage-cluster-a.md` §1/§2
 (der Plan ist nach der Closure in `done/`; die Fassung bei der Planung trug die
