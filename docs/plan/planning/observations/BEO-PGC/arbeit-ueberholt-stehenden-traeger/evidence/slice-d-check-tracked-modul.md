@@ -13,11 +13,11 @@ desselben Commits. Zusätzlich blieben `.claude/agents/verifier.md:40` und
 `.claude/agents/implementer.md:44` (identische Sieben-Module-Aufzählung)
 unangetastet, obwohl kein Teil des ursprünglichen Diffs.
 
-Gefunden hat es der Reviewer (`docs/reviews/review-slice-d-check-tracked-modul.md`
+Gefunden hat es der Reviewer (Review zu `slice-d-check-tracked-modul`
 F-1), per `grep -rn "links, anchors, ids, matrix, versions" .claude/` bestätigt.
 Behoben in der Fixrunde (Commit `5800a83`), Delta-Review bestätigt alle drei
 Träger konsistent auf acht Module.
 
-Quelle: `docs/reviews/review-slice-d-check-tracked-modul.md` F-1 ·
-`docs/reviews/review-slice-d-check-tracked-modul-fixrunde.md` ·
-`docs/reviews/verify-slice-d-check-tracked-modul.md`.
+Quelle: Review zu `slice-d-check-tracked-modul` F-1 ·
+die Fixrunde des Review-Berichts zu `slice-d-check-tracked-modul` ·
+der Verifikationsbericht zu `slice-d-check-tracked-modul`.

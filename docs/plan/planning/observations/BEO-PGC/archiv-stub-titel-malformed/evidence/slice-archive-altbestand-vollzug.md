@@ -13,5 +13,5 @@ Inhalt, Archiv-Zeiger und Fußzeilen waren korrekt; betroffen war
 ausschließlich die erste Zeile. Behoben durch direkte Titelzeilen-Korrektur
 in derselben Closure-Runde (Review-Finding F-1).
 
-Quelle: `docs/reviews/review-slice-archive-altbestand-vollzug.md` F-1 ·
+Quelle: Review zu `slice-archive-altbestand-vollzug` F-1 ·
 Commit `641eaf0`.

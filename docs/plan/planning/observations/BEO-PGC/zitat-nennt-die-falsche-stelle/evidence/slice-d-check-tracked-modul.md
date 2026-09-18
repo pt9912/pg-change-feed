@@ -16,8 +16,8 @@ Folgepflichten aus, die eine ADR bräuchten" (Architect-Verdikt §5).
 
 Gefunden hat es der Reviewer (F-2), unabhängig bestätigt und mit dem
 tragenden Präzedenzfall (`structure`-Modul, Commit `f9e5a3c`) korrigiert vom
-nachträglichen Architect-Zug
-(`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`).
+nachträglichen Architect-Zug (der Architect-Verdikt zur ADR-Frage von
+`slice-d-check-tracked-modul`).
 Behoben in der Fixrunde (Commit `5800a83`), Delta-Review bestätigt den
 korrigierten Wortlaut.
 
@@ -28,6 +28,6 @@ Abschnitts-/Slice-Verweises — dieselbe Klasse auf einem dritten Gegenstandstyp
 Da dieser Slice `welle-d-check` angehört, liegt der Lese-Schritt (Ausgang
 zuweisen) bei der Welle-Closure (Modul 6/8), nicht bei dieser Slice-Closure.
 
-Quelle: `docs/reviews/review-slice-d-check-tracked-modul.md` F-2 ·
-`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md` ·
-`docs/reviews/review-slice-d-check-tracked-modul-fixrunde.md`.
+Quelle: Review zu `slice-d-check-tracked-modul` F-2 ·
+der Architect-Verdikt zur ADR-Frage von `slice-d-check-tracked-modul` ·
+die Fixrunde des Review-Berichts zu `slice-d-check-tracked-modul`.

@@ -15,7 +15,7 @@ entzogene Tabelle sofort aus, ohne Neuaufbau der Session — die
 Verzögerungs-Annahme der Beobachtung trifft für die geprüfte
 PostgreSQL-Version (18-alpine, `compose.yaml`) nicht zu.
 
-Quelle: `docs/reviews/architect-verdict-walsender-wirksamkeit.md`
+Quelle: der Architect-Verdikt zur Walsender-Wirksamkeit
 (Testspezifikation), `tools/harness/run-integration-tests.sh` (Abschnitt
 „Publication-Entzug-Wirksamkeit — isolierter Beleg"), Implementer-Bericht
 slice-051 (drei reale `make test-integration`-Läufe, konsistentes

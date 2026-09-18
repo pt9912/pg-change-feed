@@ -15,5 +15,5 @@ Informationsverlust. `harness/README.md` war in diesem Diff nicht
 geändert (`git diff --stat` zeigt nur `AGENTS.md` und die Slice-Plan-Datei)
 — die Asymmetrie bestand bereits vorher.
 
-Quelle: `docs/reviews/review-slice-gate-index-konsolidierung.md` F-1
+Quelle: Review zu `slice-gate-index-konsolidierung` F-1
 (INFO, Klasse „Bindung-Spalte uneinheitlich tief") · Commit `d6d0d09`.

@@ -19,4 +19,4 @@ Fund ohne diesen Register-Eintrag ohne jeden weiteren Leser — `--trace` ist
 advisory, kein Gate liest die sieben Kennungen ein zweites Mal.
 
 Quelle: `docs/plan/planning/done/welle-d-check/slice-d-check-trace-rtm.md` §1/§2 ·
-`docs/reviews/verify-slice-d-check-trace-rtm.md` §A/§G.
+der Verifikationsbericht zu `slice-d-check-trace-rtm` §A/§G.

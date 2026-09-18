@@ -15,12 +15,12 @@ beantwortet (mit falscher Begründung, siehe
 geprüft hätte.
 
 Geheilt über einen **nachträglichen** Architect-Zug nach
-Implementierungsbeginn
-(`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md`,
+Implementierungsbeginn (der Architect-Verdikt zur ADR-Frage von
+`slice-d-check-tracked-modul`,
 §7: „dieses Dokument ist der fehlende Zug, nachträglich vollzogen … die
 Sequenz-Verletzung selbst bleibt im Slice-Plan als Record stehen, sie wird
 durch diesen Nachtrag nicht rückwirkend geheilt"). Die inhaltliche Frage ist
 damit beantwortet; die Sequenz-Verletzung selbst ist der hier belegte Fund.
 
-Quelle: `docs/reviews/review-slice-d-check-tracked-modul.md` F-3 ·
-`docs/reviews/architect-verdict-slice-d-check-tracked-modul-adr-frage.md` §7.
+Quelle: Review zu `slice-d-check-tracked-modul` F-3 ·
+der Architect-Verdikt zur ADR-Frage von `slice-d-check-tracked-modul` §7.

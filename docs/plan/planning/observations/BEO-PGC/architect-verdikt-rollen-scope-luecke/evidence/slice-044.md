@@ -7,8 +7,7 @@ Löschausführung (`RunRetentionUseCase.Run` → `ChangeStorePort.DeleteChanges`
 `slice-043`) zeigte ein Grant-Abgleich gegen
 `tools/schema/nacharbeit-roles.sql`, dass weder `cdc_capture` noch
 `cdc_admin` ein `DELETE`-Grant auf `cdc.transaction`/`cdc.change` trugen.
-Das Architect-Verdikt
-(`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`, Frage 1)
+Der Architect-Verdikt zur Retention-Löschausführung (Frage 1)
 hatte die Domain-/Port-/ADR-Ebene der neuen Löschmethode geprüft (kein
 Widerspruch zu `ADR-0009`/`0011`/`0012`/`0014`/`0029`), aber keine
 Rollen-/Grant-Prüfung für den neuen physischen `DELETE`-Pfad

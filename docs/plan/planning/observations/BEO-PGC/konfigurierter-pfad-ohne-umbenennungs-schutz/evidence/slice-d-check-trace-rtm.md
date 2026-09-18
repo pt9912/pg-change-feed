@@ -18,4 +18,4 @@ Closure, 2026-09-17) — Risiko bleibt „weiter offen", kein Carveout, kein
 Folge-Slice nötig, da kein akuter Bedarf.
 
 Quelle: `docs/plan/planning/done/welle-d-check/slice-d-check-trace-rtm.md` §6 Risiko 1 ·
-`docs/reviews/verify-slice-d-check-trace-rtm.md` §C Risiko 1.
+der Verifikationsbericht zu `slice-d-check-trace-rtm` §C Risiko 1.

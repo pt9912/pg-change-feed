@@ -83,8 +83,8 @@ und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der Backticks; die
 
 - **Rollen-spezifische DSN-Verdrahtung** — Ausgang **geplant** (keine
   geschärfte Regel, da eine physische Verdrahtungslücke im Bootstrap-Code
-  vorliegt, kein Workflow-Disziplin-Defizit; Begründung:
-  [`architect-review-welle-6.md`](../../../reviews/architect-review-welle-6.md) Zug 2)
+  vorliegt, kein Workflow-Disziplin-Defizit; Begründung: der
+  Architect-Review zu `welle-6`, Zug 2)
   — Folge-Slice `slice-023` · seit welle-6.
   Auslöser: `BEO-PGC/rollen-verdrahtung` (slice-011, slice-021,
   slice-022 — 3×).
@@ -138,8 +138,7 @@ Anker (Hash, Lauf, Zahl).
   simulieren, Fortsetzen ab der bestätigten Position, ausschließlich über
   den externen Zugriffsweg, kein Direktschreiben der CDC-Speichertabellen.
 - Trigger-Audit der Welle (Carveout · bootstrap-aware Gate · ADR): alle
-  drei Klassen „0 fällig"/bestätigt
-  (`docs/reviews/architect-review-welle-6.md`).
+  drei Klassen „0 fällig"/bestätigt (der Architect-Review zu `welle-6`).
 
 ## Archivierung
 

@@ -40,8 +40,7 @@ funktionierte · was anders lief. Mit ID-Bezug, wo es einen gibt.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wellen-Closure-Prozedur, Schritt 3.
 
-- Der vorab eingeholte Architect-Verdikt
-  (`docs/reviews/architect-verdict-retention-loeschausfuehrung.md`) hielt
+- Der vorab eingeholte Architect-Verdikt zur Retention-Löschausführung hielt
   über alle vier Slices: keine neue ADR nötig für die Domain-/Port-Ebene,
   das View-Owner-Muster trug `cdc.retention_blockers` und
   `cdc_storage_bytes` beide ohne `cdc_reader`-Rollenerweiterung — real
@@ -103,7 +102,8 @@ und Zielort auf **einer** Zeile, Sektionsangabe innerhalb der Backticks; die
 Kein Eintrag erreicht in dieser Welle-Closure neu 3× — der Normalfall.
 `BEO-PGC/slice-chronik-in-code-kommentar` erreichte 3× bereits während
 `slice-044` selbst (eigener, wellenloser Architect-Zug vor dieser
-Welle-Closure, `docs/reviews/architect-verdict-slice-chronik-in-code-kommentar.md`)
+Welle-Closure, der Architect-Verdikt zur Slice-Chronik in
+Code-Kommentaren)
 und wird hier nicht erneut verarbeitet.
 `BEO-PGC/retention-keine-loeschausfuehrung` wird unten als eigener,
 direkter Auflösungsfall (nicht über die 3×-Schwelle) behandelt.

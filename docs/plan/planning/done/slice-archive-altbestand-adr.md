@@ -93,7 +93,7 @@ unter einem Unterverzeichnis verlässt diesen Prüfbereich.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
-      Report: `docs/reviews/review-slice-archive-altbestand-adr.md`, 0 HIGH.
+      Report: `review-slice-archive-altbestand-adr.md`, 0 HIGH.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — keine
       Beobachtung angefallen (siehe §7).
@@ -139,7 +139,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Implementer-Lauf.
 - **Der Acceptance-Trigger der ADR verlangt eine Reviewer-Runde, die einen
   blockierenden Befund meldet** — verzögert die Welle. —
-  **Ausgang: entfallen** — Review (`docs/reviews/review-slice-archive-altbestand-adr.md`)
+  **Ausgang: entfallen** — Review (`review-slice-archive-altbestand-adr.md`)
   meldet 0 HIGH/MEDIUM/LOW, 1 INFO, nicht merge-blockierend.
 - **Die `[haenger]`-Bereinigung (externer Vorgang) schließt vor dieser ADR ab
   und macht einen Teil ihrer Kontext-Messung veraltet** (z. B. eine andere
