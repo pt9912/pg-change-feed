@@ -74,9 +74,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
       fünfzehn Programme" gehoben (jetzt erst wahr) — zusätzlich
       `spec/pflichtenheft.md` `SPEC-023` nachgezogen (Plan-Nachzug, §3).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-nats-drittstream-example-csharp-kotlin.md`
+      (0 HIGH, 0 MEDIUM, 1 LOW — keine Fixrunde am Implementer nötig,
+      DoD-Checkbox-Nachzug durch den Reviewer selbst,
+      `.harness/skills/reviewer.md` §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update: `examples/README.md` (C#-/Kotlin-Zeilen, Aggregatzahlen),
       `docs/user/benutzerhandbuch.md`s `**Beispiele:**`-Block komplettiert
       (siehe §2 dritter Liefer-Punkt).

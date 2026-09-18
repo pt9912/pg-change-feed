@@ -884,10 +884,6 @@ Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
 Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
 Vorbild.
 
-Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
-Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
-Vorbild.
-
 ## 5. Konfiguration
 
 ### Umgebungsvariablen des Feed-Containers
