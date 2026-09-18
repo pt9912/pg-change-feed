@@ -13,13 +13,17 @@ layers:
   app:      ["internal/application/usecase/**"]
   adapters: ["internal/adapters/**"]
   # `tooling` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
-  # Gruppe der Wegwerf-Clients unter `tools/harness/**`. Sie sprechen den
+  # Gruppe des Go-Codes unter `tools/**`, der keinen Hexagon-Layer bildet.
+  # `tools/harness/**` trägt die Wegwerf-Clients: Sie sprechen den
   # gRPC-Stream über den erzeugten Protokoll-Stub der Vertragsfläche
   # (`gen/cdc/stream/v1`, Gruppe `contract`) real über das Netz an und
   # verdrahten nichts (ADR-0068; der Stub zog mit `slice-097` von
   # `internal/adapters/driving/grpc/streamv1` an diesen öffentlichen Pfad um —
-  # `ADR-0076`).
-  tooling:  ["tools/harness/**"]
+  # `ADR-0076`). `tools/schema/rolloutguard/` (seit
+  # schema-rollout-zentrale-idempotenz-wache) liest ausschließlich den
+  # `--plan-only`-Report von `make schema-rollout` und importiert nichts aus
+  # `domain`, `ports`, `app`, `adapters` oder `contract`.
+  tooling:  ["tools/harness/**", "tools/schema/**"]
   # `examples` ist keine Komponente der Sicht (§2), sondern die Gate-Scope-
   # Gruppe der öffentlichen Beispiel-Clients unter `examples/**`
   # (ADR-0076/ADR-0079). Ihre Clients benutzen ausschließlich die

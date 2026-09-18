@@ -2,5 +2,9 @@
 # - .tmp/: Commit-Message-Dateien des Implementer-Workflows (git commit -F)
 # - image-hash.raw: transientes Zwischenprodukt des make image-Laufs
 #   (--metadata-file); der Beleg ist das finale harness/image-hash.txt
+# - tools/schema/rollout-precheck.yaml: Vorlauf-Report der
+#   schema-rollout-Idempotenz-Wache (--plan-only, ADR-0043); der Beleg
+#   eines echten Rollouts bleibt tools/schema/plan.yaml
 .tmp/
 harness/image-hash.raw
+tools/schema/rollout-precheck.yaml

@@ -60,20 +60,34 @@ durchzulassen.
 
 ## 2. Definition of Done
 
-- [ ] `make schema-rollout` läuft **zweimal hintereinander** gegen dieselbe
+- [x] `make schema-rollout` läuft **zweimal hintereinander** gegen dieselbe
       real migrierte Ziel-DB durch (Exit 0 bei beiden Läufen) — real
       geprüft mit dem vollen `nacharbeit-*.sql`-Bestand (aktuell: roles,
-      observability, heartbeat, administration).
-- [ ] Ein **künstlich eingefügtes**, nicht auf der bekannten Liste
-      stehendes destruktives Ziel (z. B. eine testweise per `ALTER TABLE …
-      DROP COLUMN` entfernte Spalte, die `schema.yaml` weiterhin deklariert)
-      bricht weiterhin mit Exit 8 ab — der Beleg, dass die Wache nicht
-      pauschal durchlässt.
-- [ ] `make gates` grün.
+      observability, heartbeat, administration): `tools/harness/run-schema-rollout-guard-test.sh`
+      Lauf 1 (frisch) und Lauf 2 (Skip-Pfad, Ausgabe enthält
+      „--execute uebersprungen") beide Exit 0.
+- [x] Ein **künstlich eingefügtes**, nicht auf der bekannten Liste
+      stehendes destruktives Ziel bricht weiterhin mit Exit 8 ab — der
+      Beleg, dass die Wache nicht pauschal durchlässt. **Plan-Korrektur:**
+      Das ursprünglich skizzierte Beispiel (eine per `ALTER TABLE … DROP
+      COLUMN` entfernte, von `schema.yaml` weiterhin deklarierte Spalte)
+      erzeugt real **keinen** destruktiven Blocker, sondern ein
+      nicht-destruktives `AddColumn` (d-migrate plant, die fehlende Spalte
+      wiederherzustellen) — empirisch gegen das gepinnte Image verifiziert,
+      bevor die Testform gebaut wurde. Der tatsächlich destruktive Fall ist
+      die Umkehrung: eine per `ALTER TABLE … ADD COLUMN` real
+      hinzugefügte, **nicht** in `schema.yaml` deklarierte Spalte erzeugt
+      einen unbekannten `DropColumn`-Blocker neben den sechs bekannten —
+      real geprüft (`tools/harness/run-schema-rollout-guard-test.sh` Lauf
+      3, `make: *** [schema-rollout] Error 8`).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review.
-- [ ] `AGENTS.md` §3.14 angepasst oder gestrichen (Architect-Entscheidung
-      bei Closure, siehe §1 Abgrenzung).
+- [x] `AGENTS.md` §3.14 angepasst oder gestrichen (Architect-Entscheidung
+      bei Closure, siehe §1 Abgrenzung). — gestrichen (ersatzlos): der
+      Negativtest (siehe oben) belegt, dass die zentrale Wache auch den
+      Mischfall (bekannt + unbekannt) korrekt auflöst, keine Restlücke für
+      einen dünneren Hinweis.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register
       (`docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/`)
@@ -86,11 +100,14 @@ durchzulassen.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `Makefile` (`schema-rollout`-Target, Zeilen ~181–187) | update | Vorlauf-Schritt vor `--execute`: `--dry-run`/`--plan-only`-Lauf gegen dasselbe Ziel, Report-Auswertung. |
-| Neues kleines Hilfsskript (Ort offen — `tools/schema/` oder `tools/harness/`, Entscheidung im ersten Implementer-Lauf) | neu | Liest `plan.yaml`s `blockers`, vergleicht die betroffenen Objekte gegen eine feste, kommentierte Liste der sechs bekannten Fremdobjekte (dieselbe Stelle, an der auch die `nacharbeit-*.sql`-Aufrufzeilen im Makefile stehen — Kolokation, damit ein siebtes Skript beide Änderungen im selben Diff sieht). |
-| `d-migrate`-Image (`D_MIGRATE_IMAGE`) | Recherche | Klären, ob d-migrate eine Möglichkeit bietet, einzelne Blocker gezielt zu bestätigen (`--confirm-destructive <operationId>` o. ä.) statt nur pauschal `--execute` mit/ohne Bestätigung — **vor** der Implementierung per `docker run … schema migrate --help` gegen das gepinnte Image zu prüfen; ohne einen solchen gezielten Mechanismus bleibt nur die Wahl "gesamten `--execute`-Schritt überspringen, wenn alle Blocker bekannt sind" (kein partieller Rollout neuer Inhalte in genau diesem Lauf). |
-| `AGENTS.md` §3.14 | update/streichen | Nach Lieferung: entweder streichen (zentrale Wache übernimmt) oder auf einen dünneren Hinweis reduzieren, falls die zentrale Wache eine Restlücke lässt (z. B. Mischfälle bekannt+unbekannt). |
-| Testdatei/-Skript für die zwei DoD-Punkte oben | neu | Realer Zwei-Läufe-Beleg plus künstlicher-Blocker-Negativbeleg — kein Unit-Test, weil DB-/d-migrate-Zugriff nötig ist; läuft im selben Docker-only-Rahmen wie `tools/harness/run-*.sh`. |
+| `Makefile` (`schema-rollout`-Target) | update | Vorlauf-Schritt vor `--execute`: `--plan-only`-Lauf gegen dasselbe Ziel (eigener Report-Pfad `tools/schema/rollout-precheck.yaml`, damit der committete Pflicht-Report `tools/schema/plan.yaml` ausschließlich echte `--execute`-Läufe belegt), Guard-Aufruf, bedingter Fallback auf den echten `--execute`-Lauf. |
+| `tools/schema/rolloutguard/{main.go,report.go,guard.go,guard_test.go}` | neu | **Plan-Nachzug** (Ort jetzt entschieden): Go statt eines neuen `jq`-artigen Werkzeugs — derselbe Docker-only-Weg wie `tools/harness/*` (gepinnter Toolchain-Container, `go run`), keine neue Werkzeugkette. Liest den `--plan-only`-Report, vergleicht jede Blocker-Operation (über `kind`/`objectType`/`path`, nicht über die inhaltsabhängigen `id`-Hashes) gegen die feste Liste der sechs bekannten Fremdobjekte — direkt neben den `nacharbeit-*.sql`-Dateien (Kolokation). Unit-getestet, netzlos, läuft unter `make test`. |
+| `d-migrate`-Image (`D_MIGRATE_IMAGE`) | Recherche | Durchgeführt: `docker run … schema migrate --help` zeigt **keinen** gezielten Bestätigungs-Mechanismus je Operation (`--allow-destructive` bleibt pauschal). Das gewählte Verfahren braucht ihn aber nicht — `--plan-only` allein liefert die für die Klassifikation nötige Struktur; kein partieller Rollout nötig, weil der Skip-Fall (alle Blocker bekannt) laut Definition ohnehin nichts Neues auszurollen hat. |
+| `AGENTS.md` §3.14 | streichen | Ersatzlos entfernt (kein dünnerer Hinweis nötig, siehe DoD-Punkt 2 oben). |
+| `tools/harness/run-schema-rollout-guard-test.sh` | neu | Realer Drei-Läufe-Beleg (frisch → Skip-Pfad → Negativ-Abbruch) gegen eine eigenständige, abgeräumte Ziel-DB — kein Unit-Test, weil DB-/d-migrate-Zugriff nötig ist; läuft im selben Docker-only-Rahmen wie `tools/harness/run-store-tests.sh`. Kein neues Make-Target (Werkzeug, `bash`-Aufruf direkt, wie in der Pre-completion-Checkliste dieses Slice-Laufs dokumentiert). |
+| `.gitignore` | update | **Plan-Nachzug**: `tools/schema/rollout-precheck.yaml` ist ein transientes Vorlauf-Artefakt, kein Bestand. |
+
+**Real gefundenes, außerhalb des Scopes liegendes Risiko:** `tools/schema/plan.yaml`/`down.sql` sind geteilte, feste Schreibziele — **jeder** Aufrufer von `make schema-rollout` (auch gegen eine völlig unabhängige Test-/Scratch-DB) überschreibt den committeten Pflicht-Report der letzten echten Produktions-/CI-Rollout mit seinem eigenen Ergebnis. Real aufgetreten: ein Lauf von `tools/harness/run-schema-rollout-guard-test.sh` hinterließ eine geänderte `tools/schema/plan.yaml` im Arbeitsbaum (zurückgesetzt, nicht committet). Vorbestehend (jeder heutige Aufrufer, u. a. `tools/schema/apply-rollout.sh`, trägt dasselbe Risiko) und nicht Gegenstand dieses Slice — siehe Beobachtungs-Register.
 
 ## 4. Trigger
 
