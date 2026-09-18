@@ -10,14 +10,31 @@
 -- trifft keine Schwellenwert-Entscheidung.
 --
 -- Abgedeckt (Minimum, nicht vollständig): cdc_transactions_total,
--- cdc_changes_processed, cdc_oldest_change_age_seconds,
--- cdc_consumer_position{consumer}, cdc_consumer_lag{consumer},
--- cdc_capture_lag, cdc_storage_bytes. Nicht abgedeckt: cdc_changes_pending,
--- cdc_errors_total, cdc_wal_retention_bytes (SPEC-009-Zeilen) — sie
--- brauchen entweder persistierten Zustand, den dieses Schema nicht trägt
--- (Fehler-Log) oder Systemkatalog-Zugriffe außerhalb des cdc-Schemas
--- (pg_stat_replication), die die Least-Privilege-Fläche von cdc_reader
--- unnötig erweitern würden.
+-- cdc_changes_processed, cdc_changes_pending{consumer},
+-- cdc_oldest_change_age_seconds, cdc_consumer_position{consumer},
+-- cdc_consumer_lag{consumer}, cdc_capture_lag, cdc_errors_total{class},
+-- cdc_storage_bytes — alle sieben in `LH-QA-OPS-003` geforderten
+-- Dimensionen (CDC-Lag, verarbeitete/ausstehende Changes,
+-- Speicherverbrauch, Alter des ältesten Changes, Consumer-Positionen,
+-- Fehler). Nicht abgedeckt: cdc_wal_retention_bytes (SPEC-009-Zeile,
+-- keine Lastenheft-Dimension) — sie bräuchte Systemkatalog-Zugriffe
+-- außerhalb des cdc-Schemas (pg_stat_replication), die die
+-- Least-Privilege-Fläche von cdc_reader unnötig erweitern würden.
+--
+-- `cdc_changes_pending` (`SPEC-009`, `LH-QA-OPS-003`): je Consumer die
+-- reale Anzahl noch nicht bestätigter Change-Zeilen seiner Quelle
+-- (`commit_position` der Transaktion über der bestätigten Position) —
+-- ein Zeilen-Zähler, anders als `cdc_consumer_lag`, das den
+-- LSN-Byte-Abstand der Positionen trägt (`ADR-0005`): dieselbe
+-- Quellzahl-Differenz kann bei wenigen großen oder vielen kleinen
+-- Transaktionen sehr unterschiedliche Change-Zahlen bedeuten.
+--
+-- `cdc_errors_total` (`SPEC-009`, `LH-QA-OPS-003`, Klassen aus `ADR-0023`):
+-- je Fehlerklasse die Anzahl Quellen, deren `cdc.process_heartbeat`
+-- aktuell diese Klasse trägt — der current-state-Zähler, den das
+-- vorhandene Heartbeat-Feld tatsächlich abbildet (kein historisches
+-- Fehler-Log, das dieses Schema nicht führt); eine Quelle ohne aktuellen
+-- Fehlerzustand trägt keine Zeile.
 --
 -- `cdc_capture_lag` (`SPEC-009`, `LH-FA-ADM-004`; Latenzschwellen
 -- p95/Warn/Fehler `SPEC-013`): `committed_at` trägt den Quell-
@@ -65,6 +82,18 @@ UNION ALL
 SELECT 'cdc_consumer_lag', cs.consumer_id, (cs.latest_commit_position - cs.acknowledged_position)::numeric
 FROM cdc.consumer_status cs
 WHERE cs.acknowledged_position IS NOT NULL
+UNION ALL
+SELECT 'cdc_changes_pending', cp.consumer_id,
+  (SELECT count(*)
+   FROM cdc.change c
+   JOIN cdc.transaction t ON t.transaction_id = c.transaction_id
+   WHERE t.source_id = cp.source_id AND t.commit_position > cp.acknowledged_position)::numeric
+FROM cdc.consumer_position cp
+UNION ALL
+SELECT 'cdc_errors_total', ph.error_class, count(*)::numeric
+FROM cdc.process_heartbeat ph
+WHERE ph.error_class IS NOT NULL
+GROUP BY ph.error_class
 UNION ALL
 SELECT 'cdc_storage_bytes', NULL, pg_relation_size('cdc.change')::numeric;
 

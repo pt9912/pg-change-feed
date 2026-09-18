@@ -7,6 +7,12 @@
 // meldet er über eine benannte Zeile auf stdout. Träger ist
 // tools/harness/run-integration-tests.sh — der Aufrufer liest die
 // stdout-Zeilen dieses Prozesses.
+//
+// Zwei weitere Modi (erstes Argument `acknowledge` bzw. `remove`) tragen
+// die administrative Consumer-Entfernung (LH-FA-CON-006) als zwei
+// getrennte Aufrufe — der Aufrufer prüft den DB-Zustand real dazwischen
+// (Retention-Blocker vor, Abwesenheit nach der Entfernung), was innerhalb
+// eines einzigen Prozesslaufs nicht beobachtbar wäre.
 package main
 
 import (
@@ -17,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -33,8 +40,18 @@ type readChange struct {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "acknowledge" {
+		runAcknowledgeFlow(os.Args[2:])
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "remove" {
+		runRemoveFlow(os.Args[2:])
+		return
+	}
 	if len(os.Args) != 13 {
 		fmt.Fprintln(os.Stderr, "usage: httpclient <base-url> <admin-token> <reader-token> <consumer-id> <consumer-name> <source> <publication> <schema> <table> <from> <to> <limit>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient acknowledge <base-url> <admin-token> <consumer-id> <source-id> <offset>")
+		fmt.Fprintln(os.Stderr, "   or: httpclient remove <base-url> <admin-token> <consumer-id>")
 		os.Exit(2)
 	}
 	baseURL := os.Args[1]
@@ -143,6 +160,56 @@ func readChanges(client *http.Client, baseURL, token, source, schema, table, fro
 			len(result.Changes), change.Table, change.Schema, change.ChangeID, change.Operation, change.CommitPosition, string(change.NewImage))
 	}
 	return nil
+}
+
+// runAcknowledgeFlow trägt AcknowledgeConsumer real per HTTP mit dem
+// Admin-Token (LH-FA-CON-006-Vorbedingung): der übergebene, zuvor
+// registrierte Consumer trägt die Position danach real als
+// Retention-Blocker der Quelle fort (LH-FA-RET-004) — der Aufrufer prüft
+// das über cdc.retention_blockers, bevor er den Consumer entfernt.
+func runAcknowledgeFlow(args []string) {
+	if len(args) != 5 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient acknowledge <base-url> <admin-token> <consumer-id> <source-id> <offset>")
+		os.Exit(2)
+	}
+	baseURL := args[0]
+	adminToken := args[1]
+	consumerID := args[2]
+	sourceID := args[3]
+	offset, err := strconv.ParseUint(args[4], 10, 64)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: offset %q ist keine gültige Zahl: %v\n", args[4], err)
+		os.Exit(2)
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	if _, err := call(client, http.MethodPost, baseURL+"/consumers/acknowledge", adminToken,
+		map[string]any{"consumer_id": consumerID, "source_id": sourceID, "offset": offset}, http.StatusOK); err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: AcknowledgeConsumer (admin) fehlgeschlagen: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("ACKNOWLEDGED consumer=%s source=%s offset=%d\n", consumerID, sourceID, offset)
+}
+
+// runRemoveFlow trägt RemoveConsumer real per HTTP mit dem Admin-Token
+// (LH-FA-CON-006): entfernt den übergebenen, zuvor registrierten Consumer.
+func runRemoveFlow(args []string) {
+	if len(args) != 3 {
+		fmt.Fprintln(os.Stderr, "usage: httpclient remove <base-url> <admin-token> <consumer-id>")
+		os.Exit(2)
+	}
+	baseURL := args[0]
+	adminToken := args[1]
+	consumerID := args[2]
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	removeBody, err := call(client, http.MethodPost, baseURL+"/consumers/remove", adminToken,
+		map[string]any{"consumer_id": consumerID}, http.StatusOK)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "httpclient: RemoveConsumer (admin) fehlgeschlagen: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("REMOVED consumer=%s body=%s\n", consumerID, removeBody)
 }
 
 // call führt einen HTTP-Request mit Bearer-Token aus und liefert den

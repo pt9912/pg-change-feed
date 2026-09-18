@@ -2076,6 +2076,162 @@ fi
 
 echo "run-integration-tests: HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057/ADR-0081) belegt — RegisterConsumer real per HTTP mit admin-Token ($HTTP_CONSUMER, cdc.consumer bestätigt), ListTables real per HTTP mit reader-Token (feed_e2e_full in der Antwort), GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile id=$HTTP_READ_ID/$HTTP_READ_SENTINEL, Bereich [$http_read_position,$http_read_to), change_id=$http_read_change_id gegen cdc.changes gehalten): $http_output"
 
+abdeckung_declare "HTTP-API-Consumer-Entfernung" "LH-FA-CON-006" "derselbe Wegwerf-Client bestätigt real per HTTP eine Position für den zuvor registrierten Consumer (macht ihn zum Retention-Blocker der Quelle, real gegen cdc.retention_blockers geprüft) und entfernt ihn danach über POST /consumers/remove mit dem admin-Token; cdc.consumer und cdc.consumer_position tragen ihn danach beide nicht mehr" "HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057) belegt"
+
+# HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057): zwei getrennte
+# Aufrufe desselben Wegwerf-Clients (tools/harness/httpclient), damit der
+# DB-Zustand real dazwischen geprüft werden kann — innerhalb eines
+# einzigen Prozesslaufs wäre das nicht beobachtbar. Läuft nach dem
+# bestehenden HTTP-API-Rundlauf oben, damit dessen eigene
+# registered_via_http-Prüfung den noch registrierten Consumer sieht,
+# bevor dieser Block ihn entfernt. Offset 1 liegt weit unter jeder realen
+# LSN-abgeleiteten Position der übrigen Consumer dieses Laufs (`ADR-0005`)
+# — real garantiert der kleinste Wert für src-e2e.
+HTTP_REMOVE_OFFSET=1
+
+set +e
+ack_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient acknowledge \
+  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$HTTP_CONSUMER" src-e2e "$HTTP_REMOVE_OFFSET" 2>&1)
+ack_status=$?
+set -e
+if [ "$ack_status" -ne 0 ] || ! printf '%s' "$ack_output" | grep -qF "ACKNOWLEDGED"; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — AcknowledgeConsumer (httpclient acknowledge) endete mit Ausgang $ack_status: $ack_output" >&2
+  exit 1
+fi
+
+blocker_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT consumer_id FROM cdc.retention_blockers WHERE source_id = 'src-e2e'")
+if [ "$blocker_before" != "$HTTP_CONSUMER" ]; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — $HTTP_CONSUMER ist nach der realen Bestätigung nicht der Retention-Blocker von src-e2e (gefunden: ${blocker_before:-leer})" >&2
+  exit 1
+fi
+
+set +e
+remove_output=$(docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient remove \
+  "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$HTTP_CONSUMER" 2>&1)
+remove_status=$?
+set -e
+if [ "$remove_status" -ne 0 ] || ! printf '%s' "$remove_output" | grep -qE '^REMOVED consumer='"$HTTP_CONSUMER"' body=.*"removed":true'; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — RemoveConsumer (httpclient remove) endete mit Ausgang $remove_status: $remove_output" >&2
+  exit 1
+fi
+
+consumer_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$HTTP_CONSUMER'")
+if [ "$consumer_after" != "0" ]; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — cdc.consumer trägt $HTTP_CONSUMER nach der realen Entfernung noch (count=$consumer_after)" >&2
+  exit 1
+fi
+
+position_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.consumer_position WHERE consumer_id = '$HTTP_CONSUMER'")
+if [ "$position_after" != "0" ]; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — cdc.consumer_position trägt $HTTP_CONSUMER nach der realen Entfernung noch (count=$position_after)" >&2
+  exit 1
+fi
+
+blocker_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM cdc.retention_blockers WHERE source_id = 'src-e2e' AND consumer_id = '$HTTP_CONSUMER'")
+if [ "$blocker_after" != "0" ]; then
+  echo "run-integration-tests: HTTP-API-Consumer-Entfernung — cdc.retention_blockers nennt $HTTP_CONSUMER nach der realen Entfernung noch als Blocker von src-e2e (count=$blocker_after)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: HTTP-API-Consumer-Entfernung (LH-FA-CON-006, ADR-0057) belegt — AcknowledgeConsumer real per HTTP mit admin-Token machte $HTTP_CONSUMER zum Retention-Blocker von src-e2e (cdc.retention_blockers real geprüft), RemoveConsumer real per HTTP mit admin-Token entfernte ihn danach — cdc.consumer, cdc.consumer_position und cdc.retention_blockers tragen ihn danach alle drei nicht mehr"
+
+abdeckung_declare "Strukturiertes-Logging-Beleg" "LH-QA-OPS-004" "ein Wegwerf-Werkzeug liest die stdout-Logzeilen des laufenden Feed-Containers real per docker logs und prüft jede nicht-leere Zeile als eigenständiges JSON-Objekt mit den Feldern time/level/msg" "Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-0024) belegt"
+
+# Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-0024): tools/harness/logcheck
+# liest die bislang akkumulierten stdout-Logzeilen des laufenden
+# Feed-Containers (docker logs, CDC_LOG_LEVEL=debug in compose.yaml —
+# reichlich Zeilen bis zu diesem späten Punkt im Lauf) und prüft jede
+# nicht-leere Zeile als eigenständiges JSON-Objekt mit den drei vom
+# Standard-Handler garantierten Feldern time/level/msg.
+log_lines=$(docker logs "$FEED_CONTAINER" 2>&1)
+if [ -z "$log_lines" ]; then
+  echo "run-integration-tests: Strukturiertes-Logging-Beleg — docker logs $FEED_CONTAINER lieferte keine Zeile" >&2
+  exit 1
+fi
+
+set +e
+logcheck_output=$(printf '%s\n' "$log_lines" | docker run --rm -i --network none \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  "$TOOLCHAIN_IMAGE" go run ./tools/harness/logcheck 2>&1)
+logcheck_status=$?
+set -e
+if [ "$logcheck_status" -ne 0 ] || ! printf '%s' "$logcheck_output" | grep -qE '^STRUCTURED_LOG_OK lines=[0-9]+ levels='; then
+  echo "run-integration-tests: Strukturiertes-Logging-Beleg (logcheck) endete mit Ausgang $logcheck_status: $logcheck_output" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Strukturiertes-Logging-Beleg (LH-QA-OPS-004, ADR-0024) belegt — $logcheck_output"
+
+abdeckung_declare "Metriken-Minimum-Beleg (ausstehende Changes, Fehlerklassen)" "LH-QA-OPS-003" "ein eigener, zurückliegender Consumer und ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand belegen real über cdc.metrics die beiden bislang fehlenden Dimensionen: ausstehende Changes je Consumer und Fehler je Klasse" "Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009) belegt"
+
+# Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009): cdc.metrics trägt
+# fünf der sieben im Lastenheft geforderten Dimensionen bereits mit
+# eigenen Belegen anderswo (u. a. cdc_capture_lag über LH-FA-ADM-004,
+# cdc_storage_bytes über LH-FA-RET-006). Dieser Beleg schließt die beiden
+# zuvor fehlenden real: ein eigener, zurückliegender Consumer belegt
+# cdc_changes_pending; ein direkt geschriebener Fehlerzustand belegt
+# cdc_errors_total — derselbe Schreibweg und dieselbe Wiederholschleife
+# gegen den periodischen Heartbeat-Takt (5s) wie der CLI-Diagnose-
+# Fehlerzustand-Beleg oben.
+METRICS_CONSUMER=metrics-e2e-consumer
+if ! exec_feed register-consumer "$METRICS_CONSUMER"; then
+  echo "run-integration-tests: Metriken-Minimum-Beleg — register-consumer ($METRICS_CONSUMER) endete mit einem Fehler" >&2
+  exit 1
+fi
+if ! exec_feed acknowledge-consumer "$METRICS_CONSUMER" 1; then
+  echo "run-integration-tests: Metriken-Minimum-Beleg — acknowledge-consumer ($METRICS_CONSUMER, Position 1) endete mit einem Fehler" >&2
+  exit 1
+fi
+
+pending_value=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_changes_pending' AND label = '$METRICS_CONSUMER'")
+if [ -z "$pending_value" ] || [ "$pending_value" = "0" ]; then
+  echo "run-integration-tests: Metriken-Minimum-Beleg — cdc.metrics trägt keine positive cdc_changes_pending-Zeile für $METRICS_CONSUMER (Wert: ${pending_value:-leer})" >&2
+  exit 1
+fi
+
+errors_class_seen=0
+errors_value=""
+for _ in $(seq 1 20); do
+  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -c \
+    "UPDATE cdc.process_heartbeat SET heartbeat_at = current_timestamp, error_class = 'internal' WHERE source_id = 'src-e2e'" >/dev/null
+  errors_value=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_errors_total' AND label = 'internal'")
+  if [ -n "$errors_value" ] && [ "$errors_value" != "0" ]; then
+    errors_class_seen=1
+    break
+  fi
+done
+if [ "$errors_class_seen" -ne 1 ]; then
+  echo "run-integration-tests: Metriken-Minimum-Beleg — cdc.metrics trägt keine positive cdc_errors_total-Zeile für die Klasse 'internal' innerhalb von 20 Versuchen (letzter Wert: ${errors_value:-leer})" >&2
+  exit 1
+fi
+
+feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+if [ "$feed_running" != "true" ]; then
+  echo "run-integration-tests: Feed-Container lief nach dem Metriken-Minimum-Beleg nicht mehr weiter (der Fehlerzustand wurde direkt in cdc.process_heartbeat geschrieben, nicht vom Erfassungspfad ausgelöst — kein Neustart erwartet)" >&2
+  exit 1
+fi
+
+echo "run-integration-tests: Metriken-Minimum-Beleg (LH-QA-OPS-003, SPEC-009) belegt — cdc_changes_pending für $METRICS_CONSUMER trägt $pending_value, cdc_errors_total für Klasse 'internal' trägt $errors_value"
+
 abdeckung_declare "gRPC-Stream-Rundlauf" "LH-FA-SST-008" "ein Wegwerf-Client öffnet real über gRPC den Server-Stream gegen den laufenden Feed-Container und empfängt eine danach committete Änderung; ein Öffnungsversuch ohne gültiges Token endet mit gRPC-Status Unauthenticated" "gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060) belegt"
 
 # gRPC-Stream-Rundlauf (LH-FA-SST-008, ADR-0060): ein Wegwerf-Client
