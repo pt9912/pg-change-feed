@@ -9,7 +9,7 @@
 // cdc.stream.<source_id>.<schema>.<table>, bevor die auslösende Change
 // entsteht ("READY"), und meldet den Empfang eines vollständigen
 // JSON-Change-Events ("RECEIVED") — dieselbe Zeilenform wie
-// tools/harness/grpcclient/tools/harness/sseclient, damit der Aufrufer
+// tools/harness/grpcclient und tools/harness/sseclient, damit der Aufrufer
 // (tools/harness/run-integration-tests.sh) dieselben Auswertungsmuster
 // wiederverwenden kann. Träger ist run-integration-tests.sh — der Aufrufer
 // liest die stdout-Zeilen dieses Prozesses über `docker logs`, nicht über
