@@ -92,13 +92,15 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Bau-/Start-Mechanismus-Wechsel) — `make test` übersetzt die vier
       Beispiele unverändert.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      [`review-slice-beispiele-go-dockerfile-start.md`](../../../reviews/review-slice-beispiele-go-dockerfile-start.md) —
+      0 HIGH, 0 MEDIUM, 3 INFO. Keine Fixrunde nötig.
 - [x] Doku-Update für die Go-Startform (öffentlicher Vertrag: das Handbuch
       zitiert eine Befehlsform) — siehe LP3.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`, oder „keine Beobachtung
       angefallen" in §7.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
@@ -185,13 +187,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-**Entwurf (Implementer-Rolle, vor Review/Verifikation — Planner übernimmt
-oder korrigiert bei tatsächlicher Closure):**
-
-**Gegenstand:** vollständig geliefert — `make gates` grün (dieser Zug), der
-unabhängige Reviewer-Pass gegen
+**Gegenstand:** vollständig geliefert — der unabhängige Reviewer-Pass gegen
 [`ADR-0098`](../../adr/0098-beispiel-clients-start-ueber-make-dockerfile.md)
-steht noch aus; der `git mv` nach `done/` folgt erst danach.
+liegt vor
+([`review-slice-beispiele-go-dockerfile-start.md`](../../../reviews/review-slice-beispiele-go-dockerfile-start.md),
+0 HIGH, 0 MEDIUM), der `git mv` nach `done/` folgt mit diesem Commit.
 
 **Ergebnis:** Die vier Go-Beispiele bauen/starten jetzt über
 `examples/Dockerfile` (Wurzel-Bau-Kontext, isoliert über
