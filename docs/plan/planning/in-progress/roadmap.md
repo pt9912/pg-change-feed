@@ -38,7 +38,7 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-Nichts in Arbeit.
+- [welle-beispiele-start-ueber-make.md](../welle-beispiele-start-ueber-make.md) — Beispiel-Clients: Start über `make`/Dockerfile statt `go run`, echter Start-Make-Target, Demo-Umgebung mit Bootstrapping.
 
 ## Nächste Wellen
 
