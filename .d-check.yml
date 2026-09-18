@@ -32,8 +32,30 @@ matrix:
       paths: ["docs/plan/adr/[0-9]*.md"]
       token: 'ADR-\d{4}'
     - name: slice
-      paths: ["docs/plan/planning/**/slice-*.md"]
+      # Eng gefasst statt "**/slice-*.md": ein Glob mit "**" reicht auch in
+      # docs/plan/planning/observations/**/evidence/slice-<id>.md hinein —
+      # Beleg-Dateien, die nur zufaellig denselben Namen tragen wie ein
+      # Slice-Plan. "*" ueberquert keine "/"-Grenze (matchSegs, d-check
+      # internal/hexagon/core/rules/paths.go), deshalb hier eine explizite
+      # Pfad-Liste statt eines alles-durchquerenden Musters: die vier
+      # Lifecycle-Verzeichnisse plus eine Verschachtelungsebene fuer
+      # archivierte Slices (done/<welle-id oder altbestand>/slice-*.md).
+      paths:
+        - "docs/plan/planning/open/slice-*.md"
+        - "docs/plan/planning/next/slice-*.md"
+        - "docs/plan/planning/in-progress/slice-*.md"
+        - "docs/plan/planning/done/slice-*.md"
+        - "docs/plan/planning/done/*/slice-*.md"
       token: 'slice-\d{3}'
+    - name: welle
+      # Dieselbe Enge wie bei "slice" oben, aus demselben Grund. Eine
+      # Welle-Plan-Datei liegt flach unter docs/plan/planning/ (offen),
+      # unter done/ (geschlossen) oder unter done/<welle-id>/ (archiviert,
+      # als Stub neben ihren archivierten Slices).
+      paths:
+        - "docs/plan/planning/welle-*.md"
+        - "docs/plan/planning/done/welle-*.md"
+        - "docs/plan/planning/done/*/welle-*.md"
     - name: review
       paths: ["docs/reviews/*.md"]
       token: 'docs/reviews/[\w.-]+\.md'
@@ -45,6 +67,8 @@ matrix:
     - {from: adr, to: slice, allow: false}
     - {from: adr, to: review, allow: false}
     - {from: observation, to: review, allow: false}
+    - {from: slice, to: review, allow: false}
+    - {from: welle, to: review, allow: false}
   status:
     forbidden: [superseded, deprecated]
     # opt-in: ablösende Datei darf auf ihr abgelöstes (inaktives) Ziel
