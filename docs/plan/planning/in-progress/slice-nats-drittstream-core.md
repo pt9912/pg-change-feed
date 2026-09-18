@@ -67,14 +67,14 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] [`LH-FA-SST-008`](../../../../spec/lastenheft.md) trägt einen dritten
+- [x] [`LH-FA-SST-008`](../../../../spec/lastenheft.md) trägt einen dritten
       Zustellweg: `internal/adapters/driven/natsstream/` (`Publisher`) als
       dritter `Broadcaster`-Abonnent, Bootstrap-Verdrahtung
       (`CDC_NATS_STREAM_TOKEN`, Zwei-Bedingungen-Aktivierung aus `ADR-0100`
       Teilfrage 5, `changeStreamEnabled`-Erweiterung um die dritte
       Oder-Bedingung), Unit-Tests für beide Regressionsklassen aus `ADR-0100`
       §Fitness Function (Subjekt-Wurzel `cdc.stream`, Zwei-Bedingungen-Gate).
-- [ ] `ADR-0100`s `make test-integration`-Fitness-Function-Zeile erfüllt: ein
+- [x] `ADR-0100`s `make test-integration`-Fitness-Function-Zeile erfüllt: ein
       realer NATS-Client mit gültigem Token empfängt eine vollständige
       Change über `cdc.stream.<source_id>.<schema>.<table>`, ein
       Verbindungsversuch ohne/mit falschem Token wird vom Server abgelehnt,
@@ -82,23 +82,23 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Test-Token unverändert weiter — `compose.yaml`-NATS-Auth-Konfiguration
       und ein neuer Wegwerf-Belegträger unter `tools/harness/` tragen den
       Rundlauf.
-- [ ] `SPEC-016`s Feldmengen-Paarung (env-exklusive, zugangsdaten-tragende
+- [x] `SPEC-016`s Feldmengen-Paarung (env-exklusive, zugangsdaten-tragende
       Schlüssel) trägt `CDC_NATS_STREAM_TOKEN` — Prüfung des bestehenden
       Config-Loaders (`internal/bootstrap`) und Nachzug in
       `spec/pflichtenheft.md §SPEC-016` sowie
       `docs/user/benutzerhandbuch.md`s Zugangsdaten-Absatz.
-- [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] `make gates` grün.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `spec/pflichtenheft.md §SPEC-016`,
+- [x] Doku-Update: `spec/pflichtenheft.md §SPEC-016`,
       `docs/user/benutzerhandbuch.md`s Zugangsdaten-Absatz und die
       `**Beispiele:**`-Vorbereitung des neuen Zugriffswegs (siehe §2 dritter
       Liefer-Punkt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -202,20 +202,48 @@ dasteht.
   der letzte Client-Commit). Offen bleibt die im Erwartungssatz
   mitgenannte **Stream**-Client-Hälfte: einen `nats-stream-client` gibt es
   heute nicht, er gehört zu `slice-nats-drittstream-example-*`. Die
-  Handbuch-Hälfte liegt im selben §5-Absatz wie die Aktivierung.
+  Handbuch-Hälfte liegt im selben §5-Absatz wie die Aktivierung. —
+  **Ausgang:** eingetreten und eingelöst für den Teil, der zu diesem Slice
+  gehört. Die Handbuch-Zeile steht im selben §5-Absatz wie die Aktivierung;
+  die betroffene Wecksignal-Demo ist für **beide** bereits ausgelieferten
+  Clients real belegt — der eigene Nachlauf am 2026-09-18 (siehe
+  `docs/plan/planning/observations/BEO-PGC/beispiel-client-falsche-payload-laenge/evidence/slice-nats-drittstream-core.md`)
+  hat je Client eine Zeile real eingefügt und Weckruf plus
+  `GET /changes`-Abholung gemessen (C# `change_id 899-1`, Kotlin
+  `change_id 911-1`); der Verifikationsbericht hatte die ursprüngliche
+  Run-Behauptung zu Recht als artefaktlos ausgewiesen (W-1), diese
+  Nachprobe trägt sie. Die **Stream**-Client-Hälfte ist kein Risiko dieses
+  Slice, sondern Gegenstand von `slice-nats-drittstream-example-go` und
+  `slice-nats-drittstream-example-csharp-kotlin` und dort zu belegen.
 - **`compose.yaml`-NATS-Server-Image ohne praktikablen Auth-Mechanismus:**
   siehe §4 Rückführung „`in-progress` → `open`". —
-  **Ausgang:** <bei Closure ausfüllen>.
+  **Ausgang:** entfallen. Das gepinnte Image
+  (`nats:2-alpine@sha256:065e8355…`) trägt `--auth` real — beide
+  Compose-Dateien starten den Server damit, und der reale
+  `make test-integration`-Lauf belegt die Ablehnung ohne und mit falschem
+  Token ebenso wie den Empfang mit gültigem Token. Die vorab benannte
+  Rückführung wurde nicht gebraucht, kein Carveout.
 - **Config-Loader-Umbau größer als geschätzt** (§3 letzter Absatz,
   `SPEC-016`-Nachzug): siehe §4 Rückführung „`in-progress` → `next`". —
-  **Ausgang:** <bei Closure ausfüllen>.
+  **Ausgang:** entfallen. Der Nachzug war eine Listen-Ergänzung
+  (`forbiddenFileCredentialKeys` um `nats_stream_token`), zwei
+  Kommentarzeilen und ein bereits vorhandenes Iterationsziel im Test — kein
+  Umbau, keine Rückführung.
 - **`docs/user/e2e-abdeckung.md` ist ein Erzeugnis eines realen
-  `make test-integration`-Laufs** (kein manueller Edit) — der neue
-  `TestE2E*`-Testfall muss real gegen Docker laufen, damit die Tabelle den
-  neuen Beleg trägt. — **Ausgang:** weiter offen, bis der reale Lauf
-  bestätigt ist (`AGENTS.md` §3.10 trägt dieselbe Struktur für
-  GitHub-Actions-Läufe außerhalb der lokalen Umgebung — hier: der reale
-  Lauf braucht Docker/DB-Zugang, den nicht jeder Ausführungskontext hat).
+  `make test-integration`-Laufs** (kein manueller Edit) — die Tabelle trägt
+  den neuen Beleg erst, wenn der Lauf real gelaufen ist. Träger des Belegs
+  ist die `abdeckung_declare`-Phase des Shell-Runners
+  (`tools/harness/run-integration-tests.sh`), **kein** `TestE2E*`-Fall in
+  `test/integration/integration_test.go` — die §3-Zeile dieses Plans, die
+  dort eine Änderung vorsah, ist damit überholt (Review-INFO F-9; der
+  Verifikationsbericht hat die falsche Prämisse als W-2 ausgewiesen und
+  dieser Text ist entsprechend korrigiert). — **Ausgang:** entfallen. Der
+  reale Lauf ist dreifach bestätigt (Fixrunde, Verifier mit eigenem Lauf,
+  Zitat-Korrektur-Runde); der Lauf meldete „E2E-Abdeckungstabelle
+  unverändert — entspricht dem Quelltext-Stand", die Tabelle ist also
+  Erzeugnis und nicht Handedit. Die Grenze aus `AGENTS.md` §3.10 bleibt für
+  GitHub-Actions-Läufe außerhalb der lokalen Umgebung bestehen; sie ist hier
+  nicht berührt, weil kein Workflow geändert wurde.
 - **`AGENTS.md` §3.13-Suchlauf (bewegte Eigenschaft: Feldmenge der
   zugangsdaten-tragenden Klasse, `SPEC-016`/Handbuch §5.2/Code-Prüfung —
   „von Hand nachzuzählen",
@@ -319,7 +347,98 @@ aus §6 seinen Ausgang; die Liefer-Punkte der DoD bleiben leer
 (`modul-05-planning-harness.md` §Ein Slice, dessen Gegenstand ein anderer
 übernimmt).
 
-*(bei Closure zu füllen)*
+## Was wurde geliefert?
+
+- Der dritte, vollinhaltstragende NATS-Zustellweg (`ADR-0100`):
+  `internal/adapters/driven/natsstream/` als dritter Abonnent des
+  bestehenden In-Prozess-Broadcasters, ohne Zeilen-Diff an
+  `ChangeStreamPort`, `Broadcaster` oder `CaptureService`. Subjekt
+  `cdc.stream.<source_id>.<schema>.<table>`, Payload = dasselbe
+  Zehn-Feld-Schema wie der SSE-Weg (`SPEC-021`/`SPEC-024`), Core NATS,
+  fire-and-forget.
+- Die Zwei-Bedingungen-Aktivierung (`CDC_NATS_URL` **und**
+  `CDC_NATS_STREAM_TOKEN`) samt Konfigurationsfehler-Zweig bei Token ohne
+  URL; `changeStreamEnabled` trägt die dritte Oder-Bedingung.
+- Der reale Nachweis in `make test-integration`: Empfang eines vollständigen
+  JSON-Events über `cdc.stream.src-e2e.public.feed_e2e_full` mit
+  unabhängiger `change_id`-Gegenprobe über `cdc.changes`, Ablehnung **ohne**
+  und **mit** falschem Token, und das bestehende Wecksignal mit demselben
+  Token unverändert.
+- Der Doku-Nachzug über alle lebenden Träger: `SPEC-016`, Handbuch §4/§5,
+  `harness/README.md`s `make test-integration`-Zeile und die
+  E2E-Abdeckungstabelle (Erzeugnis des realen Laufs).
+
+## Was hat funktioniert?
+
+Der Schnitt aus `ADR-0100` hielt: der `Publisher` brauchte keine Änderung am
+Broadcaster, weil dessen Vertrag protokollfrei ist — der dritte Weg ist
+strukturell derselbe Fall wie der zweite. Die Vorab-Rückführungen des Plans
+wurden beide nicht gebraucht (das gepinnte NATS-Image trägt `--auth` real;
+der `SPEC-016`-Nachzug war eine Listen-Ergänzung). Der reale Beleg lief beim
+ersten Versuch grün.
+
+## Was ging anders als geplant?
+
+Der Implementer-Zug starb mitten im Lauf an einem API-Kontingent, nachdem er
+den Code fertiggestellt, aber den realen `make test-integration`-Lauf noch
+nicht gefahren hatte; die Orchestrierung hat den Lauf nachgeholt und den
+Handoff an den Reviewer dispatcht. Der Review fand vier HIGH-Findings, alle
+in der Doku-Hälfte (Zählwert im selben File, Gate-Index-Zeile, §3.13-Meldung,
+invertierte Bibliotheks-Behauptung) — keines im Produktionscode. Die
+Auflösung der Klasse „Zahl in `Accepted`-ADRs" brauchte zwei
+Architect-Züge (`ADR-0101`, `ADR-0102`), weil die erste Supersede-Aufzählung
+unvollständig war und ihre Pauschalklausel die ausgelassenen Stellen
+mitbestätigte.
+
+## Steering-Loop-Einträge
+
+- **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** (Zähler wächst um die
+  Evidenzdatei `evidence/slice-nats-drittstream-core.md`; die Regel
+  `AGENTS.md` **§3.13** liegt in [`AGENTS.md`](../../../../AGENTS.md) §3.13 —
+  sie ist mit diesem Slice **nicht** neu verkörpert, sondern erneut belegt).
+  Drei Vorgänge desselben Slice trafen die Klasse: die Zahl der
+  Zugangsdaten-Klasse blieb in `internal/bootstrap/config_file.go` stehen
+  (der Suchlauf des Slice hatte `internal/` nicht in seinen Wurzeln — der
+  **Reviewer** fand es), die `make test-integration`-Zeile des Gate-Index
+  wurde als einzige vergleichbare nicht mitgezogen, und vier
+  `Accepted`-ADRs trugen die alte Zahl weiter. Bemerkenswert: zwei der drei
+  fand nicht der eigene Suchlauf, sondern der unabhängige Reviewer — die
+  Regel wirkt, aber ihr Träger ist die Suche, und die war zu eng gewählt.
+- **`BEO-PGC/beispiel-client-falsche-payload-laenge`** (neu, 1×, unter der
+  Schwelle): bei der Nachprobe des Auth-Risikos meldete der C#-Client 37
+  Byte Payload-Länge für ein leeres Wecksignal, der Kotlin-Client und der
+  Harness-Client 0 Byte. Kein Gate liest Beispiel-Client-Ausgaben; der Fund
+  steht als eigener Eintrag mit Belegdatei.
+
+## Beobachtungs-Register (Zeiger)
+
+Der Zähler steht in [`docs/plan/planning/observations/`](../observations/).
+Berührt: `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Evidenzdatei, kein
+neuer Eintrag) und `BEO-PGC/beispiel-client-falsche-payload-laenge` (neu,
+1×). Kein Zähler wird gesetzt — er folgt aus den Dateien.
+
+## Folge-Slices
+
+[`slice-nats-drittstream-example-go`](../open/slice-nats-drittstream-example-go.md)
+und
+[`slice-nats-drittstream-example-csharp-kotlin`](../open/slice-nats-drittstream-example-csharp-kotlin.md)
+— beide hängen an diesem Slice als Voraussetzung und liefern die
+Beispiel-Clients unter `examples/`.
+
+## Verifikation
+
+- `docs/reviews/review-slice-nats-drittstream-core.md` (0 HIGH/MEDIUM
+  zunächst offen: 4 HIGH, 2 MEDIUM, 1 LOW, 4 INFO) samt Nachtrag, der
+  Fixrunde und drei Re-Review-Runden dokumentiert.
+- `make test` (Exit 0) · `make test-integration` (Exit 0, mehrfach real
+  gefahren — vom Verifier mit eigenem Lauf, siehe unten) · `make gates`
+  (Exit 0, `docs-check` 716 Dateien / 0 Befunde).
+- Verifikationsbericht (Modul 11, eigener Kontext): DoD-Lieferpunkte (a)–(f)
+  erfüllt, eigener `make test-integration`-Lauf Exit 0; offen war allein die
+  Closure-Buchhaltung (dieser Abschnitt) und zwei §6-Ausgänge — beide hier
+  nachgezogen.
+- Reconciliation-Register: entfällt — `docs/plan/planning/reconciliation.md`
+  existiert in diesem Greenfield-Repo nicht.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
