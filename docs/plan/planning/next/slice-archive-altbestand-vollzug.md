@@ -10,8 +10,9 @@ zweiter von zwei Slices: vollzieht, was `slice-archive-altbestand-adr`
 entscheidet.
 
 **Bezug:** `slice-archive-altbestand-adr` (liefert den Schlüssel und das
-Verhältnis zu `welle-d-check`, die dieser Slice ausführt) — konkrete
-ADR-Kennung wird hier nachgetragen, sobald jene `Accepted` ist. Baseline-
+Verhältnis zu `welle-d-check`, die dieser Slice ausführt) —
+[`ADR-0096`](../../adr/0096-altbestand-schluessel-fuer-wellenlosen-archiv-bestand.md)
+(`Accepted`, Schlüssel `altbestand`). Baseline-
 Regelwerk `modul-06-roadmap.md` §Wellen-Closure-Prozedur Schritt 4.
 `AGENTS.md` §3.9 (Exit-Code des `archive-welle`-Laufs direkt und ungepiped
 prüfen — dieselbe Disziplin wie bei jedem Gate-Lauf, auch wenn dies kein
@@ -42,10 +43,12 @@ Welle-Closure sammelt ohne weitere Zuordnung.
 
 **Vorbedingungen, die dieser Slice nicht herstellt, sondern voraussetzt:**
 
-- **`[haenger]`-Sperre entfällt am realen Baum** — Ergebnis des separaten,
-  extern beauftragten Vorgangs (ADR-Zitat-Korrektur, `AGENTS.md` §3.5 über
-  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md));
-  Kennung wird hier nachgetragen, sobald sie vorliegt. Dieser Slice **prüft**
+- **`[haenger]`-Sperre entfällt am realen Baum** — Ergebnis des separaten
+  Vorgangs (ADR-Zitat-Korrektur, `AGENTS.md` §3.5 über
+  [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md),
+  mechanisiert über [`ADR-0094`](../../adr/0094-review-matrixklasse-kennung-statt-adresse.md)/[`ADR-0097`](../../adr/0097-observation-matrixklasse-review-verboten.md));
+  real bestätigt entfallen (`--vorschau altbestand`, 2026-09-18: 0 `[haenger]`-Funde,
+  nur noch `[ergebnisnotiz]`/`[kein-plan]`/`[untergrenze]` stehen). Dieser Slice **prüft**
   den Wegfall der Sperre per erneutem `--vorschau`-Lauf, er behebt sie nicht.
 - **`[ergebnisnotiz]`/`[kein-plan]`-Sperren** (falls die ADR einen
   dedizierten Schlüssel ohne Welle-Form wählt) — die zwei dafür nötigen
