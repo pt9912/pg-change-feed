@@ -88,7 +88,7 @@ Welle-Closure sammelt ohne weitere Zuordnung.
       Werkzeug-Commits im `HEAD~5..HEAD`-Fenster, durch die nachfolgenden
       Closure-Commits dieses Slices und der Welle aus dem Fenster
       geschoben — siehe Closure-Notiz.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/review-slice-archive-altbestand-vollzug.md` liegt vor
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — siehe §7.
