@@ -90,33 +90,38 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] **LP1** — `examples/compose.yaml` (Arbeitsname) bringt PostgreSQL,
+- [x] **LP1** — `examples/compose.yaml` (Arbeitsname) bringt PostgreSQL,
       Feed-Container und NATS real hoch, referenziert das per `make image`
       gebaute Image ohne eigenen `build:`-Block.
-- [ ] **LP2** — Bootstrapping: Schema-Rollout über d-migrate
+- [x] **LP2** — Bootstrapping: Schema-Rollout über d-migrate
       (`tools/schema/apply-rollout.sh`-Muster) läuft automatisch beim
       Hochfahren; eine Beispiel-Quelle/-Tabelle wird registriert/aktiviert
       (`cdc.source`/`cdc.enable_table` oder gleichwertig), belegt durch einen
       realen Lauf, der zeigt: nach dem Hochfahren liefert `GET /changes`
       (oder gleichwertig) Daten für die Beispiel-Tabelle.
-- [ ] **LP3** — `examples/.env` (fest, `ADR-0098` Festlegung 3) trägt den
+- [x] **LP3** — `examples/.env` (fest, `ADR-0098` Festlegung 3) trägt den
       von der ADR entschiedenen Kontrakt; die Compose-Datei liest sie
       (`env_file:`);
       Träger nachgezogen: `examples/README.md` (neuer Abschnitt „Demo-Umgebung"),
       `harness/README.md` §Werkzeuge (kein Gate).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `examples/README.md` neuer Abschnitt, ggf. ein Quickstart-
+- [x] Doku-Update: `examples/README.md` neuer Abschnitt, ggf. ein Quickstart-
       Absatz in `docs/user/benutzerhandbuch.md` (Detail des umsetzenden
-      Zuges, ob dort oder nur in `examples/README.md`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder Beleg in `evidence/`, oder „keine Beobachtung
-      angefallen" in §7.
+      Zuges, ob dort oder nur in `examples/README.md`) — Entscheidung: nur
+      `examples/README.md` (die Demo-Umgebung ist ein Integrator-Werkzeug,
+      `docs/user/benutzerhandbuch.md` §3 bleibt die Produktionsanleitung mit
+      manuellem Vorgehen; die neue Sektion verweist andersherum darauf).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (Entwurf in §7, Reviewer-Pass
+      steht noch aus).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — Beleg
+      nachgetragen: `../observations/BEO-PGC/schema-rollout-fremdobjekte/evidence/slice-beispiele-compose-bootstrap.md`
+      (drittes Auftreten, 3×-Schwelle erreicht, `state.md` nachgezogen).
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      weiter offen) — in §6 real eingetragen, verbleibt zur Bestätigung im
+      Reviewer-/Verifier-Pass.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind von der
       nächsten Welle-Closure getragen.
 
@@ -178,17 +183,36 @@ dasteht.
   Netzwerk-/Container-Namen kollidieren, wenn beide gleichzeitig laufen —
   bereits durch `ADR-0098` Festlegung 4 entschieden (fester, eigener
   Netzwerkname `cdc-examples`, getrennt von `cdc-feed-test` der
-  Wurzel-`compose.yaml`) — **Ausgang:** <bei Closure ausfüllen; belegt durch
-  den realen Parallellauf beider Compose-Umgebungen>.
+  Wurzel-`compose.yaml`) — **Ausgang: entfallen.** Real geprüft: beide
+  Compose-Umgebungen gleichzeitig hochgefahren (`docker compose -f
+  compose.yaml up -d postgres nats` neben laufender
+  `examples/compose.yaml`-Demo-Umgebung) — `docker ps`/`docker network ls`
+  zeigen fünf Container über zwei getrennte Netzwerke (`cdc-feed-test`,
+  `cdc-examples`), keine Namenskollision, beide healthy.
 - Committete Beispiel-Zugangsdaten in `examples/.env` könnten als
   Sicherheits-Anti-Pattern gelesen werden, obwohl sie nur gegen die isolierte
   Demo-Umgebung gelten — bereits durch `ADR-0098` Festlegung 3 entschieden
   (committet statt Vorlage, weil keine echten Secrets; Klartext-Kopfkommentar
-  zur Netzwerk-Grenze ist Pflicht) — **Ausgang:** <bei Closure ausfüllen;
-  Kopfkommentar-Wortlaut belegen>.
+  zur Netzwerk-Grenze ist Pflicht) — **Ausgang: entfallen.** `examples/.env`
+  trägt den geforderten Kopfkommentar wortgleich zu `ADR-0098` Festlegung 3:
+  „Demo-Zugangsdaten, gültig ausschließlich im isolierten Docker-Netzwerk
+  `cdc-examples` — niemals gegen eine Produktionsinstanz verwenden."
 - Das Bootstrapping könnte nicht idempotent sein (zweiter `up`-Lauf schlägt
-  fehl, weil die Beispiel-Quelle/-Tabelle schon existiert) — **Ausgang:**
-  <bei Closure ausfüllen>.
+  fehl, weil die Beispiel-Quelle/-Tabelle schon existiert) — **Ausgang:
+  eingetreten, mit Gegenmaßnahme.** Real eingetreten in einer anderen als
+  der vermuteten Form: nicht die Quelle/Tabelle-Registrierung schlägt fehl
+  (die trägt `ON CONFLICT DO NOTHING`/`CREATE TABLE IF NOT EXISTS` sauber),
+  sondern `make schema-rollout` selbst ist gegen ein bereits migriertes Ziel
+  nicht idempotent — Drift aus `nacharbeit-administration.sql`s Funktionen
+  blockiert einen zweiten Aufruf mit `DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`
+  (Exit 8), real reproduziert. Bereits bekanntes, drittes Auftreten
+  derselben Beobachtungsklasse
+  (`../observations/BEO-PGC/schema-rollout-fremdobjekte/`, siehe dortige
+  `evidence/slice-beispiele-compose-bootstrap.md`). Gegenmaßnahme in
+  `examples/bootstrap.sh`: ein Existenz-Check (`to_regclass('cdc.source_table')`)
+  überspringt den Rollout-Schritt, wenn das Ziel bereits migriert ist — ein
+  zweiter `make example-demo-up`-Lauf real mit Exit 0 geprüft, Datenstand
+  unverändert (eine Zeile, keine Duplikate).
 
 ## 7. Closure-Notiz
 
@@ -196,7 +220,52 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Das Beobachtungs-Register · `grundlagen-traceability.md` §Herkunfts-Anker
 für Steering-Loop-Regeln.
 
-*(bei Closure zu füllen)*
+**Entwurf (Implementer-Rolle) — Reviewer-/Verifier-Pass steht noch aus,
+Lifecycle-Übergang nach `done/` folgt erst danach.**
+
+**Gegenstand:** vollständig geliefert — `examples/compose.yaml` (eigenes
+Netzwerk `cdc-examples`, eigene PostgreSQL/NATS-Instanzen, referenziert das
+per `make image` geladene Image ohne `build:`-Block), `examples/bootstrap.sh`
+(Schema-Rollout über d-migrate, Beispiel-Quelle/-Tabelle-Registrierung,
+Health-/Slot-Poll), `examples/.env` (committet, `CDC_*`-Kontrakt aus
+`ADR-0098`) und die zwei `make`-Ziele `example-demo-up`/`example-demo-down`
+(`harness/mk/examples.mk`).
+
+**Ergebnis:** `make example-demo-up` fährt real PostgreSQL+NATS+Feed-Container
+hoch und liefert ohne manuellen Zwischenschritt eine lesbare Demo-Zeile —
+real geprüft über `GET /changes?source=demo-source` (Antwort trägt die
+`public.orders`-Zeile „Ada Lovelace"/42.50) und über `make example-run-go
+SURFACE=http` (zeigt `tbl-orders` als aktivierte Tabelle der Quelle). Beide
+Compose-Umgebungen (Wurzel + `examples/`) liefen im selben Zug gleichzeitig,
+ohne Namenskollision. `make example-demo-up` ein zweites Mal aufgerufen
+bleibt idempotent (Exit 0, unveränderter Datenstand — eine Zeile). `make
+example-demo-down` räumt Container und Netzwerk vollständig ab (`docker ps`/
+`docker network ls` danach ohne `cdc-examples`-Reste). `make gates` real
+grün (alle sechs Gates, u. a. `docs-check` 0 Befund(e) über 701 Dateien,
+`coverage-gate` 83.40 % ≥ 80 %).
+
+**Steering-Loop-Lerneintrag:** Logische Replikation trägt keinen initialen
+Snapshot-Export dieses CDC-Wegs — eine vor der Slot-Erzeugung (Feed-Start)
+eingefügte Zeile bleibt über `GET /changes` dauerhaft unsichtbar, real
+geprüft (erster Anlauf des Bootstrap-Skripts fügte die Demo-Zeile vor dem
+Feed-Start ein, `GET /changes` lieferte `{"changes":[]}`). Die Reihenfolge
+„Tabelle leer anlegen → Feed/Slot starten → danach erst die Demo-Zeile
+einfügen" ist deshalb keine stilistische Wahl, sondern eine funktionale
+Notwendigkeit für jede künftige Demo-/Fixture-Umgebung dieser Art.
+
+**Beobachtungs-Register:** fortgeschrieben — drittes Auftreten von
+`BEO-PGC/schema-rollout-fremdobjekte` (`evidence/slice-beispiele-compose-bootstrap.md`,
+`state.md` auf 3× nachgezogen); die 3×-Schwelle ist jetzt erreicht, ein
+Ausgang ist bei der nächsten Welle-Closure fällig (Register-README
+§Gelesen). Keine neue Beobachtungsklasse angelegt — dasselbe Muster wie
+`slice-016`/`slice-063`, hier zusätzlich auf `cdc.exclude_column`/
+`cdc.include_column` erweitert.
+
+**Risiken (§6):** zwei mit Ausgang „entfallen" (Netzwerk-Kollision,
+Zugangsdaten-Kopfkommentar — beide real geprüft), eines mit Ausgang
+„eingetreten, mit Gegenmaßnahme" (Bootstrapping-Idempotenz — nicht in der
+vermuteten Form, sondern über die bekannte `schema-rollout`-Fremdobjekte-
+Klasse; siehe §6 für den Beleg).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

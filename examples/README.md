@@ -12,7 +12,36 @@ nur, wo welches Programm liegt und wie es gebaut/gestartet wird.
 **Voraussetzung:** ein laufender Feed-Container gegen eine erreichbare
 PostgreSQL-Quelle (Image bauen, Container starten) — siehe
 [`docs/user/benutzerhandbuch.md`](../docs/user/benutzerhandbuch.md)
-§3 „Erste Schritte".
+§3 „Erste Schritte", **oder** die Demo-Umgebung unten, die diese
+Voraussetzung mit einem Befehl herstellt.
+
+## Demo-Umgebung
+
+`make example-demo-up` (`LH-QA-OPS-001`, `ADR-0098`) fährt PostgreSQL, NATS
+und den Feed-Container real hoch und stellt ohne manuellen SQL-Schritt sofort
+lesbare Demo-Daten bereit: Schema-Rollout über d-migrate
+(`tools/schema/schema.yaml`), eine registrierte Beispiel-Quelle
+(`demo-source`) und eine Beispiel-Tabelle (`public.orders`, eine Demo-Zeile),
+über `CDC_TABLES` beim Feed-Start automatisch aktiviert. Danach liefert
+`GET /changes?source=demo-source` (Token `demo-reader-token`, Adresse
+`pg-change-feed:8090` — siehe `examples/.env`) die Demo-Zeile, und jedes der
+zwölf Beispiel-Programme kann sofort gegen echte Daten laufen (z. B. `make
+example-run-go SURFACE=http ARGS="-source demo-source -publication
+pub_demo"`).
+
+Eigenständig von [`docs/user/benutzerhandbuch.md`](../docs/user/benutzerhandbuch.md)
+§3 „Erste Schritte" (Produktionsanleitung) und von der Wurzel-`compose.yaml`
+(CI-/Testtier, `LH-QA-POR-003`) — eigenes Docker-Netzwerk `cdc-examples`,
+eigene Container, eigene Daten; beide Compose-Umgebungen können gleichzeitig
+laufen. Die Umgebungsdatei `examples/.env` (committet, **keine** Vorlage,
+`ADR-0098` Festlegung 3) trägt einen Klartext-Kopfkommentar zur
+Netzwerk-Grenze — die Werte gelten ausschließlich innerhalb von
+`cdc-examples`, niemals gegen eine Produktionsinstanz.
+
+```bash
+make example-demo-up     # hochfahren + bootstrappen
+make example-demo-down   # abräumen (Container + Netzwerk)
+```
 
 ## Go
 

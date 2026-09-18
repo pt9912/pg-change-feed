@@ -88,3 +88,27 @@ ifeq ($(filter $(SURFACE),http sse grpc nats),)
 endif
 	docker build -f examples/Dockerfile $(if $(filter $(SURFACE),http),,--target runtime-$(SURFACE)) -t pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) .
 	docker run --rm --network cdc-examples --env-file examples/.env pg-change-feed-examples:go$(if $(filter $(SURFACE),http),,-$(SURFACE)) $(ARGS)
+
+# `example-demo-up`/`example-demo-down` kapseln die Demo-/Quickstart-
+# Umgebung unter examples/ (LH-QA-OPS-001, ADR-0098 Festlegung 3/4,
+# slice-beispiele-compose-bootstrap): ein Nutzer fährt `postgres`+`nats`+
+# den Feed-Container hoch und bekommt ohne manuellen SQL-/`make
+# schema-rollout`-Zwischenschritt reale, sofort lesbare Demo-Daten
+# (`public.orders`, über `CDC_TABLES` beim Feed-Start automatisch aktiviert,
+# ADR-0028). Der eigentliche Ablauf steht in examples/bootstrap.sh
+# (Schema-Rollout über d-migrate, Beispiel-Quelle/-Tabelle-Registrierung,
+# Health-Poll) — dieses Ziel ruft es nur auf; Exit-Code direkt gelesen wie
+# bei jedem anderen Ziel (AGENTS.md §3.9). Kein Gate: die Demo-Umgebung
+# braucht DB-Zugang und das benannte Docker-Netzwerk `cdc-examples`,
+# `make gates` bleibt netzlos — dasselbe Werkzeug-statt-Gate-Argument wie
+# `examples-csharp`/`examples-kotlin`/`example-run-go`.
+.PHONY: example-demo-up
+example-demo-up: ## Demo-Umgebung hochfahren + bootstrappen (postgres+nats+feed, reale Demo-Daten sofort lesbar; Werkzeug, kein Gate; ADR-0098)
+	@bash examples/bootstrap.sh
+
+# Symmetrischer Abbau: `-v --remove-orphans` wie
+# tools/harness/run-integration-tests.sh — Demo-Daten leben ausschließlich
+# im Container, ein zweiter `example-demo-up`-Lauf beginnt wieder frisch.
+.PHONY: example-demo-down
+example-demo-down: ## Demo-Umgebung abräumen (Container+Netzwerk; Werkzeug, kein Gate; ADR-0098)
+	docker compose -f examples/compose.yaml down -v --remove-orphans
