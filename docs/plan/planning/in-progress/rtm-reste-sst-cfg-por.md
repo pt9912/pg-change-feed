@@ -99,13 +99,13 @@ Priorisierungs-Schritt. **Datum:** 2026-09-19.
       (`.harness/skills/reviewer.md`), kein Self-Review — 1 MEDIUM (F-1)
       und 2 LOW (F-2/F-3) in derselben Fixrunde behoben, 3 INFO (F-4/F-5/F-6)
       als reine Hinweise ohne Aktion übernommen, kein offenes HIGH/MEDIUM.
-- [ ] Doku-Update: `harness/README.md` (`make doc-trace`-Zeile mit der
+- [x] Doku-Update: `harness/README.md` (`make doc-trace`-Zeile mit der
       real gemessenen finalen Waisenzahl nachgezogen), `docs/plan/adr/README.md`
       (`ADR-0105`-Index-Zeile).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben (falls Review-Funde anfallen).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -174,7 +174,60 @@ Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Sechs strukturell verschiedene RTM-Waisen
+  (drei Tag-only, ein neuer struktureller DDL-Fingerabdruck-Beleg, zwei
+  über eine neue CI-Matrix-Coverage-Dimension) in einem Slice gebündelt,
+  weil sie alle demselben Ziel dienten ("Jetzt noch die restlichen 6
+  Anforderungen abdecken") — die reale GitHub-REST-API-Abfrage
+  (`ADR-0105`) lieferte einen echten, zitierbaren Beleg (Lauf-ID/Commit/
+  URL) statt einer Behauptung, und der DDL-Fingerabdruck bewies
+  `LH-FA-CFG-006` strukturell, nicht nur per Tag.
+- **Was ging anders als geplant:** Der Reviewer fand 1 MEDIUM (F-1:
+  ungeprüfte GitHub-Lauf-ID in einem `sh -c`-String — Injection-Risiko,
+  eng begrenzt) und 2 LOW (F-2: falscher Komponentenname im
+  CFG-006-Kommentar; F-3: fehlendes `pipefail` in der API-Abfrage-Pipe),
+  in einer Fixrunde behoben (`b3e1c100`). Der Verifier fand danach zwei
+  weitere, reale Restbefunde, die weder Gates noch Review sehen konnten:
+  dieselbe F-2-Fehlbenennung stand wortgleich noch zweimal in der
+  Slice-Plan-Prosa (§1/§6), und `docs/user/e2e-abdeckung.md` war an zwei
+  Zeilen-Lokatoren um 3 Zeilen veraltet, weil die Fixrunde den
+  Code-Kommentar verlängerte, ohne die generierte Datei neu zu erzeugen
+  — beide in einer zweiten Fixrunde behoben (`89e9922f`). Die
+  Isolationsprobe des Verifiers (Cherry-Pick ohne den später
+  committeten Nachbar-Slice) bestätigte zusätzlich, dass der eigene Diff
+  für sich allein alle sechs Ziel-Kennungen trägt, keine versteckte
+  Abhängigkeit.
+- **Steering-Loop-Eintrag:** kein neuer Sensor — beide Verifier-Funde
+  sind weitere Belege derselben bereits verkörperten `AGENTS.md`
+  §3.13-Regel (siehe neuer Beleg im Beobachtungs-Register), diesmal mit
+  einer Nuance: eine Fixrunde, die einen Code-Kommentar korrigiert, zieht
+  auch alle anderen Prosa-Stellen nach, die dieselbe Tatsache wortgleich
+  wiederholen (Slice-Plan eingeschlossen), nicht nur den einen vom
+  Reviewer benannten Fundort.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-rtm-reste-sst-cfg-por.md` unter der bestehenden
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`.
+- **Folge-Slices:** `rtm-letzte-zwoelf-tag-only` (bereits parallel
+  bearbeitet und mittlerweile ebenfalls durch Review/Fixrunde
+  gelaufen) — löste die restlichen zwölf RTM-Waisen; nach dessen
+  Closure zeigt `make doc-trace` 0 Waisen insgesamt.
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — (1) CI-Matrix-Beleg
+  zitiert ggf. einen Vorgänger-Lauf statt HEAD → **weiter offen**, bewusst
+  akzeptiert (`ADR-0105` §Konsequenzen); (2) `make doc-ci-matrix` braucht
+  Netz → **entfallen** für `make gates` (strukturell außerhalb), weiter
+  offen als Bedienungshinweis; (3) DDL-Fingerabdruck deckt keine
+  Constraint-/Index-Änderungen ab → **weiter offen**, praktisch
+  irrelevant (Code-Lektüre bestätigt: `cdc.enable_table` schreibt
+  nachweislich nur `cdc.administration_request`, `Publish` nur `ALTER
+  PUBLICATION ... ADD TABLE` — Formulierung in der zweiten Fixrunde
+  korrigiert); (4) Tag-only ohne neuen Regressionsschutz → **entfallen**,
+  das ist die bewusste Einordnung dieser drei Punkte.
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld (kein neuer
+  Sensor/keine neue Regel verkörpert). Folge-Slice —
+  `rtm-letzte-zwoelf-tag-only` existiert als Datei unter
+  `docs/plan/planning/in-progress/`. Register —
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger/` existiert mit
+  nicht-leerem `evidence/` (der neue Beleg oben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
