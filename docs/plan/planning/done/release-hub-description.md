@@ -152,9 +152,18 @@ geschrieben.
   `hub-description`-Job) die in `hub-description.yml` selbst
   deklarierten Job-Permissions (`contents: read`) gewährt oder den
   Aufrufer-Default (`permissions: {}`) durchreicht, lässt sich nicht
-  netzlos/lokal klären. **Ausgang:** weiter offen, strukturell (derselbe
-  Fall wie `AGENTS.md` §3.10 — erst der reale Post-Push-Lauf zeigt, ob
-  `Checkout` in `hub-description.yml` mit ausreichenden Rechten läuft).
+  netzlos/lokal klären. **Ausgang:** eingetreten und real behoben — der
+  erste echte Tag-Push (`v0.1.0`, 2026-09-19) zeigte real: GitHub Actions
+  reicht den Aufrufer-Default (`permissions: {}`) durch und lässt einen
+  reusable Workflow **nicht** eigenständig auf `contents: read`
+  eskalieren (dokumentiertes Verhalten: „Reusable workflows can only
+  downgrade permissions from the caller, never elevate them") — der
+  gesamte Lauf scheiterte mit `startup_failure` vor jedem Job-Start,
+  ohne dass ein einziger Job (auch nicht `release` selbst) lief. Behoben
+  durch expliziten `permissions: {contents: read}`-Block am
+  `hub-description`-Job in `release.yml`; der Fix selbst noch nicht
+  erneut real gegen einen Tag-Push verifiziert im Moment dieses
+  Nachtrags (folgt unmittelbar).
 
 ## 7. Closure-Notiz
 

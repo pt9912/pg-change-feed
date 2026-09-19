@@ -34,7 +34,14 @@ name: release
 # die Docker-Hub-Beschreibung mit `README.md` — Praesentation, kein
 # Bestandteil der Distributions-Zusage: ein Fehlschlag hier laesst den
 # bereits abgeschlossenen `release`-Job unberuehrt, GitHub Actions aendert
-# dessen Status nicht rueckwirkend.
+# dessen Status nicht rueckwirkend. Der `hub-description`-Job braucht ein
+# eigenes `permissions: contents: read` — ein aufrufender Job ohne
+# eigene Permissions erbt `permissions: {}` vom Workflow-Top-Level, und
+# ein aufgerufener reusable Workflow kann Rechte gegenueber dem Aufrufer
+# nur absenken, nie anheben; ohne dieses Feld scheitert der gesamte Lauf
+# mit `startup_failure` vor jedem Job-Start (real beim ersten Tag-Push
+# `v0.1.0` aufgetreten, siehe Slice-Plan
+# docs/plan/planning/done/release-hub-description.md Review-Finding F-6).
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
@@ -108,5 +115,7 @@ jobs:
   hub-description:
     name: Docker-Hub-Beschreibung synchronisieren
     needs: release
+    permissions:
+      contents: read
     uses: ./.github/workflows/hub-description.yml
     secrets: inherit
