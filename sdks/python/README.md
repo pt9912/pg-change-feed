@@ -6,7 +6,7 @@ This package (`pgchangefeed`) lets a Python application consume PG Change Feed's
 
 ## Status
 
-This package is at an early, pre-1.0 stage (`0.x.y`, [ADR-0107](https://github.com/pt9912/pg-change-feed/blob/main/docs/plan/adr/0107-python-pypi-zweites-sdk-package.md)). The current release provides only the shared connection configuration (`ClientOptions`: server address and bearer token) — the HTTP API client surface itself (the nine `SPEC-018` capabilities plus `GET /changes`, `SPEC-022`) is added by a follow-up release. gRPC, SSE and NATS-vollinhalt delivery remain out of scope for this package's first release (`ADR-0107` Festlegung 1).
+This package is at an early, pre-1.0 stage (`0.x.y`, [ADR-0107](https://github.com/pt9912/pg-change-feed/blob/main/docs/plan/adr/0107-python-pypi-zweites-sdk-package.md)). The current release provides the shared connection configuration (`ClientOptions`: server address and bearer token) and a full HTTP API client surface (`PgChangeFeedHttpClient`): consumer registration/acknowledgement/position/removal, table enable/disable, status, table listing, retention, and reading changes — the nine `SPEC-018` capabilities plus `GET /changes` (`SPEC-022`). gRPC, SSE and NATS-vollinhalt delivery remain out of scope for this package's first release and would be added by a follow-up release (`ADR-0107` Festlegung 1).
 
 If a surface you need isn't covered yet, the direct wire protocol remains fully usable on its own — no `examples/python/` reference client exists yet (`ADR-0107` §Kontext); see the [`examples`](https://github.com/pt9912/pg-change-feed/tree/main/examples) reference clients for other languages in the main repository.
 

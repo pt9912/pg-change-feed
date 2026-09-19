@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.34
+Version: 1.35
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-19
 
@@ -674,6 +674,15 @@ Tabelle oben plus `GET /changes`) mit typisierten Requests/Responses und
 einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`, statt den
 Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
 
+Python-Anwendungen können statt der Beispiele das offizielle PyPI-Package
+`pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0107`,
+`pip install pgchangefeed`) — `PgChangeFeedHttpClient` deckt dieselben zehn
+Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der Tabelle oben
+plus `GET /changes`) mit typisierten Requests/Responses (`dataclasses`) und
+einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; gRPC,
+SSE und der NATS-Vollinhalts-Stream bleiben für dieses Package vorerst
+außerhalb (`ADR-0107` Festlegung 1). Siehe `sdks/python/README.md`.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -1139,3 +1148,4 @@ MIT — siehe `LICENSE`.
 | 1.32 | 2026-09-19 | Kopf-Feld `Software-Version` korrigiert: trug seit Ersteinführung unverändert `0.2.0-verdrahtung`, nie mit dem später eingeführten `docs/user/version.md` (`ADR-0051`, welle-release-pipeline-adr-0051) synchronisiert und nirgends sonst referenziert — auf einen Verweis auf die tatsächliche Versionsquelle umgestellt |
 | 1.33 | 2026-09-19 | C#-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — das NuGet-Package `PgChangeFeed.Client` deckt alle zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
 | 1.34 | 2026-09-19 | C#-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — `PgChangeFeedGrpcClient.StreamChangesAsync` öffnet `ChangeStream/StreamChanges` und liefert ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben |
+| 1.35 | 2026-09-19 | Python-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0107`, slice-sdk-python-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das PyPI-Package `pgchangefeed` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |

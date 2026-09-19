@@ -56,7 +56,7 @@ Token-Auth (`reader`/`admin`), eigene, netzlos prüfbare Tests
 
 ## 2. Definition of Done
 
-- [ ] `sdks/python/pgchangefeed/src/pgchangefeed/http_client.py` (oder
+- [x] `sdks/python/pgchangefeed/src/pgchangefeed/http_client.py` (oder
       gleichwertiger Modulname) trägt eine öffentliche Client-Klasse mit
       einer Methode je der neun Port-gedeckten Fähigkeiten von
       [`SPEC-018`](../../../../spec/pflichtenheft.md) plus dem
@@ -65,30 +65,35 @@ Token-Auth (`reader`/`admin`), eigene, netzlos prüfbare Tests
       Exception-Hierarchie, konsistent über alle Methoden) spiegeln
       `SPEC-018`/`SPEC-022` exakt. Bearer-Token wird bei Konstruktion
       übergeben (kein globaler State).
-- [ ] Eigene Tests (`pytest`) decken je Fähigkeit mindestens den Happy Path
+- [x] Eigene Tests (`pytest`) decken je Fähigkeit mindestens den Happy Path
       und die Auth-Boundary (`401` fehlendes/unbekanntes Token, `403`
       `reader`-Token gegen einen `admin`-Endpunkt) ab — netzlos prüfbar
       (kein realer Server nötig, `httpx`-Mock-Transport analog dem
       `HttpMessageHandler`-Fake-Muster der C#-Fläche).
-- [ ] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0107`
+- [x] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0107`
       §Entscheidung Festlegung 3, Import-Grenze) — real geprüft:
       `grep -rn "internal/\|cmd/" sdks/python/` liefert keinen Treffer.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Python-HTTP-Oberfläche (analog dem C#-Eintrag,
       `ADR-0106` §Konsequenzen Folgepflicht 4 als Präzedenzfall) — getragen
       durch die bereits verkörperte Selbstprüf-Instruktion
       (`.claude/commands/implement-slice.md` Schritt 17) und den
       Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
+      Zusätzlich, proaktiv vor Review (vermeidet die C#-HIGH-Klasse
+      `docs/reviews/review-slice-sdk-csharp-http-client-flaeche.md` F-1):
+      `sdks/python/README.md` §Status wurde im selben Zug nachgezogen — der
+      Absatz behauptete noch „is added by a follow-up release" für genau
+      die HTTP-Client-Fläche, die dieser Slice real liefert.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang.
@@ -118,6 +123,30 @@ als **Struktur**-Vorbild (Aufbau der Fähigkeits-Methoden, Fehler-Mapping-
 Muster), nicht als Draht-Vorbild — die tatsächliche Byte-/Feld-Form wird
 gegen `SPEC-018`/`SPEC-022` selbst geprüft, nicht gegen den C#-Code
 übernommen.
+
+**Plan-Nachzug (Implementer, vor dem Gate-Lauf):**
+
+- **Träger-Nachzug-Suchlauf durchgeführt (`AGENTS.md` §3.13):** vor dem
+  Gate-Lauf `grep -rn "follow-up\|added by" sdks/python/README.md
+  sdks/python/pgchangefeed/src/pgchangefeed/*.py` ausgeführt (Suchlauf
+  gegen die bewegte Eigenschaft „Python-HTTP-Client-Fläche existiert",
+  nicht gegen den eigenen Diff). Gefunden: `sdks/python/README.md:9`
+  behauptete unverändert „is added by a follow-up release" für genau die
+  Fläche, die dieser Slice liefert — dieselbe Fehlerklasse, die beim
+  C#-Geschwister-Slice erst im Review auffiel (F-1,
+  `docs/reviews/review-slice-sdk-csharp-http-client-flaeche.md`). Im selben
+  Zug nachgezogen (§2 DoD „Doku-Update"), **vor** dem ersten Review-Lauf
+  dieses Slices — anders als beim C#-Vorbild, wo der Implementer-Zug das
+  README noch nicht gefunden hatte und die Fixrunde nötig war. Der zweite
+  Treffer (`__init__.py`s „a follow-up release" über gRPC/SSE/NATS) ist
+  keine überholte Aussage: gRPC/SSE/NATS bleiben nach `ADR-0107`
+  Festlegung 1 tatsächlich außerhalb dieses Pakets, kein Drift.
+- **Import-Grenzen-Grep-Kollision real geprüft und vermieden:** ein erster
+  Entwurf des `http_client.py`-Docstrings nannte den Go-Server-Pfad
+  wörtlich als Gegenprobe-Hinweis — das hätte den in §2 geforderten
+  `grep -rn "internal/\|cmd/" sdks/python/`-Nulltreffer selbst verletzt
+  (ein Kommentar, kein Import, aber derselbe Grep-Treffer). Umformuliert
+  ohne den wörtlichen Pfad; `grep`-Lauf danach real 0 Treffer.
 
 ## 4. Trigger
 
