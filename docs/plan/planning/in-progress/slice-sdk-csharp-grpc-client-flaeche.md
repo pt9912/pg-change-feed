@@ -94,9 +94,11 @@ kein committeter Stub).
       Treffer, ein Doku-Kommentar-Zitat des Test-Vorbilds
       (`internal/adapters/driving/grpc/server_test.go`), kein Import.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      siehe `docs/reviews/review-slice-sdk-csharp-grpc-client-flaeche.md`
+      (0 HIGH/MEDIUM/LOW, keine Fixrunde nötig).
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die gRPC-Oberfläche (`ADR-0106` §Konsequenzen
       Folgepflicht 4) — getragen durch die bereits verkörperte
