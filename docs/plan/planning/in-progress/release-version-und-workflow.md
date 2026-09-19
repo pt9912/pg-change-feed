@@ -102,11 +102,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       behoben; kein offenes HIGH.
 - [x] Doku-Update für `harness/README.md` (`make image`-Zeile mit dem
       neuen `VERSION`/`LATEST`-Verhalten, neue `release.yml`-Zeile).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer Beleg in `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/evidence/`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-release-pipeline-adr-0051` (noch offen) — Prüfung folgt regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
 
@@ -194,7 +194,64 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Die reale Zwei-lokale-Registries-Verifikation
+  (`registry:2` auf zwei Ports statt echter GHCR-/Docker-Hub-Zugangsdaten)
+  bewies die Content-Mirror-Eigenschaft (identischer Manifest-Digest über
+  vier Tag/Registry-Kombinationen) ohne echte Zugangsdaten zu brauchen —
+  ein realer, wiederholbarer Beleg statt einer bloßen Behauptung „sollte
+  funktionieren". Ebenso die `docker.io/library/alpine`-Gegenprobe für die
+  Docker-Hub-Namensform.
+- **Was ging anders als geplant:** Der Reviewer fand 1 HIGH (F-1: zwei
+  DoD-Checkboxen verwiesen auf den zu diesem Zeitpunkt noch leeren §7 —
+  sechster Beleg der bereits verkörperten Reviewer-Regel „Beleg trägt
+  seinen Satz nicht") und 4 MEDIUM: F-2/F-3 waren echte SemVer-2.0-Bugs
+  in der ursprünglich inline in `release.yml` geführten Validierung
+  (führende Null im Prerelease-Identifier akzeptiert; Bindestrich in der
+  Build-Metadata fälschlich als Prerelease gewertet), F-4 der fehlende
+  automatisierte Negativtest dafür, F-5 eine echte, unentschiedene
+  `ADR-0103`-Governance-Frage (ihr eigener Trigger nennt „ein
+  `docker push`-Workflow" als Auslöser für eine Folge-ADR). Alle außer
+  F-5 in einer Fixrunde behoben (`31cf6e8a`) — F-5 bewusst als offenes
+  Risiko übernommen statt vom Implementer einseitig entschieden, der
+  Verifier bestätigte diese Einordnung als angemessen.
+- **Steering-Loop-Eintrag:** kein neuer Sensor — F-1 ist ein weiterer
+  (sechster) Beleg der bereits verkörperten Reviewer-Regel „Beleg trägt
+  seinen Satz nicht" (`.harness/skills/reviewer.md`); F-2/F-3/F-4 führten
+  aber zu einem echten Struktur-Ergebnis: die Tag-Validierungslogik lebt
+  jetzt als eigenständiges, netzlos testbares Skript
+  (`tools/harness/release-tag-info.sh` + `make test-release-tag-info`)
+  statt als unbelegte Inline-Logik in einem GitHub-Actions-Workflow — ein
+  wiederverwendbares Muster für künftige Workflow-interne
+  Validierungslogik in diesem Repo.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-release-version-und-workflow.md` unter der bestehenden
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/` (bereits verkörpert,
+  jetzt 6. Beleg).
+- **Folge-Slices:** `release-image-scan`, `release-upstream-drift`,
+  `release-hub-description`, `release-doku-releasing` — alle vier bereits
+  als Dateien in `open/` vorhanden (Welle
+  `welle-release-pipeline-adr-0051`). Zusätzlich benannt (kein
+  Datei-Anlegen in diesem Zug): eine Architect-Entscheidung zu F-5 vor
+  dem ersten echten Release (Folge-ADR `Supersedes ADR-0103` oder
+  explizite Begründung, siehe §6).
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — (1) `release.yml`
+  real erst nach echtem Tag-Push verifizierbar → **weiter offen**,
+  strukturell (`AGENTS.md` §3.10); (2) Digest-Ermittlungspfad `--push`
+  vs. `--load` → **eingetreten**, real geprüft und unauffällig (identischer
+  Digest über beide Modi); (3) Docker-Hub-Namensform `docker.io/<user>/<repo>`
+  → **eingetreten**, real geprüft und korrekt, reale Docker-Hub-Existenz
+  bleibt bis zum ersten Push unbewiesen; (4) `ADR-0103`-Trigger-Frage
+  (F-5) → **weiter offen**, Architect-Entscheidung vor dem ersten echten
+  Release fällig.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure, nicht
+  hier (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
+  Welle-Closure"). Vorab-Hinweis für diese spätere Prüfung: kein
+  `liegt in`-Feld in diesem Slice; alle vier Folge-Slices existieren
+  bereits als Dateien unter `docs/plan/planning/open/`; der neue
+  Beobachtungs-Beleg liegt unter
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht/evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
