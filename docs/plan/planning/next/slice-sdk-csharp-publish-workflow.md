@@ -15,7 +15,8 @@ Entscheidung 3/8 (Release-Tag-Trigger, Docker-Hub-Secret-Muster — Vorbild).
 **Berührte Spec-Stellen:** — (Prozess-/CI-Artefakt ohne eigene
 `SPEC-*`-Kennung, analog `release.yml`/`hub-description.yml`).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent (priorisiert 2026-09-19, direkter
+Auftrag: NuGet.org-Publish-Workflow für das C#-SDK-Package umsetzen).
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0106` §Konsequenzen
 Folgepflicht 1/5). **Datum:** 2026-09-19.
