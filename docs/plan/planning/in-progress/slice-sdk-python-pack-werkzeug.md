@@ -64,7 +64,7 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
 
 ## 2. Definition of Done
 
-- [ ] `make sdk-pack-python` existiert (Docker-only, kein Gate — analog
+- [x] `make sdk-pack-python` existiert (Docker-only, kein Gate — analog
       `make sdk-pack-csharp`): baut, testet (`pytest`) und paketiert
       (`uv build --no-sources`,
       [`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
@@ -82,12 +82,12 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
       abgelegt — analog dem Extraktionsmuster von `make sdk-pack-csharp`
       (`tools/harness/sdk-pack-csharp.sh`, host-seitiger Export statt
       Bind-Mount/`--user`-Workaround).
-- [ ] Real ausgeführt: ein `.whl` und ein `.tar.gz` mit der erwarteten
+- [x] Real ausgeführt: ein `.whl` und ein `.tar.gz` mit der erwarteten
       Version (z. B. `pgchangefeed-0.1.0-py3-none-any.whl`,
       `pgchangefeed-0.1.0.tar.gz`) existieren nach dem Lauf und sind als
       Smoke-Beleg im Bericht dieses Slice genannt (Datei-Existenz, keine
       Behauptung — `AGENTS.md` §3.12 Instanz B).
-- [ ] `spec/pflichtenheft.md` §1 trägt bei
+- [x] `spec/pflichtenheft.md` §1 trägt bei
       [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) einen
       Nachzug-Satz: für Python/PyPI ist die Sprachmatrix-/Vertriebsweg-
       Frage durch [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
@@ -99,7 +99,7 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
       `slice-sdk-csharp-pack-werkzeug`, siehe dessen Closure-Notiz „Was
       ging anders als geplant"); die Beziehung steht bereits umgekehrt in
       `ADR-0107`s eigenem `Schärft:`-Feld.
-- [ ] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
+- [x] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
       `SPEC-<NNN>`-Zeile für `pgchangefeed` (System: PyPI-Package;
       Version: PEP 440, `0.x.y`; Vertrag-Datei: Verweis auf
       `sdks/python/pgchangefeed/pyproject.toml` als Metadaten-Quelle,
@@ -111,26 +111,26 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
       — zum Planungszeitpunkt dieser Welle ist `SPEC-026` die höchste
       vergebene Nummer (das C#-Package selbst), aber zwischen Planung und
       Umsetzung dieses Slice könnten weitere Nummern vergeben worden sein.
-- [ ] `harness/README.md` §Werkzeuge bekommt die reale
+- [x] `harness/README.md` §Werkzeuge bekommt die reale
       `make sdk-pack-python`-Zeile (kein Gate, Bindung auf
       [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)) —
       erst jetzt zulässig, weil das Ziel jetzt real existiert
       (`AGENTS.md` §4).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -181,20 +181,28 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
   diesen Artefakt-Typ neu (das C#-Vorbild exportierte ein einzelnes
   `.nupkg`, hier sind es zwei Dateien) — ein Bind-Mount-Workaround oder
   ein falsch gesetztes `--user` könnte die Artefakte mit falschen
-  Dateirechten oder gar nicht auf den Host bringen. **Ausgang:** weiter
-  offen, zu entscheiden beim Schreiben — Erwartung: derselbe
-  `tar`-Stream-Export wie bei `make sdk-pack-csharp` trägt auch für zwei
-  Dateien statt einer, da `tar` mehrere Dateien in einem Stream
-  transportiert; real zu bestätigen.
+  Dateirechten oder gar nicht auf den Host bringen. **Ausgang:**
+  entfallen/aufgelöst — der `tar`-Stream-Export
+  (`docker run --rm --network none <image> | tar -x -C sdks/python/dist/`)
+  trug beim ersten Versuch real für beide Dateien in einem Stream
+  (`pgchangefeed-0.1.0-py3-none-any.whl`, 9330 Bytes;
+  `pgchangefeed-0.1.0.tar.gz`, 11290 Bytes) — kein Bind-Mount, kein
+  `--user`-Workaround nötig, keine Dateirechte-Auffälligkeit
+  (`git status --porcelain sdks/python/dist/` leer, Verzeichnis vollständig
+  `.gitignore`t).
 - Die neue `SPEC-<NNN>`-Nummer in `spec/pflichtenheft.md` §6/§2 muss
   fortlaufend vergeben werden — zum Planungszeitpunkt dieser Welle ist
   `SPEC-026` die zuletzt vergebene Nummer (real verifiziert,
   `grep -oE "SPEC-[0-9]+" spec/pflichtenheft.md | sort -t- -k2 -n -u |
   tail -3` → `SPEC-024`, `SPEC-025`, `SPEC-026`); zwischen Planung und
   Umsetzung dieses Slice könnte eine weitere Nummer vergeben worden sein
-  (Kollisionsrisiko). **Ausgang:** weiter offen — der Implementer
-  verifiziert die nächste freie Nummer **erneut** unmittelbar vor dem
-  Schreiben, nicht nur einmal bei der Planung (§2 DoD-Punkt oben).
+  (Kollisionsrisiko). **Ausgang:** entfallen — der Implementer verifizierte
+  unmittelbar vor dem Schreiben erneut (`grep -oE "SPEC-[0-9]+"
+  spec/pflichtenheft.md | sort -t- -k2 -n -u | tail -5` → unverändert
+  `SPEC-026` als höchste Nummer), vergab `SPEC-027` und bestätigte danach
+  Kollisionsfreiheit (`grep -c "SPEC-027" spec/*.md` → genau drei Treffer,
+  ausschließlich in `spec/pflichtenheft.md`: §1-Fließtext, §6-Zeile,
+  §7-Historie; `0` in `spec/lastenheft.md`/`spec/architecture.md`).
 - Python-Paketnamen unterliegen PyPI-Namensraum-Kollisionen — der
   Arbeitsname `pgchangefeed` könnte zum Zeitpunkt der Umsetzung bereits
   von einem fremden Package belegt sein (anders als bei NuGet, wo
@@ -207,7 +215,48 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-<…>
+- **Was hat funktioniert:** Ein glatter Durchlauf ohne Plan-Nachzug — anders
+  als bei `slice-sdk-csharp-pack-werkzeug` (dort musste die ADR-Referenz in
+  der `LH-FA-SST-009.a`-Nachzugzeile nachträglich gestrichen werden, weil
+  `make docs-check`s `matrix`-Modul sie verbot) sah dieser Slice-Plan die
+  ADR-freie Form der Nachzugzeilen bereits von Anfang an vor (§2 DoD-Punkt
+  „Kein ADR-Bezug in der Nachzug-Zeile selbst") — die gelernte Regel aus dem
+  Vorgänger-Slice trug direkt beim Schreiben, kein zweiter Anlauf nötig. Der
+  `uv`-Digest wurde real gegen die Registry reverifiziert
+  (`docker buildx imagetools inspect ghcr.io/astral-sh/uv:0.12.17`) und war
+  identisch zum in `ADR-0108` genannten Digest
+  (`sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc`).
+  Der `tar`-Stream-Export trug beim ersten Versuch für **beide** Artefakte
+  in einem Stream — die im Slice-Plan §6 offen benannte Unsicherheit
+  (zwei Dateien statt einer) bestätigte sich als unbegründet.
+- **Was ging anders als geplant:** Nichts Wesentliches. Eine Nebenbeobachtung
+  ohne Konsequenz: `uv build` legt selbständig eine `.gitignore` (Inhalt
+  `*`) im Ausgabeverzeichnis (`/out` im Container, `sdks/python/dist/` nach
+  dem Export) ab — harmlos, weil `sdks/python/.gitignore` bereits `dist/`
+  vollständig ausschließt (`git status --porcelain sdks/python/dist/`
+  bleibt leer).
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel.
+- **Beobachtungs-Register (`../observations/`):** keine neue Beleg-Datei
+  angelegt — keine Beobachtung angefallen, die eine neue Klasse
+  rechtfertigt (der Plan-Nachzug-Mechanismus aus dem C#-Vorgänger-Slice
+  trug bereits vorausschauend, siehe oben).
+- **Folge-Slices:** `slice-sdk-python-publish-workflow` — bereits als Datei
+  in `open/` vorhanden.
+- **Risiken aus §6:**
+  - „Export-Mechanismus für `.whl`/`.tar.gz` neu, zwei Dateien statt einer" —
+    **Ausgang: entfallen/aufgelöst** — real bestätigt, beide Artefakte im
+    selben `tar`-Stream, keine Dateirechte-Auffälligkeit.
+  - „Neue `SPEC-<NNN>`-Nummer könnte kollidieren" — **Ausgang: entfallen** —
+    `SPEC-027` real kollisionsfrei vergeben (`grep -c "SPEC-027"
+    spec/*.md` → genau drei Treffer, ausschließlich in
+    `spec/pflichtenheft.md`).
+  - „PyPI-Namensraum-Kollision für `pgchangefeed`" — **Ausgang: weiter
+    offen**, wie im Plan bereits vorgesehen — ohne Wirkung für dieses
+    netzlose Pack-Werkzeug-Slice, zu prüfen vor dem ersten realen
+    Publish-Versuch (`slice-sdk-python-publish-workflow`).
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

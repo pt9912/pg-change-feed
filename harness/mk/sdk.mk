@@ -1,8 +1,9 @@
-# harness/mk/sdk.mk — Werkzeug-Fragment für das erste SDK-Package
-# (`PgChangeFeed.Client`, C#/NuGet, ADR-0106). Kein Gate: `dotnet restore`
-# braucht Netz, `make gates` bleibt netzlos (ADR-0106 Festlegung 4, dieselbe
-# Begründung wie harness/mk/examples.mk) — dieses Fragment hängt deshalb
-# NICHT an GATE_CHECKS.
+# harness/mk/sdk.mk — Werkzeug-Fragment für die SDK-Packages
+# (`PgChangeFeed.Client`, C#/NuGet, ADR-0106; `pgchangefeed`, Python/PyPI,
+# ADR-0107/ADR-0108). Kein Gate: `dotnet restore`/PyPI-Paketbezug braucht
+# Netz, `make gates` bleibt netzlos (ADR-0106 Festlegung 4, ADR-0107
+# Festlegung 5, dieselbe Begründung wie harness/mk/examples.mk) — dieses
+# Fragment hängt deshalb NICHT an GATE_CHECKS.
 #
 # `sdk-pack-csharp` baut/testet/paketiert das C#-SDK Docker-only im
 # gepinnten mcr.microsoft.com/dotnet/sdk-Image (sdks/csharp/Dockerfile,
@@ -25,3 +26,24 @@
 .PHONY: sdk-pack-csharp
 sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdks/csharp/dist/; Werkzeug, kein Gate; ADR-0106)
 	@bash tools/harness/sdk-pack-csharp.sh
+
+# `sdk-pack-python` baut/testet/paketiert das Python-SDK Docker-only im
+# gepinnten python:3.14-slim-Image (sdks/python/Dockerfile, Stufe
+# `pack-export`): `pytest` läuft VOR `uv build --no-sources` in derselben
+# Docker-Bau-Kette — ein roter Test bricht den `docker build` mit
+# Exit != 0 ab, bevor die `pack`-Stufe je erreicht wird (kein stiller
+# Fallback, Muster harness/mk/examples.mk). `uv` wird per digest-gepinntem
+# Multi-Stage-`COPY` aus Astrals eigenem Werkzeug-Image bezogen, nicht per
+# `pip install uv` (ADR-0108 §Entscheidung Festlegung 1/3) — das
+# `setuptools.build_meta`-Backend in pyproject.toml bleibt unverändert
+# (ADR-0108 §Entscheidung Festlegung 2).
+#
+# Export analog `make sdk-pack-csharp`
+# (tools/harness/sdk-pack-python.sh): das Skript extrahiert BEIDE
+# Artefakte (.whl UND .tar.gz) host-seitig aus der `pack-export`-Stufe
+# (`docker run --rm --network none <image> | tar -x`, `set -o pipefail`
+# unter bash, AGENTS.md §3.9) nach sdks/python/dist/ (`.gitignore`t).
+# Exit-Code des Skripts wird wie bei jedem anderen Ziel direkt gelesen.
+.PHONY: sdk-pack-python
+sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108)
+	@bash tools/harness/sdk-pack-python.sh

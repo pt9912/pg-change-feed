@@ -4,10 +4,12 @@
 # examples/ (kein examples/python/ existiert, ADR-0107 §Kontext Ist-Stand).
 #
 # Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
-# (analog sdks/csharp/Dockerfile). Eine `pack`-Stufe (`python -m build`)
-# folgt erst mit slice-sdk-python-pack-werkzeug (ADR-0107 §Konsequenzen
-# Folgepflicht 1) — dieses Dockerfile trägt nur `pip install -e .[test]`
-# und `pytest`.
+# (analog sdks/csharp/Dockerfile). Die `pack`/`pack-export`-Stufen unten
+# (slice-sdk-python-pack-werkzeug, ADR-0107 §Konsequenzen Folgepflicht 1,
+# ADR-0108 §Entscheidung Festlegung 1/3) bauen auf `build` auf: `pytest`
+# (unten) laeuft VOR `uv build --no-sources` (Stufe `pack`) — ein roter
+# Test bricht den `docker build` mit Exit != 0 ab, bevor `pack` je erreicht
+# wird (kein stiller Fallback, Muster sdks/csharp/Dockerfile).
 #
 # Basis-Digest real gemessen (`docker buildx imagetools inspect`,
 # Manifest-Index-Digest über alle Plattformen) am Zeitpunkt dieses Zuges:
@@ -42,3 +44,31 @@ COPY pgchangefeed/tests pgchangefeed/tests
 WORKDIR /src/pgchangefeed
 RUN pip install --no-cache-dir -e ".[test]"
 RUN pytest
+
+# --- pack: `uv build --no-sources` ueber den bereits gebauten und
+# getesteten Stand (slice-sdk-python-pack-werkzeug, ADR-0107 Festlegung 5,
+# ADR-0108 §Entscheidung Festlegung 1/2/3). `uv` selbst wird NICHT per
+# `pip install` bezogen, sondern per digest-gepinntem Multi-Stage-`COPY`
+# aus Astrals eigenem Werkzeug-Image (exakter Wortlaut aus ADR-0108
+# §Entscheidung Festlegung 3; Digest real gegen die Registry
+# reverifiziert beim Schreiben dieses Zuges — `docker buildx imagetools
+# inspect ghcr.io/astral-sh/uv:0.12.17` liefert denselben Index-Digest wie
+# in der ADR genannt, keine Abweichung). `uv build` benutzt das
+# bestehende `setuptools.build_meta`-Backend ueber die PEP-517-Schnittstelle
+# unveraendert (ADR-0108 §Entscheidung Festlegung 2) -- kein Wechsel an
+# pyproject.toml. Das Erzeugnis (Source-Distribution `.tar.gz` UND Wheel
+# `.whl`) landet unter /out. ---
+FROM build AS pack
+COPY --from=ghcr.io/astral-sh/uv:0.12.17@sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc /uv /uvx /bin/
+RUN mkdir -p /out && uv build --no-sources -o /out
+
+# --- pack-export: gibt /out (.whl UND .tar.gz) als tar-Stream ueber stdout
+# aus -- dasselbe Extraktionsmuster wie pack-export im
+# sdks/csharp/Dockerfile (tools/harness/sdk-pack-csharp.sh, ADR-0060):
+# `tools/harness/sdk-pack-python.sh` baut diese Stufe und liest ihr
+# ENTRYPOINT per `docker run --rm --network none <image> | tar -x -C
+# sdks/python/dist/` aus -- kein Bind-Mount, kein `--user`-Workaround, die
+# extrahierten Dateien gehoeren dadurch automatisch dem aufrufenden
+# Nutzer. `tar` traegt beide Artefakte in einem Stream. ---
+FROM pack AS pack-export
+ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
