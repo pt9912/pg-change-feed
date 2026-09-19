@@ -80,11 +80,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Doku-Update für `harness/README.md` §Sensors/§Werkzeuge — entfällt
       als eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer Beleg `evidence/slice-release-hub-description.md` unter der bestehenden `BEO-PGC/zitat-nennt-die-falsche-stelle/` (bereits verkörpert, jetzt 5./6. Beleg über zwei Fundstellen F-1/F-2).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-release-pipeline-adr-0051` (noch offen) — Prüfung folgt regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
 
@@ -158,7 +158,69 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Die reale, hands-on-Verifikation der
+  Docker-Hub-API (vier `curl`-Aufrufe mit absichtlich ungültigen
+  Zugangsdaten, sowohl vom Implementer als auch unabhängig vom Reviewer)
+  bestätigte Endpoint-URLs und Feldnamen (`identifier`/`secret`/
+  `access_token`/`full_description`), ohne echte Zugangsdaten zu
+  brauchen — inklusive der Nebenerkenntnis, dass `pt9912/pg-change-feed`
+  auf Docker Hub bereits existiert (401 statt 404 auf den PATCH-Versuch).
+  Der Hinweis des Nutzers auf das Schwester-Repo d-check
+  (`packaging/dockerhub/README.md`) lieferte einen bereits real
+  dokumentierten Produktionsfehler (Token-Scope `read/write` reicht für
+  den Image-Push, aber nicht für den Beschreibungs-`PATCH` —
+  `403 Forbidden`) und ließ sich direkt als Kopfkommentar-Hinweis in
+  `hub-description.yml` übernehmen, bevor der Nutzer das eigene Token
+  überhaupt angelegt hat.
+- **Was ging anders als geplant:** Der Reviewer fand 2 HIGH (F-1/F-2:
+  „Zitat nennt die falsche Stelle" — ein ADR-Abschnitt und ein
+  Welle-Datei-Abschnitt waren falsch benannt, die dahinterstehenden
+  Aussagen selbst aber beide sachlich korrekt) und 1 MEDIUM (F-3:
+  fehlende committete, netzlose Negativtest-Abdeckung für die einzige
+  nicht-triviale Logik dieses Slices — die Token-Extraktion) sowie 1 LOW
+  (F-4: `curl -f`-Asymmetrie nur in der Commit-Message erklärt) und
+  2 INFO (F-5/F-6: Erfolgspfad-Feldnamen und Reusable-Workflow-
+  Permissions-Vererbung bleiben strukturell erst durch einen realen Lauf
+  klärbar). Alle in einer Fixrunde behoben bzw. dokumentiert
+  (`5cc7fa49`) — F-3 führte zu einem neuen, wiederverwendbaren
+  Testartefakt (`tools/harness/dockerhub-token.sh` +
+  `run-dockerhub-token-tests.sh` + `make test-dockerhub-token`), F-5/F-6
+  blieben bewusst als offene §6-Risiken statt code-seitig „gelöst" zu
+  werden, da beide strukturell erst durch einen realen Post-Push-Lauf
+  klärbar sind.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  F-1/F-2 sind der 5./6. Beleg der bereits verkörperten Beobachtung
+  `BEO-PGC/zitat-nennt-die-falsche-stelle`. F-3 bestätigt und erweitert
+  aber ein wiederverwendbares Struktur-Muster dieser Welle: Inline-
+  Shell-Logik in einem GitHub-Actions-Workflow bekommt ein eigenständiges,
+  netzlos testbares Skript statt unbelegter Inline-Logik — nach
+  `tools/harness/release-tag-info.sh` (`release-version-und-workflow`)
+  jetzt zum zweiten Mal angewandt (`tools/harness/dockerhub-token.sh`).
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-release-hub-description.md` unter der bestehenden
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/` (bereits verkörpert, jetzt
+  6× über zwei Fundstellen in diesem Slice; Zähler in `state.md`
+  nachgezogen).
+- **Folge-Slices:** `release-doku-releasing` — bereits als Datei in
+  `open/` vorhanden (Welle `welle-release-pipeline-adr-0051`, letzter
+  verbleibender Slice). Kein neuer Folge-Slice aus diesem Slice selbst.
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — (1) `AGENTS.md` §3.10
+  realer Post-Push-Lauf → **weiter offen**, bereits verkörpert; (2)
+  Docker-Hub-Token-Scope für den Beschreibungs-`PATCH` →
+  **eingetreten**, real im Schwester-Repo d-check dokumentiert
+  (`read/write/delete` statt `read/write` nötig), Kopfkommentar trägt den
+  Hinweis jetzt; (3) F-5 Erfolgspfad-Feldnamen unbewiesen →
+  **weiter offen**, strukturell; (4) F-6 Permissions-Vererbung bei
+  Reusable-Workflow-Aufruf ungeklärt → **weiter offen**, strukturell.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure, nicht
+  hier (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
+  Welle-Closure"). Vorab-Hinweis für diese spätere Prüfung: kein
+  `liegt in`-Feld in diesem Slice; der einzige Folge-Slice
+  (`release-doku-releasing`) existiert bereits als Datei unter
+  `docs/plan/planning/open/`; der neue Beobachtungs-Beleg liegt unter
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
