@@ -1,0 +1,8 @@
+# Bau-Ausgaben eines lokalen `pip install`/`pytest`/`python -m build`
+# (Docker-only ist die Vorgabe, AGENTS.md §3.1 — dieser Eintrag schützt nur
+# gegen einen versehentlich lokal gestarteten Host-Bau), analog
+# sdks/csharp/.gitignore.
+__pycache__/
+*.egg-info/
+dist/
+build/

@@ -60,7 +60,7 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
 
 ## 2. Definition of Done
 
-- [ ] `sdks/python/pgchangefeed/pyproject.toml` existiert (PyPA-Standard,
+- [x] `sdks/python/pgchangefeed/pyproject.toml` existiert (PyPA-Standard,
       `[project]`-Tabelle): `name = "pgchangefeed"`,
       `version = "0.1.0"` (`ADR-0107` Festlegung 4, Start bei `0.x.y`,
       PEP 440), `description`, `authors`, `license` (`MIT`, wie das
@@ -69,24 +69,24 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
       Baums dieses Repos, keine Fremdabhängigkeit über die
       HTTP-Client-Bibliothek hinaus (`ADR-0107` §Entscheidung Festlegung 1:
       `httpx`, keine schwere Fremdabhängigkeit).
-- [ ] `sdks/python/Dockerfile` (Bau-Kontext `sdks/python/`, eigenständig
+- [x] `sdks/python/Dockerfile` (Bau-Kontext `sdks/python/`, eigenständig
       von `sdks/csharp/Dockerfile` und der Wurzel-`Dockerfile`) mit
       digest-gepinnter `python`-Basis (real gemessener Digest zum
       Bau-Zeitpunkt, Kommentar-Pflicht analog `sdks/csharp/Dockerfile`);
       `pip install -e .`/`pytest` laufen darin, kein Runtime-Server-Start
       nötig (ein SDK ist keine startbare Anwendung).
-- [ ] `sdks/python/README.md` (Englisch) beschreibt Zweck,
+- [x] `sdks/python/README.md` (Englisch) beschreibt Zweck,
       Installationsweg (`pip install pgchangefeed`) und verweist auf das
       Repo-Root-`README.md` für den vollen Kontext — über absolute
       GitHub-Blob-URLs statt relativer Pfade, weil ein PyPI-Package
       außerhalb dieses Repository-Checkouts gelesen wird (Analogie
       `sdks/csharp/README.md`, siehe dessen Closure-Notiz); kein Duplikat
       der Draht-Doku (`SPEC-018` bleibt die kanonische Quelle).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
+- [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-python-pack-werkzeug`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -127,6 +127,58 @@ kein Code-Import — andere Sprache, anderes Paket-Ökosystem). Der
 Implementer prüft **vor** dem ersten Bau-Lauf, ob `sdks/csharp/**` bereits
 ein analoges Docker-Bau-/Test-Problem gelöst hat (siehe DoD-Punkt oben,
 `BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand`).
+
+**Plan-Nachzug (Implementer, vor dem Gate-Lauf):**
+
+- **Vorbild-Suchlauf (`sdks/csharp/**`) durchgeführt** —
+  `sdks/csharp/Dockerfile` und `sdks/csharp/.gitignore` vollständig
+  gelesen. Übernommen: Layer-Reihenfolge (Metadaten-/Projektdatei zuerst,
+  dann Quellcode, damit der Docker-Layer-Cache über Quelltext-Änderungen
+  stabil bleibt), keine Runtime-Stufe (ein SDK ist keine startbare
+  Anwendung), Digest-Kommentar-Form (real gemessener Digest zum
+  Bau-Zeitpunkt samt Pin-Hebungs-Hinweis), `.gitignore`-Kommentarform
+  (Docker-only-Hinweis + Grund für den `dist/`-Eintrag). Nicht übertragbar:
+  das `.proto`-Zusatzkontext-COPY-Muster (kein gRPC in diesem Erst-Scope,
+  `ADR-0107` Festlegung 1) — aber das **Grundmuster** „eine vom
+  Projekt an einer bestimmten relativen Stelle erwartete Datei per
+  `COPY` dorthin bringen, ohne sie im committeten Baum zu duplizieren"
+  wurde real für das README-Problem unten wiederverwendet (siehe
+  nächster Punkt) statt ein neues Workaround zu erfinden.
+- **Abweichung von der ursprünglich angenommenen Form (real geprüft, kein
+  Vorgriff):** `[project] readme` in `pyproject.toml` kann — anders als
+  `PgChangeFeed.Client.csproj`s `<None Include="../README.md" .../>` bei
+  C# (MSBuild erlaubt beliebige relative Pfade) — **nicht** auf eine Datei
+  außerhalb des Projekt-Wurzelverzeichnisses zeigen: `pip install -e
+  ".[test]"` scheiterte real mit
+  `distutils.errors.DistutilsOptionError: Cannot access
+  '/src/pgchangefeed/../README.md' (or anything outside
+  '/src/pgchangefeed')` (setuptools `_assert_local`). Lösung: `readme =
+  "README.md"` (rein lokaler Pfad) in `pyproject.toml`, und
+  `sdks/python/Dockerfile` kopiert die committete
+  `sdks/python/README.md` zusätzlich an die von `pyproject.toml`
+  erwartete lokale Stelle (`pgchangefeed/README.md`, neben der
+  `pyproject.toml`) — dasselbe wiederverwendete Muster wie oben, keine
+  Duplizierung im committeten Baum, nur im Docker-Bau-Layer. Kein Wechsel
+  der Baumstruktur (`sdks/python/pgchangefeed/pyproject.toml` und
+  `sdks/python/README.md` bleiben an den in §2 genannten Orten).
+- **Python-Mindestversion: `requires-python = ">=3.11"`.** Real recherchiert
+  (`docker buildx imagetools inspect python:3.13-slim`, 2026-09-19): Python
+  3.9 ist bereits EOL (Oktober 2025), 3.10 erreicht sein EOL im Oktober
+  2026 (also binnen eines guten Monats nach diesem Zug) — beide damit keine
+  sinnvolle Untergrenze für ein neu veröffentlichtes Package. 3.11 bleibt
+  bis Oktober 2027 im Security-Support, ist breit verfügbar (jede aktuelle
+  Linux-Distribution/jedes offizielle `python`-Docker-Image führt es) und
+  bringt bereits verbesserte Fehlermeldungen/Exception-Groups — eine
+  Analogie zur `net10.0`-Wahl bei C# (`ADR-0106`): die jeweils aktuell
+  unterstützte, nicht die älteste technisch mögliche Version, ohne
+  Nutzungsdaten, die eine andere Wahl rechtfertigen (§6 dieses Plans).
+- **Basis-Image-Wahl:** `python:3.13-slim` (statt der vollen `python:3.13`-
+  Variante) — kleineres Image, keine C-Compiler-Abhängigkeit nötig (`httpx`
+  und seine Abhängigkeiten `httpcore`/`h11`/`certifi`/`idna`/`anyio`/
+  `sniffio` sind reine Python-Pakete, kein Bau von C-Extensions). Digest
+  real gemessen als **Manifest-Index-Digest** (alle Plattformen), analog
+  zur C#-Basis, die ebenfalls den vollständigen, plattformübergreifenden
+  Digest trägt.
 
 ## 4. Trigger
 
