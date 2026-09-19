@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.1
+Version: 1.2
 Stand: 2026-09-19
 
 ## 1. Zweck und Zielgruppe
@@ -12,13 +12,16 @@ Prüfungen laufen. Es richtet sich an Maintainer, die einen Release-Tag
 setzen, und an Betreiber, die verstehen wollen, woher ein bestimmtes
 Image auf GHCR oder Docker Hub stammt.
 
-**Zum Zeitpunkt dieses Dokuments wurde noch kein realer Release-Tag
-gesetzt** — der hier beschriebene Prozess ist implementiert und real
-gegen die beteiligten APIs/Endpunkte geprüft (siehe die einzelnen
-Abschnitte), aber der End-zu-Ende-Ablauf mit echten Repository-Secrets
-ist strukturell erst nach dem ersten echten Tag-Push bewiesen
-(`AGENTS.md` §3.10). Dieses Dokument behauptet keinen abgeschlossenen
-ersten Release.
+**Drei reale Server-Release-Tags sind bereits gesetzt** — `v0.1.0`,
+`v0.1.1` und `v0.1.2` liefen jeweils mit grünem
+`.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
+GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
+Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
+nicht nur implementiert. Der separate SDK-Release-Weg (§4 „SDK-Release")
+ist zum Zeitpunkt dieses Dokuments implementiert und real gegen die
+beteiligten APIs geprüft, aber noch ohne eigenen realen Tag-Push
+(`sdk-csharp-v*`) — sein End-zu-Ende-Ablauf bleibt bis dahin strukturell
+unbewiesen (`AGENTS.md` §3.10).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -183,3 +186,4 @@ nicht rückwirkend verändert oder gelöscht.
 |---|---|---|
 | 1.0 | 2026-09-19 | Erste Fassung — dokumentiert den in `welle-release-pipeline-adr-0051` real implementierten Release-Prozess (`ADR-0051`) |
 | 1.1 | 2026-09-19 | §4 um den unabhängigen SDK-Release-Weg (`sdk-csharp-v*`-Tag, `NUGET_API_KEY`) ergänzt — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-csharp-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0106`) |
+| 1.2 | 2026-09-19 | §1 korrigiert: drei reale Server-Release-Tags (`v0.1.0`–`v0.1.2`) sind bereits gesetzt und liefen grün durch — der Server-Release-Mechanismus ist End-zu-Ende bewiesen; der SDK-Release-Weg bleibt bis zum ersten realen `sdk-csharp-v*`-Tag-Push separat unbewiesen |
