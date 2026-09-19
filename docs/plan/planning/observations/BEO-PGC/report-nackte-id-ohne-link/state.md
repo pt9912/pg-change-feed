@@ -1,8 +1,9 @@
 Zustand: **verkörpert** (geändert ggü. dem ersten `gestrichen`-Verdikt bei
 3×) — liegt in `AGENTS.md` §3.9, neuer Absatz „Prüfung und Folgehandlung
 sind zwei Schritte, nicht einer" · `seit slice-063`. Zähler (abgeleitet):
-6× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
-evidence/slice-063-blocker.md, evidence/slice-068.md, evidence/slice-104.md).
+7× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
+evidence/slice-063-blocker.md, evidence/slice-068.md, evidence/slice-104.md,
+evidence/slice-sdk-csharp-grpc-client-flaeche.md).
 
 Der ursprüngliche `gestrichen`-Ausgang (3×, der erste Architect-Verdikt zu
 report-nackte-id-ohne-link)
@@ -45,3 +46,13 @@ benannten **Basis**-Fehler (nackte Kennung im Fließtext eines
 Review-/Verifikationsberichts) direkt. Details:
 `evidence/slice-104.md`. Der Ausgang bleibt **verkörpert** — kein neuer
 Lese-Schritt.
+
+**Beleg 7 — `slice-sdk-csharp-grpc-client-flaeche`, derselbe Basis-Fehler,
+früherer Fang-Zeitpunkt:** Der Review-Report trug dieselbe Fehlerklasse
+(nackte `ADR-0106`-Erwähnung ohne Backticks), gefangen bereits zwischen
+Reviewer- und Verifier-Zug (eigener `docs-check`-Fund, behoben in Commit
+`899a3f80`) statt erst bei einem roten Verifier-`make gates`-Lauf wie bei
+Beleg 6. Details: `evidence/slice-sdk-csharp-grpc-client-flaeche.md`. Der
+Ausgang bleibt **verkörpert** — kein neuer Lese-Schritt; die Regel
+(`AGENTS.md` §3.9, verkörpert seit `slice-063`) trägt weiterhin, jetzt mit
+einem Beleg für einen früheren Fang-Zeitpunkt in derselben Klasse.

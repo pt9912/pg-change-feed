@@ -104,15 +104,15 @@ kein committeter Stub).
       Folgepflicht 4) — getragen durch die bereits verkörperte
       Selbstprüf-Instruktion und den Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -193,25 +193,89 @@ geschrieben.
   Komfort-Ziel für diesen Zwischenstand. **Ausgang:** eingetreten,
   akzeptiert: der direkte Aufruf reicht als Beleg für die DoD dieses
   Slice; das komfortable `make`-Ziel folgt bewusst erst mit dem
-  Pack-Werkzeug-Slice (Welle-Plan §4 Reihenfolge).
+  Pack-Werkzeug-Slice (Welle-Plan §4 Reihenfolge). Real vierfach
+  unabhängig über den ganzen Zyklus bestätigt (Implementer-Erstlauf,
+  Reviewer- und Verifier-Lauf je mit und ohne `--build-context
+  proto=proto`) — mit Kontext durchweg Exit 0/32 Tests grün, ohne Kontext
+  durchweg Exit 1 mit Abbruch exakt an der `COPY --from=proto`-Zeile; kein
+  Fall, in dem der direkte Aufruf als Beleg nicht ausgereicht hätte.
 - Ein Fake-`CallInvoker`-Test für die Authn-Boundary könnte den realen
   gRPC-`Unauthenticated`-Status-Pfad nicht exakt nachbilden. **Ausgang:**
   weiter offen — ein realer Rundlauf-Beleg bleibt
   `make test-integration`s bestehendem `tools/harness/grpcclient`
   vorbehalten (Wegwerf-Client, kein SDK-Import); dieses SDK bekommt
-  frühestens mit einem Folge-Slice einen eigenen Integrationsbeleg.
+  frühestens mit einem Folge-Slice einen eigenen Integrationsbeleg. Weder
+  Review noch Verifikation haben einen realen Server gegen dieses SDK
+  gefahren — alle Läufe dieses Zyklus liefen netzlos gegen den
+  `FakeCallInvoker`, unverändert zur Plan-Begründung.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt, oder
-  „kein neuer Sensor" — je nach Lauf>.
-- **Beobachtungs-Register (`../observations/`):** <neu angelegt | Beleg
-  ergänzt | keine Beobachtung angefallen>.
+- **Was hat funktioniert:** Ein glatter Durchlauf ohne Fixrunde — der
+  Reviewer fand 0 HIGH/MEDIUM/LOW/INFO
+  (`docs/reviews/review-slice-sdk-csharp-grpc-client-flaeche.md`) und der
+  Verifier bestätigte „DoD erfüllt"
+  (`docs/reviews/verifikation-slice-sdk-csharp-grpc-client-flaeche.md`),
+  jeweils mit eigenständig nachgefahrenen, nicht übernommenen Docker-Build-
+  Läufen (mit und ohne `--build-context proto=proto`) — insgesamt fünf
+  unabhängige Bestätigungen desselben Bildes (Implementer, Reviewer je
+  zweimal, Verifier je zweimal). Beide in der Vorgeschichte des
+  Vorgänger-Slice benannten Fehlerklassen (veralteter README-Statusabsatz,
+  nicht-typisierter Fehlerpfad) sind hier real vermieden, nicht nur
+  behauptet — von Reviewer und Verifier unabhängig voneinander geprüft.
+  Der DoD-Checkbox-Nachzug ohne Fixrunde
+  (`BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`, verkörpert seit
+  `slice-047`) griff hier korrekt: der Reviewer zog die DoD-Zeile „Review
+  durchgeführt" im selben Commit selbst nach, ohne dass der Verifier ihn
+  hätte nachtragen müssen — die geschärfte Reviewer-Skill-Instruktion
+  bestätigt sich an einem weiteren realen Lauf, kein neuer Fund.
+- **Was ging anders als geplant:** Ein `docs-check`-`id-unlinked`-Fund im
+  eigenen Review-Report (nackte `ADR-0106`-Erwähnung ohne Backticks in
+  einer Chronik-Prüfungszeile), gefangen nach dem Reviewer-Commit
+  (`d86f46b7`) und in einem eigenen, unmittelbar folgenden Commit
+  (`899a3f80`) behoben — 1 Zeile, kein inhaltlicher Verdikt-Wechsel. Der
+  Verifikationsbericht trug laut Auftrag dieser Closure denselben
+  Fehlerklassen-Kandidaten und wurde vor seinem eigenen Commit (`f75173c3`)
+  nachgebessert; dafür existiert kein separater git-Beleg, da eine vor dem
+  ersten Commit behobene Fassung keine Spur hinterlässt. Ansonsten deckt
+  sich der Umsetzungsstand mit dem Plan-Nachzug in §3 (drei Testdateien
+  statt einer, `Directory.Packages.props`-Ergänzung statt Neuanlage,
+  reale `Google.Protobuf`-Versionsabweichung `3.36.2` statt `3.36.1`) — von
+  Reviewer und Verifier je unabhängig nachgezählt.
+- **Steering-Loop-Eintrag:** kein neuer Sensor. Der `id-unlinked`-Fund ist
+  eine bereits belegte, wiederkehrende Basis-Fehlerklasse
+  (`BEO-PGC/report-nackte-id-ohne-link`, seit `slice-063` in `AGENTS.md`
+  §3.9 verkörpert) — dieser Lauf bestätigt die Regel erneut, mit der
+  Nuance eines früheren Fang-Zeitpunkts (zwischen Reviewer- und
+  Verifier-Zug statt erst bei einem roten Verifier-`make gates`-Lauf wie
+  bei `slice-104`). Kein neuer Lese-Schritt.
+- **Beobachtungs-Register (`../observations/`):** Beleg ergänzt — kein
+  neues `BEO-PGC/<slug>/`. Neue Evidenz-Datei:
+  `../observations/BEO-PGC/report-nackte-id-ohne-link/evidence/slice-sdk-csharp-grpc-client-flaeche.md`
+  (Beleg 7, Zähler jetzt real ausgezählt 7×, siehe dortiges `state.md`).
+  Zusätzlich geprüft: `BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`
+  (bereits verkörpert seit `slice-047`) — dieser Lauf bestätigt die
+  bestehende Regel als wirksam (Reviewer zog die Checkbox selbst nach),
+  löst aber keinen neuen Eintrag aus, da eine Bestätigung eines wirksamen
+  Fixes keine Beleg-Datei einer noch offenen Fehlerklasse ist. Kein
+  weiterer Treffer für diese Sub-Area über die bereits in §8 genannte
+  `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+  hinaus.
 - **Folge-Slices:** keine aus diesem Slice selbst erwartet — Umfang bleibt
-  innerhalb der Welle.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>.
+  innerhalb der Welle (Pack-Werkzeug, Publish-Workflow bleiben eigene,
+  bereits geplante Slices).
+- **Risiken aus §6:**
+  - „Bau ohne Komfort-`make`-Ziel nur über direkten `docker build
+    --build-context proto=proto`-Aufruf prüfbar" — **Ausgang: eingetreten,
+    akzeptiert** — vierfach real bestätigt (Implementer, Reviewer und
+    Verifier je mit und ohne Zusatzkontext); der direkte Aufruf reichte in
+    jedem Lauf als Beleg, das komfortable `make`-Ziel bleibt bewusst
+    `slice-sdk-csharp-pack-werkzeug` vorbehalten.
+  - „Fake-`CallInvoker`-Test könnte den realen `Unauthenticated`-Pfad
+    nicht exakt nachbilden" — **Ausgang: weiter offen**, unverändert zur
+    Plan-Begründung; ein realer Rundlauf-Beleg bleibt einem Folge-Slice
+    vorbehalten, weder Review noch Verifikation haben einen realen Server
+    gegen dieses SDK gefahren.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
