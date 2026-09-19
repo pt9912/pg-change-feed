@@ -101,4 +101,19 @@ public class PgChangeFeedHttpClientAuthBoundaryTests
 
         Assert.Equal("plain text failure", ex.Message);
     }
+
+    [Fact]
+    public async Task NonJsonSuccessBody_ThrowsMalformedResponse()
+    {
+        var (client, _) = TestClientFactory.Create(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("not json at all", Encoding.UTF8, "application/json"),
+        });
+
+        var ex = await Assert.ThrowsAsync<PgChangeFeedMalformedResponseException>(
+            () => client.ListTablesAsync("src", "pub"));
+
+        Assert.Equal(200, ex.StatusCode);
+        Assert.IsNotType<System.Text.Json.JsonException>(ex);
+    }
 }

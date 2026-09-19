@@ -195,9 +195,29 @@ public sealed class PgChangeFeedHttpClient
             throw BuildException((int)response.StatusCode, body);
         }
 
-        return JsonSerializer.Deserialize<TResponse>(body, JsonOptions)
-            ?? throw new InvalidOperationException(
-                $"PG Change Feed HTTP API returned status {(int)response.StatusCode} with an empty or " +
+        return DeserializeSuccessBody<TResponse>((int)response.StatusCode, body);
+    }
+
+    private static TResponse DeserializeSuccessBody<TResponse>(int statusCode, string body)
+    {
+        TResponse? result;
+        try
+        {
+            result = JsonSerializer.Deserialize<TResponse>(body, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new PgChangeFeedMalformedResponseException(
+                statusCode,
+                $"PG Change Feed HTTP API returned status {statusCode} with a response body that is not " +
+                "valid JSON — a protocol violation outside SPEC-018/SPEC-022's documented shapes.",
+                ex);
+        }
+
+        return result
+            ?? throw new PgChangeFeedMalformedResponseException(
+                statusCode,
+                $"PG Change Feed HTTP API returned status {statusCode} with an empty or " +
                 "null response body — a protocol violation outside SPEC-018/SPEC-022's documented shapes.");
     }
 

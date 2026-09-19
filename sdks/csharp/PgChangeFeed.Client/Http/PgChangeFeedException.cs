@@ -17,6 +17,12 @@ public abstract class PgChangeFeedException : Exception
     {
         StatusCode = statusCode;
     }
+
+    protected PgChangeFeedException(int statusCode, string message, Exception innerException)
+        : base(message, innerException)
+    {
+        StatusCode = statusCode;
+    }
 }
 
 /// <summary>
@@ -86,6 +92,26 @@ public sealed class PgChangeFeedUnexpectedStatusException : PgChangeFeedExceptio
 {
     public PgChangeFeedUnexpectedStatusException(int statusCode, string message)
         : base(statusCode, message)
+    {
+    }
+}
+
+/// <summary>
+/// A success status code (<c>2xx</c>) whose body does not parse as the
+/// expected response DTO — either invalid JSON or a valid-but-empty/<c>null</c>
+/// body. Outside every shape SPEC-018/SPEC-022 document; kept typed and
+/// distinct from the status-code exceptions above so a caller can still
+/// catch <see cref="PgChangeFeedException"/> uniformly across every method.
+/// </summary>
+public sealed class PgChangeFeedMalformedResponseException : PgChangeFeedException
+{
+    public PgChangeFeedMalformedResponseException(int statusCode, string message)
+        : base(statusCode, message)
+    {
+    }
+
+    public PgChangeFeedMalformedResponseException(int statusCode, string message, Exception innerException)
+        : base(statusCode, message, innerException)
     {
     }
 }

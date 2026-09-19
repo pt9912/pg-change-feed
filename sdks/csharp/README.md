@@ -6,7 +6,7 @@ This package (`PgChangeFeed.Client`) lets a .NET application consume PG Change F
 
 ## Status
 
-This package is at an early, pre-1.0 stage (`0.x.y`, [ADR-0106](https://github.com/pt9912/pg-change-feed/blob/main/docs/plan/adr/0106-csharp-nuget-erstes-sdk-package.md)). The current release provides the shared connection configuration (`PgChangeFeedClientOptions`: server address and bearer token). Client surfaces for the HTTP API and the gRPC change stream are added by follow-up releases.
+This package is at an early, pre-1.0 stage (`0.x.y`, [ADR-0106](https://github.com/pt9912/pg-change-feed/blob/main/docs/plan/adr/0106-csharp-nuget-erstes-sdk-package.md)). The current release provides the shared connection configuration (`PgChangeFeedClientOptions`: server address and bearer token) and a full HTTP API client surface (`PgChangeFeedHttpClient`): consumer registration/acknowledgement/position/removal, table enable/disable, status, table listing, retention, and reading changes — the nine `SPEC-018` capabilities plus `GET /changes` (`SPEC-022`). The gRPC change stream surface is added by a follow-up release.
 
 If a surface you need isn't covered yet, the direct wire protocol remains fully usable on its own — see the [`examples/csharp`](https://github.com/pt9912/pg-change-feed/tree/main/examples/csharp) reference clients in the main repository.
 
