@@ -53,7 +53,7 @@ Träger-Nachzug, den `ADR-0106` §Konsequenzen Folgepflicht 2/3 fordert:
 
 ## 2. Definition of Done
 
-- [ ] `make sdk-pack-csharp` existiert (Docker-only, kein Gate — analog
+- [x] `make sdk-pack-csharp` existiert (Docker-only, kein Gate — analog
       `make examples-csharp`): baut, testet (`dotnet test` gegen die
       Test-Projekte beider Fläche-Slices) und paketiert
       (`dotnet pack -c Release`) `sdks/csharp/PgChangeFeed.Client/` im
@@ -65,11 +65,11 @@ Träger-Nachzug, den `ADR-0106` §Konsequenzen Folgepflicht 2/3 fordert:
       Extraktionsmuster von `make proto-generate`
       (`tools/harness/proto-generate.sh`, host-seitiger Export statt
       Bind-Mount/`--user`-Workaround).
-- [ ] Real ausgeführt: ein `.nupkg` mit Dateiname
+- [x] Real ausgeführt: ein `.nupkg` mit Dateiname
       `PgChangeFeed.Client.0.1.0.nupkg` existiert nach dem Lauf und ist
       als Smoke-Beleg im Bericht dieses Slice genannt (Datei-Existenz,
       keine Behauptung — `AGENTS.md` §3.12 Instanz B).
-- [ ] `spec/pflichtenheft.md` §1 trägt bei
+- [x] `spec/pflichtenheft.md` §1 trägt bei
       [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) einen
       Nachzug-Satz: für C#/NuGet ist die Sprachmatrix-/Vertriebsweg-Frage
       durch [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)
@@ -77,18 +77,18 @@ Träger-Nachzug, den `ADR-0106` §Konsequenzen Folgepflicht 2/3 fordert:
       oder ein zweiter Vertriebsweg bleibt offen (`AGENTS.md` §3.13, kein
       Streichen der Kennung — sie bleibt die Adresse für künftige
       Sprachen/Vertriebswege).
-- [ ] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
+- [x] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
       `SPEC-<NNN>`-Zeile für `PgChangeFeed.Client` (System: NuGet-Package;
       Version: SemVer 2.0, `0.x.y`; Vertrag-Datei: Verweis auf
       `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` als
       Metadaten-Quelle, analog der bestehenden `SPEC-023`-Zeile für die
       Beispiel-Client-Werkzeugketten) sowie §7 Historie-Zeile.
-- [ ] `harness/README.md` §Werkzeuge bekommt die reale
+- [x] `harness/README.md` §Werkzeuge bekommt die reale
       `make sdk-pack-csharp`-Zeile (kein Gate, Bindung auf
       [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)) —
       erst jetzt zulässig, weil das Ziel jetzt real existiert
       (`AGENTS.md` §4).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -117,6 +117,39 @@ Träger-Nachzug, den `ADR-0106` §Konsequenzen Folgepflicht 2/3 fordert:
 | `spec/pflichtenheft.md` §6 | update | neue `SPEC-<NNN>`-Zeile für `PgChangeFeed.Client`. |
 | `spec/pflichtenheft.md` §7 Historie | update | Historie-Zeile für die neue `SPEC-<NNN>` und den `LH-FA-SST-009.a`-Nachzug. |
 | `harness/README.md` §Werkzeuge | update | reale `make sdk-pack-csharp`-Zeile. |
+
+**Plan-Nachzug (Implementer-Zug):**
+
+- Die `spec/pflichtenheft.md` §1-Nachzug-Zeile bei `LH-FA-SST-009.a` nennt
+  `ADR-0106` **nicht** namentlich — abweichend vom ursprünglichen
+  DoD-Wortlaut oben, der die Nennung vorsah. Grund: `make docs-check`s
+  `matrix`-Modul verbietet mechanisch jede Referenz `spec → adr`
+  (`.d-check.yml` `matrix.rules: {from: spec, to: adr, allow: false}`,
+  Decken-Regel) — real getroffen: ein erster Versuch mit Markdown-Link auf
+  `ADR-0106` erzeugte den Befund `spec/pflichtenheft.md:183
+  ../docs/plan/adr/0106-....md matrix-forbidden Referenz spec → adr ist
+  nicht erlaubt`. Die Nachzug-Zeile trägt den fachlichen Inhalt (Frage
+  beantwortet, `SPEC-026`, real paketierbar) ohne den ADR-Bezug; die
+  Beziehung selbst steht bereits umgekehrt in `ADR-0106`s eigenem
+  `Schärft:`-Feld. Dieselbe Regel griff versucht auch für die neue
+  `SPEC-026`-Zeile in §6 — dort ebenfalls ohne ADR-Verweis geschrieben,
+  analog der bestehenden `SPEC-023`/`SPEC-020`/`SPEC-017`-Zeilen, die auch
+  keinen ADR-Bezug tragen.
+- `harness/mk/sdk.mk` (neu angelegt, nicht `harness/mk/examples.mk`
+  erweitert) — ein eigenständiges Fragment hält das SDK-Pack-Werkzeug von
+  den Beispiel-Werkzeugketten getrennt (unterschiedliche ADRs: `ADR-0106`
+  vs. `ADR-0087`/`ADR-0090`), analog wie `harness/mk/*.mk` bereits je
+  Belang aufgeteilt ist.
+- `sdks/csharp/Dockerfile` bekommt zwei neue Stufen (`pack`, `pack-export`)
+  statt einer einzelnen — `pack-export` trägt ausschließlich das
+  `ENTRYPOINT`, ohne eigenen `RUN`-Schritt, exakt das Muster von
+  `proto`/`proto-export` im Wurzel-Dockerfile.
+- Ein roter Test wurde real erzeugt und geprüft (mutierte Testerwartung in
+  `PgChangeFeedClientOptionsTests.cs`, danach exakt auf den committeten
+  Stand zurückgesetzt — `git diff --stat` bestätigt keine Restdifferenz):
+  `docker build` bricht mit Exit 1 an der `dotnet test`-Stufe ab, kein
+  `.nupkg` wird exportiert (§6 Risiko 1 damit zusätzlich zur reinen
+  Erfolgs-Bestätigung auch am Fehlerpfad real geprüft).
 
 ## 4. Trigger
 

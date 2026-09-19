@@ -5,3 +5,9 @@
 bin/
 obj/
 *.nupkg
+
+# Host-seitiger Export-Zielort von `make sdk-pack-csharp`
+# (tools/harness/sdk-pack-csharp.sh, ADR-0106 Festlegung 4,
+# slice-sdk-csharp-pack-werkzeug) — das erzeugte .nupkg ist ein Bau-Erzeugnis,
+# kein Bestand.
+dist/

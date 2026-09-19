@@ -14,12 +14,12 @@
 # harness/mk/examples.mk). Ohne ihn bricht der Bau an der COPY-Zeile ab —
 # kein stiller Fallback.
 #
-# Kein `pack`-Aufruf und keine Runtime-Stufe hier: ein SDK-Package ist keine
-# startbare Anwendung (anders als examples/csharp), und `dotnet pack` bleibt
-# Sache von `slice-sdk-csharp-pack-werkzeug` (ADR-0106 §Konsequenzen
-# Folgepflicht 1). Dieses Dockerfile trägt ausschließlich `dotnet
-# restore`/`build`/`test` — der engste heute verfügbare Sensor für dieses
-# Projektgerüst, es gibt noch kein `make`-Ziel dafür.
+# Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
+# (anders als examples/csharp). Die `pack`/`pack-export`-Stufen unten
+# (slice-sdk-csharp-pack-werkzeug, ADR-0106 §Konsequenzen Folgepflicht 1)
+# bauen auf `build` auf: `dotnet test` (unten) laeuft VOR `dotnet pack`
+# (Stufe `pack`) — ein roter Test bricht den `docker build` mit Exit != 0 ab,
+# bevor `pack` je erreicht wird (kein stiller Fallback).
 #
 # Basis-Digest real gemessen (`docker buildx imagetools inspect`, amd64/linux)
 # am Zeitpunkt dieses Zuges — identisch mit dem in
@@ -58,3 +58,23 @@ COPY --from=proto cdc/stream/v1/changestream.proto PgChangeFeed.Client/Grpc/prot
 
 RUN dotnet build PgChangeFeed.Client/PgChangeFeed.Client.csproj -c Release --no-restore
 RUN dotnet test PgChangeFeed.Client/PgChangeFeed.Client.Tests/PgChangeFeed.Client.Tests.csproj -c Release --no-restore
+
+# --- pack: `dotnet pack` ueber den bereits gebauten und getesteten Stand
+# (slice-sdk-csharp-pack-werkzeug, ADR-0106 Festlegung 4). `--no-build`
+# verlangt, dass die Build-Stufe oben bereits mit derselben Konfiguration
+# (Release) gelaufen ist — sie ist es, als vorhergehender RUN-Schritt
+# dieses selben Dockerfiles. Das Erzeugnis (PgChangeFeed.Client.0.1.0.nupkg,
+# Version aus PgChangeFeed.Client.csproj) landet unter /out. ---
+FROM build AS pack
+RUN mkdir -p /out && \
+    dotnet pack PgChangeFeed.Client/PgChangeFeed.Client.csproj -c Release --no-restore --no-build -o /out
+
+# --- pack-export: gibt /out (das .nupkg) als tar-Stream ueber stdout aus —
+# dasselbe Extraktionsmuster wie proto-export im Wurzel-Dockerfile
+# (tools/harness/proto-generate.sh, ADR-0060): `tools/harness/sdk-pack-csharp.sh`
+# baut diese Stufe und liest ihr ENTRYPOINT per
+# `docker run --rm --network none <image> | tar -x -C sdks/csharp/dist/`
+# aus — kein Bind-Mount, kein `--user`-Workaround, die extrahierte Datei
+# gehoert dadurch automatisch dem aufrufenden Nutzer. ---
+FROM pack AS pack-export
+ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]

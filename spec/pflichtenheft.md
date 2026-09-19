@@ -180,6 +180,12 @@ offen, ADR-pflichtig. Die bestehenden Beispiel-Client-Werkzeugketten
 (`SPEC-023`) sind kein Vorgriff auf diese Anforderung — sie bleiben
 unversioniertes Vorbild ohne Paketveröffentlichung.
 
+Für C#/NuGet ist die Frage beantwortet: `PgChangeFeed.Client` (`SPEC-026`)
+deckt HTTP-API und gRPC-Stream, real Docker-only paketierbar
+(`make sdk-pack-csharp`) und real geprüft
+(`PgChangeFeed.Client.0.1.0.nupkg`). Eine zweite Sprache oder ein zweiter
+Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
+
 ---
 
 ## 2. Datenstrukturen und Schemas
@@ -602,6 +608,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-020` | gRPC Server-Streaming (HTTP/2 mit Protobuf) | gRPC-Go `google.golang.org/grpc`, Protobuf-Runtime `google.golang.org/protobuf` | — (Vertrag steht in diesem Dokument, §2 SPEC-020) |
 | `SPEC-023` | Beispiel-Client-Werkzeugketten (Go, C#/.NET, Kotlin/JVM) | digest-gepinnte Basis-Images, auf feste Versionen gepinnte Abhängigkeiten (Pin-Hebung = bewusster Commit) | — (Vertrag steht in diesem Dokument, §2 SPEC-023; die Werkzeugketten-Dateien liegen im jeweiligen Sprach-Wurzelverzeichnis) |
 | `SPEC-024` | NATS Core (Vollinhalts-Stream, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` (bereits im Baum, `SPEC-017`) | — (Vertrag steht in diesem Dokument, §2 SPEC-024) |
+| `SPEC-026` | `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.1.0`) | `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` als Metadaten-Quelle (`<PackageId>`/`<Version>`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`) |
 
 ---
 
@@ -636,3 +643,5 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-19 | `LH-FA-CAP-009.a` ergänzt: Backfill-Mechanismus (Export-Snapshot vs. Bulk-Copy, Markierung, Verhältnis zum WAL-Erfassungspfad) als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CAP-009` |
 | 2026-09-19 | `LH-FA-CFG-007.a` ergänzt: Konfigurationsmechanismus, Ausdrucksform und Regel-Auswertungsreihenfolge von Transformationen/Routing als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CFG-007` |
 | 2026-09-19 | `LH-FA-SST-009.a` ergänzt: Sprachmatrix und Paket-Vertriebsweg für offizielle Client-Bibliotheken als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-SST-009` — die bestehenden Beispiel-Client-Werkzeugketten (`SPEC-023`) erfüllen sie nicht |
+| 2026-09-19 | `SPEC-026` ergänzt: `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) — System, SemVer 2.0 `0.x.y`, Vertrag-Datei-Verweis auf die `.csproj` als Metadaten-Quelle; externe-Verträge-Zeile in §6 |
+| 2026-09-19 | `LH-FA-SST-009.a` nachgezogen: Für C#/NuGet ist die Sprachmatrix-/Vertriebsweg-Frage beantwortet und `PgChangeFeed.Client` real paketierbar (`make sdk-pack-csharp`, `PgChangeFeed.Client.0.1.0.nupkg`) — die Kennung bleibt bestehen, eine zweite Sprache oder ein zweiter Vertriebsweg bleibt offen |
