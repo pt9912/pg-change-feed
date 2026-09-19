@@ -111,9 +111,13 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
       Planung nimmt die Lehre vorweg, um kein zweites Auftreten dieser
       Klasse zu erzeugen).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-sdk-python-publish-workflow.md`
+      (2026-09-19) — 0 HIGH/MEDIUM/LOW-Findings, keine Fixrunde nötig,
+      DoD-Checkbox-Nachzug ohne Fixrunde (Skill §DoD-Checkbox-Nachzug ohne
+      Fixrunde).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfallen als eigene Punkte,
       da bereits oben als DoD-Kriterien geführt.
