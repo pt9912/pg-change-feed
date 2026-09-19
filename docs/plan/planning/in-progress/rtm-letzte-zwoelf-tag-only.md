@@ -90,17 +90,17 @@ Stelle nach, die die Anforderung wirklich erfüllt:
 - [x] `LH-QA-REL-003`/`004` zeigen in `make doc-trace` `ok`.
 - [x] `make test-integration` grün, regeneriert `docs/user/e2e-abdeckung.md`
       mit allen zwölf neuen Tags.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`), kein Self-Review — 1 MEDIUM (F-1,
       Kommentarpräzisierung) in derselben Fixrunde behoben, 1 INFO (F-2,
       unter der 3×-Schärfungsschwelle) übernommen, kein offenes HIGH/MEDIUM.
 - [x] Doku-Update: `harness/README.md` (`make doc-trace`-Zeile mit der
       real gemessenen finalen Waisenzahl — 0, real gemessen).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben (falls Review-Funde anfallen).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -157,7 +157,51 @@ Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Jeder der zwölf Tags wurde vor dem Setzen
+  gegen den tatsächlichen Testcode gehalten, nicht nur gegen die
+  Vorab-Klassifikation aus `harness/README.md` — das hat echte
+  Substanz-Unterschiede sichtbar gemacht (z. B. `LH-FA-RET-001`s Beleg ist
+  stärker als der Anforderungstext verlangt, `LH-FA-CON-002`s Beleg war
+  ursprünglich schwächer als der Kommentar behauptete). Reiner
+  Tag-Nachtrag ohne neuen Testcode hielt den Slice trotz zwölf
+  Anforderungen klein und risikoarm.
+- **Was ging anders als geplant:** Der Reviewer fand 1 MEDIUM (F-1: der
+  `LH-FA-CON-002`-Kommentar überzeichnete den Testumfang — der Test zeigt
+  nur, dass eine spätere Bestätigung die bereits gespeicherte Position
+  eines anderen Consumers nicht überschreibt, nicht die volle
+  Happy-Path-/Boundary-Formulierung aus dem Lastenheft), in derselben
+  Fixrunde präzisiert (`d1136723`). Der Verifier fand danach beiläufig
+  (nicht Teil des beauftragten Prüfumfangs) denselben Zeilen-Lokator-Drift
+  wie beim vorangegangenen Slice: die Kommentarverlängerung verschob die
+  Testfunktion um 3 Zeilen, ohne dass `docs/user/e2e-abdeckung.md` neu
+  erzeugt wurde. Der Drift war zum Fundzeitpunkt bereits inzidentell durch
+  einen parallelen Fixrunden-Commit des Nachbar-Slices behoben — real
+  durch einen erneuten `make test-integration`-Lauf bestätigt
+  ("unverändert").
+- **Steering-Loop-Eintrag:** kein neuer Sensor — der Zeilen-Lokator-Drift
+  ist ein weiterer, unmittelbar benachbarter Beleg derselben bereits
+  verkörperten `AGENTS.md` §3.13-Regel (zweiter Fall in derselben
+  Arbeitssitzung, siehe Beobachtungs-Register); bestätigt dieselbe Nuance
+  wie beim Vorgänger-Slice: eine Kommentarverlängerung ist eine
+  Nachbaränderung im Sinne der Regel, auch wenn sie keine Zahl im
+  eigentlichen Sinne bewegt.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-rtm-letzte-zwoelf-tag-only.md` unter der bestehenden
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger/`.
+- **Folge-Slices:** keine — `make doc-trace` zeigt nach diesem Slice
+  0 Waisen, alle 76 Anforderungen sind gedeckt.
+- **Risiken aus §6:** drei Risiken, drei Ausgänge — (1) Tag-only ohne
+  neuen Regressionsschutz → **entfallen**, das ist die Art dieses Slice;
+  (2) Boundary-/Negative-Akzeptanzkriterien einzelner Anforderungen ohne
+  eigenen Testbeleg → **weiter offen**, unsanierte Bestandslücke,
+  Sanierung wäre ein eigener inhaltlicher Vorgang; (3) Review-Fund F-1
+  (`LH-FA-CON-002`-Kommentar überzeichnete den Testumfang) →
+  **eingetreten**, in derselben Fixrunde präzisiert.
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld (kein neuer
+  Sensor/keine neue Regel verkörpert). Folge-Slice — keiner benannt,
+  nichts zu prüfen. Register —
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger/` existiert mit
+  nicht-leerem `evidence/` (der neue Beleg oben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
