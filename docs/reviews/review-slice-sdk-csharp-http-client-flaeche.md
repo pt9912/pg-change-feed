@@ -239,3 +239,108 @@ regulär bei Schritt 21 des Implementer-Workflows nach der Fixrunde
 nachgezogen (Skill-Regel „DoD-Checkbox-Nachzug ohne Fixrunde" greift hier
 nicht, weil eine Fixrunde stattfindet). Dieser Report ersetzt keine
 Verifikation gegen die DoD — das bleibt Verifier-Aufgabe (Modul 11).
+
+---
+
+## Fixrunden-Nachprüfung — 2026-09-19
+
+**Gegenstand:** Diff-Range `c3e80007..HEAD`, ein Commit: `7bf7dece`
+(„Fixrunde slice-sdk-csharp-http-client-flaeche"). Geänderte Dateien:
+`sdks/csharp/PgChangeFeed.Client/Http/PgChangeFeedException.cs`,
+`sdks/csharp/PgChangeFeed.Client/Http/PgChangeFeedHttpClient.cs`,
+`sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/Http/PgChangeFeedHttpClientAuthBoundaryTests.cs`,
+`sdks/csharp/README.md`. Frischer Kontext (neuer Reviewer-Lauf), Prüfung
+beschränkt auf F-1/F-2 plus Scope-Kontrolle über den vollen Diff — kein
+erneutes volles Review des unveränderten Rests.
+
+### F-1 — behoben
+
+`sdks/csharp/README.md:9` sagt jetzt korrekt: „The current release
+provides the shared connection configuration
+(`PgChangeFeedClientOptions`: server address and bearer token) and a full
+HTTP API client surface (`PgChangeFeedHttpClient`): consumer
+registration/acknowledgement/position/removal, table enable/disable,
+status, table listing, retention, and reading changes — the nine
+`SPEC-018` capabilities plus `GET /changes` (`SPEC-022`)." Die
+Methodenzahl (neun `SPEC-018`-Fähigkeiten plus `ReadChanges`) stimmt exakt
+mit der real gezählten Methodenzahl in `PgChangeFeedHttpClient.cs`
+überein. Der gRPC-Change-Stream bleibt korrekt als „added by a follow-up
+release" benannt — `slice-sdk-csharp-grpc-client-flaeche` ist real noch
+offen (kein entsprechender `PgChangeFeed.Client/Grpc/`-Namensraum im
+Baum).
+
+Eigener `grep -rn "follow-up\|added by follow" sdks/csharp/` fand zwei
+weitere Treffer außerhalb des behobenen Absatzes:
+`PgChangeFeedClientOptions.cs:12` und
+`PgChangeFeedClientOptionsTests.cs:7`. Beide sind gelesen worden — sie
+behaupten nicht dieselbe veraltete Tatsache. Ihre Aussage ist eine
+Scope-Aussage über die `PgChangeFeedClientOptions`-Klasse selbst
+(„surface-specific behavior … is NOT part of this class — it is added by
+the follow-up slices that build the actual client surfaces"), keine
+Lieferstand-Behauptung über das Package als Ganzes: Sie bleibt wahr,
+unabhängig davon, wie viele Surface-Slices bereits gelandet sind, weil
+`PgChangeFeedClientOptions` surface-spezifisches Verhalten nach wie vor
+nicht selbst trägt (das liegt weiterhin in `PgChangeFeedHttpClient` bzw.
+im künftigen gRPC-Client). Kein neuer Fund — beide Stellen geprüft, ohne
+Befund.
+
+### F-2 — behoben
+
+`PgChangeFeedHttpClient.cs:201-222` führt jetzt einen zentralen
+`DeserializeSuccessBody<TResponse>`-Helper, den `SendAsync` (die einzige
+Stelle, die alle zehn öffentlichen Methoden über `GetAsync`/`PostAsync`
+durchlaufen) am Ende des Erfolgspfads aufruft. Stichprobenartig verfolgt:
+`RegisterConsumerAsync` → `PostAsync` → `SendAsync` →
+`DeserializeSuccessBody`; `GetConsumerPositionAsync` → `GetAsync` →
+`SendAsync` → `DeserializeSuccessBody`; `ReadChangesAsync` → `GetAsync` →
+`SendAsync` → `DeserializeSuccessBody` — dieselbe Kette gilt für alle
+übrigen sieben Methoden, da es in der Klasse nur diesen einen privaten
+`SendAsync`-Pfad gibt (kein methodenspezifischer Zweitpfad, der die
+zentrale Behandlung umgehen könnte). Eine `JsonException` beim
+Deserialisieren eines `2xx`-Bodys wird jetzt als
+`PgChangeFeedMalformedResponseException` (neu, mit `innerException`-Kette)
+geworfen statt roh durchgereicht; der bestehende Empty/`null`-Body-Fall
+wirft dieselbe Exception-Klasse statt der vorherigen
+`InvalidOperationException`.
+
+Der neue Test `NonJsonSuccessBody_ThrowsMalformedResponse`
+(`PgChangeFeedHttpClientAuthBoundaryTests.cs:106-118`) setzt exakt die im
+Finding benannte Mutation: `HttpStatusCode.OK` (`2xx`) mit
+`Content = "not json at all"` (kein valides JSON) gegen `ListTablesAsync`.
+Erwartet `PgChangeFeedMalformedResponseException` mit `StatusCode == 200`
+— trifft die Finding-Aussage exakt (weder zu eng noch zu locker). Die
+zusätzliche `Assert.IsNotType<JsonException>(ex)`-Zeile ist redundant
+neben `Assert.ThrowsAsync<PgChangeFeedMalformedResponseException>`
+(sealed-Klasse, der Typ ist bereits durch den Cast-Erfolg festgelegt),
+aber nicht falsch — kein Befund, da ohne semantische Auswirkung (LOW-
+Schwelle, hier nicht eigens vergeben).
+
+**Real nachvollzogen:** Docker-Build vor dem Fix lief laut Commit-Message
+mit `JsonException`/26 von 27 grün — nicht selbst nachgestellt (der
+Commit ist bereits gelandet), aber die jetzige Zielausführung bestätigt
+den Endzustand unabhängig.
+
+### Reale Ausführung (dieser Lauf)
+
+- `docker build --no-cache -f sdks/csharp/Dockerfile sdks/csharp`: Exit-Code
+  direkt (ungepiped) geprüft, `0`. `dotnet build` 0 Warnings/0 Errors,
+  `dotnet test`: **27/27 grün** (26 vorher + 1 neuer Test). Test-Image
+  danach mit `docker rmi` entfernt.
+- `make docs-check`: Exit-Code direkt geprüft, `0`
+  (`d-check: 801 Datei(en) geprüft, 0 Befund(e)`).
+
+### Scope-Kontrolle
+
+`git diff c3e80007..HEAD --stat` zeigt genau vier Dateien — alle vier
+gehören zu F-1 (README) oder F-2 (Exception-Typ, Client, Test). Keine
+stille Nebenänderung außerhalb des Fixrunden-Auftrags gefunden.
+
+### Gesamt-Verdikt
+
+**Merge-Block aufgehoben: ja.** Beide Findings (F-1 HIGH, F-2 MEDIUM) sind
+real und korrekt behoben, kein neuer Fund. Die DoD-Checkbox „Review
+durchgeführt, Report unter `docs/reviews/` liegt vor" ist im Slice-Plan auf
+`[x]` nachgezogen (Skill-Regel „DoD-Checkbox-Nachzug ohne Fixrunde" — die
+Fixrunde selbst ist bereits abgeschlossen und geprüft, dies ist der
+abschließende Verdikt-Moment). Verbleibt: Verifikation gegen die volle DoD
+bleibt Verifier-Aufgabe (Modul 11).

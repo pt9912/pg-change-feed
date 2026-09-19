@@ -75,9 +75,12 @@ unabhängige Tests.
       §Kontext Bindung „Import-Grenze, hier ohne Ausnahme") — real geprüft:
       `grep -rn "internal/\|cmd/" sdks/csharp/` liefert keinen Treffer.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Fixrunde geprüft und Merge-Block aufgehoben, siehe
+      `docs/reviews/review-slice-sdk-csharp-http-client-flaeche.md`
+      §Fixrunden-Nachprüfung.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die HTTP-Oberfläche (`ADR-0106` §Konsequenzen
       Folgepflicht 4) — getragen durch die bereits verkörperte
