@@ -15,7 +15,7 @@ Festlegung 1/3/4 (Umfang, Ort, Versionierung).
 erst mit `slice-sdk-python-pack-werkzeug`, wenn das Package real
 paketierbar ist).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent (direkt beauftragt).
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0107` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-19.
