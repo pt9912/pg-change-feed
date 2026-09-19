@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.9.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.10.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -408,6 +408,39 @@ vorherige und neue Werte bereitgestellt werden.
 - **Negative:** Given die Quelle kann einen Wert nicht zuverlässig liefern (z. B. nach Typänderung ohne Anpassung, LH-FA-SCH-004), when der Change gelesen wird, then ist dies erkennbar, nicht still gefälscht.
 
 **Out-of-Scope:** —
+
+### LH-FA-CAP-009 — Initial-Snapshot/Backfill des Bestands
+
+**Beschreibung:** Für eine Tabelle mit bereits vorhandenen Zeilen soll eine
+Möglichkeit bestehen, diesen Bestand zusätzlich zu künftigen Änderungen ab
+Aktivierung in den Change Feed zu überführen, sodass ein Consumer den
+vollständigen Datenstand — nicht nur die seit Aktivierung entstandenen
+Änderungen — über denselben Lesezugriffsweg erhalten kann.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given eine Tabelle mit vorhandenen Zeilen wird aktiviert
+  und ein Backfill wird ausgelöst, when der Backfill abgeschlossen ist,
+  dann ist jede zum Startzeitpunkt vorhandene Zeile als Change über den
+  bestehenden Lesezugriffsweg lesbar, erkennbar als Backfill-Herkunft
+  (unterscheidbar von einer künftigen, WAL-erfassten Änderung derselben
+  Zeile).
+- **Boundary:** Given reguläre Erfassung ab Aktivierung läuft bereits,
+  when der Backfill parallel dieselbe Tabelle liest, dann ist das
+  Verhalten für Zeilen definiert, die zwischen Backfill-Start und
+  Backfill-Ende zusätzlich per WAL geändert werden — weder stille Lücke
+  noch unbegrenzte stille Dopplung.
+- **Negative:** Given ein laufender Backfill wird unterbrochen (z. B.
+  Prozessende), when er erneut gestartet wird, dann setzt er fort oder
+  beginnt neu, ohne einen bereits vollständig überführten Bestand still zu
+  verlieren.
+
+**Out-of-Scope:** Eine Migration von Bestandsdaten zwischen zwei
+PostgreSQL-Instanzen (physische/logische Replikation als Transportweg) ist
+nicht gefordert; gefordert ist ausschließlich der Bestand der aktivierten
+Quelltabelle selbst zum Aktivierungszeitpunkt. Parallelisierung/Durchsatz
+eines Backfills über sehr große Tabellen hinweg ist eine Ausbaustufe, keine
+Voraussetzung dieser Anforderung.
 
 ### LH-FA-DAT-001 — Eindeutige Identifizierung jeder Änderung
 
@@ -1018,6 +1051,7 @@ Streams, Backpressure-/Flusskontrollverfahren, Verhältnis zu
 Streaming ersetzt es nicht) — das sind Architektur- (ADR) bzw.
 Spezifikationsfragen (`SPEC-*`), keine Lastenheft-Festlegung.
 
+
 ---
 
 ## 4. Nichtfunktionale Anforderungen
@@ -1245,3 +1279,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.7.0 | 2026-09-14 | `LH-FA-CFG-005` (Spaltenauswahl) von dauerhaftem Ausschluss auf aktive Anforderung umgestellt — Titel- und Out-of-Scope-Klausel angepasst, `LH-FA-DAT-005`s Boundary-Kriterium verweist ohne Zusatzbezeichnung darauf; dieselbe Draft-Regel wie bei 0.4.0–0.6.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.8.0 | 2026-09-14 | `LH-FA-SST-008` (Live-Streaming neuer Changes über gRPC) neu ergänzt — abgegrenzt gegen `LH-FA-SST-007` (NATS bleibt eigenständiges Wecksignal); dieselbe Draft-Regel wie bei 0.4.0–0.7.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.9.0 | 2026-09-14 | `LH-FA-SST-008` von einer gRPC-spezifischen auf eine protokollneutrale Formulierung umgestellt (Titel, Beschreibung, Out-of-Scope) — Protokollwahl (gRPC, HTTP/SSE, oder beide) ist Architektur-/Spezifikationsfrage wie bei `LH-FA-SST-005`/`006`, keine Lastenheft-Festlegung; dieselbe Draft-Regel wie bei 0.4.0–0.8.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.10.0 | 2026-09-19 | `LH-FA-CAP-009` (Initial-Snapshot/Backfill des Bestands bereits vorhandener Zeilen einer aktivierten Tabelle) neu ergänzt — abgegrenzt gegen eine Instanz-zu-Instanz-Migration (Out-of-Scope) und gegen Parallelisierung/Durchsatz über sehr große Tabellen (Ausbaustufe, keine Voraussetzung); dieselbe Draft-Regel wie bei 0.4.0–0.9.0, eigener Commit vor jedem umsetzenden Slice | — |
