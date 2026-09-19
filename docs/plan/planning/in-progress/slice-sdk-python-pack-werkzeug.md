@@ -117,9 +117,12 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
       erst jetzt zulässig, weil das Ziel jetzt real existiert
       (`AGENTS.md` §4).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-sdk-python-pack-werkzeug.md`
+      (0 HIGH, 0 MEDIUM, 1 LOW, 1 INFO — keine Fixrunde nötig,
+      DoD-Checkbox-Nachzug ohne Fixrunde gemäß Reviewer-Skill).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
