@@ -500,9 +500,12 @@ func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 // `register-consumer`/`acknowledge-consumer` geführten Consumern des
 // externen Black-Box-Rundlaufs (`tools/harness/run-integration-tests.sh`),
 // die erst nach diesem Go-Testlauf entstehen. Real gegen zwei Consumer
-// getestet (`LH-FA-RET-005` Happy Path/Boundary; trägt zugleich
-// `LH-FA-CON-002`: beide Consumer bestätigen unabhängig voneinander, die
-// Position des einen bleibt von der Bestätigung des anderen unberührt):
+// getestet (`LH-FA-RET-005` Happy Path/Boundary; trägt zugleich einen
+// Teilbeleg für `LH-FA-CON-002`: `behindConsumer`s gespeicherte Position
+// bleibt exakt sein eigener bestätigter Wert, unverändert durch
+// `aheadConsumer`s spätere, unabhängige Bestätigung — die Happy-Path-/
+// Boundary-Formulierung aus `spec/lastenheft.md` selbst, denselben
+// Bereich gleichzeitig lesend, prüft dieser Testfall nicht):
 // einer blockiert (weiter
 // zurückliegende Position), einer nicht (bereits weiter bestätigt). Die
 // Sicht berechnet nichts neu, was die Domain-Policy nicht bereits real

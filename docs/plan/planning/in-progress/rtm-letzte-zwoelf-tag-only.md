@@ -91,8 +91,10 @@ Stelle nach, die die Anforderung wirklich erfüllt:
 - [x] `make test-integration` grün, regeneriert `docs/user/e2e-abdeckung.md`
       mit allen zwölf neuen Tags.
 - [ ] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review — 1 MEDIUM (F-1,
+      Kommentarpräzisierung) in derselben Fixrunde behoben, 1 INFO (F-2,
+      unter der 3×-Schärfungsschwelle) übernommen, kein offenes HIGH/MEDIUM.
 - [x] Doku-Update: `harness/README.md` (`make doc-trace`-Zeile mit der
       real gemessenen finalen Waisenzahl — 0, real gemessen).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -141,6 +143,17 @@ Lerneintrag geschrieben.
   bereits in `harness/README.md` §`make doc-trace` vor diesem Slice
   beschrieben) — Sanierung wäre ein eigener inhaltlicher Vorgang mit
   neuen Testfällen, kein Tag-Nachtrag.
+- Review-Fund F-1 (MEDIUM,
+  `docs/reviews/review-slice-rtm-letzte-zwoelf-tag-only.md`
+  <!-- d-check:status-provenance -->): der `LH-FA-CON-002`-Tag an
+  `TestE2ERetentionBlockersViewShowsFurthestBehindConsumer` belegt nur
+  einen Teilbereich — dass `aheadConsumer`s spätere Bestätigung
+  `behindConsumer`s gespeicherte Position nicht überschreibt —, nicht die
+  wörtliche Happy-Path-/Boundary-Formulierung aus `spec/lastenheft.md`
+  (gleichzeitiges Lesen desselben Bereichs durch beide Consumer).
+  **Ausgang:** eingetreten, in derselben Fixrunde behoben — der
+  Kommentar an der Testfunktion benennt jetzt präzise den geprüften
+  Teilbereich statt der vollen Anforderung.
 
 ## 7. Closure-Notiz
 
