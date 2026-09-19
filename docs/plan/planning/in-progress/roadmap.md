@@ -38,10 +38,7 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md) —
-  Erstes C#/NuGet-SDK-Package (`PgChangeFeed.Client`) für
-  [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
-  ([`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)).
+Nichts in Arbeit.
 
 ## Nächste Wellen
 
@@ -125,12 +122,15 @@ flowchart LR
     W20[welle-20: Coverage 80 % über der netzlos prüfbaren Fläche]
     A0051[ADR-0051 Accepted]
     WREL[welle-release-pipeline-adr-0051: Release-Pipeline gemäß ADR-0051]
+    A0106[ADR-0106 Accepted]
+    WSDK[welle-sdk-csharp-lh-fa-sst-009: Erstes C#/NuGet-SDK-Package]
 
     A58 --> W17
     A59 --> W18
     A6061 --> W19
     S079 --> W20
     A0051 --> WREL
+    A0106 --> WSDK
 ```
 
 ## Abgeschlossene Wellen
@@ -165,6 +165,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-beispiele-start-ueber-make — Beispiel-Clients: Start über `make`/Dockerfile statt `go run`, echter Start-Make-Target, Demo-Umgebung mit Bootstrapping (`ADR-0098`) | 2026-09-18 | [welle-beispiele-start-ueber-make-results.md](../done/welle-beispiele-start-ueber-make-results.md) |
 | welle-nats-drittstream — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming, volle Drei-Sprachen-Matrix (`LH-FA-SST-008`, `ADR-0100`) | 2026-09-18 | [welle-nats-drittstream-results.md](../done/welle-nats-drittstream-results.md) |
 | welle-release-pipeline-adr-0051 — Release-Pipeline gemäß `ADR-0051` vollständig umsetzen: Versionierung/`release.yml`, CVE-Scan, Upstream-Pin-Freshness, Docker-Hub-Beschreibungs-Sync, Betreiber-Doku | 2026-09-19 | [welle-release-pipeline-adr-0051-results.md](../done/welle-release-pipeline-adr-0051-results.md) |
+| welle-sdk-csharp-lh-fa-sst-009 — Erstes C#/NuGet-SDK-Package (`PgChangeFeed.Client`) für `LH-FA-SST-009` (`ADR-0106`) | 2026-09-19 | [welle-sdk-csharp-lh-fa-sst-009-results.md](../done/welle-sdk-csharp-lh-fa-sst-009-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

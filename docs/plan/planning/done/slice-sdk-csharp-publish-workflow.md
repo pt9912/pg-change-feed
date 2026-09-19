@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)
@@ -112,7 +112,7 @@ https://api.nuget.org/v3/index.json` veröffentlicht.
       eingetreten und aufgelöst, siehe §6).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
+      [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -305,7 +305,7 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
   `tools/harness/semver-regex.sh`, dreifach real getestet (Implementer,
   Reviewer, Verifier), siehe §6 für die volle Begründung.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
+  [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — dies ist der letzte Slice dieser Welle; die Prüfung der
   drei Paarungen läuft regelkonform bei deren eigener, separater Closure
   (nicht Teil dieses Slice-Zugs).

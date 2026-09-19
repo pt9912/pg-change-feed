@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream —
@@ -114,7 +114,7 @@ kein committeter Stub).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
+      [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -277,7 +277,7 @@ geschrieben.
     vorbehalten, weder Review noch Verifikation haben einen realen Server
     gegen dieses SDK gefahren.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
+  [welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

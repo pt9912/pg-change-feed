@@ -10,7 +10,7 @@ zwei Positionen, nicht drei.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) §Konsequenzen
+[`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) §Konsequenzen
 Folgepflicht 1 geschnitten). **Datum:** 2026-09-19.
 
 ---
@@ -20,10 +20,10 @@ Folgepflicht 1 geschnitten). **Datum:** 2026-09-19.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) (Accepted,
+[`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) (Accepted,
 2026-09-19) entscheidet Form, Ort und Umfang des ersten offiziellen
 Client-Bibliothek-Packages für
-[`LH-FA-SST-009`](../../../spec/lastenheft.md): C#/.NET, NuGet, ein Package
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md): C#/.NET, NuGet, ein Package
 (`PgChangeFeed.Client`) mit HTTP-API (`SPEC-018`) und gRPC-Stream
 (`SPEC-020`), in einem neuen Baum `sdks/csharp/`, mit eigenständigem
 SemVer ab `0.1.0`, Docker-only-Bau (`make sdk-pack-csharp`) und einem
@@ -48,7 +48,7 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) ist
+- [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) ist
   `Accepted` (bereits erfüllt, 2026-09-19).
 - Kein weiterer Trigger nötig — die Roadmap führt aktuell keine offene
   Welle (`in-progress/roadmap.md` §Offene Wellen: „Nichts in Arbeit") und
@@ -68,7 +68,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 - Der NuGet-Publish-Workflow wurde real gegen NuGet.org versucht (Tag
   `sdk-csharp-v0.1.0` oder gleichwertig) — Erfolg **oder** ein benannter
   roter Befund mit Folgemaßnahme; nach
-  [`AGENTS.md`](../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
   realen Post-Push-Lauf offen, unabhängig vom Rest der Welle.
 - Closure-Notiz in `welle-sdk-csharp-lh-fa-sst-009-results.md`.
 
@@ -80,11 +80,11 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-csharp-projektgeruest | SDK-Projektgerüst (`sdks/csharp/PgChangeFeed.Client/`, `.csproj`, Docker-Bau, leeres API-Skelett) | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-csharp-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten, Bearer-Auth, eigene Tests) | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md) |
-| slice-sdk-csharp-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`, `StreamChanges`, `.proto`-Bezug über Zusatzkontext, `authorization`-Metadata) | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
-| slice-sdk-csharp-pack-werkzeug | `make sdk-pack-csharp`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-csharp-publish-workflow | `.github/workflows/sdk-csharp-release.yml`, Tag-Präfix `sdk-csharp-v*`, `NUGET_API_KEY` | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
+| slice-sdk-csharp-projektgeruest | SDK-Projektgerüst (`sdks/csharp/PgChangeFeed.Client/`, `.csproj`, Docker-Bau, leeres API-Skelett) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-csharp-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten, Bearer-Auth, eigene Tests) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) |
+| slice-sdk-csharp-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`, `StreamChanges`, `.proto`-Bezug über Zusatzkontext, `authorization`-Metadata) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
+| slice-sdk-csharp-pack-werkzeug | `make sdk-pack-csharp`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-csharp-publish-workflow | `.github/workflows/sdk-csharp-release.yml`, Tag-Präfix `sdk-csharp-v*`, `NUGET_API_KEY` | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge (Abhängigkeitskette):**
 
@@ -112,7 +112,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - Blockiert: keine andere Welle — die Roadmap führt aktuell keine
   parallele offene Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) ist bereits
+  [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) ist bereits
   `Accepted`.
 - Intern (siehe §4 Reihenfolge): `slice-sdk-csharp-http-client-flaeche` und
   `slice-sdk-csharp-grpc-client-flaeche` hängen beide von
@@ -128,19 +128,19 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - **SSE- (`SPEC-021`) und NATS-Vollinhalts-Abdeckung (`SPEC-024`) im
-  Package** — [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md)
+  Package** — [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)
   Festlegung 1 grenzt v1 ausdrücklich auf HTTP-API und gRPC-Stream ein;
   beide bleiben über `examples/csharp/sse-client`/`nats-stream-client` als
   Vorbild einsehbar, bis ein Folge-Package sie deckt
   (§Re-Evaluierungs-Trigger 1/2 der ADR).
 - **Eine zweite SDK-Sprache** (Go, TypeScript, Kotlin/Maven, …) —
-  [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) entscheidet
+  [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) entscheidet
   ausdrücklich nur die erste Sprache; eine zweite bleibt eine eigene,
   künftige ADR (§Re-Evaluierungs-Trigger 1).
 - **Ein zweiter Vertriebsweg** für C# (z. B. ein privater Feed statt
   NuGet.org) — nicht Teil der ADR-Entscheidung.
 - **Aufspaltung in mehrere Packages** (ein Package je Zustellweg) — von
-  [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) Alternative
+  [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) Alternative
   B4 ausdrücklich verworfen; bleibt Re-Evaluierungs-Trigger 3.
 - **Umbau oder Migration von `examples/csharp/`** — die ADR verbietet das
   ausdrücklich (§Entscheidung Festlegung 2, §Entscheidung Festlegung 5);
@@ -189,5 +189,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-csharp-lh-fa-sst-009-results.md`
-Zähler: `../observations/`
+Ergebnis: [welle-sdk-csharp-lh-fa-sst-009-results.md](welle-sdk-csharp-lh-fa-sst-009-results.md)
+Zähler: [../observations/](../observations/)
