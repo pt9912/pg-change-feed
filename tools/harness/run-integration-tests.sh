@@ -2601,10 +2601,23 @@ if [ "$nats_stream_client_ready" -ne 1 ]; then
   exit 1
 fi
 
+# Die beiden Ablehnungs-Checks pollen statt einmalig zu prüfen: Der
+# NATS-Testclient schreibt REJECTED-NO-TOKEN/REJECTED-WRONG-TOKEN/READY
+# strikt sequenziell auf stdout, aber `docker logs` liest den Docker-eigenen
+# Log-Puffer, dessen Flush minimal hinter dem Container-Stdout zurückbleiben
+# kann — real beobachtet im PostgreSQL-17-Leg von e2e.yml-Lauf 35438303264:
+# der READY-Wait oben hatte bereits terminiert, der REJECTED-WRONG-TOKEN-Check
+# direkt danach sah im selben `docker logs`-Aufruf noch keine der beiden
+# Zeilen. Dasselbe Poll-statt-Einzel-Check-Muster wie beim READY-/
+# RECEIVED-Warten weiter oben in dieser Datei.
 nats_stream_client_rejected_no_token=0
-if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-NO-TOKEN"; then
-  nats_stream_client_rejected_no_token=1
-fi
+for _ in $(seq 1 20); do
+  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-NO-TOKEN"; then
+    nats_stream_client_rejected_no_token=1
+    break
+  fi
+  sleep 0.2
+done
 if [ "$nats_stream_client_rejected_no_token" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch ohne Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
   docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
@@ -2612,9 +2625,13 @@ if [ "$nats_stream_client_rejected_no_token" -ne 1 ]; then
 fi
 
 nats_stream_client_rejected_wrong_token=0
-if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-WRONG-TOKEN"; then
-  nats_stream_client_rejected_wrong_token=1
-fi
+for _ in $(seq 1 20); do
+  if docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>/dev/null | grep -qF "REJECTED-WRONG-TOKEN"; then
+    nats_stream_client_rejected_wrong_token=1
+    break
+  fi
+  sleep 0.2
+done
 if [ "$nats_stream_client_rejected_wrong_token" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch mit falschem Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
   docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
