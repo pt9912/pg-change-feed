@@ -15,7 +15,8 @@ in einem Aufruf, kein zweiter Build, kein neuer Entscheidungspunkt).
 **Berührte Spec-Stellen:** — (Prozess-/Infrastruktur-Änderung ohne
 Spec-Stratum-Bezug).
 
-**Verantwortlich:** — (direkt beauftragt, noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent (priorisiert 2026-09-19, direkter
+Auftrag: "ja, fang an").
 
 **Autor:** Planner-Agent, direkt beauftragt. **Datum:** 2026-09-19.
 
