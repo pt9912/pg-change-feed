@@ -56,7 +56,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       eigene Fehlerpfad (kein `access_token` in der Antwort → `exit 1`
       mit `::error::`) real mit Fake-Zugangsdaten ausgelöst und bestätigt.
       `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` referenziert, nicht angelegt
-      — siehe §1 Abgrenzung der Welle-Datei.
+      — siehe §6 Out-of-Scope der Welle-Datei. Token-Extraktion über das
+      neue, netzlos testbare `tools/harness/dockerhub-token.sh`
+      (`make test-dockerhub-token`, Review-Finding F-3) statt Inline-jq.
 - [x] `release.yml` (aus `release-version-und-workflow`) bekommt einen
       zusätzlichen Job `hub-description` mit `needs: release`, der
       `hub-description.yml` über `uses: ./.github/workflows/hub-description.yml`
@@ -65,9 +67,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       ändert dessen Status nicht rückwirkend (kein
       `needs`-Failure-Propagation-Block zurück).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      2 HIGH (F-1/F-2: „Zitat nennt die falsche Stelle" — ADR-Abschnitt
+      bzw. Welle-Datei-Abschnitt falsch benannt, Aussagen selbst korrekt)
+      und 1 MEDIUM (F-3: fehlende netzlose Negativtest-Abdeckung für die
+      Token-Extraktion) sowie 1 LOW (F-4: `curl -f`-Asymmetrie nur in der
+      Commit-Message erklärt) und 2 INFO (F-5/F-6: Erfolgspfad und
+      Permissions-Vererbung erst durch realen Lauf klärbar) in derselben
+      Fixrunde behoben bzw. dokumentiert, kein offenes HIGH.
 - [ ] Doku-Update für `harness/README.md` §Sensors/§Werkzeuge — entfällt
       als eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
@@ -84,6 +93,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `.github/workflows/hub-description.yml` | neu | `workflow_dispatch` + `workflow_call`, Docker-Hub-Beschreibungs-Sync. |
 | `.github/workflows/release.yml` | update | zusätzlicher `hub-description`-Job (`needs: release`), ruft `hub-description.yml` per `uses:`/`secrets: inherit` auf. |
 | `harness/README.md` §Werkzeuge | update (Plan-Nachzug) | `release.yml`-Zeile um den `hub-description`-Job ergänzt, neue eigene `hub-description.yml`-Zeile. |
+| `tools/harness/dockerhub-token.sh` | neu (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-3 (MEDIUM): netzlos testbare Token-Extraktion (grep/sed, kein jq) statt Inline-jq im Workflow, analog `tools/harness/release-tag-info.sh`. |
+| `tools/harness/run-dockerhub-token-tests.sh` + `make test-dockerhub-token` | neu (Plan-Nachzug, Fixrunde) | Tabellentest mit canned JSON-Antworten (real gegen die echte API beobachtete Formen) gegen `dockerhub-token.sh`. |
 
 ## 4. Trigger
 
@@ -118,9 +129,32 @@ geschrieben.
 - Ein Docker-Hub-API-Aufruf zur Beschreibungs-Aktualisierung kann eine
   andere Authentifizierungsform verlangen als der reine Image-Push
   (`DOCKERHUB_TOKEN`s Scope reicht möglicherweise nicht). **Ausgang:**
-  weiter offen bis zur Implementierung, dort real gegen die
-  Docker-Hub-API zu prüfen (kein Repository-Secret, das dieser Slice
-  technisch anlegen könnte — siehe Welle-Datei §6 Out-of-Scope).
+  eingetreten — im Schwester-Repo d-check real dokumentiert
+  (`packaging/dockerhub/README.md` §Transport): ein Token mit
+  `read/write`-Scope scheiterte dort am `PATCH`-Aufruf mit `403
+  Forbidden`, obwohl derselbe Token den Image-Push erfolgreich
+  authentifizierte — erst `read/write/delete`-Scope behob es, ohne den
+  Token-Wert selbst zu ändern. Der Kopfkommentar von
+  `hub-description.yml` trägt diese Anforderung jetzt explizit. Der
+  volle Erfolgspfad mit einem real gesetzten, korrekt skopierten Token
+  bleibt trotzdem bis zum ersten echten Lauf unbewiesen (siehe
+  Risiko-Einträge unten).
+- Reviewer-Finding F-5 (INFO): die Erfolgspfad-Feldnamen (`access_token`
+  bei `POST /v2/auth/token`, Erfolgs-Statuscode bei `PATCH
+  .../repositories/...`) bleiben strukturell unbewiesen, bis der
+  Workflow einmal mit echten `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`
+  läuft — alle realen Prüfungen (Implementer, Review) trafen
+  ausschließlich Fehlerpfade (`400`/`401` ohne gültige Zugangsdaten).
+  **Ausgang:** weiter offen, strukturell (dieselbe Kategorie wie
+  `AGENTS.md` §3.10, hier auf die konkreten Feldnamen zugespitzt).
+- Reviewer-Finding F-6 (INFO): ob GitHub Actions bei `uses: ./…yml` ohne
+  expliziten `permissions:`-Block im Aufrufer-Job (`release.yml`s
+  `hub-description`-Job) die in `hub-description.yml` selbst
+  deklarierten Job-Permissions (`contents: read`) gewährt oder den
+  Aufrufer-Default (`permissions: {}`) durchreicht, lässt sich nicht
+  netzlos/lokal klären. **Ausgang:** weiter offen, strukturell (derselbe
+  Fall wie `AGENTS.md` §3.10 — erst der reale Post-Push-Lauf zeigt, ob
+  `Checkout` in `hub-description.yml` mit ausreichenden Rechten läuft).
 
 ## 7. Closure-Notiz
 

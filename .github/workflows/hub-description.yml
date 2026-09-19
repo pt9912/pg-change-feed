@@ -4,9 +4,9 @@ name: hub-description
 # Docker-Hub-Beschreibungs-Sync (ADR-0051 Entscheidung 8): spiegelt den
 # Inhalt von README.md als Docker-Hub-Repository-Beschreibung fuer
 # pt9912/pg-change-feed. Praesentation, kein Bestandteil der
-# Distributions-Zusage (ADR-0051 §Konsistenz-Pruefung) — ein Fehlschlag
-# hier laesst einen bereits abgeschlossenen release.yml-Lauf unberuehrt,
-# weil GitHub Actions den Status eines vorgelagerten needs-Jobs nicht
+# Distributions-Zusage (ADR-0051 Entscheidung 8) — ein Fehlschlag hier
+# laesst einen bereits abgeschlossenen release.yml-Lauf unberuehrt, weil
+# GitHub Actions den Status eines vorgelagerten needs-Jobs nicht
 # rueckwirkend aendert.
 #
 # Zwei Trigger: `workflow_call` (aus release.yml heraus, needs: release —
@@ -28,7 +28,17 @@ name: hub-description
 # — bestaetigt Endpoint und Feldnamen); der volle Erfolgspfad bleibt bis
 # zum ersten echten Lauf mit realen Repository-Secrets unbewiesen
 # (AGENTS.md §3.10 analog, siehe Slice-Plan
-# docs/plan/planning/in-progress/release-hub-description.md §6).
+# docs/plan/planning/in-progress/release-hub-description.md §6). Die
+# Token-Extraktion selbst laeuft ueber tools/harness/dockerhub-token.sh
+# (netzlos testbar, make test-dockerhub-token) statt Inline-jq, damit sie
+# denselben committeten Testbarkeits-Standard traegt wie
+# tools/harness/release-tag-info.sh in derselben Welle.
+#
+# DOCKERHUB_TOKEN braucht den Scope `read/write/delete` — `read/write`
+# reicht fuer den Image-Push (release.yml), aber nicht fuer den
+# PATCH-Aufruf hier: ein Token mit nur `read/write` scheitert am
+# Beschreibungs-Update mit `403 Forbidden`, real dokumentiert im
+# Schwester-Repo d-check (packaging/dockerhub/README.md §Transport).
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
@@ -62,11 +72,16 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           set -uo pipefail
+          # Kein `-f` hier (anders als beim PATCH unten): `-f` liesse curl
+          # bei 4xx sofort mit einem generischen Fehler abbrechen und den
+          # JSON-Antwort-Body verwerfen, bevor
+          # tools/harness/dockerhub-token.sh ihn lesen und die eigene,
+          # praezisere `::error::`-Meldung ausgeben kann.
           token=$(curl -sS -X POST https://hub.docker.com/v2/auth/token \
             -H 'Content-Type: application/json' \
             -d "$(jq -n --arg u "$DOCKERHUB_USERNAME" --arg p "$DOCKERHUB_TOKEN" '{identifier: $u, secret: $p}')" \
-            | jq -r '.access_token // empty')
-          if [ -z "$token" ] || [ "$token" = "null" ]; then
+            | bash tools/harness/dockerhub-token.sh)
+          if [ -z "$token" ]; then
             echo "::error::Docker-Hub-Login fehlgeschlagen — kein access_token in der Antwort"
             exit 1
           fi
