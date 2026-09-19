@@ -110,6 +110,10 @@ test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (
 test-dockerhub-token: ## Tabellentest gegen tools/harness/dockerhub-token.sh (Docker-Hub-Login-Antwort-Parsing, ADR-0051, netzlos)
 	@bash tools/harness/run-dockerhub-token-tests.sh
 
+.PHONY: test-version-injection
+test-version-injection: ## Regressionstest: VERSION-Injektion vom Dockerfile bis --version (ADR-0051, netzlos sofern Basis-Images bereits gecacht)
+	@bash tools/harness/run-version-injection-test.sh
+
 .PHONY: doc-ci-matrix
 doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen, docs/user/ci-matrix-abdeckung.md schreiben (ADR-0105, kein Gate, braucht Netz)
 	@bash tools/harness/ci-matrix-abdeckung.sh

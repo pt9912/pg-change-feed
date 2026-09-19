@@ -73,9 +73,16 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       → `pg-change-feed 0.1.1-test`; `make image` ohne `VERSION`
       (unverändert `:dev`) liefert real `pg-change-feed dev`.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      siehe `docs/reviews/review-slice-release-binary-version-injektion.md`
+      (0 HIGH, 1 MEDIUM F-1: fehlender Regressionstest — behoben durch
+      `tools/harness/run-version-injection-test.sh` +
+      `make test-version-injection`, real gegen die vom Reviewer benannte
+      Mutation [fehlendes `-X`-Flag] getestet: wird rot; 1 INFO F-2:
+      taxonomische Schärfung eines §6-Risiko-Ausgangs, nicht code-seitig
+      behoben — kein offenes HIGH).
 - [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt — entfällt: `--version` selbst bleibt unverändert als Aufrufform, nur sein gelieferter Wert wird korrekt; kein neuer öffentlicher Vertrag.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -90,6 +97,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `cmd/pg-change-feed/main.go` | update | `const version` → `var version = "dev"` (Voraussetzung für `-ldflags -X`). |
 | `Dockerfile` (`build`-Stufe) | update | `ARG VERSION=dev`, `-ldflags` injiziert `main.version`. |
 | `Makefile` (`image:`-Target) | update | `VERSION=`-Zweig übergibt `--build-arg VERSION=$(VERSION)`. |
+| `tools/harness/run-version-injection-test.sh` + `make test-version-injection` | neu (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-1 (MEDIUM): netzloser Regressionstest, der eine stille Entfernung des `-X`-Flags fängt — real gegen die vom Reviewer benannte Mutation getestet (färbt rot). |
 
 ## 4. Trigger
 
@@ -117,9 +125,11 @@ geschrieben.
 - Der lokale `:dev`-Build zeigt nach dieser Änderung `pg-change-feed dev`
   statt des bisherigen `0.2.0-verdrahtung` — ein sichtbarer, aber
   gewollter Verhaltensunterschied für jeden, der `--version` gegen ein
-  `:dev`-Image aufruft. **Ausgang:** entfallen als Risiko — `dev` ist die
-  ehrlichere Aussage für ein nie veröffentlichtes Image, kein
-  Informationsverlust gegenüber einem ohnehin schon bedeutungslosen
+  `:dev`-Image aufruft. **Ausgang:** eingetreten, akzeptiert (Reviewer-
+  Finding F-2: taxonomische Schärfung — es ist eine real eingetretene,
+  bewusst akzeptierte Verhaltensänderung, kein entfallenes Risiko) —
+  `dev` ist die ehrlichere Aussage für ein nie veröffentlichtes Image,
+  kein Informationsverlust gegenüber einem ohnehin schon bedeutungslosen
   Alt-String.
 - `AGENTS.md` §3.10 gilt für die geänderte `Dockerfile`/`Makefile`-
   Mechanik (mittelbar über `release.yml`) unverändert — ein realer,
