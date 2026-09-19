@@ -88,11 +88,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Doku-Update für `harness/README.md` §Werkzeuge — entfällt als
       eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer Beleg in `BEO-PGC/commit-traceability-kein-vorab-hook/evidence/`.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-release-pipeline-adr-0051` (noch offen) — Prüfung folgt regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
 
@@ -139,12 +139,16 @@ geschrieben.
   bliebe der `DENIED`-Fehler nach dem ersten Release bestehen, nur aus
   einem anderen Grund. **Ausgang:** eingetreten, in derselben Fixrunde
   behoben (`GHCR_USERNAME`/`GHCR_PASSWORD` über Trivys eigene Flags,
-  `packages: read`-Permission in `image-scan.yml`) — der volle
-  Authentifizierungspfad gegen ein tatsächlich privates GHCR-Paket bleibt
-  bis zum ersten echten Release strukturell unverifiziert (ein lokaler
-  Nachbau mit einer passwortgeschützten Test-Registry scheiterte an einer
-  bekannten `htpasswd`/bcrypt-Inkompatibilität der `registry:2`-Referenz-
-  implementierung, kein Befund gegen die hier gewählte Lösung selbst).
+  `packages: read`-Permission in `image-scan.yml`).
+- Der volle Authentifizierungspfad gegen ein tatsächlich privates
+  GHCR-Paket (F-1-Fix) bleibt bis zum ersten echten Release strukturell
+  unverifiziert — ein lokaler Nachbau mit einer passwortgeschützten
+  Test-Registry scheiterte an einer bekannten `htpasswd`/bcrypt-
+  Inkompatibilität der `registry:2`-Referenzimplementierung, kein Befund
+  gegen die hier gewählte Lösung selbst (Verifikationsbericht
+  `docs/reviews/verifikation-slice-release-image-scan.md` §8, Zeile 2).
+  **Ausgang:** weiter offen, strukturell (löst sich mit dem ersten
+  echten Release wie Risiko 1 oben).
 - `AGENTS.md` §3.10 gilt für `image-scan.yml` als neuen Workflow
   unverändert: `make gates` grün belegt nicht, dass der reale
   Post-Push-Lauf grün läuft. **Ausgang:** weiter offen, strukturell
@@ -158,7 +162,64 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Die reale, hands-on-Verifikation von
+  `make image-cve` (ohne und mit Fake-Credentials) deckte einen echten
+  Docker/Trivy-Regressionsfall auf, bevor er in den Code gelangte: ein
+  allgemeiner `~/.docker/config.json`-Credential-Mount hätte Trivys
+  eigenen, unauthentifizierten Vulnerability-DB-Bezug mitgefärbt, sobald
+  die Config einen im Container nicht ausführbaren Credential-Helper
+  referenziert (macOS' `docker-credential-osxkeychain`). Die gewählte
+  Alternative (Trivys eigene `--username`/`--password`/`TRIVY_PASSWORD`-
+  Flags) wurde vom Verifier unabhängig gegen `docker run … image --help`
+  bestätigt — kein erfundenes Verhalten.
+- **Was ging anders als geplant:** Der Reviewer fand 2 MEDIUM (F-1:
+  fehlende GHCR-Authentifizierung für private Pakete; F-2: instabiler
+  Slice-Lifecycle-Pfad im Workflow-Kommentar) und 2 LOW (F-3: fehlendes
+  `--image-src remote`; F-4: Tippfehler), alle vier in einer Fixrunde
+  behoben. Der Fixrunden-Commit selbst führte danach eine **neue,
+  unabhängige** Gate-Verletzung ein: die Message trug keine `LH-*`-/
+  `ADR-*`-Kennung — vom Reviewer strukturell nicht sichtbar (er prüfte
+  den Diff *vor* diesem Commit), vom Verifier über einen realen,
+  ungepipten `make gates`-Lauf gefunden (Exit 2, `commit-traceability`
+  rot). Behoben über das etablierte Muster (`git reset --soft` +
+  Wiederherstellung beider Datei-Stände aus dem Objekt-Store + Neu-Commit
+  mit `ADR-0051`-tragender Message, `eb76267f`) — kein `git commit
+  --amend`, kein `git rebase -i` (unpushed, lokale Historie). Erneuter
+  `make gates`-Lauf danach: `EXIT=0`.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  die fehlende Kennung im Fixrunden-Commit ist der **fünfte** Beleg der
+  bereits verkörperten Beobachtung `BEO-PGC/commit-traceability-kein-vorab-hook`
+  (Zustand: *verkörpert*, Träger `.githooks/commit-msg`/`ADR-0062`): der
+  lokale, opt-in `commit-msg`-Hook hätte den Verstoß vor dem Commit
+  gemeldet, war aber in dieser Arbeitskopie nicht aktiviert
+  (`core.hooksPath` leer) — dieselbe bereits benannte schwächste Stelle
+  wie beim vierten Beleg, kein neuer Mechanismus nötig.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-release-image-scan.md` unter der bestehenden
+  `BEO-PGC/commit-traceability-kein-vorab-hook/` (bereits verkörpert,
+  jetzt 5. Beleg; Zähler in `state.md` nachgezogen).
+- **Folge-Slices:** `release-upstream-drift`, `release-hub-description`,
+  `release-doku-releasing` — alle drei bereits als Dateien in `open/`
+  vorhanden (Welle `welle-release-pipeline-adr-0051`). Kein neuer
+  Folge-Slice aus diesem Slice selbst.
+- **Risiken aus §6:** fünf Risiken (nach redaktioneller Aufteilung von
+  F-1s Rest-Risiko in einen eigenen Punkt), fünf Ausgänge — (1) kein
+  GHCR-`:latest`-Image bis zum ersten Release → **eingetreten**, real
+  bestätigt; (2) F-1 GHCR-Paket privat → **eingetreten**, in derselben
+  Fixrunde behoben; (3) voller Authentifizierungspfad gegen ein
+  tatsächlich privates Paket → **weiter offen**, strukturell (löst sich
+  mit dem ersten echten Release); (4) `AGENTS.md` §3.10 realer
+  Post-Push-Lauf → **weiter offen**, bereits verkörpert; (5) Trivy-CVE-DB
+  täglich volatil → **entfallen**, bewusste `ADR-0051`-Entscheidung.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure, nicht
+  hier (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
+  Welle-Closure"). Vorab-Hinweis für diese spätere Prüfung: kein
+  `liegt in`-Feld in diesem Slice; beide Folge-Slices existieren bereits
+  als Dateien unter `docs/plan/planning/open/`; der neue
+  Beobachtungs-Beleg liegt unter
+  `BEO-PGC/commit-traceability-kein-vorab-hook/evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
