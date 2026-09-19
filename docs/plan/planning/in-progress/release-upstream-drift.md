@@ -97,11 +97,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Doku-Update für `harness/README.md` §Werkzeuge — entfällt als
       eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — kein neuer Eintrag: F-2 ist eine andere Fehlerklasse als `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` (kein Required-Status-Check-Bezug, siehe §6), keine weitere Beobachtung angefallen.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice gehört zu `welle-release-pipeline-adr-0051` (noch offen) — Prüfung folgt regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
 
@@ -193,7 +193,62 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Der reale, hands-on-Testlauf aller sieben
+  neuen `make pin-stale-*`-Targets vor der Übergabe lieferte echte,
+  unbekannte Funde (P3 `golang:1.27`, P4 `postgres:18-alpine`, P5
+  `ghcr.io/pt9912/d-migrate:latest` — alle drei zeigen Upstream-Drift,
+  der vorher nirgends sichtbar war) — ein wertvolles Nebenprodukt des
+  Slice über seinen eigentlichen Liefergegenstand hinaus. Ebenso die
+  bewusste Wiederverwendung des etablierten `tools/harness/
+  ci-matrix-abdeckung.sh`-Musters für die Fixrunde (`lib-github-api.sh`)
+  statt einer neuen, abweichenden Lösung.
+- **Was ging anders als geplant:** Der Reviewer fand 1 HIGH (F-1: drei
+  neue Skripte riefen `curl` bare auf dem Host auf, im Widerspruch zum
+  bereits etablierten Container-Muster im selben Verzeichnis —
+  `AGENTS.md` §3.1) und 1 MEDIUM (F-2: die im Plan/
+  [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) übernommene
+  Formulierung „Werkzeug-/Netzausfall führt zu Skip, nicht zu Rot des
+  Gesamtlaufs" hält für die Lauf-Statusanzeige nicht — `if: always()`
+  unterscheidet nicht zwischen einem echten Fund und einem transienten
+  Ausfall) sowie 2 LOW (F-3: `pin-stale.sh`s Exit-Code-Vertrag stimmte
+  bei fehlendem Argument nicht; F-4: doppelte Plan-Tabellenzeile) und
+  1 INFO (F-5: P9 prüft nur Frische, keine Form-Konformität). Alle fünf
+  in einer Fixrunde behoben bzw. dokumentiert (`eb4e7d3f`) — F-2 ließ
+  sich nicht code-seitig beheben, ohne echte Funde zu verschlucken
+  (`continue-on-error: true` wäre keine Abhilfe), deshalb Korrektur der
+  Doku-Behauptung statt eines Mechanismus-Fixes.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  F-1 bestätigt das bereits etablierte Muster (Container-Kapselung für
+  Netzwerkwerkzeuge in `tools/harness/*.sh`, `AGENTS.md` §3.1) und macht
+  es über `lib-github-api.sh` für drei weitere Skripte wiederverwendbar,
+  statt es dreifach zu duplizieren. F-2 ist eine genauere technische
+  Fassung eines bereits bekannten, aber anderer Fehlerklasse zugehörigen
+  Alarmmüdigkeits-Risikos (`BEO-PGC/nicht-blockierender-workflow-
+  alarmmuedigkeit`, kein Required-Status-Check-Bezug hier, siehe §6) —
+  kein neuer Registereintrag, da die Klasse nicht deckungsgleich ist.
+- **Beobachtungs-Register (`../observations/`):** kein neuer Eintrag
+  (siehe Steering-Loop-Eintrag oben und §6).
+- **Folge-Slices:** `release-hub-description`, `release-doku-releasing`
+  — beide bereits als Dateien in `open/` vorhanden (Welle
+  `welle-release-pipeline-adr-0051`). Kein neuer Folge-Slice aus diesem
+  Slice selbst.
+- **Risiken aus §6:** fünf Risiken, fünf Ausgänge — (1) `AGENTS.md` §3.10
+  realer Post-Push-Lauf → **weiter offen**, bereits verkörpert; (2) P9
+  deckt künftige `uses:`-Zeilen automatisch → **entfallen**; (3)
+  Alarmmüdigkeit bei wiederholtem Werkzeugausfall → **weiter offen**,
+  strukturell verwandt mit `BEO-PGC/nicht-blockierender-workflow-
+  alarmmuedigkeit` (1×, unter der Schärfungsschwelle); (4) F-2 „if:
+  always() unterscheidet nicht zwischen Fund und Ausfall" → **eingetreten**,
+  Doku korrigiert, kein Code-Fix möglich; (5) F-5 „P9 prüft nur Frische,
+  keine Form" → **entfallen**, war nie als Form-Prüfung geplant.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure, nicht
+  hier (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
+  Welle-Closure"). Vorab-Hinweis für diese spätere Prüfung: kein
+  `liegt in`-Feld in diesem Slice; beide Folge-Slices existieren bereits
+  als Dateien unter `docs/plan/planning/open/`; kein neuer
+  Beobachtungs-Beleg in diesem Slice.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
