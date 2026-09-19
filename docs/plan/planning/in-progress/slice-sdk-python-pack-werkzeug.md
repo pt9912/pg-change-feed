@@ -257,12 +257,20 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
   Backtick vor der Fortsetzung auf der Folgezeile), unabhängig vom
   Inhalt/Diff dieses Slices, in einem bereits gemergten Nachbar-Report.
   Behoben in einem eigenen, separat committeten Fix (ein eingefügtes
-  schließendes Backtick, Gesamtzahl danach 404/gerade). `make gates`/
-  `make docs-check` liefen über den gesamten Zeitraum des Defekts
-  wiederholt grün — kein `id-unlinked`-Fehlalarm in diesem konkreten Fall,
-  siehe Beobachtungs-Eintrag für die Abgrenzung zu
+  schließendes Backtick, Gesamtzahl danach 404/gerade). Diese Korrektur
+  legte real einen **zweiten**, bis dahin verdeckten Fund offen: `make
+  docs-check` meldete danach einen `id-unlinked`-Befund für eine nackte
+  `ADR-0106`-Erwähnung an Zeile 132 desselben Reports (Beispiel-Text
+  „(slice-<name>, ADR-0106 Festlegung …)") — real unverlinkt seit dem
+  ursprünglichen Merge, aber solange durch den Backtick-Defekt fälschlich
+  als „innerhalb eines Codespans" maskiert. `make gates`/`make docs-check`
+  liefen deshalb über den gesamten Zeitraum grün, **nicht** weil kein
+  echter Fund vorlag, sondern weil der Paritäts-Defekt ihn verbarg — in
+  einem eigenen weiteren Fix behoben (`ADR-0106` an seiner eigenen Stelle
+  gebacktickt). Siehe Beobachtungs-Eintrag für die Abgrenzung zu
   `BEO-PGC/report-nackte-id-ohne-link` (dort: vergessene Verlinkung an der
-  eigenen Stelle; hier: Fernwirkung eines entfernten Syntaxfehlers).
+  eigenen Stelle, kein Maskierungs-Mechanismus; hier: Fernwirkung eines
+  entfernten Syntaxfehlers, real nachgewiesen, nicht nur hypothetisch).
 - **Folge-Slices:** `slice-sdk-python-publish-workflow` — bereits als Datei
   in `open/` vorhanden.
 - **Risiken aus §6:**

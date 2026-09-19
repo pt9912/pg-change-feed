@@ -25,7 +25,7 @@ sich vollständig — eine Behebung, die nur die scheinbar nackte Kennung
 nachbackticket, behebt nichts: Sie verschiebt die Parität nur ein weiteres
 Mal, ohne die eigentliche Fehlstelle zu schließen.
 
-**Real gefundener Beleg:** `docs/reviews/review-slice-sdk-csharp-pack-werkzeug.md`
+**Real gefundener Beleg:** `docs/reviews/review-slice-sdk-csharp-pack-werkzeug.md` <!-- d-check:status-provenance -->
 (Commit `69d2dc00`, bereits gemergt) trug an Zeile 122f. einen echten
 unclosed-backtick-Fehler: ein öffnendes Backtick vor „kein Gate," blieb ohne
 schließendes Gegenstück, bevor der Satz mit `"). Die Pipe im Fließtext …`
@@ -35,19 +35,27 @@ geraden Zahl — `grep -o` gegen ein einzelnes Backtick-Zeichen, gezählt mit
 (ein eingefügtes schließendes Backtick vor dem folgenden `"`) brachte die
 Gesamtzahl auf 404 und stellte volle Paarung wieder her.
 
-**Wichtige Gegenprobe — der Verdacht feuerte in diesem Fall nicht:**
-`make gates`/`make docs-check` liefen über den gesamten Zeitraum, in dem
-dieser Datei-Zustand bereits committet und gemergt war, wiederholt grün
-(zuletzt `832 Datei(en) geprüft, 0 Befund(e)` im Verifikationslauf zu
-`slice-sdk-python-pack-werkzeug`) — die `id-unlinked`-Prüfung von `d-check`
-hat in diesem konkreten Dokument **keine** Kennung fälschlich als nackt
-gemeldet, obwohl der Backtick-Defekt real vorlag. Der Mechanismus ist also
-ein **reales, aber nicht in jedem Fall feuerndes** Risiko — abhängig davon,
-ob im verschobenen Paritäts-Fenster tatsächlich eine bare Kennung liegt oder
-ob `d-check`s Parser Codespans anders (z. B. zeilenlokal statt
-dokumentweit) behandelt als eine naive Backtick-Zählung. Dieser Fund ist
-deshalb kein Beleg für einen Sensor-Fehlschlag, sondern eine benannte,
-bislang folgenlose Lücke.
+**Die Wirkung feuerte real — in der Gegenrichtung.** Nach der reinen
+Backtick-Korrektur (403 → 404, siehe oben) meldete `make docs-check` einen
+**neuen**, bis dahin nie gemeldeten `id-unlinked`-Befund in **demselben**
+Dokument: eine nackte `ADR-0106`-Erwähnung an Zeile 132, innerhalb eines
+zitierten Beispiel-Textes („(slice-<name>, ADR-0106 Festlegung …)"). Diese
+Erwähnung war die ganze Zeit real unverlinkt — sie lag aber, solange der
+unclosed-backtick-Defekt bestand, im verschobenen Paritäts-Fenster und wurde
+von `d-check`s Codespan-Erkennung fälschlich als „innerhalb eines Codespans"
+gewertet, also **nicht** gemeldet. `make gates`/`make docs-check` liefen über
+den gesamten Zeitraum, in dem dieser Datei-Zustand bereits committet und
+gemergt war, deshalb wiederholt grün (zuletzt `832 Datei(en) geprüft,
+0 Befund(e)` im Verifikationslauf zu `slice-sdk-python-pack-werkzeug`) —
+nicht weil kein echter Fund vorlag, sondern weil der Backtick-Defekt ihn
+verdeckte. Behoben durch Nachbacktickung von `ADR-0106` an seiner eigenen
+Stelle (analog `BEO-PGC/report-nackte-id-ohne-link`), **zusätzlich** zur
+reinen Paritäts-Korrektur — beide Fixes waren nötig, der zweite wurde erst
+durch den ersten sichtbar. Der Mechanismus ist damit **real feuernd**
+nachgewiesen: Ein unclosed-backtick-Defekt kann einen echten
+`id-unlinked`-Befund über den gesamten Zeitraum seines Bestehens
+strukturell vor `d-check` verbergen — nicht nur hypothetisch, sondern belegt
+an genau diesem Dokument.
 
 **Herkunft dieses Eintrags:** Der Fund entstand aus einer Vermutung des
 Reviewers von `slice-sdk-python-pack-werkzeug`, der bei sich selbst
