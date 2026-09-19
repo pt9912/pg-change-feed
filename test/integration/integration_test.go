@@ -187,6 +187,9 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 // INSERT, UPDATE und DELETE an der aktivierten Tabelle werden Ende-zu-Ende
 // durch das Binary erfasst, in Commit-Reihenfolge persistiert und mit
 // Inhalt gelesen (`LH-FA-CAP-001`…003, `LH-FA-CAP-004`, `LH-QA-POR-003`).
+// Trägt zugleich `LH-FA-SST-001`: die definierte Schnittstelle zur
+// PostgreSQL-Quelle (Logical Replication) läuft hier real Ende-zu-Ende,
+// nicht nur strukturell.
 // Row-Images mit der Default-Replica-Identity: das Neu-Bild trägt die
 // Zeile, das Alt-Bild der DELETE-Änderung trägt die Schlüsselspalte; der
 // Alt-Stand eines UPDATE bleibt bei unverändertem Schlüssel abwesend —

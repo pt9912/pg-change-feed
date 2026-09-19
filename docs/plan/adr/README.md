@@ -117,3 +117,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0102 | Zugangsdaten-Klasse — Supersede-Liste vervollständigt (Supers. ADR-0101, teilw.) | Accepted | 2026-09-18 | [0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md](0102-zugangsdaten-klasse-supersede-liste-vervollstaendigt.md) |
 | ADR-0103 | `image-hash.txt` lokal statt committet (Supers. ADR-0044, teilweise) | Accepted | 2026-09-18 | [0103-image-hash-lokal-statt-committet.md](0103-image-hash-lokal-statt-committet.md) |
 | ADR-0104 | Benchmark-Schwellen PER-001/002/003 (Supers. ADR-0054, teilweise) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
+| ADR-0105 | CI-Matrix-RTM-Sichtbarkeit POR-001/002 | Accepted | 2026-09-19 | [0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md](0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md) |

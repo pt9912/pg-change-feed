@@ -703,7 +703,7 @@ fi
 
 echo "run-integration-tests: Spaltenausschluss-Negative-Beleg (LH-FA-CFG-005) — cdc.exclude_column($COLUMN_TABLE.nicht_vorhandene_spalte) endete real failed mit Fehlertext, der Feed-Container lief unverändert weiter"
 
-abdeckung_declare "Lasttest-Beleg cdc_capture_lag" "LH-FA-ADM-004" "cdc_capture_lag bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab: eine durch eine pausierte CDC-Runtime künstlich verzögerte Transaktion liegt über der ungehinderten" "Lasttest-Beleg cdc_capture_lag — Baseline"
+abdeckung_declare "Lasttest-Beleg cdc_capture_lag" "LH-FA-ADM-004,LH-QA-PER-004" "cdc_capture_lag bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab: eine durch eine pausierte CDC-Runtime künstlich verzögerte Transaktion liegt über der ungehinderten — dieselbe Latenz-Messmethode, die \`LH-QA-PER-004\` über \`LH-FA-ADM-004\` verlangt" "Lasttest-Beleg cdc_capture_lag — Baseline"
 
 # Lasttest-Beleg (LH-FA-ADM-004, SPEC-013 CDC_LAG_THRESHOLDS): cdc_capture_lag
 # bildet den Abstand zwischen Quelländerung und CDC-Verfügbarkeit ab. Zwei
@@ -1327,7 +1327,7 @@ fi
 
 echo "run-integration-tests: CLI-Diagnose-Beleg (Fehlerzustand) — 'schema' sichtbar und von Normalbetrieb unterscheidbar (LH-FA-ADM-003 Boundary), Feed-Container läuft unverändert weiter"
 
-abdeckung_declare "SQL-Administration Live-Reload (enable)" "LH-FA-ADM-001,LH-FA-CFG-001" "eine bewusst nicht in der Bindungsliste geführte Tabelle wird über den SQL-Antrag aktiviert und vom bereits laufenden Feed-Container ohne Neustart erfasst" "SQL-Administration Live-Reload-Beleg (enable)"
+abdeckung_declare "SQL-Administration Live-Reload (enable)" "LH-FA-ADM-001,LH-FA-CFG-001,LH-FA-CFG-006" "eine bewusst nicht in der Bindungsliste geführte Tabelle wird über den SQL-Antrag aktiviert und vom bereits laufenden Feed-Container ohne Neustart erfasst — ihre eigene DDL (Spalten, Trigger) bleibt dabei real unverändert, keine Anwendungscode-Anpassung nötig" "SQL-Administration Live-Reload-Beleg (enable)"
 
 abdeckung_declare "SQL-Administration Live-Reload (disable)" "LH-FA-CFG-002" "derselbe Antrags-Weg spiegelbildlich: die Deaktivierung beendet die Erfassung dieser Tabelle, der Prozess läuft weiter" "SQL-Administration Live-Reload-Beleg (disable)"
 
@@ -1341,6 +1341,15 @@ abdeckung_declare "SQL-Administration Live-Reload (disable)" "LH-FA-CFG-002" "de
 # bestätigt nur „beantragt" — der Poll unten wartet auf
 # `status = 'applied'`, bevor die reale Erfassungswirkung geprüft wird.
 ADMIN_TABLE=feed_e2e_sql_admin
+
+# LH-FA-CFG-006-Beleg: `cdc.enable_table` liest nur `cdc.active_table`
+# fort — sie schreibt nie an der Quelltabelle selbst. Fingerabdruck aus
+# Spaltenliste und Trigger-Anzahl vor dem Antrag, gegen denselben
+# Fingerabdruck nach `status = 'applied'` unten geprüft.
+admin_table_ddl_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT string_agg(column_name || ':' || data_type, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$ADMIN_TABLE'")
+admin_table_triggers_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM pg_trigger WHERE tgrelid = 'public.$ADMIN_TABLE'::regclass AND NOT tgisinternal")
 
 enable_request_id=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT cdc.enable_table('src-e2e', 'public', '$ADMIN_TABLE')")
@@ -1371,6 +1380,17 @@ if [ "$enable_applied" -ne 1 ]; then
   exit 1
 fi
 
+admin_table_ddl_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT string_agg(column_name || ':' || data_type, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$ADMIN_TABLE'")
+admin_table_triggers_after=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+  "SELECT count(*) FROM pg_trigger WHERE tgrelid = 'public.$ADMIN_TABLE'::regclass AND NOT tgisinternal")
+if [ "$admin_table_ddl_before" != "$admin_table_ddl_after" ] || [ "$admin_table_triggers_before" != "$admin_table_triggers_after" ]; then
+  echo "run-integration-tests: cdc.enable_table($ADMIN_TABLE) veränderte die DDL der Quelltabelle selbst (LH-FA-CFG-006 verletzt)" >&2
+  echo "  vorher: columns=$admin_table_ddl_before triggers=$admin_table_triggers_before" >&2
+  echo "  nachher: columns=$admin_table_ddl_after triggers=$admin_table_triggers_after" >&2
+  exit 1
+fi
+
 docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
 INSERT INTO public.$ADMIN_TABLE (id, name) VALUES (1, 'SqlAdminEnabled');
 SQL
@@ -1396,7 +1416,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (enable) — cdc.enable_table($ADMIN_TABLE) ohne Neustart verarbeitet, Änderung id=1 real erfasst"
+echo "run-integration-tests: SQL-Administration Live-Reload-Beleg (enable) — cdc.enable_table($ADMIN_TABLE) ohne Neustart verarbeitet, Änderung id=1 real erfasst, DDL der Quelltabelle unverändert"
 
 # Deaktivierung: derselbe Antrags-Weg, spiegelbildlich. Der Feed-Container
 # bleibt danach am Leben — nur die Erfassung dieser einen Tabelle endet
@@ -1961,7 +1981,7 @@ fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
 
-abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
+abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-005,LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes — die spätere API, deren Ermöglichung \`LH-FA-SST-005\` forderte, ohne das interne CDC-Modell zu verändern" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
 
 # HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057, ADR-0081): ein Wegwerf-Client
 # (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token,

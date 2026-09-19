@@ -313,3 +313,5 @@ trace:
       label: E2E
     - files: [docs/user/bench-abdeckung.md]
       label: Bench
+    - files: [docs/user/ci-matrix-abdeckung.md]
+      label: CI-Matrix

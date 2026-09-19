@@ -29,6 +29,10 @@ image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (lokal, nic
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
+.PHONY: doc-ci-matrix
+doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen, docs/user/ci-matrix-abdeckung.md schreiben (ADR-0105, kein Gate, braucht Netz)
+	@bash tools/harness/ci-matrix-abdeckung.sh
+
 # --- Tests (kein Gate; Docker-only, gepinnte Images) ---
 # Toolchain-Container = derselbe gepinnte Digest wie im Dockerfile; der
 # PostgreSQL-Testcontainer trägt seinen Digest aus `docker manifest inspect
