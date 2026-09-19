@@ -84,11 +84,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       taxonomische Schärfung eines §6-Risiko-Ausgangs, nicht code-seitig
       behoben — kein offenes HIGH).
 - [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt — entfällt: `--version` selbst bleibt unverändert als Aufrufform, nur sein gelieferter Wert wird korrekt; kein neuer öffentlicher Vertrag.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — keine neue Beobachtung angefallen (siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft (wellenloser Slice): kein `liegt in`-Feld in diesem Slice (Anker vacuously erfüllt), kein Folge-Slice genannt, das in §6/§8 referenzierte `BEO-PGC/github-actions-unverifizierbar-lokal` existiert real (bereits in mehreren vorangegangenen Slices dieser Sitzung geprüft).
 
 ## 3. Plan (vor Code)
 
@@ -140,7 +140,42 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Der reale End-zu-Ende-Test des ersten
+  `v0.1.1`-Releases (Multi-Arch, `release-multi-arch-image`) deckte
+  diesen Slice-Gegenstand überhaupt erst auf — `--version` zeigte nach
+  dem echten Release-Lauf sichtbar den falschen, seit Ersteinführung nie
+  aktualisierten String. Ohne den echten Tag-Push wäre das vermutlich
+  erst bei einer künftigen Support-Anfrage aufgefallen. Die reale
+  Mutations-Probe (Implementer UND unabhängig der Reviewer UND
+  unabhängig der Verifier haben das `-X`-Flag testweise entfernt und
+  real rot gesehen) bestätigte dreifach, dass der neue Test die
+  behauptete Lücke tatsächlich schließt.
+- **Was ging anders als geplant:** Der Reviewer fand 1 MEDIUM (F-1: der
+  Injektionsmechanismus trug keinen automatisierten Regressionstest —
+  eine künftige, versehentliche Entfernung des `-X`-Flags wäre lautlos
+  gewesen) und 1 INFO (F-2: ein §6-Risiko-Ausgang war taxonomisch
+  ungenau — „entfallen" statt „eingetreten, akzeptiert"). Beide in
+  einer Fixrunde behoben: neues, netzloses
+  `tools/harness/run-version-injection-test.sh` + `make
+  test-version-injection`, real gegen die vom Reviewer benannte
+  Mutation getestet.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  F-1 bestätigt aber ein bereits etabliertes Muster dieser Sitzung
+  (Inline-/Build-Mechanik bekommt ein eigenständiges, netzlos testbares
+  Skript statt unbelegter Logik, wie zuvor
+  `tools/harness/release-tag-info.sh` und
+  `tools/harness/dockerhub-token.sh`) — jetzt zum dritten Mal angewandt.
+- **Beobachtungs-Register (`../observations/`):** keine neue Beobachtung
+  angefallen.
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** zwei Risiken, zwei Ausgänge — (1) `:dev` zeigt
+  künftig `dev` statt des alten Strings → **eingetreten, akzeptiert**
+  (Reviewer-Finding F-2, taxonomisch geschärft); (2) `AGENTS.md` §3.10 →
+  **weiter offen**, bereits verkörpert.
+- **Drei Paarungen:** wellenloser Slice, hier geprüft (nicht bei einer
+  Welle-Closure) — kein `liegt in`-Feld, kein Folge-Slice genannt, das
+  referenzierte `BEO-PGC/github-actions-unverifizierbar-lokal` existiert
+  real (bereits mehrfach in dieser Sitzung geprüft).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
