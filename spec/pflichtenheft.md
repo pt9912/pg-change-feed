@@ -141,6 +141,45 @@ eine Schema-Version ([`LH-FA-SCH-005`](lastenheft.md)). Nicht sicher interpretie
 Schemaänderungen führen zu einem sichtbaren Fehler (Fehlerklasse `schema`,
 §4) statt stiller Fehlinterpretation ([`LH-FA-SCH-004`](lastenheft.md)).
 
+### LH-FA-CAP-009.a — Backfill-Mechanismus offen
+
+**Eingabe:** Bestand einer aktivierten Quelltabelle zum
+Aktivierungszeitpunkt. **Ausgabe:** Backfill-Changes über denselben
+Lesezugriffsweg wie WAL-erfasste Changes.
+
+Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CAP-009`](lastenheft.md)), ihre
+technische Realisierung ist offen: ob der Bestand über einen konsistenten
+Export-Snapshot beim Anlegen des Replication Slots (`pg_export_snapshot`),
+eine separate Bulk-Copy-Phase oder einen anderen Mechanismus überführt
+wird, wie Backfill-Changes von WAL-Changes unterscheidbar markiert werden,
+und das Verhältnis zum bereits laufenden WAL-Erfassungspfad (das im
+Lastenheft benannte Überlappungsfenster) sind offene technische Fragen,
+ADR-pflichtig.
+
+### LH-FA-CFG-007.a — Transformationsform offen
+
+**Eingabe:** Rohform einer erfassten Change. **Ausgabe:** transformierte
+bzw. auf ein Zustellziel geroutete Change.
+
+Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-007`](lastenheft.md)),
+Konfigurationsmechanismus und Ausdrucksform der Transformationsregeln,
+ihre Auswertungsreihenfolge bei mehreren zutreffenden Regeln, und das
+Verhältnis zur bestehenden Spaltenausschluss-Antragsart (`SPEC-019`) sind
+offene technische Fragen, ADR-pflichtig.
+
+### LH-FA-SST-009.a — Sprachmatrix und Vertriebsweg offen
+
+**Eingabe:** bestehende Zustellwege (`SPEC-018`, `SPEC-020`, `SPEC-021`,
+`SPEC-024`). **Ausgabe:** offiziell gepflegtes, versioniertes Package je
+bedienter Sprache.
+
+Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-SST-009`](lastenheft.md)),
+welche Sprache(n) zuerst bedient werden und über welchen
+Paket-Vertriebsweg (z. B. NuGet, npm, Maven, Go-Modul-Registry, PyPI), ist
+offen, ADR-pflichtig. Die bestehenden Beispiel-Client-Werkzeugketten
+(`SPEC-023`) sind kein Vorgriff auf diese Anforderung — sie bleiben
+unversioniertes Vorbild ohne Paketveröffentlichung.
+
 ---
 
 ## 2. Datenstrukturen und Schemas
@@ -594,3 +633,6 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-18 | `SPEC-024` ergänzt: NATS-Vollinhalts-Stream — Subjekt-Schema (`cdc.stream.<source_id>.<schema>.<table>`, eigener Namensraum neben `SPEC-017`s Wecksignal-Subjekt), JSON-Nachrichtenschema identisch zu `SPEC-021`, Granularität je Zeilen-Change, Fire-and-Forget ohne Replay, Authentifizierung über einen serverweiten NATS-Verbindungs-Token (`CDC_NATS_STREAM_TOKEN`), Aktivierung nur bei gesetztem `CDC_NATS_URL` **und** `CDC_NATS_STREAM_TOKEN`; externe-Verträge-Zeile in §6 |
 | 2026-09-18 | `SPEC-016` nachgezogen: `nats_stream_token` in die Klasse der zugangsdaten-tragenden Felder aufgenommen (jetzt drei Token-Schlüssel statt zwei) und in die Liste der env-exklusiven, auch unter geladener Datei aus der Umgebung wirkenden Variablen ergänzt |
 | 2026-09-18 | `SPEC-023` Zeile *Sprachen und Umfang* auf fünf Zugriffs-Oberflächen gezogen (`SPEC-024` ergänzt), samt der Klarstellung, dass eine Sprache ohne öffentliche JSON-Dekodierung für den Vollinhalts-Stream-Client zusätzlich eine gepinnte JSON-Bibliothek braucht |
+| 2026-09-19 | `LH-FA-CAP-009.a` ergänzt: Backfill-Mechanismus (Export-Snapshot vs. Bulk-Copy, Markierung, Verhältnis zum WAL-Erfassungspfad) als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CAP-009` |
+| 2026-09-19 | `LH-FA-CFG-007.a` ergänzt: Konfigurationsmechanismus, Ausdrucksform und Regel-Auswertungsreihenfolge von Transformationen/Routing als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CFG-007` |
+| 2026-09-19 | `LH-FA-SST-009.a` ergänzt: Sprachmatrix und Paket-Vertriebsweg für offizielle Client-Bibliotheken als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-SST-009` — die bestehenden Beispiel-Client-Werkzeugketten (`SPEC-023`) erfüllen sie nicht |
