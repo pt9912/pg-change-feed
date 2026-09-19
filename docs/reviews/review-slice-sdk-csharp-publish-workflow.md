@@ -252,3 +252,93 @@ Implementer-Workflows.
 einer benannten Folge-Slice-Adresse in §1 „Ausdrücklich NICHT in diesem
 Slice" nachtragen). Dieser Report ist ein Lauf-Beleg; er ersetzt keine
 Verifikation gegen die volle DoD — das bleibt Verifier-Aufgabe (Modul 11).
+
+---
+
+## Fixrunden-Nachprüfung — 2026-09-19
+
+**Diff geprüft:** `git diff dbdea454..HEAD` (Fixrunde-Commit `c582eaaf`).
+`git diff dbdea454..HEAD --stat` bestätigt: ausschließlich
+`docs/user/releasing.md` geändert (43 Insertions, 2 Deletions) — kein
+stiller Nebeneffekt in einer anderen Datei.
+
+**F-1-Ausgang: behoben.**
+
+- `docs/user/releasing.md` vollständig gelesen (nicht nur den Diff-Hunk):
+  §4 trägt jetzt einen eigenen Unterabschnitt „SDK-Release: NuGet.org-
+  Publish für `PgChangeFeed.Client`" mit Tag-Namensraum
+  (`sdk-csharp-v<SemVer>`), Trennungsbegründung zu `v*`
+  ([`ADR-0106`](../plan/adr/0106-csharp-nuget-erstes-sdk-package.md)
+  Festlegung 3, E3 verworfen), dem vierstufigen Ablauf (Tag validieren →
+  `.csproj`-Version abgleichen → `make sdk-pack-csharp` → `dotnet nuget
+  push`) und dem Post-Push-Risiko-Hinweis analog `AGENTS.md` §3.10.
+- Ablauf-Beschreibung gegen die reale Workflow-Datei gehalten
+  (`.github/workflows/sdk-csharp-release.yml`, Zeilen 63–80): alle vier
+  im Dokument genannten Schritte, ihre Reihenfolge, die referenzierten
+  Skripte/Targets (`tools/harness/sdk-csharp-release-tag-info.sh`,
+  `make test-sdk-csharp-release-tag-info`, `make sdk-pack-csharp`) und
+  der exakte `dotnet nuget push`-Aufruf (Quelle
+  `https://api.nuget.org/v3/index.json`, `--api-key`) stimmen wörtlich
+  mit der Datei überein. Kein Drift zwischen Doku und Workflow.
+- Trigger-Isolationsaussage („`sdk-csharp-v*` matcht `v*` in `release.yml`
+  nicht") selbst nachgemessen: `grep -n "tags"` gegen
+  `release.yml`/`ci.yml`/`e2e.yml` bestätigt `tags: ['v*']` bzw.
+  `tags-ignore: ['**']` — ein Tag, der mit `s` beginnt, matcht `v*` nicht;
+  die Aussage trägt ihren Beleg.
+
+**§4-vs-§5-Symmetriebegründung selbst verifiziert.** §4 und §5 vollständig
+gelesen: §4 listet jetzt fünf nummerierte Schritte des
+`release.yml`-Laufs plus den eigenständigen SDK-Unterabschnitt; Schritt 5
+dort ist der `hub-description`-Job, der **innerhalb desselben
+Release-Trigger-Laufs** über `needs: release` an `release.yml` hängt.
+§5 „Begleitende, nicht-blockierende Workflows" trägt weiterhin nur
+`image-scan.yml` und `upstream-drift.yml`, beide ausdrücklich als
+„unabhängig vom Release-Trigger, nächtlich und per `workflow_dispatch`"
+beschrieben — Zahl „Zwei" im Fließtext bleibt nach der Fixrunde korrekt,
+weil `sdk-csharp-release.yml` nicht mitgezählt wird. Die
+Implementer-Begründung trägt: `sdk-csharp-release.yml` ist wie
+`release.yml`/`hub-description.yml` selbst ein tag-ausgelöster
+Release-Pfad (kein Schedule/Dispatch-Sidecar), gehört also strukturell zu
+§4, nicht zu §5. Kein Widerspruch gefunden.
+
+**Secret-Tabelle (§4) geprüft:** Neue Zeile
+`| NUGET_API_KEY | NuGet.org-API-Key für dotnet nuget push (SDK-Release,
+siehe unten) | Betreiber, manuell in GitHub |` — gleiche Spaltenform wie
+die bestehende `DOCKERHUB_TOKEN`-Zeile (Zweck knapp benannt, „Angelegt
+von"-Spalte identisch „Betreiber, manuell in GitHub"). Der
+Folgesatz „Alle drei Secrets sind eine externe, kontobezogene Handlung"
+wurde korrekt von „Beide" auf „Alle drei" hochgezogen — kein
+übersehener Zähler.
+
+**Versionskopf/Änderungshistorie geprüft:** `Version: 1.1`, `Stand:
+2026-09-19` im Kopf; neue Zeile in der Änderungshistorie-Tabelle
+(„1.1 | 2026-09-19 | §4 um den unabhängigen SDK-Release-Weg … ergänzt —
+Fixrunde nach Review-Finding F-1 …") nennt korrekt diesen Report,
+`LH-FA-SST-009` und `ADR-0106` — Ursprung der Aussage ist damit selbst
+verankert (`AGENTS.md` §3.12 Instanz B).
+
+**Keine neue falsche technische Aussage gefunden.** Kein Konjunktiv über
+eine verworfene Alternative, kein Chronik-Ton im Fließtext, keine
+Diskrepanz zwischen Dokument und Workflow-Datei.
+
+**Reale Prüfläufe:**
+
+- `make docs-check`: `d-check: 809 Datei(en) geprüft, 0 Befund(e)`.
+- `make gates`: Exit-Code direkt (ungepiped) geprüft — `0`.
+  `baseline-verify: v6.9.0 OK`, `d-check: 809 Datei(en) geprüft, 0
+  Befund(e)` (zweimal im Lauf, docs-check + docs-check-Folgeschritt),
+  `coverage-gate: OK — Coverage 82.80% erfüllt Schwelle 80%`,
+  `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD"`,
+  `a-check: gesamt: 0 Befund(e)`, `generated-sync: OK`.
+
+**Neue Funde dieser Fixrunden-Nachprüfung:** keine.
+
+## Gesamt-Verdikt (nach Fixrunde)
+
+**F-1: behoben.** 0 offene HIGH/MEDIUM/LOW-Findings. `make gates` grün.
+DoD-Zeile „Review durchgeführt, Report unter `docs/reviews/` liegt vor"
+im Slice-Plan
+(`docs/plan/planning/in-progress/slice-sdk-csharp-publish-workflow.md`)
+auf `[x]` nachgezogen, mit Verweis auf diesen Report. Kein weiterer
+Reviewer→Implementer-Rückgabe-Pfeil nötig; Übergabe an den Verifier
+(Modul 11) ist freigegeben.
