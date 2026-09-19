@@ -5,11 +5,32 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` **§3.13**
 bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Implementer
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
-Zähler (abgeleitet): **11×** (evidence/slice-091.md, evidence/slice-093.md,
-evidence/slice-094.md, evidence/slice-096.md, evidence/slice-097.md,
-evidence/slice-095.md, evidence/slice-100.md, evidence/slice-101.md,
-evidence/slice-102.md, evidence/slice-103.md, evidence/slice-105.md). Der
-elfte Vorgang (`slice-105`) trifft dieselbe Klasse über die
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
+Ordinal-Erzählung unten übernommen): **17×** — die elf unten benannten
+(`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
+`slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
+`slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
+in dieser Ordinal-Erzählung bislang unbenannte Belege
+(`evidence/slice-bench-schwellen-per-001-002-003.md`,
+`evidence/slice-d-check-tracked-modul.md`,
+`evidence/slice-nats-drittstream-core.md`,
+`evidence/slice-rtm-letzte-zwoelf-tag-only.md`,
+`evidence/slice-rtm-reste-sst-cfg-por.md` — jede für sich bereits ein
+gültiger, in ihrer eigenen Datei begründeter Beleg dieser Klasse, hier nur
+nachträglich in den Zähler aufgenommen, ohne die Ordinal-Erzählung für sie
+rückwirkend zu schreiben) plus der neue siebzehnte Beleg,
+`evidence/slice-sdk-csharp-http-client-flaeche.md`: Der Vorgänger-Slice
+(`slice-sdk-csharp-projektgeruest`) hatte `sdks/csharp/README.md` §Status
+bewusst mit Verweis auf genau diesen Folge-Slice als HTTP-Fläche-Lieferant
+geschrieben — bei Niederschrift wahr, durch die reale Auslieferung von
+`PgChangeFeedHttpClient` (zehn Methoden) falsch geworden. Gefunden hat den
+Fund nicht der Implementer-eigene §3.13-Suchlauf, sondern der **Reviewer**
+(F-1, HIGH, merge-blockierend) — dieselbe Unter-Klasse „gefunden vom
+Reviewer, nicht vom Implementer-Suchlauf" wie bei `slice-095`/`slice-097`.
+In der Fixrunde behoben, Fixrunden-Nachprüfung und Verifikation bestätigen
+unabhängig voneinander keinen weiteren stehen gebliebenen Satz (Details:
+`evidence/slice-sdk-csharp-http-client-flaeche.md`). Der elfte Vorgang
+(`slice-105`) trifft dieselbe Klasse über die
 Baseline-Versionierung statt über ein Runtime-Image: das Entfernen von
 `.harness/baseline/v6.5.0/` überholte drei Links in `docs/reviews/**` — <!-- d-check:ignore (historische Vor-Migrations-Erwähnung, kein lebender Pin) -->
 gefunden vom Implementer über denselben §3.13-Suchlauf, im selben Commit

@@ -87,15 +87,15 @@ unabhängige Tests.
       Selbstprüf-Instruktion (`.claude/commands/implement-slice.md` Schritt
       17) und den Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -170,30 +170,97 @@ geschrieben.
 - Die Fehler-Antwortform (`{"error": "<Klartext>"}`) lässt sich auf
   unterschiedliche Arten in .NET abbilden (Exception-Hierarchie vs.
   Result-Typ) — eine falsche Wahl bindet spätere Consumer an ein API-Design,
-  das ein Major-Bump bräuchte, um es zu ändern. **Ausgang:** weiter offen,
-  entschieden beim Schreiben (`ADR-0106` Festlegung 3: die
-  SemVer-Major-Boundary bindet ohnehin an Draht-Änderungen, nicht an
-  dieses interne Design — ein API-Redesign vor `1.0.0` ist folgenlos
-  möglich).
+  das ein Major-Bump bräuchte, um es zu ändern. **Ausgang: entschieden beim
+  Schreiben.** Es liegt eine `PgChangeFeedException`-Hierarchie vor,
+  konsistent über alle zehn Methoden (jede läuft durch denselben privaten
+  `SendAsync`-Pfad; Review und Verifikation haben das unabhängig
+  nachgezählt) — inklusive der in der Fixrunde ergänzten
+  `PgChangeFeedMalformedResponseException` für einen malformten
+  `2xx`-Erfolgsbody (F-2 des Reviews). `ADR-0106` Festlegung 3 bindet die
+  SemVer-Major-Boundary an Draht-Änderungen, nicht an dieses interne
+  Design — ein API-Redesign bleibt vor `1.0.0` folgenlos möglich, das Risiko
+  ist damit für den aktuellen Stand geschlossen, nicht nur vertagt.
 - Ein `HttpMessageHandler`-Fake für die Tests könnte reale
   Netzwerk-/Serialisierungs-Eigenheiten (z. B. Groß-/Kleinschreibung der
   JSON-Felder) verdecken, die erst gegen einen echten Server auffielen.
-  **Ausgang:** weiter offen — ein realer Rundlauf-Beleg bleibt
-  `make test-integration`s bestehendem `tools/harness/httpclient`
-  vorbehalten (Wegwerf-Client, kein SDK-Import, `ADR-0068`); dieses SDK
-  bekommt frühestens mit einem Folge-Slice einen eigenen Integrationsbeleg.
+  **Ausgang: weiter offen** — unverändert zur Plan-Begründung. Ein realer
+  Rundlauf-Beleg bleibt `make test-integration`s bestehendem
+  `tools/harness/httpclient` vorbehalten (Wegwerf-Client, kein SDK-Import,
+  `ADR-0068`); dieses SDK bekommt frühestens mit einem Folge-Slice einen
+  eigenen Integrationsbeleg. Weder Review noch Verifikation haben einen
+  realen Server gegen dieses SDK gefahren — die vier unabhängigen
+  Docker-Testläufe (Implementer, Reviewer-Erstlauf, Reviewer-
+  Fixrunden-Nachprüfung, Verifier) liefen alle netzlos gegen den
+  `HttpMessageHandler`-Fake.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt, oder
-  „kein neuer Sensor" — je nach Lauf>.
-- **Beobachtungs-Register (`../observations/`):** <neu angelegt | Beleg
-  ergänzt | keine Beobachtung angefallen>.
+- **Was hat funktioniert:** Vier unabhängige Docker-Builds über den ganzen
+  Zyklus (Implementer, Reviewer-Erstlauf, Reviewer-Fixrunden-Nachprüfung,
+  Verifier) bestätigten übereinstimmend dasselbe Ergebnis — 26/26 Tests grün
+  vor der Fixrunde, 27/27 nach ihr (ein neuer Test deckt die in der
+  Fixrunde behobene Lücke), 0 Warnings/0 Errors, keine Divergenz über die
+  vier Läufe. Die zentrale `SendAsync`-Bündelung aller zehn Methoden über
+  genau einen privaten Sende-Pfad erwies sich als tragfähig: Sowohl das
+  Fehler-Mapping (`BuildException`) als auch der in der Fixrunde ergänzte
+  Erfolgs-Deserialisierungs-Helfer (`DeserializeSuccessBody`) griffen ohne
+  Methoden-Zweitpfad für alle zehn Fähigkeiten — Review und Verifikation
+  konnten das je unabhängig durch Verfolgen einzelner Methodenketten
+  bestätigen, statt es aus der Struktur zu vermuten. Das 3-Commit-
+  Move-Muster (`git mv` next→in-progress · Inhalt · Fixrunde) hielt
+  `AGENTS.md` §3.3 sauber.
+- **Was ging anders als geplant:** Zwei Plan-Nachzüge im
+  Implementer-Zug (§3): Tests liegen in sechs Gruppendateien statt einer
+  einzelnen `HttpClientTests.cs`, Modelle in vier Gruppendateien plus
+  `ErrorResponse.cs` statt lose — reine Lesbarkeits-Entscheidung, kein
+  fachlicher Umfangsunterschied (Fähigkeitsabdeckung deckungsgleich mit dem
+  Plan, von Review und Verifikation je unabhängig nachgezählt). Zusätzlich
+  war — anders als beim glatten Vorgänger-Slice — eine Fixrunde nötig: Der
+  Review-Erstlauf fand 1 HIGH (F-1, `sdks/csharp/README.md` behauptete
+  weiterhin „follow-up release" für eine jetzt real gelieferte Fläche —
+  Verstoß gegen `AGENTS.md` §3.13) und 1 MEDIUM (F-2, ein malformter
+  `2xx`-Erfolgsbody führte zu einer rohen `JsonException` statt einer
+  typisierten Exception). Beide wurden in einer einzigen Fixrunde
+  (`7bf7dece`) behoben und in der Fixrunden-Nachprüfung sowie unabhängig
+  in der Verifikation als vollständig und ohne neuen Fund bestätigt.
+- **Steering-Loop-Eintrag:** kein neuer Sensor — F-1 ist eine bereits
+  verkörperte Hard Rule (`AGENTS.md` §3.13, kein Gate-fähiger Tatbestand,
+  siehe Registerbegründung); F-2 ist eine lokale Code-Review-Fehlerklasse
+  (unklare Fehlerbehandlung am Rand des Spec-Bereichs) ohne
+  Schwellenwert-Charakter. Beide Findings sind stattdessen im
+  Beobachtungs-Register festgehalten (F-1, siehe unten); F-2 bleibt ohne
+  Registereintrag, da bislang kein zweites Auftreten dieser spezifischen
+  Klasse (malformter Erfolgsbody statt Fehlerbody) im Bestand vorliegt.
+- **Beobachtungs-Register (`../observations/`):** Beleg ergänzt — kein
+  neues `BEO-PGC/<slug>/`. F-1 passt zur bereits verkörperten Beobachtung
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Erstauftreten `slice-091`,
+  bereits `AGENTS.md` §3.13): Der Vorgänger-Slice hatte
+  `sdks/csharp/README.md` §Status bewusst mit Verweis auf genau diesen
+  Folge-Slice geschrieben — bei Niederschrift wahr, durch die reale
+  Auslieferung von `PgChangeFeedHttpClient` falsch geworden. Gefunden hat
+  den Fund nicht der Implementer-eigene §3.13-Suchlauf, sondern der
+  Reviewer — dieselbe bereits belegte Unter-Klasse „gefunden vom Reviewer,
+  nicht vom Implementer-Suchlauf" wie bei `slice-095`/`slice-097`. Neue
+  Evidenz-Datei:
+  `../observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/slice-sdk-csharp-http-client-flaeche.md`;
+  Zähler jetzt real ausgezählt 17× (siehe dortiges `state.md` — dabei fünf
+  zwischenzeitlich ergänzte, in der Ordinal-Erzählung bislang unbenannte
+  Belege nachgetragen, ohne deren Erzählung rückwirkend zu schreiben);
+  Beobachtung bleibt bereits verkörpert, kein neuer Schwellen-Übertritt
+  ausgelöst.
 - **Folge-Slices:** keine aus diesem Slice selbst erwartet — Umfang bleibt
-  innerhalb der Welle.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>.
+  innerhalb der Welle (gRPC-Fläche, Pack-Werkzeug, Publish-Workflow bleiben
+  eigene, bereits geplante Slices).
+- **Risiken aus §6:**
+  - „Fehler-Antwortform-Design könnte spätere Consumer binden" —
+    **Ausgang: entschieden während der Umsetzung** — Exception-Hierarchie,
+    konsistent über alle zehn Methoden inkl. der neuen
+    `PgChangeFeedMalformedResponseException` aus der Fixrunde; bleibt vor
+    `1.0.0` folgenlos änderbar (`ADR-0106` Festlegung 3).
+  - „`HttpMessageHandler`-Fake könnte reale Netzwerk-/
+    Serialisierungs-Eigenheiten verdecken" — **Ausgang: weiter offen**,
+    unverändert zur Plan-Begründung; ein realer Rundlauf-Beleg bleibt einem
+    Folge-Slice vorbehalten.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
