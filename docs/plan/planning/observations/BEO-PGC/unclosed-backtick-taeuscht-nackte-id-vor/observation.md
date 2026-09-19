@@ -39,7 +39,7 @@ Gesamtzahl auf 404 und stellte volle Paarung wieder her.
 Backtick-Korrektur (403 → 404, siehe oben) meldete `make docs-check` einen
 **neuen**, bis dahin nie gemeldeten `id-unlinked`-Befund in **demselben**
 Dokument: eine nackte `ADR-0106`-Erwähnung an Zeile 132, innerhalb eines
-zitierten Beispiel-Textes („(slice-<name>, ADR-0106 Festlegung …)"). Diese
+zitierten Beispiel-Textes („(slice-<name>, `ADR-0106` Festlegung …)"). Diese
 Erwähnung war die ganze Zeit real unverlinkt — sie lag aber, solange der
 unclosed-backtick-Defekt bestand, im verschobenen Paritäts-Fenster und wurde
 von `d-check`s Codespan-Erkennung fälschlich als „innerhalb eines Codespans"

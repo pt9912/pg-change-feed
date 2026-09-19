@@ -261,7 +261,7 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
   legte real einen **zweiten**, bis dahin verdeckten Fund offen: `make
   docs-check` meldete danach einen `id-unlinked`-Befund für eine nackte
   `ADR-0106`-Erwähnung an Zeile 132 desselben Reports (Beispiel-Text
-  „(slice-<name>, ADR-0106 Festlegung …)") — real unverlinkt seit dem
+  „(slice-<name>, `ADR-0106` Festlegung …)") — real unverlinkt seit dem
   ursprünglichen Merge, aber solange durch den Backtick-Defekt fälschlich
   als „innerhalb eines Codespans" maskiert. `make gates`/`make docs-check`
   liefen deshalb über den gesamten Zeitraum grün, **nicht** weil kein
