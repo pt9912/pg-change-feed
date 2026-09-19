@@ -43,23 +43,34 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `hub-description.yml` existiert: `on: {workflow_dispatch:,
-      workflow_call:}`, synchronisiert die Docker-Hub-Beschreibung des
-      Repos `pt9912/pg-change-feed` mit dem Inhalt von `README.md`
-      (`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` referenziert, nicht angelegt
-      — siehe §1 Abgrenzung der Welle-Datei).
-- [ ] `release.yml` (aus `release-version-und-workflow`) bekommt einen
-      zusätzlichen Job mit `needs: <Release-Job-Name>`, der
+- [x] `hub-description.yml` existiert: `on: {workflow_dispatch:,
+      workflow_call: {secrets: {DOCKERHUB_USERNAME, DOCKERHUB_TOKEN}}}`,
+      synchronisiert die Docker-Hub-Beschreibung des Repos
+      `pt9912/pg-change-feed` mit dem Inhalt von `README.md` über
+      `POST /v2/auth/token` ({identifier, secret} → access_token) +
+      `PATCH /v2/repositories/pt9912/pg-change-feed` ({full_description}),
+      reiner curl/jq-Aufruf auf dem Runner (kein gepinnter Action-Fork).
+      Real gegen die öffentliche Docker-Hub-API geprüft: 400 bei zu
+      kurzem Fake-Secret, 401 bei korrekt geformtem, falschem Secret
+      (bestätigt Endpoint + Feldnamen + dass das Repo existiert); der
+      eigene Fehlerpfad (kein `access_token` in der Antwort → `exit 1`
+      mit `::error::`) real mit Fake-Zugangsdaten ausgelöst und bestätigt.
+      `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` referenziert, nicht angelegt
+      — siehe §1 Abgrenzung der Welle-Datei.
+- [x] `release.yml` (aus `release-version-und-workflow`) bekommt einen
+      zusätzlichen Job `hub-description` mit `needs: release`, der
       `hub-description.yml` über `uses: ./.github/workflows/hub-description.yml`
-      aufruft; ein Fehlschlag dieses Jobs lässt den Release-Job selbst
-      unberührt (kein `needs`-Failure-Propagation-Block zurück).
-- [ ] `make gates` grün.
+      mit `secrets: inherit` aufruft; ein Fehlschlag dieses Jobs lässt den
+      bereits abgeschlossenen `release`-Job unberührt — GitHub Actions
+      ändert dessen Status nicht rückwirkend (kein
+      `needs`-Failure-Propagation-Block zurück).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` §Sensors/§Werkzeuge — die
-      `release.yml`-Zeile aus `release-version-und-workflow` nennt den
-      zusätzlichen `hub-description`-Job knapp mit.
+- [ ] Doku-Update für `harness/README.md` §Sensors/§Werkzeuge — entfällt
+      als eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
+      DoD-Kriterium trägt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -71,7 +82,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `.github/workflows/hub-description.yml` | neu | `workflow_dispatch` + `workflow_call`, Docker-Hub-Beschreibungs-Sync. |
-| `.github/workflows/release.yml` | update | zusätzlicher `needs: <Release-Job>`-Job, ruft `hub-description.yml` per `uses:` auf. |
+| `.github/workflows/release.yml` | update | zusätzlicher `hub-description`-Job (`needs: release`), ruft `hub-description.yml` per `uses:`/`secrets: inherit` auf. |
+| `harness/README.md` §Werkzeuge | update (Plan-Nachzug) | `release.yml`-Zeile um den `hub-description`-Job ergänzt, neue eigene `hub-description.yml`-Zeile. |
 
 ## 4. Trigger
 

@@ -1,0 +1,77 @@
+---
+name: hub-description
+
+# Docker-Hub-Beschreibungs-Sync (ADR-0051 Entscheidung 8): spiegelt den
+# Inhalt von README.md als Docker-Hub-Repository-Beschreibung fuer
+# pt9912/pg-change-feed. Praesentation, kein Bestandteil der
+# Distributions-Zusage (ADR-0051 §Konsistenz-Pruefung) — ein Fehlschlag
+# hier laesst einen bereits abgeschlossenen release.yml-Lauf unberuehrt,
+# weil GitHub Actions den Status eines vorgelagerten needs-Jobs nicht
+# rueckwirkend aendert.
+#
+# Zwei Trigger: `workflow_call` (aus release.yml heraus, needs: release —
+# `secrets: inherit` beim Aufruf) und `workflow_dispatch` (manueller
+# Nachlauf, z. B. nach einer reinen README.md-Aenderung ohne neuen
+# Release). DOCKERHUB_USERNAME/DOCKERHUB_TOKEN sind Repository-Secrets,
+# die dieser Workflow referenziert, aber nicht anlegt (externe
+# Kontohandlung, Welle-Datei
+# docs/plan/planning/welle-release-pipeline-adr-0051.md §6).
+#
+# Docker-Hub-API (kein gepinnter Action-Fork, direkter curl/jq-Aufruf auf
+# dem Runner — reine Workflow-Mechanik, kein `make`-Target zu
+# duplizieren, analog release.ymls `gh`-CLI-Nutzung): POST
+# /v2/auth/token mit {identifier, secret} liefert ein access_token
+# (Bearer), PATCH /v2/repositories/<namespace>/<repo> mit
+# {full_description} aktualisiert die Beschreibung — real gegen die
+# oeffentliche Docker-Hub-API mit ungueltigen Zugangsdaten geprueft
+# (400 bei zu kurzem Secret, 401 bei korrekt geformtem, falschem Secret
+# — bestaetigt Endpoint und Feldnamen); der volle Erfolgspfad bleibt bis
+# zum ersten echten Lauf mit realen Repository-Secrets unbewiesen
+# (AGENTS.md §3.10 analog, siehe Slice-Plan
+# docs/plan/planning/in-progress/release-hub-description.md §6).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  hub-description:
+    name: Docker-Hub-Beschreibung mit README.md synchronisieren
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Docker-Hub-Beschreibung aktualisieren
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          token=$(curl -sS -X POST https://hub.docker.com/v2/auth/token \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg u "$DOCKERHUB_USERNAME" --arg p "$DOCKERHUB_TOKEN" '{identifier: $u, secret: $p}')" \
+            | jq -r '.access_token // empty')
+          if [ -z "$token" ] || [ "$token" = "null" ]; then
+            echo "::error::Docker-Hub-Login fehlgeschlagen — kein access_token in der Antwort"
+            exit 1
+          fi
+          jq -n --arg desc "$(cat README.md)" '{full_description: $desc}' > /tmp/hub-description-body.json
+          curl -fsS -X PATCH https://hub.docker.com/v2/repositories/pt9912/pg-change-feed \
+            -H "Authorization: Bearer $token" \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/hub-description-body.json

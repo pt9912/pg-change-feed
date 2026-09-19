@@ -28,6 +28,14 @@ name: release
 # tatsaechliches Vorhandensein bleibt bis zum ersten echten Release
 # unbewiesen (AGENTS.md §3.10 analog).
 #
+# Nach einem erfolgreichen `release`-Job ruft der zusaetzliche
+# `hub-description`-Job `hub-description.yml` per `uses:`/`workflow_call`
+# auf (`ADR-0051` Entscheidung 8, `secrets: inherit`) und synchronisiert
+# die Docker-Hub-Beschreibung mit `README.md` — Praesentation, kein
+# Bestandteil der Distributions-Zusage: ein Fehlschlag hier laesst den
+# bereits abgeschlossenen `release`-Job unberuehrt, GitHub Actions aendert
+# dessen Status nicht rueckwirkend.
+#
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
 
@@ -96,3 +104,9 @@ jobs:
             fi
           } > release-notes.md
           gh release create "$GITHUB_REF_NAME" --title "v$version" --notes-file release-notes.md
+
+  hub-description:
+    name: Docker-Hub-Beschreibung synchronisieren
+    needs: release
+    uses: ./.github/workflows/hub-description.yml
+    secrets: inherit
