@@ -38,12 +38,9 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md) —
-  Release-Pipeline gemäß [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
-  vollständig umsetzen.
-
-Kein Slice dieser Welle liegt aktuell in `in-progress/` — alle fünf
-liegen noch in `open/` (Welle eröffnet, noch nicht beansprucht).
+**Nichts in Arbeit** — aktuell keine flache Welle-Datei unter
+`docs/plan/planning/`; `welle-release-pipeline-adr-0051` ist mit dieser
+Closure nach `done/` gewandert (siehe *Abgeschlossene Wellen* unten).
 
 ## Nächste Wellen
 
@@ -166,6 +163,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-archive-altbestand — Erste Archivierung dieses Repos (wellenloser Altbestand + `welle-d-check`) | 2026-09-18 | [welle-archive-altbestand-results.md](../done/welle-archive-altbestand-results.md) |
 | welle-beispiele-start-ueber-make — Beispiel-Clients: Start über `make`/Dockerfile statt `go run`, echter Start-Make-Target, Demo-Umgebung mit Bootstrapping (`ADR-0098`) | 2026-09-18 | [welle-beispiele-start-ueber-make-results.md](../done/welle-beispiele-start-ueber-make-results.md) |
 | welle-nats-drittstream — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming, volle Drei-Sprachen-Matrix (`LH-FA-SST-008`, `ADR-0100`) | 2026-09-18 | [welle-nats-drittstream-results.md](../done/welle-nats-drittstream-results.md) |
+| welle-release-pipeline-adr-0051 — Release-Pipeline gemäß `ADR-0051` vollständig umsetzen: Versionierung/`release.yml`, CVE-Scan, Upstream-Pin-Freshness, Docker-Hub-Beschreibungs-Sync, Betreiber-Doku | 2026-09-19 | [welle-release-pipeline-adr-0051-results.md](../done/welle-release-pipeline-adr-0051-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

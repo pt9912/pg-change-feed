@@ -18,7 +18,7 @@ zwei Positionen, nicht drei.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) (Accepted,
+[`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) (Accepted,
 2026-09-13) legt fünf Teilentscheidungen für eine vollständige
 Release-Pipeline fest; zwei ihrer Träger existieren bereits
 (`ci.yml`, `.github/dependabot.yml`, aus dem archivierten
@@ -43,7 +43,7 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) ist `Accepted`
+- [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) ist `Accepted`
   (bereits erfüllt, 2026-09-13).
 - Direkter Auftraggeber-Auftrag, die verbleibenden fünf Artefakte der
   Entscheidung jetzt real umzusetzen ("Release-Pipeline jetzt wirklich
@@ -73,11 +73,11 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| release-version-und-workflow | `docs/user/version.md`, `make image`-Versionsparameter, `release.yml` (Tag → Build → GHCR+Docker-Hub-Push → GitHub-Release) | [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 1/3/4 |
-| release-image-scan | `image-scan.yml` — Trivy-CVE-Scan gegen das publizierte GHCR-`:latest`-Image, advisory | [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 6 |
-| release-upstream-drift | `upstream-drift.yml` — Pin-Freshness über das Neun-Achsen-Inventar P1–P9, fail-open, neue Make-Targets für P3–P9 | [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7 |
-| release-hub-description | `hub-description.yml` — Docker-Hub-Beschreibungs-Sync nach erfolgreichem Release | [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 8 |
-| release-doku-releasing | `docs/user/releasing.md` — Betreiber-/Maintainer-Dokumentation des jetzt real existierenden Release-Prozesses | [`ADR-0051`](../adr/0051-cicd-pipeline-github-actions.md) (derivativ, kein eigener Entscheidungspunkt) |
+| release-version-und-workflow | `docs/user/version.md`, `make image`-Versionsparameter, `release.yml` (Tag → Build → GHCR+Docker-Hub-Push → GitHub-Release) | [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 1/3/4 |
+| release-image-scan | `image-scan.yml` — Trivy-CVE-Scan gegen das publizierte GHCR-`:latest`-Image, advisory | [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 6 |
+| release-upstream-drift | `upstream-drift.yml` — Pin-Freshness über das Neun-Achsen-Inventar P1–P9, fail-open, neue Make-Targets für P3–P9 | [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 7 |
+| release-hub-description | `hub-description.yml` — Docker-Hub-Beschreibungs-Sync nach erfolgreichem Release | [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) Entscheidung 8 |
+| release-doku-releasing | `docs/user/releasing.md` — Betreiber-/Maintainer-Dokumentation des jetzt real existierenden Release-Prozesses | [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md) (derivativ, kein eigener Entscheidungspunkt) |
 
 ## 5. Abhängigkeiten
 
@@ -119,7 +119,7 @@ der Closure-Trigger unerreichbar wird.
 - **Ein echter Alt-Image-vs-Neu-Image-Upgrade-Test**
   (`BEO-PGC/kein-echter-versionswechsel-upgrade-test`) — dessen
   Re-Evaluierungs-Trigger
-  ([`ADR-0064`](../adr/0064-lh-qa-ops-005-testansatz-korrektur.md)
+  ([`ADR-0064`](../../adr/0064-lh-qa-ops-005-testansatz-korrektur.md)
   Re-Evaluierungs-Trigger 1: „Release-Pipeline/Tags abgeschlossen, erster
   Git-Tag gesetzt") wird durch diese Welle nur zur Hälfte erfüllt — die
   Pipeline existiert danach real, ein erster echter Tag ist aber (siehe
@@ -132,12 +132,10 @@ der Closure-Trigger unerreichbar wird.
 
 ## 7. Closure-Notiz
 
-*(wird bei Closure gefüllt.)*
-
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 §Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**: Die
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: <Zeiger auf `welle-<Kennung>-results.md`, Geschwister im Ruheort `done/`>
-Zähler: <Zeiger aufs Beobachtungs-Register, eine Ebene über dem Ruheort>
+Ergebnis: [welle-release-pipeline-adr-0051-results.md](welle-release-pipeline-adr-0051-results.md)
+Zähler: [../observations/](../observations/)

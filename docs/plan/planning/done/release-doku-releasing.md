@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md).
+**Welle:** [welle-release-pipeline-adr-0051](welle-release-pipeline-adr-0051.md).
 
 **Bezug:** [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
 (derivativ — kein eigener Entscheidungspunkt, dokumentiert die Summe der
@@ -177,7 +177,7 @@ geschrieben.
   Nachtrag/Korrektur als eigener kleiner Folge-Vorgang, kein Blocker für
   diesen Slice).
 - **Drei Paarungen:** dieser Slice ist der letzte von
-  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  [welle-release-pipeline-adr-0051](welle-release-pipeline-adr-0051.md)
   — die Prüfung läuft regelkonform bei deren unmittelbar folgender
   Closure (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
   Welle-Closure"). Vorab-Hinweis für diese Prüfung: kein

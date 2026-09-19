@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md).
+**Welle:** [welle-release-pipeline-adr-0051](welle-release-pipeline-adr-0051.md).
 
 **Bezug:** [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
 Entscheidung 8 (`hub-description.yml`).
@@ -213,7 +213,7 @@ geschrieben.
   **weiter offen**, strukturell; (4) F-6 Permissions-Vererbung bei
   Reusable-Workflow-Aufruf ungeklärt → **weiter offen**, strukturell.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  [welle-release-pipeline-adr-0051](welle-release-pipeline-adr-0051.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure, nicht
   hier (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
   Welle-Closure"). Vorab-Hinweis für diese spätere Prüfung: kein
