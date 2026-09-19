@@ -95,17 +95,17 @@ Träger-Nachzug, den `ADR-0106` §Konsequenzen Folgepflicht 2/3 fordert:
       Report: `docs/reviews/review-slice-sdk-csharp-pack-werkzeug.md`
       (0 HIGH, 0 MEDIUM, 0 LOW, 1 INFO — keine Fixrunde nötig,
       DoD-Checkbox-Nachzug ohne Fixrunde laut Reviewer-Skill).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -181,28 +181,107 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `make proto-generate`s `tar`-Stream-Export) ist neu für diesen
   Artefakt-Typ — ein Bind-Mount-Workaround oder ein falsch gesetztes
   `--user` könnte das Artefakt mit falschen Dateirechten oder gar nicht
-  auf den Host bringen. **Ausgang:** weiter offen, real zu prüfen beim
-  Schreiben (`docker run --rm --network none <image> | tar -x -C .`-Muster
-  aus `tools/harness/proto-generate.sh` als Vorbild, `AGENTS.md` §3.9
-  Pipe-Disziplin beachten).
+  auf den Host bringen. **Ausgang:** entfallen/aufgelöst — der
+  `tar`-Stream-Export (`docker run --rm --network none <image> | tar -x
+  -C .`, `AGENTS.md` §3.9 Pipe-Disziplin) trug beim ersten Versuch real
+  und wurde danach dreifach unabhängig bestätigt (Implementer-,
+  Reviewer-, Verifier-Lauf; der Verifikationsbericht §1.1 zählt insgesamt
+  sechs eigenständige Bau-Läufe über den Zyklus, inklusive einer eigenen,
+  vom Reviewer unabhängigen Mutations-Probe) — kein Bind-Mount, kein
+  `--user`-Workaround nötig, keine Dateirechte-Auffälligkeit in keinem der
+  Läufe (`git status --porcelain` je leer/`.gitignore`-konform nach dem
+  Export).
 - Die neue `SPEC-<NNN>`-Nummer in `spec/pflichtenheft.md` §6/§2 muss
   fortlaufend vergeben werden (aktuell zuletzt `SPEC-024`) — ein
   Parallel-Slice, der ebenfalls eine neue `SPEC-*`-Nummer vergibt, könnte
-  zu einer Kollision führen. **Ausgang:** weiter offen, gering — keine
-  andere offene Welle/kein anderer offener Slice vergibt aktuell eine neue
-  `SPEC-*`-Nummer (Roadmap: „Nichts in Arbeit").
+  zu einer Kollision führen. **Ausgang:** entfallen — `SPEC-026` real
+  kollisionsfrei vergeben; Reviewer und Verifier haben je unabhängig
+  `grep -c "SPEC-026" spec/*.md` gefahren (drei Treffer, ausschließlich in
+  `spec/pflichtenheft.md`: §1-Fließtext, §6-Zeile, §7-Historie; `0` in
+  `spec/lastenheft.md`/`spec/architecture.md`) — genau eine
+  Definitionsstelle, keine Zweitvergabe.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt, oder
-  „kein neuer Sensor" — je nach Lauf>.
-- **Beobachtungs-Register (`../observations/`):** <neu angelegt | Beleg
-  ergänzt | keine Beobachtung angefallen>.
+- **Was hat funktioniert:** Ein glatter Durchlauf ohne Fixrunde — der
+  Reviewer fand 0 HIGH/MEDIUM/LOW und 1 rein kosmetisches INFO
+  (`docs/reviews/review-slice-sdk-csharp-pack-werkzeug.md`, F-1: Form der
+  `SPEC-026`-Vertrag-Datei-Spalte weicht sachlich begründet vom
+  Nachbarzeilen-Muster ab, kein Fix nötig), der Verifier bestätigte „DoD
+  erfüllt" mit vollständig eigenständigen Läufen — inklusive einer
+  eigenen, vom Reviewer unabhängigen Mutations-Probe (andere Testdatei,
+  andere Assertion) mit identischem Ergebnis: ein roter Test verhindert
+  das `.nupkg`-Artefakt strukturell, nicht nur im vom Reviewer geprüften
+  Einzelfall. Der neue Export-Mechanismus für einen `.nupkg` (Docker-Bau
+  → `tar`-Stream-Export, analog `make proto-generate`) trug beim ersten
+  Versuch real, ohne Bind-Mount-/`--user`-Nacharbeit. Der
+  DoD-Checkbox-Nachzug ohne Fixrunde (`BEO-PGC/dod-checkbox-nachzug-review-ohne-fixrunde`)
+  griff erneut korrekt: der Reviewer zog die DoD-Zeile „Review
+  durchgeführt" im selben Commit selbst nach.
+- **Was ging anders als geplant:** Der ursprüngliche DoD-Wortlaut (§2)
+  sah eine namentliche `ADR-0106`-Nennung in der neuen
+  `LH-FA-SST-009.a`-Nachzugzeile und der neuen `SPEC-026`-Zeile vor. Ein
+  erster Versuch mit Markdown-Link erzeugte real den Befund
+  `matrix-forbidden Referenz spec → adr ist nicht erlaubt`
+  (`.d-check.yml` `matrix.rules`) — der Implementer schrieb beide Zeilen
+  ohne ADR-Bezug (Plan-Nachzug, §3) und beließ die fachliche Aussage
+  unverändert. Reviewer und Verifier prüften das unabhängig voneinander
+  gegen die bereits im Dokument etablierten §3-/§7-Kopfregeln
+  („kein ADR- und kein Slice-Verweis", die Beziehung steht bereits
+  umgekehrt in `ADR-0106`s `Schärft:`-Feld) und bestätigten: keine
+  Ad-hoc-Notlösung, sondern dieselbe Struktur-Regel wie bei
+  `SPEC-010`/`SPEC-017`/`SPEC-020`/`SPEC-023`/`SPEC-024`.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel.
+  Zwei mögliche Beobachtungs-Kandidaten geprüft (siehe unten) — beide ohne
+  neue Handlung.
+- **Beobachtungs-Register (`../observations/`):** keine neue
+  Beleg-Datei angelegt, zwei Kandidaten geprüft:
+  - a) Der Auftrag benannte einen möglichen dritten Fall in dieser Welle,
+    in dem Reviewer **und** Verifier unabhängig voneinander denselben
+    `docs-check`-`id-unlinked`-Stolperstein beim Schreiben ihrer eigenen
+    Berichte getroffen hätten (Klasse `BEO-PGC/report-nackte-id-ohne-link`,
+    bereits verkörpert seit `slice-063`, zuletzt Beleg 7 bei
+    `slice-sdk-csharp-grpc-client-flaeche`). Eigene Prüfung: weder der
+    Review- noch der Verifikationsbericht dieses Slice nennen
+    `id-unlinked` an irgendeiner Stelle, und anders als beim
+    Vorgänger-Slice (dortiger Fix-Commit `899a3f80`) existiert für diesen
+    Slice **kein** separater Fix-Commit zwischen Report-Entwurf und
+    -Commit (`git log` zeigt genau je einen Commit für Review-
+    (`69d2dc00`) und Verifikationsbericht (`500fdc85`), keinen weiteren).
+    Die behauptete dritte Instanz lässt sich aus den vorliegenden
+    Artefakten **nicht** unabhängig bestätigen — Feststellung ohne neue
+    Beleg-Datei; die bereits verkörperte Regel (`AGENTS.md` §3.9, 7
+    bestehende Belege) bleibt unverändert und ausreichend, ein
+    unbestätigter Vorgang wird nicht als Beleg eingetragen
+    (`AGENTS.md` §3.12).
+  - b) Der Implementer musste eine im ursprünglichen Plan vorgesehene
+    ADR-Referenz streichen, weil `docs-check`s `matrix`-Modul sie
+    strukturell verbietet (siehe „Was ging anders als geplant" oben).
+    `grep` über `docs/plan/planning/observations/*/*/observation.md`
+    nach „verbietet"/„verboten"/„matrix" fand zwei benachbarte, aber
+    andere Klassen (`BEO-PGC/fitness-function-gegen-eigene-entscheidung`:
+    ADR widerspricht sich selbst; `BEO-PGC/regel-weiter-als-ihr-sensor`:
+    eine Zusage ist weiter gefasst als ihr Sensor) — keine trifft „Plan
+    nimmt eine Referenzform an, die ein bestehender Sensor bereits
+    verbietet". Entscheidung: **keine neue Beobachtung** — einmaliger
+    Fehltritt, ohne Folgekosten über den bestehenden, bereits
+    verkörperten Plan-Nachzug-Mechanismus (§3 dieses Slice-Plans)
+    korrekt aufgefangen: Der Implementer dokumentierte die Abweichung
+    inline, Reviewer und Verifier bestätigten sie unabhängig als
+    regelkonform. Kein wiederkehrendes Muster, kein Gate-Umweg, keine
+    Fixrunde — die Fehlerklasse bräuchte ein zweites Auftreten, um eine
+    eigene Beobachtung zu rechtfertigen.
 - **Folge-Slices:** `slice-sdk-csharp-publish-workflow` — bereits als
   Datei in `open/` vorhanden.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>.
+- **Risiken aus §6:**
+  - „Export-Mechanismus für `.nupkg` neu, Bind-Mount-/`--user`-Risiko" —
+    **Ausgang: entfallen/aufgelöst** — dreifach unabhängig real bestätigt
+    (Implementer, Reviewer, Verifier), keine Dateirechte-Probleme
+    aufgetreten.
+  - „Neue `SPEC-<NNN>`-Nummer könnte kollidieren" — **Ausgang: entfallen**
+    — `SPEC-026` real kollisionsfrei vergeben, mehrfach gegengeprüft
+    (`grep -c` durch Reviewer und Verifier, je genau drei Treffer
+    ausschließlich in `spec/pflichtenheft.md`).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
