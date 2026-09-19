@@ -93,11 +93,11 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
 - [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-python-pack-werkzeug`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-PGC/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in
@@ -106,9 +106,9 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
       Problem prüfen, bevor ein neues Workaround-Muster erfunden wird
       (`BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand`,
       2×, siehe Welle-Plan §6 Eröffnungs-Sichtung und §6 dieses Plans).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -235,15 +235,97 @@ geschrieben.
 - Die Wahl der Python-Mindestversion (z. B. `>=3.10`) für
   `[project.requires-python]` schränkt den Konsumentenkreis ein — ein
   SDK-Package hat potenziell breitere Zielgruppen als ein
-  Docker-only-Beispielprogramm. **Ausgang:** weiter offen — Entscheidung
-  bleibt bei diesem Slice (Analogie zur C#-`net10.0`-Entscheidung, keine
-  Nutzungsdaten, die eine andere Wahl rechtfertigen); ein Wechsel wäre eine
-  spätere, eigenständige Entscheidung (`ADR-0107` §Re-Evaluierungs-Trigger,
-  Nutzungsdaten-getrieben).
+  Docker-only-Beispielprogramm. **Ausgang: eingetreten und durch reale
+  Nutzerentscheidung aufgelöst.** Statt bei einer konservativen
+  Mindestversion (`>=3.11`) zu verharren, hob ein nachträglicher, direkter
+  Coordinator-Fix (Commit `be0ede7f`, nach Verifikation) die Version auf
+  die jeweils aktuelle (3.14, `python:3.14-slim`) an — dieselbe Analogie
+  zur `net10.0`-Wahl bei C#, jetzt real vollzogen statt nur als Option
+  offengehalten. Die Einschränkung des Konsumentenkreises bleibt
+  strukturell bestehen (jede feste Untergrenze schließt ältere Runtimes
+  aus), aber die konkrete Risiko-Frage dieses Slice — „bleibt die Wahl bei
+  einer bald veralteten Version stehen?" — ist durch die reale Anhebung
+  beantwortet, kein Wechsel wäre eine spätere, eigenständige Entscheidung
+  (`ADR-0107` §Re-Evaluierungs-Trigger, Nutzungsdaten-getrieben).
 
 ## 7. Closure-Notiz
 
-<…>
+- **Was hat funktioniert:** Fünf unabhängige Docker-Builds über den
+  gesamten Zyklus (Implementer, Reviewer-Erstlauf, Reviewer-Fixrunden-
+  Nachprüfung, Verifier, und diese Planner-Closure als fünfter, eigener
+  Bau) bestätigten übereinstimmend dasselbe Ergebnis (3/3 Tests grün,
+  keine Divergenz) — auch über den nachträglichen Python-3.14-Bump hinweg
+  blieb das Verhalten stabil. Das aus `sdks/csharp/` übernommene
+  README-COPY-Workaround-Muster (eine vom Projekt an einer bestimmten
+  relativen Stelle erwartete Datei per `COPY` dorthin bringen, ohne sie im
+  committeten Baum zu duplizieren) trug real für ein Problem, das beim
+  C#-Vorbild in dieser Form gar nicht auftrat (`readme`-Feld darf bei
+  Python nicht außerhalb der Projekt-Wurzel liegen) — Beleg, dass der
+  Vorbild-Suchlauf (`AGENTS.md` §3.13/Beobachtungsregister) auch bei
+  strukturell anderen Fehlern trägt, nicht nur bei identischen.
+- **Was ging anders als geplant:** Ein ungewöhnlich langer Zyklus. Der
+  Erstreview fand 1 HIGH (F-1, Slice-Chronik im `__init__.py`-Docstring),
+  Fixrunde behoben und in derselben Nachprüfung freigegeben (Commit
+  `70aa64ce`) — DoD danach vollständig erfüllt
+  (`docs/reviews/verifikation-slice-sdk-python-projektgeruest.md`,
+  „DoD erfüllt"). Danach hob ein direkter, nutzergetriebener
+  Coordinator-Fix (kein eigener Implementer-Lauf) `requires-python` und
+  die Docker-Basis nachträglich von `>=3.11`/`python:3.13-slim` auf
+  `>=3.14`/`python:3.14-slim` an (Commit `be0ede7f`) und trug einen neuen
+  Plan-Nachzug-Absatz in §3 nach. Der Reviewer prüfte diesen Fix in einem
+  eigenen Nachtrag (`docs/reviews/review-slice-sdk-python-projektgeruest.md`
+  §„Nachtrag: Python-Versions-Bump auf 3.14") und fand dabei F-2 (MEDIUM,
+  kein Merge-Block): der neue Absatz und der dadurch überholte
+  vorbestehende Absatz standen widersprüchlich, unverbunden nebeneinander.
+  F-2 wurde direkt vom Coordinator behoben (Commit `e7670f6f`), **ohne**
+  erneuten Reviewer-Durchlauf — nur `make docs-check`/`make gates` liefen
+  danach grün. Als Planner habe ich diese Lücke bei der Closure selbst
+  geschlossen: vollständige eigene Lektüre von §3 bestätigt, dass beide
+  Absätze jetzt widerspruchsfrei sind — der geltende Wert (`>=3.14`,
+  `python:3.14-slim`) ist im neuen Absatz explizit benannt, und der
+  vorbestehende Absatz trägt jetzt selbst die Markierung „durch den
+  Nachzug oben abgelöst — hier nur noch die ursprüngliche Abwägung, nicht
+  der geltende Wert" samt Rückverweis; kein isoliert gelesener Abschnitt
+  behauptet mehr fälschlich `>=3.11`/`python:3.13-slim` als aktuell
+  geltend. F-2 gilt damit als real (nicht nur behauptet) geschlossen.
+- **Steering-Loop-Eintrag:** Neue Beobachtung
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (1×, neues Verzeichnis)
+  — ein Plan-Nachzug-Absatz wird korrekt und rechtzeitig ergänzt, ohne den
+  dadurch überholten Absatz an anderer Stelle desselben Dokuments zu
+  bereinigen oder zu markieren. Das ist eine andere Klasse als
+  `BEO-PGC/plan-nachzug` (dort fehlt der Nachzug-Commit ganz oder kommt
+  verspätet) und als `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
+  (§3.13, dort liegt der überholte Träger außerhalb des Diffs) — hier
+  liegt der überholte Text in derselben Datei und demselben
+  Bearbeitungsanlass, nur an anderer Stelle. Kein neuer Sensor (Prosa-
+  Kohärenz zwischen zwei Abschnitten einer Datei ist kein Gate-fähiges
+  Muster); Wächter bleibt Review bzw. Planner-Closure-Lektüre.
+  Zusätzlich geprüft und **ohne neuen Beleg**: ob der aus dem C#-Zyklus
+  bekannte `id-unlinked`-Docs-Check-Stolperstein
+  (`BEO-PGC/report-nackte-id-ohne-link`) in dieser Welle erneut auftrat —
+  real verneint. `make docs-check` lief bei allen vier
+  Review-/Verifikationsläufen dieses Slices grün (0 Befund je Lauf,
+  821→822 Dateien), und die Commit-Historie dieses Slices trägt keinen
+  dedizierten Fix-Commit für eine nackte Kennung. Kein weiterer Beleg zu
+  `BEO-PGC/report-nackte-id-ohne-link` ergänzt.
+- **Folge-Slices:** `slice-sdk-python-http-client-flaeche`,
+  `slice-sdk-python-pack-werkzeug`, `slice-sdk-python-publish-workflow` —
+  alle drei offen in
+  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+- **Risiken aus §6:**
+  - „Konfigurations-Skelett könnte trivial/überflüssig sein" —
+    **Ausgang: weiter offen**, entschieden beim Schreiben von
+    `slice-sdk-python-http-client-flaeche`.
+  - „Kein Python-Referenz-Client" — **Ausgang: weiter offen, strukturell**
+    (kein Ausgang möglich, bevor die Fläche geschrieben ist); Tragweite
+    steht in `slice-sdk-python-http-client-flaeche` §6.
+  - „Python-Mindestversion schränkt Konsumentenkreis ein" — **Ausgang:
+    eingetreten und durch reale Nutzerentscheidung aufgelöst** — siehe §6
+    oben, die Version wurde real auf die jeweils aktuelle (3.14) angehoben
+    statt bei einer konservativen Mindestversion zu verharren.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
