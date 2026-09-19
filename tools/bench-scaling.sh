@@ -25,6 +25,12 @@ if [ "${1:-}" = "--full" ]; then
   FULL=1
 fi
 
+# THRESHOLD_LAG_SECONDS trägt SPEC-013s bestehende cdc_capture_lag-
+# Fehlergrenze, wiederverwendet statt einer eigenen Zahl (ADR-0104):
+# überschreitet irgendeine der drei Lastenstufen sie, scheitert der Lauf.
+THRESHOLD_LAG_SECONDS=60
+THRESHOLD_BREACHED=0
+
 TABLE=bench_scaling
 SOURCE_ID=src-bench-scaling
 SLOT=slot_bench_scaling
@@ -57,7 +63,7 @@ run_tier() {
     inserted=$((inserted + rate))
     batch_end=$(date +%s%N)
     batch_ms=$(( (batch_end - batch_start) / 1000000 ))
-    sleep_s=$(awk -v ms="$batch_ms" 'BEGIN { s = (1000 - ms) / 1000.0; if (s < 0) s = 0; printf "%.3f", s }')
+    sleep_s=$(LC_ALL=C awk -v ms="$batch_ms" 'BEGIN { s = (1000 - ms) / 1000.0; if (s < 0) s = 0; printf "%.3f", s }')
     sleep "$sleep_s"
     second=$((second + 1))
   done
@@ -66,8 +72,12 @@ run_tier() {
   local lag
   lag=$(bench::psql_scalar "SELECT value FROM cdc.metrics WHERE metric_name = 'cdc_capture_lag'")
   local achieved
-  achieved=$(awk -v n="$inserted" -v s="$elapsed" 'BEGIN { if (s <= 0) s = 1; printf "%.1f", n / s }')
+  achieved=$(LC_ALL=C awk -v n="$inserted" -v s="$elapsed" 'BEGIN { if (s <= 0) s = 1; printf "%.1f", n / s }')
   echo "bench-scaling: Stufe $label — Ziel ${rate}/s über ${duration}s, $inserted Zeilen in ${elapsed}s eingefügt (~${achieved}/s), cdc_capture_lag=${lag}s"
+  if [ "$(LC_ALL=C awk -v v="$lag" -v t="$THRESHOLD_LAG_SECONDS" 'BEGIN { print (v > t) ? 1 : 0 }')" = "1" ]; then
+    echo "bench-scaling: SCHWELLE ÜBERSCHRITTEN (Stufe $label, LH-QA-PER-002, SPEC-013) — cdc_capture_lag ${lag}s liegt über der zulässigen ${THRESHOLD_LAG_SECONDS}s-Schwelle" >&2
+    THRESHOLD_BREACHED=1
+  fi
 }
 
 if [ "$FULL" -eq 1 ]; then
@@ -86,3 +96,13 @@ run_tier gross 1000 "$GROSS_DURATION" 2000000
 
 bench::stop_feed
 echo "bench-scaling: Ergebnis (LH-QA-PER-002) — alle drei SPEC-014-Lastenstufen real durchlaufen (Modus: $([ "$FULL" -eq 1 ] && echo voll || echo verkürzt))"
+
+bench::record_row "LH-QA-PER-002" \
+  "Skalierbarkeit über die drei [\`SPEC-014\`](../../spec/pflichtenheft.md)-Lastenstufen" \
+  "cdc_capture_lag ≤ ${THRESHOLD_LAG_SECONDS}s bei jeder Stufe ([\`SPEC-013\`](../../spec/pflichtenheft.md), wiederverwendet)" \
+  "tools/bench-scaling.sh"
+
+if [ "$THRESHOLD_BREACHED" = "1" ]; then
+  echo "bench-scaling: mindestens eine Lastenstufe überschritt die SPEC-013-Schwelle — siehe Meldungen oben" >&2
+  exit 1
+fi

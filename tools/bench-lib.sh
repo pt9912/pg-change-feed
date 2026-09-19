@@ -137,3 +137,47 @@ bench::wait_captured() {
   echo "bench-lib: nur ${count:-0}/$want Zeilen für $source/$table nach ${timeout}s erfasst" >&2
   return 1
 }
+
+# bench::record_row hält eine Kennungs-Zeile für docs/user/bench-abdeckung.md
+# als eigene Datei unter .tmp/bench-abdeckung-rows/ fest (ADR-0104) — ein
+# Bench-Skript schreibt nur seine eigene Zeile, ohne die der beiden anderen
+# Skripte zu lesen oder zu sperren. bench::render_abdeckung liest am Ende
+# des letzten Skripts alle vorhandenen Zeilen und schreibt die Tabelle
+# gesammelt.
+# $1=Lastenheft-Kennung $2=Kurzbeschreibung $3=Schwelle-Text $4=Ort (Datei:Zeile)
+bench::record_row() {
+  local id=$1 kurzbeschreibung=$2 schwelle=$3 ort=$4 dir
+  dir="$(bench::repo_root)/.tmp/bench-abdeckung-rows"
+  mkdir -p "$dir"
+  printf '| [`%s`](../../spec/lastenheft.md) | %s | %s | `%s` |\n' \
+    "$id" "$kurzbeschreibung" "$schwelle" "$ort" > "$dir/$id.row"
+}
+
+# bench::render_abdeckung schreibt docs/user/bench-abdeckung.md aus allen
+# bislang unter .tmp/bench-abdeckung-rows/ abgelegten Zeilen (sortiert nach
+# Kennung, damit der Diff stabil bleibt) — aufgerufen vom letzten der drei
+# Bench-Skripte in Ausführungsreihenfolge (tools/bench-batch-vs-single.sh).
+bench::render_abdeckung() {
+  local root file dir
+  root=$(bench::repo_root)
+  dir="$root/.tmp/bench-abdeckung-rows"
+  file="$root/docs/user/bench-abdeckung.md"
+  {
+    cat <<'HEADER'
+# Bench-Abdeckung je Lastenheft-Kennung
+
+Erzeugt von den drei `tools/bench-*.sh`-Skripten (`make bench`,
+[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md)):
+jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
+Schwelle. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
+Lauf-Beleg — der zuletzt gemessene Wert steht in der stdout-Ausgabe des
+jeweiligen Laufs, nicht hier.
+
+| Lastenheft-Kennung | Kurzbeschreibung | Schwelle (SPEC) | Ort |
+| --- | --- | --- | --- |
+HEADER
+    if [ -d "$dir" ]; then
+      find "$dir" -name '*.row' -print0 | sort -z | xargs -0 cat 2>/dev/null || true
+    fi
+  } > "$file"
+}

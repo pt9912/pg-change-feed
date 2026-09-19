@@ -11,6 +11,9 @@ source tools/bench-lib.sh
 
 trap bench::cleanup EXIT
 
+# THRESHOLD_FACTOR trägt SPEC-025s Batch-Vorteil-Mindestschwelle
+# (ADR-0104): der Einzelabruf muss mindestens so viel langsamer sein.
+THRESHOLD_FACTOR=10
 M=${BENCH_BATCH_VS_SINGLE_M:-200}
 TABLE=bench_batch_vs_single
 SOURCE_ID=src-bench-batch
@@ -53,5 +56,16 @@ echo "bench-batch-vs-single: Einzelabruf — ${single_ms} ms für $M Zeilen ($M 
 
 bench::stop_feed
 
-factor=$(awk -v b="$batch_ms" -v s="$single_ms" 'BEGIN { if (b <= 0) b = 1; printf "%.1f", s / b }')
+factor=$(LC_ALL=C awk -v b="$batch_ms" -v s="$single_ms" 'BEGIN { if (b <= 0) b = 1; printf "%.1f", s / b }')
 echo "bench-batch-vs-single: Ergebnis (LH-QA-PER-003) — Batch ${batch_ms} ms vs. Einzelabruf ${single_ms} ms für $M Zeilen (Einzelabruf ${factor}x langsamer)"
+
+bench::record_row "LH-QA-PER-003" \
+  "Lesevorgang über größere Change-Mengen im Batch gegen Einzelabruf" \
+  "Batch-Vorteil ≥ ${THRESHOLD_FACTOR}× (\`SPEC-025\`)" \
+  "tools/bench-batch-vs-single.sh"
+bench::render_abdeckung
+
+if [ "$(LC_ALL=C awk -v v="$factor" -v t="$THRESHOLD_FACTOR" 'BEGIN { print (v < t) ? 1 : 0 }')" = "1" ]; then
+  echo "bench-batch-vs-single: SCHWELLE UNTERSCHRITTEN (LH-QA-PER-003, SPEC-025) — Batch-Vorteil ${factor}x liegt unter der geforderten ${THRESHOLD_FACTOR}x-Schwelle" >&2
+  exit 1
+fi

@@ -306,8 +306,10 @@ trace:
   requirements:
     id-pattern: 'LH-(FA|QA)-[A-Z]{3}-\d{3}'
   coverage:
-    # Kuratierte Coverage-Dimension: Anforderungen, deren einziger Nachweis
-    # ein E2E-Test ist (nicht ADR oder Slice), erscheinen sonst faelschlich
-    # als WAISE.
+    # Kuratierte Coverage-Dimensionen: Anforderungen, deren einziger Nachweis
+    # ein Test aus einer anderen Ebene ist (nicht ADR oder Slice), erscheinen
+    # sonst faelschlich als WAISE.
     - files: [docs/user/e2e-abdeckung.md]
       label: E2E
+    - files: [docs/user/bench-abdeckung.md]
+      label: Bench

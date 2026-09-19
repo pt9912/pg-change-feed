@@ -501,6 +501,7 @@ eine ADR nur den ganzen Abschnitt nennen.
 | `SPEC-012` | `PG_MAJOR_VERSIONS` | 17, 18 | Vorschlagsregel: die zwei neuesten aktiven Major-Versionen (Stand 2026-09-09; PostgreSQL 19 unmittelbar vor Release — Aufnahme als spätere Ausweitung) |
 | `SPEC-013` | `CDC_THRESHOLDS` | Capture-Lag p95 ≤ 1 s · Warn > 5 s · Fehler > 60 s; WAL-Rückstand Warn > 100 MiB · Fehler > 1 GiB | Initialwerte Commit→CDC-Verfügbarkeit ([`LH-QA-PER-004`](lastenheft.md), `cdc_capture_lag`) und WAL-Wachstum inaktiver Slots ([`LH-QA-REL-003`](lastenheft.md), `cdc_wal_retention_bytes`); über ADR schärfbar |
 | `SPEC-014` | `LOAD_TIERS` | klein: ≤ 10 Changes/s · mittel: 100 Changes/s über 30 min · groß: 1.000 Changes/s über 60 min | Benchmark-Stufen für die Skalierbarkeits-Prüfung ([`LH-QA-PER-002`](lastenheft.md)): von kleinen Datenbanken bis zu kontinuierlichen Änderungsvolumina; über ADR schärfbar |
+| `SPEC-025` | `CDC_BENCH_THRESHOLDS` | Quell-Overhead ≤ 35 % · Batch-Vorteil ≥ 10× | Pass/Fail für [`LH-QA-PER-001`](lastenheft.md)/[`LH-QA-PER-003`](lastenheft.md); [`LH-QA-PER-002`](lastenheft.md) nutzt `SPEC-013`; über ADR schärfbar |
 
 ---
 
