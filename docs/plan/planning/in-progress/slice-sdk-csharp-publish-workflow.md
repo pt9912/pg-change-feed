@@ -94,20 +94,23 @@ https://api.nuget.org/v3/index.json` veröffentlicht.
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       `docs/reviews/review-slice-sdk-csharp-publish-workflow.md` (F-1 MEDIUM,
       Fixrunde `c582eaaf` behebt es, Fixrunden-Nachprüfung ohne neuen Fund).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — keine
-      Beobachtung angefallen (siehe §7); bestehende Einträge geprüft und
-      unverändert zutreffend.
-- [x] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko UND das
-      fehlende `NUGET_API_KEY`-Secret bleiben nach `AGENTS.md` §3.10 bzw.
-      strukturell **weiter offen**, auch bei grüner DoD im Übrigen; Risiko 3
-      ist eingetreten und aufgelöst, siehe §6).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — eine
+      neue Beobachtung angelegt,
+      `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`
+      (1×, offen, siehe §7); bestehende Einträge geprüft und unverändert
+      zutreffend.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko bleibt
+      nach `AGENTS.md` §3.10 strukturell **weiter offen**, auch bei
+      grüner DoD im Übrigen; das fehlende `NUGET_API_KEY`-Secret ist
+      **entfallen** — es existiert real, siehe §6/§7; Risiko 3 ist
+      eingetreten und aufgelöst, siehe §6).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -177,14 +180,31 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
   strukturell — bestätigt oder widerlegt erst durch einen realen Tag-Push
   `sdk-csharp-v0.1.0` (oder gleichwertig), dieselbe Klasse wie
   `BEO-PGC/github-actions-unverifizierbar-lokal` (bereits verkörpert als
-  `AGENTS.md` §3.10).
-- **`NUGET_API_KEY` existiert zum Zeitpunkt dieses Slice nicht als
+  `AGENTS.md` §3.10). **Nachtrag bei Closure:** Die Verifikation
+  (`docs/reviews/verifikation-slice-sdk-csharp-publish-workflow.md` §2)
+  hat real festgestellt, dass `NUGET_API_KEY` inzwischen bereits als
+  Repository-Secret existiert (siehe Risiko darunter) — ein realer
+  Tag-Push ist damit jetzt technisch möglich, was vorher nicht der Fall
+  war. Das ändert den Ausgang **nicht**: „weiter offen" bleibt korrekt,
+  bis tatsächlich ein Tag gepusht und der Lauf real geprüft wurde
+  (`git tag -l "sdk-csharp-v*"` lieferte bei der Verifikation weiterhin
+  leer).
+- **`NUGET_API_KEY` existiert zum Zeitpunkt der Slice-Planung nicht als
   Repository-Secret** (analog `release-image-scan`s Blocker mit dem
   fehlenden GHCR-`:latest`-Tag) — ein realer Tag-Push würde am fehlenden
   Secret scheitern, kein Implementierungsfehler dieses Slice. **Ausgang:**
-  weiter offen, strukturell — löst sich, sobald der Repository-Betreiber
-  das Secret real anlegt (externe Handlung, außerhalb des Umfangs dieses
-  Slice, siehe §1 Ausschluss).
+  entfallen — die Verifikation
+  (`docs/reviews/verifikation-slice-sdk-csharp-publish-workflow.md` §2)
+  hat real per `gh secret list` festgestellt, dass `NUGET_API_KEY` bereits
+  existiert (angelegt 2026-09-19T13:10:36Z, zeitlich neben
+  `DOCKERHUB_TOKEN`/`DOCKERHUB_USERNAME`). Weder ein Commit noch ein
+  Skript aus dem Diff-Bereich dieses Slice legt das Secret an — es stammt
+  aus einer externen, außerhalb des Repos liegenden Betreiber-Handlung
+  (Vermutung, nicht feststellbar über `gh secret list`, das kein
+  Ersteller-Feld führt). Die im Plan benannte Blockade-Bedingung
+  („ein realer Tag-Push würde am fehlenden Secret scheitern") ist damit
+  aufgehoben — unabhängig davon bleibt der reale Publish-Erfolg selbst
+  ungeprüft, siehe Risiko darüber.
 - **Ein SemVer-Tag-Parser für `sdk-csharp-v*` teilt sich möglicherweise
   Code mit `release.yml`s bereits bestehendem `v*`-Parser** — eine
   naive Kopie würde beide Stellen unabhängig driften lassen. **Ausgang:**
@@ -211,7 +231,9 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
   von keinem der drei bestehenden Workflows mitgetriggert wird, ließ sich
   direkt an den `tags`/`tags-ignore`-Zeilen ablesen (`ci.yml`/`e2e.yml`:
   `tags-ignore: ['**']` schließt jeden Tag-Push ein, `release.yml`:
-  `tags: ['v*']` matcht ein `sdk-csharp-`-Präfix nicht).
+  `tags: ['v*']` matcht ein `sdk-csharp-`-Präfix nicht). Reviewer und
+  Verifier haben diesen Nachweis je unabhängig selbst nachgemessen
+  (`grep -n "tags"`), nicht nur übernommen.
 - **Was ging anders als geplant:** Zwei Abweichungen vom DoD-Beispieltext,
   beide als Plan-Nachzug in §3 begründet: (1) drei zusätzliche Dateien
   (`semver-regex.sh`, `sdk-csharp-release-tag-info.sh`,
@@ -222,29 +244,71 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
   dem Runner statt im gepinnten Toolchain-Container (Begründung: der dort
   gepinnte `golang:1.27-alpine` trägt kein `xmllint`, ein `apk add`-Umweg
   für eine Ein-Zeilen-Extraktion wäre unverhältnismäßig — dieselbe Form wie
-  `release.yml`s eigener `tr`-Aufruf gegen `docs/user/version.md`).
+  `release.yml`s eigener `tr`-Aufruf gegen `docs/user/version.md`). Eine
+  dritte Abweichung kam erst in der Fixrunde hinzu: der Reviewer fand 1
+  MEDIUM-Finding (F-1 — `docs/user/releasing.md` zog den neuen
+  SDK-Release-Weg nicht mit, siehe unten), der Implementer behob es mit
+  `c582eaaf` (§4-Unterabschnitt „SDK-Release", Secret-Tabellenzeile), die
+  Fixrunden-Nachprüfung bestätigte 0 neue Funde.
 - **Steering-Loop-Eintrag:** kein neuer Sensor — die vorhandene
   Ruby-Stdlib-YAML-Struktur-/`bash -n`-Prüfung (Muster
   `release-version-und-workflow`) reichte erneut aus. Kein Guide/Sensor
   geschärft.
-- **Beobachtungs-Register (`../observations/`):** keine Beobachtung
-  angefallen. `BEO-PGC/github-actions-unverifizierbar-lokal` und
-  `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` wurden geprüft
-  (§8) und bleiben unverändert zutreffend, kein neuer Beleg nötig — das
+- **Beobachtungs-Register (`../observations/`):** eine neue Beobachtung
+  angelegt — `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`
+  (1×, `evidence/slice-sdk-csharp-publish-workflow.md`), zustand `offen`.
+  Grundlage: Reviewer-Finding F-1 (behoben) trägt dieselbe zugrunde
+  liegende Fehlerklasse wie das bereits verkörperte
+  `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+  (eine Meta-Pflicht an einer Doku-Datei fällt im schreibenden Kontext aus
+  dem Blick, weil kein Sensor sie erzwingt) — aber jener Eintrag ist
+  namentlich auf `docs/user/benutzerhandbuch.md` verengt
+  (`.harness/skills/reviewer.md` nennt `releasing.md` nirgends), betrifft
+  also einen anderen Träger. Entscheidung: eigene, getrennte Klasse
+  anlegen statt den bestehenden Eintrag zu erweitern — eine Erweiterung
+  hätte die bereits verkörperte, eng gezogene Regel auf einen Fall
+  gedehnt, den ihr Wortlaut nicht trägt (dieselbe Vorsicht wie bei
+  `BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad` gegenüber
+  `…-blockiert-tooling`). `BEO-PGC/github-actions-unverifizierbar-lokal`
+  und `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit` wurden
+  zusätzlich geprüft (§8) und bleiben unverändert zutreffend — das
   Post-Push-Risiko dieses Slice ist dieselbe, bereits verkörperte Klasse
-  (`AGENTS.md` §3.10), kein drittes Auftreten einer neuen Verstoßklasse.
+  (`AGENTS.md` §3.10), kein drittes Auftreten einer neuen Verstoßklasse
+  dort.
+- **Zusätzlicher Fund außerhalb dieses Slice-Scopes (nicht behoben, hier
+  nur gemeldet):** Die Verifikation
+  (`docs/reviews/verifikation-slice-sdk-csharp-publish-workflow.md` §2)
+  hat real per `git tag -l`/`git ls-remote`/`gh release list` festgestellt,
+  dass bereits drei echte Server-Release-Tags (`v0.1.0`–`v0.1.2`) mit
+  realen GitHub-Releases existieren, während `docs/user/releasing.md` §1
+  weiterhin behauptet: „Zum Zeitpunkt dieses Dokuments wurde noch kein
+  realer Release-Tag gesetzt." Diese Aussage ist überholt — aber die
+  Drift entstand **vor** dieser Welle und **nicht** durch diesen Slice:
+  Die Fixrunde `c582eaaf` änderte laut eigenem `git diff --stat`
+  ausschließlich §4, §1 blieb unberührt. Kein Folge-Slice wird hier
+  angelegt (Entscheidung liegt beim Coordinator/Nutzer); der Fund bleibt
+  nicht versteckt, sondern hier dokumentiert als kleiner, eigenständiger
+  Fix-Kandidat außerhalb dieser Welle.
 - **Folge-Slices:** keine aus diesem Slice selbst erwartet — letzter Slice
   der Welle.
 - **Risiken aus §6:** Post-Push-Lauf gegen NuGet.org — **weiter offen**,
   strukturell (`AGENTS.md` §3.10), bestätigt/widerlegt erst durch einen
-  realen Tag-Push. `NUGET_API_KEY`-Secret fehlt — **weiter offen**,
-  strukturell, externe Kontohandlung außerhalb dieses Slice-Umfangs.
-  SemVer-Parser-Code-Teilung — **eingetreten und aufgelöst**: gemeinsames
-  Skript `tools/harness/semver-regex.sh`, siehe §6 für die volle
-  Begründung.
+  realen Tag-Push; die Verifikation fand real, dass `NUGET_API_KEY`
+  inzwischen existiert (macht einen Push jetzt technisch möglich), was den
+  Ausgang nicht ändert — kein Tag wurde gepusht. `NUGET_API_KEY`-Secret
+  fehlt — **entfallen**: die Verifikation stellte real per
+  `gh secret list` fest, dass das Secret bereits existiert (angelegt
+  2026-09-19T13:10:36Z), nicht durch einen Zug in diesem Diff-Bereich,
+  vermutlich eine externe Betreiber-Handlung; die im Plan benannte
+  Blockade-Bedingung ist damit aufgehoben. SemVer-Parser-Code-Teilung —
+  **eingetreten und aufgelöst**: gemeinsames Skript
+  `tools/harness/semver-regex.sh`, dreifach real getestet (Implementer,
+  Reviewer, Verifier), siehe §6 für die volle Begründung.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
-  (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
+  (noch offen) — dies ist der letzte Slice dieser Welle; die Prüfung der
+  drei Paarungen läuft regelkonform bei deren eigener, separater Closure
+  (nicht Teil dieses Slice-Zugs).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
