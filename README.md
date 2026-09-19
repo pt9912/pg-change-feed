@@ -1,57 +1,59 @@
 # PG Change Feed
 
+*English | [Deutsch](README.de.md)*
+
 > **Durable change feeds for PostgreSQL, powered by logical replication.**
 
-## Was ist PG Change Feed?
+## What is PG Change Feed?
 
-PG Change Feed stellt persistente Change Feeds für bestehende PostgreSQL-Tabellen bereit. Es richtet sich an Anwendungen und Integrationen, die Änderungen zuverlässig und unabhängig konsumieren wollen, ohne selbst PostgreSQL WAL oder das Logical-Replication-Protokoll verarbeiten zu müssen.
+PG Change Feed provides persistent change feeds for existing PostgreSQL tables. It targets applications and integrations that need to consume changes reliably and independently, without having to process PostgreSQL WAL or the logical replication protocol themselves.
 
-## Was kann ich heute tun?
+## What can I do today?
 
-Alles unten steht Ende-zu-Ende real getestet zur Verfügung — über
-Umgebungsvariablen, `docker compose`/`make` und SQL, ohne grafische
-Oberfläche.
+Everything below is available end-to-end, real-world tested — via
+environment variables, `docker compose`/`make` and SQL, with no
+graphical interface.
 
-| Bereich | Was es tut |
+| Area | What it does |
 |---|---|
-| **Erfassung** | PostgreSQL-Quelle per Logical Replication anbinden; Tabellen per SQL-Administration (`cdc.enable_table`/`disable_table`) oder `CDC_TABLES` live (de)aktivieren; einzelne Spalten vom Erfassen ausschließen; Änderungen (INSERT/UPDATE/DELETE) transaktionsgetreu und dauerhaft speichern; Schemaänderungen an erfassten Tabellen erkennen. |
-| **Lesen** | Erfasste Änderungen per SQL (`cdc.changes`) lesen — oder über eine von vier Zustellwegen: HTTP-/JSON-API, gRPC-Stream, Server-Sent-Events oder NATS (Wecksignal oder vollständiger Change-Inhalt tabellen-granular). |
-| **Consumer** | Mehrere unabhängige Consumer registrieren, ihre Position bestätigen und fortsetzen — Duplikate werden stillen Lücken vorgezogen. |
-| **Aufbewahrung** | Zeit- und consumer-basierte Retention betreiben, blockierende Consumer sichtbar machen, bevor sie die Löschung verhindern. |
-| **Betrieb** | Betriebsstatus, CLI-Diagnose, Metriken und WAL-Rückstand abfragen. |
-| **Sicherheit** | Rollenspezifische Zugriffsrechte durchsetzen (`cdc_capture`/`cdc_admin`/`cdc_reader`, Least-Privilege — kein eigener Login, Zugriff läuft über die PostgreSQL-Verbindung selbst). |
-| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest). |
+| **Capture** | Attach a PostgreSQL source via logical replication; (de)activate tables via SQL administration (`cdc.enable_table`/`disable_table`) or `CDC_TABLES` live; exclude individual columns from capture; store changes (INSERT/UPDATE/DELETE) transactionally and durably; detect schema changes on captured tables. |
+| **Reading** | Read captured changes via SQL (`cdc.changes`) — or through one of four delivery paths: HTTP/JSON API, gRPC stream, Server-Sent Events or NATS (wake-up signal or full change content, table-granular). |
+| **Consumers** | Register multiple independent consumers, acknowledge and resume their position — duplicates are preferred over silent gaps. |
+| **Retention** | Run time- and consumer-based retention, surface blocking consumers before they prevent deletion. |
+| **Operations** | Query operational status, CLI diagnostics, metrics and WAL lag. |
+| **Security** | Enforce role-specific access rights (`cdc_capture`/`cdc_admin`/`cdc_reader`, least privilege — no separate login, access runs through the PostgreSQL connection itself). |
+| **Distribution** | Available as an OCI image for `linux/amd64` **and** `linux/arm64` (GHCR and Docker Hub, identical digest). |
 
-Details und Beispiele je Zugriffsweg (Go, C#, Kotlin) stehen im
-[Benutzerhandbuch](docs/user/benutzerhandbuch.md); der volle Anforderungs-
-und Akzeptanzkriterien-Umfang in [`spec/lastenheft.md`](spec/lastenheft.md).
+Details and examples for each access path (Go, C#, Kotlin) are in the
+[user manual](docs/user/benutzerhandbuch.md); the full scope of
+requirements and acceptance criteria is in [`spec/lastenheft.md`](spec/lastenheft.md).
 
-Siehe:
+See:
 
-- [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) für die Bedienung.
-- [`docs/user/releasing.md`](docs/user/releasing.md) für den Release-Prozess.
-- [`spec/lastenheft.md`](spec/lastenheft.md) für Anforderungen und Akzeptanzkriterien.
-- [`spec/pflichtenheft.md`](spec/pflichtenheft.md) für die technische Spezifikation.
-- [`docs/plan/adr/`](docs/plan/adr/) für Architekturentscheidungen.
+- [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) for usage (German).
+- [`docs/user/releasing.md`](docs/user/releasing.md) for the release process.
+- [`spec/lastenheft.md`](spec/lastenheft.md) for requirements and acceptance criteria.
+- [`spec/pflichtenheft.md`](spec/pflichtenheft.md) for the technical specification.
+- [`docs/plan/adr/`](docs/plan/adr/) for architecture decisions.
 
-## Warum PG Change Feed?
+## Why PG Change Feed?
 
-PostgreSQL stellt mit WAL, Logical Decoding und Logical Replication leistungsfähige CDC-Grundlagen bereit, aber keine allgemeine persistente CDC-Abstraktion mit Change-Historie, stabilen Positionen, unabhängigen Consumern und Retention. PG Change Feed schließt diese Lücke, ohne eine neue Datenbank, einen Message Broker oder Änderungen an der Quellanwendung vorauszusetzen.
+PostgreSQL provides powerful CDC foundations with WAL, logical decoding and logical replication, but no general-purpose, persistent CDC abstraction with change history, stable positions, independent consumers and retention. PG Change Feed closes that gap without requiring a new database, a message broker, or changes to the source application.
 
-## Kerngedanke
+## Core idea
 
 **PostgreSQL WAL → durable change feed → independent consumers.**
 
-Eine Quellposition wird erst bestätigt, nachdem die zugehörigen Änderungen dauerhaft gespeichert wurden. Im Fehlerfall werden mögliche Duplikate gegenüber stillen Lücken bevorzugt.
+A source position is only acknowledged after its associated changes have been stored durably. In failure scenarios, possible duplicates are preferred over silent gaps.
 
-## Was macht es vertrauenswürdig?
+## What makes it trustworthy?
 
-- **Prozess:** [`AGENTS.md`](AGENTS.md) für verbindliche Entwicklungsregeln und [`harness/README.md`](harness/README.md) für Source Precedence und vorhandene Gates.
-- **Verträge:** [`spec/lastenheft.md`](spec/lastenheft.md) mit nachvollziehbaren `LH-*`-Anforderungen und Akzeptanzkriterien.
-- **Technische Spezifikation:** [`spec/pflichtenheft.md`](spec/pflichtenheft.md).
-- **Gates:** Nur tatsächlich implementierte und ausführbare Quality Gates werden hier als erfolgreich aufgeführt.
-- **Auditierbarkeit:** Architekturentscheidungen liegen in [`docs/plan/adr/`](docs/plan/adr/), Planung in [`docs/plan/planning/`](docs/plan/planning/).
+- **Process:** [`AGENTS.md`](AGENTS.md) for binding development rules and [`harness/README.md`](harness/README.md) for source precedence and existing gates.
+- **Contracts:** [`spec/lastenheft.md`](spec/lastenheft.md) with traceable `LH-*` requirements and acceptance criteria.
+- **Technical specification:** [`spec/pflichtenheft.md`](spec/pflichtenheft.md).
+- **Gates:** only actually implemented and executable quality gates are listed here as passing.
+- **Auditability:** architecture decisions live in [`docs/plan/adr/`](docs/plan/adr/), planning in [`docs/plan/planning/`](docs/plan/planning/).
 
-## Lizenz
+## License
 
-MIT — siehe [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE).
