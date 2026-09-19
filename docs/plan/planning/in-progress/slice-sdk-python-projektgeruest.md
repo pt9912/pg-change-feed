@@ -176,24 +176,26 @@ ein analoges Docker-Bau-/Test-Problem gelöst hat (siehe DoD-Punkt oben,
   Duplizierung im committeten Baum, nur im Docker-Bau-Layer. Kein Wechsel
   der Baumstruktur (`sdks/python/pgchangefeed/pyproject.toml` und
   `sdks/python/README.md` bleiben an den in §2 genannten Orten).
-- **Python-Mindestversion: `requires-python = ">=3.11"`.** Real recherchiert
+- **Python-Mindestversion (durch den Nachzug oben abgelöst — hier nur noch
+  die ursprüngliche Abwägung, nicht der geltende Wert):** Der Implementer
+  wählte zunächst `requires-python = ">=3.11"`, real recherchiert
   (`docker buildx imagetools inspect python:3.13-slim`, 2026-09-19): Python
   3.9 ist bereits EOL (Oktober 2025), 3.10 erreicht sein EOL im Oktober
-  2026 (also binnen eines guten Monats nach diesem Zug) — beide damit keine
-  sinnvolle Untergrenze für ein neu veröffentlichtes Package. 3.11 bleibt
-  bis Oktober 2027 im Security-Support, ist breit verfügbar (jede aktuelle
-  Linux-Distribution/jedes offizielle `python`-Docker-Image führt es) und
-  bringt bereits verbesserte Fehlermeldungen/Exception-Groups — eine
-  Analogie zur `net10.0`-Wahl bei C# (`ADR-0106`): die jeweils aktuell
-  unterstützte, nicht die älteste technisch mögliche Version, ohne
-  Nutzungsdaten, die eine andere Wahl rechtfertigen (§6 dieses Plans).
-- **Basis-Image-Wahl:** `python:3.13-slim` (statt der vollen `python:3.13`-
-  Variante) — kleineres Image, keine C-Compiler-Abhängigkeit nötig (`httpx`
-  und seine Abhängigkeiten `httpcore`/`h11`/`certifi`/`idna`/`anyio`/
-  `sniffio` sind reine Python-Pakete, kein Bau von C-Extensions). Digest
-  real gemessen als **Manifest-Index-Digest** (alle Plattformen), analog
-  zur C#-Basis, die ebenfalls den vollständigen, plattformübergreifenden
-  Digest trägt.
+  2026 — beide damit keine sinnvolle Untergrenze für ein neu
+  veröffentlichtes Package; 3.11 blieb bis Oktober 2027 im Security-Support
+  und war breit verfügbar. Dieselbe Analogie zur `net10.0`-Wahl bei C#
+  (`ADR-0106`) — die jeweils aktuell unterstützte Version — führte beim
+  Nachzug oben zum Wechsel auf die inzwischen real veröffentlichte 3.14 als
+  die jetzt aktuelle Version; **der geltende Wert ist `>=3.14`**, siehe den
+  Plan-Nachzug-Absatz weiter oben in diesem Abschnitt.
+- **Basis-Image-Wahl (Begründung unverändert gültig, Version durch den
+  Nachzug oben auf `python:3.14-slim` gehoben):** eine `-slim`-Variante
+  (statt der vollen `python`-Variante) — kleineres Image, keine
+  C-Compiler-Abhängigkeit nötig (`httpx` und seine Abhängigkeiten
+  `httpcore`/`h11`/`certifi`/`idna`/`anyio`/`sniffio` sind reine
+  Python-Pakete, kein Bau von C-Extensions). Digest real gemessen als
+  **Manifest-Index-Digest** (alle Plattformen), analog zur C#-Basis, die
+  ebenfalls den vollständigen, plattformübergreifenden Digest trägt.
 
 ## 4. Trigger
 
