@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.11.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.12.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -1083,6 +1083,37 @@ Streams, Backpressure-/Flusskontrollverfahren, Verhältnis zu
 Streaming ersetzt es nicht) — das sind Architektur- (ADR) bzw.
 Spezifikationsfragen (`SPEC-*`), keine Lastenheft-Festlegung.
 
+### LH-FA-SST-009 — Client-Bibliotheken (SDKs)
+
+**Beschreibung:** Für die bestehenden Zustellwege sollen offizielle,
+versionierte Client-Bibliotheken (Packages) bereitgestellt werden, die ein
+Consumer über den Paketmanager seiner Sprache einbinden kann, ohne das
+zugrunde liegende Protokoll selbst zu implementieren.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given ein Zustellweg hat eine offizielle
+  Client-Bibliothek in einer unterstützten Sprache, when ein Consumer sie
+  über den Paketmanager dieser Sprache einbindet, dann kann er sich
+  verbinden und Changes empfangen, ohne das Protokoll selbst zu
+  implementieren.
+- **Boundary:** Given eine Client-Bibliothek existiert für einen
+  Zustellweg, when sich dessen Protokoll- oder Nachrichtenform
+  inkompatibel ändert, then trägt die Bibliothek eine erkennbare
+  Versionsgrenze (z. B. SemVer-Major), keine stille Inkompatibilität.
+- **Negative:** Given für einen Zustellweg oder eine Sprache existiert
+  keine offizielle Bibliothek, when ein Consumer ihn dennoch nutzen will,
+  then bleibt der direkte Zugriff auf die zugrunde liegende Schnittstelle
+  selbst weiterhin nutzbar — die Bibliothek ist eine Erleichterung, keine
+  Voraussetzung des Zustellwegs.
+
+**Out-of-Scope:** Welche Sprachen konkret bedient werden und über welchen
+Vertriebsweg (npm, NuGet, Maven, Go-Modul-Registry, PyPI …) ist Architektur-
+bzw. Spezifikationsfrage; gefordert ist die Fähigkeit „offiziell gepflegtes,
+versioniertes Package" selbst, keine bestimmte Sprachmatrix. Die
+bestehenden Wegwerf-/Beispielprogramme unter `examples/` erfüllen diese
+Anforderung nicht — sie sind unversioniert und nicht als eigenständiges,
+von Dritten konsumierbares Package veröffentlicht.
 
 ---
 
@@ -1313,3 +1344,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.9.0 | 2026-09-14 | `LH-FA-SST-008` von einer gRPC-spezifischen auf eine protokollneutrale Formulierung umgestellt (Titel, Beschreibung, Out-of-Scope) — Protokollwahl (gRPC, HTTP/SSE, oder beide) ist Architektur-/Spezifikationsfrage wie bei `LH-FA-SST-005`/`006`, keine Lastenheft-Festlegung; dieselbe Draft-Regel wie bei 0.4.0–0.8.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.10.0 | 2026-09-19 | `LH-FA-CAP-009` (Initial-Snapshot/Backfill des Bestands bereits vorhandener Zeilen einer aktivierten Tabelle) neu ergänzt — abgegrenzt gegen eine Instanz-zu-Instanz-Migration (Out-of-Scope) und gegen Parallelisierung/Durchsatz über sehr große Tabellen (Ausbaustufe, keine Voraussetzung); dieselbe Draft-Regel wie bei 0.4.0–0.9.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.11.0 | 2026-09-19 | `LH-FA-CFG-007` (Transformationen/Routing zwischen Erfassung und Zustellung) neu ergänzt — abgegrenzt gegen eine vollständige Transformationssprache/ein Plugin-Modell (Out-of-Scope) und gegen die bereits bestehende Spaltenauswahl (`LH-FA-CFG-005`); dieselbe Draft-Regel wie bei 0.4.0–0.10.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.12.0 | 2026-09-19 | `LH-FA-SST-009` (offizielle, versionierte Client-Bibliotheken/SDKs für die bestehenden Zustellwege) neu ergänzt — abgegrenzt gegen die bereits bestehenden, unversionierten Wegwerf-Beispielprogramme unter `examples/` (erfüllen diese Anforderung nicht) und gegen eine bestimmte Sprachmatrix (Architektur-/Spezifikationsfrage); dieselbe Draft-Regel wie bei 0.4.0–0.11.0, eigener Commit vor jedem umsetzenden Slice | — |
