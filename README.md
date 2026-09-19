@@ -4,6 +4,8 @@
 
 > **Durable change feeds for PostgreSQL, powered by logical replication.**
 
+**Source & issues:** [github.com/pt9912/pg-change-feed](https://github.com/pt9912/pg-change-feed)
+
 ## What is PG Change Feed?
 
 PG Change Feed provides persistent change feeds for existing PostgreSQL tables. It targets applications and integrations that need to consume changes reliably and independently, without having to process PostgreSQL WAL or the logical replication protocol themselves.
