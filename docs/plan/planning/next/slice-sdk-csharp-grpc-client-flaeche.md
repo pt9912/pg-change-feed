@@ -18,7 +18,7 @@ Festlegung 1/2 (Umfang, `.proto`-Bezug über Zusatzkontext),
 (Nachrichtenschema, RPC-Name, Stream-Semantik — das SDK benutzt diese
 Festlegungen, verändert sie nicht).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-19.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0106` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-19.
