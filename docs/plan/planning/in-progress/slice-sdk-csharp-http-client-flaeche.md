@@ -56,7 +56,7 @@ unabhängige Tests.
 
 ## 2. Definition of Done
 
-- [ ] `sdks/csharp/PgChangeFeed.Client/Http/` (oder gleichwertiger
+- [x] `sdks/csharp/PgChangeFeed.Client/Http/` (oder gleichwertiger
       Namensraum) trägt eine öffentliche Client-Klasse mit einer Methode je
       der neun Port-gedeckten Fähigkeiten von
       [`SPEC-018`](../../../../spec/pflichtenheft.md) plus dem Changes-Lesen
@@ -65,26 +65,27 @@ unabhängige Tests.
       Result-Form, konsistent über alle Methoden) spiegeln
       `SPEC-018`/`SPEC-022` exakt. Bearer-Token wird bei Konstruktion
       übergeben (kein globaler State).
-- [ ] Eigene Tests (xUnit, analog dem Pinnungs-Muster in
+- [x] Eigene Tests (xUnit, analog dem Pinnungs-Muster in
       `examples/csharp/Directory.Packages.props`) decken je Fähigkeit
       mindestens den Happy Path und die Auth-Boundary (`401` fehlendes/
       unbekanntes Token, `403` `reader`-Token gegen einen `admin`-Endpunkt)
       ab — netzlos prüfbar (kein realer Server nötig, `HttpMessageHandler`-
       Fake analog dem bestehenden Test-Muster der Beispiel-Clients).
-- [ ] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0106`
-      §Kontext Bindung „Import-Grenze, hier ohne Ausnahme").
-- [ ] `make gates` grün.
+- [x] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0106`
+      §Kontext Bindung „Import-Grenze, hier ohne Ausnahme") — real geprüft:
+      `grep -rn "internal/\|cmd/" sdks/csharp/` liefert keinen Treffer.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die HTTP-Oberfläche (`ADR-0106` §Konsequenzen
       Folgepflicht 4) — getragen durch die bereits verkörperte
       Selbstprüf-Instruktion (`.claude/commands/implement-slice.md` Schritt
       17) und den Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -110,6 +111,36 @@ unabhängige Tests.
 `TablesUrlBuilder.cs` (Draht-Kenntnis, kein `ProjectReference` — `ADR-0106`
 Festlegung 2: „dieselbe Draht-Kenntnis, aber als eigenständiger,
 paketierbarer Code neu geschrieben").
+
+**Plan-Nachzug (Implementer-Zug):**
+
+- Statt einer einzelnen `HttpClientTests.cs` (Arbeitsname) liegen die Tests
+  in sechs Dateien unter
+  `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/Http/`
+  (`PgChangeFeedHttpClientConstructionTests.cs`,
+  `PgChangeFeedHttpClientConsumerTests.cs`,
+  `PgChangeFeedHttpClientTableTests.cs`,
+  `PgChangeFeedHttpClientRetentionAndChangesTests.cs`,
+  `PgChangeFeedHttpClientAuthBoundaryTests.cs`, plus die gemeinsamen
+  Test-Helfer `FakeHttpMessageHandler.cs`/`TestClientFactory.cs`) —
+  gruppiert nach Fähigkeits-Gruppe (Consumer-/Tabellen-Verwaltung,
+  Retention-und-Lesen, Auth-Boundary/Fehler-Mapping) statt einer einzigen,
+  ca. 30 Tests tragenden Datei; reine Lesbarkeits-Entscheidung, kein
+  fachlicher Umfangs-Unterschied.
+- `sdks/csharp/PgChangeFeed.Client/Http/Models/*.cs` liegt in vier
+  Gruppen-Dateien (`Consumers.cs`, `Tables.cs`, `Retention.cs`,
+  `Changes.cs`) plus dem internen `ErrorResponse.cs` — bereits als
+  Glob-Zielpfad im Plan vorgesehen, hier nur die konkrete Aufteilung
+  benannt.
+- Die neun Port-gedeckten Fähigkeiten von `SPEC-018` decken je genau einen
+  Happy-Path-Test (`RegisterConsumer`, `AcknowledgeConsumer`,
+  `GetConsumerPosition`, `RemoveConsumer`, `EnableTable`, `DisableTable`,
+  `GetStatus`, `ListTables`, `RunRetention`) plus `ReadChanges`
+  (`SPEC-022`); die Auth-Boundary (`401`/`403`) sowie `400`/`404`/`500`
+  und ein Fallback für einen nicht dokumentierten Status sind zusätzlich
+  je einmal generisch geprüft (nicht je Fähigkeit dupliziert) — das
+  Fehler-Mapping selbst ist fähigkeits-unabhängiger Code
+  (`PgChangeFeedHttpClient.BuildException`).
 
 ## 4. Trigger
 

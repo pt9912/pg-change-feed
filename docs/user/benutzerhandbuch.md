@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.32
+Version: 1.33
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-19
 
@@ -666,6 +666,14 @@ auf und gibt die Antwort aus; Adresse und Token liest jedes Beispiel aus
   `make example-run-kotlin SURFACE=http ARGS="--source <quelle> --publication <publication>"`
   (startet das mit `make examples-kotlin` gebaute Image)
 
+**SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
+NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
+`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedHttpClient` deckt
+alle zehn Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der
+Tabelle oben plus `GET /changes`) mit typisierten Requests/Responses und
+einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`, statt den
+Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -1120,3 +1128,4 @@ MIT — siehe `LICENSE`.
 | 1.30 | 2026-09-18 | C#- und Kotlin-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-csharp-kotlin): §4 „Zugriff über den NATS-Vollinhalts-Stream" — `**Beispiele:**`-Block komplettiert; `examples/csharp/nats-stream-client` und `examples/kotlin/nats-stream-client` abonnieren `cdc.stream.>` und geben jede empfangene Change aus, über einen Container-Aufruf (`make example-run-csharp`/`make example-run-kotlin SURFACE=nats-stream`, Image-Tags `pg-change-feed-examples:csharp-nats-stream`/`:kotlin-nats-stream`). Mit dieser Zeile ist die volle Matrix (fünf Zugriffs-Oberflächen × drei Sprachen, fünfzehn Programme) im Handbuch vollständig |
 | 1.31 | 2026-09-19 | `cdc_changes_pending`/`cdc_errors_total`-Metriken nachgetragen (`LH-QA-OPS-003`, slice-e2e-drei-rtm-luecken): §4 „Metriken lesen" — beide Kennzahlen existierten in `cdc.metrics` bereits seit diesem Slice, waren aber nicht im Handbuch-Text genannt |
 | 1.32 | 2026-09-19 | Kopf-Feld `Software-Version` korrigiert: trug seit Ersteinführung unverändert `0.2.0-verdrahtung`, nie mit dem später eingeführten `docs/user/version.md` (`ADR-0051`, welle-release-pipeline-adr-0051) synchronisiert und nirgends sonst referenziert — auf einen Verweis auf die tatsächliche Versionsquelle umgestellt |
+| 1.33 | 2026-09-19 | C#-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — das NuGet-Package `PgChangeFeed.Client` deckt alle zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
