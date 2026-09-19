@@ -84,11 +84,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Doku-Update für `docs/user/releasing.md` selbst — entfällt als
       eigener Punkt, da bereits §2 Zeile 1 dieser DoD dieselbe Datei
       trägt; kein zusätzlicher öffentlicher Vertrag jenseits ihrer.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer Beleg `evidence/slice-release-doku-releasing.md` unter der bestehenden `BEO-PGC/zitat-nennt-die-falsche-stelle/` (bereits verkörpert, jetzt 7. Beleg, dritter Fundort in dieser Welle).
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit). Dieser Slice ist der **letzte** von `welle-release-pipeline-adr-0051` — die Welle schließt unmittelbar im Anschluss, die Prüfung läuft dort.
 
 ## 3. Plan (vor Code)
 
@@ -133,7 +133,57 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Jede in `docs/user/releasing.md` genannte
+  Datei, jedes genannte Make-Target und alle sechs Tag-Beispiele wurden
+  vor der Übergabe real gegen den Baum bzw. `tools/harness/
+  release-tag-info.sh` geprüft (`AGENTS.md` §4/§3.12) — kein
+  Halluzinieren nicht existierender Targets, real vom Reviewer und
+  Verifier unabhängig reproduziert. Der Nutzer-Hinweis auf das
+  Schwester-Repo d-check (`release-hub-description`) ließ sich direkt
+  als Betriebswissen in dieses Dokument übernehmen (Docker-Hub-Token-
+  Scope `read/write/delete`), bevor der Nutzer das eigene Token überhaupt
+  angelegt hat.
+- **Was ging anders als geplant:** Der Reviewer fand 1 HIGH (F-1:
+  „Zitat nennt die falsche Stelle" — `§3` statt `§4` für den
+  `docs/user/version.md`-Abgleich) und 1 INFO (F-2: `releasing.md` fehlt
+  in der „Siehe:"-Liste von `README.md`, vorbestehende Lücke). F-1
+  behoben, F-2 als bereits bestehende, nicht-blockierende Lücke zur
+  Kenntnis genommen statt in diesem Slice mitgelöst (kein Teil dieses
+  Slice-Umfangs). Zusätzlich, außerhalb des ursprünglichen §3-Plans:
+  `AGENTS.md` §2 Zeile 6 trug denselben veralteten
+  `<!-- d-check:ignore -->`-Kommentar wie `harness/README.md` — im selben
+  Zug konsistent mitgezogen, sonst wäre eine der beiden Kopien stehen
+  geblieben.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  F-1 ist der 7. Beleg der bereits verkörperten Beobachtung
+  `BEO-PGC/zitat-nennt-die-falsche-stelle`, und der **dritte** Fundort
+  dieser Klasse in drei aufeinanderfolgenden Slices derselben Welle
+  (`release-hub-description` F-1/F-2, jetzt hier). Bemerkenswert: alle
+  drei Fundstellen dieser Welle sind interne Selbst-Verweise innerhalb
+  eines neu geschriebenen Dokuments (Abschnitts-/ADR-Zitat auf dieselbe
+  bzw. eine benachbarte Datei), nicht Verweise auf ein fremdes Dokument
+  wie bei den vier früheren Belegen — eine mögliche Verfeinerung der
+  Beobachtung für den Lese-Schritt der Welle-Closure, nicht hier
+  entschieden.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-release-doku-releasing.md` unter der bestehenden
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/` (bereits verkörpert, jetzt
+  7. Beleg; Zähler in `state.md` nachgezogen).
+- **Folge-Slices:** keine — letzter Slice der Welle
+  `welle-release-pipeline-adr-0051`.
+- **Risiken aus §6:** ein Risiko, ein Ausgang — Doku beschreibt einen
+  real noch nie durchlaufenen Prozess (kein Tag je gesetzt) →
+  **weiter offen**, löst sich mit dem ersten echten Release (dann
+  Nachtrag/Korrektur als eigener kleiner Folge-Vorgang, kein Blocker für
+  diesen Slice).
+- **Drei Paarungen:** dieser Slice ist der letzte von
+  [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md)
+  — die Prüfung läuft regelkonform bei deren unmittelbar folgender
+  Closure (§2 DoD-Zeile „im Repo mit Wellen von der nächsten
+  Welle-Closure"). Vorab-Hinweis für diese Prüfung: kein
+  `liegt in`-Feld in diesem Slice; kein Folge-Slice; der neue
+  Beobachtungs-Beleg liegt unter
+  `BEO-PGC/zitat-nennt-die-falsche-stelle/evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
