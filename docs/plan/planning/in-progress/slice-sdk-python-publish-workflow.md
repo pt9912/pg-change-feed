@@ -70,7 +70,7 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
 
 ## 2. Definition of Done
 
-- [ ] `.github/workflows/sdk-python-release.yml` existiert: Trigger
+- [x] `.github/workflows/sdk-python-release.yml` existiert: Trigger
       ausschließlich `push: tags: ['sdk-python-v*']` (`ci.yml`/`e2e.yml`/
       `release.yml`/`sdk-csharp-release.yml` schließen diesen
       Tag-Namensraum durch ihre jeweils eigenen `tags`/`tags-ignore`-Filter
@@ -85,19 +85,23 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
       [`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
       §Entscheidung Festlegung 1 — kein `-u __token__ -p`-Flag-Paar wie
       bei `twine`).
-- [ ] Jede `uses:`-Zeile ist auf einen vollständigen Commit-SHA gepinnt,
+- [x] Jede `uses:`-Zeile ist auf einen vollständigen Commit-SHA gepinnt,
       mit Tag-Kommentar (`AGENTS.md` §3.8) — `actions/checkout`
-      wiederverwendet denselben, bereits im ganzen Repo gepinnten SHA.
-- [ ] YAML-Struktur geprüft (Muster `sdk-csharp-release.yml`: Ruby-Stdlib-
+      wiederverwendet denselben, bereits im ganzen Repo gepinnten SHA
+      (`3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`); die neue
+      `astral-sh/setup-uv`-Zeile ist real recherchiert und SHA-gepinnt
+      (`bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0`, siehe
+      Bericht dieses Slice).
+- [x] YAML-Struktur geprüft (Muster `sdk-csharp-release.yml`: Ruby-Stdlib-
       YAML-Parser, netzlos — `ruby -ryaml -e "YAML.load_file(...)"`,
       zusätzlich jeder `run:`-Block einzeln mit `bash -n` auf
-      Syntaxfehler geprüft).
-- [ ] `harness/README.md` §Werkzeuge bekommt die reale Zeile für
+      Syntaxfehler geprüft — alle vier `run:`-Blöcke fehlerfrei).
+- [x] `harness/README.md` §Werkzeuge bekommt die reale Zeile für
       `.github/workflows/sdk-python-release.yml` (kein Gate, Bindung auf
       [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)) —
       erst jetzt zulässig, weil der Workflow jetzt real existiert
       (`AGENTS.md` §4).
-- [ ] `docs/user/releasing.md` bekommt einen eigenen Abschnitt/eine
+- [x] `docs/user/releasing.md` bekommt einen eigenen Abschnitt/eine
       Tabellenzeile für den Python-SDK-Release-Weg (Tag-Präfix
       `sdk-python-v*`, Secret `PYPI_API_TOKEN`, Vertrag-Datei
       `pyproject.toml`), **analog dem bereits bestehenden C#-Eintrag** —
@@ -106,23 +110,27 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
       1×, entstanden bei `slice-sdk-csharp-publish-workflow`; diese
       Planung nimmt die Lehre vorweg, um kein zweites Auftreten dieser
       Klasse zu erzeugen).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge und
+- [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfallen als eigene Punkte,
       da bereits oben als DoD-Kriterien geführt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko bleibt
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — geprüft:
+      keine neue Beobachtung angefallen, siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko bleibt
       nach `AGENTS.md` §3.10 strukturell **weiter offen**, auch bei
-      grüner DoD im Übrigen).
+      grüner DoD im Übrigen; das `PYPI_API_TOKEN`-Secret-Risiko ist
+      **bestätigt eingetreten** — real geprüft über `gh secret list`:
+      Secret existiert **nicht**, anders als bei der C#-Welle; das
+      PyPI-Namensraum-Risiko ist **entfallen** — `pgchangefeed` ist real
+      frei (PyPI-API liefert `404`); das PEP-440-vs-SemVer-Regex-Risiko ist
+      aufgelöst — eigenständige Regex, siehe §7).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
@@ -148,6 +156,34 @@ Festlegung 4) — der Implementer prüft beim Schreiben, ob die im einfachen
 Fall (`MAJOR.MINOR.PATCH`) verwendete Teilmenge sich mit
 `tools/harness/semver-regex.sh` deckt, bevor er eine zweite,
 eigenständige Regex einführt oder die bestehende wiederverwendet.
+
+**Beim Schreiben getroffene Entscheidungen (keine Abweichung vom Plan —
+der Plan hat sie ausdrücklich auf diesen Zeitpunkt verschoben):**
+
+- **Eigenständige, nicht geteilte PEP-440-Einfachfall-Regex.** Die
+  `SEMVER_RE` aus `tools/harness/semver-regex.sh` akzeptiert
+  SemVer-Pre-Release-/Build-Metadata-Syntax (Bindestrich-Suffixe,
+  `+build`), die in dieser Form kein gültiges PEP 440 ist — ein Sourcing
+  hätte die Regex als „PEP 440" beschriftet, obwohl sie tatsächlich
+  SemVer-Grammatik prüft. `tools/harness/sdk-python-release-tag-info.sh`
+  trägt deshalb eine eigene, minimale Regex, exakt auf den in
+  `ADR-0107` Festlegung 4 gewählten Fall (`MAJOR.MINOR.PATCH`, keine
+  führenden Nullen) begrenzt. Anders als bei SemVer (zwei Konsumenten:
+  `release-tag-info.sh` und `sdk-csharp-release-tag-info.sh`) gibt es
+  hier nur einen einzigen Konsumenten — ein eigenes geteiltes Skript
+  (`tools/harness/pep440-*-regex.sh`) wäre unnötige Indirektion.
+- **`uv`-Bezug auf dem Runner: `astral-sh/setup-uv`, SHA-gepinnt.**
+  `uv` ist auf GitHub-hosted Runnern nicht vorinstalliert (anders als
+  `dotnet` bei `sdk-csharp-release.yml`). Statt eines manuellen
+  `docker create`/`docker cp`-Umwegs gegen dasselbe
+  `ghcr.io/astral-sh/uv`-Image, das `sdks/python/Dockerfile` für den
+  Pack-Schritt nutzt, verwendet der Workflow die offizielle,
+  SHA-gepinnte GitHub-Action `astral-sh/setup-uv` (SHA real über die
+  GitHub-API recherchiert, kein geratener Wert, siehe Bericht dieses
+  Slice) mit dem `version:`-Input auf denselben Stand (`0.12.17`)
+  fixiert, den der Docker-Pack-Schritt bereits verwendet — ein Werkzeug,
+  eine Version, zwei Bezugswege für zwei unterschiedliche
+  Ausführungskontexte (Container-Layer vs. Runner-Binary).
 
 ## 4. Trigger
 
@@ -187,29 +223,53 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
   voraussichtlich nicht als Repository-Secret** (analog dem
   `NUGET_API_KEY`-Blocker bei der C#-Welle) — ein realer Tag-Push würde am
   fehlenden Secret scheitern, kein Implementierungsfehler dieses Slice.
-  **Ausgang:** weiter offen — bei der C#-Welle stellte sich real heraus,
-  dass das Secret zum Zeitpunkt der Verifikation bereits (vermutlich extern)
-  angelegt worden war; ob das für `PYPI_API_TOKEN` ebenso gilt, ist beim
-  Implementieren/Verifizieren dieses Slice real zu prüfen (`gh secret
-  list`), nicht anzunehmen.
+  **Ausgang:** eingetreten, real bestätigt — `gh secret list` (Implementer-
+  Lauf, 2026-09-19) zeigt ausschließlich `DOCKERHUB_TOKEN`,
+  `DOCKERHUB_USERNAME`, `NUGET_API_KEY`; `PYPI_API_TOKEN` fehlt. Anders
+  als bei der C#-Welle (`NUGET_API_KEY` existierte bereits) bleibt dieser
+  Blocker **weiter offen** — ein realer Tag-Push scheitert am Publish-
+  Schritt, bis das Secret extern angelegt wird (Betreiber-Handlung,
+  außerhalb dieses Repos).
 - **Der PyPI-Paketname `pgchangefeed` könnte bereits vergeben sein** — im
   Gegensatz zu NuGet (real geprüft frei) ist die PyPI-Namensraum-Freiheit
-  für diesen Arbeitsnamen noch nicht bestätigt. **Ausgang:** weiter offen
-  — vor dem ersten realen Tag-Push prüft der Implementer
-  `pip index versions pgchangefeed` bzw. die PyPI-Weboberfläche; ist der
-  Name vergeben, braucht es einen alternativen Arbeitsnamen (z. B.
-  `pgchangefeed-client`), was `pyproject.toml` und diesen Workflow gleich
-  beträfe — kein Rückbau bereits gelieferter Fläche, nur ein Namens-Nachzug.
+  für diesen Arbeitsnamen noch nicht bestätigt. **Ausgang:** entfallen —
+  real geprüft (Implementer-Lauf, 2026-09-19): `curl -s -o /dev/null -w
+  '%{http_code}' https://pypi.org/pypi/pgchangefeed/json` liefert `404`
+  (Paketname frei, keine Registrierung vorhanden). Kein Namens-Nachzug
+  nötig.
 - **PEP-440- vs. SemVer-2.0-Regex-Teilung** — analog dem bei der C#-Welle
   real aufgetretenen Risiko (gemeinsames `tools/harness/semver-regex.sh`
   vs. eigenständige Kopie), hier verschärft durch die abweichende
   Grammatik (PEP 440 ≠ SemVer 2.0 im vollen Funktionsumfang, nur im hier
   genutzten einfachen Fall kompatibel, `ADR-0107` Festlegung 4). **Ausgang:**
-  weiter offen, zu entscheiden beim Schreiben (siehe §3 Ansatz).
+  aufgelöst — eigenständige, nicht geteilte Regex in
+  `tools/harness/sdk-python-release-tag-info.sh` (Begründung siehe §3
+  „Beim Schreiben getroffene Entscheidungen"); netzlos getestet über
+  `make test-sdk-python-release-tag-info` (18 Fälle, alle bestanden,
+  inklusive expliziter Negativfälle für SemVer-only-Syntax wie
+  `1.0.0-alpha.1`/`1.0.0+build.5`, die als gültiges PEP 440 verworfen
+  werden müssen).
 
 ## 7. Closure-Notiz
 
-<…>
+**Träger-Nachzug-Suchlauf (`AGENTS.md` §3.13):** `grep -rln
+"sdk-python-release\|PYPI_API_TOKEN" docs/ harness/` vor dem Gate-Lauf
+ausgeführt — Treffer ausschließlich in bereits in diesem Zug bearbeiteten
+Dateien (`harness/README.md`, `docs/user/releasing.md`, den beiden
+Welle-/Slice-Planungsdateien selbst). Kein weiterer, fremder Träger
+gefunden, der eine Eigenschaft dieses Slice beschreibt und nicht bereits
+nachgezogen wäre.
+
+**Beobachtungs-Register:** geprüft, keine neue Beobachtungsklasse
+angefallen — die drei realen Funde dieses Zuges (fehlendes
+`PYPI_API_TOKEN`, freier PyPI-Namensraum, PEP-440-Regex-Entscheidung)
+sind jeweils bereits als Risiko in §6 vorhergesehen und dort mit Ausgang
+versehen, keine neue Fehlerklasse.
+
+Review und Closure (Steering-Loop-Lerneintrag, finale DoD-Prüfung,
+Wellen-Bezug) folgen als eigener Rollenwechsel — dieser Implementer-Zug
+schließt den Slice bewusst **nicht** nach `done/` ab (kein Self-Review,
+`AGENTS.md` §6).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

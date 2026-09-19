@@ -1,0 +1,102 @@
+---
+name: sdk-python-release
+
+# PyPI-Publish-Workflow fuer das Python-SDK-Package `pgchangefeed`
+# (ADR-0107 Festlegung 5, ADR-0108 §Entscheidung Festlegung 1, LH-FA-SST-009,
+# slice-sdk-python-publish-workflow). Trigger ausschliesslich Git-Tags der
+# Form `sdk-python-v<PEP 440>` — ein EIGENER Tag-Namensraum, getrennt vom
+# Server-Release-Raum `v*` und vom C#-SDK-Raum `sdk-csharp-v*`
+# (ADR-0107 §Entscheidung Festlegung 5 letzter Punkt). `ci.yml`/`e2e.yml`
+# schliessen JEDEN Tag-Push per `tags-ignore: ['**']` aus (ci.yml Zeile
+# 40f., e2e.yml Zeile 59f.), `release.yml` reagiert ausschliesslich auf
+# `push: tags: ['v*']` (release.yml Zeile 51f.) und
+# `sdk-csharp-release.yml` ausschliesslich auf `push: tags:
+# ['sdk-csharp-v*']` — `sdk-python-v*` matcht keines der drei Muster (kein
+# Praefix-Ueberlappungs-Doppellauf; belegt im Bericht dieses Slice).
+#
+# Ablauf: Tag strikt gegen den in ADR-0107 Festlegung 4 gewaehlten
+# einfachen PEP-440-Fall `sdk-python-v<MAJOR.MINOR.PATCH>` validieren
+# (`tools/harness/sdk-python-release-tag-info.sh`, netzlos testbar ueber
+# `make test-sdk-python-release-tag-info` — eigenstaendige Regex, KEIN
+# Sourcing aus tools/harness/semver-regex.sh, siehe Kopf-Kommentar dieses
+# Skripts: PEP 440 ist nicht identisch mit SemVer 2.0), dann gegen die in
+# `sdks/python/pgchangefeed/pyproject.toml` gefuehrte `[project] version`
+# abgleichen (Abbruch bei jeder Abweichung, VOR jedem Login/Build/Push —
+# Muster `release.yml`s Tag-gegen-`docs/user/version.md`-Abgleich bzw.
+# `sdk-csharp-release.yml`s Tag-gegen-`.csproj`-Abgleich, hier gegen die
+# `pyproject.toml`). Baut/testet/paketiert danach Docker-only ueber
+# `make sdk-pack-python` (AGENTS.md §3.1, ADR-0107 Festlegung 5, ADR-0108
+# §Entscheidung Festlegung 1/3) und veroeffentlicht die erzeugten
+# Artefakte (`.whl` + `.tar.gz`) per `uv publish`
+# (ADR-0108 §Entscheidung Festlegung 1 — supersedet die urspruengliche
+# `twine`-Publish-Zeile aus ADR-0107 Festlegung 5). `uv` selbst ist auf
+# GitHub-hosted Runnern NICHT vorinstalliert (anders als `dotnet` bei
+# sdk-csharp-release.yml) — bezogen ueber die offizielle
+# `astral-sh/setup-uv`-Action, SHA-gepinnt, mit demselben `uv`-
+# Versionsstand (`0.12.17`), den `sdks/python/Dockerfile` fuer den
+# Docker-only-Bau-/Pack-Schritt per digest-gepinntem `COPY --from=`
+# bezieht (ADR-0108 §Entscheidung Festlegung 3) — ein Werkzeug, eine
+# Version, zwei Bezugswege (Docker-Image-Layer fuer den Pack-Schritt,
+# GitHub-Action fuer den Publish-Schritt auf dem Runner selbst), keine
+# neue Klasse.
+#
+# Der Token wird ueber die Umgebungsvariable `UV_PUBLISH_TOKEN` konsumiert
+# (ADR-0108 §Entscheidung Festlegung 1) — KEIN `-u __token__ -p`-Flag-Paar
+# wie bei `twine`.
+#
+# Kein `:latest`-Aequivalent (PyPI kennt keins, ADR-0107 §1 Ausschluss),
+# kein GitHub-Release-Eintrag fuer das SDK (nicht Teil dieser Folgepflicht).
+#
+# `PYPI_API_TOKEN` ist ein Repository-Secret, das dieser Workflow
+# referenziert, aber nicht anlegt (externe Kontohandlung, dieselbe Klasse
+# wie `NUGET_API_KEY`/`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`) — sein
+# tatsaechliches Vorhandensein bleibt bis zum ersten echten Tag-Push
+# unbewiesen (AGENTS.md §3.10 analog; real geprueft beim Schreiben dieses
+# Zuges ueber `gh secret list`: existiert zu diesem Zeitpunkt NICHT,
+# anders als `NUGET_API_KEY` bei der C#-Welle).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  push:
+    tags:
+      - 'sdk-python-v*'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  sdk-python-release:
+    name: Tag validieren, Python-SDK paketieren und nach PyPI veroeffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag validieren, Version ermitteln (tools/harness/sdk-python-release-tag-info.sh)
+        run: bash tools/harness/sdk-python-release-tag-info.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: pyproject.toml gegen den Tag abgleichen
+        run: |
+          pkg_version="$(grep -oE '^version = "[^"]+"' sdks/python/pgchangefeed/pyproject.toml | sed -E 's/^version = "([^"]+)"/\1/')"
+          if [ "$pkg_version" != "$version" ]; then
+            echo "::error::sdks/python/pgchangefeed/pyproject.toml ('$pkg_version') weicht vom Tag ('$version') ab"
+            exit 1
+          fi
+
+      - name: Python-SDK bauen, testen, paketieren (make sdk-pack-python)
+        run: make sdk-pack-python
+
+      - name: uv installieren (astral-sh/setup-uv)
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "0.12.17"
+
+      - name: Nach PyPI veroeffentlichen (uv publish)
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish sdks/python/dist/*

@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.2
+Version: 1.3
 Stand: 2026-09-19
 
 ## 1. Zweck und Zielgruppe
@@ -17,10 +17,10 @@ Image auf GHCR oder Docker Hub stammt.
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
 GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
 Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Der separate SDK-Release-Weg (§4 „SDK-Release")
-ist zum Zeitpunkt dieses Dokuments implementiert und real gegen die
-beteiligten APIs geprüft, aber noch ohne eigenen realen Tag-Push
-(`sdk-csharp-v*`) — sein End-zu-Ende-Ablauf bleibt bis dahin strukturell
+nicht nur implementiert. Die beiden separaten SDK-Release-Wege (§4 „SDK-Release") sind zum
+Zeitpunkt dieses Dokuments implementiert und real gegen die beteiligten
+APIs geprüft, aber noch ohne eigenen realen Tag-Push (`sdk-csharp-v*` bzw.
+`sdk-python-v*`) — ihr End-zu-Ende-Ablauf bleibt bis dahin strukturell
 unbewiesen (`AGENTS.md` §3.10).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
@@ -101,7 +101,8 @@ Doppellauf).
 |---|---|---|
 | `DOCKERHUB_USERNAME` | Docker-Hub-Login (Push + Beschreibungs-Sync) | Betreiber, manuell in GitHub |
 | `DOCKERHUB_TOKEN` | Docker-Hub-Personal-Access-Token | Betreiber, manuell in GitHub |
-| `NUGET_API_KEY` | NuGet.org-API-Key für `dotnet nuget push` (SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
+| `NUGET_API_KEY` | NuGet.org-API-Key für `dotnet nuget push` (C#-SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
+| `PYPI_API_TOKEN` | PyPI-API-Token für `uv publish` (Python-SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
 
 **Scope-Hinweis:** `DOCKERHUB_TOKEN` braucht den Scope
 **`read/write/delete`** — ein Token mit nur `read/write` authentifiziert
@@ -155,6 +156,61 @@ Folgepflicht (`ADR-0106`).
 End-zu-Ende-Ablauf mit echtem `NUGET_API_KEY`-Secret strukturell erst
 nach dem ersten echten Tag-Push bewiesen (`AGENTS.md` §3.10).
 
+### SDK-Release: PyPI-Publish für `pgchangefeed`
+
+Analog zum C#-SDK-Release-Weg oben existiert ein dritter, eigenständiger
+Release-Mechanismus für das Python-SDK-Package `pgchangefeed`
+([`ADR-0107`](../plan/adr/0107-python-pypi-zweites-sdk-package.md)
+Festlegung 5, [`ADR-0108`](../plan/adr/0108-python-sdk-uv-statt-build-twine.md)
+§Entscheidung Festlegung 1): ein eigener Tag-Namensraum
+`sdk-python-v<PEP 440>` (im hier genutzten einfachen Fall
+`MAJOR.MINOR.PATCH`, z. B. `sdk-python-v0.1.0`) — getrennt sowohl vom
+Server-Namensraum `v*` (§3) als auch vom C#-SDK-Namensraum
+`sdk-csharp-v*` (siehe oben), weil die Python-SDK-Versionierung
+unabhängig von beiden läuft (`ADR-0107` Festlegung 4) und
+`sdk-python-v*` keines der drei anderen Muster (`v*`, `sdk-csharp-v*`,
+sowie `ci.yml`/`e2e.yml`s `tags-ignore: ['**']`) matcht (kein
+Präfix-Überlappungs-Doppellauf).
+
+Trigger: `push: tags: ['sdk-python-v*']` in
+[`.github/workflows/sdk-python-release.yml`](../../.github/workflows/sdk-python-release.yml).
+Der Workflow:
+
+1. validiert den Tag-Suffix strikt gegen den einfachen PEP-440-Fall
+   `MAJOR.MINOR.PATCH` (`tools/harness/sdk-python-release-tag-info.sh`,
+   netzlos testbar über `make test-sdk-python-release-tag-info` — eine
+   eigenständige Regex, **kein** Sourcing aus
+   `tools/harness/semver-regex.sh`, weil PEP 440 nicht identisch mit
+   SemVer 2.0 ist, auch wenn der hier genutzte einfache Fall zu beiden
+   Grammatiken kompatibel bleibt);
+2. gleicht die ermittelte Version gegen die `[project] version` in
+   `sdks/python/pgchangefeed/pyproject.toml` ab — Abbruch bei jeder
+   Abweichung, vor jedem Build/Push (Muster analog dem
+   Tag-vs-`version.md`-Abgleich in §2/§3 bzw. dem
+   Tag-vs-`.csproj`-Abgleich oben, hier gegen die `pyproject.toml`);
+3. baut/testet/paketiert Docker-only über `make sdk-pack-python`
+   (erzeugt Wheel `.whl` und Source-Distribution `.tar.gz`);
+4. veröffentlicht beide Artefakte per `uv publish` — Token über die
+   Umgebungsvariable `UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}`
+   (kein `-u __token__ -p`-Flag-Paar wie bei `twine`). `uv` ist auf dem
+   GitHub-hosted Runner nicht vorinstalliert und wird über die
+   SHA-gepinnte Action `astral-sh/setup-uv` bezogen, mit demselben
+   `uv`-Versionsstand (`0.12.17`), den `sdks/python/Dockerfile` für den
+   Docker-only-Bau-/Pack-Schritt per digest-gepinntem `COPY --from=`
+   nutzt.
+
+Kein `:latest`-Äquivalent (PyPI kennt keins) und kein
+GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
+Folgepflicht (`ADR-0107`).
+
+**Zum Zeitpunkt dieses Dokuments wurde noch kein realer
+`sdk-python-v*`-Tag gesetzt, und `PYPI_API_TOKEN` existiert (real
+geprüft über `gh secret list`) noch nicht als Repository-Secret** — anders
+als bei `NUGET_API_KEY`, das sich bei der C#-Welle bereits als vorhanden
+herausstellte. Der End-zu-Ende-Ablauf mit echtem `PYPI_API_TOKEN`-Secret
+bleibt strukturell erst nach Anlage des Secrets und dem ersten echten
+Tag-Push bewiesen (`AGENTS.md` §3.10).
+
 ## 5. Begleitende, nicht-blockierende Workflows
 
 Zwei weitere Workflows laufen unabhängig vom Release-Trigger, nächtlich
@@ -187,3 +243,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.0 | 2026-09-19 | Erste Fassung — dokumentiert den in `welle-release-pipeline-adr-0051` real implementierten Release-Prozess (`ADR-0051`) |
 | 1.1 | 2026-09-19 | §4 um den unabhängigen SDK-Release-Weg (`sdk-csharp-v*`-Tag, `NUGET_API_KEY`) ergänzt — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-csharp-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0106`) |
 | 1.2 | 2026-09-19 | §1 korrigiert: drei reale Server-Release-Tags (`v0.1.0`–`v0.1.2`) sind bereits gesetzt und liefen grün durch — der Server-Release-Mechanismus ist End-zu-Ende bewiesen; der SDK-Release-Weg bleibt bis zum ersten realen `sdk-csharp-v*`-Tag-Push separat unbewiesen |
+| 1.3 | 2026-09-19 | §4 um den dritten, unabhängigen SDK-Release-Weg (`sdk-python-v*`-Tag, `PYPI_API_TOKEN`, `uv publish`) ergänzt, Secret-Tabelle um `PYPI_API_TOKEN` erweitert — vorab eingeplanter DoD-Punkt von `slice-sdk-python-publish-workflow` (`LH-FA-SST-009`, `ADR-0107`, `ADR-0108`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`) |
