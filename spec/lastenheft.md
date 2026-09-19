@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.10.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.11.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -276,6 +276,38 @@ Anwendungscode der Quellanwendung erfordern. **MVP: ja.**
 
 **Out-of-Scope:** Performance-Auswirkungen auf die Quelle sind Gegenstand
 von LH-QA-PER-001, nicht dieser Anforderung.
+
+### LH-FA-CFG-007 — Transformationen/Routing zwischen Erfassung und Zustellung
+
+**Beschreibung:** Erfasste Changes sollen sich vor der Zustellung gezielt
+transformieren lassen (z. B. Feld-Umbenennung, wertbasierte Ableitung über
+die reine Spaltenauswahl aus LH-FA-CFG-005 hinaus) und/oder anhand von
+Herkunft oder Inhalt auf unterschiedliche Zustellziele geroutet werden
+können.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given eine Transformation ist für eine Tabelle
+  konfiguriert (z. B. Feld-Umbenennung), when eine Change entsteht, dann
+  trägt die ausgelieferte Change die transformierte Form, nicht die
+  Rohform.
+- **Boundary:** Given eine Routing-Regel könnte eine Change mehreren
+  Zustellzielen zuordnen, when die Regeln ausgewertet werden, dann ist die
+  Auflösung bei Mehrdeutigkeit definiert (z. B. Regel-Reihenfolge oder
+  expliziter Fehler), nicht stillschweigend eines der Ziele.
+- **Negative:** Given eine konfigurierte Transformation lässt sich auf eine
+  konkrete Change nicht anwenden (z. B. das referenzierte Feld fehlt nach
+  einer Schemaänderung), when die Change verarbeitet wird, dann ist dies
+  über einen sichtbaren Fehlerzustand erkennbar (LH-FA-ADM-003), nicht eine
+  still unveränderte oder verworfene Auslieferung.
+
+**Out-of-Scope:** Eine vollständige Transformationssprache oder ein
+eigenes Skripting-/Plugin-Modell (vergleichbar Kafka-Connect-SMTs) ist
+nicht gefordert — gefordert ist die Fähigkeit selbst, ihre konkrete
+Ausdrucksform ist Architektur- (ADR) bzw. Spezifikationsfrage (`SPEC-*`).
+Die reine Spaltenauswahl bleibt Gegenstand von LH-FA-CFG-005; diese
+Anforderung deckt darüber hinausgehende Transformationen und
+Routing-Entscheidungen.
 
 ### LH-FA-CAP-001 — Erfassung von INSERT
 
@@ -1280,3 +1312,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.8.0 | 2026-09-14 | `LH-FA-SST-008` (Live-Streaming neuer Changes über gRPC) neu ergänzt — abgegrenzt gegen `LH-FA-SST-007` (NATS bleibt eigenständiges Wecksignal); dieselbe Draft-Regel wie bei 0.4.0–0.7.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.9.0 | 2026-09-14 | `LH-FA-SST-008` von einer gRPC-spezifischen auf eine protokollneutrale Formulierung umgestellt (Titel, Beschreibung, Out-of-Scope) — Protokollwahl (gRPC, HTTP/SSE, oder beide) ist Architektur-/Spezifikationsfrage wie bei `LH-FA-SST-005`/`006`, keine Lastenheft-Festlegung; dieselbe Draft-Regel wie bei 0.4.0–0.8.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.10.0 | 2026-09-19 | `LH-FA-CAP-009` (Initial-Snapshot/Backfill des Bestands bereits vorhandener Zeilen einer aktivierten Tabelle) neu ergänzt — abgegrenzt gegen eine Instanz-zu-Instanz-Migration (Out-of-Scope) und gegen Parallelisierung/Durchsatz über sehr große Tabellen (Ausbaustufe, keine Voraussetzung); dieselbe Draft-Regel wie bei 0.4.0–0.9.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.11.0 | 2026-09-19 | `LH-FA-CFG-007` (Transformationen/Routing zwischen Erfassung und Zustellung) neu ergänzt — abgegrenzt gegen eine vollständige Transformationssprache/ein Plugin-Modell (Out-of-Scope) und gegen die bereits bestehende Spaltenauswahl (`LH-FA-CFG-005`); dieselbe Draft-Regel wie bei 0.4.0–0.10.0, eigener Commit vor jedem umsetzenden Slice | — |
