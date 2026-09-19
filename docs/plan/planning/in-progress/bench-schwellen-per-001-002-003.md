@@ -103,10 +103,10 @@ Beleg-Quelle. Dieser Slice:
       `docs/plan/adr/README.md` ([`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md)-Index-Zeile), `docs/user/bench-abdeckung.md`
       real generiert (`make bench`, drei Zeilen, `trace.coverage` erkennt
       sie).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register fortgeschrieben.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register fortgeschrieben.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen.
 
 ## 3. Plan (vor Code)
 
@@ -178,7 +178,60 @@ Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** "Erst messen, dann Schwelle festlegen"
+  (Auftraggeber-Vorgabe) hat eine reale Messreihe erzwungen, bevor eine
+  Zahl in `SPEC-025` landete — dabei kam eine echte Instabilität
+  zutage (N=1000 streute 17,3 %/33,0 %), die eine blind übernommene
+  Schwelle hätte falsch scheitern lassen. Statt die Streuung nur
+  statistisch zu glätten (mehr Läufe), wurde real untersucht, ob ein
+  zweites, anderes Problem vorliegt (`docker stats`, Feed-Container-Logs)
+  — beide Hypothesen widerlegt, die Ursache blieb Jitter bei kurzer
+  absoluter Messdauer. N=5000/5 Läufe löste es messbar (25,0 %/28,2 %).
+- **Was ging anders als geplant:** Der Reviewer fand drei HIGH (F-1/F-2/F-3,
+  siehe `docs/reviews/review-slice-bench-schwellen-per-001-002-003.md`):
+  eine durch denselben Diff bewegte Eigenschaft
+  (`make doc-trace`-Waisenzahl in `harness/README.md`) blieb auf dem
+  Vor-Slice-Stand stehen (`AGENTS.md` §3.13-Verstoß, in derselben Datei,
+  eine Zeile neben einer bereits aktualisierten Zeile — eine
+  Nachbarzeilen-Lücke, keine Enumerations-Lücke über mehrere Dateien wie
+  in früheren Fällen), und zwei Kopfkommentare (`tools/bench-scaling.sh`,
+  `tools/bench-batch-vs-single.sh`) behaupteten weiterhin "kein
+  Pass/Fail", obwohl derselbe Diff echtes Pass/Fail einführte. Alle drei
+  in einer Fixrunde (Commit `6a324d70`) behoben; der Verifier bestätigte
+  danach unabhängig alle sieben DoD-Prüfpunkte real. Zusätzlich wurde in
+  derselben Fixrunde ein eigener Klassifikationsfehler in §1 dieses Plans
+  korrigiert (`LH-QA-PER-004` war fälschlich als "nicht Teil der neun
+  RTM-Waisen" beschrieben).
+- **Steering-Loop-Eintrag:** kein neuer Sensor — der gefundene Fehlermodus
+  (bewegte Eigenschaft in Nachbarzeile derselben Datei übersehen, obwohl
+  der Implementer dort bereits aktiv war) ist der 14. Beleg der bereits
+  verkörperten Regel `AGENTS.md` §3.13, keine neue Beobachtungsklasse.
+- **Beobachtungs-Register (`../observations/`):** neuer Beleg
+  `evidence/slice-bench-schwellen-per-001-002-003.md` unter der
+  bestehenden `BEO-PGC/arbeit-ueberholt-stehenden-traeger/` (bereits
+  verkörpert als `AGENTS.md` §3.13, keine neue Schwellen-Prüfung nötig).
+- **Folge-Slices:** `rtm-reste-sst-cfg-por` (in Bearbeitung, direkt im
+  Anschluss beauftragt: "Jetzt noch die restlichen 6 Anforderungen
+  abdecken") — löst die in §1 "Ausdrücklich NICHT in diesem Slice"
+  genannten sechs verbleibenden RTM-Waisen (`LH-FA-SST-001`/`005`,
+  `LH-FA-CFG-006`, `LH-QA-PER-004`, `LH-QA-POR-001`/`002`).
+- **Risiken aus §6:** vier Risiken, vier Ausgänge — (1) N=1000-Instabilität
+  → **eingetreten**, real untersucht und durch N=5000/5 Läufe behoben;
+  (2) einmaliger Systemlast-Ausreißer trotz Median → **weiter offen**,
+  in `ADR-0104` §Re-Evaluierungs-Trigger benannt; (3) `record_row`/
+  `render_abdeckung` ohne Sperre bei parallelem `make bench` →
+  **entfallen**, kein realer Anwendungsfall; (4) `bench-abdeckung.md`
+  nur vollständig bei allen drei Skripten in Reihenfolge → **weiter
+  offen**, durch den Reviewer verschärft (auch `make bench` selbst
+  bricht bei einem Schwellen-Verstoß vor dem letzten Skript ab, GNU-Make-
+  Default-Verhalten real bestätigt), praktisch begrenzt auf statische
+  Deklarationszeilen ohne Lauf-Kennzahlen.
+- **Drei Paarungen:** Anker — kein `liegt in`-Feld (kein neuer
+  Sensor/keine neue Regel verkörpert, nur ein weiterer Beleg für eine
+  bestehende). Folge-Slice — `rtm-reste-sst-cfg-por` existiert als Datei
+  unter `docs/plan/planning/in-progress/` (Lifecycle-Datei vorhanden).
+  Register — `BEO-PGC/arbeit-ueberholt-stehenden-traeger/` existiert mit
+  nicht-leerem `evidence/` (jetzt 14 Belege, der neue oben).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
