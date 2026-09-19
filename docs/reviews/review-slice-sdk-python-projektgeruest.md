@@ -236,3 +236,126 @@ unter `docs/reviews/` liegt vor" im Slice-Plan **offen** (Skill-Regel
 **Finding-Klasse** geht zusätzlich in die Slice-Closure §7 und von dort in
 den Steering-Loop-Zähler. Dieser Report ersetzt keine Verifikation gegen
 die DoD — das bleibt Verifier-Aufgabe (Modul 11).
+
+---
+
+## Fixrunden-Nachprüfung — 2026-09-19 (Commit `70aa64ce`)
+
+**Gegenstand:** Diff-Range `7281a633..HEAD` (Implementer-Fixrunde nach
+diesem Report), ein Commit: `70aa64ce` — „fix(sdks): Entferne
+Slice-Chronik aus `__init__.py`-Docstring (`LH-FA-SST-009`, `ADR-0107`)".
+
+**Prüfauftrag:** ausschließlich Ausgang F-1 — keine Neuprüfung des
+gesamten Slice-Diffs (das leistete der obenstehende Erst-Lauf bereits;
+Kontext-Zuschnitt Modul 8: Fixrunden-Nachprüfung bleibt auf das
+zurückgewiesene Finding fokussiert).
+
+**Eigenständig durchgeführte Prüfungen:**
+
+- `git diff 7281a633..HEAD --stat`: genau eine Datei geändert —
+  `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` (4
+  Insertionen, 4 Deletionen). Kein stiller Nebeneffekt in einer anderen
+  Datei.
+- `git diff 7281a633..HEAD` (Volltext) gelesen: Der alte Docstring-Absatz
+  „Package skeleton (slice-sdk-python-projektgeruest, `ADR-0107` Festlegung
+  1/3/4). … is added by the follow-up slice
+  (slice-sdk-python-http-client-flaeche) …" ist vollständig ersetzt durch
+  „This release exposes only the shared connection configuration
+  (`ClientOptions`) that every wire surface needs regardless of transport
+  … (`ADR-0107` Festlegung 1/3/4). The HTTP API client surface itself (the
+  `SPEC-018` capabilities) is added by a follow-up release." — beide
+  Slice-Namen (`slice-sdk-python-projektgeruest`,
+  `slice-sdk-python-http-client-flaeche`) sind aus der Datei entfernt; die
+  einzige verbleibende Kennung ist `ADR-0107 Festlegung 1/3/4`. Die
+  Vorher/Nachher-Formulierung bleibt zwar sprachlich erhalten („is added
+  by a follow-up release"), trägt aber keinen benannten Slice mehr, keine
+  Chronik — sie beschreibt einen Zustand (was diese Version enthält, was
+  nicht), ohne einen künftigen Slice-Namen zu nennen. Das entspricht dem
+  im Erst-Review als Formvorbild zitierten `PgChangeFeedClientOptions.cs`
+  eng genug: „Surface-specific behavior … is added by the follow-up
+  slices" dort spricht ebenfalls generisch von künftiger Arbeit ohne einen
+  einzelnen Slice-Namen zu nennen. `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py`
+  real gegengelesen (nicht nur der Diff) — der Docstring trägt jetzt
+  ausschließlich `ADR-0107 Festlegung 1/3/4` als Kennung.
+- `grep -rn "slice-sdk-python\|slice-sdk-csharp" sdks/python/` über den
+  gesamten Baum (nicht nur die vom Implementer genannte Datei): drei
+  Treffer, alle **außerhalb** der von F-1 betroffenen Datei —
+  `sdks/python/Dockerfile:2` („… `ADR-0107` Festlegung 1/3/5,
+  slice-sdk-python-projektgeruest"), `sdks/python/Dockerfile:8` („…
+  folgt erst mit slice-sdk-python-pack-werkzeug (`ADR-0107` §Konsequenzen
+  Folgepflicht 1) …") und
+  `sdks/python/pgchangefeed/pyproject.toml:24` („… folgt erst mit
+  slice-sdk-python-http-client-flaeche."). Diese drei Stellen waren
+  bereits **vor** der Fixrunde vorhanden (Teil des ursprünglichen
+  Implementer-Commits `07a464eb`) und wurden im Erst-Review bereits unter
+  dem Negativbefund „Kommentar-Disziplin (`AGENTS.md` §3.7) im Dockerfile
+  und in `pyproject.toml`/`options.py`" ausdrücklich geprüft und für in
+  Ordnung befunden — konsistent mit dem im selben Erst-Review etablierten
+  Präzedenzfall, dass ein Bare-Slice-Name im
+  `sdks/csharp/Dockerfile`-Kopfkommentar (Bau-/Infrastruktur-Artefakt,
+  reine Herkunftsangabe) kein Verstoß gegen die HIGH-Regel
+  „Slice-/Wellen-Chronik in **Produktionscode**-Kommentar" ist — die Regel
+  greift an Godoc-/Modul-Kommentaren über einem shipped
+  Bibliotheks-Codepfad, nicht an Bau-Skripten oder
+  Paket-Metadaten-Kommentaren. `sdks/python/Dockerfile` wird nicht mit
+  dem Package ausgeliefert; der `pyproject.toml`-Kommentar an Zeile
+  22–24 begründet den Umfang der `dependencies`-Liste, sein Satzsubjekt
+  ist „die HTTP-Client-Fläche" (eine künftige Fähigkeit), nicht ein
+  Produktionscode-Pfad dieser Datei selbst. Diese drei Fundstellen sind
+  daher **keine neue Instanz** von F-1s Klasse und keine Regression durch
+  die Fixrunde — sie lagen außerhalb des von F-1 benannten Gegenstands
+  und blieben von der Fixrunde unberührt, wie es sein soll (Fixrunde
+  betrifft nur die konkret gerügte Datei).
+- `sdks/python/pgchangefeed/src/pgchangefeed/options.py` erneut selbst
+  gelesen (nicht nur der Implementer-Bericht zitiert): Der Modul-Docstring
+  trägt ausschließlich `ADR-0107 Festlegung 1` und eine indikative
+  Ist-Zustands-Beschreibung („scopes the first Python package release to
+  the HTTP API … no gRPC/SSE/NATS surface exists yet"), plus eine
+  Analogie-Referenz auf `sdks/csharp/PgChangeFeed.Client/PgChangeFeedClientOptions.cs`
+  — keine Slice-Chronik, unverändert gegenüber dem Erst-Review-Stand
+  (`options.py` war nicht Gegenstand von F-1 und ist auch nicht Teil des
+  Fixrunden-Diffs).
+- `docker build --no-cache -f sdks/python/Dockerfile -t
+  pgcf-python-review-fixcheck sdks/python` real ausgeführt, Exit-Code
+  ungepiped in eine Log-Datei umgeleitet und separat geprüft: `0`.
+  `pytest`-Ausgabe: `3 passed in 0.01s` — Verhalten unverändert gegenüber
+  dem Erst-Review-Lauf. Test-Image danach mit `docker rmi` entfernt;
+  `git status --short` vor und nach dem Lauf leer.
+- `make docs-check` real ausgeführt, Exit-Code direkt (ungepiped)
+  geprüft: `0` (`d-check: 822 Datei(en) geprüft, 0 Befund(e)`).
+- `make gates` real ausgeführt, Exit-Code direkt (ungepiped, in eine
+  Log-Datei umgeleitet und separat aus `$?` gelesen) geprüft: `0`.
+  Teilergebnisse im Log: `baseline-verify: v6.9.0 OK`,
+  `generated-sync: OK`, `a-check: gesamt: 0 Befund(e)`,
+  `coverage-gate: OK — Coverage 82.80% erfüllt Schwelle 80%`,
+  `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne
+  Struktur-ID`.
+
+**F-1-Ausgang:** **behoben.** Beide von F-1 konkret gerügten Slice-Namen
+sind aus `__init__.py` entfernt; die verbleibende Herkunftsangabe ist
+ausschließlich `ADR-0107 Festlegung 1/3/4`, formgleich zum zitierten
+Formvorbild `PgChangeFeedClientOptions.cs`.
+
+**Neue Funde in dieser Fixrunden-Nachprüfung:** keine neue HIGH-Instanz.
+Die drei über den Gesamtbaum-Grep gefundenen `slice-sdk-python-*`-Treffer
+außerhalb von `__init__.py` (Dockerfile ×2, `pyproject.toml` ×1) sind
+vorbestehend, bereits im Erst-Review unter Negativbefund geprüft und
+liegen außerhalb des Gegenstands von F-1 (Bau-/Metadaten-Artefakte, kein
+shipped Bibliotheks-Codepfad) — sie werden hier als **INFO**
+festgehalten, nicht als neues HIGH: Sollte die Skill-Regel „Slice-/
+Wellen-Chronik in Produktionscode-Kommentar" künftig auf Bau-/
+Metadaten-Artefakte ausgedehnt werden, wären diese drei Stellen die
+ersten Kandidaten — das ist eine Grenzfrage für einen künftigen Lauf
+(Steering-Loop), keine Rückweisung dieser Fixrunde.
+
+**Gesamt-Verdikt (nach Fixrunde):** **Freigegeben.** 0 offenes HIGH, 0
+MEDIUM. Real ausgeführter Docker-Build/Test unverändert grün (3/3),
+`make docs-check` grün, `make gates` grün (alle Teilgates OK, Coverage
+82.80 % über der 80 %-Schwelle). Kein Architect-Eskalationspfad nötig —
+F-1 ist ohne Rollen-Widerspruch als einfache Fixrunde gelöst. Da keine
+weitere Fixrunde folgt, wird die DoD-Checkbox „Review durchgeführt,
+Report unter `docs/reviews/` liegt vor" im Slice-Plan jetzt auf `[x]`
+gesetzt (Skill-Regel „DoD-Checkbox-Nachzug ohne Fixrunde" — hier: Fixrunde
+bereits abgeschlossen und in derselben Nachprüfung freigegeben). Dieser
+Nachtrag ersetzt keine Verifikation gegen die DoD — das bleibt
+Verifier-Aufgabe (Modul 11).

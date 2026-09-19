@@ -83,9 +83,13 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
       `sdks/csharp/README.md`, siehe dessen Closure-Notiz); kein Duplikat
       der Draht-Doku (`SPEC-018` bleibt die kanonische Quelle).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Erst-Lauf fand 1 HIGH (F-1, Slice-Chronik in `__init__.py`-Docstring),
+      Fixrunde behoben (Commit `70aa64ce`), Fixrunden-Nachprüfung im selben
+      Report freigegeben (`docs/reviews/review-slice-sdk-python-projektgeruest.md`
+      §Fixrunden-Nachprüfung, 2026-09-19) — 0 offenes HIGH.
 - [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-python-pack-werkzeug`).
