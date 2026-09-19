@@ -19,7 +19,7 @@ superseded die `twine`-Publish-Zeile aus `ADR-0107` Festlegung 5.
 **Berührte Spec-Stellen:** — (Prozess-/CI-Artefakt ohne eigene
 `SPEC-*`-Kennung, analog `sdk-csharp-release.yml`).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent (dietmar.burkard@nerdware.dev), ab 2026-09-19.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0107` §Konsequenzen
 Folgepflicht 1/5). **Datum:** 2026-09-19.
