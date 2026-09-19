@@ -359,3 +359,152 @@ gesetzt (Skill-Regel „DoD-Checkbox-Nachzug ohne Fixrunde" — hier: Fixrunde
 bereits abgeschlossen und in derselben Nachprüfung freigegeben). Dieser
 Nachtrag ersetzt keine Verifikation gegen die DoD — das bleibt
 Verifier-Aufgabe (Modul 11).
+
+---
+
+## Nachtrag: Python-Versions-Bump auf 3.14 — 2026-09-19 (Commit `be0ede7f`)
+
+**Gegenstand:** Diff-Range `8e7fd073..be0ede7f` (zwischen dem
+Verifikations-Commit und einem nachträglichen, direkten Coordinator-Fix
+— **kein** eigener Implementer-Lauf): `requires-python` in
+`sdks/python/pgchangefeed/pyproject.toml` von `>=3.11` auf `>=3.14`
+angehoben, Docker-Basis in `sdks/python/Dockerfile` von
+`python:3.13-slim` auf `python:3.14-slim` (mit neu gemessenem Digest),
+plus ein Plan-Nachzug-Absatz in
+`docs/plan/planning/in-progress/slice-sdk-python-projektgeruest.md` §3.
+
+**Prüfauftrag:** ausschließlich dieser eine nachträgliche Fix — kein
+vollständiger Slice-Review (bereits abgeschlossen,
+`docs/reviews/verifikation-slice-sdk-python-projektgeruest.md`, DoD
+erfüllt) und keine Wiederholung des Erst-Reviews oben.
+
+**Eigenständig durchgeführte Prüfungen:**
+
+- `sdks/python/Dockerfile` und `sdks/python/pgchangefeed/pyproject.toml`
+  vollständig gelesen (nicht nur den Diff-Hunk). Die Änderung ist in
+  sich sauber: der Kopfkommentar-Digest-Block im Dockerfile wurde
+  vollständig ersetzt (alter Tag, alter Digest, neuer Tag, neuer Digest —
+  keine halbe Aktualisierung), `requires-python` und die Docker-Basis
+  bewegen sich gemeinsam auf dieselbe Version, keine Teilaktualisierung.
+- `docker buildx imagetools inspect python:3.14-slim` real gegen die
+  Registry ausgeführt: Index-Digest
+  `sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2`,
+  Plattform-Manifest trägt `org.opencontainers.image.version:
+  3.14.7-slim-trixie` — **identisch** mit dem im Dockerfile-Kommentar und
+  im Plan-Nachzug genannten Digest bzw. Versionsstring. Der Pin trägt
+  real das behauptete Tag.
+- `grep -rn "3\.1[0-9]"` über `sdks/python/` — keine verbliebene
+  `3.11`-/`3.13`-Referenz in `Dockerfile`/`pyproject.toml`;
+  `sdks/python/README.md` nennt gar keine Python-Version (kein
+  Inkonsistenz-Risiko dort). `ADR-0107`/`ADR-0108` nennen ebenfalls keine
+  konkrete Python-Mindestversion, die jetzt drifted — `ADR-0108` (nach
+  diesem Fix committet) referenziert `python:3.14-slim` bereits
+  konsistent zur neuen Basis.
+- `docker build --no-cache -f sdks/python/Dockerfile
+  -t pgcf-python-verify-fix sdks/python` real ausgeführt, Exit-Code
+  direkt geprüft: `0`. `pytest`-Ausgabe: „platform linux — Python
+  3.14.7, pytest-9.1.1" und „3 passed in 0.01s" — bestätigt die
+  Plan-Nachzug-Behauptung wortgleich. Test-Image danach mit `docker rmi`
+  entfernt (`docker images | grep pgcf-python-verify-fix` danach leer).
+- `make gates` real ausgeführt, Exit-Code direkt (ungepiped) geprüft:
+  `0` (u. a. `generated-sync: OK`, `a-check: gesamt: 0 Befund(e)`).
+- Plan-Nachzug-Text (§3, neuer Absatz „Plan-Nachzug (Nutzer-Entscheidung
+  nach Verifikation)") gegen den realen Commit geprüft: Digest, Version
+  (`3.14.7-slim-trixie`) und Build-/Test-Ergebnis (Exit 0, 3/3 grün)
+  stimmen mit der eigenen Messung überein.
+
+### F-2 — Zwei widersprüchliche, unverbunden nebeneinanderstehende Plan-Nachzüge zur selben Entscheidung
+
+- `kategorie`: MEDIUM
+- `quelle`: Maintainability (Plan-Dokument-Kohärenz)
+- `pfad`: `docs/plan/planning/in-progress/slice-sdk-python-projektgeruest.md:128-137`
+  (neuer Absatz) vs. `:179-196` (bestehender, unveränderter Absatz)
+- `befund`: Der neue Plan-Nachzug-Absatz (Zeilen 128–137, „Nutzer-
+  Entscheidung nach Verifikation") deklariert zwar den Gewinner
+  („`requires-python` auf `>=3.14` (statt der ursprünglich gewählten
+  `>=3.11`)"), aber weiter unten im selben Dokument (Zeilen 179–196,
+  vorbestehender Abschnitt „Plan-Nachzug (Implementer, vor dem
+  Gate-Lauf)") steht unverändert und unmarkiert die volle, unqualifiziert
+  formulierte Begründung für die jetzt überholte Wahl: „**Python-
+  Mindestversion:** `requires-python = ">=3.11"`." mit eigenständiger
+  EOL-Argumentation (3.9/3.10/3.11) und „**Basis-Image-Wahl:**
+  `python:3.13-slim`" mit eigener Begründung — beide lesen sich, isoliert
+  gelesen, als aktuell geltende Entscheidung, nicht als durch den
+  oberhalb stehenden Absatz überholt. Kein Verweis in die eine oder
+  andere Richtung (kein „siehe Plan-Nachzug oben"/„ersetzt durch"), keine
+  Streichung, keine Kennzeichnung als überholt. Ein Leser, der das
+  Dokument abschnittsweise statt komplett von oben nach unten liest
+  (z. B. gezielt zum Unterpunkt „Python-Mindestversion" springt), trifft
+  auf eine vollständige, in sich schlüssige, aber sachlich falsche
+  Begründung für `>=3.11`/`python:3.13-slim`, ohne einen Hinweis, dass sie
+  überholt ist.
+- `verifizierbar`: ja — `grep -n "3\.11\|3\.13-slim" docs/plan/planning/in-progress/slice-sdk-python-projektgeruest.md`
+  zeigt beide Fundstellen unverändert.
+- `klasse`: Widersprüchliche Plan-Nachzüge ohne Verweis (verwandt, aber
+  nicht identisch mit der HIGH-Klasse „Zwei-Quellen-Drift" — hier ist der
+  Gewinner an einer Stelle deklariert, die stehen gebliebene Gegenstelle
+  trägt aber keinen Rückverweis, deshalb MEDIUM statt HIGH)
+
+### INFO — Herkunft der Release-Datum-Behauptung nicht im Träger selbst nachprüfbar
+
+- `kategorie`: INFO
+- `quelle`: `AGENTS.md` §3.12 (Herkunft von Aussagen)
+- `pfad`: `docs/plan/planning/in-progress/slice-sdk-python-projektgeruest.md:133-134`,
+  `sdks/python/Dockerfile:14`
+- `befund`: Die Behauptung „Python 3.14.7 real als aktuelle stabile
+  Version verifiziert, released 2026-08-05" trägt keinen im Repo
+  nachvollziehbaren Beleg-Anker (kein Befehl, keine Datei, keine
+  Registry-Abfrage) — die Prüfung lief laut Auftragsbeschreibung über
+  eine externe WebSearch-Recherche außerhalb dieses Reviews. In diesem
+  Review stand kein WebSearch-Werkzeug zur Verfügung; der Digest- und
+  Versionsstring-Teil der Aussage (`python:3.14-slim`,
+  `3.14.7-slim-trixie`) wurde real über die Registry
+  nachgeprüft und stimmt — die reine Datums-/„aktuell"-Behauptung bleibt
+  eine externe Tatsache ohne repo-internen Nachprüfweg und damit außerhalb
+  dessen, was ein Sensor oder ein zweiter Lese-Lauf hier abschließend
+  bestätigen kann.
+- `verifizierbar`: nein — externe Tatsache ohne repo-internen Beleg-Anker.
+- `klasse`: Externe Tatsachenbehauptung ohne repo-internen Anker
+
+## Summary (Nachtrag)
+
+| Kategorie | Anzahl |
+|---|---|
+| HIGH | 0 |
+| MEDIUM | 1 |
+| LOW | 0 |
+| INFO | 1 |
+
+## Verdikt (Nachtrag)
+
+**Merge-blockierend:** nein — 0 HIGH. F-2 (MEDIUM) ist kein
+Rollen-Widerspruch und kein drittes Auftreten derselben Konfliktklasse;
+die reguläre Sequenz mit Architect-Übergabe (Modul 8) ist hier Overkill.
+Empfehlung an den nächsten Bearbeiter dieses Plan-Dokuments (Verifier
+oder ein künftiger Implementer-Lauf an diesem Slice): den Absatz
+„Python-Mindestversion"/„Basis-Image-Wahl" (Zeilen 179–196) bei
+Gelegenheit als überholt kennzeichnen oder auf den neuen Plan-Nachzug
+verweisen — kein eigener Fix in diesem Review-Lauf (Reviewer schlägt
+keine Lösung vor, Skill §Was dieser Skill NICHT macht).
+
+**Reale Prüfungen dieses Nachtrags:** Digest-Vergleich
+(`docker buildx imagetools inspect python:3.14-slim`, Übereinstimmung),
+`docker build --no-cache` (Exit 0, Python 3.14.7, 3/3 `pytest` grün,
+Test-Image entfernt), `make gates` (Exit 0, ungepiped direkt geprüft),
+`grep` gegen verbliebene `3.1[0-9]`-Referenzen (keine inkonsistente
+Fundstelle außerhalb des bekannten, in F-2 benannten Plan-Textes).
+
+**Negativbefunde (Nachtrag):**
+
+- geprüft, ohne Befund: Dockerfile/`pyproject.toml`-Konsistenz — beide
+  Dateien bewegen sich gemeinsam auf `3.14`, keine Teilaktualisierung.
+- geprüft, ohne Befund: `sdks/python/README.md` und `ADR-0107`/`ADR-0108`
+  auf verbliebene `3.11`/`3.13`-Referenzen — keine gefunden; `ADR-0108`
+  (nach diesem Fix committet) ist bereits konsistent zu `3.14`.
+- geprüft, ohne Befund: Digest-Korrektheit — real gegen die Registry
+  gemessen, identisch mit dem committeten Kommentar.
+- geprüft, ohne Befund: `make gates` — real gelaufen, Exit-Code direkt
+  geprüft, grün.
+
+Dieser Nachtrag ersetzt keine Verifikation gegen die DoD — das bleibt
+Verifier-Aufgabe (Modul 11).
