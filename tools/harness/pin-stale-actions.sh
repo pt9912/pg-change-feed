@@ -5,13 +5,21 @@
 # Mutation (zeigt der im Kommentar genannte Tag noch auf denselben SHA?)
 # und Tag-Frische (existiert ein neuerer Release des Action-Repos?). Kein
 # Gate; braucht Netz (git ls-remote + GitHub-Releases-API); meldet, hebt
-# nicht an — eine Pin-Hebung ist ein bewusster Commit (Modul 14).
+# nicht an — eine Pin-Hebung ist ein bewusster Commit (Modul 14). Die
+# Tag-Frische-Abfrage (Achse B) laeuft containerisiert ueber
+# tools/harness/lib-github-api.sh (AGENTS.md §3.1 — kein curl auf dem
+# Host noetig), analog tools/harness/ci-matrix-abdeckung.sh; `git
+# ls-remote` (Achse A) bleibt bare auf dem Host, analog dem bestehenden
+# `git rev-parse --show-toplevel` in ci-matrix-abdeckung.sh.
 #
 # Exit: 0 = keine Drift auf jeder Achse jeder Zeile · 1 = mindestens eine
 # Achse driftet · 2 = mindestens eine Achse unbestimmbar (Netz nicht
 # erreichbar). Ein doppelt vorkommendes Repo@Tag (mehrere Workflows) wird
 # nur einmal geprüft.
 set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+# shellcheck source=tools/harness/lib-github-api.sh
+. tools/harness/lib-github-api.sh
 
 rc=0
 seen=""
@@ -32,7 +40,7 @@ while read -r repo sha tag; do
     [ 1 -gt "$rc" ] && rc=1
   fi
 
-  latest=$(curl -fsS -m 15 "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/')
+  latest=$(github_api_get "repos/${repo}/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name":[[:space:]]*"([^"]+)".*/\1/')
   if [ -z "$latest" ]; then
     echo "UNBESTIMMT  $repo@$tag Tag-Frische — GitHub-Releases-API nicht erreichbar"
     [ 2 -gt "$rc" ] && rc=2

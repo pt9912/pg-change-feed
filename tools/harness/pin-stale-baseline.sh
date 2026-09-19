@@ -5,11 +5,16 @@
 # neuesten GitHub-Release von pt9912/ai-harness-course. Kein Gate; braucht
 # Netz (GitHub-Releases-API); meldet, hebt nicht an — eine Baseline-
 # Aktualisierung ist ein bewusster Bootstrap-Vorgang (Modul 2), kein
-# automatischer Nachlauf.
+# automatischer Nachlauf. Die API-Abfrage laeuft containerisiert ueber
+# tools/harness/lib-github-api.sh (AGENTS.md §3.1 — kein curl auf dem
+# Host noetig), analog tools/harness/ci-matrix-abdeckung.sh.
 #
 # Exit: 0 = keine Drift · 1 = neuerer Release existiert · 2 = API nicht
 # erreichbar oder Version nicht auffindbar (Ergebnis unbestimmbar).
 set -uo pipefail
+cd "$(git rev-parse --show-toplevel)"
+# shellcheck source=tools/harness/lib-github-api.sh
+. tools/harness/lib-github-api.sh
 
 file="harness/conventions.md"
 pinned=$(grep -E '^\- \*\*Stand:\*\*' "$file" | head -1 | sed -E 's/^- \*\*Stand:\*\* v?//')
@@ -18,7 +23,7 @@ if [ -z "$pinned" ]; then
   exit 2
 fi
 
-latest=$(curl -fsS -m 15 https://api.github.com/repos/pt9912/ai-harness-course/releases/latest 2>/dev/null | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name":[[:space:]]*"v?([^"]+)".*/\1/')
+latest=$(github_api_get "repos/pt9912/ai-harness-course/releases/latest" | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name":[[:space:]]*"v?([^"]+)".*/\1/')
 if [ -z "$latest" ]; then
   echo "UNBESTIMMT  Kurs-Baseline — GitHub-Releases-API nicht erreichbar"
   exit 2

@@ -9,11 +9,16 @@
 #
 # Aufruf: pin-stale.sh <datei> <variable> [vergleichs-tag]
 # Exit: 0 = keine Drift · 1 = Drift gefunden · 2 = Registry nicht
-# erreichbar oder Variable nicht gefunden (Ergebnis unbestimmbar).
+# erreichbar, Variable nicht gefunden oder Aufruf-Fehler (Pflichtargument
+# fehlt) — in jedem Fall ein unbestimmbares Ergebnis, nie ein DRIFT-Fund.
 set -uo pipefail
 
-file="${1:?Datei fehlt}"
-var="${2:?Variablenname fehlt}"
+if [ $# -lt 2 ]; then
+  echo "UNBESTIMMT  Aufruf — Pflichtargument fehlt (pin-stale.sh <datei> <variable> [vergleichs-tag])"
+  exit 2
+fi
+file="$1"
+var="$2"
 compare_tag="${3:-}"
 
 line=$(grep -E "^${var}[[:space:]]*\?=" "$file" || true)

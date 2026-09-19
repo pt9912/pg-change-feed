@@ -25,9 +25,13 @@ Neun-Achsen-Pin-Inventar (P1–P9) beobachtbar machen: P1/P2 nutzt bereits
 `make image-stale`, P3–P9 (Race-Toolchain, PG-Testcontainer, d-migrate,
 a-check, d-check, Kurs-Baseline, GitHub-Action-Pins) bekommen neue,
 analog benannte Make-Targets; `upstream-drift.yml` fragt alle neun Achsen
-in einem fail-open Nachtlauf ab — ein Werkzeug-/Netzausfall einer
-einzelnen Achse führt zu Skip dieser Achse, nicht zu Rot des gesamten
-Laufs, ein tatsächlich gefundener Drift bleibt sichtbar.
+in einem fail-open Nachtlauf ab — `if: always()` verhindert, dass ein
+fehlgeschlagener Schritt (echter Drift-Fund **oder** ein Werkzeug-/
+Netzausfall) die nachfolgenden Achsen-Schritte abbricht, sodass jede
+Achse unabhängig sichtbar bleibt. Reviewer-Finding F-2 (siehe §6)
+präzisiert: das unterscheidet nicht zwischen den beiden Ursachen auf
+Lauf-Statusebene — GitHub Actions färbt Schritt und Gesamtlauf bei jedem
+Nicht-Null-Exit gleich rot.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -68,18 +72,28 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (`OK`).
 - [x] `upstream-drift.yml` existiert: ein Workflow, alle neun Achsen
       (P1/P2 über das bestehende `make image-stale`, P3–P9 über die neuen
-      Targets), `if: always()` je Achsen-Schritt (fail-open — Werkzeug-/
-      Netzausfall einer Achse führt zu Skip dieser Achse, nicht zu Rot des
-      Gesamtlaufs), `schedule` (nächtlich, versetzt zu `image-scan.yml`)
+      Targets), `if: always()` je Achsen-Schritt (fail-open — ein
+      fehlgeschlagener Schritt bricht die nachfolgenden Achsen nicht ab,
+      jede bleibt unabhängig sichtbar; `if: always()` unterscheidet dabei
+      NICHT zwischen einem echten Drift-Fund und einem Werkzeug-/
+      Netzausfall auf Lauf-Statusebene — Reviewer-Finding F-2, §6),
+      `schedule` (nächtlich, versetzt zu `image-scan.yml`)
       + `workflow_dispatch`; ein real gefundener Drift bleibt sichtbar
       (roter Schritt), bleibt aber advisory. YAML-Struktur per
       Ruby-Stdlib-YAML-Parser geprüft.
 - [x] `harness/README.md` §Werkzeuge trägt alle sieben neuen Targets und
       `upstream-drift.yml`.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      1 HIGH (F-1: drei Skripte riefen `curl` bare auf dem Host auf statt
+      containerisiert, `AGENTS.md` §3.1) und 1 MEDIUM (F-2: `if: always()`
+      unterscheidet nicht zwischen Drift-Fund und Werkzeugausfall auf
+      Lauf-Statusebene) sowie 2 LOW (F-3: Exit-Code-Vertrag von
+      `pin-stale.sh` bei fehlendem Argument; F-4: doppelte Plan-Tabellenzeile)
+      und 1 INFO (F-5: P9 prüft nur Frische, keine Form) in derselben
+      Fixrunde behoben bzw. dokumentiert, kein offenes HIGH.
 - [ ] Doku-Update für `harness/README.md` §Werkzeuge — entfällt als
       eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
@@ -112,8 +126,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `tools/harness/pin-stale-baseline.sh` | neu (Plan-Nachzug) | P8, `harness/conventions.md` §Baseline gegen die GitHub-Releases-API von `pt9912/ai-harness-course` (kein Docker-Pin, eigenes Parsing). |
 | `tools/harness/pin-stale-actions.sh` | neu (Plan-Nachzug) | P9, scannt alle `uses:`-Zeilen über `.github/workflows/*.yml`, zwei Achsen je Repo@Tag (`git ls-remote` gegen Tag-Mutation, GitHub-Releases-API gegen Tag-Frische), dedupliziert Mehrfachnennungen. |
 | `.github/workflows/upstream-drift.yml` | neu | neun Achsen, fail-open, `schedule` + `workflow_dispatch`. |
-| `harness/README.md` §Werkzeuge | update (Plan-Nachzug) | acht neue Zeilen (vier P3–P6-Targets gebündelt, P7/P8/P9 einzeln, `upstream-drift.yml`). |
-| `harness/README.md` §Werkzeuge | update | sieben neue Targets + `upstream-drift.yml`. |
+| `harness/README.md` §Werkzeuge | update (Plan-Nachzug) | acht neue Zeilen (vier P3–P6-Targets gebündelt, P7/P8/P9 einzeln, `upstream-drift.yml`) — ersetzt die ursprünglich grob geplante einzelne Zeile. |
+| `tools/harness/lib-github-api.sh` | neu (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-1 (HIGH): gemeinsame containerisierte GitHub-API-GET-Funktion, analog `tools/harness/ci-matrix-abdeckung.sh` (`AGENTS.md` §3.1) — `pin-stale-baseline.sh`/`pin-stale-dcheck.sh`/`pin-stale-actions.sh` riefen `curl` zuvor bare auf dem Host auf. |
 
 ## 4. Trigger
 
@@ -156,6 +170,26 @@ geschrieben.
   der 3×-Schärfungsschwelle) — dieser Slice trägt keinen neuen Beleg
   (kein Required-Status-Check-Bezug, andere Fehlerklasse), aber die
   strukturelle Verwandtschaft wird hier benannt.
+- Reviewer-Finding F-2 (MEDIUM): `if: always()` liefert nicht die
+  ursprünglich hier behauptete Eigenschaft „Werkzeug-/Netzausfall führt
+  zu Skip dieser Achse, nicht zu Rot des Gesamtlaufs" — GitHub Actions
+  unterscheidet auf Lauf-Statusebene nicht zwischen Exit 1 (echter Fund)
+  und Exit 2 (unbestimmbar); beide färben Schritt und Gesamtlauf gleich
+  rot. `continue-on-error: true` wäre keine Abhilfe (verschluckt echte
+  Funde ebenso). **Ausgang:** eingetreten, Doku korrigiert (§1, §2 oben,
+  `upstream-drift.yml`-Kopfkommentar) — kein Code-Fix möglich, ohne echte
+  Funde zu verschlucken; die genauere Fassung des bereits benannten
+  Alarmmüdigkeits-Risikos (siehe Bullet direkt oberhalb) bleibt weiter
+  offen.
+- Reviewer-Finding F-5 (INFO): `pin-stale-actions.sh` prüft nur die
+  Frische bereits §3.8-konformer `uses:`-Zeilen — eine künftige,
+  §3.8-verletzende Zeile (floatender Tag, SHA ohne Versionskommentar)
+  erzeugt weder `DRIFT` noch `UNBESTIMMT`, sondern bleibt für P9
+  unsichtbar; die Form-Konformität selbst bleibt Review-Aufgabe, kein
+  Gate deckt sie. **Ausgang:** entfallen als Risiko dieses Slice — P9 war
+  nie als Form-Prüfung geplant (§1 Ziel: „Pin-Freshness", nicht
+  „Pin-Form"), aktuell real folgenlos (alle neun `uses:`-Zeilen
+  §3.8-konform, siehe Review-Report Negativbefunde).
 
 ## 7. Closure-Notiz
 

@@ -8,11 +8,19 @@ name: upstream-drift
 # verlangt fuer ein blockierendes Gate ausdruecklich eine eigene
 # Folge-ADR, AGENTS.md §3.6).
 #
-# fail-open je Achse (`if: always()`): ein Werkzeug-/Netzausfall EINER
-# Achse (Registry, GitHub-API nicht erreichbar) fuehrt zum Skip dieser
-# Achse, nicht zu Rot des gesamten Laufs — ein tatsaechlich gefundener
-# Drift bleibt trotzdem sichtbar (der jeweilige Schritt selbst wird rot,
-# nachfolgende Schritte laufen unabhaengig weiter).
+# fail-open je Achse (`if: always()`): ein fehlgeschlagener Schritt
+# (echter DRIFT-Fund ODER ein Werkzeug-/Netzausfall, Exit 1 bzw. 2)
+# bricht den Lauf NICHT ab — jede nachfolgende Achse laeuft unabhaengig
+# weiter und bleibt sichtbar, statt hinter einem fruehen Abbruch zu
+# verschwinden. `if: always()` unterscheidet dabei NICHT zwischen einem
+# echten Fund und einem transienten Netz-/API-Ausfall: GitHub Actions
+# faerbt Schritt UND Gesamtlauf bei jedem Nicht-Null-Exit gleich rot,
+# unabhaengig vom konkreten Exit-Code — ein einzelner Netz-Haenger einer
+# Achse reicht dafuer bereits aus. `continue-on-error: true` waere dafuer
+# keine Abhilfe, weil es echte Funde ebenso verschluckte. Alarmmuedigkeit
+# durch diese Eigenschaft bleibt ein benanntes, weiter offenes Risiko
+# (Slice-Plan `release-upstream-drift` §6,
+# `BEO-PGC/nicht-blockierender-workflow-alarmmuedigkeit`).
 #
 # Trigger `schedule` (naechtlich, versetzt zu image-scan.yml) +
 # `workflow_dispatch`, kein Pull-Request-/Push-Trigger — Pin-Freshness
