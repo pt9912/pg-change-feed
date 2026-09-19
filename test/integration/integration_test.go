@@ -194,6 +194,11 @@ func imageJSON(t *testing.T, raw []byte) map[string]any {
 // Zeile, das Alt-Bild der DELETE-Änderung trägt die Schlüsselspalte; der
 // Alt-Stand eines UPDATE bleibt bei unverändertem Schlüssel abwesend —
 // Quellverhalten der Default-Identity (`LH-FA-CAP-008` Boundary).
+// Trägt zugleich `LH-FA-DAT-002` (Quelltabelle über `SourceTableID`
+// identifizierbar), `LH-FA-DAT-003` (INSERT/UPDATE/DELETE je Change
+// unterscheidbar) und `LH-FA-DAT-005` (Row-Image-Werte je Operationstyp
+// real gelesen). Das Wiederlesen desselben Bereichs unten trägt zugleich
+// `LH-QA-REL-004`: zweimaliges Lesen liefert dieselben Changes.
 func TestE2ECaptureFlow(t *testing.T) {
 	env := newE2EEnv(t, "feed_e2e_flow")
 	ctx := context.Background()
@@ -495,7 +500,10 @@ func TestE2EChangesViewMatchesReadChanges(t *testing.T) {
 // `register-consumer`/`acknowledge-consumer` geführten Consumern des
 // externen Black-Box-Rundlaufs (`tools/harness/run-integration-tests.sh`),
 // die erst nach diesem Go-Testlauf entstehen. Real gegen zwei Consumer
-// getestet (`LH-FA-RET-005` Happy Path/Boundary): einer blockiert (weiter
+// getestet (`LH-FA-RET-005` Happy Path/Boundary; trägt zugleich
+// `LH-FA-CON-002`: beide Consumer bestätigen unabhängig voneinander, die
+// Position des einen bleibt von der Bestätigung des anderen unberührt):
+// einer blockiert (weiter
 // zurückliegende Position), einer nicht (bereits weiter bestätigt). Die
 // Sicht berechnet nichts neu, was die Domain-Policy nicht bereits real
 // entscheidet — sie macht nur sichtbar, welche Position aktuell die

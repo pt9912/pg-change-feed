@@ -811,7 +811,7 @@ if [ "$feed_running" != "true" ]; then
   exit 1
 fi
 
-abdeckung_declare "Black-Box-CLI-Rundlauf" "LH-QA-POR-003" "register-consumer und acknowledge-consumer laufen ausschließlich als externe docker exec-Aufrufe gegen den Produktions-Binary, über einen simulierten Container-Neustart hinweg" "Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern"
+abdeckung_declare "Black-Box-CLI-Rundlauf" "LH-QA-POR-003,LH-FA-CON-001,LH-FA-CON-003,LH-FA-CON-004,LH-FA-CON-005" "register-consumer und acknowledge-consumer laufen ausschließlich als externe docker exec-Aufrufe gegen den Produktions-Binary, über einen simulierten Container-Neustart hinweg — Registrierung, Positions-Persistierung (cdc.consumer_position gegen die bestätigte Position gehalten), Bestätigung und Fortsetzen ab der bestätigten Position nach dem Neustart real belegt" "Black-Box-CLI-Rundlauf belegt — register-consumer/acknowledge-consumer extern"
 
 # Black-Box-CLI-Rundlauf (LH-QA-POR-003, ADR-0030 E2E-Tier): anders als der
 # Go-Testlauf oben (`go test ./test/integration/...`, der intern gegen
@@ -1278,7 +1278,7 @@ fi
 
 echo "run-integration-tests: CLI-Diagnose-Beleg (Normalbetrieb) — alle vier Signale (LH-FA-ADM-002…005) sowie der reale Blocker $CLI_CONSUMER und cdc_storage_bytes (LH-FA-RET-005/006) in der diagnose-Ausgabe sichtbar"
 
-abdeckung_declare "CLI-Diagnose-Beleg (Fehlerzustand)" "LH-FA-ADM-003" "ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand ist in der diagnose-Ausgabe von Normalbetrieb unterscheidbar, ohne den laufenden Feed-Container zu beenden" "CLI-Diagnose-Beleg (Fehlerzustand) —"
+abdeckung_declare "CLI-Diagnose-Beleg (Fehlerzustand)" "LH-FA-ADM-003,LH-QA-REL-003" "ein direkt in die Heartbeat-Projektion geschriebener Fehlerzustand ist in der diagnose-Ausgabe von Normalbetrieb unterscheidbar, ohne den laufenden Feed-Container zu beenden — derselbe Fehlerinjektionstest, den \`LH-QA-REL-003\`s Messmethode über \`LH-FA-ADM-003\` verlangt" "CLI-Diagnose-Beleg (Fehlerzustand) —"
 
 # Fehlerzustand-Beleg (LH-FA-ADM-003 Boundary: „erkennbar von Normalbetrieb
 # unterscheidbar"). Ein real vom Erfassungspfad ausgelöster Fehlerzustand
@@ -1981,7 +1981,7 @@ fi
 
 echo "run-integration-tests: NATS-Negative-Beleg (LH-FA-SST-007, Reconnect-Nachholen) — Test-Subscriber real vom Compose-Netz getrennt (belegt über docker inspect), verpasste Change (id=240) blieb ohne jedes Wecksignal (Log-Beleg) und wurde ausschließlich über cdc.changes nachgeholt; ein frischer Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) real ein Signal, ohne dass die verpasste Change nachträglich zugestellt wurde: $nats_reconnect_after_output"
 
-abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-005,LH-FA-SST-006" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes — die spätere API, deren Ermöglichung \`LH-FA-SST-005\` forderte, ohne das interne CDC-Modell zu verändern" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
+abdeckung_declare "HTTP-API-Rundlauf" "LH-FA-SST-005,LH-FA-SST-006,LH-FA-REA-001" "ein Wegwerf-Client ruft RegisterConsumer mit dem admin-Token und ListTables mit dem reader-Token real per HTTP gegen den laufenden Feed-Container auf und liest zusätzlich Changes über \`GET /changes\` mit dem reader-Token; die Registrierung wird gegen cdc.consumer bestätigt, der gelesene Change gegen cdc.changes — die spätere API, deren Ermöglichung \`LH-FA-SST-005\` forderte, ohne das interne CDC-Modell zu verändern; der Lesezugriff trägt einen echten Bereich \`[from, to)\` zweier Positionen (\`LH-FA-REA-001\`)" "GET /changes real per HTTP mit reader-Token (die eigens eingefügte Zeile"
 
 # HTTP-API-Rundlauf (LH-FA-SST-006, ADR-0057, ADR-0081): ein Wegwerf-Client
 # (tools/harness/httpclient) ruft RegisterConsumer mit dem admin-Token,
@@ -2681,7 +2681,7 @@ fi
 
 echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt — ein Wegwerf-Client (tools/harness/natsstreamsub) verband sich real mit gültigem Token über NATS, empfing eine danach committete Änderung als vollständiges JSON-Event über $NATS_STREAM_SUBJECT (Tabelle, Operation und Spaltenwert real am Event; die Feldvollständigkeit trägt publisher_test.go auf Unit-Ebene), deren change_id ($nats_stream_change_id) unabhängig über cdc.changes lesbar ist; Verbindungsversuche ohne und mit falschem Token wurden vom NATS-Server abgelehnt, und das bestehende Wecksignal (natssub) funktionierte mit demselben Test-Token unverändert weiter (siehe NATS-Happy-Path-/Negative-Belege oben): $nats_stream_client_output"
 
-abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar, danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
+abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
 # Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
 # ADR-0058 Entscheidung 3): bildet den Mechanismus eines
