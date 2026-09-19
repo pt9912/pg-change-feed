@@ -259,3 +259,98 @@ regulär bei Schritt 21 des Implementer-Workflows nach der Fixrunde
 nachgezogen (Skill-Regel „DoD-Checkbox-Nachzug ohne Fixrunde" greift hier
 nicht, weil eine Fixrunde stattfindet). Dieser Report ersetzt keine
 Verifikation gegen die DoD — das bleibt Verifier-Aufgabe (Modul 11).
+
+---
+
+## Fixrunden-Nachprüfung — 2026-09-19
+
+**Gegenstand:** Diff-Range `b9177f48..HEAD` (Implementer-Fixrunde,
+Commit `d0da688b`), ausschließlich gegen F-1 und F-2 dieses Reports
+geprüft — kein erneuter Vollreview des ursprünglichen Diffs.
+
+**Scope-Kontrolle:** `git diff b9177f48..HEAD --stat` — genau zwei
+Dateien geändert: `docs/plan/planning/in-progress/
+slice-sdk-python-http-client-flaeche.md` (34 Zeilen, Plan-Nachzug §3)
+und `sdks/python/pgchangefeed/pyproject.toml` (2 Zeilen, Kommentartext).
+Kein weiterer Diff — die Fixrunde ist auf F-1/F-2 begrenzt geblieben.
+
+### F-1 — behoben
+
+`sdks/python/pgchangefeed/pyproject.toml:22-24` trägt jetzt: „wird von
+der HTTP-API-Client-Flaeche (src/pgchangefeed/http_client.py) fuer die
+HTTP-Requests genutzt" — eine indikative Ist-Zustands-Beschreibung ohne
+Slice-Namen, `AGENTS.md` §3.7-konform.
+
+Eigener, erweiterter Suchlauf real ausgeführt (breiter als der vom
+Implementer dokumentierte, inkl. zusätzlicher Muster „folgt mit"/„steht
+noch aus"/„is added"/„will be added"):
+
+```
+grep -rniE "follow-up|added by|folgt erst|folgt mit|noch nicht|steht noch aus|is added|will be added" sdks/python/
+```
+
+Drei Treffer, alle drei im Kontext gelesen (nicht nur die vom
+Implementer genannte Einordnung übernommen):
+
+- `README.md:9` — „gRPC, SSE and NATS-vollinhalt delivery remain out of
+  scope for this package's first release and would be added by a
+  follow-up release" — bezieht sich ausschließlich auf gRPC/SSE/NATS,
+  die nach `ADR-0107` Festlegung 1 tatsächlich außerhalb dieses Pakets
+  bleiben. Kein Drift.
+- `__init__.py:7` — „gRPC, SSE and NATS-Vollinhalt delivery remain out
+  of scope for this package (ADR-0107 Festlegung 1) -- a follow-up
+  release would add a separate client surface for them." — dieselbe
+  zutreffende Abgrenzung. Kein Drift.
+- `Dockerfile:8` — „Eine `pack`-Stufe (`python -m build`) folgt erst mit
+  slice-sdk-python-pack-werkzeug" — bezieht sich auf eine noch nicht
+  gebaute Distributions-Pack-Stufe für einen anderen, noch nicht
+  gestarteten Folge-Slice; dieser Slice liefert keine `pack`-Stufe.
+  Zutreffend, kein Drift.
+
+Keine vierte Fundstelle. F-1 ist real geschlossen; der erweiterte
+Suchlauf bestätigt unabhängig, dass keine weitere Drift-Stelle
+zurückgeblieben ist.
+
+### F-2 — dokumentiert (kein Amend, wie vom Implementer korrekt begründet)
+
+Nachgezählt: `grep -c "^def test_"
+sdks/python/pgchangefeed/tests/test_http_client.py` → `20`;
+`test_options.py` → `3`. Summe 23, deckt sich mit dem realen
+Docker-Testlauf. Der Plan-Nachzug in §3 (Zeilen 169–183) benennt die
+Diskrepanz exakt, korrekt zugeordnet (20 Kategorisierungs-Tests +
+3 vorbestehende `ClientOptions`-Tests aus `slice-sdk-python-
+projektgeruest`) und begründet nachvollziehbar, warum keine
+`--amend`-Korrektur der bereits gelandeten und bereits reviewten
+Commit-Message erfolgt (Klarstellung als Beleg-Träger, `AGENTS.md`
+§3.12). Klarstellung akzeptiert.
+
+### Verhalten unverändert — real erneut geprüft
+
+`docker build --no-cache -f sdks/python/Dockerfile sdks/python` zweimal
+real ausgeführt (einmal mit `pytest`-Ausgabe geprüft, einmal Exit-Code
+ungepiped isoliert geprüft): Exit-Code direkt `0` in beiden Läufen,
+„collected 23 items", `test_http_client.py` 20 Punkte,
+`test_options.py` 3 Punkte, „23 passed". Beide Test-Images danach per
+`docker rmi` entfernt.
+
+### Gates real ausgeführt
+
+- `make docs-check`: Exit-Code direkt `0` (828 Dateien geprüft,
+  0 Befunde — ein Datei-Zuwachs gegenüber dem ursprünglichen Lauf
+  (827), erklärt durch die neue Plan-Nachzug-Zeile im selben Baum,
+  keine neue Datei).
+- `make gates`: Exit-Code direkt `0` (`generated-sync: OK`,
+  `a-check: gesamt: 0 Befund(e)`, restliche Gates ebenfalls grün).
+
+### Gesamt-Verdikt
+
+**Beide Findings real und korrekt behoben.** F-1 (HIGH) ist geschlossen
+— eigener erweiterter Suchlauf bestätigt keine verbleibende
+Drift-Stelle. F-2 (MEDIUM) ist sachgerecht dokumentiert statt per
+Amend korrigiert, mit nachvollziehbarer, selbst nachgezählter
+Begründung. Kein neuer Fund in dieser Fixrunde. `make gates` grün.
+Die DoD-Checkbox „Review durchgeführt, Report unter `docs/reviews/`
+liegt vor" wird in diesem Commit im Slice-Plan auf `[x]` gesetzt
+(kein offenes HIGH/MEDIUM mehr aus diesem Report).
+
+**Merge-blockierend:** nein.

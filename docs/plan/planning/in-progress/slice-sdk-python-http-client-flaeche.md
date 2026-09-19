@@ -74,9 +74,13 @@ Token-Auth (`reader`/`admin`), eigene, netzlos prüfbare Tests
       §Entscheidung Festlegung 3, Import-Grenze) — real geprüft:
       `grep -rn "internal/\|cmd/" sdks/python/` liefert keinen Treffer.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Fixrunde durchlaufen (1 HIGH, 1 MEDIUM,
+      `docs/reviews/review-slice-sdk-python-http-client-flaeche.md`);
+      Fixrunden-Nachprüfung bestätigt beide Findings real behoben, kein
+      neuer Fund, kein offenes HIGH/MEDIUM.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Python-HTTP-Oberfläche (analog dem C#-Eintrag,
       `ADR-0106` §Konsequenzen Folgepflicht 4 als Präzedenzfall) — getragen
@@ -181,6 +185,13 @@ gegen `SPEC-018`/`SPEC-022` selbst geprüft, nicht gegen den C#-Code
   `--amend` korrigiert (bereits gelandet, bereits reviewt) — diese
   Klarstellung ist der Beleg-Träger für die korrekte Zahl (`AGENTS.md`
   §3.12).
+
+**Fixrunden-Nachprüfung durch den Reviewer**
+(`docs/reviews/review-slice-sdk-python-http-client-flaeche.md`
+§Fixrunden-Nachprüfung): beide Findings real und korrekt behoben — eigener
+erweiterter Suchlauf des Reviewers bestätigt unabhängig keine weitere
+Drift-Stelle für F-1; F-2-Zählung nachgemessen und bestätigt. Kein neuer
+Fund. `make gates` erneut grün.
 
 ## 4. Trigger
 
