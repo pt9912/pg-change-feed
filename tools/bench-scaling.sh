@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# bench-scaling.sh — LH-QA-PER-002-Beleg (ADR-0054 §(b)): durchläuft die
-# drei SPEC-014-Lastenstufen (klein ≤10/s, mittel 100/s×30min,
+# bench-scaling.sh — LH-QA-PER-002-Beleg (ADR-0054 §(b), Pass/Fail ADR-0104):
+# durchläuft die drei SPEC-014-Lastenstufen (klein ≤10/s, mittel 100/s×30min,
 # groß 1000/s×60min) als feste Eingabeparameter gegen einen aktiven
 # Feed-Container und liest je Stufe den erreichten Schreibdurchsatz sowie
-# cdc_capture_lag. Kein Pass/Fail — dokumentiertes Ergebnis je Stufe.
+# cdc_capture_lag — scheitert (exit 1), wenn cdc_capture_lag bei irgendeiner
+# Stufe SPEC-013s bestehende 60-s-Fehlergrenze (THRESHOLD_LAG_SECONDS)
+# überschreitet.
 #
 # Slice-Plan §6 Risiko 2: Die "groß"-Stufe (1.000/s × 60 min) macht einen
 # schnellen, wiederholten Lauf unpraktikabel lang. Default-Modus fährt

@@ -54,17 +54,21 @@ Beleg-Quelle. Dieser Slice:
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - `LH-QA-PER-004` — hat bereits eine Schwelle (`SPEC-013`) und einen
-  bestehenden Lasttest-Beleg (`tools/harness/run-integration-tests.sh`);
-  nicht Gegenstand von `ADR-0054` §(b) und nicht Teil der neun
-  RTM-Waisen dieser Klassifikation.
+  bestehenden Lasttest-Beleg (`tools/harness/run-integration-tests.sh`),
+  **war aber sehr wohl** Teil der neun ursprünglichen RTM-Waisen
+  (Korrektur einer fehlerhaften Erst-Klassifikation dieses Slice-Plans —
+  ein `make doc-trace`-Nachmessen zeigte sie weiterhin als `WAISE`); nicht
+  Gegenstand von `ADR-0054` §(b), deshalb bewusst nicht in diesem Slice,
+  sondern über einen Tag-only-Eintrag in der bestehenden Lasttest-Phase
+  (`tools/harness/run-integration-tests.sh`) im Folge-Vorgang gelöst.
 - Aufnahme von `make bench` in `make gates`/`fullbuild` — bleibt
   strukturell ausgeschlossen: `make bench` braucht `make image` und
   DB-Zugang, kein netzloser Lauf (`ADR-0104` §Verglichene Alternativen,
   Option D verworfen).
 - Die übrigen sechs RTM-Waisen aus derselben Neun-Klassifikation
-  (`LH-FA-SST-001`/`005`, `LH-FA-CFG-006`, `LH-QA-POR-001`/`002`) —
-  eigener Folge-Vorgang, andere Lösungsform (Tag-only bzw. CI-Matrix-
-  Sichtbarkeit statt Benchmark-Schwelle).
+  (`LH-FA-SST-001`/`005`, `LH-FA-CFG-006`, `LH-QA-PER-004`,
+  `LH-QA-POR-001`/`002`) — eigener Folge-Vorgang, andere Lösungsform
+  (Tag-only bzw. CI-Matrix-Sichtbarkeit statt Benchmark-Schwelle).
 
 ## 2. Definition of Done
 
@@ -88,8 +92,12 @@ Beleg-Quelle. Dieser Slice:
       191,7× über drei unabhängige Läufe, durchgehend weit über der
       Schwelle.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review — 3 HIGH (F-1/F-2/F-3)
+      in derselben Fixrunde behoben (siehe §6, neuer Risiko-Eintrag/Korrektur
+      und der neue Beobachtungs-Beleg
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger/evidence/slice-bench-schwellen-per-001-002-003.md`),
+      1 MEDIUM als weiter offenes Risiko in §6 übernommen, kein offenes HIGH.
 - [x] Doku-Update: `harness/README.md` (`make bench`-Zeile nachgezogen —
       Pass/Fail-Schwellen und reale Messwerte für PER-001/002/003),
       `docs/plan/adr/README.md` ([`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md)-Index-Zeile), `docs/user/bench-abdeckung.md`
@@ -155,9 +163,18 @@ Lerneintrag geschrieben.
 - `docs/user/bench-abdeckung.md` ist nach einem `make bench`-Lauf nur
   vollständig, wenn alle drei Skripte in dieser Reihenfolge liefen — ein
   isolierter Aufruf von nur `bench-source-impact.sh` schreibt zwar seine
-  eigene `.row`-Datei, aber `render_abdeckung` läuft nicht — **Ausgang:**
-  weiter offen, dokumentiert im Skript-Kommentar; kein Sensor erzwingt
-  die Reihenfolge, `make bench` selbst ruft immer alle drei auf.
+  eigene `.row`-Datei, aber `render_abdeckung` läuft nicht. Real geprüft
+  (Review-Report
+  [`review-slice-bench-schwellen-per-001-002-003.md`](../../../reviews/review-slice-bench-schwellen-per-001-002-003.md)
+  <!-- d-check:status-provenance -->): auch `make bench` selbst ruft nicht
+  zuverlässig alle drei auf — bricht `bench-source-impact.sh` oder
+  `bench-scaling.sh` mit `exit 1` (Schwellen-Verstoß) ab, stoppt GNU Make
+  das Recipe, bevor `bench-batch-vs-single.sh` (und damit
+  `render_abdeckung`) läuft — **Ausgang:** weiter offen, praktisch
+  begrenzt, da die Zeilen der Datei statische Schwellen-Deklarationen
+  sind, keine Lauf-Kennzahlen — ein veralteter Stand macht `make doc-trace`
+  nicht falsch positiv `ok`, solange die betroffene Zeile aus einem
+  früheren erfolgreichen Lauf stammt.
 
 ## 7. Closure-Notiz
 

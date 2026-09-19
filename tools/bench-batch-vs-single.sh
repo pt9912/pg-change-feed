@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# bench-batch-vs-single.sh — LH-QA-PER-003-Beleg (ADR-0054 §(b)): vergleicht
-# das Lesen von M bereits erfassten Change-Zeilen über cdc.changes
-# (LH-FA-SST-002) einmal als ein einziger Batch-Abruf (eine Anweisung, ein
-# Roundtrip) und einmal als M Einzelabrufe (eine Anweisung je Zeile, M
-# Roundtrips) — dokumentiertes Ergebnis, kein Pass/Fail-Schwellenwert.
+# bench-batch-vs-single.sh — LH-QA-PER-003-Beleg (ADR-0054 §(b), Pass/Fail
+# ADR-0104): vergleicht das Lesen von M bereits erfassten Change-Zeilen über
+# cdc.changes (LH-FA-SST-002) einmal als ein einziger Batch-Abruf (eine
+# Anweisung, ein Roundtrip) und einmal als M Einzelabrufe (eine Anweisung je
+# Zeile, M Roundtrips) — scheitert (exit 1), wenn der Batch-Vorteil unter
+# SPEC-025s 10×-Mindestwert (THRESHOLD_FACTOR) fällt.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 # shellcheck source=tools/bench-lib.sh
