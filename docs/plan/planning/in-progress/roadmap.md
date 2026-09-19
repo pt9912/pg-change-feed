@@ -38,9 +38,10 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-**Nichts in Arbeit** — aktuell keine flache Welle-Datei unter
-`docs/plan/planning/`; `welle-release-pipeline-adr-0051` ist mit dieser
-Closure nach `done/` gewandert (siehe *Abgeschlossene Wellen* unten).
+- [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md) —
+  Erstes C#/NuGet-SDK-Package (`PgChangeFeed.Client`) für
+  [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
+  ([`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)).
 
 ## Nächste Wellen
 
