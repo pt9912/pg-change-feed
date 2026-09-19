@@ -29,7 +29,7 @@ SQL-Zugriffe), dieses hier den Release-Prozess des Projekts selbst.
 Die aktuelle Version steht in [`docs/user/version.md`](version.md) —
 eine einzelne Zeile, reines SemVer 2.0 ohne führendes `v` (z. B. `0.1.0`).
 Diese Datei ist die **Quelle der Wahrheit** für die Version: der
-Release-Workflow (§3) gleicht sie gegen den gesetzten Git-Tag ab und
+Release-Workflow (§4) gleicht sie gegen den gesetzten Git-Tag ab und
 bricht bei jeder Abweichung ab, bevor irgendein Login, Build oder Push
 läuft.
 

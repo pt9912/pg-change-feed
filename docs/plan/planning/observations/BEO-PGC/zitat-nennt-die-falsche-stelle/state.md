@@ -14,10 +14,11 @@ Ein vierter Beleg (`welle-d-check-verkoerperung`) traf **denselben Commit**,
 der diese Verkörperung schrieb — bestätigt den Wert der Regel unmittelbar
 (siehe evidence-Datei).
 
-Zähler (abgeleitet): **6×** (evidence/slice-090.md, evidence/slice-102.md,
+Zähler (abgeleitet): **7×** (evidence/slice-090.md, evidence/slice-102.md,
 evidence/slice-d-check-tracked-modul.md,
 evidence/welle-d-check-verkoerperung.md,
-evidence/slice-release-hub-description.md — zwei Fundstellen, F-1/F-2)
+evidence/slice-release-hub-description.md — zwei Fundstellen, F-1/F-2,
+evidence/slice-release-doku-releasing.md)
 — **verkörpert**, weitere Belege zählen weiter, ohne die Verkörperung
 erneut auszulösen. Das
 Erstauftreten fiel in `slice-090` beim Übergang **in einen stehenden Träger**
