@@ -116,8 +116,12 @@ RUN mkdir -p /out && \
 FROM deps AS build
 ARG TARGETOS
 ARG TARGETARCH
+# VERSION (ADR-0051): injiziert den realen Release-Stand ins Binary
+# (`main.version`, `cmd/pg-change-feed/main.go`) aus demselben Parameter
+# wie die Image-Tags; Default `dev` fuer den `VERSION`-losen `:dev`-Build.
+ARG VERSION=dev
 COPY . .
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w -X main.version=$VERSION" \
       -o /out/pg-change-feed ./cmd/pg-change-feed
 
 # --- runtime: distroless, nonroot, nur Artefakte — keine Shell, kein Paketmanager ---

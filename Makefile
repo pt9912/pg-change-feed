@@ -46,6 +46,7 @@ include a-check.mk
 ifdef VERSION
 image: ## Baut und pusht das Multi-Arch-OCI-Image (linux/amd64+linux/arm64) nach GHCR+Docker Hub (VERSION=<semver>, optional LATEST=true — ADR-0051)
 	docker buildx build --push --platform linux/amd64,linux/arm64 \
+	  --build-arg VERSION=$(VERSION) \
 	  -t ghcr.io/pt9912/pg-change-feed:$(VERSION) \
 	  -t docker.io/pt9912/pg-change-feed:$(VERSION) \
 	  $(if $(filter true,$(LATEST)),-t ghcr.io/pt9912/pg-change-feed:latest -t docker.io/pt9912/pg-change-feed:latest,) \

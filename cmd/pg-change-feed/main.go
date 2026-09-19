@@ -15,8 +15,14 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/bootstrap"
 )
 
-// version trägt den Lieferstand des Binarys.
-const version = "0.2.0-verdrahtung"
+// version trägt den Lieferstand des Binarys — Default für einen lokalen
+// `:dev`-Build ohne `VERSION` (`make image`, `ADR-0044`/`ADR-0103`); der
+// veröffentlichte Build injiziert den realen Release-Stand über
+// `-ldflags -X main.version=<VERSION>` (`Dockerfile` `build`-Stufe,
+// `ADR-0051`) aus demselben `VERSION`-Parameter wie die Image-Tags — eine
+// Variable statt einer Konstante, weil `-X` nur Variablen überschreiben
+// kann.
+var version = "dev"
 
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--version" {

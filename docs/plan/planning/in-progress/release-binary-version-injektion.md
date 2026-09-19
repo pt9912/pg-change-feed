@@ -58,21 +58,21 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `cmd/pg-change-feed/main.go`: `const version = "0.2.0-verdrahtung"`
-      wird zu `var version = "dev"` (Linker-Flag `-X` kann nur Variablen,
-      keine Konstanten, überschreiben). Kein Verhaltensunterschied für
-      den `--version`-Aufruf selbst.
-- [ ] `Dockerfile`s `build`-Stufe bekommt `ARG VERSION=dev` und injiziert
+- [x] `cmd/pg-change-feed/main.go`: `const version = "0.2.0-verdrahtung"`
+      wurde zu `var version = "dev"` (Linker-Flag `-X` kann nur
+      Variablen, keine Konstanten, überschreiben). Kein
+      Verhaltensunterschied für den `--version`-Aufruf selbst.
+- [x] `Dockerfile`s `build`-Stufe bekommt `ARG VERSION=dev` und injiziert
       sie über `-ldflags="-s -w -X main.version=$VERSION"` (ergänzt die
       bestehenden Strip-Flags, ersetzt sie nicht). `Makefile`s
       `image:`-Target übergibt im `VERSION=`-Zweig
       `--build-arg VERSION=$(VERSION)`; der `VERSION`-lose `:dev`-Zweig
       übergibt keinen Wert und nutzt damit automatisch den
-      Dockerfile-Default `dev`. Real geprüft: ein Build mit
-      `VERSION=0.1.1-test` liefert `pg-change-feed --version` →
-      `pg-change-feed 0.1.1-test`; ein Build ohne `VERSION` (unverändert
-      `:dev`) liefert `pg-change-feed dev`.
-- [ ] `make gates` grün.
+      Dockerfile-Default `dev`. Real geprüft: `docker buildx build --load
+      --build-arg VERSION=0.1.1-test` liefert `pg-change-feed --version`
+      → `pg-change-feed 0.1.1-test`; `make image` ohne `VERSION`
+      (unverändert `:dev`) liefert real `pg-change-feed dev`.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
