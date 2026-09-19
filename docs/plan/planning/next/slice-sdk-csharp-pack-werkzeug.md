@@ -17,7 +17,8 @@ bestehen, ihr Satz „ist offen, ADR-pflichtig" wird durch `ADR-0106` und die
 jetzt reale Paketierbarkeit falsch, `AGENTS.md` §3.13), `spec/pflichtenheft.md`
 §6 Externe Verträge (neue Zeile für das Package).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent (dietmar.burkard@nerdware.dev), ab
+2026-09-19.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0106` §Konsequenzen
 Folgepflicht 1/2/3). **Datum:** 2026-09-19.
