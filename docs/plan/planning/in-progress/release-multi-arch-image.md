@@ -148,11 +148,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 - [ ] Doku-Update für `docs/user/releasing.md`/`harness/README.md` —
       entfällt als eigener Punkt, da bereits §2 oben dieselbe Zeile
       explizit als DoD-Kriterium trägt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-PGC/binfmt-werkzeuge-inkompatibel/` angelegt (1. Beleg, unter der 3×-Schärfungsschwelle): `tonistiigi/binfmt` gefolgt von `multiarch/qemu-user-static --reset` beschädigte real den lokalen Docker-Runtime, `colima restart` behob es.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft (wellenloser Slice): kein `liegt in`-Feld in diesem Slice (Anker vacuously erfüllt), kein Folge-Slice genannt, alle drei referenzierten `BEO-PGC`-Kennungen (`binfmt-werkzeuge-inkompatibel`, `image-digest-nichtdeterminismus-erzeugt-merge-konflikt`, `github-actions-unverifizierbar-lokal`) existieren real mit nicht-leerem `evidence/`.
 
 ## 3. Plan (vor Code)
 
@@ -261,7 +261,56 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-*(wird bei Bearbeitung gefüllt.)*
+- **Was hat funktioniert:** Reale, hands-on-Verifikation vor UND während
+  der Implementierung deckte zwei genuine, sonst unentdeckte Fakten auf:
+  (1) beide gepinnten Basis-Images sind bereits Multi-Arch-
+  Manifestlisten — kein Re-Pin nötig, real per `docker buildx imagetools
+  inspect` vor Code-Änderung geprüft; (2) der reale
+  `--platform linux/amd64,linux/arm64 --push`-Test gegen eine lokale
+  Test-Registry bewies nicht nur, dass der Mechanismus funktioniert,
+  sondern auch, dass die bestehende Digest-Extraktion unverändert
+  korrekt bleibt (Index-Digest statt Einzelmanifest-Digest) — ein Risiko,
+  das ohne diesen Test bis zum ersten echten Release unbewiesen
+  geblieben wäre.
+- **Was ging anders als geplant:** Der Reviewer fand 1 HIGH (F-1: die
+  Begründung für den einplattformigen `:dev`-Pfad war als unbedingte
+  Tatsache formuliert — real hängt es vom Storage-Treiber ab, mit
+  containerd-Image-Store gelingt `--load` auch für Multi-Platform-Builds;
+  die Design-Entscheidung selbst blieb richtig, nur ihre Begründung war
+  falsch) und 1 MEDIUM (F-2: Reconciliation-Checkbox ohne
+  „entfällt"-Vermerk) sowie 1 LOW (F-3: grenzwertige Kommentar-Sprache).
+  Alle drei in einer Fixrunde behoben. Zusätzlich, außerhalb der
+  Reviewer-Funde: während der lokalen Verifikation beschädigte eine
+  Kombination aus `tonistiigi/binfmt` und `multiarch/qemu-user-static
+  --reset` real den lokalen Docker-Runtime (jeder Container-Start
+  scheiterte, auch für triviale native Images) — behoben durch
+  `colima restart`, dokumentiert als neue Beobachtung.
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel —
+  F-1 ist eine Instanz des bereits bestehenden `AGENTS.md` §3.12
+  (Herkunft von Aussagen), keine neue Fehlerklasse; der Docker-Runtime-
+  Zwischenfall ist der 1. Beleg einer neuen, noch unter der
+  3×-Schärfungsschwelle liegenden Beobachtung
+  (`BEO-PGC/binfmt-werkzeuge-inkompatibel`).
+- **Beobachtungs-Register (`../observations/`):** neues Verzeichnis
+  `BEO-PGC/binfmt-werkzeuge-inkompatibel/` angelegt, 1. Beleg
+  (`evidence/slice-release-multi-arch-image.md`).
+- **Folge-Slices:** keine.
+- **Risiken aus §6:** fünf Risiken, fünf Ausgänge — (1)
+  Digest-Semantik bei Multi-Platform-Builds → **entfallen**, real
+  geprüft und unauffällig; (2) lokale Verifizierbarkeit eingeschränkt →
+  **eingetreten**, real gelöst (mit dokumentiertem Zwischenfall); (3)
+  Bauzeit → **entfallen** für die Compile-Stufe selbst, **weiter offen**
+  für die Gesamt-CI-Bauzeit (real erst mit dem ersten Post-Push-Lauf
+  messbar); (4) `AGENTS.md` §3.10 → **weiter offen**, bereits
+  verkörpert; (5) Reviewer-Finding F-1 (unbedingte Tatsachenbehauptung)
+  → **eingetreten**, real behoben.
+- **Drei Paarungen:** wellenloser Slice, hier geprüft (nicht bei einer
+  Welle-Closure) — kein `liegt in`-Feld in diesem Slice (Anker vacuously
+  erfüllt), kein Folge-Slice genannt, alle drei referenzierten
+  `BEO-PGC`-Kennungen (`binfmt-werkzeuge-inkompatibel`,
+  `image-digest-nichtdeterminismus-erzeugt-merge-konflikt`,
+  `github-actions-unverifizierbar-lokal`) existieren real mit
+  nicht-leerem `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
