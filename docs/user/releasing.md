@@ -17,11 +17,13 @@ Image auf GHCR oder Docker Hub stammt.
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
 GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
 Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Die beiden separaten SDK-Release-Wege (§4 „SDK-Release") sind zum
-Zeitpunkt dieses Dokuments implementiert und real gegen die beteiligten
-APIs geprüft, aber noch ohne eigenen realen Tag-Push (`sdk-csharp-v*` bzw.
-`sdk-python-v*`) — ihr End-zu-Ende-Ablauf bleibt bis dahin strukturell
-unbewiesen (`AGENTS.md` §3.10).
+nicht nur implementiert. Von den beiden separaten SDK-Release-Wegen (§4
+„SDK-Release") ist der C#-Weg (`sdk-csharp-v*`) ebenfalls bereits real
+mit einem grünen Tag-Push bewiesen; der Python-Weg (`sdk-python-v*`) ist
+zum Zeitpunkt dieses Dokuments implementiert und real gegen die
+beteiligten APIs geprüft, aber noch ohne eigenen realen Tag-Push — sein
+End-zu-Ende-Ablauf bleibt bis dahin strukturell unbewiesen
+(`AGENTS.md` §3.10).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -151,10 +153,12 @@ Kein `:latest`-Äquivalent (NuGet kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0106`).
 
-**Zum Zeitpunkt dieses Dokuments wurde noch kein realer
-`sdk-csharp-v*`-Tag gesetzt** — wie beim Server-Release (§1) ist der
-End-zu-Ende-Ablauf mit echtem `NUGET_API_KEY`-Secret strukturell erst
-nach dem ersten echten Tag-Push bewiesen (`AGENTS.md` §3.10).
+**Ein realer `sdk-csharp-v*`-Tag ist bereits gesetzt** — `sdk-csharp-v0.1.0`
+lief mit grünem `sdk-csharp-release.yml`-Lauf durch und veröffentlichte
+`PgChangeFeed.Client` 0.1.0 real auf NuGet.org (`dotnet nuget push`
+bestätigte `201 Created`/„Your package was pushed"). Der C#-SDK-Release-Weg
+ist damit End-zu-Ende mit echtem `NUGET_API_KEY`-Secret bewiesen, nicht nur
+implementiert.
 
 ### SDK-Release: PyPI-Publish für `pgchangefeed`
 
