@@ -50,8 +50,10 @@ Priorisierungs-Schritt. **Datum:** 2026-09-19.
    Beleg: die bestehende "SQL-Administration Live-Reload
    (enable)"-Phase nimmt jetzt einen DDL-Fingerabdruck (Spaltenliste +
    Trigger-Anzahl der Quelltabelle) vor und nach `cdc.enable_table`
-   und vergleicht — `cdc.enable_table` liest/schreibt ausschließlich
-   `cdc.active_table`, nie die Quelltabelle selbst.
+   und vergleicht — `cdc.enable_table` schreibt nur einen Antrag nach
+   `cdc.administration_request`; die Administrations-Goroutine wendet ihn
+   über `TableActivationAdapter.Publish` an (`ALTER PUBLICATION ... ADD
+   TABLE`), nie eine DDL-Änderung an der Quelltabelle selbst.
 5. `LH-QA-POR-001`/`LH-QA-POR-002` (PostgreSQL-Major-Versionen /
    primäre Zielplattform Linux) — neue generierte Coverage-Dimension
    `docs/user/ci-matrix-abdeckung.md` (`ADR-0105`): fragt reale,
@@ -156,11 +158,13 @@ Lerneintrag geschrieben.
   Trigger-Anzahl, sortiert nach `ordinal_position`) deckt keine
   Änderung an Constraints/Indizes der Quelltabelle ab — ein `enable_table`,
   das (hypothetisch) einen Index anlegen würde, bliebe unentdeckt.
-  **Ausgang:** weiter offen, praktisch irrelevant: `cdc.enable_table`s
-  Implementierung schreibt nachweislich ausschließlich in
-  `cdc.active_table` (Code-Lektüre, keine DDL-Anweisung im Pfad), der
-  Fingerabdruck ist ein zusätzlicher Laufzeit-Beleg, kein einziger
-  Wahrheitsanker.
+  **Ausgang:** weiter offen, praktisch irrelevant: `cdc.enable_table`
+  schreibt nachweislich nur einen Antrag nach
+  `cdc.administration_request`, und dessen einzige Wirkung
+  (`TableActivationAdapter.Publish`) ist ausschließlich `ALTER
+  PUBLICATION ... ADD TABLE` (Code-Lektüre, keine DDL-Anweisung an der
+  Quelltabelle im Pfad) — der Fingerabdruck ist ein zusätzlicher
+  Laufzeit-Beleg, kein einziger Wahrheitsanker.
 - Drei der sechs Punkte (`SST-001`, `SST-005`, `PER-004`) sind reine
   Tag-Ergänzungen ohne neue Prüfung — sie tragen keinen zusätzlichen
   Regressionsschutz über das hinaus, was die jeweilige Phase bereits vor
