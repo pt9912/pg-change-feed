@@ -13,7 +13,8 @@ vier vorangehenden Slices).
 **Berührte Spec-Stellen:** — (Prozess-ADR ohne Spec-Stratum;
 `docs/user/*` selbst ist Rang 6 der Source Precedence, kein Spec-Stratum).
 
-**Verantwortlich:** — (wellenlos priorisiert, siehe Welle-Auftrag).
+**Verantwortlich:** Implementer-Agent (priorisiert 2026-09-19, direkter
+Auftrag: "dann mach weiter bis die welle geschlossen ist").
 
 **Autor:** Planner-Agent, direkt beauftragt. **Datum:** 2026-09-19.
 
