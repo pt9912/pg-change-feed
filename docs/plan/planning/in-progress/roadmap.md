@@ -38,8 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md) — Zweites SDK-Package (Python/PyPI, `pgchangefeed`) für `LH-FA-SST-009` (`ADR-0107`).
-
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -171,6 +169,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-nats-drittstream — NATS als dritter, paralleler Vollinhalts-Zustellweg für Live-Streaming, volle Drei-Sprachen-Matrix (`LH-FA-SST-008`, `ADR-0100`) | 2026-09-18 | [welle-nats-drittstream-results.md](../done/welle-nats-drittstream-results.md) |
 | welle-release-pipeline-adr-0051 — Release-Pipeline gemäß `ADR-0051` vollständig umsetzen: Versionierung/`release.yml`, CVE-Scan, Upstream-Pin-Freshness, Docker-Hub-Beschreibungs-Sync, Betreiber-Doku | 2026-09-19 | [welle-release-pipeline-adr-0051-results.md](../done/welle-release-pipeline-adr-0051-results.md) |
 | welle-sdk-csharp-lh-fa-sst-009 — Erstes C#/NuGet-SDK-Package (`PgChangeFeed.Client`) für `LH-FA-SST-009` (`ADR-0106`) | 2026-09-19 | [welle-sdk-csharp-lh-fa-sst-009-results.md](../done/welle-sdk-csharp-lh-fa-sst-009-results.md) |
+| welle-sdk-python-lh-fa-sst-009 — Zweites SDK-Package (Python/PyPI, `pgchangefeed`) für `LH-FA-SST-009` (`ADR-0107`, `ADR-0108`) | 2026-09-19 | [welle-sdk-python-lh-fa-sst-009-results.md](../done/welle-sdk-python-lh-fa-sst-009-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

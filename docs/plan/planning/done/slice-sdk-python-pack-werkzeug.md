@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
@@ -135,7 +135,7 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -286,7 +286,7 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
     netzlose Pack-Werkzeug-Slice, zu prüfen vor dem ersten realen
     Publish-Versuch (`slice-sdk-python-publish-workflow`).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

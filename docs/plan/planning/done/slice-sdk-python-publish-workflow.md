@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
@@ -137,12 +137,12 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
       aufgelöst — eigenständige Regex, siehe §7).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
       (Slice-Bezug oben gesetzt, kein Folge-Slice — letzter Slice der Welle
       —, Register-Eintrag siehe §7); die **volle** Drei-Paarungen-Prüfung
       der Welle selbst (Roadmap-Rückbindung, Wellen-Closure-Notiz) läuft
       regelkonform bei der separaten, nachfolgenden Welle-Closure von
-      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
       — dieser Slice ist zugleich der letzte Anlass, sie anzustoßen.
 
 ## 3. Plan (vor Code)

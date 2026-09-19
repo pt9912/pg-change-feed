@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (die neun Port-gedeckten
@@ -103,7 +103,7 @@ Token-Auth (`reader`/`admin`), eigene, netzlos prüfbare Tests
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -338,7 +338,7 @@ geschrieben.
     `slice-063`) trägt weiterhin.
 - **Folge-Slices:** `slice-sdk-python-pack-werkzeug`,
   `slice-sdk-python-publish-workflow` — beide offen in
-  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+  [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 - **Risiken aus §6:**
   - „Kein Python-Referenz-Client — Draht-Treue nur gegen Spec-Tabellen
     prüfbar" — **Ausgang: weiter offen, strukturell (unverändert)**, real
@@ -353,7 +353,7 @@ geschrieben.
     **Ausgang: weiter offen (unverändert)**, ein realer Rundlauf-Beleg
     bleibt einem Folge-Slice vorbehalten.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
   (noch offen — Pack-Werkzeug und Publish-Workflow stehen aus) — die
   Prüfung läuft regelkonform bei deren Closure.
 

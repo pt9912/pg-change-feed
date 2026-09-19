@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (Scope),
 [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
@@ -110,7 +110,7 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
       weiter offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -311,7 +311,7 @@ geschrieben.
 - **Folge-Slices:** `slice-sdk-python-http-client-flaeche`,
   `slice-sdk-python-pack-werkzeug`, `slice-sdk-python-publish-workflow` —
   alle drei offen in
-  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+  [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md).
 - **Risiken aus §6:**
   - „Konfigurations-Skelett könnte trivial/überflüssig sein" —
     **Ausgang: weiter offen**, entschieden beim Schreiben von
@@ -324,7 +324,7 @@ geschrieben.
     oben, die Version wurde real auf die jeweils aktuelle (3.14) angehoben
     statt bei einer konservativen Mindestversion zu verharren.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  [welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

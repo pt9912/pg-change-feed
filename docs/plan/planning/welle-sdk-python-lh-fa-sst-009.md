@@ -10,7 +10,7 @@ zwei Positionen, nicht drei.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) §Konsequenzen
+[`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) §Konsequenzen
 Folgepflicht 1 geschnitten). **Datum:** 2026-09-19.
 
 ---
@@ -20,16 +20,16 @@ Folgepflicht 1 geschnitten). **Datum:** 2026-09-19.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) (Accepted,
+[`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) (Accepted,
 2026-09-19) entscheidet Form, Ort und Umfang des zweiten offiziellen
 Client-Bibliothek-Packages für
-[`LH-FA-SST-009`](../../../spec/lastenheft.md): Python, PyPI, ein Package
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md): Python, PyPI, ein Package
 (Arbeitsname `pgchangefeed`) mit **ausschließlich** HTTP-API (`SPEC-018`,
 inklusive Changes-Lesen `SPEC-022`) — anders als beim ersten (C#/NuGet)
 Package **kein** gRPC in v1, in einem neuen Baum `sdks/python/`, mit
 eigenständigem PEP-440-Versionsschema ab `0.x.y`, Docker-only-Bau
 (`make sdk-pack-python`, `uv build`/`uv publish` —
-[`ADR-0108`](../adr/0108-python-sdk-uv-statt-build-twine.md), abgelöste
+[`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md), abgelöste
 `build`+`twine`-Klausel aus `ADR-0107` Festlegung 5) und einem separaten
 Netz-Workflow für die PyPI-Veröffentlichung. Diese ADR entscheidet
 ausdrücklich nur die
@@ -43,7 +43,7 @@ erfüllt, wenn Projektgerüst, HTTP-Fläche, Pack-Werkzeug und Publish-Weg
 einzelner fertiger Slice (z. B. nur das Projektgerüst) belegt die
 Anforderung nicht; erst der volle Satz macht aus „Sprache und Vertriebsweg
 entschieden" ein „Package existiert und ist konsumierbar". Anders als bei
-der C#-Welle ([welle-sdk-csharp-lh-fa-sst-009](done/welle-sdk-csharp-lh-fa-sst-009.md))
+der C#-Welle ([welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md))
 gibt es hier nur **eine** Draht-Fläche (HTTP), kein zweiter,
 parallelisierbarer Flächen-Slice (`ADR-0107` §Entscheidung Festlegung 1 —
 gRPC bleibt Folge-Release).
@@ -56,7 +56,7 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) ist
+- [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) ist
   `Accepted` (bereits erfüllt, 2026-09-19).
 - Kein weiterer Trigger nötig — die Roadmap führt aktuell keine offene
   Welle (`in-progress/roadmap.md` §Offene Wellen: „Nichts in Arbeit") und
@@ -77,7 +77,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 - Der PyPI-Publish-Workflow wurde real gegen PyPI versucht (Tag
   `sdk-python-v0.1.0` oder gleichwertig) — Erfolg **oder** ein benannter
   roter Befund mit Folgemaßnahme; nach
-  [`AGENTS.md`](../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
   realen Post-Push-Lauf offen, unabhängig vom Rest der Welle.
 - Closure-Notiz in `welle-sdk-python-lh-fa-sst-009-results.md`.
 
@@ -89,10 +89,10 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-python-projektgeruest | SDK-Projektgerüst (`sdks/python/`, `pyproject.toml`, Docker-Bau, minimales Konfigurations-Skelett) | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-python-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten + Changes-Lesen `SPEC-022`, Bearer-Auth, eigene Tests, **ohne** Referenz-Client) | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md) |
-| slice-sdk-python-pack-werkzeug | `make sdk-pack-python`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-python-publish-workflow | `.github/workflows/sdk-python-release.yml`, Tag-Präfix `sdk-python-v*`, `PYPI_API_TOKEN`, `docs/user/releasing.md`-Nachzug im selben Slice | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
+| slice-sdk-python-projektgeruest | SDK-Projektgerüst (`sdks/python/`, `pyproject.toml`, Docker-Bau, minimales Konfigurations-Skelett) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-python-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten + Changes-Lesen `SPEC-022`, Bearer-Auth, eigene Tests, **ohne** Referenz-Client) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) |
+| slice-sdk-python-pack-werkzeug | `make sdk-pack-python`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-python-publish-workflow | `.github/workflows/sdk-python-release.yml`, Tag-Präfix `sdk-python-v*`, `PYPI_API_TOKEN`, `docs/user/releasing.md`-Nachzug im selben Slice | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge (rein sequenziell — kein Parallelisierungspotential, anders
 als bei der C#-Welle, weil es nur eine Draht-Fläche gibt, `ADR-0107`
@@ -122,7 +122,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - Blockiert: keine andere Welle — die Roadmap führt aktuell keine
   parallele offene Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) ist bereits
+  [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) ist bereits
   `Accepted`.
 - Intern (siehe §4 Reihenfolge): `slice-sdk-python-http-client-flaeche`
   hängt von `slice-sdk-python-projektgeruest` ab;
@@ -139,24 +139,24 @@ der Closure-Trigger unerreichbar wird.
 
 - **gRPC- (`SPEC-020`), SSE- (`SPEC-021`) und NATS-Vollinhalts-Abdeckung
   (`SPEC-024`) im Package** —
-  [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) Festlegung 1
+  [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) Festlegung 1
   grenzt v1 ausdrücklich auf HTTP-API ein — **anders als beim C#-Package**,
   das gRPC bereits in v1 trägt; Begründung ist die fehlende
   Python-Referenz-Client-Vorarbeit (§Kontext „Was das ändert" der ADR,
   siehe auch die Risiko-Benennung in
   `slice-sdk-python-http-client-flaeche`). gRPC/SSE/NATS bleiben für
   Python-Consumer über die entsprechenden Go-Server-Endpunkte direkt
-  ansprechbar (Negative-AC von [`LH-FA-SST-009`](../../../spec/lastenheft.md)),
+  ansprechbar (Negative-AC von [`LH-FA-SST-009`](../../../../spec/lastenheft.md)),
   bis ein Folge-Release sie deckt (§Re-Evaluierungs-Trigger 2/3 der ADR).
 - **Eine dritte SDK-Sprache** (TypeScript/npm, Kotlin/Maven, Go, …) —
-  [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) entscheidet
+  [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) entscheidet
   ausdrücklich nur die zweite Sprache; eine dritte bleibt eine eigene,
   künftige ADR (§Re-Evaluierungs-Trigger 1).
 - **Ein zweiter Vertriebsweg** für Python (z. B. Conda(-Forge)) — von der
   ADR ausdrücklich verworfen (§Verglichene Alternativen B2), nicht Teil
   dieser Welle.
 - **Aufspaltung in mehrere Packages** (ein Package je Zustellweg) — von
-  [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md) Alternative
+  [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md) Alternative
   C4 ausdrücklich verworfen.
 - **Ein `examples/python/`-Referenz-Client** — existiert nicht und wird
   von dieser Welle nicht angelegt; die ADR stellt sein Fehlen fest
@@ -226,7 +226,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-python-lh-fa-sst-009-results.md` (Geschwister im
-Ruheort `done/`, noch nicht angelegt — erst bei Closure).
-Zähler: `docs/plan/planning/observations/` (erst bei Closure als Link
-einzutragen).
+Ergebnis: [welle-sdk-python-lh-fa-sst-009-results.md](welle-sdk-python-lh-fa-sst-009-results.md)
+Zähler: [../observations/](../observations/)
