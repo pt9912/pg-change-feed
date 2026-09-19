@@ -115,7 +115,7 @@ HIGH-Klassen ergänzt — u. a. `AGENTS.md` §3.13 Träger-Nachzug, „Arbeit
 - Neue Dateien nach `slice-`/`welle-`-Nennungen durchsucht (`AGENTS.md`
   §3.7 Chronik-Klasse): Treffer ausschließlich in `Dockerfile`,
   `.csproj`, `Directory.Packages.props` — durchweg in der etablierten
-  Herkunfts-Anker-Form „(slice-<name>, ADR-0106 Festlegung …)", dieselbe
+  Herkunfts-Anker-Form „(slice-<name>, `ADR-0106` Festlegung …)", dieselbe
   Form, die bereits in `slice-sdk-csharp-projektgeruest`s Dockerfile
   unbeanstandet blieb; kein narrativer Vorher/Nachher-Satz, keine Chronik
   in `.cs`-Produktionscode-Dateien.
