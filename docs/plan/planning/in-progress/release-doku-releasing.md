@@ -49,18 +49,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `docs/user/releasing.md` existiert, trägt Version/Stand-Kopf analog
+- [x] `docs/user/releasing.md` existiert, trägt Version/Stand-Kopf analog
       `benutzerhandbuch.md`, und beschreibt real existierende Artefakte
       (kein Verweis auf einen noch nicht implementierten Workflow) — jede
       genannte Datei/jeder genannte Workflow real gegen den Baum geprüft
-      (`AGENTS.md` §4: kein Halluzinieren nicht existierender Targets).
-- [ ] `harness/README.md` Source-Precedence-Zeile 6 (`docs/user/*`) bleibt
-      korrekt — kein Update nötig, aber real geprüft, ob der dortige
-      `<!-- d-check:ignore -->`-Kommentar ("im frischen Repo selten
-      vorhanden") nach diesem Slice noch zutrifft; bei Bedarf entfernt
-      (`docs/user/` führt dann `benutzerhandbuch.md`,
-      `benutzerhandbuch-standard.md` und `releasing.md`).
-- [ ] `make gates` grün.
+      (`tools/harness/release-tag-info.sh`, `docs/user/version.md`,
+      `.github/workflows/release.yml`/`image-scan.yml`/
+      `upstream-drift.yml`, `README.md` — alle real existent). Alle sechs
+      im Dokument genannten Tag-Beispiele real gegen
+      `release-tag-info.sh` verifiziert (drei gültig, drei ungültig,
+      jeweils mit dem im Dokument behaupteten Ergebnis). Enthält
+      ausdrücklich den Hinweis, dass noch kein realer Release-Tag
+      gesetzt wurde (`AGENTS.md` §3.12: keine ungeprüfte Behauptung als
+      Feststellung).
+- [x] `harness/README.md` Source-Precedence-Zeile 6 (`docs/user/*`) —
+      real geprüft: der `<!-- d-check:ignore -->`-Kommentar traf nicht
+      mehr zu (das Verzeichnis trägt bereits sechs Dateien, jetzt sieben
+      mit `releasing.md` — die im Kommentar genannte Bedingung „im
+      frischen Repo selten vorhanden" ist damit widerlegt). Entfernt und
+      auf einen echten Link umgestellt (`[docs/user/](../docs/user/)`,
+      analog Zeile 4 derselben Tabelle). Dieselbe, wortgleiche Zeile
+      existierte zusätzlich (im Slice-Plan nicht vorab benannt) in
+      `AGENTS.md` §2 Zeile 6 — im selben Zug konsistent mitgezogen
+      (Plan-Nachzug, §3 unten).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -78,6 +90,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `docs/user/releasing.md` | neu | Betreiber-/Maintainer-Doku des realen Release-Prozesses. |
+| `AGENTS.md` §2 Zeile 6 | update (Plan-Nachzug) | dieselbe, wortgleiche `docs/user/*`-Zeile mit demselben veralteten `<!-- d-check:ignore -->`-Kommentar existierte hier zusätzlich zu `harness/README.md` — im selben Zug konsistent mitgezogen, sonst bliebe eine der beiden Kopien stehen. |
 | `harness/README.md` | ggf. update | `docs/user/*`-Zeile, `<!-- d-check:ignore -->`-Kommentar auf Zutreffen geprüft. |
 
 ## 4. Trigger
