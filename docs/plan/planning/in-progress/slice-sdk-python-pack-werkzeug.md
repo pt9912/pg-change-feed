@@ -238,11 +238,31 @@ Smoke-Beleg + Closure-Notiz mit Lerneintrag geschrieben.
   dem Export) ab — harmlos, weil `sdks/python/.gitignore` bereits `dist/`
   vollständig ausschließt (`git status --porcelain sdks/python/dist/`
   bleibt leer).
-- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel.
-- **Beobachtungs-Register (`../observations/`):** keine neue Beleg-Datei
-  angelegt — keine Beobachtung angefallen, die eine neue Klasse
-  rechtfertigt (der Plan-Nachzug-Mechanismus aus dem C#-Vorgänger-Slice
-  trug bereits vorausschauend, siehe oben).
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine geschärfte Regel — der
+  reale Fund unten (unclosed-backtick-Fernwirkung) bleibt unter der
+  3×-Schwelle (Erstauftreten), Kandidat für eine künftige Schärfung des
+  Reviewer-Skills ist bereits im Beobachtungs-Eintrag benannt.
+- **Beobachtungs-Register (`../observations/`):** eine neue Beleg-Datei
+  angelegt —
+  [`BEO-PGC/unclosed-backtick-taeuscht-nackte-id-vor`](../observations/BEO-PGC/unclosed-backtick-taeuscht-nackte-id-vor/observation.md)
+  (Erstauftreten). Der Reviewer dieses Slices bemerkte im eigenen
+  Report-Entwurf einen unclosed-backtick-Fehler (Codespan-Parität
+  verschoben), korrigierte ihn vor dem eigenen Commit — der committete
+  Report trägt ihn nicht mehr — und vermutete, dasselbe Muster könnte auch
+  im bereits gemergten `docs/reviews/review-slice-sdk-csharp-pack-werkzeug.md`
+  vorliegen, ohne dies selbst zu prüfen. Die Planner-Closure hat die
+  Vermutung real nachgemessen: ein Backtick-Gesamtzahl-Zähllauf
+  (`grep -o` + `wc -l`) gegen diese Datei ergab 403 (ungerade) — ein realer
+  unclosed-backtick-Defekt an Zeile 122f. (`kein Gate,` ohne schließendes
+  Backtick vor der Fortsetzung auf der Folgezeile), unabhängig vom
+  Inhalt/Diff dieses Slices, in einem bereits gemergten Nachbar-Report.
+  Behoben in einem eigenen, separat committeten Fix (ein eingefügtes
+  schließendes Backtick, Gesamtzahl danach 404/gerade). `make gates`/
+  `make docs-check` liefen über den gesamten Zeitraum des Defekts
+  wiederholt grün — kein `id-unlinked`-Fehlalarm in diesem konkreten Fall,
+  siehe Beobachtungs-Eintrag für die Abgrenzung zu
+  `BEO-PGC/report-nackte-id-ohne-link` (dort: vergessene Verlinkung an der
+  eigenen Stelle; hier: Fernwirkung eines entfernten Syntaxfehlers).
 - **Folge-Slices:** `slice-sdk-python-publish-workflow` — bereits als Datei
   in `open/` vorhanden.
 - **Risiken aus §6:**
