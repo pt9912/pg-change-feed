@@ -12,7 +12,8 @@ Entscheidung 1/2/3 (Versionierung, Registry-Ziele, Release-Workflow).
 **Berührte Spec-Stellen:** — (Prozess-ADR ohne Spec-Stratum, siehe
 `ADR-0051` `Schärft:`-Feld).
 
-**Verantwortlich:** — (wellenlos priorisiert, siehe Welle-Auftrag).
+**Verantwortlich:** Implementer-Agent (priorisiert 2026-09-19, direkter
+Auftrag: "Ja, fang mit release-version-und-workflow an").
 
 **Autor:** Planner-Agent, direkt beauftragt ("Release-Pipeline jetzt
 wirklich bauen", "alles — leg eine Welle mit slices dafür an"). **Datum:**
