@@ -88,18 +88,18 @@ leeres/minimales öffentliches API-Skelett — ohne jeden Import aus
 - [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-csharp-pack-werkzeug`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis `BEO-PGC/<slug>/` oder eine weitere Datei in dessen
       `evidence/`; **kein Zähler wird gesetzt**, er folgt aus den Dateien.
       Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in
       §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -176,16 +176,59 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <Guide oder Sensor geschärft/ergänzt, oder
-  „kein neuer Sensor" — je nach Lauf>.
-- **Beobachtungs-Register (`../observations/`):** <neu angelegt | Beleg
-  ergänzt | keine Beobachtung angefallen>.
+- **Was hat funktioniert:** Drei unabhängige Docker-Builds (Implementer,
+  Reviewer, Verifier) bestätigten übereinstimmend dasselbe Ergebnis (0
+  Warnings/0 Errors, 5/5 Tests grün) — keine Divergenz über die drei
+  Läufe, ein starker Beleg gegen einen versteckten Nichtdeterminismus im
+  neuen Bau-Setup. Das bereits etablierte 3-Commit-Move-Muster
+  (`git mv` open→next · Inhalt · `git mv` next→in-progress) hielt
+  `AGENTS.md` §3.3 sauber; Reviewer und Verifier bestätigten je
+  eigenständig 0 Insertions/Deletions in beiden Move-Commits.
+- **Was ging anders als geplant:** Drei Punkte liefen als Plan-Nachzug
+  im selben Implementer-Lauf (§3, `AGENTS.md`-Konvention „im selben Lauf
+  nachtragen"): (1) `sdks/csharp/Directory.Packages.props` war in der
+  ursprünglichen Datei-Tabelle nicht benannt, aber für die
+  xUnit-Pinnung notwendig; (2) `sdks/csharp/README.md` referenziert das
+  Repo-Root-`README.md`/`LICENSE` über absolute GitHub-Blob-URLs statt
+  relativer Pfade, weil ein NuGet-Package außerhalb dieses
+  Repository-Checkouts gelesen wird; (3) ein erster roter Docker-Build,
+  weil `ImplicitUsings` ein explizites `using Xunit;` in der Testdatei
+  nicht abdeckt — behoben durch Nachtrag des expliziten `using`, siehe
+  Beobachtungs-Register-Eintrag unten.
+- **Steering-Loop-Eintrag:** kein neuer Sensor — der Fund (using-Xunit-
+  Stolperstein bei ImplicitUsings) ist keine Gate-fähige Eigenschaft
+  (Prosa-/Muster-Frage, kein messbarer Schwellenwert); er ist stattdessen
+  im Beobachtungs-Register als zweites Auftreten einer bereits benannten
+  Beobachtungsklasse festgehalten (siehe unten).
+- **Beobachtungs-Register (`../observations/`):** Beleg ergänzt — kein
+  neues `BEO-PGC/<slug>/`. Der Fund passt zur bereits bestehenden
+  Beobachtung
+  `BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand`
+  (Erstauftreten `slice-104`): Alle 13 bestehenden Testdateien unter
+  `examples/csharp/*/*.Tests/*.cs` tragen bereits durchgängig ein
+  explizites `using Xunit;` (`grep -rl "using Xunit" examples/csharp
+  --include="*.cs"`, 13/13 Treffer) — das Muster, das den ersten roten
+  Build vermieden hätte, stand bereits im selben Repo-Bestand. Neue
+  Evidenz-Datei:
+  `../observations/BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand/evidence/slice-sdk-csharp-projektgeruest.md`;
+  Zähler jetzt 2× (`state.md`), weiter unter der 3×-Schwelle — keine
+  Welle-Closure-Leseauslösung durch diesen Slice allein.
 - **Folge-Slices:** `slice-sdk-csharp-http-client-flaeche`,
   `slice-sdk-csharp-grpc-client-flaeche` — beide bereits als Dateien in
   `open/` vorhanden.
-- **Risiken aus §6:** <jedes mit genau einem Ausgang — siehe §6>.
+- **Risiken aus §6:**
+  - „Gemeinsamer Nenner könnte sich als nicht tragfähig erweisen" —
+    **Ausgang: weiter offen**, entschieden beim Schreiben der beiden
+    Folge-Slices (`slice-sdk-csharp-http-client-flaeche`,
+    `slice-sdk-csharp-grpc-client-flaeche`); dieser Slice liefert bereits
+    einen realen gemeinsamen Nenner (`PgChangeFeedClientOptions`), ob er
+    für beide Surfaces trägt, zeigt sich erst dort.
+  - „`net10.0` als `TargetFramework` schränkt den Konsumentenkreis ein" —
+    **Ausgang: weiter offen**, Entscheidung bleibt bei diesem Slice
+    bestehen (Analogie zu `examples/csharp`, keine Nutzungsdaten, die
+    eine andere Wahl rechtfertigen); ein Multi-Targeting-Wechsel wäre
+    eine spätere, eigenständige, nutzungsdaten-getriebene Entscheidung
+    (`ADR-0106` §Re-Evaluierungs-Trigger 2).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-lh-fa-sst-009](../welle-sdk-csharp-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
