@@ -120,7 +120,7 @@ ergänzt — u. a. `AGENTS.md` §3.13 Träger-Nachzug, §3.9 Pipe-Disziplin).
   die `make examples-csharp`-Zeile verglichen: gleiche Form (Bau-Kontext,
   Stufen, Testlauf-vor-Artefakt-Zusage, Export-Mechanismus, `.gitignore`-
   Hinweis, „Braucht Netz … Werkzeug statt Gate", `kein Gate,
-  [ADR-Link] … · seit slice-<name>"). Die Pipe im Fließtext ist korrekt
+  [ADR-Link] … · seit slice-<name>`"). Die Pipe im Fließtext ist korrekt
   als `\|` escaped (Tabellenzelle bleibt intakt).
 - `git show 4a7b0d62 --stat`/`git show 8438ed95 --stat` geprüft: beide
   zeigen ausschließlich den Rename, 0 Insertions/Deletions — reine Moves,
