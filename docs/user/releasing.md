@@ -75,7 +75,13 @@ Doppellauf).
    `ghcr.io/pt9912/pg-change-feed:<Version>` und
    `docker.io/pt9912/pg-change-feed:<Version>`. Bei einem **stabilen**
    Tag (kein Prerelease-Anteil) wird zusätzlich `:latest` auf beiden
-   Registries gesetzt.
+   Registries gesetzt. Jedes Tag trägt **beide** Plattformen —
+   `linux/amd64` **und** `linux/arm64` — in einer einzigen
+   Manifestliste: läuft nativ auf Intel/AMD-Hardware, Apple-Silicon-Macs
+   und ARM-basierten Linux-/Windows-Hosts (Docker Desktop, WSL2-Backend),
+   ohne QEMU-Emulation zur Laufzeit. Ein natives Windows-Container-Image
+   (`os: windows`) gibt es bewusst nicht — Docker Desktop unter Windows
+   nutzt für Linux-Container ohnehin die WSL2-Linux-Engine.
 4. **GitHub-Release anlegen** mit dem Image-Digest (`sha256:…`) im
    Beschreibungstext, als nachvollziehbarer Beleg dafür, welcher exakte
    Bau hinter dem Tag steht.

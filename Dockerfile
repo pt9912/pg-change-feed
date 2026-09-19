@@ -15,8 +15,16 @@
 # PostgreSQL-Abhängigkeit (pgx/v5, rein Go, CGO-frei) trägt der deps-Layer
 # per `go mod download`/`go mod verify` aus dem gepinnten Stand.
 
-# --- deps: gepinnte Base, Lock-File vor dem Code (Layer-Cache greift) ---
-FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS deps
+# --- deps: gepinnte Base, Lock-File vor dem Code (Layer-Cache greift).
+# `--platform=$BUILDPLATFORM` (Multi-Arch, ADR-0051 additiv): diese und
+# alle von ihr abgeleiteten Stufen (proto/proto-export/coverage/build)
+# laufen immer auf der Bau-Host-Plattform, nie unter QEMU-Emulation —
+# Codegenerierung und Tests brauchen keine Zielarchitektur, und `build`
+# unten kompiliert stattdessen per GOOS/GOARCH nativ auf die Zielarchitektur
+# cross. Nur `runtime` (kein `--platform`) baut je Ziel-Plattform, die
+# buildx pro Durchlauf von `--platform linux/amd64,linux/arm64` vorgibt —
+# ohne eigene RUN-Schritte braucht das keine Emulation. ---
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS deps
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
@@ -100,10 +108,17 @@ RUN mkdir -p /out && \
     bash tools/coverage-gate.sh /out/coverage-func.txt "$COVERAGE_THRESHOLD"
 
 # --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus
-# (ADR-0042: die Struktur-Regeln der abgeloesten Kette ADR-0038/0039 bleiben fortgeltend) ---
+# (ADR-0042: die Struktur-Regeln der abgeloesten Kette ADR-0038/0039 bleiben fortgeltend).
+# TARGETOS/TARGETARCH (von buildx pro `--platform`-Durchlauf gesetzt) statt
+# des vormals fest verdrahteten GOOS=linux: das reine Go-Cross-Compiling
+# (CGO_ENABLED=0) braucht dafuer keine C-Toolchain pro Zielarchitektur und
+# laeuft nativ auf dem Bau-Host (Stufe erbt `--platform=$BUILDPLATFORM`
+# von `deps`, siehe dort). ---
 FROM deps AS build
+ARG TARGETOS
+ARG TARGETARCH
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" \
       -o /out/pg-change-feed ./cmd/pg-change-feed
 
 # --- runtime: distroless, nonroot, nur Artefakte — keine Shell, kein Paketmanager ---

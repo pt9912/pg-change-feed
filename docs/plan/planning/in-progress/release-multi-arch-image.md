@@ -92,30 +92,40 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `Dockerfile`: `deps`/`proto`/`proto-export`/`coverage`-Stufen auf
-      `FROM --platform=$BUILDPLATFORM …` umgestellt (native Bauzeit,
-      kein Cross-Emulations-Bedarf für Codegenerierung/Tests); `build`-
-      Stufe erhält `ARG TARGETOS` / `ARG TARGETARCH` und kompiliert über
-      `GOOS=$TARGETOS GOARCH=$TARGETARCH` statt des fest verdrahteten
-      `GOOS=linux`. `runtime`-Stufe unverändert (keine `RUN`-Schritte,
-      braucht keine Emulation). Real geprüft: `make image` (ohne
-      `VERSION`, unverändert einplattformig) baut weiterhin grün und
-      liefert ein lauffähiges `:dev`-Image auf diesem Rechner.
-- [ ] `Makefile`s `image:`-Target: der `VERSION=`-Zweig bekommt
+- [x] `Dockerfile`: `deps`-Stufe (und die davon abgeleiteten `proto`/
+      `proto-export`/`coverage`/`build`) auf `FROM --platform=$BUILDPLATFORM
+      …` umgestellt (native Bauzeit, kein Cross-Emulations-Bedarf für
+      Codegenerierung/Tests); `build`-Stufe erhält `ARG TARGETOS`/
+      `ARG TARGETARCH` und kompiliert über `GOOS=$TARGETOS
+      GOARCH=$TARGETARCH` statt des fest verdrahteten `GOOS=linux`.
+      `runtime`-Stufe unverändert (keine `RUN`-Schritte, braucht keine
+      Emulation). Real geprüft: `make image` (ohne `VERSION`,
+      unverändert einplattformig) baut weiterhin grün, liefert ein
+      lauffähiges `:dev`-Image, und der reale Build-Log zeigt
+      `GOARCH=arm64` korrekt automatisch übernommen (kein Regressions-
+      Risiko für den bestehenden Pfad).
+- [x] `Makefile`s `image:`-Target: der `VERSION=`-Zweig bekommt
       `--platform linux/amd64,linux/arm64`; der `VERSION`-lose `:dev`-
-      Zweig bleibt unverändert einplattformig. Real gegen eine
-      Test-Registry (`registry:2`, analog dem bereits etablierten
-      Content-Mirror-Testmuster aus `release-version-und-workflow`)
-      mit `--push` verifiziert: beide Plattform-Manifeste real
-      vorhanden, `docker buildx imagetools inspect` zeigt
-      `linux/amd64` **und** `linux/arm64/v8` in der Index-Manifestliste,
-      und ein real gezogenes `linux/arm64`-Image startet und beantwortet
-      eine reale Anfrage (kein bloßer `docker manifest inspect`-Beleg,
-      echter Container-Start pro Plattform).
-- [ ] `docs/user/releasing.md` §4 „Was beim Release automatisch
+      Zweig bleibt unverändert einplattformig (buildx' `--load` kann
+      keine Multi-Platform-Manifestliste laden — harte Grenze). Real
+      gegen eine lokale Test-Registry (`registry:2`) mit echtem
+      `--push --platform linux/amd64,linux/arm64` verifiziert (nach
+      einmaliger, danach wieder zurückgenommener Binfmt-Registrierung
+      für `amd64`-Emulation via Rosetta, siehe §7): `docker buildx
+      imagetools inspect` zeigt beide Plattform-Manifeste real in der
+      Index-Manifestliste; **beide** Images real gezogen und gestartet
+      (`docker run --platform linux/amd64 …`/`--platform linux/arm64 …`)
+      — beide liefern identische, korrekte Anwendungsausgabe. Zusätzlich
+      real geprüft: die bestehende Digest-Extraktion aus
+      `--metadata-file` liefert bei Multi-Platform-Builds unverändert
+      genau **einen** `containerimage.digest`-Wert, der exakt dem
+      sha256 des von der Registry abgerufenen rohen Index-Manifests
+      entspricht (kein Code-Fix nötig — das in §6 benannte Risiko ist
+      damit entfallen, nicht nur vermutet).
+- [x] `docs/user/releasing.md` §4 „Was beim Release automatisch
       passiert" nennt die Plattform-Abdeckung; `harness/README.md`s
       `make image`-Zeile aktualisiert.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -124,8 +134,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       explizit als DoD-Kriterium trägt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-PGC/binfmt-werkzeuge-inkompatibel/` angelegt (1. Beleg, unter der 3×-Schärfungsschwelle): `tonistiigi/binfmt` gefolgt von `multiarch/qemu-user-static --reset` beschädigte real den lokalen Docker-Runtime, `colima restart` behob es.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
 
 ## 3. Plan (vor Code)
@@ -136,6 +146,7 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `Makefile` (`image:`-Target) | update | `--platform linux/amd64,linux/arm64` nur im `VERSION=`-Zweig. |
 | `docs/user/releasing.md` | update | §4 nennt die Plattform-Abdeckung. |
 | `harness/README.md` | update | `make image`-Zeile nennt die Plattform-Abdeckung des `VERSION=`-Pfads. |
+| `docs/plan/planning/observations/BEO-PGC/binfmt-werkzeuge-inkompatibel/` | neu (Plan-Nachzug) | realer Docker-Runtime-Zwischenfall bei der lokalen Verifikation, siehe §6. |
 
 ## 4. Trigger
 
@@ -175,27 +186,44 @@ geschrieben.
   `--platform linux/amd64,linux/arm64` liefert buildx stattdessen (oder
   zusätzlich) den Digest der **Index-Manifestliste** — ob der bestehende
   `grep`/`head -1`-Mechanismus dabei weiterhin genau **einen**,
-  eindeutigen Wert liefert (den Index-Digest, nicht zufällig den eines
-  Einzelmanifests), ist vor der Implementierung nicht bewiesen. **Ausgang:**
-  weiter offen bis zur Implementierung, dort real mit `docker buildx
-  imagetools inspect` gegen den tatsächlich geschriebenen
-  `harness/image-hash.txt`-Wert gegenzuprüfen.
+  eindeutigen Wert liefert. **Ausgang:** entfallen — real gegen eine
+  lokale Test-Registry geprüft: `--metadata-file` trägt bei einem
+  Multi-Platform-Build genau **einen** `containerimage.digest`-Eintrag,
+  identisch mit dem sha256 des von der Registry abgerufenen rohen
+  Index-Manifests. Kein Code-Fix nötig.
 - **Lokale Verifizierbarkeit eingeschränkt:** Der aktive
-  Entwicklungsrechner (Colima) hat `linux/amd64` nicht als natives
-  Ziel und kein Binfmt für Cross-Emulation registriert — ein realer
-  Multi-Platform-Push-Test hier braucht entweder eine einmalige
-  Systemänderung (`docker run --privileged --rm tonistiigi/binfmt
-  --install all`, außerhalb des Repo-Umfangs, Auswirkung auf die
-  Docker-Umgebung des Nutzers) oder verlässt sich auf den ersten realen
-  CI-Lauf. **Ausgang:** weiter offen, strukturell — Implementer
-  entscheidet zwischen beiden Wegen und benennt die Wahl explizit im
-  Bericht.
+  Entwicklungsrechner (Colima) hatte `linux/amd64` zunächst nicht als
+  natives Ziel und kein Binfmt für Cross-Emulation registriert. **Ausgang:**
+  eingetreten, real gelöst — mit realem Zwischenfall: `docker run
+  --privileged --rm tonistiigi/binfmt --install all` registrierte
+  zunächst erfolgreich alle Emulatoren (inkl. `rosetta`), der
+  Buildx-Builder zeigte `linux/amd64` danach aber weiterhin nicht als
+  unterstützt. Ein zweiter Versuch mit `multiarch/qemu-user-static
+  --reset -p yes` (eine gängige, aber mit `tonistiigi/binfmt`
+  unverträgliche Alternative) beschädigte danach real den gesamten
+  lokalen Docker-Runtime — jeder Container-Start scheiterte mit
+  `exec format error`, auch für triviale native Images
+  (`hello-world`). Behoben durch `colima restart` (stellt den
+  VM-Kernelzustand inkl. `binfmt_misc` sauber zurück, keine manuelle
+  Handarbeit nötig) — danach lief `linux/amd64` real über Rosetta
+  (`docker run --platform linux/amd64 alpine uname -m` → `x86_64`), und
+  ein echter `docker buildx build --platform linux/amd64,linux/arm64
+  --push`-Lauf gegen eine lokale Registry gelang vollständig, obwohl
+  `docker buildx inspect --bootstrap` `linux/amd64` weiterhin nicht in
+  der Platform-Liste des Builders zeigt (Laufzeit-Emulation über
+  Rosetta funktioniert unabhängig von dieser Anzeige). **Lehre:**
+  `tonistiigi/binfmt` und `multiarch/qemu-user-static` nicht
+  nacheinander auf demselben Colima-Setup ausführen — ein neuer Beleg
+  für das Beobachtungs-Register (siehe §7).
 - **Bauzeit:** Multi-Platform-Builds über QEMU-freie Cross-Compilation
-  sollten die CI-Bauzeit nur moderat erhöhen (Go-Compile ist die einzige
-  echte Cross-Stufe, `apk add`/`protoc`/Tests bleiben nativ), das ist
-  aber unbewiesen, bis ein realer `release.yml`-Lauf die Bauzeit zeigt.
-  **Ausgang:** weiter offen, real erst mit dem ersten Post-Push-Lauf
-  messbar (`AGENTS.md` §3.10 analog).
+  erhöhen die Bauzeit real nur moderat — der lokale Test-Build zeigte
+  den amd64-Cross-Compile-Schritt (`GOARCH=amd64` auf dem nativen
+  arm64-Host) in 4,5s, praktisch identisch mit dem nativen
+  arm64-Compile. **Ausgang:** entfallen als Sorge für die Compile-Stufe
+  selbst; die tatsächliche Gesamt-Bauzeit in `release.yml` (inkl.
+  `apk add`/`protoc`/Tests je Plattform-Durchlauf) bleibt real erst mit
+  dem ersten Post-Push-Lauf messbar — dieser Rest-Anteil bleibt
+  **weiter offen** (`AGENTS.md` §3.10 analog).
 - `AGENTS.md` §3.10 gilt für die geänderte `release.yml`-Struktur
   (mittelbar über `make image`) unverändert — ein realer, grüner
   Post-Push-Lauf (nächster echter Release-Tag) bleibt der einzige volle

@@ -28,15 +28,26 @@ include a-check.mk
 # :latest auf beiden Registries (nur fuer stabile, nicht-Prerelease Tags —
 # das entscheidet der Aufrufer, release.yml). Ohne VERSION unveraendertes
 # Verhalten: lokal geladen, nur :dev (ADR-0044/ADR-0103).
+#
+# --platform linux/amd64,linux/arm64 nur im VERSION=-Zweig (Multi-Arch,
+# ADR-0051 additiv): buildx' --load (VERSION-loser :dev-Zweig) kann keine
+# Multi-Platform-Manifestliste laden — harte buildx-Grenze, deshalb bleibt
+# der :dev-Pfad bewusst einplattformig. Die bestehende
+# Digest-Extraktion (grep gegen containerimage.digest) braucht dafuer keine
+# Aenderung: bei Multi-Platform-Builds liefert --metadata-file exakt einen
+# containerimage.digest-Eintrag, den der Index-/Manifestlisten-Digest (real
+# gegen eine lokale Test-Registry mit --platform linux/amd64,linux/arm64
+# geprueft: grep-Ergebnis == sha256 des von der Registry abgerufenen
+# rohen Index-Manifests).
 ifdef VERSION
-image: ## Baut und pusht das OCI-Image nach GHCR+Docker Hub (VERSION=<semver>, optional LATEST=true — ADR-0051)
-	docker buildx build --push \
+image: ## Baut und pusht das Multi-Arch-OCI-Image (linux/amd64+linux/arm64) nach GHCR+Docker Hub (VERSION=<semver>, optional LATEST=true — ADR-0051)
+	docker buildx build --push --platform linux/amd64,linux/arm64 \
 	  -t ghcr.io/pt9912/pg-change-feed:$(VERSION) \
 	  -t docker.io/pt9912/pg-change-feed:$(VERSION) \
 	  $(if $(filter true,$(LATEST)),-t ghcr.io/pt9912/pg-change-feed:latest -t docker.io/pt9912/pg-change-feed:latest,) \
 	  --metadata-file harness/image-hash.raw . && grep -o '"containerimage.digest":[[:space:]]*"sha256:[0-9a-f]*' harness/image-hash.raw | head -1 | grep -o 'sha256:[0-9a-f]*' > harness/image-hash.txt && rm harness/image-hash.raw
 else
-image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (lokal, nicht committet — ADR-0103); VERSION=<semver> fuer den Multi-Registry-Push (ADR-0051)
+image: ## Baut das OCI-Image (lokale Host-Plattform); Image-Hash nach harness/image-hash.txt (lokal, nicht committet — ADR-0103); VERSION=<semver> fuer den Multi-Arch-Multi-Registry-Push (ADR-0051)
 	docker buildx build --load --metadata-file harness/image-hash.raw -t ghcr.io/pt9912/pg-change-feed:dev . && grep -o '"containerimage.digest":[[:space:]]*"sha256:[0-9a-f]*' harness/image-hash.raw | head -1 | grep -o 'sha256:[0-9a-f]*' > harness/image-hash.txt && rm harness/image-hash.raw
 endif
 
