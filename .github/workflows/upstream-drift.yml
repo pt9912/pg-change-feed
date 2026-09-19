@@ -1,0 +1,73 @@
+---
+name: upstream-drift
+
+# Upstream-Pin-Freshness (ADR-0051 Entscheidung 7): das vollstaendige
+# Neun-Achsen-Pin-Inventar (P1-P9) nachtaeglich abfragen. Advisory: ein
+# roter Lauf ist in der Actions-Uebersicht sichtbar, blockiert aber kein
+# Gate und keinen anderen Workflow (`ADR-0051` §Re-Evaluierungs-Trigger 5
+# verlangt fuer ein blockierendes Gate ausdruecklich eine eigene
+# Folge-ADR, AGENTS.md §3.6).
+#
+# fail-open je Achse (`if: always()`): ein Werkzeug-/Netzausfall EINER
+# Achse (Registry, GitHub-API nicht erreichbar) fuehrt zum Skip dieser
+# Achse, nicht zu Rot des gesamten Laufs — ein tatsaechlich gefundener
+# Drift bleibt trotzdem sichtbar (der jeweilige Schritt selbst wird rot,
+# nachfolgende Schritte laufen unabhaengig weiter).
+#
+# Trigger `schedule` (naechtlich, versetzt zu image-scan.yml) +
+# `workflow_dispatch`, kein Pull-Request-/Push-Trigger — Pin-Freshness
+# aendert sich unabhaengig vom Code-Stand dieses Repos.
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  schedule:
+    - cron: '37 3 * * *'
+  workflow_dispatch:
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  upstream-drift:
+    name: Pin-Freshness P1-P9 gegen den jeweiligen Upstream-Stand
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: P1/P2 — Dockerfile-FROM-Digests (make image-stale)
+        if: always()
+        run: make image-stale
+
+      - name: P3 — TOOLCHAIN_RACE_IMAGE (make pin-stale-race)
+        if: always()
+        run: make pin-stale-race
+
+      - name: P4 — PG_TEST_IMAGE (make pin-stale-pgtest)
+        if: always()
+        run: make pin-stale-pgtest
+
+      - name: P5 — D_MIGRATE_IMAGE (make pin-stale-dmigrate)
+        if: always()
+        run: make pin-stale-dmigrate
+
+      - name: P6 — A_CHECK_IMAGE (make pin-stale-acheck)
+        if: always()
+        run: make pin-stale-acheck
+
+      - name: P7 — DCHECK_IMAGE/DCHECK_DIGEST (make pin-stale-dcheck)
+        if: always()
+        run: make pin-stale-dcheck
+
+      - name: P8 — Kurs-Baseline-Version (make pin-stale-baseline)
+        if: always()
+        run: make pin-stale-baseline
+
+      - name: P9 — GitHub-Action-Pins (make pin-stale-actions)
+        if: always()
+        run: make pin-stale-actions

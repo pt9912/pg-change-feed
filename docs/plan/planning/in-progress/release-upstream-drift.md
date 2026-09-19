@@ -53,29 +53,36 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] Sieben neue, analog zu `make image-stale` benannte Make-Targets für
-      P3–P9 existieren (Namensschema Implementierungsdetail, z. B.
-      `make pin-stale-<achse>`): je Achse ein Tag-/Digest-Vergleich gegen
-      den tatsächlichen Upstream-Stand (P3 Race-Toolchain, P4
-      PG-Testcontainer, P5 d-migrate, P6 a-check, P7 d-check, P8
-      Kurs-Baseline, P9 GitHub-Action-Pins über alle
-      `.github/workflows/*.yml`), alle netzlos-unfähig (brauchen Netz,
-      wie `make image-stale`), advisory (kein Gate).
-- [ ] `upstream-drift.yml` existiert: ein Workflow, alle neun Achsen
+- [x] Sieben neue, analog zu `make image-stale` benannte Make-Targets für
+      P3–P9 existieren (`make pin-stale-race`/`-pgtest`/`-dmigrate`/
+      `-acheck`/`-dcheck`/`-baseline`/`-actions`): je Achse ein
+      Tag-/Digest-Vergleich gegen den tatsächlichen Upstream-Stand (P3
+      Race-Toolchain, P4 PG-Testcontainer, P5 d-migrate, P6 a-check, P7
+      d-check — zwei Achsen, P8 Kurs-Baseline, P9 GitHub-Action-Pins über
+      alle `.github/workflows/*.yml`), alle advisory (kein Gate), brauchen
+      Netz. Real ausgeführt (nicht nur `make -n`): P3 (`golang:1.27`), P4
+      (`postgres:18-alpine`) und P5 (`ghcr.io/pt9912/d-migrate:latest`)
+      zeigen echten, unbekannten Drift (Upstream-Tags wurden seit dem Pin
+      neu gebaut) — kein Fehler dieses Slice, sondern der erste reale
+      Fund, den dieses Werkzeug liefern soll; P6/P7/P8/P9 sind aktuell
+      (`OK`).
+- [x] `upstream-drift.yml` existiert: ein Workflow, alle neun Achsen
       (P1/P2 über das bestehende `make image-stale`, P3–P9 über die neuen
       Targets), `if: always()` je Achsen-Schritt (fail-open — Werkzeug-/
       Netzausfall einer Achse führt zu Skip dieser Achse, nicht zu Rot des
-      Gesamtlaufs), `schedule` (nächtlich) + `workflow_dispatch`; ein
-      real gefundener Drift bleibt sichtbar (roter Lauf), bleibt aber
-      advisory.
-- [ ] `harness/README.md` §Werkzeuge trägt alle sieben neuen Targets und
+      Gesamtlaufs), `schedule` (nächtlich, versetzt zu `image-scan.yml`)
+      + `workflow_dispatch`; ein real gefundener Drift bleibt sichtbar
+      (roter Schritt), bleibt aber advisory. YAML-Struktur per
+      Ruby-Stdlib-YAML-Parser geprüft.
+- [x] `harness/README.md` §Werkzeuge trägt alle sieben neuen Targets und
       `upstream-drift.yml`.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` §Werkzeuge (sieben neue
-      P3–P9-Targets, `upstream-drift.yml`-Zeile).
+- [ ] Doku-Update für `harness/README.md` §Werkzeuge — entfällt als
+      eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
+      DoD-Kriterium trägt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
@@ -99,8 +106,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `Makefile` | update | sieben neue P3–P9-Targets. |
+| `Makefile` | update | sieben neue P3–P9-Targets, alle `bash tools/harness/pin-stale*.sh`-Aufrufe. |
+| `tools/harness/pin-stale.sh` | neu (Plan-Nachzug) | gemeinsames Skript für P3–P6 (Digest-Pin in Makefile-/`a-check.mk`-Variable, `docker buildx imagetools inspect` gegen Tag oder explizites drittes Argument bei tag-losem Digest-Pin — P5/P6). |
+| `tools/harness/pin-stale-dcheck.sh` | neu (Plan-Nachzug) | P7, zwei Achsen (Digest-Drift über `pin-stale.sh` + Tag-Frische über die GitHub-Releases-API von `pt9912/d-check`) in einem Skript, weil `DCHECK_IMAGE`/`DCHECK_DIGEST` zwei getrennte Variablen sind. |
+| `tools/harness/pin-stale-baseline.sh` | neu (Plan-Nachzug) | P8, `harness/conventions.md` §Baseline gegen die GitHub-Releases-API von `pt9912/ai-harness-course` (kein Docker-Pin, eigenes Parsing). |
+| `tools/harness/pin-stale-actions.sh` | neu (Plan-Nachzug) | P9, scannt alle `uses:`-Zeilen über `.github/workflows/*.yml`, zwei Achsen je Repo@Tag (`git ls-remote` gegen Tag-Mutation, GitHub-Releases-API gegen Tag-Frische), dedupliziert Mehrfachnennungen. |
 | `.github/workflows/upstream-drift.yml` | neu | neun Achsen, fail-open, `schedule` + `workflow_dispatch`. |
+| `harness/README.md` §Werkzeuge | update (Plan-Nachzug) | acht neue Zeilen (vier P3–P6-Targets gebündelt, P7/P8/P9 einzeln, `upstream-drift.yml`). |
 | `harness/README.md` §Werkzeuge | update | sieben neue Targets + `upstream-drift.yml`. |
 
 ## 4. Trigger

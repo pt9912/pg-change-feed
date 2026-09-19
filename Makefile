@@ -43,6 +43,34 @@ endif
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
+# --- Upstream-Pin-Freshness P3-P9 (kein Gate; ADR-0051 Entscheidung 7, braucht Netz) ---
+# P1/P2 deckt das bestehende image-stale (Dockerfile-FROM-Zeilen); P3-P6
+# sind Makefile-/mk-Variablen mit demselben Digest-Pin-Muster, ueber das
+# gemeinsame tools/harness/pin-stale.sh; P7 (zwei Achsen), P8 und P9
+# tragen wegen abweichender Pin-Form (Kurs-Baseline-Version, GitHub-
+# Action-SHAs) je ein eigenes Skript.
+.PHONY: pin-stale-race pin-stale-pgtest pin-stale-dmigrate pin-stale-acheck pin-stale-dcheck pin-stale-baseline pin-stale-actions
+pin-stale-race: ## Advisory P3: TOOLCHAIN_RACE_IMAGE gegen Registry-Digest (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale.sh Makefile TOOLCHAIN_RACE_IMAGE
+
+pin-stale-pgtest: ## Advisory P4: PG_TEST_IMAGE gegen Registry-Digest (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale.sh Makefile PG_TEST_IMAGE
+
+pin-stale-dmigrate: ## Advisory P5: D_MIGRATE_IMAGE gegen den aktuellen :latest-Digest (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale.sh Makefile D_MIGRATE_IMAGE ghcr.io/pt9912/d-migrate:latest
+
+pin-stale-acheck: ## Advisory P6: A_CHECK_IMAGE gegen den aktuellen :latest-Digest (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale.sh a-check.mk A_CHECK_IMAGE ghcr.io/pt9912/a-check:latest
+
+pin-stale-dcheck: ## Advisory P7: DCHECK_IMAGE/DCHECK_DIGEST — Tag-Frische UND Digest-Drift (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale-dcheck.sh
+
+pin-stale-baseline: ## Advisory P8: adoptierte Kurs-Baseline-Version gegen den neuesten Kurs-Release (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale-baseline.sh
+
+pin-stale-actions: ## Advisory P9: alle uses:-SHA-Pins ueber .github/workflows/*.yml — Tag-Mutation UND Tag-Frische (ADR-0051, braucht Netz)
+	@bash tools/harness/pin-stale-actions.sh
+
 .PHONY: image-cve
 # TRIVY_IMAGE traegt aquasec/trivy v0.74.0 (Digest-Pin, Modul 14).
 TRIVY_IMAGE ?= aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
