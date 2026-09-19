@@ -30,15 +30,19 @@ include a-check.mk
 # Verhalten: lokal geladen, nur :dev (ADR-0044/ADR-0103).
 #
 # --platform linux/amd64,linux/arm64 nur im VERSION=-Zweig (Multi-Arch,
-# ADR-0051 additiv): buildx' --load (VERSION-loser :dev-Zweig) kann keine
-# Multi-Platform-Manifestliste laden — harte buildx-Grenze, deshalb bleibt
-# der :dev-Pfad bewusst einplattformig. Die bestehende
-# Digest-Extraktion (grep gegen containerimage.digest) braucht dafuer keine
-# Aenderung: bei Multi-Platform-Builds liefert --metadata-file exakt einen
-# containerimage.digest-Eintrag, den der Index-/Manifestlisten-Digest (real
-# gegen eine lokale Test-Registry mit --platform linux/amd64,linux/arm64
-# geprueft: grep-Ergebnis == sha256 des von der Registry abgerufenen
-# rohen Index-Manifests).
+# ADR-0051 additiv): der VERSION-lose :dev-Zweig (--load) bleibt bewusst
+# einplattformig fuer eine konsistente, schnelle lokale Dev-Iteration ueber
+# unterschiedliche Docker-Setups hinweg — ob --load ueberhaupt eine
+# Multi-Platform-Manifestliste laden kann, haengt vom Storage-Treiber ab
+# (real bestaetigt: mit aktiviertem containerd-Image-Store gelingt es,
+# es ist keine grundsaetzliche buildx-Grenze), und dieses Verhalten bei
+# jedem Entwicklerrechner vorauszusetzen waere keine verlaessliche Basis.
+# Die bestehende Digest-Extraktion (grep gegen containerimage.digest)
+# braucht fuer den VERSION=-Zweig keine Aenderung: bei Multi-Platform-Builds
+# liefert --metadata-file exakt einen containerimage.digest-Eintrag, den
+# Index-/Manifestlisten-Digest (real gegen eine lokale Test-Registry mit
+# --platform linux/amd64,linux/arm64 geprueft: grep-Ergebnis == sha256 des
+# von der Registry abgerufenen rohen Index-Manifests).
 ifdef VERSION
 image: ## Baut und pusht das Multi-Arch-OCI-Image (linux/amd64+linux/arm64) nach GHCR+Docker Hub (VERSION=<semver>, optional LATEST=true — ADR-0051)
 	docker buildx build --push --platform linux/amd64,linux/arm64 \

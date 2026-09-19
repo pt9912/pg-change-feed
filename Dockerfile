@@ -109,11 +109,10 @@ RUN mkdir -p /out && \
 
 # --- build: Kompilierung getrennt vom Cache-sensiblen Layer; CGO aus
 # (ADR-0042: die Struktur-Regeln der abgeloesten Kette ADR-0038/0039 bleiben fortgeltend).
-# TARGETOS/TARGETARCH (von buildx pro `--platform`-Durchlauf gesetzt) statt
-# des vormals fest verdrahteten GOOS=linux: das reine Go-Cross-Compiling
-# (CGO_ENABLED=0) braucht dafuer keine C-Toolchain pro Zielarchitektur und
-# laeuft nativ auf dem Bau-Host (Stufe erbt `--platform=$BUILDPLATFORM`
-# von `deps`, siehe dort). ---
+# TARGETOS/TARGETARCH werden von buildx pro `--platform`-Durchlauf gesetzt;
+# das reine Go-Cross-Compiling (CGO_ENABLED=0) braucht dafuer keine
+# C-Toolchain pro Zielarchitektur und laeuft nativ auf dem Bau-Host (Stufe
+# erbt `--platform=$BUILDPLATFORM` von `deps`, siehe dort). ---
 FROM deps AS build
 ARG TARGETOS
 ARG TARGETARCH

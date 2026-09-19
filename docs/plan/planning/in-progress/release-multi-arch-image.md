@@ -50,17 +50,22 @@ Real vorab geprüft, bevor dieser Plan geschrieben wurde:
   `ARG TARGETOS TARGETARCH` — vermeidet QEMU/Binfmt in `release.yml`s
   GitHub-hosted `amd64`-Runner vollständig).
 - `docker buildx build --load` (der lokale, `VERSION`-lose `:dev`-Pfad)
-  kann **keine** Multi-Platform-Manifestliste laden — das ist eine
-  harte buildx-Grenze, kein Implementierungsdetail. Der `:dev`-Pfad
-  bleibt deshalb bewusst einplattformig (`linux/amd64`, unverändert);
-  nur der `VERSION=`-Push-Pfad (`release.yml`) wird multi-arch.
-- Auf diesem Entwicklungsrechner (Colima) listet der aktive
-  buildx-Builder nur `linux/arm64, linux/386` als native Plattformen —
-  **kein** `linux/amd64`, kein Binfmt für Cross-Emulation registriert
-  (`docker buildx inspect --bootstrap`). Ein lokaler End-zu-Ende-Test
-  des künftigen `linux/amd64,linux/arm64`-Push-Builds ist auf diesem
-  Rechner ohne vorherige `docker run --privileged --rm tonistiigi/binfmt
-  --install all` nicht direkt möglich — siehe §6.
+  bleibt bewusst einplattformig — nicht wegen einer harten buildx-Grenze
+  (Reviewer-Finding F-1 zu diesem Slice: mit aktiviertem
+  containerd-Image-Store kann `--load` real eine Multi-Platform-
+  Manifestliste laden, real gegenprüft), sondern für eine konsistente,
+  schnelle lokale
+  Dev-Iteration über unterschiedliche Docker-Setups hinweg — nicht
+  jeder Entwicklerrechner hat den containerd-Image-Store aktiv. Der
+  `:dev`-Pfad baut weiterhin für die native Host-Plattform (auf diesem
+  Rechner `linux/arm64`, nicht `linux/amd64`); nur der
+  `VERSION=`-Push-Pfad (`release.yml`) wird multi-arch.
+- Auf diesem Entwicklungsrechner (Colima) listete der aktive
+  buildx-Builder ursprünglich nur `linux/arm64, linux/386` als native
+  Plattformen — **kein** `linux/amd64`, kein Binfmt für Cross-Emulation
+  registriert (`docker buildx inspect --bootstrap`). Real während der
+  Implementierung gelöst (siehe §6) — ein echter
+  `linux/amd64,linux/arm64`-Push-Build gelang danach vollständig.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -77,9 +82,9 @@ Real vorab geprüft, bevor dieser Plan geschrieben wurde:
   relevanten Plattformen (Mehrbelastung der Bauzeit sonst ohne
   Gegenwert).
 - Der lokale `:dev`-Build-Pfad (`make image` ohne `VERSION`) bleibt
-  einplattformig — buildx' `--load` unterstützt keine
-  Multi-Platform-Manifestliste (technische Grenze, siehe §1 oben), kein
-  Gestaltungsspielraum.
+  einplattformig — eine bewusste Design-Entscheidung für konsistente,
+  schnelle lokale Dev-Iteration über unterschiedliche Docker-Setups
+  hinweg (siehe §1 oben), keine technisch erzwungene Grenze.
 - Multi-Arch für die Beispiel-Client-Images (`examples/Dockerfile`,
   `examples/csharp/Dockerfile`, `examples/kotlin/Dockerfile`) — reine
   Wegwerf-Entwicklungswerkzeuge, kein veröffentlichtes, für Endnutzer
@@ -106,8 +111,11 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       Risiko für den bestehenden Pfad).
 - [x] `Makefile`s `image:`-Target: der `VERSION=`-Zweig bekommt
       `--platform linux/amd64,linux/arm64`; der `VERSION`-lose `:dev`-
-      Zweig bleibt unverändert einplattformig (buildx' `--load` kann
-      keine Multi-Platform-Manifestliste laden — harte Grenze). Real
+      Zweig bleibt unverändert einplattformig (bewusste Design-
+      Entscheidung für konsistente, schnelle lokale Dev-Iteration, keine
+      technisch erzwungene Grenze — Reviewer-Finding F-1: mit
+      aktiviertem containerd-Image-Store kann `--load` real eine
+      Multi-Platform-Manifestliste laden, real gegengeprüft). Real
       gegen eine lokale Test-Registry (`registry:2`) mit echtem
       `--push --platform linux/amd64,linux/arm64` verifiziert (nach
       einmaliger, danach wieder zurückgenommener Binfmt-Registrierung
@@ -126,14 +134,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       passiert" nennt die Plattform-Abdeckung; `harness/README.md`s
       `make image`-Zeile aktualisiert.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      1 HIGH (F-1: die Behauptung „`--load` kann keine Multi-Platform-
+      Manifestliste laden" war als unbedingte Tatsache formuliert, real
+      aber vom Storage-Treiber abhängig — mit containerd-Image-Store
+      gelingt es; die Design-Entscheidung selbst blieb unverändert
+      richtig, nur ihre Begründung wurde korrigiert) und 1 MEDIUM (F-2:
+      Reconciliation-Register-Checkbox ohne „entfällt"-Vermerk) sowie
+      1 LOW (F-3: grenzwertige Vorher/Nachher-Sprache im Dockerfile-
+      Kommentar) in derselben Fixrunde behoben, kein offenes HIGH.
 - [ ] Doku-Update für `docs/user/releasing.md`/`harness/README.md` —
       entfällt als eigener Punkt, da bereits §2 oben dieselbe Zeile
       explizit als DoD-Kriterium trägt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-PGC/binfmt-werkzeuge-inkompatibel/` angelegt (1. Beleg, unter der 3×-Schärfungsschwelle): `tonistiigi/binfmt` gefolgt von `multiarch/qemu-user-static --reset` beschädigte real den lokalen Docker-Runtime, `colima restart` behob es.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **ohne** Wellen-Betrieb hier geprüft, im Repo **mit** Wellen von der nächsten Welle-Closure (auch für Slices ohne Wellen-Zugehörigkeit).
@@ -229,6 +245,19 @@ geschrieben.
   Post-Push-Lauf (nächster echter Release-Tag) bleibt der einzige volle
   Beleg. **Ausgang:** weiter offen, strukturell (derselbe Fall wie
   `BEO-PGC/github-actions-unverifizierbar-lokal`, bereits verkörpert).
+- Reviewer-Finding F-1 (HIGH, `AGENTS.md` §3.12): Die ursprüngliche
+  Begründung für den einplattformigen `:dev`-Pfad („buildx' `--load`
+  kann keine Multi-Platform-Manifestliste laden — harte Grenze") war
+  als unbedingte Tatsache formuliert, real aber vom Storage-Treiber
+  abhängig — mit aktiviertem containerd-Image-Store gelingt es (real
+  auf diesem Rechner gegengeprüft, eigene Reproduktion unabhängig vom
+  Reviewer). **Ausgang:** eingetreten, real behoben — alle vier
+  betroffenen Träger (`Makefile`-Kommentar, `harness/README.md`,
+  dieser Slice-Plan §1/§2) auf die zutreffende, bedingte Formulierung
+  umgestellt; die Design-Entscheidung selbst (`:dev` bleibt
+  einplattformig) blieb unverändert richtig — nur ihre Begründung war
+  falsch (Konsistenz über unterschiedliche Docker-Setups statt einer
+  nicht existierenden harten Grenze).
 
 ## 7. Closure-Notiz
 
