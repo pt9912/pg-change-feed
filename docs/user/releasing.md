@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.0
+Version: 1.1
 Stand: 2026-09-19
 
 ## 1. Zweck und Zielgruppe
@@ -98,6 +98,7 @@ Doppellauf).
 |---|---|---|
 | `DOCKERHUB_USERNAME` | Docker-Hub-Login (Push + Beschreibungs-Sync) | Betreiber, manuell in GitHub |
 | `DOCKERHUB_TOKEN` | Docker-Hub-Personal-Access-Token | Betreiber, manuell in GitHub |
+| `NUGET_API_KEY` | NuGet.org-API-Key für `dotnet nuget push` (SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
 
 **Scope-Hinweis:** `DOCKERHUB_TOKEN` braucht den Scope
 **`read/write/delete`** — ein Token mit nur `read/write` authentifiziert
@@ -109,8 +110,47 @@ betroffene Schritt mit `continue-on-error` lief. In diesem Repo ist der
 `hub-description`-Job ein eigener, nicht maskierter Job — ein
 Scope-Fehler bleibt dort sichtbar rot.
 
-Beide Secrets sind eine externe, kontobezogene Handlung — kein
+Alle drei Secrets sind eine externe, kontobezogene Handlung — kein
 technischer Bestandteil dieses Repos legt sie an.
+
+### SDK-Release: NuGet.org-Publish für `PgChangeFeed.Client`
+
+Unabhängig vom oben beschriebenen Server-Image-Release existiert ein
+zweiter, eigenständiger Release-Mechanismus für das C#-SDK-Package
+`PgChangeFeed.Client`
+([`ADR-0106`](../plan/adr/0106-csharp-nuget-erstes-sdk-package.md)
+Festlegung 4): ein eigener Tag-Namensraum `sdk-csharp-v<SemVer>` (z. B.
+`sdk-csharp-v0.1.0`) — bewusst getrennt vom Server-Namensraum `v*` (§3),
+weil die SDK-Versionierung unabhängig vom Server läuft (`ADR-0106`
+Festlegung 3, Alternative E3 verworfen) und `sdk-csharp-v*` das Muster
+`v*` in `release.yml` ohnehin nicht matcht (kein
+Präfix-Überlappungs-Doppellauf mit `ci.yml`/`e2e.yml`/`release.yml`).
+
+Trigger: `push: tags: ['sdk-csharp-v*']` in
+[`.github/workflows/sdk-csharp-release.yml`](../../.github/workflows/sdk-csharp-release.yml).
+Der Workflow:
+
+1. validiert den Tag-Suffix strikt gegen SemVer 2.0
+   (`tools/harness/sdk-csharp-release-tag-info.sh`, netzlos testbar über
+   `make test-sdk-csharp-release-tag-info`);
+2. gleicht die ermittelte Version gegen die `<Version>` in
+   `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` ab —
+   Abbruch bei jeder Abweichung, vor jedem Build/Push (Muster analog dem
+   Tag-vs-`version.md`-Abgleich in §2/§3, hier gegen die Projektdatei
+   statt gegen eine Markdown-Datei);
+3. baut/testet/paketiert Docker-only über `make sdk-pack-csharp`;
+4. veröffentlicht das erzeugte `.nupkg` per `dotnet nuget push … --api-key
+   ${{ secrets.NUGET_API_KEY }} --source
+   https://api.nuget.org/v3/index.json`.
+
+Kein `:latest`-Äquivalent (NuGet kennt keins) und kein
+GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
+Folgepflicht (`ADR-0106`).
+
+**Zum Zeitpunkt dieses Dokuments wurde noch kein realer
+`sdk-csharp-v*`-Tag gesetzt** — wie beim Server-Release (§1) ist der
+End-zu-Ende-Ablauf mit echtem `NUGET_API_KEY`-Secret strukturell erst
+nach dem ersten echten Tag-Push bewiesen (`AGENTS.md` §3.10).
 
 ## 5. Begleitende, nicht-blockierende Workflows
 
@@ -142,3 +182,4 @@ nicht rückwirkend verändert oder gelöscht.
 | Version | Datum | Änderung |
 |---|---|---|
 | 1.0 | 2026-09-19 | Erste Fassung — dokumentiert den in `welle-release-pipeline-adr-0051` real implementierten Release-Prozess (`ADR-0051`) |
+| 1.1 | 2026-09-19 | §4 um den unabhängigen SDK-Release-Weg (`sdk-csharp-v*`-Tag, `NUGET_API_KEY`) ergänzt — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-csharp-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0106`) |
