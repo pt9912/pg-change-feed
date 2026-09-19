@@ -1342,10 +1342,13 @@ abdeckung_declare "SQL-Administration Live-Reload (disable)" "LH-FA-CFG-002" "de
 # `status = 'applied'`, bevor die reale Erfassungswirkung geprüft wird.
 ADMIN_TABLE=feed_e2e_sql_admin
 
-# LH-FA-CFG-006-Beleg: `cdc.enable_table` liest nur `cdc.active_table`
-# fort — sie schreibt nie an der Quelltabelle selbst. Fingerabdruck aus
-# Spaltenliste und Trigger-Anzahl vor dem Antrag, gegen denselben
-# Fingerabdruck nach `status = 'applied'` unten geprüft.
+# LH-FA-CFG-006-Beleg: `cdc.enable_table` schreibt nur einen Antrag nach
+# `cdc.administration_request`; die Administrations-Goroutine wendet ihn
+# über `TableActivationAdapter.Publish` an — ausschließlich `ALTER
+# PUBLICATION ... ADD TABLE` gegen die Publication, nie eine DDL-Änderung
+# an der Quelltabelle selbst. Fingerabdruck aus Spaltenliste und
+# Trigger-Anzahl vor dem Antrag, gegen denselben Fingerabdruck nach
+# `status = 'applied'` unten geprüft.
 admin_table_ddl_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "SELECT string_agg(column_name || ':' || data_type, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '$ADMIN_TABLE'")
 admin_table_triggers_before=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \

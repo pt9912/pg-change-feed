@@ -16,11 +16,28 @@ OUT=docs/user/ci-matrix-abdeckung.md
 # Fuehrt genau EINEN Container aus: installiert curl+jq (Netz ohnehin
 # noetig), holt den API-Pfad ($1) und wertet ihn mit dem jq-Filter ($2)
 # aus. Ergebnis auf stdout (leer bei fehlendem Feld/HTTP-Fehler).
+# `set -o pipefail` in der inneren sh -c-Pipeline: ohne sie liefert `jq`
+# bei leerem stdin (z. B. nach einem gescheiterten `curl`) Exit 0, und ein
+# API-Fehlschlag saehe wie ein leeres Ergebnis statt wie ein Fehler aus.
 api_query() {
   docker run --rm "$TOOLCHAIN_IMAGE" sh -c "
+    set -o pipefail &&
     apk add --no-cache curl jq >/dev/null 2>&1 &&
     curl -fsS -H 'Accept: application/vnd.github+json' 'https://api.github.com/$1' | jq -r '$2'
   "
+}
+
+# Lauf-IDs aus der API-Antwort werden in den API-Pfad eines FOLGENDEN
+# api_query-Aufrufs eingesetzt (Jobs-Abfrage) — vor dieser Wiederverwendung
+# geprueft, dass der Wert rein numerisch ist: ein API-Feld mit `'` wuerde
+# sonst aus der einfach gequoteten curl-URL im sh -c-String ausbrechen.
+require_numeric_run_id() {
+  case "$1" in
+    ''|*[!0-9]*)
+      echo "ci-matrix-abdeckung: $2 lieferte keine rein numerische Lauf-ID ('$1')" >&2
+      exit 1
+      ;;
+  esac
 }
 
 echo "ci-matrix-abdeckung: frage e2e.yml (LH-QA-POR-001) ab..."
@@ -31,6 +48,7 @@ if [ -z "$e2e_run_id" ] || [ "$e2e_run_id" = "null" ]; then
   echo "ci-matrix-abdeckung: kein erfolgreicher e2e.yml-Lauf gefunden" >&2
   exit 1
 fi
+require_numeric_run_id "$e2e_run_id" "e2e.yml-Lauf-ID"
 
 e2e_job_line=$(api_query "repos/$REPO/actions/runs/$e2e_run_id/jobs" \
   '[([.jobs[] | select(.name | contains("PostgreSQL 17")) | .conclusion][0] // "fehlt"), ([.jobs[] | select(.name | contains("PostgreSQL 18")) | .conclusion][0] // "fehlt")] | @tsv')
@@ -49,6 +67,7 @@ if [ -z "$ci_run_id" ] || [ "$ci_run_id" = "null" ]; then
   echo "ci-matrix-abdeckung: kein erfolgreicher ci.yml-Lauf gefunden" >&2
   exit 1
 fi
+require_numeric_run_id "$ci_run_id" "ci.yml-Lauf-ID"
 
 linux_step_ok=$(api_query "repos/$REPO/actions/runs/$ci_run_id/jobs" \
   '[.jobs[].steps[] | select(.name | contains("Linux-Plattform-Assertion")) | .conclusion][0] // "fehlt"')

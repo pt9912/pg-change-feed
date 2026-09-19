@@ -93,8 +93,10 @@ Priorisierungs-Schritt. **Datum:** 2026-09-19.
 - [x] `make doc-ci-matrix` grün, erzeugt
       `docs/user/ci-matrix-abdeckung.md`.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`), kein Self-Review.
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`), kein Self-Review — 1 MEDIUM (F-1)
+      und 2 LOW (F-2/F-3) in derselben Fixrunde behoben, 3 INFO (F-4/F-5/F-6)
+      als reine Hinweise ohne Aktion übernommen, kein offenes HIGH/MEDIUM.
 - [ ] Doku-Update: `harness/README.md` (`make doc-trace`-Zeile mit der
       real gemessenen finalen Waisenzahl nachgezogen), `docs/plan/adr/README.md`
       (`ADR-0105`-Index-Zeile).
