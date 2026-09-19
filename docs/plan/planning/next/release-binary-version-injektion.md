@@ -18,7 +18,8 @@ siehe `LH-FA-SST-003`s Aufzählung in `spec/lastenheft.md`, die
 `--version`/`--healthcheck` nur als bestehenden Mechanismus nennt, ohne
 Aussage über den gelieferten Versionswert).
 
-**Verantwortlich:** — (direkt beauftragt, noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent (priorisiert 2026-09-19, direkter
+Auftrag: "Ja, Slice anlegen und umsetzen").
 
 **Autor:** Planner-Agent, direkt beauftragt. **Datum:** 2026-09-19.
 
