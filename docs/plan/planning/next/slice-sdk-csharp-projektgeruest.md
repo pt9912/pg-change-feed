@@ -14,7 +14,7 @@ Festlegung 1/2/3/5 (Umfang, Ort, Versionierung, was unberührt bleibt).
 (bleibt nach diesem Slice noch offen — der Träger-Nachzug folgt erst mit
 `slice-sdk-csharp-pack-werkzeug`, wenn das Package real paketierbar ist).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-19.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0106` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-19.
