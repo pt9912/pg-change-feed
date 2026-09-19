@@ -10,7 +10,11 @@ wechselt nur durch `git mv`.
 [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
 Festlegung 5 (Trigger, Secret, Tag-Präfix), [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
 Entscheidung 3/8 (Release-Tag-Trigger, Registry-Secret-Muster — Vorbild,
-wie `ADR-0106` es bereits für NuGet nutzte).
+wie `ADR-0106` es bereits für NuGet nutzte),
+[`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+§Entscheidung Festlegung 1 (Publish-Frontend `uv publish` statt
+`twine upload`, Token-Konsum über `UV_PUBLISH_TOKEN`/`--token`) —
+superseded die `twine`-Publish-Zeile aus `ADR-0107` Festlegung 5.
 
 **Berührte Spec-Stellen:** — (Prozess-/CI-Artefakt ohne eigene
 `SPEC-*`-Kennung, analog `sdk-csharp-release.yml`).
@@ -31,9 +35,10 @@ validiert, ihn gegen die in `pyproject.toml` geführte `version` abgleicht
 (Abbruch bei Abweichung, vor jedem Build/Push — Muster `release.yml`s
 Tag-gegen-`version.md`-Abgleich bzw. `sdk-csharp-release.yml`s
 Tag-gegen-`.csproj`-Abgleich, hier gegen die `pyproject.toml`), die
-Artefakte aus `make sdk-pack-python` erzeugt und per
-`twine upload --repository pypi dist/* -u __token__ -p
-$PYPI_API_TOKEN` veröffentlicht.
+Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
+(Token über `UV_PUBLISH_TOKEN=${{ secrets.PYPI_API_TOKEN }}`,
+[`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+§Entscheidung Festlegung 1) veröffentlicht.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -75,8 +80,11 @@ $PYPI_API_TOKEN` veröffentlicht.
       `grep -oE`/`sed` direkt auf dem Runner, analog
       `sdk-csharp-release.yml`s `.csproj`-Lesart, `AGENTS.md` §3.1) und
       bricht bei Abweichung ab, **vor** jedem Login/Build/Push; ruft
-      `make sdk-pack-python` auf; pusht mit `twine upload --repository
-      pypi dist/* -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}`.
+      `make sdk-pack-python` auf; pusht mit `uv publish` (Token über die
+      Umgebungsvariable `UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}`,
+      [`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+      §Entscheidung Festlegung 1 — kein `-u __token__ -p`-Flag-Paar wie
+      bei `twine`).
 - [ ] Jede `uses:`-Zeile ist auf einen vollständigen Commit-SHA gepinnt,
       mit Tag-Kommentar (`AGENTS.md` §3.8) — `actions/checkout`
       wiederverwendet denselben, bereits im ganzen Repo gepinnten SHA.
@@ -126,7 +134,7 @@ $PYPI_API_TOKEN` veröffentlicht.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `.github/workflows/sdk-python-release.yml` | neu | Tag-Trigger, PEP-440-/`pyproject.toml`-Abgleich, `twine upload`. |
+| `.github/workflows/sdk-python-release.yml` | neu | Tag-Trigger, PEP-440-/`pyproject.toml`-Abgleich, `uv publish`. |
 | `harness/README.md` §Werkzeuge | update | reale Workflow-Zeile. |
 | `docs/user/releasing.md` | update | eigener Abschnitt/Tabellenzeile für den Python-SDK-Release-Weg, analog dem C#-Eintrag — **vorab eingeplant**, siehe §2. |
 | `tools/harness/sdk-python-release-tag-info.sh` (Arbeitsname) | neu | validiert `sdk-python-v<PEP 440>`-Tags, gibt `version=` aus (kein `latest=`) — Struktur-Vorbild `tools/harness/sdk-csharp-release-tag-info.sh`; PEP-440-Grammatik ist **nicht** identisch mit SemVer 2.0 (Pre-/Post-Release-Suffixe unterscheiden sich), deshalb **kein** Sourcing aus `tools/harness/semver-regex.sh` ohne vorherige Prüfung, ob die dortige Regex den hier tatsächlich genutzten einfachen Fall (`MAJOR.MINOR.PATCH`, `ADR-0107` Festlegung 4) bereits abdeckt — diese Entscheidung fällt beim Schreiben, nicht hier. |
@@ -168,7 +176,9 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
 - **`AGENTS.md` §3.10 gilt unverändert:** `make gates` grün und ein
   plausibler YAML-Aufbau belegen nicht, dass der reale Post-Push-Lauf auf
   GitHub grün läuft (Registry-Zugangsdaten-Pfad zu PyPI, Runner-
-  spezifisches `twine upload`-Verhalten). **Ausgang:** weiter offen,
+  spezifisches `uv publish`-Verhalten — zusätzlich verschärft durch die
+  in `ADR-0108` §Kontext benannte 0.x-Versionierung von `uv` selbst).
+  **Ausgang:** weiter offen,
   strukturell — bestätigt oder widerlegt erst durch einen realen Tag-Push
   `sdk-python-v0.1.0` (oder gleichwertig), dieselbe Klasse wie
   `BEO-PGC/github-actions-unverifizierbar-lokal` (bereits verkörpert als

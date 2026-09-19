@@ -28,8 +28,11 @@ Client-Bibliothek-Packages für
 inklusive Changes-Lesen `SPEC-022`) — anders als beim ersten (C#/NuGet)
 Package **kein** gRPC in v1, in einem neuen Baum `sdks/python/`, mit
 eigenständigem PEP-440-Versionsschema ab `0.x.y`, Docker-only-Bau
-(`make sdk-pack-python`, `build`+`twine`) und einem separaten Netz-Workflow
-für die PyPI-Veröffentlichung. Diese ADR entscheidet ausdrücklich nur die
+(`make sdk-pack-python`, `uv build`/`uv publish` —
+[`ADR-0108`](../adr/0108-python-sdk-uv-statt-build-twine.md), abgelöste
+`build`+`twine`-Klausel aus `ADR-0107` Festlegung 5) und einem separaten
+Netz-Workflow für die PyPI-Veröffentlichung. Diese ADR entscheidet
+ausdrücklich nur die
 *Form* — die Umsetzung ist Folgepflicht 1 dieser ADR, kein Vorgriff.
 
 Das *Mehr* gegenüber vier isolierten Slice-DoDs: `LH-FA-SST-009`s

@@ -8,9 +8,13 @@ wechselt nur durch `git mv`.
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
-Festlegung 5 (Build-Mechanismus: Docker-only bauen, `build`+`twine`),
+Festlegung 5 (Build-Mechanismus: Docker-only bauen),
 §Konsequenzen Folgepflicht 2/3 (Träger-Nachzug Pflichtenheft/
-`harness/README.md`).
+`harness/README.md`),
+[`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+§Entscheidung Festlegung 1/3 (Build-Frontend `uv build --no-sources`
+statt `build`(PyPA), digest-gepinntes `ghcr.io/astral-sh/uv`-Kopier-Image)
+— superseded die `build`+`twine`-Klausel aus `ADR-0107` Festlegung 5.
 
 **Berührte Spec-Stellen:** [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md)
 (wird mit diesem Slice für Python/PyPI aufgelöst — die Kennung selbst
@@ -29,7 +33,10 @@ Folgepflicht 1/2/3). **Datum:** 2026-09-19.
 
 **Ziel:** Ein neues, netzlos **nicht** prüfbares Werkzeug-Ziel
 `make sdk-pack-python` (Docker-only, `pip install`/`pytest`/
-`python -m build`, gepinntes `python`-Image) erzeugt reale `.whl`- und
+`uv build --no-sources`, gepinntes `python`-Image + digest-gepinntes
+`ghcr.io/astral-sh/uv`-Kopier-Image,
+[`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+§Entscheidung Festlegung 1/3) erzeugt reale `.whl`- und
 `.tar.gz`-Artefakte aus `sdks/python/pgchangefeed/` — dazu der
 Träger-Nachzug, den `ADR-0107` §Konsequenzen Folgepflicht 2/3 fordert:
 [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) (§1) und
@@ -58,12 +65,20 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
 
 - [ ] `make sdk-pack-python` existiert (Docker-only, kein Gate — analog
       `make sdk-pack-csharp`): baut, testet (`pytest`) und paketiert
-      (`python -m build`) `sdks/python/pgchangefeed/` im gepinnten
-      `python`-Image; ein roter Test bricht den `docker build` mit Exit ≠ 0
-      ab. Die Artefakte (`.whl`, `.tar.gz`) werden über einen `tar`-Stream-
-      Export aus dem Docker-Bau in ein lokales Verzeichnis (z. B.
-      `sdks/python/dist/`, `.gitignore`t) abgelegt — analog dem
-      Extraktionsmuster von `make sdk-pack-csharp`
+      (`uv build --no-sources`,
+      [`ADR-0108`](../../adr/0108-python-sdk-uv-statt-build-twine.md)
+      §Entscheidung Festlegung 1) `sdks/python/pgchangefeed/` im gepinnten
+      `python`-Image; `uv` selbst wird **nicht** per `pip install`
+      bezogen, sondern per digest-gepinntem Multi-Stage-`COPY` aus
+      Astrals eigenem Werkzeug-Image
+      (`COPY --from=ghcr.io/astral-sh/uv:0.12.17@sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc
+      /uv /uvx /bin/`, exakter Wortlaut aus `ADR-0108` §Entscheidung
+      Festlegung 3 — Digest beim Schreiben gegen die ADR erneut
+      verifizieren, nicht blind übernehmen); ein roter Test bricht den
+      `docker build` mit Exit ≠ 0 ab. Die Artefakte (`.whl`, `.tar.gz`)
+      werden über einen `tar`-Stream-Export aus dem Docker-Bau in ein
+      lokales Verzeichnis (z. B. `sdks/python/dist/`, `.gitignore`t)
+      abgelegt — analog dem Extraktionsmuster von `make sdk-pack-csharp`
       (`tools/harness/sdk-pack-csharp.sh`, host-seitiger Export statt
       Bind-Mount/`--user`-Workaround).
 - [ ] Real ausgeführt: ein `.whl` und ein `.tar.gz` mit der erwarteten
@@ -124,7 +139,7 @@ das Package — **nächste freie Nummer real verifizieren**, siehe §3) sowie
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `harness/mk/sdk.mk` (bereits durch `slice-sdk-csharp-pack-werkzeug` angelegt) | update | `sdk-pack-python`-Target ergänzen, Docker-only, kein `GATE_CHECKS`-Eintrag. |
-| `sdks/python/Dockerfile` | update | zusätzliche Bau-/Export-Stufe für `python -m build`, Extraktion analog `make sdk-pack-csharp`. |
+| `sdks/python/Dockerfile` | update | zusätzliche Bau-/Export-Stufe für `uv build --no-sources` (digest-gepinntes `ghcr.io/astral-sh/uv`-Kopier-Image, `ADR-0108` §Entscheidung Festlegung 3), Extraktion analog `make sdk-pack-csharp`. |
 | `tools/harness/sdk-pack-python.sh` (Arbeitsname) | neu | Host-seitiger `tar`-Stream-Export, analog `tools/harness/sdk-pack-csharp.sh`. |
 | `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) | update | Nachzug-Satz: Python/PyPI nicht mehr offen, dritte Sprache/Vertriebsweg bleibt offen. |
 | `spec/pflichtenheft.md` §6 | update | neue `SPEC-<NNN>`-Zeile für `pgchangefeed` (Nummer real verifizieren, siehe §2). |
@@ -148,10 +163,11 @@ in `done/` liegt (siehe Welle-Plan §4 Reihenfolge).
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): entfällt aus
   heutiger Sicht — ein Make-Target plus zwei Doku-Nachzüge.
-- `in-progress` → `open` (blockiert — Carveout?): `python -m build`
-  scheitert strukturell am gepinnten Image (z. B. fehlendes
-  `build`-Paket) — unwahrscheinlich, `build` ist Standard-PyPA-Tooling,
-  über `pip install build` netzgebunden nachinstallierbar im Bau-Schritt.
+- `in-progress` → `open` (blockiert — Carveout?): `uv build --no-sources`
+  scheitert strukturell am digest-gepinnten `ghcr.io/astral-sh/uv`-Bezug
+  (z. B. Digest inzwischen zurückgezogen) — unwahrscheinlich, der Digest
+  wurde real gemessen (`ADR-0108` §Kontext); ein alternativer, aktuell
+  gültiger Digest wäre im Umsetzungszug real nachzumessen.
 
 ## 5. Closure-Trigger
 
