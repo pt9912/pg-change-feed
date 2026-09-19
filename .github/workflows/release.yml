@@ -5,10 +5,12 @@ name: release
 # Git-Tags der Form `v<SemVer>` (`ci.yml`/`e2e.yml` schliessen Tag-Pushes
 # per `tags-ignore: ['**']` aus — kein Doppellauf).
 #
-# Ablauf: Tag strikt gegen SemVer 2.0 validieren, dann gegen
-# `docs/user/version.md` am getaggten Commit abgleichen (Abbruch bei jeder
-# Abweichung, vor jedem Login/Build/Push, ADR-0051 Entscheidung 1) — baut
-# danach ueber `make image VERSION=<validierte Version>` (Docker-only,
+# Ablauf: Tag strikt gegen SemVer 2.0 validieren und Stabilitaet ermitteln
+# (`tools/harness/release-tag-info.sh`, netzlos testbar ueber
+# `make test-release-tag-info`), dann gegen `docs/user/version.md` am
+# getaggten Commit abgleichen (Abbruch bei jeder Abweichung, vor jedem
+# Login/Build/Push, ADR-0051 Entscheidung 1) — baut danach ueber
+# `make image VERSION=<validierte Version>` (Docker-only,
 # AGENTS.md §3.1: kein separater `docker build`-Aufruf ausserhalb `make`),
 # ein Build, Push nach GHCR UND Docker Hub (Content-Mirror, ADR-0051
 # Entscheidung 2 Option D); `:latest` nur bei einem stabilen
@@ -49,16 +51,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Tag gegen SemVer 2.0 validieren
-        run: |
-          tag="${GITHUB_REF_NAME}"
-          version="${tag#v}"
-          semver_re='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
-          if ! [[ "$version" =~ $semver_re ]]; then
-            echo "::error::Tag $tag ist kein gueltiger v<SemVer-2.0>-Tag (geprueft ohne fuehrendes v: '$version')"
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_ENV"
+      - name: Tag validieren, Version und Stabilitaet ermitteln (tools/harness/release-tag-info.sh)
+        run: bash tools/harness/release-tag-info.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
       - name: docs/user/version.md gegen den Tag abgleichen
         run: |
@@ -67,13 +61,6 @@ jobs:
             echo "::error::docs/user/version.md ('$file_version') weicht vom Tag ('$version') ab"
             exit 1
           fi
-
-      - name: Stabilitaet ermitteln (kein Prerelease-Suffix -> zusaetzlich :latest)
-        run: |
-          case "$version" in
-            *-*) echo "latest=false" >> "$GITHUB_ENV" ;;
-            *) echo "latest=true" >> "$GITHUB_ENV" ;;
-          esac
 
       - name: Docker Buildx einrichten
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

@@ -43,6 +43,10 @@ endif
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
+.PHONY: test-release-tag-info
+test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (SemVer-2.0-Validierung, ADR-0051, netzlos)
+	@bash tools/harness/run-release-tag-info-tests.sh
+
 .PHONY: doc-ci-matrix
 doc-ci-matrix: ## LH-QA-POR-001/002-Beleg: reale GitHub-Actions-Läufe abfragen, docs/user/ci-matrix-abdeckung.md schreiben (ADR-0105, kein Gate, braucht Netz)
 	@bash tools/harness/ci-matrix-abdeckung.sh

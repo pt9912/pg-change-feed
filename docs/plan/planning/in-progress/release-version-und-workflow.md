@@ -72,23 +72,35 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (nicht-Prerelease) `VERSION`-Wert zusätzlich gesetzt, auf beiden
       Registries. Ohne `VERSION` bleibt das bestehende Verhalten
       (`--load`, nur `:dev`, [`ADR-0044`](../../adr/0044-image-beleg-semantik.md))
-      unverändert — real gegen zwei lokale Registry-Container geprüft:
-      derselbe Digest auf allen vier Tag/Registry-Kombinationen
-      (`docker buildx imagetools inspect`, siehe §7).
-- [x] `release.yml` existiert: Trigger `push: tags: ['v*']`; ein erster
-      Schritt validiert den Tag fail-fast strikt gegen SemVer 2.0 **und**
-      gegen den Wert in `docs/user/version.md` am getaggten Commit (Abbruch
-      bei jeder Abweichung, vor jedem Login/Build/Push); baut über
-      `make image VERSION=<validierte Version>`; legt danach ein
-      GitHub-Release an, dessen Beschreibungstext den Image-Digest trägt.
-      YAML-Struktur und jeder `run:`-Schritt syntaktisch geprüft (Ruby-
-      Stdlib-YAML-Parser bzw. `bash -n`, siehe §7) — der reale
-      Post-Push-Lauf bleibt unverifiziert (`AGENTS.md` §3.10, §6).
+      unverändert — real gegen zwei lokale Registry-Container geprüft
+      (`registry:2`, zwei Ports): derselbe Manifest-Digest auf allen vier
+      Tag/Registry-Kombinationen (`docker buildx imagetools inspect`,
+      Beleg im Fixrunden-Commit).
+- [x] `release.yml` existiert: Trigger `push: tags: ['v*']`; die
+      Tag-/Version-/Stabilitäts-Ermittlung läuft über das eigenständige,
+      netzlos getestete `tools/harness/release-tag-info.sh`
+      (`make test-release-tag-info`, real gegen zwölf Fälle inklusive der
+      zwei vom Review gefundenen SemVer-2.0-Randfälle — führende Null in
+      einem numerischen Prerelease-Identifier, Bindestrich in der
+      Build-Metadata) statt einer unbelegten Inline-Prüfung; ein
+      zusätzlicher Schritt gleicht die Version gegen `docs/user/version.md`
+      am getaggten Commit ab (Abbruch bei jeder Abweichung, vor jedem
+      Login/Build/Push); baut über `make image VERSION=<validierte
+      Version>`; legt danach ein GitHub-Release an, dessen
+      Beschreibungstext den Image-Digest trägt. YAML-Struktur und jeder
+      `run:`-Schritt syntaktisch geprüft (Ruby-Stdlib-YAML-Parser bzw.
+      `bash -n`) — der reale Post-Push-Lauf bleibt unverifiziert
+      (`AGENTS.md` §3.10, siehe §6).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` (`make image`-Zeile mit dem
+      1 HIGH (F-1, unbelegter §7-Verweis) und 2 MEDIUM (F-2/F-3, reale
+      SemVer-2.0-Abweichungen) sowie F-4 (fehlender Negativtest) in
+      derselben Fixrunde behoben; F-5 (`ADR-0103`-Trigger-Frage) als
+      Risiko in §6 übernommen statt hier aufgelöst; F-6 (Checkbox-Nachzug)
+      behoben; kein offenes HIGH.
+- [x] Doku-Update für `harness/README.md` (`make image`-Zeile mit dem
       neuen `VERSION`/`LATEST`-Verhalten, neue `release.yml`-Zeile).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
@@ -105,6 +117,9 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `.github/workflows/release.yml` | neu | Tag-Validierung (SemVer 2.0 + `version.md`-Abgleich), Build über `make image VERSION=...`, GitHub-Release mit Digest-Pin. |
 | `AGENTS.md` §3.8 | keine Änderung | bereits vorhanden (Action-Pinning) — jede neue `uses:`-Zeile in `release.yml` folgt der bestehenden Regel, kein neuer Regeltext. |
 | `harness/README.md` §Sensors/§Werkzeuge | update | `release.yml`-Zeile analog zu `e2e.yml` (kein Gate, `ADR-0051`). |
+| `tools/harness/release-tag-info.sh` | neu (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-1/F-2/F-3: die zunächst inline in `release.yml` geführte SemVer-2.0-Validierung/Stabilitäts-Ermittlung trug zwei reale Fehler (führende Null im Prerelease-Identifier akzeptiert, Bindestrich in der Build-Metadata fälschlich als Prerelease gewertet) und keinen automatisierten Beleg — jetzt eigenständiges, netzlos testbares Skript. |
+| `tools/harness/run-release-tag-info-tests.sh` | neu (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-4: automatisierter Tabellentest gegen zwölf Fälle, deckt beide real gefundenen Randfälle ab. |
+| `Makefile` (`test-release-tag-info`-Target) | neu (Plan-Nachzug, Fixrunde) | macht den neuen Testlauf über `make gates`-analoge Disziplin aufrufbar (kein Gate, netzlos). |
 
 ## 4. Trigger
 
@@ -145,15 +160,37 @@ geschrieben.
   von `make image` (`harness/image-hash.raw`/`harness/image-hash.txt`,
   [`ADR-0103`](../../adr/0103-image-hash-lokal-statt-committet.md)) — ein
   gepushtes Multi-Platform-Manifest hat einen anderen Digest-Typ als ein
-  lokal geladenes Single-Platform-Image. **Ausgang:** weiter offen bis zur
-  Implementierung, dort real gegen `ADR-0044`/`ADR-0103` zu prüfen (kein
-  Widerspruch erwartet, da beide ADRs den lokalen `:dev`-Pfad unverändert
-  lassen — zu verifizieren, nicht anzunehmen).
+  lokal geladenes Single-Platform-Image. **Ausgang:** eingetreten,
+  real geprüft und unauffällig: `--metadata-file`s `containerimage.digest`
+  liefert in beiden Modi denselben Digest-Wert (real gegen zwei lokale
+  Registry-Container verifiziert, `docker buildx imagetools inspect`
+  bestätigt Übereinstimmung auf allen vier Tag/Registry-Kombinationen) —
+  kein Widerspruch zu `ADR-0044`/`ADR-0103`, beide ADRs bleiben für den
+  lokalen `:dev`-Pfad unverändert zutreffend.
 - Docker Hub verlangt eine andere Namensform als GHCR
-  (`docker.io/<user>/<repo>` vs. `ghcr.io/pt9912/pg-change-feed`) — der
-  genaue Docker-Hub-Repository-Name ist noch nicht festgelegt. **Ausgang:**
-  weiter offen, Implementer-Entscheidung (mutmaßlich `pt9912/pg-change-feed`,
-  gegen ein real existierendes Docker-Hub-Konto zu prüfen).
+  (`docker.io/<user>/<repo>` vs. `ghcr.io/pt9912/pg-change-feed`). **Ausgang:**
+  eingetreten, real geprüft: `docker.io/<user>/<repo>` ist syntaktisch
+  korrekt und lösst identisch zur präfixlosen Docker-Hub-Form auf (real
+  gegen `docker.io/library/alpine:3.20` vs. `alpine:3.20` verifiziert,
+  identischer Digest) — `pt9912/pg-change-feed` als Repository-Name
+  gewählt; ob dieses Repository auf Docker Hub real existiert, bleibt bis
+  zum ersten echten Push unbewiesen (externe Kontoabhängigkeit, siehe
+  Welle-Datei §6).
+- Review-Finding F-5: `ADR-0103`s eigener Re-Evaluierungs-Trigger nennt
+  „ein `docker push`-Workflow" namentlich als Auslöser für eine
+  Folge-ADR („Archiv-Bedingung wird real erfüllt"). Dieser Slice fügt
+  genau das hinzu. **Ausgang:** weiter offen, bewusst nicht in diesem
+  Slice aufgelöst — der Trigger liest sich als „ein Lauf-Zweig *braucht*"
+  einen historischen Beleg, was erst mit einem tatsächlich durchgeführten
+  Push real eintritt, nicht bereits mit der bloßen Existenz des
+  Mechanismus (dieselbe Abgrenzung wie beim ersten Risiko oben und wie
+  `BEO-PGC/kein-echter-versionswechsel-upgrade-test`, siehe Welle-Datei
+  §6: „ein tatsächlicher Release" ist explizit außerhalb dieser Welle).
+  Braucht eine Architect-Entscheidung spätestens vor dem ersten echten
+  Release: entweder eine Folge-ADR (`Supersedes ADR-0103`, committeter
+  Digest für den Release-Pfad) oder eine explizite Begründung, warum der
+  GitHub-Release-Beschreibungstext als „historisch nachschlagbarer
+  Beleg" im Sinne des Triggers ausreicht, ohne `git`-Commit-Historie.
 
 ## 7. Closure-Notiz
 
