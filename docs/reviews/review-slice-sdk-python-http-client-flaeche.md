@@ -298,7 +298,7 @@ Implementer genannte Einordnung übernommen):
   die nach `ADR-0107` Festlegung 1 tatsächlich außerhalb dieses Pakets
   bleiben. Kein Drift.
 - `__init__.py:7` — „gRPC, SSE and NATS-Vollinhalt delivery remain out
-  of scope for this package (ADR-0107 Festlegung 1) -- a follow-up
+  of scope for this package (`ADR-0107` Festlegung 1) -- a follow-up
   release would add a separate client surface for them." — dieselbe
   zutreffende Abgrenzung. Kein Drift.
 - `Dockerfile:8` — „Eine `pack`-Stufe (`python -m build`) folgt erst mit
