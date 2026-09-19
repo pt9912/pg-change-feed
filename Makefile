@@ -46,8 +46,17 @@ image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht
 .PHONY: image-cve
 # TRIVY_IMAGE traegt aquasec/trivy v0.74.0 (Digest-Pin, Modul 14).
 TRIVY_IMAGE ?= aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
-image-cve: ## Advisory: Trivy CRITICAL/HIGH gegen das publizierte GHCR-:latest-Image (ADR-0051, kein Gate, braucht Netz)
-	docker run --rm $(TRIVY_IMAGE) image --severity CRITICAL,HIGH --exit-code 1 ghcr.io/pt9912/pg-change-feed:latest
+# GHCR-Pakete, die per GITHUB_TOKEN gepusht werden, entstehen unabhaengig
+# von der Sichtbarkeit des Repos privat (GitHub-Verhalten) — GHCR_USERNAME/
+# GHCR_PASSWORD (optional) authentifizieren ausschliesslich den
+# gescannten ghcr.io-Pull ueber Trivys eigene --username/TRIVY_PASSWORD-
+# Mechanik, getrennt von Trivys eigenem, unauthentifiziertem Bezug seiner
+# Vulnerability-DB: ein allgemeines Docker-Credential-Mount (`~/.docker/
+# config.json`) faerbte stattdessen jeden Registry-Zugriff des Containers
+# ein, einschliesslich des DB-Bezugs, sobald die Config einen
+# Credential-Helper referenziert, den der Container nicht ausfuehren kann.
+image-cve: ## Advisory: Trivy CRITICAL/HIGH gegen das publizierte GHCR-:latest-Image (ADR-0051, kein Gate, braucht Netz; optional GHCR_USERNAME/GHCR_PASSWORD für ein privates Paket)
+	docker run --rm $(if $(GHCR_PASSWORD),-e TRIVY_PASSWORD="$(GHCR_PASSWORD)",) $(TRIVY_IMAGE) image --image-src remote $(if $(GHCR_USERNAME),--username "$(GHCR_USERNAME)",) --severity CRITICAL,HIGH --exit-code 1 ghcr.io/pt9912/pg-change-feed:latest
 
 .PHONY: test-release-tag-info
 test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (SemVer-2.0-Validierung, ADR-0051, netzlos)

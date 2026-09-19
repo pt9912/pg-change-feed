@@ -11,16 +11,20 @@ name: image-scan
 #
 # Trigger `schedule` (naechtlich) + `workflow_dispatch`, kein
 # Pull-Request-/Push-Trigger — das Dev-Image (`:dev`) wird nie
-# veroeffentlicht, ein Scan dagegen saegte nichts ueber das aus, was
+# veroeffentlicht, ein Scan dagegen sagte nichts ueber das aus, was
 # tatsaechlich ausgeliefert wird (`ADR-0051` §Verglichene Alternativen,
 # Option D verworfen).
+#
+# `packages: read` plus `GHCR_USERNAME`/`GHCR_PASSWORD` (aus `github.actor`/
+# `secrets.GITHUB_TOKEN`) authentifizieren den Pull ueber Trivys eigene
+# Zugangsdaten-Flags (`Makefile` `image-cve`-Kommentar) — ein per
+# `GITHUB_TOKEN` gepushtes GHCR-Paket entsteht unabhaengig von der
+# Sichtbarkeit des Repos privat.
 #
 # Bis zum ersten echten Release (`release-version-und-workflow`,
 # Welle-Datei `docs/plan/planning/welle-release-pipeline-adr-0051.md`
 # §6) existiert kein GHCR-`:latest`-Image — dieser Lauf scheitert bis
-# dahin strukturell am fehlenden Ziel-Image (real geprueft, siehe
-# Slice-Plan `docs/plan/planning/in-progress/release-image-scan.md` §6),
-# kein Implementierungsfehler.
+# dahin strukturell am fehlenden Ziel-Image, kein Implementierungsfehler.
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
@@ -40,9 +44,13 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: CVE-Scan (make image-cve)
-        run: make image-cve
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: make image-cve GHCR_USERNAME="$GHCR_USERNAME" GHCR_PASSWORD="$GHCR_PASSWORD"

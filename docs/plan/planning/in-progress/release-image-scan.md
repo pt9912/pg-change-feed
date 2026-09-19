@@ -54,11 +54,22 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       `make image-stale`): Trivy CRITICAL/HIGH gegen das publizierte
       GHCR-`:latest`-Image von `ghcr.io/pt9912/pg-change-feed`, Ergebnis auf
       stdout, `exit 1` bei mindestens einem CRITICAL/HIGH-Fund,
-      `exit 0` sonst. Digest-gepinntes `aquasec/trivy` (v0.74.0). Real
-      ausgeführt: scheitert strukturell korrekt am fehlenden
-      `ghcr.io/pt9912/pg-change-feed:latest` (kein echter Release bisher,
-      Trivy selbst lief real und lud seine Vulnerability-DB).
-- [x] `image-scan.yml` existiert: ruft `make image-cve` auf, Trigger
+      `exit 0` sonst. Digest-gepinntes `aquasec/trivy` (v0.74.0, real
+      gegen `docker manifest inspect` verifiziert). Trägt optional
+      `GHCR_USERNAME`/`GHCR_PASSWORD` für ein privates GHCR-Paket (Trivys
+      eigene `--username`/`TRIVY_PASSWORD`-Mechanik statt eines
+      allgemeinen Docker-Credential-Mounts — Letzteres färbte real auch
+      Trivys eigenen, unauthentifizierten Vulnerability-DB-Bezug ein,
+      sobald `~/.docker/config.json` einen nicht ausführbaren
+      Credential-Helper referenziert). `--image-src remote` verhindert
+      zusätzlich unnötige lokale Docker-/Containerd-/Podman-Socket-Proben.
+      Real ausgeführt (mit und ohne Credentials): scheitert strukturell
+      korrekt am fehlenden `ghcr.io/pt9912/pg-change-feed:latest` (kein
+      echter Release bisher), Trivy selbst lief real und lud seine
+      Vulnerability-DB.
+- [x] `image-scan.yml` existiert: ruft `make image-cve` mit
+      `GHCR_USERNAME`/`GHCR_PASSWORD` aus `github.actor`/
+      `secrets.GITHUB_TOKEN` auf (`packages: read`-Permission), Trigger
       `schedule` (nächtlich) + `workflow_dispatch`; ein roter Lauf ist
       sichtbar, blockiert aber `make gates`/`ci.yml`/`release.yml` nicht
       (advisory, [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
@@ -67,9 +78,13 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       und ersetzt den bisherigen „Nicht behauptet (geplant)"-Hinweis am
       Dateiende (`AGENTS.md` §4: kein behauptetes Gate/Target ohne Deckung).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      2 MEDIUM (F-1: fehlende GHCR-Authentifizierung für private Pakete;
+      F-2: instabiler Slice-Plan-Pfadverweis im Workflow-Kommentar) und
+      2 LOW (F-3: fehlendes `--image-src remote`; F-4: Tippfehler) in
+      derselben Fixrunde behoben, kein offenes HIGH.
 - [ ] Doku-Update für `harness/README.md` §Werkzeuge — entfällt als
       eigener Punkt, da bereits §2 oben dieselbe Zeile explizit als
       DoD-Kriterium trägt.
@@ -86,6 +101,8 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 | `Makefile` | update | neues `image-cve`-Target, Trivy-Aufruf gegen `ghcr.io/pt9912/pg-change-feed:latest`, gepinntes Trivy-Image (Digest-Pin, Modul 14). |
 | `.github/workflows/image-scan.yml` | neu | `schedule` + `workflow_dispatch`, ruft `make image-cve` auf, `permissions: {}` mit gezielter Lockerung. |
 | `harness/README.md` §Werkzeuge | update | reale `make image-cve`-Zeile, „Nicht behauptet (geplant)"-Absatz entfernt. |
+| `Makefile` (`image-cve`-Target) | update (Plan-Nachzug, Fixrunde) | Reviewer-Finding F-1: GHCR-Pakete aus `GITHUB_TOKEN`-Pushes entstehen unabhängig von der Repo-Sichtbarkeit privat — `GHCR_USERNAME`/`GHCR_PASSWORD` (optional) authentifizieren über Trivys eigene Flags; `--image-src remote` (F-3) verhindert unnötige lokale Runtime-Proben. |
+| `.github/workflows/image-scan.yml` | update (Plan-Nachzug, Fixrunde) | `packages: read` + `GHCR_USERNAME`/`GHCR_PASSWORD` aus `github.actor`/`secrets.GITHUB_TOKEN` (F-1); stabiler Slice-Bezug statt Lifecycle-Pfad im Kommentar (F-2); Tippfehler behoben (F-4). |
 
 ## 4. Trigger
 
@@ -116,8 +133,18 @@ geschrieben.
   Implementierungsfehler. **Ausgang:** eingetreten und real bestätigt
   (`make image-cve` real ausgeführt: Trivy lud seine Vulnerability-DB und
   scheiterte danach korrekt mit einem GHCR-„DENIED"-Fehler auf das nicht
-  existierende `:latest`-Tag) — löst sich strukturell mit dem ersten
-  echten Release, kein weiterer Implementierungsschritt nötig.
+  existierende `:latest`-Tag).
+- Review-Finding F-1: ein per `GITHUB_TOKEN` gepushtes GHCR-Paket entsteht
+  unabhängig von der Repo-Sichtbarkeit privat — ohne Authentifizierung
+  bliebe der `DENIED`-Fehler nach dem ersten Release bestehen, nur aus
+  einem anderen Grund. **Ausgang:** eingetreten, in derselben Fixrunde
+  behoben (`GHCR_USERNAME`/`GHCR_PASSWORD` über Trivys eigene Flags,
+  `packages: read`-Permission in `image-scan.yml`) — der volle
+  Authentifizierungspfad gegen ein tatsächlich privates GHCR-Paket bleibt
+  bis zum ersten echten Release strukturell unverifiziert (ein lokaler
+  Nachbau mit einer passwortgeschützten Test-Registry scheiterte an einer
+  bekannten `htpasswd`/bcrypt-Inkompatibilität der `registry:2`-Referenz-
+  implementierung, kein Befund gegen die hier gewählte Lösung selbst).
 - `AGENTS.md` §3.10 gilt für `image-scan.yml` als neuen Workflow
   unverändert: `make gates` grün belegt nicht, dass der reale
   Post-Push-Lauf grün läuft. **Ausgang:** weiter offen, strukturell
