@@ -18,7 +18,7 @@ Festlegung 1 (Umfang — HTTP-API only), [`ADR-0057`](../../adr/0057-http-grpc-a
 verändert sie nicht), [`SPEC-022`](../../../../spec/pflichtenheft.md)
 (Changes-Lesen).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent (direkt beauftragt).
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0107` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-19.
