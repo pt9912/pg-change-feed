@@ -38,7 +38,12 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-Keine offene Welle.
+- [welle-release-pipeline-adr-0051](../welle-release-pipeline-adr-0051.md) —
+  Release-Pipeline gemäß [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
+  vollständig umsetzen.
+
+Kein Slice dieser Welle liegt aktuell in `in-progress/` — alle fünf
+liegen noch in `open/` (Welle eröffnet, noch nicht beansprucht).
 
 ## Nächste Wellen
 
@@ -120,11 +125,14 @@ flowchart LR
     W18[welle-18: Spaltenauswahl — Antrags-Queue-Erweiterung, Assembler-Filterung]
     W19[welle-19: Live-Change-Streaming — gRPC-Server-Streaming und HTTP/SSE]
     W20[welle-20: Coverage 80 % über der netzlos prüfbaren Fläche]
+    A0051[ADR-0051 Accepted]
+    WREL[welle-release-pipeline-adr-0051: Release-Pipeline gemäß ADR-0051]
 
     A58 --> W17
     A59 --> W18
     A6061 --> W19
     S079 --> W20
+    A0051 --> WREL
 ```
 
 ## Abgeschlossene Wellen
