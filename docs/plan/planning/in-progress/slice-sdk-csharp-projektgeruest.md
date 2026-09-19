@@ -81,9 +81,10 @@ leeres/minimales öffentliches API-Skelett — ohne jeden Import aus
       Duplikat der Draht-Doku (`SPEC-018`/`SPEC-020` bleiben die
       kanonische Quelle).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor —
+      [`review-slice-sdk-csharp-projektgeruest.md`](../../../reviews/review-slice-sdk-csharp-projektgeruest.md)
+      (0 HIGH, 0 MEDIUM, 1 LOW ohne Fixrunde; Nachzug nach Skill-Regel
+      „DoD-Checkbox-Nachzug ohne Fixrunde").
 - [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-csharp-pack-werkzeug`).
