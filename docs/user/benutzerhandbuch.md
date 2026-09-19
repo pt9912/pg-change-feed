@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.30
+Version: 1.31
 Software-Version: 0.2.0-verdrahtung
-Stand: 2026-09-18
+Stand: 2026-09-19
 
 ## 1. Einleitung
 
@@ -474,9 +474,14 @@ Verfügbare Kennzahlen: `cdc_transactions_total`, `cdc_changes_processed`,
 `cdc_oldest_change_age_seconds`, `cdc_capture_lag` (Abstand zwischen der
 letzten Quelländerung und der CDC-Verfügbarkeit, gemessen über den
 Commit-Zeitstempel aus dem WAL), `cdc_consumer_position` und
-`cdc_consumer_lag` je registriertem Consumer, sowie `cdc_storage_bytes`
-(`LH-FA-RET-006`, physische Speichergröße von `cdc.change` über
-`pg_relation_size` — der mit dem Erfassungsvolumen wachsenden Tabelle).
+`cdc_consumer_lag` je registriertem Consumer, `cdc_changes_pending`
+(`LH-QA-OPS-003`, Label = Consumer-ID, Wert = Anzahl noch nicht
+bestätigter Changes dieses Consumers), `cdc_errors_total` (`LH-QA-OPS-003`,
+Label = Fehlerklasse aus `cdc.process_heartbeat.error_class`, Wert =
+Anzahl der Quellen aktuell in dieser Fehlerklasse), sowie
+`cdc_storage_bytes` (`LH-FA-RET-006`, physische Speichergröße von
+`cdc.change` über `pg_relation_size` — der mit dem Erfassungsvolumen
+wachsenden Tabelle).
 
 `cdc_wal_retention_bytes` (WAL-Rückstand des Capture-Slots, `SPEC-009`)
 steht **nicht** in `cdc.metrics`: Die Erhebung braucht Systemkatalog-Zugriffe
@@ -1113,3 +1118,4 @@ MIT — siehe `LICENSE`.
 | 1.28 | 2026-09-18 | Dritter, vollinhaltstragender NATS-Zustellweg ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-core): neuer §4-Abschnitt „Zugriff über den NATS-Vollinhalts-Stream" (Subjekt-Namensraum `cdc.stream.<...>`, dasselbe Nachrichtenschema wie SSE, Zwei-Bedingungen-Aktivierung, serverweite Auth-Nebenwirkung auf das Wecksignal); §5 trägt die neue Variable `CDC_NATS_STREAM_TOKEN` und die auf sieben Schlüssel (drei DSN, drei Token, `nats_url`) gewachsene Zugangsdaten-Klasse der Konfigurationsdatei (`nats_stream_token` neu) |
 | 1.29 | 2026-09-18 | Erster Go-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-go): §4 „Zugriff über den NATS-Vollinhalts-Stream" — der Platzhalter-Absatz wird zu einem `**Beispiele:**`-Block (zunächst nur Go); `examples/nats-stream-client` abonniert `cdc.stream.>` und gibt jede empfangene Change aus, über einen Container-Aufruf (`make example-run-go SURFACE=nats-stream`, Image-Tag `pg-change-feed-examples:go-nats-stream`) |
 | 1.30 | 2026-09-18 | C#- und Kotlin-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-csharp-kotlin): §4 „Zugriff über den NATS-Vollinhalts-Stream" — `**Beispiele:**`-Block komplettiert; `examples/csharp/nats-stream-client` und `examples/kotlin/nats-stream-client` abonnieren `cdc.stream.>` und geben jede empfangene Change aus, über einen Container-Aufruf (`make example-run-csharp`/`make example-run-kotlin SURFACE=nats-stream`, Image-Tags `pg-change-feed-examples:csharp-nats-stream`/`:kotlin-nats-stream`). Mit dieser Zeile ist die volle Matrix (fünf Zugriffs-Oberflächen × drei Sprachen, fünfzehn Programme) im Handbuch vollständig |
+| 1.31 | 2026-09-19 | `cdc_changes_pending`/`cdc_errors_total`-Metriken nachgetragen (`LH-QA-OPS-003`, slice-e2e-drei-rtm-luecken): §4 „Metriken lesen" — beide Kennzahlen existierten in `cdc.metrics` bereits seit diesem Slice, waren aber nicht im Handbuch-Text genannt |
