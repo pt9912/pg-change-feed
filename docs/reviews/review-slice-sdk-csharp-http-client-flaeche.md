@@ -8,7 +8,7 @@ Review-Arten). Kein DoD-Abgleich — das ist Verifier-Aufgabe (Modul 11).
 **Gegenstand:** Diff-Range `36f147fa..HEAD` (Abschluss von
 `slice-sdk-csharp-projektgeruest` bis Implementer-Commit dieses Slice),
 Slice `slice-sdk-csharp-http-client-flaeche`, Welle
-[`welle-sdk-csharp-lh-fa-sst-009`](../plan/planning/welle-sdk-csharp-lh-fa-sst-009.md).
+`welle-sdk-csharp-lh-fa-sst-009`.
 Vier Commits: `2c347c29` (open→next, reiner Move), `7bb5ef16`
 (Verantwortlich gesetzt, nur Slice-Datei), `d8c1493d` (next→in-progress,
 reiner Move), `c6db11b2` (Inhalt: `PgChangeFeedHttpClient` + Modelle +

@@ -7,7 +7,7 @@ Review-Arten).
 
 **Gegenstand:** Diff-Range `8606c8a1..f43f03f0` (Welle-Eröffnung bis
 Implementer-Commit), Slice `slice-sdk-csharp-projektgeruest`,
-Welle [`welle-sdk-csharp-lh-fa-sst-009`](../plan/planning/welle-sdk-csharp-lh-fa-sst-009.md).
+Welle `welle-sdk-csharp-lh-fa-sst-009`.
 Vier Commits: `810944df` (open→next, reiner Move), `4a19a505`
 (Verantwortlich gesetzt, nur Slice-Datei), `348a7cf8` (next→in-progress,
 reiner Move), `f43f03f0` (Inhalt: neuer Baum `sdks/csharp/`).

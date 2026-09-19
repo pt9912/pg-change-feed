@@ -11,7 +11,7 @@ inkl. Fixrunden-Nachprüfung) und **nicht** gegen realen Bedarf (Validator,
 hier nicht ausgelöst).
 
 **Gegenstand:** Slice `slice-sdk-csharp-http-client-flaeche`, Welle
-[`welle-sdk-csharp-lh-fa-sst-009`](../plan/planning/welle-sdk-csharp-lh-fa-sst-009.md).
+`welle-sdk-csharp-lh-fa-sst-009`.
 `HEAD` = `5fd673d698666758d01d8f6570f47c2c1a7c653b`, Arbeitsbaum sauber
 (`git status --short` leer, vor und nach dieser Verifikation).
 

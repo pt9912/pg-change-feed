@@ -10,7 +10,7 @@ und **nicht** gegen realen Bedarf (Validator, hier nicht ausgelöst).
 
 **Gegenstand:** Diff-Range `8606c8a1..5769fbb2` (Welle-Eröffnung bis
 Review-Report-Commit), Slice `slice-sdk-csharp-projektgeruest`, Welle
-[`welle-sdk-csharp-lh-fa-sst-009`](../plan/planning/welle-sdk-csharp-lh-fa-sst-009.md).
+`welle-sdk-csharp-lh-fa-sst-009`.
 `HEAD` = `5769fbb2c6f81a3a961bc414a604e595e215d327`, Arbeitsbaum sauber
 (`git status --short` leer, vor und nach dieser Verifikation).
 

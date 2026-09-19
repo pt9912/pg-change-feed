@@ -10,7 +10,7 @@ inkl. Fixrunden-Nachprüfung F-1 behoben) und **nicht** gegen realen Bedarf
 (Validator, hier nicht ausgelöst).
 
 Dieser Slice ist der **letzte** der Welle
-[welle-sdk-csharp-lh-fa-sst-009](../plan/planning/welle-sdk-csharp-lh-fa-sst-009.md) —
+`welle-sdk-csharp-lh-fa-sst-009` —
 entsprechend gründlich geprüft: jede DoD-Zeile einzeln, drei unabhängige
 Testläufe, eigener `make gates`-Lauf, eigene Traceability-/Immutabilitäts-
 Läufe über den exakten Diff-Bereich, eigene Live-GitHub-Prüfung (Tags,

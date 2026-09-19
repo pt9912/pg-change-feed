@@ -6,9 +6,9 @@
 
 ## Was wurde geliefert?
 
-[`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) (`Accepted`)
+[`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) (`Accepted`)
 vollständig umgesetzt — das erste offizielle Client-Bibliothek-Package für
-[`LH-FA-SST-009`](../../../spec/lastenheft.md), in fünf Slices:
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md), in fünf Slices:
 
 - **`slice-sdk-csharp-projektgeruest`**: `sdks/csharp/PgChangeFeed.Client/`
   neu angelegt — `.csproj` mit NuGet-Metadaten (`PackageId=PgChangeFeed.Client`,
@@ -120,7 +120,7 @@ Feststellung.
   erwartbaren Schwankung, kein struktureller Rückgang durch diese Welle.
   `.a-check.yml` `languages: go` liest `sdks/csharp/**` strukturell nicht
   (real bestätigt: `a-check` meldet 0 Befunde auf dem Endstand).
-- **Entscheidung/ADR:** [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md)s
+- **Entscheidung/ADR:** [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)s
   Re-Evaluierungs-Trigger sind durch diese Welle **nicht** ausgelöst:
   - Trigger 1 (zweite Sprache/zweiter Vertriebsweg verlangt) — nicht
     eingetreten; diese Welle liefert ausschließlich C#/NuGet, out-of-scope
