@@ -23,8 +23,22 @@ include harness/mk/*.mk
 include a-check.mk
 
 .PHONY: image
-image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (lokal, nicht committet — ADR-0103)
+# Mit VERSION=<semver> (ADR-0051): ein Build, Push nach GHCR UND Docker Hub
+# (Content-Mirror statt zweitem Build); LATEST=true setzt zusaetzlich
+# :latest auf beiden Registries (nur fuer stabile, nicht-Prerelease Tags —
+# das entscheidet der Aufrufer, release.yml). Ohne VERSION unveraendertes
+# Verhalten: lokal geladen, nur :dev (ADR-0044/ADR-0103).
+ifdef VERSION
+image: ## Baut und pusht das OCI-Image nach GHCR+Docker Hub (VERSION=<semver>, optional LATEST=true — ADR-0051)
+	docker buildx build --push \
+	  -t ghcr.io/pt9912/pg-change-feed:$(VERSION) \
+	  -t docker.io/pt9912/pg-change-feed:$(VERSION) \
+	  $(if $(filter true,$(LATEST)),-t ghcr.io/pt9912/pg-change-feed:latest -t docker.io/pt9912/pg-change-feed:latest,) \
+	  --metadata-file harness/image-hash.raw . && grep -o '"containerimage.digest":[[:space:]]*"sha256:[0-9a-f]*' harness/image-hash.raw | head -1 | grep -o 'sha256:[0-9a-f]*' > harness/image-hash.txt && rm harness/image-hash.raw
+else
+image: ## Baut das OCI-Image; Image-Hash nach harness/image-hash.txt (lokal, nicht committet — ADR-0103); VERSION=<semver> fuer den Multi-Registry-Push (ADR-0051)
 	docker buildx build --load --metadata-file harness/image-hash.raw -t ghcr.io/pt9912/pg-change-feed:dev . && grep -o '"containerimage.digest":[[:space:]]*"sha256:[0-9a-f]*' harness/image-hash.raw | head -1 | grep -o 'sha256:[0-9a-f]*' > harness/image-hash.txt && rm harness/image-hash.raw
+endif
 
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh

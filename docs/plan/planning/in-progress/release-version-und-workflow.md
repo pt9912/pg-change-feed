@@ -58,12 +58,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `docs/user/version.md` existiert, trägt genau eine Zeile: die
+- [x] `docs/user/version.md` existiert, trägt genau eine Zeile: die
       aktuelle Version als SemVer-2.0-String (`MAJOR.MINOR.PATCH[-PRERELEASE]`,
       ohne führendes `v`) — erste Version frei wählbar (z. B. `0.1.0` oder
       die bereits im Handbuch geführte `0.2.0-verdrahtung`-Zeile
-      übernehmen, Entscheidung des Implementer-Laufs).
-- [ ] `make image` akzeptiert einen `VERSION`-Parameter (`make image
+      übernehmen, Entscheidung des Implementer-Laufs). Umgesetzt: `0.1.0`.
+- [x] `make image` akzeptiert einen `VERSION`-Parameter (`make image
       VERSION=1.2.3`): baut über **einen** `docker buildx build`-Lauf und
       pusht (`--push`, kein `--load`) nach GHCR **und** Docker Hub mit dem
       Versions-Tag auf beiden Registries (Content-Mirror,
@@ -72,18 +72,24 @@ Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
       (nicht-Prerelease) `VERSION`-Wert zusätzlich gesetzt, auf beiden
       Registries. Ohne `VERSION` bleibt das bestehende Verhalten
       (`--load`, nur `:dev`, [`ADR-0044`](../../adr/0044-image-beleg-semantik.md))
-      unverändert.
-- [ ] `release.yml` existiert: Trigger `push: tags: ['v*']`; ein erster
+      unverändert — real gegen zwei lokale Registry-Container geprüft:
+      derselbe Digest auf allen vier Tag/Registry-Kombinationen
+      (`docker buildx imagetools inspect`, siehe §7).
+- [x] `release.yml` existiert: Trigger `push: tags: ['v*']`; ein erster
       Schritt validiert den Tag fail-fast strikt gegen SemVer 2.0 **und**
       gegen den Wert in `docs/user/version.md` am getaggten Commit (Abbruch
       bei jeder Abweichung, vor jedem Login/Build/Push); baut über
       `make image VERSION=<validierte Version>`; legt danach ein
       GitHub-Release an, dessen Beschreibungstext den Image-Digest trägt.
-- [ ] `make gates` grün.
+      YAML-Struktur und jeder `run:`-Schritt syntaktisch geprüft (Ruby-
+      Stdlib-YAML-Parser bzw. `bash -n`, siehe §7) — der reale
+      Post-Push-Lauf bleibt unverifiziert (`AGENTS.md` §3.10, §6).
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für <Schnittstelle X> falls öffentlicher Vertrag berührt.
+- [ ] Doku-Update für `harness/README.md` (`make image`-Zeile mit dem
+      neuen `VERSION`/`LATEST`-Verhalten, neue `release.yml`-Zeile).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben, **falls dieser Slice einen Inventur-Fund auflöst** — Zeile mit Datum und auflösendem Artefakt nach *Aufgelöste Einträge* verschoben. Repos ohne Brownfield-Bootstrap haben die Datei nicht; dann entfällt das Item.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.

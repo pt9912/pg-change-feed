@@ -1,0 +1,111 @@
+---
+name: release
+
+# Release-Workflow (ADR-0051 Entscheidung 3): Trigger ausschliesslich
+# Git-Tags der Form `v<SemVer>` (`ci.yml`/`e2e.yml` schliessen Tag-Pushes
+# per `tags-ignore: ['**']` aus — kein Doppellauf).
+#
+# Ablauf: Tag strikt gegen SemVer 2.0 validieren, dann gegen
+# `docs/user/version.md` am getaggten Commit abgleichen (Abbruch bei jeder
+# Abweichung, vor jedem Login/Build/Push, ADR-0051 Entscheidung 1) — baut
+# danach ueber `make image VERSION=<validierte Version>` (Docker-only,
+# AGENTS.md §3.1: kein separater `docker build`-Aufruf ausserhalb `make`),
+# ein Build, Push nach GHCR UND Docker Hub (Content-Mirror, ADR-0051
+# Entscheidung 2 Option D); `:latest` nur bei einem stabilen
+# (nicht-Prerelease) Tag, auf beiden Registries (`LATEST=true`). Legt
+# abschliessend ein GitHub-Release mit dem Image-Digest im
+# Beschreibungstext an — ueber die auf GitHub-hosted Runnern
+# vorinstallierte `gh`-CLI (reine Workflow-Mechanik, kein `make`-Target zu
+# duplizieren, ADR-0051 §Konsistenz-Pruefung), kein zusaetzlich gepinnter
+# Release-Action-Fork noetig.
+#
+# Docker-Hub-Zugangsdaten (`DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`) sind
+# Repository-Secrets, die dieser Workflow referenziert, aber nicht anlegt
+# (externe Kontohandlung, Welle-Datei
+# `docs/plan/planning/welle-release-pipeline-adr-0051.md` §6) — ihr
+# tatsaechliches Vorhandensein bleibt bis zum ersten echten Release
+# unbewiesen (AGENTS.md §3.10 analog).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  push:
+    tags:
+      - 'v*'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  release:
+    name: Version validieren, Image bauen und pushen, GitHub-Release anlegen
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag gegen SemVer 2.0 validieren
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          semver_re='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          if ! [[ "$version" =~ $semver_re ]]; then
+            echo "::error::Tag $tag ist kein gueltiger v<SemVer-2.0>-Tag (geprueft ohne fuehrendes v: '$version')"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_ENV"
+
+      - name: docs/user/version.md gegen den Tag abgleichen
+        run: |
+          file_version="$(tr -d '[:space:]' < docs/user/version.md)"
+          if [ "$file_version" != "$version" ]; then
+            echo "::error::docs/user/version.md ('$file_version') weicht vom Tag ('$version') ab"
+            exit 1
+          fi
+
+      - name: Stabilitaet ermitteln (kein Prerelease-Suffix -> zusaetzlich :latest)
+        run: |
+          case "$version" in
+            *-*) echo "latest=false" >> "$GITHUB_ENV" ;;
+            *) echo "latest=true" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Docker Buildx einrichten
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Bei GHCR anmelden
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bei Docker Hub anmelden
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Image bauen und pushen (make image)
+        run: make image VERSION="$version" LATEST="$latest"
+
+      - name: GitHub-Release anlegen (Digest-Pin im Beschreibungstext)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          digest="$(cat harness/image-hash.txt)"
+          {
+            printf 'Image-Digest: `%s`\n\n' "$digest"
+            printf -- '- `ghcr.io/pt9912/pg-change-feed:%s`\n' "$version"
+            printf -- '- `docker.io/pt9912/pg-change-feed:%s`\n' "$version"
+            if [ "$latest" = "true" ]; then
+              printf -- '- `ghcr.io/pt9912/pg-change-feed:latest`\n'
+              printf -- '- `docker.io/pt9912/pg-change-feed:latest`\n'
+            fi
+          } > release-notes.md
+          gh release create "$GITHUB_REF_NAME" --title "v$version" --notes-file release-notes.md
