@@ -20,8 +20,8 @@ license = "MIT"
 authors = [{ name = "pt9912" }]
 requires-python = ">=3.14"
 # Einzige Fremdabhaengigkeit (ADR-0107 Festlegung 1: httpx, keine weitere,
-# keine schwere Fremdabhaengigkeit) -- die HTTP-Client-Flaeche selbst folgt
-# erst mit slice-sdk-python-http-client-flaeche.
+# keine schwere Fremdabhaengigkeit) -- wird von der HTTP-API-Client-Flaeche
+# (src/pgchangefeed/http_client.py) fuer die HTTP-Requests genutzt.
 dependencies = [
     "httpx>=0.27",
 ]

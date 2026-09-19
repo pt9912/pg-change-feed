@@ -148,6 +148,40 @@ gegen `SPEC-018`/`SPEC-022` selbst geprüft, nicht gegen den C#-Code
   (ein Kommentar, kein Import, aber derselbe Grep-Treffer). Umformuliert
   ohne den wörtlichen Pfad; `grep`-Lauf danach real 0 Treffer.
 
+**Fixrunde nach Review (`docs/reviews/review-slice-sdk-python-http-client-flaeche.md`, 1 HIGH, 1 MEDIUM):**
+
+- **F-1 (HIGH) behoben:** `sdks/python/pgchangefeed/pyproject.toml:22-24`
+  behauptete weiterhin „die HTTP-Client-Flaeche selbst folgt erst mit
+  slice-sdk-python-http-client-flaeche" — der vorherige Träger-Nachzug-
+  Suchlauf (`grep -rn "follow-up\|added by" sdks/python/README.md
+  sdks/python/pgchangefeed/src/pgchangefeed/*.py`) deckte weder die
+  deutsche Formulierung „folgt erst" noch `pyproject.toml` (Glob schloss
+  es aus) ab. Kommentar auf den Ist-Zustand gehoben (httpx wird von der
+  jetzt vorhandenen HTTP-API-Client-Fläche genutzt), ohne Slice-Namen
+  (`AGENTS.md` §3.7). Erweiterter Suchlauf danach real ausgeführt:
+  `grep -rniE "follow-up|added by|folgt erst|folgt mit|noch nicht|steht
+  noch aus" sdks/python/` — drei Treffer: `README.md:9` und
+  `__init__.py:7` (beide bereits korrekt, beziehen sich ausschließlich
+  auf gRPC/SSE/NATS außerhalb dieses Pakets, kein Drift) sowie
+  `Dockerfile:8` (bezieht sich auf eine `pack`-Stufe für einen anderen,
+  noch nicht gestarteten Folge-Slice — bleibt zutreffend, dieser Slice
+  fügt keine `pack`-Stufe hinzu). Keine weitere Fundstelle.
+- **F-2 (MEDIUM) dokumentiert, nicht per Amend korrigiert:** Die
+  Commit-Message von `314b51f6` nennt „23 pytest-Tests" für eine
+  Kategorisierung (Happy Path/Auth-Boundary/Statuscode-Mapping/malformter
+  Body), die real nur **20** trägt — die „23" stimmt nur als Gesamtsumme
+  inkl. der 3 vorbestehenden, unter keine der genannten Kategorien
+  fallenden `ClientOptions`-Tests aus `test_options.py`
+  (Vorgänger-Slice `slice-sdk-python-projektgeruest`). Nachgezählt:
+  `test_http_client.py` = 20 Tests (Happy Path je der zehn Fähigkeiten,
+  Auth-Boundary `401`/`403`, Statuscode-Mapping `400`/`404`/`500`/
+  unerwartet, malformter `2xx`-Body), `test_options.py` = 3 Tests
+  (vorbestehend, unrelated), Summe = 23 — deckt sich mit dem realen
+  Docker-Testlauf „23 passed". Der Commit selbst wird nicht per
+  `--amend` korrigiert (bereits gelandet, bereits reviewt) — diese
+  Klarstellung ist der Beleg-Träger für die korrekte Zahl (`AGENTS.md`
+  §3.12).
+
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `slice-sdk-python-projektgeruest`
