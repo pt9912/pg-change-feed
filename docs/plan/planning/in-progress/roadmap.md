@@ -38,6 +38,8 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md) — Zweites SDK-Package (Python/PyPI, `pgchangefeed`) für `LH-FA-SST-009` (`ADR-0107`).
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -124,6 +126,8 @@ flowchart LR
     WREL[welle-release-pipeline-adr-0051: Release-Pipeline gemäß ADR-0051]
     A0106[ADR-0106 Accepted]
     WSDK[welle-sdk-csharp-lh-fa-sst-009: Erstes C#/NuGet-SDK-Package]
+    A0107[ADR-0107 Accepted]
+    WSDKPY[welle-sdk-python-lh-fa-sst-009: Zweites SDK-Package Python/PyPI]
 
     A58 --> W17
     A59 --> W18
@@ -131,6 +135,7 @@ flowchart LR
     S079 --> W20
     A0051 --> WREL
     A0106 --> WSDK
+    A0107 --> WSDKPY
 ```
 
 ## Abgeschlossene Wellen
