@@ -1,0 +1,20 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Gepinnte Paketversionen, analog examples/csharp/Directory.Packages.props
+       (ADR-0087 Festlegung 3, ADR-0090 Festlegung 4): exakte Versionen, keine
+       Bereiche. Dieselben Versionen wie im Beispiel-Baum, dort zuletzt am
+       2026-09-17 gemessen — dieses Package fügt keine eigene, neu zu
+       bewertende Fremdabhängigkeit hinzu; die drei Pakete tragen
+       ausschließlich den Testlauf (xUnit). Pin-Hebung ist ein bewusster
+       Commit, keine stille Auflösung. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+
+</Project>

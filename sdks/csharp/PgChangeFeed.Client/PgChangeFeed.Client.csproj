@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>PgChangeFeed.Client</RootNamespace>
+    <AssemblyName>PgChangeFeed.Client</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- NuGet-Metadaten (ADR-0106 Festlegung 2/3, Slice-DoD): dieses Projekt
+       ist ein eigenständiges, veröffentlichbares Package, kein Beispiel wie
+       examples/csharp/* (SPEC-023 bleibt Vorbild, kein Belegträger). Version
+       startet bei 0.1.0 (ADR-0106 Festlegung 3, unabhängig von
+       docs/user/version.md) — Pflege bei jedem Release ein bewusster Schritt,
+       keine automatische Ableitung. -->
+  <PropertyGroup>
+    <PackageId>PgChangeFeed.Client</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>pt9912</Authors>
+    <Description>Official .NET client library for PG Change Feed (HTTP API and gRPC change stream).</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/pt9912/pg-change-feed</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pt9912/pg-change-feed</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- README.md liegt eine Ebene höher (sdks/csharp/README.md, DoD dieses
+       Slice) — Sprachwurzel-Ebene, analog dem Dockerfile/
+       Directory.Packages.props dieses Bau-Kontexts, statt je Package
+       dupliziert. Der explizite PackagePath legt sie im .nupkg trotzdem an
+       die Wurzel, wo PackageReadmeFile sie erwartet. -->
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+
+  <!-- Der SDK-Style-Glob nimmt sonst auch die Testquellen des Unterordners
+       auf (PgChangeFeed.Client.Tests/ liegt innerhalb dieses
+       Projektverzeichnisses) — das Testprojekt referenziert diese Klassen
+       bereits über ProjectReference, analog examples/csharp/http-client. -->
+  <ItemGroup>
+    <Compile Remove="PgChangeFeed.Client.Tests/**" />
+  </ItemGroup>
+
+</Project>

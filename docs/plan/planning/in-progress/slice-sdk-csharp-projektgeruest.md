@@ -58,7 +58,7 @@ leeres/minimales öffentliches API-Skelett — ohne jeden Import aus
 
 ## 2. Definition of Done
 
-- [ ] `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` existiert:
+- [x] `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` existiert:
       `TargetFramework net10.0` (Analogie zu `examples/csharp/*.csproj`,
       dieselbe .NET-Generation), `PackageId=PgChangeFeed.Client`,
       `Version=0.1.0` (`ADR-0106` Festlegung 3, Start bei `0.x.y`),
@@ -68,27 +68,27 @@ leeres/minimales öffentliches API-Skelett — ohne jeden Import aus
       `PackageReference`/`ProjectReference` auf einen privaten Baum dieses
       Repos (`ADR-0106` §Kontext Bindung „Import-Grenze, hier ohne
       Ausnahme").
-- [ ] `sdks/csharp/Dockerfile` (Bau-Kontext `sdks/csharp/`, eigenständig von
+- [x] `sdks/csharp/Dockerfile` (Bau-Kontext `sdks/csharp/`, eigenständig von
       `examples/csharp/Dockerfile` und der Wurzel-`Dockerfile`) mit
       digest-gepinnter `mcr.microsoft.com/dotnet/sdk`-Basis (real gemessener
       Digest zum Bau-Zeitpunkt, Kommentar-Pflicht analog
       `examples/csharp/Dockerfile`); `dotnet restore`/`build` laufen darin,
       kein `dotnet run`/Runtime-Stufe nötig (ein SDK ist keine
       startbare Anwendung).
-- [ ] `sdks/csharp/README.md` (Englisch, Vorgabe aus dem Auftrag) beschreibt
+- [x] `sdks/csharp/README.md` (Englisch, Vorgabe aus dem Auftrag) beschreibt
       Zweck, Installationsweg (`dotnet add package PgChangeFeed.Client`) und
       verweist auf das Repo-Root-`README.md` für den vollen Kontext; kein
       Duplikat der Draht-Doku (`SPEC-018`/`SPEC-020` bleiben die
       kanonische Quelle).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
+- [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-csharp-pack-werkzeug`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo (kein Brownfield-Bootstrap).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -113,6 +113,28 @@ leeres/minimales öffentliches API-Skelett — ohne jeden Import aus
 | `sdks/csharp/README.md` | neu | Englisch, Installationsweg, Verweis auf Repo-Root-`README.md`. |
 | `sdks/csharp/.gitignore` | neu (optional) | `bin/`/`obj/`, analog `examples/csharp/.gitignore`. |
 | Testdatei (Platzhalter, falls das Skelett bereits eine echte Klasse trägt) | neu | Konstruktions-/Validierungstest der Optionsklasse (kein Draht-Verhalten, das kommt mit den Folge-Slices). |
+
+**Plan-Nachzug (Implementer-Zug, `AGENTS.md`-Konvention „im selben Lauf
+nachtragen"):**
+
+- `sdks/csharp/Directory.Packages.props` — in der Tabelle oben nicht
+  benannt, aber notwendig: Der Konstruktions-/Validierungstest der
+  Optionsklasse braucht xUnit (`Microsoft.NET.Test.Sdk`, `xunit`,
+  `xunit.runner.visualstudio`), zentral gepinnt analog
+  `examples/csharp/Directory.Packages.props` (dieselben, dort am
+  2026-09-17 gemessenen Versionen — keine neue, eigenständig zu bewertende
+  Fremdabhängigkeit).
+- Das Skelett zeigte tatsächlich einen echten gemeinsamen Nenner
+  (`PgChangeFeedClientOptions`: `Address`/`ApiToken`) — die ADR nennt ihn
+  bereits selbst (§Entscheidung Festlegung 1, „HTTP und gRPC teilen
+  Auth-Header-Form … und Grundkonfiguration"); die Testdatei liegt unter
+  `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/` (eigenes
+  Testprojekt, analog `examples/csharp/http-client/HttpClient.Tests/`),
+  nicht als loses „Platzhalter"-File.
+- `sdks/csharp/README.md` referenziert das Repo-Root-`README.md`/`LICENSE`
+  über absolute GitHub-Blob-URLs statt relativer Pfade — ein NuGet-Package
+  wird außerhalb dieses Repository-Checkouts gelesen (NuGet.org-Paketseite),
+  ein relativer Pfad wäre dort nicht auflösbar.
 
 ## 4. Trigger
 
