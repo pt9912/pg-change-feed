@@ -1,0 +1,80 @@
+---
+name: sdk-csharp-release
+
+# NuGet.org-Publish-Workflow fuer das C#-SDK-Package `PgChangeFeed.Client`
+# (ADR-0106 Festlegung 4, LH-FA-SST-009, slice-sdk-csharp-publish-workflow).
+# Trigger ausschliesslich Git-Tags der Form `sdk-csharp-v<SemVer>` — ein
+# EIGENER Tag-Namensraum, getrennt vom Server-Release-Raum `v*`
+# (ADR-0106 §Verglichene Alternativen E3 verworfen, Festlegung 3:
+# unabhaengige SDK-Versionierung). `ci.yml`/`e2e.yml` schliessen JEDEN
+# Tag-Push per `tags-ignore: ['**']` aus (ci.yml Zeile 40f., e2e.yml Zeile
+# 59f.), `release.yml` reagiert ausschliesslich auf `push: tags: ['v*']`
+# (release.yml Zeile 51f.) — `sdk-csharp-v*` matcht dieses Muster nicht
+# (kein Praefix-Ueberlappungs-Doppellauf; belegt im Bericht dieses Slice).
+#
+# Ablauf: Tag strikt gegen `sdk-csharp-v<SemVer-2.0>` validieren
+# (`tools/harness/sdk-csharp-release-tag-info.sh`, netzlos testbar ueber
+# `make test-sdk-csharp-release-tag-info` — teilt die SemVer-2.0-Regex mit
+# `tools/harness/release-tag-info.sh` ueber `tools/harness/semver-regex.sh`,
+# damit beide Stellen nicht unabhaengig voneinander driften,
+# slice-sdk-csharp-publish-workflow §6 Risiko 3), dann gegen die in
+# `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` gefuehrte
+# `<Version>` abgleichen (Abbruch bei jeder Abweichung, VOR jedem
+# Login/Build/Push — Muster `release.yml`s Tag-gegen-`docs/user/version.md`-
+# Abgleich, hier gegen die Projektdatei statt gegen eine Markdown-Datei).
+# Baut/testet/paketiert danach Docker-only ueber `make sdk-pack-csharp`
+# (AGENTS.md §3.1, ADR-0106 Festlegung 4) und veroeffentlicht das erzeugte
+# `.nupkg` per `dotnet nuget push` — die auf GitHub-hosted Ubuntu-Runnern
+# vorinstallierte `dotnet`-CLI (reine Workflow-Mechanik, kein `make`-Target
+# zu duplizieren, analog `release.yml`s `gh`-CLI-Nutzung und
+# `hub-description.yml`s `curl`/`jq`-Nutzung).
+#
+# Kein `:latest`-Aequivalent (NuGet kennt keins, ADR-0106 §1 Ausschluss),
+# kein GitHub-Release-Eintrag fuer das SDK (nicht Teil dieser Folgepflicht).
+#
+# `NUGET_API_KEY` ist ein Repository-Secret, das dieser Workflow
+# referenziert, aber nicht anlegt (externe Kontohandlung, dieselbe Klasse
+# wie `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN`, ADR-0051 Entscheidung 8) — sein
+# tatsaechliches Vorhandensein bleibt bis zum ersten echten Tag-Push
+# unbewiesen (AGENTS.md §3.10 analog).
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  push:
+    tags:
+      - 'sdk-csharp-v*'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  sdk-csharp-release:
+    name: Tag validieren, C#-SDK paketieren und nach NuGet.org veroeffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag validieren, Version ermitteln (tools/harness/sdk-csharp-release-tag-info.sh)
+        run: bash tools/harness/sdk-csharp-release-tag-info.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: PgChangeFeed.Client.csproj gegen den Tag abgleichen
+        run: |
+          csproj_version="$(grep -oE '<Version>[^<]+</Version>' sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj | sed -E 's#</?Version>##g')"
+          if [ "$csproj_version" != "$version" ]; then
+            echo "::error::PgChangeFeed.Client.csproj ('$csproj_version') weicht vom Tag ('$version') ab"
+            exit 1
+          fi
+
+      - name: C#-SDK bauen, testen, paketieren (make sdk-pack-csharp)
+        run: make sdk-pack-csharp
+
+      - name: Nach NuGet.org veroeffentlichen (dotnet nuget push)
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push sdks/csharp/dist/*.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json

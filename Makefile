@@ -106,6 +106,10 @@ image-cve: ## Advisory: Trivy CRITICAL/HIGH gegen das publizierte GHCR-:latest-I
 test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (SemVer-2.0-Validierung, ADR-0051, netzlos)
 	@bash tools/harness/run-release-tag-info-tests.sh
 
+.PHONY: test-sdk-csharp-release-tag-info
+test-sdk-csharp-release-tag-info: ## Tabellentest gegen tools/harness/sdk-csharp-release-tag-info.sh (SemVer-2.0-Validierung, ADR-0106, netzlos)
+	@bash tools/harness/run-sdk-csharp-release-tag-info-tests.sh
+
 .PHONY: test-dockerhub-token
 test-dockerhub-token: ## Tabellentest gegen tools/harness/dockerhub-token.sh (Docker-Hub-Login-Antwort-Parsing, ADR-0051, netzlos)
 	@bash tools/harness/run-dockerhub-token-tests.sh

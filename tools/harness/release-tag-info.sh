@@ -19,11 +19,13 @@ case "$tag" in
 esac
 
 # Offizielle SemVer-2.0-Regex (semver.org), auf POSIX-ERE (Bash `=~`)
-# übertragen — keine `(?:...)`-Gruppen, sonst identische Struktur:
-# numerische Identifier ohne führende Null (`0|[1-9][0-9]*`), alphanumerische
-# Identifier dürfen führende Nullen tragen (`[0-9]*[a-zA-Z-][0-9a-zA-Z-]*`).
-semver_re='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
-if ! [[ "$version" =~ $semver_re ]]; then
+# übertragen — geteilt mit tools/harness/sdk-csharp-release-tag-info.sh
+# über tools/harness/semver-regex.sh (ADR-0106 Festlegung 4, slice-
+# sdk-csharp-publish-workflow §6 Risiko 3), damit die Regex nicht an zwei
+# Stellen unabhängig driftet.
+# shellcheck source=tools/harness/semver-regex.sh
+. "$(dirname "${BASH_SOURCE[0]}")/semver-regex.sh"
+if ! [[ "$version" =~ $SEMVER_RE ]]; then
   echo "release-tag-info: Tag '$tag' ist kein gültiger v<SemVer-2.0>-Tag (geprüft ohne führendes v: '$version')" >&2
   exit 1
 fi
