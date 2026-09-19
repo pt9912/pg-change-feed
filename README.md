@@ -8,16 +8,23 @@ PG Change Feed stellt persistente Change Feeds für bestehende PostgreSQL-Tabell
 
 ## Was kann ich heute tun?
 
-Eine PostgreSQL-Quelle mit Logical Replication anbinden, Tabellen per
-SQL-Administration oder `CDC_TABLES` aktivieren, Änderungen dauerhaft
-erfassen (INSERT/UPDATE/DELETE, transaktionsgetreu) und per SQL lesen,
-mehrere unabhängige Consumer registrieren und ihre Position bestätigen,
-zeit- und consumer-basierte Retention mit sichtbaren Blockern betreiben,
-Schemaänderungen erkennen, Betriebsstatus/CLI-Diagnose/Metriken abfragen,
-rollenspezifische Zugriffsrechte (Least-Privilege) durchsetzen und neue
-Changes zusätzlich per NATS tabellen-granular signalisieren lassen —
-alles Ende-zu-Ende real getestet, über Umgebungsvariablen,
-`docker compose`/`make` und SQL, ohne grafische Oberfläche.
+Alles unten steht Ende-zu-Ende real getestet zur Verfügung — über
+Umgebungsvariablen, `docker compose`/`make` und SQL, ohne grafische
+Oberfläche.
+
+| Bereich | Was es tut |
+|---|---|
+| **Erfassung** | PostgreSQL-Quelle per Logical Replication anbinden; Tabellen per SQL-Administration (`cdc.enable_table`/`disable_table`) oder `CDC_TABLES` live (de)aktivieren; einzelne Spalten vom Erfassen ausschließen; Änderungen (INSERT/UPDATE/DELETE) transaktionsgetreu und dauerhaft speichern; Schemaänderungen an erfassten Tabellen erkennen. |
+| **Lesen** | Erfasste Änderungen per SQL (`cdc.changes`) lesen — oder über eine von vier Zustellwegen: HTTP-/JSON-API, gRPC-Stream, Server-Sent-Events oder NATS (Wecksignal oder vollständiger Change-Inhalt tabellen-granular). |
+| **Consumer** | Mehrere unabhängige Consumer registrieren, ihre Position bestätigen und fortsetzen — Duplikate werden stillen Lücken vorgezogen. |
+| **Aufbewahrung** | Zeit- und consumer-basierte Retention betreiben, blockierende Consumer sichtbar machen, bevor sie die Löschung verhindern. |
+| **Betrieb** | Betriebsstatus, CLI-Diagnose, Metriken und WAL-Rückstand abfragen. |
+| **Sicherheit** | Rollenspezifische Zugriffsrechte durchsetzen (`cdc_capture`/`cdc_admin`/`cdc_reader`, Least-Privilege — kein eigener Login, Zugriff läuft über die PostgreSQL-Verbindung selbst). |
+| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest). |
+
+Details und Beispiele je Zugriffsweg (Go, C#, Kotlin) stehen im
+[Benutzerhandbuch](docs/user/benutzerhandbuch.md); der volle Anforderungs-
+und Akzeptanzkriterien-Umfang in [`spec/lastenheft.md`](spec/lastenheft.md).
 
 Siehe:
 
