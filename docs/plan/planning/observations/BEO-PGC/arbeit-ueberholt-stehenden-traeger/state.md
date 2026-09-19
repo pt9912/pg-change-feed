@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **18×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **19×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,19 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der neunzehnte Beleg, `evidence/slice-sdk-python-publish-workflow.md`: eine
+**neue Form** innerhalb dieser Klasse — das überholende Ereignis liegt hier
+zum ersten Mal vollständig **außerhalb** jedes Commits und jeder
+Versionskontrolle (ein realer `sdk-csharp-v0.1.0`-Tag-Push samt `dotnet
+nuget push` gegen NuGet.org, beides Betreiber-Handlungen nach der
+`slice-sdk-csharp-publish-workflow`-Closure), das den Träger
+`docs/user/releasing.md` überholte, ohne dass ein Sensor oder Diff dieses
+Repos das je hätte zeigen können; gefunden hat es der Coordinator beim
+Gegenlesen des Nachbarabschnitts, nicht der auf den eigenen
+Slice-Gegenstand begrenzte §3.13-Suchlauf des Implementers — behoben in
+einem eigenständigen Commit (`38a137f7`), dreifach unabhängig gegen
+NuGet.org und `git tag -l` nachgeprüft (Reviewer, Verifier, Details in
+`evidence/slice-sdk-python-publish-workflow.md`).
 Der siebzehnte Beleg, `evidence/slice-sdk-csharp-http-client-flaeche.md`: Der
 Vorgänger-Slice
 (`slice-sdk-csharp-projektgeruest`) hatte `sdks/csharp/README.md` §Status

@@ -121,8 +121,8 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
 - [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfallen als eigene Punkte,
       da bereits oben als DoD-Kriterien geführt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — geprüft:
@@ -135,12 +135,15 @@ Artefakte aus `make sdk-pack-python` erzeugt und per `uv publish`
       PyPI-Namensraum-Risiko ist **entfallen** — `pgchangefeed` ist real
       frei (PyPI-API liefert `404`); das PEP-440-vs-SemVer-Regex-Risiko ist
       aufgelöst — eigenständige Regex, siehe §7).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
-      (noch offen); die Prüfung läuft regelkonform bei deren Closure — und
-      ist zugleich der **letzte** Slice der Welle, also auch der letzte
-      Anlass, die Welle-Closure selbst anzustoßen.
+      (Slice-Bezug oben gesetzt, kein Folge-Slice — letzter Slice der Welle
+      —, Register-Eintrag siehe §7); die **volle** Drei-Paarungen-Prüfung
+      der Welle selbst (Roadmap-Rückbindung, Wellen-Closure-Notiz) läuft
+      regelkonform bei der separaten, nachfolgenden Welle-Closure von
+      [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+      — dieser Slice ist zugleich der letzte Anlass, sie anzustoßen.
 
 ## 3. Plan (vor Code)
 
@@ -264,16 +267,90 @@ Welle-/Slice-Planungsdateien selbst). Kein weiterer, fremder Träger
 gefunden, der eine Eigenschaft dieses Slice beschreibt und nicht bereits
 nachgezogen wäre.
 
-**Beobachtungs-Register:** geprüft, keine neue Beobachtungsklasse
-angefallen — die drei realen Funde dieses Zuges (fehlendes
-`PYPI_API_TOKEN`, freier PyPI-Namensraum, PEP-440-Regex-Entscheidung)
-sind jeweils bereits als Risiko in §6 vorhergesehen und dort mit Ausgang
-versehen, keine neue Fehlerklasse.
+Ein zweiter, unabhängiger Fund entstand **nicht** aus diesem Suchlauf,
+sondern aus dem allgemeinen Gegenlesen benachbarter Abschnitte von
+`docs/user/releasing.md` während desselben Implementer-Zugs: zwei Absätze
+behaupteten dort weiterhin „kein realer `sdk-csharp-v*`-Tag gesetzt",
+obwohl `sdk-csharp-v0.1.0` bereits real gepusht und `PgChangeFeed.Client`
+0.1.0 bereits real auf NuGet.org veröffentlicht war — ein Ereignis
+außerhalb jedes Commits dieses Repos, nach der bereits abgeschlossenen
+`slice-sdk-csharp-publish-workflow`-Closure eingetreten. Behoben in einem
+eigenständigen, außerhalb dieser Slice-DoD stehenden Commit `38a137f7`
+(siehe §7 Beobachtungs-Register unten); Reviewer und Verifier haben die
+Korrektur unabhängig gegen NuGet.org und `git tag -l` nachgeprüft und für
+korrekt befunden.
 
-Review und Closure (Steering-Loop-Lerneintrag, finale DoD-Prüfung,
-Wellen-Bezug) folgen als eigener Rollenwechsel — dieser Implementer-Zug
-schließt den Slice bewusst **nicht** nach `done/` ab (kein Self-Review,
-`AGENTS.md` §6).
+**Beobachtungs-Register:**
+
+- **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — neuer, 19.
+  Beleg: `evidence/slice-sdk-python-publish-workflow.md`. Der
+  Coordinator-Fix-Commit `38a137f7` (siehe oben) ist eine **neue Form**
+  innerhalb dieser bereits verkörperten Klasse (`AGENTS.md` §3.13) — zum
+  ersten Mal liegt das überholende Ereignis vollständig **außerhalb**
+  jedes Commits und jeder Versionskontrolle (ein realer Tag-Push samt
+  NuGet-Publish, eine Betreiber-Handlung), nicht in einem Diff dieses
+  Repos. Kein Sensor und kein Diff dieses Repos hätte das je zeigen
+  können; gefunden hat es der Coordinator beim Gegenlesen des
+  Nachbarabschnitts, nicht der auf den eigenen Slice-Gegenstand
+  begrenzte §3.13-Suchlauf des Implementers. Ausgang bleibt
+  **verkörpert** — kein neuer Lese-Schritt, `AGENTS.md` §3.13 trägt die
+  neue Form bereits vollständig; `state.md` des Eintrags ist um diesen
+  Beleg und den aktualisierten Zähler (19×) fortgeschrieben.
+- **`BEO-PGC/report-nackte-id-ohne-link`** — geprüft, kein neuer Beleg:
+  Der Review-Report dieses Slice hat 0 HIGH/MEDIUM/LOW/INFO-Findings und
+  keine Fixrunde ausgelöst; weder im Review- noch im
+  Verifikationsbericht trat die dort belegte Fehlerklasse (nackte
+  Kennung ohne Backticks) auf.
+- Sonst kein neuer Beobachtungsklassen-Fund aus diesem sauberen
+  0-Findings-Zyklus — die drei bereits in §6 vorhergesehenen realen Funde
+  dieses Zuges (fehlendes `PYPI_API_TOKEN`, freier PyPI-Namensraum,
+  PEP-440-Regex-Entscheidung) sind jeweils bereits als Risiko dort
+  benannt und mit Ausgang versehen, keine neue Fehlerklasse.
+
+**Steering-Loop-Lerneintrag:** Kein neuer Sensor, keine geschärfte Regel.
+`AGENTS.md` §3.13 trägt den Coordinator-Fund bereits vollständig als
+seinen eigenen Geltungsbereich (Träger-Nachzug, unabhängig vom Anlass des
+Drifts) — der neunzehnte Beleg schärft die Klasse nicht durch eine neue
+Regel, sondern durch eine dokumentierte neue **Form** eines bereits
+geltenden Prinzips (überholendes Ereignis kann außerhalb jeder
+Versionskontrolle liegen), festgehalten im Beobachtungs-Register statt in
+einer neuen `AGENTS.md`-Zeile — dieselbe Praxis wie bei den vorigen
+Formvarianten desselben Eintrags (z. B. der selbstreferentiellen Variante
+bei `slice-095`).
+
+**Nebenfund — reale NuGet-Indexierung bestätigt:** Reviewer und Verifier
+dieses Slices haben unabhängig voneinander gegen
+`https://api.nuget.org/v3-flatcontainer/pgchangefeed.client/index.json`
+geprüft — `{"versions": ["0.1.0"]}` — und gegen `git tag -l
+"sdk-csharp-v*"` — `sdk-csharp-v0.1.0` existiert real. Beide Prüfungen
+bestätigen den Inhalt des Coordinator-Fix-Commits `38a137f7`
+unabhängig von der bloßen Commit-Message-Behauptung: das C#-SDK ist real
+auf NuGet.org indexiert und abrufbar, nicht nur gepusht.
+
+**Was hat funktioniert:** Der Slice-Plan sah die ADR-freie Form der
+Risiko-Ausgänge und den Träger-Nachzug-Suchlauf bereits vorab vor (§2/§3),
+keine Nachbesserung nötig. Reviewer (0 Findings) und Verifier (DoD
+erfüllt, vier unabhängige Reverifikationen inkl. dritter/vierter Instanz
+für SHA-Pins und PEP-440-Isolation) liefen beide sauber durch, ohne
+Fixrunde.
+
+**Was ging anders als geplant:** Der Coordinator-Fix (`38a137f7`) lag
+außerhalb der Slice-DoD, wurde aber vom Reviewer/Verifier dieses Slices
+mitgeprüft, weil er im selben Diff-Range lag — kein Widerspruch zum Plan
+(§1 nennt den Post-Push-Nachweis ausdrücklich als außerhalb dieses
+Slice-Scopes), aber ein reales Beispiel dafür, dass „außerhalb der DoD"
+nicht „außerhalb der Review-Sichtbarkeit" bedeutet.
+
+**Folge-Slices:** keiner — dies ist der letzte Slice der Welle
+`welle-sdk-python-lh-fa-sst-009`. Die Welle-Closure selbst
+(Drei-Paarungen-Prüfung auf Wellen-Ebene, Roadmap-Rückbindung,
+Wellen-Closure-Notiz) ist ein separater, nachfolgender Zug.
+
+Review (`docs/reviews/review-slice-sdk-python-publish-workflow.md`, 0
+Findings) und Verifikation
+(`docs/reviews/verifikation-slice-sdk-python-publish-workflow.md`, DoD
+erfüllt) liegen vor. Diese Planner-Closure schließt den Slice nach
+`done/` ab (kein Self-Review — anderer Rollenwechsel, `AGENTS.md` §6).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
