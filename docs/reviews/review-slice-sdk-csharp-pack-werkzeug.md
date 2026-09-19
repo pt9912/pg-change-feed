@@ -129,7 +129,7 @@ ergänzt — u. a. `AGENTS.md` §3.13 Träger-Nachzug, §3.9 Pipe-Disziplin).
 - Neue/geänderte Dateien nach Slice-/Wellen-Chronik-Mustern durchsucht
   (`AGENTS.md` §3.7): Treffer in `Dockerfile`, `harness/mk/sdk.mk`,
   `tools/harness/sdk-pack-csharp.sh`, `.gitignore` — durchweg in der
-  etablierten Herkunfts-Anker-Form („(slice-<name>, ADR-0106
+  etablierten Herkunfts-Anker-Form („(slice-<name>, `ADR-0106`
   Festlegung …)"), indikativ über den aktuellen Zustand, keine
   Vorher/Nachher-Erzählung; kein Treffer in `.cs`-Produktionscode (dieser
   Slice ändert keine `.cs`-Dateien).
