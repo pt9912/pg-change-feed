@@ -93,15 +93,15 @@ Token-Auth (`reader`/`admin`), eigene, netzlos prüfbare Tests
       `sdks/python/README.md` §Status wurde im selben Zug nachgezogen — der
       Absatz behauptete noch „is added by a follow-up release" für genau
       die HTTP-Client-Fläche, die dieser Slice real liefert.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -236,26 +236,126 @@ geschrieben.
   dem `ADR-0107` den Erst-Scope bewusst kleiner schneidet als beim
   C#-Package (§Entscheidung Festlegung 1) — die geringere Fläche senkt die
   Zahl der ungeprüften Annahmen, hebt das Risiko aber nicht auf null.
+  **Ausgang: weiter offen, strukturell (unverändert) — real gemindert
+  durch eine zweite, unabhängige Gegenprobe.** Der Reviewer prüfte jedes
+  Feld jeder Dataclass in `models.py` Feld für Feld gegen `SPEC-018`/
+  `SPEC-022` (keine Abweichung); die Verifikation hat dieselbe
+  Feld-für-Feld-Gegenprobe ein zweites Mal, unabhängig und ohne Rückgriff
+  auf den Review-Text, komplett neu durchgeführt
+  (`docs/reviews/verifikation-slice-sdk-python-http-client-flaeche.md`
+  §2) — ebenfalls keine Abweichung, für alle zehn Fähigkeiten plus die
+  zwölf `Change`-Felder inklusive `old_image`/`new_image`-Namensgebung und
+  `ListTablesResponse.retained`. Zwei komplette, unabhängige
+  Durchläufe ohne Abweichung senken das Risiko real — sie ersetzen aber
+  weiterhin nicht den einzigen Beleg, den ein Referenz-Client oder ein
+  realer Server-Rundlauf liefern könnte: eine Feld-für-Feld-Lektüre kann
+  eine falsch gelesene Spec-Zeile nicht entdecken, wenn beide Leser
+  dieselbe Zeile gleich falsch läsen. Der reale Rundlauf-Beleg bleibt
+  einem Folge-Slice vorbehalten.
 - Die Fehler-Antwortform (`{"error": "<Klartext>"}`) lässt sich auf
   unterschiedliche Arten in Python abbilden (Exception-Hierarchie vs.
   Ergebnis-Tupel/`Result`-Typ) — eine falsche Wahl bindet spätere Consumer
   an ein API-Design, das ein Major-Bump bräuchte, um es zu ändern.
-  **Ausgang:** weiter offen, entschieden beim Schreiben — `ADR-0107`
-  Festlegung 4 bindet die PEP-440-Major-Boundary an Draht-Änderungen,
-  nicht an dieses interne Design; ein API-Redesign bleibt vor `1.0.0`
-  folgenlos möglich.
+  **Ausgang: entschieden während der Umsetzung.** Der Implementer wählte
+  eine Exception-Hierarchie (`PgChangeFeedError` und typisierte
+  Unterklassen je Statuscode plus `PgChangeFeedMalformedResponseError`)
+  mit einem zentralen `_handle`-Helfer, der sowohl den Erfolgs- als auch
+  den Fehlerpfad aller zehn Methoden trägt (Review und Verifikation
+  bestätigen unabhängig: kein methodenspezifischer Zweitpfad umgeht ihn).
+  `ADR-0107` Festlegung 4 bindet die PEP-440-Major-Boundary an
+  Draht-Änderungen, nicht an dieses interne Design — ein API-Redesign
+  (z. B. hin zu einem `Result`-Typ) bleibt vor `1.0.0` folgenlos möglich.
 - Ein `httpx`-Mock-Transport für die Tests könnte reale Netzwerk-/
   Serialisierungs-Eigenheiten (z. B. Groß-/Kleinschreibung der
   JSON-Felder, Timeout-Verhalten) verdecken, die erst gegen einen echten
-  Server auffielen. **Ausgang:** weiter offen — ein realer Rundlauf-Beleg
-  bleibt `make test-integration`s bestehendem `tools/harness/httpclient`
-  vorbehalten (Wegwerf-Client, kein SDK-Import, `ADR-0068`); dieses SDK
-  bekommt frühestens mit einem Folge-Slice einen eigenen
-  Integrationsbeleg.
+  Server auffielen. **Ausgang:** weiter offen (unverändert) — ein realer
+  Rundlauf-Beleg bleibt `make test-integration`s bestehendem
+  `tools/harness/httpclient` vorbehalten (Wegwerf-Client, kein
+  SDK-Import, `ADR-0068`); dieses SDK bekommt frühestens mit einem
+  Folge-Slice einen eigenen Integrationsbeleg.
 
 ## 7. Closure-Notiz
 
-<…>
+- **Was hat funktioniert:** Der Implementer hatte den §3.13-Träger-Nachzug-
+  Suchlauf bereits vor dem Erstreview korrekt aus dem C#-Geschwister-Fund
+  gelernt und proaktiv angewandt (§3 Plan-Nachzug) — zwei Stellen
+  (`README.md`, `__init__.py`) wurden dadurch bereits vor dem ersten
+  Review korrigiert, anders als beim C#-Zyklus, wo derselbe README-Fund
+  erst dem Reviewer auffiel. Die Fehler-Antwortform (zentraler
+  `_handle`-Helfer für Erfolgs- **und** Fehlerpfad) hat beide bereits im
+  C#-Review gefundenen Findings-Klassen (methodenspezifischer Zweitpfad,
+  malformter 2xx-Erfolgskörper) von vornherein vermieden — Review und
+  Verifikation bestätigen das unabhängig voneinander mit einer
+  Negativbefund-Zeile. `make gates` blieb über den gesamten Zyklus
+  (Implementer, Reviewer-Erstlauf, Fixrunden-Nachprüfung, Verifikation,
+  diese Planner-Closure) durchgehend grün.
+- **Was ging anders als geplant:** Trotz des proaktiven, aus dem
+  C#-Vorkommen abgeleiteten Suchlaufs fand der Reviewer eine dritte,
+  strukturell identische Trägerstelle (F-1, HIGH): `pyproject.toml:22-24`
+  behauptete weiterhin, die HTTP-Client-Fläche „folge erst" mit genau
+  diesem Slice — der Suchlauf hatte weder die Datei (Glob schloss sie
+  aus) noch die deutsche Formulierung „folgt erst" (Wortmuster deckte nur
+  „follow-up"/„added by") erfasst. Fixrunde behob den Fund
+  (`d0da688b`), Fixrunden-Nachprüfung bestätigte unabhängig keine vierte
+  Stelle. Zusätzlich trat in der §Fixrunden-Nachprüfung des
+  Review-Reports selbst der wiederholt aufgetretene `id-unlinked`-
+  Docs-Check-Stolperstein erneut auf (nackte `ADR-0107`-Erwähnung in
+  einem zitierten Docstring-Ausschnitt, ohne Backticks) — vom Coordinator
+  über einen eigenen `docs-check`-Lauf gefunden und in einem eigenen
+  Commit (`7dd0ca68`) behoben, zwischen Fixrunden-Nachprüfung und
+  Verifikation. Die Verifikation selbst hielt zusätzlich eine
+  Beobachtung fest, die kein DoD-Verstoß ist, aber für künftige
+  SDK-Slices bewusst gehalten werden sollte: Die Auth-Boundary-Tests
+  (`401`/`403`) laufen nur **repräsentativ** über eine Methode
+  (`remove_consumer`), nicht je der zehn Methoden einzeln — begründet
+  über den zentralen `_handle`-Helfer, den ausnahmslos alle zehn Methoden
+  durchlaufen, also gibt es keinen methodenspezifischen Zweitpfad, der
+  einen Einzeltest bräuchte. Der Verifier stufte das als DoD-konform ein,
+  exakt dieselbe Struktur trägt bereits das C#-Geschwister-Package
+  (`PgChangeFeedHttpClientAuthBoundaryTests.cs`) — eine repo-konsistente,
+  aber bewusst nicht vollständige Testabdeckungsform, die ein künftiger
+  Reviewer/Verifier nicht neu herleiten muss.
+- **Steering-Loop-Eintrag:** Zwei Beobachtungs-Register-Einträge
+  fortgeschrieben, kein neuer Sensor:
+  - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (18. Beleg,
+    `evidence/slice-sdk-python-http-client-flaeche.md`): F-1 zeigt, dass
+    ein aus einem vorigen Vorkommen kopierter §3.13-Suchlauf zwei
+    unabhängige Lücken zugleich tragen kann — eine Datei-Glob-Lücke
+    (`pyproject.toml` nicht im Glob) und eine Sprach-/Wortmuster-Lücke
+    (nur englische Formulierungen gesucht, die tatsächliche Fundstelle
+    stand auf Deutsch). Beide Achsen (welche Dateien, welche
+    Formulierungen) müssen unabhängig breit genug gewählt werden; ein aus
+    dem letzten Fund übernommenes Muster garantiert keine Vollständigkeit
+    am nächsten, strukturell ähnlichen Vorgang. Kein neuer Sensor — die
+    Regel (`AGENTS.md` §3.13) bleibt Lese-/Suchlauf-Disziplin, kein
+    Gate-fähiges Muster.
+  - `BEO-PGC/report-nackte-id-ohne-link` (8. Beleg,
+    `evidence/slice-sdk-python-http-client-flaeche.md`): dritter realer
+    Beleg für den frühen Fang-Zeitpunkt „zwischen Reviewer- und
+    Verifier-Zug" (nach Beleg 7, `slice-sdk-csharp-grpc-client-flaeche`)
+    statt erst bei einem roten Verifier-`make gates`-Lauf (Beleg 6). Kein
+    neuer Lese-Schritt — die Regel (`AGENTS.md` §3.9, verkörpert seit
+    `slice-063`) trägt weiterhin.
+- **Folge-Slices:** `slice-sdk-python-pack-werkzeug`,
+  `slice-sdk-python-publish-workflow` — beide offen in
+  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md).
+- **Risiken aus §6:**
+  - „Kein Python-Referenz-Client — Draht-Treue nur gegen Spec-Tabellen
+    prüfbar" — **Ausgang: weiter offen, strukturell (unverändert)**, real
+    gemindert durch eine zweite, unabhängige Feld-für-Feld-Gegenprobe
+    (Reviewer + Verifikation, beide ohne Abweichung); kein realer
+    Server-Rundlauf-Beleg bisher.
+  - „Fehler-Antwortform-Design könnte binden" — **Ausgang: entschieden
+    während der Umsetzung** (Exception-Hierarchie inkl. zentralem
+    `_handle`-Helfer für Erfolgs- und Fehlerpfad); bleibt vor `1.0.0`
+    folgenlos änderbar.
+  - „`httpx`-Mock-Transport könnte reale Eigenheiten verdecken" —
+    **Ausgang: weiter offen (unverändert)**, ein realer Rundlauf-Beleg
+    bleibt einem Folge-Slice vorbehalten.
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-sdk-python-lh-fa-sst-009](../welle-sdk-python-lh-fa-sst-009.md)
+  (noch offen — Pack-Werkzeug und Publish-Workflow stehen aus) — die
+  Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

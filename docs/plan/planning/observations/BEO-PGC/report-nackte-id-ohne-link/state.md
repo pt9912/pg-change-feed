@@ -1,9 +1,10 @@
 Zustand: **verkörpert** (geändert ggü. dem ersten `gestrichen`-Verdikt bei
 3×) — liegt in `AGENTS.md` §3.9, neuer Absatz „Prüfung und Folgehandlung
 sind zwei Schritte, nicht einer" · `seit slice-063`. Zähler (abgeleitet):
-7× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
+8× (evidence/slice-054.md, evidence/slice-055.md, evidence/slice-056.md,
 evidence/slice-063-blocker.md, evidence/slice-068.md, evidence/slice-104.md,
-evidence/slice-sdk-csharp-grpc-client-flaeche.md).
+evidence/slice-sdk-csharp-grpc-client-flaeche.md,
+evidence/slice-sdk-python-http-client-flaeche.md).
 
 Der ursprüngliche `gestrichen`-Ausgang (3×, der erste Architect-Verdikt zu
 report-nackte-id-ohne-link)
@@ -56,3 +57,13 @@ Beleg 6. Details: `evidence/slice-sdk-csharp-grpc-client-flaeche.md`. Der
 Ausgang bleibt **verkörpert** — kein neuer Lese-Schritt; die Regel
 (`AGENTS.md` §3.9, verkörpert seit `slice-063`) trägt weiterhin, jetzt mit
 einem Beleg für einen früheren Fang-Zeitpunkt in derselben Klasse.
+
+**Beleg 8 — `slice-sdk-python-http-client-flaeche`, dritter Beleg für den
+frühen Fang-Zeitpunkt:** Dieselbe Fehlerklasse wie Beleg 7 (nackte
+`ADR-0107`-Erwähnung ohne Backticks, in einem zitierten Docstring-Ausschnitt
+der §Fixrunden-Nachprüfung), gefangen vom Coordinator zwischen
+Fixrunden-Nachprüfung und Verifikation (eigener Commit `7dd0ca68`), nicht
+erst bei einem roten Verifier-`make gates`-Lauf. Details:
+`evidence/slice-sdk-python-http-client-flaeche.md`. Der Ausgang bleibt
+**verkörpert** — kein neuer Lese-Schritt; drittes reales Vorkommen desselben
+frühen Fang-Zeitpunkts, jetzt aus der Python-SDK-Welle.

@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **17×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **18×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -18,8 +18,19 @@ in dieser Ordinal-Erzählung bislang unbenannte Belege
 `evidence/slice-rtm-reste-sst-cfg-por.md` — jede für sich bereits ein
 gültiger, in ihrer eigenen Datei begründeter Beleg dieser Klasse, hier nur
 nachträglich in den Zähler aufgenommen, ohne die Ordinal-Erzählung für sie
-rückwirkend zu schreiben) plus der neue siebzehnte Beleg,
-`evidence/slice-sdk-csharp-http-client-flaeche.md`: Der Vorgänger-Slice
+rückwirkend zu schreiben) plus der achtzehnte Beleg,
+`evidence/slice-sdk-python-http-client-flaeche.md`: Derselbe Vorgang wie
+beim siebzehnten Beleg (Träger-Nachzug behauptet eine noch ausstehende
+HTTP-Client-Fläche, real durch denselben Slice widerlegt), jetzt in der
+Python-Sub-Area und mit einer geschärften Lehre — der Implementer-eigene
+§3.13-Suchlauf war diesmal proaktiv **und** aus dem C#-Vorkommen abgeleitet,
+deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
+`pyproject.toml` ausschloss, und ein Wortmuster, das die deutsche
+Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
+Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
+Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der siebzehnte Beleg, `evidence/slice-sdk-csharp-http-client-flaeche.md`: Der
+Vorgänger-Slice
 (`slice-sdk-csharp-projektgeruest`) hatte `sdks/csharp/README.md` §Status
 bewusst mit Verweis auf genau diesen Folge-Slice als HTTP-Fläche-Lieferant
 geschrieben — bei Niederschrift wahr, durch die reale Auslieferung von
