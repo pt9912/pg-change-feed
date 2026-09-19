@@ -1,0 +1,48 @@
+---
+name: image-scan
+
+# CVE-Scan (ADR-0051 Entscheidung 6): Trivy CRITICAL/HIGH gegen das
+# publizierte GHCR-`:latest`-Image, ueber das bestehende `make image-cve`
+# (Docker-only, AGENTS.md §3.1 — kein Inline-`docker run` ausserhalb
+# `make`). Advisory: ein roter Lauf ist in der Actions-Uebersicht
+# sichtbar, blockiert aber kein Gate und keinen anderen Workflow
+# (`ADR-0051` §Konsistenz-Pruefung — CVE-Scan als blockierendes Gate
+# wurde bewusst verworfen, Option B).
+#
+# Trigger `schedule` (naechtlich) + `workflow_dispatch`, kein
+# Pull-Request-/Push-Trigger — das Dev-Image (`:dev`) wird nie
+# veroeffentlicht, ein Scan dagegen saegte nichts ueber das aus, was
+# tatsaechlich ausgeliefert wird (`ADR-0051` §Verglichene Alternativen,
+# Option D verworfen).
+#
+# Bis zum ersten echten Release (`release-version-und-workflow`,
+# Welle-Datei `docs/plan/planning/welle-release-pipeline-adr-0051.md`
+# §6) existiert kein GHCR-`:latest`-Image — dieser Lauf scheitert bis
+# dahin strukturell am fehlenden Ziel-Image (real geprueft, siehe
+# Slice-Plan `docs/plan/planning/in-progress/release-image-scan.md` §6),
+# kein Implementierungsfehler.
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  image-scan:
+    name: Trivy CRITICAL/HIGH gegen ghcr.io/pt9912/pg-change-feed:latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: CVE-Scan (make image-cve)
+        run: make image-cve

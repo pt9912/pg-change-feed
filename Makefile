@@ -43,6 +43,12 @@ endif
 image-stale: ## Advisory: FROM-Digests gegen Registry-Digests (Modul 14, braucht Netz)
 	@bash tools/harness/image-stale.sh
 
+.PHONY: image-cve
+# TRIVY_IMAGE traegt aquasec/trivy v0.74.0 (Digest-Pin, Modul 14).
+TRIVY_IMAGE ?= aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+image-cve: ## Advisory: Trivy CRITICAL/HIGH gegen das publizierte GHCR-:latest-Image (ADR-0051, kein Gate, braucht Netz)
+	docker run --rm $(TRIVY_IMAGE) image --severity CRITICAL,HIGH --exit-code 1 ghcr.io/pt9912/pg-change-feed:latest
+
 .PHONY: test-release-tag-info
 test-release-tag-info: ## Tabellentest gegen tools/harness/release-tag-info.sh (SemVer-2.0-Validierung, ADR-0051, netzlos)
 	@bash tools/harness/run-release-tag-info-tests.sh

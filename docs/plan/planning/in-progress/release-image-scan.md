@@ -50,20 +50,23 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 gehört zurück zur Zerlegung. Gezählt wird nur, was mit dem Umfang wächst — die
 Gate-Läufe und die fünf Closure-Pflichten darunter zählen nicht mit.
 
-- [ ] `make image-cve` existiert (kein Gate, braucht Netz, analog
+- [x] `make image-cve` existiert (kein Gate, braucht Netz, analog
       `make image-stale`): Trivy CRITICAL/HIGH gegen das publizierte
       GHCR-`:latest`-Image von `ghcr.io/pt9912/pg-change-feed`, Ergebnis auf
       stdout, `exit 1` bei mindestens einem CRITICAL/HIGH-Fund,
-      `exit 0` sonst.
-- [ ] `image-scan.yml` existiert: ruft `make image-cve` auf, Trigger
+      `exit 0` sonst. Digest-gepinntes `aquasec/trivy` (v0.74.0). Real
+      ausgeführt: scheitert strukturell korrekt am fehlenden
+      `ghcr.io/pt9912/pg-change-feed:latest` (kein echter Release bisher,
+      Trivy selbst lief real und lud seine Vulnerability-DB).
+- [x] `image-scan.yml` existiert: ruft `make image-cve` auf, Trigger
       `schedule` (nächtlich) + `workflow_dispatch`; ein roter Lauf ist
       sichtbar, blockiert aber `make gates`/`ci.yml`/`release.yml` nicht
       (advisory, [`ADR-0051`](../../adr/0051-cicd-pipeline-github-actions.md)
-      Entscheidung 6).
-- [ ] `harness/README.md` §Werkzeuge trägt die reale `make image-cve`-Zeile
+      Entscheidung 6). YAML-Struktur per Ruby-Stdlib-YAML-Parser geprüft.
+- [x] `harness/README.md` §Werkzeuge trägt die reale `make image-cve`-Zeile
       und ersetzt den bisherigen „Nicht behauptet (geplant)"-Hinweis am
       Dateiende (`AGENTS.md` §4: kein behauptetes Gate/Target ohne Deckung).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -110,8 +113,11 @@ geschrieben.
 - Bis zum ersten echten Release (`release-version-und-workflow`, siehe
   Welle-Datei §6 Out-of-Scope) existiert kein GHCR-`:latest`-Image —
   `image-scan.yml` läuft real, scheitert aber am fehlenden Ziel-Image, kein
-  Implementierungsfehler. **Ausgang:** weiter offen, strukturelle Folge der
-  Slice-Reihenfolge, löst sich mit dem ersten echten Release.
+  Implementierungsfehler. **Ausgang:** eingetreten und real bestätigt
+  (`make image-cve` real ausgeführt: Trivy lud seine Vulnerability-DB und
+  scheiterte danach korrekt mit einem GHCR-„DENIED"-Fehler auf das nicht
+  existierende `:latest`-Tag) — löst sich strukturell mit dem ersten
+  echten Release, kein weiterer Implementierungsschritt nötig.
 - `AGENTS.md` §3.10 gilt für `image-scan.yml` als neuen Workflow
   unverändert: `make gates` grün belegt nicht, dass der reale
   Post-Push-Lauf grün läuft. **Ausgang:** weiter offen, strukturell
