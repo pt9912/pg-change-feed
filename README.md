@@ -22,6 +22,7 @@ alles Ende-zu-Ende real getestet, über Umgebungsvariablen,
 Siehe:
 
 - [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) für die Bedienung.
+- [`docs/user/releasing.md`](docs/user/releasing.md) für den Release-Prozess.
 - [`spec/lastenheft.md`](spec/lastenheft.md) für Anforderungen und Akzeptanzkriterien.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) für die technische Spezifikation.
 - [`docs/plan/adr/`](docs/plan/adr/) für Architekturentscheidungen.

@@ -1,7 +1,7 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.31
-Software-Version: 0.2.0-verdrahtung
+Version: 1.32
+Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-19
 
 ## 1. Einleitung
@@ -1119,3 +1119,4 @@ MIT — siehe `LICENSE`.
 | 1.29 | 2026-09-18 | Erster Go-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-go): §4 „Zugriff über den NATS-Vollinhalts-Stream" — der Platzhalter-Absatz wird zu einem `**Beispiele:**`-Block (zunächst nur Go); `examples/nats-stream-client` abonniert `cdc.stream.>` und gibt jede empfangene Change aus, über einen Container-Aufruf (`make example-run-go SURFACE=nats-stream`, Image-Tag `pg-change-feed-examples:go-nats-stream`) |
 | 1.30 | 2026-09-18 | C#- und Kotlin-Client für den NATS-Vollinhalts-Stream ergänzt (`ADR-0100`, `LH-FA-SST-008`, slice-nats-drittstream-example-csharp-kotlin): §4 „Zugriff über den NATS-Vollinhalts-Stream" — `**Beispiele:**`-Block komplettiert; `examples/csharp/nats-stream-client` und `examples/kotlin/nats-stream-client` abonnieren `cdc.stream.>` und geben jede empfangene Change aus, über einen Container-Aufruf (`make example-run-csharp`/`make example-run-kotlin SURFACE=nats-stream`, Image-Tags `pg-change-feed-examples:csharp-nats-stream`/`:kotlin-nats-stream`). Mit dieser Zeile ist die volle Matrix (fünf Zugriffs-Oberflächen × drei Sprachen, fünfzehn Programme) im Handbuch vollständig |
 | 1.31 | 2026-09-19 | `cdc_changes_pending`/`cdc_errors_total`-Metriken nachgetragen (`LH-QA-OPS-003`, slice-e2e-drei-rtm-luecken): §4 „Metriken lesen" — beide Kennzahlen existierten in `cdc.metrics` bereits seit diesem Slice, waren aber nicht im Handbuch-Text genannt |
+| 1.32 | 2026-09-19 | Kopf-Feld `Software-Version` korrigiert: trug seit Ersteinführung unverändert `0.2.0-verdrahtung`, nie mit dem später eingeführten `docs/user/version.md` (`ADR-0051`, welle-release-pipeline-adr-0051) synchronisiert und nirgends sonst referenziert — auf einen Verweis auf die tatsächliche Versionsquelle umgestellt |
