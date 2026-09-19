@@ -125,6 +125,17 @@ Optionen-Skelett (Adresse, Token) — ohne jeden Import aus
 | `sdks/python/.gitignore` | neu | `__pycache__/`, `*.egg-info/`, `dist/`, `build/`, analog `sdks/csharp/.gitignore`. |
 | Testdatei (`tests/test_options.py`, Arbeitsname) | neu | Konstruktions-/Validierungstest der Optionsklasse (kein Draht-Verhalten, das kommt mit dem Folge-Slice), `pytest`. |
 
+**Plan-Nachzug (Nutzer-Entscheidung nach Verifikation):** `requires-python`
+auf `>=3.14` (statt der ursprünglich gewählten `>=3.11`) und die
+Docker-Basis auf `python:3.14-slim` (`3.14.7-slim-trixie`, real per
+`docker buildx imagetools inspect` gemessener Index-Digest
+`sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2`,
+Python 3.14.7 real als aktuelle stabile Version verifiziert, released
+2026-08-05) angehoben — bewusst die aktuelle Version statt einer breiten
+Mindestversion, analog der `net10.0`-Festlegung des C#-SDK. Real
+gegengebaut: `docker build --no-cache -f sdks/python/Dockerfile
+sdks/python` → Exit 0, `pytest` 3/3 grün unter Python 3.14.7.
+
 **Ansatz:** Referenzmaterial für die Bau-/Projektstruktur ist
 `sdks/csharp/PgChangeFeed.Client/`/`sdks/csharp/Dockerfile` (Formvorbild,
 kein Code-Import — andere Sprache, anderes Paket-Ökosystem). Der

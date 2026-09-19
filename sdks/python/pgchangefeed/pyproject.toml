@@ -18,7 +18,7 @@ description = "Official Python client library for PG Change Feed (HTTP API)."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "pt9912" }]
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 # Einzige Fremdabhaengigkeit (ADR-0107 Festlegung 1: httpx, keine weitere,
 # keine schwere Fremdabhaengigkeit) -- die HTTP-Client-Flaeche selbst folgt
 # erst mit slice-sdk-python-http-client-flaeche.
