@@ -44,4 +44,25 @@
     <Compile Remove="PgChangeFeed.Client.Tests/**" />
   </ItemGroup>
 
+  <!-- Grpc.Net.Client trägt die Laufzeit, Google.Protobuf die Nachrichtenform;
+       Grpc.Tools (nur Build-Zeit, PrivateAssets) trägt protoc und das
+       C#-Plugin, das den Stub unten aus der `.proto` erzeugt
+       (slice-sdk-csharp-grpc-client-flaeche, ADR-0106 Festlegung 1/2, Muster
+       examples/csharp/grpc-client/grpc-client.csproj). -->
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
+    <PackageReference Include="Google.Protobuf" />
+  </ItemGroup>
+
+  <!-- Die `.proto` selbst liegt NICHT in diesem Verzeichnis — sie kommt erst
+       im Docker-Bau hierher, kopiert aus dem zusätzlichen, benannten
+       Bau-Kontext `proto` (sdks/csharp/Dockerfile, ADR-0106 Festlegung 2,
+       Muster examples/csharp/Dockerfile). Dieser Pfad existiert deshalb nur
+       innerhalb des Baus, nicht im committeten Baum — kein committeter
+       Stub, keine committete Kopie der `.proto`. -->
+  <ItemGroup>
+    <Protobuf Include="Grpc/proto/changestream.proto" GrpcServices="Client" />
+  </ItemGroup>
+
 </Project>

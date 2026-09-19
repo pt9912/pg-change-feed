@@ -5,6 +5,15 @@
 # Festlegung 2: eigenständiger Baum, kein `ProjectReference` auf einen
 # privaten Baum dieses Repos).
 #
+# Die gRPC-Client-Fläche (slice-sdk-csharp-grpc-client-flaeche, ADR-0106
+# Festlegung 1/2) liest die `.proto` NICHT aus diesem Kontext — sie liegt
+# außerhalb davon, unter proto/cdc/stream/v1/ an der Repo-Wurzel. Sie kommt
+# über einen ZUSÄTZLICHEN, benannten Bau-Kontext namens `proto` herein
+# (`COPY --from=proto …` unten); der Aufrufer bringt ihn mit `docker build
+# --build-context proto=proto …` mit (Muster examples/csharp/Dockerfile,
+# harness/mk/examples.mk). Ohne ihn bricht der Bau an der COPY-Zeile ab —
+# kein stiller Fallback.
+#
 # Kein `pack`-Aufruf und keine Runtime-Stufe hier: ein SDK-Package ist keine
 # startbare Anwendung (anders als examples/csharp), und `dotnet pack` bleibt
 # Sache von `slice-sdk-csharp-pack-werkzeug` (ADR-0106 §Konsequenzen
@@ -38,6 +47,14 @@ RUN dotnet restore PgChangeFeed.Client/PgChangeFeed.Client.csproj && \
 # Stelle im Bau-Kontext liegen.
 COPY README.md ./
 COPY PgChangeFeed.Client/ PgChangeFeed.Client/
+
+# Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (Muster
+# ADR-0090 Festlegung 2) — diese COPY-Zeile ist der Punkt, an dem der Bau
+# ohne den Zusatzkontext real abbricht (kein Fallback, kein übersprungener
+# Schritt; Beleg im Bericht von slice-sdk-csharp-grpc-client-flaeche). Das
+# Ziel spiegelt den relativen `Protobuf Include`-Pfad in
+# PgChangeFeed.Client.csproj (`Grpc/proto/changestream.proto`).
+COPY --from=proto cdc/stream/v1/changestream.proto PgChangeFeed.Client/Grpc/proto/changestream.proto
 
 RUN dotnet build PgChangeFeed.Client/PgChangeFeed.Client.csproj -c Release --no-restore
 RUN dotnet test PgChangeFeed.Client/PgChangeFeed.Client.Tests/PgChangeFeed.Client.Tests.csproj -c Release --no-restore

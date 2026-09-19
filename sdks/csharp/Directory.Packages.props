@@ -17,4 +17,27 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
   </ItemGroup>
 
+  <!-- gRPC-/Protobuf-Werkzeugkette der Grpc-Client-Fläche (slice-sdk-csharp-grpc-client-flaeche,
+       ADR-0106 Festlegung 1/2): der Stub entsteht im Bau aus der über den
+       benannten Zusatzkontext gelesenen `.proto`, liegt nicht im committeten
+       Baum. Neueste stabile Versionen, real gemessen am 2026-09-19
+       (api.nuget.org/v3-flatcontainer/<paket>/index.json, jeweils letzter
+       Eintrag ohne `-pre`/`-rc`-Suffix, AGENTS.md §3.12 — nicht blind von
+       examples/csharp/Directory.Packages.props übernommen):
+       - Grpc.Net.Client (gRPC-Laufzeit, `GrpcChannel`/`CallInvoker`): 2.83.0
+         (2.84.0-pre1 ist zum Messzeitpunkt die einzige 2.84.0-Zeile und
+         Prerelease, kein Kandidat)
+       - Grpc.Tools (nur Build-Zeit, PrivateAssets — trägt protoc und das
+         C#-Plugin, die den Stub erzeugen): 2.84.0 — deckungsgleich mit
+         examples/csharp
+       - Google.Protobuf (Nachrichten-Laufzeit für die erzeugten Typen):
+         3.36.2 — eine Zeile neuer als examples/csharp's 3.36.1 vom
+         2026-09-17; 4.0.0-rc2 ist zum Messzeitpunkt Prerelease und deshalb
+         kein Kandidat. -->
+  <ItemGroup>
+    <PackageVersion Include="Grpc.Net.Client" Version="2.83.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.84.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
+  </ItemGroup>
+
 </Project>

@@ -59,7 +59,7 @@ kein committeter Stub).
 
 ## 2. Definition of Done
 
-- [ ] `sdks/csharp/PgChangeFeed.Client/Grpc/` (oder gleichwertiger
+- [x] `sdks/csharp/PgChangeFeed.Client/Grpc/` (oder gleichwertiger
       Namensraum) trägt eine öffentliche Client-Klasse mit einer Methode,
       die den `StreamChanges`-RPC öffnet und die Nachrichten von
       [`SPEC-020`](../../../../spec/pflichtenheft.md) (`change_id`,
@@ -67,34 +67,37 @@ kein committeter Stub).
       `old_image`, `new_image`, `schema_version`, `schema`, `table`) an den
       Consumer weiterreicht — Bearer-Token wird bei Konstruktion oder
       Aufruf übergeben, landet im `authorization`-Metadata-Eintrag.
-- [ ] `sdks/csharp/PgChangeFeed.Client.csproj` bekommt die drei
+- [x] `sdks/csharp/PgChangeFeed.Client.csproj` bekommt die drei
       gRPC-Pakete (`Grpc.Net.Client`, `Grpc.Tools` `PrivateAssets="All"`,
       `Google.Protobuf`) über eine `Directory.Packages.props`
       (zentral gepinnt, exakte Versionen, keine Bereiche — Muster
       `examples/csharp/Directory.Packages.props`, Versionen zum
       Bau-Zeitpunkt neu gemessen, nicht blind übernommen — `AGENTS.md`
       §3.12).
-- [ ] `sdks/csharp/Dockerfile` bekommt den zusätzlichen, benannten
+- [x] `sdks/csharp/Dockerfile` bekommt den zusätzlichen, benannten
       Bau-Kontext `proto` (`--build-context proto=proto`, `COPY --from=proto
       cdc/stream/v1/changestream.proto …`) — ohne ihn bricht der Bau an der
       `COPY`-Zeile ab, kein stiller Fallback (Muster
       `examples/csharp/Dockerfile`/`ADR-0090` Festlegung 2, hier auf den
       SDK-Baum übertragen).
-- [ ] Eigene Tests (xUnit) decken mindestens: Nachrichtenschema-Vollständigkeit
+- [x] Eigene Tests (xUnit) decken mindestens: Nachrichtenschema-Vollständigkeit
       (Feld-für-Feld gegen `SPEC-020`, analog
       `internal/adapters/driving/grpc/server_test.go`s Feldvollständigkeits-
       Test) und den Authn-Boundary-Pfad (fehlendes/ungültiges Token →
       `Unauthenticated`, ohne echten Server — Fake-`CallInvoker` oder
       gleichwertig).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos —
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos —
       der generierte Stub entsteht im SDK-eigenen Bau aus der `.proto`,
       nicht als Kopie von `gen/**` (`ADR-0106` §Kontext Bindung „Import-
-      Grenze, hier ohne Ausnahme").
-- [ ] `make gates` grün.
+      Grenze, hier ohne Ausnahme") — real geprüft:
+      `grep -rn "internal/\|cmd/\|gen/" sdks/csharp/` liefert nur einen
+      Treffer, ein Doku-Kommentar-Zitat des Test-Vorbilds
+      (`internal/adapters/driving/grpc/server_test.go`), kein Import.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die gRPC-Oberfläche (`ADR-0106` §Konsequenzen
       Folgepflicht 4) — getragen durch die bereits verkörperte
       Selbstprüf-Instruktion und den Reviewer-HIGH-Punkt
@@ -129,6 +132,35 @@ kein committeter Stub).
 `ProjectReference`) und
 `internal/adapters/driving/grpc/server_test.go` (Feldvollständigkeits-
 Testmuster, serverseitig, als Vorbild für die Consumer-seitige Prüfung).
+
+**Plan-Nachzug (Implementer-Zug):**
+
+- `harness/mk/examples.mk` bzw. ein neues `harness/mk/sdk.mk` bleibt in
+  diesem Slice unberührt — §6 Risiko 1 tritt wie vorab benannt ein: der Bau
+  läuft ausschließlich über den direkten
+  `docker build --build-context proto=proto -f sdks/csharp/Dockerfile
+  sdks/csharp`-Aufruf; ein Komfort-`make`-Ziel bleibt bewusst
+  `slice-sdk-csharp-pack-werkzeug` vorbehalten.
+- Statt einer einzelnen `GrpcClientTests.cs` (Arbeitsname) liegen die Tests
+  in drei Dateien unter
+  `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.Tests/Grpc/`
+  (`ChangeMessageSchemaTests.cs` — Nachrichtenschema-Vollständigkeit,
+  `PgChangeFeedGrpcClientTests.cs` — Bearer-Token-Metadata-Form, Happy Path,
+  Authn-Boundary, plus der gemeinsame Test-Helfer `FakeCallInvoker.cs`) —
+  dasselbe Gruppierungs-Muster wie bei
+  `slice-sdk-csharp-http-client-flaeche`s Plan-Nachzug, reine
+  Lesbarkeits-Entscheidung, kein fachlicher Umfangsunterschied.
+- `sdks/csharp/Directory.Packages.props` war bereits als Datei angelegt
+  (`slice-sdk-csharp-projektgeruest`, xUnit-Pinnung) — dieser Slice ergänzt
+  sie um die drei gRPC-Pakete statt sie neu anzulegen; die Plan-Zeile oben
+  nennt „neu" mit Bezug auf die drei ergänzten Einträge, nicht die Datei
+  selbst.
+- Die real zum Bau-Zeitpunkt (2026-09-19) gemessenen Versionen weichen bei
+  `Google.Protobuf` eine Patch-Zeile von `examples/csharp/Directory.Packages.props`
+  ab (`3.36.2` statt `3.36.1`, dort zuletzt am 2026-09-17 gemessen) — genau
+  der in `AGENTS.md` §3.12 verlangte Effekt einer echten Neu-Messung statt
+  einer blinden Übernahme; `Grpc.Net.Client`/`Grpc.Tools` sind deckungsgleich
+  (`2.83.0`/`2.84.0`).
 
 ## 4. Trigger
 

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.33
+Version: 1.34
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-19
 
@@ -738,6 +738,15 @@ und lässt sich per Flag übersteuern.
   `make examples-kotlin` gebaute Image; derselbe Stub-im-Bau-Mechanismus wie
   beim C#-Client, übertragen auf die Kotlin-Werkzeugkette — `ADR-0090`)
 
+**SDK:** .NET-Anwendungen können statt der Beispiele das offizielle
+NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
+`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedGrpcClient.StreamChangesAsync`
+öffnet den `ChangeStream/StreamChanges`-RPC und liefert ein
+`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; das
+Bearer-Token landet im `authorization`-Metadata-Eintrag, ein fehlendes oder
+ungültiges Token endet den Aufruf mit gRPC-Status `Unauthenticated`, statt
+den Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+
 ### Zugriff über Server-Sent-Events
 
 **Erreichbarkeit:** derselbe HTTP-Server wie oben — aktiv, sobald
@@ -1129,3 +1138,4 @@ MIT — siehe `LICENSE`.
 | 1.31 | 2026-09-19 | `cdc_changes_pending`/`cdc_errors_total`-Metriken nachgetragen (`LH-QA-OPS-003`, slice-e2e-drei-rtm-luecken): §4 „Metriken lesen" — beide Kennzahlen existierten in `cdc.metrics` bereits seit diesem Slice, waren aber nicht im Handbuch-Text genannt |
 | 1.32 | 2026-09-19 | Kopf-Feld `Software-Version` korrigiert: trug seit Ersteinführung unverändert `0.2.0-verdrahtung`, nie mit dem später eingeführten `docs/user/version.md` (`ADR-0051`, welle-release-pipeline-adr-0051) synchronisiert und nirgends sonst referenziert — auf einen Verweis auf die tatsächliche Versionsquelle umgestellt |
 | 1.33 | 2026-09-19 | C#-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — das NuGet-Package `PgChangeFeed.Client` deckt alle zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
+| 1.34 | 2026-09-19 | C#-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — `PgChangeFeedGrpcClient.StreamChangesAsync` öffnet `ChangeStream/StreamChanges` und liefert ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben |
