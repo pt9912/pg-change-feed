@@ -21,7 +21,7 @@ Externe Verträge (neue Zeile für das Package, voraussichtlich `SPEC-028` —
 real gegen den Bestand zu verifizieren, `SPEC-027` ist die zuletzt real
 vergebene Nummer, siehe §3).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** Implementer-Agent, 2026-09-20.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0109` §Konsequenzen
 Folgepflicht 1/2/3). **Datum:** 2026-09-20.
