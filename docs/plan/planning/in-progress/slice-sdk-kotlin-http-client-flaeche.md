@@ -57,7 +57,7 @@ unabhängige Tests.
 
 ## 2. Definition of Done
 
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/…/http/` (oder
+- [x] `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/…/http/` (oder
       gleichwertiger Namensraum) trägt eine öffentliche Client-Klasse mit
       einer Methode je der neun Port-gedeckten Fähigkeiten von
       [`SPEC-018`](../../../../spec/pflichtenheft.md) plus dem Changes-Lesen
@@ -70,7 +70,7 @@ unabhängige Tests.
       existiert (anders als bei Python) ein reales Kotlin-Referenzprogramm
       als Vorbild, das genutzt wird, nicht nur als Struktur-Vorlage
       (`ADR-0109` §Kontext).
-- [ ] Eigene Tests decken je Fähigkeit mindestens den Happy Path und die
+- [x] Eigene Tests decken je Fähigkeit mindestens den Happy Path und die
       Auth-Boundary (`401` fehlendes/unbekanntes Token, `403`
       `reader`-Token gegen einen `admin`-Endpunkt) ab — netzlos prüfbar
       (kein realer Server nötig; ein Fake/Mock des HTTP-Transports analog
@@ -78,15 +78,15 @@ unabhängige Tests.
       vorigen SDKs, konkrete Form entscheidet der Implementer-Zug anhand
       des tatsächlich gewählten Kotlin-HTTP-Clients — `examples/kotlin/http-client`
       nutzt `java.net.http`, real nachzuprüfen).
-- [ ] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0109`
+- [x] Kein Import aus `internal/**`/`cmd/**` dieses Repos (`ADR-0109`
       §Kontext Bindung „Import-Grenze, hier ohne Ausnahme") — real geprüft:
       `grep -rn "internal/\|cmd/" sdks/kotlin/` liefert keinen Treffer.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Fixrunde geprüft und Merge-Block aufgehoben, falls nötig.
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Kotlin-HTTP-Oberfläche (`ADR-0109` §Konsequenzen
       Folgepflicht 4, **inklusive** des expliziten PAT-Hinweises für den
       Bezug über GitHub Packages, Festlegung 2) — getragen durch die
@@ -95,7 +95,7 @@ unabhängige Tests.
       Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -137,6 +137,77 @@ Reviewer-Finding):**
   unabhängig breit genug wählen muss, sonst bleibt eine Datei oder eine
   Formulierung unentdeckt).
 - **Backtick-Paritäts-Check** vor jedem Commit dieses Slice.
+
+**Plan-Nachzug (Implementer-Zug, `AGENTS.md`-Konvention „im selben Lauf
+nachtragen"):**
+
+- **Zusätzliche Dateien gegenüber der Tabelle oben** (Fähigkeits-/
+  Verantwortungs-Zerlegung statt einer einzigen Modell-/Testdatei, kein
+  Umfangs-Wachstum): `http/HttpTransport.kt` (Transport-Abstraktion, siehe
+  §6 Risiko 3), `http/model/{Consumers,Tables,Retention,Changes,ErrorResponse}.kt`
+  (fünf Dateien statt einer, analog dem bestehenden Datei-Schnitt der
+  C#/Python-Geschwister), fünf Testdateien statt einer
+  (`PgChangeFeedHttpClientConsumerTest.kt`,
+  `PgChangeFeedHttpClientTableTest.kt`,
+  `PgChangeFeedHttpClientRetentionAndChangesTest.kt`,
+  `PgChangeFeedHttpClientAuthBoundaryTest.kt`) plus zwei Test-Helfer
+  (`FakeHttpTransport.kt`, `TestClientFactory.kt`) — derselbe Datei-Schnitt
+  wie `sdks/csharp/PgChangeFeed.Client.Tests/Http/`.
+- **§6 Risiko 1 (Fehler-Antwortform) entschieden:** `PgChangeFeedException`
+  ist eine Kotlin **sealed class** mit sieben konkreten Unterklassen (Namen
+  identisch zur C#-Fassung: `PgChangeFeedBadRequestException` usw.) — Kotlin-
+  idiomatischer als eine offene Exception-Hierarchie (exhaustives `when`
+  möglich), bei identischem Feld-für-Feld-Verhalten zu C#/Python. Siehe
+  KDoc in `PgChangeFeedException.kt` für die vollständige Begründung.
+- **§6 Risiko 3 (HttpClient-Testbarkeit) real geprüft, nicht nur behauptet:**
+  `java.net.http.HttpClient` hat — anders als C#s `HttpMessageHandler` oder
+  Pythons `httpx.MockTransport` — keinen Pluggable-Handler; `HttpClient.send()`
+  öffnet real einen Socket. Lösung: eine `internal fun interface HttpTransport`
+  zwischen `PgChangeFeedHttpClient` und dem JDK-Client — der öffentliche
+  Konstruktor nimmt weiterhin ein `java.net.http.HttpClient` (Parität zu
+  C#/Python: Aufrufer besitzt/kontrolliert den Client), ein zweiter,
+  **`internal`** Konstruktor nimmt direkt einen `HttpTransport` und ist nur
+  innerhalb des Gradle-Moduls sichtbar (das Kotlin-Gradle-Plugin bindet
+  `test` per Default an `main`s `internal`-Sichtbarkeit) — jeder Test in
+  diesem Slice ist dadurch **echt netzlos**, ohne Socket, ohne Loopback-Server.
+- **Neue Fremdabhängigkeit `com.google.code.gson:gson:2.14.0`** — real
+  gegen Maven Central nachgemessen (`maven-metadata.xml`, 2026-09-20,
+  weiterhin aktuellste Version), dieselbe bereits im selben Repo bewertete
+  Version wie `examples/kotlin/nats-stream-client/build.gradle.kts`
+  (2026-09-18 dort gemessen, keine Drift) — keine neue, unabhängig zu
+  bewertende Bibliothek.
+- **`offset` ([`SPEC-018`](../../../../spec/pflichtenheft.md) `uint64`) als `Long` modelliert, nicht `ULong`:**
+  Gsons reflektionsbasierter Codec unterstützt Kotlins `ULong`
+  (Inline-/Value-Class) nicht korrekt — er würde das interne gewrappte
+  `Long`-Feld (de-)serialisieren statt des Werts selbst und dabei die
+  JSON-Form verfälschen. `Long` passt zu den übrigen 64-bit-Feldern dieses
+  SDK und vermeidet dieses Gson-Verhalten, auf Kosten der oberen Hälfte des
+  `uint64`-Wertebereichs — eine benannte, schmale Grenze für dieses
+  Pre-1.0-Release (siehe KDoc in `model/Consumers.kt`).
+- **Träger-Nachzug-Suchlauf real durchgeführt** (Hinweis oben): fand **eine**
+  stehende Aussage in `sdks/kotlin/pgchangefeed-kotlin/README.md` §Status
+  („a full HTTP API client surface … follow in subsequent releases") — durch
+  diesen Slice falsch geworden, im selben Zug korrigiert (jetzt: „The
+  current release provides … a full HTTP API client surface …"). Kein
+  Treffer in `build.gradle.kts`, `Dockerfile` oder sonstwo unter `sdks/kotlin/`.
+  Die bereits bekannte, separat verfolgte LOW-Klasse
+  `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` („vollinhalt", schon
+  bei 3× Schwelle) bleibt bewusst unverändert — ihre Auflösung ist laut
+  Closure-Notiz von `slice-sdk-kotlin-projektgeruest` eine Architect-Aufgabe
+  (Pflege/Steering-Loop), kein Ad-hoc-Fix eines einzelnen Implementer-Zuges.
+- **Mutation real gesehen (nicht nur behauptet, `AGENTS.md` §3.7/Schritt 19
+  des Implementer-Workflows):** zwei Produktionscode-Mutationen real
+  gefahren und wieder zurückgenommen — (1) `encode()` auf Identität gesetzt
+  (keine Prozent-Kodierung mehr) macht
+  `listTables percent-encodes reserved characters in query parameters`
+  (`PgChangeFeedHttpClientTableTest.kt`) real rot; (2) die `403`-Zuordnung in
+  `buildException` auf `PgChangeFeedBadRequestException` vertauscht macht
+  `reader token against an admin endpoint throws Forbidden`
+  (`PgChangeFeedHttpClientAuthBoundaryTest.kt`) real rot. Beide Male über
+  `docker build --no-cache -f sdks/kotlin/Dockerfile sdks/kotlin` beobachtet
+  (`BUILD FAILED`/„There were failing tests"), danach exakt zurückgesetzt
+  (`diff` gegen die Vor-Mutation-Fassung bestätigt Identität) und erneut grün
+  gebaut.
 
 ## 4. Trigger
 

@@ -17,6 +17,19 @@
 // ist Sache des Publish-Workflow-Zuges (`slice-sdk-kotlin-publish-workflow`,
 // ADR-0109 §Konsequenzen Folgepflicht 1) — kein Publish-Aufruf in diesem
 // Slice.
+//
+// `com.google.code.gson:gson` ist die JSON-Bibliothek der HTTP-Client-Fläche
+// (slice-sdk-kotlin-http-client-flaeche, `SPEC-018`/`SPEC-022`) — dieselbe
+// bereits im selben Repo real bewertete, gepinnte Version wie
+// `examples/kotlin/nats-stream-client/build.gradle.kts` (dort Lizenz/
+// transitive Abhängigkeiten bereits geprüft: nur
+// `com.google.errorprone:error_prone_annotations` im `compile`-Scope,
+// Apache-2.0). Weder `java.net.http` noch die JDK-Standardbibliothek tragen
+// einen öffentlichen JSON-Decoder. Gemessen am 2026-09-20 (Maven Central
+// maven-metadata.xml, repo1.maven.org/maven2/com/google/code/gson/gson/
+// maven-metadata.xml): weiterhin `2.14.0` (`<latest>`/`<release>`, keine
+// Drift ggü. der Messung vom 2026-09-18 in `nats-stream-client` —
+// `AGENTS.md` §3.12).
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
@@ -30,6 +43,7 @@ kotlin {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.14.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:2.4.20")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
 }

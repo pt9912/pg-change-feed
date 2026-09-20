@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.35
+Version: 1.36
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-19
+Stand: 2026-09-20
 
 ## 1. Einleitung
 
@@ -683,6 +683,24 @@ einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; gRPC,
 SSE und der NATS-Vollinhalts-Stream bleiben für dieses Package vorerst
 außerhalb (`ADR-0107` Festlegung 1). Siehe `sdks/python/README.md`.
 
+Kotlin/JVM-Anwendungen können statt der Beispiele das offizielle
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
+`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+`PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser
+Zugriffs-Oberfläche ab (die neun in der Tabelle oben plus `GET /changes`)
+mit typisierten Requests/Responses und einer versiegelten
+(`sealed class`) Fehlerklasse für `400`/`401`/`403`/`404`/`500`; der
+gRPC-Change-Stream folgt in einem Folge-Release, SSE und der
+NATS-Vollinhalts-Stream bleiben für dieses Package vorerst außerhalb
+(`ADR-0109` Festlegung 1). Anders als NuGet/PyPI wird dieses Package über
+**GitHub Packages** vertrieben (`https://maven.pkg.github.com/pt9912/pg-change-feed`,
+`ADR-0109` Festlegung 2) — GitHub Packages verlangt **immer** eine
+Authentifizierung zum Lesen, auch für ein öffentliches Package: ein
+GitHub-Konto und ein klassischer Personal Access Token (PAT) mit dem Scope
+`read:packages` sind Voraussetzung für den Bezug, unabhängig davon, ob das
+SDK öffentlich und quelloffen ist. Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`
+für den vollständigen Installationsweg samt Gradle-Zugangsdaten-Konfiguration.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -1149,3 +1167,4 @@ MIT — siehe `LICENSE`.
 | 1.33 | 2026-09-19 | C#-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — das NuGet-Package `PgChangeFeed.Client` deckt alle zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
 | 1.34 | 2026-09-19 | C#-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, slice-sdk-csharp-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen `**SDK:**`-Absatz nach dem `**Beispiele:**`-Block — `PgChangeFeedGrpcClient.StreamChangesAsync` öffnet `ChangeStream/StreamChanges` und liefert ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben |
 | 1.35 | 2026-09-19 | Python-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0107`, slice-sdk-python-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das PyPI-Package `pgchangefeed` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
+| 1.36 | 2026-09-20 | Kotlin-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer versiegelten Fehlerklassen-Hierarchie ab, samt explizitem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2) |
