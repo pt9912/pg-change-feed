@@ -1,0 +1,124 @@
+---
+name: sdk-kotlin-release
+
+# GitHub-Packages-Publish-Workflow fuer das Kotlin-SDK-Package
+# `pgchangefeed-kotlin` (ADR-0109 Festlegung 2/5, LH-FA-SST-009,
+# slice-sdk-kotlin-publish-workflow). Trigger ausschliesslich Git-Tags der
+# Form `sdk-kotlin-v<SemVer 2.0>` — ein EIGENER Tag-Namensraum, getrennt vom
+# Server-Release-Raum `v*` und den beiden anderen SDK-Raeumen
+# `sdk-csharp-v*`/`sdk-python-v*` (ADR-0109 Festlegung 5 letzter Punkt).
+# `ci.yml`/`e2e.yml`/`examples.yml` schliessen JEDEN Tag-Push per
+# `tags-ignore: ['**']` aus (ci.yml Zeile 40f., e2e.yml Zeile 59f.,
+# examples.yml Zeile 42f.), `release.yml` reagiert ausschliesslich auf
+# `push: tags: ['v*']` (release.yml Zeile 51f.),
+# `sdk-csharp-release.yml` ausschliesslich auf `push: tags:
+# ['sdk-csharp-v*']` und `sdk-python-release.yml` ausschliesslich auf
+# `push: tags: ['sdk-python-v*']` — `sdk-kotlin-v*` matcht keines dieser
+# fuenf Muster (kein Praefix-Ueberlappungs-Doppellauf; belegt im Bericht
+# dieses Slice).
+#
+# Ablauf: Tag strikt gegen `sdk-kotlin-v<SemVer-2.0>` validieren
+# (`tools/harness/sdk-kotlin-release-tag-info.sh`, netzlos testbar ueber
+# `make test-sdk-kotlin-release-tag-info` — teilt die SemVer-2.0-Regex mit
+# `tools/harness/release-tag-info.sh`/`tools/harness/sdk-csharp-release-tag-info.sh`
+# ueber `tools/harness/semver-regex.sh`, ADR-0109 Festlegung 4: reines
+# SemVer 2.0, NICHT Pythons PEP-440-Sonderfall), dann gegen die in
+# `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` gefuehrte
+# Top-Level-`version`-Zeile abgleichen (Abbruch bei jeder Abweichung, VOR
+# jedem Build/Publish — Muster `sdk-csharp-release.yml`s
+# Tag-vs-`.csproj`-Abgleich bzw. `sdk-python-release.yml`s
+# Tag-vs-`pyproject.toml`-Abgleich, hier gegen die Gradle-Versionszeile).
+# Baut/testet/paketiert danach Docker-only ueber `make sdk-pack-kotlin`
+# (AGENTS.md §3.1, ADR-0109 Festlegung 5) — ein roter Test dort bricht den
+# Workflow ab, BEVOR der eigentliche Publish-Schritt je erreicht wird.
+#
+# Der Publish-Schritt selbst laeuft NICHT im Docker-Bau (der packt nur den
+# Jar fuer `make sdk-pack-kotlin`, siehe sdks/kotlin/Dockerfile), sondern
+# ueber `./gradlew publish` direkt auf dem Runner — reine Workflow-Mechanik,
+# analog `sdk-csharp-release.yml`s `dotnet nuget push` und
+# `sdk-python-release.yml`s `uv publish` auf dem Runner selbst (kein
+# `make`-Target fuer den Publish-Schritt noetig, AGENTS.md §3.1 bindet die
+# Host-Toolchain-Sperre an lokale Entwicklung, nicht an den ephemeren
+# GitHub-hosted Runner in einem eigenstaendigen CI-Lauf). JDK 21 ist auf dem
+# `ubuntu-latest`-Runner bereits vorinstalliert (real gemessen,
+# `actions/runner-images` Ubuntu-24.04-Readme, JAVA_HOME_21_X64 — Default
+# JAVA_HOME zeigt auf JDK 17, deshalb wird JAVA_HOME fuer diesen Schritt
+# explizit auf JAVA_HOME_21_X64 gesetzt) — kein `actions/setup-java` noetig.
+# Die `.proto`-Quelle liegt NICHT im committeten SDK-Baum (ADR-0109
+# Festlegung 3) und wird fuer diesen Host-seitigen Gradle-Lauf VOR
+# `./gradlew publish` an dieselbe Stelle kopiert, die
+# `sdks/kotlin/Dockerfile` per `COPY --from=proto` befuellt
+# (`src/main/proto/changestream.proto`) — ohne diesen Schritt bricht die
+# Protobuf-Codegenerierung (und damit `publish`, das von `jar` abhaengt) ab.
+#
+# Auth: AUSSCHLIESSLICH das eingebaute `GITHUB_TOKEN`
+# (`permissions: contents: read` / `packages: write` auf Job-Ebene, real
+# dokumentiertes Minimalrezept, ADR-0109 §Kontext Recherche,
+# `docs.github.com/…/publishing-java-packages-with-gradle`) — KEIN externes
+# Repository-Secret, der zentrale Unterschied zu
+# `sdk-csharp-release.yml`/`sdk-python-release.yml`
+# (`NUGET_API_KEY`/`PYPI_API_TOKEN`). `GITHUB_ACTOR` ist ein von GitHub
+# Actions automatisch bereitgestellter Default-Umgebungswert (kein
+# `secrets.*`-Verweis noetig); `GITHUB_TOKEN` wird explizit aus
+# `secrets.GITHUB_TOKEN` als Umgebungsvariable gesetzt, weil Gradle
+# (`sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`,
+# `publishing.repositories.maven.credentials`) sie per
+# `System.getenv("GITHUB_TOKEN")` liest.
+#
+# Kein `:latest`-Aequivalent (GitHub Packages kennt keins, ADR-0109 §1
+# Ausschluss), kein GitHub-Release-Eintrag fuer das SDK (nicht Teil dieser
+# Folgepflicht).
+#
+# Dieser Workflow gilt nach AGENTS.md §3.10 erst nach einem realen, gruenen
+# Post-Push-Lauf als abgeschlossen (ADR-0109 §Konsequenzen Folgepflicht 5) —
+# `make gates` gruen und ein plausibler YAML-Aufbau sind keine
+# Ersatz-Bestaetigung.
+#
+# Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
+# Tag-Kommentar.
+
+"on":
+  push:
+    tags:
+      - 'sdk-kotlin-v*'
+
+# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+permissions: {}
+
+jobs:
+  sdk-kotlin-release:
+    name: Tag validieren, Kotlin-SDK paketieren und nach GitHub Packages veroeffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag validieren, Version ermitteln (tools/harness/sdk-kotlin-release-tag-info.sh)
+        run: bash tools/harness/sdk-kotlin-release-tag-info.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: build.gradle.kts gegen den Tag abgleichen
+        run: |
+          gradle_version="$(grep -oE '^version = "[^"]+"' sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts | sed -E 's/^version = "([^"]+)"/\1/')"
+          if [ "$gradle_version" != "$version" ]; then
+            echo "::error::sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts ('$gradle_version') weicht vom Tag ('$version') ab"
+            exit 1
+          fi
+
+      - name: Kotlin-SDK bauen, testen, paketieren (make sdk-pack-kotlin)
+        run: make sdk-pack-kotlin
+
+      - name: .proto-Quelle fuer den Host-seitigen Gradle-Lauf bereitstellen
+        run: |
+          mkdir -p sdks/kotlin/pgchangefeed-kotlin/src/main/proto
+          cp proto/cdc/stream/v1/changestream.proto sdks/kotlin/pgchangefeed-kotlin/src/main/proto/changestream.proto
+
+      - name: Nach GitHub Packages veroeffentlichen (./gradlew publish)
+        working-directory: sdks/kotlin/pgchangefeed-kotlin
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew --no-daemon publish

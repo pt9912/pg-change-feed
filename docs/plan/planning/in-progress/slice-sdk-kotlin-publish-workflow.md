@@ -17,7 +17,7 @@ brauchte jeder Vertriebsweg ein externes Registry-Secret, hier ausdrücklich
 **Berührte Spec-Stellen:** — (Prozess-/CI-Artefakt ohne eigene
 `SPEC-*`-Kennung, analog `sdk-csharp-release.yml`/`sdk-python-release.yml`).
 
-**Verantwortlich:** Implementer-Agent, 2026-09-20.
+**Verantwortlich:** Implementer-Agent (dietmar.burkard@nerdware.dev), 2026-09-20.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0109` §Konsequenzen
 Folgepflicht 1/5). **Datum:** 2026-09-20.
@@ -69,7 +69,7 @@ Repository-Secret, der zentrale Unterschied zu
 
 ## 2. Definition of Done
 
-- [ ] `.github/workflows/sdk-kotlin-release.yml` existiert: Trigger
+- [x] `.github/workflows/sdk-kotlin-release.yml` existiert: Trigger
       ausschließlich `push: tags: ['sdk-kotlin-v*']` (`ci.yml`/`e2e.yml`/
       `release.yml`/`sdk-csharp-release.yml`/`sdk-python-release.yml`
       schließen diesen Tag-Namensraum durch ihre jeweils eigenen
@@ -89,26 +89,29 @@ Repository-Secret, der zentrale Unterschied zu
       `publishing.repositories.maven`-Block von `build.gradle.kts` (real
       recherchiertes Minimalrezept, `ADR-0109` §Kontext) — **kein**
       `secrets.<NAME>`-Verweis auf ein externes Repository-Secret.
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` trägt den
+- [x] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` trägt den
       `publishing { repositories { maven { … } } }`-Block mit dem
       eingebauten `maven-publish`-Plugin (bereits in
       `slice-sdk-kotlin-projektgeruest` angelegt) — falls dieser Block
       dort noch nicht vollständig war, ergänzt dieser Slice ihn.
-- [ ] Jede `uses:`-Zeile ist auf einen vollständigen Commit-SHA gepinnt,
-      mit Tag-Kommentar (`AGENTS.md` §3.8) — `actions/checkout` und
-      `actions/setup-java` (oder gleichwertig für Gradle) wiederverwenden
-      denselben, bereits im Repo etablierten SHA, falls bereits gepinnt,
-      sonst neu recherchiert und gepinnt.
-- [ ] YAML-Struktur geprüft (Muster `sdk-csharp-release.yml`/
+- [x] Jede `uses:`-Zeile ist auf einen vollständigen Commit-SHA gepinnt,
+      mit Tag-Kommentar (`AGENTS.md` §3.8) — `actions/checkout`
+      wiederverwendet denselben, bereits im ganzen Repo gepinnten SHA
+      (`3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`); **kein**
+      `actions/setup-java` nötig — JDK 21 ist auf `ubuntu-latest` bereits
+      vorinstalliert (`JAVA_HOME_21_X64`, real gemessen, siehe §3 „Beim
+      Schreiben getroffene Entscheidungen") — keine zusätzliche
+      `uses:`-Zeile über `actions/checkout` hinaus.
+- [x] YAML-Struktur geprüft (Muster `sdk-csharp-release.yml`/
       `sdk-python-release.yml`: Ruby-Stdlib-YAML-Parser, netzlos —
       `ruby -ryaml -e "YAML.load_file(...)"`, zusätzlich jeder `run:`-Block
       einzeln mit `bash -n` auf Syntaxfehler geprüft).
-- [ ] `harness/README.md` §Werkzeuge bekommt die reale Zeile für
+- [x] `harness/README.md` §Werkzeuge bekommt die reale Zeile für
       `.github/workflows/sdk-kotlin-release.yml` (kein Gate, Bindung auf
       [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)) —
       erst jetzt zulässig, weil der Workflow jetzt real existiert
       (`AGENTS.md` §4).
-- [ ] `docs/user/releasing.md` zieht den neuen SDK-Release-Weg **vorab als
+- [x] `docs/user/releasing.md` zieht den neuen SDK-Release-Weg **vorab als
       eigener DoD-Punkt** nach (analog dem bestehenden C#-/Python-Eintrag,
       Abschnitt „SDK-Release" — hier **ohne** eine neue Secret-Tabellenzeile,
       stattdessen ein expliziter Hinweis: „kein externes Secret,
@@ -116,15 +119,15 @@ Repository-Secret, der zentrale Unterschied zu
       Reviewer-Finding wie bei der C#-Welle
       (`BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`,
       1×, Welle-Plan §6).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge und
+- [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfällt als eigener Punkt,
       da bereits oben als DoD-Kriterium geführt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -143,28 +146,56 @@ Repository-Secret, der zentrale Unterschied zu
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `.github/workflows/sdk-kotlin-release.yml` | neu | Tag-Trigger, SemVer-/`build.gradle.kts`-Abgleich, `./gradlew publish` mit `GITHUB_TOKEN`. |
-| `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` | update (falls nötig) | `publishing`-Block mit GitHub-Packages-Registry-Adresse. |
+| `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` | update | `publishing.repositories.maven`-Block mit GitHub-Packages-Registry-Adresse ergänzt (der `publications`-Block existierte bereits aus `slice-sdk-kotlin-projektgeruest`). |
 | `harness/README.md` §Werkzeuge | update | reale Workflow-Zeile. |
-| `docs/user/releasing.md` | update | SDK-Release-Weg-Abschnitt für Kotlin, vorab, kein externes Secret. |
+| `docs/user/releasing.md` | update | SDK-Release-Weg-Abschnitt für Kotlin, vorab, kein externes Secret; §1-Intro und Änderungshistorie (Version 1.4 → 1.5) mitgezogen. |
+| `tools/harness/sdk-kotlin-release-tag-info.sh` (Plan-Nachzug, real umgesetzt) | neu | validiert `sdk-kotlin-v<SemVer-2.0>`-Tags, gibt `version=` aus (kein `latest=`) — Struktur-Vorbild `tools/harness/sdk-csharp-release-tag-info.sh`, teilt sich `tools/harness/semver-regex.sh` (Entscheidung siehe unten). |
+| `tools/harness/run-sdk-kotlin-release-tag-info-tests.sh` + `Makefile`-Target `test-sdk-kotlin-release-tag-info` (Plan-Nachzug, real umgesetzt) | neu | netzloser Tabellentest, Muster `run-sdk-csharp-release-tag-info-tests.sh`/`test-sdk-csharp-release-tag-info` (kein Gate); real rot gesehen über eine Mutation (SemVer-Check auf `if false` gesetzt, 4 Fälle scheitern), danach revertiert. |
+| `tools/harness/semver-regex.sh` (Plan-Nachzug, real umgesetzt) | update | Kopf-Kommentar auf den dritten Konsumenten (`sdk-kotlin-release-tag-info.sh`) erweitert — kein Verhaltens-, nur ein Dokumentationsnachzug (der dritte Konsument teilt sich die bereits bestehende `SEMVER_RE` unverändert). |
 
-**Möglicher Plan-Nachzug (analog den beiden Vorgänger-Wellen, hier vorab
-benannt statt erst im Nachhinein entdeckt):**
+**Beim Schreiben getroffene Entscheidungen (Auflösung der unten zuvor als
+„Möglicher Plan-Nachzug" benannten offenen Punkte — keine Abweichung vom
+Plan, der Plan hat sie ausdrücklich auf diesen Zeitpunkt verschoben):**
 
-- Ein gemeinsames Tag-Validierungs-Skript
-  (`tools/harness/semver-regex.sh`, bereits aus der C#-Welle vorhanden)
-  wird für ein neues `tools/harness/sdk-kotlin-release-tag-info.sh`
-  wiederverwendet, analog `tools/harness/sdk-csharp-release-tag-info.sh`/
-  einer möglichen Python-Entsprechung — real zu prüfen, ob eine
-  Python-Entsprechung bereits existiert oder ob `sdk-python-release.yml`
-  eine eigenständige Regex führt (siehe dessen Closure-Notiz: „eigenständige
-  PEP-440-Einfachfall-Regex, nicht geteilt"). Für Kotlin/SemVer 2.0 ist
-  eine Teilung mit `tools/harness/semver-regex.sh` naheliegend (dieselbe
-  Grammatik wie bei C#), aber erst beim Schreiben zu entscheiden.
-- Die `build.gradle.kts`-Versionsprüfung läuft direkt auf dem Runner
-  (`grep`/`sed` gegen die feste `version = "…"`-Zeile) statt im gepinnten
-  Toolchain-Container — dieselbe Begründung wie bei
-  `sdk-csharp-release.yml` (kein `xmllint`/Gradle-Parser im
-  `golang:1.27-alpine`-Toolchain-Image nötig für eine Ein-Zeilen-Extraktion).
+- **Geteilte SemVer-2.0-Regex, wie bei C#.** `tools/harness/sdk-python-release-tag-info.sh`
+  führt eine eigenständige PEP-440-Regex (reale Prüfung: dessen
+  Closure-Notiz bestätigt „eigenständige Regex, nicht geteilt" — kein
+  drittes Sourcing-Ziel dort). Kotlin/Gradle-Maven-Versionierung ist reines
+  SemVer 2.0 (`ADR-0109` Festlegung 4) — dieselbe Grammatik wie beim
+  C#-SDK. `tools/harness/sdk-kotlin-release-tag-info.sh` teilt sich deshalb
+  `tools/harness/semver-regex.sh` mit `tools/harness/release-tag-info.sh`
+  und `tools/harness/sdk-csharp-release-tag-info.sh` (jetzt drei
+  Konsumenten) — der Kopf-Kommentar von `semver-regex.sh` ist entsprechend
+  nachgezogen.
+- **Versionsprüfung direkt auf dem Runner, wie geplant** —
+  `grep -oE '^version = "[^"]+"' … | sed -E 's/^version = "([^"]+)"/\1/'`
+  gegen die **Top-Level**-`version`-Zeile in `build.gradle.kts` (Anker
+  `^`, kein Leerraum davor) trifft ausschließlich Zeile 77
+  (`version = "0.1.0"`), nicht die gleichlautende, aber eingerückte Zeile
+  innerhalb des `publications.create<MavenPublication>`-Blocks — real
+  gegen die Datei geprüft (`grep -oE` liefert genau einen Treffer).
+- **Publish-Schritt läuft auf dem Runner, nicht im Docker-Bau — mit einem
+  zusätzlichen, im ursprünglichen Plan nicht ausbuchstabierten Schritt:**
+  Da die `.proto`-Quelle nicht im committeten SDK-Baum liegt (`ADR-0109`
+  Festlegung 3) und der Docker-Bau sie nur über den zusätzlichen
+  Bau-Kontext `--build-context proto=proto` bezieht (`sdks/kotlin/Dockerfile`),
+  braucht der Host-seitige `./gradlew publish`-Lauf denselben Kopier-Schritt
+  manuell: `cp proto/cdc/stream/v1/changestream.proto
+  sdks/kotlin/pgchangefeed-kotlin/src/main/proto/changestream.proto` VOR
+  dem Publish-Schritt — ohne ihn bricht die Protobuf-Codegenerierung ab
+  (`publish` hängt von `jar` ab, `jar` von `compileKotlin`, das wiederum
+  den generierten gRPC-Stub braucht). Dieser Schritt stand nicht explizit
+  im ursprünglichen §3-Plan, war aber durch `ADR-0109` Festlegung 3
+  bereits impliziert (kein committeter Stub) — kein struktureller
+  Plan-Bruch, eine notwendige Konkretisierung beim Schreiben.
+- **JDK 21 auf dem Runner, kein `actions/setup-java`.** Real gemessen
+  (`actions/runner-images`-Ubuntu-24.04-Readme, live abgerufen):
+  `ubuntu-latest` trägt JDK 21 bereits vorinstalliert unter
+  `JAVA_HOME_21_X64` (Default-`JAVA_HOME` zeigt auf JDK 17) — der
+  Publish-Schritt setzt `JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}` explizit,
+  kein zusätzlicher Action-Pin nötig (anders als bei
+  `sdk-python-release.yml`s `astral-sh/setup-uv`, wo `uv` auf dem Runner
+  nicht vorinstalliert ist).
 
 **Hinweise aus dem Beobachtungs-Register (proaktiv):**
 
@@ -230,13 +261,24 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
 - Ein SemVer-Tag-Parser für `sdk-kotlin-v*` teilt sich möglicherweise Code
   mit `tools/harness/semver-regex.sh` (bereits geteilt zwischen
   `release-tag-info.sh` und `sdk-csharp-release-tag-info.sh`) — eine naive
-  Kopie würde die Stellen unabhängig driften lassen. **Ausgang:** weiter
-  offen, zu entscheiden beim Schreiben (siehe §3 Plan-Nachzug-Hinweis).
+  Kopie würde die Stellen unabhängig driften lassen. **Ausgang:** aufgelöst
+  — `tools/harness/sdk-kotlin-release-tag-info.sh` teilt sich
+  `tools/harness/semver-regex.sh` (dritter Konsument, Kopf-Kommentar dort
+  entsprechend nachgezogen), siehe §3 „Beim Schreiben getroffene
+  Entscheidungen"; netzlos getestet über
+  `make test-sdk-kotlin-release-tag-info` (16 Fälle, alle bestanden,
+  zusätzlich real rot gesehen über eine Mutation der Regex-Prüfung).
 - Das reale `publishing.repositories.maven`-Minimalrezept aus `ADR-0109`s
   Recherche könnte beim tatsächlichen Schreiben eine zusätzliche
   Gradle-Eigenheit zeigen (z. B. Group-/Artifact-ID-Ableitung aus
   `settings.gradle.kts` statt `build.gradle.kts`), die die Doku-Recherche
-  nicht erfasst hat. **Ausgang:** weiter offen — falls der reale erste
+  nicht erfasst hat. **Ausgang:** teilweise geprüft, im Kern weiter offen —
+  `make sdk-pack-kotlin` (Docker-Bau, `./gradlew build`/`test`) bestätigt,
+  dass Gradle den ergänzten `publishing.repositories.maven`-Block
+  fehlerfrei einliest (kein Konfigurationsfehler beim `build.gradle.kts`-
+  Parsen); ob `./gradlew publish` gegen die reale GitHub-Packages-Registry
+  tatsächlich erfolgreich schreibt, bleibt nach `AGENTS.md` §3.10 bis zum
+  ersten realen Tag-Push unbewiesen — falls der reale erste
   Post-Push-Lauf daran scheitert, ist das nach `ADR-0109`
   §Re-Evaluierungs-Trigger 4 eine Nachbesserung, keine automatische
   Supersession (reiner Workflow-Bugfix ohne Entscheidungsänderung).

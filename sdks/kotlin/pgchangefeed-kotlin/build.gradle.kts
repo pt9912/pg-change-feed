@@ -12,11 +12,21 @@
 //
 // `maven-publish` ist das eingebaute Gradle-Kern-Plugin (ADR-0109
 // Festlegung 5, F1) — kein Dritt-Plugin wie `com.vanniktech.maven-publish`.
-// Der `publishing`-Block hier trägt nur die Maven-Koordinate; der reale
-// GitHub-Packages-`repositories{}`-Eintrag (`GITHUB_TOKEN`, Registry-URL)
-// ist Sache des Publish-Workflow-Zuges (`slice-sdk-kotlin-publish-workflow`,
-// ADR-0109 §Konsequenzen Folgepflicht 1) — kein Publish-Aufruf in diesem
-// Slice.
+// Der `publishing`-Block trägt die Maven-Koordinate UND den
+// GitHub-Packages-`repositories{}`-Eintrag (real recherchiertes
+// Minimalrezept, ADR-0109 §Kontext Recherche:
+// `docs.github.com/…/publishing-java-packages-with-gradle`) — Registry-URL
+// `https://maven.pkg.github.com/pt9912/pg-change-feed`, Zugangsdaten aus den
+// Umgebungsvariablen `GITHUB_ACTOR`/`GITHUB_TOKEN`. `GITHUB_ACTOR` ist ein
+// von GitHub Actions automatisch bereitgestellter Default-Umgebungswert;
+// `GITHUB_TOKEN` wird vom aufrufenden Workflow
+// (`.github/workflows/sdk-kotlin-release.yml`, ADR-0109 §Konsequenzen
+// Folgepflicht 1) explizit als Umgebungsvariable gesetzt (`secrets.GITHUB_TOKEN`)
+// — kein neues Repository-Secret, kein `secrets.<NAME>`-Verweis hier.
+// Außerhalb dieses Workflows (lokal, in `make sdk-pack-kotlin`) bleiben
+// beide Umgebungsvariablen leer — `./gradlew publish` läuft dort ohnehin
+// nicht (die Docker-Bau-Kette in `sdks/kotlin/Dockerfile` ruft nur `test`/
+// `build` auf, keinen `publish`-Task).
 //
 // `com.google.code.gson:gson` ist die JSON-Bibliothek der HTTP-Client-Fläche
 // (slice-sdk-kotlin-http-client-flaeche, `SPEC-018`/`SPEC-022`) — dieselbe
@@ -134,6 +144,16 @@ publishing {
             artifactId = "pgchangefeed-kotlin"
             version = "0.1.0"
             from(components["java"])
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/pt9912/pg-change-feed")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
         }
     }
 }

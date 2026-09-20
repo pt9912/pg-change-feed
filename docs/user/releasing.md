@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.4
+Version: 1.5
 Stand: 2026-09-20
 
 ## 1. Zweck und Zielgruppe
@@ -17,10 +17,13 @@ Image auf GHCR oder Docker Hub stammt.
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
 GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
 Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Beide separaten SDK-Release-Wege (§4
+nicht nur implementiert. Zwei der drei separaten SDK-Release-Wege (§4
 „SDK-Release") sind inzwischen ebenfalls real mit einem grünen Tag-Push
 bewiesen: `sdk-csharp-v0.1.0` (`PgChangeFeed.Client` auf NuGet.org) und
-`sdk-python-v0.1.0` (`pgchangefeed` auf PyPI).
+`sdk-python-v0.1.0` (`pgchangefeed` auf PyPI). Der dritte, jüngste Weg
+(`sdk-kotlin-v*`, `pgchangefeed-kotlin` auf GitHub Packages) ist
+implementiert, aber bis zum ersten realen `sdk-kotlin-v*`-Tag-Push nach
+[`AGENTS.md`](../../AGENTS.md) §3.10 noch unbewiesen (siehe unten).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -212,6 +215,82 @@ sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet). Der
 Python-SDK-Release-Weg ist damit End-zu-Ende mit echtem
 `PYPI_API_TOKEN`-Secret bewiesen, nicht nur implementiert.
 
+### SDK-Release: GitHub-Packages-Publish für `pgchangefeed-kotlin`
+
+Analog zu den beiden SDK-Release-Wegen oben existiert ein vierter,
+eigenständiger Release-Mechanismus für das Kotlin-SDK-Package
+`pgchangefeed-kotlin`
+([`ADR-0109`](../plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+Festlegung 2/5): ein eigener Tag-Namensraum `sdk-kotlin-v<SemVer 2.0>`
+(z. B. `sdk-kotlin-v0.1.0`) — getrennt vom Server-Namensraum `v*` (§3)
+sowie vom C#-SDK-Namensraum `sdk-csharp-v*` und vom Python-SDK-Namensraum
+`sdk-python-v*` (siehe oben), weil die Kotlin-SDK-Versionierung unabhängig
+von allen dreien läuft (`ADR-0109` Festlegung 4) und `sdk-kotlin-v*` keines
+der vier anderen Muster (`v*`, `sdk-csharp-v*`, `sdk-python-v*`, sowie
+`ci.yml`/`e2e.yml`/`examples.yml`s `tags-ignore: ['**']`) matcht (kein
+Präfix-Überlappungs-Doppellauf).
+
+Trigger: `push: tags: ['sdk-kotlin-v*']` in
+[`.github/workflows/sdk-kotlin-release.yml`](../../.github/workflows/sdk-kotlin-release.yml).
+Der Workflow:
+
+1. validiert den Tag-Suffix strikt gegen SemVer 2.0
+   (`tools/harness/sdk-kotlin-release-tag-info.sh`, netzlos testbar über
+   `make test-sdk-kotlin-release-tag-info` — teilt die SemVer-2.0-Regex mit
+   `tools/harness/release-tag-info.sh`/`tools/harness/sdk-csharp-release-tag-info.sh`
+   über `tools/harness/semver-regex.sh`, dieselbe Grammatik wie beim
+   C#-SDK, **nicht** Pythons PEP-440-Sonderfall);
+2. gleicht die ermittelte Version gegen die Top-Level-`version`-Zeile in
+   `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` ab — Abbruch bei
+   jeder Abweichung, vor jedem Build/Publish (Muster analog dem
+   Tag-vs-`.csproj`-Abgleich bzw. dem Tag-vs-`pyproject.toml`-Abgleich
+   oben, hier gegen die Gradle-Versionszeile);
+3. baut/testet/paketiert Docker-only über `make sdk-pack-kotlin` — ein
+   roter Test bricht den Workflow ab, bevor der Publish-Schritt erreicht
+   wird;
+4. veröffentlicht anschließend per `./gradlew publish` — **direkt auf dem
+   Runner**, nicht im Docker-Bau: JDK 21 ist auf dem `ubuntu-latest`-Runner
+   bereits vorinstalliert (`JAVA_HOME_21_X64`), kein zusätzliches
+   `actions/setup-java` nötig. Die `.proto`-Quelle
+   (`proto/cdc/stream/v1/changestream.proto`) wird vor diesem Schritt an
+   dieselbe Stelle kopiert, die der Docker-Bau per `COPY --from=proto`
+   befüllt (`src/main/proto/changestream.proto`) — ohne diesen
+   Kopier-Schritt bricht die Protobuf-Codegenerierung ab.
+
+**Kein externes Repository-Secret nötig** — der zentrale Unterschied zu
+den beiden Release-Wegen oben: GitHub Packages authentifiziert
+ausschließlich über das eingebaute `GITHUB_TOKEN`
+(`permissions: contents: read` / `packages: write` auf Job-Ebene, real
+dokumentiertes Minimalrezept, `ADR-0109` §Kontext Recherche). `GITHUB_ACTOR`
+ist ein von GitHub Actions automatisch bereitgestellter
+Default-Umgebungswert; `GITHUB_TOKEN` wird explizit aus
+`secrets.GITHUB_TOKEN` als Umgebungsvariable gesetzt, gelesen von
+`sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`s
+`publishing.repositories.maven.credentials`. Kein Betreiber-Schritt, kein
+neuer Eintrag in der Secret-Tabelle oben.
+
+**Ein realer Preis bleibt trotzdem bestehen — anders als bei NuGet und
+PyPI**: GitHub Packages verlangt eine Authentifizierung zum **Lesen**, auch
+für ein öffentliches Package (real dokumentiert, `ADR-0109`
+§Entscheidung Festlegung 2). Ein Kotlin-Consumer, der `pgchangefeed-kotlin`
+in sein eigenes Projekt einbindet, braucht ein GitHub-Konto und einen
+klassischen Personal-Access-Token mit `read:packages`-Scope, den er in
+seiner eigenen Build-Konfiguration hinterlegt — ein anonymer Bezug wie bei
+Maven Central, NuGet oder PyPI ist bei GitHub Packages strukturell nicht
+möglich.
+
+Kein `:latest`-Äquivalent (GitHub Packages kennt keins) und kein
+GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
+Folgepflicht (`ADR-0109`).
+
+**Der reale, grüne Post-Push-Lauf steht noch aus** — dieser Release-Weg
+ist implementiert und `make gates` läuft grün, aber nach
+[`AGENTS.md`](../../AGENTS.md) §3.10 bleibt er bis zum ersten echten
+`sdk-kotlin-v*`-Tag-Push unbewiesen: `./gradlew publish`-Verhalten auf dem
+Runner und das reale GitHub-Packages-Registry-Antwortverhalten sind lokal
+strukturell nicht prüfbar (kein Docker-only-Sensor kann einen externen,
+gehosteten Runner-Lauf ersetzen).
+
 ## 5. Begleitende, nicht-blockierende Workflows
 
 Zwei weitere Workflows laufen unabhängig vom Release-Trigger, nächtlich
@@ -246,3 +325,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.2 | 2026-09-19 | §1 korrigiert: drei reale Server-Release-Tags (`v0.1.0`–`v0.1.2`) sind bereits gesetzt und liefen grün durch — der Server-Release-Mechanismus ist End-zu-Ende bewiesen; der SDK-Release-Weg bleibt bis zum ersten realen `sdk-csharp-v*`-Tag-Push separat unbewiesen |
 | 1.3 | 2026-09-19 | §4 um den dritten, unabhängigen SDK-Release-Weg (`sdk-python-v*`-Tag, `PYPI_API_TOKEN`, `uv publish`) ergänzt, Secret-Tabelle um `PYPI_API_TOKEN` erweitert — vorab eingeplanter DoD-Punkt von `slice-sdk-python-publish-workflow` (`LH-FA-SST-009`, `ADR-0107`, `ADR-0108`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`) |
 | 1.4 | 2026-09-20 | §1/§4 korrigiert: `sdk-python-v0.1.0` real gesetzt, `pgchangefeed` 0.1.0 real auf PyPI veröffentlicht — der Python-SDK-Release-Weg ist damit wie der C#-Weg End-zu-Ende bewiesen |
+| 1.5 | 2026-09-20 | §1/§4 um den vierten, unabhängigen SDK-Release-Weg (`sdk-kotlin-v*`-Tag, GitHub Packages, `GITHUB_TOKEN`, kein externes Secret) ergänzt — vorab eingeplanter DoD-Punkt von `slice-sdk-kotlin-publish-workflow` (`LH-FA-SST-009`, `ADR-0109`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`); der reale Post-Push-Lauf bleibt nach `AGENTS.md` §3.10 bis zum ersten echten Tag-Push offen |
