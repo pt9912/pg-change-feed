@@ -95,7 +95,8 @@ dieses Repos.
       Kontext; kein Duplikat der Draht-Doku (`SPEC-018`/`SPEC-020` bleiben
       die kanonische Quelle).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor —
+      [`review-slice-sdk-kotlin-projektgeruest.md`](../../../reviews/review-slice-sdk-kotlin-projektgeruest.md)
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
