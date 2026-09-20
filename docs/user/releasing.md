@@ -1,7 +1,7 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.3
-Stand: 2026-09-19
+Version: 1.4
+Stand: 2026-09-20
 
 ## 1. Zweck und Zielgruppe
 
@@ -17,13 +17,10 @@ Image auf GHCR oder Docker Hub stammt.
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
 GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
 Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Von den beiden separaten SDK-Release-Wegen (§4
-„SDK-Release") ist der C#-Weg (`sdk-csharp-v*`) ebenfalls bereits real
-mit einem grünen Tag-Push bewiesen; der Python-Weg (`sdk-python-v*`) ist
-zum Zeitpunkt dieses Dokuments implementiert und real gegen die
-beteiligten APIs geprüft, aber noch ohne eigenen realen Tag-Push — sein
-End-zu-Ende-Ablauf bleibt bis dahin strukturell unbewiesen
-(`AGENTS.md` §3.10).
+nicht nur implementiert. Beide separaten SDK-Release-Wege (§4
+„SDK-Release") sind inzwischen ebenfalls real mit einem grünen Tag-Push
+bewiesen: `sdk-csharp-v0.1.0` (`PgChangeFeed.Client` auf NuGet.org) und
+`sdk-python-v0.1.0` (`pgchangefeed` auf PyPI).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -207,13 +204,13 @@ Kein `:latest`-Äquivalent (PyPI kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0107`).
 
-**Zum Zeitpunkt dieses Dokuments wurde noch kein realer
-`sdk-python-v*`-Tag gesetzt, und `PYPI_API_TOKEN` existiert (real
-geprüft über `gh secret list`) noch nicht als Repository-Secret** — anders
-als bei `NUGET_API_KEY`, das sich bei der C#-Welle bereits als vorhanden
-herausstellte. Der End-zu-Ende-Ablauf mit echtem `PYPI_API_TOKEN`-Secret
-bleibt strukturell erst nach Anlage des Secrets und dem ersten echten
-Tag-Push bewiesen (`AGENTS.md` §3.10).
+**Ein realer `sdk-python-v*`-Tag ist bereits gesetzt** —
+`sdk-python-v0.1.0` lief mit grünem `sdk-python-release.yml`-Lauf durch
+und veröffentlichte `pgchangefeed` 0.1.0 real auf PyPI (die PyPI-API
+`https://pypi.org/pypi/pgchangefeed/json` bestätigt Version `0.1.0`
+sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet). Der
+Python-SDK-Release-Weg ist damit End-zu-Ende mit echtem
+`PYPI_API_TOKEN`-Secret bewiesen, nicht nur implementiert.
 
 ## 5. Begleitende, nicht-blockierende Workflows
 
@@ -248,3 +245,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.1 | 2026-09-19 | §4 um den unabhängigen SDK-Release-Weg (`sdk-csharp-v*`-Tag, `NUGET_API_KEY`) ergänzt — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-csharp-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0106`) |
 | 1.2 | 2026-09-19 | §1 korrigiert: drei reale Server-Release-Tags (`v0.1.0`–`v0.1.2`) sind bereits gesetzt und liefen grün durch — der Server-Release-Mechanismus ist End-zu-Ende bewiesen; der SDK-Release-Weg bleibt bis zum ersten realen `sdk-csharp-v*`-Tag-Push separat unbewiesen |
 | 1.3 | 2026-09-19 | §4 um den dritten, unabhängigen SDK-Release-Weg (`sdk-python-v*`-Tag, `PYPI_API_TOKEN`, `uv publish`) ergänzt, Secret-Tabelle um `PYPI_API_TOKEN` erweitert — vorab eingeplanter DoD-Punkt von `slice-sdk-python-publish-workflow` (`LH-FA-SST-009`, `ADR-0107`, `ADR-0108`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`) |
+| 1.4 | 2026-09-20 | §1/§4 korrigiert: `sdk-python-v0.1.0` real gesetzt, `pgchangefeed` 0.1.0 real auf PyPI veröffentlicht — der Python-SDK-Release-Weg ist damit wie der C#-Weg End-zu-Ende bewiesen |

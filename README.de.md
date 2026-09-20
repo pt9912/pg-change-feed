@@ -24,7 +24,7 @@ Oberfläche.
 | **Aufbewahrung** | Zeit- und consumer-basierte Retention betreiben, blockierende Consumer sichtbar machen, bevor sie die Löschung verhindern. |
 | **Betrieb** | Betriebsstatus, CLI-Diagnose, Metriken und WAL-Rückstand abfragen. |
 | **Sicherheit** | Rollenspezifische Zugriffsrechte durchsetzen (`cdc_capture`/`cdc_admin`/`cdc_reader`, Least-Privilege — kein eigener Login, Zugriff läuft über die PostgreSQL-Verbindung selbst). |
-| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest); HTTP-API und gRPC-Stream stehen zusätzlich als offizielle C#-Client-Bibliothek zur Verfügung ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org). |
+| **Distribution** | Als OCI-Image für `linux/amd64` **und** `linux/arm64` beziehen (GHCR und Docker Hub, identischer Digest); HTTP-API und gRPC-Stream stehen zusätzlich als offizielle C#-Client-Bibliothek zur Verfügung ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org), die HTTP-API zusätzlich als offizielle Python-Client-Bibliothek ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) auf PyPI). |
 
 Details und Beispiele je Zugriffsweg (Go, C#, Kotlin) stehen im
 [Benutzerhandbuch](docs/user/benutzerhandbuch.md); der volle Anforderungs-
@@ -34,6 +34,7 @@ Siehe:
 
 - [`docs/user/benutzerhandbuch.md`](docs/user/benutzerhandbuch.md) für die Bedienung.
 - [`sdks/csharp/`](sdks/csharp/) für die offizielle C#-Client-Bibliothek ([`PgChangeFeed.Client`](https://www.nuget.org/packages/PgChangeFeed.Client) auf NuGet.org).
+- [`sdks/python/`](sdks/python/) für die offizielle Python-Client-Bibliothek ([`pgchangefeed`](https://pypi.org/project/pgchangefeed/) auf PyPI).
 - [`docs/user/releasing.md`](docs/user/releasing.md) für den Release-Prozess.
 - [`spec/lastenheft.md`](spec/lastenheft.md) für Anforderungen und Akzeptanzkriterien.
 - [`spec/pflichtenheft.md`](spec/pflichtenheft.md) für die technische Spezifikation.
