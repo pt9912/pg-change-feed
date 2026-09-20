@@ -66,7 +66,7 @@ denselben Mechanismus wie `examples/csharp/grpc-client`, siehe
 
 ## 2. Definition of Done
 
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/…/grpc/` (oder
+- [x] `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/…/grpc/` (oder
       gleichwertiger Namensraum) trägt eine öffentliche Client-Klasse mit
       einer Methode, die den `StreamChanges`-RPC öffnet und die Nachrichten
       von [`SPEC-020`](../../../../spec/pflichtenheft.md) (`change_id`,
@@ -74,7 +74,8 @@ denselben Mechanismus wie `examples/csharp/grpc-client`, siehe
       `old_image`, `new_image`, `schema_version`, `schema`, `table`) an den
       Consumer weiterreicht — Bearer-Token wird bei Konstruktion oder
       Aufruf übergeben, landet im `authorization`-Metadata-Eintrag.
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` bekommt dieselben
+      Umgesetzt als `io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClient`.
+- [x] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` bekommt dieselben
       gRPC-/Coroutine-Koordinaten wie `examples/kotlin/grpc-client/build.gradle.kts`
       (`io.grpc:grpc-kotlin-stub`, `io.grpc:grpc-netty-shaded`,
       `io.grpc:grpc-bom`, `com.google.protobuf:protobuf-java`,
@@ -82,45 +83,67 @@ denselben Mechanismus wie `examples/csharp/grpc-client`, siehe
       `com.google.protobuf`-Gradle-Plugin) — Versionen zum Bau-Zeitpunkt
       dieses Slice real neu gemessen, nicht aus `examples/kotlin/` oder
       `ADR-0109`s Kontext-Messung (2026-09-17) unbesehen übernommen
-      (`AGENTS.md` §3.12).
-- [ ] `sdks/kotlin/Dockerfile` bekommt den zusätzlichen, benannten
+      (`AGENTS.md` §3.12). Reale Drift gefunden und übernommen:
+      `com.google.protobuf:protoc`/`protobuf-java` `4.36.1` → `4.36.2`
+      (Maven Central, 2026-09-20); alle übrigen Koordinaten unverändert
+      (siehe `build.gradle.kts`-Kommentar für den vollständigen Messbeleg
+      inkl. der als Nicht-Release erkannten Commit-Hash-Metadaten-Anomalie
+      bei `grpc-kotlin-stub`/`protoc-gen-grpc-kotlin`).
+- [x] `sdks/kotlin/Dockerfile` bekommt den zusätzlichen, benannten
       Bau-Kontext `proto` (`--build-context proto=proto`, `COPY --from=proto
       cdc/stream/v1/changestream.proto …`) — ohne ihn bricht der Bau an der
       `COPY`-Zeile ab, kein stiller Fallback (Muster
       `examples/kotlin/Dockerfile`/`harness/mk/examples.mk`, hier auf den
-      SDK-Baum übertragen).
-- [ ] Eigene Tests decken mindestens: Nachrichtenschema-Vollständigkeit
+      SDK-Baum übertragen). Real geprüft: `docker build --build-context
+      proto=proto -f sdks/kotlin/Dockerfile sdks/kotlin` (ohne den
+      Zusatzkontext läuft `generateProto` als `NO-SOURCE`, mit ihm real
+      erzeugt — beide Fälle real ausgeführt).
+- [x] Eigene Tests decken mindestens: Nachrichtenschema-Vollständigkeit
       (Feld-für-Feld gegen `SPEC-020`, analog
       `internal/adapters/driving/grpc/server_test.go`s Feldvollständigkeits-
       Test) und den Authn-Boundary-Pfad (fehlendes/ungültiges Token →
       `Unauthenticated`, ohne echten Server — ein Fake/Stub des
       generierten Coroutine-Stubs oder gleichwertig, netzlos).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos —
+      `PgChangeFeedGrpcClientMessageSchemaTest`/`PgChangeFeedGrpcClientAuthBoundaryTest`
+      gegen `FakeGrpcStreamTransport`; beide real mutationsgetestet (rot
+      färbende Mutation je Zusage, im Implementer-Bericht dokumentiert).
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos —
       der generierte Stub entsteht im SDK-eigenen Bau aus der `.proto`,
       nicht als Kopie von `gen/**` (`ADR-0109` §Kontext Bindung „Import-
       Grenze, hier ohne Ausnahme") — real geprüft:
       `grep -rn "internal/\|cmd/\|gen/" sdks/kotlin/` liefert höchstens
       einen Treffer als Doku-Kommentar-Zitat des Test-Vorbilds
       (`internal/adapters/driving/grpc/server_test.go`), keinen Import.
-- [ ] `make gates` grün.
+      Real gemessen: genau ein solcher Treffer (in
+      `PgChangeFeedGrpcClientMessageSchemaTest.kt`s KDoc) plus ein
+      unveränderter, vor diesem Slice bereits vorhandener Treffer im
+      Gradle-Wrapper-Skript `gradlew` (Upstream-Kommentarzeile
+      `org/gradle/api/internal/plugins/…`, kein Repo-Pfad, nicht Teil
+      dieses Diffs).
+- [x] `make gates` grün. Exit-Code `0`, direkt geprüft (`AGENTS.md` §3.9) —
+      Beleg im Implementer-Bericht.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Kotlin-gRPC-Oberfläche (`ADR-0109` §Konsequenzen
       Folgepflicht 4, **inklusive** des PAT-Hinweises für den Bezug über
       GitHub Packages) — getragen durch die bereits verkörperte
       Selbstprüf-Instruktion und den Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+      Zusätzlich die veraltete Aussage „gRPC-Change-Stream folgt in einem
+      Folge-Release" im bestehenden HTTP-`**SDK:**`-Absatz korrigiert
+      (Träger-Nachzug, `AGENTS.md` §3.13) — Version `1.36` → `1.37`.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      ist ebenfalls eine Antwort und wird in §7 notiert. Keine neue
+      Beobachtung — siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -199,9 +222,19 @@ geschrieben.
   `ADR-0109` §Kontext). Eine unvollständige oder inkonsistente
   BOM-Angleichung (siehe `examples/kotlin/grpc-client/build.gradle.kts`s
   Kommentare zu `protobuf-java`-Versionsdrift) könnte den Bau mit
-  `cannot find symbol` scheitern lassen. **Ausgang:** weiter offen,
-  entschieden beim Schreiben — `examples/kotlin/grpc-client` belegt bereits
-  eine funktionierende Kombination als Referenz.
+  `cannot find symbol` scheitern lassen. **Ausgang:** eingetreten und
+  aufgelöst — real gebaut (`docker build --build-context proto=proto -f
+  sdks/kotlin/Dockerfile sdks/kotlin`), `compileKotlin`/`compileJava` beide
+  ohne `cannot find symbol`; die real neu gemessene BOM-Angleichung
+  (`protoc`/`protobuf-java` explizit auf `4.36.2` angehoben, `grpc-protobuf`
+  zieht weiterhin transitiv `protobuf-java:3.25.9`) trägt dieselbe
+  funktionierende Kombination wie `examples/kotlin/grpc-client`. Ein
+  unabhängiger, realer Kopierfehler (Docker-`COPY`-Zielpfad relativ zum zu
+  diesem Zeitpunkt bereits gewechselten `WORKDIR /src/pgchangefeed-kotlin`,
+  nicht zur Bau-Kontext-Wurzel `/src` — ein doppelter Pfadanteil
+  `pgchangefeed-kotlin/pgchangefeed-kotlin/…`) wurde vom ersten realen
+  Docker-Bau-Lauf sichtbar gemacht (`generateProto NO-SOURCE`) und noch vor
+  dem ersten Commit dieses Slice korrigiert — kein Nacharbeits-Slice nötig.
 - Ein Fake/Stub für die Authn-Boundary könnte den realen
   gRPC-`Unauthenticated`-Status-Pfad nicht exakt nachbilden. **Ausgang:**
   weiter offen — ein realer Rundlauf-Beleg bleibt
@@ -211,15 +244,78 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird beim Abschluss ergänzt>
-- **Was ging anders als geplant:** <wird beim Abschluss ergänzt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss ergänzt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss
-  ergänzt>
+- **Was hat funktioniert:** Die reale Neu-Messung (`AGENTS.md` §3.12) fand
+  genau eine echte Drift ggü. `examples/kotlin/grpc-client`s
+  2026-09-17-Messung (`protoc`/`protobuf-java` `4.36.1` → `4.36.2`,
+  drei Tage später) und erkannte korrekt eine zweite, irreführende
+  Metadaten-Anomalie (Commit-Hash-„Releases" für `grpc-kotlin-stub`/
+  `protoc-gen-grpc-kotlin`) als Nicht-Release statt sie blind zu
+  übernehmen — beide Ergebnisse real gegen `repo1.maven.org`
+  nachvollzogen, nicht behauptet. Der Fake-Transport-Seam
+  (`GrpcStreamTransport`/`FakeGrpcStreamTransport`) hielt das exakte
+  Analogie-Muster von `HttpTransport`/`FakeHttpTransport` ein — inklusive
+  der aus dem vorigen Slice gelernten, korrekten `internal`-Kommentierung
+  (compile-time Kotlin-Grenze, keine JVM-Bytecode-Schranke) von Anfang an,
+  ohne die HIGH-Fixrunde des vorigen Slice zu wiederholen. Beide
+  Kern-Zusagen (Authn-Boundary, Nachrichtenschema-Vollständigkeit) wurden
+  real mutationsgetestet: `.catch { }` (verschluckt den
+  `StatusException`) und `.map { it.toBuilder().clearSchema().build() }`
+  (entfernt ein Feld) machten je einen Testlauf real rot, vor der Rückkehr
+  zur sauberen Fassung.
+- **Was ging anders als geplant:** Der erste reale
+  `docker build --build-context proto=proto …`-Lauf schlug fehl
+  (`generateProto NO-SOURCE`, dann `Unresolved reference 'cdc'`) — die
+  `COPY --from=proto …`-Zielpfadangabe im Dockerfile duplizierte das
+  Segment `pgchangefeed-kotlin/`, weil `WORKDIR` an dieser Stelle bereits
+  auf `/src/pgchangefeed-kotlin` gewechselt war (Docker-`COPY`-Ziele sind
+  relativ zum aktuellen `WORKDIR`, nicht zur Bau-Kontext-Wurzel) — ein
+  Unterschied zu `sdks/csharp/Dockerfile`, das `WORKDIR /src` nie
+  wechselt. Der Fehler wurde durch den realen Bau-Lauf selbst sichtbar
+  (kein stiller Fallback) und vor dem ersten Commit korrigiert (§6, Risiko
+  2 „Ausgang").
+- **Steering-Loop-Eintrag:** Ein Docker-`Dockerfile`, das `WORKDIR`
+  zwischen dem Kopieren des Wrapper-Baums und dem eigentlichen
+  Quell-Kopierschritt wechselt (Muster: `sdks/kotlin/Dockerfile`,
+  `examples/kotlin/Dockerfile` bleibt bei `WORKDIR /src`), braucht bei
+  jedem `COPY --from=<zusatzkontext>`-Ziel eine bewusste Prüfung, ob der
+  Zielpfad relativ zum *aktuellen* `WORKDIR` oder — fälschlich in Analogie
+  zum Bau-Kontext-Pfad des `--from`-Quellsegments — zur Bau-Kontext-Wurzel
+  gemeint war; der reale `docker build`-Lauf ist der einzige Sensor, der
+  diesen Unterschied zuverlässig zeigt (ein `generateProto NO-SOURCE` bei
+  vorhandener `.proto`-Quelle ist der Leitbefund).
+- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung.
+  Der Copy-Pfad-Fehler oben ist kein wiederkehrendes, bereits im Register
+  geführtes Muster (geprüft: kein Treffer für „doppelter Pfadanteil"/
+  „COPY --from=proto" außerhalb des bereits bekannten, andersartigen
+  `zusatzkontext-kopplung-breiter-als-dod-wortlaut`-Eintrags) und trat nur
+  im eigenen Entwurf auf, nie committet — kein Repo-weites Muster, das
+  einen eigenen `BEO-PGC`-Eintrag rechtfertigt; der Lerneintrag oben hält
+  ihn stattdessen fest. `BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand`
+  (2×) und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (19×) wurden
+  korrekt vermieden (siehe „Was hat funktioniert" und Träger-Nachzug
+  unten) — kein drittes bzw. zwanzigstes Vorkommen.
+- **Träger-Nachzug (`AGENTS.md` §3.13, real durchgeführter Suchlauf):**
+  Gesucht (`grep -rn "Kotlin"`/`"pgchangefeed-kotlin"`) über
+  `docs/user/benutzerhandbuch.md`, `sdks/kotlin/pgchangefeed-kotlin/README.md`
+  und das Root-`README.md`. Gefunden und nachgezogen: das
+  `pgchangefeed-kotlin/README.md`s „Status"-Absatz (behauptete
+  „gRPC … follows in a subsequent release") und
+  `docs/user/benutzerhandbuch.md`s HTTP-`**SDK:**`-Absatz (dieselbe
+  veraltete Aussage auf Deutsch) — beide korrigiert, plus neuer
+  `**SDK:**`-Absatz im gRPC-Abschnitt des Handbuchs (Version `1.36` →
+  `1.37`). Nicht gefunden/nicht nachgezogen: das Root-`README.md` nennt
+  `sdks/csharp/`/`sdks/python/` mit ihren Registry-Links, aber **keine**
+  `sdks/kotlin/`-Zeile — dieser Zustand bestand bereits vor diesem Slice
+  (seit `slice-sdk-kotlin-projektgeruest`/`-http-client-flaeche`, keine
+  Eigenschaft, die *dieser* Slice bewegt) und liegt außerhalb des in §3
+  geplanten Datei-Umfangs; an den Reviewer/Koordinator gemeldet statt
+  still mitgeändert.
 - **Folge-Slices:** keine aus diesem Slice selbst erwartet — Umfang bleibt
   innerhalb der Welle (Pack-Werkzeug, Publish-Workflow bleiben eigene,
   bereits geplante Slices).
-- **Risiken aus §6:** <wird beim Abschluss ergänzt>
+- **Risiken aus §6:** alle drei tragen einen Ausgang (siehe §6) — zwei
+  eingetreten/aufgelöst, einer (Fake/Stub-Grenze der Authn-Boundary)
+  bewusst weiter offen bis zu einem künftigen Integrationsbeleg.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.

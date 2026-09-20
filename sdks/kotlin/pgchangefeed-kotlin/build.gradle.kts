@@ -30,9 +30,47 @@
 // maven-metadata.xml): weiterhin `2.14.0` (`<latest>`/`<release>`, keine
 // Drift ggü. der Messung vom 2026-09-18 in `nats-stream-client` —
 // `AGENTS.md` §3.12).
+//
+// gRPC-Stream-Client-Fläche (`slice-sdk-kotlin-grpc-client-flaeche`,
+// `ADR-0109` Festlegung 1/3, `SPEC-020`): dieselben Koordinaten wie
+// `examples/kotlin/grpc-client/build.gradle.kts` (`slice-103`) — real am
+// heutigen Bau-Zeitpunkt dieses Slice (2026-09-20, Maven Central
+// maven-metadata.xml je Artefakt, Gradle Plugin Portal für das
+// `com.google.protobuf`-Plugin) neu gemessen, nicht aus `examples/kotlin/`
+// oder `ADR-0109`s Kontext-Messung (2026-09-17) unbesehen übernommen
+// (`AGENTS.md` §3.12):
+//   io.grpc:grpc-kotlin-stub        -> 1.5.0 (unverändert; `<latest>`/
+//     `<release>` der Maven-Metadaten zeigen einen Commit-Hash-Eintrag
+//     — ein CI-Snapshot-Artefakt, kein echtes Release, lastUpdated
+//     2025-09-16, also bereits vor `examples/kotlin/grpc-client`s eigener
+//     2026-09-17-Messung vorhanden und dort korrekt ignoriert; 1.5.0 bleibt
+//     die tatsächlich zuletzt veröffentlichte, reguläre Version)
+//   io.grpc:protoc-gen-grpc-kotlin  -> 1.5.0 (dieselbe Anomalie, dieselbe
+//     Auflösung wie oben)
+//   io.grpc:grpc-netty-shaded       -> 1.84.0 (unverändert)
+//   io.grpc:grpc-bom                -> 1.84.0 (unverändert)
+//   io.grpc:protoc-gen-grpc-java    -> 1.84.0 (unverändert)
+//   org.jetbrains.kotlinx:kotlinx-coroutines-core -> 1.11.0 (unverändert)
+//   com.google.protobuf (Gradle-Plugin, Gradle Plugin Portal) -> 0.10.0
+//     (unverändert)
+//   com.google.protobuf:protoc -> 4.36.2 (REALE DRIFT ggü. der
+//     2026-09-17-Messung in `examples/kotlin/grpc-client`: dort 4.36.1.
+//     Maven-Metadaten tragen zusätzlich einen `21.0-rc-1`-Eintrag —
+//     lastUpdated 2026-09-17, ein Release-Candidate einer neuen
+//     Versionszählung, kein stabiles Release; 4.36.2 bleibt die aktuellste
+//     stabile Version, real bezogen unter
+//     repo1.maven.org/maven2/com/google/protobuf/protoc/4.36.2/)
+//   com.google.protobuf:protobuf-java -> 4.36.2 (dieselbe reale Drift wie
+//     `protoc` oben — beide müssen dieselbe Major-Zeile tragen, siehe
+//     Kommentar unten zur `io.grpc:grpc-protobuf`-Transitiv-Version; real
+//     erneut geprüft: `io.grpc:grpc-protobuf:1.84.0` zieht weiterhin
+//     transitiv `protobuf-java:3.25.9`, unverändert ggü. der
+//     2026-09-17-Messung — die explizite Anhebung bleibt aus demselben
+//     Grund nötig)
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
+    id("com.google.protobuf") version "0.10.0"
 }
 
 group = "io.github.pt9912"
@@ -44,8 +82,45 @@ kotlin {
 
 dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
+    implementation(platform("io.grpc:grpc-bom:1.84.0"))
+    implementation("io.grpc:grpc-kotlin-stub:1.5.0")
+    implementation("io.grpc:grpc-protobuf")
+    implementation("io.grpc:grpc-stub")
+    implementation("com.google.protobuf:protobuf-java:4.36.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    runtimeOnly("io.grpc:grpc-netty-shaded")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:2.4.20")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+}
+
+// Die `.proto`-Quelle liegt NICHT im committeten Baum (`ADR-0109`
+// Festlegung 3, kein committeter Stub) — sie kommt erst im Docker-Bau nach
+// `src/main/proto/` (`sdks/kotlin/Dockerfile`), kopiert aus dem
+// zusätzlichen, benannten Bau-Kontext `proto`
+// (`docker build --build-context proto=proto …`, Muster
+// `examples/kotlin/Dockerfile`/`harness/mk/examples.mk`). Ohne diesen
+// Kontext bricht der Bau an der `COPY`-Zeile im Dockerfile ab — kein
+// stiller Fallback.
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.36.2"
+    }
+    plugins {
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.84.0"
+        }
+        create("grpckt") {
+            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.5.0:jdk8@jar"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                create("grpc")
+                create("grpckt")
+            }
+        }
+    }
 }
 
 tasks.test {

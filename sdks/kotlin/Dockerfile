@@ -5,6 +5,15 @@
 # Festlegung 3: eigenständiger Baum, kein `project(":…")`-Abhängigkeitspfad
 # auf einen privaten Baum dieses Repos).
 #
+# Die gRPC-Stream-Client-Fläche (slice-sdk-kotlin-grpc-client-flaeche,
+# ADR-0109 Festlegung 1/3, SPEC-020) liest die `.proto` NICHT aus diesem
+# Kontext — sie liegt außerhalb davon, unter proto/cdc/stream/v1/ an der
+# Repo-Wurzel. Sie kommt über einen ZUSÄTZLICHEN, benannten Bau-Kontext
+# namens `proto` herein (`COPY --from=proto …` unten); der Aufrufer bringt
+# ihn mit `docker build --build-context proto=proto …` mit (Muster
+# examples/kotlin/Dockerfile, harness/mk/examples.mk). Ohne ihn bricht der
+# Bau an der COPY-Zeile ab — kein stiller Fallback.
+#
 # Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
 # (analog sdks/csharp/Dockerfile, sdks/python/Dockerfile). Die
 # `pack`/`pack-export`-Stufen (slice-sdk-kotlin-pack-werkzeug, ADR-0109
@@ -40,6 +49,15 @@ WORKDIR /src/pgchangefeed-kotlin
 RUN chmod +x ./gradlew && ./gradlew --no-daemon help >/dev/null
 
 COPY pgchangefeed-kotlin/src src
+
+# Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (Muster
+# ADR-0090 Festlegung 2, hier auf den SDK-Baum übertragen) — diese
+# COPY-Zeile ist der Punkt, an dem der Bau ohne den Zusatzkontext real
+# abbricht (kein Fallback, kein übersprungener Schritt). Das Ziel liegt
+# unter der von `com.google.protobuf`s Gradle-Plugin standardmäßig
+# gelesenen Quellmenge `src/main/proto/` (pgchangefeed-kotlin/build.gradle.kts),
+# dasselbe Muster wie examples/kotlin/Dockerfile/grpc-client.
+COPY --from=proto cdc/stream/v1/changestream.proto src/main/proto/changestream.proto
 
 RUN ./gradlew --no-daemon test
 RUN ./gradlew --no-daemon build
