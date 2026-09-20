@@ -15,7 +15,7 @@ DoD-Checkbox „Review durchgeführt" gesetzt).
 der vollständige Slice-Plan (§1 Ziel/Abgrenzung, §2 DoD, §3 Plan inkl.
 Plan-Nachzug, §6 Risiken), `ADR-0109` (Accepted, vollständig gelesen inkl.
 §Entscheidung Festlegung 1–6, §Verglichene Alternativen, §Konsequenzen),
-`spec/pflichtenheft.md` §SPEC-018/SPEC-022,
+`spec/pflichtenheft.md` §`SPEC-018`/`SPEC-022`,
 `docs/reviews/review-slice-sdk-kotlin-http-client-flaeche.md`.
 
 **Modell:** claude-sonnet-5 · **Datum:** 2026-09-20.
@@ -30,8 +30,8 @@ oder Reviewer-Bericht übernommen.
 ### 1.1 Öffentliche Client-Klasse, alle neun `SPEC-018`-Fähigkeiten + `readChanges` (`SPEC-022`)
 
 Gelesen: `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/http/PgChangeFeedHttpClient.kt`
-Zeile für Zeile gegen `spec/pflichtenheft.md` SPEC-018 (Zeilen 340–380) und
-SPEC-022 (Zeilen 464–492) gehalten:
+Zeile für Zeile gegen `spec/pflichtenheft.md` `SPEC-018` (Zeilen 340–380) und
+`SPEC-022` (Zeilen 464–492) gehalten:
 
 | Fähigkeit | Endpunkt/Methode Spec | Endpunkt/Methode Kotlin | Response-Feldnamen | Ergebnis |
 |---|---|---|---|---|
