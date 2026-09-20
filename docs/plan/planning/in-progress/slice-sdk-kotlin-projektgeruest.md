@@ -61,7 +61,7 @@ dieses Repos.
 
 ## 2. Definition of Done
 
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` existiert:
+- [x] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` existiert:
       `group = "io.github.pt9912"`, Projektname/`artifactId`
       `pgchangefeed-kotlin`, `version = "0.1.0"` (`ADR-0109` Festlegung 4,
       Start bei `0.x.y`), Kotlin-Gradle-Plugin (dieselbe Version wie
@@ -71,19 +71,20 @@ dieses Repos.
       Dritt-Plugin wie `com.vanniktech.maven-publish`). Kein Import auf
       einen privaten Baum dieses Repos (`ADR-0109` §Kontext Bindung 5,
       Import-Grenze).
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/settings.gradle.kts` existiert
+- [x] `sdks/kotlin/pgchangefeed-kotlin/settings.gradle.kts` existiert
       (analog `examples/kotlin/settings.gradle.kts`), eigenständiger
-      Gradle-Wrapper (`gradlew`/`gradlew.bat`/`gradle/wrapper/`) mit
-      derselben, bereits real erprobten Gradle-Version wie
+      Gradle-Wrapper (`gradlew`/`gradle/wrapper/` — **ohne**
+      `gradlew.bat`, siehe Plan-Nachzug §3) mit derselben, bereits real
+      erprobten Gradle-Version wie
       `examples/kotlin/gradle/wrapper/gradle-wrapper.properties`
       (`8.14`, real nachgemessen, `distributionSha256Sum` gepinnt).
-- [ ] `sdks/kotlin/Dockerfile` (Bau-Kontext `sdks/kotlin/`, eigenständig von
+- [x] `sdks/kotlin/Dockerfile` (Bau-Kontext `sdks/kotlin/`, eigenständig von
       `examples/kotlin/Dockerfile` und der Wurzel-`Dockerfile`) mit
       digest-gepinnter `eclipse-temurin:21-jdk`-Basis (real gemessener
       Digest zum Bau-Zeitpunkt, Kommentar-Pflicht analog
       `examples/kotlin/Dockerfile`); `./gradlew build`/`test` laufen darin,
       kein Runtime-Stufe nötig (ein SDK ist keine startbare Anwendung).
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/README.md` (Englisch, Vorgabe aus
+- [x] `sdks/kotlin/pgchangefeed-kotlin/README.md` (Englisch, Vorgabe aus
       dem Auftrag) beschreibt Zweck, Installationsweg (Gradle-/Maven-
       Koordinate `io.github.pt9912:pgchangefeed-kotlin`, Registry-URL
       `https://maven.pkg.github.com/pt9912/pg-change-feed`) **inklusive**
@@ -93,11 +94,11 @@ dieses Repos.
       Package) und verweist auf das Repo-Root-`README.md` für den vollen
       Kontext; kein Duplikat der Draht-Doku (`SPEC-018`/`SPEC-020` bleiben
       die kanonische Quelle).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
+- [x] Doku-Update für `harness/README.md` entfällt in diesem Slice — kein
       neues `make`-Target entsteht hier (Pack-Werkzeug folgt in
       `slice-sdk-kotlin-pack-werkzeug`).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
@@ -128,6 +129,55 @@ dieses Repos.
 | `sdks/kotlin/pgchangefeed-kotlin/README.md` | neu | Englisch, Installationsweg **inklusive** PAT-Hinweis, Verweis auf Repo-Root-`README.md`. |
 | `sdks/kotlin/.gitignore` | neu (optional) | `build/`/`.gradle/`, analog `examples/kotlin/.gitignore`. |
 | Testdatei (Platzhalter, falls das Skelett bereits eine echte Klasse trägt) | neu | Konstruktions-/Validierungstest der Optionsklasse (kein Draht-Verhalten, das kommt mit den Folge-Slices). |
+
+**Plan-Nachzug (Implementer-Zug, `AGENTS.md`-Konvention „im selben Lauf
+nachtragen"):**
+
+- **Kein `gradlew.bat`.** Kurskorrektur während der Umsetzung: Dieses Repo
+  ist Docker-only (`AGENTS.md` §3.1) — der einzige Ort, an dem `./gradlew`
+  je läuft, ist das Linux-basierte `eclipse-temurin:21-jdk`-Image in
+  `sdks/kotlin/Dockerfile`. `gradlew.bat` (Windows-Batch-Pendant) wäre
+  totes Gewicht ohne Verwendungszweck in diesem Repo. `examples/kotlin/`
+  führt es zwar mit (Standard-`gradle wrapper`-Ergebnis), bleibt aber nach
+  `ADR-0109` Festlegung 3 unangetastet — für dieses neue Projektgerüst
+  gilt bewusst nur `gradlew` + `gradle/wrapper/*`.
+- **Docker-Bau-Struktur mit verschachteltem Projektverzeichnis.** Anders
+  als `examples/kotlin/Dockerfile` (Bau-Kontext = Projektwurzel selbst)
+  liegt das Gradle-Projekt hier eine Ebene tiefer
+  (`sdks/kotlin/pgchangefeed-kotlin/`, Bau-Kontext bleibt `sdks/kotlin/`)
+  — dasselbe Strukturmuster wie `sdks/python/Dockerfile` (`pyproject.toml`
+  unter `pgchangefeed/`, `WORKDIR`-Wechsel vor dem Bau). Die `COPY`-Zeilen
+  tragen deshalb das Präfix `pgchangefeed-kotlin/`, und `WORKDIR` wechselt
+  nach dem Wrapper-Kopieren auf `/src/pgchangefeed-kotlin` — ein
+  Implementierungsdetail, keine Abweichung von `ADR-0109` Festlegung 3/5.
+- **Reale Nachmessung ohne Drift** (`AGENTS.md` §3.12, Bau-Zeitpunkt
+  2026-09-20): Kotlin-Gradle-Plugin weiterhin `2.4.20`
+  (`repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml`,
+  `lastUpdated` 2026-09-07 — keine neue Version seit der `examples/kotlin/`-Messung
+  vom 2026-09-17); `eclipse-temurin:21-jdk`-Digest
+  (`docker buildx imagetools inspect`, linux/amd64) weiterhin
+  `sha256:085eb93e049c7397f725bd8be31c4fd52ba4777a75168e851428508234aa224e`;
+  Gradle-8.14-Distribution-`sha256`
+  (`curl -sL https://services.gradle.org/distributions/gradle-8.14-bin.zip.sha256`)
+  weiterhin `61ad310d3c7d3e5da131b76bbf22b5a4c0786e9d892dae8c1658d4b484de3caa`;
+  Test-Framework-Versionen (`kotlin-test-junit5` `2.4.20`,
+  `junit-platform-launcher` `6.1.3`) ebenfalls unverändert gegen Maven
+  Central re-verifiziert. Alle vier Werte sind reale Wiederholungsmessungen,
+  keine Übernahme aus `ADR-0109`s Kontext-Messung.
+- **Test-Framework-Wahl: `kotlin-test-junit5` + JUnit Platform, kein neuer
+  Kandidat.** Vor dem ersten Bau-/Testlauf geprüft (`BEO-PGC/workaround-uebersieht-etabliertes-muster-im-bestand`,
+  siehe unten): `examples/kotlin/http-client/build.gradle.kts` setzt
+  bereits real `org.jetbrains.kotlin:kotlin-test-junit5` +
+  `org.junit.platform:junit-platform-launcher` mit `tasks.test {
+  useJUnitPlatform() }` ein — dasselbe Muster übernimmt
+  `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` unverändert, keine neue
+  Framework-Wahl.
+- **Der gemeinsame Nenner zeigte sich real**, analog C#/Python:
+  `PgChangeFeedClientOptions` (`address: java.net.URI`,
+  `apiToken: String`, `require(apiToken.isNotBlank())`) unter
+  `src/main/kotlin/io/github/pt9912/pgchangefeed/`, mit drei
+  Konstruktions-/Validierungstests unter `src/test/kotlin/…` (kein
+  Draht-Verhalten).
 
 **Hinweise aus dem Beobachtungs-Register (vor dem ersten Bau-Lauf zu
 prüfen, nicht erst nachträglich):**
