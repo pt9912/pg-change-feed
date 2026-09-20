@@ -82,10 +82,17 @@ unabhängige Tests.
       §Kontext Bindung „Import-Grenze, hier ohne Ausnahme") — real geprüft:
       `grep -rn "internal/\|cmd/" sdks/kotlin/` liefert keinen Treffer.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
       Fixrunde geprüft und Merge-Block aufgehoben, falls nötig.
+      `docs/reviews/review-slice-sdk-kotlin-http-client-flaeche.md` fand
+      1 HIGH (F-1, Kotlin-`internal` fälschlich als JVM-Zugriffsschutz
+      behauptet in `HttpTransport.kt`s KDoc und im Plan-Nachzug oben) — in
+      dieser Fixrunde in beiden Trägern korrigiert, kein weiteres Vorkommen
+      im Diff (`grep -rn "invisible outside\|no public API surface\|nur
+      innerhalb des Gradle-Moduls" sdks/kotlin/` ohne Treffer); kein offenes
+      HIGH mehr.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Kotlin-HTTP-Oberfläche (`ADR-0109` §Konsequenzen
       Folgepflicht 4, **inklusive** des expliziten PAT-Hinweises für den
@@ -166,10 +173,17 @@ nachtragen"):**
   zwischen `PgChangeFeedHttpClient` und dem JDK-Client — der öffentliche
   Konstruktor nimmt weiterhin ein `java.net.http.HttpClient` (Parität zu
   C#/Python: Aufrufer besitzt/kontrolliert den Client), ein zweiter,
-  **`internal`** Konstruktor nimmt direkt einen `HttpTransport` und ist nur
-  innerhalb des Gradle-Moduls sichtbar (das Kotlin-Gradle-Plugin bindet
-  `test` per Default an `main`s `internal`-Sichtbarkeit) — jeder Test in
-  diesem Slice ist dadurch **echt netzlos**, ohne Socket, ohne Loopback-Server.
+  **`internal`** Konstruktor nimmt direkt einen `HttpTransport` (das
+  Kotlin-Gradle-Plugin bindet `test` per Default an `main`s
+  `internal`-Sichtbarkeit) — jeder Test in diesem Slice ist dadurch **echt
+  netzlos**, ohne Socket, ohne Loopback-Server. `internal` ist dabei eine
+  **compile-time**-Sichtbarkeitsgrenze des Kotlin-Compilers gegenüber
+  anderen Kotlin-Modulen, **keine** JVM-Bytecode-Zugriffsbeschränkung: Im
+  kompilierten Jar sind sowohl dieser Konstruktor als auch `HttpTransport`
+  selbst gewöhnliche `public`-Symbole (real mit `javap -p` gegen das gebaute
+  Jar geprüft) — ein Java-Konsument oder Reflection kann beide trotzdem
+  erreichen. Die Grenze schützt gegen versehentliche Nutzung aus anderen
+  Kotlin/Gradle-Modulen, nicht gegen jeden JVM-Aufrufer.
 - **Neue Fremdabhängigkeit `com.google.code.gson:gson:2.14.0`** — real
   gegen Maven Central nachgemessen (`maven-metadata.xml`, 2026-09-20,
   weiterhin aktuellste Version), dieselbe bereits im selben Repo bewertete

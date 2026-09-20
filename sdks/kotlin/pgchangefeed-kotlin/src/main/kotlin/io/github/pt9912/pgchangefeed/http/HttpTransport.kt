@@ -45,12 +45,21 @@ internal data class TransportResponse(
  * SDKs — the caller controls connection pooling, proxies and the
  * `HttpClient`'s lifetime, this type never closes it — by wrapping it in
  * [JdkHttpTransport] internally. The `internal` secondary constructor that
- * takes an [HttpTransport] directly is invisible outside this module, so it
- * adds no public API surface; it exists purely so the test source set
+ * takes an [HttpTransport] directly exists purely so the test source set
  * (which the Kotlin Gradle plugin's default `main`/`test` association makes
  * a friend of `internal` declarations) can inject a fake [HttpTransport]
  * that returns canned [TransportResponse]s without any socket at all — a
- * genuinely network-free test, stronger than a loopback server.
+ * genuinely network-free test, stronger than a loopback server. `internal`
+ * here is a compile-time visibility boundary that the Kotlin compiler
+ * enforces against other Kotlin modules' metadata; it keeps this
+ * constructor out of accidental use from another Kotlin/Gradle module, but
+ * it is not a JVM bytecode access restriction. In the compiled class file
+ * both this constructor and [HttpTransport] itself are ordinary `public`
+ * symbols (constructors are always named `<init>` in bytecode and are not
+ * covered by Kotlin's `internal` name-mangling; interfaces are not mangled
+ * either, verified with `javap -p` against the built jar) — a Java caller,
+ * or reflection from any language, can still implement [HttpTransport] and
+ * invoke this constructor directly.
  */
 internal fun interface HttpTransport {
     fun send(request: TransportRequest): TransportResponse
