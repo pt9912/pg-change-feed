@@ -38,6 +38,11 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md) —
+  Drittes SDK-Package (Kotlin/GitHub Packages, `pgchangefeed-kotlin`) für
+  [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
+  ([`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)).
+
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -126,6 +131,8 @@ flowchart LR
     WSDK[welle-sdk-csharp-lh-fa-sst-009: Erstes C#/NuGet-SDK-Package]
     A0107[ADR-0107 Accepted]
     WSDKPY[welle-sdk-python-lh-fa-sst-009: Zweites SDK-Package Python/PyPI]
+    A0109[ADR-0109 Accepted]
+    WSDKKT[welle-sdk-kotlin-lh-fa-sst-009: Drittes SDK-Package Kotlin/GitHub Packages]
 
     A58 --> W17
     A59 --> W18
@@ -134,6 +141,7 @@ flowchart LR
     A0051 --> WREL
     A0106 --> WSDK
     A0107 --> WSDKPY
+    A0109 --> WSDKKT
 ```
 
 ## Abgeschlossene Wellen
