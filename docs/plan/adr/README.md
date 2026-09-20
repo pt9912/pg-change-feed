@@ -121,3 +121,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0106 | C#/NuGet als erstes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-19 | [0106-csharp-nuget-erstes-sdk-package.md](0106-csharp-nuget-erstes-sdk-package.md) |
 | ADR-0107 | Python/PyPI als zweites SDK-Package für `LH-FA-SST-009` (→ ADR-0108, teilw.) | Accepted | 2026-09-19 | [0107-python-pypi-zweites-sdk-package.md](0107-python-pypi-zweites-sdk-package.md) |
 | ADR-0108 | Python-SDK — `uv` statt `build`+`twine` (Supers. ADR-0107, teilw.) | Accepted | 2026-09-19 | [0108-python-sdk-uv-statt-build-twine.md](0108-python-sdk-uv-statt-build-twine.md) |
+| ADR-0109 | Kotlin/GitHub Packages als drittes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-20 | [0109-kotlin-github-packages-drittes-sdk-package.md](0109-kotlin-github-packages-drittes-sdk-package.md) |
