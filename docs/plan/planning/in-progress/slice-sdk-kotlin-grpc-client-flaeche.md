@@ -216,6 +216,11 @@ geschrieben.
   Slice; das komfortable `make`-Ziel folgt bewusst erst mit dem
   Pack-Werkzeug-Slice (Welle-Plan §4 Reihenfolge), dieselbe Struktur wie
   bei der C#-Welle.
+  **Planner-Bestätigung (Closure):** sachlich korrekt — der Verifier
+  bestätigt (§5 seines Berichts), dass kein `make`-Ziel für diesen
+  Zwischenstand existiert und `ADR-0109` §Konsequenzen Folgepflicht 1 das
+  Pack-Werkzeug ausdrücklich als eigenen, künftigen Slice vorsieht. Ausgang
+  bleibt „eingetreten, akzeptiert".
 - Die Kotlin-/Gradle-gRPC-Werkzeugkette braucht real mehr einzeln gepinnte
   Koordinaten als die C#-Variante (`Grpc.Tools` bündelt bei .NET intern,
   was bei Kotlin/Gradle als eigenständige Artefakte — `protoc`,
@@ -237,12 +242,30 @@ geschrieben.
   `pgchangefeed-kotlin/pgchangefeed-kotlin/…`) wurde vom ersten realen
   Docker-Bau-Lauf sichtbar gemacht (`generateProto NO-SOURCE`) und noch vor
   dem ersten Commit dieses Slice korrigiert — kein Nacharbeits-Slice nötig.
+  **Planner-Bestätigung (Closure):** sachlich korrekt vorgetragen — Reviewer
+  (`docs/reviews/review-slice-sdk-kotlin-grpc-client-flaeche.md`, eigener
+  `docker build --no-cache`-Lauf) und Verifier
+  (`docs/reviews/verifikation-slice-sdk-kotlin-grpc-client-flaeche.md`,
+  dritte unabhängige Bau-Bestätigung) bestätigen unabhängig voneinander,
+  dass der Doppelpfad-Fehler im committeten Zustand nicht reproduzierbar
+  ist. Ausgang bleibt „eingetreten und aufgelöst".
 - Ein Fake/Stub für die Authn-Boundary könnte den realen
   gRPC-`Unauthenticated`-Status-Pfad nicht exakt nachbilden. **Ausgang:**
   weiter offen — ein realer Rundlauf-Beleg bleibt
   `make test-integration`s bestehendem `tools/harness/grpcclient`
   vorbehalten (Wegwerf-Client, kein SDK-Import); dieses SDK bekommt
   frühestens mit einem Folge-Slice einen eigenen Integrationsbeleg.
+  **Planner-Bestätigung (Closure):** Ausgang bleibt zu Recht „weiter offen"
+  — der Verifier (§5 seines Berichts) bestätigt, dass
+  `FakeGrpcStreamTransport.withStatus(...)` den `StatusException` direkt aus
+  dem Flow wirft, ohne einen echten `io.grpc.Channel`/Interceptor-Pfad zu
+  durchlaufen; kein stillschweigendes „erledigt", ehrlich offen deklariert
+  bis zu einem künftigen Integrationsbeleg.
+
+**Planner-Zusammenfassung (Closure):** Alle drei Risiko-Ausgänge wurden vom
+Reviewer und unabhängig davon vom Verifier sachlich geprüft und bestätigt
+(`verifikation-slice-sdk-kotlin-grpc-client-flaeche.md` §5) — zwei
+eingetreten/aufgelöst, einer bewusst weiter offen. Keine Korrektur nötig.
 
 ## 7. Closure-Notiz
 
@@ -263,7 +286,18 @@ geschrieben.
   real mutationsgetestet: `.catch { }` (verschluckt den
   `StatusException`) und `.map { it.toBuilder().clearSchema().build() }`
   (entfernt ein Feld) machten je einen Testlauf real rot, vor der Rückkehr
-  zur sauberen Fassung.
+  zur sauberen Fassung. **Unabhängig bestätigt, nicht nur behauptet:** Der
+  Reviewer hat die `internal`-Aussage nicht aus der KDoc übernommen, sondern
+  über einen eigenen, ungecachten `docker build --no-cache` + `javap -p`
+  gegen den frischen Bau real gegengeprüft
+  (`docs/reviews/review-slice-sdk-kotlin-grpc-client-flaeche.md`, 0
+  Findings) — Ergebnis deckt sich exakt mit der KDoc-Aussage, anders als
+  beim vorigen Slice (dortiges HIGH F-1). Der Verifier hat dieselbe
+  Koordinaten-Messung ein fünftes Mal unabhängig wiederholt und einen
+  eigenen, dritten unabhängigen `docker build`-Lauf gefahren
+  (`docs/reviews/verifikation-slice-sdk-kotlin-grpc-client-flaeche.md`,
+  Verdikt „DoD konform: ja") — keine der beiden Rollen hat eine
+  Implementer-Behauptung unbesehen übernommen.
 - **Was ging anders als geplant:** Der erste reale
   `docker build --build-context proto=proto …`-Lauf schlug fehl
   (`generateProto NO-SOURCE`, dann `Unresolved reference 'cdc'`) — die
@@ -284,7 +318,16 @@ geschrieben.
   zum Bau-Kontext-Pfad des `--from`-Quellsegments — zur Bau-Kontext-Wurzel
   gemeint war; der reale `docker build`-Lauf ist der einzige Sensor, der
   diesen Unterschied zuverlässig zeigt (ein `generateProto NO-SOURCE` bei
-  vorhandener `.proto`-Quelle ist der Leitbefund).
+  vorhandener `.proto`-Quelle ist der Leitbefund). **Träger dieses
+  Eintrags — alle drei Rollen, nicht nur die Implementer-Perspektive:** Der
+  Reviewer hat den committeten Zustand über einen eigenen, ungecachten
+  Docker-Bau gegengeprüft (`generateProto` real gelaufen, nicht
+  `NO-SOURCE`) statt den Implementer-Bericht zu übernehmen; der Verifier hat
+  denselben Bau ein drittes Mal unabhängig gefahren und zusätzlich den
+  Dockerfile-Quelltext selbst gelesen (Zeilen-Beleg: `WORKDIR`-Wechsel vor
+  Zeile 48, `COPY --from=proto` in Zeile 60, kein doppelter Pfadanteil). Der
+  Lerneintrag ist damit dreifach unabhängig getragen, nicht nur einfach
+  behauptet.
 - **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung.
   Der Copy-Pfad-Fehler oben ist kein wiederkehrendes, bereits im Register
   geführtes Muster (geprüft: kein Treffer für „doppelter Pfadanteil"/
@@ -296,6 +339,28 @@ geschrieben.
   (2×) und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (19×) wurden
   korrekt vermieden (siehe „Was hat funktioniert" und Träger-Nachzug
   unten) — kein drittes bzw. zwanzigstes Vorkommen.
+  **Planner-Prüfung (Closure) — die korrekte zweite Anwendung der
+  Kotlin-`internal`-Lektion bewusst geprüft, nicht übergangen:** Die
+  Kotlin-`internal`-Semantik (compile-time Kotlin-Grenze, keine
+  JVM-Bytecode-Schranke) wurde jetzt zweimal real geprüft — einmal als HIGH
+  F-1 in `review-slice-sdk-kotlin-http-client-flaeche.md` (Überzeichnung
+  gefunden, korrigiert) und jetzt hier als korrekte Anwendung von Anfang an
+  (Reviewer und Verifier bestätigen unabhängig, keine Überzeichnung). Das
+  Register führt ausschließlich **Mängel-Muster** — jede der 86
+  bestehenden `BEO-PGC`-Kennungen (`ls
+  docs/plan/planning/observations/BEO-PGC/ | wc -l` real gemessen,
+  2026-09-20) trägt eine Abweichung, keine trägt eine korrekt gezogene
+  Lektion; die Register-README
+  selbst kennt nur drei Ausgänge für eine *bestehende* Beobachtung
+  (verkörpert · geplant · gestrichen), keinen vierten „positiv bestätigt"
+  für eine *neue*. Ein Eintrag „Lektion X wurde beim zweiten Vorkommen
+  korrekt angewendet" wäre kein Mängel-Muster mit Konvergenz-Bedarf bei
+  3×, sondern die Feststellung, dass Reviewer/Implementer ihre Rolle
+  planmäßig erfüllt haben (`AGENTS.md` §6, Modul 8) — dafür ist der
+  Review-/Verifikationsbericht selbst der richtige, bereits vorhandene
+  Träger (siehe oben, „Unabhängig bestätigt"), kein zusätzlicher
+  Registereintrag. **Entscheidung:** kein neuer Registereintrag für die
+  positive Anwendung.
 - **Träger-Nachzug (`AGENTS.md` §3.13, real durchgeführter Suchlauf):**
   Gesucht (`grep -rn "Kotlin"`/`"pgchangefeed-kotlin"`) über
   `docs/user/benutzerhandbuch.md`, `sdks/kotlin/pgchangefeed-kotlin/README.md`
@@ -317,7 +382,21 @@ geschrieben.
   bereits geplante Slices).
 - **Risiken aus §6:** alle drei tragen einen Ausgang (siehe §6) — zwei
   eingetreten/aufgelöst, einer (Fake/Stub-Grenze der Authn-Boundary)
-  bewusst weiter offen bis zu einem künftigen Integrationsbeleg.
+  bewusst weiter offen bis zu einem künftigen Integrationsbeleg. Der
+  Verifier hat alle drei Ausgänge unabhängig geprüft und als „sachlich
+  korrekt vorgetragen" bestätigt
+  (`verifikation-slice-sdk-kotlin-grpc-client-flaeche.md` §5) — der Planner
+  (diese Closure) übernimmt diese Prüfung, keine eigene Korrektur nötig.
+- **Rollen-Sequenz (Planner-Bestätigung, Closure):** Implementer
+  (`473f3ee8`) → Reviewer (`c36a4169`,
+  `docs/reviews/review-slice-sdk-kotlin-grpc-client-flaeche.md`, 0
+  HIGH/MEDIUM/LOW/INFO) → Verifier (`15d547ff`,
+  `docs/reviews/verifikation-slice-sdk-kotlin-grpc-client-flaeche.md`,
+  Verdikt „DoD konform: ja") — vollständig durchlaufen, kein Self-Review
+  (Modul 8). Beide nachfolgenden Rollen haben unabhängig voneinander real
+  gemessen statt Implementer-Aussagen zu übernehmen (siehe „Was hat
+  funktioniert" oben); keine der beiden fand einen Widerspruch zum
+  Implementer-Bericht.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
