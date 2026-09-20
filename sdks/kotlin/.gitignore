@@ -3,3 +3,9 @@
 # lokal gestarteten Host-Bau), analog examples/kotlin/.gitignore.
 .gradle/
 build/
+
+# Host-seitiger Export-Zielort von `make sdk-pack-kotlin`
+# (tools/harness/sdk-pack-kotlin.sh, ADR-0109 Festlegung 5,
+# slice-sdk-kotlin-pack-werkzeug) — das erzeugte .jar ist ein Bau-Erzeugnis,
+# kein Bestand.
+dist/

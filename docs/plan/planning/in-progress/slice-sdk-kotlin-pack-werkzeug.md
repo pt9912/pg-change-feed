@@ -62,7 +62,7 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
 
 ## 2. Definition of Done
 
-- [ ] `make sdk-pack-kotlin` existiert (Docker-only, kein Gate — analog
+- [x] `make sdk-pack-kotlin` existiert (Docker-only, kein Gate — analog
       `make examples-kotlin`): baut, testet (`./gradlew test` gegen die
       Test-Quellen beider Fläche-Slices) und paketiert (ein Jar-Bau-Task,
       real zu bestimmen anhand des Gradle-`java`/`kotlin("jvm")`-Plugins —
@@ -77,19 +77,19 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
       Extraktionsmuster von `make proto-generate`/`make sdk-pack-csharp`/
       `make sdk-pack-python` (`docker run --rm --network none <image> |
       tar -x -C .`, `AGENTS.md` §3.9 Pipe-Disziplin).
-- [ ] Real recherchiert und entschieden: ob GitHub Packages für dieses
+- [x] Real recherchiert und entschieden: ob GitHub Packages für dieses
       Package zwingend ein Sources- und/oder Javadoc-Jar neben dem
       Haupt-Jar verlangt, oder ob ein einzelnes Haupt-Jar genügt — die
       Entscheidung steht im Bericht dieses Slice mit ihrem Beleg
       (`AGENTS.md` §3.12 Instanz B), kein Vorgriff aus der ADR (`ADR-0109`
       lässt die Frage bewusst offen).
-- [ ] Real ausgeführt: ein `.jar` mit einem Dateinamen, der die Koordinate
+- [x] Real ausgeführt: ein `.jar` mit einem Dateinamen, der die Koordinate
       `pgchangefeed-kotlin` und die Version `0.1.0` trägt (exakte
       Gradle-Standard-Namensform, z. B. `pgchangefeed-kotlin-0.1.0.jar`),
       existiert nach dem Lauf und ist als Smoke-Beleg im Bericht dieses
       Slice genannt (Datei-Existenz, keine Behauptung — `AGENTS.md` §3.12
       Instanz B).
-- [ ] `spec/pflichtenheft.md` §1 trägt bei
+- [x] `spec/pflichtenheft.md` §1 trägt bei
       [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) einen
       Nachzug-Satz: für Kotlin/GitHub Packages ist die Sprachmatrix-/
       Vertriebsweg-Frage durch
@@ -102,7 +102,7 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
       (`.d-check.yml` `matrix.rules` verbietet mechanisch jede Referenz
       `spec → adr`, real gegen `slice-sdk-csharp-pack-werkzeug` bereits
       einmal geprüft).
-- [ ] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
+- [x] `spec/pflichtenheft.md` §6 Externe Verträge bekommt eine neue
       `SPEC-<NNN>`-Zeile für `pgchangefeed-kotlin` (System: GitHub-Packages-
       Gradle-/Maven-Package; Version: SemVer 2.0, `0.x.y`; Vertrag-Datei:
       Verweis auf `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als
@@ -114,19 +114,19 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
       Planung dieser Welle (2026-09-20), `SPEC-028` damit der
       voraussichtlich nächste freie, aber kein Vorgriff, falls zwischen
       Planung und Umsetzung ein anderer Zug bereits `SPEC-028` vergeben hat.
-- [ ] `harness/README.md` §Werkzeuge bekommt die reale
+- [x] `harness/README.md` §Werkzeuge bekommt die reale
       `make sdk-pack-kotlin`-Zeile (kein Gate, Bindung auf
       [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)) —
       erst jetzt zulässig, weil das Ziel jetzt real existiert
       (`AGENTS.md` §4).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
+- [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -144,9 +144,11 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
 |---|---|---|
 | `harness/mk/sdk.mk` (bereits vorhanden aus der C#-/Python-Welle) | update | neues `sdk-pack-kotlin`-Target, Docker-only, kein `GATE_CHECKS`-Eintrag. |
 | `sdks/kotlin/Dockerfile` | update | zusätzliche Bau-/Export-Stufe für den Jar-Bau, Extraktion analog `make proto-generate`/`make sdk-pack-csharp`. |
-| `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) | update | Nachzug-Satz: Kotlin/GitHub Packages nicht mehr offen, vierte Sprache/Vertriebsweg bleibt offen. |
-| `spec/pflichtenheft.md` §6 | update | neue `SPEC-<NNN>`-Zeile für `pgchangefeed-kotlin` (real verifizierte nächste freie Nummer). |
-| `spec/pflichtenheft.md` §7 Historie | update | Historie-Zeile für die neue `SPEC-<NNN>` und den `LH-FA-SST-009.a`-Nachzug. |
+| `tools/harness/sdk-pack-kotlin.sh` (Plan-Nachzug — nicht explizit als eigene Zeile geplant, aber Sache der DoD/Ziel-Beschreibung, analog `sdk-pack-csharp.sh`/`sdk-pack-python.sh`) | neu | Host-seitiger Export-Wrapper (`docker build --build-context proto=proto --target pack-export`, `docker run --rm --network none … \| tar -x -C sdks/kotlin/dist/`). |
+| `sdks/kotlin/.gitignore` (Plan-Nachzug) | update | `dist/`-Eintrag ergänzt, analog `sdks/csharp/.gitignore`/`sdks/python/.gitignore`. |
+| `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) | update | Nachzug-Satz: Kotlin/GitHub Packages nicht mehr offen, vierte Sprache/Vertriebsweg bleibt offen. Zusätzlich (Plan-Nachzug, `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`): die stale gewordene Schlusszeile des Python-Absatzes („Eine dritte Sprache … bleibt offen") entfernt, damit sie dem neuen Kotlin-Absatz nicht widerspricht — der C#-Absatz-Altbestand („Eine zweite Sprache … bleibt offen", bereits vor diesem Slice stale) bleibt unangetastet, außerhalb des DoD-Umfangs. |
+| `spec/pflichtenheft.md` §6 | update | neue `SPEC-028`-Zeile für `pgchangefeed-kotlin` (real verifiziert: `SPEC-027` letzte vergebene Nummer, kein `SPEC-028`-Treffer im Bestand vor diesem Zug). |
+| `spec/pflichtenheft.md` §7 Historie | update | Historie-Zeile für `SPEC-028` und den `LH-FA-SST-009.a`-Nachzug. |
 | `harness/README.md` §Werkzeuge | update | reale `make sdk-pack-kotlin`-Zeile. |
 
 **Referenz für die Nummer-Verifikation:** `grep -n "SPEC-027" spec/pflichtenheft.md`

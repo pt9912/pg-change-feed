@@ -16,9 +16,12 @@
 #
 # Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
 # (analog sdks/csharp/Dockerfile, sdks/python/Dockerfile). Die
-# `pack`/`pack-export`-Stufen (slice-sdk-kotlin-pack-werkzeug, ADR-0109
-# §Konsequenzen Folgepflicht 1) bauen später auf `build` auf — dieser Slice
-# liefert nur `./gradlew build`/`test`, kein `publish`-Aufruf.
+# `pack`/`pack-export`-Stufen unten (slice-sdk-kotlin-pack-werkzeug, ADR-0109
+# §Konsequenzen Folgepflicht 1) bauen auf `build` auf: `./gradlew test`
+# (unten) laeuft VOR dem Jar-Bau — ein roter Test bricht den `docker build`
+# mit Exit != 0 ab, bevor `pack` je erreicht wird (kein stiller Fallback).
+# Kein `publish`-Aufruf in diesem Slice (ADR-0109 Festlegung 5: Docker-only
+# bauen, Veroeffentlichung ist Folgepflicht `slice-sdk-kotlin-publish-workflow`).
 #
 # JDK-Basis: `eclipse-temurin:21-jdk`, NICHT `25-jdk` (ADR-0109
 # Festlegung 5 — Gradle 8.14 unterstützt JDK 25 nur als Toolchain-Ziel ab
@@ -61,3 +64,28 @@ COPY --from=proto cdc/stream/v1/changestream.proto src/main/proto/changestream.p
 
 RUN ./gradlew --no-daemon test
 RUN ./gradlew --no-daemon build
+
+# --- pack: kopiert den bereits gebauten Jar-Stand (`./gradlew build` oben,
+# inklusive `./gradlew test` davor) nach /out (slice-sdk-kotlin-pack-werkzeug,
+# ADR-0109 §Konsequenzen Folgepflicht 1). Der Standard-`jar`-Task läuft
+# bereits als Teil von `build`/`assemble` und erzeugt
+# build/libs/pgchangefeed-kotlin-0.1.0.jar (Gradle-Standard-Namensform aus
+# group/artifactId/version in build.gradle.kts) — kein zusätzlicher
+# Gradle-Aufruf nötig. Kein Sources-/Javadoc-Jar: GitHub Packages verlangt
+# laut offizieller Dokumentation
+# (docs.github.com/.../publishing-java-packages-with-gradle, real abgerufen)
+# keines, und `from(components["java"])` (build.gradle.kts) packt
+# ausschließlich den Haupt-Jar, solange kein `withSourcesJar()`/
+# `withJavadocJar()` im `java{}`-Block ergänzt ist (Gradle-Kern-Verhalten
+# des `maven-publish`-Plugins). ---
+FROM build AS pack
+RUN mkdir -p /out && cp build/libs/*.jar /out/
+
+# --- pack-export: gibt /out (den Jar) als tar-Stream über stdout aus —
+# dasselbe Extraktionsmuster wie sdk-pack-csharp/sdk-pack-python:
+# `tools/harness/sdk-pack-kotlin.sh` baut diese Stufe und liest ihr
+# ENTRYPOINT per `docker run --rm --network none <image> | tar -x -C
+# sdks/kotlin/dist/` aus — kein Bind-Mount, kein `--user`-Workaround, die
+# extrahierte Datei gehört dadurch automatisch dem aufrufenden Nutzer. ---
+FROM pack AS pack-export
+ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
