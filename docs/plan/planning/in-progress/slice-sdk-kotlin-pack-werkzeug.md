@@ -120,9 +120,12 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
       erst jetzt zulässig, weil das Ziel jetzt real existiert
       (`AGENTS.md` §4).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
-      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8);
+      Report: `docs/reviews/review-slice-sdk-kotlin-pack-werkzeug.md`
+      (0 HIGH, keine Fixrunde, DoD-Checkbox-Nachzug im selben Commit,
+      Reviewer-Skill §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
