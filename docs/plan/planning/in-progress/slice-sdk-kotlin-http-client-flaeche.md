@@ -101,15 +101,15 @@ unabhängige Tests.
       (`.claude/commands/implement-slice.md` Schritt 17) und den
       Reviewer-HIGH-Punkt
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -252,6 +252,12 @@ geschrieben.
   entschieden beim Schreiben. `ADR-0109` Festlegung 4 bindet die
   SemVer-Major-Boundary an Draht-Änderungen, nicht an dieses interne
   Design — ein API-Redesign bleibt vor `1.0.0` folgenlos möglich.
+  **Ausgang (Closure): entschieden, real bestätigt.** `PgChangeFeedException`
+  ist eine sealed class mit sieben Unterklassen, konsistent mit der
+  C#-Fassung geprüft (Review §Negativbefunde, Verifikation §1.1) — inklusive
+  eines von Anfang an behandelten malformten `2xx`-Erfolgsbodys
+  (`PgChangeFeedMalformedResponseException`), der bei C# erst eine
+  Fixrunde brauchte. Risiko geschlossen.
 - Ein netzloser Test-Fake für den gewählten Kotlin-HTTP-Client könnte
   reale Netzwerk-/Serialisierungs-Eigenheiten (z. B. Groß-/Kleinschreibung
   der JSON-Felder) verdecken, die erst gegen einen echten Server auffielen.
@@ -260,23 +266,121 @@ geschrieben.
   vorbehalten (Wegwerf-Client, kein SDK-Import, `ADR-0068`); dieses SDK
   bekommt frühestens mit einem Folge-Slice einen eigenen
   Integrationsbeleg — dieselbe Grenze wie bei den beiden vorigen SDKs.
+  **Ausgang (Closure): weiter offen, unverändert.** Weder C#- noch
+  Python-Geschwister haben für diese strukturelle Grenze einen
+  Beobachtungs-Register-Eintrag angelegt (`slice-sdk-csharp-http-client-flaeche`
+  §7, `slice-sdk-python-http-client-flaeche` §7 — beide führen sie als
+  Prosa-Risiko fort, kein Register); dieser Slice folgt demselben Muster,
+  kein neuer Eintrag.
 - `examples/kotlin/http-client` nutzt `java.net.http` ohne Fremdabhängigkeit
   (`ADR-0109` §Entscheidung Festlegung 1) — übernimmt das SDK dieselbe
   Wahl unreflektiert, ohne die für Tests nötige Ersetzbarkeit
   (`HttpClient`-Injektion) zu prüfen, könnte das netzlose Testen
   erschweren. **Ausgang:** weiter offen, entschieden beim Schreiben.
+  **Ausgang (Closure): entschieden, real geprüft.** `java.net.http.HttpClient`
+  bot keinen Pluggable-Handler; die Lösung (`internal fun interface
+  HttpTransport` + zweiter `internal`-Konstruktor, Plan-Nachzug §3) macht
+  alle Tests real netzlos (Review/Verifikation je unabhängig bestätigt: kein
+  Socket, keine Loopback-Auflösung). Die Lösung selbst trug ein reales HIGH
+  (F-1, siehe §7) — die Testbarkeits-**Wirkung** war korrekt, die
+  begleitende KDoc-/Plan-Aussage über die Reichweite von `internal` war es
+  nicht. Risiko geschlossen, mit dokumentiertem Lerneintrag.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird beim Abschluss ergänzt>
-- **Was ging anders als geplant:** <wird beim Abschluss ergänzt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss ergänzt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss
-  ergänzt>
+- **Was hat funktioniert:** Der Träger-Nachzug-Suchlauf (`AGENTS.md` §3.13,
+  aus dem Beobachtungs-Register proaktiv in §3 aufgenommen) fing die
+  stehende „follow in subsequent releases"-Aussage in
+  `sdks/kotlin/pgchangefeed-kotlin/README.md` bereits im Implementer-Zug —
+  anders als bei C# (dort erst dem Reviewer aufgefallen). Die sealed-class-
+  Fehlerhierarchie vermied von Anfang an den bei C# erst per Fixrunde
+  behobenen malformten-`2xx`-Body-Fehler (Review-Negativbefund, Verifikation
+  §1.1). Drei unabhängige Docker-Builds (Implementer-Mutation-Beleg,
+  Reviewer-Cache-Hit, Verifier `--no-cache`) bestätigten übereinstimmend
+  denselben Grünzustand. `make gates` blieb über den gesamten Zyklus grün.
+- **Was ging anders als geplant:** Eine Fixrunde war nötig — der Review fand
+  1 HIGH (F-1): `HttpTransport.kt`s KDoc und der Plan-Nachzug (§3)
+  behaupteten, der `internal`-Sekundärkonstruktor und `HttpTransport` selbst
+  seien „außerhalb des Gradle-Moduls unsichtbar" bzw. fügten „keine
+  öffentliche API-Fläche" hinzu. Real mit `javap -p` gegen das gebaute Jar
+  geprüft, ist das falsch für den JVM-Bytecode: Kotlins `internal` ist eine
+  **compile-time**-Grenze des Kotlin-Compiler-Frontends gegenüber anderen
+  Kotlin-Modulen (Namens-Mangling), keine JVM-Zugriffsbeschränkung —
+  Konstruktoren heißen im Bytecode immer `<init>` (nicht gemangelt) und ein
+  `internal fun interface` kompiliert zu einem gewöhnlichen `public
+  interface`. Ein Java-Konsument — den `ADR-0109` §Verglichene Alternativen
+  A selbst als Zielgruppe benennt (Java-Binärkompatibilität) — kann beide
+  technisch erreichen. Der Fix (`9181ae21`) korrigierte beide Träger auf die
+  tatsächliche Grenze (Schutz gegen versehentliche Kotlin/Gradle-Modul-
+  Nutzung, kein JVM-weiter Schutz); Verifikation bestätigte den neuen
+  Wortlaut sachlich, nicht nur formal, als korrekt.
+- **Steering-Loop-Eintrag (Lerneintrag):** Eine geschärfte Regel für künftige
+  Kotlin-Arbeit in diesem Repo, ohne neuen Sensor (kein Gate-fähiger
+  Tatbestand — dieselbe Klasse wie die bereits verkörperte
+  `AGENTS.md` §3.7/§3.12-Disziplin: ein Kommentar/eine Aussage trägt seinen
+  Beleg, hier speziell der JVM-Bytecode statt der Kotlin-Quellsemantik):
+  **Kotlins Sichtbarkeitsmodifikatoren (`internal`, aber auch `private` auf
+  Top-Level) sind Kotlin-Compiler-Grenzen, keine JVM-Bytecode-Grenzen** —
+  eine Aussage über „unsichtbar außerhalb X" für kompilierten Kotlin-Code
+  ist nur dann vollständig, wenn sie explizit auf den Kotlin/Gradle-
+  Compile-Pfad eingeschränkt ist, nicht auf jeden JVM-Aufrufer (Java,
+  Reflection). Diese Regel ist noch nicht in einem verkörperten Träger
+  (Skill, ADR) verankert — sie steht hier als Vormerkung für den nächsten
+  Kotlin-Slice.
+- **Beobachtungs-Register (`../observations/`):** **Kein neues Verzeichnis
+  angelegt** — bewusste Entscheidung, abweichend vom Vorschlag der
+  Fixrunde (der Implementer-Zug schlug `BEO-PGC/kotlin-internal-faelschlich-als-jvm-zugriffsschutz`
+  vor). Begründung: Das etablierte Muster dieses Repos öffnet ein neues
+  `BEO-PGC/<slug>/`-Verzeichnis erst ab real gezählten **Mehrfach**-
+  Vorkommen, nicht beim Erstfund — real belegt durch das nächstliegende
+  Präzedens: `slice-sdk-csharp-http-client-flaeche` §7 hielt F-2
+  (malformter `2xx`-Erfolgsbody) ausdrücklich **ohne** Registereintrag,
+  „da bislang kein zweites Auftreten dieser spezifischen Klasse … im
+  Bestand vorliegt". F-1 dieses Slice ist zwar über zwei **Träger**
+  (Produktionscode-KDoc und Plan-Prosa) wiederholt, aber beide Träger
+  tragen **dieselbe** ursprüngliche Fehleinschätzung desselben Autors
+  innerhalb **desselben** Slice — kein zweites, unabhängiges Vorkommen in
+  Zeit oder Kontext, sondern eine einzige Fundstelle, die sich in einen
+  zweiten Text kopiert hat (dieselbe Struktur, die
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` bereits von einem
+  „Zähler folgt den Vorkommen, nicht den Trägern" trennt). Der Reviewer
+  selbst kategorisierte F-1 zudem unter die bereits **verkörperte**
+  Skill-Klasse „Beleg trägt seinen Satz nicht" (`.harness/skills/reviewer.md`,
+  aus `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, Zähler bei 5× bereits
+  geschlossen und in den Skill übernommen) — die allgemeine Regel „ein
+  genannter Beleg muss die volle Aussage tragen" ist damit bereits
+  gate-/skill-wirksam; ein zusätzliches, technisch enger gefasstes
+  Register für genau die Kotlin-`internal`-Unterklasse wäre eine
+  Vor-Verkörperung ohne zweites reales Vorkommen. **Stattdessen:**
+  Vormerkung in diesem Absatz — sollte dieselbe Fehleinschätzung
+  (Kotlin-Sichtbarkeitsmodifikator fälschlich als JVM-Grenze behauptet)
+  in `slice-sdk-kotlin-grpc-client-flaeche` (plausibler Ort: eine
+  ähnliche `internal`-Transport-Abstraktion dort ist im Plan bereits als
+  wahrscheinlich benannt) oder einem späteren Kotlin-Slice ein zweites Mal
+  real auftreten, öffnet der dortige Zug `BEO-PGC/kotlin-internal-faelschlich-als-jvm-zugriffsschutz`
+  mit beiden Belegen (2× bereits bei Eröffnung) statt bei 1×.
 - **Folge-Slices:** keine aus diesem Slice selbst erwartet — Umfang bleibt
   innerhalb der Welle (gRPC-Fläche, Pack-Werkzeug, Publish-Workflow bleiben
   eigene, bereits geplante Slices).
-- **Risiken aus §6:** <wird beim Abschluss ergänzt>
+- **Risiken aus §6:**
+  - „Fehler-Antwortform-Design könnte spätere Consumer binden" —
+    **Ausgang: entschieden während der Umsetzung, geschlossen** —
+    sealed-class-Hierarchie, sieben Unterklassen, konsistent mit C# geprüft,
+    inklusive des dort erst per Fixrunde ergänzten
+    Malformed-Response-Falls von Anfang an. Bleibt vor `1.0.0` folgenlos
+    änderbar (`ADR-0109` Festlegung 4).
+  - „Netzloser Test-Fake könnte reale Netzwerk-/Serialisierungs-Eigenheiten
+    verdecken" — **Ausgang: weiter offen, unverändert** — dieselbe
+    strukturelle Grenze wie bei den beiden vorigen SDKs, kein
+    Registereintrag (weder C# noch Python legten einen an); ein realer
+    Rundlauf-Beleg bleibt einem Folge-Slice bzw. `make test-integration`s
+    bestehendem Wegwerf-Client vorbehalten.
+  - „`java.net.http` ohne Pluggable-Handler könnte netzloses Testen
+    erschweren" — **Ausgang: entschieden, geschlossen** —
+    `internal fun interface HttpTransport` plus zweiter `internal`-
+    Konstruktor löst es real (Review/Verifikation bestätigen Netzlosigkeit
+    unabhängig); die Lösung selbst trug F-1 (siehe oben), inhaltlich aber
+    korrekt und jetzt korrekt beschrieben.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
