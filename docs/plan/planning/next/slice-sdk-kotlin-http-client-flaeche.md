@@ -17,7 +17,7 @@ Festlegung 1 (Umfang), [`ADR-0057`](../../adr/0057-http-grpc-api.md)
 (Endpunkte, Token-Header-Form — das SDK benutzt diese Festlegungen,
 verändert sie nicht).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** Implementer-Agent, 2026-09-20.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0109` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-20.
