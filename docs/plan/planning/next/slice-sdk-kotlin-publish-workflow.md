@@ -17,7 +17,7 @@ brauchte jeder Vertriebsweg ein externes Registry-Secret, hier ausdrücklich
 **Berührte Spec-Stellen:** — (Prozess-/CI-Artefakt ohne eigene
 `SPEC-*`-Kennung, analog `sdk-csharp-release.yml`/`sdk-python-release.yml`).
 
-**Verantwortlich:** — (bis zur Priorisierung).
+**Verantwortlich:** Implementer-Agent, 2026-09-20.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0109` §Konsequenzen
 Folgepflicht 1/5). **Datum:** 2026-09-20.
