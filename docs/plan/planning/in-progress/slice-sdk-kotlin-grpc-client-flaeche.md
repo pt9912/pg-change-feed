@@ -122,9 +122,11 @@ denselben Mechanismus wie `examples/csharp/grpc-client`, siehe
       dieses Diffs).
 - [x] `make gates` grün. Exit-Code `0`, direkt geprüft (`AGENTS.md` §3.9) —
       Beleg im Implementer-Bericht.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      0 Findings, keine Fixrunde nötig:
+      `docs/reviews/review-slice-sdk-kotlin-grpc-client-flaeche.md`.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für die Kotlin-gRPC-Oberfläche (`ADR-0109` §Konsequenzen
       Folgepflicht 4, **inklusive** des PAT-Hinweises für den Bezug über
