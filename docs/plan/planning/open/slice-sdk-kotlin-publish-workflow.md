@@ -175,6 +175,18 @@ benannt statt erst im Nachhinein entdeckt):**
 - `BEO-PGC/github-actions-unverifizierbar-lokal` (verkörpert als
   `AGENTS.md` §3.10): Das Post-Push-Risiko dieses Slice bleibt strukturell
   offen, bis ein realer Tag-Push erfolgt — kein `make gates`-Ersatz.
+- Aus `slice-sdk-kotlin-pack-werkzeug` (Review F-2, MEDIUM, nicht
+  merge-blockierend, vorgemerkt): Dockerfile-Kommentar/`harness/README.md`/
+  Commit-Message dieses Vorgänger-Slice schreiben die
+  Sources-/Javadoc-Jar-Freistellung der zitierten GitHub-Doku-Seite zu,
+  obwohl diese Seite dazu **schweigt** (real per `curl` bestätigt, dreifach
+  unabhängig). Der praktische Schluss bleibt haltbar (getragen vom
+  tatsächlichen Gradle-Kern-Faktum `from(components["java"])` ohne
+  `withSourcesJar()`/`withJavadocJar()`), nur die Attribution ist unpräzise.
+  Berührt dieser Slice die Formulierung ohnehin (z. B. beim
+  `docs/user/releasing.md`-Nachzug), die Zuschreibung auf das tragende
+  Gradle-Faktum umstellen statt sie zu wiederholen — kein eigener DoD-Punkt,
+  da nicht zwingend berührt.
 
 ## 4. Trigger
 

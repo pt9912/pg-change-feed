@@ -128,18 +128,25 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
       Reviewer-Skill §DoD-Checkbox-Nachzug ohne Fixrunde).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge (siehe oben) — entfällt
       als eigener Punkt, da bereits oben als DoD-Kriterium geführt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — zwei
+      Belege: F-1 an `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+      (2×, weiter offen), F-2 an
+      `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (bereits verkörpert,
+      weiterer Beleg an einem neuen Beleg-Typ: Web-Recherche) — siehe §7.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang — siehe §7.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
-      (noch offen); die Prüfung läuft regelkonform bei deren Closure.
+      (noch offen, nur noch `slice-sdk-kotlin-publish-workflow` fehlt) —
+      Anker gesetzt (§0 Bezug,
+      [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)),
+      Folge-Slice benannt (§7), Register
+      fortgeschrieben (siehe oben); die volle Drei-Paarungen-Prüfung der
+      Welle selbst läuft regelkonform erst bei deren eigener Closure.
 
 ## 3. Plan (vor Code)
 
@@ -204,36 +211,103 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `.nupkg`/`.whl`+`.tar.gz`, aber nicht für ein Gradle-Jar) — ein
   Bind-Mount-Workaround oder ein falsch gesetztes `--user` könnte das
   Artefakt mit falschen Dateirechten oder gar nicht auf den Host bringen.
-  **Ausgang:** weiter offen, zu prüfen beim Schreiben — dasselbe
-  `tar`-Stream-Export-Muster wie bei den beiden Vorgänger-SDKs sollte
-  unverändert tragen, da es artefakt-unabhängig ist (ein `tar`-Stream
-  kennt keinen Unterschied zwischen `.nupkg`/`.whl`/`.jar`).
+  **Ausgang: eingetreten wie erwartet, kein Problem.** Der bestehende
+  `tar`-Stream-Export (`pack-export`-Stufe) trug unverändert für ein Jar —
+  vier unabhängige Läufe (Implementer, Reviewer, Verifier ×2) erzeugten je
+  ein reales, valides `sdks/kotlin/dist/pgchangefeed-kotlin-0.1.0.jar`
+  (112591 Bytes, normale Owner-Rechte, kein `--user`-Workaround nötig).
 - Ob GitHub Packages für dieses Package ein Sources-/Javadoc-Jar zwingend
   verlangt oder nicht, ist zum Planungszeitpunkt dieser Welle **nicht**
   abschließend recherchiert (`ADR-0109` lässt die Frage bewusst offen).
-  **Ausgang:** weiter offen, zu klären beim Schreiben dieses Slice — real
-  gegen die GitHub-Docs zu prüfen, mit Beleg im Bericht (`AGENTS.md`
-  §3.12).
+  **Ausgang: real recherchiert und entschieden — ein Haupt-Jar genügt.**
+  Drei unabhängige Web-Recherchen (Implementer, Reviewer, Verifier) zeigen:
+  die zitierte GitHub-Doku-Seite erwähnt Sources-/Javadoc-Jars an keiner
+  Stelle (weder Pflicht noch Freistellung), trägt die im Diff verwendete
+  Zuschreibung also nicht explizit — der praktische Schluss bleibt aber
+  haltbar, gestützt auf das real bestätigte Gradle-Kern-Faktum
+  (`from(components["java"])` ohne `withSourcesJar()`/`withJavadocJar()`
+  packt nur den Haupt-Jar). Die Attributions-Unschärfe ist Review-Finding
+  F-2 (MEDIUM) und dem Beobachtungs-Register zugeführt (§7); Risiko
+  zusätzlich strukturell durch `ADR-0109` §Re-Evaluierungs-Trigger 4
+  abgefangen.
 - Die neue `SPEC-<NNN>`-Nummer in `spec/pflichtenheft.md` §6/§2 muss
   fortlaufend vergeben werden (zum Planungszeitpunkt dieser Welle zuletzt
   `SPEC-027`) — ein Parallel-Slice, der ebenfalls eine neue `SPEC-*`-Nummer
-  vergibt, könnte zu einer Kollision führen. **Ausgang:** weiter offen,
-  real zu verifizieren zum Bau-Zeitpunkt dieses Slice (siehe §3
-  Referenz-Prüfung).
+  vergibt, könnte zu einer Kollision führen. **Ausgang: keine Kollision.**
+  `SPEC-028` real vergeben und dreifach verifiziert (Implementer, Reviewer,
+  Verifier je per `grep -rn "SPEC-028"`) — kein Parallel-Zug hat die Nummer
+  belegt, genau die drei erwarteten Treffer (§1, §6, §7).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird beim Abschluss ergänzt>
-- **Was ging anders als geplant:** <wird beim Abschluss ergänzt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss ergänzt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss
-  ergänzt>
+- **Was hat funktioniert:** Das etablierte Dreiklang-Muster
+  (`harness/mk/sdk.mk`-Target, Dockerfile-`pack`/`pack-export`-Stufen,
+  host-seitiger `tar`-Stream-Export-Wrapper) trug unverändert für einen
+  dritten, neuen Artefakt-Typ (`.jar` statt `.nupkg`/`.whl`+`.tar.gz`) —
+  der Reviewer bestätigt `tools/harness/sdk-pack-kotlin.sh` als „strukturell
+  nahezu Zeile-für-Zeile identisch" mit `sdk-pack-csharp.sh`. Der
+  Träger-Nachzug (Pflichtenheft `LH-FA-SST-009.a`/§6/§7,
+  `harness/README.md`) folgte demselben, bereits zweimal geübten Muster.
+  Alle drei §6-Risiken lösten sich real wie im Plan erwartet auf (siehe
+  unten) — keine Überraschung im Bau selbst.
+- **Was ging anders als geplant:** Der Kotlin-Nachzug bereinigte korrekt
+  den überholten Python-Absatz in `LH-FA-SST-009.a` (kein Wiederholungsfall
+  von `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` innerhalb dieses
+  eigenen Zuges), ließ dabei aber sichtbar werden, dass der **C#-Absatz**
+  bereits seit dem vorangegangenen Python-Nachzug denselben Fehler trägt —
+  unbemerkt in beiden vorangegangenen Reviews. Zusätzlich fand der
+  Reviewer, dass die im Diff verwendete Sources-/Javadoc-Jar-Freistellungs-
+  Aussage ihren zitierten Beleg (die GitHub-Doku-Seite) nicht explizit
+  trägt — die Seite schweigt zur Frage, statt sie zu beantworten; der
+  praktische Schluss bleibt trotzdem haltbar (drittfach unabhängig
+  nachrecherchiert: Implementer, Reviewer, Verifier).
+- **Steering-Loop-Eintrag:** Zwei Finding-Klassen dieses Laufs, beide nicht
+  neu geschaffen, sondern an bestehenden Beobachtungen angedockt (siehe
+  unten) — kein neuer BEO-Eintrag nötig, die bestehende Klassifikation
+  greift für beide Fälle, jeweils an einem für die Klasse neuen Träger-Typ
+  (Pflichtenheft-Fließtext bzw. Web-Recherche statt Befehl/Codestelle).
+- **Beobachtungs-Register (`../observations/`):**
+  - F-1 (LOW, C#-Absatz bleibt stale) →
+    `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, neuer Beleg
+    (`evidence/slice-sdk-kotlin-pack-werkzeug.md`), Zähler 1× → 2×, weiter
+    unter der Schwelle (3×), Zustand bleibt **offen**. Ursprung und
+    Vorkommen sind getrennt: Ursprung ist `slice-sdk-python-pack-werkzeug`
+    (dort entstand die Staleness), gefunden wurde sie erst beim Review
+    dieses Slice — derselbe Ursprung/Vorkommen-Split, den
+    `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` bereits einmal
+    dokumentiert. Erster Beleg dieser Klasse an einem
+    Pflichtenheft-Fließtext-Träger statt einem Slice-Plan-Dokument.
+  - F-2 (MEDIUM, Beleg trägt die Aussage nur durch Schweigen) →
+    `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (bereits `verkörpert`
+    seit `welle-20`, Reviewer-Skill-HIGH-Punkt „Beleg trägt seinen Satz
+    nicht"), neuer Beleg (`evidence/slice-sdk-kotlin-pack-werkzeug.md`) —
+    erster Beleg dieser Klasse an einer **Web-Recherche** statt einem
+    Befehl/einer Codestelle/einer Adresse/einer Assertion. Kein neuer
+    Ausgang nötig (Klasse bereits verkörpert); state.md bleibt unverändert
+    (Präzedens: `evidence/slice-release-version-und-workflow.md` wurde
+    ebenfalls ohne state.md-Änderung nach der Verkörperung ergänzt).
+  - Keine dritte Beobachtung angefallen.
 - **Folge-Slices:** `slice-sdk-kotlin-publish-workflow` — bereits als
-  Datei in `open/` vorhanden.
-- **Risiken aus §6:** <wird beim Abschluss ergänzt>
+  Datei in `open/` vorhanden; um einen proaktiven Hinweis auf F-2 ergänzt
+  (§3 „Hinweise aus dem Beobachtungs-Register", optional, kein eigener
+  DoD-Punkt dort).
+- **Risiken aus §6:** alle drei real aufgelöst — Export-Mechanismus trug
+  unverändert (reales `.jar`, vier unabhängige Läufe), Sources-/
+  Javadoc-Jar-Frage real recherchiert und entschieden (ein Haupt-Jar
+  genügt, Attributions-Unschärfe als F-2 dem Register zugeführt),
+  `SPEC-028` kollisionsfrei vergeben (dreifach verifiziert). Kein Risiko
+  bleibt strukturell offen für diesen Slice selbst — anders als bei
+  `slice-sdk-kotlin-publish-workflow`, wo `AGENTS.md` §3.10 bis zum realen
+  Post-Push-Lauf weiter offen bleibt.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
-  (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
+  (noch offen — dies ist der **vorletzte** der fünf Slices; nur noch
+  `slice-sdk-kotlin-publish-workflow` fehlt für die Wellen-Closure). Anker
+  (`ADR-0109`, `LH-FA-SST-009`), Folge-Slice
+  (`slice-sdk-kotlin-publish-workflow`, bereits in `open/`) und Register
+  (siehe oben) sind für diesen Slice selbst getragen; die volle
+  Drei-Paarungen-Prüfung **der Welle** läuft regelkonform erst bei deren
+  eigener, separater Closure — nicht Teil dieses Slice-Zugs.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
