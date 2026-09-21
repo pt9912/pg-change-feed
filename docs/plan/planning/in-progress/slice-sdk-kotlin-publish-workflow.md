@@ -134,7 +134,10 @@ Repository-Secret, der zentrale Unterschied zu
       --no-daemon publish` auf, der manuelle Host-seitige `.proto`-Kopier-
       Schritt entfällt (die `.proto` fließt über denselben benannten
       Bau-Kontext `proto` ein wie bei `make sdk-pack-kotlin`). Kein offenes
-      HIGH mehr.
+      HIGH mehr — bestätigt durch einen frischen Zweit-Review-Lauf
+      (`docs/reviews/review-slice-sdk-kotlin-publish-workflow-fixrunde.md`,
+      eigener `docker build --target publish` + `docker inspect`-Beleg, 0
+      HIGH/MEDIUM, 1 INFO).
 - [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfällt als eigener Punkt,
       da bereits oben als DoD-Kriterium geführt.
