@@ -77,9 +77,13 @@ gRPC-Fläche).
       geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/csharp/`), Ausnahme
       nur Doku-Zitate von Test-Vorbildern.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Bericht: `docs/reviews/review-slice-sdk-csharp-sse-client-flaeche.md`
+      (0 HIGH, 0 MEDIUM, 3 LOW, 1 INFO — keine Fixrunde nötig,
+      DoD-Checkbox-Nachzug ohne Fixrunde nach Skill-Regel §DoD-Checkbox-
+      Nachzug ohne Fixrunde).
 - [x] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im Folge-Slice `slice-sdk-csharp-nats-stream-client-flaeche`
