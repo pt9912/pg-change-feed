@@ -78,3 +78,18 @@ Verifier gefunden, nicht vom Reviewer. Ausgang bleibt **verkörpert** für die
 Produktionscode-Hälfte; die Doku-Hälfte ist ein offener Randbefund für den
 nächsten Lese-Schritt (Skopus-Erweiterung des HIGH-Punkts erwägen), kein
 eigener Zähler-Eintrag, da bislang nur 1× beobachtet.
+
+Beleg 8 (`slice-generated-sync-tar-export`, evidence-Datei, Planner-Closure
+2026-09-21): erstes Vorkommen der Klasse in einem **Shell-Skript**
+(`tools/harness/generated-sync.sh`, Kopf-Kommentar) — Datei-Typ-Erweiterung
+ggü. der bisherigen Go-/SQL-/`schema.yaml`-Fläche, keine neue Klasse.
+Reviewer fing die Stelle vor Merge (F-1, HIGH), Fixrunde real geprüft
+(0 HIGH danach) — Ausgang bleibt **verkörpert**, neunter Beleg derselben
+Diagnose. **Zusätzlich zweiter Beleg für die in Beleg 7 benannte
+Doku-Prosa-Grenze:** dieselbe Chronik-Struktur stand in
+`harness/sensors/generated-sync.md`, diesmal bereits vom **Reviewer selbst**
+gefunden (F-2, INFO, nicht erst vom Verifier), blieb über die Fixrunde
+unverändert bewusst INFO. Die Zwei-Beleg-Schwelle für die Doku-Prosa-
+Variante ist damit erreicht — noch kein eigener Registereintrag (unter der
+Drei-Beleg-Schwelle, `harness/README.md` §Traceability rules Analogie),
+aber ein verstärktes Signal für den nächsten Lese-Schritt.

@@ -5,7 +5,8 @@ Disziplin im gesamten Quellcode, keine eigene Sub-Area im Sinn der
 Modus-Deklaration).
 
 Die Beobachtung: Go-Quellcode-Kommentare (und, historisch, SQL-/
-`schema.yaml`-Kommentare) tragen wiederholt Slice-Chronik — entweder eine
+`schema.yaml`-Kommentare, seit `slice-generated-sync-tar-export` auch
+Shell-Skript-Kommentare) tragen wiederholt Slice-Chronik — entweder eine
 explizite Slice-Kennung (`slice-<NNN>`) als Begründungsquelle einer
 Code-Entscheidung, oder implizite Chronik-Sprache (Vorher/Nachher-
 Vergleiche wie „zeigt identisches Verhalten wie vor diesem Slice",
