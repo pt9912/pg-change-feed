@@ -38,7 +38,13 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-Nichts in Arbeit.
+- [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
+- [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
+- [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
+
+Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
+Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
+voneinander unabhängige Wellen sind kein Verstoß).
 
 ## Nächste Wellen
 
@@ -128,6 +134,10 @@ flowchart LR
     WSDKPY[welle-sdk-python-lh-fa-sst-009: Zweites SDK-Package Python/PyPI]
     A0109[ADR-0109 Accepted]
     WSDKKT[welle-sdk-kotlin-lh-fa-sst-009: Drittes SDK-Package Kotlin/GitHub Packages]
+    A0110[ADR-0110 Accepted]
+    WSDKCSV[welle-sdk-csharp-vollabdeckung: C#-SDK volle Vier-Wege-Parität]
+    WSDKKTV[welle-sdk-kotlin-vollabdeckung: Kotlin-SDK volle Vier-Wege-Parität]
+    WSDKPYV[welle-sdk-python-vollabdeckung: Python-SDK volle Vier-Wege-Parität]
 
     A58 --> W17
     A59 --> W18
@@ -136,6 +146,10 @@ flowchart LR
     A0051 --> WREL
     A0106 --> WSDK
     A0107 --> WSDKPY
+    WSDK --> WSDKCSV
+    WSDKKT --> WSDKKTV
+    WSDKPY --> WSDKPYV
+    A0110 --> WSDKPYV
     A0109 --> WSDKKT
 ```
 
