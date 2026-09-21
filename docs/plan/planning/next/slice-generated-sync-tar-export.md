@@ -20,7 +20,7 @@ Lastenheft-/Pflichtenheft-/Architektur-Bezugspunkt; `make generated-sync`
 selbst trägt keine `SPEC-*`/`ARC-*`-Kennung, ebenso wie `ADR-0084` selbst
 kein Spec-Stratum berührt).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-21.
 
 **Autor:** Claude Code (direkt vom Nutzer beauftragt, Anlass: ein realer
 `make gates`-Fehlschlag von `generated-sync` auf einem Rechner mit
@@ -115,6 +115,55 @@ gegen diese Fehlerklasse, nicht nur auf diesem einen Rechner umschifft.
 | `harness/README.md` §Sensors (`generated-sync`-Zeile), `harness/mk/generated-sync.mk` (Kopf-Kommentar) | ggf. update | Falls dort der Bind-Mount-Mechanismus explizit genannt ist (Trägernachzug, `AGENTS.md` §3.13) — Implementer-Suchlauf (`grep -rn "Bind-Mount\|bind-mount" harness/ tools/harness/`) vor Abschluss. |
 | Testdatei | — | Kein eigenständiges Unit-Test-Ziel; der Beleg ist der reale `make generated-sync`-Lauf selbst (Sensor-Skript, kein Go-Testpaket) — analog dem bestehenden Muster für `tools/harness/proto-generate.sh`. |
 
+**Plan-Nachzug (Planner-Zug, `next` → `in-progress`, 2026-09-21) — Klärung
+Risiko 1 vorab:** Die Planner-Rolle hat
+[`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md) erneut
+gegen `AGENTS.md` §3.5 gelesen und **entscheidet: keine Supersede-ADR
+nötig.** Begründung:
+
+- §Entscheidung selbst (der unberührbare Kern nach `AGENTS.md` §3.5) legt
+  die Erzeugungs-Mechanik **nicht** fest — Festlegung 1 spricht durchgehend
+  vom „gepinnten Generator" gegen die „committete `.proto`-Quelle", mit
+  genau zwei Bedingungen: „das Gate schreibt den Arbeitsbaum nicht" (Temp-
+  Verzeichnis) und „der Befund nennt den Diff". Beide Bedingungen bleiben
+  nach dem Wechsel auf `proto-export` unverändert erfüllt — die tar-Stream-
+  Extraktion landet weiterhin in einem Temp-Verzeichnis, nicht im Baum.
+- Die wörtliche Nennung „Dockerfile-Stufe `proto`" steht an genau zwei
+  Stellen: einmal in §Kontext (2) — dort beschreibt sie **`make
+  proto-generate`s** Mechanik, nicht die von `generated-sync` — und einmal
+  in der Fitness-Function-Tabelle (Spalte „Tooling"). Keine der beiden
+  Stellen gehört zur in `AGENTS.md` §3.5 abschließend benannten
+  unberührbaren Liste (§Entscheidung, §Konsequenzen, §Verglichene
+  Alternativen, §Status, Supersedes-Kette).
+- Die Fitness-Function-**Regel**-Spalte — die tatsächlich bindende Aussage
+  („byte-gleich … erzeugt in ein Temp-Verzeichnis, verglichen mit dem Baum,
+  Befund mit Diff") — bleibt vom Stufenwechsel unberührt; nur die
+  „Tooling"-Spalte nennt danach einen anderen Stufennamen als den zum
+  Entscheidungszeitpunkt vorgesehenen. Das ist eine veraltete
+  Beleg-/Beispielangabe innerhalb einer nicht-unberührbaren Sektion, keine
+  Änderung der Entscheidung selbst — anders als die vier in §Entscheidung
+  unberührbaren Sektionen, die dieser Slice inhaltlich nicht anfasst.
+- Dieser Slice ändert `ADR-0084` selbst **nicht** (kein Commit auf die
+  ADR-Datei). Die Fitness-Function-Zeile bleibt wörtlich stehen und nennt
+  weiterhin „Dockerfile-Stufe `proto`" — historisch korrekt als das zum
+  Entscheidungszeitpunkt vorgesehene Tooling, nicht mehr deckungsgleich mit
+  dem seit diesem Slice tatsächlich laufenden Mechanismus. Das ist benannt,
+  nicht verdeckt: künftige Leser dieser ADR finden die Auflösung über den
+  Verweis in diesem Slice-Plan und ggf. über einen
+  späteren, eigenständigen `AGENTS.md` §3.5-konformen Nachzug (neue Zeile in
+  `ADR-0084`s §Geschichte, kein Überschreiben — Entscheidung eines
+  künftigen Zuges, nicht Bestandteil dieses Slice).
+- **Kein Dispatch eines eigenen Architect-Zugs** — die Lektüre der
+  einschlägigen Textstellen (`§Entscheidung` vs. `§Kontext`/Fitness-Function)
+  ist eindeutig genug für eine begründete Planner-Entscheidung; ein
+  Architect-Zug käme bei derselben Textgrundlage zur selben Schlussfolgerung.
+
+**Folge für §4/§6:** Die Rückführung `in-progress` → `open` aus §4
+(„Architect-Rolle entscheidet, dass der Stufen-Wechsel eine Supersede-ADR
+braucht") entfällt damit als Vorbedingung — der Implementer-Zug startet
+ohne diese Blockade. §6 Risiko 1 erhält seinen Ausgang **entfallen** mit
+Verweis auf diesen Absatz (nicht erst bei Closure).
+
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn priorisiert (Verantwortlich
@@ -130,6 +179,10 @@ gesetzt) — kein weiterer Slice als Vorbedingung.
 - `in-progress` → `open` (blockiert — Carveout?): falls die Architect-Rolle
   (§6 Risiko 1) entscheidet, dass der Stufen-Wechsel eine Supersede-ADR zu
   `ADR-0084` braucht — dann blockiert bis diese ADR `Accepted` ist.
+  **Entfallen** durch die Planner-Klärung vom 2026-09-21 (§3 „Plan-Nachzug",
+  §6 Risiko 1) vor dem Übergang nach `in-progress` — diese Rückführung wird
+  nicht mehr erwartet, bleibt hier stehen als Beleg, dass sie vorab benannt
+  und dann aufgelöst wurde, statt stillschweigend zu verschwinden.
 
 ## 5. Closure-Trigger
 
@@ -146,11 +199,17 @@ DoD vollständig + `make gates` grün + reale Gegenprobe gegen den Auslöser
   §Konsequenzen, §Verglichene Alternativen, §Status; die
   Fitness-Function-Tabelle ist als Teil der Entscheidungsdarstellung zu
   behandeln, nicht als reine Zitat-Korrektur nach `ADR-0073`). **Ausgang:**
-  weiter offen — vor der Implementierung klärt der Implementer-Zug mit der
-  Architect-Rolle, ob eine Supersede-ADR zu `ADR-0084` nötig ist (die
-  Kern-Entscheidung „Temp-Verzeichnis, kein Baum-Schreiben, Diff im Befund"
-  bleibt unverändert erfüllt — nur die Fitness-Function-Zeile nennt einen
-  anderen Stufennamen).
+  entfallen (Planner-Klärung 2026-09-21, siehe §3 „Plan-Nachzug") — die
+  wörtliche Nennung „Dockerfile-Stufe `proto`" steht ausschließlich in
+  §Kontext (dort über `make proto-generate`, nicht über `generated-sync`)
+  und in der Fitness-Function-„Tooling"-Spalte, beide außerhalb der in
+  `AGENTS.md` §3.5 abschließend benannten unberührbaren Liste
+  (§Entscheidung, §Konsequenzen, §Verglichene Alternativen, §Status,
+  Supersedes-Kette); §Entscheidung selbst legt die Erzeugungs-Mechanik
+  bewusst nicht fest und bleibt durch den Stufenwechsel unberührt. Dieser
+  Slice ändert `ADR-0084` selbst nicht — die jetzt leicht veraltete
+  „Tooling"-Nennung bleibt stehen und ist über diesen Slice-Plan auflösbar;
+  kein Supersede-ADR nötig, kein Architect-Zug dispatcht.
 - **Risiko 2 — Verlust der unabhängigen Modulpfad-Cross-Check.** Aktuell
   leitet das Skript den Modulpfad selbst aus `go.mod` ab (`generated-sync.sh`
   Zeile 47) und vergleicht implizit gegen den im Dockerfile hartcodierten
