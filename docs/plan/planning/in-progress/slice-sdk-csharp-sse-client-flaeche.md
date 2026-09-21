@@ -91,15 +91,16 @@ gRPC-Fläche).
       Träger-Dokumente einfließen. Beide Dateien real unberührt
       (`git diff --stat` gegen diesen Diff), `PgChangeFeed.Client.csproj`s
       `<Version>` unverändert `0.1.0`.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer
+      Beleg in `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut/evidence/`
+      (Zähler jetzt 3×, Schwelle erreicht, Ausgang an die Closure von
+      `welle-sdk-csharp-vollabdeckung` verwiesen — siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -196,19 +197,115 @@ geschrieben.
 - Die Docker-Bau-Kopplung (`--build-context proto=proto` auch ohne
   gRPC-Bezug) könnte bei einem künftigen, isolierten Bau-Versuch dieses
   Slice übersehen werden, wenn jemand die DoD-Begründung „SSE braucht kein
-  proto" wörtlich nimmt. **Ausgang:** weiter offen, aber transparent
-  benannt (§3) — dritter Treffer der Klasse
-  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` würde die
-  3×-Schwelle erreichen und eine Reviewer-Skill-Schärfung auslösen.
+  proto" wörtlich nimmt. **Ausgang:** eingetreten — der Verifier prüfte
+  real (per `git log`) den Ursprung der Kopplung im SDK-Baum
+  (`sdks/csharp/Dockerfile`, seit `slice-sdk-csharp-grpc-client-flaeche`)
+  und der Planner hat sie als dritten Beleg der Klasse
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` registriert —
+  die vorab benannte 3×-Schwelle ist damit real erreicht
+  (`evidence/slice-sdk-csharp-sse-client-flaeche.md`). Die daran hängende
+  Regelschärfungs-Frage (Architect-Entscheidung, Modul 4/8) bleibt der
+  Closure von `welle-sdk-csharp-vollabdeckung` vorbehalten — die Welle
+  liegt noch offen (ein weiterer Slice folgt), kein Teil dieser
+  Einzel-Slice-Closure.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
+- **Was hat funktioniert:** Ein glatter Durchlauf ohne Fixrunde — der
+  Reviewer fand 0 HIGH/0 MEDIUM (3 LOW, 1 INFO,
+  `docs/reviews/review-slice-sdk-csharp-sse-client-flaeche.md`) und der
+  Verifier bestätigte „DoD erfüllt"
+  (`docs/reviews/verifikation-slice-sdk-csharp-sse-client-flaeche.md`), je
+  mit eigenständig nachgefahrenen, nicht übernommenen Docker-Build-Läufen
+  (mit und ohne `--build-context proto=proto`, insgesamt vier unabhängige
+  Bau-Bestätigungen über Implementer/Reviewer/Verifier). Der Frame-Parser
+  und alle zehn `SPEC-021`-Felder wurden von beiden Rollen eigenständig
+  gegen den Quellcode gehalten, nicht nur aus Bericht oder Commit-Message
+  übernommen. Der DoD-Checkbox-Nachzug ohne Fixrunde griff hier korrekt:
+  der Reviewer zog die Checkbox „Review durchgeführt" im selben Commit
+  selbst nach.
+- **Was ging anders als geplant:** Keine inhaltliche Abweichung vom Plan —
+  die drei im Implementer-Zug benannten Plan-Nachzüge (§3: eigene
+  `Sse/Models/Change.cs`-Datei, fünf statt eine Testdatei, kein
+  Mapper-Extrakt aus `Http/`) sind alle begründete Ausgestaltung, kein
+  Plan-Konflikt (von Reviewer und Verifier unabhängig geprüft). Der
+  Verifier ergänzte einen über die reine DoD-Prüfung hinausgehenden
+  Hinweis: die Docker-Bau-Kopplung in `sdks/csharp/Dockerfile` (§6) ist
+  strukturell derselben Beobachtungsklasse zuordenbar wie die bereits
+  registrierten `examples/csharp`/`examples/kotlin`-Fälle, aber bislang nie
+  für den SDK-Baum selbst belegt — der Planner hat das bei der Closure
+  real per `git log` nachgezogen (siehe unten).
+- **Steering-Loop-Eintrag:** kein neuer Sensor, keine neue Hard Rule durch
+  diese Closure selbst. Der Verifier-Hinweis zur Docker-Bau-Kopplung
+  bestätigt eine bereits vorab (Welle-Eröffnungs-Sichtung, Slice-Plan §3/§6)
+  erwartete Schwellen-Erreichung — die vorab benannte Konsequenz
+  („dritter Treffer würde die 3×-Schwelle erreichen und eine
+  Reviewer-Skill-Schärfung auslösen") ist eingetreten; die Schärfung selbst
+  bleibt eine Architect-Entscheidung bei der Welle-Closure (siehe unten),
+  kein Ergebnis dieser Slice-Closure. Die vier Reviewer-Findings (F-1…F-4,
+  3 LOW/1 INFO) lösen **keine** neuen Beobachtungs-Register-Einträge aus:
+  jedes ist ein Erstauftreten ohne belegtes Wiederholungsmuster in diesem
+  Repo (eigene Prüfung: kein bestehender `BEO-PGC/*`-Eintrag trägt „Kopie
+  statt Extraktion", „Vorbild-Verhalten übernommen, Spec-Lücke latent",
+  „Discriminator ungeprüft" oder „Randfall ohne Testbeleg"), und der Plan
+  begründet den zugrunde liegenden Design-Verzicht (keine Mapper-Extraktion
+  aus `Http/`) bereits explizit als bewusste Entscheidung (§3). F-1
+  (fehlende `data:`-Verkettung) und F-2 (wörtliche Kopie des
+  Fehler-Mappings) sind die beiden mit dem größten Wiederholungsrisiko —
+  falls der Folge-Slice `slice-sdk-csharp-nats-stream-client-flaeche`
+  denselben Frame-/Mapping-Zuschnitt wiederholt (eigener Parser, eigene
+  Fehler-Mapping-Kopie), wäre das ein zweites Auftreten und ein Kandidat für
+  einen neuen Registereintrag — an dieser Stelle benannt, damit der
+  Folge-Slice-Reviewer es nicht neu herleiten muss.
+- **Beobachtungs-Register (`../observations/`):** Beleg ergänzt zu
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut/` — neue
+  Evidenz-Datei `evidence/slice-sdk-csharp-sse-client-flaeche.md`. Der
+  Planner hat den Verifier-Hinweis geprüft: `git log --diff-filter=A
+  --oneline -- sdks/csharp/Dockerfile` und `git log --oneline --
+  sdks/csharp/Dockerfile` zeigen real, dass die unbedingte
+  `COPY --from=proto …`-Zeile bereits mit
+  `06e78545 feat(sdk): C#-gRPC-Client-Fläche für PgChangeFeed.Client`
+  (Slice `slice-sdk-csharp-grpc-client-flaeche`) in die einzige
+  `build`-Stufe kam — kein neuer Fund dieses Slice, sondern eine
+  vorbestehende, hier erstmals belegte Instanz. Zähler jetzt real
+  ausgezählt **3×** (`evidence/slice-102.md`, `evidence/slice-103.md`,
+  `evidence/slice-sdk-csharp-sse-client-flaeche.md`) — die 3×-Schwelle ist
+  erreicht, aber die dritte Instanz hat eine strukturell andere Ursache
+  als die ersten beiden (ein bewusst gebündeltes `.csproj`/Package,
+  `ADR-0106` Festlegung 1, statt vermeidbar geteilter Docker-Stufen über
+  eigenständige Programme — Details in der Evidenz-Datei §Einordnung). Der
+  `Ausgang` dieser Beobachtung ist **nicht** Teil dieser Slice-Closure:
+  `welle-sdk-csharp-vollabdeckung` liegt noch offen (ein weiterer Slice,
+  `slice-sdk-csharp-nats-stream-client-flaeche`, folgt) und hat den
+  dritten Treffer bereits bei ihrer eigenen Eröffnungs-Sichtung (§6)
+  vorausgesehen — der Lese-Schritt für die Regelschärfungs-Frage
+  (Architect-Entscheidung, Modul 4/8) bleibt der Closure dieser Welle
+  vorbehalten (`state.md` trägt den Verweis). Zusätzlich geprüft, kein
+  Handlungsbedarf: `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`
+  (bereits 3×, Architect-Sichtung ausstehend, unverändert durch diesen
+  Slice), `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+  (verkörpert, DoD-Punkt „Doku-Update" bewusst im Folge-Slice gebündelt,
+  kein Verstoß), `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert,
+  Suchlauf real durchgeführt — siehe Plan-Nachzug §3, Fund in
+  `sdks/csharp/README.md` behoben).
+- **Folge-Slices:** keine aus diesem Slice selbst erwartet — der nächste
+  Slice `slice-sdk-csharp-nats-stream-client-flaeche` ist bereits Teil
+  derselben Welle und bereits geplant (Welle-Plan §4), kein neuer
+  Folge-Slice-Bedarf durch diesen Zug.
+- **Risiken aus §6:**
+  - „Gestubbter HTTP-Response-Stream könnte reales Chunked-Transfer-/
+    Flush-Verhalten nicht exakt nachbilden" — **Ausgang: weiter offen**,
+    unverändert zur Plan-Begründung; ein realer Rundlauf-Beleg bleibt
+    `make test-integration`s `tools/harness/sseclient` vorbehalten, dieses
+    SDK bekommt (wie bei HTTP/gRPC) keinen eigenen Integrationsbeleg in
+    dieser Welle.
+  - „Docker-Bau-Kopplung könnte bei einem isolierten Bau-Versuch übersehen
+    werden" — **Ausgang: eingetreten** — der vorab benannte dritte Treffer
+    der Klasse `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`
+    ist real eingetreten und belegt (siehe Beobachtungs-Register oben); die
+    daran hängende Regelschärfungs-Entscheidung ist an die Closure von
+    `welle-sdk-csharp-vollabdeckung` verwiesen, kein offener Punkt dieses
+    Einzel-Slice mehr.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
