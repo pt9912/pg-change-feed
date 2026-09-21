@@ -38,11 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md) —
-  Drittes SDK-Package (Kotlin/GitHub Packages, `pgchangefeed-kotlin`) für
-  [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
-  ([`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)).
-
 Nichts in Arbeit.
 
 ## Nächste Wellen
@@ -178,6 +173,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-release-pipeline-adr-0051 — Release-Pipeline gemäß `ADR-0051` vollständig umsetzen: Versionierung/`release.yml`, CVE-Scan, Upstream-Pin-Freshness, Docker-Hub-Beschreibungs-Sync, Betreiber-Doku | 2026-09-19 | [welle-release-pipeline-adr-0051-results.md](../done/welle-release-pipeline-adr-0051-results.md) |
 | welle-sdk-csharp-lh-fa-sst-009 — Erstes C#/NuGet-SDK-Package (`PgChangeFeed.Client`) für `LH-FA-SST-009` (`ADR-0106`) | 2026-09-19 | [welle-sdk-csharp-lh-fa-sst-009-results.md](../done/welle-sdk-csharp-lh-fa-sst-009-results.md) |
 | welle-sdk-python-lh-fa-sst-009 — Zweites SDK-Package (Python/PyPI, `pgchangefeed`) für `LH-FA-SST-009` (`ADR-0107`, `ADR-0108`) | 2026-09-19 | [welle-sdk-python-lh-fa-sst-009-results.md](../done/welle-sdk-python-lh-fa-sst-009-results.md) |
+| welle-sdk-kotlin-lh-fa-sst-009 — Drittes SDK-Package (Kotlin/GitHub Packages, `pgchangefeed-kotlin`) für `LH-FA-SST-009` (`ADR-0109`) | 2026-09-21 | [welle-sdk-kotlin-lh-fa-sst-009-results.md](../done/welle-sdk-kotlin-lh-fa-sst-009-results.md) |
 
 ## Historische Trigger-Verschiebungen
 

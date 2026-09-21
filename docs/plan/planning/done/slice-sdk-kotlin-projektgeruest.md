@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (Scope),
 [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
@@ -115,7 +115,7 @@ dieses Repos.
       weiter offen).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -348,7 +348,7 @@ geschrieben.
     tatsächlich aktuelle Version, keine Drift ggü. `ADR-0109`s
     Kontext-Messung.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+  [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream —
@@ -147,7 +147,7 @@ denselben Mechanismus wie `examples/csharp/grpc-client`, siehe
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -398,7 +398,7 @@ eingetreten/aufgelöst, einer bewusst weiter offen. Keine Korrektur nötig.
   funktioniert" oben); keine der beiden fand einen Widerspruch zum
   Implementer-Bericht.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+  [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

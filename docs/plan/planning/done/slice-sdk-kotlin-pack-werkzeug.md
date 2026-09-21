@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
@@ -140,7 +140,7 @@ das Package) sowie `harness/README.md` §Werkzeuge (die reale
 - [x] Jedes Risiko aus §6 trägt einen Ausgang — siehe §7.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen, nur noch `slice-sdk-kotlin-publish-workflow` fehlt) —
       Anker gesetzt (§0 Bezug,
       [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)),
@@ -300,7 +300,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `slice-sdk-kotlin-publish-workflow`, wo `AGENTS.md` §3.10 bis zum realen
   Post-Push-Lauf weiter offen bleibt.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+  [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen — dies ist der **vorletzte** der fünf Slices; nur noch
   `slice-sdk-kotlin-publish-workflow` fehlt für die Wellen-Closure). Anker
   (`ADR-0109`, `LH-FA-SST-009`), Folge-Slice

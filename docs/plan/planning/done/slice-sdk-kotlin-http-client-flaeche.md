@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (die neun Port-gedeckten
@@ -111,7 +111,7 @@ unabhängige Tests.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -382,7 +382,7 @@ geschrieben.
     unabhängig); die Lösung selbst trug F-1 (siehe oben), inhaltlich aber
     korrekt und jetzt korrekt beschrieben.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+  [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

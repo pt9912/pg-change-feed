@@ -15,3 +15,12 @@ sichten der jeweils nächsten Slice-Planung liest ihn ebenfalls mit).
 Zähler (abgeleitet): 3× (evidence/slice-sdk-csharp-projektgeruest.md,
 evidence/slice-sdk-python-projektgeruest.md,
 evidence/slice-sdk-kotlin-projektgeruest.md).
+
+**Lese-Schritt der `welle-sdk-kotlin-lh-fa-sst-009`-Closure (Modul 6)
+durchgeführt** — Zustand bleibt bewusst `offen`: Die Wellen-Closure ist ein
+Planner-Zug (Modul 8), die hier fällige Regelschärfung eine
+Architect-Entscheidung; der Lese-Schritt trägt den Fund als Steering-Loop-
+Eintrag in
+`docs/plan/planning/done/welle-sdk-kotlin-lh-fa-sst-009-results.md`
+weiter, ohne ihn einseitig zu embodyen. Die nächste reguläre
+Auflösungsgelegenheit ist eine künftige Architect-Sichtung.

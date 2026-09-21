@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+**Welle:** [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
@@ -154,13 +154,13 @@ Repository-Secret, der zentrale Unterschied zu
       entfallen strukturell — siehe §7).
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind auf
       Slice-Ebene getragen — dieser Slice gehört zu
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md)
       (Slice-Bezug oben gesetzt, kein Folge-Slice — letzter Slice der
       Welle —, Register-Eintrag siehe §7); die **volle**
       Drei-Paarungen-Prüfung der Welle selbst (Roadmap-Rückbindung,
       Wellen-Closure-Notiz) läuft regelkonform bei der separaten,
       unmittelbar nachfolgenden Welle-Closure von
-      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
+      [welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md).
 
 ## 3. Plan (vor Code)
 
@@ -395,7 +395,7 @@ Wellen-Closure-Notiz) ist ein separater, unmittelbar nachfolgender Zug.
   offen.
 
 **Drei Paarungen:** dieser Slice gehört zu
-[welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md) —
+[welle-sdk-kotlin-lh-fa-sst-009](welle-sdk-kotlin-lh-fa-sst-009.md) —
 dies ist der letzte Slice dieser Welle; die volle Drei-Paarungen-Prüfung
 auf Wellen-Ebene läuft regelkonform bei deren eigener, separater, hier
 unmittelbar nachfolgender Closure.

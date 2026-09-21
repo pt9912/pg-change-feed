@@ -10,7 +10,7 @@ zwei Positionen, nicht drei.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+[`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 §Konsequenzen Folgepflicht 1 geschnitten). **Datum:** 2026-09-20.
 
 ---
@@ -20,10 +20,10 @@ zwei Positionen, nicht drei.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
-[`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+[`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 (Accepted, 2026-09-20) entscheidet Form, Ort und Umfang des dritten
 offiziellen Client-Bibliothek-Packages für
-[`LH-FA-SST-009`](../../../spec/lastenheft.md): Kotlin, GitHub Packages
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md): Kotlin, GitHub Packages
 (Gradle-/Maven-Registry dieses Repositories), ein Package (Arbeitsname
 `pgchangefeed-kotlin`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) mit
 HTTP-API (`SPEC-018`) und gRPC-Stream (`SPEC-020`) — wie beim C#-Package,
@@ -46,9 +46,9 @@ ergeben — ein einzelner fertiger Slice (z. B. nur das Projektgerüst) belegt
 die Anforderung nicht; erst der volle Satz macht aus „Sprache und
 Vertriebsweg entschieden" ein „Package existiert und ist konsumierbar".
 Dieselbe Fünf-Slice-Form wie bei der C#-Welle
-([welle-sdk-csharp-lh-fa-sst-009](done/welle-sdk-csharp-lh-fa-sst-009.md)) —
+([welle-sdk-csharp-lh-fa-sst-009](welle-sdk-csharp-lh-fa-sst-009.md)) —
 nicht die vier Slices der Python-Welle
-([welle-sdk-python-lh-fa-sst-009](done/welle-sdk-python-lh-fa-sst-009.md)),
+([welle-sdk-python-lh-fa-sst-009](welle-sdk-python-lh-fa-sst-009.md)),
 weil v1 hier wie bei C# **zwei** Draht-Flächen deckt (HTTP + gRPC), nicht nur
 eine.
 
@@ -60,7 +60,7 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+- [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   ist `Accepted` (bereits erfüllt, 2026-09-20).
 - Kein weiterer Trigger nötig — die Roadmap führt aktuell keine offene
   Welle (`in-progress/roadmap.md` §Offene Wellen: „Nichts in Arbeit") und
@@ -84,7 +84,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   `https://maven.pkg.github.com/pt9912/pg-change-feed` versucht (Tag
   `sdk-kotlin-v0.1.0` oder gleichwertig) — Erfolg **oder** ein benannter
   roter Befund mit Folgemaßnahme; nach
-  [`AGENTS.md`](../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
+  [`AGENTS.md`](../../../../AGENTS.md) §3.10 bleibt dieses Risiko bis zum
   realen Post-Push-Lauf offen, unabhängig vom Rest der Welle.
 - Closure-Notiz in `welle-sdk-kotlin-lh-fa-sst-009-results.md`.
 
@@ -96,11 +96,11 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-kotlin-projektgeruest | SDK-Projektgerüst (`sdks/kotlin/pgchangefeed-kotlin/`, Gradle-Projekt, Docker-Bau, leeres API-Skelett) | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten + Changes-Lesen `SPEC-022`, Bearer-Auth, eigene Tests) | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`, `StreamChanges`, `.proto`-Bezug über Zusatzkontext, Metadata-Auth) | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-pack-werkzeug | `make sdk-pack-kotlin`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-publish-workflow | `.github/workflows/sdk-kotlin-release.yml`, Tag-Präfix `sdk-kotlin-v*`, `GITHUB_TOKEN` (`packages: write`, kein externes Secret) | [`LH-FA-SST-009`](../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-projektgeruest | SDK-Projektgerüst (`sdks/kotlin/pgchangefeed-kotlin/`, Gradle-Projekt, Docker-Bau, leeres API-Skelett) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-http-client-flaeche | HTTP-Client-Fläche (`SPEC-018`, neun Port-gedeckte Fähigkeiten + Changes-Lesen `SPEC-022`, Bearer-Auth, eigene Tests) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`, `StreamChanges`, `.proto`-Bezug über Zusatzkontext, Metadata-Auth) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-pack-werkzeug | `make sdk-pack-kotlin`, Trägernachzug `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`) und §6 | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-publish-workflow | `.github/workflows/sdk-kotlin-release.yml`, Tag-Präfix `sdk-kotlin-v*`, `GITHUB_TOKEN` (`packages: write`, kein externes Secret) | [`LH-FA-SST-009`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge (Abhängigkeitskette):**
 
@@ -129,7 +129,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - Blockiert: keine andere Welle — die Roadmap führt aktuell keine
   parallele offene Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   ist bereits `Accepted`.
 - Intern (siehe §4 Reihenfolge): `slice-sdk-kotlin-http-client-flaeche` und
   `slice-sdk-kotlin-grpc-client-flaeche` hängen beide von
@@ -147,24 +147,24 @@ der Closure-Trigger unerreichbar wird.
 - **SSE- (`SPEC-021`) und NATS-Vollinhalts-Abdeckung (`SPEC-024`) im
   Package** — obwohl für Kotlin bereits real funktionierende Beispiele
   existieren (`examples/kotlin/sse-client`, `examples/kotlin/nats-stream-client`),
-  grenzt [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  grenzt [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   Festlegung 1 v1 ausdrücklich auf HTTP-API und gRPC-Stream ein — dieselbe
   Begründung wie bei C# (Abhängigkeits-Footprint, kein zusätzlicher
   fachlicher Nutzen ggü. gRPC für denselben Consumer). Beide bleiben über
   `examples/kotlin/sse-client`/`nats-stream-client` als Vorbild einsehbar,
   bis ein Folge-Package sie deckt (§Re-Evaluierungs-Trigger 1/2 der ADR).
 - **Eine vierte SDK-Sprache oder ein vierter Vertriebsweg** —
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   entscheidet ausdrücklich nur die dritte Sprache/den dritten Vertriebsweg;
   eine vierte bleibt eine eigene, künftige ADR (§Re-Evaluierungs-Trigger 1).
 - **Ein Wechsel von GitHub Packages zu Maven Central** —
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   §Verglichene Alternativen B2 wägt Maven Central bereits vollständig ab und
   verwirft es (Nutzerentscheidung); ein Wechsel bleibt
   §Re-Evaluierungs-Trigger 5 vorbehalten (Auth-Pflicht erweist sich als
   echtes Consumer-Problem).
 - **Aufspaltung in mehrere Packages** (ein Package je Zustellweg) — von
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   Alternative C5 ausdrücklich verworfen.
 - **Umbau, Migration oder Extraktion von `examples/kotlin/`** — die ADR
   verbietet das ausdrücklich (§Entscheidung Festlegung 3, Alternative D2
@@ -181,7 +181,7 @@ der Closure-Trigger unerreichbar wird.
   bleiben unberührt — das Kotlin-Package führt sein eigenes, unabhängiges
   SemVer-2.0-Schema (`ADR-0109` Festlegung 4).
 - **Ein Wechsel von JDK 21 auf JDK 25 / Gradle ≥ 9.1.0** —
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   Festlegung 5 bindet die JDK-Basis bewusst an die bereits erprobte
   `examples/kotlin/`-Kombination; ein Wechsel bleibt
   §Re-Evaluierungs-Trigger 3 vorbehalten.
@@ -272,5 +272,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
 nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-kotlin-lh-fa-sst-009-results.md`
-Zähler: `../observations/`
+Ergebnis: [welle-sdk-kotlin-lh-fa-sst-009-results.md](welle-sdk-kotlin-lh-fa-sst-009-results.md)
+Zähler: [../observations/](../observations/)
