@@ -65,7 +65,7 @@ gRPC-Fläche).
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
+- [x] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
       Client-Klasse öffnet `GET /changes/stream` (Bearer-Token in
       `Authorization`-Header), zerlegt SSE-Frames zu Events und liefert die
       zehn Nachrichtenfelder von
@@ -73,20 +73,22 @@ gRPC-Fläche).
       `SPEC-021` (Frame-Parser netzlos, Authn-Boundary gegen eine gestubbte
       HTTP-Response ohne echten Server, Muster
       `PgChangeFeedHttpClientAuthBoundaryTests.cs`).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
       geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/csharp/`), Ausnahme
       nur Doku-Zitate von Test-Vorbildern.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
+- [x] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im Folge-Slice `slice-sdk-csharp-nats-stream-client-flaeche`
       (§1 Abgrenzung), damit beide neuen Flächen zusammen in die
-      Träger-Dokumente einfließen.
+      Träger-Dokumente einfließen. Beide Dateien real unberührt
+      (`git diff --stat` gegen diesen Diff), `PgChangeFeed.Client.csproj`s
+      `<Version>` unverändert `0.1.0`.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
@@ -123,6 +125,39 @@ bricht der Bau an der bereits bestehenden `COPY --from=proto`-Zeile ab.
 (`tools/harness/sdk-pack-csharp.sh`) — kein Änderungsbedarf an Skript oder
 Makefile-Fragment für diesen Slice, nur eine bewusst benannte, keine
 stille Kopplung.
+
+**Plan-Nachzug (Implementer-Zug):**
+
+- Zusätzliche neue Datei gegenüber der §3-Tabelle:
+  `sdks/csharp/PgChangeFeed.Client/Sse/Models/Change.cs` — das
+  `SPEC-021`-Nachrichten-DTO (`JsonPropertyName`-Attribute) bekam eine eigene
+  Datei statt im Client selbst zu liegen, dasselbe Trennungsmuster wie
+  `Http/Models/Changes.cs` gegenüber `Http/PgChangeFeedHttpClient.cs`.
+- Statt einer einzelnen `PgChangeFeed.Client.Tests/Sse/*.cs`-Sammlung liegen
+  die Tests in fünf Dateien (`SseFrameParserTests.cs`, `TestClientFactory.cs`,
+  `PgChangeFeedSseClientTests.cs`, `PgChangeFeedSseClientAuthBoundaryTests.cs`,
+  `ChangeMessageSchemaTests.cs`) — dasselbe Gruppierungs-Muster wie bei
+  `slice-sdk-csharp-grpc-client-flaeche`s Plan-Nachzug (`Grpc/`-Ordner),
+  reine Lesbarkeits-Entscheidung, kein fachlicher Umfangsunterschied.
+  `TestClientFactory.cs` referenziert den bestehenden
+  `PgChangeFeed.Client.Tests.Http.FakeHttpMessageHandler` direkt
+  (`internal` ist assembly-, nicht namespace-scoped) statt einen zweiten
+  Fake-Handler anzulegen.
+- Fehlerabbildung (`BuildException`/`ExtractErrorMessage`) liegt als eigene,
+  kleine private Methodenpaar-Kopie in `PgChangeFeedSseClient.cs`, statt sie
+  aus `PgChangeFeedHttpClient.cs` zu extrahieren — bewusste Design-
+  Entscheidung: dieselbe Unabhängigkeit, die bereits zwischen HTTP- und
+  gRPC-Fläche besteht (Letztere bildet gRPC-`StatusCode` nativ ab, kein
+  gemeinsamer Mapper), statt eines produktiven Refactors an einer
+  bestehenden, stabilen Datei außerhalb dieses Slice-Umfangs.
+- `AGENTS.md` §3.13-Suchlauf (Träger-Nachzug) real ausgeführt:
+  `grep -rln "SSE" sdks/csharp/` traf `sdks/csharp/README.md` §Status
+  („SSE and NATS-vollinhalts delivery remain uncovered by this package") —
+  korrigiert, damit die Aussage nach diesem Slice wieder zutrifft (SSE jetzt
+  gedeckt, NATS-Vollinhalt bleibt offen). `spec/pflichtenheft.md`/
+  `docs/user/benutzerhandbuch.md` bleiben davon unberührt (siehe DoD-Punkt
+  „Doku-Update" — bewusst gebündelt im Folge-Slice, kein Träger-Nachzug-Fund
+  dieser Klasse).
 
 ## 4. Trigger
 
