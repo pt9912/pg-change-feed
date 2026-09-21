@@ -20,14 +20,9 @@
 # das erst schreibt und dann vergleicht, laesst den Baum schmutzig zurueck
 # und ist beim zweiten Lauf gruen.
 #
-# Frueher lief hier `docker build --target proto` gefolgt von einem
-# manuellen `protoc`-Aufruf gegen einen `docker run -v <Temp>:/out --user
-# <uid>:<gid>`-Bind-Mount. Der Mount war die Fehlerquelle auf
-# Docker-Backends mit eingeschraenktem UID-Mapping ausserhalb des eigenen
-# Host-Home (z. B. Colima mit `mounts: []` und `TMPDIR` ausserhalb `$HOME`:
-# `Permission denied`, real reproduziert). Die tar-Stream-Extraktion braucht
-# keinen Mount, kein `--user`-Workaround, und ist damit strukturell immun
-# gegen diese Fehlerklasse.
+# Die tar-Stream-Extraktion braucht keinen Bind-Mount und kein
+# `--user`-Workaround und ist damit strukturell immun gegen Docker-Backends
+# mit eingeschraenktem UID-Mapping ausserhalb des eigenen Host-Home.
 #
 # Modulpfad und `.proto`-Datei traegt die Stufe `proto-export` jetzt fest
 # (geteilt mit `make proto-generate`) statt sie hier aus `go.mod`/`find`

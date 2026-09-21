@@ -89,11 +89,29 @@ gegen diese Fehlerklasse, nicht nur auf diesem einen Rechner umschifft.
       strukturell und nicht nur auf diesem einen Rechner behoben ist.
       **Nicht erreicht** auf der Implementer-Maschine (§6 Risiko 4 Ausgang) —
       nur der schwächere, netzlose Ersatzbeleg geliefert; bleibt bis zu einem
-      realen Repro-Lauf offen.
+      realen Repro-Lauf offen. **Nachtrag (Fixrunde F-1, 2026-09-21):** der
+      Reviewer (`docs/reviews/review-slice-generated-sync-tar-export.md`
+      F-3) hat auf seiner eigenen Maschine die exakte Auslöser-Kombination
+      (Colima `mounts: []` **und** `TMPDIR=/tmp` außerhalb `$HOME`) real
+      hergestellt und beide Skript-Stände dagegen laufen lassen: der **alte**
+      Stand (`git show 1cce85b5:tools/harness/generated-sync.sh`) scheitert
+      dort real mit „Permission denied" beim Schreiben nach `/out`, der
+      **neue** Stand läuft unter identischem `TMPDIR=/tmp` grün
+      (`generated-sync: OK`, `git status --porcelain` leer). Das ist ein
+      direkterer Beleg als der oben genannte Ersatzbeleg — die
+      Implementer-Maschine selbst reproduziert die Kombination weiterhin
+      nicht (§6 Risiko 4 Ausgang bleibt unverändert stehen). Ob dieser
+      Fremdmaschinen-Beleg die Checkbox trägt oder ein eigener Repro-Lauf
+      nötig bleibt, entscheidet Verifier-/Planner-Closure-Arbeit.
 - [x] `make gates` grün. Real gelaufen 2026-09-21, Exit 0 (siehe Bericht).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-generated-sync-tar-export.md`: 1 HIGH
+      (F-1, Kommentar-Chronik in `tools/harness/generated-sync.sh`) —
+      Fixrunde 2026-09-21 behoben (Kopf-Kommentar auf die geltende Zusage
+      gekürzt, Chronik entfernt); F-2/F-3 (beide INFO) sind kein
+      Fixrunde-Anlass. Kein offenes HIGH mehr.
 - [x] Doku-Update: `tools/harness/generated-sync.sh` Kopf-Kommentar,
       `harness/mk/generated-sync.mk` Kopf-Kommentar,
       `harness/sensors/generated-sync.md` und `harness/README.md` §Sensors
@@ -286,7 +304,22 @@ DoD vollständig + `make gates` grün + reale Gegenprobe gegen den Auslöser
   spezifische Fehlerklasse belegend, aber Funktionsfähigkeit auf dieser
   Maschine bestätigend): `make generated-sync` und `make gates`, beide grün,
   ohne jeden `TMPDIR`-Override. Bleibt **weiter offen** bis ein Rechner mit
-  der exakten Kombination real getestet hat.
+  der exakten Kombination real getestet hat. **Nachtrag (Review-Fixrunde
+  F-1, 2026-09-21, Quelle:
+  `docs/reviews/review-slice-generated-sync-tar-export.md` F-3):** Der
+  Reviewer trägt auf seiner eigenen Maschine zufällig genau diese Kombination
+  (`mounts: []` **und**, mit `TMPDIR=/tmp` gesetzt, außerhalb `$HOME`) und hat
+  sie real hergestellt: der **alte** Skript-Stand (`git show
+  1cce85b5:tools/harness/generated-sync.sh`) scheitert dort unter
+  `TMPDIR=/tmp` real mit „Permission denied" beim Schreiben nach `/out`, der
+  **neue** Stand läuft unter identischem `TMPDIR=/tmp` grün
+  (`generated-sync: OK`, `git status --porcelain` leer). Das ist ein direkter
+  Fremdmaschinen-Beleg der exakten Fehlerklasse — stärker als der oben
+  dokumentierte Ersatzbeleg, aber nicht auf der Implementer-Maschine selbst
+  erbracht. Ob das den Ausgang dieses Risikos auf „behoben" hebt oder
+  „weiter offen" (im Sinne „kein Repro auf einer im Slice selbst
+  kontrollierten Maschine") bestehen bleibt, ist Verifier-/
+  Planner-Closure-Entscheidung.
 
 ## 7. Closure-Notiz
 
