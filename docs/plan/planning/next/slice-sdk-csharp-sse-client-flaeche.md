@@ -18,7 +18,7 @@ ausdrücklich antizipiert — kein neuer ADR-Bedarf), Festlegung 2
 (Endpunkt, Event-Form, Nachrichtenschema — das SDK benutzt diese
 Festlegungen, verändert sie nicht).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-21.
 
 **Autor:** Planner-Agent, direkt beauftragt (Nutzerauftrag „alle drei SDKs
 auf volle Vier-Wege-Parität"). **Datum:** 2026-09-21.
