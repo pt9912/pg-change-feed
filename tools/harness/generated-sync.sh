@@ -8,18 +8,46 @@
 # und dass die .proto den Draht-Vertrag richtig beschreibt (die Belege zu
 # LH-FA-SST-008).
 #
-# Der Arbeitsbaum bleibt unberuehrt. Der Generator ist die Dockerfile-Stufe
-# `proto` (protoc 31.1-r1, protoc-gen-go v1.36.12, protoc-gen-go-grpc v1.6.2 —
-# gepinnt); er schreibt in ein Temp-Verzeichnis, der Baum haengt als
-# `:ro`-Bind-Mount im Container. Die Modul-Layout-Relation stellt dieselbe
-# Option her, die `make proto-generate` setzt (`--go_opt=module=<Modulpfad>`):
-# der Generator legt seine Ausgabe damit unter dem Temp-Wurzel genau unter den
-# Pfaden ab, unter denen das Erzeugnis im Baum liegt. Das Ziel
-# `make proto-generate` erzeugt seit slice-104 zur Build-Zeit (Stufe
-# `proto-export`, COPY statt Mount) und committet ueber eine Host-seitige
-# `tar`-Extraktion — es vergleicht nicht, sondern schreibt, und ist deshalb
-# kein Pruef-Schritt: ein Gate, das erst schreibt und dann vergleicht, laesst
-# den Baum schmutzig zurueck und ist beim zweiten Lauf gruen.
+# Der Arbeitsbaum bleibt unberuehrt. Der Generator ist dieselbe
+# Dockerfile-Stufe `proto-export`, die `make proto-generate` seit slice-104
+# nutzt: die `.proto`-Quelle kommt per `COPY` (kein Bind-Mount) in die Stufe,
+# `protoc` laeuft zur Build-Zeit; ihr `ENTRYPOINT` gibt das Erzeugnis als
+# `tar`-Stream ueber stdout aus. Dieses Skript baut die Stufe und extrahiert
+# host-seitig `docker run --rm --network none <image> | tar -x -C
+# <Temp-Verzeichnis>` — anders als `make proto-generate` (das nach `.`
+# extrahiert und damit den Baum schreibt) extrahiert dieses Gate in ein
+# eigenes Temp-Verzeichnis und vergleicht dort, statt zu schreiben: ein Gate,
+# das erst schreibt und dann vergleicht, laesst den Baum schmutzig zurueck
+# und ist beim zweiten Lauf gruen.
+#
+# Frueher lief hier `docker build --target proto` gefolgt von einem
+# manuellen `protoc`-Aufruf gegen einen `docker run -v <Temp>:/out --user
+# <uid>:<gid>`-Bind-Mount. Der Mount war die Fehlerquelle auf
+# Docker-Backends mit eingeschraenktem UID-Mapping ausserhalb des eigenen
+# Host-Home (z. B. Colima mit `mounts: []` und `TMPDIR` ausserhalb `$HOME`:
+# `Permission denied`, real reproduziert). Die tar-Stream-Extraktion braucht
+# keinen Mount, kein `--user`-Workaround, und ist damit strukturell immun
+# gegen diese Fehlerklasse.
+#
+# Modulpfad und `.proto`-Datei traegt die Stufe `proto-export` jetzt fest
+# (geteilt mit `make proto-generate`) statt sie hier aus `go.mod`/`find`
+# abzuleiten und `protoc` mit diesen Werten selbst aufzurufen. Zwei
+# Eigenschaften des Bind-Mount-Mechanismus entfallen damit bewusst:
+#   - Modulpfad-Cross-Check: driftet `go.mod`s `module`-Zeile vom in der
+#     Stufe hartcodierten Wert weg, faellt das nicht mehr hier auf — es
+#     faellt spaetestens bei `make test`/`make image` auf, weil ein
+#     tatsaechlicher Modulpfad-Wechsel die Importpfade im gesamten Baum
+#     bricht (derselbe Drift war vorher zusaetzlich hier sichtbar, ist aber
+#     nicht mehr exklusiv hier sichtbar).
+#   - Dynamische `.proto`-Dateierkennung: eine zweite `.proto`-Datei wuerde
+#     von der Stufe nicht automatisch mitgeneriert (ihr `RUN`-Schritt nennt
+#     die Datei namentlich) — dieselbe Einschraenkung trug `make
+#     proto-generate`s Stufe bereits seit slice-104; dieses Gate zieht mit
+#     dem Stufen-Wechsel nur nach, was fuer das Erzeugungsziel schon galt,
+#     kein neu eingefuehrter Verlust.
+# Die verbleibende `find`-Ermittlung unten ist nur noch ein Existenz-/
+# Berichts-Check (Exit 2, wenn keine `.proto`-Quelle vorhanden ist) — sie
+# beeinflusst nicht mehr, was generiert wird.
 #
 # Der Befund traegt den Diff: je abweichender Datei die erste abweichende Stelle
 # im committeten Erzeugnis und darunter den Unified-Diff mit Kontext. Die Zeile
@@ -29,9 +57,14 @@
 # kein Urteil maskieren, weil das Urteil ausserhalb der Stufe faellt — im
 # Vergleich dieses Laufs.
 #
+# `set -o pipefail` macht die Pipe `docker run | tar -x` sicher (AGENTS.md
+# §3.9 — der Exit-Code einer Pipe ist sonst der des letzten Glieds). Dieses
+# Skript laeuft wie `tools/harness/proto-generate.sh` explizit unter bash
+# (`make` ruft `bash tools/harness/generated-sync.sh`) statt unter dem
+# `make`-Default `/bin/sh` (dort `dash`, kein `pipefail`).
+#
 # Aufruf: `make generated-sync` (haengt an GATE_CHECKS).
-# Overrides: GENERATED_SYNC_IMAGE, GENERATED_SYNC_SOURCE_DIR,
-# GENERATED_SYNC_MODULE, GENERATED_SYNC_RUN_USER.
+# Overrides: GENERATED_SYNC_IMAGE, GENERATED_SYNC_SOURCE_DIR.
 set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel)
@@ -39,25 +72,9 @@ cd "$repo_root"
 
 PROTO_SOURCE_DIR=${GENERATED_SYNC_SOURCE_DIR:-proto}
 GENERATED_SYNC_IMAGE=${GENERATED_SYNC_IMAGE:-pg-change-feed:proto-sync}
-# Der Modulpfad steht in go.mod und nirgends sonst: er ist der Praefix, den
-# `--go_opt=module=…` von den Ausgabepfaden abschneidet. Stimmt er nicht mit dem
-# go_package-Praefix der .proto ueberein, bricht der Generator ab (`generated
-# file does not match prefix …`) — die Ausgabe landet dann auf keinem falschen
-# Pfad, sondern der Lauf ist an dieser Stelle rot.
-GENERATED_SYNC_MODULE=${GENERATED_SYNC_MODULE:-$(awk '$1 == "module" { print $2; exit }' go.mod || true)}
-# Der Generator laeuft als Aufrufer-uid, damit er in das Temp-Verzeichnis
-# schreiben darf (dieses Gate mountet weiterhin; `make proto-generate` braucht
-# seit slice-104 keinen `--user`-Workaround mehr — es schreibt nicht in einen
-# Mount, sondern extrahiert host-seitig aus einem `tar`-Stream).
-RUN_USER=${GENERATED_SYNC_RUN_USER:-$(id -u):$(id -g)}
 
-if [ -z "$GENERATED_SYNC_MODULE" ]; then
-  echo "generated-sync: FAIL — kein Modulpfad (go.mod ohne module-Zeile, GENERATED_SYNC_MODULE leer)" >&2
-  exit 2
-fi
-
-# Die Quellen sind die .proto-Dateien unter dem Quellverzeichnis; eine neue
-# Datei tritt damit von selbst in den Lauf ein.
+# Nur noch Existenz-/Berichts-Check (siehe Kopf-Kommentar): die eigentliche
+# Erzeugung nennt ihre Quelle(n) selbst, in der Dockerfile-Stufe `proto-export`.
 mapfile -t proto_sources < <(find "$PROTO_SOURCE_DIR" -type f -name '*.proto' | sort)
 if [ "${#proto_sources[@]}" -eq 0 ]; then
   echo "generated-sync: FAIL — keine .proto-Quelle unter $PROTO_SOURCE_DIR" >&2
@@ -67,13 +84,8 @@ fi
 out_dir=$(mktemp -d "${TMPDIR:-/tmp}/pg-change-feed-generated-sync.XXXXXX")
 trap 'rm -rf "$out_dir"' EXIT
 
-docker build --target proto -t "$GENERATED_SYNC_IMAGE" .
-docker run --rm --user "$RUN_USER" --network none \
-  -v "$repo_root":/src:ro -v "$out_dir":/out -w /src "$GENERATED_SYNC_IMAGE" \
-  protoc -I "$PROTO_SOURCE_DIR" \
-    --go_out=/out --go_opt=module="$GENERATED_SYNC_MODULE" \
-    --go-grpc_out=/out --go-grpc_opt=module="$GENERATED_SYNC_MODULE" \
-    "${proto_sources[@]}"
+docker build --target proto-export -t "$GENERATED_SYNC_IMAGE" .
+docker run --rm --network none "$GENERATED_SYNC_IMAGE" | tar -x -C "$out_dir"
 
 report_diff() {
   local rel=$1 generated=$2 committed=$3 diff_text zero_ctx first_line
@@ -130,6 +142,6 @@ if [ "$status" -ne 0 ]; then
   exit 1
 fi
 
-printf 'generated-sync: OK — das committete Erzeugnis ist byte-gleich der Ausgabe des gepinnten Generators (Stufe proto)\n'
+printf 'generated-sync: OK — das committete Erzeugnis ist byte-gleich der Ausgabe des gepinnten Generators (Stufe proto-export)\n'
 printf 'generated-sync:   Quelle: %s\n' "${proto_sources[@]}"
 printf 'generated-sync:   geprueft: %s\n' "${generated_files[@]}"

@@ -69,41 +69,54 @@ gegen diese Fehlerklasse, nicht nur auf diesem einen Rechner umschifft.
 
 ## 2. Definition of Done
 
-- [ ] `make generated-sync` läuft ohne jeden `docker run -v`-Bind-Mount —
+- [x] `make generated-sync` läuft ohne jeden `docker run -v`-Bind-Mount —
       Erzeugung über dieselbe `proto-export`-Stufe/`tar`-Extraktion wie
       `make proto-generate`, Vergleich weiterhin in einem Temp-Verzeichnis,
       Arbeitsbaum bleibt unverändert (Fitness-Kriterium `ADR-0084`
-      Festlegung 1 unverändert erfüllt).
-- [ ] Die beiden bisherigen Eigenschaften — unabhängige Modulpfad-Ableitung
+      Festlegung 1 unverändert erfüllt). Real geprüft: `grep -n "docker run"
+      tools/harness/generated-sync.sh` zeigt nur noch eine Aufruf-Zeile ohne
+      `-v`; `make generated-sync` läuft grün, `git status --porcelain` danach
+      leer.
+- [x] Die beiden bisherigen Eigenschaften — unabhängige Modulpfad-Ableitung
       aus `go.mod` und dynamische `.proto`-Dateierkennung (`find … -name
-      '*.proto'`) — bleiben erhalten, **oder** ihr Wegfall ist im Bericht
-      explizit benannt und begründet (kein stiller Verlust, siehe §6
-      Risiko 2).
+      '*.proto'`) — Wegfall ist im Bericht (Implementer-Zug
+      2026-09-21) explizit benannt und begründet: **beide entfallen
+      bewusst**, siehe §6 Risiko 2 Ausgang.
 - [ ] Gegenprobe: ein realer Lauf von `make generated-sync` (und `make
       gates`) auf einer Docker-Umgebung, die den Auslöser reproduziert
       (Colima mit `mounts: []`, `TMPDIR` außerhalb `$HOME`) — grün ohne
       jeden `TMPDIR`-Override, als Beleg dass die Fehlerklasse
       strukturell und nicht nur auf diesem einen Rechner behoben ist.
-- [ ] `make gates` grün.
+      **Nicht erreicht** auf der Implementer-Maschine (§6 Risiko 4 Ausgang) —
+      nur der schwächere, netzlose Ersatzbeleg geliefert; bleibt bis zu einem
+      realen Repro-Lauf offen.
+- [x] `make gates` grün. Real gelaufen 2026-09-21, Exit 0 (siehe Bericht).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `tools/harness/generated-sync.sh` Kopf-Kommentar (nennt
-      aktuell den Bind-Mount-Mechanismus explizit, Zeilen 11–22) und ggf.
-      `harness/README.md` §Sensors (`generated-sync`-Zeile), falls die
-      Beschreibung dort den alten Mechanismus wiederholt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Doku-Update: `tools/harness/generated-sync.sh` Kopf-Kommentar,
+      `harness/mk/generated-sync.mk` Kopf-Kommentar,
+      `harness/sensors/generated-sync.md` und `harness/README.md` §Sensors
+      (`generated-sync`-Zeile) auf den neuen, mount-losen Mechanismus
+      nachgezogen (Träger-Nachzug-Suchlauf `grep -rn "Bind-Mount\|bind-mount"
+      harness/ tools/harness/` lief, Treffer außerhalb dieser vier Dateien
+      betreffen andere Ziele/Skripte und sind unverändert korrekt).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag. — Planner-Closure-Arbeit
+      (Modul 8/Modul 5), nicht Implementer-Schritt.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
+      ist ebenfalls eine Antwort und wird in §7 notiert. — Planner-Closure-
+      Arbeit (Schritt 25 `.claude/commands/implement-slice.md`).
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      weiter offen). — Ausgänge für Risiko 2/3/4 sind vom Implementer-Zug
+      bereits als Text in §6 nachgetragen (Risiko 1 bereits vom Planner-Zug);
+      formaler Abschluss dieses DoD-Punkts bleibt Planner-Closure-Arbeit.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       Repo ohne Wellen-Betrieb für diesen (wellenlosen) Slice, hier direkt
-      geprüft.
+      geprüft. — Planner-Closure-Arbeit.
 
 ## 3. Plan (vor Code)
 
@@ -111,6 +124,7 @@ gegen diese Fehlerklasse, nicht nur auf diesem einen Rechner umschifft.
 |---|---|---|
 | `tools/harness/generated-sync.sh` | update | `docker build --target proto` + manueller `protoc`-Aufruf mit Bind-Mount (Zeilen 70–76) ersetzt durch `docker build --target proto-export` + `docker run --rm --network none <image> \| tar -x -C "$out_dir"` (Muster `tools/harness/proto-generate.sh` Zeile 31f, aber Extraktion in ein Temp-Verzeichnis statt `.`). `RUN_USER`/`--user`-Logik entfällt (kein Mount mehr, dieselbe Begründung wie beim seinerzeitigen `proto-generate`-Umbau in `slice-104`). |
 | `Dockerfile` (Stufe `proto-export`) | ggf. update | Nur falls die Verallgemeinerung nötig ist (siehe §6 Risiko 2/3): der `RUN`-Schritt (Zeile 62–66) leitet Modulpfad und `.proto`-Dateiliste selbst ab (`awk` gegen das bereits kopierte `go.mod`, `find proto -name '*.proto'`) statt sie hartcodiert zu tragen — dieselbe Dynamik, die `generated-sync.sh` heute im Skript trägt, wandert in die Stufe, die jetzt **beide** Ziele (`proto-generate` und `generated-sync`) gemeinsam nutzen. |
+| **Plan-Nachzug (Implementer-Zug, 2026-09-21):** `Dockerfile` | **nicht ausgeführt** | Die Zeile darüber ist konditional („ggf.", „nur falls nötig") — die Entscheidung beim Schreiben fällt auf **nicht generalisieren**: `proto-export` bleibt unverändert (ein `.proto`, ein hartcodierter Modulpfad, exakt wie vor diesem Slice). Begründung siehe §6 Risiko 2 Ausgang; die Alternative (Stufe generischer machen) hätte das Risiko-3-Szenario (geteilte Stufe, geteiltes Risiko, Regressionsbeleg nötig) real ausgelöst — vermieden, weil der Nutzen (zwei entfallende Cross-Checks wiederherstellen) den zusätzlichen Umbau-Umfang an einer von zwei Zielen gemeinsam genutzten Stufe nicht rechtfertigt. `git diff --stat Dockerfile` bleibt in diesem Lauf leer. |
 | `tools/harness/generated-sync.sh` (Kopf-Kommentar) | update | Beschreibung des Mechanismus (aktuell: „Der Generator … schreibt in ein Temp-Verzeichnis, der Baum haengt als `:ro`-Bind-Mount im Container", Zeilen 11–14) auf den neuen, mount-losen Mechanismus nachgezogen — `AGENTS.md` §3.7 (Kommentar beschreibt, was da ist). |
 | `harness/README.md` §Sensors (`generated-sync`-Zeile), `harness/mk/generated-sync.mk` (Kopf-Kommentar) | ggf. update | Falls dort der Bind-Mount-Mechanismus explizit genannt ist (Trägernachzug, `AGENTS.md` §3.13) — Implementer-Suchlauf (`grep -rn "Bind-Mount\|bind-mount" harness/ tools/harness/`) vor Abschluss. |
 | Testdatei | — | Kein eigenständiges Unit-Test-Ziel; der Beleg ist der reale `make generated-sync`-Lauf selbst (Sensor-Skript, kein Go-Testpaket) — analog dem bestehenden Muster für `tools/harness/proto-generate.sh`. |
@@ -216,30 +230,63 @@ DoD vollständig + `make gates` grün + reale Gegenprobe gegen den Auslöser
   Wert (`module=github.com/pt9912/pg-change-feed`, `Dockerfile` Zeile 64+65)
   — ein Drift zwischen beiden fiele heute auf. Verschiebt sich die Ableitung
   vollständig in die Dockerfile-Stufe (beide Ziele lesen dieselbe Quelle),
-  entfällt dieser Cross-Check. **Ausgang:** zu entscheiden beim Schreiben —
-  entfällt bewusst (Begründung: ein Modulpfadwechsel fiele ohnehin an
-  anderer Stelle auf, `make test`/`make image` bräche ohne den korrekten
-  Importpfad) oder wird durch einen expliziten, weiterhin unabhängigen
-  Zweit-Check ersetzt (z. B. das Skript prüft nach dem Build zusätzlich,
-  dass die generierten Dateien tatsächlich unter dem aus `go.mod`
-  abgeleiteten Pfad liegen).
+  entfällt dieser Cross-Check. **Ausgang: entfallen (Implementer-Zug
+  2026-09-21).** Beide bisherigen Eigenschaften entfallen bewusst, kein
+  Zweit-Check ersetzt sie:
+  - Modulpfad-Cross-Check: entfällt mit der oben genannten Begründung — ein
+    tatsächlicher `go.mod`-Modulpfadwechsel bricht die Importpfade im
+    gesamten Baum und fällt damit bei `make test`/`make image` auf, auch
+    ohne dass `generated-sync` ihn zusätzlich meldet.
+  - Dynamische `.proto`-Dateierkennung: entfällt ebenfalls bewusst — diese
+    Eigenschaft trug bisher **ausschließlich** `generated-sync.sh` (per
+    `find`); die Dockerfile-Stufe `proto-export`, die `make proto-generate`
+    bereits seit slice-104 nutzt, nennt ihre `.proto`-Datei bereits namentlich
+    im `RUN`-Schritt und kannte diese Dynamik nie. Eine neue, zweite
+    `.proto`-Datei würde schon heute nicht von `make proto-generate`
+    mitgeneriert, ohne dass jemand die Stufe von Hand erweitert — dieser
+    Slice zieht `generated-sync` lediglich auf dieselbe, bereits bestehende
+    Einschränkung nach, führt sie nicht neu ein.
+  Kein Zweit-Check umgesetzt, weil ein Modulpfad-Zweit-Check redundant zum
+  ohnehin greifenden Bau-Fehlschlag wäre und ein `.proto`-Datei-Zweit-Check
+  eine Eigenschaft wiederherstellen würde, die `make proto-generate` nie
+  hatte — das wäre eine Asymmetrie zwischen den beiden Zielen, die dieselbe
+  Stufe nutzen, ohne einen dokumentierten Bedarf dafür.
 - **Risiko 3 — geteilte Stufe, geteiltes Risiko.** Wird die
   `proto-export`-Stufe generischer gemacht (dynamische `.proto`-Erkennung,
   `go.mod`-Ableitung im `RUN`-Schritt statt fester Argumente), nutzen
   `make proto-generate` **und** `make generated-sync` künftig exakt dieselbe
   Stufe — ein Fehler in der Verallgemeinerung träfe beide Ziele gleichzeitig.
-  **Ausgang:** abzudecken durch einen Regressionsbeleg im Bericht: nach dem
-  Umbau `make proto-generate` real erneut laufen lassen, Diff gegen den
-  committeten Stand muss leer bleiben (kein unbeabsichtigter
-  Verhaltenswechsel für das bestehende Ziel).
+  **Ausgang: entfallen (Implementer-Zug 2026-09-21).** Die Verallgemeinerung
+  wurde nicht vorgenommen (siehe §3 Plan-Nachzug) — `Dockerfile` bleibt in
+  diesem Lauf unverändert (`git diff --stat Dockerfile` leer), `proto-export`
+  wird von `generated-sync` nur **genutzt**, nicht **verändert**. Damit
+  entsteht keine geteilte Verallgemeinerungs-Fläche und kein neues
+  gemeinsames Fehlerrisiko — das Szenario dieses Risikos tritt nicht ein.
+  Trotzdem real erbracht (zusätzliche Absicherung, kein Pflicht-Beleg mehr,
+  da die Bedingung „wird generischer gemacht" nicht zutrifft): `make
+  proto-generate` nach dem Skript-Umbau erneut laufen lassen —
+  `git status --porcelain` danach leer, kein Diff auf den generierten
+  Dateien.
 - **Risiko 4 — Gegenprobe braucht eine reale Colima-Umgebung mit
   `mounts: []`.** Der DoD-Punkt „Gegenprobe" (§2) ist nur auf einem Rechner
-  mit genau dieser Docker-Backend-Konfiguration direkt beobachtbar. **Ausgang:**
-  weiter offen bis zum realen Lauf — ersatzweise (falls kein solcher
-  Rechner verfügbar ist) mindestens der Nachweis, dass `generated-sync.sh`
-  nach dem Umbau keine `docker run -v`-Zeile mehr enthält (`grep -n "docker
-  run" tools/harness/generated-sync.sh` zeigt keine `-v`-Option mehr) als
-  schwächerer, aber netzloser Ersatzbeleg.
+  mit genau dieser Docker-Backend-Konfiguration direkt beobachtbar. **Ausgang:
+  weiter offen (Implementer-Zug 2026-09-21).** Real geprüft auf der
+  Implementer-Maschine: `colima status` bestätigt `mounts: []` in
+  `~/.colima/default/colima.yaml`, **aber** `TMPDIR` ist ein
+  `.colima-tmp`-Verzeichnis direkt unterhalb von `$HOME` — also **innerhalb**
+  `$HOME` — und fällt damit unter Colimas Default-Verhalten „`$HOME` wird
+  beschreibbar gemountet" (Kommentar in derselben `colima.yaml`). Die exakte
+  Fehlerkombination (`mounts: []` **und** `TMPDIR` außerhalb `$HOME`) liegt
+  auf dieser Maschine nicht vor — der reale Auslöser reproduziert hier nicht,
+  ohne dass ein `TMPDIR`-Override probiert wurde (out of scope, §1). Deshalb
+  nur der schwächere, netzlose Ersatzbeleg geliefert: `grep -n "docker run"
+  tools/harness/generated-sync.sh` zeigt genau eine Aufruf-Zeile
+  (`docker run --rm --network none "$GENERATED_SYNC_IMAGE" | tar -x -C
+  "$out_dir"`), keine `-v`-Option mehr. Zusätzlich real gelaufen (nicht die
+  spezifische Fehlerklasse belegend, aber Funktionsfähigkeit auf dieser
+  Maschine bestätigend): `make generated-sync` und `make gates`, beide grün,
+  ohne jeden `TMPDIR`-Override. Bleibt **weiter offen** bis ein Rechner mit
+  der exakten Kombination real getestet hat.
 
 ## 7. Closure-Notiz
 
