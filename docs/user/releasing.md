@@ -1,7 +1,7 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.5
-Stand: 2026-09-20
+Version: 1.6
+Stand: 2026-09-21
 
 ## 1. Zweck und Zielgruppe
 
@@ -248,14 +248,17 @@ Der Workflow:
 3. baut/testet/paketiert Docker-only über `make sdk-pack-kotlin` — ein
    roter Test bricht den Workflow ab, bevor der Publish-Schritt erreicht
    wird;
-4. veröffentlicht anschließend per `./gradlew publish` — **direkt auf dem
-   Runner**, nicht im Docker-Bau: JDK 21 ist auf dem `ubuntu-latest`-Runner
-   bereits vorinstalliert (`JAVA_HOME_21_X64`), kein zusätzliches
-   `actions/setup-java` nötig. Die `.proto`-Quelle
-   (`proto/cdc/stream/v1/changestream.proto`) wird vor diesem Schritt an
-   dieselbe Stelle kopiert, die der Docker-Bau per `COPY --from=proto`
-   befüllt (`src/main/proto/changestream.proto`) — ohne diesen
-   Kopier-Schritt bricht die Protobuf-Codegenerierung ab.
+4. veröffentlicht anschließend ebenfalls Docker-only, über eine eigene
+   `publish`-Docker-Stufe (`sdks/kotlin/Dockerfile`, baut auf der bereits
+   vorhandenen `build`-Stufe auf) — `docker build --build-context
+   proto=proto --target publish` gefolgt von `docker run --rm -e
+   GITHUB_ACTOR=… -e GITHUB_TOKEN=… <image> ./gradlew --no-daemon publish`,
+   mit Netzwerkzugriff zur Laufzeit (kein `--network none`, anders als
+   jede andere Stufe dieses Dockerfiles, `ADR-0109` Festlegung 5 wörtlich:
+   Docker-only bis einschließlich `publish`). Die `.proto`-Quelle
+   (`proto/cdc/stream/v1/changestream.proto`) fließt über denselben
+   benannten Bau-Kontext `proto` ein wie bei `make sdk-pack-kotlin` — kein
+   manueller Kopier-Schritt außerhalb von Docker.
 
 **Kein externes Repository-Secret nötig** — der zentrale Unterschied zu
 den beiden Release-Wegen oben: GitHub Packages authentifiziert
@@ -286,10 +289,10 @@ Folgepflicht (`ADR-0109`).
 **Der reale, grüne Post-Push-Lauf steht noch aus** — dieser Release-Weg
 ist implementiert und `make gates` läuft grün, aber nach
 [`AGENTS.md`](../../AGENTS.md) §3.10 bleibt er bis zum ersten echten
-`sdk-kotlin-v*`-Tag-Push unbewiesen: `./gradlew publish`-Verhalten auf dem
-Runner und das reale GitHub-Packages-Registry-Antwortverhalten sind lokal
-strukturell nicht prüfbar (kein Docker-only-Sensor kann einen externen,
-gehosteten Runner-Lauf ersetzen).
+`sdk-kotlin-v*`-Tag-Push unbewiesen: `./gradlew publish`-Verhalten im
+`publish`-Docker-Image und das reale GitHub-Packages-Registry-Antwortverhalten
+sind lokal strukturell nicht prüfbar (kein Docker-only-Sensor kann einen
+echten Registry-Schreibzugriff gegen `maven.pkg.github.com` ersetzen).
 
 ## 5. Begleitende, nicht-blockierende Workflows
 
@@ -326,3 +329,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.3 | 2026-09-19 | §4 um den dritten, unabhängigen SDK-Release-Weg (`sdk-python-v*`-Tag, `PYPI_API_TOKEN`, `uv publish`) ergänzt, Secret-Tabelle um `PYPI_API_TOKEN` erweitert — vorab eingeplanter DoD-Punkt von `slice-sdk-python-publish-workflow` (`LH-FA-SST-009`, `ADR-0107`, `ADR-0108`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`) |
 | 1.4 | 2026-09-20 | §1/§4 korrigiert: `sdk-python-v0.1.0` real gesetzt, `pgchangefeed` 0.1.0 real auf PyPI veröffentlicht — der Python-SDK-Release-Weg ist damit wie der C#-Weg End-zu-Ende bewiesen |
 | 1.5 | 2026-09-20 | §1/§4 um den vierten, unabhängigen SDK-Release-Weg (`sdk-kotlin-v*`-Tag, GitHub Packages, `GITHUB_TOKEN`, kein externes Secret) ergänzt — vorab eingeplanter DoD-Punkt von `slice-sdk-kotlin-publish-workflow` (`LH-FA-SST-009`, `ADR-0109`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`); der reale Post-Push-Lauf bleibt nach `AGENTS.md` §3.10 bis zum ersten echten Tag-Push offen |
+| 1.6 | 2026-09-21 | §4 korrigiert: der Publish-Schritt (`./gradlew publish`) läuft jetzt Docker-only in einer eigenen `publish`-Stufe (`sdks/kotlin/Dockerfile`), nicht mehr direkt auf dem Runner — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-kotlin-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0109` Festlegung 5) |

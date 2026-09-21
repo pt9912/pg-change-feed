@@ -120,9 +120,21 @@ Repository-Secret, der zentrale Unterschied zu
       (`BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`,
       1×, Welle-Plan §6).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-sdk-kotlin-publish-workflow.md` fand ein
+      HIGH (F-1: `./gradlew publish` lief direkt auf dem Runner statt im
+      gepinnten Docker-Image, entgegen `ADR-0109` Festlegung 5 wörtlich) —
+      aufgelöst durch eine Fixrunde: eine neue Docker-Stufe `publish`
+      (`sdks/kotlin/Dockerfile`, baut auf `build` auf) trägt den
+      Publish-Schritt jetzt Docker-only, `.github/workflows/sdk-kotlin-release.yml`
+      baut/ruft diese Stufe per `docker build --target publish` /
+      `docker run --rm -e GITHUB_ACTOR=… -e GITHUB_TOKEN=… … ./gradlew
+      --no-daemon publish` auf, der manuelle Host-seitige `.proto`-Kopier-
+      Schritt entfällt (die `.proto` fließt über denselben benannten
+      Bau-Kontext `proto` ein wie bei `make sdk-pack-kotlin`). Kein offenes
+      HIGH mehr.
 - [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfällt als eigener Punkt,
       da bereits oben als DoD-Kriterium geführt.

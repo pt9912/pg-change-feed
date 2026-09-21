@@ -20,8 +20,13 @@
 # §Konsequenzen Folgepflicht 1) bauen auf `build` auf: `./gradlew test`
 # (unten) laeuft VOR dem Jar-Bau — ein roter Test bricht den `docker build`
 # mit Exit != 0 ab, bevor `pack` je erreicht wird (kein stiller Fallback).
-# Kein `publish`-Aufruf in diesem Slice (ADR-0109 Festlegung 5: Docker-only
-# bauen, Veroeffentlichung ist Folgepflicht `slice-sdk-kotlin-publish-workflow`).
+# `./gradlew publish` laeuft ebenfalls in einer eigenen Docker-Stufe
+# (`publish`, ganz unten) — ADR-0109 Festlegung 5 legt woertlich Docker-only
+# bis EINSCHLIESSLICH `publish` fest; eine fruehere Fassung dieses Workflows
+# rief `./gradlew publish` direkt auf dem Runner auf, ausserhalb jedes
+# Containers (Review-Finding F-1,
+# docs/reviews/review-slice-sdk-kotlin-publish-workflow.md) — korrigiert in
+# der Fixrunde zu slice-sdk-kotlin-publish-workflow.
 #
 # JDK-Basis: `eclipse-temurin:21-jdk`, NICHT `25-jdk` (ADR-0109
 # Festlegung 5 — Gradle 8.14 unterstützt JDK 25 nur als Toolchain-Ziel ab
@@ -89,3 +94,41 @@ RUN mkdir -p /out && cp build/libs/*.jar /out/
 # extrahierte Datei gehört dadurch automatisch dem aufrufenden Nutzer. ---
 FROM pack AS pack-export
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
+
+# --- publish: veröffentlicht den bereits gebauten Jar nach GitHub Packages
+# (slice-sdk-kotlin-publish-workflow, ADR-0109 Festlegung 5 wörtlich:
+# Docker-only bis EINSCHLIESSLICH `publish`). Baut auf `build` auf (NICHT
+# auf `pack`/`pack-export` — beide sind nur die Export-Kette für das
+# lokale/netzlose Werkzeug `make sdk-pack-kotlin`, für `publish` irrelevant):
+# `./gradlew --no-daemon build` ist zu diesem Zeitpunkt des Bau-Layers
+# bereits gelaufen, `build/libs/pgchangefeed-kotlin-0.1.0.jar` liegt bereits
+# vor. `./gradlew publish` läuft NICHT während `docker build` (kein
+# RUN-Schritt in dieser Stufe) — der Publish-Schritt braucht
+# Registry-Netzwerkzugriff (https://maven.pkg.github.com) erst zur
+# LAUFZEIT, über `docker run` ohne `--network none` (anders als jede andere
+# Stufe dieses Dockerfiles, die netzlos bau-/testbar bleibt). Zur Laufzeit
+# findet Gradles Up-to-date-Prüfung für `generateProto`/`compileKotlin`/
+# `jar` den seit dem Bau unveränderten Dateizustand bereits erfüllt vor und
+# lädt nur den bereits gebauten Jar hoch — kein zweiter Compile-/
+# Codegenerierungs-Lauf außerhalb von Docker (Korrektur von
+# docs/reviews/review-slice-sdk-kotlin-publish-workflow.md Finding F-1: eine
+# frühere Fassung dieses Workflows rief `./gradlew publish` direkt auf dem
+# GitHub-hosted Runner auf, außerhalb jedes Containers, und wiederholte
+# dabei die gesamte Bau-Kette ein zweites Mal, ohne den bereits erzeugten
+# Jar zu verwenden).
+#
+# Zugangsdaten (GITHUB_ACTOR/GITHUB_TOKEN) werden ausschließlich zur
+# Laufzeit über `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...`
+# durchgereicht, NICHT als Build-Arg — ein Build-Arg landet im
+# Image-Layer-/History-Cache, ein Secret darf dort nicht auftauchen (kein
+# `ARG GITHUB_TOKEN`/`ARG GITHUB_ACTOR` in diesem Dockerfile).
+#
+# CMD statt ENTRYPOINT: Ein ENTRYPOINT im Exec-Format würde ein am
+# `docker run`-Aufruf zusätzlich mitgegebenes Kommando an das ENTRYPOINT-Array
+# ANHÄNGEN statt es zu ERSETZEN (Docker-Kernverhalten) — der aufrufende
+# Workflow gibt das Kommando trotzdem explizit mit
+# (`docker run … <image> ./gradlew --no-daemon publish`, Konsistenz mit den
+# übrigen Aufrufen dieses Workflows), CMD wird dabei vollständig ersetzt,
+# kein Argument-Duplikat.
+FROM build AS publish
+CMD ["./gradlew", "--no-daemon", "publish"]

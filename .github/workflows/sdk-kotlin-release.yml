@@ -32,24 +32,29 @@ name: sdk-kotlin-release
 # (AGENTS.md §3.1, ADR-0109 Festlegung 5) — ein roter Test dort bricht den
 # Workflow ab, BEVOR der eigentliche Publish-Schritt je erreicht wird.
 #
-# Der Publish-Schritt selbst laeuft NICHT im Docker-Bau (der packt nur den
-# Jar fuer `make sdk-pack-kotlin`, siehe sdks/kotlin/Dockerfile), sondern
-# ueber `./gradlew publish` direkt auf dem Runner — reine Workflow-Mechanik,
-# analog `sdk-csharp-release.yml`s `dotnet nuget push` und
-# `sdk-python-release.yml`s `uv publish` auf dem Runner selbst (kein
-# `make`-Target fuer den Publish-Schritt noetig, AGENTS.md §3.1 bindet die
-# Host-Toolchain-Sperre an lokale Entwicklung, nicht an den ephemeren
-# GitHub-hosted Runner in einem eigenstaendigen CI-Lauf). JDK 21 ist auf dem
-# `ubuntu-latest`-Runner bereits vorinstalliert (real gemessen,
-# `actions/runner-images` Ubuntu-24.04-Readme, JAVA_HOME_21_X64 — Default
-# JAVA_HOME zeigt auf JDK 17, deshalb wird JAVA_HOME fuer diesen Schritt
-# explizit auf JAVA_HOME_21_X64 gesetzt) — kein `actions/setup-java` noetig.
-# Die `.proto`-Quelle liegt NICHT im committeten SDK-Baum (ADR-0109
-# Festlegung 3) und wird fuer diesen Host-seitigen Gradle-Lauf VOR
-# `./gradlew publish` an dieselbe Stelle kopiert, die
-# `sdks/kotlin/Dockerfile` per `COPY --from=proto` befuellt
-# (`src/main/proto/changestream.proto`) — ohne diesen Schritt bricht die
-# Protobuf-Codegenerierung (und damit `publish`, das von `jar` abhaengt) ab.
+# Der Publish-Schritt selbst laeuft — wie der Rest des Baus — IM Docker-Bau
+# (ADR-0109 Festlegung 5 woertlich: "im gepinnten eclipse-temurin:21-jdk-
+# Image" bis EINSCHLIESSLICH `publish`; Korrektur von Review-Finding F-1,
+# docs/reviews/review-slice-sdk-kotlin-publish-workflow.md — eine fruehere
+# Fassung dieses Workflows rief `./gradlew publish` direkt auf dem Runner
+# auf, ausserhalb jedes Containers, und wiederholte dabei die gesamte
+# Bau-Kette inkl. Protobuf-Codegenerierung ein zweites Mal, ohne den
+# bereits von `make sdk-pack-kotlin` erzeugten Jar zu verwenden). Die neue
+# Docker-Stufe `publish` (sdks/kotlin/Dockerfile) baut auf der bereits
+# vorhandenen `build`-Stufe auf (Layer-Wiederverwendung — der Jar liegt zu
+# diesem Zeitpunkt bereits vor) und braucht — anders als jede andere Stufe
+# dieses Dockerfiles — Netzwerkzugriff zur LAUFZEIT
+# (https://maven.pkg.github.com), deshalb kein `--network none` bei diesem
+# `docker run`. Die `.proto`-Quelle liegt NICHT im committeten SDK-Baum
+# (ADR-0109 Festlegung 3) und fliesst — wie beim Bau von
+# `make sdk-pack-kotlin` — ueber den zusaetzlichen, benannten Bau-Kontext
+# `proto` in den Docker-Bau ein (`--build-context proto=proto`); kein
+# manueller Kopier-Schritt ausserhalb von Docker mehr noetig.
+#
+# Zugangsdaten (GITHUB_ACTOR/GITHUB_TOKEN) werden AUSSCHLIESSLICH zur
+# LAUFZEIT ueber `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...`
+# durchgereicht, NICHT als Build-Arg — ein Build-Arg landet im
+# Image-Layer-/History-Cache, ein Secret darf dort nicht auftauchen.
 #
 # Auth: AUSSCHLIESSLICH das eingebaute `GITHUB_TOKEN`
 # (`permissions: contents: read` / `packages: write` auf Job-Ebene, real
@@ -111,14 +116,13 @@ jobs:
       - name: Kotlin-SDK bauen, testen, paketieren (make sdk-pack-kotlin)
         run: make sdk-pack-kotlin
 
-      - name: .proto-Quelle fuer den Host-seitigen Gradle-Lauf bereitstellen
-        run: |
-          mkdir -p sdks/kotlin/pgchangefeed-kotlin/src/main/proto
-          cp proto/cdc/stream/v1/changestream.proto sdks/kotlin/pgchangefeed-kotlin/src/main/proto/changestream.proto
+      - name: Publish-Docker-Stufe bauen (sdks/kotlin/Dockerfile, Target publish)
+        run: docker build --build-context proto=proto --target publish -t pg-change-feed:sdk-kotlin-publish sdks/kotlin
 
-      - name: Nach GitHub Packages veroeffentlichen (./gradlew publish)
-        working-directory: sdks/kotlin/pgchangefeed-kotlin
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME_21_X64 }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew --no-daemon publish
+      - name: Nach GitHub Packages veroeffentlichen (./gradlew publish, im Docker-Image)
+        run: |
+          docker run --rm \
+            -e GITHUB_ACTOR="${{ github.actor }}" \
+            -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+            pg-change-feed:sdk-kotlin-publish \
+            ./gradlew --no-daemon publish

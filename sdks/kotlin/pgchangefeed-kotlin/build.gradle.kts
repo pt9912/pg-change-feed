@@ -24,9 +24,14 @@
 // Folgepflicht 1) explizit als Umgebungsvariable gesetzt (`secrets.GITHUB_TOKEN`)
 // — kein neues Repository-Secret, kein `secrets.<NAME>`-Verweis hier.
 // Außerhalb dieses Workflows (lokal, in `make sdk-pack-kotlin`) bleiben
-// beide Umgebungsvariablen leer — `./gradlew publish` läuft dort ohnehin
-// nicht (die Docker-Bau-Kette in `sdks/kotlin/Dockerfile` ruft nur `test`/
-// `build` auf, keinen `publish`-Task).
+// beide Umgebungsvariablen leer — `make sdk-pack-kotlin` baut ausschließlich
+// die `pack-export`-Docker-Stufe (`test`/`build`, kein `publish`-Task).
+// `sdks/kotlin/Dockerfile` trägt daneben eine eigene `publish`-Stufe (baut
+// auf `build` auf), die ausschließlich `.github/workflows/sdk-kotlin-release.yml`
+// baut und per `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...` mit
+// echten Zugangsdaten zur Laufzeit startet (ADR-0109 Festlegung 5: Docker-only
+// bis einschließlich `publish` — Korrektur von Review-Finding F-1,
+// docs/reviews/review-slice-sdk-kotlin-publish-workflow.md).
 //
 // `com.google.code.gson:gson` ist die JSON-Bibliothek der HTTP-Client-Fläche
 // (slice-sdk-kotlin-http-client-flaeche, `SPEC-018`/`SPEC-022`) — dieselbe
