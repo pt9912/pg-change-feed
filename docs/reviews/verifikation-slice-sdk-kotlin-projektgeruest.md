@@ -159,7 +159,7 @@ geführt.
   bereits im Fließtext vorhanden, siehe §6 oben).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) — Prüfung läuft
   regelkonform bei Closure der Welle
-  [welle-sdk-kotlin-lh-fa-sst-009](../plan/planning/welle-sdk-kotlin-lh-fa-sst-009.md).
+  [welle-sdk-kotlin-lh-fa-sst-009](../plan/planning/done/welle-sdk-kotlin-lh-fa-sst-009.md).
 - `git mv` nach `done/` — nicht erfolgt, erwartungsgemäß.
 
 ## Verdikt

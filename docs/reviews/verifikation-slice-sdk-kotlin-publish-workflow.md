@@ -10,7 +10,7 @@ und
 [`review-slice-sdk-kotlin-publish-workflow-fixrunde.md`](review-slice-sdk-kotlin-publish-workflow-fixrunde.md))
 und **nicht** gegen realen Bedarf (Validator, hier nicht ausgelöst). Dies
 ist der **letzte** Slice der Welle
-[`welle-sdk-kotlin-lh-fa-sst-009`](../plan/planning/welle-sdk-kotlin-lh-fa-sst-009.md).
+[`welle-sdk-kotlin-lh-fa-sst-009`](../plan/planning/done/welle-sdk-kotlin-lh-fa-sst-009.md).
 
 **Gegenstand:** vier Commits auf `main` (`LH-FA-SST-009`, `ADR-0109`):
 

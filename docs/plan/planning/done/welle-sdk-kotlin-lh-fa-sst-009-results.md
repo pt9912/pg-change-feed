@@ -6,10 +6,10 @@
 
 ## Was wurde geliefert?
 
-[`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+[`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 (`Accepted`) vollständig umgesetzt — das dritte offizielle
 Client-Bibliothek-Package für
-[`LH-FA-SST-009`](../../../spec/lastenheft.md): Kotlin, GitHub Packages, in
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md): Kotlin, GitHub Packages, in
 fünf Slices, mit derselben Zwei-Flächen-Parallelisierungs-Form wie die
 C#-Welle (HTTP + gRPC in einem Erst-Release):
 
@@ -215,7 +215,7 @@ Feststellung.
   strukturell nicht (real bestätigt: `a-check` meldet 0 Befunde auf dem
   Endstand).
 - **Entscheidung/ADR —
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   §Re-Evaluierungs-Trigger, durch diese Welle **nicht** ausgelöst:**
   - Trigger 1 (vierte Sprache/vierter Vertriebsweg verlangt) — nicht
     eingetreten, out-of-scope §6 der Welle-Datei.
