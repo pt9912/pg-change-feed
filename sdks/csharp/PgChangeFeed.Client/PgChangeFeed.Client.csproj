@@ -12,12 +12,12 @@
   <!-- NuGet-Metadaten (ADR-0106 Festlegung 2/3, Slice-DoD): dieses Projekt
        ist ein eigenständiges, veröffentlichbares Package, kein Beispiel wie
        examples/csharp/* (SPEC-023 bleibt Vorbild, kein Belegträger). Version
-       startete bei 0.1.0 (ADR-0106 Festlegung 3, unabhängig von
-       docs/user/version.md) und wurde auf 0.2.0 gehoben
-       (slice-sdk-csharp-nats-stream-client-flaeche): additive, rückwärts-
-       kompatible Erweiterung um die SSE- und NATS-Vollinhalts-Client-Fläche,
-       kein Breaking Change an HTTP-/gRPC-Fläche — Pflege bei jedem Release
-       ein bewusster Schritt, keine automatische Ableitung. -->
+       `0.2.0` (ADR-0106 Festlegung 3, unabhängig von docs/user/version.md) —
+       additive, rückwärtskompatible Erweiterung um die SSE- und
+       NATS-Vollinhalts-Client-Fläche neben der bestehenden HTTP-/gRPC-Fläche
+       (· seit slice-sdk-csharp-nats-stream-client-flaeche), kein Breaking
+       Change an HTTP-/gRPC-Fläche — Pflege bei jedem Release ein bewusster
+       Schritt, keine automatische Ableitung. -->
   <PropertyGroup>
     <PackageId>PgChangeFeed.Client</PackageId>
     <Version>0.2.0</Version>

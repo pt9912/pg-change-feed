@@ -74,8 +74,13 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice
       Subjekt-Formatierung netzlos, Verbindungs-Fehlerpfad ohne echten
       Server). Real umgesetzt: `PgChangeFeedNatsStreamClient` (Injektions-
       und Convenience-Konstruktor über `INatsClient`), `BuildSubject`/
-      `BuildSourceSubject` als Subjekt-Formatierer, sechzehn neue Tests in
-      vier Dateien (`Nats/`), 70/70 grün (`dotnet test` im Docker-Bau).
+      `BuildSourceSubject` als Subjekt-Formatierer, 15 neue Testmethoden
+      (`[Fact]`/`[Theory]`-Attribute, real ausgezählt) in fünf Dateien
+      (`Nats/`, inkl. `FakeNatsClient.cs` ohne eigene Testmethode) — 21
+      tatsächlich laufende neue Testfälle (real gemessen: isolierter
+      Docker-Testlauf gegen Elternstand `4b93def4` liefert `Passed: 49,
+      Total: 49`, gegen diesen Commit `Passed: 70, Total: 70`, Delta 21),
+      70/70 grün (`dotnet test` im Docker-Bau).
 - [x] `sdks/csharp/Directory.Packages.props` bekommt `NATS.Net` als
       gepinntes Paket, real zum Bau-Zeitpunkt neu gemessen (nicht blind
       aus `examples/csharp/Directory.Packages.props`s `3.2.0` übernommen —
@@ -100,9 +105,13 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice
       `<Version>0.2.0` als Smoke-Beleg — alle vier Client-Flächen im
       selben Artefakt. Real erzeugt: `sdks/csharp/dist/PgChangeFeed.Client.0.2.0.nupkg`
       (37451 Bytes, `lib/net10.0/PgChangeFeed.Client.dll` enthalten).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      `docs/reviews/review-slice-sdk-csharp-nats-stream-client-flaeche.md`
+      (2× HIGH, 1× MEDIUM) durch eine gezielte Fixrunde behoben (F-1
+      Kommentar-Chronik zurückgeführt, F-2/F-3 Zahlen real neu gemessen
+      und korrigiert) — kein offenes HIGH/MEDIUM mehr.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für SSE **und** NATS-Vollinhalt (`ADR-0106`
       §Konsequenzen Folgepflicht 4-Muster) — getragen durch die bereits
@@ -289,9 +298,12 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `<Description>`, `sdks/csharp/Dockerfile`, `harness/mk/sdk.mk`,
   `harness/README.md`, `README.md`/`README.de.md`,
   `tools/harness/sdk-pack-csharp.sh`, `Sse/Models/Change.cs`s
-  „three surfaces"-Kommentar — neun Dateien, acht davon zählen als ein
-  zusammenhängender Fund dieses einen Vorgangs), zwei davon außerhalb des
-  vorgeschriebenen `grep`-Musters gefunden (Details in der Evidenz-Datei).
+  „three surfaces"-Kommentar — **zehn** Dateien, real ausgezählt per
+  `git diff --stat` (korrigiert gegenüber der zunächst genannten neun,
+  Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche F-3), acht
+  Fundstellen zählen als ein zusammenhängender Fund dieses einen
+  Vorgangs), zwei davon außerhalb des vorgeschriebenen `grep`-Musters
+  gefunden (Details in der Evidenz-Datei).
   Übrige Register-Einträge geprüft, kein Handlungsbedarf:
   `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
   (verkörpert, DoD-Punkt „Doku-Update" real geliefert — siehe §2),

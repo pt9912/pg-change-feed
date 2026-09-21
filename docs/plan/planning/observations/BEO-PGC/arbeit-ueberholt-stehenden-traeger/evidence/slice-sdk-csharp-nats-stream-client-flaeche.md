@@ -63,7 +63,12 @@ Umsetzung gefunden, nicht durch den Suchlauf-Befehl selbst — derselbe
 Grenzfall, den `AGENTS.md` §3.13 §Grenze bereits benennt
 („Zahlen"/Prosa-Umformulierungen trifft `grep` nicht zuverlässig), hier
 erstmals für einen **Kommentar-Text** statt für eine Zahl oder einen
-Symbolnamen belegt.
+Symbolnamen belegt. Die acht Fundstellen betreffen zusammen **zehn**
+Dateien, nicht neun — real ausgezählt per `git diff --stat` (korrigiert,
+Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche F-3): die
+Bündel-Fundstelle `sdks/csharp/Dockerfile`/`harness/mk/sdk.mk`/
+`tools/harness/sdk-pack-csharp.sh` trägt drei Dateien statt
+zwei, `README.md`/`README.de.md` trägt zwei statt einer.
 
 Quelle: Implementer-Zug `slice-sdk-csharp-nats-stream-client-flaeche`, real
 gegenseitig geprüfter Diff (`git diff --stat`) und die zitierten

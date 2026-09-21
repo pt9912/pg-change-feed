@@ -31,7 +31,10 @@ Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
 Der zwanzigste Beleg, `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`:
 dieselbe Erfolgsform wie beim neunten/zehnten/elften Vorgang — der
-Implementer-eigene §3.13-Suchlauf traf acht Fundstellen, die den
+Implementer-eigene §3.13-Suchlauf traf acht Fundstellen über **zehn**
+Dateien (real ausgezählt per `git diff --stat`, korrigiert gegenüber der
+zunächst genannten neun — Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche
+F-3), die den
 Lieferstand von `PgChangeFeed.Client` als „HTTP-API und gRPC-Stream" bzw.
 über den `0.1.0`-Artefaktnamen beschrieben und durch die reale NATS-
 Vollinhalts-Fläche (vierte Client-Fläche, Version-Hebung auf `0.2.0`)
