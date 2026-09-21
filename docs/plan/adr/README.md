@@ -119,6 +119,7 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0104 | Benchmark-Schwellen PER-001/002/003 (Supers. ADR-0054, teilweise) | Accepted | 2026-09-19 | [0104-benchmark-schwellen-per-001-002-003.md](0104-benchmark-schwellen-per-001-002-003.md) |
 | ADR-0105 | CI-Matrix-RTM-Sichtbarkeit POR-001/002 | Accepted | 2026-09-19 | [0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md](0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md) |
 | ADR-0106 | C#/NuGet als erstes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-19 | [0106-csharp-nuget-erstes-sdk-package.md](0106-csharp-nuget-erstes-sdk-package.md) |
-| ADR-0107 | Python/PyPI als zweites SDK-Package für `LH-FA-SST-009` (→ ADR-0108, teilw.) | Accepted | 2026-09-19 | [0107-python-pypi-zweites-sdk-package.md](0107-python-pypi-zweites-sdk-package.md) |
+| ADR-0107 | Python/PyPI als zweites SDK-Package für `LH-FA-SST-009` (→ ADR-0108/0110) | Accepted | 2026-09-19 | [0107-python-pypi-zweites-sdk-package.md](0107-python-pypi-zweites-sdk-package.md) |
 | ADR-0108 | Python-SDK — `uv` statt `build`+`twine` (Supers. ADR-0107, teilw.) | Accepted | 2026-09-19 | [0108-python-sdk-uv-statt-build-twine.md](0108-python-sdk-uv-statt-build-twine.md) |
 | ADR-0109 | Kotlin/GitHub Packages als drittes SDK-Package für `LH-FA-SST-009` | Accepted | 2026-09-20 | [0109-kotlin-github-packages-drittes-sdk-package.md](0109-kotlin-github-packages-drittes-sdk-package.md) |
+| ADR-0110 | Python-SDK-Umfang erweitert auf gRPC/SSE/NATS (Supers. ADR-0107, teilw.) | Proposed | 2026-09-21 | [0110-python-sdk-umfang-erweitert-vollmatrix.md](0110-python-sdk-umfang-erweitert-vollmatrix.md) |
