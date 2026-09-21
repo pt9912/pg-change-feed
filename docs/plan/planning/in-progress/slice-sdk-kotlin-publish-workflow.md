@@ -141,20 +141,26 @@ Repository-Secret, der zentrale Unterschied zu
 - [x] Doku-Update: `harness/README.md` §Werkzeuge und
       `docs/user/releasing.md` (siehe oben) — entfällt als eigener Punkt,
       da bereits oben als DoD-Kriterium geführt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
-      Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko bleibt
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neuer
+      Eintrag `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`
+      (Erstauftreten, 1×, siehe §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (das Post-Push-Risiko bleibt
       nach `AGENTS.md` §3.10 strukturell **weiter offen**, auch bei
-      grüner DoD im Übrigen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      dieser Slice gehört zu
+      grüner DoD im Übrigen; die übrigen drei Risiken sind aufgelöst bzw.
+      entfallen strukturell — siehe §7).
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind auf
+      Slice-Ebene getragen — dieser Slice gehört zu
       [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
-      (noch offen); die Prüfung läuft regelkonform bei deren Closure.
+      (Slice-Bezug oben gesetzt, kein Folge-Slice — letzter Slice der
+      Welle —, Register-Eintrag siehe §7); die **volle**
+      Drei-Paarungen-Prüfung der Welle selbst (Roadmap-Rückbindung,
+      Wellen-Closure-Notiz) läuft regelkonform bei der separaten,
+      unmittelbar nachfolgenden Welle-Closure von
+      [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md).
 
 ## 3. Plan (vor Code)
 
@@ -300,19 +306,106 @@ Befund mit Folgemaßnahme dokumentiert ist; dieser Slice kann trotzdem nach
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <wird beim Abschluss ergänzt>
-- **Was ging anders als geplant:** <wird beim Abschluss ergänzt>
-- **Steering-Loop-Eintrag:** <wird beim Abschluss ergänzt>
-- **Beobachtungs-Register (`../observations/`):** <wird beim Abschluss
-  ergänzt>
-- **Folge-Slices:** keine aus diesem Slice selbst erwartet — letzter Slice
-  der Welle.
-- **Risiken aus §6:** <wird beim Abschluss ergänzt>
-- **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md)
-  (noch offen) — dies ist der letzte Slice dieser Welle; die Prüfung der
-  drei Paarungen läuft regelkonform bei deren eigener, separater Closure
-  (nicht Teil dieses Slice-Zugs).
+**Träger-Nachzug-Suchlauf (`AGENTS.md` §3.13):** Bereits vom Implementer
+und beiden Reviewer-Läufen durchgeführt (`grep -rln "sdk-csharp-v\|
+sdk-python-v\|NUGET_API_KEY\|PYPI_API_TOKEN\|SDK-Release"` sowie gezielt
+über `spec/pflichtenheft.md`) — kein weiterer, fremder Träger außerhalb
+des Diffs gefunden, der eine Eigenschaft dieses Slice beschreibt und nicht
+bereits nachgezogen wäre (siehe Negativbefunde beider Review-Reports).
+Diese Planner-Closure hat den Suchlauf mit `grep -rln "sdk-kotlin-release\|
+gradlew publish"` eigenständig wiederholt — kein zusätzlicher Treffer über
+den bereits im Diff bearbeiteten Bestand hinaus.
+
+**Was hat funktioniert:** Die real funktionierende Fixrunden-Sequenz mit
+zweitem unabhängigem Review ist der zentrale Beleg dieses Slice: Der erste
+Reviewer-Lauf fand ein reales, mechanisch nachvollziehbares HIGH (F-1 —
+`./gradlew publish` lief auf dem Runner statt Docker-only, entgegen
+`ADR-0109` §Entscheidung Festlegung 5 wörtlich) und empfahl explizit
+**keine** einseitige Implementer-Rückgabe, sondern eine Fixrunde mit
+frischem Zweit-Review — genau das lief so: Der Fix (`21872c3d`, neue
+Docker-Stufe `publish`) löste das Finding real auf, und der
+Fixrunden-Reviewer übernahm nichts ungeprüft (eigener `docker build
+--target publish` + `docker inspect`-Lauf, eigenständige Wiederholung
+aller elf ursprünglich unauffälligen Prüfpunkte, eigener Träger-Nachzug-
+Suchlauf) statt der Implementer-Einschätzung zu vertrauen. Der Verifier
+wiederholte das Muster ein drittes Mal unabhängig (vierter Docker-Build
+insgesamt) und bestätigte DoD-Konformität ohne Übernahme. Das 3-Commit-
+Lifecycle-Muster (Implementer → Review → Fix → Fixrunden-Review →
+Verifikation → Planner-Closure) hielt über den gesamten Zyklus, ohne dass
+irgendeine Rolle die Einschätzung der vorherigen unbesehen übernahm.
+
+**Was ging anders als geplant:** Der Slice-Plan sah beim Schreiben (§3
+„Beim Schreiben getroffene Entscheidungen") den Publish-Schritt bewusst
+auf dem Runner vor, mit einer eigenen Lesart von `AGENTS.md` §3.1 als
+Begründung — das erwies sich beim Review als nicht tragfähig gegen den
+wörtlichen `ADR-0109`-Text (Docker-only bis einschließlich `publish`).
+Anders als bei den beiden Fixrunden der Vorgänger-SDK-Wellen (C#: Slice-
+Chronik im Docstring; Python: Träger-Nachzug-Lücke) ist dies die erste
+Fixrunde dieser dritten SDK-Welle, deren Ursache eine **Implementierungs-
+Abweichung von einer bereits `Accepted`-ADR** war, nicht ein Textdefekt
+oder eine Nachzug-Lücke — eine neue Fehlerklasse für das
+Beobachtungs-Register dieser Welle (siehe unten). Die Auflösung blieb
+trotzdem im Rahmen dieses einen Slice: ein reiner Code-Fix, keine
+Supersede-ADR — `ADR-0109` §Re-Evaluierungs-Trigger 4 hatte diesen
+Unterschied (Workflow-Bugfix ohne Entscheidungsänderung vs. inhaltliche
+Korrektur) bereits selbst vorgesehen, bevor der Fall real eintrat.
+
+**Steering-Loop-Eintrag:** Kein neuer Sensor, keine geschärfte
+`AGENTS.md`-Regel — `AGENTS.md` §3.5 (Accepted-ADR-Immutabilität) und §3.1
+(Docker-only) tragen die Regel bereits vollständig; was fehlte, war die
+Disziplin, eine Abweichung als **offene Frage** statt als eigene
+Entscheidung zu formulieren. Festgehalten als neuer Beobachtungs-Register-
+Eintrag statt als Regelschärfung, weil ein Erstauftreten (1×) unter der
+3×-Schwelle liegt, siehe unten.
+
+**Beobachtungs-Register (`../observations/`):** Neuer Eintrag
+`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (Erstauftreten, 1×,
+`evidence/slice-sdk-kotlin-publish-workflow.md`) — geprüft, keine
+bestehende Klasse passt: `BEO-PGC/fitness-function-gegen-eigene-
+entscheidung` betrifft eine ADR, die sich selbst widerspricht (Fitness-
+Function vs. Entscheidungstext), nicht eine Implementierung, die vom
+Entscheidungstext abweicht; `BEO-PGC/gate-scope-erweiterung-ohne-adr-
+traeger` betrifft einen wachsenden Gate-Scope ohne ADR-Träger, keine
+Bau-/Ausführungsort-Abweichung. Die neue Klasse: ein Implementer weicht
+von der wörtlichen Festlegung einer `Accepted`-ADR ab und stellt das als
+bewusste Entscheidung dar, statt es als offene Frage zu kennzeichnen —
+aufgelöst hier über eine Fixrunde (Code-Fix), nicht über eine
+Supersede-ADR, weil der Fund den Ausführungsort betraf, keine inhaltliche
+ADR-Korrektur.
+
+**Folge-Slices:** keine — dies ist der letzte Slice der Welle
+`welle-sdk-kotlin-lh-fa-sst-009`. Die Welle-Closure selbst
+(Drei-Paarungen-Prüfung auf Wellen-Ebene, Roadmap-Rückbindung,
+Wellen-Closure-Notiz) ist ein separater, unmittelbar nachfolgender Zug.
+
+**Risiken aus §6 — Ausgänge:**
+
+- `AGENTS.md` §3.10 (realer Post-Push-Lauf unverifiziert) — **weiter
+  offen**, strukturell, unverändert; kein Tag-Push in diesem Zug
+  (`git tag -l | grep kotlin` leer).
+- Kein Secret-Anlage-Risiko — **entfallen strukturell**, unverändert:
+  `GITHUB_TOKEN` ist immer verfügbar, kein externes Secret nötig.
+- SemVer-Tag-Parser teilt sich Code mit `semver-regex.sh` — **aufgelöst**:
+  `tools/harness/sdk-kotlin-release-tag-info.sh` ist dritter Konsument,
+  `make test-sdk-kotlin-release-tag-info` grün (16 Fälle).
+- Reales `publishing.repositories.maven`-Minimalrezept könnte
+  Gradle-Eigenheit zeigen — **teilweise geprüft, im Kern weiter offen**:
+  `make sdk-pack-kotlin` bestätigt fehlerfreies Parsen; der reale
+  Schreibzugriff bleibt nach `AGENTS.md` §3.10 bis zum ersten Tag-Push
+  offen.
+
+**Drei Paarungen:** dieser Slice gehört zu
+[welle-sdk-kotlin-lh-fa-sst-009](../welle-sdk-kotlin-lh-fa-sst-009.md) —
+dies ist der letzte Slice dieser Welle; die volle Drei-Paarungen-Prüfung
+auf Wellen-Ebene läuft regelkonform bei deren eigener, separater, hier
+unmittelbar nachfolgender Closure.
+
+Review (`docs/reviews/review-slice-sdk-kotlin-publish-workflow.md`, 1
+HIGH, Fixrunde `21872c3d` real behoben) +
+`docs/reviews/review-slice-sdk-kotlin-publish-workflow-fixrunde.md` (0
+HIGH/MEDIUM, 1 INFO) + `docs/reviews/verifikation-slice-sdk-kotlin-publish-workflow.md`
+(DoD konform) liegen vor. Diese Planner-Closure schließt den Slice nach
+`done/` ab (kein Self-Review — anderer Rollenwechsel, `AGENTS.md` §6).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
