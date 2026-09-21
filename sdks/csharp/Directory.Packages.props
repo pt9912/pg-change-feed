@@ -40,4 +40,21 @@
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
   </ItemGroup>
 
+  <!-- NATS.Net: the gepinnte, öffentliche Client-Bibliothek der NATS-
+       Vollinhalts-Client-Fläche (slice-sdk-csharp-nats-stream-client-flaeche,
+       ADR-0106 §Entscheidung Festlegung 1 letzter Absatz, SPEC-024). Meta-
+       Paket, real neu gemessen am 2026-09-22 (AGENTS.md §3.12 — nicht blind
+       aus examples/csharp/Directory.Packages.props' `3.2.0` vom 2026-09-17
+       übernommen): `api.nuget.org/v3-flatcontainer/nats.net/index.json`
+       listet `3.2.0` weiterhin als jüngste stabile Version (kein neuerer
+       Eintrag seit dem Beispiel-Messzeitpunkt, letzter NuGet-Commit auf
+       dieser Registrierung 2026-08-29) — derselbe Kandidat, real erneut
+       bestätigt statt übernommen. Für net10.0 zieht es transitiv
+       ausschließlich eigene (NATS.Client.*) und Microsoft.Extensions.*-Pakete
+       nach — keine zusätzliche, eigenständig zu bewertende
+       Fremdabhängigkeit. -->
+  <ItemGroup>
+    <PackageVersion Include="NATS.Net" Version="3.2.0" />
+  </ItemGroup>
+
 </Project>

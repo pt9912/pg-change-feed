@@ -9,8 +9,9 @@
 #
 # `sdk-pack-csharp` baut/testet/paketiert das C#-SDK Docker-only im
 # gepinnten mcr.microsoft.com/dotnet/sdk-Image (sdks/csharp/Dockerfile,
-# Stufe `pack-export`): `dotnet test` gegen BEIDE Testflächen (HTTP + gRPC,
-# dasselbe Testprojekt PgChangeFeed.Client.Tests) läuft VOR `dotnet pack`
+# Stufe `pack-export`): `dotnet test` gegen alle vier Testflächen (HTTP +
+# gRPC + SSE + NATS-Vollinhalt, dasselbe Testprojekt
+# PgChangeFeed.Client.Tests) läuft VOR `dotnet pack`
 # in derselben Docker-Bau-Kette — ein roter Test bricht den `docker build`
 # mit Exit != 0 ab, bevor die `pack`-Stufe je erreicht wird (kein stiller
 # Fallback, Muster harness/mk/examples.mk). Wie beim gRPC-Bau der Fläche
@@ -23,7 +24,7 @@
 # tools/harness/sdk-pack-csharp.sh extrahiert das .nupkg host-seitig aus der
 # `pack-export`-Stufe (`docker run --rm --network none <image> | tar -x`,
 # `set -o pipefail` unter bash, AGENTS.md §3.9) nach sdks/csharp/dist/
-# (`.gitignore`t). Erzeugnis: PgChangeFeed.Client.0.1.0.nupkg. Exit-Code des
+# (`.gitignore`t). Erzeugnis: PgChangeFeed.Client.0.2.0.nupkg. Exit-Code des
 # Skripts wird wie bei jedem anderen Ziel direkt gelesen.
 .PHONY: sdk-pack-csharp
 sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdks/csharp/dist/; Werkzeug, kein Gate; ADR-0106)

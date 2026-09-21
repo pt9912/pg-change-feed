@@ -15,8 +15,9 @@ namespace PgChangeFeed.Client.Sse.Models;
 /// Kept as its own type rather than reused across surfaces: it is a
 /// different wire contract than <c>PgChangeFeed.Client.Http.Models.Change</c>
 /// (SPEC-022, eleven fields including <c>commit_position</c>/
-/// <c>committed_at</c>) and than the generated gRPC <c>Change</c> stub
-/// (SPEC-020, its own protobuf-generated type) — three surfaces, three
+/// <c>committed_at</c>), the generated gRPC <c>Change</c> stub (SPEC-020, its
+/// own protobuf-generated type), and <see cref="PgChangeFeed.Client.Nats.Models.Change"/>
+/// (SPEC-024, delivered over NATS instead of HTTP) — four surfaces, four
 /// independent wire contracts that happen to share most field names.
 /// </summary>
 public sealed record Change(

@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **19×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **20×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,20 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der zwanzigste Beleg, `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`:
+dieselbe Erfolgsform wie beim neunten/zehnten/elften Vorgang — der
+Implementer-eigene §3.13-Suchlauf traf acht Fundstellen, die den
+Lieferstand von `PgChangeFeed.Client` als „HTTP-API und gRPC-Stream" bzw.
+über den `0.1.0`-Artefaktnamen beschrieben und durch die reale NATS-
+Vollinhalts-Fläche (vierte Client-Fläche, Version-Hebung auf `0.2.0`)
+falsch wurden, und behob alle acht im selben Zug — mit einer Erweiterung:
+zwei der acht Fundstellen (`tools/harness/sdk-pack-csharp.sh`s Kommentar,
+`Sse/Models/Change.cs`s „three surfaces"-Kommentar) lagen außerhalb des im
+DoD-Wortlaut vorgeschriebenen `grep`-Musters und wurden nur durch
+aufmerksames Lesen benachbarter Dateien gefunden — derselbe Grenzfall, den
+`AGENTS.md` §3.13 §Grenze bereits für Zahlen/Prosa-Umformulierungen
+benennt, hier erstmals für einen Kommentar-Text belegt. Details:
+`evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`.
 Der neunzehnte Beleg, `evidence/slice-sdk-python-publish-workflow.md`: eine
 **neue Form** innerhalb dieser Klasse — das überholende Ereignis liegt hier
 zum ersten Mal vollständig **außerhalb** jedes Commits und jeder

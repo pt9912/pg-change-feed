@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.37
+Version: 1.38
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-20
+Stand: 2026-09-22
 
 ## 1. Einleitung
 
@@ -833,6 +833,15 @@ aus; Adresse und Token liest jedes Beispiel aus `CDC_HTTP_ADDR` und
   `make example-run-kotlin SURFACE=sse` (startet das mit
   `make examples-kotlin` gebaute Image)
 
+**SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
+NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
+`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedSseClient.StreamChangesAsync`
+öffnet `GET /changes/stream` und liefert ein `IAsyncEnumerable<Change>` mit
+allen zehn Feldern der Tabelle oben; das Bearer-Token landet im
+`Authorization`-Header, ein fehlender oder unbekannter Token endet den
+Aufruf mit `PgChangeFeedUnauthorizedException` (HTTP-Status `401`), statt
+den Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+
 ### Zugriff über das NATS-Wecksignal
 
 Anders als die drei Abschnitte zuvor ist dieser Zugriffsweg **signal-tragend**,
@@ -949,6 +958,17 @@ per Flag übersteuern.
 Die Beispiele sind zum Lesen und Nachbauen gedacht; die E2E-Testclients des
 Harness liegen unter `tools/harness/` (`natsstreamsub`) und sind kein
 Vorbild.
+
+**SDK:** .NET-Anwendungen können statt des Beispiels dasselbe offizielle
+NuGet-Package `PgChangeFeed.Client` einbinden (`LH-FA-SST-009`, `ADR-0106`,
+`dotnet add package PgChangeFeed.Client`) — `PgChangeFeedNatsStreamClient.StreamChangesAsync`
+abonniert den Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über
+`BuildSubject`/`BuildSourceSubject` eingeschränktes Subjekt) und liefert ein
+`IAsyncEnumerable<Change>` mit allen zehn Feldern der Tabelle oben; die
+Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
+wie oben), ein abgelehnter Verbindungsversuch endet die Aufzählung mit einer
+NATS-eigenen Ausnahme, statt den Draht-Vertrag selbst zu implementieren;
+siehe `sdks/csharp/README.md`.
 
 ## 5. Konfiguration
 
@@ -1186,3 +1206,4 @@ MIT — siehe `LICENSE`.
 | 1.35 | 2026-09-19 | Python-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0107`, slice-sdk-python-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das PyPI-Package `pgchangefeed` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer typisierten Fehlerklasse ab |
 | 1.36 | 2026-09-20 | Kotlin-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer versiegelten Fehlerklassen-Hierarchie ab, samt explizitem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2) |
 | 1.37 | 2026-09-20 | Kotlin-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen zweiten Absatz im `**SDK:**`-Block — `PgChangeFeedGrpcClient.streamChanges()` öffnet `ChangeStream/StreamChanges` und liefert ein `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle oben, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2); der vorangehende HTTP-Absatz oben wurde korrigiert — er behauptete fälschlich, der gRPC-Change-Stream „folge in einem Folge-Release" |
+| 1.38 | 2026-09-22 | C#-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, `welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.StreamChangesAsync` bzw. `PgChangeFeedNatsStreamClient.StreamChangesAsync` liefern ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der jeweiligen Tabelle; das NuGet-Package `PgChangeFeed.Client` ist dafür auf `0.2.0` gehoben |

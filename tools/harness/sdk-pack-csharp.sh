@@ -4,8 +4,8 @@
 #
 # Docker-only: `dotnet build`/`dotnet test`/`dotnet pack` laufen
 # ausschliesslich im gepinnten mcr.microsoft.com/dotnet/sdk-Image
-# (sdks/csharp/Dockerfile, AGENTS.md §3.1). `dotnet test` deckt BEIDE
-# Testflaechen (HTTP + gRPC, dasselbe Testprojekt
+# (sdks/csharp/Dockerfile, AGENTS.md §3.1). `dotnet test` deckt alle vier
+# Testflaechen (HTTP + gRPC + SSE + NATS-Vollinhalt, dasselbe Testprojekt
 # PgChangeFeed.Client.Tests) und laeuft VOR `dotnet pack` in derselben
 # Docker-Bau-Kette — ein roter Test bricht den `docker build` mit Exit != 0
 # ab, bevor die `pack`-Stufe je erreicht wird (kein stiller Fallback).
