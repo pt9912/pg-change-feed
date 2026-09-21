@@ -1,6 +1,6 @@
 # ADR-0110: Python-SDK-Umfang erweitert auf gRPC/SSE/NATS-Vollinhalt (Supersedes ADR-0107, teilweise)
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Datum:** 2026-09-21
 
@@ -265,10 +265,9 @@ ebenfalls trägt.
      §3.13) — Sache des umsetzenden Zuges.
   3. `docs/user/benutzerhandbuch.md` bekommt einen SDK-Hinweis je neu
      gedeckter Oberfläche, im selben Zug wie das jeweilige Client-Programm.
-  4. Diese ADR wird erst durch eine explizite Annahme-Entscheidung
-     (`Status: Accepted`) wirksam — sie bleibt bis dahin `Proposed` und
-     entscheidet nichts verbindlich (dieser Zug nimmt keine ADR selbst an,
-     Nutzerentscheidung ist ein separater Schritt).
+  4. Ein Planner-Zug schneidet die Umsetzung für alle drei Sprachen
+     (C#/Kotlin ohne eigene ADR, Python über diese ADR) — §Geschichte
+     dokumentiert die Nutzerentscheidung, die diese ADR wirksam macht.
 
 ## Fitness Function (falls maschinell prüfbar)
 
@@ -304,10 +303,9 @@ ebenfalls trägt.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-21 | Proposed | dieser Architect-Zug (kein vorausgehender Slice-Plan — ADR vor Implementierung, Modul 8); ausgelöst durch den Auftrag, alle drei SDKs auf volle Vier-Wege-Parität zu erweitern |
+| 2026-09-21 | Accepted | Nutzerentscheidung im Chat vom 2026-09-21 („Wenn es die volle Abdeckung geben wird, dann accept") — die Bedingung war der geplante Umfang selbst (Vier-Wege-Parität über alle drei SDKs), den §Entscheidung bereits trägt |
 
-Diese ADR ist **`Proposed`**, nicht `Accepted` — die Annahme ist ein
-separater, expliziter Nutzerentscheidungs-Schritt, den dieser Zug nicht
-vorwegnimmt. Nach einer künftigen `Accepted`-Setzung wird diese Datei nicht
-mehr inhaltlich überschrieben; spätere Korrekturen entstehen als neue ADR mit
+Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
+Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
 `Supersedes ADR-0110` (Baseline-Regelwerk `modul-04-adrs.md` §Hard Rule für
 Accepted-ADRs).
