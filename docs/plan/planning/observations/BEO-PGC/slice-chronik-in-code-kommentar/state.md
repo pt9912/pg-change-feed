@@ -93,3 +93,14 @@ unverändert bewusst INFO. Die Zwei-Beleg-Schwelle für die Doku-Prosa-
 Variante ist damit erreicht — noch kein eigener Registereintrag (unter der
 Drei-Beleg-Schwelle, `harness/README.md` §Traceability rules Analogie),
 aber ein verstärktes Signal für den nächsten Lese-Schritt.
+
+Beleg 9 (`slice-sdk-kotlin-nats-stream-client-flaeche`, evidence-Datei,
+Planner-Closure 2026-09-22): `build.gradle.kts`s Version-Kommentar trug ein
+Arrow-Muster (`0.1.0 -> 0.2.0`) mit Slice-Kennung statt `ADR-*`/`LH-*`-Anker
+— dieselbe Instanz wie beim analogen C#-NATS-Sibling-Slice
+(`slice-sdk-csharp-nats-stream-client-flaeche`, für den keine eigene
+Evidenzdatei angelegt wurde — Lücke, hier nur benannt, nicht rückwirkend
+geschlossen). Reviewer fing die Stelle vor Merge (F-1, HIGH), Fixrunde real
+geprüft, vierfache unabhängige Bestätigung (Reviewer, Fixrunden-Reviewer,
+Verifier). Ausgang bleibt **verkörpert**, neunte Evidenzdatei in diesem
+Verzeichnis (real ausgezählt).

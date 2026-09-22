@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **20×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **21×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,20 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der einundzwanzigste Beleg,
+`evidence/slice-sdk-kotlin-nats-stream-client-flaeche.md`: anders als beim
+zwanzigsten (C#-)Beleg fand hier **nicht** der Implementer-eigene
+§3.13-Suchlauf die stehen gebliebene Stelle
+(`sdks/kotlin/Dockerfile:77,104`, weiterhin `pgchangefeed-kotlin-0.1.0.jar`),
+sondern der unabhängige Reviewer (F-2, MEDIUM) — dieselbe Unter-Klasse
+„gefunden vom Reviewer, nicht vom Implementer-Suchlauf" wie bei `slice-095`/
+`slice-097`/`slice-sdk-csharp-http-client-flaeche`. Zwei Sibling-Träger
+(`harness/README.md`, `harness/mk/sdk.mk`), die denselben Sachverhalt
+beschreiben, hatte der Implementer-Suchlauf bereits korrekt nachgezogen —
+nur die beiden Dockerfile-Zeilen lagen außerhalb seines Suchraums. Fixrunde
+real behoben, dritte/vierte unabhängige Bestätigung (Fixrunden-Reviewer,
+Verifier). Ausgang bleibt **verkörpert**, kein neuer Regelschärfungs-Anlass.
+Details: `evidence/slice-sdk-kotlin-nats-stream-client-flaeche.md`.
 Der zwanzigste Beleg, `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`:
 dieselbe Erfolgsform wie beim neunten/zehnten/elften Vorgang — der
 Implementer-eigene §3.13-Suchlauf traf mehrere Fundstellen über **zehn**

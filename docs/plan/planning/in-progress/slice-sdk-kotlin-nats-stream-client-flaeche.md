@@ -110,9 +110,11 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice).
       Reconciliation-Datei in diesem Repo.
 - [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert. Keine neue
-      Beobachtung angefallen — der Suchlauf war vollständig, kein Fund über
-      dieses Slice hinaus (§7).
+      ist ebenfalls eine Antwort und wird in §7 notiert. Kein **neues**
+      Verzeichnis nötig — F-1/F-2 sind Belege zweier bereits verkörperter
+      Klassen (`BEO-PGC/slice-chronik-in-code-kommentar`,
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger`), Evidenzdateien in
+      beiden bei der Planner-Closure nachgetragen (§7).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (§7).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
@@ -223,16 +225,43 @@ Closure-Notiz mit Lerneintrag geschrieben.
   erwarteten Test fehl. Beide Mutationen zurückgenommen, finaler Bau grün
   (Docker-Layer-Cache-Treffer auf den bereits verifizierten guten Stand —
   deterministischer Beleg, kein erneuter blinder Lauf).
-- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung
-  angefallen. Der vollständige Suchlauf (§2 DoD-Punkt) deckte alle
-  stehenden, jetzt falschen Träger ab (`spec/pflichtenheft.md` §1/§6/§7,
-  `docs/user/benutzerhandbuch.md` HTTP-/gRPC-Absätze +
+- **Beobachtungs-Register (`../observations/`):** Kein **neues**
+  Verzeichnis angefallen. Der vollständige Suchlauf (§2 DoD-Punkt) deckte
+  alle stehenden, jetzt falschen Träger ab (`spec/pflichtenheft.md`
+  §1/§6/§7, `docs/user/benutzerhandbuch.md` HTTP-/gRPC-Absätze +
   SSE-/NATS-`**SDK:**`-Absätze + Versionshistorie, `sdks/kotlin/pgchangefeed-kotlin/README.md`,
   `harness/README.md`, `harness/mk/sdk.mk`) — kein Fund, der über dieses
   Slice hinaus offen bliebe. `docs/user/releasing.md` wurde geprüft, trägt
   aber keine Faktenbehauptung zur aktuellen Versionsabdeckung (nur ein
   illustratives `z. B. sdk-kotlin-v0.1.0`-Tag-Beispiel) — kein Nachzug
-  nötig.
+  nötig. **Aber:** Die beiden Review-Findings F-1/F-2 sind je ein weiterer
+  Beleg zweier bereits verkörperter Klassen — bei dieser Planner-Closure
+  nachgetragen, nicht bei der DoD-Erstniederschrift des Implementers
+  erkannt (dieselbe Unterscheidung, die `../observations/README.md`
+  zwischen „neue Beobachtung" und „Beleg in `evidence/`" trifft):
+  F-1 (Chronik-Kommentar in `build.gradle.kts`, Arrow-Muster
+  `0.1.0 -> 0.2.0` mit Slice-Kennung statt `ADR-*`/`LH-*`-Anker) ist
+  dieselbe Klasse wie beim analogen C#-NATS-Sibling-Slice
+  (`BEO-PGC/slice-chronik-in-code-kommentar`, neunte Evidenzdatei,
+  `evidence/slice-sdk-kotlin-nats-stream-client-flaeche.md`); F-2 (stale
+  `0.1.0.jar`-Kommentar in `sdks/kotlin/Dockerfile:77,104`, vom Reviewer
+  statt vom Implementer-Suchlauf gefunden) ist dieselbe Klasse wie die
+  bereits 20-fach belegte Träger-Nachzug-Beobachtung
+  (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, einundzwanzigste
+  Evidenzdatei, `evidence/slice-sdk-kotlin-nats-stream-client-flaeche.md`).
+  Beide bleiben **verkörpert** — kein neuer Regelschärfungs-Anlass, beide
+  Funde liefen vor Merge (Reviewer), kein Hard-Rule-Verstoß erreichte
+  `main`. Die beiden anderen bei Welle-Eröffnung gesichteten Register-Treffer
+  (`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`,
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`) erzeugten in
+  diesem Slice **keinen** neuen Beleg — beide Flächen-Slices dieser Welle
+  benannten `--build-context proto=proto` explizit statt es zu verschweigen
+  (erstere Klasse), und keine der DoD-/Plan-Aussagen dieses Slices behauptete
+  ungeprüft eine mittlerweile falsche Tatsache (letztere Klasse). Beide
+  bleiben bei den bei der SSE-Slice-Closure bzw. der csharp-Welle-Closure
+  festgestellten Zählerständen; der reguläre Lese-Schritt für
+  `zusatzkontext-kopplung-breiter-als-dod-wortlaut` läuft bei der
+  unmittelbar folgenden Wellen-Closure.
 - **Folge-Slices:** Keine neuen Folge-Slices ausgelöst. Eine vierte Sprache
   oder ein vierter Vertriebsweg für `LH-FA-SST-009.a` bleibt weiterhin eine
   eigene, künftige ADR-pflichtige Entscheidung (unverändert). Die
