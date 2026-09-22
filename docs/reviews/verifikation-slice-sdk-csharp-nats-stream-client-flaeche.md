@@ -78,11 +78,11 @@ neuerer Kandidat. **Ergebnis: berechtigt auf `[x]`.**
 `PgChangeFeed.Client.csproj:22-23` trägt `<Version>0.2.0</Version>`
 (vorher `0.1.0`, additive Erweiterung, kein Breaking Change). Der
 begleitende Kommentar (Zeilen 12-20) wurde eigenständig gelesen: er nennt
-den **Zustand** — „Version `0.2.0` (ADR-0106 Festlegung 3, unabhängig von
-`docs/user/version.md`) — additive, rückwärtskompatible Erweiterung um die
+den **Zustand** — `` „Version `0.2.0` (ADR-0106 Festlegung 3, unabhängig von
+docs/user/version.md) — additive, rückwärtskompatible Erweiterung um die
 SSE- und NATS-Vollinhalts-Client-Fläche neben der bestehenden HTTP-/
 gRPC-Fläche (· seit slice-sdk-csharp-nats-stream-client-flaeche), kein
-Breaking Change …" — **keine** „startete …/wurde … gehoben"-Erzählung mehr.
+Breaking Change …" `` — **keine** „startete …/wurde … gehoben"-Erzählung mehr.
 Dies ist die **vierte** unabhängige Bestätigung (Implementer-Fix,
 Fixrunden-Review, diese Verifikation), dass F-1 des Erstreviews real und
 dauerhaft behoben ist. **Ergebnis: berechtigt auf `[x]`.**
