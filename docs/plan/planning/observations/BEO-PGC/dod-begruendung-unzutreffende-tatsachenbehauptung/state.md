@@ -12,11 +12,26 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **5×** (evidence/slice-036.md, evidence/slice-082.md,
-evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md) —
-**Schwelle erreicht**, Ausgang beim Lese-Schritt der `welle-20`-Closure. Der
-fünfte Beleg (`slice-095`, 2. Durchlauf) ist ein weiterer Vorgang derselben
-Klasse und kein neuer Handlungsbedarf: eine §2-DoD-Zeile behauptete
+Zähler (abgeleitet): **6×** (evidence/slice-036.md, evidence/slice-082.md,
+evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
+evidence/slice-sdk-kotlin-sse-client-flaeche.md) — **Schwelle erreicht**,
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der sechste Beleg
+(`slice-sdk-kotlin-sse-client-flaeche`) ist ein weiterer Vorgang derselben
+Klasse und kein neuer Handlungsbedarf, mit einer bemerkenswerten
+Herkunfts-Variante: die ungeprüfte Übernahme betraf hier einen
+Registerstand (`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`),
+der durch eine **parallele**, nicht die eigene Arbeit bereits überholt war
+(`slice-sdk-csharp-sse-client-flaeche` einer Geschwister-Welle, vor
+Slice-Start) — ein eigener neuer Beobachtungs-Eintrag für diese Variante
+wurde bei der Closure geprüft und verworfen, weil der Mechanismus
+(ungeprüfte Übernahme statt frischer Prüfung zum Schreibzeitpunkt)
+identisch mit dieser Klasse bleibt, unabhängig von der Herkunft des
+überholenden Ereignisses; gefunden hat es der Verifier, nicht der
+Reviewer, dessen Diff-Prüfung „keine Änderung an `observations/`" korrekt,
+aber ohne Abgleich gegen den absoluten Registerstand blieb (Details:
+`evidence/slice-sdk-kotlin-sse-client-flaeche.md`). Der fünfte Beleg
+(`slice-095`, 2. Durchlauf) ist ein weiterer Vorgang derselben Klasse und
+kein neuer Handlungsbedarf: eine §2-DoD-Zeile behauptete
 ungeprüft „dieses Repo führt Wellen-Betrieb", ein unangepasster
 Vorlagen-Standardtext, der dem eigenen Slice-Kopf widersprach — bei der
 Slice-Closure gefunden und korrigiert. Der vierte Beleg ist ein weiterer

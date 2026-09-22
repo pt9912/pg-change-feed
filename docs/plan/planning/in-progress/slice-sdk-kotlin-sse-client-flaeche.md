@@ -98,7 +98,7 @@ dasselbe Muster wie die bestehende gRPC-Fläche) an den Consumer liefert.
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -118,12 +118,17 @@ mit `com.google.code.gson:gson` verdrahtet, dieselbe JSON-Bibliothek für
 die Nachrichtenfelder).
 
 **Bekannte Docker-Bau-Kopplung (`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`,
-2×, unter der Schwelle):** `sdks/kotlin/Dockerfile` trägt eine einzige
-`build`-Stufe für alle Flächen — ein `docker build` dieses Slice braucht
-deshalb weiterhin `--build-context proto=proto`, sonst bricht der Bau an
-der bereits bestehenden `COPY --from=proto`-Zeile ab. `make sdk-pack-kotlin`
-trägt den Flag bereits unconditional (`tools/harness/sdk-pack-kotlin.sh`) —
-kein Änderungsbedarf, nur eine bewusst benannte, keine stille Kopplung.
+zum Zeitpunkt dieses Slice-Starts bereits real 3×, Schwelle erreicht —
+ausgelöst durch `slice-sdk-csharp-sse-client-flaeche` der parallelen
+Geschwister-Welle `welle-sdk-csharp-vollabdeckung` (Commit `d8cc10a1`,
+2026-09-22 00:10:21), vor dem `next → in-progress`-Übergang dieses Slice
+(`baf6e8bd`, 06:06:49); Korrektur nach Verifikation, siehe §7):**
+`sdks/kotlin/Dockerfile` trägt eine einzige `build`-Stufe für alle Flächen —
+ein `docker build` dieses Slice braucht deshalb weiterhin
+`--build-context proto=proto`, sonst bricht der Bau an der bereits
+bestehenden `COPY --from=proto`-Zeile ab. `make sdk-pack-kotlin` trägt den
+Flag bereits unconditional (`tools/harness/sdk-pack-kotlin.sh`) — kein
+Änderungsbedarf, nur eine bewusst benannte, keine stille Kopplung.
 
 ## 4. Trigger
 
@@ -154,9 +159,11 @@ geschrieben.
   vorbehalten; dieselbe Teststrategie wie bei HTTP/gRPC dieses Packages.
 - Die Docker-Bau-Kopplung (`--build-context proto=proto` auch ohne
   gRPC-Bezug) könnte bei einem künftigen, isolierten Bau-Versuch übersehen
-  werden. **Ausgang:** weiter offen, aber transparent benannt (§3) — ein
-  dritter Kotlin-Treffer würde `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`
-  auf die 3×-Schwelle heben.
+  werden. **Ausgang:** weiter offen, aber transparent benannt (§3) —
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` steht bereits
+  bei 3× (Schwelle erreicht, siehe §3/§7); ein Kotlin-Treffer hier wäre ein
+  weiterer Beleg derselben, bereits über der Schwelle liegenden
+  Beobachtung, kein Schwellen-Übertritt mehr.
 
 ## 7. Closure-Notiz
 
@@ -187,12 +194,40 @@ geschrieben.
   KDoc dokumentiert, statt sie erst im Review nachzutragen — dieselbe
   Formulierung wie bei den beiden Vorgänger-Flächen
   (`HttpTransport`/`GrpcStreamTransport`), diesmal ohne Fixrunde.
-- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung
-  angefallen. Der bereits geführte 2×-Fund
-  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` wurde bewusst
-  vermieden statt ein drittes Mal ausgelöst: jeder Docker-Bau dieses Slice
-  trug `--build-context proto=proto` von Anfang an (§3 dieses Plans nennt
-  den Grund) — der Zähler bleibt bei 2×.
+- **Beobachtungs-Register (`../observations/`):** Kein vierter Beleg für
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` aus diesem
+  Slice selbst — jeder Docker-Bau dieses Slice trug
+  `--build-context proto=proto` von Anfang an (§3 dieses Plans nennt den
+  Grund).
+  **Korrektur nach Verifikation**
+  (`docs/reviews/verifikation-slice-sdk-kotlin-sse-client-flaeche.md` §6):
+  Dieser Plan behauptete durchgängig (§3/§6/§7/§8), der Zähler stehe bei
+  „2×, unter der Schwelle" — das war zum Zeitpunkt des Slice-Starts
+  (`baf6e8bd`, 2026-09-22 06:06:49) bereits falsch. Die parallele
+  Geschwister-Welle `welle-sdk-csharp-vollabdeckung` hatte den Zähler über
+  `slice-sdk-csharp-sse-client-flaeche` (Commit `d8cc10a1`, 2026-09-22
+  00:10:21 — vor dem Start dieses Slice) bereits auf real **3× (Schwelle
+  erreicht)** gehoben; der Welle-Plan selbst
+  (`welle-sdk-kotlin-vollabdeckung.md`) trägt diese Korrektur bereits
+  (Commit `3438f52b`, 06:05:38 — eine Minute vor diesem Slice-Start), die
+  jetzt korrigierte Kopie in diesem Slice-Plan hatte den älteren Stand aus
+  einem früheren Entwurf unverändert mitgeführt. Die **Handlung** dieses
+  Slice war davon unberührt richtig (kein vierter Beleg erzeugt); die
+  **Prosa-Behauptung** „2×" war eine stale Tatsachenaussage (`AGENTS.md`
+  §3.12 Instanz B) und ist mit dieser Closure auf den realen Stand
+  korrigiert (§3/§6/§8).
+  Zusätzlich als sechster Beleg der bereits verkörperten Klasse
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` vermerkt
+  (`../observations/BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung/evidence/slice-sdk-kotlin-sse-client-flaeche.md`)
+  — kein neuer Handlungsbedarf, die Klasse ist bereits in `AGENTS.md` §3.12
+  Instanz B verkörpert. Geprüft und verworfen: ein eigener, neuer
+  Beobachtungs-Eintrag für „eine Behauptung wird durch eine **parallele**
+  Welle stale, nicht durch die eigene Arbeit" — der Mechanismus ist
+  ungeprüfte Übernahme aus einem älteren Entwurf/der eigenen Erinnerung
+  statt frischer Prüfung gegen den Gegenstand zum Schreibzeitpunkt, exakt
+  die bestehende Definition dieser Klasse; ob das überholende Ereignis aus
+  der eigenen oder einer parallelen Arbeit stammt, ändert den Mechanismus
+  nicht, nur seine Herkunft.
 - **Folge-Slices:** `slice-sdk-kotlin-nats-stream-client-flaeche` (nächster
   Slice der Welle, trägt zusätzlich den in diesem Slice bewusst
   ausgesparten Version-Bump und Doku-Träger-Nachzug für die SSE-Fläche).
@@ -215,9 +250,14 @@ mit `slice-sdk-kotlin-projektgeruest` eröffnet (GF), keine erneute
 Ausdifferenzierung nötig.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
-`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` (2×, §3 dieses
-Plans trägt sie), `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
+`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` (real 3×, Schwelle
+erreicht — §3 dieses Plans trug bei Niederschrift fälschlich „2×, unter
+der Schwelle", korrigiert bei dieser Closure, siehe §7),
+`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
 (verkörpert), `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert),
+`BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert →
+`AGENTS.md` §3.12 Instanz B; die soeben genannte „2×"-Korrektur zählt bei
+dieser Closure als deren sechster Beleg, siehe §7),
 `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (offen, 3×,
 Architect-Entscheidung, kein Handlungsbedarf hier).
 
