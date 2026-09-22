@@ -17,7 +17,7 @@ ausdrücklich antizipiert), Festlegung 3 (räumliche Trennung von
 **Berührte Spec-Stellen:** [`SPEC-021`](../../../../spec/pflichtenheft.md)
 (Endpunkt, Event-Form, Nachrichtenschema).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-22.
 
 **Autor:** Planner-Agent, direkt beauftragt (Nutzerauftrag „alle drei SDKs
 auf volle Vier-Wege-Parität"). **Datum:** 2026-09-21.
