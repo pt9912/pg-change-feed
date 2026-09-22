@@ -8,7 +8,7 @@ Verzeichnis-Position — kein Status-Feld.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) §Entscheidung
+[`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) §Entscheidung
 Festlegung 1, letzter Absatz geschnitten — SSE/NATS-Vollinhalt als
 Folge-Package war dort bereits ausdrücklich antizipiert, keine neue ADR
 nötig). **Datum:** 2026-09-21.
@@ -21,7 +21,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 `PgChangeFeed.Client` (`SPEC-026`) deckt bislang HTTP-API (`SPEC-018`) und
-gRPC-Stream (`SPEC-020`) — [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md)
+gRPC-Stream (`SPEC-020`) — [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md)
 Festlegung 1 grenzte v1 bewusst so ein, ließ SSE (`SPEC-021`) und
 NATS-Vollinhalt (`SPEC-024`) aber ausdrücklich als „Folge-Package" offen —
 „entweder als v2 desselben Packages oder als eigenständiges Package" (dort
@@ -32,7 +32,7 @@ Vier-Wege-Matrix, die `examples/csharp/{http,grpc,sse,nats-stream}-client`
 bereits real belegen.
 
 Das *Mehr* gegenüber zwei isolierten Slice-DoDs:
-[`LH-FA-SST-009`](../../../spec/lastenheft.md)s AC „Consumer bindet ein
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md)s AC „Consumer bindet ein
 Package über den Paketmanager ein, ohne das Protokoll selbst zu
 implementieren" ist für die volle Matrix erst erfüllt, wenn SSE- **und**
 NATS-Vollinhalts-Fläche zusammen mit der bereits bestehenden HTTP-/
@@ -47,7 +47,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf
 erwähnt werden, aber nie Trigger sein.
 
-- [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) ist
+- [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) ist
   `Accepted` (bereits erfüllt, 2026-09-19) und sein letzter
   Festlegung-1-Absatz erlaubt die Erweiterung ausdrücklich ohne neue ADR.
 - `welle-sdk-csharp-lh-fa-sst-009` liegt in `done/` (bereits erfüllt,
@@ -88,8 +88,8 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-csharp-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`) im bestehenden Package | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
-| slice-sdk-csharp-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`), Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
+| slice-sdk-csharp-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`) im bestehenden Package | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
+| slice-sdk-csharp-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`), Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge:** Bewusst **sequentiell**, nicht parallelisierbar wie
 HTTP/gRPC in der ersten csharp-Welle — beide Flächen berühren
@@ -108,7 +108,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - Blockiert: keine andere Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0106`](../adr/0106-csharp-nuget-erstes-sdk-package.md) ist bereits
+  [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md) ist bereits
   `Accepted`, keine neue ADR nötig.
 - **Geschwister-Wellen, keine Abhängigkeit:** `welle-sdk-kotlin-vollabdeckung`
   und `welle-sdk-python-vollabdeckung` verfolgen dasselbe Ziel für ihre
@@ -189,9 +189,8 @@ vollständig durchgesehen. Relevante Treffer:
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 §Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**: Die
-beiden Zeiger unten werden erst bei Closure (unmittelbar vor dem `git mv`
-nach `done/`) als auflösbare Links eingetragen. Diese Welle ist noch
-offen — die Zeiger stehen deshalb als Platzhalter, keine Links.
+beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/` auflösen,
+nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-csharp-vollabdeckung-results.md` (noch nicht angelegt)
-Zähler: `docs/plan/planning/observations/` (Beobachtungs-Register)
+Ergebnis: [welle-sdk-csharp-vollabdeckung-results.md](welle-sdk-csharp-vollabdeckung-results.md)
+Zähler: [../observations/](../observations/)
