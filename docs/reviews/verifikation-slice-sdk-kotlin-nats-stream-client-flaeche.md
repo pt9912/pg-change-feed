@@ -10,7 +10,7 @@ und der Fixrunden-Bestätigung
 [`review-slice-sdk-kotlin-nats-stream-client-flaeche-fixrunde.md`](review-slice-sdk-kotlin-nats-stream-client-flaeche-fixrunde.md))
 und **nicht** gegen realen Bedarf (Validator, hier nicht ausgelöst). Dies
 ist der **letzte** Flächen-Slice der Welle
-[`welle-sdk-kotlin-vollabdeckung`](../plan/planning/welle-sdk-kotlin-vollabdeckung.md);
+[`welle-sdk-kotlin-vollabdeckung`](../plan/planning/done/welle-sdk-kotlin-vollabdeckung.md);
 die Welle-Closure selbst ist ausdrücklich **nicht** Teil dieses Auftrags.
 
 **Gegenstand:** vier Commits auf `main`, Elternstand `e8eddf79` (Closure

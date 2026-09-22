@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md).
+**Welle:** [welle-sdk-kotlin-vollabdeckung](welle-sdk-kotlin-vollabdeckung.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream),
@@ -116,12 +116,15 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice).
       `BEO-PGC/arbeit-ueberholt-stehenden-traeger`), Evidenzdateien in
       beiden bei der Planner-Closure nachgetragen (§7).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (§7).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
-      (noch offen); die Prüfung läuft regelkonform bei deren Closure.
-      Bleibt bewusst offen bis zur Welle-Closure (eigener, nachfolgender
-      Schritt, nicht Teil dieses Slices).
+      [welle-sdk-kotlin-vollabdeckung](welle-sdk-kotlin-vollabdeckung.md)
+      (jetzt `done/`, mit dieser Wellen-Closure geschlossen). **Bei der
+      Wellen-Closure geprüft:** Anker korrekt (Link oben löst auf, beide
+      Dateien liegen jetzt als Geschwister in `done/`); kein Folge-Slice
+      (letzter Flächen-Slice der Welle, §7 unten); Beobachtungs-Register
+      real fortgeschrieben (zwei Evidenzdateien bei dieser Planner-Closure
+      nachgetragen, siehe DoD-Punkt oben).
 
 ## 3. Plan (vor Code)
 
@@ -282,8 +285,14 @@ Closure-Notiz mit Lerneintrag geschrieben.
   explizites Minor-Schema — **entfallen**, wie geplant (additiver
   SemVer-Minor-Bump ist unmissverständlich).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
-  (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
+  [welle-sdk-kotlin-vollabdeckung](welle-sdk-kotlin-vollabdeckung.md) —
+  bei deren Wellen-Closure real geprüft: Anker korrekt, kein Folge-Slice
+  (letzter Flächen-Slice der Welle), Beobachtungs-Register fortgeschrieben
+  (§2 DoD-Punkt oben). **Planner-Closure-Nachtrag (Modul 8):**
+  Verifikationsbericht (`verifikation-slice-sdk-kotlin-nats-stream-client-flaeche.md`,
+  Verdikt „DoD erfüllt") vollständig gelesen; die dort in §1.11 bereits
+  vorab bestätigte Zulässigkeit der offen gelassenen „Drei Paarungen"
+  wird mit dieser Wellen-Closure real eingelöst.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -9,7 +9,7 @@ Diff als solchen (Reviewer-Aufgabe, abgeschlossen mit
 und **nicht** gegen realen Bedarf (Validator, hier nicht ausgelöst).
 
 **Gegenstand:** zwei Commits auf `main`, Welle
-[`welle-sdk-kotlin-vollabdeckung`](../plan/planning/welle-sdk-kotlin-vollabdeckung.md):
+[`welle-sdk-kotlin-vollabdeckung`](../plan/planning/done/welle-sdk-kotlin-vollabdeckung.md):
 
 - `75fc1f3f` — Implementer-Commit („feat(sdks/kotlin): SSE-Stream-Client-Fläche"),
   neue Dateien unter `sdks/kotlin/pgchangefeed-kotlin/.../sse/**` (7
