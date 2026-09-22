@@ -21,7 +21,7 @@ Folge-Package ausdrücklich antizipiert), [`ADR-0100`](../../adr/0100-nats-dritt
 [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) (Träger-Nachzug:
 „deckt HTTP-API und gRPC-Stream" wird durch diese Welle falsch).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-22.
 
 **Autor:** Planner-Agent, direkt beauftragt (Nutzerauftrag „alle drei SDKs
 auf volle Vier-Wege-Parität"). **Datum:** 2026-09-21.
