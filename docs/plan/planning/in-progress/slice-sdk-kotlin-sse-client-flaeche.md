@@ -75,10 +75,12 @@ dasselbe Muster wie die bestehende gRPC-Fläche) an den Consumer liefert.
       geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/kotlin/`), Ausnahme
       nur Doku-Zitate.
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      **Offen** — Implementer-Rolle endet hier, Handoff an Reviewer.
+      Report: `docs/reviews/review-slice-sdk-kotlin-sse-client-flaeche.md`
+      (0 HIGH, 0 MEDIUM, zwei LOW, zwei INFO — keine Fixrunde nötig,
+      DoD-Checkbox-Nachzug ohne Fixrunde per Skill-Regel).
 - [x] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im Folge-Slice `slice-sdk-kotlin-nats-stream-client-flaeche`
