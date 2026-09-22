@@ -57,32 +57,45 @@ dasselbe Muster wie die bestehende gRPC-Fläche) an den Consumer liefert.
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
+- [x] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
       Client-Klasse öffnet `GET /changes/stream` (Bearer-Token in
       `Authorization`-Header), zerlegt SSE-Frames zu Events und liefert
       die zehn Nachrichtenfelder von
       [`SPEC-021`](../../../../spec/pflichtenheft.md) — Tests
       referenzieren `SPEC-021` (Frame-Parser netzlos, Authn-Boundary
-      gegen eine gestubbte HTTP-Response ohne echten Server).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
+      gegen eine gestubbte HTTP-Response ohne echten Server). Real
+      umgesetzt: `PgChangeFeedSseClient.streamChanges()` (Package
+      `io.github.pt9912.pgchangefeed.sse`), Frame-Parser `SseFrameParser`,
+      Nachrichtenmodell `sse.model.Change` — 16 neue Tests (7
+      `SseFrameParserTest` + 7 `PgChangeFeedSseClientAuthBoundaryTest` + 2
+      `PgChangeFeedSseClientMessageSchemaTest`), real gezählt aus den
+      JUnit-XML-Reports des Docker-Baus (`build/test-results/test/*.xml`);
+      Gesamtsuite des Pakets 47 Tests, 0 Fehler.
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
       geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/kotlin/`), Ausnahme
       nur Doku-Zitate.
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
+      **Offen** — Implementer-Rolle endet hier, Handoff an Reviewer.
+- [x] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im Folge-Slice `slice-sdk-kotlin-nats-stream-client-flaeche`
-      (§1 Abgrenzung).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+      (§1 Abgrenzung). Träger-Nachzug-Suchlauf (`AGENTS.md` §3.13) gegen
+      `sdks/kotlin/pgchangefeed-kotlin/README.md` durchgeführt: die dort
+      stehengebliebene Aussage „SSE and NATS-vollinhalt delivery remain out
+      of scope for this package's planned first full release" (Status-
+      Absatz) wurde gefunden und korrigiert — SSE ist jetzt als gedeckt
+      benannt, NATS bleibt offen benannt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
@@ -145,12 +158,50 @@ geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
+- **Was hat funktioniert:** Die bestehende HTTP-Fläche
+  (`PgChangeFeedHttpClient`/`PgChangeFeedException`-Hierarchie) und der
+  bereits real erprobte Frame-Parser aus
+  `examples/kotlin/sse-client/SseStream.kt` trugen die Umsetzung fast
+  vollständig — kein neuer Fremd-Abhängigkeitsbedarf, keine neue
+  Fehlerklassen-Hierarchie: `PgChangeFeedSseClient` wirft dieselben sieben
+  `PgChangeFeedException`-Subtypen wie `PgChangeFeedHttpClient`
+  (`buildException`/`extractErrorMessage` dupliziert statt geteilt — dasselbe
+  Muster wie der C#-Sibling `PgChangeFeed.Client.Sse.PgChangeFeedSseClient`).
+  Die Docker-Bau-Kette (`bash tools/harness/sdk-pack-kotlin.sh`) lief beim
+  ersten Versuch grün (Gradle-Wrapper-Layer bereits gecacht aus dem
+  gRPC-Slice).
+- **Was ging anders als geplant:** Die Plan-Tabelle (§3) nannte
+  `kotlinx.coroutines.flow.Flow<Change>` als Zielform (analog der
+  gRPC-Fläche); real umgesetzt wurde stattdessen ein `kotlin.sequences.Sequence<Change>`
+  — kalt (nichts läuft vor der ersten Iteration) wie ein `Flow`, aber ohne
+  die `flowOn(Dispatchers.IO)`-Umgehung, die ein `flow { }`-Builder um
+  einen blockierenden `java.net.http.HttpClient.send()`-Aufruf bräuchte.
+  Der Plan selbst öffnete diese Tür ausdrücklich ("oder gleichwertig
+  idiomatisch"); die Design-Entscheidung samt Begründung steht in
+  `PgChangeFeedSseClient`s Klassen-KDoc.
+- **Steering-Loop-Eintrag:** Die aus der C#-SDK-Reihe übernommene Lektion
+  zur `internal`-Sichtbarkeit (compile-time Kotlin-Grenze, keine
+  JVM-Bytecode-Schranke) wurde von Anfang an korrekt in `SseTransport.kt`s
+  KDoc dokumentiert, statt sie erst im Review nachzutragen — dieselbe
+  Formulierung wie bei den beiden Vorgänger-Flächen
+  (`HttpTransport`/`GrpcStreamTransport`), diesmal ohne Fixrunde.
+- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung
+  angefallen. Der bereits geführte 2×-Fund
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` wurde bewusst
+  vermieden statt ein drittes Mal ausgelöst: jeder Docker-Bau dieses Slice
+  trug `--build-context proto=proto` von Anfang an (§3 dieses Plans nennt
+  den Grund) — der Zähler bleibt bei 2×.
+- **Folge-Slices:** `slice-sdk-kotlin-nats-stream-client-flaeche` (nächster
+  Slice der Welle, trägt zusätzlich den in diesem Slice bewusst
+  ausgesparten Version-Bump und Doku-Träger-Nachzug für die SSE-Fläche).
+- **Risiken aus §6:** Beide Risiken bleiben **weiter offen**, wie im Plan
+  vorgesehen — keins wurde in diesem Slice aufgelöst: (1) der gestubbte
+  HTTP-Response-Stream bildet nicht das reale Chunked-Transfer-/Flush-
+  Verhalten nach, ein realer Rundlauf-Beleg bleibt
+  `make test-integration`s `tools/harness/sseclient` vorbehalten; (2) die
+  Docker-Bau-Kopplung wurde in diesem Slice erfolgreich vermieden (siehe
+  Beobachtungs-Register oben), bleibt aber als latentes Risiko für künftige
+  isolierte Bau-Versuche bestehen.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
