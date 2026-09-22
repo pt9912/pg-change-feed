@@ -8,7 +8,7 @@ Verzeichnis-Position — kein Status-Feld.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+[`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 §Entscheidung Festlegung 1, letzter Absatz geschnitten — SSE/NATS-Vollinhalt
 als Folge-Package war dort ausdrücklich antizipiert, keine neue ADR nötig).
 **Datum:** 2026-09-21.
@@ -22,7 +22,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 `pgchangefeed-kotlin` (`SPEC-028`) deckt bislang HTTP-API (`SPEC-018`) und
 gRPC-Stream (`SPEC-020`) —
-[`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+[`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 Festlegung 1 grenzte v1 bewusst so ein („wie bei C#, nicht größer"), ließ
 SSE (`SPEC-021`) und NATS-Vollinhalt (`SPEC-024`) aber ausdrücklich als
 „Folge-Package" offen — dieselbe Formulierung, „jetzt zum dritten Mal
@@ -42,7 +42,7 @@ stehen.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Regeln.
 
-- [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+- [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   ist `Accepted` (bereits erfüllt, 2026-09-20) und sein letzter
   Festlegung-1-Absatz erlaubt die Erweiterung ausdrücklich ohne neue ADR.
 - `welle-sdk-kotlin-lh-fa-sst-009` liegt in `done/` (bereits erfüllt,
@@ -74,8 +74,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-kotlin-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`) im bestehenden Package | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
-| slice-sdk-kotlin-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`), Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`) im bestehenden Package | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
+| slice-sdk-kotlin-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`), Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md) |
 
 **Reihenfolge:** Sequentiell, dieselbe Begründung wie bei
 `welle-sdk-csharp-vollabdeckung` §4 — der Version-Bump und der
@@ -89,7 +89,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - Blockiert: keine andere Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0109`](../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+  [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   ist bereits `Accepted`, keine neue ADR nötig.
 - **Geschwister-Wellen, keine Abhängigkeit:** `welle-sdk-csharp-vollabdeckung`
   und `welle-sdk-python-vollabdeckung` verfolgen dasselbe Ziel für ihre
@@ -174,9 +174,8 @@ vollständig durchgesehen. Relevante Treffer:
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 §Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**: Die
-beiden Zeiger unten werden erst bei Closure (unmittelbar vor dem `git mv`
-nach `done/`) als auflösbare Links eingetragen. Diese Welle ist noch
-offen — die Zeiger stehen deshalb als Platzhalter, keine Links.
+beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/`
+auflösen, nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-kotlin-vollabdeckung-results.md` (noch nicht angelegt)
-Zähler: `docs/plan/planning/observations/` (Beobachtungs-Register)
+Ergebnis: [welle-sdk-kotlin-vollabdeckung-results.md](welle-sdk-kotlin-vollabdeckung-results.md)
+Zähler: [../observations/](../observations/)
