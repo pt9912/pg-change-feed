@@ -55,17 +55,22 @@ zutreffend, nicht stehen geblieben).
 Einordnung: Diese Instanz reiht sich in die Erfolgsform („Implementer
 findet über den vorgeschriebenen §3.13-Suchlauf selbst und behebt im
 selben Commit", vgl. `slice-093`/`slice-094`/`slice-100`/`slice-101`/
-`slice-102`) — mit einer Erweiterung: zwei der acht real behobenen
-Fundstellen (`tools/harness/sdk-pack-csharp.sh`, `Sse/Models/Change.cs`)
-lagen außerhalb des im DoD-Wortlaut vorgeschriebenen `grep`-Musters und
-wurden nur durch aufmerksames Lesen benachbarter Dateien während der
-Umsetzung gefunden, nicht durch den Suchlauf-Befehl selbst — derselbe
-Grenzfall, den `AGENTS.md` §3.13 §Grenze bereits benennt
-(„Zahlen"/Prosa-Umformulierungen trifft `grep` nicht zuverlässig), hier
-erstmals für einen **Kommentar-Text** statt für eine Zahl oder einen
-Symbolnamen belegt. Die acht Fundstellen betreffen zusammen **zehn**
-Dateien, nicht neun — real ausgezählt per `git diff --stat` (korrigiert,
-Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche F-3): die
+`slice-102`) — mit einer Erweiterung: zwei der oben aufgeführten, real
+behobenen Fundstellen (`tools/harness/sdk-pack-csharp.sh`,
+`Sse/Models/Change.cs`) lagen außerhalb des im DoD-Wortlaut
+vorgeschriebenen `grep`-Musters und wurden nur durch aufmerksames Lesen
+benachbarter Dateien während der Umsetzung gefunden, nicht durch den
+Suchlauf-Befehl selbst — derselbe Grenzfall, den `AGENTS.md` §3.13
+§Grenze bereits benennt („Zahlen"/Prosa-Umformulierungen trifft `grep`
+nicht zuverlässig), hier erstmals für einen **Kommentar-Text** statt für
+eine Zahl oder einen Symbolnamen belegt. Diese Fassung trägt bewusst
+**keine** zusammenfassende Fundstellen-Zahl
+(`verifikation-slice-sdk-csharp-nats-stream-client-flaeche.md` §2:
+„Fundstelle" trägt — anders als „Datei" — keine im Text definierte,
+mechanisch eindeutige Zähleinheit). Die real ausgezählte, mechanisch
+eindeutige Zahl ist **zehn Dateien** (`git diff --stat`, korrigiert
+gegenüber der zunächst genannten neun — Fixrunde
+review-slice-sdk-csharp-nats-stream-client-flaeche F-3): die
 Bündel-Fundstelle `sdks/csharp/Dockerfile`/`harness/mk/sdk.mk`/
 `tools/harness/sdk-pack-csharp.sh` trägt drei Dateien statt
 zwei, `README.md`/`README.de.md` trägt zwei statt einer.

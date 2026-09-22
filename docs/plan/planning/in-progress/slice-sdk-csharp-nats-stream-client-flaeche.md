@@ -293,17 +293,19 @@ Closure-Notiz mit Lerneintrag geschrieben.
 - **Beobachtungs-Register (`../observations/`):** neuer Beleg
   `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md` zu
   `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Zähler jetzt real
-  ausgezählt **20×**) — acht real behobene Fundstellen (`spec/pflichtenheft.md`
+  ausgezählt **20×**) — real behobene Fundstellen (`spec/pflichtenheft.md`
   §1/§6, `sdks/csharp/README.md`, `PgChangeFeed.Client.csproj`s
   `<Description>`, `sdks/csharp/Dockerfile`, `harness/mk/sdk.mk`,
   `harness/README.md`, `README.md`/`README.de.md`,
   `tools/harness/sdk-pack-csharp.sh`, `Sse/Models/Change.cs`s
   „three surfaces"-Kommentar — **zehn** Dateien, real ausgezählt per
   `git diff --stat` (korrigiert gegenüber der zunächst genannten neun,
-  Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche F-3), acht
-  Fundstellen zählen als ein zusammenhängender Fund dieses einen
-  Vorgangs), zwei davon außerhalb des vorgeschriebenen `grep`-Musters
-  gefunden (Details in der Evidenz-Datei).
+  Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche F-3); bewusst
+  **keine** zusammenfassende „Fundstellen"-Zahl an dieser Stelle
+  (Verifikationsbericht §2: „Fundstelle" trägt — anders als „Datei" — keine
+  im Text definierte, mechanisch eindeutige Zähleinheit), zwei der zehn
+  Dateien außerhalb des vorgeschriebenen `grep`-Musters gefunden (Details
+  in der Evidenz-Datei).
   Übrige Register-Einträge geprüft, kein Handlungsbedarf:
   `BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
   (verkörpert, DoD-Punkt „Doku-Update" real geliefert — siehe §2),
@@ -330,6 +332,25 @@ Closure-Notiz mit Lerneintrag geschrieben.
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
+- **Planner-Closure-Nachtrag (Modul 8):** Verifikationsbericht
+  (`verifikation-slice-sdk-csharp-nats-stream-client-flaeche.md`, Verdikt
+  „DoD-konform: ja") vollständig gelesen; die dort nicht-blockierend
+  gegebene Empfehlung zur „acht Fundstellen"-Formulierung umgesetzt —
+  diese DoD-Zeile und der zugehörige Beobachtungs-Beleg
+  (`evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`,
+  `../observations/BEO-PGC/arbeit-ueberholt-stehenden-traeger/state.md`)
+  tragen jetzt ausschließlich die mechanisch eindeutige Zahl „zehn Dateien"
+  (`git diff --stat`), ohne eine zusammenfassende „Fundstellen"-Zahl ohne
+  definierte Zähleinheit (gewählt statt einer expliziten Zähldefinition,
+  weil die Datei-Liste selbst bereits vollständig ist und keine zweite
+  Zählregel gebraucht wird). Alle drei §6-Risiken tragen einen Ausgang
+  (siehe oben); kein Risiko wurde durch diesen Nachtrag neu aufgeworfen.
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` (3×, Schwelle
+  erreicht) bleibt bewusst **unverkörpert** durch diese Slice-Closure —
+  ihr eigenes `state.md` verweist den Ausgang ausdrücklich an den
+  Lese-Schritt der `welle-sdk-csharp-vollabdeckung`-Closure (Modul 6), und
+  eine Regelschärfung selbst ist ohnehin eine Architect-, keine
+  Planner-Entscheidung (Modul 4/8) — siehe dort.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

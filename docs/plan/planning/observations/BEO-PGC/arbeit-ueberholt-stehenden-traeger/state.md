@@ -31,20 +31,25 @@ Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
 Der zwanzigste Beleg, `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`:
 dieselbe Erfolgsform wie beim neunten/zehnten/elften Vorgang — der
-Implementer-eigene §3.13-Suchlauf traf acht Fundstellen über **zehn**
+Implementer-eigene §3.13-Suchlauf traf mehrere Fundstellen über **zehn**
 Dateien (real ausgezählt per `git diff --stat`, korrigiert gegenüber der
 zunächst genannten neun — Fixrunde review-slice-sdk-csharp-nats-stream-client-flaeche
 F-3), die den
 Lieferstand von `PgChangeFeed.Client` als „HTTP-API und gRPC-Stream" bzw.
 über den `0.1.0`-Artefaktnamen beschrieben und durch die reale NATS-
 Vollinhalts-Fläche (vierte Client-Fläche, Version-Hebung auf `0.2.0`)
-falsch wurden, und behob alle acht im selben Zug — mit einer Erweiterung:
-zwei der acht Fundstellen (`tools/harness/sdk-pack-csharp.sh`s Kommentar,
+falsch wurden, und behob sie alle im selben Zug — mit einer Erweiterung:
+zwei dieser Fundstellen (`tools/harness/sdk-pack-csharp.sh`s Kommentar,
 `Sse/Models/Change.cs`s „three surfaces"-Kommentar) lagen außerhalb des im
 DoD-Wortlaut vorgeschriebenen `grep`-Musters und wurden nur durch
 aufmerksames Lesen benachbarter Dateien gefunden — derselbe Grenzfall, den
 `AGENTS.md` §3.13 §Grenze bereits für Zahlen/Prosa-Umformulierungen
-benennt, hier erstmals für einen Kommentar-Text belegt. Details:
+benennt, hier erstmals für einen Kommentar-Text belegt. Anders als beim
+Erstlauf trägt diese Zeile keine zusammenfassende „Fundstellen"-Zahl mehr
+(`verifikation-slice-sdk-csharp-nats-stream-client-flaeche.md` §2: keine
+im Text definierte, mechanisch eindeutige Zähleinheit für „Fundstelle" —
+anders als für „Datei"); die mechanisch eindeutige Zahl bleibt **zehn
+Dateien**. Details:
 `evidence/slice-sdk-csharp-nats-stream-client-flaeche.md`.
 Der neunzehnte Beleg, `evidence/slice-sdk-python-publish-workflow.md`: eine
 **neue Form** innerhalb dieser Klasse — das überholende Ereignis liegt hier
