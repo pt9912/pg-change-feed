@@ -135,12 +135,29 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 2):** Das Register (`docs/plan/planning/observations/README.md`) wurde
 vollständig durchgesehen. Relevante Treffer:
 
-- `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` (offen, 2×,
-  unter der Schwelle — **beide** bisherigen Belege sind `slice-102`
-  (C#) und `slice-103` (Kotlin), also bereits eine Kotlin-Instanz) —
-  betrifft `sdks/kotlin/Dockerfile`s einzige `build`-Stufe genauso wie bei
-  C#. Beide Flächen-Slices dieser Welle benennen das explizit; ein
-  weiterer Kotlin-Treffer hier würde die 3×-Schwelle erreichen.
+- `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` — **Nachtrag
+  `AGENTS.md` §3.13, real geprüft bei Slice-Priorisierung
+  `slice-sdk-kotlin-sse-client-flaeche`:** Diese Zeile trug bei
+  Welle-Eröffnung (2026-09-21) „offen, 2×, unter der Schwelle" — dieselben
+  zwei Belege `slice-102` (C#) und `slice-103` (Kotlin), beide
+  `examples/**`. Die parallele Geschwister-Welle
+  `welle-sdk-csharp-vollabdeckung` hat während ihres SSE-Slice
+  (`slice-sdk-csharp-sse-client-flaeche`) inzwischen einen **dritten**
+  Beleg erzeugt — Registerstand jetzt real **3×, Schwelle erreicht**
+  (`../observations/BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut/state.md`).
+  Der dritte Beleg trifft erstmals einen SDK-Package-Baum
+  (`sdks/csharp/**`) statt `examples/**`, mit strukturell anderer Ursache
+  (ein einziges Package/`.csproj` statt vermeidbar geteilter
+  Docker-Stufen) als die ersten beiden — der Ausgang (ob/wie die Klasse
+  künftig gefangen wird) bleibt eine offene Architect-Entscheidung, die
+  bisherige Aussage „ein weiterer Kotlin-Treffer hier würde die
+  3×-Schwelle erreichen" ist damit gegenstandslos: Die Schwelle ist
+  bereits erreicht, unabhängig von einem Kotlin-Treffer. Betrifft
+  `sdks/kotlin/Dockerfile`s einzige `build`-Stufe unverändert genauso wie
+  bei C#. Beide Flächen-Slices dieser Welle benennen das weiterhin
+  explizit; ein Kotlin-Treffer hier wäre ein weiterer Beleg derselben,
+  bereits über der Schwelle liegenden Beobachtung, kein
+  Schwellen-Übertritt mehr.
 - `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (offen, 3×,
   Schwelle bereits erreicht — der Lese-Schritt der Kotlin-Erstwelle hat
   das bereits vermerkt, Embodiment bleibt Architect-Entscheidung) —
