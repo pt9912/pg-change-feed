@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md).
+**Welle:** [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream),
@@ -129,7 +129,7 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
+      [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -330,7 +330,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   - „Version-Hebung ohne SemVer-Minor-Konvention" — **Ausgang: entfallen**,
     wie geplant.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
+  [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 - **Planner-Closure-Nachtrag (Modul 8):** Verifikationsbericht
   (`verifikation-slice-sdk-csharp-nats-stream-client-flaeche.md`, Verdikt

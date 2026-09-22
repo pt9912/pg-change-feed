@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md).
+**Welle:** [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream —
@@ -102,7 +102,7 @@ gRPC-Fläche).
 - [x] Jedes Risiko aus §6 trägt einen Ausgang.
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
+      [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -307,7 +307,7 @@ geschrieben.
     `welle-sdk-csharp-vollabdeckung` verwiesen, kein offener Punkt dieses
     Einzel-Slice mehr.
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-csharp-vollabdeckung](../welle-sdk-csharp-vollabdeckung.md)
+  [welle-sdk-csharp-vollabdeckung](welle-sdk-csharp-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
