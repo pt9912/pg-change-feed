@@ -8,8 +8,8 @@ kein Nachvollzug des Vorgänger-Reports, sondern eine eigene Prüfung mit
 eigenem Diff-Lesen, eigenem Suchlauf und eigenem `make gates`-Lauf.
 
 **Gegenstand:** Commit `6b279311` ("fix(sdk-kotlin): Fixrunde review
-F-1/F-2 Chronik-Kommentar + Dockerfile-Nachzug (LH-FA-SST-009,
-ADR-0109)"), isoliert per `git show 6b279311` geprüft (3 Dateien, 12
+F-1/F-2 Chronik-Kommentar + Dockerfile-Nachzug (`LH-FA-SST-009`,
+`ADR-0109`)"), isoliert per `git show 6b279311` geprüft (3 Dateien, 12
 Insertions / 10 Deletions) — nicht der breitere Range
 `c8c9e3ae..6b279311`, der zusätzlich den zwischenzeitlichen
 Review-Report-Commit `49e35ab9` enthält. Vorgänger-Commit: `c8c9e3ae`
