@@ -690,10 +690,10 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 Zugriffs-Oberfläche ab (die neun in der Tabelle oben plus `GET /changes`)
 mit typisierten Requests/Responses und einer versiegelten
 (`sealed class`) Fehlerklasse für `400`/`401`/`403`/`404`/`500`; derselbe
-Package trägt seit `slice-sdk-kotlin-grpc-client-flaeche` auch den
-gRPC-Change-Stream (siehe unten, „Zugriff über den gRPC-Change-Stream"),
-SSE und der NATS-Vollinhalts-Stream bleiben für dieses Package vorerst
-außerhalb (`ADR-0109` Festlegung 1). Anders als NuGet/PyPI wird dieses Package über
+Package trägt außerdem den gRPC-Change-Stream (siehe unten, „Zugriff über
+den gRPC-Change-Stream"), den SSE-Stream (siehe „Zugriff über
+Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
+den NATS-Vollinhalts-Stream"). Anders als NuGet/PyPI wird dieses Package über
 **GitHub Packages** vertrieben (`https://maven.pkg.github.com/pt9912/pg-change-feed`,
 `ADR-0109` Festlegung 2) — GitHub Packages verlangt **immer** eine
 Authentifizierung zum Lesen, auch für ein öffentliches Package: ein
@@ -783,8 +783,11 @@ Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
 `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle
 oben; das Bearer-Token landet im `authorization`-Metadata-Eintrag, ein
 fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
-`Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Wie
-beim HTTP-API-Zugriff oben verlangt der Bezug über **GitHub Packages**
+`Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
+Package trägt außerdem den SSE-Stream (siehe „Zugriff über
+Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
+den NATS-Vollinhalts-Stream"). Wie beim HTTP-API-Zugriff oben verlangt der
+Bezug über **GitHub Packages**
 (`https://maven.pkg.github.com/pt9912/pg-change-feed`) immer eine
 Authentifizierung, auch für dieses öffentliche Package: ein GitHub-Konto
 und ein klassischer Personal Access Token (PAT) mit dem Scope
@@ -841,6 +844,18 @@ allen zehn Feldern der Tabelle oben; das Bearer-Token landet im
 `Authorization`-Header, ein fehlender oder unbekannter Token endet den
 Aufruf mit `PgChangeFeedUnauthorizedException` (HTTP-Status `401`), statt
 den Draht-Vertrag selbst zu implementieren; siehe `sdks/csharp/README.md`.
+
+Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
+`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+`PgChangeFeedSseClient.streamChanges()` öffnet `GET /changes/stream` und
+liefert eine `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; das
+Bearer-Token landet im `Authorization`-Header, ein fehlender oder
+unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedException`
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren. Wie
+beim HTTP-API-Zugriff oben verlangt der Bezug über **GitHub Packages**
+immer eine Authentifizierung, auch für dieses öffentliche Package
+(`ADR-0109` Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 ### Zugriff über das NATS-Wecksignal
 
@@ -969,6 +984,22 @@ Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
 wie oben), ein abgelehnter Verbindungsversuch endet die Aufzählung mit einer
 NATS-eigenen Ausnahme, statt den Draht-Vertrag selbst zu implementieren;
 siehe `sdks/csharp/README.md`.
+
+Kotlin/JVM-Anwendungen können statt des Beispiels dasselbe offizielle
+Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
+`ADR-0109`, Koordinate `io.github.pt9912:pgchangefeed-kotlin`) —
+`PgChangeFeedNatsStreamClient.streamChanges()` abonniert den
+Vollinhalts-Namensraum (Default `cdc.stream.>`, oder ein über `buildSubject`/
+`buildSourceSubject` eingeschränktes Subjekt) und liefert eine
+`Sequence<Change>` mit allen zehn Feldern der Tabelle oben; die
+Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
+wie oben), ein abgelehnter Verbindungsversuch endet die Sequenz mit der
+zugrunde liegenden `io.nats.client`-Ausnahme unverändert, statt den
+Draht-Vertrag selbst zu implementieren oder eine zweite Fehlerklassen-Hierarchie
+zu erfinden. Wie beim HTTP-API-Zugriff oben verlangt der Bezug über
+**GitHub Packages** immer eine Authentifizierung, auch für dieses
+öffentliche Package (`ADR-0109` Festlegung 2). Siehe
+`sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 ## 5. Konfiguration
 
@@ -1207,3 +1238,4 @@ MIT — siehe `LICENSE`.
 | 1.36 | 2026-09-20 | Kotlin-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer versiegelten Fehlerklassen-Hierarchie ab, samt explizitem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2) |
 | 1.37 | 2026-09-20 | Kotlin-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen zweiten Absatz im `**SDK:**`-Block — `PgChangeFeedGrpcClient.streamChanges()` öffnet `ChangeStream/StreamChanges` und liefert ein `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle oben, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2); der vorangehende HTTP-Absatz oben wurde korrigiert — er behauptete fälschlich, der gRPC-Change-Stream „folge in einem Folge-Release" |
 | 1.38 | 2026-09-22 | C#-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, `welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.StreamChangesAsync` bzw. `PgChangeFeedNatsStreamClient.StreamChangesAsync` liefern ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der jeweiligen Tabelle; das NuGet-Package `PgChangeFeed.Client` ist dafür auf `0.2.0` gehoben |
+| 1.39 | 2026-09-22 | Kotlin-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, `welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.streamChanges()` bzw. `PgChangeFeedNatsStreamClient.streamChanges()` liefern eine `Sequence<Change>` mit allen zehn Feldern der jeweiligen Tabelle, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages; die vorangehenden HTTP-/gRPC-Absätze oben wurden korrigiert — sie behaupteten fälschlich, SSE und der NATS-Vollinhalts-Stream blieben für dieses Package „vorerst außerhalb"; das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` ist dafür auf `0.2.0` gehoben |

@@ -82,6 +82,24 @@
 //     transitiv `protobuf-java:3.25.9`, unverändert ggü. der
 //     2026-09-17-Messung — die explizite Anhebung bleibt aus demselben
 //     Grund nötig)
+//
+// NATS-Vollinhalts-Stream-Client-Fläche (`slice-sdk-kotlin-nats-stream-client-flaeche`,
+// `ADR-0109` Festlegung 1, `SPEC-024`): `io.nats:jnats` real am heutigen
+// Bau-Zeitpunkt dieses Slice (2026-09-22, Maven Central maven-metadata.xml,
+// repo1.maven.org/maven2/io/nats/jnats/maven-metadata.xml) neu gemessen,
+// nicht aus `examples/kotlin/nats-stream-client/build.gradle.kts`s
+// 2026-09-18-Messung unbesehen übernommen (`AGENTS.md` §3.12): weiterhin
+// `2.26.3` (`<latest>`/`<release>`, keine Drift, dieselbe Version wie bei
+// jenem Beispiel). Kein zweiter JSON-Decoder nötig — dieselbe bereits
+// gepinnte `com.google.code.gson:gson:2.14.0` deserialisiert auch die
+// NATS-Nachrichten (`SPEC-024` teilt das Schema mit `SPEC-021`).
+//
+// Diese Version-Hebung (`0.1.0` -> `0.2.0`) trägt außerdem den
+// SSE-Client-Fläche (`slice-sdk-kotlin-sse-client-flaeche`, `SPEC-021`) —
+// beide Flächen bündeln ihren Version-Bump gemeinsam in diesem letzten
+// Flächen-Slice der Welle (`welle-sdk-kotlin-vollabdeckung` §1). Additiv,
+// rückwärtskompatible Erweiterung — SemVer-Minor, keine ADR-pflichtige
+// Ausnahme (Slice-Plan §6).
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
@@ -89,7 +107,7 @@ plugins {
 }
 
 group = "io.github.pt9912"
-version = "0.1.0"
+version = "0.2.0"
 
 kotlin {
     jvmToolchain(21)
@@ -103,6 +121,7 @@ dependencies {
     implementation("io.grpc:grpc-stub")
     implementation("com.google.protobuf:protobuf-java:4.36.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("io.nats:jnats:2.26.3")
     runtimeOnly("io.grpc:grpc-netty-shaded")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:2.4.20")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
@@ -147,7 +166,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "io.github.pt9912"
             artifactId = "pgchangefeed-kotlin"
-            version = "0.1.0"
+            version = "0.2.0"
             from(components["java"])
         }
     }

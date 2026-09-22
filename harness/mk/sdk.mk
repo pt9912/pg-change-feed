@@ -32,21 +32,21 @@ sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdk
 
 # `sdk-pack-kotlin` baut/testet/paketiert das Kotlin-SDK Docker-only im
 # gepinnten eclipse-temurin:21-jdk-Image (sdks/kotlin/Dockerfile, Stufe
-# `pack-export`): `./gradlew test` gegen BEIDE Testflächen (HTTP + gRPC)
-# läuft VOR dem Jar-Bau in derselben Docker-Bau-Kette — ein roter Test
-# bricht den `docker build` mit Exit != 0 ab, bevor die `pack`-Stufe je
-# erreicht wird (kein stiller Fallback, Muster harness/mk/examples.mk). Wie
-# beim gRPC-Bau der Fläche trägt der Aufruf zwingend
-# `--build-context proto=proto` (ADR-0090 Festlegung 2, übernommen auf den
-# Kotlin-SDK-Baum) — ohne ihn bricht der Bau an der `COPY --from=proto`-Zeile
-# in sdks/kotlin/Dockerfile ab.
+# `pack-export`): `./gradlew test` gegen VIER Testflächen (HTTP + gRPC + SSE
+# + NATS-Vollinhalt) läuft VOR dem Jar-Bau in derselben Docker-Bau-Kette —
+# ein roter Test bricht den `docker build` mit Exit != 0 ab, bevor die
+# `pack`-Stufe je erreicht wird (kein stiller Fallback, Muster
+# harness/mk/examples.mk). Wie beim gRPC-Bau der Fläche trägt der Aufruf
+# zwingend `--build-context proto=proto` (ADR-0090 Festlegung 2, übernommen
+# auf den Kotlin-SDK-Baum) — ohne ihn bricht der Bau an der `COPY
+# --from=proto`-Zeile in sdks/kotlin/Dockerfile ab.
 #
 # Export analog `make sdk-pack-csharp`/`make sdk-pack-python`
 # (tools/harness/sdk-pack-kotlin.sh): das Skript extrahiert das erzeugte
 # .jar host-seitig aus der `pack-export`-Stufe (`docker run --rm --network
 # none <image> | tar -x`, `set -o pipefail` unter bash, AGENTS.md §3.9) nach
 # sdks/kotlin/dist/ (`.gitignore`t). Erzeugnis:
-# pgchangefeed-kotlin-0.1.0.jar. Kein Sources-/Javadoc-Jar — GitHub Packages
+# pgchangefeed-kotlin-0.2.0.jar. Kein Sources-/Javadoc-Jar — GitHub Packages
 # verlangt laut offizieller Dokumentation keines (real recherchiert,
 # sdks/kotlin/Dockerfile Stufe `pack`). Exit-Code des Skripts wird wie bei
 # jedem anderen Ziel direkt gelesen.

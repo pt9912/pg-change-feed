@@ -62,47 +62,60 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice).
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
+- [x] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
       Client-Klasse verbindet sich über `io.nats:jnats` mit Token-Auth,
       abonniert den Vollinhalts-Namensraum und liefert die zehn
       Nachrichtenfelder von
       [`SPEC-024`](../../../../spec/pflichtenheft.md) — Tests
       referenzieren `SPEC-024` (Nachrichtenschema-Vollständigkeit,
       Subjekt-Formatierung netzlos, Verbindungs-Fehlerpfad ohne echten
-      Server).
-- [ ] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` bekommt
+      Server). Real gebaut/getestet (`docker build --target build`), 14 neue
+      Tests grün (4 Auth-Boundary + 3 Nachrichtenschema + 7 Subjekt), zwei
+      rot färbende Mutationen real geprüft (§7).
+- [x] `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` bekommt
       `io.nats:jnats` als Abhängigkeit, real zum Bau-Zeitpunkt neu
       gemessen (nicht blind aus `examples/kotlin/nats-stream-client/build.gradle.kts`s
-      `2.26.3` übernommen — `AGENTS.md` §3.12).
-- [ ] `build.gradle.kts`s `version` wird gehoben (von `0.1.0` auf `0.2.0`
-      — additive, rückwärtskompatible Erweiterung).
-- [ ] `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-028` nachgezogen: der
+      `2.26.3` übernommen — `AGENTS.md` §3.12). Real gemessen 2026-09-22
+      gegen Maven Central: weiterhin `2.26.3`, keine Drift (§7).
+- [x] `build.gradle.kts`s `version` wird gehoben (von `0.1.0` auf `0.2.0`
+      — additive, rückwärtskompatible Erweiterung). Top-Level UND
+      `publishing`-Block-Koordinate beide gehoben (real geprüft, beide
+      Stellen getrennt geführt).
+- [x] `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-028` nachgezogen: der
       Satz „deckt HTTP-API und gRPC-Stream" wird zu „deckt HTTP-API,
       gRPC-Stream, SSE und NATS-Vollinhalt" (`AGENTS.md` §3.13) —
       Suchlauf-Pflicht: `grep -rn "HTTP-API und gRPC-Stream\|pgchangefeed-kotlin-0.1.0"`
       über `spec/`, `docs/`, `harness/` (Ergebnis in §7 berichtet).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos.
-- [ ] `make gates` grün.
-- [ ] Ein real neu gebautes `.jar` (`make sdk-pack-kotlin`) mit
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos (real
+      geprüft: alle Importe in den neuen Dateien sind `io.github.pt9912.pgchangefeed.*`,
+      `com.google.gson.*`, `io.nats.client.*`, `java.*`/`kotlin.*`).
+- [x] `make gates` grün (Exit 0, ungepiped geprüft, `AGENTS.md` §3.9 — §7).
+- [x] Ein real neu gebautes `.jar` (`make sdk-pack-kotlin`) mit
       `version=0.2.0` als Smoke-Beleg — alle vier Client-Flächen im
-      selben Artefakt.
+      selben Artefakt. `pgchangefeed-kotlin-0.2.0.jar`, 144598 Bytes, real
+      erzeugt (§7).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
+      Bleibt für den Reviewer-Rollenwechsel offen — kein Self-Review.
+- [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für SSE **und** NATS-Vollinhalt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+      ist ebenfalls eine Antwort und wird in §7 notiert. Keine neue
+      Beobachtung angefallen — der Suchlauf war vollständig, kein Fund über
+      dieses Slice hinaus (§7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (§7).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
+      Bleibt bewusst offen bis zur Welle-Closure (eigener, nachfolgender
+      Schritt, nicht Teil dieses Slices).
 
 ## 3. Plan (vor Code)
 
@@ -161,12 +174,80 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
+- **Was hat funktioniert:** Das bestehende `SseTransport`/`GrpcStreamTransport`-Seam-Muster
+  hat sich unverändert auf NATS übertragen lassen (`NatsStreamTransport`,
+  ein `() -> ByteArray?`-Next-Payload-Supplier statt SSEs `() -> String?`-Zeilen-Supplier)
+  — netzlose Tests ohne echten NATS-Server, exakt wie bei den beiden
+  Geschwister-Flächen. Die C#-Geschwister-Fläche
+  (`sdks/csharp/PgChangeFeed.Client/Nats/PgChangeFeedNatsStreamClient.cs`)
+  war ein direkt übertragbares Formvorbild für Konstruktoren
+  (Convenience/Advanced/Test-only), Subjekt-Validierung
+  (`buildSubject`/`buildSourceSubject`) und die Entscheidung, KEINE zweite
+  Fehlerklassen-Hierarchie für Verbindungsfehler zu erfinden (nur für
+  Payload-Malformed: `PgChangeFeedNatsMalformedMessageException`).
+  Kotlin-Spezifisch: `Nats.connect()` verbindet synchron (anders als jnats'
+  Java-Pendant der C#-Bibliothek), was einen kleinen Pair-basierten
+  privaten Sekundär-Konstruktor brauchte, um eine
+  Konstruktor-Arity-Kollision zwischen „owned Connection bauen" und
+  „Connection injizieren" zu vermeiden (`connectOwned`-Companion-Helfer,
+  im Quelltext begründet).
+- **Was ging anders als geplant:** Der Träger-Nachzug war breiter als der
+  im Slice-Plan §2 explizit genannte `grep`-Suchraum
+  (`spec/`, `docs/`, `harness/`) vermuten ließ — der reale Lauf über
+  genau diesen Suchraum fand zusätzlich zwei stehende Stellen, die keiner
+  der beiden Kotlin-Vorgänger-Slices (HTTP, gRPC, SSE) angefasst hatte:
+  `harness/README.md`s `make sdk-pack-kotlin`-Zeile („BEIDE Testflächen
+  (HTTP + gRPC)", `pgchangefeed-kotlin-0.1.0.jar`) und
+  `harness/mk/sdk.mk`s gleichlautender Kommentarblock — beide waren seit
+  der SSE-Fläche bereits falsch (sie hätten „HTTP + gRPC + SSE" tragen
+  müssen), wurden aber übersehen. Beide jetzt auf „vier Testflächen (HTTP +
+  gRPC + SSE + NATS-Vollinhalt)"/`0.2.0.jar` nachgezogen — exakt die
+  `AGENTS.md` §3.13-Disziplin, angewendet auf einen Fund, den kein
+  vorheriger Slice gemacht hatte.
+- **Steering-Loop-Eintrag:** Der im Slice-Auftrag genannte, vorab bekannte
+  Fallstrick „kein Chronik-Kommentar" und „jede Zahl real messen" wurde
+  durchgehalten: `jnats` real gegen Maven Central gemessen (2.26.3,
+  unverändert), Testzahlen aus dem echten Gradle-Testlauf (61 Tests
+  gesamt, 0 Fehler, `test-results/test/*.xml` extrahiert und aufsummiert —
+  nicht geschätzt), Jar-Größe (144598 Bytes) aus einem realen `ls -la`.
+  Zwei rot färbende Mutationen real gebaut und rot gesehen (nicht nur
+  behauptet): (1) `yield(parseChange(payload))` um `.copy(schema = "")`
+  ergänzt → `PgChangeFeedNatsStreamClientMessageSchemaTest` schlägt fehl;
+  (2) `nextPayload()`-Aufruf in `try { … } catch (ex: Exception) { break }`
+  gehüllt (verschluckt die Transport-Exception) →
+  `PgChangeFeedNatsStreamClientAuthBoundaryTest` schlägt exakt am
+  erwarteten Test fehl. Beide Mutationen zurückgenommen, finaler Bau grün
+  (Docker-Layer-Cache-Treffer auf den bereits verifizierten guten Stand —
+  deterministischer Beleg, kein erneuter blinder Lauf).
+- **Beobachtungs-Register (`../observations/`):** Keine neue Beobachtung
+  angefallen. Der vollständige Suchlauf (§2 DoD-Punkt) deckte alle
+  stehenden, jetzt falschen Träger ab (`spec/pflichtenheft.md` §1/§6/§7,
+  `docs/user/benutzerhandbuch.md` HTTP-/gRPC-Absätze +
+  SSE-/NATS-`**SDK:**`-Absätze + Versionshistorie, `sdks/kotlin/pgchangefeed-kotlin/README.md`,
+  `harness/README.md`, `harness/mk/sdk.mk`) — kein Fund, der über dieses
+  Slice hinaus offen bliebe. `docs/user/releasing.md` wurde geprüft, trägt
+  aber keine Faktenbehauptung zur aktuellen Versionsabdeckung (nur ein
+  illustratives `z. B. sdk-kotlin-v0.1.0`-Tag-Beispiel) — kein Nachzug
+  nötig.
+- **Folge-Slices:** Keine neuen Folge-Slices ausgelöst. Eine vierte Sprache
+  oder ein vierter Vertriebsweg für `LH-FA-SST-009.a` bleibt weiterhin eine
+  eigene, künftige ADR-pflichtige Entscheidung (unverändert). Die
+  Welle-Closure (`welle-sdk-kotlin-vollabdeckung` → `done/` mit
+  `welle-sdk-kotlin-vollabdeckung-results.md`) ist der nächste Schritt
+  nach diesem Slice, aber laut Welle-Plan/Slice-Plan bewusst ein eigener,
+  nachfolgender Zug — nicht Teil dieses Slices.
+- **Risiken aus §6:** (1) Gefakter NATS-Verbindungsfehler-Test bildet nicht
+  exakt das reale Token-Ablehnungsverhalten nach — **weiter offen**,
+  unverändert wie geplant; ein realer Rundlauf-Beleg bleibt `make
+  test-integration`s bestehendem `tools/harness/natsstreamsub` vorbehalten,
+  diese Fläche hat keinen eigenen Realserver-Test (Slice-Plan §1
+  Out-of-Scope). (2) Träger-Nachzug könnte eine Stelle übersehen —
+  **weiter offen**, Review prüft den Diff unabhängig; real ist der
+  Suchlauf breiter ausgefallen als der im Plan genannte Minimal-Suchraum
+  (siehe „Was ging anders als geplant"), was das Risiko in der Praxis
+  gesenkt, aber nicht auf Null gebracht hat. (3) Version-Hebung ohne
+  explizites Minor-Schema — **entfallen**, wie geplant (additiver
+  SemVer-Minor-Bump ist unmissverständlich).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-kotlin-vollabdeckung](../welle-sdk-kotlin-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.

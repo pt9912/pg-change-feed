@@ -192,10 +192,10 @@ Für Python/PyPI ist die Frage ebenfalls beantwortet: `pgchangefeed`
 (`pgchangefeed-0.1.0-py3-none-any.whl`, `pgchangefeed-0.1.0.tar.gz`).
 
 Für Kotlin/GitHub Packages ist die Frage ebenfalls beantwortet:
-`pgchangefeed-kotlin` (`SPEC-028`) deckt HTTP-API und gRPC-Stream, real
-Docker-only paketierbar (`make sdk-pack-kotlin`) und real geprüft
-(`pgchangefeed-kotlin-0.1.0.jar`). Eine vierte Sprache oder ein vierter
-Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
+`pgchangefeed-kotlin` (`SPEC-028`) deckt HTTP-API, gRPC-Stream, SSE und
+NATS-Vollinhalt, real Docker-only paketierbar (`make sdk-pack-kotlin`) und
+real geprüft (`pgchangefeed-kotlin-0.2.0.jar`). Eine vierte Sprache oder ein
+vierter Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
 
 ---
 
@@ -621,7 +621,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-024` | NATS Core (Vollinhalts-Stream, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` (bereits im Baum, `SPEC-017`) | — (Vertrag steht in diesem Dokument, §2 SPEC-024) |
 | `SPEC-026` | `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.0`) | `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` als Metadaten-Quelle (`<PackageId>`/`<Version>`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-024`) |
 | `SPEC-027` | `pgchangefeed` PyPI-Package (Python, zweites SDK-Package für `LH-FA-SST-009`) | PEP 440, `0.x.y` (aktuell `0.1.0`) | `sdks/python/pgchangefeed/pyproject.toml` als Metadaten-Quelle (`[project] name`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierten Drahtvertrag (`SPEC-018`) |
-| `SPEC-028` | `pgchangefeed-kotlin` GitHub-Packages-Gradle-/Maven-Package (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.1.0`) | `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als Metadaten-Quelle (`group`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`) |
+| `SPEC-028` | `pgchangefeed-kotlin` GitHub-Packages-Gradle-/Maven-Package (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.0`) | `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als Metadaten-Quelle (`group`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-024`) |
 
 ---
 
@@ -663,3 +663,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-20 | `SPEC-028` ergänzt: `pgchangefeed-kotlin` GitHub-Packages-Gradle-/Maven-Package (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) — System, SemVer 2.0 `0.x.y`, Vertrag-Datei-Verweis auf die `build.gradle.kts` als Metadaten-Quelle; externe-Verträge-Zeile in §6 |
 | 2026-09-20 | `LH-FA-SST-009.a` nachgezogen: Für Kotlin/GitHub Packages ist die Sprachmatrix-/Vertriebsweg-Frage beantwortet und `pgchangefeed-kotlin` real paketierbar (`make sdk-pack-kotlin`, `pgchangefeed-kotlin-0.1.0.jar`) — die Kennung bleibt bestehen, eine vierte Sprache oder ein vierter Vertriebsweg bleibt offen |
 | 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-026` nachgezogen (`welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): `PgChangeFeed.Client` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`PgChangeFeed.Client.0.2.0.nupkg`); die Kennung bleibt bestehen, eine zweite Sprache oder ein zweiter Vertriebsweg bleibt offen |
+| 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-028` nachgezogen (`welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): `pgchangefeed-kotlin` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`pgchangefeed-kotlin-0.2.0.jar`); die Kennung bleibt bestehen, eine vierte Sprache oder ein vierter Vertriebsweg bleibt offen |
