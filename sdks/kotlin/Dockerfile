@@ -74,7 +74,7 @@ RUN ./gradlew --no-daemon build
 # inklusive `./gradlew test` davor) nach /out (slice-sdk-kotlin-pack-werkzeug,
 # ADR-0109 §Konsequenzen Folgepflicht 1). Der Standard-`jar`-Task läuft
 # bereits als Teil von `build`/`assemble` und erzeugt
-# build/libs/pgchangefeed-kotlin-0.1.0.jar (Gradle-Standard-Namensform aus
+# build/libs/pgchangefeed-kotlin-0.2.0.jar (Gradle-Standard-Namensform aus
 # group/artifactId/version in build.gradle.kts) — kein zusätzlicher
 # Gradle-Aufruf nötig. Kein Sources-/Javadoc-Jar: GitHub Packages verlangt
 # laut offizieller Dokumentation
@@ -101,7 +101,7 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # auf `pack`/`pack-export` — beide sind nur die Export-Kette für das
 # lokale/netzlose Werkzeug `make sdk-pack-kotlin`, für `publish` irrelevant):
 # `./gradlew --no-daemon build` ist zu diesem Zeitpunkt des Bau-Layers
-# bereits gelaufen, `build/libs/pgchangefeed-kotlin-0.1.0.jar` liegt bereits
+# bereits gelaufen, `build/libs/pgchangefeed-kotlin-0.2.0.jar` liegt bereits
 # vor. `./gradlew publish` läuft NICHT während `docker build` (kein
 # RUN-Schritt in dieser Stufe) — der Publish-Schritt braucht
 # Registry-Netzwerkzugriff (https://maven.pkg.github.com) erst zur

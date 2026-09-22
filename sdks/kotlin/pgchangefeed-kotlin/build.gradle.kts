@@ -94,12 +94,10 @@
 // gepinnte `com.google.code.gson:gson:2.14.0` deserialisiert auch die
 // NATS-Nachrichten (`SPEC-024` teilt das Schema mit `SPEC-021`).
 //
-// Diese Version-Hebung (`0.1.0` -> `0.2.0`) trägt außerdem den
-// SSE-Client-Fläche (`slice-sdk-kotlin-sse-client-flaeche`, `SPEC-021`) —
-// beide Flächen bündeln ihren Version-Bump gemeinsam in diesem letzten
-// Flächen-Slice der Welle (`welle-sdk-kotlin-vollabdeckung` §1). Additiv,
-// rückwärtskompatible Erweiterung — SemVer-Minor, keine ADR-pflichtige
-// Ausnahme (Slice-Plan §6).
+// Version `0.2.0` deckt beide zuletzt gelieferten Client-Flächen ab, SSE
+// (`SPEC-021`) und NATS-Vollinhalt (`SPEC-024`, `ADR-0109` Festlegung 1) —
+// additive, rückwärtskompatible Erweiterung, SemVer-Minor, keine
+// ADR-pflichtige Ausnahme.
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`

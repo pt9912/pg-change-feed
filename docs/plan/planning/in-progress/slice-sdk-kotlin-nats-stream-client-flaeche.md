@@ -94,10 +94,14 @@ sondern dessen offen gelassenen Doku-/Träger-Nachzug (§1 jenes Slice).
       `version=0.2.0` als Smoke-Beleg — alle vier Client-Flächen im
       selben Artefakt. `pgchangefeed-kotlin-0.2.0.jar`, 144598 Bytes, real
       erzeugt (§7).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-      Bleibt für den Reviewer-Rollenwechsel offen — kein Self-Review.
+      `docs/reviews/review-slice-sdk-kotlin-nats-stream-client-flaeche.md`
+      (1 HIGH, 1 MEDIUM) — Fixrunde durchgeführt (F-1: Chronik-Kommentar
+      in `build.gradle.kts` auf Zustandsaussage zurückgeführt; F-2:
+      `sdks/kotlin/Dockerfile:77,104` auf `0.2.0.jar` nachgezogen), kein
+      offenes HIGH/MEDIUM mehr.
 - [x] Doku-Update: `docs/user/benutzerhandbuch.md` bekommt einen
       SDK-Hinweis für SSE **und** NATS-Vollinhalt.
 - [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
