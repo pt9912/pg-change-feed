@@ -42,9 +42,10 @@ sichtbar (79 Anforderungen, 2 Waisen — je Verifikations-Report §1,
 `LH-FA-SST-009` über `SDK-E2E`, Status `ok`).
 
 `make gates` grün auf dem Endstand (938 Datei(en) im Gate-Lauf, 0 `docs-check`-Befunde,
-Coverage 82,70–82,80 % über die Gate-Läufe dieser Closure (je ≥ 80 %-Endstufe), `a-check` 0 Befunde,
+Coverage 82,60–82,80 % über die Gate-Läufe dieser Closure (run-to-run-Variation der Messung, jeder Lauf über der 80 %-Endstufe), `a-check` 0 Befunde,
 `generated-sync`/`commit-traceability`/`baseline-verify` je ohne Befund),
-ungepiped geprüft nach jedem Commit dieser Closure ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+ungepiped geprüft zu jedem Commit dieser Closure — der Ausgang je
+Commit-Klasse steht in §Verifikation ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 Kein Tag-Push (`git tag -l "sdk-*-v*"` liefert ausschließlich
 `sdk-csharp-v0.1.0` und `sdk-python-v0.1.0` — eigenständig gemessen zu
 dieser Closure): diese Welle ändert keine öffentliche API-Fläche und kein
@@ -190,7 +191,7 @@ belegte Feststellung, jede Zeile der Welle-§3 mit eigener Messung geprüft.
   ausschließlich `.gitkeep`, kein Carveout referenziert [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   oder einen der drei Slices dieser Welle (gemessen).
 - **Bootstrap-aware Gates (Modul 13):** 0 betroffen — `coverage-gate`
-  steht unverändert bei der 80 %-Endstufe (real gemessen 82,70–82,80 % über die Gate-Läufe dieser Closure) und
+  steht unverändert bei der 80 %-Endstufe (real gemessen 82,60–82,80 % über die Gate-Läufe dieser Closure) und
   wurde von keinem der drei Slices berührt (SDK-/Werkzeug-Bäume, außerhalb
   der netzlos prüfbaren Go-Fläche `./internal/...`+`./cmd/...`+`./gen/...`);
   `.a-check.yml` `languages: go` liest `sdks/**` strukturell nicht (real
@@ -271,7 +272,7 @@ Entscheidungen:
   der Move-Commit bleibt rein) und wurde vom Reconciliations-Commit
   (`66bade56`) auf Grün geführt (ungepiped, Exit-Code direkt geprüft,
   [`AGENTS.md`](../../../../AGENTS.md) §3.9) — 937–938 Datei(en) je
-  Gate-Lauf dieser Closure, 0 Befunde; Coverage 82,70–82,80 % ≥ 80 %;
+  Gate-Lauf dieser Closure, 0 Befunde; Coverage 82,60–82,80 % ≥ 80 %;
   `a-check`/`generated-sync`/`commit-traceability`/`baseline-verify` je
   ohne Befund; Stempel-Gleichheit je Lauf.
 - Realer, grüner Pflichtbeleg je Sprache (Closure-Trigger, Welle-Datei §3):
