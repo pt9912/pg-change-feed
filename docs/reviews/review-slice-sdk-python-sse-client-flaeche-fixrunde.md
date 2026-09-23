@@ -182,3 +182,11 @@ Eigenschaft (Mechanik der Testdatei-Übergabe, beide Stände) erweitern —
 FR-1 ist der Befund, den dieser Suchlauf gemeldet hätte. Dieser Report
 ist Lauf-Beleg; die DoD-/Spec-Konformität prüft der Verifier separat
 (Modul 11).
+**Addendum (nach Fixrunde 2, Commit `beeddc3c`):** FR-1 gelöst — die drei
+Phrase-Stellen tragen die ENV-Form (Runner-Kopf: „Stufe-CMD" und
+„Umgebungsvariable `PGCHANGEFEED_TEST_FILE`"; `harness/README.md` Zeile 160:
+ENV-Form samt Guard-Beschreibung); der §3.13-Suchlauf um die zweite bewegte
+Eigenschaft erweitert, mit dem gemessenen Vorher-Stand `3c941b0b`.
+Endstand: kein offenes HIGH/MEDIUM — die Substanz bestätigt die Verifikation
+(`verifikation-slice-sdk-python-sse-client-flaeche.md`) durch eigenes
+Nachmessen.

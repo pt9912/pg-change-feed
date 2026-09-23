@@ -144,7 +144,7 @@ gilt für **jede** neue Fläche einzeln).
 | Wurzel-README | „deckt HTTP-API"-Form für das veröffentlichte 0.1.0-Package — wahr für den veröffentlichen Stand | bleibt (bündelige Praxis wie beim Vorgänger-Slice) |
 | `docs/user/version.md` | Versionsstand des Python-Packages — Hebung im letzten Flächen-Slice | bleibt gebündelt |
 
-**§3.13-Suchlauf, zweite Eigenschaft (Fixrunde FR-1 — bewegte Eigenschaft: „die Testdatei wird je Phase als docker run-Argument übergeben"; beide Stände gemessen: Parent `6bbe99d9` und HEAD):**
+**§3.13-Suchlauf, zweite Eigenschaft (Fixrunde FR-1 — bewegte Eigenschaft: „die Testdatei wird je Phase als docker run-Argument übergeben"; beide Stände gemessen: Vorher-Stand `3c941b0b` — dort kam die Phrase in den `harness/README`-Träger — und HEAD):**
 
 | Träger | Befund | Behandlung |
 |---|---|---|
