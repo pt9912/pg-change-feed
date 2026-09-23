@@ -1,12 +1,12 @@
 # Review-Report: slice-sdk-python-http-reale2e — 2026-09-23
 
 **Review-Art:** Code — der Diff (`git diff d99768f2..HEAD`, Implementations-Commit
-`040991ad`) gegen den [Slice-Plan](../plan/planning/in-progress/slice-sdk-python-http-reale2e.md),
+`040991ad`) gegen den `Slice-Plan` `slice-sdk-python-http-reale2e`,
 die ADRs und die Hard Rules (`AGENTS.md` §3) geprüft. **Nicht** gegen die
 DoD — das ist Verifier-Aufgabe (Modul 11).
 
 **Gegenstand:** Commit `040991ad` ([`LH-FA-SST-009`](../../spec/lastenheft.md), [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)) —
-[slice-sdk-python-http-reale2e](../plan/planning/in-progress/slice-sdk-python-http-reale2e.md)
+`slice-sdk-python-http-reale2e`
 
 **Skill:** `.harness/skills/reviewer.md` ( geschärft 2026-09-09: vier
 repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
@@ -22,7 +22,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
 
 **Eingangs-Kontext** (die Verträge, gegen die geprüft wurde):
 
-- [Slice-Plan slice-sdk-python-http-reale2e](../plan/planning/in-progress/slice-sdk-python-http-reale2e.md) (§2 DoD, §3 Plan + Plan-Nachzug + §3.13-Suchlauf-Feld, §6 Risiken, §8)
+- `Slice-Plan` `slice-sdk-python-http-reale2e` (§2 DoD, §3 Plan + Plan-Nachzug + §3.13-Suchlauf-Feld, §6 Risiken, §8)
 - [ADR-0110](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) (Mechanik-Klasse, Festlegung 2/Folgepflicht 1) · [ADR-0107](../plan/adr/0107-python-pypi-zweites-sdk-package.md) (Ort/Import-Grenze) · [ADR-0057](../plan/adr/0057-http-grpc-api.md) (HTTP-Server-Vertrag, benutzt nicht erweitert)
 - [`SPEC-018`](../../spec/pflichtenheft.md) (Draht), [`LH-FA-SST-006`](../../spec/lastenheft.md)/[`LH-FA-SST-008`](../../spec/lastenheft.md)/[`LH-FA-SST-009`](../../spec/lastenheft.md)/[`LH-FA-CON-001`](../../spec/lastenheft.md)
 - `AGENTS.md` §3 (Hard Rules), `harness/conventions.md` (MR-000/MR-001)
@@ -38,7 +38,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
 
 - `kategorie`: MEDIUM
 - `quelle`: Maintainability (Code-Review gegen Plan, Modul 10)
-- `pfad`: docs/plan/planning/in-progress/slice-sdk-python-http-reale2e.md:145 (Plan §3) · harness/mk/sdk.mk:118
+- `pfad`: docs/plan/planning/done/slice-sdk-python-http-reale2e.md:175 (Plan §3) · harness/mk/sdk.mk:118
 - `befund`: Der Plan §3 führt `harness/mk/sdk.mk` als Update-Punkt („der
   Kommentar-Block des Targets `test-sdk-python-integration` zieht um die
   HTTP-Phase nach"); der Diff enthält keine Änderung an dieser Datei, und
@@ -86,7 +86,7 @@ repo-spezifische HIGH-Regeln, drei MEDIUM-Klassen) ·
 - `kategorie`: LOW
 - `quelle`: Maintainability · offene Beobachtung
   `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`
-- `pfad`: docs/plan/planning/in-progress/slice-sdk-python-http-reale2e.md:163
+- `pfad`: docs/plan/planning/done/slice-sdk-python-http-reale2e.md:193
 - `befund`: Der Plan-Nachzug schreibt „degenerater Pfad mit Kopf-
   Regeneration" — wortgleiches Fragment aus
   `slice-sdk-kotlin-reale2e` §7 (docs/plan/planning/done/slice-sdk-kotlin-reale2e.md:359,

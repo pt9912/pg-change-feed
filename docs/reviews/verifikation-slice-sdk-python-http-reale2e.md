@@ -9,7 +9,7 @@ Hausform dieses Reports:
 [`verifikation-slice-sdk-kotlin-reale2e.md`](verifikation-slice-sdk-kotlin-reale2e.md)
 (derselbe Runner-Typ, dieselbe Verifikations-Pflichtenliste).
 
-**Gegenstand:** [`../plan/planning/in-progress/slice-sdk-python-http-reale2e.md`](../plan/planning/in-progress/slice-sdk-python-http-reale2e.md),
+**Gegenstand:** `Slice-Plan` `slice-sdk-python-http-reale2e`,
 Diff-Range `d99768f2..HEAD` — Substanz `040991ad` (Implementation: HTTP-Testdatei,
 Runner-Erweiterung um vierte Phase + Parametrisierung + Träger-Writer,
 Träger-Abschnitt, README-Zeile, Plan-Update; 6 Dateien, 490 Insertions /
