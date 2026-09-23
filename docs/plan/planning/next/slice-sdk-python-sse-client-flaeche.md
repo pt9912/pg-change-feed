@@ -15,7 +15,7 @@ Boundary: keine Zustellgarantie, kein Stream-internes Replay),
 **Berührte Spec-Stellen:** [`SPEC-021`](../../../../spec/pflichtenheft.md)
 (Endpunkt, Event-Form, Nachrichtenschema).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0110` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-21.
