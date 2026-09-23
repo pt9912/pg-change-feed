@@ -7,7 +7,7 @@ Grenz-/Gates-Prüfung. Review-Artefakt des Reviewers:
 Hausform dieses Reports:
 [`verifikation-slice-sdk-csharp-reale2e.md`](verifikation-slice-sdk-csharp-reale2e.md).
 
-**Gegenstand:** [`../plan/planning/in-progress/slice-sdk-kotlin-reale2e.md`](../plan/planning/in-progress/slice-sdk-kotlin-reale2e.md),
+**Gegenstand:** [`../plan/planning/done/slice-sdk-kotlin-reale2e.md`](../plan/planning/done/slice-sdk-kotlin-reale2e.md),
 Diff-Range `b58cb173..HEAD` — Substanz `060aa62f` (Implementation: Runner,
 Docker-Stufe, Gradle-SourceSet, fünf Testdateien, Make-Target, Träger,
 README-Zeile, Plan-Update; 12 Dateien, 825 Insertions / 10 Deletions —

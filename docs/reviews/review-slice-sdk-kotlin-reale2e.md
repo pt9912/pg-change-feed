@@ -1,7 +1,7 @@
 # Review-Report: slice-sdk-kotlin-reale2e — 2026-09-23
 
 **Review-Art:** Code — geprüft gegen Plan
-([`slice-sdk-kotlin-reale2e`](../plan/planning/in-progress/slice-sdk-kotlin-reale2e.md),
+([`slice-sdk-kotlin-reale2e`](../plan/planning/done/slice-sdk-kotlin-reale2e.md),
 §2 DoD, §3 Plan + Plan-Nachzug + §3.13-Suchlauf-Feld, §6 Risiken),
 [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 (Accepted) §Entscheidung Festlegung 2, [`ADR-0109`](../plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)
@@ -57,7 +57,7 @@ Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` (Kotlin-Abschnitt),
 - `quelle`: `AGENTS.md` §3.13 (Träger-Nachzug) · Reviewer-Skill HIGH
   „Beleg trägt seinen Satz nicht" (Variante: Adresse auf ein Artefakt,
   das es nicht gibt — Nachbar-Form `BEO-PGC/zitat-nennt-die-falsche-stelle`)
-- `pfad`: `docs/plan/planning/in-progress/slice-sdk-kotlin-reale2e.md:169`
+- `pfad`: `docs/plan/planning/done/slice-sdk-kotlin-reale2e.md:189`
 - `befund`: Die Geprüft-Zeile des committeten Suchlauf-Felds nennt als
   Träger „`sdks/kotlin/README.md` §Status" — auf dieser Ebene existiert
   keine README (Inhalt von `sdks/kotlin/`: `dist/`, `Dockerfile`,
@@ -144,7 +144,7 @@ Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` (Kotlin-Abschnitt),
 
 - `kategorie`: INFO
 - `quelle`: `AGENTS.md` §3.13 („gemeldet statt still mitgeändert")
-- `pfad`: `docs/plan/planning/in-progress/slice-sdk-kotlin-reale2e.md:168`
+- `pfad`: `docs/plan/planning/done/slice-sdk-kotlin-reale2e.md:188`
 - `befund`: Die Behandlungs-Spalte sagt „gezogen: die Zeile nennt jetzt
   den Kotlin-Abschnitt als real" — die C#-Zeile in `harness/README.md`
   wurde aber nicht geändert (Diff: unverändert); ihre Endklause
