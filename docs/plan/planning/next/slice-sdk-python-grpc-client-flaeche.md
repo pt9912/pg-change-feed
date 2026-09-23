@@ -19,7 +19,7 @@ Slice führt den Mechanismus dafür ein**), [`ADR-0107`](../../adr/0107-python-p
 **Berührte Spec-Stellen:** [`SPEC-020`](../../../../spec/pflichtenheft.md)
 (Nachrichtenschema, RPC-Name, Stream-Semantik).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0110` §Konsequenzen
 Folgepflicht 1). **Datum:** 2026-09-21.
