@@ -265,9 +265,13 @@ Entscheidungen:
   Link-Berichtigung `a78aed81`). Die DoD-/Verifier-Werte sind aus den
   Reports übernommen und dort laufgebunden verankert (`AGENTS.md` §3.12
   Instanz A).
-- `make gates`: grün nach jedem Commit dieser Closure (ungepiped,
-  Exit-Code direkt geprüft, [`AGENTS.md`](../../../../AGENTS.md) §3.9) —
-  937–938 Datei(en) je Gate-Lauf dieser Closure, 0 Befunde; Coverage 82,70–82,80 % ≥ 80 %;
+- `make gates`: grün nach jedem Inhalts-Commit dieser Closure; nach dem
+  reinen Welle-Move (`bb3dbfda`) misste der Lauf real **46
+  target-missing-Befunde** (Exit 2, docs-check only — Muster `848d2263`,
+  der Move-Commit bleibt rein) und wurde vom Reconciliations-Commit
+  (`66bade56`) auf Grün geführt (ungepiped, Exit-Code direkt geprüft,
+  [`AGENTS.md`](../../../../AGENTS.md) §3.9) — 937–938 Datei(en) je
+  Gate-Lauf dieser Closure, 0 Befunde; Coverage 82,70–82,80 % ≥ 80 %;
   `a-check`/`generated-sync`/`commit-traceability`/`baseline-verify` je
   ohne Befund; Stempel-Gleichheit je Lauf.
 - Realer, grüner Pflichtbeleg je Sprache (Closure-Trigger, Welle-Datei §3):
