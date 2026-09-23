@@ -97,15 +97,22 @@ gilt für **jede** neue Fläche einzeln).
       Zug (Version 1.42, Fixrunde); gebündelt bleiben nur der
       NATS-Handbuch-Teil und `spec/pflichtenheft.md` — derselbe Schnitt
       wie beim Vorgänger-Slice.)*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7 unten —
+      Lerneintrag: §3.13-Suchlauf je bewegter Eigenschaft, nicht je
+      Slice; Beleg im Beobachtungs-Register.)*
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      ist ebenfalls eine Antwort und wird in §7 notiert. *(Beleg:
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+      `evidence/slice-sdk-python-sse-client-flaeche.md`; übrige
+      Kandidaten geprüft, siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang. *(zwei Ausgänge in §6,
+      final — Risiko 1 entfallen mit Beleg am Ort, Risiko 2 entfallen;
+      siehe §7.)*
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -188,10 +195,15 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 - `httpx`s Streaming-Response-API könnte SSE-Frames anders puffern als
   erwartet (Chunk-Grenzen fallen nicht mit Zeilen-Grenzen zusammen).
-  **Ausgang:** weiter offen bis zum ersten realen Integrationstest-Lauf —
-  der Frame-Parser wird bewusst zeilenweise über einen Iterator gebaut
-  (Muster `examples/csharp/sse-client/SseStream.cs`s `ReadEvent`), nicht
-  über eine Annahme fester Chunk-Grenzen.
+  **Ausgang:** entfallen — der zeilenweise Parser bindet Chunk-Grenzen
+  nicht: die Unit-Probe fährt vier Chunk-Formen (CRLF, CR/NL-Split über
+  Chunk-Grenzen, Mid-Line-Split, LF) netzlos grün im Integration-Image
+  (Haupt-Review F-6-Negativprobe, Unit-Test
+  `test_chunk_boundaries_need_not_coincide_with_lines`), und die reale
+  `make test-sdk-python-integration`-Fläche läuft grün gegen den
+  laufenden Feed-Container (Implementer-Lauf EXIT=0; Verifikation §1
+  DoD 2: eigener Verifier-Lauf EXIT=0). Ein Pufferungs-Abweichfall tritt
+  in keinem der Läufe auf.
 - Der Realserver-SSE-Test könnte real langsamer terminieren als der
   gRPC-Test (Polling auf ein Event statt eines blockierenden Streams).
   **Ausgang:** entfallen — dasselbe Warte-/Poll-Muster wie
@@ -200,12 +212,97 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
+- **Was hat funktioniert:** der Plan-Schnitt trägt sich in einem Zug —
+  die SSE-Fläche und die Runner-Erweiterung je Fläche gehören in einen
+  Slice, weil die Fläche ohne den Werkzeug-Lauf nicht abnahmefähig ist
+  ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+  §Entscheidung Festlegung 2/Folgepflicht 1). Beide Rückführungen aus §4
+  stehen nicht an: der Vorgänger-Slice liegt in `done/`, und das Werkzeug
+  nahm die zweite Testdatei ohne zweite Infrastruktur auf —
+  `make test-sdk-python-integration` lief real grün (Implementer-Lauf
+  EXIT=0: gRPC change_id=804-1, SSE change_id=807-1, je SQL-Gegenprüfung
+  gegen `cdc.changes`; Verifier-Lauf EXIT=0: gRPC 804-1 deckend, SSE
+  808-1 — laufgebundene Messgröße, Verifikation N-1). Die Rollen-Kette
+  läuft unabhängig: Haupt-Review F-1…F-9, Fixrunde 1 löste F-1…F-5
+  (`3c941b0b`), Re-Review FR-1 gelöst in Fixrunde 2 (`beeddc3c`), Endstand
+  kein offenes HIGH/MEDIUM (Addendum im Fixrunden-Report); die
+  Verifikation fährt eigene Läufe (Unit-Suite netzlos, beide Mutationen
+  rot aus dem richtigen Grund, `make gates` Exit 0) und ihr Urteil
+  „erfüllt mit Auflagen“ ist mit den beiden Auflagen V-1/V-2 gelöst
+  (`25fad0e1`).
+- **Was ging anders als geplant:** die Lücken-Struktur wiederholt sich
+  in der Korrektur-Kette desselben Slice, nicht in der Umsetzung — der
+  §3.13-Suchlauf war je Slice und je **einer** bewegten Eigenschaft
+  gebunden („SSE bleibt außerhalb des Packages“), während der Fix-Zug
+  eine **zweite** Eigenschaft bewegte (Testdatei-Übergabe:
+  docker run-Argument → Umgebungsvariable) ohne eigenen Suchlauf.
+  Re-Review FR-1 fand die drei Phrase-Stellen, die ein zweiter Suchlauf
+  gemeldet hätte; Haupt-Review F-2 traf denselben Fall auf der ersten
+  Eigenschaft (die `harness/README.md`-Werkzeug-Zeile stand nicht im
+  Plan-Nachzug, gefunden vom Reviewer). Verifikation V-1 trägt die
+  dritte Stelle: die Stand-Deklaration der zweiten Suchlauf-Tabelle
+  nannte `6bbe99d9` als Vorher-Stand des `harness/README.md`-Trägers —
+  der wahre Vorher-Stand ist `3c941b0b` (die Phrase kam erst mit
+  Fixrunde 1 in den Träger); gelöst im Verifikations-Commit `25fad0e1`.
+- **Steering-Loop-Eintrag:** geschärfte Regel (Anwendungs-Schärfung der
+  bereits verkörperten Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13 · seit welle-20): der
+  §3.13-Suchlauf wird je **bewegter Eigenschaft** geführt, nicht je
+  Slice — jede mechanische Umstellung im Fix-Diff (hier:
+  docker run-Argument → Umgebungsvariable `PGCHANGEFEED_TEST_FILE`) ist
+  eine eigene Eigenschaft mit eigenem Suchlauf über beide Stände. Kein
+  neuer Sensor: die verfügbare Falsifikation bleibt die Messung an
+  beiden Ständen (§3.13s Grenze für Zahlen/Prosa-Umformulierungen
+  bleibt; die Mechanik-Phrase ist ein neuer Fall derselben Grenze — ein
+  Träger, den ein Suchlauf mit einem Wortmuster je Eigenschaft träfe,
+  bräuchte eine Semantik-Entscheidung, welche Umstellung zur welchen
+  Eigenschaft gehört). Keine benannte Spec-Lücke. Ob die Schärfung einen
+  eigenen Satz in `AGENTS.md` §3.13 trägt, prüft der Lese-Schritt der
+  Welle-Closure — die Klasse steht mit diesem Beleg bei 22×
+  (Datei-Anzahl unter `evidence/`, real ausgezählt), bereits verkörpert.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — neuer,
+    zweiundzwanzigster Beleg:
+    `evidence/slice-sdk-python-sse-client-flaeche.md`; die Kette
+    (Haupt-Review F-2, Re-Review FR-1, Verifikation V-1) trägt je ihre
+    Fundstellen; `state.md` trägt den abgeleiteten Zähler.
+  - **`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`** — geprüft:
+    kein eigenständiger Fund in dieser Kette (die V-1-Abweichung ist
+    eine Stand-Deklaration des Suchlaufs, kein Zahlenwert, der gegen
+    seine Messung driftet). Die Zahlen des Closure-Zugs sind je aus
+    ihrer Messung gezogen: Zähler 22× (Datei-Anzahl unter `evidence/`,
+    real ausgezählt — 21× vor diesem Beleg), Testzahlen 20/3/8/10 = 41
+    (nachgemessen, Verifikation §1 DoD 1), `change_id`-Werte je
+    laufgebunden (N-1).
+  - **`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`**
+    — geprüft: die Klasse traf den Verbund (Haupt-Review F-1, MEDIUM)
+    und ist in der Kette gelöst (Fixrunde 1: Python-`**SDK:**`-Absatz im
+    SSE-Handbuch-Abschnitt, Version 1.42, Historie-Zeile; Verifikation
+    §1 DoD 5 misst alle drei Träger); der gebündelte NATS-Handbuch-Teil
+    und `spec/pflichtenheft.md` bleiben beim Folgelauf.
+  - **`BEO-PGC/test-runner-stiller-ausschluss`** — geprüft: Haupt-Review
+    F-3 ist verwandt (stiller Ausschluss im Default-Aufruf), aber kein
+    Vorkommen der Klasse — anderes Skript und anderer Mechanismus
+    (pytest-Sammlung über `testpaths` beim blanken Image-Aufruf statt
+    `go test -run`-Filterung in `tools/harness/run-integration-tests.sh`);
+    der Fall ist im Zug gelöst (CMD-Guard, Negativprobe Ausgang 2,
+    Verifikation §1 DoD 1) und in den Reports konserviert — kein
+    Registereintrag, der Zähler der Klasse bleibt 2×.
+  - Re-Review FR-2 (Link-Nachzug `228dfc9e` an committeten
+    Review-Reports, INFO) — Prozess-Merkung ohne Registereintrag; der
+    Fund ist in der Kette gelöst und im Report konserviert.
+- **Folge-Slices:** `slice-sdk-python-nats-stream-client-flaeche`
+  (Reihenfolge Welle-Plan §4) — erweitert das hier erweiterte Werkzeug
+  um die dritte Fläche und bündelt den NATS-Handbuch-Teil, den
+  Version-Bump und den `spec/pflichtenheft.md`-Nachzug. Kein
+  zusätzlicher Slice aus dieser Closure.
+- **Risiken aus §6:** Risiko 1 (httpx-Pufferung) — **entfallen** (der
+  Parser bindet Chunk-Grenzen nicht: vier Chunk-Formen netzlos grün,
+  reale Integrationstest-Läufe grün; Begründung und Beleg am Ort in
+  §6). Risiko 2 (SSE-Test-Laufzeit) — **entfallen** (unverändert; §6).
+  Kein Ausgang „weiter offen“ ins Register — ein Registereintrag für ein
+  nie aufgetretenes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.

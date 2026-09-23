@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **21×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **22×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,29 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der zweiundzwanzigste Beleg,
+`evidence/slice-sdk-python-sse-client-flaeche.md`: die Lücken-Struktur
+wiederholt sich innerhalb eines Slice — der §3.13-Suchlauf war je Slice
+und je **einer** bewegten Eigenschaft gebunden („SSE bleibt außerhalb
+des Packages“), während der Fix-Zug desselben Slice eine **zweite**
+Eigenschaft bewegte (Testdatei-Übergabe des Integration-Images:
+docker run-Argument → Umgebungsvariable `PGCHANGEFEED_TEST_FILE`) und
+ohne eigenen Suchlauf durchlief. Der Haupt-Review traf den Fall auf der
+ersten Eigenschaft (`harness/README.md`s
+`make test-sdk-python-integration`-Zeile trug die Ein-Flächen-Form,
+F-2 MEDIUM — gefunden vom Reviewer, die Plan-Nachzug-Liste nannte die
+Zeile nicht), der Re-Review auf der zweiten (FR-1 MEDIUM — drei
+Phrase-Stellen: Runner-Skriptkopf „Stufe-ENTRYPOINT“/„docker
+run-Argument“ und die neue `harness/README.md`-Zeile); Fixrunde 2 zog
+die drei Stellen auf die ENV-Form und der Suchlauf wurde um die zweite
+Eigenschaft erweitert — der Verifier trug die Stand-Deklaration der
+Erweiterung nach (V-1: der wahre Vorher-Stand des
+`harness/README.md`-Trägers ist `3c941b0b`, nicht `6bbe99d9`).
+Geschärfte Lehre (Closure-Notiz): der Suchlauf wird je bewegter
+Eigenschaft geführt, nicht je Slice. Ausgang bleibt **verkörpert**, kein
+neuer Schwellen-Übertritt — die Schärfung ist eine Anwendungs-Schärfung
+der verkörperten Regel `AGENTS.md` §3.13. Details:
+`evidence/slice-sdk-python-sse-client-flaeche.md`.
 Der einundzwanzigste Beleg,
 `evidence/slice-sdk-kotlin-nats-stream-client-flaeche.md`: anders als beim
 zwanzigsten (C#-)Beleg fand hier **nicht** der Implementer-eigene
