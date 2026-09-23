@@ -33,8 +33,8 @@ Eingabeseite").
   (verschärfte Test-Pflicht, reale Server-Instanz je neuer Fläche, kein
   `examples/python/`), Festlegung 3 (Struktur-Delegation an den umsetzenden
   Zug), §Konsequenzen Folgepflicht 2/3
-- `ADR-0100` (NATS-Vollinhalts-Vertrag), `spec/pflichtenheft.md` §2 `SPEC-024`
-  (Subjekt-Schema, zehn Felder, Verbindungsebene-Auth), `SPEC-027`-Zeile §6
+- `ADR-0100` (NATS-Vollinhalts-Vertrag), `spec/pflichtenheft.md` §2 [`SPEC-024`]
+  (Subjekt-Schema, zehn Felder, Verbindungsebene-Auth), `[SPEC-027]`-Zeile §6
 - `AGENTS.md` §3.1 (Docker-only), §3.2 (Suppression-Verbot), §3.7
   (Kommentar-Disziplin), §3.12 (Herkunft von Aussagen), §3.13 (Träger-Nachzug)
 - `harness/conventions.md` (MR-000/MR-002)
@@ -67,14 +67,14 @@ Eingabeseite").
   8 (grpc) + 10 (sse) + 7 (nats) = **48** — deckungsgleich mit der
   Vorgänger-Formel der SSE-DoD („20 + 3 + 8 + 10 = 41") plus die 7 neuen
   NATS-Tests; keine Drift.
-- **SPEC-024-Draht Feld für Feld gegen den Server gehalten:** die zehn
+- **[`SPEC-024`](../../spec/pflichtenheft.md)-Draht Feld für Feld gegen den Server gehalten:** die zehn
   JSON-Keys des Client-Parsings (`change_id` … `table`) decken sich exakt
   mit `internal/adapters/driven/natsstream/publisher.go`s
   `json:`-Tags (Zeilen 140–149); Subjekt-Form `cdc.stream.<source_id>.>`
-  deckt sich mit `SPEC-024`s Tabellenzeile („`cdc.stream.<source_id>.>`
+  deckt sich mit [`SPEC-024`]s Tabellenzeile („`cdc.stream.<source_id>.>`
   deckt alle Tabellen einer Quelle") und mit `subjectPrefix`/`subjectFor`
   des Publishers; Authentifizierung Verbindungsebene (`nats.connect(token=…)`,
-  kein Per-Message-Header) — entspricht der `SPEC-024`-Zeile
+  kein Per-Message-Header) — entspricht der [`SPEC-024`]-Zeile
   „Authentifizierung".
 - **Versions-/Auth-Verkettung des Integrationstest-Werkzeugs real gelesen:**
   `compose.yaml` trägt `CDC_NATS_STREAM_TOKEN: e2e-nats-stream-token`
@@ -116,26 +116,26 @@ Eingabeseite").
 
 ## Findings
 
-### F-1 — `spec/pflichtenheft.md` §6: die `SPEC-027`-Vertragszeile blieb stehen — Versions-Zelle driftet gegen die eigene Messung, Planpunkt still gestrichen
+### F-1 — `spec/pflichtenheft.md` §6: die [`SPEC-027`]-Vertragszeile blieb stehen — Versions-Zelle driftet gegen die eigene Messung, Planpunkt still gestrichen
 
 - `kategorie`: HIGH
 - `quelle`: `AGENTS.md` §3.12/§3.13 · `ADR-0110` §Konsequenzen
   Folgepflicht 2
 - `pfad`: `spec/pflichtenheft.md:625`
-- `befund`: Die `SPEC-027`-Zeile der §6-Vertragstabelle trägt weiter
+- `befund`: Die `[SPEC-027]`-Zeile der §6-Vertragstabelle trägt weiter
   „PEP 440, `0.x.y` (aktuell `0.1.0`)" und „… deckt bereits dokumentierten
-  Drahtvertrag (`SPEC-018`)" — während derselbe Diff in derselben Datei
+  Drahtvertrag ([`SPEC-018`])" — während derselbe Diff in derselben Datei
   (§1) auf „deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt" +
   `0.2.0` zieht und `pyproject.toml` real `0.2.0` misst. Beide
-  Schwester-Zeilen derselben Tabelle (`SPEC-026`, `SPEC-028`) tragen durch
+  Schwester-Zeilen derselben Tabelle ([`SPEC-026`], [`SPEC-028`]) tragen durch
   die C#-/Kotlin-Vorgänger-Commits „aktuell `0.2.0`" **und** die
   Vier-Verträge-Liste — dieselbe Zeilen-Form, derselbe Nachzug. Der Plan
   §3 versprach die Zeile ausdrücklich („`spec/pflichtenheft.md` §1
-  (`LH-FA-SST-009.a`), **§6 (`SPEC-027`-Zeile)** | update | Träger-Nachzug");
+  (`LH-FA-SST-009.a`), **§6 (`[SPEC-027]`-Zeile)** | update | Träger-Nachzug");
   der Plan-Nachzug deklariert das Streichen nicht — die einzige
   pflichtenheft-Zeile im Diff neben der §1-Prosa ist die Chronik-Zeile
   (§7-Historie). Damit ist zugleich `ADR-0110` Folgepflicht 2 („
-  `spec/pflichtenheft.md` `SPEC-027` und `LH-FA-SST-009.a` brauchen einen
+  `spec/pflichtenheft.md` [`SPEC-027`] und `LH-FA-SST-009.a` brauchen einen
   Träger-Nachzug") zur Hälfte unerfüllt. Die INFO-Herabstufung der
   Zahl-drift-Klasse („Träger außerhalb des Diffs") greift nicht — die
   Datei liegt im Diff.
@@ -173,7 +173,7 @@ Eingabeseite").
   Satz nicht" (Nachbar-Form „Zitat nennt die falsche Stelle", seit
   welle-d-check unter dieser Klasse gefasst)
 - `pfad`: `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py:16`
-- `befund`: Die neue Klammer lautet wörtlich „(SPEC-024, **ADR-0110
+- `befund`: Die neue Klammer lautet wörtlich „([`SPEC-024`](../../spec/pflichtenheft.md), **[ADR-0110](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   Festlegung 3**: v2 desselben Packages)". Im Original trägt Festlegung 3
   diese Aussage nicht — sie lautet: die ADR „entscheidet **nicht**, ob das
   Folge-Release eine `v2` desselben `pgchangefeed`-Packages ist oder ein
@@ -285,17 +285,17 @@ Eingabeseite").
   nie.
 - `klasse`: „Vakuum-Assertion" (tote Nachklammer)
 
-### F-8 — `PgChangeFeedMalformedResponseError`-Docstring nennt SPEC-024 nicht als Form, die ihn trägt
+### F-8 — `PgChangeFeedMalformedResponseError`-Docstring nennt [`SPEC-024`](../../spec/pflichtenheft.md) nicht als Form, die ihn trägt
 
 - `kategorie`: LOW
 - `quelle`: Maintainability (Wiederholung des SSE-Review-F-4-Musters)
 - `pfad`: `sdks/python/pgchangefeed/src/pgchangefeed/exceptions.py:52-58`
-- `befund`: Der Docstring zählt „SPEC-018/SPEC-022 … or a SPEC-021 SSE
-  event" als tragende Formen; der NATS-Weg (SPEC-024) kommt in diesem Diff
+- `befund`: Der Docstring zählt „[`SPEC-018`](../../spec/pflichtenheft.md)/[`SPEC-022`](../../spec/pflichtenheft.md) … or a [`SPEC-021`](../../spec/pflichtenheft.md) SSE
+  event" als tragende Formen; der NATS-Weg ([`SPEC-024`](../../spec/pflichtenheft.md)) kommt in diesem Diff
   neu als dritter raisender Ort hinzu (drei neue Meldungen in
   `nats_stream_client.py`), bleibt in der Aufzählung aber unerwähnt —
-  dieselbe Stelle, die der SSE-Slice in seiner Fixrunde für SPEC-021
-  nachziehen musste, verpasst jetzt SPEC-024. Zweites Auftreten desselben
+  dieselbe Stelle, die der SSE-Slice in seiner Fixrunde für [`SPEC-021`](../../spec/pflichtenheft.md)
+  nachziehen musste, verpasst jetzt [`SPEC-024`](../../spec/pflichtenheft.md). Zweites Auftreten desselben
   Musters in diesem Package.
 - `verifizierbar`: ja — Docstring lesen gegen die drei neuen
   raising-Sites.
@@ -310,7 +310,7 @@ Eingabeseite").
   Chronik-Zeile | neu" meint die Historie-Tabelle, die im Pflichtenheft
   unter „## 7. Historie" (Zeile 630) liegt; die tatsächliche §6 trägt die
   Vertragszeilen. Die Etikett-Verschiebung legt die Doppeldeutigkeit frei,
-  unter der der §3-Punkt „§6 (`SPEC-027`-Zeile)" beim Umsetzen als durch
+  unter der der §3-Punkt „§6 (`[SPEC-027]`-Zeile)" beim Umsetzen als durch
   die Chronik-Zeile erfüllt gelesen werden konnte (F-1) — der
   Plan-Nachzug-Text selbst trägt die Verwirrung mit.
 - `verifizierbar`: ja — Abschnitts-Köpfe des Pflichtenhefts (Zeilen 613/630)
@@ -356,15 +356,15 @@ Eingabeseite").
   §3-Zeilen und alle vier Plan-Nachzug-Zeilen sind im Diff vertreten; der
   `tests/integration/`-Pfad-Punkt ist als Abweichung deklariert
   (Plan-Nachzug Zeile 1, Geschwister-Ordner `integration/` seit dem
-  Vorgänger-Slice). Still gestrichen wurde nur die §6-`SPEC-027`-Zeile
+  Vorgänger-Slice). Still gestrichen wurde nur die §6-`[SPEC-027]`-Zeile
   (F-1).
 - geprüft, ohne Befund: **Test-Anzahl** — `grep -c "^def test_"` real
   20 + 3 + 8 + 10 + 7 = 48, deckungsgleich mit der Vorgänger-Formel (41
   bei SSE) plus 7; keine Drift (§3.12 Instanz A, Nachmessen statt Übernahme).
-- geprüft, ohne Befund: **SPEC-024-Draht** — Subjekt-Form
+- geprüft, ohne Befund: **[`SPEC-024`](../../spec/pflichtenheft.md)-Draht** — Subjekt-Form
   (`cdc.stream.<source_id>.>`), alle zehn Nachrichtenfelder, Verbindungsebene-
   Authentifizierung, Fire-and-Forget/Zustellgarantie „keine" — einzeln
-  gegen `spec/pflichtenheft.md` §2 SPEC-024 gehalten; serverseitige
+  gegen `spec/pflichtenheft.md` §2 [`SPEC-024`](../../spec/pflichtenheft.md) gehalten; serverseitige
   Gegenprobe (`publisher.go`) trägt dieselben zehn JSON-Keys und denselben
   Subjekt-Präfix. „Kein drittes Schema" gewahrt (`StreamChange` wiederverwendet).
 - geprüft, ohne Befund: **Token-/Quelle-Verkettung des Realserver-Laufs** —
@@ -443,9 +443,9 @@ Verzweigung"
 ## Verdikt
 
 **Merge-blockierend:** ja — drei HIGH-Findings (F-1 stale
-`SPEC-027`-Vertragszeile mit Planpunkt still gestrichen; F-2 `#noqa`-Suppression
+[`SPEC-027`]-Vertragszeile mit Planpunkt still gestrichen; F-2 `#noqa`-Suppression
 gegen §3.2; F-3 falscher Beleg-Anker im Package-Docstring). Die Fläche selbst
-ist vollständig und konsistent designt: SPEC-024-Draht Feld für Feld gegen
+ist vollständig und konsistent designt: [`SPEC-024`](../../spec/pflichtenheft.md)-Draht Feld für Feld gegen
 Server und Spec gehalten, Realserver-Phase im Runner mit Token-Verkettung
 und SQL-Gegenprüfung, 48 Unit-Tests real nachgemessen, reales
 `0.2.0`-Artefakt-Paar gemessen, `make gates` grün (eigener, ungepiped
@@ -459,9 +459,9 @@ kein Rollen-Widerspruch, keine Konflikt-Pfad-Sequenz über den Architect nötig
 Konflikttyp; hier liegt keines von beiden vor). Erwarteter Umfang der
 Fixrunde:
 
-1. F-1: `spec/pflichtenheft.md` §6 `SPEC-027`-Zeile nachziehen
-   („aktuell `0.2.0`" + Vier-Verträge-Liste `SPEC-018`/`SPEC-020`/
-   `SPEC-021`/`SPEC-024` — Muster der `SPEC-026`-/`SPEC-028`-Zeilen);
+1. F-1: `spec/pflichtenheft.md` §6 `[SPEC-027]`-Zeile nachziehen
+   („aktuell `0.2.0`" + Vier-Verträge-Liste [`SPEC-018`]/[`SPEC-020`]/
+   [`SPEC-021`]/[`SPEC-024`] — Muster der [`SPEC-026`]-/[`SPEC-028`]-Zeilen);
    die still gestrichene Plan-§3-Zeile als ausgeführt oder als Abweichung
    deklarieren.
 2. F-2: das `# noqa: BLE001`-Token entfernen; die Zusage-Kommentar-Zeile
@@ -481,7 +481,7 @@ Fixrunde:
    auf das halten, was die Assertion misst.
 7. F-7/F-8/F-9/F-10: kleinflächige Korrekturen (vakuum-Nachklammer
    entfernen oder aussagekräftig machen; Docstring-Enumeration um
-   `SPEC-024` ergänzen; „§6" → „§7" im Plan-Nachzug; EOF-Newline nach
+   [`SPEC-024`] ergänzen; „§6" → „§7" im Plan-Nachzug; EOF-Newline nach
    Entscheidung der Fixrunde — Muster im Package etabliert).
 
 Die Finding-Klassen gehen in die Slice-Closure §7 und von dort in den
