@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgchangefeed"
-version = "0.1.0"
+version = "0.2.0"
 # README.md liegt eine Ebene hoeher (sdks/python/README.md, Sprachwurzel-
 # Ebene, analog sdks/csharp/README.md) -- setuptools erlaubt fuer `readme`
 # aber keinen Pfad ausserhalb des Projekt-Wurzelverzeichnisses (real geprueft:
@@ -14,7 +14,7 @@ version = "0.1.0"
 # `.proto`-Einspeisung in sdks/csharp/Dockerfile (COPY an eine vom
 # Projekt erwartete relative Stelle, ohne sie im committeten Baum zu
 # duplizieren).
-description = "Official Python client library for PG Change Feed (HTTP API and gRPC live-change stream)."
+description = "Official Python client library for PG Change Feed (HTTP API, gRPC and SSE live-change streams, NATS full-content stream)."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "pt9912" }]
@@ -31,6 +31,7 @@ dependencies = [
     "httpx>=0.27",
     "grpcio>=1.75",
     "protobuf>=6",
+    "nats-py>=2",
 ]
 
 [project.urls]

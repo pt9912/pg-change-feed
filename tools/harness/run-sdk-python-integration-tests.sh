@@ -25,8 +25,9 @@
 # Server-E2E-Runner).
 #
 # Eine Phase je Flaeche (slice-sdk-python-grpc-client-flaeche: gRPC,
-# SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021): jede Phase
-# traegt ihre Testdatei explizit als Umgebungsvariable
+# SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021;
+# slice-sdk-python-nats-stream-client-flaeche: NATS-Vollinhalt, SPEC-024):
+# jede Phase traegt ihre Testdatei explizit als Umgebungsvariable
 # `PGCHANGEFEED_TEST_FILE` (kein stiller
 # Ausschluss des Rests, Muster der -run-Muster im Server-E2E-Runner) und
 # traegt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
@@ -69,8 +70,11 @@ SDK_TEST_CONTAINER=cdc-sdk-python-client-test
 TEST_TABLE=feed_e2e_full
 GRPC_TEST_FILE=integration/test_grpc_realserver.py
 SSE_TEST_FILE=integration/test_sse_realserver.py
+NATS_TEST_FILE=integration/test_nats_realserver.py
 GRPC_SENTINEL=PythonGrpcSdkE2ESentinel
 SSE_SENTINEL=PythonSseSdkE2ESentinel
+NATS_SENTINEL=PythonNatsSdkE2ESentinel
+NATS_STREAM_TOKEN=e2e-nats-stream-token
 
 cleanup() {
   docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
@@ -160,19 +164,26 @@ fi
 docker build --build-context proto=proto -f sdks/python/Dockerfile \
   --target integration -t "$SDK_INTEGRATION_IMAGE" sdks/python
 
-# run_surface_phase <Name> <Addr-Env-Name> <Addr-Wert> <Sentinel> <ID-Basis>
-# <Testdatei> <Reject-Marker> — ein Realserver-Rundlauf fuer genau eine
-# SDK-Flaeche: Container starten, auf READY warten, begrenzte Folge
-# eindeutiger Zeilen committen (Fire-and-Forget-Fenster, SPEC-020/SPEC-021),
-# auf den Reject-Marker und das Prozessende warten, die RECEIVED-Zeile
-# pruefen und die change_id unabhaengig gegen cdc.changes halten.
+# run_surface_phase <Name> <Testdatei> <Sentinel> <ID-Basis> <Reject-Marker>
+# <Extra-Env> — ein Realserver-Rundlauf fuer genau eine SDK-Flaeche:
+# Container starten (die Adress-/Auth-Variablen je Flaeche kommen als
+# Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, begrenzte
+# Folge eindeutiger Zeilen committen (Fire-and-Forget-Fenster,
+# SPEC-020/SPEC-021/SPEC-024), auf den Reject-Marker und das Prozessende
+# warten, die RECEIVED-Zeile pruefen und die change_id unabhaengig gegen
+# cdc.changes halten.
 run_surface_phase() {
-  local phase_name=$1 addr_env_name=$2 addr_value=$3 sentinel=$4 id_base=$5 test_file=$6 reject_marker=$7
-  local attempt insert_id captured change_id
+  local phase_name=$1 test_file=$2 sentinel=$3 id_base=$4 reject_marker=$5 extra_env=$6
+  local attempt insert_id captured change_id pair
+
+  local env_args=()
+  for pair in $extra_env; do
+    env_args+=(-e "$pair")
+  done
 
   docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
-    -e "$addr_env_name=$addr_value" \
+    "${env_args[@]}" \
     -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \
     -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
     -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
@@ -284,15 +295,23 @@ SQL
 
 GRPC_CHANGE_ID=$(run_surface_phase \
   "gRPC-Flaeche (SPEC-020)" \
-  PGCHANGEFEED_GRPC_ADDR \
-  "pg-change-feed:9090" \
-  "$GRPC_SENTINEL" 300 "$GRPC_TEST_FILE" \
-  "REJECTED code=Unauthenticated")
+  "$GRPC_TEST_FILE" \
+  "$GRPC_SENTINEL" 300 \
+  "REJECTED code=Unauthenticated" \
+  "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090")
 
 SSE_CHANGE_ID=$(run_surface_phase \
   "SSE-Flaeche (SPEC-021)" \
-  PGCHANGEFEED_HTTP_ADDR "http://pg-change-feed:8090" \
-  "$SSE_SENTINEL" 310 "$SSE_TEST_FILE" \
-  "REJECTED status=401")
+  "$SSE_TEST_FILE" \
+  "$SSE_SENTINEL" 310 \
+  "REJECTED status=401" \
+  "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090")
 
-echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) gruen — gRPC-Flaeche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID) und SSE-Flaeche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) oeffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Aenderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhaengig ueber cdc.changes lesbar); ein Stream-Oeffnungsversuch ohne Token endete je mit gRPC-Status Unauthenticated bzw. HTTP-Status 401"
+NATS_CHANGE_ID=$(run_surface_phase \
+  "NATS-Vollinhalts-Flaeche (SPEC-024)" \
+  "$NATS_TEST_FILE" \
+  "$NATS_SENTINEL" 320 \
+  "REJECTED token-rejected" \
+  "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=src-e2e")
+
+echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) gruen — gRPC-Flaeche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID), SSE-Flaeche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) und NATS-Vollinhalts-Flaeche (pgchangefeed.nats_stream_client, nats://nats:4222, change_id=$NATS_CHANGE_ID) oeffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Aenderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhaengig ueber cdc.changes lesbar); ein Stream-Oeffnungsversuch ohne Token endete je mit gRPC-Status Unauthenticated bzw. HTTP-Status 401, ein NATS-Verbindungsversuch mit falschem Token wurde vom NATS-Server abgelehnt"

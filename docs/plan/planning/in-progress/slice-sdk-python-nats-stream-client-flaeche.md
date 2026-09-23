@@ -128,6 +128,15 @@ diesem Slice").
 | `spec/pflichtenheft.md` §1 (`LH-FA-SST-009.a`), §6 (`SPEC-027`-Zeile) | update | Träger-Nachzug: volle Vier-Wege-Abdeckung für Python. |
 | `docs/user/benutzerhandbuch.md` | update | SDK-Hinweis für gRPC, SSE und NATS-Vollinhalt. |
 
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `sdks/python/pgchangefeed/integration/test_nats_realserver.py` (Arbeitsname, statt `tests/integration/`-Pfad) | Abweichung | die Realserver-Tests liegen seit dem Vorgänger-Slice im Geschwister-Ordner `integration/`; die §3-Zeile trug noch den Arbeitsnamen `test_nats_stream_realserver.py` unter `tests/`. |
+| `tools/harness/run-sdk-python-integration-tests.sh` | update | dritte Phase im `run_surface_phase`-Muster (Env-Liste je Fläche), NATS-Sentinel/-ID-Bereich 320ff., Reject-Marker `REJECTED token-rejected` (Ablehnung am Verbindungsversuch, `allow_reconnect=False`), SQL-Gegenprüfung gegen `cdc.changes`. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` (Docstring + Export `PgChangeFeedNatsStreamClient`), `options.py`-Docstring, `sdks/python/README.md` §Status, pyproject-Beschreibung | update | Träger-Nachzug (`AGENTS.md` §3.13): die Satzform „NATS bleibt außerhalb" wird durch diesen Slice falsch; das Package trägt jetzt die volle Vier-Wege-Matrix. |
+| `spec/pflichtenheft.md` §6 Chronik-Zeile | neu | der Nachzug trägt seine Chronik-Zeile (Muster der Vorgänger-Nachzüge 2026-09-22). |
+
 **Ansatz:** Referenzmaterial für Nachrichtenschema/Subjekt-Form ist
 `examples/csharp/nats-stream-client/Format.cs`/
 `examples/kotlin/nats-stream-client/…/Format.kt` (Fremdsprachen-Referenzen

@@ -187,9 +187,11 @@ paketierbar (`make sdk-pack-csharp`) und real geprüft
 Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
 
 Für Python/PyPI ist die Frage ebenfalls beantwortet: `pgchangefeed`
-(`SPEC-027`) deckt HTTP-API, real Docker-only paketierbar
-(`make sdk-pack-python`) und real geprüft
-(`pgchangefeed-0.1.0-py3-none-any.whl`, `pgchangefeed-0.1.0.tar.gz`).
+(`SPEC-027`) deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt, real
+Docker-only paketierbar (`make sdk-pack-python`) und real geprüft
+(`pgchangefeed-0.2.0-py3-none-any.whl`, `pgchangefeed-0.2.0.tar.gz`). Eine
+dritte Sprache oder ein dritter Vertriebsweg bleibt offen — diese Kennung
+bleibt ihre Adresse.
 
 Für Kotlin/GitHub Packages ist die Frage ebenfalls beantwortet:
 `pgchangefeed-kotlin` (`SPEC-028`) deckt HTTP-API, gRPC-Stream, SSE und
@@ -664,3 +666,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-20 | `LH-FA-SST-009.a` nachgezogen: Für Kotlin/GitHub Packages ist die Sprachmatrix-/Vertriebsweg-Frage beantwortet und `pgchangefeed-kotlin` real paketierbar (`make sdk-pack-kotlin`, `pgchangefeed-kotlin-0.1.0.jar`) — die Kennung bleibt bestehen, eine vierte Sprache oder ein vierter Vertriebsweg bleibt offen |
 | 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-026` nachgezogen (`welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): `PgChangeFeed.Client` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`PgChangeFeed.Client.0.2.0.nupkg`); die Kennung bleibt bestehen, eine zweite Sprache oder ein zweiter Vertriebsweg bleibt offen |
 | 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-028` nachgezogen (`welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): `pgchangefeed-kotlin` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`pgchangefeed-kotlin-0.2.0.jar`); die Kennung bleibt bestehen, eine vierte Sprache oder ein vierter Vertriebsweg bleibt offen |
+| 2026-09-23 | `LH-FA-SST-009.a`/`SPEC-027` nachgezogen (`welle-sdk-python-vollabdeckung`, slice-sdk-python-grpc-client-flaeche + slice-sdk-python-sse-client-flaeche + slice-sdk-python-nats-stream-client-flaeche): `pgchangefeed` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API — Version auf `0.2.0` gehoben, real paketiert (`pgchangefeed-0.2.0-py3-none-any.whl`, `pgchangefeed-0.2.0.tar.gz`); die Kennung bleibt bestehen, eine dritte Sprache oder ein dritter Vertriebsweg bleibt offen |

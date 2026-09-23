@@ -5,11 +5,13 @@ This release exposes the shared connection configuration
 the nine SPEC-018 capabilities plus reading persisted changes
 (`ReadChanges`, SPEC-022), the gRPC live-change-stream surface
 (`PgChangeFeedGrpcClient`): the `StreamChanges` server-streaming RPC
-(SPEC-020), and the SSE live-change-stream surface (`PgChangeFeedSseClient`):
+(SPEC-020), the SSE live-change-stream surface (`PgChangeFeedSseClient`):
 the same fire-and-forget, no-replay stream over Server-Sent-Events
-(SPEC-021). NATS-Vollinhalt delivery remains out of scope for this release
-(ADR-0110 carries the remaining surface of the four-way matrix) -- the
-follow-up slice of the same wave adds a separate client surface for it.
+(SPEC-021), and the NATS full-content stream surface
+(`PgChangeFeedNatsStreamClient`): the same message schema and
+fire-and-forget, no-replay boundary, delivered over a NATS subject namespace
+instead of HTTP, with connection-level (not per-call) token authentication
+(SPEC-024, ADR-0110 Festlegung 3: v2 desselben Packages).
 """
 
 from pgchangefeed.exceptions import (
@@ -25,6 +27,7 @@ from pgchangefeed.exceptions import (
 from pgchangefeed.grpc_client import PgChangeFeedGrpcClient
 from pgchangefeed.http_client import PgChangeFeedHttpClient
 from pgchangefeed.models import StreamChange
+from pgchangefeed.nats_stream_client import PgChangeFeedNatsStreamClient
 from pgchangefeed.options import ClientOptions
 from pgchangefeed.sse_client import PgChangeFeedSseClient
 
@@ -33,6 +36,7 @@ __all__ = [
     "PgChangeFeedHttpClient",
     "PgChangeFeedGrpcClient",
     "PgChangeFeedSseClient",
+    "PgChangeFeedNatsStreamClient",
     "StreamChange",
     "PgChangeFeedError",
     "PgChangeFeedBadRequestError",
