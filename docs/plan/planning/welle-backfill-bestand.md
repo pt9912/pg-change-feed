@@ -170,12 +170,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - **Wird blockiert von:** keiner Welle;
   [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) ist
   `Accepted`, der Trigger (§2) ist erfüllt.
-- **Blockiert:** keine offene Welle-Datei. Eine **benannte Kopplung** trägt die
-  Umsetzung der Transformationen
+- **Blockiert:** Slices der Welle
+  [welle-transformationen](welle-transformationen.md) — die Umsetzung der
+  Transformationen
   ([`LH-FA-CFG-007`](../../../spec/lastenheft.md),
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) —
-  sie hat keine Welle-Datei; die Bedingungen gelten für deren künftige
-  Planung:
+  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
+  hängt über **benannte Kopplungen** an dieser Welle; die Bedingungen sind
+  Start-Trigger einzelner Slices der Transformations-Welle:
   - **K1 — Row-Image-Funktion.** Der Kern der Transformations-Umsetzung
     ([`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
     Folgepflicht 2, Auswertung „in `rowImage` nach dem Ausschluss")
@@ -281,7 +282,9 @@ der Closure-Trigger unerreichbar wird.
 - **Transformationen und Routing**
   ([`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-CFG-008`](../../../spec/lastenheft.md),
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) —
-  eigene Umsetzung; die Kopplung steht in §5.
+  die Transformationen sind Gegenstand von
+  [welle-transformationen](welle-transformationen.md), das Routing hat weder
+  Welle noch Umsetzung; die Kopplung steht in §5.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle Workflow-
   Änderung** — [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht. Die
   Package-Versionen der drei SDKs heben im Slice `sdk-origin` als Datei-

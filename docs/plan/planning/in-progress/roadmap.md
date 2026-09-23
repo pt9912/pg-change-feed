@@ -43,10 +43,15 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
   erkennbar (`origin`) über den bestehenden Lesezugriffsweg lesbar, zehn
   Slices ([`LH-FA-CAP-009`](../../../../spec/lastenheft.md),
   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)).
+- [welle-transformationen](../welle-transformationen.md) — Transformationen:
+  erfasste Changes tragen vor der Persistierung die durch deklarative Regeln
+  bestimmte Form, konfiguriert über die SQL-Antrags-Queue, zehn Slices
+  ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)).
 
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
-Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
-voneinander unabhängige Wellen sind kein Verstoß).
+Slice, nicht je offener Welle-Datei; mehrere gleichzeitig eröffnete Wellen sind
+kein Verstoß).
 
 ## Nächste Wellen
 
@@ -142,10 +147,17 @@ flowchart LR
     A0111[ADR-0111 Accepted]
     WBF[welle-backfill-bestand: Backfill des Bestands]
     A0112[ADR-0112 Accepted]
+    WTR[welle-transformationen: Transformationen]
+    BSP[slice-backfill-spec-nachzug]
     BRI[slice-backfill-row-image-gemeinsam]
     BRU[slice-backfill-run-usecase]
     BSA[slice-backfill-sql-administration]
-    TRF[Umsetzung ADR-0112 Transformationen: keine Welle-Datei]
+    BE2E[slice-backfill-e2e]
+    TSP[slice-transformationen-spec-nachzug]
+    TKR[slice-transformationen-kern-rename]
+    TAS[slice-transformationen-antragsweg-schema]
+    TBP[slice-transformationen-backfill-pfad]
+    TSR[slice-transformationen-start-reihenfolge]
 
     A58 --> W17
     A59 --> W18
@@ -164,26 +176,39 @@ flowchart LR
     WBF --- BRI
     WBF --- BRU
     WBF --- BSA
-    A0112 --> TRF
-    BRI -.->|K1 Kern-Slice| TRF
-    BRU -.->|K2 Backfill-Pfad| TRF
-    BSA -.->|K3 Antragsweg| TRF
+    A0112 --> WTR
+    WTR --- TSP
+    WTR --- TKR
+    WTR --- TAS
+    WTR --- TBP
+    WTR --- TSR
+    BSP -.->|SPEC-019| TSP
+    BRI -.->|K1 Kern| TKR
+    BSA -.->|K3 Antragsweg| TAS
+    BRU -.->|K2 Backfill-Pfad| TBP
+    BE2E -.->|Backfill-Runner| TBP
+    BSA -.->|Run-Start| TSR
 ```
 
-**Benannte Kopplung an die Umsetzung der Transformationen**
-([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
-[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)):
-der Knoten `TRF` hat keine Welle-Datei und keine Zeile in *Nächste Wellen*; die
-gestrichelten Kanten sind Bedingungen an ihre künftige Planung, kein Trigger
-einer bestehenden Welle. **K1** — der Kern (Regelauswertung im Row Image) startet
-nach `slice-backfill-row-image-gemeinsam`; **K2** — der Slice, der den
-Backfill-Pfad an die Regelauswertung bindet
+**Benannte Kopplung zwischen den beiden offenen Wellen**
+([welle-backfill-bestand](../welle-backfill-bestand.md) und
+[welle-transformationen](../welle-transformationen.md)): die gestrichelten
+Kanten sind Start-Trigger einzelner Slices der Transformations-Welle, kein
+Trigger einer Welle. **K1** — der Kern
+([`LH-FA-CFG-007`](../../../../spec/lastenheft.md), Regelauswertung im Row
+Image) startet nach `slice-backfill-row-image-gemeinsam`; **K2** — der Slice, der
+den Backfill-Pfad an die Regelauswertung bindet
 ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-Folgepflicht 7), folgt `slice-backfill-run-usecase`; **K3** — der Antragsweg der
-Transformationen erweitert die `request_kind`-Menge nach
-`slice-backfill-sql-administration`. Ausführung und Begründung der Reihenfolge
-(Backfill zuerst) stehen in [welle-backfill-bestand](../welle-backfill-bestand.md)
-§5.
+Folgepflicht 7), folgt `slice-backfill-run-usecase` und zusätzlich
+`slice-backfill-e2e`; **K3** — der Antragsweg der Transformationen erweitert
+die `request_kind`-Menge nach `slice-backfill-sql-administration`; dazu die
+gemeinsame Änderung von [`SPEC-019`](../../../../spec/pflichtenheft.md) (Spec-Nachzug
+nach `slice-backfill-spec-nachzug`) und die gemeinsame Startpfad-Stelle in
+`internal/bootstrap/wiring.go` (`slice-transformationen-start-reihenfolge` nach
+`slice-backfill-sql-administration`). Ausführung und Begründung der
+Reihenfolge (Backfill zuerst) stehen in
+[welle-backfill-bestand](../welle-backfill-bestand.md) §5 und
+[welle-transformationen](../welle-transformationen.md) §5.
 
 ## Abgeschlossene Wellen
 
