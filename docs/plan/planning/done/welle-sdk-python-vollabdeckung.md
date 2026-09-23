@@ -8,7 +8,7 @@ Verzeichnis-Position — kein Status-Feld.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, direkt aus
-[`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+[`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 §Konsequenzen Folgepflicht 1 geschnitten — **anders als bei C#/Kotlin
 braucht Python diese neue ADR**, weil `ADR-0107` den kleineren Erst-Scope
 **explizit wegen** einer Risiko-Asymmetrie wählte, siehe `ADR-0110`
@@ -22,9 +22,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht.
 
 `pgchangefeed` (`SPEC-027`) deckt bislang ausschließlich HTTP-API
-(`SPEC-018`) — [`ADR-0107`](../adr/0107-python-pypi-zweites-sdk-package.md)
+(`SPEC-018`) — [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)
 Festlegung 1 grenzte v1 bewusst darauf ein, **wegen** der fehlenden
-Python-Referenz-Vorarbeit (kein `examples/python/`). [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+Python-Referenz-Vorarbeit (kein `examples/python/`). [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 (Accepted, 2026-09-21) entscheidet: Das Restrisiko bleibt real bestehen,
 wird aber jetzt bewusst getragen — ein Folge-Release deckt alle drei
 verbleibenden Wege (gRPC `SPEC-020`, SSE `SPEC-021`, NATS-Vollinhalt
@@ -36,7 +36,7 @@ bei den bisherigen SDK-Slices aller drei Sprachen (C#/Kotlin/Python-HTTP
 testeten bislang ausschließlich netzlos gegen Fakes).
 
 Das *Mehr* gegenüber drei isolierten Slice-DoDs:
-[`LH-FA-SST-009`](../../../spec/lastenheft.md)s AC ist für die volle
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md)s AC ist für die volle
 Matrix erst erfüllt, wenn gRPC-, SSE- **und** NATS-Vollinhalts-Fläche
 zusammen mit der bestehenden HTTP-Fläche in einem realen, neu
 paketierten Artefakt-Paar (`.whl`+`.tar.gz`) stehen **und** jede der drei
@@ -49,7 +49,7 @@ Folgepflicht 1 nicht.
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Regeln.
 
-- [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) ist
+- [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) ist
   `Accepted` (bereits erfüllt, 2026-09-21).
 - `welle-sdk-python-lh-fa-sst-009` liegt in `done/` (bereits erfüllt,
   2026-09-19) — das Package existiert real und ist paketierbar
@@ -87,9 +87,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-python-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`); führt das Realserver-Integrationstest-Werkzeug ein | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
-| slice-sdk-python-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`); erweitert das Integrationstest-Werkzeug | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
-| slice-sdk-python-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`); erweitert das Werkzeug; Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
+| slice-sdk-python-grpc-client-flaeche | gRPC-Client-Fläche (`SPEC-020`); führt das Realserver-Integrationstest-Werkzeug ein | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
+| slice-sdk-python-sse-client-flaeche | SSE-Client-Fläche (`SPEC-021`); erweitert das Integrationstest-Werkzeug | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
+| slice-sdk-python-nats-stream-client-flaeche | NATS-Vollinhalts-Client-Fläche (`SPEC-024`); erweitert das Werkzeug; Version-Hebung, Träger-Nachzug | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) |
 
 **Reihenfolge:** Sequentiell, in dieser Reihenfolge (gRPC → SSE →
 NATS-Vollinhalt) — dieselbe Reihenfolge, die `ADR-0107` Festlegung 1
@@ -113,7 +113,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - Blockiert: keine andere Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) ist
+  [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) ist
   bereits `Accepted`.
 - **Geschwister-Wellen, keine Abhängigkeit:** `welle-sdk-csharp-vollabdeckung`
   und `welle-sdk-kotlin-vollabdeckung` verfolgen dasselbe Ziel für ihre
@@ -185,11 +185,8 @@ vollständig durchgesehen. Relevante Treffer:
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 §Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**.
-Die beiden Zeiger unten sind als auflösbare Links eingetragen: der
-Ergebnis-Zeiger trägt die Ruheort-Datei in `done/` direkt, der
-Zähler-Zeiger das Register; der `git mv` der Welle-Datei nach `done/`
-folgt als eigener Commit (`AGENTS.md` §3.3) und der
-Reconciliations-Commit danach stellt beide auf die Ruheort-Tiefe.
+Die beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/`
+auflösen, nicht vom Schreibort.
 
-Ergebnis: [welle-sdk-python-vollabdeckung-results.md](done/welle-sdk-python-vollabdeckung-results.md)
-Zähler: [observations/](observations/README.md) (Beobachtungs-Register)
+Ergebnis: [welle-sdk-python-vollabdeckung-results.md](welle-sdk-python-vollabdeckung-results.md)
+Zähler: [observations/](../observations/README.md) (Beobachtungs-Register)

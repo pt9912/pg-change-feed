@@ -47,7 +47,7 @@ Runner-Assertionen wurden statisch gegen den Skripttext geprüft.
 | 8 | Reconciliation (`[ ]`, „entfällt") | — | `docs/plan/planning/reconciliation.md` existiert nicht | korrekt |
 | 9 | Beobachtungs-Register (`[ ]`) | — | korrekt offen (Antwort in §7 bei Closure) | Trennung korrekt |
 | 10 | Risiko-Ausgänge (`[ ]`) | — | Ausgänge in §6 geschrieben (2× weiter offen, 1× entfallen) | Trennung korrekt |
-| 11 | Drei Paarungen (`[ ]`) | — | [Welle](../plan/planning/welle-sdk-python-vollabdeckung.md) offen | Trennung korrekt |
+| 11 | Drei Paarungen (`[ ]`) | — | [Welle](../plan/planning/done/welle-sdk-python-vollabdeckung.md) offen | Trennung korrekt |
 
 ### DoD 1 — gRPC-Client-Fläche (Substanz erfüllt, Beleg-Zahl veraltet)
 

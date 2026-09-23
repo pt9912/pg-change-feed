@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md).
+**Welle:** [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream),
@@ -161,7 +161,7 @@ diesem Slice").
       in §6 — siehe §7.)*
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
+      [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -372,7 +372,7 @@ NATS-Fläche + Closure-Notiz mit Lerneintrag geschrieben.
     als dokumentierter Lauf, INFO — der Feld-Kopf trägt am HEAD den
     breiteren Raum).
 - **Folge-Slices:** keiner — letzter Flächen-Slice der
-  [Welle](../welle-sdk-python-vollabdeckung.md); die Welle-Closure
+  [Welle](welle-sdk-python-vollabdeckung.md); die Welle-Closure
   (Results-Datei, Roadmap-Nachzug, Lese-Schritt) folgt als eigener
   Planner-Zug. Ein realer `sdk-python-v0.2.0`-Tag-Push bleibt
   Betreiber-Entscheidung ([`AGENTS.md`](../../../../AGENTS.md) §3.10,
@@ -388,7 +388,7 @@ NATS-Fläche + Closure-Notiz mit Lerneintrag geschrieben.
   ins Register — der einzige materialisierte Fall trägt seinen Beleg als
   Beleg einer bestehenden Klasse (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
+  [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure:
   Anker (Welle-Link oben löst am Ruheort auf), Folge-Slice (keiner,
   letzter Flächen-Slice der Welle), Register (drei Evidenzdateien dieser

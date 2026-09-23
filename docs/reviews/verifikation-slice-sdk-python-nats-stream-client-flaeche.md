@@ -70,7 +70,7 @@ im Original gelesen; die serverseitige Gegenprobe
 | 12 | Reconciliation-Register — „entfällt" | **korrekt** (`docs/plan/planning/reconciliation.md` existiert nicht, gemessen) |
 | 13 | Beobachtungs-Register fortgeschrieben / „keine Beobachtung" in §7 | **korrekt offen** (Antwort in §7 bei Closure; Register trägt keinen Eintrag dieses Slices) |
 | 14 | Jedes Risiko aus §6 trägt einen Ausgang | **erfüllt** (alle vier Ausgänge im Plan geschrieben: 1× am Ort benannt — Modul-Docstring; 2× entfallen mit Begründung; 1× weiter offen → Review) |
-| 15 | Drei Paarungen (Anker · Folge-Slice · Register) | **erfüllt als Deklaration** (Welle [welle-sdk-python-vollabdeckung](../plan/planning/welle-sdk-python-vollabdeckung.md) noch offen; Endprüfung regelkonform bei deren Closure) |
+| 15 | Drei Paarungen (Anker · Folge-Slice · Register) | **erfüllt als Deklaration** (Welle [welle-sdk-python-vollabdeckung](../plan/planning/done/welle-sdk-python-vollabdeckung.md) noch offen; Endprüfung regelkonform bei deren Closure) |
 
 Kein DoD-Punkt wurde still gestrichen; die Zeilen 11/13 sind die
 regelmäßige Trennung Implementer-Bericht → Verifikation → Closure

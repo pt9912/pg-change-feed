@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md).
+**Welle:** [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md),
 [`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Change-Stream —
@@ -114,7 +114,7 @@ gilt für **jede** neue Fläche einzeln).
       siehe §7.)*
 - [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
-      [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
+      [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
 
 ## 3. Plan (vor Code)
@@ -304,7 +304,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Kein Ausgang „weiter offen“ ins Register — ein Registereintrag für ein
   nie aufgetretenes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
+  [welle-sdk-python-vollabdeckung](welle-sdk-python-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
