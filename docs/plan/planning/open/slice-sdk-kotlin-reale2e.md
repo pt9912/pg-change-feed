@@ -1,0 +1,244 @@
+# Slice sdk-kotlin-reale2e: Kotlin-SDK — vier Zustellweg-Flächen mit Realserver-Beleg
+
+**Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
+Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
+wechselt nur durch `git mv`.
+
+**Welle:** [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+
+**Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
+(Client-Bibliotheken — die Fläche existiert, der Beleg-Stand wird stärker),
+[`LH-FA-SST-008`](../../../../spec/lastenheft.md) (Live-Streaming —
+gRPC/SSE/NATS-Flächen, Boundary: kein Replay im Stream selbst),
+[`LH-FA-SST-006`](../../../../spec/lastenheft.md) (HTTP-API),
+[`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+§Entscheidung Festlegung 2/Folgepflicht 1 (die etablierte Mechanik-Klasse,
+hier auf den Kotlin-Baum gespiegelt), [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md)
+(Ort `sdks/kotlin/`, Import-Grenze, unverändert gültig), [`ADR-0060`](../../adr/0060-grpc-streaming-mechanismus.md)/[`ADR-0061`](../../adr/0061-http-sse-zusaetzlich-zu-grpc.md)/[`ADR-0100`](../../adr/0100-nats-dritter-vollinhalts-zustellweg.md)
+(Server-Verträge der drei Stream-Wege, werden vom SDK benutzt, nicht erweitert).
+
+**Berührte Spec-Stellen:** [`SPEC-018`](../../../../spec/pflichtenheft.md),
+[`SPEC-020`](../../../../spec/pflichtenheft.md),
+[`SPEC-021`](../../../../spec/pflichtenheft.md),
+[`SPEC-024`](../../../../spec/pflichtenheft.md) — gelesen als Draht-Vertrag,
+nicht geändert.
+
+**Verantwortlich:** — (noch nicht priorisiert).
+
+**Autor:** Planner-Agent, Welle-Eröffnung
+[welle-sdk-reale2e](../welle-sdk-reale2e.md). **Datum:** 2026-09-23.
+
+---
+
+## 1. Ziel und Abgrenzung
+
+**Ziel:** Der Realserver-Beleg für die **vier Kotlin-Zustellweg-Flächen**
+des Packages `pgchangefeed-kotlin` (HTTP `SPEC-018`, gRPC `SPEC-020`, SSE
+`SPEC-021`, NATS-Vollinhalt `SPEC-024`) — dieselbe Mechanik, die
+`slice-sdk-csharp-reale2e` auf dem C#-Baum durchläuft (und beide im Muster
+des Python-Vorbilds, real gebaut in
+`slice-sdk-python-grpc-client-flaeche`, `done/`): (a) eine additive
+Docker-Stufe `integration` in `sdks/kotlin/Dockerfile` (baut auf `build`
+auf — derselbe installierte Jar-/Klassenpfad, kein zweiter Build-Pfad);
+(b) ein Runner-Skript `tools/harness/run-sdk-kotlin-integration-tests.sh`
+(Arbeitsname) — Bring-up im Python-Runner-Muster, Bau/Start der
+`integration`-Stufe im selben Docker-Netz wie der Feed-Container, eine
+Phase je Fläche; der Kotlin-Prüfling ist die **kompilierte
+Client-Assembly** (der Integrationstest importiert
+`io.github.pt9912.pgchangefeed` direkt, kein Wegwerf-Duplikat-Client);
+(c) ein Make-Target `test-sdk-kotlin-integration` in `harness/mk/sdk.mk`;
+(d) Nachzug der `harness/README.md`-Zeile im selben Zug.
+
+**Je Fläche der Beleg (die vier Phasen des Runners)** — dieselbe
+Formulierung wie im C#-Slice §1 (Phasen 1–4: gRPC-Stream-Empfang mit
+SQL-Gegenprüfung und `Unauthenticated`-Ablehnung; SSE-Empfang mit
+SQL-Gegenprüfung und 401; NATS-Vollinhalt-Empfang mit SQL-Gegenprüfung
+und Token-Abweisung; HTTP-Rundlauf RegisterConsumer/ListTables über die
+SDK-Methoden mit SQL-Gegenprüfung gegen `cdc.consumer` und 401-Ablehnung),
+hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
+`PgChangeFeedSseClient`, `PgChangeFeedNatsStreamClient`,
+`PgChangeFeedHttpClient` aus `io.github.pt9912.pgchangefeed.*`).
+
+**Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
+
+- **Die Python-HTTP-Fläche** — eigener Folge-Slice
+  (`slice-sdk-python-http-reale2e`); er erweitert das bestehende
+  Python-Runner-Skript, nicht dieses.
+- **Der Abdeckungs-Träger-Erstzug** — die Datei
+  `docs/user/sdk-e2e-abdeckung.md` existiert bereits real (erstes
+  Erzeugnis des C#-Runners, Vorgänger-Slice); dieser Slice **erweitert**
+  sie um den Kotlin-Abschnitt (idempotent, Marker-gegrenzt). Der
+  `.d-check.yml`-Eintrag existiert bereits (Vorgänger-Slice) und wird
+  hier nicht geändert.
+- **Version-Bump oder Publish-Workflow-Änderung** — der Realserver-Test
+  ist kein Artefakt-Vertrag; die Top-Level-`version` in
+  `build.gradle.kts` und `.github/workflows/sdk-kotlin-release.yml`
+  bleiben unverändert (Welle-Plan §6).
+- **Ein `examples/kotlin/`-Bezug** — die Beispiele bleiben Doku mit
+  Bau-Bindung (`SPEC-023`), unberührt.
+- **`spec/pflichtenheft.md`-Nachzug** — kein falsch werdender Träger
+  (Welle-Plan §6); `SPEC-027`s Deckungs-Aussage bleibt richtig.
+- **Eine Aufnahme des Targets in `make gates`** — braucht DB-Zugang/
+  Docker/Netz, dieselbe Klasse wie `make test-integration` (Welle-Plan §6).
+
+## 2. Definition of Done
+
+- [ ] `LH-FA-SST-009`-Beleg-Stand stärker: alle vier Kotlin-Flächen
+      tragen je einen realen Rundlauf gegen eine laufende Server-Instanz
+      (§1, Phasen 1–4), jede Phase mit SQL-Gegenprüfung der empfangenen
+      `change_id` gegen `cdc.changes` (gRPC/SSE/NATS) bzw. der
+      Registrierung gegen `cdc.consumer` (HTTP) und je einem
+      Ablehnungs-Beleg ohne gültiges Token (gRPC `Unauthenticated`,
+      SSE/HTTP Status 401, NATS-Token-Abweisung durch den Server).
+      *(Sensor-Beleg: `make test-sdk-kotlin-integration` EXIT=0 —
+      zu tragen beim Umsetzungs-Lauf.)*
+- [ ] **Mechanik** ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+      §Entscheidung Festlegung 2, gespiegelt): additive Docker-Stufe
+      `integration` in `sdks/kotlin/Dockerfile` (baut auf `build` auf,
+      **dieselben Pins wiederverwendet** — `eclipse-temurin:21-jdk@sha256:085e…`
+      aus der bestehenden `build`-Stufe (`sdks/kotlin/Dockerfile` Z. 43),
+      **keine neuen Pins**), Runner-Skript
+      `tools/harness/run-sdk-kotlin-integration-tests.sh` (Bring-up im
+      Python-Runner-Muster, `set -euo pipefail`, Cleanup je Ausgang,
+      Phase-Auswahl explizit — kein stiller Ausschluss,
+      `BEO-PGC/test-runner-stiller-ausschluss`-Disziplin), Make-Target
+      `test-sdk-kotlin-integration` in `harness/mk/sdk.mk`. Kein Gate.
+      *(Sensor-Beleg: realer Lauf des Targets — zu tragen beim
+      Umsetzungs-Lauf.)*
+- [ ] **Träger-Erweiterung im selben Zug:**
+      `docs/user/sdk-e2e-abdeckung.md` trägt den Kotlin-Abschnitt (aus
+      derselben Messung, die ihn belegt, idempotent vom Runner
+      geschrieben — die Datei trägt nur Zeilen real existierender
+      Runner-Phasen).
+- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
+      `sdks/kotlin/**` — der neue Integrationstest-Quelltext inklusive
+      (Import-Zeilen-Prüfung, Muster der bestehenden SDK-Slices).
+- [ ] `make gates` grün.
+- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+      Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
+      kein Self-Review (Modul 8).
+- [ ] Doku-Update im selben Zug: `harness/README.md` §Werkzeuge bekommt
+      die neue `make test-sdk-kotlin-integration`-Zeile, weil das Target
+      hier real entsteht ([`AGENTS.md`](../../../../AGENTS.md) §4; die
+      Zeile trägt ihren realen Lauf, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`).
+- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+      diesem Repo.
+- [ ] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
+      eine Antwort und wird in §7 notiert.
+- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
+- [ ] Die drei Paarungen getragen — dieser Slice gehört zu
+      [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+
+## 3. Plan (vor Code)
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `tools/harness/run-sdk-kotlin-integration-tests.sh` | neu | Runner, wortwörtliche Spiegelung des C#-Runner-Musters (dasselbe Bring-up, dieselbe Phase-Form); Form-Vorbilder: `tools/harness/run-sdk-python-integration-tests.sh` (Origin) und der C#-Runner (Spiegel). |
+| `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/kotlin/` (Arbeitsname) | neu | der Integrationstest importiert die Client-Klassen direkt; eigener Quellmenge-Ordner (Gradle-Quellset oder eigenes Modul — der umsetzende Zug entscheidet über die Gradle-Form), damit der Unit-Lauf (`./gradlew test`) unberührt bleibt und die `integration`-Stufe gezielt aufruft (kein stiller Ausschluss des Rests). |
+| `sdks/kotlin/Dockerfile` | update | additive Stufe `integration` (baut auf `build` auf); Pins unverändert (`eclipse-temurin:21-jdk@sha256:085e…`, Wiederverwendung aus `build`, kein neuer Pin). |
+| `harness/mk/sdk.mk` | update | neues Target `test-sdk-kotlin-integration`. |
+| `docs/user/sdk-e2e-abdeckung.md` | update | Kotlin-Abschnitt als Erzeugnis des Kotlin-Runners (idempotent, Marker-gegrenzt). |
+| `harness/README.md` §Werkzeuge | update | neue Zeile für `make test-sdk-kotlin-integration` (nach dem realen Lauf geschrieben). |
+
+**Ansatz:** Dieselbe `run_surface_phase`-Form wie im C#-Slice (begrenztes
+Fire-and-Forget-Fenster, eindeutige Sentinel- und ID-Wertebereiche je
+Phase, Reject-Marker je Protokoll). Der Runner schreibt den Träger-
+Abschnitt idempotent aus derselben Messung, die ihn belegt
+(`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`-Disziplin).
+
+## 4. Trigger
+
+**Start** (`next` → `in-progress`): wenn diese Welle eröffnet ist und kein
+anderer Slice in `in-progress/` liegt (WIP-Limit 1); die Form ist durch
+den C#-Vorgänger durchlaufen.
+
+**Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
+
+- `in-progress` → `next` (zu groß, zurück zur Zerlegung): falls die
+  Gradle-Form der Integrations-Quellmenge (Quellmenge-Ordner vs. eigenes
+  Modul vs. `--tests`-Filter) mehr Aufwand verlangt als erwartet — dann
+  Rück zur Zerlegung mit der Gradle-Entscheidung als eigenem
+  Mechanik-Kern.
+- `in-progress` → `open` (blockiert — Carveout?): die `integration`-Stufe
+  scheitert an einem Kotlin-/Gradle-spezifischen Verhalten, das der
+  Vorbild-Mechanik widerspricht (unwahrscheinlich — die `build`-Stufe
+  baut den Jar bereits real, `sdk-pack-kotlin` läuft grün).
+
+## 5. Closure-Trigger
+
+DoD vollständig + `make gates` grün + ein realer, grüner
+`make test-sdk-kotlin-integration`-Lauf mit allen vier Phasen +
+Closure-Notiz mit Lerneintrag geschrieben.
+
+## 6. Risiken und offene Punkte
+
+- **Form-Vorbild-Kopie trägt deutsches Wortfragment weiter**
+  (`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`,
+  offen, 2×): Runner-Skript und Dockerfile-Kommentar entstehen als Kopie
+  zweier Vorbilder (Python-Origin, C#-Spiegel). *Zusage:* die
+  übernommenen Form-Teile werden je separat auf Sprachreinheit geprüft;
+  der Suchlauf im Bericht trägt das Ergebnis.
+- **Gradle-Quellmenge-Form:** `--tests`-Filter, eigener
+  Quellmenge-Ordner (`src/integrationTest/` mit eigener Gradle-SourceSet-
+  Registrierung) oder ein eigenes Gradle-Modul — die drei Formen haben
+  unterschiedliche Unit-Lauf-Konsequenzen; die falsche Form schließt die
+  Integrations-Tests aus dem Unit-Lauf aus (gut) oder lässt sie still
+  mitlaufen (schlecht — netzloser `make sdk-pack-kotlin`-Lauf würde
+  realserver-Tests verlangen und scheitern). *Erwartet, zu belegen
+  durch:* ein realer `make sdk-pack-kotlin`-Lauf bleibt grün, nachdem
+  die Integrations-Quellmenge existiert (kein stiller Ausschluss in die
+  andere Richtung).
+- **JVM-stdout-Pufferung vs. `docker logs`-Marker-Polling:** der Runner
+  liest die Marker über `docker logs`, während der Test läuft;
+  JVM-stdout kann zeilenweise gepuffert sein. *Erwartet, zu belegen
+  durch:* der erste reale Lauf zeigt die Marker fristnah; falls nicht,
+  trägt der Fix die ungepufferte Ausgabe-Form (Gradle-Runner-Option bzw.
+  explizite Flushes) und den Beleg.
+- **zwei Token-Klassen in der HTTP-Phase** — dieselbe Ausgangslage wie im
+  C#-Slice §6 (dritter Punkt); *Erwartet, zu belegen durch:* der reale
+  Lauf.
+- **Sentinel-/ID-Kollisionen mit anderen Läufen** — der Kotlin-Runner
+  wählt eigene Sentinel- und ID-Wertebereiche (Muster Python-Runner:
+  300/310/320; C#-Runner wählt eigene). *Erwartet, zu belegen durch:* der
+  reale Lauf.
+
+## 7. Closure-Notiz
+
+- **Was hat funktioniert:** *(zu tragen bei Closure)*
+- **Was ging anders als geplant:** *(zu tragen bei Closure)*
+- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
+  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
+  `done/`-Übergang)*
+- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
+  „keine Beobachtung angefallen" als notierte Antwort)*
+- **Risiken aus §6:** *(je ein Ausgang)*
+- **Drei Paarungen:** dieser Slice gehört zu
+  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (offen) — die Prüfung
+  läuft regelkonform bei deren Closure.
+
+## 8. Sub-Area-Prüfungen und Modus-Begründung
+
+**Vorgelagert — Sub-Area-Wahl prüfen:** Sub-Area `sdks/kotlin/` — bereits
+mit `slice-sdk-kotlin-projektgeruest` eröffnet (GF), keine erneute
+Ausdifferenzierung nötig; `tools/harness/` ist Werkzeug-Area der
+bestehenden Runner-Familie (GF, fortlaufend).
+
+**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
+`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter` (offen,
+2×, einschlägig — Risiko §6; dieser Slice ist potenziell das dritte
+Auftreten, das der Eintrag als Prüfpunkt benennt),
+`BEO-PGC/test-runner-stiller-ausschluss` (offen, 2×, nicht einschlägig —
+explizite Phase-Auswahl), `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
+(verkörpert, Suchlauf trägt README-Status-Abschnitt und
+`harness/README.md`-Zeilen),
+`BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (offen, 3×,
+Architect-Entscheidung — READMEs höchstens Suchlauf-Ziel, kein
+Schreib-Ziel),
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert),
+`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (verkörpert).
+
+**Modus-Begründungsblock:** alle berührten Sub-Areas GF (Fortsetzung der
+SDK-Bäume und der `tools/harness/`-Werkzeug-Familie; die Dockerfile-Stufe
+ist eine additive Erweiterung eines GF-Artefakts).

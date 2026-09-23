@@ -38,6 +38,14 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-sdk-reale2e](../welle-sdk-reale2e.md) — SDK-Realserver-E2E: die
+  zwölf Zustellweg-Flächen der drei SDK-Packages (3 Sprachen × 4 Wege)
+  tragen reale Server-Belege nach, Abdeckungs-Träger
+  `docs/user/sdk-e2e-abdeckung.md` + `trace.coverage`-Eintrag
+  (Label `SDK-E2E`) im selben Zug
+  ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+  §Entscheidung Festlegung 2).
+
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
 voneinander unabhängige Wellen sind kein Verstoß).
@@ -51,7 +59,6 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-| welle-sdk-reale2e | `welle-sdk-python-vollabdeckung` liegt in `done/` | Noch nicht geschnitten — mindestens: `slice-sdk-csharp-reale2e` (Realserver-Integrationstest des C#-SDK, neues `make test-sdk-csharp-integration` im Mechanismus-Muster des Python-Werkzeugs), `slice-sdk-kotlin-reale2e` (dasselbe für Kotlin, `make test-sdk-kotlin-integration`), `slice-sdk-python-http-reale2e` (Retrofit der HTTP-Fläche in `tools/harness/run-sdk-python-integration-tests.sh` — in der laufenden Welle bewusst Out-of-Scope, [`welle-sdk-python-vollabdeckung`](../done/welle-sdk-python-vollabdeckung.md) §6); einer der drei Slices führt den parallelen Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` ein — stabile Abdeckungs-Deklaration der SDK-Realserver-Belege im Muster von `docs/user/e2e-abdeckung.md`, kein Lauf-Beleg — samt Pflicht-`trace.coverage`-Eintrag (Label `SDK-E2E`) in `.d-check.yml` im selben Zug; `docs/user/e2e-abdeckung.md` selbst bleibt unverändert, ihr Erzeuger bleibt Eigentum des Server-Runners `tools/harness/run-integration-tests.sh` | M |
 
 ## Meilensteine
 
@@ -133,7 +140,7 @@ flowchart LR
     WSDKCSV[welle-sdk-csharp-vollabdeckung: C#-SDK volle Vier-Wege-Parität]
     WSDKKTV[welle-sdk-kotlin-vollabdeckung: Kotlin-SDK volle Vier-Wege-Parität]
     WSDKPYV[welle-sdk-python-vollabdeckung: Python-SDK volle Vier-Wege-Parität]
-    WSDKRE2E[geplant: welle-sdk-reale2e SDK-Realserver-E2E C#/Kotlin/Python-HTTP]
+    WSDKRE2E[welle-sdk-reale2e: SDK-Realserver-E2E C#/Kotlin/Python-HTTP]
 
     A58 --> W17
     A59 --> W18
