@@ -1,8 +1,7 @@
 # Verifikationsbericht: slice-sdk-python-sse-client-flaeche — 2026-09-23
 
 **Rolle:** Verifier (Modul 11) — „Bauen wir es richtig?" gegen den
-DoD-Vertrag (Slice-Plan
-[`slice-sdk-python-sse-client-flaeche`](../plan/planning/in-progress/slice-sdk-python-sse-client-flaeche.md)
+DoD-Vertrag (`Slice-Plan` `slice-sdk-python-sse-client-flaeche`
 §2), den Plan-vs-Code-Diff (§3 + Plan-Nachzug + beide
 §3.13-Suchlauf-Felder) und die ADR-Konformität
 ([`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
