@@ -23,7 +23,7 @@ Liste ist der Lauf nicht reproduzierbar):
 - [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   §Entscheidung Festlegung 2, §Konsequenzen Folgepflicht 1–3
 - `spec/pflichtenheft.md` `SPEC-021` · `spec/lastenheft.md`
-  [`LH-FA-SST-009`](../spec/lastenheft.md)
+  [`LH-FA-SST-009`](../../spec/lastenheft.md)
 - `AGENTS.md` (§3 Hard Rules, §3.9/§3.12/§3.13) · `harness/conventions.md`
   (MR-000) · `v6.9.0` · `regelwerk/modul-08-agentenrollen.md` §Die neun
   Übergaben
@@ -145,7 +145,7 @@ Liste ist der Lauf nicht reproduzierbar):
   unberührt; Handbuch-Versionshistorie-Muster (Skill-HIGH) — beide Muster
   (Version-Kopf, Historie-Zeile) im selben Diff
 - geprüft, ohne Befund: Commit-Message-Traceability — `3c941b0b` und
-  `228dfc9e` nennen je [`LH-FA-SST-009`](../spec/lastenheft.md) +
+  `228dfc9e` nennen je [`LH-FA-SST-009`](../../spec/lastenheft.md) +
   [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md),
   kein `SPEC-*`/`ARC-*` im Betreff
 - geprüft, ohne Befund: `make docs-check` real gefahren — Ausgang 0,
