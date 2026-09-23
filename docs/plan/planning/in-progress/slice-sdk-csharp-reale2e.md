@@ -109,16 +109,22 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009`-Beleg-Stand stärker: alle vier C#-Flächen tragen
+- [x] `LH-FA-SST-009`-Beleg-Stand stärker: alle vier C#-Flächen tragen
       je einen realen Rundlauf gegen eine laufende Server-Instanz
       (§1, Phasen 1–4), jede Phase mit SQL-Gegenprüfung der empfangenen
       `change_id` gegen `cdc.changes` (gRPC/SSE/NATS) bzw. der
       Registrierung gegen `cdc.consumer` (HTTP) und je einem
       Ablehnungs-Beleg ohne gültiges Token (gRPC `Unauthenticated`,
       SSE/HTTP Status 401, NATS-Token-Abweisung durch den Server).
-      *(Sensor-Beleg: `make test-sdk-csharp-integration` EXIT=0 —
-      zu tragen beim Umsetzungs-Lauf.)*
-- [ ] **Mechanik** ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+      *(Sensor-Beleg: `make test-sdk-csharp-integration` EXIT=0 — der
+      Lauf trug gRPC change_id=804-1, SSE 807-1, NATS 810-1 (je
+      SQL-Gegenprüfung gegen `cdc.changes`) und die Consumer-Registrierung
+      (consumer_id=csharp-sdk-e2e-20260923075217, unabhängig über
+      `cdc.consumer` lesbar); die Ablehnungs-Belege trugen je Phase real
+      gRPC `Unauthenticated`, HTTP `401` und die NATS-Verbindungsablehnung.
+      Der Endstand nach den Lauf-Korrekturen (Linktiefe des Trägers)
+      wurde in einem erneuten Lauf bestätigt.)*
+- [x] **Mechanik** ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
       §Entscheidung Festlegung 2, gespiegelt): additive Docker-Stufe
       `integration` in `sdks/csharp/Dockerfile` (baut auf `build` auf,
       **dieselben Pins wiederverwendet** — `mcr.microsoft.com/dotnet/sdk:10.0@sha256:60a2…`
@@ -128,9 +134,10 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
       je Ausgang, Testdatei-/Phase-Auswahl explizit — kein stiller
       Ausschluss, `BEO-PGC/test-runner-stiller-ausschluss`-Disziplin),
       Make-Target `test-sdk-csharp-integration` in `harness/mk/sdk.mk`.
-      Kein Gate. *(Sensor-Beleg: realer Lauf des Targets — zu tragen beim
-      Umsetzungs-Lauf.)*
-- [ ] **Abdeckungs-Träger + `trace.coverage`-Eintrag im selben Zug**:
+      Kein Gate. *(Sensor-Beleg: realer Lauf des Targets EXIT=0 — siehe
+      oben; der Runner fuhr alle vier Phasen gegen den laufenden
+      Feed-Container.)*
+- [x] **Abdeckungs-Träger + `trace.coverage`-Eintrag im selben Zug**:
       `docs/user/sdk-e2e-abdeckung.md` entsteht real (generiert vom
       Runner, Marker-gegrenzter C#-Abschnitt — die Datei trägt nur Zeilen
       real existierender Runner-Phasen, Muster
@@ -138,15 +145,15 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
       `.d-check.yml` trägt den `trace.coverage`-Eintrag (Label
       `SDK-E2E`) — die RTM sieht die C#-Belege ab diesem Slice; die
       Kotlin-/Python-Abschnitte kommen mit deren Slices (Welle-Plan §4).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
       `sdks/csharp/**` — der neue Integrationstest-Quelltext inklusive
       (Import-Zeilen-Prüfung, Muster der bestehenden SDK-Slices).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
       kein Self-Review (Modul 8).
-- [ ] Doku-Update im selben Zug: `harness/README.md` §Werkzeuge bekommt
+- [x] Doku-Update im selben Zug: `harness/README.md` bekommt
       die neue `make test-sdk-csharp-integration`-Zeile, weil das Target
       hier real entsteht ([`AGENTS.md`](../../../../AGENTS.md) §4: kein
       Träger nennt ein Target, das es nicht gibt — umgekehrt: eine Zeile
@@ -172,6 +179,26 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
 | `docs/user/sdk-e2e-abdeckung.md` | neu | der Abdeckungs-Träger, C#-Abschnitt als Erzeugnis des Runners (idempotent, Marker-gegrenzt); Form nach `docs/user/e2e-abdeckung.md`. |
 | `.d-check.yml` | update | `trace.coverage`-Eintrag `- files: [docs/user/sdk-e2e-abdeckung.md] / label: SDK-E2E`. |
 | `harness/README.md` §Werkzeuge | update | neue Zeile für `make test-sdk-csharp-integration` (nach dem realen Lauf geschrieben). |
+
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| Testklassen-Form (4 Klassen à 2 Tests statt 4 Einzelfiles) | Abweichung | der Runner selektiert je Phase per `dotnet test --filter FullyQualifiedName~<Klasse>` — die Testklasse trägt Happy-Path **und** Reject-Beleg je Phase (dieselbe Zusammenfassung wie die Python-Testdateien); `PGCHANGEFEED_TEST_NAME` (mit `:?`-Guard, Muster Python-CMD-Guard) ersetzt den Arbeitsnamen „Testdatei". |
+| `sdks/csharp/PgChangeFeed.Client.Integration/PhaseEnvironment.cs` | neu | gemeinsame Env-Auslese + Marker-Druck (`Console.Out.Flush()` — Risiko-§6 Pufferung) der vier Phasen; jede Variable an ihrer Eingabeseite gebunden (`Required`). |
+| HTTP-Phase: `PGCHANGEFEED_SOURCE_ID`/`PGCHANGEFEED_HTTP_PUBLICATION` als Env statt festen Strings im Test | Erweiterung | die ListTables-Eingabe (Quelle, Publikation) ist eine Eingabeseite der Zusage — gebunden über die Umgebung, dieselbe Disziplin wie die Token-Form (Review-Klasse des Vorgänger-Slices F-6). |
+| HTTP-Phase: eigener Sentinel-/ID-Bereich (430ff., eigener Sentinel-Name) | Erweiterung | die Phase-Funktion committet Fire-and-Forget-Inserts in derselben Tabelle; ein wiederverwendeter ID-Bereich kollidierte real mit der gRPC-Phase (PK-Konflikt sichtbar im ersten Lauf) — eigene Bereiche je Phase (400/410/420/430). |
+| Träger-Schreiber erhält fremde Abschnitte | Erweiterung | der Runner ersetzt nur seinen marker-gegrenzten C#-Abschnitt und erhält den Inhalt hinter dem end-Marker — die Kotlin-/Python-Abschnitte der Folge-Slices bleiben bei jedem Re-Run bestehen. |
+| C#-Namespaces: `Change`-DTO je Fläche eigen (Sse/Nats/Models, Cdc.Stream.V1) | Abweichung | die drei Stream-Flächen tragen drei eigenständige DTOs (vier unabhängige Wire-Verträge, Kommentar im SSE-Model); der Test importiert je Fläche ihren eigenen Typ — kein geteilter Alias. |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die C#-Flächen tragen reale Realserver-Belege"; beide Stände gemessen: Parent `fce7af10` und HEAD):**
+
+| Träger | Befund | Behandlung |
+|---|---|---|
+| `harness/README.md` §Werkzeuge | Zeile fehlte (Target real, Zeile nicht) | in diesem Zug ergänzt (nach dem realen Lauf, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`) |
+| `sdks/csharp/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
+| `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
+| `spec/pflichtenheft.md` | geprüft — `SPEC-027`s Deckungs-Aussage bleibt richtig (Welle-Plan §6) | kein falsch werdender Träger |
 
 **Ansatz:** Struktur-Vorbild ist der Python-Runner — eigenständiges
 Skript, geteilte Compose-Umgebung, SDK als Prüfling, keine Server-E2E-
