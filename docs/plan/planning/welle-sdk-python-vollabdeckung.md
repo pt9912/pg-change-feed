@@ -184,10 +184,12 @@ vollständig durchgesehen. Relevante Treffer:
 ## 7. Closure-Notiz
 
 Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
-§Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**: Die
-beiden Zeiger unten werden erst bei Closure (unmittelbar vor dem `git mv`
-nach `done/`) als auflösbare Links eingetragen. Diese Welle ist noch
-offen — die Zeiger stehen deshalb als Platzhalter, keine Links.
+§Herkunfts-Anker für Steering-Loop-Regeln — dort die **Ruheort-Regel**.
+Die beiden Zeiger unten sind als auflösbare Links eingetragen: der
+Ergebnis-Zeiger trägt die Ruheort-Datei in `done/` direkt, der
+Zähler-Zeiger das Register; der `git mv` der Welle-Datei nach `done/`
+folgt als eigener Commit (`AGENTS.md` §3.3) und der
+Reconciliations-Commit danach stellt beide auf die Ruheort-Tiefe.
 
-Ergebnis: `welle-sdk-python-vollabdeckung-results.md` (noch nicht angelegt)
-Zähler: `docs/plan/planning/observations/` (Beobachtungs-Register)
+Ergebnis: [welle-sdk-python-vollabdeckung-results.md](done/welle-sdk-python-vollabdeckung-results.md)
+Zähler: [observations/](observations/README.md) (Beobachtungs-Register)

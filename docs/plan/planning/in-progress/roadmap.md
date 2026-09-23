@@ -38,8 +38,6 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
-- [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
-
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
 voneinander unabhängige Wellen sind kein Verstoß).
@@ -189,6 +187,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 | welle-sdk-kotlin-lh-fa-sst-009 — Drittes SDK-Package (Kotlin/GitHub Packages, `pgchangefeed-kotlin`) für `LH-FA-SST-009` (`ADR-0109`) | 2026-09-21 | [welle-sdk-kotlin-lh-fa-sst-009-results.md](../done/welle-sdk-kotlin-lh-fa-sst-009-results.md) |
 | welle-sdk-csharp-vollabdeckung — C#/NuGet-SDK auf volle Vier-Wege-Parität erweitern (SSE, NATS-Vollinhalt, `ADR-0106`) | 2026-09-22 | [welle-sdk-csharp-vollabdeckung-results.md](../done/welle-sdk-csharp-vollabdeckung-results.md) |
 | welle-sdk-kotlin-vollabdeckung — Kotlin/GitHub-Packages-SDK auf volle Vier-Wege-Parität erweitern (SSE, NATS-Vollinhalt, `ADR-0109`) | 2026-09-22 | [welle-sdk-kotlin-vollabdeckung-results.md](../done/welle-sdk-kotlin-vollabdeckung-results.md) |
+| welle-sdk-python-vollabdeckung — Python/PyPI-SDK auf volle Vier-Wege-Parität erweitern (gRPC, SSE, NATS-Vollinhalt, `ADR-0110`) | 2026-09-23 | [welle-sdk-python-vollabdeckung-results.md](../done/welle-sdk-python-vollabdeckung-results.md) |
 
 ## Historische Trigger-Verschiebungen
 
