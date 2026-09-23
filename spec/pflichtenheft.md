@@ -159,13 +159,25 @@ ADR-pflichtig.
 ### LH-FA-CFG-007.a — Transformationsform offen
 
 **Eingabe:** Rohform einer erfassten Change. **Ausgabe:** transformierte
-bzw. auf ein Zustellziel geroutete Change.
+Change.
 
 Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-007`](lastenheft.md)),
 Konfigurationsmechanismus und Ausdrucksform der Transformationsregeln,
 ihre Auswertungsreihenfolge bei mehreren zutreffenden Regeln, und das
 Verhältnis zur bestehenden Spaltenausschluss-Antragsart (`SPEC-019`) sind
 offene technische Fragen, ADR-pflichtig.
+
+### LH-FA-CFG-008.a — Routingform offen
+
+**Eingabe:** erfasste Change. **Ausgabe:** Zustellung an das durch eine
+Routing-Regel bestimmte Zustellziel.
+
+Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-008`](lastenheft.md)),
+das Modell der Zustellziele, Konfigurationsmechanismus und Ausdrucksform der
+Routing-Regeln sowie ihre Auflösung bei mehreren zutreffenden Regeln sind
+offene technische Fragen, ADR-pflichtig. Die bestehenden Zustellwege tragen
+kein Zielmodell: gRPC und SSE liefern ungefiltert (`SPEC-020`, `SPEC-021`),
+das NATS-Subjekt (`SPEC-024`) ist die einzige adressierbare Zielform.
 
 ### LH-FA-SST-009.a — Sprachmatrix und Vertriebsweg offen
 
@@ -657,6 +669,7 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-18 | `SPEC-023` Zeile *Sprachen und Umfang* auf fünf Zugriffs-Oberflächen gezogen (`SPEC-024` ergänzt), samt der Klarstellung, dass eine Sprache ohne öffentliche JSON-Dekodierung für den Vollinhalts-Stream-Client zusätzlich eine gepinnte JSON-Bibliothek braucht |
 | 2026-09-19 | `LH-FA-CAP-009.a` ergänzt: Backfill-Mechanismus (Export-Snapshot vs. Bulk-Copy, Markierung, Verhältnis zum WAL-Erfassungspfad) als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CAP-009` |
 | 2026-09-19 | `LH-FA-CFG-007.a` ergänzt: Konfigurationsmechanismus, Ausdrucksform und Regel-Auswertungsreihenfolge von Transformationen/Routing als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-CFG-007` |
+| 2026-09-23 | `LH-FA-CFG-007.a` auf Transformationen begrenzt; `LH-FA-CFG-008.a` ergänzt: Routingform (Zielmodell, Konfigurationsmechanismus, Auflösung) als offene, ADR-pflichtige technische Frage zur aus `LH-FA-CFG-007` herausgelösten Lastenheft-Anforderung `LH-FA-CFG-008` |
 | 2026-09-19 | `LH-FA-SST-009.a` ergänzt: Sprachmatrix und Paket-Vertriebsweg für offizielle Client-Bibliotheken als offene, ADR-pflichtige technische Frage zur neuen Lastenheft-Anforderung `LH-FA-SST-009` — die bestehenden Beispiel-Client-Werkzeugketten (`SPEC-023`) erfüllen sie nicht |
 | 2026-09-19 | `SPEC-026` ergänzt: `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) — System, SemVer 2.0 `0.x.y`, Vertrag-Datei-Verweis auf die `.csproj` als Metadaten-Quelle; externe-Verträge-Zeile in §6 |
 | 2026-09-19 | `LH-FA-SST-009.a` nachgezogen: Für C#/NuGet ist die Sprachmatrix-/Vertriebsweg-Frage beantwortet und `PgChangeFeed.Client` real paketierbar (`make sdk-pack-csharp`, `PgChangeFeed.Client.0.1.0.nupkg`) — die Kennung bleibt bestehen, eine zweite Sprache oder ein zweiter Vertriebsweg bleibt offen |

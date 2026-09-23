@@ -1,7 +1,7 @@
 # Lastenheft — PG Change Feed
 
 **Projektname:** PG Change Feed
-**Version:** 0.12.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
+**Version:** 0.13.0 (`Major.Minor.Patch`); vor `Accepted` frei änderbar, ab
 `Accepted` ist jede Änderung eine Vertragsänderung (siehe Historie).
 **Status:** Draft
 **Autor:** pt9912, **Datum:** 2026-09-12
@@ -277,13 +277,11 @@ Anwendungscode der Quellanwendung erfordern. **MVP: ja.**
 **Out-of-Scope:** Performance-Auswirkungen auf die Quelle sind Gegenstand
 von LH-QA-PER-001, nicht dieser Anforderung.
 
-### LH-FA-CFG-007 — Transformationen/Routing zwischen Erfassung und Zustellung
+### LH-FA-CFG-007 — Transformationen zwischen Erfassung und Zustellung
 
 **Beschreibung:** Erfasste Changes sollen sich vor der Zustellung gezielt
 transformieren lassen (z. B. Feld-Umbenennung, wertbasierte Ableitung über
-die reine Spaltenauswahl aus LH-FA-CFG-005 hinaus) und/oder anhand von
-Herkunft oder Inhalt auf unterschiedliche Zustellziele geroutet werden
-können.
+die reine Spaltenauswahl aus LH-FA-CFG-005 hinaus).
 
 **Akzeptanzkriterien:**
 
@@ -291,10 +289,11 @@ können.
   konfiguriert (z. B. Feld-Umbenennung), when eine Change entsteht, dann
   trägt die ausgelieferte Change die transformierte Form, nicht die
   Rohform.
-- **Boundary:** Given eine Routing-Regel könnte eine Change mehreren
-  Zustellzielen zuordnen, when die Regeln ausgewertet werden, dann ist die
-  Auflösung bei Mehrdeutigkeit definiert (z. B. Regel-Reihenfolge oder
-  expliziter Fehler), nicht stillschweigend eines der Ziele.
+- **Boundary:** Given mehrere konfigurierte Transformationen könnten
+  dasselbe Feld einer Change betreffen, when die Regeln ausgewertet
+  werden, dann ist die Auflösung bei Mehrdeutigkeit definiert (z. B.
+  Regel-Reihenfolge oder expliziter Fehler), nicht stillschweigend eine
+  der Regeln.
 - **Negative:** Given eine konfigurierte Transformation lässt sich auf eine
   konkrete Change nicht anwenden (z. B. das referenzierte Feld fehlt nach
   einer Schemaänderung), when die Change verarbeitet wird, dann ist dies
@@ -305,9 +304,34 @@ können.
 eigenes Skripting-/Plugin-Modell (vergleichbar Kafka-Connect-SMTs) ist
 nicht gefordert — gefordert ist die Fähigkeit selbst, ihre konkrete
 Ausdrucksform ist Architektur- (ADR) bzw. Spezifikationsfrage (`SPEC-*`).
-Die reine Spaltenauswahl bleibt Gegenstand von LH-FA-CFG-005; diese
-Anforderung deckt darüber hinausgehende Transformationen und
-Routing-Entscheidungen.
+Die reine Spaltenauswahl bleibt Gegenstand von LH-FA-CFG-005; das Routing
+auf Zustellziele ist Gegenstand von LH-FA-CFG-008.
+
+### LH-FA-CFG-008 — Routing von Changes auf Zustellziele
+
+**Beschreibung:** Erfasste Changes sollen anhand von Herkunft oder Inhalt
+auf unterschiedliche Zustellziele geroutet werden können.
+
+**Akzeptanzkriterien:**
+
+- **Happy Path:** Given eine Routing-Regel ist für eine Tabelle oder einen
+  Inhalt konfiguriert, when eine Change entsteht, dann wird sie dem
+  Zustellziel zugestellt, das die Regel bestimmt.
+- **Boundary:** Given eine Routing-Regel könnte eine Change mehreren
+  Zustellzielen zuordnen, when die Regeln ausgewertet werden, dann ist die
+  Auflösung bei Mehrdeutigkeit definiert (z. B. Regel-Reihenfolge oder
+  expliziter Fehler), nicht stillschweigend eines der Ziele.
+- **Negative:** Given eine konfigurierte Routing-Regel lässt sich auf eine
+  konkrete Change nicht anwenden, when die Change verarbeitet wird, dann
+  ist dies über einen sichtbaren Fehlerzustand erkennbar (LH-FA-ADM-003),
+  nicht eine still an ein Standardziel geleitete oder verworfene
+  Auslieferung.
+
+**Out-of-Scope:** Eine vollständige Routing-Sprache ist nicht gefordert —
+gefordert ist die Fähigkeit selbst, ihre konkrete Ausdrucksform und das
+Modell der Zustellziele sind Architektur- (ADR) bzw. Spezifikationsfrage
+(`SPEC-*`). Die Umformung des Inhalts einer Change bleibt Gegenstand von
+LH-FA-CFG-007.
 
 ### LH-FA-CAP-001 — Erfassung von INSERT
 
@@ -1345,3 +1369,4 @@ in dieser Tabelle (Decken-Regel).
 | 0.10.0 | 2026-09-19 | `LH-FA-CAP-009` (Initial-Snapshot/Backfill des Bestands bereits vorhandener Zeilen einer aktivierten Tabelle) neu ergänzt — abgegrenzt gegen eine Instanz-zu-Instanz-Migration (Out-of-Scope) und gegen Parallelisierung/Durchsatz über sehr große Tabellen (Ausbaustufe, keine Voraussetzung); dieselbe Draft-Regel wie bei 0.4.0–0.9.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.11.0 | 2026-09-19 | `LH-FA-CFG-007` (Transformationen/Routing zwischen Erfassung und Zustellung) neu ergänzt — abgegrenzt gegen eine vollständige Transformationssprache/ein Plugin-Modell (Out-of-Scope) und gegen die bereits bestehende Spaltenauswahl (`LH-FA-CFG-005`); dieselbe Draft-Regel wie bei 0.4.0–0.10.0, eigener Commit vor jedem umsetzenden Slice | — |
 | 0.12.0 | 2026-09-19 | `LH-FA-SST-009` (offizielle, versionierte Client-Bibliotheken/SDKs für die bestehenden Zustellwege) neu ergänzt — abgegrenzt gegen die bereits bestehenden, unversionierten Wegwerf-Beispielprogramme unter `examples/` (erfüllen diese Anforderung nicht) und gegen eine bestimmte Sprachmatrix (Architektur-/Spezifikationsfrage); dieselbe Draft-Regel wie bei 0.4.0–0.11.0, eigener Commit vor jedem umsetzenden Slice | — |
+| 0.13.0 | 2026-09-23 | `LH-FA-CFG-007` auf Transformationen begrenzt (Titel, Beschreibung, Boundary-Kriterium auf die Auflösung mehrerer Transformationen, Out-of-Scope-Verweis); das Routing auf Zustellziele als eigene Anforderung `LH-FA-CFG-008` herausgelöst — die Beschreibung von `LH-FA-CFG-007` verband beides mit „und/oder", sein Boundary-Kriterium nannte aber nur Routing-Regeln, sodass eine Abnahme nur für Transformationen nicht eindeutig war; dieselbe Draft-Regel wie bei 0.4.0–0.12.0, eigener Commit vor jedem umsetzenden Slice | — |
