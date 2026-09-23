@@ -83,9 +83,12 @@ gilt für **jede** neue Fläche einzeln).
       *(strenge Import-Zeilen-Prüfung über `sdks/python/pgchangefeed/`:
       kein Treffer gegen internal/cmd/gen.)*
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      *(Haupt-Review F-1…F-5; Fixrunde 1 löste F-1…F-5; Re-Review FR-1
+      (MEDIUM) gelöst in Fixrunde 2; Re-Review-Endstand: kein offenes
+      HIGH/MEDIUM.)*
 - [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im letzten Flächen-Slice (§1 Abgrenzung). *(Präzisiert nach
@@ -140,6 +143,14 @@ gilt für **jede** neue Fläche einzeln).
 | `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-027` | Satzform „deckt HTTP-API" steht nicht im Diff — Bündelung im letzten Flächen-Slice | bleibt gebündelt (konsistent C#/Kotlin-Präzedenz, [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Folgepflicht 2) |
 | Wurzel-README | „deckt HTTP-API"-Form für das veröffentlichte 0.1.0-Package — wahr für den veröffentlichen Stand | bleibt (bündelige Praxis wie beim Vorgänger-Slice) |
 | `docs/user/version.md` | Versionsstand des Python-Packages — Hebung im letzten Flächen-Slice | bleibt gebündelt |
+
+**§3.13-Suchlauf, zweite Eigenschaft (Fixrunde FR-1 — bewegte Eigenschaft: „die Testdatei wird je Phase als docker run-Argument übergeben"; beide Stände gemessen: Parent `6bbe99d9` und HEAD):**
+
+| Träger | Befund | Behandlung |
+|---|---|---|
+| `tools/harness/run-sdk-python-integration-tests.sh` Kopf („Stufe-ENTRYPOINT") | Phrase gefunden, durch die CMD-Umstellung falsch | Fixrunde 2: „Stufe-CMD" gezogen |
+| `tools/harness/run-sdk-python-integration-tests.sh` Kopf („docker run-Argument") | Phrase gefunden, gezogen | Fixrunde 2: Umgebungsvariable `PGCHANGEFEED_TEST_FILE`-Form |
+| `harness/README.md` §Werkzeuge („docker run-Argument") | Phrase gefunden, gezogen | Fixrunde 2: ENV-Form samt Guard-Beschreibung |
 
 **Ansatz:** Referenzmaterial für die Frame-Zerlegung ist
 `examples/csharp/sse-client/SseStream.cs`/`examples/kotlin/sse-client/…/SseStream.kt`

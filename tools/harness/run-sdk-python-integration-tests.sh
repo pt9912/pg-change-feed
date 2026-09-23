@@ -19,14 +19,15 @@
 # des Packages direkt (kein Wegwerf-Duplikat-Client daneben). Die
 # stdout-Marker der Testlaeufe (READY/RECEIVED/REJECTED) liest dieser
 # Runner ueber `docker logs`, waehrend der Test noch laeuft — deshalb
-# ungepuffert (`python -u`, Stufe-ENTRYPOINT). Die `change_id` der
+# ungepuffert (`python -u`, Stufe-CMD). Die `change_id` der
 # empfangenen Change wird zusaetzlich gegen den Lesezugriffsweg
 # `cdc.changes` gehalten (dieselbe Disziplin wie die Rundlaeufe im
 # Server-E2E-Runner).
 #
 # Eine Phase je Flaeche (slice-sdk-python-grpc-client-flaeche: gRPC,
 # SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021): jede Phase
-# benennt ihre Testdatei explizit als docker run-Argument (kein stiller
+# traegt ihre Testdatei explizit als Umgebungsvariable
+# `PGCHANGEFEED_TEST_FILE` (kein stiller
 # Ausschluss des Rests, Muster der -run-Muster im Server-E2E-Runner) und
 # traegt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
 # nicht in die Quere kommen.
