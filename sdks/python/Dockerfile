@@ -126,13 +126,13 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # diese Stufe (`--target integration`, zwingend mit dem benannten
 # Bau-Kontext `proto` — derselbe Abbruchpunkt wie oben), startet sie im
 # selben Docker-Netz wie den Feed-Container und liest die stdout-Marker
-# (READY/RECEIVED/REJECTED) ueber `docker logs`. Der ENTRYPOINT traegt die
-# pytest-Mechanik; die Testdatei je Flaeche (und `-v --capture=no`) reicht
-# der Runner als docker run-Argument nach — jede Phase benennt ihre
-# Testdatei explizit, kein stiller Ausschluss des Rests (Muster der
-# -run-Muster im Server-E2E-Runner). `-u` haelt die Marker ungepuffert
+# (READY/RECEIVED/REJECTED) ueber `docker logs`. Der Aufruf traegt die
+# Testdatei je Flaeche als Umgebungsvariable `PGCHANGEFEED_TEST_FILE` —
+# der shell-Form-Guard unten (`:?`) scheitert laut bei blankem Aufruf,
+# statt still die Unit-Tests ueber testpaths zu fahren (kein gruenes
+# Default ohne jeden Integrationstest). `-u` haelt die Marker ungepuffert
 # sichtbar; `--capture=no` reicht pytest-Prints ungefiltert nach stdout
-# (beide vom Runner je Phase mitgereicht). ---
+# (der Runner pollt die Marker, waehrend der Test laeuft). ---
 FROM build AS integration
 WORKDIR /src/pgchangefeed
-ENTRYPOINT ["python", "-u", "-m", "pytest"]
+CMD ["/bin/sh", "-c", "python -u -m pytest \"${PGCHANGEFEED_TEST_FILE:?Testdatei je Flaeche erforderlich}\" -v --capture=no"]

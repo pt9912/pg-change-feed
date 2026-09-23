@@ -88,12 +88,12 @@ gilt für **jede** neue Fläche einzeln).
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
-      gebündelt im letzten Flächen-Slice (§1 Abgrenzung). *(Wie im
-      Vorgänger-Slice: der gRPC-/SSE-Teil des Handbuchs wurde in der
-      Fixrunde des Vorgänger-Slices bzw. im selben Muster je Fläche
-      nachgezogen — der SSE-`**SDK:**`-Absatz gehört in denselben Zug wie
-      die Fläche; der NATS-Handbuch-Teil und `spec/pflichtenheft.md`
-      bleiben beim letzten Flächen-Slice.)*
+      gebündelt im letzten Flächen-Slice (§1 Abgrenzung). *(Präzisiert nach
+      Review F-1 (§3.13-Suchlauf-Feld oben trägt den vollen Stand): der
+      Python-`**SDK:**`-Absatz im SSE-Handbuch-Abschnitt gehört in diesen
+      Zug (Version 1.42, Fixrunde); gebündelt bleiben nur der
+      NATS-Handbuch-Teil und `spec/pflichtenheft.md` — derselbe Schnitt
+      wie beim Vorgänger-Slice.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
@@ -125,6 +125,21 @@ gilt für **jede** neue Fläche einzeln).
 | `sdks/python/pgchangefeed/src/pgchangefeed/models.py`: `StreamChange`-Datenklasse (10 Felder) | neu | der SSE-Wire-Vertrag trägt die zehn Domain-Felder, nicht die zwölf des HTTP-Lesezugriffs ([`SPEC-022`](../../../../spec/pflichtenheft.md)) — eigene getypte Klasse statt Wiederverwendung der HTTP-`Change`, dieselbe Mapping-Doktrin wie der Rest des Packages. |
 | `tools/harness/run-sdk-python-integration-tests.sh` | update | der Runner bekommt eine `run_surface_phase`-Funktion: je Fläche ein Aufruf mit eigener Testdatei (explizit als docker run-Argument), eigenem Sentinel und ID-Wertebereich (gRPC 300ff., SSE 310ff.) und eigener Reject-Marker-Form (`Unauthenticated` bzw. `401`); die SQL-Gegenprüfung gegen `cdc.changes` läuft je Phase. |
 | `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py`-Docstring, `options.py`-Docstring, `sdks/python/README.md` §Status | update | Träger-Nachzug (`AGENTS.md` §3.13): die Satzform „SSE bleibt außerhalb" wird durch diesen Slice falsch. |
+| `sdks/python/Dockerfile`: CMD-Guard je Phase (Shell-Form mit `:?`) | update | Review F-3: der blanke docker run-Aufruf fuhr still die Unit-Tests grün (`testpaths = tests`), ohne jeden Integrationstest — verwandter Fall der Klasse `BEO-PGC/test-runner-stiller-ausschluss`. Real jetzt: `CMD` in Shell-Form mit `${PGCHANGEFEED_TEST_FILE:?…}`-Guard — blanker Aufruf scheitert laut, der Runner reicht die Testdatei als Umgebungsvariable nach. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/exceptions.py` (Docstring) | update | Review F-4: `PgChangeFeedMalformedResponseError` nennt jetzt auch die `SPEC-021`-Verletzungsform (der SSE-Client wirft ihn für Stream-Schema-Verletzungen). |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „SSE bleibt außerhalb des Packages"; beide Stände gemessen: Parent `b43251ee` und HEAD):**
+
+| Träger | Befund | Behandlung |
+|---|---|---|
+| `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` (Docstring) | Satzform gefunden, gezogen in diesem Diff | erledigt |
+| `sdks/python/pgchangefeed/src/pgchangefeed/options.py` (Docstring) | Satzform gefunden, gezogen | erledigt |
+| `sdks/python/README.md` §Status | Satzform gefunden, gezogen | erledigt |
+| `docs/user/benutzerhandbuch.md` §SSE (Python-`**SDK:**`-Absatz) | Absatz fehlte (Review F-1) | Fixrunde: Absatz ergänzt (Version 1.42 + Historie) |
+| `harness/README.md` §Werkzeuge (`make test-sdk-python-integration`-Zeile) | Zeile trug die Ein-Flächen-Form (Review F-2) | Fixrunde: Zwei-Flächen-Form gezogen |
+| `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-027` | Satzform „deckt HTTP-API" steht nicht im Diff — Bündelung im letzten Flächen-Slice | bleibt gebündelt (konsistent C#/Kotlin-Präzedenz, ADR-0110 Folgepflicht 2) |
+| Wurzel-README | „deckt HTTP-API"-Form für das veröffentlichte 0.1.0-Package — wahr für den veröffentlichen Stand | bleibt (bündelige Praxis wie beim Vorgänger-Slice) |
+| `docs/user/version.md` | Versionsstand des Python-Packages — Hebung im letzten Flächen-Slice | bleibt gebündelt |
 
 **Ansatz:** Referenzmaterial für die Frame-Zerlegung ist
 `examples/csharp/sse-client/SseStream.cs`/`examples/kotlin/sse-client/…/SseStream.kt`

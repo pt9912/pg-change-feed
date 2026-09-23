@@ -175,7 +175,8 @@ run_surface_phase() {
     -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \
     -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
     -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
-    "$SDK_INTEGRATION_IMAGE" "$test_file" -v --capture=no >/dev/null
+    -e PGCHANGEFEED_TEST_FILE="$test_file" \
+    "$SDK_INTEGRATION_IMAGE" >/dev/null
 
   test_ready=0
   for _ in $(seq 1 60); do

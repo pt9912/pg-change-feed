@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.41
+Version: 1.42
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-23
 
@@ -869,6 +869,16 @@ beim HTTP-API-Zugriff oben verlangt der Bezug über **GitHub Packages**
 immer eine Authentifizierung, auch für dieses öffentliche Package
 (`ADR-0109` Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
+Python-Anwendungen können statt des Beispiels das offizielle
+PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
+`pip install pgchangefeed`) — `PgChangeFeedSseClient.stream_changes()`
+öffnet denselben Endpunkt `GET /changes/stream` und liefert einen Iterator
+über die getypten `StreamChange`-Events mit allen zehn Feldern der Tabelle
+oben; das Bearer-Token landet im `Authorization`-Header, ein fehlender oder
+unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedError`
+(HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren.
+Siehe `sdks/python/README.md`.
+
 ### Zugriff über das NATS-Wecksignal
 
 Anders als die drei Abschnitte zuvor ist dieser Zugriffsweg **signal-tragend**,
@@ -1253,3 +1263,4 @@ MIT — siehe `LICENSE`.
 | 1.39 | 2026-09-22 | Kotlin-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, `welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.streamChanges()` bzw. `PgChangeFeedNatsStreamClient.streamChanges()` liefern eine `Sequence<Change>` mit allen zehn Feldern der jeweiligen Tabelle, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages; die vorangehenden HTTP-/gRPC-Absätze oben wurden korrigiert — sie behaupteten fälschlich, SSE und der NATS-Vollinhalts-Stream blieben für dieses Package „vorerst außerhalb"; das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` ist dafür auf `0.2.0` gehoben |
 | 1.40 | 2026-09-23 | Python-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-grpc-client-flaeche): der §4-Absatz zum PyPI-Package `pgchangefeed` trägt jetzt die gRPC-Stream-Fläche `PgChangeFeedGrpcClient` (siehe „Zugriff über den gRPC-Change-Stream") statt „gRPC, SSE und der NATS-Vollinhalts-Stream bleiben vorerst außerhalb"; SSE und der NATS-Vollinhalts-Stream folgen im selben Folge-Release |
 | 1.41 | 2026-09-23 | Python-SDK-Absatz im gRPC-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-python-grpc-client-flaeche Fixrunde): „Zugriff über den gRPC-Change-Stream" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedGrpcClient.stream_changes()` liefert einen Iterator über die generierten `Change`-Nachrichten mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt), samt `timeout`-Form; `Stand:`-Datum auf diesen Zug gezogen |
+| 1.42 | 2026-09-23 | Python-SDK-Absatz im SSE-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-sse-client-flaeche): „Zugriff über Server-Sent-Events" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedSseClient.stream_changes()` liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt); der NATS-Vollinhalts-Stream folgt im selben Folge-Release |
