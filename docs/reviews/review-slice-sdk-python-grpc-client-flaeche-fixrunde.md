@@ -29,7 +29,7 @@ inkl. §3.12-Instanz-A-HIGH, „Beleg trägt seinen Satz nicht",
 
 **Eingangs-Kontext** (Verträge, gegen die geprüft wurde):
 
-- [Slice-Plan](../plan/planning/in-progress/slice-sdk-python-grpc-client-flaeche.md)
+- `Slice-Plan` `slice-sdk-python-grpc-client-flaeche`
   (§2 DoD, §3 Plan + Plan-Nachzug)
 - [Haupt-Review F-1…F-6](review-slice-sdk-python-grpc-client-flaeche.md),
   [Verifikation V-1…V-3](verifikation-slice-sdk-python-grpc-client-flaeche.md)

@@ -1,7 +1,7 @@
 # Verifikationsbericht: slice-sdk-python-grpc-client-flaeche — 2026-09-23
 
 **Rolle:** Verifier (Modul 11) — „Bauen wir es richtig?" gegen den
-DoD-Vertrag ([Slice-Plan](../plan/planning/in-progress/slice-sdk-python-grpc-client-flaeche.md)
+DoD-Vertrag (`Slice-Plan` `slice-sdk-python-grpc-client-flaeche`
 §2), den Plan-vs-Code-Diff (§3 + Plan-Nachzug inkl. Fixrunden-Zeilen) und
 die ADR-Konformität ([`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md),
 [`ADR-0107`](../plan/adr/0107-python-pypi-zweites-sdk-package.md)).
@@ -291,7 +291,7 @@ nicht.
 
 **V-1 — MEDIUM: DoD-Sensor-Beleg-Zahl driftet gegen die Messung
 (29/6 statt 31/8).**
-Fundstelle: [Slice-Plan](../plan/planning/in-progress/slice-sdk-python-grpc-client-flaeche.md)
+Fundstelle: `Slice-Plan` `slice-sdk-python-grpc-client-flaeche`
 §2, Zeilen 78–82 („29 Unit-Tests grün, darunter 6 neue gRPC-Tests
 (`grep -c "^def test_"` = 6; 20 + 3 + 6 = 29)"). Messung: die
 Testdatei trägt **8** `def test_`-Funktionen, der Pack-Lauf der
@@ -324,7 +324,7 @@ Kopfzeilen-Nachzug) — die Fixrunde hat den Kopf auf 1.39 gehoben und
 damit die Kollision sichtbar gemacht statt aufgelöst.
 
 **V-3 — LOW: `options.py`-Änderung ohne eigene Plan-Nachzug-Zeile.**
-Fundstelle: [Slice-Plan](../plan/planning/in-progress/slice-sdk-python-grpc-client-flaeche.md)
+Fundstelle: `Slice-Plan` `slice-sdk-python-grpc-client-flaeche`
 §3 Plan-Nachzug Zeile 7 (nennt nur `README.md` §Status und
 `__init__.py`-Docstring; `options.py` steht dort nur als
 Klassen-Referenz in der Begründung) gegen den realen Diff

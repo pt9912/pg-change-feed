@@ -25,7 +25,7 @@ Slice-Plans (`slice-sdk-python-grpc-client-flaeche`, Lifecycle
 
 **Eingangs-Kontext** (Verträge, gegen die geprüft wurde):
 
-- [Slice-Plan](../plan/planning/in-progress/slice-sdk-python-grpc-client-flaeche.md)
+- `Slice-Plan` `slice-sdk-python-grpc-client-flaeche`
   (§2 DoD, §3 Plan + Plan-Nachzug, §6 Risiken)
 - [ADR-0110](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   (Umfang, Festlegung 2 — verschärfte Test-Pflicht, Import-Grenze),
