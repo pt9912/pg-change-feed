@@ -21,7 +21,7 @@ id-unlinked-Befunde im NATS-Review-Report behoben"); 11 Dateien,
 
 - Haupt-Review-Report (F-1…F-11) am HEAD:
   `docs/reviews/review-slice-sdk-python-nats-stream-client-flaeche.md`
-- [`Plan`](../plan/planning/in-progress/slice-sdk-python-nats-stream-client-flaeche.md)
+- `Plan` `slice-sdk-python-nats-stream-client-flaeche`
   (§3 Nachzug, das neue §3.13-Suchlauf-Feld, §6 Risiken, §7 Closure-Notiz)
 - [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   (Accepted) Festlegung 3 (Zeilen 203–210) und §Konsequenzen Folgepflicht 2;

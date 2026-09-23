@@ -1,7 +1,7 @@
 # Verifikationsbericht: slice-sdk-python-nats-stream-client-flaeche — 2026-09-23
 
 **Rolle:** Verifier (Modul 11) — „Bauen wir es richtig?" gegen den
-DoD-Vertrag ([Slice-Plan](../plan/planning/in-progress/slice-sdk-python-nats-stream-client-flaeche.md)
+DoD-Vertrag (`Slice-Plan` `slice-sdk-python-nats-stream-client-flaeche`
 §2, alle 15 Zeilen), den Plan-vs-Code-Diff (§3 + Plan-Nachzug + das
 committete §3.13-Suchlauf-Feld), die
 [`SPEC-024`](../../spec/pflichtenheft.md)-Konformität und
