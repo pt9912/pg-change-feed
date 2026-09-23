@@ -196,6 +196,9 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
 | Träger | Befund | Behandlung |
 |---|---|---|
 | `harness/README.md` §Werkzeuge | Zeile fehlte (Target real, Zeile nicht) | in diesem Zug ergänzt (nach dem realen Lauf, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`) |
+| `harness/README.md` §Werkzeuge (`make doc-trace`-Zeile) | Coverage-Aufzählung ohne den vierten Eintrag gefunden (Review F-1a); Zahlen „76/55/0" gegen die Messung 79/2 überholt | gezogen: vier Dimensionen + Messung 2026-09-23 (79 Anforderungen, 2 Waisen) |
+| `harness/sensors/docs-check.md` §Grenze | Aufzählung mit einer Coverage-Datei gefunden (Review F-1b) | gezogen: vier Dateien |
+| `docs/plan/planning/welle-sdk-reale2e.md` §6 (Träger-Form-Behauptung) | „`Datei:Zeile`-Orte (Muster e2e-abdeckung.md)" gefunden — der reale Träger trägt Runner-Verweis-Orte ohne Zeilenanker (Review F-1c) | gezogen: echte Form am Ort benannt |
 | `sdks/csharp/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
 | `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
 | `spec/pflichtenheft.md` | geprüft — `SPEC-027`s Deckungs-Aussage bleibt richtig (Welle-Plan §6) | kein falsch werdender Träger |

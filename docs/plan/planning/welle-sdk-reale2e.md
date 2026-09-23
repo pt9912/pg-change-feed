@@ -308,9 +308,11 @@ vollständig durchgesehen. Relevante Treffer:
   Handlungsbedarf hier.
 - `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert,
   [`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz A) — der Träger
-  `docs/user/sdk-e2e-abdeckung.md` trägt `Datei:Zeile`-Orte (Muster
-  `e2e-abdeckung.md`), die mit jeder Einfügung oberhalb drift-verändert
-  sind: je Slice schreibt sein eigener Runner den Abschnitt neu
+  `docs/user/sdk-e2e-abdeckung.md` trägt je Abschnittszeile einen
+  Runner-Verweis als `Ort` (Form-Vorbild `e2e-abdeckung.md`, aber ohne
+  `Datei:Zeile`-Anker — die Runner-Phase-Auswahl ist klassen-stabil, ein
+  Zeilenanker driftete bei jeder Runner-Einfügung); je Slice schreibt sein
+  eigener Runner den Abschnitt neu
   (idempotent, aus derselben Messung, die ihn belegt) — dieselbe
   Disziplin, die die Python-Vorbild-Kette in ihrer Closure geschärft hat.
 - `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 2×) — der

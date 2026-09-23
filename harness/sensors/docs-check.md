@@ -140,8 +140,10 @@ Regel zählt Zeilen.
     ohne selbst eines zu sein: `trace.requirements.id-pattern` weicht bewusst
     von d-checks generischem Default ab und ist auf die
     `LH-(FA|QA)-[A-Z]{3}-\d{3}`-Kennungskonvention dieses Repos verdrahtet,
-    `trace.coverage` liest zusätzlich `docs/user/e2e-abdeckung.md` als
-    kuratierte Coverage-Dimension. Ein grünes `make docs-check`/`make gates`
+    `trace.coverage` liest zusätzlich `docs/user/e2e-abdeckung.md`,
+    `docs/user/bench-abdeckung.md`, `docs/user/ci-matrix-abdeckung.md` und
+    `docs/user/sdk-e2e-abdeckung.md` als kuratierte Coverage-Dimensionen.
+    Ein grünes `make docs-check`/`make gates`
     sagt über die RTM nichts aus — sie bleibt advisory, ihr Exit-Code steht
     unabhängig neben dem Gate · seit slice-d-check-trace-rtm.
 

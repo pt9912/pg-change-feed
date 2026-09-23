@@ -2,7 +2,7 @@
 # run-sdk-csharp-integration-tests.sh — Realserver-Integrationstest der
 # C#-SDK-Zustellweg-Flaechen (slice-sdk-csharp-reale2e; Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild
-# tools/harness/run-sdk-python-integration-tests.sh): die vier Flaeche des
+# tools/harness/run-sdk-python-integration-tests.sh): die vier FlaecheN des
 # Packages PgChangeFeed.Client (HTTP SPEC-018, gRPC SPEC-020, SSE SPEC-021,
 # NATS-Vollinhalt SPEC-024) pruefen ihre Protokoll-Annahmen je gegen eine
 # reale, laufende Server-Instanz — der Pruefling ist die kompilierte
@@ -22,7 +22,12 @@
 # Der Runner schreibt den Abdeckungs-Traeger docs/user/sdk-e2e-abdeckung.md
 # (C#-Abschnitt, marker-gegrenzt) aus derselben Messung, die ihn belegt —
 # idempotent, nur bei inhaltlicher Abweichung (Muster
-# run-integration-tests.shs Abdeckungstabelle).
+# run-integration-tests.shs Abdeckungstabelle). Grenze der Writer-Form:
+# dieser Runner erzeugt Kopf und alles bis zu seinem end-Marker neu und
+# erhaelt den Rest; ein Folge-Runner (Kotlin/Python-HTTP) spiegelt dieselbe
+# Form NICHT wortgleich — sein Re-Run wuerde die Abschnitte oberhalb seines
+# begin-Markers wegwerfen. Er haelt den Kopf stabil und ersetzt nur seinen
+# eigenen Abschnitt (Rest-Erhalt hinter dem end-Marker, wie hier).
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
 # compose.yaml traegt keinen build:-Block, ADR-0044) und Netz (NuGet-Restore
@@ -59,7 +64,7 @@ SDK_TEST_CONTAINER=cdc-sdk-csharp-client-test
 TEST_TABLE=feed_e2e_full
 ABDECKUNG_ZIEL=docs/user/sdk-e2e-abdeckung
 ABDECKUNG_ZIEL_DATEI=${ABDECKUNG_ZIEL}.md
-CSPROC_TEST_NAME=GrpcRealserverTests
+GRPC_TEST_NAME=GrpcRealserverTests
 SSE_TEST_NAME=SseRealserverTests
 NATS_TEST_NAME=NatsRealserverTests
 HTTP_TEST_NAME=HttpRealserverTests
@@ -276,7 +281,7 @@ SQL
 }
 
 GRPC_IDENT=$(run_phase \
-  "gRPC-Flaeche (SPEC-020)" "$CSPROC_TEST_NAME" \
+  "gRPC-Flaeche (SPEC-020)" "$GRPC_TEST_NAME" \
   "$GRPC_SENTINEL" 400 "REJECTED code=Unauthenticated" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$GRPC_SENTINEL" \
   changes "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090 PGCHANGEFEED_API_TOKEN=$API_TOKEN")
@@ -309,10 +314,10 @@ HTTP_IDENT=$(run_phase \
 abdeckung_csharp_abschnitt() {
   printf '%s\n' \
     '<!-- pgchangefeed-sdk-e2e:csharp-begin -->' \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedGrpcClient\`) oeffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfaengt eine danach committete Aenderung; ein Oeffnungsversuch ohne gueltiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedSseClient\`) oeffnet real \`GET /changes/stream\` und empfaengt eine danach committete Aenderung; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`SseRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfaengt eine danach committete Aenderung als vollstaendiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
-    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhaengig ueber \`cdc.consumer\` lesbar; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`HttpRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedGrpcClient\`) oeffnet real den gRPC-Server-Stream gegen den laufenden Feed-Container und empfaengt eine danach committete Aenderung; ein Oeffnungsversuch ohne gueltiges Token endet mit gRPC-Status \`Unauthenticated\` | \`GrpcRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedSseClient\`) oeffnet real \`GET /changes/stream\` und empfaengt eine danach committete Aenderung; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`SseRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-008\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedNatsStreamClient\`) verbindet sich real per NATS und empfaengt eine danach committete Aenderung als vollstaendiges JSON-Event; ein Verbindungsversuch mit falschem Token wird vom NATS-Server abgelehnt | \`NatsRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
+    "| [\`LH-FA-SST-006\`](../../spec/lastenheft.md), [\`LH-FA-CON-001\`](../../spec/lastenheft.md), [\`LH-FA-SST-009\`](../../spec/lastenheft.md) | ein C#-SDK-Client (\`PgChangeFeedHttpClient\`) registriert real einen Consumer (admin-Token) und listet Tabellen (reader-Token); die Registrierung ist unabhaengig ueber \`cdc.consumer\` lesbar; ein Aufruf ohne gueltiges Token endet mit HTTP-Status 401 | \`HttpRealserverTests\` | \`tools/harness/run-sdk-csharp-integration-tests.sh\` |" \
     '<!-- pgchangefeed-sdk-e2e:csharp-end -->'
 }
 
@@ -332,13 +337,15 @@ abdeckung_schreiben() {
     printf '%s\n' \
       '# SDK-E2E-Abdeckung je Spec-Kennung' \
       '' \
-      'Erzeugt von `make test-sdk-*-integration` ueber die Runner-Skripte' \
-      'unter `tools/harness/`: je Sprach-Abschnitt deklariert der zustaendige' \
-      'Runner seine Realserver-Phasen an Ort und Stelle. Diese Datei ist eine' \
-      '**stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der Runner' \
-      'schreibt sie nur bei inhaltlicher Abweichung. Sie traegt nur Zeilen' \
-      'real existierender Runner-Phasen — ein Beleg steht hier nie, bevor' \
-      'sein Lauf gruen lief.' \
+      'Erzeugt von `make test-sdk-csharp-integration` über' \
+      '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
+      'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
+      'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
+      'zustaendige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+      'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
+      'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
+      'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
+      'bevor sein Lauf grün lief.' \
       '' \
       '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
       '| --- | --- | --- | --- |'
