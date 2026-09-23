@@ -23,7 +23,7 @@ hier auf den C#-Baum gespiegelt), [`ADR-0106`](../../adr/0106-csharp-nuget-erste
 [`SPEC-024`](../../../../spec/pflichtenheft.md) — gelesen als Draht-Vertrag,
 nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-sdk-reale2e](../welle-sdk-reale2e.md). **Datum:** 2026-09-23.
