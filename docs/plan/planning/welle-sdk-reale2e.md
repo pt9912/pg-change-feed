@@ -338,5 +338,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 Die beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/`
 auflösen, nicht vom Schreibort.
 
-Ergebnis: `welle-sdk-reale2e-results.md`
-Zähler: `../observations/` (Beobachtungs-Register)
+Ergebnis: [welle-sdk-reale2e-results.md](done/welle-sdk-reale2e-results.md)
+Zähler: [observations/](observations/README.md) (Beobachtungs-Register)
