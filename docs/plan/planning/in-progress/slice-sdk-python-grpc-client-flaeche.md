@@ -128,7 +128,12 @@ als der bestehende Go-Toolchain-Container in
       Zeile im selben Zug, nicht erst später). *(In diesem Lauf erledigt:
       Zeile in `harness/README.md` §Werkzeuge, dazu Nachzug auf der
       bestehenden `make sdk-pack-python`-Zeile — der pack-Bau trägt jetzt
-      denselben Bau-Kontext.)*
+      denselben Bau-Kontext.)* *(Fixrunden-Nachzug, Re-Review F-2/F-3: der
+      gRPC-Teil des Handbuchs ist hier trotzdem korrigiert — der
+      PyPI-Absatz (1.40) und der `**SDK:**`-Absatz im gRPC-Abschnitt (1.41)
+      tragen die neue Fläche; der Plan-Satz „Handbuch nicht in diesem
+      Slice" bleibt nur für den SSE-/NATS-Handbuch-Teil und
+      `spec/pflichtenheft.md` geltend.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
@@ -170,6 +175,8 @@ hinausgehende oder abweichende Änderungen):**
 | `docs/user/benutzerhandbuch.md` (SDK-Absatz + Version 1.40 + Historie) | update | Review F-3: der Handbuch-Absatz zum PyPI-Package trägt dieselbe falsch werdende Satzform mit dem superseded `ADR-0107`-Zitat; statt auf den gebündelten Nachzug im letzten Flächen-Slice zu warten, korrigiert die Fixrunde den gRPC-Teil im selben Slice (Präzedenz: die C#/Kotlin-Vollabdeckungs-Slices korrigierten den Handbuch-Hinweis je Fläche im selben Zug, Änderungshistorie 1.34/1.37). Der SSE-/NATS-Handbuch-Teil bleibt beim letzten Flächen-Slice. (V-2-Nachzug: die Historien-Zeile trug 1.40, nicht 1.39 — 1.39 war bereits von der Kotlin-Welle belegt.) |
 | `tests/test_grpc_client.py`: `timeout`-Weiterleitungs-Tests (2 neu, `def test_`-Zahl jetzt 8) | update | Review F-4: der neue Parameter `stream_changes(timeout=…)` ist ohne Aufzeichnung im Fake ungebunden — eine Regression, die ihn still fallen lässt, blieb grün. Der Fake zeichnet den Timeout je Aufruf mit; zwei Tests binden Weiterleitung (30.0) und Default (None). |
 | `sdks/python/pgchangefeed/src/pgchangefeed/options.py` | update | Verifikation V-3 (Deklarations-Nachzug, sachlich unverändert): Docstring + Attribut-Doku ziehen mit der neuen Fläche nach — [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md)s Erst-Scope-Satz wird durch diesen Slice falsch, `address`/`api_token` tragen jetzt die gRPC-Form mit (dieselbe Träger-Klasse wie README/`__init__`, im Welle-Plan als Suchlauf-Ziel benannt). |
+| `integration/test_grpc_realserver.py`: Nichtleer-Asserts zurück | update | Re-Review F-1 (MEDIUM): die typbewusste Neuschreibung (F-2 des Haupt-Reviews) hatte für `transaction_id`, `source_table_id`, `schema_version` die korrekte Nichtleer-Bindung ersetzt — ein proto3-Wire-Image ohne diese Felder (`""`) blieb grün. Drei `!= ""`-Asserts zurück (neben `change_id`). |
+| `docs/user/benutzerhandbuch.md`: Python-`**SDK:**`-Absatz im gRPC-Abschnitt (1.41 + `Stand:`) | update | Re-Review F-2/F-4 (LOW): der gRPC-Handbuch-Abschnitt trug `**SDK:**`-Absätze nur für C#/Kotlin, die 1.40-Historie nannte eine Klasse, die der Körper nirgends nennt; der dritte Sprach-Absatz zieht nach (Präzedenz Änderungshistorie 1.37), Version 1.41, `Stand:`-Datum mitgezogen. |
 | `integration/test_grpc_realserver.py`: Feldvollständigkeits-Prüfung typbewusst | update | Review F-2: das frühere `!= ""` war für `old_image`/`new_image` (bytes) und `sequence` (int) vakuum (nie ungleich-rot). Real jetzt: je Feld ein Typ-Assert, dazu Inhalt (Operation, Alt-Bild-Leere am INSERT, Sentinel, Tabelle, Schema). |
 
 **Ansatz:** Draht-Kenntnis-Quelle für das Nachrichtenschema ist

@@ -76,6 +76,9 @@ def test_realserver_receives_a_committed_change_over_the_stream() -> None:
             f"Feld {field}: {type(value).__name__}, wollen {kind.__name__}"
         )
     assert received.change_id != ""
+    assert received.transaction_id != ""
+    assert received.source_table_id != ""
+    assert received.schema_version != ""
     assert received.operation == "INSERT"
     assert received.old_image == b"", "ein INSERT traegt kein Alt-Bild am Wire"
     assert _SENTINEL in received.new_image.decode()
