@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **23×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **24×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,23 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der vierundzwanzigste Beleg,
+`evidence/slice-sdk-csharp-reale2e.md`: der §3.13-Suchlauf des
+Implementers trug vier geplante Träger-Zeilen (alle bestätigt) und
+verfehlte drei weitere — alle drei hängen an derselben Wurzel: der
+`.d-check.yml`-`trace.coverage`-Eintrag des Diff verbreitert die Menge
+der kuratierten Coverage-Dimensionen, und jede Prosa-Zeile, die diese
+Menge aufzählt (`harness/README.md`s `make doc-trace`-Zeile,
+`harness/sensors/docs-check.md` §Grenze, die Welle-Plan-§6), wird durch
+exakt diese Verbreiterung überholt — der deklarierte Mustersatz
+(geplante Träger, `Datei:Zeile`-Form) beschrieb den Suchraum, nicht die
+Bewegung. Gefunden vom Reviewer (F-1, MEDIUM), gezogen in der Fixrunde
+(`86892bdb`). Geschärfte Lehre (Closure-Notiz): der Suchraum eines
+§3.13-Suchlaufs folgt der Schreib-Verbreiterung der Bewegung, nicht dem
+deklarierten Mustersatz. Ausgang bleibt **verkörpert**, kein neuer
+Schwellen-Übertritt — die Schärfung ist eine Anwendungs-Schärfung der
+verkörperten Regel `AGENTS.md` §3.13. Details:
+`evidence/slice-sdk-csharp-reale2e.md`.
 Der dreiundzwanzigste Beleg,
 `evidence/slice-sdk-python-nats-stream-client-flaeche.md`: die schmale
 Plan-Mustersatz-Grep-Form des §3.13-Suchlaufs verfehlte alle fünf

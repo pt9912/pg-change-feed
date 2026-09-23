@@ -149,24 +149,39 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
       `sdks/csharp/**` — der neue Integrationstest-Quelltext inklusive
       (Import-Zeilen-Prüfung, Muster der bestehenden SDK-Slices).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
-      kein Self-Review (Modul 8).
+      kein Self-Review (Modul 8). *(Report `review-slice-sdk-csharp-reale2e`:
+      0 HIGH · 1 MEDIUM · 4 LOW · 2 INFO; Fixrunde `86892bdb` löste
+      F-1 bis F-6 (F-7 INFO als Runner-Kommentar); die Verifikation
+      urteilte „erfüllt" mit zwei nicht-blockierenden Beobachtungen,
+      beide gelöst in `7bede9f2` — der Nachzug bei Schritt 21 des
+      Minimal Agent Workflow geschieht in diesem Closure-Commit
+      (`BEO-PGC/dod-checkbox-nachzug`).)*
 - [x] Doku-Update im selben Zug: `harness/README.md` bekommt
       die neue `make test-sdk-csharp-integration`-Zeile, weil das Target
       hier real entsteht ([`AGENTS.md`](../../../../AGENTS.md) §4: kein
       Träger nennt ein Target, das es nicht gibt — umgekehrt: eine Zeile
       über ein Target trägt ihren realen Lauf, der vor der Zeile gefahren
       ist; `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7 unten —
+      Lerneintrag: der Suchraum des §3.13-Suchlaufs folgt der
+      Schreib-Verbreiterung der Bewegung; Beleg im Beobachtungs-Register.)*
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo.
-- [ ] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+- [x] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
+      eine Antwort und wird in §7 notiert. *(Beleg:
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+      `evidence/slice-sdk-csharp-reale2e.md`; übrige Kandidaten geprüft,
+      siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang. *(vier Ausgänge in §6, je
+      entfallen mit Beleg am Ort; siehe §7.)*
+- [x] Die drei Paarungen getragen — dieser Slice gehört zu
+      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel im
+      Lerneintrag liegt in `AGENTS.md` §3.13 (`seit welle-20`, am Ort
+      existent); Folge-Slice: beide genannten Pläne existieren in
+      `open/`; Register: der neue Beleg liegt in `evidence/` — §7.)*
 
 ## 3. Plan (vor Code)
 
@@ -249,13 +264,23 @@ Closure-Notiz mit Lerneintrag geschrieben.
   statt die Übereinstimmung mit dem Vorbild als ausreichenden Beleg zu
   werten. *Zusage:* die übernommenen Form-Teile werden je separat
   gesichtet; der Suchlauf im Bericht trägt das Ergebnis.
+  **Ausgang:** entfallen — die je-teilige Sichtung lief real (Review
+  „Kommentar-Sichtung je übernommenem Form-Teil": Runner-Kopf,
+  Phasen-Prosa, Dockerfile-Kommentar, Make-Target-Kommentar je separat
+  gegen das Python-Vorbild); kein unübersetztes deutsches Wortfragment,
+  der Zähler der Klasse bleibt 2×. Gefunden wurden stattdessen zwei
+  andere Klassen (F-3 Grammatik-Slip, F-4 ASCII-Mischform), beide gelöst
+  (Fixrunde `86892bdb`; Umlaut-Residuum des F-4-Fixes `7bede9f2`).
 - **.NET-stdout-Pufferung vs. `docker logs`-Marker-Polling:** der Runner
   liest READY/RECEIVED/REJECTED über `docker logs`, während der Test
   läuft — .NET-Pufferung könnte die Marker verzögern (Python-Lösung:
   `python -u`). *Erwartet, zu belegen durch:* der erste reale Lauf
   zeigt die Marker fristnah; falls nicht, trägt der Fix den
   ungepufferten Ausgabe-Form (z. B. `Console.Out.Flush()` je Marker)
-  und den Beleg, dass der Runner sie liest.
+  und den Beleg, dass der Runner sie liest. **Ausgang:** entfallen —
+  die Marker trafen fristnah in allen drei Läufen (Implementer-Lauf,
+  Review-Lauf, Verifier-Lauf, je EXIT=0); die Phase-Form druckt je
+  Marker mit `Console.Out.Flush()` (Plan-Nachzug, `PhaseEnvironment.cs`).
 - **zwei Token-Klassen in der HTTP-Phase:** der Server-E2E-HTTP-Rundlauf
   nutzt das `admin`-Token für RegisterConsumer und das `reader`-Token
   für Listen/Lesen (Container-Vertrag `CDC_API_TOKEN_ADMIN`/
@@ -263,26 +288,117 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Die HTTP-Phase des C#-Runners braucht beide — der Ablehnungs-Beleg
   (401) bleibt beim Token-freien Aufruf. *Erwartet, zu belegen durch:*
   der reale Lauf; die Env-Form folgt dem bestehenden
-  `run-integration-tests.sh`-Muster.
+  `run-integration-tests.sh`-Muster. **Ausgang:** entfallen — die
+  HTTP-Phase fährt beide Klassen real (admin-/reader-Paar je Env-gebunden
+  `PGCHANGEFEED_API_TOKEN_ADMIN`/`PGCHANGEFEED_API_TOKEN_READER`, Runner);
+  der Ablehnungs-Beleg (401) lief am token-freien Aufruf, der
+  Listen-Aufruf am reader-Token.
 - **Sentinel-/ID-Kollisionen mit anderen Läufen:** die vier Phasen
   tragen je eigene Sentinel- und ID-Wertebereiche (Muster
   Python-Runner: 300/310/320); der C#-Runner wählt eigene Bereiche,
   damit sich parallele oder nacheinander gelaufene SDK-Runner nicht in
   die Quere kommen. *Erwartet, zu belegen durch:* der reale Lauf.
+  **Ausgang:** entfallen — eigene Bereiche je Phase (400/410/420/430,
+  Plan-Nachzug); drei unabhängige Läufe (Implementer, Review, Verifier)
+  ohne Kollision, `consumer_id` je laufgebunden statt kollidierend.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** der Mechanik-Spiegel trug den ersten Zug ohne
+  zweite Infrastruktur — die additive `integration`-Stufe baut auf der
+  bestehenden `build`-Stufe auf (kein neuer Pin), und der Runner fuhr
+  alle vier Phasen gegen dieselbe Compose-Umgebung:
+  `make test-sdk-csharp-integration` lief real grün (Implementer-Lauf
+  EXIT=0: gRPC `change_id=804-1`, SSE `807-1`, NATS `810-1`, je
+  SQL-Gegenprüfung gegen `cdc.changes`, die Registrierung gegen
+  `cdc.consumer`); Review- und Verifier-Läufe reproduzierten die Werte
+  byte-identisch (deterministische Bring-up-Kette — nur `consumer_id`
+  ist laufgebunden, Zeitstempel-Form, Verifikation §1). Der Abdeckungs-
+  Träger ist byte-stabil idempotent („Abdeckungs-Traeger unveraendert"
+  in allen drei Läufen). Die Rollen-Kette lief unabhängig: Haupt-Review
+  F-1…F-8, Fixrunde `86892bdb` (F-1 bis F-6, F-7 als Runner-Kommentar),
+  Verifikation „erfüllt" (eigener Lauf EXIT=0, `make doc-trace` —
+  gemessen 2026-09-23: 79 Anforderungen, 2 Waisen —, `make gates` EXIT=0
+  mit Stempel-Gleichheit); die zwei nicht-blockierenden Beobachtungen
+  der Verifikation (Umlaut-Residuum im Träger, überholter Report-Satz)
+  sind in `7bede9f2` gelöst.
+- **Was ging anders als geplant:** der §3.13-Suchlauf trug zunächst vier
+  Träger-Zeilen — alle vier einzeln bestätigt (Verifikation §3) — und
+  verfehlte drei weitere (Review F-1, MEDIUM): die
+  `make doc-trace`-Coverage-Aufzählung in `harness/README.md`, die
+  Coverage-Dimensionen-Aufzählung in `harness/sensors/docs-check.md`
+  §Grenze, die Träger-Form-Behauptung in
+  [welle-sdk-reale2e](../welle-sdk-reale2e.md) §6. Alle drei hängen an
+  derselben Wurzel: der `.d-check.yml`-`trace.coverage`-Eintrag dieses
+  Diff verbreitert die Menge der kuratierten Coverage-Dimensionen, und
+  genau diese Verbreiterung überholt jede Prosa-Zeile, die die Aufzählung
+  trägt — der deklarierte Mustersatz des Plans (geplante Träger,
+  `Datei:Zeile`-Form) beschrieb den Suchraum, nicht die Bewegung.
+  Denselben Satz-Zug traf F-2 (die neuen Träger-Zeilen citen die
+  Kopf-Anforderung nicht — RTM-Waise), gelöst in der Fixrunde; die RTM
+  sieht [`LH-FA-SST-009`](../../../../spec/lastenheft.md) über das Label
+  `SDK-E2E` (real gemessen, `make doc-trace` 2026-09-23, Status `ok`).
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Regel
+  (Anwendungs-Schärfung der bereits verkörperten Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13 · seit welle-20): der
+  Suchraum eines §3.13-Suchlaufs folgt der **Schreib-Verbreiterung der
+  Bewegung**, nicht dem deklarierten Mustersatz — jede
+  Verdrahtungs-Änderung, die eine aufgezählte Menge verbreitert (hier:
+  jeder `.d-check.yml`-`trace.coverage`-Eintrag), überholt **alle**
+  Prosa-Zeilen, die dieselbe Aufzählung tragen — README-Werkzeug-Zeile,
+  Sensor-Doku, Welle-Plan —, auch wenn sie keinem geplanten Träger
+  zugeordnet waren. Kein neuer Sensor: die verfügbare Falsifikation
+  bleibt die Messung an beiden Ständen (§3.13s Grenze für
+  Prosa-Aufzählungen bleibt; ein Wortmuster, das jede
+  Verbreiterungs-Überholung träfe, bräuchte eine Semantik-Entscheidung,
+  welche Aufzählung zu welcher Bewegung gehört). Keine benannte
+  Spec-Lücke. Ob die Schärfung einen eigenen Satz in `AGENTS.md` §3.13
+  trägt, prüft der Lese-Schritt der Welle-Closure — die Klasse steht mit
+  diesem Beleg bei 24× (Datei-Anzahl unter `evidence/`, real
+  ausgezählt), bereits verkörpert.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — neuer,
+    vierundzwanzigster Beleg:
+    `evidence/slice-sdk-csharp-reale2e.md`; Review F-1 trägt die drei
+    Fundstellen, die Fixrunde zog sie; `state.md` trägt den abgeleiteten
+    Zähler.
+  - **`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`** —
+    geprüft: kein drittes Auftreten (die je-teilige Sichtung lief real,
+    Review §Eigenständig durchgeführte Prüfungen); Zähler bleibt 2×.
+  - **F-3/F-4/F-5** — geprüft: keine Register-Klasse trägt sie (F-3
+    „einmalig" — Grammatik-Slip; F-4 „Orthografie-Split in der
+    Träger-Familie"; F-5 schmale Erzeuger-Glob-Form der
+    `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`-Klasse, deren Zähler
+    dadurch bei 8× bleibt) — alle drei in der Kette gelöst und im Report
+    konserviert; notiert als Antwort statt Registereintrag.
+  - **F-2/F-8** — geprüft: F-8 ist durch die Nachmessung entkräftet
+    (kein Vorkommen); F-2 ist eine neue Kurzform („Abdeckungszuordnung
+    nennt ihre Anforderung nicht"), in der Kette gelöst und als Vorlauf
+    auf die Welle-Closure-Prüfung konserviert — kein Registereintrag.
+- **Folge-Slices:** `slice-sdk-kotlin-reale2e` und
+  `slice-sdk-python-http-reale2e` (beide in `open/`, Welle-Plan §4) —
+  Review F-7 (INFO) gibt ihnen die Writer-Form-Randbedingung mit: ein
+  Folge-Runner ersetzt nur seinen eigenen marker-gegrenzten Abschnitt
+  und erhält den Inhalt **hinter** seinem end-Marker, nicht den
+  oberhalb (der C#-Writer regeneriert Kopf + Tabellenkopf neu, weil sein
+  begin-Marker der erste der Datei ist); die Randbedingung trägt der
+  Runner-Kommentar seit `86892bdb`. Kein zusätzlicher Slice aus dieser
+  Closure.
+- **Risiken aus §6:** Risiko 1 (Form-Vorbild-Kopie) — **entfallen** mit
+  Beleg am Ort; Risiko 2 (Marker-Pufferung) — **entfallen**; Risiko 3
+  (zwei Token-Klassen) — **entfallen**; Risiko 4 (ID-Kollisionen) —
+  **entfallen** (alle Begründungen und Belege am Ort in §6). Kein Ausgang
+  „weiter offen" ins Register — ein Registereintrag für ein nie
+  aufgetretenes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (noch offen) — die Prüfung
+  läuft regelkonform bei deren Closure. (a) Anker: die Regel des
+  Lerneintrags liegt in `AGENTS.md` §3.13 (`seit welle-20`) — am Ort
+  existent; (b) Folge-Slice: beide genannten Pläne existieren als
+  Dateien in `open/`; (c) Register: jede genannte Kennung existiert als
+  Verzeichnis, und das `evidence/` des genannten Eintrags trägt 24
+  Dateien (real ausgezählt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
