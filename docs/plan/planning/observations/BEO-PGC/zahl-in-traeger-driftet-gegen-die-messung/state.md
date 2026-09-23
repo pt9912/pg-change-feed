@@ -24,13 +24,18 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **12×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **13×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
 evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md,
-evidence/slice-103.md) —
+evidence/slice-103.md, evidence/slice-sdk-python-grpc-client-flaeche.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt).
-Der zwölfte Beleg (`slice-103`) trifft exakt dieselbe Fundstelle wie die
+Der dreizehnte Beleg (slice-sdk-python-grpc-client-flaeche) führt die Klasse
+dreifach in derselben Korrektur-Kette (Haupt-Review F-1, Verifikation V-1,
+Re-Review F-5 — 5/29 → 6/29 → 1.39/1.40): jede Nachzug-Zeile zog die Zahl aus
+dem Vorgängerstand des Trägers statt aus der Messung, die sie belegt; die
+Lektion „Messung zuerst, dann Text" trägt die Closure-Notiz des Belegs
+(`done/slice-sdk-python-grpc-client-flaeche.md` §7). Der zwölfte Beleg (`slice-103`) trifft exakt dieselbe Fundstelle wie die
 beiden vorigen (`slice-101`, `slice-102`) — alle drei Pläne entstanden in
 rascher Folge und übernahmen dieselbe, bei ihrer jeweiligen Niederschrift
 bereits veraltete Zahl „5×" für `BEO-PGC/github-actions-unverifizierbar-lokal`

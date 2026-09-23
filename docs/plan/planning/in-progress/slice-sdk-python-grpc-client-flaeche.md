@@ -115,10 +115,14 @@ als der bestehende Go-Toolchain-Container in
       (`grep -E "^\s*(from|import)" … \| grep internal/cmd/gen`) liefert
       keinen Treffer.)*
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
-- [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
+      *(Haupt-Review: review-slice-sdk-python-grpc-client-flaeche.md
+      F-1…F-6; Fixrunde 1 löste F-1 bis F-4/F-6; Verifikation V-1…V-3
+      gelöst; Fixrunden-Re-Review: review-…-fixrunde.md — 0 HIGH, MEDIUM
+      F-1 in Fixrunde 2 gelöst; Fixrunde 2: kein offenes HIGH/MEDIUM.)*
+- [x] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
       gebündelt im letzten Flächen-Slice (§1 Abgrenzung); `harness/README.md`
       §Sensors/§Werkzeuge bekommt die neue `make test-sdk-python-integration`-
@@ -133,16 +137,27 @@ als der bestehende Go-Toolchain-Container in
       PyPI-Absatz (1.40) und der `**SDK:**`-Absatz im gRPC-Abschnitt (1.41)
       tragen die neue Fläche; der Plan-Satz „Handbuch nicht in diesem
       Slice" bleibt nur für den SSE-/NATS-Handbuch-Teil und
+      `spec/pflichtenheft.md` geltend.)* *(Closure: die in diesem Slice
+      geltenden Teile tragen reale Belege — `harness/README.md`-Zeile im
+      Implementations-Commit `f1ce9be4`, gRPC-Handbuch-Teil 1.40/1.41 in
+      `b7a993fe`/`2eb18947` (Kopf 1.41, `Stand:` 2026-09-23); die
+      Bündelungs-Formel bleibt für den SSE-/NATS-Handbuch-Teil und
       `spec/pflichtenheft.md` geltend.)*
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7 unten —
+      Lerneintrag: Zahl-/Versions-Nachzug aus derselben Messung, die sie
+      belegt; Beleg im Beobachtungs-Register.)*
+- [x] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
       Reconciliation-Datei in diesem Repo.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder Beleg in `evidence/`; keine Beobachtung angefallen
-      ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
+      ist ebenfalls eine Antwort und wird in §7 notiert. *(Beleg:
+      `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`,
+      `evidence/slice-sdk-python-grpc-client-flaeche.md`; übrige
+      Kandidaten geprüft, siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang. *(drei Ausgänge in §6,
+      final — 3× entfallen mit Begründung am Ort; siehe §7.)*
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       dieser Slice gehört zu
       [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
       (noch offen); die Prüfung läuft regelkonform bei deren Closure.
@@ -247,16 +262,23 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 - Das neue Integrationstest-Werkzeug könnte real langsamer/flakier sein
   als erwartet (Compose-Bring-up + Docker-Bau + realer Netzwerk-Rundlauf
-  in einem einzigen Skript). **Ausgang:** weiter offen — reale Laufzeit
-  und Stabilität werden erst beim tatsächlichen Lauf sichtbar; ein
-  wiederholtes Auftreten von Flakiness wäre ein Kandidat für
-  `BEO-PGC/test-integration-retention-timing-flake`-artige Beobachtung
-  (eigener, neuer Registereintrag, falls es real auftritt).
+  in einem einzigen Skript). **Ausgang:** entfallen — der erste reale
+  Lauf des Werkzeugs ist grün mit vollem Behauptungspfad (Verifikation
+  §1 DoD 2: `change_id=804-1` real empfangen und über `cdc.changes`
+  gegengeprüft, fünf explizite Fehl-Ausgänge vor dem Erfolgssatz,
+  `set -euo pipefail`); Flakiness tritt in keinem der Läufe auf. Ein
+  Registereintrag für ein nie aufgetretenes Muster trägt kein `evidence/`
+  (Paarung (c) verlangt nicht-leeren Beleg); ein reales späteres
+  Auftreten von Flakiness bekommt seinen Registereintrag beim dann
+  geschlossenen Vorgang (Kandidat:
+  `BEO-PGC/test-integration-retention-timing-flake`-artige Beobachtung).
 - `grpcio-tools`s `protoc`-Python-Plugin könnte einen anderen
   Stub-Codestil erzeugen als erwartet (z. B. keine Typ-Stubs `.pyi` ohne
-  Zusatz-Flag). **Ausgang:** weiter offen bis zum ersten realen Bau —
-  kein Blocker, falls die erzeugten Typen funktional korrekt sind, auch
-  ohne `.pyi`.
+  Zusatz-Flag). **Ausgang:** entfallen — der erste reale Bau erzeugt
+  funktionale Stubs ohne Blocker: Modul-Namen folgen dem
+  `.proto`-Dateinamen, kein `.pyi`; die Deskriptor-Bindung der
+  Unit-Tests und die Wheel-/SDist-Einbindung tragen die Fläche
+  (Verifikation §1 DoD 1).
 - Das neue Skript teilt sich das benannte Docker-Netz `cdc-feed-test` mit
   einem eventuell noch laufenden `make test-integration`-Lauf, falls
   beide gleichzeitig ausgeführt werden. **Ausgang:** entfallen — dieselbe
@@ -266,12 +288,77 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** <…>
-- **Was ging anders als geplant:** <…>
-- **Steering-Loop-Eintrag:** <…>
-- **Beobachtungs-Register (`../observations/`):** <…>
-- **Folge-Slices:** <…>
-- **Risiken aus §6:** <…>
+- **Was hat funktioniert:** der Plan-Schnitt trägt sich in einem Zug — die
+  gRPC-Fläche und das Realserver-Integrationstest-Werkzeug gehören in
+  einen Slice, weil die Fläche ohne den Werkzeug-Lauf nicht abnahmefähig
+  ist ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+  §Entscheidung Festlegung 2). Beide Rückführungen aus §4 stehen nicht an:
+  der Bau-Kontext `proto=proto` trägt den Python-Baum (C#/Kotlin belegen
+  den Mechanismus bereits), und das Werkzeug ist mit der Fläche in
+  derselben Größe geliefert — `make test-sdk-python-integration` lief
+  real grün (`change_id=804-1` über die Runner-Assertion-Kette empfangen,
+  über `cdc.changes` gegengeprüft; Lauf-Beleg zitiert im
+  Verifikationsbericht §1 DoD 2). Reviewer (F-1…F-6) und Verifier
+  (V-1…V-3) laufen unabhängig voneinander; die beiden Fixrunden lösen
+  ihre Befunde je in einem Commit (`b7a993fe`, `2eb18947`), der
+  Re-Review-Endstand trägt 0 HIGH.
+- **Was ging anders als geplant:** drei Zahl-/Stand-Driften entstehen in
+  der Korrektur-Kette selbst, nicht in der Umsetzung — jede
+  Nachzug-Zeile, die eine Zahl oder Version trägt, zog den Wert aus dem
+  Vorgängerstand des Trägers statt aus der Messung, die sie belegt:
+  5/29 → 6/29 → 1.39/1.40 (Haupt-Review F-1, Verifikation V-1, Re-Review
+  F-5; je vom nächsten Leser durch Nachzählen statt Übernahme gefunden).
+  Die Plan-Nachzug-Tabelle trägt dadurch die V-3-Deklaration
+  (`options.py`) und die zwei Fixrunden-2-Zeilen — sie bleibt das
+  Übergabe-Artefakt der nächsten Rollen, der Code-Diff ist es nicht.
+- **Steering-Loop-Eintrag:** geschärfte Regel (Anwendungs-Schärfung der
+  bereits verkörperten Klasse `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`,
+  Anker [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A ·
+  seit slice-089): eine Zahl-/Versions-Nachzug-Zeile wird aus
+  **derselben Messung** gezogen, die sie belegt — Messung zuerst, dann
+  Text —, nicht aus dem Vorgängerstand des Trägers. Kein neuer Sensor:
+  die verfügbare Falsifikation bleibt die Messung selbst, so wie der
+  Eintrag in seiner `state.md` sie führt. Keine benannte Spec-Lücke. Ob
+  die Schärfung einen eigenen Satz in `AGENTS.md` §3.12 Instanz A trägt,
+  prüft der Lese-Schritt der Welle-Closure — die Klasse steht mit diesem
+  Beleg bei 13× (Datei-Anzahl unter `evidence/`, real ausgezählt),
+  bereits verkörpert.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`** — neuer,
+    dreizehnter Beleg:
+    `evidence/slice-sdk-python-grpc-client-flaeche.md`; die drei
+    Auftreten der Kette (Haupt-Review F-1, Verifikation V-1, Re-Review
+    F-5) tragen je ihre Fundstellen; `state.md` trägt den abgeleiteten
+    Zähler.
+  - **`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`** — geprüft: die
+    Klasse traf den Verbund (Haupt-Review F-2, Re-Review F-1/F-2); beide
+    Funde sind in der Kette gelöst (Fixrunde 1 / Fixrunde 2) und in den
+    Review-Reports konserviert — kein zusätzlicher Beleg in dieser
+    Closure; der Lernwert der Kette läuft über die Zahl-Drift-Beobachtung
+    (deren drei Funde dieselbe Wurzel tragen).
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — geprüft: F-7 des
+    Re-Reviews (die überholte `options.py`-Planzeile des offenen
+    NATS-Folge-Slices) ist ein Übergabe-Artefakt an den Folgelauf, kein
+    Registereintrag; die fixgenerierten Funde F-3/F-4 sind in der Kette
+    gelöst und in den Reports konserviert.
+  - Re-Review F-6 (Verifikations-Report und Auflagen-Korrekturen in
+    einem Commit) — Prozessbeobachtung ohne Registereintrag; die
+    Übergabe-Artefakte (Plan-Nachzug-Notizen) tragen die Zuordnung
+    (Re-Review: „erwartet keine Aktion").
+- **Folge-Slices:** `slice-sdk-python-sse-client-flaeche` und
+  `slice-sdk-python-nats-stream-client-flaeche` (Reihenfolge Welle-Plan
+  §4) — sie erweitern das hier eingeführte Werkzeug; der NATS-Folgelauf
+  reduziert die überholte `options.py`-Planzeile (F-7, Übergabe oben) und
+  bündelt den SSE-/NATS-Handbuch-Teil, den Version-Bump und den
+  `spec/pflichtenheft.md`-Nachzug. Kein zusätzlicher Slice aus dieser
+  Closure.
+- **Risiken aus §6:** Risiko 1 (Werkzeug-Laufzeit/Stabilität) —
+  **entfallen** (der erste reale Lauf ist grün; Flakiness tritt in keinem
+  der Läufe auf; Begründung und Beleg am Ort in §6). Risiko 2
+  (Stub-Codestil) — **entfallen** (funktionale Stubs aus dem realen Bau,
+  kein Blocker; §6). Risiko 3 — **entfallen** (unverändert; §6). Kein
+  Ausgang „weiter offen" ins Register — ein Registereintrag für ein nie
+  aufgetretenes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
   (noch offen) — die Prüfung läuft regelkonform bei deren Closure.
