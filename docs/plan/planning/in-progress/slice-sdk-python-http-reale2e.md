@@ -123,18 +123,48 @@ Fläche real abzunehmen — die drei Stream-Phasen belegen das
       `sdks/python/**` (Import-Zeilen-Prüfung, Muster der bestehenden
       SDK-Slices).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
-      kein Self-Review (Modul 8).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+      kein Self-Review (Modul 8). *(Report
+      `review-slice-sdk-python-http-reale2e`: 0 HIGH · 2 MEDIUM · 3 LOW ·
+      1 INFO; Fixrunde `d668b9cc` zog F-1 bis F-5 — F-6 bleibt INFO ohne
+      erwartete Aktion (Review-Verdikt); die Verifikation urteilte
+      „DoD-Verdikt: erfüllt" mit 0 DoD-Abweichungen (`f85d0a51`,
+      Link-Berichtigung `a78aed81`) — der Checkbox-Nachzug geschieht in
+      diesem Closure-Commit (`BEO-PGC/dod-checkbox-nachzug`-Form wie im
+      C#-/Kotlin-Vorgänger).)*
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7 unten —
+      Lerneintrag: zwei Anwendungs-Schärfungen — der §3.13-Suchlauf
+      folgt der Schreib-Verbreiterung der Bewegung über alle Träger der
+      Eigenschaft (F-2-Kette, Klasse
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+      [`AGENTS.md`](../../../../AGENTS.md) §3.13), und die je-teilige
+      Sprachreinheits-Sichtung einer Form-Vorbild-Kopie deckt auch die
+      Plan-Prosa (F-4, drittes Auftreten der Klasse
+      `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter` —
+      Schwelle erreicht, Ausgang im Lese-Schritt der Welle-Closure).)*
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo.
-- [ ] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+- [x] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
+      eine Antwort und wird in §7 notiert. *(Zwei Belege:
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger` und
+      `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`,
+      je `evidence/slice-sdk-python-http-reale2e.md`; übrige Kandidaten
+      geprüft, siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang. *(vier Ausgänge in §6, je
+      am Ort — drei entfallen mit Begründung, einer als vorab
+      deklarierter „verworfen — Umfang"-Ausgang; siehe §7.)*
+- [x] Die drei Paarungen getragen — dieser Slice gehört zu
+      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel
+      des Lerneintrags liegt als Anwendungs-Schärfung der verkörperten
+      Klasse `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
+      [`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent); die
+      Schwelle-Klasse
+      `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`
+      trägt ihre Ausgangs-Zuweisung als Folgung in der Welle-Closure;
+      Folge-Slice: keiner — dieser Slice schließt die Matrix dieser
+      Welle; Register: beide neuen Belege liegen in `evidence/` — §7.)*
 
 ## 3. Plan (vor Code)
 
@@ -211,34 +241,171 @@ Closure-Notiz mit Lerneintrag geschrieben.
   zu belegen durch:* der reale Lauf; falls die Form nicht passt, trägt
   der Fix eine eigene, schlankere HTTP-Phase-Funktion (Rückführung §4,
   zweiter Punkt).
+  **Ausgang:** entfallen — die `run_surface_phase`-Form trug den
+  zustandsbehafteten Rundlauf nach der Parametrisierung
+  (`received_grep`/`sql_kind`, SQL-Variante `consumer` gegen
+  `cdc.consumer`); der reale Lauf fuhr alle vier Phasen grün
+  (Implementer-Lauf EXIT=0, DoD; Verifier-Lauf EXIT=0 samt realem
+  Rot-Beleg durch eigene Mutation, Verifikation §1). Das Form-Residuum
+  (Review F-5: der Fire-and-Forget-Insert-Anteil der HTTP-Phase) ist als
+  Form-Residuum der Phasen-Parametrisierung dokumentiert, nicht
+  DoD-wirksam — die zwei Diagnose-Zeilen sind phasenneutral gezogen
+  (Fixrunde `d668b9cc` erste Zeile, Verifier-Zug `f85d0a51` zweite
+  Zeile), der tote Insert-Anteil (331–335 ohne Empfänger) bleibt als
+  deklariertes Residuum stehen (Verifikation §7.1).
 - **Träger-Abschnitt-Kohärenz:** drei Runner schreiben je einen
   Abschnitt derselben Datei — eine Marker-Kollision (zwei Runner,
   dieselbe Grenz-Markierung) würde einen Abschnitt überschreiben.
   *Erwartet, zu belegen durch:* der reale Lauf dieses Slices liest und
   schreibt die Datei mit allen drei Abschnitten sichtbar; die
   Marker-Form ist je Sprache eindeutig (Sprach-Segment im Marker-Namen).
+  **Ausgang:** entfallen — der reale Lauf las und schrieb die Datei mit
+  allen drei Abschnitten sichtbar; die Marker sind je Sprache eindeutig
+  (`pgchangefeed-sdk-e2e:{csharp,kotlin,python}-begin/end`), alle drei
+  Abschnitte byte-identisch dem Erzeugnis ihres je eigenen
+  Runner-Generators, die C#-/Kotlin-Abschnitte im Diff rein additions —
+  beidseitiger Erhalt real gemessen, „Abdeckungs-Traeger unveraendert"
+  im Lauf (Verifikation §2 Zeile 3).
 - **Sentinel-/ID-Kollisionen mit den Stream-Phasen:** die HTTP-Phase
   braucht eigene Wertebereiche (bestehende: 300/310/320 für gRPC/SSE/
-  NATS). *Erwartet, zu belegen durch:* der reale Lauf.
+  NATS). *Erwartet, zu belegen durch:* der reale Lauf. **Ausgang:**
+  entfallen — eigene Bereiche je Phase (HTTP 330/331–335 gegen 301–305/
+  311–315/321–325, disjunkt; Review-Negativbefund), Implementer- und
+  Verifier-Lauf ohne Kollision, die IDs sind laufgebunden (Verifikation
+  §2 Zeile 2, §7 Beobachtung 3).
 - **Der ReadChanges-Beleg als Umfangs-Erweiterung** (§1 Erweiterungs-
   Option): falls der umsetzende Zug ihn fährt, trägt der DoD seine
   eigene SQL-Gegenprüfung gegen `cdc.changes` im Bereich `[from, to)`
   (Muster des bestehenden `GET /changes`-E2E-Belegs); falls nicht, wird
   die Option mit Ausgang „verworfen — Umfang" in §7 verzeichnet.
+  **Ausgang:** verworfen — Umfang (die vorab deklarierte Form, dritter
+  Satz dieses Punkts): die Option wurde nicht gefahren — der Test trägt
+  keinen ReadChanges-Aufruf (real geprüft, Verifikation §2 Zeile 8–11);
+  der Pflichtkern (Registrierung + Listen + SQL-Gegenprüfung + 401)
+  trägt die Abnahme, das Änderungs-Empfangen belegen die drei
+  Stream-Phasen bereits (§1 Zuschnitt).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** die additive Erweiterung der bewährten
+  Runner-Infrastruktur trug den Zug ohne zweite Infrastruktur — die
+  vierte Phase (HTTP) fuhr in der bestehenden `run_surface_phase`-Form
+  nach der Parametrisierung (`received_grep`/`sql_kind`, SQL-Variante
+  `consumer`) gegen dieselbe Compose-Umgebung: `make
+  test-sdk-python-integration` lief real grün (Implementer-Lauf EXIT=0:
+  gRPC `change_id=804-1`, SSE `807-1`, NATS `813-1`, je SQL-Gegenprüfung
+  gegen `cdc.changes`, die Consumer-Registrierung
+  `consumer_id=python-sdk-e2e-4ad61b9f8a0d` über `cdc.consumer`; der
+  Verifier-Lauf fuhr den Rot-Beleg real — gültiger reader-Token im
+  401-Test, EXIT=2 mit wortgleich quotierter Fail-Form — und den
+  sauberen Abschlusslauf EXIT=0 mit laufgebundenen Nachbar-IDs
+  `810-1`/`consumer_id=python-sdk-e2e-570d402081d4`, Verifikation §1).
+  Die drei Stream-Phasen blieben über die Parameter-Nachreichung
+  verhaltensgleich (Muster-Bestandteile byte-gleich, Erst-Token-Anker
+  schärfer nicht breiter, beide Läufe grün — Verifikation §4). Der
+  Träger-Abschnitt ist runner-generiert und byte-identisch dem
+  Generator-Erzeugnis; die Matrix-Vollständigkeit (12 Zeilen, 3 Sprachen
+  × 4 Wege) ist vom Verifier selbst gezählt (Verifikation §2 Zeile 3).
+  Die Rollen-Kette lief unabhängig: Haupt-Review F-1…F-6 (0 HIGH ·
+  2 MEDIUM · 3 LOW · 1 INFO), Fixrunde `d668b9cc` (F-1 bis F-5),
+  Verifikation „DoD-Verdikt: erfüllt" mit 0 DoD-Abweichungen
+  (`f85d0a51`, Link-Berichtigung `a78aed81`).
+- **Was ging anders als geplant:** der Plan §3 führte
+  `harness/mk/sdk.mk` als Update-Punkt — keine Änderung erfolgte (der
+  Target-Kommentar trägt keine Phasen-Enumeration, nichts falsch
+  geworden); die Auslassung war zunächst undeklariert (Review F-1
+  MEDIUM) und ist in der Fixrunde als Auslassung deklariert
+  (§3.13-Feld). Das committete §3.13-Feld nannte nur die eigene
+  Python-Zeile von `harness/README.md` §Werkzeuge und verfehlte die
+  zwei Nachbar-Zeilen derselben Tabelle, deren Endklassen dieselbe
+  Erweiterungs-Zusage als ausstehend weitertrugen (Review F-2 MEDIUM) —
+  gezogen in der Fixrunde. Dazu F-4: die Plan-Prosa selbst trug das
+  deutsche Wortfragment „degenerater Pfad" wortgleich aus der
+  Kotlin-Plan-§7 weiter (drittes Auftreten der Register-Klasse) —
+  gezogen in der Fixrunde. F-5 (stream-förmige Fehlerdiagnose der
+  HTTP-Phase) wurde in zwei Zügen phasenneutral gezogen (Fixrunde erste
+  Zeile, Verifier-Zug `f85d0a51` zweite Zeile); der tote Insert-Anteil
+  (331–335 ohne Empfänger) bleibt als deklariertes Form-Residuum stehen.
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Regel, zwei
+  Anwendungs-Schärfungen der Register-Klassen:
+  *Der §3.13-Suchlauf folgt der Schreib-Verbreiterung der Bewegung über
+  alle Träger der Eigenschaft, nicht dem deklarierten
+  Eintäger-Mustersatz* — das Suchlauf-Feld nannte den eigenen
+  `harness/README.md`-Träger und verfehlte die zwei Nachbar-Zeilen
+  derselben Werkzeug-Tabelle, deren Endklassen dieselbe ausstehende
+  Zusage trugen (F-2; Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13 · das vierte Auftreten der
+  dort dokumentierten Fund-Struktur nach `slice-091`/`093`/`094`); und
+  *die je-teilige Sprachreinheits-Sichtung einer Form-Vorbild-Kopie
+  deckt jeden kopierten Form-Teil — auch die Plan-Prosa selbst* (F-4;
+  Klasse `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`,
+  drittes Auftreten — Schwelle erreicht; die Ausgangs-Zuweisung läuft
+  als Folgung im Lese-Schritt der Welle-Closure, Modul 10 §Pflege). Kein
+  neuer Sensor: die verfügbare Falsifikation bleibt die Messung an
+  beiden Ständen; die Funde trugen die bestehenden Leser (Reviewer,
+  Fixrunde, Verifikation §3 am Suchlauf-Feld). Keine benannte
+  Spec-Lücke.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — neuer,
+    sechsundzwanzigster Beleg: `evidence/slice-sdk-python-http-reale2e.md`;
+    F-2 trägt die Endklassen-Kette (das Suchlauf-Feld nannte einen von
+    drei Trägern derselben ausstehenden Zusage), die Fixrunde zog sie;
+    `state.md` trägt den Zähler (26×, Datei-Anzahl unter `evidence/`,
+    real ausgezählt).
+  - **`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`**
+    — neuer, dritter Beleg: `evidence/slice-sdk-python-http-reale2e.md`;
+    F-4 trägt die Klasse erstmals in Plan-Prosa (das Fragment
+    „degenerater Pfad" wanderte wortgleich aus der Kotlin-Plan-§7 in den
+    Plan-Nachzug; die §8-Deklaration „dieser Slice kopiert kein
+    Form-Vorbild" prüfte ihre eigene Prosa nicht mit); Zähler 3× —
+    Schwelle erreicht, Folgung: Ausgang im Lese-Schritt der
+    Welle-Closure (Modul 10 §Pflege).
+  - **F-3 (Chronik-Sprache im Test-Docstring, Grenzfall)** — geprüft:
+    keine Register-Klasse trägt ihn (die Klasse
+    `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` ist auf
+    Test-Harness-Bash-Kommentare `tools/harness/*.sh` skopiert; der Fund
+    sitzt im Python-Test-Docstring und war als Grenzfall mit ADR-Anker
+    klassifiziert), in der Fixrunde gelöst, im Report konserviert.
+  - **F-1 (Planpunkt still gestrichen)** — in der Fixrunde als
+    Auslassung deklariert (§3.13-Feld), im Report konserviert; keine
+    Register-Klasse trägt ihn (`BEO-PGC/plan-nachzug` trägt die
+    Gegenrichtung — Erweiterung über den gemeldeten Umfang hinaus).
+  - **F-5 (Form-Residuum der Phasen-Parametrisierung)** — Rest am Ort
+    benannt (Was ging anders); keine Register-Klasse trägt ihn
+    (`BEO-PGC/spiegelung-ist-approximation` trägt die
+    Gate-Approximations-Klasse, nicht die Phasen-Form).
+  - **F-6 (Zitier-Basis)** — INFO ohne erwartete Aktion
+    (Review-Verdikt); keine Klasse trägt sie — keine Beobachtung
+    angefallen.
+- **ReadChanges-Erweiterungs-Option (§1):** verworfen — Umfang. Der
+  Test trägt keinen ReadChanges-Aufruf (real geprüft, Verifikation §2
+  Zeile 8–11); der Pflichtkern trägt die Abnahme, das Änderungs-Empfangen
+  belegen die drei Stream-Phasen bereits (§1 Zuschnitt); die Option war
+  von Anfang an als Erweiterungs-Option deklariert (Rückführung §4,
+  erster Punkt).
+- **Risiken aus §6:** Risiko 1 (`run_surface_phase`-Form) —
+  **entfallen** mit Begründung am Ort (die Form trug den Rundlauf nach
+  der Parametrisierung; das Form-Residuum ist dokumentiert, nicht
+  DoD-wirksam); Risiko 2 (Träger-Abschnitt-Kohärenz) — **entfallen**;
+  Risiko 3 (Sentinel-/ID-Kollisionen) — **entfallen**; Risiko 4
+  (ReadChanges-Beleg) — **verworfen — Umfang** (die vorab deklarierte
+  Form, §6 vierter Punkt). Kein Ausgang „weiter offen" ins Register —
+  ein Registereintrag für ein im Slice gelöstes Muster trüge kein
+  `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
   [welle-sdk-reale2e](../welle-sdk-reale2e.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+  läuft regelkonform bei deren Closure. (a) Anker: die Regel des
+  Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13, `seit welle-20`, am Ort
+  existent); die Schwelle-Klasse
+  `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`
+  trägt ihre Ausgangs-Zuweisung als Folgung in der Welle-Closure; (b)
+  Folge-Slice: keiner — dieser Slice schließt die Matrix dieser Welle;
+  (c) Register: jede genannte Kennung existiert als Verzeichnis, und die
+  `evidence/`-Verzeichnisse tragen die neuen Belege (26× bzw. 3×, real
+  ausgezählt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

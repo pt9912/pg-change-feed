@@ -1,11 +1,9 @@
-Zustand: offen — Ausgang noch nicht zugewiesen. Zweites Auftreten, weiter
-unter der 3×-Schwelle für eine reguläre Skill-Verkörperung (§Pflege,
-`.harness/skills/reviewer.md`). Ein drittes Auftreten (z. B. bei einem
-vierten SDK-Sprachpaket) sollte prüfen, ob eine zusätzliche Lese-Pflicht im
-Reviewer-Skill sinnvoll ist: bei einem als „wortgleiche Übernahme aus
-Sprachpaket X" begründeten Diff-Abschnitt das übernommene Vorbild selbst
-noch einmal auf Sprachreinheit zu prüfen, statt die Übereinstimmung mit dem
-Vorbild allein als ausreichenden Beleg zu werten.
+Zustand: offen — Ausgang noch nicht zugewiesen. Drittes Auftreten — die
+3×-Schwelle ist mit dem Beleg des Slices `slice-sdk-python-http-reale2e`
+erreicht (Modul 10 §Pflege); die Ausgangs-Zuweisung läuft im Lese-Schritt
+der `welle-sdk-reale2e`-Closure (Modul 6) und ist in der Closure-Notiz des
+Slices als Folgung vermerkt.
 
-Zähler (abgeleitet): 2× (evidence/slice-sdk-csharp-projektgeruest.md,
-evidence/slice-sdk-kotlin-projektgeruest.md).
+Zähler (abgeleitet): 3× (evidence/slice-sdk-csharp-projektgeruest.md,
+evidence/slice-sdk-kotlin-projektgeruest.md,
+evidence/slice-sdk-python-http-reale2e.md).

@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **25×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **26×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,22 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der sechsundzwanzigste Beleg,
+`evidence/slice-sdk-python-http-reale2e.md`: das §3.13-Suchlauf-Feld
+nannte die eigene `harness/README.md`-Python-Zeile und verfehlte die zwei
+Nachbar-Zeilen derselben Werkzeug-Tabelle, deren Endklassen die
+Erweiterungs-Zusage („erweitert sich um den Python-HTTP-Abschnitt") als
+ausstehend weitertrugen, obwohl beide Erweiterungen mit diesem Zug real
+existierten — das vierte Auftreten der in `AGENTS.md` §3.13
+dokumentierten Fund-Struktur (nach `slice-091`/`093`/`094`), diesmal mit
+der Schreib-Verbreiterung als Wurzel: der Suchlauf folgt der
+Schreib-Verbreiterung der Bewegung über alle Träger der Eigenschaft,
+nicht dem deklarierten Eintäger-Mustersatz. Gefunden vom Reviewer (F-2,
+MEDIUM), gezogen in der Fixrunde (`d668b9cc`), vom Verifier gegen beide
+Stände bestätigt (Verifikation §3, Zeile 8). Ausgang bleibt **verkörpert**,
+kein neuer Schwellen-Übertritt — die Schärfung ist eine Anwendungs-
+Schärfung der verkörperten Regel `AGENTS.md` §3.13. Details:
+`evidence/slice-sdk-python-http-reale2e.md`.
 Der fünfundzwanzigste Beleg,
 `evidence/slice-sdk-kotlin-reale2e.md`: die Prüf-Angaben des committeten
 §3.13-Suchlauf-Felds trugen zwei Baum-Widerlegungen — F-1 (MEDIUM,
