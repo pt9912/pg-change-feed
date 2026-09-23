@@ -24,3 +24,22 @@ hat sie bislang aufgegriffen; `slice-103` (letzter Slice der Matrix, aktuell
 `open/`) benennt sie in seinem eigenen §6 bereits als zu prüfenden Kandidaten
 ("`SPEC-023` „Sprachen und Umfang", falls bis dahin nicht bereits
 nachgezogen") — die einzige bestehende, wenn auch bedingte, Adresse.
+
+## Benannt, nicht gezählt
+
+Kein abgeschlossener Vorgang, deshalb keine `evidence/`-Datei und keine
+Bewegung des Zählers.
+
+- **`ResetConsumerUseCase` (Consumer-Reset).** `ADR-0013` (`Accepted`) führt
+  in ihren Konsequenzen: „Der administrative Reset braucht eine bewusste,
+  protokollierte Sonderoperation". `ADR-0028` listet `ResetConsumerUseCase`,
+  `ADR-0039` plant dafür das Paket `reset/` (`ResetConsumerService`,
+  `ResetConsumerCommand`), `spec/architecture.md` nennt den Reset „eine
+  explizite administrative Sonderoperation". Im Code fehlt das Paket
+  (`internal/application/usecase/` trägt kein `reset`), das Lastenheft
+  fordert keinen Reset, und weder ein Slice noch die Roadmap noch ein
+  Beobachtungs-Eintrag führt ihn. Ausgang offen: die Ankündigung per neuer ADR
+  zurücknehmen (Entfernen und Neu-Registrieren nach `LH-FA-CON-006` als
+  Ersatz) oder den Reset bauen (eigene ADR). Gesichtet am 2026-09-23 bei der
+  Frage der Backfill-Sichtbarkeit; `ADR-0111` führt den Reset als
+  Re-Evaluierungs-Trigger.
