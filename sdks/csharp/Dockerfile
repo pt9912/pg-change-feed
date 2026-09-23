@@ -78,3 +78,22 @@ RUN mkdir -p /out && \
 # gehoert dadurch automatisch dem aufrufenden Nutzer. ---
 FROM pack AS pack-export
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
+
+# --- integration: der Realserver-Integrationstest der SDK-Flaechen
+# (slice-sdk-csharp-reale2e, Mechanik-Klasse ADR-0110 §Entscheidung
+# Festlegung 2, gespiegelt vom Python-Vorbild). Baut auf `build` auf
+# (dieselben Pins, kein neuer Pin), kopiert das Integrationsprojekt
+# (ProjectReference auf die Client-Assembly — der Pruefling ist das SDK
+# selbst, kein Wegwerf-Duplikat-Client) und baut es Release; die
+# Testlaeufe fuehrt der Runner je Flaeche als `dotnet test --filter` aus —
+# die Testklasse je Phase kommt als Umgebungsvariable, deren Guard
+# (`:?`) blanken Aufruf laut scheitern laesst (kein gruenes Default ohne
+# jeden Integrationstest, Muster sdks/python/Dockerfile). Restore braucht
+# Netz (NuGet), der Testlauf selbst braucht DB-/Netz-Zugang und ist kein
+# Gate. ---
+FROM build AS integration
+COPY PgChangeFeed.Client.Integration/ PgChangeFeed.Client.Integration/
+RUN dotnet restore PgChangeFeed.Client.Integration/PgChangeFeed.Client.Integration.csproj && \
+    dotnet build PgChangeFeed.Client.Integration/PgChangeFeed.Client.Integration.csproj -c Release --no-restore
+WORKDIR /src
+CMD ["/bin/sh", "-c", "exec dotnet test PgChangeFeed.Client.Integration/PgChangeFeed.Client.Integration.csproj -c Release --no-build --filter \"FullyQualifiedName~${PGCHANGEFEED_TEST_NAME:?Testklasse je Phase erforderlich}\" --logger \"console;verbosity=detailed\""]

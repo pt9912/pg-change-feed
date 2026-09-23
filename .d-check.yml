@@ -315,3 +315,5 @@ trace:
       label: Bench
     - files: [docs/user/ci-matrix-abdeckung.md]
       label: CI-Matrix
+    - files: [docs/user/sdk-e2e-abdeckung.md]
+      label: SDK-E2E

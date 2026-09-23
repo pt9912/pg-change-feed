@@ -78,6 +78,24 @@ sdk-pack-kotlin: ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach s
 sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108, ADR-0110)
 	@bash tools/harness/sdk-pack-python.sh
 
+# `test-sdk-csharp-integration` ist der Realserver-Integrationstest der
+# C#-SDK-Zustellweg-Flaechen (slice-sdk-csharp-reale2e, Mechanik-Klasse
+# ADR-0110 Festlegung 2, gespiegelt vom Python-Werkzeug): das Skript
+# tools/harness/run-sdk-csharp-integration-tests.sh faehrt die
+# compose.yaml-Umgebung hoch (PostgreSQL/NATS/Feed-Container, Schema-Rollout
+# ueber d-migrate, Vorbedingungen der Aktivierung), baut die
+# `integration`-Docker-Stufe des C#-SDK (sdks/csharp/Dockerfile, zwingend
+# mit dem benannten Bau-Kontext `proto`) und startet je Flaeche eine Phase
+# im selben Docker-Netz wie den Feed-Container — der Pruefling ist die
+# kompilierte Client-Assembly. Kein Gate (braucht DB-Zugang/Docker/Netz,
+# dieselbe Klasse wie `make test-integration`); setzt ein geladenes
+# :dev-Image voraus (`make image` vorher, compose.yaml traegt keinen
+# build:-Block, ADR-0044). Der Runner schreibt den C#-Abschnitt des
+# Abdeckungs-Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
+.PHONY: test-sdk-csharp-integration
+test-sdk-csharp-integration: ## C#-SDK-Realserver-Integrationstest (compose + integration-Stufe, vier Phasen; Werkzeug, kein Gate; slice-sdk-csharp-reale2e)
+	@bash tools/harness/run-sdk-csharp-integration-tests.sh
+
 # `test-sdk-python-integration` ist der Realserver-Integrationstest der
 # Python-SDK-Zustellweg-Flaechen (ADR-0110 §Entscheidung Festlegung
 # 2/Folgepflicht 1, slice-sdk-python-grpc-client-flaeche): das Skript
