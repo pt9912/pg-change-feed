@@ -40,10 +40,6 @@ nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
 - [welle-sdk-python-vollabdeckung](../welle-sdk-python-vollabdeckung.md)
 
-Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
-Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
-voneinander unabhängige Wellen sind kein Verstoß).
-
 ## Nächste Wellen
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
