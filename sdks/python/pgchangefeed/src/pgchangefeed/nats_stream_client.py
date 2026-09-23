@@ -72,7 +72,7 @@ class PgChangeFeedNatsStreamClient:
         the connect error of the NATS client library, not a swallowed empty
         stream). ``timeout`` bounds the total consumption in seconds
         (``None`` = unbounded); past it the generator stops."""
-        events: queue.Queue[bytes | None] = queue.Queue()
+        events: queue.Queue[bytes] = queue.Queue()
         ready = threading.Event()
         connection_error: list[BaseException] = []
         stop = threading.Event()

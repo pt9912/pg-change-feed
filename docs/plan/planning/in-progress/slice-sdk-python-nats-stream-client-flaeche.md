@@ -137,7 +137,7 @@ diesem Slice").
 | `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` (Docstring + Export `PgChangeFeedNatsStreamClient`), `options.py`-Docstring, `sdks/python/README.md` §Status, pyproject-Beschreibung | update | Träger-Nachzug (`AGENTS.md` §3.13): die Satzform „NATS bleibt außerhalb" wird durch diesen Slice falsch; das Package trägt jetzt die volle Vier-Wege-Matrix. |
 | `spec/pflichtenheft.md` §7 Historie-Chronik-Zeile | neu | der Nachzug trägt seine Chronik-Zeile in §7 Historie (Muster der Vorgänger-Nachzüge 2026-09-22). |
 
-**§3.13-Suchlauf (committetes Feld — Suchlauf-Pflicht des DoD, Raum `spec/`, `docs/`, `sdks/python/`; das Ergebnis steht hier, vor der Closure-Notiz):**
+**§3.13-Suchlauf (committetes Feld — Suchlauf-Pflicht des DoD; Raum `spec/`, `docs/`, `sdks/python/`, darüber hinaus `harness/` und die Wurzel-READMEs, wie die Fixrunden-Funde belegen; das Ergebnis steht hier, vor der Closure-Notiz):**
 
 | Fundstelle (Schreibform am Ist-Baum) | Befund | Behandlung |
 |---|---|---|
@@ -145,8 +145,9 @@ diesem Slice").
 | `spec/pflichtenheft.md` §6 Vertragszeile `SPEC-027` | „aktuell `0.1.0`" + Vertrag-Liste `SPEC-018` gefunden (Review F-1) | gezogen: `0.2.0` + volle Vertragsliste |
 | `spec/pflichtenheft.md` §7 Historie | Chronik-Zeile fehlte | ergänzt (Plan-Nachzug) |
 | `harness/README.md` §Werkzeuge (sdk-pack-python-Zeile) | 0.1.0-Artefaktnamen gefunden | gezogen auf 0.2.0 (Endstand) |
-| `harness/README.md` §Werkzeuge (test-sdk-python-integration-Zeile) | Zwei-Flächen-/Zwei-Reject-Form gefunden | gezogen auf drei Flächen |
-| Wurzel-`README.md` + `README.de.md` (Distribution-Zeile) | „HTTP-API als offizielle Python-Bibliothek" gefunden | gezogen auf dieselben vier Zustellwege |
+| `harness/README.md` §Werkzeuge (test-sdk-python-integration-Zeile) | Zwei-Flächen-Form gefunden; die Reject-Form-Zeile trägt drei Formen (Fixrunde 2, Re-Review R-2) | gezogen |
+| Wurzel-`README.md` (Distribution-Zeile) | „HTTP-API als offizielle Python-Bibliothek" gefunden | gezogen auf dieselben vier Zustellwege |
+| `README.de.md` (Distribution-Zeile) | dieselbe Zwilling-Zeile gefunden, im ersten Suchlauf übersehen (Re-Review R-1/R-2) | Fixrunde 2: gezogen auf dieselben vier Zustellwege |
 | `sdks/python/README.md` §Intro | „consume the HTTP API" gefunden | gezogen auf die vier Zustellwege |
 | `sdks/python/pgchangefeed/src/pgchangefeed/options.py` | Docstring-Satz „NATS still follows" gefunden | gezogen auf `PgChangeFeedNatsStreamClient` |
 | `docs/plan/planning/welle-sdk-python-vollabdeckung.md` (Trigger-Zeile 56) | 0.1.0-Artefaktnamen gefunden — **historisch korrekt** (Trigger-Ist-Stand von 2026-09-21) | belassen (Records-Herkunfts-Form) |
