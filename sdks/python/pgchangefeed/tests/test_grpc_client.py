@@ -48,7 +48,10 @@ class _FakeChannel:
 
     def __init__(self, result_factory: Callable[[], Iterator[Any]]) -> None:
         self.method: str | None = None
-        self.invocations: list[tuple[tuple[tuple[str, str], ...], Any]] = []
+        # je Aufruf: (metadata, request, timeout) — der Timeout wird mit
+        # gezeichnet, damit eine Regression, die ihn still fallen laesst,
+        # sichtbar rot macht statt am Fake vorüberzulaufen.
+        self.invocations: list[tuple[tuple[tuple[str, str], ...], Any, float | None]] = []
         self._result_factory = result_factory
 
     def unary_stream(
@@ -65,7 +68,7 @@ class _FakeChannel:
             metadata: tuple[tuple[str, str], ...] | None = None,
             timeout: float | None = None,
         ) -> Iterator[Any]:
-            self.invocations.append((tuple(metadata or ()), request))
+            self.invocations.append((tuple(metadata or ()), request, timeout))
             return self._result_factory()
 
         return call
@@ -163,14 +166,28 @@ def test_stream_changes_sends_the_bearer_token_in_authorization_metadata() -> No
     client, channel = _make_client()
     list(client.stream_changes())
     assert len(channel.invocations) == 1
-    metadata, _request = channel.invocations[0]
+    metadata, _request, _timeout = channel.invocations[0]
     assert metadata == (("authorization", f"Bearer {TOKEN}"),)
+
+
+def test_stream_changes_forwards_the_call_timeout() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes(timeout=30.0))
+    _metadata, _request, timeout = channel.invocations[0]
+    assert timeout == 30.0
+
+
+def test_stream_changes_leaves_the_call_deadline_unbounded_by_default() -> None:
+    client, channel = _make_client()
+    list(client.stream_changes())
+    _metadata, _request, timeout = channel.invocations[0]
+    assert timeout is None
 
 
 def test_stream_changes_sends_a_filterless_request() -> None:
     client, channel = _make_client()
     list(client.stream_changes())
-    _metadata, request = channel.invocations[0]
+    _metadata, request, _timeout = channel.invocations[0]
     assert isinstance(request, changestream_pb2.StreamChangesRequest)
     assert request.SerializeToString() == b""
 

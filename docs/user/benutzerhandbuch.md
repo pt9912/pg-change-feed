@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.38
+Version: 1.39
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-22
 
@@ -679,9 +679,10 @@ Python-Anwendungen können statt der Beispiele das offizielle PyPI-Package
 `pip install pgchangefeed`) — `PgChangeFeedHttpClient` deckt dieselben zehn
 Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der Tabelle oben
 plus `GET /changes`) mit typisierten Requests/Responses (`dataclasses`) und
-einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; gRPC,
-SSE und der NATS-Vollinhalts-Stream bleiben für dieses Package vorerst
-außerhalb (`ADR-0107` Festlegung 1). Siehe `sdks/python/README.md`.
+einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; derselbe
+Package trägt außerdem den gRPC-Change-Stream (siehe unten, „Zugriff über
+den gRPC-Change-Stream"); SSE und der NATS-Vollinhalts-Stream folgen im
+selben Folge-Release (`ADR-0110`). Siehe `sdks/python/README.md`.
 
 Kotlin/JVM-Anwendungen können statt der Beispiele das offizielle
 Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
@@ -1238,4 +1239,5 @@ MIT — siehe `LICENSE`.
 | 1.36 | 2026-09-20 | Kotlin-SDK-Hinweis für die HTTP-Oberfläche ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-http-client-flaeche): §4 „Zugriff über die HTTP-/JSON-API" trägt im `**SDK:**`-Absatz jetzt zusätzlich das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` — `PgChangeFeedHttpClient` deckt dieselben zehn Fähigkeiten dieser Oberfläche (neun aus `SPEC-018` plus `GET /changes`, `SPEC-022`) mit typisierten Requests/Responses und einer versiegelten Fehlerklassen-Hierarchie ab, samt explizitem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2) |
 | 1.37 | 2026-09-20 | Kotlin-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, slice-sdk-kotlin-grpc-client-flaeche): §4 „Zugriff über den gRPC-Change-Stream" trägt jetzt einen zweiten Absatz im `**SDK:**`-Block — `PgChangeFeedGrpcClient.streamChanges()` öffnet `ChangeStream/StreamChanges` und liefert ein `kotlinx.coroutines.flow.Flow<Change>` mit allen zehn Feldern der Tabelle oben, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages (`ADR-0109` Festlegung 2); der vorangehende HTTP-Absatz oben wurde korrigiert — er behauptete fälschlich, der gRPC-Change-Stream „folge in einem Folge-Release" |
 | 1.38 | 2026-09-22 | C#-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0106`, `welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.StreamChangesAsync` bzw. `PgChangeFeedNatsStreamClient.StreamChangesAsync` liefern ein `IAsyncEnumerable<Change>` mit allen zehn Feldern der jeweiligen Tabelle; das NuGet-Package `PgChangeFeed.Client` ist dafür auf `0.2.0` gehoben |
+| 1.39 | 2026-09-23 | Python-SDK-Hinweis für den gRPC-Change-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-grpc-client-flaeche): der §4-Absatz zum PyPI-Package `pgchangefeed` trägt jetzt die gRPC-Stream-Fläche `PgChangeFeedGrpcClient` (siehe „Zugriff über den gRPC-Change-Stream") statt „gRPC, SSE und der NATS-Vollinhalts-Stream bleiben vorerst außerhalb"; SSE und der NATS-Vollinhalts-Stream folgen im selben Folge-Release |
 | 1.39 | 2026-09-22 | Kotlin-SDK-Hinweis für SSE und den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0109`, `welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): §4 „Zugriff über Server-Sent-Events" und §4 „Zugriff über den NATS-Vollinhalts-Stream" tragen jetzt je einen `**SDK:**`-Absatz — `PgChangeFeedSseClient.streamChanges()` bzw. `PgChangeFeedNatsStreamClient.streamChanges()` liefern eine `Sequence<Change>` mit allen zehn Feldern der jeweiligen Tabelle, samt erneutem Hinweis auf die PAT-Pflicht (`read:packages`) beim Bezug über GitHub Packages; die vorangehenden HTTP-/gRPC-Absätze oben wurden korrigiert — sie behaupteten fälschlich, SSE und der NATS-Vollinhalts-Stream blieben für dieses Package „vorerst außerhalb"; das GitHub-Packages-Gradle-/Maven-Package `pgchangefeed-kotlin` ist dafür auf `0.2.0` gehoben |

@@ -57,21 +57,30 @@ def test_realserver_receives_a_committed_change_over_the_stream() -> None:
 
     assert received is not None
     # Feldvollstaendigkeit am realen Wire-Image (SPEC-020): alle zehn Felder
-    # getragen, Identitaeten non-empty.
-    for field in (
-        "change_id",
-        "transaction_id",
-        "source_table_id",
-        "sequence",
-        "operation",
-        "old_image",
-        "new_image",
-        "schema_version",
-        "schema",
-        "table",
+    # getragen, je in seinem Wire-Typ; getypte Pruefung, weil ein `!= ""`
+    # gegen bytes/int-Felder vakuum waere (nie ungleich-rot).
+    for field, kind in (
+        ("change_id", str),
+        ("transaction_id", str),
+        ("source_table_id", str),
+        ("sequence", int),
+        ("operation", str),
+        ("old_image", bytes),
+        ("new_image", bytes),
+        ("schema_version", str),
+        ("schema", str),
+        ("table", str),
     ):
-        assert getattr(received, field) != "", f"Feld {field} leer auf dem Wire"
+        value = getattr(received, field)
+        assert isinstance(value, kind) and not isinstance(value, bool), (
+            f"Feld {field}: {type(value).__name__}, wollen {kind.__name__}"
+        )
+    assert received.change_id != ""
     assert received.operation == "INSERT"
+    assert received.old_image == b"", "ein INSERT traegt kein Alt-Bild am Wire"
+    assert _SENTINEL in received.new_image.decode()
+    assert received.table == _TABLE
+    assert received.schema == "public"
 
     print(
         f"RECEIVED change_id={received.change_id} table={received.table} "
