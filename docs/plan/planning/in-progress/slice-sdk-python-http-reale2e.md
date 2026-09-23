@@ -85,38 +85,44 @@ Fläche real abzunehmen — die drei Stream-Phasen belegen das
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-006`/`LH-FA-SST-009`-Beleg-Stand stärker: die
+- [x] `LH-FA-SST-006`/`LH-FA-SST-009`-Beleg-Stand stärker: die
       Python-HTTP-Fläche trägt einen realen Rundlauf gegen eine laufende
       Server-Instanz — Registrierung eines Wegwerf-Consumers und
       Listen-Aufruf über `PgChangeFeedHttpClient`, die Registrierung
       über `cdc.consumer` gegen den SQL-Lesezugriffsweg gehalten; ein
       Token-freier Aufruf endet mit HTTP-Status 401.
       *(Sensor-Beleg: `make test-sdk-python-integration` EXIT=0 mit vier
-      Phasen — zu tragen beim Umsetzungs-Lauf.)*
-- [ ] **Runner-Erweiterung**: `tools/harness/run-sdk-python-integration-tests.sh`
+      Phasen — der Lauf trug gRPC change_id=804-1, SSE 807-1, NATS 813-1
+      (je SQL-Gegenprüfung gegen `cdc.changes`) und die Consumer-Registrierung
+      (consumer_id=python-sdk-e2e-4ad61b9f8a0d, unabhängig über
+      `cdc.consumer` lesbar); die 401-Ablehnung real. Mutation real
+      gefahren: gültiger reader-Token im 401-Test — der Lauf färbte rot
+      („rejects_the_call_without_token FAILED“), Revert, Abschlusslauf
+      grün.)*
+- [x] **Runner-Erweiterung**: `tools/harness/run-sdk-python-integration-tests.sh`
       trägt die HTTP-Phase als vierte Phase (eigene Sentinel-/ID-
       Wertebereiche, `REJECTED status=401`-Marker, explizite
       Testdatei-Auswahl — kein stiller Ausschluss des Rests);
       `integration/test_http_realserver.py` (Arbeitsname) entsteht als
       Geschwister-Testdatei der drei bestehenden Realserver-Testdateien
       (kein Verweis auf `tests/`-Unit-Quelltext nötig).
-- [ ] **Träger-Nachzug im selben Zug**: `docs/user/sdk-e2e-abdeckung.md`
+- [x] **Träger-Nachzug im selben Zug**: `docs/user/sdk-e2e-abdeckung.md`
       trägt den Python-Abschnitt (aus derselben Messung, die ihn belegt,
       idempotent vom Runner geschrieben) — und die DoD-Verankerung der
       **Matrix-Vollständigkeit**: nach diesem Slice deklariert der
       Träger alle zwölf Flächen-Belege (3 Sprachen × 4 Wege); ein
       fehlender Abschnitt oder eine Phantom-Zeile (Beleg ohne realen
       Lauf) bricht diese DoD sichtbar.
-- [ ] **Runner-Kopf-Nachzug** (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`):
+- [x] **Runner-Kopf-Nachzug** (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`):
       die Phasen-Dokumentation im Skript-Kopf trägt die vierte Phase,
       ohne die überholte Dreier-Form still stehen zu lassen; die
       bestehende `harness/README.md`-Zeile `make test-sdk-python-integration`
       zieht im selben Zug nach (Phasen-Liste, Ablehnungs-Beleg-Form —
       der umsetzende Lauf ist ihr Beleg, [`AGENTS.md`](../../../../AGENTS.md) §4).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
       `sdks/python/**` (Import-Zeilen-Prüfung, Muster der bestehenden
       SDK-Slices).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
@@ -148,6 +154,25 @@ reader für den Listen-Aufruf — Container-Vertrag in `compose.yaml`), die
 Registrierung gegen `cdc.consumer` gehalten. Die Phase wird in der
 bestehenden `run_surface_phase`-Form geführt (eigene Sentinel-/ID-
 Wertebereiche, die die Stream-Phasen nicht schneiden).
+
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `tools/harness/run-sdk-python-integration-tests.sh`: `run_surface_phase` um `received_grep`/`sql_kind` erweitert | Erweiterung | die HTTP-Phase braucht die `consumer`-SQL-Variante (Gegenprüfung gegen `cdc.consumer`) und eine phasenspezifische RECEIVED-Form — dieselbe Parametrisierung wie der C#-Runner (`run-sdk-csharp-integration-tests.sh`); die drei Stream-Phasen reichen ihre bisher feste Form als Parameter nach (kein Verhaltenstausch). |
+| `tools/harness/run-sdk-python-integration-tests.sh`: Träger-Writer (Python-Abschnitt) | neu | der Python-Runner trägt seinen Abschnitt-Generator jetzt selbst (beidseitiger Rest-Erhalt, degenerater Pfad mit Kopf-Regeneration — die Form-Grenze der C#/Kotlin-Kette); die Matrix-Vollständigkeit (12 Zeilen) ist damit runner-generiert, nicht handgeschrieben. |
+| `API_TOKEN_ADMIN`/`API_TOKEN_READER` im Runner-Kopf | neu | die HTTP-Phase braucht beide Token-Klassen (Risiko der C#-Kette, Ausgang dort belegt — dieselbe Ausgangslage hier). |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Python-HTTP-Fläche trägt einen realen Realserver-Beleg; der Träger deklariert alle zwölf Flächen-Belege"; beide Stände gemessen: Parent `d99768f2` und HEAD):**
+
+| Träger | Befund | Behandlung |
+|---|---|---|
+| `docs/user/sdk-e2e-abdeckung.md` | Python-Abschnitt fehlte | in diesem Zug ergänzt (runner-generiert; C#/Kotlin-Abschnitte byte-identisch erhalten — beidseitiger Erhalt real gemessen) |
+| `harness/README.md` §Werkzeuge (`make test-sdk-python-integration`-Zeile) | Phasen-Liste „grpc_client, sse_client, nats_stream_client“ ohne die HTTP-Fläche | gezogen: vier Flächen + HTTP-Ablehnungsform + cdc.consumer-Gegenprüfung |
+| `tools/harness/run-sdk-python-integration-tests.sh` Kopf | Dreier-Phasen-Form (`nachzug-laesst-ueberholten-text-stehen`, im Plan §8 benannt) | gezogen: vierte Phase im Kopf |
+| `sdks/python/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
+| `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
+| `spec/pflichtenheft.md` | geprüft — kein falsch werdender Träger (Welle-Plan §6) | nichts zu ziehen |
 
 ## 4. Trigger
 
