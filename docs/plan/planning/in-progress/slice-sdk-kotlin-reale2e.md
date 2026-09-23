@@ -123,22 +123,42 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
       `sdks/kotlin/**` — der neue Integrationstest-Quelltext inklusive
       (Import-Zeilen-Prüfung, Muster der bestehenden SDK-Slices).
 - [x] `make gates` grün.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
-      kein Self-Review (Modul 8).
+      kein Self-Review (Modul 8). *(Report `review-slice-sdk-kotlin-reale2e`:
+      0 HIGH · 1 MEDIUM · 2 LOW · 3 INFO; Fixrunde `c6523009` zog F-1,
+      F-2, F-3, F-6 — F-4/F-5 bleiben INFO ohne erwartete Aktion
+      (Review-Verdikt); die Verifikation urteilte „DoD erfüllt" mit drei
+      nicht-blockierenden Beobachtungen (`e69a77eb`) — der Nachzug bei
+      Schritt 21 des Minimal Agent Workflow geschieht in diesem
+      Closure-Commit (`BEO-PGC/dod-checkbox-nachzug`-Form wie im
+      C#-Vorgänger).)*
 - [x] Doku-Update im selben Zug: `harness/README.md` §Werkzeuge bekommt
       die neue `make test-sdk-kotlin-integration`-Zeile, weil das Target
       hier real entsteht ([`AGENTS.md`](../../../../AGENTS.md) §4; die
       Zeile trägt ihren realen Lauf, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag. *(§7 unten —
+      Lerneintrag: eine Spiegelung überträgt nicht die Assertions-
+      Semantik, sondern die Draht-Aussage; Anwendungs-Schärfung der
+      verkörperten Klasse `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+      Anker [`AGENTS.md`](../../../../AGENTS.md) §3.13.)*
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo.
-- [ ] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang.
-- [ ] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+- [x] Beobachtungs-Register fortgeschrieben — kein Anfall ist ebenfalls
+      eine Antwort und wird in §7 notiert. *(Beleg:
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
+      `evidence/slice-sdk-kotlin-reale2e.md`; übrige Kandidaten geprüft,
+      siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang. *(fünf Ausgänge in §6, je
+      entfallen mit Begründung am Ort; siehe §7.)*
+- [x] Die drei Paarungen getragen — dieser Slice gehört zu
+      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel des
+      Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
+      `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
+      [`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent);
+      Folge-Slice: der genannte Plan existiert als Datei in `open/`;
+      Register: der neue Beleg liegt in `evidence/` — §7.)*
 
 ## 3. Plan (vor Code)
 
@@ -208,6 +228,14 @@ Closure-Notiz mit Lerneintrag geschrieben.
   zweier Vorbilder (Python-Origin, C#-Spiegel). *Zusage:* die
   übernommenen Form-Teile werden je separat auf Sprachreinheit geprüft;
   der Suchlauf im Bericht trägt das Ergebnis.
+  **Ausgang:** entfallen — kein unübersetztes deutsches Wortfragment in
+  einem englischen Klassen-Doc-Kommentar (Zähler der Klasse bleibt 2×);
+  die je-teilige Sichtung hat den Treffer der Träger-Familie nicht
+  ausgesiebt, gefunden hat ihn der Review (F-2: das Fragment „FlaecheN"
+  im Runner-Kopf, wortgleich aus dem C#-Spiegel-Kopf — deutschsprachige
+  Kommentar-Familie, ASCII-Transliteration), gezogen in der Fixrunde
+  (`c6523009`), die beräumte Form vom Verifier bestätigt (Verifikation
+  §3). Struktur-Abgrenzung im Register-Abschnitt §7.
 - **Gradle-Quellmenge-Form:** `--tests`-Filter, eigener
   Quellmenge-Ordner (`src/integrationTest/` mit eigener Gradle-SourceSet-
   Registrierung) oder ein eigenes Gradle-Modul — die drei Formen haben
@@ -217,34 +245,151 @@ Closure-Notiz mit Lerneintrag geschrieben.
   realserver-Tests verlangen und scheitern). *Erwartet, zu belegen
   durch:* ein realer `make sdk-pack-kotlin`-Lauf bleibt grün, nachdem
   die Integrations-Quellmenge existiert (kein stiller Ausschluss in die
-  andere Richtung).
+  andere Richtung). **Ausgang:** entfallen — der reale
+  `make sdk-pack-kotlin`-Lauf blieb über die Integrations-Quellmenge
+  grün (Layer-Kette CACHED über den COPY der Quellmenge bis
+  `pack-export`, EXIT=0 — Verifikation §1); die gebaute Form trägt der
+  Plan-Nachzug (eigener SourceSet + Task, nicht an `check`; zwei eigene
+  Konfigurationen mit Kommentar-Begründungszug).
 - **JVM-stdout-Pufferung vs. `docker logs`-Marker-Polling:** der Runner
   liest die Marker über `docker logs`, während der Test läuft;
   JVM-stdout kann zeilenweise gepuffert sein. *Erwartet, zu belegen
   durch:* der erste reale Lauf zeigt die Marker fristnah; falls nicht,
   trägt der Fix die ungepufferte Ausgabe-Form (Gradle-Runner-Option bzw.
   explizite Flushes) und den Beleg.
+  **Ausgang:** entfallen — die gebaute Form trägt beide Hälften
+  (`System.out.flush()` je Marker in den vier Testklassen,
+  `showStandardStreams` live in `build.gradle.kts`, Plan-Nachzug), und
+  die Marker trafen in beiden Läufen (Implementer, Verifier — je EXIT=0
+  mit vollständigen READY/RECEIVED/REJECTED-Zügen) fristnah.
 - **zwei Token-Klassen in der HTTP-Phase** — dieselbe Ausgangslage wie im
   C#-Slice §6 (dritter Punkt); *Erwartet, zu belegen durch:* der reale
-  Lauf.
+  Lauf. **Ausgang:** entfallen — die HTTP-Phase fährt beide Klassen real
+  (admin-/reader-Paar je Phase-Env gebunden, Runner; Verifikation §4);
+  der Ablehnungs-Beleg (401) lief am token-freien Aufruf, der
+  Listen-Aufruf am reader-Token.
 - **Sentinel-/ID-Kollisionen mit anderen Läufen** — der Kotlin-Runner
   wählt eigene Sentinel- und ID-Wertebereiche (Muster Python-Runner:
   300/310/320; C#-Runner wählt eigene). *Erwartet, zu belegen durch:* der
-  reale Lauf.
+  reale Lauf. **Ausgang:** entfallen — eigene Bereiche je Phase
+  (440/450/460/470 gegen C# 400/410/420/430 und Python 300/310/320,
+  disjunkt; Sentinels sprachspezifisch disjunkt — Review-Negativbefund);
+  Implementer- und Verifier-Lauf ohne Kollision, die IDs sind
+  laufgebunden (Verifikation §6.2).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** der Mechanik-Spiegel trug den Zug ohne zweite
+  Infrastruktur — die additive `integration`-Stufe baut auf der bestehenden
+  `build`-Stufe auf (kein neuer Pin, Verifikation §2 Zeile 2), und der
+  Runner fuhr alle vier Phasen gegen dieselbe Compose-Umgebung:
+  `make test-sdk-kotlin-integration` lief real grün (Implementer-Lauf
+  EXIT=0: gRPC `change_id=806-1`, SSE `814-1`, NATS `818-1`, je
+  SQL-Gegenprüfung gegen `cdc.changes`, die Registrierung über
+  `cdc.consumer`; Verifier-Lauf EXIT=0 mit laufgebundenen Nachbar-IDs
+  `805-1`/`810-1`/`817-1` — die IDs sind laufgebunden, je SQL-Gegenprüfung
+  wirksam, Verifikation §1/§2). Die aus der C#-Kette übernommenen Lern-
+  ketten trugen real: die Writer-Form-Randbedingung (C#-Review F-7,
+  `done/slice-sdk-csharp-reale2e.md` §7 Folge-Slices) steckt im
+  Kotlin-Runner als beidseitiger Erhalt (`awk` vor `kotlin-begin`/ab
+  `kotlin-end`; der C#-Abschnitt blieb in allen Läufen byte-identisch),
+  die SST-009-Zitierpflicht je Träger-Zeile (C#-Review F-2-Klasse) stand
+  ab der ersten Kotlin-Zeile (Review-Negativbefund), und der netzlose
+  Pack-Lauf blieb über die Integrations-Quellmenge grün (Layer-Ketten-
+  Beleg, Verifikation §1). Die Rollen-Kette lief unabhängig: Haupt-Review
+  F-1…F-6 (0 HIGH · 1 MEDIUM · 2 LOW · 3 INFO), Fixrunde `c6523009`
+  (F-1, F-2, F-3, F-6), Verifikation „DoD erfüllt" mit eigenen
+  Sensor-Läufen und drei nicht-blockierenden Beobachtungen ohne erwartete
+  Aktion (Verifikation §6, `e69a77eb`).
+- **Was ging anders als geplant:** die C#-Lernkette trug die Draht-
+  Aussagen der Spiegelung — die neu aufgetretenen Lücken waren Gradle-/
+  Bibliotheks-spezifische Formen, die keine Spiegelung mitträgt: die
+  Config-Resolvability-Kette (eine reine Vererbung aus `runtimeOnly`/
+  `integrationTestImplementation` ohne eigene resolvable Konfiguration
+  endet real in der ProviderNotFoundException — `grpc-netty-shaded` fehlt
+  im Lauf-Classpath; die gebaute Form trägt zwei eigene Konfigurationen,
+  Plan-Nachzug) und die gson-Null-Semantik (gson trägt JSON-null als
+  `JsonNull.INSTANCE`, nicht als Kotlin-null — die C#-`Assert.Null`-Form
+  wäre auf dem gson-Baum falsch; die gebaute Form prüft die Aussage über
+  beide Formen, Plan-Nachzug). Dazu das Suchlauf-Feld selbst: seine
+  Prüf-Angaben trugen zwei Baum-Widerlegungen (F-1 — Adresse ohne
+  Artefakt, `sdks/kotlin/README.md` existiert nicht, real ist es
+  `sdks/kotlin/pgchangefeed-kotlin/README.md`; F-6 — Behandlungs-Angabe
+  „gezogen" für eine Zeile, die an beiden Ständen byte-identisch bleibt,
+  „gemeldet, nicht gezogen"), beide vom Reviewer gefunden, beide in der
+  Fixrunde gezogen, beide vom Verifier gegen beide Stände bestätigt
+  (Verifikation §3).
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Regel
+  (Anwendungs-Schärfung der bereits verkörperten Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13 · seit welle-20): **eine
+  Spiegelung überträgt nicht die Assertions-Semantik, sondern die
+  Draht-Aussage** — die C#-Lernkette lief als Draht-Aussage wortwörtlich
+  weiter (Writer-Form beidseitig, SST-009 je Träger-Zeile), während die
+  Assertions-Form des Vorbilds je Sprache neu zu binden ist:
+  Bibliotheksspezifische Null-Formen (gson `JsonNull` vs. C# `null` vs.
+  Python `None`) brauchen je Sprache eine eigene Bindungs-Form; die
+  gebaute Form (`oldImage == null || oldImage!!.isJsonNull`, SSE/NATS-
+  Test) trägt die Draht-Aussage (kein Alt-Bild am INSERT) über beide
+  gson-Formen und bleibt rot-fähig bei real vorhandenem Alt-Bild. Kein
+  neuer Sensor: die verfügbare Falsifikation bleibt die Messung an beiden
+  Ständen; die Rot-Fähigkeit der Assertion trägt der Quelltext (Review-
+  Negativbefund) — ein Wortmuster, das Bibliotheks-Semantik-Übernahmen
+  träfe, bräuchte dieselbe Semantik-Entscheidung, die §3.13s Grenze für
+  Zahlen/Prosa-Umformulierungen bereits benennt. Keine benannte
+  Spec-Lücke.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — neuer,
+    fünfundzwanzigster Beleg: `evidence/slice-sdk-kotlin-reale2e.md`;
+    F-1/F-6 tragen die Prüf-Angaben-Widerlegungen am Suchlauf-Feld, die
+    Fixrunde zog sie; `state.md` trägt den abgeleiteten Zähler (25×,
+    Datei-Anzahl unter `evidence/`, real ausgezählt).
+  - **`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`** —
+    geprüft: F-2 trägt die Klasse nicht, Zähler bleibt 2× — das Fragment
+    „FlaecheN" sitzt in der deutschsprachigen Runner-Kommentar-Familie
+    (ASCII-Transliteration, `tools/harness/`), nicht im englischen
+    Klassen-Doc-Kommentar eines SDK-Sprachpakets (`sdks/*/`); dieselbe
+    Struktur, die der C#-Vorgänger für seine F-3/F-4 als notierte Antwort
+    führte. Der Befund (wortgleiche Übernahme aus dem C#-Spiegel-Kopf,
+    Review F-2) ist in der Fixrunde gelöst und im Report konserviert; der
+    C#-Spiegel-Kopf trägt dieselbe Form-Familie weiterhin — gemeldet,
+    nicht gezogen: der C#-Baum gehört dem gelösten Vorgänger-Slice, hier
+    kein Schreib-Ziel.
+  - **F-3 (Writer-Fehlbestands-Pfad ohne Kopf)** — geprüft: keine
+    Register-Klasse trägt ihn; degenerater Pfad, in der Fixrunde
+    geschlossen (Kopf-Regeneration im Muster des C#-Runners), im Report
+    konserviert.
+  - **F-6 (Behandlungsspalte)** — trägt den Beleg von
+    `BEO-PGC/arbeit-ueberholt-stehenden-traeger` mit (Prüf-Angabe des
+    Suchlauf-Felds), kein eigener Eintrag.
+  - **F-4/F-5 (Vorbild-Frist, Marker-Ordnung)** — INFO ohne erwartete
+    Aktion (Review-Verdikt); keine Klasse trägt sie — keine Beobachtung
+    angefallen.
+- **Folge-Slices:** `slice-sdk-python-http-reale2e` (in `open/`,
+  Welle-Plan §4) — der letzte Matrix-Slice erweitert den bestehenden
+  Python-Runner um die HTTP-Phase und trägt die Matrix-Vollständigkeits-
+  Prüfung; die Writer-Form-Randbedingung (C#-Review F-7-Kette) gilt für
+  ihn unverändert und ist hier real gebaut und gemessen (beidseitiger
+  Erhalt, Runner-Kommentar). Kein zusätzlicher Slice aus dieser Closure.
+- **Risiken aus §6:** Risiko 1 (Form-Vorbild-Kopie) — **entfallen** mit
+  Begründung am Ort (die je-teilige Sichtung hat den Treffer der
+  Träger-Familie nicht ausgesiebt, gefunden hat ihn der Review F-2, gezogen
+  in der Fixrunde `c6523009`; Zähler der Klasse bleibt 2×); Risiko 2
+  (Gradle-Quellmenge-Form) — **entfallen**; Risiko 3 (Marker-Pufferung) —
+  **entfallen**; Risiko 4 (zwei Token-Klassen) — **entfallen**; Risiko 5
+  (ID-Kollisionen) — **entfallen** (alle Begründungen und Belege am Ort in
+  §6). Kein Ausgang „weiter offen" ins Register — ein Registereintrag für
+  ein im Slice gelöstes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (noch offen) — die Prüfung
+  läuft regelkonform bei deren Closure. (a) Anker: die Regel des
+  Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13, `seit welle-20`, am Ort
+  existent); (b) Folge-Slice: der genannte Plan existiert als Datei in
+  `open/`; (c) Register: jede genannte Kennung existiert als Verzeichnis,
+  und das `evidence/` des genannten Eintrags trägt 25 Dateien (real
+  ausgezählt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
