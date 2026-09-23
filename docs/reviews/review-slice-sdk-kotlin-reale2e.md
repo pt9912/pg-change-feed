@@ -30,7 +30,7 @@ Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` (Kotlin-Abschnitt),
 - Plan (§1–§8), [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   Festlegung 2 (Mechanik-Klasse), [`ADR-0109`](../plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)
   Festlegung 1/3/5 (Ort, Import-Grenze), [`ADR-0090`](../plan/adr/0090-beispiel-clients-volle-matrix.md)
-  Festlegung 2, [`welle-sdk-reale2e.md`](../plan/planning/welle-sdk-reale2e.md)
+  Festlegung 2, [`welle-sdk-reale2e.md`](../plan/planning/done/welle-sdk-reale2e.md)
   (§1 Träger-Erzeugnis, §4 Reihenfolge, §6 Beobachtungen-Sicht)
 - `spec/lastenheft.md` [`LH-FA-SST-009`](../../spec/lastenheft.md),
   [`LH-FA-SST-008`](../../spec/lastenheft.md),

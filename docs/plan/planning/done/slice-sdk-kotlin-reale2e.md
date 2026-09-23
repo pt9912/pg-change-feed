@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+**Welle:** [welle-sdk-reale2e](welle-sdk-reale2e.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
 (Client-Bibliotheken — die Fläche existiert, der Beleg-Stand wird stärker),
@@ -26,7 +26,7 @@ nicht geändert.
 **Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-sdk-reale2e](../welle-sdk-reale2e.md). **Datum:** 2026-09-23.
+[welle-sdk-reale2e](welle-sdk-reale2e.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -153,7 +153,7 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
 - [x] Jedes Risiko aus §6 trägt einen Ausgang. *(fünf Ausgänge in §6, je
       entfallen mit Begründung am Ort; siehe §7.)*
 - [x] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel des
+      [welle-sdk-reale2e](welle-sdk-reale2e.md). *(Anker: die Regel des
       Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
       `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
       [`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent);
@@ -381,7 +381,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   §6). Kein Ausgang „weiter offen" ins Register — ein Registereintrag für
   ein im Slice gelöstes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (noch offen) — die Prüfung
+  [welle-sdk-reale2e](welle-sdk-reale2e.md) (noch offen) — die Prüfung
   läuft regelkonform bei deren Closure. (a) Anker: die Regel des
   Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
   `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker

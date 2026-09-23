@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+**Welle:** [welle-sdk-reale2e](welle-sdk-reale2e.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
 (Client-Bibliotheken — die Fläche existiert, der Beleg-Stand wird stärker),
@@ -23,7 +23,7 @@ wird vom SDK benutzt, nicht erweitert).
 **Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-sdk-reale2e](../welle-sdk-reale2e.md). **Datum:** 2026-09-23.
+[welle-sdk-reale2e](welle-sdk-reale2e.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -156,7 +156,7 @@ Fläche real abzunehmen — die drei Stream-Phasen belegen das
       am Ort — drei entfallen mit Begründung, einer als vorab
       deklarierter „verworfen — Umfang"-Ausgang; siehe §7.)*
 - [x] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel
+      [welle-sdk-reale2e](welle-sdk-reale2e.md). *(Anker: die Regel
       des Lerneintrags liegt als Anwendungs-Schärfung der verkörperten
       Klasse `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker
       [`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent); die
@@ -394,7 +394,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   ein Registereintrag für ein im Slice gelöstes Muster trüge kein
   `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (offen) — die Prüfung
+  [welle-sdk-reale2e](welle-sdk-reale2e.md) (offen) — die Prüfung
   läuft regelkonform bei deren Closure. (a) Anker: die Regel des
   Lerneintrags liegt als Anwendungs-Schärfung der verkörperten Klasse
   `BEO-PGC/arbeit-ueberholt-stehenden-traeger` vor (Anker

@@ -8,7 +8,7 @@ Verzeichnis-Position — kein Status-Feld.
 **Zielmeilenstein:** kein Meilenstein-Bezug.
 
 **Verantwortlich:** — (wellenlos priorisiert, geschnitten aus
-[`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+[`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 §Entscheidung Festlegung 2 — der etablierte Mechanismus — auf die zwei
 weiteren Sprachen gespiegelt und um den HTTP-Retrofit der bestehenden
 Flächen ergänzt, Nutzerentscheidung 2026-09-23, dokumentiert als
@@ -32,7 +32,7 @@ aber bislang **nur netzlos gegen Fakes** abgenommen worden
 `FakeSseTransport`/`FakeNatsStreamTransport` im Kotlin-Baum,
 `httpx.MockTransport` im Python-Baum; die Ausnahme ist der
 Python-Realserver-Test der drei neuen Flächen aus
-`welle-sdk-python-vollabdeckung`). [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+`welle-sdk-python-vollabdeckung`). [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 §Entscheidung Festlegung 2/Folgepflicht 1 hat die verschärfte Test-Pflicht
 (realer, laufender Server zusätzlich zu Unit-Tests) bereits als Klasse
 etabliert und für die drei Python-Neuflächen real umgesetzt — diese Welle
@@ -41,7 +41,7 @@ Kotlin-Bäume vollständig, Python-HTTP-Fläche als Retrofit) in **einem
 Bündel**.
 
 Das *Mehr* gegenüber drei isolierten Slice-DoDs:
-[`LH-FA-SST-009`](../../../spec/lastenheft.md)s Zielmatrix („drei SDKs ×
+[`LH-FA-SST-009`](../../../../spec/lastenheft.md)s Zielmatrix („drei SDKs ×
 vier Zustellwege") ist erst vollständig belegt, wenn **jede der zwölf
 Flächen** einen realen, laufenden Server-Beleg trägt — drei unabhängige
 Slice-Closures belegen je nur ihre Sprache; keine einzelne DoD beobachtet,
@@ -49,7 +49,7 @@ dass die Matrix **als Ganzes** geschlossen ist. Dazu kommt der
 parallele Abdeckungs-Träger
 `docs/user/sdk-e2e-abdeckung.md` (stabile Abdeckungs-Deklaration der
 SDK-Realserver-Belege im Muster von
-[`e2e-abdeckung.md`](../../../docs/user/e2e-abdeckung.md), Erzeugnis der
+[`e2e-abdeckung.md`](../../../../docs/user/e2e-abdeckung.md), Erzeugnis der
 SDK-Runner, kein Lauf-Beleg) samt seinem `trace.coverage`-Eintrag (Label
 `SDK-E2E`) in `.d-check.yml` — die RTM-Sichtbarkeit der zwölf Belege ist
 ein Zustand, den erst die Welle-Closure gegen die volle Matrix prüft;
@@ -68,7 +68,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   sdk-python-vollabdeckung` listet `welle-sdk-python-vollabdeckung.md`
   und `welle-sdk-python-vollabdeckung-results.md`; Roadmap-Log-Zeile
   trägt Abschluss 2026-09-23). Damit ist der Mechanismus der
-  verschärften Test-Pflicht ([`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+  verschärften Test-Pflicht ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   §Entscheidung Festlegung 2/Folgepflicht 1) real gebaut, real gelaufen
   und bewährt (`make test-sdk-python-integration`, drei reale
   Flächen-Läufe mit SQL-Gegenprüfung und Ablehnungs-Belegen —
@@ -105,7 +105,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - Kein Tag-Push (kein `sdk-*-v*`-Tag): Version-Hebung ist hier **nicht**
   nötig — der Testbestand dieser Welle ändert keine öffentliche
   API-Fläche und kein Package-Artefakt; ein Release-Zug bleibt
-  Betreiber-Handlung ([`AGENTS.md`](../../../AGENTS.md) §3.10) und liegt
+  Betreiber-Handlung ([`AGENTS.md`](../../../../AGENTS.md) §3.10) und liegt
   außerhalb dieser Welle.
 - Closure-Notiz in `welle-sdk-reale2e-results.md`.
 
@@ -116,9 +116,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-sdk-csharp-reale2e | C#-SDK: vier Realserver-Phasen (HTTP, gRPC, SSE, NATS-Vollinhalt); führt den C#-Integrationstest-Runner und den Abdeckungs-Träger samt `trace.coverage`-Eintrag ein | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
-| slice-sdk-kotlin-reale2e | Kotlin-SDK: dieselbe Mechanik, vier Flächen-Phasen | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
-| slice-sdk-python-http-reale2e | Python-SDK: HTTP-Fläche in den bestehenden Realserver-Runner nachziehen; erweitert den Träger um den Python-Abschnitt und prüft die Matrix-Vollständigkeit | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../spec/lastenheft.md), [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
+| slice-sdk-csharp-reale2e | C#-SDK: vier Realserver-Phasen (HTTP, gRPC, SSE, NATS-Vollinhalt); führt den C#-Integrationstest-Runner und den Abdeckungs-Träger samt `trace.coverage`-Eintrag ein | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
+| slice-sdk-kotlin-reale2e | Kotlin-SDK: dieselbe Mechanik, vier Flächen-Phasen | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-008`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
+| slice-sdk-python-http-reale2e | Python-SDK: HTTP-Fläche in den bestehenden Realserver-Runner nachziehen; erweitert den Träger um den Python-Abschnitt und prüft die Matrix-Vollständigkeit | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`LH-FA-SST-006`](../../../../spec/lastenheft.md), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) §Entscheidung Festlegung 2 |
 
 **Reihenfolge:** Sequentiell in dieser Reihenfolge (csharp → kotlin →
 python-http). Drei Gründe:
@@ -127,7 +127,7 @@ python-http). Drei Gründe:
    `docs/user/sdk-e2e-abdeckung.md` ist ein **Erzeugnis der Runner** —
    jedes der drei Runner-Skripte schreibt seinen eigenen Matrix-Abschnitt
    idempotent (Marker-gegrenzt, Muster
-   [`e2e-abdeckung.md`](../../../docs/user/e2e-abdeckung.md): „Erzeugt
+   [`e2e-abdeckung.md`](../../../../docs/user/e2e-abdeckung.md): „Erzeugt
    von …, stabile Abdeckungs-Deklaration, kein Lauf-Beleg"). Die Datei
    entsteht real mit dem ersten Runner; der `trace.coverage`-Eintrag
    (Label `SDK-E2E`) kommt im selben Zug, weil er die RTM auf eine Datei
@@ -140,7 +140,7 @@ python-http). Drei Gründe:
    aktuellen Laufs und würde genau die §3.12-Klasse
    („Beleg trägt seinen Satz nicht") erzeugen, die diese Welle vermeiden
    will. Die drei Vorbilder des Trägermusters tragen ihre Entscheidung
-   je am Einführungs-Ort ([`ADR-0104`](../adr/0104-benchmark-schwellen-per-001-002-003.md)/[`ADR-0105`](../adr/0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md));
+   je am Einführungs-Ort ([`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md)/[`ADR-0105`](../../adr/0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md));
    der `trace.coverage`-Eintrag folgt dort der Datei, nicht der Welle.
 2. **C# und Kotlin bauen je neue Infrastruktur, Python erweitert
    bestehende.** Der C#-Slice führt Runner-Form, Docker-Stufe und
@@ -163,7 +163,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - Blockiert: keine andere Welle.
 - Wird blockiert von: keiner anderen Welle;
-  [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+  [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
   ist bereits `Accepted`, und der Trigger (§2) ist real erfüllt.
 - **Geschwister-Slices:** der C#- und der Kotlin-Slice verändern
   disjunkte Bäume (`sdks/csharp/**` vs. `sdks/kotlin/**`, je eigene
@@ -200,7 +200,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
      `make test-integration` und das bestehende
      `make test-sdk-python-integration`, das dieselbe Begründung trägt).
   3. **Der Mechanismus ist bereits entschieden und real gebaut** —
-     [`ADR-0110`](../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+     [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
      §Entscheidung Festlegung 2/Folgepflicht 1 etablierte die
      Teststrategie-Klasse (Realserver-Integrationstest für SDK-Flächen,
      Delegation des Mechanismus an den umsetzenden Zug); der umsetzende
@@ -212,12 +212,12 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
      keine neue Entscheidungsklasse, sondern der bewährte Stand als
      Vorlage.
   4. **Das Trägermuster hat seine Form** — drei Instanzen
-     ([`e2e-abdeckung.md`](../../../docs/user/e2e-abdeckung.md),
-     [`bench-abdeckung.md`](../../../docs/user/bench-abdeckung.md),
-     [`ci-matrix-abdeckung.md`](../../../docs/user/ci-matrix-abdeckung.md));
+     ([`e2e-abdeckung.md`](../../../../docs/user/e2e-abdeckung.md),
+     [`bench-abdeckung.md`](../../../../docs/user/bench-abdeckung.md),
+     [`ci-matrix-abdeckung.md`](../../../../docs/user/ci-matrix-abdeckung.md));
      von ihnen trugen zwei einen ADR, weil die *Abfrage-Architektur*
-     ([`ADR-0105`](../adr/0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md):
-     REST-API-Abfrage) bzw. die *Schwellen* ([`ADR-0104`](../adr/0104-benchmark-schwellen-per-001-002-003.md))
+     ([`ADR-0105`](../../adr/0105-ci-matrix-rtm-sichtbarkeit-por-001-002.md):
+     REST-API-Abfrage) bzw. die *Schwellen* ([`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md))
      die Entscheidung trugen — nicht das Muster selbst. Der erste
      Präzedenzfall (`e2e-abdeckung.md`, vom Server-Runner generiert)
      kam ohne eigenen ADR aus; der vierte Instanz-Zug ist dem ersten
@@ -249,10 +249,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - **Keine Aufnahme in `make gates`** — die neuen Targets brauchen
   DB-Zugang/Docker/Netz (dieselbe strukturelle Grenze wie
   `make test-integration`); eine Gate-Aufnahme wäre eine eigene
-  Schwellen-/Gate-Entscheidung ([`AGENTS.md`](../../../AGENTS.md) §3.6).
+  Schwellen-/Gate-Entscheidung ([`AGENTS.md`](../../../../AGENTS.md) §3.6).
 - **Kein `examples/**`-Bezug** — die Beispiel-Clients bleiben Doku mit
-  Bau-Bindung ([`ADR-0087`](../adr/0087-beispiel-clients-csharp-kotlin.md),
-  [`ADR-0090`](../adr/0090-beispiel-clients-volle-matrix.md)); diese
+  Bau-Bindung ([`ADR-0087`](../../adr/0087-beispiel-clients-csharp-kotlin.md),
+  [`ADR-0090`](../../adr/0090-beispiel-clients-volle-matrix.md)); diese
   Welle baut keinen neuen Beispiel-Client und berührt die bestehenden
   nicht.
 - **`spec/architecture.md`/`.a-check.yml`** bleiben unberührt —
@@ -276,7 +276,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 vollständig durchgesehen. Relevante Treffer:
 
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert,
-  [`AGENTS.md`](../../../AGENTS.md) §3.13, 23×) — dieser Eintrag trägt
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13, 23×) — dieser Eintrag trägt
   bereits SDK-Belege derselben Sub-Area-Familie; die bewegte Eigenschaft
   dieser Welle („welche Flächen tragen einen Realserver-Beleg") wird
   voraussichtlich in SDK-READMEs und `harness/README.md`-Zeilen
@@ -307,7 +307,7 @@ vollständig durchgesehen. Relevante Treffer:
   höchstens im Suchlauf-Nachzug, nicht als Schreib-Ziel; kein
   Handlungsbedarf hier.
 - `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert,
-  [`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz A) — der Träger
+  [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A) — der Träger
   `docs/user/sdk-e2e-abdeckung.md` trägt je Abschnittszeile einen
   Runner-Verweis als `Ort` (Form-Vorbild `e2e-abdeckung.md`, aber ohne
   `Datei:Zeile`-Anker — die Runner-Phase-Auswahl ist klassen-stabil, ein
@@ -338,5 +338,5 @@ Regeln dieser Sektion: Baseline-Regelwerk `grundlagen-traceability.md`
 Die beiden Zeiger unten sind so zu schreiben, wie sie vom Ruheort `done/`
 auflösen, nicht vom Schreibort.
 
-Ergebnis: [welle-sdk-reale2e-results.md](done/welle-sdk-reale2e-results.md)
-Zähler: [observations/](observations/README.md) (Beobachtungs-Register)
+Ergebnis: [welle-sdk-reale2e-results.md](welle-sdk-reale2e-results.md)
+Zähler: [observations/](../observations/README.md) (Beobachtungs-Register)

@@ -4,7 +4,7 @@
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
 wechselt nur durch `git mv`.
 
-**Welle:** [welle-sdk-reale2e](../welle-sdk-reale2e.md).
+**Welle:** [welle-sdk-reale2e](welle-sdk-reale2e.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md)
 (Client-Bibliotheken — die Fläche existiert, der Beleg-Stand wird stärker),
@@ -26,7 +26,7 @@ nicht geändert.
 **Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
-[welle-sdk-reale2e](../welle-sdk-reale2e.md). **Datum:** 2026-09-23.
+[welle-sdk-reale2e](welle-sdk-reale2e.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -53,7 +53,7 @@ Wegwerf-Duplikat-Client daneben; (c) ein Make-Target
 Träger `docs/user/sdk-e2e-abdeckung.md` samt `.d-check.yml`
 `trace.coverage`-Eintrag (Label `SDK-E2E`) — beide in diesem Slice, weil
 der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
-([Welle-Plan §4](../welle-sdk-reale2e.md), Reihenfolge-Grund 1).
+([Welle-Plan §4](welle-sdk-reale2e.md), Reihenfolge-Grund 1).
 
 **Je Fläche der Beleg (die vier Phasen des Runners):**
 
@@ -178,7 +178,7 @@ der C#-Runner der erste Abschnitts-Erzeuger der Datei ist
 - [x] Jedes Risiko aus §6 trägt einen Ausgang. *(vier Ausgänge in §6, je
       entfallen mit Beleg am Ort; siehe §7.)*
 - [x] Die drei Paarungen getragen — dieser Slice gehört zu
-      [welle-sdk-reale2e](../welle-sdk-reale2e.md). *(Anker: die Regel im
+      [welle-sdk-reale2e](welle-sdk-reale2e.md). *(Anker: die Regel im
       Lerneintrag liegt in `AGENTS.md` §3.13 (`seit welle-20`, am Ort
       existent); Folge-Slice: beide genannten Pläne existieren in
       `open/`; Register: der neue Beleg liegt in `evidence/` — §7.)*
@@ -328,7 +328,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   `make doc-trace`-Coverage-Aufzählung in `harness/README.md`, die
   Coverage-Dimensionen-Aufzählung in `harness/sensors/docs-check.md`
   §Grenze, die Träger-Form-Behauptung in
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) §6. Alle drei hängen an
+  [welle-sdk-reale2e](welle-sdk-reale2e.md) §6. Alle drei hängen an
   derselben Wurzel: der `.d-check.yml`-`trace.coverage`-Eintrag dieses
   Diff verbreitert die Menge der kuratierten Coverage-Dimensionen, und
   genau diese Verbreiterung überholt jede Prosa-Zeile, die die Aufzählung
@@ -392,7 +392,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   „weiter offen" ins Register — ein Registereintrag für ein nie
   aufgetretenes Muster trüge kein `evidence/` (Paarung (c)).
 - **Drei Paarungen:** dieser Slice gehört zu
-  [welle-sdk-reale2e](../welle-sdk-reale2e.md) (noch offen) — die Prüfung
+  [welle-sdk-reale2e](welle-sdk-reale2e.md) (noch offen) — die Prüfung
   läuft regelkonform bei deren Closure. (a) Anker: die Regel des
   Lerneintrags liegt in `AGENTS.md` §3.13 (`seit welle-20`) — am Ort
   existent; (b) Folge-Slice: beide genannten Pläne existieren als

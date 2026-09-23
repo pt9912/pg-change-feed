@@ -30,7 +30,7 @@ Plan-Update (DoD-Häkchen, Plan-Nachzug, §3.13-Feld).
   Folgepflicht 1) und die dort beibehaltenen Festlegungen 3–5,
   [`ADR-0106`](../plan/adr/0106-csharp-nuget-erstes-sdk-package.md)
   Festlegung 2/4, [`ADR-0090`](../plan/adr/0090-beispiel-clients-volle-matrix.md)
-  Festlegung 2, [`welle-sdk-reale2e.md`](../plan/planning/welle-sdk-reale2e.md)
+  Festlegung 2, [`welle-sdk-reale2e.md`](../plan/planning/done/welle-sdk-reale2e.md)
   (§1 Träger-Erzeugnis, §4 Reihenfolge, §6 Beobachtungen-Sicht)
 - `spec/lastenheft.md` [`LH-FA-SST-009`](../../spec/lastenheft.md),
   [`LH-FA-SST-008`](../../spec/lastenheft.md),
@@ -138,7 +138,7 @@ Plan-Update (DoD-Häkchen, Plan-Nachzug, §3.13-Feld).
 
 - `kategorie`: LOW
 - `quelle`: Maintainability · Plan §2 DoD („`LH-FA-SST-009`-Beleg-Stand
-  stärker") · [`welle-sdk-reale2e.md`](../plan/planning/welle-sdk-reale2e.md)
+  stärker") · [`welle-sdk-reale2e.md`](../plan/planning/done/welle-sdk-reale2e.md)
   §1 (Zweck des Trägers: RTM-Sichtbarkeit der zwölf Belege)
 - `pfad`: `tools/harness/run-sdk-csharp-integration-tests.sh`
   (`abdeckung_csharp_abschnitt`), `docs/user/sdk-e2e-abdeckung.md:10–13`
