@@ -126,11 +126,13 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # diese Stufe (`--target integration`, zwingend mit dem benannten
 # Bau-Kontext `proto` — derselbe Abbruchpunkt wie oben), startet sie im
 # selben Docker-Netz wie den Feed-Container und liest die stdout-Marker
-# (READY/RECEIVED/REJECTED) ueber `docker logs`. `-u` haelt die Marker
-# ungepuffert sichtbar (der Runner pollt sie, waehrend der Test laeuft);
-# `--capture=no` reicht pytest-Prints ungefiltert nach stdout. Der Pfad
-# `integration` gegenueber testpaths (pyproject.toml) ist der einzige
-# Aufruf, der diese Tests sammelt. ---
+# (READY/RECEIVED/REJECTED) ueber `docker logs`. Der ENTRYPOINT traegt die
+# pytest-Mechanik; die Testdatei je Flaeche (und `-v --capture=no`) reicht
+# der Runner als docker run-Argument nach — jede Phase benennt ihre
+# Testdatei explizit, kein stiller Ausschluss des Rests (Muster der
+# -run-Muster im Server-E2E-Runner). `-u` haelt die Marker ungepuffert
+# sichtbar; `--capture=no` reicht pytest-Prints ungefiltert nach stdout
+# (beide vom Runner je Phase mitgereicht). ---
 FROM build AS integration
 WORKDIR /src/pgchangefeed
-ENTRYPOINT ["python", "-u", "-m", "pytest", "integration", "-v", "--capture=no"]
+ENTRYPOINT ["python", "-u", "-m", "pytest"]

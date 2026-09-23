@@ -258,3 +258,36 @@ class ReadChangesResponse:
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> ReadChangesResponse:
         return cls(changes=[Change.from_json(item) for item in data["changes"]])
+
+
+# --- Live-Change-Stream, SSE (SPEC-021): dieselben zehn Felder wie der
+# --- Domain-Typ, nicht die zwölf des HTTP-Lesezugriffs (SPEC-022) --
+
+
+@dataclass(frozen=True)
+class StreamChange:
+    change_id: str
+    transaction_id: str
+    source_table_id: str
+    sequence: int
+    operation: str
+    old_image: Any | None
+    new_image: Any | None
+    schema_version: str
+    schema: str
+    table: str
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> StreamChange:
+        return cls(
+            change_id=data["change_id"],
+            transaction_id=data["transaction_id"],
+            source_table_id=data["source_table_id"],
+            sequence=data["sequence"],
+            operation=data["operation"],
+            old_image=data["old_image"],
+            new_image=data["new_image"],
+            schema_version=data["schema_version"],
+            schema=data["schema"],
+            table=data["table"],
+        )

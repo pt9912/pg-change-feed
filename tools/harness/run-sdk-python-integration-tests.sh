@@ -15,14 +15,21 @@
 # Python-SDK (sdks/python/Dockerfile, zwingend mit dem benannten Bau-Kontext
 # `proto` — ohne ihn bricht der Bau an der COPY --from=proto-Zeile ab) und
 # startet sie im selben Docker-Netz wie den Feed-Container. Der Pruefling
-# ist das SDK selbst: der Integrationstest importiert
-# pgchangefeed.grpc_client direkt (kein Wegwerf-Duplikat-Client daneben).
-# Die stdout-Marker des Testlaufs (READY/RECEIVED/REJECTED) liest dieser
+# ist das SDK selbst: der Integrationstest importiert die Client-Flaechen
+# des Packages direkt (kein Wegwerf-Duplikat-Client daneben). Die
+# stdout-Marker der Testlaeufe (READY/RECEIVED/REJECTED) liest dieser
 # Runner ueber `docker logs`, waehrend der Test noch laeuft — deshalb
 # ungepuffert (`python -u`, Stufe-ENTRYPOINT). Die `change_id` der
 # empfangenen Change wird zusaetzlich gegen den Lesezugriffsweg
-# `cdc.changes` gehalten (dieselbe Disziplin wie der gRPC-Stream-Rundlauf
-# im Server-E2E-Runner).
+# `cdc.changes` gehalten (dieselbe Disziplin wie die Rundlaeufe im
+# Server-E2E-Runner).
+#
+# Eine Phase je Flaeche (slice-sdk-python-grpc-client-flaeche: gRPC,
+# SPEC-020; slice-sdk-python-sse-client-flaeche: SSE, SPEC-021): jede Phase
+# benennt ihre Testdatei explizit als docker run-Argument (kein stiller
+# Ausschluss des Rests, Muster der -run-Muster im Server-E2E-Runner) und
+# traegt eigenen Sentinel- und ID-Wertebereich, damit sich die Phasen
+# nicht in die Quere kommen.
 #
 # Voraussetzungen: Docker, ein geladenes :dev-Image (`make image` vorher —
 # compose.yaml traegt keinen build:-Block, ADR-0044) und Netz (pip-Paketbezug
@@ -46,20 +53,23 @@ PG_PASSWORD=postgres
 # Derselbe Slot-Name wie der Container-Vertrag in compose.yaml (CDC_SLOT).
 SLOT=slot_pgc_e2e
 # Derselbe Reader-Token wie der Container-Vertrag in compose.yaml
-# (CDC_API_TOKEN_READER): der gRPC-Stream akzeptiert beide Token-Klassen
-# (SPEC-020), der Test traegt die Reader-Klasse.
+# (CDC_API_TOKEN_READER): gRPC-Stream und SSE-Endpunkt akzeptieren beide
+# Token-Klassen (SPEC-020/SPEC-021), die Tests tragen die Reader-Klasse.
 API_TOKEN=e2e-reader-token
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
 SDK_INTEGRATION_IMAGE=${SDK_PYTHON_INTEGRATION_IMAGE:-pg-change-feed:sdk-python-integration}
-SDK_TEST_CONTAINER=cdc-sdk-python-grpc-client-test
+SDK_TEST_CONTAINER=cdc-sdk-python-client-test
 
 # Dasselbe aktivierte Tisch-Set wie der Container-Vertrag (CDC_TABLES):
 # die Aktivierung traegt die Verdrahtung des Feed-Containers (ADR-0028),
-# die Tabellen muessen dafuer physisch existieren. Gegriffen wird fuer den
-# gRPC-Beleg auf feed_e2e_full (REPLICA IDENTITY FULL).
+# die Tabellen muessen dafuer physisch existieren. Gegriffen wird fuer die
+# Belege auf feed_e2e_full (REPLICA IDENTITY FULL).
 TEST_TABLE=feed_e2e_full
-TEST_SENTINEL=PythonGrpcSdkE2ESentinel
+GRPC_TEST_FILE=integration/test_grpc_realserver.py
+SSE_TEST_FILE=integration/test_sse_realserver.py
+GRPC_SENTINEL=PythonGrpcSdkE2ESentinel
+SSE_SENTINEL=PythonSseSdkE2ESentinel
 
 cleanup() {
   docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
@@ -149,46 +159,68 @@ fi
 docker build --build-context proto=proto -f sdks/python/Dockerfile \
   --target integration -t "$SDK_INTEGRATION_IMAGE" sdks/python
 
-docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
-docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
-  -e PGCHANGEFEED_GRPC_ADDR="pg-change-feed:9090" \
-  -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \
-  -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
-  -e PGCHANGEFEED_E2E_SENTINEL="$TEST_SENTINEL" \
-  "$SDK_INTEGRATION_IMAGE" >/dev/null
+# run_surface_phase <Name> <Addr-Env-Name> <Addr-Wert> <Sentinel> <ID-Basis>
+# <Testdatei> <Reject-Marker> — ein Realserver-Rundlauf fuer genau eine
+# SDK-Flaeche: Container starten, auf READY warten, begrenzte Folge
+# eindeutiger Zeilen committen (Fire-and-Forget-Fenster, SPEC-020/SPEC-021),
+# auf den Reject-Marker und das Prozessende warten, die RECEIVED-Zeile
+# pruefen und die change_id unabhaengig gegen cdc.changes halten.
+run_surface_phase() {
+  local phase_name=$1 addr_env_name=$2 addr_value=$3 sentinel=$4 id_base=$5 test_file=$6 reject_marker=$7
+  local attempt insert_id captured change_id
 
-test_ready=0
-for _ in $(seq 1 60); do
-  if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "READY"; then
-    test_ready=1
-    break
-  fi
-  if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
-    break
-  fi
-  sleep 1
-done
-if [ "$test_ready" -ne 1 ]; then
-  echo "run-sdk-python-integration-tests: Integrationstest wurde nicht innerhalb der Zeitspanne bereit (kein READY): $(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)" >&2
-  exit 1
-fi
+  docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
+  docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
+    -e "$addr_env_name=$addr_value" \
+    -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \
+    -e PGCHANGEFEED_E2E_TABLE="$TEST_TABLE" \
+    -e PGCHANGEFEED_E2E_SENTINEL="$sentinel" \
+    "$SDK_INTEGRATION_IMAGE" "$test_file" -v --capture=no >/dev/null
 
-# Die Zustellung ist Fire-and-Forget ohne Replay (SPEC-020): zwischen
-# "Test hat den Stream geoeffnet" und "Server hat den Empfaenger am
-# Broadcaster registriert" liegt ein kurzes Fenster, in dem eine committete
-# Aenderung fuer diesen Empfaenger verworfen wird. Der Lauf committet
-# deshalb eine begrenzte Folge eindeutiger Zeilen, bis der Test genau eine
-# davon real empfangen hat (Muster run-integration-tests.shs
-# gRPC-Stream-Rundlauf). Die IDs 300ff. liegen in einem eigenen Wertebereich.
-received=0
-for attempt in 1 2 3 4 5; do
-  insert_id=$((300 + attempt))
-  docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$TEST_SENTINEL');
+  test_ready=0
+  for _ in $(seq 1 60); do
+    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "READY"; then
+      test_ready=1
+      break
+    fi
+    if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      break
+    fi
+    sleep 1
+  done
+  if [ "$test_ready" -ne 1 ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — Test wurde nicht innerhalb der Zeitspanne bereit (kein READY): $(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)" >&2
+    exit 1
+  fi
+
+  local received=0
+  for attempt in 1 2 3 4 5; do
+    insert_id=$((id_base + attempt))
+    # >/dev/null: die psql-INSERT-Echo-Zeile („INSERT 0 1") gehoert nicht in
+    # den Funktions-stdout — der Aufrufer haelt hier nur den Rueckgabewert
+    # (die change_id).
+    docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
+INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
 SQL
-  for _ in $(seq 1 20); do
-    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
-      received=1
+    for _ in $(seq 1 20); do
+      if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
+        received=1
+        break
+      fi
+      if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+        break
+      fi
+      sleep 0.5
+    done
+    if [ "$received" -eq 1 ]; then
+      break
+    fi
+  done
+
+  local rejected=0
+  for _ in $(seq 1 40); do
+    if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "$reject_marker"; then
+      rejected=1
       break
     fi
     if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
@@ -196,75 +228,69 @@ SQL
     fi
     sleep 0.5
   done
-  if [ "$received" -eq 1 ]; then
-    break
+
+  local test_stopped=0
+  for _ in $(seq 1 20); do
+    if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
+      test_stopped=1
+      break
+    fi
+    sleep 0.5
+  done
+  local test_exit
+  test_exit=$(docker inspect --format '{{.State.ExitCode}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo unbekannt)
+  local test_output
+  test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
+
+  if [ "$received" -ne 1 ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — der Test empfing keine der committeten Aenderungen ($TEST_TABLE, $sentinel) ueber den Stream: $test_output" >&2
+    exit 1
   fi
-done
-
-# Der Test faehrt nach dem Empfang im selben Lauf noch die Negative-Pruefung
-# aus (Stream-Oeffnungsversuch ohne Token); auf deren Ergebnis und auf das
-# Prozessende wird separat gewartet, damit die ausgewerteten Zeilen unten
-# aus einem abgeschlossenen Lauf stammen.
-rejected=0
-for _ in $(seq 1 40); do
-  if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "REJECTED code=Unauthenticated"; then
-    rejected=1
-    break
+  if ! printf '%s' "$test_output" | grep -qE "RECEIVED .*table=$TEST_TABLE .*operation=INSERT .*new_image=.*$sentinel"; then
+    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile traegt nicht die erwartete Aenderung ($TEST_TABLE, INSERT, Sentinel im Row Image): $test_output" >&2
+    exit 1
   fi
-  if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
-    break
+  if [ "$rejected" -ne 1 ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — Stream-Oeffnungsversuch ohne gueltiges Token wurde nicht abgelehnt ($reject_marker fehlt): $test_output" >&2
+    exit 1
   fi
-  sleep 0.5
-done
-
-test_stopped=0
-for _ in $(seq 1 20); do
-  if [ "$(docker inspect --format '{{.State.Running}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo false)" != "true" ]; then
-    test_stopped=1
-    break
+  if [ "$test_stopped" -ne 1 ] || [ "$test_exit" != "0" ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — der Test endete nicht mit Ausgang 0 (gestoppt: $test_stopped, Ausgang: $test_exit): $test_output" >&2
+    exit 1
   fi
-  sleep 0.5
-done
-test_exit=$(docker inspect --format '{{.State.ExitCode}}' "$SDK_TEST_CONTAINER" 2>/dev/null || echo unbekannt)
-test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
-if [ "$received" -ne 1 ]; then
-  echo "run-sdk-python-integration-tests: der Test empfing keine der committeten Aenderungen ($TEST_TABLE, $TEST_SENTINEL) ueber den Stream: $test_output" >&2
-  exit 1
-fi
-if ! printf '%s' "$test_output" | grep -qE "RECEIVED .*table=$TEST_TABLE .*operation=INSERT .*new_image=.*$TEST_SENTINEL"; then
-  echo "run-sdk-python-integration-tests: die RECEIVED-Zeile traegt nicht die erwartete Aenderung ($TEST_TABLE, INSERT, Sentinel im Row Image): $test_output" >&2
-  exit 1
-fi
-if [ "$rejected" -ne 1 ]; then
-  echo "run-sdk-python-integration-tests: Stream-Oeffnungsversuch ohne gueltiges Token wurde nicht mit Unauthenticated abgelehnt: $test_output" >&2
-  exit 1
-fi
-if [ "$test_stopped" -ne 1 ] || [ "$test_exit" != "0" ]; then
-  echo "run-sdk-python-integration-tests: der Test endete nicht mit Ausgang 0 (gestoppt: $test_stopped, Ausgang: $test_exit): $test_output" >&2
-  exit 1
-fi
+  change_id=$(printf '%s' "$test_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
+  if [ -z "$change_id" ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — die RECEIVED-Zeile traegt keine change_id: $test_output" >&2
+    exit 1
+  fi
+  captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
+    "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$change_id' AND table_name = '$TEST_TABLE' AND new_data->>'name' = '$sentinel'")
+  if [ -z "$captured" ] || [ "$captured" -lt 1 ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — die ueber den Stream empfangene Aenderung (change_id=$change_id, $sentinel) ist nicht real ueber cdc.changes lesbar (count=${captured:-leer})" >&2
+    exit 1
+  fi
 
-# Unabhaengiger SQL-Beleg, dass genau die empfangene Aenderung real erfasst
-# wurde: die change_id der RECEIVED-Zeile steht ueber den bestehenden
-# Lesezugriffsweg in cdc.changes — der Stream-Empfang ist damit keine
-# erfundene Ausgabe des Testlaufs.
-grpc_change_id=$(printf '%s' "$test_output" | grep -oE 'RECEIVED change_id=[^ ]+' | head -n1 | cut -d= -f2 || true)
-if [ -z "$grpc_change_id" ]; then
-  echo "run-sdk-python-integration-tests: die RECEIVED-Zeile traegt keine change_id: $test_output" >&2
-  exit 1
-fi
-captured=$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
-  "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND change_id = '$grpc_change_id' AND table_name = '$TEST_TABLE' AND new_data->>'name' = '$TEST_SENTINEL'")
-if [ -z "$captured" ] || [ "$captured" -lt 1 ]; then
-  echo "run-sdk-python-integration-tests: die ueber den Stream empfangene Aenderung (change_id=$grpc_change_id, $TEST_SENTINEL) ist nicht real ueber cdc.changes lesbar (count=${captured:-leer})" >&2
-  exit 1
-fi
+  feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+  if [ "$feed_running" != "true" ]; then
+    echo "run-sdk-python-integration-tests: $phase_name — Feed-Container lief nach dem Lauf nicht mehr weiter (kein Neustart erwartet)" >&2
+    exit 1
+  fi
 
-feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
-if [ "$feed_running" != "true" ]; then
-  echo "run-sdk-python-integration-tests: Feed-Container lief nach dem Lauf nicht mehr weiter (kein Neustart erwartet)" >&2
-  exit 1
-fi
+  printf '%s\n' "$change_id"
+}
 
-echo "run-sdk-python-integration-tests: gRPC-SDK-Realserver-Beleg (ADR-0110 Festlegung 2/Folgepflicht 1) gruen — der Integrationstest (pgchangefeed.grpc_client im $SDK_INTEGRATION_IMAGE-Container) oeffnete real den Server-Stream gegen den laufenden Feed-Container (pg-change-feed:9090) und empfing eine danach committete Aenderung (Tabelle, Operation und Sentinel real am Wire; change_id=$grpc_change_id unabhaengig ueber cdc.changes lesbar); ein Stream-Oeffnungsversuch ohne Token endete mit gRPC-Status Unauthenticated"
+GRPC_CHANGE_ID=$(run_surface_phase \
+  "gRPC-Flaeche (SPEC-020)" \
+  PGCHANGEFEED_GRPC_ADDR \
+  "pg-change-feed:9090" \
+  "$GRPC_SENTINEL" 300 "$GRPC_TEST_FILE" \
+  "REJECTED code=Unauthenticated")
+
+SSE_CHANGE_ID=$(run_surface_phase \
+  "SSE-Flaeche (SPEC-021)" \
+  PGCHANGEFEED_HTTP_ADDR "http://pg-change-feed:8090" \
+  "$SSE_SENTINEL" 310 "$SSE_TEST_FILE" \
+  "REJECTED status=401")
+
+echo "run-sdk-python-integration-tests: SDK-Realserver-Belege (ADR-0110 Festlegung 2/Folgepflicht 1) gruen — gRPC-Flaeche (pgchangefeed.grpc_client, pg-change-feed:9090, change_id=$GRPC_CHANGE_ID) und SSE-Flaeche (pgchangefeed.sse_client, pg-change-feed:8090, change_id=$SSE_CHANGE_ID) oeffneten real ihre Server-Streams gegen den laufenden Feed-Container und empfingen je eine danach committete Aenderung (Tabelle, Operation und Sentinel real am Wire; change_id je unabhaengig ueber cdc.changes lesbar); ein Stream-Oeffnungsversuch ohne Token endete je mit gRPC-Status Unauthenticated bzw. HTTP-Status 401"

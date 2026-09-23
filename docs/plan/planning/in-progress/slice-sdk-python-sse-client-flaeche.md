@@ -56,30 +56,44 @@ gilt für **jede** neue Fläche einzeln).
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
+- [x] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
       Client-Klasse öffnet `GET /changes/stream` (Bearer-Token in
       `Authorization`-Header über `httpx`), zerlegt SSE-Frames zu Events
       und liefert die zehn Nachrichtenfelder von
       [`SPEC-021`](../../../../spec/pflichtenheft.md) — Unit-Tests
       referenzieren `SPEC-021` (Frame-Parser netzlos, Authn-Boundary gegen
       einen `httpx.MockTransport`, dasselbe Fake-Muster wie die
-      bestehende HTTP-Fläche dieses Packages).
-- [ ] **Realserver-Integrationstest erweitert** (`ADR-0110` §Entscheidung
-      Festlegung 2/Folgepflicht 1): eine neue Testdatei unter
-      `sdks/python/pgchangefeed/tests/integration/`
-      (`test_sse_realserver.py`, Arbeitsname) läuft über
+      bestehende HTTP-Fläche dieses Packages). *(Sensor-Beleg: `make
+      sdk-pack-python` EXIT=0 — 41 Unit-Tests grün, darunter 10 neue
+      SSE-Tests `tests/test_sse_client.py` (`grep -c "^def test_"` = 10;
+      20 + 3 + 8 + 10 = 41; Zahlen aus derselben Messung wie die
+      Gesamtzahl gezogen).)*
+- [x] **Realserver-Integrationstest erweitert** (`ADR-0110` §Entscheidung
+      Festlegung 2/Folgepflicht 1): eine neue Testdatei läuft über
       `make test-sdk-python-integration` und belegt real, dass die SDK
       SSE-Fläche eine zuvor über `psql` eingefügte Änderung über den
       laufenden Feed-Container empfängt — belegt am Nachrichtenschema und
-      über die `change_id` gegen `cdc.changes` gehalten.
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos.
-- [ ] `make gates` grün.
+      über die `change_id` gegen `cdc.changes` gehalten. *(Sensor-Beleg:
+      `make test-sdk-python-integration` EXIT=0 — der gRPC-Rundlauf
+      (change_id=804-1) und der SSE-Rundlauf (change_id=807-1) liefen
+      real grün, je mit SQL-Gegenprüfung gegen `cdc.changes`; der
+      Öffnungsversuch ohne Token endete je mit gRPC-Status
+      `Unauthenticated` bzw. HTTP-Status 401.)*
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos.
+      *(strenge Import-Zeilen-Prüfung über `sdks/python/pgchangefeed/`:
+      kein Treffer gegen internal/cmd/gen.)*
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
 - [ ] Doku-Update (`docs/user/benutzerhandbuch.md`,
       `spec/pflichtenheft.md`): bewusst **nicht** in diesem Slice —
-      gebündelt im letzten Flächen-Slice (§1 Abgrenzung).
+      gebündelt im letzten Flächen-Slice (§1 Abgrenzung). *(Wie im
+      Vorgänger-Slice: der gRPC-/SSE-Teil des Handbuchs wurde in der
+      Fixrunde des Vorgänger-Slices bzw. im selben Muster je Fläche
+      nachgezogen — der SSE-`**SDK:**`-Absatz gehört in denselben Zug wie
+      die Fläche; der NATS-Handbuch-Teil und `spec/pflichtenheft.md`
+      bleiben beim letzten Flächen-Slice.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
@@ -101,6 +115,16 @@ gilt für **jede** neue Fläche einzeln).
 | `sdks/python/pgchangefeed/tests/test_sse_client.py` (Arbeitsname) | neu | Frame-Parser-Grenzfälle, Authn-Boundary, Nachrichtenschema-Vollständigkeit — netzlos gegen `httpx.MockTransport`. |
 | `sdks/python/pgchangefeed/tests/integration/test_sse_realserver.py` (Arbeitsname) | neu | Realserver-Rundlauf: SDK empfängt real eine committete Änderung über SSE. |
 | `sdks/python/Dockerfile` | update | `integration`-Stufe kopiert/installiert zusätzlich `tests/integration/test_sse_realserver.py` (kein neuer Bau-Mechanismus, dieselbe Stufe). |
+
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `sdks/python/pgchangefeed/integration/test_sse_realserver.py` (statt `tests/integration/`) | Abweichung | der Vorgänger-Slice zog die Realserver-Tests in den Geschwister-Ordner `integration/` (Review-Begründung dort); die §3-Zeile trug noch den Arbeitsnamen. |
+| `sdks/python/Dockerfile` (ENTRYPOINT flexibel statt kopiertem Testfile) | Abweichung | die `integration`-Stufe kopiert das Verzeichnis bereits **ganz** (`COPY pgchangefeed/integration pgchangefeed/integration`) — keine zusätzliche COPY-Zeile nötig. Real gezogen: der ENTRYPOINT von der gebundenen Fassung auf `python -u -m pytest` erweitert, der Runner reicht die Testdatei je Phase als docker run-Argument nach — jede Phase nennt ihre Testdatei explizit, kein stiller Ausschluss des Rests. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/models.py`: `StreamChange`-Datenklasse (10 Felder) | neu | der SSE-Wire-Vertrag trägt die zehn Domain-Felder, nicht die zwölf des HTTP-Lesezugriffs ([`SPEC-022`](../../../../spec/pflichtenheft.md)) — eigene getypte Klasse statt Wiederverwendung der HTTP-`Change`, dieselbe Mapping-Doktrin wie der Rest des Packages. |
+| `tools/harness/run-sdk-python-integration-tests.sh` | update | der Runner bekommt eine `run_surface_phase`-Funktion: je Fläche ein Aufruf mit eigener Testdatei (explizit als docker run-Argument), eigenem Sentinel und ID-Wertebereich (gRPC 300ff., SSE 310ff.) und eigener Reject-Marker-Form (`Unauthenticated` bzw. `401`); die SQL-Gegenprüfung gegen `cdc.changes` läuft je Phase. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py`-Docstring, `options.py`-Docstring, `sdks/python/README.md` §Status | update | Träger-Nachzug (`AGENTS.md` §3.13): die Satzform „SSE bleibt außerhalb" wird durch diesen Slice falsch. |
 
 **Ansatz:** Referenzmaterial für die Frame-Zerlegung ist
 `examples/csharp/sse-client/SseStream.cs`/`examples/kotlin/sse-client/…/SseStream.kt`
