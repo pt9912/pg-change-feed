@@ -1,23 +1,21 @@
-Zustand: offen — Ausgang noch nicht zugewiesen. Drittes Auftreten — die
-3×-Schwelle ist mit dem Beleg des Slices `slice-sdk-python-http-reale2e`
-erreicht (Modul 10 §Pflege); die Ausgangs-Zuweisung läuft im Lese-Schritt
-der `welle-sdk-reale2e`-Closure (Modul 6) und ist in der Closure-Notiz des
-Slices als Folgung vermerkt.
+Zustand: **verkörpert** — Ausgang: **verkörpert** →
+`.harness/skills/reviewer.md` (HIGH-Punkt „Form-Vorbild-Kopie trägt ein
+sprachgebrochenes Wortfragment weiter", Wortlaut *„sichtet ihn einzeln auf
+Sprachreinheit — beim Kopieren mit dem Formvorbild selbst in der Hand; die
+wortgleiche Übereinstimmung mit dem Vorbild ist kein Beleg für die
+Sprachreinheit"*) · seit slice-sdk-python-http-reale2e. Ausgang geschlossen
+durch den Architect-Verdikt zur Form-Vorbild-Kopie und der Sprachreinheit
+je Form-Teil
+(`docs/reviews/architect-verdict-formvorbild-kopie-sprachreinheit-je-form-teil.md`) <!-- d-check:status-provenance -->
 
 Zähler (abgeleitet): 3× (evidence/slice-sdk-csharp-projektgeruest.md,
 evidence/slice-sdk-kotlin-projektgeruest.md,
-evidence/slice-sdk-python-http-reale2e.md).
+evidence/slice-sdk-python-http-reale2e.md) — Schwelle mit dem dritten
+Beleg erreicht; der Lese-Schritt der `welle-sdk-reale2e`-Closure trug den
+Fund als offene Übergabe weiter, dieses Architect-Verdikt schließt sie.
 
-**Lese-Schritt der `welle-sdk-reale2e`-Closure (Modul 6) durchgeführt** —
-Zustand bleibt bewusst `offen`: Die Wellen-Closure ist ein Planner-Zug
-(Modul 8), die hier fällige Regelschärfung (je Form-Teil eine eigene
-Sprachreinheits-Sichtung einer Form-Vorbild-Kopie, auch in Plan-Prosa —
-oder eine Fitness Function) eine **Architect-Entscheidung** (Modul 4/8,
-Präzedenz `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`, dieselbe
-Behandlung in der `welle-sdk-kotlin-lh-fa-sst-009`-Closure); der
-Lese-Schritt trägt den Fund als Steering-Loop-Eintrag in
-`done/welle-sdk-reale2e-results.md` weiter, ohne ihn einseitig zu
-embodyen — die Familien-Grenze (Runner-Kommentar-Familie ≠ SDK-Doc-
-Familie) trägt die Klasse selbst, die übrige Schärfung wird von den
-verkörperten Ankern `AGENTS.md` §3.13/§3.12 nicht getragen. Die nächste
-reguläre Auflösungsgelegenheit ist eine künftige Architect-Sichtung.
+Der Name des Eintrags nennt die Kopie als Mechanismus — der Zähler trägt
+auch das Erstauftreten selbst (das C#-Fragment wurde frisch aus der
+deutschen Plan-Prosa formuliert, ohne Vorbild); der HIGH-Punkt trägt
+beide Herkunftswege („frisch formuliert oder aus einem Formvorbild
+übernommen").

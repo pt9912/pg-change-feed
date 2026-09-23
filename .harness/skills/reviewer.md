@@ -160,6 +160,42 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   ohne Bindung an ihre Eingabeseite
   · seit slice-089. Die Träger-Seite derselben Regel steht in
   `.claude/commands/implement-slice.md` Schritt 19.
+- **Form-Vorbild-Kopie trägt ein sprachgebrochenes Wortfragment weiter** —
+  ein Form-Teil stammt aus der deutschen Plan-Prosa (frisch formuliert oder
+  aus einem Vorgänger-Plan übernommen) oder aus einem Formvorbild (ein
+  SDK-Sprachpaket aus seinem Vorgänger-Paket, ein gespiegelter Runner-/
+  Dockerfile-/Make-Target-Kopf) und trägt ein Wortfragment, das die Sprache
+  seines Trägers bricht: ein unübersetztes deutsches Fachwort mitten im
+  englischen Satz (README-Formulierung, Klassen-Doc-Kommentar) oder ein
+  gebrochenes Hybrid-Fragment in deutscher Plan-Prosa. *Wer einen solchen
+  Form-Teil schreibt oder liest, sichtet ihn einzeln auf Sprachreinheit —
+  beim Kopieren mit dem Formvorbild selbst in der Hand; die wortgleiche
+  Übereinstimmung mit dem Vorbild ist kein Beleg für die Sprachreinheit,
+  sondern genau der Weg, auf dem das Fragment weiterwandert. Die
+  §8-Deklaration („dieser Slice kopiert kein Form-Vorbild") sichtet ihre
+  eigene Prosa mit.* Abgrenzung: die Sprache des Trägers entscheidet, nicht
+  das Wort — ein deutsches Fachwort in einem deutschsprachigen Kommentar
+  (Runner-Köpfe in `tools/harness/`, Build-Datei-Kommentare der SDK-Bäume)
+  ist an seinem Ort und kein Befund dieser Klasse; die orthografische
+  Form-Familie ihrer byte-identischen Kopien („FlaecheN") bleibt die
+  Nachbar-Form der jeweiligen Reviews, kein Zähler dieser Klasse. Kein Gate
+  fängt das: es gibt keinen Sensor für Prosa-Orthografie, und eine
+  Formpflicht auf Prosa erzeugt Pflichterfüllung (dieselbe Grenze wie beim
+  Zahl-im-Träger-Punkt); die verfügbare Falsifikation ist das Lesen des
+  Form-Teils gegen sein Vorbild. Herkunft:
+  `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter` (3×,
+  `slice-sdk-csharp-projektgeruest`/`-kotlin-projektgeruest`/
+  `-python-http-reale2e` — je LOW befundet; die beiden Code-Kommentar-
+  Fragmente „unstrittige" stehen bis heute im Bestand:
+  `grep -rni unstrittige sdks/` → zwei Treffer,
+  `PgChangeFeedClientOptions.cs:7` und `PgChangeFeedClientOptions.kt:9`,
+  gemessen beim Architect-Verdikt zur Form-Vorbild-Kopie — die als LOW an
+  den „nächsten Slice, der dieselbe Datei berührt" weitergereichte
+  Korrektur hat sie nie gezogen) und
+  `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (3×, derselbe
+  Mechanismus an den README-Sätzen aller drei Sprachpakete, README-Treffer
+  heute gezogen), der Architect-Verdikt zur Form-Vorbild-Kopie und der
+  Sprachreinheit je Form-Teil · seit slice-sdk-python-http-reale2e.
 - **Traceability-/ID-Schema-Verstoß** — Commit oder PR nennt keine
   `LH-*`- oder `ADR-*`-Kennung; oder eine Kennung nutzt ein Präfix, das MR-000
   nicht deklariert (`LH-FA/QA-<BEREICH>-<NNN>`, `SPEC-<NNN>`, `ARC-<NNN>`,

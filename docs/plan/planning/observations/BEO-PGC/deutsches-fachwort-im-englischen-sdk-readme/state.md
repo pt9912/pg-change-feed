@@ -1,26 +1,24 @@
-Zustand: offen — Ausgang noch nicht zugewiesen. Real 3× vorhanden
-(csharp, python, kotlin), damit die 3×-Schwelle für §Pflege
-(`.harness/skills/reviewer.md`) bereits **bei Anlage** dieses Eintrags
-erreicht — zwei der drei Instanzen waren real vorhanden, aber nie formal
-befundet, bevor der Kotlin-Review sie als eigene Klasse benannte. Die
-Pflege-Schärfung selbst (Klassifikation prüfen, Reviewer-Skill-Ergänzung
-„prüfe eine von einem Formvorbild übernommene README-/Doku-Formulierung
-auf verbliebene deutsche Fachwörter", oder eine Fitness Function) ist eine
-Architect-Entscheidung (Modul 4/8) und **kein** Teil dieser
-Slice-/Wellen-Closure — dieser Eintrag legt den Lese-Beleg bereit, löst ihn
-nicht auf. Nächste reguläre Lesegelegenheit: die Closure von
-`welle-sdk-kotlin-lh-fa-sst-009` (§8 Vorgelagert — offene Beobachtungen
-sichten der jeweils nächsten Slice-Planung liest ihn ebenfalls mit).
+Zustand: **verkörpert** — Ausgang: **verkörpert** →
+`.harness/skills/reviewer.md` (derselbe HIGH-Punkt „Form-Vorbild-Kopie
+trägt ein sprachgebrochenes Wortfragment weiter", der die
+README-/Doku-Formulierung als Verstoßfläche nennt) · seit
+slice-sdk-python-http-reale2e. Ausgang geschlossen durch denselben
+Architect-Verdikt zur Form-Vorbild-Kopie und der Sprachreinheit je
+Form-Teil
+(`docs/reviews/architect-verdict-formvorbild-kopie-sprachreinheit-je-form-teil.md`) <!-- d-check:status-provenance -->,
+dessen Mechanismus (Form-Teil aus Formvorbild oder Plan-Prosa, je-teilige
+Sprachreinheits-Sichtung) beide Klassen trägt. Der Name dieses Eintrags
+nennt den Erstauftreten-Ort (README-Satz), nicht die Grenze des
+Gegenstands.
 
 Zähler (abgeleitet): 3× (evidence/slice-sdk-csharp-projektgeruest.md,
 evidence/slice-sdk-python-projektgeruest.md,
-evidence/slice-sdk-kotlin-projektgeruest.md).
+evidence/slice-sdk-kotlin-projektgeruest.md) — bei Anlage erreicht
+(Schwelle), beide früheren Instanzen rückwirkend erfasst.
 
-**Lese-Schritt der `welle-sdk-kotlin-lh-fa-sst-009`-Closure (Modul 6)
-durchgeführt** — Zustand bleibt bewusst `offen`: Die Wellen-Closure ist ein
-Planner-Zug (Modul 8), die hier fällige Regelschärfung eine
-Architect-Entscheidung; der Lese-Schritt trägt den Fund als Steering-Loop-
-Eintrag in
-`docs/plan/planning/done/welle-sdk-kotlin-lh-fa-sst-009-results.md`
-weiter, ohne ihn einseitig zu embodyen. Die nächste reguläre
-Auflösungsgelegenheit ist eine künftige Architect-Sichtung.
+Bestand (gemessen beim Architect-Verdikt): `grep -rni vollinhalt
+sdks/*/README.md sdks/*/pgchangefeed-kotlin/README.md` → 0 Treffer; die
+deutschen „Vollinhalt"-Nennungen in Build-Datei-Kommentaren
+(`sdks/csharp/*`, `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`)
+sind an ihrem Ort — deutschsprachiger Kommentar, kein sprachfremdes
+Fragment (die Abgrenzung des HIGH-Punkts).
