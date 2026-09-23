@@ -17,7 +17,7 @@ Eingang.
 `b7a993fe` (Fixrunde F-1…F-4/F-6), `59e42d22` (Verifikations-Report +
 Auflagen V-1…V-3). **Während dieses Laufs gelandet und mitgeprüft:**
 `5d5fa3eb` (docs(plan): id-unlinked-Befund im Fixrunden-Nachzug behoben) —
-ändert dieselbe Nachzug-Tabelle (Version-Label 1.39 → 1.40 + ADR-0107-Link,
+ändert dieselbe Nachzug-Tabelle (Version-Label 1.39 → 1.40 + [`ADR-0107`](../plan/adr/0107-python-pypi-zweites-sdk-package.md)-Link,
 aus einem `d-check`-Lauf); sein Inhalt ist in die Befunde eingerechnet, der
 Review-Range selbst bleibt der genannte.
 
@@ -84,7 +84,7 @@ inkl. §3.12-Instanz-A-HIGH, „Beleg trägt seinen Satz nicht",
 
 - `kategorie`: LOW
 - `quelle`: Maintainability (Muster-Abweichung im eigenen Handbuch-Muster);
-  Teil-Form von „Beleg trägt seinen Satz nicht"; ADR-0110 Folgepflicht 3 im
+  Teil-Form von „Beleg trägt seinen Satz nicht"; [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Folgepflicht 3 im
   Kern erfüllt — deshalb LOW
 - `pfad`: `docs/user/benutzerhandbuch.md:682-685` (Python-Pointer),
   `docs/user/benutzerhandbuch.md:706-796` (gRPC-Abschnitt, SDK-Block nur
@@ -239,7 +239,7 @@ inkl. §3.12-Instanz-A-HIGH, „Beleg trägt seinen Satz nicht",
   `sdks/python/**`, `docs/**`, `README.md`, `spec/**` nach der bewegten
   Satzform-Klasse („gRPC/SSE/NATS bleiben außerhalb des Python-Packages"):
   `sdks/python/README.md` §Status trägt die gRPC-Fläche positiv mit
-  ADR-0110-Anker und wahrer Out-of-Scope-Form für SSE/NATS;
+  [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)-Anker und wahrer Out-of-Scope-Form für SSE/NATS;
   `__init__.py`-Docstring, `options.py`-Docstring und Attribut-Doku
   (V-3 deklariert, inhaltlich geprüft: `address`/`api_token` tragen die
   gRPC-Form), Handbuch-Python-Absatz — keine Rest-Satzform der Klasse.
@@ -247,7 +247,7 @@ inkl. §3.12-Instanz-A-HIGH, „Beleg trägt seinen Satz nicht",
   library") bleibt für das **veröffentlichte** 0.1.0-Package wahr, Nachzug
   beim Version-Bump gebündelt — dieselbe deklarierte Praxis wie bei C#
   (1.38: Bump mit Vollabdeckung) und Kotlin (1.39), kein Befund in diesem
-  Slice. `SPEC-027`/`LH-FA-SST-009.a` gebündelt (ADR-0110 Folgepflicht 2,
+  Slice. `SPEC-027`/`LH-FA-SST-009.a` gebündelt ([`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Folgepflicht 2,
   konsistent).
 - **§3.11 (host-lokale Pfade)** — der ganze Fix-Diff (Plan, Handbuch,
   Verifikations-Report, beide Testdateien) enthält keinen host-lokalen
@@ -273,7 +273,7 @@ inkl. §3.12-Instanz-A-HIGH, „Beleg trägt seinen Satz nicht",
   (`tools/harness/working-tree-hash.sh`), der Stempel deckt den Ist-Baum
   (HEAD `5d5fa3eb`, Arbeitsbaum sauber) — der Nachzieh-Commit `5d5fa3eb`
   (id-unlinked-Behebung) ist gates-geprüft.
-- **ADR-0110 Fitness-Zeile (reale Server-Instanz je Fläche)** — der
+- **[`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Fitness-Zeile (reale Server-Instanz je Fläche)** — der
   Integrationstest trägt zwei Tests gegen die reale Instanz (positiver
   Empfang + `UNAUTHENTICATED`-Öffnung ohne Token), unverändert zur
   Haupt-Review-Prüfung.
