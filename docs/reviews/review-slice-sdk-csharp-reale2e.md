@@ -334,5 +334,4 @@ dieselbe Runde, Einzelzeilen). Die DoD-Checkbox „Review durchgeführt" bleibt
 deshalb offen — der Nachzug erfolgt regulär bei Schritt 21 des
 Implementer-Workflows (`BEO-PGC/dod-checkbox-nachzug`); der
 Selbst-Nachzug-Regelfall (Review ohne Fixrunde) greift hier nicht. Dieser
-Report wurde **nicht committet** (Lauf-Vorgabe); er liegt unter
-`docs/reviews/review-slice-sdk-csharp-reale2e.md`.
+Report ist mit der Fixrunde committet (`86892bdb`).

@@ -341,7 +341,7 @@ abdeckung_schreiben() {
       '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
       'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
       'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
-      'zustaendige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+      'zuständige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
       'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
       'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
       'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
