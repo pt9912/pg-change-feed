@@ -1,7 +1,7 @@
 # Review-Report: slice-sdk-csharp-reale2e — 2026-09-23
 
 **Review-Art:** Code — geprüft gegen Plan
-(`../plan/planning/in-progress/slice-sdk-csharp-reale2e.md`, §2 DoD, §3 Plan +
+(`../plan/planning/done/slice-sdk-csharp-reale2e.md`, §2 DoD, §3 Plan +
 Plan-Nachzug + §3.13-Suchlauf-Feld, §6 Risiken), [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
 (Accepted) §Entscheidung Festlegung 2/Folgepflicht 1,
 [`ADR-0106`](../plan/adr/0106-csharp-nuget-erstes-sdk-package.md) (Ort
@@ -105,7 +105,7 @@ Plan-Update (DoD-Häkchen, Plan-Nachzug, §3.13-Feld).
 
 - `kategorie`: MEDIUM
 - `quelle`: `AGENTS.md` §3.13 (Träger-Nachzug)
-- `pfad`: `docs/plan/planning/in-progress/slice-sdk-csharp-reale2e.md`
+- `pfad`: `docs/plan/planning/done/slice-sdk-csharp-reale2e.md`
   (§3.13-Feld), `harness/README.md:134`, `harness/sensors/docs-check.md:143`,
   `docs/plan/planning/welle-sdk-reale2e.md:311`
 - `befund`: Das committete Suchlauf-Feld trägt vier Träger-Zeilen — alle
@@ -241,7 +241,7 @@ Plan-Update (DoD-Häkchen, Plan-Nachzug, §3.13-Feld).
 
 - `kategorie`: INFO
 - `quelle`: `AGENTS.md` §3.12 Instanz A (Zahlenwert in einem Träger)
-- `pfad`: `docs/plan/planning/in-progress/slice-sdk-csharp-reale2e.md`
+- `pfad`: `docs/plan/planning/done/slice-sdk-csharp-reale2e.md`
   (§2 DoD, Sensor-Beleg)
 - `befund`: Die DoD-Zeile nennt das Target, aber keinen Lauf-Anker und
   führt zwei Läufe („in einem erneuten Lauf bestätigt"), ohne zu sagen,

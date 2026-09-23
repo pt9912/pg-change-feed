@@ -5,7 +5,7 @@
 Grenz-/Gates-Prüfung. Review-Artefakt des Reviewers:
 [`review-slice-sdk-csharp-reale2e.md`](review-slice-sdk-csharp-reale2e.md).
 
-**Gegenstand:** [`../plan/planning/in-progress/slice-sdk-csharp-reale2e.md`](../plan/planning/in-progress/slice-sdk-csharp-reale2e.md),
+**Gegenstand:** [`../plan/planning/done/slice-sdk-csharp-reale2e.md`](../plan/planning/done/slice-sdk-csharp-reale2e.md),
 Diff-Range `fce7af10..HEAD` — Substanz `ecff7370` + `11e42f7b` (Code + Träger
 + Verdrahtung bzw. Plan-Update/README-Zeile), Fixrunde `86892bdb`
 (Review F-1 bis F-6, F-7 INFO). Committe wurde nichts; der Arbeitsbaum ist
