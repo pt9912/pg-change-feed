@@ -21,7 +21,7 @@ Struktur bleibt v2 desselben Packages), [`ADR-0100`](../../adr/0100-nats-dritter
 [`LH-FA-SST-009.a`](../../../../spec/pflichtenheft.md) (Träger-Nachzug:
 „deckt HTTP-API" wird durch diese Welle falsch).
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-23.
 
 **Autor:** Planner-Agent, direkt beauftragt (`ADR-0110` §Konsequenzen
 Folgepflicht 1/2). **Datum:** 2026-09-21.
