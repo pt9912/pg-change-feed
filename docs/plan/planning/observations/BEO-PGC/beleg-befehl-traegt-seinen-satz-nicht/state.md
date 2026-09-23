@@ -6,9 +6,25 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (abgeleitet): **5×** (evidence/slice-084.md, evidence/slice-085.md,
-evidence/slice-091.md, evidence/slice-093.md, evidence/slice-094.md) —
-**Schwelle erreicht**. Der fünfte Beleg ist der erste, in dem der Beleg eine
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **8×**
+(evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
+evidence/slice-093.md, evidence/slice-094.md,
+evidence/slice-release-version-und-workflow.md,
+evidence/slice-sdk-kotlin-pack-werkzeug.md,
+evidence/slice-sdk-python-nats-stream-client-flaeche.md) —
+**Schwelle erreicht**. Der Beleg
+`evidence/slice-sdk-python-nats-stream-client-flaeche.md`
+(`slice-sdk-python-nats-stream-client-flaeche`, F-6 + R-1): die
+Realserver-Rejection-Assertion hielt `pytest.raises(Exception)`, während
+der gedruckte Marker die Ursache „token-rejected" behauptete — ein
+nicht-authentifizierungsbedingter Verbindungsfehler erzeugte denselben
+Beleg-Satz; Fixrunde 1 band `nats.errors.Error` +
+`match="Authorization Violation"` (gegen die nats-py-Quellen
+nachgemessen, s3e→s3f rot→grün am selben Server). R-1 traf dieselbe
+Klasse über das committete §3.13-Suchlauf-Feld des Plans, dessen
+Behandlungs-Angaben der Baum widerlegte; der Vorgang zählt zugleich bei
+`BEO-PGC/arbeit-ueberholt-stehenden-traeger`. Ausgang bleibt
+**verkörpert**. Der fünfte Beleg ist der erste, in dem der Beleg eine
 **Assertion** ist: die Ausgabe-Hälfte von vier Fällen prüfte eine Zeichenkette,
 die auch aus einem anderen Pfad kam. Der
 vierte Beleg trifft die Klasse an einer **Adresse**: ein Testkopf verwies auf

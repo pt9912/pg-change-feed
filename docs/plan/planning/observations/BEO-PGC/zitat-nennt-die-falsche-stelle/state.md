@@ -14,13 +14,25 @@ Ein vierter Beleg (`welle-d-check-verkoerperung`) traf **denselben Commit**,
 der diese Verkörperung schrieb — bestätigt den Wert der Regel unmittelbar
 (siehe evidence-Datei).
 
-Zähler (abgeleitet): **7×** (evidence/slice-090.md, evidence/slice-102.md,
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **7×**
+(evidence/slice-090.md, evidence/slice-102.md,
 evidence/slice-d-check-tracked-modul.md,
 evidence/welle-d-check-verkoerperung.md,
 evidence/slice-release-hub-description.md — zwei Fundstellen, F-1/F-2,
-evidence/slice-release-doku-releasing.md)
+evidence/slice-release-doku-releasing.md,
+evidence/slice-sdk-python-nats-stream-client-flaeche.md)
 — **verkörpert**, weitere Belege zählen weiter, ohne die Verkörperung
-erneut auszulösen. Das
+erneut auszulösen. Der Beleg
+`evidence/slice-sdk-python-nats-stream-client-flaeche.md`
+(`slice-sdk-python-nats-stream-client-flaeche`, F-3 HIGH): der neue
+`__init__.py`-Docstring zitierte `ADR-0110` Festlegung 3 als
+entscheidende Schicht für „v2 desselben Packages" — die Festlegung
+entscheidet ausdrücklich nichts (Delegation an den Folge-Zug); die
+tatsächliche Entscheidungsschicht ist der Welle-Plan §6. Der Verweis
+wurde übernommen, ohne das Original aufzuschlagen; Fixrunde 1 re-anchorte
+auf die Entscheidungslage, das Fixrunden-Re-Review maß beide Anker im
+Original nach.
+Das
 Erstauftreten fiel in `slice-090` beim Übergang **in einen stehenden Träger**
 auf: aus der Kopfzeile eines Review-Reports wurde eine Abschnittsnummer
 übernommen und in `harness/sensors/generated-sync.md` gesetzt. Der zweite

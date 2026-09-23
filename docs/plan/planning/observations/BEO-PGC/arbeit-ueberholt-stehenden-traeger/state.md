@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **22×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **23×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,18 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der dreiundzwanzigste Beleg,
+`evidence/slice-sdk-python-nats-stream-client-flaeche.md`: die schmale
+Plan-Mustersatz-Grep-Form des §3.13-Suchlaufs verfehlte alle fünf
+Träger-Stellen in deren tatsächlicher Schreibform und ließ `harness/` und
+die Wurzel-READMEs außerhalb des Pfadraums (F-4, gefunden vom Reviewer);
+das committete Suchlauf-Feld behauptete danach zwei vollzogene Nachzüge,
+die der Baum widerlegte (R-1/R-2) — der Suchlauf-Befund selbst wurde zum
+Träger, dessen Behandlungs-Angaben das Re-Review am Baum nachmisst.
+Geschärfte Lehre (Closure-Notiz): der Suchlauf folgt §3.13s Wortlaut
+(über die Träger nach der bewegten Eigenschaft), nicht dem Plan-Mustersatz.
+Ausgang bleibt **verkörpert**, kein neuer Schwellen-Übertritt. Details:
+`evidence/slice-sdk-python-nats-stream-client-flaeche.md`.
 Der zweiundzwanzigste Beleg,
 `evidence/slice-sdk-python-sse-client-flaeche.md`: die Lücken-Struktur
 wiederholt sich innerhalb eines Slice — der §3.13-Suchlauf war je Slice
