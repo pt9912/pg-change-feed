@@ -17,7 +17,8 @@ abgebrochener Run hinterlässt nichts), [`LH-FA-CAP-004`](../../../../spec/laste
 (Metadaten-Erweiterbarkeit), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 4/6/7 (Atomarität,
 Run-Zustand, Ordnung, Retention), [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Schemamigrationen mit
 d-migrate), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (rollenspezifische DSN-Verdrahtung), [`ADR-0017`](../../adr/0017-generische-change-tabelle.md)
-(generische Change-Tabelle).
+(generische Change-Tabelle), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1/3 (Rollenschnitt, Grants, Annahme in einer
+Transaktion, Warn-Spalte(n), `estimated_rows` = `NULL` als „unbekannt").
 
 **Berührte Spec-Stellen:** [`SPEC-029`](../../../../spec/pflichtenheft.md) (Feldform `cdc.backfill_run`, durch
 `spec-nachzug`), [`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md) — gelesen, nicht geändert;
@@ -35,13 +36,26 @@ d-migrate), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (r
 (`run_id` = die `administration_request_id` des Antrags, `source_id`,
 `schema_name`, `table_name`, `status`, `requested_at`, `started_at`,
 `finished_at`, `snapshot_position`, `rows_copied`, `estimated_rows`,
-`error_message`; die geschlossene `status`-Menge als CHECK **bei Erstanlage**
-der Tabelle), die Grants, und die Adapter für die beiden Ports aus
+`error_message`; `estimated_rows` ist **nullable** — `NULL` heißt „unbekannt",
+nie `0` —; dazu die **Warn-Spalte(n)** für die beiden Warnungen (Zahl und
+Bezeichner wie in [`SPEC-029`](../../../../spec/pflichtenheft.md) durch `spec-nachzug` festgelegt; leer, solange
+keine Auswertung sie setzt); die geschlossene `status`-Menge als CHECK **bei
+Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 `run-usecase`:
 
-- der **Run-Zustands-Adapter**: Übergänge, Fortschritt (`rows_copied` je Block
-  **außerhalb** der Daten-Transaktion, damit er für Leser sichtbar ist), der
-  Abgleich `running` → `interrupted`, die Abfrage des aktiven Runs je Tabelle;
+- der **Annahme-Adapter** (`Admit`, Paket `postgresstorage`, Pool der
+  Administrations-Goroutine aus `CDC_ADMIN_DSN`, Naht `sqlexec.DB` mit `Begin`):
+  **eine** Transaktion — Prüfung „kein aktiver Run (`queued`/`running`) derselben
+  Tabelle" (Lesen vor Einfügen), `INSERT` der Run-Zeile `queued` (`run_id` = die
+  `administration_request_id`, geschätzte Zeilenzahl, ggf. Warnung 1),
+  `UPDATE … applied` des Antrags, der genau **eine** `pending`-Zeile treffen muss,
+  Commit; jede Abweichung ist Rollback und Fehler, ein aktiver Run ein
+  Sentinel-Fehler;
+- der **Run-Zustands-Adapter** (Pool aus `CDC_CAPTURE_DSN`, **keine**
+  Anlage-Operation): Übergänge, Fortschritt (`rows_copied` je Block
+  **außerhalb** der Daten-Transaktion, damit er für Leser sichtbar ist; trägt
+  auch die Warnung 2), der Abgleich `running` → `interrupted`, die `queued`-Zeilen
+  der eigenen Quelle in Antragsreihenfolge (`ORDER BY requested_at, run_id`);
 - der **atomare Schreiber**: **eine** Store-Transaktion über alle Blöcke — je
   Block eine `cdc.transaction`-Zeile (Kennung `0bf-<run-id>-<Block>`, Position
   `X`, `committed_at`) und `cdc.change`-Zeilen (`origin = 'backfill'`,
@@ -66,15 +80,26 @@ der Tabelle), die Grants, und die Adapter für die beiden Ports aus
 ## 2. Definition of Done
 
 - [ ] Schema und Grants: `cdc.backfill_run` liegt in `tools/schema/schema.yaml`
-      (CHECK auf `status` bei Erstanlage), die Grants stehen in
-      `tools/schema/nacharbeit-roles.sql` — `cdc_capture` mit `SELECT`, `INSERT`,
-      `UPDATE` auf die Tabelle, weitere Rollen nach der Klärung im Start-Trigger
-      von `run-usecase`. *Zu belegen durch:* `make schema-rollout` zweimal
+      (CHECK auf `status` bei Erstanlage, `estimated_rows` nullable, die
+      Warn-Spalte(n) nach [`SPEC-029`](../../../../spec/pflichtenheft.md)), die Grants stehen in
+      `tools/schema/nacharbeit-roles.sql` — `cdc_admin` mit `SELECT`, `INSERT`,
+      `cdc_capture` mit `SELECT`, `UPDATE`, niemand mit `DELETE`, `cdc_reader` ohne
+      Recht auf die Basistabelle ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1, Punkt 3). *Zu belegen
+      durch:* `make schema-rollout` zweimal
       hintereinander mit Exit 0, `tools/schema/plan.yaml` und
       `tools/schema/down.sql` neu erzeugt und mitcommittet, der Rollen-Test
       `internal/bootstrap/roles_rollout_file_internal_test.go` (netzlos, Teil der
-      Gates) angepasst, und ein Rollen-Test im Store-Tier (`roles_test.go`-Muster):
-      `cdc_reader` trägt **kein** `SELECT` auf die Basistabelle.
+      Gates) angepasst, und ein Rollen-Test im Store-Tier (`roles_test.go`-Muster,
+      je Rolle ein Login): `cdc_capture` — `INSERT` scheitert mit SQLSTATE `42501`,
+      `UPDATE` gelingt; `cdc_admin` — `INSERT` gelingt, `UPDATE` und `DELETE`
+      scheitern; `cdc_reader` — `SELECT` auf die Basistabelle scheitert.
+- [ ] Annahme-Adapter: ein Store-Test gegen reale PostgreSQL zeigt, dass eine
+      Annahme Run-Zeile `queued` und Antragsvermerk `applied` **zugleich**
+      hinterlässt, dass ein Antragsvermerk ohne `pending`-Zeile (Rollback-Fall)
+      **weder** Run-Zeile **noch** Vermerk hinterlässt, dass ein zweiter Antrag bei
+      aktivem Run ohne zweite Zeile endet, und dass `estimated_rows` als `NULL` und
+      nicht als `0` gespeichert und gelesen wird. *Zu belegen durch:*
+      `make test-store`.
 - [ ] Atomarität: ein Store-Test gegen reale PostgreSQL zeigt, dass ein zweiter
       Leser vor dem Commit **keine** Zeile des Runs sieht und danach alle
       Blöcke zugleich, dass ein Rollback **keine** `cdc.transaction`- und keine
@@ -115,10 +140,10 @@ der Tabelle), die Grants, und die Adapter für die beiden Ports aus
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/schema/schema.yaml` | update | Tabelle `backfill_run`; CHECK auf `status` bei Erstanlage (spätere Erweiterung über Nacharbeit-SQL, nach dem Muster von `request_kind`). |
-| `tools/schema/nacharbeit-roles.sql` | update | Grants für `cdc_capture` (und ggf. `cdc_admin`). |
+| `tools/schema/schema.yaml` | update | Tabelle `backfill_run`; CHECK auf `status` bei Erstanlage (spätere Erweiterung über Nacharbeit-SQL, nach dem Muster von `request_kind`); `estimated_rows` nullable; Warn-Spalte(n). |
+| `tools/schema/nacharbeit-roles.sql` | update | Grants: `cdc_admin` `SELECT`, `INSERT`; `cdc_capture` `SELECT`, `UPDATE`. |
 | `internal/bootstrap/roles_rollout_file_internal_test.go` | update | hält den Rollenschnitt gegen die Rollout-Datei; die neue Tabelle darf für `cdc_reader` **nicht** als Basistabellen-Grant erscheinen. |
-| `internal/adapters/driven/postgresstorage/` (Arbeitsname `backfillrun.go`, `backfillwriter.go`, + Tests) | neu | die beiden Adapter über die schmale Ausführungs-Naht des Pakets (`sqlexec`); explizite Spaltenlisten. |
+| `internal/adapters/driven/postgresstorage/` (Arbeitsname `backfilladmission.go`, `backfillrun.go`, `backfillwriter.go`, + Tests) | neu | die drei Adapter über die schmale Ausführungs-Naht des Pakets (`sqlexec`); explizite Spaltenlisten; der Annahme-Adapter nutzt `Begin`. |
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | die neuen Anweisungen. |
 | `internal/adapters/driven/postgresstorage/schema.sql` | prüfen | wie in `change-origin`: ob die eingebettete DDL eine Träger-Rolle hat. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
@@ -170,11 +195,19 @@ geschrieben.
   Verbindung und kollidiert nicht mit dem Commit derselben Run-Zeile. *Erwartet,
   zu belegen durch:* der Zustands-Test mit gleichzeitigem Fortschritts-Update
   und Commit. **Ausgang:** *(bei Closure)*
-- **Die Rollenlage** (wer schreibt `queued`, wer liest die Tabelle) ist im
-  Start-Trigger von `run-usecase` geklärt; ein Grant zu viel für `cdc_admin`
-  oder ein `SELECT`-Grant für `cdc_reader` auf die Basistabelle wäre ein
-  Rollen-Verstoß ([`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…[`LH-QA-SEC-003`](../../../../spec/lastenheft.md)). *Erwartet, zu belegen
-  durch:* der Rollen-Test. **Ausgang:** *(bei Closure)*
+- **Die Rollenlage** ist mit [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1 gesetzt (`cdc_admin` legt an, `cdc_capture`
+  ändert, `cdc_reader` liest nur die View); ein `INSERT` für `cdc_capture`, ein
+  `UPDATE` oder `DELETE` für `cdc_admin` oder ein `SELECT`-Grant für `cdc_reader`
+  auf die Basistabelle wäre ein Rollen-Verstoß ([`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…[`LH-QA-SEC-003`](../../../../spec/lastenheft.md)).
+  *Erwartet, zu belegen durch:* der Rollen-Test im Store-Tier und der netzlose
+  Rollen-Test der Rollout-Datei. **Ausgang:** *(bei Closure)*
+- **Die Annahme-Transaktion ist nicht atomar oder greift zu weit.** Der
+  Antragsvermerk muss genau eine `pending`-Zeile treffen, sonst Rollback; der
+  Verzicht auf eine Sperre zwischen mehreren Annehmenden beruht auf der Annahme,
+  dass `processAdministrationRequests` Anträge sequenziell in **einer** Goroutine
+  verarbeitet und je Quelle eine Instanz Anträge annimmt ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1,
+  Punkt 2). *Erwartet, zu belegen durch:* der Rollback-Test des zweiten
+  Liefer-Punkts. **Ausgang:** *(bei Closure)*
 - **Geteilter Zustand in den Store-Tests** (`BEO-PGC/test-isolation-geteilter-zustand`,
   offen, 1×): unskopierte Bereinigung in den bestehenden Tests würde die Zeilen
   eines parallelen Tests treffen. *Erwartet, zu belegen durch:* die neuen Tests

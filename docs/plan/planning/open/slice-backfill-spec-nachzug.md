@@ -14,7 +14,8 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Initial-Snapshot/Backfill des Bestands —
 Haupt-Bezug), [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) (die offene, ADR-pflichtige Frage
 „Backfill-Mechanismus"), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 1 (Spec-Nachzug —
-Träger dieses Slice).
+Träger dieses Slice), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Folgepflicht 1 (Grants, Warn-Spalte(n), `estimated_rows` =
+`NULL`, Bedeutung von `applied`, Annahme-Sequenz).
 
 **Berührte Spec-Stellen:** [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md), [`SPEC-001`](../../../../spec/pflichtenheft.md) (Tabellenliste),
 [`SPEC-002`](../../../../spec/pflichtenheft.md) (`cdc.change`), [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antrags-Datensatz),
@@ -48,17 +49,24 @@ Greenfield: die Doku führt). Umfang:
   `wal`; letzte Spalte der View);
 - (c) [`SPEC-019`](../../../../spec/pflichtenheft.md): Antragsart `backfill`, geschlossene Menge mit fünf Werten,
   die Bedeutung von `applied` bei dieser Antragsart („angenommen" — die
-  Ausführung steht im Run-Zustand);
+  Run-Zeile entsteht in derselben Transaktion, die Ausführung steht im
+  Run-Zustand);
 - (d) [`SPEC-022`](../../../../spec/pflichtenheft.md): Feld `origin` in der Antwort; die Anmerkung, dass ein
   Bestandsabzug **eine** Commit-Position teilt und ein `limit` innerhalb einer
   Position nicht fortsetzen kann;
 - (e) [`SPEC-029`](../../../../spec/pflichtenheft.md) (neu): Feldform von `cdc.backfill_run` und
-  `cdc.backfill_status`; [`SPEC-001`](../../../../spec/pflichtenheft.md) führt `cdc.backfill_run` in der
+  `cdc.backfill_status` samt den **Grants** (`cdc_admin` `SELECT`/`INSERT`,
+  `cdc_capture` `SELECT`/`UPDATE`, `cdc_reader` kein Recht auf die Basistabelle,
+  `SELECT` auf die View), den **Warn-Spalte(n)** für die beiden Warnungen (Zahl und
+  Bezeichner legt dieser Slice fest; `run-store` folgt) — ohne Toleranz und ohne
+  Richtgröße — und `estimated_rows` = `NULL` als „unbekannt", nie `0`, jede Stelle
+  mit dem Wort „geschätzt"; [`SPEC-001`](../../../../spec/pflichtenheft.md) führt `cdc.backfill_run` in der
   Tabellenliste;
 - (f) `spec/architecture.md`: eine Sequenz für den Backfill (Auslösung über die
-  Antragsqueue, Übergabe an den Worker, Snapshot, ein Commit) und die
-  Driven-Adapter-Rolle des Snapshot-Lesers in [`ARC-006`](../../../../spec/architecture.md) — **ohne**
-  ADR-, Slice- oder Wellen-Bezug ([`AGENTS.md`](../../../../AGENTS.md) §3.4).
+  Antragsqueue, **Annahme** — Run-Zeile `queued` und Antragsvermerk in einer
+  Transaktion —, Wecken des Workers und Aufnahme beim Prozessstart, Snapshot, ein
+  Commit) und die Driven-Adapter-Rollen des Snapshot-Lesers und der Annahme in
+  [`ARC-006`](../../../../spec/architecture.md) — **ohne** ADR-, Slice- oder Wellen-Bezug ([`AGENTS.md`](../../../../AGENTS.md) §3.4).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -73,8 +81,10 @@ Greenfield: die Doku führt). Umfang:
   [`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md) und die Regeltypen in [`SPEC-019`](../../../../spec/pflichtenheft.md) bleiben Gegenstand
   der Transformations-Umsetzung; dieser Slice fügt [`SPEC-019`](../../../../spec/pflichtenheft.md) nur die
   Antragsart `backfill` hinzu und lässt Raum für weitere Werte (Welle §5, K3).
-- **Eine Richtgröße für „große Tabellen"** — die Zahl entsteht erst aus der
-  Messung in `bench-richtgroesse`; kein Wert ohne Messung im Pflichtenheft.
+- **Toleranz und Richtgröße für „große Tabellen"** — die Richtgröße entsteht erst
+  aus der Messung in `bench-richtgroesse`, die Toleranz ist ein Startwert im Code
+  ohne §3-Eintrag; kein Wert ohne Messung im Pflichtenheft, [`SPEC-029`](../../../../spec/pflichtenheft.md) trägt nur die
+  Spalte(n) der Warnungen.
 
 ## 2. Definition of Done
 
@@ -89,13 +99,16 @@ Greenfield: die Doku führt). Umfang:
 - [ ] Die Datenstrukturen stehen: [`SPEC-002`](../../../../spec/pflichtenheft.md) (`origin`), [`SPEC-019`](../../../../spec/pflichtenheft.md)
       (Antragsart `backfill`, fünf Werte), [`SPEC-022`](../../../../spec/pflichtenheft.md) (`origin`, Positions-
       Anmerkung), [`SPEC-001`](../../../../spec/pflichtenheft.md) (`cdc.backfill_run`) und [`SPEC-029`](../../../../spec/pflichtenheft.md) (Feldform
-      `cdc.backfill_run`/`cdc.backfill_status`, die Kennung ist die nächste
+      `cdc.backfill_run`/`cdc.backfill_status` samt Grants, Warn-Spalte(n) und
+      `estimated_rows` = `NULL` als „unbekannt"; [`SPEC-019`](../../../../spec/pflichtenheft.md) nennt `applied`
+      bei `backfill` „angenommen"; die Kennung ist die nächste
       freie: höchste vergebene Kennung vor diesem Slice ist `SPEC-028` —
       *zu belegen durch* `grep -o 'SPEC-0[0-9][0-9]' spec/pflichtenheft.md | sort -u`
       am Parent-Stand); §7 Historie trägt je Änderung eine Zeile ohne ADR-/
       Slice-Bezug.
-- [ ] `spec/architecture.md` trägt die Backfill-Sequenz und die
-      Snapshot-Leser-Rolle in [`ARC-006`](../../../../spec/architecture.md), ohne ADR-/Slice-/Wellen-Bezug;
+- [ ] `spec/architecture.md` trägt die Backfill-Sequenz (einschließlich der
+      Annahme in einer Transaktion und der Aufnahme beim Start) und die Rollen des
+      Snapshot-Lesers und der Annahme in [`ARC-006`](../../../../spec/architecture.md), ohne ADR-/Slice-/Wellen-Bezug;
       die Aufzählungen der Antragsarten in derselben Datei sind auf die
       Menge mit `backfill` gezogen. *Zu belegen durch:* `make docs-check`
       (`matrix`-Modul) und der Suchlauf in §3.
@@ -126,7 +139,7 @@ Greenfield: die Doku führt). Umfang:
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `spec/pflichtenheft.md` §1 (`LH-FA-CAP-009.a`) | update | Überschrift und Text auf den beantworteten Stand; Zusagen-Form. |
-| `spec/pflichtenheft.md` §2 ([`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md), [`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-029`](../../../../spec/pflichtenheft.md)) | update / neu | Datenstrukturen; [`SPEC-029`](../../../../spec/pflichtenheft.md) neu (Datenstruktur, §2 — keine Breiten-Regel wie in §3). |
+| `spec/pflichtenheft.md` §2 ([`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md), [`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-029`](../../../../spec/pflichtenheft.md)) | update / neu | Datenstrukturen; [`SPEC-029`](../../../../spec/pflichtenheft.md) neu (Datenstruktur, §2 — keine Breiten-Regel wie in §3) mit Grants und Warn-Spalte(n). |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile, ohne ADR-/Slice-Bezug. |
 | `spec/architecture.md` §1/§4 | update | Rolle des Snapshot-Lesers in [`ARC-006`](../../../../spec/architecture.md); Sequenz „Bestand als Backfill überführen"; Antragsarten-Aufzählung im bestehenden Sequenz-Abschnitt zur SQL-Aktivierung. |
 
@@ -137,6 +150,7 @@ Greenfield: die Doku führt). Umfang:
 | Anker auf die Überschrift „… offen" (`#lh-fa-cap-009a--backfill-mechanismus-offen`) in anderen Dokumenten | `grep -rn 'backfill-mechanismus' --include=*.md .` | *(Implementer trägt ein)* | Anker mitziehen; Records (`docs/reviews/**`, `done/**`) nur als Zitat-Korrektur nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) |
 | Aufzählungen der Antragsarten („vier Antragsarten", `enable`/`disable`/`exclude_column`/`include_column`, „die drei übrigen Antragsarten") | `grep -rn 'exclude_column' spec docs/user harness README.md` | *(Implementer trägt ein)* | Spec-Stellen dieses Slice ziehen; Handbuch-Stellen an `sql-administration` melden (Welle §4) |
 | Feldlisten von `cdc.change`/`GET /changes` mit Anzahl-Formulierung (z. B. „zwölf Felder") | `grep -rn 'Felder' spec/pflichtenheft.md spec/architecture.md` | *(Implementer trägt ein)* | Spec-Stellen dieses Slice ziehen; Handbuch an `change-origin` melden |
+| Aufzählungen der Views und Rollen-Grants in `spec/architecture.md` ([`ARC-005`](../../../../spec/architecture.md) „SQL-Funktionen/Views", [`ARC-006`](../../../../spec/architecture.md) Adapter-Liste) | `grep -n 'ARC-005\|ARC-006' spec/architecture.md` | *(Implementer trägt ein)* | [`ARC-005`](../../../../spec/architecture.md) trägt die View bereits in der Sammelform; [`ARC-006`](../../../../spec/architecture.md) um die Rollen ergänzen |
 | `LH-FA-CAP-009` in Trägern der Abdeckung | `grep -rn 'CAP-009' docs harness .d-check.yml` | *(Implementer trägt ein)* | unverändert bis `e2e` (der Runner schreibt die Abdeckungs-Zeile) |
 
 ## 4. Trigger
@@ -173,6 +187,11 @@ geschrieben.
   als Zusage an die Umsetzung formulieren. *Erwartet, zu belegen durch:* Review
   liest jeden Satz der neuen Abschnitte auf Zukunfts-Form. **Ausgang:** *(bei
   Closure)*
+- **Zahl und Bezeichner der Warn-Spalte(n)** legt dieser Slice in [`SPEC-029`](../../../../spec/pflichtenheft.md) fest;
+  `run-store` folgt ihnen. Weicht das Schema davon ab, ist es ein Plan-Nachzug
+  dieses Slice, kein Alleingang des Schemas. *Erwartet, zu belegen durch:* der
+  Abgleich von [`SPEC-029`](../../../../spec/pflichtenheft.md) und `tools/schema/schema.yaml` im Review von `run-store`.
+  **Ausgang:** *(bei Closure)*
 - **Kennungs-Vergabe [`SPEC-029`](../../../../spec/pflichtenheft.md)** gegen die Transformations-Umsetzung: sie
   erweitert [`SPEC-019`](../../../../spec/pflichtenheft.md) und braucht ggf. eigene Kennungen. Die Vergabe ist
   fortlaufend je Datei ([`SPEC-028`](../../../../spec/pflichtenheft.md) ist die höchste vorhandene); dieser Slice

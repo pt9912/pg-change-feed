@@ -17,7 +17,9 @@ Negative: Neubeginn nach Abbruch), [`LH-FA-CON-004`](../../../../spec/lastenheft
 vorwärts — die Sichtbarkeits-Grenze), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 (Auslösung,
 Administration, Sichtbarkeit) und Festlegung 1/2/3, [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
 (Antrags-Queue und Live-Reload), [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Schemamigrationen — Idempotenz-
-Guard), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (Rollen).
+Guard), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (Rollen), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1/2/3 (Annahme in einer
+Transaktion, Aufnahme beim Start und bei Wecksignal, Warn-Spalte(n) in View und
+`diagnose`).
 
 **Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antrags-Datensatz, durch
 `spec-nachzug`), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand), [`ARC-005`](../../../../spec/architecture.md), [`ARC-007`](../../../../spec/architecture.md) — gelesen,
@@ -46,26 +48,35 @@ sichtbar. Drei Teile:
   `knownForeignObjects` (`tools/schema/rolloutguard/guard.go`) — sonst bricht
   ein zweiter Rollout mit Exit 8.
 - **Verarbeitung.** Ein Zweig `backfill` in `applyAdministrationRequest`
-  (`internal/bootstrap/wiring.go`): Vorbedingungen und Run-Zeile `queued` über
-  den Use Case (mit der beim Antrag **geschätzten** Zeilenzahl), Antrag `applied`
-  im Sinn von „angenommen", Übergabe an **einen** Backfill-Worker (eine
-  Goroutine, ein Run zugleich, Folge-Anträge warten in Antragsreihenfolge; die
-  Administrations-Goroutine blockiert **nicht** auf der Kopie); ein eigener
-  Pool aus `CDC_CAPTURE_DSN`; beim Prozessstart setzt die Composition Root jeden
-  `running`-Run der Quelle auf `interrupted` und der Worker nimmt `queued`-Runs
-  wieder auf; **kein** automatischer Neustart eines `interrupted`-Runs.
+  (`internal/bootstrap/wiring.go`) ruft `BackfillTableUseCase.Request`:
+  Vorbedingungen, die beim Antrag **geschätzte** Zeilenzahl und `Admit` — Run-Zeile
+  `queued` und Antrag `applied` im Sinn von „angenommen" in **einer** Transaktion
+  über den Pool der Administrations-Goroutine. Nach einem erfolgreichen `Admit`
+  sendet der Zweig ein nicht blockierendes Wecksignal (Kapazität 1, Signale
+  verschmelzen) an **einen** Backfill-Worker (eine Goroutine, ein Run zugleich;
+  die Administrations-Goroutine blockiert **nicht** auf der Kopie) mit eigenem
+  Pool aus `CDC_CAPTURE_DSN`. Die Worker-Schleife arbeitet **zuerst** alle
+  `queued`-Zeilen ihrer Quelle in der Reihenfolge `(requested_at, run_id)` ab und
+  wartet **dann** auf das nächste Signal ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 2). Beim Prozessstart
+  läuft zuerst der Bindungsaufbau der Composition Root, dann der Abgleich
+  `running` → `interrupted` je `running`-Run der Quelle, dann startet der Worker
+  und liest die `queued`-Zeilen; eine `queued`-Zeile überlebt einen Neustart und
+  wird ausgeführt, ein `interrupted`-Run wird **nicht** aufgenommen (**kein**
+  automatischer Neustart).
 - **Sichtbarkeit.** Die View `cdc.backfill_status` (letzter Run je Tabelle:
-  Status, Zeilen, Zeiten, Fehlertext, **geschätzte** Zeilenzahl) mit `SELECT`
-  für `cdc_reader`, die Ausgabe in `diagnose` (`bootstrap.Diagnose`: je Tabelle
-  Status und Fortschritt; ein `failed`/`interrupted`-Run ist Berichtsinhalt,
+  Status, Zeilen, Zeiten, Fehlertext, **geschätzte** Zeilenzahl, die
+  Warn-Spalte(n) aus `run-store`) mit `SELECT` für `cdc_reader`, die Ausgabe in
+  `diagnose` (`bootstrap.Diagnose`: je Tabelle Status und Fortschritt, die
+  Warn-Spalte(n) — leer, solange keine Auswertung sie setzt —, eine unbekannte
+  Schätzung als „unbekannt"; ein `failed`/`interrupted`-Run ist Berichtsinhalt,
   kein Befehlsfehler) und der Handbuch-Abschnitt der Oberfläche.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **Die Warn-Schwelle für große Tabellen** — die Richtgröße entsteht aus der
-  Messung in `bench-richtgroesse`; hier zeigen View und `diagnose` Schätzung und
-  Laufzeit **ohne** Schwellenwert, und die Schätzung trägt an jedem Träger das
-  Wort „geschätzt" (`BEO-PGC/geschaetzter-wert-als-grenze`).
+- **Die Auswertung der Warnungen** (Toleranz, Richtgröße) — sie entsteht mit
+  `bench-richtgroesse`; hier zeigen View und `diagnose` die Warn-Spalte(n) (leer),
+  Schätzung und Laufzeit **ohne** Schwellenwert, und die Schätzung trägt an jedem
+  Träger das Wort „geschätzt" (`BEO-PGC/geschaetzter-wert-als-grenze`).
 - **Die gemessene Startposition eines frisch registrierten Consumers** —
   ungeprüft ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1: „erwartet, nicht geprüft"); das Handbuch
   dieses Slice trägt sie nicht, `e2e` misst sie und trägt sie nach.
@@ -87,20 +98,28 @@ sichtbar. Drei Teile:
       `tools/harness/run-schema-rollout-guard-test.sh` (alle Läufe) und der
       Unit-Test in `tools/schema/rolloutguard/guard_test.go`; `plan.yaml` und
       `down.sql` regeneriert, falls der Rollout sie verändert.
-- [ ] Verarbeitung: ein `backfill`-Antrag gegen eine aktivierte Tabelle legt den
-      Run `queued` mit Schätzung an, wird `applied` vermerkt und blockiert die
+- [ ] Verarbeitung: ein `backfill`-Antrag gegen eine aktivierte Tabelle ruft
+      `Request`, legt den Run `queued` mit Schätzung an und vermerkt ihn `applied`
+      („angenommen") in einer Transaktion, weckt den Worker und blockiert die
       Administrations-Goroutine nicht; eine nicht aktivierte Tabelle und ein
       zweiter Antrag bei aktivem Run enden als `failed` mit Text; der Worker führt
-      Runs nacheinander in Antragsreihenfolge; nach einem Prozessneustart ist ein
-      vorheriger `running`-Run `interrupted` und ein `queued`-Run läuft weiter;
-      ein `interrupted`-Run startet nicht von selbst. *Zu belegen durch:*
-      `make test` (Whitebox in `internal/bootstrap`, mit Fakes) und ein Test im
-      Store-Tier für den Abgleich.
+      Runs nacheinander in Antragsreihenfolge `(requested_at, run_id)`; nach einem
+      Prozessneustart ist ein vorheriger `running`-Run `interrupted` und ein
+      `queued`-Run wird beim Start aufgenommen und ausgeführt; ein `interrupted`-Run
+      startet nicht von selbst; ein Signal, das während eines Runs eintrifft, geht
+      nicht verloren; fehlen Bindung oder Publication-Mitgliedschaft bei der
+      Aufnahme, endet der Run `failed` (Klasse `configuration`) ohne Slot. *Zu
+      belegen durch:* `make test` (Whitebox in `internal/bootstrap`, mit Fakes; je
+      Regel ein Test mit Mutation) und ein Test im Store-Tier für den Abgleich und
+      für zwei aufeinanderfolgende `backfill`-Anträge derselben Tabelle (der zweite
+      endet `failed`; das trägt die Annahme von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1, dass
+      Anträge sequenziell in **einer** Goroutine verarbeitet werden).
 - [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
-      Status, Zeilen, Zeiten, Fehlertext und der als geschätzt geführten
-      Zeilenzahl (`-1`/unbekannt bleibt „unbekannt", nie `0`); `cdc_reader` liest
-      sie, die Basistabelle nicht; `diagnose` gibt sie aus, ein `failed`-Run ist
-      Berichtsinhalt (Exit 0). Das Benutzerhandbuch trägt den neuen Abschnitt
+      Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
+      Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
+      Warn-Spalte(n); `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
+      gibt sie aus (die Warn-Spalte(n) leer, solange keine Auswertung sie setzt),
+      ein `failed`-Run ist Berichtsinhalt (Exit 0). Das Benutzerhandbuch trägt den neuen Abschnitt
       „Bestand als Backfill überführen" (Auslösung, Betriebs-Vorbedingungen —
       `SELECT`-Recht der Login-Identität von `CDC_CAPTURE_DSN` auf die
       Quelltabelle, Reserve in `max_replication_slots`/`max_wal_senders`,
@@ -140,7 +159,7 @@ sichtbar. Drei Teile:
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Eintrag der Funktion; der Kommentar „aktuell sechs Objekte" zählt neu. |
 | `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |
 | `tools/schema/nacharbeit-roles.sql` (+ `roles_rollout_file_internal_test.go`) | update | `SELECT` auf die View für `cdc_reader`. |
-| `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill`, Worker-Goroutine, Pool, Start-Abgleich, `Diagnose`-Ausgabe. |
+| `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill` (ruft `Request`, sendet das Wecksignal), Worker-Goroutine mit Start-Aufnahme und Schleife „erst abarbeiten, dann warten", Pool, Start-Reihenfolge (Bindungsaufbau, Abgleich, Worker), `Diagnose`-Ausgabe. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion. |
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make schema-rollout` (Fremdobjekt-Aufzählung) und die Zeile `make example-demo-up`, die dieselbe Aufzählung wiederholt. |
@@ -203,8 +222,9 @@ geschrieben.
   *(bei Closure)*
 - **Ein `queued`-Run überlebt den Prozessstart nicht**, wenn der Worker nur einen
   In-Speicher-Kanal liest (`BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger`,
-  verkörpert). *Erwartet, zu belegen durch:* der Neustart-Test des zweiten
-  Liefer-Punkts (Träger ist die Tabelle). **Ausgang:** *(bei Closure)*
+  verkörpert): der Träger ist die Tabelle, das Signal weckt nur. *Erwartet, zu
+  belegen durch:* der Neustart-Test und der Test „Signal während eines Runs" des
+  zweiten Liefer-Punkts. **Ausgang:** *(bei Closure)*
 - **Die Administrations-Goroutine blockiert auf einer Kopie.** *Erwartet, zu
   belegen durch:* ein Test mit einem blockierenden Fake-Run, während ein
   weiterer Antrag verarbeitet wird. **Ausgang:** *(bei Closure)*
@@ -221,7 +241,9 @@ geschrieben.
 - **Eine Instanz je Quelle** trägt den Start-Abgleich; laufen zwei Instanzen gegen
   dieselbe Quelle, setzte die zweite den Run der ersten auf `interrupted`.
   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) legt „eine Instanz je Quelle" fest ([`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)-Muster für
-  `pending`); ein Schutz ist nicht Teil. **Ausgang:** *(bei Closure)*
+  `pending`); die Annahme ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1) und die Aufnahme (Festlegung 2)
+  stützen sich auf dieselbe Festlegung; ein Schutz ist nicht Teil. **Ausgang:**
+  *(bei Closure)*
 
 ## 7. Closure-Notiz
 

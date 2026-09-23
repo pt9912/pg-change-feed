@@ -85,7 +85,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   kein Gate, aber Pflichtbeleg dieser Welle.
 - **Reale, grüne Läufe der DB-Tiers:** `make test-replication` (Snapshot-Träger,
   Bild-Parität) und `make test-store` (Run-Zustand,
-  atomarer Schreiber, Antrags-Funktion), und `make schema-rollout` zweimal
+  Annahme-Transaktion, atomarer Schreiber, Antrags-Funktion, Rollen), und `make schema-rollout` zweimal
   hintereinander gegen dieselbe Ziel-Datenbank (Idempotenz) — die
   Fitness-Function-Zeilen von
   [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md), die nur
@@ -101,8 +101,9 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Backfill-Pfad gemeinsam aufrufen.
 - Die Sichtbarkeits-Grenze (Backfill ist ein Zustandsabzug für Consumer vor
   `X`), die Lese-Regel „Bestandsabzug ohne `Limit`", die gemessene
-  Startposition eines frisch registrierten Consumers und die gemessene
-  Warn-Richtgröße stehen im Benutzerhandbuch — jede Zahl mit ihrem Ursprung
+  Startposition eines frisch registrierten Consumers, die gemessene
+  Warn-Richtgröße und die Toleranz als „Startwert, Setzung ohne Messung" stehen im
+  Benutzerhandbuch — jede Zahl mit ihrem Ursprung
   ([`AGENTS.md`](../../../AGENTS.md) §3.12).
 - Closure-Notiz in `welle-backfill-bestand-results.md`.
 
@@ -118,11 +119,11 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | slice-backfill-row-image-gemeinsam | Row-Image-Konstruktion als eine gemeinsame, reine Funktion der Domäne; der WAL-Pfad ruft sie, byte-gleiches Ergebnis | [`LH-FA-CAP-008`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2 |
 | slice-backfill-change-origin | Feld `origin` (`wal` \| `backfill`, `NULL` ≙ `wal`) in Domäne, Store, View `cdc.changes` und `GET /changes` | [`LH-FA-DAT-006`](../../../spec/lastenheft.md), [`LH-FA-REA-001`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2/8 |
 | slice-backfill-snapshot-reader | Outbound Port `TableSnapshotPort` und Driven Adapter: temporärer Slot mit Export-Snapshot, Import, Cursor-Blöcke, Spaltenliste, GUC-Parität | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-FA-CAP-008`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 1 |
-| slice-backfill-run-usecase | Domäne `BackfillRun`, `BackfillTableUseCase`, Fähigkeits-Ports für Run-Zustand und atomaren Schreiber, Fail-closed-Prüfung, Wecksignal — gegen Fakes | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 3/4/6 |
-| slice-backfill-run-store | Tabelle `cdc.backfill_run`, Grants, Postgres-Adapter für Run-Zustand und den einen atomaren Schreiber (Ordnung, `change_id`, `origin`) | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-FA-CAP-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 4/6 |
-| slice-backfill-sql-administration | Antragsart `backfill`, `cdc.backfill_table`, Übergabe an den Worker, Start-Abgleich, `cdc.backfill_status`, `diagnose`, Idempotenz-Guard, Handbuch der Auslösung | [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-FA-SST-003`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
+| slice-backfill-run-usecase | Domäne `BackfillRun`, `BackfillTableUseCase`, Fähigkeits-Ports für Annahme, Run-Zustand und atomaren Schreiber, Fail-closed-Prüfung, Wecksignal — gegen Fakes | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 3/4/6 |
+| slice-backfill-run-store | Tabelle `cdc.backfill_run`, Grants, Postgres-Adapter für Annahme, Run-Zustand und den einen atomaren Schreiber (Ordnung, `change_id`, `origin`) | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-FA-CAP-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 4/6 |
+| slice-backfill-sql-administration | Antragsart `backfill`, `cdc.backfill_table`, Worker-Schleife mit Start-Aufnahme und Wecksignal, Start-Abgleich, `cdc.backfill_status`, `diagnose`, Idempotenz-Guard, Handbuch der Auslösung | [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-FA-SST-003`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
 | slice-backfill-e2e | `make test-integration`: Happy Path, Boundary, Negative; Startposition eines frisch registrierten Consumers gemessen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 |
-| slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße und die Warnung in `diagnose`/Status | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
+| slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße; Auswertung der zwei Warnungen im Use Case des Runs, sichtbar über View und `diagnose` | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
 | slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Package-Versionen | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
@@ -169,7 +170,11 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 
 - **Wird blockiert von:** keiner Welle;
   [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) ist
-  `Accepted`, der Trigger (§2) ist erfüllt.
+  `Accepted`, der Trigger (§2) ist erfüllt. Den Status `Accepted` von
+  [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  verlangen zwei Slice-Start-Trigger (`slice-backfill-run-usecase`,
+  `slice-backfill-bench-richtgroesse`), kein Wellen-Start-Trigger: die Eröffnung
+  hängt nicht daran.
 - **Blockiert:** Slices der Welle
   [welle-transformationen](welle-transformationen.md) — die Umsetzung der
   Transformationen
@@ -237,6 +242,20 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 | 5 Idempotenz-Guard | `slice-backfill-sql-administration` (DoD) |
 | 6 Cursor-Form (Priorität nach `S5`) | kein Slice dieser Welle; Adresse: `BEO-PGC/limit-fortsetzung-innerhalb-einer-position` (offen) und der Re-Evaluierungs-Trigger von [`ADR-0081`](../adr/0081-changes-lesen-ueber-die-http-api.md); bis dahin trägt die Doku die Lese-Regel „Bestandsabzug ohne `Limit`" (`slice-backfill-sql-administration`) |
 
+**Träger der Folgepflichten von
+[`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)**
+(Rollenschnitt, Aufnahme, Warn-Kriterium):
+
+| Folgepflicht | Träger |
+|---|---|
+| 1 Spec-Nachzug (Grants, Warn-Spalte(n), `applied` = „angenommen", Sicht) | `slice-backfill-spec-nachzug` |
+| 2 Port-Schnitt der Annahme, `Request` endet mit `Admit`, Vorbedingungen erneut prüfen | `slice-backfill-run-usecase` (Start-Trigger: `ADR-0113` `Accepted`) |
+| 3 Grants, `estimated_rows` nullable, Warn-Spalte(n), Annahme-Adapter, Rollen-Tests | `slice-backfill-run-store` |
+| 4 Verarbeitungs-Zweig, Worker-Schleife mit Start-Aufnahme und Signal, View und `diagnose` | `slice-backfill-sql-administration` |
+| 5 Warn-Auswertung, Toleranz-Konstante, Handbuch | `slice-backfill-bench-richtgroesse` (Start-Trigger: `ADR-0113` `Accepted`) |
+| 6 `reltuples` = `−1` an PostgreSQL 17 und 18 | `slice-backfill-snapshot-reader` |
+| 7 Neustart-Beleg der `queued`-Zeile | `slice-backfill-e2e` |
+
 ## 6. Out-of-Scope für diese Welle
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
@@ -294,10 +313,12 @@ der Closure-Trigger unerreichbar wird.
   Risiko des Slice `e2e` (§6 dort), keine Workflow-Änderung.
 - **Kein Server-Release** — `docs/user/version.md` bleibt unberührt; die
   Änderungshistorie des Benutzerhandbuchs trägt je berührtem Slice eine Zeile.
-- **Keine Schwellen-Senkung und keine neue Gate-Klasse** — die Zuordnung des
-  neuen DB-Pakets aus `slice-backfill-snapshot-reader` zu den Messgegenständen
-  von Coverage-Gate und DB-Adapter-Coverage ist eine Architect-Entscheidung
-  vor dem Start dieses Slice; eine Senkung bliebe per
+- **Keine Schwellen-Senkung und keine neue Gate-Klasse** — das neue DB-Paket
+  aus `slice-backfill-snapshot-reader` (`postgressnapshot`) ist nach
+  [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  Punkt 1 nicht Gegenstand des Coverage-Gates, weil sein Testlauf einen externen
+  Dienst voraussetzt; die Regel greift ohne Textänderung, der Slice zieht die
+  namentlichen Listen nach (Trigger (a)); eine Senkung bliebe per
   [`AGENTS.md`](../../../AGENTS.md) §3.6 ADR-pflichtig.
 - **Lastenheft unverändert** — die Welle schärft Techniken im Pflichtenheft,
   nicht Anforderungen.
@@ -332,9 +353,11 @@ Risiko trägt (Detail je Slice in §8):
   (`pg_class.reltuples`) und die Warn-Richtgröße dürfen an keinem Träger zur
   Grenze werden; die Richtgröße entsteht erst aus einer Messung.
 - `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×) —
-  `slice-backfill-snapshot-reader`: die Zuordnung des neuen DB-Pakets zu den
-  Messgegenständen ist eine Vorab-Bedingung und steht als Start-Trigger, nicht
-  als Rückführungs-Bedingung.
+  `slice-backfill-run-usecase` und `slice-backfill-bench-richtgroesse`: der Status
+  `Accepted` von
+  [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  steht als Start-Trigger, nicht als Rückführungs-Bedingung; die Zuordnung des
+  DB-Pakets im `snapshot-reader` ist vor dem Start entschieden.
 - `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (offen, 2×),
   `BEO-PGC/endstufe-unter-eigenem-messgegenstand-unerreichbar` (verkörpert),
   `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` (offen, 2×),

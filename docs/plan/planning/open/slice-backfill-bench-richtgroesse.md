@@ -1,4 +1,4 @@
-# Slice backfill-bench-richtgroesse: Bench der Kopierdauer je Tabellengröße — Warn-Richtgröße aus der Messung, Warnung in `diagnose`
+# Slice backfill-bench-richtgroesse: Bench der Kopierdauer je Tabellengröße — Warn-Richtgröße aus der Messung, Auswertung der beiden Warnungen im Use Case des Runs
 
 **Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
@@ -15,7 +15,9 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 große Tabellen ist Ausbaustufe — hier die Messung, ab wann eine Tabelle dafür
 in Frage kommt), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3 (große Tabellen: Warnung, keine
 Ablehnung; Richtgröße zu messen), Teilfrage 4 (Ein-Transaktions-Form),
-[`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(b) (Benchmark-Infrastruktur), [`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md) (Benchmark-Schwellen).
+[`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) §(b) (Benchmark-Infrastruktur), [`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md) (Benchmark-Schwellen),
+[`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3 (Warn-Kriterium: Toleranz als Startwert, zwei Warnungen, Richtgröße
+aus der Messung).
 
 **Berührte Spec-Stellen:** [`SPEC-025`](../../../../spec/pflichtenheft.md) (Bench-Schwellen — gelesen; **kein** neuer
 Wert in §3 ohne schärfende ADR, siehe §6), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand mit
@@ -36,21 +38,33 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
   `tools/bench-source-impact.sh`, `tools/bench-scaling.sh` und
   `tools/bench-batch-vs-single.sh` (Arbeitsname `tools/bench-backfill.sh`, dieselbe
   Umgebung über `tools/bench-lib.sh`): Kopierdauer eines Runs je Tabellengröße
-  (Antrag bis `completed`), an einer Stufenfolge von Tabellengrößen (die Stufen
+  (`finished_at − started_at` des Runs; die Wartezeit in `queued` zählt nicht), an einer Stufenfolge von Tabellengrößen (die Stufen
   legt der Slice fest und nennt sie im Bericht); gemessen wird auch, wie nah die
   **geschätzte** Zeilenzahl (`pg_class.reltuples`) der tatsächlichen kommt — in
   einer frisch befüllten, in einer analysierten und in einer nie analysierten
   Tabelle. `make bench` fährt das Skript mit; es ist eine **Messung** mit
   gedruckter Zahl, kein Pass/Fail gegen eine Schwelle (die Richtgröße ist ihr
   Ergebnis, nicht ihre Vorbedingung).
-- **Richtgröße und Warnung.** Aus der Messung und dem im Start-Trigger
-  festgelegten Warn-Kriterium folgt eine Zeilenzahl-Richtgröße. Sie steht als
+- **Toleranz, Richtgröße und Warnungen** ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3). Die **Toleranz**
+  ist eine benannte Konstante an genau **einer** Stelle im Use-Case-Paket des Runs,
+  mit dem Startwert 10 Minuten Kopierdauer — „Startwert, Setzung ohne Messung";
+  die Uhr ist der `ClockPort`. Die **Richtgröße in Zeilen** folgt aus der Messung
+  dieses Slice (die Zeilenzahl, die der Bench in der Toleranz kopiert, auf eine
+  runde Zahl abgerundet, die Rundungsregel nennt der Bericht; kopiert der Bench
+  nicht die volle Toleranzdauer, ist die Zahl aus der gemessenen Rate
+  hochgerechnet und als **abgeleitet** gekennzeichnet) und steht als
   benannte Konstante im Code (Anker: der gemessene Lauf) und im Handbuch
-  (Abschnitt „Grenzwerte“, mit ihrem Ursprung); `diagnose` gibt eine Warnzeile
-  aus, wenn die geschätzte Zeilenzahl eines Runs die Richtgröße übersteigt;
-  eine unbekannte Schätzung warnt nicht, sagt aber „unbekannt". Die
-  Administrations-Goroutine protokolliert dieselbe Warnung beim Antrag. **Keine
-  Ablehnung** ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3).
+  (Abschnitt „Grenzwerte“, mit Ursprung, Host und Lauf). Die **Auswertung beider
+  Warnungen** liegt an **einer** Stelle im Use Case des Runs — nicht in
+  `bootstrap.Diagnose`: Warnung (1) beim Antrag, wenn die **geschätzte**
+  Zeilenzahl über der Richtgröße liegt; Warnung (2) zur Laufzeit, wenn ein Run
+  länger als die Toleranz läuft, geprüft bei jedem Fortschritts-Update (je Block)
+  und beim Abschluss. Das Ergebnis steht als Spalte(n) an der Run-Zeile —
+  Warnung (1) schreibt `Admit`, Warnung (2) der Worker per `UPDATE` —,
+  `cdc.backfill_status` reicht sie durch, `diagnose` liest sie aus der View.
+  Eine unbekannte Schätzung (`NULL`) warnt nicht (Warnung (1) entfällt), sagt
+  aber „unbekannt"; Warnung (2) greift unabhängig von der Schätzung. **Keine
+  Ablehnung, kein Abbruch, keine Statusänderung** ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3).
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
@@ -58,16 +72,17 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
   Schwellen der drei bestehenden Bench-Kennungen; die Richtgröße ist eine
   gemessene Orientierung, keine Anforderung. Ein Schwellenwert im Bench wäre eine
   neue Gate-Aussage ([`AGENTS.md`](../../../../AGENTS.md) §3.6).
-- **Ein Eintrag der Richtgröße in `spec/pflichtenheft.md` §3** — die Regel dieses
-  Abschnitts verlangt, dass eine ADR den Wert in ihrem `Schärft:`-Feld
-  deklariert; [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) tut das nicht (`Accepted`, unveränderlich). Soll die
-  Richtgröße Vertrag werden, braucht sie eine schärfende ADR (Auftraggeber-Frage,
-  siehe Bericht der Welle-Eröffnung).
+- **Ein Eintrag von Toleranz oder Richtgröße in `spec/pflichtenheft.md` §3** — die
+  Regel dieses Abschnitts verlangt, dass eine ADR den Wert in ihrem `Schärft:`-Feld
+  deklariert; weder [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) noch [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) tut das (Festlegung 3, Punkt 1: die
+  Toleranz steuert nur eine Warnung). Soll einer der Werte Vertrag werden, braucht
+  er eine Folge-ADR.
+- **Ein Konfigurationsschlüssel für Toleranz oder Richtgröße** — die Konstante ist
+  billiger nachzuschärfen als eine neue Betreiber-Oberfläche; Konfigurierbarkeit ist
+  ein Re-Evaluierungs-Trigger von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) (Folge-ADR).
 - **Checkpoint, Block-Transaktionen, Parallelisierung** — der
   Re-Evaluierungs-Trigger für sie ist „Kopierdauer über der Betriebs-Toleranz"
   ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)); diese Messung liefert dafür Zahlen, entscheidet ihn nicht.
-- **Eine Warnung am Status-View** — die View kennt die Konstante nicht; sie trägt
-  die Rohwerte (Schätzung, Laufzeit).
 - **Aussagen über andere Hardware** — die Zahl gilt für den gemessenen Host und
   nennt ihn.
 
@@ -79,14 +94,23 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
       Größe und Lauf. *Zu belegen durch:* ein realer `make bench`-Lauf (Exit
       ungefiltert gesichert), Ausgabe im Bericht; ein gemessener Lauf, nicht
       abgeleitet.
-- [ ] Richtgröße und Warnung: die Richtgröße folgt aus der Messung und dem
-      festgelegten Warn-Kriterium (Herleitung im Bericht, jede Zahl mit
-      Ursprung: gemessen · übernommen · abgeleitet); sie steht als benannte
-      Konstante mit Anker im Code und im Handbuch-Abschnitt „Grenzwerte“;
-      `diagnose` warnt oberhalb der Richtgröße, schweigt darunter und bei
-      „unbekannt", und keine Stelle lehnt einen Antrag wegen der Größe ab.
-      *Zu belegen durch:* Unit-Tests der Warn-Auswertung an der Grenze (genau
-      auf, eins darüber, unbekannt) mit je einer Mutation (`make test`).
+- [ ] Toleranz, Richtgröße und Warnungen: die Richtgröße folgt aus der Messung
+      (Herleitung im Bericht, jede Zahl mit Ursprung: gemessen · übernommen ·
+      abgeleitet; Host und Lauf genannt); die Toleranz-Konstante (Startwert 10
+      Minuten) und die Richtgröße stehen je an **genau einer** Stelle im Code; die
+      Auswertung beider Warnungen liegt im Use Case des Runs und nicht in
+      `bootstrap.Diagnose`; eine Warnung ändert weder Status noch Ablauf, und keine
+      Stelle lehnt einen Antrag wegen der Größe ab. *Zu belegen durch:* Unit-Tests
+      mit Fake-Uhr und je einer Mutation (`make test`) — Warnung (2) genau an der
+      Toleranz (darunter keine, darüber gesetzt), Warnung (1) an der Richtgröße
+      (genau auf, eins darüber), unbekannte Schätzung → keine Warnung (1) und nie
+      `0`; ein Store-Test, dass die View das Ergebnis der Run-Zeile durchreicht
+      (`make test-store`); der Suchlauf in §3.
+- [ ] Benennung: jede Stelle, die die Zeilenzahl nennt, trägt das Wort „geschätzt";
+      die Richtgröße heißt „Richtgröße" oder „Orientierung", nie „Grenze", „Limit"
+      oder „maximal"; die Toleranz heißt „Startwert" mit dem Zusatz „Setzung ohne
+      Messung" ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, Punkt 6). *Zu belegen durch:* Review des Diffs
+      (kein Gate) und der Suchlauf in §3.
 - [ ] Träger: die `make bench`-Beschreibung ist auf vier Skripte gezogen
       (Makefile-Kommentar und -Hilfetext, `harness/README.md` §Sensors,
       ggf. `docs/user/bench-abdeckung.md`); das Handbuch trägt die Änderungshistorie.
@@ -98,7 +122,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 - [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: Handbuch „Grenzwerte“ mit Richtgröße und Ursprung, Änderungshistorie eine Zeile.
+- [ ] Doku-Update: Handbuch „Grenzwerte“ nennt die Toleranz als „Startwert, Setzung ohne Messung" und die Richtgröße mit ihrem Ursprung (gemessen oder abgeleitet), Host und Lauf; Änderungshistorie eine Zeile.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -118,8 +142,10 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 |---|---|---|
 | `tools/bench-backfill.sh` (Arbeitsname) | neu | die Messung im Muster der drei bestehenden Skripte; nutzt `tools/bench-lib.sh`. |
 | `Makefile` (Target `bench`) | update | ruft das vierte Skript; Hilfetext und Kommentar zählen neu. |
-| `internal/bootstrap/wiring.go` (`Diagnose`, Antrags-Zweig) | update | Warn-Auswertung an einer Stelle (Arbeitsname `backfillWarnRows`), Warnzeile in `diagnose`, Log-Warnung beim Antrag. |
-| `internal/bootstrap/diagnose_test.go` u. a. | update | Grenzfälle der Warnung. |
+| `internal/application/usecase/backfill/` (+ Tests, Arbeitsname `warn.go`) | update | Toleranz- und Richtgrößen-Konstante, Auswertung beider Warnungen an einer Stelle; Fake-Uhr-Tests der Grenzfälle. |
+| Run-Zustands-Port, Annahme-Port und ihre Adapter | prüfen | tragen das Warn-Ergebnis in die Spalte(n) aus `run-store` (Warnung 1 über `Admit`, Warnung 2 über das Fortschritts-Update); ein Bedarf über das dort angelegte Feld hinaus wäre ein Plan-Nachzug. |
+| `internal/bootstrap/wiring.go` (`Diagnose`) | prüfen | liest die Warn-Spalte(n) aus der View (`sql-administration`); enthält keine Auswertung und keine Konstante. |
+| `internal/bootstrap/diagnose_test.go` | prüfen | zeigt die Warnung aus der View an; keine Grenzfälle der Auswertung (die liegen im Use-Case-Test). |
 | `docs/user/benutzerhandbuch.md` | update | Richtgröße im Abschnitt „Grenzwerte“ mit Ursprung; Diagnose-Beispiel; Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make bench` (drei → vier Skripte) — aus dem realen Lauf geschrieben. |
 | `docs/user/bench-abdeckung.md` | prüfen | die Datei bindet `LH-QA-PER-001`…`003` an durchgesetzte Schwellen; eine Zeile ohne Schwelle für `LH-FA-CAP-009` passt nicht zu dieser Form — Entscheidung im Slice, im Bericht begründet. |
@@ -132,17 +158,18 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 | Hilfetext und Kommentar des Targets `bench` | Lesen von `Makefile` | *(Implementer trägt ein)* | nachziehen |
 | Bench-Abdeckungs-Träger | Lesen von `docs/user/bench-abdeckung.md` und dem Generator in `tools/bench-batch-vs-single.sh` | *(Implementer trägt ein)* | Entscheidung siehe §3, Zeile `bench-abdeckung.md` |
 | Handbuch-Grenzwerte | Lesen von §Grenzwerte in `docs/user/benutzerhandbuch.md` | *(Implementer trägt ein)* | Richtgröße ergänzen; die Replication-Verbindungs-Zahl ist Sache von `sql-administration` |
+| Toleranz-Konstante an genau einer Stelle; Wortwahl der Richtgröße | `grep -rn 'Toleranz\|Richtgröße\|Orientierung' internal docs harness --include=*.go --include=*.md` (Konstante, Handbuch, Kommentare) | *(Implementer trägt ein)* | eine Definition der Toleranz; „geschätzt" an jeder Nennung der Zeilenzahl; kein „Grenze"/„Limit"/„maximal" am Begriff |
 | Build-Kontext | Lesen von `.dockerignore` und `Dockerfile` | *(Implementer trägt ein)* | Bench-Skripte laufen auf dem Host; keine Docker-Stufe kopiert `tools/bench-*.sh` — sonst Freigabe nach [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md) |
 
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `e2e` in `done/` liegt, kein
-anderer Slice in `in-progress/` liegt **und** das **Warn-Kriterium festgelegt
-ist**: eine Dauer (in Sekunden) der Kopie, ab der eine Tabelle als „groß" gilt,
-oder ein anderes benanntes Maß — [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt „die Betriebs-Toleranz",
-beziffert sie aber nicht. Die Festlegung trifft der Auftraggeber oder der
-Architect (Verdikt unter `docs/reviews/`); ohne sie stünde ein selbst gewählter
-Wert als Grenze im Code (`BEO-PGC/geschaetzter-wert-als-grenze`). Das ist eine
+anderer Slice in `in-progress/` liegt **und** [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) den Status `Accepted` trägt
+(geprüft an der Status-Spalte im ADR-Index): sie legt das Warn-Kriterium fest —
+die Toleranz als Startwert 10 Minuten Kopierdauer, zwei Warnungen, die
+Richtgröße erst aus der Messung (Festlegung 3). [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt „die
+Betriebs-Toleranz" ohne Wert; ohne die Festlegung stünde ein selbst gewählter Wert
+als Grenze im Code (`BEO-PGC/geschaetzter-wert-als-grenze`). Das ist eine
 **Vorab-Bedingung** und steht am Start, nicht als Rückführung
 (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`).
 
@@ -150,7 +177,7 @@ Wert als Grenze im Code (`BEO-PGC/geschaetzter-wert-als-grenze`). Das ist eine
 
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): falls Bench und
   Warn-Auswertung nicht in einem Review tragen — der abtrennbare Teil ist die
-  Warn-Auswertung in `diagnose`.
+  Warn-Auswertung im Use Case samt ihren Tests.
 - `in-progress` → `open` (blockiert): falls die Schätzung (`reltuples`) so weit
   von der tatsächlichen Zeilenzahl abweicht, dass eine Warnung an ihr nichts
   trägt (dann Architect-Frage: statt der Schätzung eine andere Größe, etwa ein
@@ -163,9 +190,12 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **Das Warn-Kriterium fehlt** — [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) beziffert die „Betriebs-Toleranz"
-  nicht; der Start-Trigger trägt die Vorab-Bedingung. *Erwartet, zu belegen
-  durch:* das Verdikt. **Ausgang:** *(bei Closure)*
+- **Die Toleranz ist eine Setzung ohne Messung** ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3: Startwert
+  10 Minuten). Sie wird im Code und im Handbuch als „Startwert, Setzung ohne
+  Messung" geführt und nicht als Ergebnis dieses Slice ausgegeben. *Erwartet, zu
+  belegen durch:* der Bericht nennt die gemessene Kopierdauer je Stufe neben dem
+  Startwert; weicht sie ab, ist das Nachschärfen der Konstante ein
+  Re-Evaluierungs-Fall von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md), kein Bruch. **Ausgang:** *(bei Closure)*
 - **Die Richtgröße wird zur Grenze** (`BEO-PGC/geschaetzter-wert-als-grenze`,
   offen, 1×; dieser Slice ist der Ort, an dem der Fehler passiert): eine
   gemessene Zahl eines Hosts steht im Code und im Handbuch als allgemeine
@@ -184,7 +214,12 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   (Muster `bench-scaling.sh`), ein Volllauf ist Option. *Erwartet, zu belegen
   durch:* Laufzeit im Bericht. **Ausgang:** *(bei Closure)*
 - **Ein Wert in `spec/pflichtenheft.md` §3 ohne schärfende ADR** wäre gegen die
-  Regel des Abschnitts; der Slice führt keinen. **Ausgang:** *(bei Closure)*
+  Regel des Abschnitts; der Slice führt keinen (weder Toleranz noch Richtgröße).
+  **Ausgang:** *(bei Closure)*
+- **Warnung (2) prüft je Block und beim Abschluss:** ein einzelner Block, der
+  länger als die Toleranz braucht, warnt erst danach — die Warnung ist eine
+  Orientierung, kein Alarm (akzeptiertes Negativ von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)). Das Handbuch sagt es
+  so. **Ausgang:** *(bei Closure)*
 
 ## 7. Closure-Notiz
 

@@ -15,7 +15,9 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 [`LH-FA-CAP-008`](../../../../spec/lastenheft.md) (Row-Image-Abwesenheit), [`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md) (keine
 unbegrenzte RAM-Haltung), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 1 (Mechanismus: Slot-Snapshot),
 [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) (Ports nach Fähigkeiten), [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md) (Nahtform der
-Treiber-Hülle), [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3 (Messgegenstand der DB-Adapter-Coverage),
+Treiber-Hülle), [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1 und 3 (Messgegenstand des Coverage-Gates und der DB-Adapter-Coverage;
+Re-Evaluierungs-Trigger (a): die namentliche Liste nachziehen),
+[`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, Punkt 5 (`reltuples` = `−1` für nie analysierte Tabellen),
 [`ADR-0030`](../../adr/0030-testpyramide.md) (Testpyramide).
 
 **Berührte Spec-Stellen:** [`SPEC-012`](../../../../spec/pflichtenheft.md) (PostgreSQL 17 und 18), [`ARC-004`](../../../../spec/architecture.md)
@@ -43,8 +45,11 @@ je Spalte (Startwert `B` = 1.000, der Slice legt ihn fest). Die Anlage trägt ei
 Zeitlimit; sein Ablauf endet als Fehlerklasse `transient`. Alle Verbindungen
 laufen über `CDC_CAPTURE_DSN`. Als Katalog-Fähigkeit derselben Quelle liest der
 Adapter außerdem die **geschätzte Zeilenzahl** einer Tabelle
-(`pg_class.reltuples`; ein negativer Wert heißt „unbekannt" — erwartet, ungemessen)
-für den Antrag des Runs.
+(`pg_class.reltuples`; ein negativer Wert heißt „unbekannt" — erwartet, in
+diesem Slice an PostgreSQL 17 und 18 zu messen) für den Antrag des Runs. Der
+Adapter liegt in einem **neuen eigenen Paket** (`postgressnapshot`), nicht in
+`postgresstorage`: er liest die Quelltabelle über eine Replikationsverbindung, der
+Run-Store bleibt in `postgresstorage` — zwei Verantwortungen.
 
 Der Slice trägt die real gemessenen Befunde M1–M5 aus [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) als Tests und
 die **Bild-Parität**: dasselbe Zeilenbild über WAL-Pfad und Backfill-Pfad
@@ -80,17 +85,41 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
       mit mehr als einem Block und exakt an der Blockgrenze), die Spaltenliste
       lässt generierte und gelöschte Spalten aus, eine leere Tabelle liefert
       keinen Block, die geschätzte Zeilenzahl einer frisch befüllten Tabelle ohne
-      `ANALYZE` ist „unbekannt" und nach `ANALYZE` dicht an der tatsächlichen
-      Zeilenzahl. *Zu belegen durch:* `make test-replication` (auf 17 und 18).
+      `ANALYZE` ist „unbekannt" (`reltuples = −1`, erwartet — der Bericht nennt den
+      gemessenen Wert je Version mit seinem Lauf) und nach `ANALYZE` dicht an der
+      tatsächlichen Zeilenzahl. *Zu belegen durch:* `make test-replication` (auf
+      PostgreSQL 17 und 18).
 - [ ] Bild-Parität: für Zeilen mit den Typen `timestamptz`, `float8`, `bytea`,
       `interval`, `numeric`, `jsonb`, Array, `date` und einer generierten Spalte
       ist das über den Backfill-Pfad gebaute Bild byte-gleich dem über den
       WAL-Pfad gebauten — unter einer Rolle mit Sitzungs-GUC ungleich Standard
       (`timezone`, `datestyle`; M5). *Zu belegen durch:* `make test-replication`
       (der WAL-Zweig des Vergleichs läuft im Tier über Publication und Slot).
-- [ ] Gate-Läufe der Messungen: das neue Paket ist dem beschlossenen Gegenstand
-      zugeordnet (Start-Trigger, §4), `make coverage-gate` bleibt grün, die
-      DB-Adapter-Coverage nennt ihre Zahl mit ihrem Lauf ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)).
+- [ ] Gate-Zuordnung (a): das neue Paket steht in den namentlichen Stellen des
+      Messgegenstands — `Dockerfile` (Ausschluss-Muster der Stufe `coverage`),
+      `DB_COVERAGE_PKGS` in `tools/harness/db-coverage.sh` und die Paketliste der
+      Messphase in `tools/harness/run-replication-tests.sh` — sowie in den
+      Beschreibungen `harness/sensors/coverage-gate.md` und
+      `harness/sensors/db-adapter-coverage.md` und, falls sie eine Paketliste
+      nennt, in `harness/README.md` ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1: die Regel greift ohne
+      Textänderung, Trigger (a) verlangt die Liste nachzuziehen). *Zu belegen
+      durch:* der Suchlauf in §3 (beide Stände) und ein grüner `make coverage-gate`
+      am Diff.
+- [ ] Gate-Zuordnung (b): die Tests des neuen Pakets überspringen ohne Datenbank
+      **tatsächlich** — das trägt die Ausnahme. *Zu belegen durch:* ein `go test -v`
+      des Pakets ohne `CDC_REPLICATION_TEST_DSN` (Docker-only), dessen Ausgabe für
+      **jeden** Test `SKIP` zeigt; der Bericht nennt Befehl und gedruckte Ausgabe.
+- [ ] Gate-Zuordnung (c): netzlos prüfbare Logik (Blockbildung, Row-Image-
+      Konstruktion) liegt **nicht** im neuen Paket, sondern in der Domäne bzw. im
+      Paket der gemeinsamen Funktion aus `row-image-gemeinsam`, damit der Nenner
+      des blockierenden Gates nicht ohne Not aus dem Gate herausfällt. *Zu belegen
+      durch:* Review des Diffs und der Statement-Zahl des Gate-Laufs vor und nach
+      dem Diff (Zähler und Nenner mit Lauf, [`AGENTS.md`](../../../../AGENTS.md) §3.12).
+- [ ] Gate-Zuordnung (d): der Adapter läuft in der Tier `make test-replication`
+      (Replikationsverbindung); die DB-Adapter-Coverage wird mit dem Slice
+      nachgemessen und der Bericht nennt ihre Zahl mit Zähler, Nenner und Lauf
+      gegen die geltende Schwelle (`DB_COVERAGE_THRESHOLD`, [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3).
+      *Zu belegen durch:* `make test-replication` (Exit ungefiltert gesichert).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -99,7 +128,7 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
 - [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors (`make test-replication` und die Coverage-Zeilen) und die Sensor-Dateien `harness/sensors/coverage-gate.md`/`harness/sensors/db-adapter-coverage.md` tragen das neue Paket, soweit der Architect-Beschluss es verlangt.
+- [ ] Doku-Update: `harness/README.md` §Sensors (`make test-replication` und die Coverage-Zeilen) und die Sensor-Dateien `harness/sensors/coverage-gate.md`/`harness/sensors/db-adapter-coverage.md` tragen das neue Paket, soweit sie Pakete nennen (Suchlauf in §3).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -118,35 +147,32 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/application/port/outbound/tablesnapshot.go` (Arbeitsname) | neu | `TableSnapshotPort`: Snapshot öffnen (Tabelle) → Position `X`, Spalten, Block-Leser → schließen; Fähigkeits-Port ([`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md)). |
-| `internal/adapters/driven/postgressnapshot/` (Arbeitsname) | neu | Treiber-Hülle (Form von [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)), Slot-Anlage, Import, Cursor, Spaltenliste, GUC-Parität; Übersetzung oberhalb der Naht netzlos prüfbar. |
-| `internal/adapters/driven/postgressnapshot/*_test.go` | neu | Snapshot-Träger M1–M4, Blöcke, Spalten, Bild-Parität; DB-gebundene Tests überspringen ohne `CDC_REPLICATION_TEST_DSN` (Muster der bestehenden DB-Pakete). |
-| `tools/harness/run-replication-tests.sh` | update (falls nötig) | Tier-Vorbedingungen (Rollen, zweiter Lauf gegen PostgreSQL 17). |
-| `Dockerfile` (Stufe `coverage`), `tools/harness/db-coverage.sh` (`DB_COVERAGE_PKGS`) | update — **nach Architect-Beschluss** | siehe Start-Trigger: das Paket ist ohne DB-Verbindung ungeprüft und darf den netzlosen Nenner nicht füllen. |
+| `internal/adapters/driven/postgressnapshot/` | neu | neues eigenes Paket: Treiber-Hülle (Form von [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)), Slot-Anlage, Import, Cursor, Spaltenliste, GUC-Parität, Katalog-Lesen der Schätzung; netzlos prüfbare Logik liegt außerhalb (Domäne bzw. Paket der gemeinsamen Funktion). |
+| `internal/adapters/driven/postgressnapshot/*_test.go` | neu | Snapshot-Träger M1–M4, Blöcke, Spalten, Bild-Parität; **jeder** Test überspringt ohne `CDC_REPLICATION_TEST_DSN` (Muster von `postgresack`, `ack_test.go`). |
+| `tools/harness/run-replication-tests.sh` | update | Paketliste der Messphase (`go test … ./internal/adapters/driven/postgresack ./internal/adapters/driving/replication/receive`) um das neue Paket; Tier-Vorbedingungen (Rollen, zweiter Lauf gegen PostgreSQL 17), falls nötig. |
+| `Dockerfile` (Stufe `coverage`), `tools/harness/db-coverage.sh` (`DB_COVERAGE_PKGS`) | update | das Paket steht im Ausschluss-Muster bzw. in der Paketliste ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1): es ist ohne DB-Verbindung ungeprüft und füllt den netzlosen Nenner nicht. |
+| `harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md`, `harness/README.md` | update | Beschreibungen, die Pakete nennen; Zahlen mit Ursprung. |
 
-**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Menge der Pakete, deren Testlauf einen externen PostgreSQL voraussetzt"; beide Stände gemessen):**
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Menge der Pakete, deren Testlauf einen externen PostgreSQL voraussetzt"; beide Stände gemessen; der Befund ist der **Planner-Vorbefund am Parent-Stand `18cee124`**, der Implementer bestätigt ihn am Diff und trägt Nichtgefundenes nach):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Ausschluss-Muster der Coverage-Stufe | Lesen von `Dockerfile` (`grep -vE` über `postgresstorage`, `postgresack`, `replication/receive`) | *(Implementer trägt ein)* | nach Architect-Beschluss |
-| Paketliste der DB-Adapter-Coverage | `grep -n 'DB_COVERAGE_PKGS' tools/harness/db-coverage.sh` | *(Implementer trägt ein)* | nach Architect-Beschluss |
-| Sensor-Beschreibungen | `grep -rn 'postgresack' harness docs` | *(Implementer trägt ein)* | aktive Träger nachziehen; `Accepted` ADRs ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) nicht ändern |
-| Träger der DB-Adapter-Coverage im Workflow | Lesen von `.github/workflows/e2e.yml` auf eine Paketliste | *(Implementer trägt ein)* | trüge der Workflow die Liste, wäre das eine Workflow-Änderung ([`AGENTS.md`](../../../../AGENTS.md) §3.10: realer Post-Push-Lauf vor Closure) |
+| Ausschluss-Muster der Coverage-Stufe | `grep -n 'postgresstorage\|postgresack\|replication/receive' Dockerfile` | `Dockerfile:101`: `grep -vE '(^|/)(postgresstorage|postgresack|replication/receive)$'` | `postgressnapshot` ergänzen |
+| Paketliste der DB-Adapter-Coverage | `grep -n 'DB_COVERAGE_PKGS' tools/harness/db-coverage.sh` | `tools/harness/db-coverage.sh:48` (drei Pakete); Kopfkommentar Zeilen 7–33 nennt die Pakete und Statement-Zahlen des Stands `slice-085` | Liste ergänzen; Kommentar nur ergänzen, wo er aufzählt, Zahlen mit Ursprung neu messen |
+| Paketliste der Messphase im Tier-Skript | `grep -n 'postgresack' tools/harness/run-replication-tests.sh` | `tools/harness/run-replication-tests.sh:98-103`: der `go test`-Aufruf der Messphase nennt `postgresack` und `replication/receive` namentlich (dritte namentliche Stelle neben `Dockerfile` und `db-coverage.sh`); die Kommentare in den Zeilen 87–88 und 116–117 nennen die Pakete ebenfalls | Paket ergänzen, sonst läuft der Adapter in der Messphase nicht mit |
+| Sensor-Beschreibungen | `grep -rn 'postgresack' harness docs` | `harness/sensors/db-adapter-coverage.md` (Zeilen 28, 45–68: Paketliste, Nenner „691 Statements"), `harness/sensors/coverage-gate.md` (Zeilen 20, 131, 194–217: Paket-Zahlen des Stands `slice-085`); kein Treffer in `harness/README.md` (nennt keine Paketliste) | aktive Träger nachziehen; `Accepted` ADRs ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md), [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) nicht ändern |
+| Träger der DB-Adapter-Coverage im Workflow und in Make | `grep -n 'postgresack\|replication/receive' .github/workflows/*.yml Makefile harness/mk/*.mk` | kein Treffer | keine Workflow-Änderung ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht); der Implementer bestätigt am Diff |
 | Build-Kontext | Lesen von `.dockerignore` | *(Implementer trägt ein)* | `internal/` ist freigegeben; ein Pfad außerhalb bräuchte eine Freigabe (`BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad`) |
 
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `run-usecase` **nicht** vorausgesetzt
-ist (dieser Slice geht ihm voraus), `row-image-gemeinsam` in `done/` liegt, kein
-anderer Slice in `in-progress/` liegt **und** ein **Architect-Verdikt** unter
-`docs/reviews/` die Frage beantwortet, welchem Messgegenstand das neue Paket
-zugehört: erweitern die Ausschluss-Regel der Coverage-Stufe und der Gegenstand der
-DB-Adapter-Coverage ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3) sich um dieses Paket (dann mit
-Beschluss-Träger, weil die Regel dort namentlich aufzählt), oder liegt der
-Snapshot-Leser in einem der bestehenden DB-Pakete. Das ist eine **Vorab-Bedingung**
-und steht deshalb am Start, nicht als Rückführung
-(`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×). Ohne den
-Beschluss füllte ein Paket, dessen Tests ohne Datenbank überspringen, den Nenner
-des blockierenden Gates mit ungedeckten Zeilen.
+ist (dieser Slice geht ihm voraus), `row-image-gemeinsam` in `done/` liegt und kein
+anderer Slice in `in-progress/` liegt. Die Zuordnung des neuen Pakets zum
+Messgegenstand ist entschieden und kein Start-Trigger: ein eigenes Paket
+`postgressnapshot`, dessen Testlauf einen externen Dienst voraussetzt, ist nach
+[`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1 nicht Gegenstand des Coverage-Gates; die namentliche Liste
+zieht dieser Slice nach (DoD, Gate-Zuordnung (a)).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -165,9 +191,13 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
 
 ## 6. Risiken und offene Punkte
 
-- **Gate-Zuordnung des neuen DB-Pakets** — der Start-Trigger trägt die
-  Vorab-Bedingung. *Erwartet, zu belegen durch:* das Architect-Verdikt und der
-  grüne `make coverage-gate` am Diff. **Ausgang:** *(bei Closure)*
+- **Der Test-Ausschluss trägt die Ausnahme nicht.** Das neue Paket ist nur dann
+  aus dem Nenner des Coverage-Gates herausgehalten ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1), wenn seine
+  Tests ohne Datenbank tatsächlich überspringen; ein netzlos laufender Test im
+  Paket wäre ein Widerspruch zum Ausschluss, ein vergessener Eintrag in einer der
+  drei namentlichen Stellen füllte den Nenner mit ungedeckten Zeilen. *Erwartet,
+  zu belegen durch:* DoD Gate-Zuordnung (a)–(c) und der grüne `make coverage-gate`
+  am Diff. **Ausgang:** *(bei Closure)*
 - **Die GUC-Parität ist ungemessen.** [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) belegt nur, dass der
   Walsender die Rollen-Defaults trägt (M5); dass eine reguläre Verbindung mit
   demselben DSN dieselben Werte trägt, führt die ADR als „erwartet".
@@ -186,10 +216,17 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   Zeitlimit-Test; die Tier-Umgebung setzt beides auf 10
   (`tools/harness/run-replication-tests.sh`). **Ausgang:** *(bei Closure)*
 - **Netzlos geprüfter Code im DB-Gegenstand** (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`,
-  offen, 2×): die Übersetzungs-Schicht oberhalb der Naht ([`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) ist
-  netzlos prüfbar und hebt die DB-Zahl ohne DB-Beleg. *Erwartet, zu belegen
-  durch:* der Bericht nennt Zähler und Nenner je Messung; ein weiterer Beleg
-  der Klasse erreicht die Schwelle 3×. **Ausgang:** *(bei Closure)*
+  offen, 2×): netzlos prüfbare Logik im Adapter-Paket höbe die DB-Zahl ohne
+  DB-Beleg und widerspräche dem Test-Ausschluss; sie liegt deshalb außerhalb
+  (DoD Gate-Zuordnung (c)). *Erwartet, zu belegen durch:* der Bericht nennt Zähler
+  und Nenner je Messung; ein weiterer Beleg der Klasse erreicht die Schwelle 3×.
+  **Ausgang:** *(bei Closure)*
+- **`reltuples` = `−1` für nie analysierte Tabellen** ist Wissen aus der
+  PostgreSQL-Dokumentation und in diesem Repo nicht gemessen ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  Festlegung 3, Punkt 5). *Erwartet, zu belegen durch:* die Messung an
+  PostgreSQL 17 und 18 im Test (DoD Blöcke und Spalten). Weicht ein Wert ab, ist
+  die Abbildung „unbekannt" im Port zu ändern und der Befund geht als Frage an
+  den Architect. **Ausgang:** *(bei Closure)*
 - **`pglogrepl` trägt die Optionen** (`CreateReplicationSlotOptions{Temporary,
   SnapshotAction}`, Ergebnis `SnapshotName`) — in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) als „gelesen"
   geführt, nicht als gefahren. *Erwartet, zu belegen durch:* M1 im Tier.
@@ -217,16 +254,16 @@ bestehenden DB-Pakete, keine eigene Sub-Area — kein Anlass zur
 Ausdifferenzierung.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
-`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×, einschlägig —
-Start-Trigger), `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`
+`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×, gesichtet — die
+Zuordnung des Pakets ist vor dem Start entschieden), `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`
 (offen, 2×, einschlägig — Risiko §6),
 `BEO-PGC/endstufe-unter-eigenem-messgegenstand-unerreichbar` (verkörpert),
 `BEO-PGC/coverage-stage-dockerignore-blockiert-tooling` (offen, 2×) und
 `BEO-PGC/dockerignore-default-deny-blockiert-neuen-pfad` (offen, 1×) —
 Suchlauf-Zeile Build-Kontext, `BEO-PGC/arbeit-ueberholt-stehenden-traeger`
 (verkörpert, 26×, Suchlauf §3), `BEO-PGC/gate-scope-erweiterung-ohne-adr-traeger`
-(offen, 2×, einschlägig — eine Erweiterung des Messgegenstands braucht einen
-Träger, Start-Trigger), `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+(offen, 2×, einschlägig — der Träger der Erweiterung ist [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 1 samt
+Trigger (a), keine neue ADR), `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
 (verkörpert, 13×, Zahlen der Coverage tragen den Lauf).
 
 **Modus-Begründungsblock:** alle berührten Sub-Areas GF.

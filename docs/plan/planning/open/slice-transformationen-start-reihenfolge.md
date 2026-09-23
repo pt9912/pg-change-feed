@@ -134,7 +134,7 @@ Antrags-Verarbeitung und Stream-Start“; beide Stände gemessen):**
 | Beschreibungen der Reihenfolge im Code | `grep -n 'runAdministration\|stream.Run\|processAdministrationRequests' internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Doc-Kommentare an `Run`, `runAdministration` und `processAdministrationRequests` beschreiben den Vorlauf |
 | Beschreibungen in Doku | `grep -rn 'Administrations-Goroutine\|Antrags-Queue' docs/user harness spec` | *(Implementer trägt ein)* | Aussagen über den Start nachziehen; Handbuch-Stellen an `betriebsdoku` melden |
 | Kommentare, die eine Reihenfolge behaupten | `grep -rn 'vor stream.Run\|nach stream.Run' internal --include=*.go` | *(Implementer trägt ein)* | jede Behauptung ist durch den Test dieses Slice getragen oder wird gestrichen (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, offen, 2×) |
-| Startpfad des Backfill-Workers und des Start-Abgleichs (aus `slice-backfill-sql-administration`) | Lesen von `Run` in `internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Worker und Abgleich sind vor dem Vorlauf gestartet, sonst verarbeitet der Vorlauf einen `backfill`-Antrag gegen einen fehlenden Worker (Risiko §6) |
+| Startpfad des Backfill-Workers und des Start-Abgleichs (aus `slice-backfill-sql-administration`) | Lesen von `Run` in `internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Abgleich `running` → `interrupted` und Worker-Start stehen vor dem Vorlauf, sonst sieht die Annahme des Vorlaufs einen noch nicht abgeglichenen Run (Risiko §6) |
 
 ## 4. Trigger
 
@@ -154,8 +154,8 @@ Start-Abgleich stehen dann fest) und kein anderer Slice in `in-progress/` liegt
 - `in-progress` → `open` (blockiert): falls `Run` ohne Umbau, der über die
   kleine Extraktion hinausgeht, keine Stelle für einen ordnungsprüfenden Test
   bietet (dann Architect-Frage zum Zuschnitt der Composition Root) oder falls
-  der Vorlauf mit einem `backfill`-Antrag kollidiert, den der Worker noch nicht
-  annimmt.
+  der Vorlauf mit einem `backfill`-Antrag kollidiert, den Abgleich und Worker
+  noch nicht aufgenommen haben.
 
 ## 5. Closure-Trigger
 
@@ -170,11 +170,16 @@ geschrieben.
   Vorlaufs trägt dieselbe Abbruch-Semantik wie die Goroutine; ein Test mit
   blockierendem Fake belegt, dass ein Abbruch des Kontexts den Vorlauf beendet.
   **Ausgang:** *(bei Closure)*
-- **Ein `backfill`-Antrag im Vorlauf trifft keinen Worker.** Der Backfill-Zweig
-  übergibt an einen Worker und legt eine `queued`-Run-Zeile an (dauerhaft,
-  `slice-backfill-sql-administration`); der Vorlauf darf den Zweig nicht in
-  einen Zustand bringen, in dem der Worker fehlt. *Erwartet, zu belegen durch:*
-  Lesen von `Run` am Start (Suchlauf, Zeile 4) und ein Test mit Fake-Worker.
+- **Ein `backfill`-Antrag im Vorlauf trifft einen Zustand ohne Abgleich oder
+  Worker.** Der Backfill-Zweig nimmt den Antrag an (Run-Zeile `queued` und Antrag
+  `applied` in einer Transaktion, dauerhaft, `slice-backfill-sql-administration`)
+  und weckt den Worker; der Worker liest die `queued`-Zeilen beim Start, nach dem
+  Abgleich `running` → `interrupted`. Der Vorlauf darf den Zweig nicht in einen
+  Zustand bringen, in dem der Abgleich noch aussteht — ein `running`-Run einer
+  früheren Prozessinstanz ließe die Prüfung „kein aktiver Run" den Antrag als
+  `failed` enden (erwartet, hergeleitet aus der Annahme-Regel von
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1). *Erwartet, zu belegen durch:* Lesen von `Run` am
+  Start (Suchlauf, Zeile 4) und ein Test mit Fake-Worker.
   **Ausgang:** *(bei Closure)*
 - **Der Vorlauf ändert das Verhalten für `enable`/`disable`**: eine Bindung
   entsteht vor dem Stream statt danach. Das ist die gewollte Eigenschaft; ein

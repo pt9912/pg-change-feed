@@ -17,7 +17,8 @@ laufenden System), [`LH-FA-CAP-004`](../../../../spec/lastenheft.md), [`LH-FA-RE
 [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 (Startposition messen und dokumentieren) und
 Folgepflicht 2 (`S5`), [`ADR-0030`](../../adr/0030-testpyramide.md) (Testpyramide, E2E-Tier), [`ADR-0058`](../../adr/0058-testansatz-fuenf-luecken.md)
 (Testansatz — additive Belege am realen Container), [`ADR-0012`](../../adr/0012-at-least-once.md)
-(at-least-once, Consumer arbeiten idempotent).
+(at-least-once, Consumer arbeiten idempotent), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 2 (Aufnahme einer
+`queued`-Zeile beim Prozessstart).
 
 **Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-029`](../../../../spec/pflichtenheft.md) — gelesen
 als Vertrag der Belege, nicht geändert.
@@ -52,7 +53,10 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
   der Run steht `interrupted`, **keine** Change des Runs ist sichtbar, ein
   erneuter Antrag ergibt einen neuen Run, der `completed` erreicht — der Bestand
   ist danach **einmal** und vollständig lesbar (keine Dopplung durch den
-  Abbruch).
+  Abbruch). Eine zum Abbruchzeitpunkt `queued` wartende Zeile (ein zweiter Antrag
+  gegen eine zweite Tabelle, angenommen hinter dem hängenden Run) überlebt den
+  Neustart und wird beim Prozessstart aufgenommen und ausgeführt, ohne dass ein
+  neuer Antrag nötig ist ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 2).
 - **Startposition.** Von welcher Position ein frisch registrierter Consumer
   startet, ist in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 „erwartet, nicht geprüft": der Slice
   misst sie (Registrierung über den CLI-Weg, Position über den HTTP-Weg und
@@ -86,8 +90,10 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       bestätigt die Ortswahl im Review oder verlangt zusätzlich den Tier-Beleg.
 - [ ] Negative: `docker kill` im laufenden Run → nach dem Neustart `interrupted`,
       keine sichtbare Change des Runs, erneuter Antrag erreicht `completed`, Bestand
-      einmal und vollständig. *Zu belegen durch:* `make test-integration`; **jedes**
-      der drei Kriterien trägt je eine Mutation im Bericht (die Prüfung gegen die
+      einmal und vollständig; eine zum Abbruchzeitpunkt `queued` wartende Zeile
+      überlebt den Neustart und wird ausgeführt (`completed`, Bestand ihrer Tabelle
+      lesbar). *Zu belegen durch:* `make test-integration`; **jedes** dieser
+      Kriterien trägt je eine Mutation im Bericht (die Prüfung gegen die
       Eingabe gelenkt, der Lauf färbt rot —
       `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert).
 - [ ] Startposition gemessen und im Handbuch mit ihrem Lauf genannt; der
@@ -139,7 +145,10 @@ eine beim Aufruf laufende Schreibtransaktion endet (M3 in [`ADR-0111`](../../adr
 auf der Quelle, steht der Run in `running`, ohne dass er weiterkommt — dann
 `docker kill`, Transaktion beenden, Neustart. Das setzt voraus, dass der Run
 vor der Slot-Anlage `running` trägt; der Implementer prüft es am
-Use-Case-Vertrag.
+Use-Case-Vertrag. Für den `queued`-Beleg beantragt der Test, während der erste Run
+hängt, einen zweiten Run gegen eine zweite Tabelle (derselben Tabelle würde der
+zweite Antrag als `failed` enden): der Ein-Worker-Betrieb hält ihn `queued`; nach
+dem Neustart beobachtet der Test, dass er ohne neuen Antrag `completed` erreicht.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der E2E-belegten Kennungen und ihre Zeilen-Anker", „die Beschreibung von `make test-integration`"; beide Stände gemessen):**
 

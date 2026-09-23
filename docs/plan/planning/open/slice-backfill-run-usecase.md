@@ -17,7 +17,9 @@ Fail-closed vor dem Commit), [`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.
 RAM-Haltung), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 3/4/6 (Position, Atomarität,
 Ordnung), [`ADR-0028`](../../adr/0028-inbound-use-cases.md) (Inbound Use Cases), [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) (Ports nach
 Fähigkeiten), [`ADR-0027`](../../adr/0027-capture-application-service.md) (Application Service), [`ADR-0040`](../../adr/0040-clockport.md) (`ClockPort`),
-[`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md) (Wecksignal), [`ADR-0023`](../../adr/0023-fehlerklassifikation.md) (Fehlerklassen).
+[`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md) (Wecksignal), [`ADR-0023`](../../adr/0023-fehlerklassifikation.md) (Fehlerklassen),
+[`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1/2 (Rollenschnitt der `queued`-Zeile, Annahme in einer
+Transaktion, erneute Prüfung der Vorbedingungen vor der Ausführung).
 
 **Berührte Spec-Stellen:** [`SPEC-008`](../../../../spec/pflichtenheft.md) (Fehlerklassen), [`SPEC-029`](../../../../spec/pflichtenheft.md)
 (Feldform des Run-Zustands, durch `spec-nachzug`), [`ARC-001`](../../../../spec/architecture.md), [`ARC-002`](../../../../spec/architecture.md),
@@ -35,13 +37,22 @@ Fähigkeiten), [`ADR-0027`](../../adr/0027-capture-application-service.md) (Appl
 Umfang:
 
 - Domäne `BackfillRun` (Zustände `queued` | `running` | `completed` | `failed` |
-  `interrupted`, zulässige Übergänge, Fortschrittszähler, Fehlertext) und die
+  `interrupted`, zulässige Übergänge, Fortschrittszähler, Fehlertext, die
+  **geschätzte** Zeilenzahl als „unbekannt" oder Zahl — nie `0` für unbekannt —
+  und ein Feld für die Warn-Kennzeichnung, leer, solange keine Auswertung sie
+  setzt) und die
   Kennungs-Bildung: Transaktions-Kennung `0bf-<run-id>-<Blocknummer, 8 Stellen,
   null-aufgefüllt>`, Sequenz `1…B`, `change_id` `<Transaktions-ID>-<Sequenz>`
   ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 6);
-- Inbound Port `BackfillTableUseCase` ([`ADR-0028`](../../adr/0028-inbound-use-cases.md)) und zwei Outbound-Ports als
-  Fähigkeits-Schnitte ([`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md)): ein **Run-Zustands-Port** (anlegen, auf
-  `running` setzen, Fortschritt, abschließen, aktiven Run je Tabelle erfragen,
+- Inbound Port `BackfillTableUseCase` ([`ADR-0028`](../../adr/0028-inbound-use-cases.md)) und drei Outbound-Ports als
+  Fähigkeits-Schnitte ([`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md), Schnitt nach [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1):
+  ein **Annahme-Port** (Arbeitsname `BackfillAdmissionPort`, eine Methode
+  `Admit(ctx, requestID, run)`: Prüfung „kein aktiver Run derselben Tabelle",
+  Anlage der Run-Zeile `queued` und Antragsvermerk `applied` — „angenommen" — als
+  **eine** Einheit; ein aktiver Run ist ein Sentinel-Fehler, jede Abweichung
+  hinterlässt weder Zeile noch Vermerk), ein **Run-Zustands-Port** ohne
+  Operation „anlegen" (auf `running` setzen, Fortschritt, abschließen,
+  `queued`-Zeilen der eigenen Quelle in Antragsreihenfolge lesen,
   `running` → `interrupted` abgleichen) und ein **Schreiber-Port**, der **eine**
   Transaktion über alle Blöcke hält (beginnen, Block anhängen, mit der
   Run-Zeile zusammen committen, zurückrollen) — der bestehende
@@ -50,9 +61,11 @@ Umfang:
 - der Use Case mit **zwei Einstiegen**: `Request` (läuft synchron in der
   Administrations-Goroutine: Vorbedingungen — Tabelle aktiviert mit laufender
   Bindung über `TableActivationPort.Registered`, Mitgliedschaft in der
-  Publication über `Published`, kein aktiver Run derselben Tabelle —, geschätzte
-  Zeilenzahl über den Snapshot-Port lesen, Run `queued` anlegen) und `Execute`
-  (läuft im Worker): Ablauf über den
+  Publication über `Published` —, geschätzte Zeilenzahl über den Snapshot-Port
+  lesen, dann als **letzter** Schritt `Admit`; die Prüfung „kein aktiver Run"
+  liegt in `Admit`) und `Execute` (läuft im Worker; **zuerst** prüft er
+  Bindung und Publication-Mitgliedschaft erneut — Abweichung endet den Run
+  `failed` mit der Klasse `configuration`, ohne Slot und ohne Kopie): Ablauf über den
   `TableSnapshotPort` (Blöcke lesen, je Block den Ausschlussstand über
   `ColumnExclusionPort.ExcludedColumns` **neu** lesen und das Bild über die
   gemeinsame Funktion bauen, Block an den Schreiber), **Fail-closed vor dem
@@ -68,10 +81,12 @@ Umfang:
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
-- **Postgres-Adapter und Schema** (`cdc.backfill_run`, Grants) — `run-store`;
-  dieser Slice hat keine Datenbank.
-- **Der Worker und die Übergabe aus der Administrations-Goroutine**,
-  Start-Abgleich, Antragsart, SQL-Funktion — `sql-administration`.
+- **Postgres-Adapter und Schema** (`cdc.backfill_run`, Grants, die Transaktion
+  von `Admit`) — `run-store`; dieser Slice hat keine Datenbank.
+- **Die Auswertung der Warnungen** (Toleranz, Richtgröße) — `bench-richtgroesse`;
+  dieser Slice trägt nur das leere Feld der Warn-Kennzeichnung.
+- **Der Worker samt Aufnahme beim Start und Wecksignal**, Start-Abgleich,
+  Antragsart, SQL-Funktion — `sql-administration`.
 - **Regelauswertung/Transformationen** ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) — der Bild-Bau des Use Case
   hat **eine** Stelle, an der ein Regelstand später eingeht (Welle §5, K2); die
   Erweiterung der Fail-closed-Prüfung um den Regelstand gehört dem
@@ -94,9 +109,21 @@ Umfang:
       Schreib-Fehler, Abbruch des Kontexts — jeweils Rollback, Run `failed`
       bzw. `interrupted`, **keine** Zeile geschrieben, die richtige Fehlerklasse,
       Heartbeat unberührt; Vorbedingungs-Fehler (Tabelle nicht aktiviert, aktiver
-      Run) enden in `Request` ohne Run-Zeile und ohne Snapshot. *Zu belegen durch:* `make test` und je Test
+      Run) enden in `Request` ohne Run-Zeile und ohne geöffneten Snapshot (die
+      Schätzung ist ein Katalog-Lesezugriff); fehlen Bindung oder
+      Publication-Mitgliedschaft erst in `Execute`, endet der Run `failed` mit der
+      Klasse `configuration` und der Snapshot-Port wird nicht geöffnet. *Zu belegen
+      durch:* `make test` und je Test
       eine Mutation der Prüfung, die den Test rot färbt (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
       verkörpert).
+- [ ] Annahme gegen Fakes: `Request` ruft `Admit` **als letzten** Schritt und nur
+      nach bestandenen Vorbedingungen und gelesener Schätzung; ein Sentinel-Fehler
+      „aktiver Run" endet den Antrag ohne zweite Zeile; eine unbekannte
+      Schätzung erreicht `Admit` als „unbekannt", nicht als `0`; der
+      Run-Zustands-Port hat keine Anlage-Operation. *Zu belegen durch:* `make test`
+      (Reihenfolge der Fake-Aufrufe, je Test eine Mutation), `make a-check` (der
+      Annahme-Port liegt in `ports`, kein Adapter importiert einen anderen) und
+      die Port-Definitionen im Diff (Review).
 - [ ] Der Speicherbedarf ist durch `B` begrenzt ([`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md)): die
       Ports erlauben Streamen, der Schreiber erhält Block 1, bevor der Leser
       Block 2 geliefert hat. *Zu belegen durch:* ein Test, der die Reihenfolge der
@@ -131,17 +158,17 @@ Umfang:
 | `internal/domain/model/backfillrun.go` (+ Test) | neu | `BackfillRun`, Zustände und Übergänge, Kennungs-Bildung. |
 | `internal/domain/errors/` | update | Sentinel-Fehler (Tabelle nicht aktiviert, aktiver Run, Ausschlussstand geändert). |
 | `internal/application/port/inbound/backfill.go` | neu | `BackfillTableUseCase` samt Command. |
-| `internal/application/port/outbound/backfillrun.go`, `backfillwriter.go` (Arbeitsnamen) | neu | Run-Zustands-Port und Schreiber-Port. |
-| `internal/application/usecase/backfill/service.go` (+ Test) | neu | der Use Case; Fakes für Snapshot-Port, beide Ports, Bindung, Ausschluss, Uhr, Wecksignal. |
+| `internal/application/port/outbound/backfilladmission.go`, `backfillrun.go`, `backfillwriter.go` (Arbeitsnamen) | neu | Annahme-Port, Run-Zustands-Port (ohne Anlage) und Schreiber-Port. |
+| `internal/application/usecase/backfill/service.go` (+ Test) | neu | der Use Case; Fakes für Snapshot-Port, die drei Ports, Bindung, Ausschluss, Uhr, Wecksignal. |
 
-**Klärung, die den Port-Schnitt bestimmt** (Start-Trigger, §4): wer die
-`queued`-Zeile schreibt und mit welcher Datenbank-Rolle. Der Text von
-[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 nennt zwei Schreiber — die Administrations-Goroutine
-„legt die Run-Zeile `queued` an", der Worker-Pool aus `CDC_CAPTURE_DSN` trägt
-`INSERT` auf `cdc.backfill_run`. Die Administrations-Goroutine läuft über
-`CDC_ADMIN_DSN` (Rolle `cdc_admin`, gelesen an `postgresstorage.NewAdministrationRequest`
-in `internal/bootstrap/wiring.go`); schriebe sie die Zeile, bräuchte `cdc_admin`
-einen eigenen Grant auf die Tabelle.
+**Port-Schnitt der Annahme** ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1): die Rolle `cdc_admin` — die
+Administrations-Goroutine liest ihre Anträge über `postgresstorage.NewAdministrationRequest`
+mit `CDC_ADMIN_DSN`, gelesen in `internal/bootstrap/wiring.go` — legt die Run-Zeile
+`queued` an, in **derselben Transaktion**, die den Antrag auf `applied` setzt. Der
+Annahme-Port (`Admit`) ist deshalb ein eigener Fähigkeits-Port
+([`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md)) und keine vierte Methode des `AdministrationRequestPort`; der
+Run-Zustands-Port des Worker-Pools (`CDC_CAPTURE_DSN`) legt nichts an. Die Grants
+und die Transaktion selbst trägt `run-store`.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Begriff Backfill und die Menge der Domänen-Typen und Ports"; beide Stände gemessen):**
 
@@ -155,10 +182,10 @@ einen eigenen Grant auf die Tabelle.
 
 **Start** (`next` → `in-progress`): wenn `snapshot-reader` und
 `row-image-gemeinsam` in `done/` liegen, kein anderer Slice in
-`in-progress/` liegt **und** die Schreib-Rolle der `queued`-Zeile festgelegt ist
-(Architect-Kurzverdikt unter `docs/reviews/` oder ein Plan-Nachzug dieses Slice,
-den der Reviewer prüft): sie bestimmt den Schnitt des Run-Zustands-Ports und die
-Grants in `run-store`.
+`in-progress/` liegt **und** [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) den Status `Accepted` trägt (Schreib-Rolle der
+`queued`-Zeile, Annahme in einer Transaktion, Aufnahme beim Start; geprüft an der
+Status-Spalte im ADR-Index): sie bestimmt den Schnitt der drei Ports und die Grants
+in `run-store`. Vorab-Bedingung, kein Ergebnis dieses Slice.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -176,9 +203,13 @@ Closure-Notiz mit Lerneintrag geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **Die Schreib-Rolle der `queued`-Zeile ist im ADR-Text mehrdeutig** (siehe
-  §3) — Port-Schnitt und Grants hängen daran. *Erwartet, zu belegen durch:* die
-  Klärung im Start-Trigger. **Ausgang:** *(bei Closure)*
+- **Der Port-Schnitt der Annahme trägt die Atomarität nicht.** `Admit` ist der
+  einzige Anlage-Weg der Run-Zeile und schließt Prüfung, Anlage und Antragsvermerk
+  zu einer Einheit; wäre die Anlage zusätzlich am Run-Zustands-Port erreichbar,
+  entstünde ein zweiter, nicht atomarer Weg ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1).
+  *Erwartet, zu belegen durch:* die Aufruf-Reihenfolge-Tests und die
+  Port-Definitionen im Diff; die Transaktion des Adapters belegt `run-store`.
+  **Ausgang:** *(bei Closure)*
 - **Fail-closed-Prüfung ist zu grob oder zu lasch.** Der Vergleich „Ausschlussstand
   wie beim Bau der Blöcke" muss Mengengleichheit unabhängig von der Reihenfolge
   prüfen und eine Zwischenabweichung (Ausschluss, dann Wiedereinschluss) erkennen,
