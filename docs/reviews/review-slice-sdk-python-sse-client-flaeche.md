@@ -120,7 +120,7 @@ Liste ist der Lauf nicht reproduzierbar):
 - `pfad`: `sdks/python/pgchangefeed/src/pgchangefeed/exceptions.py:51-57`
   gegen `sdks/python/pgchangefeed/src/pgchangefeed/sse_client.py:115-133`
 - `befund`: Der Docstring sagt, die Klasse trage Verletzungen der
-  „SPEC-018/SPEC-022 response shape"; seit diesem Slice wirft auch der
+  „[`SPEC-018`](../../spec/pflichtenheft.md)/[`SPEC-022`](../../spec/pflichtenheft.md) response shape"; seit diesem Slice wirft auch der
   SSE-Client ihn (Status 200, drei Befund-Formen gegen `SPEC-021`). Kein
   falscher Satz über eine Stelle, die er jetzt trägt — aber die
   Klassen-Doku nennt zwei von inzwischen drei Straten nicht.
@@ -206,7 +206,7 @@ Liste ist der Lauf nicht reproduzierbar):
   Event-Form, zehn Felder) gegen `sse_client.py`/`models.py` — Frame-Form,
   Auth-Rechtsklasse (`reader`/`admin`, Bearer-Header), Feldsatz und
   `null`-Bild-Boundary decken den Draht; `SPEC-027`/`LH-FA-SST-009.a`-Deferral
-  konsistent mit ADR-0110 Folgepflicht 2 (der Träger beschreibt das
+  konsistent mit [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Folgepflicht 2 (der Träger beschreibt das
   veröffentlichte 0.1.0-Release, der Version-Bump ist gebündelt — wie im
   Vorgänger-Review praktiziert)
 - geprüft, ohne Befund: `internal/adapters/driving/http/sse.go`
@@ -256,7 +256,7 @@ Liste ist der Lauf nicht reproduzierbar):
   kein Handlungsbedarf) — kein neuer Befund
 - geprüft, ohne Befund: `AGENTS.md` §3.11 (host-lokale Pfade) — der ganze
   Diff nennt keinen host-lokalen Absolutpfad; §3.5 (Accepted-ADR-Immutabilität)
-  — ADR-0110 unberührt
+  — [`ADR-0110`](../plan/adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) unberührt
 - geprüft, ohne Befund: Commit-Message-Traceability (`6bbe99d9` nennt
   `LH-FA-SST-009` + `ADR-0110`, kein `SPEC-*`/`ARC-*` im Betreff)
 

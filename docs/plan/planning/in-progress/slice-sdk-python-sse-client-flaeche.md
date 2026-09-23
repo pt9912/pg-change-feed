@@ -137,7 +137,7 @@ gilt für **jede** neue Fläche einzeln).
 | `sdks/python/README.md` §Status | Satzform gefunden, gezogen | erledigt |
 | `docs/user/benutzerhandbuch.md` §SSE (Python-`**SDK:**`-Absatz) | Absatz fehlte (Review F-1) | Fixrunde: Absatz ergänzt (Version 1.42 + Historie) |
 | `harness/README.md` §Werkzeuge (`make test-sdk-python-integration`-Zeile) | Zeile trug die Ein-Flächen-Form (Review F-2) | Fixrunde: Zwei-Flächen-Form gezogen |
-| `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-027` | Satzform „deckt HTTP-API" steht nicht im Diff — Bündelung im letzten Flächen-Slice | bleibt gebündelt (konsistent C#/Kotlin-Präzedenz, ADR-0110 Folgepflicht 2) |
+| `spec/pflichtenheft.md` `LH-FA-SST-009.a`/`SPEC-027` | Satzform „deckt HTTP-API" steht nicht im Diff — Bündelung im letzten Flächen-Slice | bleibt gebündelt (konsistent C#/Kotlin-Präzedenz, [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) Folgepflicht 2) |
 | Wurzel-README | „deckt HTTP-API"-Form für das veröffentlichte 0.1.0-Package — wahr für den veröffentlichen Stand | bleibt (bündelige Praxis wie beim Vorgänger-Slice) |
 | `docs/user/version.md` | Versionsstand des Python-Packages — Hebung im letzten Flächen-Slice | bleibt gebündelt |
 
