@@ -49,8 +49,7 @@ und geschätzter Aufwand (S/M/L, kein Termin).
 
 | Welle | Trigger | Wichtigste Slices | Geschätzter Aufwand |
 |---|---|---|---|
-
-Nichts geplant — keine Welle in der Vorschau.
+| welle-sdk-reale2e | `welle-sdk-python-vollabdeckung` liegt in `done/` | Noch nicht geschnitten — mindestens: `slice-sdk-csharp-reale2e` (Realserver-Integrationstest des C#-SDK, neues `make test-sdk-csharp-integration` im Mechanismus-Muster des Python-Werkzeugs), `slice-sdk-kotlin-reale2e` (dasselbe für Kotlin, `make test-sdk-kotlin-integration`), `slice-sdk-python-http-reale2e` (Retrofit der HTTP-Fläche in `tools/harness/run-sdk-python-integration-tests.sh` — in der laufenden Welle bewusst Out-of-Scope, [`welle-sdk-python-vollabdeckung`](../welle-sdk-python-vollabdeckung.md) §6); einer der drei Slices führt den parallelen Abdeckungs-Träger `docs/user/sdk-e2e-abdeckung.md` ein — stabile Abdeckungs-Deklaration der SDK-Realserver-Belege im Muster von `docs/user/e2e-abdeckung.md`, kein Lauf-Beleg — samt Pflicht-`trace.coverage`-Eintrag (Label `SDK-E2E`) in `.d-check.yml` im selben Zug; `docs/user/e2e-abdeckung.md` selbst bleibt unverändert, ihr Erzeuger bleibt Eigentum des Server-Runners `tools/harness/run-integration-tests.sh` | M |
 
 ## Meilensteine
 
@@ -132,6 +131,7 @@ flowchart LR
     WSDKCSV[welle-sdk-csharp-vollabdeckung: C#-SDK volle Vier-Wege-Parität]
     WSDKKTV[welle-sdk-kotlin-vollabdeckung: Kotlin-SDK volle Vier-Wege-Parität]
     WSDKPYV[welle-sdk-python-vollabdeckung: Python-SDK volle Vier-Wege-Parität]
+    WSDKRE2E[geplant: welle-sdk-reale2e SDK-Realserver-E2E C#/Kotlin/Python-HTTP]
 
     A58 --> W17
     A59 --> W18
@@ -144,6 +144,7 @@ flowchart LR
     WSDKKT --> WSDKKTV
     WSDKPY --> WSDKPYV
     A0110 --> WSDKPYV
+    WSDKPYV --> WSDKRE2E
     A0109 --> WSDKKT
 ```
 
