@@ -50,9 +50,9 @@ class PgChangeFeedUnexpectedStatusError(PgChangeFeedError):
 
 class PgChangeFeedMalformedResponseError(PgChangeFeedError):
     """A success status code (``2xx``) whose body does not match the
-    expected SPEC-018/SPEC-022 response shape, or a SPEC-021 SSE event whose
-    data payload does not match the documented stream schema -- invalid
-    JSON, or valid JSON missing an expected field. Outside every shape the
-    HTTP/SSE contracts document; kept typed and distinct from the
-    status-code errors above so a caller can still catch
+    expected SPEC-018/SPEC-022 response shape, or a SPEC-021 SSE event or
+    SPEC-024 NATS message whose payload does not match the documented stream
+    schema -- invalid JSON, or valid JSON missing an expected field. Outside
+    every shape the HTTP/SSE/NATS contracts document; kept typed and
+    distinct from the status-code errors above so a caller can still catch
     ``PgChangeFeedError`` uniformly across every method."""

@@ -11,7 +11,8 @@ the same fire-and-forget, no-replay stream over Server-Sent-Events
 (`PgChangeFeedNatsStreamClient`): the same message schema and
 fire-and-forget, no-replay boundary, delivered over a NATS subject namespace
 instead of HTTP, with connection-level (not per-call) token authentication
-(SPEC-024, ADR-0110 Festlegung 3: v2 desselben Packages).
+(SPEC-024, Welle-Plan §6: v2 desselben Packages — ADR-0110 Festlegung 3
+delegiert die Struktur-Entscheidung an den umsetzenden Zug).
 """
 
 from pgchangefeed.exceptions import (

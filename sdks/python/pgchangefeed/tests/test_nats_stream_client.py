@@ -156,8 +156,6 @@ def test_connect_rejection_surfaces_and_is_not_swallowed(monkeypatch) -> None:
     client = _make_client()
     with pytest.raises(RuntimeError, match="authorization violation"):
         list(client.stream_changes(timeout=2.0))
-    # Der Fehlschlag erreicht den Generator sichtbar (nicht still leer).
-    assert rejection is not None
 
 
 def test_timeout_bounds_the_consumption(monkeypatch) -> None:

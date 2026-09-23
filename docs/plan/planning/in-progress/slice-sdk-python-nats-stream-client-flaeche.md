@@ -135,7 +135,22 @@ diesem Slice").
 | `sdks/python/pgchangefeed/integration/test_nats_realserver.py` (Arbeitsname, statt `tests/integration/`-Pfad) | Abweichung | die Realserver-Tests liegen seit dem Vorgänger-Slice im Geschwister-Ordner `integration/`; die §3-Zeile trug noch den Arbeitsnamen `test_nats_stream_realserver.py` unter `tests/`. |
 | `tools/harness/run-sdk-python-integration-tests.sh` | update | dritte Phase im `run_surface_phase`-Muster (Env-Liste je Fläche), NATS-Sentinel/-ID-Bereich 320ff., Reject-Marker `REJECTED token-rejected` (Ablehnung am Verbindungsversuch, `allow_reconnect=False`), SQL-Gegenprüfung gegen `cdc.changes`. |
 | `sdks/python/pgchangefeed/src/pgchangefeed/__init__.py` (Docstring + Export `PgChangeFeedNatsStreamClient`), `options.py`-Docstring, `sdks/python/README.md` §Status, pyproject-Beschreibung | update | Träger-Nachzug (`AGENTS.md` §3.13): die Satzform „NATS bleibt außerhalb" wird durch diesen Slice falsch; das Package trägt jetzt die volle Vier-Wege-Matrix. |
-| `spec/pflichtenheft.md` §6 Chronik-Zeile | neu | der Nachzug trägt seine Chronik-Zeile (Muster der Vorgänger-Nachzüge 2026-09-22). |
+| `spec/pflichtenheft.md` §7 Historie-Chronik-Zeile | neu | der Nachzug trägt seine Chronik-Zeile in §7 Historie (Muster der Vorgänger-Nachzüge 2026-09-22). |
+
+**§3.13-Suchlauf (committetes Feld — Suchlauf-Pflicht des DoD, Raum `spec/`, `docs/`, `sdks/python/`; das Ergebnis steht hier, vor der Closure-Notiz):**
+
+| Fundstelle (Schreibform am Ist-Baum) | Befund | Behandlung |
+|---|---|---|
+| `spec/pflichtenheft.md` §1 (Python-Absatz) | „deckt HTTP-API" gefunden | gezogen: „deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt" + Endstand-Artefaktnamen 0.2.0 |
+| `spec/pflichtenheft.md` §6 Vertragszeile `SPEC-027` | „aktuell `0.1.0`" + Vertrag-Liste `SPEC-018` gefunden (Review F-1) | gezogen: `0.2.0` + volle Vertragsliste |
+| `spec/pflichtenheft.md` §7 Historie | Chronik-Zeile fehlte | ergänzt (Plan-Nachzug) |
+| `harness/README.md` §Werkzeuge (sdk-pack-python-Zeile) | 0.1.0-Artefaktnamen gefunden | gezogen auf 0.2.0 (Endstand) |
+| `harness/README.md` §Werkzeuge (test-sdk-python-integration-Zeile) | Zwei-Flächen-/Zwei-Reject-Form gefunden | gezogen auf drei Flächen |
+| Wurzel-`README.md` + `README.de.md` (Distribution-Zeile) | „HTTP-API als offizielle Python-Bibliothek" gefunden | gezogen auf dieselben vier Zustellwege |
+| `sdks/python/README.md` §Intro | „consume the HTTP API" gefunden | gezogen auf die vier Zustellwege |
+| `sdks/python/pgchangefeed/src/pgchangefeed/options.py` | Docstring-Satz „NATS still follows" gefunden | gezogen auf `PgChangeFeedNatsStreamClient` |
+| `docs/plan/planning/welle-sdk-python-vollabdeckung.md` (Trigger-Zeile 56) | 0.1.0-Artefaktnamen gefunden — **historisch korrekt** (Trigger-Ist-Stand von 2026-09-21) | belassen (Records-Herkunfts-Form) |
+| historische Records (`done/`, `docs/reviews/**` bereits geschlossener Züge) | dieselben Sprachformen — Records tragen keine §Geschichte | belassen |
 
 **Ansatz:** Referenzmaterial für Nachrichtenschema/Subjekt-Form ist
 `examples/csharp/nats-stream-client/Format.cs`/

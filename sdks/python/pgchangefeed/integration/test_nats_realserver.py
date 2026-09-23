@@ -28,6 +28,7 @@ import time
 import pytest
 
 import nats
+from nats import errors as nats_errors
 
 import pgchangefeed.nats_stream_client as nats_stream_client
 from pgchangefeed.models import StreamChange
@@ -105,10 +106,6 @@ def test_realserver_rejects_the_connection_with_wrong_token() -> None:
             allow_reconnect=False,
         )
 
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(nats_errors.Error, match="Authorization Violation") as exc_info:
         asyncio.run(attempt())
-    assert not isinstance(exc_info.value, TimeoutError), (
-        f"Verbindungsversuch mit falschem Token endete am Fristablauf, "
-        f"wollen laut Ablehnung: {exc_info.value!r}"
-    )
     print(f"REJECTED token-rejected: {exc_info.value}", flush=True)

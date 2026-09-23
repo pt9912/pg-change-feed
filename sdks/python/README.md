@@ -2,7 +2,7 @@
 
 Official Python client library for [PG Change Feed](https://github.com/pt9912/pg-change-feed), a durable change feed system for PostgreSQL built on logical replication.
 
-This package (`pgchangefeed`) lets a Python application consume PG Change Feed's HTTP API without implementing the wire protocol itself — see [`LH-FA-SST-009`](https://github.com/pt9912/pg-change-feed/blob/main/spec/lastenheft.md) for the requirement this SDK fulfills.
+This package (`pgchangefeed`) lets a Python application consume PG Change Feed's delivery paths (HTTP API, gRPC stream, SSE stream, NATS full-content stream) without implementing the wire protocol itself — see [`LH-FA-SST-009`](https://github.com/pt9912/pg-change-feed/blob/main/spec/lastenheft.md) for the requirement this SDK fulfills.
 
 ## Status
 

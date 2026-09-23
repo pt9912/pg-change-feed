@@ -86,7 +86,7 @@ class PgChangeFeedNatsStreamClient:
                         connect_timeout=_SUBSCRIPTION_READY_TIMEOUT_SECONDS,
                         allow_reconnect=False,
                     )
-                except BaseException as exc:  # noqa: BLE001 — connect-Fehlschlag wird sichtbar am Generator weitergereicht
+                except BaseException as exc:
                     connection_error.append(exc)
                     ready.set()
                     return
@@ -119,8 +119,6 @@ class PgChangeFeedNatsStreamClient:
                     payload = events.get(timeout=_STREAM_POLL_INTERVAL_SECONDS)
                 except queue.Empty:
                     continue
-                if payload is None:
-                    return
                 yield _parse_stream_change(payload)
         finally:
             stop.set()
