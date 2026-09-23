@@ -38,6 +38,12 @@ Slice. Aus demselben Grund gehört der Wortlaut in keine Sektions-Regel-Zeile
 oben. Wer den Sensor selbst baut: Code-Fences beim Matchen aus dem Block
 nehmen, sonst schlägt ein Beispiel-Auszug durch. -->
 
+- [welle-backfill-bestand](../welle-backfill-bestand.md) — Backfill des
+  Bestands: der Tabellenbestand einer aktivierten Tabelle wird als Backfill
+  erkennbar (`origin`) über den bestehenden Lesezugriffsweg lesbar, zehn
+  Slices ([`LH-FA-CAP-009`](../../../../spec/lastenheft.md),
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)).
+
 Nichts in Arbeit — kein Slice liegt in `in-progress/` (WIP-Limit 1 gilt je
 Slice, nicht je offener Welle-Datei; drei gleichzeitig eröffnete,
 voneinander unabhängige Wellen sind kein Verstoß).
@@ -133,6 +139,13 @@ flowchart LR
     WSDKKTV[welle-sdk-kotlin-vollabdeckung: Kotlin-SDK volle Vier-Wege-Parität]
     WSDKPYV[welle-sdk-python-vollabdeckung: Python-SDK volle Vier-Wege-Parität]
     WSDKRE2E[welle-sdk-reale2e: SDK-Realserver-E2E C#/Kotlin/Python-HTTP]
+    A0111[ADR-0111 Accepted]
+    WBF[welle-backfill-bestand: Backfill des Bestands]
+    A0112[ADR-0112 Accepted]
+    BRI[slice-backfill-row-image-gemeinsam]
+    BRU[slice-backfill-run-usecase]
+    BSA[slice-backfill-sql-administration]
+    TRF[Umsetzung ADR-0112 Transformationen: keine Welle-Datei]
 
     A58 --> W17
     A59 --> W18
@@ -147,7 +160,30 @@ flowchart LR
     A0110 --> WSDKPYV
     WSDKPYV --> WSDKRE2E
     A0109 --> WSDKKT
+    A0111 --> WBF
+    WBF --- BRI
+    WBF --- BRU
+    WBF --- BSA
+    A0112 --> TRF
+    BRI -.->|K1 Kern-Slice| TRF
+    BRU -.->|K2 Backfill-Pfad| TRF
+    BSA -.->|K3 Antragsweg| TRF
 ```
+
+**Benannte Kopplung an die Umsetzung der Transformationen**
+([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)):
+der Knoten `TRF` hat keine Welle-Datei und keine Zeile in *Nächste Wellen*; die
+gestrichelten Kanten sind Bedingungen an ihre künftige Planung, kein Trigger
+einer bestehenden Welle. **K1** — der Kern (Regelauswertung im Row Image) startet
+nach `slice-backfill-row-image-gemeinsam`; **K2** — der Slice, der den
+Backfill-Pfad an die Regelauswertung bindet
+([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+Folgepflicht 7), folgt `slice-backfill-run-usecase`; **K3** — der Antragsweg der
+Transformationen erweitert die `request_kind`-Menge nach
+`slice-backfill-sql-administration`. Ausführung und Begründung der Reihenfolge
+(Backfill zuerst) stehen in [welle-backfill-bestand](../welle-backfill-bestand.md)
+§5.
 
 ## Abgeschlossene Wellen
 
