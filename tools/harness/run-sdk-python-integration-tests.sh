@@ -172,19 +172,21 @@ docker build --build-context proto=proto -f sdks/python/Dockerfile \
   --target integration -t "$SDK_INTEGRATION_IMAGE" sdks/python
 
 # run_surface_phase <Name> <Testdatei> <Sentinel> <ID-Basis> <Reject-Marker>
-# <Extra-Env> <Received-Grep> <SQL-Variante: changes|consumer> — ein
-# Realserver-Rundlauf fuer genau eine SDK-Flaeche: Container starten (die
-# Adress-/Auth-Variablen je Flaeche kommen als Leerzeichen-getrennte
-# Extra-Env-Liste herein), auf READY warten, begrenzte Folge eindeutiger
-# Zeilen committen (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024),
-# auf den Reject-Marker und das Prozessende warten, die RECEIVED-Zeile
-# pruefen und die Identitaet unabhaengig gegen den SQL-Lesezugriffsweg
-# halten. Die SQL-Variante "changes" haelt die change_id gegen cdc.changes
-# (Streams), "consumer" die Consumer-Registrierung gegen cdc.consumer
-# (HTTP — Muster run-sdk-csharp-integration-tests.sh).
+# <Extra-Env> <Received-Grep> <SQL-Variante: changes|consumer> <Insert-Rows:
+# yes|no> — ein Realserver-Rundlauf fuer genau eine SDK-Flaeche: Container
+# starten (die Adress-/Auth-Variablen je Flaeche kommen als
+# Leerzeichen-getrennte Extra-Env-Liste herein), auf READY warten, bei
+# Stream-Phasen eine begrenzte Folge eindeutiger Zeilen committen
+# (Fire-and-Forget-Fenster, SPEC-020/SPEC-021/SPEC-024 — die HTTP-Flaeche
+# committet ihre Aenderung selbst: RegisterConsumer, kein CDC-Empfang, kein
+# Insert-Anteil), auf den Reject-Marker und das Prozessende warten, die
+# RECEIVED-Zeile pruefen und die Identitaet unabhaengig gegen den
+# SQL-Lesezugriffsweg halten. Die SQL-Variante "changes" haelt die change_id
+# gegen cdc.changes (Streams), "consumer" die Consumer-Registrierung gegen
+# cdc.consumer (HTTP — Muster run-sdk-csharp-integration-tests.sh).
 run_surface_phase() {
   local phase_name=$1 test_file=$2 sentinel=$3 id_base=$4 reject_marker=$5 extra_env=$6 \
-        received_grep=$7 sql_kind=$8
+        received_grep=$7 sql_kind=$8 insert_rows=$9
   local attempt insert_id captured ident pair
 
   local env_args=()
@@ -219,13 +221,20 @@ run_surface_phase() {
 
   local received=0
   for attempt in 1 2 3 4 5; do
-    insert_id=$((id_base + attempt))
-    # >/dev/null: die psql-INSERT-Echo-Zeile („INSERT 0 1") gehoert nicht in
-    # den Funktions-stdout — der Aufrufer haelt hier nur den Rueckgabewert
-    # (die change_id).
-    docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
+    # Die Fire-and-Forget-Insert-Form traegt nur die Stream-Phasen (der
+    # HTTP-Rundlauf committet seine "Aenderung" selbst — RegisterConsumer,
+    # kein CDC-Empfang; der tote Insert-Anteil der HTTP-Phase ist in der
+    # Welle-Closure von welle-sdk-reale2e als Form-Residuum deklariert und
+    # wird hier vom insert_rows-Parameter ausgeschlossen).
+    if [ "$insert_rows" = "yes" ]; then
+      insert_id=$((id_base + attempt))
+      # >/dev/null: die psql-INSERT-Echo-Zeile („INSERT 0 1") gehoert nicht in
+      # den Funktions-stdout — der Aufrufer haelt hier nur den Rueckgabewert
+      # (die change_id).
+      docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null <<SQL
 INSERT INTO public.$TEST_TABLE (id, name) VALUES ($insert_id, '$sentinel');
 SQL
+    fi
     for _ in $(seq 1 20); do
       if docker logs "$SDK_TEST_CONTAINER" 2>/dev/null | grep -qF "RECEIVED"; then
         received=1
@@ -316,7 +325,7 @@ GRPC_CHANGE_ID=$(run_surface_phase \
   "REJECTED code=Unauthenticated" \
   "PGCHANGEFEED_GRPC_ADDR=pg-change-feed:9090" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$GRPC_SENTINEL" \
-  changes)
+  changes yes)
 
 SSE_CHANGE_ID=$(run_surface_phase \
   "SSE-Flaeche (SPEC-021)" \
@@ -325,7 +334,7 @@ SSE_CHANGE_ID=$(run_surface_phase \
   "REJECTED status=401" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$SSE_SENTINEL" \
-  changes)
+  changes yes)
 
 NATS_CHANGE_ID=$(run_surface_phase \
   "NATS-Vollinhalts-Flaeche (SPEC-024)" \
@@ -334,7 +343,7 @@ NATS_CHANGE_ID=$(run_surface_phase \
   "REJECTED token-rejected" \
   "PGCHANGEFEED_NATS_URL=nats://nats:4222 PGCHANGEFEED_NATS_STREAM_TOKEN=$NATS_STREAM_TOKEN PGCHANGEFEED_SOURCE_ID=src-e2e" \
   "RECEIVED change_id=[^ ]+ table=$TEST_TABLE .*operation=INSERT .*new_image=.*$NATS_SENTINEL" \
-  changes)
+  changes yes)
 
 HTTP_IDENT=$(run_surface_phase \
   "HTTP-Flaeche (SPEC-018)" \
@@ -343,7 +352,7 @@ HTTP_IDENT=$(run_surface_phase \
   "REJECTED status=401" \
   "PGCHANGEFEED_HTTP_ADDR=http://pg-change-feed:8090 PGCHANGEFEED_API_TOKEN_ADMIN=$API_TOKEN_ADMIN PGCHANGEFEED_API_TOKEN_READER=$API_TOKEN_READER PGCHANGEFEED_SOURCE_ID=src-e2e PGCHANGEFEED_HTTP_PUBLICATION=$HTTP_PUBLICATION" \
   "RECEIVED consumer_id=[^ ]+" \
-  consumer)
+  consumer no)
 
 # --- Abdeckungs-Traeger (docs/user/sdk-e2e-abdeckung.md) -------------------
 # Der Python-Abschnitt entsteht aus derselben Messung, die ihn belegt;
