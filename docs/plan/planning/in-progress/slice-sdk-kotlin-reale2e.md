@@ -83,16 +83,22 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009`-Beleg-Stand stärker: alle vier Kotlin-Flächen
+- [x] `LH-FA-SST-009`-Beleg-Stand stärker: alle vier Kotlin-Flächen
       tragen je einen realen Rundlauf gegen eine laufende Server-Instanz
       (§1, Phasen 1–4), jede Phase mit SQL-Gegenprüfung der empfangenen
       `change_id` gegen `cdc.changes` (gRPC/SSE/NATS) bzw. der
       Registrierung gegen `cdc.consumer` (HTTP) und je einem
       Ablehnungs-Beleg ohne gültiges Token (gRPC `Unauthenticated`,
       SSE/HTTP Status 401, NATS-Token-Abweisung durch den Server).
-      *(Sensor-Beleg: `make test-sdk-kotlin-integration` EXIT=0 —
-      zu tragen beim Umsetzungs-Lauf.)*
-- [ ] **Mechanik** ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
+      *(Sensor-Beleg: `make test-sdk-kotlin-integration` EXIT=0 — der
+      Lauf trug gRPC change_id=806-1, SSE 814-1, NATS 818-1 (je
+      SQL-Gegenprüfung gegen `cdc.changes`) und die Consumer-Registrierung
+      über `cdc.consumer`; die Ablehnungs-Belege trugen je Phase real
+      gRPC `Unauthenticated`, HTTP `401` und die NATS-Verbindungsablehnung.
+      Mutation real gefahren: gültiger Token im gRPC-Reject-Test — der
+      Lauf färbte rot („der Ablehnungs-Beleg blieb aus“), Revert,
+      Abschlusslauf grün.)*
+- [x] **Mechanik** ([`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md)
       §Entscheidung Festlegung 2, gespiegelt): additive Docker-Stufe
       `integration` in `sdks/kotlin/Dockerfile` (baut auf `build` auf,
       **dieselben Pins wiederverwendet** — `eclipse-temurin:21-jdk@sha256:085e…`
@@ -103,22 +109,25 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
       Phase-Auswahl explizit — kein stiller Ausschluss,
       `BEO-PGC/test-runner-stiller-ausschluss`-Disziplin), Make-Target
       `test-sdk-kotlin-integration` in `harness/mk/sdk.mk`. Kein Gate.
-      *(Sensor-Beleg: realer Lauf des Targets — zu tragen beim
-      Umsetzungs-Lauf.)*
-- [ ] **Träger-Erweiterung im selben Zug:**
+      *(Sensor-Beleg: realer Lauf des Targets EXIT=0 — siehe oben; der
+      Runner fuhr alle vier Phasen gegen den laufenden Feed-Container, und
+      `make sdk-pack-kotlin` blieb grün nach dem Einzug der
+      Integrations-Quellmenge — kein stiller Mitlauf in die andere
+      Richtung, Risiko-§6-Ausgang 2.)*
+- [x] **Träger-Erweiterung im selben Zug:**
       `docs/user/sdk-e2e-abdeckung.md` trägt den Kotlin-Abschnitt (aus
       derselben Messung, die ihn belegt, idempotent vom Runner
       geschrieben — die Datei trägt nur Zeilen real existierender
       Runner-Phasen).
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos in
       `sdks/kotlin/**` — der neue Integrationstest-Quelltext inklusive
       (Import-Zeilen-Prüfung, Muster der bestehenden SDK-Slices).
-- [ ] `make gates` grün.
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6),
       kein Self-Review (Modul 8).
-- [ ] Doku-Update im selben Zug: `harness/README.md` §Werkzeuge bekommt
+- [x] Doku-Update im selben Zug: `harness/README.md` §Werkzeuge bekommt
       die neue `make test-sdk-kotlin-integration`-Zeile, weil das Target
       hier real entsteht ([`AGENTS.md`](../../../../AGENTS.md) §4; die
       Zeile trägt ihren realen Lauf, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`).
@@ -141,6 +150,25 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
 | `harness/mk/sdk.mk` | update | neues Target `test-sdk-kotlin-integration`. |
 | `docs/user/sdk-e2e-abdeckung.md` | update | Kotlin-Abschnitt als Erzeugnis des Kotlin-Runners (idempotent, Marker-gegrenzt). |
 | `harness/README.md` §Werkzeuge | update | neue Zeile für `make test-sdk-kotlin-integration` (nach dem realen Lauf geschrieben). |
+
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`: SourceSet `integrationTest` + Task | neu | die Gradle-Form (Plan §3 ließ die Form offen): eigener SourceSet + eigener `integrationTest`-Task, der **nicht** an `check` hängt — der netzlose Pack-Lauf (`make sdk-pack-kotlin`) bleibt unberührt (real gemessen, EXIT=0). Zwei eigene Konfigurationen: `integrationTestImplementation` (erbt `testImplementation`, trägt das main-Output als Prüfling) und `integrationTestRuntimeClasspath` (resolvable, erbt `testRuntimeOnly` **und** `runtimeOnly` — ohne `grpc-netty-shaded` endet der gRPC-Kanal real in der ProviderNotFoundException, im zweiten Lauf gesehen). Der Task-Classpath wird explizit aus diesen Konfigurationen gebaut; `showStandardStreams` reicht die Runner-Marker live durch (JVM-stdout-Pufferung, Risiko-§6-Ausgang 3). |
+| `sdks/kotlin/pgchangefeed-kotlin/src/integrationTest/kotlin/` (5 Dateien) | neu | PhaseEnvironment (Env-Auslese + Marker-Druck mit Flush) + vier Testklassen (je Happy-Path + Reject-Beleg, `kotlin.test`/JUnit-Platform-Form wie der Unit-Baum). |
+| gson-Semantik: `oldImage == null \|\| isJsonNull` | Erweiterung | gson trägt JSON-null in ein `JsonElement?`-Feld als `JsonNull.INSTANCE`, nicht als Kotlin-null — der Alt-Bild-Assert prüft die Semantik (kein Alt-Bild) über beide Formen; real im vierten Lauf als rote Assertion gesehen und in diesem Lauf gelöst. |
+
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Kotlin-Flächen tragen reale Realserver-Belege"; beide Stände gemessen: Parent `b58cb173` und HEAD):**
+
+| Träger | Befund | Behandlung |
+|---|---|---|
+| `harness/README.md` §Werkzeuge | Zeile fehlt (Target real, Zeile nicht) | in diesem Zug ergänzt (nach dem realen Lauf) |
+| `docs/user/sdk-e2e-abdeckung.md` | Kotlin-Abschnitt fehlt | in diesem Zug ergänzt (C#-Abschnitt byte-identisch erhalten — Writer-Form-Erhalt auf beiden Seiten real gemessen) |
+| `harness/README.md` §Werkzeuge (`make test-sdk-csharp-integration`-Zeile) | Endklause „erweitert sich Slice für Slice um die Kotlin- und Python-HTTP-Abschnitte" — mit diesem Slice zur Hälfte verbraucht | gezogen: die Zeile nennt jetzt den Kotlin-Abschnitt als real (Welle-Slice 2) |
+| `sdks/kotlin/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
+| `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
+| `spec/pflichtenheft.md` | geprüft — kein falsch werdender Träger | nichts zu ziehen |
 
 **Ansatz:** Dieselbe `run_surface_phase`-Form wie im C#-Slice (begrenztes
 Fire-and-Forget-Fenster, eindeutige Sentinel- und ID-Wertebereiche je

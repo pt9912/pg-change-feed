@@ -132,3 +132,20 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # kein Argument-Duplikat.
 FROM build AS publish
 CMD ["./gradlew", "--no-daemon", "publish"]
+
+# --- integration: der Realserver-Integrationstest der SDK-Flaechen
+# (slice-sdk-kotlin-reale2e, Mechanik-Klasse ADR-0110 §Entscheidung
+# Festlegung 2, gespiegelt vom Python-Vorbild). Baut auf `build` auf
+# (dieselben Pins, kein neuer Pin), baut die Integrations-Quellmenge
+# (build.gradle.kts-SourceSet `integrationTest` — der Unit-Lauf
+# `./gradlew test`/`build` bleibt unberuehrt, der Task haengt bewusst
+# NICHT an `check`) und fuehrt die Testlaeufe je Flaeche als
+# `./gradlew integrationTest --tests` aus — die Testklasse je Phase kommt
+# als Umgebungsvariable, deren Guard (`:?`) blanken Aufruf laut scheitern
+# laesst (kein gruenes Default ohne jeden Integrationstest, Muster
+# sdks/python-Dockerfile). Restore braucht Netz (Gradle-Abhaengigkeiten),
+# der Testlauf selbst braucht DB-/Netz-Zugang und ist kein Gate. ---
+FROM build AS integration
+RUN ./gradlew --no-daemon integrationTestClasses
+WORKDIR /src/pgchangefeed-kotlin
+CMD ["/bin/sh", "-c", "exec ./gradlew --no-daemon integrationTest --tests \"io.github.pt9912.pgchangefeed.integration.${PGCHANGEFEED_TEST_NAME:?Testklasse je Phase erforderlich}\""]

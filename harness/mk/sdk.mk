@@ -78,6 +78,25 @@ sdk-pack-kotlin: ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach s
 sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108, ADR-0110)
 	@bash tools/harness/sdk-pack-python.sh
 
+# `test-sdk-kotlin-integration` ist der Realserver-Integrationstest der
+# Kotlin-SDK-Zustellweg-Flaechen (slice-sdk-kotlin-reale2e, Mechanik-Klasse
+# ADR-0110 Festlegung 2, gespiegelt vom C#-Werkzeug): das Skript
+# tools/harness/run-sdk-kotlin-integration-tests.sh faehrt die
+# compose.yaml-Umgebung hoch, baut die `integration`-Docker-Stufe des
+# Kotlin-SDK (sdks/kotlin/Dockerfile, zwingend mit dem benannten
+# Bau-Kontext `proto`) und startet je Flaeche eine Phase
+# (`./gradlew integrationTest --tests` je Testklasse, Testklasse als
+# Umgebungsvariable mit `:?`-Guard gegen blanken Aufruf) im selben
+# Docker-Netz wie den Feed-Container — der Pruefling ist die kompilierte
+# Client-Assembly. Kein Gate (braucht DB-Zugang/Docker/Netz, dieselbe
+# Klasse wie `make test-integration`); setzt ein geladenes :dev-Image
+# voraus (`make image` vorher, compose.yaml traegt keinen build:-Block,
+# ADR-0044). Der Runner schreibt den Kotlin-Abschnitt des Abdeckungs-
+# Traegers docs/user/sdk-e2e-abdeckung.md aus derselben Messung.
+.PHONY: test-sdk-kotlin-integration
+test-sdk-kotlin-integration: ## Kotlin-SDK-Realserver-Integrationstest (compose + integration-Stufe, vier Phasen; Werkzeug, kein Gate; slice-sdk-kotlin-reale2e)
+	@bash tools/harness/run-sdk-kotlin-integration-tests.sh
+
 # `test-sdk-csharp-integration` ist der Realserver-Integrationstest der
 # C#-SDK-Zustellweg-Flaechen (slice-sdk-csharp-reale2e, Mechanik-Klasse
 # ADR-0110 Festlegung 2, gespiegelt vom Python-Werkzeug): das Skript

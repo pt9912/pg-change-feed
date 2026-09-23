@@ -159,6 +159,69 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// Integrations-Quellmenge (slice-sdk-kotlin-reale2e, Mechanik-Klasse
+// ADR-0110 §Entscheidung Festlegung 2): die Realserver-Tests brauchen eine
+// laufende Server-Instanz (compose-Netz) — sie laufen NICHT im netzlosen
+// Unit-Lauf (`./gradlew test`/`build`, `make sdk-pack-kotlin` bleibt
+// unberührt; der `integrationTest`-Task hängt bewusst NICHT an `check`),
+// sondern nur über `make test-sdk-kotlin-integration`
+// (tools/harness/run-sdk-kotlin-integration-tests.sh), das je Phase einen
+// `--tests`-Filter gegen einen Testklassen-Namen setzt (explizite
+// Phase-Auswahl, kein stiller Ausschluss; die Phase-Adressen/Auth kommen
+// über Umgebungsvariablen, die der Test-JVM erbt).
+val integrationTestImplementation by configurations.creating {
+    extendsFrom(configurations.testImplementation.get())
+}
+
+// Resolvable Laufzeit-Konfiguration des Integrationstest-Lauf-Classpaths:
+// die runtimeOnly-Abhaengigkeiten des Hauptmoduls (grpc-netty-shaded) sind
+// selbst nicht resolvable — diese Konfiguration erbt sie (und die Test-
+// Laufzeit) und wird unten im Task aufgelöst.
+val integrationTestRuntimeClasspath by configurations.creating {
+    extendsFrom(
+        configurations.getByName("integrationTestImplementation"),
+        configurations.testRuntimeOnly.get(),
+        configurations.runtimeOnly.get(),
+    )
+    isCanBeResolved = true
+    isVisible = false
+}
+
+sourceSets {
+    create("integrationTest") {
+        kotlin.srcDir("src/integrationTest/kotlin")
+    }
+}
+
+dependencies {
+    // Die main-Klassen (inklusive der im Bau erzeugten gRPC-Stubs) sind die
+    // Grundlage der Integrations-Tests — der Pruefling ist die kompilierte
+    // Client-Assembly.
+    "integrationTestImplementation"(sourceSets["main"].output)
+}
+
+val integrationTest by tasks.registering(Test::class) {
+    description =
+        "Realserver-Integrationstest der SDK-Flaechen — braucht eine laufende Server-Instanz; je Phase ein Aufruf mit --tests-Filter."
+    group = "verification"
+    testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+    // Der Lauf-Classpath traegt die Laufzeitstuecke explizit: die
+    // Implementation-Abhaengigkeiten (via integrationTestImplementation),
+    // die Test-Laufzeit (junit-launcher, testRuntimeOnly) und die
+    // runtimeOnly-Abhaengigkeiten des Hauptmoduls (grpc-netty-shaded — ohne
+    // sie endet der gRPC-Kanal in der ProviderNotFoundException).
+    classpath = sourceSets["integrationTest"].output +
+        configurations["integrationTestRuntimeClasspath"]
+    useJUnitPlatform()
+    // Die Runner-Marker (READY/RECEIVED/REJECTED) liest der Runner ueber
+    // `docker logs`, waehrend der Test laeuft — die Standard-Streams muessen
+    // live durchgereicht werden (JVM-stdout-Pufferung, Plan §6).
+    testLogging {
+        events("passed", "failed")
+        showStandardStreams = true
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
