@@ -3,13 +3,32 @@
 # Bau-Kontext ist sdks/python/ selbst — NICHT die Repo-Wurzel und NICHT
 # examples/ (kein examples/python/ existiert, ADR-0107 §Kontext Ist-Stand).
 #
+# Die gRPC-Client-Flaeche (slice-sdk-python-grpc-client-flaeche, ADR-0110
+# Festlegung 1) liest die `.proto` NICHT aus diesem Kontext — sie liegt
+# ausserhalb davon, unter proto/cdc/stream/v1/ an der Repo-Wurzel. Sie kommt
+# ueber einen ZUSAETZLICHEN, benannten Bau-Kontext namens `proto` herein
+# (`COPY --from=proto …` unten); der Aufrufer bringt ihn mit `docker build
+# --build-context proto=proto …` mit (Muster sdks/csharp/Dockerfile,
+# ADR-0090 Festlegung 2). Ohne ihn bricht der Bau an der COPY-Zeile ab —
+# kein stiller Fallback. Die Stub-Module entstehen im Bau
+# (`grpcio-tools`/`protoc`, Stufe `build`) und werden nicht committet
+# (.gitignore); sie landen als Unterpackage `pgchangefeed.grpc_gen` im
+# Wheel — das erzeugte `_pb2_grpc`-Modul traegt den generierten flachen
+# Geschwister-Import, den der `sed`-Schritt unten auf den Package-Import
+# hebt, bevor pytest ihn importiert.
+#
 # Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
 # (analog sdks/csharp/Dockerfile). Die `pack`/`pack-export`-Stufen unten
 # (slice-sdk-python-pack-werkzeug, ADR-0107 §Konsequenzen Folgepflicht 1,
 # ADR-0108 §Entscheidung Festlegung 1/3) bauen auf `build` auf: `pytest`
 # (unten) laeuft VOR `uv build --no-sources` (Stufe `pack`) — ein roter
 # Test bricht den `docker build` mit Exit != 0 ab, bevor `pack` je erreicht
-# wird (kein stiller Fallback, Muster sdks/csharp/Dockerfile).
+# wird (kein stiller Fallback, Muster sdks/csharp/Dockerfile). Die
+# `integration`-Stufe baut ebenfalls auf `build` auf und startet pytest
+# NICHT selbst — ihr ENTRYPOINT ist der Realserver-Integrationstest der
+# SDK-Flaeche (ADR-0110 §Entscheidung Festlegung 2/Folgepflicht 1,
+# tools/harness/run-sdk-python-integration-tests.sh); sie braucht Netz und
+# DB-Zugang und ist deshalb kein Gate.
 #
 # Basis-Digest real gemessen (`docker buildx imagetools inspect`,
 # Manifest-Index-Digest über alle Plattformen) am Zeitpunkt dieses Zuges:
@@ -40,9 +59,34 @@ COPY README.md pgchangefeed/README.md
 
 COPY pgchangefeed/src pgchangefeed/src
 COPY pgchangefeed/tests pgchangefeed/tests
+COPY pgchangefeed/integration pgchangefeed/integration
+
+# Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (Muster
+# ADR-0090 Festlegung 2) — diese COPY-Zeile ist der Punkt, an dem der Bau
+# ohne den Zusatzkontext real abbricht (kein Fallback, kein übersprungener
+# Schritt; Muster sdks/csharp/Dockerfile). Die flache Ziel-Zeile
+# (`changestream.proto`, ohne Paketpfad) hält die erzeugten Stub-Module
+# flach in `grpc_gen/` statt unter `cdc/stream/v1/` — genau wie die
+# `.proto`-Einspeisung oben eine vom Aufruf erwartete relative Stelle.
+COPY --from=proto cdc/stream/v1/changestream.proto changestream.proto
 
 WORKDIR /src/pgchangefeed
+# grpcio-tools vor der Stub-Erzeugung: ihr `protoc`-Modul (pip-Extra
+# `test`) traegt den Plugin-Aufruf. Die Stub-Erzeugung schreibt in
+# src/pgchangefeed/grpc_gen/ (Package-Marker committet, Stub-Module
+# gitignore't); die Modul-Namen folgen dem `.proto`-Dateinamen
+# (`changestream_pb2.py`/`changestream_pb2_grpc.py`, protoc-Konvention).
+# Der `sed`-Schritt zieht den generierten flachen Geschwister-Import in
+# `_pb2_grpc.py` auf den Package-Import — die dokumentierte Anpassung
+# generierter Python-Stubs (grpc-Handbuch, "Generated Code"-Leitfaden,
+# import statement), damit `pgchangefeed.grpc_gen.changestream_pb2_grpc`
+# als Package-Modul laedt.
 RUN pip install --no-cache-dir -e ".[test]"
+RUN python -m grpc_tools.protoc -I.. --python_out=src/pgchangefeed/grpc_gen --grpc_python_out=src/pgchangefeed/grpc_gen changestream.proto \
+    && sed -i 's/^import changestream_pb2 as changestream__pb2$/from pgchangefeed.grpc_gen import changestream_pb2 as changestream__pb2/' src/pgchangefeed/grpc_gen/changestream_pb2_grpc.py
+# Der blanke `pytest`-Lauf sammelt nur die Unit-Tests (pyproject.toml
+# testpaths = tests) — die Realserver-Tests unter pgchangefeed/integration/
+# laufen nur in der `integration`-Stufe (expliziter Pfad-Aufruf dort).
 RUN pytest
 
 # --- pack: `uv build --no-sources` ueber den bereits gebauten und
@@ -57,7 +101,8 @@ RUN pytest
 # bestehende `setuptools.build_meta`-Backend ueber die PEP-517-Schnittstelle
 # unveraendert (ADR-0108 §Entscheidung Festlegung 2) -- kein Wechsel an
 # pyproject.toml. Das Erzeugnis (Source-Distribution `.tar.gz` UND Wheel
-# `.whl`) landet unter /out. ---
+# `.whl`) landet unter /out; das Wheel traegt die zur Bauzeit erzeugten
+# Stub-Module mit (Regular-Unterpackage, setuptools packages.find). ---
 FROM build AS pack
 COPY --from=ghcr.io/astral-sh/uv:0.12.17@sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc /uv /uvx /bin/
 RUN mkdir -p /out && uv build --no-sources -o /out
@@ -72,3 +117,20 @@ RUN mkdir -p /out && uv build --no-sources -o /out
 # Nutzer. `tar` traegt beide Artefakte in einem Stream. ---
 FROM pack AS pack-export
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
+
+# --- integration: der Realserver-Integrationstest der SDK-Flaechen
+# (ADR-0110 §Entscheidung Festlegung 2/Folgepflicht 1). Baut auf `build`
+# auf (dasselbe installierte SDK samt `grpcio` und dieselben Stub-Module,
+# kein zweiter Install-Pfad) und fuert pytest gegen eine reale, laufende
+# Server-Instanz: `tools/harness/run-sdk-python-integration-tests.sh` baut
+# diese Stufe (`--target integration`, zwingend mit dem benannten
+# Bau-Kontext `proto` — derselbe Abbruchpunkt wie oben), startet sie im
+# selben Docker-Netz wie den Feed-Container und liest die stdout-Marker
+# (READY/RECEIVED/REJECTED) ueber `docker logs`. `-u` haelt die Marker
+# ungepuffert sichtbar (der Runner pollt sie, waehrend der Test laeuft);
+# `--capture=no` reicht pytest-Prints ungefiltert nach stdout. Der Pfad
+# `integration` gegenueber testpaths (pyproject.toml) ist der einzige
+# Aufruf, der diese Tests sammelt. ---
+FROM build AS integration
+WORKDIR /src/pgchangefeed
+ENTRYPOINT ["python", "-u", "-m", "pytest", "integration", "-v", "--capture=no"]

@@ -6,3 +6,11 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# Die gRPC-Stub-Module entstehen zur Docker-Bauzeit aus der `.proto` über
+# den benannten Bau-Kontext `proto` (sdks/python/Dockerfile, `COPY
+# --from=proto`) und sind nicht committet — `gen/**` bleibt die Go-Bindung;
+# das committete `__init__.py` macht aus dem erzeugten Ordner ein
+# reguläres Unterpackage (radierbar über den negierten Eintrag unten).
+pgchangefeed/src/pgchangefeed/grpc_gen/*.py
+!pgchangefeed/src/pgchangefeed/grpc_gen/__init__.py

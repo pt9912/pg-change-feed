@@ -27,6 +27,11 @@
 # die Pipe hier, ohne einen globalen `SHELL`-Override im Makefile zu
 # brauchen.
 #
+# Der gRPC-Teil der Flaeche liest die `.proto` ueber einen zusaetzlichen,
+# benannten Bau-Kontext (`--build-context proto=proto`, ADR-0090
+# Festlegung 2, Muster sdks/csharp/Dockerfile) — ohne ihn bricht der Bau
+# an der `COPY --from=proto`-Zeile in sdks/python/Dockerfile ab.
+#
 # Aufruf: `make sdk-pack-python`. Override: SDK_PACK_PYTHON_IMAGE. Kein
 # Gate (ADR-0107 Festlegung 5: PyPI-Paketbezug fuer Test-Abhaengigkeiten
 # braucht Netz, `make gates` bleibt netzlos).
@@ -37,6 +42,6 @@ cd "$repo_root"
 
 SDK_PACK_PYTHON_IMAGE=${SDK_PACK_PYTHON_IMAGE:-pg-change-feed:sdk-python-pack-export}
 
-docker build --target pack-export -t "$SDK_PACK_PYTHON_IMAGE" sdks/python
+docker build --build-context proto=proto --target pack-export -t "$SDK_PACK_PYTHON_IMAGE" sdks/python
 mkdir -p sdks/python/dist
 docker run --rm --network none "$SDK_PACK_PYTHON_IMAGE" | tar -x -C sdks/python/dist

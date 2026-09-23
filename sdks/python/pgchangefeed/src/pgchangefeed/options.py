@@ -1,11 +1,13 @@
 """Shared connection configuration for PG Change Feed client surfaces.
 
-ADR-0107 Festlegung 1 scopes the first Python package release to the HTTP
-API (SPEC-018) only -- no gRPC/SSE/NATS surface exists yet in this package.
-This class still holds only the two values every wire surface needs
-regardless of transport (base address, bearer token), so a later surface
-can reuse it without a breaking change to this constructor -- no
-anticipation of endpoint methods themselves (analogy:
+ADR-0107 Festlegung 1 scoped the first Python package release to the HTTP
+API (SPEC-018); ADR-0110 extends the package scope to the four-way delivery
+matrix — the gRPC live-change stream (SPEC-020) is covered by
+`PgChangeFeedGrpcClient`, SSE and NATS-Vollinhalt still follow in the same
+wave. This class still holds only the two values every wire surface needs
+regardless of transport (base address, bearer token), so a later surface can
+reuse it without a breaking change to this constructor -- no anticipation of
+endpoint methods themselves (analogy:
 sdks/csharp/PgChangeFeed.Client/PgChangeFeedClientOptions.cs).
 """
 
@@ -19,10 +21,11 @@ class ClientOptions:
     """Connection configuration for a PG Change Feed client surface.
 
     Attributes:
-        address: Base address of the PG Change Feed server (the HTTP
-            endpoint, for the surface currently covered by this package).
+        address: Base address of the PG Change Feed server (the endpoint the
+            surface consumes: HTTP base URL for the HTTP surface, host:port
+            for the gRPC surface).
         api_token: Bearer token sent as an authorization credential
-            (SPEC-018).
+            (SPEC-018 HTTP header, SPEC-020 gRPC metadata).
     """
 
     address: str

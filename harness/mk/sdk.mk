@@ -71,6 +71,25 @@ sdk-pack-kotlin: ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach s
 # (`docker run --rm --network none <image> | tar -x`, `set -o pipefail`
 # unter bash, AGENTS.md §3.9) nach sdks/python/dist/ (`.gitignore`t).
 # Exit-Code des Skripts wird wie bei jedem anderen Ziel direkt gelesen.
+# Der gRPC-Teil der Flaeche liest die `.proto` ueber den benannten
+# Bau-Kontext `proto` (ADR-0090 Festlegung 2, Muster sdks/csharp) —
+# tools/harness/sdk-pack-python.sh traegt ihn zwingend.
 .PHONY: sdk-pack-python
-sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108)
+sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108, ADR-0110)
 	@bash tools/harness/sdk-pack-python.sh
+
+# `test-sdk-python-integration` ist der Realserver-Integrationstest der
+# Python-SDK-Zustellweg-Flaechen (ADR-0110 §Entscheidung Festlegung
+# 2/Folgepflicht 1, slice-sdk-python-grpc-client-flaeche): das Skript
+# tools/harness/run-sdk-python-integration-tests.sh faehrt die
+# compose.yaml-Umgebung hoch (PostgreSQL/NATS/Feed-Container, Schema-Rollout
+# ueber d-migrate, Vorbedingungen der Aktivierung), baut die
+# `integration`-Docker-Stufe des Python-SDK (sdks/python/Dockerfile,
+# zwingend mit dem benannten Bau-Kontext `proto`) und startet sie im selben
+# Docker-Netz wie den Feed-Container — der Pruefling ist das SDK selbst.
+# Kein Gate (braucht DB-Zugang/Docker/Netz, dieselbe Klasse wie
+# `make test-integration`); setzt ein geladenes :dev-Image voraus
+# (`make image` vorher, compose.yaml traegt keinen build:-Block, ADR-0044).
+.PHONY: test-sdk-python-integration
+test-sdk-python-integration: ## Python-SDK-Realserver-Integrationstest (compose + integration-Stufe; Werkzeug, kein Gate; ADR-0110)
+	@bash tools/harness/run-sdk-python-integration-tests.sh

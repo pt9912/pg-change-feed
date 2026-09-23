@@ -14,16 +14,23 @@ version = "0.1.0"
 # `.proto`-Einspeisung in sdks/csharp/Dockerfile (COPY an eine vom
 # Projekt erwartete relative Stelle, ohne sie im committeten Baum zu
 # duplizieren).
-description = "Official Python client library for PG Change Feed (HTTP API)."
+description = "Official Python client library for PG Change Feed (HTTP API and gRPC live-change stream)."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "pt9912" }]
 requires-python = ">=3.14"
-# Einzige Fremdabhaengigkeit (ADR-0107 Festlegung 1: httpx, keine weitere,
-# keine schwere Fremdabhaengigkeit) -- wird von der HTTP-API-Client-Flaeche
-# (src/pgchangefeed/http_client.py) fuer die HTTP-Requests genutzt.
+# Laufzeitabhaengigkeiten je Client-Flaeche: httpx traegt die HTTP-Flaeche
+# (src/pgchangefeed/http_client.py, SPEC-018/SPEC-022); grpcio und protobuf
+# tragen die gRPC-Flaeche (src/pgchangefeed/grpc_client.py, SPEC-020) --
+# protobuf, weil die zur Bauzeit erzeugten Stub-Module
+# (src/pgchangefeed/grpc_gen/, kein committeter Stub) die protobuf-Runtime
+# beim Import brauchen (ADR-0110 erweitert den Erst-Scope aus ADR-0107
+# Festlegung 1). Kein Import aus einem privaten Baum dieses Repos
+# (ADR-0107 Festlegung 3).
 dependencies = [
     "httpx>=0.27",
+    "grpcio>=1.75",
+    "protobuf>=6",
 ]
 
 [project.urls]
@@ -31,7 +38,15 @@ Homepage = "https://github.com/pt9912/pg-change-feed"
 Repository = "https://github.com/pt9912/pg-change-feed"
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "grpcio-tools>=1.75"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+# Der blanke `pytest`-Lauf (Dockerfile-Stufe `build`, `RUN pytest`) sammelt
+# nur die netzlosen Unit-Tests: die Realserver-Tests liegen unter
+# pgchangefeed/integration/ und brauchen eine laufende Server-Instanz --
+# sie laufen nur in der `integration`-Docker-Stufe (expliziter Pfad-Argument
+# gegenueber testpaths, ADR-0110 Festlegung 2/Folgepflicht 1).
+testpaths = ["tests"]

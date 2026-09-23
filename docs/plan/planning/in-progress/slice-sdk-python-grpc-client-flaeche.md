@@ -63,7 +63,7 @@ als der bestehende Go-Toolchain-Container in
 
 ## 2. Definition of Done
 
-- [ ] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
+- [x] `LH-FA-SST-009` erfüllt: eine öffentliche, im Package sichtbare
       Client-Klasse öffnet den `StreamChanges`-RPC (`grpcio`,
       `authorization`-Metadata mit Bearer-Token) und liefert die zehn
       Nachrichtenfelder von
@@ -75,8 +75,11 @@ als der bestehende Go-Toolchain-Container in
       benannten Docker-Bau-Kontext (`--build-context proto=proto`,
       `grpcio-tools`/`protoc`), kein committeter Stub im SDK-Baum —
       dasselbe Muster wie bei C#/Kotlin, hier zum ersten Mal für Python
-      eingeführt.
-- [ ] **Realserver-Integrationstest-Werkzeug eingeführt** (`ADR-0110`
+      eingeführt. *(Sensor-Beleg: `make sdk-pack-python` EXIT=0 —
+      29 Unit-Tests grün, darunter 5 neue gRPC-Tests
+      `tests/test_grpc_client.py`; Wheel+SDist tragen die
+      `grpc_gen`-Stub-Module.)*
+- [x] **Realserver-Integrationstest-Werkzeug eingeführt** (`ADR-0110`
       §Entscheidung Festlegung 2/Folgepflicht 1): ein neues Skript
       `tools/harness/run-sdk-python-integration-tests.sh` und ein neues
       Make-Target `make test-sdk-python-integration` (Arbeitsnamen,
@@ -96,10 +99,20 @@ als der bestehende Go-Toolchain-Container in
       `cdc.changes` gehalten (Muster: `run-integration-tests.sh`s
       gRPC-Rundlauf, hier mit dem SDK selbst statt einem Wegwerf-Client als
       Prüfling). Kein Gate — braucht DB-Zugang/Docker/Netz, dieselbe
-      Klasse wie `make test-integration`.
-- [ ] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
-      geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/python/`).
-- [ ] `make gates` grün.
+      Klasse wie `make test-integration`. *(Sensor-Beleg: `make
+      test-sdk-python-integration` EXIT=0 — der SDK-Client empfing real
+      eine committete Änderung über `pg-change-feed:9090`
+      (change_id=804-1, unabhängig über `cdc.changes` lesbar); der
+      Öffnungsversuch ohne Token endete mit gRPC-Status
+      `Unauthenticated`.)*
+- [x] Kein Import aus `internal/**`/`cmd/**`/`gen/**` dieses Repos — real
+      geprüft (`grep -rn "internal/\|cmd/\|gen/" sdks/python/`). *(Der
+      Wörter-Grep trägt jetzt Prosadiskurs über die Stub-Erzeugung
+      (`grpc_gen`-Pfad, „`gen/**` bleibt die Go-Bindung") in Kommentaren;
+      die strenge Import-Zeilen-Prüfung
+      (`grep -E "^\s*(from|import)" … \| grep internal/cmd/gen`) liefert
+      keinen Treffer.)*
+- [x] `make gates` grün.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
@@ -110,7 +123,10 @@ als der bestehende Go-Toolchain-Container in
       Zeile **in diesem** Slice, weil das Werkzeug hier real entsteht
       (`AGENTS.md` §4: kein Träger nennt ein Target, das es nicht gibt —
       umgekehrt gilt auch: ein real existierendes Target bekommt seine
-      Zeile im selben Zug, nicht erst später).
+      Zeile im selben Zug, nicht erst später). *(In diesem Lauf erledigt:
+      Zeile in `harness/README.md` §Werkzeuge, dazu Nachzug auf der
+      bestehenden `make sdk-pack-python`-Zeile — der pack-Bau trägt jetzt
+      denselben Bau-Kontext.)*
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register (`../reconciliation.md`) fortgeschrieben,
       **falls dieser Slice einen Inventur-Fund auflöst** — entfällt: keine
@@ -136,6 +152,19 @@ als der bestehende Go-Toolchain-Container in
 | `tools/harness/run-sdk-python-integration-tests.sh` | neu | Bring-up der `compose.yaml`-Umgebung, Bau/Start der `integration`-Docker-Stufe, Abbau. |
 | `harness/mk/sdk.mk` | update | neues Target `test-sdk-python-integration`. |
 | `harness/README.md` §Werkzeuge | update | neue Zeile für `make test-sdk-python-integration`. |
+
+**Plan-Nachzug (im selben Lauf, vor dem Gate-Lauf — über den Plan
+hinausgehende oder abweichende Änderungen):**
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `sdks/python/pgchangefeed/integration/test_grpc_realserver.py` (statt `tests/integration/`) | Abweichung | Der blanke `RUN pytest`-Lauf der `build`-Stufe sammelt mit `testpaths = ["tests"]` auch Unterordner von `tests/`; ein `--ignore=tests/integration` in `addopts` würde auch den expliziten Integrations-Aufruf ausschließen. Ein eigener Top-Level-Ordner `integration/` (Geschwister von `tests/`) trägt beide Läufe ohne Ausschluss-Tricks: `testpaths` begrenzt den Unit-Lauf auf `tests/`, die `integration`-Stufe ruft ihren Pfad explizit auf. |
+| `sdks/python/pyproject.toml`: zusätzlich `protobuf>=6` als Laufzeitabhängigkeit | Erweiterung | Die zur Bauzeit erzeugten Stub-Module importieren die `protobuf`-Runtime; das Wheel muss sie als Abhängigkeit deklarieren, sonst scheitert der Import beim Consumer. `grpcio-tools` trägt sie nur für den Bau, nicht als Paket-Vertrag. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/grpc_gen/__init__.py` | neu | Package-Marker: macht aus dem zur Bauzeit erzeugten Stub-Ordner ein reguläres Unterpackage (Wheel-Einbindung über `setuptools packages.find`); die Stub-Module selbst bleiben uncommittet (`.gitignore`-Nachzug, dieselbe Tabelle). |
+| `sdks/python/.gitignore` | update | die zwei Stub-Module (`changestream_pb2.py`/`changestream_pb2_grpc.py`, protoc leitet die Modulnamen aus dem `.proto`-**Dateinamen** ab — nicht aus dem Proto-Package) bleiben uncommittet, der Package-Marker bleibt committet. |
+| `tools/harness/sdk-pack-python.sh` | update | der `pack-export`-Bau läuft über dieselbe `COPY --from=proto`-Zeile des Dockerfiles — ohne `--build-context proto=proto` bricht `make sdk-pack-python` ab; der Aufruf trägt den Kontext zwingend (Muster `tools/harness/sdk-pack-csharp.sh`). |
+| `stream_changes(timeout=None)` | Erweiterung | der Integrationstest braucht eine fristbare Empfangsschleife — ein blockierendes `next()` ohne Call-Deadline hängt endlos, wenn der Server nichts sendet; der `timeout`-Parameter ist der grpcio-native Weg und bleibt optional (`None` = unverändert unbegrenzt). |
+| `sdks/python/README.md` §Status, `src/pgchangefeed/__init__.py`-Docstring | update | Träger-Nachzug (`AGENTS.md` §3.13, dieselbe Klasse wie der im Welle-Plan genannte `options.py`-Docstring): die Satzform „gRPC bleibt außerhalb" wird durch diesen Slice falsch. |
 
 **Ansatz:** Draht-Kenntnis-Quelle für das Nachrichtenschema ist
 [`SPEC-020`](../../../../spec/pflichtenheft.md) direkt und
