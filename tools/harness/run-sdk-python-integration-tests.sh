@@ -275,7 +275,7 @@ SQL
     exit 1
   fi
   if [ "$rejected" -ne 1 ]; then
-    echo "run-sdk-python-integration-tests: $phase_name — Stream-Oeffnungsversuch ohne gueltiges Token wurde nicht abgelehnt ($reject_marker fehlt): $test_output" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — der Ablehnungs-Beleg blieb aus ($reject_marker fehlt): $test_output" >&2
     exit 1
   fi
   if [ "$test_stopped" -ne 1 ] || [ "$test_exit" != "0" ]; then
