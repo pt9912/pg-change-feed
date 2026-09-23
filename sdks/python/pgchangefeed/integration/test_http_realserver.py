@@ -3,9 +3,9 @@
 Runs only in the `integration` Docker stage (sdks/python/Dockerfile), started
 by tools/harness/run-sdk-python-integration-tests.sh inside the same Docker
 network as the feed container (ADR-0110 §Entscheidung Festlegung 2 — the
-HTTP surface is the one delivery-path surface of this package whose
-origin-acceptance predated that rule; this phase strengthens its evidence
-stand to the same form). A roundtrip in the pattern of the server-E2E HTTP
+HTTP surface carries its real-server evidence under the same rule the
+stream surfaces carry; this phase strengthens its evidence stand to that
+form). A roundtrip in the pattern of the server-E2E HTTP
 phase: the SDK registers a disposable consumer with the admin token and
 lists tables with the reader token; the registration is held against the
 SQL read path (`cdc.consumer`) by the runner; a call with an unknown token

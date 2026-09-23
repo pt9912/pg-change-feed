@@ -267,7 +267,7 @@ SQL
   test_output=$(docker logs "$SDK_TEST_CONTAINER" 2>&1 || true)
 
   if [ "$received" -ne 1 ]; then
-    echo "run-sdk-python-integration-tests: $phase_name — der Test empfing keine der committeten Aenderungen ($TEST_TABLE, $sentinel) ueber den Stream: $test_output" >&2
+    echo "run-sdk-python-integration-tests: $phase_name — der Test lieferte den Happy-Path-Marker nicht ($TEST_TABLE, $sentinel): $test_output" >&2
     exit 1
   fi
   if ! printf '%s' "$test_output" | grep -qE "$received_grep"; then

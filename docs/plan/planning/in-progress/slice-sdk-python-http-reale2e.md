@@ -160,7 +160,7 @@ Wertebereiche, die die Stream-Phasen nicht schneiden).
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/harness/run-sdk-python-integration-tests.sh`: `run_surface_phase` um `received_grep`/`sql_kind` erweitert | Erweiterung | die HTTP-Phase braucht die `consumer`-SQL-Variante (Gegenprüfung gegen `cdc.consumer`) und eine phasenspezifische RECEIVED-Form — dieselbe Parametrisierung wie der C#-Runner (`run-sdk-csharp-integration-tests.sh`); die drei Stream-Phasen reichen ihre bisher feste Form als Parameter nach (kein Verhaltenstausch). |
-| `tools/harness/run-sdk-python-integration-tests.sh`: Träger-Writer (Python-Abschnitt) | neu | der Python-Runner trägt seinen Abschnitt-Generator jetzt selbst (beidseitiger Rest-Erhalt, degenerater Pfad mit Kopf-Regeneration — die Form-Grenze der C#/Kotlin-Kette); die Matrix-Vollständigkeit (12 Zeilen) ist damit runner-generiert, nicht handgeschrieben. |
+| `tools/harness/run-sdk-python-integration-tests.sh`: Träger-Writer (Python-Abschnitt) | neu | der Python-Runner trägt seinen Abschnitt-Generator jetzt selbst (beidseitiger Rest-Erhalt, Fehlbestands-Pfad (fehlt die Träger-Datei ganz) regeneriert Kopf + Tabellenkopf — die Form-Grenze der C#/Kotlin-Kette); die Matrix-Vollständigkeit (12 Zeilen) ist damit runner-generiert, nicht handgeschrieben. |
 | `API_TOKEN_ADMIN`/`API_TOKEN_READER` im Runner-Kopf | neu | die HTTP-Phase braucht beide Token-Klassen (Risiko der C#-Kette, Ausgang dort belegt — dieselbe Ausgangslage hier). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Python-HTTP-Fläche trägt einen realen Realserver-Beleg; der Träger deklariert alle zwölf Flächen-Belege"; beide Stände gemessen: Parent `d99768f2` und HEAD):**
@@ -173,6 +173,8 @@ Wertebereiche, die die Stream-Phasen nicht schneiden).
 | `sdks/python/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
 | `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
 | `spec/pflichtenheft.md` | geprüft — kein falsch werdender Träger (Welle-Plan §6) | nichts zu ziehen |
+| `harness/mk/sdk.mk` | Plan §3 führt die Zeile als Update-Punkt — keine Änderung erfolgt und der Target-Kommentar trägt keine Phasen-Enumeration, nichts falsch geworden (Review F-1) | Auslassung deklariert: der Kommentar-Block braucht keinen Nachzug |
+| `harness/README.md` §Werkzeuge (Kotlin- und C#-Zeilen) | Endklassen der Erweiterungs-Zusage („erweitert sich um …“) gefunden — seit diesem Zug verbraucht (Review F-2) | gezogen: „trägt den … Abschnitt seit slice-sdk-python-http-reale2e“ |
 
 ## 4. Trigger
 
