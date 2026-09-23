@@ -179,7 +179,7 @@ rot, Arbeitsbaum nach allen Läufen sauber. Beobachtungen (nicht DoD-wirksam):
 
 1. **F-5-Rest in der zweiten Diagnose-Zeile** (LOW-Klasse des Reviews
    restiert zur Hälfte): die Reject-Prüfung (Runner Z. 278) trägt weiter
-   Stream-Wortlaut — mein mutierter Lauf zeigt real „HTTP-Flaeche (SPEC-018)
+   Stream-Wortlaut — mein mutierter Lauf zeigt real „HTTP-Flaeche ([`SPEC-018`](../../spec/pflichtenheft.md))
    — Stream-Oeffnungsversuch ohne gueltiges Token wurde nicht abgelehnt",
    obwohl die HTTP-Phase keinen Stream öffnet; ebenso bleibt der tote
    Insert-Anteil (331–335 ohne Empfänger) bestehen. Der Fixrunde-Fix traf
