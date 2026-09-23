@@ -3,7 +3,7 @@
 # Kotlin-SDK-Zustellweg-Flaechen (slice-sdk-kotlin-reale2e; Mechanik-Klasse
 # ADR-0110 §Entscheidung Festlegung 2, gespiegelt vom Python-Vorbild und dem
 # C#-Spiegel tools/harness/run-sdk-csharp-integration-tests.sh): die vier
-# FlaecheN des Packages pgchangefeed-kotlin (HTTP SPEC-018, gRPC SPEC-020,
+# Flaechen des Packages pgchangefeed-kotlin (HTTP SPEC-018, gRPC SPEC-020,
 # SSE SPEC-021, NATS-Vollinhalt SPEC-024) pruefen ihre Protokoll-Annahmen je
 # gegen eine reale, laufende Server-Instanz — der Pruefling ist die
 # kompilierte Client-Assembly, der Integrationstest importiert
@@ -335,6 +335,26 @@ abdeckung_schreiben() {
   fi
   temp=$(mktemp)
   {
+    if [ -z "$vor" ]; then
+      # Degenerater Pfad (fehlt die Traeger-Datei ganz — kein stiller
+      # nackter Abschnitt, Muster csharp-Runner): Kopf und Tabellenkopf
+      # regenerieren, wie der C#-Writer ihn traegt.
+      printf '%s\n' \
+        '# SDK-E2E-Abdeckung je Spec-Kennung' \
+        '' \
+        'Erzeugt von `make test-sdk-csharp-integration` über' \
+        '`tools/harness/run-sdk-csharp-integration-tests.sh`; die Sprach-Runner' \
+        'der Folge-Slices (Kotlin, Python-HTTP) erweitern dieselbe Datei um ihre' \
+        'marker-gegrenzten Abschnitte. Je Sprach-Abschnitt deklariert der' \
+        'zustaendige Runner seine Realserver-Phasen an Ort und Stelle. Diese' \
+        'Datei ist eine **stabile Abdeckungs-Deklaration**, kein Lauf-Beleg: der' \
+        'Runner schreibt sie nur bei inhaltlicher Abweichung. Sie trägt nur' \
+        'Zeilen real existierender Runner-Phasen — ein Beleg steht hier nie,' \
+        'bevor sein Lauf grün lief.' \
+        '' \
+        '| Spec-Kennung | Kurzbeschreibung | Nachweis | Ort |' \
+        '| --- | --- | --- | --- |'
+    fi
     if [ -n "$vor" ]; then
       printf '%s\n' "$vor"
     fi

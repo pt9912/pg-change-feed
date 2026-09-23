@@ -165,8 +165,8 @@ hier jeweils gegen die Kotlin-Client-Klassen (`PgChangeFeedGrpcClient`,
 |---|---|---|
 | `harness/README.md` §Werkzeuge | Zeile fehlt (Target real, Zeile nicht) | in diesem Zug ergänzt (nach dem realen Lauf) |
 | `docs/user/sdk-e2e-abdeckung.md` | Kotlin-Abschnitt fehlt | in diesem Zug ergänzt (C#-Abschnitt byte-identisch erhalten — Writer-Form-Erhalt auf beiden Seiten real gemessen) |
-| `harness/README.md` §Werkzeuge (`make test-sdk-csharp-integration`-Zeile) | Endklause „erweitert sich Slice für Slice um die Kotlin- und Python-HTTP-Abschnitte" — mit diesem Slice zur Hälfte verbraucht | gezogen: die Zeile nennt jetzt den Kotlin-Abschnitt als real (Welle-Slice 2) |
-| `sdks/kotlin/README.md` §Status | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
+| `harness/README.md` §Werkzeuge (`make test-sdk-csharp-integration`-Zeile) | Endklause „erweitert sich Slice für Slice um die Kotlin- und Python-HTTP-Abschnitte" — mit diesem Slice zur Hälfte verbraucht | gemeldet, nicht gezogen — die Endklasse bleibt als Verlaufs-Aussage wahr (der Kotlin-Abschnitt ist mit diesem Slice real) |
+| `sdks/kotlin/pgchangefeed-kotlin/README.md` §Status (die erste Feld-Fassung nannte fälschlich `sdks/kotlin/README.md` — Adresse ohne Artefakt, Review F-1) | geprüft — trägt keine Teststrategie-Aussage über Realserver-Läufe | kein Nachzug nötig |
 | `docs/user/benutzerhandbuch.md` | geprüft — trägt die SDK-Hinweise, keine E2E-Beleg-Aussage | nichts zu ziehen |
 | `spec/pflichtenheft.md` | geprüft — kein falsch werdender Träger | nichts zu ziehen |
 
