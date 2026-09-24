@@ -78,7 +78,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 
 ## 2. Definition of Done
 
-- [ ] Happy Path und Boundary am laufenden Feed-Container: Bestand lesbar und als
+- [x] Happy Path und Boundary am laufenden Feed-Container: Bestand lesbar und als
       `backfill` erkennbar über beide Lesewege, unterscheidbar von einer
       WAL-Änderung derselben Zeile, Replay-Invariante nach nebenläufigen
       Schreibern, leere Tabelle, zweiter Antrag. *Zu belegen durch:* ein realer
@@ -88,7 +88,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       Folgepflicht 2 den E2E-Beleg (`S5`); dieser Slice belegt sie im E2E, weil erst
       dort Snapshot, Schreiber und WAL-Pfad komponiert laufen — der Architect
       bestätigt die Ortswahl im Review oder verlangt zusätzlich den Tier-Beleg.
-- [ ] Negative: `docker kill` im laufenden Run → nach dem Neustart `interrupted`,
+- [x] Negative: `docker kill` im laufenden Run → nach dem Neustart `interrupted`,
       keine sichtbare Change des Runs, erneuter Antrag erreicht `completed`, Bestand
       einmal und vollständig; eine zum Abbruchzeitpunkt `queued` wartende Zeile
       überlebt den Neustart und wird ausgeführt (`completed`, Bestand ihrer Tabelle
@@ -96,7 +96,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       Kriterien trägt je eine Mutation im Bericht (die Prüfung gegen die
       Eingabe gelenkt, der Lauf färbt rot —
       `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert).
-- [ ] Startposition gemessen und im Handbuch mit ihrem Lauf genannt; der
+- [x] Startposition gemessen und im Handbuch mit ihrem Lauf genannt; der
       Runner deklariert die Phase(n) über `abdeckung_declare` mit der Kennung
       [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), und `docs/user/e2e-abdeckung.md` trägt nach dem Lauf eine
       Zeile dafür (Erzeugnis des Runners, kein Lauf-Beleg, mitcommittet);
@@ -109,10 +109,10 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: Handbuch §4 (Abschnitt „Bestand als Backfill überführen“) trägt die gemessene Startposition mit Lauf-Ursprung; die Änderungshistorie eine Zeile.
+- [x] Doku-Update: Handbuch §4 (Abschnitt „Bestand als Backfill überführen“) trägt die gemessene Startposition mit Lauf-Ursprung; die Änderungshistorie eine Zeile.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -200,10 +200,14 @@ gemessen oder benannt; die Komposition trägt erst dieser Slice):
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Abdeckungs-Tabelle | Lauf von `make test-integration`, `git diff docs/user/e2e-abdeckung.md` | *(Implementer trägt ein)* | mitcommitten; Zeilen-Anker früherer Zeilen verschieben sich |
-| Zeile `make test-integration` in `harness/README.md` (lange Aufzählung der Rundläufe) | Lesen | *(Implementer trägt ein)* | Rundlauf ergänzen, Rest unverändert |
-| RTM-Träger | `make doc-trace` | *(Implementer trägt ein)* | `LH-FA-CAP-009` nicht mehr Waise; sonst Deklarations-Anker prüfen |
-| CI-Träger der Läufe | Lesen von `.github/workflows/e2e.yml` (Trigger, Matrix) | *(Implementer trägt ein)* | unverändert; die Laufzeit-Frage steht in §6 |
+| Abdeckungs-Tabelle | `git show e7df5619:docs/user/e2e-abdeckung.md \| grep -c '^\| \['` (Parent); Lauf von `make test-integration`, danach `git diff docs/user/e2e-abdeckung.md` und `grep -c` (Diff-Stand) | Parent: 41 Zeilen, 0 mit `LH-FA-CAP-009` (13 Go-, 28 Bash-Zeilen; ein Lauf des Parent-Runners im Arbeitsbaum dieses Slice meldet „aus 14 Go-Zeilen und 28 Bash-Zeilen“, weil `backfill_test.go` im Paket liegt). Diff-Stand: 48 Zeilen (Lauf-Zeile: „aus 14 Go-Zeilen und 34 Bash-Zeilen“), 7 mit `LH-FA-CAP-009`; `git diff --stat`: 35 Einfügungen, 28 Löschungen — 7 neue Zeilen, 28 Zeilen mit verschobenem Ort-Anker | mitcommittet; Zeilen-Anker früherer Zeilen verschieben sich |
+| Zeile `make test-integration` in `harness/README.md` (lange Aufzählung der Rundläufe) | Lesen; Zählwort „sieben“ nachgezählt: `grep -c '^abdeckung_declare "Backfill' tools/harness/run-integration-tests.sh` und `grep -c '^func TestE2EBackfill' test/integration/backfill_test.go` | Aufzählung endet vor dem Satz zum Erzeugnis `docs/user/e2e-abdeckung.md`; Zählung: 6 Runner-Deklarationen + 1 Testfunktion = 7 Rundläufe, drei Haltepunkte (offene Schreibtransaktion, unbestätigter Schlüssel, `docker pause`); der Kopf des Abschnitts im Runner nennt dieselben drei | ein Satz ergänzt (sieben Backfill-Rundläufe), Rest unverändert; der Runner-Kopf-Kommentar nennt `docker pause` statt der Tabellensperre |
+| Aussage zu den Waisen in `harness/README.md` (Zeile `make doc-trace`) | `make -C <Worktree von e7df5619> doc-trace` (Parent), `make doc-trace` (Diff-Stand); `git grep -n -i waise <Stand>` | Parent: „80 Anforderung(en), 3 Waise(n)“ (`LH-FA-CAP-009`, `LH-FA-CFG-007`, `LH-FA-CFG-008`); Diff-Stand: „80 Anforderung(en), 2 Waise(n)“, `LH-FA-CAP-009` mit Nachweis `E2E`. Träger der Waisen-Aussage: die README-Zeile (3 Waisen mit Datum 2026-09-23), sonst nur Pläne mit Zukunftsaussagen (`welle-backfill-bestand`, `welle-transformationen`, zwei offene Slices) | README-Zeile nachgezogen (2 Waisen, Datum 2026-09-24, `LH-FA-CFG-007`/`LH-FA-CFG-008`); Pläne unverändert |
+| Beschreibungen von `make test-integration` außerhalb der README | `git grep -l 'test-integration' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` und Lesen der beschreibenden Treffer (`Makefile`, `harness/sensors/docs-check.md`, `AGENTS.md`, `examples/README.md`, `docs/plan/planning/in-progress/roadmap.md`) | Parent: 124 Zeilen in 57 Dateien; Diff-Stand: 127 Zeilen in 59 Dateien (zusätzlich `docs/user/benutzerhandbuch.md` mit 2 und `test/integration/backfill_test.go` mit 1 Zeile); beide Stände ohne die Plan-Datei dieses Slice, die sich selbst zitiert. Beschreibend: `Makefile` (Hilfezeile nennt drei Beispiele ohne Vollständigkeitsanspruch), `harness/sensors/docs-check.md` (Erzeugung der Abdeckungstabelle, unverändert wahr); die übrigen sind Verweise auf das Ziel ohne Beschreibung des Inhalts | unverändert |
+| Ausgabe und Modi des Wegwerf-Clients | `git grep -n httpclient <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` und Lesen der Treffer außerhalb von `tools/` | Parent: 39 Treffer-Zeilen in 14 Dateien, Diff-Stand: 48 Zeilen in 14 Dateien (die Mehrzeilen liegen in `tools/harness/`); beide ohne die Plan-Datei dieses Slice; beschreibende Träger der Ausgabeform: `examples/http-client/main.go` (Verweis „Wegwerf-Client als Belegträger“), `examples/README.md` (Abgrenzung), `docs/plan/planning/open/slice-transformationen-e2e-wirkung.md` (Plan-Zeile „geben Schlüssel und Werte der Row Images aus“) — keine nennt die READ-Zeile oder deren Feldliste | unverändert |
+| Zählwörter zu den bewegten Eigenschaften | `git grep -n -E '(zwei\|drei\|vier\|fünf\|sechs\|sieben\|acht\|beiden\|beide) (Backfill-\|weitere \|zusätzliche )?(Rundl\|Belege\|Phasen\|Haltepunkt\|Fremdobjekt\|Waise)' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/adr'` (ohne die Plan-Datei dieses Slice) | Parent: 11 Treffer; Diff-Stand: 11 Treffer. Entfallen: „vier Fremdobjekten“ im Runner-Kommentar (ersetzt); hinzugekommen: „sieben Backfill-Rundläufe“ in `harness/README.md`. Die übrigen zehn betreffen Kurs-Dokumente (`.claude/commands/close-welle.md`, `.harness/baseline`), die SDK-Werkzeuge (`harness/mk/sdk.mk`, „vier Phasen“) und die Coverage-/Replikations-Skripte (zwei Phasen) und sind von diesem Slice nicht berührt | unverändert |
+| RTM-Träger | `make doc-trace` | siehe Zeile zu den Waisen: `LH-FA-CAP-009` trägt `E2E`, 2 Waisen | Deklarations-Anker tragen |
+| CI-Träger der Läufe | Lesen von `.github/workflows/e2e.yml` (Trigger, Matrix, `timeout-minutes`); `git diff --stat e7df5619 -- .github` | Trigger Pull Request und Push, Matrix über die PostgreSQL-Versionen 17 und 18, `timeout-minutes: 60`; `.github` ohne Diff | unverändert; die Laufzeit-Frage steht in §6 |
 
 ## 4. Trigger
 
