@@ -94,3 +94,77 @@ func TestNewChangeRejectsInvariantViolations(t *testing.T) {
 		})
 	}
 }
+
+// LH-FA-CAP-009 / SPEC-002: der Konstruktor legt einen Change mit der
+// Herkunft `wal` an.
+func TestNewChangeDefaultsOriginToWAL(t *testing.T) {
+	change := buildChange(t, validChangeArgs())
+	if change.Origin != ChangeOriginWAL {
+		t.Fatalf("Origin = %q, wollen %q", change.Origin, ChangeOriginWAL)
+	}
+}
+
+// Die Herkunft ist eine geschlossene Menge (`SPEC-002`): `wal` und
+// `backfill` werden angenommen, jeder andere Wert abgelehnt; die leere
+// Zeichenkette (fehlender Wert, `NULL`) liest als `wal`
+// (`LH-FA-DAT-006` Boundary).
+func TestNewChangeOriginClosedSet(t *testing.T) {
+	cases := []struct {
+		raw     string
+		want    ChangeOrigin
+		wantErr error
+	}{
+		{"wal", ChangeOriginWAL, nil},
+		{"backfill", ChangeOriginBackfill, nil},
+		{"", ChangeOriginWAL, nil},
+		{"snapshot", "", domainerrors.ErrInvalidChangeOrigin},
+		{"WAL", "", domainerrors.ErrInvalidChangeOrigin},
+		{" backfill", "", domainerrors.ErrInvalidChangeOrigin},
+	}
+	for _, tc := range cases {
+		t.Run(tc.raw, func(t *testing.T) {
+			got, err := NewChangeOrigin(tc.raw)
+			if !stderrors.Is(err, tc.wantErr) {
+				t.Fatalf("Fehler = %v, wollen %v", err, tc.wantErr)
+			}
+			if got != tc.want {
+				t.Fatalf("Herkunft = %q, wollen %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// `WithOrigin` setzt die Herkunft und lehnt einen Wert außerhalb der Menge
+// ab; der Change bleibt dann unverändert.
+func TestChangeWithOrigin(t *testing.T) {
+	change := buildChange(t, validChangeArgs())
+
+	backfill, err := change.WithOrigin(ChangeOriginBackfill)
+	if err != nil {
+		t.Fatalf("WithOrigin(backfill): %v", err)
+	}
+	if backfill.Origin != ChangeOriginBackfill {
+		t.Fatalf("Origin = %q, wollen %q", backfill.Origin, ChangeOriginBackfill)
+	}
+	if change.Origin != ChangeOriginWAL {
+		t.Fatalf("der Ursprungs-Change bleibt unverändert: Origin = %q", change.Origin)
+	}
+
+	rejected, err := change.WithOrigin(ChangeOrigin("snapshot"))
+	if !stderrors.Is(err, domainerrors.ErrInvalidChangeOrigin) {
+		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrInvalidChangeOrigin)
+	}
+	if rejected.Origin != ChangeOriginWAL {
+		t.Fatalf("abgelehnter Wert verändert den Change: Origin = %q", rejected.Origin)
+	}
+}
+
+// Ein fehlender Wert liest als `wal`, ein gesetzter bleibt.
+func TestChangeOriginOrDefault(t *testing.T) {
+	if got := ChangeOrigin("").OrDefault(); got != ChangeOriginWAL {
+		t.Fatalf("leere Herkunft liest als %q, wollen %q", got, ChangeOriginWAL)
+	}
+	if got := ChangeOriginBackfill.OrDefault(); got != ChangeOriginBackfill {
+		t.Fatalf("gesetzte Herkunft bleibt: %q", got)
+	}
+}

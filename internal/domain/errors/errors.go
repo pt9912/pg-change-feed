@@ -79,4 +79,10 @@ var (
 	// `enable`/`disable`/`exclude_column`/`include_column`
 	// (`chk_administration_request_kind`, `ADR-0050`, `LH-FA-CFG-005`).
 	ErrInvalidAdministrationRequestKind = stderrors.New("unbekannte Antragsart")
+
+	// ErrInvalidChangeOrigin: die Herkunft eines Changes ist `wal` oder
+	// `backfill` (`SPEC-002`, `LH-FA-CAP-009`); die Datenbankspalte
+	// `cdc.change.origin` trägt keinen CHECK, die geschlossene Menge
+	// erzwingt allein die Domäne.
+	ErrInvalidChangeOrigin = stderrors.New("unbekannte Change-Herkunft")
 )
