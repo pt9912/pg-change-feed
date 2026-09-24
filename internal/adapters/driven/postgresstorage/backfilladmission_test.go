@@ -219,7 +219,9 @@ func TestBackfillAdmitRefusesARequestThatIsNotTheBackfillOfThisRun(t *testing.T)
 	now := time.Now().UTC()
 	const otherSource = "src-backfill-other"
 	f.exec("INSERT INTO cdc.source (source_id, name) VALUES ($1, 'andere Backfill-Quelle') ON CONFLICT (source_id) DO NOTHING", otherSource)
-	t.Cleanup(func() { _, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", otherSource) })
+	t.Cleanup(func() {
+		_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", otherSource)
+	})
 
 	// Jeder Fall trägt seine eigene Run-Tabelle: ein angenommener Antrag legt
 	// einen aktiven Run an, den der nächste Fall als aktiven Run
