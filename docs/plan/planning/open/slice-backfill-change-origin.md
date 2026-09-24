@@ -81,7 +81,10 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
       `wal`, die Feldreihenfolge bleibt, `origin` steht zuletzt. *Zu belegen
       durch:* Handler-Test in `readchanges_test.go` (`make test`); das
       Benutzerhandbuch (§4 „Änderungen lesen" und der `GET /changes`-Teil der
-      HTTP-Beschreibung) nennt das Feld, die Änderungshistorie trägt eine Zeile
+      HTTP-Beschreibung) nennt das Feld — zwei benannte Stellen: die
+      Spaltenliste des SQL-Beispiels unter „Änderungen lesen" und die Feldliste
+      der `GET /changes`-Antwort unter „Changes lesen" —, der `Version:`-Kopf
+      ist hochgezogen, die Änderungshistorie trägt eine Zeile
       (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
       `BEO-PGC/handbuch-versionshistorie-uebersprungen`).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
@@ -119,13 +122,13 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 | `internal/adapters/driven/postgresstorage/schema.sql` | prüfen | eingebettete DDL (`ApplySchema`); ob sie noch ein Träger der Spalte ist oder nur Test-Hilfe, klärt der Suchlauf. |
 | `internal/adapters/driving/http/readchanges.go` (+ `readchanges_test.go`) | update | Antwortfeld `origin`. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
-| `docs/user/benutzerhandbuch.md` | update | §4 „Änderungen lesen", HTTP-Beschreibung von `GET /changes`, Änderungshistorie. |
+| `docs/user/benutzerhandbuch.md` | update | §4 „Änderungen lesen" (Spaltenliste des SQL-Beispiels), HTTP-Beschreibung von `GET /changes` (Feldliste der Antwort), `Version:`-Kopf und Änderungshistorie. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „Feld- und Spaltenmenge von `cdc.change`, `cdc.changes` und `GET /changes`; die Live-Wege bleiben bei zehn Feldern"; beide Stände gemessen: Parent und Diff):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Spaltenlisten der View in Doku | `grep -rn 'committed_at' docs/user spec harness` | *(Implementer trägt ein)* | Handbuch-Stellen ziehen; Spec ist gezogen |
+| Spaltenlisten der View in Doku | `grep -rn 'committed_at' docs/user spec harness` | *(Implementer trägt ein)* | Handbuch-Stellen ziehen; Spec ist gezogen. Übergabe aus dem Spec-Nachzug, am Stand `89053d3b` nachgemessen (`grep -n 'committed_at' docs/user/benutzerhandbuch.md`): die Spaltenliste des SQL-Beispiels unter „Änderungen lesen" (Z. 377) und die Feldliste der `GET /changes`-Antwort unter „Changes lesen" (Z. 639) tragen `origin` nicht; Zeilennummern sind der Stand dieser Messung, am Start neu messen |
 | Anzahl-Formulierungen („zehn Felder", „zwölf Felder") an `GET /changes` | `grep -rn 'Felder' docs/user spec` | *(Implementer trägt ein)* | nur Stellen, die `GET /changes` betreffen, ziehen; die Live-Wege bleiben bei zehn |
 | Harness/Tests mit `SELECT *` gegen `cdc.changes` | `grep -rn 'SELECT \*' tools test internal` | *(Implementer trägt ein)* | prüfen, ob die zusätzliche Spalte die Aussage ändert |
 | eingebettete DDL, Report, Rollback | `git ls-files tools/schema internal/adapters/driven/postgresstorage/schema.sql` und Lesen | *(Implementer trägt ein)* | `plan.yaml`/`down.sql` regenerieren; `schema.sql` entscheiden und im Bericht nennen |

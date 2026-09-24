@@ -124,8 +124,12 @@ sichtbar. Drei Teile:
       `SELECT`-Recht der Login-Identität von `CDC_CAPTURE_DSN` auf die
       Quelltabelle, Reserve in `max_replication_slots`/`max_wal_senders`,
       Snapshot-Haltedauer an der Quelle —, Sichtbarkeits-Grenze, Lesen ohne
-      `Limit`, Status und Diagnose), die Rollen-Beschreibung, das Glossar und die
-      Änderungshistorie. *Zu belegen durch:* `make test-store` (View, Grant),
+      `Limit`, Status und Diagnose), die Rollen-Beschreibung, das Glossar, der
+      `Version:`-Kopf und die Änderungshistorie. Die zwei Fortsetzungs-Idiome des
+      Handbuchs tragen die Regel „Position und `limit`" aus [`SPEC-022`](../../../../spec/pflichtenheft.md):
+      `commit_position > <letzte-gelesene-position>` mit `LIMIT` im SQL-Beispiel
+      unter „Änderungen lesen" und `from = <letzte gelieferte commit_position> + 1`
+      unter „Changes lesen". *Zu belegen durch:* `make test-store` (View, Grant),
       `make test` (`diagnose`), Review des Handbuchs.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
@@ -161,7 +165,7 @@ sichtbar. Drei Teile:
 | `tools/schema/nacharbeit-roles.sql` (+ `roles_rollout_file_internal_test.go`) | update | `SELECT` auf die View für `cdc_reader`. |
 | `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill` (ruft `Request`, sendet das Wecksignal), Worker-Goroutine mit Start-Aufnahme und Schleife „erst abarbeiten, dann warten", Pool, Start-Reihenfolge (Bindungsaufbau, Abgleich, Worker), `Diagnose`-Ausgabe. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion. |
-| `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, Änderungshistorie. |
+| `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, die zwei Fortsetzungs-Idiome (§4 „Änderungen lesen", „Changes lesen"), `Version:`-Kopf und Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make schema-rollout` (Fremdobjekt-Aufzählung) und die Zeile `make example-demo-up`, die dieselbe Aufzählung wiederholt. |
 | `Makefile` (Kommentar über `schema-rollout`) | update | trägt die Zahl der Fremdobjekte. |
 
@@ -175,6 +179,7 @@ sichtbar. Drei Teile:
 | Beispielausgabe von `diagnose` im Handbuch (§4) und `diagnose`-Tests | `grep -rn 'diagnose' docs/user internal/bootstrap` | *(Implementer trägt ein)* | Beispiel und Tests an die neue Ausgabe |
 | Zahl der Replication-Verbindungen je Container-Lauf (Handbuch §Grenzwerte: „zwei gleichzeitige Replication-Protokoll-Verbindungen … zählen gegen `max_wal_senders`") — während eines Runs kommt kurzzeitig der Walsender des temporären Slots hinzu | `grep -rn 'max_wal_senders\|Replication-Protokoll-Verbindungen' docs/user spec` | *(Implementer trägt ein)* | Aussage präzisieren („zwei; während der Slot-Anlage eines Backfills eine weitere"), sobald sie belegt ist |
 | Rollen-Beschreibung im Handbuch (§2, Rollen-Tabelle) | Lesen | *(Implementer trägt ein)* | `cdc_capture` trägt zusätzlich die Betriebs-Vorbedingung `SELECT` auf Quelltabellen |
+| Fortsetzungs-Idiome und `backfill`-Nennung im Handbuch | `grep -n 'letzte\|LIMIT\|backfill' docs/user/benutzerhandbuch.md` | *(Implementer trägt ein)* | Übergabe aus dem Spec-Nachzug, am Stand `89053d3b` nachgemessen: `commit_position > <letzte-gelesene-position>` samt `LIMIT 500` (SQL-Beispiel unter „Änderungen lesen", Z. 379/381) und `from = <letzte gelieferte commit_position> + 1` (unter „Changes lesen", Z. 642) tragen die Regel „Position und `limit`" aus [`SPEC-022`](../../../../spec/pflichtenheft.md) nicht; `grep -c 'backfill' docs/user/benutzerhandbuch.md` liefert 0 (das Handbuch nennt `backfill` nicht). Zeilennummern sind der Stand dieser Messung, am Start neu messen |
 | E2E-Abdeckungs-Zeilennummern | `git diff --stat` auf `test/integration/**`, `tools/harness/run-integration-tests.sh` | *(Implementer trägt ein)* | dieser Slice berührt den Runner nicht; ein Treffer wäre ein Plan-Nachzug |
 
 ## 4. Trigger
