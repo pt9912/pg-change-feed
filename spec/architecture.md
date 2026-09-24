@@ -1,6 +1,6 @@
 # Architektur — PG Change Feed
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-09-18.
+**Status:** Aktiv. **Letzte Änderung:** 2026-09-24.
 
 **Rolle:** Sicht-Stratum — *keine* eigenen Anforderungen, derivativ. Regeln:
 Baseline-Regelwerk `modul-03-spec.md` §Ziel-Form: Architektur-Sicht.
@@ -38,7 +38,7 @@ flowchart TB
     App["Application<br/>(Capture · Consumer · Retention · Konfiguration)"]
     Domain["Domain Core<br/>(Changes · Transaktionen · Positionen ·<br/>Consumer · Schemas · Policies)"]
     Outbound["Outbound Ports<br/>(Fähigkeiten)"]
-    Driven["Driven Adapters<br/>(PostgreSQL Store · PostgreSQL ACK ·<br/>Metadata · File Spool · Telemetry)"]
+    Driven["Driven Adapters<br/>(PostgreSQL Store · PostgreSQL ACK · Metadata ·<br/>Backfill-Snapshot-Leser · Backfill-Annahme ·<br/>File Spool · Telemetry)"]
 
     PG --> Driving
     Driving --> Inbound
@@ -56,7 +56,7 @@ flowchart TB
 | `ARC-003` | Inbound Ports | Fähigkeitsschnittstellen, über die Driving Adapters die Use Cases aufrufen |
 | `ARC-004` | Outbound Ports | Fähigkeitsschnittstellen, über die Application Services technische Wirkungen anfordern |
 | `ARC-005` | Driving Adapters | Technik → Use Case: Replication Stream, CLI, SQL-Funktionen/Views, später HTTP-/gRPC |
-| `ARC-006` | Driven Adapters | Fähigkeit → Technik: PostgreSQL Store, PostgreSQL ACK, Metadata, File Spool, Telemetry |
+| `ARC-006` | Driven Adapters | Fähigkeit → Technik: PostgreSQL Store, PostgreSQL ACK, Metadata, Backfill-Snapshot-Leser (Bestand im Slot-Snapshot), Backfill-Annahme (Run-Zeile und Antragsvermerk in einer Transaktion), File Spool, Telemetry |
 | `ARC-007` | Bootstrap | Composition Root: kennt als einzige Komponente konkrete Adapter und verdrahtet alles |
 
 ## 2. Schichten und Constraints
@@ -218,7 +218,7 @@ einen Hintergrund-Zug, der offene Anträge liest, denselben
 Antrags-Datensatz vermerkt. Beide Pfade laufen über denselben Inbound
 Port; nur der Aufrufweg zu ihm unterscheidet sich.
 
-Die **Antragsart des Datensatzes wählt den Inbound Port** — vier Arten
+Die **Antragsart des Datensatzes wählt den Inbound Port** — fünf Arten
 laufen über diesen einen Weg:
 
 | Antragsart | SQL-Funktion | Inbound Port |
@@ -227,17 +227,19 @@ laufen über diesen einen Weg:
 | `disable` | `cdc.disable_table(...)` | `DisableTableUseCase` |
 | `exclude_column` | `cdc.exclude_column(...)` | `ExcludeColumnUseCase` |
 | `include_column` | `cdc.include_column(...)` | `IncludeColumnUseCase` |
+| `backfill` | `cdc.backfill_table(...)` | `BackfillTableUseCase` |
 
 Die beiden Spalten-Antragsarten ([`LH-FA-CFG-005`](lastenheft.md)) rufen
 denselben Administrations-Hintergrundzug auf demselben Antrags-Datensatz;
 sie tragen keinen Tabellen-Bindungs- oder Publication-Zug, sondern den
 Spaltennamen und die Spaltenexistenz-Prüfung (`ColumnExclusionPort`,
-`ARC-004`). Der Hintergrund-Zug vermerkt das Ergebnis wie bei den beiden
-Tabellen-Antragsarten im selben Datensatz (`applied`/`failed` samt
-Fehlertext). Das Diagramm unten zeigt den Weg am Beispiel `enable`
-(`EnableTableUseCase`); die drei übrigen Antragsarten nehmen denselben Weg
-von der Antragsqueue über den Hintergrund-Zug und wählen dort ihren Inbound
-Port.
+`ARC-004`). Der Hintergrund-Zug vermerkt das Ergebnis wie bei `enable`/
+`disable` im selben Datensatz (`applied`/`failed` samt Fehlertext). Das
+Diagramm unten zeigt den Weg am Beispiel `enable` (`EnableTableUseCase`); die
+übrigen Antragsarten nehmen denselben Weg von der Antragsqueue über den
+Hintergrund-Zug und wählen dort ihren Inbound Port. Die Antragsart `backfill`
+weicht im Ergebnis ab: `applied` heißt „angenommen", die Ausführung läuft
+außerhalb des Hintergrund-Zugs (nächster Abschnitt).
 
 ```mermaid
 sequenceDiagram
@@ -262,6 +264,90 @@ sequenceDiagram
     EUC-->>AP: Status
     AP->>AQ: Antrag als erledigt vermerken
 ```
+
+### Use-Case: LH-FA-CAP-009.a — Bestand als Backfill überführen
+
+Der Backfill des Tabellenbestands ([`LH-FA-CAP-009`](lastenheft.md)) trennt
+**Annahme** und **Ausführung**. Die Annahme läuft im
+Administrations-Hintergrundzug und blockiert nicht auf der Kopie; die
+Ausführung liegt bei einem einzelnen Backfill-Worker (eine Goroutine, ein Run
+zugleich). Die Annahme und die Aufnahme:
+
+```mermaid
+sequenceDiagram
+    participant A as Administrator über SQL (ARC-005)
+    participant AQ as Antragsqueue (ARC-006)
+    participant AP as Administrations-Hintergrundzug (ARC-007)
+    participant BUC as BackfillTableUseCase (ARC-003/002)
+    participant AdP as Annahme-Port (ARC-004)
+    participant AdA as Backfill-Annahme (ARC-006)
+    participant W as Backfill-Worker (ARC-007)
+
+    A->>AQ: Antrag `backfill` schreiben (Status offen) + Wecksignal
+    AP->>AQ: offene Anträge lesen
+    AQ-->>AP: Antrag
+    AP->>BUC: Backfill für Tabelle t beantragt
+    BUC->>BUC: Vorbedingungen prüfen (Tabelle aktiviert und gebunden), Zeilenzahl schätzen
+    BUC->>AdP: Antrag annehmen
+    AdP->>AdA: eine Transaktion
+    Note over AdA: kein aktiver Run derselben Tabelle prüfen,<br/>Run-Zeile `queued` einfügen,<br/>Antrag `applied` vermerken — Commit oder Rollback
+    AdA-->>BUC: angenommen
+    AP->>W: Wecksignal (im Prozess)
+    Note over W: Aufnahme auch beim Prozessstart
+```
+
+Die Vorbedingungs-Prüfung und die Schätzung liegen **vor** der Annahme; ein
+Vorbedingungs-Fehler endet den Antrag `failed` und hinterlässt keine
+Run-Zeile. Annahme und Antragsvermerk sind eine Transaktion, weil ein Run nach
+einem Absturz zwischen den beiden Schritten sonst entweder ohne angenommenen
+Antrag oder mit einem Antrag stünde, dessen Wiederholung am aktiven Run
+scheitert. Die Rolle des Administrations-Anschlusses legt die Zeile an, die
+Rolle des Capture-Anschlusses schreibt sie nur fort.
+
+Beim Prozessstart läuft zuerst der Bindungsaufbau der Composition Root, dann
+der Abgleich `running` → `interrupted`, dann startet der Worker und liest die
+`queued`-Runs seiner Quelle in Antragsreihenfolge; danach wartet er auf das
+nächste Wecksignal. Ein `interrupted`-Run wird nicht aufgenommen. Die
+Ausführung eines Runs:
+
+```mermaid
+sequenceDiagram
+    participant W as Backfill-Worker (ARC-007)
+    participant BUC as BackfillTableUseCase (ARC-003/002)
+    participant RZP as Run-Zustands-Port (ARC-004)
+    participant SP as Snapshot-Port (ARC-004)
+    participant SA as Backfill-Snapshot-Leser (ARC-006)
+    participant BW as Backfill-Schreiber-Port (ARC-004)
+    participant PG as PostgreSQL
+
+    W->>BUC: nächsten `queued`-Run ausführen
+    BUC->>BUC: Bindung und Publication erneut prüfen
+    BUC->>RZP: Status `running`
+    BUC->>SP: Snapshot öffnen
+    SP->>SA: Snapshot öffnen
+    SA->>PG: temporärer Slot mit Snapshot-Export → Position X
+    SA->>PG: Transaktion (REPEATABLE READ) mit importiertem Snapshot
+    SA-->>BUC: Position X
+    loop je Block begrenzter Größe
+        SA-->>BUC: Zeilen des Blocks
+        BUC->>BW: Block als Transaktion auf Position X vormerken
+        BUC->>RZP: Fortschritt (außerhalb der Daten-Transaktion)
+    end
+    BUC->>BUC: Bindung und Ausschlussstand erneut prüfen (fail-closed)
+    BUC->>BW: ein Commit aller Blöcke, Run `completed`
+    BW->>PG: eine Store-Transaktion
+    BUC-->>W: fertig, Wecksignal je Tabelle
+```
+
+Bis zum einen Commit ist nichts für Leser sichtbar. Eine Abweichung bei der
+Fail-closed-Prüfung rollt alle Blöcke zurück und der Run endet `failed`; ein
+Prozessende oder ein Verbindungsverlust rollt sie ebenfalls zurück, der Run
+bleibt `running` und wird beim nächsten Prozessstart `interrupted`. Der
+Snapshot-Leser trägt den Snapshot-Export und den Import; der Worker arbeitet
+auf eigenen Verbindungen, der Capture-kritische Pfad bleibt unberührt.
+Backfill-Changes gehen nicht in den Live-Stream: sie werden über den
+bestehenden Lesezugriffsweg gelesen; das Wecksignal nach dem Commit wird über
+denselben Port gesendet wie das der WAL-Changes.
 
 ## 5. Fehlermodelle und Resilienz
 
