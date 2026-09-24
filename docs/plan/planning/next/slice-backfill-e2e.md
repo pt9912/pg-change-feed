@@ -23,7 +23,7 @@ Folgepflicht 2 (`S5`), [`ADR-0030`](../../adr/0030-testpyramide.md) (Testpyramid
 **Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-029`](../../../../spec/pflichtenheft.md) — gelesen
 als Vertrag der Belege, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
