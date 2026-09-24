@@ -65,14 +65,14 @@ Adapter-Typ. Signatur und Typ der Spalten-Eingabe legt der Implementer fest.
 
 ## 2. Definition of Done
 
-- [ ] Die Row-Image-Konstruktion liegt an genau einer Stelle: die
+- [x] Die Row-Image-Konstruktion liegt an genau einer Stelle: die
       JSON-Erzeugung für Row Images kommt ausschließlich aus der
       Domänen-Funktion; der Mapper des Replication-Pfads ruft sie, das
       private `rowImage` entfällt. *Zu belegen durch:* Suchlauf über
       `internal/**` nach der Bild-Erzeugung (Befehl und Fundstellen im
       Bericht) — eine Konstruktionsstelle; `make a-check` grün (die Domäne
       importiert nichts aus anderen Schichten).
-- [ ] Byte-Gleichheit gegen den Parent-Stand: die bestehenden Mapper-Tests
+- [x] Byte-Gleichheit gegen den Parent-Stand: die bestehenden Mapper-Tests
       (`internal/adapters/driving/replication/mapper/mapper_test.go`) laufen
       ohne geänderte Erwartungswerte grün, und ein neuer Domänen-Test trägt
       Referenz-Bytes, die **am Parent-Stand mit dem alten `rowImage` gemessen**
@@ -82,22 +82,22 @@ Adapter-Typ. Signatur und Typ der Spalten-Eingabe legt der Implementer fest.
       Spalten). *Zu belegen durch:* `make test` mit
       Race-Detector; `git diff` der Mapper-Testdatei zeigt keine geänderte
       Erwartung.
-- [ ] Der Kommentar-Träger folgt: der Doc-Kommentar des Bildes steht an der
+- [x] Der Kommentar-Träger folgt: der Doc-Kommentar des Bildes steht an der
       neuen Funktion und nennt Zusage, Abwesenheits-Vertrag und Ausschluss
       ([`AGENTS.md`](../../../../AGENTS.md) §3.7); Kommentare im Mapper, die `rowImage` nennen, sind
       nachgezogen.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — kein öffentlicher Vertrag berührt (Byte-Gleichheit); die Suche in §3 belegt es.
+- [x] Doku-Update: entfällt — kein öffentlicher Vertrag berührt (Byte-Gleichheit); die Suche in §3 belegt es.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -122,7 +122,7 @@ Adapter-Typ. Signatur und Typ der Spalten-Eingabe legt der Implementer fest.
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Go-Code und Kommentare | `grep -rn 'rowImage' --include=*.go .` (Parent: `git grep -n 'rowImage' HEAD -- '*.go'`) | Parent: 17 Treffer — 5 in `mapper.go` (Aufrufe Z. 233/237, Kommentar Z. 471, Definition samt Doc Z. 515/524), 4 in `natsstream/publisher.go`, 6 in `driving/http/{sse,readchanges}.go`, 1 in `examples/nats-stream-client/format_test.go`. Diff: alle 5 `mapper.go`-Treffer weg; die übrigen 11 bleiben — sie gehören zu **zwei anderen, gleichnamigen** Funktionen (`natsstream.rowImage`, `http.rowImage`), die ein **bereits gebautes** Bild (`[]byte`) als `json.RawMessage` in die Wire-Nachricht einbetten und kein Bild konstruieren. Neue Treffer: nur `rowImageColumns` in `rowimage_test.go` (Testvariable) | mapper-Treffer nachgezogen; die elf anderen nicht ändern (andere Funktion, andere Schicht; die Namensgleichheit ist eine gemeldete Beobachtung, kein Teil dieses Slice) |
-| Dokumente (Spec, Handbuch, Harness) | `grep -rn 'rowImage' --include=*.md .` (Parent: `git grep -n 'rowImage' HEAD -- '*.md'`) | Parent und Diff tragen dieselben Treffer außerhalb dieser Plan-Datei: `docs/plan/planning/welle-backfill-bestand.md` Z. 187 (K1, zitiert ADR-0112 „in `rowImage`"), `docs/plan/planning/open/slice-transformationen-kern-rename.md` Z. 240 (nennt das Entfallen des privaten `rowImage` bereits als kommend), `docs/plan/planning/done/welle-18-results.md` Z. 40 (Record), `docs/reviews/review-slice-nats-drittstream-example-*.md` (Records; meinen `natsstream.rowImage`). Kein Treffer in `spec/`, `docs/user/`, `harness/`, `README.md`, `AGENTS.md`. Ergänzend `grep -rnE 'Row-?Image-Konstruktion' --include=*.md .`: benennt den *Ort* nirgends als Mapper-Datei außer den `Accepted` ADRs | keine Änderung: die beiden Plan-Treffer (fremde offene Pläne) bleiben wahr bzw. zitieren ADR-0112 wörtlich — in den Bericht gemeldet, nicht still mitgeändert; Records/`Accepted` unberührbar |
+| Dokumente (Spec, Handbuch, Harness) | `grep -rn 'rowImage' --include=*.md .` (Parent: `git grep -n 'rowImage' HEAD -- '*.md'`) | Parent und Diff tragen dieselben Treffer außerhalb dieser Plan-Datei: `docs/plan/planning/welle-backfill-bestand.md` Z. 187 (K1, zitiert [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) „in `rowImage`"), `docs/plan/planning/open/slice-transformationen-kern-rename.md` Z. 240 (nennt das Entfallen des privaten `rowImage` bereits als kommend), `docs/plan/planning/done/welle-18-results.md` Z. 40 (Record), `docs/reviews/review-slice-nats-drittstream-example-*.md` (Records; meinen `natsstream.rowImage`). Kein Treffer in `spec/`, `docs/user/`, `harness/`, `README.md`, `AGENTS.md`. Ergänzend `grep -rnE 'Row-?Image-Konstruktion' --include=*.md .`: benennt den *Ort* nirgends als Mapper-Datei außer den `Accepted` ADRs | keine Änderung: die beiden Plan-Treffer (fremde offene Pläne) bleiben wahr bzw. zitieren ADR-0112 wörtlich — in den Bericht gemeldet, nicht still mitgeändert; Records/`Accepted` unberührbar |
 | `Accepted` ADRs, die den Ort als Kontext nennen (`mapper.rowImage`) | dieselbe Suche, Treffer unter `docs/plan/adr/` | Parent und Diff identisch: `0059` (Z. 59/60/152/240), `0111` (Z. 88/228), `0112` (Z. 89/170/240/359) — 10 Treffer, jeder nennt `rowImage` als den Ort zum Entscheidungszeitpunkt | nicht ändern: der Ort steht dort als Stand zum Entscheidungszeitpunkt; nur eine reine Verweisgerüst-Korrektur wäre nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) zulässig ([`AGENTS.md`](../../../../AGENTS.md) §3.5) |
 | Zweite JSON-Erzeugung für Bilder | `grep -rn 'json.Marshal' internal --include=*.go` (Fundstellen nach Bild-Bezug lesen) | Parent: `mapper.go` (2× in `rowImage`), `natsstream/publisher.go` (`json.Marshal(toStreamMessage(change))`), `http/sse.go` (`json.Marshal(toStreamChange(change))`). Diff: `model/rowimage.go` (2×, die eine Funktion), dieselben zwei Wire-Stellen. Gelesen: die beiden Wire-Stellen serialisieren die Nachricht und betten das Bild als `json.RawMessage` ein — keine Bild-Konstruktion. Ergänzend `grep -rn "WriteByte('{')" internal --include=*.go`: ein Treffer (`model/rowimage.go`) | Fundstellen, die ein Row Image bauen, gehören in die eine Funktion |
 
