@@ -3041,32 +3041,35 @@ docker run --rm --network "$NETWORK" \
 
 echo "run-integration-tests: TestE2EBackfillReplayInvariant (LH-FA-CAP-009) belegt — Zeile 'Replay-Invariante:' der Testausgabe oben"
 
-abdeckung_declare "Backfill-DDL-Fenster" "LH-FA-CAP-009" "entfernt eine DDL-Änderung eine Spalte zwischen Snapshot-Export und Snapshot-Import, endet der Run failed mit der Fehlerklasse storage ohne Change, der Erfassungspfad läuft weiter, und ein neuer Antrag übernimmt den Bestand in der geänderten Form" "Backfill-DDL-Fenster (LH-FA-CAP-009) belegt"
+abdeckung_declare "Backfill-DDL-Fenster" "LH-FA-CAP-009" "ändert eine DDL zwischen Snapshot-Export und Snapshot-Import die Tabelle, endet der Run failed ohne Change und der Erfassungspfad läuft weiter: ein DROP COLUMN mit der Fehlerklasse storage, ein Umschreiben der Tabelle (ALTER COLUMN TYPE) mit der Fehlerklasse transient; ein neuer Antrag übernimmt den Bestand vollständig in der geänderten Form" "Backfill-DDL-Fenster (LH-FA-CAP-009) belegt"
 
 BF_PHASE="Backfill-DDL-Fenster"
 BF_DDL_TABLE=feed_e2e_backfill_ddl
+BF_REWRITE_TABLE=feed_e2e_backfill_rewrite
 
-docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
-CREATE TABLE public.$BF_DDL_TABLE (id int PRIMARY KEY, name text, note text);
-INSERT INTO public.$BF_DDL_TABLE (id, name, note) VALUES (1, 'DdlAlpha', 'n1'), (2, 'DdlBeta', 'n2'), (3, 'DdlGamma', 'n3');
-SQL
-bf_enable "$BF_DDL_TABLE" "$BF_PHASE"
-
+# bf_ddl_window <Tabelle> <DDL-Anweisung> <Fehlerklasse>: beantragt einen
+# Backfill der Tabelle, führt die DDL im Fenster zwischen Snapshot-Export und
+# Snapshot-Import aus und prüft, dass der Run failed mit der Klasse endet,
+# ohne Change und ohne Fehlerzustand des Erfassungspfads. Sie setzt
+# bf_ddl_run, bf_ddl_error und bf_pause_ms.
+#
 # Die Haltetransaktion hält die Slot-Anlage an, der Run steht dann hinter der
 # Vorbedingungsprüfung. Der Feed-Container ist angehalten (docker pause),
 # während die Haltetransaktion endet: der Run liest die Antwort der
 # Slot-Anlage erst nach dem Fortsetzen, der Snapshot ist dann exportiert und
 # noch nicht importiert. Die DDL-Sitzung wartet, bis die Slot-Anlage fertig
-# ist (der Walsender des Slots wartet auf den nächsten Befehl), entfernt in diesem
-# Fenster die Spalte und committet; danach läuft der Container weiter. Die
+# ist (der Walsender des Slots wartet auf den nächsten Befehl), führt in diesem
+# Fenster die DDL aus und committet; danach läuft der Container weiter. Die
 # Pause bleibt unter der Hälfte von wal_sender_timeout (2 s, compose.yaml),
 # innerhalb derer PostgreSQL die Verbindung des Erfassungspfads beendet.
-bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
-bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE — Haltetransaktion"
-bf_request "$BF_DDL_TABLE" "$BF_PHASE"
-bf_ddl_run=$bf_run_id
-bf_await_run "$bf_ddl_run" running 30 "$BF_PHASE"
-bf_hold_start e2e-bf-ddl "BEGIN;
+bf_ddl_window() {
+  local table=$1 ddl=$2 class=$3 pause_start
+  bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
+  bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE $table — Haltetransaktion"
+  bf_request "$table" "$BF_PHASE"
+  bf_ddl_run=$bf_run_id
+  bf_await_run "$bf_ddl_run" running 30 "$BF_PHASE $table"
+  bf_hold_start e2e-bf-ddl "BEGIN;
 DO \$\$
 DECLARE deadline timestamptz := clock_timestamp() + interval '30 seconds';
 BEGIN
@@ -3078,24 +3081,40 @@ BEGIN
     PERFORM pg_stat_clear_snapshot();
   END LOOP;
 END \$\$;
-ALTER TABLE public.$BF_DDL_TABLE DROP COLUMN note;
+$ddl;
 COMMIT;"
-bf_ddl_pid=$bf_hold_pid
-bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-ddl' AND state = 'active'" 1 30 "$BF_PHASE — DDL-Sitzung wartet"
-bf_pause_start=$(date +%s%N)
-docker pause "$FEED_CONTAINER" >/dev/null
-bf_hold_end e2e-bf-xid
-wait "$bf_ddl_pid" || bf_fail "$BF_PHASE — die DDL-Sitzung endete mit einem Fehler"
-docker unpause "$FEED_CONTAINER" >/dev/null
-bf_pause_ms=$(( ($(date +%s%N) - bf_pause_start) / 1000000 ))
-[ "$bf_pause_ms" -lt 1000 ] || bf_fail "$BF_PHASE — die Pause des Feed-Containers dauerte ${bf_pause_ms} ms; erlaubt sind unter 1000 ms, die Hälfte von wal_sender_timeout (2000 ms)"
-bf_await_run "$bf_ddl_run" failed 60 "$BF_PHASE"
-bf_ddl_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")
-printf '%s' "$bf_ddl_error" | grep -q '^storage: ' || bf_fail "$BF_PHASE — der Fehlertext beginnt nicht mit der Klasse storage: $bf_ddl_error"
-bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_DDL_TABLE'")" 0 "$BF_PHASE — Changes der Tabelle nach dem fehlgeschlagenen Run"
-bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_ddl_run-%'")" 0 "$BF_PHASE — Transaktionen des fehlgeschlagenen Runs"
-bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")" "" "$BF_PHASE — Fehlerzustand des Erfassungspfads (der Run-Fehler ist run-lokal)"
-bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$BF_PHASE — Feed-Container läuft weiter"
+  local ddl_pid=$bf_hold_pid
+  bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-ddl' AND state = 'active'" 1 30 "$BF_PHASE $table — DDL-Sitzung wartet"
+  pause_start=$(date +%s%N)
+  docker pause "$FEED_CONTAINER" >/dev/null
+  bf_hold_end e2e-bf-xid
+  wait "$ddl_pid" || bf_fail "$BF_PHASE $table — die DDL-Sitzung endete mit einem Fehler"
+  docker unpause "$FEED_CONTAINER" >/dev/null
+  bf_pause_ms=$(( ($(date +%s%N) - pause_start) / 1000000 ))
+  [ "$bf_pause_ms" -lt 1000 ] || bf_fail "$BF_PHASE $table — die Pause des Feed-Containers dauerte ${bf_pause_ms} ms; erlaubt sind unter 1000 ms, die Hälfte von wal_sender_timeout (2000 ms)"
+  bf_await_run "$bf_ddl_run" failed 60 "$BF_PHASE $table"
+  bf_ddl_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")
+  printf '%s' "$bf_ddl_error" | grep -q "^$class: " || bf_fail "$BF_PHASE $table — der Fehlertext beginnt nicht mit der Klasse $class: $bf_ddl_error"
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$table'")" 0 "$BF_PHASE $table — Changes der Tabelle nach dem fehlgeschlagenen Run"
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_ddl_run-%'")" 0 "$BF_PHASE $table — Transaktionen des fehlgeschlagenen Runs"
+  bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")" "" "$BF_PHASE $table — Fehlerzustand des Erfassungspfads (der Run-Fehler ist run-lokal)"
+  bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$BF_PHASE $table — Feed-Container läuft weiter"
+}
+
+# Entfernte Spalte: DECLARE scheitert am Katalog (Klasse storage).
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_DDL_TABLE (id int PRIMARY KEY, name text, note text);
+INSERT INTO public.$BF_DDL_TABLE (id, name, note) VALUES (1, 'DdlAlpha', 'n1'), (2, 'DdlBeta', 'n2'), (3, 'DdlGamma', 'n3');
+CREATE TABLE public.$BF_REWRITE_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_REWRITE_TABLE (id, name) VALUES (1, 'RewAlpha'), (2, 'RewBeta'), (3, 'RewGamma');
+SQL
+bf_enable "$BF_DDL_TABLE" "$BF_PHASE"
+bf_enable "$BF_REWRITE_TABLE" "$BF_PHASE"
+
+bf_ddl_window "$BF_DDL_TABLE" "ALTER TABLE public.$BF_DDL_TABLE DROP COLUMN note" storage
+bf_ddl_run_drop=$bf_ddl_run
+bf_ddl_error_drop=$bf_ddl_error
+bf_pause_ms_drop=$bf_pause_ms
 
 # Abhilfe: ein neuer Antrag übernimmt den Bestand in der geänderten Form.
 bf_request "$BF_DDL_TABLE" "$BF_PHASE"
@@ -3103,7 +3122,23 @@ bf_ddl_retry=$bf_run_id
 bf_await_run "$bf_ddl_retry" completed 60 "$BF_PHASE"
 bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_DDL_TABLE' AND origin = 'backfill' AND NOT jsonb_exists(new_data, 'note')")" 3 "$BF_PHASE — Bestand ohne die entfernte Spalte nach dem neuen Antrag"
 
-echo "run-integration-tests: Backfill-DDL-Fenster (LH-FA-CAP-009) belegt — DROP COLUMN zwischen Snapshot-Export und Snapshot-Import endete Run $bf_ddl_run failed ($bf_ddl_error) ohne Change, der Erfassungspfad lief weiter (Pause des Feed-Containers ${bf_pause_ms} ms); der neue Antrag $bf_ddl_retry übernahm 3 Zeilen ohne die entfernte Spalte"
+# Umgeschriebene Tabelle: der ältere Snapshot sieht die neue Datei leer; die
+# Sperre mit dem Filenode-Vergleich beendet den Run (Klasse transient), er
+# schließt nicht mit 0 Zeilen ab.
+bf_ddl_window "$BF_REWRITE_TABLE" "ALTER TABLE public.$BF_REWRITE_TABLE ALTER COLUMN name TYPE varchar(64)" transient
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")" 0 "$BF_PHASE — rows_copied des abgebrochenen Runs nach dem Umschreiben"
+bf_ddl_run_rewrite=$bf_ddl_run
+bf_ddl_error_rewrite=$bf_ddl_error
+bf_pause_ms_rewrite=$bf_pause_ms
+
+bf_request "$BF_REWRITE_TABLE" "$BF_PHASE"
+bf_rewrite_retry=$bf_run_id
+bf_await_run "$bf_rewrite_retry" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_rewrite_retry'")" 3 "$BF_PHASE — rows_copied des neuen Antrags nach dem Umschreiben"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_REWRITE_TABLE' AND origin = 'backfill' AND transaction_id LIKE '0bf-$bf_rewrite_retry-%'")" 3 "$BF_PHASE — Bestand der umgeschriebenen Tabelle nach dem neuen Antrag"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'name', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_REWRITE_TABLE' AND origin = 'backfill'")" "RewAlpha,RewBeta,RewGamma" "$BF_PHASE — Werte des Bestands der umgeschriebenen Tabelle"
+
+echo "run-integration-tests: Backfill-DDL-Fenster (LH-FA-CAP-009) belegt — DROP COLUMN zwischen Snapshot-Export und Snapshot-Import endete Run $bf_ddl_run_drop failed ($bf_ddl_error_drop) ohne Change (Pause des Feed-Containers ${bf_pause_ms_drop} ms), der neue Antrag $bf_ddl_retry übernahm 3 Zeilen ohne die entfernte Spalte; ALTER COLUMN TYPE endete Run $bf_ddl_run_rewrite failed ($bf_ddl_error_rewrite) ohne Change (Pause ${bf_pause_ms_rewrite} ms), der neue Antrag $bf_rewrite_retry übernahm 3 Zeilen; der Erfassungspfad lief in beiden Fällen weiter"
 
 abdeckung_declare "Backfill-Negative (docker kill, queued-Aufnahme)" "LH-FA-CAP-009" "ein docker kill des Feed-Containers mitten im Run hinterlässt keine sichtbare Change des Runs, kein Slot und keine Sitzung bleiben; nach dem Neustart steht der Run interrupted, ein erneuter Antrag übernimmt den Bestand einmal und vollständig, und ein zum Abbruchzeitpunkt queued wartender Run wird ohne neuen Antrag aufgenommen und ausgeführt" "Backfill-Negative (docker kill, queued-Aufnahme) belegt"
 
