@@ -59,13 +59,13 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 
 ## 2. Definition of Done
 
-- [ ] Domäne: `model.ChangeOrigin` ist eine geschlossene Menge
+- [x] Domäne: `model.ChangeOrigin` ist eine geschlossene Menge
       (`wal` | `backfill`), der Konstruktor-Default ist `wal`, ein anderer
       Wert wird abgelehnt; `Change.Origin` trägt das Feld, der Doc-Kommentar von
       `model.Change` und der Operationsmenge in
       `internal/domain/model/change.go` nennt es. *Zu belegen durch:* Unit-Tests
       in `change_test.go` (`make test`).
-- [ ] Store und Schema: `cdc.change.origin` und die View-Spalte existieren,
+- [x] Store und Schema: `cdc.change.origin` und die View-Spalte existieren,
       `InsertChange`/`SelectChanges` tragen sie in **expliziten** Spaltenlisten,
       der Mapper (Zeile ↔ Change) trägt sie; eine bestehende Zeile ohne Wert
       (`NULL`) liest über View **und** `ReadChanges` als `wal`
@@ -77,7 +77,14 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
       sind neu erzeugt und mitcommittet (Muster der bisherigen Schema-Slices).
       Der Vertragstest `TestE2EChangesViewMatchesReadChanges` hält View und
       `ReadChanges` auf derselben Spaltenmenge (`BEO-PGC/lese-doppelquelle`).
-- [ ] `GET /changes` trägt `origin` je Change; ein fehlender Wert steht als
+      *Stand des Implementers, zwei Grenzen benannt:* (1) `make schema-rollout`
+      zweimal Exit 0 ist gegen eine **frische** Ziel-Datenbank gemessen; gegen
+      ein mit dem Parent-Schema ausgerolltes Ziel blockiert die View-Änderung
+      (§3, „Messung zu Risiko §6"). (2) `TestE2EChangesViewMatchesReadChanges`
+      bleibt unverändert; die `origin`-Parität von View und `ReadChanges` trägt
+      der Store-Tier-Test `TestChangesViewCarriesOriginLikeReadChanges`
+      (§3, Zeile zu `test/integration`).
+- [x] `GET /changes` trägt `origin` je Change; ein fehlender Wert steht als
       `wal`, die Feldreihenfolge bleibt, `origin` steht zuletzt. *Zu belegen
       durch:* Handler-Test in `readchanges_test.go` (`make test`); das
       Benutzerhandbuch (§4 „Änderungen lesen" und der `GET /changes`-Teil der
@@ -92,10 +99,10 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe dritter Liefer-Punkt (Handbuch, Änderungshistorie); [`SPEC-002`](../../../../spec/pflichtenheft.md)/[`SPEC-022`](../../../../spec/pflichtenheft.md) sind bereits gezogen.
+- [x] Doku-Update: siehe dritter Liefer-Punkt (Handbuch, Änderungshistorie); [`SPEC-002`](../../../../spec/pflichtenheft.md)/[`SPEC-022`](../../../../spec/pflichtenheft.md) sind bereits gezogen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -114,12 +121,16 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/domain/model/change.go` (+ `change_test.go`) | update | `ChangeOrigin`, `Change.Origin`, Konstruktor-Default; Kommentar-Nachzug. |
-| `internal/domain/errors/` | update (falls nötig) | Fehler für einen unzulässigen Wert. |
+| `internal/domain/errors/errors.go` | update | `ErrInvalidChangeOrigin` für einen unzulässigen Wert (Gemessen: nötig — die Konstruktoren lehnen über einen Sentinel ab). |
 | `tools/schema/schema.yaml` | update | Spalte `origin` an `change`; View `changes` mit `COALESCE(...)` als letzter Spalte samt `columns:`-Signatur. |
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | `InsertChange`, `SelectChanges`: explizite Spaltenlisten. |
 | `internal/adapters/driven/postgresstorage/mapper/mapper.go` (+ `mapper_test.go`) | update | Zeile ↔ Change trägt `origin`. |
 | `internal/adapters/driven/postgresstorage/store.go` (+ `store_test.go`, `sqlviews_test.go`) | update | Schreiben/Lesen; Testfall `NULL` ≙ `wal`. |
-| `internal/adapters/driven/postgresstorage/schema.sql` | prüfen | eingebettete DDL (`ApplySchema`); ob sie noch ein Träger der Spalte ist oder nur Test-Hilfe, klärt der Suchlauf. |
+| `internal/adapters/driven/postgresstorage/schema.sql` | update | Entscheidung nach dem Suchlauf: die eingebettete DDL ist Test-Schema-Loader (`ApplySchema` in `store_test.go` und `tableactivation_test.go`, `DROP SCHEMA cdc CASCADE` + `ApplySchema` je Test) und damit zweiter Schema-Träger der Spalte — ohne `origin text` scheitert `InsertChange` in diesen Tests. Die Spalte steht dort mit derselben Form wie in `schema.yaml` (nullable, ohne Default, ohne CHECK). |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate.go` (+ `translate_test.go`) | update (nicht im ursprünglichen Plan) | die Scan-Schleife von `ReadChanges` liest die Projektion von `SelectChanges` Spalte für Spalte; `origin` ist die 14. Spalte und kommt hier in `mapper.ChangeRow`. Test: Zeilen-Fake mit Herkunft (`wal`, `backfill`, leer, unbekannt). |
+| `internal/adapters/driven/natsstream/publisher.go` (+ `publisher_test.go`), `internal/adapters/driving/http/sse.go` | update (Kommentar, nicht im ursprünglichen Plan) | drei Kommentare behaupten „dieselben (zehn) Felder wie `model.Change`" — mit `Change.Origin` stimmt das nicht mehr; sie nennen jetzt „ohne das Feld `origin`" (§3.13, Suchlauf-Zeile „Kommentare in den Live-Wegen"). |
+| Tests: `mapper_test.go`, `store_test.go`, `sqlviews_test.go` | update | Herkunft-Rundlauf im Mapper; Store-Test (`wal`/`backfill`/`NULL`, unbekannter Wert wird abgelehnt); View-Test (`origin` letzte Spalte, `NULL` ≙ `wal`, Parität View ↔ `ReadChanges`). |
+| `test/integration/integration_test.go` (`TestE2EChangesViewMatchesReadChanges`) | **nicht geändert** | der Vertragstest bleibt auf den bisherigen Spalten; die `origin`-Parität von View und `ReadChanges` trägt der Store-Tier-Test `TestChangesViewCarriesOriginLikeReadChanges` (`make test-store`). Grund: das Testpaket zu berühren verschöbe die `Datei:Zeile`-Anker in `docs/user/e2e-abdeckung.md` (Risiko §6, vierter Punkt). |
 | `internal/adapters/driving/http/readchanges.go` (+ `readchanges_test.go`) | update | Antwortfeld `origin`. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
 | `docs/user/benutzerhandbuch.md` | update | §4 „Änderungen lesen" (Spaltenliste des SQL-Beispiels), HTTP-Beschreibung von `GET /changes` (Feldliste der Antwort), `Version:`-Kopf und Änderungshistorie. |
@@ -128,12 +139,20 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Spaltenlisten der View in Doku | `grep -rn 'committed_at' docs/user spec harness` | *(Implementer trägt ein)* | Handbuch-Stellen ziehen; Spec ist gezogen. Übergabe aus dem Spec-Nachzug, am Stand `89053d3b` nachgemessen (`grep -n 'committed_at' docs/user/benutzerhandbuch.md`): die Spaltenliste des SQL-Beispiels unter „Änderungen lesen" (Z. 377) und die Feldliste der `GET /changes`-Antwort unter „Changes lesen" (Z. 639) tragen `origin` nicht; Zeilennummern sind der Stand dieser Messung, am Start neu messen |
-| Anzahl-Formulierungen („zehn Felder", „zwölf Felder") an `GET /changes` | `grep -rn 'Felder' docs/user spec` | *(Implementer trägt ein)* | nur Stellen, die `GET /changes` betreffen, ziehen; die Live-Wege bleiben bei zehn |
-| Harness/Tests mit `SELECT *` gegen `cdc.changes` | `grep -rn 'SELECT \*' tools test internal` | *(Implementer trägt ein)* | prüfen, ob die zusätzliche Spalte die Aussage ändert |
-| eingebettete DDL, Report, Rollback | `git ls-files tools/schema internal/adapters/driven/postgresstorage/schema.sql` und Lesen | *(Implementer trägt ein)* | `plan.yaml`/`down.sql` regenerieren; `schema.sql` entscheiden und im Bericht nennen |
-| Wegwerf-Client `tools/harness/httpclient` (liest `GET /changes`) | Lesen der Dekodierung | *(Implementer trägt ein)* | nur anpassen, wenn er strikt dekodiert |
-| E2E-Abdeckungs-Tabelle (`Datei:Zeile`-Anker) | `git diff --stat` auf `test/integration/**` und `tools/harness/run-integration-tests.sh` | *(Implementer trägt ein)* | berührt der Zug den Runner oder das Testpaket, regeneriert `make test-integration` `docs/user/e2e-abdeckung.md` und der Zug committet sie |
+| Spaltenlisten der View in Doku | Parent (Commit `f4ba82ab`, Stand vor diesem Slice): `git grep -n 'committed_at' f4ba82ab -- docs/user spec harness`; Diff-Stand (Commit `e95937cf`, Arbeitsbaum sauber): dasselbe mit `e95937cf` | Beide Stände **6** Treffer (gemessen), davon 3 im Handbuch: Parent `docs/user/benutzerhandbuch.md` Z. 377 (Spaltenliste des SQL-Beispiels unter „Änderungen lesen"), Z. 419 (`SELECT change_id, committed_at` — explizite Zwei-Spalten-Abfrage unter „Aufbewahrung", von `origin` nicht berührt), Z. 639 (Feldliste der `GET /changes`-Antwort unter „Changes lesen"); 3 in `spec/pflichtenheft.md` (Z. 236 synthetische Transaktionen, Z. 603 `SPEC-022`-Antwortzelle — trägt `origin` bereits —, Z. 819 Änderungsverlauf), keiner in `harness/`. Ergänzend `git grep -n -w 'origin' <Stand> -- docs/user`: Parent 1 (`docs/user/releasing.md`, das Git-Remote), Diff-Stand 6 (das Remote plus fünf Zeilen im Handbuch); `-- spec`: je Stand 9 (Spec ist gezogen) | Handbuch-Z. 377 und Z. 639 gezogen (die zwei benannten Stellen), Z. 419 unverändert; Version 1.44 samt Historienzeile; Spec unverändert |
+| Anzahl-Formulierungen („zehn Felder", „zwölf Felder") an `GET /changes` | `git grep -n 'Felder' <Stand> -- docs/user spec` und `git grep -n -E 'elf Felder\|zwölf Felder\|dreizehn Felder' <Stand> -- docs/user spec` | `Felder` je Stand **33** Treffer (gemessen), davon `zehn Felder` je Stand **19** (gRPC-, SSE- und NATS-Vollinhalts-Abschnitte, deren SDK-Absätze und `SPEC-020`/`SPEC-021`/`SPEC-024` — Live-Wege, bleiben bei zehn); `elf`/`zwölf`/`dreizehn Felder` je Stand **0** — keine Anzahl-Formulierung für `GET /changes` in `docs/user` oder `spec`. Außerhalb des Suchraums: `sdks/python/pgchangefeed/src/pgchangefeed/models.py` Z. 264 („nicht die zwölf des HTTP-Lesezugriffs (`SPEC-022`)") — der HTTP-Lesezugriff trägt mit `origin` dreizehn Felder | keine Änderung im Suchraum nötig; der Python-Kommentar gehört zu `slice-backfill-sdk-origin` (fremde Datei, gemeldet statt still geändert) |
+| Harness/Tests mit `SELECT *` gegen `cdc.changes` | `git grep -n 'SELECT \*' <Stand> -- tools test internal` | Je Stand **3** Treffer (gemessen): `test/integration/integration_test.go` Z. 1002 und 1052 (Kommentare zur expliziten Spaltenliste, kein SQL) und `tools/bench-batch-vs-single.sh` Z. 42 (`SELECT count(*) FROM (SELECT * FROM cdc.changes … LIMIT $M) t` — zählt Zeilen, liest die zusätzliche Spalte mit, ohne dass eine Aussage davon abhängt) | keine Änderung: keine der drei Stellen setzt eine Spaltenmenge voraus, die `origin` verletzt |
+| Kommentare in den Live-Wegen („dieselben Felder wie `model.Change`") | `git grep -n -E 'dieselben (zehn )?Felder wie\|Feldern wie der Domain-Typ' <Stand> -- '*.go' '*.proto' '*.py'` | Je Stand **8** Treffer (gemessen), die `model.Change` als Feldvorbild nennen: `natsstream/publisher.go` Z. 135, `natsstream/publisher_test.go` Z. 261, `driving/http/sse.go` Z. 29 — mit `Change.Origin` nicht mehr wahr —; `gen/cdc/stream/v1/changestream.pb.go` Z. 31 und `proto/cdc/stream/v1/changestream.proto` Z. 13 (dieselbe Aussage über die gRPC-Nachricht); `driving/http/readchanges.go` Z. 46 (`GET /changes`: trägt `origin`, bleibt wahr); `natsstream/publisher.go` Z. 165 (verweist auf das SSE-Event, bleibt wahr); Python-`models.py` Z. 263 | die drei Go-Kommentare ziehen „ohne `Origin`" nach; die `.proto`-Quelle und die generierte Datei **nicht** (die Zeile 13/31 zu ändern verlangt `make proto-generate`, der Plan legt die Proto-Artefakte und `make generated-sync` als unberührt fest) — gemeldet: die Aussage „mit denselben Feldern wie der Domain-Typ" ist an der gRPC-Nachricht ungenau geworden; der Python-Kommentar gehört zu `slice-backfill-sdk-origin` |
+| eingebettete DDL, Report, Rollback | `git ls-tree -r --name-only <Stand> -- tools/schema internal/adapters/driven/postgresstorage/schema.sql` | Je Stand **14** Dateien (gemessen, gleiche Menge); `tools/schema/plan.yaml` und `tools/schema/down.sql` ändern sich im Diff (Ergebnis eines frischen `make schema-rollout` gegen eine leere Datenbank), `schema.sql` und `schema.yaml` ebenso. `schema.sql` ist Träger, nicht nur Test-Hilfe: `store_test.go` und `tableactivation_test.go` bauen das Schema je Test über `ApplySchema` auf; ohne die Spalte dort scheitert `InsertChange` (rot gesehen, Mutation Z12) | `plan.yaml`/`down.sql` regeneriert und committet; `schema.sql` gezogen (Entscheidung, siehe Zeile in der Plan-Tabelle oben) |
+| Wegwerf-Client `tools/harness/httpclient` (liest `GET /changes`) | Lesen der Dekodierung (`tools/harness/httpclient/main.go` Z. 126–129) und `git grep -n -i -E 'DisallowUnknown\|UnmappedMemberHandling\|FAIL_ON_UNKNOWN\|ignoreUnknownKeys\|extra=.forbid' <Stand> -- '*.go' '*.cs' '*.kt' '*.py'` | Der Client dekodiert über `json.Unmarshal` in eine Struktur ohne `origin` — nicht strikt; strikte Dekoder-Muster je Stand **0** Treffer (gemessen) im ganzen Baum | keine Änderung nötig |
+| E2E-Abdeckungs-Tabelle (`Datei:Zeile`-Anker) | `git diff --stat f4ba82ab e95937cf -- test/integration tools/harness/run-integration-tests.sh docs/user/e2e-abdeckung.md` | Leer (gemessen, 0 Zeilen): der Diff berührt weder das Testpaket noch den Runner noch die Tabelle | keine Regeneration nötig; `make test-integration` lief für diesen Slice nicht (siehe Bericht) |
+
+**Messung zu Risiko §6 „d-migrate konvergiert nicht" (Implementer; der Ausgang gehört der Closure).** Alle Läufe gegen einen Wegwerf-PostgreSQL-18-Container (`postgres:18-alpine`, Digest aus `PG_TEST_IMAGE`), Rollout-Werkzeug d-migrate im gepinnten Image (Makefile-Variable `D_MIGRATE_IMAGE`); Ausgabe je Lauf gedruckt, hier die Exit-Codes:
+
+- **Frische Ziel-Datenbank, neues Schema, `make schema-rollout` zweimal hintereinander:** beide Läufe Exit 0 (gemessen). Der zweite Lauf nimmt den `--allow-destructive`-Pfad der Idempotenz-Wache (Meldung in der Ausgabe); die View `cdc.changes` führt danach `origin` als letzte Spalte. Der erste dieser Läufe erzeugt die committeten `plan.yaml`/`down.sql` (14 Operationen, `change` mit der Spalte `origin`, View `changes` mit `COALESCE(c.origin, 'wal') AS origin`).
+- **Ziel-Datenbank mit dem Schema des Parent-Commits `f4ba82ab` (zuvor per `make schema-rollout` ausgerollt), danach das neue Schema:** `make schema-rollout` endet mit Exit 2 (der Precheck-Lauf meldet Exit 8). Blocker im Precheck-Report: `MANUAL_ACTION_REQUIRED` für `ReplaceView` der View `changes`, Diagnose `VIEW_SIGNATURE_INCOMPATIBLE` („CREATE OR REPLACE VIEW is only renderable when view columns keep the same count, order, names and visible types"). Die Operation `AddColumn` für `change.origin` steht im selben Plan als regulär renderbar; die Wache (`tools/schema/rolloutguard`) lehnt die Blocker-Klasse `MANUAL_ACTION_REQUIRED` ab und läuft ohne `--allow-destructive`. **Ein bereits mit dem alten Schema ausgerolltes Ziel lässt sich damit über `make schema-rollout` nicht auf den neuen Stand heben.**
+- **Derselbe Ausgangsstand, nach einem manuellen `DROP VIEW cdc.changes` vor dem Rollout:** Exit 0, ein zweiter Lauf Exit 0; eine zuvor ohne Spalte gespeicherte Zeile liest über die View als `wal` (`NULL` in `cdc.change.origin`), die Rechte auf die View sind danach wieder gesetzt (`\dp cdc.changes` zeigt `cdc_reader=r`). Das ist eine Messung, kein umgesetzter Weg: einen Vorlauf-Schritt im Makefile-Target oder eine Sicht außerhalb des neutralen Modells zu führen, berührt [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) und `knownForeignObjects` — die in §4 vorab benannte Architect-Frage; dieser Slice setzt sie nicht um.
+- **Reichweite der Aussage:** die Test-Tiers (`make test-store`, `make test-replication`, `make test-integration`), `make example-demo-up` und der Compose-Aufbau legen ihr Schema laut `harness/README.md` §Sensors frisch an; der bestehende Rollout-Check in `examples/bootstrap.sh` überspringt den Rollout gegen ein bereits migriertes Ziel — dass ein dort weiterlebendes Alt-Schema `InsertChange` scheitern lässt, ist abgeleitet, nicht gemessen.
 
 ## 4. Trigger
 
