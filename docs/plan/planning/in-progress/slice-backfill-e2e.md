@@ -104,7 +104,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       neue `func TestE2E*` steht in einem `-run`-Muster des Runners oder ist eine
       deklarierte Runner-Phase — *zu belegen durch:* der Lauf zeigt jede in der
       `-v`-Ausgabe (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
