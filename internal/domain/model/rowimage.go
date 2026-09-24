@@ -20,9 +20,9 @@ import (
 // Fehler); eine Werteliste ohne tragenden Wert liefert `{}`.
 //
 // Die Funktion ist rein: sie hält keinen Zustand, liest ihre Eingaben nur
-// und teilt keinen Speicher mit ihnen. Sie ist die einzige Stelle, die ein
-// Row Image erzeugt (`ADR-0111` Teilfrage 2) — der WAL-Pfad und der
-// Backfill-Pfad rufen dieselbe Funktion.
+// und teilt keinen Speicher mit ihnen. Sie ist die eine Konstruktionsstelle
+// für Row Images (`ADR-0111` Teilfrage 2): jeder Pfad, der ein Row Image
+// erzeugt, ruft sie; gerufen wird sie vom Replication-Mapper.
 func BuildRowImage(columns []string, values []*string, excluded []string) ([]byte, error) {
 	if values == nil {
 		return nil, nil
