@@ -3029,8 +3029,8 @@ echo "run-integration-tests: Backfill-Boundary (leere Tabelle, zweiter Antrag) b
 
 # Replay-Invariante: die Schreiber, die Haltetransaktion und die Anwendung des
 # Logs liegen in TestE2EBackfillReplayInvariant
-# (test/integration/backfill_test.go); die Abdeckungszeile entsteht aus dem
-# Doc-Kommentar der Testfunktion.
+# (test/integration/backfill_e2e_test.go); die Abdeckungszeile entsteht aus
+# dem Doc-Kommentar der Testfunktion.
 docker run --rm --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
