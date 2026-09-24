@@ -90,6 +90,14 @@ Antrags trägt der Folge-Slice.
       zweimal hintereinander (Exit 0) und
       `tools/harness/run-schema-rollout-guard-test.sh` (alle Läufe);
       `plan.yaml` und `down.sql` regeneriert, falls der Rollout sie verändert.
+      Der **Alt-Tag-Lauf** desselben Skripts
+      ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+      Entscheidung 7: das Schema des jüngsten `v*`-Tags per `git archive`
+      ausrollen, danach den Arbeitsbaum — Exit 0 zweimal, der zuvor eingefügte
+      Datenstand über `cdc.changes` lesbar; der Bericht nennt den Tag und die
+      gedruckten Exit-Codes) trägt den Upgrade-Beleg für die zwei nullable
+      Spalten (`jsonb` statt `text` ist über einen Alt-Bestand ungemessen) und
+      die zwei Funktionen.
 - [ ] Idempotenz-Guard und Rollen-Test: `knownForeignObjects` in
       `tools/schema/rolloutguard/guard.go` trägt beide Funktionen
       (Signatur-Schreibweise am realen `--plan-only`-Report gemessen, nicht
@@ -149,7 +157,7 @@ Antrags trägt der Folge-Slice.
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | zwei Antragsarten, Felder `RuleName`/`RuleSpec`, Konstruktor-Invarianten; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Lesen der zwei Spalten, Abbildung der Antragsarten. |
 | `internal/bootstrap/wiring.go` (+ Test) | update | nur der Fehlertext im `default`-Zweig von `applyAdministrationRequest` (nennt die geschlossene Menge). |
-| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/README.md` §Sensors, `Makefile`-Kommentar über `schema-rollout` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe. |
+| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/README.md` §Sensors, `Makefile`-Kommentar über `schema-rollout` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene
 `request_kind`-Menge (Parent-Stand plus zwei)“, „die Menge der Fremdobjekte
@@ -191,8 +199,9 @@ anderer Slice in `in-progress/` liegt (WIP-Limit 1).
 ## 5. Closure-Trigger
 
 DoD vollständig + `make gates` grün + `make test`, `make test-store` und `make
-schema-rollout` (zweimal) real grün + Closure-Notiz mit Lerneintrag
-geschrieben.
+schema-rollout` (zweimal) real grün + der Alt-Tag-Lauf von
+`tools/harness/run-schema-rollout-guard-test.sh` real grün + Closure-Notiz mit
+Lerneintrag geschrieben.
 
 ## 6. Risiken und offene Punkte
 
@@ -201,6 +210,12 @@ geschrieben.
   bestehenden Funktionen (`enable_table(in:text,in:text,in:text)` in
   `guard.go`) ist gelesen, die der neuen mit `jsonb` ist ungemessen. *Erwartet,
   zu belegen durch:* zweiter `make schema-rollout` und
+  `run-schema-rollout-guard-test.sh`. **Ausgang:** *(bei Closure)*
+- **Die zwei Spalten, besonders `rule_spec jsonb`, konvergieren nicht über
+  einen Alt-Bestand.** Eine nullable `text`-Spalte an einer bestehenden Tabelle
+  rollt über einen Alt-Bestand (gemessen im Architect-Verdikt
+  `architect-verdict-schema-rollout-view-signatur`, Szenario 5); `jsonb` statt
+  `text` ist nicht gemessen. *Erwartet, zu belegen durch:* der Alt-Tag-Lauf von
   `run-schema-rollout-guard-test.sh`. **Ausgang:** *(bei Closure)*
 - **Zwei Schema-Träger driften** (`tools/schema/schema.yaml` und
   `postgresstorage/schema.sql` tragen dieselbe Spaltenform, jeder für einen

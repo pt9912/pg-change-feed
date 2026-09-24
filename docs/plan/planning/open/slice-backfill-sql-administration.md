@@ -97,7 +97,15 @@ sichtbar. Drei Teile:
       `make test-store`, `make schema-rollout` zweimal hintereinander (Exit 0),
       `tools/harness/run-schema-rollout-guard-test.sh` (alle Läufe) und der
       Unit-Test in `tools/schema/rolloutguard/guard_test.go`; `plan.yaml` und
-      `down.sql` regeneriert, falls der Rollout sie verändert.
+      `down.sql` regeneriert, falls der Rollout sie verändert. Der
+      **Alt-Tag-Lauf** desselben Skripts
+      ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+      Entscheidung 7: das Schema des jüngsten `v*`-Tags per `git archive`
+      ausrollen, danach den Arbeitsbaum — Exit 0 zweimal, der zuvor eingefügte
+      Datenstand über `cdc.changes` lesbar; der Bericht nennt den Tag und die
+      gedruckten Exit-Codes) trägt den Upgrade-Beleg für die CHECK-Menge und die
+      Funktion in `nacharbeit-administration.sql` und für die neue View über
+      einen Alt-Bestand.
 - [ ] Verarbeitung: ein `backfill`-Antrag gegen eine aktivierte Tabelle ruft
       `Request`, legt den Run `queued` mit Schätzung an und vermerkt ihn `applied`
       („angenommen") in einer Transaktion, weckt den Worker und blockiert die
@@ -117,7 +125,14 @@ sichtbar. Drei Teile:
 - [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
-      zwei Warn-Spalten; `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
+      zwei Warn-Spalten — **schon in dieser Signatur** (`warn_estimated_size`,
+      `warn_duration`, die `false`-Werte der Run-Zeile), damit
+      `slice-backfill-bench-richtgroesse` die View nur mit Werten füllt und ihre
+      Signatur nicht erneut ändert (Auflage aus dem Architect-Verdikt
+      `architect-verdict-schema-rollout-view-signatur`; eine Signaturänderung
+      einer bestehenden View kostet nach
+      [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) ein
+      Lesefenster im Rollout); `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
       gibt sie aus (beide Warn-Spalten `false`, solange keine Auswertung sie setzt),
       ein `failed`-Run ist Berichtsinhalt (Exit 0). Das Benutzerhandbuch trägt den neuen Abschnitt
       „Bestand als Backfill überführen" (Auslösung, Betriebs-Vorbedingungen —
@@ -161,10 +176,10 @@ sichtbar. Drei Teile:
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Abbildung der Antragsart. |
 | `tools/schema/nacharbeit-administration.sql` | update | CHECK-Menge (fünf Werte), Funktion `cdc.backfill_table`, Kopfkommentar. |
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Eintrag der Funktion; der Kommentar „aktuell sechs Objekte" zählt neu. |
-| `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |
+| `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell mit ihrer endgültigen Spaltenliste, die zwei Warn-Spalten eingeschlossen (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |
 | `tools/schema/nacharbeit-roles.sql` (+ `roles_rollout_file_internal_test.go`) | update | `SELECT` auf die View für `cdc_reader`. |
 | `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill` (ruft `Request`, sendet das Wecksignal), Worker-Goroutine mit Start-Aufnahme und Schleife „erst abarbeiten, dann warten", Pool, Start-Reihenfolge (Bindungsaufbau, Abgleich, Worker), `Diagnose`-Ausgabe. |
-| `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion. |
+| `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, die zwei Fortsetzungs-Idiome (§4 „Änderungen lesen", „Changes lesen"), `Version:`-Kopf und Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make schema-rollout` (Fremdobjekt-Aufzählung) und die Zeile `make example-demo-up`, die dieselbe Aufzählung wiederholt. |
 | `Makefile` (Kommentar über `schema-rollout`) | update | trägt die Zahl der Fremdobjekte. |
@@ -203,8 +218,9 @@ sichtbar. Drei Teile:
 ## 5. Closure-Trigger
 
 DoD vollständig + `make gates` grün + `make test`, `make test-store` und
-`make schema-rollout` (zweimal) real grün + Closure-Notiz mit Lerneintrag
-geschrieben.
+`make schema-rollout` (zweimal) real grün + der Alt-Tag-Lauf von
+`tools/harness/run-schema-rollout-guard-test.sh` real grün + Closure-Notiz mit
+Lerneintrag geschrieben.
 
 ## 6. Risiken und offene Punkte
 
@@ -214,6 +230,13 @@ geschrieben.
   der neuen ist ungemessen. *Erwartet, zu belegen durch:* zweiter
   `make schema-rollout` und `run-schema-rollout-guard-test.sh`. **Ausgang:**
   *(bei Closure)*
+- **Die neue View oder die erweiterte CHECK-Menge konvergiert nicht über einen
+  Alt-Bestand.** Eine neue View konvergiert über einen Alt-Bestand (gemessen im
+  Architect-Verdikt `architect-verdict-schema-rollout-view-signatur`,
+  Szenario 5: Exit 0, zweiter Lauf Exit 0); CHECK-Menge und Funktion laufen über
+  `nacharbeit-administration.sql` und sind über einen Alt-Bestand ungemessen.
+  *Erwartet, zu belegen durch:* der Alt-Tag-Lauf von
+  `run-schema-rollout-guard-test.sh`. **Ausgang:** *(bei Closure)*
 - **`applied` wird als „Bestand kopiert" gelesen.** Bei dieser Antragsart heißt
   `applied` „angenommen"; die Ausführung steht in `cdc.backfill_run`. Ein Leser
   von `cdc.administration_request`, `diagnose` oder Handbuch könnte es anders

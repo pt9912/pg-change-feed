@@ -89,7 +89,14 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   hintereinander gegen dieselbe Ziel-Datenbank (Idempotenz) — die
   Fitness-Function-Zeilen von
   [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md), die nur
-  das gebündelte System zeigt.
+  das gebündelte System zeigt. Dazu der **Alt-Tag-Lauf** von
+  `tools/harness/run-schema-rollout-guard-test.sh`
+  ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  Entscheidung 7): das Schema des jüngsten `v*`-Tags ausrollen, danach den
+  Arbeitsbaum dieser Welle — Exit 0 zweimal, der Datenstand über `cdc.changes`
+  lesbar; er zeigt das Upgrade über den Alt-Bestand mit **allen** Schema-Änderungen
+  der Welle zusammen (`origin` in der View, neue Tabelle, neue View, Antragsart,
+  Funktion).
 - `make doc-trace` führt [`LH-FA-CAP-009`](../../../spec/lastenheft.md) nicht
   mehr unter den Waisen; der Träger ist die Zeile in
   [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner
@@ -226,6 +233,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   - `run-store` → `sql-administration` → `e2e` → `bench-richtgroesse`
     (jeder Schritt braucht das lauffähige System der Vorstufe);
   - `change-origin` → `sdk-origin` (sonst unabhängig von den übrigen Slices).
+
+**§3.13-Suchlauf (committetes Feld) — bewegte Eigenschaft: „die Signatur
+einer im neutralen Modell deklarierten View oder eine bestehende
+View-Spalte", ausgelöst durch
+[`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md).** Eine
+Signaturänderung einer bestehenden View verlangt den Vorlauf im Target
+`schema-rollout` und kostet SQL-Leser ein Lesefenster; das Architect-Verdikt
+`architect-verdict-schema-rollout-view-signatur` sagt: außer `origin` in
+`cdc.changes` (`slice-backfill-change-origin`) ändert kein geplanter Slice eine
+bestehende View. Nachgemessen am Parent-Stand (Commit `3acd2c8d`, Suchraum
+`docs/plan/planning/open/` und die beiden Wellen-Dateien
+`welle-backfill-bestand.md`, `welle-transformationen.md`; der Diff dieses Zuges
+berührt nur Plan-Dateien):
+
+| Suche | Befehl | Befund (gemessen) | Behandlung |
+|---|---|---|---|
+| Views im neutralen Modell | `awk '/^views:/{f=1} f&&/^  [a-z_]+:/{print}' tools/schema/schema.yaml` | 4 Views: `active_tables`, `consumer_status`, `changes`, `retention_blockers` | Gegenstand der folgenden Suchen |
+| Pläne, die das neutrale Modell ändern | `git grep -l 'tools/schema/schema.yaml' <Stand> -- <Suchraum>` | Parent: 3 Pläne — `slice-backfill-run-store` (neue Tabelle), `slice-backfill-sql-administration` (neue View `backfill_status`, CHECK-Menge, Funktion), `slice-transformationen-antragsweg-schema` (zwei nullable Spalten an `administration_request`, zwei Funktionen); alle additiv. Diff-Stand: 5 Dateien — dazu `slice-backfill-bench-richtgroesse` (Zeile „prüfen, nicht ändern") und dieses Feld | keine Signaturänderung; additive Änderungen brauchen keinen Vorlauf ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 5); der Alt-Tag-Lauf steht in den drei DoDs |
+| Pläne, die eine der vier Views nennen | `git grep -l -E 'cdc\.(changes\|active_tables\|consumer_status\|retention_blockers)' <Stand> -- <Suchraum>` und Lesen jedes Treffers | Parent: 8 Pläne, 18 Treffer-Zeilen (`git grep -n`, gemessen); jeder gelesene Treffer ist ein Lesen oder ein Beleg (Ordnungstest, E2E-Lesen über `cdc.changes`, Startposition über `cdc.consumer_status`, Handbuch-Beschreibung) oder die Nennung von `origin` in `cdc.changes` durch `slice-backfill-change-origin`; `retention_blockers`: 0 Treffer. Diff-Stand: 10 Pläne, 26 Treffer-Zeilen — die zusätzlichen sind die Alt-Tag-Lauf-Nachzüge dieses Zuges und dieses Feld | kein weiterer Plan ändert eine bestehende View oder View-Spalte |
+| Nachträgliche Änderung der neuen View | Lesen von `slice-backfill-sql-administration` und `slice-backfill-bench-richtgroesse` | `backfill_status` trägt die zwei Warn-Spalten von Anfang an; `slice-backfill-bench-richtgroesse` füllt nur Werte | Auflage aus dem Verdikt in beide Pläne gezogen (DoD, Rückführung, Plan-Tabelle) |
+| Regel-Sicht der Transformationen | Lesen von `welle-transformationen.md` §6 | keine View; der Regelstand bleibt über `cdc.administration_request` lesbar | keine Änderung |
+
+Nicht gefunden: kein Plan, der eine der vier Views umordnet, umbenennt oder
+im Typ ändert; kein Plan, der `cdc.active_tables`, `cdc.consumer_status` oder
+`cdc.retention_blockers` berührt.
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)

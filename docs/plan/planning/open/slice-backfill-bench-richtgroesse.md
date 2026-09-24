@@ -61,7 +61,9 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
   länger als die Toleranz läuft, geprüft bei jedem Fortschritts-Update (je Block)
   und beim Abschluss. Das Ergebnis steht in den zwei Warn-Spalten der Run-Zeile —
   Warnung (1) schreibt `Admit`, Warnung (2) der Worker per `UPDATE` —,
-  `cdc.backfill_status` reicht sie durch, `diagnose` liest sie aus der View.
+  `cdc.backfill_status` reicht sie durch — die View trägt die zwei Spalten seit
+  `slice-backfill-sql-administration` in ihrer Signatur, dieser Slice **ändert die
+  Signatur nicht** und füllt nur Werte —, `diagnose` liest sie aus der View.
   Eine unbekannte Schätzung (`NULL`) warnt nicht (Warnung (1) entfällt), sagt
   aber „unbekannt"; Warnung (2) greift unabhängig von der Schätzung. **Keine
   Ablehnung, kein Abbruch, keine Statusänderung** ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3).
@@ -105,7 +107,14 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
       Toleranz (darunter keine, darüber gesetzt), Warnung (1) an der Richtgröße
       (genau auf, eins darüber), unbekannte Schätzung → keine Warnung (1) und nie
       `0`; ein Store-Test, dass die View das Ergebnis der Run-Zeile durchreicht
-      (`make test-store`); der Suchlauf in §3.
+      (`make test-store`); der Suchlauf in §3. Die Signatur von
+      `cdc.backfill_status` bleibt unverändert (Spaltenzahl, -reihenfolge,
+      -namen und -typen wie am Start dieses Slice; eine Signaturänderung einer
+      bestehenden View kostet nach
+      [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) ein
+      Lesefenster im Rollout) — *zu belegen durch:* `git diff` gegen den
+      Start-Stand zeigt keine Änderung an der View-Definition in
+      `tools/schema/schema.yaml`.
 - [ ] Benennung: jede Stelle, die die Zeilenzahl nennt, trägt das Wort „geschätzt";
       die Richtgröße heißt „Richtgröße" oder „Orientierung", nie „Grenze", „Limit"
       oder „maximal"; die Toleranz heißt „Startwert" mit dem Zusatz „Setzung ohne
@@ -148,6 +157,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 | `internal/bootstrap/diagnose_test.go` | prüfen | zeigt die Warnung aus der View an; keine Grenzfälle der Auswertung (die liegen im Use-Case-Test). |
 | `docs/user/benutzerhandbuch.md` | update | Richtgröße im Abschnitt „Grenzwerte“ mit Ursprung; Diagnose-Beispiel; Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make bench` (drei → vier Skripte) — aus dem realen Lauf geschrieben. |
+| `tools/schema/schema.yaml` | prüfen (nicht ändern) | die View `backfill_status` trägt die zwei Warn-Spalten seit `slice-backfill-sql-administration`; ein Bedarf an einer Signaturänderung wäre ein Plan-Nachzug und ein Rückführungsgrund (§4), keine stille Änderung. |
 | `docs/user/bench-abdeckung.md` | prüfen | die Datei bindet `LH-QA-PER-001`…`003` an durchgesetzte Schwellen; eine Zeile ohne Schwelle für `LH-FA-CAP-009` passt nicht zu dieser Form — Entscheidung im Slice, im Bericht begründet. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Zahl und der Inhalt der Bench-Skripte hinter `make bench`"; beide Stände gemessen):**
@@ -178,6 +188,11 @@ als Grenze im Code (`BEO-PGC/geschaetzter-wert-als-grenze`). Das ist eine
 - `in-progress` → `next` (zu groß, zurück zur Zerlegung): falls Bench und
   Warn-Auswertung nicht in einem Review tragen — der abtrennbare Teil ist die
   Warn-Auswertung im Use Case samt ihren Tests.
+- `in-progress` → `next` (Plan-Nachzug): falls die Warn-Auswertung eine
+  Signaturänderung von `cdc.backfill_status` verlangt (über die zwei Warn-Spalten
+  aus `slice-backfill-sql-administration` hinaus) — die Änderung ist nach
+  [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) ein
+  Lesefenster im Rollout und wird vor der Umsetzung im Plan benannt.
 - `in-progress` → `open` (blockiert): falls die Schätzung (`reltuples`) so weit
   von der tatsächlichen Zeilenzahl abweicht, dass eine Warnung an ihr nichts
   trägt (dann Architect-Frage: statt der Schätzung eine andere Größe, etwa ein

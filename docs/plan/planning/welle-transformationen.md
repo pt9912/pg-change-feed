@@ -105,7 +105,15 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Schwelle) und `make schema-rollout` zweimal hintereinander gegen dieselbe
   Ziel-Datenbank (Idempotenz) — die Fitness-Function-Zeilen von
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md),
-  die nur das gebündelte System zeigt.
+  die nur das gebündelte System zeigt. Dazu der **Alt-Tag-Lauf** von
+  `tools/harness/run-schema-rollout-guard-test.sh`
+  ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  Entscheidung 7): das Schema des jüngsten `v*`-Tags ausrollen, danach den
+  Arbeitsbaum — Exit 0 zweimal, der Datenstand über `cdc.changes` lesbar; er
+  zeigt die zwei nullable Spalten und die zwei Funktionen dieser Welle über einen
+  Alt-Bestand (die Welle ändert keine bestehende View, siehe den
+  §3.13-Suchlauf in §5 von
+  [welle-backfill-bestand](welle-backfill-bestand.md)).
 - **Die Fitness-Function-Tests aus
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   sind grün und tragen ihre Eingabe:** der Eigenschaftstest im `mapper`-Paket

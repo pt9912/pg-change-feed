@@ -86,7 +86,14 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       `cdc_capture` mit `SELECT`, `UPDATE`, niemand mit `DELETE`, `cdc_reader` ohne
       Recht auf die Basistabelle ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1, Punkt 3). *Zu belegen
       durch:* `make schema-rollout` zweimal
-      hintereinander mit Exit 0, `tools/schema/plan.yaml` und
+      hintereinander mit Exit 0, der **Alt-Tag-Lauf** von
+      `tools/harness/run-schema-rollout-guard-test.sh`
+      ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+      Entscheidung 7: das Schema des jüngsten `v*`-Tags per `git archive`
+      ausrollen, danach den Arbeitsbaum — Exit 0 zweimal, der zuvor eingefügte
+      Datenstand über `cdc.changes` lesbar; der Bericht nennt den Tag und die
+      gedruckten Exit-Codes; der Lauf entsteht in der Fixrunde von
+      `slice-backfill-change-origin`), `tools/schema/plan.yaml` und
       `tools/schema/down.sql` neu erzeugt und mitcommittet, der Rollen-Test
       `internal/bootstrap/roles_rollout_file_internal_test.go` (netzlos, Teil der
       Gates) angepasst, und ein Rollen-Test im Store-Tier (`roles_test.go`-Muster,
@@ -147,6 +154,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | die neuen Anweisungen. |
 | `internal/adapters/driven/postgresstorage/schema.sql` | prüfen | wie in `change-origin`: ob die eingebettete DDL eine Träger-Rolle hat. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
+| `tools/harness/run-schema-rollout-guard-test.sh` | ausführen (nicht ändern) | der Alt-Tag-Lauf belegt die Tabelle gegen einen Alt-Bestand ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Tabellenliste des `cdc`-Schemas und die Rollenverteilung der Grants"; beide Stände gemessen):**
 
@@ -175,8 +183,9 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 ## 5. Closure-Trigger
 
 DoD vollständig + `make gates` grün + `make test-store` und
-`make schema-rollout` (zweimal) real grün + Closure-Notiz mit Lerneintrag
-geschrieben.
+`make schema-rollout` (zweimal) real grün + der Alt-Tag-Lauf von
+`tools/harness/run-schema-rollout-guard-test.sh` real grün + Closure-Notiz mit
+Lerneintrag geschrieben.
 
 ## 6. Risiken und offene Punkte
 
@@ -190,7 +199,12 @@ geschrieben.
 - **Der CHECK bei Erstanlage konvergiert** (die Zusage von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage
   4): die Tabelle `change` trägt CHECKs bei Erstanlage bereits (`chk_change_operation`
   in `tools/schema/schema.yaml`); für **diese** Tabelle ungemessen. *Erwartet, zu
-  belegen durch:* Erst- und Folgelauf des Rollouts. **Ausgang:** *(bei Closure)*
+  belegen durch:* Erst- und Folgelauf des Rollouts und der Alt-Tag-Lauf (die
+  Tabelle ist additiv gegenüber dem Schema des jüngsten `v*`-Tags; additive
+  Änderungen rollen über einen Alt-Bestand, gemessen im Architect-Verdikt
+  `architect-verdict-schema-rollout-view-signatur`, Szenario 5, für eine neue
+  Tabelle mit Fremdschlüssel und Default — der CHECK und die Warn-Spalten
+  gehören nicht zu dieser Messung). **Ausgang:** *(bei Closure)*
 - **Der Fortschritt außerhalb der Daten-Transaktion** braucht eine zweite
   Verbindung und kollidiert nicht mit dem Commit derselben Run-Zeile. *Erwartet,
   zu belegen durch:* der Zustands-Test mit gleichzeitigem Fortschritts-Update
