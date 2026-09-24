@@ -23,7 +23,7 @@ aus der Messung).
 Wert in §3 ohne schärfende ADR, siehe §6), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand mit
 `estimated_rows`) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
