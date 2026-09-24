@@ -30,9 +30,26 @@ type writerRun struct {
 // Version und Bindung.
 func newWriterRun(t *testing.T, f *backfillFixture, prefix string, offset uint64) *writerRun {
 	t.Helper()
-	admission := newBackfillAdmission(t, f)
-	runs := newBackfillRunAdapter(t, f)
-	writer, err := postgresstorage.NewBackfillWriter(context.Background(), f.dsn)
+	return newWriterRunAs(t, f, prefix, offset, f.dsn, f.dsn)
+}
+
+// newWriterRunAs baut dieselbe Lage wie `newWriterRun` mit der Annahme über
+// `admissionDSN` und dem Run-Zustand samt Schreiber über `workerDSN` — die
+// Rollen-Tests übergeben hier die Login-Identitäten von `cdc_admin` und
+// `cdc_capture`.
+func newWriterRunAs(t *testing.T, f *backfillFixture, prefix string, offset uint64, admissionDSN, workerDSN string) *writerRun {
+	t.Helper()
+	admission, err := postgresstorage.NewBackfillAdmission(context.Background(), admissionDSN)
+	if err != nil {
+		t.Fatalf("NewBackfillAdmission: %v", err)
+	}
+	t.Cleanup(admission.Close)
+	runs, err := postgresstorage.NewBackfillRun(context.Background(), workerDSN)
+	if err != nil {
+		t.Fatalf("NewBackfillRun: %v", err)
+	}
+	t.Cleanup(runs.Close)
+	writer, err := postgresstorage.NewBackfillWriter(context.Background(), workerDSN)
 	if err != nil {
 		t.Fatalf("NewBackfillWriter: %v", err)
 	}

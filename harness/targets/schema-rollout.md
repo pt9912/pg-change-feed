@@ -9,8 +9,8 @@ DB-Zugang und hängt an keinem `GATE_CHECKS`-Eintrag; die netzlose Vorstufe
 `make schema-validate` ist sein Voraussetzungsziel.
 
 Es setzt sich aus zwei Teilen zusammen: dem d-migrate-Rollout der Objekte, die
-das neutrale Modell ausdrückt (Tabellen, Constraints, die drei Views
-`active_tables`, `consumer_status`, `changes`), und vier psql-Nacharbeit-Schritten
+das neutrale Modell ausdrückt (Tabellen, Constraints, die vier Views
+`active_tables`, `consumer_status`, `changes`, `retention_blockers`), und vier psql-Nacharbeit-Schritten
 für Objektklassen, die d-migrate nicht konvergiert oder nicht ausdrückt. Die
 Rollout-Kette ist idempotent: ein zweiter Lauf gegen ein migriertes Ziel endet
 mit Exit 0
@@ -68,7 +68,7 @@ anderen Schritts tut es.
 
    | Schritt | Datei | Objektklasse |
    |---|---|---|
-   | 1 | `tools/schema/nacharbeit-roles.sql` | die Rollen `cdc_capture`, `cdc_admin`, `cdc_reader` und ihre Rechte auf Tabellen und die drei deklarierten Views (Least-Privilege-Schnitt) |
+   | 1 | `tools/schema/nacharbeit-roles.sql` | die Rollen `cdc_capture`, `cdc_admin`, `cdc_reader` und ihre Rechte auf Tabellen und die vier deklarierten Views (Least-Privilege-Schnitt) |
    | 2 | `tools/schema/nacharbeit-observability.sql` | View `cdc.metrics`, Recht `SELECT` für `cdc_reader` |
    | 3 | `tools/schema/nacharbeit-heartbeat.sql` | View `cdc.heartbeat`, Recht `SELECT` für `cdc_reader` |
    | 4 | `tools/schema/nacharbeit-administration.sql` | die vier SQL-Funktionen `cdc.enable_table`, `cdc.disable_table`, `cdc.exclude_column`, `cdc.include_column` mit `EXECUTE` für `cdc_admin`, und der CHECK `chk_administration_request_kind` |
@@ -151,7 +151,7 @@ noch Erweiterung.
   echte anstehende Änderung neben den sechs bekannten Blockern bleibt wirksam,
   (4) View-Signatur-Vorlauf samt Soll-Signatur, Recht und lesbarer Zeile,
   Folgelauf ohne Vorlauf, abhängiges Objekt scheitert laut ohne Kaskade,
-  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum,
+  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum mit den Rechten von `cdc_admin` auf `cdc.administration_request` und `cdc.backfill_run` nach dem Upgrade,
   (6) unbekannte Blocker brechen mit Exit 8 ab: (6a) eine nicht deklarierte
   Funktion bleibt bestehen und bindet die Bekannt-Liste end-to-end, (6b) eine
   nicht deklarierte Spalte belegt den Abbruch gegen einen real gemeldeten

@@ -20,12 +20,13 @@ import (
 // d-migrate-Rollout (`tools/schema/schema.yaml`, `ADR-0043`), die Grants die
 // Rollen-Datei (`tools/schema/nacharbeit-roles.sql`).
 //
-// Kopplung: diese Dateien müssen vor `consumerstate_test.go`,
-// `store_test.go` und `tableactivation_test.go` laufen — deren Tests räumen
-// das Schema per `DROP SCHEMA cdc CASCADE` samt hand-DDL-Neuaufbau zurück, der
-// `cdc.backfill_run` nicht mitträgt. Die Dateinamen `backfill*_test.go`
-// sortieren vor ihnen (`b` < `c`), dieselbe Ordnung wie bei
-// `administrationrequest_test.go`.
+// Kopplung: diese Dateien und `roles_test.go` müssen vor `store_test.go`
+// (`newTestStore`, `DROP SCHEMA cdc CASCADE` samt hand-DDL-Neuaufbau) und
+// `tableactivation_test.go` (`newTestActivation`, derselbe Neuaufbau) laufen
+// — der Neuaufbau trägt weder `cdc.backfill_run` noch
+// `cdc.administration_request` mit. Die Dateinamen `backfill*_test.go` und
+// `roles_test.go` sortieren vor ihnen (`b`, `r` < `s`, `t`), dieselbe
+// Ordnung wie bei `administrationrequest_test.go`.
 //
 // Isolation (`BEO-PGC/test-isolation-geteilter-zustand`): jeder Test führt
 // seine Zeilen unter eigenen Kennungen (Run-, Antrags-, Tabellen- und

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.46
+Version: 1.47
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -73,7 +73,7 @@ Gruppenrolle zuweisen:
 | Rolle | Zweck | Umgebungsvariable |
 |---|---|---|
 | `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung) | `CDC_ADMIN_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen) | `CDC_ADMIN_DSN` |
 | `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
@@ -606,6 +606,16 @@ einem laufenden Alt-Container gemessen).
 rollen ohne Zwischenschritt aus. Ein zweiter Lauf gegen ein bereits
 ausgerolltes Ziel endet ebenfalls mit Exit 0.
 
+**Rechte der drei Rollen.** Der Rollout setzt die Rechte der Gruppenrollen
+bei jedem Lauf (idempotent), auch gegen ein bereits ausgerolltes Ziel. Die
+Rechte von `cdc_admin` auf `cdc.administration_request` (`SELECT`, `UPDATE`)
+und auf `cdc.backfill_run` (`SELECT`, `INSERT`) kommen aus diesem Lauf: rollen
+Sie das Schema nach einem Upgrade **vor** dem Tausch des Feed-Containers aus.
+Ohne das Recht auf `cdc.administration_request` bleiben Anträge der
+SQL-Administration `pending`, und der Feed-Container protokolliert „Anträge
+lesen fehlgeschlagen" — das trifft eine Login-Identität, die nur `IN ROLE
+cdc_admin` ist, nicht einen Superuser-Login.
+
 **Änderung an der Spaltenliste einer View.** Ändert ein Release die Signatur
 einer View des Schemas (Spalte anhängen, umordnen, umbenennen, Typ ändern —
 so trägt `cdc.changes` seit der Einführung des Feldes `origin` eine
@@ -1106,7 +1116,7 @@ das Package dieselbe Vier-Wege-Matrix wie die C#-/Kotlin-Pendants. Siehe
 | Variable | Pflicht | Bedeutung |
 |---|---|---|
 | `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream) |
-| `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, `register-consumer`/`acknowledge-consumer`) |
+| `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, Verarbeitung der Antrags-Queue, `register-consumer`/`acknowledge-consumer`) |
 | `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`, `diagnose`) |
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
@@ -1344,3 +1354,4 @@ MIT — siehe `LICENSE`.
 | 1.44 | 2026-09-24 | Feld `origin` in den Lesewegen ergänzt (`LH-FA-CAP-009`, `LH-FA-DAT-006`, `ADR-0111`, slice-backfill-change-origin): §4 „Änderungen lesen" trägt `origin` als letzte Spalte des SQL-Beispiels über `cdc.changes` samt Bedeutung (`wal` \| `backfill`, ein fehlender Wert liest als `wal`), §4 „Zugriff über die HTTP-/JSON-API" nennt `origin` als letztes Feld der `GET /changes`-Antwort; die drei Live-Zustellwege tragen das Feld nicht |
 | 1.45 | 2026-09-24 | Schema-Upgrade über eine View-Signaturänderung dokumentiert (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" nennt die Reihenfolge (Schema-Rollout vor dem Container-Tausch), den automatischen Vorlauf `DROP VIEW cdc.<name>` samt Meldung, das Lesefenster für SQL-Leser (Richtwert aus einer einzelnen Messung, nicht garantiert) und das Verhalten bei einem abhängigen Objekt oder einem Abbruch nach dem Vorlauf |
 | 1.46 | 2026-09-24 | Hinweis zu Rechten und Vorbedingung des View-Signatur-Vorlaufs ergänzt (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" benennt, dass `DROP VIEW` die Rechteliste der View verwirft und nur `cdc_reader` im selben Lauf sein `SELECT`-Recht zurückbekommt (eigene Grants an andere Rollen setzt der Betreiber erneut), sowie die feste Adressierung des Schemas `cdc` |
+| 1.47 | 2026-09-24 | Rechteschnitt von `cdc_admin` ergänzt (`LH-QA-SEC-001`, `LH-QA-SEC-002`, `ADR-0047`, `ADR-0050`, slice-backfill-run-store Fixrunde): §2 „Zugriff und Rollen" nennt die Verarbeitung der Antrags-Queue `cdc.administration_request` (lesen, Ausgang vermerken) als Zweck der Rolle, §5 „Umgebungsvariablen des Feed-Containers" die Zeile `CDC_ADMIN_DSN`; §4 „Schema aktualisieren" trägt den Absatz „Rechte der drei Rollen" (der Rollout setzt die Rechte bei jedem Lauf, Schema-Rollout vor dem Container-Tausch, Anträge bleiben ohne das Recht `pending`) |

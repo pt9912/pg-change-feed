@@ -33,7 +33,11 @@
 #      nie im Repo-Baum) wird mit dem Makefile dieses Tags ausgerollt, eine
 #      Datenzeile geschrieben, danach der Arbeitsbaum zweimal ausgerollt —
 #      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
-#      Soll-Signatur der View. Tag und Exit-Codes stehen in der Ausgabe.
+#      Soll-Signatur der View, und die Rechte des Rollen-Schnitts: `cdc_admin`
+#      trägt vor dem Upgrade kein Recht auf `cdc.administration_request` und
+#      danach `SELECT`/`UPDATE` (kein `INSERT`/`DELETE`) sowie `SELECT`/
+#      `INSERT` auf der neuen Tabelle `cdc.backfill_run`. Tag und Exit-Codes
+#      stehen in der Ausgabe.
 #   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
 #      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
 #      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:
@@ -241,6 +245,9 @@ alt_exit=$RUN_EXIT
 seed_row "$ALT_DB" alttag
 alt_rows_before=$(psql_q "$ALT_DB" "SELECT count(*) FROM cdc.changes")
 [ "$alt_rows_before" = "1" ] || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.changes trägt $alt_rows_before statt 1 Zeile im Stand von $ALT_TAG"
+alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('cdc_admin', '$1', '$2')"; }
+[ "$(alt_privilege cdc.administration_request UPDATE)" = "f" ] \
+  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc_admin trägt im Stand von $ALT_TAG schon UPDATE auf cdc.administration_request"
 run_rollout . "$ALT_TARGET"
 work_exit_1=$RUN_EXIT
 work_out_1=$RUN_OUT
@@ -251,12 +258,19 @@ work_exit_2=$RUN_EXIT
 [ "$(psql_q "$ALT_DB" "SELECT change_id FROM cdc.changes")" = "alttag-ch" ] \
   || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG ist über cdc.changes nach dem Upgrade nicht unverändert lesbar"
 [ "$(view_signature "$ALT_DB")" = "$sig_ref" ] || fail "Lauf 5: die View trägt nach dem Upgrade nicht die Soll-Signatur"
+for expected in "cdc.administration_request SELECT t" "cdc.administration_request UPDATE t" \
+  "cdc.administration_request INSERT f" "cdc.administration_request DELETE f" \
+  "cdc.backfill_run SELECT t" "cdc.backfill_run INSERT t" "cdc.backfill_run UPDATE f"; do
+  read -r alt_object alt_right alt_want <<<"$expected"
+  [ "$(alt_privilege "$alt_object" "$alt_right")" = "$alt_want" ] \
+    || fail "Lauf 5: cdc_admin trägt nach dem Upgrade über $ALT_TAG auf $alt_object das Recht $alt_right nicht als $alt_want"
+done
 if grep -q "Vorlauf" <<<"$work_out_1"; then
   alt_vorlauf="mit Vorlauf"
 else
   alt_vorlauf="ohne Vorlauf"
 fi
-echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar"
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; cdc_admin-Rechte auf administration_request und backfill_run gesetzt"
 
 echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
 echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"

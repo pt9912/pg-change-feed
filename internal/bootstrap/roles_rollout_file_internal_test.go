@@ -194,7 +194,10 @@ func istKlassenGrant(objekt string) bool {
 // anhängen · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` anhängen. Zu (4a):
 // `INSERT` an `cdc_capture` auf `cdc.backfill_run` anhängen · `UPDATE` an
 // `cdc_admin` anhängen · den `UPDATE`-Grant von `cdc_capture` streichen ·
-// `SELECT` an `cdc_reader` anhängen.
+// `SELECT` an `cdc_reader` anhängen. Zu (4b): den Grant
+// `SELECT, UPDATE ON cdc.administration_request TO cdc_admin` streichen bzw.
+// auf `SELECT` kürzen · `INSERT` oder `DELETE` an `cdc_admin` anhängen ·
+// `SELECT` an `cdc_capture` oder `cdc_reader` anhängen.
 func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	rechte, _ := rolloutRechte(t, rolloutDateiPfad(t))
 
@@ -276,6 +279,31 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	} {
 		if rechteVon(rechte, verboten.rolle, "cdc.backfill_run")[verboten.privileg] {
 			t.Fatalf("%s trägt %s auf cdc.backfill_run im Rollout-Text — der Rollenschnitt des Backfills (ADR-0113 Festlegung 1, LH-QA-SEC-001…003) ist aufgeweicht", verboten.rolle, strings.ToUpper(verboten.privileg))
+		}
+	}
+
+	// (4b) Antrags-Queue (`ADR-0050`, `LH-FA-ADM-001`): die
+	// Administrations-Goroutine und die Annahme eines Backfills laufen über
+	// `CDC_ADMIN_DSN` und lesen offene Anträge (`ListPending`), leiten den
+	// Spaltenausschluss-Stand ab (`ExcludedColumns`) und vermerken den
+	// Ausgang (`MarkApplied`/`MarkFailed`) — `SELECT`, `UPDATE`. Angelegt
+	// werden Anträge nur von den SECURITY-DEFINER-Funktionen
+	// (`nacharbeit-administration.sql`): `cdc_admin` trägt weder `INSERT`
+	// noch `DELETE`, die beiden anderen Rollen kein Recht auf die Tabelle.
+	for _, privileg := range []string{"select", "update"} {
+		if !rechteVon(rechte, "cdc_admin", "cdc.administration_request")[privileg] {
+			t.Fatalf("cdc_admin fehlt %s auf cdc.administration_request im Rollout-Text — die Antragsverarbeitung (ListPending, Vermerk applied/failed, ADR-0050) und die Annahme des Backfills scheitern unter einem Least-Privilege-Login real mit SQLSTATE 42501", strings.ToUpper(privileg))
+		}
+	}
+	for _, verboten := range []struct {
+		rolle, privileg string
+	}{
+		{"cdc_admin", "insert"}, {"cdc_admin", "delete"},
+		{"cdc_capture", "select"}, {"cdc_capture", "insert"}, {"cdc_capture", "update"}, {"cdc_capture", "delete"},
+		{"cdc_reader", "select"}, {"cdc_reader", "insert"}, {"cdc_reader", "update"}, {"cdc_reader", "delete"},
+	} {
+		if rechteVon(rechte, verboten.rolle, "cdc.administration_request")[verboten.privileg] {
+			t.Fatalf("%s trägt %s auf cdc.administration_request im Rollout-Text — der Rollenschnitt der Antrags-Queue (ADR-0050, LH-QA-SEC-001…003) ist aufgeweicht", verboten.rolle, strings.ToUpper(verboten.privileg))
 		}
 	}
 

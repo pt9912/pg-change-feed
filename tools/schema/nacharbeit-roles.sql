@@ -17,7 +17,9 @@
 -- Registrierungs-/Verwaltungspfade — DML auf source_table/schema_version
 -- (LH-FA-CFG-001.a) und consumer/consumer_position (LH-FA-CON-001…006),
 -- die Annahme eines Backfills (SELECT, INSERT auf backfill_run, ADR-0113
--- Festlegung 1), CREATE auf der
+-- Festlegung 1), die Verarbeitung der Antrags-Queue (SELECT, UPDATE auf
+-- administration_request, ADR-0050: offene Anträge lesen, den
+-- Spaltenausschluss-Stand ableiten, den Ausgang vermerken), CREATE auf der
 -- Datenbank für `CREATE PUBLICATION` selbst
 -- (tableactivation.go CREATE/ALTER PUBLICATION) — für das Hinzufügen von
 -- Tabellen zur Publication reicht das allein nicht, siehe die Grenze
@@ -142,3 +144,15 @@ GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;
 -- cdc_capture kein INSERT; cdc_reader trägt kein Recht auf die Basistabelle.
 GRANT SELECT, INSERT ON cdc.backfill_run TO cdc_admin;
 GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;
+
+-- Antrags-Queue (ADR-0050, LH-FA-ADM-001): die Administrations-Goroutine und
+-- die Annahme eines Backfills laufen über CDC_ADMIN_DSN. SELECT trägt
+-- ListPending und die Ableitung des Spaltenausschluss-Standes
+-- (SelectAppliedColumnRequests, ADR-0065), UPDATE den Vermerk applied/failed
+-- (UpdateAdministrationRequestApplied/-Failed, dieselbe Anweisung wie im
+-- Vermerk der Annahme). Angelegt werden Anträge ausschließlich von den
+-- SECURITY-DEFINER-Funktionen cdc.enable_table/disable_table/exclude_column/
+-- include_column (nacharbeit-administration.sql) unter den Rechten ihres
+-- Eigentümers — cdc_admin trägt weder INSERT noch DELETE; cdc_capture und
+-- cdc_reader tragen kein Recht auf die Tabelle.
+GRANT SELECT, UPDATE ON cdc.administration_request TO cdc_admin;

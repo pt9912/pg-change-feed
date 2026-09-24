@@ -523,3 +523,85 @@ func TestCdcReaderRoleCannotReadTheBackfillRunBaseTable(t *testing.T) {
 		t.Fatalf("cdc_reader SELECT auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
 	}
 }
+
+// Die Tests unten belegen den Rollenschnitt auf
+// `cdc.administration_request` (`ADR-0050`, `LH-QA-SEC-001`…`003`) je Rolle
+// real: `cdc_admin` liest und vermerkt Anträge (`SELECT`, `UPDATE`), legt
+// keine an und löscht keine; `cdc_capture` und `cdc_reader` tragen kein
+// Recht auf die Tabelle. Rot färbende Mutation je Zeile der Grants in
+// `tools/schema/nacharbeit-roles.sql`: den Grant an `cdc_admin` streichen
+// bzw. auf `SELECT` kürzen, `INSERT`/`DELETE` an `cdc_admin` oder `SELECT`
+// an `cdc_capture`/`cdc_reader` ergänzen — der jeweilige Test meldet die
+// abweichende Anweisung.
+const administrationRoleRequest = "roles-administration-request"
+
+// seedAdministrationRoleRequest legt als Superuser den offenen Antrag an,
+// an dem die Rollen-Tests lesen und schreiben, und räumt ihn ab.
+func seedAdministrationRoleRequest(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, "DELETE FROM cdc.administration_request WHERE administration_request_id LIKE $1", administrationRoleRequest+"%"); err != nil {
+		t.Fatalf("Vorab-Aufräumen des Antrags: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, request_kind, status)
+		 VALUES ($1, $2, 'public', 'roles_administration', 'enable', 'pending')`, administrationRoleRequest, rolesTestSource,
+	); err != nil {
+		t.Fatalf("Antrag anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id LIKE $1", administrationRoleRequest+"%")
+	})
+}
+
+func TestCdcAdminRoleReadsAndMarksAdministrationRequestsButNeitherInsertsNorDeletes(t *testing.T) {
+	pool := newTestRolesConn(t)
+	seedAdministrationRoleRequest(t, pool)
+	conn := asRole(t, pool, "cdc_admin")
+	ctx := context.Background()
+
+	var status string
+	if err := conn.QueryRow(ctx,
+		"SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", administrationRoleRequest,
+	).Scan(&status); err != nil {
+		t.Fatalf("cdc_admin SELECT auf administration_request: erwartet Erfolg, %v", err)
+	}
+	tag, err := conn.Exec(ctx,
+		"UPDATE cdc.administration_request SET status = 'applied', error_message = NULL WHERE administration_request_id = $1 AND status = 'pending'",
+		administrationRoleRequest)
+	if err != nil || tag.RowsAffected() != 1 {
+		t.Fatalf("cdc_admin UPDATE auf administration_request: erwartet Erfolg auf 1 Zeile, %v (Zeilen %d)", err, tag.RowsAffected())
+	}
+	if _, err := conn.Exec(ctx,
+		`INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, request_kind, status)
+		 VALUES ($1, $2, 'public', 'roles_administration_admin', 'enable', 'pending')`, administrationRoleRequest+"-admin", rolesTestSource,
+	); !permissionDenied(err) {
+		t.Fatalf("cdc_admin INSERT auf administration_request: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+	if _, err := conn.Exec(ctx, "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", administrationRoleRequest); !permissionDenied(err) {
+		t.Fatalf("cdc_admin DELETE auf administration_request: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}
+
+func TestCdcCaptureAndReaderRolesCannotTouchAdministrationRequests(t *testing.T) {
+	for _, role := range []string{"cdc_capture", "cdc_reader"} {
+		t.Run(role, func(t *testing.T) {
+			pool := newTestRolesConn(t)
+			seedAdministrationRoleRequest(t, pool)
+			conn := asRole(t, pool, role)
+			ctx := context.Background()
+
+			var status string
+			if err := conn.QueryRow(ctx,
+				"SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", administrationRoleRequest,
+			).Scan(&status); !permissionDenied(err) {
+				t.Fatalf("%s SELECT auf administration_request: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
+			}
+			if _, err := conn.Exec(ctx,
+				"UPDATE cdc.administration_request SET status = 'applied' WHERE administration_request_id = $1", administrationRoleRequest,
+			); !permissionDenied(err) {
+				t.Fatalf("%s UPDATE auf administration_request: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
+			}
+		})
+	}
+}
