@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.48
+Version: 1.49
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -421,15 +421,19 @@ LIMIT 500;
 ### Bestand als Backfill überführen
 
 Die Erfassung trägt nur Änderungen ab der Aktivierung. Ein **Backfill**
-überführt zusätzlich die Zeilen, die die Tabelle zum Zeitpunkt des Antrags
+überführt zusätzlich die Zeilen, die die Tabelle zum Startzeitpunkt des Runs
 bereits enthält, als `INSERT`-Änderungen mit `origin = 'backfill'` in den Feed
 (`LH-FA-CAP-009`, `LH-FA-ADM-001`). Er wird **ausdrücklich** ausgelöst — die
 Aktivierung einer Tabelle startet keinen.
 
 **Voraussetzung:** Die Tabelle ist aktiviert (laufende Bindung, Mitglied der
 Publication, siehe [Tabelle live aktivieren](#tabelle-live-aktivieren)); eine
-Login-Identität mit `cdc_admin`-Mitgliedschaft; der Feed-Container läuft für die
-Quelle. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
+Login-Identität mit `cdc_admin`-Mitgliedschaft für den Antrag und dessen
+Vermerk; eine Login-Identität mit `cdc_reader`-Mitgliedschaft (die hinter
+`CDC_READER_DSN`) für das Lesen des Runs; der Feed-Container läuft für die
+Quelle. Der Snapshot entsteht mit dem Start des Runs, nicht mit dem Antrag: ein
+Run, der hinter einem anderen wartet, liest den Bestand zu seinem späteren
+Start. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
 
 - **`SELECT`-Recht:** die Login-Identität hinter `CDC_CAPTURE_DSN` liest die
   Tabelle (siehe [Zugriff und Rollen](#zugriff-und-rollen)).
@@ -459,7 +463,8 @@ der Antrag wird `applied` vermerkt. **`applied` heißt hier „angenommen", nich
 „Bestand kopiert"** — den Verlauf des Runs zeigt allein `cdc.backfill_status`.
 Ein Antrag endet `failed` (Fehlertext in `error_message`, keine Run-Zeile), wenn
 die Tabelle nicht aktiviert ist, keine laufende Bindung hat oder ein Run
-derselben Tabelle `queued` oder `running` ist:
+derselben Tabelle `queued` oder `running` ist. Die Abfrage läuft unter der
+`cdc_admin`-Identität des Antrags:
 
 ```sql
 SELECT status, error_message
@@ -468,7 +473,8 @@ WHERE administration_request_id = '<zurückgegebene-id>';
 ```
 
 Den Run lesen Sie über die View `cdc.backfill_status` — je Tabelle der zuletzt
-beantragte Run:
+beantragte Run. Die Abfrage läuft unter einer `cdc_reader`-Identität; die Rolle
+`cdc_admin` trägt kein `SELECT` auf die View:
 
 ```sql
 SELECT status, rows_copied, estimated_rows, started_at, finished_at,
@@ -501,7 +507,9 @@ erneuter Antrag (`cdc.backfill_table`) beginnt einen neuen Run mit neuem
 Snapshot und damit von vorn. Ein abgebrochener Run hinterlässt keine
 Änderungszeile. Betreiben Sie je Quelle **eine** Instanz: eine zweite Instanz
 gegen dieselbe Quelle würde die `running`-Runs der ersten beim Start als
-`interrupted` vermerken.
+`interrupted` vermerken. Eine Instanz nimmt nur Backfill-Anträge ihrer eigenen
+Quelle an; ein Antrag für eine andere Quelle bleibt `pending`, bis die Instanz
+dieser Quelle ihn annimmt.
 
 **Was der Bestand im Feed bedeutet:**
 
@@ -1452,7 +1460,7 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 | Consumer | Ein benannter, unabhängiger Leser des Change Feeds |
 | Slot | Der PostgreSQL Logical-Replication-Slot, der den Fortsetzungspunkt trägt |
 | Lebenszeichen (Heartbeat) | Periodischer Nachweis, dass der Capture-Prozess aktiv ist |
-| Backfill | Die einmalige Überführung des Tabellenbestands (Zeilen, die zum Zeitpunkt des Antrags bestehen) als `INSERT`-Änderungen mit `origin = 'backfill'`; ausdrücklich über `cdc.backfill_table` ausgelöst |
+| Backfill | Die einmalige Überführung des Tabellenbestands (Zeilen, die zum Startzeitpunkt des Runs bestehen) als `INSERT`-Änderungen mit `origin = 'backfill'`; ausdrücklich über `cdc.backfill_table` ausgelöst |
 | Run (Backfill) | Ein Backfill-Durchlauf für eine Tabelle; sein Zustand steht in `cdc.backfill_run`, gelesen über `cdc.backfill_status` |
 | Angenommen (`applied` bei `backfill`) | Der Antrag ist angenommen und die Run-Zeile `queued` angelegt; sagt nichts über die Ausführung des Runs |
 | Geschätzte Zeilenzahl | Eine Schätzung des Katalogs der Quelle für die Zeilenzahl der Tabelle (`estimated_rows`); keine Zählung und keine Grenze, NULL heißt unbekannt |
@@ -1538,3 +1546,4 @@ MIT — siehe `LICENSE`.
 | 1.46 | 2026-09-24 | Hinweis zu Rechten und Vorbedingung des View-Signatur-Vorlaufs ergänzt (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" benennt, dass `DROP VIEW` die Rechteliste der View verwirft und nur `cdc_reader` im selben Lauf sein `SELECT`-Recht zurückbekommt (eigene Grants an andere Rollen setzt der Betreiber erneut), sowie die feste Adressierung des Schemas `cdc` |
 | 1.47 | 2026-09-24 | Rechteschnitt von `cdc_admin` ergänzt (`LH-QA-SEC-001`, `LH-QA-SEC-002`, `ADR-0047`, `ADR-0050`, slice-backfill-run-store Fixrunde): §2 „Zugriff und Rollen" nennt die Verarbeitung der Antrags-Queue `cdc.administration_request` (lesen, Ausgang vermerken) als Zweck der Rolle, §5 „Umgebungsvariablen des Feed-Containers" die Zeile `CDC_ADMIN_DSN`; §4 „Schema aktualisieren" trägt den Absatz „Rechte der drei Rollen" (der Rollout setzt die Rechte bei jedem Lauf, Schema-Rollout vor dem Container-Tausch, Anträge bleiben ohne das Recht `pending`) |
 | 1.48 | 2026-09-24 | SQL-Auslösung des Backfills dokumentiert (`LH-FA-CAP-009`, `LH-FA-ADM-001`, `LH-FA-SST-003`, `ADR-0111`, `ADR-0113`, `ADR-0116`, slice-backfill-sql-administration): §4 neuer Abschnitt „Bestand als Backfill überführen" (`cdc.backfill_table`, `applied` heißt „angenommen", View `cdc.backfill_status`, geschätzte Zeilenzahl, Neustart-Verhalten, Sichtbarkeits-Grenze, Bedeutung der Schema-Version einer Backfill-Änderung, Betriebs-Vorbedingungen); §4 „Änderungen lesen" trägt die Regel „Position und `limit`" mit dem Schlüsselvergleich, „Diagnose ausführen" den Abschnitt „Backfill je Tabelle", „Schema aktualisieren" die Rechte von `cdc_capture`/`cdc_reader`; §2 Rollen und Betriebs-Hinweis zum `SELECT`-Recht, §5 die beiden DSN-Zeilen, §6 Fehlerklassen, §8 Glossar, §9 Grenzwerte |
+| 1.49 | 2026-09-24 | Backfill-Abschnitt an Rollen und Stichtag angeglichen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-sql-administration Fixrunde): §4 „Bestand als Backfill überführen" nennt den Antrag und dessen Vermerk unter `cdc_admin`, das Lesen von `cdc.backfill_status` unter einer `cdc_reader`-Identität (die Rolle `cdc_admin` trägt kein `SELECT` auf die View), und den Snapshot als Start des Runs statt des Antrags (auch §8 Glossar); ein Backfill-Antrag einer anderen Quelle bleibt für die Instanz dieser Quelle `pending` |
