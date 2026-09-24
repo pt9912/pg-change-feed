@@ -31,8 +31,9 @@ import (
 
 const (
 	// DefaultBlockSize ist die Blockgröße `B` (Zeilen je `NextBlock`):
-	// der Speicherbedarf des Lesens ist durch sie begrenzt. Der Wert ist
-	// ein Startwert (Setzung ohne Messung, `ADR-0111` Teilfrage 1).
+	// die Zeilenzahl des Lesens ist durch sie begrenzt, nicht die Bytezahl.
+	// Der Wert ist ein Startwert (Setzung ohne Messung, `ADR-0111`
+	// Teilfrage 1).
 	DefaultBlockSize = 1000
 
 	// DefaultSlotTimeout begrenzt Verbindungsaufbau und Slot-Anlage. Die

@@ -23,16 +23,30 @@ type typeSet struct {
 	columns []typeColumn
 }
 
-// typeTable liefert den Typ-Satz der Bild-Parität. Nicht enthalten sind
-// die Typen der Erweiterungen (`hstore`, `citext`, `ltree`): der
-// Testcontainer bringt sie nicht mit, und die Zusage ist strukturell
-// (kein Cast in der Lese-Anweisung), nicht typweise.
+// requiredTypes nennt die Typ-DDLs, die der Typ-Satz tragen muss
+// (`ADR-0115` Festlegung 4); `TestImageParityWalAndBackfill` prüft sie
+// gegen die Tabelle, damit das Streichen einer Zeile rot wird.
+var requiredTypes = []string{
+	"boolean", "char(5)", "inet", "cidr", "macaddr", "money", "bit(5)", "varbit", "uuid", "xml",
+	"oid", "regclass", "int4range", "int4multirange", "tsvector", "tsquery", "point", "polygon",
+	"timetz", "hstore", "citext", "ltree", "hstore[]",
+}
+
+// typeTable liefert den Typ-Satz der Bild-Parität, einschließlich der
+// Extension-Typen `hstore`, `citext` und `ltree`: sie liegen in einem
+// eigenen Schema `snap_ext_<sfx>`, das `set.drop` samt den Extensions
+// entfernt.
 func typeTable(sfx string) typeSet {
 	mood, rng := "snap_mood_"+sfx, "snap_rng_"+sfx
 	c1, c2 := "snap_c1_"+sfx, "snap_c2_"+sfx
 	dInt, dText, dArr, dBool := "snap_dint_"+sfx, "snap_dtext_"+sfx, "snap_darr_"+sfx, "snap_dbool_"+sfx
+	ext := "snap_ext_" + sfx
 	set := typeSet{
 		create: []string{
+			"CREATE SCHEMA " + ext,
+			"CREATE EXTENSION hstore SCHEMA " + ext,
+			"CREATE EXTENSION citext SCHEMA " + ext,
+			"CREATE EXTENSION ltree SCHEMA " + ext,
 			"CREATE TYPE " + mood + " AS ENUM ('sad', 'ok', 'hä ppy')",
 			"CREATE TYPE " + rng + " AS RANGE (subtype = integer)",
 			"CREATE TYPE " + c1 + " AS (a int, b text)",
@@ -45,6 +59,8 @@ func typeTable(sfx string) typeSet {
 		drop: []string{
 			"DROP DOMAIN IF EXISTS " + dInt + ", " + dText + ", " + dArr + ", " + dBool + " CASCADE",
 			"DROP TYPE IF EXISTS " + mood + ", " + rng + ", " + c1 + ", " + c2 + " CASCADE",
+			"DROP EXTENSION IF EXISTS hstore, citext, ltree CASCADE",
+			"DROP SCHEMA IF EXISTS " + ext + " CASCADE",
 		},
 	}
 	add := func(name, ddl, value, edge string) {
@@ -124,6 +140,11 @@ func typeTable(sfx string) typeSet {
 	add("mr", "int4multirange", "'{[1,3),[5,9)}'", "'{}'")
 	add("rx", rng, "'[1,5)'", "'empty'")
 
+	// Extension-Typen.
+	add("hs", ext+".hstore", `'a=>1, "b c"=>NULL, d=>"x\"y"'`, "''")
+	add("ci2", ext+".citext", "'MiXed Case'", "''")
+	add("lt", ext+".ltree", "'Top.Science.Astronomy'", "''")
+
 	// Enum, Domains, Composites.
 	add("en", mood, "'ok'", "'hä ppy'")
 	add("di", dInt, "3", "1")
@@ -152,6 +173,7 @@ func typeTable(sfx string) typeSet {
 	add("abt", "bit(3)[]", "ARRAY[B'101']", "ARRAY[]::bit(3)[]")
 	add("ar", "int4range[]", "ARRAY['[1,3)'::int4range]", "ARRAY[]::int4range[]")
 	add("ax", dBool+"[]", "ARRAY[true]::"+dBool+"[]", "ARRAY[]::"+dBool+"[]")
+	add("ah", ext+".hstore[]", "ARRAY['a=>1'::"+ext+".hstore, 'b=>NULL'::"+ext+".hstore]", "ARRAY[]::"+ext+".hstore[]")
 	return set
 }
 
@@ -186,6 +208,25 @@ func (s typeSet) insert(qualified string) string {
 		rows[i] = "(" + strings.Join(row, ", ") + ")"
 	}
 	return "INSERT INTO " + qualified + " (" + strings.Join(names, ", ") + ") VALUES " + strings.Join(rows, ", ")
+}
+
+// missingRequired nennt die Typen aus `requiredTypes`, die keine Spalte der
+// Tabelle trägt; ein Typ eines Schemas zählt über seinen Namen nach dem Punkt.
+func (s typeSet) missingRequired() []string {
+	var missing []string
+	for _, want := range requiredTypes {
+		found := false
+		for _, column := range s.columns {
+			if column.ddl == want || strings.HasSuffix(column.ddl, "."+want) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			missing = append(missing, want)
+		}
+	}
+	return missing
 }
 
 // ddlOf liefert den Typ einer Spalte für die Fehlermeldung.

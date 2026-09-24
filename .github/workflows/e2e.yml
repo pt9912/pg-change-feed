@@ -106,8 +106,10 @@ jobs:
       # Die beiden Replication-Phasen laufen als ZWEI Schritte ueber das
       # Traeger-Skript (seine Implementierung ist `make test-replication`, ein
       # eigenes Make-Target je Phase gibt es nicht): `measure` traegt das
-      # Verdikt der Messung, `tier` den Tier-weiten `go test ./...`. Sie sind
-      # getrennt, weil der Tier-Lauf `go test ./...` ueber den ganzen Baum
+      # Verdikt der Messung, `tier` den Tier-weiten `go test ./...` und den
+      # Slot-Reserve-Lauf des Snapshot-Adapters (eigener PostgreSQL mit
+      # `max_replication_slots=1`). Sie sind getrennt, weil der Tier-Lauf
+      # `go test ./...` ueber den ganzen Baum
       # fuehrt — in einem gemeinsamen Schritt verschluckte sein Exit das Verdikt
       # der Messung. Der `tier`-Schritt rollt das CDC-Schema vor dem Lauf aus
       # (tools/schema/apply-rollout.sh, ADR-0043), weil die
@@ -119,5 +121,5 @@ jobs:
       - name: DB-Adapter-Coverage — Replication-Teil, Merge + Schwelle
         run: bash tools/harness/run-replication-tests.sh measure
 
-      - name: Replication-Tier (go test ./...)
+      - name: Replication-Tier (go test ./... und Slot-Reserve)
         run: bash tools/harness/run-replication-tests.sh tier

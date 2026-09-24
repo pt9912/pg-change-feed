@@ -195,7 +195,20 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
    DB-Adapter-Zahl ein (die Messphase läuft ohne die Variable). Real geprüft
    (Lauf `slice-backfill-snapshot-reader`, Fixrunde): ein verschobener
    Testname im `-run` und `max_replication_slots=10` statt `1` färben die
-   Phase je rot.
+   Phase je rot. Die Last der parallelen Pakete verzögert außerdem den
+   serverseitigen Abbau eines beendeten Walsenders: der Restart-Test
+   `TestStreamRestartsOnExistingSlot` (Paket `receive`) wartet nach dem Ende
+   seines ersten Laufs auf `pg_replication_slots.active = false`, bevor er den
+   Slot wieder auflegt; der Adapter selbst wiederholt `START_REPLICATION` bei
+   SQLSTATE 55006 nicht. Gemessen (Lauf `slice-backfill-snapshot-reader`,
+   zweite Fixrunde: Wegwerf-PostgreSQL mit der Tier-Konfiguration, dieser Test
+   mit `-count=300` parallel zum Paket `postgressnapshot` mit `-count=6`):
+   ohne den Poll 11 und 9 (PostgreSQL 17) sowie 10 (PostgreSQL 18) von 300
+   Läufen mit SQLSTATE 55006, mit dem Poll 0, 0 (PostgreSQL 17) und 0
+   (PostgreSQL 18) von 300. Die Phase `tier` dauert rund 45 s, davon rund 8 s
+   der Slot-Reserve-Lauf (Container-Start, Bereitschaft, Test), gemessen an
+   zwei Läufen (PostgreSQL 18: 46,3 s und 7,8 s; PostgreSQL 17: 44,4 s und
+   7,5 s).
 8. **Die Gleichheit der Listen ist gewächtert, die Eigenschaft ist es nicht.**
    `db-package-lists-check.sh` prüft, dass die vier namentlichen Stellen
    dieselben Pakete nennen (§Gegenstand). Es prüft nicht, ob ein Paket die
@@ -204,8 +217,9 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
    verlangt ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    Trigger (a)), nicht weil ein Wächter es merkt. Ebenso bleibt die
    **Skip-Eigenschaft** Disziplin: jeder Test eines ausgenommenen Pakets
-   überspringt ohne Datenbank (`testDSN(t)` als erste Anweisung); ein
-   ergänzter Test ohne diese Anweisung läuft netzlos und widerspricht dem
+   überspringt ohne Datenbank (`testDSN(t)` als erste Anweisung; der Test der
+   Slot-Reserve beginnt mit der Prüfung von `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN`);
+   ein ergänzter Test ohne eine solche Anweisung läuft netzlos und widerspricht dem
    Ausschluss, ohne dass ein Sensor es meldet. Der Nachweis am aktuellen Stand
    ist ein einmaliger Lauf: `go test -count=1 -v
    ./internal/adapters/driven/postgressnapshot` im Toolchain-Image mit

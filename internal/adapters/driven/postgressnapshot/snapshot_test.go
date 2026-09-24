@@ -235,6 +235,7 @@ func TestSnapshotPairedWithPoint(t *testing.T) {
 	if err != nil {
 		t.Fatalf("exportSnapshot: %v", err)
 	}
+	t.Cleanup(func() { closeConn(export.conn) })
 	mustExec(t, admin, "INSERT INTO "+qualified+" VALUES (3, 'c')")
 	afterPoint := scalar(t, admin, "SELECT pg_current_wal_lsn()")
 
@@ -275,6 +276,7 @@ func TestTemporarySlotEndsWithConnection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("exportSnapshot: %v", err)
 	}
+	t.Cleanup(func() { closeConn(export.conn) })
 	if got := slotCount(t, admin, slot); got != "1" {
 		t.Fatalf("Slot %s zwischen Anlage und Import: %s Zeilen im Katalog, erwartet 1", slot, got)
 	}
@@ -622,14 +624,17 @@ func TestImageParityWalAndBackfill(t *testing.T) {
 	dsn := testDSN(t)
 	admin := connect(t, dsn)
 	set := typeTable(suffix())
-	for _, statement := range set.create {
-		mustExec(t, admin, statement)
+	if missing := set.missingRequired(); len(missing) > 0 {
+		t.Fatalf("der Typ-Satz trägt die Typen %q nicht", missing)
 	}
 	t.Cleanup(func() {
 		for _, statement := range set.drop {
 			bestEffort(admin, statement)
 		}
 	})
+	for _, statement := range set.create {
+		mustExec(t, admin, statement)
+	}
 	versionNum, err := strconv.Atoi(scalar(t, admin, "SHOW server_version_num"))
 	if err != nil {
 		t.Fatalf("server_version_num: %v", err)
@@ -972,6 +977,7 @@ func TestImportOfUnknownSnapshotIsStorage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("exportSnapshot: %v", err)
 	}
+	t.Cleanup(func() { closeConn(export.conn) })
 	export.snapshotName = "00000003-00000002-1"
 	if _, err := adapter.importSnapshot(ctx, export, "public", table); !errors.Is(err, outbound.ErrSnapshotStorage) {
 		t.Fatalf("importSnapshot mit unbekanntem Snapshot: %v, erwartet Klasse storage", err)
@@ -1016,6 +1022,7 @@ func TestUnreachableSourceIsTransient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("exportSnapshot: %v", err)
 	}
+	t.Cleanup(func() { closeConn(export.conn) })
 	if _, err := broken.importSnapshot(ctx, export, "public", table); !errors.Is(err, outbound.ErrSnapshotTransient) {
 		t.Errorf("importSnapshot ohne Listener für die Lese-Verbindung: %v, erwartet Klasse transient", err)
 	}
@@ -1030,6 +1037,9 @@ func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
 	dsn := testDSN(t)
 	ctx := testCtx(t)
 	admin := connect(t, dsn)
+	// Die Rolle steht vor der Datenbank: ihr Grant liegt in der eigenen
+	// Datenbank, und der Cleanup entfernt die Datenbank vor der Rolle.
+	role, password := newRole(t, admin, "REPLICATION")
 	database := "snap_cat_" + suffix()
 	mustExec(t, admin, "CREATE DATABASE "+database+" TEMPLATE template0")
 	t.Cleanup(func() { bestEffort(admin, "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)") })
@@ -1041,7 +1051,6 @@ func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
 	isolated := connect(t, u.String())
 	mustExec(t, isolated, "REVOKE SELECT ON pg_catalog.pg_attribute, pg_catalog.pg_class FROM PUBLIC")
 	mustExec(t, isolated, "CREATE TABLE public.t (id int PRIMARY KEY)")
-	role, password := newRole(t, admin, "REPLICATION")
 	mustExec(t, isolated, "GRANT SELECT ON public.t TO "+role)
 	adapter := newAdapter(t, roleDSN(t, u.String(), role, password))
 

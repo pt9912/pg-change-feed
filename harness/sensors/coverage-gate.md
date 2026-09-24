@@ -66,11 +66,12 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 Fixrunde: die Stufe nachgestellt — `go test -coverpkg=<Paketliste der Stufe>
 -covermode=atomic`, dedupliziert über die Block-Position; gedeckt **1731 von
 2082**, gedruckt `total: (statements) 83.1%`; `make coverage-gate` desselben
-Stands druckt `Coverage 83.20%`). Der Stand davor misst im selben Verfahren
-**1691 von 2040** (gedruckt `82.9%`); die 42 Statements Unterschied sind das
-Unterpaket `postgressnapshot/snapshotlogic` (42 von 42 gedeckt), das im
-Gegenstand liegt. Die gedeckte Zahl ist lauf-gebunden: zwei Läufe desselben
-Stands druckten `83.1%` und `83.2%`.
+Stands druckt `Coverage 83.20%`). Der Nenner setzt sich aus **2040**
+Statements der übrigen Pakete (an deren Stand `d7539e2c` im selben Verfahren
+**1691 gedeckt**, gedruckt `82.9%`) und den **42** Statements des Unterpakets
+`postgressnapshot/snapshotlogic` zusammen (42 von 42 gedeckt); das
+Unterpaket liegt im Gegenstand. Die gedeckte Zahl ist lauf-gebunden: zwei
+Läufe desselben Stands druckten `83.1%` und `83.2%`.
 
 **Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
 `slice-097`, der

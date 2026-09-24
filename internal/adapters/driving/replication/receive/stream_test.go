@@ -694,6 +694,29 @@ func TestWALRetentionMeasureReconnectsAfterConnectionLoss(t *testing.T) {
 	}
 }
 
+// awaitSlotInactive wartet, bis der Walsender des Slots ihn freigegeben hat:
+// das Ende von `Stream.Run` schließt die Verbindung des Clients, der Server
+// gibt den Slot asynchron dazu frei (`active = false`); ein Wiederaufsetzen
+// davor endet mit SQLSTATE 55006.
+func awaitSlotInactive(t *testing.T, pool *pgxpool.Pool, slot string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		var active bool
+		if err := pool.QueryRow(context.Background(),
+			"SELECT active FROM pg_replication_slots WHERE slot_name = $1", slot).Scan(&active); err != nil {
+			t.Fatalf("Slot %s im Katalog: %v", slot, err)
+		}
+		if !active {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("Slot %s ist %s nach dem Stream-Ende noch aktiv", slot, timeout)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
 // TestStreamRestartsOnExistingSlot trägt den bestehende-Slot-Zweig am
 // realen Pfad (`ADR-0012`): der Stream endet, weitere Changes entstehen,
 // der Restart legt denselben Slot wieder auf — `ensureSlot` liest den
@@ -743,6 +766,7 @@ func TestStreamRestartsOnExistingSlot(t *testing.T) {
 	case <-time.After(15 * time.Second):
 		t.Fatalf("erster Lauf endet nicht")
 	}
+	awaitSlotInactive(t, pool, env.slot, 10*time.Second)
 
 	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Zweite')"); err != nil {
 		t.Fatalf("INSERT nach Stream-Ende: %v", err)

@@ -108,8 +108,11 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
   bash tools/harness/db-coverage.sh
 fi
 
-# Phase `tier` — der Tier-weite `go test ./...`; der Exit dieses Aufrufs ist
-# das Verdikt dieser Phase. Der Schema-Stand dieses Laufs kommt aus derselben
+# Phase `tier` — zwei Läufe nacheinander: der Tier-weite `go test ./...` gegen
+# den gemeinsamen Container und der Slot-Reserve-Lauf des Snapshot-Adapters
+# gegen einen eigenen Container (unten); jeder Exit ist ein Verdikt dieser
+# Phase, und der zweite Lauf braucht zusätzlich das `--- PASS` seines Tests.
+# Der Schema-Stand dieses Laufs kommt aus derselben
 # Schema-Anwendung wie der Betrieb (tools/schema/apply-rollout.sh,
 # `make test-store`): die `internal/bootstrap`-Fixtures starten
 # `bootstrap.Run` real, und der liest `cdc.table_schema`

@@ -74,8 +74,11 @@ type TableSnapshot interface {
 	// Sitzungs-GUC, ohne Cast und ohne Funktion auf dem Spaltenwert — dieselbe
 	// Erzeugung wie der Text, den `pgoutput` je Spalte sendet (`ADR-0115`);
 	// `nil` ist NULL. Ein leerer Block meldet das Ende des Bestands —
-	// auch beim ersten Aufruf einer leeren Tabelle. Der Speicherbedarf
-	// eines Aufrufs ist durch `B` begrenzt (`LH-FA-CAP-006.a`).
+	// auch beim ersten Aufruf einer leeren Tabelle. Die Zeilenzahl eines
+	// Aufrufs ist durch `B` begrenzt (`LH-FA-CAP-006.a`); der Speicherbedarf
+	// ist `B` mal die Zeilenbreite, weil die Grenze Zeilen zählt, nicht Bytes,
+	// und der Block bis zur Rückgabe als Treiberbytes und als Zeichenketten
+	// vorliegt (aus dem Treiber-Quelltext abgeleitet, nicht gemessen).
 	NextBlock(ctx context.Context) ([][]*string, error)
 
 	// Close beendet die Lese-Transaktion und die Verbindung; ein
