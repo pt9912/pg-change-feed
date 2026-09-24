@@ -23,7 +23,7 @@ HTTP-API).
 (`GET /changes`) — beide durch `spec-nachzug` bereits um `origin` ergänzt, hier
 gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
