@@ -1,6 +1,6 @@
 # ADR-0114: Schema-Rollout — automatischer Vorlauf für View-Signatur-Änderungen (ergänzt ADR-0043)
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Datum:** 2026-09-24
 
@@ -164,6 +164,7 @@ neu bewertet.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-24 | Proposed | `architect-verdict-schema-rollout-view-signatur` |
+| 2026-09-24 | Accepted — Annahme durch den Auftraggeber samt dem gemessenen Lesefenster von rund 7 Sekunden während des Vorlaufs | `architect-verdict-schema-rollout-view-signatur` |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
