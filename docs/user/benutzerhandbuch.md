@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.50
+Version: 1.51
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -449,6 +449,15 @@ Start. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
   CDC-Speicher trägt eine offene Schreibtransaktion. Je größer die Tabelle,
   desto länger. Eine Ablehnung großer Tabellen gibt es nicht.
 
+**Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
+der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
+der Tabelle laufen weiter. Eine DDL, die `ACCESS EXCLUSIVE` verlangt
+(`ALTER TABLE` mit Umschreiben der Tabelle, `TRUNCATE`, `VACUUM FULL`,
+`CLUSTER`, `DROP TABLE`), wartet bis zum Ende des Runs; Leser der Tabelle, die
+nach ihr anfragen, stauen sich hinter ihr (aus dem Sperrverhalten von
+PostgreSQL hergeleitet, nicht gemessen). Planen Sie eine solche DDL nicht in
+die Laufzeit eines Runs.
+
 **Vorgehen:**
 
 ```sql
@@ -497,6 +506,18 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
 - **`warn_estimated_size` und `warn_duration`** sind eine Kennzeichnung, die die
   Zeilenzahl und die Kopierdauer betrifft; sie ändern weder `status` noch den
   Ablauf. In dieser Version setzt keine Auswertung sie: beide bleiben `false`.
+- **Umschreiben der Tabelle im Fenster:** Zwischen dem Snapshot-Export und der
+  Sperre kann eine fremde DDL die Tabelle umschreiben (`ALTER TABLE … ALTER
+  COLUMN … TYPE`, das die Datei neu schreibt, oder `TRUNCATE`); der ältere
+  Snapshot sieht die neue Datei leer. Der Run erkennt das an der Datei der
+  Tabelle und endet `failed` mit `error_message` `transient: …`, Ursache
+  „nach dem Snapshot-Export umgeschrieben“ und ohne Änderung; ein **neuer
+  Antrag** beginnt neu und liest den Bestand des neuen Zustands. Dieselbe
+  Erkennung schlägt auch bei `VACUUM FULL` und `CLUSTER` an, obwohl der Snapshot
+  die Zeilen noch sieht — ein Fehlalarm mit derselben Abhilfe. Das Fenster ist
+  die Zeit zwischen Export und Sperre; seine Dauer ist nicht gemessen. Ein
+  `DROP COLUMN` oder `RENAME COLUMN` im Fenster endet ebenfalls `failed`, mit
+  der Klasse `storage`.
 - Ein Run-Fehler ist **run-lokal**: er setzt weder den Fehlerzustand des
   Lebenszeichens noch stoppt er die Erfassung.
 
@@ -1564,3 +1585,4 @@ MIT — siehe `LICENSE`.
 | 1.48 | 2026-09-24 | SQL-Auslösung des Backfills dokumentiert (`LH-FA-CAP-009`, `LH-FA-ADM-001`, `LH-FA-SST-003`, `ADR-0111`, `ADR-0113`, `ADR-0116`, slice-backfill-sql-administration): §4 neuer Abschnitt „Bestand als Backfill überführen" (`cdc.backfill_table`, `applied` heißt „angenommen", View `cdc.backfill_status`, geschätzte Zeilenzahl, Neustart-Verhalten, Sichtbarkeits-Grenze, Bedeutung der Schema-Version einer Backfill-Änderung, Betriebs-Vorbedingungen); §4 „Änderungen lesen" trägt die Regel „Position und `limit`" mit dem Schlüsselvergleich, „Diagnose ausführen" den Abschnitt „Backfill je Tabelle", „Schema aktualisieren" die Rechte von `cdc_capture`/`cdc_reader`; §2 Rollen und Betriebs-Hinweis zum `SELECT`-Recht, §5 die beiden DSN-Zeilen, §6 Fehlerklassen, §8 Glossar, §9 Grenzwerte |
 | 1.49 | 2026-09-24 | Backfill-Abschnitt an Rollen und Stichtag angeglichen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-sql-administration Fixrunde): §4 „Bestand als Backfill überführen" nennt den Antrag und dessen Vermerk unter `cdc_admin`, das Lesen von `cdc.backfill_status` unter einer `cdc_reader`-Identität (die Rolle `cdc_admin` trägt kein `SELECT` auf die View), und den Snapshot als Start des Runs statt des Antrags (auch §8 Glossar); ein Backfill-Antrag einer anderen Quelle bleibt für die Instanz dieser Quelle `pending` |
 | 1.50 | 2026-09-24 | Gemessene Startposition eines frisch registrierten Consumers dokumentiert (`LH-FA-CAP-009`, `LH-FA-CON-005`, `ADR-0111`, slice-backfill-e2e): §4 „Bestand als Backfill überführen" trägt den Punkt „Startposition eines neuen Consumers" (`offset` 0, `acknowledged` `false`, vor der Snapshot-Position jedes Runs; Ursprung: der Lauf von `make test-integration`) und nennt in der Zustandstabelle, dass `rows_copied` eines `interrupted`-Runs den zuletzt festgehaltenen Fortschritt trägt |
+| 1.51 | 2026-09-24 | Sperre des Backfill-Runs und Ausgang bei umgeschriebener Tabelle dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“ trägt den Absatz „Sperre der Tabelle“ (Lesesperre bis zum Ende des Runs, Wirkung auf DDL mit `ACCESS EXCLUSIVE`) und den Punkt „Umschreiben der Tabelle im Fenster“ (`failed`/`transient` ohne Änderung, neuer Antrag als Abhilfe, Fehlalarme `VACUUM FULL`/`CLUSTER`) |

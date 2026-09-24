@@ -172,8 +172,11 @@ Umsetzung, keine Messergebnisse.
   Snapshot-Export). Der `consistent_point` des Slots ist die Position `X` des
   Runs; der Bestand wird in einer `REPEATABLE READ`-Transaktion gelesen, die
   den exportierten Snapshot importiert, über einen Cursor in Blöcken
-  begrenzter Größe, ohne Datei-, Dump- oder Zwischenspeicher. Der Slot besteht
-  nur, bis der Snapshot importiert und die Replication-Verbindung beendet ist.
+  begrenzter Größe, ohne Datei-, Dump- oder Zwischenspeicher. Der Import steht
+  unter einer Lesesperre der Tabelle; wurde die Tabelle zwischen
+  Snapshot-Export und Sperre umgeschrieben, endet der Run `failed`
+  (Fehlerklasse `transient`) ohne Change, ein neuer Antrag beginnt neu. Der
+  Slot besteht nur, bis der Snapshot importiert und die Replication-Verbindung beendet ist.
   Alle Blöcke werden in **einer** Store-Transaktion geschrieben, die einmal am
   Ende zusammen mit dem Run-Zustand `completed` committet. Eine leere Tabelle
   endet `completed` mit 0 Zeilen und schreibt keine Transaktion. Die Rolle des
@@ -854,3 +857,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-24 | `SPEC-001` um `cdc.backfill_run` erweitert; `SPEC-002` um das Feld `origin` (`wal` \| `backfill`, fehlender Wert liest als `wal`, letzte Spalte der View `cdc.changes`); `SPEC-019` um die Antragsart `backfill` (fünf Werte) und die Bedeutung von `applied` bei `backfill` („angenommen"); `SPEC-022` um das Antwort-Feld `origin` und die Position-und-`limit`-Anmerkung; `SPEC-020`/`SPEC-021` grenzen das Feld `origin` aus der Nachricht aus |
 | 2026-09-24 | `SPEC-029` ergänzt: Feldform von `cdc.backfill_run` und `cdc.backfill_status` — Spalten, zwei Warn-Spalten (`warn_estimated_size`, `warn_duration`), `estimated_rows` NULL als „unbekannt", Grants je Rolle |
 | 2026-09-24 | `SPEC-019` um den Absatz „Grants" der Antrags-Queue erweitert (`cdc_admin` `SELECT`, `UPDATE`; `cdc_capture` und `cdc_reader` kein Recht; kein `INSERT`, kein `DELETE`); `LH-FA-CAP-009.a` Absatz „Markierung" um die Bedeutung der Schema-Version einer Backfill-Change ergänzt (Kennung zum Run-Start, keine Beschreibung der Bild-Spalten) |
+| 2026-09-24 | `LH-FA-CAP-009.a` Absatz „Mechanismus" um die Lesesperre des Imports und das Ende des Runs bei umgeschriebener Tabelle ergänzt (`failed`, Fehlerklasse `transient`, ohne Change) |
