@@ -136,7 +136,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       drei Operationen endet nach der eigenen Frist mit Fehler, auch bei
       abgelöstem Kontext); die Gegenseite am Use Case trägt
       `TestExecuteContextEndedInterrupts` in `usecase/backfill`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
