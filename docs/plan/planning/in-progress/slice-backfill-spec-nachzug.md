@@ -112,7 +112,7 @@ Greenfield: die Doku führt). Umfang:
       die Aufzählungen der Antragsarten in derselben Datei sind auf die
       Menge mit `backfill` gezogen. *Zu belegen durch:* `make docs-check`
       (`matrix`-Modul) und der Suchlauf in §3.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
