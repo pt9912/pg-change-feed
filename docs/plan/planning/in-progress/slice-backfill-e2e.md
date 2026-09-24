@@ -98,8 +98,9 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       den gedruckten `change_id`s. **Ort der Replay-Invariante:** die
       Fitness-Function-Zeile in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt den Tier `make test-replication`,
       Folgepflicht 2 den E2E-Beleg (`S5`); dieser Slice belegt sie im E2E, weil erst
-      dort Snapshot, Schreiber und WAL-Pfad komponiert laufen — der Architect
-      bestätigt die Ortswahl im Review oder verlangt zusätzlich den Tier-Beleg.
+      dort Snapshot, Schreiber und WAL-Pfad komponiert laufen. Die Ortswahl ist
+      eine benannte Entscheidung des Planners (§3, letzte Zeile); kein
+      Architect-Verdikt trägt sie.
 - [x] Negative: `docker kill` im laufenden Run → nach dem Neustart `interrupted`,
       keine sichtbare Change des Runs, erneuter Antrag erreicht `completed`, Bestand
       einmal und vollständig; eine zum Abbruchzeitpunkt `queued` wartende Zeile
@@ -107,7 +108,9 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       lesbar). *Zu belegen durch:* `make test-integration`; **jedes** dieser
       Kriterien trägt je eine Mutation im Bericht (die Prüfung gegen die
       Eingabe gelenkt, der Lauf färbt rot —
-      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert).
+      `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert). Im Repo
+      belegt sind die Mutationen der Zusagen zu [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md) (Verifikations-Report §4);
+      die der Negative-Phase trägt kein committetes Artefakt (§7).
 - [x] Startposition gemessen und im Handbuch mit ihrem Lauf genannt; der
       Runner deklariert die Phase(n) über `abdeckung_declare` mit der Kennung
       [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), und `docs/user/e2e-abdeckung.md` trägt nach dem Lauf eine
@@ -133,14 +136,14 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: Handbuch §4 (Abschnitt „Bestand als Backfill überführen“) trägt die gemessene Startposition mit Lauf-Ursprung; die Änderungshistorie eine Zeile.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -168,6 +171,10 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 | `spec/architecture.md` | update | Fixrunde zum Review (F-2, Entscheidung des Auftraggebers: die Sicht trägt sie): das Sequenzdiagramm der Run-Ausführung führt „Lesesperre auf die Tabelle, Umschreib-Prüfung“; der Absatz darunter nennt Sperrdauer, wartende DDL, Ende des Runs bei umgeschriebener Tabelle (`failed`, Klasse `transient`, ohne Change) und die Aufgabe des Snapshot-Lesers — ohne ADR-, Slice- oder Wellen-Bezug (`AGENTS.md` §3.4). |
 | `docs/plan/planning/observations/BEO-PGC/lesesperre-ohne-zeitgrenze/` | neu | Register-Eintrag zur Wartegrenze der Lesesperre (Review F-6, Ausgang *weiter offen*): `observation.md`, `state.md`, `evidence/slice-backfill-e2e.md`. |
 | `harness/README.md` §Sensors | update | die Zeile `make test-integration` trägt die sieben Backfill-Rundläufe und das Umschreiben in der Phase DDL-Fenster; die Zeile `make test-replication` nennt Lesesperre und Filenode-Vergleich. |
+| `docs/plan/adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md` und `docs/plan/adr/README.md` | neu / update | Closure: [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md) (`Supersedes` [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md), teilweise) setzt zwei Aussagen auf die gemessene Reichweite (Wirkung der Lesesperre auf wartende DDL; `RENAME COLUMN` ohne E2E-Beleg — Review F-1/F-7, Verifikation V-5); Index-Zeile. |
+| `harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md` | update | Closure: Nenner und gedeckte Zahl mit Lauf-Ursprung — Coverage-Gate 2541 Statements (54 in `snapshotlogic`), gedeckt 2112, gedruckt 83.10 %; DB-Adapter-Coverage 1035 Statements (`postgressnapshot` 130), gedeckt 850, gedruckt 82.13 % (Messung im Bericht der Closure, §7). |
+| Ortswahl der Replay-Invariante (Entscheidung des Planners, Closure; Verifikation V-1) | Entscheidung | Ort: `make test-integration` (`TestE2EBackfillReplayInvariant`). Anker der Wahl: [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 2 führt die Replay-Invariante im Umfang von `S5` (E2E); die Fitness-Function-Zeile derselben ADR nennt zusätzlich den Tier `make test-replication` (`git grep -n 'Replay-Invariante' docs/plan/adr/0111-backfill-bestand-snapshot-bulk-copy.md`: die Zeilen zu Herleitung, Folgepflicht und Fitness Function). Begründung: die Invariante verlangt Snapshot, nebenläufige Schreiber und WAL-Pfad zugleich; das leistet erst der komponierte Lauf am Feed-Container. Ein Tier-Beleg ist nicht geliefert (`git grep -n -i replay -- '*.go'`: nur `backfill_e2e_test.go` trägt die Invariante); weder der Review noch ein Architect-Verdikt hat die Ortswahl bestätigt oder den Tier-Beleg verlangt. Die Fitness-Function-Zeile nennt damit einen Beleg, den kein Test trägt — *benannte Lücke*, Adresse: Architect im Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md) (Zeile schärfen oder Tier-Beleg verlangen). |
+| Register-Einträge der Closure (`observations/BEO-PGC/…`) | neu / update | `evidence/slice-backfill-e2e.md` in fünf bestehenden Einträgen (`negativtest-ohne-bindung-an-seine-eingabe`, `zahl-in-traeger-driftet-gegen-die-messung`, `arbeit-ueberholt-stehenden-traeger`, `adr-aussage-breiter-als-ihre-messung`, `vorher-nachher-sprache-in-test-harness-kommentar`) und zwei neuen Einträgen (`plan-zusage-erfuellung-ohne-committeten-anker`, `run-fehlertext-traegt-klasse-doppelt`); `lesesperre-ohne-zeitgrenze` trägt sie aus der Fixrunde. Zähler und Ausgänge in §7. |
 
 **Ansatz-Vorschlag, zu belegen (nicht bindend):** Ein „Abbruch mitten im Run" ist
 nur mit einem festen Haltepunkt deterministisch. Der Slot-Anlage blockiert bis
@@ -241,6 +248,7 @@ gemessen oder benannt; die Komposition trägt erst dieser Slice):
 | Symbolnamen des Imports (`importSnapshot`, `readColumns`, `snapshotlogic`) | `git grep -l -E 'importSnapshot\|readColumns\|snapshotlogic' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/in-progress/slice-backfill-e2e.md' ':!*.go'` | beide Stände: dieselben drei Dateien (`harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md`, `tools/harness/db-coverage.sh`); sie nennen die Paketzugehörigkeit und Statement-Zahlen mit Lauf-Stempel (der Stempel bindet die Zahl an ihren Lauf, sie behaupten keinen aktuellen Stand) | unverändert |
 | Zahl der Statements des Gegenstands `postgressnapshot`/`snapshotlogic` | Lesen der beiden Sensor-Dokumente an den Stellen mit Lauf-Stempel | gestempelte Werte (`snapshotlogic` 42 Statements, DB-Adapter-Coverage 82,08 % bei Stand `02b3059d`) bleiben wahr für ihren Lauf; die Zahlen dieses Laufs stehen im Bericht, nicht in den Sensor-Dokumenten | unverändert; nicht gefunden: ein Träger, der die Zahl ungestempelt als Ist-Stand führt |
 | CI-Träger der Läufe | Lesen von `.github/workflows/e2e.yml` (Trigger, Matrix, `timeout-minutes`); `git diff --stat e7df5619 -- .github` | Trigger Pull Request und Push, Matrix über die PostgreSQL-Versionen 17 und 18, `timeout-minutes: 60`; `.github` ohne Diff | unverändert; die Laufzeit-Frage steht in §6 |
+| Träger der Closure — bewegte Eigenschaften: „Nenner und gedeckte Zahl der Coverage-Messungen“ (Produktionscode in `postgressnapshot`/`snapshotlogic`/`service.go` bewegt), „Reichweite der Sätze zu Sperr-Warteschlange und `RENAME COLUMN`“ | `git grep -n -E '\b(2527\|1027)\b\|82[.,]08\|82[.,]9[04]?%' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!docs/plan/planning/in-progress/slice-backfill-e2e.md'` (Parent `cf7f2d02`, Diff-Stand = Arbeitsbaum der Closure); `git grep -n -i -E 'stauen\|Sperr-Warteschlange\|E2E-belegt' -- docs/plan/adr`; `git grep -n -i 'RENAME COLUMN' -- . ':!docs/reviews' ':!docs/plan/planning/observations'` (Arbeitsbaum) | Parent: 7 Treffer-Zeilen in zwei Dateien (`harness/sensors/coverage-gate.md` 4, `harness/sensors/db-adapter-coverage.md` 3); Diff-Stand: 0. ADR-Kette: `ADR-0118` trägt fünf Treffer-Zeilen (Kontext-Zeile zu `DROP COLUMN` mit „E2E-belegt“, „Nicht gemessen“, Option F, Festlegung 5, Konsequenzen); `RENAME COLUMN` steht in `ADR-0118` (Festlegung 5), im Handbuch (Fenster-Absatz, Historienzeile 1.52) und in der neuen ADR. Nicht gefunden: ein weiterer Träger, der die Zahlen 2527/1027 oder „nur Leser“ führt | Sensor-Dokumente nachgezogen (Nenner mit Lauf); `ADR-0118` `Accepted`, die drei betroffenen Stellen berichtigt `ADR-0119`; Option F und die Kontext-Zeile zu `DROP COLUMN` bleiben wahr |
 
 ## 4. Trigger
 
@@ -284,33 +292,64 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
 - **Die Replay-Invariante gilt real nicht** — [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) führt sie als
   „hergeleitet, im Slice als Eigenschaftstest zu belegen". Ein Rot wäre kein
   Testfehler, sondern ein Befund gegen die Entscheidung; die Rückführung §4
-  benennt das. *Erwartet, zu belegen durch:* der Lauf. **Ausgang:** *(bei Closure)*
+  benennt das. *Erwartet, zu belegen durch:* der Lauf. **Ausgang:** **entfallen** — die
+  Invariante gilt real: `--- PASS: TestE2EBackfillReplayInvariant` in beiden Legs von
+  `e2e.yml` Lauf `36065957210` (Kopf `43137ebf`), gedruckt „Replay-Invariante:
+  Snapshot-Position 28721360, 54 Backfill-Changes, WAL-Changes davor 409 und dahinter
+  164, 57 Zeilen im Quellstand“ (PostgreSQL 17) und „… 31875224, 54 … 409 … 169, 57 …“
+  (PostgreSQL 18) — gemessen an diesem Lauf (`gh run view 36065957210 --log`).
 - **Nichtdeterministischer Abbruch** — siehe Ansatz-Vorschlag; ohne Haltepunkt
   bliebe der Test flackernd. *Erwartet, zu belegen durch:* mehrere
-  Wiederholungen im Bericht. **Ausgang:** *(bei Closure)*
+  Wiederholungen im Bericht. **Ausgang:** **entfallen** — die Haltepunkte sind
+  mechanisch fest (offene Schreibtransaktion, unbestätigter Schlüssel im zweiten Block,
+  `docker pause` mit gemessener Grenze); die Phase Negative lief grün im E2E-Lauf des
+  Reviews (Review-Report, 277 s) und in beiden Legs von `e2e.yml` Lauf `36065957210`
+  (gedruckt „Backfill-Negative (docker kill, queued-Aufnahme) belegt“, gemessen an
+  diesem Lauf). Aussagegrenze: ein Lauf je Leg und ein lokaler Lauf sind kein Beweis
+  gegen Flackern (`AGENTS.md` §3.10); tritt ein Flackern auf, öffnet es das Risiko erneut.
 - **Randfall-Belege nur beim Reviewer** (`BEO-PGC/e2e-metrik-boundary-nur-reviewer-belegt`,
   offen, 1×): die leere Tabelle und der zweite Antrag sind committete
   Testfälle, nicht Reviewer-Scratch-Läufe. *Erwartet, zu belegen durch:* die
-  Testfunktionen im Diff. **Ausgang:** *(bei Closure)*
+  Testfunktionen im Diff. **Ausgang:** **entfallen** — die Phase `Backfill-Boundary (leere
+  Tabelle, zweiter Antrag)` ist eine committete Runner-Phase (`abdeckung_declare`) und
+  druckt in beiden Legs von Lauf `36065957210` „belegt“ (leere Tabelle `completed` mit 0
+  Zeilen ohne Transaktion, zweiter Antrag `failed`); Beleg: der Lauf, gemessen mit
+  `gh run view 36065957210 --log`.
 - **Stiller Ausschluss aus dem Runner** (`BEO-PGC/test-runner-stiller-ausschluss`,
   offen, 2×): eine neue `TestE2E*`-Funktion ohne `-run`-Muster läuft nie.
   *Erwartet, zu belegen durch:* die `-v`-Ausgabe des Laufs. Ein weiterer
-  Auftritt der Klasse erreicht 3×. **Ausgang:** *(bei Closure)*
+  Auftritt der Klasse erreicht 3×. **Ausgang:** **entfallen** — die einzige neue
+  `TestE2E*`-Funktion, `TestE2EBackfillReplayInvariant`, steht in der `-v`-Ausgabe beider
+  Legs von Lauf `36065957210` (`=== RUN` und `--- PASS`); die sechs übrigen Rundläufe sind
+  deklarierte Runner-Phasen. Kein Auftritt der Klasse, der Zähler des Eintrags bleibt 2×.
 - **Geteilter Zustand zwischen Rundläufen** (`BEO-PGC/test-isolation-geteilter-zustand`,
   offen, 1×): eigene Tabellennamen und eigene Quelle je Phase; die
   Bestands-Tabelle wird nach dem Lauf abgeräumt. *Erwartet, zu belegen durch:*
-  Lesen der Phasen. **Ausgang:** *(bei Closure)*
+  Lesen der Phasen. **Ausgang:** **entfallen** — der Review las jede Phase mit eigener
+  Tabelle (Review-Report, Negativbefunde: „jede Phase mit eigener Tabelle“), und beide
+  Legs von `e2e.yml` Lauf `36065957210` fuhren die sieben Rundläufe nacheinander ohne
+  Kollision.
 - **Laufzeit des erweiterten Testpakets.** `e2e.yml` fährt `make test-integration`
   je PostgreSQL-Version der Matrix; der Zuwachs verlängert jeden Lauf. Der
   Workflow bleibt unverändert ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht). *Erwartet, zu
   belegen durch:* die lokale Laufzeit vor und nach dem Zug im Bericht (mit
   Lauf-Ursprung); eine Aussage über den GitHub-Runner ist erst nach dem ersten
   Push-Lauf möglich und bleibt **weiter offen**, falls ein Timeout auftritt.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** **entfallen** — der Schritt „Compose-Integrationstest (Black-Box-E2E)“
+  lief in `e2e.yml` Lauf `36065957210` (Kopf `43137ebf`) 7 min 15 s (PostgreSQL 17,
+  22:11:35 bis 22:18:50) und 7 min 20 s (PostgreSQL 18, 22:11:37 bis 22:18:57) bei
+  `timeout-minutes: 60`, beide `success` (gemessen: `gh api
+  repos/pt9912/pg-change-feed/actions/runs/36065957210/jobs`, Zeitstempel je Schritt).
+  Aussagegrenze: ein Lauf je Leg; eine „Laufzeit vor dem Zug“ ist auf dem Runner nicht
+  gemessen (kein Lauf vor dem Zug mit diesem Schritt im selben Aufbau).
 - **Die Startposition** ist ein gemessener Wert mit Ursprung (der Lauf); eine
   Übernahme aus [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) oder aus dem Gedächtnis ist nicht zulässig
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). *Erwartet, zu belegen durch:* das Handbuch nennt
-  den Lauf. **Ausgang:** *(bei Closure)*
+  den Lauf. **Ausgang:** **entfallen** — Handbuch §4, Punkt „Startposition eines neuen
+  Consumers“ nennt den Lauf von `make test-integration` (Phase Backfill-Startposition);
+  der Verifikations-Report bestätigt die Werte (Position 0, `acknowledged` `false`, 5
+  Backfill-Changes, 0 hinter der bestätigten Position) gegen die gedruckte Zeile beider
+  Legs von `e2e.yml` Lauf `36065957210`.
 - **Umschreiben der Tabelle im Fenster zwischen Export und Sperre** (gemessen,
   [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md) §Gemessen,
   PostgreSQL 17.11 und 18.6): ohne Sperre und Filenode-Vergleich endet der Run bei
@@ -324,9 +363,13 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
   gemessen. Die Wirkung der Sperre auf andere Zugriffe, solange eine DDL auf sie wartet,
   ist gemessen (Review-Report F-1, PostgreSQL 18): ein `INSERT`, ein `SELECT` auf die
   Tabelle und die Abfrage von `pg_publication_tables` liefen je in ein 4-s-Limit; das
-  Handbuch nennt Schreiber, Leser und Administration. **Ausgang:** eingetreten → in
+  Handbuch nennt Schreiber, Leser und Administration. **Ausgang:** **eingetreten** → in
   diesem Slice behoben ([`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md),
-  Fixrunde); die Fehlalarm-Frage bleibt an den Re-Evaluierungs-Trigger der ADR gebunden.
+  Fixrunde; Berichtigung der Aussagen zu Sperr-Warteschlange und `RENAME COLUMN`:
+  [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md)); kein Carveout
+  und kein Folge-Slice nötig. Die Fehlalarm-Frage ist akzeptiertes Negativ der ADR
+  (Festlegung 4) und an deren Re-Evaluierungs-Trigger gebunden, kein offenes Risiko dieses
+  Slice.
 - **Wartegrenze der Lesesperre** (Review F-6): der Run wartet an der Sperranweisung,
   solange eine fremde Transaktion `ACCESS EXCLUSIVE` hält; der Kontext, den der Worker
   übergibt, trägt kein Zeitlimit, und `ADR-0118` Festlegung 1 nimmt das an. Gebunden ist
@@ -338,25 +381,114 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
 - **Zeitannahmen der Haltepunkte auf dem GitHub-Runner** (Review F-9): die Pause des
   Feed-Containers bleibt unter 1000 ms, der Lauf scheitert sichtbar darüber (lokal
   gemessen 377 ms und 248 ms in den zwei Läufen der Phase DDL-Fenster, Gesamtlauf 4 min 39 s, Lauf-Ursprung: der
-  Lauf dieser Fixrunde); ob der GitHub-Runner sie hält, ist nicht gemessen.
-  `e2e.yml` ist unverändert. **Ausgang:** bei Closure über den realen Post-Push-Lauf von
-  `e2e.yml` ([`AGENTS.md`](../../../../AGENTS.md) §3.10): grün → entfallen; rot →
-  Carveout oder Folge-Slice.
+  Lauf dieser Fixrunde); `e2e.yml` ist unverändert. **Ausgang:** **entfallen** — der reale
+  Post-Push-Lauf von `e2e.yml` ([`AGENTS.md`](../../../../AGENTS.md) §3.10), Lauf
+  `36065957210` am Kopf `43137ebf`, beide Legs `success`; gedruckt „Pause des
+  Feed-Containers“ 110 ms und 163 ms (PostgreSQL 17, Zeilen `DROP COLUMN` und
+  Umschreiben) sowie 245 ms und 173 ms (PostgreSQL 18), Grenze im Runner 1000 ms;
+  `ci` (Lauf `36065957245`) und `examples` (Lauf `36065957304`) desselben Kopfes ebenfalls
+  `success` (gemessen: `gh run view 36065957210 --json jobs`, `gh run list --commit`,
+  `gh run view --log`). Aussagegrenze: ein Lauf je Leg, kein Beweis gegen Flackern; ein
+  späteres Timeout öffnet das Risiko erneut.
 - **Die Abdeckungs-Zeilen-Anker** verschieben sich mit jeder Einfügung oberhalb
-  bestehender Phasen; die regenerierte Datei wird committet. **Ausgang:** *(bei
-  Closure)*
+  bestehender Phasen; die regenerierte Datei wird committet. **Ausgang:** **entfallen** —
+  `docs/user/e2e-abdeckung.md` ist regeneriert und committet; der Runner meldet in beiden
+  Legs von `e2e.yml` Lauf `36065957210` „E2E-Abdeckungstabelle unverändert —
+  `docs/user/e2e-abdeckung.md` entspricht dem Quelltext-Stand“ (gemessen an diesem Lauf).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Die Rollen-Kette lief in getrennten Kontexten und fand, was kein
+  Gate las. Die E2E-Phase DDL-Fenster fand den Vertragsbruch des Slice: ein Umschreiben der
+  Tabelle zwischen Snapshot-Export und Import ließ den Run `completed` mit `rows_copied` 0 bei
+  drei vorhandenen Zeilen enden (gemessen, [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md)
+  §Gemessen); die Tests zum Umschreiben im Fenster in `make test` und `make test-replication` entstehen erst
+  mit der Fixrunde (§3). Das
+  Architect-Verdikt setzte Lesesperre und Filenode-Vergleich als Fixrunde in diesen Slice; jede
+  Zusage der Fixrunde färbt bei einer Mutation ihrer Eingabeseite rot, in allen drei Tiers
+  (Verifikations-Report §4: sechs rote Mutationen, eine äquivalente grün). Der Review (0 HIGH · 1
+  MEDIUM · 5 LOW · 4 INFO, Summary des Reports) fand F-1 durch Nachmessen der Sperr-Warteschlange an
+  einem Wegwerf-Container (Schreiber und Publication-Abfrage stauen sich, nicht nur Leser), F-3 durch
+  Nachzählen des Suchlauf-Felds und F-4 durch Lesen einer Assertion an ihrer Eingabeseite; der Verifier
+  reproduzierte F-1 selbst und bestätigte mit `make gates`, `make test` und `make test-replication`
+  (je Exit 0) und dem realen Post-Push-Lauf: `e2e.yml` Lauf `36065957210` am Kopf `43137ebf`, beide
+  Legs `success` (Schritt „Compose-Integrationstest“ 7 min 15 s und 7 min 20 s, Pausen des Haltepunkts
+  110/163 ms und 245/173 ms gegen die Grenze 1000 ms; gemessen an diesem Lauf, `gh run view
+  36065957210 --json jobs` und Log, Ursprung je Zahl in §6). Es ist ein Lauf je Leg: der Beleg sagt
+  „hält auf dem Runner“, nicht „flackert nie“.
+- **Was ging anders als geplant:** (1) Der Slice ist nicht „nur Test“: die Fixrunde legt Produktionscode an
+  (`postgressnapshot/snapshot.go`, `snapshotlogic/logic.go`, `usecase/backfill/service.go`); der Diff
+  umfasst 18 Commits und 23 Dateien (+2910/−370, **übernommen** aus dem Verifikations-Report, Range
+  `e7df5619..43137ebf`). (2) Der Ansatz „Tabellensperre als Haltepunkt“ trägt nicht: `pg_publication_tables`
+  wartet auf jede Sperre der Tabelle, und eine `ACCESS EXCLUSIVE`-Sperre weist ihrer Transaktion eine
+  Kennung zu, auf die die Slot-Anlage wartet (§3, Ansatz-Ergebnis, gemessen an PostgreSQL 18); Ersatz sind
+  der unbestätigte Schlüssel im zweiten Block und `docker pause`. (3) Die Fixrunde lief ohne eigenen
+  Review-Report — benannte Grenze (V-3): der Verifier las den Fixrunden-Diff, mutierte ihn und
+  reproduzierte F-1 selbst, ein Reviewer-Durchgang über den Fixrunden-Diff ist nicht gefahren.
+  (4) Der Plan nennt sechs Fremdobjekte, `knownForeignObjects` führt sieben (Plan-Drift, in §3 benannt).
+- **Verifier-Beobachtungen (V-1 bis V-6):** *V-1* (LOW): die Ortswahl der Replay-Invariante ist eine
+  benannte Entscheidung des Planners (§3, letzte Zeile der Tabelle mit Begründung und Anker); kein Architect-Verdikt
+  trägt sie, und ein Tier-Beleg ist nicht geliefert — die Fitness-Function-Zeile von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt einen Beleg, den kein Test trägt
+  (*benannte Lücke*, Adresse: Architect im Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md)). *V-2* (LOW): die Mutationen je Negative-Kriterium
+  sind im Repo nicht belegt — der Bericht des Implementers liegt nicht im Repo, kein committetes Artefakt
+  nennt sie, der Verifier fuhr für die Negative-Phase keine E2E-Mutation (Lauf-Kosten je rund 5 Minuten;
+  Verifikations-Report §12). Die Closure fährt sie nicht nach; die Runner-Assertions der Negative-Phase sind
+  gelesen und im grünen Post-Push-Lauf bestätigt, nicht gemutet — eine benannte Grenze, keine Erfüllung der
+  Zusage. *V-3* (INFO) siehe „Was ging anders“ (3). *V-4* (INFO): der `ctx`-Parameter von `ClassifyLock`
+  ist wirkungsgleich zu `Classify` (äquivalente Mutation), die Kontext-Bindung trägt
+  `TestImportLockWaitEndsWithTheContext`; keine Aktion. *V-5* (INFO): die zwei überholten Aussagen von
+  `ADR-0118` sind mit [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md) berichtigt.
+  *V-6* (INFO): Tier-Nebenwirkungen (`tools/schema/plan.yaml`, `docs/user/e2e-abdeckung.md`) sind
+  zurückgenommen, keine Aktion.
+- **Steering-Loop-Eintrag (Lerneintrag):** *Lerneintrag (Ausprägung, in der Phase verkörpert):* ein E2E-Beleg
+  für ein DDL-Fenster fährt nicht nur eine Form, die sichtbar scheitert (`DROP COLUMN`, `failed`/`storage`),
+  sondern auch eine Rewrite-DDL (`ALTER COLUMN … TYPE`): die sichtbar scheiternde Form belegt das Fenster
+  nur für Fehler mit Meldung, die stille Form deckt den Verlust ohne Meldung auf. Die Phase DDL-Fenster fährt beide Läufe
+  über `bf_ddl_window`. *Neuer Sensor:* die Phase DDL-Fenster (zwei Läufe, ein neuer Antrag danach) und im
+  Store-Tier `TestRewriteInWindowIsTransient`, `TestNoRewriteInWindowReadsTheSnapshot`,
+  `TestImportWaitsForExclusiveLockAndThenAborts`, `TestImportLockWaitEndsWithTheContext`; gebunden an die
+  Eingabeseite (Mutationen M1 bis M5 und M-E2E rot, Verifikations-Report §4). *Benannte Spec-Lücke:* die
+  Fitness-Function-Zeile von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt für die
+  Replay-Invariante den Tier `make test-replication`; der Beleg liegt im E2E
+  (`TestE2EBackfillReplayInvariant`), der Tier-Beleg fehlt (Adresse: V-1 oben). *Geschärfte Regel
+  (Kandidat, nicht entschieden):* eine DoD-Zusage an eine nachgelagerte Rolle („der Architect bestätigt“,
+  „je Kriterium eine Mutation im Bericht“) nennt den committeten Ort ihrer Erfüllung
+  (`BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`, 1×; ein zweites Auftreten liegt unter der
+  Schwelle, der Träger ist Sache des Lese-Schritts). *Ansatz-Ergebnis:* der Haltepunkt „Tabellensperre“ trägt
+  nicht (§3); der Ersatz ist gemessen und belegt. *Sensor-Dokumente:* Nenner und gedeckte Zahl tragen ihren
+  Lauf — Coverage-Gate: `make coverage-gate` (Closure-Lauf am Stand `cf7f2d02`, Exit 0), gedruckt
+  `total: (statements) 83.1%` und `coverage-gate: OK — Coverage 83.10% erfüllt Schwelle 80%`, dedupliziert
+  2112 von 2541 = 83,12 % (Awk über `/out/coverage.out` des Images, **abgeleitet**), darunter `snapshotlogic`
+  54 von 54; DB-Adapter-Coverage: `make test-replication` (Closure-Lauf, PostgreSQL 18, Exit 0) mit dem
+  Store-Profil des Verifikations-Laufs (der Slice berührt `postgresstorage` nicht:
+  `git diff --stat e7df5619..HEAD` über dessen Verzeichnis ist leer), gedruckt `DB-Adapter-Coverage: 82.13%
+  (gedeckt 850 von 1035 Statements; Profile gemergt: store,replication)`, dieselbe Zeile wie in beiden Legs
+  des Post-Push-Laufs.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei `evidence/slice-backfill-e2e.md`,
+  Zähler = Zahl der Dateien (real ausgezählt: `ls …/evidence | wc -l`). *Bestehende Klassen:*
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (F-4) **10×**, `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (F-3) **18×**, `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (F-2) **30×** und
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, F-7, V-5) **4×** stehen **über** der Schwelle 3×; ihr Ausgang
+  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md) (die ersten drei sind
+  verkörpert, der vierte ohne zugewiesenen Ausgang; die drei ersten erweitern den Bestand um eine weitere
+  Ausprägung, die state-Dateien tragen den Vermerk). `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`
+  (F-5) **2×** und `BEO-PGC/formatierungs-drift-ohne-gate` (F-10) **2×**, offen; `BEO-PGC/lesesperre-ohne-zeitgrenze` (F-6)
+  **1×**, offen (Risiko §6 „Wartegrenze der Lesesperre“). *Neue Klassen:*
+  `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (V-1, V-2) **1×**, offen;
+  `BEO-PGC/run-fehlertext-traegt-klasse-doppelt` (F-8) **1×**, verkörpert (`failureText`,
+  `TestExecuteFailureTextCarriesClassOnce`). F-9 ist kein Register-Anfall: das Risiko hat seinen Ausgang in §6.
+- **Folge-Slices:** keine neuen. Die offenen Slices der Welle (`slice-backfill-bench-richtgroesse`,
+  `slice-backfill-sdk-origin`) sind von diesem Slice nicht abhängig; der Tier-Beleg der Replay-Invariante
+  ist eine Entscheidung des Architects im Lese-Schritt der Welle-Closure, ein Slice entsteht erst mit ihr.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Replay-Invariante gilt real nicht ·
+  Nichtdeterministischer Abbruch · Randfall-Belege nur beim Reviewer · Stiller Ausschluss aus dem Runner ·
+  Geteilter Zustand zwischen Rundläufen · Laufzeit des erweiterten Testpakets · Die Startposition ·
+  Zeitannahmen der Haltepunkte auf dem GitHub-Runner · Die Abdeckungs-Zeilen-Anker. *Eingetreten:*
+  Umschreiben der Tabelle im Fenster — in diesem Slice behoben ([`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md),
+  [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md)). *Weiter offen:* Wartegrenze der
+  Lesesperre → Register `BEO-PGC/lesesperre-ohne-zeitgrenze`.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
