@@ -300,25 +300,63 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # bekannten Objekte sofort wieder an (CREATE OR REPLACE, dieselbe
 # Idempotenz wie bei jedem anderen Lauf) — ihr kurzes reales Fehlen
 # zwischen --execute und dem ersten nacharbeit-Schritt bleibt folgenlos.
-# Jeder andere Fall (kein Blocker, ein unbekannter Blocker, eine andere
-# Blocker-Klasse) läuft ohne --allow-destructive und bricht bei einer
-# echten neuen destruktiven Änderung weiterhin mit Exit 8 ab.
+# Vorlauf für View-Signatur-Änderungen (ADR-0114): d-migrate rendert ein
+# CREATE OR REPLACE VIEW nur, wenn die View Spaltenzahl, -reihenfolge,
+# -namen und sichtbare Typen behält; jede andere Signaturänderung einer im
+# neutralen Modell deklarierten View (Spalte anhängen, umordnen,
+# umbenennen, Typ ändern) meldet der Precheck als Blocker
+# MANUAL_ACTION_REQUIRED für die Operation ReplaceView, mit der Diagnose
+# VIEW_SIGNATURE_INCOMPATIBLE. rolloutguard erkennt diese Klasse und
+# nennt die betroffenen Views; das Target entfernt jede davon mit
+# `DROP VIEW cdc.<name>` (ohne CASCADE, ein Statement je View, jedes auf
+# stdout gemeldet) vor --execute. d-migrate legt die View danach selbst neu
+# an (Operation CreateView im Pflicht-Report), die Rechte setzt
+# nacharbeit-roles.sql im selben Lauf. Hängt ein fremdes Objekt an der
+# View, scheitert der DROP laut und nichts wird mitgelöscht. Der Vorlauf
+# läuft nur bei einem Blocker dieser Klasse: additive Änderungen (neue
+# Tabelle, neue nullable Spalte, neue View) erzeugen keinen Blocker und
+# bekommen keinen Vorlauf, ein Ziel mit Soll-Signatur ebenso wenig.
+#
+# Alles oder nichts: rolloutguard meldet nur dann Views oder
+# --allow-destructive, wenn JEDER Blocker des Reports zur Klasse
+# „View-Signatur" gehört oder ein bekanntes Fremdobjekt ist. Jeder andere
+# Fall (ein unbekannter Blocker, eine andere Blocker-Klasse) läuft ohne
+# Vorlauf und ohne --allow-destructive und bricht bei einer echten neuen
+# destruktiven Änderung weiterhin mit Exit 8 ab; ein am Precheck
+# gescheiterter Lauf ändert das Ziel nicht.
 #
 # Grenze: Der Precheck- und der --execute-Lauf sind zwei unabhängige,
 # sequenzielle docker-run-Aufrufe gegen denselben lebenden Ziel-Zustand —
 # kein d-migrate-Flag liest einen zuvor geprüften Plan zur Ausführung
 # wieder ein. Ein zwischen beiden Läufen neu entstehender destruktiver
 # Blocker würde vom Precheck nicht erfasst, liefe aber unter dem bereits
-# gesetzten --allow-destructive durch (enges, aber reales Fenster).
+# gesetzten --allow-destructive durch (enges, aber reales Fenster). Der
+# Vorlauf ist nicht atomar mit --execute: scheitert --execute nach dem
+# DROP VIEW, fehlt die View bis zum Wiederholungslauf (der heilt sie
+# idempotent); für SQL-Leser über cdc_reader fehlt sie in einem Lauf, der
+# eine Signaturänderung ausliefert, für die Dauer des Rollouts (Richtwert
+# aus einer einzelnen Messung, ADR-0114: rund 7 s). Der Feed-Container
+# liest den Store über Tabellen, nicht über diese View.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	@docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --plan-only --report tools/schema/rollout-precheck.yaml; \
 	plan_exit=$$?; \
 	allow_destructive=""; \
-	if [ "$$plan_exit" = "8" ] && docker run --rm --network none -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go run ./tools/schema/rolloutguard tools/schema/rollout-precheck.yaml; then \
-	  echo "schema-rollout: nur bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
-	  allow_destructive="--allow-destructive"; \
+	drop_views=""; \
+	if [ "$$plan_exit" = "8" ]; then \
+	  guard_out=$$(docker run --rm --network none -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go run ./tools/schema/rolloutguard tools/schema/rollout-precheck.yaml) && guard_ok=1 || guard_ok=0; \
+	  if [ "$$guard_ok" = "1" ]; then \
+	    if printf '%s\n' "$$guard_out" | grep -qx 'allow-destructive'; then \
+	      echo "schema-rollout: nur bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
+	      allow_destructive="--allow-destructive"; \
+	    fi; \
+	    drop_views=$$(printf '%s\n' "$$guard_out" | sed -n 's/^drop-view //p'); \
+	  fi; \
 	fi; \
+	for v in $$drop_views; do \
+	  echo "schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.$$v"; \
+	  docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -c "DROP VIEW cdc.$$v" || exit 1; \
+	done; \
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --execute $$allow_destructive --report tools/schema/plan.yaml --generate-rollback --rollback-output tools/schema/down.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-roles.sql
 	docker run --rm --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work:ro $(PG_TEST_IMAGE) psql "$(SCHEMA_TARGET:db:%=%)" -v ON_ERROR_STOP=1 -f /work/tools/schema/nacharbeit-observability.sql

@@ -1,26 +1,40 @@
 #!/usr/bin/env bash
 # run-schema-rollout-guard-test — realer Beleg der zentralen
-# `make schema-rollout`-Idempotenz-Wache (ADR-0043, tools/schema/rolloutguard,
-# BEO-PGC/schema-rollout-fremdobjekte): vier Läufe gegen dieselbe,
-# eigenständige Ziel-DB.
+# `make schema-rollout`-Wache (ADR-0043, ADR-0114, tools/schema/rolloutguard,
+# BEO-PGC/schema-rollout-fremdobjekte): sechs Läufe gegen eigenständige
+# Ziel-Datenbanken derselben Wegwerf-Instanz.
 #
 #   1. Frischer Rollout (kein Blocker) — muss durchlaufen.
 #   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — trägt
 #      ausschließlich die sechs bekannten Fremdobjekt-Blocker — muss erneut
 #      Exit 0 liefern UND den --allow-destructive-Pfad des Guards nehmen
 #      (stdout trägt die Meldung), nicht nur zufällig Exit 0 aus anderem
-#      Grund.
+#      Grund; ein Vorlauf (ADR-0114) findet nicht statt.
 #   3. Eine echte, gleichzeitig anstehende, NICHT-destruktive Schema-Änderung
 #      neben den sechs bekannten Blockern: eine von schema.yaml weiterhin
 #      deklarierte, nullable Spalte (administration_request.error_message —
 #      trägt keine View-/Funktions-Abhängigkeit, anders als
 #      process_heartbeat.error_class, das die Sicht cdc.heartbeat trägt) wird
 #      per `ALTER TABLE … DROP COLUMN` außerhalb von d-migrate entfernt — der
-#      nächste Rollout-Lauf muss sie real zurückbringen. Das ist der
-#      Regressionsschutz für den konkret gefundenen Fehler: ein reines
+#      nächste Rollout-Lauf muss sie real zurückbringen, ohne Vorlauf. Das ist
+#      der Regressionsschutz für den konkret gefundenen Fehler: ein reines
 #      Überspringen von `--execute` bei bekannten Blockern ließ eine solche
 #      echte Änderung verlustig gehen.
-#   4. Ein künstlich per `ALTER TABLE … ADD COLUMN` hinzugefügtes, nicht
+#   4. Die View cdc.changes trägt eine abweichende Signatur (ADR-0114,
+#      Klasse „View-Signatur") — der Rollout muss Exit 0 liefern, den Vorlauf
+#      melden, die Soll-Signatur herstellen, cdc_reader das SELECT-Recht
+#      zurückgeben und die bestehende Zeile über die View lesbar lassen; ein
+#      Folgelauf braucht keinen Vorlauf. Hängt ein fremdes Objekt an der View
+#      (eine View im Schema `public`, das d-migrate nicht liest), scheitert
+#      der Rollout laut, das Objekt bleibt bestehen (`DROP VIEW` ohne
+#      CASCADE), und der Wiederholungslauf ohne das Objekt heilt.
+#   5. Alt-Tag-Lauf (ADR-0114 Entscheidung 7): das Schema des jüngsten
+#      `v*`-Tags (`git archive` in ein Verzeichnis unter `${TMPDIR:-/tmp}`,
+#      nie im Repo-Baum) wird mit dem Makefile dieses Tags ausgerollt, eine
+#      Datenzeile geschrieben, danach der Arbeitsbaum zweimal ausgerollt —
+#      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
+#      Soll-Signatur der View. Tag und Exit-Codes stehen in der Ausgabe.
+#   6. Ein künstlich per `ALTER TABLE … ADD COLUMN` hinzugefügtes, nicht
 #      deklariertes Objekt — muss weiterhin mit Exit 8 abbrechen (der
 #      Beleg, dass die Wache nicht pauschal durchlässt).
 #
@@ -35,17 +49,60 @@ PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd
 NETWORK=cdc-schema-rollout-guard-test
 CONTAINER=cdc-schema-rollout-guard-test-pg
 DB=cdc
+ALT_DB=cdc_alttag
 USER=postgres
 PASSWORD=postgres
 TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$DB?sslmode=disable"
+ALT_TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$ALT_DB?sslmode=disable"
+ALT_DIR=""
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK" >/dev/null
 
 cleanup() {
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
+  if [ -n "$ALT_DIR" ]; then
+    rm -rf "$ALT_DIR"
+  fi
 }
 trap cleanup EXIT
+
+fail() {
+  echo "run-schema-rollout-guard-test: FEHLER — $*" >&2
+  exit 1
+}
+
+# psql_q <db> <sql>: eine Abfrage, ungerahmte Ausgabe.
+psql_q() {
+  docker exec "$CONTAINER" psql -U "$USER" -d "$1" -v ON_ERROR_STOP=1 -tAc "$2"
+}
+
+# view_signature <db>: Spaltenname:Typ der View cdc.changes in Reihenfolge.
+view_signature() {
+  psql_q "$1" "SELECT string_agg(column_name || ':' || data_type, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='changes'"
+}
+
+# seed_row <db> <praefix>: eine vollständige Kette Quelle → Change; die
+# Zeile trägt keinen origin-Wert (auch ein Schema-Stand ohne die Spalte
+# nimmt sie an).
+seed_row() {
+  docker exec "$CONTAINER" psql -U "$USER" -d "$1" -v ON_ERROR_STOP=1 \
+    -c "INSERT INTO cdc.source (source_id, name) VALUES ('$2-src', '$2')" \
+    -c "INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ('$2-st', '$2-src', 'public', 't')" \
+    -c "INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ('$2-sv', '$2-st', 1)" \
+    -c "INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ('$2-tx', '$2-src', 1)" \
+    -c "INSERT INTO cdc.change (change_id, transaction_id, source_table_id, sequence, operation, new_data, schema_version) VALUES ('$2-ch', '$2-tx', '$2-st', 1, 'INSERT', '{\"a\": 1}', '$2-sv')" >/dev/null
+}
+
+# run_rollout <make-verzeichnis> <ziel-dsn>: ein `make schema-rollout`;
+# Ausgabe gedruckt und in RUN_OUT, Exit-Code in RUN_EXIT (kein Abbruch).
+run_rollout() {
+  set +e
+  RUN_OUT=$(make -C "$1" schema-rollout SCHEMA_TARGET="$2" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)
+  RUN_EXIT=$?
+  set -e
+  echo "$RUN_OUT"
+}
 
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$CONTAINER" \
@@ -70,18 +127,21 @@ docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "CREATE SCHEMA IF NOT EXISTS cdc" \
   -c "ALTER ROLE $USER IN DATABASE $DB SET search_path = cdc"
 
-echo "run-schema-rollout-guard-test: Lauf 1/4 (frischer Rollout, muss durchlaufen)"
+echo "run-schema-rollout-guard-test: Lauf 1/6 (frischer Rollout, muss durchlaufen)"
 make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
 
-echo "run-schema-rollout-guard-test: Lauf 2/4 (Idempotenz — muss den --allow-destructive-Pfad nehmen)"
+echo "run-schema-rollout-guard-test: Lauf 2/6 (Idempotenz — muss den --allow-destructive-Pfad nehmen, ohne Vorlauf)"
 out=$(make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)
 echo "$out"
 if ! grep -q -- "--allow-destructive" <<<"$out"; then
   echo "run-schema-rollout-guard-test: FEHLER — Lauf 2 hat den --allow-destructive-Pfad nicht genommen (Meldung fehlt in der Ausgabe)" >&2
   exit 1
 fi
+if grep -q "Vorlauf" <<<"$out"; then
+  fail "Lauf 2 meldet einen Vorlauf, obwohl keine View ihre Signatur ändert (ADR-0114 Entscheidung 4)"
+fi
 
-echo "run-schema-rollout-guard-test: Lauf 3/4 (echte anstehende Änderung neben den sechs bekannten Blockern — muss real zurückkommen)"
+echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den sechs bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.administration_request DROP COLUMN error_message"
 still_missing=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
@@ -90,7 +150,11 @@ if [ "$still_missing" != "0" ]; then
   echo "run-schema-rollout-guard-test: FEHLER — Vorbedingung fehlgeschlagen, error_message ist nach DROP COLUMN noch da" >&2
   exit 1
 fi
-make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
+out=$(make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK" 2>&1)
+echo "$out"
+if grep -q "Vorlauf" <<<"$out"; then
+  fail "Lauf 3 meldet einen Vorlauf, obwohl die anstehende Änderung additiv ist (ADR-0114 Entscheidung 5)"
+fi
 restored=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
   "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name='error_message'")
 if [ "$restored" != "1" ]; then
@@ -98,16 +162,89 @@ if [ "$restored" != "1" ]; then
   exit 1
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 4/4 (unbekannter Blocker, muss mit Exit 8 abbrechen)"
+echo "run-schema-rollout-guard-test: Lauf 4/6 (View-Signatur-Änderung, ADR-0114 — Vorlauf, Soll-Signatur, Recht, Zeile lesbar)"
+sig_ref=$(view_signature "$DB")
+[ -n "$sig_ref" ] || fail "Lauf 4: Soll-Signatur der View cdc.changes nicht lesbar"
+seed_row "$DB" lauf4
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
+  -c "DROP VIEW cdc.changes" \
+  -c "CREATE VIEW cdc.changes AS SELECT change_id, transaction_id FROM cdc.change"
+[ "$(view_signature "$DB")" != "$sig_ref" ] || fail "Lauf 4: Vorbedingung fehlgeschlagen, die View trägt schon die Soll-Signatur"
+[ "$(psql_q "$DB" "SELECT has_table_privilege('cdc_reader', 'cdc.changes', 'SELECT')")" = "f" ] \
+  || fail "Lauf 4: Vorbedingung fehlgeschlagen, cdc_reader hat das SELECT-Recht schon vor dem Rollout"
+run_rollout . "$TARGET"
+[ "$RUN_EXIT" -eq 0 ] || fail "Lauf 4: Rollout gegen die abweichende View-Signatur endete mit Exit $RUN_EXIT statt 0"
+grep -q "Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.changes" <<<"$RUN_OUT" \
+  || fail "Lauf 4: die Vorlauf-Meldung für cdc.changes fehlt in der Ausgabe"
+[ "$(view_signature "$DB")" = "$sig_ref" ] || fail "Lauf 4: die View trägt nach dem Rollout nicht die Soll-Signatur"
+[ "$(psql_q "$DB" "SELECT has_table_privilege('cdc_reader', 'cdc.changes', 'SELECT')")" = "t" ] \
+  || fail "Lauf 4: cdc_reader hat nach dem Rollout kein SELECT-Recht auf cdc.changes"
+[ "$(psql_q "$DB" "SELECT change_id || '|' || origin FROM cdc.changes WHERE change_id = 'lauf4-ch'")" = "lauf4-ch|wal" ] \
+  || fail "Lauf 4: die bestehende Zeile ist über cdc.changes nach dem Rollout nicht (als wal) lesbar"
+run_rollout . "$TARGET"
+[ "$RUN_EXIT" -eq 0 ] || fail "Lauf 4: der Folgelauf endete mit Exit $RUN_EXIT statt 0"
+if grep -q "Vorlauf" <<<"$RUN_OUT"; then
+  fail "Lauf 4: der Folgelauf meldet einen Vorlauf, obwohl die View die Soll-Signatur trägt (ADR-0114 Entscheidung 4)"
+fi
+
+echo "run-schema-rollout-guard-test: Lauf 4 (abhängiges Objekt — der Vorlauf scheitert laut, das Objekt bleibt bestehen, der Wiederholungslauf heilt)"
+view_def=$(psql_q "$DB" "SELECT pg_get_viewdef('cdc.changes'::regclass)")
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
+  -c "CREATE VIEW public.zz_lauf4_abhaengig AS SELECT change_id FROM cdc.changes" \
+  -c "CREATE OR REPLACE VIEW cdc.changes AS SELECT c.*, 1 AS zz_lauf4_zusatz FROM (${view_def%;}) c"
+[ "$(view_signature "$DB")" != "$sig_ref" ] || fail "Lauf 4: Vorbedingung fehlgeschlagen, die View trägt trotz Zusatzspalte die Soll-Signatur"
+run_rollout . "$TARGET"
+[ "$RUN_EXIT" -ne 0 ] || fail "Lauf 4: der Rollout lief durch (Exit 0), obwohl ein fremdes Objekt an der View hängt — der Vorlauf darf nicht kaskadieren"
+grep -q "DROP VIEW cdc.changes" <<<"$RUN_OUT" || fail "Lauf 4: die Vorlauf-Meldung fehlt in der Ausgabe des scheiternden Laufs"
+[ "$(psql_q "$DB" "SELECT to_regclass('public.zz_lauf4_abhaengig') IS NOT NULL")" = "t" ] \
+  || fail "Lauf 4: das abhängige Objekt wurde mitgelöscht"
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 -c "DROP VIEW public.zz_lauf4_abhaengig"
+run_rollout . "$TARGET"
+[ "$RUN_EXIT" -eq 0 ] || fail "Lauf 4: der Wiederholungslauf nach dem gescheiterten Vorlauf endete mit Exit $RUN_EXIT statt 0"
+[ "$(view_signature "$DB")" = "$sig_ref" ] || fail "Lauf 4: die View trägt nach dem Wiederholungslauf nicht die Soll-Signatur"
+
+echo "run-schema-rollout-guard-test: Lauf 5/6 (Alt-Tag-Lauf — Schema des jüngsten v*-Tags, danach der Arbeitsbaum)"
+ALT_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+[ -n "$ALT_TAG" ] || fail "Lauf 5: kein v*-Tag im Repository"
+ALT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/schema-rollout-alt-tag.XXXXXX")
+git archive "$ALT_TAG" | tar -x -C "$ALT_DIR"
+docker exec "$CONTAINER" psql -U "$USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $ALT_DB"
+docker exec "$CONTAINER" psql -U "$USER" -d "$ALT_DB" -v ON_ERROR_STOP=1 \
+  -c "CREATE SCHEMA IF NOT EXISTS cdc" \
+  -c "ALTER ROLE $USER IN DATABASE $ALT_DB SET search_path = cdc"
+run_rollout "$ALT_DIR" "$ALT_TARGET"
+alt_exit=$RUN_EXIT
+[ "$alt_exit" -eq 0 ] || fail "Lauf 5: der Rollout des Schema-Stands von $ALT_TAG endete mit Exit $alt_exit statt 0"
+seed_row "$ALT_DB" alttag
+alt_rows_before=$(psql_q "$ALT_DB" "SELECT count(*) FROM cdc.changes")
+[ "$alt_rows_before" = "1" ] || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.changes trägt $alt_rows_before statt 1 Zeile im Stand von $ALT_TAG"
+run_rollout . "$ALT_TARGET"
+work_exit_1=$RUN_EXIT
+work_out_1=$RUN_OUT
+[ "$work_exit_1" -eq 0 ] || fail "Lauf 5: der erste Rollout des Arbeitsbaums über $ALT_TAG endete mit Exit $work_exit_1 statt 0"
+run_rollout . "$ALT_TARGET"
+work_exit_2=$RUN_EXIT
+[ "$work_exit_2" -eq 0 ] || fail "Lauf 5: der zweite Rollout des Arbeitsbaums endete mit Exit $work_exit_2 statt 0"
+[ "$(psql_q "$ALT_DB" "SELECT change_id FROM cdc.changes")" = "alttag-ch" ] \
+  || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG ist über cdc.changes nach dem Upgrade nicht unverändert lesbar"
+[ "$(view_signature "$ALT_DB")" = "$sig_ref" ] || fail "Lauf 5: die View trägt nach dem Upgrade nicht die Soll-Signatur"
+if grep -q "Vorlauf" <<<"$work_out_1"; then
+  alt_vorlauf="mit Vorlauf"
+else
+  alt_vorlauf="ohne Vorlauf"
+fi
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar"
+
+echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannter Blocker, muss mit Exit 8 abbrechen)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.source ADD COLUMN _rolloutguard_test_col text"
 set +e
 make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
-run4_exit=$?
+run6_exit=$?
 set -e
-if [ "$run4_exit" -eq 0 ]; then
-  echo "run-schema-rollout-guard-test: FEHLER — Lauf 4 lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag" >&2
+if [ "$run6_exit" -eq 0 ]; then
+  echo "run-schema-rollout-guard-test: FEHLER — Lauf 6 lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag" >&2
   exit 1
 fi
 
-echo "run-schema-rollout-guard-test: OK — alle drei DoD-Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, Negativ-Abbruch Exit $run4_exit)"
+echo "run-schema-rollout-guard-test: OK — alle Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, View-Signatur-Vorlauf, Alt-Tag $ALT_TAG, Negativ-Abbruch Exit $run6_exit)"
