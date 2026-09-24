@@ -611,7 +611,7 @@ steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
 
 | Merkmal | Festlegung |
 |---|---|
-| Reihenfolge | deterministisch nach (`commit_position`, `transaction_id`, `sequence`) — [`LH-FA-REA-004`](lastenheft.md); die Fortsetzung ist `from = <letzte gelieferte commit_position> + 1` |
+| Reihenfolge | deterministisch nach (`commit_position`, `transaction_id`, `sequence`) — [`LH-FA-REA-004`](lastenheft.md); die Fortsetzung ist `from = <letzte gelieferte commit_position> + 1`, wenn das Lesen die letzte Position vollständig erfasst hat; enthält sie mehr Changes als `limit`, gilt die Zeile „Position und `limit`" |
 | Leere Menge | `{"changes": []}`, nie `null` — ohne Treffer (unbekannte Quelle, unbekanntes Schema, unbekannte Tabelle, leerer Bereich) endet der Aufruf `200`; ein leerer Bestand ist kein Fehler ([`LH-FA-REA-006`](lastenheft.md) Boundary) |
 | Fehler-Antwortform | unverändert `{"error": "<Klartext>"}` (`SPEC-018`); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
 | Herkunft | `origin` trägt `wal` für einen über den Replication Stream erfassten Change und `backfill` für einen Bestands-Change (`SPEC-002`, `LH-FA-CAP-009.a`); ein gespeicherter Change ohne das Feld liest als `wal`. Der Abschnitt bietet keinen Filter auf `origin` |
@@ -691,9 +691,8 @@ Zeile je Run, angelegt bei der Annahme eines Antrags der Antragsart
 Die beiden Warn-Spalten sind eine Kennzeichnung, kein Wert: sie nennen weder
 Toleranz noch Richtgröße, und eine gesetzte Warnung ändert weder `status` noch
 den Ablauf des Runs — keine Ablehnung, kein Abbruch. Es sind zwei Spalten mit
-je einem Schreiber, weil die Annahme nur einfügen und der Worker nur
-fortschreiben darf (Grants unten); eine gemeinsame Spalte hätte zwei
-Schreiber für einen Wert.
+je einem Schreiber: die Annahme fügt nur ein und der Worker schreibt nur
+fort (Grants unten), jede Spalte hat deshalb genau eine schreibende Rolle.
 
 **Grants** (Rollen nach der Zuordnung der DSN-Verdrahtung):
 

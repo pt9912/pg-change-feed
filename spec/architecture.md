@@ -298,10 +298,10 @@ sequenceDiagram
 
 Die Vorbedingungs-Prüfung und die Schätzung liegen **vor** der Annahme; ein
 Vorbedingungs-Fehler endet den Antrag `failed` und hinterlässt keine
-Run-Zeile. Annahme und Antragsvermerk sind eine Transaktion, weil ein Run nach
-einem Absturz zwischen den beiden Schritten sonst entweder ohne angenommenen
-Antrag oder mit einem Antrag stünde, dessen Wiederholung am aktiven Run
-scheitert. Die Rolle des Administrations-Anschlusses legt die Zeile an, die
+Run-Zeile. Annahme und Antragsvermerk sind eine Transaktion: nach einem Absturz
+zwischen den beiden Schritten bleibt entweder beides bestehen oder beides
+aus, ein angenommener Antrag hat damit immer seine Run-Zeile und ein Antrag
+ohne Run-Zeile bleibt wiederholbar. Die Rolle des Administrations-Anschlusses legt die Zeile an, die
 Rolle des Capture-Anschlusses schreibt sie nur fort.
 
 Beim Prozessstart läuft zuerst der Bindungsaufbau der Composition Root, dann
@@ -339,7 +339,8 @@ sequenceDiagram
     BUC-->>W: fertig, Wecksignal je Tabelle
 ```
 
-Bis zum einen Commit ist nichts für Leser sichtbar. Eine Abweichung bei der
+Sichtbar für Leser ist bis zum Commit nur der Fortschritt der Run-Zeile, die
+kopierten Changes werden mit dem einen Commit sichtbar. Eine Abweichung bei der
 Fail-closed-Prüfung rollt alle Blöcke zurück und der Run endet `failed`; ein
 Prozessende oder ein Verbindungsverlust rollt sie ebenfalls zurück, der Run
 bleibt `running` und wird beim nächsten Prozessstart `interrupted`. Der
