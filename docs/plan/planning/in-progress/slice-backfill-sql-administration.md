@@ -188,14 +188,14 @@ sichtbar. Drei Teile:
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: siehe dritter Liefer-Punkt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -314,7 +314,9 @@ Rechte sind Messungen des Verifiers, die Handbuch-Version ist am Stand `c7045f81
 | Zahl der Replication-Verbindungen je Container-Lauf (Handbuch §Grenzwerte) | `grep -rn -e 'max_wal_senders' -e 'Replication-Protokoll-Verbindungen' docs/user spec` | Parent 1 Zeile (Handbuch, „zwei gleichzeitige … zählen gegen `max_wal_senders`“), Diff-Stand 3 (neue Betriebs-Vorbedingung im Backfill-Abschnitt, die präzisierte Grenzwert-Zeile) | präzisiert („zwei; während der Slot-Anlage eines Backfills eine weitere, die nach dem Import endet“, abgeleitet aus dem Adapter, `snapshot.go` Paketkommentar); nicht während eines Container-Laufs mit laufendem Run gemessen |
 | Rollen-Beschreibung im Handbuch (§2, Rollen-Tabelle) | Lesen | Die Zeilen `cdc_capture`, `cdc_admin` und `cdc_reader` nannten weder Backfill noch `cdc.backfill_status` | die drei Zeilen und ein Betriebs-Hinweis (`SELECT` auf Quelltabellen) nachgezogen; §4 „Schema aktualisieren“ (Absatz „Rechte der drei Rollen“) und §5 (zwei DSN-Zeilen) ebenso |
 | Fortsetzungs-Idiome und `backfill`-Nennung im Handbuch | `grep -n -e 'letzte-gelesene' -e 'letzte gelieferte' -e 'LIMIT' -e 'backfill' docs/user/benutzerhandbuch.md` | Der Befehl druckt am Parent 10 Zeilen und am Diff-Stand (`c188be43`) 40 (`git grep -n … 2d47d8a7 -- docs/user/benutzerhandbuch.md` bzw. `… c188be43 …`); `-e 'backfill'` allein: Parent 7, Diff-Stand 30; am Fixrunden-Stand (`55085f76`, Handbuch 1.49) drucken die beiden Befehle 41 und 31. Beide Idiome (SQL-Beispiel unter „Änderungen lesen“, `from = <letzte gelieferte commit_position> + 1` unter „Changes lesen“) trugen die Regel „Position und `limit`“ nicht | beide tragen sie jetzt (Absatz „Fortsetzen und `LIMIT`“ mit dem Schlüsselvergleich; Satz im Absatz „Changes lesen“); der Schlüsselvergleich ist im Store-Tier gelaufen (`TestChangesViewKeysetContinuesInsideOnePosition`) |
-| Nenner der Coverage-Messungen (`harness/sensors/coverage-gate.md` §Zählbasis, `harness/sensors/db-adapter-coverage.md` §Zählbasis) | Lesen; `make gates` und `make test-store` gefolgt von `make test-replication` drucken die Zahlen | Der Slice fügt Produktionscode in `internal/bootstrap` und `postgresstorage` hinzu: der gemergte DB-Nenner ist gedruckt **1025** (`DB-Adapter-Coverage: 81.76% (gedeckt 838 von 1025 Statements; Profile gemergt: store,replication)`, PostgreSQL 17 und 18), die Sensor-Datei nennt **1016**; die Unit-Quote druckt `Coverage 82.90%` im Endlauf von `make gates` (ein früherer Lauf desselben Slice: 82.80 %; Sensor-Datei: 84.90 % am Stand `c7045f81`); am Fixrunden-Stand (`4981766a` samt Plan-Nachzug) druckt `make gates` `coverage-gate: OK — Coverage 83.00% erfüllt Schwelle 80%`, `make test-store` nach frischer Messung des Replication-Teils `DB-Adapter-Coverage: 82.08% (gedeckt 843 von 1027 Statements; Profile gemergt: store,replication)` | **gemeldet, nicht nachgezogen**: beide Dateien tragen ihre Nenner mit Lauf und Stand der Closure der jeweiligen Zeile; der Unit-Nenner ist in diesem Lauf nicht als Statement-Zahl gemessen |
+| Nenner der Coverage-Messungen (`harness/sensors/coverage-gate.md` §Zählbasis, `harness/sensors/db-adapter-coverage.md` §Zählbasis) | Lesen; `make gates` und `make test-store` gefolgt von `make test-replication` drucken die Zahlen | Der Slice fügt Produktionscode in `internal/bootstrap` und `postgresstorage` hinzu: der gemergte DB-Nenner ist gedruckt **1025** (`DB-Adapter-Coverage: 81.76% (gedeckt 838 von 1025 Statements; Profile gemergt: store,replication)`, PostgreSQL 17 und 18), die Sensor-Datei nennt **1016**; die Unit-Quote druckt `Coverage 82.90%` im Endlauf von `make gates` (ein früherer Lauf desselben Slice: 82.80 %; Sensor-Datei: 84.90 % am Stand `c7045f81`); am Fixrunden-Stand (`4981766a` samt Plan-Nachzug) druckt `make gates` `coverage-gate: OK — Coverage 83.00% erfüllt Schwelle 80%`, `make test-store` nach frischer Messung des Replication-Teils `DB-Adapter-Coverage: 82.08% (gedeckt 843 von 1027 Statements; Profile gemergt: store,replication)` | in der Closure nachgezogen: die Zeile darunter |
+| Nenner und gedeckte Zahl in den Sensor-Dokumenten (Suchlauf der Closure) | `git grep -c -w -e 1016 -e 2398 -e 830 -e 2033 -e 81.69 -e 84.90 <Stand> -- harness docs/user spec README.md AGENTS.md` | Stand `02b3059d` (vor dem Nachzug): `harness/sensors/coverage-gate.md` 4 Zeilen, `harness/sensors/db-adapter-coverage.md` 4 Zeilen, keine Zahl in `docs/user`, `spec`, `README.md`, `AGENTS.md`; Arbeitsbaum nach dem Nachzug: 0 Treffer. Neue Zahlen (`-e 1027 -e 2527 -e 843 -e 2096`): `coverage-gate.md` 2 Zeilen, `db-adapter-coverage.md` 3 Zeilen. Gemessen im Lauf der Closure: DB-Adapter `bash tools/harness/db-coverage.sh` über die abgelegten Profile druckt `DB-Adapter-Coverage: 82.08% (gedeckt 843 von 1027 Statements; Profile gemergt: store,replication)`, Anteile aus dem gemergten Profil abgeleitet: `postgresstorage` 686 (gedeckt 540), `postgresack` 32 (32), `postgressnapshot` 122 (118), `replication/receive` 187 (153); `make coverage-gate` (EXIT=0) druckt `total: (statements) 82.9%` und `coverage-gate: OK — Coverage 82.90% erfüllt Schwelle 80%`, das Profil des gebauten Images mit Awk über die Block-Position ausgezählt: gedeckt 2096 von 2527 (82,94 %), davon `postgressnapshot/snapshotlogic` 42 von 42. Übernommen: der Store-Lauf hinter dem Store-Profil (Verifikation §1, PostgreSQL 18); `83.00%` und `82.90%` desselben Stands `c092efa5` (Verifikation §1) | beide Sensor-Dokumente tragen die neuen Zahlen mit Lauf und Stand; die datierten Absätze zu `slice-097` und `slice-085` unverändert |
+| Zählwort „beiden" vor Antragsarten (Verifikation V-1) | `git grep -n -e 'beiden Tabellen-Antragsarten' <Stand> -- internal tools harness spec` | Parent `2d47d8a7` 9 Zeilen, `895b1faf` 6, `02b3059d` 5. Der Treffer `queries.go` (Kommentar zu `SelectAppliedColumnRequests`: die Abfrage schließt drei Antragsarten aus, nicht zwei) ist in `02b3059d` behoben. Verbleibende fünf Treffer (`model/administrationrequest.go` Zeilen 16, 37, 56; `administrationrequest_test.go` Zeile 234; `wiring.go` Zeile 1345) bezeichnen `enable`/`disable` (Träger von Bindungs- und Publication-Menge), neben denen `backfill` namentlich genannt wird; Kontext gelesen | behoben in `02b3059d`; die fünf Treffer unverändert |
 | E2E-Abdeckungs-Zeilennummern | `git diff --stat 2d47d8a7 -- test/integration tools/harness/run-integration-tests.sh` | leer (kein Treffer) | kein Nachzug; `make test-integration` lief unverändert grün (Regression der Verdrahtung, kein neuer Beleg) |
 
 
@@ -350,43 +352,73 @@ Lerneintrag geschrieben.
   entspricht der Form von `enable_table` (gelesen in `guard.go`), die Erkennung
   der neuen ist ungemessen. *Erwartet, zu belegen durch:* zweiter
   `make schema-rollout` und `run-schema-rollout-guard-test.sh`. **Ausgang:**
-  *(bei Closure)*
+  **entfallen** — der Guard erkennt die Funktion: der Guard-Test-Lauf endet
+  ungekürzt mit Exit 0 (Läufe 2 und 5 tragen den zweiten Rollout, Verifikation
+  §1), der Unit-Test in `guard_test.go` ist grün (`make test`), und die Mutation
+  „Eintrag `backfill_table(in:text,in:text,in:text)` aus `knownForeignObjects`
+  entfernt" färbt `guard_test.go` rot (Review, Mutation K1).
 - **Die neue View oder die erweiterte CHECK-Menge konvergiert nicht über einen
   Alt-Bestand.** Eine neue View konvergiert über einen Alt-Bestand (gemessen im
   Architect-Verdikt `architect-verdict-schema-rollout-view-signatur`,
   Szenario 5: Exit 0, zweiter Lauf Exit 0); CHECK-Menge und Funktion laufen über
   `nacharbeit-administration.sql` und sind über einen Alt-Bestand ungemessen.
   *Erwartet, zu belegen durch:* der Alt-Tag-Lauf von
-  `run-schema-rollout-guard-test.sh`. **Ausgang:** *(bei Closure)*
+  `run-schema-rollout-guard-test.sh`. **Ausgang:** **entfallen** — der
+  Alt-Tag-Lauf gegen `v0.1.2` endet dreimal mit Exit 0 (Rollout des Tags,
+  Arbeitsbaum mit Vorlauf, Arbeitsbaum zweiter Lauf) und prüft im Skript die
+  fünf `request_kind`-Werte, `EXECUTE` allein für `cdc_admin` und 19 Rechte der
+  drei Rollen; die Mutation „Funktion aus der `GRANT`-Zeile gestrichen" färbt
+  Lauf 5 rot (Verifikation §1 und §4, M-F1).
 - **`applied` wird als „Bestand kopiert" gelesen.** Bei dieser Antragsart heißt
   `applied` „angenommen"; die Ausführung steht in `cdc.backfill_run`. Ein Leser
   von `cdc.administration_request`, `diagnose` oder Handbuch könnte es anders
   deuten. *Erwartet, zu belegen durch:* [`SPEC-019`](../../../../spec/pflichtenheft.md) und Handbuch sagen es
-  ausdrücklich; Review liest beide. **Ausgang:** *(bei Closure)*
+  ausdrücklich; Review liest beide. **Ausgang:** **entfallen** —
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) („Für die Antragsart `backfill` heißt `applied`
+  **angenommen**") und das Handbuch (§4: „`applied` heißt hier „angenommen"",
+  Glossar „Angenommen (`applied` bei `backfill`)") sagen es; der Review las beide
+  ohne Befund, der Verifier las beide am Stand `c092efa5`.
 - **Die geschätzte Zeilenzahl wird zur Grenze** (`BEO-PGC/geschaetzter-wert-als-grenze`,
   offen, 1×): `pg_class.reltuples` ist eine Schätzung, für nie analysierte
   Tabellen als „unbekannt" erwartet (`-1`). Weder Handbuch noch Code dürfen sie
   als Grenze oder als `0` lesen; der Slice führt kein Ablehnen. *Erwartet, zu
   belegen durch:* Tests mit `-1` und die Wortwahl an jedem Träger. **Ausgang:**
-  *(bei Closure)*
+  **entfallen** für diesen Slice — die Tests tragen `NULL` als „unbekannt", nie
+  `0` (`TestFormatBackfillRunNamesTheEstimateAsEstimatedAndUnknownAsUnknown`,
+  `TestBackfillStatusViewShowsTheLatestRunPerTable`; die Mutation
+  `COALESCE(estimated_rows, 0)` färbt `TestDiagnoseReportsTheLatestBackfillRunPerTable`
+  rot, Review D1), und der Review las „geschätzt" an jeder Stelle der Zeilenzahl;
+  der Slice führt kein Ablehnen. Die Beobachtung `BEO-PGC/geschaetzter-wert-als-grenze`
+  bleibt mit ihrem Zähler (1×) unberührt: dieser Slice liefert kein Vorkommen.
 - **Ein `queued`-Run überlebt den Prozessstart nicht**, wenn der Worker nur einen
   In-Speicher-Kanal liest (`BEO-PGC/laufzeitzustand-ohne-dauerhaften-traeger`,
   verkörpert): der Träger ist die Tabelle, das Signal weckt nur. *Erwartet, zu
   belegen durch:* der Neustart-Test und der Test „Signal während eines Runs" des
-  zweiten Liefer-Punkts. **Ausgang:** *(bei Closure)*
+  zweiten Liefer-Punkts. **Ausgang:** **entfallen** — der Träger ist die Tabelle:
+  `TestBackfillWorkerRunsQueuedRunsAtStartInOrderAndSkipsTheOthers` (Aufnahme beim
+  Start, `interrupted` startet nicht), `TestReconcileBackfillRunsAgainstPostgreSQL`
+  (Abgleich gegen die reale Run-Tabelle) und
+  `TestBackfillWorkerKeepsASignalThatArrivesBetweenReadAndWait` (Signal zwischen
+  Lesung und Warten); die Mutationen M1, M2, M4 und M5 färben sie rot (Review).
 - **Die Administrations-Goroutine blockiert auf einer Kopie.** *Erwartet, zu
   belegen durch:* ein Test mit einem blockierenden Fake-Run, während ein
-  weiterer Antrag verarbeitet wird. **Ausgang:** *(bei Closure)*
+  weiterer Antrag verarbeitet wird. **Ausgang:** **entfallen** —
+  `TestBackfillRunDoesNotBlockTheAdministrationGoroutine` belegt es mit einem
+  blockierenden Fake-Run (Review und Verifikation §2 Zeile 2), `-race` grün.
 - **Das Handbuch nennt eine Aussage ohne Beleg** (Startposition eines frisch
   registrierten Consumers; Richtgröße): beide bleiben bis `e2e` bzw.
   `bench-richtgroesse` **außerhalb** des Handbuchs ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B).
-  *Erwartet, zu belegen durch:* Review des Abschnitts. **Ausgang:** *(bei
-  Closure)*
+  *Erwartet, zu belegen durch:* Review des Abschnitts. **Ausgang:** **entfallen** —
+  `grep -n -i 'Richtgr\|Startposition' docs/user/benutzerhandbuch.md` druckt keine
+  Zeile (Verifikation §6); der Review nennt beide Aussagen ausdrücklich als nicht im
+  Handbuch stehend.
 - **Handbuch und Änderungshistorie** (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`
   und `BEO-PGC/handbuch-versionshistorie-uebersprungen`, verkörpert, je 3×): der
   Slice liefert mehrere Oberflächen (Funktion, View, `diagnose`); jede braucht
   ihre Stelle. *Erwartet, zu belegen durch:* der Suchlauf-Eintrag und die neue
-  Historien-Zeile. **Ausgang:** *(bei Closure)*
+  Historien-Zeile. **Ausgang:** **entfallen** — `Version: 1.49` mit den
+  Historienzeilen 1.48 und 1.49 (Verifikation §6), der Suchlauf-Eintrag steht in §3;
+  Funktion, View und `diagnose` haben je ihre Stelle im Handbuch (§4, §2, Glossar).
 - **Eine Instanz je Quelle** trägt den Start-Abgleich; laufen zwei Instanzen gegen
   dieselbe Quelle, setzte die zweite den Run der ersten auf `interrupted`.
   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) legt „eine Instanz je Quelle" fest ([`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)-Muster für
@@ -397,21 +429,149 @@ Lerneintrag geschrieben.
   Login-Rollen mit zwei Quellen); gibt es für seine Quelle keine Instanz, bleibt
   er `pending`. Die vier übrigen Antragsarten lesen weiter alle offenen Anträge
   ohne Quellbezug (Bestand aus [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)); das ist eine benannte Grenze, kein
-  Teil dieses Slice. **Ausgang:** *(bei Closure)*
+  Teil dieses Slice. **Ausgang:** **weiter offen** — der Quellvergleich für die
+  Antragsart `backfill` ist umgesetzt und getestet; die Rest-Grenzen (die vier übrigen
+  Antragsarten ohne Quellbezug, zwei Instanzen derselben Quelle ohne Schutz) stehen im
+  Register `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (Zähler 2×).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** die Rollen-Kette lief in getrennten Kontexten und fand, was kein Gate
+  las. Der Review (3 HIGH · 3 MEDIUM · 3 LOW · 5 INFO, Summary des Reports) fand durch Nachfahren
+  und Mutieren, was die Läufe des Implementers grün ließ: den Guard-Lauf, der die zugesagten Rechte
+  nicht führte (F-1), die Quellfilter-Mutation von `diagnose`, die grün blieb (F-2, Mutation D2),
+  die Suchlauf-Zeile, deren Zahlen zu einem anderen Befehl gehörten (F-3), und das Handbuch-SQL,
+  das unter der genannten Rolle mit „permission denied" endete (F-4, ausgeführt gegen einen
+  ausgerollten Arbeitsbaum). Die Fixrunde (`b019cc2e`, `cabc6d14`, `947d9960`, `c0c6e286`,
+  `120139ec`, `d5e5ea99`, `55085f76`, `4981766a`, `c092efa5`) behob F-1 bis F-9 und setzte F-10 um; die
+  Verifikation bestätigte mit eigenen Läufen (Verifikation §1: `make gates`, `make test`,
+  `make a-check`, `make coverage-gate`, `make test-store` zweimal und der Guard-Test je EXIT=0),
+  mit vier Eingabeseiten-Mutationen der Fixrunde, alle rot (§4, M-F1, M-F2, M-F9, M-F10), mit dem
+  Alt-Tag-Lauf von `v0.1.2` (Lauf 5: Exit 0/0/0) und mit dem Suchlauf-Feld an beiden Ständen (§5).
+  Der Alt-Bestand-Beleg der Rollen-, Funktions- und CHECK-Zusagen steht im Repo (Lauf 5 des
+  Guard-Test-Skripts), nicht als Wegwerf-Messung im Scratchpad; die Vorbedingungen am Alt-Stand
+  (Funktion fehlt, CHECK ohne `backfill`, `cdc_admin` ohne `UPDATE`) verhindern, dass der Lauf
+  trivial grün ist.
+- **Was ging anders als geplant:** der Plan wuchs um `internal/bootstrap/backfill.go` als eigene
+  Datei, um die Wiederholung des Workers nach einem Fehlerdurchgang (`backfillRetryInterval`, 5 s;
+  ein Lesefehler ließe eine `queued`-Zeile sonst bis zum nächsten Signal liegen), um
+  `administrationDeps.source` (Quellvergleich für `backfill`, F-10) und um den Vermerk-Test von
+  `MarkApplied` (F-9); die Umfangsentscheidung („keine Rückführung nach `next/`") hielt am Diff:
+  33 Dateien, 2106 Zeilen am Stand `c188be43` (Verifikation §3.3, **übernommen**). Die Fixrunde lief
+  ohne eigenen Review-Report; der Verifier las, fuhr und mutierte das neue Material selbst (V-2).
+  Der Nachzug der Zahlen in den Sensor-Dokumenten fand in der Closure statt und steht mit
+  Lauf und Stand in `harness/sensors/db-adapter-coverage.md` (1027 Statements, gedeckt 843,
+  gedruckt `82.08%`) und `harness/sensors/coverage-gate.md` (2527 Statements, gedeckt 2096,
+  gedruckt `82.90%`); der Suchlauf der Closure steht als Zeile im Feld in §3. Ein einmaliger
+  Ausfall von `TestWALRetentionThresholdEndToEnd` im Lauf des Implementers ist mit dem
+  Repo-Skript nicht reproduzierbar (Review F-11: 30 von 30 und 12 von 12 grün am Slice-Stand und
+  am Parent) und ohne Fix im Register geführt.
+- **Verifier-Beobachtungen (V-1 bis V-5):** *V-1* (LOW) gezogen: der Kommentar zu
+  `SelectAppliedColumnRequests` nennt die drei Tabellen-Antragsarten (Commit `02b3059d`, reine
+  Kommentar-Korrektur); das Suchmuster der Plan-Zeile „Zählwörter" enthielt „vier", nicht „beiden"
+  (Lerneintrag unten). *V-2* benannt, kein Nachzug: die Fixrunde ohne eigenen Review-Report; die
+  DoD-Zeile „Review durchgeführt" ist durch den Report erfüllt. *V-3* gezogen: die Sensor-Dokumente
+  tragen die Zahlen dieses Laufs. *V-4* benannt, kein Nachzug: der Zweig „Publication-Mitgliedschaft
+  fehlt" ist im Use Case netzlos getestet, im Worker-Test gegen die reale Run-Tabelle nur der
+  Bindungs-Zweig; beide liegen in derselben Vorbedingungs-Prüfung des Use Cases. *V-5* im Register
+  (`BEO-PGC/test-schreibt-in-committete-datei`, `BEO-PGC/tier-skripte-hinterlassen-anonyme-volumes`).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Neuer Sensor-Umfang:* Lauf 5 des Guard-Test-Skripts
+  (`tools/harness/run-schema-rollout-guard-test.sh`) führt die Alt-Bestand-Zusagen im Repo — 19
+  Tabellen-/View-Rechte der drei Rollen, `EXECUTE` auf `cdc.backfill_table` allein für `cdc_admin`
+  (auch nicht `PUBLIC`) und die fünf `request_kind`-Werte —, gebunden an die Eingabeseite: die
+  Mutation „Funktion aus der `GRANT`-Zeile gestrichen" färbt Lauf 5 rot (Exit 1, Verifikation §4,
+  M-F1), die `REVOKE`-Zeile ohne die Funktion ebenfalls (§3, Fixrunden-Mutationen). Die Klasse ist nicht
+  neu: `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` erreicht mit diesem Slice 12×, Ausgang
+  bleibt **verkörpert** (der Reviewer fährt den Beleg; er fand hier einen Beleg-Befehl kleiner
+  als seine Beschreibung); `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (9×, F-2) trägt die
+  Ausprägung „Filter-Eingabe ohne Zeile außerhalb des Filters". *Geschärfte Regel
+  (Ausgangs-Kandidat, nicht entschieden):* ein Suchlauf nach einer bewegten **Menge** (vier → fünf
+  Antragsarten, sechs → sieben Fremdobjekte) sucht neben dem Symbolnamen auch die **Zählwörter** und
+  Aufzählungen (`vier`, `beiden`, `zwei`, `sechs`); der Symbolnamen-Suchlauf fand den Fall
+  in `queries.go` nicht, der Zählwort-Suchlauf des Verifiers fand den Rest, den die Fixrunde
+  übersah (V-1). Das ist die Hälfte der Grenze von [`AGENTS.md`](../../../../AGENTS.md) §3.13
+  („`grep` trifft zuverlässig Symbolnamen, nicht Zahlen"), die sich mit einem Zählwort-Muster
+  mechanisch schließen lässt — anders als ein Zeilen-Lokator, dessen Verschiebung keine
+  wiederholbare Spur trägt. Herkunft: `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  (5×, F-6, F-7, V-1); Träger-Kandidaten sind [`AGENTS.md`](../../../../AGENTS.md) §3.13 und der
+  Suchlauf-Schritt von `implement-slice`, die Entscheidung liegt beim Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md) (Architect). *Benannte Lücke (Architect):*
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1 („je
+  Quelle nimmt eine Instanz Anträge an") ist für die Antragsart `backfill` am Code gebunden — der
+  Vergleich `request.Source != deps.source` in `processAdministrationRequests`, Unit-Test mit zwei
+  Quellen, Login-Test mit einem Antrag einer fremden Quelle, Mutation rot (Verifikation M-F10), ohne
+  Port-Änderung. Die Rest-Grenze ist offen: die vier übrigen Antragsarten lesen weiter alle
+  offenen Anträge ohne Quellbezug (Bestand aus
+  [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)), und zwei Instanzen
+  derselben Quelle sind ohne Schutz. Beide ADRs sind `Accepted` und unberührbar; ob eine Ergänzung
+  nötig ist (Quellfilter der Queue-Lesung, neue ADR mit `Supersedes`), entscheidet der Architect
+  (`BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, 2×).
+- **Beobachtungs-Register (`../observations/`):** je Vorkommen eine `evidence/`-Datei
+  `slice-backfill-sql-administration.md`, Zähler = Zahl der Dateien (real ausgezählt).
+  *Bestehende Klassen:* `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (F-1, F-3) **12×**,
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (F-2) **9×**,
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-6, F-7, V-1) **5×** und
+  `BEO-PGC/test-schreibt-in-committete-datei` (V-5) **4×** stehen **über** der Schwelle 3×; ihr Ausgang
+  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md)
+  (die ersten beiden sind verkörpert mit Ausgangs-Kandidat, die letzten beiden ohne zugewiesenen
+  Ausgang). `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (F-10) **2×**, offen.
+  *Neue Klassen (je 1×, offen):* `BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig` (F-4),
+  `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (F-5), `BEO-PGC/formatierungs-drift-ohne-gate`
+  (F-8), `BEO-PGC/nicht-reproduzierbarer-test-ausfall` (F-11) und
+  `BEO-PGC/tier-skripte-hinterlassen-anonyme-volumes` (V-5). Kein Eintrag erreicht mit diesem Slice
+  erstmals 3×. *Benannt, nicht gezählt:* F-9 (Log-Meldung folgt der Bedeutung des Zustands
+  nicht, ein Vorkommen, in der Fixrunde behoben), F-12 (Zahl streut zwischen Läufen; die Sensor-Dateien
+  trugen ihre Zahlen mit Lauf, §3.12 erfüllt), F-13 und F-14 (Hinweise), V-3 und V-4.
+- **Träger-Übergaben (§3.13):** die vom Slice bewegten Eigenschaften, die offene Pläne beschreiben,
+  geprüft an deren Text: `slice-transformationen-antragsweg-schema` (§3-Zeile zum Guard-Test-Skript:
+  Lauf 5 vergleicht die `request_kind`-Menge exakt mit fünf Werten und prüft `EXECUTE` für die eine
+  Funktion; die Zeile führt den Alt-Tag-Lauf als „ausgeführt und geändert" und benennt Menge, Meldung
+  und `EXECUTE` je neue Funktion als Nachzug), `slice-backfill-bench-richtgroesse` (§3-Zeile
+  zu `diagnose`: der Ort ist `internal/bootstrap/backfill.go`, `diagnoseBackfillStatus`, nicht
+  `wiring.go`). Ohne Änderung geprüft: `slice-transformationen-start-reihenfolge` (die Start-Reihenfolge
+  Bindungsaufbau → Abgleich → Worker → Administrations-Goroutine → `stream.Run` stimmt mit der Zeile
+  „Startpfad des Backfill-Workers" überein), `slice-backfill-e2e` (nennt den Startzeitpunkt des
+  Runs, den zweiten Antrag als `failed` und `cdc.backfill_status`),
+  `slice-transformationen-antragsweg-usecase`, `slice-backfill-sdk-origin`,
+  `welle-backfill-bestand` und die Roadmap (keine Zustandsaussage berührt; die Register-Zähler in den
+  §8-Sichtungslisten der offenen Pläne sind Stände der jeweiligen Planungszeit, der Zähler steht im
+  Register).
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice belegt die Auslösung netzlos (Fakes) und im
+  Store-Tier; der Container-Lauf, den ein Nutzer auslösen und lesen kann, gehört zu `slice-backfill-e2e`
+  (§1 dieses Plans: „Der E2E-Beleg am Container — `e2e`"). Der Bedarf aus
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) („ein Backfill wird ausgelöst") wird mit dem
+  Wellen-Beleg validierbar. Kein stilles Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):** eine getrennte Rolle im frischen
+  Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in `done/` und greift daher erst nach
+  dem `git mv` — hier nicht ausgeführt.
+- **Folge-Slices:** keine neuen — die Folge-Slices der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`
+  (`slice-backfill-e2e`, `slice-backfill-bench-richtgroesse`, `slice-backfill-sdk-origin`); der
+  Start-Trigger von `slice-transformationen-antragsweg-schema` und
+  `slice-transformationen-start-reihenfolge` („nach `slice-backfill-sql-administration`") ist mit
+  dem Übergang nach `done/` erfüllt. Die Frage an den Architect zu
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) und
+  [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md) ist kein Slice, sie ist
+  im Register adressiert.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Guard erkennt die Funktion nicht)
+  **entfallen**, Guard-Test-Lauf und Mutation K1; Risiko 2 (View/CHECK über einen Alt-Bestand)
+  **entfallen**, Alt-Tag-Lauf `v0.1.2` Exit 0/0/0 mit den Rechte- und CHECK-Prüfungen im Skript;
+  Risiko 3 (`applied` als „Bestand kopiert" gelesen) **entfallen**, Spec und Handbuch sagen es;
+  Risiko 4 (geschätzte Zeilenzahl wird zur Grenze) **entfallen** für diesen Slice, Tests und Review;
+  Risiko 5 (`queued`-Run überlebt den Prozessstart nicht) **entfallen**, Neustart-, Abgleich- und
+  Signal-Tests; Risiko 6 (Administrations-Goroutine blockiert) **entfallen**, Test mit blockierendem
+  Fake-Run; Risiko 7 (Handbuch-Aussage ohne Beleg) **entfallen**, Suchlauf ohne Treffer und Review;
+  Risiko 8 (Handbuch und Änderungshistorie) **entfallen**, Version 1.49 mit Historienzeilen 1.48 und
+  1.49; Risiko 9 (eine Instanz je Quelle) **weiter offen** im Register
+  (`BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, 2×), der Quellvergleich für `backfill` ist umgesetzt.
+  Ein Risiko „DB-Adapter-Coverage bewegt Zähler und Nenner" führt dieser Plan nicht; der Nachzug der
+  beiden Sensor-Dokumente ist im Slice erledigt (siehe „Was ging anders als geplant" und §3).
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure.
+  Prüfung läuft regelkonform bei deren Closure: (a) *Anker* — der Lerneintrag trägt kein Feld
+  `liegt in <Zielort>`, der Ausgangs-Kandidat der Zählwort-Regel ist dem Lese-Schritt adressiert; (b)
+  *Folge-Slice* — `slice-backfill-e2e`, `slice-backfill-bench-richtgroesse` und
+  `slice-backfill-sdk-origin` existieren als Dateien in `open/`; (c) *Register* — die genannten
+  Verzeichnisse `BEO-PGC/<slug>` tragen je ein nicht leeres `evidence/`.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

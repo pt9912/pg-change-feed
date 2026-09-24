@@ -157,7 +157,7 @@ Antrags trägt der Folge-Slice.
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | zwei Antragsarten, Felder `RuleName`/`RuleSpec`, Konstruktor-Invarianten; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Lesen der zwei Spalten, Abbildung der Antragsarten. |
 | `internal/bootstrap/wiring.go` (+ Test) | update | nur der Fehlertext im `default`-Zweig von `applyAdministrationRequest` (nennt die geschlossene Menge). |
-| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/targets/schema-rollout.md` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
+| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/targets/schema-rollout.md` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt **und geändert** (Übergabe aus `slice-backfill-sql-administration`): Lauf 5 vergleicht die `request_kind`-Menge des Alt-Bestands nach dem Upgrade exakt mit den **fünf** Werten (`backfill,disable,enable,exclude_column,include_column`, samt Fehlermeldung „fünf Antragsarten") und prüft `EXECUTE` allein für die Funktion `cdc.backfill_table`; der Slice zieht Menge und Meldung auf sieben Werte nach und ergänzt `EXECUTE` (nur `cdc_admin`, nicht `PUBLIC`) je neue Funktion — sonst färbt Lauf 5 mit der Erweiterung rot. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene
 `request_kind`-Menge (Parent-Stand plus zwei)“, „die Menge der Fremdobjekte

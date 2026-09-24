@@ -153,7 +153,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 | `Makefile` (Target `bench`) | update | ruft das vierte Skript; Hilfetext und Kommentar zählen neu. |
 | `internal/application/usecase/backfill/` (+ Tests, Arbeitsname `warn.go`) | update | Toleranz- und Richtgrößen-Konstante, Auswertung beider Warnungen an einer Stelle; Fake-Uhr-Tests der Grenzfälle. |
 | Run-Zustands-Port, Annahme-Port und ihre Adapter | prüfen | tragen das Warn-Ergebnis in die zwei Warn-Spalten aus `run-store` (Warnung 1 über `Admit`, Warnung 2 über das Fortschritts-Update); ein Bedarf über die dort angelegten Spalten hinaus wäre ein Plan-Nachzug. |
-| `internal/bootstrap/wiring.go` (`Diagnose`) | prüfen | liest die zwei Warn-Spalten aus der View (`sql-administration`); enthält keine Auswertung und keine Konstante. |
+| `internal/bootstrap/backfill.go` (`diagnoseBackfillStatus`, `formatBackfillRun`; von `Diagnose` in `wiring.go` gerufen) | prüfen | liest die zwei Warn-Spalten aus der View (`sql-administration`, Abfrage `WHERE source_id = $1`); enthält keine Auswertung und keine Konstante. |
 | `internal/bootstrap/diagnose_test.go` | prüfen | zeigt die Warnung aus der View an; keine Grenzfälle der Auswertung (die liegen im Use-Case-Test). |
 | `docs/user/benutzerhandbuch.md` | update | Richtgröße im Abschnitt „Grenzwerte“ mit Ursprung; Diagnose-Beispiel; Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make bench` (drei → vier Skripte) — aus dem realen Lauf geschrieben. |
