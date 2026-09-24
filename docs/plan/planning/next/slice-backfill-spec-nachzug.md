@@ -24,7 +24,7 @@ von `cdc.backfill_run`/`cdc.backfill_status`), [`ARC-006`](../../../../spec/arch
 und `spec/architecture.md` §4 (Sequenz). Der Verweis zeigt **aufwärts**: die
 Spec nennt diesen Slice nie.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
