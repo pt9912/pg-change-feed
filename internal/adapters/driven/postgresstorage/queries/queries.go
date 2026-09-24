@@ -347,3 +347,103 @@ const UpdateAdministrationRequestFailed = `
 UPDATE cdc.administration_request
 SET status = 'failed', error_message = $2
 WHERE administration_request_id = $1 AND status = 'pending'`
+
+// SelectActiveBackfillRun liest, ob für die Tabelle ein Run im Zustand
+// `queued` oder `running` besteht (`SPEC-029`, `ADR-0111` Teilfrage 4): die
+// Prüfung „kein aktiver Run“ der Annahme-Transaktion (Lesen vor Einfügen).
+const SelectActiveBackfillRun = `
+SELECT EXISTS (
+    SELECT 1 FROM cdc.backfill_run
+    WHERE source_id = $1 AND schema_name = $2 AND table_name = $3
+      AND status IN ('queued', 'running')
+)`
+
+// InsertBackfillRun legt die Run-Zeile der Annahme an (`SPEC-029`): Status
+// `queued`, `rows_copied` und `warn_duration` tragen ihren Default,
+// `started_at`, `finished_at`, `snapshot_position` und `error_message` bleiben
+// NULL. `estimated_rows` geht als NULL, wenn die Schätzung unbekannt ist —
+// nie als 0. Die Spaltenliste ist explizit. Die Anlage hat keinen
+// `ON CONFLICT`-Zweig: eine doppelte `run_id` ist ein Fehler, keine
+// stille Wiederholung.
+const InsertBackfillRun = `
+INSERT INTO cdc.backfill_run
+    (run_id, source_id, schema_name, table_name, status, requested_at, estimated_rows, warn_estimated_size)
+VALUES ($1, $2, $3, $4, 'queued', $5, $6, $7)`
+
+// SelectQueuedBackfillRuns liest die `queued`-Runs einer Quelle in der
+// Aufnahme-Ordnung `(requested_at, run_id)` (`SPEC-029`). `error_message`
+// liest als leerer Text, wenn die Spalte NULL trägt.
+const SelectQueuedBackfillRuns = `
+SELECT run_id, source_id, schema_name, table_name, status, requested_at, started_at, finished_at,
+       snapshot_position, rows_copied, estimated_rows, COALESCE(error_message, ''),
+       warn_estimated_size, warn_duration
+FROM cdc.backfill_run
+WHERE source_id = $1 AND status = 'queued'
+ORDER BY requested_at, run_id`
+
+// UpdateBackfillRunRunning setzt einen `queued`-Run auf `running` und hält
+// den Beginn der Kopierdauer fest; die `WHERE`-Klausel lässt jeden anderen
+// Zustand unberührt — die Rückkehr trägt dann `RowsAffected() == 0`.
+const UpdateBackfillRunRunning = `
+UPDATE cdc.backfill_run
+SET status = 'running', started_at = $2
+WHERE run_id = $1 AND status = 'queued'`
+
+// UpdateBackfillRunProgress schreibt Snapshot-Position und
+// Fortschrittszähler eines `running`-Runs fort. `warn_duration` geht nur von
+// `false` nach `true` und bleibt danach unverändert (`SPEC-029`).
+const UpdateBackfillRunProgress = `
+UPDATE cdc.backfill_run
+SET snapshot_position = $2, rows_copied = $3, warn_duration = (warn_duration OR $4)
+WHERE run_id = $1 AND status = 'running'`
+
+// UpdateBackfillRunFinish hält den Endzustand eines Runs ohne Daten-Commit
+// fest (`failed`, `interrupted`, `completed` einer leeren Tabelle). Die
+// Übergänge sind `running` → jeder Endzustand und `queued` → `failed`;
+// jeder Endzustand ist endgültig, die `WHERE`-Klausel trifft ihn nicht.
+// `snapshot_position` bleibt bei NULL im Argument unverändert, ein leerer
+// Fehlertext geht als NULL.
+const UpdateBackfillRunFinish = `
+UPDATE cdc.backfill_run
+SET status = $2, finished_at = $3, snapshot_position = COALESCE($4::bigint, snapshot_position),
+    rows_copied = $5, error_message = NULLIF($6::text, ''), warn_duration = (warn_duration OR $7)
+WHERE run_id = $1 AND (status = 'running' OR (status = 'queued' AND $2::text = 'failed'))`
+
+// SelectBackfillRunStatus liest den Status einer Run-Zeile: die Unterscheidung
+// zwischen einem bereits beendeten Run (wirkungsloser Erfolg von `Finish`)
+// und einer fehlenden Zeile.
+const SelectBackfillRunStatus = `
+SELECT status FROM cdc.backfill_run WHERE run_id = $1`
+
+// UpdateBackfillRunInterrupted setzt jeden `running`-Run der Quelle auf
+// `interrupted` (Abgleich beim Prozessstart); `queued`-Runs bleiben
+// unberührt. Die Rückkehr trägt ihre Zahl.
+const UpdateBackfillRunInterrupted = `
+UPDATE cdc.backfill_run
+SET status = 'interrupted', finished_at = $2
+WHERE source_id = $1 AND status = 'running'`
+
+// UpdateBackfillRunCompleted schreibt den Endzustand `completed` eines Runs
+// mit Daten; die Anweisung steht als letzte der Schreibtransaktion, der
+// Commit folgt unmittelbar. Sie trifft nur einen `running`-Run.
+const UpdateBackfillRunCompleted = `
+UPDATE cdc.backfill_run
+SET status = 'completed', finished_at = $2, snapshot_position = COALESCE($3::bigint, snapshot_position),
+    rows_copied = $4, warn_duration = (warn_duration OR $5)
+WHERE run_id = $1 AND status = 'running'`
+
+// InsertBackfillTransaction persistiert die synthetische Transaktion eines
+// Blocks. Anders als `InsertTransaction` hat die Anweisung keinen
+// `ON CONFLICT`-Zweig: eine bereits vorhandene Block-Kennung ist ein Fehler
+// des Runs, kein idempotenter Wiederholungsfall.
+const InsertBackfillTransaction = `
+INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committed_at)
+VALUES ($1, $2, $3, $4)`
+
+// InsertBackfillChange persistiert einen Change eines Blocks. Die Spaltenliste
+// ist explizit; `origin` steht als letzte Spalte. Kein `ON CONFLICT`-Zweig,
+// dieselbe Begründung wie `InsertBackfillTransaction`.
+const InsertBackfillChange = `
+INSERT INTO cdc.change
+    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)`

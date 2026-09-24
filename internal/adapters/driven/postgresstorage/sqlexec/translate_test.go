@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/sqlexec"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
@@ -1110,3 +1111,85 @@ func TestReadPendingRequestsClassifiesIterationFailure(t *testing.T) {
 var _ sqlexec.Executor = (*fakeExecutor)(nil)
 
 var _ pgx.Rows = (*fakeRows)(nil)
+
+// --- Backfill-Runs ---
+
+// backfillRunRow trägt eine Ergebnis-Zeile der Run-Abfrage in der Spalten-
+// Reihenfolge von `ReadBackfillRuns`.
+func backfillRunRow(runID, status string, started *time.Time, position, estimate *int64) []any {
+	return []any{
+		runID, "src-1", "public", "orders", status, time.Unix(100, 0).UTC(), started, (*time.Time)(nil),
+		position, int64(3), estimate, "", false, true,
+	}
+}
+
+func TestReadBackfillRunsTranslatesRuns(t *testing.T) {
+	started := time.Unix(200, 0).UTC()
+	position := int64(7000)
+	estimate := int64(50)
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		backfillRunRow("run-1", "running", &started, &position, &estimate),
+		backfillRunRow("run-2", "queued", nil, nil, nil),
+	}}}
+	recorder := &failRecorder{class: outbound.ErrBackfillStorage}
+
+	runs, err := sqlexec.ReadBackfillRuns(context.Background(), exec, sqlexec.Statement{
+		SQL:  "SELECT runs",
+		Args: []any{"src-1"},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadBackfillRuns: %v", err)
+	}
+	if len(runs) != 2 || runs[0].ID != "run-1" || runs[1].ID != "run-2" {
+		t.Fatalf("Runs = %+v", runs)
+	}
+	if runs[0].Status != model.BackfillRunRunning || runs[0].StartedAt.UnixNanos != started.UnixNano() ||
+		runs[0].SnapshotPosition.Offset != 7000 || runs[0].RowsCopied != 3 || !runs[0].WarnDuration {
+		t.Fatalf("Run 1 = %+v", runs[0])
+	}
+	if rows, known := runs[0].EstimatedRows.Rows(); !known || rows != 50 {
+		t.Fatalf("Schätzung Run 1 = %d, bekannt %v", rows, known)
+	}
+	if _, known := runs[1].EstimatedRows.Rows(); known {
+		t.Fatal("NULL-Schätzung liest als bekannt")
+	}
+	if len(exec.queries) != 1 || exec.queries[0].sql != "SELECT runs" || !reflect.DeepEqual(exec.queries[0].args, []any{"src-1"}) {
+		t.Fatalf("Query-Aufrufe = %v", exec.queries)
+	}
+}
+
+func TestReadBackfillRunsLeavesDomainFailureUnclassified(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		backfillRunRow("run-1", "paused", nil, nil, nil),
+	}}}
+	recorder := &failRecorder{class: outbound.ErrBackfillStorage}
+
+	_, err := sqlexec.ReadBackfillRuns(context.Background(), exec, sqlexec.Statement{SQL: "SELECT runs", Fail: recorder.fail})
+
+	if !stderrors.Is(err, mapper.ErrUnknownBackfillStatus) {
+		t.Fatalf("erwartete die Status-Invariante, gesehen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("ein Domänen-Fehler läuft nicht durch den Übersetzungspunkt: %v", recorder.causes)
+	}
+}
+
+func TestReadBackfillRunsClassifiesDriverFailures(t *testing.T) {
+	cause := stderrors.New("Treiber-Fehler")
+	cases := map[string]*fakeExecutor{
+		"Abfrage":   {queryErr: cause},
+		"Scan":      {rows: &fakeRows{rows: [][]any{backfillRunRow("run-1", "queued", nil, nil, nil)}, scanErrs: map[int]error{0: cause}}},
+		"Iteration": {rows: &fakeRows{iterErr: cause}},
+	}
+	for name, exec := range cases {
+		recorder := &failRecorder{class: outbound.ErrBackfillStorage}
+		_, err := sqlexec.ReadBackfillRuns(context.Background(), exec, sqlexec.Statement{SQL: "SELECT runs", Fail: recorder.fail})
+		if !stderrors.Is(err, outbound.ErrBackfillStorage) || !stderrors.Is(err, cause) {
+			t.Fatalf("%s: Fehler trägt nicht Klasse und Ursache: %v", name, err)
+		}
+		if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+			t.Fatalf("%s: Übersetzungspunkt gesehen: %v", name, recorder.causes)
+		}
+	}
+}

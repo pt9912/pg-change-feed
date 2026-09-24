@@ -415,3 +415,111 @@ func TestMetricsViewCarriesStorageBytes(t *testing.T) {
 		t.Fatalf("cdc_storage_bytes = %v, wollen > 0 nach dem Einfügen von Testdaten", storageBytes)
 	}
 }
+
+// Die drei Tests unten belegen den Rollenschnitt auf `cdc.backfill_run`
+// (`SPEC-029`, `ADR-0113` Festlegung 1, `LH-QA-SEC-001`…`003`) je Rolle
+// real: was die Rolle darf, gelingt; was sie nicht darf, scheitert mit
+// SQLSTATE 42501. Rot färbende Mutation je Zeile der Grants in
+// `tools/schema/nacharbeit-roles.sql`: `INSERT` an `cdc_capture`, `UPDATE`
+// oder `DELETE` an `cdc_admin`, `SELECT` an `cdc_reader` ergänzen bzw. den
+// erlaubten Grant streichen — der jeweilige Test meldet die abweichende
+// Zeile.
+const backfillRoleRun = "roles-backfill-run"
+
+// seedBackfillRoleRun legt als Superuser die Run-Zeile an, an der die
+// Rollen-Tests schreiben und lesen, und räumt sie ab.
+func seedBackfillRoleRun(t *testing.T, pool *pgxpool.Pool) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Run-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status)
+		 VALUES ($1, $2, 'public', 'roles_backfill', 'queued')`, backfillRoleRun, rolesTestSource,
+	); err != nil {
+		t.Fatalf("Run-Zeile anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE run_id LIKE $1", backfillRoleRun+"%")
+	})
+}
+
+// asRole reserviert eine Verbindung und setzt die Rolle; das Zurücksetzen
+// übernimmt die Bereinigung des Tests.
+func asRole(t *testing.T, pool *pgxpool.Pool, role string) *pgxpool.Conn {
+	t.Helper()
+	ctx := context.Background()
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		t.Fatalf("Verbindung reservieren: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = conn.Exec(ctx, "RESET ROLE")
+		conn.Release()
+	})
+	if _, err := conn.Exec(ctx, "SET ROLE "+role); err != nil {
+		t.Fatalf("SET ROLE %s: %v", role, err)
+	}
+	return conn
+}
+
+func TestCdcCaptureRoleUpdatesBackfillRunButNeitherInsertsNorDeletes(t *testing.T) {
+	pool := newTestRolesConn(t)
+	seedBackfillRoleRun(t, pool)
+	conn := asRole(t, pool, "cdc_capture")
+	ctx := context.Background()
+
+	var status string
+	if err := conn.QueryRow(ctx, "SELECT status FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun).Scan(&status); err != nil {
+		t.Fatalf("cdc_capture SELECT auf backfill_run: erwartet Erfolg, %v", err)
+	}
+	tag, err := conn.Exec(ctx, "UPDATE cdc.backfill_run SET status = 'running', started_at = now() WHERE run_id = $1", backfillRoleRun)
+	if err != nil || tag.RowsAffected() != 1 {
+		t.Fatalf("cdc_capture UPDATE auf backfill_run: erwartet Erfolg auf 1 Zeile, %v (Zeilen %d)", err, tag.RowsAffected())
+	}
+	if _, err := conn.Exec(ctx,
+		`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status)
+		 VALUES ($1, $2, 'public', 'roles_backfill_capture', 'queued')`, backfillRoleRun+"-capture", rolesTestSource,
+	); !permissionDenied(err) {
+		t.Fatalf("cdc_capture INSERT auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+	if _, err := conn.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun); !permissionDenied(err) {
+		t.Fatalf("cdc_capture DELETE auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}
+
+func TestCdcAdminRoleInsertsBackfillRunButNeitherUpdatesNorDeletes(t *testing.T) {
+	pool := newTestRolesConn(t)
+	seedBackfillRoleRun(t, pool)
+	conn := asRole(t, pool, "cdc_admin")
+	ctx := context.Background()
+
+	if _, err := conn.Exec(ctx,
+		`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status)
+		 VALUES ($1, $2, 'public', 'roles_backfill_admin', 'queued')`, backfillRoleRun+"-admin", rolesTestSource,
+	); err != nil {
+		t.Fatalf("cdc_admin INSERT auf backfill_run: erwartet Erfolg, %v", err)
+	}
+	var status string
+	if err := conn.QueryRow(ctx, "SELECT status FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun).Scan(&status); err != nil {
+		t.Fatalf("cdc_admin SELECT auf backfill_run: erwartet Erfolg, %v", err)
+	}
+	if _, err := conn.Exec(ctx, "UPDATE cdc.backfill_run SET status = 'running' WHERE run_id = $1", backfillRoleRun); !permissionDenied(err) {
+		t.Fatalf("cdc_admin UPDATE auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+	if _, err := conn.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun); !permissionDenied(err) {
+		t.Fatalf("cdc_admin DELETE auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}
+
+func TestCdcReaderRoleCannotReadTheBackfillRunBaseTable(t *testing.T) {
+	pool := newTestRolesConn(t)
+	seedBackfillRoleRun(t, pool)
+	conn := asRole(t, pool, "cdc_reader")
+
+	var status string
+	if err := conn.QueryRow(context.Background(), "SELECT status FROM cdc.backfill_run WHERE run_id = $1", backfillRoleRun).Scan(&status); !permissionDenied(err) {
+		t.Fatalf("cdc_reader SELECT auf backfill_run: erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", err)
+	}
+}

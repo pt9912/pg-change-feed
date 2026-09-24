@@ -298,3 +298,47 @@ func RegisterConsumer(ctx context.Context, exec Executor, statement Statement) (
 	}
 	return tag.RowsAffected() == 1, nil
 }
+
+// ReadBackfillRuns liest Run-Zeilen (`SPEC-029`) in der Ordnung der Abfrage;
+// jede Zeile läuft durch den Mapper und damit durch die Domänen-Konstruktoren
+// (`ADR-0029`) — eine Zeile außerhalb der Invarianten endet sichtbar, nicht
+// als still gefälschter Run.
+func ReadBackfillRuns(ctx context.Context, exec Executor, statement Statement) ([]model.BackfillRun, error) {
+	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
+	if err != nil {
+		return nil, statement.fail(err)
+	}
+	defer rows.Close()
+
+	runs := make([]model.BackfillRun, 0)
+	for rows.Next() {
+		var row mapper.BackfillRunRow
+		if err := rows.Scan(
+			&row.RunID,
+			&row.SourceID,
+			&row.Schema,
+			&row.Table,
+			&row.Status,
+			&row.RequestedAt,
+			&row.StartedAt,
+			&row.FinishedAt,
+			&row.SnapshotPosition,
+			&row.RowsCopied,
+			&row.EstimatedRows,
+			&row.ErrorMessage,
+			&row.WarnEstimatedSize,
+			&row.WarnDuration,
+		); err != nil {
+			return nil, statement.fail(err)
+		}
+		run, err := mapper.ToBackfillRun(row)
+		if err != nil {
+			return nil, err
+		}
+		runs = append(runs, run)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, statement.fail(err)
+	}
+	return runs, nil
+}
