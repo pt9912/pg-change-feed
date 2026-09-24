@@ -17,12 +17,22 @@ dann `tools/coverage-gate.sh` gegen `THRESHOLD`
 
 Die Paketliste der Stufe kommt aus `go list`; der Filter nimmt die vier
 Pakete aus, deren Testlauf einen externen Dienst voraussetzt
-(`postgresstorage` ohne das Unterpaket `mapper`, `postgresack`,
-`postgressnapshot`, `replication/receive`). Die tragende Regel ist die
-**Eigenschaft**, nicht die Liste: Ein Paket, dessen Testlauf einen externen
+(`postgresstorage`, `postgresack`, `postgressnapshot`,
+`replication/receive`). Das Muster ist END-verankert und trifft genau diese
+Pakete, nicht ihre Unterpakete: `postgresstorage/mapper` und
+`postgressnapshot/snapshotlogic` bleiben im Gegenstand. Die tragende Regel ist
+die **Eigenschaft**, nicht die Liste: Ein Paket, dessen Testlauf einen externen
 Dienst voraussetzt, ist nicht Gegenstand dieses Gates. Die DB-gestützte Ebene
 dieser vier Pakete trägt ihre eigene, subjekt-qualifizierte Messung
 (`ADR-0071` Punkt 3).
+
+Vor dem Bau hält
+[`tools/harness/db-package-lists-check.sh`](../../tools/harness/db-package-lists-check.sh)
+die namentlichen Stellen der Liste gleich (Filter, `DB_COVERAGE_PKGS`, die
+Paketlisten der beiden Messläufe; Vertrag:
+[`db-adapter-coverage.md`](db-adapter-coverage.md) §Gegenstand); ein
+Unterschied färbt `make coverage-gate` rot, bevor der Bau läuft (§Grenze
+Nr. 8).
 
 `test/integration/` bleibt außerhalb: eigenständige `integration_test`-
 Paketwurzel unter `test/` mit Black-Box-Tests gegen einen laufenden
@@ -52,7 +62,18 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der aktuelle Nenner ist 1936, nicht 1903** (Lauf `slice-097`, der
+**Der Nenner der Stufe ist 2082** (Lauf `slice-backfill-snapshot-reader`,
+Fixrunde: die Stufe nachgestellt — `go test -coverpkg=<Paketliste der Stufe>
+-covermode=atomic`, dedupliziert über die Block-Position; gedeckt **1731 von
+2082**, gedruckt `total: (statements) 83.1%`; `make coverage-gate` desselben
+Stands druckt `Coverage 83.20%`). Der Stand davor misst im selben Verfahren
+**1691 von 2040** (gedruckt `82.9%`); die 42 Statements Unterschied sind das
+Unterpaket `postgressnapshot/snapshotlogic` (42 von 42 gedeckt), das im
+Gegenstand liegt. Die gedeckte Zahl ist lauf-gebunden: zwei Läufe desselben
+Stands druckten `83.1%` und `83.2%`.
+
+**Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
+`slice-097`, der
 Architect-Verdikt zum Coverage-Messgegenstand von `slice-097` §2/§5) — die
 Differenz trägt zwei Ursachen: `slice-096` bewegte Produktionscode in
 `internal/bootstrap/{config_file,wiring}.go` (+33, abgeleitet), und `slice-097`
@@ -124,10 +145,10 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
   eingeschlossen, netzlos) — **30/32**, **31/472** und **112/187**, Lauf
   `slice-085`; die Stufe dieses Gates nimmt die drei Pakete aus und
   instrumentiert sie darum nicht. Das vierte ausgenommene Paket
-  (`postgressnapshot`, 157 Statements laut Nenner der DB-Adapter-Coverage)
+  (`postgressnapshot`, 122 Statements laut Nenner der DB-Adapter-Coverage)
   trägt netzlos **0** gedeckte Statements: jeder seiner Tests überspringt ohne
-  `CDC_REPLICATION_TEST_DSN` (Lauf `slice-backfill-snapshot-reader`,
-  `go test -v` ohne Netz und ohne Variable, jeder Test `SKIP`).
+  `CDC_REPLICATION_TEST_DSN` (Lauf `slice-backfill-snapshot-reader`, Fixrunde,
+  `go test -v` ohne Netz und ohne Variable: 21 Tests, 21 `SKIP`).
 
 ## Grenze — was das Grün nicht abdeckt
 
@@ -144,7 +165,11 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    Punkt 3. Das Unterpaket `postgresstorage/mapper` bleibt im Gegenstand
    (20 Statements, 20 gedeckt, Lauf `slice-089`) — und ist damit **nicht** Teil der
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
-   die zwei Zahlen überlappen nicht.
+   die zwei Zahlen überlappen nicht. Ebenso bleibt das Unterpaket
+   `postgressnapshot/snapshotlogic` im Gegenstand (42 Statements, 42 gedeckt;
+   Lauf `slice-backfill-snapshot-reader`, Fixrunde): es trägt die netzlos
+   prüfbare Logik des Snapshot-Adapters, die deshalb nicht im ausgenommenen
+   Paket liegt.
 
    **Drei Pakete des Gegenstands führen keine Testdatei** — kein eigenes und
    kein externes Testpaket. Die Gruppierung ist mechanisch, nicht gezählt nach
@@ -195,8 +220,8 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
 3. **Keine Zeilen-Ausnahme.** Das Gate hat strukturell keinen
    Suppression-Pfad (`AGENTS.md` §3.2) — die Gesamt-Coverage besteht oder
    scheitert als Zahl.
-4. **Die Rücknahme eines ausgenommenen Pakets ist nur unvollständig
-   gewächtert.** **Rückrechnung, datiert** — *kein eigener Lauf*, und die drei
+4. **Die Rücknahme eines ausgenommenen Pakets ist durch die Prozent-Schwelle
+   nur unvollständig gewächtert.** **Rückrechnung, datiert** — *kein eigener Lauf*, und die drei
    Paket-Zahlen stammen aus dem Stand von `slice-085`: wird `postgresack`
    wieder in `-coverpkg` genommen, blieb die Stufe **damals** (`THRESHOLD=70`)
    grün — `(1369 + 30) / (1903 + 32) = 72,30 %` ≥ 70; dasselbe galt für die
@@ -222,27 +247,29 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    entfernt: `postgresstorage` mit −11,05 Prozentpunkten darunter, die beiden
    grünen mit **+2,30** (`postgresack`) und **+0,86** Prozentpunkten
    (`replication/receive`) darüber — zum Kippen wären dort ≈45 bzw. ≈18
-   Statements nötig. **Der
-   Wächter ist** damit allein die Prozent-Schwelle, und sie trägt die
+   Statements nötig. **Innerhalb der Stufe ist**
+   die Prozent-Schwelle damit der einzige Wächter dieser Rücknahmen, und sie trägt die
    Gegenstands-Hälfte der Fitness Function aus
    [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
    („keine Block-Position im Profil liegt in …“) nicht vollständig: einen
-   eigenen Sensor hat kein Rücknahme-Fall, und die Schwelle fängt nur einen der
-   drei — **zwei** bleiben grün. Der
+   eigenen Sensor hat innerhalb der Stufe kein Rücknahme-Fall, und die Schwelle
+   fängt nur einen der drei — **zwei** bleiben dort grün. Der
    Re-Evaluierungs-Trigger (a) derselben ADR greift beim Kommen oder Gehen
    eines Pakets, nicht bei der Rücknahme eines bereits ausgenommenen.
 
    **Das vierte ausgenommene Paket, `postgressnapshot`, ist gemessen
    gewächtert.** Seine Tests überspringen netzlos alle, es trägt netzlos **0**
    gedeckte Statements; nimmt der Filter der Stufe es nicht mehr aus, färbt die
-   Prozent-Schwelle rot: der Lauf `slice-backfill-snapshot-reader` mit dem
-   Dockerfile-Filter ohne `postgressnapshot` druckt
-   `coverage-gate: FAIL — Coverage 77.00% unter Schwelle 80%` (Exit ≠ 0 des
+   Prozent-Schwelle rot: der Lauf `slice-backfill-snapshot-reader` (Fixrunde)
+   mit dem Dockerfile-Filter ohne `postgressnapshot` druckt
+   `coverage-gate: FAIL — Coverage 78.60% unter Schwelle 80%` (Exit ≠ 0 des
    `docker build`). Mit dem Eintrag druckt derselbe Stand
-   `coverage-gate: OK — Coverage 82.90% erfüllt Schwelle 80%` (ein zweiter Lauf
-   desselben Stands druckte `82.80%`: die in §Zählbasis benannte Schwankung).
-   Von den vier Rücknahme-Fällen färben damit **zwei** die Stufe rot
-   (`postgresstorage`, `postgressnapshot`) und **zwei** bleiben grün.
+   `coverage-gate: OK — Coverage 83.20% erfüllt Schwelle 80%`. Von den vier
+   Rücknahme-Fällen färben damit **zwei** die Stufe über die Prozent-Schwelle rot
+   (`postgresstorage`, `postgressnapshot`) und **zwei** bleiben dort grün.
+   Über die Prozent-Schwelle hinaus färbt `db-package-lists-check.sh`
+   (`make coverage-gate` ruft es vor dem Bau) **jede** der vier Rücknahmen rot:
+   der Filter weicht dann von `DB_COVERAGE_PKGS` ab (Nr. 8).
 5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die vier
    ausgenommenen Pakete in der Testpaket-Liste stehen oder nicht, ändert die
    Zahl nicht — ihre Testdateien überspringen netzlos ohnehin. **Der Wächter
@@ -269,12 +296,23 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    `kindUmgebung` (`cmd/pg-change-feed/main_test.go`), und ihr Entdecker ist der
    Vergleich zweier Profile.
 
+8. **Die Gleichheit der namentlichen Listen ist gewächtert, die Eigenschaft
+   nicht.** `db-package-lists-check.sh` prüft, dass Dockerfile-Filter,
+   `DB_COVERAGE_PKGS` und die Paketlisten der beiden Messläufe dieselben Pakete
+   nennen: das Streichen von `postgressnapshot` aus je einer der vier Stellen, das
+   Ersetzen von `postgresstorage` in der Store-Liste und ein unbekannter
+   Filter-Eintrag enden je mit Exit 1 (Lauf `slice-backfill-snapshot-reader`,
+   Fixrunde). Ob ein Paket die Eigenschaft „Testlauf setzt einen externen Dienst
+   voraus" trägt, und ob jeder seiner Tests ohne Datenbank überspringt, prüft kein
+   Sensor — Disziplin, benannt in
+   [`db-adapter-coverage.md`](db-adapter-coverage.md) §Grenze Nr. 8.
+
 ## Ausgabe und Ausgänge
 
 | Exit | Bedeutung |
 |---|---|
 | 0 | Gesamt-Coverage ≥ `THRESHOLD` |
-| 1 | Gesamt-Coverage < `THRESHOLD` (`coverage-gate: FAIL`) |
+| 1 | Gesamt-Coverage < `THRESHOLD` (`coverage-gate: FAIL`) oder die Paketlisten weichen ab (`db-package-lists-check:`-Meldung, Bau nicht gestartet) |
 | 2 | Coverage-Eingabe fehlt/leer, `total:`-Zeile fehlt, oder Prozentwert nicht parsbar |
 
 Rot-/Grün-Beleg (real, [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md);
@@ -291,4 +329,5 @@ Schwelle 70%`, Exit 0).
 
 [`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 · [`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)
-· `tools/coverage-gate.sh` · `harness/mk/coverage.mk` · seit slice-049.
+· `tools/coverage-gate.sh` · `tools/harness/db-package-lists-check.sh` ·
+`harness/mk/coverage.mk` · seit slice-049.

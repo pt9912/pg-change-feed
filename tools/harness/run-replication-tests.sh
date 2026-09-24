@@ -18,7 +18,8 @@
 #             `replication.coverprofile` in DB_COVERAGE_DIR und ruft
 #             tools/harness/db-coverage.sh; dessen Exit ist das Verdikt der
 #             DB-Adapter-Coverage (kein Gate).
-#   tier    — der Tier-weite `go test ./...`.
+#   tier    — der Tier-weite `go test ./...` und der Slot-Reserve-Lauf des
+#             Snapshot-Adapters gegen einen eigenen PostgreSQL.
 # Ohne Argument (make test-replication) laufen beide Phasen nacheinander.
 # Die Trennung haelt beide Verdikte lesbar: der Tier-Lauf fuehrt `go test ./...`
 # ueber den ganzen Baum — im selben Schritt verschluckte sein Exit das Verdikt
@@ -41,6 +42,7 @@ PG_TEST_IMAGE=${PG_TEST_IMAGE:-postgres:18-alpine@sha256:63bdc97d67b5133bf0e5ebd
 GO_MODCACHE_VOLUME=${GO_MODCACHE_VOLUME:-pg-change-feed-gomodcache}
 NETWORK=cdc-repl-test
 PG_CONTAINER=cdc-repl-test-pg
+PG_EXCLUSIVE_CONTAINER=cdc-repl-test-pg-slot1
 PG_DB=cdc_test
 PG_USER=cdc
 PG_PASSWORD=cdc
@@ -48,7 +50,7 @@ PG_PASSWORD=cdc
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"
 
 cleanup() {
-  docker rm -f "$PG_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -f "$PG_CONTAINER" "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -59,18 +61,18 @@ docker run -d --name "$PG_CONTAINER" \
   -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
   "$PG_TEST_IMAGE" -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10 -c wal_sender_timeout=2000 >/dev/null
 
-ready=0
-for _ in $(seq 1 60); do
-  if docker exec "$PG_CONTAINER" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
-    ready=1
-    break
-  fi
-  sleep 1
-done
-if [ "$ready" -ne 1 ]; then
-  echo "run-replication-tests: Testcontainer wurde nicht bereit" >&2
-  exit 1
-fi
+wait_ready() {
+  local container=$1
+  for _ in $(seq 1 60); do
+    if docker exec "$container" pg_isready -U "$PG_USER" -d "$PG_DB" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "run-replication-tests: Testcontainer $container wurde nicht bereit" >&2
+  return 1
+}
+wait_ready "$PG_CONTAINER"
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
@@ -126,4 +128,29 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
     -e GOCACHE=/tmp/gocache \
     -e CDC_REPLICATION_TEST_DSN="$DSN" \
     "$TOOLCHAIN_IMAGE" go test ./...
+
+  # Slot-Reserve des Snapshot-Adapters: `TestSlotReserveExhaustedIsConfiguration`
+  # braucht einen PostgreSQL mit `max_replication_slots=1` und läuft deshalb
+  # gegen einen eigenen Container, nicht gegen den gemeinsamen der Pakete
+  # oben. Ein Lauf, in dem der Test nicht als PASS erscheint (Name
+  # verschoben, Variable ungelesen), ist rot.
+  docker rm -f "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
+  docker run -d --name "$PG_EXCLUSIVE_CONTAINER" \
+    --network "$NETWORK" \
+    -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
+    "$PG_TEST_IMAGE" -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=1 >/dev/null
+  wait_ready "$PG_EXCLUSIVE_CONTAINER"
+  reserve_out=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_EXCLUSIVE_CONTAINER:5432/$PG_DB?sslmode=disable" \
+    "$TOOLCHAIN_IMAGE" go test -count=1 -v -run '^TestSlotReserveExhaustedIsConfiguration$' \
+      ./internal/adapters/driven/postgressnapshot 2>&1) || { printf '%s\n' "$reserve_out"; exit 1; }
+  printf '%s\n' "$reserve_out"
+  if ! grep -q -- '--- PASS: TestSlotReserveExhaustedIsConfiguration' <<<"$reserve_out"; then
+    echo "run-replication-tests: TestSlotReserveExhaustedIsConfiguration ist nicht als PASS gelaufen" >&2
+    exit 1
+  fi
 fi

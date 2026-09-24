@@ -24,19 +24,33 @@ Punkt 4).
 
 ## Gegenstand
 
-`internal/adapters/driven/postgresstorage` **ohne** das Unterpaket `mapper`,
+`internal/adapters/driven/postgresstorage`,
 `internal/adapters/driven/postgresack`,
 `internal/adapters/driven/postgressnapshot`,
 `internal/adapters/driving/replication/receive`
 ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 Punkt 1). Die tragende Regel ist die **Eigenschaft**, nicht die Liste: Ein
-Paket, dessen Testlauf einen externen Dienst voraussetzt, gehört hierher. Das
-Unterpaket `mapper` bleibt im Unit-Gegenstand (`make coverage-gate`) — die zwei
-Zahlen überlappen deshalb **nicht**, ihre Gegenstände sind verschieden.
+Paket, dessen Testlauf einen externen Dienst voraussetzt, gehört hierher. Die
+Namen der Liste treffen genau das genannte Paket (`-coverpkg` und das
+END-verankerte Filter-Muster der Dockerfile-Stufe), nicht seine Unterpakete:
+`postgresstorage/mapper` und `postgressnapshot/snapshotlogic` bleiben im
+Unit-Gegenstand (`make coverage-gate`) — die zwei Zahlen überlappen deshalb
+**nicht**, ihre Gegenstände sind verschieden.
 
-Der **einzige Träger** der Gegenstandsliste ist
-`tools/harness/db-coverage.sh --coverpkg`; die beiden Läufe lesen sie von dort
-(`-coverpkg`), statt sie zu wiederholen.
+**Die Liste steht an vier Stellen**, und
+[`tools/harness/db-package-lists-check.sh`](../../tools/harness/db-package-lists-check.sh)
+hält sie gleich (Bestandteil von `make coverage-gate`, netzlos, read-only):
+`DB_COVERAGE_PKGS` in `tools/harness/db-coverage.sh` (`--coverpkg`, von beiden
+Messläufen gelesen), das Ausschluss-Muster der Dockerfile-Stufe `coverage`,
+die `go test`-Paketliste des Messlaufs in `tools/harness/run-store-tests.sh`
+und die in `tools/harness/run-replication-tests.sh`. Gleich heißt: der Filter
+nimmt genau die Pakete von `DB_COVERAGE_PKGS` aus, und die beiden Messläufe
+testen zusammen genau diese Pakete. Real geprüft (Lauf
+`slice-backfill-snapshot-reader`, Fixrunde): das Streichen von
+`postgressnapshot` aus `DB_COVERAGE_PKGS`, aus der Liste der Messphase oder
+aus dem Dockerfile-Filter, das Ersetzen von `postgresstorage` in der Store-Liste
+und ein unbekannter Filter-Eintrag enden je mit Exit 1 des Skripts. Was es
+nicht prüft, steht in §Grenze Nr. 8.
 
 ## Zählbasis
 
@@ -45,22 +59,24 @@ Der **einzige Träger** der Gegenstandsliste ist
   Statements** für dieses Paket und **keine Zeile** für
   `postgresack`/`postgressnapshot`/`replication/receive` — die drei Pakete
   werden von `postgresstorage` nicht verlinkt und darum nicht instrumentiert.
-- **Im Replication-Lauf erscheint jede Block-Position dreimal.** `go test`
-  testet dort **drei** Pakete (`postgresack`, `postgressnapshot`,
-  `replication/receive`); jedes der drei Testbinaries instrumentiert **alle**
-  Gegenstands-Pakete, darum trägt das Profil **271 Positionen × 3** (813
-  Zeilen) — je Position eine Kopie je Testbinary, jede mit ihrem `count`.
-  **„Gedeckt" heißt: mindestens ein Vorkommen trägt `count > 0`.**
-  `db-coverage.sh` dedupliziert über die Block-Position und trägt je Position 1
-  (gedeckt) bzw. 0 — dieselbe Basis, die [`coverage-gate.md`](coverage-gate.md)
-  §Zählbasis für die Unit-Zahl beschreibt. Ohne diese Regel (nur das erste
-  Vorkommen gezählt) fällt `replication/receive` von **153/187** auf **0/187**,
-  `postgressnapshot` von **139/157** auf **0/157** und das Replication-Profil
-  von 324/376 = 86,17 % auf **32/376 = 8,51 %** (**abgeleitet** aus dem
+- **Im Replication-Lauf steht jede Block-Position einmal je getestetem Paket
+  im Profil.** `go test` testet dort **drei** Pakete (`postgresack`,
+  `postgressnapshot`, `replication/receive`); jedes der drei Testbinaries
+  instrumentiert **alle** Gegenstands-Pakete, darum trägt das Profil **245
+  Positionen × 3** (735 Zeilen), jede Kopie mit ihrem `count` (gemessen:
+  `awk 'NR>1{n[$1]++} …' replication.coverprofile` druckt „Positionen: 245
+  Zeilen: 735", „Vielfachheit 3 : 245 Positionen"). **„Gedeckt" heißt:
+  mindestens ein Vorkommen trägt `count > 0`.** `db-coverage.sh` dedupliziert
+  über die Block-Position und trägt je Position 1 (gedeckt) bzw. 0 — dieselbe
+  Basis, die [`coverage-gate.md`](coverage-gate.md) §Zählbasis für die
+  Unit-Zahl beschreibt. Ohne diese Regel (nur das erste Vorkommen gezählt)
+  fällt `replication/receive` von **153/187** auf **0/187**,
+  `postgressnapshot` von **118/122** auf **0/122** und das Replication-Profil
+  von 303/341 = 88,86 % auf **32/341 = 9,38 %** (**abgeleitet** aus dem
   Replication-Profil desselben Laufs, Awk über `replication.coverprofile`).
   Die Zahlen dieses Punktes stammen aus dem Lauf `slice-backfill-snapshot-reader`
-  (`make test-replication`, PostgreSQL 18) — Beispielwerte, nicht die geltende
-  Größe des Gegenstands; die trägt der Nenner-Punkt mit ihrem Lauf.
+  (Fixrunde, `make test-replication`, PostgreSQL 18) — Beispielwerte, nicht die
+  geltende Größe des Gegenstands; die trägt der Nenner-Punkt mit ihrem Lauf.
 - Die beiden Läufe messen **verschiedene** Testbestände und partitionieren den
   Gegenstand: `postgresstorage` läuft nur mit `CDC_STORE_TEST_DSN`
   (`make test-store`), `postgresack`/`postgressnapshot`/`replication/receive`
@@ -68,18 +84,19 @@ Der **einzige Träger** der Gegenstandsliste ist
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **848 Statements** (`postgresstorage` 472 ·
-  `postgresack` 32 · `postgressnapshot` 157 · `replication/receive` 187) — die
+- Der gemergte Nenner ist **813 Statements** (`postgresstorage` 472 ·
+  `postgresack` 32 · `postgressnapshot` 122 · `replication/receive` 187) — die
   **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
   einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
   derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
   hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
-  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**848**
-  und ihre vier Anteile: Lauf `slice-backfill-snapshot-reader`, frischer
-  `make test-store` gefolgt von `make test-replication`, gedruckt:
-  `DB-Adapter-Coverage: 79.25% (gedeckt 672 von 848 Statements; Profile
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**813**
+  und ihre vier Anteile: Lauf `slice-backfill-snapshot-reader` (Fixrunde),
+  frischer `make test-store` gefolgt von `make test-replication`, gedruckt:
+  `DB-Adapter-Coverage: 80.07% (gedeckt 651 von 813 Statements; Profile
   gemergt: store,replication)`; die Anteile aus dem gemergten Profil desselben
-  Laufs abgeleitet). Die **gedeckte** Zahl
+  Laufs abgeleitet: gedeckt 348 · 32 · 118 · 153; derselbe Wert 651 von 813
+  druckt der Lauf gegen PostgreSQL 17). Die **gedeckte** Zahl
   daneben ist zusätzlich **lauf**-gebunden: sie wandert schon bei unverändertem
   Code-Stand, ist darum ebenfalls **kein** Zustand und nennt ihren Lauf. Die
   Größe **eines** Anteils hängt an seiner Naht
@@ -118,7 +135,8 @@ nacheinander im selben Job:
    `replication.coverprofile` ab, mergt beide Profile und prüft die Schwelle.
    **Der Exit dieses Schritts ist das Verdikt der Messung.**
 3. `tools/harness/run-replication-tests.sh tier` — der Tier-weite
-   `go test ./...`, als **eigener Schritt** mit eigenem Exit.
+   `go test ./...` und der Slot-Reserve-Lauf des Snapshot-Adapters (Nr. 7),
+   als **eigener Schritt** mit eigenem Exit.
 
 Die Schritte 2 und 3 rufen dasselbe Skript in seinen zwei Phasen (das Skript ist
 die Implementierung von `make test-replication`; ein eigenes Make-Target je Phase
@@ -167,11 +185,35 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
    hält im Test der Slot-Anlage-Frist (`TestSlotCreationTimeout`) rund eine
    Sekunde lang eine offene Schreibtransaktion, in der eine fremde
    Slot-Anlage wartet. Ein Test, der die Reserve von `max_replication_slots`
-   ausschöpft, würde die Slots der übrigen Pakete blockieren und läuft deshalb
-   **nicht** im Tier: `TestSlotReserveExhaustedIsConfiguration` überspringt
-   ohne `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN` (ein eigener PostgreSQL mit
-   `max_replication_slots=1`) und geht nicht in die Zahl ein — der Träger
-   dieser Zusage ist ein einmaliger, manueller Lauf.
+   ausschöpft, blockiert die Slots der übrigen Pakete und läuft deshalb
+   **nicht** gegen diese Instanz: `TestSlotReserveExhaustedIsConfiguration`
+   überspringt ohne `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN`. Die Phase `tier` von
+   `tools/harness/run-replication-tests.sh` startet nach dem Tier-weiten
+   `go test ./...` einen eigenen PostgreSQL mit `max_replication_slots=1`,
+   setzt die Variable auf ihn und fährt nur diesen Test mit `-v`; ein Lauf, in
+   dem er nicht als `--- PASS` erscheint, ist rot. Der Test geht nicht in die
+   DB-Adapter-Zahl ein (die Messphase läuft ohne die Variable). Real geprüft
+   (Lauf `slice-backfill-snapshot-reader`, Fixrunde): ein verschobener
+   Testname im `-run` und `max_replication_slots=10` statt `1` färben die
+   Phase je rot.
+8. **Die Gleichheit der Listen ist gewächtert, die Eigenschaft ist es nicht.**
+   `db-package-lists-check.sh` prüft, dass die vier namentlichen Stellen
+   dieselben Pakete nennen (§Gegenstand). Es prüft nicht, ob ein Paket die
+   Eigenschaft „Testlauf setzt einen externen Dienst voraus" **hat** — ein neues
+   Paket mit DB-Tests trägt sich in die vier Stellen ein, weil die Regel es
+   verlangt ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+   Trigger (a)), nicht weil ein Wächter es merkt. Ebenso bleibt die
+   **Skip-Eigenschaft** Disziplin: jeder Test eines ausgenommenen Pakets
+   überspringt ohne Datenbank (`testDSN(t)` als erste Anweisung); ein
+   ergänzter Test ohne diese Anweisung läuft netzlos und widerspricht dem
+   Ausschluss, ohne dass ein Sensor es meldet. Der Nachweis am aktuellen Stand
+   ist ein einmaliger Lauf: `go test -count=1 -v
+   ./internal/adapters/driven/postgressnapshot` im Toolchain-Image mit
+   `--network none` und ohne `CDC_REPLICATION_TEST_DSN` druckt 21 `--- SKIP` und
+   0 `--- PASS` (Lauf `slice-backfill-snapshot-reader`, Fixrunde). Einen
+   maschinellen Wächter führt dieser Sensor nicht: ein netzloser
+   `go test -v`-Lauf gegen die Gegenstands-Pakete ist ein eigener Docker-Lauf
+   und gehört nicht in das netzlose Skript, das die Listen vergleicht.
 
 ## Ausgabe und Ausgänge
 

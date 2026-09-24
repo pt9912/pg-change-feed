@@ -4,6 +4,9 @@
 # +gen/... ohne die Pakete, deren Testlauf einen externen Dienst voraussetzt)
 # und prueft sie ueber tools/coverage-gate.sh gegen THRESHOLD; haengt
 # coverage-gate an GATE_CHECKS — der Root-Aggregator faehrt es via make gates.
+# Vor dem Bau haelt tools/harness/db-package-lists-check.sh die namentlichen
+# Paketlisten des ausgenommenen Gegenstands gleich (harness/sensors/coverage-gate.md
+# §Grenze Nr. 4).
 #
 # Kalibrierungs-Bindung (harness/README.md §Sensors, ADR-0054 §(a)): bootstrap-
 # aware Gate. Die geltende Stufe ist THRESHOLD unten und steht ausschliesslich
@@ -21,6 +24,7 @@ NO_CACHE_FILTER_COV := --no-cache-filter coverage
 
 .PHONY: coverage-gate
 coverage-gate: ## Coverage-Schwelle (bootstrap-aware Rampe Einstieg 70 % -> Endstufe 80 %; Bindung in harness/README §Sensors)
+	bash tools/harness/db-package-lists-check.sh
 	docker build $(NO_CACHE_FILTER_COV) \
 	    --build-arg COVERAGE_THRESHOLD=$(THRESHOLD) \
 	    --target coverage -t pg-change-feed:coverage .
