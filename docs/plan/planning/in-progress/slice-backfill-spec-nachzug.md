@@ -88,7 +88,7 @@ Greenfield: die Doku führt). Umfang:
 
 ## 2. Definition of Done
 
-- [ ] [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) ist beantwortet: die Überschrift trägt kein „offen"
+- [x] [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) ist beantwortet: die Überschrift trägt kein „offen"
       mehr, der Text nennt Mechanismus, Markierung, Überlappungs-Verhalten,
       Sichtbarkeits-Grenze und Neubeginn als Zusagen (Zukunfts-Form: was die
       Umsetzung liefern **muss**, nicht was gemessen wurde — die Zusagen sind
@@ -96,7 +96,7 @@ Greenfield: die Doku führt). Umfang:
       [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) führt Lückenfreiheit und Replay-Invariante als
       „hergeleitet"). *Zu belegen durch:* Lesen des Abschnitts und
       `make docs-check`.
-- [ ] Die Datenstrukturen stehen: [`SPEC-002`](../../../../spec/pflichtenheft.md) (`origin`), [`SPEC-019`](../../../../spec/pflichtenheft.md)
+- [x] Die Datenstrukturen stehen: [`SPEC-002`](../../../../spec/pflichtenheft.md) (`origin`), [`SPEC-019`](../../../../spec/pflichtenheft.md)
       (Antragsart `backfill`, fünf Werte), [`SPEC-022`](../../../../spec/pflichtenheft.md) (`origin`, Positions-
       Anmerkung), [`SPEC-001`](../../../../spec/pflichtenheft.md) (`cdc.backfill_run`) und [`SPEC-029`](../../../../spec/pflichtenheft.md) (Feldform
       `cdc.backfill_run`/`cdc.backfill_status` samt Grants, Warn-Spalte(n) und
@@ -106,7 +106,7 @@ Greenfield: die Doku führt). Umfang:
       *zu belegen durch* `grep -o 'SPEC-0[0-9][0-9]' spec/pflichtenheft.md | sort -u`
       am Parent-Stand); §7 Historie trägt je Änderung eine Zeile ohne ADR-/
       Slice-Bezug.
-- [ ] `spec/architecture.md` trägt die Backfill-Sequenz (einschließlich der
+- [x] `spec/architecture.md` trägt die Backfill-Sequenz (einschließlich der
       Annahme in einer Transaktion und der Aufnahme beim Start) und die Rollen des
       Snapshot-Lesers und der Annahme in [`ARC-006`](../../../../spec/architecture.md), ohne ADR-/Slice-/Wellen-Bezug;
       die Aufzählungen der Antragsarten in derselben Datei sind auf die
@@ -117,10 +117,10 @@ Greenfield: die Doku führt). Umfang:
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das Doku-Update der Spec; das Benutzerhandbuch bleibt unberührt (§1).
+- [x] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das Doku-Update der Spec; das Benutzerhandbuch bleibt unberührt (§1).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -142,16 +142,19 @@ Greenfield: die Doku führt). Umfang:
 | `spec/pflichtenheft.md` §2 ([`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md), [`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-022`](../../../../spec/pflichtenheft.md), [`SPEC-029`](../../../../spec/pflichtenheft.md)) | update / neu | Datenstrukturen; [`SPEC-029`](../../../../spec/pflichtenheft.md) neu (Datenstruktur, §2 — keine Breiten-Regel wie in §3) mit Grants und Warn-Spalte(n). |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile, ohne ADR-/Slice-Bezug. |
 | `spec/architecture.md` §1/§4 | update | Rolle des Snapshot-Lesers in [`ARC-006`](../../../../spec/architecture.md); Sequenz „Bestand als Backfill überführen"; Antragsarten-Aufzählung im bestehenden Sequenz-Abschnitt zur SQL-Aktivierung. |
+| `spec/pflichtenheft.md` §2 ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md)) | update (Plan-Nachzug im Lauf) | Fund des §3.13-Suchlaufs (Zeile 3): „dieselben Felder wie der Domain-Typ `model.Change`" bleibt nach der Einführung von `origin` an `model.Change` nur wahr, wenn die Live-Nachricht das Feld ausdrücklich ausnimmt — je ein Halbsatz, keine Änderung der Nachrichtenschemata. |
+| `spec/architecture.md` Kopf und Komponenten-Diagramm | update (Plan-Nachzug im Lauf) | der Frische-Marker „Letzte Änderung" und der Knoten „Driven Adapters" des Mermaid-Diagramms tragen die neuen Rollen aus [`ARC-006`](../../../../spec/architecture.md) mit; die Sicht bliebe sonst gegen ihre eigene Tabelle uneinheitlich. |
+| `spec/pflichtenheft.md` §2 [`SPEC-029`](../../../../spec/pflichtenheft.md) — **Festlegung der Warn-Spalten** (Auftrag aus §1 (e)) | Festlegung | **Zwei** Spalten vom Typ `boolean`, `NOT NULL`, Default `false`: `warn_estimated_size` (Warnung 1: die **geschätzte** Zeilenzahl liegt über der Richtgröße; schreibt die Annahme) und `warn_duration` (Warnung 2: Kopierdauer über der Toleranz; schreibt der Worker). Grund für zwei statt einer: die beiden Schreiber sind verschiedene Rollen mit verschiedenem Grant (`cdc_admin` nur `INSERT`, `cdc_capture` nur `UPDATE`) — eine gemeinsame Spalte hätte zwei Schreiber für einen Wert. Grund für `boolean` statt Text/Zahl: die Spalten tragen nur das Ergebnis, weder Toleranz noch Richtgröße (`ADR-0113` Festlegung 3 Punkt 4: sie stehen an genau einer Stelle im Code). `run-store` folgt diesen Namen und Typen. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`LH-FA-CAP-009.a` ist beantwortet; die Antragsarten-Menge trägt `backfill`; `cdc.change` trägt `origin`"; beide Stände gemessen: Parent und Diff — der Implementer trägt Gefundenes und Nichtgefundenes je Zeile ein):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Anker auf die Überschrift „… offen" (`#lh-fa-cap-009a--backfill-mechanismus-offen`) in anderen Dokumenten | `grep -rn 'backfill-mechanismus' --include=*.md .` | *(Implementer trägt ein)* | Anker mitziehen; Records (`docs/reviews/**`, `done/**`) nur als Zitat-Korrektur nach [`ADR-0073`](../../adr/0073-zitat-korrektur-an-immutablen-dokumenten.md) |
-| Aufzählungen der Antragsarten („vier Antragsarten", `enable`/`disable`/`exclude_column`/`include_column`, „die drei übrigen Antragsarten") | `grep -rn 'exclude_column' spec docs/user harness README.md` | *(Implementer trägt ein)* | Spec-Stellen dieses Slice ziehen; Handbuch-Stellen an `sql-administration` melden (Welle §4) |
-| Feldlisten von `cdc.change`/`GET /changes` mit Anzahl-Formulierung (z. B. „zwölf Felder") | `grep -rn 'Felder' spec/pflichtenheft.md spec/architecture.md` | *(Implementer trägt ein)* | Spec-Stellen dieses Slice ziehen; Handbuch an `change-origin` melden |
-| Aufzählungen der Views und Rollen-Grants in `spec/architecture.md` ([`ARC-005`](../../../../spec/architecture.md) „SQL-Funktionen/Views", [`ARC-006`](../../../../spec/architecture.md) Adapter-Liste) | `grep -n 'ARC-005\|ARC-006' spec/architecture.md` | *(Implementer trägt ein)* | [`ARC-005`](../../../../spec/architecture.md) trägt die View bereits in der Sammelform; [`ARC-006`](../../../../spec/architecture.md) um die Rollen ergänzen |
-| `LH-FA-CAP-009` in Trägern der Abdeckung | `grep -rn 'CAP-009' docs harness .d-check.yml` | *(Implementer trägt ein)* | unverändert bis `e2e` (der Runner schreibt die Abdeckungs-Zeile) |
+| Anker auf die Überschrift „… offen" (`#lh-fa-cap-009a--backfill-mechanismus-offen`) in anderen Dokumenten | `grep -rn 'backfill-mechanismus' --include=*.md .` | **Parent** (`77c60bd1`): 1 Treffer — die Suchbefehl-Zelle dieser Tabelle selbst (Zitat des Ankers in Inline-Code, kein Link); die Überschrift `### LH-FA-CAP-009.a — Backfill-Mechanismus offen` stand in `spec/pflichtenheft.md` Z. 144. **Diff:** dieselbe 1 Treffer (die eigene Zelle), die Überschrift lautet `### LH-FA-CAP-009.a — Backfill-Mechanismus`. **Nicht gefunden:** jeder Link auf den Anker; ergänzender Lauf `grep -rnE 'cap-009a\|CAP-009\.a' --include=*.md --include=*.yml --include=*.yaml .` außerhalb der Backfill-Plan-/ADR-Dateien: nur die nackte Kennung ohne Anker in [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) (Z. 393, 411) und in der Historie des Pflichtenhefts. | keine Anker zu ziehen; `ADR-0112` ist `Accepted` und trägt die Kennung ohne Anker, unberührt. |
+| Aufzählungen der Antragsarten („vier Antragsarten", `enable`/`disable`/`exclude_column`/`include_column`, „die drei übrigen Antragsarten") | `grep -rn 'exclude_column' spec docs/user harness README.md` | **Parent:** 9 Treffer (`spec/architecture.md` Z. 228; `spec/pflichtenheft.md` Z. 403, 414, 433, 658, 661; `docs/user/benutzerhandbuch.md` Z. 259, 1250; `harness/README.md` Z. 141). **Diff:** 9 Treffer, dieselbe Menge, Zeilennummern in `spec/pflichtenheft.md` verschoben. **Gefunden und gezogen:** `spec/architecture.md` („vier Arten" → „fünf", Tabelle + `backfill`, „die drei übrigen Antragsarten" umformuliert, „beiden Tabellen-Antragsarten" → `enable`/`disable`); `spec/pflichtenheft.md` `SPEC-019` (Funktionsliste, `request_kind`-Menge, `column_name`-Zelle „die drei übrigen", „beiden Tabellen-Antragsarten" → `enable`/`disable`). **Nicht gefunden:** keine weitere Zählformulierung („vier/fünf Antragsarten") in `spec`, `docs/user`, `harness`, `README.md`, `README.de.md`, `AGENTS.md`. **Nicht gezogen (Records):** Historie-Zeilen Z. 658/661 (Zeitpunkt-Records, wahr zu ihrem Datum). | Spec-Stellen gezogen; **Meldung an `slice-backfill-sql-administration`:** `docs/user/benutzerhandbuch.md` nennt `backfill` nicht; Z. 302 „Tabellen-Antragsarten (`enable`/`disable`)" bleibt wahr; `harness/README.md` Z. 141 beschreibt den Spaltenausschluss-Rundlauf, unberührt. |
+| Feldlisten von `cdc.change`/`GET /changes` mit Anzahl-Formulierung (z. B. „zwölf Felder") | `grep -rn 'Felder' spec/pflichtenheft.md spec/architecture.md` | **Parent:** 11 Treffer in `spec/pflichtenheft.md`, 0 in `spec/architecture.md`. **Diff:** 11 (Anzahl unverändert; Wortlaut an zwei Stellen erweitert). **Gefunden:** „zehn Felder" in `SPEC-021` und `SPEC-024` und „dieselben Felder wie der Domain-Typ `model.Change`" in `SPEC-020` — Live-Nachrichten, die `origin` nicht tragen (Zusage in `SPEC-002`); die Aussage „wie der Domain-Typ" würde durch das neue Feld an `model.Change` falsch → `SPEC-020`/`SPEC-021` um die Ausnahme ergänzt (`SPEC-024` verweist auf `SPEC-021`s Feldliste und bleibt wahr). **Nicht gefunden:** eine Anzahl-Formulierung für `cdc.change` oder für die `GET /changes`-Antwort in `spec/`. | Handbuch an `slice-backfill-change-origin` melden: `docs/user/benutzerhandbuch.md` Z. 639 (Feldliste der `GET /changes`-Antwort) und Z. 377 (Spaltenliste der View-Abfrage) tragen `origin` noch nicht; die „zehn Feldern" der Live-Wege (Z. 721 ff.) bleiben wahr. Die Fortsetzungs-Idiome `commit_position > <letzte-gelesene-position>` (Z. 375 ff.) und `from = <letzte> + 1` (Z. 641 ff.) tragen die neue Position-und-`limit`-Regel aus `SPEC-022` noch nicht — Meldung an `slice-backfill-sql-administration` (Handbuch „Lesen ohne `Limit`"). |
+| Aufzählungen der Views und Rollen-Grants in `spec/architecture.md` ([`ARC-005`](../../../../spec/architecture.md) „SQL-Funktionen/Views", [`ARC-006`](../../../../spec/architecture.md) Adapter-Liste) | `grep -n 'ARC-005\|ARC-006' spec/architecture.md` | **Parent:** 20 Zeilen (Komponenten-Tabelle Z. 58/59, Schichten-Tabelle Z. 77/78, Teilnehmer der bestehenden Sequenzen). **Diff:** 24 Zeilen (die vier zusätzlichen sind Teilnehmer der neuen Sequenzen). **Gefunden und gezogen:** [`ARC-006`](../../../../spec/architecture.md) (Adapterliste um Snapshot-Leser und Annahme) und der Knoten „Driven Adapters" im Diagramm. **Nicht gefunden:** eine Aufzählung der Views oder der Rollen-Grants in `spec/architecture.md` — [`ARC-005`](../../../../spec/architecture.md) nennt „SQL-Funktionen/Views" in Sammelform, die Schichten-Tabelle (Z. 77/78) ist rollen-, nicht adapterlistenbezogen. | keine weitere Stelle zu ziehen; die Grants stehen in `SPEC-029`, nicht in der Sicht. |
+| `LH-FA-CAP-009` in Trägern der Abdeckung | `grep -rn 'CAP-009' docs harness .d-check.yml` | **Parent** (`git grep` am Stand `77c60bd1`, ohne die Backfill-Plan-/ADR-Dateien): 13 Zeilen — Roadmap, Transformations-Plan und -Welle, ADR-Index, `ADR-0112`, drei Verifikationsberichte (Records), `harness/README.md` (`make doc-trace`-Zeile mit der Waisen-Momentaufnahme). **Diff:** dieselbe Menge — der Diff berührt keine dieser Dateien. **Nicht gefunden:** ein Träger in `docs/user/` (weder Abdeckungstabelle noch Handbuch) und in `.d-check.yml` (`trace.coverage`). | unverändert bis `e2e` (der Runner schreibt die Abdeckungs-Zeile); die Waisen-Momentaufnahme in `harness/README.md` gehört dem Slice, der sie ändert. |
 
 ## 4. Trigger
 
