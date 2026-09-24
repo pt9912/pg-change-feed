@@ -95,7 +95,7 @@ Umfang:
 
 ## 2. Definition of Done
 
-- [ ] Happy Path gegen Fakes: ein Run mit mehreren Blöcken schreibt alle
+- [x] Happy Path gegen Fakes: ein Run mit mehreren Blöcken schreibt alle
       Blöcke in **eine** Transaktion und committet einmal; jeder Change trägt
       `operation = INSERT`, `origin = 'backfill'`, kein `old_data`, das Bild aus
       der gemeinsamen Funktion; Position `X` an jedem Block; Transaktions- und
@@ -103,7 +103,7 @@ Umfang:
       Wecksignal je Tabelle nach dem Commit; eine leere Tabelle endet
       `completed` mit 0 Zeilen ohne Transaktion. *Zu belegen durch:* `make test`
       (Race-Detector).
-- [ ] Negative gegen Fakes, je an ihre Eingabe gebunden: Bindung fehlt vor dem
+- [x] Negative gegen Fakes, je an ihre Eingabe gebunden: Bindung fehlt vor dem
       Commit, Ausschlussstand weicht ab (auch: er weicht in einem
       Zwischenblock ab und ist am Ende wieder gleich), Snapshot-Fehler,
       Schreib-Fehler, Abbruch des Kontexts — jeweils Rollback, Run `failed`
@@ -122,7 +122,7 @@ Umfang:
       durch:* `make test` und je Test
       eine Mutation der Prüfung, die den Test rot färbt (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`,
       verkörpert).
-- [ ] Annahme gegen Fakes: `Request` ruft `Admit` **als letzten** Schritt und nur
+- [x] Annahme gegen Fakes: `Request` ruft `Admit` **als letzten** Schritt und nur
       nach bestandenen Vorbedingungen und gelesener Schätzung; ein Sentinel-Fehler
       „aktiver Run" endet den Antrag ohne zweite Zeile; eine unbekannte
       Schätzung (`known` = falsch, der Katalog führt `−1`) erreicht `Admit` als
@@ -132,7 +132,7 @@ Umfang:
       (Reihenfolge der Fake-Aufrufe, je Test eine Mutation), `make a-check` (der
       Annahme-Port liegt in `ports`, kein Adapter importiert einen anderen) und
       die Port-Definitionen im Diff (Review).
-- [ ] Die Zeilenzahl im Speicher ist durch `B` je Block begrenzt ([`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md));
+- [x] Die Zeilenzahl im Speicher ist durch `B` je Block begrenzt ([`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md));
       `B` zählt Zeilen, nicht Bytes — der Speicherbedarf eines Blocks ist `B` mal
       die Zeilenbreite (Port-Doku `NextBlock`), der Use Case macht darüber keine
       Aussage: die Ports erlauben Streamen, der Schreiber erhält Block 1, bevor der Leser
@@ -144,13 +144,13 @@ Umfang:
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — kein öffentlicher Vertrag berührt; das Benutzerhandbuch bleibt bis `sql-administration` unberührt.
+- [x] Doku-Update: entfällt — kein öffentlicher Vertrag berührt; das Benutzerhandbuch bleibt bis `sql-administration` unberührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -165,11 +165,23 @@ Umfang:
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `internal/domain/model/backfillrun.go` (+ Test) | neu | `BackfillRun`, Zustände und Übergänge, Kennungs-Bildung. |
-| `internal/domain/errors/` | update | Sentinel-Fehler (Tabelle nicht aktiviert, aktiver Run, Ausschlussstand geändert). |
-| `internal/application/port/inbound/backfill.go` | neu | `BackfillTableUseCase` samt Command. |
-| `internal/application/port/outbound/backfilladmission.go`, `backfillrun.go`, `backfillwriter.go` (Arbeitsnamen) | neu | Annahme-Port, Run-Zustands-Port (ohne Anlage) und Schreiber-Port. |
-| `internal/application/usecase/backfill/service.go` (+ Test) | neu | der Use Case; Fakes für Snapshot-Port, die drei Ports, Bindung, Ausschluss, Uhr, Wecksignal. |
+| `internal/domain/model/backfillrun.go` (+ Test) | neu | `BackfillRun`, Zustände und Übergänge (Wert-Typ, jede Methode liefert einen neuen Run), die Schätzung als Zahl oder „unbekannt" (`RowEstimate`, Nullwert = unbekannt), `BackfillTransactionID`. Geliefert. |
+| `internal/domain/model/change.go`, `internal/adapters/driving/replication/mapper/mapper.go` | update (**Abweichung**, +1 Zeile im WAL-Pfad) | `ChangeIDFor`: die Bildungsregel `<Transaktions-ID>-<Sequenz>` stand als `fmt.Sprintf` im WAL-Mapper; der Backfill-Pfad ruft dieselbe Funktion, damit die Regel nicht an zwei Stellen steht. Der Plan nannte die Kennungs-Bildung nur für die Domäne. |
+| `internal/domain/errors/` | update | Sentinel-Fehler: Tabelle nicht aktiviert, aktiver Run, Ausschlussstand geändert (wie geplant); zusätzlich unzulässiger Statuswechsel, Fortschritts-Rückschritt, negative Zeilenzahl, Blocknummer außerhalb des achtstelligen Bereichs. Geliefert. |
+| `internal/application/port/inbound/backfill.go` | neu | `BackfillTableUseCase` (`Request`, `Execute`) samt Commands und Results. Geliefert. |
+| `internal/application/port/outbound/backfilladmission.go`, `backfillrun.go`, `backfillwriter.go` | neu | Namen festgelegt: `BackfillAdmissionPort` (`Admit`), `BackfillRunPort` (`Queued`, `MarkRunning`, `RecordProgress`, `Finish`, `InterruptRunning` — keine Anlage), `BackfillWriterPort` (`Begin`) mit `BackfillTransaction` (`AppendBlock`, `Commit`, `Rollback`), `ErrBackfillStorage`. Geliefert. |
+| `internal/application/usecase/backfill/service.go` (+ Test) | neu | der Use Case; Fakes für Snapshot-Port, die drei Ports, Bindung, Ausschluss, Uhr, Wecksignal. **Abweichung:** die acht Pflicht-Ports (`Ports`) tragen zusätzlich `SchemaStorePort` — `model.NewChange` verlangt eine Schema-Version-Referenz, der Run liest die aktuelle Version der Tabelle über `CurrentVersion`; der Plan nannte den Port nicht. Geliefert. |
+
+**Festlegungen ohne Vorgabe im Plan** (im Code als Kommentar am Ort, hier gesammelt):
+
+- **Blocknummern zählen ab 1**, wie die Sequenz; die Grenze der achtstelligen Nummer ist ein Fehler, keine stille Überschreitung.
+- **Übergang `queued` → `failed`** ist zulässig: die erneute Prüfung der Vorbedingungen in `Execute` endet einen Run, der nie `running` war; sein `started_at` bleibt leer, die Kopierdauer beginnt mit `running`.
+- **`interrupted` gegen `failed`:** ein Fehler bei beendetem eigenen Kontext ist `interrupted` (ohne Fehlertext), sonst `failed` mit der Klasse der Ursache. Endet der Kontext, solange der Run noch `queued` ist, bleibt er `queued` und der Aufruf meldet den Kontext-Fehler (`ADR-0113` Festlegung 2: die Zeile überlebt den Neustart).
+- **Endzustand auf abgelöstem Kontext:** Rollback, Schließen des Snapshots und `Finish` laufen über `context.WithoutCancel`; die Dauer begrenzt der Adapter.
+- **Ergebnis von `Execute`:** ein Run-Fehler ist ein Ergebnis mit dem Run im Endzustand, kein Fehler des Aufrufs; der Fehler des Aufrufs meldet „Endzustand nicht festgehalten" oder „Kontext endete vor dem Beginn".
+- **Klassen des Runs:** `permission`, `configuration`, `storage`, `transient`, `replication` aus dem Vertrag; ein nicht erkannter Fehler bleibt `internal`; `schema` vergibt der Run nicht (offen für den Backfill-Pfad der Transformationen). Eine Tabelle ohne registrierte Schema-Version endet als `configuration`.
+- **Wecksignal** nur nach einem Commit mit mindestens einer Zeile; eine leere Tabelle schreibt nichts und weckt nicht.
+- **Publication** trägt der Command (`BackfillRequestCommand`, `BackfillExecuteCommand`), wie bei `EnableTableCommand`.
 
 **Port-Schnitt der Annahme** ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1): die Rolle `cdc_admin` — die
 Administrations-Goroutine liest ihre Anträge über `postgresstorage.NewAdministrationRequest`
@@ -207,9 +219,10 @@ der Adapter in `internal/adapters/driven/postgressnapshot`):
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| bestehende Verwendung des Wortes „Backfill" im Code (Nachtrag einer fehlenden Spaltenform im Replication-Mapper, `TestConsumeRelationBackfillsMissingTableSchema`) | `grep -rni 'backfill' internal --include=*.go` | *(Implementer trägt ein)* | neue Bezeichner bleiben von der Spaltenform-Bedeutung unterscheidbar (`BackfillRun`, `BackfillTable…`); Fundstellen der alten Bedeutung werden nicht umbenannt |
-| Port-Verzeichnis-Übersicht in Doku | `grep -rn 'ports/outbound\|port/outbound' docs spec harness` | *(Implementer trägt ein)* | Listen nachziehen, falls vorhanden |
-| Fehlerklassen-Abbildung | Lesen von `classifyRunError` in `internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | Run-Fehler bilden **nicht** über den Capture-Pfad ab; die Abbildung des Runs steht am Use Case |
+| bestehende Verwendung des Wortes „Backfill" im Code (Nachtrag einer fehlenden Spaltenform im Replication-Mapper, `TestConsumeRelationBackfillsMissingTableSchema`) | `git grep -n -i 'backfill' <Stand> -- 'internal/**/*.go'` (Zeilen), `git grep -l -i …` (Dateien) | Parent `643582b0`: 80 Zeilen in 18 Dateien; Diff `9d4e9de8`: 362 Zeilen in 26 Dateien (gemessen). Die alte Bedeutung „Nachtrag einer Spaltenform" steht an drei Stellen im Produktivcode — `internal/adapters/driving/replication/mapper/mapper.go:334`, `internal/adapters/driven/postgresstorage/schemastore.go:106`, `internal/adapters/driven/postgresstorage/queries/queries.go:286` — und im Test `TestConsumeRelationBackfillsMissingTableSchema`; an beiden Ständen gleich (Diff: `git grep -n -i backfill 9d4e9de8 -- <die drei Dateien>`) | neue Bezeichner tragen `BackfillRun…`, `BackfillTable…`, `BackfillTransaction…`, `BackfillAdmission…`, `BackfillWriter…`; die drei Fundstellen der alten Bedeutung bleiben, weil sie den Nachtrag einer Spaltenform meinen und ihr Wortlaut zutrifft |
+| Port-Verzeichnis-Übersicht in Doku | `git grep -n 'ports/outbound\|port/outbound' <Stand> -- docs spec harness` | Parent `643582b0`: 44 Zeilen in 26 Dateien; Diff `9d4e9de8`: 44 Zeilen in 26 Dateien (gemessen, der Diff berührt keine Doku-Datei). Ohne die historischen Träger (`done/`, `reviews/`, `observations/`, `adr/`) bleibt nur dieser Plan (drei Zeilen); `spec/` und `harness/` tragen keinen Treffer. Nicht gefunden: eine Doku-Datei, die die Dateien von `port/outbound` aufzählt | nichts nachzuziehen |
+| Fehlerklassen-Abbildung | Lesen von `classifyRunError` in `internal/bootstrap/wiring.go` (Zeile 1378) und `git diff --stat 643582b0 9d4e9de8 -- internal/bootstrap` | Parent und Diff gleich: `classifyRunError` bildet die Sentinels des Capture-Pfads ab (`ErrConfiguration`, `receive.*`, `decode.ErrSchema`, `mapper.*`, `outbound.ErrReplication`/`ErrStorage`/`ErrHeartbeatStorage`/`ErrConsumerStateStorage`); der Diff berührt `internal/bootstrap` nicht. Nicht gefunden: ein Verweis von dort auf die Sentinels des Runs (`ErrSnapshot*`, `ErrBackfillStorage`, `ErrTableNotActivated`, `ErrExclusionStateChanged`) | Run-Fehler bilden nicht über den Capture-Pfad ab; die Abbildung des Runs steht in `classifyError` am Use Case und vergibt `permission`/`configuration`/`storage`/`transient`/`replication`, sonst `internal` |
+| Beschreibung der drei Adapter und der Aufrufe in den Folge-Plänen | `git grep -n -E 'Admit\|Annahme-Port\|Run-Zustands\|Schreiber' 9d4e9de8 -- 'docs/plan/planning/open/slice-backfill-*' 'docs/plan/planning/open/slice-transformationen-*'`, dann Lesen der Treffer | `slice-backfill-run-store` (Zeilen 46, 54, 59) beschreibt die drei Adapter ohne Methodennamen; `slice-backfill-sql-administration` (51–54) ruft `Request` und danach das Wecksignal; `slice-backfill-bench-richtgroesse` (63, 155) trägt Warnung (1) über `Admit`, Warnung (2) über das Fortschritts-Update; `slice-transformationen-backfill-pfad` (135, 150) nennt den Use Case unter `internal/application/usecase/backfill/…` und die Fail-closed-Aufzählungen | die Namen und Signaturen stehen jetzt in den Port-Dateien; drei Übergaben gemeldet statt in fremden Plänen mitgeändert: (1) `Ports` verlangt zusätzlich `SchemaStorePort` — die Verdrahtung in `sql-administration` reicht ihn durch; (2) `Execute` trägt die Publication im Command — der Worker übergibt sie; (3) `BackfillRunPort.RecordProgress` und `Finish` tragen den ganzen Run (inklusive der beiden Warn-Kennzeichnungen) — der Run-Zustands-Adapter schreibt die Spalten je Übergang, das Fortschritts-Update trägt Warnung (2) |
 
 ## 4. Trigger
 
