@@ -15,12 +15,12 @@ dann `tools/coverage-gate.sh` gegen `THRESHOLD`
 ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md),
 [`ADR-0054`](../../docs/plan/adr/0054-coverage-gate-und-benchmark-infrastruktur.md)).
 
-Die Paketliste der Stufe kommt aus `go list`; der Filter nimmt die drei
+Die Paketliste der Stufe kommt aus `go list`; der Filter nimmt die vier
 Pakete aus, deren Testlauf einen externen Dienst voraussetzt
 (`postgresstorage` ohne das Unterpaket `mapper`, `postgresack`,
-`replication/receive`). Die tragende Regel ist die **Eigenschaft**, nicht die
-Liste: Ein Paket, dessen Testlauf einen externen Dienst voraussetzt, ist
-nicht Gegenstand dieses Gates. Die DB-gestützte Ebene dieser drei Pakete
+`postgressnapshot`, `replication/receive`). Die tragende Regel ist die
+**Eigenschaft**, nicht die Liste: Ein Paket, dessen Testlauf einen externen
+Dienst voraussetzt, ist nicht Gegenstand dieses Gates. Die DB-gestützte Ebene dieser vier Pakete
 trägt ihre eigene, subjekt-qualifizierte Messung (`ADR-0071` Punkt 3).
 
 `test/integration/` bleibt außerhalb: eigenständige `integration_test`-
@@ -122,13 +122,18 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
   einer eigenen Messung mit `-coverpkg` über **alle** Pakete (die drei
   eingeschlossen, netzlos) — **30/32**, **31/472** und **112/187**, Lauf
   `slice-085`; die Stufe dieses Gates nimmt die drei Pakete aus und
-  instrumentiert sie darum nicht.
+  instrumentiert sie darum nicht. Das vierte ausgenommene Paket
+  (`postgressnapshot`, 157 Statements laut Nenner der DB-Adapter-Coverage)
+  trägt netzlos **0** gedeckte Statements: jeder seiner Tests überspringt ohne
+  `CDC_REPLICATION_TEST_DSN` (Lauf `slice-backfill-snapshot-reader`,
+  `go test -v` ohne Netz und ohne Variable, jeder Test `SKIP`).
 
 ## Grenze — was das Grün nicht abdeckt
 
-1. **Die DB-gestützte Fläche liegt außerhalb des Messgegenstands.** Die drei
+1. **Die DB-gestützte Fläche liegt außerhalb des Messgegenstands.** Die vier
    Pakete `internal/adapters/driven/postgresstorage` (ohne das Unterpaket
-   `mapper`), `internal/adapters/driven/postgresack` und
+   `mapper`), `internal/adapters/driven/postgresack`,
+   `internal/adapters/driven/postgressnapshot` und
    `internal/adapters/driving/replication/receive` setzen in ihren
    Testläufen einen externen Dienst voraus (PostgreSQL) und werden deshalb
    nicht in die Zahl dieses Gates gerechnet; ihre Netto-Abdeckung trägt die
@@ -225,7 +230,18 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    drei — **zwei** bleiben grün. Der
    Re-Evaluierungs-Trigger (a) derselben ADR greift beim Kommen oder Gehen
    eines Pakets, nicht bei der Rücknahme eines bereits ausgenommenen.
-5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die drei
+
+   **Das vierte ausgenommene Paket, `postgressnapshot`, ist gemessen
+   gewächtert.** Seine Tests überspringen netzlos alle, es trägt netzlos **0**
+   gedeckte Statements; nimmt der Filter der Stufe es nicht mehr aus, färbt die
+   Prozent-Schwelle rot: der Lauf `slice-backfill-snapshot-reader` mit dem
+   Dockerfile-Filter ohne `postgressnapshot` druckt
+   `coverage-gate: FAIL — Coverage 77.00% unter Schwelle 80%` (Exit ≠ 0 des
+   `docker build`). Mit dem Eintrag druckt derselbe Stand
+   `coverage-gate: OK — Coverage 82.90% erfüllt Schwelle 80%`. Von den vier
+   Rücknahme-Fällen färben damit **zwei** die Stufe rot (`postgresstorage`,
+   `postgressnapshot`) und **zwei** bleiben grün.
+5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die vier
    ausgenommenen Pakete in der Testpaket-Liste stehen oder nicht, ändert die
    Zahl nicht — ihre Testdateien überspringen netzlos ohnehin. **Der Wächter
    ist**: keiner; die Einhaltung ist eine Aussage des Rezepts, keine Messung.

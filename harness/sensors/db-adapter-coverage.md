@@ -2,7 +2,7 @@
 
 ## Vertrag
 
-Die drei Pakete, deren Testlauf einen externen PostgreSQL voraussetzt, tragen
+Die vier Pakete, deren Testlauf einen externen PostgreSQL voraussetzt, tragen
 eine **eigene, subjekt-qualifizierte Coverage-Zahl**: die
 **DB-Adapter-Coverage**. Sie entsteht aus je einem `-coverprofile` der beiden
 Träger-Läufe (`make test-store`, `make test-replication`), gemergt und geprüft
@@ -26,6 +26,7 @@ Punkt 4).
 
 `internal/adapters/driven/postgresstorage` **ohne** das Unterpaket `mapper`,
 `internal/adapters/driven/postgresack`,
+`internal/adapters/driven/postgressnapshot`,
 `internal/adapters/driving/replication/receive`
 ([`ADR-0071`](../../docs/plan/adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
 Punkt 1). Die tragende Regel ist die **Eigenschaft**, nicht die Liste: Ein
@@ -42,36 +43,43 @@ Der **einzige Träger** der Gegenstandsliste ist
 - **`-coverpkg` instrumentiert nur die in einem Testbinary verlinkten
   Gegenstands-Pakete.** Der Lauf über `postgresstorage` allein trägt **472
   Statements** für dieses Paket und **keine Zeile** für
-  `postgresack`/`replication/receive` — die beiden Pakete werden von
-  `postgresstorage` nicht verlinkt und darum nicht instrumentiert.
-- **Im Replication-Lauf erscheint jede Block-Position zweimal.** `go test`
-  testet dort **zwei** Pakete (`postgresack`, `replication/receive`); jedes der
-  beiden Testbinaries instrumentiert **beide** Gegenstands-Pakete, darum trägt
-  das Profil **132 Positionen × 2** — je Position eine Kopie mit ihrem
-  `count` und eine mit `0`. **„Gedeckt" heißt: mindestens ein Vorkommen trägt
-  `count > 0`.** `db-coverage.sh` dedupliziert über die Block-Position und
-  trägt je Position 1 (gedeckt) bzw. 0 — dieselbe Basis, die
-  [`coverage-gate.md`](coverage-gate.md) §Zählbasis für die Unit-Zahl
-  beschreibt. Ohne diese Regel (nur das erste Vorkommen gezählt) fällt
-  `replication/receive` von **112/155** auf **0/155** und das Replication-Profil
-  von 130/178 auf **18/178 = 10,11 %**. Die Zahlen der zwei ersten Punkte
-  stammen aus dem **Kalibrierungs-Lauf** (§Kalibrierungs-Bindung) — Beispielwerte,
-  nicht die geltende Größe des Gegenstands; die trägt der Nenner-Punkt mit ihrem
-  Lauf.
+  `postgresack`/`postgressnapshot`/`replication/receive` — die drei Pakete
+  werden von `postgresstorage` nicht verlinkt und darum nicht instrumentiert.
+- **Im Replication-Lauf erscheint jede Block-Position dreimal.** `go test`
+  testet dort **drei** Pakete (`postgresack`, `postgressnapshot`,
+  `replication/receive`); jedes der drei Testbinaries instrumentiert **alle**
+  Gegenstands-Pakete, darum trägt das Profil **271 Positionen × 3** (813
+  Zeilen) — je Position eine Kopie je Testbinary, jede mit ihrem `count`.
+  **„Gedeckt" heißt: mindestens ein Vorkommen trägt `count > 0`.**
+  `db-coverage.sh` dedupliziert über die Block-Position und trägt je Position 1
+  (gedeckt) bzw. 0 — dieselbe Basis, die [`coverage-gate.md`](coverage-gate.md)
+  §Zählbasis für die Unit-Zahl beschreibt. Ohne diese Regel (nur das erste
+  Vorkommen gezählt) fällt `replication/receive` von **153/187** auf **0/187**,
+  `postgressnapshot` von **139/157** auf **0/157** und das Replication-Profil
+  von 324/376 = 86,17 % auf **32/376 = 8,51 %** (**abgeleitet** aus dem
+  Replication-Profil desselben Laufs, Awk über `replication.coverprofile`).
+  Die Zahlen dieses Punktes stammen aus dem Lauf `slice-backfill-snapshot-reader`
+  (`make test-replication`, PostgreSQL 18) — Beispielwerte, nicht die geltende
+  Größe des Gegenstands; die trägt der Nenner-Punkt mit ihrem Lauf.
 - Die beiden Läufe messen **verschiedene** Testbestände und partitionieren den
   Gegenstand: `postgresstorage` läuft nur mit `CDC_STORE_TEST_DSN`
-  (`make test-store`), `postgresack`/`replication/receive` nur mit
-  `CDC_REPLICATION_TEST_DSN` (`make test-replication`). Jeder Lauf
+  (`make test-store`), `postgresack`/`postgressnapshot`/`replication/receive`
+  nur mit `CDC_REPLICATION_TEST_DSN` (`make test-replication`). Jeder Lauf
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **691 Statements** (`postgresstorage` 472 · `postgresack`
-  32 · `replication/receive` 187) — die **Zustandsgröße** dieses Gegenstands,
-  aus dem Profil entstanden, nicht aus einer gepflegten Konstante. Sie hängt am
-  **Code-Stand**, nicht am Lauf: derselbe Stand misst denselben Nenner, ein Zug,
-  der Produktionscode hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert
-  und trägt — wie jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen
-  wurde (**691** und ihre drei Anteile: Lauf `slice-085`). Die **gedeckte** Zahl
+- Der gemergte Nenner ist **848 Statements** (`postgresstorage` 472 ·
+  `postgresack` 32 · `postgressnapshot` 157 · `replication/receive` 187) — die
+  **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
+  einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
+  derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
+  hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**848**
+  und ihre vier Anteile: Lauf `slice-backfill-snapshot-reader`, frischer
+  `make test-store` gefolgt von `make test-replication`, gedruckt:
+  `DB-Adapter-Coverage: 79.25% (gedeckt 672 von 848 Statements; Profile
+  gemergt: store,replication)`; die Anteile aus dem gemergten Profil desselben
+  Laufs abgeleitet). Die **gedeckte** Zahl
   daneben ist zusätzlich **lauf**-gebunden: sie wandert schon bei unverändertem
   Code-Stand, ist darum ebenfalls **kein** Zustand und nennt ihren Lauf. Die
   Größe **eines** Anteils hängt an seiner Naht
@@ -154,6 +162,16 @@ Die Profile liegen in `DB_COVERAGE_DIR` (Default
    und `cdc.process_heartbeat` brauchen. Die Messung dieses Sensors läuft als
    **eigener Schritt** ohne diesen Rollout (§Träger) — ein Fehler des Rollouts
    färbt die Zahl **nicht**, und ihr Grün deckt den Tier-Lauf **nicht** ab.
+7. **Die drei Pakete des Replication-Laufs teilen sich einen Testcontainer.**
+   `go test` fährt sie parallel gegen dieselbe Instanz; `postgressnapshot`
+   hält im Test der Slot-Anlage-Frist (`TestSlotCreationTimeout`) rund eine
+   Sekunde lang eine offene Schreibtransaktion, in der eine fremde
+   Slot-Anlage wartet. Ein Test, der die Reserve von `max_replication_slots`
+   ausschöpft, würde die Slots der übrigen Pakete blockieren und läuft deshalb
+   **nicht** im Tier: `TestSlotReserveExhaustedIsConfiguration` überspringt
+   ohne `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN` (ein eigener PostgreSQL mit
+   `max_replication_slots=1`) und geht nicht in die Zahl ein — der Träger
+   dieser Zusage ist ein einmaliger, manueller Lauf.
 
 ## Ausgabe und Ausgänge
 
