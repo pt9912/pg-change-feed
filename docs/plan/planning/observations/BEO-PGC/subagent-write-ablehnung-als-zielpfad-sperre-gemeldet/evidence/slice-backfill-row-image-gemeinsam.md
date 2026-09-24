@@ -1,0 +1,3 @@
+**Vorgang:** slice-backfill-row-image-gemeinsam
+
+**Fund:** Ein Reviewer-Subagent schrieb seinen Report zuerst als Entwurf ins Scratchpad; das `Write`-Werkzeug lehnte diesen Aufruf mit „Subagents should return findings as text, not write report files" ab, der Subagent meldete den Zielpfad unter `docs/reviews/` als gesperrt. Der zweite Versuch am Zielpfad ging durch; der Report liegt in Commit `0d5c3f1a` (Nachprüfung der Fixrunde eingeschlossen). Die Ablehnung galt dem Entwurfs-Aufruf, nicht dem Zielpfad; die Ursache ist im Transkript vom Auftraggeber geprüft und hier übernommen, vom Planner nicht nachgemessen (das Transkript liegt außerhalb des Repos).
