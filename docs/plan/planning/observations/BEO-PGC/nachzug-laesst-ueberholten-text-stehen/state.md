@@ -1,9 +1,19 @@
-Stand: **offen** (2×) — unter der Schwelle, kein Ausgang. Gelesen wird der
-Eintrag im Sichtungs-Schritt der Slice-Planung
-(`docs/plan/planning/observations/README.md`). Der zweite Beleg trifft
-denselben Mechanismus an einem anderen Träger-Typ (`spec/pflichtenheft.md`
-Fließtext statt Slice-Plan-Dokument) und mit Ursprung und Vorkommen
-getrennt (Ursprung: `slice-sdk-python-pack-werkzeug`; Vorkommen: gefunden
-beim Review von `slice-sdk-kotlin-pack-werkzeug`). Zähler (abgeleitet): 2×
-(evidence/slice-sdk-python-projektgeruest.md,
-evidence/slice-sdk-kotlin-pack-werkzeug.md).
+Stand: **offen** (3×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
+Ausgang noch **nicht** zugewiesen). Gelesen wird der Eintrag im Lese-Schritt
+der Closure von `welle-backfill-bestand` (Modul 6): die Regelschärfungs-Frage
+— ob und wie `.harness/skills/reviewer.md` oder ein Schritt der
+Implementer-Selbstprüfung die Klasse fängt — ist eine Architect-Entscheidung
+(Modul 4/8), die dieser Lese-Schritt als Steering-Loop-Eintrag weiterträgt.
+
+Zähler (abgeleitet): 3× (evidence/slice-sdk-python-projektgeruest.md,
+evidence/slice-sdk-kotlin-pack-werkzeug.md,
+evidence/slice-backfill-spec-nachzug.md). Der zweite Beleg trifft denselben
+Mechanismus an einem anderen Träger-Typ (`spec/pflichtenheft.md` Fließtext
+statt Slice-Plan-Dokument) und mit Ursprung und Vorkommen getrennt (Ursprung:
+`slice-sdk-python-pack-werkzeug`; Vorkommen: gefunden beim Review von
+`slice-sdk-kotlin-pack-werkzeug`). Der dritte Beleg trifft ihn an einer
+Tabellenzeile des Pflichtenhefts (`SPEC-022`: die neue Zeile „Position und
+`limit`" nimmt die Fortsetzungs-Regel der Zeile „Reihenfolge" desselben
+Abschnitts zurück, ohne dass diese den Vorbehalt trägt) — Ursprung und
+Vorkommen fallen dort im selben Zug zusammen; das Review fand ihn, die
+Fixrunde behob ihn.

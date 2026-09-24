@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **26×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **27×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,17 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der siebenundzwanzigste Beleg,
+`evidence/slice-backfill-spec-nachzug.md`: die Träger waren offene
+Folge-Pläne (Plan-Sätze „leer, solange keine Auswertung sie setzt", „vier
+Arten"), die der Spec-Nachzug durch die Festlegung der zwei Warn-Spalten und
+der fünf Antragsarten überholte; das committete Suchlauf-Feld las `spec`,
+`docs/user`, `harness` und die READMEs, nicht `docs/plan/planning` (Review F-2,
+LOW), und das Muster der Fixrunde suchte die „leer"-Formen statt des Hedges
+„Warn-Spalte(n)" (Verifikation V-1, INFO) — Anwendungs-Schärfung der
+verkörperten Regel `AGENTS.md` §3.13, kein Schwellen-Übertritt: ein Slice, der
+eine offene Zahl festlegt, sucht auch den Hedge des offenen Punkts über alle
+Plan-Träger. Details: `evidence/slice-backfill-spec-nachzug.md`.
 Der sechsundzwanzigste Beleg,
 `evidence/slice-sdk-python-http-reale2e.md`: das §3.13-Suchlauf-Feld
 nannte die eigene `harness/README.md`-Python-Zeile und verfehlte die zwei
