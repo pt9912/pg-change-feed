@@ -25,7 +25,7 @@ Transaktion, erneute Prüfung der Vorbedingungen vor der Ausführung).
 (Feldform des Run-Zustands, durch `spec-nachzug`), [`ARC-001`](../../../../spec/architecture.md), [`ARC-002`](../../../../spec/architecture.md),
 [`ARC-003`](../../../../spec/architecture.md), [`ARC-004`](../../../../spec/architecture.md) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
