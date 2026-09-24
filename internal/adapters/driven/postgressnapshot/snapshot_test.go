@@ -333,8 +333,8 @@ func TestPermissionClassWithoutSelect(t *testing.T) {
 	adapter := newAdapter(t, roleDSN(t, dsn, role, password))
 	runID := "perm" + suffix()
 	_, err := adapter.OpenSnapshot(ctx, runID, "public", table)
-	if !errors.Is(err, outbound.ErrSnapshotPermission) {
-		t.Fatalf("OpenSnapshot ohne SELECT: %v, erwartet Klasse permission", err)
+	if !errors.Is(err, outbound.ErrSnapshotPermission) || !strings.Contains(err.Error(), "Tabellensperre") {
+		t.Fatalf("OpenSnapshot ohne SELECT: %v, erwartet Klasse permission in der Phase Tabellensperre", err)
 	}
 	waitSlotGone(t, admin, "cdc_bf_"+runID)
 
@@ -535,6 +535,10 @@ func TestConfigurationClass(t *testing.T) {
 	runID := "conf" + suffix()
 	if _, err := adapter.OpenSnapshot(ctx, runID, "public", "gibt_es_nicht_"+suffix()); !errors.Is(err, outbound.ErrSnapshotConfiguration) {
 		t.Errorf("OpenSnapshot einer fehlenden Tabelle: %v, erwartet Klasse configuration", err)
+	}
+	waitSlotGone(t, admin, "cdc_bf_"+runID)
+	if _, err := adapter.OpenSnapshot(ctx, runID, "gibt_es_nicht_"+suffix(), "t"); !errors.Is(err, outbound.ErrSnapshotConfiguration) {
+		t.Errorf("OpenSnapshot eines fehlenden Schemas: %v, erwartet Klasse configuration", err)
 	}
 	waitSlotGone(t, admin, "cdc_bf_"+runID)
 	if _, _, err := adapter.EstimatedRows(ctx, "public", "gibt_es_nicht_"+suffix()); !errors.Is(err, outbound.ErrSnapshotConfiguration) {
@@ -1031,8 +1035,9 @@ func TestUnreachableSourceIsTransient(t *testing.T) {
 
 // TestCatalogQueryFailuresKeepTheirClass trägt die Fehler der Katalog-
 // Abfragen: in einer eigenen Datenbank ohne `SELECT` auf `pg_attribute`
-// und `pg_class` enden die Spaltenliste und die Schätzung mit der
-// Fehlerklasse ihres SQLSTATE (`permission`), nicht als Lesefehler.
+// enden die Spaltenliste, ohne `SELECT` auf `pg_class` zusätzlich die
+// Umschreib-Prüfung und die Schätzung mit der Fehlerklasse ihres SQLSTATE
+// (`permission`), nicht als Lesefehler.
 func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
 	dsn := testDSN(t)
 	ctx := testCtx(t)
@@ -1049,7 +1054,7 @@ func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
 	}
 	u.Path = "/" + database
 	isolated := connect(t, u.String())
-	mustExec(t, isolated, "REVOKE SELECT ON pg_catalog.pg_attribute, pg_catalog.pg_class FROM PUBLIC")
+	mustExec(t, isolated, "REVOKE SELECT ON pg_catalog.pg_attribute FROM PUBLIC")
 	mustExec(t, isolated, "CREATE TABLE public.t (id int PRIMARY KEY)")
 	mustExec(t, isolated, "GRANT SELECT ON public.t TO "+role)
 	adapter := newAdapter(t, roleDSN(t, u.String(), role, password))
@@ -1058,6 +1063,14 @@ func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
 	_, err = adapter.OpenSnapshot(ctx, runID, "public", "t")
 	if !errors.Is(err, outbound.ErrSnapshotPermission) || !strings.Contains(err.Error(), "Spaltenliste") {
 		t.Errorf("OpenSnapshot ohne SELECT auf pg_attribute: %v, erwartet Klasse permission in der Phase Spaltenliste", err)
+	}
+	waitSlotGone(t, isolated, "cdc_bf_"+runID)
+
+	mustExec(t, isolated, "REVOKE SELECT ON pg_catalog.pg_class FROM PUBLIC")
+	runID = "catalog" + suffix()
+	_, err = adapter.OpenSnapshot(ctx, runID, "public", "t")
+	if !errors.Is(err, outbound.ErrSnapshotPermission) || !strings.Contains(err.Error(), "Umschreib-Prüfung") {
+		t.Errorf("OpenSnapshot ohne SELECT auf pg_class: %v, erwartet Klasse permission in der Phase Umschreib-Prüfung", err)
 	}
 	waitSlotGone(t, isolated, "cdc_bf_"+runID)
 	_, _, err = adapter.EstimatedRows(ctx, "public", "t")
@@ -1116,5 +1129,213 @@ func TestReadWithCancelledContextIsTransient(t *testing.T) {
 	cancel()
 	if _, err := snap.NextBlock(cancelled); !errors.Is(err, outbound.ErrSnapshotTransient) {
 		t.Fatalf("NextBlock mit beendetem Kontext: %v, erwartet Klasse transient", err)
+	}
+}
+
+// windowTable legt eine Tabelle mit drei Zeilen an und exportiert danach den
+// Snapshot: der Zustand, in dem ein Fremdschreiber im Fenster zwischen Export
+// und Import umschreiben kann (`ADR-0118`).
+func windowTable(t *testing.T, dsn, application string) (admin *pgconn.PgConn, adapter *PostgresTableSnapshotAdapter, export *slotExport, table string) {
+	t.Helper()
+	admin = connect(t, dsn)
+	table = newTable(t, admin, "id int PRIMARY KEY, name text")
+	mustExec(t, admin, "INSERT INTO public."+quoteIdent(table)+" VALUES (1, 'a'), (2, 'b'), (3, 'c')")
+	adapter = newAdapter(t, appDSN(t, dsn, application))
+	export, err := adapter.exportSnapshot(testCtx(t), "cdc_bf_win_"+suffix())
+	if err != nil {
+		t.Fatalf("exportSnapshot: %v", err)
+	}
+	t.Cleanup(func() { closeConn(export.conn) })
+	return admin, adapter, export, table
+}
+
+// TestRewriteInWindowIsTransient trägt die Erkennung eines Umschreibens
+// zwischen Export und Import (`ADR-0118` Festlegung 2 und 3): jede Form, die
+// die Datei der Tabelle ändert, endet als Klasse `transient` mit Tabelle und
+// Abhilfe, ohne geöffneten Cursor und ohne Slot oder Sitzung danach; ein neuer
+// Aufruf liest den Bestand des neuen Zustands. `VACUUM FULL` und `CLUSTER`
+// behalten die Zeilen und enden trotzdem so (Festlegung 4).
+func TestRewriteInWindowIsTransient(t *testing.T) {
+	dsn := testDSN(t)
+	cases := []struct {
+		name      string
+		ddl       func(table string) string
+		rowsAfter int
+	}{
+		{"ALTER COLUMN TYPE", func(table string) string {
+			return "ALTER TABLE public." + quoteIdent(table) + " ALTER COLUMN name TYPE varchar(64)"
+		}, 3},
+		{"TRUNCATE", func(table string) string { return "TRUNCATE public." + quoteIdent(table) }, 0},
+		{"VACUUM FULL", func(table string) string { return "VACUUM FULL public." + quoteIdent(table) }, 3},
+		{"CLUSTER", func(table string) string {
+			return "CLUSTER public." + quoteIdent(table) + " USING " + quoteIdent(table+"_pkey")
+		}, 3},
+		{"DROP und CREATE", func(table string) string {
+			return "DROP TABLE public." + quoteIdent(table) + "; CREATE TABLE public." + quoteIdent(table) + " (id int PRIMARY KEY, name text)"
+		}, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			application := "snap_rewrite_" + suffix()
+			admin, adapter, export, table := windowTable(t, dsn, application)
+			ctx := testCtx(t)
+			mustExec(t, admin, tc.ddl(table))
+
+			snap, err := adapter.importSnapshot(ctx, export, "public", table)
+			if snap != nil {
+				t.Cleanup(func() { _ = snap.Close(ctx) })
+			}
+			if !errors.Is(err, outbound.ErrSnapshotTransient) {
+				t.Fatalf("importSnapshot nach %s im Fenster: %v (Snapshot %v), erwartet Klasse transient", tc.name, err, snap)
+			}
+			if snap != nil {
+				t.Errorf("importSnapshot liefert trotz Fehler einen Snapshot")
+			}
+			for _, part := range []string{"public." + table, "umgeschrieben", "neuer Antrag"} {
+				if !strings.Contains(err.Error(), part) {
+					t.Errorf("die Meldung nennt %q nicht: %v", part, err)
+				}
+			}
+			waitSessionsGone(t, admin, application)
+
+			again, err := adapter.OpenSnapshot(ctx, "rw"+suffix(), "public", table)
+			if err != nil {
+				t.Fatalf("OpenSnapshot nach dem Umschreiben: %v", err)
+			}
+			t.Cleanup(func() { _ = again.Close(ctx) })
+			if _, rows := drain(t, ctx, again); len(rows) != tc.rowsAfter {
+				t.Fatalf("Zeilen des neuen Aufrufs nach %s = %d, erwartet %d", tc.name, len(rows), tc.rowsAfter)
+			}
+		})
+	}
+}
+
+// TestNoRewriteInWindowReadsTheSnapshot ist die Kontrolle zu
+// `TestRewriteInWindowIsTransient`: ohne Umschreiben im Fenster bricht der
+// Import nicht ab. Eine kompatible Spalten-Erweiterung ändert die Datei nicht
+// (Bestand im Snapshot-Stand, `ADR-0116`); ein `DROP COLUMN` endet weiter am
+// Cursor als Klasse `storage` (`ADR-0118` Festlegung 5).
+func TestNoRewriteInWindowReadsTheSnapshot(t *testing.T) {
+	dsn := testDSN(t)
+	cases := []struct {
+		name        string
+		ddl         func(table string) string
+		wantStorage bool
+	}{
+		{"keine DDL", nil, false},
+		{"ADD COLUMN", func(table string) string {
+			return "ALTER TABLE public." + quoteIdent(table) + " ADD COLUMN extra int"
+		}, false},
+		{"DROP COLUMN", func(table string) string {
+			return "ALTER TABLE public." + quoteIdent(table) + " DROP COLUMN name"
+		}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			admin, adapter, export, table := windowTable(t, dsn, "snap_norewrite_"+suffix())
+			ctx := testCtx(t)
+			if tc.ddl != nil {
+				mustExec(t, admin, tc.ddl(table))
+			}
+			snap, err := adapter.importSnapshot(ctx, export, "public", table)
+			if tc.wantStorage {
+				if !errors.Is(err, outbound.ErrSnapshotStorage) {
+					t.Fatalf("importSnapshot nach %s: %v, erwartet Klasse storage", tc.name, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("importSnapshot nach %s: %v, erwartet keinen Abbruch", tc.name, err)
+			}
+			t.Cleanup(func() { _ = snap.Close(ctx) })
+			if got, want := strings.Join(snap.Columns(), ","), "id,name"; got != want {
+				t.Errorf("Spalten = %s, erwartet %s", got, want)
+			}
+			if _, rows := drain(t, ctx, snap); len(rows) != 3 {
+				t.Fatalf("Zeilen = %d, erwartet 3", len(rows))
+			}
+		})
+	}
+}
+
+// TestPartitionedTableIsNoFalseAlarm trägt das `coalesce` des Vergleichs: eine
+// partitionierte Tabelle hat keine eigene Datei (`pg_relation_filenode` liefert
+// NULL), ihr Import bricht ohne Umschreiben nicht ab.
+func TestPartitionedTableIsNoFalseAlarm(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := "snap_part_" + suffix()
+	mustExec(t, admin, "CREATE TABLE public."+quoteIdent(table)+" (id int, name text) PARTITION BY RANGE (id)")
+	t.Cleanup(func() { bestEffort(admin, "DROP TABLE IF EXISTS public."+quoteIdent(table)+" CASCADE") })
+	mustExec(t, admin, "CREATE TABLE public."+quoteIdent(table+"_p1")+" PARTITION OF public."+quoteIdent(table)+" FOR VALUES FROM (0) TO (100)")
+	mustExec(t, admin, "INSERT INTO public."+quoteIdent(table)+" VALUES (1, 'a'), (2, 'b')")
+
+	snap, err := newAdapter(t, dsn).OpenSnapshot(ctx, "part"+suffix(), "public", table)
+	if err != nil {
+		t.Fatalf("OpenSnapshot einer partitionierten Tabelle: %v", err)
+	}
+	t.Cleanup(func() { _ = snap.Close(ctx) })
+	if _, rows := drain(t, ctx, snap); len(rows) != 2 {
+		t.Fatalf("Zeilen = %d, erwartet 2", len(rows))
+	}
+}
+
+// TestImportWaitsForExclusiveLockAndThenAborts trägt die Sperre (`ADR-0118`
+// Festlegung 1): hält eine fremde Transaktion nach dem Export `ACCESS
+// EXCLUSIVE` mit einem Umschreiben, wartet der Import an der Sperranweisung
+// (nicht erst am Cursor) und endet nach dem Commit als Klasse `transient`.
+func TestImportWaitsForExclusiveLockAndThenAborts(t *testing.T) {
+	dsn := testDSN(t)
+	application := "snap_lock_" + suffix()
+	admin, adapter, export, table := windowTable(t, dsn, application)
+	ctx := testCtx(t)
+	ddl := connect(t, dsn)
+	mustExec(t, ddl, "BEGIN")
+	committed := false
+	t.Cleanup(func() {
+		if !committed {
+			bestEffort(ddl, "ROLLBACK")
+		}
+	})
+	mustExec(t, ddl, "ALTER TABLE public."+quoteIdent(table)+" ALTER COLUMN name TYPE varchar(64)")
+
+	type outcome struct {
+		snap outbound.TableSnapshot
+		err  error
+	}
+	done := make(chan outcome, 1)
+	go func() {
+		snap, err := adapter.importSnapshot(ctx, export, "public", table)
+		done <- outcome{snap: snap, err: err}
+	}()
+
+	waiting := "SELECT count(*) FROM pg_stat_activity WHERE application_name = '" + application +
+		"' AND wait_event_type = 'Lock' AND query LIKE 'LOCK TABLE%'"
+	deadline := time.Now().Add(15 * time.Second)
+	for scalar(t, admin, waiting) != "1" {
+		if time.Now().After(deadline) {
+			t.Fatal("der Import wartet 15 s nach dem Umschreiben nicht an der Sperranweisung")
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	select {
+	case got := <-done:
+		t.Fatalf("importSnapshot kehrt vor dem Commit der DDL zurück: %v", got.err)
+	default:
+	}
+
+	mustExec(t, ddl, "COMMIT")
+	committed = true
+	select {
+	case got := <-done:
+		if got.snap != nil {
+			t.Cleanup(func() { _ = got.snap.Close(ctx) })
+		}
+		if !errors.Is(got.err, outbound.ErrSnapshotTransient) {
+			t.Fatalf("importSnapshot nach dem Commit: %v, erwartet Klasse transient", got.err)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("importSnapshot kehrt 20 s nach dem Commit der DDL nicht zurück")
 	}
 }

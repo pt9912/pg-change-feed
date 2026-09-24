@@ -1,6 +1,7 @@
 // Package snapshotlogic trägt die netzlos prüfbare Logik des
 // `PostgresTableSnapshotAdapter` (`ADR-0111` Teilfrage 1): Konstruktions-
-// validierung, Slot-Name, Cursor- und Fetch-Anweisung, Bezeichner-Quoting,
+// validierung, Slot-Name, Sperr-, Umschreib-Prüfungs-, Cursor- und
+// Fetch-Anweisung, Bezeichner-Quoting,
 // Zeilenwerte, Schätzungs-Abbildung und Fehlerklassifikation. Das Paket
 // öffnet keine Verbindung und läuft im Unit-Gegenstand des Coverage-Gates
 // (`make test`, `ADR-0071` Punkt 1); die Verbindungsschritte liegen im
@@ -94,6 +95,53 @@ func CursorStatement(columns []string, schema, table string) string {
 	}
 	return "DECLARE " + CursorName + " NO SCROLL CURSOR FOR SELECT " +
 		strings.Join(quoted, ", ") + " FROM " + QuoteIdent(schema) + "." + QuoteIdent(table)
+}
+
+// RewriteQuery vergleicht den `relfilenode` der Tabelle im Snapshot mit dem
+// aktuellen Katalog (Parameter `$1` Schema, `$2` Tabelle); `true` heißt: die
+// Tabelle wurde nach dem Snapshot-Export umgeschrieben. Das `coalesce` hält
+// Relationen ohne eigene Datei (partitionierte Tabellen) frei von Fehlalarmen
+// (`ADR-0118` Festlegung 2).
+const RewriteQuery = `SELECT c.relfilenode <> coalesce(pg_relation_filenode(c.oid), 0)
+	   FROM pg_class c
+	  WHERE c.oid = to_regclass(quote_ident($1) || '.' || quote_ident($2))`
+
+// LockStatement bildet die Lesesperre der Tabelle, die bis zum Ende der
+// Lese-Transaktion gilt (`ADR-0118` Festlegung 1).
+func LockStatement(schema, table string) string {
+	return "LOCK TABLE " + QuoteIdent(schema) + "." + QuoteIdent(table) + " IN ACCESS SHARE MODE"
+}
+
+// ClassifyLock übersetzt den Fehler der Sperranweisung: eine fehlende Tabelle
+// (`42P01`) oder ein fehlendes Schema (`3F000`) ist die Klasse
+// `configuration`, alles Übrige folgt `Classify` mit der Klasse `storage`.
+func ClassifyLock(ctx context.Context, cause error, schema, table string) error {
+	var pgErr *pgconn.PgError
+	if ctx.Err() == nil && errors.As(cause, &pgErr) && (pgErr.Code == "42P01" || pgErr.Code == "3F000") {
+		return fmt.Errorf("%w: Tabelle %s.%s nicht vorhanden", outbound.ErrSnapshotConfiguration, schema, table)
+	}
+	return Classify(ctx, cause, outbound.ErrSnapshotStorage, "Tabellensperre")
+}
+
+// CheckRewrite wertet die Zeilen von `RewriteQuery` aus: `nil` heißt
+// unverändert. Ein Unterschied und eine fehlende Zeile (die Tabelle steht im
+// Snapshot nicht im Katalog) enden als Klasse `transient` mit Tabelle,
+// Ursache und Abhilfe; eine andere Form der Antwort ist ein Lesefehler
+// (`storage`).
+func CheckRewrite(rows [][][]byte, schema, table string) error {
+	rewritten := true // keine Zeile: die Tabelle steht im Snapshot nicht im Katalog
+	switch {
+	case len(rows) == 0:
+	case len(rows) == 1 && len(rows[0]) == 1 && string(rows[0][0]) == "t":
+	case len(rows) == 1 && len(rows[0]) == 1 && string(rows[0][0]) == "f":
+		rewritten = false
+	default:
+		return fmt.Errorf("%w: Umschreib-Prüfung: unerwartete Antwort für %s.%s", outbound.ErrSnapshotStorage, schema, table)
+	}
+	if rewritten {
+		return fmt.Errorf("%w: Tabelle %s.%s wurde nach dem Snapshot-Export umgeschrieben; ein neuer Antrag beginnt neu", outbound.ErrSnapshotTransient, schema, table)
+	}
+	return nil
 }
 
 // FetchStatement holt die nächsten höchstens `blockSize` Zeilen des Cursors.

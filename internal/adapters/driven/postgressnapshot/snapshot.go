@@ -7,7 +7,8 @@
 //
 // Alle Verbindungen laufen über denselben DSN (`CDC_CAPTURE_DSN`): die
 // Replication-Verbindung legt den Slot an und endet nach dem Import, eine
-// reguläre Verbindung liest im importierten Snapshot. Der Adapter liegt in
+// reguläre Verbindung sperrt die Tabelle, prüft sie auf ein Umschreiben seit
+// dem Export (`ADR-0118`) und liest im importierten Snapshot. Der Adapter liegt in
 // einem eigenen Paket, weil er die Quelltabelle über eine
 // Replication-Verbindung liest und der Run-Store (`postgresstorage`) eine
 // andere Verantwortung trägt. Sein Testlauf setzt einen PostgreSQL mit
@@ -109,7 +110,9 @@ type slotExport struct {
 
 // OpenSnapshot legt den temporären Slot an, importiert seinen Snapshot in
 // einer regulären `REPEATABLE READ`-Transaktion, beendet die
-// Replication-Verbindung und liest Spalten und Cursor im Snapshot.
+// Replication-Verbindung, sperrt die Tabelle gegen Umschreiben, prüft sie auf
+// ein Umschreiben seit dem Export (`ADR-0118`) und liest Spalten und Cursor im
+// Snapshot.
 func (a *PostgresTableSnapshotAdapter) OpenSnapshot(ctx context.Context, runID, schema, table string) (outbound.TableSnapshot, error) {
 	slot, err := snapshotlogic.SlotName(runID)
 	if err != nil {
@@ -160,8 +163,8 @@ func (a *PostgresTableSnapshotAdapter) exportSnapshot(ctx context.Context, slot 
 
 // importSnapshot importiert den exportierten Snapshot in einer regulären
 // Verbindung, beendet danach die Replication-Verbindung (der temporäre Slot
-// fällt weg, der Snapshot bleibt lesbar) und bereitet Spalten und Cursor
-// vor. Nach der Rückkehr — mit oder ohne Fehler — ist die
+// fällt weg, der Snapshot bleibt lesbar), sperrt und prüft die Tabelle
+// (`lockAndVerify`) und bereitet Spalten und Cursor vor. Nach der Rückkehr — mit oder ohne Fehler — ist die
 // Replication-Verbindung geschlossen.
 func (a *PostgresTableSnapshotAdapter) importSnapshot(ctx context.Context, export *slotExport, schema, table string) (outbound.TableSnapshot, error) {
 	defer closeConn(export.conn)
@@ -184,6 +187,10 @@ func (a *PostgresTableSnapshotAdapter) importSnapshot(ctx context.Context, expor
 	// Slot fällt weg, die Lese-Transaktion behält den Stand.
 	closeConn(export.conn)
 
+	if err := lockAndVerify(ctx, snap, schema, table); err != nil {
+		snap.abort()
+		return nil, err
+	}
 	columns, err := readColumns(ctx, conn, schema, table)
 	if err != nil {
 		snap.abort()
@@ -195,6 +202,22 @@ func (a *PostgresTableSnapshotAdapter) importSnapshot(ctx context.Context, expor
 		return nil, snapshotlogic.Classify(ctx, err, outbound.ErrSnapshotStorage, "Cursor")
 	}
 	return snap, nil
+}
+
+// lockAndVerify sperrt die Tabelle gegen Umschreiben und prüft, dass sie seit
+// dem Snapshot-Export nicht umgeschrieben wurde (`ADR-0118`): erst die
+// Lesesperre, die bis zum Ende der Transaktion gilt, dann der
+// Filenode-Vergleich. Ein Umschreiben endet als Klasse `transient`.
+func lockAndVerify(ctx context.Context, snap *snapshot, schema, table string) error {
+	if err := snap.exec(ctx, snapshotlogic.LockStatement(schema, table)); err != nil {
+		return snapshotlogic.ClassifyLock(ctx, err, schema, table)
+	}
+	result := snap.conn.ExecParams(ctx, snapshotlogic.RewriteQuery,
+		[][]byte{[]byte(schema), []byte(table)}, nil, nil, nil).Read()
+	if result.Err != nil {
+		return snapshotlogic.Classify(ctx, result.Err, outbound.ErrSnapshotStorage, "Umschreib-Prüfung")
+	}
+	return snapshotlogic.CheckRewrite(result.Rows, schema, table)
 }
 
 // readColumns liest die Spaltenliste im Snapshot: Spalten der Tabelle in

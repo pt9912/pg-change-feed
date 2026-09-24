@@ -179,3 +179,99 @@ func TestClassify(t *testing.T) {
 		}
 	}
 }
+
+func TestLockStatement(t *testing.T) {
+	if got, want := snapshotlogic.LockStatement("public", "t"), `LOCK TABLE "public"."t" IN ACCESS SHARE MODE`; got != want {
+		t.Errorf("LockStatement = %q, erwartet %q", got, want)
+	}
+	got := snapshotlogic.LockStatement(`s"x`, `t"; DROP TABLE u; --`)
+	if want := `LOCK TABLE "s""x"."t""; DROP TABLE u; --" IN ACCESS SHARE MODE`; got != want {
+		t.Errorf("LockStatement mit Anführungszeichen = %q, erwartet %q", got, want)
+	}
+}
+
+func TestRewriteQueryCoalescesRelationsWithoutFile(t *testing.T) {
+	if !strings.Contains(snapshotlogic.RewriteQuery, "coalesce(pg_relation_filenode(c.oid), 0)") {
+		t.Errorf("RewriteQuery trägt das coalesce für Relationen ohne eigene Datei nicht: %s", snapshotlogic.RewriteQuery)
+	}
+	if !strings.Contains(snapshotlogic.RewriteQuery, "quote_ident($1) || '.' || quote_ident($2)") {
+		t.Errorf("RewriteQuery quotet Schema und Tabelle nicht: %s", snapshotlogic.RewriteQuery)
+	}
+}
+
+func row(value string) [][]byte { return [][]byte{[]byte(value)} }
+
+func TestCheckRewrite(t *testing.T) {
+	cases := []struct {
+		name string
+		rows [][][]byte
+		want error // nil: unverändert
+	}{
+		{"unverändert", [][][]byte{row("f")}, nil},
+		{"umgeschrieben", [][][]byte{row("t")}, outbound.ErrSnapshotTransient},
+		{"Tabelle im Snapshot nicht im Katalog", nil, outbound.ErrSnapshotTransient},
+		{"NULL statt Wahrheitswert", [][][]byte{{nil}}, outbound.ErrSnapshotStorage},
+		{"anderer Wert", [][][]byte{row("x")}, outbound.ErrSnapshotStorage},
+		{"leeres Feld", [][][]byte{row("")}, outbound.ErrSnapshotStorage},
+		{"zwei Zeilen", [][][]byte{row("f"), row("f")}, outbound.ErrSnapshotStorage},
+		{"zwei Felder", [][][]byte{{[]byte("f"), []byte("f")}}, outbound.ErrSnapshotStorage},
+		{"Zeile ohne Feld", [][][]byte{{}}, outbound.ErrSnapshotStorage},
+	}
+	for _, tc := range cases {
+		err := snapshotlogic.CheckRewrite(tc.rows, "public", "orders")
+		if tc.want == nil {
+			if err != nil {
+				t.Errorf("%s: %v, erwartet nil", tc.name, err)
+			}
+			continue
+		}
+		if !errors.Is(err, tc.want) {
+			t.Errorf("%s: %v, erwartet %v", tc.name, err, tc.want)
+			continue
+		}
+		if !strings.Contains(err.Error(), "public.orders") {
+			t.Errorf("%s: die Meldung nennt die Tabelle nicht: %v", tc.name, err)
+		}
+	}
+	err := snapshotlogic.CheckRewrite([][][]byte{row("t")}, "public", "orders")
+	for _, part := range []string{"umgeschrieben", "neuer Antrag"} {
+		if !strings.Contains(err.Error(), part) {
+			t.Errorf("die Meldung des Umschreibens nennt %q nicht: %v", part, err)
+		}
+	}
+	for _, class := range []error{outbound.ErrSnapshotConfiguration, outbound.ErrSnapshotStorage, outbound.ErrSnapshotPermission} {
+		if errors.Is(err, class) {
+			t.Errorf("das Umschreiben trägt zusätzlich die Klasse %v", class)
+		}
+	}
+}
+
+func TestClassifyLock(t *testing.T) {
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	live := context.Background()
+	cases := []struct {
+		name  string
+		ctx   context.Context
+		cause error
+		want  error
+	}{
+		{"Tabelle fehlt", live, &pgconn.PgError{Code: "42P01"}, outbound.ErrSnapshotConfiguration},
+		{"Schema fehlt", live, &pgconn.PgError{Code: "3F000"}, outbound.ErrSnapshotConfiguration},
+		{"ohne SELECT", live, &pgconn.PgError{Code: "42501"}, outbound.ErrSnapshotPermission},
+		{"Kontext beendet", cancelled, &pgconn.PgError{Code: "42P01"}, outbound.ErrSnapshotTransient},
+		{"Zeitlimit", live, context.DeadlineExceeded, outbound.ErrSnapshotTransient},
+		{"Sitzung beendet", live, &pgconn.PgError{Code: "57P01"}, outbound.ErrSnapshotTransient},
+		{"anderer SQLSTATE", live, &pgconn.PgError{Code: "55P03"}, outbound.ErrSnapshotStorage},
+		{"Fehler ohne SQLSTATE", live, errors.New("boom"), outbound.ErrSnapshotStorage},
+	}
+	for _, tc := range cases {
+		err := snapshotlogic.ClassifyLock(tc.ctx, tc.cause, "public", "orders")
+		if !errors.Is(err, tc.want) {
+			t.Errorf("%s: %v, erwartet %v", tc.name, err, tc.want)
+		}
+		if !strings.Contains(err.Error(), "public.orders") && !strings.Contains(err.Error(), "Tabellensperre") {
+			t.Errorf("%s: die Meldung nennt weder Tabelle noch Phase: %v", tc.name, err)
+		}
+	}
+}
