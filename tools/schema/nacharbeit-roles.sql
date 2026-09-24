@@ -12,9 +12,12 @@
 -- Erfassungspfad — REPLICATION-Attribut für den Replication-Stream
 -- (ADR-0008), INSERT auf transaction/change (queries.go InsertTransaction/
 -- InsertChange), SELECT auf source_table/schema_version für die
--- Bindungs-Auflösung. cdc_admin trägt die Registrierungs-/
--- Verwaltungspfade — DML auf source_table/schema_version (LH-FA-CFG-001.a)
--- und consumer/consumer_position (LH-FA-CON-001…006), CREATE auf der
+-- Bindungs-Auflösung und die Fortführung des Backfill-Run-Zustands
+-- (SELECT, UPDATE auf backfill_run, SPEC-029). cdc_admin trägt die
+-- Registrierungs-/Verwaltungspfade — DML auf source_table/schema_version
+-- (LH-FA-CFG-001.a) und consumer/consumer_position (LH-FA-CON-001…006),
+-- die Annahme eines Backfills (SELECT, INSERT auf backfill_run, ADR-0113
+-- Festlegung 1), CREATE auf der
 -- Datenbank für `CREATE PUBLICATION` selbst
 -- (tableactivation.go CREATE/ALTER PUBLICATION) — für das Hinzufügen von
 -- Tabellen zur Publication reicht das allein nicht, siehe die Grenze
@@ -130,3 +133,12 @@ GRANT SELECT, INSERT, UPDATE ON cdc.process_heartbeat TO cdc_admin;
 -- beiden Tabellen.
 GRANT INSERT ON cdc.schema_version TO cdc_capture;
 GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;
+
+-- Backfill-Run-Zustand (SPEC-029, ADR-0113 Festlegung 1): cdc_admin legt die
+-- Zeile bei der Annahme an (SELECT für die Prüfung „kein aktiver Run“, INSERT
+-- für die Anlage im Status queued); cdc_capture führt sie fort (SELECT für die
+-- WHERE-Klausel und das Lesen der queued-Runs, UPDATE für Statuswechsel,
+-- Fortschritt und Abschluss). Niemand trägt DELETE, cdc_admin kein UPDATE,
+-- cdc_capture kein INSERT; cdc_reader trägt kein Recht auf die Basistabelle.
+GRANT SELECT, INSERT ON cdc.backfill_run TO cdc_admin;
+GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;

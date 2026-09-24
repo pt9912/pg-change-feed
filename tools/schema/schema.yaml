@@ -31,6 +31,11 @@
 # Re-Evaluierungs-Trigger, dieselbe Klasse wie nacharbeit-roles.sql).
 # Herkunft: `docs/plan/planning/observations/BEO-PGC/d-migrate-nacharbeit`.
 #
+# backfill_run trägt den Run-Zustand des Backfills (SPEC-029, LH-FA-CAP-009,
+# ADR-0113): eine Zeile je Run, ohne SQL-Funktion und ohne Nacharbeit-Datei —
+# die Tabelle läuft vollständig über dieses Modell, ihre Grants stehen in
+# tools/schema/nacharbeit-roles.sql.
+#
 # Die drei Views (active_tables, consumer_status, changes) tragen den
 # SQL-Zugriff nach LH-FA-SST-002 (Konfiguration, Status, Kernlesezugriffe)
 # als eigene Driving-Adapter-Fläche (ARC-005, „SQL-Funktionen/Views"): sie
@@ -260,6 +265,32 @@ tables:
       heartbeat_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
       error_class: { type: text }
     primary_key: [source_id]
+
+  backfill_run:
+    description: "Run-Zustand eines Backfills des Tabellenbestands (SPEC-029, LH-FA-CAP-009, ADR-0111, ADR-0113): eine Zeile je Run, angelegt von cdc_admin bei der Annahme eines Antrags (Status queued, in derselben Transaktion wie der Antragsvermerk applied), fortgeschrieben von cdc_capture. run_id ist die administration_request_id des annehmenden Antrags. estimated_rows ist nullable: NULL heißt unbekannt, nie 0. Die zwei Warn-Spalten sind eine Kennzeichnung (false, solange keine Auswertung sie setzt). Die geschlossene status-Menge steht als CHECK bei Erstanlage, weil d-migrate eine CHECK-Änderung an einer bestehenden Tabelle nicht konvergiert (siehe Kopfkommentar)."
+    columns:
+      run_id: { type: text, required: true }
+      source_id:
+        type: text
+        required: true
+        references: { table: source, column: source_id }
+      schema_name: { type: text, required: true }
+      table_name: { type: text, required: true }
+      status: { type: text, required: true }
+      requested_at: { type: datetime, timezone: true, required: true, default: current_timestamp }
+      started_at: { type: datetime, timezone: true }
+      finished_at: { type: datetime, timezone: true }
+      snapshot_position: { type: biginteger }
+      rows_copied: { type: biginteger, required: true, default: 0 }
+      estimated_rows: { type: biginteger }
+      warn_estimated_size: { type: boolean, required: true, default: false }
+      warn_duration: { type: boolean, required: true, default: false }
+      error_message: { type: text }
+    primary_key: [run_id]
+    constraints:
+      - name: chk_backfill_run_status
+        type: check
+        expression: "status IN ('queued', 'running', 'completed', 'failed', 'interrupted')"
 
 views:
   active_tables:

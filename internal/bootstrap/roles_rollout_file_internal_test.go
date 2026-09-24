@@ -191,7 +191,10 @@ func istKlassenGrant(objekt string) bool {
 // `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
 // entfernen · die Lese-View `cdc.retention_blockers` aus dem Reader-Grant
 // streichen · `GRANT ALL ON ALL TABLES IN SCHEMA cdc TO cdc_reader`
-// anhängen · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` anhängen.
+// anhängen · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` anhängen. Zu (4a):
+// `INSERT` an `cdc_capture` auf `cdc.backfill_run` anhängen · `UPDATE` an
+// `cdc_admin` anhängen · den `UPDATE`-Grant von `cdc_capture` streichen ·
+// `SELECT` an `cdc_reader` anhängen.
 func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	rechte, _ := rolloutRechte(t, rolloutDateiPfad(t))
 
@@ -246,6 +249,34 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	// verbreiterte die Least-Privilege-Fläche (LH-QA-SEC-001) ohne Aufrufer.
 	if privilegien := rechteVon(rechte, "cdc_capture", "cdc.process_heartbeat"); len(privilegien) != 0 {
 		t.Fatalf("cdc_capture trägt Rechte auf cdc.process_heartbeat im Rollout-Text: %v — die Tabelle gehört zum Admin-Pfad", privilegien)
+	}
+
+	// (4a) Backfill-Run-Zustand (`SPEC-029`, `ADR-0113` Festlegung 1): die
+	// Annahme (`cdc_admin`) prüft und legt die Zeile an — `SELECT`,
+	// `INSERT`; der Worker (`cdc_capture`) führt sie fort — `SELECT`,
+	// `UPDATE`. Niemand trägt `DELETE`, `cdc_admin` kein `UPDATE`,
+	// `cdc_capture` kein `INSERT`, `cdc_reader` kein Recht auf die
+	// Basistabelle (er liest über die View der Sichtbarkeit).
+	for _, erwartet := range []struct {
+		rolle, privileg string
+	}{
+		{"cdc_admin", "select"}, {"cdc_admin", "insert"},
+		{"cdc_capture", "select"}, {"cdc_capture", "update"},
+	} {
+		if !rechteVon(rechte, erwartet.rolle, "cdc.backfill_run")[erwartet.privileg] {
+			t.Fatalf("%s fehlt %s auf cdc.backfill_run im Rollout-Text — die Annahme bzw. der Worker des Backfills scheitert real mit SQLSTATE 42501 (ADR-0113)", erwartet.rolle, strings.ToUpper(erwartet.privileg))
+		}
+	}
+	for _, verboten := range []struct {
+		rolle, privileg string
+	}{
+		{"cdc_admin", "update"}, {"cdc_admin", "delete"},
+		{"cdc_capture", "insert"}, {"cdc_capture", "delete"},
+		{"cdc_reader", "select"}, {"cdc_reader", "insert"}, {"cdc_reader", "update"}, {"cdc_reader", "delete"},
+	} {
+		if rechteVon(rechte, verboten.rolle, "cdc.backfill_run")[verboten.privileg] {
+			t.Fatalf("%s trägt %s auf cdc.backfill_run im Rollout-Text — der Rollenschnitt des Backfills (ADR-0113 Festlegung 1, LH-QA-SEC-001…003) ist aufgeweicht", verboten.rolle, strings.ToUpper(verboten.privileg))
+		}
 	}
 
 	// (5) Lesepfad — `cdc_reader` liest über die **vier** Lese-Views der
