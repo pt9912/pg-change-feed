@@ -55,8 +55,10 @@ nicht prüft, steht in §Grenze Nr. 8.
 ## Zählbasis
 
 - **`-coverpkg` instrumentiert nur die in einem Testbinary verlinkten
-  Gegenstands-Pakete.** Der Lauf über `postgresstorage` allein trägt **472
-  Statements** für dieses Paket und **keine Zeile** für
+  Gegenstands-Pakete.** Der Lauf über `postgresstorage` allein trägt **675
+  Statements** für dieses Paket (Lauf `slice-backfill-run-store`, Closure,
+  Stand `c7045f81`: `store.coverprofile` aus `make test-store`, dedupliziert
+  über die Block-Position, gedeckt 527) und **keine Zeile** für
   `postgresack`/`postgressnapshot`/`replication/receive` — die drei Pakete
   werden von `postgresstorage` nicht verlinkt und darum nicht instrumentiert.
 - **Im Replication-Lauf steht jede Block-Position einmal je getestetem Paket
@@ -84,19 +86,22 @@ nicht prüft, steht in §Grenze Nr. 8.
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **813 Statements** (`postgresstorage` 472 ·
+- Der gemergte Nenner ist **1016 Statements** (`postgresstorage` 675 ·
   `postgresack` 32 · `postgressnapshot` 122 · `replication/receive` 187) — die
   **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
   einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
   derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
   hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
-  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**813**
-  und ihre vier Anteile: Lauf `slice-backfill-snapshot-reader` (Fixrunde),
-  frischer `make test-store` gefolgt von `make test-replication`, gedruckt:
-  `DB-Adapter-Coverage: 80.07% (gedeckt 651 von 813 Statements; Profile
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1016**
+  und ihre vier Anteile: Lauf `slice-backfill-run-store` (Closure, Stand
+  `c7045f81`), `make test-store` gefolgt von `make test-replication` gegen
+  PostgreSQL 18, gedruckt:
+  `DB-Adapter-Coverage: 81.69% (gedeckt 830 von 1016 Statements; Profile
   gemergt: store,replication)`; die Anteile aus dem gemergten Profil desselben
-  Laufs abgeleitet: gedeckt 348 · 32 · 118 · 153; derselbe Wert 651 von 813
-  druckt der Lauf gegen PostgreSQL 17). Die **gedeckte** Zahl
+  Laufs abgeleitet: gedeckt 527 · 32 · 118 · 153; denselben Wert 830 von 1016
+  druckt der Lauf gegen PostgreSQL 17 — **übernommen** aus dem
+  Verifikations-Report `verifikation-slice-backfill-run-store` §1, in diesem
+  Lauf nicht gemessen). Die **gedeckte** Zahl
   daneben ist zusätzlich **lauf**-gebunden: sie wandert schon bei unverändertem
   Code-Stand, ist darum ebenfalls **kein** Zustand und nennt ihren Lauf. Die
   Größe **eines** Anteils hängt an seiner Naht

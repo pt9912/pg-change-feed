@@ -62,16 +62,18 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2082** (Lauf `slice-backfill-snapshot-reader`,
-Fixrunde: die Stufe nachgestellt — `go test -coverpkg=<Paketliste der Stufe>
--covermode=atomic`, dedupliziert über die Block-Position; gedeckt **1731 von
-2082**, gedruckt `total: (statements) 83.1%`; `make coverage-gate` desselben
-Stands druckt `Coverage 83.20%`). Der Nenner setzt sich aus **2040**
-Statements der übrigen Pakete (an deren Stand `d7539e2c` im selben Verfahren
-**1691 gedeckt**, gedruckt `82.9%`) und den **42** Statements des Unterpakets
-`postgressnapshot/snapshotlogic` zusammen (42 von 42 gedeckt); das
-Unterpaket liegt im Gegenstand. Die gedeckte Zahl ist lauf-gebunden: zwei
-Läufe desselben Stands druckten `83.1%` und `83.2%`.
+**Der Nenner der Stufe ist 2398** (Lauf `slice-backfill-run-store`, Closure am
+Stand `c7045f81`: die Stufe nachgestellt — `go test -count=1
+-coverpkg=<Paketliste der Stufe> -covermode=atomic`, dedupliziert über die
+Block-Position; gedeckt **2033 von 2398**, gedruckt `total: (statements)
+84.8%`; `make coverage-gate` desselben Stands druckt `Coverage 84.90%`). Der
+Nenner setzt sich aus **2356** Statements der übrigen Pakete (**abgeleitet**)
+und den **42** Statements des Unterpakets `postgressnapshot/snapshotlogic`
+zusammen (42 von 42 gedeckt, aus demselben Profil); das Unterpaket liegt im
+Gegenstand. Die gedeckte Zahl ist lauf-gebunden: Läufe desselben Code-Stands
+druckten `Coverage 84.70%`, `84.80%` und `84.90%` (die ersten beiden
+**übernommen** aus dem Verifikations-Report `verifikation-slice-backfill-run-store`
+§1, der dritte in diesem Lauf).
 
 **Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
 `slice-097`, der
