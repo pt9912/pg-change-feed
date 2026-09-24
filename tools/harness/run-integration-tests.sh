@@ -1721,7 +1721,7 @@ abdeckung_declare "NATS-Negative-Beleg (Reconnect-Nachholen)" "LH-FA-SST-007" "e
 NATS_SUBSCRIBER_CONTAINER=cdc-e2e-natssub
 NATS_SUBJECT="cdc.changes.src-e2e.public.feed_e2e_full"
 
-docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_SUBSCRIBER_CONTAINER" --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -1742,7 +1742,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$nats_subscriber_ready" -ne 1 ]; then
   echo "run-integration-tests: NATS-Test-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -1762,7 +1762,7 @@ for _ in $(seq 1 60); do
   sleep 0.5
 done
 nats_subscriber_output=$(docker logs "$NATS_SUBSCRIBER_CONTAINER" 2>&1 || true)
-docker rm -f "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_SUBSCRIBER_CONTAINER" >/dev/null 2>&1 || true
 if [ "$nats_signal_received" -ne 1 ]; then
   echo "run-integration-tests: NATS-Test-Subscriber ($NATS_SUBJECT) empfing nach der Change (id=230) kein Wecksignal innerhalb der Zeitspanne: $nats_subscriber_output" >&2
   exit 1
@@ -1862,7 +1862,7 @@ echo "run-integration-tests: NATS-Boundary-Beleg (LH-FA-SST-007) — Change (id=
 NATS_RECONNECT_BEFORE_CONTAINER=cdc-e2e-natssub-reconnect-before
 NATS_RECONNECT_AFTER_CONTAINER=cdc-e2e-natssub-reconnect-after
 
-docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_RECONNECT_BEFORE_CONTAINER" "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_RECONNECT_BEFORE_CONTAINER" --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -1883,14 +1883,14 @@ for _ in $(seq 1 60); do
 done
 if [ "$nats_reconnect_before_ready" -ne 1 ]; then
   echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
 nats_subs_before_disconnect=$(docker exec "$NATS_CONTAINER" wget -q -O - "http://localhost:8222/subsz?subs=1")
 if ! echo "$nats_subs_before_disconnect" | grep -qF "\"subject\": \"$NATS_SUBJECT\""; then
   echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber ($NATS_SUBJECT) war vor der Trennung entgegen der Erwartung nicht als Abonnent beim Broker gelistet: $nats_subs_before_disconnect" >&2
-  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -1899,7 +1899,7 @@ docker network disconnect "$NETWORK" "$NATS_RECONNECT_BEFORE_CONTAINER"
 subscriber_networks_after_disconnect=$(docker inspect "$NATS_RECONNECT_BEFORE_CONTAINER" --format '{{json .NetworkSettings.Networks}}')
 if echo "$subscriber_networks_after_disconnect" | grep -qF "\"$NETWORK\""; then
   echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber-Container trägt laut docker inspect nach dem Trennungsversuch noch die Netzbindung $NETWORK (reale Trennung nicht hergestellt): $subscriber_networks_after_disconnect" >&2
-  docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -1914,7 +1914,7 @@ SQL
 sleep 5
 
 nats_reconnect_before_output=$(docker logs "$NATS_RECONNECT_BEFORE_CONTAINER" 2>&1 || true)
-docker rm -f "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_RECONNECT_BEFORE_CONTAINER" >/dev/null 2>&1 || true
 if printf '%s' "$nats_reconnect_before_output" | grep -qF "RECEIVED"; then
   echo "run-integration-tests: NATS-Negative-Beleg — Test-Subscriber empfing trotz realer Trennung ein Wecksignal für die verpasste Change (id=240): $nats_reconnect_before_output" >&2
   exit 1
@@ -1950,7 +1950,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$nats_reconnect_after_ready" -ne 1 ]; then
   echo "run-integration-tests: NATS-Negative-Beleg — Wiederverbindungs-Subscriber ($NATS_SUBJECT) wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -1970,7 +1970,7 @@ for _ in $(seq 1 60); do
   sleep 0.5
 done
 nats_reconnect_after_output=$(docker logs "$NATS_RECONNECT_AFTER_CONTAINER" 2>&1 || true)
-docker rm -f "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_RECONNECT_AFTER_CONTAINER" >/dev/null 2>&1 || true
 if [ "$nats_reconnect_signal_resumed" -ne 1 ]; then
   echo "run-integration-tests: NATS-Negative-Beleg — Wiederverbindungs-Subscriber empfing für eine neue Change (id=241) kein Wecksignal innerhalb der Zeitspanne — die Verbindung wäre damit nicht real wiederhergestellt gewesen: $nats_reconnect_after_output" >&2
   exit 1
@@ -2281,7 +2281,7 @@ GRPC_STREAM_TABLE=feed_e2e_full
 GRPC_STREAM_SENTINEL=GrpcStreamE2ESentinel
 GRPC_ADDR="pg-change-feed:9090"
 
-docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$GRPC_CLIENT_CONTAINER" --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -2302,7 +2302,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$grpc_client_ready" -ne 1 ]; then
   echo "run-integration-tests: gRPC-Stream-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$GRPC_CLIENT_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -2359,7 +2359,7 @@ for _ in $(seq 1 20); do
 done
 grpc_client_exit=$(docker inspect --format '{{.State.ExitCode}}' "$GRPC_CLIENT_CONTAINER" 2>/dev/null || echo unbekannt)
 grpc_client_output=$(docker logs "$GRPC_CLIENT_CONTAINER" 2>&1 || true)
-docker rm -f "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$GRPC_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 
 if [ "$grpc_received" -ne 1 ]; then
   echo "run-integration-tests: gRPC-Stream-Rundlauf — Test-Client empfing keine der committeten Änderungen ($GRPC_STREAM_TABLE, $GRPC_STREAM_SENTINEL) über den Stream: $grpc_client_output" >&2
@@ -2427,7 +2427,7 @@ SSE_CLIENT_CONTAINER=cdc-e2e-sseclient
 SSE_STREAM_TABLE=feed_e2e_full
 SSE_STREAM_SENTINEL=SseStreamE2ESentinel
 
-docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$SSE_CLIENT_CONTAINER" --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -2448,7 +2448,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$sse_client_ready" -ne 1 ]; then
   echo "run-integration-tests: SSE-Stream-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$SSE_CLIENT_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -2502,7 +2502,7 @@ for _ in $(seq 1 20); do
 done
 sse_client_exit=$(docker inspect --format '{{.State.ExitCode}}' "$SSE_CLIENT_CONTAINER" 2>/dev/null || echo unbekannt)
 sse_client_output=$(docker logs "$SSE_CLIENT_CONTAINER" 2>&1 || true)
-docker rm -f "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$SSE_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 
 if [ "$sse_received" -ne 1 ]; then
   echo "run-integration-tests: SSE-Stream-Rundlauf — Test-Client empfing keine der committeten Änderungen ($SSE_STREAM_TABLE, $SSE_STREAM_SENTINEL) über den Stream: $sse_client_output" >&2
@@ -2576,7 +2576,7 @@ NATS_STREAM_TABLE=feed_e2e_full
 NATS_STREAM_SENTINEL=NatsStreamE2ESentinel
 NATS_STREAM_SUBJECT="cdc.stream.src-e2e.public.$NATS_STREAM_TABLE"
 
-docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_STREAM_CLIENT_CONTAINER" --network "$NETWORK" \
   -v "$(pwd)":/src:ro \
   -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
@@ -2597,7 +2597,7 @@ for _ in $(seq 1 60); do
 done
 if [ "$nats_stream_client_ready" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Test-Client wurde nicht innerhalb der Zeitspanne bereit: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -2620,7 +2620,7 @@ for _ in $(seq 1 20); do
 done
 if [ "$nats_stream_client_rejected_no_token" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch ohne Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -2634,7 +2634,7 @@ for _ in $(seq 1 20); do
 done
 if [ "$nats_stream_client_rejected_wrong_token" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Verbindungsversuch mit falschem Token wurde nicht vom NATS-Server abgelehnt: $(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)" >&2
-  docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
   exit 1
 fi
 
@@ -2666,7 +2666,7 @@ SQL
 done
 
 nats_stream_client_output=$(docker logs "$NATS_STREAM_CLIENT_CONTAINER" 2>&1 || true)
-docker rm -f "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_STREAM_CLIENT_CONTAINER" >/dev/null 2>&1 || true
 
 if [ "$nats_stream_received" -ne 1 ]; then
   echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf — Test-Client empfing keine der committeten Änderungen ($NATS_STREAM_TABLE, $NATS_STREAM_SENTINEL) über das Subjekt $NATS_STREAM_SUBJECT: $nats_stream_client_output" >&2

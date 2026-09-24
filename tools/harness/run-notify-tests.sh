@@ -19,12 +19,12 @@ NATS_CONTAINER=cdc-notify-test-nats
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"
 
 cleanup() {
-  docker rm -f "$NATS_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$NATS_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-docker rm -f "$NATS_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$NATS_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$NATS_CONTAINER" --network "$NETWORK" "$NATS_TEST_IMAGE" >/dev/null
 
 # Die Bereitschaft verlangt eine echte TCP-Abfrage gegen den Client-Port

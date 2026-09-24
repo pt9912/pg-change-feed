@@ -25,11 +25,13 @@ bench::feed_container() { echo "${BENCH_FEED_CONTAINER:-pgc-bench-feed}"; }
 
 # Räumt eine vorherige (z. B. abgebrochene) Umgebung weg und dient als
 # EXIT-Trap — idempotent, jeder Schritt toleriert "existiert nicht".
+# `-v` entfernt die anonymen Volumes des Containers (das Postgres-Image
+# deklariert ein VOLUME).
 bench::cleanup() {
   local feed pg net
   feed=$(bench::feed_container); pg=$(bench::pg_container); net=$(bench::network_name)
-  docker rm -f "$feed" >/dev/null 2>&1 || true
-  docker rm -f "$pg" >/dev/null 2>&1 || true
+  docker rm -fv "$feed" >/dev/null 2>&1 || true
+  docker rm -fv "$pg" >/dev/null 2>&1 || true
   docker network rm "$net" >/dev/null 2>&1 || true
 }
 
@@ -92,7 +94,7 @@ bench::start_feed() {
   local net feed pg dsn
   net=$(bench::network_name); feed=$(bench::feed_container); pg=$(bench::pg_container)
   dsn="postgres://postgres:postgres@$pg:5432/cdc?sslmode=disable"
-  docker rm -f "$feed" >/dev/null 2>&1 || true
+  docker rm -fv "$feed" >/dev/null 2>&1 || true
   docker run -d --name "$feed" --network "$net" \
     -e CDC_CAPTURE_DSN="$dsn" -e CDC_ADMIN_DSN="$dsn" -e CDC_READER_DSN="$dsn" \
     -e CDC_SOURCE_ID="$2" -e CDC_PUBLICATION="$4" -e CDC_SLOT="$3" \
@@ -119,7 +121,7 @@ bench::start_feed() {
 bench::stop_feed() {
   local feed
   feed=$(bench::feed_container)
-  docker rm -f "$feed" >/dev/null 2>&1 || true
+  docker rm -fv "$feed" >/dev/null 2>&1 || true
 }
 
 # Wartet, bis mindestens $2 Zeilen für Quelle/Tabelle in cdc.changes stehen

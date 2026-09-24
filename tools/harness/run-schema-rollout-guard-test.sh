@@ -89,8 +89,10 @@ cp tools/schema/plan.yaml tools/schema/down.sql "$ARTEFACT_BACKUP"/
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK" >/dev/null
 
+# `-v` entfernt die anonymen Volumes des Containers (das Postgres-Image
+# deklariert ein VOLUME).
 cleanup() {
-  docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
   if [ -n "$ALT_DIR" ]; then
     rm -rf "$ALT_DIR"
@@ -137,7 +139,7 @@ run_rollout() {
   echo "$RUN_OUT"
 }
 
-docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$CONTAINER" \
   --network "$NETWORK" \
   -e POSTGRES_DB="$DB" -e POSTGRES_USER="$USER" -e POSTGRES_PASSWORD="$PASSWORD" \

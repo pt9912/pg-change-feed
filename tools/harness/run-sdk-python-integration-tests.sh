@@ -84,7 +84,7 @@ NATS_SENTINEL=PythonNatsSdkE2ESentinel
 NATS_STREAM_TOKEN=e2e-nats-stream-token
 
 cleanup() {
-  docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -194,7 +194,7 @@ run_surface_phase() {
     env_args+=(-e "$pair")
   done
 
-  docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
     "${env_args[@]}" \
     -e PGCHANGEFEED_API_TOKEN="$API_TOKEN" \

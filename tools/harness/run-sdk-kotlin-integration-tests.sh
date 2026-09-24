@@ -74,7 +74,7 @@ NATS_SENTINEL=KotlinNatsSdkE2ESentinel
 HTTP_SENTINEL=KotlinHttpSdkE2ESentinel
 
 cleanup() {
-  docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -162,7 +162,7 @@ run_phase() {
     env_args+=(-e "$pair")
   done
 
-  docker rm -f "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$SDK_TEST_CONTAINER" >/dev/null 2>&1 || true
   docker run -d --name "$SDK_TEST_CONTAINER" --network "$NETWORK" \
     "${env_args[@]}" \
     -e PGCHANGEFEED_TEST_NAME="$test_name" \

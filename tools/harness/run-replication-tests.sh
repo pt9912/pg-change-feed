@@ -49,13 +49,15 @@ PG_PASSWORD=cdc
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK"
 
+# `-v` entfernt die anonymen Volumes des Containers (das Postgres-Image
+# deklariert ein VOLUME).
 cleanup() {
-  docker rm -f "$PG_CONTAINER" "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$PG_CONTAINER" "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-docker rm -f "$PG_CONTAINER" >/dev/null 2>&1 || true
+docker rm -fv "$PG_CONTAINER" >/dev/null 2>&1 || true
 docker run -d --name "$PG_CONTAINER" \
   --network "$NETWORK" \
   -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
@@ -137,7 +139,7 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
   # gegen einen eigenen Container, nicht gegen den gemeinsamen der Pakete
   # oben. Ein Lauf, in dem der Test nicht als PASS erscheint (Name
   # verschoben, Variable ungelesen), ist rot.
-  docker rm -f "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
   docker run -d --name "$PG_EXCLUSIVE_CONTAINER" \
     --network "$NETWORK" \
     -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
