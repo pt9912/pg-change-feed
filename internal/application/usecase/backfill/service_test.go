@@ -819,6 +819,28 @@ func TestExecuteRecordsProgressPerBlock(t *testing.T) {
 	}
 }
 
+// TestExecuteMarksRunningBeforeOpeningSnapshot trägt die Reihenfolge des
+// Zustandswechsels (`ADR-0111` Teilfrage 4): die Slot-Anlage im Snapshot-Port
+// wartet auf laufende Schreibtransaktionen der Quelle, der Run steht dabei
+// schon `running`. Der Snapshot-Port sieht beim Öffnen den festgehaltenen
+// Zustand.
+func TestExecuteMarksRunningBeforeOpeningSnapshot(t *testing.T) {
+	r := newRig()
+	var runningAtOpen []model.BackfillRunStatus
+	r.snapshotP.beforeOpen = func() {
+		for _, run := range r.runs.marked {
+			runningAtOpen = append(runningAtOpen, run.Status)
+		}
+	}
+	mustExecute(t, r)
+	if want := []model.BackfillRunStatus{model.BackfillRunRunning}; !reflect.DeepEqual(runningAtOpen, want) {
+		t.Fatalf("beim Öffnen des Snapshots festgehaltene Zustände = %v, will %v", runningAtOpen, want)
+	}
+	if got, want := r.trace.only("MarkRunning", "OpenSnapshot"), []string{"MarkRunning", "OpenSnapshot"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Reihenfolge = %v, will %v", got, want)
+	}
+}
+
 // TestExecuteStreamsBlocks trägt `LH-FA-CAP-006.a`: der Schreiber erhält
 // Block `n`, bevor der Leser Block `n+1` liefert — höchstens ein Block im
 // Speicher des Use Cases.

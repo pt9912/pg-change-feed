@@ -368,7 +368,11 @@ func (s *BackfillTableService) stillBound(ctx context.Context, table model.Sourc
 }
 
 // currentVersion liest die aktuelle Schema-Version der Tabelle, auf die
-// jeder Change des Runs verweist (`ADR-0029`, Regel 7).
+// jeder Change des Runs verweist (`ADR-0029`, Regel 7). Die Referenz ist eine
+// Kennung der Reihenfolge und beschreibt die Spalten des Bildes nicht: sie
+// kann hinter dem Bild liegen (Erweiterung der Tabelle vor oder während des
+// Runs) oder auf eine Version ohne Spaltenform zeigen (`ADR-0116`
+// Festlegung 1 und 2).
 func (s *BackfillTableService) currentVersion(ctx context.Context, table model.SourceTable) (model.SchemaVersion, error) {
 	version, found, err := s.ports.Schemas.CurrentVersion(ctx, table.ID)
 	if err != nil {

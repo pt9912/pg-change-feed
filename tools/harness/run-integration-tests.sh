@@ -35,7 +35,11 @@
 # Feed-Container durch eine neue Instanz desselben `:dev`-Images, während
 # `postgres`/`nats` unberührt bleiben — Datenstand vor dem Tausch bleibt
 # über `cdc.changes` identisch lesbar, eine danach eingefügte Zeile wird
-# weiterhin erfasst.
+# weiterhin erfasst. Die Backfill-Rundläufe (LH-FA-CAP-009: Happy Path,
+# Schema-Version, Startposition eines frisch registrierten Consumers,
+# Boundary, Replay-Invariante, DDL-Fenster, Negative) laufen vor dem
+# Upgrade-Sicherheits-Rundlauf; ihre Haltepunkte beschreibt der Kopf des
+# Abschnitts `Backfill-Rundläufe`.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -2701,15 +2705,525 @@ fi
 
 echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, ADR-0100) belegt — ein Wegwerf-Client (tools/harness/natsstreamsub) verband sich real mit gültigem Token über NATS, empfing eine danach committete Änderung als vollständiges JSON-Event über $NATS_STREAM_SUBJECT (Tabelle, Operation und Spaltenwert real am Event; die Feldvollständigkeit trägt publisher_test.go auf Unit-Ebene), deren change_id ($nats_stream_change_id) unabhängig über cdc.changes lesbar ist; Verbindungsversuche ohne und mit falschem Token wurden vom NATS-Server abgelehnt, und das bestehende Wecksignal (natssub) funktionierte mit demselben Test-Token unverändert weiter (siehe NATS-Happy-Path-/Negative-Belege oben): $nats_stream_client_output"
 
+# --- Backfill-Rundläufe (LH-FA-CAP-009, ADR-0111) ----------------------------
+# Die Phasen laufen am laufenden Feed-Container und lesen und lösen
+# ausschließlich über externe Wege: SQL-Funktionen und Views, HTTP,
+# `docker exec`, `docker kill`. Drei Haltepunkte machen die Zeitpunkte eines
+# Runs deterministisch: eine offene Schreibtransaktion mit
+# Transaktionskennung hält die Slot-Anlage an (Run `running`, noch kein
+# Snapshot); eine Tabellensperre `ACCESS EXCLUSIVE` hält den Cursor-Aufbau
+# nach dem Snapshot-Import an; ein unbestätigter Schlüssel in
+# `cdc.transaction` hält den Schreiber im zweiten Block an. Jede Sitzung
+# hält kürzer als das Zeitlimit der Slot-Anlage (30 s) und wird von
+# `bf_hold_end` beendet; jede Phase legt ihre eigene Tabelle an.
+bf_fail() {
+  echo "run-integration-tests: $*" >&2
+  exit 1
+}
+
+bf_sql() {
+  docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 -tAc "$1"
+}
+
+# bf_expect <gelesen> <erwartet> <Beschreibung>
+bf_expect() {
+  [ "$1" = "$2" ] || bf_fail "$3 — erwartet '$2', gelesen '$1'"
+}
+
+# bf_await_sql <Anfrage> <erwartet> <Sekunden> <Beschreibung> [Takt in Sekunden]
+bf_await_sql() {
+  local query=$1 want=$2 seconds=$3 what=$4 step=${5:-0.25} got="" deadline
+  deadline=$(( $(date +%s) + seconds ))
+  while :; do
+    got=$(bf_sql "$query")
+    if [ "$got" = "$want" ]; then
+      return 0
+    fi
+    if [ "$(date +%s)" -ge "$deadline" ]; then
+      break
+    fi
+    sleep "$step"
+  done
+  bf_fail "$what — erwartet '$want', gelesen '${got:-leer}' (Anfrage: $query)"
+}
+
+# bf_await_applied <Antrags-ID> <Phase>
+bf_await_applied() {
+  local request_id=$1 phase=$2 status="" message=""
+  for _ in $(seq 1 60); do
+    status=$(bf_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$request_id'")
+    if [ "$status" = "applied" ]; then
+      return 0
+    fi
+    if [ "$status" = "failed" ]; then
+      message=$(bf_sql "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$request_id'")
+      bf_fail "$phase — Antrag $request_id endete failed: $message"
+    fi
+    sleep 0.5
+  done
+  bf_fail "$phase — Antrag $request_id wurde nicht innerhalb der Zeitspanne vermerkt (status=${status:-leer})"
+}
+
+# bf_enable <Tabelle> <Phase>
+bf_enable() {
+  local request_id
+  request_id=$(bf_sql "SELECT cdc.enable_table('src-e2e', 'public', '$1')")
+  [ -n "$request_id" ] || bf_fail "$2 — cdc.enable_table($1) lieferte keine Antrags-ID"
+  bf_await_applied "$request_id" "$2"
+}
+
+# bf_request <Tabelle> <Phase> setzt bf_run_id auf die Kennung des Runs
+# (die Antrags-ID) und wartet auf die Annahme.
+bf_request() {
+  bf_run_id=$(bf_sql "SELECT cdc.backfill_table('src-e2e', 'public', '$1')")
+  [ -n "$bf_run_id" ] || bf_fail "$2 — cdc.backfill_table($1) lieferte keine Antrags-ID"
+  bf_await_applied "$bf_run_id" "$2"
+}
+
+# bf_await_run <Run-ID> <Status> <Sekunden> <Phase>: ein anderer Endzustand
+# als der erwartete endet die Phase.
+bf_await_run() {
+  local run_id=$1 want=$2 seconds=$3 phase=$4 status="" message="" i
+  for ((i = 0; i < seconds * 4; i++)); do
+    status=$(bf_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$run_id'")
+    if [ "$status" = "$want" ]; then
+      return 0
+    fi
+    case "$status" in
+      completed | failed | interrupted)
+        message=$(bf_sql "SELECT coalesce(error_message, '') FROM cdc.backfill_run WHERE run_id = '$run_id'")
+        bf_fail "$phase — Run $run_id endete $status statt $want: $message"
+        ;;
+    esac
+    sleep 0.25
+  done
+  bf_fail "$phase — Run $run_id erreichte $want nicht innerhalb von ${seconds}s (status=${status:-leer})"
+}
+
+# bf_await_healthy <Phase>
+bf_await_healthy() {
+  local health=""
+  for _ in $(seq 1 60); do
+    health=$(docker inspect --format '{{.State.Health.Status}}' "$FEED_CONTAINER" 2>/dev/null || echo fehlt)
+    if [ "$health" = "healthy" ]; then
+      return 0
+    fi
+    sleep 1
+  done
+  bf_fail "$1 — Feed-Container meldet Health-Status ${health:-fehlt}, wollen healthy"
+}
+
+# bf_hold_start <Sitzungsname> <SQL>: eine Hintergrund-Sitzung, die <SQL>
+# ausführt (bf_hold_pid trägt den Prozess des Aufrufs); bf_hold_end beendet
+# sie über ihren application_name.
+bf_hold_start() {
+  docker exec -i -e PGAPPNAME="$1" "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 >/dev/null 2>&1 <<<"$2" &
+  bf_hold_pid=$!
+}
+
+bf_hold_end() {
+  bf_sql "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name = '$1'" >/dev/null
+}
+
+# bf_http <Modus und Argumente von tools/harness/httpclient>: der Client-Lauf
+# im Toolchain-Container; ein Fehlschlag des Clients endet die Phase.
+bf_http() {
+  local output status
+  set +e
+  output=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    "$TOOLCHAIN_IMAGE" go run ./tools/harness/httpclient "$@" 2>&1)
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    bf_fail "httpclient $1 endete mit Ausgang $status: $output"
+  fi
+  printf '%s\n' "$output"
+}
+
+# bf_read_ids <Ausgabe von bf_http changes>: die change_id der READ-Zeilen,
+# sortiert und kommagetrennt.
+bf_read_ids() {
+  printf '%s\n' "$1" | grep '^READ ' | grep -oE 'change_id=[^ ]+' | cut -d= -f2 | LC_ALL=C sort | paste -sd,
+}
+
+abdeckung_declare "Backfill-Happy-Path" "LH-FA-CAP-009,LH-FA-REA-001" "eine aktivierte Tabelle mit Bestand wird über cdc.backfill_table als Run übernommen; jede Bestandszeile ist über cdc.changes und GET /changes als INSERT mit origin backfill lesbar, unterscheidbar von einer danach über den WAL-Pfad erfassten Änderung derselben Zeile (origin wal), und die change_id der HTTP-Antwort ist gegen cdc.changes gehalten" "Backfill-Happy-Path (LH-FA-CAP-009) belegt"
+
+BF_PHASE="Backfill-Happy-Path"
+BF_TABLE=feed_e2e_backfill
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_TABLE (id int PRIMARY KEY, name text, note text);
+INSERT INTO public.$BF_TABLE (id, name, note) VALUES
+  (1, 'BackfillAlpha', 'n1'),
+  (2, 'BackfillBeta', NULL),
+  (3, 'BackfillGamma', 'n3'),
+  (4, 'BackfillDelta', 'n4'),
+  (5, 'BackfillEpsilon', 'n5');
+SQL
+bf_enable "$BF_TABLE" "$BF_PHASE"
+
+# Ohne Backfill trägt das Log keine Zeile des Bestands.
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE'")" 0 "$BF_PHASE — Changes der Tabelle vor dem Backfill"
+
+bf_request "$BF_TABLE" "$BF_PHASE"
+bf_happy_run=$bf_run_id
+bf_await_run "$bf_happy_run" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_status WHERE source_id = 'src-e2e' AND schema_name = 'public' AND table_name = '$BF_TABLE'")" completed "$BF_PHASE — Status über cdc.backfill_status"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_happy_run'")" 5 "$BF_PHASE — rows_copied"
+bf_position=$(bf_sql "SELECT snapshot_position FROM cdc.backfill_run WHERE run_id = '$bf_happy_run'")
+[ -n "$bf_position" ] || bf_fail "$BF_PHASE — der abgeschlossene Run trägt keine Snapshot-Position"
+
+# Lesen über den SQL-Weg: fünf INSERT-Changes der Herkunft backfill ohne
+# old_data, ein Block (Transaktion 0bf-<Run>-00000001), alle auf der
+# Snapshot-Position, jede Bestandszeile einmal.
+bf_where="source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'backfill'"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_where AND operation = 'INSERT' AND old_data IS NULL")" 5 "$BF_PHASE — INSERT-Changes der Herkunft backfill"
+bf_expect "$(bf_sql "SELECT string_agg(DISTINCT transaction_id, ',') FROM cdc.changes WHERE $bf_where")" "0bf-$bf_happy_run-00000001" "$BF_PHASE — Transaktions-Kennung des Blocks"
+bf_expect "$(bf_sql "SELECT string_agg(DISTINCT commit_position::text, ',') FROM cdc.changes WHERE $bf_where")" "$bf_position" "$BF_PHASE — Commit-Position der Backfill-Changes"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'id', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE $bf_where")" "1,2,3,4,5" "$BF_PHASE — Schlüssel des Bestands"
+bf_expected_ids=""
+for n in 1 2 3 4 5; do
+  bf_expected_ids="${bf_expected_ids:+$bf_expected_ids,}0bf-$bf_happy_run-00000001-$n"
+done
+bf_expect "$(bf_sql "SELECT string_agg(change_id, ',' ORDER BY sequence) FROM cdc.changes WHERE $bf_where")" "$bf_expected_ids" "$BF_PHASE — change_id nach Sequenz"
+bf_expect "$(bf_sql "SELECT jsonb_exists(new_data, 'note') FROM cdc.changes WHERE $bf_where AND new_data->>'id' = '2'")" f "$BF_PHASE — NULL-Spalte im Row Image der Zeile 2"
+bf_expect "$(bf_sql "SELECT new_data->>'note' FROM cdc.changes WHERE $bf_where AND new_data->>'id' = '3'")" n3 "$BF_PHASE — Spaltenwert der Zeile 3"
+
+# Lesen über HTTP: der Bereich [X, X+1) trägt genau den Bestand.
+bf_http_backfill=$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$BF_TABLE" "$bf_position" "$((bf_position + 1))")
+bf_expect "$(printf '%s\n' "$bf_http_backfill" | grep -c '^READ .* operation=INSERT .* origin=backfill$')" 5 "$BF_PHASE — READ-Zeilen INSERT/backfill über GET /changes"
+bf_expect "$(printf '%s\n' "$bf_http_backfill" | grep -c " commit_position=$bf_position ")" 5 "$BF_PHASE — Commit-Position der READ-Zeilen"
+bf_expect "$(bf_read_ids "$bf_http_backfill")" "$(bf_sql "SELECT string_agg(change_id, ',' ORDER BY change_id COLLATE \"C\") FROM cdc.changes WHERE $bf_where")" "$BF_PHASE — change_id über GET /changes gegen cdc.changes"
+
+# Eine danach über den WAL-Pfad erfasste Änderung derselben Zeile trägt
+# origin wal und liegt hinter der Snapshot-Position.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+UPDATE public.$BF_TABLE SET name = 'BackfillGammaWal' WHERE id = 3;
+SQL
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'wal'" 1 30 "$BF_PHASE — WAL-Change der Zeile 3"
+bf_expect "$(bf_sql "SELECT string_agg(origin || ':' || operation, ',' ORDER BY commit_position, transaction_id, sequence) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND new_data->>'id' = '3'")" "backfill:INSERT,wal:UPDATE" "$BF_PHASE — Herkunft und Operation der Zeile 3 in Lese-Ordnung"
+bf_wal_position=$(bf_sql "SELECT commit_position FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'wal'")
+[ "$bf_wal_position" -gt "$bf_position" ] || bf_fail "$BF_PHASE — die WAL-Change liegt auf Position $bf_wal_position, nicht hinter der Snapshot-Position $bf_position"
+bf_http_all=$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$BF_TABLE" "" "")
+bf_expect "$(printf '%s\n' "$bf_http_all" | grep -c ' origin=backfill$')" 5 "$BF_PHASE — READ-Zeilen der Herkunft backfill im ganzen Log"
+bf_expect "$(printf '%s\n' "$bf_http_all" | grep -c ' origin=wal$')" 1 "$BF_PHASE — READ-Zeilen der Herkunft wal im ganzen Log"
+printf '%s\n' "$bf_http_all" | grep '^READ ' | tail -n1 | grep -qF "BackfillGammaWal" || bf_fail "$BF_PHASE — die letzte READ-Zeile ist nicht die WAL-Änderung der Zeile 3: $bf_http_all"
+
+bf_feed_running=$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)
+bf_expect "$bf_feed_running" true "$BF_PHASE — Feed-Container läuft weiter"
+
+echo "run-integration-tests: Backfill-Happy-Path (LH-FA-CAP-009) belegt — Run $bf_happy_run übernahm 5 Bestandszeilen von $BF_TABLE auf Position $bf_position (Transaktion 0bf-$bf_happy_run-00000001), lesbar über cdc.changes und GET /changes als INSERT mit origin backfill, change_id gegen cdc.changes gehalten ($bf_expected_ids); die danach erfasste Änderung der Zeile 3 trägt origin wal auf Position $bf_wal_position: $bf_http_all"
+
+abdeckung_declare "Backfill-Schema-Version-Beleg" "LH-FA-CAP-009,LH-FA-SCH-005" "die Schema-Version einer Backfill-Change ist die zum Antrag aktuelle Zeile aus cdc.schema_version; nach einer Spalten-Erweiterung ohne Änderung über den WAL-Pfad bleibt sie unverändert, und das Row Image trägt die neue Spalte" "Backfill-Schema-Version-Beleg (LH-FA-CAP-009) belegt"
+
+BF_PHASE="Backfill-Schema-Version-Beleg"
+BF_VERSION_TABLE=feed_e2e_backfill_version
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_VERSION_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_VERSION_TABLE (id, name) VALUES (1, 'VersionAlpha'), (2, 'VersionBeta');
+SQL
+bf_enable "$BF_VERSION_TABLE" "$BF_PHASE"
+
+bf_version_id_sql="SELECT sv.schema_version_id FROM cdc.schema_version sv JOIN cdc.source_table st ON st.source_table_id = sv.source_table_id WHERE st.source_id = 'src-e2e' AND st.schema_name = 'public' AND st.table_name = '$BF_VERSION_TABLE' ORDER BY sv.version DESC LIMIT 1"
+bf_version_before=$(bf_sql "$bf_version_id_sql")
+[ -n "$bf_version_before" ] || bf_fail "$BF_PHASE — die Aktivierung hat keine Schema-Version für $BF_VERSION_TABLE angelegt"
+
+# Die Erweiterung erzeugt keine Change über den WAL-Pfad: keine Relation-
+# Nachricht, keine neue Version.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+ALTER TABLE public.$BF_VERSION_TABLE ADD COLUMN extra text DEFAULT 'neu';
+SQL
+
+bf_request "$BF_VERSION_TABLE" "$BF_PHASE"
+bf_version_run=$bf_run_id
+bf_await_run "$bf_version_run" completed 60 "$BF_PHASE"
+bf_version_where="source_id = 'src-e2e' AND table_name = '$BF_VERSION_TABLE' AND origin = 'backfill'"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_version_where")" 2 "$BF_PHASE — Backfill-Changes der Tabelle"
+bf_expect "$(bf_sql "SELECT string_agg(DISTINCT schema_version, ',') FROM cdc.changes WHERE $bf_version_where")" "$bf_version_before" "$BF_PHASE — Schema-Version der Backfill-Changes"
+bf_expect "$(bf_sql "$bf_version_id_sql")" "$bf_version_before" "$BF_PHASE — höchste registrierte Version nach dem Run"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_version_where AND new_data->>'extra' = 'neu'")" 2 "$BF_PHASE — neue Spalte im Row Image"
+bf_version_shape=$(bf_sql "SELECT count(*) FROM cdc.table_schema WHERE schema_version_id = '$bf_version_before'")
+
+echo "run-integration-tests: Backfill-Schema-Version-Beleg (LH-FA-CAP-009) belegt — Run $bf_version_run auf $BF_VERSION_TABLE nach ADD COLUMN ohne WAL-Change: alle Backfill-Changes tragen die zum Antrag aktuelle Version $bf_version_before, das Row Image trägt die Spalte extra; die Version führt $bf_version_shape Zeilen in cdc.table_schema"
+
+abdeckung_declare "Backfill-Startposition" "LH-FA-CON-005,LH-FA-CAP-009" "die Anfangsposition eines frisch registrierten Consumers wird über den CLI-Weg und den HTTP-Weg gemessen und gegen die Position des Bestands gehalten: sie liegt vor der Snapshot-Position, der Bestand ist ab ihr lesbar; ein Consumer mit bestätigter Position hinter dem Bestand liest ihn über seinen Fortschritt nicht" "Backfill-Startposition (LH-FA-CON-005) belegt"
+
+BF_PHASE="Backfill-Startposition"
+BF_CONSUMER=bf-e2e-start-consumer
+
+exec_feed register-consumer "$BF_CONSUMER" || bf_fail "$BF_PHASE — register-consumer ($BF_CONSUMER) endete mit einem Fehler"
+bf_start_out=$(bf_http position "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" "$BF_CONSUMER")
+bf_start_offset=$(printf '%s\n' "$bf_start_out" | grep -oE '"offset":[0-9]+' | cut -d: -f2)
+bf_expect "$bf_start_offset" 0 "$BF_PHASE — Anfangsposition (offset) über GET /consumers/position: $bf_start_out"
+printf '%s\n' "$bf_start_out" | grep -qF '"acknowledged":false' || bf_fail "$BF_PHASE — der frisch registrierte Consumer trägt eine bestätigte Position: $bf_start_out"
+bf_status_row=$(bf_sql "SELECT coalesce(acknowledged_position::text, 'NULL') || '|' || coalesce(latest_commit_position::text, 'NULL') FROM cdc.consumer_status WHERE consumer_id = '$BF_CONSUMER'")
+bf_expect "${bf_status_row%%|*}" NULL "$BF_PHASE — bestätigte Position in cdc.consumer_status"
+[ "$bf_start_offset" -lt "$bf_position" ] || bf_fail "$BF_PHASE — die Anfangsposition $bf_start_offset liegt nicht vor der Snapshot-Position $bf_position"
+
+# Ab der Anfangsposition ist der Bestand lesbar: jede Position hinter ihr,
+# darunter die Snapshot-Position, gehört zum Fortschritt des Consumers.
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'backfill' AND commit_position > $bf_start_offset")" 5 "$BF_PHASE — Bestand hinter der Anfangsposition"
+
+# Bestätigt der Consumer eine Position hinter dem Bestand, liegt der Bestand
+# vor seiner Position und erscheint nicht in seinem Fortschritt.
+bf_latest_position=$(bf_sql "SELECT max(commit_position) FROM cdc.transaction WHERE source_id = 'src-e2e'")
+exec_feed acknowledge-consumer "$BF_CONSUMER" "$bf_latest_position" || bf_fail "$BF_PHASE — acknowledge-consumer ($BF_CONSUMER, $bf_latest_position) endete mit einem Fehler"
+bf_ack_out=$(bf_http position "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" "$BF_CONSUMER")
+printf '%s\n' "$bf_ack_out" | grep -qF "\"offset\":$bf_latest_position" || bf_fail "$BF_PHASE — die bestätigte Position ist nicht $bf_latest_position: $bf_ack_out"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'backfill' AND commit_position > $bf_latest_position")" 0 "$BF_PHASE — Bestand hinter der bestätigten Position"
+bf_http remove "$HTTP_BASE_URL" "$HTTP_TOKEN_ADMIN" "$BF_CONSUMER" >/dev/null
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.consumer WHERE consumer_id = '$BF_CONSUMER'")" 0 "$BF_PHASE — Consumer nach der Entfernung"
+
+echo "run-integration-tests: Backfill-Startposition (LH-FA-CON-005) belegt — der frisch registrierte Consumer $BF_CONSUMER startet an Position $bf_start_offset (acknowledged=false; cdc.consumer_status trägt bestätigte und letzte Commit-Position als $bf_status_row, NULL heißt leer), die Snapshot-Position des Bestands ist $bf_position: ab der Anfangsposition sind 5 Backfill-Changes lesbar; nach der Bestätigung von $bf_latest_position liegen 0 hinter ihr: $bf_start_out"
+
+abdeckung_declare "Backfill-Boundary (leere Tabelle, zweiter Antrag)" "LH-FA-CAP-009" "eine leere Tabelle endet completed mit 0 Zeilen und schreibt keine Transaktion; ein zweiter Antrag für dieselbe Tabelle bei aktivem Run endet failed mit Grund, ohne Run-Zeile, der erste Run läuft davon unberührt zu Ende" "Backfill-Boundary (leere Tabelle, zweiter Antrag) belegt"
+
+BF_PHASE="Backfill-Boundary"
+BF_EMPTY_TABLE=feed_e2e_backfill_empty
+BF_DUP_TABLE=feed_e2e_backfill_dup
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_EMPTY_TABLE (id int PRIMARY KEY, name text);
+CREATE TABLE public.$BF_DUP_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_DUP_TABLE (id, name) VALUES (1, 'DupAlpha'), (2, 'DupBeta');
+SQL
+bf_enable "$BF_EMPTY_TABLE" "$BF_PHASE"
+bf_enable "$BF_DUP_TABLE" "$BF_PHASE"
+
+bf_request "$BF_EMPTY_TABLE" "$BF_PHASE"
+bf_empty_run=$bf_run_id
+bf_await_run "$bf_empty_run" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_empty_run'")" 0 "$BF_PHASE — rows_copied der leeren Tabelle"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_empty_run-%'")" 0 "$BF_PHASE — Transaktionen des Runs der leeren Tabelle"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_EMPTY_TABLE'")" 0 "$BF_PHASE — Changes der leeren Tabelle"
+
+# Haltepunkt 1: die offene Schreibtransaktion hält die Slot-Anlage an. Der
+# Run steht dann `running` ohne Snapshot-Position — der Zustandswechsel
+# liegt vor dem Öffnen des Snapshots.
+bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE — Haltetransaktion"
+bf_request "$BF_DUP_TABLE" "$BF_PHASE"
+bf_dup_first=$bf_run_id
+bf_await_run "$bf_dup_first" running 30 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT coalesce(snapshot_position::text, 'NULL') FROM cdc.backfill_run WHERE run_id = '$bf_dup_first'")" NULL "$BF_PHASE — Snapshot-Position des Runs an der Haltetransaktion"
+
+bf_dup_second=$(bf_sql "SELECT cdc.backfill_table('src-e2e', 'public', '$BF_DUP_TABLE')")
+[ -n "$bf_dup_second" ] || bf_fail "$BF_PHASE — der zweite Antrag lieferte keine Antrags-ID"
+bf_await_sql "SELECT status FROM cdc.administration_request WHERE administration_request_id = '$bf_dup_second'" failed 30 "$BF_PHASE — zweiter Antrag bei aktivem Run"
+bf_dup_error=$(bf_sql "SELECT error_message FROM cdc.administration_request WHERE administration_request_id = '$bf_dup_second'")
+printf '%s' "$bf_dup_error" | grep -qF "aktiver Backfill-Run" || bf_fail "$BF_PHASE — der Fehlertext des zweiten Antrags nennt den aktiven Run nicht: $bf_dup_error"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.backfill_run WHERE run_id = '$bf_dup_second'")" 0 "$BF_PHASE — Run-Zeile des zweiten Antrags"
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_dup_first'")" running "$BF_PHASE — erster Run nach dem zweiten Antrag"
+
+bf_hold_end e2e-bf-xid
+bf_await_run "$bf_dup_first" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_dup_first'")" 2 "$BF_PHASE — rows_copied des ersten Runs"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.backfill_run WHERE source_id = 'src-e2e' AND table_name = '$BF_DUP_TABLE'")" 1 "$BF_PHASE — Run-Zeilen der Tabelle"
+
+echo "run-integration-tests: Backfill-Boundary (leere Tabelle, zweiter Antrag) belegt — Run $bf_empty_run auf der leeren Tabelle endete completed mit 0 Zeilen und schrieb keine Transaktion; der zweite Antrag $bf_dup_second bei aktivem Run $bf_dup_first endete failed ($bf_dup_error) ohne Run-Zeile, der erste Run stand an der Haltetransaktion running ohne Snapshot-Position und endete danach completed mit 2 Zeilen"
+
+# Replay-Invariante: die Schreiber, die Haltetransaktion und die Anwendung des
+# Logs liegen in TestE2EBackfillReplayInvariant
+# (test/integration/backfill_test.go); die Abdeckungszeile entsteht aus dem
+# Doc-Kommentar der Testfunktion.
+docker run --rm --network "$NETWORK" \
+  -v "$(pwd)":/src:ro \
+  -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+  -w /src \
+  -e GOCACHE=/tmp/gocache \
+  -e CDC_INTEGRATION_DSN="$DSN" \
+  "$TOOLCHAIN_IMAGE" go test -v -count=1 -run '^TestE2EBackfillReplayInvariant$' ./test/integration/...
+
+echo "run-integration-tests: TestE2EBackfillReplayInvariant (LH-FA-CAP-009) belegt — Zeile 'Replay-Invariante:' der Testausgabe oben"
+
+abdeckung_declare "Backfill-DDL-Fenster" "LH-FA-CAP-009" "entfernt eine DDL-Änderung eine Spalte zwischen Snapshot-Export und Snapshot-Import, endet der Run failed mit der Fehlerklasse storage ohne Change, der Erfassungspfad läuft weiter, und ein neuer Antrag übernimmt den Bestand in der geänderten Form" "Backfill-DDL-Fenster (LH-FA-CAP-009) belegt"
+
+BF_PHASE="Backfill-DDL-Fenster"
+BF_DDL_TABLE=feed_e2e_backfill_ddl
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_DDL_TABLE (id int PRIMARY KEY, name text, note text);
+INSERT INTO public.$BF_DDL_TABLE (id, name, note) VALUES (1, 'DdlAlpha', 'n1'), (2, 'DdlBeta', 'n2'), (3, 'DdlGamma', 'n3');
+SQL
+bf_enable "$BF_DDL_TABLE" "$BF_PHASE"
+
+# Die Haltetransaktion hält die Slot-Anlage an, der Run steht dann hinter der
+# Vorbedingungsprüfung. Der Feed-Container ist angehalten (docker pause),
+# während die Haltetransaktion endet: der Run liest die Antwort der
+# Slot-Anlage erst nach dem Fortsetzen, der Snapshot ist dann exportiert und
+# noch nicht importiert. Die DDL-Sitzung wartet, bis die Slot-Anlage fertig
+# ist (der Walsender des Slots wartet auf den nächsten Befehl), entfernt in diesem
+# Fenster die Spalte und committet; danach läuft der Container weiter. Die
+# Pause bleibt unter der Hälfte von wal_sender_timeout (2 s, compose.yaml),
+# innerhalb derer PostgreSQL die Verbindung des Erfassungspfads beendet.
+bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE — Haltetransaktion"
+bf_request "$BF_DDL_TABLE" "$BF_PHASE"
+bf_ddl_run=$bf_run_id
+bf_await_run "$bf_ddl_run" running 30 "$BF_PHASE"
+bf_hold_start e2e-bf-ddl "BEGIN;
+DO \$\$
+DECLARE deadline timestamptz := clock_timestamp() + interval '30 seconds';
+BEGIN
+  WHILE NOT EXISTS (SELECT 1 FROM pg_replication_slots s JOIN pg_stat_activity a ON a.pid = s.active_pid WHERE s.slot_name LIKE 'cdc\_bf\_%' AND a.state <> 'active') LOOP
+    IF clock_timestamp() > deadline THEN
+      RAISE EXCEPTION 'die Slot-Anlage des Runs wurde nicht fertig';
+    END IF;
+    PERFORM pg_sleep(0.01);
+    PERFORM pg_stat_clear_snapshot();
+  END LOOP;
+END \$\$;
+ALTER TABLE public.$BF_DDL_TABLE DROP COLUMN note;
+COMMIT;"
+bf_ddl_pid=$bf_hold_pid
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-ddl' AND state = 'active'" 1 30 "$BF_PHASE — DDL-Sitzung wartet"
+bf_pause_start=$(date +%s%N)
+docker pause "$FEED_CONTAINER" >/dev/null
+bf_hold_end e2e-bf-xid
+wait "$bf_ddl_pid" || bf_fail "$BF_PHASE — die DDL-Sitzung endete mit einem Fehler"
+docker unpause "$FEED_CONTAINER" >/dev/null
+bf_pause_ms=$(( ($(date +%s%N) - bf_pause_start) / 1000000 ))
+[ "$bf_pause_ms" -lt 1000 ] || bf_fail "$BF_PHASE — die Pause des Feed-Containers dauerte ${bf_pause_ms} ms; erlaubt sind unter 1000 ms, die Hälfte von wal_sender_timeout (2000 ms)"
+bf_await_run "$bf_ddl_run" failed 60 "$BF_PHASE"
+bf_ddl_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_ddl_run'")
+printf '%s' "$bf_ddl_error" | grep -q '^storage: ' || bf_fail "$BF_PHASE — der Fehlertext beginnt nicht mit der Klasse storage: $bf_ddl_error"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_DDL_TABLE'")" 0 "$BF_PHASE — Changes der Tabelle nach dem fehlgeschlagenen Run"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_ddl_run-%'")" 0 "$BF_PHASE — Transaktionen des fehlgeschlagenen Runs"
+bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")" "" "$BF_PHASE — Fehlerzustand des Erfassungspfads (der Run-Fehler ist run-lokal)"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$BF_PHASE — Feed-Container läuft weiter"
+
+# Abhilfe: ein neuer Antrag übernimmt den Bestand in der geänderten Form.
+bf_request "$BF_DDL_TABLE" "$BF_PHASE"
+bf_ddl_retry=$bf_run_id
+bf_await_run "$bf_ddl_retry" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_DDL_TABLE' AND origin = 'backfill' AND NOT jsonb_exists(new_data, 'note')")" 3 "$BF_PHASE — Bestand ohne die entfernte Spalte nach dem neuen Antrag"
+
+echo "run-integration-tests: Backfill-DDL-Fenster (LH-FA-CAP-009) belegt — DROP COLUMN zwischen Snapshot-Export und Snapshot-Import endete Run $bf_ddl_run failed ($bf_ddl_error) ohne Change, der Erfassungspfad lief weiter (Pause des Feed-Containers ${bf_pause_ms} ms); der neue Antrag $bf_ddl_retry übernahm 3 Zeilen ohne die entfernte Spalte"
+
+abdeckung_declare "Backfill-Negative (docker kill, queued-Aufnahme)" "LH-FA-CAP-009" "ein docker kill des Feed-Containers mitten im Run hinterlässt keine sichtbare Change des Runs, kein Slot und keine Sitzung bleiben; nach dem Neustart steht der Run interrupted, ein erneuter Antrag übernimmt den Bestand einmal und vollständig, und ein zum Abbruchzeitpunkt queued wartender Run wird ohne neuen Antrag aufgenommen und ausgeführt" "Backfill-Negative (docker kill, queued-Aufnahme) belegt"
+
+BF_PHASE="Backfill-Negative"
+BF_KILL_TABLE=feed_e2e_backfill_kill
+BF_QUEUED_TABLE=feed_e2e_backfill_queued
+BF_KILL_ROWS=2500
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_KILL_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_KILL_TABLE (id, name) SELECT g, 'Kill-' || g FROM generate_series(1, $BF_KILL_ROWS) g;
+CREATE TABLE public.$BF_QUEUED_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_QUEUED_TABLE (id, name) SELECT g, 'Queued-' || g FROM generate_series(1, 4) g;
+SQL
+bf_enable "$BF_KILL_TABLE" "$BF_PHASE"
+bf_enable "$BF_QUEUED_TABLE" "$BF_PHASE"
+
+# Der Run soll erst im zweiten Block stehen bleiben (Blockgröße 1000). Die
+# Haltetransaktion hält die Slot-Anlage an; während sie endet, ist der
+# Feed-Container angehalten (docker pause), und die Konflikt-Sitzung legt in
+# diesem Fenster die Transaktionskennung des zweiten Blocks unbestätigt an
+# (eine offene Transaktion während der Slot-Anlage würde diese verzögern).
+# Nach dem Fortsetzen schreibt der Run den ersten Block und wartet im zweiten
+# auf die Konflikt-Sitzung. Die Pause bleibt unter der Hälfte von
+# wal_sender_timeout (2 s, compose.yaml).
+bf_hold_start e2e-bf-xid $'BEGIN;\nSELECT pg_current_xact_id();\nSELECT pg_sleep(120);'
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-xid' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE — Haltetransaktion"
+bf_request "$BF_KILL_TABLE" "$BF_PHASE"
+bf_kill_run=$bf_run_id
+bf_await_run "$bf_kill_run" running 30 "$BF_PHASE"
+
+# Der zweite Antrag gegen eine andere Tabelle wird angenommen und wartet
+# hinter dem ersten Run.
+bf_request "$BF_QUEUED_TABLE" "$BF_PHASE"
+bf_queued_run=$bf_run_id
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_queued_run'")" queued "$BF_PHASE — Status des zweiten Runs hinter dem ersten"
+
+bf_hold_start e2e-bf-conflict "BEGIN;
+DO \$\$
+DECLARE deadline timestamptz := clock_timestamp() + interval '30 seconds';
+BEGIN
+  WHILE NOT EXISTS (SELECT 1 FROM pg_replication_slots s JOIN pg_stat_activity a ON a.pid = s.active_pid WHERE s.slot_name LIKE 'cdc\_bf\_%' AND a.state <> 'active') LOOP
+    IF clock_timestamp() > deadline THEN
+      RAISE EXCEPTION 'die Slot-Anlage des Runs wurde nicht fertig';
+    END IF;
+    PERFORM pg_sleep(0.01);
+    PERFORM pg_stat_clear_snapshot();
+  END LOOP;
+END \$\$;
+INSERT INTO cdc.transaction (transaction_id, source_id, commit_position, committed_at) VALUES ('0bf-$bf_kill_run-00000002', 'src-e2e', 1, now());
+SELECT pg_sleep(120);"
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-conflict' AND state = 'active'" 1 30 "$BF_PHASE — Konflikt-Sitzung wartet"
+bf_pause_start=$(date +%s%N)
+docker pause "$FEED_CONTAINER" >/dev/null
+bf_hold_end e2e-bf-xid
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE application_name = 'e2e-bf-conflict' AND backend_xid IS NOT NULL" 1 30 "$BF_PHASE — Konflikt-Zeile des zweiten Blocks" 0.02
+docker unpause "$FEED_CONTAINER" >/dev/null
+bf_pause_ms=$(( ($(date +%s%N) - bf_pause_start) / 1000000 ))
+[ "$bf_pause_ms" -lt 1000 ] || bf_fail "$BF_PHASE — die Pause des Feed-Containers dauerte ${bf_pause_ms} ms; erlaubt sind unter 1000 ms, die Hälfte von wal_sender_timeout (2000 ms)"
+
+bf_await_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_kill_run'" 1000 60 "$BF_PHASE — Fortschritt nach dem ersten Block"
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND wait_event = 'transactionid'" 1 30 "$BF_PHASE — Schreiber wartet im zweiten Block"
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_kill_run'")" running "$BF_PHASE — Status des Runs im zweiten Block"
+
+docker kill "$FEED_CONTAINER" >/dev/null
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" false "$BF_PHASE — Feed-Container nach docker kill"
+bf_hold_end e2e-bf-conflict
+
+# Nach dem Abbruch bleibt weder eine Sitzung noch ein Slot des Runs zurück,
+# und der Run hat nichts sichtbar gemacht.
+bf_await_sql "SELECT count(*) FROM pg_stat_activity WHERE backend_type IN ('client backend', 'walsender') AND pid <> pg_backend_pid()" 0 60 "$BF_PHASE — Sitzungen nach dem Abbruch"
+bf_expect "$(bf_sql "SELECT count(*) FROM pg_replication_slots WHERE slot_name LIKE 'cdc\_bf\_%'")" 0 "$BF_PHASE — temporäre Slots des Runs nach dem Abbruch"
+bf_await_sql "SELECT active FROM pg_replication_slots WHERE slot_name = '$SLOT'" f 60 "$BF_PHASE — Haupt-Slot nach dem Abbruch"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_KILL_TABLE'")" 0 "$BF_PHASE — sichtbare Changes des abgebrochenen Runs"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_kill_run-%'")" 0 "$BF_PHASE — Transaktionen des abgebrochenen Runs"
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_kill_run'")" running "$BF_PHASE — Status des abgebrochenen Runs vor dem Neustart"
+
+docker start "$FEED_CONTAINER" >/dev/null
+bf_await_healthy "$BF_PHASE"
+
+bf_await_run "$bf_kill_run" interrupted 30 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT finished_at IS NOT NULL FROM cdc.backfill_run WHERE run_id = '$bf_kill_run'")" t "$BF_PHASE — finished_at des unterbrochenen Runs"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_kill_run'")" 1000 "$BF_PHASE — rows_copied des unterbrochenen Runs (letzter festgehaltener Fortschritt)"
+
+# Die zum Abbruchzeitpunkt queued wartende Zeile wird ohne neuen Antrag
+# aufgenommen und ausgeführt.
+bf_await_run "$bf_queued_run" completed 90 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_QUEUED_TABLE' AND origin = 'backfill' AND transaction_id LIKE '0bf-$bf_queued_run-%'")" 4 "$BF_PHASE — Bestand des aufgenommenen Runs"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.backfill_run WHERE source_id = 'src-e2e' AND table_name = '$BF_KILL_TABLE'")" 1 "$BF_PHASE — kein automatischer Neustart des unterbrochenen Runs"
+
+# Ein erneuter Antrag beginnt neu: der Bestand ist danach einmal und
+# vollständig lesbar.
+bf_request "$BF_KILL_TABLE" "$BF_PHASE"
+bf_retry_run=$bf_run_id
+bf_await_run "$bf_retry_run" completed 90 "$BF_PHASE"
+bf_kill_where="source_id = 'src-e2e' AND table_name = '$BF_KILL_TABLE' AND origin = 'backfill'"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_kill_where")" "$BF_KILL_ROWS" "$BF_PHASE — Backfill-Changes nach dem erneuten Antrag"
+bf_expect "$(bf_sql "SELECT count(DISTINCT new_data->>'id') FROM cdc.changes WHERE $bf_kill_where")" "$BF_KILL_ROWS" "$BF_PHASE — verschiedene Schlüssel"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_kill_where AND transaction_id NOT LIKE '0bf-$bf_retry_run-%'")" 0 "$BF_PHASE — Changes fremder Runs"
+bf_expect "$(bf_sql "SELECT count(DISTINCT transaction_id) FROM cdc.changes WHERE $bf_kill_where")" 3 "$BF_PHASE — Blöcke des erneuten Runs"
+
+# Der Erfassungspfad setzt nach dem Neustart fort.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$BF_KILL_TABLE (id, name) VALUES ($((BF_KILL_ROWS + 1)), 'KillAfterRestart');
+SQL
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_KILL_TABLE' AND origin = 'wal'" 1 30 "$BF_PHASE — Erfassung nach dem Neustart"
+
+echo "run-integration-tests: Backfill-Negative (docker kill, queued-Aufnahme) belegt — docker kill im zweiten Block von Run $bf_kill_run (rows_copied 1000, running): keine Sitzung und kein Slot blieben zurück, keine Change des Runs war sichtbar; nach dem Neustart steht der Run interrupted, der queued wartende Run $bf_queued_run wurde ohne neuen Antrag aufgenommen und endete completed (4 Zeilen); der erneute Antrag $bf_retry_run übernahm $BF_KILL_ROWS Zeilen einmal (3 Blöcke), die Erfassung setzte nach dem Neustart fort"
+
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
-# Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064 Supersedes
-# ADR-0058 Entscheidung 3): bildet den Mechanismus eines
-# Anwendungs-Upgrades nach — ein realer Container-Tausch über
-# `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
-# in ADR-0058 vorgesehenen, real blockierten zweiten
-# `make schema-rollout`-Lauf (BEO-PGC/schema-rollout-fremdobjekte, Exit 8
-# auf vier Fremdobjekten, das Blocker-Protokoll zu `slice-063`). Läuft hier,
+# Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064): bildet den
+# Mechanismus eines Anwendungs-Upgrades nach — ein realer Container-Tausch
+# über `$COMPOSE up -d --force-recreate --no-deps pg-change-feed` ersetzt den
+# Feed-Container durch eine neue Instanz desselben Images. Der Tausch belegt
+# das Upgrade des Prozesses, nicht des Schemas: den zweiten
+# `make schema-rollout`-Lauf gegen ein migriertes Ziel (idempotent über die
+# sieben bekannten Fremdobjekte des Idempotenz-Guards in
+# `tools/schema/rolloutguard`) belegt
+# `tools/harness/run-schema-rollout-guard-test.sh`. Der Rundlauf läuft hier,
 # solange der Feed-Container noch unversehrt und gesund ist — vor
 # TestE2ESchemaChangeDropColumn/TestE2ESchemaChangeIncompatibleTypeChange
 # unten, die ihn beide dauerhaft beenden. `feed_e2e_full` bleibt über den
