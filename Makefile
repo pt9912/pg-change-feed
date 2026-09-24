@@ -290,11 +290,13 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # denselben Report nach tools/schema/rollout-precheck.yaml (eigene Datei,
 # damit der committete Pflicht-Report tools/schema/plan.yaml ausschließlich
 # echte --execute-Läufe belegt); endet er blockierend (Exit 8), entscheidet
-# tools/schema/rolloutguard anhand des strukturierten Reports, ob
-# ausschließlich die sechs bekannten Objekte blockieren. Nur dann läuft der
-# reguläre --execute-Schritt zusätzlich mit --allow-destructive. --execute
-# selbst läuft in jedem Fall, damit jede echte, gleichzeitig anstehende
-# Schema-Änderung im selben Lauf wirksam bleibt (Regressionsbeleg:
+# tools/schema/rolloutguard anhand des strukturierten Reports, ob jeder
+# Blocker ein bekanntes Fremdobjekt oder eine View-Signatur-Änderung ist
+# (siehe „Alles oder nichts" unten). Blockiert dabei mindestens ein bekanntes
+# Fremdobjekt, läuft der reguläre --execute-Schritt zusätzlich mit
+# --allow-destructive. --execute selbst läuft in jedem Fall, damit jede
+# echte, gleichzeitig anstehende Schema-Änderung im selben Lauf wirksam
+# bleibt (Regressionsbeleg:
 # tools/harness/run-schema-rollout-guard-test.sh Lauf 3). Die vier
 # nacharbeit-*.sql-Schritte laufen danach unverändert und legen die sechs
 # bekannten Objekte sofort wieder an (CREATE OR REPLACE, dieselbe
@@ -311,7 +313,13 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 # `DROP VIEW cdc.<name>` (ohne CASCADE, ein Statement je View, jedes auf
 # stdout gemeldet) vor --execute. d-migrate legt die View danach selbst neu
 # an (Operation CreateView im Pflicht-Report), die Rechte setzt
-# nacharbeit-roles.sql im selben Lauf. Hängt ein fremdes Objekt an der
+# nacharbeit-roles.sql im selben Lauf — und nur für cdc_reader: `DROP VIEW`
+# verwirft die gesamte ACL der View, ein vom Betreiber an eine andere Rolle
+# vergebenes GRANT SELECT ON cdc.<view> ist nach einem Lauf mit
+# Signaturänderung weg und wird vom Betreiber erneut gesetzt. Der Vorlauf
+# adressiert das Schema cdc fest (`DROP VIEW cdc.<name>`; der Report trägt nur
+# den View-Namen) und setzt die Rollout-Vorbedingung search_path = cdc voraus
+# (tools/schema/apply-rollout.sh). Hängt ein fremdes Objekt an der
 # View, scheitert der DROP laut und nichts wird mitgelöscht. Der Vorlauf
 # läuft nur bei einem Blocker dieser Klasse: additive Änderungen (neue
 # Tabelle, neue nullable Spalte, neue View) erzeugen keinen Blocker und

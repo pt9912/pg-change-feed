@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.45
+Version: 1.46
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -621,6 +621,14 @@ Dabei gilt:
 - Es gehen keine Daten verloren: die View trägt keine Daten, die erfassten
   Changes liegen in `cdc.change` und sind danach über `cdc.changes` unverändert
   lesbar. Die Rechte der Rolle `cdc_reader` setzt derselbe Lauf wieder.
+- **Eigene Rechte:** Das Entfernen der View verwirft ihre gesamte
+  Rechteliste. Nur `cdc_reader` bekommt das `SELECT`-Recht im selben Lauf
+  zurück; ein von Ihnen an eine andere Rolle vergebenes `GRANT SELECT ON
+  cdc.<view>` fehlt danach. Setzen Sie solche Rechte nach einem Rollout mit
+  Vorlauf-Meldung erneut.
+- **Vorbedingung:** Der Vorlauf adressiert das Schema `cdc` fest
+  (`DROP VIEW cdc.<name>`); wie beim gesamten Rollout gilt der
+  `search_path` `cdc` des Ziels.
 - **Lesefenster:** Für SQL-Leser über `cdc_reader` fehlt die View — oder
   sie ist noch ohne Recht — für die Dauer des Rollouts. Richtwert rund 7
   Sekunden, aus einer einzelnen Architect-Messung auf einer Testinstanz mit
@@ -1335,3 +1343,4 @@ MIT — siehe `LICENSE`.
 | 1.43 | 2026-09-23 | Python-SDK-Absatz für den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-nats-stream-client-flaeche): §4 „Zugriff über den NATS-Vollinhalts-Stream" trägt jetzt den dritten Sprach-`**SDK:**`-Absatz — `PgChangeFeedNatsStreamClient.stream_changes()` abonniert `cdc.stream.<source_id>.>` und liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern; das PyPI-Package `pgchangefeed` ist dafür auf `0.2.0` gehoben — die volle Vier-Wege-Matrix ist damit für alle drei SDK-Sprachen im Handbuch vollständig |
 | 1.44 | 2026-09-24 | Feld `origin` in den Lesewegen ergänzt (`LH-FA-CAP-009`, `LH-FA-DAT-006`, `ADR-0111`, slice-backfill-change-origin): §4 „Änderungen lesen" trägt `origin` als letzte Spalte des SQL-Beispiels über `cdc.changes` samt Bedeutung (`wal` \| `backfill`, ein fehlender Wert liest als `wal`), §4 „Zugriff über die HTTP-/JSON-API" nennt `origin` als letztes Feld der `GET /changes`-Antwort; die drei Live-Zustellwege tragen das Feld nicht |
 | 1.45 | 2026-09-24 | Schema-Upgrade über eine View-Signaturänderung dokumentiert (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" nennt die Reihenfolge (Schema-Rollout vor dem Container-Tausch), den automatischen Vorlauf `DROP VIEW cdc.<name>` samt Meldung, das Lesefenster für SQL-Leser (Richtwert aus einer einzelnen Messung, nicht garantiert) und das Verhalten bei einem abhängigen Objekt oder einem Abbruch nach dem Vorlauf |
+| 1.46 | 2026-09-24 | Hinweis zu Rechten und Vorbedingung des View-Signatur-Vorlaufs ergänzt (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" benennt, dass `DROP VIEW` die Rechteliste der View verwirft und nur `cdc_reader` im selben Lauf sein `SELECT`-Recht zurückbekommt (eigene Grants an andere Rollen setzt der Betreiber erneut), sowie die feste Adressierung des Schemas `cdc` |

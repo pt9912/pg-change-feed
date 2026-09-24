@@ -62,7 +62,8 @@ type decision struct {
 // decide wertet den Precheck-Report aus. Alles oder nichts (ADR-0114
 // Entscheidung 2): jeder Blocker muss entweder zur Klasse „View-Signatur"
 // gehören oder unter destructiveConfirmationReason eine Operation auf
-// knownForeignObjects sein; schon ein einziger anderer Blocker — real
+// knownForeignObjects sein; ein Blocker ohne Operationen belegt keine
+// bekannte Operation und zählt als unbekannt; schon ein einziger anderer Blocker — real
 // geprüft mit einer künstlich per ALTER TABLE … ADD COLUMN hinzugefügten,
 // nicht deklarierten Spalte, die d-migrate als unbekannten
 // DropColumn-Blocker meldet — lässt die Entscheidung leer: kein Vorlauf,
@@ -94,6 +95,9 @@ func decide(r report) decision {
 	for _, b := range r.Blockers {
 		switch b.Reason {
 		case destructiveConfirmationReason:
+			if len(b.OperationIDs) == 0 {
+				return decision{reason: fmt.Sprintf("Blocker %q ohne Operation", b.Reason)}
+			}
 			d.allowDestructive = true
 			for _, id := range b.OperationIDs {
 				op, ok := opByID[id]

@@ -225,6 +225,34 @@ func TestDecideRefusesManualActionWithoutOperations(t *testing.T) {
 	}
 }
 
+// TestDecideRefusesDestructiveBlockerWithoutOperations prüft, dass ein
+// Blocker DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION ohne operationIds
+// nicht vakuum als „bekanntes Fremdobjekt" durchgeht — allein, neben den
+// bekannten Fremdobjekten und neben der Klasse „View-Signatur" (alles oder
+// nichts: weder --allow-destructive noch Vorlauf).
+func TestDecideRefusesDestructiveBlockerWithoutOperations(t *testing.T) {
+	empty := blocker{Reason: destructiveConfirmationReason}
+	alone := report{Status: "blocked", Blockers: []blocker{empty}}
+	withForeign := knownBlockedReport()
+	withForeign.Blockers = append(withForeign.Blockers, empty)
+	withSignature := viewSignatureOnlyReport("changes")
+	withSignature.Blockers = append(withSignature.Blockers, empty)
+
+	for _, tc := range []struct {
+		name string
+		r    report
+	}{
+		{"allein", alone},
+		{"neben Fremdobjekten", withForeign},
+		{"neben View-Signatur", withSignature},
+	} {
+		d := decide(tc.r)
+		if d.allowDestructive || len(d.dropViews) != 0 {
+			t.Errorf("%s: decision = %+v — wollte leer bei einem destruktiven Blocker ohne Operation", tc.name, d)
+		}
+	}
+}
+
 // TestDecideRefusesViewNameThatIsNotAnIdentifier prüft die
 // Eingabe-Validierung des Namens, der in `DROP VIEW cdc.<name>` gelangt:
 // Anführungszeichen, Semikolon, Punkt und Großbuchstaben lehnt decide ab.

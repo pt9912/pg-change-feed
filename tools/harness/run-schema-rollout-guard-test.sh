@@ -34,9 +34,26 @@
 #      Datenzeile geschrieben, danach der Arbeitsbaum zweimal ausgerollt —
 #      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
 #      Soll-Signatur der View. Tag und Exit-Codes stehen in der Ausgabe.
-#   6. Ein künstlich per `ALTER TABLE … ADD COLUMN` hinzugefügtes, nicht
-#      deklariertes Objekt — muss weiterhin mit Exit 8 abbrechen (der
-#      Beleg, dass die Wache nicht pauschal durchlässt).
+#   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
+#      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
+#      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:
+#         dieselbe Klasse wie die sechs bekannten Fremdobjekte (Blocker
+#         DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION), aber nicht auf der
+#         Bekannt-Liste. Ließe die Wache den Blocker durch, riefe das Target
+#         `--execute` mit `--allow-destructive` auf und d-migrate löschte die
+#         Funktion — der Beleg ist, dass sie nach dem Lauf besteht. Nur dieser
+#         Fall bindet die Bekannt-Liste (`knownForeignObjects`) des Guards
+#         end-to-end; die Liste selbst trägt der Unit-Test in
+#         tools/schema/rolloutguard.
+#      b) eine nicht deklarierte Spalte per `ALTER TABLE … ADD COLUMN`:
+#         d-migrate meldet einen DropColumn-Blocker und bricht auch unter
+#         `--allow-destructive` selbst ab — der Beleg für den Abbruch mit
+#         Exit 8 gegen einen real gemeldeten Blocker, nicht für die
+#         Bekannt-Liste.
+#
+# Am Ende (auch beim Fehlschlag) stellt der Lauf die vom Rollout
+# überschriebenen Erzeugnisse tools/schema/plan.yaml und tools/schema/down.sql
+# wieder her; der Arbeitsbaum bleibt unverändert.
 #
 # Eigenständiges Docker-Netz/-Container, unabhängig von der
 # Wurzel-`compose.yaml` und `examples/compose.yaml` — Daten leben
@@ -55,6 +72,10 @@ PASSWORD=postgres
 TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$DB?sslmode=disable"
 ALT_TARGET="db:postgres://$USER:$PASSWORD@$CONTAINER:5432/$ALT_DB?sslmode=disable"
 ALT_DIR=""
+# `make schema-rollout` ohne `-C` überschreibt die committeten Erzeugnisse
+# tools/schema/plan.yaml und down.sql; cleanup stellt sie aus dieser Sicherung wieder her.
+ARTEFACT_BACKUP=$(mktemp -d "${TMPDIR:-/tmp}/schema-rollout-artefakte.XXXXXX")
+cp tools/schema/plan.yaml tools/schema/down.sql "$ARTEFACT_BACKUP"/
 
 docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NETWORK" >/dev/null
 
@@ -64,6 +85,8 @@ cleanup() {
   if [ -n "$ALT_DIR" ]; then
     rm -rf "$ALT_DIR"
   fi
+  cp "$ARTEFACT_BACKUP"/plan.yaml "$ARTEFACT_BACKUP"/down.sql tools/schema/
+  rm -rf "$ARTEFACT_BACKUP"
 }
 trap cleanup EXIT
 
@@ -235,16 +258,27 @@ else
 fi
 echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar"
 
-echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannter Blocker, muss mit Exit 8 abbrechen)"
+echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
+echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
+  -c "CREATE FUNCTION cdc.zz_rolloutguard_unbekannt() RETURNS integer LANGUAGE sql AS 'SELECT 1'"
+run_rollout . "$TARGET"
+run6a_exit=$RUN_EXIT
+[ "$run6a_exit" -ne 0 ] || fail "Lauf 6a lief durch (Exit 0), obwohl ein unbekannter destruktiver Blocker vorlag"
+grep -qE "(Error|Fehler) 8" <<<"$RUN_OUT" || fail "Lauf 6a: der Abbruch trägt nicht den d-migrate-Exit 8 (Error 8/Fehler 8 fehlt in der Ausgabe)"
+if grep -q "nur bekannte Fremdobjekt-Blocker" <<<"$RUN_OUT"; then
+  fail "Lauf 6a: die Wache hat --allow-destructive für einen unbekannten Blocker freigegeben"
+fi
+[ "$(psql_q "$DB" "SELECT to_regprocedure('cdc.zz_rolloutguard_unbekannt()') IS NOT NULL")" = "t" ] \
+  || fail "Lauf 6a: die nicht deklarierte Funktion wurde gelöscht — --allow-destructive lief für einen unbekannten Blocker"
+docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 -c "DROP FUNCTION cdc.zz_rolloutguard_unbekannt()"
+
+echo "run-schema-rollout-guard-test: Lauf 6b (nicht deklarierte Spalte — DropColumn-Blocker, Abbruch mit Exit 8)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.source ADD COLUMN _rolloutguard_test_col text"
-set +e
-make schema-rollout SCHEMA_TARGET="$TARGET" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
-run6_exit=$?
-set -e
-if [ "$run6_exit" -eq 0 ]; then
-  echo "run-schema-rollout-guard-test: FEHLER — Lauf 6 lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag" >&2
-  exit 1
-fi
+run_rollout . "$TARGET"
+run6b_exit=$RUN_EXIT
+[ "$run6b_exit" -ne 0 ] || fail "Lauf 6b lief durch (Exit 0), obwohl ein unbekannter Blocker vorlag"
+grep -qE "(Error|Fehler) 8" <<<"$RUN_OUT" || fail "Lauf 6b: der Abbruch trägt nicht den d-migrate-Exit 8 (Error 8/Fehler 8 fehlt in der Ausgabe)"
 
-echo "run-schema-rollout-guard-test: OK — alle Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, View-Signatur-Vorlauf, Alt-Tag $ALT_TAG, Negativ-Abbruch Exit $run6_exit)"
+echo "run-schema-rollout-guard-test: OK — alle Belege real erbracht (Idempotenz-Allow, echte Änderung bleibt wirksam, View-Signatur-Vorlauf, Alt-Tag $ALT_TAG, Negativ-Abbruch: unbekannte Funktion bleibt bestehen, make-Exit $run6a_exit/$run6b_exit mit d-migrate-Exit 8)"
