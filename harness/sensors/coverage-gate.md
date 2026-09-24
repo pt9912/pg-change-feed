@@ -62,18 +62,19 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2398** (Lauf `slice-backfill-run-store`, Closure am
-Stand `c7045f81`: die Stufe nachgestellt — `go test -count=1
--coverpkg=<Paketliste der Stufe> -covermode=atomic`, dedupliziert über die
-Block-Position; gedeckt **2033 von 2398**, gedruckt `total: (statements)
-84.8%`; `make coverage-gate` desselben Stands druckt `Coverage 84.90%`). Der
-Nenner setzt sich aus **2356** Statements der übrigen Pakete (**abgeleitet**)
-und den **42** Statements des Unterpakets `postgressnapshot/snapshotlogic`
-zusammen (42 von 42 gedeckt, aus demselben Profil); das Unterpaket liegt im
-Gegenstand. Die gedeckte Zahl ist lauf-gebunden: Läufe desselben Code-Stands
-druckten `Coverage 84.70%`, `84.80%` und `84.90%` (die ersten beiden
-**übernommen** aus dem Verifikations-Report `verifikation-slice-backfill-run-store`
-§1, der dritte in diesem Lauf).
+**Der Nenner der Stufe ist 2527** (Lauf `slice-backfill-sql-administration`,
+Closure am Stand `02b3059d`: `make coverage-gate` baut die Stufe `coverage`, das
+Profil `/out/coverage.out` des gebauten Images, dedupliziert über die
+Block-Position mit Awk ausgezählt; gedeckt **2096 von 2527** = 82,94 %,
+gedruckt `total: (statements) 82.9%` und `coverage-gate: OK — Coverage 82.90%
+erfüllt Schwelle 80%`). Der Nenner setzt sich aus **2485** Statements der
+übrigen Pakete (**abgeleitet**) und den **42** Statements des Unterpakets
+`postgressnapshot/snapshotlogic` zusammen (42 von 42 gedeckt, aus demselben
+Profil); das Unterpaket liegt im Gegenstand. Die Nenner-Größe ist an den
+Code-Stand gebunden, die gedeckte Zahl an den Lauf: `make coverage-gate` am
+Stand `c092efa5` druckte `Coverage 83.00%` und im Lauf von `make gates`
+`Coverage 82.90%` (beide **übernommen** aus dem Verifikations-Report
+`verifikation-slice-backfill-sql-administration` §1).
 
 **Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
 `slice-097`, der

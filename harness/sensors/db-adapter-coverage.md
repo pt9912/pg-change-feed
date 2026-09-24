@@ -86,22 +86,24 @@ nicht prüft, steht in §Grenze Nr. 8.
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **1016 Statements** (`postgresstorage` 675 ·
+- Der gemergte Nenner ist **1027 Statements** (`postgresstorage` 686 ·
   `postgresack` 32 · `postgressnapshot` 122 · `replication/receive` 187) — die
   **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
   einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
   derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
   hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
-  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1016**
-  und ihre vier Anteile: Lauf `slice-backfill-run-store` (Closure, Stand
-  `c7045f81`), `make test-store` gefolgt von `make test-replication` gegen
-  PostgreSQL 18, gedruckt:
-  `DB-Adapter-Coverage: 81.69% (gedeckt 830 von 1016 Statements; Profile
-  gemergt: store,replication)`; die Anteile aus dem gemergten Profil desselben
-  Laufs abgeleitet: gedeckt 527 · 32 · 118 · 153; denselben Wert 830 von 1016
-  druckt der Lauf gegen PostgreSQL 17 — **übernommen** aus dem
-  Verifikations-Report `verifikation-slice-backfill-run-store` §1, in diesem
-  Lauf nicht gemessen). Die **gedeckte** Zahl
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1027**
+  und ihre vier Anteile: Lauf `slice-backfill-sql-administration` (Closure,
+  Stand `02b3059d`): `bash tools/harness/db-coverage.sh` über die abgelegten
+  Profile — das Store-Profil aus `make test-store` gegen PostgreSQL 18
+  (Verifikation `verifikation-slice-backfill-sql-administration` §1, `HEAD`
+  `c092efa5`) und das Replication-Profil aus `make test-replication` (dessen
+  Pakete der Slice nicht berührt; `git diff --stat` über sie ist leer) —,
+  gedruckt: `DB-Adapter-Coverage: 82.08% (gedeckt 843 von 1027 Statements;
+  Profile gemergt: store,replication)`; die Anteile aus dem gemergten Profil
+  dieses Laufs abgeleitet: gedeckt 540 · 32 · 118 · 153. Der Store-Lauf selbst
+  ist **übernommen** aus dem Verifikations-Report, in diesem Lauf nicht neu
+  gefahren). Die **gedeckte** Zahl
   daneben ist zusätzlich **lauf**-gebunden: sie wandert schon bei unverändertem
   Code-Stand, ist darum ebenfalls **kein** Zustand und nennt ihren Lauf. Die
   Größe **eines** Anteils hängt an seiner Naht
