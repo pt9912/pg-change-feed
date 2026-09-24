@@ -21,9 +21,13 @@ Guard), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (Rolle
 Transaktion, Aufnahme beim Start und bei Wecksignal, Warn-Spalten in View und
 `diagnose`).
 
-**Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antrags-Datensatz, durch
-`spec-nachzug`), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand), [`ARC-005`](../../../../spec/architecture.md), [`ARC-007`](../../../../spec/architecture.md) — gelesen,
-nicht geändert.
+**Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antrags-Datensatz) —
+**geändert**: der Absatz „Grants“ der Antrags-Queue
+([Architect-Verdikt](../../../reviews/architect-verdict-backfill-schema-klasse-rollen.md));
+[`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) Absatz „Markierung“ — **geändert**: ein Satz zur
+Schema-Version ([`ADR-0116`](../../adr/0116-backfill-schema-version-referenz-reichweite.md));
+[`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand), [`ARC-005`](../../../../spec/architecture.md),
+[`ARC-007`](../../../../spec/architecture.md) — gelesen, nicht geändert.
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
@@ -89,7 +93,7 @@ sichtbar. Drei Teile:
 
 ## 2. Definition of Done
 
-- [ ] Antragsweg: `cdc.backfill_table` schreibt ausschließlich einen Antrag der
+- [x] Antragsweg: `cdc.backfill_table` schreibt ausschließlich einen Antrag der
       Art `backfill` (`column_name` leer) und sendet `pg_notify`; `PUBLIC` hat kein
       `EXECUTE`, ein Login ohne `cdc_admin`-Mitgliedschaft scheitert mit
       „permission denied for function"; die `request_kind`-Menge trägt genau die
@@ -106,7 +110,7 @@ sichtbar. Drei Teile:
       gedruckten Exit-Codes) trägt den Upgrade-Beleg für die CHECK-Menge und die
       Funktion in `nacharbeit-administration.sql` und für die neue View über
       einen Alt-Bestand.
-- [ ] Verarbeitung: ein `backfill`-Antrag gegen eine aktivierte Tabelle ruft
+- [x] Verarbeitung: ein `backfill`-Antrag gegen eine aktivierte Tabelle ruft
       `Request`, legt den Run `queued` mit Schätzung an und vermerkt ihn `applied`
       („angenommen") in einer Transaktion, weckt den Worker und blockiert die
       Administrations-Goroutine nicht; eine nicht aktivierte Tabelle und ein
@@ -140,7 +144,7 @@ sichtbar. Drei Teile:
       Vermerk trägt beide Bedingungen in seiner `WHERE`-Klausel). *Zu belegen
       durch:* je Abweichung (Art, Quelle/Schema/Tabelle) ein Test mit Mutation
       (Prüfung entfernen → rot).
-- [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
+- [x] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
       zwei Warn-Spalten — **schon in dieser Signatur** (`warn_estimated_size`,
@@ -164,15 +168,22 @@ sichtbar. Drei Teile:
       unter „Änderungen lesen" und `from = <letzte gelieferte commit_position> + 1`
       unter „Changes lesen". *Zu belegen durch:* `make test-store` (View, Grant),
       `make test` (`diagnose`), Review des Handbuchs.
+- [x] Spec-Zug (Architect-Verdikt): [`SPEC-019`](../../../../spec/pflichtenheft.md) trägt den Absatz „Grants“ der
+      Antrags-Queue (`cdc_admin` `SELECT`, `UPDATE`; `cdc_capture` und `cdc_reader` kein Recht;
+      niemand `INSERT` oder `DELETE`); [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) Absatz „Markierung“ trägt den
+      Satz zur Schema-Version, das Handbuch denselben Inhalt im Abschnitt zum Backfill
+      ([`ADR-0116`](../../adr/0116-backfill-schema-version-referenz-reichweite.md) Folgepflicht 2 und 3). *Zu belegen durch:* der Diff der
+      Spec und des Handbuchs, `make docs-check`; die Rechte selbst der Rollen-Test
+      (`make test-store`).
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe dritter Liefer-Punkt.
+- [x] Doku-Update: siehe dritter Liefer-Punkt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -188,11 +199,21 @@ sichtbar. Drei Teile:
 
 ## 3. Plan (vor Code)
 
+**Umfangsentscheidung (vor dem Code, am Diff gemessen):** keine Rückführung nach `next/`. Der in §4 vorab benannte abtrennbare Teil (Status-View, `diagnose`, Handbuch) ist klein — die View ist eine YAML-Stelle samt einem Grant, `diagnose` eine Funktion mit Formatierung —, und drei Bindungen halten ihn im Slice: die Signatur der View soll von Anfang an stehen (Auflage aus dem Architect-Verdikt zur View-Signatur), die Handbuch-Pflicht für `cdc.backfill_table` verlangt den Abschnitt ohnehin, und der Login-Test der Verarbeitung liest den Status. Gemessen am Stand nach dem dritten Produktions-Commit (`git diff --shortstat 2d47d8a7 HEAD`): 33 Dateien, 2106 Zeilen dazu, davon 413 in acht Produktions-Go-Dateien und 1377 in 14 Testdateien; der Rest Spec, Handbuch, Schema-SQL und Harness-Doku. Vier Commits trennen Speicher, Verdrahtung, Spec und Handbuch. Die Spec-Zusätze aus dem Architect-Verdikt sind zwei kurze Absätze und tragen den Umfang nicht.
+
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | Antragsart `backfill`; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Abbildung der Antragsart. |
-| `internal/adapters/driven/postgresstorage/backfilladmission.go`, `queries/queries.go` (+ Test) oder die Verarbeitung in `internal/bootstrap/wiring.go` | update (Übergabe aus `slice-backfill-run-store`) | Art- und Bezugs-Prüfung von Antrag und Run vor bzw. bei `Admit` (DoD „Bezug von Antrag und Run"). |
+| `internal/adapters/driven/postgresstorage/backfilladmission.go`, `queries/queries.go` (+ Test) oder die Verarbeitung in `internal/bootstrap/wiring.go` | update (Übergabe aus `slice-backfill-run-store`) | Art- und Bezugs-Prüfung von Antrag und Run vor bzw. bei `Admit` (DoD „Bezug von Antrag und Run"). **Umgesetzt** in der zweiten Form des Plans („der Vermerk trägt beide Bedingungen in seiner `WHERE`-Klausel“): die neue Anweisung `UpdateAdministrationRequestAdmitted` trifft nur einen `pending`-Antrag der Art `backfill` mit Quelle, Schema und Tabelle des Runs; trifft sie keine Zeile, unterscheidet `rejectedRequest` (Antrag fehlt oder nicht offen → `ErrBackfillRequestNotPending`; offen, aber andere Art oder Adresse → `ErrBackfillRunInvalid`). Der Antragszweig baut den Run aus den Werten des Antrags. Port-Kommentar an `BackfillAdmissionPort.Admit` nachgezogen. |
+| `internal/adapters/driven/postgresstorage/backfillhelpers_test.go`, `backfilladmission_test.go` | update | Der Helfer `pendingRequest` legt die Art `backfill` an (`pendingRequestOfKind` für abweichende Arten); neuer Test je Abweichung (Art, Quelle, Schema, Tabelle) als Unterfall. |
+| `internal/domain/errors/errors.go`, `internal/application/port/outbound/administrationrequest.go` | update (nicht im Plan) | Doc-Kommentare zählen die fünf Antragsarten bzw. die fünf Funktionen (§3.13-Suchlauf). |
+| `internal/bootstrap/backfill.go` (neu) | create (nicht im Plan als eigene Datei) | Worker (`runBackfillWorker`, `drainBackfillQueue`), Wecksignal (`newBackfillWake`, `signalBackfillWorker`), Start-Abgleich (`reconcileBackfillRuns`) und die Ausgabe von `diagnose` (`diagnoseBackfillStatus`); `wiring.go` bleibt bei der Verdrahtung. Der Worker liest nach einem Durchgang mit Fehler nach `backfillRetryInterval` erneut (ein Lesefehler bei der Aufnahme lässt eine `queued`-Zeile sonst bis zum nächsten Signal liegen; kein Poll im Normalbetrieb). |
+| `internal/bootstrap/backfill_internal_test.go`, `backfill_endtoend_test.go` (neu), `administration_roles_internal_test.go`, `diagnose_test.go`, `roles_rollout_file_internal_test.go` | create / update | Whitebox-Tests mit Fakes (Reihenfolge, Aufnahme beim Start, Signal zwischen Lesung und Warten, erneutes Lesen nach jedem Run, nicht blockierender Sender, Ergebnis `failed` ohne weiteren Endzustand, Wiederholung nach Fehler, Antragszweig, Abgleich); der Abgleich gegen die reale Run-Tabelle und die Aufnahme einer `queued`-Zeile ohne Bindung (Worker, Use Case und Adapter real: der Run endet `failed`, Klasse `configuration`, vor dem Slot); der Login-Test führt die Art `backfill` (angenommen unter `cdc_admin`/`cdc_capture`, zweiter Antrag `failed`, nicht aktivierte Tabelle `failed`); `diagnose` unter einer `cdc_reader`-Identität; die neue View im Reader-Grant des Rollout-Texts. |
+| `internal/adapters/driven/postgresstorage/administrationrequest_test.go`, `roles_test.go`, `sqlviews_test.go`, `backfillstatusview_test.go` (neu) | update / create | die Funktion `cdc.backfill_table` (schreibt nur den Antrag, `pg_notify`, `EXECUTE` nur `cdc_admin`), die CHECK-Menge mit genau fünf Werten, `cdc_reader` liest über die View und nicht die Basistabelle, die View trägt den letzten Run je Tabelle (Ordnung, Gleichstand, NULL/0, Warn-Spalten), und der Schlüsselvergleich der Fortsetzung in einer Position (Beleg der Handbuch-Aussage). |
+| `spec/pflichtenheft.md` | update (Architect-Verdikt) | `SPEC-019`: Absatz „Grants“; `LH-FA-CAP-009.a` „Markierung“: Satz zur Schema-Version; Historie-Zeile. |
+| `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis des Rollouts gegen eine leere Datenbank (die View `backfill_status` erhöht die Operationszahl von 15 auf 16); die `target`-Zeile bleibt die committete. |
+| `tools/harness/run-schema-rollout-guard-test.sh` | **nicht geändert** (Vorgabe des Auftraggebers: die Skripte unter `tools/harness/` bleiben in diesem Slice unberührt) | Der Alt-Tag-Lauf wird ausgeführt, nicht geändert; seine Kommentare zählen „sechs“ Fremdobjekte (Zeilen 9, 14, 44, 171) — gemeldet, nicht nachgezogen. Die zusätzlichen Alt-Bestand-Prüfungen (Funktion, `EXECUTE`, View-Recht, CHECK-Menge) laufen als Wegwerf-Messung außerhalb des Repos; ihr Ergebnis steht im Bericht. |
 | `tools/schema/nacharbeit-administration.sql` | update | CHECK-Menge (fünf Werte), Funktion `cdc.backfill_table`, Kopfkommentar. |
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Eintrag der Funktion; der Kommentar „aktuell sechs Objekte" zählt neu. |
 | `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell mit ihrer endgültigen Spaltenliste, die zwei Warn-Spalten eingeschlossen (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |
@@ -263,18 +284,20 @@ Rechte sind Messungen des Verifiers, die Handbuch-Version ist am Stand `c7045f81
   Rechteschnitt der Queue bereits; der Zug liest sie beim Nachziehen der Rollen-Beschreibung, statt
   sie zu überschreiben.
 
-**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene `request_kind`-Menge (vier → fünf)", „die Menge der Fremdobjekte außerhalb des neutralen Modells (sechs → sieben)", „die Ausgabe von `diagnose`"; beide Stände gemessen):**
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene `request_kind`-Menge (vier → fünf)", „die Menge der Fremdobjekte außerhalb des neutralen Modells (sechs → sieben)", „die Ausgabe von `diagnose`", „die Rechte der Rollen und die Zahl der Lese-Views von `cdc_reader` (vier → fünf)"; beide Stände gemessen — Parent `2d47d8a7` mit `git grep -n … 2d47d8a7 -- <Pfade>`, Diff-Stand mit `grep -rn …` am Stand nach dem dritten Produktions-Commit `c188be43`; Zahlen sind gedruckte Zeilenzahlen dieser Läufe, keine Werte aus dem Plan):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Aufzählungen der Antragsarten | `grep -rn 'exclude_column' internal tools docs spec harness` | *(Implementer trägt ein)* | Fehlertext in `applyAdministrationRequest` („… geschlossene Menge enable/disable/exclude_column/include_column"), Doc-Kommentare, Handbuch, Architektur-Sicht |
-| Zahl der Fremdobjekte („sechs") | `grep -rn 'sechs' harness Makefile tools docs/user` | *(Implementer trägt ein)* | Guard-Kommentar, `harness/targets/schema-rollout.md`, die `harness/README.md`-Zeile `make example-demo-up`, Sensor-Dateien nachziehen; `Accepted` ADRs nicht ändern |
-| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | *(Implementer trägt ein)* | Zahl und Beschreibung nachziehen, falls sich die Läufe ändern |
-| Beispielausgabe von `diagnose` im Handbuch (§4) und `diagnose`-Tests | `grep -rn 'diagnose' docs/user internal/bootstrap` | *(Implementer trägt ein)* | Beispiel und Tests an die neue Ausgabe |
-| Zahl der Replication-Verbindungen je Container-Lauf (Handbuch §Grenzwerte: „zwei gleichzeitige Replication-Protokoll-Verbindungen … zählen gegen `max_wal_senders`") — während eines Runs kommt kurzzeitig der Walsender des temporären Slots hinzu | `grep -rn 'max_wal_senders\|Replication-Protokoll-Verbindungen' docs/user spec` | *(Implementer trägt ein)* | Aussage präzisieren („zwei; während der Slot-Anlage eines Backfills eine weitere"), sobald sie belegt ist |
-| Rollen-Beschreibung im Handbuch (§2, Rollen-Tabelle) | Lesen | *(Implementer trägt ein)* | `cdc_capture` trägt zusätzlich die Betriebs-Vorbedingung `SELECT` auf Quelltabellen |
-| Fortsetzungs-Idiome und `backfill`-Nennung im Handbuch | `grep -n 'letzte\|LIMIT\|backfill' docs/user/benutzerhandbuch.md` | *(Implementer trägt ein)* | Übergabe aus dem Spec-Nachzug, am Stand `89053d3b` nachgemessen: `commit_position > <letzte-gelesene-position>` samt `LIMIT 500` (SQL-Beispiel unter „Änderungen lesen", Z. 379/381) und `from = <letzte gelieferte commit_position> + 1` (unter „Changes lesen", Z. 642) tragen die Regel „Position und `limit`" aus [`SPEC-022`](../../../../spec/pflichtenheft.md) nicht; `grep -c 'backfill' docs/user/benutzerhandbuch.md` liefert 0 (das Handbuch nennt `backfill` nicht). Zeilennummern sind der Stand dieser Messung, am Start neu messen |
-| E2E-Abdeckungs-Zeilennummern | `git diff --stat` auf `test/integration/**`, `tools/harness/run-integration-tests.sh` | *(Implementer trägt ein)* | dieser Slice berührt den Runner nicht; ein Treffer wäre ein Plan-Nachzug |
+| Aufzählungen der Antragsarten und der Antragsfunktionen | `grep -rn -e 'exclude_column' internal tools docs spec harness` | Parent 103 Zeilen, Diff-Stand 105. Träger, die die Menge oder die Funktionen aufzählen: Fehlertext in `applyAdministrationRequest`, Doc-Kommentare in `model/administrationrequest.go`, `domain/errors/errors.go`, `outbound/administrationrequest.go`, Kopf und CHECK-Zeile in `nacharbeit-administration.sql`, Kommentare in `nacharbeit-roles.sql` und `schema.yaml` (Kopf, Beschreibung der Tabelle), Zeile 4 der Objektklassen in `harness/targets/schema-rollout.md`, Funktionszahl in `administrationrequest_test.go`, Meldung in `administration_internal_test.go`. Nicht gefunden: eine Aufzählung im Handbuch (es nennt die Antragsarten je Aufgabe, nicht als Menge). Schon fünfstellig: `SPEC-019`, Tabelle „Antragsart → Inbound Port“ in `spec/architecture.md`. | alle genannten Träger im Diff nachgezogen; historische Zeilen (Historie der Spec, Beobachtungs-Belege, Pläne fremder Slices) unberührt |
+| Zahl der Fremdobjekte („sechs") | `grep -rn -e 'sechs' harness Makefile tools docs/user` | Parent 19 Zeilen, Diff-Stand 11. Verbleibende Treffer: Läufe des Guard-Tests („sechs Läufe“, unverändert richtig), unabhängige Zahlen (`erfassung-feldliste.md`, `docs-check.md`, Handbuch „sechs Klassen“, Historie 1.18). Nicht nachgezogen: `tools/harness/run-schema-rollout-guard-test.sh` Zeilen 9, 14, 44, 171 zählen noch „sechs“ Fremdobjekte (Skript in diesem Slice nicht ändern, Vorgabe des Auftraggebers). | `guard.go` (Kommentar) und `guard_test.go`, `harness/targets/schema-rollout.md` (Zeilen 89, 151), die `harness/README.md`-Zeile `make example-demo-up` nachgezogen; das Skript **gemeldet** |
+| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | Die Zahl der Läufe (sechs) und ihre Beschreibung bleiben wahr; Lauf 5 prüft die Rechte von `cdc_admin`, nicht die der Rollen `cdc_capture`/`cdc_reader`, nicht die neue Funktion und nicht die CHECK-Menge | `harness/targets/schema-rollout.md` nennt die Rechte von `cdc_capture`/`cdc_reader`, die Funktion und die CHECK-Menge als Inhalt des Alt-Bestand-Belegs, den diese Messung erbringt (Wegwerf-Skript im Scratchpad, ausgeführt); das committete Skript unverändert |
+| Beispielausgabe von `diagnose` im Handbuch (§4) und `diagnose`-Tests | `grep -rn -e 'diagnose' docs/user internal/bootstrap` | Parent 52 Zeilen, Diff-Stand 76; das Beispiel im Handbuch trägt die Zeilen der Abschnitte Betriebsstatus bis Speicherverbrauch, die Tests prüfen Teilzeichenketten (`strings.Contains`) | Beispiel und Erläuterung um „Backfill je Tabelle“ ergänzt; die bestehenden `diagnose`-Tests brauchen keine Änderung (additive Ausgabe), zwei neue Tests und ein Format-Test tragen den neuen Abschnitt |
+| Zahl der Replication-Verbindungen je Container-Lauf (Handbuch §Grenzwerte) | `grep -rn -e 'max_wal_senders' -e 'Replication-Protokoll-Verbindungen' docs/user spec` | Parent 1 Zeile (Handbuch, „zwei gleichzeitige … zählen gegen `max_wal_senders`“), Diff-Stand 3 (neue Betriebs-Vorbedingung im Backfill-Abschnitt, die präzisierte Grenzwert-Zeile) | präzisiert („zwei; während der Slot-Anlage eines Backfills eine weitere, die nach dem Import endet“, abgeleitet aus dem Adapter, `snapshot.go` Paketkommentar); nicht während eines Container-Laufs mit laufendem Run gemessen |
+| Rollen-Beschreibung im Handbuch (§2, Rollen-Tabelle) | Lesen | Die Zeilen `cdc_capture`, `cdc_admin` und `cdc_reader` nannten weder Backfill noch `cdc.backfill_status` | die drei Zeilen und ein Betriebs-Hinweis (`SELECT` auf Quelltabellen) nachgezogen; §4 „Schema aktualisieren“ (Absatz „Rechte der drei Rollen“) und §5 (zwei DSN-Zeilen) ebenso |
+| Fortsetzungs-Idiome und `backfill`-Nennung im Handbuch | `grep -n -e 'letzte-gelesene' -e 'letzte gelieferte' -e 'LIMIT' -e 'backfill' docs/user/benutzerhandbuch.md` | Parent 7 Nennungen von `backfill`, Diff-Stand 30. Beide Idiome (SQL-Beispiel unter „Änderungen lesen“, `from = <letzte gelieferte commit_position> + 1` unter „Changes lesen“) trugen die Regel „Position und `limit`“ nicht | beide tragen sie jetzt (Absatz „Fortsetzen und `LIMIT`“ mit dem Schlüsselvergleich; Satz im Absatz „Changes lesen“); der Schlüsselvergleich ist im Store-Tier gelaufen (`TestChangesViewKeysetContinuesInsideOnePosition`) |
+| Nenner der Coverage-Messungen (`harness/sensors/coverage-gate.md` §Zählbasis, `harness/sensors/db-adapter-coverage.md` §Zählbasis) | Lesen; `make gates` und `make test-store` gefolgt von `make test-replication` drucken die Zahlen | Der Slice fügt Produktionscode in `internal/bootstrap` und `postgresstorage` hinzu: der gemergte DB-Nenner ist gedruckt **1025** (`DB-Adapter-Coverage: 81.76% (gedeckt 838 von 1025 Statements; Profile gemergt: store,replication)`, PostgreSQL 17 und 18), die Sensor-Datei nennt **1016**; die Unit-Quote druckt `Coverage 82.80%` (Sensor-Datei: 84.90 % am Stand `c7045f81`) | **gemeldet, nicht nachgezogen**: beide Dateien tragen ihre Nenner mit Lauf und Stand der Closure der jeweiligen Zeile; der Unit-Nenner ist in diesem Lauf nicht als Statement-Zahl gemessen |
+| E2E-Abdeckungs-Zeilennummern | `git diff --stat 2d47d8a7 -- test/integration tools/harness/run-integration-tests.sh` | leer (kein Treffer) | kein Nachzug; `make test-integration` lief unverändert grün (Regression der Verdrahtung, kein neuer Beleg) |
+
 
 ## 4. Trigger
 
