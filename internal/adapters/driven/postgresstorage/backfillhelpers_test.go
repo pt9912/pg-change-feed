@@ -98,13 +98,18 @@ func (f *backfillFixture) count(sql string, args ...any) int {
 }
 
 // pendingRequest legt einen offenen Antrag an und räumt ihn samt der Run-Zeile
-// gleicher Kennung ab. Die Antragsart ist `enable`; der Annahme-Adapter liest die
-// Antragsart nicht, nur Kennung und Status.
+// gleicher Kennung ab. Die Antragsart ist `backfill`, die Annahme prüft sie.
 func (f *backfillFixture) pendingRequest(id, schema, table string) {
+	f.t.Helper()
+	f.pendingRequestOfKind(id, schema, table, "backfill")
+}
+
+// pendingRequestOfKind legt einen offenen Antrag einer Antragsart an.
+func (f *backfillFixture) pendingRequestOfKind(id, schema, table, kind string) {
 	f.t.Helper()
 	f.exec(`INSERT INTO cdc.administration_request
 	    (administration_request_id, source_id, schema_name, table_name, request_kind, status)
-	    VALUES ($1, $2, $3, $4, 'enable', 'pending')`, id, backfillTestSource, schema, table)
+	    VALUES ($1, $2, $3, $4, $5, 'pending')`, id, backfillTestSource, schema, table, kind)
 	f.t.Cleanup(func() {
 		_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE run_id = $1", id)
 		_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", id)

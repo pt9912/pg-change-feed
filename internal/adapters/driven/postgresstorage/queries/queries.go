@@ -348,6 +348,25 @@ UPDATE cdc.administration_request
 SET status = 'failed', error_message = $2
 WHERE administration_request_id = $1 AND status = 'pending'`
 
+// UpdateAdministrationRequestAdmitted vermerkt die Annahme eines
+// Backfill-Antrags (`ADR-0113` Festlegung 1): anders als
+// `UpdateAdministrationRequestApplied` trifft die Anweisung nur einen
+// `pending`-Antrag der Art `backfill`, der Quelle (`$2`), Schema (`$3`) und
+// Tabelle (`$4`) des Runs adressiert — ein Antrag anderer Art oder anderer
+// Adresse bleibt unberührt.
+const UpdateAdministrationRequestAdmitted = `
+UPDATE cdc.administration_request
+SET status = 'applied', error_message = NULL
+WHERE administration_request_id = $1 AND status = 'pending'
+  AND request_kind = 'backfill'
+  AND source_id = $2 AND schema_name = $3 AND table_name = $4`
+
+// SelectAdministrationRequestStatus liest den Status eines Antrags: die
+// Unterscheidung, warum die Annahme keine Zeile traf (Antrag fehlt oder nicht
+// mehr offen, oder offen mit abweichender Art bzw. Adresse).
+const SelectAdministrationRequestStatus = `
+SELECT status FROM cdc.administration_request WHERE administration_request_id = $1`
+
 // SelectActiveBackfillRun liest, ob für die Tabelle ein Run im Zustand
 // `queued` oder `running` besteht (`SPEC-029`, `ADR-0111` Teilfrage 4): die
 // Prüfung „kein aktiver Run“ der Annahme-Transaktion (Lesen vor Einfügen).

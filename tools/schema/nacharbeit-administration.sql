@@ -4,8 +4,8 @@
 -- Objektklassen der Antrags-Queue liegen hier:
 --
 -- (1) cdc.enable_table/cdc.disable_table/cdc.exclude_column/
--- cdc.include_column sind ihre schreibenden SQL-Funktionen
--- (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005). d-migrate 1.3.1 generiert ihre
+-- cdc.include_column/cdc.backfill_table sind ihre schreibenden SQL-Funktionen
+-- (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005, LH-FA-CAP-009). d-migrate 1.3.1 generiert ihre
 -- DDL korrekt über
 -- den `functions:`-Knoten (`schema generate`), aber `schema migrate --execute`
 -- bricht für jede dort deklarierte Funktion mit POST_EXECUTE_DRIFT (Exit 5)
@@ -13,7 +13,7 @@
 -- frische PostgreSQL-18-Instanz, nicht auf diese Funktionen beschränkt.
 --
 -- (2) Die geschlossene request_kind-Menge (`enable`, `disable`,
--- `exclude_column`, `include_column`) trägt der CHECK
+-- `exclude_column`, `include_column`, `backfill`) trägt der CHECK
 -- chk_administration_request_kind. Er steht nicht als deklarativer Check in
 -- tools/schema/schema.yaml, weil d-migrate 1.3.1 eine CHECK-Änderung an
 -- einer bestehenden Tabelle nicht konvergiert: real gemessen — den
@@ -42,9 +42,12 @@
 -- der Spaltenausschluss (`LH-FA-CFG-005`, ADR-0059): cdc.exclude_column/
 -- cdc.include_column schreiben ausschließlich den Antrags-Datensatz samt
 -- Spaltennamen und prüfen nichts an der Quelle — die Spaltenexistenz trägt
--- der Use Case über ColumnExclusionPort. Kanal-Name `cdc_administration`
--- ist Implementer-Entscheidung, real mit `LISTEN`/pgx WaitForNotification
--- getestet (administrationrequest_test.go).
+-- der Use Case über ColumnExclusionPort. cdc.backfill_table (`LH-FA-CAP-009`,
+-- ADR-0111) schreibt ebenso ausschließlich den Antrags-Datensatz der Art
+-- `backfill` (ohne Spalte); Vorbedingungen und Annahme trägt der Use Case,
+-- und `applied` heißt dort „angenommen“ (SPEC-019). Kanal-Name
+-- `cdc_administration` ist Implementer-Entscheidung, real mit `LISTEN`/pgx
+-- WaitForNotification getestet (administrationrequest_test.go).
 --
 -- SECURITY DEFINER mit gepinntem search_path (dieselbe Absicherung, die
 -- eine SECURITY-DEFINER-Routine braucht: ohne ihn entscheidet der Suchpfad
@@ -56,7 +59,7 @@
 -- ohne cdc_admin-Mitgliedschaft scheitert mit „permission denied for
 -- function", ein Login mit cdc_admin-Mitgliedschaft gelingt).
 ALTER TABLE cdc.administration_request DROP CONSTRAINT IF EXISTS chk_administration_request_kind;
-ALTER TABLE cdc.administration_request ADD CONSTRAINT chk_administration_request_kind CHECK (request_kind IN ('enable', 'disable', 'exclude_column', 'include_column'));
+ALTER TABLE cdc.administration_request ADD CONSTRAINT chk_administration_request_kind CHECK (request_kind IN ('enable', 'disable', 'exclude_column', 'include_column', 'backfill'));
 
 CREATE OR REPLACE FUNCTION cdc.enable_table(p_source_id text, p_schema_name text, p_table_name text)
 RETURNS text
@@ -134,5 +137,24 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text) TO cdc_admin;
+CREATE OR REPLACE FUNCTION cdc.backfill_table(p_source_id text, p_schema_name text, p_table_name text)
+RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = cdc, pg_temp
+AS $$
+DECLARE
+    v_id text;
+BEGIN
+    v_id := gen_random_uuid()::text;
+    INSERT INTO cdc.administration_request
+        (administration_request_id, source_id, schema_name, table_name, request_kind, status)
+    VALUES (v_id, p_source_id, p_schema_name, p_table_name, 'backfill', 'pending');
+    PERFORM pg_notify('cdc_administration', v_id);
+    RETURN v_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text) TO cdc_admin;

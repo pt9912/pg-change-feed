@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// knownForeignObjects trägt die aktuell sechs Objekte, die außerhalb des
+// knownForeignObjects trägt die aktuell sieben Objekte, die außerhalb des
 // neutralen Modells (tools/schema/schema.yaml) über
 // tools/schema/nacharbeit-*.sql angelegt werden und deshalb bei jedem
 // zweiten `schema migrate`-Lauf gegen ein bereits migriertes Ziel als
@@ -20,6 +20,7 @@ var knownForeignObjects = map[foreignObject]bool{
 	{kind: "DropFunction", objectType: "FUNCTION", path: "disable_table(in:text,in:text,in:text)"}:          true,
 	{kind: "DropFunction", objectType: "FUNCTION", path: "exclude_column(in:text,in:text,in:text,in:text)"}: true,
 	{kind: "DropFunction", objectType: "FUNCTION", path: "include_column(in:text,in:text,in:text,in:text)"}: true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "backfill_table(in:text,in:text,in:text)"}:         true,
 	{kind: "DropView", objectType: "VIEW", path: "heartbeat"}:                                               true,
 	{kind: "DropView", objectType: "VIEW", path: "metrics"}:                                                 true,
 }

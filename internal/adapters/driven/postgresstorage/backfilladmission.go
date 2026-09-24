@@ -2,9 +2,11 @@ package postgresstorage
 
 import (
 	"context"
+	stderrors "errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage/mapper"
@@ -59,11 +61,14 @@ var _ outbound.BackfillAdmissionPort = (*BackfillAdmissionAdapter)(nil)
 
 // Admit nimmt den Antrag in **einer** Transaktion an: Prüfung „kein aktiver
 // Run derselben Tabelle“, Anlage der Run-Zeile `queued`, Antragsvermerk
-// `applied`, Commit. Der Vermerk muss genau eine `pending`-Zeile treffen;
+// `applied`, Commit. Der Vermerk trifft nur einen `pending`-Antrag der Art
+// `backfill`, der Quelle, Schema und Tabelle des Runs adressiert
+// (`UpdateAdministrationRequestAdmitted`) und muss genau eine Zeile treffen;
 // jede Abweichung verwirft die Transaktion und hinterlässt weder Run-Zeile
-// noch Vermerk. Zwischen mehreren Annehmenden sperrt die Transaktion
-// nicht (`ADR-0113` Festlegung 1 Punkt 2): sie beruht darauf, dass eine
-// Goroutine je Quelle Anträge nacheinander annimmt.
+// noch Vermerk und endet als `ErrBackfillRequestNotPending` bzw.
+// `ErrBackfillRunInvalid` (`rejectedRequest`). Zwischen mehreren Annehmenden
+// sperrt die Transaktion nicht (`ADR-0113` Festlegung 1 Punkt 2): sie beruht
+// darauf, dass eine Goroutine je Quelle Anträge nacheinander annimmt.
 func (a *BackfillAdmissionAdapter) Admit(ctx context.Context, requestID model.AdministrationRequestID, run model.BackfillRun) error {
 	if requestID == "" {
 		return domainerrors.ErrEmptyIdentifier
@@ -106,12 +111,13 @@ func (a *BackfillAdmissionAdapter) Admit(ctx context.Context, requestID model.Ad
 		return backfillStorageFailure(ctx, a.log, err)
 	}
 
-	tag, err := tx.Exec(ctx, queries.UpdateAdministrationRequestApplied, string(requestID))
+	tag, err := tx.Exec(ctx, queries.UpdateAdministrationRequestAdmitted,
+		string(requestID), string(run.Source), run.Schema, run.Table)
 	if err != nil {
 		return backfillStorageFailure(ctx, a.log, err)
 	}
 	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("%w: %s", outbound.ErrBackfillRequestNotPending, requestID)
+		return a.rejectedRequest(ctx, tx, requestID, run)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -119,4 +125,24 @@ func (a *BackfillAdmissionAdapter) Admit(ctx context.Context, requestID model.Ad
 	}
 	a.log.Info(ctx, "backfilladmission: Antrag angenommen", "request_id", requestID, "table", run.QualifiedName())
 	return nil
+}
+
+// rejectedRequest benennt die Ursache, aus der der Vermerk „angenommen“ keine
+// Zeile traf: ein fehlender oder nicht offener Antrag endet als
+// `ErrBackfillRequestNotPending`, ein offener Antrag, der nicht die Art
+// `backfill` trägt oder nicht Quelle, Schema und Tabelle des Runs adressiert,
+// als `ErrBackfillRunInvalid`.
+func (a *BackfillAdmissionAdapter) rejectedRequest(ctx context.Context, tx pgx.Tx, requestID model.AdministrationRequestID, run model.BackfillRun) error {
+	var status string
+	err := tx.QueryRow(ctx, queries.SelectAdministrationRequestStatus, string(requestID)).Scan(&status)
+	if stderrors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("%w: %s besteht nicht", outbound.ErrBackfillRequestNotPending, requestID)
+	}
+	if err != nil {
+		return backfillStorageFailure(ctx, a.log, err)
+	}
+	if status != "pending" {
+		return fmt.Errorf("%w: %s ist %s", outbound.ErrBackfillRequestNotPending, requestID, status)
+	}
+	return fmt.Errorf("%w: Antrag %s ist kein Backfill-Antrag für %s/%s", outbound.ErrBackfillRunInvalid, requestID, run.Source, run.QualifiedName())
 }

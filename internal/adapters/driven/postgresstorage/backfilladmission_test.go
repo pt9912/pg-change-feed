@@ -204,3 +204,55 @@ func TestBackfillAdmitStoresUnknownEstimateAsNullAndNotAsZero(t *testing.T) {
 		t.Fatalf("Schätzung 0 liest als %d, bekannt %v", rows, known)
 	}
 }
+
+// `Admit` nimmt einen Antrag nur an, wenn er die Art `backfill` trägt und
+// Quelle, Schema und Tabelle des Runs adressiert (`ADR-0113` Festlegung 1):
+// eine Abweichung in der Art, der Quelle, dem Schema oder der Tabelle endet
+// als `ErrBackfillRunInvalid` ohne Run-Zeile und ohne Vermerk — der Antrag
+// bleibt `pending`. Rot färbende Mutationen (je eine): die Bedingung der Art,
+// der Quelle, des Schemas oder der Tabelle aus der `WHERE`-Klausel von
+// `UpdateAdministrationRequestAdmitted` entfernen — der zugehörige Fall nimmt
+// den Antrag an.
+func TestBackfillAdmitRefusesARequestThatIsNotTheBackfillOfThisRun(t *testing.T) {
+	f := newBackfillFixture(t)
+	admission := newBackfillAdmission(t, f)
+	now := time.Now().UTC()
+	const otherSource = "src-backfill-other"
+	f.exec("INSERT INTO cdc.source (source_id, name) VALUES ($1, 'andere Backfill-Quelle') ON CONFLICT (source_id) DO NOTHING", otherSource)
+	t.Cleanup(func() { _, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", otherSource) })
+
+	// Jeder Fall trägt seine eigene Run-Tabelle: ein angenommener Antrag legt
+	// einen aktiven Run an, den der nächste Fall als aktiven Run
+	// (`ErrBackfillRunActive`) ablehnt, nicht als Abweichung.
+	cases := []struct {
+		name, kind, source, schema, tableSuffix string
+	}{
+		{"Art", "enable", backfillTestSource, "public", ""},
+		{"Quelle", "backfill", otherSource, "public", ""},
+		{"Schema", "backfill", backfillTestSource, "andere", ""},
+		{"Tabelle", "backfill", backfillTestSource, "public", "_andere"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			id := "adm-bezug-" + c.name
+			runTable := "adm_bezug_" + c.name
+			f.exec(`INSERT INTO cdc.administration_request
+			    (administration_request_id, source_id, schema_name, table_name, request_kind, status)
+			    VALUES ($1, $2, $3, $4, $5, 'pending')`, id, c.source, c.schema, runTable+c.tableSuffix, c.kind)
+			t.Cleanup(func() {
+				_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE run_id = $1", id)
+				_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", id)
+			})
+			err := admission.Admit(context.Background(), model.AdministrationRequestID(id), queuedRun(t, id, runTable, now, model.UnknownRowEstimate()))
+			if !stderrors.Is(err, outbound.ErrBackfillRunInvalid) {
+				t.Errorf("Abweichung in %s: Fehler = %v, erwartet ErrBackfillRunInvalid", c.name, err)
+			}
+			if _, exists := f.runStatus(id); exists {
+				t.Errorf("Abweichung in %s: die Run-Zeile blieb stehen", c.name)
+			}
+			if got := f.requestStatus(id); got != "pending" {
+				t.Errorf("Abweichung in %s: Antragsstatus = %q, erwartet pending", c.name, got)
+			}
+		})
+	}
+}

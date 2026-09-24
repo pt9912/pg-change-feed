@@ -13,9 +13,11 @@ type AdministrationRequestID string
 
 // AdministrationRequestKind trägt die geschlossene Menge der Antragsarten
 // (`chk_administration_request_kind`, Tabelle `cdc.administration_request`):
-// die beiden Tabellen-Antragsarten `enable`/`disable` und die beiden
+// die beiden Tabellen-Antragsarten `enable`/`disable`, die beiden
 // Spalten-Antragsarten `exclude_column`/`include_column`
-// (`LH-FA-CFG-005`).
+// (`LH-FA-CFG-005`) und die Bestands-Antragsart `backfill`
+// (`LH-FA-CAP-009`, `ADR-0111`). Bei `backfill` heißt der Status `applied`
+// „angenommen": die Ausführung steht in `cdc.backfill_run` (`SPEC-019`).
 type AdministrationRequestKind string
 
 const (
@@ -23,6 +25,7 @@ const (
 	AdministrationRequestDisable       AdministrationRequestKind = "disable"
 	AdministrationRequestExcludeColumn AdministrationRequestKind = "exclude_column"
 	AdministrationRequestIncludeColumn AdministrationRequestKind = "include_column"
+	AdministrationRequestBackfill      AdministrationRequestKind = "backfill"
 )
 
 // AdministrationRequest trägt einen offenen (`pending`) Antrags-Datensatz,
@@ -31,7 +34,7 @@ const (
 // `EnableTableCommand`/`DisableTableCommand`, ohne deren
 // Bindungs-Kennungen — die vergibt die Verarbeitung selbst (`ARC-007`).
 // `Column` trägt den Ziel-Spaltennamen der beiden Spalten-Antragsarten; die
-// beiden Tabellen-Antragsarten tragen dort den leeren Wert.
+// beiden Tabellen-Antragsarten und `backfill` tragen dort den leeren Wert.
 type AdministrationRequest struct {
 	ID     AdministrationRequestID
 	Source SourceID
@@ -44,20 +47,20 @@ type AdministrationRequest struct {
 // NewAdministrationRequest legt einen Antrags-Datensatz an und verlangt
 // nichtleere Kennungen (ID, Quelle, Schema, Tabelle) sowie eine Antragsart
 // aus der geschlossenen Menge `enable`/`disable`/`exclude_column`/
-// `include_column` — dasselbe Konstruktor-Muster wie die übrigen zehn
+// `include_column`/`backfill` — dasselbe Konstruktor-Muster wie die übrigen zehn
 // Domänentypen in diesem Paket (z. B. `NewSchemaVersion`); die Prüfung der
 // geschlossenen Menge liegt am Domain-Core-Rand, wie es die
 // Architektur-Sicht für Domänenobjekte und ihre Invarianten vorsieht
 // (`ARC-001`).
 // Die beiden Spalten-Antragsarten tragen eine nichtleere Spalte — ohne sie
-// adressiert der Antrag kein Ziel; die beiden Tabellen-Antragsarten tragen
-// keine Spalte.
+// adressiert der Antrag kein Ziel; die beiden Tabellen-Antragsarten und
+// `backfill` tragen keine Spalte.
 func NewAdministrationRequest(id AdministrationRequestID, source SourceID, schema, table, column string, kind AdministrationRequestKind) (AdministrationRequest, error) {
 	if id == "" || source == "" || schema == "" || table == "" {
 		return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier
 	}
 	switch kind {
-	case AdministrationRequestEnable, AdministrationRequestDisable:
+	case AdministrationRequestEnable, AdministrationRequestDisable, AdministrationRequestBackfill:
 	case AdministrationRequestExcludeColumn, AdministrationRequestIncludeColumn:
 		if column == "" {
 			return AdministrationRequest{}, domainerrors.ErrEmptyIdentifier

@@ -30,7 +30,9 @@ type BackfillAdmissionPort interface {
 	// sind **eine** Einheit. Ein aktiver Run endet als
 	// `domainerrors.ErrBackfillRunActive`; ein Antrag, der nicht `pending`
 	// ist, als `ErrBackfillRequestNotPending`; ein Run, der nicht die Kennung
-	// des Antrags trägt oder nicht `queued` ist, als `ErrBackfillRunInvalid`.
+	// des Antrags trägt oder nicht `queued` ist, als `ErrBackfillRunInvalid` —
+	// ebenso ein Antrag, der nicht die Art `backfill` trägt oder nicht Quelle,
+	// Schema und Tabelle des Runs adressiert.
 	// Jede Abweichung hinterlässt weder Run-Zeile noch Antragsvermerk.
 	// `run.ID` trägt die Kennung des Antrags. Persistenzfehler tragen
 	// `ErrBackfillStorage`.

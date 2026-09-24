@@ -6,7 +6,7 @@ import (
 )
 
 // knownBlockedReport spiegelt real gemessene Report-Felder (--plan-only
-// gegen ein bereits vollständig migriertes Ziel): genau die sechs
+// gegen ein bereits vollständig migriertes Ziel): genau die sieben
 // bekannten Fremdobjekt-Blocker, sonst nichts.
 func knownBlockedReport() report {
 	return report{
@@ -17,6 +17,7 @@ func knownBlockedReport() report {
 				"DropFunction:FUNCTION:b1:b2",
 				"DropFunction:FUNCTION:c1:c2",
 				"DropFunction:FUNCTION:d1:d2",
+				"DropFunction:FUNCTION:d3:d4",
 				"DropView:VIEW:e1:e2",
 				"DropView:VIEW:f1:f2",
 			}},
@@ -26,6 +27,7 @@ func knownBlockedReport() report {
 			{ID: "DropFunction:FUNCTION:b1:b2", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"disable_table(in:text,in:text,in:text)"}},
 			{ID: "DropFunction:FUNCTION:c1:c2", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"exclude_column(in:text,in:text,in:text,in:text)"}},
 			{ID: "DropFunction:FUNCTION:d1:d2", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"include_column(in:text,in:text,in:text,in:text)"}},
+			{ID: "DropFunction:FUNCTION:d3:d4", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"backfill_table(in:text,in:text,in:text)"}},
 			{ID: "DropView:VIEW:e1:e2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"heartbeat"}},
 			{ID: "DropView:VIEW:f1:f2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"metrics"}},
 		},
@@ -51,7 +53,7 @@ func viewSignatureOnlyReport(name string) report {
 
 // TestDecideAllowsDestructiveWhenAllBlockersKnown prüft den Regelfall: ein
 // zweiter Lauf gegen ein bereits vollständig migriertes Ziel trägt
-// ausschließlich die sechs bekannten Fremdobjekt-Blocker — decide erlaubt
+// ausschließlich die sieben bekannten Fremdobjekt-Blocker — decide erlaubt
 // --allow-destructive und verlangt keinen Vorlauf.
 func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 	d := decide(knownBlockedReport())
@@ -66,7 +68,7 @@ func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 // TestDecideRefusesUnknownDestructiveBlocker prüft den Negativfall: eine
 // künstlich per ALTER TABLE … ADD COLUMN hinzugefügte, nicht deklarierte
 // Spalte erzeugt real einen zusätzlichen, unbekannten DropColumn-Blocker
-// neben den sechs bekannten — decide bleibt leer, auch im Mischfall.
+// neben den sieben bekannten — decide bleibt leer, auch im Mischfall.
 func TestDecideRefusesUnknownDestructiveBlocker(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].OperationIDs = append(r.Blockers[0].OperationIDs, "DropColumn:COLUMN:g1:g2")
@@ -119,7 +121,7 @@ func TestDecideRefusesEmptyBlockers(t *testing.T) {
 
 // TestDecideViewSignatureWithKnownForeignObjects prüft den real
 // gemessenen Fall des Upgrades über die View-Signaturänderung: die Klasse
-// „View-Signatur" neben den sechs bekannten Fremdobjekten — decide erlaubt
+// „View-Signatur" neben den sieben bekannten Fremdobjekten — decide erlaubt
 // --allow-destructive UND meldet die View für den Vorlauf.
 func TestDecideViewSignatureWithKnownForeignObjects(t *testing.T) {
 	d := decide(withViewSignature(knownBlockedReport(), "changes"))

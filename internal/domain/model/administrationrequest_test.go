@@ -7,13 +7,16 @@ import (
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
-// NewAdministrationRequest trägt die vier Antragsarten der geschlossenen
-// Menge (`LH-FA-ADM-001`, `LH-FA-CFG-005`); die beiden Tabellen-Antragsarten
-// tragen keine Spalte.
+// NewAdministrationRequest trägt die fünf Antragsarten der geschlossenen
+// Menge (`LH-FA-ADM-001`, `LH-FA-CFG-005`, `LH-FA-CAP-009`); die beiden
+// Tabellen-Antragsarten und `backfill` tragen keine Spalte. Rot färbende
+// Mutation: `AdministrationRequestBackfill` aus dem `switch` des
+// Konstruktors streichen — die Art endet als `ErrInvalidAdministrationRequestKind`.
 func TestNewAdministrationRequestAcceptsTabellenAntragsarten(t *testing.T) {
 	for _, kind := range []AdministrationRequestKind{
 		AdministrationRequestEnable,
 		AdministrationRequestDisable,
+		AdministrationRequestBackfill,
 	} {
 		request, err := NewAdministrationRequest("req-1", "src-1", "public", "orders", "", kind)
 		if err != nil {

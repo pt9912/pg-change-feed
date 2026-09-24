@@ -102,12 +102,13 @@ $$;
 -- über CDC_ADMIN_DSN tatsächlich einsetzt (ADR-0047); dokumentiert und
 -- getestet (roles_test.go), nicht angenommen.
 
--- cdc_reader: ausschließlich die vier bestehenden Lese-Views aus
--- tools/schema/schema.yaml (retention_blockers seit LH-FA-RET-005 dabei —
+-- cdc_reader: ausschließlich die fünf Lese-Views aus
+-- tools/schema/schema.yaml (retention_blockers, LH-FA-RET-005, und
+-- backfill_status, SPEC-029, dabei —
 -- dieselbe Definer-Semantik trägt den Lesezugriff auf
 -- cdc.consumer_position/cdc.consumer/cdc.transaction, ohne dass cdc_reader
 -- je einen Grant auf eine dieser Basistabellen bekommt).
-GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes, cdc.retention_blockers TO cdc_reader;
+GRANT SELECT ON cdc.active_tables, cdc.consumer_status, cdc.changes, cdc.retention_blockers, cdc.backfill_status TO cdc_reader;
 
 -- Lückenschließung (ADR-0047 Kontext-Befund 3): cdc.process_heartbeat
 -- trug bislang keinen Grant an irgendeine der drei Rollen — der
@@ -141,7 +142,8 @@ GRANT SELECT, INSERT ON cdc.table_schema TO cdc_capture;
 -- für die Anlage im Status queued); cdc_capture führt sie fort (SELECT für die
 -- WHERE-Klausel und das Lesen der queued-Runs, UPDATE für Statuswechsel,
 -- Fortschritt und Abschluss). Niemand trägt DELETE, cdc_admin kein UPDATE,
--- cdc_capture kein INSERT; cdc_reader trägt kein Recht auf die Basistabelle.
+-- cdc_capture kein INSERT; cdc_reader trägt kein Recht auf die Basistabelle und
+-- liest über die View cdc.backfill_status.
 GRANT SELECT, INSERT ON cdc.backfill_run TO cdc_admin;
 GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;
 
@@ -152,7 +154,7 @@ GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;
 -- (UpdateAdministrationRequestApplied/-Failed, dieselbe Anweisung wie im
 -- Vermerk der Annahme). Angelegt werden Anträge ausschließlich von den
 -- SECURITY-DEFINER-Funktionen cdc.enable_table/disable_table/exclude_column/
--- include_column (nacharbeit-administration.sql) unter den Rechten ihres
+-- include_column/backfill_table (nacharbeit-administration.sql) unter den Rechten ihres
 -- Eigentümers — cdc_admin trägt weder INSERT noch DELETE; cdc_capture und
 -- cdc_reader tragen kein Recht auf die Tabelle.
 GRANT SELECT, UPDATE ON cdc.administration_request TO cdc_admin;

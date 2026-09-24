@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
@@ -53,12 +54,12 @@ func newTestAdministrationRequestPool(t *testing.T) (*pgxpool.Pool, string) {
 
 	var functions int
 	if err := pool.QueryRow(ctx,
-		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column')",
+		"SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'cdc' AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table')",
 	).Scan(&functions); err != nil {
 		t.Fatalf("Funktions-Prüfung: %v", err)
 	}
-	if functions != 4 {
-		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
+	if functions != 5 {
+		t.Fatalf("cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table fehlen — der Schema-Rollout über make schema-rollout trägt sie (ADR-0050, LH-FA-CFG-005, LH-FA-CAP-009, tools/schema/nacharbeit-administration.sql); der test-store-Lauf rollt sie vor dem Testlauf aus")
 	}
 
 	if _, err := pool.Exec(ctx,
@@ -541,5 +542,136 @@ func TestAdministrationListenerWaitForNotification(t *testing.T) {
 	defer cancelNotify()
 	if err := listener.WaitForNotification(notifyCtx); err != nil {
 		t.Fatalf("WaitForNotification nach NOTIFY: %v", err)
+	}
+}
+
+// TestAdministrationRequestBackfillTableWritesOnlyTheRequestAndNotifies trägt
+// den Antrags-Weg der Bestands-Antragsart (`LH-FA-CAP-009`, `ADR-0111`
+// Teilfrage 5, `ADR-0050`): `cdc.backfill_table` legt genau eine Zeile der Art
+// `backfill` ohne Spalte mit Status `pending` an und sendet `pg_notify` mit
+// der Antrags-Kennung; sie legt weder eine Run-Zeile an noch berührt sie
+// Bindung oder Publication. Rot färbende Mutation: den `INSERT` der Funktion
+// um `INSERT INTO cdc.backfill_run …` erweitern — die Prüfung „keine
+// Run-Zeile“ meldet sie; die Art `'backfill'` im `INSERT` durch `'enable'`
+// ersetzen — die Prüfung der Art meldet sie.
+func TestAdministrationRequestBackfillTableWritesOnlyTheRequestAndNotifies(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	listener := listenForAdministrationNotify(t, ctx, dsn)
+
+	var requestID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.backfill_table($1, $2, $3)", administrationRequestSource, "public", "orders_backfill",
+	).Scan(&requestID); err != nil {
+		t.Fatalf("cdc.backfill_table: %v", err)
+	}
+	if requestID == "" {
+		t.Fatalf("cdc.backfill_table lieferte eine leere Antrags-ID")
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", requestID)
+	})
+
+	notifyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	notification, err := listener.WaitForNotification(notifyCtx)
+	if err != nil {
+		t.Fatalf("WaitForNotification: %v", err)
+	}
+	if notification.Channel != "cdc_administration" || notification.Payload != requestID {
+		t.Fatalf("Notify = %q/%q, wollen cdc_administration/%q", notification.Channel, notification.Payload, requestID)
+	}
+
+	var sourceID, schemaName, tableName, requestKind, status string
+	var column *string
+	if err := pool.QueryRow(ctx,
+		"SELECT source_id, schema_name, table_name, column_name, request_kind, status FROM cdc.administration_request WHERE administration_request_id = $1",
+		requestID,
+	).Scan(&sourceID, &schemaName, &tableName, &column, &requestKind, &status); err != nil {
+		t.Fatalf("Antrags-Zeile lesen: %v", err)
+	}
+	if sourceID != administrationRequestSource || schemaName != "public" || tableName != "orders_backfill" {
+		t.Fatalf("Antrags-Zeile: source=%q schema=%q table=%q", sourceID, schemaName, tableName)
+	}
+	if requestKind != "backfill" || status != "pending" || column != nil {
+		t.Fatalf("Antrags-Zeile: Art %q, Status %q, Spalte %v — erwartet backfill, pending, NULL", requestKind, status, column)
+	}
+	var runs int
+	if err := pool.QueryRow(ctx, "SELECT count(*) FROM cdc.backfill_run WHERE run_id = $1", requestID).Scan(&runs); err != nil {
+		t.Fatalf("Run-Zeilen zählen: %v", err)
+	}
+	if runs != 0 {
+		t.Fatalf("cdc.backfill_table legte %d Run-Zeile(n) an — die Funktion schreibt nur den Antrag (ADR-0050)", runs)
+	}
+}
+
+// TestAdministrationRequestBackfillTableRequiresCdcAdminMembership belegt das
+// `REVOKE … FROM PUBLIC`/`GRANT … TO cdc_admin`-Paar für `cdc.backfill_table`
+// (`ADR-0047`, `LH-QA-SEC-001`…`003`): eine Rolle ohne `cdc_admin`-Mitgliedschaft
+// scheitert mit SQLSTATE 42501 („permission denied for function“). Rot färbende
+// Mutation: `cdc.backfill_table(text, text, text)` aus der `REVOKE`-Zeile der
+// Nacharbeit-Datei streichen — `PUBLIC` behält `EXECUTE`, der Aufruf gelingt.
+func TestAdministrationRequestBackfillTableRequiresCdcAdminMembership(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+
+	for _, role := range []string{"cdc_reader", "cdc_capture"} {
+		conn, err := pool.Acquire(ctx)
+		if err != nil {
+			t.Fatalf("Verbindung reservieren: %v", err)
+		}
+		func() {
+			defer func() {
+				_, _ = conn.Exec(ctx, "RESET ROLE")
+				conn.Release()
+			}()
+			if _, err := conn.Exec(ctx, "SET ROLE "+role); err != nil {
+				t.Fatalf("SET ROLE %s: %v", role, err)
+			}
+			var requestID string
+			err := conn.QueryRow(ctx,
+				"SELECT cdc.backfill_table($1, $2, $3)", administrationRequestSource, "public", "orders_backfill_denied",
+			).Scan(&requestID)
+			if !permissionDenied(err) {
+				t.Fatalf("%s SELECT cdc.backfill_table(...): erwartet SQLSTATE 42501 (insufficient_privilege), erhalten %v", role, err)
+			}
+		}()
+	}
+}
+
+// TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds belegt die
+// geschlossene `request_kind`-Menge (`chk_administration_request_kind`,
+// `tools/schema/nacharbeit-administration.sql`): jede der fünf Arten wird
+// angenommen, eine sechste endet mit SQLSTATE 23514. Rot färbende Mutationen
+// (je eine): `'backfill'` aus der CHECK-Klausel streichen — die Art `backfill`
+// endet mit 23514; `'truncate'` in die Klausel aufnehmen — die sechste Art
+// wird angenommen.
+func TestAdministrationRequestKindCheckCarriesExactlyTheFiveKinds(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	const requestID = "kind-check-request"
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", requestID)
+	})
+
+	insert := func(kind string) error {
+		_, err := pool.Exec(ctx,
+			`INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, request_kind, status)
+			 VALUES ($1, $2, 'public', 'kind_check', $3, 'pending')`, requestID, administrationRequestSource, kind)
+		return err
+	}
+	for _, kind := range []string{"enable", "disable", "exclude_column", "include_column", "backfill"} {
+		if err := insert(kind); err != nil {
+			t.Fatalf("Art %q: erwartet angenommen, %v", kind, err)
+		}
+		if _, err := pool.Exec(ctx, "DELETE FROM cdc.administration_request WHERE administration_request_id = $1", requestID); err != nil {
+			t.Fatalf("Aufräumen: %v", err)
+		}
+	}
+	err := insert("truncate")
+	var pgErr *pgconn.PgError
+	if !stderrors.As(err, &pgErr) || pgErr.Code != "23514" {
+		t.Fatalf("Art %q: erwartet SQLSTATE 23514 (check_violation), erhalten %v", "truncate", err)
 	}
 }

@@ -524,6 +524,35 @@ func TestCdcReaderRoleCannotReadTheBackfillRunBaseTable(t *testing.T) {
 	}
 }
 
+// `cdc_reader` liest den Run-Zustand über die View `cdc.backfill_status`
+// (`SPEC-029`): die View trägt die Zeile des Runs samt der zwei Warn-Spalten
+// (`false`) und der unbekannten Schätzung als NULL, obwohl `cdc_reader` kein
+// Recht auf die Basistabelle hat (Definer-Semantik der Views). Rot färbende
+// Mutation: `cdc.backfill_status` aus dem Reader-Grant der Rollen-Datei
+// streichen — der Lesezugriff endet mit SQLSTATE 42501.
+func TestCdcReaderRoleReadsTheBackfillRunThroughTheStatusView(t *testing.T) {
+	pool := newTestRolesConn(t)
+	seedBackfillRoleRun(t, pool)
+	conn := asRole(t, pool, "cdc_reader")
+
+	var (
+		status                 string
+		estimated              *int64
+		warnSize, warnDuration bool
+	)
+	err := conn.QueryRow(context.Background(),
+		"SELECT status, estimated_rows, warn_estimated_size, warn_duration FROM cdc.backfill_status WHERE run_id = $1",
+		backfillRoleRun,
+	).Scan(&status, &estimated, &warnSize, &warnDuration)
+	if err != nil {
+		t.Fatalf("cdc_reader SELECT auf cdc.backfill_status: erwartet Erfolg, %v", err)
+	}
+	if status != "queued" || estimated != nil || warnSize || warnDuration {
+		t.Fatalf("cdc.backfill_status trägt %q, Schätzung %v, Warnungen %v/%v — erwartet queued, unbekannt (NULL), false/false",
+			status, estimated, warnSize, warnDuration)
+	}
+}
+
 // Die Tests unten belegen den Rollenschnitt auf
 // `cdc.administration_request` (`ADR-0050`, `LH-QA-SEC-001`…`003`) je Rolle
 // real: `cdc_admin` liest und vermerkt Anträge (`SELECT`, `UPDATE`), legt

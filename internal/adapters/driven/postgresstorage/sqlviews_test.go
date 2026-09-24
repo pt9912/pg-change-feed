@@ -2,6 +2,7 @@ package postgresstorage_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -386,5 +387,104 @@ func TestChangesViewCarriesOriginLikeReadChanges(t *testing.T) {
 		if viewOrigins[seed.changeID] != seed.want {
 			t.Fatalf("%s: origin über die View = %q, wollen %q", seed.changeID, viewOrigins[seed.changeID], seed.want)
 		}
+	}
+}
+
+// TestChangesViewKeysetContinuesInsideOnePosition belegt die Fortsetzungs-
+// Regel „Position und `limit`" (`SPEC-022`) an der View `cdc.changes`: eine
+// Commit-Position mit mehr Changes als das `LIMIT` lässt sich über
+// `commit_position > <letzte-gelesene-position>` nicht fortsetzen — die
+// Abfrage überspringt den Rest der Position —, über den Schlüsselvergleich
+// (`commit_position`, `transaction_id`, `sequence`) dagegen lückenlos. Der
+// Bestandsabzug eines Backfills legt alle seine Changes auf eine Position und
+// ist der Fall, in dem das zählt. Rot färbende Mutation: den
+// Schlüsselvergleich der zweiten Seite durch `commit_position > 3100`
+// ersetzen — die zweite Seite verliert `vt-keyset-b-1`.
+func TestChangesViewKeysetContinuesInsideOnePosition(t *testing.T) {
+	pool := newTestViews(t)
+	ctx := context.Background()
+	const table = "vt-keyset-table"
+
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ($1, $2, 'public', $1)",
+		table, viewsTestSource,
+	); err != nil {
+		t.Fatalf("source_table-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ($1, $2, 1)",
+		table+"-sv", table,
+	); err != nil {
+		t.Fatalf("schema_version-Zeile: %v", err)
+	}
+	seeds := []struct {
+		transaction string
+		position    int
+		sequences   []int
+	}{
+		{"vt-keyset-a-tx", 3100, []int{1, 2}},
+		{"vt-keyset-b-tx", 3100, []int{1}},
+		{"vt-keyset-c-tx", 3200, []int{1}},
+	}
+	for _, seed := range seeds {
+		if _, err := pool.Exec(ctx,
+			"INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ($1, $2, $3)",
+			seed.transaction, viewsTestSource, seed.position,
+		); err != nil {
+			t.Fatalf("transaction-Zeile %s: %v", seed.transaction, err)
+		}
+		for _, sequence := range seed.sequences {
+			if _, err := pool.Exec(ctx,
+				`INSERT INTO cdc.change (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version)
+				 VALUES ($1, $2, $3, $4, 'INSERT', NULL, '{}'::jsonb, $5)`,
+				fmt.Sprintf("%s-%d", seed.transaction, sequence), seed.transaction, table, sequence, table+"-sv",
+			); err != nil {
+				t.Fatalf("change-Zeile %s/%d: %v", seed.transaction, sequence, err)
+			}
+		}
+	}
+
+	read := func(where string, args ...any) []string {
+		t.Helper()
+		rows, err := pool.Query(ctx,
+			"SELECT change_id FROM cdc.changes WHERE source_id = $1 AND table_name = $2 AND "+where+" ORDER BY commit_position, transaction_id, sequence LIMIT 2",
+			append([]any{viewsTestSource, table}, args...)...)
+		if err != nil {
+			t.Fatalf("Lesen (%s): %v", where, err)
+		}
+		defer rows.Close()
+		var ids []string
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				t.Fatalf("Scan: %v", err)
+			}
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	equal := func(got []string, want ...string) bool {
+		if len(got) != len(want) {
+			return false
+		}
+		for i := range got {
+			if got[i] != want[i] {
+				return false
+			}
+		}
+		return true
+	}
+
+	first := read("commit_position >= 1")
+	if !equal(first, "vt-keyset-a-tx-1", "vt-keyset-a-tx-2") {
+		t.Fatalf("erste Seite = %v, erwartet [vt-keyset-a-tx-1 vt-keyset-a-tx-2]", first)
+	}
+	byPosition := read("commit_position > 3100")
+	if !equal(byPosition, "vt-keyset-c-tx-1") {
+		t.Fatalf("Fortsetzung über commit_position > 3100 = %v, erwartet den Sprung über den Rest der Position ([vt-keyset-c-tx-1])", byPosition)
+	}
+	byKey := read("(commit_position, transaction_id, sequence) > ($3, $4, $5)", 3100, "vt-keyset-a-tx", 2)
+	if !equal(byKey, "vt-keyset-b-tx-1", "vt-keyset-c-tx-1") {
+		t.Fatalf("Fortsetzung über den Schlüsselvergleich = %v, erwartet [vt-keyset-b-tx-1 vt-keyset-c-tx-1]", byKey)
 	}
 }

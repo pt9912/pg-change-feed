@@ -76,8 +76,9 @@ var (
 
 	// ErrInvalidAdministrationRequestKind: die Antragsart eines
 	// Administrations-Antrags ist eine der geschlossenen Menge
-	// `enable`/`disable`/`exclude_column`/`include_column`
-	// (`chk_administration_request_kind`, `ADR-0050`, `LH-FA-CFG-005`).
+	// `enable`/`disable`/`exclude_column`/`include_column`/`backfill`
+	// (`chk_administration_request_kind`, `ADR-0050`, `LH-FA-CFG-005`,
+	// `LH-FA-CAP-009`).
 	ErrInvalidAdministrationRequestKind = stderrors.New("unbekannte Antragsart")
 
 	// ErrInvalidChangeOrigin: die Herkunft eines Changes ist `wal` oder
