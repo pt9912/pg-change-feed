@@ -427,31 +427,50 @@ func diagnoseReaderDSN(t *testing.T, pool *pgxpool.Pool, baseDSN string) string 
 // der zuletzt beantragte Run mit Status, Fortschritt, **geschätzter**
 // Zeilenzahl und den zwei Kennzeichnungen; eine unbekannte Schätzung (NULL)
 // erscheint als „unbekannt“, nie als 0; ein `failed`-Run trägt seinen
-// Fehlertext und ist Berichtsinhalt (Exit 0). Rot färbende Mutationen (je
-// eine, in `diagnoseBackfillStatus`): `COALESCE(estimated_rows, 0)` in der
-// Abfrage — die unbekannte Schätzung erscheint als 0; den Fehlertext nicht
-// ausgeben; den Exit-Code eines `failed`-Runs auf 1 setzen.
+// Fehlertext und ist Berichtsinhalt (Exit 0); ein Run einer fremden Quelle
+// erscheint nicht. Rot färbende Mutationen (je eine, in
+// `diagnoseBackfillStatus`): `COALESCE(estimated_rows, 0)` in der Abfrage —
+// die unbekannte Schätzung erscheint als 0; `WHERE source_id = $1` durch
+// `WHERE $1::text IS NOT NULL` ersetzen — die Tabelle der fremden Quelle
+// erscheint; den Fehlertext nicht ausgeben; den Exit-Code eines
+// `failed`-Runs auf 1 setzen.
 func TestDiagnoseReportsTheLatestBackfillRunPerTable(t *testing.T) {
 	pool := newDiagnoseTestFixture(t)
 	ctx := context.Background()
 	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
-	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE source_id = $1", diagnoseTestSource) })
-	if _, err := pool.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE source_id = $1", diagnoseTestSource); err != nil {
-		t.Fatalf("Vorab-Aufräumen der Run-Zeilen: %v", err)
+	const foreignSource = "src-diagnose-foreign"
+	clearRuns := func(ctx context.Context) {
+		for _, source := range []string{diagnoseTestSource, foreignSource} {
+			if _, err := pool.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE source_id = $1", source); err != nil {
+				t.Fatalf("Aufräumen der Run-Zeilen von %s: %v", source, err)
+			}
+		}
 	}
-	insert := func(id, table, status string, requested string, copied int64, estimate any, warnSize bool, message any) {
+	clearRuns(ctx)
+	t.Cleanup(func() {
+		clearRuns(context.Background())
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", foreignSource)
+	})
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'Diagnose-Fremdquelle') ON CONFLICT (source_id) DO NOTHING",
+		foreignSource,
+	); err != nil {
+		t.Fatalf("Zeile der fremden Quelle: %v", err)
+	}
+	insert := func(id, source, table, status string, requested string, copied int64, estimate any, warnSize bool, message any) {
 		t.Helper()
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status, requested_at, rows_copied, estimated_rows, warn_estimated_size, error_message)
 			 VALUES ($1, $2, 'public', $3, $4, $5::timestamptz, $6, $7, $8, $9)`,
-			id, diagnoseTestSource, table, status, requested, copied, estimate, warnSize, message,
+			id, source, table, status, requested, copied, estimate, warnSize, message,
 		); err != nil {
 			t.Fatalf("Run-Zeile %s: %v", id, err)
 		}
 	}
-	insert("diag-done", "diag_done", "completed", "2026-09-24T10:00:00Z", 12, int64(10), false, nil)
-	insert("diag-old", "diag_unknown", "completed", "2026-09-24T09:00:00Z", 5, int64(5), false, nil)
-	insert("diag-new", "diag_unknown", "failed", "2026-09-24T11:00:00Z", 0, nil, true, "permission: kein SELECT auf die Quelltabelle")
+	insert("diag-done", diagnoseTestSource, "diag_done", "completed", "2026-09-24T10:00:00Z", 12, int64(10), false, nil)
+	insert("diag-old", diagnoseTestSource, "diag_unknown", "completed", "2026-09-24T09:00:00Z", 5, int64(5), false, nil)
+	insert("diag-new", diagnoseTestSource, "diag_unknown", "failed", "2026-09-24T11:00:00Z", 0, nil, true, "permission: kein SELECT auf die Quelltabelle")
+	insert("diag-foreign", foreignSource, "diag_foreign_table", "running", "2026-09-24T12:00:00Z", 3, int64(30), false, nil)
 
 	var code int
 	output := captureStdout(t, func() {
@@ -472,6 +491,9 @@ func TestDiagnoseReportsTheLatestBackfillRunPerTable(t *testing.T) {
 	}
 	if strings.Contains(output, "diag_unknown: completed") || strings.Contains(output, "geschätzt 0") {
 		t.Fatalf("stdout = %q — zeigt einen älteren Run oder die unbekannte Schätzung als 0", output)
+	}
+	if strings.Contains(output, "diag_foreign_table") {
+		t.Fatalf("stdout = %q — zeigt die Tabelle einer fremden Quelle", output)
 	}
 }
 
