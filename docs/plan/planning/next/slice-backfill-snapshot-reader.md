@@ -24,7 +24,7 @@ Re-Evaluierungs-Trigger (a): die namentliche Liste nachziehen),
 (Outbound Port), [`ARC-006`](../../../../spec/architecture.md) (Driven Adapter), [`ARC-008`](../../../../spec/architecture.md) (PostgreSQL Logical
 Replication) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
