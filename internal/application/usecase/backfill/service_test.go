@@ -937,8 +937,8 @@ func TestExecuteRejectsNonQueuedRun(t *testing.T) {
 // TestExecuteClassifiesFailures trägt die Abbildung der Fehlerursachen auf die
 // `SPEC-008`-Klassen, je Sentinel ein Fall an seiner Eingabe: die fünf
 // Sentinels des Snapshot-Ports, die Storage-Sentinels der Backfill-Ports und
-// des Schema Stores, `ErrSchemaVersionUnknown` als `schema`; ein nicht erkannter
-// Fehler bleibt `internal`. Jeder Fall endet den Run `failed` mit der Klasse
+// des Schema Stores, `ErrSchemaVersionUnknown` als `configuration`; ein nicht
+// erkannter Fehler bleibt `internal`, die Klasse `schema` vergibt der Run nicht. Jeder Fall endet den Run `failed` mit der Klasse
 // vor dem Text, ohne Commit und ohne Wecksignal.
 func TestExecuteClassifiesFailures(t *testing.T) {
 	cause := func(sentinel error) error { return fmt.Errorf("%w: technische Ursache", sentinel) }
@@ -964,7 +964,7 @@ func TestExecuteClassifiesFailures(t *testing.T) {
 		{"Run-Zustand MarkRunning", func(r *rig) { r.runs.markRunningErr = cause(outbound.ErrBackfillStorage) }, "storage"},
 		{"Run-Zustand Fortschritt", func(r *rig) { r.runs.progressErr = cause(outbound.ErrBackfillStorage) }, "storage"},
 		{"Schema Store", func(r *rig) { r.schemas.err = cause(outbound.ErrSchemaStoreStorage) }, "storage"},
-		{"Schema-Version unbekannt", func(r *rig) { r.schemas.found = false }, "schema"},
+		{"Schema-Version unbekannt", func(r *rig) { r.schemas.found = false }, "configuration"},
 		{"Ausschlussstand nicht lesbar", func(r *rig) { r.exclusion.err = stderrors.New("unbekannter Fehler") }, "internal"},
 		{"Position ohne Offset", func(r *rig) { r.snapshot.offset = 0 }, "internal"},
 		{"unbekannter Fehler", func(r *rig) { r.snapshotP.openErr = stderrors.New("unbekannt") }, "internal"},

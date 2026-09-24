@@ -301,17 +301,19 @@ func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillR
 	return BackfillExecuteResult{Run: final}, nil
 }
 
-// classifyError ordnet die Ursache eines Run-Fehlers einer der sieben
-// Fehlerklassen zu (`SPEC-008`, `ADR-0023`); ein nicht erkannter Fehler
-// bleibt `internal`. Die Abbildung gilt dem Run und ist nicht die des
-// Capture-Pfads.
+// classifyError ordnet die Ursache eines Run-Fehlers einer der Klassen des
+// Run-Vertrags zu — `permission`, `configuration`, `storage`, `transient`,
+// `replication` (`SPEC-008`, `ADR-0111` Teilfrage 5); ein nicht erkannter
+// Fehler bleibt `internal`. Die Klasse `schema` vergibt der Run nicht. Die
+// Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
 func classifyError(err error) model.ErrorClass {
 	switch {
 	case errors.Is(err, outbound.ErrSnapshotPermission):
 		return model.ErrorClassPermission
 	case errors.Is(err, outbound.ErrSnapshotConfiguration),
 		errors.Is(err, domainerrors.ErrTableNotActivated),
-		errors.Is(err, domainerrors.ErrExclusionStateChanged):
+		errors.Is(err, domainerrors.ErrExclusionStateChanged),
+		errors.Is(err, outbound.ErrSchemaVersionUnknown):
 		return model.ErrorClassConfiguration
 	case errors.Is(err, outbound.ErrSnapshotTransient):
 		return model.ErrorClassTransient
@@ -322,8 +324,6 @@ func classifyError(err error) model.ErrorClass {
 		errors.Is(err, outbound.ErrStorage),
 		errors.Is(err, outbound.ErrSchemaStoreStorage):
 		return model.ErrorClassStorage
-	case errors.Is(err, outbound.ErrSchemaVersionUnknown):
-		return model.ErrorClassSchema
 	default:
 		return model.ErrorClassInternal
 	}
