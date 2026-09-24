@@ -130,14 +130,17 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `test/integration/integration_test.go` | update | neue `TestE2E*`-Funktionen für Boundary/Negative-Teile, die Go-seitig lesen (Replay-Anwendung, Bestandsvergleich). |
-| `tools/harness/run-integration-tests.sh` | update | Phasen: Auslösung per `docker exec`/`psql`, Poll, nebenläufige Schreiber, `docker kill` samt Neustart; `abdeckung_declare` mit `LH-FA-CAP-009`; `-run`-Muster um neue Testfunktionen. |
-| Kommentar zum zweiten `make schema-rollout`-Lauf in `tools/harness/run-integration-tests.sh` (gemeldet von `slice-backfill-change-origin`, Review F-7) | update | der Kommentar („… real blockierten zweiten `make schema-rollout`-Lauf (… Exit 8 auf vier Fremdobjekten …)") beschreibt den Stand der Wache nicht mehr: sechs Fremdobjekte, der zweite Lauf endet mit Exit 0. Der Runner wird in diesem Slice ohnehin bearbeitet, und die Zeilen-Anker von `docs/user/e2e-abdeckung.md` verschieben sich hier ohnehin (Erzeugnis, mitcommittet) — der Slice, der den Kommentar ändert, ist der Slice, der die Anker regeneriert. |
-| `tools/harness/httpclient/main.go` | prüfen/update | liest `GET /changes` für den Wegwerf-Beleg; trägt er `origin`, ist der Beleg der Feldform am Wire. |
-| `compose.yaml` | prüfen | Vertrag des Feed-Containers (Tabellen, DSN); eine Abweichung wäre ein Plan-Nachzug. |
+| `test/integration/integration_test.go` | unverändert | die Go-Hälfte liegt in der neuen Datei `test/integration/backfill_test.go` (eigene Helfer; der Abdeckungs-Erzeuger liest alle `.go`-Dateien des Pakets). Go-seitig laufen nur die Replay-Anwendung und der Bestandsvergleich, die übrigen Belege sind Runner-Phasen. |
+| `test/integration/backfill_test.go` | neu | `TestE2EBackfillReplayInvariant` (Boundary: drei nebenläufige `INSERT`/`UPDATE`/`DELETE`-Schreiber vor und nach der Snapshot-Position, Replay des Logs gegen den Quellstand, Überlappung der beiden Seiten als Abbruchbedingung) samt Hilfsfunktionen; ausschließlich externe Wege (SQL, keine Importe aus `internal/**`). |
+| `tools/harness/run-integration-tests.sh` | update | sieben Rundläufe (sechs Runner-Phasen mit `abdeckung_declare` auf `LH-FA-CAP-009`, ein eigener Go-Aufruf): Happy Path, Schema-Version, Startposition, Boundary (leere Tabelle, zweiter Antrag), Replay-Invariante, DDL-Fenster, Negative (`docker kill`, `queued`-Aufnahme); drei Haltepunkte (offene Schreibtransaktion, unbestätigter Schlüssel im zweiten Block, `docker pause`); der Tabellensperren-Ansatz ist nicht realisiert (siehe Ansatz-Ergebnis). |
+| Kommentar zum zweiten `make schema-rollout`-Lauf in `tools/harness/run-integration-tests.sh` (gemeldet von `slice-backfill-change-origin`, Review F-7) | update | der Kommentar („… real blockierten zweiten `make schema-rollout`-Lauf (… Exit 8 auf vier Fremdobjekten …)") beschrieb den Stand der Wache nicht: er nennt jetzt den Ist-Zustand (der Tausch belegt das Upgrade des Prozesses; den zweiten Rollout belegt `tools/harness/run-schema-rollout-guard-test.sh`, idempotent über die Fremdobjekte des Guards). **Plan-Drift:** der Plan nennt sechs Fremdobjekte, `knownForeignObjects` in `tools/schema/rolloutguard/guard.go` führt sieben (fünf Funktionen, zwei Views); der Kommentar nennt sieben. Die Zeilen-Anker von `docs/user/e2e-abdeckung.md` verschieben sich hier ohnehin (Erzeugnis, mitcommittet) — der Slice, der den Kommentar ändert, ist der Slice, der die Anker regeneriert. |
+| `tools/harness/httpclient/main.go` | update | geliefert: `origin` in der READ-Zeile (geprüft gegen `wal`/`backfill`, der Beleg der Feldform am Wire) und die Modi `changes` (`GET /changes` ohne Registrierung) und `position` (`GET /consumers/position`). |
+| `compose.yaml` | prüfen | unverändert: `max_replication_slots=10` und `max_wal_senders=10` tragen die Reserve für den temporären Slot; `wal_sender_timeout=2000` begrenzt die Pause des `docker pause`-Haltepunkts (der Runner hält sie unter der Hälfte); die drei DSNs sind Superuser-Verbindungen, die Rollen-Zusagen tragen die Store-Tier-Tests (Architect-Verdikt, „Akzeptiertes Negativ"). |
+| `internal/application/usecase/backfill/service.go` | update | Grenze-Kommentar an `currentVersion` (Auflage aus dem Architect-Verdikt, [`ADR-0116`](../../adr/0116-backfill-schema-version-referenz-reichweite.md) Folgepflicht 1; kein Verhaltens-Diff). |
+| `internal/application/usecase/backfill/service_test.go` | update | `TestExecuteMarksRunningBeforeOpeningSnapshot` bindet die Reihenfolge `MarkRunning` vor `OpenSnapshot` (Übergabe aus `slice-backfill-run-usecase`). |
 | `docs/user/e2e-abdeckung.md` | regeneriert | Erzeugnis des Runners, mitcommittet. |
-| `docs/user/benutzerhandbuch.md` | update | gemessene Startposition (Ursprung: der Lauf), Änderungshistorie. |
-| `harness/README.md` §Sensors | update | die Zeile `make test-integration` trägt den Backfill-Rundlauf (aus derselben Messung geschrieben). |
+| `docs/user/benutzerhandbuch.md` | update | geliefert: Punkt „Startposition eines neuen Consumers“ (Ursprung: der Lauf), `rows_copied` im Zustand `interrupted`, Version 1.50 samt Änderungshistorie. |
+| `harness/README.md` §Sensors | update | die Zeile `make test-integration` trägt die sieben Backfill-Rundläufe. |
 
 **Ansatz-Vorschlag, zu belegen (nicht bindend):** Ein „Abbruch mitten im Run" ist
 nur mit einem festen Haltepunkt deterministisch. Der Slot-Anlage blockiert bis
@@ -150,6 +153,14 @@ Use-Case-Vertrag. Für den `queued`-Beleg beantragt der Test, während der erste
 hängt, einen zweiten Run gegen eine zweite Tabelle (derselben Tabelle würde der
 zweite Antrag als `failed` enden): der Ein-Worker-Betrieb hält ihn `queued`; nach
 dem Neustart beobachtet der Test, dass er ohne neuen Antrag `completed` erreicht.
+
+**Ansatz-Ergebnis (Implementer; gemessen, Ursprung je Punkt):**
+
+- **Haltepunkt „offene Schreibtransaktion“ trägt.** Der Run steht `running` mit `snapshot_position` NULL an der Slot-Anlage (`make test-integration`, Phase Boundary und `TestE2EBackfillReplayInvariant`); die Voraussetzung „`running` vor der Slot-Anlage“ gilt am Container und ist am Use Case gebunden (`TestExecuteMarksRunningBeforeOpeningSnapshot`).
+- **Haltepunkt „Tabellensperre“ trägt nicht** (Wegwerf-Läufe gegen `PG_TEST_IMAGE`, PostgreSQL 18): `pg_publication_tables` — die Abfrage der Publication-Mitgliedschaft im Antrag und am Run-Start — wartet auf jede Sperre der Tabelle (7,06 s Wartezeit an einer 8-s-Sperre); eine `ACCESS EXCLUSIVE`-Sperre weist ihrer Transaktion eine Transaktionskennung zu, auf die die Slot-Anlage wartet (der Run endete `transient` nach 30 s). Ersatz: ein unbestätigter Schlüssel `0bf-<Run>-00000002` in `cdc.transaction` hält den Schreiber im zweiten Block (Blockgröße 1000, Tabelle mit 2500 Zeilen), und `docker pause` des Feed-Containers, während die Haltetransaktion endet, öffnet ein Fenster nach dem Snapshot-Export, in dem die Quelle sperr- und DDL-frei zugänglich ist.
+- **Abbruch mitten im Lauf.** `docker kill` im zweiten Block (`rows_copied` 1000, Status `running`): danach keine Sitzung (`client backend`, `walsender`) und kein Slot `cdc_bf_*`, keine sichtbare Change des Runs. Der Kill trifft eine offene Lese- **und** Schreibtransaktion; die Prüfung „keine sichtbare Change“ ist an die Ein-Transaktions-Form gebunden (ein Commit je Block färbt sie rot).
+- **Fenster zwischen Export und Cursor.** `DROP COLUMN` im Fenster: `DECLARE` scheitert `42703`, der Run endet `failed` mit Klasse `storage`, ohne Change (Phase DDL-Fenster). Ein Tabellen-Rewrite (`ALTER COLUMN … TYPE` statt `DROP COLUMN` in derselben Phase, Wegwerf-Lauf, nicht committet): der Run endet `completed` mit `rows_copied` 0 bei drei Zeilen der Tabelle — siehe §6.
+- **Ergebnis gegen Zeile.** Die Belege lesen den Zustand aus `cdc.backfill_run` und `cdc.backfill_status`, also aus der Zeile.
 
 **Übergaben aus `slice-backfill-snapshot-reader`** (gemeldet, aus dem Reader-Slice
 gemessen oder benannt; die Komposition trägt erst dieser Slice):
@@ -263,6 +274,19 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
   Übernahme aus [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) oder aus dem Gedächtnis ist nicht zulässig
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). *Erwartet, zu belegen durch:* das Handbuch nennt
   den Lauf. **Ausgang:** *(bei Closure)*
+- **Tabellen-Rewrite im Fenster zwischen Export und Cursor** (gemessen, Wegwerf-Lauf
+  der Phase DDL-Fenster mit `ALTER TABLE … ALTER COLUMN name TYPE varchar(64)` statt
+  `DROP COLUMN`, PostgreSQL 18): der Run endet `completed` mit `rows_copied` 0 bei drei
+  Zeilen der Tabelle; die neu geschriebene Tabelle ist für den älteren Snapshot leer
+  (die tabellenumschreibenden Formen von `ALTER TABLE` sind nach der
+  PostgreSQL-Dokumentation nicht MVCC-sicher). Ein Verlust, den der Run nicht meldet —
+  ein Befund gegen die Aussage „ohne Verlust“ von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) für dieses
+  Fenster, kein Testfehler; der Slice bindet ihn nicht als Test (ein Test der Fehlform
+  bände den Fehler), er meldet ihn an den Architect (Folge-ADR oder Schärfung). Das
+  Fenster liegt zwischen Snapshot-Export und dem Cursor-Aufbau des Runs; die Dauer des
+  Fensters ist nicht gemessen. Ab dem Cursor-Aufbau hält der Run eine
+  `ACCESS SHARE`-Sperre der Tabelle, die ein `ALTER TABLE` bis zum Ende des Runs warten
+  lässt (aus der Sperrmatrix hergeleitet, nicht gemessen). **Ausgang:** *(bei Closure)*
 - **Die Abdeckungs-Zeilen-Anker** verschieben sich mit jeder Einfügung oberhalb
   bestehender Phasen; die regenerierte Datei wird committet. **Ausgang:** *(bei
   Closure)*

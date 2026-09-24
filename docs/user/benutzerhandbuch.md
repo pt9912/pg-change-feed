@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.49
+Version: 1.50
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -489,7 +489,7 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
 | `running` | die Kopie läuft; `rows_copied` schreitet je Block fort |
 | `completed` | alle Zeilen sind in **einer** Transaktion geschrieben; `rows_copied` ist die Zahl der Backfill-Änderungen (eine leere Tabelle endet `completed` mit 0) |
 | `failed` | der Run endete mit einem Fehler; `error_message` trägt die Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen)) vor der Ursache; der Run hinterlässt keine Änderung |
-| `interrupted` | der Prozess endete während der Kopie; der Run hinterlässt keine Änderung |
+| `interrupted` | der Prozess endete während der Kopie; der Run hinterlässt keine Änderung, `rows_copied` nennt den zuletzt festgehaltenen Fortschritt der Kopie und zählt keine sichtbaren Änderungen |
 
 - **`estimated_rows` ist eine Schätzung** der Quelle (aus dem Katalog), keine
   Zählung und keine Grenze. NULL heißt **unbekannt** — der Katalog führt keine
@@ -518,6 +518,22 @@ dieser Quelle ihn annimmt.
   Consumer, dessen bestätigte Position beim Commit des Runs `X` bereits erreicht
   hat, sieht den Bestand nicht über seinen Fortschritt; über das Bereichslesen
   (siehe [Änderungen lesen](#änderungen-lesen)) bleibt er lesbar.
+- **Startposition eines neuen Consumers:** Ein frisch registrierter Consumer
+  (`register-consumer`, `POST /consumers`) trägt keine bestätigte Position.
+  `GET /consumers/position` liest ihn mit `offset` 0 und `acknowledged`
+  `false`, `cdc.consumer_status` mit leerer bestätigter Position. Diese
+  Anfangsposition liegt vor der Snapshot-Position `X` jedes Runs: liest der
+  Consumer ab ihr (`commit_position > 0`, über `GET /changes` ohne `from`),
+  gehört der Bestand zu seinem Fortschritt, gefolgt von den Änderungen der
+  Erfassung. Bestätigt er eine Position hinter `X`, liegt der Bestand vor seiner
+  Position und erscheint nicht in seinem Fortschritt. *Ursprung:* gemessen im
+  Lauf von `make test-integration`, Phase „Backfill-Startposition“ (Zeile in
+  [`e2e-abdeckung.md`](e2e-abdeckung.md)): `offset` 0, `acknowledged` `false`,
+  5 Backfill-Änderungen mit `commit_position > 0`, 0 mit `commit_position`
+  hinter der bestätigten Position; die Lauf-Zeile lautet „… startet an Position
+  0 (acknowledged=false …), die Snapshot-Position des Bestands ist …: ab der
+  Anfangsposition sind 5 Backfill-Changes lesbar; nach der Bestätigung von …
+  liegen 0 hinter ihr“.
 - **Lesen:** Ein Bestandsabzug teilt **eine** Commit-Position; ein `LIMIT`
   kann innerhalb einer Position nicht fortsetzen. Lesen Sie ihn ohne `LIMIT`
   oder über den Schlüsselvergleich (siehe [Änderungen lesen](#änderungen-lesen)).
@@ -1547,3 +1563,4 @@ MIT — siehe `LICENSE`.
 | 1.47 | 2026-09-24 | Rechteschnitt von `cdc_admin` ergänzt (`LH-QA-SEC-001`, `LH-QA-SEC-002`, `ADR-0047`, `ADR-0050`, slice-backfill-run-store Fixrunde): §2 „Zugriff und Rollen" nennt die Verarbeitung der Antrags-Queue `cdc.administration_request` (lesen, Ausgang vermerken) als Zweck der Rolle, §5 „Umgebungsvariablen des Feed-Containers" die Zeile `CDC_ADMIN_DSN`; §4 „Schema aktualisieren" trägt den Absatz „Rechte der drei Rollen" (der Rollout setzt die Rechte bei jedem Lauf, Schema-Rollout vor dem Container-Tausch, Anträge bleiben ohne das Recht `pending`) |
 | 1.48 | 2026-09-24 | SQL-Auslösung des Backfills dokumentiert (`LH-FA-CAP-009`, `LH-FA-ADM-001`, `LH-FA-SST-003`, `ADR-0111`, `ADR-0113`, `ADR-0116`, slice-backfill-sql-administration): §4 neuer Abschnitt „Bestand als Backfill überführen" (`cdc.backfill_table`, `applied` heißt „angenommen", View `cdc.backfill_status`, geschätzte Zeilenzahl, Neustart-Verhalten, Sichtbarkeits-Grenze, Bedeutung der Schema-Version einer Backfill-Änderung, Betriebs-Vorbedingungen); §4 „Änderungen lesen" trägt die Regel „Position und `limit`" mit dem Schlüsselvergleich, „Diagnose ausführen" den Abschnitt „Backfill je Tabelle", „Schema aktualisieren" die Rechte von `cdc_capture`/`cdc_reader`; §2 Rollen und Betriebs-Hinweis zum `SELECT`-Recht, §5 die beiden DSN-Zeilen, §6 Fehlerklassen, §8 Glossar, §9 Grenzwerte |
 | 1.49 | 2026-09-24 | Backfill-Abschnitt an Rollen und Stichtag angeglichen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-sql-administration Fixrunde): §4 „Bestand als Backfill überführen" nennt den Antrag und dessen Vermerk unter `cdc_admin`, das Lesen von `cdc.backfill_status` unter einer `cdc_reader`-Identität (die Rolle `cdc_admin` trägt kein `SELECT` auf die View), und den Snapshot als Start des Runs statt des Antrags (auch §8 Glossar); ein Backfill-Antrag einer anderen Quelle bleibt für die Instanz dieser Quelle `pending` |
+| 1.50 | 2026-09-24 | Gemessene Startposition eines frisch registrierten Consumers dokumentiert (`LH-FA-CAP-009`, `LH-FA-CON-005`, `ADR-0111`, slice-backfill-e2e): §4 „Bestand als Backfill überführen" trägt den Punkt „Startposition eines neuen Consumers" (`offset` 0, `acknowledged` `false`, vor der Snapshot-Position jedes Runs; Ursprung: der Lauf von `make test-integration`) und nennt in der Zustandstabelle, dass `rows_copied` eines `interrupted`-Runs den zuletzt festgehaltenen Fortschritt trägt |
