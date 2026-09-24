@@ -93,7 +93,7 @@ func listenForAdministrationNotify(t *testing.T, ctx context.Context, dsn string
 // den realen Antrags-Weg (ADR-0050): der Funktionsaufruf legt eine Zeile mit
 // Status `pending` an und sendet `pg_notify`, real über `LISTEN` beobachtet
 // — kein direkter Zugriff auf `cdc.source_table`/`cdc.schema_version`/die
-// Publication (Slice-Abgrenzung, Verarbeitung folgt in einem Folge-Slice).
+// Publication (die Verarbeitung trägt die Administrations-Goroutine).
 func TestAdministrationRequestEnableTableWritesPendingRequestAndNotifies(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
