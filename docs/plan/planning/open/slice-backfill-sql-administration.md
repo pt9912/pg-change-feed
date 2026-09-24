@@ -181,16 +181,16 @@ sichtbar. Drei Teile:
 | `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill` (ruft `Request`, sendet das Wecksignal), Worker-Goroutine mit Start-Aufnahme und Schleife „erst abarbeiten, dann warten", Pool, Start-Reihenfolge (Bindungsaufbau, Abgleich, Worker), `Diagnose`-Ausgabe. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, die zwei Fortsetzungs-Idiome (§4 „Änderungen lesen", „Changes lesen"), `Version:`-Kopf und Änderungshistorie. |
-| `harness/README.md` §Sensors | update | Zeile `make schema-rollout` (Fremdobjekt-Aufzählung) und die Zeile `make example-demo-up`, die dieselbe Aufzählung wiederholt. |
-| `Makefile` (Kommentar über `schema-rollout`) | update | trägt die Zahl der Fremdobjekte. |
+| `harness/README.md` §Sensors | update | Zeile `make example-demo-up`, die die Fremdobjekt-Aufzählung wiederholt; die Zeile `make schema-rollout` trägt keine Aufzählung, sie verweist auf `harness/targets/schema-rollout.md`. |
+| `harness/targets/schema-rollout.md` | update | trägt die Zahl und die Objektklassen der Fremdobjekte; der Makefile-Kommentar über `schema-rollout` trägt sie nicht. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene `request_kind`-Menge (vier → fünf)", „die Menge der Fremdobjekte außerhalb des neutralen Modells (sechs → sieben)", „die Ausgabe von `diagnose`"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Aufzählungen der Antragsarten | `grep -rn 'exclude_column' internal tools docs spec harness` | *(Implementer trägt ein)* | Fehlertext in `applyAdministrationRequest` („… geschlossene Menge enable/disable/exclude_column/include_column"), Doc-Kommentare, Handbuch, Architektur-Sicht |
-| Zahl der Fremdobjekte („sechs") | `grep -rn 'sechs' harness Makefile tools docs/user` | *(Implementer trägt ein)* | Guard-Kommentar, Makefile-Kommentar, zwei `harness/README.md`-Zeilen, Sensor-Dateien nachziehen; `Accepted` ADRs nicht ändern |
-| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/README.md` (Zeile `make schema-rollout`, „vier Läufe") | *(Implementer trägt ein)* | Zahl und Beschreibung nachziehen, falls sich die Läufe ändern |
+| Zahl der Fremdobjekte („sechs") | `grep -rn 'sechs' harness Makefile tools docs/user` | *(Implementer trägt ein)* | Guard-Kommentar, `harness/targets/schema-rollout.md`, die `harness/README.md`-Zeile `make example-demo-up`, Sensor-Dateien nachziehen; `Accepted` ADRs nicht ändern |
+| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | *(Implementer trägt ein)* | Zahl und Beschreibung nachziehen, falls sich die Läufe ändern |
 | Beispielausgabe von `diagnose` im Handbuch (§4) und `diagnose`-Tests | `grep -rn 'diagnose' docs/user internal/bootstrap` | *(Implementer trägt ein)* | Beispiel und Tests an die neue Ausgabe |
 | Zahl der Replication-Verbindungen je Container-Lauf (Handbuch §Grenzwerte: „zwei gleichzeitige Replication-Protokoll-Verbindungen … zählen gegen `max_wal_senders`") — während eines Runs kommt kurzzeitig der Walsender des temporären Slots hinzu | `grep -rn 'max_wal_senders\|Replication-Protokoll-Verbindungen' docs/user spec` | *(Implementer trägt ein)* | Aussage präzisieren („zwei; während der Slot-Anlage eines Backfills eine weitere"), sobald sie belegt ist |
 | Rollen-Beschreibung im Handbuch (§2, Rollen-Tabelle) | Lesen | *(Implementer trägt ein)* | `cdc_capture` trägt zusätzlich die Betriebs-Vorbedingung `SELECT` auf Quelltabellen |

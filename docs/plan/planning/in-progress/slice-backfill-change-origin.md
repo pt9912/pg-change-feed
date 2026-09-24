@@ -208,6 +208,17 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 | „nicht idempotent gegen ein migriertes Ziel" | `git grep -n -i -E 'nicht idempotent' <Stand> -- docs/user harness examples Makefile tools` | Parent **2** Treffer (beide `examples/bootstrap.sh`), Diff-Stand **0** | Kommentar und Meldung in `examples/bootstrap.sh` gezogen (der Existenz-Check bleibt, akzeptiertes Negativ laut [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)); `examples/README.md` trägt keine Aussage dazu (Suchlauf `-i -E schema|rollout|volume|down` gegen den Parent: Treffer nur in der Demo-Beschreibung Z. 23–24, bei `example-demo-down` Z. 44 und in den `-schema`-Flags der Beispiel-Aufrufe) |
 | Beschreibungen „Blocker/zweiter Rollout" außerhalb der Suchräume oben | `git grep -n -E 'schema-rollout' <Stand> -- '*.sh'` und Lesen von `tools/harness/run-integration-tests.sh` Z. 2711 | Z. 2711 nennt „den in [`ADR-0058`](../../adr/0058-testansatz-fuenf-luecken.md) vorgesehenen, real blockierten zweiten `make schema-rollout`-Lauf (… Exit 8 auf vier Fremdobjekten …)" — die Aussage beschreibt den Ist-Stand der Wache nicht mehr (bereits seit der zentralen Idempotenz-Wache) | nicht geändert: `tools/harness/run-integration-tests.sh` ist das Testpaket-Runner-Skript, dessen Phasen-Deklarationen `docs/user/e2e-abdeckung.md` trägt (Risiko §6, vierter Punkt) — gemeldet |
 
+**Nachzug außerhalb des Slice-Umfangs (Kommentar- und Target-Dokument-Zug,
+[`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)):** Der
+Kommentarblock über `schema-rollout` im `Makefile` und die Zeile
+`make schema-rollout` in `harness/README.md` (die beiden „update"-Zeilen oben)
+tragen den Ist-Vertrag nicht mehr selbst; er steht in
+`harness/targets/schema-rollout.md`, beide verweisen dorthin. Das Rezept des
+Targets ist unverändert bis auf den Meldungstext bei `--allow-destructive`
+(„nur" entfällt, weil die Meldung auch bei gleichzeitiger View-Signatur-Änderung
+druckt); der Guard-Test zieht seine Text-Erwartung und die Lauf-Kennung der
+Nebenfall-Überschrift („Lauf 4/6") gleich.
+
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `spec-nachzug` in `done/` liegt und

@@ -157,7 +157,7 @@ Antrags trägt der Folge-Slice.
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | zwei Antragsarten, Felder `RuleName`/`RuleSpec`, Konstruktor-Invarianten; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Lesen der zwei Spalten, Abbildung der Antragsarten. |
 | `internal/bootstrap/wiring.go` (+ Test) | update | nur der Fehlertext im `default`-Zweig von `applyAdministrationRequest` (nennt die geschlossene Menge). |
-| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/README.md` §Sensors, `Makefile`-Kommentar über `schema-rollout` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
+| `tools/harness/run-schema-rollout-guard-test.sh`, `harness/targets/schema-rollout.md` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene
 `request_kind`-Menge (Parent-Stand plus zwei)“, „die Menge der Fremdobjekte
@@ -167,8 +167,8 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Aufzählungen der Antragsarten | `grep -rn 'exclude_column' internal tools docs spec harness` | *(Implementer trägt ein)* | Fehlertext in `applyAdministrationRequest`, Doc-Kommentare, `schema.yaml`-Beschreibung nachziehen; Handbuch-Stellen an `betriebsdoku` melden; Spec-Stellen trägt `spec-nachzug` |
-| Zahl der Fremdobjekte (Wortform des Parent-Stands, am Start gemessen) | `grep -rn 'sechs\|sieben\|acht' harness Makefile tools docs/user` | *(Implementer trägt ein)* | Guard-Kommentar, Makefile-Kommentar, die zwei `harness/README.md`-Zeilen (`make schema-rollout`, `make example-demo-up`), Sensor-Dateien nachziehen; `Accepted` ADRs nicht ändern |
-| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/README.md` (Zeile `make schema-rollout`) | *(Implementer trägt ein)* | Zahl und Beschreibung nachziehen, falls sich die Läufe ändern |
+| Zahl der Fremdobjekte (Wortform des Parent-Stands, am Start gemessen) | `grep -rn 'sechs\|sieben\|acht' harness Makefile tools docs/user` | *(Implementer trägt ein)* | Guard-Kommentar, `harness/targets/schema-rollout.md`, die `harness/README.md`-Zeile `make example-demo-up`, Sensor-Dateien nachziehen; `Accepted` ADRs nicht ändern |
+| Läufe des Guard-Tests | Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | *(Implementer trägt ein)* | Zahl und Beschreibung nachziehen, falls sich die Läufe ändern |
 | Spaltenform von `administration_request` in weiteren Trägern | `grep -rn 'administration_request' internal tools --include=*.go --include=*.sql --include=*.yaml` | *(Implementer trägt ein)* | beide Schema-Träger und Test-Fixtures tragen dieselben Spalten |
 | Fehlertext der geschlossenen Menge im `default`-Zweig | `grep -n 'geschlossene Menge' internal/bootstrap/wiring.go` | *(Implementer trägt ein)* | nennt die tatsächliche Menge; ein Test liest ihn |
 

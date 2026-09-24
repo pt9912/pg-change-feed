@@ -190,7 +190,7 @@ bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokume
 # Protobuf-/gRPC-Codegenerierung laeuft ausschliesslich im gepinnten
 # Toolchain-Container (`AGENTS.md` §3.1) — kein Host-protoc/-buf. Die
 # Dockerfile-Stufe `proto` traegt protoc und die beiden protoc-gen-*-
-# Plugins; die Folgestufe `proto-export` (seit slice-104) kopiert die
+# Plugins; die Folgestufe `proto-export` kopiert die
 # `.proto`-Quelle per COPY hinein und erzeugt den Code **zur Build-Zeit**
 # (kein Bind-Mount, kein `--user`-Workaround) — ihr ENTRYPOINT gibt das
 # Erzeugnis als `tar`-Stream ueber stdout aus. Der erzeugte Go-Code liegt
@@ -243,108 +243,14 @@ schema-validate: ## d-migrate: neutrales Schema prüfen (netzlos; Vorlauf vor ge
 	fi
 	docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network none -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema validate --source $(SCHEMA_SOURCE)
 
-# Der Rollout trägt die CDC-Schema-Form vollständig — der CHECK über der
-# Operation ist mit d-migrate 1.3.0 deklarativ konvergent (schema.yaml,
-# chk_change_operation) und braucht keine Nacharbeit mehr (slice-015 hat das
-# real gegen einen frischen Rollout getestet, Post-Compare grün). Die drei
-# SQL-Views (LH-FA-SST-002) sind seit slice-016 ebenfalls deklarativ
-# überführt (schema.yaml, `views:`-Knoten mit `source_dialect: postgresql`
-# und `columns:`-Signatur) — d-migrate 1.3.1 behebt den Post-Compare-Drift
-# auf frisch angelegten Sichten (Changelog: fehlendes
-# `ViewDefinition.sourceDialect` im Fingerabdruck-Vergleich), real gegen
-# einen frischen Rollout UND einen Folgelauf gegen eine bereits migrierte
-# Instanz getestet (slice-016, Exit 0 in beiden Fällen, kein
-# `VIEW_SIGNATURE_UNKNOWN`-Blocker dank `columns:`-Signatur). Der
-# `nacharbeit-views.sql`-Schritt entfällt damit; die verbleibenden
-# psql-Nacharbeit-Schritte tragen andere Objektklassen, die d-migrate nicht
-# ausdrückt (Rollen/GRANTs, Observability-/Heartbeat-Views mit GRANT auf
-# cdc_reader). Zwei Schritte seit slice-011 (LH-QA-SEC-001…003,
-# LH-FA-SST-004): tools/schema/nacharbeit-roles.sql trägt die drei
-# Least-Privilege-Rollen, tools/schema/nacharbeit-observability.sql die
-# Metriken-Minimum-View cdc.metrics, die auf cdc_reader grantet — deshalb
-# läuft sie nach der Rollen-Datei. Ein weiterer Schritt seit slice-012
-# (LH-FA-ADM-002, LH-QA-OPS-002): tools/schema/nacharbeit-heartbeat.sql
-# trägt die Health-View cdc.heartbeat, die sich aus demselben Grund wie
-# cdc.metrics selbst an cdc_reader grantet — sie läuft deshalb ebenfalls
-# nach der Rollen-Datei. Ein weiterer Schritt seit slice-036 (ADR-0050,
-# LH-FA-ADM-001, LH-FA-CFG-005): tools/schema/nacharbeit-administration.sql
-# trägt die vier schreibenden SQL-Funktionen der Antrags-Queue
-# (cdc.enable_table/cdc.disable_table sowie seit slice-066
-# cdc.exclude_column/cdc.include_column) und die CHECK-Klausel
-# chk_administration_request_kind mit den vier Antragsarten — d-migrate 1.3.1
-# generiert Funktions-DDL korrekt über den `functions:`-Knoten, aber `schema
-# migrate --execute` bricht für jede dort deklarierte Funktion mit
-# POST_EXECUTE_DRIFT (Exit 5) ab (real reproduziert, auch mit einer trivialen
-# No-Arg-Funktion), und eine neue CHECK-Klausel an einer bestehenden Tabelle
-# trägt derselbe Lauf ebenfalls nicht (Exit 5, BEO-PGC/d-migrate-nacharbeit).
-# Die Datei grantet EXECUTE an cdc_admin und läuft deshalb ebenfalls nach der
-# Rollen-Datei.
-#
-# Zentrale Idempotenz-Wache (ADR-0043,
-# BEO-PGC/schema-rollout-fremdobjekte): Ein zweiter Lauf gegen ein bereits
-# migriertes Ziel blockiert sonst mit Exit 8, weil die sechs Fremdobjekte
-# aus den vier nacharbeit-*.sql-Dateien außerhalb des neutralen Modells
-# liegen und d-migrate ihren Abbau plant — unabhängig davon, ob dieser Lauf
-# sonst inhaltlich nichts oder eine echte neue Schema-Änderung trägt. Ein
-# vorgelagerter --plan-only-Lauf (kein --execute, liest nur) schreibt
-# denselben Report nach tools/schema/rollout-precheck.yaml (eigene Datei,
-# damit der committete Pflicht-Report tools/schema/plan.yaml ausschließlich
-# echte --execute-Läufe belegt); endet er blockierend (Exit 8), entscheidet
-# tools/schema/rolloutguard anhand des strukturierten Reports, ob jeder
-# Blocker ein bekanntes Fremdobjekt oder eine View-Signatur-Änderung ist
-# (siehe „Alles oder nichts" unten). Blockiert dabei mindestens ein bekanntes
-# Fremdobjekt, läuft der reguläre --execute-Schritt zusätzlich mit
-# --allow-destructive. --execute selbst läuft in jedem Fall, damit jede
-# echte, gleichzeitig anstehende Schema-Änderung im selben Lauf wirksam
-# bleibt (Regressionsbeleg:
-# tools/harness/run-schema-rollout-guard-test.sh Lauf 3). Die vier
-# nacharbeit-*.sql-Schritte laufen danach unverändert und legen die sechs
-# bekannten Objekte sofort wieder an (CREATE OR REPLACE, dieselbe
-# Idempotenz wie bei jedem anderen Lauf) — ihr kurzes reales Fehlen
-# zwischen --execute und dem ersten nacharbeit-Schritt bleibt folgenlos.
-# Vorlauf für View-Signatur-Änderungen (ADR-0114): d-migrate rendert ein
-# CREATE OR REPLACE VIEW nur, wenn die View Spaltenzahl, -reihenfolge,
-# -namen und sichtbare Typen behält; jede andere Signaturänderung einer im
-# neutralen Modell deklarierten View (Spalte anhängen, umordnen,
-# umbenennen, Typ ändern) meldet der Precheck als Blocker
-# MANUAL_ACTION_REQUIRED für die Operation ReplaceView, mit der Diagnose
-# VIEW_SIGNATURE_INCOMPATIBLE. rolloutguard erkennt diese Klasse und
-# nennt die betroffenen Views; das Target entfernt jede davon mit
-# `DROP VIEW cdc.<name>` (ohne CASCADE, ein Statement je View, jedes auf
-# stdout gemeldet) vor --execute. d-migrate legt die View danach selbst neu
-# an (Operation CreateView im Pflicht-Report), die Rechte setzt
-# nacharbeit-roles.sql im selben Lauf — und nur für cdc_reader: `DROP VIEW`
-# verwirft die gesamte ACL der View, ein vom Betreiber an eine andere Rolle
-# vergebenes GRANT SELECT ON cdc.<view> ist nach einem Lauf mit
-# Signaturänderung weg und wird vom Betreiber erneut gesetzt. Der Vorlauf
-# adressiert das Schema cdc fest (`DROP VIEW cdc.<name>`; der Report trägt nur
-# den View-Namen) und setzt die Rollout-Vorbedingung search_path = cdc voraus
-# (tools/schema/apply-rollout.sh). Hängt ein fremdes Objekt an der
-# View, scheitert der DROP laut und nichts wird mitgelöscht. Der Vorlauf
-# läuft nur bei einem Blocker dieser Klasse: additive Änderungen (neue
-# Tabelle, neue nullable Spalte, neue View) erzeugen keinen Blocker und
-# bekommen keinen Vorlauf, ein Ziel mit Soll-Signatur ebenso wenig.
-#
-# Alles oder nichts: rolloutguard meldet nur dann Views oder
-# --allow-destructive, wenn JEDER Blocker des Reports zur Klasse
-# „View-Signatur" gehört oder ein bekanntes Fremdobjekt ist. Jeder andere
-# Fall (ein unbekannter Blocker, eine andere Blocker-Klasse) läuft ohne
-# Vorlauf und ohne --allow-destructive und bricht bei einer echten neuen
-# destruktiven Änderung weiterhin mit Exit 8 ab; ein am Precheck
-# gescheiterter Lauf ändert das Ziel nicht.
-#
-# Grenze: Der Precheck- und der --execute-Lauf sind zwei unabhängige,
-# sequenzielle docker-run-Aufrufe gegen denselben lebenden Ziel-Zustand —
-# kein d-migrate-Flag liest einen zuvor geprüften Plan zur Ausführung
-# wieder ein. Ein zwischen beiden Läufen neu entstehender destruktiver
-# Blocker würde vom Precheck nicht erfasst, liefe aber unter dem bereits
-# gesetzten --allow-destructive durch (enges, aber reales Fenster). Der
-# Vorlauf ist nicht atomar mit --execute: scheitert --execute nach dem
-# DROP VIEW, fehlt die View bis zum Wiederholungslauf (der heilt sie
-# idempotent); für SQL-Leser über cdc_reader fehlt sie in einem Lauf, der
-# eine Signaturänderung ausliefert, für die Dauer des Rollouts (Richtwert
-# aus einer einzelnen Messung, ADR-0114: rund 7 s). Der Feed-Container
-# liest den Store über Tabellen, nicht über diese View.
+# Rollout des neutralen Schemas: Precheck (--plan-only), Wache
+# tools/schema/rolloutguard, Vorlauf `DROP VIEW cdc.<name>` bei einer
+# View-Signatur-Änderung (ADR-0114), `schema migrate --execute` mit
+# Pflicht-Report und Rollback-Artefakt, danach die vier psql-Nacharbeit-
+# Dateien tools/schema/nacharbeit-*.sql (Rollen, Views cdc.metrics und
+# cdc.heartbeat, Administrations-Funktionen), die d-migrate nicht ausdrückt
+# (ADR-0043). Vertrag, Reihenfolge, Exit-Codes und Grenzen:
+# harness/targets/schema-rollout.md.
 schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflicht-Report und Rollback-Artefakt (braucht DB-Zugang, kein Gate)
 	@mkdir -p tools/schema
 	@docker run --rm --user "$(D_MIGRATE_RUN_USER)" --network $(SCHEMA_ROLLOUT_NETWORK) -v "$(CURDIR)":/work -w /work $(D_MIGRATE_IMAGE) schema migrate --source $(SCHEMA_SOURCE) --target "$(SCHEMA_TARGET)" --plan-only --report tools/schema/rollout-precheck.yaml; \
@@ -355,7 +261,7 @@ schema-rollout: schema-validate ## d-migrate: Schema-Rollout --execute mit Pflic
 	  guard_out=$$(docker run --rm --network none -v "$(CURDIR)":/src:ro -v $(GO_MODCACHE_VOLUME):/go/pkg/mod -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go run ./tools/schema/rolloutguard tools/schema/rollout-precheck.yaml) && guard_ok=1 || guard_ok=0; \
 	  if [ "$$guard_ok" = "1" ]; then \
 	    if printf '%s\n' "$$guard_out" | grep -qx 'allow-destructive'; then \
-	      echo "schema-rollout: nur bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
+	      echo "schema-rollout: bekannte Fremdobjekt-Blocker (ADR-0043) - --execute laeuft mit --allow-destructive"; \
 	      allow_destructive="--allow-destructive"; \
 	    fi; \
 	    drop_views=$$(printf '%s\n' "$$guard_out" | sed -n 's/^drop-view //p'); \

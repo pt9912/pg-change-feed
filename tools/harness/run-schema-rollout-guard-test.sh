@@ -210,7 +210,7 @@ if grep -q "Vorlauf" <<<"$RUN_OUT"; then
   fail "Lauf 4: der Folgelauf meldet einen Vorlauf, obwohl die View die Soll-Signatur trägt (ADR-0114 Entscheidung 4)"
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 4 (abhängiges Objekt — der Vorlauf scheitert laut, das Objekt bleibt bestehen, der Wiederholungslauf heilt)"
+echo "run-schema-rollout-guard-test: Lauf 4/6 (abhängiges Objekt — der Vorlauf scheitert laut, das Objekt bleibt bestehen, der Wiederholungslauf heilt)"
 view_def=$(psql_q "$DB" "SELECT pg_get_viewdef('cdc.changes'::regclass)")
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "CREATE VIEW public.zz_lauf4_abhaengig AS SELECT change_id FROM cdc.changes" \
@@ -266,7 +266,7 @@ run_rollout . "$TARGET"
 run6a_exit=$RUN_EXIT
 [ "$run6a_exit" -ne 0 ] || fail "Lauf 6a lief durch (Exit 0), obwohl ein unbekannter destruktiver Blocker vorlag"
 grep -qE "(Error|Fehler) 8" <<<"$RUN_OUT" || fail "Lauf 6a: der Abbruch trägt nicht den d-migrate-Exit 8 (Error 8/Fehler 8 fehlt in der Ausgabe)"
-if grep -q "nur bekannte Fremdobjekt-Blocker" <<<"$RUN_OUT"; then
+if grep -q "bekannte Fremdobjekt-Blocker (ADR-0043)" <<<"$RUN_OUT"; then
   fail "Lauf 6a: die Wache hat --allow-destructive für einen unbekannten Blocker freigegeben"
 fi
 [ "$(psql_q "$DB" "SELECT to_regprocedure('cdc.zz_rolloutguard_unbekannt()') IS NOT NULL")" = "t" ] \
