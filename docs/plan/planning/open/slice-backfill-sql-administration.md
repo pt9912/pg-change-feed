@@ -197,6 +197,7 @@ sichtbar. Drei Teile:
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Eintrag der Funktion; der Kommentar „aktuell sechs Objekte" zählt neu. |
 | `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell mit ihrer endgültigen Spaltenliste, die zwei Warn-Spalten eingeschlossen (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |
 | `tools/schema/nacharbeit-roles.sql` (+ `roles_rollout_file_internal_test.go`) | update | `SELECT` auf die View für `cdc_reader`. |
+| `internal/bootstrap/administration_roles_internal_test.go` | update (Übergabe aus `slice-backfill-run-store`) | der Login-Test zieht je Antragsart einen Antrag durch `processAdministrationRequests` unter einer `cdc_admin`- und einer `cdc_capture`-Login-Identität; die Art `backfill` kommt hinzu, damit der neue Zweig unter dem Rollenschnitt läuft, für den er gebaut ist. |
 | `internal/bootstrap/wiring.go` (+ Tests) | update | Zweig `backfill` (ruft `Request`, sendet das Wecksignal), Worker-Goroutine mit Start-Aufnahme und Schleife „erst abarbeiten, dann warten", Pool, Start-Reihenfolge (Bindungsaufbau, Abgleich, Worker), `Diagnose`-Ausgabe; der Snapshot-Adapter (`postgressnapshot.New`, aus `slice-backfill-snapshot-reader`) entsteht hier mit `CDC_CAPTURE_DSN` und seinen Startwerten für Blockgröße und Zeitlimit (Setzung ohne Messung) — auch die Schätzung im Antrag liest er über diesen DSN, nicht über den Pool der Administrations-Goroutine. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | prüfen | trägt die Läufe des Guards; ein Lauf gegen die neue Funktion; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt, nicht geändert. |
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, die zwei Fortsetzungs-Idiome (§4 „Änderungen lesen", „Changes lesen"), `Version:`-Kopf und Änderungshistorie. |
@@ -222,6 +223,45 @@ Ports liegen in `internal/application/port/outbound/backfill*.go`, der Inbound P
 - **Aufnahme und Abgleich.** `Queued` (Aufnahme) und `InterruptRunning` (Start-Abgleich)
   sind Operationen des Run-Zustands-Ports; der Use Case ruft keine von beiden, Worker
   und Prozessstart tragen sie.
+
+**Übergaben aus `slice-backfill-run-store`** (gemeldet, kein zusätzlicher Umfang; die Adapter
+liegen in `internal/adapters/driven/postgresstorage/backfill{admission,run,writer}.go`; die
+Rechte sind Messungen des Verifiers, die Handbuch-Version ist am Stand `c7045f81` gelesen):
+
+- **Rechte, die die Verarbeitung voraussetzt.** `cdc_admin` trägt `SELECT`, `UPDATE` auf
+  `cdc.administration_request` (kein `INSERT`, kein `DELETE`) und `SELECT`, `INSERT` auf
+  `cdc.backfill_run`; `cdc_capture` trägt `SELECT`, `UPDATE` auf `cdc.backfill_run` und **kein**
+  Recht auf die Antrags-Queue; `cdc_reader` trägt kein Recht auf eine der beiden Basistabellen
+  (`has_table_privilege` an PostgreSQL 17.11 und 18.6, Verifikation `verifikation-slice-backfill-run-store`
+  §3.2). Der Worker-Pool (`CDC_CAPTURE_DSN`) liest die Queue also nicht; was er vom Antrag
+  braucht, steht in der Run-Zeile. Die View `backfill_status` bekommt hier ihr `SELECT` für
+  `cdc_reader`.
+- **Pools.** Jeder der drei Adapter baut seinen Verbindungspool im Konstruktor aus der DSN, die
+  der Aufrufer übergibt (`NewBackfillAdmission(ctx, dsn, …)`, `NewBackfillRun(ctx, dsn, …)`,
+  `NewBackfillWriter(ctx, dsn, …)`); die Annahme gehört an `cfg.AdminDSN`, Run-Zustand und
+  Schreiber an `cfg.CaptureDSN`. Run-Zustand und Schreiber laufen auf getrennten Pools, damit der
+  Fortschritt eines Runs nicht auf der Verbindung der offenen Schreibtransaktion liegt.
+- **Sentinel-Fehler an den Ports.** `Admit` und der Schreiber melden Ablehnungen über drei
+  Sentinels, unterscheidbar per `errors.Is`: `ErrBackfillRequestNotPending` (der Antrag ist
+  nicht `pending`), `ErrBackfillRunInvalid` (der Run passt nicht zu `Admit`/`Begin`),
+  `ErrBackfillBlockInvalid` (Block oder Commit verletzt den Vertrag des Schreibers); `classifyError`
+  bildet sie auf die Klasse `internal` ab, Treiberfehler tragen `ErrBackfillStorage` (`storage`),
+  ein aktiver Run ist `domainerrors.ErrBackfillRunActive`. Was der Zweig `backfill` mit einem
+  Antrag tut, dessen `Admit` einen dieser Fehler meldet, legt dieser Plan nur für den aktiven Run
+  und die nicht aktivierte Tabelle fest (DoD „Verarbeitung").
+- **Test-Aufbau mit Logins (Muster).** Eine Rollen-Zusage wird unter einem Login belegt, nicht
+  unter dem Superuser (`CREATE ROLE … LOGIN … IN ROLE <rolle>`, kein Eigentum an `cdc`-Objekten):
+  `internal/bootstrap/administration_roles_internal_test.go` (der ganze Weg von
+  `processAdministrationRequests`, alle vier Antragsarten, `applied` und `failed`),
+  `internal/adapters/driven/postgresstorage/backfillroles_test.go` (Annahme unter `cdc_admin`,
+  Run-Zustand und Schreiber unter `cdc_capture`, je unter der Rolle des anderen mit SQLSTATE `42501`),
+  Rechte-Abfragen in Lauf 5 von `tools/harness/run-schema-rollout-guard-test.sh` nach dem Upgrade
+  vom jüngsten `v*`-Tag. Die Grant-Mutation („Grant streichen") färbt alle drei rot.
+- **Handbuch-Stand.** Am Stand `c7045f81` trägt das Benutzerhandbuch `Version: 1.47`; der Zug dieses
+  Slice ist die Zeile 1.48 der Änderungshistorie. §2 (Rollen-Tabelle, Zeile `cdc_admin`), §4
+  „Schema aktualisieren" (Absatz „Rechte der drei Rollen") und §5 (Zeile `CDC_ADMIN_DSN`) nennen den
+  Rechteschnitt der Queue bereits; der Zug liest sie beim Nachziehen der Rollen-Beschreibung, statt
+  sie zu überschreiben.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene `request_kind`-Menge (vier → fünf)", „die Menge der Fremdobjekte außerhalb des neutralen Modells (sechs → sieben)", „die Ausgabe von `diagnose`"; beide Stände gemessen):**
 

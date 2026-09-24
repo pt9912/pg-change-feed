@@ -158,14 +158,14 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: die Sensor-Zeile `make test-store` in `harness/README.md` und die Schema-Kommentare, soweit sie die Tabellenliste oder die Rollenverteilung aufzählen; das Benutzerhandbuch trägt den Rechteschnitt von `cdc_admin` (§2, §4, §5), die Betreiber-Oberfläche des Backfills bleibt bis `sql-administration` unberührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -233,10 +233,16 @@ Ports liegen in `internal/application/port/outbound/backfill*.go`, der Run-Wert 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Rechte-Vokabular in Doku, Spec, Schema, Tests | `git grep -c -e 'has_table_privilege' -e 'GRANT SELECT' -e 'GRANT INSERT' -e 'Least-Privilege' -e 'insufficient_privilege' -e 'SQLSTATE 42501' <Stand> -- docs/user README.md harness spec AGENTS.md compose.yaml examples tools/schema internal/bootstrap ':!tools/schema/plan.yaml' ':!tools/schema/down.sql'` | Parent dreizehn Dateien, Diff vierzehn; bewegt: `tools/schema/nacharbeit-roles.sql` 13 → 14, `internal/bootstrap/roles_rollout_file_internal_test.go` 5 → 6, neu `internal/bootstrap/administration_roles_internal_test.go` 1; unverändert u. a. `docs/user/benutzerhandbuch.md` 4, `compose.yaml` 1, `spec/pflichtenheft.md` 1, `spec/lastenheft.md` 2. Gelesen: der Kommentar in `compose.yaml` (die Umgebung verbindet als Superuser, die Rollentrennung belegen die Testcontainer-Tests) bleibt wahr; `spec/pflichtenheft.md` trägt die Grants-Tabelle von [`SPEC-029`](../../../../spec/pflichtenheft.md) nur für `cdc.backfill_run` | keine Änderung an `compose.yaml` und Spec; die Grants-Tabelle von `SPEC-029` an Architect gemeldet (§6) |
-| Beschreibungen der Rolle `cdc_admin` | `git grep -c -e 'cdc_admin' <Stand> -- docs/user README.md harness spec compose.yaml examples` | Parent fünf Dateien (`README.md` 1, `compose.yaml` 1, `docs/user/benutzerhandbuch.md` 10, `harness/targets/schema-rollout.md` 2, `spec/pflichtenheft.md` 3), Diff sieben: `docs/user/benutzerhandbuch.md` 10 → 13, `harness/README.md` 0 → 1, `harness/targets/schema-rollout.md` 2 → 3 (die eigenen Zeilen). Gelesen: die Rollen-Tabelle in §2 und die Zeile `CDC_ADMIN_DSN` in §5 des Handbuchs nannten den Zweck ohne Antrags-Queue (nachgezogen); die Zeilen mit „`cdc_admin`-Mitgliedschaft" als Voraussetzung in §4 (Aktivieren, Deaktivieren, Ausschließen, Consumer) sind mit dem Grant wahr; `README.md` nennt Least-Privilege ohne Rechte | Handbuch §2, §4 („Schema aktualisieren"), §5 nachgezogen, `harness/README.md` (Sensor-Zeile `make test-store`) nachgezogen |
+| Beschreibungen der Rolle `cdc_admin` | `git grep -c -e 'cdc_admin' <Stand> -- docs/user README.md harness spec compose.yaml examples` | Parent fünf Dateien (`README.md` 1, `compose.yaml` 1, `docs/user/benutzerhandbuch.md` 10, `harness/targets/schema-rollout.md` 2, `spec/pflichtenheft.md` 3), Diff sechs (dieselben fünf und `harness/README.md`): `docs/user/benutzerhandbuch.md` 10 → 13, `harness/README.md` 0 → 1, `harness/targets/schema-rollout.md` 2 → 3 (die eigenen Zeilen). Gelesen: die Rollen-Tabelle in §2 und die Zeile `CDC_ADMIN_DSN` in §5 des Handbuchs nannten den Zweck ohne Antrags-Queue (nachgezogen); die Zeilen mit „`cdc_admin`-Mitgliedschaft" als Voraussetzung in §4 (Aktivieren, Deaktivieren, Ausschließen, Consumer) sind mit dem Grant wahr; `README.md` nennt Least-Privilege ohne Rechte | Handbuch §2, §4 („Schema aktualisieren"), §5 nachgezogen, `harness/README.md` (Sensor-Zeile `make test-store`) nachgezogen |
 | Rollenschnitt-Tabelle von [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) | `git grep -c -e 'cdc_admin' <Stand> -- docs/plan/adr/0047-rollenspezifische-dsn-verdrahtung.md` | Parent und Diff drucken 7; die Tabelle der Rollen und Aufrufer nennt `cdc.administration_request` an keiner Stelle | `Accepted`, nicht geändert; an Architect gemeldet (§6) |
 | Träger der Antrags-Queue | `git grep -c -e 'administration_request' <Stand> -- docs/user harness spec docs/plan/adr README.md compose.yaml tools/schema/compose-init ':!tools/schema/plan.yaml' ':!tools/schema/down.sql'` | Parent neun Dateien, Diff zehn: `docs/user/benutzerhandbuch.md` 10 → 14, `harness/README.md` 0 → 1, `harness/targets/schema-rollout.md` 1 → 2; unverändert: `spec/pflichtenheft.md` 6, `docs/plan/adr/0050-…` 1, `0059-…` 4, `0065-…` 5, `0111-…` 3, `0112-…` 5, `harness/sensors/db-adapter-coverage.md` 1. Gelesen: `db-adapter-coverage.md` nennt `cdc.administration_request` als Lesezugriff des `bootstrap.Run`-Fixtures — betrifft den Schema-Stand des Tier-Laufs, nicht die Rolle | keine Änderung an ADRs, Spec und Sensor-Dokument |
 | „drei Views" (F-9) | `git grep -n -e 'drei deklarierten Views' -e 'drei Views' <Stand> -- harness docs/user spec tools/schema` | Parent drei Treffer (`harness/targets/schema-rollout.md` Zeile 12 und 71, `tools/schema/schema.yaml` Zeile 39), Diff einer (`schema.yaml` Zeile 39). Gelesen: `schema.yaml` Zeile 39 spricht von den ersten drei Views und nennt die vierte, `retention_blockers`, im folgenden Absatz (Zeile 50) | die zwei Treffer in `schema-rollout.md` auf „vier" gezogen (gezählt am Schema: vier Einträge unter `views:`); `schema.yaml` unverändert |
+
+**§3.13-Suchlauf der Closure (committetes Feld — bewegte Eigenschaft: „der Nenner der beiden Coverage-Messungen, den die neuen Pakete und Dateien des Slice verschieben"; nachgetragen aus Verifikation V-1; beide Stände gemessen: Parent `03cd3804`, Diff `bd470a0b` = letzter Code-Commit; die Zahlen sind die gedruckten Zeilen der Läufe):**
+
+| Träger | Suchbefehl | Befund | Behandlung |
+|---|---|---|---|
+| Nenner und gedeckte Zahl in den Sensor-Dokumenten | `git grep -c -w -e 2082 -e 813 -e 1731 -e 651 -e 2040 -e 472 <Stand> -- harness docs/user spec README.md AGENTS.md ':!tools/schema/plan.yaml'` | Parent und Diff drucken dieselben zwei Dateien mit denselben Zahlen: `harness/sensors/coverage-gate.md` 6, `harness/sensors/db-adapter-coverage.md` 5; keine Zahl in `harness/README.md`, `docs/user`, `spec`, `README.md`, `AGENTS.md`. Gelesen: `db-adapter-coverage.md` führte 813 (`postgresstorage` 472) und den Lauf des Vorgänger-Slice, `coverage-gate.md` 2082 und `83.2%` — je als Beleg des benannten Laufs wahr, als „Zustandsgröße" des Ist-Stands nicht mehr; `coverage-gate.md` Zeilen zu `slice-097` (1936) und `slice-085` (1903, `31/472`) sind datierte Messungen anderer Läufe | Zahlen im Lauf der Closure neu gemessen (Stand `c7045f81`, `make test-store` gefolgt von `make test-replication`, `make coverage-gate`, die Stufe nachgestellt) und mit Lauf und Commit-Kennung nachgezogen: DB-Adapter 830 von 1016 (`81.69%`; `postgresstorage` 675, gedeckt 527), Unit-Stufe 2033 von 2398 (gedruckt `84.8%`, Gate-Zeile `84.90%`); die datierten Absätze unverändert; am Stand `510f6ffe` (nach dem Nachzug) druckt derselbe Befehl nur noch `harness/sensors/coverage-gate.md` 2 (`31/472`, `(1903 + 472)`: datierte Messung des Laufs `slice-085`) |
 
 ## 4. Trigger
 
@@ -272,7 +278,13 @@ Lerneintrag geschrieben.
   `1, 748, 9999999999, 0bf-run-00000001, 0bf-a-00000002, a` liefert unter dem Datenbank-Default, `"C"` und `"und-x-icu"`
   dieselbe Reihenfolge (`0bf-a-00000002, 0bf-run-00000001, 1, 748, 9999999999, a`); der Reviewer maß dasselbe (Review F-6,
   Messung des Reviewers, hier nachgemessen).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — die Messung trägt: die Reihenfolge `0bf-…` vor `1`, `748`,
+  `9999999999` hält unter dem Datenbank-Default, `"C"` und `"und-x-icu"` an PostgreSQL 17.11 und
+  18.6 und unter glibc `"en_US.utf8"` am Image `postgres:18` (Debian) (Verifikation
+  `verifikation-slice-backfill-run-store` §3.4); auf den Alpine-Testcontainern ist `en_US.utf8` nur
+  der gedruckte `datcollate`-Name, keine wählbare Kollation, der Beleg dort trägt Default, `"C"` und
+  ICU (Verifikation V-5). Eine gemessene Kollation weicht nicht ab, ein Betreiber-Hinweis im Handbuch
+  entfällt.
 - **Der CHECK bei Erstanlage konvergiert** (die Zusage von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage
   4): die Tabelle `change` trägt CHECKs bei Erstanlage bereits (`chk_change_operation`
   in `tools/schema/schema.yaml`); für **diese** Tabelle ungemessen. *Erwartet, zu
@@ -281,17 +293,32 @@ Lerneintrag geschrieben.
   Änderungen rollen über einen Alt-Bestand, gemessen im Architect-Verdikt
   `architect-verdict-schema-rollout-view-signatur`, Szenario 5, für eine neue
   Tabelle mit Fremdschlüssel und Default — der CHECK und die Warn-Spalten
-  gehören nicht zu dieser Messung). **Ausgang:** *(bei Closure)*
+  gehören nicht zu dieser Messung). **Ausgang:** *entfallen* — der Rollout konvergiert: `plan.yaml`
+  trägt `chk_backfill_run_status` und die zwei Warn-Spalten (`BOOLEAN NOT NULL DEFAULT FALSE`) im
+  `CREATE TABLE`; Lauf 5 des Guard-Tests rollt das Schema von `v0.1.2` und danach den Arbeitsbaum
+  aus, gedruckt `Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0
+  (Arbeitsbaum, zweiter Lauf)` mit lesbarem Altbestand (Verifikation §1); kein Eintrag in
+  `knownForeignObjects` (`git diff` über `tools/schema/rolloutguard` leer, Verifikation §3.3);
+  `TestBackfillRunTableRejectsAStatusOutsideTheClosedSet`.
 - **Der Fortschritt außerhalb der Daten-Transaktion** braucht eine zweite
   Verbindung und kollidiert nicht mit dem Commit derselben Run-Zeile. *Erwartet,
   zu belegen durch:* der Zustands-Test mit gleichzeitigem Fortschritts-Update
-  und Commit. **Ausgang:** *(bei Closure)*
+  und Commit. **Ausgang:** *entfallen* —
+  `TestBackfillProgressDoesNotWaitForTheOpenWriteTransaction` schreibt den Fortschritt auf der
+  zweiten Verbindung, während die Schreibtransaktion offen ist (Wartezeit unter 2 s, sichtbarer Zähler und
+  Warn-Spalte, keine Daten vor dem Commit), und committet danach dieselbe Run-Zeile als
+  `completed`; die Mutation „Commit rollt zurück" färbt ihn rot (Verifikation §2 Zeile 4, §4 M3).
 - **Die Rollenlage** ist mit [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1 gesetzt (`cdc_admin` legt an, `cdc_capture`
   ändert, `cdc_reader` liest nur die View); ein `INSERT` für `cdc_capture`, ein
   `UPDATE` oder `DELETE` für `cdc_admin` oder ein `SELECT`-Grant für `cdc_reader`
   auf die Basistabelle wäre ein Rollen-Verstoß ([`LH-QA-SEC-001`](../../../../spec/lastenheft.md)…[`LH-QA-SEC-003`](../../../../spec/lastenheft.md)).
   *Erwartet, zu belegen durch:* der Rollen-Test im Store-Tier und der netzlose
-  Rollen-Test der Rollout-Datei. **Ausgang:** *(bei Closure)*
+  Rollen-Test der Rollout-Datei. **Ausgang:** *entfallen* — die Rechte auf `cdc.backfill_run` sind
+  an PostgreSQL 17.11 und 18.6 gemessen (`cdc_admin` `SELECT`/`INSERT`, `cdc_capture`
+  `SELECT`/`UPDATE`, `cdc_reader` nichts, niemand `DELETE`; Verifikation §3.2); die Rollen-Tests je
+  Rolle im Store-Tier und die Prüfung (4a) der Rollout-Datei färben unter den Mutationen R1 bis R3,
+  M5 und M6 rot (Review „Mutationen"). Der Rollenschnitt auf die Antrags-Queue ist das Risiko
+  darunter.
 - **Die Annahme-Transaktion ist nicht atomar oder greift zu weit.** Der
   Antragsvermerk muss genau eine `pending`-Zeile treffen, sonst Rollback; der
   Verzicht auf eine Sperre zwischen mehreren Annehmenden beruht auf der Annahme,
@@ -301,15 +328,33 @@ Lerneintrag geschrieben.
   [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) vereinbar (die ADR nimmt genau das an),
   benannt, aber weder erzwungen (keine Sperre, keine Unique-Kante auf aktive Runs) noch getestet (Review F-5).
   *Erwartet, zu belegen durch:* der Rollback-Test des zweiten
-  Liefer-Punkts. **Ausgang:** *(bei Closure)*
+  Liefer-Punkts. **Ausgang:** *weiter offen* — Register `BEO-PGC/ein-instanz-annahme-ohne-erzwingung`
+  (1×). Die Atomarität trägt: `TestBackfillAdmitLeavesQueuedRunAndAppliedRequestTogether` und
+  `TestBackfillAdmitRollsBackWhenTheRequestIsNotPending` (kein Antrag, `applied`, `failed`; Mutationen
+  M2 und S1 rot, Verifikation §2 Zeile 2, §4). Offen bleibt die Annahme ohne Sperre: benannt, weder
+  erzwungen noch getestet (Review F-5); Adresse ist der Re-Evaluierungs-Trigger von
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) („Mehr als eine
+  Instanz je Quelle nimmt Anträge an"), den sequenziellen Fall trägt der DoD „Verarbeitung" in
+  `slice-backfill-sql-administration`.
 - **Geteilter Zustand in den Store-Tests** (`BEO-PGC/test-isolation-geteilter-zustand`,
   offen, 1×): unskopierte Bereinigung in den bestehenden Tests würde die Zeilen
   eines parallelen Tests treffen. *Erwartet, zu belegen durch:* die neuen Tests
-  bereinigen nur ihre Run-Kennung. **Ausgang:** *(bei Closure)*
+  bereinigen nur ihre Run-Kennung. **Ausgang:** *entfallen* — der Suchlauf (§3, vierte Zeile) druckt
+  am Diff-Stand null unskopierte Löschungen auf `transaction`, `change`, `backfill_run` und
+  `source`, die neuen Tests bereinigen unter dem Präfix ihrer eigenen Kennungen (Verifikation §3.6).
+  Die Dateiordnungs-Kopplung der Tests mit `DROP SCHEMA cdc CASCADE` (Review F-3) ist ein anderer
+  Zustand desselben Musters und im Register geführt (`BEO-PGC/test-isolation-geteilter-zustand`,
+  2×).
 - **DB-Adapter-Coverage** ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3): neuer, DB-gestützt geprüfter
   Code in `postgresstorage` bewegt Zähler und Nenner. *Erwartet, zu belegen
   durch:* der Bericht nennt die Zahl mit ihrem Lauf ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten*, im Slice gelöst (kein Carveout, kein Folge-Slice): Zähler und Nenner
+  der beiden Messungen bewegen sich mit dem Slice (Verifikation V-1); die Sensor-Dokumente führen die
+  Zahlen mit Lauf und Commit-Kennung (Stand `c7045f81`, `make test-store` gefolgt von
+  `make test-replication`): DB-Adapter-Coverage `81.69%`, gedeckt 830 von 1016 Statements
+  (`postgresstorage` 675, gedeckt 527); Unit-Stufe gedeckt 2033 von 2398, gedruckt `84.8%`, Gate-Zeile
+  `84.90%` (Läufe desselben Stands druckten `84.70%` bis `84.90%`). Beide Schwellen (70 % und 80 %) sind
+  erfüllt, das Suchlauf-Feld der Closure (§3) trägt den Träger.
 - **Eingetreten und in der Fixrunde behoben (Review F-1) — `cdc_admin` trug kein Recht auf `cdc.administration_request`.**
   *Sachverhalt:* die Tabelle trägt keinen Grant an `cdc_admin`; `ListPending`, `ExcludedColumns` und der Vermerk
   `applied`/`failed` (dieselbe Anweisung wie im Vermerk von `Admit`,
@@ -332,29 +377,141 @@ Lerneintrag geschrieben.
   `cdc_admin` ohne `administration_request`; ob [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) oder
   [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) (beide `Accepted`) eine Ergänzung brauchen,
   und ob die Grants-Tabelle von [`SPEC-029`](../../../../spec/pflichtenheft.md) (nur `cdc.backfill_run`) den Vermerk auf
-  `administration_request` nennt, entscheidet der Architect — kein ADR- oder Spec-Auftrag dieses Slice. **Ausgang:** *(bei Closure)*
+  `administration_request` nennt, entscheidet der Architect — kein ADR- oder Spec-Auftrag dieses Slice. **Ausgang:** *eingetreten*, im Slice
+  behoben (Fixrunde `bd470a0b`; kein Carveout, kein Folge-Slice): `cdc_admin` trägt `SELECT`, `UPDATE` auf
+  `cdc.administration_request`, gemessen an PostgreSQL 17.11 und 18.6 (Verifikation §3.2), und die Träger
+  färben unter der Mutation „Grant streichen" rot (Verifikation §4, M11 und M11b). Die Frage an den Architect
+  steht als Beleg im Register (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 3×; Adresse Architect), der
+  Befund als weiterer Beleg der Klasse `BEO-PGC/rollen-test-abdeckungsluecken` (3×).
 - **Gemeldet (Implementer) — der Annahme-Adapter liest die Antragsart nicht.** Die geschlossene `request_kind`-Menge
   trägt `backfill` noch nicht (`tools/schema/nacharbeit-administration.sql`); die Store-Tests nehmen deshalb einen
   offenen Antrag der Art `enable` an. Der Art-Vergleich (`request_kind = 'backfill'` in der `WHERE`-Klausel des
   Vermerks) und der Bezug von Antrag und Run (Quelle, Schema, Tabelle) gehören an `slice-backfill-sql-administration`, das
   die Antragsart einführt; dort sind sie als DoD-Punkt „Bezug von Antrag und Run" und als §3-Zeile getragen (Review F-4).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten* → Folge-Slice `slice-backfill-sql-administration` (DoD „Bezug von Antrag und Run" und
+  §3-Zeile, im Plan des Empfängers gelesen; Verifikation §8 Punkt 1). `Admit` nimmt am Stand `c7045f81` jeden
+  `pending`-Antrag über seine Kennung an, unabhängig von Art, Quelle, Schema und Tabelle; bis zum Folge-Slice ist keiner der drei Adapter verdrahtet
+  (`git grep` der drei Konstruktoren außerhalb der Tests: nur ihre Definitionen, keine Aufrufstelle; `Admit` ruft allein der Use Case).
 - **Gemeldet (Implementer) — Startwerte ohne Messung.** Die Fristen der Adapter (30 s je Zustands-Operation, 5 min je
   Block und Commit, `internal/adapters/driven/postgresstorage/backfill.go`) und die zeilenweise Einfügung eines
   Blocks (je Change eine Anweisung) sind Setzungen; ihre Messung gehört zu `slice-backfill-bench-richtgroesse`.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *weiter offen* — Register `BEO-PGC/backfill-adapter-startwerte-ohne-messung` (1×); Träger der
+  Messung ist `slice-backfill-bench-richtgroesse` (§3 „Übergabe aus `slice-backfill-run-store`", in der Closure
+  gezogen).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** die Rollen-Kette lief in getrennten Kontexten und fand, was kein Gate
+  las. Der Review (1 HIGH · 1 MEDIUM · 2 LOW · 5 INFO, Summary des Reports) fand den Bestandsdefekt F-1
+  mit einer Rechte-Messung an PostgreSQL 18 — seine 18 Mutationen färbten alle rot, prüften aber nicht die
+  Rolle der Verbindung (F-2); die Fixrunde (`bd470a0b`,
+  `552cb437`) behob F-1 bis F-5 und F-9; die Verifikation bestätigte mit eigenen Läufen (Verifikation §1:
+  `make gates`, `make test`, `make a-check`, `make coverage-gate` je EXIT=0; `make test-store` und
+  `make test-replication` je EXIT=0 an PostgreSQL 17 und 18), mit der Rechte-Matrix an 17.11 und 18.6
+  (§3.2), mit elf Eingabeseiten-Mutationen, alle rot (§4, M1 bis M11b), und mit dem Alt-Tag-Lauf von
+  `v0.1.2` (Lauf 5: Exit 0/0/0). Die Adapter-Pflichten aus dem Port-Vertrag des Run-Use-Cases (Zeitbegrenzung
+  bei abgelöstem Kontext, Endzustand idempotent) sind am Adapter belegt und rot färbbar (M1, M4); die
+  Ordnung `0bf-…` trägt unter vier gemessenen Kollationen (§3.4).
+- **Was ging anders als geplant:** der Plan wuchs um drei Sentinel-Fehler an den Ports, `backfill.go`
+  (Fristen, Fehlerübersetzung) und die Übersetzung der Run-Zeile in `mapper` und `sqlexec` (beide im
+  Coverage-Gate, [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)); die Fixrunde trug zusätzlich Grant, Prüfung (4b), Login-Tests, Alt-Tag-Rechte,
+  Handbuch 1.47 und den Nachzug in `harness/targets/schema-rollout.md` (F-9). Die Fixrunde lief ohne
+  Nachprüfungs-Review; der Verifier las, fuhr und mutierte das neue Material selbst (Verifikation V-3,
+  §3.5, §4). Die Nachmessung der Closure am Sensor-Träger (Verifikation V-1) misst die beiden Nenner am
+  Stand `c7045f81`: DB-Adapter 1016, Unit-Stufe 2398; beide stehen mit Lauf und Commit-Kennung in den
+  Sensor-Dokumenten (`510f6ffe`), das committete Suchlauf-Feld trägt den Träger (§3, Suchlauf der Closure).
+- **Verifier-Beobachtungen (V-1 bis V-7):** *V-1* (LOW) gezogen: Sensor-Dokumente und Suchlauf-Feld der
+  Closure (`510f6ffe`), Risiko 7 mit diesem Lauf. *V-2* gezogen: „Diff sieben" in §3 ist „sechs" (am Stand
+  `bd470a0b` gemessen). *V-3* zulässig, kein Nachzug. *V-4* benannt, kein Nachzug: „kein Superuser" der
+  Login-Tests ist Konstruktion (`CREATE ROLE … LOGIN … IN ROLE`), keine Assertion; der Verifier maß
+  `rolsuper = f`, ein Superuser-Login würde die Tests nicht rot färben. *V-5* benannt: auf den
+  Alpine-Testcontainern ist `en_US.utf8` nur ein gedruckter Name, der Beleg trägt Default, `"C"` und ICU
+  (Risiko 1). *V-6* im Register (`BEO-PGC/test-schreibt-in-committete-datei`, 3×). *V-7* im Register
+  (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 3×).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Ausgangs-Kandidat, nicht entschieden):* eine
+  Rollen-Zusage — ein Grant, ein Verbot, die Zuordnung eines Adapters zu einer Rolle — braucht einen Test
+  unter dem **Login der Rolle** (`CREATE ROLE … LOGIN … IN ROLE <rolle>`, kein Superuser) und eine Mutation
+  an der Rolle der Verbindung („Grant streichen"), nicht einen Test unter dem Superuser. Der Slice fand so
+  einen Defekt des Bestands: `cdc_admin` trug auf `cdc.administration_request` kein einziges Recht
+  (`has_table_privilege` `SELECT` und `UPDATE` beide `f`, vom Reviewer an PostgreSQL 18 gemessen, vom Verifier
+  nach der Fixrunde an 17.11 und 18.6 als gesetzt), ein Login `IN ROLE cdc_admin` (Handbuch §2) scheiterte an
+  `ListPending` und am Vermerk `applied`; im Compose-Aufbau blieb es unentdeckt, weil `CDC_ADMIN_DSN` dort
+  als Superuser `postgres` läuft und jeder Store-Test ebenfalls. Die Klasse ist nicht neu:
+  `BEO-PGC/rollen-test-abdeckungsluecken` (Punkt 2, Adapter-Ebene) erreicht mit diesem Slice 3×, der
+  Ausgangs-Kandidat steht in dessen `state.md` (Träger-Kandidaten: Schritt 19 von `implement-slice` und
+  der HIGH-Punkt „Zusage ohne Bindung an ihre Eingabeseite" im Reviewer-Skill; Architect-Entscheidung im
+  Lese-Schritt). Kein Beleg von `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (8×): der Mechanismus
+  ist derselbe, die Ausprägung „Rolle der Verbindung" trägt der Rollen-Eintrag. *Neuer Sensor-Umfang:* die
+  Rechte sind an drei Ebenen gebunden — der netzlose Rollen-Test der Rollout-Datei (4b, Teil der Gates), die
+  Store-Tier-Tests und der Login-Test über den ganzen Administrationsweg (`internal/bootstrap`, mit den
+  drei Backfill-Adaptern unter ihren echten Rollen) und die Rechte-Abfragen in Lauf 5 des Guard-Tests nach
+  dem Upgrade vom jüngsten `v*`-Tag; die Mutation „Grant streichen" färbt alle rot (Verifikation §4, M11
+  und M11b). *Benannte Lücke (Architect):* [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)
+  führt den Rollenschnitt von `cdc_admin` ohne die Antrags-Queue,
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) nennt die bestehende
+  Schleife „unverändert lauffähig", und die Grants-Tabelle von [`SPEC-029`](../../../../spec/pflichtenheft.md)
+  deckt nur `cdc.backfill_run`; beide ADRs sind `Accepted` und unberührbar, ob eine Ergänzung nötig ist (neue
+  ADR mit `Supersedes`, Spec-Nachzug), entscheidet der Architect
+  (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, 3×; verwandt, nicht doppelt gezählt:
+  `BEO-PGC/architect-verdikt-rollen-scope-luecke`, 1×).
+- **Beobachtungs-Register (`../observations/`):** je Vorkommen eine `evidence/`-Datei
+  `slice-backfill-run-store.md`, Zähler = Zahl der Dateien (real ausgezählt).
+  *Bestehende Klassen:* `BEO-PGC/rollen-test-abdeckungsluecken` (F-1, F-2) **3×**,
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, V-7) **3×** und
+  `BEO-PGC/test-schreibt-in-committete-datei` (V-6) **3×** erreichen **mit diesem Slice die Schwelle
+  3×**; ihr Ausgang gehört dem Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (V-1, V-2) **17×** (verkörpert); `BEO-PGC/test-isolation-geteilter-zustand` (F-3, Dateiordnungs-Kopplung)
+  **2×**; `BEO-PGC/zitat-nennt-die-falsche-stelle` (F-3) **8×** (verkörpert). *Neue Klassen (je 1×, offen):*
+  `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (F-5) und `BEO-PGC/backfill-adapter-startwerte-ohne-messung`
+  (F-7), für die zwei Risiken mit Ausgang „weiter offen" (§6). *Fortgeführt:*
+  `BEO-PGC/adapter-pflicht-eines-ports-ohne-traeger-im-adapter-slice` (1×): sein `state.md` führt den Beleg
+  im Adapter (M1, M4). *Benannt, nicht gezählt:* F-4 (Übergabe ohne Träger im Empfänger-Plan, in der Fixrunde
+  gezogen; der Gegenstand — eine Aufrufer-Pflicht — liegt neben dem der Klasse
+  `adapter-pflicht-eines-ports-ohne-traeger-im-adapter-slice`, eine Adapter-Pflicht), F-6 (der Beleg deckte eine
+  Kollation von mehreren, die Messung schließt die Lücke: Risiko 1), F-8 (Coverage-Zahl streut zwischen Läufen,
+  die Läufe stehen bei den Zahlen), V-4 (Konstruktion statt Assertion) und die nicht wiederholbaren
+  Rollen-Tests des Bestands mit festen Kennungen (F-9, im Beleg von `test-isolation-geteilter-zustand`
+  benannt).
+- **Träger-Übergaben (§3.13):** die vom Slice gemeldeten Eigenschaften stehen in den Plänen der Empfänger,
+  geprüft an deren Text (die Pläne bleiben offen, ihr Planner prüft sie beim Start):
+  `slice-backfill-sql-administration` (§3 „Übergaben aus `slice-backfill-run-store`": Rechte der drei Rollen
+  auf die zwei Basistabellen, Pools je Adapter, drei Sentinel-Fehler und ihre Klasse, Test-Aufbau mit Logins,
+  Handbuch-Stand `Version: 1.47` mit Zeile 1.48 als Zug; §3-Zeile für den Login-Test),
+  `slice-transformationen-antragsweg-usecase` (§3: der Regelstand-Adapter läuft über `CDC_ADMIN_DSN`,
+  `cdc_capture` trägt auf der Queue kein Recht; §3-Zeile für den Login-Test mit den zwei neuen Arten),
+  `slice-transformationen-antragsweg-schema` (§3: die Tabellen-Grants decken die zwei neuen Spalten),
+  `slice-backfill-bench-richtgroesse` (§3: Fristen und Einfügeform als Setzungen ohne Messung). Ohne
+  Änderung geprüft: `slice-backfill-e2e` und `slice-backfill-sdk-origin` (keine Aussage zu Rollen, Grants
+  oder Handbuch-Version; der Compose-Aufbau fährt die DSNs als Superuser und trägt keine Rollen-Aussage),
+  `welle-backfill-bestand` und die Roadmap (keine Zustandsaussage berührt; die Register-Zähler in den
+  §8-Sichtungslisten der offenen Pläne sind Stände der jeweiligen Planungszeit, der Zähler steht im
+  Register).
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice liefert Adapter ohne End-Nutzer-Verhalten:
+  der Backfill-Lauf, den ein Nutzer auslösen und lesen könnte, existiert erst mit den Folge-Slices
+  (`slice-backfill-sql-administration`, `slice-backfill-e2e`); die drei Adapter sind bis dahin nirgends
+  verdrahtet. Die einzige Wirkung am Betrieb ist der Grant `SELECT, UPDATE` von `cdc_admin` auf die
+  Antrags-Queue; er ist gegen die Handbuch-Anleitung des Least-Privilege-Logins real belegt
+  (`TestAdministrationPathRunsUnderLeastPrivilegeLogins`, Verifikation §3.5). Der Bedarf aus
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) wird mit dem Wellen-Beleg (`slice-backfill-e2e`)
+  validierbar. Kein stilles Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):** eine getrennte Rolle im frischen
+  Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in `done/` und greift daher erst nach
+  dem `git mv` — hier nicht ausgeführt.
+- **Folge-Slices:** keine neuen — die Folge-Slices der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die Übergaben oben
+  tragen ihre Adressen. Die Frage an den Architect zu `ADR-0047`, `ADR-0113` und `SPEC-029` ist kein Slice,
+  sie ist im Register adressiert.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Textsortierung) **entfallen**, gemessen; Risiko 2
+  (CHECK bei Erstanlage) **entfallen**, Rollout und Alt-Tag-Lauf; Risiko 3 (Fortschritt außerhalb der
+  Daten-Transaktion) **entfallen**, Test und Mutation; Risiko 4 (Rollenlage) **entfallen**, Rechte gemessen;
+  Risiko 5 (Annahme-Transaktion) **weiter offen** im Register
+  (`BEO-PGC/ein-instanz-annahme-ohne-erzwingung`), Atomarität belegt; Risiko 6 (geteilter Zustand)
+  **entfallen** für die neuen Tests; Risiko 7 (DB-Adapter-Coverage) **eingetreten**, im Slice gelöst;
+  Risiko 8 (Grant auf die Antrags-Queue) **eingetreten**, im Slice behoben, Frage an den Architect im
+  Register; Risiko 9 (Antragsart) **eingetreten** → Folge-Slice `slice-backfill-sql-administration`;
+  Risiko 10 (Startwerte) **weiter offen** im Register
+  (`BEO-PGC/backfill-adapter-startwerte-ohne-messung`).
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 

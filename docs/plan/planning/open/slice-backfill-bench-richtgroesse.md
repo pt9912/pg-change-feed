@@ -180,6 +180,16 @@ Abschluss mit denselben Feldern (`WarnEstimatedSize`, `WarnDuration`, bis zur Au
 `false`). Der Test-Baustein für die Uhr ist im Use-Case-Test vorhanden (`fakeClock`
 läuft je Aufruf um einen Schritt weiter).
 
+**Übergabe aus `slice-backfill-run-store`** (gemeldet, kein zusätzlicher Umfang): die
+Postgres-Adapter des Runs tragen zwei Startwerte ohne Messung — die Fristen (30 s je
+Zustands-Operation, 5 min je Block und Commit; `backfillStateTimeout` und
+`backfillBlockTimeout` in `internal/adapters/driven/postgresstorage/backfill.go`) und die
+zeilenweise Einfügung eines Blocks (`AppendBlock`: je Change eine Anweisung in der einen
+Schreibtransaktion). Die Kopierdauer je Tabellengröße, die der Bench misst, schließt die
+Einfügeform ein; der Bench nennt sie im Ursprung jeder Kopier-Zahl, und eine Blockdauer nahe
+oder über der Frist steht als Befund im Bericht. Beide Setzungen bleiben bis dahin ungemessen
+(Review F-7 zu `slice-backfill-run-store`, INFO).
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Zahl und der Inhalt der Bench-Skripte hinter `make bench`"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |

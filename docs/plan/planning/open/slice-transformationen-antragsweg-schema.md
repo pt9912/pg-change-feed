@@ -153,7 +153,7 @@ Antrags trägt der Folge-Slice.
 | `internal/adapters/driven/postgresstorage/schema.sql` | update | zweiter Schema-Träger (Store-Tier) trägt die zwei Spalten. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | falls der Rollout sie verändert ([`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)). |
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Einträge beider Funktionen; der Kommentar, der die Objekte zählt, zählt neu. |
-| `internal/bootstrap/roles_rollout_file_internal_test.go` | update | Grant-Text der zwei Funktionen (Rolle `cdc_admin`, `PUBLIC` ohne Recht). |
+| `internal/bootstrap/roles_rollout_file_internal_test.go` | update | Grant-Text der zwei Funktionen (Rolle `cdc_admin`, `PUBLIC` ohne Recht). Die Prüfung (4b) aus `slice-backfill-run-store` hält die Tabellen-Grants von `cdc_admin` auf `cdc.administration_request` (`SELECT`, `UPDATE`; kein `INSERT`, kein `DELETE`; kein Recht der beiden anderen Rollen); die zwei neuen Spalten fallen unter diese Tabellen-Grants und brauchen keinen eigenen Grant. |
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | zwei Antragsarten, Felder `RuleName`/`RuleSpec`, Konstruktor-Invarianten; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Lesen der zwei Spalten, Abbildung der Antragsarten. |
 | `internal/bootstrap/wiring.go` (+ Test) | update | nur der Fehlertext im `default`-Zweig von `applyAdministrationRequest` (nennt die geschlossene Menge). |
