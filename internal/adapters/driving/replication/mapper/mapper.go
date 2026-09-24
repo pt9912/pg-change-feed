@@ -10,7 +10,6 @@ package mapper
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -230,11 +229,12 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 		return nil, fmt.Errorf("%w: unbekannte Operation %d", domainerrors.ErrInvalidOperation, event.Operation)
 	}
 
-	newImage, err := rowImage(event.Relation, event.New, binding.ExcludedColumns)
+	columns := columnNames(event.Relation)
+	newImage, err := model.BuildRowImage(columns, event.New, binding.ExcludedColumns)
 	if err != nil {
 		return nil, err
 	}
-	oldImage, err := rowImage(event.Relation, event.Old, binding.ExcludedColumns)
+	oldImage, err := model.BuildRowImage(columns, event.Old, binding.ExcludedColumns)
 	if err != nil {
 		return nil, err
 	}
@@ -468,7 +468,7 @@ func (a *Assembler) IncludeColumn(qualified, column string) {
 
 // appendExcluded trägt einen Spaltennamen an eine Ausschluss-Liste an und
 // liefert eine neue Liste: der Rückgabewert teilt keinen Speicher mit dem
-// übergebenen, ein Schnappschuss eines Lesers (`rowImage`) bleibt
+// übergebenen, ein Schnappschuss eines Lesers (`model.BuildRowImage`) bleibt
 // dadurch gültig.
 func appendExcluded(excluded []string, column string) []string {
 	next := make([]string, 0, len(excluded)+1)
@@ -512,44 +512,14 @@ func (a *Assembler) RemoveBinding(qualified string) {
 	delete(a.tables, qualified)
 }
 
-// rowImage trägt das JSON-Row-Image (`SPEC-002`, `ADR-0016`) einer
-// Änderung: ein JSON-Objekt über die gesendeten Spalten-Werte in
-// Relation-Reihenfolge. Werte sind JSON-Strings — der Text-Stand der
-// Quelle geht unverändert in das Bild, ohne Typ-Interpretation; ein
-// nil-Wert trägt NULL oder unverändertes TOAST und ist Abwesenheit
-// (`LH-FA-CAP-008` Boundary). Ein in `excluded` geführter Spaltenname
-// wird ebenso übersprungen (`LH-FA-CFG-005`): derselbe
-// Abwesenheits-Vertrag wie beim nil-Wert, kein eigener Platzhalter
-// (`LH-FA-DAT-005` Boundary).
-func rowImage(relation *decode.Relation, values []*string, excluded []string) ([]byte, error) {
-	if values == nil {
-		return nil, nil
-	}
-	var image bytes.Buffer
-	image.WriteByte('{')
-	first := true
+// columnNames trägt die Spaltennamen einer Relation in Relation-Reihenfolge —
+// die neutrale Spalten-Eingabe von `model.BuildRowImage`.
+func columnNames(relation *decode.Relation) []string {
+	names := make([]string, len(relation.Columns))
 	for i, column := range relation.Columns {
-		if i >= len(values) || values[i] == nil || containsColumn(excluded, column.Name) {
-			continue
-		}
-		name, err := json.Marshal(column.Name)
-		if err != nil {
-			return nil, err
-		}
-		value, err := json.Marshal(*values[i])
-		if err != nil {
-			return nil, err
-		}
-		if !first {
-			image.WriteByte(',')
-		}
-		first = false
-		image.Write(name)
-		image.WriteByte(':')
-		image.Write(value)
+		names[i] = column.Name
 	}
-	image.WriteByte('}')
-	return image.Bytes(), nil
+	return names
 }
 
 // qualifiedNames trägt die qualifizierten Namen einer Relation-Liste.
