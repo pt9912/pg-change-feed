@@ -125,4 +125,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0110 | Python-SDK-Umfang erweitert auf gRPC/SSE/NATS (Supers. ADR-0107, teilw.) | Accepted | 2026-09-21 | [0110-python-sdk-umfang-erweitert-vollmatrix.md](0110-python-sdk-umfang-erweitert-vollmatrix.md) |
 | ADR-0111 | Backfill des Bestands: Bulk-Copy im Slot-Snapshot (`LH-FA-CAP-009`) | Accepted | 2026-09-23 | [0111-backfill-bestand-snapshot-bulk-copy.md](0111-backfill-bestand-snapshot-bulk-copy.md) |
 | ADR-0112 | Transformationen: deklarative Regeln vor der Persistierung (`LH-FA-CFG-007`) | Accepted | 2026-09-23 | [0112-transformationsform-deklarative-regeln-vor-persistenz.md](0112-transformationsform-deklarative-regeln-vor-persistenz.md) |
-| ADR-0113 | Backfill: Rollenschnitt, Aufnahme, Warn-Kriterium (Supers. ADR-0111, teilw.) | Proposed | 2026-09-23 | [0113-backfill-rollenschnitt-aufnahme-warnkriterium.md](0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) |
+| ADR-0113 | Backfill: Rollenschnitt, Aufnahme, Warn-Kriterium (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0113-backfill-rollenschnitt-aufnahme-warnkriterium.md](0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) |

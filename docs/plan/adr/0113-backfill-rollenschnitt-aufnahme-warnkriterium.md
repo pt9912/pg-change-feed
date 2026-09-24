@@ -1,6 +1,6 @@
 # ADR-0113: Backfill — Rollenschnitt der `queued`-Zeile, Aufnahme beim Start, Warn-Kriterium für große Tabellen (Supersedes ADR-0111, Teilfrage 5 teilweise)
 
-**Status:** Proposed — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
+**Status:** Accepted — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
 in **Teilfrage 5, teilweise** (genau zwei Absätze, siehe §Entscheidung);
 alles Übrige von `ADR-0111` bleibt in Kraft
 
@@ -406,6 +406,7 @@ nicht** — der Planner zieht sie nach (`AGENTS.md` §3.13).
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-23 | Proposed — Architect-Vorschlag; die Auftraggeber-Vorentscheidungen zu Rollenschnitt, Aufnahme und Warn-Kriterium sind an den Beleg-Ankern im Code geprüft | [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
+| 2026-09-24 | Accepted — Annahme durch den Auftraggeber samt Aufnahme per Signal im Prozess und Toleranz von 10 Minuten als Startpunkt | [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
