@@ -1,4 +1,5 @@
-Zustand: offen — Ausgang: **weiter offen** (unter der 3×-Schärfungsschwelle).
+Zustand: offen — Ausgang: **weiter offen** (Schwelle 3× erreicht; die Schärfungsfrage gehört dem
+Lese-Schritt der Closure von `welle-backfill-bestand`).
 
 **Adresse der Lücke:** die Entscheidung über eine Schärfung von `ADR-0114`
 Entscheidung 3 liegt beim Architect (Notiz an ihn: Verifikation
@@ -36,7 +37,23 @@ neue ADR mit `Supersedes` — und ob die Grants-Tabelle von `SPEC-029` den Verme
 `tools/schema/nacharbeit-roles.sql` getragen. Verwandt, nicht doppelt gezählt:
 `BEO-PGC/architect-verdikt-rollen-scope-luecke` (1×).
 
+**Vierter Beleg (`slice-backfill-e2e`):** zwei Aussagen von `ADR-0118` (`Accepted`)
+tragen eine andere Reichweite als die Messung — die Sperr-Warteschlange nennt nur
+Leser („hergeleitet, nicht gemessen“), gemessen (PostgreSQL 18) warten auch
+Schreiber und die Publication-Abfrage der Administration; der Satzteil
+„E2E-belegt“ zu `RENAME COLUMN` hat im Repo keinen Beleg (nur `DROP COLUMN`).
+Beide sind mit der neuen `ADR-0119` (`Supersedes ADR-0118`, teilweise) auf die
+gemessene Reichweite gesetzt; das Handbuch trug die Messung bereits. Dieser Beleg
+ist der Ausgang der zwei Aussagen, nicht der drei früheren (deren Adresse bleibt
+der Architect).
+
+**Stand 4×.** Der Lese-Schritt der Closure von
+`welle-backfill-bestand` liest den Eintrag mit; die Frage einer Regel („eine ADR,
+die eine Aussage über eine Menge trifft, nennt die Menge, an der sie geprüft ist“)
+bleibt dort, nicht entschieden.
+
 Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung. Zähler
-(abgeleitet): **3×** (evidence/slice-backfill-change-origin.md,
+(abgeleitet): **4×** (evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md,
-evidence/slice-backfill-run-store.md).
+evidence/slice-backfill-run-store.md,
+evidence/slice-backfill-e2e.md).

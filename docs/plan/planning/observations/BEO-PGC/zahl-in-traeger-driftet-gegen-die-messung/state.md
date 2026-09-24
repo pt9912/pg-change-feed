@@ -24,7 +24,8 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **17×** (evidence/slice-backfill-run-store.md — Nenner der zwei
+Zähler (abgeleitet): **18×** (evidence/slice-backfill-e2e.md — eine Trefferzahl im
+Suchlauf-Feld des Plans, Review F-3; evidence/slice-backfill-run-store.md — Nenner der zwei
 Coverage-Messungen in den Sensor-Dokumenten, Verifikation V-1, und eine Dateizahl im
 Suchlauf-Feld, V-2; evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
@@ -34,7 +35,13 @@ evidence/slice-103.md, evidence/slice-sdk-python-grpc-client-flaeche.md,
 evidence/slice-backfill-row-image-gemeinsam.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
-**Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt).
+**Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
+Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 18×).
+Der achtzehnte Beleg (slice-backfill-e2e) trifft wieder eine **Suchlauf-Feld**-Zahl:
+die Trefferzahl einer Zeile stand für den Stand eines früheren Fixrunden-Commits
+(127 Zeilen in 59 Dateien) statt für den Diff-Stand (130 in 60, die Fixrunde legt
+eine ADR mit zwei Treffern an); der Reviewer fand sie durch Nachmessen an beiden
+Ständen, die Fixrunde setzte die gemessene Zahl.
 Der sechzehnte Beleg (slice-backfill-snapshot-reader) trifft einen
 Skript-Kommentar („ZWEIMAL" gegen gemessen dreimal), eine lauf-gebunden
 streuende gedeckte Zahl (Plan-Zahlen 1691/1731 gegen gemessen 1689 bis 1733) und

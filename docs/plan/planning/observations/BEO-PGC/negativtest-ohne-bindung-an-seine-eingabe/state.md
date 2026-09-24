@@ -5,12 +5,22 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
-Zähler (abgeleitet): **9×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **10×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
-evidence/slice-backfill-sql-administration.md) —
-**Schwelle erreicht**. Der neunte Beleg (`slice-backfill-sql-administration`, F-2) trifft
+evidence/slice-backfill-sql-administration.md,
+evidence/slice-backfill-e2e.md) —
+**Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
+liest den Eintrag mit (10×). Der zehnte Beleg (`slice-backfill-e2e`, F-4) trifft eine
+**E2E-Assertion**: `coalesce(error_class, '')` gleich `''` liest denselben leeren
+String bei einer Zeile mit NULL und bei **keiner** Zeile; eine fehlende
+Heartbeat-Zeile (Quelle unbekannt, Filter falsch) hielte die Zusage „der
+Run-Fehler ist run-lokal, der Erfassungspfad läuft weiter“ grün. Die Fixrunde
+liest `count(*)` mit `error_class IS NULL` gleich 1 — bei fehlender Zeile 0, rot;
+der Verifier las die Form und sah beide CI-Legs grün, gemutet ist sie nicht
+(Grenze im Verifikations-Report §12). Ausprägung: die Aussage „kein Fehlerzustand“
+bindet die **Existenz der Zeile**, nicht nur das Fehlen des Fehlers. Der neunte Beleg (`slice-backfill-sql-administration`, F-2) trifft
 die **Quellfilter-Zusage** einer Abfrage: die Mutation `WHERE source_id = $1` →
 `WHERE $1::text IS NOT NULL` blieb grün, weil beide Tests nur Runs **einer** Quelle anlegten;
 gebunden durch einen Run einer fremden Quelle im Test (Mutation danach rot). Dieselbe Klasse,

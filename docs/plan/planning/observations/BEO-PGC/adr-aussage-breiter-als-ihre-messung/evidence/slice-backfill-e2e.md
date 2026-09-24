@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-e2e (Review-Funde F-1 und F-7, Verifikation V-5, Planner-Closure)
+
+**Fund:** `ADR-0118` §Konsequenzen sagt, Leser der Quelltabelle stauten sich hinter einer auf die Lesesperre wartenden DDL („hergeleitet, nicht gemessen“); das Handbuch übernahm die Aussage. Der Reviewer maß (PostgreSQL 18, Sitzung A hält `LOCK TABLE … IN ACCESS SHARE MODE`, Sitzung B `ALTER TABLE … ALTER COLUMN … TYPE` wartet): ein `INSERT`, ein `SELECT` auf die Tabelle und `SELECT … FROM pg_publication_tables` laufen je in eine 4-s-Grenze (F-1, MEDIUM, Handbuch-Text) — die Aussage der ADR war enger als die Messung; der Verifier reproduzierte die Messung. Zweite Stelle: `ADR-0118` Festlegung 5 nennt `RENAME COLUMN` im Fenster „E2E-belegt“; im Repo fährt nur `DROP COLUMN` einen Beleg, `RENAME COLUMN` ist im Review gemessen (Klasse `storage`, SQLSTATE 42703) und ohne Test (F-7, INFO; V-5, INFO). Die ADR ist `Accepted` und unberührbar; das Handbuch zog in der Fixrunde nach, die Berichtigung der ADR-Sätze steht in `ADR-0119` (`Supersedes ADR-0118`, teilweise).
+
+Quelle: `docs/reviews/review-slice-backfill-e2e.md` (F-1, F-7) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-e2e.md` (§5 F-1, V-5). <!-- d-check:status-provenance -->
