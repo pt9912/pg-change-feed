@@ -93,7 +93,7 @@ Antrags trägt der Folge-Slice.
 - [ ] Idempotenz-Guard und Rollen-Test: `knownForeignObjects` in
       `tools/schema/rolloutguard/guard.go` trägt beide Funktionen
       (Signatur-Schreibweise am realen `--plan-only`-Report gemessen, nicht
-      angenommen — der Parameter `jsonb` ist neu gegenüber den vier bestehenden
+      angenommen — der Parameter `jsonb` ist neu gegenüber den bestehenden
       Funktionen), `guard_test.go` deckt sie;
       `internal/bootstrap/roles_rollout_file_internal_test.go` liest den
       Grant-Text beider Funktionen und färbt sich bei entferntem
@@ -197,7 +197,7 @@ geschrieben.
 ## 6. Risiken und offene Punkte
 
 - **Der Idempotenz-Guard erkennt die Funktion mit `jsonb`-Parameter nicht** —
-  ein zweiter Rollout bräche mit Exit 8. Die Signatur-Schreibweise der vier
+  ein zweiter Rollout bräche mit Exit 8. Die Signatur-Schreibweise der
   bestehenden Funktionen (`enable_table(in:text,in:text,in:text)` in
   `guard.go`) ist gelesen, die der neuen mit `jsonb` ist ungemessen. *Erwartet,
   zu belegen durch:* zweiter `make schema-rollout` und

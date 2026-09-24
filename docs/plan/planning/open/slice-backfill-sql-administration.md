@@ -67,14 +67,14 @@ sichtbar. Drei Teile:
   Status, Zeilen, Zeiten, Fehlertext, **geschätzte** Zeilenzahl, die
   Warn-Spalte(n) aus `run-store`) mit `SELECT` für `cdc_reader`, die Ausgabe in
   `diagnose` (`bootstrap.Diagnose`: je Tabelle Status und Fortschritt, die
-  Warn-Spalte(n) — leer, solange keine Auswertung sie setzt —, eine unbekannte
+  Warn-Spalte(n) — `false`, solange keine Auswertung sie setzt —, eine unbekannte
   Schätzung als „unbekannt"; ein `failed`/`interrupted`-Run ist Berichtsinhalt,
   kein Befehlsfehler) und der Handbuch-Abschnitt der Oberfläche.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - **Die Auswertung der Warnungen** (Toleranz, Richtgröße) — sie entsteht mit
-  `bench-richtgroesse`; hier zeigen View und `diagnose` die Warn-Spalte(n) (leer),
+  `bench-richtgroesse`; hier zeigen View und `diagnose` die Warn-Spalte(n) (`false`),
   Schätzung und Laufzeit **ohne** Schwellenwert, und die Schätzung trägt an jedem
   Träger das Wort „geschätzt" (`BEO-PGC/geschaetzter-wert-als-grenze`).
 - **Die gemessene Startposition eines frisch registrierten Consumers** —
@@ -118,7 +118,7 @@ sichtbar. Drei Teile:
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
       Warn-Spalte(n); `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
-      gibt sie aus (die Warn-Spalte(n) leer, solange keine Auswertung sie setzt),
+      gibt sie aus (die Warn-Spalte(n) `false`, solange keine Auswertung sie setzt),
       ein `failed`-Run ist Berichtsinhalt (Exit 0). Das Benutzerhandbuch trägt den neuen Abschnitt
       „Bestand als Backfill überführen" (Auslösung, Betriebs-Vorbedingungen —
       `SELECT`-Recht der Login-Identität von `CDC_CAPTURE_DSN` auf die

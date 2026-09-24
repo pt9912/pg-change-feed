@@ -38,7 +38,7 @@ Transaktion, Warn-Spalte(n), `estimated_rows` = `NULL` als „unbekannt").
 `finished_at`, `snapshot_position`, `rows_copied`, `estimated_rows`,
 `error_message`; `estimated_rows` ist **nullable** — `NULL` heißt „unbekannt",
 nie `0` —; dazu die **Warn-Spalte(n)** für die beiden Warnungen (Zahl und
-Bezeichner wie in [`SPEC-029`](../../../../spec/pflichtenheft.md) durch `spec-nachzug` festgelegt; leer, solange
+Bezeichner wie in [`SPEC-029`](../../../../spec/pflichtenheft.md) durch `spec-nachzug` festgelegt; `false`, solange
 keine Auswertung sie setzt); die geschlossene `status`-Menge als CHECK **bei
 Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 `run-usecase`:

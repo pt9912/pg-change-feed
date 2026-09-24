@@ -235,8 +235,8 @@ geschrieben.
 - **Überholter Text im selben Dokument**
   (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, offen, 2×): die
   Überschrift „… offen“, der Einleitungssatz von
-  [`SPEC-019`](../../../../spec/pflichtenheft.md) (nennt die vier
-  SQL-Funktionen) und der Satz „vier Arten“ in `spec/architecture.md` können
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) (nennt die
+  bestehenden SQL-Funktionen) und der Satz zur Menge der Arten in `spec/architecture.md` können
   die alte Aussage tragen. *Erwartet, zu belegen durch:* Lesen der Abschnitte
   von oben nach unten und Suchlauf §3, Zeilen 2–3. **Ausgang:** *(bei Closure)*
 - **Kollision mit `slice-backfill-spec-nachzug`** in
