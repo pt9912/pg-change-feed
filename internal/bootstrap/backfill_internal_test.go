@@ -531,7 +531,7 @@ func TestAdministrationBackfillBranchRequestsAndWakesTheWorker(t *testing.T) {
 	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
 		{ID: "req-ok", Source: "src-admin", Schema: "sales", Table: "orders", Kind: model.AdministrationRequestBackfill},
 	}}
-	deps := administrationDeps{requests: requests, backfill: useCase, backfillWake: wake, publication: "cdc_pub", log: &recordingLog{}}
+	deps := administrationDeps{requests: requests, backfill: useCase, backfillWake: wake, source: "src-admin", publication: "cdc_pub", log: &recordingLog{}}
 
 	processAdministrationRequests(ctx, deps)
 
@@ -563,6 +563,34 @@ func TestAdministrationBackfillBranchRequestsAndWakesTheWorker(t *testing.T) {
 	}
 	if message := requests.failed["req-refused"]; message != "Tabelle nicht aktiviert" {
 		t.Fatalf("Fehlertext des abgelehnten Antrags = %q, erwartet der Text von Request", message)
+	}
+}
+
+// Ein `backfill`-Antrag einer anderen Quelle bleibt für die Instanz dieser
+// Quelle unberührt `pending`: kein `Request`, kein Vermerk, kein Wecksignal;
+// der Antrag der eigenen Quelle im selben Durchlauf wird angenommen. Rot
+// färbende Mutation: den Vergleich `request.Source != deps.source` in
+// `processAdministrationRequests` entfernen — der Antrag der fremden Quelle
+// erreicht `Request`.
+func TestAdministrationBackfillBranchLeavesTheRequestOfAnotherSourcePending(t *testing.T) {
+	useCase := &fakeBackfillUseCase{}
+	wake := newBackfillWake()
+	requests := &fakeAdministrationRequestPort{pending: []model.AdministrationRequest{
+		{ID: "req-foreign", Source: "src-other", Schema: "sales", Table: "orders", Kind: model.AdministrationRequestBackfill},
+		{ID: "req-own", Source: "src-admin", Schema: "sales", Table: "orders", Kind: model.AdministrationRequestBackfill},
+	}}
+	deps := administrationDeps{requests: requests, backfill: useCase, backfillWake: wake, source: "src-admin", publication: "cdc_pub", log: &recordingLog{}}
+
+	processAdministrationRequests(context.Background(), deps)
+
+	if len(useCase.requested) != 1 || useCase.requested[0].RequestID != "req-own" {
+		t.Fatalf("Request-Aufrufe = %+v, erwartet genau der Antrag req-own", useCase.requested)
+	}
+	if len(requests.applied) != 1 || requests.applied[0] != "req-own" || len(requests.failed) != 0 {
+		t.Fatalf("Vermerke applied %v, failed %v — erwartet nur req-own applied", requests.applied, requests.failed)
+	}
+	if len(wake) != 1 {
+		t.Fatalf("Wecksignale = %d, erwartet 1 (der Antrag der eigenen Quelle)", len(wake))
 	}
 }
 
@@ -635,6 +663,7 @@ func TestBackfillRunDoesNotBlockTheAdministrationGoroutine(t *testing.T) {
 		assembler:       assembler,
 		backfill:        useCase,
 		backfillWake:    newBackfillWake(),
+		source:          "src-admin",
 		publication:     "cdc_pub",
 		log:             &recordingLog{},
 	}

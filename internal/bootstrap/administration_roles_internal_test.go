@@ -68,7 +68,11 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // Rot färbende Mutation: den Grant `SELECT, UPDATE ON cdc.administration_request
 // TO cdc_admin` aus der Rollout-Datei streichen (oder `UPDATE` allein), oder
 // `SELECT, INSERT ON cdc.backfill_run TO cdc_admin` — der
-// Test meldet die Anweisung, die an dem fehlenden Recht scheitert.
+// Test meldet die Anweisung, die an dem fehlenden Recht scheitert. Rot
+// färbende Mutation der Quellbindung: den Vergleich
+// `request.Source != deps.source` in `processAdministrationRequests`
+// entfernen — der Antrag der fremden Quelle wird verarbeitet (Status nicht
+// mehr `pending`), der Test meldet ihn.
 func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
 	if baseDSN == "" {
@@ -82,15 +86,18 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	t.Cleanup(admin.Close)
 
 	const (
-		sourceID    = model.SourceID("src-admin-roles")
-		testTable   = "admin_roles_path"
-		publication = "pgc_admin_roles_pub"
+		sourceID      = model.SourceID("src-admin-roles")
+		foreignSource = "src-admin-roles-foreign"
+		testTable     = "admin_roles_path"
+		publication   = "pgc_admin_roles_pub"
 	)
-	if _, err := admin.Exec(ctx,
-		"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'Administrationspfad unter Rollen') ON CONFLICT (source_id) DO NOTHING",
-		string(sourceID),
-	); err != nil {
-		t.Fatalf("Quelle-Zeile: %v", err)
+	for _, source := range []string{string(sourceID), foreignSource} {
+		if _, err := admin.Exec(ctx,
+			"INSERT INTO cdc.source (source_id, name) VALUES ($1, 'Administrationspfad unter Rollen') ON CONFLICT (source_id) DO NOTHING",
+			source,
+		); err != nil {
+			t.Fatalf("Quelle-Zeile %s: %v", source, err)
+		}
 	}
 	// Betriebs-Vorbedingung je aktivierter Tabelle (`nacharbeit-roles.sql`,
 	// Grenze): die Quelltabelle gehört `cdc_admin`.
@@ -103,7 +110,8 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	t.Cleanup(func() {
 		cleanup := context.Background()
 		_, _ = admin.Exec(cleanup, "DROP PUBLICATION IF EXISTS "+publication)
-		_, _ = admin.Exec(cleanup, "DELETE FROM cdc.administration_request WHERE source_id = $1", string(sourceID))
+		_, _ = admin.Exec(cleanup, "DELETE FROM cdc.administration_request WHERE source_id = $1 OR source_id = $2", string(sourceID), foreignSource)
+		_, _ = admin.Exec(cleanup, "DELETE FROM cdc.source WHERE source_id = $1", foreignSource)
 		_, _ = admin.Exec(cleanup, "DELETE FROM cdc.schema_version WHERE source_table_id IN (SELECT source_table_id FROM cdc.source_table WHERE source_id = $1)", string(sourceID))
 		_, _ = admin.Exec(cleanup, "DELETE FROM cdc.source_table WHERE source_id = $1", string(sourceID))
 		_, _ = admin.Exec(cleanup, "DROP TABLE IF EXISTS public."+testTable)
@@ -150,7 +158,9 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	if err != nil {
 		t.Fatalf("postgressnapshot.New mit cdc_capture-Login: %v", err)
 	}
-	t.Cleanup(func() { _, _ = admin.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE source_id = $1", string(sourceID)) })
+	t.Cleanup(func() {
+		_, _ = admin.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE source_id = $1", string(sourceID))
+	})
 
 	assembler, err := mapper.NewAssembler(sourceID, map[string]mapper.TableBinding{}, nil)
 	if err != nil {
@@ -179,6 +189,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		schemaStore:     schemaStore,
 		columnExclusion: activation,
 		assembler:       assembler,
+		source:          sourceID,
 		publication:     publication,
 		log:             log,
 	}
@@ -243,6 +254,12 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	// Worker wird geweckt. Ein zweiter Antrag derselben Tabelle bei aktivem
 	// Run endet `failed` samt Text, ohne zweite Run-Zeile und ohne Signal; ein
 	// Antrag für eine nicht aktivierte Tabelle endet `failed` ohne Run-Zeile.
+	// Ein Antrag einer anderen Quelle liegt vor dem eigenen in der Queue und
+	// bleibt `pending`: keine Run-Zeile, kein Wecksignal.
+	var foreignID string
+	if err := admin.QueryRow(ctx, "SELECT cdc.backfill_table($1, 'public', $2)", foreignSource, testTable).Scan(&foreignID); err != nil {
+		t.Fatalf("cdc.backfill_table für die fremde Quelle: %v", err)
+	}
 	backfillID, status, message := requestOn(testTable, "backfill_table", "")
 	if status != "applied" {
 		t.Fatalf("backfill_table unter cdc_admin-/cdc_capture-Login: Status %q (%s), erwartet applied — Log: %v", status, message, log.messages)
@@ -259,6 +276,14 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		t.Fatalf("Wecksignale nach der Annahme = %d, erwartet 1", len(backfillWake))
 	}
 	<-backfillWake
+	var foreignStatus string
+	if err := admin.QueryRow(ctx, "SELECT status FROM cdc.administration_request WHERE administration_request_id = $1", foreignID).Scan(&foreignStatus); err != nil || foreignStatus != "pending" {
+		t.Fatalf("Antrag der fremden Quelle: Status %q (%v), erwartet pending — die Instanz dieser Quelle rührt ihn nicht an", foreignStatus, err)
+	}
+	var foreignRuns int
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM cdc.backfill_run WHERE source_id = $1", foreignSource).Scan(&foreignRuns); err != nil || foreignRuns != 0 {
+		t.Fatalf("Run-Zeilen der fremden Quelle: %d (%v), erwartet 0", foreignRuns, err)
+	}
 
 	secondID, status, message := requestOn(testTable, "backfill_table", "")
 	if status != "failed" || !strings.Contains(message, "aktiver Backfill-Run") {

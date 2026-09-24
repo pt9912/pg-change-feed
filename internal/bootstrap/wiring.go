@@ -839,6 +839,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			assembler:       stream.Assembler(),
 			backfill:        backfillTables,
 			backfillWake:    backfillWake,
+			source:          cfg.Source,
 			publication:     cfg.Publication,
 			pollInterval:    administrationPollInterval,
 			log:             log,
@@ -1253,9 +1254,13 @@ type administrationDeps struct {
 	// Teilfrage 5, `ADR-0113` Festlegung 2).
 	backfill     inbound.BackfillTableUseCase
 	backfillWake chan<- struct{}
+	// source ist die Quelle dieser Instanz: ein `backfill`-Antrag einer
+	// anderen Quelle bleibt `pending` für die Instanz, die ihn annimmt
+	// (`ADR-0113` Festlegung 1, je Quelle nimmt eine Instanz Anträge an).
+	source       model.SourceID
 	publication  string
-	pollInterval    time.Duration
-	log             outbound.LogPort
+	pollInterval time.Duration
+	log          outbound.LogPort
 }
 
 // runAdministration verarbeitet offene Anträge der Antrags-Queue
@@ -1291,7 +1296,8 @@ func runAdministration(ctx context.Context, deps administrationDeps) {
 // Durchlauf versucht erneut). Ein gescheiterter Antrag wird als `failed`
 // vermerkt, statt `pending` zu bleiben — ein `pending` bleibender Antrag
 // würde jeden Durchlauf erneut versuchen, ohne dass sich der Fehlerzustand
-// ändert.
+// ändert. Ein `backfill`-Antrag einer anderen Quelle als `deps.source` bleibt
+// unberührt `pending`.
 func processAdministrationRequests(ctx context.Context, deps administrationDeps) {
 	pending, err := deps.requests.ListPending(ctx)
 	if err != nil {
@@ -1299,6 +1305,9 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 		return
 	}
 	for _, request := range pending {
+		if request.Kind == model.AdministrationRequestBackfill && request.Source != deps.source {
+			continue
+		}
 		if err := applyAdministrationRequest(ctx, deps, request); err != nil {
 			deps.log.Warn(ctx, "administration: Antrag fehlgeschlagen",
 				"request_id", request.ID, "kind", request.Kind, "error", err)
