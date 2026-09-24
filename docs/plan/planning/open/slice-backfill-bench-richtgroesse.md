@@ -60,7 +60,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
   Zeilenzahl über der Richtgröße liegt; Warnung (2) zur Laufzeit, wenn ein Run
   länger als die Toleranz läuft, geprüft bei jedem Fortschritts-Update (je Block)
   und beim Abschluss. Das Ergebnis steht in den zwei Warn-Spalten der Run-Zeile —
-  Warnung (1) schreibt `Admit`, Warnung (2) der Worker per `UPDATE` —,
+  Warnung (1) schreibt `Admit`, Warnung (2) das Fortschritts-Update des Run-Zustands-Adapters (`UPDATE`) —,
   `cdc.backfill_status` reicht sie durch — die View trägt die zwei Spalten seit
   `slice-backfill-sql-administration` in ihrer Signatur, dieser Slice **ändert die
   Signatur nicht** und füllt nur Werte —, `diagnose` liest sie aus der View.
@@ -167,6 +167,18 @@ Zeilenbreite (Port-Doku `NextBlock`, nicht gemessen). Der Bench nennt `B` und di
 Zeilenbreite seiner Tabellen im Ursprung jeder Kopier-Zahl; eine Richtgröße in Zeilen gilt
 für diese Breite, Messungen mit breiten Zeilen (`jsonb`, `bytea`) sind ohne eigenen Lauf
 ungemessen.
+
+**Übergabe aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang):
+`Request` legt den Run mit der Schätzung an (`RowEstimate`: der Nullwert ist „unbekannt",
+die Zahl 0 einer analysierten, leeren Tabelle bleibt bekannt) und ruft `Admit` als letzten
+Schritt; die Stelle für Warnung (1) ist der Run-Wert zwischen `WithEstimatedRows` und
+`Admit`. Das Fortschritts-Update ist `progress` in
+`internal/application/usecase/backfill/service.go`: je Block und einmal mit der
+Anfangsposition (Zähler 0) ruft es `BackfillRunPort.RecordProgress` mit dem **ganzen** Run;
+Warnung (2) setzt der Slice dort am Run-Wert, `Finish` und `Commit` tragen den Run beim
+Abschluss mit denselben Feldern (`WarnEstimatedSize`, `WarnDuration`, bis zur Auswertung
+`false`). Der Test-Baustein für die Uhr ist im Use-Case-Test vorhanden (`fakeClock`
+läuft je Aufruf um einen Schritt weiter).
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Zahl und der Inhalt der Bench-Skripte hinter `make bench`"; beide Stände gemessen):**
 

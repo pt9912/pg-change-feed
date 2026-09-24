@@ -173,6 +173,18 @@ gemessen oder benannt; die Komposition trägt erst dieser Slice):
   dafür deterministisch herstellbar, misst der Slice das Fenster; sonst nennt der
   Bericht es als ungemessen.
 
+**Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang):
+
+- **`running` vor der Slot-Anlage.** Der Ansatz-Vorschlag setzt voraus, dass der Run vor
+  der Slot-Anlage `running` trägt. Am Code gelesen: `Execute` ruft `MarkRunning` vor
+  `copyBlocks`, und erst dort öffnet `OpenSnapshot` den Slot
+  (`internal/application/usecase/backfill/service.go`); kein Test des Use Cases bindet
+  diese Reihenfolge, sie ist nicht gemessen.
+- **Ergebnis gegen Zeile.** Bei einem Commit mit unbekanntem Ausgang kann die Zeile
+  `completed` tragen, während das Ergebnis von `Execute` `failed` meldet
+  (`BEO-PGC/execute-ergebnis-widerspricht-persistierter-zeile`); die Belege dieses Slice
+  lesen den Zustand aus `cdc.backfill_status`, also aus der Zeile.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der E2E-belegten Kennungen und ihre Zeilen-Anker", „die Beschreibung von `make test-integration`"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
@@ -186,7 +198,21 @@ gemessen oder benannt; die Komposition trägt erst dieser Slice):
 
 **Start** (`next` → `in-progress`): wenn `sql-administration` in `done/` liegt,
 `make image` real gelaufen ist (`compose.yaml` trägt keinen `build:`-Block,
-[`ADR-0044`](../../adr/0044-image-beleg-semantik.md)) und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1).
+[`ADR-0044`](../../adr/0044-image-beleg-semantik.md)), kein anderer Slice in `in-progress/` liegt (WIP-Limit 1)
+**und** ein Architect-Verdikt unter `docs/reviews/` zur Schema-Version der
+Backfill-Changes vorliegt, **das der Übergangs-Commit `next` → `in-progress` nennt**
+(`BEO-PGC/start-trigger-ohne-uebergabe-artefakt`, offen, 1×). Die Frage des Verdikts
+(Register: `BEO-PGC/backfill-schema-version-hinter-snapshot-spalten`, aus dem Review von
+`slice-backfill-run-usecase`, F-8): der Run liest die aktuelle Schema-Version der Tabelle
+vor dem Öffnen des Snapshots; sie wechselt allein mit der nächsten Relation-Nachricht des
+WAL-Pfads und kann hinter den Spalten des Snapshots liegen (kompatible
+Spalten-Erweiterung ohne WAL-Änderung) oder auf eine Version ohne `TableSchema`
+verweisen (statische Erstaktivierung). Das akzeptierte Negativ von
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt nur die
+Erweiterung „während des Runs". Ob der Wortlaut ausreicht oder eine Schärfung nötig ist
+(Folge-ADR, ggf. eine Änderung des Zeitpunkts, an dem der Run die Version liest), ist eine
+Entscheidung, keine Auslegung dieses Slice; der Beleg der Bild-Form über
+`cdc.changes` hängt an ihr.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

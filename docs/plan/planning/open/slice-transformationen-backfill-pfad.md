@@ -91,7 +91,10 @@ Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
       Spalte) belegt [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) für den
       Backfill-Pfad. *Zu belegen durch:* `make test` gegen Fakes, je
       Negativfall an seine Eingabe gebunden (Mutation der Prüfung färbt den
-      Test rot).
+      Test rot); dazu der Lesefehler des Regelstands je Block und unmittelbar
+      vor dem Commit — der Fake scheitert ab dem n-ten Aufruf, je Aufrufstelle
+      eine Mutation, die ihren Fehler verwirft
+      (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
 - [ ] E2E-Beleg in `make test-integration`: für eine Tabelle mit
       `rename_column`-Regel trägt ein Backfill-Run den Bestand über
       `cdc.changes` und `GET /changes` mit umbenanntem Schlüssel und `origin =
@@ -139,6 +142,23 @@ Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
 | `test/integration/integration_test.go`, `tools/harness/run-integration-tests.sh` | update | Backfill-Phase mit Regel; `-run`-Muster und Abdeckungs-Deklaration (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner, wird nicht von Hand geschrieben. |
 
+**Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang; alle
+Stellen in `internal/application/usecase/backfill/service.go`):
+
+- **Stelle des Bild-Baus.** `blockBuilder.build` baut das Bild je Zeile über
+  `model.BuildRowImage(columns, row, excluded)`; das ist die einzige Stelle des Runs, an der
+  ein Regelsatz eingeht.
+- **Stelle der Fail-closed-Prüfung.** In `copyBlocks` liest `excludedColumns` je Block den
+  Ausschlussstand neu und `sameNames` vergleicht ihn mit dem Stand des ersten Blocks; vor dem
+  Commit prüfen `stillBound` die Bindung und derselbe Vergleich den Stand; ein nicht lesbarer
+  Stand endet den Run wie eine Abweichung. Die Grenze der Prüfung (ein zwischen zwei
+  Lesungen gesetzter und zurückgenommener Stand ist unsichtbar, der Stand trägt keine
+  Historie) steht im Doc-Kommentar von `copyBlocks` und gilt für den Regelstand ebenso.
+- **Port und Fake des Regelstands.** `Ports` bündelt die Pflicht-Ports des Use Cases; der
+  Regelstand-Port kommt dort hinzu. Die Fakes des Use-Case-Tests lassen einen Aufruf ab dem
+  n-ten scheitern (`fakeExclusion.errCall`); der Fake des Regelstands folgt diesem Muster.
+- **Klassifikation.** `classifyError` (siehe §4).
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „welche
 Erzeugungspfade `model.Change`-Bilder bauen und ob sie den Regelstand tragen“;
 beide Stände gemessen):**
@@ -169,7 +189,11 @@ Run-Fehlerklassen aus
 [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 Teilfrage 4 beschreibt die Nichtanwendbarkeit nur für den Erfassungspfad — ob
 der Run mit der Klasse `schema` endet (Erweiterung der Run-Klassen, ggf.
-Folge-ADR) oder anders, ist eine Entscheidung, keine Auslegung dieses Slice.
+Folge-ADR) oder anders, ist eine Entscheidung, keine Auslegung dieses Slice. Die
+Abbildung, an der das Verdikt ansetzt, steht in `classifyError` am Use Case des Runs
+(`internal/application/usecase/backfill/service.go`): ein nicht erkannter Fehler endet als
+`internal`, `schema` vergibt der Run nicht (Register:
+`BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill`).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

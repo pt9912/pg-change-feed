@@ -172,6 +172,28 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
 | `tools/harness/run-schema-rollout-guard-test.sh` | ausführen (nicht ändern) | der Alt-Tag-Lauf belegt die Tabelle gegen einen Alt-Bestand ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7). |
 
+**Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang; die
+Ports liegen in `internal/application/port/outbound/backfill*.go`, der Run-Wert in
+`internal/domain/model/backfillrun.go`):
+
+- **Ganzer Run je Übergang.** `MarkRunning`, `RecordProgress` und `Finish` tragen den
+  ganzen Run (`model.BackfillRun`), `Commit` den Run im Endzustand `completed`: der
+  Run-Zustands-Adapter schreibt die Spalten je Übergang — `snapshot_position`,
+  `rows_copied`, beide Warn-Spalten, `started_at`, `finished_at`, `error_message`.
+- **Leere Zeitspalten und Fehlertext.** `started_at` ist leer, bis der Run `running` ist,
+  auch bei `queued` → `failed` (die erneute Prüfung der Vorbedingungen endet einen Run,
+  der nie `running` war); `error_message` trägt bei `failed` die Klasse vor dem Text
+  (`<Klasse>: <Ursache>`), sonst ist er leer, `interrupted` trägt keinen Text.
+- **Zulässige Übergänge.** `failed` folgt auf `queued` und `running`, `completed` und
+  `interrupted` auf `running`; jeder Endzustand ist endgültig (Adapter-Pflicht (2) im
+  DoD).
+- **Kennungen.** Transaktions-Kennung `0bf-<run-id>-<Blocknummer, 8 Stellen>` aus
+  `model.BackfillTransactionID` (Blocknummern zählen ab 1, ein Überlauf der achten
+  Stelle ist ein Fehler) und `change_id` aus `model.ChangeIDFor`; beide stehen im
+  übergebenen `model.ChangeTransaction`, der Schreiber bildet sie nicht neu.
+- **Fehlerklassen.** Persistenzfehler der Adapter tragen `outbound.ErrBackfillStorage`;
+  ein aktiver Run bei `Admit` ist `domainerrors.ErrBackfillRunActive`.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Tabellenliste des `cdc`-Schemas und die Rollenverteilung der Grants"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |

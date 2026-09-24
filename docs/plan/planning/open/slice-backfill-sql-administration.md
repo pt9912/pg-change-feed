@@ -122,6 +122,16 @@ sichtbar. Drei Teile:
       für zwei aufeinanderfolgende `backfill`-Anträge derselben Tabelle (der zweite
       endet `failed`; das trägt die Annahme von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1, dass
       Anträge sequenziell in **einer** Goroutine verarbeitet werden).
+      **Aufrufer-Vertrag von `Execute`** (Übergabe aus `slice-backfill-run-usecase`,
+      Verifikation V-1): das Ergebnis trägt den Run im Endzustand **des Aufrufs**;
+      die Zeile in `cdc.backfill_run` ist der dauerhafte Zustand und kann `completed`
+      tragen, während das Ergebnis `failed` meldet (Commit mit unbekanntem Ausgang;
+      das Wecksignal des Use Cases entfällt dann, obwohl die Daten sichtbar sind).
+      Der Worker verwendet das Ergebnis für Log und Fehlerklasse, schreibt daraus
+      keinen weiteren Endzustand und stellt keinen neuen Antrag;
+      `cdc.backfill_status` und `diagnose` lesen die Zeile. Der Test-Beleg ist ein
+      Whitebox-Fall des Worker-Tests (ein Fake-Use-Case liefert ein Ergebnis
+      `failed`; der Worker schreibt keinen Endzustand und beantragt nichts).
 - [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
@@ -183,6 +193,26 @@ sichtbar. Drei Teile:
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt, §2 Rollen, §4 Diagnose, Glossar, die zwei Fortsetzungs-Idiome (§4 „Änderungen lesen", „Changes lesen"), `Version:`-Kopf und Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make example-demo-up`, die die Fremdobjekt-Aufzählung wiederholt; die Zeile `make schema-rollout` trägt keine Aufzählung, sie verweist auf `harness/targets/schema-rollout.md`. |
 | `harness/targets/schema-rollout.md` | update | trägt die Zahl und die Objektklassen der Fremdobjekte; der Makefile-Kommentar über `schema-rollout` trägt sie nicht. |
+
+**Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang; die
+Ports liegen in `internal/application/port/outbound/backfill*.go`, der Inbound Port in
+`internal/application/port/inbound/backfill.go`, der Use Case in
+`internal/application/usecase/backfill/service.go`):
+
+- **Pflicht-Ports.** `Ports` des Use Cases trägt acht Pflicht-Ports, darunter
+  `SchemaStorePort` (`model.NewChange` verlangt eine Schema-Version-Referenz); die
+  Verdrahtung in `wiring.go` reicht ihn durch. Optional sind `WithChangeNotification`
+  ([`ADR-0055`](../../adr/0055-nats-change-notification-wecksignal.md)) und `WithLog`.
+- **Publication im Command.** `BackfillRequestCommand` und `BackfillExecuteCommand`
+  tragen die Publication der Quelle; der Antragszweig und der Worker übergeben sie
+  (wie bei `EnableTableCommand`).
+- **Ergebnis von `Execute`.** Ein Run-Fehler ist ein Ergebnis mit dem Run im
+  Endzustand, kein Fehler des Aufrufs; der Fehler des Aufrufs meldet „Endzustand nicht
+  festgehalten" oder „Kontext endete vor dem Beginn" (ein noch `queued` Run bleibt dann
+  `queued`). Der Aufrufer-Vertrag steht im DoD „Verarbeitung".
+- **Aufnahme und Abgleich.** `Queued` (Aufnahme) und `InterruptRunning` (Start-Abgleich)
+  sind Operationen des Run-Zustands-Ports; der Use Case ruft keine von beiden, Worker
+  und Prozessstart tragen sie.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene `request_kind`-Menge (vier → fünf)", „die Menge der Fremdobjekte außerhalb des neutralen Modells (sechs → sieben)", „die Ausgabe von `diagnose`"; beide Stände gemessen):**
 
