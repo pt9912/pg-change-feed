@@ -321,9 +321,9 @@ ORDER BY requested_at`
 // Anträgen derselben Transaktion nicht unterscheidend — deshalb der
 // deterministische Zweitschlüssel `administration_request_id`: dieselbe
 // Antrags-Menge trägt damit unabhängig von der Ausführungsreihenfolge
-// genau eine Reihenfolge. Die beiden Tabellen-Antragsarten bleiben außen
-// vor; `COALESCE` normalisiert das für sie NULL-bare `column_name` wie in
-// SelectPendingAdministrationRequests.
+// genau eine Reihenfolge. Die drei Tabellen-Antragsarten (`enable`,
+// `disable`, `backfill`) bleiben außen vor; `COALESCE` normalisiert das
+// NULL-bare `column_name` wie in SelectPendingAdministrationRequests.
 const SelectAppliedColumnRequests = `
 SELECT schema_name, table_name, request_kind, COALESCE(column_name, '')
 FROM cdc.administration_request
