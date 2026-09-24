@@ -121,6 +121,21 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       `make test-store` in der Test-Datenbank; der Bericht nennt die
       Kollation der Datenbank (`datcollate`), weil die Ordnung `0bf-…` vor
       Ziffern-Kennungen eine Textsortierung ist.
+- [ ] Adapter-Pflichten aus den Port-Verträgen (`BackfillRunPort`,
+      `BackfillTransaction`): (1) **Zeitbegrenzung** — `Finish`,
+      `InterruptRunning` und `Rollback` sind adapterseitig zeitbegrenzt und
+      beenden sich bei einem vom Abbruch gelösten Kontext (ohne Frist des
+      Aufrufers) nicht vorzeitig; Vorbild ist `closeTimeout` des
+      Snapshot-Adapters (`internal/adapters/driven/postgressnapshot`);
+      (2) **Endzustand idempotent** — `Finish` auf einen bereits beendeten Run
+      ist ein wirkungsloser Erfolg: der Endzustand bleibt unverändert, der
+      Aufruf meldet keinen Fehler (die Anweisung wirkt nur auf `queued`/`running`).
+      *Zu belegen durch:* `make test-store` (`Finish(failed)` auf einen
+      `completed`-Run liefert nil, die Zeile bleibt `completed`) und ein
+      netzloser Test an der Ausführungs-Naht (eine blockierende Naht: jede der
+      drei Operationen endet nach der eigenen Frist mit Fehler, auch bei
+      abgelöstem Kontext); die Gegenseite am Use Case trägt
+      `TestExecuteContextEndedInterrupts` in `usecase/backfill`.
 - [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
@@ -151,6 +166,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 | `tools/schema/nacharbeit-roles.sql` | update | Grants: `cdc_admin` `SELECT`, `INSERT`; `cdc_capture` `SELECT`, `UPDATE`. |
 | `internal/bootstrap/roles_rollout_file_internal_test.go` | update | hält den Rollenschnitt gegen die Rollout-Datei; die neue Tabelle darf für `cdc_reader` **nicht** als Basistabellen-Grant erscheinen. |
 | `internal/adapters/driven/postgresstorage/` (Arbeitsname `backfilladmission.go`, `backfillrun.go`, `backfillwriter.go`, + Tests) | neu | die drei Adapter über die schmale Ausführungs-Naht des Pakets (`sqlexec`); explizite Spaltenlisten; der Annahme-Adapter nutzt `Begin`. |
+| `internal/adapters/driven/postgresstorage/backfillrun.go`, `backfillwriter.go` | Pflicht aus dem Port-Vertrag | Zeitgrenze für `Finish`, `InterruptRunning`, `Rollback` und `Finish` als wirkungsloser Erfolg auf einen beendeten Run (DoD-Punkt „Adapter-Pflichten"). |
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | die neuen Anweisungen. |
 | `internal/adapters/driven/postgresstorage/schema.sql` | prüfen | wie in `change-origin`: ob die eingebettete DDL eine Träger-Rolle hat. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
