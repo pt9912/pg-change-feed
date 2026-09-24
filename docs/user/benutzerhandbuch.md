@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.44
+Version: 1.45
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -593,6 +593,54 @@ make schema-rollout SCHEMA_TARGET="db:<ihre-postgres-dsn>"
 
 Der Lauf erzeugt einen Pflicht-Report (`tools/schema/plan.yaml`) und ein
 Rollback-Artefakt (`tools/schema/down.sql`).
+
+**Reihenfolge beim Upgrade.** Rollen Sie das Schema **vor** dem Tausch des
+Feed-Containers aus, dann ersetzen Sie den Container durch die neue Version.
+Der neue Container erwartet das neue Schema (er schreibt zum Beispiel die
+Spalte `cdc.change.origin`); umgekehrt ist der Rollout vor dem Tausch für
+den weiterlaufenden Container erwartungsgemäß unkritisch, weil neue Spalten
+nullable und neue Tabellen oder Views additiv sind (abgeleitet, nicht mit
+einem laufenden Alt-Container gemessen).
+
+**Additive Änderungen** — neue Tabelle, neue nullable Spalte, neue View —
+rollen ohne Zwischenschritt aus. Ein zweiter Lauf gegen ein bereits
+ausgerolltes Ziel endet ebenfalls mit Exit 0.
+
+**Änderung an der Spaltenliste einer View.** Ändert ein Release die Signatur
+einer View des Schemas (Spalte anhängen, umordnen, umbenennen, Typ ändern —
+so trägt `cdc.changes` seit der Einführung des Feldes `origin` eine
+zusätzliche letzte Spalte), kann d-migrate die View nicht in-place ersetzen.
+Der Lauf entfernt sie dann selbst und legt sie neu an; er meldet das:
+
+```text
+schema-rollout: Vorlauf (ADR-0114) - View-Signatur-Aenderung, DROP VIEW cdc.changes
+```
+
+Dabei gilt:
+
+- Es gehen keine Daten verloren: die View trägt keine Daten, die erfassten
+  Changes liegen in `cdc.change` und sind danach über `cdc.changes` unverändert
+  lesbar. Die Rechte der Rolle `cdc_reader` setzt derselbe Lauf wieder.
+- **Lesefenster:** Für SQL-Leser über `cdc_reader` fehlt die View — oder
+  sie ist noch ohne Recht — für die Dauer des Rollouts. Richtwert rund 7
+  Sekunden, aus einer einzelnen Architect-Messung auf einer Testinstanz mit
+  einer Zeile (`ADR-0114`); eine Messung, nicht garantiert — auf einem
+  größeren Ziel kann es länger dauern. Der Feed-Container liest den Store über
+  die Tabellen, nicht über diese View (aus dem Quelltext abgeleitet, nicht
+  während eines Rollouts gemessen).
+- Der Schritt läuft nur in einem Lauf, der eine Signaturänderung ausliefert;
+  ein Lauf gegen ein Ziel mit aktueller View-Signatur meldet keinen Vorlauf und
+  hat kein Fenster.
+- Hängt ein eigenes Objekt (etwa eine selbst angelegte View) an der
+  betroffenen View, bricht der Lauf mit dem PostgreSQL-Fehler ab. Es wird nichts
+  mitgelöscht: nehmen Sie das eigene Objekt vor dem Rollout weg und legen Sie es
+  danach neu an.
+- Bricht der Lauf nach dem Vorlauf ab, fehlt die View bis zum nächsten
+  Lauf; ein Wiederholungslauf legt sie wieder an.
+
+Ein Rollout, der am Precheck mit Exit 8 endet (ein nicht bekannter Blocker),
+hat das Ziel nicht verändert — gemessen für eine ausstehende
+View-Signaturänderung ohne Vorlauf: die neue Spalte war danach nicht angelegt.
 
 ### Zugriff über die HTTP-/JSON-API
 
@@ -1286,3 +1334,4 @@ MIT — siehe `LICENSE`.
 | 1.42 | 2026-09-23 | Python-SDK-Absatz im SSE-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-sse-client-flaeche): „Zugriff über Server-Sent-Events" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedSseClient.stream_changes()` liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt); der NATS-Vollinhalts-Stream folgt im selben Folge-Release |
 | 1.43 | 2026-09-23 | Python-SDK-Absatz für den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-nats-stream-client-flaeche): §4 „Zugriff über den NATS-Vollinhalts-Stream" trägt jetzt den dritten Sprach-`**SDK:**`-Absatz — `PgChangeFeedNatsStreamClient.stream_changes()` abonniert `cdc.stream.<source_id>.>` und liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern; das PyPI-Package `pgchangefeed` ist dafür auf `0.2.0` gehoben — die volle Vier-Wege-Matrix ist damit für alle drei SDK-Sprachen im Handbuch vollständig |
 | 1.44 | 2026-09-24 | Feld `origin` in den Lesewegen ergänzt (`LH-FA-CAP-009`, `LH-FA-DAT-006`, `ADR-0111`, slice-backfill-change-origin): §4 „Änderungen lesen" trägt `origin` als letzte Spalte des SQL-Beispiels über `cdc.changes` samt Bedeutung (`wal` \| `backfill`, ein fehlender Wert liest als `wal`), §4 „Zugriff über die HTTP-/JSON-API" nennt `origin` als letztes Feld der `GET /changes`-Antwort; die drei Live-Zustellwege tragen das Feld nicht |
+| 1.45 | 2026-09-24 | Schema-Upgrade über eine View-Signaturänderung dokumentiert (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" nennt die Reihenfolge (Schema-Rollout vor dem Container-Tausch), den automatischen Vorlauf `DROP VIEW cdc.<name>` samt Meldung, das Lesefenster für SQL-Leser (Richtwert aus einer einzelnen Messung, nicht garantiert) und das Verhalten bei einem abhängigen Objekt oder einem Abbruch nach dem Vorlauf |

@@ -67,19 +67,17 @@ docker exec "$CONTAINER" psql -U "$DBUSER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "CREATE SCHEMA IF NOT EXISTS cdc" \
   -c "ALTER ROLE $DBUSER IN DATABASE $DB SET search_path = cdc"
 
-# `make schema-rollout` selbst ist NICHT idempotent gegen ein bereits
-# vollständig migriertes Ziel (real geprüft, dieser Zug): die
-# `nacharbeit-administration.sql`-Nacharbeit legt Funktionen/Views an, die
-# `tools/schema/schema.yaml` deklarativ nicht kennt — ein zweiter Rollout
-# gegen dieselbe DB liest das als Drift und blockiert mit
-# `DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION` (Exit 8), weil er sie
-# zurückbauen wollte. Dieser Zug behebt das nicht (Bestand außerhalb des
-# Slice-Umfangs) — die Wache hier ist ein einfacher Existenz-Check: eine
-# bereits vom ersten Rollout angelegte Tabelle bedeutet "schon migriert",
-# der zweite `example-demo-up`-Lauf überspringt den Rollout-Schritt.
+# `make schema-rollout` ist gegen ein bereits migriertes Ziel idempotent
+# (zentrale Wache `tools/schema/rolloutguard`, ADR-0043). Die Wache hier ist
+# trotzdem ein einfacher Existenz-Check: eine bereits vom ersten Rollout
+# angelegte Tabelle bedeutet "schon migriert", der zweite `example-demo-up`-Lauf
+# überspringt den Rollout-Schritt. Ein weiterlebendes Demo-Volume mit einem
+# älteren Schema-Stand bekommt das neue Schema dadurch nicht; `make
+# example-demo-down` (mit `down -v`) baut es neu auf, die Demo trägt keine
+# schützenswerten Daten (ADR-0114).
 already_migrated=$(docker exec "$CONTAINER" psql -U "$DBUSER" -d "$DB" -tAc "SELECT to_regclass('cdc.source_table') IS NOT NULL")
 if [ "$already_migrated" = "t" ]; then
-  echo "bootstrap: Schema bereits ausgerollt — überspringe make schema-rollout (nicht idempotent gegen ein migriertes Ziel, siehe Kommentar)"
+  echo "bootstrap: Schema bereits ausgerollt — überspringe make schema-rollout (Existenz-Check, siehe Kommentar)"
 else
   echo "bootstrap: Schema-Rollout über d-migrate …"
   make schema-rollout SCHEMA_TARGET="db:${CDC_ADMIN_DSN}" SCHEMA_ROLLOUT_NETWORK="$NETWORK"
