@@ -116,8 +116,8 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       anderen Schicht); `make coverage-gate` grün (Domäne und
       `replication/mapper` liegen in der netzlos gemessenen Fläche — die
       `coverage`-Stufe des Dockerfile schließt nur die Pakete
-      `postgresstorage`, `postgresack` und `replication/receive` selbst aus;
-      kein neues Paket).
+      `postgresstorage`, `postgresack`, `postgressnapshot` und
+      `replication/receive` selbst aus; kein neues Paket).
 - [ ] Der Kommentar-Träger folgt: der Doc-Kommentar von `TableBinding` und
       `AddBinding` nennt den Regelstand neben `ExcludedColumns`;
       `ErrTransformationNotApplicable` trägt einen Kommentar, der nur zusagt,

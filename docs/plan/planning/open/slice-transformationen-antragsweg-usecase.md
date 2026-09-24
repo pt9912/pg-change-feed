@@ -99,7 +99,8 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       Funktion an einer Stelle, die in der netzlos gemessenen Fläche liegt
       (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`, offen, 2×; der
       Ausschluss des Coverage-Gates trifft nur die Pakete `postgresstorage`,
-      `postgresack` und `replication/receive` selbst, gelesen am Dockerfile).
+      `postgresack`, `postgressnapshot` und `replication/receive` selbst,
+      gelesen am Dockerfile).
       *Zu belegen durch:* `make test-store` (gleicher Zeitstempel, Reihenfolge,
       Set/Remove-Zyklus, Katalog-Lesart) und `make test` (Faltung).
 - [ ] Verdrahtung und Dauerhaftigkeit: ein `set_transformation`-Antrag gegen
