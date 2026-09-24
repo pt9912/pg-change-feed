@@ -88,22 +88,30 @@ Adapter-Typ. Signatur und Typ der Spalten-Eingabe legt der Implementer fest.
       nachgezogen.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
+      Report `docs/reviews/review-slice-backfill-row-image-gemeinsam.md`
+      (Erstlauf 1 HIGH, 0 MEDIUM, 1 LOW, 5 INFO); F-1 und F-2 in der Fixrunde
+      (`cd046787`, `dc633a97`) behoben und vom Reviewer am Kopf nachgeprüft,
+      kein offenes HIGH/MEDIUM.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: entfällt — kein öffentlicher Vertrag berührt (Byte-Gleichheit); die Suche in §3 belegt es.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
-      neuer Sensor · benannte Spec-Lücke).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+      neuer Sensor · benannte Spec-Lücke). *(§7: geschärfte Anwendung der
+      Zahl-im-Träger-Regel auf Suchlauf-Felder; benannte Lücke.)*
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      eine Antwort und wird in §7 notiert. *(Eine weitere `evidence/`-Datei
+      in `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, ein neues
+      Verzeichnis `BEO-PGC/subagent-write-ablehnung-als-zielpfad-sperre-gemeldet`;
+      siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen). *(Vier Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
@@ -151,15 +159,30 @@ Closure-Notiz mit Lerneintrag geschrieben.
 - **Byte-Abweichung durch Escaping.** `encoding/json` maskiert `<`, `>`, `&`
   standardmäßig; ein anderer Encoder oder ein `SetEscapeHTML(false)` änderte
   jedes Bild mit solchen Zeichen. *Erwartet, zu belegen durch:* die
-  Referenz-Bytes mit diesen Zeichen. **Ausgang:** *(bei Closure)*
+  Referenz-Bytes mit diesen Zeichen. **Ausgang:** *entfallen* — nicht
+  eingetreten: die Referenz-Bytes mit `<`, `>`, `&` (Fall „Maskierung" in
+  `TestBuildRowImageBytes`) sind am Parent-Stand `43f394a1` von Reviewer und
+  Verifier je unabhängig in einem temporären Worktree gegen das alte `rowImage`
+  reproduziert (Review §Eigenständig durchgeführte Prüfungen; Verifikation §3),
+  und die Reviewer-Mutation „Wert ohne `json.Marshal`" (M7) färbt den
+  Maskierungs-Fall rot.
 - **Ort der Funktion.** Die Domäne setzt voraus, dass die Eingabe ohne
   `decode`-Typen auskommt. *Erwartet, zu belegen durch:* `make a-check` und der
-  Import-Blick auf die neue Datei. **Ausgang:** *(bei Closure)*
+  Import-Blick auf die neue Datei. **Ausgang:** *entfallen* — nicht
+  eingetreten: `make a-check` endet Exit 0 mit „gesamt: 0 Befund(e)" (Review
+  und Verifikation §1, je eigener Lauf), und `rowimage.go` importiert nur `bytes`
+  und `encoding/json` (Verifikation §2, Zeile 1).
 - **Kopplung an die Transformations-Umsetzung** (Welle §5, K1): die Funktion
   ist ihr Ansatzpunkt; ein Signatur-Zuschnitt, der jeden Aufrufer bei einer
   Erweiterung ändern müsste, verschöbe Kosten in die zweite Welle. *Erwartet, zu
   belegen durch:* Review liest die Signatur mit dieser Frage. **Ausgang:**
-  *(bei Closure)*
+  *eingetreten* in der erwarteten, begrenzten Form → Folge-Slice
+  `slice-transformationen-kern-rename`: die Signatur ist positional, ein
+  Regel-Parameter ändert die zwei Aufrufstellen in `Assembler.change` (je Bild
+  eine) und die künftige Backfill-Aufrufstelle (Review F-7, Verifikation V-2,
+  beide INFO — kein Vorbau, keine Abweichung). Die Übergabe steht im Plan des
+  Empfängers (§3-Suchlauf, Zeile „Aufrufer der gemeinsamen Funktion", am Stand
+  `89053d3b` nachgemessen); kein Carveout.
 - **Leistung im Backfill.** Ein Backfill ruft die Funktion je Zeile; sie darf
   nicht mehr allozieren als das alte `rowImage`. *Erwartet, zu belegen durch:*
   ein `go test -bench` gegen den Parent-Stand oder eine begründete
@@ -172,21 +195,123 @@ Closure-Notiz mit Lerneintrag geschrieben.
   64 → 65 allocs/op, 1313 → 1409 B/op, ns/op im Rauschen; der Lauf liegt in
   keinem Artefakt des Repos. *Ergebnis:* tragbar, keine Vermeidung — eine
   Vermeidung der Namensliste ist ausdrücklich nicht Teil dieses Slice.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — die Bedingung des Risikos („die Funktion allokiert
+  mehr als das alte `rowImage`") ist nicht eingetreten: `BuildRowImage` hat
+  denselben Rumpf (Review, zeilenweiser Vergleich; Verifikation §3), und ein
+  Backfill-Aufrufer trägt den Zuschlag der Namensliste nicht. Bestehen bleibt
+  die Wirkung im WAL-Adapter, als tragbar entschieden und ohne Folge-Slice:
+  **eine zusätzliche Allokation je WAL-Änderung** (`columnNames`, Ursprung
+  Code-Lesung; der Verifier bestätigte am Code, dass `columnNames` genau ein
+  `make([]string, …)` je Änderung anlegt und die Liste über beide Bild-Aufrufe
+  geteilt wird). Die Zahlen 64 → 65 allocs/op und 1313 → 1409 B/op sind
+  **Review-Messung, nicht committet** (Review F-4); der Verifier hat sie nicht
+  nachgemessen, er hat nur die Differenz von 96 B gegen sechs Spalten × 16 B
+  Zeichenketten-Kopf rechnerisch plausibilisiert.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** der Zug blieb eine Verschiebung einer Funktion mit
+  Tests, ohne Rückführung (§4). Die Byte-Gleichheit ist von zwei Rollen
+  unabhängig am Parent-Stand `43f394a1` belegt: Reviewer und Verifier fuhren
+  je in einem temporären Worktree die Referenz-Erwartungen des Kopfes gegen das
+  **alte** `rowImage` — alle Fälle grün (Review §Eigenständig durchgeführte
+  Prüfungen; Verifikation §3). Die Zusagen sind an ihrer Eingabeseite
+  gebunden: der Review setzte acht Mutationen, die Verifikation vier, alle
+  rot (Review §Mutationen; Verifikation §5). Der Review (Erstlauf 1 HIGH ·
+  0 MEDIUM · 1 LOW · 5 INFO, Summary des Reports) und die Verifikation
+  („Bestätigt", sieben `[x]`-Zeilen je mit eigenem Beleg, `make gates`
+  EXIT=0 im Verifier-Lauf) liefen im frischen Kontext; die
+  Suchlauf-Zahlen maß der Verifier an beiden Ständen nach (vier
+  Plan-Zeilen, alle bestätigt).
+- **Was ging anders als geplant:** die Fixrunde nach dem Review zog drei
+  Träger: F-1 (die Summe des Suchlauf-Feldes und der Parent-Bezug des
+  Befehls, `cd046787`), F-2 (der Doc-Kommentar von `BuildRowImage` stellte den
+  Backfill-Aufrufer als Bestand dar, `dc633a97`) und F-4 (die Wirkung der
+  Namensliste als Zahl mit Ursprung im Plan, `cd046787`). Der Plan wuchs
+  im Lauf um die Zeile für `columnNames` und die Ausnahme, dass
+  `containsColumn` im Mapper bleibt (§3); beide Abweichungen stehen mit
+  Begründung in §3, der Diff ist zu ihnen wahr (Verifikation §3).
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Anwendung der
+  verkörperten Regel [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A (`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`):
+  *das §3.13-Suchlauf-Feld ist selbst ein Zahlen-Träger und trägt dieselbe
+  Pflicht — der Parent-Stand steht als Commit-Kennung, nie als `HEAD` oder
+  „vorher"; jede Gesamtzahl ist gedruckt gemessen (`… | wc -l`) oder als
+  abgeleitet gekennzeichnet, nie aus den Teilzahlen addiert als Messung
+  ausgegeben.* Beleg: das Feld nannte 17 gegen gemessen 16 mit stimmenden
+  Summanden (Review F-1), und sein Parent-Befehl nannte `HEAD` (Verifikation
+  V-4 hält fest, dass ein `HEAD`-Bezug im Diff-Stand-Befehl nur bis zum
+  nächsten Commit wahr bleibt). Kein neuer Sensor: der Reviewer fand beide
+  Stellen durch Nachmessen, kein Gate liest Prosa-Zahlen (die Begründung
+  führt die Klasse im Register). **Benannte Lücken** (kein Träger im Repo, keine
+  Spec-Lücke): (a) die Allokations-Messung Parent gegen Kopf ist über kein
+  `make`-Ziel wiederholbar — `BenchmarkBuildRowImage` liegt im Domänen-Test,
+  der Vergleich gegen den Parent-Stand lief ad hoc in temporären Worktrees;
+  deshalb tragen die Zahlen im Plan den Ursprung „Review-Messung, nicht
+  committet" (§6). (b) Die Kopplung K1 hängt an einer positionalen Signatur;
+  ob der Regel-Parameter als weiteres Positionsargument oder anders eintritt,
+  entscheidet `slice-transformationen-kern-rename`, nicht dieser Slice.
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`** — weitere Datei
+    `evidence/slice-backfill-row-image-gemeinsam.md` (Review F-1 und F-4,
+    Verifikation V-4); Zähler **14×** (Datei-Anzahl unter `evidence/`, real
+    ausgezählt). Ausgang bleibt verkörpert — kein neuer Schwellen-Übertritt,
+    kein Lese-Schritt der Welle-Closure.
+  - **`BEO-PGC/subagent-write-ablehnung-als-zielpfad-sperre-gemeldet`** —
+    neues Verzeichnis (Kürzel `PGC`), Zähler **1×**, offen: ein
+    Reviewer-Subagent meldete den Zielpfad des Reports als gesperrt, nachdem
+    ein `Write` auf einen Scratchpad-Entwurf abgelehnt worden war; der Zielpfad
+    war nicht gesperrt (Beleg: Commit `0d5c3f1a`; Ursache vom Auftraggeber im
+    Transkript geprüft, vom Planner nicht nachgemessen).
+  - **F-2 (Kommentar stellt eine Zusage der Welle als bestehenden Zustand
+    dar)** — benannt, nicht angelegt: erstes Auftreten dieser Form. Gegen
+    `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (2×) geprüft und
+    nicht dorthin gezählt: jene Klasse betrifft einen zugesagten **Fehlerpfad**,
+    der das Verhalten umkehrt; hier war das Verhalten der Funktion richtig, nur
+    der Aufrufer stand im Präsens. Ein zweites Auftreten legt die Klasse an.
+  - **F-6 (namensgleiche `rowImage` in `natsstream` und `http`)** — kein
+    Befund: der Review bewertet die Verwechslungsgefahr als durch den Diff
+    verringert; der Plan meldet die Namensgleichheit selbst (§3), keine
+    Beobachtung angefallen.
+  - **F-3, F-5, F-7, V-1 bis V-3** — INFO ohne erwartete Aktion (zulässige
+    Test-Provenienz, dritte Kopie einer Sechs-Zeilen-Namenssuche,
+    Kopplungs-Beurteilung, Coverage-Rauschen 82.60 % gegen 82.70 % in zwei
+    gedruckten Läufen desselben Baums); keine Beobachtung angefallen.
+- **Träger-Übergaben (§3.13):** die zwei Handbuch-Meldungen des Vorgängers
+  standen nur als Text im Plan von `slice-backfill-spec-nachzug`; sie sind
+  jetzt in den Plänen der Empfänger eingetragen (am Stand `89053d3b`
+  nachgemessen): `slice-backfill-change-origin` trägt die zwei
+  `origin`-Stellen (SQL-Beispiel unter „Änderungen lesen", Feldliste unter
+  „Changes lesen"), `slice-backfill-sql-administration` die zwei
+  Fortsetzungs-Idiome samt der Nennung von `backfill` (0 Treffer im Handbuch);
+  beide mit `Version:`-Kopf und Änderungshistorie. Die Übergabe der Kopplung
+  K1 trägt der Plan von `slice-transformationen-kern-rename`.
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice ist eine interne
+  Refaktorierung ohne End-Nutzer-Wert; das Ergebnis ist byte-gleich zum
+  Parent, ein Nutzer-Bedarf ist daran nicht zu validieren. Kein stilles
+  Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):**
+  eine getrennte Rolle im frischen Kontext, kein Schritt der Planner-Closure;
+  der Skill prüft Slices in `done/` und greift daher erst nach dem `git mv` —
+  hier nicht ausgeführt.
+- **Folge-Slices:** keine neuen — die Folge-Slices der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die Kopplung K1 übernimmt
+  `slice-transformationen-kern-rename` (Start-Trigger jetzt erfüllt), die
+  Handbuch-Übergaben gehen an `slice-backfill-change-origin` und
+  `slice-backfill-sql-administration`.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Byte-Abweichung durch
+  Escaping) **entfallen**; Risiko 2 (Ort der Funktion) **entfallen**;
+  Risiko 3 (Kopplung K1) **eingetreten** in der begrenzten Form, übergeben an
+  `slice-transformationen-kern-rename`; Risiko 4 (Leistung) **entfallen**
+  für die Funktion, die Wirkung im WAL-Adapter (eine zusätzliche Allokation
+  je WAL-Änderung, Review-Messung, nicht committet) ist als tragbar
+  entschieden.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure.
+  Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Lerneintrag
+  verkörpert nichts neu, er schärft die Anwendung einer bestehenden Regel
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A, am Ort existent); (b) Folge-Slice: keiner neu; (c) Register:
+  beide genannten Kennungen existieren als Verzeichnis, und ihre
+  `evidence/`-Verzeichnisse tragen die neue Datei (14× bzw. 1×, real
+  ausgezählt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
