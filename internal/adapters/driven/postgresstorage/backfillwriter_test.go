@@ -117,7 +117,7 @@ func (f *backfillFixture) backfillRows(prefix string) (transactions, changes int
 // `operation = 'INSERT'` und `old_data IS NULL`, die Transaktion die Position
 // `X` und den Snapshot-Zeitpunkt. Rot färbende Mutation: `AppendBlock`
 // committet je Block (eine Transaktion je Block) — die Vor-Commit-Zählung
-// fände Zeilen.
+// findet Zeilen.
 func TestBackfillWriterIsInvisibleBeforeTheCommitAndCompleteAfterIt(t *testing.T) {
 	f := newBackfillFixture(t)
 	w := newWriterRun(t, f, "wr-atomic", 3_000_100)
@@ -217,8 +217,8 @@ func TestBackfillWriterRollbackLeavesNoRow(t *testing.T) {
 // nichts: die Run-Zeile trifft `WHERE status = 'running'` nicht, der Commit
 // endet als `ErrInvalidBackfillTransition`, und der Rollback hinterlässt keine
 // Zeile. Rot färbende Mutation: in `UpdateBackfillRunCompleted` die Klausel
-// `AND status = 'running'` entfernen — der beendete Run würde überschrieben und
-// die Daten committet.
+// `AND status = 'running'` entfernen — der beendete Run wird überschrieben und
+// die Daten werden committet.
 func TestBackfillWriterDoesNotCommitAnEndedRun(t *testing.T) {
 	f := newBackfillFixture(t)
 	w := newWriterRun(t, f, "wr-ended", 3_000_300)
@@ -347,7 +347,7 @@ func TestBackfillProgressDoesNotWaitForTheOpenWriteTransaction(t *testing.T) {
 // die Kollation der Datenbank im Log fest. Rot färbende Mutation: der Präfix
 // `backfillTransactionPrefix` (`internal/domain/model/backfillrun.go`) beginnt
 // mit einem Zeichen, das hinter Ziffern sortiert (`bf-` statt `0bf-`) — der
-// WAL-Commit stünde vor den Blöcken.
+// WAL-Commit steht vor den Blöcken.
 func TestBackfillBlocksSortBeforeTheWALTransactionOnTheSamePosition(t *testing.T) {
 	f := newBackfillFixture(t)
 	const offset = 9_100_000_000
@@ -373,8 +373,9 @@ func TestBackfillBlocksSortBeforeTheWALTransactionOnTheSamePosition(t *testing.T
 		t.Fatalf("Commit: %v", err)
 	}
 
-	// WAL-Kennungen sind Ziffernfolgen ohne führende Null; die Werte
-	// decken kurze, lange und lexikographisch kleine wie große ab.
+	// WAL-Kennungen beginnen mit einer Ziffer ungleich 0; die Werte decken
+	// kurze, lange sowie lexikographisch kleine und große ab, das Suffix
+	// ordnet sie dem Test zu.
 	store, err := postgresstorage.New(context.Background(), f.dsn)
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -410,8 +411,19 @@ func TestBackfillBlocksSortBeforeTheWALTransactionOnTheSamePosition(t *testing.T
 	for _, record := range records {
 		order = append(order, fmt.Sprintf("%s/%d/%s", record.Change.TransactionID, record.Change.Sequence, record.Change.Origin))
 	}
+	block1, err := model.BackfillTransactionID(w.run.ID, 1)
+	if err != nil {
+		t.Fatalf("BackfillTransactionID: %v", err)
+	}
+	block2, err := model.BackfillTransactionID(w.run.ID, 2)
+	if err != nil {
+		t.Fatalf("BackfillTransactionID: %v", err)
+	}
+	// Die Soll-Ordnung nennt die Block-Kennungen über `model.BackfillTransactionID`,
+	// nicht als Literal: ein Präfix, der hinter Ziffern sortiert, färbt die
+	// Ordnung rot und nicht bloß den Text-Vergleich.
 	want := []string{
-		"0bf-wr-order-00000001/1/backfill", "0bf-wr-order-00000001/2/backfill", "0bf-wr-order-00000002/1/backfill",
+		fmt.Sprintf("%s/1/backfill", block1), fmt.Sprintf("%s/2/backfill", block1), fmt.Sprintf("%s/1/backfill", block2),
 		"1wr-order/1/wal", "748wr-order/1/wal", "9999999999wr-order/1/wal",
 	}
 	if fmt.Sprint(order) != fmt.Sprint(want) {

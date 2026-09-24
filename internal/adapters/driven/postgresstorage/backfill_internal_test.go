@@ -470,7 +470,7 @@ func TestBackfillWriterDoesNotCommitWhenTheRunIsNotRunning(t *testing.T) {
 
 // Die Eingaben der Operationen tragen ihren Vertrag: `Begin` verlangt einen
 // `running`-Run mit Position, `Admit` einen `queued`-Run mit der Kennung des
-// Antrags. Die Naht wird nicht erreicht (`nil`-Träger würde abstürzen).
+// Antrags. Die Naht wird nicht erreicht: der `nil`-Träger stürzt bei jedem Zugriff ab.
 func TestBackfillAdaptersRejectInputsOutsideTheirContract(t *testing.T) {
 	writer := newBackfillWriter(nil, outbound.NoopLog, time.Second, time.Second)
 	for name, run := range map[string]model.BackfillRun{

@@ -3,6 +3,7 @@ package postgresstorage_test
 import (
 	"context"
 	stderrors "errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -108,7 +109,7 @@ func TestBackfillRunFollowsTheRunThroughItsTransitions(t *testing.T) {
 // zuerst, bei gleichem Zeitstempel die kleinere Run-Kennung; `running`-Runs
 // und Runs einer anderen Quelle erscheinen nicht. Rot färbende Mutation:
 // `ORDER BY requested_at` ohne `run_id` — die zwei gleichzeitigen Anträge
-// kämen in Einfügereihenfolge statt in Kennungs-Reihenfolge.
+// stehen in Einfügereihenfolge statt in Kennungs-Reihenfolge.
 func TestBackfillRunQueuedIsOrderedByRequestedAtThenRunID(t *testing.T) {
 	f := newBackfillFixture(t)
 	admission := newBackfillAdmission(t, f)
@@ -160,7 +161,7 @@ func TestBackfillRunQueuedIsOrderedByRequestedAtThenRunID(t *testing.T) {
 // `started_at` bleibt NULL, wenn der Run nie `running` war. Rot färbende
 // Mutation: in `UpdateBackfillRunFinish` die Klausel `status = 'queued' AND
 // $2 = 'failed'` durch `status = 'queued'` ersetzen — `queued` →
-// `completed` gelänge.
+// `completed` gelingt.
 func TestBackfillRunFinishAllowsExactlyTheSpecifiedTransitions(t *testing.T) {
 	f := newBackfillFixture(t)
 	admission := newBackfillAdmission(t, f)
@@ -250,7 +251,7 @@ func TestBackfillRunFinishAllowsExactlyTheSpecifiedTransitions(t *testing.T) {
 // wirkungsloser Erfolg — der Aufruf meldet nil, Status, `finished_at`,
 // Zähler und Fehlertext bleiben. Rot färbende Mutation: in
 // `UpdateBackfillRunFinish` die `WHERE`-Klausel auf `status IN ('queued',
-// 'running', 'completed')` erweitern — der zweite Aufruf überschriebe den
+// 'running', 'completed')` erweitern — der zweite Aufruf überschreibt den
 // `completed`-Run mit `failed`.
 func TestBackfillRunFinishOnAnEndedRunIsANoOpSuccess(t *testing.T) {
 	f := newBackfillFixture(t)
@@ -384,7 +385,7 @@ func TestBackfillRunProgressKeepsAWarningOnceSet(t *testing.T) {
 // `interrupted` und meldet ihre Zahl; `queued`, beendete Runs und Runs einer
 // anderen Quelle bleiben. Rot färbende Mutation: in
 // `UpdateBackfillRunInterrupted` `status = 'running'` durch
-// `status IN ('queued', 'running')` ersetzen — der `queued`-Run ginge mit.
+// `status IN ('queued', 'running')` ersetzen — der `queued`-Run geht mit.
 func TestBackfillRunInterruptRunningTouchesOnlyRunningRunsOfTheSource(t *testing.T) {
 	f := newBackfillFixture(t)
 	admission := newBackfillAdmission(t, f)
@@ -431,5 +432,35 @@ func TestBackfillRunInterruptRunningTouchesOnlyRunningRunsOfTheSource(t *testing
 	f.scan("SELECT finished_at, error_message FROM cdc.backfill_run WHERE run_id = 'int-running-1'", nil, &finished, &message)
 	if !finished.Equal(base.Add(time.Hour)) || message != nil {
 		t.Fatalf("interrupted: finished_at %v, Text %v", finished, message)
+	}
+}
+
+// Die geschlossene Status-Menge steht als CHECK bei Erstanlage der Tabelle
+// (`SPEC-029`): ein Wert außerhalb der fünf Zustände scheitert mit SQLSTATE
+// 23514 (`check_violation`), auch für einen Schreiber mit dem Recht dazu.
+// Rot färbende Mutation: `chk_backfill_run_status` an der Ziel-Datenbank
+// entfernen (`ALTER TABLE cdc.backfill_run DROP CONSTRAINT
+// chk_backfill_run_status`) — der Insert gelingt.
+func TestBackfillRunTableRejectsAStatusOutsideTheClosedSet(t *testing.T) {
+	f := newBackfillFixture(t)
+	t.Cleanup(func() {
+		_, _ = f.pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE run_id LIKE 'chk-status-%'")
+	})
+
+	insert := func(id, status string) error {
+		_, err := f.pool.Exec(context.Background(),
+			`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status)
+			 VALUES ($1, $2, 'public', 'chk_status', $3)`, id, backfillTestSource, status)
+		return err
+	}
+	for _, status := range []string{"queued", "running", "completed", "failed", "interrupted"} {
+		if err := insert("chk-status-"+status, status); err != nil {
+			t.Fatalf("Status %s: erwartet Erfolg, %v", status, err)
+		}
+	}
+	for _, status := range []string{"paused", "QUEUED", ""} {
+		if err := insert("chk-status-invalid-"+status, status); err == nil || !strings.Contains(err.Error(), "SQLSTATE 23514") {
+			t.Fatalf("Status %q: erwartet SQLSTATE 23514 (check_violation), erhalten %v", status, err)
+		}
 	}
 }

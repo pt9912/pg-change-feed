@@ -72,7 +72,7 @@ func TestBackfillAdmitLeavesQueuedRunAndAppliedRequestTogether(t *testing.T) {
 // Ein Antragsvermerk ohne `pending`-Zeile (Rollback-Fall) hinterlässt weder
 // Run-Zeile noch Vermerk: kein Antrag, ein bereits `applied` und ein bereits
 // `failed` vermerkter Antrag. Rot färbende Mutation: die Prüfung
-// `RowsAffected() != 1` in `Admit` entfernen — die Run-Zeile bliebe stehen.
+// `RowsAffected() != 1` in `Admit` entfernen — die Run-Zeile bleibt stehen.
 func TestBackfillAdmitRollsBackWhenTheRequestIsNotPending(t *testing.T) {
 	f := newBackfillFixture(t)
 	admission := newBackfillAdmission(t, f)
@@ -113,7 +113,7 @@ func TestBackfillAdmitRollsBackWhenTheRequestIsNotPending(t *testing.T) {
 // `ErrBackfillRunActive` ohne zweite Zeile und ohne Vermerk: der Antrag
 // bleibt `pending`. Ein beendeter Run ist nicht aktiv, eine andere Tabelle
 // ist unabhängig. Rot färbende Mutation: in `SelectActiveBackfillRun` den
-// Status-Filter auf `status = 'queued'` verengen — der `running`-Fall gälte
+// Status-Filter auf `status = 'queued'` verengen — der `running`-Fall gilt
 // als frei.
 func TestBackfillAdmitRefusesASecondActiveRunOfTheSameTable(t *testing.T) {
 	f := newBackfillFixture(t)
