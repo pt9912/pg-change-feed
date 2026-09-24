@@ -62,19 +62,19 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2527** (Lauf `slice-backfill-sql-administration`,
-Closure am Stand `02b3059d`: `make coverage-gate` baut die Stufe `coverage`, das
-Profil `/out/coverage.out` des gebauten Images, dedupliziert über die
-Block-Position mit Awk ausgezählt; gedeckt **2096 von 2527** = 82,94 %,
-gedruckt `total: (statements) 82.9%` und `coverage-gate: OK — Coverage 82.90%
-erfüllt Schwelle 80%`). Der Nenner setzt sich aus **2485** Statements der
-übrigen Pakete (**abgeleitet**) und den **42** Statements des Unterpakets
-`postgressnapshot/snapshotlogic` zusammen (42 von 42 gedeckt, aus demselben
+**Der Nenner der Stufe ist 2541** (Lauf `slice-backfill-e2e`, Closure am Stand
+`cf7f2d02`: `make coverage-gate` baut die Stufe `coverage`, das Profil
+`/out/coverage.out` des gebauten Images, dedupliziert über die Block-Position
+mit Awk ausgezählt; gedeckt **2112 von 2541** = 83,12 %, gedruckt
+`total: (statements) 83.1%` und `coverage-gate: OK — Coverage 83.10% erfüllt
+Schwelle 80%`). Der Nenner setzt sich aus **2487** Statements der übrigen Pakete
+(**abgeleitet**) und den **54** Statements des Unterpakets
+`postgressnapshot/snapshotlogic` zusammen (54 von 54 gedeckt, aus demselben
 Profil); das Unterpaket liegt im Gegenstand. Die Nenner-Größe ist an den
-Code-Stand gebunden, die gedeckte Zahl an den Lauf: `make coverage-gate` am
-Stand `c092efa5` druckte `Coverage 83.00%` und im Lauf von `make gates`
-`Coverage 82.90%` (beide **übernommen** aus dem Verifikations-Report
-`verifikation-slice-backfill-sql-administration` §1).
+Code-Stand gebunden, die gedeckte Zahl an den Lauf: `make gates` im
+Verifikations-Lauf am Stand `43137ebf` druckte `Coverage 83.10%`
+(**übernommen** aus `verifikation-slice-backfill-e2e` §1, dieselbe Zeile wie der
+Lauf oben).
 
 **Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
 `slice-097`, der
@@ -149,7 +149,8 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
   eingeschlossen, netzlos) — **30/32**, **31/472** und **112/187**, Lauf
   `slice-085`; die Stufe dieses Gates nimmt die drei Pakete aus und
   instrumentiert sie darum nicht. Das vierte ausgenommene Paket
-  (`postgressnapshot`, 122 Statements laut Nenner der DB-Adapter-Coverage)
+  (`postgressnapshot`, 130 Statements laut Nenner der DB-Adapter-Coverage,
+  Lauf `slice-backfill-e2e`)
   trägt netzlos **0** gedeckte Statements: jeder seiner Tests überspringt ohne
   `CDC_REPLICATION_TEST_DSN` (Lauf `slice-backfill-snapshot-reader`, Fixrunde,
   `go test -v` ohne Netz und ohne Variable: 21 Tests, 21 `SKIP`).
@@ -170,8 +171,8 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    (20 Statements, 20 gedeckt, Lauf `slice-089`) — und ist damit **nicht** Teil der
    DB-Adapter-Coverage, deren Gegenstand `postgresstorage` ohne `mapper` führt;
    die zwei Zahlen überlappen nicht. Ebenso bleibt das Unterpaket
-   `postgressnapshot/snapshotlogic` im Gegenstand (42 Statements, 42 gedeckt;
-   Lauf `slice-backfill-snapshot-reader`, Fixrunde): es trägt die netzlos
+   `postgressnapshot/snapshotlogic` im Gegenstand (54 Statements, 54 gedeckt;
+   Lauf `slice-backfill-e2e`, Closure): es trägt die netzlos
    prüfbare Logik des Snapshot-Adapters, die deshalb nicht im ausgenommenen
    Paket liegt.
 
