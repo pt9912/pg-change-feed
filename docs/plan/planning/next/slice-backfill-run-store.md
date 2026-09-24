@@ -24,7 +24,7 @@ Transaktion, Warn-Spalten, `estimated_rows` = `NULL` als „unbekannt").
 `spec-nachzug`), [`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md) — gelesen, nicht geändert;
 [`ARC-006`](../../../../spec/architecture.md) (Driven Adapter).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
