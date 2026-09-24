@@ -46,7 +46,7 @@ Kommentar-Chronik, Handbuch-Zug).
 
 - **Gates am Stand `d03ae183`:** `make test` Exit 0 (`-race`); `make a-check` Exit 0
   („gesamt: 0 Befund(e)“); `make coverage-gate` Exit 0, gedruckt „coverage-gate: OK —
-  Coverage 82.90% erfüllt Schwelle 80%“; `make test-store` (PostgreSQL 18) Exit 0, gedruckt
+  Coverage 82.90% erfüllt Schwelle 80%“ (der Lauf innerhalb von `make gates` druckt 83.00%, dieselbe Streuung wie bei den Vorgängern); `make test-store` (PostgreSQL 18) Exit 0, gedruckt
   „DB-Adapter-Coverage: 81.76% (gedeckt 838 von 1025 Statements; Profile gemergt:
   store,replication)“, nach frischer Messung des Replication-Teils
   (`run-replication-tests.sh measure`, Exit 0) unverändert dieselbe Zeile;
@@ -54,8 +54,10 @@ Kommentar-Chronik, Handbuch-Zug).
   v0.1.2: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, mit Vorlauf), Exit 0
   (Arbeitsbaum, zweiter Lauf) … cdc_admin-Rechte auf administration_request und
   backfill_run gesetzt“), `plan.yaml`/`down.sql` danach nicht im Diff; der Replication-Tier
-  (`run-replication-tests.sh tier`) zweimal Exit 0. `make gates` steht am Ende dieses
-  Reports (Abschnitt Verdikt).
+  (`run-replication-tests.sh tier`) zweimal Exit 0. `make gates` (ungefiltert, Exit-Code
+  gesichert): erster Lauf Exit 2 (`docs-check`: eine ungelinkte Kennung im Entwurf dieses
+  Reports, behoben), danach Exit 0 mit „d-check: 1050 Datei(en) geprüft, 0 Befund(e)“,
+  „coverage-gate: OK — Coverage 83.00%“ und „gesamt: 0 Befund(e)“ (`a-check`).
 - **Alt-Bestand-Substanz selbst nachgemessen** (Wegwerf-PostgreSQL 18, Schema des jüngsten
   `v*`-Tags `v0.1.2` per `git archive` ausgerollt, danach der Arbeitsbaum zweimal, alle Exit
   0): `cdc.backfill_table` besteht, `EXECUTE` für `cdc_admin` `t`, für `cdc_capture`,
@@ -272,7 +274,7 @@ d-migrate-Rollout des mutierten Arbeitsbaums, danach die Store-Tier-Tests.
   `Queued(deps.source)`. Bei mehreren Containern (verschiedene Quellen) gegen eine Datenbank
   kann ein `backfill`-Antrag der Quelle B von Instanz A gegen deren Publication geprüft, mit
   `failed` beendet oder als Run für B angenommen werden, ohne dass B's Worker geweckt wird.
-  Bestandseigenschaft aller Antragsarten (ADR-0050); der Plan benennt „mehr als eine Instanz
+  Bestandseigenschaft aller Antragsarten ([`ADR-0050`](../plan/adr/0050-sql-administration-antragsqueue-und-live-reload.md)); der Plan benennt „mehr als eine Instanz
   je Quelle“, nicht diesen Fall; kein Test bindet die Annahme.
 - `verifizierbar`: ja — zwei Quellen, zwei Instanzen, ein `backfill`-Antrag
 - `klasse`: ADR-Annahme nicht am Code gebunden
