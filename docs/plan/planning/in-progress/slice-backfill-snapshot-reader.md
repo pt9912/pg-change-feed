@@ -137,7 +137,9 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
       ausgenommenen Paket bleiben die Schritte mit Verbindung. *Zu belegen durch:*
       Review des Diffs und der Statement-Zahl des Gate-Laufs vor und nach dem Diff
       (Zähler und Nenner mit Lauf, [`AGENTS.md`](../../../../AGENTS.md) §3.12).
-      *Beleg:* Nenner der `coverage`-Stufe 2040 → 2082, gedeckt 1691 → 1731, das
+      *Beleg:* Nenner der `coverage`-Stufe 2040 → 2082, gedeckt 1691 → 1731 (Lauf-Belege
+      des Implementers; die Nachmessung des Verifiers streut, gedeckt 1689 bis 1692 an den
+      Ständen `62d00abe` und `d7539e2c`, 1733 an `7f75444f`, die Nenner sind exakt), das
       Unterpaket trägt 42 von 42 (Läufe in §3 Messbefunde); der END-verankerte
       Filter nimmt es nicht aus.
 - [x] Gate-Zuordnung (d): der Adapter läuft in der Tier `make test-replication`
@@ -150,18 +152,25 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
+      *Beleg:* zwei Reports (`review-slice-backfill-snapshot-reader`,
+      `review-slice-backfill-snapshot-reader-fixrunde`) und die Verifikation
+      (`verifikation-slice-backfill-snapshot-reader`, Verdikt „Bestätigt"); die zweite
+      Fixrunde nach dem Nachprüfungs-Review hat keinen eigenen Report, der Verifier
+      hat ihre Behebungen selbst am Code und an den Läufen nachgemessen (Verifikation §3.7).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: `harness/README.md` §Sensors (`make test-replication` und die Coverage-Zeilen) und die Sensor-Dateien `harness/sensors/coverage-gate.md`/`harness/sensors/db-adapter-coverage.md` tragen das neue Paket, soweit sie Pakete nennen (Suchlauf in §3).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
-      neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+      neuer Sensor · benannte Spec-Lücke) — §7.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      eine Antwort und wird in §7 notiert. *Beleg:* elf `evidence/`-Dateien
+      `slice-backfill-snapshot-reader.md` (zehn in bestehenden Klassen, eine in der
+      neuen Klasse; §7).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -208,8 +217,8 @@ druckt am **Parent** (Treffer je Datei): `Dockerfile` 1 · `slice-transformation
 
 **Suchlauf der Fixrunde** (bewegte Eigenschaften: der Wortlaut des Lesepfads — Cast statt Ausgabefunktion —, die Menge der ausgenommenen Pakete samt Unterpaket `snapshotlogic`, der Träger der Slot-Reserve-Zusage; Parent-Stand `d7539e2c`, Diff-Stand `bf05067d`):
 
-- **Wortlaut des Lesepfads:** `grep -rn --include=*.md -e '::tex[t]' spec docs harness AGENTS.md README.md` (die Klammer hält diese Zeile aus dem Treffer-Satz). Am Parent des Vorgängers `5e5d0b89` (`git grep -n` mit denselben Pfaden) **9** Zeilen in **4** Dateien: `ADR-0111` 2, `done/slice-backfill-row-image-gemeinsam.md` 1, dieser Plan 1, der Review-Report 5. Am Diff-Stand `bf05067d` **21** Zeilen in **4** Dateien: `ADR-0111` 2, `ADR-0115` 13, `done/slice-backfill-row-image-gemeinsam.md` 1, Review-Report 5; dieser Plan 0. **Gefunden und nachgezogen:** dieser Plan (Ziel-Absatz, DoD Bild-Parität, Messbefunde, Risiken). **Nicht angefasst, mit Grund:** `ADR-0111` (`Accepted`, ersetzt an drei Stellen durch `ADR-0115`), der `done/`-Record und der Review-Report (Records, `AGENTS.md` §3.5), `ADR-0115` (trägt den Wortlaut als Gegenstand seiner Entscheidung). Kein Treffer in `spec/`, `harness/`, `AGENTS.md`, `README.md`.
-- **Menge der ausgenommenen Pakete (Träger mit Paketnamen):** `git grep -c -E 'postgresack|replication/receive|postgressnapshot' <Stand> -- . ':!docs/plan/adr' ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!internal' ':!docs/plan/planning/in-progress/slice-backfill-snapshot-reader.md'` (Diff-Stand mit `--untracked` gemessen). Am Parent `d7539e2c`: `Dockerfile` 1 · `slice-transformationen-antragsweg-usecase.md` 1 · `slice-transformationen-kern-rename.md` 1 · `welle-backfill-bestand.md` 1 · `harness/README.md` 1 · `coverage-gate.md` 16 · `db-adapter-coverage.md` 11 · `db-coverage.sh` 7 · `run-replication-tests.sh` 7. Am Diff: dieselben Dateien mit `kern-rename` 2, `coverage-gate.md` 20, `db-adapter-coverage.md` 14, `db-coverage.sh` 4, `run-replication-tests.sh` 8. **Nachgezogen:** beide offenen Pläne (vier Pakete), `harness/README.md` Zeile `make test-replication` (Verweis statt vierter Paketliste), beide Sensor-Beschreibungen. **Nicht gefunden:** kein Treffer für die vier Pakete oder `snapshotlogic` in `.github/workflows/*.yml`, `Makefile`, `harness/mk/*.mk` (beide Stände) — keine Workflow-Änderung, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht.
+- **Wortlaut des Lesepfads:** `grep -rn --include=*.md -e '::tex[t]' spec docs harness AGENTS.md README.md` (die Klammer hält diese Zeile aus dem Treffer-Satz). Am Parent des Vorgängers `5e5d0b89` (`git grep -n` mit denselben Pfaden) **9** Zeilen in **4** Dateien: `ADR-0111` 2, `done/slice-backfill-row-image-gemeinsam.md` 1, dieser Plan 1, der Review-Report 5. Am Diff-Stand `bf05067d` **21** Zeilen in **4** Dateien: `ADR-0111` 2, `ADR-0115` 13, `done/slice-backfill-row-image-gemeinsam.md` 1, Review-Report 5; dieser Plan 0; an `7f75444f` **23** Zeilen in **6** Dateien (dieselben Zahlen plus dieser Plan 1 — die Beschreibung der Mutation im Messbefund zur Parität, kein Träger des Lese-Wortlauts — und der Nachprüfungs-Report 1; gemessen). **Gefunden und nachgezogen:** dieser Plan (Ziel-Absatz, DoD Bild-Parität, Messbefunde, Risiken). **Nicht angefasst, mit Grund:** `ADR-0111` (`Accepted`, ersetzt an drei Stellen durch `ADR-0115`), der `done/`-Record und der Review-Report (Records, `AGENTS.md` §3.5), `ADR-0115` (trägt den Wortlaut als Gegenstand seiner Entscheidung). Kein Treffer in `spec/`, `harness/`, `AGENTS.md`, `README.md`.
+- **Menge der ausgenommenen Pakete (Träger mit Paketnamen):** `git grep -c -E 'postgresack|replication/receive|postgressnapshot' <Stand> -- . ':!docs/plan/adr' ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' ':!internal' ':!docs/plan/planning/in-progress/slice-backfill-snapshot-reader.md'` (Diff-Stand mit `--untracked` gemessen). Am Parent `d7539e2c`: `Dockerfile` 1 · `slice-transformationen-antragsweg-usecase.md` 1 · `slice-transformationen-kern-rename.md` 1 · `welle-backfill-bestand.md` 1 · `harness/README.md` 1 · `coverage-gate.md` 16 · `db-adapter-coverage.md` 11 · `db-coverage.sh` 7 · `run-replication-tests.sh` 7. Am Diff-Stand `bf05067d`: dieselben Dateien mit `kern-rename` 2, `coverage-gate.md` 20, `db-adapter-coverage.md` 14, `db-coverage.sh` 4, `run-replication-tests.sh` 8; an `7f75444f` trägt `db-adapter-coverage.md` 15 (die zweite Fixrunde ergänzt eine Zeile, gemessen). **Nachgezogen:** beide offenen Pläne (vier Pakete), `harness/README.md` Zeile `make test-replication` (Verweis statt vierter Paketliste), beide Sensor-Beschreibungen. **Nicht gefunden:** kein Treffer für die vier Pakete oder `snapshotlogic` in `.github/workflows/*.yml`, `Makefile`, `harness/mk/*.mk` (beide Stände) — keine Workflow-Änderung, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht.
 - **Träger der Slot-Reserve-Zusage:** `git grep -n --untracked -E 'SNAPSHOT_TEST_EXCLUSIVE_DSN|TestSlotReserve'`: Test, `run-replication-tests.sh` (setzt die Variable, Phase `tier`), `db-adapter-coverage.md` §Grenze Nr. 7 und dieser Plan; die vorige Behauptung „nur manuell belegt" steht in keinem Träger mehr.
 - **Träger der Skip-Eigenschaft und der Listengleichheit:** `db-adapter-coverage.md` §Grenze Nr. 8, `coverage-gate.md` §Grenze Nr. 8, `harness/README.md` Zeile `make coverage-gate`.
 - **Suchlauf der zweiten Fixrunde** (bewegte Eigenschaften: der Inhalt der Phase `tier` — zwei Läufe statt eines — und der Typ-Satz mit seiner Größe und Ausschluss-Begründung; Parent-Stand `56305a4d`, Diff-Stand `d3420bd9`):
@@ -219,7 +228,7 @@ druckt am **Parent** (Treffer je Datei): `Dockerfile` 1 · `slice-transformation
 **Messbefunde des Implementers** (Läufe an diesem Diff; die Nachweise stehen mit Befehl im Bericht der Übergabe):
 
 - **Unit-Zahl, Erstlieferung** (`make coverage-gate`, gedruckt): Parent `82.90%`, Diff `82.90%` (zwei weitere `make gates`-Läufe am Diff: `82.90%`, `82.80%`); gedeckt/Nenner, abgeleitet aus dem Profil der Stufe (dedupliziert): Parent **1692 von 2040**, Diff **1691 von 2040**.
-- **Unit-Zahl, Fixrunde** (die Stufe nachgestellt: `go test -coverpkg=<Paketliste der Stufe> -covermode=atomic`, dedupliziert über die Block-Position): am Stand `d7539e2c` **1691 von 2040** (gedruckt `total: (statements) 82.9%`), am Diff **1731 von 2082** (gedruckt `83.1%`); `make coverage-gate` am Diff druckt `Coverage 83.20%`. Der Nenner wächst um **42** Statements — das Unterpaket `snapshotlogic` liegt im Gegenstand, gedeckt **42 von 42** (aus demselben Profil abgeleitet). Die gedeckte Zahl ist lauf-gebunden (zwei Läufe am Diff druckten `83.1%` und `83.2%`).
+- **Unit-Zahl, Fixrunde** (die Stufe nachgestellt: `go test -coverpkg=<Paketliste der Stufe> -covermode=atomic`, dedupliziert über die Block-Position): am Stand `d7539e2c` **1691 von 2040** (gedruckt `total: (statements) 82.9%`), am Diff **1731 von 2082** (gedruckt `83.1%`); `make coverage-gate` am Diff druckt `Coverage 83.20%`. Der Nenner wächst um **42** Statements — das Unterpaket `snapshotlogic` liegt im Gegenstand, gedeckt **42 von 42** (aus demselben Profil abgeleitet). Die gedeckte Zahl ist lauf-gebunden (zwei Läufe am Diff druckten `83.1%` und `83.2%`); 1691 und 1731 sind Lauf-Belege des Implementers, der Verifier maß 1692 (`62d00abe`), 1689 (`d7539e2c`) und 1733 (`7f75444f`) bei gleichen Nennern.
 - **DB-Adapter-Coverage, Erstlieferung** (frischer `make test-store` gefolgt von `make test-replication`, PostgreSQL 18, gedruckt): Parent **77.13% (gedeckt 533 von 691)**, Diff **79.25% (gedeckt 672 von 848)** gegen `DB_COVERAGE_THRESHOLD` 70; `postgressnapshot` trug davon **139 von 157** (abgeleitet aus dem gemergten Profil).
 - **DB-Adapter-Coverage, Fixrunde** (frischer `make test-store` gefolgt von `make test-replication`, PostgreSQL 18, gedruckt): **80.07% (gedeckt 651 von 813 Statements; Profile gemergt: store,replication)**; derselbe Wert druckt `PG_TEST_IMAGE=<17er-Digest> make test-replication` gegen PostgreSQL 17. Der Nenner sinkt um 35 (`postgressnapshot` 157 → 122, abgeleitet): die Logik des Unterpakets verlässt den Gegenstand, die Konfigurations-Kopie je Verbindung und der Zweig für beendete Verbindungen kommen hinzu; `postgressnapshot` trägt **118 von 122** (abgeleitet aus dem gemergten Profil). **Ungedeckt bleiben 2 Blöcke (4 Statements)**: die Zweige „`consistent_point` nicht lesbar" und „Snapshot-Name nicht lesbar" in `exportSnapshot` — der Server liefert beide Werte im geprüften Format, ein Fehlformat ist ohne Fake nicht auslösbar. Der Abbruch des komponierten Runs mitten im Lauf gehört dem `e2e`-Slice (§1). Die Zeitlage des Fensters zwischen Export und Cursor (gleichzeitiges `ALTER TABLE`, Review-Befund F-17) ist nicht gemessen und bleibt Sache des `e2e`-Slice.
 - **`reltuples`:** `−1` für die frisch befüllte, nie analysierte Tabelle auf PostgreSQL **17.11** und **18.6** (der Test druckt den Wert und die Version), nach `ANALYZE` 40 (= tatsächliche Zeilenzahl) auf beiden — die Erwartung aus [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, Punkt 5 ist belegt, die Abbildung „unbekannt" im Port bleibt.
@@ -268,41 +277,65 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   namentlichen Stellen (ihre Gleichheit hält `db-package-lists-check.sh`) füllte
   den Nenner mit ungedeckten Zeilen. *Erwartet,
   zu belegen durch:* DoD Gate-Zuordnung (a)–(c) und der grüne `make coverage-gate`
-  am Diff. **Ausgang:** *(bei Closure)*
+  am Diff. **Ausgang:** *entfallen* — nicht eingetreten: das Paket überspringt ohne
+  Datenbank 21 von 21 Tests (Verifikation §2 Nr. 5), die Gleichheit der vier
+  namentlichen Stellen hält `db-package-lists-check.sh` (vier Listen-Mutationen mit
+  Exit 1, Verifikation §5 M3 bis M6), die Rücknahme aus dem Filter färbt das Gate
+  rot (`78.60%` gegen Schwelle 80 %, Verifikation §5 M7).
 - **Die GUC-Parität ist ungemessen.** [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) belegt nur, dass der
   Walsender die Rollen-Defaults trägt (M5); dass eine reguläre Verbindung mit
   demselben DSN dieselben Werte trägt, führt die ADR als „erwartet".
   *Erwartet, zu belegen durch:* der Paritätstest über den Typ-Satz unter drei
   Rollen-GUC-Lagen (`ALTER ROLE … SET`, [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md) Festlegung 4).
   Fällt er rot aus, ist der Fallback eine explizite `SET`-Angleichung der
-  Sitzung an die Walsender-Werte — dann Rückführung §4. **Ausgang:** *(bei
-  Closure)*
+  Sitzung an die Walsender-Werte — dann Rückführung §4. **Ausgang:** *entfallen*
+  für die GUC-Parität selbst: sie hält in drei Lagen auf PostgreSQL 17.11 und 18.6
+  (Verifikation §3.1), Fallback und Rückführung sind nicht eingetreten. Rot färbte
+  der Paritätstest die **Cast-Form** des Lesepfads, nicht die GUC-Lage
+  (Review F-1) — die Folge ist [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md)
+  (Steering-Loop-Eintrag in §7).
 - **Generierte Spalten in PostgreSQL 18.** Der WAL-Pfad sendet generierte
   Spalten nicht, solange die Publication sie nicht ausdrücklich veröffentlicht;
   ob das für die Publication dieses Repos unter PostgreSQL 18 gilt, ist ungemessen.
   *Erwartet, zu belegen durch:* der Paritätstest mit generierter Spalte auf 17
-  und 18. **Ausgang:** *(bei Closure)*
+  und 18. **Ausgang:** *entfallen* — gemessen: der Walsender sendet die generierte
+  Spalte für die Publication dieses Repos unter 17.11 und 18.6 nicht, das
+  Backfill-Bild lässt sie aus (Messbefund in §3; Verifikation §3.1).
 - **Slot-Anlage wartet auf laufende Schreibtransaktionen** (M3: 5,27 s bei rund
   5 s Restlaufzeit, gemessen in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)) und braucht Reserve in
   `max_replication_slots`/`max_wal_senders`. *Erwartet, zu belegen durch:* der
   Zeitlimit-Test; die Tier-Umgebung setzt beides auf 10
-  (`tools/harness/run-replication-tests.sh`). **Ausgang:** *(bei Closure)*
+  (`tools/harness/run-replication-tests.sh`). **Ausgang:** *entfallen* — die
+  Erwartung ist belegt: `TestSlotCreationTimeout` (1-s-Limit gegen eine offene
+  Schreibtransaktion endet als `transient`, kein Slot bleibt), und die Slot-Reserve
+  (`53400` → `configuration`) trägt die Phase `tier` (Verifikation §2 Nr. 1, §3.2).
+  Die Wirkung auf einen Haltepunkt im E2E steht als Übergabe in `slice-backfill-e2e` §3.
 - **Netzlos geprüfter Code im DB-Gegenstand** (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`,
   offen, 2×): netzlos prüfbare Logik im Adapter-Paket höbe die DB-Zahl ohne
   DB-Beleg und widerspräche dem Test-Ausschluss; sie liegt deshalb im Unterpaket
   `snapshotlogic` (DoD Gate-Zuordnung (c)). *Erwartet, zu belegen durch:* der Bericht nennt Zähler
   und Nenner je Messung; ein weiterer Beleg der Klasse erreicht die Schwelle 3×.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten* in der ersten Lieferung (Review F-5: `Validate`, `SlotName`,
+  `CursorStatement`, `QuoteIdent`, `Classify` im ausgenommenen Paket) und im Slice
+  gelöst: das Unterpaket `snapshotlogic` liegt im Gegenstand des Gates (Nenner
+  2040 → 2082, 42 von 42 gedeckt; Verifikation §3.3). Die Klasse erreicht damit
+  **3×** (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`, evidence-Datei
+  dieses Slice); der Ausgang gehört dem Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md).
 - **`reltuples` = `−1` für nie analysierte Tabellen** ist Wissen aus der
   PostgreSQL-Dokumentation und in diesem Repo nicht gemessen ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
   Festlegung 3, Punkt 5). *Erwartet, zu belegen durch:* die Messung an
   PostgreSQL 17 und 18 im Test (DoD Blöcke und Spalten). Weicht ein Wert ab, ist
   die Abbildung „unbekannt" im Port zu ändern und der Befund geht als Frage an
-  den Architect. **Ausgang:** *(bei Closure)*
+  den Architect. **Ausgang:** *entfallen* — nicht eingetreten: `reltuples` ist `−1` für
+  die frisch befüllte, nie analysierte Tabelle auf PostgreSQL 17.11 und 18.6 (der Test
+  druckt Wert und Version) und 40 nach `ANALYZE`; die Abbildung „unbekannt" im Port
+  bleibt (Verifikation §2 Nr. 2).
 - **`pglogrepl` trägt die Optionen** (`CreateReplicationSlotOptions{Temporary,
   SnapshotAction}`, Ergebnis `SnapshotName`) — in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) als „gelesen"
   geführt, nicht als gefahren. *Erwartet, zu belegen durch:* M1 im Tier.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — M1 bis M4 laufen real gegen PostgreSQL 17.11 und 18.6
+  (Verifikation §2 Nr. 1).
 - **Restart auf einem noch aktiven Slot.** Der Adapter im Paket `receive`
   wiederholt `START_REPLICATION` bei SQLSTATE 55006 („slot … is active for PID")
   nicht; ein Neustart des Streams, der den Slot vor der serverseitigen Freigabe
@@ -310,12 +343,21 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   Test zeigt sich das als Flake unter Last (Flake-Messung in §3); der Test wartet
   auf die Freigabe; das Produktionsverhalten ist unverändert und
   gehört nicht zu diesem Slice. *Erwartet, zu belegen durch:* die Flake-Messung
-  (0 von 300 in drei Läufen mit dem Poll). **Ausgang:** *(bei Closure)*
+  (0 von 300 in drei Läufen mit dem Poll). **Ausgang:** *weiter offen* für das
+  Produktionsverhalten, *entfallen* für den Test: der Poll hält (Implementer 0 von 300
+  je Version, Verifier 0 von 100 je Version, ohne Poll 3 von 100). Das
+  Produktionsverhalten steht im Register unter `BEO-PGC/adapter-fehler-ausgang`
+  (evidence-Datei dieses Slice, 3×); Adresse: der Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md) und der Slice, der den
+  Wiederholungsversuch der Konfigurationsschicht liefert.
 - **Blockgröße zählt Zeilen, nicht Bytes.** Bei Zeilen im MB-Bereich (`jsonb`,
   `bytea`) ist der Speicherbedarf eines `NextBlock` `B` mal die Zeilenbreite,
   und der Block liegt kurzzeitig doppelt vor (abgeleitet, nicht gemessen; Port-
   Doku benennt die Grenze). *Erwartet, zu belegen durch:* eine Messung mit
-  breiten Zeilen in der Ausbaustufe für Durchsatz. **Ausgang:** *(bei Closure)*
+  breiten Zeilen in der Ausbaustufe für Durchsatz. **Ausgang:** *weiter offen* — im
+  Register als `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` (neu, 1×); Adresse:
+  `slice-backfill-bench-richtgroesse` (Übergabe in dessen §3) und `slice-backfill-run-usecase`
+  (der Liefer-Punkt zum Speicherbedarf nennt die Grenze als Zeilenzahl).
 - **Der Tier-Schritt in `e2e.yml` fährt den Slot-Reserve-Lauf je Matrix-Leg.**
   Ob der zweite Container (`max_replication_slots=1`, Bereitschaft über
   `pg_isready` im Container) auf dem GitHub-Runner ebenso grün läuft wie lokal
@@ -323,21 +365,161 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10: der Workflow ändert nur
   Beschreibungstext, das Verhalten des bestehenden Schritts umfasst den
   zweiten Container). *Erwartet, zu belegen durch:* der erste Post-Push-Lauf
-  von `e2e.yml` (`gh run list`). **Ausgang:** *(bei Closure)*
+  von `e2e.yml` (`gh run list`). **Ausgang:** *weiter offen* ([`AGENTS.md`](../../../../AGENTS.md)
+  §3.10, lokal nicht prüfbar) — im Register unter
+  `BEO-PGC/github-actions-unverifizierbar-lokal` (evidence-Datei dieses Slice, 8×).
+  Auflösungs-Bedingung: der erste `e2e`-Lauf (beide Matrix-Legs, Schritt
+  `Replication-Tier (go test ./... und Slot-Reserve)`) nach dem Push der Commits
+  dieses Slice; sein Ergebnis wird in der evidence-Datei nachgetragen (Prüfung über
+  `gh run list --workflow e2e.yml` und `gh run view`).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** die Rollen-Kette lief in getrennten Kontexten und fand,
+  was kein Gate las: Review (2 HIGH · 4 MEDIUM · 6 LOW · 6 INFO), Fixrunde 1,
+  Nachprüfungs-Review (1 HIGH · 1 MEDIUM · 3 LOW · 5 INFO), Fixrunde 2, Verifikation
+  „Bestätigt" mit eigenen Läufen (Verifikation §1: `make gates` EXIT=0,
+  `make test-replication` EXIT=0 auf PostgreSQL 18.6 und 17.11; Mutationen M1 bis M9
+  am Wegwerf-Stand rot, Verifikation §5). Der Paritätstest gegen das reale WAL-Bild
+  (85 Typ-Spalten, drei GUC-Lagen, beide Versionen) trägt die Kernzusage; die
+  Lese-Anweisung trägt weder Cast noch Funktion (Verifikation §3.1). Der Fund F-1 wurde
+  nicht im Alleingang umgangen: er ging als Architect-Frage an
+  [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md) und kam
+  als Fixrunde im selben Slice zurück, ohne Rückführung nach `open/`.
+- **Was ging anders als geplant:** der Plan wuchs um das Unterpaket `snapshotlogic`
+  (Review F-5/F-6), das Listen-Prüfskript `tools/harness/db-package-lists-check.sh`
+  (F-3), die Slot-Reserve-Phase im Tier (F-10) und den Typ-Satz mit 85 Spalten statt
+  einer Stichprobe; zwei Fixrunden statt einer. Der Lesepfad liest im Text-Ergebnisformat
+  der Ausgabefunktion statt über den Cast, den der Wortlaut von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nannte — nach der
+  Messung der ADR rund 29 % weniger Lese-Zeit (abgeleitet aus Mittelwerten, Lese-Lauf
+  des Clients, nicht der ganze Backfill). Die Treiber-Hülle nach
+  [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md) ist bewusst
+  nicht realisiert (§3). Die zweite Fixrunde hat keinen eigenen Review-Report; der
+  Verifier hat ihre Behebungen selbst nachgemessen (Verifikation §3.7, V-3).
+- **Verifier-Beobachtungen (V-1 bis V-8):** *V-1* gezogen: die gedeckten Zahlen 1691 und
+  1731 tragen in DoD Gate-Zuordnung (c) und in den Messbefunden die Kennzeichnung
+  „Lauf-Beleg des Implementers" samt den Zahlen des Verifiers (1692 an `62d00abe`, 1689 an
+  `d7539e2c`, 1733 an `7f75444f`, Nenner exakt). *V-2* gezogen: die stand-relativen
+  Zellen des Suchlauf-Felds tragen ihren Stand; der Planner maß nach —
+  `git grep -n -e '::tex[t]' <Stand> -- spec docs harness AGENTS.md README.md`: `bf05067d`
+  21 Zeilen in 4 Dateien, `7f75444f` 23 Zeilen in 6 Dateien (dieser Plan 1, Nachprüfungs-Report 1);
+  `git grep -c -E 'postgresack|replication/receive|postgressnapshot' <Stand> -- harness/sensors/db-adapter-coverage.md`:
+  `bf05067d` 14, `7f75444f` 15. *V-3* zulässig (zweite Fixrunde ohne Report, vom Verifier
+  nachgemessen), kein Nachzug. *V-4* siehe Register
+  (`BEO-PGC/github-actions-unverifizierbar-lokal`) und §6. *V-5* gezogen (die
+  Reconciliation-Zeile steht auf `[x]`, „entfällt" korrekt). *V-6* siehe Register
+  (`BEO-PGC/test-schreibt-in-committete-datei`, jetzt 2×). *V-7* zur Kenntnis: die drei
+  Extensions liegen datenbankweit im gemeinsamen Testcontainer, in eigenem Schema und mit
+  Aufräumen im Cleanup; ein künftiger Test, der sie anlegt, nimmt dasselbe Schema-Muster.
+  *V-8* kein Nachzug (gleiche Größenordnung, andere Lastdauer).
+- **Steering-Loop-Eintrag (Lerneintrag):** *neuer Sensor-Umfang:* der Slice erweitert
+  Sensoren, nicht nur eine Fläche — `tools/harness/db-package-lists-check.sh` ist die
+  erste Rezeptzeile von `make coverage-gate` und hält die vier namentlichen Stellen des
+  Messgegenstands gleich (eine Verschärfung, keine Schwelle sinkt; der Verifier sah vier
+  Listen-Mutationen mit Exit 1); die Phase `tier` von `tools/harness/run-replication-tests.sh`
+  fährt den Slot-Reserve-Lauf gegen einen eigenen PostgreSQL mit
+  `max_replication_slots=1`, und ein Lauf ohne `--- PASS` des Tests ist rot (Verifikation
+  §5 M8, M9); das Unterpaket `snapshotlogic` liegt im Nenner des Coverage-Gates (2040 →
+  2082 Statements, 42 von 42 gedeckt, Verifikation §3.3), das DB-Paket `postgressnapshot`
+  im DB-Gegenstand (80.07 % bei 651 von 813 Statements, Verifikation §1, Schwelle 70 %);
+  der Strukturtest `requiredTypes` des Paritätstests meldet einen aus der Typ-Tabelle
+  gestrichenen Pflicht-Typ. *Geschärfte Anwendung, keine neue Regel:* der erste Review
+  fand mit F-1 einen Fehler in der Kernzusage einer `Accepted` ADR — der Cast auf den
+  Spaltennamen ist nicht die Ausgabefunktion, die `pgoutput` sendet; fünf Typen (`bool`,
+  `char(n)`, `inet`, `xml`, Domain über `bool`; sieben von 86 Spalten) weichen ab —, den der
+  Implementer-Test nicht sah, weil seine Fixture die Typen nicht trug. Die Zusage
+  „byte-gleich" (`ADR-0111` Teilfrage 2) war an acht Typen belegt; wer eine Aussage über
+  **alle Werte einer Menge** annimmt, braucht vor der Annahme einen Beleg über die Menge
+  (den Typ-Satz), nicht über eine Stichprobe. Das ist die zweite Belegstelle von
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (2×, unter der Schwelle), keine neue Regel;
+  [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md) verkörpert sie
+  für diese eine ADR (Typ-Satz als Daten, Strukturtest, drei Lagen, beide Versionen), der
+  Ausgangs-Kandidat für die allgemeine Fassung steht im `state.md` des Eintrags
+  (Architect-Entscheidung bei 3×). *Zweite geschärfte Anwendung* (§3.12 Instanz B,
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`, jetzt 7×): der
+  Nachprüfungs-Review widerlegte die Test-Begründung „Extension-Typen nicht anlegbar im
+  Testcontainer" durch Messung (`pg_available_extensions` führt alle drei, der Testnutzer
+  ist Superuser); eine Ausschluss-Begründung ist eine Tatsachenbehauptung über das
+  Werkzeug und trägt ihren Beleg-Anker oder steht als „erwartet". *Flake im fremden Test*
+  `TestStreamRestartsOnExistingSlot` (Paket `receive`): Ursache ein Wettlauf im Test beim
+  Freigeben des Slots, das Produktionsverhalten kennt keinen Wiederholungsversuch bei
+  SQLSTATE 55006; repariert ist der Test (Poll auf `active = false`), das Produktionsverhalten
+  bewusst nicht geändert (Register `BEO-PGC/adapter-fehler-ausgang`). *Benannte Spec-Lücke:*
+  keine — `spec/` ist unberührt, [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md)
+  („Werte im Text-Stand der Quelle") bleibt wörtlich wahr; die Ausführung legt
+  [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md) fest.
+- **Beobachtungs-Register (`../observations/`):** je Vorkommen eine `evidence/`-Datei
+  `slice-backfill-snapshot-reader.md`, Zähler = Zahl der Dateien (real ausgezählt).
+  *Bestehende Klassen:* `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1) **2×**;
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (F-1, F-3, F-4, F-9) **7×**;
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (F-3, F-5) **10×**;
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (F-2, F-14, F-15, V-1, V-2) **16×**;
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (F-16, Nachprüfung F-3) **29×**;
+  `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (Nachprüfung F-1) **7×**;
+  `BEO-PGC/test-schreibt-in-committete-datei` (V-6) **2×**;
+  `BEO-PGC/github-actions-unverifizierbar-lokal` (V-4, §6) **8×** — weiter offen, siehe unten;
+  `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (F-5) **3×** und
+  `BEO-PGC/adapter-fehler-ausgang` (Nachprüfung F-2, Flake) **3×** — beide erreichen
+  **mit diesem Slice die Schwelle 3×**; ihr Ausgang gehört dem Lese-Schritt der Closure
+  von [welle-backfill-bestand](../welle-backfill-bestand.md). *Neue Klasse (1×, offen):* `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`
+  (Risiko §6, weiter offen; Adresse `slice-backfill-bench-richtgroesse`). *Benannt, nicht
+  gezählt:* Nachprüfung F-4 (der Cleanup einer Rolle lief vor dem Cleanup der Datenbank und
+  ließ die Rolle je Lauf zurück) — erstes Auftreten dieser Form; gegen
+  `BEO-PGC/test-isolation-geteilter-zustand` (1×) geprüft und nicht dorthin gezählt: jene
+  Klasse betrifft ungescopte `DELETE`/`DROP SCHEMA CASCADE` gemeinsamer Zustände, hier
+  bleibt eine eigene Rolle wegen der Cleanup-Reihenfolge zurück; und die Form „ein Test
+  verändert die Last anderer Pakete im geteilten Testcontainer" (Nachprüfung F-2) —
+  keine Klasse führt sie
+  (`BEO-PGC/test-integration-retention-timing-flake` betrifft eine Zeit-Assertion an
+  unverändertem Stand), das Vorkommen ist im Flake-Beleg von `adapter-fehler-ausgang`
+  gezählt; ein zweites Auftreten legt die Klasse an. Die übrigen Funde beider Reviews sind
+  im Slice behoben (Verifikation §3.7) oder INFO ohne erwartete Aktion; F-17 (Fenster
+  zwischen Export und Cursor) ist als Übergabe adressiert (unten).
+- **Träger-Übergaben (§3.13):** die vom Slice gemeldeten Eigenschaften des Ports und des
+  Adapters standen bisher nur in diesem Plan; sie stehen jetzt in den Plänen der
+  Empfänger, geprüft an deren Text (die Pläne bleiben offen, ihr Planner prüft sie beim Start):
+  `slice-backfill-run-usecase` (§3 „Übergaben aus `slice-backfill-snapshot-reader`" —
+  fünf Sentinels und ihre Abbildung, ein beendeter Kontext als `transient` gegen
+  `interrupted`, `known`/bekannte `0` der Schätzung, Snapshot-Schließen auf jedem Pfad,
+  Run-Kennung und Slot-Name, Startwerte `B` = 1.000 und Zeitlimit 30 s als Setzung ohne
+  Messung; der Liefer-Punkt zum Speicherbedarf nennt `B` als Zeilenzahl),
+  `slice-backfill-e2e` (§3: das Zeitlimit von 30 s begrenzt den Haltepunkt des
+  Ansatz-Vorschlags, der Abbruch mitten im Lauf mit dem Slot- und Sitzungs-Beleg, das
+  ungemessene Fenster zwischen Export und Cursor),
+  `slice-backfill-bench-richtgroesse` (§3: `B` und Zeilenbreite im Ursprung jeder
+  Kopier-Zahl) und `slice-backfill-sql-administration` (§3, Zeile `wiring.go`: der
+  Adapter entsteht mit `CDC_CAPTURE_DSN`, auch die Schätzung im Antrag liest darüber).
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice liefert einen Port und
+  einen Driven Adapter ohne End-Nutzer-Verhalten; der Backfill-Lauf, den ein Nutzer
+  auslösen und lesen könnte, existiert erst mit den Folge-Slices. Der Bedarf aus
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) wird mit dem Wellen-Beleg
+  (`slice-backfill-e2e`) validierbar. Kein stilles Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):** eine getrennte
+  Rolle im frischen Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in
+  `done/` und greift daher erst nach dem `git mv` — hier nicht ausgeführt.
+- **Folge-Slices:** keine neuen — die Folge-Slices der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die
+  Übergaben oben tragen ihre Adressen.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Test-Ausschluss) **entfallen**;
+  Risiko 2 (GUC-Parität) **entfallen** (die Cast-Form war der rote Teil,
+  [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md)); Risiko 3
+  (generierte Spalten) **entfallen**; Risiko 4 (Slot-Anlage) **entfallen**; Risiko 5
+  (netzlos geprüfter Code) **eingetreten**, im Slice gelöst (Unterpaket), Klasse 3×;
+  Risiko 6 (`reltuples`) **entfallen**; Risiko 7 (`pglogrepl`-Optionen) **entfallen**;
+  Risiko 8 (Restart auf aktivem Slot) Test **entfallen**, Produktionsverhalten **weiter
+  offen** im Register; Risiko 9 (Blockgröße) **weiter offen**, neue Klasse; Risiko 10
+  (Tier-Schritt in `e2e.yml`) **weiter offen**: Auflösungs-Bedingung ist der erste
+  `e2e`-Lauf nach dem Push der Commits dieses Slice, sein Ergebnis wird in
+  `evidence/slice-backfill-snapshot-reader.md` der Klasse
+  `BEO-PGC/github-actions-unverifizierbar-lokal` nachgetragen
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure.
+  Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Sensor-Umfang ist am Ort
+  verkörpert (Listen-Prüfskript, Slot-Reserve-Phase, `snapshotlogic` im Gate-Nenner,
+  `requiredTypes`); die geschärften Anwendungen verkörpern nichts neu. (b) Folge-Slice:
+  keiner neu, die Übergaben tragen Adressen. (c) Register: alle genannten Kennungen
+  existieren als Verzeichnis, ihre `evidence/`-Verzeichnisse tragen die Datei.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
