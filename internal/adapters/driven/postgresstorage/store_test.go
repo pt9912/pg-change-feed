@@ -692,3 +692,154 @@ func TestPersistCarriesStorageClassOnCommitFailure(t *testing.T) {
 		t.Fatalf("Meldung = %q, wollen die Commit-Ursache hinter der Klasse", err.Error())
 	}
 }
+
+// committedOriginTransaction legt eine committed Quelltransaktion mit je
+// einem Change pro übergebener Herkunft an; die Änderungen tragen aufsteigende
+// Sequenzen, die Herkunft setzt der Test über `WithOrigin` bzw. bleibt beim
+// Konstruktor-Default.
+func committedOriginTransaction(t *testing.T, id string, offset uint64, origins ...model.ChangeOrigin) *model.ChangeTransaction {
+	t.Helper()
+	tx, err := model.NewOpenTransaction(model.TransactionID(id), testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	for i, origin := range origins {
+		sequence := int64(i + 1)
+		change, err := model.NewChange(
+			model.ChangeID(fmt.Sprintf("%s-%d", id, sequence)),
+			model.TransactionID(id),
+			testTableMain,
+			sequence,
+			model.OperationInsert,
+			nil,
+			[]byte(fmt.Sprintf(`{"n":%d}`, sequence)),
+			testSchemaMain,
+		)
+		if err != nil {
+			t.Fatalf("NewChange %d: %v", sequence, err)
+		}
+		if origin != "" {
+			if change, err = change.WithOrigin(origin); err != nil {
+				t.Fatalf("WithOrigin %d: %v", sequence, err)
+			}
+		}
+		if err := tx.AppendChange(change); err != nil {
+			t.Fatalf("AppendChange %d: %v", sequence, err)
+		}
+	}
+	position, err := model.NewSourcePosition(testSource, offset)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	return tx
+}
+
+// TestPersistAndReadCarryChangeOrigin belegt das Feld `origin` am Store
+// (`SPEC-002`, `LH-FA-CAP-009`): der Konstruktor-Default `wal` und ein
+// gesetztes `backfill` gehen als Text in die Spalte und lesen über
+// `ReadChanges` unverändert zurück; eine Zeile ohne Wert (`NULL`) liest
+// als `wal` (`LH-FA-DAT-006` Boundary).
+func TestPersistAndReadCarryChangeOrigin(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+	ctx := context.Background()
+
+	persist(t, store, committedOriginTransaction(t, "t-origin", 10, "", model.ChangeOriginBackfill, model.ChangeOriginWAL))
+
+	stored := map[string]string{}
+	rows, err := pool.Query(ctx, "SELECT change_id, origin FROM cdc.change WHERE transaction_id = 't-origin' ORDER BY sequence")
+	if err != nil {
+		t.Fatalf("Spalten-Lesen: %v", err)
+	}
+	// Die Verbindung geht auch bei einem t.Fatalf in der Schleife zurück in
+	// den Pool — sonst blockiert pool.Close() im Cleanup den Testlauf.
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var origin *string
+		if err := rows.Scan(&id, &origin); err != nil {
+			t.Fatalf("Spalten-Scan: %v", err)
+		}
+		if origin == nil {
+			t.Fatalf("%s: origin-Spalte ist NULL, der Store schreibt den Wert", id)
+		}
+		stored[id] = *origin
+	}
+	rows.Close()
+	want := map[string]string{"t-origin-1": "wal", "t-origin-2": "backfill", "t-origin-3": "wal"}
+	for id, origin := range want {
+		if stored[id] != origin {
+			t.Fatalf("Spalte origin von %s = %q, wollen %q", id, stored[id], origin)
+		}
+	}
+
+	read := func() map[model.ChangeID]model.ChangeOrigin {
+		records, err := store.ReadChanges(ctx, query(t, nil, nil, "", "", nil))
+		if err != nil {
+			t.Fatalf("ReadChanges: %v", err)
+		}
+		origins := map[model.ChangeID]model.ChangeOrigin{}
+		for _, record := range records {
+			origins[record.Change.ID] = record.Change.Origin
+		}
+		return origins
+	}
+	got := read()
+	if got["t-origin-1"] != model.ChangeOriginWAL || got["t-origin-2"] != model.ChangeOriginBackfill || got["t-origin-3"] != model.ChangeOriginWAL {
+		t.Fatalf("ReadChanges-Herkunft = %v, wollen wal/backfill/wal", got)
+	}
+
+	// LH-FA-DAT-006 Boundary: eine bestehende Zeile ohne Wert liest als wal.
+	if _, err := pool.Exec(ctx, "UPDATE cdc.change SET origin = NULL WHERE change_id = 't-origin-2'"); err != nil {
+		t.Fatalf("NULL setzen: %v", err)
+	}
+	got = read()
+	if got["t-origin-2"] != model.ChangeOriginWAL {
+		t.Fatalf("Zeile mit origin = NULL liest als %q, wollen wal", got["t-origin-2"])
+	}
+	if got["t-origin-1"] != model.ChangeOriginWAL || got["t-origin-3"] != model.ChangeOriginWAL {
+		t.Fatalf("übrige Zeilen verändert: %v", got)
+	}
+}
+
+// Eine Herkunft außerhalb der geschlossenen Menge (`SPEC-002`) erreicht die
+// Datenbank nicht: der Store endet mit dem Domänen-Fehler und schreibt
+// weder Transaktion noch Change (die Spalte trägt keinen CHECK, die Menge
+// erzwingt die Domäne).
+func TestPersistRejectsUnknownChangeOrigin(t *testing.T) {
+	store, pool := newTestStore(t)
+	seedReference(t, pool)
+
+	bad, err := model.NewChange("t-origin-bad-1", "t-origin-bad", testTableMain, 1, model.OperationInsert, nil, []byte(`{"n":1}`), testSchemaMain)
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	bad.Origin = "snapshot"
+	tx, err := model.NewOpenTransaction("t-origin-bad", testSource)
+	if err != nil {
+		t.Fatalf("NewOpenTransaction: %v", err)
+	}
+	if err := tx.AppendChange(bad); err != nil {
+		t.Fatalf("AppendChange: %v", err)
+	}
+	position, err := model.NewSourcePosition(testSource, 12)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	if err := tx.Commit(position, model.NewTimePoint(1)); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	if err := store.PersistTransaction(context.Background(), tx); !stderrors.Is(err, domainerrors.ErrInvalidChangeOrigin) {
+		t.Fatalf("PersistTransaction mit Herkunft snapshot: %v, wollen %v", err, domainerrors.ErrInvalidChangeOrigin)
+	}
+	if n := count(t, pool, "SELECT count(*) FROM cdc.transaction WHERE transaction_id = 't-origin-bad'"); n != 0 {
+		t.Fatalf("abgelehnte Herkunft hinterlässt %d Transaktions-Zeilen", n)
+	}
+	if n := count(t, pool, "SELECT count(*) FROM cdc.change WHERE origin = 'snapshot'"); n != 0 {
+		t.Fatalf("abgelehnte Herkunft hinterlässt %d Change-Zeilen", n)
+	}
+}

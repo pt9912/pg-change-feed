@@ -21,11 +21,12 @@ ON CONFLICT (transaction_id) DO NOTHING`
 // InsertChange persistiert einen Change; die Deduplizierungsbasis ist der
 // Primärschlüssel `change_id` (`SPEC-002`). Die Row Images gehen als Text
 // in die `jsonb`-Spalten; ein fehlendes Bild geht als NULL
-// (Abwesenheit, `LH-FA-CAP-008` Boundary).
+// (Abwesenheit, `LH-FA-CAP-008` Boundary). Die Spaltenliste ist explizit
+// und trägt `origin` als letzte Spalte (`SPEC-002`, `LH-FA-CAP-009`).
 const InsertChange = `
 INSERT INTO cdc.change
-    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version)
-VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8)
+    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
+VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8, $9)
 ON CONFLICT (change_id) DO NOTHING`
 
 // SelectChanges liest deterministisch sortiert (`LH-FA-REA-004.a`):
@@ -40,7 +41,9 @@ ON CONFLICT (change_id) DO NOTHING`
 // SELECT — gespeicherte Positionen bleiben unverändert (`LH-FA-REA-002`).
 // committed_at trägt den realen Quell-Commit-Zeitpunkt der Transaktion
 // (`LH-FA-ADM-004`) — die zeitbasierte Retention (`LH-FA-RET-003`) liest
-// ihr Alter dagegen.
+// ihr Alter dagegen. `origin` steht als letzte Spalte, `NULL` einer Zeile
+// ohne das Feld liest als `wal` (`LH-FA-DAT-006` Boundary) — derselbe
+// `COALESCE` wie in der View `cdc.changes`.
 const SelectChanges = `
 SELECT
     t.source_id,
@@ -55,7 +58,8 @@ SELECT
     c.old_data,
     c.new_data,
     c.schema_version,
-    t.committed_at
+    t.committed_at,
+    COALESCE(c.origin, 'wal') AS origin
 FROM cdc.change AS c
 JOIN cdc.transaction AS t
     ON c.transaction_id = t.transaction_id

@@ -35,7 +35,8 @@ type TransactionRow struct {
 // ChangeRow trägt eine Zeile aus `cdc.change` (`SPEC-002`) samt den
 // Klartext-Bezeichnern der betroffenen Tabelle aus dem Join auf
 // `cdc.source_table`; die Row Images sind JSON-Bytes, NULL liest sich als
-// nil (Abwesenheit).
+// nil (Abwesenheit). Origin trägt die Herkunft in Text-Form (`SPEC-002`);
+// die leere Zeichenkette liest als `wal`.
 type ChangeRow struct {
 	ChangeID      string
 	TransactionID string
@@ -47,6 +48,7 @@ type ChangeRow struct {
 	SchemaVersion string
 	Schema        string
 	Table         string
+	Origin        string
 }
 
 // NewTransactionRow trägt die `cdc.transaction`-Zeile einer committed
@@ -71,10 +73,17 @@ func NewTransactionRow(transaction *model.ChangeTransaction, position model.Sour
 }
 
 // NewChangeRows trägt die `cdc.change`-Zeilen der Changes; ein fehlendes
-// Bild trägt die Zeile als nil (NULL, Abwesenheit).
+// Bild trägt die Zeile als nil (NULL, Abwesenheit). Die Herkunft läuft
+// durch die geschlossene Menge (`model.NewChangeOrigin`): ein fehlender
+// Wert schreibt `wal`, ein Wert außerhalb von `wal`/`backfill` endet als
+// Domänen-Fehler, bevor eine Zeile die Datenbank erreicht.
 func NewChangeRows(changes []model.Change) ([]ChangeRow, error) {
 	rows := make([]ChangeRow, 0, len(changes))
 	for _, change := range changes {
+		origin, err := model.NewChangeOrigin(string(change.Origin))
+		if err != nil {
+			return nil, err
+		}
 		rows = append(rows, ChangeRow{
 			ChangeID:      string(change.ID),
 			TransactionID: string(change.TransactionID),
@@ -84,6 +93,7 @@ func NewChangeRows(changes []model.Change) ([]ChangeRow, error) {
 			OldData:       change.OldImage,
 			NewData:       change.NewImage,
 			SchemaVersion: string(change.SchemaVersion),
+			Origin:        string(origin),
 		})
 	}
 	return rows, nil
@@ -117,7 +127,14 @@ func ToPosition(source string, commitPosition int64) (model.SourcePosition, erro
 // Schema und Tabelle setzt der Mapper aus den Klartext-Bezeichnern der
 // Zeile — sie sind keine Konstruktor-Invariante von `model.NewChange`
 // (`ADR-0081` Teilfrage 3), der Lesepfad trägt sie aber in der Rückgabe.
+// Die Herkunft der Zeile läuft durch die geschlossene Menge: die leere
+// Zeichenkette (`NULL` einer Zeile ohne das Feld) liest als `wal`
+// (`LH-FA-DAT-006` Boundary), ein unbekannter Wert endet als Domänen-Fehler.
 func ToChange(row ChangeRow) (model.Change, error) {
+	origin, err := model.NewChangeOrigin(row.Origin)
+	if err != nil {
+		return model.Change{}, err
+	}
 	change, err := model.NewChange(
 		model.ChangeID(row.ChangeID),
 		model.TransactionID(row.TransactionID),
@@ -133,5 +150,6 @@ func ToChange(row ChangeRow) (model.Change, error) {
 	}
 	change.Schema = row.Schema
 	change.Table = row.Table
+	change.Origin = origin
 	return change, nil
 }

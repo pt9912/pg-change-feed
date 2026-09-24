@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 )
 
 // Die SQL-View-Tests belegen den direkten SQL-Zugriff nach
@@ -265,5 +268,123 @@ func TestChangesViewCarriesRangeLimitAndFilter(t *testing.T) {
 	filterRows.Close()
 	if len(filterIDs) != 2 || filterIDs[0] != "vt-changes-c-100" || filterIDs[1] != "vt-changes-c-300" {
 		t.Fatalf("Filter %s = %v, wollen [vt-changes-c-100 vt-changes-c-300] in Commit-Ordnung", tableMain, filterIDs)
+	}
+}
+
+// TestChangesViewCarriesOriginLikeReadChanges belegt das Feld `origin` an
+// der View (`SPEC-002`, `LH-FA-CAP-009`, `LH-FA-DAT-006` Boundary) und die
+// Spaltenmenge-Parität von View und `ReadChanges`
+// (`BEO-PGC/lese-doppelquelle`): `origin` ist die **letzte** Spalte von
+// `cdc.changes`; eine gespeicherte Zeile mit `wal`, mit `backfill` und eine
+// Zeile ohne Wert (`NULL`) lesen über die View und über `ReadChanges` mit
+// derselben Herkunft — die Zeile ohne Wert als `wal`.
+func TestChangesViewCarriesOriginLikeReadChanges(t *testing.T) {
+	pool := newTestViews(t)
+	ctx := context.Background()
+	const table = "vt-origin-table"
+
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.source_table (source_table_id, source_id, schema_name, table_name) VALUES ($1, $2, 'public', $1)",
+		table, viewsTestSource,
+	); err != nil {
+		t.Fatalf("source_table-Zeile: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		"INSERT INTO cdc.schema_version (schema_version_id, source_table_id, version) VALUES ($1, $2, 1)",
+		table+"-sv", table,
+	); err != nil {
+		t.Fatalf("schema_version-Zeile: %v", err)
+	}
+
+	type seedRow struct {
+		changeID string
+		position int
+		origin   any
+		want     string
+	}
+	seeds := []seedRow{
+		{"vt-origin-c-wal", 2100, "wal", "wal"},
+		{"vt-origin-c-backfill", 2200, "backfill", "backfill"},
+		{"vt-origin-c-null", 2300, nil, "wal"},
+	}
+	for _, seed := range seeds {
+		txID := seed.changeID + "-tx"
+		if _, err := pool.Exec(ctx,
+			"INSERT INTO cdc.transaction (transaction_id, source_id, commit_position) VALUES ($1, $2, $3)",
+			txID, viewsTestSource, seed.position,
+		); err != nil {
+			t.Fatalf("transaction-Zeile %s: %v", txID, err)
+		}
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO cdc.change
+			    (change_id, transaction_id, source_table_id, sequence, operation, old_data, new_data, schema_version, origin)
+			 VALUES ($1, $2, $3, 1, 'INSERT', NULL, '{}'::jsonb, $4, $5)`,
+			seed.changeID, txID, table, table+"-sv", seed.origin,
+		); err != nil {
+			t.Fatalf("change-Zeile %s: %v", seed.changeID, err)
+		}
+	}
+
+	// `origin` steht als letzte Spalte der View.
+	var lastColumn string
+	if err := pool.QueryRow(ctx,
+		`SELECT column_name FROM information_schema.columns
+		 WHERE table_schema = 'cdc' AND table_name = 'changes'
+		 ORDER BY ordinal_position DESC LIMIT 1`,
+	).Scan(&lastColumn); err != nil {
+		t.Fatalf("Spalten-Prüfung: %v", err)
+	}
+	if lastColumn != "origin" {
+		t.Fatalf("letzte Spalte von cdc.changes = %q, wollen origin", lastColumn)
+	}
+
+	// Über die View gelesen: NULL liest als wal.
+	viewOrigins := map[string]string{}
+	viewRows, err := pool.Query(ctx,
+		"SELECT change_id, origin FROM cdc.changes WHERE source_id = $1 AND table_name = $2",
+		viewsTestSource, table,
+	)
+	if err != nil {
+		t.Fatalf("View-Lesen: %v", err)
+	}
+	// Die Verbindung geht auch bei einem t.Fatalf in der Schleife zurück in
+	// den Pool — sonst blockiert pool.Close() im Cleanup den Testlauf.
+	defer viewRows.Close()
+	for viewRows.Next() {
+		var id string
+		var origin *string
+		if err := viewRows.Scan(&id, &origin); err != nil {
+			t.Fatalf("View-Scan: %v", err)
+		}
+		if origin == nil {
+			t.Fatalf("%s: die View liefert NULL statt wal", id)
+		}
+		viewOrigins[id] = *origin
+	}
+	viewRows.Close()
+
+	// Über ReadChanges gelesen: dieselbe Herkunft je Change.
+	store, err := postgresstorage.New(ctx, os.Getenv("CDC_STORE_TEST_DSN"))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	t.Cleanup(store.Close)
+	records, err := store.ReadChanges(ctx, outbound.ChangeQuery{Source: viewsTestSource, Table: table})
+	if err != nil {
+		t.Fatalf("ReadChanges: %v", err)
+	}
+	if len(records) != len(seeds) {
+		t.Fatalf("ReadChanges = %d Records, wollen %d", len(records), len(seeds))
+	}
+	for _, record := range records {
+		id := string(record.Change.ID)
+		if viewOrigins[id] != string(record.Change.Origin) {
+			t.Fatalf("%s: origin View=%q ReadChanges=%q", id, viewOrigins[id], record.Change.Origin)
+		}
+	}
+	for _, seed := range seeds {
+		if viewOrigins[seed.changeID] != seed.want {
+			t.Fatalf("%s: origin über die View = %q, wollen %q", seed.changeID, viewOrigins[seed.changeID], seed.want)
+		}
 	}
 }

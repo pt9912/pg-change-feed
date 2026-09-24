@@ -195,3 +195,65 @@ func TestToChangeRejectsRowOutsideInvariants(t *testing.T) {
 		t.Fatalf("Fehler = %v, wollen %v", err, domainerrors.ErrNonPositiveSequence)
 	}
 }
+
+// Die Herkunft eines Changes geht in die Zeile (`SPEC-002`, `origin`) und
+// liest sich unverändert zurück: `wal` aus dem Konstruktor-Default,
+// `backfill` über `WithOrigin`.
+func TestChangeRowRoundTripsOrigin(t *testing.T) {
+	wal, err := model.NewChange("c-1", "t-1", "tbl-1", 1, model.OperationInsert, nil, []byte(`{"a":1}`), "sv-1")
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	backfill, err := wal.WithOrigin(model.ChangeOriginBackfill)
+	if err != nil {
+		t.Fatalf("WithOrigin: %v", err)
+	}
+	rows, err := mapper.NewChangeRows([]model.Change{wal, backfill})
+	if err != nil {
+		t.Fatalf("NewChangeRows: %v", err)
+	}
+	if rows[0].Origin != "wal" || rows[1].Origin != "backfill" {
+		t.Fatalf("Zeilen-Herkunft = %q/%q, wollen wal/backfill", rows[0].Origin, rows[1].Origin)
+	}
+	for i, want := range []model.ChangeOrigin{model.ChangeOriginWAL, model.ChangeOriginBackfill} {
+		restored, err := mapper.ToChange(rows[i])
+		if err != nil {
+			t.Fatalf("ToChange %d: %v", i, err)
+		}
+		if restored.Origin != want {
+			t.Fatalf("Change %d: Origin = %q, wollen %q", i, restored.Origin, want)
+		}
+	}
+}
+
+// Ein Change ohne gesetzte Herkunft (Literal, nicht über den Konstruktor)
+// schreibt `wal`, eine Zeile ohne Wert (`NULL`, leere Zeichenkette) liest
+// als `wal` (`LH-FA-DAT-006` Boundary); ein Wert außerhalb der Menge endet
+// in beiden Richtungen als Domänen-Fehler.
+func TestChangeRowOriginMissingReadsAsWALAndUnknownIsRejected(t *testing.T) {
+	rows, err := mapper.NewChangeRows([]model.Change{{ID: "c-1", TransactionID: "t-1", SourceTableID: "tbl-1", Sequence: 1, Operation: model.OperationInsert, SchemaVersion: "sv-1"}})
+	if err != nil {
+		t.Fatalf("NewChangeRows: %v", err)
+	}
+	if rows[0].Origin != "wal" {
+		t.Fatalf("fehlende Herkunft schreibt %q, will wal", rows[0].Origin)
+	}
+
+	null := mapper.ChangeRow{ChangeID: "c-1", TransactionID: "t-1", SourceTableID: "tbl-1", Sequence: 1, Operation: string(model.OperationInsert), SchemaVersion: "sv-1"}
+	change, err := mapper.ToChange(null)
+	if err != nil {
+		t.Fatalf("ToChange(NULL-Herkunft): %v", err)
+	}
+	if change.Origin != model.ChangeOriginWAL {
+		t.Fatalf("NULL-Herkunft liest als %q, will wal", change.Origin)
+	}
+
+	unknown := null
+	unknown.Origin = "snapshot"
+	if _, err := mapper.ToChange(unknown); err != domainerrors.ErrInvalidChangeOrigin {
+		t.Fatalf("ToChange(snapshot): %v, will %v", err, domainerrors.ErrInvalidChangeOrigin)
+	}
+	if _, err := mapper.NewChangeRows([]model.Change{{ID: "c-1", TransactionID: "t-1", SourceTableID: "tbl-1", Sequence: 1, Operation: model.OperationInsert, SchemaVersion: "sv-1", Origin: "snapshot"}}); err != domainerrors.ErrInvalidChangeOrigin {
+		t.Fatalf("NewChangeRows(snapshot): %v, will %v", err, domainerrors.ErrInvalidChangeOrigin)
+	}
+}

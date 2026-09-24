@@ -216,7 +216,16 @@ func changeRow(id string, sequence int64, position int64) []any {
 		[]byte(`{"name":"a"}`),
 		"sv-1",
 		time.Unix(100, 0),
+		"wal",
 	}
+}
+
+// changeRowWithOrigin trägt eine Ergebnis-Zeile der Change-Abfrage mit der
+// übergebenen Herkunft als letzter Spalte (`SPEC-002`, `origin`).
+func changeRowWithOrigin(origin string) []any {
+	row := changeRow("chg-1", 1, 42)
+	row[len(row)-1] = origin
+	return row
 }
 
 // failRecorder trägt die Ursachen, die der Aufrufer klassifizieren würde —
@@ -279,6 +288,36 @@ func TestReadChangesIssuesQueryAndTranslatesRows(t *testing.T) {
 	}
 	if len(recorder.causes) != 0 {
 		t.Fatalf("der Erfolgsfall darf die Klasse nicht berühren: %v", recorder.causes)
+	}
+}
+
+// Die letzte Spalte der Projektion trägt die Herkunft (`SPEC-002`): ein
+// gelesener Wert erreicht den Change, ein Wert außerhalb der geschlossenen
+// Menge endet als Domänen-Fehler statt als gefälschter Change (`ADR-0029`).
+func TestReadChangesCarriesOrigin(t *testing.T) {
+	for _, tc := range []struct {
+		origin  string
+		want    model.ChangeOrigin
+		wantErr error
+	}{
+		{"wal", model.ChangeOriginWAL, nil},
+		{"backfill", model.ChangeOriginBackfill, nil},
+		{"", model.ChangeOriginWAL, nil},
+		{"snapshot", "", domainerrors.ErrInvalidChangeOrigin},
+	} {
+		t.Run(tc.origin, func(t *testing.T) {
+			exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{changeRowWithOrigin(tc.origin)}}}
+			records, err := sqlexec.ReadChanges(context.Background(), exec, sqlexec.Statement{
+				SQL:  "SELECT changes",
+				Fail: (&failRecorder{class: outbound.ErrStorage}).fail,
+			})
+			if !stderrors.Is(err, tc.wantErr) {
+				t.Fatalf("Fehler = %v, wollen %v", err, tc.wantErr)
+			}
+			if tc.wantErr == nil && records[0].Change.Origin != tc.want {
+				t.Fatalf("Origin = %q, wollen %q", records[0].Change.Origin, tc.want)
+			}
+		})
 	}
 }
 

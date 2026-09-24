@@ -67,7 +67,10 @@ CREATE INDEX IF NOT EXISTS cdc_transaction_source_position_idx
 -- `LH-FA-CAP-008` Boundary). Die Sequenz ist innerhalb der Transaktion
 -- eindeutig und mindestens 1 (`SPEC-002`); die UNIQUE-Kante erzwingt die
 -- Domänen-Invariante (`ADR-0029`, Regel 6) auch gegen Bestand außerhalb
--- der Domänen-Konstruktoren.
+-- der Domänen-Konstruktoren. `origin` trägt die Herkunft (`SPEC-002`,
+-- `LH-FA-CAP-009`): nullable, ohne DEFAULT und ohne CHECK — NULL liest
+-- als `wal`, die geschlossene Menge erzwingt die Domäne
+-- (`model.ChangeOrigin`); dieselbe Spaltenform wie `tools/schema/schema.yaml`.
 CREATE TABLE IF NOT EXISTS cdc.change (
     change_id       text PRIMARY KEY,
     transaction_id  text NOT NULL REFERENCES cdc.transaction (transaction_id),
@@ -77,6 +80,7 @@ CREATE TABLE IF NOT EXISTS cdc.change (
     old_data        jsonb,
     new_data        jsonb,
     schema_version  text NOT NULL REFERENCES cdc.schema_version (schema_version_id),
+    origin          text,
     UNIQUE (transaction_id, sequence)
 );
 

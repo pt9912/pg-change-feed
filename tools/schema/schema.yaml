@@ -154,6 +154,13 @@ tables:
         type: text
         required: true
         references: { table: schema_version, column: schema_version_id }
+      # origin trägt die Herkunft des Changes (SPEC-002, LH-FA-CAP-009):
+      # `wal` oder `backfill`. Bewusst nullable, ohne DEFAULT und ohne
+      # CHECK — NULL liest als `wal` (LH-FA-DAT-006), die geschlossene
+      # Menge erzwingt die Domäne (model.ChangeOrigin), nicht die
+      # Datenbank; d-migrate konvergiert eine CHECK-Änderung an einer
+      # bestehenden Tabelle nicht (siehe Kopfkommentar).
+      origin: { type: text }
     primary_key: [change_id]
     constraints:
       - name: chk_change_operation
@@ -317,7 +324,8 @@ views:
           c.old_data,
           c.new_data,
           c.schema_version,
-          t.committed_at
+          t.committed_at,
+          COALESCE(c.origin, 'wal') AS origin
       FROM cdc.change c
       JOIN cdc.transaction t ON t.transaction_id = c.transaction_id
       JOIN cdc.source_table st ON st.source_table_id = c.source_table_id
@@ -336,6 +344,7 @@ views:
       - { name: new_data, type: jsonb }
       - { name: schema_version, type: text }
       - { name: committed_at, type: "timestamp with time zone" }
+      - { name: origin, type: text }
 
   retention_blockers:
     description: "Retention-Sicht: je Quelle der Consumer, dessen bestätigte Position den größten Rückstand zur letzten Commit-Position trägt — genau die Position, die RetentionPolicy.AllowsDeletion (RunRetentionUseCase) aktuell als Löschgrenze der Quelle behandelt (LH-FA-RET-005). Macht die bereits real getroffene Freigabe-Entscheidung sichtbar, berechnet sie nicht neu. Ein Consumer ohne jede bestätigte Position gegen eine Quelle trägt keine Zeile in cdc.consumer_position und erscheint hier nicht — dieselbe Abwesenheits-Lesart wie ConsumerStatePort.Positions (er blockiert retentionsseitig auch nicht). Eine Quelle ohne jede bestätigte Consumer-Position erscheint deshalb gar nicht in dieser Sicht (kein aktueller Blocker)."
