@@ -59,7 +59,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
   `bootstrap.Diagnose`: Warnung (1) beim Antrag, wenn die **geschätzte**
   Zeilenzahl über der Richtgröße liegt; Warnung (2) zur Laufzeit, wenn ein Run
   länger als die Toleranz läuft, geprüft bei jedem Fortschritts-Update (je Block)
-  und beim Abschluss. Das Ergebnis steht als Spalte(n) an der Run-Zeile —
+  und beim Abschluss. Das Ergebnis steht in den zwei Warn-Spalten der Run-Zeile —
   Warnung (1) schreibt `Admit`, Warnung (2) der Worker per `UPDATE` —,
   `cdc.backfill_status` reicht sie durch, `diagnose` liest sie aus der View.
   Eine unbekannte Schätzung (`NULL`) warnt nicht (Warnung (1) entfällt), sagt
@@ -143,8 +143,8 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 | `tools/bench-backfill.sh` (Arbeitsname) | neu | die Messung im Muster der drei bestehenden Skripte; nutzt `tools/bench-lib.sh`. |
 | `Makefile` (Target `bench`) | update | ruft das vierte Skript; Hilfetext und Kommentar zählen neu. |
 | `internal/application/usecase/backfill/` (+ Tests, Arbeitsname `warn.go`) | update | Toleranz- und Richtgrößen-Konstante, Auswertung beider Warnungen an einer Stelle; Fake-Uhr-Tests der Grenzfälle. |
-| Run-Zustands-Port, Annahme-Port und ihre Adapter | prüfen | tragen das Warn-Ergebnis in die Spalte(n) aus `run-store` (Warnung 1 über `Admit`, Warnung 2 über das Fortschritts-Update); ein Bedarf über das dort angelegte Feld hinaus wäre ein Plan-Nachzug. |
-| `internal/bootstrap/wiring.go` (`Diagnose`) | prüfen | liest die Warn-Spalte(n) aus der View (`sql-administration`); enthält keine Auswertung und keine Konstante. |
+| Run-Zustands-Port, Annahme-Port und ihre Adapter | prüfen | tragen das Warn-Ergebnis in die zwei Warn-Spalten aus `run-store` (Warnung 1 über `Admit`, Warnung 2 über das Fortschritts-Update); ein Bedarf über die dort angelegten Spalten hinaus wäre ein Plan-Nachzug. |
+| `internal/bootstrap/wiring.go` (`Diagnose`) | prüfen | liest die zwei Warn-Spalten aus der View (`sql-administration`); enthält keine Auswertung und keine Konstante. |
 | `internal/bootstrap/diagnose_test.go` | prüfen | zeigt die Warnung aus der View an; keine Grenzfälle der Auswertung (die liegen im Use-Case-Test). |
 | `docs/user/benutzerhandbuch.md` | update | Richtgröße im Abschnitt „Grenzwerte“ mit Ursprung; Diagnose-Beispiel; Änderungshistorie. |
 | `harness/README.md` §Sensors | update | Zeile `make bench` (drei → vier Skripte) — aus dem realen Lauf geschrieben. |

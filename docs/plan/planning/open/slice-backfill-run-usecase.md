@@ -39,8 +39,8 @@ Umfang:
 - Domäne `BackfillRun` (Zustände `queued` | `running` | `completed` | `failed` |
   `interrupted`, zulässige Übergänge, Fortschrittszähler, Fehlertext, die
   **geschätzte** Zeilenzahl als „unbekannt" oder Zahl — nie `0` für unbekannt —
-  und ein Feld für die Warn-Kennzeichnung, `false`, solange keine Auswertung sie
-  setzt) und die
+  und je ein Feld für die beiden Warn-Kennzeichnungen, `false`, solange keine
+  Auswertung sie setzt) und die
   Kennungs-Bildung: Transaktions-Kennung `0bf-<run-id>-<Blocknummer, 8 Stellen,
   null-aufgefüllt>`, Sequenz `1…B`, `change_id` `<Transaktions-ID>-<Sequenz>`
   ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 6);
@@ -84,7 +84,7 @@ Umfang:
 - **Postgres-Adapter und Schema** (`cdc.backfill_run`, Grants, die Transaktion
   von `Admit`) — `run-store`; dieser Slice hat keine Datenbank.
 - **Die Auswertung der Warnungen** (Toleranz, Richtgröße) — `bench-richtgroesse`;
-  dieser Slice trägt nur das Feld der Warn-Kennzeichnung (`false`).
+  dieser Slice trägt nur die Felder der beiden Warn-Kennzeichnungen (`false`).
 - **Der Worker samt Aufnahme beim Start und Wecksignal**, Start-Abgleich,
   Antragsart, SQL-Funktion — `sql-administration`.
 - **Regelauswertung/Transformationen** ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) — der Bild-Bau des Use Case

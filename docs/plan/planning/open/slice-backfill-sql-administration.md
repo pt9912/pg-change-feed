@@ -18,7 +18,7 @@ vorwärts — die Sichtbarkeits-Grenze), [`ADR-0111`](../../adr/0111-backfill-be
 Administration, Sichtbarkeit) und Festlegung 1/2/3, [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
 (Antrags-Queue und Live-Reload), [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Schemamigrationen — Idempotenz-
 Guard), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (Rollen), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1/2/3 (Annahme in einer
-Transaktion, Aufnahme beim Start und bei Wecksignal, Warn-Spalte(n) in View und
+Transaktion, Aufnahme beim Start und bei Wecksignal, Warn-Spalten in View und
 `diagnose`).
 
 **Berührte Spec-Stellen:** [`SPEC-019`](../../../../spec/pflichtenheft.md) (Antrags-Datensatz, durch
@@ -65,16 +65,16 @@ sichtbar. Drei Teile:
   automatischer Neustart).
 - **Sichtbarkeit.** Die View `cdc.backfill_status` (letzter Run je Tabelle:
   Status, Zeilen, Zeiten, Fehlertext, **geschätzte** Zeilenzahl, die
-  Warn-Spalte(n) aus `run-store`) mit `SELECT` für `cdc_reader`, die Ausgabe in
+  zwei Warn-Spalten aus `run-store`) mit `SELECT` für `cdc_reader`, die Ausgabe in
   `diagnose` (`bootstrap.Diagnose`: je Tabelle Status und Fortschritt, die
-  Warn-Spalte(n) — `false`, solange keine Auswertung sie setzt —, eine unbekannte
+  die zwei Warn-Spalten — `false`, solange keine Auswertung sie setzt —, eine unbekannte
   Schätzung als „unbekannt"; ein `failed`/`interrupted`-Run ist Berichtsinhalt,
   kein Befehlsfehler) und der Handbuch-Abschnitt der Oberfläche.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
 
 - **Die Auswertung der Warnungen** (Toleranz, Richtgröße) — sie entsteht mit
-  `bench-richtgroesse`; hier zeigen View und `diagnose` die Warn-Spalte(n) (`false`),
+  `bench-richtgroesse`; hier zeigen View und `diagnose` die zwei Warn-Spalten (`false`),
   Schätzung und Laufzeit **ohne** Schwellenwert, und die Schätzung trägt an jedem
   Träger das Wort „geschätzt" (`BEO-PGC/geschaetzter-wert-als-grenze`).
 - **Die gemessene Startposition eines frisch registrierten Consumers** —
@@ -117,8 +117,8 @@ sichtbar. Drei Teile:
 - [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
-      Warn-Spalte(n); `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
-      gibt sie aus (die Warn-Spalte(n) `false`, solange keine Auswertung sie setzt),
+      zwei Warn-Spalten; `cdc_reader` liest sie, die Basistabelle nicht; `diagnose`
+      gibt sie aus (beide Warn-Spalten `false`, solange keine Auswertung sie setzt),
       ein `failed`-Run ist Berichtsinhalt (Exit 0). Das Benutzerhandbuch trägt den neuen Abschnitt
       „Bestand als Backfill überführen" (Auslösung, Betriebs-Vorbedingungen —
       `SELECT`-Recht der Login-Identität von `CDC_CAPTURE_DSN` auf die

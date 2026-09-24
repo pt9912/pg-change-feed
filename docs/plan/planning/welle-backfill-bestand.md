@@ -248,9 +248,9 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 
 | Folgepflicht | Träger |
 |---|---|
-| 1 Spec-Nachzug (Grants, Warn-Spalte(n), `applied` = „angenommen", Sicht) | `slice-backfill-spec-nachzug` |
+| 1 Spec-Nachzug (Grants, zwei Warn-Spalten, `applied` = „angenommen", Sicht) | `slice-backfill-spec-nachzug` |
 | 2 Port-Schnitt der Annahme, `Request` endet mit `Admit`, Vorbedingungen erneut prüfen | `slice-backfill-run-usecase` (Start-Trigger: `ADR-0113` `Accepted`) |
-| 3 Grants, `estimated_rows` nullable, Warn-Spalte(n), Annahme-Adapter, Rollen-Tests | `slice-backfill-run-store` |
+| 3 Grants, `estimated_rows` nullable, zwei Warn-Spalten, Annahme-Adapter, Rollen-Tests | `slice-backfill-run-store` |
 | 4 Verarbeitungs-Zweig, Worker-Schleife mit Start-Aufnahme und Signal, View und `diagnose` | `slice-backfill-sql-administration` |
 | 5 Warn-Auswertung, Toleranz-Konstante, Handbuch | `slice-backfill-bench-richtgroesse` (Start-Trigger: `ADR-0113` `Accepted`) |
 | 6 `reltuples` = `−1` an PostgreSQL 17 und 18 | `slice-backfill-snapshot-reader` |

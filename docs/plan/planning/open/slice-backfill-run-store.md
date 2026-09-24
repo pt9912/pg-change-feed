@@ -18,7 +18,7 @@ abgebrochener Run hinterlässt nichts), [`LH-FA-CAP-004`](../../../../spec/laste
 Run-Zustand, Ordnung, Retention), [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md) (Schemamigrationen mit
 d-migrate), [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) (rollenspezifische DSN-Verdrahtung), [`ADR-0017`](../../adr/0017-generische-change-tabelle.md)
 (generische Change-Tabelle), [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1/3 (Rollenschnitt, Grants, Annahme in einer
-Transaktion, Warn-Spalte(n), `estimated_rows` = `NULL` als „unbekannt").
+Transaktion, Warn-Spalten, `estimated_rows` = `NULL` als „unbekannt").
 
 **Berührte Spec-Stellen:** [`SPEC-029`](../../../../spec/pflichtenheft.md) (Feldform `cdc.backfill_run`, durch
 `spec-nachzug`), [`SPEC-001`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md) — gelesen, nicht geändert;
@@ -37,9 +37,9 @@ Transaktion, Warn-Spalte(n), `estimated_rows` = `NULL` als „unbekannt").
 `schema_name`, `table_name`, `status`, `requested_at`, `started_at`,
 `finished_at`, `snapshot_position`, `rows_copied`, `estimated_rows`,
 `error_message`; `estimated_rows` ist **nullable** — `NULL` heißt „unbekannt",
-nie `0` —; dazu die **Warn-Spalte(n)** für die beiden Warnungen (Zahl und
-Bezeichner wie in [`SPEC-029`](../../../../spec/pflichtenheft.md) durch `spec-nachzug` festgelegt; `false`, solange
-keine Auswertung sie setzt); die geschlossene `status`-Menge als CHECK **bei
+nie `0` —; dazu die **zwei Warn-Spalten** `warn_estimated_size` und `warn_duration`
+für die beiden Warnungen (Typ `boolean NOT NULL DEFAULT false` wie in [`SPEC-029`](../../../../spec/pflichtenheft.md)
+durch `spec-nachzug` festgelegt; `false`, solange keine Auswertung sie setzt); die geschlossene `status`-Menge als CHECK **bei
 Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 `run-usecase`:
 
@@ -81,7 +81,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 
 - [ ] Schema und Grants: `cdc.backfill_run` liegt in `tools/schema/schema.yaml`
       (CHECK auf `status` bei Erstanlage, `estimated_rows` nullable, die
-      Warn-Spalte(n) nach [`SPEC-029`](../../../../spec/pflichtenheft.md)), die Grants stehen in
+      zwei Warn-Spalten nach [`SPEC-029`](../../../../spec/pflichtenheft.md)), die Grants stehen in
       `tools/schema/nacharbeit-roles.sql` — `cdc_admin` mit `SELECT`, `INSERT`,
       `cdc_capture` mit `SELECT`, `UPDATE`, niemand mit `DELETE`, `cdc_reader` ohne
       Recht auf die Basistabelle ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1, Punkt 3). *Zu belegen
@@ -140,7 +140,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/schema/schema.yaml` | update | Tabelle `backfill_run`; CHECK auf `status` bei Erstanlage (spätere Erweiterung über Nacharbeit-SQL, nach dem Muster von `request_kind`); `estimated_rows` nullable; Warn-Spalte(n). |
+| `tools/schema/schema.yaml` | update | Tabelle `backfill_run`; CHECK auf `status` bei Erstanlage (spätere Erweiterung über Nacharbeit-SQL, nach dem Muster von `request_kind`); `estimated_rows` nullable; die zwei Warn-Spalten. |
 | `tools/schema/nacharbeit-roles.sql` | update | Grants: `cdc_admin` `SELECT`, `INSERT`; `cdc_capture` `SELECT`, `UPDATE`. |
 | `internal/bootstrap/roles_rollout_file_internal_test.go` | update | hält den Rollenschnitt gegen die Rollout-Datei; die neue Tabelle darf für `cdc_reader` **nicht** als Basistabellen-Grant erscheinen. |
 | `internal/adapters/driven/postgresstorage/` (Arbeitsname `backfilladmission.go`, `backfillrun.go`, `backfillwriter.go`, + Tests) | neu | die drei Adapter über die schmale Ausführungs-Naht des Pakets (`sqlexec`); explizite Spaltenlisten; der Annahme-Adapter nutzt `Begin`. |
