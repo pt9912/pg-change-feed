@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.51
+Version: 1.52
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -451,12 +451,28 @@ Start. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
 
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
 der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
-der Tabelle laufen weiter. Eine DDL, die `ACCESS EXCLUSIVE` verlangt
-(`ALTER TABLE` mit Umschreiben der Tabelle, `TRUNCATE`, `VACUUM FULL`,
-`CLUSTER`, `DROP TABLE`), wartet bis zum Ende des Runs; Leser der Tabelle, die
-nach ihr anfragen, stauen sich hinter ihr (aus dem Sperrverhalten von
-PostgreSQL hergeleitet, nicht gemessen). Planen Sie eine solche DDL nicht in
-die Laufzeit eines Runs.
+der Tabelle laufen weiter, solange keine DDL auf die Tabelle wartet. Eine DDL,
+die `ACCESS EXCLUSIVE` verlangt (`ALTER TABLE` mit Umschreiben der Tabelle,
+`TRUNCATE`, `VACUUM FULL`, `CLUSTER`, `DROP TABLE`), wartet bis zum Ende des
+Runs, und **jeder weitere Zugriff auf die Tabelle stellt sich hinter sie**:
+Schreiber und Leser der Tabelle ebenso wie die Abfrage der
+Publication-Mitgliedschaft (`pg_publication_tables`), die ein Antrag und der
+Start eines Runs ausführen. Gemessen (PostgreSQL 18, Ursprung:
+[Review-Report](../reviews/review-slice-backfill-e2e.md) F-1): mit einer
+wartenden `ALTER TABLE … ALTER COLUMN … TYPE` liefen ein `INSERT` in die
+Tabelle, ein `SELECT count(*)` auf die Tabelle und die Abfrage von
+`pg_publication_tables` je in ein Zeitlimit von 4 s. Führen Sie eine solche DDL
+an einer Tabelle nicht aus, solange ein Run für sie `running` ist (Status in
+`cdc.backfill_status`); die Dauer des Runs wächst mit der Größe der Tabelle.
+
+In der Gegenrichtung wartet der Run, solange eine fremde Transaktion
+`ACCESS EXCLUSIVE` auf der Tabelle hält: er steht `running` mit `rows_copied` 0
+und hält für diese Zeit seinen Snapshot. Der Run trägt dafür keine eigene
+Zeitgrenze; das Warten endet mit dem Ende der fremden Transaktion oder mit dem
+Abbruch des Runs (Ablauf seines Kontexts; der Adapter beendet ihn mit der Klasse
+`transient` und hinterlässt keine Sitzung, gemessen im Store-Tier von
+`make test-replication`, PostgreSQL 18). Beenden Sie eine offene DDL-Transaktion
+auf der Tabelle, statt den Run warten zu lassen.
 
 **Vorgehen:**
 
@@ -516,8 +532,10 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
   Erkennung schlägt auch bei `VACUUM FULL` und `CLUSTER` an, obwohl der Snapshot
   die Zeilen noch sieht — ein Fehlalarm mit derselben Abhilfe. Das Fenster ist
   die Zeit zwischen Export und Sperre; seine Dauer ist nicht gemessen. Ein
-  `DROP COLUMN` oder `RENAME COLUMN` im Fenster endet ebenfalls `failed`, mit
-  der Klasse `storage`.
+  `DROP COLUMN` im Fenster endet ebenfalls `failed`, mit der Klasse `storage`
+  (Phase DDL-Fenster von `make test-integration`); ein `RENAME COLUMN` endet
+  gleich (gemessen im [Review-Report](../reviews/review-slice-backfill-e2e.md),
+  PostgreSQL 18, Klasse `storage`; kein Beleg im E2E-Runner).
 - Ein Run-Fehler ist **run-lokal**: er setzt weder den Fehlerzustand des
   Lebenszeichens noch stoppt er die Erfassung.
 
@@ -1586,3 +1604,4 @@ MIT — siehe `LICENSE`.
 | 1.49 | 2026-09-24 | Backfill-Abschnitt an Rollen und Stichtag angeglichen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-sql-administration Fixrunde): §4 „Bestand als Backfill überführen" nennt den Antrag und dessen Vermerk unter `cdc_admin`, das Lesen von `cdc.backfill_status` unter einer `cdc_reader`-Identität (die Rolle `cdc_admin` trägt kein `SELECT` auf die View), und den Snapshot als Start des Runs statt des Antrags (auch §8 Glossar); ein Backfill-Antrag einer anderen Quelle bleibt für die Instanz dieser Quelle `pending` |
 | 1.50 | 2026-09-24 | Gemessene Startposition eines frisch registrierten Consumers dokumentiert (`LH-FA-CAP-009`, `LH-FA-CON-005`, `ADR-0111`, slice-backfill-e2e): §4 „Bestand als Backfill überführen" trägt den Punkt „Startposition eines neuen Consumers" (`offset` 0, `acknowledged` `false`, vor der Snapshot-Position jedes Runs; Ursprung: der Lauf von `make test-integration`) und nennt in der Zustandstabelle, dass `rows_copied` eines `interrupted`-Runs den zuletzt festgehaltenen Fortschritt trägt |
 | 1.51 | 2026-09-24 | Sperre des Backfill-Runs und Ausgang bei umgeschriebener Tabelle dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“ trägt den Absatz „Sperre der Tabelle“ (Lesesperre bis zum Ende des Runs, Wirkung auf DDL mit `ACCESS EXCLUSIVE`) und den Punkt „Umschreiben der Tabelle im Fenster“ (`failed`/`transient` ohne Änderung, neuer Antrag als Abhilfe, Fehlalarme `VACUUM FULL`/`CLUSTER`) |
+| 1.52 | 2026-09-24 | Wirkung der Tabellensperre des Backfill-Runs vollständig und mit Ursprung dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“, Absatz „Sperre der Tabelle“, nennt neben Lesern auch Schreiber und die Publication-Abfrage der Administration als hinter einer wartenden DDL gestaut (gemessen, PostgreSQL 18) und die Gegenrichtung (der Run wartet ohne eigene Zeitgrenze auf eine offene `ACCESS EXCLUSIVE`-Transaktion); `RENAME COLUMN` im Fenster ist als im Review gemessen, nicht im E2E-Runner belegt gekennzeichnet |

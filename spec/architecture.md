@@ -327,6 +327,7 @@ sequenceDiagram
     SP->>SA: Snapshot öffnen
     SA->>PG: temporärer Slot mit Snapshot-Export → Position X
     SA->>PG: Transaktion (REPEATABLE READ) mit importiertem Snapshot
+    SA->>PG: Lesesperre auf die Tabelle, Umschreib-Prüfung
     SA-->>BUC: Position X
     loop je Block begrenzter Größe
         SA-->>BUC: Zeilen des Blocks
@@ -343,8 +344,15 @@ Sichtbar für Leser ist bis zum Commit nur der Fortschritt der Run-Zeile, die
 kopierten Changes werden mit dem einen Commit sichtbar. Eine Abweichung bei der
 Fail-closed-Prüfung rollt alle Blöcke zurück und der Run endet `failed`; ein
 Prozessende oder ein Verbindungsverlust rollt sie ebenfalls zurück, der Run
-bleibt `running` und wird beim nächsten Prozessstart `interrupted`. Der
-Snapshot-Leser trägt den Snapshot-Export und den Import; der Worker arbeitet
+bleibt `running` und wird beim nächsten Prozessstart `interrupted`. Die
+Lesesperre gilt bis zum Ende der Lese-Transaktion: eine DDL mit exklusiver
+Sperre wartet bis dahin, und der Run wartet an der Sperranweisung, solange eine
+fremde Transaktion die Tabelle exklusiv hält. Die Umschreib-Prüfung vergleicht
+die Datei der Tabelle im Snapshot mit dem aktuellen Katalog; wurde die Tabelle
+zwischen Snapshot-Export und Lesesperre umgeschrieben, endet der Run `failed`
+mit der Klasse `transient` und ohne Change, und ein neuer Antrag beginnt neu.
+Der Snapshot-Leser trägt den Snapshot-Export, den Import, die Lesesperre und
+die Umschreib-Prüfung; der Worker arbeitet
 auf eigenen Verbindungen, der Capture-kritische Pfad bleibt unberührt.
 Backfill-Changes gehen nicht in den Live-Stream: sie werden über den
 bestehenden Lesezugriffsweg gelesen; das Wecksignal nach dem Commit wird über
