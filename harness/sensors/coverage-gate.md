@@ -20,8 +20,9 @@ Pakete aus, deren Testlauf einen externen Dienst voraussetzt
 (`postgresstorage` ohne das Unterpaket `mapper`, `postgresack`,
 `postgressnapshot`, `replication/receive`). Die tragende Regel ist die
 **Eigenschaft**, nicht die Liste: Ein Paket, dessen Testlauf einen externen
-Dienst voraussetzt, ist nicht Gegenstand dieses Gates. Die DB-gestützte Ebene dieser vier Pakete
-trägt ihre eigene, subjekt-qualifizierte Messung (`ADR-0071` Punkt 3).
+Dienst voraussetzt, ist nicht Gegenstand dieses Gates. Die DB-gestützte Ebene
+dieser vier Pakete trägt ihre eigene, subjekt-qualifizierte Messung
+(`ADR-0071` Punkt 3).
 
 `test/integration/` bleibt außerhalb: eigenständige `integration_test`-
 Paketwurzel unter `test/` mit Black-Box-Tests gegen einen laufenden
@@ -238,9 +239,10 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
    Dockerfile-Filter ohne `postgressnapshot` druckt
    `coverage-gate: FAIL — Coverage 77.00% unter Schwelle 80%` (Exit ≠ 0 des
    `docker build`). Mit dem Eintrag druckt derselbe Stand
-   `coverage-gate: OK — Coverage 82.90% erfüllt Schwelle 80%`. Von den vier
-   Rücknahme-Fällen färben damit **zwei** die Stufe rot (`postgresstorage`,
-   `postgressnapshot`) und **zwei** bleiben grün.
+   `coverage-gate: OK — Coverage 82.90% erfüllt Schwelle 80%` (ein zweiter Lauf
+   desselben Stands druckte `82.80%`: die in §Zählbasis benannte Schwankung).
+   Von den vier Rücknahme-Fällen färben damit **zwei** die Stufe rot
+   (`postgresstorage`, `postgressnapshot`) und **zwei** bleiben grün.
 5. **Die Testpaket-Liste ist Disziplin, kein Sensor.** Ob die vier
    ausgenommenen Pakete in der Testpaket-Liste stehen oder nicht, ändert die
    Zahl nicht — ihre Testdateien überspringen netzlos ohnehin. **Der Wächter
