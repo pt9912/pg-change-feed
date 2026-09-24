@@ -111,19 +111,28 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
+      Report `docs/reviews/review-slice-backfill-change-origin.md` (0 HIGH,
+      2 MEDIUM, 3 LOW, 5 INFO); F-1 bis F-6 in Fixrunde 2 behoben (§3, Tabelle
+      „Fixrunde 2"), F-7 und F-10 als gemeldete Träger geführt, F-8 im Handbuch
+      und im Target-Dokument benannt, F-9 bewertet ohne Aktion. Ein
+      Reviewer-Nachprüfungs-Report zur Fixrunde liegt nicht vor; die Behebung
+      hat der Verifier selbst am Code nachgemessen (Verifikation §2 Zeile 6,
+      §5 Mutationen), kein offenes HIGH/MEDIUM.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: siehe dritter Liefer-Punkt (Handbuch, Änderungshistorie); [`SPEC-002`](../../../../spec/pflichtenheft.md)/[`SPEC-022`](../../../../spec/pflichtenheft.md) sind bereits gezogen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
-      neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+      neuer Sensor · benannte Spec-Lücke). *(§7: neuer Sensor-Umfang und
+      benannte ADR-Lücke.)*
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      eine Antwort und wird in §7 notiert. *(Fünf weitere `evidence/`-Dateien
+      in bestehenden Klassen, vier neue Klassen; siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen). *(Vier Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
@@ -165,7 +174,7 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
 | Spaltenlisten der View in Doku | Parent (Commit `f4ba82ab`, Stand vor diesem Slice): `git grep -n 'committed_at' f4ba82ab -- docs/user spec harness`; Diff-Stand (Commit `e95937cf`, Arbeitsbaum sauber): dasselbe mit `e95937cf` | Beide Stände **6** Treffer (gemessen), davon 3 im Handbuch: Parent `docs/user/benutzerhandbuch.md` Z. 377 (Spaltenliste des SQL-Beispiels unter „Änderungen lesen"), Z. 419 (`SELECT change_id, committed_at` — explizite Zwei-Spalten-Abfrage unter „Aufbewahrung", von `origin` nicht berührt), Z. 639 (Feldliste der `GET /changes`-Antwort unter „Changes lesen"); 3 in `spec/pflichtenheft.md` (Z. 236 synthetische Transaktionen, Z. 603 `SPEC-022`-Antwortzelle — trägt `origin` bereits —, Z. 819 Änderungsverlauf), keiner in `harness/`. Ergänzend `git grep -n -w 'origin' <Stand> -- docs/user`: Parent 1 (`docs/user/releasing.md`, das Git-Remote), Diff-Stand 6 (das Remote plus fünf Zeilen im Handbuch); `-- spec`: je Stand 9 (Spec ist gezogen) | Handbuch-Z. 377 und Z. 639 gezogen (die zwei benannten Stellen), Z. 419 unverändert; Version 1.44 samt Historienzeile; Spec unverändert |
-| Anzahl-Formulierungen („zehn Felder", „zwölf Felder") an `GET /changes` | Erste Fassung: `git grep -n 'Felder' <Stand> -- docs/user spec` und `git grep -n -E 'elf Felder\|zwölf Felder\|dreizehn Felder' <Stand> -- docs/user spec`. Fixrunde 2 (Suchraum auf den ganzen Baum erweitert, Wortsuche über Zeilenumbrüche hinweg): `git grep -n -i -w -E 'twelve\|eleven\|thirteen\|zwölf\|zwoelf\|elf\|dreizehn' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` (Parent `09386619`, Diff-Stand `HEAD` der Fixrunde) | `Felder` je Stand **33** Treffer (gemessen, `docs/user spec`), davon `zehn Felder` je Stand **19** (Live-Wege, bleiben bei zehn); `elf`/`zwölf`/`dreizehn Felder` in `docs/user spec` je Stand **0**. Erweiterte Suche: je Stand **24** Treffer über den Baum (gemessen, unverändert), davon **4** Feldanzahl-Träger für `GET /changes`, alle in `sdks/`: `sdks/csharp/PgChangeFeed.Client/Sse/Models/Change.cs` Z. 17 („eleven fields"), `sdks/csharp/PgChangeFeed.Client/Nats/Models/Change.cs` Z. 21 („eleven fields"), `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse/model/Change.kt` Z. 19–20 („twelve" am Zeilenende, „fields" in der Folgezeile — eine Zeilen-Suche auf „twelve fields" träfe sie nicht), `sdks/python/pgchangefeed/src/pgchangefeed/models.py` Z. 264 („zwölf des HTTP-Lesezugriffs"); die übrigen 20 Treffer sind fremde Zahlen (zwölf Beispiel-Programme, zwölf SDK-Flächen, Baseline-Text). Zusätzlich `git grep -n -i -E '(ten\|zehn) (fields\|felder)' <Stand> -- sdks examples`: je Stand **18** Treffer, davon `Http/Models/Changes.cs` Z. 8 und `http/model/Changes.kt` Z. 8 („the same ten fields as the domain type" — das HTTP-Modell trägt am Parent zwölf Felder, gezählt an `Changes.cs`/`Changes.kt`); `examples/`: **0** Treffer. Die übrigen Treffer beschreiben Live-Wege (zehn Felder) | in `docs/user`/`spec`/`harness`/`examples`: nichts zu ändern; die sechs SDK-Kommentare (die vier Zahlen-Träger und die zwei „same ten fields"-Kommentare) gehören zu `slice-backfill-sdk-origin` (fremde Datei, dort nicht geändert) — an dessen §3 gemeldet (eine eigene Zeile „Kommentare mit Feldanzahl in den SDK-Bäumen"), die SDK-Dateien selbst bleiben in diesem Slice unberührt |
+| Anzahl-Formulierungen („zehn Felder", „zwölf Felder") an `GET /changes` | Erste Fassung: `git grep -n 'Felder' <Stand> -- docs/user spec` und `git grep -n -E 'elf Felder\|zwölf Felder\|dreizehn Felder' <Stand> -- docs/user spec`. Fixrunde 2 (Suchraum auf den ganzen Baum erweitert, Wortsuche über Zeilenumbrüche hinweg): `git grep -n -i -w -E 'twelve\|eleven\|thirteen\|zwölf\|zwoelf\|elf\|dreizehn' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` (Parent `09386619`, Diff-Stand `c54f873a`; die Muster sind mit `|` gemessen und stehen in dieser Tabelle als `\|` maskiert) | `Felder` je Stand **33** Treffer (gemessen, `docs/user spec`), davon `zehn Felder` je Stand **19** (Live-Wege, bleiben bei zehn); `elf`/`zwölf`/`dreizehn Felder` in `docs/user spec` je Stand **0**. Erweiterte Suche: **24** Treffer über den Baum am Parent `09386619` sowie an `f4ba82ab` und `e95937cf`, **25** an `c54f873a` (gemessen; der Zusatztreffer an `c54f873a` ist die Meldungszeile in `docs/plan/planning/open/slice-backfill-sdk-origin.md`, die 25 damit abgeleitet: 24 + 1), davon **4** Feldanzahl-Träger für `GET /changes`, alle in `sdks/`: `sdks/csharp/PgChangeFeed.Client/Sse/Models/Change.cs` Z. 17 („eleven fields"), `sdks/csharp/PgChangeFeed.Client/Nats/Models/Change.cs` Z. 21 („eleven fields"), `sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/sse/model/Change.kt` Z. 19–20 („twelve" am Zeilenende, „fields" in der Folgezeile — eine Zeilen-Suche auf „twelve fields" träfe sie nicht), `sdks/python/pgchangefeed/src/pgchangefeed/models.py` Z. 264 („zwölf des HTTP-Lesezugriffs"); die übrigen 20 Treffer sind fremde Zahlen (zwölf Beispiel-Programme, zwölf SDK-Flächen, Baseline-Text). Zusätzlich `git grep -n -i -E '(ten\|zehn) (fields\|felder)' <Stand> -- sdks examples`: je Stand **16** Treffer (gemessen an `09386619`, `f4ba82ab`, `e95937cf` und `c54f873a`; alle 16 in `sdks/`), davon `Http/Models/Changes.cs` Z. 8 und `http/model/Changes.kt` Z. 8 („the same ten fields as the domain type" — das HTTP-Modell trägt am Parent zwölf Felder, gezählt an `Changes.cs`/`Changes.kt`); `examples/`: **0** Treffer. Die übrigen Treffer beschreiben Live-Wege (zehn Felder) | in `docs/user`/`spec`/`harness`/`examples`: nichts zu ändern; die sechs SDK-Kommentare (die vier Zahlen-Träger und die zwei „same ten fields"-Kommentare) gehören zu `slice-backfill-sdk-origin` (fremde Datei, dort nicht geändert) — an dessen §3 gemeldet (eine eigene Zeile „Kommentare mit Feldanzahl in den SDK-Bäumen"), die SDK-Dateien selbst bleiben in diesem Slice unberührt |
 | Harness/Tests mit `SELECT *` gegen `cdc.changes` | `git grep -n 'SELECT \*' <Stand> -- tools test internal` | Je Stand **3** Treffer (gemessen): `test/integration/integration_test.go` Z. 1002 und 1052 (Kommentare zur expliziten Spaltenliste, kein SQL) und `tools/bench-batch-vs-single.sh` Z. 42 (`SELECT count(*) FROM (SELECT * FROM cdc.changes … LIMIT $M) t` — zählt Zeilen, liest die zusätzliche Spalte mit, ohne dass eine Aussage davon abhängt) | keine Änderung: keine der drei Stellen setzt eine Spaltenmenge voraus, die `origin` verletzt |
 | Kommentare in den Live-Wegen („dieselben Felder wie `model.Change`") | `git grep -n -E 'dieselben (zehn )?Felder wie\|Feldern wie der Domain-Typ' <Stand> -- '*.go' '*.proto' '*.py'` | Je Stand **8** Treffer (gemessen), die `model.Change` als Feldvorbild nennen: `natsstream/publisher.go` Z. 135, `natsstream/publisher_test.go` Z. 261, `driving/http/sse.go` Z. 29 — mit `Change.Origin` nicht mehr wahr —; `gen/cdc/stream/v1/changestream.pb.go` Z. 31 und `proto/cdc/stream/v1/changestream.proto` Z. 13 (dieselbe Aussage über die gRPC-Nachricht); `driving/http/readchanges.go` Z. 46 (`GET /changes`: trägt `origin`, bleibt wahr); `natsstream/publisher.go` Z. 165 (verweist auf das SSE-Event, bleibt wahr); Python-`models.py` Z. 263 | die drei Go-Kommentare ziehen „ohne `Origin`" nach; die `.proto`-Quelle und die generierte Datei **nicht** (die Zeile 13/31 zu ändern verlangt `make proto-generate`, der Plan legt die Proto-Artefakte und `make generated-sync` als unberührt fest) — gemeldet: die Aussage „mit denselben Feldern wie der Domain-Typ" ist an der gRPC-Nachricht ungenau geworden; der Python-Kommentar gehört zu `slice-backfill-sdk-origin` |
 | eingebettete DDL, Report, Rollback | `git ls-tree -r --name-only <Stand> -- tools/schema internal/adapters/driven/postgresstorage/schema.sql` | Je Stand **14** Dateien (gemessen, gleiche Menge); `tools/schema/plan.yaml` und `tools/schema/down.sql` ändern sich im Diff (Ergebnis eines frischen `make schema-rollout` gegen eine leere Datenbank), `schema.sql` und `schema.yaml` ebenso. `schema.sql` ist Träger, nicht nur Test-Hilfe: `store_test.go` und `tableactivation_test.go` bauen das Schema je Test über `ApplySchema` auf; ohne die Spalte dort scheitert `InsertChange` (rot gesehen, Mutation Z12) | `plan.yaml`/`down.sql` regeneriert und committet; `schema.sql` gezogen (Entscheidung, siehe Zeile in der Plan-Tabelle oben) |
@@ -253,33 +262,185 @@ Alt-Tag-Lauf) real grün + Closure-Notiz mit Lerneintrag geschrieben.
   **diese** View ungemessen. *Erwartet, zu belegen durch:* zweiter
   `make schema-rollout`. Der Beleg der Fixrunde steht in §3 („Ausgang der
   Messung", [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten* — nicht an der Spalte (die additive Spalte
+  konvergierte, Operation `AddColumn` regulär renderbar), sondern an der
+  Signaturänderung der View: gegen ein Ziel mit dem Parent-Schema blockierte der
+  Precheck mit `ReplaceView`/`VIEW_SIGNATURE_INCOMPATIBLE`, `make schema-rollout`
+  endete mit Exit 2 (§3, „Messung zu Risiko §6"). Im Slice gelöst, kein
+  Carveout und kein Folge-Slice: Architect-Verdikt
+  (`docs/reviews/architect-verdict-schema-rollout-view-signatur.md`),
+  [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) und die
+  Fixrunden (Vorlauf im Target, Wache `tools/schema/rolloutguard`, Guard-Test
+  Läufe 4 bis 6 mit dem Alt-Tag-Lauf). Belege: §3 „Ausgang der Messung" (Parent
+  `f4ba82ab` → Arbeitsbaum Exit 0 und 0, Tag `v0.1.2` → Arbeitsbaum Exit 0, 0
+  und 0) und die eigenen Läufe des Verifiers (Verifikation §3.2: Parent-Lauf
+  `WORK_ROLLOUT_1_EXIT=0`, `WORK_ROLLOUT_2_EXIT=0`, Guard-Test EXIT=0). Die
+  Klasse trägt `BEO-PGC/d-migrate-nacharbeit` (siebter Beleg).
 - **View und Lesepfad driften auseinander** (`BEO-PGC/lese-doppelquelle`,
   verkörpert): die View trägt `origin`, `SelectChanges` nicht (oder umgekehrt).
   *Erwartet, zu belegen durch:* `TestE2EChangesViewMatchesReadChanges` und der
-  Store-Test. **Ausgang:** *(bei Closure)*
+  Store-Test. **Ausgang:** *entfallen* — nicht eingetreten: View und
+  `SelectChanges` tragen `origin` beide als letzte Spalte mit demselben
+  `COALESCE(…, 'wal')`, und `TestChangesViewCarriesOriginLikeReadChanges`
+  (`make test-store`) hält sie gegeneinander; die Mutationen an der View
+  (`COALESCE` entfernt, Review M5, Verifikation M5) und an `SelectChanges`
+  (Review M6) färben ihn rot. `TestE2EChangesViewMatchesReadChanges` bleibt
+  bewusst unverändert (viertes Risiko unten).
 - **Ein Client dekodiert strikt und bricht am neuen Feld.** Die SDK-Decoder
   ignorieren unbekannte Felder (gelesen für C# `System.Text.Json`, Kotlin Gson,
   Python `json` mit expliziten Feldern); ein realer Beleg fehlt bis
   `sdk-origin`. *Erwartet, zu belegen durch:* `make test-sdk-*-integration`-Läufe
-  bzw. der Slice `sdk-origin`. **Ausgang:** *(bei Closure)*
+  bzw. der Slice `sdk-origin`. **Ausgang:** *weiter offen* — der Slice maß nur,
+  was er messen kann: 0 strikte Dekoder-Muster im Baum (§3, gemessen), der
+  Wegwerf-Client `tools/harness/httpclient` ist nicht strikt (gelesen); ein
+  realer Beleg mit den SDK-Decodern fehlt bis `slice-backfill-sdk-origin`, dessen
+  §6 (erster Punkt) das Risiko mit Fixture-Test trägt. Register:
+  `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen` (offen, 1×).
 - **Die Zeilenzahl-Anker der E2E-Abdeckung wandern**, sobald der Zug das
   Testpaket berührt. *Erwartet, zu belegen durch:* der Suchlauf-Eintrag zur
-  Abdeckungs-Tabelle. **Ausgang:** *(bei Closure)*
+  Abdeckungs-Tabelle. **Ausgang:** *entfallen* — nicht eingetreten: der Diff
+  berührt weder das Testpaket noch den Runner noch die Tabelle (§3, gemessen;
+  `git diff --stat f4ba82ab..HEAD -- test/integration tools/harness/run-integration-tests.sh docs/user/e2e-abdeckung.md`
+  leer, vom Verifier nachgemessen), und `make test-integration` meldete
+  „E2E-Abdeckungstabelle unverändert". Der eine Träger, dessen Änderung die
+  Anker verschöbe — der Kommentar zum zweiten Rollout-Lauf im Runner (Review
+  F-7) —, ist bewusst unverändert und als Zeile in
+  `slice-backfill-e2e` (§3) adressiert.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** das Feld `origin` ist von der Domäne bis zu View
+  und `GET /changes` durchgängig, die Live-Wege bleiben bei zehn Feldern
+  (Verifikation §3.1). Die Rollen-Kette lief in getrennten Kontexten:
+  Review (0 HIGH · 2 MEDIUM · 3 LOW · 5 INFO), Fixrunde 2 (F-1 bis F-6),
+  Verifikation „Bestätigt" mit eigenen Läufen — `make gates` EXIT=0, der
+  Guard-Test EXIT=0, ein selbst gefahrener Upgrade-Lauf vom Parent-Schema in
+  den Arbeitsbaum (Exit 0 und 0), Eingabeseiten-Mutationen am Diff rot
+  (Verifikation §5). Der Upgrade-Blocker der View-Signatur wurde nicht im
+  Alleingang umgangen: die in §4 vorab benannte Rückführungs-Frage ging als
+  Architect-Frage an [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  und kam als Fixrunde im selben Slice zurück, ohne Rückführung nach `open/`.
+- **Was ging anders als geplant:** der Plan wuchs um die Nachträge der
+  Umsetzung (`translate.go`, der zweite Schema-Träger `schema.sql`, drei
+  Live-Weg-Kommentare, `examples/bootstrap.sh`; §3) und um zwei Fixrunden:
+  die Umsetzung von [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  (Vorlauf im Target, Klasse „View-Signatur" in `tools/schema/rolloutguard`,
+  Guard-Test von vier auf sechs Läufe, Handbuch „Schema aktualisieren" bis
+  Version 1.46) und die Behebung der Review-Funde F-1 bis F-6. Der Vertragstest
+  `TestE2EChangesViewMatchesReadChanges` blieb bewusst unberührt (die
+  Zeilen-Anker der E2E-Abdeckung), die `origin`-Parität trägt der
+  Store-Tier-Test. Nach der Verifikation kam ein Doku-/Kommentar-Zug
+  außerhalb des Slice (Commit `c54f873a`: `harness/targets/schema-rollout.md`
+  trägt den Ist-Vertrag des Targets, der Makefile-Kommentar und die README-Zeile
+  verweisen dorthin); er ist kein Diff-Bestandteil des geprüften Umfangs, die
+  Verweise des Plans (§3, „Nachzug außerhalb des Slice-Umfangs") zeigen auf ihn.
+- **Verifier-Beobachtungen (V-1 bis V-8):** *V-1* gezogen: die Suchlauf-Zelle
+  „Anzahl-Formulierungen" nennt 16 (statt 18) samt den vier Ständen; der
+  Planner maß bei der Closure `git grep -n -i -E '(ten|zehn) (fields|felder)' <Stand> -- sdks examples`
+  an `09386619`, `f4ba82ab`, `e95937cf` und `c54f873a`: je 16, alle in `sdks/`.
+  *V-2* gezogen: die erweiterte Suche trägt 24 an den ersten drei Ständen und 25
+  an `c54f873a`; die 25 ist als abgeleitet gekennzeichnet (24 + Meldungszeile in
+  `slice-backfill-sdk-origin`). *V-3* ist die ADR-Lücke (unten). *V-4*
+  (Blocker-Grund `MANUAL_ACTION_REQUIRED` enger als der ADR-Wortlaut) zulässig,
+  kein Nachzug. *V-5* durch `c54f873a` behoben: der Meldungstext des Rezepts
+  druckt „`bekannte Fremdobjekt-Blocker (ADR-0043)`" ohne „nur" (`Makefile`
+  Z. 264), der Guard-Test erwartet diesen Text und die Überschrift des
+  Nebenfalls heißt „Lauf 4/6" (`git grep -n 'nur bekannte' HEAD -- Makefile tools/harness`:
+  0 Treffer). Rest: der Kommentar am Feld `allowDestructive` in
+  `tools/schema/rolloutguard/guard.go` sagt weiter „(nur bekannte Fremdobjekte
+  blockieren)" und ist neben einem View-Signatur-Blocker ungenau — Kommentar,
+  keine Zusage; nicht geändert (Code-Datei, kein Planner-Zug), im Bericht der
+  Closure gemeldet. *V-6* siehe Register (`test-schreibt-in-committete-datei`).
+  *V-7* gezogen (die Reconciliation-Zeile steht auf `[x]`). *V-8* regelkonforme
+  Übergabe, kein Nachzug.
+- **Steering-Loop-Eintrag (Lerneintrag):** *neuer Sensor-Umfang:* der Slice
+  liefert nicht nur ein Feld, sondern erweitert einen Sensor — die Wache
+  `tools/schema/rolloutguard` kennt die Klasse „View-Signatur" (alles oder
+  nichts), und der Guard-Test `tools/harness/run-schema-rollout-guard-test.sh`
+  trägt Lauf 4 (abweichende Signatur), Lauf 5 (Alt-Bestand: der Schema-Stand des
+  letzten Release-Tags wird ausgerollt, danach der Arbeitsbaum) und Lauf 6 (der
+  Negativ-Abbruch bleibt der letzte); der Alt-Tag-Lauf schließt für das Schema
+  den Trigger 1 von [`ADR-0064`](../../adr/0064-lh-qa-ops-005-testansatz-korrektur.md)
+  ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  Entscheidung 7). *Geschärfte Anwendung (keine neue Regel):* ein Beleg trägt nur
+  den Satz, den seine Mutation rot färbt — Lauf 6 nannte sich „Beleg, dass die
+  Wache nicht pauschal durchlässt", die Mutation der Bekannt-Liste blieb grün,
+  weil d-migrate den Blocker selbst abbricht (Review F-2); nach der Fixrunde
+  färbt Lauf 6a sie rot (der Verifier maß Exit 1 des Guard-Tests mit
+  deaktivierter Prüfung), und 6b heißt, was er ist. Das ist die verkörperte
+  Klasse `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` in der Form
+  „Assertion" (neunter Beleg, Reviewer-HIGH-Punkt „Beleg trägt seinen Satz
+  nicht" hat gegriffen). *Benannte Spec-Lücke mit Adresse:*
+  [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  Entscheidung 3 sagt, die Rechte setze `nacharbeit-roles.sql` „im selben Lauf";
+  das gilt für `cdc_reader` (dort steht das einzige `GRANT` auf `cdc.changes`),
+  nicht für Rechte, die ein Betreiber außerhalb des Repos vergibt — `DROP VIEW`
+  verwirft die gesamte Rechteliste (abgeleitet aus der PostgreSQL-Semantik,
+  nicht am Lauf gemessen). Die ADR ist `Accepted` und wird nicht überschrieben
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.5); die Grenze steht in
+  `docs/user/benutzerhandbuch.md` (§4 „Schema aktualisieren", „Eigene Rechte"),
+  in `harness/targets/schema-rollout.md` (§Grenze Punkt 3) und in §3 dieses
+  Plans. Die Adresse der Entscheidung ist der Architect (Verifikation V-3);
+  das Register führt sie als offenen Eintrag
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` — dieser Slice ordnet keinen
+  ADR-Auftrag an.
+- **Beobachtungs-Register (`../observations/`):** je Vorkommen eine
+  `evidence/`-Datei `slice-backfill-change-origin.md` (Zähler = Zahl der
+  Dateien, real ausgezählt). *Bestehende Klassen:*
+  `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (Review F-2) **9×**;
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (Review F-3, Verifikation V-5)
+  **4×** — über der Schwelle, der Ausgang bleibt beim Lese-Schritt der Closure
+  von [welle-backfill-bestand](../welle-backfill-bestand.md);
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Verifikation V-1, V-2)
+  **15×**; `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Review F-4, F-7, F-10)
+  **28×**; `BEO-PGC/d-migrate-nacharbeit` (die View-Signaturänderung als fünfte
+  Objektklasse) **7×**. *Neue Klassen (je 1×, offen):*
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (Review F-5, Verifikation V-3),
+  `BEO-PGC/test-fatalf-mit-offener-rows-blockiert-pool-close` (Implementer-Befund,
+  übernommen, nicht vom Planner reproduziert; die zwei vorbestehenden
+  `pool.Query`-Stellen in `sqlviews_test.go` tragen dieselbe Form),
+  `BEO-PGC/test-schreibt-in-committete-datei` (Review F-6, Verifikation V-6),
+  `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen` (das dritte Risiko
+  aus §6, Ausgang *weiter offen*). *Benannt, nicht gezählt:* die Slice-Bezüge in
+  Makefile-Kommentaren, die der Nutzer nach der Verifikation meldete (Zug
+  `c54f873a` außerhalb eines Slice, keine `evidence/`-Datei — Vermerk im `state.md`
+  von `BEO-PGC/slice-chronik-in-code-kommentar`); F-1 (Blocker ohne Operationen
+  gilt als bekannt, ein Vakuum-Zweig der Wache) — im Slice behoben, erstes
+  Auftreten ohne Klasse im Register. Keine Klasse erreicht mit diesem Slice
+  neu die Schwelle von 3×.
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice ist eine interne
+  Erweiterung um ein Herkunftsfeld ohne neues End-Nutzer-Verhalten außer dem
+  additiven Feld `origin` in `cdc.changes` und `GET /changes`; das Feld hat
+  noch keinen Erzeuger außer `wal` (jede Zeile trägt `wal`, ein fehlender Wert
+  liest als `wal`), es gibt also keinen Nutzerfall, den ein Validator gegen einen
+  realen Bedarf halten könnte. Der Bedarf aus
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) wird erst mit den
+  Folge-Slices und dem Wellen-Beleg (`slice-backfill-e2e`) validierbar. Kein
+  stilles Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):** eine
+  getrennte Rolle im frischen Kontext, kein Schritt der Planner-Closure; der
+  Skill prüft Slices in `done/` und greift daher erst nach dem `git mv` — hier
+  nicht ausgeführt.
+- **Folge-Slices:** keine neuen. Meldungen mit Adresse: `slice-backfill-sdk-origin`
+  (die sechs SDK-Kommentare und der reale Decoder-Beleg, §3 und §6 dort),
+  `slice-backfill-e2e` (der Kommentar zum zweiten Rollout-Lauf im Runner,
+  Review F-7, eigene §3-Zeile). Die Aussage
+  „mit denselben Feldern wie der Domain-Typ" an der gRPC-Nachricht
+  (`proto/cdc/stream/v1/changestream.proto`, Review F-10) verlangt
+  `make proto-generate` und bleibt eine gemeldete Ungenauigkeit ohne Träger-Slice.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Konvergenz)
+  **eingetreten**, im Slice gelöst ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md),
+  Fixrunden, Guard-Test Läufe 4 bis 6; Klasse `BEO-PGC/d-migrate-nacharbeit`);
+  Risiko 2 (Doppelquelle View/Lesepfad) **entfallen**; Risiko 3 (strikter
+  Decoder) **weiter offen**, adressiert in `slice-backfill-sdk-origin` §6 und im
+  Register; Risiko 4 (Zeilen-Anker der E2E-Abdeckung) **entfallen**.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure.
+  Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Sensor-Umfang ist
+  am Ort verkörpert (Wache und Guard-Test, `harness/targets/schema-rollout.md`,
+  [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)); die
+  geschärfte Anwendung verkörpert nichts neu. (b) Folge-Slice: keiner neu, die
+  Meldungen tragen Adressen (siehe oben). (c) Register: alle genannten Kennungen
+  existieren als Verzeichnis, ihre `evidence/`-Verzeichnisse tragen die Datei.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
