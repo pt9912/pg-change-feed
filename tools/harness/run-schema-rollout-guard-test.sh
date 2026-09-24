@@ -6,12 +6,12 @@
 #
 #   1. Frischer Rollout (kein Blocker) — muss durchlaufen.
 #   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — trägt
-#      ausschließlich die sechs bekannten Fremdobjekt-Blocker — muss erneut
+#      ausschließlich die sieben bekannten Fremdobjekt-Blocker — muss erneut
 #      Exit 0 liefern UND den --allow-destructive-Pfad des Guards nehmen
 #      (stdout trägt die Meldung), nicht nur zufällig Exit 0 aus anderem
 #      Grund; ein Vorlauf (ADR-0114) findet nicht statt.
 #   3. Eine echte, gleichzeitig anstehende, NICHT-destruktive Schema-Änderung
-#      neben den sechs bekannten Blockern: eine von schema.yaml weiterhin
+#      neben den sieben bekannten Blockern: eine von schema.yaml weiterhin
 #      deklarierte, nullable Spalte (administration_request.error_message —
 #      trägt keine View-/Funktions-Abhängigkeit, anders als
 #      process_heartbeat.error_class, das die Sicht cdc.heartbeat trägt) wird
@@ -33,15 +33,21 @@
 #      nie im Repo-Baum) wird mit dem Makefile dieses Tags ausgerollt, eine
 #      Datenzeile geschrieben, danach der Arbeitsbaum zweimal ausgerollt —
 #      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
-#      Soll-Signatur der View, und die Rechte des Rollen-Schnitts: `cdc_admin`
-#      trägt vor dem Upgrade kein Recht auf `cdc.administration_request` und
-#      danach `SELECT`/`UPDATE` (kein `INSERT`/`DELETE`) sowie `SELECT`/
-#      `INSERT` auf der neuen Tabelle `cdc.backfill_run`. Tag und Exit-Codes
-#      stehen in der Ausgabe.
+#      Soll-Signatur der View, und der Rollen-Schnitt: die Rechte der drei
+#      Rollen auf `cdc.administration_request`, `cdc.backfill_run` und
+#      `cdc.backfill_status` (`cdc_admin` trägt vor dem Upgrade kein Recht auf
+#      die Antrags-Tabelle), `EXECUTE` auf `cdc.backfill_table` allein für
+#      `cdc_admin` (nicht PUBLIC) und die fünf Werte von
+#      `chk_administration_request_kind`. Tag, Exit-Codes und Zählung stehen in
+#      der Ausgabe. Rot färbende Eingabeseiten-Mutationen:
+#      `cdc.backfill_table(text, text, text)` aus der GRANT-Zeile, die
+#      REVOKE-Zeile oder `'backfill'` aus dem CHECK in
+#      tools/schema/nacharbeit-administration.sql, `cdc.backfill_status` aus
+#      dem GRANT für `cdc_reader` in tools/schema/nacharbeit-roles.sql.
 #   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
 #      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
 #      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:
-#         dieselbe Klasse wie die sechs bekannten Fremdobjekte (Blocker
+#         dieselbe Klasse wie die sieben bekannten Fremdobjekte (Blocker
 #         DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION), aber nicht auf der
 #         Bekannt-Liste. Ließe die Wache den Blocker durch, riefe das Target
 #         `--execute` mit `--allow-destructive` auf und d-migrate löschte die
@@ -168,7 +174,7 @@ if grep -q "Vorlauf" <<<"$out"; then
   fail "Lauf 2 meldet einen Vorlauf, obwohl keine View ihre Signatur ändert (ADR-0114 Entscheidung 4)"
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den sechs bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
+echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den sieben bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.administration_request DROP COLUMN error_message"
 still_missing=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
@@ -245,9 +251,18 @@ alt_exit=$RUN_EXIT
 seed_row "$ALT_DB" alttag
 alt_rows_before=$(psql_q "$ALT_DB" "SELECT count(*) FROM cdc.changes")
 [ "$alt_rows_before" = "1" ] || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.changes trägt $alt_rows_before statt 1 Zeile im Stand von $ALT_TAG"
-alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('cdc_admin', '$1', '$2')"; }
-[ "$(alt_privilege cdc.administration_request UPDATE)" = "f" ] \
+# alt_privilege <rolle> <objekt> <recht>: Tabellen-/View-Recht der Rolle im Alt-Tag-Ziel.
+alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('$1', '$2', '$3')"; }
+ALT_FUNCTION="cdc.backfill_table(text, text, text)"
+[ "$(alt_privilege cdc_admin cdc.administration_request UPDATE)" = "f" ] \
   || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc_admin trägt im Stand von $ALT_TAG schon UPDATE auf cdc.administration_request"
+[ "$(psql_q "$ALT_DB" "SELECT to_regprocedure('$ALT_FUNCTION') IS NULL")" = "t" ] \
+  || fail "Lauf 5: Vorbedingung fehlgeschlagen, $ALT_FUNCTION besteht im Stand von $ALT_TAG schon"
+alt_kinds_sql="SELECT string_agg(k, ',' ORDER BY k) FROM (SELECT unnest(regexp_matches(pg_get_constraintdef(oid), '''([a-z_]+)''', 'g')) AS k FROM pg_constraint WHERE conname = 'chk_administration_request_kind' AND conrelid = 'cdc.administration_request'::regclass) s"
+alt_kinds_before=$(psql_q "$ALT_DB" "$alt_kinds_sql")
+case "$alt_kinds_before" in
+  *backfill*) fail "Lauf 5: Vorbedingung fehlgeschlagen, chk_administration_request_kind trägt im Stand von $ALT_TAG schon backfill ($alt_kinds_before)" ;;
+esac
 run_rollout . "$ALT_TARGET"
 work_exit_1=$RUN_EXIT
 work_out_1=$RUN_OUT
@@ -258,19 +273,38 @@ work_exit_2=$RUN_EXIT
 [ "$(psql_q "$ALT_DB" "SELECT change_id FROM cdc.changes")" = "alttag-ch" ] \
   || fail "Lauf 5: die Zeile aus dem Stand von $ALT_TAG ist über cdc.changes nach dem Upgrade nicht unverändert lesbar"
 [ "$(view_signature "$ALT_DB")" = "$sig_ref" ] || fail "Lauf 5: die View trägt nach dem Upgrade nicht die Soll-Signatur"
-for expected in "cdc.administration_request SELECT t" "cdc.administration_request UPDATE t" \
-  "cdc.administration_request INSERT f" "cdc.administration_request DELETE f" \
-  "cdc.backfill_run SELECT t" "cdc.backfill_run INSERT t" "cdc.backfill_run UPDATE f"; do
-  read -r alt_object alt_right alt_want <<<"$expected"
-  [ "$(alt_privilege "$alt_object" "$alt_right")" = "$alt_want" ] \
-    || fail "Lauf 5: cdc_admin trägt nach dem Upgrade über $ALT_TAG auf $alt_object das Recht $alt_right nicht als $alt_want"
+alt_privilege_count=0
+for expected in \
+  "cdc_admin cdc.administration_request SELECT t" "cdc_admin cdc.administration_request UPDATE t" \
+  "cdc_admin cdc.administration_request INSERT f" "cdc_admin cdc.administration_request DELETE f" \
+  "cdc_capture cdc.administration_request SELECT f" "cdc_capture cdc.administration_request UPDATE f" \
+  "cdc_reader cdc.administration_request SELECT f" "cdc_reader cdc.administration_request UPDATE f" \
+  "cdc_admin cdc.backfill_run SELECT t" "cdc_admin cdc.backfill_run INSERT t" "cdc_admin cdc.backfill_run UPDATE f" \
+  "cdc_capture cdc.backfill_run SELECT t" "cdc_capture cdc.backfill_run UPDATE t" "cdc_capture cdc.backfill_run INSERT f" \
+  "cdc_reader cdc.backfill_run SELECT f" "cdc_reader cdc.backfill_run UPDATE f" \
+  "cdc_reader cdc.backfill_status SELECT t" \
+  "cdc_admin cdc.backfill_status SELECT f" "cdc_capture cdc.backfill_status SELECT f"; do
+  read -r alt_role alt_object alt_right alt_want <<<"$expected"
+  [ "$(alt_privilege "$alt_role" "$alt_object" "$alt_right")" = "$alt_want" ] \
+    || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $alt_object das Recht $alt_right nicht als $alt_want"
+  alt_privilege_count=$((alt_privilege_count + 1))
 done
+for expected in "cdc_admin t" "cdc_capture f" "cdc_reader f"; do
+  read -r alt_role alt_want <<<"$expected"
+  [ "$(psql_q "$ALT_DB" "SELECT has_function_privilege('$alt_role', '$ALT_FUNCTION', 'EXECUTE')")" = "$alt_want" ] \
+    || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $ALT_FUNCTION das Recht EXECUTE nicht als $alt_want"
+done
+[ "$(psql_q "$ALT_DB" "SELECT coalesce(bool_or(a.grantee = 0), false) FROM pg_proc p, LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a WHERE p.oid = '$ALT_FUNCTION'::regprocedure")" = "f" ] \
+  || fail "Lauf 5: $ALT_FUNCTION trägt nach dem Upgrade über $ALT_TAG ein EXECUTE-Recht für PUBLIC"
+alt_kinds_after=$(psql_q "$ALT_DB" "$alt_kinds_sql")
+[ "$alt_kinds_after" = "backfill,disable,enable,exclude_column,include_column" ] \
+  || fail "Lauf 5: chk_administration_request_kind trägt nach dem Upgrade über $ALT_TAG die Menge '$alt_kinds_after' statt der fünf Antragsarten"
 if grep -q "Vorlauf" <<<"$work_out_1"; then
   alt_vorlauf="mit Vorlauf"
 else
   alt_vorlauf="ohne Vorlauf"
 fi
-echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; cdc_admin-Rechte auf administration_request und backfill_run gesetzt"
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run und backfill_status, EXECUTE auf $ALT_FUNCTION allein für cdc_admin (nicht PUBLIC), request_kind-Menge $alt_kinds_after"
 
 echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
 echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"
