@@ -22,7 +22,7 @@ Backfill-Pfad), [`ADR-0016`](../../adr/0016-jsonb-row-images-mvp.md) (JSONB-Row-
 gelesen, nicht geändert; [`ARC-001`](../../../../spec/architecture.md) (Domain Core: reine Funktionen) und
 [`ARC-006`](../../../../spec/architecture.md) (Driven darf Driving nicht importieren).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
