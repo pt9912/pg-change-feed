@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
@@ -294,7 +295,8 @@ func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillR
 	case ctx.Err() != nil:
 		final, err = run.Interrupt(s.ports.Clock.Now())
 	default:
-		final, err = run.Fail(s.ports.Clock.Now(), classifyError(cause), cause.Error())
+		class := classifyError(cause)
+		final, err = run.Fail(s.ports.Clock.Now(), class, failureText(class, cause))
 	}
 	if err != nil {
 		return BackfillExecuteResult{Run: run}, fmt.Errorf("%w (Ursache des Runs: %v)", err, cause)
@@ -303,6 +305,13 @@ func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillR
 		return BackfillExecuteResult{Run: run}, fmt.Errorf("Run-Zustand nicht festgehalten: %w (Ursache des Runs: %v)", err, cause)
 	}
 	return BackfillExecuteResult{Run: final}, nil
+}
+
+// failureText ist der Text der Ursache ohne die Klassen-Angabe, die ein
+// Fehlerwert der Ports selbst trägt („Fehlerklasse <Klasse>: …“): `Fail`
+// setzt die Klasse einmal vor den Text.
+func failureText(class model.ErrorClass, cause error) string {
+	return strings.Replace(cause.Error(), "Fehlerklasse "+string(class)+": ", "", 1)
 }
 
 // classifyError ordnet die Ursache eines Run-Fehlers einer der Klassen des

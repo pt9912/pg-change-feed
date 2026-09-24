@@ -1339,3 +1339,36 @@ func TestImportWaitsForExclusiveLockAndThenAborts(t *testing.T) {
 		t.Fatal("importSnapshot kehrt 20 s nach dem Commit der DDL nicht zurück")
 	}
 }
+
+// TestImportLockWaitEndsWithTheContext trägt die Wartegrenze der Sperre
+// (`ADR-0118` Festlegung 1): die Wartezeit an der Sperranweisung trägt der
+// Kontext des Aufrufs. Endet er, während eine fremde Transaktion `ACCESS
+// EXCLUSIVE` hält, kehrt der Import mit der Klasse `transient` zurück und
+// hinterlässt keine Sitzung.
+func TestImportLockWaitEndsWithTheContext(t *testing.T) {
+	dsn := testDSN(t)
+	application := "snap_lockctx_" + suffix()
+	admin, adapter, export, table := windowTable(t, dsn, application)
+	ddl := connect(t, dsn)
+	mustExec(t, ddl, "BEGIN")
+	t.Cleanup(func() { bestEffort(ddl, "ROLLBACK") })
+	mustExec(t, ddl, "LOCK TABLE public."+quoteIdent(table)+" IN ACCESS EXCLUSIVE MODE")
+
+	const limit = 2 * time.Second
+	ctx, cancel := context.WithTimeout(testCtx(t), limit)
+	defer cancel()
+	start := time.Now()
+	snap, err := adapter.importSnapshot(ctx, export, "public", table)
+	elapsed := time.Since(start)
+	if snap != nil {
+		t.Cleanup(func() { _ = snap.Close(context.Background()) })
+		t.Fatal("importSnapshot liefert trotz gehaltener Sperre einen Snapshot")
+	}
+	if !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Fatalf("importSnapshot nach Ablauf des Kontexts: %v, erwartet Klasse transient", err)
+	}
+	if elapsed < limit || elapsed > limit+10*time.Second {
+		t.Fatalf("importSnapshot kehrt nach %v zurück, erwartet nach dem Ablauf des Kontexts (%v)", elapsed, limit)
+	}
+	waitSessionsGone(t, admin, application)
+}

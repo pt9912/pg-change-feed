@@ -3097,7 +3097,7 @@ COMMIT;"
   printf '%s' "$bf_ddl_error" | grep -q "^$class: " || bf_fail "$BF_PHASE $table — der Fehlertext beginnt nicht mit der Klasse $class: $bf_ddl_error"
   bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$table'")" 0 "$BF_PHASE $table — Changes der Tabelle nach dem fehlgeschlagenen Run"
   bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_ddl_run-%'")" 0 "$BF_PHASE $table — Transaktionen des fehlgeschlagenen Runs"
-  bf_expect "$(bf_sql "SELECT coalesce(error_class, '') FROM cdc.heartbeat WHERE source_id = 'src-e2e'")" "" "$BF_PHASE $table — Fehlerzustand des Erfassungspfads (der Run-Fehler ist run-lokal)"
+  bf_expect "$(bf_sql "SELECT count(*) FROM cdc.heartbeat WHERE source_id = 'src-e2e' AND error_class IS NULL")" 1 "$BF_PHASE $table — Lebenszeichen der Quelle ohne Fehlerzustand (der Run-Fehler ist run-lokal)"
   bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$BF_PHASE $table — Feed-Container läuft weiter"
 }
 
@@ -3160,7 +3160,7 @@ bf_enable "$BF_QUEUED_TABLE" "$BF_PHASE"
 # Haltetransaktion hält die Slot-Anlage an; während sie endet, ist der
 # Feed-Container angehalten (docker pause), und die Konflikt-Sitzung legt in
 # diesem Fenster die Transaktionskennung des zweiten Blocks unbestätigt an
-# (eine offene Transaktion während der Slot-Anlage würde diese verzögern).
+# (die Slot-Anlage wartet auf jede offene Schreibtransaktion).
 # Nach dem Fortsetzen schreibt der Run den ersten Block und wartet im zweiten
 # auf die Konflikt-Sitzung. Die Pause bleibt unter der Hälfte von
 # wal_sender_timeout (2 s, compose.yaml).

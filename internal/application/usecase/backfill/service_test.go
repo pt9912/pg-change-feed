@@ -1047,6 +1047,22 @@ func TestExecuteClassifiesFailures(t *testing.T) {
 	}
 }
 
+// TestExecuteFailureTextCarriesClassOnce trägt: der Fehlertext nennt die
+// Klasse einmal vor der Ursache, auch wenn der Fehlerwert des Ports sie
+// selbst trägt („Fehlerklasse transient: …“).
+func TestExecuteFailureTextCarriesClassOnce(t *testing.T) {
+	r := newRig()
+	r.snapshotP.openErr = fmt.Errorf("%w: Tabelle umgeschrieben", outbound.ErrSnapshotTransient)
+	run := mustExecute(t, r)
+	want := "transient: " + strings.TrimPrefix(outbound.ErrSnapshotTransient.Error(), "Fehlerklasse transient: ") + ": Tabelle umgeschrieben"
+	if run.Status != model.BackfillRunFailed || run.ErrorMessage != want {
+		t.Fatalf("Fehlertext = %q, will %q", run.ErrorMessage, want)
+	}
+	if strings.Contains(run.ErrorMessage, "Fehlerklasse") {
+		t.Fatalf("Fehlertext trägt die Klasse doppelt: %q", run.ErrorMessage)
+	}
+}
+
 // TestExecuteMidCopyFailureKeepsProgressAndWritesNothing trägt „keine Zeile
 // geschrieben": scheitert das Lesen des zweiten Blocks, ist der erste Block
 // zurückgerollt und nichts committet; der Endzustand trägt den zuletzt
@@ -1145,7 +1161,8 @@ func TestExecuteFailClosed(t *testing.T) {
 			if tc.wantErr == outbound.ErrBackfillStorage {
 				class = "storage: "
 			}
-			if !strings.HasPrefix(run.ErrorMessage, class) || !strings.Contains(run.ErrorMessage, tc.wantErr.Error()) {
+			wantText := strings.TrimPrefix(tc.wantErr.Error(), "Fehlerklasse "+class)
+			if !strings.HasPrefix(run.ErrorMessage, class) || !strings.Contains(run.ErrorMessage, wantText) {
 				t.Fatalf("Fehlertext = %q", run.ErrorMessage)
 			}
 			if len(r.writer.committed) != 0 || r.trace.count("Commit") != 0 {

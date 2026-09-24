@@ -264,9 +264,9 @@ func stateDiff(want, got map[string]replayImage) []string {
 // Eine offene Schreibtransaktion hält den Run in `running` (die Anlage des
 // temporären Slots wartet auf sie); vor der Freigabe committen die Schreiber
 // und liegen damit auf oder vor der Snapshot-Position, danach committen sie
-// dahinter. Der Test bricht ab, wenn eine der beiden Seiten leer bleibt,
-// statt ohne Überlappung grün zu werden. Die Lese-Ordnung
-// `(commit_position, transaction_id, sequence)` trägt `LH-FA-CAP-004`.
+// dahinter. Der Test bricht ab, wenn eine der beiden Seiten leer bleibt. Die
+// Lese-Ordnung `(commit_position, transaction_id, sequence)` trägt
+// `LH-FA-CAP-004`.
 func TestE2EBackfillReplayInvariant(t *testing.T) {
 	env := newBackfillEnv(t)
 	ctx := context.Background()
