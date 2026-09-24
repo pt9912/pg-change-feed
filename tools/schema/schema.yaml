@@ -226,7 +226,7 @@ tables:
         expression: "(acknowledged_position > 0)"
 
   administration_request:
-    description: "Antrags-Datensatz der schreibenden SQL-Administration (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005): cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table (tools/schema/nacharbeit-administration.sql) schreiben ausschließlich hierher und senden pg_notify — die eigentliche Bindungs-/Publication-Änderung bleibt TableActivationAdapter vorbehalten und läuft asynchron über die Administrations-Goroutine (Folge-Slice). request_kind/status sind bewusst text mit CHECK statt eines eigenen Enum-Typs — dasselbe Muster wie change.operation. column_name trägt den Ziel-Spaltennamen der beiden Spalten-Antragsarten exclude_column/include_column; die beiden Tabellen-Antragsarten enable/disable lassen sie NULL."
+    description: "Antrags-Datensatz der schreibenden SQL-Administration (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005): cdc.enable_table/cdc.disable_table/cdc.exclude_column/cdc.include_column/cdc.backfill_table (tools/schema/nacharbeit-administration.sql) schreiben ausschließlich hierher und senden pg_notify — die eigentliche Bindungs-/Publication-Änderung bleibt TableActivationAdapter vorbehalten und läuft asynchron über die Administrations-Goroutine. request_kind/status sind bewusst text mit CHECK statt eines eigenen Enum-Typs — dasselbe Muster wie change.operation. column_name trägt den Ziel-Spaltennamen der beiden Spalten-Antragsarten exclude_column/include_column; die drei Tabellen-Antragsarten enable/disable/backfill lassen sie NULL."
     columns:
       administration_request_id: { type: text, required: true }
       source_id:

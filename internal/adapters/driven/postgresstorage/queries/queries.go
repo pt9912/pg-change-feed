@@ -303,9 +303,10 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
 // Anlage-Reihenfolge (`requested_at`) — die Administrations-Goroutine
 // verarbeitet sie in dieser Ordnung, sowohl nach `NOTIFY` als auch
-// periodisch als Fallback-Poll. Die vier Antragsarten teilen sich eine
-// Tabelle; die beiden Tabellen-Antragsarten tragen keine Spalte
-// (`column_name` NULL) — `COALESCE` normalisiert das auf den leeren Wert.
+// periodisch als Fallback-Poll. Die fünf Antragsarten teilen sich eine
+// Tabelle; die drei Tabellen-Antragsarten (`enable`, `disable`, `backfill`)
+// tragen keine Spalte (`column_name` NULL) — `COALESCE` normalisiert das auf
+// den leeren Wert.
 const SelectPendingAdministrationRequests = `
 SELECT administration_request_id, source_id, schema_name, table_name, COALESCE(column_name, ''), request_kind
 FROM cdc.administration_request

@@ -38,7 +38,7 @@
 -- `pg_notify` — sie berührt cdc.source_table, cdc.schema_version und die
 -- Publication nicht direkt (das bleibt exklusiv TableActivationAdapter über
 -- EnableTableUseCase/DisableTableUseCase vorbehalten, ausgeführt von der
--- Administrations-Goroutine eines Folge-Slice). Dieselbe Disziplin trägt
+-- Administrations-Goroutine). Dieselbe Disziplin trägt
 -- der Spaltenausschluss (`LH-FA-CFG-005`, ADR-0059): cdc.exclude_column/
 -- cdc.include_column schreiben ausschließlich den Antrags-Datensatz samt
 -- Spaltennamen und prüfen nichts an der Quelle — die Spaltenexistenz trägt

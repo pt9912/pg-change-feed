@@ -9,8 +9,8 @@ DB-Zugang und hängt an keinem `GATE_CHECKS`-Eintrag; die netzlose Vorstufe
 `make schema-validate` ist sein Voraussetzungsziel.
 
 Es setzt sich aus zwei Teilen zusammen: dem d-migrate-Rollout der Objekte, die
-das neutrale Modell ausdrückt (Tabellen, Constraints, die vier Views
-`active_tables`, `consumer_status`, `changes`, `retention_blockers`), und vier psql-Nacharbeit-Schritten
+das neutrale Modell ausdrückt (Tabellen, Constraints, die fünf Views
+`active_tables`, `consumer_status`, `changes`, `retention_blockers`, `backfill_status`), und vier psql-Nacharbeit-Schritten
 für Objektklassen, die d-migrate nicht konvergiert oder nicht ausdrückt. Die
 Rollout-Kette ist idempotent: ein zweiter Lauf gegen ein migriertes Ziel endet
 mit Exit 0
