@@ -495,9 +495,11 @@ func TestEstimatedRows(t *testing.T) {
 	adapter := newAdapter(t, dsn)
 
 	raw := scalar(t, admin, "SELECT reltuples::text FROM pg_class WHERE oid = '"+qualified+"'::regclass")
+	version := scalar(t, admin, "SHOW server_version")
 	if raw != "-1" {
-		t.Fatalf("reltuples der nie analysierten Tabelle = %s auf %s, erwartet -1", raw, scalar(t, admin, "SHOW server_version"))
+		t.Fatalf("reltuples der nie analysierten Tabelle = %s auf %s, erwartet -1", raw, version)
 	}
+	t.Logf("reltuples der nie analysierten Tabelle = %s auf PostgreSQL %s", raw, version)
 	rows, known, err := adapter.EstimatedRows(ctx, "public", table)
 	if err != nil || known {
 		t.Fatalf("EstimatedRows vor ANALYZE = %d, %v, %v; erwartet unbekannt", rows, known, err)
@@ -508,6 +510,7 @@ func TestEstimatedRows(t *testing.T) {
 	if err != nil || !known || rows != 40 {
 		t.Fatalf("EstimatedRows nach ANALYZE = %d, %v, %v; erwartet 40, bekannt", rows, known, err)
 	}
+	t.Logf("EstimatedRows nach ANALYZE = %d, bekannt %v", rows, known)
 }
 
 // TestConfigurationClass trägt die Klasse `configuration`: eine nicht
