@@ -2711,8 +2711,8 @@ echo "run-integration-tests: NATS-Vollinhalts-Stream-Rundlauf (LH-FA-SST-008, AD
 # `docker exec`, `docker kill`. Drei Haltepunkte machen die Zeitpunkte eines
 # Runs deterministisch: eine offene Schreibtransaktion mit
 # Transaktionskennung hält die Slot-Anlage an (Run `running`, noch kein
-# Snapshot); eine Tabellensperre `ACCESS EXCLUSIVE` hält den Cursor-Aufbau
-# nach dem Snapshot-Import an; ein unbestätigter Schlüssel in
+# Snapshot); `docker pause` des Feed-Containers, während sie endet, öffnet
+# ein Fenster nach dem Snapshot-Export; ein unbestätigter Schlüssel in
 # `cdc.transaction` hält den Schreiber im zweiten Block an. Jede Sitzung
 # hält kürzer als das Zeitlimit der Slot-Anlage (30 s) und wird von
 # `bf_hold_end` beendet; jede Phase legt ihre eigene Tabelle an.
