@@ -1,12 +1,24 @@
 package model
 
 import (
+	"fmt"
+
 	domainerrors "github.com/pt9912/pg-change-feed/internal/domain/errors"
 )
 
 // ChangeID identifiziert einen Change eindeutig (`LH-FA-DAT-001`); die
-// konkrete Form legt der Adapter fest, die Eindeutigkeit ist Domänen-Eigenschaft.
+// Eindeutigkeit ist Domänen-Eigenschaft, die Bildungsregel der erfassenden
+// Pfade trägt `ChangeIDFor`.
 type ChangeID string
+
+// ChangeIDFor bildet die Kennung eines Changes aus der Kennung seiner
+// Transaktion und seiner Sequenz: `<Transaktions-ID>-<Sequenz>`
+// (`ADR-0111` Teilfrage 6). Der WAL-Pfad und der Backfill-Pfad rufen diese
+// eine Funktion; sie ist eindeutig, solange die Transaktions-Kennung es ist
+// und die Sequenz innerhalb der Transaktion (`SPEC-002`).
+func ChangeIDFor(tx TransactionID, sequence int64) ChangeID {
+	return ChangeID(fmt.Sprintf("%s-%d", tx, sequence))
+}
 
 // TransactionID identifiziert eine Quelltransaktion (`SPEC-001`, Tabelle
 // `cdc.transaction`).

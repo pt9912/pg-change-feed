@@ -85,4 +85,42 @@ var (
 	// `cdc.change.origin` trägt keinen CHECK, die geschlossene Menge
 	// erzwingt allein die Domäne.
 	ErrInvalidChangeOrigin = stderrors.New("unbekannte Change-Herkunft")
+
+	// ErrInvalidBackfillTransition: ein Backfill-Run wechselt nur entlang
+	// `queued` → `running` → `completed`/`interrupted` und `queued`/`running`
+	// → `failed` (`SPEC-029`, `LH-FA-CAP-009`); ein beendeter Run ist
+	// endgültig, ein neuer Antrag legt einen neuen Run an.
+	ErrInvalidBackfillTransition = stderrors.New("unzulässiger Statuswechsel des Backfill-Runs")
+
+	// ErrBackfillProgressRegression: der Fortschrittszähler eines Runs
+	// (`rows_copied`, `SPEC-029`) wächst nur.
+	ErrBackfillProgressRegression = stderrors.New("Fortschritt des Backfill-Runs rückt nicht vor")
+
+	// ErrNegativeRowCount: eine geschätzte Zeilenzahl ist mindestens 0;
+	// „unbekannt" ist ein eigener Zustand, kein negativer Wert (`SPEC-029`).
+	ErrNegativeRowCount = stderrors.New("Zeilenzahl ist kleiner als 0")
+
+	// ErrBackfillBlockOverflow: die Blocknummer der synthetischen
+	// Transaktions-Kennung ist achtstellig (`ADR-0111` Teilfrage 6); eine
+	// größere Nummer verletzt die lexikographische Ordnung der Kennungen.
+	ErrBackfillBlockOverflow = stderrors.New("Blocknummer außerhalb von 1 bis 99999999")
+
+	// ErrTableNotActivated: die Tabelle trägt keine Bindung oder keine
+	// Mitgliedschaft in der Publication der Quelle — die Vorbedingung eines
+	// Backfills (`LH-FA-CAP-009`, `ADR-0111` Teilfrage 5) und der Fail-closed-
+	// Prüfung vor dem Commit (`ADR-0111` Teilfrage 4). Fehlerklasse
+	// `configuration` (`SPEC-008`).
+	ErrTableNotActivated = stderrors.New("Tabelle nicht aktiviert oder nicht in der Publication")
+
+	// ErrBackfillRunActive: für dieselbe Tabelle besteht ein Run im Zustand
+	// `queued` oder `running` (`ADR-0111` Teilfrage 4, `ADR-0113`
+	// Festlegung 1); der Annahme-Port meldet ihn, es entsteht keine zweite
+	// Run-Zeile.
+	ErrBackfillRunActive = stderrors.New("Für die Tabelle besteht bereits ein aktiver Backfill-Run")
+
+	// ErrExclusionStateChanged: der Ausschlussstand der Tabelle
+	// (`LH-FA-CFG-005`) weicht von dem ab, mit dem die Blöcke eines Runs
+	// gebaut wurden (`ADR-0111` Teilfrage 4, `LH-QA-SEC-004`). Fehlerklasse
+	// `configuration` (`SPEC-008`).
+	ErrExclusionStateChanged = stderrors.New("Ausschlussstand während des Backfills geändert")
 )

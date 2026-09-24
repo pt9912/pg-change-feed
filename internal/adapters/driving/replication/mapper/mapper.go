@@ -240,7 +240,7 @@ func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	}
 
 	change, err := model.NewChange(
-		model.ChangeID(fmt.Sprintf("%s-%d", a.open.tx.ID, sequence)),
+		model.ChangeIDFor(a.open.tx.ID, sequence),
 		a.open.tx.ID,
 		binding.TableID,
 		sequence,
