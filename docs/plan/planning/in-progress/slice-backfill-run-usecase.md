@@ -139,7 +139,7 @@ Umfang:
       Block 2 geliefert hat. *Zu belegen durch:* ein Test, der die Reihenfolge der
       Fake-Aufrufe prüft. `make a-check` grün (der Use Case importiert keinen
       Adapter), `make coverage-gate` grün.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
