@@ -1,6 +1,6 @@
 # ADR-0115: Backfill — Spaltenwerte im Text-Ergebnisformat der Ausgabefunktion statt `col::text` (Supersedes ADR-0111, Teilfrage 1 und 2 teilweise)
 
-**Status:** Proposed — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
+**Status:** Accepted — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
 in **Teilfrage 1 (Ablauf Nr. 3) und Teilfrage 2, jeweils teilweise**, sowie in
 einer Zeile der §Fitness Function (genau drei Stellen, siehe §Entscheidung);
 alles Übrige von `ADR-0111` bleibt in Kraft
@@ -312,6 +312,7 @@ Zeile ersetzt; die übrigen Zeilen von `ADR-0111` bleiben.
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-24 | Proposed — Architect-Vorschlag zum Review-Befund F-1 (Bild-Parität `col::text`); Befund an Wegwerf-Containern auf PostgreSQL 17.11 und 18.6 reproduziert, neun Lesevarianten am 86-Spalten-Typ-Satz gegen den Walsender gemessen | Review-Report zum Snapshot-Leser, Befund F-1 (`docs/reviews/`) |
+| 2026-09-24 | Accepted — Annahme durch den Auftraggeber samt Option A (Text-Ergebnisformat ohne Cast) und den drei ersetzten Stellen von ADR-0111 | [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 1 und 2 |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

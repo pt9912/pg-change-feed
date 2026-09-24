@@ -127,3 +127,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0112 | Transformationen: deklarative Regeln vor der Persistierung (`LH-FA-CFG-007`) | Accepted | 2026-09-23 | [0112-transformationsform-deklarative-regeln-vor-persistenz.md](0112-transformationsform-deklarative-regeln-vor-persistenz.md) |
 | ADR-0113 | Backfill: Rollenschnitt, Aufnahme, Warn-Kriterium (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0113-backfill-rollenschnitt-aufnahme-warnkriterium.md](0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) |
 | ADR-0114 | Schema-Rollout: Vorlauf für View-Signatur-Änderungen (ergänzt ADR-0043) | Accepted | 2026-09-24 | [0114-schema-rollout-vorlauf-view-signatur.md](0114-schema-rollout-vorlauf-view-signatur.md) |
+| ADR-0115 | Backfill: Spaltenwerte im Text-Ergebnisformat (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0115-backfill-spaltenwerte-text-ergebnisformat.md](0115-backfill-spaltenwerte-text-ergebnisformat.md) |
