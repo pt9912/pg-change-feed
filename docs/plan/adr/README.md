@@ -128,3 +128,5 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0113 | Backfill: Rollenschnitt, Aufnahme, Warn-Kriterium (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0113-backfill-rollenschnitt-aufnahme-warnkriterium.md](0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) |
 | ADR-0114 | Schema-Rollout: Vorlauf für View-Signatur-Änderungen (ergänzt ADR-0043) | Accepted | 2026-09-24 | [0114-schema-rollout-vorlauf-view-signatur.md](0114-schema-rollout-vorlauf-view-signatur.md) |
 | ADR-0115 | Backfill: Spaltenwerte im Text-Ergebnisformat (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0115-backfill-spaltenwerte-text-ergebnisformat.md](0115-backfill-spaltenwerte-text-ergebnisformat.md) |
+| ADR-0116 | Backfill: Reichweite der Schema-Version-Referenz (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0116-backfill-schema-version-referenz-reichweite.md](0116-backfill-schema-version-referenz-reichweite.md) |
+| ADR-0117 | Backfill: Fehlerklasse schema im Run (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0117-backfill-run-fehlerklasse-schema.md](0117-backfill-run-fehlerklasse-schema.md) |

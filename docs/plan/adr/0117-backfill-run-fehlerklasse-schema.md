@@ -1,6 +1,6 @@
 # ADR-0117: Backfill — Fehlerklasse `schema` für eine im Run nicht anwendbare Transformationsregel, Klassenmenge des Runs (Supersedes ADR-0111, Teilfrage 5 teilweise)
 
-**Status:** Proposed — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
+**Status:** Accepted — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
 in **Teilfrage 5, teilweise** (genau ein Satzteil: die Aufzählung der fünf
 Fehlerklassen im Absatz „Fehlerklassen und Heartbeat", siehe §Entscheidung);
 alles Übrige von `ADR-0111` bleibt in Kraft. [`ADR-0112`](0112-transformationsform-deklarative-regeln-vor-persistenz.md)
@@ -227,6 +227,7 @@ genannten Träger ändert diese ADR nicht** — der Planner zieht sie nach
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-24 | Proposed — Architect-Vorschlag zum Review-Befund F-9 und zum Start-Trigger des Backfill-Pfads der Transformationen | Review-Report zum Run-Use-Case, Befund F-9 (`docs/reviews/`) |
+| 2026-09-24 | Accepted — Annahme durch den Auftraggeber samt Klasse schema für eine im Run nicht anwendbare Regel, run-lokal | [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit

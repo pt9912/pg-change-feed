@@ -1,6 +1,6 @@
 # ADR-0116: Backfill — Bedeutung und Reichweite der Schema-Version-Referenz einer Backfill-Change (Supersedes ADR-0111, Konsequenzen teilweise)
 
-**Status:** Proposed — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
+**Status:** Accepted — Supersedes [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md)
 in **§Konsequenzen, „Akzeptierte Negative", genau einem Aufzählungspunkt**
 („Schema-Version-Verweis"); alles Übrige von `ADR-0111` bleibt in Kraft
 
@@ -251,6 +251,7 @@ genannten Träger ändert diese ADR nicht** — der Planner zieht sie nach
 | Datum | Ereignis | Verweis |
 |---|---|---|
 | 2026-09-24 | Proposed — Architect-Vorschlag zum Review-Befund F-8; die zwei Fälle vor dem Run an Wegwerf-Containern auf PostgreSQL 17.11 und 18.6 mit den realen Adaptern gemessen | Review-Report zum Run-Use-Case, Befund F-8 (`docs/reviews/`) |
+| 2026-09-24 | Accepted — Annahme durch den Auftraggeber samt Reihenfolge-Marker-Bedeutung der Version und den drei benannten Reichweiten | [`ADR-0111`](0111-backfill-bestand-snapshot-bulk-copy.md) |
 
 Nach `Accepted` wird diese Datei **nicht mehr inhaltlich überschrieben**.
 Spätere Korrekturen oder Schärfungen entstehen als neue ADR mit
