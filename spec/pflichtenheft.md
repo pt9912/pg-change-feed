@@ -141,20 +141,108 @@ eine Schema-Version ([`LH-FA-SCH-005`](lastenheft.md)). Nicht sicher interpretie
 Schemaänderungen führen zu einem sichtbaren Fehler (Fehlerklasse `schema`,
 §4) statt stiller Fehlinterpretation ([`LH-FA-SCH-004`](lastenheft.md)).
 
-### LH-FA-CAP-009.a — Backfill-Mechanismus offen
+### LH-FA-CAP-009.a — Backfill-Mechanismus
 
-**Eingabe:** Bestand einer aktivierten Quelltabelle zum
-Aktivierungszeitpunkt. **Ausgabe:** Backfill-Changes über denselben
+**Eingabe:** Bestand einer aktivierten Quelltabelle zum Startzeitpunkt eines
+Backfill-Laufs („Run"). **Ausgabe:** Backfill-Changes über denselben
 Lesezugriffsweg wie WAL-erfasste Changes.
 
-Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CAP-009`](lastenheft.md)), ihre
-technische Realisierung ist offen: ob der Bestand über einen konsistenten
-Export-Snapshot beim Anlegen des Replication Slots (`pg_export_snapshot`),
-eine separate Bulk-Copy-Phase oder einen anderen Mechanismus überführt
-wird, wie Backfill-Changes von WAL-Changes unterscheidbar markiert werden,
-und das Verhältnis zum bereits laufenden WAL-Erfassungspfad (das im
-Lastenheft benannte Überlappungsfenster) sind offene technische Fragen,
-ADR-pflichtig.
+Die Lastenheft-Fähigkeit ([`LH-FA-CAP-009`](lastenheft.md)) wird durch einen
+ausdrücklich ausgelösten Run erfüllt. Die folgenden Sätze sind Zusagen an die
+Umsetzung, keine Messergebnisse.
+
+- **Auslösung.** Ausdrücklich, nie implizit von der Aktivierung: die
+  SQL-Funktion `cdc.backfill_table(source_id, schema, table)` schreibt
+  ausschließlich einen Antrag der Antragsart `backfill` (`SPEC-019`) und
+  sendet `pg_notify`. Ein Run setzt eine aktivierte Tabelle mit laufender
+  Bindung voraus; eine verletzte Vorbedingung endet den Antrag `failed` mit
+  Text, ebenso ein zweiter Antrag für dieselbe Tabelle, solange ein Run dieser
+  Tabelle `queued` oder `running` ist.
+- **Annahme und Aufnahme.** Die Administrations-Verarbeitung nimmt den Antrag
+  an, sie führt ihn nicht aus: in **einer** Transaktion entsteht die Run-Zeile
+  `queued` (`SPEC-029`) und der Antrag wird `applied` vermerkt — `applied`
+  heißt hier „angenommen". Ein einzelner Backfill-Worker (eine Goroutine, ein
+  Run zugleich, keine Parallelisierung) nimmt `queued`-Runs seiner Quelle in
+  Antragsreihenfolge beim Prozessstart und bei jedem Wecksignal auf; er prüft
+  vor der Ausführung Bindung und Publication-Mitgliedschaft erneut (Abweichung
+  endet den Run `failed`, Fehlerklasse `configuration`, ohne Slot und ohne
+  Kopie).
+- **Mechanismus.** Bulk-Copy des Tabellenbestands im Snapshot eines je Run
+  angelegten temporären logischen Replication Slots (`pgoutput`, mit
+  Snapshot-Export). Der `consistent_point` des Slots ist die Position `X` des
+  Runs; der Bestand wird in einer `REPEATABLE READ`-Transaktion gelesen, die
+  den exportierten Snapshot importiert, über einen Cursor in Blöcken
+  begrenzter Größe, ohne Datei-, Dump- oder Zwischenspeicher. Der Slot besteht
+  nur, bis der Snapshot importiert und die Replication-Verbindung beendet ist.
+  Alle Blöcke werden in **einer** Store-Transaktion geschrieben, die einmal am
+  Ende zusammen mit dem Run-Zustand `completed` committet. Eine leere Tabelle
+  endet `completed` mit 0 Zeilen und schreibt keine Transaktion. Die Rolle des
+  Capture-Prozesses braucht `SELECT` auf die Quelltabelle — eine
+  Betriebs-Vorbedingung wie `REPLICATION`, keine Vergabe durch die Software;
+  ihr Fehlen endet den Run `failed` (Fehlerklasse `permission`).
+- **Markierung.** Jeder Backfill-Change trägt `origin = backfill`
+  (`SPEC-002`), `operation = INSERT`, kein `old_data` und ein **vollständiges**
+  `new_data` (auch Spalten, die ein `UPDATE`-Image als Abwesenheit tragen kann,
+  [`LH-FA-CAP-008`](lastenheft.md)). Das Row Image ist byte-gleich dem
+  WAL-Image derselben Zeile: dieselbe Bild-Konstruktion, ausgeschlossene
+  Spalten ([`LH-FA-CFG-005`](lastenheft.md)) und generierte Spalten fehlen,
+  `NULL` entfällt, Werte im Text-Stand der Quelle.
+- **Position und Ordnung.** Alle Blöcke eines Runs liegen auf der Position
+  `X`. Jeder Block ist eine eigene synthetische Transaktion mit der Kennung
+  `0bf-<run-id>-<Blocknummer>` (Blocknummer achtstellig, null-aufgefüllt) und
+  der Sequenz `1…B`; die Kennung sortiert wegen des führenden `0` vor jeder
+  WAL-Transaktions-Kennung derselben Position. Die Change-Kennung folgt der
+  Regel des WAL-Pfads (`<Transaktions-ID>-<Sequenz>`). Die Lese-Ordnung
+  bleibt (`commit_position`, `transaction_id`, `sequence`)
+  ([`LH-FA-REA-004`](lastenheft.md)); innerhalb des Backfills ist sie die
+  Cursor-Reihenfolge, einmal vergeben und stabil.
+- **Überlappungs-Verhalten.** Jeder Commit mit Position ≤ `X` steckt im
+  Bestand, jeder Commit mit Position > `X` kommt über den WAL-Pfad und sortiert
+  hinter dem Backfill; die Bindung der Tabelle steht vor der Slot-Anlage, es
+  entsteht **keine Lücke**. Eine Zeile, die im Fenster (Aktivierung, `X`]
+  geändert wurde und deren WAL-Change persistiert ist, erscheint **doppelt**:
+  der WAL-Change davor, der Backfill-Stand danach — begrenzt auf dieses
+  Fenster, und **idempotent**: wendet ein Consumer das Log ab dem Log-Anfang in
+  Lese-Ordnung an (`INSERT`/`UPDATE` als Upsert des Row Images, `DELETE` als
+  Löschen), entspricht sein Stand je Schlüssel dem Quellstand.
+- **Sichtbarkeits-Grenze.** Positionen wandern nur vorwärts
+  ([`LH-FA-CON-004`](lastenheft.md)); der Bestand liegt auf `X`. Er ist ein
+  Zustandsabzug für Consumer **vor** `X` (neu registrierte, zurückliegende und
+  ein eigens für den Abzug registrierter Consumer). Ein Consumer, dessen
+  bestätigte Position beim Commit des Runs bereits `X` erreicht hat, sieht den
+  Bestand nicht über seinen Fortschritt; der Bestand bleibt über das
+  Bereichslesen ([`LH-FA-REA-001`](lastenheft.md)) lesbar. Ein Bestandsabzug
+  teilt **eine** Commit-Position; ein `limit` kann innerhalb einer Position
+  nicht fortsetzen (`SPEC-022`), er wird deshalb ohne `limit` oder über den
+  Schlüsselvergleich (`commit_position`, `transaction_id`, `sequence`) auf der
+  View `cdc.changes` gelesen.
+- **Unterbrechung und Neubeginn.** Ein abgebrochener Run (Prozessende,
+  Verbindungsverlust) hinterlässt keine Change-Zeile. Beim Prozessstart wird
+  jeder `running`-Run `interrupted`; `queued`-Runs laufen weiter; ein
+  `interrupted`-Run wird **nicht** automatisch neu gestartet. Ein erneuter
+  Antrag startet einen neuen Run mit neuem Snapshot und beginnt damit neu.
+- **Fail-closed vor dem Commit.** Unmittelbar vor dem Commit prüft der Run,
+  dass die Bindung der Tabelle besteht und der Ausschlussstand
+  ([`LH-FA-CFG-005`](lastenheft.md)) dem Stand entspricht, mit dem die Blöcke
+  gebaut wurden; jede Abweichung rollt den Run zurück (`failed`, Grund im
+  Fehlertext). Ein ausgeschlossener Wert wird nie serialisiert.
+- **Sichtbarkeit und Fehler des Runs.** Die View `cdc.backfill_status` und die
+  CLI-Diagnose zeigen den Run (`SPEC-029`). Run-Fehler tragen die Klasse aus
+  `SPEC-008` im Fehlertext und sind **run-lokal**: sie setzen weder den
+  Heartbeat-Fehlerzustand noch stoppen sie den Capture-Pfad.
+- **Zustellung und Retention.** Backfill-Changes gehen in keinen Live-Weg
+  (`SPEC-020`, `SPEC-021`, `SPEC-024`); nach dem Commit sendet der Run je
+  Tabelle ein Wecksignal (`SPEC-017`, best effort). Die Retention behandelt sie
+  wie jeden Change; `committed_at` der synthetischen Transaktionen ist der
+  Snapshot-Zeitpunkt.
+- **Große Tabellen.** Die Ein-Transaktions-Form hält für die Kopierdauer einen
+  Snapshot an der Quelle und eine offene Schreibtransaktion im CDC-Speicher.
+  Dafür gibt es zwei Warnungen — **keine Ablehnung, kein Abbruch, keine
+  Statusänderung**: (1) beim Antrag, wenn die **geschätzte** Zeilenzahl über
+  einer Richtgröße liegt; (2) zur Laufzeit, wenn die Kopierdauer eine Toleranz
+  überschreitet. Das Ergebnis steht in den beiden Warn-Spalten (`SPEC-029`).
+  Toleranz und Richtgröße sind keine Konstanten dieses Dokuments; `SPEC-029`
+  trägt nur ihr Ergebnis.
 
 ### LH-FA-CFG-007.a — Transformationsform offen
 
@@ -233,6 +321,7 @@ Vorgesehene Tabellen:
 | `cdc.consumer_position` | bestätigte Position je Consumer |
 | `cdc.schema_version` | Schema-Versionen (SPEC-004) |
 | `cdc.process_heartbeat` | Betriebs-/Capture-Zustand: periodisches Lebenszeichen des Capture-Prozesses ([`LH-FA-ADM-002`](lastenheft.md), [`LH-QA-OPS-002`](lastenheft.md)) |
+| `cdc.backfill_run` | Run-Zustand eines Backfills des Tabellenbestands (`SPEC-029`, [`LH-FA-CAP-009`](lastenheft.md)) |
 
 ### SPEC-002 — `cdc.change`
 
@@ -245,12 +334,20 @@ Vorgesehene Tabellen:
   "operation": "INSERT | UPDATE | DELETE",
   "old_data": "jsonb | null",
   "new_data": "jsonb | null",
-  "schema_version": "Referenz auf cdc.schema_version"
+  "schema_version": "Referenz auf cdc.schema_version",
+  "origin": "wal | backfill (fehlender Wert liest als wal; LH-FA-CAP-009)"
 }
 ```
 
 Im MVP werden `old_data` und `new_data` als `jsonb` gespeichert (Row
 Images; Verfügbarkeit je Operationstyp siehe [`LH-FA-CAP-008`](lastenheft.md)).
+
+`origin` benennt die Herkunft des Changes: `wal` für einen über den
+Replication Stream erfassten Change, `backfill` für einen Bestands-Change
+eines Backfill-Runs (`LH-FA-CAP-009.a`). Die Menge ist geschlossen; ein
+gespeicherter Change ohne das Feld liest sich als `wal`, die View `cdc.changes` führt das Feld
+als **letzte** Spalte. Die Live-Wege (`SPEC-020`, `SPEC-021`, `SPEC-024`)
+tragen es nicht.
 
 ### SPEC-003 — SourcePosition
 
@@ -399,9 +496,10 @@ interner Fehler (`500`).
 ### SPEC-019 — `cdc.administration_request` (Antrags-Datensatz)
 
 Feldform des Antrags-Datensatzes der schreibenden SQL-Administration
-([`LH-FA-ADM-001`](lastenheft.md), [`LH-FA-CFG-005`](lastenheft.md)):
+([`LH-FA-ADM-001`](lastenheft.md), [`LH-FA-CFG-005`](lastenheft.md),
+[`LH-FA-CAP-009`](lastenheft.md)):
 `cdc.enable_table`/`cdc.disable_table`/`cdc.exclude_column`/
-`cdc.include_column` schreiben ausschließlich eine Zeile hierher und senden
+`cdc.include_column`/`cdc.backfill_table` schreiben ausschließlich eine Zeile hierher und senden
 `pg_notify` auf dem Kanal `cdc_administration`; der laufende Capture-Prozess
 liest die offenen Anträge und vermerkt das Ergebnis in derselben Zeile.
 
@@ -410,8 +508,8 @@ liest die offenen Anträge und vermerkt das Ergebnis in derselben Zeile.
 | `administration_request_id` | text (PK) | ja | von der SQL-Funktion vergeben; zugleich der `pg_notify`-Payload |
 | `source_id` | text (FK `cdc.source`) | ja | Quelle des Antrags |
 | `schema_name` / `table_name` | text | ja | adressierte Tabelle |
-| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die beiden Tabellen-Antragsarten tragen hier NULL |
-| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` |
+| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die drei übrigen Antragsarten (`enable`, `disable`, `backfill`) tragen hier NULL |
+| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` |
 | `requested_at` | timestamptz | ja, Default `current_timestamp` | Anlage-Zeitpunkt; die Verarbeitungs-Ordnung |
 | `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
 | `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
@@ -422,8 +520,18 @@ Antrags-Konstruktors); ein Spaltenausschluss gegen eine an der Quelle nicht
 existierende Spalte endet als `failed` mit dem Fehlertext der
 `ErrSourceColumnMissing`-Ausprägung (Klartext „Spalte existiert nicht an der
 Quelle", gefolgt von der Adresse `schema.table.column`, getrennt durch
-Punkte). Die beiden Tabellen-Antragsarten tragen unverändert Bindungs-Zeilen
-und Publication nach.
+Punkte). Die Antragsarten `enable`/`disable` tragen unverändert
+Bindungs-Zeilen und Publication nach.
+
+Für die Antragsart `backfill` heißt `applied` **angenommen**: die Run-Zeile
+(`cdc.backfill_run`, `SPEC-029`) entsteht mit dem Status `queued` in
+**derselben Transaktion**, die den Antrag von `pending` auf `applied` setzt —
+der Vermerk trifft genau **eine** `pending`-Zeile, jede Abweichung rollt beide
+Schreibvorgänge zurück. Die Ausführung des Runs steht im Run-Zustand, nicht im
+Antragsstatus. Ein Antrag, dessen Vorbedingung verletzt ist (Tabelle nicht
+aktiviert oder ohne laufende Bindung, ein aktiver Run — `queued`/`running` —
+derselben Tabelle), endet `failed` mit Fehlertext und hinterlässt keine
+Run-Zeile.
 
 Für die beiden Spalten-Antragsarten trägt `applied` darüber hinaus eine
 zweite Bedeutung: der Stand ist **dauerhaft vermerkt**. Ihre
@@ -455,7 +563,7 @@ trägt kein Replay ([`LH-FA-SST-008`](lastenheft.md) Boundary).
 | Protokoll / Dienst | gRPC über HTTP/2 mit Protobuf (`proto3`); Paket `cdc.stream.v1`, Dienst `ChangeStream`, Quelldatei `proto/cdc/stream/v1/changestream.proto` |
 | RPC | `StreamChanges(StreamChangesRequest) returns (stream Change)` — ein Server-Streaming-Aufruf: ein Öffnungsversuch, viele Antwortnachrichten über die Zeit |
 | Request | `StreamChangesRequest` trägt keine Felder; eine tabellen-granulare Filterung ist nicht Teil dieser Version |
-| Nachricht `Change` | dieselben Felder wie der Domain-Typ `model.Change` (`OldImage`/`NewImage`, `internal/domain/model/change.go`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string) |
+| Nachricht `Change` | dieselben Felder wie der Domain-Typ `model.Change` (`OldImage`/`NewImage`, `internal/domain/model/change.go`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, eine der drei Operationen `INSERT`, `UPDATE`, `DELETE`), `old_image` (bytes), `new_image` (bytes), `schema_version` (string), `schema` (string), `table` (string); das Feld `origin` (`SPEC-002`) gehört nicht zur Nachricht |
 | Granularität | eine Nachricht je Zeilen-Change der committed Transaktion, in deren Reihenfolge — keine Deduplizierung nach Tabelle |
 | Zustellgarantie | keine (Fire-and-Forget, verlustbehaftet): ein Consumer, der nicht verbunden ist **oder langsamer liest als Changes eintreffen**, verpasst die betroffenen Nachrichten ersatzlos — je Abonnent trägt der `Broadcaster` eine begrenzte Empfangs-Warteschlange, deren Überlauf verworfen wird. Ein Replay innerhalb des Streams gibt es nicht; verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar ([`LH-FA-SST-008`](lastenheft.md) Boundary) |
 | Erzeuger-Blockade | keine: `Publish` blockiert nie auf einen Abonnenten — auch ein verbundener, gerade nicht lesender Consumer hält den Capture-Pfad nicht an. Der Aufruf liefert nur bei ungültigem Aufruf (fehlender Change oder bereits beendeter Aufruf-Kontext) einen Fehler; ein Fehlschlag geht nicht in den Rückgabewert des Capture-Aufrufs ein (Zeile *Fehler bei Publish-Fehlschlag*) |
@@ -474,7 +582,7 @@ Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md), zweiter Zustellwe
 | Rechtsklasse | `reader` oder `admin` — Streaming ist rein lesend |
 | Response-Form | `Content-Type: text/event-stream`; je Change ein Event, sofort über `http.Flusher` ausgeliefert |
 | Event-Typ | `event: change` |
-| Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`: `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
+| Event-Daten | `data:` trägt ein JSON-Objekt mit denselben zehn Feldern wie der Domain-Typ `model.Change`, ohne das Feld `origin` (`SPEC-002`): `change_id` (string), `transaction_id` (string), `source_table_id` (string), `sequence` (int64), `operation` (string, `INSERT`/`UPDATE`/`DELETE`), `old_image`, `new_image`, `schema_version` (string), `schema` (string), `table` (string). Die Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild ist `null` |
 | Zustellgarantie | keine (Fire-and-Forget): ein nicht verbundener **oder langsamer lesender** Consumer verpasst die betroffenen Nachrichten ersatzlos; ein Erzeuger hält nie auf einen Empfänger an. Verpasste Changes bleiben über den bestehenden Lesezugriffsweg ([`LH-FA-REA-001`](lastenheft.md) ff.) und die bestätigte Consumer-Position ([`LH-FA-CON-003`](lastenheft.md)/[`LH-FA-CON-005`](lastenheft.md)) nachholbar |
 | Replay | kein Stream-internes Replay; der `Last-Event-ID`-Header wird weder gesendet noch ausgewertet |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server. Ist die Adresse gesetzt, aber kein `Broadcaster` verdrahtet, antwortet der Endpunkt mit `503` |
@@ -492,7 +600,7 @@ Port-gedeckten Fähigkeiten ausgestaltet.
 
 | Fähigkeit | Endpunkt | Rechtsklasse | Request | Response |
 |---|---|---|---|---|
-| `ReadChanges` ([`LH-FA-SST-006`](lastenheft.md), [`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `GET /changes` | `reader` oder `admin` | Query-Parameter `source` (**Pflicht**), `schema`, `table` (je optional und **unabhängig**), `from`, `to` (optional, `commit_position`-Werte ≥ 1, `from` **inklusiv** / `to` **exklusiv**), `limit` (optional, ≥ 1) — **kein** Default-Limit | `200`: `{"changes": [{"commit_position": <int64>, "change_id": "<string>", "transaction_id": "<string>", "source_table_id": "<string>", "schema": "<string>", "table": "<string>", "sequence": <int64>, "operation": "<INSERT\|UPDATE\|DELETE>", "old_image": <eingebettetes JSON \| null>, "new_image": <eingebettetes JSON \| null>, "schema_version": "<string>", "committed_at": "<RFC 3339 in UTC, Bruchteil-Sekunden mit bis zu neun Stellen (abschließende Nullen entfallen)>"}, …]}` — kein Treffer → leere Liste, **nie `404`** |
+| `ReadChanges` ([`LH-FA-SST-006`](lastenheft.md), [`LH-FA-REA-001`](lastenheft.md)…[`006`](lastenheft.md)) | `GET /changes` | `reader` oder `admin` | Query-Parameter `source` (**Pflicht**), `schema`, `table` (je optional und **unabhängig**), `from`, `to` (optional, `commit_position`-Werte ≥ 1, `from` **inklusiv** / `to` **exklusiv**), `limit` (optional, ≥ 1) — **kein** Default-Limit | `200`: `{"changes": [{"commit_position": <int64>, "change_id": "<string>", "transaction_id": "<string>", "source_table_id": "<string>", "schema": "<string>", "table": "<string>", "sequence": <int64>, "operation": "<INSERT\|UPDATE\|DELETE>", "old_image": <eingebettetes JSON \| null>, "new_image": <eingebettetes JSON \| null>, "schema_version": "<string>", "committed_at": "<RFC 3339 in UTC, Bruchteil-Sekunden mit bis zu neun Stellen (abschließende Nullen entfallen)>", "origin": "<wal\|backfill>"}, …]}` — kein Treffer → leere Liste, **nie `404`** |
 
 Die Feldnamen folgen dem API-Vokabular, nicht dem Spaltenvokabular der
 View: `schema`/`table` statt `schema_name`/`table_name` (wie
@@ -506,6 +614,8 @@ steht zusätzlich daneben — die API adressiert Tabellen an anderer Stelle
 | Reihenfolge | deterministisch nach (`commit_position`, `transaction_id`, `sequence`) — [`LH-FA-REA-004`](lastenheft.md); die Fortsetzung ist `from = <letzte gelieferte commit_position> + 1` |
 | Leere Menge | `{"changes": []}`, nie `null` — ohne Treffer (unbekannte Quelle, unbekanntes Schema, unbekannte Tabelle, leerer Bereich) endet der Aufruf `200`; ein leerer Bestand ist kein Fehler ([`LH-FA-REA-006`](lastenheft.md) Boundary) |
 | Fehler-Antwortform | unverändert `{"error": "<Klartext>"}` (`SPEC-018`); `400` für ein fehlendes `source`, einen **Parameter außerhalb der Liste** (strenger als die neun Bestandsendpunkte — ein unbekannter *Filter* änderte den Ergebnisstand sonst still), eine nicht als Ganzzahl lesbare Zahl, `from`/`to` `< 1`, `limit` `< 1` ([`LH-FA-REA-003`](lastenheft.md) Negative) oder `from > to` ([`LH-FA-REA-001`](lastenheft.md) Negative); fehlender/unbekannter Bearer-Token `401`; Store-Fehler der Klasse `storage` `500`. Kein `404`-Pfad: das Lesen prüft nichts an der Quelle, es liest einen Bestand |
+| Herkunft | `origin` trägt `wal` für einen über den Replication Stream erfassten Change und `backfill` für einen Bestands-Change (`SPEC-002`, `LH-FA-CAP-009.a`); ein gespeicherter Change ohne das Feld liest als `wal`. Der Abschnitt bietet keinen Filter auf `origin` |
+| Position und `limit` | Ein `limit` schneidet Zeilen, nicht Positionen: enthält eine Commit-Position mehr Changes als `limit`, liefert `from = <letzte gelieferte commit_position> + 1` den Rest dieser Position nicht, und ein Lesen ab derselben Position liefert wieder dieselben Zeilen. Ein Bestandsabzug legt alle seine Changes auf **eine** Position; er wird ohne `limit` gelesen (oder über den Schlüsselvergleich auf der View `cdc.changes`) |
 | Noch nicht begrenzt | Kein Default-Limit und **keine** harte Obergrenze: ohne `limit` liest der Aufruf unbegrenzt, wie der View-Direktzugriff. Eine eingebaute Grenze wäre eine eigene Festlegung dieses Abschnitts |
 | Aktivierung | wie die übrigen Endpunkte über `CDC_HTTP_ADDR`; ungesetzt bedeutet deaktiviertes Feature, kein HTTP-Server |
 
@@ -554,6 +664,53 @@ unverändert.
 | Erzeuger-Blockade | keine: Der Publisher liest ausschließlich aus dem bereits vom `Broadcaster` isolierten Kanal, dieselbe Fehlerisolation wie `SPEC-020`/`SPEC-021` |
 | Authentifizierung | Verbindungsebene: Der NATS-Server verlangt einen Token, sobald `CDC_NATS_STREAM_TOKEN` konfiguriert ist — ein Verbindungsversuch ohne oder mit falschem Token wird vom Server abgelehnt. Dieser Token gilt serverweit (auch für die bislang anonyme `SPEC-017`-Verbindung), sobald er konfiguriert ist |
 | Aktivierung | optional, **beide** Bedingungen: `CDC_NATS_URL` **und** `CDC_NATS_STREAM_TOKEN` gesetzt. Nur `CDC_NATS_URL` gesetzt bedeutet unverändertes `SPEC-017`-Bestandsverhalten, kein dritter Weg. `CDC_NATS_STREAM_TOKEN` gesetzt ohne `CDC_NATS_URL` ist ein Konfigurationsfehler beim Start (`configuration`, `SPEC-008`) |
+
+### SPEC-029 — `cdc.backfill_run` und `cdc.backfill_status` (Run-Zustand eines Backfills)
+
+Feldform des Run-Zustands zu `LH-FA-CAP-009.a` und der lesenden View
+([`LH-FA-CAP-009`](lastenheft.md), [`LH-FA-SST-003`](lastenheft.md)): eine
+Zeile je Run, angelegt bei der Annahme eines Antrags der Antragsart
+`backfill` (`SPEC-019`), fortgeschrieben vom Backfill-Worker.
+
+| Spalte | Typ | Pflicht | Bedeutung |
+|---|---|---|---|
+| `run_id` | text (PK) | ja | die `administration_request_id` des annehmenden Antrags |
+| `source_id` | text (FK `cdc.source`) | ja | Quelle des Runs |
+| `schema_name` / `table_name` | text | ja | kopierte Tabelle |
+| `status` | text | ja | geschlossene Menge `queued` \| `running` \| `completed` \| `failed` \| `interrupted`; die Menge steht bei Erstanlage der Tabelle als Prüfbedingung |
+| `requested_at` | timestamptz | ja | Anlage-Zeitpunkt; die Aufnahme-Ordnung ist (`requested_at`, `run_id`) |
+| `started_at` | timestamptz | nein | Übergang nach `running`, NULL solange `queued`; der Beginn der Kopierdauer — die Wartezeit in `queued` zählt nicht |
+| `finished_at` | timestamptz | nein | Übergang nach `completed`, `failed` oder `interrupted` |
+| `snapshot_position` | bigint | nein | die Position `X` des Runs (`LH-FA-CAP-009.a`, `SPEC-003`); NULL bis zur Anlage des Snapshots |
+| `rows_copied` | bigint | ja, Default 0 | Fortschritt je Block, außerhalb der Daten-Transaktion fortgeschrieben und damit für Leser sichtbar; bei `completed` die Zahl der geschriebenen Backfill-Changes |
+| `estimated_rows` | bigint | nein | die beim Antrag **geschätzte** Zeilenzahl der Tabelle (eine Schätzung der Quelle, keine Zählung); NULL heißt „unbekannt", **nie** `0` |
+| `warn_estimated_size` | boolean | ja, Default `false` | Warnung (1): die **geschätzte** Zeilenzahl liegt über der Richtgröße; bleibt `false`, solange `estimated_rows` unbekannt ist oder keine Richtgröße festgelegt ist. Schreibt die Annahme |
+| `warn_duration` | boolean | ja, Default `false` | Warnung (2): die Kopierdauer hat die Toleranz überschritten; gesetzt beim Fortschritts-Update (je Block) oder beim Abschluss und danach unverändert. Schreibt der Worker |
+| `error_message` | text | nein | Fehlertext eines `failed`-Runs, mit der Fehlerklasse aus `SPEC-008`; sonst NULL |
+
+Die beiden Warn-Spalten sind eine Kennzeichnung, kein Wert: sie nennen weder
+Toleranz noch Richtgröße, und eine gesetzte Warnung ändert weder `status` noch
+den Ablauf des Runs — keine Ablehnung, kein Abbruch. Es sind zwei Spalten mit
+je einem Schreiber, weil die Annahme nur einfügen und der Worker nur
+fortschreiben darf (Grants unten); eine gemeinsame Spalte hätte zwei
+Schreiber für einen Wert.
+
+**Grants** (Rollen nach der Zuordnung der DSN-Verdrahtung):
+
+| Rolle | Recht auf `cdc.backfill_run` | Träger |
+|---|---|---|
+| `cdc_admin` | `SELECT`, `INSERT` | die Annahme: Prüfung „kein aktiver Run derselben Tabelle" und Anlage der Zeile `queued` |
+| `cdc_capture` | `SELECT`, `UPDATE` | der Worker: `queued`-Zeilen lesen, Statuswechsel, `started_at`/`finished_at`, `snapshot_position`, `rows_copied`, `error_message`, `warn_duration`; der Abgleich `running` → `interrupted` beim Prozessstart |
+| `cdc_reader` | **keines** | liest ausschließlich über die View |
+
+Niemand trägt `DELETE`; `cdc_admin` trägt kein `UPDATE`, `cdc_capture` kein
+`INSERT`. `cdc_reader` trägt `SELECT` auf die View `cdc.backfill_status`.
+
+**View `cdc.backfill_status`:** je Tabelle (`source_id`, `schema_name`,
+`table_name`) die Zeile des zuletzt beantragten Runs (größtes `requested_at`,
+Zweitschlüssel `run_id`) mit denselben Spalten wie `cdc.backfill_run`. Jede
+Ausgabe der **geschätzten** Zeilenzahl (View-Leser, CLI-Diagnose) zeigt NULL
+als „unbekannt" und nie als `0`.
 
 ---
 
@@ -680,3 +837,6 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-026` nachgezogen (`welle-sdk-csharp-vollabdeckung`, slice-sdk-csharp-sse-client-flaeche + slice-sdk-csharp-nats-stream-client-flaeche): `PgChangeFeed.Client` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`PgChangeFeed.Client.0.2.0.nupkg`); die Kennung bleibt bestehen, eine zweite Sprache oder ein zweiter Vertriebsweg bleibt offen |
 | 2026-09-22 | `LH-FA-SST-009.a`/`SPEC-028` nachgezogen (`welle-sdk-kotlin-vollabdeckung`, slice-sdk-kotlin-sse-client-flaeche + slice-sdk-kotlin-nats-stream-client-flaeche): `pgchangefeed-kotlin` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API und gRPC-Stream — Version auf `0.2.0` gehoben, real paketiert (`pgchangefeed-kotlin-0.2.0.jar`); die Kennung bleibt bestehen, eine vierte Sprache oder ein vierter Vertriebsweg bleibt offen |
 | 2026-09-23 | `LH-FA-SST-009.a`/`SPEC-027` nachgezogen (`welle-sdk-python-vollabdeckung`, slice-sdk-python-grpc-client-flaeche + slice-sdk-python-sse-client-flaeche + slice-sdk-python-nats-stream-client-flaeche): `pgchangefeed` deckt jetzt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt statt nur HTTP-API — Version auf `0.2.0` gehoben, real paketiert (`pgchangefeed-0.2.0-py3-none-any.whl`, `pgchangefeed-0.2.0.tar.gz`); die Kennung bleibt bestehen, eine dritte Sprache oder ein dritter Vertriebsweg bleibt offen |
+| 2026-09-24 | `LH-FA-CAP-009.a` beantwortet: Backfill-Mechanismus als Zusagen an die Umsetzung — ausdrückliche Auslösung über die Antragsart `backfill`, Annahme in einer Transaktion und Aufnahme durch einen einzelnen Worker, Bulk-Copy im Snapshot eines je Run angelegten temporären Slots in einer Store-Transaktion, Markierung über `origin`, Position `X` je Run, Überlappungs-Verhalten (keine Lücke, begrenzte idempotente Dopplung), Sichtbarkeits-Grenze, Neubeginn nach Abbruch, Fail-closed-Prüfung, zwei Warnungen für große Tabellen; die Überschrift verliert „offen" |
+| 2026-09-24 | `SPEC-001` um `cdc.backfill_run` erweitert; `SPEC-002` um das Feld `origin` (`wal` \| `backfill`, fehlender Wert liest als `wal`, letzte Spalte der View `cdc.changes`); `SPEC-019` um die Antragsart `backfill` (fünf Werte) und die Bedeutung von `applied` bei `backfill` („angenommen"); `SPEC-022` um das Antwort-Feld `origin` und die Position-und-`limit`-Anmerkung; `SPEC-020`/`SPEC-021` grenzen das Feld `origin` aus der Nachricht aus |
+| 2026-09-24 | `SPEC-029` ergänzt: Feldform von `cdc.backfill_run` und `cdc.backfill_status` — Spalten, zwei Warn-Spalten (`warn_estimated_size`, `warn_duration`), `estimated_rows` NULL als „unbekannt", Grants je Rolle |
