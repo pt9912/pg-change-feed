@@ -118,6 +118,10 @@ test-sdk-python-release-tag-info: ## Tabellentest gegen tools/harness/sdk-python
 test-sdk-kotlin-release-tag-info: ## Tabellentest gegen tools/harness/sdk-kotlin-release-tag-info.sh (SemVer-2.0-Validierung, ADR-0109, netzlos)
 	@bash tools/harness/run-sdk-kotlin-release-tag-info-tests.sh
 
+.PHONY: test-image-stale-parse
+test-image-stale-parse: ## Tabellentest gegen tools/harness/dockerfile-from.sh (FROM-Parsing von image-stale, ADR-0039, netzlos)
+	@bash tools/harness/run-dockerfile-from-tests.sh
+
 .PHONY: test-dockerhub-token
 test-dockerhub-token: ## Tabellentest gegen tools/harness/dockerhub-token.sh (Docker-Hub-Login-Antwort-Parsing, ADR-0051, netzlos)
 	@bash tools/harness/run-dockerhub-token-tests.sh

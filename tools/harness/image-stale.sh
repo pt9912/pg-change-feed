@@ -4,7 +4,9 @@
 # aktuellen Registry-Digests derselben Tags. Kein Gate: er braucht Netz
 # und urteilt nicht — er meldet. Ein Update bleibt ein bewusster Commit,
 # der die Digest-Zeile anhebt (Modul 14); Major-Version-Wechsel sind
-# Entscheidungen, kein automatischer Nachlauf.
+# Entscheidungen, kein automatischer Nachlauf. Die FROM-Zeilen liest
+# tools/harness/dockerfile-from.sh (netzlos testbar über
+# `make test-image-stale-parse`).
 #
 # Exit: 0 = keine Drift · 1 = Drift gefunden · 2 = Registry nicht
 # erreichbar (Ergebnis unbestimmbar — keine still grüne Aussage).
@@ -13,7 +15,10 @@ set -uo pipefail
 dockerfile="${1:-Dockerfile}"
 rc=0
 
+from_lines=$(bash "$(dirname "$0")/dockerfile-from.sh" "$dockerfile") || { echo "UNBESTIMMT  $dockerfile — FROM-Zeilen nicht lesbar"; exit 2; }
+
 while read -r tag pinned; do
+  [ -n "$pinned" ] || continue
   current=$(docker buildx imagetools inspect "$tag" --format '{{.Manifest.Digest}}' 2>/dev/null) || { echo "UNBESTIMMT  $tag — Registry nicht erreichbar"; rc=2; continue; }
   if [ "$current" = "$pinned" ]; then
     echo "OK          $tag == $pinned"
@@ -21,13 +26,13 @@ while read -r tag pinned; do
     echo "DRIFT       $tag: gepinnt $pinned, aktuell $current"
     rc=1
   fi
-done < <(grep -E '^FROM .*@' "$dockerfile" | awk '{split($2,a,"@"); print a[1], a[2]}')
+done <<< "$from_lines"
 
 # Major-Versions-Abdeckung: für Versionstag der Form <repo>:<MAJOR>.<MINOR><suffix>
 # prüfen, ob ein Tag mit der nächsten MAJOR-Version existiert — sonst meldet der
 # Digest-Vergleich oben nur Patch-Drift innerhalb des Tags, nie einen
 # Major-Wechsel (Lücke, im Implementer-/Review-Kontext benannt).
-while read -r tag; do
+while read -r tag _; do
   case "$tag" in
     *:[0-9].[0-9]*) ;;
     *) continue ;;
@@ -42,6 +47,6 @@ while read -r tag; do
     echo "MAJOR-DRIFT  $tag: neuer Major-Tag existiert: $base:$next_maj$suffix — Bump ist ein bewusster Commit (Modul 14)"
     rc=1
   fi
-done < <(grep -E '^FROM ' "$dockerfile" | awk '{split($2,a,"@"); print a[1]}')
+done <<< "$from_lines"
 
 exit "$rc"
