@@ -132,6 +132,14 @@ sichtbar. Drei Teile:
       `cdc.backfill_status` und `diagnose` lesen die Zeile. Der Test-Beleg ist ein
       Whitebox-Fall des Worker-Tests (ein Fake-Use-Case liefert ein Ergebnis
       `failed`; der Worker schreibt keinen Endzustand und beantragt nichts).
+      **Bezug von Antrag und Run** (Übergabe aus `slice-backfill-run-store`,
+      Review F-4): `Admit` nimmt einen `pending`-Antrag über seine Kennung an und
+      liest weder die Antragsart noch Quelle, Schema und Tabelle des Antrags; die
+      Verarbeitung prüft die Antragsart `backfill` und dass Quelle, Schema und
+      Tabelle des Antrags die des Runs sind, bevor sie `Admit` ruft (oder der
+      Vermerk trägt beide Bedingungen in seiner `WHERE`-Klausel). *Zu belegen
+      durch:* je Abweichung (Art, Quelle/Schema/Tabelle) ein Test mit Mutation
+      (Prüfung entfernen → rot).
 - [ ] Sichtbarkeit: `cdc.backfill_status` liefert je Tabelle den letzten Run mit
       Status, Zeilen, Zeiten, Fehlertext, der als geschätzt geführten
       Zeilenzahl (`NULL`/unbekannt bleibt „unbekannt", nie `0`) und der
@@ -184,6 +192,7 @@ sichtbar. Drei Teile:
 |---|---|---|
 | `internal/domain/model/administrationrequest.go` (+ Test) | update | Antragsart `backfill`; der Doc-Kommentar zählt die Menge auf. |
 | `internal/adapters/driven/postgresstorage/administrationrequest.go` (+ Test) | update | Abbildung der Antragsart. |
+| `internal/adapters/driven/postgresstorage/backfilladmission.go`, `queries/queries.go` (+ Test) oder die Verarbeitung in `internal/bootstrap/wiring.go` | update (Übergabe aus `slice-backfill-run-store`) | Art- und Bezugs-Prüfung von Antrag und Run vor bzw. bei `Admit` (DoD „Bezug von Antrag und Run"). |
 | `tools/schema/nacharbeit-administration.sql` | update | CHECK-Menge (fünf Werte), Funktion `cdc.backfill_table`, Kopfkommentar. |
 | `tools/schema/rolloutguard/guard.go` (+ `guard_test.go`) | update | Eintrag der Funktion; der Kommentar „aktuell sechs Objekte" zählt neu. |
 | `tools/schema/schema.yaml` | update | View `backfill_status` im neutralen Modell mit ihrer endgültigen Spaltenliste, die zwei Warn-Spalten eingeschlossen (Ausweichform: Nacharbeit-SQL, dann Guard-Eintrag). |

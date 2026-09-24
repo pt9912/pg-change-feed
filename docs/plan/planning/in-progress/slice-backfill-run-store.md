@@ -136,15 +136,28 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       drei Operationen endet nach der eigenen Frist mit Fehler, auch bei
       abgelöstem Kontext); die Gegenseite am Use Case trägt
       `TestExecuteContextEndedInterrupts` in `usecase/backfill`.
+- [x] Rollen unter echtem Login (Review F-1, F-2): der Administrationsweg
+      (`processAdministrationRequests` mit allen vier Antragsarten) läuft mit
+      einer `cdc_admin`- und einer `cdc_capture`-Login-Identität ohne Superuser
+      bis zum Vermerk `applied`/`failed`; die drei Backfill-Adapter laufen unter
+      dem Login ihrer Rolle (Annahme `cdc_admin`, Run-Zustand und Schreiber
+      `cdc_capture`) und scheitern unter der Rolle des anderen mit SQLSTATE
+      `42501`; `cdc_admin` trägt `SELECT`, `UPDATE` auf
+      `cdc.administration_request`, sonst nichts auf ihr; der Rollout des
+      Arbeitsbaums über den Stand des jüngsten `v*`-Tags setzt die Rechte. *Zu
+      belegen durch:* `make test-store` (`internal/bootstrap` und
+      `postgresstorage`), der netzlose Rollen-Test der Rollout-Datei (4b) und
+      der Alt-Tag-Lauf von `tools/harness/run-schema-rollout-guard-test.sh`.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
+      Nach der Fixrunde bleibt kein offenes HIGH oder MEDIUM.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [x] Doku-Update: die Sensor-Zeile `make test-store` in `harness/README.md` und die Schema-Kommentare, soweit sie die Tabellenliste oder die Rollenverteilung aufzählen; das Benutzerhandbuch bleibt bis `sql-administration` unberührt.
+- [x] Doku-Update: die Sensor-Zeile `make test-store` in `harness/README.md` und die Schema-Kommentare, soweit sie die Tabellenliste oder die Rollenverteilung aufzählen; das Benutzerhandbuch trägt den Rechteschnitt von `cdc_admin` (§2, §4, §5), die Betreiber-Oberfläche des Backfills bleibt bis `sql-administration` unberührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -163,20 +176,26 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/schema/schema.yaml` | update | Tabelle `backfill_run`; CHECK auf `status` bei Erstanlage (spätere Erweiterung über Nacharbeit-SQL, nach dem Muster von `request_kind`); `estimated_rows` nullable; die zwei Warn-Spalten. |
-| `tools/schema/nacharbeit-roles.sql` | update | Grants: `cdc_admin` `SELECT`, `INSERT`; `cdc_capture` `SELECT`, `UPDATE`. |
+| `tools/schema/nacharbeit-roles.sql` | update | Grants: `cdc_admin` `SELECT`, `INSERT`; `cdc_capture` `SELECT`, `UPDATE` auf `cdc.backfill_run`. Fixrunde (Review F-1): `cdc_admin` zusätzlich `SELECT`, `UPDATE` auf `cdc.administration_request` (kein `INSERT`, kein `DELETE`); der Kopf-Kommentar nennt den Ist-Rollenschnitt samt Antrags-Queue. Weitere Grants ergab die Messung des ganzen Administrationswegs nicht (§6). |
 | `internal/bootstrap/roles_rollout_file_internal_test.go` | update | hält den Rollenschnitt gegen die Rollout-Datei; die neue Tabelle darf für `cdc_reader` **nicht** als Basistabellen-Grant erscheinen. |
 | `internal/adapters/driven/postgresstorage/` (Arbeitsname `backfilladmission.go`, `backfillrun.go`, `backfillwriter.go`, + Tests) | neu | die drei Adapter über die schmale Ausführungs-Naht des Pakets (`sqlexec`); explizite Spaltenlisten; der Annahme-Adapter nutzt `Begin`. |
 | `internal/adapters/driven/postgresstorage/backfillrun.go`, `backfillwriter.go` | Pflicht aus dem Port-Vertrag | Zeitgrenze für `Finish`, `InterruptRunning`, `Rollback` und `Finish` als wirkungsloser Erfolg auf einen beendeten Run (DoD-Punkt „Adapter-Pflichten"). |
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | die neuen Anweisungen. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Ergebnis von `make schema-rollout`, committet. |
-| `tools/harness/run-schema-rollout-guard-test.sh` | ausführen (nicht ändern) | der Alt-Tag-Lauf belegt die Tabelle gegen einen Alt-Bestand ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7). |
-| `internal/adapters/driven/postgresstorage/schema.sql` | geprüft, nicht geändert | die eingebettete DDL trägt nur die Store-Seite (`source`, `source_table`, `schema_version`, `transaction`, `change`); `cdc.backfill_run` liegt allein im neutralen Modell, die Backfill-Store-Tests laufen vor den Tests, die das Schema per `DROP SCHEMA cdc CASCADE` samt hand-DDL neu aufbauen (Dateinamen `backfill*_test.go` vor `consumerstate_test.go`). |
+| `tools/harness/run-schema-rollout-guard-test.sh` | ausführen; Fixrunde: update | der Alt-Tag-Lauf belegt die Tabelle gegen einen Alt-Bestand ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7). Fixrunde (Review F-1): Lauf 5 fragt nach dem Upgrade des Schemas vom jüngsten `v*`-Tag die Rechte von `cdc_admin` ab (`has_table_privilege`: `administration_request` `SELECT`/`UPDATE` gesetzt, `INSERT`/`DELETE` nicht; `backfill_run` `SELECT`/`INSERT` gesetzt, `UPDATE` nicht) und prüft vor dem Upgrade, dass `UPDATE` auf `administration_request` fehlt. Entscheidung: im Guard-Skript statt an anderer Stelle, weil der Alt-Tag-Lauf dort schon das Ausrollen des Alt-Standes und des Arbeitsbaums trägt — der Zusatz sind sieben Abfragen ohne eigenen Aufbau. |
+| `internal/adapters/driven/postgresstorage/schema.sql` | geprüft, nicht geändert | die eingebettete DDL trägt nur die Store-Seite (`source`, `source_table`, `schema_version`, `transaction`, `change`); `cdc.backfill_run` liegt allein im neutralen Modell, die Backfill-Store-Tests laufen vor den Tests, die das Schema per `DROP SCHEMA cdc CASCADE` samt hand-DDL neu aufbauen (`store_test.go`, `tableactivation_test.go`; die Dateinamen `backfill*_test.go` und `roles_test.go` sortieren vor ihnen). |
 | `internal/application/port/outbound/backfilladmission.go`, `backfillwriter.go` | update (Plan-Nachzug) | drei Sentinel-Fehler an den Ports, damit die Adapter-Ablehnungen über `errors.Is` unterscheidbar sind: `ErrBackfillRequestNotPending` (die Annahme trifft keine `pending`-Zeile), `ErrBackfillRunInvalid` (Run passt nicht zu `Admit`/`Begin`), `ErrBackfillBlockInvalid` (Block oder Commit verletzt den Vertrag des Schreibers); die Port-Kommentare tragen den geschärften Vertrag (Blocknummern 1, 2, 3, …, Kennungen, Herkunft `backfill`, Zähler = angehängte Changes). Keine Änderung an Methoden-Signaturen. |
 | `internal/adapters/driven/postgresstorage/backfill.go` | neu (Plan-Nachzug) | die zwei Frist-Startwerte und die Fehlerübersetzung (`ErrBackfillStorage`) der drei Adapter an einer Stelle. |
 | `internal/adapters/driven/postgresstorage/mapper/backfillrun.go`, `sqlexec/translate.go` (+ Tests) | neu/update (Plan-Nachzug) | die Übersetzung der Run-Zeile (`BackfillRunRow`, `ToBackfillRun`, `ReadBackfillRuns`, NULL-Schätzung als „unbekannt“) liegt in den beiden Paketen, die im Coverage-Gate stehen und netzlos geprüft werden — die Logik im DB-Paket bliebe außerhalb des Gates ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)); keine neue Paketgrenze, die drei namentlichen DB-Listen bleiben unverändert. |
 | `internal/adapters/driven/postgresstorage/backfill_internal_test.go`, `backfillhelpers_test.go`, `backfilladmission_test.go`, `backfillrun_test.go`, `backfillwriter_test.go`, `roles_test.go` | neu/update (Plan-Nachzug) | Store-Tier-Tests der DoD (Annahme, Zustand, Atomarität, Ordnung, Rollen) und der netzlose Frist-/Vertragstest an der Ausführungs-Naht (`backfill_internal_test.go`, läuft in `make test`). |
-| `internal/bootstrap/roles_rollout_file_internal_test.go` | update | Prüfung (4a): Grants und Verbote auf `cdc.backfill_run` gegen den Rollout-Text. |
-| `harness/README.md` | update | die Sensor-Zeile `make test-store` nennt die Backfill-Tests im Store-Tier. |
+| `internal/bootstrap/roles_rollout_file_internal_test.go` | update | Prüfung (4a): Grants und Verbote auf `cdc.backfill_run` gegen den Rollout-Text; Fixrunde: Prüfung (4b) für `cdc.administration_request` (`cdc_admin` `SELECT`, `UPDATE`; `INSERT`/`DELETE` und jedes Recht der beiden anderen Rollen verboten). |
+| `internal/bootstrap/administration_roles_internal_test.go` | neu (Fixrunde, Review F-1) | der ganze Antragsverarbeitungs-Pfad (`processAdministrationRequests`: `ListPending`, alle vier Antragsarten samt Use Case, `Registered`, `ExcludedColumns`, `MarkApplied`/`MarkFailed`, Schema-Speicher) unter einer `cdc_admin`- und einer `cdc_capture`-Login-Identität (`IN ROLE`, kein Superuser, kein Eigentum an `cdc`-Objekten; Quelltabelle gehört `cdc_admin`) — Test im Paket `internal/bootstrap`, weil es die Composition-Root-Funktion `processAdministrationRequests` aufruft und `tools/harness/run-store-tests.sh` das Paket vor den `postgresstorage`-Tests ausführt. |
+| `internal/adapters/driven/postgresstorage/backfillroles_test.go`, `backfillwriter_test.go` (`newWriterRunAs`), `roles_test.go` | neu/update (Fixrunde, Review F-2, F-1) | die drei Backfill-Adapter unter dem Login ihrer Rolle (Annahme `cdc_admin`; Run-Zustand und Schreiber `cdc_capture`) und je unter der Rolle des anderen mit SQLSTATE `42501`; Rollen-Tests für `cdc.administration_request` je Rolle (`SET ROLE`-Muster wie bei `backfill_run`). |
+| `internal/adapters/driven/postgresstorage/backfillhelpers_test.go` | update (Fixrunde, Review F-3) | der Kopplungs-Kommentar nennt die Dateien, die das Schema neu aufbauen (`store_test.go`, `tableactivation_test.go`), und die Dateinamen, die davor sortieren. |
+| `harness/README.md` | update | die Sensor-Zeile `make test-store` nennt die Backfill-Tests im Store-Tier; Fixrunde: die Rollen-Tests, die Adapter unter Login und den Antragsverarbeitungs-Pfad. |
+| `docs/user/benutzerhandbuch.md` | update (Fixrunde, Review F-1) | der Rechteschnitt von `cdc_admin` ist eine Betreiber-Oberfläche: §2 „Zugriff und Rollen" (Rollen-Tabelle), §4 „Schema aktualisieren" (Absatz „Rechte der drei Rollen"), §5 (`CDC_ADMIN_DSN`), `Version:` 1.47 und Zeile in der Änderungshistorie. |
+| `harness/targets/schema-rollout.md` | update (Fixrunde, Review F-9) | die zwei Stellen „drei deklarierte Views" nennen vier (`active_tables`, `consumer_status`, `changes`, `retention_blockers`, am Schema gezählt: die vier Einträge unter `views:` in `tools/schema/schema.yaml`); die Beleg-Zeile zu Lauf 5 nennt die Rechte. |
+| `docs/plan/planning/open/slice-backfill-sql-administration.md` | update (Fixrunde, Review F-4) | die Übergabe „Antragsart lesen / Bezug von Antrag und Run" ist dort als DoD-Punkt und §3-Zeile getragen; sonst unverändert. |
 
 **Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang; die
 Ports liegen in `internal/application/port/outbound/backfill*.go`, der Run-Wert in
@@ -209,6 +228,16 @@ Ports liegen in `internal/application/port/outbound/backfill*.go`, der Run-Wert 
 | Rollen-Test der Rollout-Datei | `git grep -c -e 'backfill_run' <Stand> -- internal/bootstrap` | Parent: kein Treffer; Diff: `internal/bootstrap/roles_rollout_file_internal_test.go` 5. Gelesen: Regel (7) („der Leser teilt kein Objekt mit einer schreibenden Rolle") trägt die neue Tabelle unverändert, weil `cdc_reader` keinen Grant auf sie hat; Regel (3) prüft nur `transaction`/`change` | Prüfung (4a) für `cdc.backfill_run` ergänzt (Grants und Verbote je Rolle) |
 | Test-Bereinigung anderer Store-Tests | `git grep -c -e 'DELETE FROM cdc' -e 'DROP SCHEMA' <Stand> -- 'internal/adapters/driven/postgresstorage/*_test.go'` und `git grep -n -e 'DELETE FROM cdc.transaction"' -e 'DELETE FROM cdc.change"' -e 'DELETE FROM cdc.backfill_run"' -e 'DELETE FROM cdc.source"' d095e5be -- 'internal/adapters/driven/postgresstorage/*_test.go'` | Parent sieben Dateien mit Treffern, Diff elf (neu: `backfillhelpers_test.go` 3, `backfillrun_test.go` 5, `backfillwriter_test.go` 4, `roles_test.go` 4 — die vier Zahlen sind die eigenen Bereinigungen); der zweite Befehl druckt am Diff-Stand null Treffer: keine unskopierte Löschung auf `transaction`, `change`, `backfill_run` oder `source` | die neuen Tests bereinigen nur Zeilen unter ihren eigenen Kennungen (Präfix je Test); die Dateinamen `backfill*_test.go` sortieren vor den Tests mit `DROP SCHEMA cdc CASCADE` |
 
+**§3.13-Suchlauf der Fixrunde (committetes Feld — bewegte Eigenschaft: „die Rechte, die `cdc_admin` auf die Antrags-Queue `cdc.administration_request` trägt"; gesucht nach Rechten und Tabellen, nicht nach Rollennamen; beide Stände gemessen: Parent `51c69243`, Diff `bd470a0b` = Code-Commit der Fixrunde; die Zahlen sind die gedruckten Zeilen der Läufe):**
+
+| Träger | Suchbefehl | Befund | Behandlung |
+|---|---|---|---|
+| Rechte-Vokabular in Doku, Spec, Schema, Tests | `git grep -c -e 'has_table_privilege' -e 'GRANT SELECT' -e 'GRANT INSERT' -e 'Least-Privilege' -e 'insufficient_privilege' -e 'SQLSTATE 42501' <Stand> -- docs/user README.md harness spec AGENTS.md compose.yaml examples tools/schema internal/bootstrap ':!tools/schema/plan.yaml' ':!tools/schema/down.sql'` | Parent dreizehn Dateien, Diff vierzehn; bewegt: `tools/schema/nacharbeit-roles.sql` 13 → 14, `internal/bootstrap/roles_rollout_file_internal_test.go` 5 → 6, neu `internal/bootstrap/administration_roles_internal_test.go` 1; unverändert u. a. `docs/user/benutzerhandbuch.md` 4, `compose.yaml` 1, `spec/pflichtenheft.md` 1, `spec/lastenheft.md` 2. Gelesen: der Kommentar in `compose.yaml` (die Umgebung verbindet als Superuser, die Rollentrennung belegen die Testcontainer-Tests) bleibt wahr; `spec/pflichtenheft.md` trägt die Grants-Tabelle von [`SPEC-029`](../../../../spec/pflichtenheft.md) nur für `cdc.backfill_run` | keine Änderung an `compose.yaml` und Spec; die Grants-Tabelle von `SPEC-029` an Architect gemeldet (§6) |
+| Beschreibungen der Rolle `cdc_admin` | `git grep -c -e 'cdc_admin' <Stand> -- docs/user README.md harness spec compose.yaml examples` | Parent fünf Dateien (`README.md` 1, `compose.yaml` 1, `docs/user/benutzerhandbuch.md` 10, `harness/targets/schema-rollout.md` 2, `spec/pflichtenheft.md` 3), Diff sieben: `docs/user/benutzerhandbuch.md` 10 → 13, `harness/README.md` 0 → 1, `harness/targets/schema-rollout.md` 2 → 3 (die eigenen Zeilen). Gelesen: die Rollen-Tabelle in §2 und die Zeile `CDC_ADMIN_DSN` in §5 des Handbuchs nannten den Zweck ohne Antrags-Queue (nachgezogen); die Zeilen mit „`cdc_admin`-Mitgliedschaft" als Voraussetzung in §4 (Aktivieren, Deaktivieren, Ausschließen, Consumer) sind mit dem Grant wahr; `README.md` nennt Least-Privilege ohne Rechte | Handbuch §2, §4 („Schema aktualisieren"), §5 nachgezogen, `harness/README.md` (Sensor-Zeile `make test-store`) nachgezogen |
+| Rollenschnitt-Tabelle von [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) | `git grep -c -e 'cdc_admin' <Stand> -- docs/plan/adr/0047-rollenspezifische-dsn-verdrahtung.md` | Parent und Diff drucken 7; die Tabelle der Rollen und Aufrufer nennt `cdc.administration_request` an keiner Stelle | `Accepted`, nicht geändert; an Architect gemeldet (§6) |
+| Träger der Antrags-Queue | `git grep -c -e 'administration_request' <Stand> -- docs/user harness spec docs/plan/adr README.md compose.yaml tools/schema/compose-init ':!tools/schema/plan.yaml' ':!tools/schema/down.sql'` | Parent neun Dateien, Diff zehn: `docs/user/benutzerhandbuch.md` 10 → 14, `harness/README.md` 0 → 1, `harness/targets/schema-rollout.md` 1 → 2; unverändert: `spec/pflichtenheft.md` 6, `docs/plan/adr/0050-…` 1, `0059-…` 4, `0065-…` 5, `0111-…` 3, `0112-…` 5, `harness/sensors/db-adapter-coverage.md` 1. Gelesen: `db-adapter-coverage.md` nennt `cdc.administration_request` als Lesezugriff des `bootstrap.Run`-Fixtures — betrifft den Schema-Stand des Tier-Laufs, nicht die Rolle | keine Änderung an ADRs, Spec und Sensor-Dokument |
+| „drei Views" (F-9) | `git grep -n -e 'drei deklarierten Views' -e 'drei Views' <Stand> -- harness docs/user spec tools/schema` | Parent drei Treffer (`harness/targets/schema-rollout.md` Zeile 12 und 71, `tools/schema/schema.yaml` Zeile 39), Diff einer (`schema.yaml` Zeile 39). Gelesen: `schema.yaml` Zeile 39 spricht von den ersten drei Views und nennt die vierte, `retention_blockers`, im folgenden Absatz (Zeile 50) | die zwei Treffer in `schema-rollout.md` auf „vier" gezogen (gezählt am Schema: vier Einträge unter `views:`); `schema.yaml` unverändert |
+
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `run-usecase` und `change-origin` in
@@ -239,6 +268,10 @@ Lerneintrag geschrieben.
   c.transaction_id, c.sequence` in der View). *Erwartet, zu belegen durch:* der
   Ordnungs-Test in der Test-Datenbank samt genannter Kollation; weicht eine
   gängige Kollation ab, wird der Betreiber-Hinweis Teil des Handbuchs.
+  *Messung (Implementer, PostgreSQL 18-alpine, `datcollate = en_US.utf8`):* `string_agg(v, ', ' ORDER BY v COLLATE …)` über
+  `1, 748, 9999999999, 0bf-run-00000001, 0bf-a-00000002, a` liefert unter dem Datenbank-Default, `"C"` und `"und-x-icu"`
+  dieselbe Reihenfolge (`0bf-a-00000002, 0bf-run-00000001, 1, 748, 9999999999, a`); der Reviewer maß dasselbe (Review F-6,
+  Messung des Reviewers, hier nachgemessen).
   **Ausgang:** *(bei Closure)*
 - **Der CHECK bei Erstanlage konvergiert** (die Zusage von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage
   4): die Tabelle `change` trägt CHECKs bei Erstanlage bereits (`chk_change_operation`
@@ -264,7 +297,10 @@ Lerneintrag geschrieben.
   Verzicht auf eine Sperre zwischen mehreren Annehmenden beruht auf der Annahme,
   dass `processAdministrationRequests` Anträge sequenziell in **einer** Goroutine
   verarbeitet und je Quelle eine Instanz Anträge annimmt ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1,
-  Punkt 2). *Erwartet, zu belegen durch:* der Rollback-Test des zweiten
+  Punkt 2). Zwei gleichzeitig annehmende Verbindungen sähen unter `READ COMMITTED` beide „kein aktiver Run"; das ist mit
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) vereinbar (die ADR nimmt genau das an),
+  benannt, aber weder erzwungen (keine Sperre, keine Unique-Kante auf aktive Runs) noch getestet (Review F-5).
+  *Erwartet, zu belegen durch:* der Rollback-Test des zweiten
   Liefer-Punkts. **Ausgang:** *(bei Closure)*
 - **Geteilter Zustand in den Store-Tests** (`BEO-PGC/test-isolation-geteilter-zustand`,
   offen, 1×): unskopierte Bereinigung in den bestehenden Tests würde die Zeilen
@@ -274,21 +310,35 @@ Lerneintrag geschrieben.
   Code in `postgresstorage` bewegt Zähler und Nenner. *Erwartet, zu belegen
   durch:* der Bericht nennt die Zahl mit ihrem Lauf ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A).
   **Ausgang:** *(bei Closure)*
-- **Gemeldet (Implementer) — `cdc_admin` trägt kein Recht auf `cdc.administration_request`.**
-  Gemessen am ausgerollten Schema (`has_table_privilege('cdc_admin', 'cdc.administration_request', 'SELECT')` und
-  `'UPDATE'`: beide `false`; `SET ROLE cdc_admin; SELECT count(*) FROM cdc.administration_request` endet mit
-  „permission denied for table administration_request"). `Admit` vermerkt den Antrag als `cdc_admin`
-  ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1) und braucht dafür
-  `SELECT` und `UPDATE`; `ListPending`/`MarkApplied` laufen laut `internal/bootstrap/wiring.go` (`NewAdministrationRequest` über `cfg.AdminDSN`) über denselben Pool — gelesen, nicht an einem Login gemessen. Die Store-Tests dieses
-  Slice laufen mit dem Superuser des Testcontainers, der Rollen-Test deckt nur `cdc.backfill_run` — die Lücke ist damit
-  nicht durch einen Test rot, sondern gemessen. Vorschlag (Architect-Entscheidung, Tabelle in
-  [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)):
-  `GRANT SELECT, UPDATE ON cdc.administration_request TO cdc_admin` samt Rollen-Test; Adresse:
-  `slice-backfill-sql-administration` (dort läuft die Verdrahtung) oder ein eigener Slice. **Ausgang:** *(bei Closure)*
+- **Eingetreten und in der Fixrunde behoben (Review F-1) — `cdc_admin` trug kein Recht auf `cdc.administration_request`.**
+  *Sachverhalt:* die Tabelle trägt keinen Grant an `cdc_admin`; `ListPending`, `ExcludedColumns` und der Vermerk
+  `applied`/`failed` (dieselbe Anweisung wie im Vermerk von `Admit`,
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1) scheitern unter einer
+  Login-Identität `IN ROLE cdc_admin` mit „permission denied for table administration_request". *Messung:* Implementer am
+  ausgerollten Schema (`has_table_privilege('cdc_admin', 'cdc.administration_request', 'SELECT')` und `'UPDATE'`: beide
+  `false`); Reviewer an PostgreSQL 18 (`relacl` leer, Login-Lauf der Anweisungen, `docs/reviews/review-slice-backfill-run-store.md`
+  F-1); Fixrunde: `TestAdministrationPathRunsUnderLeastPrivilegeLogins` (der ganze Weg von `processAdministrationRequests`
+  unter einem `cdc_admin`- und einem `cdc_capture`-Login) ist ohne den Grant rot gesehen (Status bleibt `pending`, Log „Anträge
+  lesen fehlgeschlagen") und mit `SELECT, UPDATE` grün — die Messung des ganzen Weges (`ListPending`, `enable`/`disable`/
+  `exclude_column`/`include_column` samt Publication-DDL an einer `cdc_admin`-eigenen Quelltabelle, `Registered`,
+  `ExcludedColumns`, `CurrentVersion` unter `cdc_capture`, Vermerk `applied` und `failed`) fand **kein** weiteres fehlendes
+  Recht. *Herkunft:* Lücke im Bestand seit der Antrags-Queue
+  ([`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)) — `nacharbeit-roles.sql` trug nie einen
+  Grant auf die Tabelle; unentdeckt, weil `compose.yaml` alle drei DSNs als Superuser `postgres` fährt und jeder Store-Test
+  mit dem Superuser lief. *Wirkung:* Anträge der SQL-Administration bleiben mit einem Least-Privilege-Login `pending`.
+  *Maßnahme:* `GRANT SELECT, UPDATE` in `nacharbeit-roles.sql`, Prüfung (4b) im netzlosen Rollen-Test, Rollen-Tests im
+  Store-Tier, der Login-Test über den ganzen Weg, die Adapter unter Login (F-2), Rechte-Abfragen im Alt-Tag-Lauf, Handbuch.
+  **An Architect gemeldet:** [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) nennt den Rollenschnitt von
+  `cdc_admin` ohne `administration_request`; ob [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md) oder
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) (beide `Accepted`) eine Ergänzung brauchen,
+  und ob die Grants-Tabelle von [`SPEC-029`](../../../../spec/pflichtenheft.md) (nur `cdc.backfill_run`) den Vermerk auf
+  `administration_request` nennt, entscheidet der Architect — kein ADR- oder Spec-Auftrag dieses Slice. **Ausgang:** *(bei Closure)*
 - **Gemeldet (Implementer) — der Annahme-Adapter liest die Antragsart nicht.** Die geschlossene `request_kind`-Menge
   trägt `backfill` noch nicht (`tools/schema/nacharbeit-administration.sql`); die Store-Tests nehmen deshalb einen
   offenen Antrag der Art `enable` an. Der Art-Vergleich (`request_kind = 'backfill'` in der `WHERE`-Klausel des
-  Vermerks) gehört an `slice-backfill-sql-administration`, das die Antragsart einführt. **Ausgang:** *(bei Closure)*
+  Vermerks) und der Bezug von Antrag und Run (Quelle, Schema, Tabelle) gehören an `slice-backfill-sql-administration`, das
+  die Antragsart einführt; dort sind sie als DoD-Punkt „Bezug von Antrag und Run" und als §3-Zeile getragen (Review F-4).
+  **Ausgang:** *(bei Closure)*
 - **Gemeldet (Implementer) — Startwerte ohne Messung.** Die Fristen der Adapter (30 s je Zustands-Operation, 5 min je
   Block und Commit, `internal/adapters/driven/postgresstorage/backfill.go`) und die zeilenweise Einfügung eines
   Blocks (je Change eine Anweisung) sind Setzungen; ihre Messung gehört zu `slice-backfill-bench-richtgroesse`.
