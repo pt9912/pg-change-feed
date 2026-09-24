@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **28×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **29×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,16 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der neunundzwanzigste Beleg,
+`evidence/slice-backfill-snapshot-reader.md`: die bewegte Eigenschaft (Inhalt der
+Phase `tier` — zwei Läufe statt eines) trug Beschreibungen in
+`tools/harness/run-replication-tests.sh` und `.github/workflows/e2e.yml`, die
+der Suchlauf nicht las, weil er Variablen- und Testnamen suchte, nicht die
+Bezeichnung der Phase (Nachprüfungs-Review F-3, LOW); dazu zwei offene Pläne mit
+drei statt vier ausgenommenen Paketen (F-16, LOW). Beide in den Fixrunden
+gezogen, der Suchlauf trägt die gesuchte Eigenschaft seither mit beiden
+Ständen — Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13, kein
+Schwellen-Übertritt.
 Der achtundzwanzigste Beleg,
 `evidence/slice-backfill-change-origin.md`: die bewegte Eigenschaft (Feldzahl
 der `GET /changes`-Antwort) trug Träger in `*.kt` und `*.cs`

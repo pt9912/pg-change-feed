@@ -1,0 +1,8 @@
+**Vorgang:** slice-backfill-snapshot-reader (Verifikation V-4, §6; Plan §6 letztes Risiko)
+
+**Fund:** Der Slice ändert an `.github/workflows/e2e.yml` nur einen Schrittnamen und einen Kommentar (`Replication-Tier (go test ./... und Slot-Reserve)`); kein `run:`, keine Matrix, keine `uses:`-Zeile, kein neuer Schritt. **`AGENTS.md` §3.10 ist dem Buchstaben nach nicht ausgelöst** — der bestehende Schritt `tier` ruft aber `tools/harness/run-replication-tests.sh tier`, und dieses Skript fährt seit diesem Slice je Matrix-Leg (PostgreSQL 17 und 18) einen zweiten Container (`max_replication_slots=1`, Bereitschaft über `pg_isready` im Container) samt Slot-Reserve-Test. Lokal gemessen dauert die ganze Phase rund 45 s (44,4 s PostgreSQL 18, 44,5 s PostgreSQL 17, Verifier), der Slot-Reserve-Lauf 7,8 s und 7,5 s (Implementer); ob der zweite Container auf dem GitHub-Runner ebenso grün läuft, ist lokal nicht prüfbar (`AGENTS.md` §3.1). Wie bei `slice-090` steht die Regel für den Fall nicht, ihr Gegenstand trifft zu.
+
+**Ausgang bei dieser Closure: weiter offen.** Auflösungs-Bedingung: der erste `e2e`-Lauf (`.github/workflows/e2e.yml`, beide Matrix-Legs) nach dem Push der Commits dieses Slice; sein Ergebnis (grün oder roter Befund mit Folgemaßnahme) wird hier nachgetragen, geprüft mit `gh run list --workflow e2e.yml` und `gh run view`. Der Workflow ist nicht blockierend (eigener Workflow, kein Required-Status-Check).
+
+Quelle: `docs/reviews/verifikation-slice-backfill-snapshot-reader.md` (§6, V-4) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-backfill-snapshot-reader-fixrunde.md` (F-9). <!-- d-check:status-provenance -->

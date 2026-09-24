@@ -24,15 +24,20 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **15×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **16×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
 evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md,
 evidence/slice-103.md, evidence/slice-sdk-python-grpc-client-flaeche.md,
 evidence/slice-backfill-row-image-gemeinsam.md,
-evidence/slice-backfill-change-origin.md) —
+evidence/slice-backfill-change-origin.md,
+evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt).
-Der fünfzehnte Beleg (slice-backfill-change-origin) trifft wieder ein
+Der sechzehnte Beleg (slice-backfill-snapshot-reader) trifft einen
+Skript-Kommentar („ZWEIMAL" gegen gemessen dreimal), eine lauf-gebunden
+streuende gedeckte Zahl (Plan-Zahlen 1691/1731 gegen gemessen 1689 bis 1733) und
+zwei stand-relative Zellen des Suchlauf-Felds; die Zellen tragen seither ihre
+Commit-Kennung, gefunden hat alle vier der nachmessende Leser. Der fünfzehnte Beleg (slice-backfill-change-origin) trifft wieder ein
 **Suchlauf-Feld**: eine Trefferzahl (18) stand als gemessen, real 16 an vier
 Ständen, und eine zweite (24 „unverändert") verschob sich durch die Meldungszeile
 des Plans selbst auf 25; beide vom Verifier durch Nachmessen gefunden, der Zug

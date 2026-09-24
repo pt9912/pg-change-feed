@@ -6,14 +6,19 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **9×**
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **10×**
 (evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-sdk-python-nats-stream-client-flaeche.md,
-evidence/slice-backfill-change-origin.md) —
-**Schwelle erreicht**. Der neunte Beleg
+evidence/slice-backfill-change-origin.md,
+evidence/slice-backfill-snapshot-reader.md) —
+**Schwelle erreicht**. Der zehnte Beleg
+(`evidence/slice-backfill-snapshot-reader.md`, F-3 und F-5) trifft die Form
+**Befehl**: ein grüner `make coverage-gate` als Beleg für drei namentliche
+Stellen, von denen er nur eine bindet, und ein unveränderter Nenner als Beleg
+für „keine netzlos prüfbare Logik im Paket"; Ausgang bleibt **verkörpert**. Der neunte Beleg
 (`evidence/slice-backfill-change-origin.md`, F-2) trifft die Form **Assertion**
 an einem Guard-Test: der Lauf, der die Bekannt-Liste der Schema-Rollout-Wache
 belegen sollte, endete auch mit entfernter Prüfung grün, weil der Abbruch aus

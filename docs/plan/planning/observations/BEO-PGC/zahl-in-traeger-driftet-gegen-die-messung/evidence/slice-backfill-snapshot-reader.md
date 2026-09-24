@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-snapshot-reader (Review-Funde F-2, F-14, F-15; Verifikation V-1, V-2)
+
+**Fund:** (1) Der Kopfkommentar von `tools/harness/db-coverage.sh` nannte „jede Block-Position dort ZWEIMAL", gemessen sind es dreimal (813 Zeilen für 271 Positionen; F-2, HIGH); die Fixrunde ersetzte die Zahl durch einen Verweis auf das Sensor-Dokument. (2) Die gedeckte Unit-Zahl streute in den Läufen des Reviewers und des Verifiers stärker als die in `harness/sensors/coverage-gate.md` benannte Ein-Statement-Schwankung (F-14): der Verifier maß 1692 (`62d00abe`), 1689 (`d7539e2c`) und 1733 (`7f75444f`) gegen die Plan-Zahlen 1691 und 1731, die Nenner 2040 und 2082 sind exakt (V-1). (3) `harness/sensors/coverage-gate.md` nannte „Der aktuelle Nenner ist 1936" (Lauf `slice-097`) neben dem gemessenen 2040 (F-15). (4) Zwei Zellen des Suchlauf-Felds waren stand-relativ: die `::tex[t]`-Zeile „dieser Plan 0" gilt an `bf05067d` (an `7f75444f` 1), `db-adapter-coverage.md` 14 an `bf05067d` (an `7f75444f` 15; V-2). Die Zellen tragen ihre Commit-Kennung; die Klasse tritt zum sechzehnten Mal auf, alle Funde macht der nachmessende Leser.
+
+Quelle: `docs/reviews/review-slice-backfill-snapshot-reader.md` (F-2, F-14, F-15) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-snapshot-reader.md` (§3.3, §3.6, V-1, V-2). <!-- d-check:status-provenance -->

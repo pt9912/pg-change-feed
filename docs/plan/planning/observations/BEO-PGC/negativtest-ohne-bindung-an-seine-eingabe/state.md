@@ -5,9 +5,13 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
-Zähler (abgeleitet): **6×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **7×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
-evidence/slice-092.md) — **Schwelle erreicht**. Der fünfte Beleg (`slice-091`) ist der erste, bei dem die
+evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md) —
+**Schwelle erreicht**. Der siebte Beleg (`slice-backfill-snapshot-reader`,
+vier Zusagen in einem Vorgang: Typ-Parität, Bezeichner-Quoting, Nullgrenze der
+Schätzung, zwei namentliche Paketlisten) fand sie durch Mutationen des
+Reviewers; Ausgang bleibt **verkörpert**. Der fünfte Beleg (`slice-091`) ist der erste, bei dem die
 Klasse **an einem vorbestehenden Test** gefunden wurde, während dieselbe
 Erscheinung im **selben** Vorgang an einem **neu geschriebenen** Test auftrat —
 und der Vorgang hat sie vorhergesagt („der wahrscheinlichste Fehler dieses

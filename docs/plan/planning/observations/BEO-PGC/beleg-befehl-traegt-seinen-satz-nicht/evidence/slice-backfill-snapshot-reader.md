@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-snapshot-reader (Review-Funde F-3, F-5)
+
+**Fund:** Zwei Belege der ersten Lieferung trugen ihren Satz nicht. (1) DoD Gate-Zuordnung (a) nannte „ein grüner `make coverage-gate`" als Beleg, dass die drei namentlichen Stellen des Messgegenstands gezogen sind; gemessen färbt nur der Dockerfile-Ausschluss das Gate rot (R10, 77,00 %), das Streichen aus `DB_COVERAGE_PKGS` oder der Messphase lässt es grün (R11, R12; F-3). (2) DoD Gate-Zuordnung (c) nannte den unveränderten Nenner 2040 → 2040 als Beleg, dass keine netzlos prüfbare Logik im ausgenommenen Paket liegt; der unveränderte Nenner zeigt nur, dass nichts in den Gate-Nenner gewandert ist (F-5). Behoben: das Listen-Prüfskript bindet die Gleichheit der vier Stellen, der Nenner wächst mit dem Unterpaket `snapshotlogic` (2040 → 2082, 42 von 42 gedeckt); die verbleibende Grenze (Eigenschaft und Skip-Eigenschaft sind Disziplin) steht in `harness/sensors/db-adapter-coverage.md` §Grenze Nr. 8.
+
+Quelle: `docs/reviews/review-slice-backfill-snapshot-reader.md` (F-3, F-5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-snapshot-reader.md` (§2 Zeilen 4 und 6, §3.3). <!-- d-check:status-provenance -->

@@ -16,10 +16,16 @@ Lese-Schritt lief als Teil der laufenden `welle-17`-Closure (Modul 8
 §Rollen-Sequenz für eine Welle, Schritt 3b, Planner → Architect →
 Planner-Zug).
 
-Zähler (abgeleitet): **7×** (evidence/slice-039.md, evidence/slice-056.md,
+Zähler (abgeleitet): **8×** (evidence/slice-039.md, evidence/slice-056.md,
 evidence/slice-064.md, evidence/slice-082.md, evidence/slice-090.md,
-evidence/slice-098.md, evidence/slice-099.md) — Schwelle erreicht, Ausgang
-zugewiesen. Der fünfte Beleg fällt **außerhalb** der Regel an, die sie
+evidence/slice-098.md, evidence/slice-099.md,
+evidence/slice-backfill-snapshot-reader.md) — Schwelle erreicht, Ausgang
+zugewiesen. Der achte Beleg (`slice-backfill-snapshot-reader`) ist wie `slice-090`
+ein Fall **außerhalb** des Buchstabens von §3.10: `e2e.yml` ändert nur Schrittname
+und Kommentar, der bestehende Schritt `tier` fährt aber je Matrix-Leg einen
+zweiten Container; **weiter offen**, Auflösungs-Bedingung: der erste
+`e2e`-Lauf nach dem Push der Commits dieses Slice, sein Ergebnis wird in
+`evidence/slice-backfill-snapshot-reader.md` nachgetragen. Der fünfte Beleg fällt **außerhalb** der Regel an, die sie
 verkörpert: `slice-090` ändert am Workflow nur einen Schrittnamen und
 Kommentarzeilen, `AGENTS.md` §3.10 ist dem Buchstaben nach **nicht**
 ausgelöst — sein Grund aber trifft zu, weil `ci.yml` mit `make gates` jetzt

@@ -1,12 +1,22 @@
-Zustand: offen (**2×**) — unter der Schwelle, kein Ausgang zugewiesen. Ein Träger
+Zustand: offen (**3×**) — Schwelle erreicht mit `slice-backfill-snapshot-reader`;
+Ausgang noch **nicht** zugewiesen, er gehört dem Lese-Schritt der Closure von
+`welle-backfill-bestand` (Modul 6). Der dritte Beleg
+(`evidence/slice-backfill-snapshot-reader.md`) trägt eine andere Ausprägung: netzlos
+prüfbare Logik lag im ausgenommenen Paket `postgressnapshot`, ohne dass ein
+netzloser Test die DB-Zahl hob; der Slice löste sie durch das Unterpaket
+`snapshotlogic` im Unit-Gegenstand (Nenner 2040 → 2082, 42 von 42 gedeckt,
+`ADR-0080` §Kontext Punkt 5 führt Unterpakete ausgenommener Pakete im
+Unit-Gegenstand). Der Slice benennt diesen Weg im Plan vorab als Mittel des Risikos;
+ob ein Unterpaket als **Regel** für neue DB-Pakete gelten soll, ist Teil der
+Entscheidung. Bis dahin: ein Träger
 ist **nicht** vorgeschlagen: die naheliegende Antwort wäre eine Neudefinition
 des Gegenstands (nur Code, dessen Test eine Verbindung braucht), und das ist
 eine **Entscheidung** über eine Messfläche — `ADR-0071` Punkt 3 trägt sie, und
 `ADR-0080` hat die Verdünnung als Trigger benannt. Sie gehört als
 Architect-Frage behandelt, nicht als Notiz.
 
-Zähler (abgeleitet): **2×** (evidence/slice-084.md, evidence/slice-085.md) —
-unter der Schwelle. **Ein zweiter Slug wäre die verbotene Umformulierung:** es
+Zähler (abgeleitet): **3×** (evidence/slice-084.md, evidence/slice-085.md,
+evidence/slice-backfill-snapshot-reader.md) — Schwelle erreicht. **Ein zweiter Slug wäre die verbotene Umformulierung:** es
 ist **eine** Beobachtung, nur die Größenordnung hat sich geändert (netzlos
 gedeckter Anteil im Gegenstand **8,35 % → 26,69 %**).
 

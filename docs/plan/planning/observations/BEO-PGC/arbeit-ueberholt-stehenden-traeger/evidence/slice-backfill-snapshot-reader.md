@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-snapshot-reader (Review-Funde F-16 und Nachprüfung F-3)
+
+**Fund:** Zwei Träger, die die Arbeit falsch machte, ohne dass sie im Diff standen. (1) Zwei offene Pläne (`slice-transformationen-kern-rename`, `slice-transformationen-antragsweg-usecase`) behaupteten, die `coverage`-Stufe schließe „nur die Pakete `postgresstorage`, `postgresack` und `replication/receive`" aus; am Diff sind es vier (F-16, LOW); die Fixrunde zog beide Sätze minimal auf vier Pakete nach. (2) Der Kommentar an der Phase `tier` in `tools/harness/run-replication-tests.sh` und Kommentar plus Schrittname in `.github/workflows/e2e.yml` beschrieben die Phase als einen Aufruf, während sie mit dem Slot-Reserve-Lauf zwei führt; der Suchlauf des Plans suchte Variablen- und Testnamen, nicht die Bezeichnung der Phase (Nachprüfung F-3, LOW) — die Suchform trifft Symbolnamen, nicht Beschreibungen (Grenze in `AGENTS.md` §3.13). Die zweite Fixrunde zog beide Träger und trägt die gesuchte Eigenschaft („Phasen- und Beschreibungstexte") im Suchlauf-Feld mit beiden Ständen (`56305a4d`, `d3420bd9`).
+
+Quelle: `docs/reviews/review-slice-backfill-snapshot-reader.md` (F-16) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-backfill-snapshot-reader-fixrunde.md` (F-3). <!-- d-check:status-provenance -->

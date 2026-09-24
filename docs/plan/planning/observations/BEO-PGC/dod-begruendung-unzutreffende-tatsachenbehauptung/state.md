@@ -12,10 +12,16 @@ Träger schlägt er den Kopf von `docs/plan/adr/README.md` vor oder `AGENTS.md`
 und steht aus; deshalb ist der Ausgang hier *nicht* vorwegnehmend als
 `verkörpert` gesetzt.
 
-Zähler (abgeleitet): **6×** (evidence/slice-036.md, evidence/slice-082.md,
+Zähler (abgeleitet): **7×** (evidence/slice-036.md, evidence/slice-082.md,
 evidence/slice-081.md, evidence/slice-083.md, evidence/slice-095.md,
-evidence/slice-sdk-kotlin-sse-client-flaeche.md) — **Schwelle erreicht**,
-Ausgang beim Lese-Schritt der `welle-20`-Closure. Der sechste Beleg
+evidence/slice-sdk-kotlin-sse-client-flaeche.md,
+evidence/slice-backfill-snapshot-reader.md) — **Schwelle erreicht**,
+Ausgang beim Lese-Schritt der `welle-20`-Closure. Der siebte Beleg
+(`slice-backfill-snapshot-reader`) trifft eine Plan-Begründung und ein DoD-Kriterium
+(„der Testcontainer bringt die Extension-Typen nicht mit"), die der
+Nachprüfungs-Review durch Messung widerlegte; verwandt mit
+`BEO-PGC/mechanismus-erklaerung-ohne-werkzeugbeleg`, gezählt hier (Instanz B);
+Ausgang bleibt **verkörpert**. Der sechste Beleg
 (`slice-sdk-kotlin-sse-client-flaeche`) ist ein weiterer Vorgang derselben
 Klasse und kein neuer Handlungsbedarf, mit einer bemerkenswerten
 Herkunfts-Variante: die ungeprüfte Übernahme betraf hier einen
