@@ -115,6 +115,7 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
 | `harness/README.md` §Sensors (`make sdk-pack-*`) | update | real erzeugte Artefaktnamen; aus **realen** Läufen geschrieben. |
 | `harness/mk/sdk.mk` | prüfen | trägt der Kommentar die Version? |
 | `docs/user/benutzerhandbuch.md` | prüfen/update | `**SDK:**`-Absätze; Änderungshistorie. |
+| Kommentare mit Feldanzahl in den SDK-Bäumen (gemeldet von `slice-backfill-change-origin`, Fixrunde, Suchlauf über `sdks/` und `examples/`) | update | `Sse/Models/Change.cs` Z. 17 und `Nats/Models/Change.cs` Z. 21 (C#, „eleven fields" für `GET /changes`), `sse/model/Change.kt` Z. 19–20 (Kotlin, „twelve fields"), `models.py` Z. 264 (Python, „zwölf des HTTP-Lesezugriffs"): der HTTP-Lesezugriff trägt mit `origin` dreizehn Felder; die C#-Kommentare nennen schon am Parent eine Zahl, die nicht zu den gezählten zwölf Feldern passt. Ebenso `Http/Models/Changes.cs` Z. 8 und `http/model/Changes.kt` Z. 8 („the same ten fields as the domain type"): das HTTP-Modell trägt am Parent zwölf, jetzt dreizehn Felder. Die Kommentare sind Träger der bewegten Eigenschaft „Feldmenge des HTTP-Lesemodells" und werden mit dem Feld nachgezogen. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Version der drei Packages (0.2.0 → neue Version)", „die Feldmenge des HTTP-Lesemodells"; beide Stände gemessen):**
 
