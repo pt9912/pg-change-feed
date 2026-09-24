@@ -10,8 +10,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgressnapshot"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/backfill"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/excludecolumn"
@@ -52,7 +55,7 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // und die Aktivierung über eine `cdc_admin`-Login-Identität, der
 // Schema-Speicher über eine `cdc_capture`-Login-Identität — beide ohne
 // Superuser-Recht und ohne Eigentum an einem `cdc`-Objekt. Der Lauf zieht je
-// einen Antrag jeder der vier Antragsarten durch `ListPending`, den Use Case,
+// einen Antrag jeder der fünf Antragsarten durch `ListPending`, den Use Case,
 // die laufende `Assembler`-Bindung und den Vermerk `applied`; ein
 // fünfter Antrag (`include_column` auf eine fehlende Spalte) endet im Vermerk
 // `failed` samt Fehlertext.
@@ -63,7 +66,8 @@ func adminPathLoginDSN(t *testing.T, admin *pgxpool.Pool, baseDSN, login, group 
 // `tools/schema/nacharbeit-roles.sql`), scheitert dort mit SQLSTATE 42501.
 //
 // Rot färbende Mutation: den Grant `SELECT, UPDATE ON cdc.administration_request
-// TO cdc_admin` aus der Rollout-Datei streichen (oder `UPDATE` allein) — der
+// TO cdc_admin` aus der Rollout-Datei streichen (oder `UPDATE` allein), oder
+// `SELECT, INSERT ON cdc.backfill_run TO cdc_admin` — der
 // Test meldet die Anweisung, die an dem fehlenden Recht scheitert.
 func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
@@ -123,19 +127,55 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 		t.Fatalf("NewSchemaStore mit cdc_capture-Login: %v", err)
 	}
 	t.Cleanup(schemaStore.Close)
+	// Der Backfill-Antragszweig läuft mit denselben Rollen, die die
+	// Verdrahtung zuweist (`ADR-0113` Festlegung 1): die Annahme unter dem
+	// `cdc_admin`-Login, Run-Zustand, Schreiber und Snapshot-Adapter unter
+	// dem `cdc_capture`-Login.
+	backfillAdmission, err := postgresstorage.NewBackfillAdmission(ctx, adminDSN, postgresstorage.WithLog(&recordingLog{}))
+	if err != nil {
+		t.Fatalf("NewBackfillAdmission mit cdc_admin-Login: %v", err)
+	}
+	t.Cleanup(backfillAdmission.Close)
+	backfillRuns, err := postgresstorage.NewBackfillRun(ctx, captureDSN, postgresstorage.WithLog(&recordingLog{}))
+	if err != nil {
+		t.Fatalf("NewBackfillRun mit cdc_capture-Login: %v", err)
+	}
+	t.Cleanup(backfillRuns.Close)
+	backfillWriter, err := postgresstorage.NewBackfillWriter(ctx, captureDSN, postgresstorage.WithLog(&recordingLog{}))
+	if err != nil {
+		t.Fatalf("NewBackfillWriter mit cdc_capture-Login: %v", err)
+	}
+	t.Cleanup(backfillWriter.Close)
+	backfillSnapshot, err := postgressnapshot.New(captureDSN)
+	if err != nil {
+		t.Fatalf("postgressnapshot.New mit cdc_capture-Login: %v", err)
+	}
+	t.Cleanup(func() { _, _ = admin.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE source_id = $1", string(sourceID)) })
 
 	assembler, err := mapper.NewAssembler(sourceID, map[string]mapper.TableBinding{}, nil)
 	if err != nil {
 		t.Fatalf("NewAssembler: %v", err)
 	}
 	log := &recordingLog{}
+	backfillWake := newBackfillWake()
 	deps := administrationDeps{
-		requests:        requests,
-		activation:      activation,
-		enableTables:    enable.NewEnableTableService(activation),
-		disableTables:   disable.NewDisableTableService(activation),
-		excludeColumns:  excludecolumn.NewExcludeColumnService(activation),
-		includeColumns:  includecolumn.NewIncludeColumnService(activation),
+		requests:       requests,
+		activation:     activation,
+		enableTables:   enable.NewEnableTableService(activation),
+		disableTables:  disable.NewDisableTableService(activation),
+		excludeColumns: excludecolumn.NewExcludeColumnService(activation),
+		includeColumns: includecolumn.NewIncludeColumnService(activation),
+		backfill: backfill.NewBackfillTableService(backfill.Ports{
+			Activation: activation,
+			Exclusion:  activation,
+			Schemas:    schemaStore,
+			Snapshot:   backfillSnapshot,
+			Admission:  backfillAdmission,
+			Runs:       backfillRuns,
+			Writer:     backfillWriter,
+			Clock:      systemclock.New(),
+		}),
+		backfillWake:    backfillWake,
 		schemaStore:     schemaStore,
 		columnExclusion: activation,
 		assembler:       assembler,
@@ -146,9 +186,9 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	// request legt den Antrag über die SQL-Administration an, lässt die
 	// Goroutine-Schleife einmal über ihn laufen und liest Status und
 	// Fehlertext als Superuser zurück.
-	request := func(function, column string) (id, status, message string) {
+	requestOn := func(table, function, column string) (id, status, message string) {
 		t.Helper()
-		args := []any{string(sourceID), "public", testTable}
+		args := []any{string(sourceID), "public", table}
 		call := "SELECT cdc." + function + "($1, $2, $3)"
 		if column != "" {
 			call = "SELECT cdc." + function + "($1, $2, $3, $4)"
@@ -167,7 +207,7 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	}
 	expectApplied := func(function, column string) {
 		t.Helper()
-		if _, status, message := request(function, column); status != "applied" {
+		if _, status, message := requestOn(testTable, function, column); status != "applied" {
 			t.Fatalf("%s unter cdc_admin-/cdc_capture-Login: Status %q (%s), erwartet applied — Log: %v", function, status, message, log.messages)
 		}
 	}
@@ -192,8 +232,55 @@ func TestAdministrationPathRunsUnderLeastPrivilegeLogins(t *testing.T) {
 	expectApplied("include_column", "secret")
 
 	// Ein fehlgeschlagener Antrag endet im Vermerk failed samt Fehlertext.
-	if _, status, message := request("include_column", "does_not_exist"); status != "failed" || message == "" {
+	if _, status, message := requestOn(testTable, "include_column", "does_not_exist"); status != "failed" || message == "" {
 		t.Fatalf("include_column auf fehlende Spalte: Status %q, Fehlertext %q, erwartet failed samt Text", status, message)
+	}
+
+	// Der Backfill-Antrag (`LH-FA-CAP-009`): die Annahme legt unter dem
+	// `cdc_admin`-Login die Run-Zeile `queued` an und vermerkt den Antrag
+	// `applied`, die Zeilenzahl wird unter dem `cdc_capture`-Login geschätzt
+	// (unbekannt bleibt NULL, nie 0: die Tabelle ist nie analysiert), der
+	// Worker wird geweckt. Ein zweiter Antrag derselben Tabelle bei aktivem
+	// Run endet `failed` samt Text, ohne zweite Run-Zeile und ohne Signal; ein
+	// Antrag für eine nicht aktivierte Tabelle endet `failed` ohne Run-Zeile.
+	backfillID, status, message := requestOn(testTable, "backfill_table", "")
+	if status != "applied" {
+		t.Fatalf("backfill_table unter cdc_admin-/cdc_capture-Login: Status %q (%s), erwartet applied — Log: %v", status, message, log.messages)
+	}
+	var runStatus string
+	var estimated *int64
+	if err := admin.QueryRow(ctx, "SELECT status, estimated_rows FROM cdc.backfill_run WHERE run_id = $1", backfillID).Scan(&runStatus, &estimated); err != nil {
+		t.Fatalf("Run-Zeile nach backfill_table: %v", err)
+	}
+	if runStatus != "queued" || estimated != nil {
+		t.Fatalf("Run-Zeile nach der Annahme: Status %q, geschätzte Zeilenzahl %v — erwartet queued und unbekannt (NULL)", runStatus, estimated)
+	}
+	if len(backfillWake) != 1 {
+		t.Fatalf("Wecksignale nach der Annahme = %d, erwartet 1", len(backfillWake))
+	}
+	<-backfillWake
+
+	secondID, status, message := requestOn(testTable, "backfill_table", "")
+	if status != "failed" || !strings.Contains(message, "aktiver Backfill-Run") {
+		t.Fatalf("zweiter backfill_table bei aktivem Run: Status %q, Fehlertext %q, erwartet failed mit dem Grund „aktiver Backfill-Run“", status, message)
+	}
+	var runRows int
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM cdc.backfill_run WHERE source_id = $1 AND table_name = $2", string(sourceID), testTable).Scan(&runRows); err != nil || runRows != 1 {
+		t.Fatalf("Run-Zeilen der Tabelle nach dem abgelehnten Antrag: %d (%v), erwartet 1", runRows, err)
+	}
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM cdc.backfill_run WHERE run_id = $1", secondID).Scan(&runRows); err != nil || runRows != 0 {
+		t.Fatalf("Run-Zeile des abgelehnten Antrags: %d (%v), erwartet 0", runRows, err)
+	}
+	if len(backfillWake) != 0 {
+		t.Fatal("ein abgelehnter Backfill-Antrag weckte den Worker")
+	}
+
+	notActivatedID, status, message := requestOn("admin_roles_not_activated", "backfill_table", "")
+	if status != "failed" || !strings.Contains(message, "nicht aktiviert") {
+		t.Fatalf("backfill_table auf nicht aktivierte Tabelle: Status %q, Fehlertext %q, erwartet failed mit dem Grund „nicht aktiviert“", status, message)
+	}
+	if err := admin.QueryRow(ctx, "SELECT count(*) FROM cdc.backfill_run WHERE run_id = $1", notActivatedID).Scan(&runRows); err != nil || runRows != 0 {
+		t.Fatalf("Run-Zeile für die nicht aktivierte Tabelle: %d (%v), erwartet 0", runRows, err)
 	}
 
 	expectApplied("disable_table", "")

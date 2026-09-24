@@ -36,6 +36,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsnotify"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/natsstream"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresack"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgressnapshot"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgresstorage"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/systemclock"
 	"github.com/pt9912/pg-change-feed/internal/adapters/driven/telemetry"
@@ -47,6 +48,7 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/acknowledge"
+	"github.com/pt9912/pg-change-feed/internal/application/usecase/backfill"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/capture"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/disable"
 	"github.com/pt9912/pg-change-feed/internal/application/usecase/enable"
@@ -669,6 +671,9 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// §Konsequenzen) — auch für diese bislang anonyme Wecksignal-Verbindung.
 	stopNatsStreamPublisher := func() {}
 	var natsStreamPublisherDone sync.WaitGroup
+	// changeNotification trägt dasselbe Wecksignal für den Backfill-Run
+	// (`ADR-0111` Teilfrage 5): `nil`, solange `envNatsURL` leer ist.
+	var changeNotification outbound.ChangeNotificationPort
 	if cfg.NatsURL != "" {
 		var natsConnOpts []nats.Option
 		if cfg.NatsStreamToken != "" {
@@ -684,6 +689,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			return err
 		}
 		captureOpts = append(captureOpts, capture.WithChangeNotification(notify))
+		changeNotification = notify
 
 		// Der `natsstream.Publisher` (`ADR-0100` Teilfrage 1/5) entsteht nur
 		// unter beiden Bedingungen (`natsStreamActive`) — dieselbe
@@ -737,6 +743,78 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		_ = adminListener.Close(closeCtx)
 	}()
 
+	// Der Backfill (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`): die Annahme
+	// eines Antrags läuft über den Pool der Administrations-Goroutine
+	// (`cdc_admin`), Run-Zustand und Schreiber laufen je über einen eigenen
+	// Pool der Rolle `cdc_capture`, der Snapshot-Adapter liest über dieselbe
+	// DSN — auch die geschätzte Zeilenzahl im Antrag liest er darüber, nicht
+	// über den Pool der Administrations-Goroutine. Blockgröße und Zeitlimit
+	// des Snapshot-Adapters tragen seine Startwerte.
+	backfillAdmission, err := postgresstorage.NewBackfillAdmission(ctx, cfg.AdminDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer backfillAdmission.Close()
+	backfillRuns, err := postgresstorage.NewBackfillRun(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer backfillRuns.Close()
+	backfillWriter, err := postgresstorage.NewBackfillWriter(ctx, cfg.CaptureDSN, postgresstorage.WithLog(log))
+	if err != nil {
+		return err
+	}
+	defer backfillWriter.Close()
+	backfillSnapshot, err := postgressnapshot.New(cfg.CaptureDSN)
+	if err != nil {
+		return err
+	}
+	clock := systemclock.New()
+	backfillOpts := []backfill.Option{backfill.WithLog(log)}
+	if changeNotification != nil {
+		backfillOpts = append(backfillOpts, backfill.WithChangeNotification(changeNotification))
+	}
+	backfillTables := backfill.NewBackfillTableService(backfill.Ports{
+		Activation: activation,
+		Exclusion:  activation,
+		Schemas:    schemaStore,
+		Snapshot:   backfillSnapshot,
+		Admission:  backfillAdmission,
+		Runs:       backfillRuns,
+		Writer:     backfillWriter,
+		Clock:      clock,
+	}, backfillOpts...)
+
+	// Start-Reihenfolge des Backfills (`ADR-0113` Festlegung 2): zuerst der
+	// Bindungsaufbau der Composition Root (`assemblerTables`,
+	// `stream.BindCapture`, oben), dann der Abgleich `running` → `interrupted`,
+	// dann startet der Worker und liest die `queued`-Zeilen seiner Quelle.
+	if err := reconcileBackfillRuns(ctx, backfillRuns, clock, cfg.Source, log); err != nil {
+		return err
+	}
+	backfillWake := newBackfillWake()
+	backfillCtx, stopBackfill := context.WithCancel(ctx)
+	var backfillDone sync.WaitGroup
+	backfillDone.Add(1)
+	go func() {
+		defer backfillDone.Done()
+		runBackfillWorker(backfillCtx, backfillWorkerDeps{
+			runs:        backfillRuns,
+			useCase:     backfillTables,
+			source:      cfg.Source,
+			publication: cfg.Publication,
+			wake:        backfillWake,
+			retryAfter:  backfillRetryInterval,
+			log:         log,
+		})
+	}()
+	// Ein früher Rücksprung aus `Run` beendet den Worker, bevor die Pools
+	// (`defer`-Kette oben) schließen.
+	defer func() {
+		stopBackfill()
+		backfillDone.Wait()
+	}()
+
 	// Die Administrations-Goroutine läuft wie Heartbeat und WAL-Retention
 	// über den eigenen Pool und die eigene Goroutine — kein Eingriff in
 	// die kritische Sektion des Capture-Persist-ACK-Pfads
@@ -759,6 +837,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			schemaStore:     schemaStore,
 			columnExclusion: activation,
 			assembler:       stream.Assembler(),
+			backfill:        backfillTables,
+			backfillWake:    backfillWake,
 			publication:     cfg.Publication,
 			pollInterval:    administrationPollInterval,
 			log:             log,
@@ -925,6 +1005,8 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	walRetentionDone.Wait()
 	stopAdministration()
 	administrationDone.Wait()
+	stopBackfill()
+	backfillDone.Wait()
 	stopRetention()
 	retentionDone.Wait()
 	stopNatsStreamPublisher()
@@ -1165,7 +1247,13 @@ type administrationDeps struct {
 	// Prozessstart (`activatedTableBindings`).
 	columnExclusion outbound.ColumnExclusionPort
 	assembler       *mapper.Assembler
-	publication     string
+	// backfill nimmt einen Antrag der Art `backfill` an (`Request`) und
+	// weckt danach den Backfill-Worker über `backfillWake`; die Ausführung
+	// des Runs trägt der Worker, nicht diese Goroutine (`ADR-0111`
+	// Teilfrage 5, `ADR-0113` Festlegung 2).
+	backfill     inbound.BackfillTableUseCase
+	backfillWake chan<- struct{}
+	publication  string
 	pollInterval    time.Duration
 	log             outbound.LogPort
 }
@@ -1255,6 +1343,14 @@ func processAdministrationRequests(ctx context.Context, deps administrationDeps)
 // über die Herkunft neu an — der Stand überlebt den `disable`/`enable`-Zyklus
 // ohne Neustart. Der Lese-Fehler endet wie jeder Antrags-Fehler im
 // `failed`-Vermerk (`processAdministrationRequests`).
+//
+// Der `backfill`-Zweig nimmt den Antrag über `BackfillTableUseCase.Request`
+// an und weckt danach den Backfill-Worker; die Kopie läuft dort, nicht in
+// dieser Goroutine. Ein Antrag, den `Request` annimmt, ist damit `applied` im
+// Sinn von „angenommen“ (die Annahme vermerkt ihn in ihrer Transaktion; das
+// anschließende `MarkApplied` trifft keine `pending`-Zeile mehr und ist
+// kein Fehler). Eine verletzte Vorbedingung und ein aktiver Run derselben
+// Tabelle enden als Fehler und damit im `failed`-Vermerk.
 func applyAdministrationRequest(ctx context.Context, deps administrationDeps, request model.AdministrationRequest) error {
 	qualified := request.Schema + "." + request.Table
 	switch request.Kind {
@@ -1328,8 +1424,23 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		}
 		deps.assembler.IncludeColumn(qualified, request.Column)
 		return nil
+	case model.AdministrationRequestBackfill:
+		if deps.backfill == nil {
+			return errBackfillNotWired
+		}
+		if _, err := deps.backfill.Request(ctx, inbound.BackfillRequestCommand{
+			RequestID:   request.ID,
+			Source:      request.Source,
+			Schema:      request.Schema,
+			Table:       request.Table,
+			Publication: deps.publication,
+		}); err != nil {
+			return err
+		}
+		signalBackfillWorker(deps.backfillWake)
+		return nil
 	default:
-		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable/exclude_column/include_column", request.Kind)
+		return fmt.Errorf("Antragsart %q trägt nicht die geschlossene Menge enable/disable/exclude_column/include_column/backfill", request.Kind)
 	}
 }
 
@@ -1536,7 +1647,9 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 // (`LH-FA-ADM-004`, `cdc_capture_lag`), Verarbeitungsrückstand je Consumer
 // (`LH-FA-ADM-005`, `cdc_consumer_lag{consumer}`), der aktuell die Löschung
 // blockierende Consumer je Quelle (`LH-FA-RET-005`, `cdc.retention_blockers`)
-// und der Speicherverbrauch (`LH-FA-RET-006`, `cdc_storage_bytes`). Anders
+// und der Speicherverbrauch (`LH-FA-RET-006`, `cdc_storage_bytes`) sowie der
+// zuletzt beantragte Backfill-Run je Tabelle (`LH-FA-CAP-009`,
+// `cdc.backfill_status`, `diagnoseBackfillStatus`). Anders
 // als `Healthcheck` trifft dieser Befehl keine binäre Verdikt-Entscheidung —
 // er gibt die Rohwerte aller Views unverändert weiter, keine
 // Schwellenwert-Klassifikation (`SPEC-007` bleibt Sache des lesenden
@@ -1551,7 +1664,7 @@ func Healthcheck(ctx context.Context, dsn string, source model.SourceID) int {
 // Betriebsstatus oben, kein Fehlerzustand. Der Aufruf öffnet eine eigene,
 // kurzlebige Verbindung — kein Bestandteil der laufenden Verdrahtung
 // (`Run` oben); der Aufrufer übergibt `cfg.ReaderDSN` (`ADR-0047`: alle
-// drei Views tragen ein `SELECT`-Grant an `cdc_reader`).
+// vier Views tragen ein `SELECT`-Grant an `cdc_reader`).
 func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -1661,6 +1774,11 @@ func Diagnose(ctx context.Context, dsn string, source model.SourceID) int {
 		return 1
 	}
 	fmt.Printf("  Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): %.0f Bytes\n", storageBytes)
+
+	if err := diagnoseBackfillStatus(ctx, pool, source); err != nil {
+		fmt.Fprintf(os.Stderr, "pg-change-feed: diagnose: cdc.backfill_status nicht lesbar: %v\n", err)
+		return 1
+	}
 
 	return 0
 }

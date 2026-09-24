@@ -655,7 +655,7 @@ func TestApplyAdministrationRequestRejectsUnknownKind(t *testing.T) {
 	}
 
 	if err := applyAdministrationRequest(ctx, deps, request); err == nil {
-		t.Fatal("applyAdministrationRequest(unbekannte Kind) = nil, wollen einen Fehler (geschlossene Menge enable/disable)")
+		t.Fatal("applyAdministrationRequest(unbekannte Kind) = nil, wollen einen Fehler (geschlossene Menge enable/disable/exclude_column/include_column/backfill)")
 	}
 }
 

@@ -2,6 +2,7 @@ package bootstrap_test
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -394,5 +395,100 @@ func TestDiagnoseReportsNoConfirmedConsumer(t *testing.T) {
 	}
 	if !strings.Contains(output, "(keiner — kein Consumer mit bestätigter Position)") {
 		t.Fatalf("stdout = %q, wollen die 'keiner'-Zeile bei leerem cdc.consumer_position-Bestand", output)
+	}
+}
+
+// diagnoseReaderDSN legt eine anmeldefähige Identität `IN ROLE cdc_reader` an
+// (so legt sie `docs/user/benutzerhandbuch.md` §2 an) und liefert ihre DSN;
+// die Bereinigung entfernt sie wieder. `diagnose` läuft im Betrieb über diese
+// Rolle (`CDC_READER_DSN`, `ADR-0047`).
+func diagnoseReaderDSN(t *testing.T, pool *pgxpool.Pool, baseDSN string) string {
+	t.Helper()
+	ctx := context.Background()
+	const login, password = "pgc_test_diagnose_reader", "test-login-password"
+	if _, err := pool.Exec(ctx, "DROP ROLE IF EXISTS "+login); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Login-Identität: %v", err)
+	}
+	if _, err := pool.Exec(ctx, "CREATE ROLE "+login+" LOGIN PASSWORD '"+password+"' IN ROLE cdc_reader"); err != nil {
+		t.Fatalf("Login-Identität anlegen: %v", err)
+	}
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DROP ROLE IF EXISTS "+login) })
+	parsed, err := url.Parse(baseDSN)
+	if err != nil {
+		t.Fatalf("Basis-DSN nicht parsebar: %v", err)
+	}
+	parsed.User = url.UserPassword(login, password)
+	return parsed.String()
+}
+
+// TestDiagnoseReportsTheLatestBackfillRunPerTable belegt die Ausgabe des
+// Backfills in `diagnose` (`LH-FA-SST-003`, `LH-FA-CAP-009`, `SPEC-029`) unter
+// der Rolle, die die Verdrahtung `diagnose` zuweist (`cdc_reader`): je Tabelle
+// der zuletzt beantragte Run mit Status, Fortschritt, **geschätzter**
+// Zeilenzahl und den zwei Kennzeichnungen; eine unbekannte Schätzung (NULL)
+// erscheint als „unbekannt“, nie als 0; ein `failed`-Run trägt seinen
+// Fehlertext und ist Berichtsinhalt (Exit 0). Rot färbende Mutationen (je
+// eine, in `diagnoseBackfillStatus`): `COALESCE(estimated_rows, 0)` in der
+// Abfrage — die unbekannte Schätzung erscheint als 0; den Fehlertext nicht
+// ausgeben; den Exit-Code eines `failed`-Runs auf 1 setzen.
+func TestDiagnoseReportsTheLatestBackfillRunPerTable(t *testing.T) {
+	pool := newDiagnoseTestFixture(t)
+	ctx := context.Background()
+	baseDSN := os.Getenv("CDC_STORE_TEST_DSN")
+	t.Cleanup(func() { _, _ = pool.Exec(context.Background(), "DELETE FROM cdc.backfill_run WHERE source_id = $1", diagnoseTestSource) })
+	if _, err := pool.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE source_id = $1", diagnoseTestSource); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Run-Zeilen: %v", err)
+	}
+	insert := func(id, table, status string, requested string, copied int64, estimate any, warnSize bool, message any) {
+		t.Helper()
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status, requested_at, rows_copied, estimated_rows, warn_estimated_size, error_message)
+			 VALUES ($1, $2, 'public', $3, $4, $5::timestamptz, $6, $7, $8, $9)`,
+			id, diagnoseTestSource, table, status, requested, copied, estimate, warnSize, message,
+		); err != nil {
+			t.Fatalf("Run-Zeile %s: %v", id, err)
+		}
+	}
+	insert("diag-done", "diag_done", "completed", "2026-09-24T10:00:00Z", 12, int64(10), false, nil)
+	insert("diag-old", "diag_unknown", "completed", "2026-09-24T09:00:00Z", 5, int64(5), false, nil)
+	insert("diag-new", "diag_unknown", "failed", "2026-09-24T11:00:00Z", 0, nil, true, "permission: kein SELECT auf die Quelltabelle")
+
+	var code int
+	output := captureStdout(t, func() {
+		code = bootstrap.Diagnose(ctx, diagnoseReaderDSN(t, pool, baseDSN), diagnoseTestSource)
+	})
+	if code != 0 {
+		t.Fatalf("Diagnose-Exit-Code = %d, wollen 0 (ein failed-Run ist Berichtsinhalt) — stdout %q", code, output)
+	}
+	for _, want := range []string{
+		"Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):",
+		"    public.diag_done: completed, 12 Zeilen kopiert, geschätzt 10, Warnung Größe false, Warnung Dauer false\n",
+		"    public.diag_unknown: failed, 0 Zeilen kopiert, geschätzt unbekannt, Warnung Größe true, Warnung Dauer false\n",
+		"      Fehler: permission: kein SELECT auf die Quelltabelle\n",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("stdout = %q, wollen die Zeile %q", output, want)
+		}
+	}
+	if strings.Contains(output, "diag_unknown: completed") || strings.Contains(output, "geschätzt 0") {
+		t.Fatalf("stdout = %q — zeigt einen älteren Run oder die unbekannte Schätzung als 0", output)
+	}
+}
+
+// TestDiagnoseReportsNoBackfillWhenNoneWasRequested belegt den Fall ohne Run:
+// die Zeile sagt, dass kein Backfill beantragt wurde, und der Lesezugriff
+// endet mit Exit 0.
+func TestDiagnoseReportsNoBackfillWhenNoneWasRequested(t *testing.T) {
+	pool := newDiagnoseTestFixture(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, "DELETE FROM cdc.backfill_run WHERE source_id = $1", diagnoseTestSource); err != nil {
+		t.Fatalf("Vorab-Aufräumen der Run-Zeilen: %v", err)
+	}
+	var code int
+	output := captureStdout(t, func() {
+		code = bootstrap.Diagnose(ctx, diagnoseReaderDSN(t, pool, os.Getenv("CDC_STORE_TEST_DSN")), diagnoseTestSource)
+	})
+	if code != 0 || !strings.Contains(output, "(keiner — kein Backfill beantragt)") {
+		t.Fatalf("Exit %d, stdout %q — erwartet 0 und die Zeile „(keiner — kein Backfill beantragt)“", code, output)
 	}
 }

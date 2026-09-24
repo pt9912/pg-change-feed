@@ -189,7 +189,8 @@ func istKlassenGrant(objekt string) bool {
 // `ADR-0048` korrigierte Ursprungstext) · den `DELETE`-Grant auf
 // `cdc.transaction`/`cdc.change` für `cdc_admin` entfernen · `DELETE` an
 // `cdc_capture` auf `cdc.change` ergänzen · den Schema-USAGE-Grant
-// entfernen · die Lese-View `cdc.retention_blockers` aus dem Reader-Grant
+// entfernen · die Lese-View `cdc.retention_blockers` bzw. `cdc.backfill_status`
+// aus dem Reader-Grant
 // streichen · `GRANT ALL ON ALL TABLES IN SCHEMA cdc TO cdc_reader`
 // anhängen · `GRANT CREATE ON SCHEMA cdc TO cdc_reader` anhängen. Zu (4a):
 // `INSERT` an `cdc_capture` auf `cdc.backfill_run` anhängen · `UPDATE` an
@@ -307,12 +308,13 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 		}
 	}
 
-	// (5) Lesepfad — `cdc_reader` liest über die **vier** Lese-Views der
+	// (5) Lesepfad — `cdc_reader` liest über die **fünf** Lese-Views der
 	// Datei (`LH-FA-SST-002`, mit `retention_blockers` aus
-	// `LH-FA-RET-005`). Die vier sind der erklärte Lese-Umfang des Rollouts;
+	// `LH-FA-RET-005` und `backfill_status` aus `SPEC-029`). Die fünf sind der
+	// erklärte Lese-Umfang des Rollouts;
 	// fehlt eine, scheitert der jeweilige Lesezugriffsweg real.
 	for _, view := range []string{
-		"cdc.active_tables", "cdc.consumer_status", "cdc.changes", "cdc.retention_blockers",
+		"cdc.active_tables", "cdc.consumer_status", "cdc.changes", "cdc.retention_blockers", "cdc.backfill_status",
 	} {
 		if !rechteVon(rechte, "cdc_reader", view)["select"] {
 			t.Fatalf("cdc_reader fehlt select auf der Lese-View %s im Rollout-Text — der Lesezugriffsweg (LH-FA-SST-002) scheitert real", view)
@@ -324,7 +326,7 @@ func TestRolloutDateiTraegtDieRechteDerVerdrahtung(t *testing.T) {
 	// Rundum-Vergabe über jedes zu diesem Zeitpunkt existierende Objekt des
 	// Schemas — auch über jedes Schreibpfad-Objekt. Sie lässt die übrigen
 	// Zeilen der Datei stehen; aufgehoben ist die **Trennung**, die (7)
-	// prüft, weil der Umfang des Lesers dann nicht mehr an seinen vier
+	// prüft, weil der Umfang des Lesers dann nicht mehr an seinen fünf
 	// Views hängt (LH-QA-SEC-001).
 	for rolle, objekte := range rechte {
 		for objekt := range objekte {
