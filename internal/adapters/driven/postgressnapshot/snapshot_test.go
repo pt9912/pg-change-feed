@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -18,6 +18,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgproto3"
 
+	"github.com/pt9912/pg-change-feed/internal/adapters/driven/postgressnapshot/snapshotlogic"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
@@ -34,6 +35,10 @@ const (
 )
 
 var nameCounter atomic.Int64
+
+// quoteIdent ist die Quoting-Funktion des Adapters, hier für die
+// Test-Statements.
+var quoteIdent = snapshotlogic.QuoteIdent
 
 // suffix liefert einen je Prozess und Aufruf eindeutigen Namensteil im
 // Bezeichner-Alphabet der Quelle.
@@ -68,6 +73,9 @@ func connect(t *testing.T, dsn string) *pgconn.PgConn {
 		t.Fatalf("Verbindungsaufbau: %v", err)
 	}
 	t.Cleanup(func() { _ = conn.Close(context.Background()) })
+	// Ein Aufräum-Statement wartet höchstens 10 s auf die Sperre einer
+	// ungeschlossenen Lese-Transaktion.
+	mustExec(t, conn, "SET lock_timeout = '10s'")
 	return conn
 }
 
@@ -576,30 +584,71 @@ func TestNextBlockAfterClose(t *testing.T) {
 	}
 }
 
-// parityColumns trägt die Typen der Bild-Parität; `gen` ist generiert und
-// fehlt in beiden Bildern.
-const parityColumns = `id int PRIMARY KEY, ts timestamptz, f float8, b bytea, iv interval, n numeric,
-	j jsonb, arr text[], d date, nul text, gen int GENERATED ALWAYS AS (id * 2) STORED`
+// gucLage ist eine Sitzungs-GUC-Lage der Rolle, unter der WAL-Pfad und
+// Backfill-Pfad lesen; `inImage` sind Teilzeichenfolgen, die das WAL-Bild
+// nur trägt, wenn die Lage tatsächlich wirkt.
+type gucLage struct {
+	name     string
+	settings []string
+	inImage  []string
+}
 
-const parityInsert = `INSERT INTO %s (id, ts, f, b, iv, n, j, arr, d) VALUES
-	(1, '2026-09-24 08:11:12.5+00', 0.1::float8 + 0.2::float8, '\xdeadbeef', '1 day 02:03:04', 12345.6700,
-	 '{"a": [1, 2], "b": null}', '{x,"y z",NULL}', '2026-09-24'),
-	(2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`
+var gucLagen = []gucLage{
+	{name: "Standard"},
+	{
+		name: "Tokyo",
+		settings: []string{
+			"timezone = 'Asia/Tokyo'", "datestyle = 'German, DMY'", "intervalstyle = 'sql_standard'",
+			"bytea_output = 'escape'", "extra_float_digits = 0",
+		},
+		inImage: []string{"JST", `+1-2 +3 +4:05:06.7`, `\\336\\255\\276\\357`},
+	},
+	{
+		name: "Verbose",
+		settings: []string{
+			"intervalstyle = 'postgres_verbose'", "datestyle = 'SQL, MDY'", "extra_float_digits = -3",
+			"timezone = 'America/New_York'",
+		},
+		inImage: []string{"EDT", "@ 1 year 2 mons 3 days 4 hours 5 mins 6.7 secs"},
+	},
+}
 
-// TestImageParityWalAndBackfill trägt die Bild-Parität (M5): dieselben
-// Zeilen ergeben über den WAL-Pfad (Publication, Slot, Walsender) und den
-// Backfill-Pfad byte-gleiche Row Images — unter einer Rolle, deren
-// Sitzungs-GUC vom Standard abweichen.
+// TestImageParityWalAndBackfill trägt die Typ-Parität (`ADR-0115`
+// Festlegung 4, M5 aus `ADR-0111`): über die Typ-Tabelle ist der Roh-Text
+// jeder Spalte im Backfill-Pfad byte-gleich dem des WAL-Pfads (Publication,
+// Slot, Walsender), und das über `BuildRowImage` gebaute Bild ebenso — in
+// drei Sitzungs-GUC-Lagen der Rolle.
 func TestImageParityWalAndBackfill(t *testing.T) {
 	dsn := testDSN(t)
-	ctx := testCtx(t)
 	admin := connect(t, dsn)
-	role, password := newRole(t, admin, "REPLICATION")
-	for _, guc := range []string{"timezone = 'Asia/Tokyo'", "datestyle = 'German, DMY'", "intervalstyle = 'sql_standard'"} {
-		mustExec(t, admin, "ALTER ROLE "+role+" SET "+guc)
+	set := typeTable(suffix())
+	for _, statement := range set.create {
+		mustExec(t, admin, statement)
 	}
-	table := newTable(t, admin, parityColumns)
+	t.Cleanup(func() {
+		for _, statement := range set.drop {
+			bestEffort(admin, statement)
+		}
+	})
+	versionNum, err := strconv.Atoi(scalar(t, admin, "SHOW server_version_num"))
+	if err != nil {
+		t.Fatalf("server_version_num: %v", err)
+	}
+	t.Logf("PostgreSQL %s, %d Typ-Spalten", scalar(t, admin, "SHOW server_version"), len(set.columns))
+	for _, lage := range gucLagen {
+		t.Run(lage.name, func(t *testing.T) { checkParity(t, dsn, admin, set, versionNum >= 180000, lage) })
+	}
+}
+
+func checkParity(t *testing.T, dsn string, admin *pgconn.PgConn, set typeSet, virtualGenerated bool, lage gucLage) {
+	ctx := testCtx(t)
+	role, password := newRole(t, admin, "REPLICATION")
+	for _, setting := range lage.settings {
+		mustExec(t, admin, "ALTER ROLE "+role+" SET "+setting)
+	}
+	table := newTable(t, admin, set.definition(virtualGenerated))
 	qualified := "public." + quoteIdent(table)
+	mustExec(t, admin, "ALTER TABLE "+qualified+" DROP COLUMN dropme")
 	mustExec(t, admin, "GRANT SELECT ON "+qualified+" TO "+role)
 	publication := "snap_pub_" + suffix()
 	mustExec(t, admin, "CREATE PUBLICATION "+publication+" FOR TABLE "+qualified)
@@ -628,14 +677,14 @@ func TestImageParityWalAndBackfill(t *testing.T) {
 	if err != nil {
 		t.Fatalf("consistent_point: %v", err)
 	}
-	mustExec(t, admin, fmt.Sprintf(parityInsert, qualified))
+	mustExec(t, admin, set.insert(qualified))
 	if err := pglogrepl.StartReplication(ctx, wal, slot, start, pglogrepl.StartReplicationOptions{
 		Mode:       pglogrepl.LogicalReplication,
 		PluginArgs: []string{"proto_version '1'", "publication_names '" + publication + "'"},
 	}); err != nil {
 		t.Fatalf("START_REPLICATION: %v", err)
 	}
-	walImages := collectWalImages(t, ctx, wal, 2)
+	walRows := collectWalRows(t, ctx, wal, 3)
 
 	// Backfill-Pfad: derselbe DSN, dieselbe Rolle.
 	snap, err := newAdapter(t, memberDSN).OpenSnapshot(ctx, "parity"+suffix(), "public", table)
@@ -644,52 +693,91 @@ func TestImageParityWalAndBackfill(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = snap.Close(ctx) })
 	_, rows := drain(t, ctx, snap)
-	backfillImages := map[string][]byte{}
+	if len(rows) != len(walRows) {
+		t.Fatalf("Backfill trägt %d Zeilen, WAL %d", len(rows), len(walRows))
+	}
+
+	columns := snap.Columns()
+	if want := len(set.columns) + 1; len(columns) != want {
+		t.Fatalf("Backfill-Spalten = %d (%q), erwartet %d: die gelöschte und die generierten Spalten fehlen", len(columns), columns, want)
+	}
+	images := map[string][]byte{}
 	for _, row := range rows {
-		image, err := model.BuildRowImage(snap.Columns(), row, nil)
+		id := *row[0]
+		walRow, ok := walRows[id]
+		if !ok {
+			t.Errorf("Zeile %s fehlt im WAL", id)
+			continue
+		}
+		if !equalStrings(walRow.columns, columns) {
+			t.Fatalf("Spalten des WAL %q ≠ Spalten des Backfill %q", walRow.columns, columns)
+		}
+		for i, name := range columns {
+			if !sameText(walRow.values[i], row[i]) {
+				t.Errorf("Zeile %s, Spalte %s (Typ %s): WAL %s ≠ Backfill %s", id, name, set.ddlOf(name), showText(walRow.values[i]), showText(row[i]))
+			}
+		}
+		image, err := model.BuildRowImage(columns, row, nil)
 		if err != nil {
 			t.Fatalf("BuildRowImage: %v", err)
 		}
-		backfillImages[*row[0]] = image
-	}
-
-	for id, walImage := range walImages {
-		backfillImage, ok := backfillImages[id]
-		if !ok {
-			t.Errorf("Zeile %s fehlt im Backfill", id)
-			continue
+		images[id] = image
+		walImage, err := model.BuildRowImage(walRow.columns, walRow.values, nil)
+		if err != nil {
+			t.Fatalf("BuildRowImage (WAL): %v", err)
 		}
-		if !bytes.Equal(walImage, backfillImage) {
-			t.Errorf("Zeile %s: WAL-Bild %s ≠ Backfill-Bild %s", id, walImage, backfillImage)
+		if !bytes.Equal(walImage, image) {
+			t.Errorf("Zeile %s: WAL-Bild %s ≠ Backfill-Bild %s", id, walImage, image)
 		}
 	}
-	if len(backfillImages) != len(walImages) {
-		t.Errorf("Backfill trägt %d Zeilen, WAL %d", len(backfillImages), len(walImages))
-	}
 
-	// Die Bindung an die Aussage: die Rollen-GUC prägen das WAL-Bild
-	// tatsächlich, die generierte Spalte fehlt, NULL entfällt.
-	image := string(walImages["1"])
-	if !strings.Contains(image, "JST") || !regexp.MustCompile(`"d":"\d{2}\.\d{2}\.\d{4}"`).MatchString(image) || !strings.Contains(image, `"iv":"1 2:03:04"`) {
-		t.Errorf("das WAL-Bild trägt die Rollen-GUC nicht: %s", image)
+	// Die Bindung an die Aussage: die Rollen-GUC prägen das Bild tatsächlich,
+	// NULL entfällt, die gelöschte und die generierten Spalten fehlen.
+	image := string(images["1"])
+	for _, want := range lage.inImage {
+		if !strings.Contains(image, want) {
+			t.Errorf("das Bild der Lage %s trägt %q nicht: %s", lage.name, want, image)
+		}
 	}
-	if strings.Contains(image, `"gen"`) || strings.Contains(image, `"nul"`) {
-		t.Errorf("das Bild trägt die generierte oder die NULL-Spalte: %s", image)
+	for _, absent := range []string{`"gen"`, `"genv"`, `"dropme"`} {
+		if strings.Contains(image, absent) {
+			t.Errorf("das Bild trägt %s: %s", absent, image)
+		}
 	}
-	if got := string(walImages["2"]); got != `{"id":"2"}` {
-		t.Errorf("Bild der Zeile 2 = %s, erwartet {\"id\":\"2\"}", got)
+	if got := string(images["3"]); got != `{"id":"3"}` {
+		t.Errorf("Bild der NULL-Zeile = %s, erwartet {\"id\":\"3\"}", got)
 	}
-	t.Logf("Bild Zeile 1 auf %s: %s", scalar(t, admin, "SHOW server_version"), image)
+	t.Logf("Bild Zeile 1 in der Lage %s: %s", lage.name, image)
 }
 
-// collectWalImages liest Insert-Nachrichten der Publication vom
-// Walsender und baut je Zeile das Bild mit derselben Funktion wie der
-// Backfill; der Schlüssel ist der Wert der ersten Spalte.
-func collectWalImages(t *testing.T, ctx context.Context, wal *pgconn.PgConn, want int) map[string][]byte {
+func sameText(a, b *string) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
+}
+
+func showText(value *string) string {
+	if value == nil {
+		return "NULL"
+	}
+	return fmt.Sprintf("%q", *value)
+}
+
+// walRow trägt die Spalten und Textwerte einer Insert-Nachricht.
+type walRow struct {
+	columns []string
+	values  []*string
+}
+
+// collectWalRows liest Insert-Nachrichten der Publication vom Walsender; der
+// Schlüssel ist der Wert der ersten Spalte. Ein Wert ist der Text des
+// Feldes, `nil` ist NULL.
+func collectWalRows(t *testing.T, ctx context.Context, wal *pgconn.PgConn, want int) map[string]walRow {
 	t.Helper()
 	relations := map[uint32]*pglogrepl.RelationMessage{}
-	images := map[string][]byte{}
-	for len(images) < want {
+	rows := map[string]walRow{}
+	for len(rows) < want {
 		receiveCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		message, err := wal.ReceiveMessage(receiveCtx)
 		cancel()
@@ -716,31 +804,27 @@ func collectWalImages(t *testing.T, ctx context.Context, wal *pgconn.PgConn, wan
 			if relation == nil {
 				t.Fatalf("Insert ohne Relation %d", m.RelationID)
 			}
-			columns := make([]string, len(m.Tuple.Columns))
-			values := make([]*string, len(m.Tuple.Columns))
+			row := walRow{columns: make([]string, len(m.Tuple.Columns)), values: make([]*string, len(m.Tuple.Columns))}
 			for i, column := range m.Tuple.Columns {
-				columns[i] = relation.Columns[i].Name
+				row.columns[i] = relation.Columns[i].Name
 				if column.DataType == pglogrepl.TupleDataTypeText {
 					text := string(column.Data)
-					values[i] = &text
+					row.values[i] = &text
 				}
 			}
-			image, err := model.BuildRowImage(columns, values, nil)
-			if err != nil {
-				t.Fatalf("BuildRowImage: %v", err)
-			}
-			images[*values[0]] = image
+			rows[*row.values[0]] = row
 		}
 	}
-	return images
+	return rows
 }
 
 // TestSlotReserveExhaustedIsConfiguration trägt die Betriebs-Vorbedingung
 // der Slot-Reserve: sind alle Slots belegt, endet die Anlage als
 // `configuration`. Der Test braucht einen eigenen PostgreSQL mit
-// `max_replication_slots=1` — auf dem gemeinsamen Testcontainer würde er
-// die Slots paralleler Pakete blockieren — und überspringt ohne
-// `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN`.
+// `max_replication_slots=1`, weil er auf dem gemeinsamen Testcontainer die
+// Slots paralleler Pakete blockiert; den Container und die Variable
+// `CDC_SNAPSHOT_TEST_EXCLUSIVE_DSN` stellt die Phase `tier` von
+// `tools/harness/run-replication-tests.sh`, ohne sie überspringt der Test.
 func TestSlotReserveExhaustedIsConfiguration(t *testing.T) {
 	dsn := os.Getenv(exclusiveDSNEnv)
 	if dsn == "" {
@@ -762,8 +846,266 @@ func TestSlotReserveExhaustedIsConfiguration(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Slot des Halters: %v", err)
 	}
-	_, err = newAdapter(t, dsn).OpenSnapshot(ctx, "reserve"+suffix(), "public", "t")
-	if !errors.Is(err, outbound.ErrSnapshotConfiguration) {
-		t.Fatalf("OpenSnapshot ohne freien Slot: %v, erwartet Klasse configuration", err)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	snap, err := newAdapter(t, dsn).OpenSnapshot(ctx, "reserve"+suffix(), "public", table)
+	if err == nil {
+		_ = snap.Close(ctx)
+	}
+	if !errors.Is(err, outbound.ErrSnapshotConfiguration) || !strings.Contains(err.Error(), "SQLSTATE 53400") {
+		t.Fatalf("OpenSnapshot ohne freien Slot: %v, erwartet Klasse configuration aus SQLSTATE 53400", err)
+	}
+}
+
+// TestQuotedSchemaAndTableNames trägt das Quoting von Schema und Tabelle:
+// Namen mit Anführungszeichen, Leerzeichen und Großbuchstaben werden
+// gelesen, ihre Spalten- und Schätzungs-Abfragen finden sie ebenfalls.
+func TestQuotedSchemaAndTableNames(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	schema := `Sch "ema ` + suffix()
+	table := `Mixed Case "x ` + suffix()
+	mustExec(t, admin, "CREATE SCHEMA "+quoteIdent(schema))
+	t.Cleanup(func() { bestEffort(admin, "DROP SCHEMA IF EXISTS "+quoteIdent(schema)+" CASCADE") })
+	mustExec(t, admin, "CREATE TABLE "+quoteIdent(schema)+"."+quoteIdent(table)+" (id int PRIMARY KEY, v text)")
+	mustExec(t, admin, "INSERT INTO "+quoteIdent(schema)+"."+quoteIdent(table)+" VALUES (1, 'a'), (2, 'b')")
+	mustExec(t, admin, "ANALYZE "+quoteIdent(schema)+"."+quoteIdent(table))
+
+	adapter := newAdapter(t, dsn)
+	snap, err := adapter.OpenSnapshot(ctx, "quoted"+suffix(), schema, table)
+	if err != nil {
+		t.Fatalf("OpenSnapshot: %v", err)
+	}
+	t.Cleanup(func() { _ = snap.Close(ctx) })
+	_, rows := drain(t, ctx, snap)
+	if got, want := renderAll(rows), []string{"1|a", "2|b"}; !equalStrings(got, want) {
+		t.Fatalf("Zeilen = %v, erwartet %v", got, want)
+	}
+	if estimate, known, err := adapter.EstimatedRows(ctx, schema, table); err != nil || !known || estimate != 2 {
+		t.Fatalf("EstimatedRows = %d, %v, %v; erwartet 2, bekannt", estimate, known, err)
+	}
+}
+
+// TestEstimatedRowsAnalyzedEmptyTableIsKnownZero trägt die Grenze der
+// Schätzung: eine analysierte leere Tabelle trägt `reltuples = 0` und ist
+// eine bekannte Schätzung von null Zeilen, nicht „unbekannt".
+func TestEstimatedRowsAnalyzedEmptyTableIsKnownZero(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	mustExec(t, admin, "ANALYZE public."+quoteIdent(table))
+	if raw := scalar(t, admin, "SELECT reltuples::text FROM pg_class WHERE oid = 'public."+quoteIdent(table)+"'::regclass"); raw != "0" {
+		t.Fatalf("reltuples der analysierten leeren Tabelle = %s, erwartet 0", raw)
+	}
+	rows, known, err := newAdapter(t, dsn).EstimatedRows(ctx, "public", table)
+	if err != nil || !known || rows != 0 {
+		t.Fatalf("EstimatedRows = %d, %v, %v; erwartet 0, bekannt", rows, known, err)
+	}
+}
+
+// TestSlotNameCollisionIsReplication trägt die Klasse `replication`: ein
+// bereits belegter Slot-Name ist eine Störung der Slot-Anlage ohne
+// spezifischere Klasse.
+func TestSlotNameCollisionIsReplication(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	runID := "collide" + suffix()
+	holder := newAdapter(t, dsn)
+	export, err := holder.exportSnapshot(ctx, "cdc_bf_"+runID)
+	if err != nil {
+		t.Fatalf("exportSnapshot des Halters: %v", err)
+	}
+	t.Cleanup(func() { closeConn(export.conn) })
+
+	_, err = newAdapter(t, dsn).OpenSnapshot(ctx, runID, "public", table)
+	if !errors.Is(err, outbound.ErrSnapshotReplication) {
+		t.Fatalf("OpenSnapshot mit belegtem Slot-Namen: %v, erwartet Klasse replication", err)
+	}
+}
+
+// appDSN setzt den `application_name` der Sitzungen, damit ein Test die
+// Sitzungen des Adapters im Katalog findet.
+func appDSN(t *testing.T, dsn, application string) string {
+	t.Helper()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatalf("DSN: %v", err)
+	}
+	q := u.Query()
+	q.Set("application_name", application)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+// waitSessionsGone wartet, bis keine Sitzung mit dem `application_name`
+// mehr im Katalog steht: das Backend endet asynchron zum Verbindungsende des
+// Clients.
+func waitSessionsGone(t *testing.T, admin *pgconn.PgConn, application string) {
+	t.Helper()
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		if scalar(t, admin, "SELECT count(*) FROM pg_stat_activity WHERE application_name = '"+application+"'") == "0" {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Fatalf("Sitzungen von %s stehen 15 s nach dem Fehler noch im Katalog", application)
+}
+
+// TestImportOfUnknownSnapshotIsStorage trägt den Abbruch des Imports: ein
+// Snapshot-Name, den der Server nicht kennt, endet als Klasse `storage`, und
+// beide Verbindungen des Adapters sind danach geschlossen (der Slot ist weg,
+// keine Sitzung bleibt).
+func TestImportOfUnknownSnapshotIsStorage(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	application := "snap_import_" + suffix()
+	adapter := newAdapter(t, appDSN(t, dsn, application))
+	slot := "cdc_bf_unknown_" + suffix()
+	export, err := adapter.exportSnapshot(ctx, slot)
+	if err != nil {
+		t.Fatalf("exportSnapshot: %v", err)
+	}
+	export.snapshotName = "00000003-00000002-1"
+	if _, err := adapter.importSnapshot(ctx, export, "public", table); !errors.Is(err, outbound.ErrSnapshotStorage) {
+		t.Fatalf("importSnapshot mit unbekanntem Snapshot: %v, erwartet Klasse storage", err)
+	}
+	waitSlotGone(t, admin, slot)
+	waitSessionsGone(t, admin, application)
+}
+
+// unreachableDSN ersetzt Host und Port des Test-DSN durch eine Adresse ohne
+// Listener.
+func unreachableDSN(t *testing.T, dsn string) string {
+	t.Helper()
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatalf("DSN: %v", err)
+	}
+	u.Host = "127.0.0.1:1"
+	return u.String()
+}
+
+// TestUnreachableSourceIsTransient trägt die Klasse `transient` an den
+// Verbindungsaufbauten: eine Quelle ohne Listener endet an der
+// Replication-Verbindung, an der Lese-Verbindung des Imports und an der
+// Schätzung als `transient`, und die Replication-Verbindung des Imports ist
+// danach geschlossen.
+func TestUnreachableSourceIsTransient(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	broken := newAdapter(t, unreachableDSN(t, dsn))
+
+	if _, err := broken.OpenSnapshot(ctx, "unreach"+suffix(), "public", table); !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Errorf("OpenSnapshot ohne Listener: %v, erwartet Klasse transient", err)
+	}
+	if _, _, err := broken.EstimatedRows(ctx, "public", table); !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Errorf("EstimatedRows ohne Listener: %v, erwartet Klasse transient", err)
+	}
+
+	slot := "cdc_bf_unreach_" + suffix()
+	export, err := newAdapter(t, dsn).exportSnapshot(ctx, slot)
+	if err != nil {
+		t.Fatalf("exportSnapshot: %v", err)
+	}
+	if _, err := broken.importSnapshot(ctx, export, "public", table); !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Errorf("importSnapshot ohne Listener für die Lese-Verbindung: %v, erwartet Klasse transient", err)
+	}
+	waitSlotGone(t, admin, slot)
+}
+
+// TestCatalogQueryFailuresKeepTheirClass trägt die Fehler der Katalog-
+// Abfragen: in einer eigenen Datenbank ohne `SELECT` auf `pg_attribute`
+// und `pg_class` enden die Spaltenliste und die Schätzung mit der
+// Fehlerklasse ihres SQLSTATE (`permission`), nicht als Lesefehler.
+func TestCatalogQueryFailuresKeepTheirClass(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	database := "snap_cat_" + suffix()
+	mustExec(t, admin, "CREATE DATABASE "+database+" TEMPLATE template0")
+	t.Cleanup(func() { bestEffort(admin, "DROP DATABASE IF EXISTS "+database+" WITH (FORCE)") })
+	u, err := url.Parse(dsn)
+	if err != nil {
+		t.Fatalf("DSN: %v", err)
+	}
+	u.Path = "/" + database
+	isolated := connect(t, u.String())
+	mustExec(t, isolated, "REVOKE SELECT ON pg_catalog.pg_attribute, pg_catalog.pg_class FROM PUBLIC")
+	mustExec(t, isolated, "CREATE TABLE public.t (id int PRIMARY KEY)")
+	role, password := newRole(t, admin, "REPLICATION")
+	mustExec(t, isolated, "GRANT SELECT ON public.t TO "+role)
+	adapter := newAdapter(t, roleDSN(t, u.String(), role, password))
+
+	runID := "catalog" + suffix()
+	_, err = adapter.OpenSnapshot(ctx, runID, "public", "t")
+	if !errors.Is(err, outbound.ErrSnapshotPermission) || !strings.Contains(err.Error(), "Spaltenliste") {
+		t.Errorf("OpenSnapshot ohne SELECT auf pg_attribute: %v, erwartet Klasse permission in der Phase Spaltenliste", err)
+	}
+	waitSlotGone(t, isolated, "cdc_bf_"+runID)
+	_, _, err = adapter.EstimatedRows(ctx, "public", "t")
+	if !errors.Is(err, outbound.ErrSnapshotPermission) || !strings.Contains(err.Error(), "Zeilenschätzung") {
+		t.Errorf("EstimatedRows ohne SELECT auf pg_class: %v, erwartet Klasse permission in der Phase Zeilenschätzung", err)
+	}
+}
+
+// TestReadAfterBackendTermination trägt den Verbindungsabbruch mitten im
+// Lesen: nach dem Beenden der Lese-Sitzung endet der nächste Block als
+// sichtbarer Fehler mit einer Klasse, und `Close` bleibt ohne Wirkung.
+func TestReadAfterBackendTermination(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	mustExec(t, admin, "INSERT INTO public."+quoteIdent(table)+" SELECT g FROM generate_series(1, 5) g")
+	snap, err := newAdapter(t, dsn, WithBlockSize(2)).OpenSnapshot(ctx, "term"+suffix(), "public", table)
+	if err != nil {
+		t.Fatalf("OpenSnapshot: %v", err)
+	}
+	t.Cleanup(func() { _ = snap.Close(ctx) })
+	if block, err := snap.NextBlock(ctx); err != nil || len(block) != 2 {
+		t.Fatalf("erster Block = %d Zeilen, %v; erwartet 2", len(block), err)
+	}
+	pid := snap.(*snapshot).conn.PID()
+	mustExec(t, admin, fmt.Sprintf("SELECT pg_terminate_backend(%d)", pid))
+
+	_, err = snap.NextBlock(ctx)
+	t.Logf("NextBlock nach pg_terminate_backend: %v", err)
+	if !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Fatalf("NextBlock nach dem Ende der Sitzung: %v, erwartet Klasse transient", err)
+	}
+	if _, err := snap.NextBlock(ctx); !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Fatalf("zweiter NextBlock auf der beendeten Verbindung: %v, erwartet Klasse transient", err)
+	}
+	if err := snap.Close(ctx); err != nil {
+		t.Fatalf("Close nach dem Verbindungsabbruch: %v", err)
+	}
+}
+
+// TestReadWithCancelledContextIsTransient trägt das Kontext-Ende beim
+// Lesen: ein beendeter Kontext endet als Klasse `transient`.
+func TestReadWithCancelledContextIsTransient(t *testing.T) {
+	dsn := testDSN(t)
+	ctx := testCtx(t)
+	admin := connect(t, dsn)
+	table := newTable(t, admin, "id int PRIMARY KEY")
+	mustExec(t, admin, "INSERT INTO public."+quoteIdent(table)+" VALUES (1)")
+	snap, err := newAdapter(t, dsn).OpenSnapshot(ctx, "cancel"+suffix(), "public", table)
+	if err != nil {
+		t.Fatalf("OpenSnapshot: %v", err)
+	}
+	t.Cleanup(func() { _ = snap.Close(ctx) })
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := snap.NextBlock(cancelled); !errors.Is(err, outbound.ErrSnapshotTransient) {
+		t.Fatalf("NextBlock mit beendetem Kontext: %v, erwartet Klasse transient", err)
 	}
 }

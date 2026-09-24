@@ -69,7 +69,10 @@ type TableSnapshot interface {
 	Columns() []string
 
 	// NextBlock liest die nächsten höchstens `B` Zeilen. Zeile `i` trägt
-	// je Spalte den Text-Stand der Quelle in der Ordnung von `Columns()`;
+	// je Spalte den Text-Stand der Quelle in der Ordnung von `Columns()`:
+	// das Ergebnis der Ausgabefunktion des Spaltentyps unter den
+	// Sitzungs-GUC, ohne Cast und ohne Funktion auf dem Spaltenwert — dieselbe
+	// Erzeugung wie der Text, den `pgoutput` je Spalte sendet (`ADR-0115`);
 	// `nil` ist NULL. Ein leerer Block meldet das Ende des Bestands —
 	// auch beim ersten Aufruf einer leeren Tabelle. Der Speicherbedarf
 	// eines Aufrufs ist durch `B` begrenzt (`LH-FA-CAP-006.a`).
