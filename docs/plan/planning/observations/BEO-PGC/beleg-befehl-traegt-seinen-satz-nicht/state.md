@@ -6,15 +6,25 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **10×**
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **11×**
 (evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-sdk-python-nats-stream-client-flaeche.md,
 evidence/slice-backfill-change-origin.md,
-evidence/slice-backfill-snapshot-reader.md) —
-**Schwelle erreicht**. Der zehnte Beleg
+evidence/slice-backfill-snapshot-reader.md,
+evidence/slice-backfill-run-usecase.md) —
+**Schwelle erreicht**. Der elfte Beleg
+(`evidence/slice-backfill-run-usecase.md`, F-6, V-2 und die Nachmessung der Closure)
+trifft die Form **Befehl** in einer neuen Ausprägung: **Tabellen-Escape und Filter**. Ein
+Suchbefehl in einer Tabellenzelle trug `\|` (als `-E`-Alternation und als Pipe zu `wc -l`)
+und lieferte aus der Zelle kopiert 0 Treffer; ein Ausschluss-Filter (`grep -v -E` über die
+`-n`-Ausgabe) schloss nach Zeileninhalt statt nach Pfad aus und ließ die Behauptung „nur
+dieser Plan" falsch stehen. Ausgang bleibt **verkörpert** (der Reviewer fährt den Befehl);
+die Form „ein Befehl in einer Tabellenzelle steht ohne Pipe-Zeichen, mehrere Muster als
+`-e`-Argumente, Ausschlüsse als Pfad-Pathspec" trägt das Suchlauf-Feld von
+`slice-backfill-run-usecase`. Der zehnte Beleg
 (`evidence/slice-backfill-snapshot-reader.md`, F-3 und F-5) trifft die Form
 **Befehl**: ein grüner `make coverage-gate` als Beleg für drei namentliche
 Stellen, von denen er nur eine bindet, und ein unveränderter Nenner als Beleg

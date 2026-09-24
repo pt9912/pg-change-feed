@@ -5,10 +5,22 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
-Zähler (abgeleitet): **7×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **8×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
-evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md) —
-**Schwelle erreicht**. Der siebte Beleg (`slice-backfill-snapshot-reader`,
+evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
+evidence/slice-backfill-run-usecase.md) —
+**Schwelle erreicht**. Der achte Beleg (`slice-backfill-run-usecase`) trifft die
+**Fehlerzweige** einer Prüfung: acht Mutationen blieben grün (Lesefehler des
+Ausschlussstands je Block und vor dem Commit, `finished_at` der Endzustände,
+Fortschritts-Fehler, `Finish`-Fehler bei leerer Tabelle), weil die Fakes jeden Aufruf
+dauerhaft scheitern ließen und der jeweils andere Aufruf desselben Zweigs den Fake
+auffing. Es ist dieselbe Klasse — die Eingabeseite eines Fehlerzweigs ist der Zeitpunkt
+des Fehlers, und „Fehler an **dieser** Stelle verwerfen" ist die Mutation —, kein neuer
+Eintrag. **Ausgangs-Kandidat** einer Schärfung der verkörperten Regel (Architect-Entscheidung
+im Lese-Schritt der Closure von `welle-backfill-bestand`, nicht getroffen): Schritt 19 in
+`.claude/commands/implement-slice.md` und der HIGH-Punkt in `.harness/skills/reviewer.md`
+nennen für einen Fehlerzweig mit mehreren gleichartigen Aufrufstellen die Form „der Fake
+scheitert ab Aufruf n; je Aufrufstelle eine Mutation, die ihren Fehler verwirft". Der siebte Beleg (`slice-backfill-snapshot-reader`,
 vier Zusagen in einem Vorgang: Typ-Parität, Bezeichner-Quoting, Nullgrenze der
 Schätzung, zwei namentliche Paketlisten) fand sie durch Mutationen des
 Reviewers; Ausgang bleibt **verkörpert**. Der fünfte Beleg (`slice-091`) ist der erste, bei dem die

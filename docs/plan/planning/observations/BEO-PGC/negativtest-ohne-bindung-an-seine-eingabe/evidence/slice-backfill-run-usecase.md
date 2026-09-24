@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-run-usecase (Review-Funde F-1, F-2, F-3, Mutationen 24 bis 31)
+
+**Fund:** Der Reviewer setzte 38 wirksame Mutationen und fand acht, die grün blieben: die Fehlerzweige der Fail-closed-Prüfung (Ausschlussstand nicht lesbar, je Block und unmittelbar vor dem Commit; `LH-QA-SEC-004`), `finished_at` der drei Endzustands-Wege, der Fehler des Fortschritts je Block und mit der Anfangsposition sowie der Fehler von `Finish` bei leerer Tabelle. Ursache war der Fake: `fakeExclusion` und `fakeRuns` ließen jeden Aufruf dauerhaft scheitern, ein Fehler erst ab dem n-ten Aufruf war nicht ausdrückbar, und der jeweils andere Aufruf desselben Fehlerzweigs fing den dauerhaft scheiternden Fake auf. Die Fixrunde gab den Fakes einen Fehler ab Aufruf n (`errCall`, `progressErrCall`, `finishErrCall`) und eine schrittweise laufende Uhr; alle acht Mutationen färben seither rot (der Verifier setzte 20 Mutationen, alle rot). Gefunden hat sie die Mutationsprobe des Reviewers, nicht der Lauf des Implementers.
+
+Quelle: `docs/reviews/review-slice-backfill-run-usecase.md` (F-1, F-2, F-3, Tabelle Mutationen) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-run-usecase.md` (§4, Zeilen M1 bis M8). <!-- d-check:status-provenance -->

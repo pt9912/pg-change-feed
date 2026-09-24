@@ -23,9 +23,14 @@ evidence/slice-backfill-snapshot-reader.md) — Schwelle erreicht, Ausgang
 zugewiesen. Der achte Beleg (`slice-backfill-snapshot-reader`) ist wie `slice-090`
 ein Fall **außerhalb** des Buchstabens von §3.10: `e2e.yml` ändert nur Schrittname
 und Kommentar, der bestehende Schritt `tier` fährt aber je Matrix-Leg einen
-zweiten Container; **weiter offen**, Auflösungs-Bedingung: der erste
-`e2e`-Lauf nach dem Push der Commits dieses Slice, sein Ergebnis wird in
-`evidence/slice-backfill-snapshot-reader.md` nachgetragen. Der fünfte Beleg fällt **außerhalb** der Regel an, die sie
+zweiten Container; **aufgelöst**: der `e2e`-Lauf 35988269802 zum Push
+`455bcdef` (Abruf mit `gh run view`) endete `success`, in beiden Matrix-Legs — „image +
+test-integration (PostgreSQL 18)" 2026-09-24 10:37:11Z bis 10:44:44Z und „(PostgreSQL 17)"
+10:37:11Z bis 10:46:41Z —; der Schritt „Replication-Tier (go test ./... und Slot-Reserve)"
+und der Schritt „DB-Adapter-Coverage — Replication-Teil, Merge + Schwelle" endeten in beiden
+Legs mit `success`. Derselbe Push löste `ci` (35988269814) und `examples` (35988269793) aus,
+beide `success`. Der Ausgang steht hier, weil eine `evidence/`-Datei ab Merge unveränderlich
+ist; `evidence/slice-backfill-snapshot-reader.md` bleibt der Beleg des Auftretens. Der fünfte Beleg fällt **außerhalb** der Regel an, die sie
 verkörpert: `slice-090` ändert am Workflow nur einen Schrittnamen und
 Kommentarzeilen, `AGENTS.md` §3.10 ist dem Buchstaben nach **nicht**
 ausgelöst — sein Grund aber trifft zu, weil `ci.yml` mit `make gates` jetzt
