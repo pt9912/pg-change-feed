@@ -70,7 +70,7 @@ ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 # Baums und Gate-Skript gegen COVERAGE_THRESHOLD (ADR-0071, ADR-0054;
 # Kalibrierungs-Bindung harness/README.md §Sensors). Die Flaeche ist
 # internal/...+cmd/...+gen/... ohne die Pakete, deren Testlauf einen externen
-# Dienst voraussetzt — der Filter unten nennt die drei namentlich, die
+# Dienst voraussetzt — der Filter unten nennt die vier namentlich, die
 # tragende Regel ist die Eigenschaft, nicht die Liste; die Paketliste selbst
 # kommt aus `go list` und zieht neue Pakete mit. `gen/...` ist seit
 # `slice-097` Teil der Liste: der Umzug der erzeugten Vertragsflaeche
@@ -98,7 +98,7 @@ ENV COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD}
 COPY . .
 RUN mkdir -p /out && \
     pkgs=( $(go list ./internal/... ./cmd/... ./gen/... \
-        | grep -vE '(^|/)(postgresstorage|postgresack|replication/receive)$') ) && \
+        | grep -vE '(^|/)(postgresstorage|postgresack|postgressnapshot|replication/receive)$') ) && \
     go test \
         -coverpkg="$(IFS=,; echo "${pkgs[*]}")" \
         -coverprofile=/out/coverage.out \

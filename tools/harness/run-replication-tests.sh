@@ -84,7 +84,7 @@ docker run --rm --network "$NETWORK" \
   "$TOOLCHAIN_IMAGE" go mod download
 
 # Phase `measure` — DB-Adapter-Coverage (ADR-0071 Punkt 3): eigener Messlauf
-# über den Replication-Teil des Gegenstands (`postgresack`,
+# über den Replication-Teil des Gegenstands (`postgresack`, `postgressnapshot`,
 # `replication/receive`), mit `-coverpkg` über die ganze Gegenstandsliste. Der
 # Exit von db-coverage.sh ist das Verdikt dieser Phase.
 if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
@@ -100,6 +100,7 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
       -coverprofile=/cov/replication.coverprofile \
       -covermode=atomic \
       ./internal/adapters/driven/postgresack \
+      ./internal/adapters/driven/postgressnapshot \
       ./internal/adapters/driving/replication/receive
 
   bash tools/harness/db-coverage.sh
@@ -113,7 +114,7 @@ fi
 # (`SchemaStorePort.CurrentVersion`), `cdc.administration_request`
 # (`ColumnExclusionPort.ExcludedColumns`, ADR-0050) und
 # `cdc.process_heartbeat` (HeartbeatPort). Die `measure`-Phase oben läuft
-# ohne diesen Schritt: ihr Gegenstand (`postgresack`,
+# ohne diesen Schritt: ihr Gegenstand (`postgresack`, `postgressnapshot`,
 # `replication/receive`) bringt seine Tabellen selbst mit.
 if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
   bash tools/schema/apply-rollout.sh "$PG_CONTAINER" "$PG_DB" "$PG_USER" "$NETWORK" "$DSN"

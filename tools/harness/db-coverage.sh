@@ -3,12 +3,12 @@
 # Traeger-Laeufe (`make test-store`, `make test-replication`) zu EINER Zahl und
 # prueft sie gegen DB_COVERAGE_THRESHOLD.
 #
-# Subject der Zahl sind die drei Pakete, deren Testlauf einen externen
+# Subject der Zahl sind die vier Pakete, deren Testlauf einen externen
 # PostgreSQL voraussetzt (ADR-0071 Punkt 3): postgresstorage OHNE das
 # Unterpaket mapper (das bleibt Gegenstand des Unit-Gates), postgresack,
-# replication/receive. Die Zahl traegt dieses Subjekt in ihrem Namen
-# ("DB-Adapter-Coverage") und heisst nie "die Coverage" des Repos — das ist die
-# Gate-getragene Unit-Zahl (ADR-0071 Punkt 4).
+# postgressnapshot, replication/receive. Die Zahl traegt dieses Subjekt in
+# ihrem Namen ("DB-Adapter-Coverage") und heisst nie "die Coverage" des Repos —
+# das ist die Gate-getragene Unit-Zahl (ADR-0071 Punkt 4).
 #
 # Kein Gate: der Traeger ist der nicht-blockierende Workflow
 # .github/workflows/e2e.yml, nicht `make gates` — das Gate laeuft bei jedem
@@ -16,10 +16,9 @@
 #
 # Zaehlbasis: -coverpkg instrumentiert nur die in einem Testbinary VERLINKTEN
 # Gegenstands-Pakete (der Lauf ueber postgresstorage allein traegt 472
-# Statements fuer dieses Paket und keine Zeile fuer postgresack/receive;
-# Nenner-Stand: Lauf `slice-085`). Im
-# Replication-Lauf testet `go test` zwei Pakete (postgresack,
-# replication/receive); jedes der beiden Testbinaries instrumentiert beide
+# Statements fuer dieses Paket und keine Zeile fuer die Pakete des
+# Replication-Laufs; Nenner-Stand: Lauf `slice-085`). Im Replication-Lauf testet `go test` drei Pakete (postgresack, postgressnapshot,
+# replication/receive); jedes der drei Testbinaries instrumentiert alle
 # Gegenstands-Pakete, darum erscheint jede Block-Position dort ZWEIMAL —
 # einmal mit ihrem count, einmal mit 0. "Gedeckt" heisst: mindestens ein
 # Vorkommen traegt count > 0. Der Merge unten dedupliziert ueber die
@@ -30,8 +29,8 @@
 #
 # Die beiden Laeufe messen VERSCHIEDENE Testbestaende und partitionieren das
 # Subject: postgresstorage laeuft nur mit CDC_STORE_TEST_DSN (make test-store),
-# postgresack/replication/receive nur mit CDC_REPLICATION_TEST_DSN (make
-# test-replication). Jeder Lauf instrumentiert dabei seinen Teil; die beiden
+# postgresack/postgressnapshot/replication/receive nur mit
+# CDC_REPLICATION_TEST_DSN (make test-replication). Jeder Lauf instrumentiert dabei seinen Teil; die beiden
 # Dateimengen sind DISJUNKT. Das Merge ist deshalb sinnvoll — die Vereinigung
 # der gedeckten Positionen beschreibt das ganze Subject; eine der beiden Laeufe
 # allein traegt nur seine Haelfte.
@@ -45,7 +44,7 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-DB_COVERAGE_PKGS="./internal/adapters/driven/postgresstorage,./internal/adapters/driven/postgresack,./internal/adapters/driving/replication/receive"
+DB_COVERAGE_PKGS="./internal/adapters/driven/postgresstorage,./internal/adapters/driven/postgresack,./internal/adapters/driven/postgressnapshot,./internal/adapters/driving/replication/receive"
 DB_COVERAGE_DIR=${DB_COVERAGE_DIR:-${TMPDIR:-/tmp}/pg-change-feed-db-coverage}
 # Geltende Stufe der Rampe (bootstrap-aware, ADR-0054 §(a), ADR-0071 Punkt 3).
 # Der bewegliche Wert steht ausschliesslich hier; README und Sensor nennen die
