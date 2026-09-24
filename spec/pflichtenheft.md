@@ -186,7 +186,9 @@ Umsetzung, keine Messergebnisse.
   [`LH-FA-CAP-008`](lastenheft.md)). Das Row Image ist byte-gleich dem
   WAL-Image derselben Zeile: dieselbe Bild-Konstruktion, ausgeschlossene
   Spalten ([`LH-FA-CFG-005`](lastenheft.md)) und generierte Spalten fehlen,
-  `NULL` entfällt, Werte im Text-Stand der Quelle.
+  `NULL` entfällt, Werte im Text-Stand der Quelle. Die Schema-Version einer
+  Backfill-Change ist die zum Run-Start aktuelle Version der Tabelle; sie
+  unterscheidet, sie beschreibt die Bild-Spalten nicht.
 - **Position und Ordnung.** Alle Blöcke eines Runs liegen auf der Position
   `X`. Jeder Block ist eine eigene synthetische Transaktion mit der Kennung
   `0bf-<run-id>-<Blocknummer>` (Blocknummer achtstellig, null-aufgefüllt) und
@@ -548,6 +550,18 @@ endet deshalb `applied`, nicht `failed`: er wirkt, sobald die Tabelle erfasst
 wird. Die Antrags-Zeilen dieser beiden Arten sind dadurch tragend — eine
 Bereinigung der Tabelle verlöre den Stand.
 
+**Grants** (Rollen nach der Zuordnung der DSN-Verdrahtung):
+
+| Rolle | Recht auf `cdc.administration_request` | Träger |
+|---|---|---|
+| `cdc_admin` | `SELECT`, `UPDATE` | die Administrations-Verarbeitung: offene Anträge lesen, den Ausgang (`applied`/`failed`) vermerken, die dauerhaften Stände aus den `applied`-Zeilen ableiten; die Annahme eines Backfills vermerkt in derselben Transaktion |
+| `cdc_capture` | **keines** | — |
+| `cdc_reader` | **keines** | — |
+
+Niemand trägt `INSERT` oder `DELETE`: Anträge legen ausschließlich die
+SQL-Funktionen an (`SECURITY DEFINER`, unter den Rechten ihres Eigentümers);
+das Recht, eine Funktion aufzurufen, trägt allein `cdc_admin`.
+
 ### SPEC-020 — gRPC-Live-Change-Stream (Nachrichtenschema, RPC-Name, Stream-Semantik)
 
 Technische Ausgestaltung von [`LH-FA-SST-008`](lastenheft.md): ein
@@ -839,3 +853,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-24 | `LH-FA-CAP-009.a` beantwortet: Backfill-Mechanismus als Zusagen an die Umsetzung — ausdrückliche Auslösung über die Antragsart `backfill`, Annahme in einer Transaktion und Aufnahme durch einen einzelnen Worker, Bulk-Copy im Snapshot eines je Run angelegten temporären Slots in einer Store-Transaktion, Markierung über `origin`, Position `X` je Run, Überlappungs-Verhalten (keine Lücke, begrenzte idempotente Dopplung), Sichtbarkeits-Grenze, Neubeginn nach Abbruch, Fail-closed-Prüfung, zwei Warnungen für große Tabellen; die Überschrift verliert „offen" |
 | 2026-09-24 | `SPEC-001` um `cdc.backfill_run` erweitert; `SPEC-002` um das Feld `origin` (`wal` \| `backfill`, fehlender Wert liest als `wal`, letzte Spalte der View `cdc.changes`); `SPEC-019` um die Antragsart `backfill` (fünf Werte) und die Bedeutung von `applied` bei `backfill` („angenommen"); `SPEC-022` um das Antwort-Feld `origin` und die Position-und-`limit`-Anmerkung; `SPEC-020`/`SPEC-021` grenzen das Feld `origin` aus der Nachricht aus |
 | 2026-09-24 | `SPEC-029` ergänzt: Feldform von `cdc.backfill_run` und `cdc.backfill_status` — Spalten, zwei Warn-Spalten (`warn_estimated_size`, `warn_duration`), `estimated_rows` NULL als „unbekannt", Grants je Rolle |
+| 2026-09-24 | `SPEC-019` um den Absatz „Grants" der Antrags-Queue erweitert (`cdc_admin` `SELECT`, `UPDATE`; `cdc_capture` und `cdc_reader` kein Recht; kein `INSERT`, kein `DELETE`); `LH-FA-CAP-009.a` Absatz „Markierung" um die Bedeutung der Schema-Version einer Backfill-Change ergänzt (Kennung zum Run-Start, keine Beschreibung der Bild-Spalten) |
