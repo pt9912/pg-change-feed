@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.47
+Version: 1.48
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-24
 
@@ -72,9 +72,9 @@ Gruppenrolle zuweisen:
 
 | Rolle | Zweck | Umgebungsvariable |
 |---|---|---|
-| `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) | `CDC_CAPTURE_DSN` |
-| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen) | `CDC_ADMIN_DSN` |
-| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
+| `cdc_capture` | Erfassungspfad des Feed-Containers (Store-Adapter, Replication-Stream) und Ausführung eines Backfills (Run-Zustand fortschreiben, Bestand im Snapshot lesen und schreiben, siehe [Bestand als Backfill überführen](#bestand-als-backfill-überführen)) | `CDC_CAPTURE_DSN` |
+| `cdc_admin` | Verwaltungszugriff (Registrierung von Quellen und Tabellen, Heartbeat, `register-consumer`/`acknowledge-consumer`, Retention-Löschausführung, Verarbeitung der Antrags-Queue `cdc.administration_request` — offene Anträge lesen und ihren Ausgang vermerken, ohne Anträge selbst anzulegen oder zu löschen —, Annahme eines Backfill-Antrags, die die Run-Zeile in `cdc.backfill_run` anlegt; `cdc.backfill_table` und die übrigen Antragsfunktionen ruft nur diese Rolle auf) | `CDC_ADMIN_DSN` |
+| `cdc_reader` | Nur-Lese-Zugriff auf die Diagnose- und Lese-Views (`cdc.active_tables`, `cdc.consumer_status`, `cdc.changes`, `cdc.metrics`, `cdc.heartbeat`, `cdc.retention_blockers`, `cdc.backfill_status`) — trägt auch `--healthcheck` und `diagnose` (siehe [Diagnose ausführen](#diagnose-ausführen)) | `CDC_READER_DSN` |
 
 ```sql
 CREATE ROLE feed_capture_login LOGIN PASSWORD '<geheim>' IN ROLE cdc_capture;
@@ -99,6 +99,12 @@ zusätzlich direkt auf die Login-Identität hinter `CDC_CAPTURE_DSN`:
 ```sql
 ALTER ROLE feed_capture_login REPLICATION;
 ```
+
+**Betriebs-Hinweis (Backfill):** Die Software vergibt kein Recht auf Ihre
+Quelltabellen. Soll ein Backfill eine Tabelle überführen, braucht die
+Login-Identität hinter `CDC_CAPTURE_DSN` zusätzlich `SELECT` auf sie —
+`GRANT SELECT ON <schema>.<tabelle> TO feed_capture_login;`. Fehlt es, endet
+der Run `failed` mit der Fehlerklasse `permission`.
 
 ## 3. Erste Schritte
 
@@ -395,6 +401,147 @@ Dieselben Änderungen sind ohne SQL-Direktzugriff über die API lesbar:
 Reihenfolge (siehe
 [Zugriff über die HTTP-/JSON-API](#zugriff-über-die-http-json-api)).
 
+**Fortsetzen und `LIMIT`:** Ein `LIMIT` schneidet Zeilen, nicht Positionen.
+Trug eine Commit-Position mehr Änderungen als das `LIMIT`, überspringt
+`commit_position > <letzte-gelesene-position>` den Rest dieser Position
+(`SPEC-022`, Zeile „Position und `limit`"). Das trifft den Bestandsabzug eines
+Backfills, der alle seine Änderungen auf **eine** Position legt (siehe
+[Bestand als Backfill überführen](#bestand-als-backfill-überführen)): lesen Sie
+ihn ohne `LIMIT` oder setzen Sie über den Schlüsselvergleich fort:
+
+```sql
+SELECT change_id, commit_position, transaction_id, sequence, operation, new_data, origin
+FROM cdc.changes
+WHERE source_id = '<quelle-id>'
+  AND (commit_position, transaction_id, sequence) > (<letzte-position>, '<letzte-transaction-id>', <letzte-sequence>)
+ORDER BY commit_position, transaction_id, sequence
+LIMIT 500;
+```
+
+### Bestand als Backfill überführen
+
+Die Erfassung trägt nur Änderungen ab der Aktivierung. Ein **Backfill**
+überführt zusätzlich die Zeilen, die die Tabelle zum Zeitpunkt des Antrags
+bereits enthält, als `INSERT`-Änderungen mit `origin = 'backfill'` in den Feed
+(`LH-FA-CAP-009`, `LH-FA-ADM-001`). Er wird **ausdrücklich** ausgelöst — die
+Aktivierung einer Tabelle startet keinen.
+
+**Voraussetzung:** Die Tabelle ist aktiviert (laufende Bindung, Mitglied der
+Publication, siehe [Tabelle live aktivieren](#tabelle-live-aktivieren)); eine
+Login-Identität mit `cdc_admin`-Mitgliedschaft; der Feed-Container läuft für die
+Quelle. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
+
+- **`SELECT`-Recht:** die Login-Identität hinter `CDC_CAPTURE_DSN` liest die
+  Tabelle (siehe [Zugriff und Rollen](#zugriff-und-rollen)).
+- **Reserve für die Replication-Verbindung:** ein Run legt für die Dauer der
+  Slot-Anlage einen temporären Replication Slot an und öffnet dafür eine
+  Replication-Verbindung — beides zählt gegen `max_replication_slots` und
+  `max_wal_senders` der Quell-Instanz, zusätzlich zu den beiden Verbindungen
+  des Feed-Containers (siehe [Grenzwerte](#grenzwerte)).
+- **Snapshot-Haltedauer:** die Kopie liest den Bestand in **einem** Snapshot der
+  Quelle und schreibt ihn in **einer** Transaktion des CDC-Speichers, die einmal
+  am Ende committet. Für die Dauer der Kopie hält die Quelle den Snapshot (er
+  hindert die Bereinigung von Zeilenversionen, die er noch sieht), und der
+  CDC-Speicher trägt eine offene Schreibtransaktion. Je größer die Tabelle,
+  desto länger. Eine Ablehnung großer Tabellen gibt es nicht.
+
+**Vorgehen:**
+
+```sql
+SELECT cdc.backfill_table('<source_id>', '<schema>', '<tabelle>');
+```
+
+**Ergebnis:** Der Aufruf ist asynchron: Er schreibt einen Antrag nach
+`cdc.administration_request` (Art `backfill`, Status `pending`) und gibt dessen
+Kennung zurück — die Kopie hat damit noch nicht begonnen. Der Feed-Container
+nimmt den Antrag an: die Zeile des Runs entsteht mit dem Status `queued`, und
+der Antrag wird `applied` vermerkt. **`applied` heißt hier „angenommen", nicht
+„Bestand kopiert"** — den Verlauf des Runs zeigt allein `cdc.backfill_status`.
+Ein Antrag endet `failed` (Fehlertext in `error_message`, keine Run-Zeile), wenn
+die Tabelle nicht aktiviert ist, keine laufende Bindung hat oder ein Run
+derselben Tabelle `queued` oder `running` ist:
+
+```sql
+SELECT status, error_message
+FROM cdc.administration_request
+WHERE administration_request_id = '<zurückgegebene-id>';
+```
+
+Den Run lesen Sie über die View `cdc.backfill_status` — je Tabelle der zuletzt
+beantragte Run:
+
+```sql
+SELECT status, rows_copied, estimated_rows, started_at, finished_at,
+       error_message, warn_estimated_size, warn_duration
+FROM cdc.backfill_status
+WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<tabelle>';
+```
+
+| `status` | Bedeutung |
+|---|---|
+| `queued` | angenommen, wartet; ein Run läuft zugleich, weitere warten in der Reihenfolge ihrer Anträge |
+| `running` | die Kopie läuft; `rows_copied` schreitet je Block fort |
+| `completed` | alle Zeilen sind in **einer** Transaktion geschrieben; `rows_copied` ist die Zahl der Backfill-Änderungen (eine leere Tabelle endet `completed` mit 0) |
+| `failed` | der Run endete mit einem Fehler; `error_message` trägt die Fehlerklasse (siehe [Fehlerklassen](#fehlerklassen)) vor der Ursache; der Run hinterlässt keine Änderung |
+| `interrupted` | der Prozess endete während der Kopie; der Run hinterlässt keine Änderung |
+
+- **`estimated_rows` ist eine Schätzung** der Quelle (aus dem Katalog), keine
+  Zählung und keine Grenze. NULL heißt **unbekannt** — der Katalog führt keine
+  Schätzung —, nie 0. Die Ausgabe von `diagnose` zeigt es als „unbekannt".
+- **`warn_estimated_size` und `warn_duration`** sind eine Kennzeichnung, die die
+  Zeilenzahl und die Kopierdauer betrifft; sie ändern weder `status` noch den
+  Ablauf. In dieser Version setzt keine Auswertung sie: beide bleiben `false`.
+- Ein Run-Fehler ist **run-lokal**: er setzt weder den Fehlerzustand des
+  Lebenszeichens noch stoppt er die Erfassung.
+
+**Neustart und Wiederholung:** Beim Start des Feed-Containers wird jeder
+`running`-Run der Quelle `interrupted`; ein `queued`-Run überlebt den Start und
+wird ausgeführt. Ein `interrupted`-Run startet **nicht** von selbst neu: ein
+erneuter Antrag (`cdc.backfill_table`) beginnt einen neuen Run mit neuem
+Snapshot und damit von vorn. Ein abgebrochener Run hinterlässt keine
+Änderungszeile. Betreiben Sie je Quelle **eine** Instanz: eine zweite Instanz
+gegen dieselbe Quelle würde die `running`-Runs der ersten beim Start als
+`interrupted` vermerken.
+
+**Was der Bestand im Feed bedeutet:**
+
+- **Position:** alle Änderungen eines Runs liegen auf **einer** Commit-Position
+  `X` (`snapshot_position` des Runs). Positionen wandern nur vorwärts: ein
+  Consumer, dessen bestätigte Position beim Commit des Runs `X` bereits erreicht
+  hat, sieht den Bestand nicht über seinen Fortschritt; über das Bereichslesen
+  (siehe [Änderungen lesen](#änderungen-lesen)) bleibt er lesbar.
+- **Lesen:** Ein Bestandsabzug teilt **eine** Commit-Position; ein `LIMIT`
+  kann innerhalb einer Position nicht fortsetzen. Lesen Sie ihn ohne `LIMIT`
+  oder über den Schlüsselvergleich (siehe [Änderungen lesen](#änderungen-lesen)).
+- **Überlappung:** Eine Zeile, die im Fenster zwischen Aktivierung und `X`
+  geändert wurde, kann doppelt erscheinen — die Änderung aus der Erfassung und
+  der Bestand danach. Wendet ein Consumer das Log ab dem Anfang in Lese-Ordnung
+  an (`INSERT` und `UPDATE` als Upsert des Row Images, `DELETE` als Löschen),
+  entspricht sein Stand je Schlüssel dem Quellstand.
+- **`schema_version`:** Die Schema-Version einer Backfill-Änderung ist die zum
+  Run-Start aktuelle Version der Tabelle. Sie unterscheidet Backfill-Änderungen
+  von Änderungen einer später registrierten Version; sie beschreibt die Spalten
+  des Bildes nicht — die Spalten stehen im Bild selbst (`new_data`). Das Bild
+  kann eine Spalte tragen, die die referenzierte Version nicht führt: bei einer
+  Erweiterung während des Runs, bei einer kompatiblen Erweiterung vor dem Run,
+  wenn seit der letzten Relation-Nachricht keine Änderung der Tabelle erfasst
+  wurde, und bei einer Tabelle, die seit ihrer Aktivierung keine Änderung
+  erfasst hat (die Version hat dann noch keine Spaltenform). Der Run ändert die
+  Version nicht und bricht deshalb nicht ab.
+- **Ausgeschlossene Spalten** (siehe [Spalte vom Ausschluss
+  konfigurieren](#spalte-vom-ausschluss-konfigurieren)) tragen die Backfill-
+  Änderungen nicht; ein Ausschluss, der während des Runs geändert wird, endet den
+  Run `failed` (Klasse `configuration`), bevor etwas sichtbar wird.
+- **Zustellung:** Backfill-Änderungen gehen in keinen der Live-Zustellwege (gRPC,
+  SSE, NATS-Vollinhalt); nach dem Commit sendet der Run je Tabelle ein
+  Wecksignal (NATS-Wecksignal, wenn aktiviert). Sie unterliegen der Aufbewahrung
+  wie jede Änderung.
+
+**Diagnose:** `diagnose` gibt den Run je Tabelle mit Status, Fortschritt,
+**geschätzter** Zeilenzahl und den beiden Kennzeichnungen aus (siehe [Diagnose
+ausführen](#diagnose-ausführen)); ein `failed`- oder `interrupted`-Run ist
+Berichtsinhalt, kein Befehlsfehler.
+
 ### Aufbewahrung (Retention)
 
 Der Feed-Container bereinigt `cdc.change`-Zeilen automatisch über einen
@@ -498,9 +645,9 @@ die Least-Privilege-Fläche von `cdc_reader` unnötig erweitern würden — sieh
 
 Statt der SQL-Abfragen oben einzeln zu stellen, liest der
 `diagnose`-Sondermodus dieselben Views (`cdc.heartbeat`, `cdc.metrics`,
-`cdc.retention_blockers`) über `CDC_READER_DSN` und gibt eine
+`cdc.retention_blockers`, `cdc.backfill_status`) über `CDC_READER_DSN` und gibt eine
 menschenlesbare Zusammenfassung aus (`LH-FA-SST-003`, deckt
-`LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`) — derselbe Image-Tag wie der
+`LH-FA-ADM-002`…`005`, `LH-FA-RET-005`/`006`, `LH-FA-CAP-009`) — derselbe Image-Tag wie der
 Daemon, als einmaliger, kurzlebiger Lauf statt als Dauerdienst:
 
 ```bash
@@ -524,7 +671,19 @@ pg-change-feed diagnose: Quelle "src-e2e"
     cli-e2e-consumer: 3
   Blockierender Consumer (LH-FA-RET-005): cli-e2e-consumer, bestätigte Position 42, Rückstand 3
   Speicherverbrauch cdc_storage_bytes (LH-FA-RET-006): 65536 Bytes
+  Backfill je Tabelle (LH-FA-CAP-009, letzter Run; die Zeilenzahl ist geschätzt):
+    public.orders: completed, 1200 Zeilen kopiert, geschätzt 1150, Warnung Größe false, Warnung Dauer false
+    public.audit: failed, 0 Zeilen kopiert, geschätzt unbekannt, Warnung Größe false, Warnung Dauer false
+      Fehler: permission: …
 ```
+
+Der Abschnitt „Backfill je Tabelle" liest die View `cdc.backfill_status` (siehe
+[Bestand als Backfill überführen](#bestand-als-backfill-überführen)): je
+Tabelle der zuletzt beantragte Run mit Status, Fortschritt, der **geschätzten**
+Zeilenzahl (eine unbekannte Schätzung erscheint als „unbekannt", nie als 0) und
+den beiden Kennzeichnungen; bei einem `failed`-Run folgt der Fehlertext. Ist
+noch nie ein Backfill beantragt worden, steht dort „(keiner — kein Backfill
+beantragt)".
 
 Trägt keine Quelle in `cdc.retention_blockers` gar keine Zeile (noch kein
 Consumer hat je gegen sie bestätigt), zeigt die Zeile stattdessen:
@@ -609,12 +768,17 @@ ausgerolltes Ziel endet ebenfalls mit Exit 0.
 **Rechte der drei Rollen.** Der Rollout setzt die Rechte der Gruppenrollen
 bei jedem Lauf (idempotent), auch gegen ein bereits ausgerolltes Ziel. Die
 Rechte von `cdc_admin` auf `cdc.administration_request` (`SELECT`, `UPDATE`)
-und auf `cdc.backfill_run` (`SELECT`, `INSERT`) kommen aus diesem Lauf: rollen
+und auf `cdc.backfill_run` (`SELECT`, `INSERT`), von `cdc_capture` auf
+`cdc.backfill_run` (`SELECT`, `UPDATE`) und von `cdc_reader` auf die View
+`cdc.backfill_status` (`SELECT`) kommen aus diesem Lauf: rollen
 Sie das Schema nach einem Upgrade **vor** dem Tausch des Feed-Containers aus.
 Ohne das Recht auf `cdc.administration_request` bleiben Anträge der
 SQL-Administration `pending`, und der Feed-Container protokolliert „Anträge
 lesen fehlgeschlagen" — das trifft eine Login-Identität, die nur `IN ROLE
-cdc_admin` ist, nicht einen Superuser-Login.
+cdc_admin` ist, nicht einen Superuser-Login. Die Antragsfunktion
+`cdc.backfill_table` gehört wie die übrigen Antragsfunktionen `cdc_admin`
+allein: eine Login-Identität ohne diese Mitgliedschaft scheitert mit
+„permission denied for function".
 
 **Änderung an der Spaltenliste einer View.** Ändert ein Release die Signatur
 einer View des Schemas (Spalte anhängen, umordnen, umbenennen, Typ ändern —
@@ -712,7 +876,15 @@ UTC) und `origin` (`wal` oder `backfill`, als letztes Feld; eine ohne
 dieses Feld gespeicherte Änderung liest als `wal`) — dieselbe Sicht wie
 der SQL-Zugriff auf `cdc.changes`. Die
 Reihenfolge ist deterministisch; die Fortsetzung liest ab
-`from = <letzte gelieferte commit_position> + 1`. Ein Aufruf ohne Treffer
+`from = <letzte gelieferte commit_position> + 1`, wenn das Lesen die letzte
+Position vollständig erfasst hat. Ein `limit` schneidet Zeilen, nicht Positionen:
+Enthält eine Commit-Position mehr Änderungen als `limit`, liefert dieses `from`
+den Rest der Position nicht, und ein Lesen ab derselben Position liefert wieder
+dieselben Zeilen (`SPEC-022`). Den Bestandsabzug eines Backfills, der alle seine
+Änderungen auf **eine** Position legt (siehe [Bestand als Backfill
+überführen](#bestand-als-backfill-überführen)), lesen Sie deshalb ohne `limit`
+oder über den Schlüsselvergleich im SQL-Zugriff (siehe [Änderungen
+lesen](#änderungen-lesen)). Ein Aufruf ohne Treffer
 endet `200` mit leerer Liste (`{"changes": []}`), nie `404`; ein Parameter
 außerhalb der genannten Liste endet `400`, ebenso ein fehlendes `source`,
 eine nicht lesbare Zahl, `from`/`to` unter 1, `limit` unter 1 und
@@ -1115,8 +1287,8 @@ das Package dieselbe Vier-Wege-Matrix wie die C#-/Kotlin-Pendants. Siehe
 
 | Variable | Pflicht | Bedeutung |
 |---|---|---|
-| `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream) |
-| `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, Verarbeitung der Antrags-Queue, `register-consumer`/`acknowledge-consumer`) |
+| `CDC_CAPTURE_DSN` | ja | Verbindung über die Rolle `cdc_capture` (Store-Adapter, Replication-Stream, Ausführung eines Backfills) |
+| `CDC_ADMIN_DSN` | ja | Verbindung über die Rolle `cdc_admin` (Tabellen-Aktivierung, Heartbeat, Verarbeitung der Antrags-Queue, Annahme eines Backfill-Antrags, `register-consumer`/`acknowledge-consumer`) |
 | `CDC_READER_DSN` | ja | Verbindung über die Rolle `cdc_reader` (`--healthcheck`, `diagnose`) |
 | `CDC_SOURCE_ID` | ja | Kennung der Quelle (muss in `cdc.source` registriert sein) |
 | `CDC_PUBLICATION` | ja | Name der PostgreSQL-Publication |
@@ -1201,21 +1373,23 @@ Klassen (`ADR-0023`, `SPEC-008`):
 
 | Klasse | Bedeutung | Verhalten |
 |---|---|---|
-| `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff; deklariert, aktuell von keinem Adapter konstruiert |
+| `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneuter Versuch mit begrenztem Backoff; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts |
 | `configuration` | ungültige oder fehlende Umgebungsvariable | Kein Start, sichtbarer Fehler |
-| `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; deklariert, aktuell von keinem Adapter konstruiert |
+| `permission` | fehlende Berechtigung | Sichtbarer Fehler, kein stiller Retry; im Erfassungspfad deklariert, aktuell von keinem Adapter konstruiert — ein Backfill-Run trägt sie als Klasse seines Fehlertexts (z. B. fehlendes `SELECT` auf die Quelltabelle) |
 | `schema` | eine Replikationsnachricht ist nicht sicher interpretierbar (z. B. TRUNCATE, unbekannter Nachrichtentyp) | Sichtbarer Fehler, kein stilles Überspringen |
 | `storage` | Persistenzfehler | Kein Source-ACK, damit keine Änderung verloren geht |
 | `replication` | zwei Unterarten (`ADR-0049`): **Stream-Ordnungs-Verletzung** (z. B. Commit ohne offene Transaktion) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Slot, Keepalive, Quell-Bestätigung) | Stream-Ordnungs-Verletzung: sofortiger, sichtbarer Abbruch, unabhängig vom WAL-Rückstand. Transport-/Verbindungsstörung: Schwellen-Überwachung über den WAL-Rückstand (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)) — kontrollierte Fortsetzung unterhalb 1 GiB, sichtbarer Abbruch darüber |
 | `internal` | unerwarteter interner Fehler, der keiner anderen Klasse zuzuordnen ist | Sichtbarer Fehler; realer Fallback für jeden nicht erkannten Fehler |
 
 `transient` und `permission` gehören zur deklarierten Menge der sieben
-Klassen, werden aber von keinem Adapter aktuell konstruiert — sie sind
-heute nicht beobachtbar. `internal` ist dagegen der real erreichbare
+Klassen, werden im Erfassungspfad aber von keinem Adapter aktuell konstruiert
+— beobachtbar sind sie heute nur als Klasse im Fehlertext eines
+fehlgeschlagenen Backfill-Runs (`cdc.backfill_status.error_message`).
+`internal` ist dagegen der real erreichbare
 Fallback-Zweig: Jeder Fehler, der keiner der übrigen sechs Klassen
 zugeordnet werden kann, fällt auf `internal` zurück.
 
-Ein Fehler jeder Klasse beendet den Container-Prozess mit Ausgang 1; der
+Ein Fehler des Erfassungspfads jeder Klasse beendet den Container-Prozess mit Ausgang 1 (ein Fehler eines Backfill-Runs ist run-lokal und beendet ihn nicht); der
 zuletzt beobachtete Fehlerzustand wird zusätzlich in
 `cdc.heartbeat.error_class` festgehalten und bei einem erfolgreichen
 Neustart automatisch wieder gelöscht.
@@ -1278,6 +1452,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 | Consumer | Ein benannter, unabhängiger Leser des Change Feeds |
 | Slot | Der PostgreSQL Logical-Replication-Slot, der den Fortsetzungspunkt trägt |
 | Lebenszeichen (Heartbeat) | Periodischer Nachweis, dass der Capture-Prozess aktiv ist |
+| Backfill | Die einmalige Überführung des Tabellenbestands (Zeilen, die zum Zeitpunkt des Antrags bestehen) als `INSERT`-Änderungen mit `origin = 'backfill'`; ausdrücklich über `cdc.backfill_table` ausgelöst |
+| Run (Backfill) | Ein Backfill-Durchlauf für eine Tabelle; sein Zustand steht in `cdc.backfill_run`, gelesen über `cdc.backfill_status` |
+| Angenommen (`applied` bei `backfill`) | Der Antrag ist angenommen und die Run-Zeile `queued` angelegt; sagt nichts über die Ausführung des Runs |
+| Geschätzte Zeilenzahl | Eine Schätzung des Katalogs der Quelle für die Zeilenzahl der Tabelle (`estimated_rows`); keine Zählung und keine Grenze, NULL heißt unbekannt |
 
 ## 9. Anhang
 
@@ -1293,7 +1471,11 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
 - Ein Container-Lauf bindet genau eine Quelle.
 - Ein Container-Lauf hält zwei gleichzeitige Replication-Protokoll-
   Verbindungen zur Quelle (Stream-Adapter, WAL-Rückstand-Messung) — beide
-  zählen gegen `max_wal_senders` der Quell-Instanz.
+  zählen gegen `max_wal_senders` der Quell-Instanz. Während der Slot-Anlage
+  eines Backfills kommt eine weitere hinzu (die Replication-Verbindung des
+  temporären Slots, sie endet nach dem Import des Snapshots); sie zählt ebenfalls
+  gegen `max_wal_senders`, der temporäre Slot zusätzlich gegen
+  `max_replication_slots`.
 
 ### Support und Kontakt
 
@@ -1355,3 +1537,4 @@ MIT — siehe `LICENSE`.
 | 1.45 | 2026-09-24 | Schema-Upgrade über eine View-Signaturänderung dokumentiert (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" nennt die Reihenfolge (Schema-Rollout vor dem Container-Tausch), den automatischen Vorlauf `DROP VIEW cdc.<name>` samt Meldung, das Lesefenster für SQL-Leser (Richtwert aus einer einzelnen Messung, nicht garantiert) und das Verhalten bei einem abhängigen Objekt oder einem Abbruch nach dem Vorlauf |
 | 1.46 | 2026-09-24 | Hinweis zu Rechten und Vorbedingung des View-Signatur-Vorlaufs ergänzt (`LH-QA-OPS-005`, `ADR-0114`, slice-backfill-change-origin Fixrunde): §4 „Schema aktualisieren" benennt, dass `DROP VIEW` die Rechteliste der View verwirft und nur `cdc_reader` im selben Lauf sein `SELECT`-Recht zurückbekommt (eigene Grants an andere Rollen setzt der Betreiber erneut), sowie die feste Adressierung des Schemas `cdc` |
 | 1.47 | 2026-09-24 | Rechteschnitt von `cdc_admin` ergänzt (`LH-QA-SEC-001`, `LH-QA-SEC-002`, `ADR-0047`, `ADR-0050`, slice-backfill-run-store Fixrunde): §2 „Zugriff und Rollen" nennt die Verarbeitung der Antrags-Queue `cdc.administration_request` (lesen, Ausgang vermerken) als Zweck der Rolle, §5 „Umgebungsvariablen des Feed-Containers" die Zeile `CDC_ADMIN_DSN`; §4 „Schema aktualisieren" trägt den Absatz „Rechte der drei Rollen" (der Rollout setzt die Rechte bei jedem Lauf, Schema-Rollout vor dem Container-Tausch, Anträge bleiben ohne das Recht `pending`) |
+| 1.48 | 2026-09-24 | SQL-Auslösung des Backfills dokumentiert (`LH-FA-CAP-009`, `LH-FA-ADM-001`, `LH-FA-SST-003`, `ADR-0111`, `ADR-0113`, `ADR-0116`, slice-backfill-sql-administration): §4 neuer Abschnitt „Bestand als Backfill überführen" (`cdc.backfill_table`, `applied` heißt „angenommen", View `cdc.backfill_status`, geschätzte Zeilenzahl, Neustart-Verhalten, Sichtbarkeits-Grenze, Bedeutung der Schema-Version einer Backfill-Änderung, Betriebs-Vorbedingungen); §4 „Änderungen lesen" trägt die Regel „Position und `limit`" mit dem Schlüsselvergleich, „Diagnose ausführen" den Abschnitt „Backfill je Tabelle", „Schema aktualisieren" die Rechte von `cdc_capture`/`cdc_reader`; §2 Rollen und Betriebs-Hinweis zum `SELECT`-Recht, §5 die beiden DSN-Zeilen, §6 Fehlerklassen, §8 Glossar, §9 Grenzwerte |

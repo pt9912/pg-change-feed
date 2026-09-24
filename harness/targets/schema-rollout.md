@@ -68,10 +68,10 @@ anderen Schritts tut es.
 
    | Schritt | Datei | Objektklasse |
    |---|---|---|
-   | 1 | `tools/schema/nacharbeit-roles.sql` | die Rollen `cdc_capture`, `cdc_admin`, `cdc_reader` und ihre Rechte auf Tabellen und die vier deklarierten Views (Least-Privilege-Schnitt) |
+   | 1 | `tools/schema/nacharbeit-roles.sql` | die Rollen `cdc_capture`, `cdc_admin`, `cdc_reader` und ihre Rechte auf Tabellen und die fünf deklarierten Views (Least-Privilege-Schnitt) |
    | 2 | `tools/schema/nacharbeit-observability.sql` | View `cdc.metrics`, Recht `SELECT` für `cdc_reader` |
    | 3 | `tools/schema/nacharbeit-heartbeat.sql` | View `cdc.heartbeat`, Recht `SELECT` für `cdc_reader` |
-   | 4 | `tools/schema/nacharbeit-administration.sql` | die vier SQL-Funktionen `cdc.enable_table`, `cdc.disable_table`, `cdc.exclude_column`, `cdc.include_column` mit `EXECUTE` für `cdc_admin`, und der CHECK `chk_administration_request_kind` |
+   | 4 | `tools/schema/nacharbeit-administration.sql` | die fünf SQL-Funktionen `cdc.enable_table`, `cdc.disable_table`, `cdc.exclude_column`, `cdc.include_column`, `cdc.backfill_table` mit `EXECUTE` für `cdc_admin`, und der CHECK `chk_administration_request_kind` (fünf Antragsarten) |
 
    Die Rollen-Datei läuft zuerst, weil die drei Folge-Dateien ihre Rechte an
    Rollen vergeben, die sie voraussetzen. Rollen sind kein Tabellen- oder
@@ -86,8 +86,8 @@ anderen Schritts tut es.
 Blocker des Precheck-Reports zu einer von zwei bekannten Klassen gehört:
 
 - **Bekanntes Fremdobjekt** — Blocker `DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION`
-  mit ausschließlich Operationen auf die sechs Objekte der Nacharbeit-Dateien
-  (vier Funktionen, die Views `metrics` und `heartbeat`; sie liegen außerhalb
+  mit ausschließlich Operationen auf die sieben Objekte der Nacharbeit-Dateien
+  (fünf Funktionen, die Views `metrics` und `heartbeat`; sie liegen außerhalb
   des neutralen Modells, d-migrate plant deshalb bei jedem Lauf gegen ein
   migriertes Ziel ihren Abbau). Folge: `--allow-destructive`. Die Bekannt-Liste
   (`knownForeignObjects` in `guard.go`) trägt einen Eintrag im selben Commit wie
@@ -148,10 +148,10 @@ noch Erweiterung.
 - `bash tools/harness/run-schema-rollout-guard-test.sh` — sechs Läufe gegen eine
   Wegwerf-PostgreSQL (kein Gate, braucht DB-Zugang): (1) frischer Rollout,
   (2) Idempotenz über den `--allow-destructive`-Pfad ohne Vorlauf, (3) eine
-  echte anstehende Änderung neben den sechs bekannten Blockern bleibt wirksam,
+  echte anstehende Änderung neben den sieben bekannten Blockern bleibt wirksam,
   (4) View-Signatur-Vorlauf samt Soll-Signatur, Recht und lesbarer Zeile,
   Folgelauf ohne Vorlauf, abhängiges Objekt scheitert laut ohne Kaskade,
-  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum mit den Rechten von `cdc_admin` auf `cdc.administration_request` und `cdc.backfill_run` nach dem Upgrade,
+  (5) Alt-Tag-Lauf vom Schema des jüngsten `v*`-Tags über den Arbeitsbaum mit den Rechten der drei Rollen auf `cdc.administration_request`, `cdc.backfill_run` und `cdc.backfill_status`, der Funktion `cdc.backfill_table` (`EXECUTE` allein für `cdc_admin`) und der `request_kind`-Menge nach dem Upgrade,
   (6) unbekannte Blocker brechen mit Exit 8 ab: (6a) eine nicht deklarierte
   Funktion bleibt bestehen und bindet die Bekannt-Liste end-to-end, (6b) eine
   nicht deklarierte Spalte belegt den Abbruch gegen einen real gemeldeten
