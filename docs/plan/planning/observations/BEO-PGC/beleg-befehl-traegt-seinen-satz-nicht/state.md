@@ -6,13 +6,19 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **8×**
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **9×**
 (evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
-evidence/slice-sdk-python-nats-stream-client-flaeche.md) —
-**Schwelle erreicht**. Der Beleg
+evidence/slice-sdk-python-nats-stream-client-flaeche.md,
+evidence/slice-backfill-change-origin.md) —
+**Schwelle erreicht**. Der neunte Beleg
+(`evidence/slice-backfill-change-origin.md`, F-2) trifft die Form **Assertion**
+an einem Guard-Test: der Lauf, der die Bekannt-Liste der Schema-Rollout-Wache
+belegen sollte, endete auch mit entfernter Prüfung grün, weil der Abbruch aus
+d-migrate kam; gefunden hat es der Reviewer durch die Mutation der
+Eingabeseite, der Ausgang bleibt **verkörpert**. Der Beleg
 `evidence/slice-sdk-python-nats-stream-client-flaeche.md`
 (`slice-sdk-python-nats-stream-client-flaeche`, F-6 + R-1): die
 Realserver-Rejection-Assertion hielt `pytest.raises(Exception)`, während

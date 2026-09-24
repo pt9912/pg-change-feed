@@ -1,8 +1,9 @@
 Zustand: verkörpert → geschärfte Test-Kadenz-Regel liegt in
 `harness/README.md` §Sensors, `make schema-rollout`-Bindung (seit
-slice-015). Zähler (abgeleitet): 6× (evidence/slice-006.md,
+slice-015). Zähler (abgeleitet): 7× (evidence/slice-006.md,
 evidence/slice-010.md, evidence/slice-015.md, evidence/slice-016.md,
-evidence/slice-036.md, evidence/slice-066.md).
+evidence/slice-036.md, evidence/slice-066.md,
+evidence/slice-backfill-change-origin.md).
 Nachrichtlich: Von den drei bislang betroffenen Objektklassen sind zwei
 technisch aufgelöst — das CHECK-Constraint `chk_change_operation` seit
 slice-015 (deklarativ in `tools/schema/schema.yaml`), die drei Views seit
@@ -23,6 +24,12 @@ an einer bereits bestehenden Tabelle** (nicht die Erstanlage) ist
 ebenfalls nicht deklarativ tragbar — Exit 5, die bestehende Klausel
 entfällt beim Änderungsversuch. Sie liegt deshalb ebenfalls in
 `nacharbeit-administration.sql`, neben der Funktionsklasse.
+Mit `slice-backfill-change-origin` kommt eine fünfte Objektklasse hinzu: die
+**Signaturänderung einer bereits angelegten View** (`ReplaceView` mit
+`VIEW_SIGNATURE_INCOMPATIBLE`, Exit 8 im Precheck). Sie läuft nicht über eine
+Nacharbeit-Datei, sondern über den Vorlauf `DROP VIEW` im Target
+`schema-rollout` mit der Wache `tools/schema/rolloutguard`
+(`harness/targets/schema-rollout.md`).
 Die verkörperte Regel bleibt als Betriebsdisziplin bestehen (bewährt: der
 d-migrate-Fix traf ein, der reale Test lief erst nach dem expliziten
 Fix-Signal).

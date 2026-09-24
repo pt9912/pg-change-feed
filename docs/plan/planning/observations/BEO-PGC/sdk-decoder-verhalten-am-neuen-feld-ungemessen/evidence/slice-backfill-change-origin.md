@@ -1,0 +1,3 @@
+**Vorgang:** slice-backfill-change-origin (Risiko §6, Ausgang bei der Closure)
+
+**Fund:** Das Risiko „Ein Client dekodiert strikt und bricht am neuen Feld" konnte der Slice nicht real belegen: der Suchlauf (Plan §3, Zeile „Wegwerf-Client `tools/harness/httpclient`") maß 0 strikte Dekoder-Muster im ganzen Baum und las den Wegwerf-Client als nicht strikt; die SDK-Decoder sind gelesen, nicht gemessen. Die Fixrunde und der Verifier haben daran nichts geändert (Verifikation, Abschnitt „Verdikt", Übergabe: „strikte Dekoder: erst mit `slice-backfill-sdk-origin` real belegbar"). Der reale Beleg gehört dem Folge-Slice.

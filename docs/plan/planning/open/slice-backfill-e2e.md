@@ -132,6 +132,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 |---|---|---|
 | `test/integration/integration_test.go` | update | neue `TestE2E*`-Funktionen für Boundary/Negative-Teile, die Go-seitig lesen (Replay-Anwendung, Bestandsvergleich). |
 | `tools/harness/run-integration-tests.sh` | update | Phasen: Auslösung per `docker exec`/`psql`, Poll, nebenläufige Schreiber, `docker kill` samt Neustart; `abdeckung_declare` mit `LH-FA-CAP-009`; `-run`-Muster um neue Testfunktionen. |
+| Kommentar zum zweiten `make schema-rollout`-Lauf in `tools/harness/run-integration-tests.sh` (gemeldet von `slice-backfill-change-origin`, Review F-7) | update | der Kommentar („… real blockierten zweiten `make schema-rollout`-Lauf (… Exit 8 auf vier Fremdobjekten …)") beschreibt den Stand der Wache nicht mehr: sechs Fremdobjekte, der zweite Lauf endet mit Exit 0. Der Runner wird in diesem Slice ohnehin bearbeitet, und die Zeilen-Anker von `docs/user/e2e-abdeckung.md` verschieben sich hier ohnehin (Erzeugnis, mitcommittet) — der Slice, der den Kommentar ändert, ist der Slice, der die Anker regeneriert. |
 | `tools/harness/httpclient/main.go` | prüfen/update | liest `GET /changes` für den Wegwerf-Beleg; trägt er `origin`, ist der Beleg der Feldform am Wire. |
 | `compose.yaml` | prüfen | Vertrag des Feed-Containers (Tabellen, DSN); eine Abweichung wäre ein Plan-Nachzug. |
 | `docs/user/e2e-abdeckung.md` | regeneriert | Erzeugnis des Runners, mitcommittet. |

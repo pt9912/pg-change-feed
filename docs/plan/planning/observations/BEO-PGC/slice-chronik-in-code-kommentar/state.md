@@ -104,3 +104,21 @@ geschlossen). Reviewer fing die Stelle vor Merge (F-1, HIGH), Fixrunde real
 geprüft, vierfache unabhängige Bestätigung (Reviewer, Fixrunden-Reviewer,
 Verifier). Ausgang bleibt **verkörpert**, neunte Evidenzdatei in diesem
 Verzeichnis (real ausgezählt).
+
+**Benannt, nicht gezählt — außerhalb eines Slice.** Im Kommentarblock über dem
+Target `schema-rollout` im `Makefile` und in den `proto`-Kommentaren standen
+acht Zeilen mit Slice-Bezug als Begründung („seit slice-011/012/036/066",
+„slice-015 hat das …", „slice-016 …", „seit slice-104"); der Nutzer meldete sie
+nach der Verifikation von `slice-backfill-change-origin`, der Zug
+`c54f873a` bereinigte sie (Kommentar auf den Ist-Vertrag gekürzt, der Vertrag
+steht in `harness/targets/schema-rollout.md`). Ein Vorgang außerhalb eines
+Slice-Diffs, gefunden ohne Reviewer, deshalb nach dem Präzedenzfall der
+`slice-018`-Korrektur (siehe `observation.md`) **keine** `evidence/`-Datei und
+kein Zähler-Beitrag. Derselbe Suchlauf gegen `HEAD` (`c54f873a`, gemessen bei der
+Closure von `slice-backfill-change-origin`) findet weitere Kandidaten: mit
+`grep -cE 'slice-[0-9a-z]'` **19** Zeilen in `harness/mk/*.mk` (sechs Dateien),
+**32** in `tools/**/*.sh` (16 Dateien) und **57** in `harness/sensors/*.md`
+(vier Dateien). Die Treffer sind Kandidaten, nicht Verstöße: Herkunfts-Anker der
+Form `· seit slice-<NNN>` und Testfall-Provenienz sind nach `AGENTS.md` §3.7
+zulässig, die Klassifikation je Treffer (Zustand des Codes gegen Testfall) ist
+nicht geschehen. Ein Aufräum-Zug über diese Flächen ist nicht angelegt.

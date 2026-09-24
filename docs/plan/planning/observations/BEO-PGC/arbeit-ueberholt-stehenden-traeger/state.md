@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **27×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **28×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -29,6 +29,17 @@ deckte aber zwei unabhängige Lücken zugleich nicht ab: einen Datei-Glob, der
 Formulierung „folgt erst" (statt „follow-up"/„added by") nicht traf.
 Gefunden hat den dritten Treffer wieder der Reviewer (F-1, HIGH), nicht der
 Implementer-Suchlauf. Details: `evidence/slice-sdk-python-http-client-flaeche.md`.
+Der achtundzwanzigste Beleg,
+`evidence/slice-backfill-change-origin.md`: die bewegte Eigenschaft (Feldzahl
+der `GET /changes`-Antwort) trug Träger in `*.kt` und `*.cs`
+(SDK-Kommentare „twelve"/„eleven fields"), die das committete Suchlauf-Feld nicht
+las — es suchte `docs/user`, `spec` und `*.go`/`*.proto`/`*.py`; das Kotlin-Wort
+„twelve" stand am Zeilenende, „fields" in der Folgezeile. Gefunden vom Reviewer
+(F-4, LOW), Suchraum in der Fixrunde auf den ganzen Baum erweitert, die Träger
+als Meldung an den Folge-Slice `slice-backfill-sdk-origin` gegeben —
+Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13 (der Suchraum
+folgt den Dateitypen, die die bewegte Eigenschaft tragen können, nicht denen des
+eigenen Diffs), kein Schwellen-Übertritt.
 Der siebenundzwanzigste Beleg,
 `evidence/slice-backfill-spec-nachzug.md`: die Träger waren offene
 Folge-Pläne (Plan-Sätze „leer, solange keine Auswertung sie setzt", „vier

@@ -24,14 +24,20 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **14×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **15×** (evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
 evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md,
 evidence/slice-103.md, evidence/slice-sdk-python-grpc-client-flaeche.md,
-evidence/slice-backfill-row-image-gemeinsam.md) —
+evidence/slice-backfill-row-image-gemeinsam.md,
+evidence/slice-backfill-change-origin.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt).
-Der vierzehnte Beleg (slice-backfill-row-image-gemeinsam) trifft die Klasse an
+Der fünfzehnte Beleg (slice-backfill-change-origin) trifft wieder ein
+**Suchlauf-Feld**: eine Trefferzahl (18) stand als gemessen, real 16 an vier
+Ständen, und eine zweite (24 „unverändert") verschob sich durch die Meldungszeile
+des Plans selbst auf 25; beide vom Verifier durch Nachmessen gefunden, der Zug
+der Closure setzt die gemessene Zahl mit ihren Ständen und kennzeichnet die
+abgeleitete. Der vierzehnte Beleg (slice-backfill-row-image-gemeinsam) trifft die Klasse an
 einem **Suchlauf-Feld** — dem Träger, der selbst Zahlen über zwei Stände
 führt: eine Summe (17) stand als gemessen, real 16, und der Parent-Bezug nannte
 `HEAD` statt des Parent-Commits; vom Reviewer durch eigenes Nachmessen
