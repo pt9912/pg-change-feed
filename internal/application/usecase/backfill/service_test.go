@@ -117,8 +117,11 @@ func (f *fakeActivation) Unpublish(context.Context, string, string, string) erro
 type fakeExclusion struct {
 	trace *trace
 	// stateFn liefert den Stand des n-ten Aufrufs (ab 1).
-	stateFn   func(call int) map[string][]string
+	stateFn func(call int) map[string][]string
+	// err lässt jeden Aufruf scheitern; ist errCall gesetzt, scheitert nur
+	// der errCall-te Aufruf (ab 1).
 	err       error
+	errCall   int
 	calls     int
 	gotSource model.SourceID
 }
@@ -127,7 +130,7 @@ func (f *fakeExclusion) ExcludedColumns(ctx context.Context, source model.Source
 	f.calls++
 	f.trace.add("ExcludedColumns")
 	f.gotSource = source
-	if f.err != nil {
+	if f.err != nil && (f.errCall == 0 || f.errCall == f.calls) {
 		return nil, f.err
 	}
 	if f.stateFn == nil {
@@ -265,8 +268,13 @@ type fakeRuns struct {
 	trace *trace
 
 	markRunningErr error
-	progressErr    error
-	finishErr      error
+	// progressErr lässt jeden RecordProgress-Aufruf scheitern; ist
+	// progressErrCall gesetzt, scheitert nur der progressErrCall-te Aufruf
+	// (ab 1). finishErr und finishErrCall verhalten sich für Finish ebenso.
+	progressErr     error
+	progressErrCall int
+	finishErr       error
+	finishErrCall   int
 
 	marked     []model.BackfillRun
 	progresses []model.BackfillRun
@@ -288,14 +296,20 @@ func (f *fakeRuns) MarkRunning(ctx context.Context, run model.BackfillRun) error
 func (f *fakeRuns) RecordProgress(ctx context.Context, run model.BackfillRun) error {
 	f.trace.add("Progress")
 	f.progresses = append(f.progresses, run)
-	return f.progressErr
+	if f.progressErr != nil && (f.progressErrCall == 0 || f.progressErrCall == len(f.progresses)) {
+		return f.progressErr
+	}
+	return nil
 }
 
 func (f *fakeRuns) Finish(ctx context.Context, run model.BackfillRun) error {
 	f.trace.add("Finish(%s)", run.Status)
 	f.finished = append(f.finished, run)
 	f.finishCtxErr = append(f.finishCtxErr, ctx.Err())
-	return f.finishErr
+	if f.finishErr != nil && (f.finishErrCall == 0 || f.finishErrCall == len(f.finished)) {
+		return f.finishErr
+	}
+	return nil
 }
 
 func (f *fakeRuns) InterruptRunning(context.Context, model.SourceID, model.TimePoint) (int, error) {
@@ -379,9 +393,20 @@ func (t *fakeTx) Rollback(ctx context.Context) error {
 	return f.rollbackErr
 }
 
-type fakeClock struct{ at int64 }
+// fakeClock liefert `at`; mit `step` > 0 läuft die Uhr je Aufruf um `step`
+// weiter, sodass jede Lesung einen erkennbar anderen Zeitpunkt trägt. `last`
+// hält die zuletzt gelieferte Lesung.
+type fakeClock struct {
+	at   int64
+	step int64
+	last model.TimePoint
+}
 
-func (c *fakeClock) Now() model.TimePoint { return model.NewTimePoint(c.at) }
+func (c *fakeClock) Now() model.TimePoint {
+	c.last = model.NewTimePoint(c.at)
+	c.at += c.step
+	return c.last
+}
 
 type fakeNotifier struct {
 	trace *trace
@@ -1106,6 +1131,222 @@ func TestExecuteFailClosed(t *testing.T) {
 			}
 			if r.writer.rollbacks != 1 || r.trace.count("Notify") != 0 {
 				t.Fatalf("Rollbacks=%d Wecksignale=%d", r.writer.rollbacks, r.trace.count("Notify"))
+			}
+		})
+	}
+}
+
+// TestExecuteExclusionReadFailure trägt den Lesefehler-Zweig der
+// Fail-closed-Prüfung (`LH-QA-SEC-004`, `ADR-0111` Teilfrage 4): ein Stand, der
+// nicht gelesen werden kann, ist kein bestätigter Stand. Der n-te Lesefehler
+// (Lesung 1..3 je Block, Lesung 4 unmittelbar vor dem Commit) endet den Run
+// `failed` mit der Klasse der Ursache, ohne Commit und ohne Wecksignal; die
+// Lesung bricht den Lauf ab (keine weitere Lesung, kein weiterer Block), die
+// Schreibtransaktion ist zurückgerollt, der Snapshot geschlossen. Weil nur
+// der n-te Aufruf scheitert, färbt sich der Test rot, sobald ein Lesefehler
+// verworfen wird — dann läuft der Run bis zum Commit durch.
+func TestExecuteExclusionReadFailure(t *testing.T) {
+	cases := []struct {
+		name      string
+		call      int
+		appended  int
+		rollbacks int
+		rows      int64
+	}{
+		{"vor dem ersten Block", 1, 0, 0, 0},
+		{"vor dem zweiten Block", 2, 1, 1, 2},
+		{"vor dem letzten Block", 3, 2, 1, 4},
+		{"unmittelbar vor dem Commit", 4, 3, 1, 5},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			r.exclusion.err = fmt.Errorf("%w: Ausschlussstand nicht lesbar", outbound.ErrStorage)
+			r.exclusion.errCall = tc.call
+			run := mustExecute(t, r)
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Ausschlussstand nicht lesbar") {
+				t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
+			}
+			if run.RowsCopied != tc.rows {
+				t.Fatalf("RowsCopied = %d, will %d (zuletzt festgehaltener Zähler)", run.RowsCopied, tc.rows)
+			}
+			if r.exclusion.calls != tc.call {
+				t.Fatalf("Ausschluss-Lesungen = %d, will %d (Abbruch mit dem Lesefehler)", r.exclusion.calls, tc.call)
+			}
+			if len(r.writer.blocks) != tc.appended {
+				t.Fatalf("angehängte Blöcke = %d, will %d", len(r.writer.blocks), tc.appended)
+			}
+			if r.trace.count("Commit") != 0 || len(r.writer.committed) != 0 || r.trace.count("Notify") != 0 {
+				t.Fatalf("Commit/Wecksignal trotz Lesefehler: %v", r.trace.events)
+			}
+			if r.writer.rollbacks != tc.rollbacks {
+				t.Fatalf("Rollbacks = %d, will %d", r.writer.rollbacks, tc.rollbacks)
+			}
+			if r.snapshot.closed != 1 {
+				t.Fatalf("Snapshot %d-mal geschlossen, will 1", r.snapshot.closed)
+			}
+			if len(r.runs.finished) != 1 || r.runs.finished[0] != run {
+				t.Fatalf("Finish = %+v", r.runs.finished)
+			}
+		})
+	}
+}
+
+// TestExecuteProgressFailure trägt die Fehlerzweige der Fortschritts-Schreibung
+// (`SPEC-029`): der n-te Schreibfehler des Run-Zustands (Aufruf 1 mit der
+// Anfangsposition, Aufruf 2..4 je Block) endet den Run `failed` (`storage`),
+// ohne Commit, mit dem zuletzt **festgehaltenen** Zähler, zurückgerollter
+// Transaktion und geschlossenem Snapshot; nach dem Fehler folgt kein weiterer
+// Fortschritt. Nur der n-te Aufruf scheitert: ein verworfener Fehler lässt den
+// Run bis zum Commit durchlaufen.
+func TestExecuteProgressFailure(t *testing.T) {
+	cases := []struct {
+		name      string
+		call      int
+		appended  int
+		rollbacks int
+		rows      int64
+	}{
+		{"mit der Anfangsposition", 1, 0, 0, 0},
+		{"nach dem ersten Block", 2, 1, 1, 0},
+		{"nach dem zweiten Block", 3, 2, 1, 2},
+		{"nach dem letzten Block", 4, 3, 1, 4},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			r.runs.progressErr = fmt.Errorf("%w: Fortschritt nicht schreibbar", outbound.ErrBackfillStorage)
+			r.runs.progressErrCall = tc.call
+			run := mustExecute(t, r)
+			if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Fortschritt nicht schreibbar") {
+				t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
+			}
+			if run.RowsCopied != tc.rows {
+				t.Fatalf("RowsCopied = %d, will %d (zuletzt festgehaltener Zähler)", run.RowsCopied, tc.rows)
+			}
+			if len(r.runs.progresses) != tc.call {
+				t.Fatalf("Fortschritts-Aufrufe = %d, will %d (kein Fortschritt nach dem Fehler)", len(r.runs.progresses), tc.call)
+			}
+			if len(r.writer.blocks) != tc.appended || r.trace.count("Commit") != 0 || r.trace.count("Notify") != 0 {
+				t.Fatalf("Blöcke=%d, Ereignisse %v", len(r.writer.blocks), r.trace.events)
+			}
+			if r.writer.rollbacks != tc.rollbacks || r.snapshot.closed != 1 {
+				t.Fatalf("Rollbacks=%d (will %d), Snapshot %d-mal geschlossen", r.writer.rollbacks, tc.rollbacks, r.snapshot.closed)
+			}
+			if len(r.runs.finished) != 1 || r.runs.finished[0] != run {
+				t.Fatalf("Finish = %+v", r.runs.finished)
+			}
+		})
+	}
+}
+
+// TestExecuteEmptyTableFinishFailure trägt den Endzustand der leeren Tabelle:
+// `completed` gilt erst, wenn `Finish` ihn festhält. Scheitert `Finish(completed)`,
+// endet der Run `failed` (`storage`) — nicht `completed` —, und scheitert auch
+// dieses `Finish`, meldet der Aufruf den Fehler mit dem zuletzt festgehaltenen
+// Zustand `running`.
+func TestExecuteEmptyTableFinishFailure(t *testing.T) {
+	finishedStatuses := func(r *rig) []model.BackfillRunStatus {
+		var out []model.BackfillRunStatus
+		for _, run := range r.runs.finished {
+			out = append(out, run.Status)
+		}
+		return out
+	}
+	want := []model.BackfillRunStatus{model.BackfillRunCompleted, model.BackfillRunFailed}
+
+	t.Run("erstes Finish scheitert", func(t *testing.T) {
+		r := newRig()
+		r.snapshot.blocks = nil
+		r.runs.finishErr = fmt.Errorf("%w: Endzustand nicht schreibbar", outbound.ErrBackfillStorage)
+		r.runs.finishErrCall = 1
+		run := mustExecute(t, r)
+		if run.Status != model.BackfillRunFailed || !strings.HasPrefix(run.ErrorMessage, "storage: ") || !strings.Contains(run.ErrorMessage, "Endzustand nicht schreibbar") {
+			t.Fatalf("Run = %+v, will failed mit storage-Klasse und Ursache", run)
+		}
+		if got := finishedStatuses(r); !reflect.DeepEqual(got, want) {
+			t.Fatalf("Finish-Zustände = %v, will %v", got, want)
+		}
+		if r.trace.count("Notify") != 0 || r.snapshot.closed != 1 {
+			t.Fatalf("Ereignisse %v", r.trace.events)
+		}
+	})
+
+	t.Run("jedes Finish scheitert", func(t *testing.T) {
+		r := newRig()
+		r.snapshot.blocks = nil
+		r.runs.finishErr = fmt.Errorf("%w: Endzustand nicht schreibbar", outbound.ErrBackfillStorage)
+		result, err := r.execute(context.Background(), t)
+		if !stderrors.Is(err, outbound.ErrBackfillStorage) || !strings.Contains(err.Error(), "Endzustand nicht schreibbar") {
+			t.Fatalf("Execute = %v, will den Persistenzfehler", err)
+		}
+		if result.Run.Status != model.BackfillRunRunning {
+			t.Fatalf("Ergebnis-Run = %+v, will den zuletzt festgehaltenen Zustand running", result.Run)
+		}
+		if got := finishedStatuses(r); !reflect.DeepEqual(got, want) {
+			t.Fatalf("Finish-Zustände = %v, will %v", got, want)
+		}
+		if r.trace.count("Notify") != 0 {
+			t.Fatalf("Wecksignal ohne festgehaltenen Endzustand")
+		}
+	})
+}
+
+// TestExecuteFinishedAt trägt `finished_at` in jedem Endzustand (`SPEC-029`,
+// `ADR-0113` Festlegung 3: die Kopierdauer ist `finished_at − started_at`):
+// der Zeitpunkt ist die letzte Lesung der Uhr, die je Aufruf weiterläuft, und
+// steht sowohl im Ergebnis als auch an dem Port, der den Endzustand festhält
+// (Commit oder `Finish`). Ein gestarteter Run trägt ihn nach `started_at`.
+func TestExecuteFinishedAt(t *testing.T) {
+	cases := []struct {
+		name    string
+		setup   func(*rig, context.CancelFunc)
+		status  model.BackfillRunStatus
+		started bool
+		held    func(*rig) model.BackfillRun
+	}{
+		{"completed mit Daten", func(*rig, context.CancelFunc) {}, model.BackfillRunCompleted, true,
+			func(r *rig) model.BackfillRun { return r.writer.committed[0] }},
+		{"completed, leere Tabelle", func(r *rig, _ context.CancelFunc) { r.snapshot.blocks = nil }, model.BackfillRunCompleted, true,
+			func(r *rig) model.BackfillRun { return r.runs.finished[0] }},
+		{"failed beim Kopieren", func(r *rig, _ context.CancelFunc) {
+			r.snapshot.nextErrAt, r.snapshot.nextErr = 2, fmt.Errorf("%w: Verbindung weg", outbound.ErrSnapshotStorage)
+		}, model.BackfillRunFailed, true,
+			func(r *rig) model.BackfillRun { return r.runs.finished[0] }},
+		{"failed bei der erneuten Prüfung", func(r *rig, _ context.CancelFunc) { r.activation.published = false }, model.BackfillRunFailed, false,
+			func(r *rig) model.BackfillRun { return r.runs.finished[0] }},
+		{"interrupted", func(r *rig, cancel context.CancelFunc) {
+			r.snapshot.onNext = func(call int) {
+				if call == 2 {
+					cancel()
+				}
+			}
+		}, model.BackfillRunInterrupted, true,
+			func(r *rig) model.BackfillRun { return r.runs.finished[0] }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			r.clock.at, r.clock.step = 100, 10
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.setup(r, cancel)
+			result, err := r.service.Execute(ctx, backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})
+			if err != nil {
+				t.Fatalf("Execute = %v", err)
+			}
+			run := result.Run
+			if run.Status != tc.status {
+				t.Fatalf("Status = %q, will %q (%+v)", run.Status, tc.status, run)
+			}
+			if run.FinishedAt.Unset() || run.FinishedAt != r.clock.last {
+				t.Fatalf("finished_at = %v, will die letzte Lesung der Uhr %v", run.FinishedAt, r.clock.last)
+			}
+			if tc.started && !run.FinishedAt.After(run.StartedAt) {
+				t.Fatalf("finished_at %v nicht nach started_at %v", run.FinishedAt, run.StartedAt)
+			}
+			if held := tc.held(r); held.FinishedAt != run.FinishedAt {
+				t.Fatalf("der Port hielt finished_at %v, das Ergebnis trägt %v", held.FinishedAt, run.FinishedAt)
 			}
 		})
 	}

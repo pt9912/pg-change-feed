@@ -169,7 +169,11 @@ func (s *BackfillTableService) Execute(ctx context.Context, command BackfillExec
 // baut das Bild mit ihm. Fail-closed (`ADR-0111` Teilfrage 4,
 // `LH-QA-SEC-004`): jeder weitere Block und der Zustand unmittelbar vor dem
 // Commit tragen denselben Ausschlussstand wie der erste Block, und die
-// Bindung besteht unter derselben Tabellen-Kennung.
+// Bindung besteht unter derselben Tabellen-Kennung; ein Stand, der nicht
+// gelesen werden kann, endet den Run wie eine Abweichung. Die Prüfung
+// erkennt Abweichungen des Standes zum Zeitpunkt einer Lesung: ein Ausschluss,
+// der zwischen zwei Lesungen gesetzt und wieder zurückgenommen wird, ist
+// unsichtbar, weil der Stand (`ExcludedColumns`) keine Historie trägt.
 func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.BackfillRun, table model.SourceTable, version model.SchemaVersion) (model.BackfillRun, error) {
 	snapshot, err := s.ports.Snapshot.OpenSnapshot(ctx, string(run.ID), run.Schema, run.Table)
 	if err != nil {
@@ -275,10 +279,10 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 // mit der Fehlerklasse der Ursache (`classifyError`) — oder `interrupted`,
 // wenn der eigene Kontext endete, denn ein Fehler bei beendetem Kontext ist
 // dessen Folge. Ein noch `queued` Run bleibt bei beendetem Kontext `queued`
-// und wird nach einem Neustart aufgenommen. Der Endzustand wird auf einem vom
-// Abbruch gelösten Kontext festgehalten; ohne Festhalten meldet der Aufruf
-// einen Fehler, und der Run bleibt bis zum Abgleich beim Prozessstart
-// `running`.
+// (`ADR-0113` Festlegung 2). Der Endzustand wird auf einem vom Abbruch
+// gelösten Kontext festgehalten; kann `Finish` ihn nicht festhalten, meldet
+// der Aufruf einen Fehler und das Ergebnis trägt den zuletzt festgehaltenen
+// Zustand.
 func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillRun, cause error) (BackfillExecuteResult, error) {
 	var (
 		final model.BackfillRun

@@ -82,6 +82,9 @@ type TableSnapshot interface {
 	NextBlock(ctx context.Context) ([][]*string, error)
 
 	// Close beendet die Lese-Transaktion und die Verbindung; ein
-	// wiederholter Aufruf bleibt ohne Wirkung.
+	// wiederholter Aufruf bleibt ohne Wirkung. Der Aufrufer ruft `Close` auf
+	// einem vom Abbruch gelösten Kontext (ohne Frist des Aufrufers): der
+	// Adapter beendet sich bei einem abgelösten Kontext nicht vorzeitig und
+	// begrenzt seine Dauer selbst.
 	Close(ctx context.Context) error
 }

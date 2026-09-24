@@ -32,6 +32,9 @@ type BackfillTransaction interface {
 	Commit(ctx context.Context, run model.BackfillRun) error
 
 	// Rollback verwirft alle angehängten Blöcke; ein wiederholter Aufruf
-	// und ein Aufruf nach dem Commit bleiben ohne Wirkung.
+	// und ein Aufruf nach dem Commit bleiben ohne Wirkung. Der Use Case ruft
+	// `Rollback` auf einem vom Abbruch gelösten Kontext (ohne Frist des
+	// Aufrufers): der Adapter beendet sich bei einem abgelösten Kontext nicht
+	// vorzeitig und begrenzt seine Dauer selbst.
 	Rollback(ctx context.Context) error
 }
