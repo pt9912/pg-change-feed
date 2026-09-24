@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -22,50 +24,112 @@ var knownForeignObjects = map[foreignObject]bool{
 	{kind: "DropView", objectType: "VIEW", path: "metrics"}:                                                 true,
 }
 
-// destructiveConfirmationReason ist der einzige Blocker-Grund, den dieser
-// Guard automatisch auflöst — die einzige Klasse, in der d-migrate
-// überhaupt Blocker-Operationen (mit operationIds) statt eines
-// pauschalen Fehlers meldet (real gemessen, --plan-only-Report).
+// destructiveConfirmationReason ist der Blocker-Grund, unter dem d-migrate
+// die Abbau-Operationen der bekannten Fremdobjekte meldet (real gemessen,
+// --plan-only-Report).
 const destructiveConfirmationReason = "DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION"
 
-// decide meldet, ob der nachfolgende `--execute`-Schritt zusätzlich mit
-// `--allow-destructive` laufen darf: nur wenn der Report überhaupt
-// blockiert war und JEDE Blocker-Operation (a) den Grund
-// destructiveConfirmationReason trägt und (b) auf der Liste
-// knownForeignObjects steht. Das Ergebnis entscheidet bewusst NICHT, ob
-// `--execute` überhaupt läuft — der Aufrufer (Makefile-Target
-// schema-rollout) lässt `--execute` in jedem Fall laufen, damit eine
-// echte, gleichzeitig anstehende Schema-Änderung im selben Plan wirksam
-// bleibt (Regressionsbeleg: tools/harness/run-schema-rollout-guard-test.sh
-// Lauf 3). Ein einziger unbekannter Blocker — real geprüft mit einer
-// künstlich per ALTER TABLE … ADD COLUMN hinzugefügten, nicht
-// deklarierten Spalte, die d-migrate als unbekannten DropColumn-Blocker
-// neben den sechs bekannten meldet — lässt decide false liefern; der
-// `--execute`-Lauf läuft dann ohne `--allow-destructive` und bricht mit
-// demselben Blocker real mit Exit 8 ab.
-func decide(r report) (allowDestructive bool, reason string) {
+// manualActionReason und viewSignatureCode bilden zusammen die Klasse
+// „View-Signatur" (ADR-0114 Entscheidung 1): eine Operation ReplaceView
+// (Objekttyp VIEW) unter dem Blocker-Grund MANUAL_ACTION_REQUIRED, zu der
+// der Report die Diagnose VIEW_SIGNATURE_INCOMPATIBLE trägt (real
+// gemessen: d-migrate rendert ein CREATE OR REPLACE VIEW nur bei gleicher
+// Spaltenzahl, -reihenfolge, -namen und -typen).
+const (
+	manualActionReason = "MANUAL_ACTION_REQUIRED"
+	viewSignatureCode  = "VIEW_SIGNATURE_INCOMPATIBLE"
+)
+
+// viewIdentifier ist die einzige Form, in der ein Name aus dem Report in
+// `DROP VIEW cdc.<name>` gelangt: ein einfacher, kleingeschriebener
+// Bezeichner. Alles andere gilt als unbekannter Blocker.
+var viewIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
+// decision ist das Ergebnis von decide. Leer (kein --allow-destructive,
+// keine Views) heißt: der Aufrufer läuft ohne jede Erweiterung weiter und
+// bricht bei einem Blocker mit Exit 8 ab.
+type decision struct {
+	// allowDestructive: der `--execute`-Schritt läuft zusätzlich mit
+	// `--allow-destructive` (nur bekannte Fremdobjekte blockieren).
+	allowDestructive bool
+	// dropViews: die Views der Klasse „View-Signatur", die der Aufrufer vor
+	// `--execute` per `DROP VIEW cdc.<name>` (ohne CASCADE) entfernt;
+	// d-migrate legt sie anschließend neu an. Sortiert, ohne Duplikate.
+	dropViews []string
+	reason    string
+}
+
+// decide wertet den Precheck-Report aus. Alles oder nichts (ADR-0114
+// Entscheidung 2): jeder Blocker muss entweder zur Klasse „View-Signatur"
+// gehören oder unter destructiveConfirmationReason eine Operation auf
+// knownForeignObjects sein; schon ein einziger anderer Blocker — real
+// geprüft mit einer künstlich per ALTER TABLE … ADD COLUMN hinzugefügten,
+// nicht deklarierten Spalte, die d-migrate als unbekannten
+// DropColumn-Blocker meldet — lässt die Entscheidung leer: kein Vorlauf,
+// kein --allow-destructive, der --execute-Lauf bricht mit Exit 8 ab.
+//
+// Das Ergebnis entscheidet bewusst NICHT, ob `--execute` überhaupt läuft —
+// der Aufrufer (Makefile-Target schema-rollout) lässt `--execute` in jedem
+// Fall laufen, damit eine echte, gleichzeitig anstehende Schema-Änderung im
+// selben Plan wirksam bleibt (Regressionsbeleg:
+// tools/harness/run-schema-rollout-guard-test.sh Lauf 3).
+func decide(r report) decision {
 	if len(r.Blockers) == 0 {
-		return false, "kein Blocker im Report — kein Grund fuer --allow-destructive"
+		return decision{reason: "kein Blocker im Report — weder --allow-destructive noch Vorlauf noetig"}
 	}
 
-	opByID := make(map[string]foreignObject, len(r.Operations))
+	opByID := make(map[string]operation, len(r.Operations))
 	for _, op := range r.Operations {
-		opByID[op.ID] = foreignObject{kind: op.Kind, objectType: op.ObjectType, path: strings.Join(op.Path, ".")}
+		opByID[op.ID] = op
+	}
+	signatureDiagnosed := make(map[string]bool)
+	for _, d := range r.Diagnostics {
+		if d.Code == viewSignatureCode && d.OperationID != "" {
+			signatureDiagnosed[d.OperationID] = true
+		}
 	}
 
+	var d decision
+	views := make(map[string]bool)
 	for _, b := range r.Blockers {
-		if b.Reason != destructiveConfirmationReason {
-			return false, fmt.Sprintf("unbekannte Blocker-Klasse %q", b.Reason)
-		}
-		for _, id := range b.OperationIDs {
-			obj, ok := opByID[id]
-			if !ok {
-				return false, fmt.Sprintf("Blocker-Operation %s nicht im Report gefunden", id)
+		switch b.Reason {
+		case destructiveConfirmationReason:
+			d.allowDestructive = true
+			for _, id := range b.OperationIDs {
+				op, ok := opByID[id]
+				if !ok {
+					return decision{reason: fmt.Sprintf("Blocker-Operation %s nicht im Report gefunden", id)}
+				}
+				if !knownForeignObjects[foreignObject{kind: op.Kind, objectType: op.ObjectType, path: strings.Join(op.Path, ".")}] {
+					return decision{reason: fmt.Sprintf("unbekannter Blocker %s (%s %s %s)", id, op.Kind, op.ObjectType, strings.Join(op.Path, "."))}
+				}
 			}
-			if !knownForeignObjects[obj] {
-				return false, fmt.Sprintf("unbekannter Blocker %s (%s %s %s)", id, obj.kind, obj.objectType, obj.path)
+		case manualActionReason:
+			if len(b.OperationIDs) == 0 {
+				return decision{reason: fmt.Sprintf("Blocker %q ohne Operation", b.Reason)}
 			}
+			for _, id := range b.OperationIDs {
+				op, ok := opByID[id]
+				if !ok {
+					return decision{reason: fmt.Sprintf("Blocker-Operation %s nicht im Report gefunden", id)}
+				}
+				if op.Kind != "ReplaceView" || op.ObjectType != "VIEW" || !signatureDiagnosed[id] {
+					return decision{reason: fmt.Sprintf("unbekannter Blocker %s (%s %s %s) — keine View-Signatur-Aenderung", id, op.Kind, op.ObjectType, strings.Join(op.Path, "."))}
+				}
+				if len(op.Path) != 1 || !viewIdentifier.MatchString(op.Path[0]) {
+					return decision{reason: fmt.Sprintf("View-Name %q der Operation %s ist kein einfacher Bezeichner", strings.Join(op.Path, "."), id)}
+				}
+				views[op.Path[0]] = true
+			}
+		default:
+			return decision{reason: fmt.Sprintf("unbekannte Blocker-Klasse %q", b.Reason)}
 		}
 	}
-	return true, "alle Blocker auf der bekannten Fremdobjekt-Liste (ADR-0043) — --allow-destructive ist sicher"
+
+	for v := range views {
+		d.dropViews = append(d.dropViews, v)
+	}
+	sort.Strings(d.dropViews)
+	d.reason = "alle Blocker sind bekannte Fremdobjekte (ADR-0043) oder View-Signatur-Aenderungen (ADR-0114)"
+	return d
 }

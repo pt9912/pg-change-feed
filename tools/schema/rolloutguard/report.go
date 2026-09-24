@@ -1,33 +1,46 @@
-// Command rolloutguard entscheidet, ob ein zweiter make schema-rollout-Lauf
-// gegen ein bereits migriertes Ziel ausschließlich auf den bekannten
-// Fremdobjekten blockiert (ADR-0043) — zentral, für jeden
-// Aufrufer gleich, statt bei jedem Aufrufer einzeln
+// Command rolloutguard entscheidet, was ein make schema-rollout-Lauf gegen
+// ein bereits migriertes Ziel zusätzlich zum regulären `--execute` tun darf
+// (ADR-0043, ADR-0114): `--allow-destructive`, wenn ausschließlich die
+// bekannten Fremdobjekte blockieren, und einen Vorlauf `DROP VIEW`, wenn
+// eine im neutralen Modell deklarierte View ihre Signatur ändert — zentral,
+// für jeden Aufrufer gleich, statt bei jedem Aufrufer einzeln
 // (docs/plan/planning/observations/BEO-PGC/schema-rollout-fremdobjekte/).
 // Es liest den strukturierten JSON-Report eines vorgelagerten
-// `schema migrate --plan-only`-Laufs und meldet über den Exit-Code, ob das
-// Makefile-Target den nachfolgenden `--execute`-Schritt zusätzlich mit
-// `--allow-destructive` laufen lassen darf.
+// `schema migrate --plan-only`-Laufs und meldet über Exit-Code und
+// stdout-Zeilen, was das Makefile-Target tun darf.
 package main
 
 import "encoding/json"
 
 // report bildet nur die Felder des d-migrate-Plan-Reports ab, die dieser
 // Guard braucht (reales Schema, gemessen am gepinnten Image via
-// --plan-only --report, siehe Slice-Plan §3). d-migrate trägt weitere
-// Felder (summary, diagnostics, …), die hier bewusst nicht dekodiert
-// werden.
+// --plan-only --report). d-migrate trägt weitere Felder (summary,
+// statements, …), die hier bewusst nicht dekodiert werden.
 type report struct {
-	Status   string `json:"status"`
-	Blockers []struct {
-		Reason       string   `json:"reason"`
-		OperationIDs []string `json:"operationIds"`
-	} `json:"blockers"`
-	Operations []struct {
-		ID         string   `json:"id"`
-		Kind       string   `json:"kind"`
-		ObjectType string   `json:"objectType"`
-		Path       []string `json:"path"`
-	} `json:"operations"`
+	Status      string       `json:"status"`
+	Blockers    []blocker    `json:"blockers"`
+	Operations  []operation  `json:"operations"`
+	Diagnostics []diagnostic `json:"diagnostics"`
+}
+
+type blocker struct {
+	Reason       string   `json:"reason"`
+	OperationIDs []string `json:"operationIds"`
+}
+
+type operation struct {
+	ID         string   `json:"id"`
+	Kind       string   `json:"kind"`
+	ObjectType string   `json:"objectType"`
+	Path       []string `json:"path"`
+}
+
+// diagnostic trägt den Diagnosecode zu einer Operation. Das Feld
+// blockers[].diagnosticCodes ist im realen Report leer (gemessen); die
+// Zuordnung von Code zu Operation läuft ausschließlich über operationId.
+type diagnostic struct {
+	Code        string `json:"code"`
+	OperationID string `json:"operationId"`
 }
 
 // foreignObject identifiziert eine Blocker-Operation stabil über Kind,
