@@ -25,7 +25,7 @@ Transaktion, Aufnahme beim Start und bei Wecksignal, Warn-Spalten in View und
 `spec-nachzug`), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand), [`ARC-005`](../../../../spec/architecture.md), [`ARC-007`](../../../../spec/architecture.md) — gelesen,
 nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-24.
 
 **Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
