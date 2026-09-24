@@ -392,3 +392,54 @@ func TestReadChangesOhneVerdrahtungEndetVorDemHandler(t *testing.T) {
 // Der Fake erfüllt den Inbound Port; die Zusicherung hält die Fake-Seite
 // gegen den Port-Vertrag.
 var _ inbound.ReadChangesUseCase = (*fakeReadChangesUseCase)(nil)
+
+// TestReadChangesTraegtOriginAlsLetztesFeld trägt das Antwortfeld `origin`
+// (`SPEC-022`, `LH-FA-CAP-009`): `wal` und `backfill` stehen so in der
+// Antwort, wie der Change sie trägt; ein fehlender Wert (ein Change ohne
+// gesetzte Herkunft) liest als `wal`. Das Feld steht als letztes — die
+// Reihenfolge der übrigen Felder bleibt.
+func TestReadChangesTraegtOriginAlsLetztesFeld(t *testing.T) {
+	position, err := model.NewSourcePosition("src-1", 1)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	base, err := model.NewChange(
+		model.ChangeID("c-1"), model.TransactionID("tx-1"), model.SourceTableID("tbl-1"),
+		1, model.OperationInsert, nil, []byte(`{"id":1}`), model.SchemaVersionID("sv-1"),
+	)
+	if err != nil {
+		t.Fatalf("NewChange: %v", err)
+	}
+	backfill, err := base.WithOrigin(model.ChangeOriginBackfill)
+	if err != nil {
+		t.Fatalf("WithOrigin: %v", err)
+	}
+	missing := base
+	missing.Origin = ""
+
+	for _, tc := range []struct {
+		name   string
+		change model.Change
+		want   string
+	}{
+		{"wal", base, "wal"},
+		{"backfill", backfill, "backfill"},
+		{"fehlender Wert liest als wal", missing, "wal"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := newReadChangesServer(t, &fakeReadChangesUseCase{result: inbound.ReadChangesResult{
+				Changes: []inbound.ReadChange{{Position: position, Change: tc.change, CommittedAt: model.NewTimePoint(1)}},
+			}})
+			resp := getChanges(t, ts, testReaderToken, "/changes?source=src-1")
+			defer resp.Body.Close()
+
+			raw := strings.TrimSpace(body(t, resp))
+			if suffix := `,"origin":"` + tc.want + `"}]}`; !strings.HasSuffix(raw, suffix) {
+				t.Fatalf("Body = %s, will Endung %s (origin als letztes Feld)", raw, suffix)
+			}
+			if !strings.Contains(raw, `"schema_version":"sv-1","committed_at":"`) {
+				t.Fatalf("Body = %s, will die Feldreihenfolge schema_version, committed_at, origin", raw)
+			}
+		})
+	}
+}

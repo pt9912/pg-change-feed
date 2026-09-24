@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.43
+Version: 1.44
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-23
+Stand: 2026-09-24
 
 ## 1. Einleitung
 
@@ -374,7 +374,7 @@ für jeden Aufruf über diesen Zugriffsweg (`LH-FA-CON-004.a`).
 
 ```sql
 SELECT source_id, commit_position, change_id, schema_name, table_name,
-       operation, old_data, new_data, committed_at
+       operation, old_data, new_data, committed_at, origin
 FROM cdc.changes
 WHERE source_id = '<quelle-id>' AND commit_position > <letzte-gelesene-position>
 ORDER BY commit_position, sequence
@@ -383,7 +383,12 @@ LIMIT 500;
 
 **Ergebnis:** Jede Zeile ist eine committed Änderung in Anhang-Reihenfolge.
 `old_data`/`new_data` sind `jsonb`; bei `INSERT` ist `old_data` NULL, bei
-`DELETE` ist `new_data` NULL.
+`DELETE` ist `new_data` NULL. `origin` nennt die Herkunft der Änderung:
+`wal` für eine über den Replication Stream erfasste Änderung, `backfill`
+für eine Bestands-Änderung eines Backfills (`LH-FA-CAP-009`); eine
+Änderung, die ohne dieses Feld gespeichert wurde, liest als `wal`
+(`LH-FA-DAT-006`). `origin` ist die letzte Spalte der View; die drei
+Live-Zustellwege (gRPC, SSE, NATS-Vollinhalt) tragen das Feld nicht.
 
 Dieselben Änderungen sind ohne SQL-Direktzugriff über die API lesbar:
 `GET /changes` — derselbe Lesezugriff mit denselben Filtern und derselben
@@ -636,8 +641,10 @@ Reader-Token sind die administrativen Endpunkte nicht erreichbar (`403`).
 (≥ 1). Ohne `limit` liest der Aufruf unbegrenzt. Die Antwort trägt je
 Änderung `commit_position`, `change_id`, `transaction_id`,
 `source_table_id`, `schema`, `table`, `sequence`, `operation`,
-`old_image`, `new_image`, `schema_version` und `committed_at` (RFC 3339,
-UTC) — dieselbe Sicht wie der SQL-Zugriff auf `cdc.changes`. Die
+`old_image`, `new_image`, `schema_version`, `committed_at` (RFC 3339,
+UTC) und `origin` (`wal` oder `backfill`, als letztes Feld; eine ohne
+dieses Feld gespeicherte Änderung liest als `wal`) — dieselbe Sicht wie
+der SQL-Zugriff auf `cdc.changes`. Die
 Reihenfolge ist deterministisch; die Fortsetzung liest ab
 `from = <letzte gelieferte commit_position> + 1`. Ein Aufruf ohne Treffer
 endet `200` mit leerer Liste (`{"changes": []}`), nie `404`; ein Parameter
@@ -1278,3 +1285,4 @@ MIT — siehe `LICENSE`.
 | 1.41 | 2026-09-23 | Python-SDK-Absatz im gRPC-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-python-grpc-client-flaeche Fixrunde): „Zugriff über den gRPC-Change-Stream" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedGrpcClient.stream_changes()` liefert einen Iterator über die generierten `Change`-Nachrichten mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt), samt `timeout`-Form; `Stand:`-Datum auf diesen Zug gezogen |
 | 1.42 | 2026-09-23 | Python-SDK-Absatz im SSE-Handbuch-Abschnitt ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-sse-client-flaeche): „Zugriff über Server-Sent-Events" trägt jetzt den `**SDK:**`-Absatz des PyPI-Packages — `PgChangeFeedSseClient.stream_changes()` liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern (dritte Sprache neben C#/Kotlin im selben Abschnitt); der NATS-Vollinhalts-Stream folgt im selben Folge-Release |
 | 1.43 | 2026-09-23 | Python-SDK-Absatz für den NATS-Vollinhalts-Stream ergänzt (`LH-FA-SST-009`, `ADR-0110`, `welle-sdk-python-vollabdeckung`, slice-sdk-python-nats-stream-client-flaeche): §4 „Zugriff über den NATS-Vollinhalts-Stream" trägt jetzt den dritten Sprach-`**SDK:**`-Absatz — `PgChangeFeedNatsStreamClient.stream_changes()` abonniert `cdc.stream.<source_id>.>` und liefert einen Iterator über die getypten `StreamChange`-Events mit allen zehn Feldern; das PyPI-Package `pgchangefeed` ist dafür auf `0.2.0` gehoben — die volle Vier-Wege-Matrix ist damit für alle drei SDK-Sprachen im Handbuch vollständig |
+| 1.44 | 2026-09-24 | Feld `origin` in den Lesewegen ergänzt (`LH-FA-CAP-009`, `LH-FA-DAT-006`, `ADR-0111`, slice-backfill-change-origin): §4 „Änderungen lesen" trägt `origin` als letzte Spalte des SQL-Beispiels über `cdc.changes` samt Bedeutung (`wal` \| `backfill`, ein fehlender Wert liest als `wal`), §4 „Zugriff über die HTTP-/JSON-API" nennt `origin` als letztes Feld der `GET /changes`-Antwort; die drei Live-Zustellwege tragen das Feld nicht |

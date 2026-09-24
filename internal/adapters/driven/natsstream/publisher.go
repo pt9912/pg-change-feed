@@ -133,9 +133,10 @@ func (p *Publisher) Run(ctx context.Context) {
 
 // streamMessage trägt dasselbe Nachrichtenschema wie die SSE-Ereignisse
 // (`SPEC-021`, `ADR-0100` Teilfrage 2) — dieselben zehn Felder wie
-// `model.Change`, hier eigenständig geführt (kein Adapter-→-Adapter-Import,
-// `ADR-0100` Teilfrage 1). Die Row Images stehen als eingebettete
-// JSON-Werte; ein fehlendes Bild (`LH-FA-CAP-008` Boundary) wird zu `null`.
+// `model.Change` ohne `Origin` (`SPEC-002`, `SPEC-024`), hier eigenständig
+// geführt (kein Adapter-→-Adapter-Import, `ADR-0100` Teilfrage 1). Die
+// Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
+// (`LH-FA-CAP-008` Boundary) wird zu `null`.
 type streamMessage struct {
 	ChangeID      string          `json:"change_id"`
 	TransactionID string          `json:"transaction_id"`

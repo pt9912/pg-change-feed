@@ -48,7 +48,9 @@ var readChangesParams = map[string]bool{
 // Commit-Position seiner Quelltransaktion und deren Commit-Zeitpunkt. Die
 // Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
 // (`LH-FA-CAP-008` Boundary) wird zu `null`. `committed_at` trägt RFC 3339
-// mit Nanosekunden in UTC.
+// mit Nanosekunden in UTC. `origin` steht als letztes Feld und trägt `wal`
+// oder `backfill` (`SPEC-002`, `LH-FA-CAP-009`); ein fehlender Wert liest
+// als `wal`. Die Live-Wege tragen das Feld nicht.
 type readChangeResponse struct {
 	CommitPosition int64           `json:"commit_position"`
 	ChangeID       string          `json:"change_id"`
@@ -62,6 +64,7 @@ type readChangeResponse struct {
 	NewImage       json.RawMessage `json:"new_image"`
 	SchemaVersion  string          `json:"schema_version"`
 	CommittedAt    string          `json:"committed_at"`
+	Origin         string          `json:"origin"`
 }
 
 // readChangesResponse trägt den JSON-Response-Body bei Erfolg
@@ -89,6 +92,7 @@ func toReadChangeResponse(change inbound.ReadChange) readChangeResponse {
 		NewImage:       rowImage(change.Change.NewImage),
 		SchemaVersion:  string(change.Change.SchemaVersion),
 		CommittedAt:    time.Unix(0, change.CommittedAt.UnixNanos).UTC().Format(time.RFC3339Nano),
+		Origin:         string(change.Change.Origin.OrDefault()),
 	}
 }
 

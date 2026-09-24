@@ -27,8 +27,9 @@ type changeSubscriber interface {
 
 // streamChange trägt das SSE-Nachrichtenschema eines Change-Events
 // (`SPEC-018`, Abschnitt `GET /changes/stream`): dieselben Felder wie der
-// Domain-Typ `model.Change`. Die Row Images stehen als eingebettete
-// JSON-Werte; ein fehlendes Bild (`LH-FA-CAP-008` Boundary) wird zu `null`.
+// Domain-Typ `model.Change` ohne `Origin` (`SPEC-002`, `SPEC-021`). Die
+// Row Images stehen als eingebettete JSON-Werte; ein fehlendes Bild
+// (`LH-FA-CAP-008` Boundary) wird zu `null`.
 type streamChange struct {
 	ChangeID      string          `json:"change_id"`
 	TransactionID string          `json:"transaction_id"`

@@ -258,8 +258,8 @@ func TestPublishSkipsUnusableSubjectName(t *testing.T) {
 }
 
 // TestToStreamMessageCarriesAllTenFields trägt die Nachrichtenform
-// (`SPEC-021`/`SPEC-024`): dieselben zehn Felder wie `model.Change`, ein
-// fehlendes Row Image wird zu JSON `null`.
+// (`SPEC-021`/`SPEC-024`): dieselben zehn Felder wie `model.Change` ohne
+// `Origin`, ein fehlendes Row Image wird zu JSON `null`.
 func TestToStreamMessageCarriesAllTenFields(t *testing.T) {
 	change := testChange(t)
 	change.OldImage = nil
