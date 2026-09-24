@@ -6,7 +6,7 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **11×**
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **12×**
 (evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
@@ -14,8 +14,15 @@ evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-sdk-python-nats-stream-client-flaeche.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md,
-evidence/slice-backfill-run-usecase.md) —
-**Schwelle erreicht**. Der elfte Beleg
+evidence/slice-backfill-run-usecase.md,
+evidence/slice-backfill-sql-administration.md) —
+**Schwelle erreicht**. Der zwölfte Beleg
+(`evidence/slice-backfill-sql-administration.md`, F-1 und F-3) trifft die Form **Befehl**
+an zwei Trägern: ein im Repo genannter Guard-Lauf, der die zugesagten Rechte, die Funktion
+und die CHECK-Menge nicht führte (die Messung lag als Wegwerf-Skript außerhalb des Repos;
+die Grant-Mutation ließ den Lauf grün), und ein Suchbefehl, dessen gedruckte Zahlen zu einem
+Befehl mit weniger Mustern gehörten. Ausgang bleibt **verkörpert**; die Bindung im Repo
+(Lauf 5 prüft im Skript, Grant-Mutation rot) ist der Beleg der Behebung. Der elfte Beleg
 (`evidence/slice-backfill-run-usecase.md`, F-6, V-2 und die Nachmessung der Closure)
 trifft die Form **Befehl** in einer neuen Ausprägung: **Tabellen-Escape und Filter**. Ein
 Suchbefehl in einer Tabellenzelle trug `\|` (als `-E`-Alternation und als Pipe zu `wc -l`)

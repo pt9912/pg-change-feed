@@ -5,11 +5,19 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
-Zähler (abgeleitet): **8×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **9×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
-evidence/slice-backfill-run-usecase.md) —
-**Schwelle erreicht**. Der achte Beleg (`slice-backfill-run-usecase`) trifft die
+evidence/slice-backfill-run-usecase.md,
+evidence/slice-backfill-sql-administration.md) —
+**Schwelle erreicht**. Der neunte Beleg (`slice-backfill-sql-administration`, F-2) trifft
+die **Quellfilter-Zusage** einer Abfrage: die Mutation `WHERE source_id = $1` →
+`WHERE $1::text IS NOT NULL` blieb grün, weil beide Tests nur Runs **einer** Quelle anlegten;
+gebunden durch einen Run einer fremden Quelle im Test (Mutation danach rot). Dieselbe Klasse,
+Ausgang bleibt **verkörpert**; der Ausgangs-Kandidat „Fehlerzweig je Aufrufstelle" (Folgesatz
+des achten Belegs) und dieser Fall — eine Filter-Eingabe verlangt Zeilen **außerhalb** des
+Filters im Test — gehören in denselben Lese-Schritt der Closure von `welle-backfill-bestand`.
+Der achte Beleg (`slice-backfill-run-usecase`) trifft die
 **Fehlerzweige** einer Prüfung: acht Mutationen blieben grün (Lesefehler des
 Ausschlussstands je Block und vor dem Commit, `finished_at` der Endzustände,
 Fortschritts-Fehler, `Finish`-Fehler bei leerer Tabelle), weil die Fakes jeden Aufruf

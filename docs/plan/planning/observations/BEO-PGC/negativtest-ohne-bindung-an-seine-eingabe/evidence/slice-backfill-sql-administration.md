@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-sql-administration (Review F-2, Mutation D2, Behebung durch Verifikation M-F2 nachgemessen)
+
+**Fund:** Die Ausgabe von `diagnose` sagt „je Tabelle der Quelle" zu; die Abfrage trägt `WHERE source_id = $1`. Die Mutation `WHERE source_id = $1` → `WHERE $1::text IS NOT NULL` blieb grün, auch im ganzen Paket `internal/bootstrap` gegen die reale Datenbank: beide `diagnose`-Tests legten Runs nur für **eine** Quelle an, ein Run einer fremden Quelle kam in keinem Test vor. Das Godoc des Tests nannte den Quellfilter unter den Mutationen nicht. Behoben: `TestDiagnoseReportsTheLatestBackfillRunPerTable` legt zusätzlich einen Run einer fremden Quelle an und verlangt, dass seine Tabelle nicht in der Ausgabe steht; der Verifier sah dieselbe Mutation rot (Exit 2, nur dieser Test). Gefunden hat es die Mutation des Reviewers, nicht der Lauf des Implementers. Gleiche Form für den Antragszweig: der Vergleich `request.Source != deps.source` ist seit der Fixrunde durch einen Test mit zwei Quellen gebunden (Verifikation M-F10).
+
+Quelle: `docs/reviews/review-slice-backfill-sql-administration.md` (F-2, Mutation D2) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-sql-administration.md` (§4 Zeilen M-F2 und M-F10). <!-- d-check:status-provenance -->

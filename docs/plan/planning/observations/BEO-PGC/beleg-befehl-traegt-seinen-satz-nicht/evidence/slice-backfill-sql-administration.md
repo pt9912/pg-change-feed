@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-sql-administration (Review F-1 und F-3, Behebung durch Verifikation nachgemessen)
+
+**Fund:** Zwei Belege trugen ihren Satz nicht. (1) `harness/targets/schema-rollout.md` §Belege (5) beschrieb Lauf 5 des Guard-Test-Skripts mit den Rechten der drei Rollen, der Funktion `cdc.backfill_table` (`EXECUTE` allein für `cdc_admin`) und der `request_kind`-Menge; das committete Lauf 5 prüfte nur `cdc_admin` auf zwei Tabellen. Die Substanz war wahr (der Reviewer mass sie an einem Alt-Bestand), der genannte Beleg maß sie nicht — die Messung lag als Wegwerf-Skript außerhalb des Repos. Die Mutation „`EXECUTE`-Grant der Funktion streichen" ließ den Lauf grün. (2) Die Suchlauf-Zeile „Fortsetzungs-Idiome und `backfill`-Nennung" im Slice-Plan nannte einen Befehl mit vier Mustern und die Zahlen des Befehls mit einem Muster (Parent 7 → 30 statt 10 → 40). Behoben: Lauf 5 prüft im Skript 19 Rechte, `EXECUTE` allein für `cdc_admin` und die fünf `request_kind`-Werte samt Vorbedingungen am Alt-Stand; die Grant-Mutation färbt den Lauf rot (Verifikation M-F1, Exit 1); die Suchlauf-Zeile nennt beide Paare.
+
+Quelle: `docs/reviews/review-slice-backfill-sql-administration.md` (F-1, F-3) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-sql-administration.md` (§3.1, §4 Zeilen M-F1 und F-3). <!-- d-check:status-provenance -->
