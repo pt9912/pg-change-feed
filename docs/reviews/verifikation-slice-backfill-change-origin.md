@@ -183,12 +183,12 @@ unverändert"). Alle Meldungen stehen im Plan.
 | [`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md) | Pflicht-Report, destruktive Operationen default blockiert, `knownForeignObjects` | `--allow-destructive` weiterhin nur bei bekannten Fremdobjekten; `plan.yaml`/`down.sql` neu erzeugt und committet; Guard-Test Lauf 1–3 und 6 unverändert in Nummern und Ausgang | konform |
 | [`ADR-0064`](../plan/adr/0064-lh-qa-ops-005-testansatz-korrektur.md) Trigger 1 | Schema-Upgrade über den Alt-Tag prüfen | Lauf 5 des Guard-Tests (Tag `v0.1.2`) und mein Parent-Lauf | konform (für das Schema; der Container-Tausch prüft es weiterhin nicht, `ADR-0064` Negativ unverändert) |
 | [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 1 | Klasse über Operation `ReplaceView`/`VIEW` und Diagnose `VIEW_SIGNATURE_INCOMPATIBLE` | Die Umsetzung verlangt **zusätzlich** den Blocker-Grund `MANUAL_ACTION_REQUIRED` | **konform, zulässig eng** (V-4): die Aussage geht in die sichere Richtung — meldet ein künftiger d-migrate dieselbe Diagnose unter anderem Grund, fällt der Fall in „unbekannt" und endet mit Exit 8 statt mit einem Vorlauf; Entscheidung 2 („jeder andere Blocker lässt beides ausfallen") trägt das. Die Präzisierung steht im Plan (§3, Fixrunde-Zeile `rolloutguard`) und im Kommentar von `guard.go`; real gemessen: der Report der Klasse trägt `MANUAL_ACTION_REQUIRED` (Fixture `realViewSignatureReport`, Guard-Test Lauf 4 fährt den Vorlauf real) |
-| ADR-0114 Entscheidung 2 | alles oder nichts | `TestDecideViewSignatureWithUnknownBlockerRefusesEverything`, `…WithKnownForeignObjects`; Vakuum-Fall (leere `operationIds`) abgelehnt | konform |
-| ADR-0114 Entscheidung 3 | `DROP VIEW cdc.<name>` ohne `CASCADE`, je View gemeldet, Rechte über `nacharbeit-roles.sql` | Makefile; Guard-Test Lauf 4 „abhängiges Objekt"; `cdc_reader` `t` nach dem Rollout | konform, mit V-3 (ADR-Lücke zur ACL) |
-| ADR-0114 Entscheidung 4/5 | kein Vorlauf ohne Anlass, additive Änderungen ohne Vorlauf | Guard-Test: Lauf 2, 3 und der Folgelauf von Lauf 4 melden keinen „Vorlauf" (Assertionen); mein zweiter Parent-Arbeitsbaum-Lauf: 0 Treffer | konform |
-| ADR-0114 Entscheidung 6 | Reihenfolge Schema-Rollout vor Container-Tausch im Handbuch | Handbuch §4 „Reihenfolge beim Upgrade" | konform |
-| ADR-0114 Entscheidung 7 | Guard-Test-Lauf für abweichende Signatur, Alt-Tag-Lauf, Lauf mit unbekanntem Blocker bleibt der letzte | Lauf 4, 5, 6; Alt-Tag mit gedrucktem Tag und Exit-Codes | konform |
-| ADR-0114 Folgepflicht | Umsetzung in `rolloutguard`, Makefile, Guard-Test, Handbuch, `harness/README.md` | alle fünf Träger im Diff (`examples/bootstrap.sh` zusätzlich als Träger nach Suchlauf) | konform |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 2 | alles oder nichts | `TestDecideViewSignatureWithUnknownBlockerRefusesEverything`, `…WithKnownForeignObjects`; Vakuum-Fall (leere `operationIds`) abgelehnt | konform |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 3 | `DROP VIEW cdc.<name>` ohne `CASCADE`, je View gemeldet, Rechte über `nacharbeit-roles.sql` | Makefile; Guard-Test Lauf 4 „abhängiges Objekt"; `cdc_reader` `t` nach dem Rollout | konform, mit V-3 (ADR-Lücke zur ACL) |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 4/5 | kein Vorlauf ohne Anlass, additive Änderungen ohne Vorlauf | Guard-Test: Lauf 2, 3 und der Folgelauf von Lauf 4 melden keinen „Vorlauf" (Assertionen); mein zweiter Parent-Arbeitsbaum-Lauf: 0 Treffer | konform |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 6 | Reihenfolge Schema-Rollout vor Container-Tausch im Handbuch | Handbuch §4 „Reihenfolge beim Upgrade" | konform |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7 | Guard-Test-Lauf für abweichende Signatur, Alt-Tag-Lauf, Lauf mit unbekanntem Blocker bleibt der letzte | Lauf 4, 5, 6; Alt-Tag mit gedrucktem Tag und Exit-Codes | konform |
+| [`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md) Folgepflicht | Umsetzung in `rolloutguard`, Makefile, Guard-Test, Handbuch, `harness/README.md` | alle fünf Träger im Diff (`examples/bootstrap.sh` zusätzlich als Träger nach Suchlauf) | konform |
 | [`ADR-0058`](../plan/adr/0058-testansatz-fuenf-luecken.md) Entscheidung 2 | additive Spalte an `cdc.change` als belegter Weg | Spalte nullable, ohne CHECK; Konvergenz gemessen | konform |
 | [`ADR-0081`](../plan/adr/0081-changes-lesen-ueber-die-http-api.md) | Changes lesen über die HTTP-API | Feldreihenfolge unverändert, `origin` zuletzt | konform |
 
@@ -279,7 +279,7 @@ erwartete Aktion im Slice.
   §Konsequenzen sind unberührbar) braucht, entscheidet der Architect.
 - **V-4 (INFO) — `MANUAL_ACTION_REQUIRED` enger als der ADR-Text: zulässig.** Siehe §4;
   Fail-closed-Richtung, im Plan und im Code-Kommentar begründet, real gemessen.
-- **V-5 (INFO) — Sensor-Ausgabe: Meldung „nur bekannte Fremdobjekt-Blocker (ADR-0043)"
+- **V-5 (INFO) — Sensor-Ausgabe: Meldung „nur bekannte Fremdobjekt-Blocker ([`ADR-0043`](../plan/adr/0043-schemamigrationen-mit-d-migrate.md))"
   bei gemischtem Report.** Bei Läufen mit View-Signatur-Blocker und den sechs bekannten
   Fremdobjekten (Lauf 4 und 5) druckt das Target „nur bekannte Fremdobjekt-Blocker …
   --execute laeuft mit --allow-destructive" und danach den Vorlauf; „nur" ist dort
@@ -312,7 +312,7 @@ erwartete Aktion im Slice.
 | Sicherheitsnaht `rolloutguard` | **bestätigt**: Unit-Tests EXIT=0, Guard-Test EXIT=0, Mutation G5 rot an Lauf 6a, F-1 (M3) rot |
 | Upgrade-Belege | **bestätigt**: `f4ba82ab` → Arbeitsbaum (Exit 0 / 0, Vorlauf nur im ersten Lauf, Zeile `wal`, Recht `t`) und `v0.1.2` (Guard-Test Lauf 5) |
 | DB-Sensoren | `make test-store` EXIT=0, `make test-replication` EXIT=0 (je `DB-Adapter-Coverage: 77.13% (gedeckt 533 von 691 …)`, Schwelle 70 %), `make test-integration` EXIT=0 |
-| Entscheidungen `ADR-0111`/`0043`/`0064`/`0114`/`0058`/`0081` | **konform** (ADR-0114-Blocker-Grund enger: zulässig, V-4; ACL: ADR-Lücke, V-3) |
+| Entscheidungen `ADR-0111`/`0043`/`0064`/`0114`/`0058`/`0081` | **konform** ([`ADR-0114`](../plan/adr/0114-schema-rollout-vorlauf-view-signatur.md)-Blocker-Grund enger: zulässig, V-4; ACL: ADR-Lücke, V-3) |
 | Harte Regeln (§3.3, §3.5, §3.6, §3.7, §3.9, §3.11, §3.12, §3.13, Handbuch-Version) | **erfüllt**; §3.12 mit V-1/V-2 |
 | Commit-Traceability, MR-Immutabilität | **grün** (`RANGE=09386619..HEAD`) |
 | Gates | **`make gates` EXIT=0**, `make test` EXIT=0, `make a-check` EXIT=0, `make coverage-gate` EXIT=0 (`82.90%`) |
