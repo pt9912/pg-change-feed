@@ -160,6 +160,14 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 | `tools/schema/schema.yaml` | prüfen (nicht ändern) | die View `backfill_status` trägt die zwei Warn-Spalten seit `slice-backfill-sql-administration`; ein Bedarf an einer Signaturänderung wäre ein Plan-Nachzug und ein Rückführungsgrund (§4), keine stille Änderung. |
 | `docs/user/bench-abdeckung.md` | prüfen | die Datei bindet `LH-QA-PER-001`…`003` an durchgesetzte Schwellen; eine Zeile ohne Schwelle für `LH-FA-CAP-009` passt nicht zu dieser Form — Entscheidung im Slice, im Bericht begründet. |
 
+**Übergabe aus `slice-backfill-snapshot-reader`** (gemeldet, kein zusätzlicher Umfang):
+der Snapshot-Leser liest in Blöcken von `DefaultBlockSize` = 1.000 Zeilen, ein Startwert
+ohne Messung; `B` zählt Zeilen, nicht Bytes, der Speicherbedarf eines Blocks ist `B` mal die
+Zeilenbreite (Port-Doku `NextBlock`, nicht gemessen). Der Bench nennt `B` und die
+Zeilenbreite seiner Tabellen im Ursprung jeder Kopier-Zahl; eine Richtgröße in Zeilen gilt
+für diese Breite, Messungen mit breiten Zeilen (`jsonb`, `bytea`) sind ohne eigenen Lauf
+ungemessen.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Zahl und der Inhalt der Bench-Skripte hinter `make bench`"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |

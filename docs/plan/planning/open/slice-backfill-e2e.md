@@ -151,6 +151,28 @@ hängt, einen zweiten Run gegen eine zweite Tabelle (derselben Tabelle würde de
 zweite Antrag als `failed` enden): der Ein-Worker-Betrieb hält ihn `queued`; nach
 dem Neustart beobachtet der Test, dass er ohne neuen Antrag `completed` erreicht.
 
+**Übergaben aus `slice-backfill-snapshot-reader`** (gemeldet, aus dem Reader-Slice
+gemessen oder benannt; die Komposition trägt erst dieser Slice):
+
+- **Zeitlimit des Haltepunkts.** Die Slot-Anlage trägt ein Zeitlimit
+  (`DefaultSlotTimeout`, 30 s, Startwert ohne Messung); sein Ablauf endet als
+  `transient` (M3 im Reader-Test: 1-s-Limit gegen eine offene Schreibtransaktion). Hält
+  der Test die Schreibtransaktion länger als das Limit, endet der Run `failed` statt zu
+  hängen — der Haltepunkt des Ansatz-Vorschlags hält kürzer als das Limit (der Test
+  läuft gegen den Container, nicht gegen den Adapter im Prozess).
+- **Abbruch mitten im Lauf.** Der Reader belegt, dass der temporäre Slot mit der
+  Replication-Verbindung endet (M4) und dass der Cursor den Snapshot-Stand liest; der
+  Abbruch des komponierten Runs (`docker kill` mit offener Lese-Transaktion) ist nicht
+  gefahren. *Erwartet, zu belegen durch:* nach dem Kill steht kein Slot `cdc_bf_*` in
+  `pg_replication_slots` und keine Sitzung des Runs in `pg_stat_activity`.
+- **Fenster zwischen Export und Cursor.** Spaltenliste und `DECLARE` laufen ohne
+  Tabellensperre im importierten Snapshot; ein gleichzeitiges `ALTER TABLE` in diesem
+  Fenster lässt den `DECLARE` mit `storage` (`42703`) scheitern oder — bei einem
+  Tabellen-Rewrite — Katalog-Stand und Snapshot auseinanderlaufen (aus dem Verhalten
+  von `SET TRANSACTION SNAPSHOT` abgeleitet, **nicht gemessen**). Ist ein Haltepunkt
+  dafür deterministisch herstellbar, misst der Slice das Fenster; sonst nennt der
+  Bericht es als ungemessen.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der E2E-belegten Kennungen und ihre Zeilen-Anker", „die Beschreibung von `make test-integration`"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |

@@ -107,7 +107,13 @@ Umfang:
       Commit, Ausschlussstand weicht ab (auch: er weicht in einem
       Zwischenblock ab und ist am Ende wieder gleich), Snapshot-Fehler,
       Schreib-Fehler, Abbruch des Kontexts — jeweils Rollback, Run `failed`
-      bzw. `interrupted`, **keine** Zeile geschrieben, die richtige Fehlerklasse,
+      bzw. `interrupted`, **keine** Zeile geschrieben, die richtige Fehlerklasse
+      (der `TableSnapshotPort` meldet sie als fünf Sentinels
+      `ErrSnapshotPermission`/`…Configuration`/`…Transient`/`…Replication`/`…Storage`;
+      der Use Case klassifiziert per `errors.Is`, je Sentinel ein Test an seiner
+      Eingabe; ein beendeter Kontext und eine beendete Verbindung
+      (`57P01`/`57P02`/`57P03`) kommen aus dem Adapter beide als `…Transient` —
+      `interrupted` gegen `failed` unterscheidet der Use Case am eigenen Kontext),
       Heartbeat unberührt; Vorbedingungs-Fehler (Tabelle nicht aktiviert, aktiver
       Run) enden in `Request` ohne Run-Zeile und ohne geöffneten Snapshot (die
       Schätzung ist ein Katalog-Lesezugriff); fehlen Bindung oder
@@ -119,13 +125,17 @@ Umfang:
 - [ ] Annahme gegen Fakes: `Request` ruft `Admit` **als letzten** Schritt und nur
       nach bestandenen Vorbedingungen und gelesener Schätzung; ein Sentinel-Fehler
       „aktiver Run" endet den Antrag ohne zweite Zeile; eine unbekannte
-      Schätzung erreicht `Admit` als „unbekannt", nicht als `0`; der
+      Schätzung (`known` = falsch, der Katalog führt `−1`) erreicht `Admit` als
+      „unbekannt", nicht als `0`, und eine bekannte Schätzung `0` (analysierte,
+      leere Tabelle) bleibt bekannt `0`; der
       Run-Zustands-Port hat keine Anlage-Operation. *Zu belegen durch:* `make test`
       (Reihenfolge der Fake-Aufrufe, je Test eine Mutation), `make a-check` (der
       Annahme-Port liegt in `ports`, kein Adapter importiert einen anderen) und
       die Port-Definitionen im Diff (Review).
-- [ ] Der Speicherbedarf ist durch `B` begrenzt ([`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md)): die
-      Ports erlauben Streamen, der Schreiber erhält Block 1, bevor der Leser
+- [ ] Die Zeilenzahl im Speicher ist durch `B` je Block begrenzt ([`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md));
+      `B` zählt Zeilen, nicht Bytes — der Speicherbedarf eines Blocks ist `B` mal
+      die Zeilenbreite (Port-Doku `NextBlock`), der Use Case macht darüber keine
+      Aussage: die Ports erlauben Streamen, der Schreiber erhält Block 1, bevor der Leser
       Block 2 geliefert hat. *Zu belegen durch:* ein Test, der die Reihenfolge der
       Fake-Aufrufe prüft. `make a-check` grün (der Use Case importiert keinen
       Adapter), `make coverage-gate` grün.
@@ -169,6 +179,29 @@ Annahme-Port (`Admit`) ist deshalb ein eigener Fähigkeits-Port
 ([`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md)) und keine vierte Methode des `AdministrationRequestPort`; der
 Run-Zustands-Port des Worker-Pools (`CDC_CAPTURE_DSN`) legt nichts an. Die Grants
 und die Transaktion selbst trägt `run-store`.
+
+**Übergaben aus `slice-backfill-snapshot-reader`** (gemeldet, kein zusätzlicher
+Umfang; der Port liegt in `internal/application/port/outbound/tablesnapshot.go`,
+der Adapter in `internal/adapters/driven/postgressnapshot`):
+
+- **Fehlerklassen und Kontext** — siehe die Klammer im zweiten Liefer-Punkt: fünf
+  Sentinels, ein beendeter Kontext und eine beendete Verbindung kommen als
+  `ErrSnapshotTransient`. `53300` (`too_many_connections`) ordnet der Adapter
+  `configuration` zu, obwohl es auch eine ausgeschöpfte `max_connections` der Quelle,
+  einen vorübergehenden Zustand, meinen kann (vertretbar, im Tier nicht auslösbar:
+  eine Rolle mit `CONNECTION LIMIT 1` öffnet den Snapshot trotzdem, weil die
+  Replication-Verbindung nicht zählt; als Unit-Fall in `TestClassify`).
+- **Schließen** — der Aufrufer schließt den Snapshot, auch nach einem Fehler beim
+  Lesen (Port-Doku `OpenSnapshot`); der Use Case ruft `Close` auf jedem Pfad.
+- **Run-Kennung** — `OpenSnapshot(ctx, runID, schema, table)` bildet den Slot-Namen
+  `cdc_bf_<runID ohne Bindestriche>`; das Alphabet ist `[a-z0-9_]`, die Länge höchstens
+  63 Zeichen, eine Abweichung endet als `configuration`. Die Antrags-Kennungen des
+  Bestands sind `gen_random_uuid()::text` (`cdc.enable_table`, Kleinbuchstaben-Hex);
+  dieselbe Form ergäbe einen Namen mit 39 Zeichen (abgeleitet, nicht als Run
+  gemessen).
+- **Startwerte** — `DefaultBlockSize` 1.000 (Zeilen) und `DefaultSlotTimeout` 30 s
+  sind Startwerte, Setzung ohne Messung; eine Zahl in einem Träger des Runs nennt
+  diesen Ursprung.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „der Begriff Backfill und die Menge der Domänen-Typen und Ports"; beide Stände gemessen):**
 
