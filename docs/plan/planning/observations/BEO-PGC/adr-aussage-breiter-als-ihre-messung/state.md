@@ -23,6 +23,20 @@ Strukturtest im Paritätstest. Ausgangs-Kandidat bei 3× (Architect-Entscheidung
 nicht getroffen): eine ADR, die eine Aussage über **alle Werte einer Menge**
 („byte-gleich", „für jeden Typ") trifft, nennt die Menge, an der sie geprüft ist.
 
+**Dritter Beleg (`slice-backfill-run-store`):** `ADR-0113` (`Accepted`) Festlegung 1
+setzt die Annahme als `cdc_admin` voraus und nennt die bestehende Schleife „unverändert
+lauffähig"; ihr Beleg deckt die Rechte auf `cdc.backfill_run`, das Recht auf
+`cdc.administration_request` war nie gesetzt (`ADR-0047` führt die Antrags-Queue in ihrer
+Rollen- und Aufrufer-Tabelle nicht). **Schwelle 3× erreicht mit diesem Slice**; der Ausgang
+gehört dem Lese-Schritt der Closure von `welle-backfill-bestand`, nicht entschieden.
+**Adresse der Lücke:** Architect (Plan `slice-backfill-run-store` §6: ob `ADR-0047` oder
+`ADR-0113` eine Ergänzung braucht — §Entscheidung ist unberührbar, eine Änderung wäre eine
+neue ADR mit `Supersedes` — und ob die Grants-Tabelle von `SPEC-029` den Vermerk auf
+`cdc.administration_request` nennt). Der Betrieb ist über den Grant in
+`tools/schema/nacharbeit-roles.sql` getragen. Verwandt, nicht doppelt gezählt:
+`BEO-PGC/architect-verdikt-rollen-scope-luecke` (1×).
+
 Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung. Zähler
-(abgeleitet): 2× (evidence/slice-backfill-change-origin.md,
-evidence/slice-backfill-snapshot-reader.md).
+(abgeleitet): **3×** (evidence/slice-backfill-change-origin.md,
+evidence/slice-backfill-snapshot-reader.md,
+evidence/slice-backfill-run-store.md).

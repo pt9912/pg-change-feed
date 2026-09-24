@@ -24,7 +24,9 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **16×** (evidence/slice-081.md, evidence/slice-084.md,
+Zähler (abgeleitet): **17×** (evidence/slice-backfill-run-store.md — Nenner der zwei
+Coverage-Messungen in den Sensor-Dokumenten, Verifikation V-1, und eine Dateizahl im
+Suchlauf-Feld, V-2; evidence/slice-081.md, evidence/slice-084.md,
 evidence/slice-085.md, evidence/slice-088.md, evidence/slice-089.md,
 evidence/slice-090.md, evidence/slice-092.md, evidence/slice-096.md,
 evidence/slice-099.md, evidence/slice-101.md, evidence/slice-102.md,
