@@ -124,15 +124,18 @@ Greenfield: die Doku führt). Umfang:
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: entfällt als eigener Punkt — der Slice **ist** das Doku-Update der Spec; das Benutzerhandbuch bleibt unberührt (§1).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
-      neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+      neuer Sensor · benannte Spec-Lücke). *(§7: geschärfte Regel — Suchlauf
+      nach dem Hedge des offenen Punkts; benannte Lücken.)*
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
-      eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
-      weiter offen).
+      eine Antwort und wird in §7 notiert. *(Zwei weitere `evidence/`-Dateien,
+      je `slice-backfill-spec-nachzug.md`: `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+      und `BEO-PGC/arbeit-ueberholt-stehenden-traeger`; siehe §7.)*
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+      weiter offen). *(Sechs Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
@@ -193,49 +196,167 @@ geschrieben.
   (`matrix`-Modul in `.d-check.yml`, [`AGENTS.md`](../../../../AGENTS.md) §3.4) — die Begründung der
   Entscheidung bleibt in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md). *Erwartet, zu belegen durch:*
   `make docs-check` grün und ein `grep -n 'ADR-0\|slice-\|welle-'` über beide
-  Spec-Dateien am Diff. **Ausgang:** *(bei Closure)*
+  Spec-Dateien am Diff. **Ausgang:** *entfallen* — nicht eingetreten:
+  `make docs-check` lief im Verifier-Lauf mit 0 Befunden, und das `grep` über
+  beide Spec-Dateien nach ADR-, Slice- und Wellen-Kennungen fand 0 Treffer
+  (Verifikation §2 Zeile 3).
 - **Zusagen als Tatsachen missverstanden** ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B):
   Lückenfreiheit, Replay-Invariante und GUC-Parität sind in
   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) „hergeleitet" bzw. „erwartet"; das Pflichtenheft darf sie nur
   als Zusage an die Umsetzung formulieren. *Erwartet, zu belegen durch:* Review
-  liest jeden Satz der neuen Abschnitte auf Zukunfts-Form. **Ausgang:** *(bei
-  Closure)*
+  liest jeden Satz der neuen Abschnitte auf Zukunfts-Form. **Ausgang:**
+  *entfallen* — nicht eingetreten: der Review nennt die Zusagen-Form im
+  Negativbefund (Lückenfreiheit und Replay-Invariante stehen als Zusage, nicht
+  als geprüfte Aussage), und der Verifier las den Abschnitt gegen die
+  Entscheidungen (Verifikation §4, Zeile „Mechanismus, Markierung, Position …").
 - **Zahl und Bezeichner der Warn-Spalte(n)** legt dieser Slice in [`SPEC-029`](../../../../spec/pflichtenheft.md) fest;
   `run-store` folgt ihnen. Weicht das Schema davon ab, ist es ein Plan-Nachzug
   dieses Slice, kein Alleingang des Schemas. *Erwartet, zu belegen durch:* der
   Abgleich von [`SPEC-029`](../../../../spec/pflichtenheft.md) und `tools/schema/schema.yaml` im Review von `run-store`.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — die Zahl (zwei) und die Bezeichner
+  (`warn_estimated_size`, `warn_duration`, `boolean NOT NULL DEFAULT false`)
+  stehen in [`SPEC-029`](../../../../spec/pflichtenheft.md) fest (Verifikation
+  §4, erste Zeile); der Abgleich mit dem Schema ist DoD-Gegenstand von
+  `slice-backfill-run-store` (die Schema-und-Grants-Zeile trägt „zwei
+  Warn-Spalten nach [`SPEC-029`](../../../../spec/pflichtenheft.md)", auf die festgelegte Form gezogen im Zug
+  `95bd14a8`).
 - **Kennungs-Vergabe [`SPEC-029`](../../../../spec/pflichtenheft.md)** gegen die Transformations-Umsetzung: sie
   erweitert [`SPEC-019`](../../../../spec/pflichtenheft.md) und braucht ggf. eigene Kennungen. Die Vergabe ist
   fortlaufend je Datei ([`SPEC-028`](../../../../spec/pflichtenheft.md) ist die höchste vorhandene); dieser Slice
   vergibt genau eine. *Erwartet, zu belegen durch:* die Suche im DoD-Punkt 2.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — nicht eingetreten: `grep -o 'SPEC-0[0-9][0-9]'
+  spec/pflichtenheft.md | sort -u` liefert am Parent (`77c60bd1`) als höchste
+  Kennung `SPEC-028` und am Diff `SPEC-029`; genau eine Kennung vergeben, und
+  die offenen Transformations-Pläne führen `SPEC-030` nicht.
 - **Überholter Text im selben Dokument** (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`,
   offen, 2×): die Überschrift „… offen" und die Einleitungssätze der Abschnitte
   können nach dem Nachzug noch die alte Aussage tragen. *Erwartet, zu belegen
   durch:* Lesen beider Abschnitte von oben nach unten und Suchlauf §3, Zeile 1.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten* — nicht an der Überschrift (Suchlauf §3, Zeile 1:
+  kein Link auf den Anker, Überschrift ohne „offen"), sondern an `SPEC-022`:
+  die unbedingte Fortsetzungs-Regel der Zeile „Reihenfolge" stand neben der
+  neuen Zeile „Position und `limit`" (Review F-1, MEDIUM). Im Slice behoben
+  (Fixrunde `1034840f`), kein Carveout und kein Folge-Slice nötig; die Klasse
+  trägt jetzt den dritten Beleg im Register (§7).
 
 - **Übergabe aus dem Review** (Deutungsfragen, keine Änderung in diesem Slice):
   F-5 (die zwei Warnungen für große Tabellen tragen im Pflichtenheft keinen
   Lastenheft-Anker; Präzisierung oder neue Zusage?) — an Verifier/Architect
   gemeldet. F-6 (die Architektur-Sicht beschreibt Annahme, Worker und
   Snapshot-Leser im Indikativ, obwohl die Umsetzung in den Folge-Slices liegt)
-  — an Verifier/Architect gemeldet. **Ausgang:** *(bei Closure)*
+  — an Verifier/Architect gemeldet. **Ausgang:** *entfallen* — der Verifier
+  urteilt beide als kein Befund (Verifikation §6): F-5 ist eine zulässige
+  Präzisierung von [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (die Warnung ändert keinen Ausgang der
+  drei Akzeptanzkriterien), F-6 folgt dem Greenfield-Stil der Sicht, ein
+  Zukunftsmarker wäre nach [`AGENTS.md`](../../../../AGENTS.md) §3.4 regelwidrig. Der Re-Evaluierungs-Trigger für F-5
+  (die Warnung wird zum Vertrag) liegt bei [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** der Zug blieb ein reiner Doku-Zug über die zwei
+  Spec-Dateien ohne Rückführung (§4): Lastenheft, Benutzerhandbuch, Code und
+  Schema sind unverändert (`git diff --stat`, Verifikation §3). Die
+  Rollen-Kette lief unabhängig — Review (Summary aus dem Report übernommen:
+  0 HIGH · 1 MEDIUM · 3 LOW · 2 INFO), Fixrunde für F-1 bis F-4 (`1034840f`,
+  `6d6ee7ea`), Verifikation „Bestätigt": sieben `[x]`-Zeilen je mit eigenem
+  Beleg, die Spec gegen [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) und
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) konform, an den zwei überholten Stellen der älteren ADR
+  (Grants, `applied` = „angenommen") folgt die Spec der jüngeren. Der
+  Verifier maß das §3.13-Suchlauf-Feld an beiden Ständen nach (sieben Zeilen,
+  alle bestätigt) und fuhr `make gates` real (EXIT=0, Stempel gleich —
+  Verifikation §1). Die Zusagen-Form trug: Lückenfreiheit und
+  Replay-Invariante stehen als Zusage an die Umsetzung, nicht als geprüfte
+  Tatsache.
+- **Was ging anders als geplant:** der Plan wuchs im Lauf um drei Zeilen
+  (`SPEC-020`/`SPEC-021`: die Live-Nachricht nimmt `origin` aus; Kopf und
+  Diagramm der Sicht; die Warn-Spalten-Festlegung — der Auftrag „Zahl und
+  Bezeichner legt dieser Slice fest" ist mit zwei Spalten eingelöst). Die
+  Fixrunde zog F-2 direkt in fünf Fremd-Plänen statt nur zu melden
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.13: „gemeldet statt still mitgeändert" — hier nicht still, die
+  Plan-Zeilen und die Suchlauf-Zeile 7 nennen es). Danach maß der Verifier
+  einen Rest: das Muster der Fixrunde suchte die „leer"-Formen, nicht den
+  Hedge „Warn-Spalte(n)" (V-1) — im Planner-Zug `95bd14a8` gezogen.
+- **Verifier-Beobachtungen (V-1 bis V-3):** *V-1* gezogen: 17 Zeilen in fünf
+  Plan-Dateien (`slice-backfill-run-store`, `-run-usecase`,
+  `-sql-administration`, `-bench-richtgroesse`, `welle-backfill-bestand`) am
+  Stand vor `95bd14a8`, 0 danach (`git grep -cE 'Warn-Spalte\(n\)|Spalte\(n\)|ein Feld für die Warn|das Feld der Warn' -- docs/plan/planning`,
+  ohne die Datei dieses Slice); der Verifier nannte 14 Zeilen in vier Dateien,
+  die übrigen drei trägt dasselbe Muster; die Absichten der Pläne bleiben
+  unberührt. Dieser Plan selbst behält „Warn-Spalte(n)" in §1 und §2 als
+  Wortlaut des ursprünglichen Auftrags; die Festlegung steht in §3. *V-2*
+  ist ein **Fehlalarm**: `harness/README.md` (Zeile `make doc-trace`) nennt
+  bereits „80 Anforderungen, **3 Waisen**" — am Parent und an `HEAD`
+  (`git grep -o '[0-9]* Anforderungen, \*\*[0-9]* Waisen\*\*' <Stand> -- harness/README.md`,
+  seit `712dc26d`); nichts zu ändern, der Verifikations-Report bleibt als
+  Record unberührt. *V-3* ohne Handlungsbedarf: die Messung der Startposition
+  eines frisch registrierten Consumers trägt `slice-backfill-e2e`.
+- **Steering-Loop-Eintrag (Lerneintrag):** geschärfte Regel (Anwendungs-Schärfung
+  der verkörperten Klasse `BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Anker
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13): *ein Slice, der eine bis dahin offene Zahl oder Menge festlegt,
+  sucht den Hedge des offenen Punkts („(n)", „offen", „noch nicht") über alle
+  Plan-Träger — nicht nur den Vorzustand des Werts, den er ersetzt.* Beleg:
+  die Träger sagten „Warn-Spalte(n)", und erst die Suche nach dem Hedge
+  (Verifikation V-1) fand sie; die „leer"-Suche der Fixrunde hatte nur einen
+  Teil getroffen, der committete Suchlauf des Implementers `docs/plan/planning`
+  gar nicht (Review F-2). Zweitens erreicht `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  mit diesem Slice **3×** (die Tabellenzeile „Reihenfolge" von `SPEC-022`
+  trug die Fortsetzungs-Regel ohne den Vorbehalt der neuen Zeile „Position
+  und `limit`", Review F-1) und wandert in die Steering-Loop-Einträge der
+  Closure von [welle-backfill-bestand](../welle-backfill-bestand.md); die Regelschärfungs-Frage bleibt eine
+  Architect-Entscheidung. Kein neuer Sensor: der Reviewer und der Verifier
+  fanden die Funde als Leser, kein Gate liest Prosa-Kohärenz. Benannte
+  Spec-Lücken (jeweils ein Träger außerhalb dieses Slice, der Zug ist
+  gemeldet, nicht gezogen): die Handbuch-Träger `docs/user/benutzerhandbuch.md`
+  (Feldliste der `GET /changes`-Antwort und Spaltenliste der View-Abfrage ohne
+  `origin` → `slice-backfill-change-origin`; Fortsetzungs-Idiome ohne die
+  Position-und-`limit`-Regel → `slice-backfill-sql-administration`; beide
+  Meldungen stehen im Suchlauf-Feld §3, Zeile 3) und die Startposition eines
+  frisch registrierten Consumers, in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) „erwartet, nicht geprüft"
+  (→ `slice-backfill-e2e`).
+- **Beobachtungs-Register (`../observations/`):**
+  - **`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`** — weitere Datei
+    `evidence/slice-backfill-spec-nachzug.md` (Review F-1); Zähler **3×**
+    (Datei-Anzahl unter `evidence/`, real ausgezählt), Schwelle erreicht,
+    Ausgang noch nicht zugewiesen — `state.md` trägt den Übergang in den
+    Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md).
+  - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — weitere Datei
+    `evidence/slice-backfill-spec-nachzug.md` (Review F-2, Verifikation
+    V-1); Zähler **27×** (real ausgezählt), Ausgang bleibt verkörpert.
+  - **F-3 (Konjunktiv über die verworfene Alternative in Spec-Prosa)** —
+    benannt, nicht angelegt: keine Register-Klasse trägt Doku-Prosa
+    (`BEO-PGC/slice-chronik-in-code-kommentar` ist auf Code-Kommentare
+    skopiert), und andere Reports nennen Konjunktiv nur als bestandene
+    Negativprüfung; ein Auftreten, kein zweites.
+  - **F-4 (unpräzise Sichtbarkeitsaussage neben einer Gegenstelle)** und der
+    **Host-Python-Einsatz** für Markdown-Ersetzungen (Review: ohne Befund,
+    kein Artefakt im Repo) — benannt, nicht angelegt: erstes Auftreten ohne
+    Klasse im Register.
+  - **F-5, F-6, V-2, V-3** — kein Befund bzw. Fehlalarm (siehe §6 und oben),
+    keine Beobachtung angefallen.
+- **Validator (Modul 8):** entfällt ausdrücklich — der Slice ist ein reiner
+  Doku-/Spec-Nachzug ohne End-Nutzer-Wert; der Nutzer-Bedarf (`LH-FA-CAP-009`
+  laut Lastenheft) wird erst durch die Umsetzung der Folge-Slices und den
+  Wellen-Beleg (`slice-backfill-e2e`) validierbar. Kein stilles Überspringen.
+- **Closure-Notiz-Review (`.harness/skills/closure-note-reviewer.md`):**
+  eine getrennte Rolle im frischen Kontext, kein Schritt der Planner-Closure;
+  der Skill prüft Slices in `done/` (Kontext-Eingang: alle Closure-Notizen
+  dort) und greift daher erst nach dem `git mv` — hier nicht ausgeführt.
+- **Folge-Slices:** keine neuen — die neun Folge-Slices der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die zwei Handbuch-Meldungen
+  gehen an `slice-backfill-change-origin` und `slice-backfill-sql-administration`.
+- **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Spec-Straten ohne
+  Kennung) **entfallen**; Risiko 2 (Zusagen als Tatsachen) **entfallen**;
+  Risiko 3 (Warn-Spalten) **entfallen** (festgelegt; Schema-Abgleich beim
+  Folge-Slice `run-store`); Risiko 4 (Kennungs-Vergabe) **entfallen**;
+  Risiko 5 (überholter Text) **eingetreten**, im Slice behoben, Klasse im
+  Register; Übergabe F-5/F-6 **entfallen** (kein Befund).
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
-  Prüfung läuft regelkonform bei deren Closure.
+  Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Lerneintrag
+  verkörpert nichts neu, er schärft die Anwendung einer bestehenden Regel
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent); (b) Folge-Slice: keiner neu; (c) Register:
+  beide genannten Kennungen existieren als Verzeichnis, und ihre
+  `evidence/`-Verzeichnisse tragen die neue Datei (3× bzw. 27×, real
+  ausgezählt).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
