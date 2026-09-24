@@ -79,7 +79,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 
 ## 2. Definition of Done
 
-- [ ] Schema und Grants: `cdc.backfill_run` liegt in `tools/schema/schema.yaml`
+- [x] Schema und Grants: `cdc.backfill_run` liegt in `tools/schema/schema.yaml`
       (CHECK auf `status` bei Erstanlage, `estimated_rows` nullable, die
       zwei Warn-Spalten nach [`SPEC-029`](../../../../spec/pflichtenheft.md)), die Grants stehen in
       `tools/schema/nacharbeit-roles.sql` — `cdc_admin` mit `SELECT`, `INSERT`,
@@ -100,20 +100,20 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       je Rolle ein Login): `cdc_capture` — `INSERT` scheitert mit SQLSTATE `42501`,
       `UPDATE` gelingt; `cdc_admin` — `INSERT` gelingt, `UPDATE` und `DELETE`
       scheitern; `cdc_reader` — `SELECT` auf die Basistabelle scheitert.
-- [ ] Annahme-Adapter: ein Store-Test gegen reale PostgreSQL zeigt, dass eine
+- [x] Annahme-Adapter: ein Store-Test gegen reale PostgreSQL zeigt, dass eine
       Annahme Run-Zeile `queued` und Antragsvermerk `applied` **zugleich**
       hinterlässt, dass ein Antragsvermerk ohne `pending`-Zeile (Rollback-Fall)
       **weder** Run-Zeile **noch** Vermerk hinterlässt, dass ein zweiter Antrag bei
       aktivem Run ohne zweite Zeile endet, und dass `estimated_rows` als `NULL` und
       nicht als `0` gespeichert und gelesen wird. *Zu belegen durch:*
       `make test-store`.
-- [ ] Atomarität: ein Store-Test gegen reale PostgreSQL zeigt, dass ein zweiter
+- [x] Atomarität: ein Store-Test gegen reale PostgreSQL zeigt, dass ein zweiter
       Leser vor dem Commit **keine** Zeile des Runs sieht und danach alle
       Blöcke zugleich, dass ein Rollback **keine** `cdc.transaction`- und keine
       `cdc.change`-Zeile hinterlässt, und dass jeder Change `origin = 'backfill'`,
       `operation = 'INSERT'` und `old_data IS NULL` trägt. *Zu belegen durch:*
       `make test-store`.
-- [ ] Ordnung und Zustand: mit einem WAL-Commit **auf derselben Position** `X`
+- [x] Ordnung und Zustand: mit einem WAL-Commit **auf derselben Position** `X`
       liest `cdc.changes` die Backfill-Blöcke **vor** dem WAL-Commit
       (`(commit_position, transaction_id, sequence)`); die Übergänge, der
       Fortschritt außerhalb der Daten-Transaktion und der Abgleich `running` →
@@ -121,7 +121,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
       `make test-store` in der Test-Datenbank; der Bericht nennt die
       Kollation der Datenbank (`datcollate`), weil die Ordnung `0bf-…` vor
       Ziffern-Kennungen eine Textsortierung ist.
-- [ ] Adapter-Pflichten aus den Port-Verträgen (`BackfillRunPort`,
+- [x] Adapter-Pflichten aus den Port-Verträgen (`BackfillRunPort`,
       `BackfillTransaction`): (1) **Zeitbegrenzung** — `Finish`,
       `InterruptRunning` und `Rollback` sind adapterseitig zeitbegrenzt und
       beenden sich bei einem vom Abbruch gelösten Kontext (ohne Frist des
@@ -141,10 +141,10 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: die Sensor-Zeile `make test-store` in `harness/README.md` und die Schema-Kommentare, soweit sie die Tabellenliste oder die Rollenverteilung aufzählen; das Benutzerhandbuch bleibt bis `sql-administration` unberührt.
+- [x] Doku-Update: die Sensor-Zeile `make test-store` in `harness/README.md` und die Schema-Kommentare, soweit sie die Tabellenliste oder die Rollenverteilung aufzählen; das Benutzerhandbuch bleibt bis `sql-administration` unberührt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -200,14 +200,14 @@ Ports liegen in `internal/application/port/outbound/backfill*.go`, der Run-Wert 
 - **Fehlerklassen.** Persistenzfehler der Adapter tragen `outbound.ErrBackfillStorage`;
   ein aktiver Run bei `Admit` ist `domainerrors.ErrBackfillRunActive`.
 
-**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Tabellenliste des `cdc`-Schemas und die Rollenverteilung der Grants"; beide Stände gemessen):**
+**§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Tabellenliste des `cdc`-Schemas und die Rollenverteilung der Grants"; beide Stände gemessen: Parent `03cd3804`, Diff `d095e5be` = letzter Code-Commit, danach nur Plan-Commits; die Zahlen sind die gedruckten Zeilen der Läufe):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Tabellenlisten in Doku und Kommentaren | `grep -rn 'cdc.administration_request' docs spec harness tools --include=*.md --include=*.sql --include=*.yaml` (Aufzählungen von Tabellen) | *(Implementer trägt ein)* | Aufzählungen nachziehen; [`SPEC-001`](../../../../spec/pflichtenheft.md) trägt `spec-nachzug` |
-| Rollenverteilung in Kommentaren | Lesen der Kopfkommentare von `nacharbeit-roles.sql` | *(Implementer trägt ein)* | nachziehen, wo die Aufzählung `cdc_capture` beschreibt |
-| Rollen-Test der Rollout-Datei | Lesen von `internal/bootstrap/roles_rollout_file_internal_test.go` (Regeln zu Views/Basistabellen) | *(Implementer trägt ein)* | anpassen |
-| Test-Bereinigung anderer Store-Tests | Lesen der `Cleanup`-Blöcke in `postgresstorage/*_test.go` | *(Implementer trägt ein)* | neue Tests bereinigen nur ihre eigenen Zeilen (`BEO-PGC/test-isolation-geteilter-zustand`) |
+| Tabellenlisten in Doku, Spec und Schema-Kommentaren | `git grep -c -e 'cdc.consumer_position' -e 'cdc.process_heartbeat' -e 'cdc.table_schema' -e 'cdc.administration_request' <Stand> -- docs/user harness spec tools/schema README.md AGENTS.md internal/adapters/driven/postgresstorage/schema.sql ':!tools/schema/plan.yaml' ':!tools/schema/down.sql'` | Parent und Diff drucken dieselben elf Dateien mit denselben Zahlen (`docs/user/benutzerhandbuch.md` 9, `docs/user/e2e-abdeckung.md` 2, `harness/README.md` 1, `harness/sensors/db-adapter-coverage.md` 2, `internal/adapters/driven/postgresstorage/schema.sql` 2, `spec/pflichtenheft.md` 5, `tools/schema/nacharbeit-administration.sql` 6, `nacharbeit-heartbeat.sql` 2, `nacharbeit-observability.sql` 7, `nacharbeit-roles.sql` 6, `tools/schema/schema.yaml` 4). Gelesen: die eine vollständige Tabellenliste ([`SPEC-001`](../../../../spec/pflichtenheft.md)) trägt `cdc.backfill_run` seit `spec-nachzug`; `db-adapter-coverage.md` Nr. 6 nennt die Tabellen, die `bootstrap.Run` liest — `cdc.backfill_run` gehört (noch) nicht dazu; der Kopf von `schema.sql` zählt Tabellen auf, die die DDL **nicht** trägt, und war schon ohne `table_schema` und `administration_request` unvollständig, eine Aufzählung der Modellliste ist er nicht; der Kopf von `schema.yaml` trägt eine Aufzählung der Tabellen des Modells | `schema.yaml`-Kopf um einen Absatz zu `backfill_run` ergänzt; die übrigen Träger unverändert, Begründung je Träger in der Spalte Befund |
+| Rollenverteilung in Kommentaren und Doku | `git grep -c -e 'cdc_capture' -e 'cdc_admin' <Stand> -- docs/user harness spec README.md AGENTS.md tools/schema/nacharbeit-roles.sql` | Parent und Diff drucken dieselben acht Dateien; einzige Zahl, die sich bewegt: `tools/schema/nacharbeit-roles.sql` 23 → 29 (die eigenen Zeilen). Gelesen: der Kopf-Absatz „Rollenschnitt" von `nacharbeit-roles.sql` beschreibt `cdc_capture` und `cdc_admin` (nachgezogen); die Rollen-Tabelle in `docs/user/benutzerhandbuch.md` §Zugriff und Rollen nennt die Zwecke der Rollen — die Betreiber-Oberfläche des Backfills entsteht erst mit `slice-backfill-sql-administration`; `harness/targets/schema-rollout.md` Zeile „Schritt 1" nennt „die drei deklarierten Views", der Leser trägt vier (`retention_blockers`), der Stand ist von diesem Slice nicht bewegt | Rollen-Datei-Kopf nachgezogen; Handbuch unverändert (Aufschub mit Adresse `slice-backfill-sql-administration`, laut §2 dieses Plans); die „drei Views" in `schema-rollout.md` gemeldet, nicht geändert (nicht von diesem Slice bewegt) |
+| Rollen-Test der Rollout-Datei | `git grep -c -e 'backfill_run' <Stand> -- internal/bootstrap` | Parent: kein Treffer; Diff: `internal/bootstrap/roles_rollout_file_internal_test.go` 5. Gelesen: Regel (7) („der Leser teilt kein Objekt mit einer schreibenden Rolle") trägt die neue Tabelle unverändert, weil `cdc_reader` keinen Grant auf sie hat; Regel (3) prüft nur `transaction`/`change` | Prüfung (4a) für `cdc.backfill_run` ergänzt (Grants und Verbote je Rolle) |
+| Test-Bereinigung anderer Store-Tests | `git grep -c -e 'DELETE FROM cdc' -e 'DROP SCHEMA' <Stand> -- 'internal/adapters/driven/postgresstorage/*_test.go'` und `git grep -n -e 'DELETE FROM cdc.transaction"' -e 'DELETE FROM cdc.change"' -e 'DELETE FROM cdc.backfill_run"' -e 'DELETE FROM cdc.source"' d095e5be -- 'internal/adapters/driven/postgresstorage/*_test.go'` | Parent sieben Dateien mit Treffern, Diff elf (neu: `backfillhelpers_test.go` 3, `backfillrun_test.go` 5, `backfillwriter_test.go` 4, `roles_test.go` 4 — die vier Zahlen sind die eigenen Bereinigungen); der zweite Befehl druckt am Diff-Stand null Treffer: keine unskopierte Löschung auf `transaction`, `change`, `backfill_run` oder `source` | die neuen Tests bereinigen nur Zeilen unter ihren eigenen Kennungen (Präfix je Test); die Dateinamen `backfill*_test.go` sortieren vor den Tests mit `DROP SCHEMA cdc CASCADE` |
 
 ## 4. Trigger
 
@@ -273,6 +273,25 @@ Lerneintrag geschrieben.
 - **DB-Adapter-Coverage** ([`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md) Punkt 3): neuer, DB-gestützt geprüfter
   Code in `postgresstorage` bewegt Zähler und Nenner. *Erwartet, zu belegen
   durch:* der Bericht nennt die Zahl mit ihrem Lauf ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A).
+  **Ausgang:** *(bei Closure)*
+- **Gemeldet (Implementer) — `cdc_admin` trägt kein Recht auf `cdc.administration_request`.**
+  Gemessen am ausgerollten Schema (`has_table_privilege('cdc_admin', 'cdc.administration_request', 'SELECT')` und
+  `'UPDATE'`: beide `false`; `SET ROLE cdc_admin; SELECT count(*) FROM cdc.administration_request` endet mit
+  „permission denied for table administration_request"). `Admit` vermerkt den Antrag als `cdc_admin`
+  ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1) und braucht dafür
+  `SELECT` und `UPDATE`; `ListPending`/`MarkApplied` laufen laut `internal/bootstrap/wiring.go` (`NewAdministrationRequest` über `cfg.AdminDSN`) über denselben Pool — gelesen, nicht an einem Login gemessen. Die Store-Tests dieses
+  Slice laufen mit dem Superuser des Testcontainers, der Rollen-Test deckt nur `cdc.backfill_run` — die Lücke ist damit
+  nicht durch einen Test rot, sondern gemessen. Vorschlag (Architect-Entscheidung, Tabelle in
+  [`ADR-0047`](../../adr/0047-rollenspezifische-dsn-verdrahtung.md)):
+  `GRANT SELECT, UPDATE ON cdc.administration_request TO cdc_admin` samt Rollen-Test; Adresse:
+  `slice-backfill-sql-administration` (dort läuft die Verdrahtung) oder ein eigener Slice. **Ausgang:** *(bei Closure)*
+- **Gemeldet (Implementer) — der Annahme-Adapter liest die Antragsart nicht.** Die geschlossene `request_kind`-Menge
+  trägt `backfill` noch nicht (`tools/schema/nacharbeit-administration.sql`); die Store-Tests nehmen deshalb einen
+  offenen Antrag der Art `enable` an. Der Art-Vergleich (`request_kind = 'backfill'` in der `WHERE`-Klausel des
+  Vermerks) gehört an `slice-backfill-sql-administration`, das die Antragsart einführt. **Ausgang:** *(bei Closure)*
+- **Gemeldet (Implementer) — Startwerte ohne Messung.** Die Fristen der Adapter (30 s je Zustands-Operation, 5 min je
+  Block und Commit, `internal/adapters/driven/postgresstorage/backfill.go`) und die zeilenweise Einfügung eines
+  Blocks (je Change eine Anweisung) sind Setzungen; ihre Messung gehört zu `slice-backfill-bench-richtgroesse`.
   **Ausgang:** *(bei Closure)*
 
 ## 7. Closure-Notiz
