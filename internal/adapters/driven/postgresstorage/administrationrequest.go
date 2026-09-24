@@ -78,15 +78,19 @@ func (a *AdministrationRequestAdapter) ListPending(ctx context.Context) ([]model
 
 // MarkApplied vermerkt einen erfolgreich verarbeiteten Antrag; die
 // WHERE-Klausel der Query trägt die Idempotenz — ein bereits vermerkter
-// Antrag bleibt unverändert, kein Fehler.
+// Antrag (etwa ein `backfill`-Antrag, den die Annahme vermerkt hat) bleibt
+// unverändert, kein Fehler und keine Erfolgsmeldung.
 func (a *AdministrationRequestAdapter) MarkApplied(ctx context.Context, id model.AdministrationRequestID) error {
 	if id == "" {
 		return domainerrors.ErrEmptyIdentifier
 	}
-	if _, err := a.db.Exec(ctx, queries.UpdateAdministrationRequestApplied, string(id)); err != nil {
+	tag, err := a.db.Exec(ctx, queries.UpdateAdministrationRequestApplied, string(id))
+	if err != nil {
 		return administrationStorageFailure(ctx, a.log, err)
 	}
-	a.log.Info(ctx, "administrationrequest: Antrag erledigt", "request_id", id)
+	if tag.RowsAffected() > 0 {
+		a.log.Info(ctx, "administrationrequest: Antrag erledigt", "request_id", id)
+	}
 	return nil
 }
 

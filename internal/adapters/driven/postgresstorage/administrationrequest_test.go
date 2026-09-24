@@ -5,6 +5,7 @@ import (
 	stderrors "errors"
 	"fmt"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -419,6 +420,71 @@ func TestAdministrationRequestAdapterMarkAppliedIsIdempotent(t *testing.T) {
 	}
 	if status != "applied" {
 		t.Fatalf("status = %q, wollen applied (MarkFailed nach MarkApplied bleibt ohne Wirkung)", status)
+	}
+}
+
+// infoRecorder sammelt die Info-Meldungen eines Adapters.
+type infoRecorder struct {
+	mu       sync.Mutex
+	messages []string
+}
+
+func (r *infoRecorder) Debug(context.Context, string, ...any) {}
+func (r *infoRecorder) Warn(context.Context, string, ...any)  {}
+func (r *infoRecorder) Error(context.Context, string, ...any) {}
+func (r *infoRecorder) Info(_ context.Context, msg string, _ ...any) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.messages = append(r.messages, msg)
+}
+
+func (r *infoRecorder) count(msg string) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	n := 0
+	for _, m := range r.messages {
+		if m == msg {
+			n++
+		}
+	}
+	return n
+}
+
+// TestAdministrationRequestAdapterMarkAppliedLogsOnlyARequestItMarked trägt
+// die Bedeutung der Erfolgsmeldung: „Antrag erledigt“ steht nur, wenn
+// `MarkApplied` eine `pending`-Zeile vermerkt hat; ein bereits vermerkter
+// Antrag (bei `backfill` die Annahme) bleibt ohne Meldung. Rot färbende
+// Mutation: die `RowsAffected`-Bedingung in `MarkApplied` entfernen — der
+// zweite Aufruf meldet den Antrag erneut.
+func TestAdministrationRequestAdapterMarkAppliedLogsOnlyARequestItMarked(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	log := &infoRecorder{}
+
+	adapter, err := postgresstorage.NewAdministrationRequest(ctx, dsn, postgresstorage.WithLog(log))
+	if err != nil {
+		t.Fatalf("NewAdministrationRequest: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+
+	var requestID string
+	if err := pool.QueryRow(ctx,
+		"SELECT cdc.enable_table($1, $2, $3)", administrationRequestSource, "public", "orders_adapter_logged",
+	).Scan(&requestID); err != nil {
+		t.Fatalf("cdc.enable_table: %v", err)
+	}
+	const done = "administrationrequest: Antrag erledigt"
+	if err := adapter.MarkApplied(ctx, model.AdministrationRequestID(requestID)); err != nil {
+		t.Fatalf("erstes MarkApplied: %v", err)
+	}
+	if got := log.count(done); got != 1 {
+		t.Fatalf("Meldungen %q nach dem ersten MarkApplied = %d, erwartet 1", done, got)
+	}
+	if err := adapter.MarkApplied(ctx, model.AdministrationRequestID(requestID)); err != nil {
+		t.Fatalf("zweites MarkApplied: %v", err)
+	}
+	if got := log.count(done); got != 1 {
+		t.Fatalf("Meldungen %q nach dem zweiten MarkApplied = %d, erwartet 1 (kein Antrag vermerkt)", done, got)
 	}
 }
 
