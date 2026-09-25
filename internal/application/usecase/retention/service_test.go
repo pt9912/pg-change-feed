@@ -36,8 +36,9 @@ type fakeStore struct {
 	readFailFrom   int
 	deleteFailFrom int
 	failErr        error
+	ignoreAfter    bool // liest immer vom Anfang, wie ein Store ohne Cursor
 
-	readErrFor   map[model.SourceID]error // Quell-Kennung → Fehler
+	readErrFor  map[model.SourceID]error // Quell-Kennung → Fehler
 	deleteErrFor model.ChangeID           // freigegebene Kennung → Fehler
 	deleteErr    error
 }
@@ -63,7 +64,7 @@ func (f *fakeStore) ReadRetentionCandidates(ctx context.Context, source model.So
 	}
 
 	start := 0
-	if after != "" {
+	if after != "" && !f.ignoreAfter {
 		start = len(f.records)
 		for i, record := range f.records {
 			if record.Change.ID == after {
@@ -608,5 +609,23 @@ func TestRunContinuesPastShortPages(t *testing.T) {
 	}
 	if wantAfters := []model.ChangeID{"", "c2", "c3", "c7"}; !idsEqual(store.readAfters, wantAfters) {
 		t.Fatalf("after je Aufruf = %q, wollen %q", store.readAfters, wantAfters)
+	}
+}
+
+// TestRunRejectsPageWithoutProgress trägt den Schutz vor einem Store, der den
+// Cursor nicht beachtet: liefert der Fake auf den zweiten Aufruf dieselbe
+// Seite, endet der Lauf als Fehler der Klasse `storage` nach zwei Lese-Aufrufen
+// und einer Löschung, statt dieselbe Seite endlos zu lesen.
+func TestRunRejectsPageWithoutProgress(t *testing.T) {
+	store := &fakeStore{maxPage: 3, ignoreAfter: true}
+	result, _, err := runPaged(t, store)
+	if !stderrors.Is(err, outbound.ErrStorage) {
+		t.Fatalf("Seite ohne Fortschritt: %v (Erwartung: Klasse storage)", err)
+	}
+	if store.readCalls != 2 || result.Deleted != 0 {
+		t.Fatalf("Lese-Aufrufe = %d, Deleted = %d, wollen 2 und 0", store.readCalls, result.Deleted)
+	}
+	if want := []model.ChangeID{"c1"}; !idsEqual(store.removed, want) {
+		t.Fatalf("gelöschte Menge = %v, wollen genau die erste Seite %v", store.removed, want)
 	}
 }

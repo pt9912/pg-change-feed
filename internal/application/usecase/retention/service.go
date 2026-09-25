@@ -6,6 +6,7 @@ package retention
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
@@ -56,6 +57,8 @@ const PageSize = 10_000
 // `ChangeStorePort.DeleteChanges`; nur eine leere Seite beendet den Lauf.
 // Der Lauf ist über die Seiten nicht atomar: ein Fehler hinterlässt die
 // Löschungen der Seiten davor, der nächste Lauf setzt fort (`ADR-0124`).
+// Eine Seite, deren letzte Kennung der Cursor ist, verletzt den Seitenvertrag
+// des Ports und endet als Fehler der Klasse `storage`, nicht als Endlosschleife.
 // Eine leere Quellen-Kennung ist eine ungültige Konfiguration und endet über
 // einen expliziten Fehlerpfad, keine stille Übernahme (`LH-FA-RET-002`
 // Negative).
@@ -92,6 +95,11 @@ func (s *RunRetentionService) Run(ctx context.Context, command RunRetentionComma
 			return RunRetentionResult{}, err
 		}
 		deleted += len(eligible)
-		after = page[len(page)-1].ChangeID
+
+		last := page[len(page)-1].ChangeID
+		if last == after {
+			return RunRetentionResult{}, fmt.Errorf("%w: Kandidaten-Seite ohne Fortschritt hinter %q", outbound.ErrStorage, after)
+		}
+		after = last
 	}
 }
