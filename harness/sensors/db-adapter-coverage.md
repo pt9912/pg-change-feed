@@ -86,14 +86,23 @@ nicht prüft, steht in §Grenze Nr. 8.
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **1035 Statements** (`postgresstorage` 686 ·
-  `postgresack` 32 · `postgressnapshot` 130 · `replication/receive` 187) — die
+- Der gemergte Nenner ist **1058 Statements** (`postgresstorage` 686 ·
+  `postgresack` 32 · `postgressnapshot` 130 · `replication/receive` 210) — die
   **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
   einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
   derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
   hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
-  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1035**
-  und ihre vier Anteile: Lauf `slice-backfill-e2e` (Closure, Stand `cf7f2d02`):
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1058**
+  und ihre vier Anteile: Lauf `slice-backfill-slot-leerlauf-bestaetigung`
+  (Implementer-Lauf am Arbeitsbaum über `f4e32fba`): `make test-store` und
+  `make test-replication` gegen PostgreSQL 18 (Pin von `PG_TEST_IMAGE`),
+  gedruckt: `DB-Adapter-Coverage: 82.51% (gedeckt 873 von 1058 Statements;
+  Profile gemergt: store,replication)`; die Anteile aus dem gemergten Profil
+  dieses Laufs abgeleitet: gedeckt 540 · 32 · 125 · 176. `replication/receive`
+  trägt gegenüber dem Nenner 187 am Stand `cf7f2d02` 23 Statements mehr: der
+  Produktionscode der Leerlauf-Bestätigung in `receive.go`. Der Nenner **1035**
+  am Stand `cf7f2d02` (Anteile 686 · 32 · 130 · 187) und seine Läufe: Lauf
+  `slice-backfill-e2e` (Closure, Stand `cf7f2d02`):
   `make test-replication` gegen PostgreSQL 18 (Pin von `PG_TEST_IMAGE`), dessen
   `db-coverage.sh` das Replication-Profil dieses Laufs mit dem Store-Profil aus
   `make test-store` mergt — der Slice berührt `postgresstorage` nicht (der

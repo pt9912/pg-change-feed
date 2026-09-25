@@ -44,9 +44,13 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
    (`pg_current_wal_lsn()` minus `confirmed_flush_lsn`, dieselbe Größe wie
    `cdc_wal_retention_bytes`) und das vom Slot gehaltene WAL (`pg_current_wal_lsn()`
    minus `restart_lsn`); gedruckt werden je Run die Spitze, der Rückstand
-   unmittelbar nach dem Run und der Rückstand nach einem Live-Commit auf der
-   aktivierten Live-Tabelle (Wartezeit bis unter die Warnschwelle, höchstens
-   120 s), je Stufe der Median der Spitzen samt abgeleiteter Bytes je Zeile. Die
+   unmittelbar nach dem Run und der Rückstand nach der Wartezeit ohne jeden
+   Schreibzugriff (bis unter die Warnschwelle, höchstens 120 s — die
+   Leerlauf-Bestätigung des Streams senkt ihn,
+   [`ADR-0120`](../../docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)),
+   je Stufe der Median der Spitzen samt abgeleiteter Bytes je Zeile, nach der
+   letzten Stufe die höchste Spitze der größten Stufe im Vergleich zur
+   Warnschwelle (100 MiB, [`SPEC-013`](../../spec/pflichtenheft.md)). Die
    Blockgröße `B` und die Toleranz liest das
    Skript aus dem Code (`DefaultBlockSize` in
    `internal/adapters/driven/postgressnapshot/snapshot.go`,
@@ -59,14 +63,10 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
    einmal während eines Runs über die größte Stufe (und 10 s danach), einmal
    als Referenz gleicher Dauer ohne Run; die Zeile nennt zusätzlich die
    WAL-Spitzen (Rückstand und gehaltenes WAL) im Lauf mit Run.
-4. **Richtgröße und WAL-Schwellen (abgeleitet).** Rate der größten Stufe
-   (Median) mal Toleranz in Sekunden, abgerundet auf eine Stelle (die erste
-   Ziffer bleibt, der Rest wird `0`). Die Zahl ist **abgeleitet**, solange keine
-   Stufe die Toleranz ausfüllt; die Ausgabe sagt es. Eine zweite Zeile rechnet
-   aus den Bytes je Zeile der größten Stufe hoch, bei welcher Zeilenzahl ein
-   einzelner Run die Warnschwelle (100 MiB) und die Fehlerschwelle (1 GiB) des
-   WAL-Rückstands (`SPEC-013`) erreichte; auch diese Zahl ist abgeleitet, und
-   die Bytes je Zeile hängen an Zeilenbreite und Bestand im CDC-Speicher.
+4. **Richtgröße (abgeleitet).** Rate der größten Stufe (Median) mal Toleranz in
+   Sekunden, abgerundet auf eine Stelle (die erste Ziffer bleibt, der Rest wird
+   `0`). Die Zahl ist **abgeleitet**, solange keine Stufe die Toleranz ausfüllt;
+   die Ausgabe sagt es.
 
 ## Parameter
 
@@ -106,9 +106,11 @@ Was das Skript **nicht** misst — eine Aussage darüber ist ungedeckt:
   liegen, und die Probe 20 s nach dem letzten Run der Stufe kann darüber liegen
   (der höchste gedruckte Wert einer Stufe ist der höchste gemessene Wert, nicht
   die Spitze allein). Der Speicher der PostgreSQL-Instanz ist nicht gemessen.
-- **WAL.** Die Messung ist ohne Pass/Fail und ohne Ursachenzuordnung: der
-  Rückstand steigt durch jedes WAL ohne Inhalt für die Publication, nicht nur
-  durch einen Run. Die Wartezeit nach dem Live-Commit ist auf 120 s begrenzt.
+- **WAL.** Die Messung ist ohne Pass/Fail und ohne Ursachenzuordnung: sie
+  liest Rückstand und gehaltenes WAL des Slots, nicht die Ursache eines Werts.
+  Die Wartezeit ohne Schreibzugriff ist auf 120 s begrenzt. Das Skript schreibt
+  zwischen den Runs nichts, was den Slot bestätigen ließe: eine Regression der
+  Leerlauf-Bestätigung bleibt als hoher Rückstand in der Ausgabe sichtbar.
 - **Live-Wirkung.** Eine Live-Last, eine Live-Tabelle, ein Run zugleich; die
   Referenz ohne Run hat dieselbe Dauer, aber keine Wiederholung.
 - **Extrapolation.** Die Richtgröße rechnet die Rate der größten Stufe auf die

@@ -32,11 +32,22 @@ Quellpositionen. **Schritte:**
    dauerhaft gespeichert.
 4. COMMIT Store — die Persistenz ist abgeschlossen.
 5. ACK Source — erst jetzt bestätigt der ReplicationAckPort die Position
-   gegenüber PostgreSQL.
+   gegenüber PostgreSQL. Im Leerlauf des Streams — keine Quelltransaktion
+   zwischen BEGIN und COMMIT — bestätigt die Application zusätzlich das
+   WAL-Ende, das die Quelle in ihrer Keepalive-Nachricht nennt, sobald es hinter
+   der zuletzt bestätigten Position liegt; diese Bestätigung braucht keine
+   Persistenz, weil das WAL bis dahin keinen zu speichernden Change der
+   Publication trägt. Inmitten einer Quelltransaktion und bei einem WAL-Ende
+   nicht hinter der bestätigten Position bestätigt der Stream nichts.
 
 Zentrale Invariante:
 
     ACK(position) => durable(all changes <= position)
+
+Sie gilt auch für die Bestätigung im Leerlauf: jede Transaktion mit Changes der
+Publication und Commit vor dem bestätigten WAL-Ende ist bereits gespeichert, und
+eine Transaktion, die davor begann und danach committet, liefert die Quelle
+nach der bestätigten Position vollständig.
 
 **Fehlermodi:** Persistenzfehler → kein Source-ACK; Dekodierfehler →
 sichtbarer Fehler (Fehlerklasse `schema`, §4), kein stilles Überspringen.
@@ -785,7 +796,7 @@ Regeln dieser Sektion: verbindliche Felder der Betriebsschnittstelle
 | `SPEC-009` | `cdc_capture_lag` | Abstand Quelländerung → CDC-Verfügbarkeit ([`LH-FA-ADM-004`](lastenheft.md)) | Capture |
 | `SPEC-009` | `cdc_consumer_lag` | Rückstand je Consumer ([`LH-FA-ADM-005`](lastenheft.md)) | ConsumerState |
 | `SPEC-009` | `cdc_consumer_position` | bestätigte Position je Consumer, roh ([`LH-QA-OPS-003`](lastenheft.md)) | ConsumerState |
-| `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand | Replication Stream |
+| `SPEC-009` | `cdc_wal_retention_bytes` | WAL-Rückstand/Replication-Slot-Zustand: das vom Feed noch nicht bestätigte WAL (aktuelles WAL-Ende der Instanz minus `confirmed_flush_lsn` des Slots); WAL ohne Inhalt für die Publication bestätigt der Feed im Leerlauf, es hält den Rückstand nicht | Replication Stream |
 | `SPEC-009` | `cdc_storage_bytes` | Speicherverbrauch der CDC-Daten | ChangeStore |
 | `SPEC-009` | `cdc_oldest_change_age` | Alter des ältesten aufbewahrten Changes | ChangeStore |
 
@@ -858,3 +869,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-24 | `SPEC-029` ergänzt: Feldform von `cdc.backfill_run` und `cdc.backfill_status` — Spalten, zwei Warn-Spalten (`warn_estimated_size`, `warn_duration`), `estimated_rows` NULL als „unbekannt", Grants je Rolle |
 | 2026-09-24 | `SPEC-019` um den Absatz „Grants" der Antrags-Queue erweitert (`cdc_admin` `SELECT`, `UPDATE`; `cdc_capture` und `cdc_reader` kein Recht; kein `INSERT`, kein `DELETE`); `LH-FA-CAP-009.a` Absatz „Markierung" um die Bedeutung der Schema-Version einer Backfill-Change ergänzt (Kennung zum Run-Start, keine Beschreibung der Bild-Spalten) |
 | 2026-09-24 | `LH-FA-CAP-009.a` Absatz „Mechanismus" um die Lesesperre des Imports und das Ende des Runs bei umgeschriebener Tabelle ergänzt (`failed`, Fehlerklasse `transient`, ohne Change) |
+| 2026-09-25 | `LH-QA-REL-001.a` Schritt 5 und Invariante um die Bestätigung im Leerlauf ergänzt (WAL-Ende der Keepalive-Nachricht, ohne Persistenz, nie inmitten einer Quelltransaktion, nie zurück); `SPEC-009` Zeile `cdc_wal_retention_bytes`: Bedeutung „vom Feed noch nicht bestätigtes WAL" |

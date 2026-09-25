@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.55
+Version: 1.56
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -450,28 +450,25 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
   desto länger. Eine Ablehnung großer Tabellen gibt es nicht; ab welcher Größe
   ein Run warnt, steht unter [Grenzwerte](#grenzwerte).
 - **WAL-Rückstand des Capture-Slots:** die Kopie schreibt den Bestand in den
-  CDC-Speicher derselben Datenbank; dieses WAL zählt zum WAL-Rückstand des
-  Capture-Slots (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)), und die
-  offene Schreibtransaktion hält das WAL für den Slot auf der Platte der Quelle.
-  Der Rückstand ist **nicht an den Backfill gebunden**: der Slot bestätigt nur
-  Commits, die Änderungen veröffentlichter Tabellen tragen; jedes WAL ohne
-  solchen Inhalt (der Run, aber ebenso ein Schreiber auf eine nicht aktivierte
-  Tabelle) hebt den Rückstand, bis ein Commit auf einer aktivierten Tabelle
-  eintrifft. Überschreitet er die Fehlerschwelle von 1 GiB, beendet sich der
+  CDC-Speicher derselben Datenbank. Dieses WAL trägt keine Änderung einer
+  veröffentlichten Tabelle; der Feed bestätigt es im Leerlauf seines Streams
+  (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)), es hält den
+  Rückstand des Capture-Slots also nicht, und der Run beendet den Feed-Container
+  nicht über die Fehlerschwelle — dasselbe gilt für jeden Schreiber auf eine
+  nicht aktivierte Tabelle. Was bleibt, ist die offene
+  Schreibtransaktion des Runs: sie hält das WAL für den Slot auf der Platte der
+  Quelle, und der Walsender der Quelle dekodiert sie in seinen Arbeitsspeicher
+  und lagert sie ab einer Größe auf die Platte aus. Beides wächst mit der Größe
+  der Tabelle und ist eine Eigenschaft der Ein-Transaktions-Form des Runs; die
+  Bestätigung im Leerlauf ändert es nicht. Gemessene Werte stehen unter
+  [Grenzwerte](#grenzwerte). Wächst der Rückstand dennoch über die
+  Fehlerschwelle (etwa weil der Feed nicht antwortet), beendet sich der
   Feed-Container mit der Klasse `replication` (Ausgang 1) und ein laufender Run
-  endet `interrupted`; das kann bei weniger Zeilen eintreten als die Richtgröße.
-  Die Bestätigung solchen WALs ist in
-  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
-  entschieden und im Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung`
-  geplant; in dieser Version bestätigt der Slot es nicht. **Abhilfen für den
-  Betrieb:** ein Commit auf einer aktivierten Tabelle (etwa ein einzelner
-  Schreibvorgang auf eine Tabelle aus der Aktivierung) senkt den Rückstand
-  sofort; das Datei-Feld `wal_retention_error_bytes` (Bytes, kein
+  endet `interrupted`; das Datei-Feld `wal_retention_error_bytes` (Bytes, kein
   Umgebungsvariablen-Gegenstück, `SPEC-016`, siehe
   [Optionale YAML-Konfigurationsdatei](#optionale-yaml-konfigurationsdatei-cdc_config_file))
   hebt die Fehlerschwelle über den erwarteten Rückstand — es ändert die Ursache
-  nicht und wirkt für jede Ursache eines Rückstands. Gemessene Werte stehen unter
-  [Grenzwerte](#grenzwerte).
+  nicht und wirkt für jede Ursache eines Rückstands.
 
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
 der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
@@ -820,8 +817,13 @@ strukturiert:
 {"msg": "replication: WAL-Rückstand gemessen", "metric": "cdc_wal_retention_bytes", "bytes": 12345}
 ```
 
-**Ergebnis:** `bytes` wächst, solange der Capture-Slot inaktiv ist und die
-Quelle weiterschreibt (z. B. während eines Verbindungsabbruchs) — ein
+**Ergebnis:** `bytes` ist das WAL, das die Quelle dem Feed geliefert, der Feed
+aber noch nicht bestätigt hat (aktuelles WAL-Ende der Instanz minus
+`confirmed_flush_lsn` des Slots). WAL ohne Inhalt für die Publication — ein
+Schreiber auf eine nicht aktivierte Tabelle, ein Backfill-Run — bestätigt der
+Feed im Leerlauf seines Streams selbst und lässt den Wert damit nicht wachsen. `bytes` wächst, solange der Feed nicht
+bestätigt: der Capture-Slot ist inaktiv und die Quelle schreibt weiter (z. B.
+während eines Verbindungsabbruchs), oder der Feed antwortet nicht — ein
 dauerhaft wachsender Wert ist ein Warnsignal für WAL-Erschöpfung auf der
 Quelle. Der Feed-Container vergleicht den gemessenen Wert bei jedem Takt
 gegen zwei Schwellen (`SPEC-013`, `ADR-0049`):
@@ -1600,14 +1602,16 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   des Implementers, im Repository nicht auflösbar), also je 5.000.000
   Zeilen nach Rundung; der Lauf `20260925T015600Z` (gemessen, gedruckt im
   [Verifikations-Report](../reviews/verifikation-slice-backfill-bench-richtgroesse.md)
-  §3) ergibt 8.654 Zeilen/s und ebenfalls 5.000.000 Zeilen. Der Wert im Code (4.000.000) ist der kleinere und damit
-  vorsichtigere Wert; die Konstante ist ein Startwert, den eine weitere Messung
-  nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
+  §3) ergibt 8.654 Zeilen/s und ebenfalls 5.000.000 Zeilen. Der Lauf
+  `20260925T032925Z` (gemessen, gedruckt im Lauf) ergibt bei 5.532 Zeilen/s
+  (Bereich 4.778 bis 6.631) 3.319.200 Zeilen, abgerundet 3.000.000. Der Wert im
+  Code (4.000.000) liegt innerhalb der Spanne dieser Läufe (3.000.000 bis
+  5.000.000 nach Rundung); die Konstante ist ein Startwert, den eine weitere
+  Messung nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
   ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
   den Lauf-Berichten, nicht im Repository). Die Zahl gilt für den Host und die
   Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
-  andere Hardware und eine andere Einfügeform sind ungemessen. Die
-  WAL-Fehlerschwelle (siehe unten) kann bei weniger Zeilen greifen.
+  andere Hardware und eine andere Einfügeform sind ungemessen.
 - **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
   `tools/bench-backfill.sh`, Vertrag in
   [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
@@ -1650,38 +1654,46 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   nicht untersucht, ein Zusammenhang mit der Tabellengröße ist nicht belegt.
   Bemessen Sie den Speicher des Feed-Containers nicht knapp an der Spitze im Run.
 - **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
-  `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen);
-  dieselben Läufe): Spitze im Run im Median 140 MiB in der Stufe mit 200.000
-  Zeilen (etwa 735 Bytes je Zeile), 719 und 834 MiB in den zwei Runs über je
-  1.000.000 Zeilen. Der Rückstand blieb ohne Live-Commit bestehen (776 MiB
-  unmittelbar nach dem ersten Run über 1.000.000 Zeilen) und sank nach einem
-  Live-Commit auf einer aktivierten Tabelle auf 2 MiB. Ein **dritter** Run über
-  1.000.000 Zeilen im selben CDC-Speicher (mit den 2.330.000 Backfill-Änderungen
-  der vorherigen Runs) überschritt vor seinem Ende die
-  Fehlerschwelle von 1 GiB (Messwert 1.098.218.616 Bytes): der Feed-Container
-  beendete sich mit Ausgang 1 (`replication`), der Run endete `interrupted`.
-  Der Rückstand je Zeile wächst danach mit dem Bestand im CDC-Speicher
-  (abgeleitet aus den drei Runs). Das vom
-  Slot auf der Platte der Quelle gehaltene WAL erreichte
-  in den zwei Runs über 1.000.000 Zeilen 782 und 1.613 MiB (Spitze).
-  Ein Nachlauf am eigenen Lauf `20260925T012459Z` (übernommen aus dem
-  Lauf-Bericht des Implementers, im Repository nicht auflösbar; Stufe 200.000
-  Zeilen) liegt im selben Band: Spitze im Run Median 140 MiB (etwa 735 Bytes je
-  Zeile, abgeleitet), vom Slot gehaltenes WAL Median 266 MiB.
-  **Ursache und Abhilfe:** der Rückstand hängt nicht am Backfill. Ein Schreiber,
-  der 200.000 Zeilen in eine **nicht aktivierte** Tabelle schrieb, hob ihn ohne
-  Run um 33,5 MiB (175 Bytes je Zeile); der Rückstand blieb bis zu einem
-  Commit auf einer aktivierten Tabelle bestehen, der ihn innerhalb von 3 s auf
-  0 MiB senkte (Lauf `wal-verdikt[20260925T004731Z]`, gedruckt in
+  `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)).
+  Der Feed bestätigt WAL ohne Inhalt für die Publication im Leerlauf seines
+  Streams. Gemessen (Lauf `20260925T032925Z` von `tools/bench-backfill.sh`,
+  gedruckt im Lauf, Vertrag in
+  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
+  Host und Tabellen wie oben, PostgreSQL 18; Rückstand im Abstand von 1 bis 2 s
+  gelesen und auf ganze MiB gerundet): in allen neun Runs der Stufen mit 10.000,
+  50.000 und 200.000 Zeilen (je 3 Runs) lag die Spitze des Rückstands im Run bei
+  0 MiB, unmittelbar nach dem Run ebenfalls bei 0 MiB; das Skript schrieb
+  zwischen den Runs nichts. Ohne die Bestätigung — gemessen an einem
+  Stand, der WAL ohne Inhalt für die Publication nicht bestätigte (Lauf
+  `20260925T000439Z`, Stufe 200.000 Zeilen, übernommen aus dem Lauf-Bericht, im
+  Repository nicht auflösbar; ebenso die Läufe `20260925T012459Z`,
+  `20260924T233628Z`) — lag die Spitze im Run im Median bei 140 MiB (etwa 735
+  Bytes je Zeile), bei 719 und 834 MiB in den zwei Runs über je 1.000.000 Zeilen,
+  und der Rückstand blieb bis zu einem Commit auf einer aktivierten Tabelle
+  bestehen (776 MiB unmittelbar nach dem ersten Run über 1.000.000 Zeilen); ein
+  dritter Run über 1.000.000 Zeilen im selben CDC-Speicher überschritt vor
+  seinem Ende die Fehlerschwelle von 1 GiB (Messwert 1.098.218.616 Bytes,
+  Feed-Container mit Ausgang 1, Run `interrupted`). Ein Schreiber auf eine nicht
+  aktivierte Tabelle erzeugte dort ohne Run 33,5 MiB WAL je 200.000 Zeilen (175
+  Bytes je Zeile; Lauf `wal-verdikt[20260925T004731Z]`, gedruckt in
   [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
   §Gemessen; Architekt-Verdikt
   [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)).
-  Die Ursache ist die fehlende Bestätigung von WAL ohne Inhalt für die
-  Publication; ihre Behebung ist der Folge-Slice
-  `slice-backfill-slot-leerlauf-bestaetigung`. Als Abhilfen stehen die Punkte
-  aus [Bestand als Backfill überführen](#bestand-als-backfill-überführen) zur
-  Verfügung: ein Commit auf einer aktivierten Tabelle, oder das Datei-Feld
-  `wal_retention_error_bytes`.
+  **Grenze der Ein-Transaktions-Form:** das vom Slot auf der Platte der Quelle
+  **gehaltene** WAL (`restart_lsn`) und der Spill des Walsenders bleiben. Das
+  gehaltene WAL erreichte in der Stufe mit 200.000 Zeilen im Median 140 MiB
+  (Spitze im Run, Lauf `20260925T032925Z`; 31 MiB bei 50.000 und 7 MiB bei
+  10.000 Zeilen), in den zwei Runs über je 1.000.000 Zeilen 782 und 1.613 MiB
+  (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar). Der
+  Walsender lagerte bei einem Run über 200.000 Zeilen 79 MB der offenen
+  Transaktion aus (`spill_bytes` des Slots, `logical_decoding_work_mem` 64 MB;
+  Lauf `spill-verdikt[20260925T005729Z]`, übernommen aus
+  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
+  §Gemessen). Beides wächst mit der Größe der Tabelle; die Bestätigung im
+  Leerlauf entlastet den Capture-Pfad, nicht die Platte der Quelle. Bemessen
+  Sie den Plattenplatz der Quelle danach (abgeleitet: 1.613 MiB gehaltenes WAL
+  bei 1.000.000 Zeilen von etwa 74 Bytes, gut das Zwanzigfache der
+  Zeilenbytes).
 - **Backfill, Wirkung auf die Live-Erfassung** (je ein Run über 200.000 Zeilen
   bei 100 Live-Änderungen/s in eine andere aktivierte Tabelle, dazu eine
   Referenz gleicher Dauer ohne Run; **jeder Vergleich ist ein Einzellauf ohne
@@ -1777,3 +1789,4 @@ MIT — siehe `LICENSE`.
 | 1.53 | 2026-09-25 | Warnungen des Backfill-Runs und gemessene Richtgrößen dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse): §4 „Bestand als Backfill überführen“ nennt, wann `warn_estimated_size` und `warn_duration` gesetzt werden, und den WAL-Rückstand des Capture-Slots als vierte Betriebs-Vorbedingung; „Diagnose ausführen“ deutet die beiden Kennzeichnungen; §9 „Grenzwerte“ trägt die Toleranz der Kopierdauer (Startwert, Setzung ohne Messung), die Richtgröße (abgeleitet, Orientierung, keine Grenze) und die gemessenen Werte (Kopierdauer, Speicher, WAL-Rückstand, Wirkung auf die Live-Erfassung, Schätzung der Zeilenzahl) mit Host und Lauf |
 | 1.54 | 2026-09-25 | Ursache und Abhilfen des WAL-Rückstands sowie Ursprung der Messwerte nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-bench-richtgroesse Fixrunde): §4 „Bestand als Backfill überführen“ nennt den WAL-Rückstand als nicht an den Backfill gebunden, den Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` und die Betriebs-Abhilfen (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); §9 „Grenzwerte“ nennt zur Richtgröße die Werte dreier Läufe (7.693, 8.933, 8.559 Zeilen/s; Konstante = kleinster Wert), zum Speicher des Feed-Containers die Spitze im Run **und** die Probe 20 s nach dem Run (641,7 MiB als höchster gemessener Wert), zur Live-Wirkung drei Einzelläufe statt einer Aussage „kein Unterschied“, und kennzeichnet die im Repository nicht auflösbaren Läufe als übernommen |
 | 1.55 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T012459Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar), Richtgröße um den gedruckten Lauf `20260925T015600Z` des Verifikations-Reports ergänzt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse Closure) |
+| 1.56 | 2026-09-25 | Bestätigung von WAL ohne Inhalt für die Publication im Leerlauf des Streams dokumentiert (`LH-FA-CAP-009`, `LH-QA-REL-001`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung): §4 „WAL-Rückstand prüfen“ nennt die Bedeutung von `cdc_wal_retention_bytes` (vom Feed noch nicht bestätigtes WAL) und dass WAL ohne Inhalt für die Publication den Wert nicht wachsen lässt; §4 „Bestand als Backfill überführen“ trägt den WAL-Rückstand als Punkt ohne Abbruch über die Fehlerschwelle und die offene Schreibtransaktion des Runs als verbleibende Last; §9 „Grenzwerte“ führt den Rückstand mit Bestätigung (Lauf `20260925T032925Z`), die Messwerte ohne Bestätigung mit ihrem Lauf, das gehaltene WAL und den Spill als Grenze der Ein-Transaktions-Form und die Richtgröße um den Lauf `20260925T032925Z` ergänzt; der Satz „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ entfällt |

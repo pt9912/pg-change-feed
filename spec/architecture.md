@@ -130,6 +130,33 @@ deren abhängige Changes bereits dauerhaft gespeichert wurden. Stream und ACK
 dürfen dieselbe technische Verbindung verwenden, sind architektonisch
 getrennte Rollen.
 
+**Leerlauf-Weg.** Trägt eine Keepalive-Nachricht der Quelle ein WAL-Ende hinter
+der zuletzt bestätigten Position, während der Stream keine Quelltransaktion
+offen hat, meldet der Replication Stream „Leerlauf bis Position" an die
+Application; sie bestätigt die Position über denselben ReplicationAckPort, ohne
+etwas zu persistieren. WAL, das keine Tabelle der Publication berührt, hält den
+Slot damit nicht zurück. Inmitten einer Quelltransaktion und bei einem WAL-Ende
+nicht hinter der bestätigten Position bestätigt der Stream nichts.
+
+```mermaid
+sequenceDiagram
+    participant PG as PostgreSQL (WAL)
+    participant RS as Replication Stream (Driving, ARC-005)
+    participant IIP as IdleConfirmationInboundPort (ARC-003)
+    participant App as Application (ARC-002)
+    participant RAP as ReplicationAckPort (ARC-004)
+    participant AA as PostgresReplicationAckAdapter (ARC-006)
+
+    PG->>RS: Keepalive (WAL-Ende P)
+    Note over RS: keine Quelltransaktion offen,<br/>P hinter der bestätigten Position
+    RS->>IIP: Leerlauf bis P
+    IIP->>App: ConfirmIdle
+    App->>RAP: ACK(P), ohne PersistTransaction
+    RAP->>AA: Position an Quelle bestätigen
+    AA->>PG: WAL-Bestätigung
+    App-->>RS: Ergebnis: bestätigte Position P
+```
+
 ### Use-Case: LH-FA-REA-002 — Lesen ab Position
 
 ```mermaid

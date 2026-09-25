@@ -62,7 +62,27 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2558** (Lauf `slice-backfill-bench-richtgroesse`,
+**Der Nenner der Stufe ist 2567** (Lauf `slice-backfill-slot-leerlauf-bestaetigung`,
+Implementer-Lauf am Arbeitsbaum über `f4e32fba`: `make coverage-gate` baut die
+Stufe `coverage`, das Profil `/out/coverage.out` des gebauten Images,
+dedupliziert über die Block-Position mit Awk ausgezählt; gedeckt **2136 von
+2567** = 83,21 %, gedruckt `total: (statements) 83.2%` und `coverage-gate: OK —
+Coverage 83.20% erfüllt Schwelle 80%`). Der Nenner trägt gegenüber dem Nenner
+2558 am Stand `8d8860f7` (unten) neun Statements mehr (**abgeleitet**); die Produktionsdateien
+des Slice im Gegenstand sind `usecase/capture/service.go` (47 von 47 gedeckt),
+`replication/mapper/mapper.go` (168 von 175) und `bootstrap/wiring.go` (237 von
+604), aus demselben Profil (`git diff --stat f4e32fba` über `internal`, `cmd`,
+`gen` ohne Testdateien zeigt außer diesen drei nur `replication/receive/receive.go`,
+das im Gegenstand der DB-Adapter-Coverage liegt, und den Port
+`port/inbound/idleconfirmation.go` ohne ausführbare Statements). Die
+Lokatoren der zwei Blöcke von `wiring.go`, die der Abschnitt unten nennt, liegen
+am Stand dieses Laufs bei `:1287.4,1288.1` (Kontext-Ende-Zweig von
+`runAdministration`, 1 Statement; die Funktion trägt einen weiteren
+`return`-Zweig bei `:1293.4,1294.1`) und `:1183.5,1184.13` (Fehlerzweig der
+WAL-Rückstands-Messung in `runWALRetentionCheck`, 2 Statements), gemessen im
+Profil dieses Laufs.
+
+**Der Nenner der Stufe am Stand `8d8860f7` war 2558** (Lauf `slice-backfill-bench-richtgroesse`,
 Closure am Stand `8d8860f7`: `make coverage-gate` baut die Stufe `coverage`, das
 Profil `/out/coverage.out` des gebauten Images, dedupliziert über die
 Block-Position mit Awk ausgezählt; gedeckt **2129 von 2558** = 83,23 %, gedruckt
@@ -112,8 +132,8 @@ nie; wer den Ist-Stand braucht, liest diesen Absatz, nicht die Zahl darunter.
   `internal/bootstrap/wiring.go`; von den zwei Blöcken, die die
   Acht-Lauf-Messung unten benennt, trägt sie nach dem Stand von `slice-093`
   nur noch **einer**: der Kontext-Ende-Zweig von `runAdministration`
-  (`:1091.4,1092.1`, 1 Statement). Den zweiten — den Fehlerzweig der
-  WAL-Rückstands-Messung in `runWALRetentionCheck` (`:991.5,992.13`,
+  (`:1287.4,1288.1`, 1 Statement). Den zweiten — den Fehlerzweig der
+  WAL-Rückstands-Messung in `runWALRetentionCheck` (`:1183.5,1184.13`,
   2 Statements), den
   [`ADR-0082`](../../docs/plan/adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md)
   §Kontext (2) als Takt-Zweig benennt — fährt der netzlose Test
