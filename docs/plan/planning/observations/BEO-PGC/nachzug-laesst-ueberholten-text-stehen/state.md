@@ -12,10 +12,12 @@ Begründung: die Belege sind dieselbe Fehlerklasse (ein Nachzug lässt eine
 eingeordnet; der Reviewer-Punkt ordnet sie einheitlich ein. Ein Sensor ist
 ausgeschlossen: ob zwei Aussagen einander widersprechen, ist eine Lese-Handlung.
 
-Zähler: 10× (Dateien unter `evidence/`; die zehnte,
+Zähler: 11× (Dateien unter `evidence/`; die zehnte,
 `evidence/slice-backfill-speicher-untersuchung.md`, trägt F-3, F-5 und V-2: Nachbar-Aussagen
 im selben Handbuch und im Trigger des Folge-Slice, ein Suchausdruck in fremder Datei, dessen
-Meldung die Closure des meldenden Slice zieht).
+Meldung die Closure des meldenden Slice zieht; die elfte,
+`evidence/slice-retention-lauf-speicher-begrenzung.md`, trägt F-3 und V-1, beide MEDIUM: die
+Nachzüge eines Architect-Verdikts in Plan §6 und Handbuch).
 
 Deckel bei 10× (seit slice-backfill-speicher-untersuchung): weitere Auftreten, die vor dem
 Merge vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten

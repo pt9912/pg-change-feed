@@ -1,9 +1,13 @@
-Zustand: **geplant** — Ausgang: **geplant** →
-`slice-retention-lauf-speicher-begrenzung` (Datei in `open/`): die Ursache der Speicher-Spitze
-des Feed-Containers nach einem Backfill ist untersucht und belegt — der Retention-Lauf liest
-alle Changes der Quelle samt Row Images, nicht der Block (Messbericht
+Zustand: **verkörpert** — Ausgang: **verkörpert** →
+`internal/application/usecase/retention/service.go` (Kandidaten seitenweise ohne Row Images,
+`ReadRetentionCandidates` am `ChangeStorePort`) · seit slice-retention-lauf-speicher-begrenzung
+(Entscheidung `ADR-0124`): die Ursache der Speicher-Spitze des Feed-Containers nach einem
+Backfill ist der Retention-Lauf, nicht der Block (Messbericht
 `messbericht-slice-backfill-speicher-untersuchung` §1 und §4; Schalter „Bereinigung aus“:
-flach). Herkunft: `slice-backfill-speicher-untersuchung`, seit welle-backfill-bestand
+flach). Beleg der Behebung: Spitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes
+(`messbericht-slice-retention-lauf-speicher-begrenzung` Abschnitt 3; Verifier-Lauf
+15,5 bis 17,3 MiB, `verifikation-slice-retention-lauf-speicher-begrenzung` Abschnitt 4).
+Herkunft: `slice-backfill-speicher-untersuchung`, seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt` §4.3 und §5 (h)).
 
 Gegenstand: der Block des Snapshot-Lesers zählt Zeilen, nicht Bytes (Port-Doku `NextBlock`

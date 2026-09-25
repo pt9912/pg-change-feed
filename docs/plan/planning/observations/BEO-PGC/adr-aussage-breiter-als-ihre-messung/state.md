@@ -23,6 +23,13 @@ Die Belege und ihre Berichtigungen:
   `make test-replication`, der Beleg liegt in `make test-integration`): berichtigt
   mit `ADR-0122`.
 
+- `ADR-0124` (Fitness-Function-Zeile 3: „die Spitze nach dem Run liegt im Bereich der
+  Spitze im Run (8,9 bis 10,5 MiB) plus dem Bedarf einer Seite“; gemessen 14,9 bis
+  17,6 MiB): **akzeptiertes Negativ**, kein Supersede. Die Zeile ist eine Messung ohne
+  Pass/Fail, keine der sechs Festlegungen hängt an der Zahl; die Lesart (der Form nach
+  erfüllt) steht in der Closure-Notiz von `slice-retention-lauf-speicher-begrenzung`
+  und im Messbericht dieses Slice, Abschnitt 7.1.
+
 Verwandt, nicht doppelt gezählt: `BEO-PGC/architect-verdikt-rollen-scope-luecke`.
 
-Zähler: 5× (Dateien unter `evidence/`).
+Zähler: 6× (Dateien unter `evidence/`).

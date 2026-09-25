@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.63
+Version: 1.64
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -680,7 +680,12 @@ als schützenswert. Ein neu angebundener Consumer, der vor seinem ersten
 Lesezugriff vor Bereinigung geschützt sein soll, sollte deshalb einmal
 bestätigen (auch die dokumentierte Anfangsposition genügt), bevor er mit
 dem Lesen beginnt. Bestätigt ein Consumer erstmals, während ein Durchlauf
-läuft, gilt seine Position erst im nächsten Durchlauf.
+läuft, gilt seine Position erst im nächsten Durchlauf: Changes, die dieser
+Durchlauf nach dem Lesen der Positionen löscht, sind für diesen Consumer
+verloren, sein Schutz beginnt mit dem nächsten Durchlauf. Ein Durchlauf kann
+eine Transaktion in mehreren Schritten löschen; ein Consumer mit bestätigter
+Position sieht davon nichts, ein Consumer ohne Bestätigung kann eine alte
+Transaktion währenddessen unvollständig lesen.
 
 Direkter SQL-Zugriff auf die betroffenen Tabellen bleibt zulässig
 (`cdc_admin`-Mitgliedschaft, verbunden über `CDC_ADMIN_DSN`):
@@ -1879,3 +1884,4 @@ MIT — siehe `LICENSE`.
 | 1.61 | 2026-09-25 | Zahlen und Herkunftsangaben der Speicher-Messung in §9 „Grenzwerte“ und §4 „Bestand als Backfill überführen“ nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung Fixrunde): Höchstwert je Change 1,59 statt 1,57 KiB, `GOGC=25` senkt die Spitze um 11 bis 21 % statt 18 bis 21 %, die Runs mit 2.000.000 Changes vor dem Run stehen in einer eigenen Zeile; der Speicher im Run bei nicht leerem `cdc.change` ist benannt; Herkunft der Aussage zur laufenden Erfassung; die Server-Versionen `v0.1.0` bis `v0.1.2` tragen denselben Bereinigungslauf; Reihe N als Gegenprobe zum Ausbleiben der Bereinigungs-Takte |
 | 1.62 | 2026-09-25 | Bereinigungslauf liest Kandidaten seitenweise ohne Row Images (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung): §4 „Aufbewahrung (Retention)“ beschreibt die Seiten (10.000 Changes, nicht atomar, Consumer-Positionen einmal je Durchlauf), §4 „Bestand als Backfill überführen“ und §9 „Grenzwerte“ ersetzen die Bemessung des Speicherlimits je Change durch die Nachmessung (Spitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, zwei Läufe) und nennen den Stand der Vorversionen `v0.1.0` bis `v0.1.2`; die Richtgröße bleibt und folgt der Kopierdauer |
 | 1.63 | 2026-09-25 | Aussagen zum Speicher des Feed-Containers an die Messung angeglichen (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Fixrunde): der Speicher hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der Changes (gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, über 3.000.000 Changes nichts gemessen); der Anstieg zwischen den Stufen ist als Differenz zweier Endpunkte (keine gemessene Steigung) mit dem Ausgangszustand des Containers benannt, ein dritter Lauf mit Seiten-Cache-Anteil ergänzt; die Beschreibung der Vorversionen nennt ihren Ist-Zustand |
+| 1.64 | 2026-09-25 | Betriebs-Hinweis (Consumer-Bindung) unter „Aufbewahrung (Retention)“ um zwei Folgen ergänzt (`LH-FA-RET-004`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Closure): Changes, die ein Durchlauf nach dem Lesen der Positionen löscht, sind für einen erstmals bestätigenden Consumer verloren, sein Schutz beginnt mit dem nächsten Durchlauf; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen, ein Consumer ohne Bestätigung kann sie währenddessen unvollständig lesen |

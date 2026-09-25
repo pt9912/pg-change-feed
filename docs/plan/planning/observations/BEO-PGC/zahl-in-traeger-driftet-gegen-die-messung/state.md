@@ -1,4 +1,4 @@
-Deckel bei 22× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 23× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -35,7 +35,11 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **22×** (evidence/slice-backfill-speicher-untersuchung.md — Prozentangabe
+Zähler (abgeleitet): **23×** (evidence/slice-retention-lauf-speicher-begrenzung.md — eine
+unbedingte Aussage („hängt nicht an der Zahl der Changes“) gegen die gemessene Steigung im
+selben Träger, Review F-1 (MEDIUM, daher Datei trotz Deckel), F-2, und die Zählwörter des
+Suchlauf-Felds ohne Stand-Commit, Verifikation V-2;
+evidence/slice-backfill-speicher-untersuchung.md — Prozentangabe
 und Höchstwert je Change gegen die gedruckten Zeilen (beide HIGH), zwei Zählwörter im
 Suchlauf-Feld, Review F-1, F-2 und Verifikation V-3;
 evidence/slice-backfill-sdk-origin.md — eine Trefferzahl im

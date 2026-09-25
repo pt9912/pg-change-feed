@@ -20,3 +20,8 @@ Der Ort, an dem der Fehler entstehen konnte (die Warn-Richtgröße von
 Nennung von Richtgröße und Toleranz trägt Lauf, Host und das Wort „Orientierung“
 bzw. „Startwert, Setzung ohne Messung“, und keine Stelle lehnt einen Antrag wegen
 der Größe ab (Verifikation §2 Nr. 3, §8). Der Zähler bleibt **1×**.
+
+Angewandt ohne Anfall an `slice-retention-lauf-speicher-begrenzung`: der Bedarf einer Seite
+(etwa 1,5 MiB, hergeleitet) steht als Orientierung neben der gemessenen Spitze (14,9 bis
+17,6 MiB), keine Stelle lehnt oder begrenzt anhand der Herleitung; der Bedarf einer Seite
+ist nicht getrennt gemessen. Der Zähler bleibt **1×**.

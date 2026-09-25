@@ -256,16 +256,17 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       in der Fixrunde aufgelöst (Wortlaut in Handbuch 1.63, Pflichtenheft und Godoc;
       Auswertung der Klausel im Messbericht Abschnitt 7.1); F-3 und F-13: Architect-Verdikt
       `architect-verdict-retention-neue-consumer-und-seitengrenze` liegt vor, die
-      Eintragung als Ausgang in §6 folgt bei der Closure (Planner).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+      Ausgänge stehen in §6, das Handbuch trägt die Folgen (1.64). Verifikation
+      `verifikation-slice-retention-lauf-speicher-begrenzung`: DoD erfüllt.
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von der
       Slice-Closure selbst (§7): die Roadmap führt mit
       [welle-transformationen](../welle-transformationen.md) eine offene Welle, deren
       Closure hängt aber an zehn Slices in `open/` (gemessen am 2026-09-25 mit `ls
@@ -337,10 +338,15 @@ sonst 0); Befehl 3: 80 (`docs/user` 18, `harness` 5, `spec` 5, `internal` 16, `t
 `spec` 7, `docs/user` 2, `harness` 0); Befehl 2: 13 (alle `docs/user`); Befehl 3: 87
 (`docs/user` 25, `harness` 5, `spec` 5, `internal` 16, `tools` 9, `README.md` 0,
 `docs/plan/adr` 27; die Abweichung zu den 80 Zeilen für `5b1f7762` folgt aus den seither
-geschriebenen Handbuch-Zeilen). Diff (Arbeitsbaum am Ende der Arbeit, `git grep -n …` ohne
-Baum): Befehl 1: 309 (`internal` 274, `test` 24, `tools` 2, `spec` 7, `docs/user` 2,
-`harness` 0); Befehl 2: 6 (alle `docs/user`); Befehl 3: 85 (`docs/user` 18, `harness` 7,
-`spec` 7, `internal` 17, `tools` 9, `README.md` 0, `docs/plan/adr` 27).
+geschriebenen Handbuch-Zeilen). Diff-Stand `b2484add` (Ende der Umsetzung, vor der
+Fixrunde; `git grep -n … b2484add -- <Wurzeln>`): Befehl 1: 309 (`internal` 274, `test` 24,
+`tools` 2, `spec` 7, `docs/user` 2, `harness` 0); Befehl 2: 6 (alle `docs/user`); Befehl 3: 85
+(`docs/user` 18, `harness` 7, `spec` 7, `internal` 17, `tools` 9, `README.md` 0,
+`docs/plan/adr` 27). Stand `bade3fef` (`HEAD` vor der Closure; die Fixrunde ergänzt Handbuch-
+und Vertragszeilen, `git grep -n … bade3fef -- <Wurzeln>`, gemessen am 2026-09-25): Befehl 1:
+309; Befehl 2: 7; Befehl 3: 88 (`docs/user` 20, `harness` 8, `spec` 7, `internal` 17, `tools` 9,
+`README.md` 0, `docs/plan/adr` 27). Im Arbeitsbaum der Closure trägt Befehl 3 eine Zeile mehr
+(89, `docs/user` 21: die Historienzeile 1.64 des Handbuchs), Befehl 1 und 2 sind unverändert.
 
 **Ergebnis des Suchlaufs am Diff (Implementer).** *Gefunden und gezogen:* die Träger der
 Tabelle in §3 (Port, Use Case, Adapter, vier Fakes, Kommentar an `retentionInterval`,
@@ -463,7 +469,10 @@ geschrieben.
   unabhängige SQL-Zählung und die unverändert grünen Tests der Anforderungen.
   *Befund des Implementers:* alle drei liegen vor und sind rot gesehen
   (Messbericht Abschnitt 5 und 6); eine bestehende Testerwartung blieb, ihr Fake trägt
-  einen Bestand (Messbericht Abschnitt 6, Befund 1). **Ausgang:** *(bei Closure)*
+  einen Bestand (Messbericht Abschnitt 6, Befund 1). **Ausgang:** *entfallen* — Beleg:
+  Verifikation `verifikation-slice-retention-lauf-speicher-begrenzung` Abschnitt 5 (sieben
+  Use-Case- und vier Store-Tier-Mutationen der Eingabeseite selbst rot gesehen, `make test` und
+  `make test-store` Exit 0, `make gates` Exit 0).
 - **Die Datenbank-Arbeit je Takt wächst mit der Zahl der Changes** (die Sortierung über
   die Menge entfällt; die Seiten-Abfrage bleibt linear: 0,38 bis 2,0 s je 1.000.000
   Changes, gemessen im Architect-Zug, `n` = 1, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
@@ -482,8 +491,14 @@ geschrieben.
   Implementers:* die Takte laufen in allen sechs Runs bis zum Ende weiter (20 bis 23 Zeilen
   „Bereinigung gelaufen“ seit dem Start, keine fehlgeschlagene; Garbage-Collection-Läufe im
   Nachlauf 560 bis 2.467); die Ausbleib-Beobachtung tritt nicht mehr auf (Messbericht
-  Abschnitt 1, Punkt 3). Die Dauer eines Laufs ist nicht gemessen (Abschnitt 6, Befund 4).
-  **Ausgang:** *(bei Closure)*
+  Abschnitt 1, Punkt 3); der Verifier-Lauf bestätigt es (21 bis 24, keine fehlgeschlagene,
+  Verifikation Abschnitt 4). Die Dauer eines Laufs ist nicht gemessen (Abschnitt 6, Befund 4).
+  **Ausgang:** *weiter offen* — die Hypothese „Feed-Prozess als Ursache des Ausbleibens“
+  entfällt als Ursache (die Takte laufen in allen Runs); die lineare Arbeit der Datenbank je
+  Takt und die ungemessene Dauer eines Laufs am Feed bleiben. Adresse: Re-Evaluierungs-Trigger
+  (a) von [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+  (beobachtbar: die Zeilen „retention: Bereinigung gelaufen“ bleiben zwischen den Takten aus,
+  oder die Dauer erreicht `retentionInterval`, 10 s; Kandidaten auf Transaktions-Ebene, Alternative E).
 - **Ein Backfill oder die Erfassung committet während einer laufenden Bereinigung.** Die
   Seitengrenze darf eine Zeile in **diesem** Lauf überspringen (Commit hinter dem
   Cursor), sie löscht nie früher: die Freigabe hängt an dem, was `AllowsDeletion` für die
@@ -492,7 +507,9 @@ geschrieben.
   belegen durch:* der Store-Tier-Test 3 („hinter dem Cursor: fehlt im laufenden
   Durchlauf, steht im nächsten“). *Befund des Implementers:* der Test liegt vor
   (`TestRetentionCandidateBehindCursorAppearsInNextRun`) und ist an `>=` und an einem
-  ignorierten Cursor rot gesehen (Messbericht Abschnitt 5). **Ausgang:** *(bei Closure)*
+  ignorierten Cursor rot gesehen (Messbericht Abschnitt 5). **Ausgang:** *entfallen* — Beleg:
+  Verifikation Abschnitt 5 (Mutationen S1 `>=` und S4 ohne `ORDER BY` färben
+  `TestRetentionCandidateBehindCursorAppearsInNextRun` rot, selbst gefahren).
 - **Ein Consumer bestätigt erstmals während eines längeren Laufs.** Die Positionen
   werden einmal je Lauf gelesen; ein Consumer, der erst danach seine erste Bestätigung
   setzt, ist im laufenden Lauf nicht berücksichtigt (er zählt erst ab seiner ersten
@@ -505,20 +522,34 @@ geschrieben.
   akzeptiertes Negativ ohne neuen Fall; **vom Planner beim Nachzug gefunden, nicht vom
   Architect bewertet** — der Implementer legt die Frage dem Architect vor, bevor er sie
   als akzeptiert schließt. *Befund des Implementers* (am Code, Messbericht Abschnitt 6,
-  Befund 3): das Fenster bestand mit dem Lauf vor der Änderung ebenso (Positionen, dann
-  Lesen aller Changes, dann Löschen der ganzen Menge) und ist nach den Messungen des
-  Architect-Verdikts nicht breiter geworden (Dauer des Laufs nicht länger); die Änderung ist
-  keine Vertragsänderung, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+  Befund 3): das Fenster besteht mit dem Lauf vor der Änderung ebenso (Positionen, dann
+  Lesen aller Changes, dann Löschen der ganzen Menge); seine Breite ist die Laufdauer: im
+  Regelbetrieb 0,38 bis 2,0 s, im Extremlauf (vollständige Löschung, der erste Lauf nach einem
+  großen Bestand, der das Mindestalter erreicht) etwa 26 s statt etwa 3,4 s, das Siebenfache
+  (abgeleitet aus den Einzelläufen von
+  [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+  §Gemessen, `n` = 1, nicht am Feed gemessen; Architect-Verdikt
+  [`architect-verdict-retention-neue-consumer-und-seitengrenze`](../../../reviews/architect-verdict-retention-neue-consumer-und-seitengrenze.md));
+  die Änderung ist keine Vertragsänderung, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
   Festlegung 4 ist wörtlich umgesetzt (Positionen einmal je Lauf,
   `TestRunReadsPositionsOncePerRun`). Eine Erneuerung der Positionen je Seite wäre eine
   Schärfung von Festlegung 4 (Folge-ADR mit `Supersedes`) und ist nicht umgesetzt; das Handbuch
-  nennt die Lage im „Betriebs-Hinweis (Consumer-Bindung)“. Die Bewertung „akzeptiertes
-  Negativ“ liegt beim Architect. **Ausgang:** *(bei Closure)*
+  nennt die Lage im „Betriebs-Hinweis (Consumer-Bindung)“ samt der Folge für einen erstmals
+  bestätigenden Consumer (Handbuch 1.64). **Ausgang:** *akzeptiertes Negativ* — Architect-Verdikt
+  [`architect-verdict-retention-neue-consumer-und-seitengrenze`](../../../reviews/architect-verdict-retention-neue-consumer-und-seitengrenze.md)
+  (F-3: ein Consumer ohne Positions-Zeile ist in jedem Lauf ungeschützt, das Fenster ist der
+  letzte Ausschnitt dieser Lücke; keine Vertragsänderung, keine neue ADR).
 - **Ein Abbruch zwischen zwei Seiten** hinterlässt ein Präfix der Löschmenge (Lauf nicht
   atomar). *Erwartet, zu belegen durch:* Unit-Test 4 (Fehler beim Aufruf `n` hinterlässt
   genau die Löschungen der Seiten davor). *Befund des Implementers:* Lese- und Lösch-Fehler
   ab Aufruf `n` sind geprüft und rot gesehen (`TestRunReadFailureLeavesPagesBefore`,
-  `TestRunDeleteFailureStopsAtThatPage`, Messbericht Abschnitt 5). **Ausgang:** *(bei Closure)*
+  `TestRunDeleteFailureStopsAtThatPage`, Messbericht Abschnitt 5). **Ausgang:** *akzeptiertes
+  Negativ* — Architect-Verdikt
+  [`architect-verdict-retention-neue-consumer-und-seitengrenze`](../../../reviews/architect-verdict-retention-neue-consumer-und-seitengrenze.md)
+  (F-13 a: Alter und Commit-Position sind Eigenschaften der Transaktion, die Freigabe fällt für
+  alle ihre Changes gleich aus; ein Consumer mit bestätigter Position sieht eine Transaktion nie
+  teilweise gelöscht, ein Consumer ohne Bestätigung ist bereits ungeschützt); das Handbuch nennt
+  die Nicht-Atomarität (1.64).
 - **Die Größe eines Kandidaten im Go-Prozess ist hergeleitet, nicht gemessen** (etwa
   0,15 KiB, Seite etwa 1,5 MiB, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
   §Was diese ADR nicht behauptet); die Zahl ist eine Orientierung, keine Grenze
@@ -528,7 +559,12 @@ geschrieben.
   einer Seite ist aus der Nachmessung nicht getrennt (keine Messung mit anderer Seitengröße);
   ein Anstieg der Spitze um 2,4 und 2,5 MiB zwischen 1.000.000 und 3.000.000 Changes ist
   gemessen und nicht erklärt (etwa 1,3 Bytes je Change, abgeleitet als Differenz der zwei
-  Endpunkte, keine gemessene Steigung; Auswertung: Messbericht Abschnitt 7.1). **Ausgang:** *(bei Closure)*
+  Endpunkte, keine gemessene Steigung; Auswertung: Messbericht Abschnitt 7.1); der Verifier-Lauf
+  liegt bei 15,5 bis 17,3 MiB (Verifikation Abschnitt 4). **Ausgang:** *weiter offen* — der Wert
+  der Spitze steht neben der Herleitung, der Bedarf einer Seite ist nicht getrennt gemessen und
+  der Restanstieg unerklärt. Adresse: Register `BEO-PGC/geschaetzter-wert-als-grenze` (die 1,5 MiB
+  je Seite sind Orientierung, keine Grenze); Restanstieg und Seitenbedarf tragen als benannte
+  Grenze Messbericht Abschnitt 7.1 und das Handbuch unter „Grenzwerte“.
 - **Die Nachmessung hängt am Host** (Speicher, Platte und Laufzeit bei 3.000.000
   Changes). *Erwartet, zu belegen durch:* jede Zahl nennt Host und Lauf; die Erwartung ist
   als Form gefasst („hängt nicht an der Zahl der Changes“), die Vergleichswerte der Reihe J
@@ -536,44 +572,184 @@ geschrieben.
   prune` im Lauf; der Bericht nennt die Aufräum-Schritte
   (`BEO-PGC/dod-kriterium-haengt-am-messhost`, 1×, offen). *Befund des Implementers:* jede
   Zahl nennt Host, Lauf und Zeile; die Läufe endeten ohne Platten- oder Zeitproblem, die
-  Aufräum-Schritte stehen im Messbericht Abschnitt 6 („Aufgeräumt“). **Ausgang:** *(bei Closure)*
+  Aufräum-Schritte stehen im Messbericht Abschnitt 6 („Aufgeräumt“). **Ausgang:** *weiter offen*
+  → Register `BEO-PGC/dod-kriterium-haengt-am-messhost` (1×): die DoD ist hostunabhängig gefasst
+  und erfüllt; alle Messwerte (Implementer, Review, Verifier) stammen von einem Host, eine
+  zweite Umgebung ist nicht gemessen.
 - **Der Slice läuft nicht vor dem Server-Release `v0.2.0`** (kein Wächter).
   *Erwartet, zu belegen durch:* die Vorbedingung in §4 und die Release-Aussage in §7; die
-  Prüfung liegt beim Planner der Release-Vorbereitung. **Ausgang:** *(bei Closure)*
+  Prüfung liegt beim Planner der Release-Vorbereitung. **Ausgang:** *entfallen* — Beleg: die
+  Closure liegt mit ihrem Move-Commit vor dem Tag; `git tag -l 'v*'` nennt am 2026-09-25 vor dem
+  Move `v0.1.0`, `v0.1.1` und `v0.1.2`; die Release-Aussage steht in §7.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
+- **Was hat funktioniert:** Die Kette Untersuchung → Entscheidung → Umsetzung lief in getrennten
+  Kontexten: die Untersuchung fand die Ursache, der Architect legte die Entscheidung
+  ([`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)) mit
+  Einzelmessungen fest, der Implementer setzte um und maß nach. Die Löschsicherheit trug an der
+  Eingabeseite: sieben Use-Case-Mutationen und vier Store-Tier-Mutationen färben Tests per
+  Assertion rot, der Verifier fuhr sie selbst (Verifikation Abschnitt 5); der 25.000-Changes-Test
+  zählt gegen eine unabhängige SQL-Zählung. Der Review (0 HIGH · 3 MEDIUM · 3 LOW · 7 INFO) fand
+  durch Nachmessen die unbedingte Speicher-Aussage gegen die gedruckten Zeilen (F-1) und die
+  fehlende Auswertung der Plan-Klausel (F-2); der Verifier bestätigte die DoD mit eigenem
+  `make gates`, `make test-store`, Skalierungs-Lauf und einer eigenen Nachmessung, deren Werte
+  (15,5 bis 17,3 MiB) im Band der Implementer-Läufe liegen, und fand den offenen Nachzug des
+  Architect-Verdikts (V-1).
+- **Was ging anders als geplant:** (1) Die Fortschrittsprüfung des Use Case (eine Seite, deren
+  letzte Kennung der Cursor ist, endet als Fehler der Klasse `storage`) stand nicht im Plan; die
+  Mutation `>=` ließ den Lauf ohne sie nicht enden (§3, Zeile `service.go`). (2) Die zwei
+  Store-Tier-Tests liegen in eigenen Dateien statt in `store_test.go` (§3, zwei Zeilen). (3) Die
+  Plan-Klausel der Nachmessung („wächst die Spitze mit der Zahl der Changes“) ist dem Wortlaut
+  nach an den zwei Läufen erfüllt (Bereiche ohne Überlappung) und der Sache nach nicht
+  ausgelöst; die Lesart ist Entscheidung des Auftraggebers, ihre Begründung steht im Messbericht
+  Abschnitt 7.1 (F-2). (4) Zwei Bewertungen des Reviews (F-3, F-13 a) gingen an den Architect;
+  ihre Nachzüge trägt diese Closure (V-1). (5) Die Fitness-Function-Zeile 3 von
+  [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md) ist wörtlich
+  nicht erfüllt (V-3), siehe unter „Lesart der Fitness-Function-Zeile“.
 - **Bekannte `git bisect`-Falle:** der Commit `d49e248f` (Fortschrittsprüfung im Use Case)
   ist rot — `TestRunRejectsPageWithoutProgress` schlägt an ihm fehl (`gelöschte Menge = [c1 c1]`),
   der Folgecommit `7572051c` behebt es; `HEAD` ist grün, die Historie bleibt unverändert.
   Ein `git bisect` über diesen Bereich hält dort an; `git bisect skip d49e248f` übergeht ihn.
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Release-Aussage (für die Beschreibung von `v0.2.0`):** Vorschlag des Implementers
-  (Vorschlag und Anker im Architect-Verdikt, Abschnitt „Aussage für die Release-Beschreibung“;
-  die Zahlen tragen ihren Ursprung): „Behoben: der Bereinigungslauf las je Takt (10 s) alle
-  Changes der Quelle samt Row Images in den Speicher; er liest jetzt seitenweise (10.000
-  Kandidaten, ohne Row Images). In `v0.1.0`, `v0.1.1` und `v0.1.2` wächst der Speicher des
-  Feed-Containers mit der Zahl der gespeicherten Changes: 1,03 bis 1,59 KiB je Change bei
-  schmalen Zeilen (an einem Backfill des Standes vor der Änderung gemessen, abgeleitet;
-  Messbericht der Untersuchung, Abschnitt 3.3); für die Erfassung ohne Backfill ist der Bedarf
-  hergeleitet, nicht gemessen (10 Changes/s halten 864.000 Changes, etwa 0,85 bis 1,3 GiB
-  Spitze je Takt, Architect-Verdikt). In `v0.2.0` liegt die Spitze nach Backfills über je
-  1.000.000 Zeilen bei 3.000.000 Changes in `cdc.change` bei 17,3 bis 17,6 MiB (gemessen, zwei
-  Läufe, Messbericht dieses Slice, Abschnitt 3).“ Belege der Reichweite: `git diff v0.1.2 HEAD --
-  internal/application/usecase/retention internal/application/port/outbound/changestore.go`
-  war am Stand vor dem Slice leer; `git show v0.1.0:…/service.go` und `v0.1.1:…` tragen dieselbe
-  Zeile `ReadChanges(ctx, outbound.ChangeQuery{Source: command.Source})`.
+- **Steering-Loop-Eintrag (Lerneintrag):**
+  *(a) Benannte Grenze und Lerneintrag zum Schnitt — die Ursache lag im Nachbarsystem.* Das
+  Speicher-Verhalten der Retention zeigt sich in der Messung des Backfills; es besteht
+  in `v0.1.0` bis `v0.1.2` ohne Backfill (§1 Reichweite) und ist ein vorbestehender Defekt.
+  Der Untersuchungs-Slice trug im selben Zug Reichweite an den Tags, Vorbedingung im Trigger
+  (§4) und Release-Aussage (unten): das ist die Anwendung des Kandidaten
+  `BEO-PGC/vorbestehender-defekt-durch-messung-im-nachbarsystem-gefunden`, **kein zweites
+  Auftreten** (derselbe Vorgang, kein Finding fand die Lücke); der Eintrag bleibt **1×, offen**,
+  ohne Träger. Begründung gegen eine Regel bei 1×: sie wäre eine Formpflicht im Slice-Schnitt eines
+  Untersuchungs-Slice, deren Nutzen ein zweiter, unabhängiger Vorgang zeigen muss; der Auslöser
+  steht in der `state.md`. *(b) Neuer Sensor auf Testebene — Fake mit Budget.* Die
+  Fortschrittsprüfung `last == after` war an ihrer Eingabeseite nur durch die Zeitüberschreitung
+  des Testlaufs rot zu färben (Review F-4, LOW); der Fake trägt ein Budget an Lese-Aufrufen
+  (`maxReads`, Fehler `errReadBudget`), die Mutationen „Prüfung abgeschaltet“ und „Cursor bleibt
+  leer“ färben Tests per Assertion in 0,00 s (Verifikation Abschnitt 5, M1). Gelernt: ein Test einer
+  Schleife mit Fortschrittsprüfung bindet die Zusage erst, wenn die Endlosigkeit im Fake eine
+  Assertion ist, keine Uhr; die Klasse `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  trägt sie (12×, verkörpert; **Deckel** — F-4 ist vor dem Merge vom Reviewer gefunden, LOW, bekannter
+  Träger-Typ Fake im Use-Case-Test, daher keine weitere Datei, Finding-Kennung F-4 hier); kein
+  neuer Träger, die Regel „mutiere den Eingabewert“ deckt den Fall. *(c) Benannte Spec-Lücke,
+  geschlossen:* die Lesung der Retention hatte im Pflichtenheft keine Aussage;
+  [`LH-FA-RET-004.a`](../../../../spec/pflichtenheft.md) trägt Punkt 4 (Seiten, Speicher an der
+  Seitengröße). *(d) Der Nachzug eines Architect-Verdikts braucht einen Träger je Aussage:* Plan
+  §6, Plan-Prosa und Handbuch trugen Aussagen, die das Verdikt überholte (V-1);
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (11×, verkörpert, Deckel) trägt die Klasse — der
+  Suchlauf in §3 ist die Regel, kein neuer Träger.
+- **Lesart der Fitness-Function-Zeile 3 von [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+  (Verifikation V-3):** die Zeile erwartet die Spitze nach dem Run „im Bereich der Spitze im Run
+  (8,9 bis 10,5 MiB) plus dem Bedarf einer Seite“; gemessen sind 14,9 bis 17,6 MiB (`memory.peak`,
+  zwei Läufe) und 15,5 bis 17,3 MiB (Verifier-Lauf), der `anon`-Wert der Spitze im Run liegt im
+  Verifier-Lauf bei 10,0 bis 13,2 MiB. Wörtlich ist die Erwartung nicht erfüllt, der Form nach ja:
+  die Spitze ist flach über der Zahl der Changes und die Takte laufen weiter. Die Zeile ist eine
+  Messung ohne Pass/Fail („Werkzeug, kein Gate“, [`AGENTS.md`](../../../../AGENTS.md) §3.6), ihre
+  Erwartung ist hergeleitet. **Kein Berichtigungs-ADR:** keine der Festlegungen 1 bis 6 der ADR
+  hängt an der Zahl (gemessen: `grep -n -E 'MiB|KiB'` über die Festlegungen im Abschnitt
+  „Entscheidung“ der ADR, Zeilen 110 bis 186, trifft nichts; eine ADR ist nach `Accepted`
+  unberührbar, [`AGENTS.md`](../../../../AGENTS.md) §3.5); die Lesart steht hier, im Messbericht
+  Abschnitt 7.1 und im Register `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (6×). Dieselbe
+  Entscheidung gilt für die Abweichung 1,57 gegen 1,59 KiB in der ADR (Zeilen 68, 191, 199):
+  die Faktoren der Kandidaten-Größe werden 6,9 bis 10,6 statt sieben bis zehn (abgeleitet, §3
+  Träger-Tabelle, Zeile zu den `Accepted`-ADRs), keine Festlegung hängt an ihr; die Release-Aussage
+  nennt 1,03 bis 1,59.
+- **Benannte Grenzen und Restrisiken (Verifikation):** *V-4* (INFO): `memory.peak` trägt einen
+  Seiten-Cache-Anteil, der zwischen den Läufen streut (Review-Lauf: 31,8 MiB mit 16,5 MiB `file`
+  bei 1.000.000 Changes; drei Runs des Verifiers und zwei Läufe des Implementers 0,0 MiB am
+  Run-Ende); Handbuch, Messbericht und Vertrag `harness/targets/bench-backfill.md` nennen es,
+  die Ursache ist nicht untersucht. *V-5* (INFO): die gedeckte Zahl des Unit-Gates streut um
+  drei Statements zwischen den Läufen (2167 gegen 2170 bei Nenner 2601); die Zeile in
+  `harness/sensors/coverage-gate.md` nennt ihren Lauf. *Restrisiken, weiter offen:* die Dauer
+  eines Bereinigungslaufs am Feed ist ungemessen (Adresse: Trigger (a) von [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md), §6 zweites
+  Risiko); die Live-Erfassung als Speicherquelle, breite Zeilen und Läufe über 3.000.000 Changes
+  sind ungemessen; alle Messwerte stammen von einem Host, `n` = 2 bis 3 je Stufe (Register
+  `BEO-PGC/dod-kriterium-haengt-am-messhost`); die Arbeit der Datenbank je Takt wächst weiter
+  linear mit der Zahl der Changes (Trigger: Laufdauer ab 10 s, dann Kandidaten auf
+  Transaktions-Ebene); der Restanstieg von 2,4 und 2,5 MiB zwischen 1.000.000 und 3.000.000
+  Changes ist unerklärt (die Klausel ist der Sache nach nicht ausgelöst, Messbericht 7.1).
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-retention-lauf-speicher-begrenzung.md`, Zähler = Zahl der Dateien.
+  *Neue Belege:* `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` **23×** (F-1 MEDIUM, F-2,
+  V-2; verkörpert, Deckel bei 23×), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` **11×**
+  (F-3, V-1, beide MEDIUM; verkörpert, Deckel bei 10×), `BEO-PGC/adr-aussage-breiter-als-ihre-messung`
+  **6×** (V-3; verkörpert). *Zustand nachgezogen, ohne neue Datei:*
+  `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` **2×** (Ausgang *verkörpert* → Use Case der
+  Retention; der Gegenstand „Block zählt Zeilen“ bleibt in der Port-Doku, Zeilen im MB-Bereich
+  bleiben ungemessen, Adresse: Trigger „Ausbaustufe für Durchsatz“ von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)),
+  `BEO-PGC/vorbestehender-defekt-durch-messung-im-nachbarsystem-gefunden` **1×** (Vorgang gelöst,
+  Begründung oben), `BEO-PGC/dod-kriterium-haengt-am-messhost` **1×** und
+  `BEO-PGC/geschaetzter-wert-als-grenze` **1×** (beide angewandt ohne Anfall).
+  *Deckel-Fälle ohne Datei, Finding-Kennung hier:* F-4 (`negativtest-ohne-bindung-an-seine-eingabe`,
+  Klasse siehe Lerneintrag b). *Kein eigener Register-Anfall* (Text-, Werkzeug- und
+  Historien-Findings ohne wiederkehrende Klasse im Register): F-5 (roter Zwischencommit, benannt
+  in „Bekannte `git bisect`-Falle“), F-6 (Vorher-Nachher-Sprache in Handbuch-Prosa, LOW, vor dem
+  Merge behoben; Träger sind [`AGENTS.md`](../../../../AGENTS.md) §3.7 und der Reviewer-Skill),
+  F-7 bis F-13, V-4, V-5. *Lese-Schritt der nächsten Welle-Closure (`welle-transformationen`):*
+  kein Eintrag erreicht mit diesem Beleg neu 3× ohne Ausgang — die drei Einträge mit neuer Datei
+  tragen bereits den Ausgang *verkörpert*, die übrigen stehen bei 1× bzw. 2× —, es entsteht kein
+  Vermerk in einer `state.md`.
+- **Folge-Slices:** keine angelegt. Was offen bleibt, trägt eine Adresse (Risiken unten:
+  Trigger (a) von [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md), Register). Übergaben an offene Pläne
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.13, Suchlauf am Stand `bade3fef`):
+  `slice-sdk-kotlin-cloudsmith` — die zwei Versionsbezüge auf das Handbuch (`Version:` 1.61 am
+  Stand `989beef3`) tragen zusätzlich die Version 1.64 nach dieser Closure; dort stehende
+  Zeilen-Lokatoren des Handbuchs sind mit ihrem Stand (`37e825e2`) gekennzeichnet und gelten
+  nicht als nachzuziehen. Die Slices von `welle-transformationen` nennen keine Handbuch-Version
+  und keinen Zeilen-Lokator des Handbuchs (gemessen: `git grep -n -E 'benutzerhandbuch.*(Z\.|Zeile|:[0-9]{3,4})'
+  -- docs/plan/planning/open` trifft nur `slice-sdk-kotlin-cloudsmith`, dort mit Stand); ihr
+  Bezug auf „retention“ gilt dem Register-Eintrag `test-integration-retention-timing-flake`
+  (`git grep -n -i 'retention' -- docs/plan/planning/open`), nicht der Lesung; kein Nachzug. Die
+  Handbuch-Zahlen „vor der Behebung“ aus der Closure von `slice-backfill-speicher-untersuchung`
+  sind ersetzt: `grep -n -i 'vor der Behebung' docs/user/benutzerhandbuch.md` trifft nichts.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Bereinigungsmenge ändert
+  sich · Ein Backfill oder die Erfassung committet während einer laufenden Bereinigung · Der Slice
+  läuft nicht vor dem Server-Release `v0.2.0`. *Akzeptiertes Negativ* (zählt als entfallen mit
+  Verdikt-Anker,
+  [`architect-verdict-retention-neue-consumer-und-seitengrenze`](../../../reviews/architect-verdict-retention-neue-consumer-und-seitengrenze.md)):
+  Ein Consumer bestätigt erstmals während eines längeren Laufs · Ein Abbruch zwischen zwei Seiten.
+  *Weiter offen:* Die Datenbank-Arbeit je Takt wächst mit der Zahl der Changes (Trigger (a) von
+  [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)) · Die Größe eines Kandidaten im Go-Prozess ist hergeleitet (Register
+  `geschaetzter-wert-als-grenze`) · Die Nachmessung hängt am Host (Register
+  `dod-kriterium-haengt-am-messhost`).
+- **Release-Aussage (für die Beschreibung von `v0.2.0`):** kopierbare Kurzfassung (Anwender-Sprache;
+  die Zahlen tragen ihren Ursprung, gemessen oder als hergeleitet gekennzeichnet; Anker:
+  Architect-Verdikt, Abschnitt „Aussage für die Release-Beschreibung“, Messbericht dieses Slice
+  Abschnitt 3, Verifikation Abschnitt 4 und 7):
+
+  > **Behoben: Speicherbedarf des periodischen Bereinigungslaufs (Retention) des Feed-Containers.**
+  > **Was war** (`v0.1.0`, `v0.1.1`, `v0.1.2`): Der Bereinigungslauf liest alle 10 Sekunden alle
+  > gespeicherten Änderungen einer Quelle samt Zeilenabbildern in den Speicher; der Bedarf des
+  > Feed-Containers wächst mit der Zahl der gespeicherten Änderungen (1,03 bis 1,59 KiB je Änderung
+  > bei schmalen Zeilen, an einem Backfill gemessen; für die laufende Erfassung ohne Backfill nur
+  > hergeleitet, nicht gemessen: bei 10 Änderungen je Sekunde und 24 Stunden Mindestalter etwa 0,85
+  > bis 1,3 GiB Spitze je Takt).
+  > **Was ist** (`v0.2.0`): Der Lauf liest die Kandidaten seitenweise (10.000 je Seite, ohne
+  > Zeilenabbilder); die gemessene Spitze liegt bei 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000
+  > gespeicherten Änderungen (schmale Zeilen, ein Host, zwei Läufe; ein dritter, unabhängiger Lauf
+  > 15,5 bis 17,3 MiB).
+  > **Was bleibt:** ungemessen sind breite Zeilen, mehr als 3.000.000 Änderungen, die laufende
+  > Erfassung als Speicherquelle und die Dauer eines Bereinigungslaufs; die Arbeit der Datenbank je
+  > Takt wächst weiter mit der Zahl der Änderungen. Ein Lauf ist nicht atomar; ein Consumer ohne
+  > bestätigte Position ist vor der Bereinigung nicht geschützt (Benutzerhandbuch, Abschnitt
+  > Aufbewahrung).
+
+  Belege der Reichweite: `git diff v0.1.2 8cd39719 --stat -- internal/application/usecase/retention
+  internal/application/port/outbound/changestore.go` ist leer (Verifikation Abschnitt 7); `git show
+  v0.1.0:…/service.go`, `v0.1.1:…` und `v0.1.2:…` tragen dieselbe Zeile
+  `ReadChanges(ctx, outbound.ChangeQuery{Source: command.Source})`; die Rechnung 10 × 86.400 s =
+  864.000 Änderungen, × 1,03 bis 1,59 KiB = 0,85 bis 1,31 GiB ist abgeleitet.
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt Anker,
   Folge-Slice und Register (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose
-  Betrieb selbst auslöst). *(Ergebnis bei Closure)*
+  Betrieb selbst auslöst). *Anker:* die Zielorte der Lerneinträge existieren — Use Case
+  `internal/application/usecase/retention/service.go` und `service_test.go` (Fake mit Budget),
+  [`LH-FA-RET-004.a`](../../../../spec/pflichtenheft.md) Punkt 4 — und tragen ihre Herkunft im
+  Diff dieses Slice. *Folge-Slice:* keiner genannt, kein Versprechen offen. *Register:* jede
+  genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
+  (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`). Die Prüfung läuft
+  zusätzlich bei der Closure der nächsten Welle
+  ([welle-transformationen](../welle-transformationen.md), die Roadmap führt sie unter *Offene
+  Wellen*).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 
