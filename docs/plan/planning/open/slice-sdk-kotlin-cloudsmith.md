@@ -281,9 +281,10 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
 **Start** (`next` → `in-progress`), drei beobachtbare Bedingungen:
 
 1. **WIP-Limit 1:** `docs/plan/planning/done/slice-backfill-speicher-untersuchung.md`
-   existiert, und `in-progress/` trägt nur `roadmap.md`. Stand der Planung: der Slice
-   liegt in `in-progress/`, die Datei in `done/` fehlt (`ls`, 2026-09-25) — die
-   Bedingung ist **nicht** erfüllt.
+   existiert, und `in-progress/` trägt nur `roadmap.md`. Stand nach dem Move der Closure von
+   `slice-backfill-speicher-untersuchung` (`ls`, 2026-09-25): die Datei liegt in `done/`,
+   `in-progress/` trägt nur `roadmap.md` — die Bedingung ist an diesem Stand erfüllt; der
+   Start liest sie neu (ein anderer Slice kann `in-progress/` vorher belegen).
 2. **Betreiber-Voraussetzungen** (`ADR-0123` Folgepflicht 3; Verdikt §Betreiber-Voraussetzungen
    1 bis 5) — Ergebnis der Prüfung dieser Planung, 2026-09-25:
    - Secrets: `gh secret list` druckte die Zeilen

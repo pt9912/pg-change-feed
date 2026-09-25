@@ -335,8 +335,9 @@ grep -m1 'Status:' docs/plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-
 
 Der erste Befehl nennt nur `roadmap.md`, der zweite den Pfad von
 `slice-backfill-speicher-untersuchung` in `done/`, der dritte `**Status:** Accepted`
-(gemessen am 2026-09-25: ADR `Accepted`; der Slice `slice-backfill-speicher-untersuchung`
-liegt in `in-progress/`, der Start ist damit noch nicht eingetreten).
+(gemessen am 2026-09-25 nach dem Move der Closure von `slice-backfill-speicher-untersuchung`:
+`in-progress/` trägt nur `roadmap.md`, der Slice liegt in `done/`, die ADR ist `Accepted` —
+die Start-Bedingung ist erfüllt).
 
 **Vorbedingung des Server-Release `v0.2.0`** (nicht Start dieses Slice; Entscheidung des
 Nutzers, dokumentiert im Architect-Verdikt, Abschnitt „Anlass“): dieser Slice liegt in
