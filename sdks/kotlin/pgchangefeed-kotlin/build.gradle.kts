@@ -94,10 +94,11 @@
 // gepinnte `com.google.code.gson:gson:2.14.0` deserialisiert auch die
 // NATS-Nachrichten (`SPEC-024` teilt das Schema mit `SPEC-021`).
 //
-// Version `0.2.0` deckt beide zuletzt gelieferten Client-Flächen ab, SSE
-// (`SPEC-021`) und NATS-Vollinhalt (`SPEC-024`, `ADR-0109` Festlegung 1) —
-// additive, rückwärtskompatible Erweiterung, SemVer-Minor, keine
-// ADR-pflichtige Ausnahme.
+// Version `0.2.1` (SemVer, `ADR-0109` Festlegung 1): Pflege bei jedem Release
+// ein bewusster Schritt, keine automatische Ableitung. Die POM-Felder
+// `name`/`description`/`url`/`licenses` im `publishing`-Block sind, was
+// GitHub Packages Anwendern zeigt (das `jar` trägt keine README): sie tragen
+// keine internen Kennungen.
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
@@ -105,7 +106,7 @@ plugins {
 }
 
 group = "io.github.pt9912"
-version = "0.2.0"
+version = "0.2.1"
 
 kotlin {
     jvmToolchain(21)
@@ -227,8 +228,25 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "io.github.pt9912"
             artifactId = "pgchangefeed-kotlin"
-            version = "0.2.0"
+            version = "0.2.1"
             from(components["java"])
+            pom {
+                name.set("PG Change Feed Kotlin client")
+                description.set(
+                    "Kotlin/JVM client library for PG Change Feed: read PostgreSQL changes over HTTP and receive " +
+                        "them live over gRPC, SSE and NATS.",
+                )
+                url.set("https://github.com/pt9912/pg-change-feed")
+                licenses {
+                    license {
+                        name.set("MIT")
+                        url.set("https://github.com/pt9912/pg-change-feed/blob/main/LICENSE")
+                    }
+                }
+                scm {
+                    url.set("https://github.com/pt9912/pg-change-feed")
+                }
+            }
         }
     }
     repositories {

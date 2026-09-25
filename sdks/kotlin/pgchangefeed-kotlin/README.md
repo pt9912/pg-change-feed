@@ -1,18 +1,20 @@
-# PG Change Feed — Kotlin SDK
+# PG Change Feed — Kotlin client
 
-Official Kotlin/JVM client library for [PG Change Feed](https://github.com/pt9912/pg-change-feed), a durable change feed system for PostgreSQL built on logical replication.
+Kotlin/JVM client library for [PG Change Feed](https://github.com/pt9912/pg-change-feed), a server that records every INSERT, UPDATE and DELETE of selected PostgreSQL tables and makes these changes available over HTTP, gRPC, Server-Sent Events (SSE) and NATS.
 
-This package (`pgchangefeed-kotlin`) lets a Kotlin or Java application consume PG Change Feed's HTTP API, gRPC change stream, SSE change stream and NATS full-content stream without implementing the wire protocol itself — see [`LH-FA-SST-009`](https://github.com/pt9912/pg-change-feed/blob/main/spec/lastenheft.md) for the requirement this SDK fulfills.
+With this package (`pgchangefeed-kotlin`) a Kotlin or Java application can
 
-## Status
+- read the recorded changes and keep track of how far it has processed them,
+- manage which tables the server captures, and
+- receive changes live, as they happen,
 
-This package is at an early, pre-1.0 stage (`0.x.y`, [ADR-0109](https://github.com/pt9912/pg-change-feed/blob/main/docs/plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)). The current release provides the shared connection configuration (`PgChangeFeedClientOptions`: server address and bearer token), a full HTTP API client surface (`PgChangeFeedHttpClient`): consumer registration/acknowledgement/position/removal, table enable/disable, status, table listing, retention, and reading changes — the nine `SPEC-018` capabilities plus `GET /changes` (`SPEC-022`; each change carries `origin`, `wal` or `backfill`, read as `wal` when the response has none or carries JSON `null`, any other value passed through unchanged) — with typed request/response data classes and a typed exception hierarchy for `400`/`401`/`403`/`404`/`500`, the gRPC live-change-stream surface (`PgChangeFeedGrpcClient`, `SPEC-020`): `streamChanges()` opens the `ChangeStream/StreamChanges` server-streaming RPC and yields a `kotlinx.coroutines.flow.Flow` of the generated `Change` message — fire-and-forget, no replay, no table-granular filtering (`LH-FA-SST-008` Boundary) —, the SSE live-change-stream surface (`PgChangeFeedSseClient`, `SPEC-021`): `streamChanges()` opens `GET /changes/stream` and yields a `Sequence` of the ten `SPEC-021` message fields, reusing the same typed exception hierarchy as `PgChangeFeedHttpClient`, with the same fire-and-forget/no-replay boundary, and the NATS full-content stream surface (`PgChangeFeedNatsStreamClient`, `SPEC-024`): `streamChanges()` subscribes to the `cdc.stream.<source_id>.<schema>.<table>` namespace (or a wildcard over it, via `buildSubject`/`buildSourceSubject`) and yields a `Sequence` of the same ten message fields; authentication for this surface is connection-level (a NATS server-wide token), not per-call — a rejected connection propagates the underlying `io.nats.client` exception unwrapped rather than a second, invented exception hierarchy.
+without implementing any of the wire protocols itself.
 
-If a surface you need isn't covered yet, the direct wire protocol remains fully usable on its own — see the [`examples/kotlin`](https://github.com/pt9912/pg-change-feed/tree/main/examples/kotlin) reference clients in the main repository.
+Version 0.x — the API can still change between releases.
 
 ## Installation
 
-This package is distributed via [GitHub Packages](https://maven.pkg.github.com/pt9912/pg-change-feed) (Gradle/Maven registry), not Maven Central (`ADR-0109` Festlegung 2). **GitHub Packages always requires authentication to read a package, even a public one** — unlike Maven Central, NuGet, or PyPI. You need a GitHub account and a classic personal access token (PAT) with the `read:packages` scope.
+Requires Java 21 or newer. The package is published on [GitHub Packages](https://maven.pkg.github.com/pt9912/pg-change-feed), not on Maven Central. **GitHub Packages always requires authentication to read a package, even a public one.** You need a GitHub account and a classic personal access token (PAT) with the `read:packages` scope.
 
 Add the registry and your credentials in `settings.gradle.kts`:
 
@@ -23,7 +25,7 @@ dependencyResolutionManagement {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/pt9912/pg-change-feed")
             credentials {
-                username = System.getenv("GITHUB_ACTOR")
+                username = System.getenv("GITHUB_ACTOR") // your GitHub user name
                 password = System.getenv("GITHUB_TOKEN") // a classic PAT with read:packages
             }
         }
@@ -35,13 +37,209 @@ Then declare the dependency in `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("io.github.pt9912:pgchangefeed-kotlin:0.2.0")
+    implementation("io.github.pt9912:pgchangefeed-kotlin:0.2.1")
 }
 ```
 
-## Documentation
+The library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
 
-This README intentionally does not duplicate the wire protocol documentation. For the full picture — server setup, HTTP/gRPC/SSE/NATS delivery paths, and operational guidance — see the [project README](https://github.com/pt9912/pg-change-feed/blob/main/README.md) and the technical specification (`spec/pflichtenheft.md`, `SPEC-018`/`SPEC-020`) in the main repository.
+```kotlin
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("com.google.protobuf:protobuf-java:4.36.2")
+    implementation("com.google.code.gson:gson:2.14.0")
+}
+```
+
+## Quick start
+
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server.
+
+### Read changes and remember your position
+
+A *consumer* is a named reader whose progress the server remembers. You register it once, read changes, and acknowledge the position of the last change you have processed. A position is the `commitPosition` of a change; `readChanges` reads from `from` (inclusive) up to `to` (exclusive). A consumer that has never acknowledged reports offset 0.
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient
+import io.github.pt9912.pgchangefeed.http.model.AcknowledgeConsumerRequest
+import io.github.pt9912.pgchangefeed.http.model.RegisterConsumerRequest
+import java.net.URI
+import java.net.http.HttpClient
+
+fun main() {
+    val options = PgChangeFeedClientOptions(URI("http://feed.example.com:8090"), "<admin token>")
+    val client = PgChangeFeedHttpClient(HttpClient.newHttpClient(), options)
+
+    client.registerConsumer(RegisterConsumerRequest("billing", "Billing service"))
+
+    val position = client.getConsumerPosition("billing")
+    val result = client.readChanges("my-source", from = position.offset + 1)
+    for (change in result.changes) {
+        println("${change.commitPosition} ${change.operation} ${change.schema}.${change.table} ${change.newImage}")
+    }
+
+    if (result.changes.isNotEmpty()) {
+        client.acknowledgeConsumer(
+            AcknowledgeConsumerRequest("billing", "my-source", result.changes.last().commitPosition),
+        )
+    }
+}
+```
+
+`limit` cuts rows, not positions: if one commit position carries more changes than `limit`, continuing from that position plus one skips the rest of it. Leave `limit` out (or set it generously) where a single position can carry many changes.
+
+### Receive changes live
+
+The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `PgChangeFeedClientOptions`.
+
+gRPC (the address is the `http://host:port` URL of the gRPC endpoint; `streamChanges()` returns a `kotlinx.coroutines.flow.Flow` of the generated `Change` protobuf messages, row images are JSON in a `ByteString`):
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClient
+import java.net.URI
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    val options = PgChangeFeedClientOptions(URI("http://feed.example.com:9090"), "<reader token>")
+    PgChangeFeedGrpcClient(options).use { client ->
+        client.streamChanges().collect { change ->
+            println("${change.operation} ${change.schema}.${change.table} ${change.newImage.toStringUtf8()}")
+        }
+    }
+}
+```
+
+Server-Sent Events (the address is the HTTP base URL; `streamChanges()` returns a `Sequence` that blocks while it waits for the next change):
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClient
+import java.net.URI
+import java.net.http.HttpClient
+
+fun main() {
+    val options = PgChangeFeedClientOptions(URI("http://feed.example.com:8090"), "<reader token>")
+    val client = PgChangeFeedSseClient(HttpClient.newHttpClient(), options)
+    for (change in client.streamChanges()) {
+        println("${change.operation} ${change.schema}.${change.table} ${change.newImage}")
+    }
+}
+```
+
+NATS (the address is the NATS URL, the token is the NATS stream token checked when the connection is opened, so a rejected token fails in the constructor). The subject selects what you receive: `buildSourceSubject` covers all tables of one source, `buildSubject` one table, and without a subject you receive every source:
+
+```kotlin
+import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
+import io.github.pt9912.pgchangefeed.nats.PgChangeFeedNatsStreamClient
+import java.net.URI
+
+fun main() {
+    val options = PgChangeFeedClientOptions(URI("nats://feed.example.com:4222"), "<NATS stream token>")
+    PgChangeFeedNatsStreamClient(options).use { client ->
+        val subject = PgChangeFeedNatsStreamClient.buildSubject("my-source", "public", "orders")
+        for (change in client.streamChanges(subject)) {
+            println("${change.operation} ${change.schema}.${change.table} ${change.newImage}")
+        }
+    }
+}
+```
+
+## API overview
+
+`PgChangeFeedHttpClient(httpClient, options)` wraps the HTTP API. The `java.net.http.HttpClient` you pass in stays yours; the library never closes it.
+
+| Method | What it does | Token |
+|---|---|---|
+| `registerConsumer(request)` | Registers a consumer. Registering an existing consumer changes nothing (`alreadyRegistered` is true). | admin |
+| `acknowledgeConsumer(request)` | Stores the consumer's position. Repeating the same position has no effect; a position before the stored one is rejected. | admin |
+| `getConsumerPosition(consumerId)` | Reads the stored position (`offset`, and `acknowledged`, which is false for a consumer that never acknowledged). | reader |
+| `removeConsumer(consumerId)` | Removes a consumer. | admin |
+| `enableTable(request)` | Starts capturing a table. | admin |
+| `disableTable(request)` | Stops capturing a table. `retained` reports that changes already stored for it remain. | admin |
+| `getStatus(source, schema, table, publication)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
+| `listTables(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
+| `runRetention(request)` | Deletes stored changes older than `minAgeNanos` that every consumer with a stored position has passed; returns the number deleted. | admin |
+| `readChanges(source, schema, table, from, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions. Only `source` is required. | reader |
+
+Request and response classes live in `io.github.pt9912.pgchangefeed.http.model`.
+
+The live streams each have one method:
+
+| Class | Method | What it does |
+|---|---|---|
+| `PgChangeFeedGrpcClient(options)` | `streamChanges()` | Opens the gRPC stream and returns a `Flow` of the generated `Change` messages. `close()` shuts down the channel the client owns. |
+| `PgChangeFeedSseClient(httpClient, options)` | `streamChanges()` | Opens `GET /changes/stream` and returns a `Sequence` of `io.github.pt9912.pgchangefeed.sse.model.Change` objects. |
+| `PgChangeFeedNatsStreamClient(options)` | `streamChanges(subject)` | Subscribes to a subject and returns a `Sequence` of `io.github.pt9912.pgchangefeed.nats.model.Change` objects. `close()` closes the connection the client owns. |
+
+## The change object
+
+`readChanges` returns `io.github.pt9912.pgchangefeed.http.model.Change` data classes:
+
+| Property | Meaning |
+|---|---|
+| `commitPosition` | Position of the committed source transaction that carried the change; the value you read ranges by and acknowledge. |
+| `changeId` | Unique id of the change. |
+| `transactionId` | Id of the source transaction. |
+| `sourceTableId` | Id of the captured table. |
+| `schema`, `table` | Schema and name of the table. |
+| `sequence` | Order of the row change within its transaction. |
+| `operation` | `INSERT`, `UPDATE` or `DELETE`. |
+| `oldImage` | Row values before the change as a Gson `JsonElement`; `null` for an INSERT. For UPDATE and DELETE it holds what PostgreSQL provides for the table's replica identity. |
+| `newImage` | Row values after the change as a `JsonElement`; `null` for a DELETE. |
+| `schemaVersion` | Version of the table schema the change was captured with. |
+| `committedAt` | Commit time of the source transaction (RFC 3339, UTC). |
+| `origin` | `wal` for a change captured live from the database, `backfill` for a change that was taken from the existing table contents. A response without the field, or with JSON `null`, reads as `wal`; any other value is passed through unchanged. |
+
+The live streams deliver change objects with ten properties: `changeId`, `transactionId`, `sourceTableId`, `sequence`, `operation`, `oldImage`, `newImage`, `schemaVersion`, `schema`, `table`. They carry no `commitPosition`, `committedAt` or `origin`.
+
+## Error handling
+
+Every failing HTTP call throws a subclass of the sealed class `PgChangeFeedException`, which carries the HTTP `statusCode`. The same exceptions are thrown when the SSE stream cannot be opened. All live in `io.github.pt9912.pgchangefeed.http`.
+
+| Exception | When |
+|---|---|
+| `PgChangeFeedBadRequestException` | 400 — invalid request or a violated rule. |
+| `PgChangeFeedUnauthorizedException` | 401 — token missing or unknown. |
+| `PgChangeFeedForbiddenException` | 403 — known token whose class may not call this endpoint (for example a reader token on an admin call). |
+| `PgChangeFeedNotFoundException` | 404 — the table does not exist in the source database (`enableTable`, `disableTable`, `getStatus`). |
+| `PgChangeFeedServerErrorException` | 500 — unexpected error inside the server. |
+| `PgChangeFeedUnexpectedStatusException` | any other non-success status. |
+| `PgChangeFeedMalformedResponseException` | a success response or SSE event whose content cannot be read. |
+
+```kotlin
+import io.github.pt9912.pgchangefeed.http.PgChangeFeedException
+import io.github.pt9912.pgchangefeed.http.PgChangeFeedForbiddenException
+import io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient
+import io.github.pt9912.pgchangefeed.http.PgChangeFeedUnauthorizedException
+
+fun listTablesReportingErrors(client: PgChangeFeedHttpClient) {
+    try {
+        client.listTables("my-source", "my_publication")
+    } catch (e: PgChangeFeedUnauthorizedException) {
+        println("token missing or unknown")
+    } catch (e: PgChangeFeedForbiddenException) {
+        println("token is not allowed to call this endpoint")
+    } catch (e: PgChangeFeedException) {
+        println("${e.statusCode} ${e.message}")
+    }
+}
+```
+
+The gRPC stream reports a missing or unknown token as an `io.grpc.StatusException` with status `UNAUTHENTICATED`, thrown while the `Flow` is collected. The NATS client passes on the exception of the NATS client library (`io.nats.client`) when the server rejects the token, and throws `PgChangeFeedNatsMalformedMessageException` when a message cannot be read.
+
+## Reading versus streaming
+
+- **Reading over HTTP** (`readChanges`) is asking: you name a range, the server answers from the changes it has stored. You can read the same range again, and with a registered consumer you can carry on after a restart exactly where you stopped. Changes stay readable until the retention removes them.
+- **The live streams** (gRPC, SSE, NATS) are pushing: you get every change committed after you connected, in commit order, with the full row content. There is no delivery guarantee and no replay. A change committed while you were disconnected, or while you read too slowly, does not arrive on the stream. Use the stream to react quickly and `readChanges` to catch up on what it missed.
+- The gRPC and SSE streams cannot be filtered by table; on the NATS stream the subject chooses the source or the table.
+
+## More
+
+- [Project README](https://github.com/pt9912/pg-change-feed/blob/main/README.md)
+- [User manual](https://github.com/pt9912/pg-change-feed/blob/main/docs/user/benutzerhandbuch.md) — setting up and operating the server, tokens, delivery paths (in German)
+- [Reference clients](https://github.com/pt9912/pg-change-feed/tree/main/examples/kotlin) for each delivery path
 
 ## License
 

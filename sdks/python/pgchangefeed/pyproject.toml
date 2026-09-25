@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pgchangefeed"
-version = "0.2.0"
+version = "0.2.1"
 # README.md liegt eine Ebene hoeher (sdks/python/README.md, Sprachwurzel-
 # Ebene, analog sdks/csharp/README.md) -- setuptools erlaubt fuer `readme`
 # aber keinen Pfad ausserhalb des Projekt-Wurzelverzeichnisses (real geprueft:
@@ -34,9 +34,13 @@ dependencies = [
     "nats-py>=2",
 ]
 
+keywords = ["postgresql", "change-data-capture", "cdc", "logical-replication", "change-feed"]
+
 [project.urls]
 Homepage = "https://github.com/pt9912/pg-change-feed"
+Documentation = "https://github.com/pt9912/pg-change-feed/blob/main/docs/user/benutzerhandbuch.md"
 Repository = "https://github.com/pt9912/pg-change-feed"
+Issues = "https://github.com/pt9912/pg-change-feed/issues"
 
 [project.optional-dependencies]
 test = ["pytest>=8", "grpcio-tools>=1.75"]

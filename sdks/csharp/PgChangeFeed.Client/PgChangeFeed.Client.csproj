@@ -12,17 +12,17 @@
   <!-- NuGet-Metadaten (ADR-0106 Festlegung 2/3, Slice-DoD): dieses Projekt
        ist ein eigenständiges, veröffentlichbares Package, kein Beispiel wie
        examples/csharp/* (SPEC-023 bleibt Vorbild, kein Belegträger). Version
-       `0.2.0` (ADR-0106 Festlegung 3, unabhängig von docs/user/version.md) —
-       additive, rückwärtskompatible Erweiterung um die SSE- und
-       NATS-Vollinhalts-Client-Fläche neben der bestehenden HTTP-/gRPC-Fläche
-       (· seit slice-sdk-csharp-nats-stream-client-flaeche), kein Breaking
-       Change an HTTP-/gRPC-Fläche — Pflege bei jedem Release ein bewusster
-       Schritt, keine automatische Ableitung. -->
+       `0.2.1` (ADR-0106 Festlegung 3, unabhängig von docs/user/version.md) —
+       Pflege bei jedem Release ein bewusster Schritt, keine automatische
+       Ableitung. Description, PackageTags und die README (PackageReadmeFile)
+       sind die Felder, die Anwender auf NuGet.org sehen: sie tragen keine
+       internen Kennungen. -->
   <PropertyGroup>
     <PackageId>PgChangeFeed.Client</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>pt9912</Authors>
     <Description>Official .NET client library for PG Change Feed (HTTP API, gRPC change stream, SSE stream, and NATS full-content stream).</Description>
+    <PackageTags>postgresql;change-data-capture;cdc;logical-replication;change-feed</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/pt9912/pg-change-feed</PackageProjectUrl>
     <RepositoryUrl>https://github.com/pt9912/pg-change-feed</RepositoryUrl>
