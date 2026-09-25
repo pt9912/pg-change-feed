@@ -99,7 +99,7 @@ ersten Betreiber.
       „Eine Messung liegt vor“ ist beantragt); die Handbuch-Version und die
       Änderungshistorie tragen eine Zeile. *Zu belegen durch:* Lesen des
       Handbuch-Abschnitts und `make docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
