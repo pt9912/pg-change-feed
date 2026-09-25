@@ -388,8 +388,8 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   trägt allein der Unit-Test `TestRunNoConfirmationInsideOpenTransaction`
   (Mutation rot). Ein deterministischer Store-Test dafür ist nicht gebaut: das
   WAL-Ende der Keepalive-Nachricht liegt auf der Leitung vor dem Commit der
-  laufenden Transaktion (hergeleitet aus der Quelle des Walsenders, nicht
-  ausgeführt), eine Bestätigung inmitten der Transaktion überspränge also
+  laufenden Transaktion (hergeleitet, die PostgreSQL-Quelle ist nicht gelesen
+  und der Fall nicht ausgeführt), eine Bestätigung inmitten der Transaktion überspränge also
   keinen Change — der Store-Test kann die Prüfung nicht rot färben. Was den
   Store-Test rot färbt, ist die Größe der bestätigten Position (Mutation:
   gemeldete Position + 1 GiB → der Neustart liefert den Change nicht, „kein
