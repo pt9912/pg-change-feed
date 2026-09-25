@@ -199,6 +199,18 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       Nachlauf weiter (hergeleitet aus dem Takt von 10 s: etwa fünf bis sechs je 60 s).
       Trifft das nicht zu — die Spitze wächst mit der Zahl der Changes oder die Takte
       bleiben aus —, steht der Befund im Bericht und der Slice geht nicht nach `done/`.
+      *Ergebnis* (Messbericht Abschnitt 7.1, gemessen und abgeleitet je Zahl dort):
+      Spitze flach im Bereich 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes
+      (zwei Läufe); Restanstieg von 2,4 und 2,5 MiB benannt (1,3 Bytes je Change,
+      abgeleitet aus der Differenz der Endpunkte, 0,08 bis 0,12 % der 1,03 bis 1,59 KiB
+      je Change vor der Änderung), Ursache nicht untersucht; die Takte laufen weiter
+      (20 bis 23, im Review-Lauf 22 bis 24, keine fehlgeschlagene). Die Klausel ist der
+      Sache nach nicht ausgelöst (Entscheidung des Auftraggebers; Begründung Messbericht
+      7.1: Takte laufen, Größenordnung, Sprung 1.000.000 → 2.000.000 fällt mit dem
+      Ausgangszustand des Containers zusammen, Streuung derselben Stufe über drei Läufe
+      0,2 bis 0,8 MiB); dem Wortlaut nach steigen die Bereiche der zwei Läufe ohne
+      Überlappung. Grenze: drei Stufen bis 3.000.000 Changes, schmale Zeilen, `n` = 2
+      plus `n` = 1 (Review); darüber ist nichts gemessen.
 - [x] Regressions-Beleg der Live-Last: der Skalierungs-Lauf (`tools/bench-scaling.sh`, das
       zweite Skript von `make bench`, Belegträger von
       [`LH-QA-PER-002`](../../../../spec/lastenheft.md)) läuft einmal; `cdc_capture_lag`
@@ -238,8 +250,13 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       der Stand des Diff ist Aufgabe des Implementers.
 - [x] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+      (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8). Report
+      `review-slice-retention-lauf-speicher-begrenzung` (0 HIGH, 3 MEDIUM): F-1 und F-2
+      in der Fixrunde aufgelöst (Wortlaut in Handbuch 1.63, Pflichtenheft und Godoc;
+      Auswertung der Klausel im Messbericht Abschnitt 7.1); F-3 und F-13: Architect-Verdikt
+      `architect-verdict-retention-neue-consumer-und-seitengrenze` liegt vor, die
+      Eintragung als Ausgang in §6 folgt bei der Closure (Planner).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
@@ -280,7 +297,20 @@ zwei Träger, eine Messung) ohne Vergleichs-Slice; die Laufzeit der Nachmessung 
 | `docs/reviews/messbericht-slice-retention-lauf-speicher-begrenzung.md` | neu | gedruckte Zeilen der Nachmessung, des Skalierungs-Laufs und der Mutationen des Store-Tiers (samt Mutationen des Use Cases und der Übersetzung, Befunde, Bewertung der Richtgröße); Form nach `messbericht-slice-backfill-speicher-untersuchung`, die gedruckten Zeilen im selben Dokument statt in einem Zeilen-Dokument |
 | `harness/README.md` (Zeile `make test-store`) | update | Erwähnung der Kandidaten-Seiten-Tests (Entscheidung des Implementers laut Suchlauf-Tabelle) |
 | `harness/sensors/db-adapter-coverage.md`, `harness/sensors/coverage-gate.md` | update | Nenner der Zählbasis nach dem Lauf des Slice (1064 bzw. 2601, je mit Lauf und gedruckter Zeile); §3.13-Träger der bewegten Statement-Zahlen |
-| `harness/targets/bench-backfill.md` | update | der Halbsatz „Speicherbedarf des Feed-Containers bis in den GiB-Bereich“ entfällt (Träger der bewegten Eigenschaft, gefunden beim Lesen der Suchlauf-Treffer) |
+| `harness/targets/bench-backfill.md` | update | der Halbsatz „Speicherbedarf des Feed-Containers bis in den GiB-Bereich“ entfällt (Träger der bewegten Eigenschaft, gefunden beim Lesen der Suchlauf-Treffer); in der Fixrunde zusätzlich die Zeile „Speicher“ (Grenzen des Skripts): „der Speicher des Feeds hängt an der Zahl der Changes“ ist nach der Messung nicht mehr wahr und nennt jetzt den Seiten-Anteil des Bereinigungslaufs und den Seiten-Cache in `memory.peak` (Fund der Fixrunde-Suche, Befehl B unten) |
+| `internal/application/usecase/retention/service_test.go` (Fixrunde, F-4) | update | der Fake trägt ein Budget an Lese-Aufrufen (`maxReads`, Vorgabe `defaultMaxReads` = 20, Fehler `errReadBudget`): die Mutationen „Fortschrittsprüfung abgeschaltet“ und „Cursor bleibt leer“ färben Tests jetzt durch eine Assertion rot statt durch die Zeitüberschreitung des Testlaufs (Messbericht Abschnitt 5, Zeile „Eine Seite ohne Fortschritt“) |
+| `internal/application/usecase/retention/service.go` (Fixrunde, F-1, F-8) | update | Godoc von `PageSize` nennt, was die Konstante tut (Kandidaten je Lese-Aufruf, eine Seite im Speicher), statt der Speicher-Aussage; Godoc von `Run` ohne den ausgeschlossenen Ausgang „nicht als Endlosschleife“ (nur Kommentare) |
+| `docs/user/benutzerhandbuch.md`, `spec/pflichtenheft.md` (Fixrunde, F-1, F-6) | update | Wortlaut „hängt nicht an der Zahl der Changes“ auf „nicht mit nennenswertem Betrag“ mit gemessenem Bereich (14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes; darüber nichts gemessen); die 1,3 Bytes je Change als Differenz zweier Endpunkte gekennzeichnet; dritter Lauf (Review) mit Seiten-Cache-Anteil; Vorversionen im Ist-Zustand; Handbuch 1.63 mit Historienzeile; Punkt 4 von `LH-FA-RET-004.a` als Sachaussage ohne Zahl im Speicherbedarf |
+| `docs/reviews/messbericht-slice-retention-lauf-speicher-begrenzung.md` (Fixrunde, F-2, F-9 bis F-11) | update | Abschnitt 7 trägt die Auswertung der Plan-Klausel (7.1) und die Richtgröße (7.2); Grundlinie trennt den Seiten-Anteil (Abschnitt 3); Kennzahl `memory.peak` mit Cache-Anteil; zwei Zitier-Ungenauigkeiten berichtigt (Wert bei 3.000.000 Changes, Stand des Image) |
+
+**Hinweis zur Bindung des 25.000-Changes-Tests** (Review F-7, INFO): in
+`internal/bootstrap/retention_pages_test.go` ist die Consumer-Position gleich der
+Change-Position an Position 3.500 jünger als die 24-h-Grenze der festen Uhr; die
+Mutation `t.commit_position + 1` (S5) bleibt dort grün. Die Grenze „Consumer-Position
+gleich Change-Position“ tragen der Einheitentest (`c4` an Position 200, Consumer 200,
+`TestRunDistinguishesEligibleChangesFromMixedSet`) und der Adapter-Test gegen
+`ReadChanges` (`TestRetentionCandidateCarriesPositionAndTimeOfReadChanges`, S5 rot);
+der 25.000-Changes-Test bindet sie nicht.
 
 Die vier Fakes (Zählung am Stand `5b1f7762`: `git grep -n -E 'func \(.*\) DeleteChanges'
 -- '*.go'` nennt fünf Methoden, vier in Tests und eine am Adapter): der Fake in
@@ -333,6 +363,30 @@ bei leerem `cdc.change`, unverändert wahr) und zwei Zeilen der Änderungshistor
 Die Grenze der Suchform bleibt (Zahlen und Lokatoren trifft `grep` nicht zuverlässig); die
 Zeilen-Lokatoren wurden gezielt mit `git grep -n -E 'wiring\.go:[0-9]+|:1[0-9]{3}\.[0-9]'`
 gesucht.
+
+**Suchlauf der Fixrunde** (bewegte Eigenschaft: „der Speicher des Feed-Containers hängt
+nicht an der Zahl der Changes“ wird zu „nicht mit nennenswertem Betrag“; Suchform
+Symbolname/Wortlaut, Zählwort, Beschreibung; beide Stände gemessen: vor der Fixrunde
+`c21c43b9` mit `git grep … c21c43b9 -- <Wurzeln>`, danach der Arbeitsbaum):
+
+```text
+git grep -n -i 'nicht an der Zahl\|hängt nicht' -- docs/user spec harness internal docs/plan/adr
+git grep -n -i -E '(an|von|mit) der Zahl der (gespeicherten )?Changes' -- docs/user spec harness internal docs/plan/adr
+```
+
+Befehl A: `c21c43b9` 7 Zeilen (`docs/user` 3, `spec` 2, `docs/plan/adr` 2, `harness` 0,
+`internal` 0), Arbeitsbaum 5 (`docs/user` 2, `spec` 1, `docs/plan/adr` 2). Befehl B:
+`c21c43b9` 10 Zeilen (`docs/plan/adr` 4, `docs/user` 4, `harness` 1, `spec` 1), Arbeitsbaum
+11 (`docs/plan/adr` 4, `docs/user` 5, `spec` 2). *Gefunden und gezogen:* die Handbuch-Zeilen
+in §4 (Retention, Backfill) und §9 (Speicher-Bullet, Richtgröße-Bullet), Punkt 4 von
+`LH-FA-RET-004.a` samt Änderungshistorie, der Godoc von `PageSize`, in `harness/targets/bench-backfill.md`
+die Zeile „Speicher“ (von Befehl B getroffen, vom Befehl der Review-Fundstelle nicht). *Nicht
+gefunden bzw. nicht gezogen:* `docs/plan/adr/0124-…md` Zeile 209 („nicht an der Zahl der
+Changes“, `Accepted`, [`AGENTS.md`](../../../../AGENTS.md) §3.5 — eine inhaltliche Korrektur
+wäre eine neue ADR mit `Supersedes`, keine Änderung dieser Zeile), `docs/plan/adr/0065-…md` (anderer Gegenstand: Ausschlussstand),
+Handbuch Zeile „Dauerhaftigkeit“ (anderer Gegenstand), `spec/pflichtenheft.md` Zeile 672 (anderer
+Gegenstand). Die Handbuch-Aussagen über die Seiten (10.000 je Seite, Positionen einmal je
+Lauf) sind von der Formulierungsänderung nicht berührt.
 
 Der Ausdruck `1,03 bis 1,5[79]` in Befehl 2 trifft beide Fassungen des Höchstwerts je Change:
 das Handbuch trägt am Parent `5b1f7762` `1,03 bis 1,57`, am Stand `989beef3` `1,03 bis 1,59`
@@ -472,8 +526,9 @@ geschrieben.
   (der Wert der Spitze steht neben der Herleitung, nicht statt ihrer). *Befund des
   Implementers:* die Spitze liegt bei 14,9 bis 17,6 MiB (Messbericht Abschnitt 3); der Bedarf
   einer Seite ist aus der Nachmessung nicht getrennt (keine Messung mit anderer Seitengröße);
-  ein Rest von etwa 1,3 Bytes je Change zwischen 1.000.000 und 3.000.000 Changes ist gemessen
-  und nicht erklärt. **Ausgang:** *(bei Closure)*
+  ein Anstieg der Spitze um 2,4 und 2,5 MiB zwischen 1.000.000 und 3.000.000 Changes ist
+  gemessen und nicht erklärt (etwa 1,3 Bytes je Change, abgeleitet als Differenz der zwei
+  Endpunkte, keine gemessene Steigung; Auswertung: Messbericht Abschnitt 7.1). **Ausgang:** *(bei Closure)*
 - **Die Nachmessung hängt am Host** (Speicher, Platte und Laufzeit bei 3.000.000
   Changes). *Erwartet, zu belegen durch:* jede Zahl nennt Host und Lauf; die Erwartung ist
   als Form gefasst („hängt nicht an der Zahl der Changes“), die Vergleichswerte der Reihe J
@@ -490,6 +545,10 @@ geschrieben.
 
 - **Was hat funktioniert:** *(zu tragen bei Closure)*
 - **Was ging anders als geplant:** *(zu tragen bei Closure)*
+- **Bekannte `git bisect`-Falle:** der Commit `d49e248f` (Fortschrittsprüfung im Use Case)
+  ist rot — `TestRunRejectsPageWithoutProgress` schlägt an ihm fehl (`gelöschte Menge = [c1 c1]`),
+  der Folgecommit `7572051c` behebt es; `HEAD` ist grün, die Historie bleibt unverändert.
+  Ein `git bisect` über diesen Bereich hält dort an; `git bisect skip d49e248f` übergeht ihn.
 - **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
   geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
   `done/`-Übergang)*

@@ -43,9 +43,9 @@ func NewRunRetentionService(store outbound.ChangeStorePort, state outbound.Consu
 
 var _ inbound.RunRetentionUseCase = (*RunRetentionService)(nil)
 
-// PageSize ist die Zahl der Kandidaten je Lese-Aufruf eines Laufs
-// (`ADR-0124`): der Arbeitsspeicher eines Laufs hängt an ihr, nicht an der
-// Zahl der gespeicherten Changes.
+// PageSize ist die Zahl der Kandidaten (Kennung, Commit-Position,
+// Commit-Zeitpunkt) je Lese-Aufruf eines Laufs (`ADR-0124`); ein Lauf hält
+// je Zeitpunkt eine Seite im Speicher.
 const PageSize = 10_000
 
 // Run liest die bestätigten Consumer-Positionen und die Wanduhr einmal und
@@ -58,7 +58,7 @@ const PageSize = 10_000
 // Der Lauf ist über die Seiten nicht atomar: ein Fehler hinterlässt die
 // Löschungen der Seiten davor, der nächste Lauf setzt fort (`ADR-0124`).
 // Eine Seite, deren letzte Kennung der Cursor ist, verletzt den Seitenvertrag
-// des Ports und endet als Fehler der Klasse `storage`, nicht als Endlosschleife.
+// des Ports und endet als Fehler der Klasse `storage`.
 // Eine leere Quellen-Kennung ist eine ungültige Konfiguration und endet über
 // einen expliziten Fehlerpfad, keine stille Übernahme (`LH-FA-RET-002`
 // Negative).

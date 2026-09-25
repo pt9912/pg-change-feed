@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.62
+Version: 1.63
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -474,10 +474,11 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
 `cdc.change` um die Zeilenzahl der Tabelle wachsen. Der Bereinigungslauf des Feeds
 liest sie in jedem Takt seitenweise (10.000 Changes je Seite, ohne die Row Images,
 siehe [Aufbewahrung (Retention)](#aufbewahrung-retention)); der Speicherbedarf des
-Feed-Containers hängt deshalb nicht an dieser Zahl. Gemessen liegt die Spitze des
-Feed-Containers nach Backfills über je 1.000.000 Zeilen bei 3.000.000 Changes in
-`cdc.change` bei 17,3 bis 17,6 MiB (zwei Läufe; Messwerte und Herkunft unter
-[Grenzwerte](#grenzwerte)).
+Feed-Containers hängt deshalb nicht mit nennenswertem Betrag an dieser Zahl.
+Gemessen liegt die Spitze des Feed-Containers nach Backfills über je 1.000.000
+Zeilen bei 1.000.000 bis 3.000.000 Changes in `cdc.change` bei 14,9 bis 17,6 MiB
+(zwei Läufe; über 3.000.000 Changes ist nichts gemessen; Messwerte und Herkunft
+unter [Grenzwerte](#grenzwerte)).
 
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
 der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
@@ -662,9 +663,11 @@ existiert dafür nicht. Jeder Durchlauf liest die Changes der Quelle seitenweise
 (10.000 je Seite) und dabei je Change nur Kennung, Commit-Position und
 Commit-Zeitpunkt, keine Row Images; er entscheidet je Change über die Löschung
 und löscht die freigegebenen Changes einer Seite, bevor er die nächste liest.
-Der Speicher des Feed-Containers hängt deshalb an der Seitengröße, nicht an der
-Zahl der Changes in `cdc.change` (Messwerte unter [Grenzwerte](#grenzwerte)); die
-Arbeit der Datenbank je Durchlauf wächst dagegen mit dieser Zahl. Ein Durchlauf
+Der Speicher des Feed-Containers hängt deshalb an der Seitengröße und nicht mit
+nennenswertem Betrag an der Zahl der Changes in `cdc.change` (gemessen 14,9 bis
+17,6 MiB bei 1.000.000 bis 3.000.000 Changes; Messwerte unter
+[Grenzwerte](#grenzwerte)); die Arbeit der Datenbank je Durchlauf wächst dagegen
+mit dieser Zahl. Ein Durchlauf
 ist nicht atomar: bricht er ab, bleiben die Löschungen der bereits bearbeiteten
 Seiten bestehen, und der nächste Takt setzt fort. Die bestätigten
 Consumer-Positionen liest ein Durchlauf einmal zu Beginn.
@@ -1645,8 +1648,8 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
   andere Hardware und eine andere Einfügeform sind für die Kopierrate
   ungemessen. Die Richtgröße folgt der Kopierdauer; der Speicher des
-  Feed-Containers geht nicht ein, weil er nicht an der Zahl der Changes hängt
-  (siehe *Backfill, Speicher des Feed-Containers*).
+  Feed-Containers geht nicht ein, weil er nicht mit nennenswertem Betrag an der
+  Zahl der Changes hängt (siehe *Backfill, Speicher des Feed-Containers*).
 - **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
   `tools/bench-backfill.sh`, Vertrag in
   [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
@@ -1673,8 +1676,9 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Blockzahl); die längste Dauer eines einzelnen Blocks und die Dauer des Commits
   sind nicht gemessen.
 - **Backfill, Speicher des Feed-Containers.** Der Speicher des Feed-Containers
-  hängt nicht an der Zahl der Changes, die für die Quelle in `cdc.change` stehen:
-  der periodische Bereinigungslauf (alle 10 s, siehe
+  hängt nicht mit nennenswertem Betrag an der Zahl der Changes, die für die
+  Quelle in `cdc.change` stehen: gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis
+  3.000.000 Changes; der periodische Bereinigungslauf (alle 10 s, siehe
   [Aufbewahrung (Retention)](#aufbewahrung-retention)) liest sie seitenweise
   (10.000 Changes je Seite) und ohne Row Images. Gemessen wurde mit
   `tools/bench-backfill-memory.sh` (Vertrag in
@@ -1694,9 +1698,18 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   | 2.000.000 | 16,5 und 16,9 |
   | 3.000.000 | 17,3 und 17,6 |
 
-  Zwischen 1.000.000 und 3.000.000 Changes wächst die Spitze um 2,4 und 2,5 MiB,
-  etwa 1,3 Bytes je Change (abgeleitet); die Ursache dieses Wachstums ist nicht
-  untersucht. Die Bereinigungs-Takte laufen in allen sechs Runs bis zum Ende weiter
+  Zwischen 1.000.000 und 3.000.000 Changes liegt die Spitze um 2,4 und 2,5 MiB
+  höher; das sind etwa 1,3 Bytes je Change, abgeleitet aus der Differenz der
+  beiden Endpunkte (keine gemessene Steigung). Die Werte der drei Stufen
+  überlappen einander nicht, der Sprung von 1.000.000 auf 2.000.000 Changes fällt
+  mit dem Ausgangszustand des Containers zusammen (leeres `cdc.change` im ersten
+  Run, gefülltes in den folgenden); die Ursache des Anstiegs ist nicht
+  untersucht. Ein dritter Lauf (`20260925T193207Z`) lag bei 2.000.000 und
+  3.000.000 Changes bei 16,6 und 16,8 MiB; bei 1.000.000 Changes stand die Spitze
+  bei 31,8 MiB, davon 16,5 MiB Seiten-Cache des Containers (`memory.peak`
+  schließt ihn ein; der Speicher des Prozesses lag dort bei 9,1 MiB, gemessen,
+  [Review-Report](../reviews/review-slice-retention-lauf-speicher-begrenzung.md)).
+  Die Bereinigungs-Takte laufen in allen sechs Runs bis zum Ende weiter
   (gedruckt: 20 bis 23 Zeilen „Bereinigung gelaufen“ seit dem Start des
   Feed-Containers, keine fehlgeschlagene). Bei leerem `cdc.change` liegt die Spitze
   des Prozesses im Run bei 8,9 bis 10,5 MiB, von 10.000 bis 1.000.000 Zeilen
@@ -1710,9 +1723,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   **Vorversionen.** Die Server-Versionen `v0.1.0` bis `v0.1.2` lesen in jedem Takt
   alle Changes der Quelle samt Row Images in den Speicher (Quelltext der drei
   Versionen verglichen, nicht am Image der Version gemessen). Ihr Speicher wächst
-  mit der Zahl der Changes: am Stand vor der seitenweisen Lesung gemessen 1,03 bis
-  1,59 KiB je Change bei schmalen Zeilen (abgeleitet, ab 100.000 Changes) und
-  1.082,7 bis 1.273,5 MiB bei 1.000.000 Changes ([Messbericht der
+  mit der Zahl der Changes: 1,03 bis 1,59 KiB je Change bei schmalen Zeilen
+  (abgeleitet, ab 100.000 Changes; an einem Build mit dieser Lesung gemessen,
+  nicht am Image der Version) und 1.082,7 bis 1.273,5 MiB bei 1.000.000 Changes
+  ([Messbericht der
   Untersuchung](../reviews/messbericht-slice-backfill-speicher-untersuchung.md),
   Abschnitt 3.3).
 - **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
@@ -1864,3 +1878,4 @@ MIT — siehe `LICENSE`.
 | 1.60 | 2026-09-25 | Speicher des Feed-Containers im Backfill gemessen und die Ursache benannt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung): §9 „Grenzwerte“ ersetzt die übernommenen Zahlen durch gemessene — die Spitze hängt an der Zahl der Changes in `cdc.change` (Bereinigungslauf liest je Takt alle Changes), nicht an der Tabellengröße; 1,03 bis 1,59 KiB je Change bei schmalen, 2,65 bis 4,19 KiB bei breiten Zeilen; Bemessung des Speicherlimits; die Richtgröße um den Speicher ergänzt; §4 „Bestand als Backfill überführen“ nennt den Speicher des Feed-Containers, „Aufbewahrung (Retention)“ die Lesung aller Changes je Durchlauf |
 | 1.61 | 2026-09-25 | Zahlen und Herkunftsangaben der Speicher-Messung in §9 „Grenzwerte“ und §4 „Bestand als Backfill überführen“ nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung Fixrunde): Höchstwert je Change 1,59 statt 1,57 KiB, `GOGC=25` senkt die Spitze um 11 bis 21 % statt 18 bis 21 %, die Runs mit 2.000.000 Changes vor dem Run stehen in einer eigenen Zeile; der Speicher im Run bei nicht leerem `cdc.change` ist benannt; Herkunft der Aussage zur laufenden Erfassung; die Server-Versionen `v0.1.0` bis `v0.1.2` tragen denselben Bereinigungslauf; Reihe N als Gegenprobe zum Ausbleiben der Bereinigungs-Takte |
 | 1.62 | 2026-09-25 | Bereinigungslauf liest Kandidaten seitenweise ohne Row Images (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung): §4 „Aufbewahrung (Retention)“ beschreibt die Seiten (10.000 Changes, nicht atomar, Consumer-Positionen einmal je Durchlauf), §4 „Bestand als Backfill überführen“ und §9 „Grenzwerte“ ersetzen die Bemessung des Speicherlimits je Change durch die Nachmessung (Spitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, zwei Läufe) und nennen den Stand der Vorversionen `v0.1.0` bis `v0.1.2`; die Richtgröße bleibt und folgt der Kopierdauer |
+| 1.63 | 2026-09-25 | Aussagen zum Speicher des Feed-Containers an die Messung angeglichen (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Fixrunde): der Speicher hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der Changes (gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, über 3.000.000 Changes nichts gemessen); der Anstieg zwischen den Stufen ist als Differenz zweier Endpunkte (keine gemessene Steigung) mit dem Ausgangszustand des Containers benannt, ein dritter Lauf mit Seiten-Cache-Anteil ergänzt; die Beschreibung der Vorversionen nennt ihren Ist-Zustand |

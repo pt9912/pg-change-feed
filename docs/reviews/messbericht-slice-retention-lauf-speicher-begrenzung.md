@@ -23,20 +23,23 @@ Zeile.
    **14,9 bis 15,1**, **16,5 bis 16,9** und **17,3 bis 17,6 MiB** (zwei Läufe,
    `n` = 2 je Stufe; Läufe `20260925T183239Z` und `20260925T184503Z`, Zeilen „Zeilen in
    `cdc.change` nach dem Nachlauf“). Vor der Änderung standen dort 1.082,7 bis 1.273,5,
-   2.269,2 bis 3.058,0 und 3.096,6 MiB (Messbericht der Untersuchung, Abschnitt 3.3,
-   Reihen B und C). Die Zusage „Spitze im Bereich der Werte bei ausgeschalteter
+   2.269,2 bis 3.058,0 und 2.751,7 bis 3.096,6 MiB (Messbericht der Untersuchung,
+   Abschnitt 3.3, Reihen B und C; bei 3.000.000 Changes die Spitze im Run, nicht die
+   Spitze nach dem Nachlauf). Die Zusage „Spitze im Bereich der Werte bei ausgeschalteter
    Bereinigung plus dem Bedarf einer Seite“ ist damit belegt, mit einer Einschränkung
    (Punkt 2).
-2. **Ein Rest an Wachstum bleibt gemessen und unerklärt.** Die Werte ohne Bereinigung
+2. **Ein Rest an Anstieg bleibt gemessen und unerklärt.** Die Werte ohne Bereinigung
    (Reihe J des Messberichts der Untersuchung, ein Lauf) liegen bei 13,3, 13,2 und
    13,7 MiB. Die Differenz der Nachmessung zu Reihe J steigt von 1,6 bis 1,8 MiB bei
    1.000.000 über 3,3 bis 3,7 bei 2.000.000 auf 3,6 bis 3,9 MiB bei 3.000.000 Changes
-   (abgeleitet aus den Zeilen). Von 1.000.000 auf 3.000.000 Changes wachsen die Werte
-   um 2,4 und 2,5 MiB (17,3 − 14,9 und 17,6 − 15,1), also etwa 1,3 Bytes je Change
-   (abgeleitet: 2,5 MiB × 1.048.576 / 2.000.000); vor der Änderung waren es 1,03 bis 1,59 KiB je Change (Untersuchung,
-   Abschnitt 3.3), das ist etwa das Eintausendfache. Die Ursache des Rests ist **nicht
-   untersucht**; die Herleitung des Bedarfs einer Seite (etwa 1,5 MiB) sagt keinen Rest
-   dieser Art voraus.
+   (abgeleitet aus den Zeilen). Von 1.000.000 auf 3.000.000 Changes liegen die Werte
+   um 2,4 und 2,5 MiB höher (17,3 − 14,9 und 17,6 − 15,1), also etwa 1,3 Bytes je
+   Change (abgeleitet: 2,5 MiB × 1.048.576 / 2.000.000; die Differenz zweier
+   Endpunkte, keine gemessene Steigung); vor der Änderung waren es 1,03 bis 1,59 KiB
+   je Change (Untersuchung, Abschnitt 3.3), das ist etwa das Eintausendfache. Die
+   Ursache des Rests ist **nicht untersucht**; die Herleitung des Bedarfs einer Seite
+   (etwa 1,5 MiB) sagt keinen Rest dieser Art voraus. Die Auswertung der Plan-Klausel
+   zu diesem Rest steht in Abschnitt 7.1.
 3. **Die Bereinigungs-Takte laufen bei 2.000.000 und 3.000.000 Changes weiter.** Die
    Zählung „Bereinigung gelaufen“ seit dem Start des Feeds steht nach dem Nachlauf bei
    20, 22 und 23 (Lauf 1) und 20, 23 und 23 (Lauf 2), fehlgeschlagen 0; der Nachlauf
@@ -58,8 +61,10 @@ Zeile.
 20 CPU, 33.362.599.936 Byte RAM; PostgreSQL 18 (`postgres:18-alpine`, Pin aus
 `tools/bench-lib.sh`). **Feed-Image:** `ghcr.io/pt9912/pg-change-feed:dev`,
 Image-ID `sha256:8c8dea000428448c0ff22a95f66061b32634beff80eeef1cf5c70e94c4a82a40`
-(`make image` am Stand des Commits `0e6b1b30`; der Produktionscode dieses Standes ist der
-des Slice-Diffs, danach änderte sich nur Doku). **Aufruf** beider
+(`make image` am Stand des Commits `0e6b1b30`; seither änderten sich Doku, Kommentare
+in `internal/bootstrap/wiring.go` und `internal/application/usecase/retention/service.go`
+(kein ausführbarer Code) und der Testcode des Use Cases — `git diff 0e6b1b30 --
+'*.go'`). **Aufruf** beider
 Läufe wie Reihe B der Untersuchung, damit der Vergleich dieselbe Anordnung hat:
 `BENCH_MEM_STAGES=1000000 BENCH_FEED_ENV='GODEBUG=gctrace=1' BENCH_FEED_DOCKER_ARGS='--memory 6g'`,
 drei Runs, ein frischer Feed-Container je Run, `cdc.change` vor Run 1 leer (Bestand vor
@@ -100,19 +105,31 @@ Nachmessung (Lauf 1; Lauf 2):
 
 Die Spitze im Run (`anon`) liegt bei leerem `cdc.change` (Run 1) bei 10,2 und 10,0 MiB, im
 Bereich der Untersuchung bei leerem `cdc.change` (8,9 bis 10,5 MiB); bei 2.000.000 Changes
-davor (Run 3) bei 12,6 und 12,8 MiB, also 2,4 und 2,8 MiB darüber. Der Bedarf einer Seite
-(hergeleitet etwa 1,5 MiB,
-[`ADR-0124`](../plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md))
-ist aus dieser Messung nicht getrennt: sie enthält keinen Lauf mit einer anderen
-Seitengröße, gegen den die Differenz zu bilden wäre.
+davor (Run 3) bei 12,6 und 12,8 MiB, also 2,4 und 2,8 MiB darüber. Die Zeilen
+„Grundlinie“ (`anon`, Ruhe 10 s nach dem Start des Feeds, Abschnitt 9) trennen dabei
+einen Anteil: bei leerem `cdc.change` (Run 1) 5,1 und 5,4 MiB, bei 1.000.000 und
+2.000.000 Changes davor (Run 2 und 3) 10,1 bis 10,7 MiB (Maximum je Fenster, vier
+Fenster) — ein Sprung von etwa 5 MiB einmal beim Wechsel von leerem zu gefülltem
+`cdc.change`, danach flach. Das ist rund das Dreifache des hergeleiteten Bedarfs einer
+Seite (etwa 1,5 MiB,
+[`ADR-0124`](../plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md);
+abgeleitet; Anteile von Heap-Überhang der Speicherbereinigung und Treiber-Puffern sind
+darin nicht getrennt). Eine Messung mit einer anderen Seitengröße, gegen die die
+Differenz zu bilden wäre, liegt nicht vor.
 
 **Zur Zusage der Nachmessung.** Die Erwartung war eine Form („hängt nicht an der Zahl der
 Changes“, Werte im Bereich von Reihe J plus einer Seite), keine Schwelle. Erfüllt ist sie
 für die Form: das Wachstum je Change liegt etwa um das Eintausendfache unter dem der
 Untersuchung, und die Takte laufen weiter. Die Werte selbst liegen bei 1.000.000 Changes
 im Rahmen „Reihe J plus etwa 1,5 MiB“ (Differenz 1,6 bis 1,8 MiB), bei 2.000.000 und
-3.000.000 Changes darüber (3,3 bis 3,9 MiB); dieser Rest wird nicht als Beleg für „flach“
-gezählt (Punkt 2 des Ergebnisses).
+3.000.000 Changes darüber (3,3 bis 3,9 MiB); die Auswertung dieses Rests steht in
+Abschnitt 7.1.
+
+**Kennzahl.** `memory.peak` schließt den Seiten-Cache der cgroup (`file`) ein. In den
+zwei Läufen dieses Berichts steht `file` bei 0,0 MiB am Run-Ende (Zeilen „cgroup Run-Ende“,
+Abschnitt 9); im Review-Lauf `20260925T193207Z` trägt Run 1 `memory.peak` 31,8 MiB bei
+`anon` 9,1 und `file` 16,5 MiB (Review-Bericht, Abschnitt „Eigenständig durchgeführte
+Prüfungen“, Nachmessung). Die Ursache dieses Cache-Anteils ist nicht untersucht.
 
 ## 4. Skalierungs-Lauf (Regressions-Beleg der Live-Last)
 
@@ -149,7 +166,8 @@ Runners im Scratchpad, dieselben Images und derselbe Schema-Rollout).
 | Die Freigabe trägt die Consumer-Position | `AllowsDeletion(…, consumerPositions[:0])` | sechs Tests, u. a. `TestRunReleasesSameSetAtEveryPageSize` |
 | Ein Lese-Fehler ab Aufruf `n` hinterlässt die Löschungen davor | Lese-Fehler als Erfolg zurückgegeben | `TestRunStoreReadErrorFollowsSource`, `TestRunReadFailureLeavesPagesBefore` |
 | Ein Lösch-Fehler an Seite `n` endet den Lauf | Lösch-Fehler als Erfolg zurückgegeben | `TestRunDeleteErrorFollowsEligibleSet`, `TestRunDeleteFailureStopsAtThatPage` |
-| Eine Seite ohne Fortschritt endet als Fehler | Fortschrittsprüfung `last == after` abgeschaltet | kein Fehlschlag, sondern `panic: test timed out after 1m0s` in `TestRunRejectsPageWithoutProgress` (Rot durch Zeitüberschreitung) |
+| Eine Seite ohne Fortschritt endet als Fehler | Fortschrittsprüfung `last == after` abgeschaltet (`false && last == after`) | `TestRunRejectsPageWithoutProgress`: „Lauf las über die Seite ohne Fortschritt hinaus: Lese-Aufruf über dem Budget des Fakes (Lese-Aufrufe = 3, erlaubt 2)“ — eine Assertion; das Budget an Lese-Aufrufen (`maxReads`) trägt der Fake seit der Fixrunde (vorher: `panic: test timed out after 1m0s`, Rot durch Zeitüberschreitung) |
+| Der Cursor der nächsten Seite ist die letzte Kennung | Cursor bleibt leer (`after = last` entfällt) | elf Tests rot durch Assertion (u. a. `TestRunReleasesSameSetAtEveryPageSize`, `TestRunReadsEachPageAtPageSizeFromTheLastKey`, `TestRunRejectsPageWithoutProgress`); ohne Budget des Fakes lief dieser Fall bis zur Zeitüberschreitung |
 
 **Übersetzung** (`sqlexec/translate_test.go`): Commit-Zeitpunkt als `committedAt.Unix()`
 statt `UnixNano()` → `TestReadRetentionCandidatesIssuesQueryAndTranslatesRows` rot. Die
@@ -234,7 +252,53 @@ und das Netz `cdc-store-test` von Hand entfernt). `tools/schema/plan.yaml` und
 `tools/schema/down.sql`, die jeder Rollout-Lauf umschreibt, sind nach jedem Lauf mit
 `git checkout` zurückgenommen; nichts Erzeugtes ist committet.
 
-## 7. Bewertung der Warn-Richtgröße
+## 7. Bewertungen
+
+### 7.1 Auswertung der Plan-Klausel zur Spitze
+
+Die Klausel (Slice-Plan, DoD-Punkt „Nachmessung“): „Trifft das nicht zu — die Spitze
+wächst mit der Zahl der Changes oder die Takte bleiben aus —, steht der Befund im
+Bericht und der Slice geht nicht nach `done/`.“ Der Reviewer hat den Wortlaut an den
+zwei Läufen als erfüllt gelesen (die Bereiche steigen ohne Überlappung) und die Sache
+anders bewertet (Review-Bericht, Abschnitt „Bewertung der Plan-Klausel“).
+
+**Auswertung (Entscheidung des Auftraggebers): die Klausel löst der Sache nach nicht
+aus.** Die Erwartung war eine Form, keine Schwelle (Plan: „Orientierung, keine
+Schwelle“); das Ziel des Slice ist das Ende der Abhängigkeit im KiB-Bereich je Change
+(Plan, Abschnitt 1). Die Belege:
+
+1. *Die Takte bleiben nicht aus.* Zähler „Bereinigung gelaufen“ seit dem Start 20 bis 23
+   (Läufe 1 und 2, Abschnitt 9) und 22, 23, 24 im Review-Lauf `20260925T193207Z`,
+   fehlgeschlagen in allen neun Runs 0.
+2. *Die Größenordnung.* Der Rest von 2,4 und 2,5 MiB zwischen 1.000.000 und 3.000.000
+   Changes (Abschnitt 3, Tabelle; 17,3 − 14,9 und 17,6 − 15,1) sind 1,3 Bytes je Change
+   (abgeleitet, Differenz zweier Endpunkte), gegen 1.055 bis 1.628 Bytes je Change vor
+   der Änderung (1,03 bis 1,59 KiB, Untersuchung, Abschnitt 3.3; abgeleitet): das sind
+   0,08 bis 0,12 % (abgeleitet: 1,3 / 1.628 und 1,3 / 1.055).
+3. *Der Sprung von 1.000.000 auf 2.000.000 Changes fällt mit dem Ausgangszustand des
+   Containers zusammen.* Run 1 beginnt mit leerem `cdc.change` (Grundlinie `anon` 5,1
+   und 5,4 MiB), Run 2 und 3 mit gefülltem (10,1 bis 10,7 MiB, Abschnitt 3; die Zeilen
+   „Grundlinie“ in Abschnitt 9); zwischen 1.000.000 und 2.000.000 Changes davor ist
+   die Grundlinie flach. Die Bereiche der zwei Läufe überlappen zwischen den Stufen
+   nicht; mit dem Review-Lauf überlappen sie (16,8 MiB bei 3.000.000 Changes liegt im
+   Bereich der Stufe 2.000.000, 16,5 bis 16,9). Der Schritt 2.000.000 → 3.000.000
+   beträgt 0,7 und 0,8 MiB (16,9 → 17,6; 16,5 → 17,3), im Review-Lauf 0,2 MiB
+   (16,6 → 16,8); bei 3.000.000 Changes stehen 17,6, 17,3 und im Review-Lauf 16,8 MiB,
+   die Streuung desselben Schritts über drei Läufe ist 0,2 bis 0,8 MiB.
+4. *Ein Wert außerhalb des Bereichs.* Der Review-Lauf trägt in Run 1 (leeres
+   `cdc.change`) `memory.peak` 31,8 MiB, davon `file` 16,5 MiB bei `anon` 9,1 MiB
+   (Abschnitt 3, Kennzahl; Review-Bericht); er liegt über dem Bereich 14,9 bis 17,6 MiB
+   der zwei Läufe dieses Berichts und ist dort nicht eingerechnet.
+
+**Formulierung des DoD-Punktes:** Spitze flach im Bereich 14,9 bis 17,6 MiB bei
+1.000.000 bis 3.000.000 Changes (zwei Läufe); Restanstieg von 2,4 und 2,5 MiB benannt,
+Ursache nicht untersucht; Klausel der Sache nach nicht ausgelöst (Belege 1 bis 3).
+
+**Grenze der Aussage:** drei Stufen bis 3.000.000 Changes, schmale Zeilen (74 Bytes),
+`n` = 2 (Implementer) plus `n` = 1 (Review); über 3.000.000 Changes ist nichts gemessen,
+ebenso nicht die laufende Erfassung als Quelle der Changes und breite Zeilen.
+
+### 7.2 Bewertung der Warn-Richtgröße
 
 Trigger: „Eine Messung liegt vor“
 ([`ADR-0113`](../plan/adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)).

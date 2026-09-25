@@ -178,8 +178,9 @@ Was das Skript **nicht** misst — eine Aussage darüber ist ungedeckt:
   der Statusabfrage (etwa 1 bis 2 Sekunden); die Spitze kann zwischen zwei Proben
   liegen, und die Probe 20 s oder 60 s nach dem letzten Run der Stufe kann darüber
   liegen (der höchste gedruckte Wert einer Stufe ist der höchste gemessene Wert,
-  nicht die Spitze allein), weil der Speicher des Feeds an der Zahl der Changes in
-  `cdc.change` hängt und nicht nur am Run. Die Untersuchung des Speichers
+  nicht die Spitze allein), weil der Speicher des Feeds nicht nur am Run hängt: der
+  Bereinigungslauf liest je Takt eine Seite Kandidaten, und `memory.peak` schließt
+  den Seiten-Cache der cgroup ein. Die Untersuchung des Speichers
   (`tools/bench-backfill-memory.sh`, oben) trennt beides. Der Speicher der
   PostgreSQL-Instanz ist nicht gemessen.
 - **WAL.** Die Messung ist ohne Pass/Fail und ohne Ursachenzuordnung: sie

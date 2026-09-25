@@ -11,6 +11,16 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
+// errReadBudget ist der Fehler, mit dem der Fake einen Lauf beendet, der mehr
+// Lese-Aufrufe macht als `maxReads` erlaubt: ein Lauf, der eine Seite ohne
+// Fortschritt nicht erkennt, endet damit als Assertion-Fehler des Tests und
+// nicht erst durch die Zeitüberschreitung des Testlaufs.
+var errReadBudget = stderrors.New("Lese-Aufruf über dem Budget des Fakes")
+
+// defaultMaxReads ist das Budget an Lese-Aufrufen, wenn ein Test `maxReads`
+// nicht setzt; der größte Bestand der Tests braucht acht Aufrufe (Seiten zu 1).
+const defaultMaxReads = 20
+
 // fakeStore trägt den `ChangeStorePort` als Fake (`ADR-0030`):
 // `ReadRetentionCandidates` meldet einen fest verdrahteten Bestand in der
 // Reihenfolge der Liste, die der Fake als Ordnung des Schlüssels führt
@@ -21,6 +31,8 @@ import (
 // (1-basiert) lassen erst die Aufrufe ab dem n-ten scheitern. Die
 // `…ErrFor`-Felder binden einen Port-Fehler an genau den Eingabewert, auf
 // den er antwortet (LP2): jede andere Quelle bzw. Menge trägt derselbe Fake.
+// `maxReads` begrenzt die Zahl der Lese-Aufrufe: ab dem Aufruf n > `maxReads`
+// (Vorgabe `defaultMaxReads`) antwortet der Fake mit `errReadBudget`.
 type fakeStore struct {
 	records      []outbound.ChangeRecord
 	readCalls    int
@@ -37,6 +49,7 @@ type fakeStore struct {
 	deleteFailFrom int
 	failErr        error
 	ignoreAfter    bool // liest immer vom Anfang, wie ein Store ohne Cursor
+	maxReads       int  // der Lese-Aufruf n > maxReads scheitert mit `errReadBudget`; 0 = `defaultMaxReads`
 
 	readErrFor  map[model.SourceID]error // Quell-Kennung → Fehler
 	deleteErrFor model.ChangeID           // freigegebene Kennung → Fehler
@@ -56,6 +69,13 @@ func (f *fakeStore) ReadRetentionCandidates(ctx context.Context, source model.So
 	f.readCalls++
 	f.readAfters = append(f.readAfters, after)
 	f.readLimits = append(f.readLimits, limit)
+	budget := f.maxReads
+	if budget == 0 {
+		budget = defaultMaxReads
+	}
+	if f.readCalls > budget {
+		return nil, errReadBudget
+	}
 	if err, ok := f.readErrFor[source]; ok {
 		return nil, err
 	}
@@ -615,10 +635,15 @@ func TestRunContinuesPastShortPages(t *testing.T) {
 // TestRunRejectsPageWithoutProgress trägt den Schutz vor einem Store, der den
 // Cursor nicht beachtet: liefert der Fake auf den zweiten Aufruf dieselbe
 // Seite, endet der Lauf als Fehler der Klasse `storage` nach zwei Lese-Aufrufen
-// und einer Löschung, statt dieselbe Seite endlos zu lesen.
+// und einer Löschung. Der Fake erlaubt zwei Lese-Aufrufe (`maxReads`); ein
+// dritter endet als `errReadBudget`, der Test fällt dann an der Fehlerklasse
+// und an der Zahl der Lese-Aufrufe.
 func TestRunRejectsPageWithoutProgress(t *testing.T) {
-	store := &fakeStore{maxPage: 3, ignoreAfter: true}
+	store := &fakeStore{maxPage: 3, ignoreAfter: true, maxReads: 2}
 	result, _, err := runPaged(t, store)
+	if stderrors.Is(err, errReadBudget) {
+		t.Fatalf("Lauf las über die Seite ohne Fortschritt hinaus: %v (Lese-Aufrufe = %d, erlaubt 2)", err, store.readCalls)
+	}
 	if !stderrors.Is(err, outbound.ErrStorage) {
 		t.Fatalf("Seite ohne Fortschritt: %v (Erwartung: Klasse storage)", err)
 	}
