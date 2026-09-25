@@ -2,7 +2,7 @@
 
 Kotlin/JVM client library for [PG Change Feed](https://github.com/pt9912/pg-change-feed), a server that records every INSERT, UPDATE and DELETE of selected PostgreSQL tables and makes these changes available over HTTP, gRPC, Server-Sent Events (SSE) and NATS.
 
-With this package (`pgchangefeed-kotlin`) a Kotlin or Java application can
+With this package (`pgchangefeed-kotlin`) a Kotlin application can
 
 - read the recorded changes and keep track of how far it has processed them,
 - manage which tables the server captures, and
@@ -41,7 +41,7 @@ dependencies {
 }
 ```
 
-The library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
+Apart from the Kotlin standard library, the library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
 
 ```kotlin
 dependencies {
@@ -53,7 +53,7 @@ dependencies {
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
 
 ### Read changes and remember your position
 
@@ -93,7 +93,7 @@ fun main() {
 
 The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `PgChangeFeedClientOptions`.
 
-gRPC (the address is the `http://host:port` URL of the gRPC endpoint; `streamChanges()` returns a `kotlinx.coroutines.flow.Flow` of the generated `Change` protobuf messages, row images are JSON in a `ByteString`):
+gRPC (the address is the `http://host:port` URL of the gRPC endpoint; `streamChanges()` returns a `kotlinx.coroutines.flow.Flow` of the generated `Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own plaintext channel, `PgChangeFeedGrpcClient(channel, options)` takes an `io.grpc.Channel` you configure yourself):
 
 ```kotlin
 import io.github.pt9912.pgchangefeed.PgChangeFeedClientOptions
@@ -156,7 +156,7 @@ fun main() {
 | `acknowledgeConsumer(request)` | Stores the consumer's position. Repeating the same position has no effect; a position before the stored one is rejected. | admin |
 | `getConsumerPosition(consumerId)` | Reads the stored position (`offset`, and `acknowledged`, which is false for a consumer that never acknowledged). | reader |
 | `removeConsumer(consumerId)` | Removes a consumer. | admin |
-| `enableTable(request)` | Starts capturing a table. | admin |
+| `enableTable(request)` | Starts capturing a table (see below). A table that is already captured changes nothing (`alreadyEnabled` is true); a table that does not exist throws `PgChangeFeedNotFoundException`. | admin |
 | `disableTable(request)` | Stops capturing a table. `retained` reports that changes already stored for it remain. | admin |
 | `getStatus(source, schema, table, publication)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `listTables(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
@@ -164,6 +164,8 @@ fun main() {
 | `readChanges(source, schema, table, from, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions. Only `source` is required. | reader |
 
 Request and response classes live in `io.github.pt9912.pgchangefeed.http.model`.
+
+`EnableTableRequest` names the table and the ids it is captured under: `source`, `schema` and `table` identify the table, `publication` is the PostgreSQL publication of the source, `tableId` is the id you give the table (every change of the table carries it as `sourceTableId`), and `schemaVersionId` and `version` (a number, 1 or higher) identify the table's schema version (changes carry the id as `schemaVersion`).
 
 The live streams each have one method:
 
@@ -186,8 +188,8 @@ The live streams each have one method:
 | `schema`, `table` | Schema and name of the table. |
 | `sequence` | Order of the row change within its transaction. |
 | `operation` | `INSERT`, `UPDATE` or `DELETE`. |
-| `oldImage` | Row values before the change as a Gson `JsonElement`; `null` for an INSERT. For UPDATE and DELETE it holds what PostgreSQL provides for the table's replica identity. |
-| `newImage` | Row values after the change as a `JsonElement`; `null` for a DELETE. |
+| `oldImage` | Row values before the change as a Gson `JsonElement`; `JsonNull` for an INSERT (`oldImage?.isJsonNull == true`, not a Kotlin `null`). For UPDATE and DELETE it holds what PostgreSQL provides for the table's replica identity. |
+| `newImage` | Row values after the change as a `JsonElement`; `JsonNull` for a DELETE. |
 | `schemaVersion` | Version of the table schema the change was captured with. |
 | `committedAt` | Commit time of the source transaction (RFC 3339, UTC). |
 | `origin` | `wal` for a change captured live from the database, `backfill` for a change that was taken from the existing table contents. A response without the field, or with JSON `null`, reads as `wal`; any other value is passed through unchanged. |
@@ -196,7 +198,7 @@ The live streams deliver change objects with ten properties: `changeId`, `transa
 
 ## Error handling
 
-Every failing HTTP call throws a subclass of the sealed class `PgChangeFeedException`, which carries the HTTP `statusCode`. The same exceptions are thrown when the SSE stream cannot be opened. All live in `io.github.pt9912.pgchangefeed.http`.
+An HTTP call that the server answers with an error status throws a subclass of the sealed class `PgChangeFeedException`, which carries the HTTP `statusCode`. The same exceptions are thrown when the SSE stream cannot be opened. All live in `io.github.pt9912.pgchangefeed.http`. Connection failures and timeouts are not converted: they surface as the `java.io.IOException` of `java.net.http.HttpClient` (for example `java.net.http.HttpTimeoutException`). Every HTTP call has a timeout of ten seconds; the SSE stream has none.
 
 | Exception | When |
 |---|---|

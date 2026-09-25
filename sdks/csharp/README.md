@@ -22,7 +22,7 @@ Requires .NET 10 or newer. The examples below assume implicit usings, the defaul
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
 
 ### Read changes and remember your position
 
@@ -59,7 +59,7 @@ if (result.Changes.Count > 0)
 
 The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `PgChangeFeedClientOptions` and return an `IAsyncEnumerable` you read with `await foreach`. Every `StreamChangesAsync` accepts a `CancellationToken` to end the stream.
 
-gRPC (the address is the `http://host:port` URL of the gRPC endpoint; the messages are the generated `Cdc.Stream.V1.Change` protobuf messages, row images are JSON in a `ByteString`):
+gRPC (the address is the `http://host:port` URL of the gRPC endpoint; the messages are the generated `Cdc.Stream.V1.Change` protobuf messages, row images are JSON in a `ByteString`, empty when there is none; the convenience constructor opens its own plaintext channel, `new PgChangeFeedGrpcClient(callInvoker, options)` takes a `CallInvoker` you configure yourself, for example from `GrpcChannel.CreateCallInvoker()`):
 
 ```csharp
 using PgChangeFeed.Client;
@@ -113,7 +113,7 @@ await foreach (var change in client.StreamChangesAsync(subject))
 | `AcknowledgeConsumerAsync(request)` | Stores the consumer's position. Repeating the same position has no effect; a position before the stored one is rejected. | admin |
 | `GetConsumerPositionAsync(consumerId)` | Reads the stored position (`Offset`, and `Acknowledged`, which is false for a consumer that never acknowledged). | reader |
 | `RemoveConsumerAsync(consumerId)` | Removes a consumer. | admin |
-| `EnableTableAsync(request)` | Starts capturing a table. | admin |
+| `EnableTableAsync(request)` | Starts capturing a table (see below). A table that is already captured changes nothing (`AlreadyEnabled` is true); a table that does not exist throws `PgChangeFeedNotFoundException`. | admin |
 | `DisableTableAsync(request)` | Stops capturing a table. `Retained` reports that changes already stored for it remain. | admin |
 | `GetStatusAsync(source, schema, table, publication)` | Tells whether a table is captured (`Enabled`) or no longer captured with stored changes remaining (`Retained`). | reader |
 | `ListTablesAsync(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
@@ -121,6 +121,8 @@ await foreach (var change in client.StreamChangesAsync(subject))
 | `ReadChangesAsync(source, schema, table, from, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from, to)` of commit positions. Only `source` is required. | reader |
 
 Request and response types live in `PgChangeFeed.Client.Http.Models`.
+
+`EnableTableRequest` names the table and the ids it is captured under: `Source`, `Schema` and `Table` identify the table, `Publication` is the PostgreSQL publication of the source, `TableId` is the id you give the table (every change of the table carries it as `SourceTableId`), and `SchemaVersionId` and `Version` (a number, 1 or higher) identify the table's schema version (changes carry the id as `SchemaVersion`).
 
 The live streams each have one method:
 
@@ -153,7 +155,7 @@ The live streams deliver change objects with ten properties: `ChangeId`, `Transa
 
 ## Error handling
 
-Every failing HTTP call throws a subclass of `PgChangeFeedException`, which carries the HTTP `StatusCode`. The same exceptions are thrown when the SSE stream cannot be opened.
+An HTTP call that the server answers with an error status throws a subclass of `PgChangeFeedException`, which carries the HTTP `StatusCode`. The same exceptions are thrown when the SSE stream cannot be opened. Connection failures and timeouts are not converted: they surface as the `HttpRequestException` (connection failure) or `TaskCanceledException` (timeout) of the `HttpClient`.
 
 | Exception | When |
 |---|---|
