@@ -1526,3 +1526,200 @@ func TestExecuteCleanupFailuresAreLoggedNotFatal(t *testing.T) {
 		t.Fatalf("Warnungen = %v, will Rollback und Schließen", r.log.warns)
 	}
 }
+
+// --- Warnungen (`ADR-0113` Festlegung 3) -----------------------------------
+
+// scriptClock liefert die Lesungen der Reihe nach und danach die letzte.
+type scriptClock struct {
+	readings []int64
+	calls    int
+}
+
+func (c *scriptClock) Now() model.TimePoint {
+	i := c.calls
+	c.calls++
+	if i >= len(c.readings) {
+		i = len(c.readings) - 1
+	}
+	return model.NewTimePoint(c.readings[i])
+}
+
+func (r *rig) executeWithClock(ctx context.Context, t *testing.T, clock outbound.ClockPort) (backfill.BackfillExecuteResult, error) {
+	t.Helper()
+	service := backfill.NewBackfillTableService(backfill.Ports{
+		Activation: r.activation, Exclusion: r.exclusion, Schemas: r.schemas, Snapshot: r.snapshotP,
+		Admission: r.admission, Runs: r.runs, Writer: r.writer, Clock: clock,
+	}, backfill.WithChangeNotification(r.notifier), backfill.WithLog(r.log))
+	return service.Execute(ctx, backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})
+}
+
+// TestRequestWarnsAtEstimatedSizeGuideline trägt Warnung (1): die
+// **geschätzte** Zeilenzahl über der Richtgröße setzt die Kennzeichnung im Run,
+// den `Admit` erhält; genau auf der Richtgröße, bei einer bekannten `0` und bei
+// einer unbekannten Schätzung bleibt sie aus — auch wenn die Zahl neben
+// „unbekannt“ groß ist. Kein Fall lehnt den Antrag ab: `Admit` läuft in jedem
+// als letzter Schritt.
+func TestRequestWarnsAtEstimatedSizeGuideline(t *testing.T) {
+	guideline := backfill.EstimatedRowsGuidelineForTest
+	cases := []struct {
+		name  string
+		rows  int64
+		known bool
+		want  bool
+	}{
+		{"genau auf der Richtgröße", guideline, true, false},
+		{"eine Zeile über der Richtgröße", guideline + 1, true, true},
+		{"weit über der Richtgröße", guideline * 10, true, true},
+		{"unbekannt neben großer Zahl", guideline * 10, false, false},
+		{"bekannte Null", 0, true, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			r.snapshotP.estimateRows, r.snapshotP.estimateKnown = tc.rows, tc.known
+			result, err := r.service.Request(context.Background(), requestCommand())
+			if err != nil {
+				t.Fatalf("Request = %v, will nil (keine Ablehnung wegen der Größe)", err)
+			}
+			if r.admission.calls != 1 || r.trace.events[len(r.trace.events)-1] != "Admit" {
+				t.Fatalf("Aufrufe = %v, will Admit als letzten Schritt", r.trace.events)
+			}
+			if r.admission.gotRun.WarnEstimatedSize != tc.want || result.Run.WarnEstimatedSize != tc.want {
+				t.Fatalf("Warnung Größe: Admit %t, Ergebnis %t, will %t", r.admission.gotRun.WarnEstimatedSize, result.Run.WarnEstimatedSize, tc.want)
+			}
+			if r.admission.gotRun.WarnDuration {
+				t.Fatal("Warnung Dauer beim Antrag gesetzt")
+			}
+			if r.admission.gotRun.Status != model.BackfillRunQueued {
+				t.Fatalf("Status = %q, will queued", r.admission.gotRun.Status)
+			}
+		})
+	}
+}
+
+// TestExecuteWarnsCopyDurationAtTolerance trägt Warnung (2) im Lauf: das
+// Fortschritts-Update je Block und der Abschluss werten die Kopierdauer
+// (`finished_at − started_at` an der Uhr) gegen die Toleranz aus. Die Lesungen
+// der Uhr eines Laufs mit drei Blöcken sind: 1 Beginn, 2 Snapshot-Zeitpunkt,
+// 3 Anfangsposition, 4 bis 6 die Blöcke, 7 Abschluss. Darunter und genau auf der
+// Toleranz keine Warnung; darüber gesetzt, ab dem Update, das sie sieht, und bis
+// zum Commit weitergetragen. Die Warnung ändert weder Status noch Ablauf.
+func TestExecuteWarnsCopyDurationAtTolerance(t *testing.T) {
+	const t0 = int64(1000)
+	tol := backfill.CopyDurationToleranceNanosForTest
+	baseline := newRig()
+	mustExecute(t, baseline)
+
+	cases := []struct {
+		name         string
+		readings     []int64
+		wantProgress []bool // je RecordProgress-Aufruf: Anfangsposition, Block 1, 2, 3
+		wantFinal    bool
+	}{
+		{"eine Nanosekunde unter der Toleranz", []int64{t0, t0, t0 + tol - 1}, []bool{false, false, false, false}, false},
+		{"genau auf der Toleranz", []int64{t0, t0, t0 + tol}, []bool{false, false, false, false}, false},
+		{"über der Toleranz ab dem zweiten Block", []int64{t0, t0, t0, t0, t0 + tol + 1}, []bool{false, false, true, true}, true},
+		{"über der Toleranz erst beim Abschluss", []int64{t0, t0, t0, t0, t0, t0, t0 + tol + 1}, []bool{false, false, false, false}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			result, err := r.executeWithClock(context.Background(), t, &scriptClock{readings: tc.readings})
+			if err != nil {
+				t.Fatalf("Execute = %v", err)
+			}
+			run := result.Run
+			if run.Status != model.BackfillRunCompleted || run.RowsCopied != 5 {
+				t.Fatalf("Run = %+v, will completed mit 5 Zeilen (die Warnung ändert den Status nicht)", run)
+			}
+			if !reflect.DeepEqual(r.trace.events, baseline.trace.events) {
+				t.Fatalf("Ablauf = %v, will den Ablauf ohne Warnung %v", r.trace.events, baseline.trace.events)
+			}
+			var got []bool
+			for _, p := range r.runs.progresses {
+				got = append(got, p.WarnDuration)
+			}
+			if !reflect.DeepEqual(got, tc.wantProgress) {
+				t.Fatalf("Warnung Dauer je Fortschritts-Update = %v, will %v", got, tc.wantProgress)
+			}
+			if len(r.writer.committed) != 1 || r.writer.committed[0].WarnDuration != tc.wantFinal || run.WarnDuration != tc.wantFinal {
+				t.Fatalf("Warnung Dauer beim Abschluss: Commit %+v, Ergebnis %t, will %t", r.writer.committed, run.WarnDuration, tc.wantFinal)
+			}
+			if run.WarnEstimatedSize {
+				t.Fatal("Warnung Größe im Lauf gesetzt")
+			}
+		})
+	}
+}
+
+// TestExecuteWarnsCopyDurationOnEmptyTable trägt den Abschluss ohne
+// Schreibtransaktion: eine leere Tabelle, deren Kopierdauer die Toleranz
+// überschreitet, hält die Warnung im Endzustand fest.
+func TestExecuteWarnsCopyDurationOnEmptyTable(t *testing.T) {
+	r := newRig()
+	r.snapshot.blocks = nil
+	t0, tol := int64(1000), backfill.CopyDurationToleranceNanosForTest
+	result, err := r.executeWithClock(context.Background(), t, &scriptClock{readings: []int64{t0, t0, t0, t0 + tol + 1}})
+	if err != nil || result.Run.Status != model.BackfillRunCompleted {
+		t.Fatalf("Execute = %+v, %v", result, err)
+	}
+	if len(r.runs.finished) != 1 || !r.runs.finished[0].WarnDuration || !result.Run.WarnDuration {
+		t.Fatalf("Finish = %+v, will die Warnung Dauer", r.runs.finished)
+	}
+	if r.trace.count("Begin") != 0 {
+		t.Fatalf("Schreibtransaktion für eine leere Tabelle: %v", r.trace.events)
+	}
+}
+
+// TestExecuteWarnsCopyDurationOnFailureAndInterrupt trägt den Abschluss eines
+// Runs, der endet, bevor er fertig ist: `failed` und `interrupted` halten die
+// Warnung fest, wenn die Kopierdauer die Toleranz bis dahin überschritten hat;
+// ein Run, der vor seinem Beginn `failed` endet (`queued`, `started_at` nicht
+// gesetzt), trägt keine Warnung, auch wenn die Uhr weiter als die Toleranz vom
+// Nullwert der Startzeit entfernt ist.
+func TestExecuteWarnsCopyDurationOnFailureAndInterrupt(t *testing.T) {
+	t0, tol := int64(1000), backfill.CopyDurationToleranceNanosForTest
+	late := []int64{t0, t0, t0, t0, t0 + tol + 1}
+	cases := []struct {
+		name     string
+		readings []int64
+		setup    func(*rig, context.CancelFunc)
+		status   model.BackfillRunStatus
+		want     bool
+	}{
+		{"failed nach der Toleranz", late, func(r *rig, _ context.CancelFunc) {
+			r.snapshot.nextErrAt, r.snapshot.nextErr = 2, fmt.Errorf("%w: Verbindung weg", outbound.ErrSnapshotStorage)
+		}, model.BackfillRunFailed, true},
+		{"failed unter der Toleranz", []int64{t0}, func(r *rig, _ context.CancelFunc) {
+			r.snapshot.nextErrAt, r.snapshot.nextErr = 2, fmt.Errorf("%w: Verbindung weg", outbound.ErrSnapshotStorage)
+		}, model.BackfillRunFailed, false},
+		{"interrupted nach der Toleranz", late, func(r *rig, cancel context.CancelFunc) {
+			r.snapshot.onNext = func(call int) {
+				if call == 2 {
+					cancel()
+				}
+			}
+		}, model.BackfillRunInterrupted, true},
+		{"failed vor dem Beginn, Uhr weit von null", []int64{t0 + 2*tol}, func(r *rig, _ context.CancelFunc) {
+			r.activation.published = false
+		}, model.BackfillRunFailed, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newRig()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			tc.setup(r, cancel)
+			result, err := r.executeWithClock(ctx, t, &scriptClock{readings: tc.readings})
+			if err != nil {
+				t.Fatalf("Execute = %v", err)
+			}
+			if result.Run.Status != tc.status || result.Run.WarnDuration != tc.want {
+				t.Fatalf("Run = %+v, will %s mit Warnung Dauer %t", result.Run, tc.status, tc.want)
+			}
+			if len(r.runs.finished) != 1 || r.runs.finished[0].WarnDuration != tc.want {
+				t.Fatalf("Finish = %+v, will Warnung Dauer %t", r.runs.finished, tc.want)
+			}
+		})
+	}
+}

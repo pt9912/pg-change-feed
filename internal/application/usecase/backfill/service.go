@@ -86,10 +86,10 @@ var _ inbound.BackfillTableUseCase = (*BackfillTableService)(nil)
 
 // Request nimmt einen Backfill-Antrag an (`ADR-0113` Festlegung 1): die
 // Vorbedingungen — Tabelle mit laufender Bindung und Mitglied der
-// Publication —, die geschätzte Zeilenzahl, dann als **letzter** Schritt
-// `Admit`. Vor `Admit` entsteht weder eine Run-Zeile noch ein Snapshot; die
-// Schätzung ist ein Katalog-Lesezugriff. Die Prüfung „kein aktiver Run"
-// liegt in `Admit`.
+// Publication —, die geschätzte Zeilenzahl samt Warnung (1) (`warn.go`), dann
+// als **letzter** Schritt `Admit`. Vor `Admit` entsteht weder eine Run-Zeile
+// noch ein Snapshot; die Schätzung ist ein Katalog-Lesezugriff. Die Warnung
+// lehnt keinen Antrag ab. Die Prüfung „kein aktiver Run“ liegt in `Admit`.
 func (s *BackfillTableService) Request(ctx context.Context, command BackfillRequestCommand) (BackfillRequestResult, error) {
 	run, err := model.NewQueuedBackfillRun(model.BackfillRunID(command.RequestID), command.Source, command.Schema, command.Table, s.ports.Clock.Now())
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *BackfillTableService) Request(ctx context.Context, command BackfillRequ
 			return BackfillRequestResult{}, err
 		}
 	}
-	run = run.WithEstimatedRows(estimate)
+	run = warnedEstimatedSize(run.WithEstimatedRows(estimate))
 	if err := s.ports.Admission.Admit(ctx, command.RequestID, run); err != nil {
 		return BackfillRequestResult{}, err
 	}
@@ -245,10 +245,12 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 	}
 
 	if writer == nil {
-		completed, err := run.Complete(s.ports.Clock.Now(), 0)
+		now := s.ports.Clock.Now()
+		completed, err := run.Complete(now, 0)
 		if err != nil {
 			return run, err
 		}
+		completed = warnedCopyDuration(completed, now)
 		if err := s.ports.Runs.Finish(ctx, completed); err != nil {
 			return run, err
 		}
@@ -265,10 +267,12 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 	if !sameNames(baseline, excluded) {
 		return run, domainerrors.ErrExclusionStateChanged
 	}
-	completed, err := run.Complete(s.ports.Clock.Now(), copied)
+	now := s.ports.Clock.Now()
+	completed, err := run.Complete(now, copied)
 	if err != nil {
 		return run, err
 	}
+	completed = warnedCopyDuration(completed, now)
 	if err := writer.Commit(ctx, completed); err != nil {
 		return run, err
 	}
@@ -287,20 +291,24 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 func (s *BackfillTableService) conclude(ctx context.Context, run model.BackfillRun, cause error) (BackfillExecuteResult, error) {
 	var (
 		final model.BackfillRun
+		now   model.TimePoint
 		err   error
 	)
 	switch {
 	case ctx.Err() != nil && run.Status == model.BackfillRunQueued:
 		return BackfillExecuteResult{Run: run}, cause
 	case ctx.Err() != nil:
-		final, err = run.Interrupt(s.ports.Clock.Now())
+		now = s.ports.Clock.Now()
+		final, err = run.Interrupt(now)
 	default:
 		class := classifyError(cause)
-		final, err = run.Fail(s.ports.Clock.Now(), class, failureText(class, cause))
+		now = s.ports.Clock.Now()
+		final, err = run.Fail(now, class, failureText(class, cause))
 	}
 	if err != nil {
 		return BackfillExecuteResult{Run: run}, fmt.Errorf("%w (Ursache des Runs: %v)", err, cause)
 	}
+	final = warnedCopyDuration(final, now)
 	if err := s.ports.Runs.Finish(context.WithoutCancel(ctx), final); err != nil {
 		return BackfillExecuteResult{Run: run}, fmt.Errorf("Run-Zustand nicht festgehalten: %w (Ursache des Runs: %v)", err, cause)
 	}
@@ -403,13 +411,15 @@ func (s *BackfillTableService) excludedColumns(ctx context.Context, run model.Ba
 	return byTable[run.QualifiedName()], nil
 }
 
-// progress schreibt Snapshot-Position und Fortschrittszähler fort. Bei einem
-// Fehler des Ports bleibt der Run im zuletzt festgehaltenen Stand.
+// progress schreibt Snapshot-Position, Fortschrittszähler und die Warnung
+// „Kopierdauer“ fort (Warnung (2), `warn.go`). Bei einem Fehler des Ports
+// bleibt der Run im zuletzt festgehaltenen Stand.
 func (s *BackfillTableService) progress(ctx context.Context, run model.BackfillRun, position model.SourcePosition, rowsCopied int64) (model.BackfillRun, error) {
 	updated, err := run.RecordProgress(position, rowsCopied)
 	if err != nil {
 		return run, err
 	}
+	updated = warnedCopyDuration(updated, s.ports.Clock.Now())
 	if err := s.ports.Runs.RecordProgress(ctx, updated); err != nil {
 		return run, err
 	}

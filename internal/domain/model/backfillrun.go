@@ -61,8 +61,9 @@ func (e RowEstimate) Rows() (rows int64, known bool) {
 // Wartezeit in `queued` zählt nicht. `SnapshotPosition` ist die Position `X`
 // des Runs, der Nullwert bis zur Anlage des Snapshots. `ErrorMessage` trägt
 // bei `failed` die Fehlerklasse (`SPEC-008`) vor dem Text, sonst ist er
-// leer. Die beiden Warn-Kennzeichnungen bleiben `false`, solange keine
-// Auswertung sie setzt (`SPEC-029`).
+// leer. Die beiden Warn-Kennzeichnungen sind `false`, bis die Auswertung des
+// Use Cases sie setzt (`SPEC-029`, `ADR-0113`); sie ändern weder Status noch
+// Ablauf des Runs.
 type BackfillRun struct {
 	ID                BackfillRunID
 	Source            SourceID

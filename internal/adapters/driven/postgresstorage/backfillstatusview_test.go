@@ -14,7 +14,8 @@ import (
 // `tools/schema/schema.yaml`): `requested_at DESC` zu `ASC` ändern — die
 // Auswahl liefert den älteren Run; `run_id DESC` zu `ASC` ändern — der
 // Gleichstand liefert die kleinere Kennung; das `DISTINCT ON` entfernen — die
-// Tabelle trägt mehrere Zeilen.
+// Tabelle trägt mehrere Zeilen; `r.warn_estimated_size` durch `false` ersetzen
+// — die Sicht zeigt die Warnung „Größe“ nicht.
 func TestBackfillStatusViewShowsTheLatestRunPerTable(t *testing.T) {
 	f := newBackfillFixture(t)
 	base := time.Date(2026, 9, 24, 12, 0, 0, 0, time.UTC)
@@ -31,6 +32,8 @@ func TestBackfillStatusViewShowsTheLatestRunPerTable(t *testing.T) {
 	insert("vwst-b-2", "vwst_b", "queued", base, nil, false)
 	insert("vwst-c-1", "vwst_c", "queued", base, nil, false)
 	insert("vwst-d-1", "vwst_d", "queued", base, int64(0), false)
+	f.exec(`INSERT INTO cdc.backfill_run (run_id, source_id, schema_name, table_name, status, requested_at, estimated_rows, warn_estimated_size)
+	        VALUES ('vwst-e-1', $1, 'public', 'vwst_e', 'queued', $2, 7000000, true)`, backfillTestSource, base)
 
 	latest := func(table string) (id, status string, estimate *int64, warnSize, warnDuration bool, rows int) {
 		t.Helper()
@@ -51,5 +54,8 @@ func TestBackfillStatusViewShowsTheLatestRunPerTable(t *testing.T) {
 	}
 	if _, _, estimate, _, _, _ := latest("vwst_d"); estimate == nil || *estimate != 0 {
 		t.Errorf("vwst_d: Schätzung %v — erwartet die bekannte Schätzung 0", estimate)
+	}
+	if _, _, estimate, warnSize, warnDuration, _ := latest("vwst_e"); estimate == nil || *estimate != 7000000 || !warnSize || warnDuration {
+		t.Errorf("vwst_e: Schätzung %v, Warnungen %v/%v — erwartet 7000000, true/false", estimate, warnSize, warnDuration)
 	}
 }
