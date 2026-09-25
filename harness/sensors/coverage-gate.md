@@ -62,7 +62,16 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2567** (Lauf `slice-backfill-slot-leerlauf-bestaetigung`,
+**Der Nenner der Stufe ist 2601** (Lauf `slice-retention-lauf-speicher-begrenzung`,
+Implementer-Lauf am Arbeitsbaum über `0e6b1b30`: `make coverage-gate` baut die
+Stufe `coverage`, das Profil `/out/coverage.out` des gebauten Images,
+dedupliziert über die Block-Position mit Awk ausgezählt; gedeckt **2167 von
+2601** = 83,31 %, gedruckt `total: (statements) 83.3%` und `coverage-gate: OK —
+Coverage 83.30% erfüllt Schwelle 80%`). Gegenüber dem Nenner 2567 des früheren
+Laufs (unten) sind es 34 Statements mehr (**abgeleitet**, Differenz zweier Läufe
+verschiedener Stände, nicht je Datei zugeordnet); der Slice trägt Produktionscode
+im Gegenstand in `usecase/retention/service.go` und `postgresstorage/sqlexec`.
+**Der frühere Nenner war 2567** (Lauf `slice-backfill-slot-leerlauf-bestaetigung`,
 Implementer-Lauf am Arbeitsbaum über `f4e32fba`: `make coverage-gate` baut die
 Stufe `coverage`, das Profil `/out/coverage.out` des gebauten Images,
 dedupliziert über die Block-Position mit Awk ausgezählt; gedeckt **2136 von

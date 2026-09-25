@@ -138,6 +138,10 @@ Bereinigungsmenge.
    ([`LH-FA-RET-003`](lastenheft.md)).
 3. Langsame Consumer, die die Safe Watermark blockieren, sind sichtbar
    ([`LH-FA-RET-005`](lastenheft.md)).
+4. Die Bereinigungsmenge wird seitenweise bestimmt: der Arbeitsspeicher eines
+   Bereinigungslaufs hängt an der Seitengröße (10.000 Kandidaten), nicht an
+   der Zahl der gespeicherten Changes; eine Seite trägt je Change nur Kennung,
+   Commit-Position und Commit-Zeitpunkt, keine Row Images.
 
 Retention ist eine Domain Policy; sie liegt nicht in einem Adapter.
 
@@ -873,3 +877,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die HTTP-Lesemodelle der drei Packages tragen das `GET /changes`-Antwortfeld `origin` (`wal` \| `backfill`, ein fehlendes Feld oder JSON-`null` liest als `wal`, jeder andere Wert kommt unverändert an), die Live-Flächen (gRPC, SSE, NATS-Vollinhalt) tragen es nicht; die Zeilen nennen `SPEC-022` unter den gedeckten Drahtverträgen |
 | 2026-09-25 | `LH-FA-SST-009.a` Eingabe um `SPEC-022` ergänzt (der Zustellweg `GET /changes` ist Teil der HTTP-Fläche der Packages) |
 | 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die Version der drei Packages ist `0.2.1`; die Paketbeschreibung (README und Metadaten-Felder) ist Anwender-Dokumentation ohne interne Kennungen |
+| 2026-09-25 | `LH-FA-RET-004.a` um Punkt 4 ergänzt: die Bereinigungsmenge wird seitenweise bestimmt (10.000 Kandidaten je Seite, ohne Row Images); der Arbeitsspeicher eines Bereinigungslaufs hängt an der Seitengröße, nicht an der Zahl der gespeicherten Changes |

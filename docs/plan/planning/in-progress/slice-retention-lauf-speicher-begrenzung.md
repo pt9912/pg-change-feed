@@ -134,7 +134,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
 
 ## 2. Definition of Done
 
-- [ ] Umsetzung nach [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md):
+- [x] Umsetzung nach [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md):
       `ReadRetentionCandidates` und `RetentionCandidate` am `ChangeStorePort`, Kommentar
       am Port nennt den Seitenvertrag (Ordnung des Schlüssels, leere Seite ist das
       Ende); `Run` arbeitet je Seite (`PageSize` = 10.000, Positionen und Uhr einmal
@@ -144,7 +144,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       §Vorgabe der Abfrage, `limit` kleiner 1 endet als `outbound.ErrNonPositiveLimit`,
       eine leere Quelle als `ErrEmptyIdentifier`; kein Löschprädikat in SQL. *Zu
       belegen durch:* Lesen des Diffs gegen die sechs Festlegungen der ADR.
-- [ ] Unit-Tests (`make test`, `retention/service_test.go`, Fake mit Begrenzung je
+- [x] Unit-Tests (`make test`, `retention/service_test.go`, Fake mit Begrenzung je
       Aufruf und Aufruf-Zähler): (1) dieselbe freigegebene Menge bei Begrenzung 1, 2, 3,
       N und größer als N, verglichen mit einer **handgeschriebenen** Erwartung, nicht
       mit dem Ergebnis des Use Case; (2) jeder Lese-Aufruf trägt `limit` =
@@ -159,7 +159,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       geänderte Erwartung — eine Erwartung, die sich ändern müsste, ist ein Befund im
       Bericht, keine stille Anpassung. Die Seitengröße ist eine Konstante; die
       Begrenzung auf 1 kommt vom Fake. *Zu belegen durch:* `make test`.
-- [ ] Store-Tier (`make test-store`, `postgresstorage`, reale PostgreSQL): (1) die
+- [x] Store-Tier (`make test-store`, `postgresstorage`, reale PostgreSQL): (1) die
       Seiten einer Quelle decken genau ihre Changes ab (Vereinigung, keine Doppelten,
       keine Kennung einer anderen Quelle) bei Begrenzung 1, 2 und größer als die Menge;
       (2) `Position` und `CommittedAt` je Kandidat sind gleich denen des Datensatzes von
@@ -177,13 +177,13 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       entfernt (eine Seite liefert alles), `ORDER BY` entfernt (der Cursor überspringt
       Kennungen). *Zu belegen durch:* `make test-store` samt den gedruckten Mutationen im
       Bericht des Slice.
-- [ ] Gate-Zuordnung (`harness/sensors/db-adapter-coverage.md` §Gegenstand): die
+- [x] Gate-Zuordnung (`harness/sensors/db-adapter-coverage.md` §Gegenstand): die
       Übersetzungsfunktion liegt in `postgresstorage/sqlexec` (Gegenstand des
       Unit-Gates, `make coverage-gate`, netzlos über einen `Executor`-Fake geprüft), die
       Methode am Adapter in `postgresstorage` (DB-Adapter-Coverage, `make test-store`),
       die Abfrage-Konstante in `postgresstorage/queries` (Textkonstante ohne
       Statements). Kein Test ohne Verbindung im DB-Paket hebt die DB-Zahl.
-- [ ] Die Nachmessung liegt vor: `make image`, dann `tools/bench-backfill-memory.sh` mit
+- [x] Die Nachmessung liegt vor: `make image`, dann `tools/bench-backfill-memory.sh` mit
       `BENCH_MEM_STAGES=1000000` (Default-Image, drei Runs mit einem frischen
       Feed-Container je Run; Bestand in `cdc.change` vor den Runs 0, 1.000.000 und
       2.000.000, danach 3.000.000); die gedruckten Zeilen stehen im Bericht des Slice
@@ -199,7 +199,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       Nachlauf weiter (hergeleitet aus dem Takt von 10 s: etwa fünf bis sechs je 60 s).
       Trifft das nicht zu — die Spitze wächst mit der Zahl der Changes oder die Takte
       bleiben aus —, steht der Befund im Bericht und der Slice geht nicht nach `done/`.
-- [ ] Regressions-Beleg der Live-Last: der Skalierungs-Lauf (`tools/bench-scaling.sh`, das
+- [x] Regressions-Beleg der Live-Last: der Skalierungs-Lauf (`tools/bench-scaling.sh`, das
       zweite Skript von `make bench`, Belegträger von
       [`LH-QA-PER-002`](../../../../spec/lastenheft.md)) läuft einmal; `cdc_capture_lag`
       je Lastenstufe liegt unter der bestehenden 60-s-Grenze
@@ -207,12 +207,12 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       Kein neues Gate; der Vergleich gilt der Grenze, nicht einem Vorwert. Das Ergebnis
       der übrigen `make bench`-Skripte steht mit dem Messhost „zur Kenntnis“, kein
       Kriterium (`BEO-PGC/dod-kriterium-haengt-am-messhost`).
-- [ ] Der Retention-Lebenszyklus-Rundlauf von `make test-integration`
+- [x] Der Retention-Lebenszyklus-Rundlauf von `make test-integration`
       (`tools/harness/run-integration-tests.sh`, Wartezeit über mehr als zwei Takte)
       bleibt ohne geänderte Erwartung grün; ein Ausfall wird gegen
       `BEO-PGC/test-integration-retention-timing-flake` gelesen, nicht stillschweigend
       wiederholt.
-- [ ] Träger nachgezogen, nach der Nachmessung und mit Ursprung je Zahl: das
+- [x] Träger nachgezogen, nach der Nachmessung und mit Ursprung je Zahl: das
       Benutzerhandbuch (Abschnitte „Aufbewahrung (Retention)“, „Bestand als Backfill
       überführen“, Absatz „Speicher des Feed-Containers“, „Grenzwerte“: Speicher-Bullet
       samt Bemessungsregel und `docker --memory`-Hinweis ersetzt durch die Nachmessung;
@@ -221,18 +221,18 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       Änderungshistorie), der Kommentar an `retentionInterval` in
       `internal/bootstrap/wiring.go`; Version und Änderungshistorie des Handbuchs tragen
       eine Zeile. *Zu belegen durch:* Lesen der Abschnitte und `make docs-check`.
-- [ ] Bewertung der Richtgröße nach dem Trigger von
+- [x] Bewertung der Richtgröße nach dem Trigger von
       [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
       („Eine Messung liegt vor“): sie folgt der Kopierdauer (Messbericht Abschnitt 6) und
       bleibt vom Speicher der Bereinigung unberührt — *erwartet*, dass der Wert bleibt
       und das Speicher-Argument im Handbuch entfällt; die Bewertung und ihr Ergebnis
       (bleibt oder Nachschärfung der Konstante) stehen im Bericht und im Handbuch.
-- [ ] Die Aussage für die Release-Beschreibung von `v0.2.0` steht im Wortlaut in §7
+- [x] Die Aussage für die Release-Beschreibung von `v0.2.0` steht im Wortlaut in §7
       (Zeile „Release-Aussage“): der Defekt sitzt in `v0.1.0`, `v0.1.1` und `v0.1.2`
       (Belege: §1 Reichweite), `v0.2.0` trägt die Änderung; Vorschlag und Anker:
       Architect-Verdikt, Abschnitt „Aussage für die Release-Beschreibung“. Zahlen der
       Aussage tragen ihren Ursprung, der Bedarf in `v0.1.x` steht als hergeleitet.
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Stand des Parent ist eingetragen,
       der Stand des Diff ist Aufgabe des Implementers.
@@ -277,7 +277,10 @@ zwei Träger, eine Messung) ohne Vergleichs-Slice; die Laufzeit der Nachmessung 
 | `internal/bootstrap/wiring.go` | update | Kommentar an `retentionInterval` („Jeder Takt liest alle Changes der Quelle …“) nennt die Seiten |
 | `docs/user/benutzerhandbuch.md` (Retention, §Backfill Speicher-Absatz, §Grenzwerte, Version, Änderungshistorie) | update | Nachmessung statt Bemessungsregel; Richtgröße nach der Bewertung |
 | `spec/pflichtenheft.md` ([`LH-FA-RET-004.a`](../../../../spec/pflichtenheft.md), Änderungshistorie) | update | Punkt 4 ohne ADR- und Slice-Bezug (das Doc-Gate verbietet die Kante Spec → ADR/Slice): „Die Bereinigungsmenge wird seitenweise bestimmt: der Arbeitsspeicher eines Bereinigungslaufs hängt an der Seitengröße (10.000 Kandidaten), nicht an der Zahl der gespeicherten Changes; eine Seite trägt je Change nur Kennung, Commit-Position und Commit-Zeitpunkt, keine Row Images.“ (Wortlaut-Vorschlag des Architects) |
-| `docs/reviews/messbericht-slice-retention-lauf-speicher-begrenzung.md` | neu | gedruckte Zeilen der Nachmessung, des Skalierungs-Laufs und der Mutationen des Store-Tiers; Form nach `messbericht-slice-backfill-speicher-untersuchung` |
+| `docs/reviews/messbericht-slice-retention-lauf-speicher-begrenzung.md` | neu | gedruckte Zeilen der Nachmessung, des Skalierungs-Laufs und der Mutationen des Store-Tiers (samt Mutationen des Use Cases und der Übersetzung, Befunde, Bewertung der Richtgröße); Form nach `messbericht-slice-backfill-speicher-untersuchung`, die gedruckten Zeilen im selben Dokument statt in einem Zeilen-Dokument |
+| `harness/README.md` (Zeile `make test-store`) | update | Erwähnung der Kandidaten-Seiten-Tests (Entscheidung des Implementers laut Suchlauf-Tabelle) |
+| `harness/sensors/db-adapter-coverage.md`, `harness/sensors/coverage-gate.md` | update | Nenner der Zählbasis nach dem Lauf des Slice (1064 bzw. 2601, je mit Lauf und gedruckter Zeile); §3.13-Träger der bewegten Statement-Zahlen |
+| `harness/targets/bench-backfill.md` | update | der Halbsatz „Speicherbedarf des Feed-Containers bis in den GiB-Bereich“ entfällt (Träger der bewegten Eigenschaft, gefunden beim Lesen der Suchlauf-Treffer) |
 
 Die vier Fakes (Zählung am Stand `5b1f7762`: `git grep -n -E 'func \(.*\) DeleteChanges'
 -- '*.go'` nennt fünf Methoden, vier in Tests und eine am Adapter): der Fake in
@@ -299,7 +302,37 @@ git grep -n -i -E 'alle Changes der Quelle|liest alle|Bereinigungslauf|Retention
 **Stand und Trefferzahl.** Parent `5b1f7762`: Befehl 1: 298 Zeilen (`internal` 263, `test`
 24, `tools` 2, `spec` 7, `docs/user` 2, `harness` 0); Befehl 2: 12 (alle in `docs/user`,
 sonst 0); Befehl 3: 80 (`docs/user` 18, `harness` 5, `spec` 5, `internal` 16, `tools` 9,
-`README.md` 0, `docs/plan/adr` 27). Diff: *(Implementer trägt ein)*.
+`README.md` 0, `docs/plan/adr` 27). Parent am Start der Arbeit (`8cd39719`, gemessen mit
+`git grep -n … 8cd39719 -- <Wurzeln>`): Befehl 1: 298 (`internal` 263, `test` 24, `tools` 2,
+`spec` 7, `docs/user` 2, `harness` 0); Befehl 2: 13 (alle `docs/user`); Befehl 3: 87
+(`docs/user` 25, `harness` 5, `spec` 5, `internal` 16, `tools` 9, `README.md` 0,
+`docs/plan/adr` 27; die Abweichung zu den 80 Zeilen für `5b1f7762` folgt aus den seither
+geschriebenen Handbuch-Zeilen). Diff (Arbeitsbaum am Ende der Arbeit, `git grep -n …` ohne
+Baum): Befehl 1: 309 (`internal` 274, `test` 24, `tools` 2, `spec` 7, `docs/user` 2,
+`harness` 0); Befehl 2: 6 (alle `docs/user`); Befehl 3: 85 (`docs/user` 18, `harness` 7,
+`spec` 7, `internal` 17, `tools` 9, `README.md` 0, `docs/plan/adr` 27).
+
+**Ergebnis des Suchlaufs am Diff (Implementer).** *Gefunden und gezogen:* die Träger der
+Tabelle in §3 (Port, Use Case, Adapter, vier Fakes, Kommentar an `retentionInterval`,
+Handbuch an vier Stellen samt Version und Änderungshistorie, `LH-FA-RET-004.a` samt
+Änderungshistorie); dazu drei Träger, die der Suchlauf des Planners nicht nannte:
+`harness/sensors/db-adapter-coverage.md` (Nenner 1058 → 1064, mit Lauf),
+`harness/sensors/coverage-gate.md` (Nenner 2567 → 2601, mit Lauf) und
+`harness/targets/bench-backfill.md` (der Halbsatz „Speicherbedarf des Feed-Containers bis in
+den GiB-Bereich“ beschrieb die bewegte Eigenschaft; gefunden beim Lesen der Treffer von
+Befehl 3 an dieser Datei). *Ein Lokator, der mitgewandert wäre:* `coverage-gate.md` nennt
+Zeilen in `internal/bootstrap/wiring.go` (`:1287.4,1288.1`, `:1183.5,1184.13`); der Kommentar
+an `retentionInterval` liegt davor. Die Änderung des Kommentars ist deshalb zeilenneutral
+(vier Zeilen vor, vier nach der Änderung, `git diff --stat` zeigt 4 Einfügungen, 4 Löschungen);
+die Lokatoren stehen unverändert und sind am Diff geprüft (`git show 8cd39719:…` gegen den
+Arbeitsbaum, Zeile 1287 `return`). *Nicht gefunden:* die Träger, die der Suchlauf des Planners
+als „nicht zu ziehen“ führt, sind unverändert (Accepted-ADRs, Records, `SPEC-022`,
+`tools/harness/run-integration-tests.sh`, `tools/schema/nacharbeit-roles.sql`); im Rest von
+Befehl 2 stehen nur die Richtgröße (drei Zeilen), der Wert „8,9 bis 10,5“ des Handbuchs (Run
+bei leerem `cdc.change`, unverändert wahr) und zwei Zeilen der Änderungshistorie (Records).
+Die Grenze der Suchform bleibt (Zahlen und Lokatoren trifft `grep` nicht zuverlässig); die
+Zeilen-Lokatoren wurden gezielt mit `git grep -n -E 'wiring\.go:[0-9]+|:1[0-9]{3}\.[0-9]'`
+gesucht.
 
 Der Ausdruck `1,03 bis 1,5[79]` in Befehl 2 trifft beide Fassungen des Höchstwerts je Change:
 das Handbuch trägt am Parent `5b1f7762` `1,03 bis 1,57`, am Stand `989beef3` `1,03 bis 1,59`
@@ -374,7 +407,9 @@ geschrieben.
   *Erwartet, zu belegen durch:* die Unit-Tests (Menge bei jeder Begrenzung gegen
   handgeschriebene Erwartung), der Store-Tier-Test über mehr als zwei Seiten gegen eine
   unabhängige SQL-Zählung und die unverändert grünen Tests der Anforderungen.
-  **Ausgang:** *(bei Closure)*
+  *Befund des Implementers:* alle drei liegen vor und sind rot gesehen
+  (Messbericht Abschnitt 5 und 6); eine bestehende Testerwartung blieb, ihr Fake trägt
+  einen Bestand (Messbericht Abschnitt 6, Befund 1). **Ausgang:** *(bei Closure)*
 - **Die Datenbank-Arbeit je Takt wächst mit der Zahl der Changes** (die Sortierung über
   die Menge entfällt; die Seiten-Abfrage bleibt linear: 0,38 bis 2,0 s je 1.000.000
   Changes, gemessen im Architect-Zug, `n` = 1, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
@@ -389,15 +424,21 @@ geschrieben.
   `review-slice-backfill-speicher-untersuchung`, F-11). *Erwartet, zu belegen durch:* die
   Nachmessung bei 1.000.000, 2.000.000 und 3.000.000 Changes — laufen die Takte dort bis
   zum Ende weiter, entfällt die Hypothese als Ursache des Ausbleibens; bleiben sie aus,
-  steht der Befund im Bericht und der Slice geht nicht nach `done/`. **Ausgang:** *(bei
-  Closure)*
+  steht der Befund im Bericht und der Slice geht nicht nach `done/`. *Befund des
+  Implementers:* die Takte laufen in allen sechs Runs bis zum Ende weiter (20 bis 23 Zeilen
+  „Bereinigung gelaufen“ seit dem Start, keine fehlgeschlagene; Garbage-Collection-Läufe im
+  Nachlauf 560 bis 2.467); die Ausbleib-Beobachtung tritt nicht mehr auf (Messbericht
+  Abschnitt 1, Punkt 3). Die Dauer eines Laufs ist nicht gemessen (Abschnitt 6, Befund 4).
+  **Ausgang:** *(bei Closure)*
 - **Ein Backfill oder die Erfassung committet während einer laufenden Bereinigung.** Die
   Seitengrenze darf eine Zeile in **diesem** Lauf überspringen (Commit hinter dem
   Cursor), sie löscht nie früher: die Freigabe hängt an dem, was `AllowsDeletion` für die
   gelesene Zeile entschied ([`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
   Festlegung 6). Was nicht sein darf, ist ein **dauerhaftes** Überspringen. *Erwartet, zu
   belegen durch:* der Store-Tier-Test 3 („hinter dem Cursor: fehlt im laufenden
-  Durchlauf, steht im nächsten“). **Ausgang:** *(bei Closure)*
+  Durchlauf, steht im nächsten“). *Befund des Implementers:* der Test liegt vor
+  (`TestRetentionCandidateBehindCursorAppearsInNextRun`) und ist an `>=` und an einem
+  ignorierten Cursor rot gesehen (Messbericht Abschnitt 5). **Ausgang:** *(bei Closure)*
 - **Ein Consumer bestätigt erstmals während eines längeren Laufs.** Die Positionen
   werden einmal je Lauf gelesen; ein Consumer, der erst danach seine erste Bestätigung
   setzt, ist im laufenden Lauf nicht berücksichtigt (er zählt erst ab seiner ersten
@@ -409,22 +450,38 @@ geschrieben.
   (`retentionMinAge`), begrenzt die Kandidaten auf alte Changes. *Erwartet:* ein
   akzeptiertes Negativ ohne neuen Fall; **vom Planner beim Nachzug gefunden, nicht vom
   Architect bewertet** — der Implementer legt die Frage dem Architect vor, bevor er sie
-  als akzeptiert schließt. **Ausgang:** *(bei Closure)*
+  als akzeptiert schließt. *Befund des Implementers* (am Code, Messbericht Abschnitt 6,
+  Befund 3): das Fenster bestand mit dem Lauf vor der Änderung ebenso (Positionen, dann
+  Lesen aller Changes, dann Löschen der ganzen Menge) und ist nach den Messungen des
+  Architect-Verdikts nicht breiter geworden (Dauer des Laufs nicht länger); die Änderung ist
+  keine Vertragsänderung, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+  Festlegung 4 ist wörtlich umgesetzt (Positionen einmal je Lauf,
+  `TestRunReadsPositionsOncePerRun`). Eine Erneuerung der Positionen je Seite wäre eine
+  Schärfung von Festlegung 4 (Folge-ADR mit `Supersedes`) und ist nicht umgesetzt; das Handbuch
+  nennt die Lage im „Betriebs-Hinweis (Consumer-Bindung)“. Die Bewertung „akzeptiertes
+  Negativ“ liegt beim Architect. **Ausgang:** *(bei Closure)*
 - **Ein Abbruch zwischen zwei Seiten** hinterlässt ein Präfix der Löschmenge (Lauf nicht
   atomar). *Erwartet, zu belegen durch:* Unit-Test 4 (Fehler beim Aufruf `n` hinterlässt
-  genau die Löschungen der Seiten davor). **Ausgang:** *(bei Closure)*
+  genau die Löschungen der Seiten davor). *Befund des Implementers:* Lese- und Lösch-Fehler
+  ab Aufruf `n` sind geprüft und rot gesehen (`TestRunReadFailureLeavesPagesBefore`,
+  `TestRunDeleteFailureStopsAtThatPage`, Messbericht Abschnitt 5). **Ausgang:** *(bei Closure)*
 - **Die Größe eines Kandidaten im Go-Prozess ist hergeleitet, nicht gemessen** (etwa
   0,15 KiB, Seite etwa 1,5 MiB, [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
   §Was diese ADR nicht behauptet); die Zahl ist eine Orientierung, keine Grenze
   (`BEO-PGC/geschaetzter-wert-als-grenze`). *Erwartet, zu belegen durch:* die Nachmessung
-  (der Wert der Spitze steht neben der Herleitung, nicht statt ihrer). **Ausgang:** *(bei
-  Closure)*
+  (der Wert der Spitze steht neben der Herleitung, nicht statt ihrer). *Befund des
+  Implementers:* die Spitze liegt bei 14,9 bis 17,6 MiB (Messbericht Abschnitt 3); der Bedarf
+  einer Seite ist aus der Nachmessung nicht getrennt (keine Messung mit anderer Seitengröße);
+  ein Rest von etwa 1,3 Bytes je Change zwischen 1.000.000 und 3.000.000 Changes ist gemessen
+  und nicht erklärt. **Ausgang:** *(bei Closure)*
 - **Die Nachmessung hängt am Host** (Speicher, Platte und Laufzeit bei 3.000.000
   Changes). *Erwartet, zu belegen durch:* jede Zahl nennt Host und Lauf; die Erwartung ist
   als Form gefasst („hängt nicht an der Zahl der Changes“), die Vergleichswerte der Reihe J
   sind Orientierung am selben Host; kein `docker volume prune` und kein `docker system
   prune` im Lauf; der Bericht nennt die Aufräum-Schritte
-  (`BEO-PGC/dod-kriterium-haengt-am-messhost`, 1×, offen). **Ausgang:** *(bei Closure)*
+  (`BEO-PGC/dod-kriterium-haengt-am-messhost`, 1×, offen). *Befund des Implementers:* jede
+  Zahl nennt Host, Lauf und Zeile; die Läufe endeten ohne Platten- oder Zeitproblem, die
+  Aufräum-Schritte stehen im Messbericht Abschnitt 6 („Aufgeräumt“). **Ausgang:** *(bei Closure)*
 - **Der Slice läuft nicht vor dem Server-Release `v0.2.0`** (kein Wächter).
   *Erwartet, zu belegen durch:* die Vorbedingung in §4 und die Release-Aussage in §7; die
   Prüfung liegt beim Planner der Release-Vorbereitung. **Ausgang:** *(bei Closure)*
@@ -440,10 +497,21 @@ geschrieben.
   „keine Beobachtung angefallen“ als notierte Antwort)*
 - **Folge-Slices:** *(zu tragen bei Closure)*
 - **Risiken aus §6:** *(je ein Ausgang)*
-- **Release-Aussage (für die Beschreibung von `v0.2.0`):** *(zu tragen bei Closure;
-  Vorschlag und Anker im Architect-Verdikt, Abschnitt „Aussage für die Release-Beschreibung“;
-  Inhalt: die Lesung sitzt in `v0.1.0`, `v0.1.1`, `v0.1.2`, der Speicher des Feed-Containers
-  wächst dort mit der Zahl der gespeicherten Changes, `v0.2.0` liest seitenweise)*
+- **Release-Aussage (für die Beschreibung von `v0.2.0`):** Vorschlag des Implementers
+  (Vorschlag und Anker im Architect-Verdikt, Abschnitt „Aussage für die Release-Beschreibung“;
+  die Zahlen tragen ihren Ursprung): „Behoben: der Bereinigungslauf las je Takt (10 s) alle
+  Changes der Quelle samt Row Images in den Speicher; er liest jetzt seitenweise (10.000
+  Kandidaten, ohne Row Images). In `v0.1.0`, `v0.1.1` und `v0.1.2` wächst der Speicher des
+  Feed-Containers mit der Zahl der gespeicherten Changes: 1,03 bis 1,59 KiB je Change bei
+  schmalen Zeilen (an einem Backfill des Standes vor der Änderung gemessen, abgeleitet;
+  Messbericht der Untersuchung, Abschnitt 3.3); für die Erfassung ohne Backfill ist der Bedarf
+  hergeleitet, nicht gemessen (10 Changes/s halten 864.000 Changes, etwa 0,85 bis 1,3 GiB
+  Spitze je Takt, Architect-Verdikt). In `v0.2.0` liegt die Spitze nach Backfills über je
+  1.000.000 Zeilen bei 3.000.000 Changes in `cdc.change` bei 17,3 bis 17,6 MiB (gemessen, zwei
+  Läufe, Messbericht dieses Slice, Abschnitt 3).“ Belege der Reichweite: `git diff v0.1.2 HEAD --
+  internal/application/usecase/retention internal/application/port/outbound/changestore.go`
+  war am Stand vor dem Slice leer; `git show v0.1.0:…/service.go` und `v0.1.1:…` tragen dieselbe
+  Zeile `ReadChanges(ctx, outbound.ChangeQuery{Source: command.Source})`.
 - **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt Anker,
   Folge-Slice und Register (Baseline-Regelwerk `modul-06-roadmap.md` §Was der wellenlose
   Betrieb selbst auslöst). *(Ergebnis bei Closure)*

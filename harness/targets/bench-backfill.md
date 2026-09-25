@@ -97,8 +97,8 @@ Vertrags: beide enden mit Exit 1 und drucken den Zustand des Containers (`Status
 
 ## Speicher-Untersuchung — `tools/bench-backfill-memory.sh`
 
-Ein zweites Skript, **kein Teil von `make bench`** (Minuten je Stufe, Speicherbedarf
-des Feed-Containers bis in den GiB-Bereich): dieselbe Umgebung
+Ein zweites Skript, **kein Teil von `make bench`** (Minuten je Stufe):
+dieselbe Umgebung
 (`tools/bench-lib.sh`), dieselbe Haltung — eine Messung ohne Pass/Fail. Es misst,
 wie sich der Speicher des Feed-Containers im Backfill-Run und danach zur Zeilenzahl
 der Tabelle, zur Zeilenbreite, zur Zahl der gespeicherten Changes und zu einer

@@ -97,14 +97,23 @@ nicht prüft, steht in §Grenze Nr. 8.
   instrumentiert dabei **seinen** Teil; die beiden Profile tragen darum
   **disjunkte** Dateimengen, und ihr Merge ist die Vereinigung — keine
   Doppelzählung.
-- Der gemergte Nenner ist **1058 Statements** (`postgresstorage` 686 ·
+- Der gemergte Nenner ist **1064 Statements** (`postgresstorage` 692 ·
   `postgresack` 32 · `postgressnapshot` 130 · `replication/receive` 210) — die
   **Zustandsgröße** dieses Gegenstands, aus dem Profil entstanden, nicht aus
   einer gepflegten Konstante. Sie hängt am **Code-Stand**, nicht am Lauf:
   derselbe Stand misst denselben Nenner, ein Zug, der Produktionscode
   hinzufügt, einen größeren. Sie ist darum **kein** Dauerwert und trägt — wie
-  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1058**
-  und ihre vier Anteile: Lauf `slice-backfill-slot-leerlauf-bestaetigung`
+  jede Zahl dieses Dokuments — den Lauf mit, in dem sie gemessen wurde (**1064**:
+  Lauf `slice-retention-lauf-speicher-begrenzung`, Implementer-Lauf am
+  Arbeitsbaum über `0e6b1b30`: `make test-store` und danach `make test-replication`
+  gegen PostgreSQL 18 (Pin von `PG_TEST_IMAGE`), gedruckt: `DB-Adapter-Coverage:
+  82.61% (gedeckt 879 von 1064 Statements; Profile gemergt: store,replication)`;
+  die vier Anteile aus dem gemergten Profil dieses Laufs abgeleitet (Statements
+  je Paket, Awk über `merged.coverprofile`): 692 · 32 · 130 · 210;
+  `postgresstorage` trägt gegenüber dem Nenner 686 6 Statements mehr: die Methode
+  `ReadRetentionCandidates` in `store.go`, gedeckt durch
+  `postgresstorage/retentioncandidates_test.go`. Der frühere Nenner **1058** und
+  seine vier Anteile: Lauf `slice-backfill-slot-leerlauf-bestaetigung`
   (Implementer-Lauf am Arbeitsbaum über `f4e32fba`): `make test-store` und
   `make test-replication` gegen PostgreSQL 18 (Pin von `PG_TEST_IMAGE`),
   gedruckt: `DB-Adapter-Coverage: 82.51% (gedeckt 873 von 1058 Statements;
