@@ -43,5 +43,13 @@ cd "$repo_root"
 SDK_PACK_PYTHON_IMAGE=${SDK_PACK_PYTHON_IMAGE:-pg-change-feed:sdk-python-pack-export}
 
 docker build --build-context proto=proto --target pack-export -t "$SDK_PACK_PYTHON_IMAGE" sdks/python
-mkdir -p sdks/python/dist
-docker run --rm --network none "$SDK_PACK_PYTHON_IMAGE" | tar -x -C sdks/python/dist
+
+# Nach erfolgreichem Export ersetzt das Ergebnis sdks/python/dist/; dort
+# liegen danach nur die Artefakte dieses Baus.
+# shellcheck source=tools/harness/sdk-dist-clean.sh
+. tools/harness/sdk-dist-clean.sh
+dist="$repo_root/sdks/python/dist"
+stage=$(sdk_dist_stage "$dist")
+trap 'rm -rf -- "$stage"' EXIT
+docker run --rm --network none "$SDK_PACK_PYTHON_IMAGE" | tar -x -C "$stage"
+sdk_dist_swap "$stage" "$dist"

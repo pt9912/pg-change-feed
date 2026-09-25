@@ -41,5 +41,13 @@ cd "$repo_root"
 SDK_PACK_KOTLIN_IMAGE=${SDK_PACK_KOTLIN_IMAGE:-pg-change-feed:sdk-kotlin-pack-export}
 
 docker build --build-context proto=proto --target pack-export -t "$SDK_PACK_KOTLIN_IMAGE" sdks/kotlin
-mkdir -p sdks/kotlin/dist
-docker run --rm --network none "$SDK_PACK_KOTLIN_IMAGE" | tar -x -C sdks/kotlin/dist
+
+# Nach erfolgreichem Export ersetzt das Ergebnis sdks/kotlin/dist/; dort
+# liegen danach nur die Artefakte dieses Baus.
+# shellcheck source=tools/harness/sdk-dist-clean.sh
+. tools/harness/sdk-dist-clean.sh
+dist="$repo_root/sdks/kotlin/dist"
+stage=$(sdk_dist_stage "$dist")
+trap 'rm -rf -- "$stage"' EXIT
+docker run --rm --network none "$SDK_PACK_KOTLIN_IMAGE" | tar -x -C "$stage"
+sdk_dist_swap "$stage" "$dist"

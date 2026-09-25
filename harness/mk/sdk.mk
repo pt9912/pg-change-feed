@@ -25,6 +25,14 @@ sdk-public-doc-check: ## Keine interne Kennung in den Dateien unter sdks/ (netzl
 test-sdk-public-doc-check: ## Tabellentest gegen tools/harness/sdk-public-doc-check.sh (netzlos)
 	@bash tools/harness/run-sdk-public-doc-check-tests.sh
 
+# `test-sdk-dist-clean` prueft die Hilfsfunktionen, mit denen die drei
+# `sdk-pack-*`-Skripte sdks/<sprache>/dist/ vor dem Export ersetzen
+# (tools/harness/sdk-dist-clean.sh): Altlasten verschwinden, unzulaessige
+# Pfade werden abgelehnt. Netzlos, Werkzeug wie die uebrigen `test-sdk-*`.
+.PHONY: test-sdk-dist-clean
+test-sdk-dist-clean: ## Tabellentest gegen tools/harness/sdk-dist-clean.sh (netzlos)
+	@bash tools/harness/run-sdk-dist-clean-tests.sh
+
 # `sdk-pack-csharp` baut/testet/paketiert das C#-SDK Docker-only im
 # gepinnten mcr.microsoft.com/dotnet/sdk-Image (sdks/csharp/Dockerfile,
 # Stufe `pack-export`): `dotnet test` gegen alle vier Testflächen (HTTP +
