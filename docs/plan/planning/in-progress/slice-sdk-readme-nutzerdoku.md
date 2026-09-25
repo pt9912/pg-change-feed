@@ -86,11 +86,18 @@ der Fehlertexte (20 Texte, Python 8, C# 6, Kotlin 6).
   Package-Bau, weil die README dort bereits im Bau-Kontext liegt; für C# und Kotlin
   läge die README außerhalb der Test-Bau-Kontexte, ein Wächter dort wäre eine
   Änderung der Bau-Kontexte (ein anderer Vorgang).
-- **Ein neues Gate in `make gates`** für den Kennungs-Wächter der SDK-Dateien — er ist
-  netzlos und schnell, ein weiteres Gate ändert aber die Gate-Liste (`harness/README.md`
-  §Sensors, `AGENTS.md` §4) und ihre Sensor-Bindung; die Fixrunde liefert ihn als
-  Werkzeug mit Tabellentest, das die drei `make sdk-pack-*`-Ziele als Vorstufe tragen
-  (§3), und schwächt keine bestehende Schwelle.
+- **Ein neues Gate in `make gates`** für den Kennungs-Wächter der SDK-Dateien — jedes
+  bestehende Gate trägt eine ADR
+  ([`ADR-0041`](../../adr/0041-a-check-maschinenform-architekturpruefung.md),
+  [`ADR-0045`](../../adr/0045-commit-traceability-standing-gate.md),
+  [`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md),
+  [`ADR-0084`](../../adr/0084-sync-gate-fuer-generierte-artefakte.md)), und die ADR ist
+  Architect-Arbeit. Die Fixrunde liefert den Wächter als Werkzeug mit Tabellentest, das die
+  drei `make sdk-pack-*`-Ziele als Vorstufe tragen und das die drei Release-Workflows über
+  diese Ziele vor jedem Publish fahren (§3); ein Rückfall wird damit nicht ausgeliefert,
+  fällt aber nicht bei jedem Push auf. Die Aufnahme in `make gates` ist übergeben an
+  `slice-sdk-public-doc-check-gate` (netzlos, gemessen `real 0m0,013s` für
+  `make sdk-public-doc-check`, 2026-09-25); der Slice schwächt keine bestehende Schwelle.
 
 ## 2. Definition of Done
 
@@ -113,12 +120,13 @@ der Fehlertexte (20 Texte, Python 8, C# 6, Kotlin 6).
 - [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8); kein
-      offenes HIGH/MEDIUM nach der Fixrunde (F-1 bis F-3 behoben, Belege §3;
-      Bestätigung durch den Verifier steht aus).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
+      offenes HIGH/MEDIUM nach der Fixrunde (F-1 bis F-3 behoben, Belege §3);
+      Verifikation: [`verifikation-slice-sdk-readme-nutzerdoku`](../../../reviews/verifikation-slice-sdk-readme-nutzerdoku.md)
+      (Verdikt Bestätigt).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag.
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben oder „keine Beobachtung
       angefallen“ in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — im Repo **mit**
       Wellen von der nächsten Welle-Closure geprüft (auch für Slices ohne
       Wellen-Zugehörigkeit).
@@ -257,13 +265,13 @@ gedruckt; Parent `6839f738`, Diff-Stand = Arbeitsbaum am 2026-09-25):**
 | Chronik-/Jargon-Wörter in den SDK-Dateien | `git grep -nE 'Draht-Kenntnis\|unstrittig\|Welle-Plan\|Boundary \(\|zuvor\|bisher' <Stand> -- sdks` | Parent **28** Zeilen (Python 7, Kotlin `main` 11 und `test` 1, C# 9); HEAD **0** | gelöst |
 | Sources-Jar / XML-Dokumentationsdatei als Träger der Kommentare | `unzip -l sdks/csharp/dist/PgChangeFeed.Client.0.2.1.nupkg`, `unzip -l sdks/kotlin/dist/pgchangefeed-kotlin-0.2.1-sources.jar`, `unzip -p … \| strings [-e l] \| grep -cE 'SPEC-\|ADR-\|LH-(FA\|QA)'` über `.xml`, `.dll` (auch UTF-16-Literale), Jars | nupkg trägt `lib/net10.0/PgChangeFeed.Client.xml` (59422 Bytes), Sources-Jar 37 Einträge; 0 Treffer in `.xml`, `.dll`, den Jar-Dateien und im Wheel (`.py`-Dateien, einschließlich `changestream_pb2_grpc.py`) | Belege der Auslieferung |
 | Versionsangaben `0.2.0` | `git grep -c '0\.2\.0' <Stand> -- spec harness sdks docs/user tools .github Makefile` | Parent **29** Zeilen in 11 Dateien (`benutzerhandbuch.md` 4, `harness/README.md` 3, `harness/mk/sdk.mk` 2, `sdks/csharp/Dockerfile` 1, `.csproj` 2, `sdks/kotlin/Dockerfile` 2, Kotlin-README 1, `build.gradle.kts` 3, `pyproject.toml` 1, `lastenheft.md` 1, `pflichtenheft.md` 9); Diff-Stand (Stand der ersten Fassung, `92e2ca6c`) **8** Zeilen in 3 Dateien (`benutzerhandbuch.md` 4, `lastenheft.md` 1, `pflichtenheft.md` 3); Fixrunde-Stand (HEAD nach der Fixrunde) **21** Zeilen in 5 Dateien (die acht wie zuvor, dazu `docs/user/releasing.md` 10 und `harness/README.md` 3) | die 21 verschobenen Zeilen stehen auf `0.2.1` (`git grep -n '0\.2\.1'`: Parent `97363562` 22 Zeilen, HEAD 22 Zeilen — die Fixrunde hebt keine Version); die 8 ursprünglichen sind Records: vier Handbuch-Historie-Zeilen (1.32, 1.38, 1.39, 1.43), eine Lastenheft-Historie-Zeile (Fassung 0.2.0 des Dokuments), drei Pflichtenheft-Historie-Zeilen (2026-09-22/23); die 13 der Fixrunde sind Belege veröffentlichter Tags und Läufe (`sdk-…-v0.2.0`, F-4) in `releasing.md` und den drei Workflow-Zeilen der `harness/README.md` — sie berichten ein vergangenes Ereignis und sind keine Versionsträger der Quellversion |
-| Veröffentlichte Tags | `git tag -l 'sdk-*'` | `sdk-csharp-v0.1.0`, `sdk-csharp-v0.2.0`, `sdk-kotlin-v0.2.0`, `sdk-python-v0.1.0`, `sdk-python-v0.2.0` | `0.2.0` ist an allen drei Stellen veröffentlicht: die Beschreibung erscheint nur mit einer neuen Version — Grund der Hebung auf `0.2.1` (Versionsentscheidung) |
+| Veröffentlichte Tags | `git tag -l 'sdk-*'` | `sdk-csharp-v0.1.0`, `sdk-csharp-v0.2.0`, `sdk-kotlin-v0.2.0`, `sdk-python-v0.1.0`, `sdk-python-v0.2.0` (Stand der Planung); `git ls-remote --tags origin 'sdk-*0.2.1*'` (Closure, 2026-09-25): `sdk-csharp-v0.2.1`, `sdk-kotlin-v0.2.1`, `sdk-python-v0.2.1`, alle drei auf `7df775c8` | `0.2.0` ist an allen drei Stellen veröffentlicht: die Beschreibung erscheint nur mit einer neuen Version — Grund der Hebung auf `0.2.1` (Versionsentscheidung) |
 | Publish-Workflows (Tag-Abgleich gegen die Metadaten-Quelle) | `bash tools/harness/sdk-<sprache>-release-tag-info.sh sdk-<sprache>-v0.2.1` (je Sprache) und `make test-sdk-<sprache>-release-tag-info` | je `version=0.2.1`, Exit 0; die drei Testläufe `alle Fälle bestanden` | die Extraktion der Version aus `<Version>`/`^version = "…"` trifft die Kommentar-Umformulierungen nicht |
 | Träger, die den README-Inhalt beschreiben | `git grep -n -i 'README' -- spec harness AGENTS.md docs/user docs/plan/adr sdks tools .github Makefile` gefiltert auf SDK/Package/NuGet/PyPI | nur Pfad-Verweise (Handbuch) und die Bau-Kommentare der Dockerfiles/`.csproj`/`pyproject.toml` über den Weg der Datei in das Paket; keine Beschreibung des Inhalts | kein Nachzug nötig |
 | README-Aussagen zu `null`/leer der Row Images (F-2), je Sprache gegen den Quelltext | `git grep -nE 'isJsonNull\|Assert.Null\(change.OldImage\|old_image is None' HEAD -- sdks` | Kotlin: KDoc `Changes.kt:24-28` und Test `…RetentionAndChangesTest.kt:72` belegen `JsonElement.JsonNull` (`isJsonNull == true`) statt `null`; C#: `Assert.Null(change.OldImage)` (`JsonElement?`); Python: `assert change.old_image is None`; Kotlin-SSE/-NATS-Tests prüfen `oldImage?.isJsonNull` | gelöst: Kotlin-README nennt `JsonNull`, C#/Python bleiben `null`/`None`; gRPC-Bilder „empty when there is none“ (`ByteString`/`bytes`) in allen drei READMEs |
 | README-Aussage „der Server bedient kein TLS“ (F-12) | `git grep -nEi 'tls\.Config\|ListenAndServeTLS\|ServeTLS\|credentials.NewTLS\|tls\.Listen' HEAD -- internal cmd \| wc -l` und `git grep -nEi '\btls\b' HEAD -- docs/user/benutzerhandbuch.md \| wc -l` | **0** und **0** — weder Server-Code noch Handbuch führen TLS | Aussage in den drei READMEs; „Python ≥ 3.14“: `requires-python = ">=3.14"` (`pyproject.toml`) nennt keinen Grund, die README nennt keinen (§6) |
 | Träger der Aussage „Kotlin-Zustellweg unbewiesen“ (F-4) | `git grep -nE 'unbewiesen' HEAD -- docs/user harness/README.md \| wc -l`; `gh run list --workflow sdk-kotlin-release.yml`; `gh api /users/pt9912/packages/maven/io.github.pt9912.pgchangefeed-kotlin/versions --jq '.[].name'` | HEAD **2** Treffer: `releasing.md` Historie-Zeile 1.2 (ein Record) und die `hub-description.yml`-Zeile der `harness/README.md` (anderer Gegenstand); Lauf 36117929552 `success`, Paketversion `0.2.0` (2026-09-25) | `releasing.md` (Version 1.7) und die drei SDK-Workflow-Zeilen der `harness/README.md` nachgezogen |
-| Deutsche Wortfragmente und Chronik in den englischen READMEs | `grep -niE 'vollinhalt\|welle\|harness\|rohform\|boundary\|derzeit\|bisher\|vorher\|urspr\|pre-1\|noch nicht\|\byet\b\|previous\|formerly\|no longer\|already\|slice\|\bADR\b\|\bSPEC\b\|fire-and-forget\|currently\|until now\|used to\|earlier\|intentionally' <drei READMEs>` | 9 Treffer, alle „already“/„no longer“ in Sachaussagen zum Server-Zustand („`retained` … already stored“, „no longer captured“, Feld `already_registered`) — keine Chronik, kein deutsches Fragment | belassen |
+| Deutsche Wortfragmente und Chronik in den englischen READMEs | `grep -niE 'vollinhalt\|welle\|harness\|rohform\|boundary\|derzeit\|bisher\|vorher\|urspr\|pre-1\|noch nicht\|\byet\b\|previous\|formerly\|no longer\|already\|slice\|\bADR\b\|\bSPEC\b\|fire-and-forget\|currently\|until now\|used to\|earlier\|intentionally' <drei READMEs>` | Stand der ersten Fassung (`92e2ca6c`): 9 Treffer; Arbeitsbaum über `d9e048fa` (gemessen 2026-09-25, Closure; Verifikation §7 nennt dieselbe Zahl): **12** Treffer, je vier in den drei READMEs — alle „already“/„no longer“ in Sachaussagen zum Server-Zustand („`retained` … already stored“, „no longer captured“, Felder `already_registered` und `already_enabled`) — keine Chronik, kein deutsches Fragment | belassen |
 
 ## 4. Trigger
 
@@ -285,37 +293,239 @@ bestätigt die DoD, Closure-Notiz mit Steering-Loop-Eintrag geschrieben.
 ## 6. Risiken und offene Punkte
 
 - Eine README-Aussage stimmt nicht mit dem Verhalten des Servers überein, weil sie aus
-  dem Quelltext des SDK statt aus dem Server gelesen wurde — **Ausgang:** offen bis zur
-  Verifikation; Gegenmaßnahme: Aussagen zu Positionen, Tokens und `limit` sind gegen
-  `spec/pflichtenheft.md` (`SPEC-018`, `SPEC-022`) und das Benutzerhandbuch gelesen.
+  dem Quelltext des SDK statt aus dem Server gelesen wurde — **Ausgang: eingetreten**, im
+  Slice aufgelöst: zwei README-Aussagen stimmten nicht mit dem Code überein (Kotlin
+  `JsonNull` statt `null`, Review F-2; Transportfehler außerhalb der Fehlerklassen, Review
+  F-5), beide behoben (Verifikation §3); die Server-Seite (Positionen, Tokens, `limit`,
+  `from`/`to`, `origin`, Subjekt-Namensraum, `already_enabled`) las der Verifier gegen
+  Server-Code und Pflichtenheft (`SPEC-018`, `SPEC-022`) ohne Befund (Verifikation §11,
+  „README-Beispiele (Anwendersicht)“), der Reviewer gegen `SPEC-022` und das
+  Benutzerhandbuch (Review, Negativbefunde); gelesen, nicht gegen einen
+  Server-Container gefahren. Register: `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`
+  (2×).
 - Die Beschreibung erscheint erst nach einem Release (Tag-Push, Betreiber-Handlung) auf den
   Paket-Seiten; ob sie dort wie erwartet gerendert wird, ist lokal nicht prüfbar
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.10 sinngemäß: externe Oberfläche) — **Ausgang:** weiter offen bis zum
-  ersten Release mit `0.2.1`.
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10 sinngemäß: externe Oberfläche) — **Ausgang:
+  entfallen** für den Inhalt an den Registries: die Publish-Läufe 36129672841 (C#/NuGet),
+  36129672859 (Python/PyPI) und 36129672852 (Kotlin/GitHub Packages) endeten je `success`
+  (`gh run view <id> --json conclusion,headBranch`, 2026-09-25; Tags `sdk-*-v0.2.1` auf
+  `7df775c8`, `git ls-remote --tags origin`). PyPI: `https://pypi.org/pypi/pgchangefeed/0.2.1/json`
+  trägt die neue Beschreibung (README-Text als `description`, 0 Kennungs-Treffer; im
+  Closure-Lauf gelesen, auch vom Auftraggeber des Closure-Zugs). NuGet: das `.nupkg` aus
+  `api.nuget.org/v3-flatcontainer` trägt `README.md` (13150 Bytes), `nuspec` (Version
+  `0.2.1`, Beschreibung, Tags) und `lib/net10.0/PgChangeFeed.Client.xml` (59422 Bytes),
+  0 Kennungs-Treffer in README und XML (gemessen 11:36 UTC, sechs Minuten nach dem Push;
+  der erste Abruf um 11:34 UTC lieferte noch `404`, die Indexierung folgt dem Push).
+  **Ungesehen** bleibt die grafische Darstellung der Paket-Seiten (PyPI, NuGet.org,
+  GitHub Packages): sie ist eine externe Oberfläche, an der kein Träger im Repo hängt.
 - Die Kotlin-Beschreibung liegt im `pom`; ob GitHub Packages sie anzeigt, ist lokal nicht
-  prüfbar (die Kommentare in `build.gradle.kts` machen dazu keine Aussage mehr) — **Ausgang:**
-  weiter offen bis zum ersten Release mit `0.2.1`.
+  prüfbar (die Kommentare in `build.gradle.kts` machen dazu keine Aussage mehr) — **Ausgang:
+  entfallen**: kein Träger im Repo behauptet die Anzeige (`build.gradle.kts` sagt, die
+  POM-Felder seien die mit den Artefakten veröffentlichten Metadaten), und die
+  veröffentlichte `pom` trägt `name`, `description`, `url` und Lizenz MIT (abgerufen von
+  `maven.pkg.github.com/pt9912/pg-change-feed/io/github/pt9912/pgchangefeed-kotlin/0.2.1/`
+  mit dem `gh`-Token, 2026-09-25); die Anzeige auf der GitHub-Packages-Seite ist ungesehen.
 - Das Sources-Jar (`java { withSourcesJar() }`) gehört über `from(components["java"])` zur
   Veröffentlichung nach GitHub Packages; die Publikations-Metadaten verweisen darauf
   (`generateMetadataFileForMavenPublication`), der Upload gegen `maven.pkg.github.com` ist
-  lokal nicht prüfbar — **Ausgang:** weiter offen bis zum ersten Release mit `0.2.1`
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.10 sinngemäß).
+  lokal nicht prüfbar — **Ausgang: entfallen**: `pgchangefeed-kotlin-0.2.1-sources.jar`,
+  `pgchangefeed-kotlin-0.2.1.jar` und `pgchangefeed-kotlin-0.2.1.pom` liefern am selben
+  Pfad je HTTP `200` (`curl -I -L` mit dem `gh`-Token, 2026-09-25); der Publish-Schritt
+  „Nach GitHub Packages veroeffentlichen“ des Laufs 36129672852 ist `success`
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
 - Die geänderten Fehlertexte können Integrationstests betreffen. Die SDK-Test- und
   Integrationsquellen tragen keine Prüfung dieser Texte (`grep` nach den Fragmenten: 0 Treffer,
-  §3); `make test-sdk-python-integration`, `make test-sdk-csharp-integration` und
-  `make test-sdk-kotlin-integration` sind in dieser Fixrunde **nicht gefahren** (Nutzer-Auftrag:
-  keine Realserver-Läufe) — **Ausgang:** die Grenze steht hier; die Läufe gehören zur Verifikation,
-  falls der Verifier sie verlangt.
+  §3; Verifikation §6 bestätigt es, dazu AST-Gleichheit bis auf die Texte) —
+  **Ausgang: entfallen**: kein Test kann an den Texten rot werden. **Benannte Grenze:**
+  `make test-sdk-python-integration`, `make test-sdk-csharp-integration` und
+  `make test-sdk-kotlin-integration` sind nach der Bereinigung nicht gefahren (Nutzer-Auftrag:
+  keine Realserver-Läufe) und laufen in keinem Workflow (`git grep -n 'test-sdk-.*-integration'
+  -- .github` druckt 0 Zeilen, gemessen 2026-09-25); ein Slice, der SDK-Code ändert, fährt sie
+  nach seiner DoD, dieser ändert kein Verhalten.
 - Der Kennungs-Wächter für C# und Kotlin ist ein Repo-Werkzeug (`make sdk-public-doc-check`),
   kein Gate und kein Teil der Test-Bau-Kontexte; ein Rückfall fällt beim `make sdk-pack-*` auf,
-  nicht bei `make gates` — **Ausgang:** weiter offen (Entscheidung über ein weiteres Gate bei
-  der Closure, benannte Grenze).
+  nicht bei `make gates` — **Ausgang: weiter offen** → `slice-sdk-public-doc-check-gate`
+  (Datei in `open/`; Entscheidung der Closure: Aufnahme als Gate, netzlos, `real 0m0,013s`;
+  die ADR als Gate-Träger ist Architect-Arbeit, siehe §1).
 - Die README nennt den Grund von „Python 3.14 or newer“ nicht (`requires-python = ">=3.14"`
-  nennt ihn nicht; `grep -rln 'requires-python\|Python 3\.14\|python:3\.14' docs/plan/adr spec` trifft nur die Begründung des Basis-Images in einer ADR, nicht die Untergrenze) — **Ausgang:** weiter offen, keine Anwender-Aktion.
+  nennt ihn nicht; `grep -rln 'requires-python\|Python 3\.14\|python:3\.14' docs/plan/adr spec` trifft nur die Begründung des Basis-Images in einer ADR, nicht die Untergrenze) — **Ausgang: weiter offen**
+  → Register `BEO-PGC/sdk-python-untergrenze-ohne-anwender-begruendung` (1×), keine Anwender-Aktion.
 
 ## 7. Closure-Notiz
 
-*(wird bei der Closure durch den Planner gefüllt)*
+- **Was hat funktioniert:** Die Rollen-Kette lief in getrennten Kontexten, und der
+  Sensor war die Mutation der Eingabeseite. Der Reviewer fuhr Mutationen (M1 bis M8) gegen
+  den Python-Wächter und fand den HIGH (F-1: Argumente, Feldliste und Statuscodes der
+  README ungebunden) durch Nachfahren, nicht durch Lesen. Der Verifier fuhr sechs eigene
+  README-Mutationen (A bis F, je genau ein Test rot), zwei Wächter-Pfade (G: Stub über die
+  `.proto`, H: C#-Datei), übersetzte die C#- und Kotlin-Beispiele in Temp-Dateien der
+  Test-Bau-Kontexte (Exit 0, je ein Gegenversuch rot) und scannte die fünf ausgelieferten
+  Artefakte auf Kennungen (0 Treffer). Die Kennungs-Bereinigung ist gemessen: `git grep`
+  über `sdks` ohne `grpc_gen`, Parent `97363562` **499 Zeilen in 98 Dateien**, `HEAD` 0
+  (Verifikation §3, **übernommen**; Muster und Gruppen im Suchlauf §3). Die Gate-Zeilen
+  des Verifiers stehen in seinem Report §1 (`make gates` Exit 0, `coverage-gate: OK —
+  Coverage 83.10%`, `d-check: 1144 Datei(en) geprüft, 0 Befund(e)`, **übernommen**). Der
+  Slice ändert an Go nur Kommentare in `gen/cdc/stream/v1/*.pb.go` (Verifikation §6:
+  `git diff -U0` ohne Kommentarzeilen ist für `proto/` und `gen/` leer, `make
+  generated-sync` Exit 0); Zahlen in `harness/sensors/*.md` sind davon nicht betroffen
+  (`git grep -n -iE 'sdks|0\.2\.[01]' -- harness/sensors` druckt 0 Zeilen, gemessen 2026-09-25;
+  der Nenner der Coverage-Stufe in `harness/sensors/coverage-gate.md` hängt an den
+  Statements, und die Kommentarzeilen ändern keines, **abgeleitet**), kein Nachzug.
+- **Was ging anders als geplant:** (1) *Umfangserweiterung auf Nutzeranweisung mitten im
+  Slice* (Feststellung, kein Fehler): der Plan nahm README und Metadaten-Felder in den
+  Umfang; auf den Review F-3 hin und die Anweisung „öffentliche API-Kommentare auch
+  bereinigen“ kamen die Docstrings, XML-Kommentare, KDoc, Testkommentare, Build-Dateien,
+  20 Laufzeit-Fehlertexte und die `.proto`-Kommentare hinzu (106 Dateien in `sdks proto
+  gen`, Verifikation §6). Begründung im Plan §1: ein veröffentlichter Paketstand ist
+  unveränderlich, die Bereinigung gehört in `0.2.1`. (2) *Die Fixrunde lief ohne zweiten
+  Reviewer-Durchgang* — **benannte Grenze** (V-2): der Verifier prüfte ihre Semantik durch
+  AST-Vergleich (Python), Nicht-Kommentar-Diff (C#, Kotlin), Artefakt-Scan und Mutationen
+  (Verifikation §6, §4, §5); eine Reviewer-Lesung der neuen Kommentar-Texte fehlt. Dieselbe
+  Grenze steht in den Closure-Notizen von `slice-backfill-run-store`, `slice-backfill-e2e`,
+  `slice-backfill-bench-richtgroesse`, `slice-backfill-slot-leerlauf-bestaetigung` und
+  `slice-backfill-sdk-origin` (`git grep -n -i -E 'Fixrunde lief ohne' -- docs/plan/planning/done`,
+  gemessen 2026-09-25: fünf Slice-Pläne); die Vorgänger führen keinen Register-Eintrag, dieser
+  Slice hält es gleich (siehe Register unten). (3) *Der Wächter blieb kein Gate*: die
+  Begründung im Plan §1 („ein weiteres Gate ändert die Gate-Liste“) ist ein Aufwandsargument
+  (Verifikation V-4); die Closure-Entscheidung steht unten. (4) *Neue Artefakt-Inhalte ohne
+  ADR*: die XML-Dokumentationsdatei im `.nupkg` und das Sources-Jar (Review F-10,
+  Verifikation V-6), Entscheidung unten.
+- **Entscheidung V-4 (Wächter als Gate):** Aufnahme in `make gates`, ausgeführt von einem
+  Folge-Slice, nicht in dieser Closure. Grund für die Aufnahme: `make sdk-public-doc-check`
+  ist netzlos und ein `grep` (`time make sdk-public-doc-check` → `real 0m0,013s`,
+  `time make test-sdk-public-doc-check` → `real 0m0,195s`, gemessen 2026-09-25); die
+  Alternative „Vorstufe der Pack-Ziele bleibt“ trägt nur für die Auslieferung (die drei
+  Release-Workflows fahren `make sdk-pack-*` vor jedem Publish, gemessen in der
+  Verifikation §6/§8), nicht für die Früherkennung je Push. Grund gegen die Ausführung hier:
+  jedes bestehende Gate trägt eine ADR (`ADR-0041`, `-0045`, `-0054`, `-0084`), und die
+  Gate-Liste (`harness/README.md` §Sensors), `harness/mk/sdk.mk` und die Sensor-Doku gehören
+  dem Implementer-Zug nach dieser ADR. Adresse: `slice-sdk-public-doc-check-gate` (Datei in
+  `open/`). Bis dahin tragen `harness/README.md` (Zeile `make sdk-public-doc-check`) und
+  `harness/mk/sdk.mk` die Aufwands-Begründung „ein weiteres Gate ändert die Gate-Liste“;
+  der Folge-Slice ersetzt sie (Suchlauf im Slice-Plan, DoD 2). Keine Schwelle gesenkt
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.6).
+- **Entscheidung V-6 (ADR für die neuen Artefakt-Inhalte):** keine neue ADR. Begründung:
+  `ADR-0106` sagt, der Bau „erzeugt eine `.nupkg` als Artefakt“ — das Paket bleibt eines, die
+  XML-Datei liegt darin; `ADR-0109` nennt den Artefaktumfang nicht (`grep -n -iE
+  'sources|javadoc|\.jar' docs/plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md` druckt 0
+  Zeilen, `grep -n -iE 'jar|Artefakt'` zwei Vergleichszeilen ohne Umfangsaussage, gemessen
+  2026-09-25); `ADR-0107` (Wheel und `sdist`) bleibt unberührt. Der Zusatz ist additiv:
+  kein Anwender-Code bricht, die Signaturen sind unverändert. Belegt am veröffentlichten
+  Stand: das `.nupkg` von NuGet.org trägt `lib/net10.0/PgChangeFeed.Client.xml`, GitHub
+  Packages liefert `pgchangefeed-kotlin-0.2.1-sources.jar` (Messungen in §6). Die
+  Eigenschaft steht in den `make sdk-pack-*`-Zeilen der `harness/README.md` (§Sensors) und
+  im Plan §3. Trigger für eine ADR (dann als neue ADR, die `ADR-0106`/`ADR-0109` schärft,
+  nicht als Änderung der `Accepted`): eine Festlegung zum Artefaktumfang, die über „Kommentare
+  reisen mit dem Paket“ hinausgeht (Javadoc-Jar, Symbol-Package, Umfang der `sdist`).
+- **Post-Push-Belege** ([`AGENTS.md`](../../../../AGENTS.md) §3.10 sinngemäß; kein Workflow im
+  Diff, die drei Publish-Workflows liefen erstmals mit `0.2.1`): Tags `sdk-csharp-v0.2.1`,
+  `sdk-python-v0.2.1`, `sdk-kotlin-v0.2.1` auf `7df775c8` (`git ls-remote --tags origin`);
+  Läufe 36129672841 (C#/NuGet), 36129672859 (Python/PyPI), 36129672852 (Kotlin/GitHub Packages)
+  je `completed`/`success` (`gh run view <id> --json conclusion,headBranch,headSha`, gemessen
+  2026-09-25); CI von `7df775c8` (`gh run list --commit 7df775c888a2ec987a6c8b7ae675f94c2a21cdc6`):
+  `ci` 36127605194, `examples` 36127605177, `e2e` 36127605205, je `success`. Die Inhalte an den
+  Registries stehen in §6 (Risiko zwei bis vier).
+- **Benannte Grenzen (Verifikation V-3, V-5, V-7, V-8), je mit Adresse oder Begründung:**
+  V-3: die 20 Fehlertexte sind Laufzeitverhalten ohne Test; die SDK-Realserver-Tiers sind
+  nach der Bereinigung nicht gefahren (§6, fünfter Punkt); Adresse: jeder Slice, der SDK-Code
+  ändert, fährt sie nach seiner DoD; dieser Slice ändert keine Anweisung des Codes.
+  V-5: 16 von 60 öffentlichen Python-Definitionen tragen keinen Docstring (13 `from_json`,
+  drei verschachtelte Funktionen des NATS-Clients; Klassen und Client-Methoden tragen alle
+  einen), die Kotlin-KDoc-Abdeckung ist nicht gemessen — keine Aktion: der Einstieg des
+  Anwenders (Klassen, Client-Methoden, README-API-Tabelle) ist vollständig, die
+  `from_json`-Methoden sind Dekodier-Fabriken der Modelle; die Kotlin-Messung ist ein
+  Befehl, kein Träger, den der Zug ausführt, der Kotlin-Modelle ändert. V-7: der Satz „The
+  fields match the change of the HTTP and SSE surfaces (without the commit position, commit
+  time and origin)“ in `proto/cdc/stream/v1/changestream.proto` ist nicht falsch (auch die
+  SSE-Nachricht trägt die zehn Felder ohne diese drei), aber die Klammer liest sich wie eine
+  HTTP-Aussage; er steht in den Stubs von `0.2.1` aller Sprachen. Adresse: die nächste
+  Änderung an dieser `.proto` (Kommentar im selben Zug, ein Stub-Neubau via `make
+  proto-generate`, der Wächter `make generated-sync` hält Go). V-8: keine Sicht auf die
+  gerenderten Paket-Seiten — §6 zweiter und dritter Punkt (Inhalt gemessen, Darstellung
+  ungesehen).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Kandidat, nicht entschieden,
+  1×):* die Anwender-Sichtbarkeit von Kennungen. Die Träger-Regel „Kennungen in Prosa
+  verlinken“ (d-check `ids`) ist für Leser im Repo gebaut; sie galt auch in Texten, die das
+  Repo verlassen (README als PyPI-/NuGet-Beschreibung, Docstrings im Wheel, XML-Doku im
+  `.nupkg`, KDoc im Sources-Jar, Fehlertexte, `.proto`-Kommentare in den Stubs) und erzeugte
+  dort Kennungen, die kein Anwender auflösen kann — der Nutzer nannte sie Rauschen. Der
+  Regel-Kandidat lautet: *Texte, die das Repo verlassen, tragen keine internen Kennungen*.
+  Planner-Entscheidung: **keine** `AGENTS.md`-Regel aus einem Auftreten (Register-Regel: erst
+  ab 3×); der Eintrag `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` (1×) trägt den
+  Kandidaten, der Slice trägt Wächter je Träger. *Neuer Sensor:* zwei, beide kein Gate:
+  `sdks/python/pgchangefeed/tests/test_public_text.py` (im Bau, für die zur Bauzeit erzeugten
+  Stubs) und `make sdk-public-doc-check` mit Tabellentest `make test-sdk-public-doc-check`
+  (`grep` über `sdks/`, Vorstufe der drei `make sdk-pack-*`-Ziele); die Aufnahme des zweiten
+  in `make gates` übernimmt `slice-sdk-public-doc-check-gate`. *Benannte Spec-Lücke:* kein
+  Dokument des Repos benennt die Anwender-Sicht auf ausgelieferte Texte als eigene
+  Leser-Klasse (`ids` verlangt Links, verbietet keine Kennung; §3.7 deckt Kommentar-Klassen,
+  keine ausgelieferte Aussage); die Lücke ist der Register-Eintrag, kein ADR-Auftrag.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-sdk-readme-nutzerdoku.md`, Zähler = Zahl der Dateien.
+  *Bestehende Klassen mit weiterer Datei:* `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  (F-1, HIGH) **12×**, verkörpert (kein Deckel, weil Schwere ≥ MEDIUM);
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-4) **9×**, verkörpert;
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (F-2) **2×**, offen;
+  `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (F-11, Ausprägung Quelltext-Kommentar
+  gegen README) **3×**, offen, ohne Ausgang: **Lese-Schritt der nächsten Welle-Closure
+  (`welle-transformationen`)**, der `state.md` trägt den Vermerk. *Neue Klassen:*
+  `BEO-PGC/intern-kennungen-in-ausgelieferten-texten` (F-3) **1×**, offen;
+  `BEO-PGC/sdk-python-untergrenze-ohne-anwender-begruendung` (F-12, Plan §6) **1×**, offen.
+  *Gedeckelt, ohne neue Datei (Deckel für verkörperte Einträge ab 10×, `../observations/README.md`):*
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (21×, verkörpert) — V-1 (LOW, der
+  Verifier fand vor dem Merge die veraltete Trefferzahl 9 statt 12 im Suchlauf-Feld
+  „Deutsche Wortfragmente und Chronik“, in dieser Closure auf 12 gesetzt, Ursprung im Feld) und
+  F-9 (LOW, Zählwort „alle“ Abhängigkeiten `runtime`, Reviewer vor dem Merge; die `pom`
+  trägt acht `runtime` und `kotlin-stdlib` `compile`), Träger-Typ bekannt (Zahl im
+  Slice-Plan). *Ohne Eintrag:* F-5 (Aussage reicht weiter als der Code — Transportfehler
+  außerhalb der Fehlerklassen, behoben, je Sprache benannt), F-7 (Aussage ohne Anleitung:
+  `enable_table`-Felder), F-8 (Wächter-Zählkonstanten, gehört zur Klasse von F-1 und ist mit ihr
+  behoben), F-10 (Anwender-Doku-Fläche, umgesetzt als XML-Datei und Sources-Jar) sind
+  einmalige, im Slice behobene Ausprägungen ohne Klasse mit Wiederholung im Register; F-6
+  (Kommentar behauptet Nichtgeprüftes, LOW) fällt unter den verkörperten Reviewer-Punkt
+  „Kommentar trägt keine der Kommentar-Klassen“ (Klausel Zusage) und weitet
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (dort: ein Fehlerpfad, hier die
+  Anzeige einer externen Oberfläche) nicht zu einem vierten Beleg. V-2 trägt keinen Eintrag
+  (siehe „Was ging anders“ 2, Vorgänger-Praxis). *Kein Anfall:*
+  `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` und
+  `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter` (Suchlauf §3: 12 Treffer,
+  alle „already“/„no longer“ in Sachaussagen, kein deutsches Fragment).
+  *Einträge bei 3× oder darüber ohne Ausgang mit dieser Datei:* `zwei-quellen-drift-handbuch-gegen-pflichtenheft`
+  (3×) — Adresse: Lese-Schritt der Closure von
+  [welle-transformationen](../welle-transformationen.md).
+- **Folge-Slices:** `slice-sdk-public-doc-check-gate` (Datei in `open/`, Entscheidung V-4).
+  **Übergaben an offene Pläne** ([`AGENTS.md`](../../../../AGENTS.md) §3.13): Suchlauf
+  `git grep -n -E '0\.2\.[01]|sdk-pack|SPEC-02[678]|Package-Version|Paketbeschreibung' --
+  docs/plan/planning/open docs/plan/planning/welle-transformationen.md` (gemessen
+  2026-09-25 am Stand `d9e048fa`, vor den Änderungen dieser Closure): keine Zeile trägt
+  `0.2.0` oder `0.2.1`; Treffer in `slice-transformationen-betriebsdoku` (`SPEC-026`/`-027`/`-028`
+  als berührte Stellen, Z. 21 bis 23) und `welle-transformationen.md` (Z. 273 Kennungsvergabe,
+  ohne Bezug; Z. 395 „Package-Versionen der SDKs bleiben unberührt“ — gilt weiter). Ein
+  zweiter Suchlauf `git grep -n -E 'sdks/|README' -- docs/plan/planning/open` trifft
+  `slice-transformationen-betriebsdoku` (u. a. DoD Z. 72 bis 75, §3 Z. 136 und 137) und die
+  `harness/README.md`-Verweise anderer Pläne; `slice-transformationen-e2e-wirkung` trägt den Satz „die SDK-Tiers
+  laufen gegen einen Server ohne Regeln“ (`git grep -n 'test-sdk-'`), eine Aussage über
+  Testläufe, die der Slice nicht bewegt. **Nachgezogen:** `slice-transformationen-betriebsdoku`
+  §3 Zeile „SDK-READMEs“ (Z. 137). Fund am Stand `d9e048fa`: die Zeile nannte zwei von drei
+  READMEs und sagte, eine Änderung dort hebe die Package-Version nicht (Metadaten-Text); die
+  README ist die Paketbeschreibung auf PyPI und NuGet und erscheint dort mit einer neuen
+  Version, und `make sdk-public-doc-check` färbt jede Kennung in einer Datei unter `sdks/`.
+  Die Zeile nennt alle drei READMEs, den Abschnitt zum Change-Objekt, die Eigenschaft
+  „Paketbeschreibung“ und den Wächter. Nicht betroffen:
+  `slice-transformationen-e2e-wirkung` (SDK-Tiers fahren gegen einen Server ohne Regeln,
+  keine bewegte Eigenschaft), `slice-capture-*`, `slice-harness-suchlauf-nachmessen`,
+  `slice-backfill-speicher-untersuchung`.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten:* README-Aussage gegen
+  den Code (F-2, F-5; im Slice behoben). *Entfallen:* Darstellung und Inhalt auf den
+  Paket-Seiten (Registry-Inhalte gemessen, Darstellung ungesehen) · Anzeige der Kotlin-`pom` ·
+  Upload des Sources-Jars · Fehlertexte und Integrationstests (Grenze: Tiers nicht gefahren).
+  *Weiter offen:* Kennungs-Wächter ohne Gate → `slice-sdk-public-doc-check-gate` · Python-Untergrenze
+  → Register `BEO-PGC/sdk-python-untergrenze-ohne-anwender-begruendung`.
+- **Drei Paarungen:** dieser Slice ist wellenlos; die Paarungen (Anker · Folge-Slice · Register)
+  prüft die Closure von [welle-transformationen](../welle-transformationen.md) (offen; die
+  Ereignis-Adresse steht dort §5 „Ereignis-Adresse“, die Roadmap führt sie unter *Offene
+  Wellen*). Anker: die Wächter (`test_public_text.py`, `make sdk-public-doc-check`); Folge-Slice:
+  `slice-sdk-public-doc-check-gate`; Register: die sechs Einträge oben.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

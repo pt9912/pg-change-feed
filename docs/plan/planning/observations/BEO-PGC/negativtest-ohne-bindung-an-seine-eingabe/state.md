@@ -1,4 +1,4 @@
-Deckel bei 11× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 12× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -37,15 +37,21 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **11×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **12×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
 evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-e2e.md,
-evidence/slice-backfill-bench-richtgroesse.md) —
+evidence/slice-backfill-bench-richtgroesse.md,
+evidence/slice-sdk-readme-nutzerdoku.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
-liest den Eintrag mit (11×). Der elfte Beleg (`slice-backfill-bench-richtgroesse`,
+liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
+(`welle-transformationen`) den zwölften Beleg. Der zwölfte Beleg
+(`slice-sdk-readme-nutzerdoku`, Review F-1, HIGH) trifft eine **README-Prüfung**: der
+Wächter band Namen und Tabellen, nicht die Argumente der Beispiel-Aufrufe; die Fixrunde
+bindet jeden Aufruf an die echte Signatur (Ausprägung: die Eingabeseite eines
+Doku-Beispiels ist sein Argument). Der elfte Beleg (`slice-backfill-bench-richtgroesse`,
 Verifikation V-3, Review F-7) trifft eine **Konstante**: die Zusage „Startwert 10
 Minuten“ hat keine maschinelle Bindung — die Mutation, die den Faktor der Umrechnung
 Minuten nach Nanosekunden entfernt (Toleranz 10 Sekunden), lässt `make test` grün, weil

@@ -1,0 +1,6 @@
+**Vorgang:** slice-sdk-readme-nutzerdoku (Review F-1, HIGH; Verifikation §3 Zeile F-1 und §4 A bis F)
+
+**Fund:** Der Python-Wächter der README (`test_readme_examples.py`) band Namen, Methoden und Tabellenzeilen, nicht die Argumente der Beispiel-Aufrufe: `api_token=` → `token=` (vier Beispiele), `offset=` → `position=` und `from_=` → `start=` im Schnellstart, eine gestrichene Zeile der Feldliste der Stream-Nachricht und ein anderer Statuscode der Fehler-Tabelle ließen den Bau grün (Reviewer-Mutationen M1, M3, M4, M7, M8). Die Zusage „jedes Beispiel ist durch den Wächter im Bau geprüft“ war ungebunden an die Eingabeseite des Beispiels. Die Fixrunde band jeden Aufruf per `inspect.signature(…).bind`, die Feldliste gegen `StreamChange` und den generierten `Change`, die Fehler-Tabelle gegen die Abbildung der Statuscodes; der Verifier fuhr sechs eigene Mutationen der README (A bis F), je genau ein Test rot. Schwere HIGH: eine Datei trotz Deckel des verkörperten Eintrags.
+
+Quelle: `docs/reviews/review-slice-sdk-readme-nutzerdoku.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-sdk-readme-nutzerdoku.md` (§3 Zeile F-1, §4 A bis F). <!-- d-check:status-provenance -->

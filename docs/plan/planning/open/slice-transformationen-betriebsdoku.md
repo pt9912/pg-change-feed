@@ -134,7 +134,7 @@ an dieses Slice gemeldet haben.
 |---|---|---|
 | `docs/user/benutzerhandbuch.md` | update | neuer Abschnitt in §4, §2 Rollen, §6 Fehlerklassen (Zeile `schema`), Glossar, Änderungshistorie. |
 | `sdks/**` (Modelle, Tests) | lesen | Beleg-Suchlauf; Änderung nur nach Plan-Nachzug. |
-| SDK-READMEs (`sdks/csharp/README.md`, `sdks/python/README.md`) | prüfen | Aussagen über Row Images, falls vorhanden; eine Änderung dort hebt die Package-Version nicht (Metadaten-Text), wird aber im Bericht benannt. |
+| SDK-READMEs (`sdks/csharp/README.md`, `sdks/python/README.md`, `sdks/kotlin/pgchangefeed-kotlin/README.md`) | prüfen | Aussagen über Row Images (jede README trägt einen Abschnitt zum Change-Objekt mit `old_image`/`new_image`, Suchlauf am Start); die README ist die Paketbeschreibung auf PyPI und NuGet und erscheint dort erst mit einer neuen Package-Version, eine Änderung wird im Bericht benannt. Jede Textdatei unter `sdks/` trägt keine interne Kennung (`SPEC-`/`ADR-`/`ARC-`/`LH-FA-`/`LH-QA-`, Slice-/Welle-Name): `make sdk-public-doc-check` färbt sonst jedes `make sdk-pack-*`. |
 | `docs/user/benutzerhandbuch-standard.md` | prüfen | Standard-Form des Handbuchs — der neue Abschnitt folgt ihr. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der
