@@ -1,41 +1,35 @@
 # sdks/python/Dockerfile — Docker-only Bau-/Testsetup des Python-SDK-Pakets
-# `pgchangefeed` (ADR-0107 Festlegung 1/3/5, slice-sdk-python-projektgeruest).
-# Bau-Kontext ist sdks/python/ selbst — NICHT die Repo-Wurzel und NICHT
-# examples/ (kein examples/python/ existiert, ADR-0107 §Kontext Ist-Stand).
+# `pgchangefeed`. Bau-Kontext ist sdks/python/ selbst — NICHT die Repo-Wurzel
+# und NICHT examples/ (es gibt kein examples/python/).
 #
-# Die gRPC-Client-Flaeche (slice-sdk-python-grpc-client-flaeche, ADR-0110
-# Festlegung 1) liest die `.proto` NICHT aus diesem Kontext — sie liegt
-# ausserhalb davon, unter proto/cdc/stream/v1/ an der Repo-Wurzel. Sie kommt
-# ueber einen ZUSAETZLICHEN, benannten Bau-Kontext namens `proto` herein
+# Die gRPC-Client-Fläche liest die `.proto` NICHT aus diesem Kontext — sie
+# liegt außerhalb davon, unter proto/cdc/stream/v1/ an der Repo-Wurzel. Sie
+# kommt über einen ZUSÄTZLICHEN, benannten Bau-Kontext namens `proto` herein
 # (`COPY --from=proto …` unten); der Aufrufer bringt ihn mit `docker build
-# --build-context proto=proto …` mit (Muster sdks/csharp/Dockerfile,
-# ADR-0090 Festlegung 2). Ohne ihn bricht der Bau an der COPY-Zeile ab —
-# kein stiller Fallback. Die Stub-Module entstehen im Bau
-# (`grpcio-tools`/`protoc`, Stufe `build`) und werden nicht committet
-# (.gitignore); sie landen als Unterpackage `pgchangefeed.grpc_gen` im
-# Wheel — das erzeugte `_pb2_grpc`-Modul traegt den generierten flachen
+# --build-context proto=proto …` mit (Muster sdks/csharp/Dockerfile). Ohne ihn
+# bricht der Bau an der COPY-Zeile ab — kein stiller Fallback. Die Stub-Module
+# entstehen im Bau (`grpcio-tools`/`protoc`, Stufe `build`) und werden nicht
+# committet (.gitignore); sie landen als Unterpackage `pgchangefeed.grpc_gen`
+# im Wheel — das erzeugte `_pb2_grpc`-Modul trägt den generierten flachen
 # Geschwister-Import, den der `sed`-Schritt unten auf den Package-Import
 # hebt, bevor pytest ihn importiert.
 #
 # Keine Runtime-Stufe hier: ein SDK-Package ist keine startbare Anwendung
-# (analog sdks/csharp/Dockerfile). Die `pack`/`pack-export`-Stufen unten
-# (slice-sdk-python-pack-werkzeug, ADR-0107 §Konsequenzen Folgepflicht 1,
-# ADR-0108 §Entscheidung Festlegung 1/3) bauen auf `build` auf: `pytest`
-# (unten) laeuft VOR `uv build --no-sources` (Stufe `pack`) — ein roter
-# Test bricht den `docker build` mit Exit != 0 ab, bevor `pack` je erreicht
-# wird (kein stiller Fallback, Muster sdks/csharp/Dockerfile). Die
-# `integration`-Stufe baut ebenfalls auf `build` auf und startet pytest
-# NICHT selbst — ihr ENTRYPOINT ist der Realserver-Integrationstest der
-# SDK-Flaeche (ADR-0110 §Entscheidung Festlegung 2/Folgepflicht 1,
-# tools/harness/run-sdk-python-integration-tests.sh); sie braucht Netz und
+# (analog sdks/csharp/Dockerfile). Die `pack`/`pack-export`-Stufen unten bauen
+# auf `build` auf: `pytest` (unten) läuft VOR `uv build --no-sources` (Stufe
+# `pack`) — ein roter Test bricht den `docker build` mit Exit != 0 ab, bevor
+# `pack` je erreicht wird (kein stiller Fallback, Muster
+# sdks/csharp/Dockerfile). Die `integration`-Stufe baut ebenfalls auf `build`
+# auf und startet pytest NICHT selbst — ihr CMD ist der
+# Realserver-Integrationstest der SDK-Fläche
+# (tools/harness/run-sdk-python-integration-tests.sh); sie braucht Netz und
 # DB-Zugang und ist deshalb kein Gate.
 #
-# Basis-Digest real gemessen (`docker buildx imagetools inspect`,
-# Manifest-Index-Digest über alle Plattformen) am Zeitpunkt dieses Zuges:
+# Basis-Digest gemessen (`docker buildx imagetools inspect`,
+# Manifest-Index-Digest über alle Plattformen):
 #   python:3.14-slim (3.14.7-slim-trixie, aktuelle Python-Version)
 #     -> sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2
-# Pin-Hebung ist ein bewusster Commit (AGENTS.md §3.6/Modul 14), keine
-# stille Auflösung.
+# Pin-Hebung ist ein bewusster Commit, keine stille Auflösung.
 FROM python:3.14-slim@sha256:caaf356f40667c496d405780745b9ac25771c189a51dfcc42430d531ea09f8a2 AS build
 WORKDIR /src
 
@@ -47,8 +41,7 @@ COPY pgchangefeed/pyproject.toml pgchangefeed/pyproject.toml
 # README.md liegt im committeten Baum auf Sprachwurzel-Ebene
 # (sdks/python/README.md), eine Ebene über pyproject.toml -- setuptools
 # erlaubt für `[project] readme` aber keinen Pfad außerhalb des
-# Projekt-Wurzelverzeichnisses (real geprüft beim Schreiben dieses Zuges,
-# Plan-Nachzug §3 der Slice-Datei: `DistutilsOptionError: Cannot access
+# Projekt-Wurzelverzeichnisses (`DistutilsOptionError: Cannot access
 # '.../README.md' (or anything outside '...')`). Diese COPY-Zeile legt die
 # Datei deshalb zusätzlich an die von pyproject.toml erwartete lokale
 # Stelle (pgchangefeed/README.md, neben pyproject.toml) -- dasselbe Muster
@@ -61,13 +54,13 @@ COPY pgchangefeed/src pgchangefeed/src
 COPY pgchangefeed/tests pgchangefeed/tests
 COPY pgchangefeed/integration pgchangefeed/integration
 
-# Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ (Muster
-# ADR-0090 Festlegung 2) — diese COPY-Zeile ist der Punkt, an dem der Bau
-# ohne den Zusatzkontext real abbricht (kein Fallback, kein übersprungener
-# Schritt; Muster sdks/csharp/Dockerfile). Die flache Ziel-Zeile
-# (`changestream.proto`, ohne Paketpfad) hält die erzeugten Stub-Module
-# flach in `grpc_gen/` statt unter `cdc/stream/v1/` — genau wie die
-# `.proto`-Einspeisung oben eine vom Aufruf erwartete relative Stelle.
+# Der zusätzliche, benannte Bau-Kontext `proto` trägt NUR proto/ — diese
+# COPY-Zeile ist der Punkt, an dem der Bau ohne den Zusatzkontext real
+# abbricht (kein Fallback, kein übersprungener Schritt; Muster
+# sdks/csharp/Dockerfile). Die flache Ziel-Zeile (`changestream.proto`, ohne
+# Paketpfad) hält die erzeugten Stub-Module flach in `grpc_gen/` statt unter
+# `cdc/stream/v1/` — genau wie die `.proto`-Einspeisung oben eine vom Aufruf
+# erwartete relative Stelle.
 COPY --from=proto cdc/stream/v1/changestream.proto changestream.proto
 
 WORKDIR /src/pgchangefeed
@@ -90,26 +83,22 @@ RUN python -m grpc_tools.protoc -I.. --python_out=src/pgchangefeed/grpc_gen --gr
 RUN pytest
 
 # --- pack: `uv build --no-sources` ueber den bereits gebauten und
-# getesteten Stand (slice-sdk-python-pack-werkzeug, ADR-0107 Festlegung 5,
-# ADR-0108 §Entscheidung Festlegung 1/2/3). `uv` selbst wird NICHT per
-# `pip install` bezogen, sondern per digest-gepinntem Multi-Stage-`COPY`
-# aus Astrals eigenem Werkzeug-Image (exakter Wortlaut aus ADR-0108
-# §Entscheidung Festlegung 3; Digest real gegen die Registry
-# reverifiziert beim Schreiben dieses Zuges — `docker buildx imagetools
-# inspect ghcr.io/astral-sh/uv:0.12.17` liefert denselben Index-Digest wie
-# in der ADR genannt, keine Abweichung). `uv build` benutzt das
-# bestehende `setuptools.build_meta`-Backend ueber die PEP-517-Schnittstelle
-# unveraendert (ADR-0108 §Entscheidung Festlegung 2) -- kein Wechsel an
-# pyproject.toml. Das Erzeugnis (Source-Distribution `.tar.gz` UND Wheel
-# `.whl`) landet unter /out; das Wheel traegt die zur Bauzeit erzeugten
-# Stub-Module mit (Regular-Unterpackage, setuptools packages.find). ---
+# getesteten Stand. `uv` selbst wird NICHT per `pip install` bezogen, sondern
+# per digest-gepinntem Multi-Stage-`COPY` aus Astrals eigenem Werkzeug-Image
+# (Digest gegen die Registry geprueft: `docker buildx imagetools inspect
+# ghcr.io/astral-sh/uv:0.12.17` liefert denselben Index-Digest). `uv build`
+# benutzt das bestehende `setuptools.build_meta`-Backend ueber die
+# PEP-517-Schnittstelle unveraendert -- kein Wechsel an pyproject.toml. Das
+# Erzeugnis (Source-Distribution `.tar.gz` UND Wheel `.whl`) landet unter
+# /out; das Wheel traegt die zur Bauzeit erzeugten Stub-Module mit
+# (Regular-Unterpackage, setuptools packages.find). ---
 FROM build AS pack
 COPY --from=ghcr.io/astral-sh/uv:0.12.17@sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc /uv /uvx /bin/
 RUN mkdir -p /out && uv build --no-sources -o /out
 
 # --- pack-export: gibt /out (.whl UND .tar.gz) als tar-Stream ueber stdout
 # aus -- dasselbe Extraktionsmuster wie pack-export im
-# sdks/csharp/Dockerfile (tools/harness/sdk-pack-csharp.sh, ADR-0060):
+# sdks/csharp/Dockerfile (tools/harness/sdk-pack-csharp.sh):
 # `tools/harness/sdk-pack-python.sh` baut diese Stufe und liest ihr
 # ENTRYPOINT per `docker run --rm --network none <image> | tar -x -C
 # sdks/python/dist/` aus -- kein Bind-Mount, kein `--user`-Workaround, die
@@ -118,12 +107,11 @@ RUN mkdir -p /out && uv build --no-sources -o /out
 FROM pack AS pack-export
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 
-# --- integration: der Realserver-Integrationstest der SDK-Flaechen
-# (ADR-0110 §Entscheidung Festlegung 2/Folgepflicht 1). Baut auf `build`
-# auf (dasselbe installierte SDK samt `grpcio` und dieselben Stub-Module,
-# kein zweiter Install-Pfad) und fuert pytest gegen eine reale, laufende
-# Server-Instanz: `tools/harness/run-sdk-python-integration-tests.sh` baut
-# diese Stufe (`--target integration`, zwingend mit dem benannten
+# --- integration: der Realserver-Integrationstest der SDK-Flaechen. Baut auf
+# `build` auf (dasselbe installierte SDK samt `grpcio` und dieselben
+# Stub-Module, kein zweiter Install-Pfad) und fuert pytest gegen eine reale,
+# laufende Server-Instanz: `tools/harness/run-sdk-python-integration-tests.sh`
+# baut diese Stufe (`--target integration`, zwingend mit dem benannten
 # Bau-Kontext `proto` — derselbe Abbruchpunkt wie oben), startet sie im
 # selben Docker-Netz wie den Feed-Container und liest die stdout-Marker
 # (READY/RECEIVED/REJECTED) ueber `docker logs`. Der Aufruf traegt die

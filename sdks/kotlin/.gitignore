@@ -1,11 +1,10 @@
-# Bau-Ausgaben eines lokalen `gradlew`-Laufs (Docker-only ist die Vorgabe,
-# AGENTS.md §3.1 — dieser Eintrag schützt nur gegen einen versehentlich
-# lokal gestarteten Host-Bau), analog examples/kotlin/.gitignore.
+# Bau-Ausgaben eines lokalen `gradlew`-Laufs (Docker-only ist die Vorgabe;
+# dieser Eintrag schützt nur gegen einen versehentlich lokal gestarteten
+# Host-Bau), analog examples/kotlin/.gitignore.
 .gradle/
 build/
 
 # Host-seitiger Export-Zielort von `make sdk-pack-kotlin`
-# (tools/harness/sdk-pack-kotlin.sh, ADR-0109 Festlegung 5,
-# slice-sdk-kotlin-pack-werkzeug) — das erzeugte .jar ist ein Bau-Erzeugnis,
-# kein Bestand.
+# (tools/harness/sdk-pack-kotlin.sh) — die erzeugten .jar-Dateien sind
+# Bau-Erzeugnisse, kein Bestand.
 dist/

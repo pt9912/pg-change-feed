@@ -7,6 +7,24 @@
 # Begründung wie harness/mk/examples.mk) — dieses Fragment hängt deshalb
 # NICHT an GATE_CHECKS.
 #
+# `sdk-public-doc-check` prueft, dass keine Datei unter sdks/ eine interne
+# Kennung (SPEC-/ADR-/ARC-/LH-FA-/LH-QA-, Slice-/Welle-Name) traegt:
+# Kommentare, Docstrings, Fehlertexte, README und Build-Dateien der SDKs
+# erreichen Anwender ueber die Pakete (Wheel/sdist, nupkg mit XML-Doku,
+# Sources-Jar). Reines grep, netzlos und schnell
+# (tools/harness/sdk-public-doc-check.sh); die drei `sdk-pack-*`-Ziele haengen
+# davon ab, damit ein Rueckfall vor dem Bau auffaellt. Bewusst kein Teil von
+# GATE_CHECKS: ein weiteres Gate aendert die Gate-Liste in harness/README.md
+# und ihre Sensor-Bindung; das Ziel bleibt Werkzeug mit eigenem Tabellentest
+# (`make test-sdk-public-doc-check`).
+.PHONY: sdk-public-doc-check
+sdk-public-doc-check: ## Keine interne Kennung in den Dateien unter sdks/ (netzlos, grep; Vorstufe der sdk-pack-*-Ziele; Werkzeug, kein Gate)
+	@bash tools/harness/sdk-public-doc-check.sh
+
+.PHONY: test-sdk-public-doc-check
+test-sdk-public-doc-check: ## Tabellentest gegen tools/harness/sdk-public-doc-check.sh (netzlos)
+	@bash tools/harness/run-sdk-public-doc-check-tests.sh
+
 # `sdk-pack-csharp` baut/testet/paketiert das C#-SDK Docker-only im
 # gepinnten mcr.microsoft.com/dotnet/sdk-Image (sdks/csharp/Dockerfile,
 # Stufe `pack-export`): `dotnet test` gegen alle vier Testflächen (HTTP +
@@ -27,7 +45,7 @@
 # (`.gitignore`t). Erzeugnis: PgChangeFeed.Client.0.2.1.nupkg. Exit-Code des
 # Skripts wird wie bei jedem anderen Ziel direkt gelesen.
 .PHONY: sdk-pack-csharp
-sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdks/csharp/dist/; Werkzeug, kein Gate; ADR-0106)
+sdk-pack-csharp: sdk-public-doc-check ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdks/csharp/dist/; Werkzeug, kein Gate; ADR-0106)
 	@bash tools/harness/sdk-pack-csharp.sh
 
 # `sdk-pack-kotlin` baut/testet/paketiert das Kotlin-SDK Docker-only im
@@ -45,13 +63,12 @@ sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdk
 # (tools/harness/sdk-pack-kotlin.sh): das Skript extrahiert das erzeugte
 # .jar host-seitig aus der `pack-export`-Stufe (`docker run --rm --network
 # none <image> | tar -x`, `set -o pipefail` unter bash, AGENTS.md §3.9) nach
-# sdks/kotlin/dist/ (`.gitignore`t). Erzeugnis:
-# pgchangefeed-kotlin-0.2.1.jar. Kein Sources-/Javadoc-Jar — GitHub Packages
-# verlangt laut offizieller Dokumentation keines (real recherchiert,
-# sdks/kotlin/Dockerfile Stufe `pack`). Exit-Code des Skripts wird wie bei
-# jedem anderen Ziel direkt gelesen.
+# sdks/kotlin/dist/ (`.gitignore`t). Erzeugnisse:
+# pgchangefeed-kotlin-0.2.1.jar und pgchangefeed-kotlin-0.2.1-sources.jar
+# (`java { withSourcesJar() }` in build.gradle.kts; die Quellen tragen die KDoc).
+# Exit-Code des Skripts wird wie bei jedem anderen Ziel direkt gelesen.
 .PHONY: sdk-pack-kotlin
-sdk-pack-kotlin: ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach sdks/kotlin/dist/; Werkzeug, kein Gate; ADR-0109)
+sdk-pack-kotlin: sdk-public-doc-check ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach sdks/kotlin/dist/; Werkzeug, kein Gate; ADR-0109)
 	@bash tools/harness/sdk-pack-kotlin.sh
 
 # `sdk-pack-python` baut/testet/paketiert das Python-SDK Docker-only im
@@ -75,7 +92,7 @@ sdk-pack-kotlin: ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach s
 # Bau-Kontext `proto` (ADR-0090 Festlegung 2, Muster sdks/csharp) —
 # tools/harness/sdk-pack-python.sh traegt ihn zwingend.
 .PHONY: sdk-pack-python
-sdk-pack-python: ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108, ADR-0110)
+sdk-pack-python: sdk-public-doc-check ## Python-SDK bauen+testen+paketieren (sdks/python, .whl+.tar.gz nach sdks/python/dist/; Werkzeug, kein Gate; ADR-0107, ADR-0108, ADR-0110)
 	@bash tools/harness/sdk-pack-python.sh
 
 # `test-sdk-kotlin-integration` ist der Realserver-Integrationstest der
