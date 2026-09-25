@@ -174,9 +174,17 @@ Gates und Belege:
       (erwartet, nach dem Sammelfenster und der asynchronen Verarbeitung ggf. mit
       Wiederholung). Der Beleg wird vor der Closure in §6/§7 eingetragen; bis dahin
       bleibt das Risiko „erster realer Lauf“ offen.
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow (`AGENTS.md` §6), kein Self-Review (Modul 8).
+      Report `docs/reviews/review-slice-sdk-kotlin-cloudsmith.md`: 0 HIGH,
+      F-2/F-3/F-4 in der Fixrunde behoben (§3 „Plan-Nachzug der Fixrunde“), F-5 als
+      benannte Grenze in §6; **F-1 (MEDIUM) ist nicht behoben, sondern als
+      Erwartung benannt**: die anonyme Lesbarkeit steht in Trägern (§3 Fixrunde, Zeile
+      „F-1“), bis der Post-Push-Beleg (oben, `AGENTS.md` §3.10) sie belegt oder
+      korrigiert — das Kriterium „kein offenes MEDIUM“ ist damit bis zu diesem Beleg
+      mit Adresse (§6, Risiko „Tatsachenbehauptung vor dem Beleg“) getragen, nicht
+      erfüllt.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag.
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues Verzeichnis `BEO-<KUERZEL>/<slug>/` oder eine weitere Datei in dessen `evidence/`; **kein Zaehler wird gesetzt**, er folgt aus den Dateien. Keine Beobachtung angefallen ist ebenfalls eine Antwort und wird in §7 notiert.
 - [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter offen).
@@ -220,6 +228,37 @@ Tabelle oben, vor dem Sensor-Lauf eingetragen; gelesen am Stand `dbb87155`):
 | `docs/user/benutzerhandbuch.md` | Lokatoren | Die vier Kotlin-Stellen stehen am Stand `dbb87155` auf Z. 1076, 1175, 1252, 1406 (Plan: 1049–1055, 1148–1153, 1225–1227, 1379–1382); `Version:` von `1.64` auf `1.65`. |
 | `docs/user/releasing.md` | Ergänzung | Zusätzlich zu §4: ein Satz in §1 (die Job-Struktur mit zwei Zielen ist unbewiesen), Werttyp-Hinweis unter der Secret-Tabelle (Service-Slug; Rückfall bei HTTP 401/403), Abschnitt „Offen bis zum ersten Tag-Lauf“ mit dem POM-Abrufpfad. `Version:` `1.9` → `1.10`. |
 | `tools/harness/sdk-pack-kotlin.sh` | update (Kommentar) | Der Kopfkommentar nennt die Probe und „Gradle-Paketbezug“ statt „GitHub-Packages-Paketbezug“. `tools/harness/run-sdk-kotlin-release-tag-info-tests.sh` und `tools/harness/sdk-kotlin-release-tag-info.sh` bleiben unberührt: ihre Aussage „kein `:latest`-Äquivalent“ bleibt richtig. |
+
+**Plan-Nachzug der Fixrunde** (Review-Findings F-1 bis F-5, vor dem Gate-Lauf
+eingetragen; Basis: HEAD `a8e765dd`):
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `docs/user/releasing.md` (§4, Absatz „Ein realer `sdk-kotlin-v*`-Tag“) | Korrektur (F-2) | Der Absatz endete mit „End-zu-Ende bewiesen“ und zitierte den Schrittnamen der Ein-Job-Fassung; die Absätze davor und §1 nennen die Zwei-Job-Struktur unbewiesen. Jetzt: bewiesen ist der Publish nach GitHub Packages mit den Läufen von `sdk-kotlin-v0.2.0` (36117929552) und `sdk-kotlin-v0.2.1` (36129672852) — beide Läufe nur mit diesem einen Ziel; die Schrittnamen stehen wie im Workflow (Z. 93, 130), die Zwei-Job-Struktur und der Cloudsmith-Weg sind bis zum ersten Tag-Lauf unbewiesen. `Version:` 1.10 auf 1.11 mit Historie-Zeile. |
+| `docs/user/releasing.md` (Betreiber-Voraussetzungen, Z. 316) | Korrektur (F-3) | „Name und API-Key“ gegen „Service-Slug“ der Secret-Tabelle vereinheitlicht: `CLOUDSMITH_USERNAME` trägt den Service-Slug (Anmeldename); ob Cloudsmith den Service-Namen verlangt, zeigt der erste Tag-Lauf (Rückfall steht in der Secret-Tabelle und in §6). |
+| `docs/user/releasing.md` (Offen-Absatz, Z. 349–351) | Korrektur (F-1, Teil) | „auf Cloudsmith liegen erst die Versionen ab `0.2.2`“ nahm den Zustand nach dem Tag-Lauf vorweg; jetzt: „liegen nach dem ersten Tag-Lauf (`sdk-kotlin-v0.2.2`) erwartet die Versionen ab `0.2.2`“. |
+| §6 dieses Plans | Ergänzung (F-4, F-1, F-5) | Drei neue Einträge: „Kontingent-Angabe“ (die Verweisstelle in §4 trägt jetzt einen Eintrag), „Tatsachenbehauptung vor dem Beleg“ (F-1) und „Probe bindet nicht den Aufrufer“ (F-5, benannte Grenze). |
+| F-1: die Träger der Aussage „anonym lesbar / ohne Konto und Token beziehbar“ | **bewusst unverändert** (bis zum Post-Push-Beleg Erwartung) | Am 2026-09-25 druckten die anonymen URLs HTTP 404 (§4 Start, Punkt 2: leeres Repository, Sichtbarkeit nicht getrennt). Die Aussage ist bis zum anonymen POM-Abruf (§2 Post-Push-Beleg) **Erwartung**, kein Beleg. Die README (Anwender-Text) bleibt unverändert, weil sie die Aussage mit dem ersten Tag-Lauf belegt oder korrigiert; die Adresse für die Closure: bei Beleg (HTTP 200) alle Stellen **unverändert lassen**, sonst **alle** korrigieren. Stellen am Stand dieser Fixrunde (Träger, ohne die zwei Historie-Records): `sdks/kotlin/pgchangefeed-kotlin/README.md:19` und `:21`; `docs/user/benutzerhandbuch.md:1078`, `:1180`, `:1257`, `:1412`; `spec/pflichtenheft.md:321`; `docs/user/releasing.md:324–325`; `.github/workflows/sdk-kotlin-release.yml:6`; `harness/README.md:148`. Nicht Teil der Erwartung (Record, bleibt): `docs/user/benutzerhandbuch.md:1894` (Historie 1.65), `spec/pflichtenheft.md:885` (Historie). `docs/user/releasing.md:342` („ein anonymer Abruf … muss HTTP 200 antworten“) ist bereits als Zusage formuliert. |
+| `sdks/kotlin/Dockerfile` (Probe) | **nicht geändert** (F-5) | Die Probe bindet die Task-Namen am Literal im Dockerfile. Die zwei Aufruf-Literale im Workflow (Z. 101, 139) sind davon nicht gebunden: das Dockerfile kennt den Bau-Kontext `sdks/kotlin` und sieht `.github/` nicht; eine Bindung bräuchte einen netzlosen Vergleichstest (neue Datei in `tools/harness/`, neues Target in `harness/mk/sdk.mk`, Zeile in `harness/README.md` §Sensors) und liegt über der kleinen Fixrunde. Als benannte Grenze in §6 geführt; ein falscher Name endet im ersten Tag-Lauf laut mit „Task not found“. Die Zeile `grep -F` auf `url = uri(…)` (Prüfung (c)) bleibt ebenso; Grenze im selben Eintrag. |
+
+**Suchlauf der Fixrunde** (§3.13; bewegte Aussagen: „Kotlin-Release-Weg
+End-zu-Ende bewiesen“, „Cloudsmith anonym lesbar“, „Name und API-Key“; Parent =
+HEAD vor der Fixrunde `a8e765dd` per `git grep … a8e765dd`, Diff-Stand am
+Arbeitsbaum; Zahlen wie von `git grep` gedruckt, Summen abgeleitet):
+
+```sh
+git grep -n 'End-zu-Ende bewiesen' [<Stand>] -- docs/user harness spec sdks .github
+git grep -n -E 'Nach (GitHub Packages|Cloudsmith)|\./gradlew publish, im Docker-Image' [<Stand>] -- docs/user harness spec sdks .github
+git grep -n -E 'anonym lesbar|anonymer Abruf|ohne Konto|no account|Konto und (keinen )?Token' [<Stand>] -- docs/user spec harness/README.md sdks/kotlin .github/workflows/sdk-kotlin-release.yml
+git grep -n -E 'dessen Name und$|Service-Slug|Service-Name' [<Stand>] -- docs/user spec harness sdks .github
+```
+
+| Aussage | Parent (`a8e765dd`) | Diff-Stand | Behandlung |
+|---|---|---|---|
+| „End-zu-Ende bewiesen“ | **3** Zeilen, alle `docs/user/releasing.md`: Z. 362 (Träger, Kotlin), Z. 406, 408 (Historie-Records 1.2, 1.4) | **2** Zeilen, `docs/user/releasing.md` Z. 414, 416 (dieselben zwei Records) | Träger-Zeile korrigiert (F-2); die Records bleiben. Nicht gefunden: kein weiterer Träger in `harness/README.md`, `spec`, `sdks`, `.github`, der den Kotlin-Weg als End-zu-Ende bewiesen führt |
+| Schrittnamen des Publish-Schritts | **3** Zeilen: Workflow Z. 93 und 130, `releasing.md` Z. 358 (zitiert `./gradlew publish, im Docker-Image`) | **4** Zeilen: Workflow Z. 93, 130; `releasing.md` **2** Zeilen (beide Namen wie im Workflow); `./gradlew publish, im Docker-Image` steht nirgends mehr | F-2 behoben. Nicht gefunden: kein zweiter Träger, der den alten Schrittnamen zitiert |
+| Anonyme Lesbarkeit von Cloudsmith | **13** Zeilen in 6 Dateien: Workflow 1, Handbuch 5 (davon Z. 1894 Record), `releasing.md` 2, `harness/README.md` 1, Kotlin-README 2, `pflichtenheft.md` 2 (davon Z. 885 Record) | **13** Zeilen, dieselben Dateien und Zahlen (`releasing.md` Z. 325, 342 statt 324, 341) | keine Änderung außer `releasing.md` (Z. 349–350, F-1 Teil); die zehn Träger-Zeilen sind Erwartung bis zum Post-Push-Beleg (Zeile „F-1“ oben). Nicht gefunden: die Stelle `harness/README.md:148` stand nicht im Review-Befund (dort fünf Träger); sie ist hier aufgenommen |
+| „Name und API-Key“ / Werttyp des Anmeldenamens | Z. `releasing.md` 315 („dessen Name und“); Service-Slug/-Name: **5** Zeilen (`releasing.md` Z. 135, 136, 138, 345, 346) | „dessen Name und“: **0**; Service-Slug/-Name: **7** Zeilen (`releasing.md` Z. 135, 136, 138, 316, 346, 347 und die Historie-Zeile 1.11, Z. 423) | F-3 behoben; Z. 135–138 und 346–347 sagen dasselbe wie Z. 316 (Slug, Rückfall Name) |
 
 **Ansatz der Probe im Bau (Zusage, im Slice zu erproben — die Aussagen über das
 Gradle-Verhalten sind hergeleitet, nicht gemessen):**
@@ -348,7 +387,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-05-planning-harness.md`
      50 GB und 200 GB aus der Dokumentation für Open-Source-Repositories. Die
      beiden Angaben stimmen nicht überein; verbindlich ist die Kontoanzeige, für
      ein Paket unter 1 MB je Version (`ADR-0123` §Kontext, `du -sk`, entpackt
-     548 kB und 260 kB) ohne Folgen. Die ADR bleibt unberührt (Risiko §6).
+     548 kB und 260 kB) ohne Folgen. Die ADR bleibt unberührt (§6, Risiko
+     „Kontingent-Angabe“).
 3. **Version frei:** `git ls-remote --tags origin 'sdk-kotlin-v0.2.2'` druckt keine
    Zeile (Stand der Planung: 0 Zeilen); sonst trägt der Slice die nächste freie
    PATCH-Version durch alle Träger (§1 Versionsentscheidung). **Messung am Start
@@ -465,6 +505,47 @@ Closure.
   `ls …/evidence | wc -l` → 3, 2026-09-25). Zu belegen durch: der Suchlauf-Vergleich
   beider Träger am Diff-Stand. **Ausgang:** *entfallen* bei Deckung, sonst
   *eingetreten* (im Slice behoben, Evidenz-Datei im Register).
+
+- **Kontingent-Angabe** — die Kontoanzeige nennt (Angabe des Auftraggebers, nicht
+  selbst eingesehen) für den Core-Plan nach dem Ende der Ultra-Testphase (2026-10-09,
+  kein Zahlungsmittel hinterlegt) 500 MB Artefaktdaten und 1 GB Auslieferung;
+  `ADR-0123` §Kontext nennt aus der Dokumentation 50 GB und 200 GB für
+  Open-Source-Repositories (§4 Start, Punkt 2). *Erwartet:* ohne Einfluss — ein
+  Paket unter 1 MB je Version (`ADR-0123` §Kontext, `du -sk`, entpackt 548 kB und
+  260 kB); verbindlich ist die Kontoanzeige. Beleg beim ersten Lauf: die
+  Usage-Seite des Repositories in der Web-App nach dem Upload. **Ausgang:**
+  offen bis zum Tag-Lauf, dann *entfallen* (Nutzung im Rahmen beider Angaben) oder
+  *eingetreten* (Betreiber-Frage, ADR-Folge nur bei einer Änderung der
+  Festlegungen). Der Ausgang setzt die Closure.
+- **Tatsachenbehauptung vor dem Beleg: „anonym lesbar / ohne Konto und Token
+  beziehbar“** (Review F-1, [`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz B) —
+  die Aussage steht in Trägern als Tatsache, obwohl am 2026-09-25 die anonymen URLs
+  HTTP 404 druckten (leeres Repository, §4 Start Punkt 2). Sie ist bis zum
+  Post-Push-Beleg (§2, §5: anonymer POM-Abruf HTTP 200) **Erwartung**. Stellen (am
+  Stand der Fixrunde; die Zeilen verschieben sich mit Nachbaränderungen):
+  `sdks/kotlin/pgchangefeed-kotlin/README.md:19` und `:21`,
+  `docs/user/benutzerhandbuch.md:1078`, `:1180`, `:1257`, `:1412`,
+  `spec/pflichtenheft.md:321`, `docs/user/releasing.md:324–325`,
+  `.github/workflows/sdk-kotlin-release.yml:6`, `harness/README.md:148`. Die README
+  bleibt bis dahin unverändert (Anwender-Text). **Ausgang:** offen bis zum
+  Tag-Lauf; *entfallen* bei HTTP 200 (alle Stellen bleiben unverändert),
+  *eingetreten* bei 404 trotz grünem Upload (alle Stellen werden mit der
+  Betreiber-Antwort zu Sichtbarkeit und Slug korrigiert, ein Nachzug vor der
+  Closure).
+- **Probe bindet nicht den Aufrufer** (Review F-5, benannte Grenze) — die Probe
+  bindet die Task-Namen am Literal im Dockerfile; die zwei Aufruf-Literale im
+  Workflow (`publishMavenPublicationToGitHubPackagesRepository`,
+  `publishMavenPublicationToCloudsmithRepository`) sind davon nicht gebunden. Das
+  Dockerfile sieht `.github/` nicht (Bau-Kontext `sdks/kotlin`); eine Bindung
+  verlangt einen netzlosen Vergleichstest samt Target und Sensor-Zeile und liegt
+  über der kleinen Fixrunde. Ein falscher Name endet im ersten Tag-Lauf laut
+  mit „Task not found“ (Gradle löst nur eindeutige Abkürzungen auf); heute sind
+  beide Stellen wortgleich (gelesen). Ebenso: Prüfung (c) ist ein `grep -F` auf
+  `url = uri(…)` und würde von einer Kommentarzeile mit dem Literal erfüllt; die
+  Probe hängt in Prüfung (a) am Ausgabeformat `:<Name> SKIPPED` von `--dry-run`.
+  **Ausgang:** *weiter offen* → Beobachtungs-Register bei der Closure (Klasse
+  „Probe bindet nicht den Aufrufer“), sofern der Tag-Lauf keinen Namensfehler
+  zeigt; sonst *eingetreten*.
 
 *Kein Risiko dieses Slice, sondern benannte Trigger der ADR:* das langlebige Secret
 (OIDC statt API-Key: `ADR-0123` Re-Evaluierungs-Trigger 3) und eine Änderung der

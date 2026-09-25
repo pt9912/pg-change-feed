@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.10
+Version: 1.11
 Stand: 2026-09-25
 
 ## 1. Zweck und Zielgruppe
@@ -312,8 +312,9 @@ Gradle liest sie in `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`
 ein Cloudsmith-Konto mit der Organisation `pt9912`, ein Open-Source-Repository
 `pg-change-feed` (Broadcast, Sichtbarkeit „Open source“, in der Web-App
 angelegt — Open-Source-Repositories lassen sich nicht über die API anlegen)
-und ein Service-Konto mit Schreibrecht auf dieses Repository, dessen Name und
-API-Key die zwei Repository-Secrets tragen. Die Einstellung „Republishing“
+und ein Service-Konto mit Schreibrecht auf dieses Repository, dessen
+Anmeldename (`CLOUDSMITH_USERNAME`, der Service-Slug) und API-Key
+(`CLOUDSMITH_API_KEY`) die zwei Repository-Secrets tragen. Die Einstellung „Republishing“
 bleibt aus: eine veröffentlichte Version ist unveränderlich. Der Upload
 sammelt die Einzeldateien einer Version in einem Sammelfenster (60 Sekunden)
 und verarbeitet sie danach asynchron; der Job meldet Erfolg mit dem Upload,
@@ -345,21 +346,28 @@ Ebenfalls bis dahin nicht geprüft: ob Cloudsmith die von Gradle
 mitveröffentlichte Moduldatei annimmt, ob der Anmeldename ein Service-Slug
 oder ein Service-Name sein muss und ob die Paketseite die POM-Beschreibung
 anzeigt (optional pflegt der Betreiber dort den Text in der Web-App). Die
-Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages, auf Cloudsmith
-liegen erst die Versionen ab `0.2.2`.
+Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages; auf Cloudsmith
+liegen nach dem ersten Tag-Lauf (`sdk-kotlin-v0.2.2`) erwartet die Versionen ab
+`0.2.2`.
 
 Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
 eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
 dieser Folgepflicht (`ADR-0109`, `ADR-0123`).
 
-**Ein realer `sdk-kotlin-v*`-Tag ist gesetzt** — `sdk-kotlin-v0.2.0` lief
-mit grünem `sdk-kotlin-release.yml`-Lauf durch (Lauf 36117929552; alle
-Schritte `success`, darunter „Nach GitHub Packages veroeffentlichen
-(./gradlew publish, im Docker-Image)"), und die Paketversion ist über die
+**Belegt ist der Publish nach GitHub Packages, nicht die Zwei-Job-Struktur.**
+Zwei reale `sdk-kotlin-v*`-Tags liefen mit grünem
+`sdk-kotlin-release.yml`-Lauf durch, jeweils mit nur diesem einen Ziel:
+`sdk-kotlin-v0.2.0` (Lauf 36117929552) und `sdk-kotlin-v0.2.1` (Lauf
+36129672852), alle Schritte `success`. Die Paketversion ist über die
 GitHub-API abfragbar (`gh api
 /users/pt9912/packages/maven/io.github.pt9912.pgchangefeed-kotlin/versions`
-nennt `0.2.0`, 2026-09-25). Der Kotlin-SDK-Release-Weg ist damit
-End-zu-Ende bewiesen, nicht nur implementiert.
+nennt `0.2.0`, 2026-09-25). Der heutige Schritt „Nach GitHub Packages
+veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)" ruft die
+Einzel-Aufgabe `publishMavenPublicationToGitHubPackagesRepository`, der Schritt
+„Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)"
+die des zweiten Ziels; beide Schritte, die Job-Struktur mit zwei Zielen und
+der Cloudsmith-Weg sind bis zu ihrem ersten Tag-Lauf unbewiesen (Absatz „Offen
+bis zum ersten Tag-Lauf“ oben).
 
 **Beschreibung der Kotlin-Paketseite (manuell).** GitHub Packages zeigt bei
 Maven-Paketen weder eine README noch die `<description>` der POM an; die
@@ -412,3 +420,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.8 | 2026-09-25 | §4 um den manuell gepflegten Beschreibungstext der Kotlin-Paketseite ergänzt (`LH-FA-SST-009`, `ADR-0109`): GitHub Packages zeigt bei Maven weder README noch POM-Beschreibung, die Schreib-Schnittstelle fehlt in REST und GraphQL |
 | 1.9 | 2026-09-25 | §1 auf den realen Server-Release `v0.2.0` gezogen (`ADR-0051`): Lauf 36190768475 `success`, GHCR und Docker Hub tragen `0.2.0` und `latest` (amd64, arm64), Release-Hinweise lassen sich mit `gh release edit` ergänzen |
 | 1.10 | 2026-09-25 | §4 Kotlin-Abschnitt auf zwei Vertriebsziele gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): ein Job je Ziel (GitHub Packages, Cloudsmith) mit den Einzel-Aufgaben statt der Sammel-Aufgabe, Secret-Tabelle um `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY` erweitert, Betreiber-Voraussetzungen, Wiederholung je Job und die Offen-Punkte bis zum ersten Tag-Lauf beschrieben; „Alle drei Secrets“ leitet die Zahl nicht mehr aus einem Zählwort ab |
+| 1.11 | 2026-09-25 | §4 Kotlin-Abschnitt an den Beleg-Stand gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): bewiesen ist der Publish nach GitHub Packages mit den Läufen von `sdk-kotlin-v0.2.0` und `sdk-kotlin-v0.2.1`, die Zwei-Job-Struktur mit Cloudsmith ist bis zu ihrem ersten Tag-Lauf unbewiesen; die Schrittnamen stehen wie im Workflow; `CLOUDSMITH_USERNAME` trägt überall den Service-Slug; die Versionen auf Cloudsmith stehen als nach dem ersten Tag-Lauf erwartet |
