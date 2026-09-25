@@ -46,12 +46,11 @@ cd "$(git rev-parse --show-toplevel)"
 
 DB_COVERAGE_PKGS="./internal/adapters/driven/postgresstorage,./internal/adapters/driven/postgresack,./internal/adapters/driven/postgressnapshot,./internal/adapters/driving/replication/receive"
 DB_COVERAGE_DIR=${DB_COVERAGE_DIR:-${TMPDIR:-/tmp}/pg-change-feed-db-coverage}
-# Geltende Stufe der Rampe (bootstrap-aware, ADR-0054 §(a), ADR-0071 Punkt 3).
-# Der bewegliche Wert steht ausschliesslich hier; README und Sensor nennen die
-# Rampe und den Verweis auf diesen Ort. Override: DB_COVERAGE_THRESHOLD=…
-# (Hochschalt-Trigger: die naechste Ausbau-Stufe schliesst die Luecke zur
-# naechsten vollen 5-%-Stufe).
-DB_COVERAGE_THRESHOLD=${DB_COVERAGE_THRESHOLD:-70}
+# Geltende Stufe der Rampe (bootstrap-aware, ADR-0054 §(a), ADR-0071 Punkt 3):
+# die Endstufe. Der bewegliche Wert steht ausschliesslich hier; README und
+# Sensor nennen die Rampe und den Verweis auf diesen Ort. Override:
+# DB_COVERAGE_THRESHOLD=…
+DB_COVERAGE_THRESHOLD=${DB_COVERAGE_THRESHOLD:-80}
 
 if [[ "${1:-}" == "--coverpkg" ]]; then
   printf '%s\n' "$DB_COVERAGE_PKGS"

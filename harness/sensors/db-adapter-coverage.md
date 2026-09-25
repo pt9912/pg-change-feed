@@ -161,6 +161,20 @@ ist — dieselbe Reifung wie beim Unit-Gate. Das ist **keine** Schwellen-Senkung
 (`AGENTS.md` §3.6 bleibt unverletzt): die Endstufe steht fest, nur der
 Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
+**Stand der Rampe: Endstufe.** `tools/harness/db-coverage.sh` führt 80. Beleg
+der Hochschaltung (Closure von `welle-backfill-bestand`, Stand `32028d4f`,
+**gemessen**, Docker-Läufe mit je eigenem `DB_COVERAGE_DIR`): `make test-store`
+und danach `make test-replication` an PostgreSQL 18 (Pin von `PG_TEST_IMAGE`) und
+an PostgreSQL 17 (Digest aus `.github/workflows/e2e.yml`) druckten je
+`DB-Adapter-Coverage: 82.51% (gedeckt 873 von 1058 Statements; Profile gemergt:
+store,replication)`; dieselbe Zeile stand im Lauf `36108615045` von `e2e.yml`
+(Stand `c82d3333`, beide Legs, Schwelle 70). Der gemergte Stand endet bei
+Schwelle 80 mit `db-coverage: OK — DB-Adapter-Coverage 82.51% erfuellt Schwelle
+80%` (Exit 0) und bei `DB_COVERAGE_THRESHOLD=85` mit `db-coverage: FAIL —
+DB-Adapter-Coverage 82.51% unter Schwelle 85%` (Exit 1) — die Stufe prüft real.
+Die gedeckte Zahl streut von Lauf zu Lauf; sie ist der Beleg der genannten Läufe,
+nicht der Ist-Stand.
+
 ## Träger
 
 Drei Schritte in [`.github/workflows/e2e.yml`](../../.github/workflows/e2e.yml),
