@@ -5,13 +5,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Subject-Formatierung netzlos geprüft (`SPEC-024`): [PgChangeFeedNatsStreamClient.buildSubject]/
- * [PgChangeFeedNatsStreamClient.buildSourceSubject] bauen den
- * dokumentierten vier- bzw. dreistufigen Subjekt-Aufbau, [PgChangeFeedNatsStreamClient.streamChanges]
- * lässt seinen Default ([PgChangeFeedNatsStreamClient.ALL_SOURCES_SUBJECT])
- * unverändert am Transport ankommen. Muster: der C# Sibling
- * `PgChangeFeed.Client.Tests.Nats.PgChangeFeedNatsStreamClientTests`'
- * Subjekt-Assertions.
+ * Network-free check of the subject format: [PgChangeFeedNatsStreamClient.buildSubject]/
+ * [PgChangeFeedNatsStreamClient.buildSourceSubject] build the four-token and
+ * three-token subject, and [PgChangeFeedNatsStreamClient.streamChanges]
+ * passes its default ([PgChangeFeedNatsStreamClient.ALL_SOURCES_SUBJECT])
+ * unchanged to the transport.
  */
 class PgChangeFeedNatsStreamClientSubjectTest {
 

@@ -13,12 +13,10 @@ import kotlin.test.assertFailsWith
 
 /**
  * [PgChangeFeedGrpcClient] against a fake [GrpcStreamTransport] (no real
- * server, no network — `AGENTS.md` §3.1 in the test run): the bearer-token
- * metadata form (`SPEC-020`) and the auth boundary (`UNAUTHENTICATED`
- * surfaces from the stream itself, not a swallowed empty flow) — the
- * consumer-side counterpart of the server-side fitness function `ADR-0060`
- * Teilfrage 4 names (Go-side test vorbild cited in
- * [PgChangeFeedGrpcClientMessageSchemaTest]'s KDoc).
+ * server, no network): the bearer-token metadata form and the auth boundary
+ * (`UNAUTHENTICATED` surfaces from the stream itself, not a swallowed empty
+ * flow) — the consumer-side counterpart of the server-side authentication
+ * test.
  */
 class PgChangeFeedGrpcClientAuthBoundaryTest {
     private val authorizationKey: Metadata.Key<String> =
@@ -37,7 +35,7 @@ class PgChangeFeedGrpcClientAuthBoundaryTest {
         assertEquals("Bearer reader-token", transport.lastHeaders?.get(authorizationKey))
     }
 
-    // Rot färbende Mutation (real geprüft, slice-sdk-kotlin-grpc-client-flaeche):
+    // Mutation that turns this test red (checked for real):
     // `PgChangeFeedGrpcClient.streamChanges()` um `.catch { }` erweitert, das
     // den `StatusException` still schluckt statt ihn weiterzureichen — dieser
     // Test schlägt dann fehl (kein `StatusException` mehr geworfen), statt

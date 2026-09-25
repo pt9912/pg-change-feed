@@ -6,8 +6,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Happy-path coverage for the four table-management capabilities of
- * SPEC-018 (`EnableTable`, `DisableTable`, `GetStatus`, `ListTables`).
+ * Happy-path coverage for the four table-management capabilities
+ * (`EnableTable`, `DisableTable`, `GetStatus`, `ListTables`).
  */
 class PgChangeFeedHttpClientTableTest {
 

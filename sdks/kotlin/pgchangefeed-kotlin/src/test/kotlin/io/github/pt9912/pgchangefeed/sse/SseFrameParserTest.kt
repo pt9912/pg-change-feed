@@ -5,11 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * [SseFrameParser.readFrame] against a fake line source — netzlos
- * ([SPEC-021]), same structure as `examples/kotlin/sse-client`'s
- * `SseStreamTest` (read as Draht-Kenntnis, not imported — `ADR-0109`
- * Festlegung 3): every frame boundary/truncation edge case a real
- * `text/event-stream` body can present.
+ * [SseFrameParser.readFrame] against a fake line source — network-free:
+ * every frame boundary/truncation edge case a real `text/event-stream` body
+ * can present.
  */
 class SseFrameParserTest {
     private fun linesOf(vararg lines: String): () -> String? {
@@ -62,8 +60,8 @@ class SseFrameParserTest {
         assertNull(frame)
     }
 
-    // Rot färbende Mutation (real geprüft,
-    // slice-sdk-kotlin-sse-client-flaeche): `SseFrameParser.readFrame` um
+    // Mutation that turns this test red (checked for real):
+    // `SseFrameParser.readFrame` um
     // ein zusätzliches `return null` direkt vor dem regulären
     // `return SseFrame(...)` ergänzt, sodass ein vollständiges,
     // abgeschlossenes Frame trotz Leerzeile als `null` statt als Event

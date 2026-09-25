@@ -34,7 +34,7 @@ internal class FakeNatsStreamTransport private constructor(
         /**
          * Builds a fake transport whose subscription yields the given
          * [payloads] in order, then ends the sequence cleanly — the happy
-         * path (`SPEC-024`: one message per row change, in order).
+         * path (one message per row change, in order).
          */
         fun withPayloads(vararg payloads: ByteArray): FakeNatsStreamTransport =
             FakeNatsStreamTransport(payloads.toList(), failure = null)
@@ -43,13 +43,11 @@ internal class FakeNatsStreamTransport private constructor(
          * Builds a fake transport whose subscription yields no message and
          * then throws [failure] from the next-payload supplier itself —
          * simulating what a real NATS subscription does when the
-         * underlying connection was rejected or fails (`SPEC-024`'s
-         * connection-level auth boundary: a missing or wrong
-         * `CDC_NATS_STREAM_TOKEN`). Ausgang bewusst offen (Slice-Plan §6):
-         * dieses Fake bildet die Fehler-*Form* nach (eine Exception aus dem
-         * Stream selbst), nicht den realen Server-seitigen
-         * Ablehnungsmechanismus — ein realer Rundlauf-Beleg bleibt `make
-         * test-integration`s `tools/harness/natsstreamsub` vorbehalten.
+         * underlying connection was rejected or fails (the connection-level
+         * auth boundary: a missing or wrong stream token). The fake models the
+         * shape of the failure (an exception from the stream itself), not the
+         * server's real rejection mechanism; the real rejection is covered by
+         * the real-server integration test.
          */
         fun withFailure(failure: Exception): FakeNatsStreamTransport =
             FakeNatsStreamTransport(emptyList(), failure)

@@ -6,8 +6,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Happy-path coverage for the four consumer-management capabilities of
- * SPEC-018 (`RegisterConsumer`, `AcknowledgeConsumer`,
+ * Happy-path coverage for the four consumer-management capabilities
+ * (`RegisterConsumer`, `AcknowledgeConsumer`,
  * `GetConsumerPosition`, `RemoveConsumer`).
  */
 class PgChangeFeedHttpClientConsumerTest {

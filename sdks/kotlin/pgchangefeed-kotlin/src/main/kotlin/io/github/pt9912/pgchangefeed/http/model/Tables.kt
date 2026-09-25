@@ -3,8 +3,11 @@ package io.github.pt9912.pgchangefeed.http.model
 import com.google.gson.annotations.SerializedName
 
 /**
- * `EnableTable` request — `POST /tables/enable` (SPEC-018), all seven
- * fields mandatory, `version` must be >= 1.
+ * The table to capture, all seven fields mandatory. `source` and `publication`
+ * name the source and its PostgreSQL publication. `tableId` is the id the
+ * table is captured under (every change of the table carries it as
+ * `source_table_id`); `schemaVersionId` and `version` (must be >= 1) identify
+ * the table's schema version (changes carry the id as `schema_version`).
  */
 data class EnableTableRequest(
     @SerializedName("source") val source: String,
@@ -17,8 +20,8 @@ data class EnableTableRequest(
 )
 
 /**
- * `EnableTable` response (`201`). A table physically missing at the source
- * ends `404` instead (SPEC-018).
+ * The captured table; `alreadyEnabled` is true when it was captured before. A
+ * table that does not exist in the source database ends `404` instead.
  */
 data class EnableTableResponse(
     @SerializedName("table_id") val tableId: String,
@@ -29,8 +32,7 @@ data class EnableTableResponse(
 )
 
 /**
- * `DisableTable` request — `POST /tables/disable` (SPEC-018), all four
- * fields mandatory.
+ * The table to stop capturing, all four fields mandatory.
  */
 data class DisableTableRequest(
     @SerializedName("source") val source: String,
@@ -40,8 +42,9 @@ data class DisableTableRequest(
 )
 
 /**
- * `DisableTable` response (`200`). A table physically missing at the
- * source ends `404` instead (SPEC-018).
+ * `retained` is true when changes already stored for the table remain
+ * readable. A table that does not exist in the source database ends `404`
+ * instead.
  */
 data class DisableTableResponse(
     @SerializedName("removed") val removed: Boolean,
@@ -49,16 +52,17 @@ data class DisableTableResponse(
 )
 
 /**
- * `GetStatus` response (`200`) — both `false` reads a table that was never
- * enabled. A table physically missing at the source ends `404` instead
- * (SPEC-018).
+ * `enabled` is true for a captured table; `retained` is true for a table that
+ * is no longer captured but whose stored changes remain. Both `false` reads a
+ * table that was never enabled. A table that does not exist in the source
+ * database ends `404` instead.
  */
 data class TableStatusResponse(
     @SerializedName("enabled") val enabled: Boolean,
     @SerializedName("retained") val retained: Boolean,
 )
 
-/** One entry of a [ListTablesResponse] list (SPEC-018). */
+/** One table of a [ListTablesResponse]. */
 data class TableInfo(
     @SerializedName("table_id") val tableId: String,
     @SerializedName("source") val source: String,
@@ -67,8 +71,9 @@ data class TableInfo(
 )
 
 /**
- * `ListTables` response (`200`) — both lists are empty without any
- * activation (SPEC-018).
+ * `tables` are the captured tables; `retained` are the tables that are no
+ * longer captured but whose stored changes remain. Both lists are empty when
+ * no table was ever enabled.
  */
 data class ListTablesResponse(
     @SerializedName("tables") val tables: List<TableInfo>,

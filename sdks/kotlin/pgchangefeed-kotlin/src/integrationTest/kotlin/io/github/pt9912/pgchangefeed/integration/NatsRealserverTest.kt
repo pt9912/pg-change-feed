@@ -7,13 +7,12 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Realserver phase for the NATS full-content stream surface (SPEC-024):
- * subscribes the source's namespace against the running feed container and
- * receives a change committed afterwards as a full JSON event; a second
- * connect with a wrong token is rejected by the NATS server (SPEC-024
- * Negative) — the rejection throws synchronously from the client
- * constructor (real `io.nats.client` behavior), carrying the server's
- * `Authorization` wording.
+ * Real-server phase for the NATS stream client: subscribes the source's
+ * namespace against the running feed container and receives a change
+ * committed afterwards as a full JSON event; a second connect with a wrong
+ * token is rejected by the NATS server — the rejection throws synchronously
+ * from the client constructor (real `io.nats.client` behavior), carrying the
+ * server's `Authorization` wording.
  */
 class NatsRealserverTest {
     @Test

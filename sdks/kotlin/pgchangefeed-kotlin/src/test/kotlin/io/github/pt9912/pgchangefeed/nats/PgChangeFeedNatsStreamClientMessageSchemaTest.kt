@@ -5,24 +5,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Feld-für-Feld-Vollständigkeitstest gegen `SPEC-024`s zehn
- * Nachrichtenfelder, Consumer-seitig geprüft: jedes vom Fake gelieferte
- * Feld erreicht den Aufrufer über [PgChangeFeedNatsStreamClient.streamChanges]
- * unverändert — analog dem SSE-Pendant
+ * Field-by-field completeness test of the ten message fields, checked from
+ * the consumer side: every field the fake delivers reaches the caller through
+ * [PgChangeFeedNatsStreamClient.streamChanges] unchanged — analogous to the
+ * SSE counterpart
  * `io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClientMessageSchemaTest`
- * und dem gRPC-Pendant
+ * and the gRPC counterpart
  * `io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClientMessageSchemaTest`.
  */
 class PgChangeFeedNatsStreamClientMessageSchemaTest {
 
-    // Rot färbende Mutation (real geprüft,
-    // slice-sdk-kotlin-nats-stream-client-flaeche):
+    // Mutation that turns this test red (checked for real):
     // `PgChangeFeedNatsStreamClient.streamChanges`s `yield(parseChange(payload))`-Aufruf
     // um `.copy(schema = "")` ergänzt, das das `schema`-Feld vor der Ausgabe
     // leert — dieser Test schlägt dann bei der `schema`-Assertion fehl,
     // statt still grün zu bleiben.
     @Test
-    fun `streamChanges yields all SPEC-024 fields unchanged`() {
+    fun `streamChanges yields all ten fields unchanged`() {
         val payload = """{"change_id":"change-1","transaction_id":"tx-1","source_table_id":"table-1",""" +
             """"sequence":2,"operation":"UPDATE","old_image":{"id":1},""" +
             """"new_image":{"id":1,"bestellstatus":"bezahlt"},"schema_version":"table-1-v1",""" +

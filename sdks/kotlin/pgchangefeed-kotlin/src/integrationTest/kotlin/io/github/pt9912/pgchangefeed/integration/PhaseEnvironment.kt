@@ -1,9 +1,8 @@
 package io.github.pt9912.pgchangefeed.integration
 
 /**
- * Shared environment plumbing for the realserver integration phases
- * (slice-sdk-kotlin-reale2e, Mechanik-Klasse ADR-0110 §Entscheidung
- * Festlegung 2): every phase names its test class explicitly through the
+ * Shared environment plumbing for the real-server integration phases: every
+ * phase names its test class explicitly through the
  * runner's `PGCHANGEFEED_TEST_NAME` `--tests` filter (no silent exclusion),
  * and every marker (`READY`/`RECEIVED`/`REJECTED`) is what
  * `tools/harness/run-sdk-kotlin-integration-tests.sh` asserts on via

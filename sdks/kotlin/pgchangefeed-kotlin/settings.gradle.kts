@@ -1,12 +1,11 @@
-// sdks/kotlin/pgchangefeed-kotlin/settings.gradle.kts — Wurzelprojekt des
-// Kotlin-SDK-Pakets (ADR-0109 Festlegung 3: eigenständiges Projekt unter
-// sdks/kotlin/, kein Untermodul von examples/kotlin/). Anders als
-// examples/kotlin/settings.gradle.kts (fünf Module, eine Sprach-Wurzel) ist
-// dieses Projekt ein einzelnes, flaches Gradle-Modul — ein Package, eine
-// Maven-Koordinate (ADR-0109 Festlegung 1: "ein Package, nicht vier/fünf").
-// `dependencyResolutionManagement` zentralisiert die Paket-Quelle, analog
-// examples/kotlin/settings.gradle.kts; Netz ist ohnehin Voraussetzung
-// (Maven-Central-Paketbezug), `make gates` bleibt davon unberührt.
+// sdks/kotlin/pgchangefeed-kotlin/settings.gradle.kts — root project of the
+// Kotlin SDK package: a standalone project under sdks/kotlin/, not a
+// submodule of examples/kotlin/. Unlike examples/kotlin/settings.gradle.kts
+// (five modules, one language root), this project is a single flat Gradle
+// module — one package, one Maven coordinate.
+// `dependencyResolutionManagement` centralizes the package source, like
+// examples/kotlin/settings.gradle.kts; network access is a prerequisite anyway
+// (Maven Central package download), `make gates` is unaffected.
 rootProject.name = "pgchangefeed-kotlin"
 
 pluginManagement {

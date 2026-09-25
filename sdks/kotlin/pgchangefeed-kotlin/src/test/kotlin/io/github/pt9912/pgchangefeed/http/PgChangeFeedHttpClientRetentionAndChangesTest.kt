@@ -6,8 +6,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Happy-path coverage for `RunRetention` (SPEC-018) and `ReadChanges`
- * (SPEC-022, `GET /changes`), including the optional-parameter handling
+ * Happy-path coverage for `RunRetention` and `ReadChanges`
+ * (`GET /changes`), including the optional-parameter handling
  * and the embedded-JSON `old_image`/`new_image` shape.
  */
 class PgChangeFeedHttpClientRetentionAndChangesTest {

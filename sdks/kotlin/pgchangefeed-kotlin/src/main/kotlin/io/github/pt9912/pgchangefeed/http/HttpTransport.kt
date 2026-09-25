@@ -25,50 +25,31 @@ internal data class TransportResponse(
 )
 
 /**
- * Transport seam between [PgChangeFeedHttpClient] and the actual wire.
+ * Transport seam between [PgChangeFeedHttpClient] and the wire.
  *
- * `java.net.http.HttpClient` (the JDK client `examples/kotlin/http-client`
- * uses, SPEC-023) has **no** pluggable-handler concept — unlike C#'s
- * `HttpMessageHandler` (injected into `System.Net.Http.HttpClient`, faked
- * in the C# SDK's tests via `FakeHttpMessageHandler`) or Python's `httpx`
- * (faked via `httpx.MockTransport`), `HttpClient.send()` always performs
- * real socket I/O against the `URI` on the request. Injecting the real
- * `java.net.http.HttpClient` directly into [PgChangeFeedHttpClient] would
- * therefore force every response-shape/error-mapping test to open a real
- * socket (either a genuine network call or an in-process loopback HTTP
- * server) just to exercise JSON (de)serialization and status-code mapping.
+ * `java.net.http.HttpClient` has no pluggable handler: `send()` always
+ * performs real socket I/O. [PgChangeFeedHttpClient] therefore depends on this
+ * interface instead of on `HttpClient` directly, so that tests can exercise
+ * JSON handling and status-code mapping against canned [TransportResponse]s
+ * without any socket.
  *
- * This interface is the fix: [PgChangeFeedHttpClient] depends on
- * [HttpTransport], not on `java.net.http.HttpClient` directly. The public
- * constructor (`PgChangeFeedHttpClient(HttpClient, PgChangeFeedClientOptions)`)
- * keeps the same caller-supplies-the-HttpClient parity as the C#/Python
- * SDKs — the caller controls connection pooling, proxies and the
- * `HttpClient`'s lifetime, this type never closes it — by wrapping it in
- * [JdkHttpTransport] internally. The `internal` secondary constructor that
- * takes an [HttpTransport] directly exists purely so the test source set
- * (which the Kotlin Gradle plugin's default `main`/`test` association makes
- * a friend of `internal` declarations) can inject a fake [HttpTransport]
- * that returns canned [TransportResponse]s without any socket at all — a
- * genuinely network-free test, stronger than a loopback server. `internal`
- * here is a compile-time visibility boundary that the Kotlin compiler
- * enforces against other Kotlin modules' metadata; it keeps this
- * constructor out of accidental use from another Kotlin/Gradle module, but
- * it is not a JVM bytecode access restriction. In the compiled class file
- * both this constructor and [HttpTransport] itself are ordinary `public`
- * symbols (constructors are always named `<init>` in bytecode and are not
- * covered by Kotlin's `internal` name-mangling; interfaces are not mangled
- * either, verified with `javap -p` against the built jar) — a Java caller,
- * or reflection from any language, can still implement [HttpTransport] and
- * invoke this constructor directly.
+ * The public constructor `PgChangeFeedHttpClient(HttpClient, PgChangeFeedClientOptions)`
+ * takes the caller's `HttpClient` — the caller controls connection pooling,
+ * proxies and the client's lifetime, this class never closes it — and wraps it
+ * in [JdkHttpTransport]. The `internal` constructor that takes an
+ * [HttpTransport] directly is meant for the test source set. `internal` is a
+ * compile-time visibility boundary of the Kotlin compiler, not a JVM access
+ * restriction: in the compiled class file the constructor and [HttpTransport]
+ * are ordinary `public` symbols, so a Java caller or reflection could still use
+ * them.
  */
 internal fun interface HttpTransport {
     fun send(request: TransportRequest): TransportResponse
 }
 
 /**
- * The real [HttpTransport]: adapts a caller-supplied `java.net.http.HttpClient`
- * (the same JDK client `examples/kotlin/http-client`'s `TablesClient` uses,
- * read as draht-Kenntnis, not imported — `ADR-0109` Festlegung 3).
+ * The real [HttpTransport]: adapts a caller-supplied `java.net.http.HttpClient`.
+ * Every request carries a timeout of ten seconds.
  */
 internal class JdkHttpTransport(private val httpClient: HttpClient) : HttpTransport {
     override fun send(request: TransportRequest): TransportResponse {

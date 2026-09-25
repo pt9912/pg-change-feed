@@ -36,8 +36,8 @@ internal class FakeGrpcStreamTransport private constructor(
     companion object {
         /**
          * Builds a fake transport whose stream yields the given [messages]
-         * in order, then completes cleanly — the happy path (`SPEC-020`:
-         * one message per row change, in order).
+         * in order, then completes cleanly — the happy path (one message
+         * per row change, in order).
          */
         fun withMessages(vararg messages: Change): FakeGrpcStreamTransport =
             FakeGrpcStreamTransport(messages.toList(), failureStatus = null)
@@ -45,13 +45,11 @@ internal class FakeGrpcStreamTransport private constructor(
         /**
          * Builds a fake transport whose stream fails immediately with
          * [status], before any message — simulating what a real gRPC
-         * channel does when a call is rejected up front (e.g. `SPEC-020`'s
-         * `UNAUTHENTICATED` auth boundary). Ausgang bewusst offen
-         * (Slice-Plan §6): dieses Fake bildet die Fehler-*Form* nach (ein
-         * `StatusException` aus dem Stream selbst), nicht den realen
-         * Server-seitigen Ablehnungsmechanismus — ein realer
-         * Rundlauf-Beleg bleibt `make test-integration`s
-         * `tools/harness/grpcclient` vorbehalten.
+         * channel does when a call is rejected up front (e.g. the
+         * `UNAUTHENTICATED` auth boundary). The fake models the shape of the
+         * failure (a `StatusException` from the stream itself), not the
+         * server's real rejection mechanism; the real rejection is covered by
+         * the real-server integration test.
          */
         fun withStatus(status: Status): FakeGrpcStreamTransport =
             FakeGrpcStreamTransport(emptyList(), status)

@@ -2,24 +2,21 @@ package io.github.pt9912.pgchangefeed.http.model
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Typed request/response data classes mirroring the SPEC-018 JSON schemas
- * exactly — field names taken directly from `spec/pflichtenheft.md`
- * SPEC-018, not from the C#/Python sibling packages, which serve only as a
- * structural reference (`ADR-0109` §Kontext, same rule as `ADR-0107` for
- * Python). Every Kotlin property maps to its JSON field name via
- * `@SerializedName`, keeping the property itself idiomatic camelCase.
+/*
+ * Typed request and response data classes of the consumer calls. Every Kotlin
+ * property maps to its JSON field name via `@SerializedName`, keeping the
+ * property itself idiomatic camelCase.
  */
 
-/** `RegisterConsumer` request — `POST /consumers` (SPEC-018), both fields mandatory. */
+/** The consumer to register: a unique `consumerId` and a display `name`, both mandatory. */
 data class RegisterConsumerRequest(
     @SerializedName("consumer_id") val consumerId: String,
     @SerializedName("name") val name: String,
 )
 
 /**
- * `RegisterConsumer` response (`201`) — `alreadyRegistered` carries
- * idempotency forward, there is no separate status code for it (SPEC-018).
+ * The registered consumer. `alreadyRegistered` is true when it existed before;
+ * there is no separate status code for that.
  */
 data class RegisterConsumerResponse(
     @SerializedName("consumer_id") val consumerId: String,
@@ -28,20 +25,17 @@ data class RegisterConsumerResponse(
 )
 
 /**
- * `AcknowledgeConsumer` request — `POST /consumers/acknowledge` (SPEC-018),
- * all three fields mandatory. A position older than the current one, or one
- * from a different source, ends `400`.
+ * The position to store: `offset` is the `commit_position` of the last change
+ * the consumer has processed for `sourceId`; all three fields are mandatory. A
+ * position older than the current one, or one from a different source, ends
+ * `400`.
  *
- * `offset` is modeled as `Long` (signed 64-bit), not Kotlin's `ULong`, even
- * though the wire field is `uint64` (same as C#'s `ulong`) — Gson's
- * reflection-based codec does not natively support Kotlin's unsigned
- * inline/value classes; it would (de)serialize the type's internal wrapped
- * `Long` field rather than the value itself, silently producing the wrong
- * JSON shape. `Long` matches how the other 64-bit wire fields in this SDK
- * (`sequence`, `commit_position`, `version`, `min_age_nanos`) are already
- * modeled and avoids that Gson footgun, at the cost of not representing
- * offsets in the top half of the `uint64` range — a narrow, named boundary
- * for this pre-1.0 release.
+ * `offset` is a `Long` (signed 64-bit), although the wire field is unsigned
+ * 64-bit: Gson's reflection-based codec does not support Kotlin's unsigned
+ * value classes (it would (de)serialize the wrapped `Long` field instead of
+ * the value). `Long` matches the other 64-bit fields of this SDK (`sequence`,
+ * `commit_position`, `version`, `min_age_nanos`); offsets in the top half of
+ * the unsigned range are not representable.
  */
 data class AcknowledgeConsumerRequest(
     @SerializedName("consumer_id") val consumerId: String,
@@ -49,7 +43,7 @@ data class AcknowledgeConsumerRequest(
     @SerializedName("offset") val offset: Long,
 )
 
-/** `AcknowledgeConsumer` response (`200`) — the position now in effect after the acknowledgement. */
+/** The position now stored for the consumer after the acknowledgement. */
 data class AcknowledgeConsumerResponse(
     @SerializedName("consumer_id") val consumerId: String,
     @SerializedName("source_id") val sourceId: String,
@@ -57,8 +51,8 @@ data class AcknowledgeConsumerResponse(
 )
 
 /**
- * `GetConsumerPosition` response (`200`) — `acknowledged = false` reads the
- * defined starting position without any prior acknowledgement (SPEC-018).
+ * The stored position of a consumer. `acknowledged = false` reads the defined
+ * starting position of a consumer that never acknowledged.
  */
 data class ConsumerPositionResponse(
     @SerializedName("consumer_id") val consumerId: String,
@@ -68,9 +62,8 @@ data class ConsumerPositionResponse(
 )
 
 /**
- * `RemoveConsumer` response (`200`) — a never-registered consumer reports
- * `removed = false`, never `404` (idempotency instead of an error against
- * an unknown resource, SPEC-018).
+ * A consumer that was never registered reports `removed = false`, never
+ * `404`.
  */
 data class RemoveConsumerResponse(
     @SerializedName("consumer_id") val consumerId: String,

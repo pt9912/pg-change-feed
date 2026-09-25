@@ -11,11 +11,10 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 
 /**
- * Realserver phase for the gRPC stream surface (SPEC-020): opens the server
- * stream against the running feed container and receives a change committed
+ * Real-server phase for the gRPC stream client: opens the server stream
+ * against the running feed container and receives a change committed
  * afterwards; a second open with an unknown token is rejected with gRPC
- * status `Unauthenticated` (SPEC-020 Negative), not swallowed as an empty
- * stream. The commit-to-delivery window is fire-and-forget — the runner
+ * status `Unauthenticated`, not swallowed as an empty stream. The commit-to-delivery window is fire-and-forget — the runner
  * commits a bounded sequence of unique rows until one arrives; this test
  * keeps receiving until it sees its sentinel.
  */

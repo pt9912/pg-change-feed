@@ -1,104 +1,74 @@
-// sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts — Maven-Metadaten und
-// Bau-Konfiguration des Kotlin-SDK-Pakets (ADR-0109 Festlegung 1/2/3/4/5).
-// Eigenständiges Projekt, kein Untermodul von examples/kotlin/ (Festlegung 3)
-// — kein Import auf einen privaten Baum dieses Repos.
+// sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts — Maven metadata and build
+// configuration of the Kotlin SDK package. A standalone project, not a
+// submodule of examples/kotlin/; it imports nothing from a private tree of
+// this repository.
 //
-// Kotlin-Gradle-Plugin-Version real gegen Maven Central nachgemessen
+// Kotlin Gradle plugin version measured against Maven Central
 // (`repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml`,
-// heute, 2026-09-20): aktuellste Version weiterhin 2.4.20 (`lastUpdated`
-// 2026-09-07, keine Drift ggü. der in `examples/kotlin/build.gradle.kts` am
-// 2026-09-17 gemessenen Version — real re-verifiziert, nicht blind
-// übernommen, AGENTS.md §3.12).
+// 2026-09-20): the latest version is 2.4.20 (`lastUpdated` 2026-09-07), the
+// same as in `examples/kotlin/build.gradle.kts` (measured 2026-09-17).
 //
-// `maven-publish` ist das eingebaute Gradle-Kern-Plugin (ADR-0109
-// Festlegung 5, F1) — kein Dritt-Plugin wie `com.vanniktech.maven-publish`.
-// Der `publishing`-Block trägt die Maven-Koordinate UND den
-// GitHub-Packages-`repositories{}`-Eintrag (real recherchiertes
-// Minimalrezept, ADR-0109 §Kontext Recherche:
-// `docs.github.com/…/publishing-java-packages-with-gradle`) — Registry-URL
-// `https://maven.pkg.github.com/pt9912/pg-change-feed`, Zugangsdaten aus den
-// Umgebungsvariablen `GITHUB_ACTOR`/`GITHUB_TOKEN`. `GITHUB_ACTOR` ist ein
-// von GitHub Actions automatisch bereitgestellter Default-Umgebungswert;
-// `GITHUB_TOKEN` wird vom aufrufenden Workflow
-// (`.github/workflows/sdk-kotlin-release.yml`, ADR-0109 §Konsequenzen
-// Folgepflicht 1) explizit als Umgebungsvariable gesetzt (`secrets.GITHUB_TOKEN`)
-// — kein neues Repository-Secret, kein `secrets.<NAME>`-Verweis hier.
-// Außerhalb dieses Workflows (lokal, in `make sdk-pack-kotlin`) bleiben
-// beide Umgebungsvariablen leer — `make sdk-pack-kotlin` baut ausschließlich
-// die `pack-export`-Docker-Stufe (`test`/`build`, kein `publish`-Task).
-// `sdks/kotlin/Dockerfile` trägt daneben eine eigene `publish`-Stufe (baut
-// auf `build` auf), die ausschließlich `.github/workflows/sdk-kotlin-release.yml`
-// baut und per `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...` mit
-// echten Zugangsdaten zur Laufzeit startet (ADR-0109 Festlegung 5: Docker-only
-// bis einschließlich `publish` — Korrektur von Review-Finding F-1,
-// docs/reviews/review-slice-sdk-kotlin-publish-workflow.md).
+// `maven-publish` is the built-in Gradle core plugin, not a third-party plugin
+// such as `com.vanniktech.maven-publish`. The `publishing` block carries the
+// Maven coordinate and the GitHub Packages `repositories{}` entry — registry
+// URL `https://maven.pkg.github.com/pt9912/pg-change-feed`, credentials from
+// the environment variables `GITHUB_ACTOR`/`GITHUB_TOKEN`. `GITHUB_ACTOR` is a
+// default value GitHub Actions provides; `GITHUB_TOKEN` is set explicitly by
+// the calling workflow (`.github/workflows/sdk-kotlin-release.yml`, from
+// `secrets.GITHUB_TOKEN`) — no repository secret is needed and none is named
+// here. Outside that workflow (locally, in `make sdk-pack-kotlin`) both
+// variables stay empty; `make sdk-pack-kotlin` builds only the `pack-export`
+// Docker stage (`test`/`build`, no `publish` task). `sdks/kotlin/Dockerfile`
+// also carries a `publish` stage (built on `build`) that only
+// `.github/workflows/sdk-kotlin-release.yml` builds and starts with
+// `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...` and real credentials at
+// run time.
 //
-// `com.google.code.gson:gson` ist die JSON-Bibliothek der HTTP-Client-Fläche
-// (slice-sdk-kotlin-http-client-flaeche, `SPEC-018`/`SPEC-022`) — dieselbe
-// bereits im selben Repo real bewertete, gepinnte Version wie
-// `examples/kotlin/nats-stream-client/build.gradle.kts` (dort Lizenz/
-// transitive Abhängigkeiten bereits geprüft: nur
-// `com.google.errorprone:error_prone_annotations` im `compile`-Scope,
-// Apache-2.0). Weder `java.net.http` noch die JDK-Standardbibliothek tragen
-// einen öffentlichen JSON-Decoder. Gemessen am 2026-09-20 (Maven Central
-// maven-metadata.xml, repo1.maven.org/maven2/com/google/code/gson/gson/
-// maven-metadata.xml): weiterhin `2.14.0` (`<latest>`/`<release>`, keine
-// Drift ggü. der Messung vom 2026-09-18 in `nats-stream-client` —
-// `AGENTS.md` §3.12).
+// `com.google.code.gson:gson` is the JSON library of the HTTP client, the SSE
+// client and the NATS client, at the same pinned version as
+// `examples/kotlin/nats-stream-client/build.gradle.kts` (license and transitive
+// dependencies checked there: only
+// `com.google.errorprone:error_prone_annotations` in the `compile` scope,
+// Apache-2.0). Neither `java.net.http` nor the JDK standard library carries a
+// public JSON decoder. Measured 2026-09-20 (Maven Central maven-metadata.xml,
+// repo1.maven.org/maven2/com/google/code/gson/gson/maven-metadata.xml): the
+// latest version is `2.14.0` (`<latest>`/`<release>`).
 //
-// gRPC-Stream-Client-Fläche (`slice-sdk-kotlin-grpc-client-flaeche`,
-// `ADR-0109` Festlegung 1/3, `SPEC-020`): dieselben Koordinaten wie
-// `examples/kotlin/grpc-client/build.gradle.kts` (`slice-103`) — real am
-// heutigen Bau-Zeitpunkt dieses Slice (2026-09-20, Maven Central
-// maven-metadata.xml je Artefakt, Gradle Plugin Portal für das
-// `com.google.protobuf`-Plugin) neu gemessen, nicht aus `examples/kotlin/`
-// oder `ADR-0109`s Kontext-Messung (2026-09-17) unbesehen übernommen
-// (`AGENTS.md` §3.12):
-//   io.grpc:grpc-kotlin-stub        -> 1.5.0 (unverändert; `<latest>`/
-//     `<release>` der Maven-Metadaten zeigen einen Commit-Hash-Eintrag
-//     — ein CI-Snapshot-Artefakt, kein echtes Release, lastUpdated
-//     2025-09-16, also bereits vor `examples/kotlin/grpc-client`s eigener
-//     2026-09-17-Messung vorhanden und dort korrekt ignoriert; 1.5.0 bleibt
-//     die tatsächlich zuletzt veröffentlichte, reguläre Version)
-//   io.grpc:protoc-gen-grpc-kotlin  -> 1.5.0 (dieselbe Anomalie, dieselbe
-//     Auflösung wie oben)
-//   io.grpc:grpc-netty-shaded       -> 1.84.0 (unverändert)
-//   io.grpc:grpc-bom                -> 1.84.0 (unverändert)
-//   io.grpc:protoc-gen-grpc-java    -> 1.84.0 (unverändert)
-//   org.jetbrains.kotlinx:kotlinx-coroutines-core -> 1.11.0 (unverändert)
-//   com.google.protobuf (Gradle-Plugin, Gradle Plugin Portal) -> 0.10.0
-//     (unverändert)
-//   com.google.protobuf:protoc -> 4.36.2 (REALE DRIFT ggü. der
-//     2026-09-17-Messung in `examples/kotlin/grpc-client`: dort 4.36.1.
-//     Maven-Metadaten tragen zusätzlich einen `21.0-rc-1`-Eintrag —
-//     lastUpdated 2026-09-17, ein Release-Candidate einer neuen
-//     Versionszählung, kein stabiles Release; 4.36.2 bleibt die aktuellste
-//     stabile Version, real bezogen unter
+// gRPC stream client: the same coordinates as
+// `examples/kotlin/grpc-client/build.gradle.kts`, measured again on 2026-09-20
+// (Maven Central maven-metadata.xml per artifact, Gradle Plugin Portal for the
+// `com.google.protobuf` plugin):
+//   io.grpc:grpc-kotlin-stub        -> 1.5.0 (`<latest>`/`<release>` of the
+//     Maven metadata show a commit-hash entry — a CI snapshot artifact, not a
+//     release, lastUpdated 2025-09-16; 1.5.0 is the latest regular release)
+//   io.grpc:protoc-gen-grpc-kotlin  -> 1.5.0 (same anomaly, same resolution)
+//   io.grpc:grpc-netty-shaded       -> 1.84.0
+//   io.grpc:grpc-bom                -> 1.84.0
+//   io.grpc:protoc-gen-grpc-java    -> 1.84.0
+//   org.jetbrains.kotlinx:kotlinx-coroutines-core -> 1.11.0
+//   com.google.protobuf (Gradle plugin, Gradle Plugin Portal) -> 0.10.0
+//   com.google.protobuf:protoc -> 4.36.2 (`examples/kotlin/grpc-client`, measured
+//     2026-09-17, has 4.36.1. The Maven metadata also carry a `21.0-rc-1` entry,
+//     lastUpdated 2026-09-17, a release candidate of a new version numbering;
+//     4.36.2 is the latest stable version, obtained from
 //     repo1.maven.org/maven2/com/google/protobuf/protoc/4.36.2/)
-//   com.google.protobuf:protobuf-java -> 4.36.2 (dieselbe reale Drift wie
-//     `protoc` oben — beide müssen dieselbe Major-Zeile tragen, siehe
-//     Kommentar unten zur `io.grpc:grpc-protobuf`-Transitiv-Version; real
-//     erneut geprüft: `io.grpc:grpc-protobuf:1.84.0` zieht weiterhin
-//     transitiv `protobuf-java:3.25.9`, unverändert ggü. der
-//     2026-09-17-Messung — die explizite Anhebung bleibt aus demselben
-//     Grund nötig)
+//   com.google.protobuf:protobuf-java -> 4.36.2 (the same version as `protoc`;
+//     both must be on the same major line. `io.grpc:grpc-protobuf:1.84.0` still
+//     pulls in `protobuf-java:3.25.9` transitively, so the explicit raise stays
+//     necessary)
 //
-// NATS-Vollinhalts-Stream-Client-Fläche (`slice-sdk-kotlin-nats-stream-client-flaeche`,
-// `ADR-0109` Festlegung 1, `SPEC-024`): `io.nats:jnats` real am heutigen
-// Bau-Zeitpunkt dieses Slice (2026-09-22, Maven Central maven-metadata.xml,
-// repo1.maven.org/maven2/io/nats/jnats/maven-metadata.xml) neu gemessen,
-// nicht aus `examples/kotlin/nats-stream-client/build.gradle.kts`s
-// 2026-09-18-Messung unbesehen übernommen (`AGENTS.md` §3.12): weiterhin
-// `2.26.3` (`<latest>`/`<release>`, keine Drift, dieselbe Version wie bei
-// jenem Beispiel). Kein zweiter JSON-Decoder nötig — dieselbe bereits
-// gepinnte `com.google.code.gson:gson:2.14.0` deserialisiert auch die
-// NATS-Nachrichten (`SPEC-024` teilt das Schema mit `SPEC-021`).
+// NATS stream client: `io.nats:jnats` measured 2026-09-22 (Maven Central
+// maven-metadata.xml, repo1.maven.org/maven2/io/nats/jnats/maven-metadata.xml):
+// `2.26.3` (`<latest>`/`<release>`), the same version as in
+// `examples/kotlin/nats-stream-client/build.gradle.kts`. No second JSON decoder
+// is needed: the pinned `com.google.code.gson:gson:2.14.0` also deserializes
+// the NATS messages, which share their schema with the SSE events.
 //
-// Version `0.2.1` (SemVer, `ADR-0109` Festlegung 1): Pflege bei jedem Release
-// ein bewusster Schritt, keine automatische Ableitung. Die POM-Felder
-// `name`/`description`/`url`/`licenses` im `publishing`-Block sind, was
-// GitHub Packages Anwendern zeigt (das `jar` trägt keine README): sie tragen
-// keine internen Kennungen.
+// Version `0.2.1` (SemVer): raised deliberately at each release, not derived
+// automatically. The POM fields `name`/`description`/`url`/`licenses`/`scm` in
+// the `publishing` block are the package metadata published with the
+// artifacts; the jar carries no README. They contain no internal identifiers.
+// The `java` block adds a sources jar to the publication.
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
@@ -110,6 +80,10 @@ version = "0.2.1"
 
 kotlin {
     jvmToolchain(21)
+}
+
+java {
+    withSourcesJar()
 }
 
 dependencies {
@@ -126,14 +100,13 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
 }
 
-// Die `.proto`-Quelle liegt NICHT im committeten Baum (`ADR-0109`
-// Festlegung 3, kein committeter Stub) — sie kommt erst im Docker-Bau nach
-// `src/main/proto/` (`sdks/kotlin/Dockerfile`), kopiert aus dem
-// zusätzlichen, benannten Bau-Kontext `proto`
-// (`docker build --build-context proto=proto …`, Muster
-// `examples/kotlin/Dockerfile`/`harness/mk/examples.mk`). Ohne diesen
-// Kontext bricht der Bau an der `COPY`-Zeile im Dockerfile ab — kein
-// stiller Fallback.
+// The `.proto` source is not in the committed tree — it arrives only in the
+// Docker build, at `src/main/proto/` (`sdks/kotlin/Dockerfile`), copied from
+// the additional named build context `proto`
+// (`docker build --build-context proto=proto …`, the same pattern as
+// `examples/kotlin/Dockerfile`/`harness/mk/examples.mk`). Without that context
+// the build stops at the `COPY` line of the Dockerfile — there is no silent
+// fallback.
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:4.36.2"
@@ -160,24 +133,23 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// Integrations-Quellmenge (slice-sdk-kotlin-reale2e, Mechanik-Klasse
-// ADR-0110 §Entscheidung Festlegung 2): die Realserver-Tests brauchen eine
-// laufende Server-Instanz (compose-Netz) — sie laufen NICHT im netzlosen
-// Unit-Lauf (`./gradlew test`/`build`, `make sdk-pack-kotlin` bleibt
-// unberührt; der `integrationTest`-Task hängt bewusst NICHT an `check`),
-// sondern nur über `make test-sdk-kotlin-integration`
-// (tools/harness/run-sdk-kotlin-integration-tests.sh), das je Phase einen
-// `--tests`-Filter gegen einen Testklassen-Namen setzt (explizite
-// Phase-Auswahl, kein stiller Ausschluss; die Phase-Adressen/Auth kommen
-// über Umgebungsvariablen, die der Test-JVM erbt).
+// Integration source set: the real-server tests need a running server
+// instance (compose network). They do not run in the network-free unit run
+// (`./gradlew test`/`build`, `make sdk-pack-kotlin`; the `integrationTest`
+// task is deliberately not attached to `check`) but only through
+// `make test-sdk-kotlin-integration`
+// (tools/harness/run-sdk-kotlin-integration-tests.sh), which sets a `--tests`
+// filter on a test class name per phase (explicit phase selection, no silent
+// exclusion); phase addresses and auth arrive as environment variables that
+// the test JVM inherits.
 val integrationTestImplementation by configurations.creating {
     extendsFrom(configurations.testImplementation.get())
 }
 
-// Resolvable Laufzeit-Konfiguration des Integrationstest-Lauf-Classpaths:
-// die runtimeOnly-Abhaengigkeiten des Hauptmoduls (grpc-netty-shaded) sind
-// selbst nicht resolvable — diese Konfiguration erbt sie (und die Test-
-// Laufzeit) und wird unten im Task aufgelöst.
+// Resolvable runtime configuration of the integration test class path: the
+// runtimeOnly dependencies of the main module (grpc-netty-shaded) are not
+// resolvable themselves — this configuration inherits them (and the test
+// runtime) and is resolved in the task below.
 val integrationTestRuntimeClasspath by configurations.creating {
     extendsFrom(
         configurations.getByName("integrationTestImplementation"),
@@ -195,28 +167,28 @@ sourceSets {
 }
 
 dependencies {
-    // Die main-Klassen (inklusive der im Bau erzeugten gRPC-Stubs) sind die
-    // Grundlage der Integrations-Tests — der Pruefling ist die kompilierte
-    // Client-Assembly.
+    // The main classes (including the gRPC stubs generated in the build) are
+    // the subject of the integration tests: the compiled client assembly is
+    // what is tested.
     "integrationTestImplementation"(sourceSets["main"].output)
 }
 
 val integrationTest by tasks.registering(Test::class) {
     description =
-        "Realserver-Integrationstest der SDK-Flaechen — braucht eine laufende Server-Instanz; je Phase ein Aufruf mit --tests-Filter."
+        "Real-server integration test of the client surfaces — needs a running server instance; one call per phase with a --tests filter."
     group = "verification"
     testClassesDirs = sourceSets["integrationTest"].output.classesDirs
-    // Der Lauf-Classpath traegt die Laufzeitstuecke explizit: die
-    // Implementation-Abhaengigkeiten (via integrationTestImplementation),
-    // die Test-Laufzeit (junit-launcher, testRuntimeOnly) und die
-    // runtimeOnly-Abhaengigkeiten des Hauptmoduls (grpc-netty-shaded — ohne
-    // sie endet der gRPC-Kanal in der ProviderNotFoundException).
+    // The run class path carries the runtime pieces explicitly: the
+    // implementation dependencies (via integrationTestImplementation), the
+    // test runtime (junit-launcher, testRuntimeOnly) and the runtimeOnly
+    // dependencies of the main module (grpc-netty-shaded — without it the gRPC
+    // channel ends in a ProviderNotFoundException).
     classpath = sourceSets["integrationTest"].output +
         configurations["integrationTestRuntimeClasspath"]
     useJUnitPlatform()
-    // Die Runner-Marker (READY/RECEIVED/REJECTED) liest der Runner ueber
-    // `docker logs`, waehrend der Test laeuft — die Standard-Streams muessen
-    // live durchgereicht werden (JVM-stdout-Pufferung, Plan §6).
+    // The runner markers (READY/RECEIVED/REJECTED) are read by the runner via
+    // `docker logs` while the test is running — the standard streams must be
+    // passed through live (JVM stdout buffering).
     testLogging {
         events("passed", "failed")
         showStandardStreams = true

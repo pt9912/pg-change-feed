@@ -8,12 +8,12 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Realserver phase for the SSE stream surface (SPEC-021): opens
- * `GET /changes/stream` against the running feed container and receives a
- * change committed afterwards; a second open with an unknown token is
- * rejected with HTTP status 401 (SPEC-021 via LH-FA-SST-008 Negative), as a
- * typed [io.github.pt9912.pgchangefeed.http.PgChangeFeedUnauthorizedException]
- * — the same closed set the HTTP surface throws.
+ * Real-server phase for the SSE stream client: opens `GET /changes/stream`
+ * against the running feed container and receives a change committed
+ * afterwards; a second open with an unknown token is rejected with HTTP status
+ * 401, as a typed
+ * [io.github.pt9912.pgchangefeed.http.PgChangeFeedUnauthorizedException] — the
+ * same set the HTTP client throws.
  */
 class SseRealserverTest {
     @Test

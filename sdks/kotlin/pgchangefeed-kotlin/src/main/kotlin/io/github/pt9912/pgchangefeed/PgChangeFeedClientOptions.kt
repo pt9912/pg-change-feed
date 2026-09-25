@@ -3,21 +3,17 @@ package io.github.pt9912.pgchangefeed
 import java.net.URI
 
 /**
- * Shared connection configuration for PG Change Feed client surfaces. The
- * HTTP API (SPEC-018) and the gRPC change stream (SPEC-020) both
- * authenticate with a bearer token against a single server address — this
- * is the one unstrittige, shared configuration denominator identified
- * while writing this project skeleton (ADR-0109 Festlegung 1, referencing
- * ADR-0106 Festlegung 1: "HTTP und gRPC teilen Auth-Header-Form (Bearer
- * Token) und Grundkonfiguration (Adresse, Token)"). Surface-specific
- * behavior (which HTTP paths, which gRPC stub, retry/backoff policy) is
- * deliberately NOT part of this class — it is added by the follow-up
- * slices that build the actual client surfaces.
+ * Connection configuration shared by the PG Change Feed clients: the address
+ * of the server and the bearer token. The HTTP, gRPC, SSE and NATS clients
+ * all authenticate with such a token against a single server address. What a
+ * client does with them (which HTTP paths, which gRPC call) is up to the
+ * client itself; the options carry no retry or backoff policy.
  *
- * @property address the base address of the PG Change Feed server (HTTP or
- *   gRPC endpoint, depending on the surface that consumes these options).
- * @property apiToken the bearer token sent as an authorization credential
- *   (SPEC-018).
+ * @property address the address of the PG Change Feed server, in the form the
+ *   client needs: the HTTP base URL for the HTTP and SSE clients, the gRPC
+ *   endpoint for the gRPC client, the NATS URL for the NATS client.
+ * @property apiToken the bearer token sent as the authorization credential;
+ *   must not be blank.
  */
 class PgChangeFeedClientOptions(
     val address: URI,

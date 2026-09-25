@@ -12,19 +12,17 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 /**
- * The `SPEC-021` error-response mapping when opening `GET /changes/stream`
- * fails before any frame is delivered — the same closed set of typed
- * exceptions as
- * `io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient` (SPEC-018's
- * uniform `{"error": "<text>"}` body), reused rather than a second
- * hierarchy. Same structure as
- * `io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClientAuthBoundaryTest`
- * and the C# sibling's `PgChangeFeedSseClientAuthBoundaryTests`.
+ * The error-response mapping when opening `GET /changes/stream` fails before
+ * any frame is delivered — the same set of typed exceptions as
+ * `io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient` (the uniform
+ * `{"error": "<text>"}` body), reused rather than a second hierarchy. Same
+ * structure as
+ * `io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClientAuthBoundaryTest`.
  */
 class PgChangeFeedSseClientAuthBoundaryTest {
 
-    // Rot färbende Mutation (real geprüft,
-    // slice-sdk-kotlin-sse-client-flaeche): `PgChangeFeedSseClient.buildException`s
+    // Mutation that turns this test red (checked for real):
+    // `PgChangeFeedSseClient.buildException`s
     // `401`-Zweig auf `PgChangeFeedForbiddenException(...)` statt
     // `PgChangeFeedUnauthorizedException(...)` geändert — dieser Test
     // schlägt dann fehl (falscher Exception-Typ), statt still grün zu
@@ -45,12 +43,11 @@ class PgChangeFeedSseClientAuthBoundaryTest {
     }
 
     @Test
-    fun `no Broadcaster wired throws UnexpectedStatus`() {
-        // SPEC-021: `503`, wenn CDC_HTTP_ADDR gesetzt, aber kein
-        // Broadcaster verdrahtet ist — außerhalb des geschlossenen
-        // 400/401/403/404/500-Sets.
+    fun `stream not available throws UnexpectedStatus`() {
+        // `503` when the HTTP API is on but the change stream is not
+        // available — outside the 400/401/403/404/500 set.
         val (client, _) = TestClientFactory.create { _ ->
-            FakeSseTransport.lineResponse(503, """{"error":"ChangeStream ohne Broadcaster verdrahtet"}""")
+            FakeSseTransport.lineResponse(503, """{"error":"change stream not available"}""")
         }
 
         val ex = assertFailsWith<PgChangeFeedUnexpectedStatusException> {

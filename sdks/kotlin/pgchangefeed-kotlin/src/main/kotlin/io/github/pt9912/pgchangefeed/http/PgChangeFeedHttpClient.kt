@@ -23,67 +23,93 @@ import java.net.http.HttpClient
 import java.nio.charset.StandardCharsets
 
 /**
- * Public entry point for the PG Change Feed HTTP/JSON API: one method per
- * wire capability — the nine port-covered capabilities of SPEC-018
- * (`RegisterConsumer`, `AcknowledgeConsumer`, `GetConsumerPosition`,
- * `RemoveConsumer`, `EnableTable`, `DisableTable`, `GetStatus`,
- * `ListTables`, `RunRetention`) plus reading persisted changes
- * (`readChanges`, SPEC-022). Requests/responses are typed data classes that
- * mirror the SPEC-018/SPEC-022 JSON schemas exactly
+ * Client for the PG Change Feed HTTP/JSON API: one method per capability —
+ * `registerConsumer`, `acknowledgeConsumer`, `getConsumerPosition`,
+ * `removeConsumer`, `enableTable`, `disableTable`, `getStatus`, `listTables`,
+ * `runRetention` and `readChanges`. Requests and responses are typed data
+ * classes that mirror the JSON documents of the API
  * (`io.github.pt9912.pgchangefeed.http.model`); every non-success response
- * becomes a typed [PgChangeFeedException] subtype instead of a raw HTTP
- * status code mixed with the success path — see that type's KDoc for the
- * sealed-class design decision.
+ * becomes a typed [PgChangeFeedException] subtype instead of a raw HTTP status
+ * code mixed with the success path. Connection errors and timeouts of the
+ * transport are not converted; they reach the caller as the `IOException` of
+ * `java.net.http.HttpClient`.
  *
- * The `java.net.http.HttpClient` passed to the public constructor is
- * injected, not owned — the caller controls its lifetime, connection
- * pooling and any redirect/proxy configuration; this type never closes it.
- * The bearer token and server address come from [PgChangeFeedClientOptions],
- * supplied at construction — no global or static state, a process can hold
+ * The `java.net.http.HttpClient` passed to the public constructor is passed
+ * in, not owned — the caller controls its lifetime, connection pooling and any
+ * redirect/proxy configuration; this class never closes it. The bearer token
+ * and server address come from [PgChangeFeedClientOptions], supplied at
+ * construction — there is no global or static state, so a process can hold
  * several independently configured instances at once.
- *
- * Draht-Kenntnis-Vorbild (gelesen, nicht importiert — `ADR-0109`
- * Festlegung 3): `examples/kotlin/http-client/TablesClient.kt`,
- * `TablesUrlBuilder.kt`, and `spec/pflichtenheft.md` SPEC-018/SPEC-022
- * directly.
  */
 class PgChangeFeedHttpClient internal constructor(
     private val transport: HttpTransport,
     private val options: PgChangeFeedClientOptions,
 ) {
     /**
-     * Public constructor — wraps the caller-supplied `java.net.http.HttpClient`
-     * in the real [JdkHttpTransport]. See [HttpTransport]'s KDoc for why the
-     * client depends on a transport seam rather than on `HttpClient` directly.
+     * Public constructor — wraps the caller's `java.net.http.HttpClient` in
+     * the real [JdkHttpTransport]; see [HttpTransport] for why the client
+     * depends on a transport interface rather than on `HttpClient` directly.
      */
     constructor(httpClient: HttpClient, options: PgChangeFeedClientOptions) :
         this(JdkHttpTransport(httpClient), options)
 
-    /** `RegisterConsumer` — `POST /consumers` (admin, SPEC-018, `LH-FA-CON-001`). */
+    /**
+     * Registers a consumer, a named reader whose position the server keeps
+     * (`POST /consumers`, admin token). Registering an existing consumer
+     * changes nothing; the response reports it with `alreadyRegistered`.
+     */
     fun registerConsumer(request: RegisterConsumerRequest): RegisterConsumerResponse =
         post("/consumers", gson.toJson(request))
 
-    /** `AcknowledgeConsumer` — `POST /consumers/acknowledge` (admin, SPEC-018, `LH-FA-CON-004`). */
+    /**
+     * Stores the position up to which a consumer has processed a source
+     * (`POST /consumers/acknowledge`, admin token). Repeating the stored
+     * position has no effect; an earlier position, or a position of another
+     * source, is rejected with [PgChangeFeedBadRequestException].
+     */
     fun acknowledgeConsumer(request: AcknowledgeConsumerRequest): AcknowledgeConsumerResponse =
         post("/consumers/acknowledge", gson.toJson(request))
 
-    /** `GetConsumerPosition` — `GET /consumers/position` (reader or admin, SPEC-018, `LH-FA-CON-003`/`005`). */
+    /**
+     * Reads the stored position of a consumer (`GET /consumers/position`,
+     * reader or admin token). `acknowledged` is `false` for a consumer that
+     * never acknowledged; `offset` is then the starting position.
+     */
     fun getConsumerPosition(consumerId: String): ConsumerPositionResponse =
         get("/consumers/position?" + buildQuery("consumer_id" to consumerId))
 
-    /** `RemoveConsumer` — `POST /consumers/remove` (admin, SPEC-018, `LH-FA-CON-006`). */
+    /**
+     * Removes a consumer (`POST /consumers/remove`, admin token); `removed` is
+     * `false` for one that was never registered.
+     */
     fun removeConsumer(consumerId: String): RemoveConsumerResponse =
         post("/consumers/remove", gson.toJson(mapOf("consumer_id" to consumerId)))
 
-    /** `EnableTable` — `POST /tables/enable` (admin, SPEC-018, `LH-FA-CFG-001`). */
+    /**
+     * Starts capturing a table of a source (`POST /tables/enable`, admin
+     * token). `alreadyEnabled` is `true` when the table was captured already; a
+     * table that does not exist in the source database raises
+     * [PgChangeFeedNotFoundException].
+     */
     fun enableTable(request: EnableTableRequest): EnableTableResponse =
         post("/tables/enable", gson.toJson(request))
 
-    /** `DisableTable` — `POST /tables/disable` (admin, SPEC-018, `LH-FA-CFG-002`). */
+    /**
+     * Stops capturing a table (`POST /tables/disable`, admin token). `retained`
+     * is `true` when changes already stored for the table remain readable; a
+     * table that does not exist in the source database raises
+     * [PgChangeFeedNotFoundException].
+     */
     fun disableTable(request: DisableTableRequest): DisableTableResponse =
         post("/tables/disable", gson.toJson(request))
 
-    /** `GetStatus` — `GET /tables/status` (reader or admin, SPEC-018, `LH-FA-CFG-003`). */
+    /**
+     * Tells whether a table is captured (`enabled`) or no longer captured with
+     * stored changes remaining (`retained`) (`GET /tables/status`, reader or
+     * admin token). A table that was never enabled reports both as `false`; a
+     * table that does not exist in the source database raises
+     * [PgChangeFeedNotFoundException].
+     */
     fun getStatus(source: String, schema: String, table: String, publication: String): TableStatusResponse =
         get(
             "/tables/status?" + buildQuery(
@@ -94,19 +120,27 @@ class PgChangeFeedHttpClient internal constructor(
             ),
         )
 
-    /** `ListTables` — `GET /tables` (reader or admin, SPEC-018, `LH-FA-CFG-004`). */
+    /**
+     * Lists the captured tables and the tables that are no longer captured but
+     * whose stored changes remain (`GET /tables`, reader or admin token).
+     */
     fun listTables(source: String, publication: String): ListTablesResponse =
         get("/tables?" + buildQuery("source" to source, "publication" to publication))
 
-    /** `RunRetention` — `POST /retention/run` (admin, SPEC-018, `LH-FA-RET-002`..`004`). */
+    /**
+     * Deletes the stored changes of a source that are older than `minAgeNanos`
+     * and that every consumer with a stored position has passed
+     * (`POST /retention/run`, admin token); `deleted` is the number removed.
+     */
     fun runRetention(request: RunRetentionRequest): RunRetentionResponse =
         post("/retention/run", gson.toJson(request))
 
     /**
-     * `ReadChanges` — `GET /changes` (reader or admin, SPEC-022). [source]
-     * is mandatory; [schema]/[table] are optional and independent; [from]
-     * is inclusive, [to] exclusive (both `commit_position` values); there
-     * is no default [limit].
+     * Reads stored changes of a source (`GET /changes`, reader or admin
+     * token). [source] is mandatory; [schema]/[table] are optional and
+     * independent; [from] is inclusive, [to] exclusive (both `commit_position`
+     * values). [limit] cuts rows, not positions, and there is no default
+     * limit. A range without changes returns an empty list.
      */
     fun readChanges(
         source: String,
@@ -165,7 +199,7 @@ class PgChangeFeedHttpClient internal constructor(
             throw PgChangeFeedMalformedResponseException(
                 statusCode,
                 "PG Change Feed HTTP API returned status $statusCode with a response body that is " +
-                    "not valid JSON — a protocol violation outside SPEC-018/SPEC-022's documented shapes.",
+                    "not valid JSON.",
                 ex,
             )
         }
@@ -173,7 +207,7 @@ class PgChangeFeedHttpClient internal constructor(
             ?: throw PgChangeFeedMalformedResponseException(
                 statusCode,
                 "PG Change Feed HTTP API returned status $statusCode with an empty or null response " +
-                    "body — a protocol violation outside SPEC-018/SPEC-022's documented shapes.",
+                    "body.",
             )
     }
 
@@ -199,10 +233,7 @@ class PgChangeFeedHttpClient internal constructor(
     /**
      * RFC 3986 percent-encoding (unreserved: `A-Za-z0-9-_.~`) — not
      * `java.net.URLEncoder`'s form-encoding (which encodes a space as `+`
-     * instead of `%20`). Same escaping as the C# sibling's
-     * `Uri.EscapeDataString` and `examples/kotlin/http-client/TablesUrlBuilder.kt`'s
-     * hand-rolled encoder (read as a Vorbild, not imported — `ADR-0109`
-     * Festlegung 3).
+     * instead of `%20`).
      */
     private fun encode(value: String): String {
         val builder = StringBuilder()

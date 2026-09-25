@@ -13,12 +13,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Realserver phase for the HTTP API surface (SPEC-018): a roundtrip in the
- * pattern of the server-E2E HTTP phase — the SDK registers a disposable
- * consumer with the admin token and lists tables with the reader token; the
- * registration is held against the SQL read path (`cdc.consumer`) by the
- * runner; a call with an unknown token is rejected with HTTP status 401
- * (SPEC-018 Negative).
+ * Real-server phase for the HTTP API client: a roundtrip — the SDK registers a
+ * disposable consumer with the admin token and lists tables with the reader
+ * token; the runner checks the registration against the SQL read path
+ * (`cdc.consumer`); a call with an unknown token is rejected with HTTP status
+ * 401.
  */
 class HttpRealserverTest {
     @Test

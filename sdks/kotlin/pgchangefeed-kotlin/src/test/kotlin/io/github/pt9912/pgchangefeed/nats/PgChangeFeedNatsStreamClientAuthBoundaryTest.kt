@@ -7,18 +7,16 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertSame
 
 /**
- * The `SPEC-024` connection-level auth boundary and the malformed-payload
- * path when subscribing to the NATS full-content stream — no real NATS
- * server involved (`AGENTS.md` §3.1 in the test run). Muster:
+ * The connection-level auth boundary and the malformed-payload path when
+ * subscribing to the NATS stream — no real NATS server involved. Pattern:
  * `io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClientAuthBoundaryTest`,
  * `io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClientAuthBoundaryTest`,
- * adapted to NATS's connection-level (not per-message) auth boundary — same
- * shape as the C# sibling's `PgChangeFeedNatsStreamClientAuthBoundaryTests`.
+ * adapted to NATS's connection-level (not per-message) auth boundary.
  */
 class PgChangeFeedNatsStreamClientAuthBoundaryTest {
 
-    // Rot färbende Mutation (real geprüft,
-    // slice-sdk-kotlin-nats-stream-client-flaeche): `PgChangeFeedNatsStreamClient.streamChanges`s
+    // Mutation that turns this test red (checked for real):
+    // `PgChangeFeedNatsStreamClient.streamChanges`s
     // `val payload = nextPayload() ?: break`-Zeile um ein umgebendes
     // `try { ... } catch (ex: Exception) { break }` ergänzt, das eine
     // Transport-Exception verschluckt statt sie weiterzureichen — dieser

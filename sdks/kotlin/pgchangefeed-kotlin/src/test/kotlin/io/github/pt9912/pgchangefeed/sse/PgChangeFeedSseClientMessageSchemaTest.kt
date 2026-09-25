@@ -5,25 +5,21 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Feld-für-Feld-Vollständigkeitstest gegen `SPEC-021`s zehn
- * Nachrichtenfelder, Consumer-seitig geprüft: jedes vom Fake gelieferte
- * Feld erreicht den Aufrufer über [PgChangeFeedSseClient.streamChanges]
- * unverändert — analog dem gRPC-Pendant
- * `io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClientMessageSchemaTest`
- * und dem serverseitigen Feldvollständigkeits-Testmuster in
- * `internal/adapters/driving/http/sse_test.go`, das dieser Test nicht
- * importiert (`ADR-0109` §Kontext Bindung „Import-Grenze, hier ohne
- * Ausnahme").
+ * Field-by-field completeness test of the ten message fields, checked from
+ * the consumer side: every field the fake delivers reaches the caller through
+ * [PgChangeFeedSseClient.streamChanges] unchanged — analogous to the gRPC
+ * counterpart
+ * `io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClientMessageSchemaTest`.
  */
 class PgChangeFeedSseClientMessageSchemaTest {
 
-    // Rot färbende Mutation (real geprüft,
-    // slice-sdk-kotlin-sse-client-flaeche): `PgChangeFeedSseClient.streamChanges`s
+    // Mutation that turns this test red (checked for real):
+    // `PgChangeFeedSseClient.streamChanges`s
     // `yield(parseChange(...))`-Aufruf um `.copy(schema = "")` ergänzt, das
     // das `schema`-Feld vor der Ausgabe leert — dieser Test schlägt dann
     // bei der `schema`-Assertion fehl, statt still grün zu bleiben.
     @Test
-    fun `streamChanges yields all SPEC-021 fields unchanged`() {
+    fun `streamChanges yields all ten fields unchanged`() {
         val frameData = """{"change_id":"change-1","transaction_id":"tx-1","source_table_id":"table-1",""" +
             """"sequence":2,"operation":"UPDATE","old_image":{"id":1},""" +
             """"new_image":{"id":1,"bestellstatus":"bezahlt"},"schema_version":"table-1-v1",""" +

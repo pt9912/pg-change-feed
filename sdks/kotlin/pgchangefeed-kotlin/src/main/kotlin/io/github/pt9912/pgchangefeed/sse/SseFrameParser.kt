@@ -1,25 +1,20 @@
 package io.github.pt9912.pgchangefeed.sse
 
 /**
- * One complete SSE frame of the `SPEC-021` change stream — the `event:`
- * name and the `data:` payload accumulated up to the blank line that
- * terminates it.
+ * One complete SSE frame of the change stream — the `event:` name and the
+ * `data:` payload accumulated up to the blank line that terminates it.
  */
 internal data class SseFrame(val name: String, val data: String)
 
 /**
- * Zerlegt Server-Sent-Events-Frames aus einer Zeilenquelle in [SseFrame]-
- * Werte — reine Zeilen-Verarbeitung über die JDK-Standardbibliothek, kein
- * Fremdmodul nötig. Form-Vorbild (gelesen, nicht importiert — `ADR-0109`
- * Festlegung 3): `examples/kotlin/sse-client/src/main/kotlin/cdcexamples/sse/SseStream.kt`'s
- * `readEvent`, bereits real erprobt.
+ * Splits Server-Sent-Events frames from a line source into [SseFrame] values —
+ * plain line processing over the JDK standard library, no further dependency.
  *
- * Ein Frame endet mit der Leerzeile, die der Server nach der `event:`- und
- * der `data:`-Zeile schreibt (`SPEC-021`); sie trennt zwei aufeinander-
- * folgende Events. Ist die Quelle vor dem Frame-Abschluss erschöpft
- * ([next] liefert `null`), liefert [readFrame] ebenfalls `null`, und ein
- * begonnenes Frame wird verworfen — ein unvollständiges Frame ist kein
- * Event.
+ * A frame ends with the blank line the server writes after the `event:` and
+ * the `data:` line; it separates two consecutive events. When the source is
+ * exhausted before a frame is complete ([next] returns `null`), [readFrame]
+ * also returns `null`, and a frame already begun is discarded — an incomplete
+ * frame is not an event.
  */
 internal object SseFrameParser {
     private const val EVENT_PREFIX = "event: "

@@ -10,45 +10,32 @@ import io.nats.client.Options
 import java.time.Duration
 
 /**
- * Public entry point for the PG Change Feed NATS full-content stream
- * (`SPEC-024`, `LH-FA-SST-008`): [streamChanges] subscribes to the
- * four-token subject namespace `cdc.stream.<source_id>.<schema>.<table>`
+ * Client for the PG Change Feed live change stream over NATS: [streamChanges]
+ * subscribes to the subject namespace `cdc.stream.<source_id>.<schema>.<table>`
  * (or a wildcard pattern over it, see [buildSourceSubject]/[ALL_SOURCES_SUBJECT])
- * and yields the ten `SPEC-024` message fields as [Change] — the same
- * idiomatic form as the existing gRPC/SSE surfaces
+ * and yields the ten message fields as [Change] — the same form as the gRPC
+ * and SSE clients
  * ([io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClient.streamChanges],
  * [io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClient.streamChanges]).
  *
- * Authentication is connection-level, not per-call (`SPEC-024`): the NATS
- * server rejects the connection itself when a server-wide token is
- * configured and the client's token is missing or wrong — there is no
- * per-message header to attach, unlike the HTTP/gRPC/SSE surfaces' bearer
- * token. [PgChangeFeedClientOptions] is still the shared denominator this
- * class reuses: [PgChangeFeedClientOptions.address] becomes the NATS server
- * URL (e.g. `nats://host:4222`) and [PgChangeFeedClientOptions.apiToken]
- * becomes the connection token — the same two-value shape as every other
- * surface, carried over a different transport.
+ * Authentication is connection-level, not per call: the NATS server rejects
+ * the connection itself when it is configured with a token and the client's
+ * token is missing or wrong — there is no per-message header to attach.
+ * [PgChangeFeedClientOptions] is reused: [PgChangeFeedClientOptions.address] is
+ * the NATS server URL (e.g. `nats://host:4222`) and
+ * [PgChangeFeedClientOptions.apiToken] is the connection token.
  *
- * **Boundary (`SPEC-024`, `LH-FA-SST-008`):** no delivery guarantee and no
- * in-stream replay (Core NATS, fire-and-forget); a disconnected or
- * slow-reading consumer misses the affected messages permanently. Missed
- * changes remain recoverable through the existing read path
+ * **Limits:** no delivery guarantee and no in-stream replay (fire-and-forget);
+ * a disconnected or slow-reading consumer misses the affected messages
+ * permanently. Missed changes remain recoverable through the read path
  * ([io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient.readChanges]).
- * A rejected connection (missing/wrong token) or a subscription that fails
- * for any other reason surfaces as whatever exception the underlying
- * `io.nats.client` call throws, propagated unwrapped from [streamChanges]'s
- * [Sequence] once iterated — the same "not a swallowed empty stream"
- * boundary as the gRPC surface's `UNAUTHENTICATED` `StatusException` and the
- * SSE surface's `401`: NATS connection errors are not HTTP status codes or
- * gRPC statuses, and inventing a parallel mapping here would only risk
- * drifting from what `io.nats.client` itself already throws (same reasoning
- * as the C# sibling's `PgChangeFeed.Client.Nats.PgChangeFeedNatsStreamClient`).
- * Only a message whose payload does not parse as the documented `SPEC-024`
- * shape gets its own typed exception, [PgChangeFeedNatsMalformedMessageException] —
- * that is a protocol violation, not a connection failure.
- *
- * Draht-Kenntnis-Vorbild (gelesen, nicht importiert — `ADR-0109`
- * Festlegung 3): `examples/kotlin/nats-stream-client/src/main/kotlin/cdcexamples/natsstream/{Format,Main}.kt`.
+ * A rejected connection (missing/wrong token) or a subscription that fails for
+ * any other reason surfaces as whatever exception the underlying
+ * `io.nats.client` call throws, propagated unwrapped — the stream is never
+ * silently empty, the same as the gRPC client's `UNAUTHENTICATED`
+ * `StatusException` and the SSE client's `401`. Only a message whose payload
+ * cannot be read gets its own typed exception,
+ * [PgChangeFeedNatsMalformedMessageException].
  */
 class PgChangeFeedNatsStreamClient private constructor(
     private val transport: NatsStreamTransport,
@@ -56,30 +43,25 @@ class PgChangeFeedNatsStreamClient private constructor(
 ) : AutoCloseable {
 
     /**
-     * Convenience constructor: connects to [options]'s address with
-     * [options]'s token (`SPEC-024`'s connection-level auth) and owns the
-     * resulting [Connection]. [close] closes that connection. A rejected
-     * connection (missing/wrong server-wide token) throws synchronously from
-     * this constructor itself, the same moment `io.nats.client.Nats.connect`
-     * throws — this is real `io.nats.client` behavior, not something this
-     * class remaps (see the class-level boundary note).
+     * Convenience constructor: connects to [options]'s address with [options]'s
+     * token and owns the resulting [Connection]. [close] closes that
+     * connection. A rejected connection (missing/wrong token) throws
+     * synchronously from this constructor itself, the moment
+     * `io.nats.client.Nats.connect` throws; the class does not remap it (see
+     * the class-level note on limits).
      */
     constructor(options: PgChangeFeedClientOptions) : this(connectOwned(options))
 
     /**
-     * Unpacks the `(transport, connection)` pair [connectOwned] builds into
-     * this class's two-argument primary constructor — a single-expression
-     * delegate target so [io.nats.client.Nats.connect] runs exactly once.
-     * Kept `private`: a bare [Connection]-typed public constructor would
-     * collide with this one at the same arity/shape if both existed
-     * directly (see [PgChangeFeedNatsStreamClient] taking [Connection]
-     * below, which stays distinct only because it carries `ownedConnection = null`
-     * rather than delegating through this pair).
+     * Unpacks the `(transport, connection)` pair [connectOwned] builds into the
+     * two-argument primary constructor, so that `io.nats.client.Nats.connect`
+     * runs exactly once. It is `private` because a public constructor taking a
+     * bare pair would be ambiguous next to the [Connection] constructor.
      */
     private constructor(owned: Pair<NatsStreamTransport, Connection>) : this(owned.first, owned.second)
 
     /**
-     * Advanced constructor: the [Connection] is injected, not owned — the
+     * Advanced constructor: the [Connection] is passed in, not owned — the
      * caller controls connection lifetime and sharing (e.g. one connection
      * behind several subjects/subscriptions, or a connection already
      * authenticated some other way). [close] is then a no-op.
@@ -87,44 +69,32 @@ class PgChangeFeedNatsStreamClient private constructor(
     constructor(connection: Connection) : this(JnatsStreamTransport(connection), ownedConnection = null)
 
     /**
-     * Test-only constructor: injects a [NatsStreamTransport] directly,
-     * bypassing connection construction entirely — the same seam
-     * [io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClient]'s
-     * `GrpcStreamTransport` and
-     * [io.github.pt9912.pgchangefeed.sse.PgChangeFeedSseClient]'s
-     * `SseTransport` provide for their surfaces, and for the same reason:
-     * `io.nats.client.Connection`/`Subscription` need a real server to
-     * connect to; faking at this boundary keeps the tests genuinely
-     * network-free.
+     * Constructor for the test source set: takes a [NatsStreamTransport]
+     * directly and builds no connection — the same kind of transport interface
+     * the gRPC and SSE clients use, because `io.nats.client.Connection` needs a
+     * real server; faking at this boundary keeps the tests network-free.
      *
-     * `internal` here — as with those two sibling seams — is a
-     * **compile-time** Kotlin-compiler visibility boundary against other
-     * Kotlin modules' metadata (the Kotlin Gradle plugin's default
-     * main/test sourceSet association makes the test sourceSet a friend of
-     * `internal` declarations in `main`). It is **not** a JVM bytecode
-     * access restriction: in the compiled class file this constructor is an
-     * ordinary `public` `<init>` symbol (constructors are always named
-     * `<init>` in bytecode and are not covered by Kotlin's `internal`
-     * name-mangling) — a Java caller, or reflection from any language, can
-     * still invoke it directly given a [NatsStreamTransport] implementation.
+     * `internal` is a compile-time visibility boundary of the Kotlin compiler
+     * (the test source set is a friend of the `internal` declarations of
+     * `main`), not a JVM access restriction: in the compiled class file this
+     * constructor is an ordinary `public` `<init>`, so a Java caller or
+     * reflection could still invoke it with a [NatsStreamTransport].
      */
     internal constructor(transport: NatsStreamTransport) : this(transport, ownedConnection = null)
 
     /**
-     * Subscribes to [subject] (default: [ALL_SOURCES_SUBJECT], every source
-     * and table) and yields every [Change] the NATS server delivers from
-     * subscription time onward (`SPEC-024`: fire-and-forget, no replay, one
-     * message per row change in commit order). Use [buildSubject]/
-     * [buildSourceSubject] to narrow the subject to one table or one
-     * source. The returned [Sequence] is cold — nothing subscribes until it
-     * is iterated.
+     * Subscribes to [subject] (default: [ALL_SOURCES_SUBJECT], every source and
+     * table) and yields every [Change] the NATS server delivers from
+     * subscription time onward (fire-and-forget, no replay, one message per row
+     * change in commit order). Use [buildSubject]/[buildSourceSubject] to
+     * narrow the subject to one table or one source. The returned [Sequence] is
+     * cold — nothing subscribes until it is iterated.
      *
-     * A subscription rejected or failed by the NATS server (missing/wrong
-     * token, `SPEC-024` Negative) ends the sequence with the underlying
-     * `io.nats.client` exception itself — see the class-level boundary
-     * note. A message whose payload does not parse as the documented
-     * `SPEC-024` shape throws [PgChangeFeedNatsMalformedMessageException],
-     * because that is a protocol violation, not a stream end.
+     * A subscription rejected or failed by the NATS server ends the sequence
+     * with the underlying `io.nats.client` exception itself — see the
+     * class-level note on limits. A message whose payload cannot be read throws
+     * [PgChangeFeedNatsMalformedMessageException], because that is not a stream
+     * end.
      */
     fun streamChanges(subject: String = ALL_SOURCES_SUBJECT): Sequence<Change> = sequence {
         val nextPayload = transport.subscribe(subject)
@@ -140,15 +110,15 @@ class PgChangeFeedNatsStreamClient private constructor(
             gson.fromJson(json, Change::class.java)
         } catch (ex: JsonSyntaxException) {
             throw PgChangeFeedNatsMalformedMessageException(
-                "PG Change Feed NATS full-content stream delivered a message whose payload is " +
-                    "not valid JSON — a protocol violation outside SPEC-024's documented shape.",
+                "PG Change Feed NATS stream delivered a message whose payload is " +
+                    "not valid JSON.",
                 ex,
             )
         }
         return change
             ?: throw PgChangeFeedNatsMalformedMessageException(
-                "PG Change Feed NATS full-content stream delivered a message whose payload is " +
-                    "empty or null — a protocol violation outside SPEC-024's documented shape.",
+                "PG Change Feed NATS stream delivered a message whose payload is " +
+                    "empty or null.",
             )
     }
 
@@ -159,9 +129,9 @@ class PgChangeFeedNatsStreamClient private constructor(
 
     companion object {
         /**
-         * The full-content namespace's root wildcard — every source, every
-         * table (`SPEC-024`: `cdc.stream.>`). The default [streamChanges]
-         * subscribes to when no narrower subject is supplied.
+         * The root wildcard of the stream namespace — every source, every table
+         * (`cdc.stream.>`). The default [streamChanges] subscribes to when no
+         * narrower subject is supplied.
          */
         const val ALL_SOURCES_SUBJECT: String = "cdc.stream.>"
 
@@ -169,12 +139,12 @@ class PgChangeFeedNatsStreamClient private constructor(
         private val gson = Gson()
 
         /**
-         * Builds the four-token `SPEC-024` subject for one specific table:
-         * `cdc.stream.<sourceId>.<schema>.<table>`. Each token is validated
-         * to contain none of NATS's own token separator (`.`) or wildcard
-         * characters (`*`, `>`) — a token carrying one of these would
-         * silently change which subjects the resulting string matches,
-         * rather than fail loudly.
+         * Builds the four-token subject for one specific table:
+         * `cdc.stream.<sourceId>.<schema>.<table>`. Each token is validated to
+         * contain none of NATS's own token separator (`.`) or wildcard
+         * characters (`*`, `>`) — a token carrying one of these would silently
+         * change which subjects the resulting string matches, rather than fail
+         * loudly.
          */
         fun buildSubject(sourceId: String, schema: String, table: String): String {
             validateToken(sourceId, "sourceId")
@@ -185,7 +155,7 @@ class PgChangeFeedNatsStreamClient private constructor(
 
         /**
          * Builds the three-token wildcard subject for every table of one
-         * source: `cdc.stream.<sourceId>.>` (`SPEC-024`).
+         * source: `cdc.stream.<sourceId>.>`.
          */
         fun buildSourceSubject(sourceId: String): String {
             validateToken(sourceId, "sourceId")
@@ -212,43 +182,33 @@ class PgChangeFeedNatsStreamClient private constructor(
 }
 
 /**
- * Transport seam between [PgChangeFeedNatsStreamClient] and the actual
- * `io.nats.client` wire — same reasoning as
- * [io.github.pt9912.pgchangefeed.sse.SseTransport]'s KDoc:
- * `io.nats.client.Connection`/`Subscription` carry no pluggable-handler
- * concept, so [PgChangeFeedNatsStreamClient] depends on this seam instead of
- * the real client directly, letting tests inject a network-free fake that
- * hands back canned payloads without any socket at all.
+ * Transport interface between [PgChangeFeedNatsStreamClient] and the
+ * `io.nats.client` wire — like [io.github.pt9912.pgchangefeed.sse.SseTransport]:
+ * `io.nats.client.Connection`/`Subscription` have no pluggable handler, so
+ * [PgChangeFeedNatsStreamClient] depends on this interface instead of the real
+ * client directly, letting tests inject a network-free fake that hands back
+ * canned payloads.
  *
- * [subscribe] returns a `() -> ByteArray?` next-payload supplier — the same
- * shape [io.github.pt9912.pgchangefeed.sse.SseTransport]'s `nextLine`
- * carries, adapted from lines to raw message bytes; a `null` result ends the
- * sequence (subscription closed), any thrown exception propagates from
- * [PgChangeFeedNatsStreamClient.streamChanges]'s [Sequence] unmodified (see
- * that method's boundary note).
+ * [subscribe] returns a `() -> ByteArray?` next-payload supplier; a `null`
+ * result ends the sequence (subscription closed), any thrown exception
+ * propagates unmodified from [PgChangeFeedNatsStreamClient.streamChanges]'s
+ * [Sequence].
  *
- * `internal` here — as with the sibling `SseTransport`/`GrpcStreamTransport`
- * seams — is a **compile-time** Kotlin-compiler visibility boundary against
- * other Kotlin modules' metadata, **not** a JVM bytecode access restriction:
- * see [PgChangeFeedNatsStreamClient]'s test-only constructor KDoc for the
- * full explanation, which applies here identically.
+ * `internal` is a compile-time visibility boundary of the Kotlin compiler, not
+ * a JVM access restriction; see the test-source-set constructor of
+ * [PgChangeFeedNatsStreamClient] for the details, which apply here identically.
  */
 internal fun interface NatsStreamTransport {
     fun subscribe(subject: String): () -> ByteArray?
 }
 
 /**
- * The real [NatsStreamTransport]: adapts a caller-supplied
- * `io.nats.client.Connection` (already connected — either owned by
- * [PgChangeFeedNatsStreamClient]'s convenience constructor or injected via
- * its advanced constructor). [io.nats.client.Subscription.nextMessage] is
- * called with [Duration.ZERO], which waits real-unbounded rather than
- * timing out — the same choice
- * `examples/kotlin/nats-stream-client/src/main/kotlin/cdcexamples/natsstream/Main.kt`
- * makes (read as Draht-Kenntnis, not imported — `ADR-0109` Festlegung 3),
- * and matches Core NATS's fire-and-forget semantics: there is no next
- * message to wait *for* once the subscription itself ends, at which point
- * `nextMessage` returns `null`.
+ * The real [NatsStreamTransport]: adapts an already connected
+ * `io.nats.client.Connection` (either owned by [PgChangeFeedNatsStreamClient]'s
+ * convenience constructor or passed in through its advanced constructor).
+ * [io.nats.client.Subscription.nextMessage] is called with [Duration.ZERO],
+ * which waits without a timeout; when the subscription itself ends,
+ * `nextMessage` returns `null` and the sequence ends.
  */
 internal class JnatsStreamTransport(private val connection: Connection) : NatsStreamTransport {
     override fun subscribe(subject: String): () -> ByteArray? {

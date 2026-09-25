@@ -10,23 +10,18 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * Feld-für-Feld-Vollständigkeitstest gegen `SPEC-020`s zehn
- * Nachrichtenfelder, Consumer-seitig geprüft: jedes vom Fake gelieferte
- * Feld erreicht den Aufrufer über [PgChangeFeedGrpcClient.streamChanges]
- * unverändert — analog dem serverseitigen Feldvollständigkeits-Testmuster
- * in `internal/adapters/driving/grpc/server_test.go`
- * (`traegtTokenOeffnetStreamUndTraegtChange`), das dieser Test nicht
- * importiert (`ADR-0109` §Kontext Bindung „Import-Grenze, hier ohne
- * Ausnahme").
+ * Field-by-field completeness test of the ten message fields, checked from
+ * the consumer side: every field the fake delivers reaches the caller through
+ * [PgChangeFeedGrpcClient.streamChanges] unchanged.
  */
 class PgChangeFeedGrpcClientMessageSchemaTest {
-    // Rot färbende Mutation (real geprüft, slice-sdk-kotlin-grpc-client-flaeche):
+    // Mutation that turns this test red (checked for real):
     // `PgChangeFeedGrpcClient.streamChanges()` um
     // `.map { it.toBuilder().clearSchema().build() }` erweitert, das das
     // `schema`-Feld vor der Ausgabe entfernt — dieser Test schlägt dann bei
     // der `schema`-Assertion fehl, statt still grün zu bleiben.
     @Test
-    fun `streamChanges yields all SPEC-020 fields unchanged`() = runBlocking {
+    fun `streamChanges yields all ten fields unchanged`() = runBlocking {
         val change = Change.newBuilder()
             .setChangeId("change-1")
             .setTransactionId("tx-1")

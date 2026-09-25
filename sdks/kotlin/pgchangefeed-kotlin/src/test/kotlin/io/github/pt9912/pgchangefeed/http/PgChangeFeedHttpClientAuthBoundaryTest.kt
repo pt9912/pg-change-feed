@@ -7,11 +7,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
 /**
- * The SPEC-018 error-response mapping — the auth boundary (`401`
- * missing/unknown token, `403` a `reader` token against an `admin`
- * endpoint) plus the remaining documented statuses (`400`/`500`) and the
- * defensive fallback for anything outside that closed set. Same structure
- * as the C# sibling's `PgChangeFeedHttpClientAuthBoundaryTests`.
+ * The error-response mapping — the auth boundary (`401` missing/unknown
+ * token, `403` a `reader` token against an `admin` endpoint) plus the
+ * remaining statuses (`400`/`500`) and the fallback for any other status.
  */
 class PgChangeFeedHttpClientAuthBoundaryTest {
 

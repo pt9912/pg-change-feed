@@ -11,35 +11,28 @@ import io.grpc.Metadata
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Public entry point for the PG Change Feed live-change stream (`SPEC-020`,
- * `LH-FA-SST-008`): [streamChanges] opens the `ChangeStream/StreamChanges`
- * server-streaming RPC and yields the generated [Change] message — the ten
- * `SPEC-020` fields (`change_id`, `transaction_id`, `source_table_id`,
- * `sequence`, `operation`, `old_image`, `new_image`, `schema_version`,
- * `schema`, `table`) — unmapped, exactly as the wire defines them. There is
- * no separate DTO layer here (unlike
- * `io.github.pt9912.pgchangefeed.http.model`): the generated stub already
- * is a typed, versioned representation of the wire schema; introducing a
- * second, hand-mapped type would only risk drifting from it.
+ * Client for the PG Change Feed live change stream over gRPC: [streamChanges]
+ * opens the `ChangeStream/StreamChanges` server-streaming call and yields the
+ * generated [Change] message with the ten fields `change_id`,
+ * `transaction_id`, `source_table_id`, `sequence`, `operation`, `old_image`,
+ * `new_image`, `schema_version`, `schema` and `table`, exactly as the server
+ * sends them. There is no separate DTO layer (unlike
+ * `io.github.pt9912.pgchangefeed.http.model`): the generated message already
+ * is the typed form of the stream schema.
  *
- * The bearer token is sent in the `authorization` gRPC metadata entry as
- * `Bearer <token>` (`SPEC-020`) on every call — there is no global or
- * static state; a process can hold several independently configured
- * instances at once.
+ * The bearer token is sent in the `authorization` call metadata entry as
+ * `Bearer <token>` on every call — there is no global or static state; a
+ * process can hold several independently configured instances at once.
  *
- * **Boundary (`SPEC-020`, `LH-FA-SST-008`):** the stream carries no replay
- * and no table-granular filtering. A consumer that needs either uses the
- * existing read path
+ * **Limits:** the stream carries no replay and cannot be filtered by table. A
+ * consumer that needs either uses the read path
  * (`io.github.pt9912.pgchangefeed.http.PgChangeFeedHttpClient.readChanges`),
  * not this stream.
  *
- * `.proto` liegt NICHT im committeten Baum dieses Pakets — der generierte
- * Coroutine-Stub ([ChangeStreamGrpcKt]) und der Nachrichtentyp ([Change])
- * entstehen im Bau aus dem zusätzlichen, benannten Docker-Bau-Kontext
- * `proto` (`ADR-0109` Festlegung 3, `sdks/kotlin/Dockerfile`).
- *
- * Draht-Kenntnis-Vorbild (gelesen, nicht importiert — `ADR-0109`
- * Festlegung 3): `examples/kotlin/grpc-client/src/main/kotlin/cdcexamples/grpc/Main.kt`.
+ * The `.proto` file is not part of the committed tree of this package: the
+ * generated coroutine stub ([ChangeStreamGrpcKt]) and the message type
+ * ([Change]) are generated during the build from the additional named Docker
+ * build context `proto` (`sdks/kotlin/Dockerfile`).
  */
 class PgChangeFeedGrpcClient private constructor(
     private val transport: GrpcStreamTransport,
@@ -48,18 +41,15 @@ class PgChangeFeedGrpcClient private constructor(
 ) : AutoCloseable {
 
     /**
-     * Convenience constructor: opens and owns its own [ManagedChannel]
-     * against [options]'s address (`usePlaintext()` — the PG Change Feed
-     * server speaks plaintext gRPC over HTTP/2 by default, the same choice
-     * as the reference clients and the C#/Python SDKs). [close] shuts down
-     * that channel. A TLS-terminated deployment builds its own [Channel]
-     * and uses the advanced constructor below instead.
+     * Convenience constructor: opens and owns its own [ManagedChannel] against
+     * [options]'s address (`usePlaintext()` — the PG Change Feed server speaks
+     * plaintext gRPC over HTTP/2). [close] shuts down that channel. A
+     * TLS-terminated deployment builds its own [Channel] and uses the advanced
+     * constructor below instead.
      *
      * [options].address must carry a resolvable host and port (e.g.
      * `http://pg-change-feed:50051`) — only the authority part is used, the
-     * scheme is ignored; this mirrors [options] being the shared connection
-     * denominator between the HTTP and gRPC surfaces (`ADR-0109`
-     * Festlegung 1).
+     * scheme is ignored.
      */
     constructor(options: PgChangeFeedClientOptions) : this(options, buildOwnedChannel(options))
 
@@ -67,49 +57,36 @@ class PgChangeFeedGrpcClient private constructor(
         this(GeneratedStubTransport(channel), options, channel)
 
     /**
-     * Advanced constructor: the [Channel] is injected, not owned — the
-     * caller controls channel lifetime and sharing (e.g. one channel behind
-     * several client surfaces, or a TLS-terminated channel). [close] is
-     * then a no-op.
+     * Advanced constructor: the [Channel] is passed in, not owned — the caller
+     * controls channel lifetime and sharing (e.g. one channel behind several
+     * clients, or a TLS-terminated channel). [close] is then a no-op.
      */
     constructor(channel: Channel, options: PgChangeFeedClientOptions) :
         this(GeneratedStubTransport(channel), options, ownedChannel = null)
 
     /**
-     * Test-only constructor: injects a [GrpcStreamTransport] directly,
-     * bypassing channel construction entirely — the same seam
-     * `io.github.pt9912.pgchangefeed.http.HttpTransport` uses for the HTTP
-     * client surface, and for the same reason: the generated coroutine stub
-     * exposes no pluggable-handler concept the way `Grpc.Core.CallInvoker`
-     * does on the C# side; faking at this boundary keeps the tests
-     * genuinely network-free without hand-rolling a fake low-level
-     * [Channel]/`ClientCall` pair.
+     * Constructor for the test source set: takes a [GrpcStreamTransport]
+     * directly and builds no channel — the same transport interface the HTTP
+     * client uses (`io.github.pt9912.pgchangefeed.http.HttpTransport`), so
+     * tests need no network and no hand-rolled fake [Channel].
      *
-     * `internal` here — as with `HttpTransport`'s test-only constructor —
-     * is a **compile-time** Kotlin-compiler visibility boundary against
-     * other Kotlin modules' metadata (the Kotlin Gradle plugin's default
-     * main/test sourceSet association makes the test sourceSet a friend of
-     * `internal` declarations in `main`). It is **not** a JVM bytecode
-     * access restriction: in the compiled class file this constructor is
-     * an ordinary `public` `<init>` symbol (constructors are always named
-     * `<init>` in bytecode and are not covered by Kotlin's `internal`
-     * name-mangling) — a Java caller, or reflection from any language, can
-     * still invoke it directly given a [GrpcStreamTransport] implementation.
+     * `internal` is a compile-time visibility boundary of the Kotlin compiler
+     * (the test source set is a friend of the `internal` declarations of
+     * `main`), not a JVM access restriction: in the compiled class file this
+     * constructor is an ordinary `public` `<init>`, so a Java caller or
+     * reflection could still invoke it with a [GrpcStreamTransport].
      */
     internal constructor(transport: GrpcStreamTransport, options: PgChangeFeedClientOptions) :
         this(transport, options, ownedChannel = null)
 
     /**
-     * `StreamChanges` — opens the server-streaming RPC and yields every
-     * [Change] the server sends from connection time onward (`SPEC-020`:
-     * fire-and-forget, no replay, one message per row change in commit
-     * order). The request carries no filter (`SPEC-020`: table-granular
-     * filtering is not part of this version).
+     * Opens the server-streaming call and yields every [Change] the server
+     * sends from connection time onward: fire-and-forget, no replay, one
+     * message per row change in commit order. The request carries no filter.
      *
      * A missing or invalid bearer token ends the call with gRPC status
-     * `UNAUTHENTICATED` (`SPEC-020` Negative) — this surfaces as an
-     * `io.grpc.StatusException` from the returned [Flow] itself once
-     * collected, not a swallowed empty stream.
+     * `UNAUTHENTICATED` — this surfaces as an `io.grpc.StatusException` from
+     * the returned [Flow] once collected, not as a silently empty stream.
      */
     fun streamChanges(): Flow<Change> {
         val headers = Metadata().apply {
@@ -141,10 +118,10 @@ class PgChangeFeedGrpcClient private constructor(
 }
 
 /**
- * Transport seam between [PgChangeFeedGrpcClient] and the generated
- * coroutine stub (`ChangeStreamGrpcKt.ChangeStreamCoroutineStub`) — see
- * [PgChangeFeedGrpcClient]'s test-only constructor KDoc for why this seam
- * exists and what `internal` does and does not restrict.
+ * Transport interface between [PgChangeFeedGrpcClient] and the generated
+ * coroutine stub (`ChangeStreamGrpcKt.ChangeStreamCoroutineStub`); see the
+ * test-source-set constructor of [PgChangeFeedGrpcClient] for why it exists
+ * and what `internal` does and does not restrict.
  */
 internal fun interface GrpcStreamTransport {
     fun streamChanges(headers: Metadata): Flow<Change>
