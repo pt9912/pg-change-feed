@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Out-of-Scope: Parallelisierung/Durchsatz über sehr
 große Tabellen ist Ausbaustufe — hier die Messung, ab wann eine Tabelle dafür
@@ -25,7 +25,7 @@ Wert in §3 ohne schärfende ADR, siehe §6), [`SPEC-029`](../../../../spec/pfli
 
 **Verantwortlich:** Implementer-Agent, 2026-09-25.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -165,7 +165,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -407,7 +407,7 @@ DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Ex
   Konstanten, die nur eine Warnung steuert (keine Ablehnung, kein Abbruch, keine
   Statusänderung); (iii) die Lücke hat eine Adresse — `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
   (elfter Beleg) im Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md), und der nächste Zug, der
+  [welle-backfill-bestand](welle-backfill-bestand.md), und der nächste Zug, der
   `warn.go` ändert (Re-Evaluierung der Toleranz), trägt den Umrechnungs-Test mit.
   *V-4* (INFO): benannte Grenze, siehe „Was ging anders“ (3). *V-5* (INFO): die
   `make bench`-Zeile in `harness/README.md` nennt Herkunft (übernommen aus
@@ -419,7 +419,7 @@ DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Ex
   `933ab054`). *V-7* (INFO): **benannte Grenze** — die Setz-Pfade der beiden Warnungen
   sind nur durch Unit- und View-Test belegt, in keinem realen Lauf ist eine Warnung
   gesetzt; Register `BEO-PGC/setzpfad-einer-kennzeichnung-nur-im-unit-test-belegt` (1×),
-  Adresse: der Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md).
+  Adresse: der Lese-Schritt der Closure von [welle-backfill-bestand](welle-backfill-bestand.md).
 - **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Kandidat, nicht
   entschieden, 1×):* ein Bench-Beleg trägt den Messhost; ein DoD-Kriterium oder ein
   Closure-Trigger über das Ergebnis eines Ganz-Targets, dessen Ausgang an einer
@@ -451,7 +451,7 @@ DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Ex
   (F-7, F-8, V-3) **11×**, `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (F-3) **31×**
   und `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-1) **6×** stehen **über** der
   Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  [welle-backfill-bestand](welle-backfill-bestand.md) (die state-Dateien tragen den
   Vermerk; die ersten drei sind verkörpert, `nachzug-laesst-ueberholten-text-stehen`
   hat noch keinen zugewiesenen Ausgang). `BEO-PGC/geschaetzter-wert-als-grenze` bleibt
   **1×**, offen (der Ort des Fehlers ist ohne zweites Auftreten geschlossen).
@@ -466,7 +466,7 @@ DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Ex
   [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md); Start-Trigger: diese
   Datei in `done/`). Die Ursache der Speicher-Spitze und die Ende-zu-Ende-Belege einer
   gesetzten Warnung haben keinen Slice; ihre Adresse ist der Lese-Schritt der Closure
-  von [welle-backfill-bestand](../welle-backfill-bestand.md) (Register, siehe oben).
+  von [welle-backfill-bestand](welle-backfill-bestand.md) (Register, siehe oben).
 - **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Toleranz ist
   eine Setzung ohne Messung · Die Richtgröße wird zur Grenze · Laufzeit von `make bench` ·
   Ein Wert in `spec/pflichtenheft.md` §3 ohne schärfende ADR · Warnung (2) prüft je Block
@@ -475,7 +475,7 @@ DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Ex
   [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md), kein
   Carveout und kein Folge-Slice nötig. *Weiter offen:* Die Messung hängt am Host →
   Register `BEO-PGC/dod-kriterium-haengt-am-messhost`.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-008`](../../../../spec/lastenheft.md) (Row-Image-Abwesenheit),
 [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (Spaltenausschluss, Wert nirgends im Image),
@@ -24,7 +24,7 @@ gelesen, nicht geändert; [`ARC-001`](../../../../spec/architecture.md) (Domain 
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -113,7 +113,7 @@ Adapter-Typ. Signatur und Typ der Spalten-Eingabe legt der Implementer fest.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen). *(Vier Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -294,7 +294,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   der Skill prüft Slices in `done/` und greift daher erst nach dem `git mv` —
   hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die Kopplung K1 übernimmt
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`; die Kopplung K1 übernimmt
   `slice-transformationen-kern-rename` (Start-Trigger jetzt erfüllt), die
   Handbuch-Übergaben gehen an `slice-backfill-change-origin` und
   `slice-backfill-sql-administration`.
@@ -305,7 +305,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   für die Funktion, die Wirkung im WAL-Adapter (eine zusätzliche Allokation
   je WAL-Änderung, Review-Messung, nicht committet) ist als tragbar
   entschieden.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Lerneintrag
   verkörpert nichts neu, er schärft die Anwendung einer bestehenden Regel
   ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A, am Ort existent); (b) Folge-Slice: keiner neu; (c) Register:

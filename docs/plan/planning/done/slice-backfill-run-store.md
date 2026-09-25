@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Negative: Neubeginn ohne Verlust — ein
 abgebrochener Run hinterlässt nichts), [`LH-FA-CAP-004`](../../../../spec/lastenheft.md) (Ordnung),
@@ -26,7 +26,7 @@ Transaktion, Warn-Spalten, `estimated_rows` = `NULL` als „unbekannt").
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -168,7 +168,7 @@ Erstanlage** der Tabelle), die Grants, und die Adapter für die drei Ports aus
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -460,7 +460,7 @@ Lerneintrag geschrieben.
   `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, V-7) **3×** und
   `BEO-PGC/test-schreibt-in-committete-datei` (V-6) **3×** erreichen **mit diesem Slice die Schwelle
   3×**; ihr Ausgang gehört dem Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  [welle-backfill-bestand](welle-backfill-bestand.md); `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
   (V-1, V-2) **17×** (verkörpert); `BEO-PGC/test-isolation-geteilter-zustand` (F-3, Dateiordnungs-Kopplung)
   **2×**; `BEO-PGC/zitat-nennt-die-falsche-stelle` (F-3) **8×** (verkörpert). *Neue Klassen (je 1×, offen):*
   `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (F-5) und `BEO-PGC/backfill-adapter-startwerte-ohne-messung`
@@ -499,7 +499,7 @@ Lerneintrag geschrieben.
   Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in `done/` und greift daher erst nach
   dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die Übergaben oben
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`; die Übergaben oben
   tragen ihre Adressen. Die Frage an den Architect zu `ADR-0047`, `ADR-0113` und `SPEC-029` ist kein Slice,
   sie ist im Register adressiert.
 - **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Textsortierung) **entfallen**, gemessen; Risiko 2
@@ -512,7 +512,7 @@ Lerneintrag geschrieben.
   Register; Risiko 9 (Antragsart) **eingetreten** → Folge-Slice `slice-backfill-sql-administration`;
   Risiko 10 (Startwerte) **weiter offen** im Register
   (`BEO-PGC/backfill-adapter-startwerte-ohne-messung`).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

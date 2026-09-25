@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Happy Path, Boundary, Negative — alle drei am
 laufenden System), [`LH-FA-CAP-004`](../../../../spec/lastenheft.md), [`LH-FA-REA-001`](../../../../spec/lastenheft.md), [`LH-FA-CON-005`](../../../../spec/lastenheft.md)
@@ -30,7 +30,7 @@ Umschreib-Prüfung des Snapshot-Lesers.
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -146,7 +146,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -173,7 +173,7 @@ bestehenden Rundläufe (ausschließlich externe Wege: `docker exec`, SQL gegen
 | `harness/README.md` §Sensors | update | die Zeile `make test-integration` trägt die sieben Backfill-Rundläufe und das Umschreiben in der Phase DDL-Fenster; die Zeile `make test-replication` nennt Lesesperre und Filenode-Vergleich. |
 | `docs/plan/adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md` und `docs/plan/adr/README.md` | neu / update | Closure: [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md) (`Supersedes` [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md), teilweise) setzt zwei Aussagen auf die gemessene Reichweite (Wirkung der Lesesperre auf wartende DDL; `RENAME COLUMN` ohne E2E-Beleg — Review F-1/F-7, Verifikation V-5); Index-Zeile. |
 | `harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md` | update | Closure: Nenner und gedeckte Zahl mit Lauf-Ursprung — Coverage-Gate 2541 Statements (54 in `snapshotlogic`), gedeckt 2112, gedruckt 83.10 %; DB-Adapter-Coverage 1035 Statements (`postgressnapshot` 130), gedeckt 850, gedruckt 82.13 % (Messung im Bericht der Closure, §7). |
-| Ortswahl der Replay-Invariante (Entscheidung des Planners, Closure; Verifikation V-1) | Entscheidung | Ort: `make test-integration` (`TestE2EBackfillReplayInvariant`). Anker der Wahl: [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 2 führt die Replay-Invariante im Umfang von `S5` (E2E); die Fitness-Function-Zeile derselben ADR nennt zusätzlich den Tier `make test-replication` (`git grep -n 'Replay-Invariante' docs/plan/adr/0111-backfill-bestand-snapshot-bulk-copy.md`: die Zeilen zu Herleitung, Folgepflicht und Fitness Function). Begründung: die Invariante verlangt Snapshot, nebenläufige Schreiber und WAL-Pfad zugleich; das leistet erst der komponierte Lauf am Feed-Container. Ein Tier-Beleg ist nicht geliefert (`git grep -n -i replay -- '*.go'`: nur `backfill_e2e_test.go` trägt die Invariante); weder der Review noch ein Architect-Verdikt hat die Ortswahl bestätigt oder den Tier-Beleg verlangt. Die Fitness-Function-Zeile nennt damit einen Beleg, den kein Test trägt — *benannte Lücke*, Adresse: Architect im Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md) (Zeile schärfen oder Tier-Beleg verlangen). |
+| Ortswahl der Replay-Invariante (Entscheidung des Planners, Closure; Verifikation V-1) | Entscheidung | Ort: `make test-integration` (`TestE2EBackfillReplayInvariant`). Anker der Wahl: [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 2 führt die Replay-Invariante im Umfang von `S5` (E2E); die Fitness-Function-Zeile derselben ADR nennt zusätzlich den Tier `make test-replication` (`git grep -n 'Replay-Invariante' docs/plan/adr/0111-backfill-bestand-snapshot-bulk-copy.md`: die Zeilen zu Herleitung, Folgepflicht und Fitness Function). Begründung: die Invariante verlangt Snapshot, nebenläufige Schreiber und WAL-Pfad zugleich; das leistet erst der komponierte Lauf am Feed-Container. Ein Tier-Beleg ist nicht geliefert (`git grep -n -i replay -- '*.go'`: nur `backfill_e2e_test.go` trägt die Invariante); weder der Review noch ein Architect-Verdikt hat die Ortswahl bestätigt oder den Tier-Beleg verlangt. Die Fitness-Function-Zeile nennt damit einen Beleg, den kein Test trägt — *benannte Lücke*, Adresse: Architect im Lese-Schritt der Closure von [welle-backfill-bestand](welle-backfill-bestand.md) (Zeile schärfen oder Tier-Beleg verlangen). |
 | Register-Einträge der Closure (`observations/BEO-PGC/…`) | neu / update | `evidence/slice-backfill-e2e.md` in fünf bestehenden Einträgen (`negativtest-ohne-bindung-an-seine-eingabe`, `zahl-in-traeger-driftet-gegen-die-messung`, `arbeit-ueberholt-stehenden-traeger`, `adr-aussage-breiter-als-ihre-messung`, `vorher-nachher-sprache-in-test-harness-kommentar`) und zwei neuen Einträgen (`plan-zusage-erfuellung-ohne-committeten-anker`, `run-fehlertext-traegt-klasse-doppelt`); `lesesperre-ohne-zeitgrenze` trägt sie aus der Fixrunde. Zähler und Ausgänge in §7. |
 
 **Ansatz-Vorschlag, zu belegen (nicht bindend):** Ein „Abbruch mitten im Run" ist
@@ -431,7 +431,7 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
   trägt sie, und ein Tier-Beleg ist nicht geliefert — die Fitness-Function-Zeile von
   [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) nennt einen Beleg, den kein Test trägt
   (*benannte Lücke*, Adresse: Architect im Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md)). *V-2* (LOW): die Mutationen je Negative-Kriterium
+  [welle-backfill-bestand](welle-backfill-bestand.md)). *V-2* (LOW): die Mutationen je Negative-Kriterium
   sind im Repo nicht belegt — der Bericht des Implementers liegt nicht im Repo, kein committetes Artefakt
   nennt sie, der Verifier fuhr für die Negative-Phase keine E2E-Mutation (Lauf-Kosten je rund 5 Minuten;
   Verifikations-Report §12). Die Closure fährt sie nicht nach; die Runner-Assertions der Negative-Phase sind
@@ -471,7 +471,7 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
   `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (F-4) **10×**, `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
   (F-3) **18×**, `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (F-2) **30×** und
   `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, F-7, V-5) **4×** stehen **über** der Schwelle 3×; ihr Ausgang
-  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md) (die ersten drei sind
+  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](welle-backfill-bestand.md) (die ersten drei sind
   verkörpert, der vierte ohne zugewiesenen Ausgang; die drei ersten erweitern den Bestand um eine weitere
   Ausprägung, die state-Dateien tragen den Vermerk). `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`
   (F-5) **2×** und `BEO-PGC/formatierungs-drift-ohne-gate` (F-10) **2×**, offen; `BEO-PGC/lesesperre-ohne-zeitgrenze` (F-6)
@@ -489,7 +489,7 @@ ungefiltert gesichert) + Closure-Notiz mit Lerneintrag geschrieben.
   Umschreiben der Tabelle im Fenster — in diesem Slice behoben ([`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md),
   [`ADR-0119`](../../adr/0119-backfill-wirkung-der-lesesperre-berichtigt.md)). *Weiter offen:* Wartegrenze der
   Lesesperre → Register `BEO-PGC/lesesperre-ohne-zeitgrenze`.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

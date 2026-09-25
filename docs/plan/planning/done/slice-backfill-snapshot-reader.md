@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Bestand über denselben Lesezugriffsweg),
 [`LH-FA-CAP-008`](../../../../spec/lastenheft.md) (Row-Image-Abwesenheit), [`LH-FA-CAP-006.a`](../../../../spec/pflichtenheft.md) (keine
@@ -27,7 +27,7 @@ Replication) — gelesen, nicht geändert.
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -173,7 +173,7 @@ byte-gleich — mit der gemeinsamen Funktion aus `row-image-gemeinsam`.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -321,7 +321,7 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   2040 → 2082, 42 von 42 gedeckt; Verifikation §3.3). Die Klasse erreicht damit
   **3×** (`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code`, evidence-Datei
   dieses Slice); der Ausgang gehört dem Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md).
+  [welle-backfill-bestand](welle-backfill-bestand.md).
 - **`reltuples` = `−1` für nie analysierte Tabellen** ist Wissen aus der
   PostgreSQL-Dokumentation und in diesem Repo nicht gemessen ([`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
   Festlegung 3, Punkt 5). *Erwartet, zu belegen durch:* die Messung an
@@ -348,7 +348,7 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   je Version, Verifier 0 von 100 je Version, ohne Poll 3 von 100). Das
   Produktionsverhalten steht im Register unter `BEO-PGC/adapter-fehler-ausgang`
   (evidence-Datei dieses Slice, 3×); Adresse: der Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md) und der Slice, der den
+  [welle-backfill-bestand](welle-backfill-bestand.md) und der Slice, der den
   Wiederholungsversuch der Konfigurationsschicht liefert.
 - **Blockgröße zählt Zeilen, nicht Bytes.** Bei Zeilen im MB-Bereich (`jsonb`,
   `bytea`) ist der Speicherbedarf eines `NextBlock` `B` mal die Zeilenbreite,
@@ -462,7 +462,7 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (F-5) **3×** und
   `BEO-PGC/adapter-fehler-ausgang` (Nachprüfung F-2, Flake) **3×** — beide erreichen
   **mit diesem Slice die Schwelle 3×**; ihr Ausgang gehört dem Lese-Schritt der Closure
-  von [welle-backfill-bestand](../welle-backfill-bestand.md). *Neue Klasse (1×, offen):* `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`
+  von [welle-backfill-bestand](welle-backfill-bestand.md). *Neue Klasse (1×, offen):* `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`
   (Risiko §6, weiter offen; Adresse `slice-backfill-bench-richtgroesse`). *Benannt, nicht
   gezählt:* Nachprüfung F-4 (der Cleanup einer Rolle lief vor dem Cleanup der Datenbank und
   ließ die Rolle je Lauf zurück) — erstes Auftreten dieser Form; gegen
@@ -499,7 +499,7 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   Rolle im frischen Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in
   `done/` und greift daher erst nach dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`; die
   Übergaben oben tragen ihre Adressen.
 - **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Test-Ausschluss) **entfallen**;
   Risiko 2 (GUC-Parität) **entfallen** (die Cast-Form war der rote Teil,
@@ -514,7 +514,7 @@ DoD vollständig + `make gates` grün + `make test-replication` real grün
   `evidence/slice-backfill-snapshot-reader.md` der Klasse
   `BEO-PGC/github-actions-unverifizierbar-lokal` nachgetragen
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Sensor-Umfang ist am Ort
   verkörpert (Listen-Prüfskript, Slot-Reserve-Phase, `snapshotlogic` im Gate-Nenner,
   `requiredTypes`); die geschärften Anwendungen verkörpern nichts neu. (b) Folge-Slice:

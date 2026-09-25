@@ -49,7 +49,7 @@ Fail-closed-Prüfung vor dem Commit prüft zusätzlich, dass der Regelstand
 demselben Stand entspricht, mit dem die Blöcke gebaut wurden; eine auf den
 Bestand nicht anwendbare Regel endet den Run sichtbar; ein E2E-Beleg zeigt die
 transformierte Form eines Backfill-Bestands am laufenden System. Das ist
-Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
+Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md)
 §5.
 
 **Ausdrücklich NICHT in diesem Slice** — je Punkt mit Begründung:
@@ -62,11 +62,11 @@ Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
   `map_value`, sobald er dort steht.
 - **Ein zweiter Bild-Bau-Weg im Run** — der Run hat **eine** Stelle, an der
   Ausschluss- und Regelstand in das Bild eingehen (Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) §5 K2); ein zweiter
+  [welle-backfill-bestand](../done/welle-backfill-bestand.md) §5 K2); ein zweiter
   Weg wäre ein zweiter Träger derselben Aussage.
 - **Checkpoint, Wiederaufnahme, Live-Zustellung von Backfill-Changes** —
   Out-of-Scope der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md).
+  [welle-backfill-bestand](../done/welle-backfill-bestand.md).
 - **Eine Regelform, die nur der Backfill kennt** — Regeln gelten je Tabelle für
   beide Erzeugungspfade; eine Backfill-spezifische Regel ist keine Fähigkeit
   von
@@ -193,7 +193,7 @@ beide Stände gemessen):**
 
 **Start** (`next` → `in-progress`): wenn `slice-backfill-run-usecase` in
 `done/` liegt (Kopplung K2 der Welle
-[welle-backfill-bestand](../welle-backfill-bestand.md) §5), **zusätzlich**
+[welle-backfill-bestand](../done/welle-backfill-bestand.md) §5), **zusätzlich**
 `slice-backfill-e2e` (der E2E-Beleg braucht das lauffähige System und die
 Backfill-Phase im Runner) und `slice-transformationen-antragsweg-usecase`
 (Regelstand-Port und Wirkung) in `done/` liegen und kein anderer Slice in

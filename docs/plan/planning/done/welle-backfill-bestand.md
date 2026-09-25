@@ -11,7 +11,7 @@ zwei Positionen, nicht drei.
 
 **Verantwortlich:** — (Rolleninhaber der Implementer-Rolle je Slice, gesetzt
 beim Übergang `open` → `next`; geschnitten aus
-[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
 §Folgepflichten 2 durch den Planner). **Datum:** 2026-09-23.
 
 ---
@@ -26,9 +26,9 @@ Der Bestand einer aktivierten Tabelle wird auf ausdrückliche Auslösung hin
 tragen — erkennbar als Backfill (`origin = 'backfill'`), lückenlos an den
 laufenden WAL-Pfad angeschlossen und ohne Verlust bei Unterbrechung. Das ist
 die Aussage der drei Akzeptanzkriterien von
-[`LH-FA-CAP-009`](../../../spec/lastenheft.md) (Happy Path, Boundary,
+[`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Happy Path, Boundary,
 Negative); der Mechanismus ist mit
-[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) entschieden:
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) entschieden:
 eine Bulk-Copy des Tabellenbestands in dem `REPEATABLE READ`-Snapshot eines je
 Run angelegten temporären logischen Slots, in **einer** Store-Transaktion
 committet, als `INSERT` mit dem neuen Feld `origin`, ausgelöst über die
@@ -44,8 +44,8 @@ komponierten System prüfbar; die Negative (Unterbrechung, Neubeginn ohne
 Verlust) braucht Start-Abgleich, Run-Zustand und den realen Prozessabbruch.
 Dazu kommt der Träger-Zustand, den kein Einzel-DoD beobachtet: die
 Row-Image-Konstruktion liegt an genau **einer** Stelle
-([`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) §Fitness
-Function, Review-Prüfpflicht), und [`LH-FA-CAP-009`](../../../spec/lastenheft.md)
+([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) §Fitness
+Function, Review-Prüfpflicht), und [`LH-FA-CAP-009`](../../../../spec/lastenheft.md)
 ist im RTM-Lauf (`make doc-trace`) nicht mehr Waise — beides ist ein Zustand
 des ganzen Bündels, zu belegen bei der Welle-Closure.
 
@@ -57,12 +57,12 @@ Mensch ohne Rückfrage sagen kann, ob er eingetreten ist; ein Datum darf erwähn
 werden, aber nie Trigger sein. Und der **Start**-Trigger ist **kein Ergebnis
 dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
 
-- [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) trägt den
+- [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) trägt den
   Status `Accepted` — **bereits erfüllt**, geprüft an der Zeile
   `ADR-0111` im ADR-Index
-  ([`docs/plan/adr/README.md`](../adr/README.md), Status-Spalte
+  ([`docs/plan/adr/README.md`](../../adr/README.md), Status-Spalte
   `Accepted`, Datum 2026-09-23).
-- [`LH-FA-CAP-009`](../../../spec/lastenheft.md) steht im Lastenheft als
+- [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) steht im Lastenheft als
   Anforderung mit den drei Akzeptanzkriterien — **bereits erfüllt**, geprüft
   an `spec/lastenheft.md` §`LH-FA-CAP-009`.
 - Kein weiterer Trigger nötig — die Welle kann sofort eröffnet werden; die
@@ -76,7 +76,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
 - Alle elf Slices in `done/`.
 - `make gates` grün — der Exit-Code des Laufs wird ungefiltert gesichert und
-  gesondert ausgewertet ([`AGENTS.md`](../../../AGENTS.md) §3.9).
+  gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - **Ein realer, grüner `make test-integration`-Lauf** mit den Backfill-Belegen
   am laufenden Feed-Container — Happy Path (Bestand über `cdc.changes` und
   `GET /changes`, `origin = 'backfill'`), Boundary (nebenläufige Schreiber
@@ -88,33 +88,33 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Annahme-Transaktion, atomarer Schreiber, Antrags-Funktion, Rollen), und `make schema-rollout` zweimal
   hintereinander gegen dieselbe Ziel-Datenbank (Idempotenz) — die
   Fitness-Function-Zeilen von
-  [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md), die nur
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md), die nur
   das gebündelte System zeigt. Dazu der **Alt-Tag-Lauf** von
   `tools/harness/run-schema-rollout-guard-test.sh`
-  ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md)
+  ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)
   Entscheidung 7): das Schema des jüngsten `v*`-Tags ausrollen, danach den
   Arbeitsbaum dieser Welle — Exit 0 zweimal, der Datenstand über `cdc.changes`
   lesbar; er zeigt das Upgrade über den Alt-Bestand mit **allen** Schema-Änderungen
   der Welle zusammen (`origin` in der View, neue Tabelle, neue View, Antragsart,
   Funktion).
-- `make doc-trace` führt [`LH-FA-CAP-009`](../../../spec/lastenheft.md) nicht
+- `make doc-trace` führt [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) nicht
   mehr unter den Waisen; der Träger ist die Zeile in
-  [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner
+  [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md), die der Runner
   von `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
   Lauf-Beleg).
 - **Ein Run beendet den Capture-Prozess nicht über den WAL-Rückstand.** Der
   Lauf von `tools/bench-backfill.sh` (einzeln, Exit 0) druckt den WAL-Rückstand
   je Run; die Spitze der größten Stufe liegt *erwartet* unter der Warnschwelle
-  von 100 MiB ([`SPEC-013`](../../../spec/pflichtenheft.md)) — die Messung trägt
+  von 100 MiB ([`SPEC-013`](../../../../spec/pflichtenheft.md)) — die Messung trägt
   `slice-backfill-bench-richtgroesse`, die Ursache
-  ([`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), Slot
+  ([`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md), Slot
   bestätigt im Leerlauf) `slice-backfill-slot-leerlauf-bestaetigung`; erst beide
   zusammen zeigen, dass der Konstraint „Capture-kritischer Pfad bleibt
-  unberührt“ aus [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+  unberührt“ aus [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
   für einen Run gilt. Ein Lauf von `make bench` als Ganzes ist kein Kriterium:
   er endet am Messhost mit Exit 2 an
-  [`LH-QA-PER-001`](../../../spec/lastenheft.md) (Ursache: das Architect-Verdikt
-  [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md),
+  [`LH-QA-PER-001`](../../../../spec/lastenheft.md) (Ursache: das Architect-Verdikt
+  [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md),
   Befund 2).
 - Die Row-Image-Konstruktion liegt an genau einer Stelle: der Suchlauf über
   `internal/**` nach der JSON-Bild-Erzeugung (Befehl und Fundstellen im
@@ -127,7 +127,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Bedeutung des WAL-Rückstands des Capture-Slots samt der Grenze der
   Ein-Transaktions-Form (gehaltenes WAL, Spill) stehen im
   Benutzerhandbuch — jede Zahl mit ihrem Ursprung
-  ([`AGENTS.md`](../../../AGENTS.md) §3.12).
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12).
 - Closure-Notiz in `welle-backfill-bestand-results.md`.
 
 ## 4. Slices in dieser Welle
@@ -138,17 +138,17 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 
 | Slice | Titel | Bezug |
 |---|---|---|
-| slice-backfill-spec-nachzug | Pflichtenheft (`LH-FA-CAP-009.a` beantwortet, `SPEC-002`/`SPEC-019`/`SPEC-022`, neue `SPEC-029`) und Architektur-Sicht (Backfill-Sequenz, ohne ADR-/Slice-Bezug) auf den beschlossenen Stand ziehen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 1 |
-| slice-backfill-row-image-gemeinsam | Row-Image-Konstruktion als eine gemeinsame, reine Funktion der Domäne; der WAL-Pfad ruft sie, byte-gleiches Ergebnis | [`LH-FA-CAP-008`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2 |
-| slice-backfill-change-origin | Feld `origin` (`wal` \| `backfill`, `NULL` ≙ `wal`) in Domäne, Store, View `cdc.changes` und `GET /changes` | [`LH-FA-DAT-006`](../../../spec/lastenheft.md), [`LH-FA-REA-001`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2/8 |
-| slice-backfill-snapshot-reader | Outbound Port `TableSnapshotPort` und Driven Adapter: temporärer Slot mit Export-Snapshot, Import, Cursor-Blöcke, Spaltenliste, GUC-Parität | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-FA-CAP-008`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 1 |
-| slice-backfill-run-usecase | Domäne `BackfillRun`, `BackfillTableUseCase`, Fähigkeits-Ports für Annahme, Run-Zustand und atomaren Schreiber, Fail-closed-Prüfung, Wecksignal — gegen Fakes | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 3/4/6 |
-| slice-backfill-run-store | Tabelle `cdc.backfill_run`, Grants, Postgres-Adapter für Annahme, Run-Zustand und den einen atomaren Schreiber (Ordnung, `change_id`, `origin`) | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-FA-CAP-004`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 4/6 |
-| slice-backfill-sql-administration | Antragsart `backfill`, `cdc.backfill_table`, Worker-Schleife mit Start-Aufnahme und Wecksignal, Start-Abgleich, `cdc.backfill_status`, `diagnose`, Idempotenz-Guard, Handbuch der Auslösung | [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-FA-SST-003`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
-| slice-backfill-e2e | `make test-integration`: Happy Path, Boundary, Negative; Startposition eines frisch registrierten Consumers gemessen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 |
-| slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße; Auswertung der zwei Warnungen im Use Case des Runs, sichtbar über View und `diagnose` | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
-| slice-backfill-slot-leerlauf-bestaetigung | Capture-Slot bestätigt im Leerlauf das `ServerWALEnd` der Keepalive-Nachricht (Entscheidung in der Application, ohne Persistenz); WAL ohne Inhalt für die Publication hält den Rückstand nicht mehr; Belege in Unit, Store und E2E, Träger (Spec, Handbuch, Bench) nachgezogen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-REL-001`](../../../spec/lastenheft.md), [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), [`ADR-0007`](../adr/0007-source-ack-outbound-port.md) |
-| slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Versionsentscheidung der Packages | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
+| slice-backfill-spec-nachzug | Pflichtenheft (`LH-FA-CAP-009.a` beantwortet, `SPEC-002`/`SPEC-019`/`SPEC-022`, neue `SPEC-029`) und Architektur-Sicht (Backfill-Sequenz, ohne ADR-/Slice-Bezug) auf den beschlossenen Stand ziehen | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Folgepflicht 1 |
+| slice-backfill-row-image-gemeinsam | Row-Image-Konstruktion als eine gemeinsame, reine Funktion der Domäne; der WAL-Pfad ruft sie, byte-gleiches Ergebnis | [`LH-FA-CAP-008`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2 |
+| slice-backfill-change-origin | Feld `origin` (`wal` \| `backfill`, `NULL` ≙ `wal`) in Domäne, Store, View `cdc.changes` und `GET /changes` | [`LH-FA-DAT-006`](../../../../spec/lastenheft.md), [`LH-FA-REA-001`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2/8 |
+| slice-backfill-snapshot-reader | Outbound Port `TableSnapshotPort` und Driven Adapter: temporärer Slot mit Export-Snapshot, Import, Cursor-Blöcke, Spaltenliste, GUC-Parität | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`LH-FA-CAP-008`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 1 |
+| slice-backfill-run-usecase | Domäne `BackfillRun`, `BackfillTableUseCase`, Fähigkeits-Ports für Annahme, Run-Zustand und atomaren Schreiber, Fail-closed-Prüfung, Wecksignal — gegen Fakes | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 3/4/6 |
+| slice-backfill-run-store | Tabelle `cdc.backfill_run`, Grants, Postgres-Adapter für Annahme, Run-Zustand und den einen atomaren Schreiber (Ordnung, `change_id`, `origin`) | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`LH-FA-CAP-004`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 4/6 |
+| slice-backfill-sql-administration | Antragsart `backfill`, `cdc.backfill_table`, Worker-Schleife mit Start-Aufnahme und Wecksignal, Start-Abgleich, `cdc.backfill_status`, `diagnose`, Idempotenz-Guard, Handbuch der Auslösung | [`LH-FA-ADM-001`](../../../../spec/lastenheft.md), [`LH-FA-SST-003`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
+| slice-backfill-e2e | `make test-integration`: Happy Path, Boundary, Negative; Startposition eines frisch registrierten Consumers gemessen | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 |
+| slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße; Auswertung der zwei Warnungen im Use Case des Runs, sichtbar über View und `diagnose` | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, [`ADR-0054`](../../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
+| slice-backfill-slot-leerlauf-bestaetigung | Capture-Slot bestätigt im Leerlauf das `ServerWALEnd` der Keepalive-Nachricht (Entscheidung in der Application, ohne Persistenz); WAL ohne Inhalt für die Publication hält den Rückstand nicht mehr; Belege in Unit, Store und E2E, Träger (Spec, Handbuch, Bench) nachgezogen | [`LH-FA-CAP-009`](../../../../spec/lastenheft.md), [`LH-QA-REL-001`](../../../../spec/lastenheft.md), [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md), [`ADR-0007`](../../adr/0007-source-ack-outbound-port.md) |
+| slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Versionsentscheidung der Packages | [`LH-FA-SST-009`](../../../../spec/lastenheft.md), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`), außer `slice-backfill-sdk-origin`, der nach `slice-backfill-change-origin`
@@ -157,17 +157,17 @@ technischen Kanten stehen in §5.
 
 **Herkunft des elften Slice:** `slice-backfill-slot-leerlauf-bestaetigung` ist
 nicht aus dem Schnitt-Vorschlag von
-[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) geschnitten,
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) geschnitten,
 sondern aus
-[`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 4
+[`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 4
 und dem Architect-Verdikt
-[`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)
+[`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)
 (Verdikt 3, „Zuschnitt“): der Eingriff berührt Empfangs-Schleife, Application
 und einen Port des Capture-kritischen Pfads und braucht Review und Verifier für
 sich; er steht **vor** der Welle-Closure.
 
 **Abweichungen vom Schnitt-Vorschlag** in
-[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
 §Folgepflichten 2 (dort ausdrücklich „Planner entscheidet final") — vier, je
 mit Grund:
 
@@ -177,7 +177,7 @@ mit Grund:
    `origin` ist eine additive Erweiterung von Schema, View und Lesepfaden;
    beide zusammen sprengen den ≤3-Liefer-Punkte-Rahmen eines einzelnen
    Reviews. Außerdem ist die gemeinsame Funktion der Punkt, an dem die
-   Transformations-Umsetzung ([`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
+   Transformations-Umsetzung ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
    ansetzt (§5): ein eigener Slice macht diese Kante benennbar.
 2. **`S3` geteilt** in `run-usecase` (Domäne, Use Case, Ports, Fakes — netzlos)
    und `run-store` (Tabelle, Grants, Postgres-Adapter — Store-Tier). Ein Slice
@@ -204,38 +204,38 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Roadmap-Struktur: fünf Abschnitte.
 
 - **Wird blockiert von:** keiner Welle;
-  [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) ist
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) ist
   `Accepted`, der Trigger (§2) ist erfüllt. Den Status `Accepted` von
-  [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
   verlangen zwei Slice-Start-Trigger (`slice-backfill-run-usecase`,
   `slice-backfill-bench-richtgroesse`), kein Wellen-Start-Trigger: die Eröffnung
   hängt nicht daran.
 - **Blockiert:** Slices der Welle
-  [welle-transformationen](welle-transformationen.md) — die Umsetzung der
+  [welle-transformationen](../welle-transformationen.md) — die Umsetzung der
   Transformationen
-  ([`LH-FA-CFG-007`](../../../spec/lastenheft.md),
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
+  ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md),
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md))
   hängt über **benannte Kopplungen** an dieser Welle; die Bedingungen sind
   Start-Trigger einzelner Slices der Transformations-Welle:
   - **K1 — Row-Image-Funktion.** Der Kern der Transformations-Umsetzung
-    ([`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+    ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
     Folgepflicht 2, Auswertung „in `rowImage` nach dem Ausschluss")
     startet erst, wenn `slice-backfill-row-image-gemeinsam` in `done/` liegt:
     die Regelauswertung hängt an der **einen** gemeinsamen Funktion, nicht an
     zwei Bild-Erzeugern.
   - **K2 — Backfill-Pfad.**
-    [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+    [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
     Folgepflicht 7 („Ein Backfill-Pfad … trägt dieselbe Regelauswertung; die
     zugehörige ADR nennt sie") wird als eigener Slice der Transformations-
     Umsetzung geführt, nach `slice-backfill-run-usecase`; er trägt (a) den
     Regelstand im Run (Auswertung im Bild-Bau), (b) die Erweiterung der
     Fail-closed-Prüfung um den Regelstand und (c) einen E2E-Beleg (Backfill-
-    Change trägt die transformierte Form). [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+    Change trägt die transformierte Form). [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
     nennt Transformationen nicht; die Bindung trägt allein
-    [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md).
+    [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md).
   - **K3 — gemeinsame Zeilen.** Beide Umsetzungen berühren dieselben Stellen:
     die geschlossene `request_kind`-Menge (`tools/schema/nacharbeit-administration.sql`),
-    [`SPEC-019`](../../../spec/pflichtenheft.md), `applyAdministrationRequest`
+    [`SPEC-019`](../../../../spec/pflichtenheft.md), `applyAdministrationRequest`
     und den Idempotenz-Guard. Der Antragsweg-Slice der Transformationen
     (Folgepflicht 3) startet nach `slice-backfill-sql-administration` in
     `done/` und erweitert die dort stehende Menge additiv.
@@ -266,21 +266,21 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     nach dem `done/` von `bench-richtgroesse`, Verdikt 3);
   - `change-origin` → `sdk-origin` (sonst unabhängig von den übrigen Slices).
 - **Keine neue Kante zur Welle
-  [welle-transformationen](welle-transformationen.md).**
+  [welle-transformationen](../welle-transformationen.md).**
   `slice-backfill-slot-leerlauf-bestaetigung` ändert weder die
-  `request_kind`-Menge noch [`SPEC-019`](../../../spec/pflichtenheft.md) noch
+  `request_kind`-Menge noch [`SPEC-019`](../../../../spec/pflichtenheft.md) noch
   den Run-Zweig der Administration;
   K1 bis K3 bleiben. Er berührt additiv zwei Dateien, die auch offene Slices der
   Transformationen nennen (`internal/adapters/driving/replication/mapper/mapper.go`
   eine lesende Methode, `internal/bootstrap/wiring.go` eine Verdrahtungszeile);
   die Reihenfolge „Backfill zuerst“ bleibt, jeder Slice der Transformationen
   wartet weiter auf seine Kante, nicht auf die Closure dieser Welle
-  ([welle-transformationen](welle-transformationen.md) §5).
+  ([welle-transformationen](../welle-transformationen.md) §5).
 
 **§3.13-Suchlauf (committetes Feld) — bewegte Eigenschaft: „die Signatur
 einer im neutralen Modell deklarierten View oder eine bestehende
 View-Spalte", ausgelöst durch
-[`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md).** Eine
+[`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md).** Eine
 Signaturänderung einer bestehenden View verlangt den Vorlauf im Target
 `schema-rollout` und kostet SQL-Leser ein Lesefenster; das Architect-Verdikt
 `architect-verdict-schema-rollout-view-signatur` sagt: außer `origin` in
@@ -293,7 +293,7 @@ berührt nur Plan-Dateien):
 | Suche | Befehl | Befund (gemessen) | Behandlung |
 |---|---|---|---|
 | Views im neutralen Modell | `awk '/^views:/{f=1} f&&/^  [a-z_]+:/{print}' tools/schema/schema.yaml` | 4 Views: `active_tables`, `consumer_status`, `changes`, `retention_blockers` | Gegenstand der folgenden Suchen |
-| Pläne, die das neutrale Modell ändern | `git grep -l 'tools/schema/schema.yaml' <Stand> -- <Suchraum>` | Parent: 3 Pläne — `slice-backfill-run-store` (neue Tabelle), `slice-backfill-sql-administration` (neue View `backfill_status`, CHECK-Menge, Funktion), `slice-transformationen-antragsweg-schema` (zwei nullable Spalten an `administration_request`, zwei Funktionen); alle additiv. Diff-Stand: 5 Dateien — dazu `slice-backfill-bench-richtgroesse` (Zeile „prüfen, nicht ändern") und dieses Feld | keine Signaturänderung; additive Änderungen brauchen keinen Vorlauf ([`ADR-0114`](../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 5); der Alt-Tag-Lauf steht in den drei DoDs |
+| Pläne, die das neutrale Modell ändern | `git grep -l 'tools/schema/schema.yaml' <Stand> -- <Suchraum>` | Parent: 3 Pläne — `slice-backfill-run-store` (neue Tabelle), `slice-backfill-sql-administration` (neue View `backfill_status`, CHECK-Menge, Funktion), `slice-transformationen-antragsweg-schema` (zwei nullable Spalten an `administration_request`, zwei Funktionen); alle additiv. Diff-Stand: 5 Dateien — dazu `slice-backfill-bench-richtgroesse` (Zeile „prüfen, nicht ändern") und dieses Feld | keine Signaturänderung; additive Änderungen brauchen keinen Vorlauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 5); der Alt-Tag-Lauf steht in den drei DoDs |
 | Pläne, die eine der vier Views nennen | `git grep -l -E 'cdc\.(changes\|active_tables\|consumer_status\|retention_blockers)' <Stand> -- <Suchraum>` und Lesen jedes Treffers | Parent: 8 Pläne, 18 Treffer-Zeilen (`git grep -n`, gemessen); jeder gelesene Treffer ist ein Lesen oder ein Beleg (Ordnungstest, E2E-Lesen über `cdc.changes`, Startposition über `cdc.consumer_status`, Handbuch-Beschreibung) oder die Nennung von `origin` in `cdc.changes` durch `slice-backfill-change-origin`; `retention_blockers`: 0 Treffer. Diff-Stand: 10 Pläne, 26 Treffer-Zeilen — die zusätzlichen sind die Alt-Tag-Lauf-Nachzüge dieses Zuges und dieses Feld | kein weiterer Plan ändert eine bestehende View oder View-Spalte |
 | Nachträgliche Änderung der neuen View | Lesen von `slice-backfill-sql-administration` und `slice-backfill-bench-richtgroesse` | `backfill_status` trägt die zwei Warn-Spalten von Anfang an; `slice-backfill-bench-richtgroesse` füllt nur Werte | Auflage aus dem Verdikt in beide Pläne gezogen (DoD, Rückführung, Plan-Tabelle) |
 | Regel-Sicht der Transformationen | Lesen von `welle-transformationen.md` §6 | keine View; der Regelstand bleibt über `cdc.administration_request` lesbar | keine Änderung |
@@ -303,7 +303,7 @@ im Typ ändert; kein Plan, der `cdc.active_tables`, `cdc.consumer_status` oder
 `cdc.retention_blockers` berührt.
 
 **Träger der Folgepflichten** — jede Pflicht aus
-[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
 §Folgepflichten hat einen Träger oder eine benannte Adresse
 (`BEO-PGC/adr-folgepflicht-ohne-traeger-slice` — eine adresslose Pflicht
 bleibt liegen, bis sie ein Leser zufällig findet):
@@ -311,14 +311,14 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 | Folgepflicht | Träger |
 |---|---|
 | 1 Spec-Nachzug | `slice-backfill-spec-nachzug`; der Benutzerhandbuch-Anteil verteilt auf `change-origin`, `sql-administration`, `e2e`, `bench-richtgroesse` (§4, Abweichung 4) |
-| 2 Umsetzung (S1–S6) | die elf Slices dieser Welle (S1–S6 sind zehn davon; der elfte trägt [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), siehe unten) |
-| 3 Nicht Teil (Checkpoint, Parallelisierung, HTTP-/CLI-Auslösung, Live-Zustellung, Filter `origin`, Auslösung als Option von `enable`) | §6 dieser Welle; Adresse: die Re-Evaluierungs-Trigger in [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) |
+| 2 Umsetzung (S1–S6) | die elf Slices dieser Welle (S1–S6 sind zehn davon; der elfte trägt [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md), siehe unten) |
+| 3 Nicht Teil (Checkpoint, Parallelisierung, HTTP-/CLI-Auslösung, Live-Zustellung, Filter `origin`, Auslösung als Option von `enable`) | §6 dieser Welle; Adresse: die Re-Evaluierungs-Trigger in [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) |
 | 4 Kommentar-Nachzug `model.Change` | `slice-backfill-change-origin` (DoD) |
 | 5 Idempotenz-Guard | `slice-backfill-sql-administration` (DoD) |
-| 6 Cursor-Form (Priorität nach `S5`) | kein Slice dieser Welle; Adresse: `BEO-PGC/limit-fortsetzung-innerhalb-einer-position` (offen) und der Re-Evaluierungs-Trigger von [`ADR-0081`](../adr/0081-changes-lesen-ueber-die-http-api.md); bis dahin trägt die Doku die Lese-Regel „Bestandsabzug ohne `Limit`" (`slice-backfill-sql-administration`) |
+| 6 Cursor-Form (Priorität nach `S5`) | kein Slice dieser Welle; Adresse: `BEO-PGC/limit-fortsetzung-innerhalb-einer-position` (offen) und der Re-Evaluierungs-Trigger von [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md); bis dahin trägt die Doku die Lese-Regel „Bestandsabzug ohne `Limit`" (`slice-backfill-sql-administration`) |
 
 **Träger der Folgepflichten von
-[`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)**
+[`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)**
 (Rollenschnitt, Aufnahme, Warn-Kriterium):
 
 | Folgepflicht | Träger |
@@ -332,7 +332,7 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 | 7 Neustart-Beleg der `queued`-Zeile | `slice-backfill-e2e` |
 
 **Träger der Folgepflichten von
-[`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md)** (Capture-Slot
+[`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md)** (Capture-Slot
 bestätigt im Leerlauf):
 
 | Folgepflicht | Träger |
@@ -341,7 +341,7 @@ bestätigt im Leerlauf):
 | 2 Spec-Nachzug (`LH-QA-REL-001.a`, `SPEC-009`, Leerlauf-Weg in der Architektur-Sicht) | `slice-backfill-slot-leerlauf-bestaetigung` |
 | 3 Handbuch („WAL-Rückstand prüfen“, §4, §Grenzwerte) | `slice-backfill-slot-leerlauf-bestaetigung` |
 | 4 `tools/bench-backfill.sh` (Zeile „WAL-Rückstand-Schwellen“ entfällt) | `slice-backfill-slot-leerlauf-bestaetigung` |
-| 5 Suchlauf (Kommentar und Test von `handleCopyData`/`standbyStatus`, Aussage von [`ADR-0080`](../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) | `slice-backfill-slot-leerlauf-bestaetigung` (`ADR-0080` bleibt unberührt, `Accepted`) |
+| 5 Suchlauf (Kommentar und Test von `handleCopyData`/`standbyStatus`, Aussage von [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) | `slice-backfill-slot-leerlauf-bestaetigung` (`ADR-0080` bleibt unberührt, `Accepted`) |
 | Nachzug im Plan von `slice-backfill-bench-richtgroesse` („Befunde der Messung“, DoD „realer `make bench`-Lauf“; Zeile „Folge-Arbeit“ des Verdikts) | Planner; gezogen und ratifiziert in der Closure von `slice-backfill-bench-richtgroesse` (Plan §2 „Bench“, §3 „Befunde der Messung“, §5) |
 
 ## 6. Out-of-Scope für diese Welle
@@ -352,51 +352,51 @@ Zielsetzung: Was nicht ausdrücklich ausgeschlossen ist, dehnt die Welle, bis
 der Closure-Trigger unerreichbar wird.
 
 - **Fortsetzen mit Checkpoint und Block-Transaktionen** — die Ein-Transaktions-
-  Form gilt für den Erstumfang ([`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+  Form gilt für den Erstumfang ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
   Teilfrage 4 Option B, Festlegung 3); der Re-Evaluierungs-Trigger (Kopierdauer
   über der Betriebs-Toleranz) führt zu einer Folge-ADR. Ihn trägt auch die
   Grenze der Ein-Transaktions-Form, die die Leerlauf-Bestätigung
-  ([`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 2)
+  ([`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 2)
   bestehen lässt: das von der Quelle gehaltene WAL und der Spill des Walsenders.
 - **Parallelisierung** — Ausbaustufe laut
-  [`LH-FA-CAP-009`](../../../spec/lastenheft.md) (ein Worker, ein Run zugleich).
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (ein Worker, ein Run zugleich).
 - **HTTP-Endpunkt und CLI-Auslösung** — im Erstumfang genügt
   `cdc.backfill_table` samt `cdc.backfill_status` und `diagnose`
-  ([`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+  ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
   Festlegung 2); die Auslösung ohne SQL-Zugang ist additiv über denselben
   Use Case und ein eigener Slice.
 - **Live-Zustellung von Backfill-Changes** über gRPC, SSE und NATS-Vollinhalt —
   die Live-Wege tragen ausschließlich WAL-Changes, ihre Schemata
-  ([`SPEC-020`](../../../spec/pflichtenheft.md), [`SPEC-021`](../../../spec/pflichtenheft.md),
-  [`SPEC-024`](../../../spec/pflichtenheft.md)) und die Proto-Artefakte bleiben
+  ([`SPEC-020`](../../../../spec/pflichtenheft.md), [`SPEC-021`](../../../../spec/pflichtenheft.md),
+  [`SPEC-024`](../../../../spec/pflichtenheft.md)) und die Proto-Artefakte bleiben
   unberührt, `make generated-sync` ist nicht betroffen; das Wecksignal nach dem
   Run-Commit läuft über den bestehenden `ChangeNotificationPort`.
 - **Filter `origin` an `GET /changes`** — das Feld ist lesbar, die
   serverseitige Filterung eine Folge-Entscheidung (Filter-Grammatik nach
-  [`ADR-0081`](../adr/0081-changes-lesen-ueber-die-http-api.md)).
+  [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md)).
 - **Consumer-Reset** — das Positionsmodell bleibt unverändert; der Reset ist
-  „explizit administrativ" ([`ADR-0013`](../adr/0013-consumer-domainkonzept.md))
+  „explizit administrativ" ([`ADR-0013`](../../adr/0013-consumer-domainkonzept.md))
   und eine eigene Fähigkeit mit eigener Entscheidung
-  ([`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+  ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
   Festlegung 1).
 - **Cursor-Form für `Limit` innerhalb einer Position** — Re-Evaluierung von
-  [`ADR-0081`](../adr/0081-changes-lesen-ueber-die-http-api.md); diese Welle
+  [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md); diese Welle
   trägt nur die Lese-Regel in der Doku. Hinweis für eine spätere Welle: alle
   Blöcke eines Runs teilen die Position `X`, ein Bestand jenseits von `Limit`
   Zeilen ist über `GET /changes` nur ohne `Limit` lesbar.
 - **Retention-Paging** — `RunRetentionService` liest alle Changes einer Quelle
   in den Speicher; die Grenze besteht unabhängig vom Backfill
   (Re-Evaluierungs-Trigger von
-  [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)).
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)).
 - **Instanz-zu-Instanz-Migration** — Out-of-Scope im Lastenheft.
 - **Transformationen und Routing**
-  ([`LH-FA-CFG-007`](../../../spec/lastenheft.md), [`LH-FA-CFG-008`](../../../spec/lastenheft.md),
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) —
+  ([`LH-FA-CFG-007`](../../../../spec/lastenheft.md), [`LH-FA-CFG-008`](../../../../spec/lastenheft.md),
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)) —
   die Transformationen sind Gegenstand von
-  [welle-transformationen](welle-transformationen.md), das Routing hat weder
+  [welle-transformationen](../welle-transformationen.md), das Routing hat weder
   Welle noch Umsetzung; die Kopplung steht in §5.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle Workflow-
-  Änderung** — [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht. Die
+  Änderung** — [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht. Die
   Package-Versionen der drei SDKs bleiben `0.2.0` (Versionsentscheidung im
   Slice `sdk-origin`, dessen §3); ein Tag-Push und damit ein Release bleibt
   Betreiber-Handlung außerhalb dieser Welle. Die Pipeline `e2e.yml` fährt `make test-integration`
@@ -406,11 +406,11 @@ der Closure-Trigger unerreichbar wird.
   Änderungshistorie des Benutzerhandbuchs trägt je berührtem Slice eine Zeile.
 - **Keine Schwellen-Senkung und keine neue Gate-Klasse** — das neue DB-Paket
   aus `slice-backfill-snapshot-reader` (`postgressnapshot`) ist nach
-  [`ADR-0071`](../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
+  [`ADR-0071`](../../adr/0071-coverage-gate-messgegenstand-netzlos-pruefbare-flaeche.md)
   Punkt 1 nicht Gegenstand des Coverage-Gates, weil sein Testlauf einen externen
   Dienst voraussetzt; die Regel greift ohne Textänderung, der Slice zieht die
   namentlichen Listen nach (Trigger (a)); eine Senkung bliebe per
-  [`AGENTS.md`](../../../AGENTS.md) §3.6 ADR-pflichtig.
+  [`AGENTS.md`](../../../../AGENTS.md) §3.6 ADR-pflichtig.
 - **Lastenheft unverändert** — die Welle schärft Techniken im Pflichtenheft,
   nicht Anforderungen.
 
@@ -431,13 +431,13 @@ Risiko trägt (Detail je Slice in §8):
   Regel (jeder Run ist eine Position mit vielen Changes). Träger in der
   Doku: `slice-backfill-sql-administration`; Cursor-Form: §6.
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert,
-  [`AGENTS.md`](../../../AGENTS.md) §3.13, 26×) — betrifft jeden Slice; der
+  [`AGENTS.md`](../../../../AGENTS.md) §3.13, 26×) — betrifft jeden Slice; der
   Suchlauf steht als committiertes Feld je Slice-Plan §3.
 - `BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (offen, 1×) — betrifft diese
   Welle als Ganzes: die Träger-Tabelle in §5 gibt jeder Folgepflicht von
-  [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) einen
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) einen
   Träger oder eine benannte Adresse; die Kopplung zu
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Folgepflicht 7 steht in §5.
 - `BEO-PGC/geschaetzter-wert-als-grenze` (offen, 1×) — `slice-backfill-sql-administration`
   und `slice-backfill-bench-richtgroesse`: die geschätzte Zeilenzahl
@@ -446,7 +446,7 @@ Risiko trägt (Detail je Slice in §8):
 - `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×) —
   `slice-backfill-run-usecase` und `slice-backfill-bench-richtgroesse`: der Status
   `Accepted` von
-  [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
   steht als Start-Trigger, nicht als Rückführungs-Bedingung; die Zuordnung des
   DB-Pakets im `snapshot-reader` ist vor dem Start entschieden.
 - `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (offen, 2×),
@@ -496,11 +496,11 @@ Risiko trägt (Detail je Slice in §8):
 - `slice-backfill-slot-leerlauf-bestaetigung` (elfter Slice; Zähler = Dateien
   unter `evidence/`, Stand der Closure des Slice): `BEO-PGC/adr-aussage-breiter-als-ihre-messung`
   (offen, 5×) — die Store-Zeile der Fitness Function von
-  [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) („Mutation
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) („Mutation
   inmitten der Transaktion → Change fehlt“) ist nach der Messung nicht
   erfüllbar (Belege: `review-slice-backfill-slot-leerlauf-bestaetigung` F-1,
   `verifikation-slice-backfill-slot-leerlauf-bestaetigung` §4 S2); berichtigt
-  in [`ADR-0121`](../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md).
+  in [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md).
   Weitere Belege dieses Slice: `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
   (verkörpert, 20×), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 7×),
   `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (offen, 3×),

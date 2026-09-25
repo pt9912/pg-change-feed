@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-DAT-006`](../../../../spec/lastenheft.md) (Metadaten-Erweiterbarkeit — Boundary: gespeicherte
 Changes ohne das Feld lesen sich unverändert), [`LH-FA-REA-001`](../../../../spec/lastenheft.md)
@@ -25,7 +25,7 @@ gelesen, nicht geändert.
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -134,7 +134,7 @@ schreibt in diesem Slice `backfill` — dafür gibt es noch keinen Schreiber.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen). *(Vier Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -390,7 +390,7 @@ Alt-Tag-Lauf) real grün + Closure-Notiz mit Lerneintrag geschrieben.
   `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (Review F-2) **9×**;
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (Review F-3, Verifikation V-5)
   **4×** — über der Schwelle, der Ausgang bleibt beim Lese-Schritt der Closure
-  von [welle-backfill-bestand](../welle-backfill-bestand.md);
+  von [welle-backfill-bestand](welle-backfill-bestand.md);
   `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Verifikation V-1, V-2)
   **15×**; `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Review F-4, F-7, F-10)
   **28×**; `BEO-PGC/d-migrate-nacharbeit` (die View-Signaturänderung als fünfte
@@ -434,7 +434,7 @@ Alt-Tag-Lauf) real grün + Closure-Notiz mit Lerneintrag geschrieben.
   Risiko 2 (Doppelquelle View/Lesepfad) **entfallen**; Risiko 3 (strikter
   Decoder) **weiter offen**, adressiert in `slice-backfill-sdk-origin` §6 und im
   Register; Risiko 4 (Zeilen-Anker der E2E-Abdeckung) **entfallen**.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Sensor-Umfang ist
   am Ort verkörpert (Wache und Guard-Test, `harness/targets/schema-rollout.md`,
   [`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md)); die

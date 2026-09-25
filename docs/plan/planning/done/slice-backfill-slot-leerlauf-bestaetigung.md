@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Backfill des
 Bestands — der Run darf den Capture-Prozess nicht beenden),
@@ -219,7 +219,7 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
+      der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md)
       (die Roadmap führt sie unter *Offene Wellen*, das Ereignis kann
       eintreten; die Welle setzt diesen Slice in ihrem Closure-Trigger voraus).
 
@@ -620,7 +620,7 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   letzte als Paket-Zuordnung), fünf nennen `wiring.go`
   (`antragsweg-schema`, `antragsweg-usecase`, `backfill-pfad`,
   `start-reihenfolge`, `kern-rename`); die Reihenfolge „Backfill zuerst“
-  ([welle-backfill-bestand](../welle-backfill-bestand.md) §5) bleibt, es
+  ([welle-backfill-bestand](welle-backfill-bestand.md) §5) bleibt, es
   entsteht **keine** neue Kante. **Ausgang:** *entfallen* — die Änderung ist
   additiv (`Assembler.TransactionOpen`: 7 Zeilen in `mapper.go`, hängt an keiner
   Sperre und berührt `tablesMu` nicht; in `wiring.go` eine `captureService`-
@@ -713,7 +713,7 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (V-2) **7×** und
   `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (F-6) **3×** stehen **über
   oder auf** der Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Welle-Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  [welle-backfill-bestand](welle-backfill-bestand.md) (die state-Dateien tragen den
   Vermerk; `zahl-in-traeger-driftet-gegen-die-messung` ist verkörpert,
   `vorher-nachher-sprache-in-test-harness-kommentar` erreicht die Schwelle mit diesem
   Slice). `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (F-3, Variante „Ersatz unter neuem
@@ -733,7 +733,7 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   `slice-backfill-sdk-origin`; die offenen Grenzen (Schwelle → Prozessende ohne
   committeten Test, Quellseite nur als Messung des Reviewers) haben keinen Slice, ihre
   Adresse ist der Lese-Schritt der Welle-Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md). Übergaben an offene Pläne
+  [welle-backfill-bestand](welle-backfill-bestand.md). Übergaben an offene Pläne
   ([`AGENTS.md`](../../../../AGENTS.md) §3.13): `slice-backfill-sdk-origin` und die
   Slices der Transformationen tragen keinen betroffenen Träger (Suchlauf in §6, letzter
   Punkt; Ergebnis: kein Treffer, keine neue Kante).
@@ -748,7 +748,7 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) (erwartet). *Weiter
   offen:* Bindung der Kette „Fehlerschwelle → Prozessende“ → Register
   `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung`.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

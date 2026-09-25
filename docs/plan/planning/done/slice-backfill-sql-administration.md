@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-ADM-001`](../../../../spec/lastenheft.md) (Administration über SQL), [`LH-FA-SST-003`](../../../../spec/lastenheft.md)
 (CLI-Diagnose), [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Auslösung: „ein Backfill wird ausgelöst";
@@ -31,7 +31,7 @@ Schema-Version ([`ADR-0116`](../../adr/0116-backfill-schema-version-referenz-rei
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -198,7 +198,7 @@ sichtbar. Drei Teile:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -495,7 +495,7 @@ Lerneintrag geschrieben.
   wiederholbare Spur trägt. Herkunft: `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
   (5×, F-6, F-7, V-1); Träger-Kandidaten sind [`AGENTS.md`](../../../../AGENTS.md) §3.13 und der
   Suchlauf-Schritt von `implement-slice`, die Entscheidung liegt beim Lese-Schritt der Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md) (Architect). *Benannte Lücke (Architect):*
+  [welle-backfill-bestand](welle-backfill-bestand.md) (Architect). *Benannte Lücke (Architect):*
   [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 1 („je
   Quelle nimmt eine Instanz Anträge an") ist für die Antragsart `backfill` am Code gebunden — der
   Vergleich `request.Source != deps.source` in `processAdministrationRequests`, Unit-Test mit zwei
@@ -512,7 +512,7 @@ Lerneintrag geschrieben.
   `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (F-2) **9×**,
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-6, F-7, V-1) **5×** und
   `BEO-PGC/test-schreibt-in-committete-datei` (V-5) **4×** stehen **über** der Schwelle 3×; ihr Ausgang
-  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md)
+  gehört dem Lese-Schritt der Closure von [welle-backfill-bestand](welle-backfill-bestand.md)
   (die ersten beiden sind verkörpert mit Ausgangs-Kandidat, die letzten beiden ohne zugewiesenen
   Ausgang). `BEO-PGC/ein-instanz-annahme-ohne-erzwingung` (F-10) **2×**, offen.
   *Neue Klassen (je 1×, offen):* `BEO-PGC/handbuch-beispiel-nicht-unter-genannter-rolle-lauffaehig` (F-4),
@@ -545,7 +545,7 @@ Lerneintrag geschrieben.
   Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in `done/` und greift daher erst nach
   dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`
   (`slice-backfill-e2e`, `slice-backfill-bench-richtgroesse`, `slice-backfill-sdk-origin`); der
   Start-Trigger von `slice-transformationen-antragsweg-schema` und
   `slice-transformationen-start-reihenfolge` („nach `slice-backfill-sql-administration`") ist mit
@@ -566,7 +566,7 @@ Lerneintrag geschrieben.
   (`BEO-PGC/ein-instanz-annahme-ohne-erzwingung`, 2×), der Quellvergleich für `backfill` ist umgesetzt.
   Ein Risiko „DB-Adapter-Coverage bewegt Zähler und Nenner" führt dieser Plan nicht; der Nachzug der
   beiden Sensor-Dokumente ist im Slice erledigt (siehe „Was ging anders als geplant" und §3).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure: (a) *Anker* — der Lerneintrag trägt kein Feld
   `liegt in <Zielort>`, der Ausgangs-Kandidat der Zählwort-Regel ist dem Lese-Schritt adressiert; (b)
   *Folge-Slice* — `slice-backfill-e2e`, `slice-backfill-bench-richtgroesse` und

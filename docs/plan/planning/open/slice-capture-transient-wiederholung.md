@@ -32,7 +32,7 @@ präzisiert.
 **Verantwortlich:** — (noch nicht priorisiert).
 
 **Autor:** Planner-Agent, Closure der Welle
-[welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-25.
+[welle-backfill-bestand](../done/welle-backfill-bestand.md). **Datum:** 2026-09-25.
 
 ---
 

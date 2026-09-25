@@ -71,7 +71,7 @@ dieser Welle**: Steht er in der Slice-Liste unten, ist er falsch platziert.
   `LH-FA-CFG-007` nennt `LH-FA-CFG-008`).
 - Kein weiterer Trigger nötig — die Welle kann sofort eröffnet werden. Die
   Kopplungen K1–K3 zur Welle
-  [welle-backfill-bestand](welle-backfill-bestand.md) sind **Start-Trigger
+  [welle-backfill-bestand](done/welle-backfill-bestand.md) sind **Start-Trigger
   einzelner Slices** (§4, §5), kein Trigger der Welle: sie ist als Ganzes
   planbar, ihre Slices starten gestaffelt.
 
@@ -113,7 +113,7 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   zeigt die zwei nullable Spalten und die zwei Funktionen dieser Welle über einen
   Alt-Bestand (die Welle ändert keine bestehende View, siehe den
   §3.13-Suchlauf in §5 von
-  [welle-backfill-bestand](welle-backfill-bestand.md)).
+  [welle-backfill-bestand](done/welle-backfill-bestand.md)).
 - **Die Fitness-Function-Tests aus
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   sind grün und tragen ihre Eingabe:** der Eigenschaftstest im `mapper`-Paket
@@ -162,7 +162,7 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`); die Slices
 dieser Welle und die der Welle
-[welle-backfill-bestand](welle-backfill-bestand.md) teilen sich das WIP-Limit,
+[welle-backfill-bestand](done/welle-backfill-bestand.md) teilen sich das WIP-Limit,
 und jeder Slice startet, sobald sein Start-Trigger gilt — die technischen
 Kanten stehen in §5. Die Reihenfolge der Tabelle folgt einer Regel: **erst die
 Wirkung, dann der Beleg, dann die Doku** — und der Backfill-Pfad **unmittelbar
@@ -214,7 +214,7 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
    Adresse auf (`BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`, offen, 2×),
    und `betriebsdoku` nennt den aufgeschobenen Gegenstand vollständig in seinem
    §2. Das weicht von der Regel der Welle
-   [welle-backfill-bestand](welle-backfill-bestand.md) ab, wo der Handbuch-Zug
+   [welle-backfill-bestand](done/welle-backfill-bestand.md) ab, wo der Handbuch-Zug
    im oberflächen-liefernden Slice liegt; Grund: bei den Transformationen liegt
    die Wirkung fünf Slices hinter der Oberfläche.
 
@@ -228,7 +228,7 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
 
 5. **Folgepflicht 7 (Backfill-Pfad) als eigener Slice, Start strenger als die
    Kopplung K2.** K2 der Welle
-   [welle-backfill-bestand](welle-backfill-bestand.md) verlangt
+   [welle-backfill-bestand](done/welle-backfill-bestand.md) verlangt
    `slice-backfill-run-usecase`; dieser Slice startet zusätzlich erst nach
    `slice-backfill-e2e` (er trägt einen E2E-Beleg im Backfill-Runner) und
    trägt ein **Architect-Kurzverdikt** zur Nichtanwendbarkeit im Run: die
@@ -249,9 +249,9 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 - **Wird blockiert von:** keiner Welle;
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   ist `Accepted`, der Trigger (§2) ist erfüllt. Eine **benannte Kopplung**
-  verbindet die Welle mit [welle-backfill-bestand](welle-backfill-bestand.md) —
+  verbindet die Welle mit [welle-backfill-bestand](done/welle-backfill-bestand.md) —
   die Kanten K1–K3 der Welle
-  [welle-backfill-bestand](welle-backfill-bestand.md) §5 sind hier
+  [welle-backfill-bestand](done/welle-backfill-bestand.md) §5 sind hier
   Start-Trigger einzelner Slices:
   - **K1 — Row-Image-Funktion.** `kern-rename` startet erst, wenn
     `slice-backfill-row-image-gemeinsam` in `done/` liegt: die Regelauswertung
@@ -293,7 +293,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     stehen dann fest).
   - **Begründete Reihenfolge — Backfill zuerst.** Die Kanten zeigen alle in
     dieselbe Richtung: die Transformationen erweitern Stellen, die der Backfill
-    anlegt (Welle [welle-backfill-bestand](welle-backfill-bestand.md) §5).
+    anlegt (Welle [welle-backfill-bestand](done/welle-backfill-bestand.md) §5).
     Beide Wellen sind ohne einander eröffnet; jeder Slice dieser Welle wartet
     auf seine Kante, nicht auf die Closure der Backfill-Welle.
 - **Blockiert:** keine Welle. Das Routing
@@ -305,7 +305,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   eintreten kann: die Roadmap führt diese Welle unter *Offene Wellen*, und die
   Welle hat einen Closure-Trigger (§3). Die Paarungen der Slice-Closures (Anker
   · Folge-Slice · Register) laufen bei ihr, nicht bei der Closure der Welle
-  [welle-backfill-bestand](welle-backfill-bestand.md).
+  [welle-backfill-bestand](done/welle-backfill-bestand.md).
 - **Benanntes Zwischenzustands-Fenster.** Ab `antragsweg-usecase` sind Regeln
   setzbar; ein Backfill-Run vor `backfill-pfad` lieferte die Rohform, dieselbe
   Tabelle also zwei Formen. Das Fenster ist ein Slice lang (`backfill-pfad`

@@ -180,7 +180,7 @@ abbildet“; beide Stände gemessen):**
 
 **Start** (`next` → `in-progress`): wenn `slice-backfill-row-image-gemeinsam`
 in `done/` liegt (Kopplung K1 der Welle
-[welle-backfill-bestand](../welle-backfill-bestand.md) §5: die Regelauswertung
+[welle-backfill-bestand](../done/welle-backfill-bestand.md) §5: die Regelauswertung
 hängt an der **einen** gemeinsamen Funktion, nicht an zwei Bild-Erzeugern),
 `slice-transformationen-spec-nachzug` und `slice-harness-suchlauf-nachmessen`
 in `done/` liegen (der zweite liefert das Nachmess-Werkzeug für das

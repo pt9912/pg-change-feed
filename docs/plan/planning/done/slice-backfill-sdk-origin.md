@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (Client-Bibliotheken — die HTTP-Fläche der drei
 Packages), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (HTTP-API, `GET /changes`), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8
@@ -25,7 +25,7 @@ um `origin` ergänzt) — gelesen; [`SPEC-026`](../../../../spec/pflichtenheft.m
 
 **Verantwortlich:** Implementer-Agent, 2026-09-25.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -110,7 +110,7 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -189,7 +189,7 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   Server-Container). Ungemessen bleibt das Verhalten eines Decoders gegenüber
   einem unbekannten Feld: kein Test speist ein solches ein (der Fall „unbekannter
   Wert“ ist ein bekanntes Feld). Adresse: die Closure der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md).
+  [welle-backfill-bestand](welle-backfill-bestand.md).
 - **Kotlin/Gson und der Default `wal`.** Gson setzt bei einem fehlenden Feld auf
   eine Kotlin-Klasse mit Default-Parameter nicht den Default (erwartet: `null`);
   das Modell muss `null` als `wal` lesen. *Erwartet, zu belegen durch:* der Test
@@ -303,7 +303,7 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   allein liest, findet die Auslegung hier und in Verifikation V-1. **Übergabe an den
   Release-Zug:** die drei Tags `sdk-csharp-v0.2.0`, `sdk-python-v0.2.0` und
   `sdk-kotlin-v0.2.0` setzt der Betreiber gemeinsam nach der Closure der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) (Entscheidung des Auftraggebers);
+  [welle-backfill-bestand](welle-backfill-bestand.md) (Entscheidung des Auftraggebers);
   Tag = Quell-Version, die Tag-Abgleiche der Workflows lesen unverändert dieselben Quellen.
   Der reale Post-Push-Lauf der Publish-Workflows bleibt bis dahin unbewiesen
   ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
@@ -326,7 +326,7 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   **21×**, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (F-2) **13×** und
   `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-6) **8×** stehen **über** der
   Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Welle-Closure von
-  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  [welle-backfill-bestand](welle-backfill-bestand.md) (die state-Dateien tragen den
   Vermerk; die ersten beiden sind verkörpert, `nachzug-laesst-ueberholten-text-stehen`
   wartet auf die Regelschärfungs-Frage des Architects). `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`
   (F-5, Ausprägung innerhalb des Pflichtenhefts) **2×** und
@@ -342,7 +342,7 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (kein Fragment gefunden).
 - **Folge-Slices:** keine neuen. Die offene Grenze (kein Lauf der SDK-Decoder gegen einen
   Server, V-3) hat keinen Slice; ihre Adresse ist die Closure der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md). Übergaben an offene Pläne
+  [welle-backfill-bestand](welle-backfill-bestand.md). Übergaben an offene Pläne
   ([`AGENTS.md`](../../../../AGENTS.md) §3.13): der Suchlauf
   `git grep -n -i -E 'origin|Lesemodell|0\.2\.0|thirteen|dreizehn|zehn Felder' -- 'docs/plan/planning/open/slice-transformationen-*.md' docs/plan/planning/welle-transformationen.md`
   (gemessen 2026-09-25 am Stand `98f44839`) findet vier Zeilen in vier Dateien: `slice-transformationen-backfill-pfad`
@@ -366,7 +366,7 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   (im Slice aufgelöst) · Zahl im Träger (Suchlauf-Feld, Review F-1; in der Fixrunde
   behoben, Klasse im Register). *Weiter offen:* der Ausgang „Ein Decoder ignoriert das neue
   Feld nicht“ → Register `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen`.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung

@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Happy Path, Boundary, Negative),
 [`LH-FA-CAP-004`](../../../../spec/lastenheft.md) (Ordnung), [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) (Spaltenausschluss —
@@ -27,7 +27,7 @@ Transaktion, erneute Prüfung der Vorbedingungen vor der Ausführung).
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -166,7 +166,7 @@ Umfang:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen). *Beleg:* zehn Ausgänge am Ort in §6.
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -452,7 +452,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   **8×**; `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (F-6, V-2, Nachmessung der
   Closure) **11×**; `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (F-12) **3×**
   — erreicht **mit diesem Slice die Schwelle 3×**, sein Ausgang gehört dem Lese-Schritt der
-  Closure von [welle-backfill-bestand](../welle-backfill-bestand.md). *Neue Klassen (je 1×,
+  Closure von [welle-backfill-bestand](welle-backfill-bestand.md). *Neue Klassen (je 1×,
   offen):* `BEO-PGC/adapter-pflicht-eines-ports-ohne-traeger-im-adapter-slice` (F-4, F-5),
   und für die drei Risiken mit Ausgang „weiter offen" (§6):
   `BEO-PGC/execute-ergebnis-widerspricht-persistierter-zeile` (V-1),
@@ -501,7 +501,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Rolle im frischen Kontext, kein Schritt der Planner-Closure; der Skill prüft Slices in
   `done/` und greift daher erst nach dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`; die
   Übergaben oben tragen ihre Adressen. Ob das Architect-Verdikt zu F-8 einen weiteren Zug
   (Folge-ADR, Änderung am Use Case) auslöst, entscheidet das Verdikt.
 - **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Port-Schnitt) **entfallen**;
@@ -515,7 +515,7 @@ Closure-Notiz mit Lerneintrag geschrieben.
   Adresse: Architect-Verdikt als Start-Vorbedingung von `e2e`; Risiko 10 (Klasse
   `schema`, F-9) **weiter offen** im Register, Adresse: Architect-Kurzverdikt im
   Start-Trigger von `slice-transformationen-backfill-pfad`.
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Sensor-Umfang ist am Ort
   verkörpert (Fakes mit Fehler ab Aufruf n, vier Tests, die Port-Verträge und der DoD
   „Adapter-Pflichten" in `slice-backfill-run-store`); die geschärfte Anwendung verkörpert

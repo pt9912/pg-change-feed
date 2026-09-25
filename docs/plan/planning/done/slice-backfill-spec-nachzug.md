@@ -9,7 +9,7 @@ aus `open/` oder `next/` nach `done/` — §7 nennt in der Zeile `Gegenstand:`
 Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 (§Ein Slice, dessen Gegenstand ein anderer übernimmt).
 
-**Welle:** [welle-backfill-bestand](../welle-backfill-bestand.md).
+**Welle:** [welle-backfill-bestand](welle-backfill-bestand.md).
 
 **Bezug:** [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (Initial-Snapshot/Backfill des Bestands —
 Haupt-Bezug), [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) (die offene, ADR-pflichtige Frage
@@ -26,7 +26,7 @@ Spec nennt diesen Slice nie.
 
 **Verantwortlich:** Implementer-Agent, 2026-09-24.
 
-**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](../welle-backfill-bestand.md). **Datum:** 2026-09-23.
+**Autor:** Planner-Agent, Welle-Eröffnung [welle-backfill-bestand](welle-backfill-bestand.md). **Datum:** 2026-09-23.
 
 ---
 
@@ -137,7 +137,7 @@ Greenfield: die Doku führt). Umfang:
 - [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen). *(Sechs Ausgänge in §6, je am Ort; siehe §7.)*
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
-      von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
+      von der Closure der Welle [welle-backfill-bestand](welle-backfill-bestand.md) (die Roadmap führt sie unter
       *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 3. Plan (vor Code)
@@ -171,7 +171,7 @@ Greenfield: die Doku führt). Umfang:
 
 ## 4. Trigger
 
-**Start** (`next` → `in-progress`): wenn die Welle [welle-backfill-bestand](../welle-backfill-bestand.md) eröffnet ist und
+**Start** (`next` → `in-progress`): wenn die Welle [welle-backfill-bestand](welle-backfill-bestand.md) eröffnet ist und
 kein anderer Slice in `in-progress/` liegt (WIP-Limit 1). Dieser Slice
 kommt zuerst: jeder Folge-Slice liest die hier festgelegten Zusagen.
 
@@ -302,7 +302,7 @@ geschrieben.
   mit diesem Slice **3×** (die Tabellenzeile „Reihenfolge" von `SPEC-022`
   trug die Fortsetzungs-Regel ohne den Vorbehalt der neuen Zeile „Position
   und `limit`", Review F-1) und wandert in die Steering-Loop-Einträge der
-  Closure von [welle-backfill-bestand](../welle-backfill-bestand.md); die Regelschärfungs-Frage bleibt eine
+  Closure von [welle-backfill-bestand](welle-backfill-bestand.md); die Regelschärfungs-Frage bleibt eine
   Architect-Entscheidung. Kein neuer Sensor: der Reviewer und der Verifier
   fanden die Funde als Leser, kein Gate liest Prosa-Kohärenz. Benannte
   Spec-Lücken (jeweils ein Träger außerhalb dieses Slice, der Zug ist
@@ -318,7 +318,7 @@ geschrieben.
     `evidence/slice-backfill-spec-nachzug.md` (Review F-1); Zähler **3×**
     (Datei-Anzahl unter `evidence/`, real ausgezählt), Schwelle erreicht,
     Ausgang noch nicht zugewiesen — `state.md` trägt den Übergang in den
-    Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md).
+    Lese-Schritt der Closure von [welle-backfill-bestand](welle-backfill-bestand.md).
   - **`BEO-PGC/arbeit-ueberholt-stehenden-traeger`** — weitere Datei
     `evidence/slice-backfill-spec-nachzug.md` (Review F-2, Verifikation
     V-1); Zähler **27×** (real ausgezählt), Ausgang bleibt verkörpert.
@@ -342,7 +342,7 @@ geschrieben.
   der Skill prüft Slices in `done/` (Kontext-Eingang: alle Closure-Notizen
   dort) und greift daher erst nach dem `git mv` — hier nicht ausgeführt.
 - **Folge-Slices:** keine neuen — die neun Folge-Slices der Welle
-  [welle-backfill-bestand](../welle-backfill-bestand.md) liegen als Dateien in `open/`; die zwei Handbuch-Meldungen
+  [welle-backfill-bestand](welle-backfill-bestand.md) liegen als Dateien in `open/`; die zwei Handbuch-Meldungen
   gehen an `slice-backfill-change-origin` und `slice-backfill-sql-administration`.
 - **Risiken aus §6:** je ein Ausgang am Ort — Risiko 1 (Spec-Straten ohne
   Kennung) **entfallen**; Risiko 2 (Zusagen als Tatsachen) **entfallen**;
@@ -350,7 +350,7 @@ geschrieben.
   Folge-Slice `run-store`); Risiko 4 (Kennungs-Vergabe) **entfallen**;
   Risiko 5 (überholter Text) **eingetreten**, im Slice behoben, Klasse im
   Register; Übergabe F-5/F-6 **entfallen** (kein Befund).
-- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
+- **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure. (a) Anker: der Lerneintrag
   verkörpert nichts neu, er schärft die Anwendung einer bestehenden Regel
   ([`AGENTS.md`](../../../../AGENTS.md) §3.13, am Ort existent); (b) Folge-Slice: keiner neu; (c) Register:

@@ -175,7 +175,7 @@ Bindung anlegen und den Ausschlussstand mitführen“, „die Felder von
 **Start** (`next` → `in-progress`): wenn `antragsweg-schema` in `done/` liegt
 (die Spalten und Antragsarten bestehen im Store) und kein anderer Slice in
 `in-progress/` liegt (WIP-Limit 1). Die Kopplung K3 der Welle
-[welle-backfill-bestand](../welle-backfill-bestand.md) §5 ist mit
+[welle-backfill-bestand](../done/welle-backfill-bestand.md) §5 ist mit
 `antragsweg-schema` erfüllt; `applyAdministrationRequest` trägt zu diesem
 Zeitpunkt bereits den Backfill-Zweig, dieser Slice erweitert ihn additiv.
 

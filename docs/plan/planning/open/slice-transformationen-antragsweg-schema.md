@@ -176,7 +176,7 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 
 **Start** (`next` → `in-progress`): wenn `slice-backfill-sql-administration` in
 `done/` liegt (Kopplung K3 der Welle
-[welle-backfill-bestand](../welle-backfill-bestand.md) §5: beide Umsetzungen
+[welle-backfill-bestand](../done/welle-backfill-bestand.md) §5: beide Umsetzungen
 berühren die geschlossene `request_kind`-Menge in
 `tools/schema/nacharbeit-administration.sql`,
 [`SPEC-019`](../../../../spec/pflichtenheft.md), `applyAdministrationRequest`
