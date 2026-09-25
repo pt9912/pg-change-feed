@@ -187,13 +187,17 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       dieses Slice.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8); Verifikation als eigene Rolle mit Report unter
-      `docs/reviews/` (Verdikt 3: der Eingriff berührt Empfangs-Schleife,
-      Application und einen Port des Capture-kritischen Pfads und braucht
-      Review und Verifier für sich).
+      Self-Review (Modul 8); kein offenes HIGH/MEDIUM: der Report
+      `review-slice-backfill-slot-leerlauf-bestaetigung` trägt 0 HIGH und 2
+      MEDIUM; F-2 ist behoben (Test benannt nach dem, was er treibt, die Kette
+      §6 „Bindung der Kette“), F-1 ist an die Closure adressiert
+      (Berichtigungs-ADR, §6 zweites Risiko).
+- [ ] Verifikation als eigene Rolle mit Report unter `docs/reviews/` (Verdikt
+      3: der Eingriff berührt Empfangs-Schleife, Application und einen Port
+      des Capture-kritischen Pfads und braucht Review und Verifier für sich).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Parent-Stand steht
@@ -252,7 +256,7 @@ Punkt 2 (die Application bestätigt) und Festlegung 5 (Form und Name der Meldung
 | `internal/adapters/driving/replication/receive/receive.go` | update (Entscheidungen) | Der Stream verlangt beide Ports (`Config.IdleConfirmation`, `BindIdleConfirmation`; `Run` endet ohne einen davon in der Klasse `configuration`, keine still abgeschaltete Bestätigung). **Höchstens ein Standby-Status-Update je Keepalive (Klärung zu §6, viertes Risiko):** die Bestätigung über den `ReplicationAckPort` ist selbst das Update; im Bestätigungsfall sendet der Stream keines zusätzlich, sonst höchstens die Antwort auf `ReplyRequested`. Gebunden in drei Teilen: `TestRunIdleConfirmationSendsNoSecondUpdate` (Stream: 0 Updates im Bestätigungsfall), `TestConfirmIdleAcknowledgesOnlyThroughTheAckPort` (Application: genau ein `Acknowledge`), `postgresack` `seam_test.go` (ein Update je `Acknowledge`, Bestand). Ein Fehler des Ports endet als `ErrReplication` mit der Ursache dahinter (`%w` auf beide). Die Quelle der Position trägt `Stream.source` (Konstruktor-Parameter von `newStreamOnSession`). |
 | `internal/application/usecase/capture/service.go` | update | zusätzlich der Guard `ErrMissingIdlePosition` (leere Position erreicht den Port nicht; ein Aufruf-Vertragsverstoß, kein Fehler der Quelle). |
 | `internal/adapters/driving/replication/mapper/mapper_test.go` | update | `TestTransactionOpenFollowsBeginAndCommit`. |
-| `internal/bootstrap/walretention_endtoend_test.go` (gelöscht) → `internal/bootstrap/walretention_endtoend_internal_test.go` (neu, `package bootstrap`) | Rückführungs-Punkt (b) des Plans nicht eingetreten, Wachstums-Quelle ersetzt | `TestWALRetentionThresholdEndToEnd` behält Namen und Zusage (beide Seiten der Schwelle bei real wachsendem Rückstand, echter `WALRetentionChecker`, `runWALRetentionCheck`, Rückgabewert-Priorität), wächst aber an einem **inaktiven Slot** (`pg_create_logical_replication_slot`, kein Stream) statt an einem laufenden Prozess — **keine Test-Naht im Produktionscode**. Der erste Ansatz (Zeilensperre auf `cdc.schema_version` lässt die Persistenz warten, ein nicht antwortender Feed) ist verworfen, an zwei Messungen: (1) `wal_sender_timeout=2000` trennt die Verbindung eines Feeds, der länger als 2 s nicht antwortet — der Lauf endete mit „write failed: broken pipe“ nach der Freigabe der Sperre, der Test bestand nur zufällig über diesen Ausgang; (2) das WAL der Instanz wächst durch gleichzeitige Schreiber anderer Test-Pakete: im ersten Lauf 546.360 B gegen die Fehlerschwelle 524.288 B in der Warnphase, in zwei Wiederholungen 195.600 und 195.568 B. Daraus die Form des Ersatzes: Schwellen 32 KiB/2 MiB (Last ~170 KiB und ~6,6 MiB) und eine **exklusive Instanz** (`CDC_WALRETENTION_TEST_DSN`; `run-replication-tests.sh` fährt den Test allein nach dem Tier-Lauf auf der zweiten Instanz und verlangt sein `--- PASS`). Hergeleitet, nicht ausgeführt: bei blockiertem `Capture` endet der Stream-Lauf nach dem Abbruch über `stopStream` mit dem Persistenzfehler der Klasse `storage`, und `mergeStreamAndWALFaultOutcome` gibt einen Stream-Fehler vor dem Schwellen-Fehler zurück. |
+| `internal/bootstrap/walretention_endtoend_test.go` (gelöscht) → `internal/bootstrap/walretention_slotgrowth_internal_test.go` (neu, `package bootstrap`) | Rückführungs-Punkt (b) des Plans nicht eingetreten, Wachstums-Quelle ersetzt | `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot` (Name und Datei benennen, was der Test treibt) belegt beide Seiten der Schwelle bei real wachsendem Rückstand an einem **inaktiven Slot** (`pg_create_logical_replication_slot`) mit dem echten `WALRetentionChecker` und `runWALRetentionCheck`; er fährt **weder einen Stream noch `Run`** — die Abbruchfunktion ist ein bloßer Kontext-Abbruch, die Rückgabewert-Priorität prüft er über `mergeStreamAndWALFaultOutcome(nil, …)` direkt. **Keine Test-Naht im Produktionscode.** Der erste Ansatz (Zeilensperre auf `cdc.schema_version` lässt die Persistenz warten, ein nicht antwortender Feed) ist verworfen, an zwei Messungen: (1) `wal_sender_timeout=2000` trennt die Verbindung eines Feeds, der länger als 2 s nicht antwortet — der Lauf endete mit „write failed: broken pipe“ nach der Freigabe der Sperre, der Test bestand nur zufällig über diesen Ausgang; (2) das WAL der Instanz wächst durch gleichzeitige Schreiber anderer Test-Pakete: im ersten Lauf 546.360 B gegen die Fehlerschwelle 524.288 B in der Warnphase, in zwei Wiederholungen 195.600 und 195.568 B. Daraus die Form des Ersatzes: Schwellen 32 KiB/2 MiB (Last ~170 KiB und ~6,6 MiB) und eine **exklusive Instanz** (`CDC_WALRETENTION_TEST_DSN`; `run-replication-tests.sh` fährt den Test allein nach dem Tier-Lauf auf der zweiten Instanz und verlangt sein `--- PASS`). Die Kette „Fehlerschwelle → Prozessende“ verteilt sich auf mehrere Träger (§6 „Bindung der Kette“). Die Historie der Datei reißt bei `00caec48` (Git führt dort `A`/`D`, nicht `R`); die Umbenennung auf den Namen des Gegenstands ist der reine Move-Commit `ec7e43dd`. |
 | `internal/bootstrap/replication_stream_test.go` | update (mehr als geplant) | neben dem Kommentar: die Bindung an den Service (`BindIdleConfirmation`), die Position der Transport-Probe an das WAL-Ende der Instanz statt an den Slot-Stand gehängt (eine Bestätigung im Leerlauf erreicht höchstens das WAL-Ende), und der neue Verdrahtungs-Test `TestRealIdleConfirmationReleasesForeignWAL` (echter Service, echter ACK-Adapter; `confirmed_flush_lsn` erreicht das WAL-Ende hinter der Last, `cdc.transaction`/`cdc.change` tragen unverändert je eine Zeile). Die Bedingung liegt an der Position, weil die Instanz gleichzeitige Schreiber anderer Pakete trägt. |
 | `internal/adapters/driving/replication/receive/stream_test.go` | update (mehr als geplant) | Stand-in `fakeCapture` trägt `ConfirmIdle` (sendet das Standby-Status-Update über die Verbindung des Streams wie der `ReplicationAckPort`), `declineIdle` und `newStream`; vier Belege: X1 gegen die zweite Instanz mit Standard-`wal_sender_timeout` (Rückstand unter einem Zehntel der Last), die Nullprobe dazu (`declineIdle`: Rückstand bleibt bei mindestens der Hälfte), X1 gegen `wal_sender_timeout=2s` **an der Position** (`confirmed_flush_lsn` erreicht das WAL-Ende der Last; der Rückstand ist dort durch gleichzeitige Schreiber nicht aussagekräftig), der Sicherheits-Test. Die Rückstands-Aussagen (Zehntel der Last, Nullprobe) laufen auf der zweiten Instanz, die keinen gleichzeitigen Schreiber trägt. |
 | `tools/harness/run-replication-tests.sh` | update | zweite Instanz (Standard-`wal_sender_timeout`, ohne Schema, vor beiden Phasen gestartet) und der gesonderte Lauf von `TestWALRetentionThresholdEndToEnd` mit PASS-Prüfung; kein neues Make-Ziel. |
@@ -260,6 +264,11 @@ Punkt 2 (die Application bestätigt) und Festlegung 5 (Form und Name der Meldung
 | `docs/user/e2e-abdeckung.md` | regeneriert (wie geplant) | Erzeugnis des Runners, mitcommittet. |
 | `tools/bench-backfill.sh`, `harness/targets/bench-backfill.md` | Entscheidung zu Zeile „`tools/bench-backfill.sh`“ | `release_wal` entfällt ersatzlos als Live-Commit und wird zu `settle_wal`: das Skript wartet zwischen den Runs ohne jeden Schreibzugriff höchstens 120 s auf einen Rückstand unter der Warnschwelle; eine Regression der Leerlauf-Bestätigung bleibt damit als hoher Rückstand in der Ausgabe sichtbar. Neu: eine Zeile nach der letzten Stufe mit der höchsten Spitze der größten Stufe im Vergleich zur Warnschwelle (Vergleich, kein Pass/Fail, Exit unverändert). `WAL_ERROR_BYTES` und die Zeile „WAL-Rückstand-Schwellen (abgeleitet)“ entfallen. |
 | `harness/README.md` (Zeilen `make test-replication`, `make test-integration`, `make bench`), `harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md`, `spec/pflichtenheft.md`, `spec/architecture.md`, `docs/user/benutzerhandbuch.md` (Version 1.56) | update (wie geplant) | Zahlen mit Lauf-Ursprung im Bericht des Implementers und in den Sensor-Dateien; die Lokatoren zu `wiring.go` in `coverage-gate.md` sind auf `:1287.4,1288.1` und `:1183.5,1184.13` nachgemessen. |
+| **Fixrunde nach dem Review (über den Plan hinaus, vor dem Sensor-Lauf eingetragen):** | | |
+| `internal/bootstrap/walretention_endtoend_internal_test.go` → `internal/bootstrap/walretention_slotgrowth_internal_test.go` | reiner Move (`ec7e43dd`), danach Inhalt (`5a5d3422`) | Review-Befund F-2 und F-3: `TestWALRetentionThresholdEndToEnd` → `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`; Godoc und Meldungen nennen, was der Test treibt (Wachstum an einem inaktiven Slot bis zur Fehlerschwelle, Abbruchfunktion als bloßer Kontext-Abbruch, weder Stream noch `Run`); der Kommentar der exklusiven Instanz steht im Indikativ (F-6). Mutation der Eingabeseite: Last der zweiten Seite von 8.001 auf 11 Zeilen gekürzt → `--- FAIL` mit „die Abbruchfunktion wurde nach Überschreiten der Fehlerschwelle nicht innerhalb 20 s ausgelöst“ (`make test-replication`, Exit 2); zurückgenommen, danach Exit 0 mit `--- PASS`. |
+| `tools/harness/run-replication-tests.sh`, `internal/bootstrap/walretention_internal_test.go`, `harness/README.md` (Zeile `make test-replication`) | update | der neue Testname in der PASS-Prüfung des Runners und in den zwei Verweisen; die Zeile des Sensors nennt „ohne Stream und ohne `Run`“. |
+| `docs/user/benutzerhandbuch.md` (Version 1.57) | update | Review-Befund F-4: Lauf `20260925T032925Z` als übernommen (nicht auflösbar) gekennzeichnet, Nachmessung `20260925T043056Z` aus dem Review-Report, Spanne der Richtgröße über sechs Läufe. Der Code-Wert `estimatedRowsGuideline` bleibt. |
+| dieser Plan (§2 DoD, §3 Suchlauf-Feld, §6) | update | Review-Befunde F-1 (gemessene Aussage des Reviewers, Ausgang Berichtigungs-ADR), F-2 (Bindung der Kette), F-5 (Zahlen des Suchlaufs), F-8 und F-9 (Startposition, Laufzeit); die DoD-Zeile „Review durchgeführt“ ist von der Zeile „Verifikation“ getrennt. Keine Handbuch-, Sensor- oder Spec-Stelle behauptet die nicht erfüllbare Store-Bindung (Suchlauf unten, Zeile „Store-Bindung“). |
 
 **Umfang: M** (geschätzt, kein Messwert). Ursprung der Schätzung: die
 Produktionsänderung ist klein (`handleCopyData` trägt 30 Zeilen, `Capture` 55,
@@ -297,7 +306,7 @@ neuere Aussage trägt
 
 | Träger | Suchbefehl | Befund Parent (`a90555b6`, gemessen) | Behandlung / Diff-Stand |
 |---|---|---|---|
-| Aussagen zur Keepalive-Antwort und zur bestätigten Position | `git grep -n -i -E 'bestätigten Position\|lastAcked\|Keepalive-Antwort\|Keepalive-Position' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` (Zeilen) und dieselbe Abfrage mit `-l` (Dateien) | 57 Zeilen in 25 Dateien. Vom Planner gelesen und beschreibend für die Empfangs-Schleife: `receive.go`, `seam_test.go`, `stream_test.go`, `internal/bootstrap/replication_stream_test.go` (Zeile 182), `docs/plan/adr/0080-nahtform-pgconn-adapter-treiberhuelle.md` (`Accepted`, Punkt 5 „Keepalive-Antwort mit der letzten bestätigten Position“), die Kommentare zu `wal_sender_timeout` in `compose.yaml` und `tools/harness/run-replication-tests.sh` (bleiben wahr: sie nennen die Zeitspanne, nicht die Zusage). Stichprobe (gelesen): `docs/user/e2e-abdeckung.md` und `docs/user/benutzerhandbuch.md` tragen die **Consumer**-Position — anderer Gegenstand. Nicht gelesen: die übrigen Dateien (u. a. `cmd/pg-change-feed/main.go`, `internal/bootstrap/wiring.go`, `harness/README.md`, `test/integration/integration_test.go`) | **Diff-Stand (Implementer, `git grep` am Arbeitsbaum über `f4e32fba` mit denselben Ausschlüssen, gemessen):** Parent-Stand `f4e32fba` 64 Zeilen in 26 Dateien, Diff-Stand 92 Zeilen in 27 Dateien (Zuwachs: `seam_test.go`, `receive.go`, Spec und Architektur-Sicht). **Nachgezogen:** `receive.go` (Paketkopf, `lastAcked`, `handleCopyData`, `confirmIdle`), `seam_test.go` (Keepalive-Tests: WAL-Ende nicht hinter der bestätigten Position; Zusage „Leerlauf bestätigt“ neu), `stream_test.go` (`TestStreamKeepaliveReportsAcknowledgedPosition` mit `declineIdle`; die Regel „die Antwort meldet nie den Empfangsstand“ lebt dort für den Fall fort, dass die Application nicht bestätigt), `replication_stream_test.go` (Kommentar), `spec/pflichtenheft.md`, `spec/architecture.md`, `harness/README.md`. **Gelesen, bleibt wahr (Gegenstand ist die Consumer-Position, nicht die des Slots):** `cmd/pg-change-feed/main.go:75`, `wiring.go:1732/1742` (Diagnose-Ausgabe), `test/integration/integration_test.go:495`, `welle6_endtoend_test.go:18`, `diagnose_test.go:44`, `spec/lastenheft.md:727/960`, `benutzerhandbuch.md:605/686/766`, `e2e-abdeckung.md` (drei Zeilen), `tools/schema/nacharbeit-observability.sql:26`, `postgresstorage/consumerstate*.go`, `queries.go`, `translate.go`, `outbound/consumerstate.go`, `retention_test.go`, `ADR-0112:229`; `compose.yaml:27` und `run-replication-tests.sh:4` nennen die Zeitspanne der Keepalive-Antwort, nicht die Zusage. **Nichtgefunden:** keine weitere Beschreibung der Keepalive-Antwort der Empfangs-Schleife außerhalb dieser Träger; die im Parent-Stand „nicht gelesenen“ Dateien sind damit gelesen. `ADR-0080` (`Accepted`) bleibt unberührt |
+| Aussagen zur Keepalive-Antwort und zur bestätigten Position | `git grep -n -i -E 'bestätigten Position\|lastAcked\|Keepalive-Antwort\|Keepalive-Position' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md' ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` (Zeilen) und dieselbe Abfrage mit `-l` (Dateien) | 57 Zeilen in 25 Dateien. Vom Planner gelesen und beschreibend für die Empfangs-Schleife: `receive.go`, `seam_test.go`, `stream_test.go`, `internal/bootstrap/replication_stream_test.go` (Zeile 182), `docs/plan/adr/0080-nahtform-pgconn-adapter-treiberhuelle.md` (`Accepted`, Punkt 5 „Keepalive-Antwort mit der letzten bestätigten Position“), die Kommentare zu `wal_sender_timeout` in `compose.yaml` und `tools/harness/run-replication-tests.sh` (bleiben wahr: sie nennen die Zeitspanne, nicht die Zusage). Stichprobe (gelesen): `docs/user/e2e-abdeckung.md` und `docs/user/benutzerhandbuch.md` tragen die **Consumer**-Position — anderer Gegenstand. Nicht gelesen: die übrigen Dateien (u. a. `cmd/pg-change-feed/main.go`, `internal/bootstrap/wiring.go`, `harness/README.md`, `test/integration/integration_test.go`) | **Diff-Stand (Implementer, `git grep` am Arbeitsbaum über `f4e32fba` mit denselben Ausschlüssen, gemessen):** Parent-Stand `f4e32fba` 64 Zeilen in 26 Dateien, Diff-Stand `427f6d1b` 94 Zeilen in 27 Dateien (Zuwachs: `seam_test.go`, `receive.go`, Spec und Architektur-Sicht; die Plan-Datei liegt im Suchraum und trägt 9 dieser 94 Zeilen — ein Selbstverweis, seine Zahl driftet mit jedem Edit). **Nachgezogen:** `receive.go` (Paketkopf, `lastAcked`, `handleCopyData`, `confirmIdle`), `seam_test.go` (Keepalive-Tests: WAL-Ende nicht hinter der bestätigten Position; Zusage „Leerlauf bestätigt“ neu), `stream_test.go` (`TestStreamKeepaliveReportsAcknowledgedPosition` mit `declineIdle`; die Regel „die Antwort meldet nie den Empfangsstand“ lebt dort für den Fall fort, dass die Application nicht bestätigt), `replication_stream_test.go` (Kommentar), `spec/pflichtenheft.md`, `spec/architecture.md`, `harness/README.md`. **Gelesen, bleibt wahr (Gegenstand ist die Consumer-Position, nicht die des Slots):** `cmd/pg-change-feed/main.go:75`, `wiring.go:1732/1742` (Diagnose-Ausgabe), `test/integration/integration_test.go:495`, `welle6_endtoend_test.go:18`, `diagnose_test.go:44`, `spec/lastenheft.md:727/960`, `benutzerhandbuch.md:605/686/766`, `e2e-abdeckung.md` (drei Zeilen), `tools/schema/nacharbeit-observability.sql:26`, `postgresstorage/consumerstate*.go`, `queries.go`, `translate.go`, `outbound/consumerstate.go`, `retention_test.go`, `ADR-0112:229`; `compose.yaml:27` und `run-replication-tests.sh:4` nennen die Zeitspanne der Keepalive-Antwort, nicht die Zusage. **Nichtgefunden:** keine weitere Beschreibung der Keepalive-Antwort der Empfangs-Schleife außerhalb dieser Träger; die im Parent-Stand „nicht gelesenen“ Dateien sind damit gelesen. `ADR-0080` (`Accepted`) bleibt unberührt |
 | Aussagen „Rückstand wächst durch fremdes WAL / sinkt durch einen Live-Commit“ | `git grep -n -i -E 'Live-Commit\|nie bestätigt\|weder BEGIN noch COMMIT\|Rückstand bleibt\|bleibt der Rückstand' <Stand> -- . <dieselben Ausschlüsse>` | 8 Zeilen in 4 Dateien: `docs/user/benutzerhandbuch.md` (Zeilen 456, 457, 1617, 1619), `internal/bootstrap/walretention_endtoend_test.go`, `tools/bench-backfill.sh` (Zeile 118), `spec/lastenheft.md` (Zeile 733, anderer Gegenstand: Consumer) | **Diff-Stand (Implementer, gemessen):** Parent-Stand `f4e32fba` 12 Zeilen in 6 Dateien, Diff-Stand ohne die Plan-Datei selbst 2 Zeilen: `stream_test.go:984` (Godoc der neuen Nullprobe: „bleibt der Rückstand“ beschreibt den Test, nicht das Produkt) und `spec/lastenheft.md:733` (anderer Gegenstand: Consumer). Handbuch (Zeilen 456/457/1617/1619 am Planner-Stand), `walretention_endtoend_test.go` und `tools/bench-backfill.sh` tragen die Aussage nicht mehr; die vom Suchmuster nicht getroffenen Handbuch-Sätze („nicht an den Backfill gebunden … in dieser Version bestätigt der Slot es nicht“, „kann bei weniger Zeilen eintreten/greifen“) sind gelesen und ersetzt bzw. gestrichen, `harness/targets/bench-backfill.md` (Live-Commit-Freigabe) ist nachgezogen. *Planner, Übergabe aus der Closure von `slice-backfill-bench-richtgroesse` (Fixrunde `c97273b3` und Handbuch 1.55, gemessen am Arbeitsbaum dieser Closure):* die Zeilen des Parent-Stands haben sich verschoben — Handbuch 1656 und 1658, `tools/bench-backfill.sh` 120 und 268; dazu trägt das Handbuch die Aussage „nicht an den Backfill gebunden … in dieser Version bestätigt der Slot es nicht“ (Zeilen 452 bis 470, vom Suchmuster nicht getroffen), und `harness/targets/bench-backfill.md` (Zeilen 47 und 111) beschreibt die Live-Commit-Freigabe des Skripts |
 | Symbolnamen der Empfangs-Schleife und der Messung | `git grep -l -E 'handleCopyData\|standbyStatus\|parseKeepalive\|ackFirstOnly\|runWALRetentionCheck\|WALRetentionChecker' <Stand> -- . <dieselben Ausschlüsse>` | 17 Dateien, darunter [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md), [`ADR-0080`](../../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md), [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) (alle `Accepted`), `harness/sensors/coverage-gate.md`, `internal/adapters/driven/postgresack/*`, `internal/bootstrap/*_test.go` | **Diff-Stand (Implementer, gemessen):** Parent-Stand `f4e32fba` 19 Dateien, Diff-Stand 19 Dateien: zwei Namen wechseln (die Plan-Datei wandert nach `in-progress/`, `walretention_endtoend_test.go` wird `walretention_endtoend_internal_test.go`). Gelesen: die Fundstellen außerhalb der Träger dieses Zuges sind Zitate (`administrationrequest.go:114`, `slog_levels_internal_test.go:19`, `retention_internal_test.go:158`, `wiring_rest_internal_test.go:380` als Aufruf, `postgresack/ack.go` mit eigener `standbyStatus`-Funktion, `welle-backfill-bestand.md:344` als Träger-Zeile für die Closure) und bleiben wahr; Zitate in `Accepted`-ADRs (`ADR-0050`, `ADR-0080`, `ADR-0082`) bleiben. Nichtgefunden: keine Beschreibung von `standbyStatus`/`handleCopyData`, die die Keepalive-Antwort anders als der Kommentar in `receive.go` fasst |
 | Zeilen-Lokatoren zu `wiring.go` | `git grep -n -E 'wiring\.go:[0-9]\|:991\.\|:1091\.' <Stand> -- . <dieselben Ausschlüsse>` | 6 Zeilen: `harness/sensors/coverage-gate.md` Zeilen 107/108 (`:1091.4,1092.1`, `:991.5,992.13`); [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) (`:981`, `:414`) und [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) (`:282-286`, eine Zeile der Geschichte) — `Accepted`, bleiben | **Diff-Stand (Implementer, gemessen):** die zwei Blöcke im Coverage-Profil der Stufe `coverage` dieses Laufs nachgemessen: `runAdministration`, Kontext-Ende-Zweig `:1287.4,1288.1` (1 Statement; die Funktion trägt einen weiteren `return`-Zweig `:1293.4,1294.1`), `runWALRetentionCheck`, Fehlerzweig der Messung `:1183.5,1184.13` (2 Statements); die Lokatoren in `coverage-gate.md` (zwei Stellen) sind nachgezogen, `git grep` nach dem Muster trifft dort nichts mehr (Diff-Stand: `ADR-0082`, `ADR-0088` unverändert, `Accepted`). Die alten Werte `:1091`/`:991` standen schon am Parent-Stand nicht mehr an ihrer Stelle (`f4e32fba:internal/bootstrap/wiring.go` trägt dort `classifyWALRetention` und `resolveWALRetentionThresholds`-Aufruf): die Verschiebung stammt nicht erst von diesem Zug. Zeilen-Lokatoren sind die Grenze der Suchform ([`AGENTS.md`](../../../../AGENTS.md) §3.13), der Reviewer liest sie |
@@ -305,6 +314,9 @@ neuere Aussage trägt
 | Beschreibungen von `make test-replication`/`make test-integration`/`make bench` | Lesen der Zeilen in `harness/README.md` §Sensors an beiden Ständen; `git grep -n 'test-replication' <Stand> -- . <dieselben Ausschlüsse> \| wc -l` | Parent-Stand `f4e32fba` 78 Zeilen (gemessen), Diff-Stand 81 Zeilen (gemessen, Zuwachs aus den neuen Kommentaren der Skripte und Tests) | nachgezogen, was der Lauf gefahren hat: die drei Zeilen in `harness/README.md` (`make test-replication`: X1, Sicherheits-Test, Verdrahtungs-Test, Schwellen-Beleg auf der zweiten Instanz; `make test-integration`: Leerlauf-Bestätigungs-Rundlauf; `make bench`: die geänderte Rückstands-Ausgabe); `make test-store` unverändert (Storage nicht berührt, gefahren nur für die Zahl der DB-Adapter-Coverage) |
 | Zählwörter „zehn Slices“ dieser Welle | `git grep -n -E 'zehn (Slice\|Slices)' <Stand> -- docs/plan/planning ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` | Parent: 6 Zeilen; die Welle-Datei (`welle-backfill-bestand.md` Zeilen 37, 77, 271) zählt diese Welle, dazu die Roadmap Zeile 43 (die Angabe bricht um: „zehn“ am Zeilenende, „Slices“ auf der nächsten — die Suche trifft sie nicht); mit diesem Zug auf elf gezogen (Planner). Die übrigen (`welle-transformationen.md` Zeilen 39 und 84, Roadmap Zeile 48) zählen die andere Welle | Planner: nachgezogen; Implementer: der Diff-Stand trägt dieselben 4 Zeilen wie der Parent-Stand `f4e32fba` (gemessen), sie zählen die Transformationen-Welle und bleiben wahr |
 | Coverage-Zahlen der offenen Pläne der Transformationen | `git grep -n -E '\b[0-9]{2,4} Statements\|[0-9]{2}[.,][0-9]{1,2} ?%' <Stand> -- docs/plan/planning/open` | gemessen an `f4e32fba` und am Diff-Stand: je 0 Treffer in `docs/plan/planning/open` | die offenen Pläne der Transformationen führen keinen Ist-Stand ungestempelt; nichts zu melden |
+| **Fixrunde nach dem Review — Zahlen der Zeilen oben am neuen Stand** (Parent der Fixrunde `67e331ac`, Diff-Stand: Arbeitsbaum, beide gemessen) | dieselben Befehle wie oben (jede Zeile mit ihren Flags), zusätzlich mit dem Ausschluss `':!docs/plan/planning/in-progress/slice-backfill-slot-leerlauf-bestaetigung.md'`: die Plan-Datei ist ihr eigener Suchraum, ihre Treffer sind ein Selbstverweis und driften mit jedem Edit | Parent `67e331ac` ohne Plan-Datei: Zeile 1 **85** Zeilen in 26 Dateien (mit Plan-Datei 94 in 27); Zeile 2: 2 Zeilen in 2 Dateien; Zeile 3 (`-l`): 18 Dateien (mit Plan-Datei 19); Zeile 4: 4 Zeilen in 2 Dateien; Zeile 5: 10 Zeilen in 6 Dateien; `test-replication` (Zeile 6, `wc -l`): 74; Zählwörter „zehn Slices“: 4; Coverage-Zahlen in `open`: 0 | Diff-Stand ohne Plan-Datei: Zeile 1: 85 in 26 (unverändert); Zeile 2: 2 in 2; Zeile 3: 18; Zeile 4: 4 in 2 (`ADR-0082`, `ADR-0088`, `Accepted`, bleiben); Zeile 5: 9 Zeilen in 5 Dateien (das Godoc der umbenannten Test-Datei trägt die Muster nicht mehr); `test-replication`: 74; „zehn Slices“: 4; Coverage in `open`: 0. Die Fixrunde bewegt keinen Träger dieser Zeilen außer den Test-Dateien selbst |
+| Name und Datei des Schwellen-Tests | `git grep -n -E 'TestWALRetentionThresholdEndToEnd\|walretention_endtoend' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' <Plan-Ausschluss>` | Parent `67e331ac`: 9 Zeilen in 4 Dateien (`harness/README.md`, die Test-Datei, `walretention_internal_test.go`, `run-replication-tests.sh`; gemessen) | Diff-Stand: 0 Treffer. Gefunden und nachgezogen: das Runner-Skript (`-run`-Muster und PASS-Prüfung), die zwei Verweise in `walretention_internal_test.go`, die Zeile `make test-replication` in `harness/README.md`. Records (`docs/plan/planning/done`, `observations`, `docs/reviews`) nennen den alten Namen weiter und bleiben. Nichtgefunden: kein Sensor-Dokument und keine ADR nennt den Namen |
+| Store-Bindung der Bedingung „keine offene Transaktion“ | `git grep -n -i -E 'inmitten der Transaktion\|Bestätigung inmitten\|hinter Nachrichten\|noch nicht gespeichert\|offene(n)? Quelltransaktion' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' <Plan-Ausschluss> ':!docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md'` (Frage: behauptet ein Träger eine Store-Bindung dieser Mutation?) | Parent `67e331ac` und Diff-Stand je 11 Zeilen. Gelesen: `harness/README.md:139` (Sicherheits-Test: „Bestätigung hinter ihrem ersten Change, Stream-Neustart, Commit: der Change wird geliefert“ — beschreibt, was der Test fährt, keine Mutation), `receive.go:467` und `seam_test.go:696/717/720` (Begründung und Unit-Test der Prüfung), `stream_test.go:361/1042` (Sicherheits-Test, beschreibt seinen Ablauf), `mapper.go:36/40` und `spec/lastenheft.md:426` (anderer Gegenstand) | **Keine der elf Zeilen behauptet die nicht erfüllbare Store-Mutation** (die Zeile der Welle-Datei nennt sie einen Verdacht, siehe unten). Sie steht nur in `ADR-0120` (Fitness Function und Festlegung 1 Punkt 3, `Accepted`, ausgenommen) und im Plan. **Gemeldet an den Planner (fremde Datei):** `docs/plan/planning/welle-backfill-bestand.md` Zeile 503 nennt die Store-Zeile „möglicherweise nicht rot“ und „ein Verdacht, kein Beleg, deshalb nicht gezählt“ — nach der Messung des Reviewers ist sie ein Beleg (Review-Report F-1); die Welle-Datei ist Planner-Träger und bleibt in dieser Fixrunde unberührt |
 
 ## 4. Trigger
 
@@ -386,29 +398,75 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   „keine offene Transaktion“ (alle Store-Tests grün, Mutation entfernt die
   Prüfung von `TransactionOpen` in `confirmIdle`) — die Eigenschaft „inmitten“
   trägt allein der Unit-Test `TestRunNoConfirmationInsideOpenTransaction`
-  (Mutation rot). Ein deterministischer Store-Test dafür ist nicht gebaut: das
-  WAL-Ende der Keepalive-Nachricht liegt auf der Leitung vor dem Commit der
-  laufenden Transaktion (hergeleitet, die PostgreSQL-Quelle ist nicht gelesen
-  und der Fall nicht ausgeführt), eine Bestätigung inmitten der Transaktion überspränge also
-  keinen Change — der Store-Test kann die Prüfung nicht rot färben. Was den
-  Store-Test rot färbt, ist die Größe der bestätigten Position (Mutation:
-  gemeldete Position + 1 GiB → der Neustart liefert den Change nicht, „kein
-  CaptureCommand innerhalb 20 s“) und das Abschalten der Bestätigung
-  (Vorbedingung `confirmed_flush_lsn` hinter dem offenen Change scheitert).
-  **Ausgang:** bei der Closure — Vorschlag *weiter offen* mit Adresse
-  Architect (Eigenschaft „inmitten“ nur auf Unit-Ebene tragen oder Test-Naht
-  in der Sitzung).
-- **Bestehende Tests, die die alte Lage voraussetzen.** `TestWALRetentionThresholdEndToEnd`
-  erzeugt den wachsenden Rückstand über fremdes WAL; nach dem Zug wächst er
-  dort nicht mehr, der Test verliert seine Voraussetzung. Eine neue
-  Wachstums-Quelle für einen laufenden Prozess (ein nicht antwortender Feed:
-  blockierter `Capture`-Stand-in oder inaktiver Slot bei laufender Messung)
-  braucht womöglich eine Test-Naht im Produktionscode.
+  (Mutation rot). Was den Store-Test rot färbt, ist die Größe der bestätigten
+  Position (Mutation: gemeldete Position + 1 GiB → der Neustart liefert den
+  Change nicht, „kein CaptureCommand innerhalb 20 s“) und das Abschalten der
+  Bestätigung (Vorbedingung `confirmed_flush_lsn` hinter dem offenen Change
+  scheitert).
+  *Gemessen (Reviewer, Review-Report `review-slice-backfill-slot-leerlauf-bestaetigung`
+  F-1; Wegwerf-Test im Paket `receive` mit aktiver Mutation, Instanz mit
+  Standard-`wal_sender_timeout`; der Test liegt nicht im Repository):* das
+  Store-Tier stellt den Zustand her — ein blockierender `Capture`-Stand-in,
+  währenddessen committet eine zweite Transaktion 400.000 Änderungen auf die
+  veröffentlichte Tabelle, nach 55 s Freigabe. Ein Keepalive inmitten der
+  Transaktion tritt auf (Zustand `open=true` am `Assembler`), seine Position
+  ist die Commit-LSN dieser Transaktion (gedruckt `P=210904992`,
+  `confirmed_flush_lsn` nach dem Abbruch `0/C9227A0`), und der Neustart liefert
+  sie vollständig (`commit=210904992 changes=400000`). Die Mutation „Bestätigung
+  inmitten der Transaktion“ färbt den Store-Test damit nicht: die Zeile
+  „Mutation (Bestätigung inmitten der Transaktion) → Change fehlt“ der Fitness
+  Function von
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) ist wie
+  geschrieben nicht erfüllbar. Die Datensicherheit hängt am Verhalten der
+  Quelle (die Position eines Keepalive ist höchstens die Commit-LSN der
+  laufenden Transaktion, die Quelle liefert bei Gleichheit weiter); im
+  Store-Tier bindet sie nur die Größe der Position. Die Prüfung „keine offene
+  Transaktion“ (Festlegung 1 Punkt 3) trägt der Unit-Test
+  `TestRunNoConfirmationInsideOpenTransaction`.
+  **Ausgang:** *weiter offen* — die Berichtigung von Fitness-Function-Zeile
+  und Begründung („hinter Nachrichten, die noch nicht gespeichert sind“,
+  Festlegung 1 Punkt 3) ist eine neue ADR mit `Supersedes`, die der Planner bei
+  der Closure schreibt; `ADR-0120` bleibt unberührt
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.5). Klasse:
+  `BEO-PGC/fitness-function-gegen-eigene-entscheidung` (Register-Vorschlag der
+  Closure: weitere Evidence-Datei).
+- **Bestehende Tests, die die alte Lage voraussetzen.** Der Schwellen-Test
+  `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot` erzeugt den
+  wachsenden Rückstand an einem inaktiven Slot ohne Stream und ohne `Run`
+  (Wachstums-Quelle, die ohne Test-Naht im Produktionscode auskommt).
   `TestStreamKeepaliveReportsAcknowledgedPosition` trägt die Regel „nie der
-  Empfangsstand“ über eine im Produktionscode nie auftretende Stand-in-Antwort.
-  *Erwartet, zu belegen durch:* beide Tests laufen nach dem Zug mit neuer,
-  benannter Zusage grün; die alte Zusage wird nicht stillschweigend gestrichen,
-  der Bericht nennt, wo sie fortlebt. **Ausgang:** bei der Closure.
+  Empfangsstand“ über eine im Produktionscode nie auftretende Stand-in-Antwort
+  (`declineIdle`). Beide Tests laufen mit neuer, benannter Zusage grün
+  (`make test-replication`, Exit 0); die alte Zusage lebt im zweiten Test für
+  den Fall fort, dass die Application nicht bestätigt. **Ausgang:** bei der
+  Closure.
+- **Bindung der Kette „Fehlerschwelle → Prozessende“.** Kein committeter Test
+  fährt `Run` mit einem realen Stream bis zum Schwellen-Fehler; die Kette
+  verteilt sich auf Träger, deren Teilketten je einzeln gebunden sind:
+  (1) Messung → Fehler und Abbruch-Zug: `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`
+  (echter `WALRetentionChecker`, echter Rückstand; Eingabeseiten-Mutation
+  gesehen: die Last der zweiten Seite auf 11 Zeilen gekürzt → der Test endet
+  rot mit „Abbruchfunktion … nicht innerhalb 20 s ausgelöst“) und
+  `TestRunWALRetentionCheckStopsStreamAboveErrorThreshold` (Fake-Messung;
+  Mutation `stopStream()` entfernt → rot gesehen); (2) Stream-Ende →
+  Rückgabewert der Klasse `replication`:
+  `TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd` und
+  `…PrioritizesStreamError`; (3) Fehler → Klasse:
+  `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`; (4) laufender
+  Container: die E2E-Phase „Leerlauf-Bestätigung“ von `make test-integration`
+  bindet die Gegenseite (die Schwelle wird bei Leerlauf-Bestätigung nicht
+  erreicht, der Container läuft, der Run endet `completed`). **Benannte
+  Grenze:** die Seite „Schwelle erreicht → Container endet“ trägt nur die
+  Nullprobe der E2E-Phase (Leerlauf-Bestätigung abgeschaltet → Exit 2 der
+  Phase, Run `interrupted`; Reviewer-Messung, Review-Report) — eine einmalige
+  Mutation, kein committeter Wächter; ebenso die Verdrahtung in `Run`
+  (`streamCtx`/`stopStream`, `mergeStreamAndWALFaultOutcome`) und der
+  Prozess-Ausgang in `main.go` haben keinen committeten Test am realen Stream.
+  **Ausgang:** *weiter offen* (Grenze benannt; ein committeter Test, der `Run`
+  gegen einen realen, blockierten Stream bis zum Schwellen-Fehler fährt, ist
+  bei einem `wal_sender_timeout` der Testinstanz nicht stabil — der erste
+  Ansatz endete mit einer getrennten Verbindung, siehe Zeile
+  `walretention_slotgrowth_internal_test.go` in §3).
 - **Zwei Sender des Standby-Status-Updates.** Der ACK-Adapter sendet bei jeder
   `Acknowledge` ein Update über dieselbe Verbindung (`postgresack`,
   `seam_test.go`), der Stream sendet Antworten auf Keepalive-Nachrichten;
@@ -450,7 +508,34 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   für den Schritt „Compose-Integrationstest“ in den zwei Legs, übernommen aus
   dem Plan jenes Slice). *Erwartet, zu belegen
   durch:* die Laufzeit vor und nach dem Zug im Bericht mit Lauf-Ursprung.
+  *Gemessen (Reviewer, Review-Report `review-slice-backfill-slot-leerlauf-bestaetigung`
+  F-9, `gh run view`):* die Job-Dauer der zwei E2E-Legs (PostgreSQL 17/18)
+  liegt am Parent-Stand bei 11 min 21 s und 11 min 2 s, am Diff-Stand bei
+  12 min 36 s und 13 min 0 s — die neue Phase kostet etwa 1,3 bis 2 min je
+  Leg (abgeleitet: Differenz der Job-Dauern; der Host der Läufe ist der
+  GitHub-Runner, die Läufe streuen); `make test-replication` läuft in 92 s
+  (Reviewer-Lauf); die Grenze `timeout-minutes: 60` ist nicht berührt.
   **Ausgang:** bei der Closure.
+- **Startposition der Rückschritt-Wache.** `lastAcked` des Streams startet bei
+  0 (`newStreamOnSession` setzt es nicht auf die Startposition des Slots): das
+  erste Keepalive nach einem Neustart kann eine Leerlauf-Position tragen, die
+  hinter dem Dekodier-Stand, aber unter dem `confirmed_flush_lsn` des Slots
+  liegt (Review-Report F-8). *Bewertung am Code:* die Position eines Keepalive
+  ist das WAL-Ende der Quelle, der Start liegt bei `confirmed_flush_lsn`
+  (`ensureSlot` gibt sie als Startposition zurück, hergeleitet); der Parent-Stand
+  `f4e32fba` sendet die Keepalive-Antwort nach einem Neustart ebenfalls mit
+  `lastAcked` = 0
+  (`git show f4e32fba:internal/adapters/driving/replication/receive/receive.go`,
+  Zeile 422). *Gemessen (Wegwerf-Test im Paket `receive`, PostgreSQL 18,
+  `make test-replication` Exit 0, der Test liegt nicht im Repository; der Lauf
+  druckte im Erfolgsfall keine Zeile, belegt ist die Bedingung des Tests):*
+  nach einer Bestätigung C sendet der Stand-in über mehrere Keepalive-Takte
+  ein Standby-Status-Update mit Position C − 8192 (mindestens ein Update
+  gesendet, Bedingung des Tests), und `confirmed_flush_lsn` bleibt bei C oder
+  höher — ein Rückwärts-Update ist für den Slot wirkungslos. Ein Schaden ist
+  damit nicht belegt (höchstens eine Wiederlieferung, die der At-Least-Once-Pfad
+  trägt). **Ausgang:** *entfallen* als Risiko, als unschädliche Eigenschaft
+  benannt; kein committeter Test bindet sie.
 - **Akzeptierte Negative aus
   [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md), ohne
   Folgepflicht:** das gehaltene WAL der offenen Backfill-Transaktion und der
@@ -516,10 +601,21 @@ Zahl der Dateien unter `evidence/` (ausgezählt am 2026-09-25 mit
   Fitness-Function-Zeilen von
   [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) gegen den
   Entscheidungsteil gelesen: die Store-Zeile („Mutation: Bestätigung inmitten
-  der Transaktion → Change fehlt“) ist mit einer offenen **Quelltransaktion**
-  möglicherweise nicht erfüllbar (§6 zweites Risiko); das Lesen ist die
-  Aufgabe, die Klasse *nicht* neu gezählt (der Auftritt ist ein Verdacht, kein
-  Beleg).
+  der Transaktion → Change fehlt“) ist nach der Messung des Reviewers nicht
+  erfüllbar (§6 zweites Risiko, Ursprung: Review-Report
+  `review-slice-backfill-slot-leerlauf-bestaetigung` F-1). Register-Vorschlag
+  der Closure: eine weitere Evidence-Datei zu diesem Eintrag (Zähler folgt aus
+  den Dateien); die Berichtigung der Zeile ist eine neue ADR.
+- Register-Vorschläge des Implementers für die Closure (aus dem Review):
+  `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (offen, 1×) — Auftritt in
+  Variante „Ersatz unter neuem Dateinamen“: eine Test-Datei wechselte in einem
+  Commit Paket (`bootstrap_test` → `bootstrap`), Name und Inhalt (Git führt
+  `A`/`D`, `git log --follow` reißt bei `00caec48`); die Historie ist nicht
+  mehr herstellbar, der Fixrunden-Move ist rein. Lehre: die Umbenennung einer
+  Datei ist ein eigener Move-Commit **auch dann**, wenn der Inhalt danach
+  neu gefasst wird. Neue Klasse (kein Eintrag im Register): eine Test-Zusage
+  wird unter gleichem Namen abgeschwächt — der Name (`…EndToEnd`) und die
+  Meldungen behaupteten einen Stream, den der Ersatz nicht fuhr.
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 30×) — Suchlauf §3.
 - `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert, 18×),
   `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert, 7×),

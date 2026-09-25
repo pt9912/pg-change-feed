@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.56
+Version: 1.57
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -1603,11 +1603,17 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Zeilen nach Rundung; der Lauf `20260925T015600Z` (gemessen, gedruckt im
   [Verifikations-Report](../reviews/verifikation-slice-backfill-bench-richtgroesse.md)
   §3) ergibt 8.654 Zeilen/s und ebenfalls 5.000.000 Zeilen. Der Lauf
-  `20260925T032925Z` (gemessen, gedruckt im Lauf) ergibt bei 5.532 Zeilen/s
-  (Bereich 4.778 bis 6.631) 3.319.200 Zeilen, abgerundet 3.000.000. Der Wert im
-  Code (4.000.000) liegt innerhalb der Spanne dieser Läufe (3.000.000 bis
-  5.000.000 nach Rundung); die Konstante ist ein Startwert, den eine weitere
-  Messung nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
+  `20260925T032925Z` (übernommen aus dem Lauf-Bericht des Implementers, im
+  Repository nicht auflösbar) ergibt bei 5.532 Zeilen/s (Bereich 4.778 bis
+  6.631) 3.319.200 Zeilen, abgerundet 3.000.000. Der Lauf `20260925T043056Z`
+  (gemessen, gedruckt im
+  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md);
+  der Host trug dabei Last fremder Container) ergibt bei 4.504 Zeilen/s
+  2.702.400 Zeilen, abgerundet 2.000.000. Die Spanne dieser sechs Läufe
+  reicht von 2.000.000 bis 5.000.000 Zeilen nach Rundung; der Wert im Code
+  (4.000.000) liegt innerhalb dieser Spanne und über den zwei niedrigsten
+  Werten (3.000.000 und 2.000.000); die Konstante ist ein Startwert, den eine
+  weitere Messung nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
   ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
   den Lauf-Berichten, nicht im Repository). Die Zahl gilt für den Host und die
   Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
@@ -1657,7 +1663,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)).
   Der Feed bestätigt WAL ohne Inhalt für die Publication im Leerlauf seines
   Streams. Gemessen (Lauf `20260925T032925Z` von `tools/bench-backfill.sh`,
-  gedruckt im Lauf, Vertrag in
+  übernommen aus dem Lauf-Bericht des Implementers, im Repository nicht
+  auflösbar; nachgemessen im Lauf `20260925T043056Z`, gedruckt im
+  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md),
+  mit gleichem Ergebnis; Vertrag in
   [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
   Host und Tabellen wie oben, PostgreSQL 18; Rückstand im Abstand von 1 bis 2 s
   gelesen und auf ganze MiB gerundet): in allen neun Runs der Stufen mit 10.000,
@@ -1682,8 +1691,11 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   **Grenze der Ein-Transaktions-Form:** das vom Slot auf der Platte der Quelle
   **gehaltene** WAL (`restart_lsn`) und der Spill des Walsenders bleiben. Das
   gehaltene WAL erreichte in der Stufe mit 200.000 Zeilen im Median 140 MiB
-  (Spitze im Run, Lauf `20260925T032925Z`; 31 MiB bei 50.000 und 7 MiB bei
-  10.000 Zeilen), in den zwei Runs über je 1.000.000 Zeilen 782 und 1.613 MiB
+  (Spitze im Run, Lauf `20260925T032925Z`, übernommen, im Repository nicht
+  auflösbar; 31 MiB bei 50.000 und 7 MiB bei 10.000 Zeilen) und 141 MiB (35
+  MiB bei 50.000, 7 MiB bei 10.000 Zeilen; Lauf `20260925T043056Z`, gedruckt im
+  [Review-Report](../reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md)),
+  in den zwei Runs über je 1.000.000 Zeilen 782 und 1.613 MiB
   (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar). Der
   Walsender lagerte bei einem Run über 200.000 Zeilen 79 MB der offenen
   Transaktion aus (`spill_bytes` des Slots, `logical_decoding_work_mem` 64 MB;
@@ -1790,3 +1802,4 @@ MIT — siehe `LICENSE`.
 | 1.54 | 2026-09-25 | Ursache und Abhilfen des WAL-Rückstands sowie Ursprung der Messwerte nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-bench-richtgroesse Fixrunde): §4 „Bestand als Backfill überführen“ nennt den WAL-Rückstand als nicht an den Backfill gebunden, den Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` und die Betriebs-Abhilfen (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); §9 „Grenzwerte“ nennt zur Richtgröße die Werte dreier Läufe (7.693, 8.933, 8.559 Zeilen/s; Konstante = kleinster Wert), zum Speicher des Feed-Containers die Spitze im Run **und** die Probe 20 s nach dem Run (641,7 MiB als höchster gemessener Wert), zur Live-Wirkung drei Einzelläufe statt einer Aussage „kein Unterschied“, und kennzeichnet die im Repository nicht auflösbaren Läufe als übernommen |
 | 1.55 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T012459Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar), Richtgröße um den gedruckten Lauf `20260925T015600Z` des Verifikations-Reports ergänzt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse Closure) |
 | 1.56 | 2026-09-25 | Bestätigung von WAL ohne Inhalt für die Publication im Leerlauf des Streams dokumentiert (`LH-FA-CAP-009`, `LH-QA-REL-001`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung): §4 „WAL-Rückstand prüfen“ nennt die Bedeutung von `cdc_wal_retention_bytes` (vom Feed noch nicht bestätigtes WAL) und dass WAL ohne Inhalt für die Publication den Wert nicht wachsen lässt; §4 „Bestand als Backfill überführen“ trägt den WAL-Rückstand als Punkt ohne Abbruch über die Fehlerschwelle und die offene Schreibtransaktion des Runs als verbleibende Last; §9 „Grenzwerte“ führt den Rückstand mit Bestätigung (Lauf `20260925T032925Z`), die Messwerte ohne Bestätigung mit ihrem Lauf, das gehaltene WAL und den Spill als Grenze der Ein-Transaktions-Form und die Richtgröße um den Lauf `20260925T032925Z` ergänzt; der Satz „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ entfällt |
+| 1.57 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T032925Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar); Nachmessung des Laufs `20260925T043056Z` aus dem Review-Report ergänzt (Rückstand 0 MiB in neun Runs, gehaltenes WAL 141 MiB bei 200.000 Zeilen, Richtgröße 2.000.000 bei 4.504 Zeilen/s); Spanne der Richtgröße über sechs Läufe 2.000.000 bis 5.000.000 (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung Fixrunde) |
