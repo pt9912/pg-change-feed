@@ -20,7 +20,9 @@ jede Zahl dieses Berichts nennt Reihe und Lauf und ist dort auflösbar.
    (`RunRetentionService.Run` ruft `ReadChanges` mit der Quelle als einzigem Filter;
    die Abfrage `SelectChanges` trägt `LIMIT NULL`). Der Speicher hängt deshalb an der
    **Zahl der Changes in `cdc.change`** — nicht an der Größe der kopierten Tabelle
-   und nicht daran, ob ein Backfill oder die laufende Erfassung sie geschrieben hat.
+   und nicht daran, ob ein Backfill oder die laufende Erfassung sie geschrieben hat
+   (gemessen ist nur der Backfill als Quelle; die laufende Erfassung ist aus dem Code
+   gelesen, nicht gemessen, Abschnitt 9).
    Ein Backfill füllt `cdc.change` in einem Zug und macht die Abhängigkeit sichtbar.
    Der Beleg sind zwei Schalter (Abschnitt 4): Bereinigung aus → der Speicher bleibt
    flach; `cdc.change` leeren → der Live-Heap fällt.
@@ -32,18 +34,20 @@ jede Zahl dieses Berichts nennt Reihe und Lauf und ist dort auflösbar.
    Zeilen von etwa 1,3 KB (abgeleitet, Abschnitt 3.3 und 3.5): 1.000.000 Changes
    ergeben Spitzen von 1.083 und 1.274 MiB (Reihen B und C, Run 1).
 4. **Ausgang.** Ein behebbarer Defekt im Code: Änderungs-Slice
-   `slice-retention-lauf-speicher-begrenzung` (Datei in `open/`, Entscheidung des
-   Architects, ob der Vertrag von `ChangeStorePort` eine ADR verlangt). Bis zu seiner
-   Umsetzung trägt das Benutzerhandbuch unter „Grenzwerte“ die gemessene Grenze.
+   `slice-retention-lauf-speicher-begrenzung` (Datei in `open/`); die Lösung steht in
+   [`ADR-0124`](../plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md).
+   Das Benutzerhandbuch trägt unter „Grenzwerte“ die gemessene Grenze des Standes dieses
+   Berichts.
 5. **Warn-Richtgröße** (4.000.000 geschätzte Zeilen, `warn.go`): sie bezieht den
    Speicher nicht ein. Ein Backfill dieser Größe hinterlässt 4.000.000 Changes; bei
-   1,03 bis 1,57 KiB je Change sind das 3,9 bis 6,0 GiB Speicher des Feed-Containers
+   1,03 bis 1,59 KiB je Change sind das 3,9 bis 6,1 GiB Speicher des Feed-Containers
    (abgeleitet), bei Zeilen von 1,3 KB 10,1 bis 16,0 GiB. Der Wert im Code bleibt in
    diesem Slice unverändert (eine Änderung ist Code); die Neubemessung ist ein
    Liefer-Punkt des Änderungs-Slice, nach dem Trigger von
    [`ADR-0113`](../plan/adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
    „Eine Messung liegt vor“ (Abschnitt 6).
-6. **Server-Release.** Empfehlung in Abschnitt 7.
+6. **Server-Release.** Der Defekt steht in `v0.1.0` bis `v0.1.2`; Änderungs-Slice zuerst,
+   danach `v0.2.0` (Nutzer-Entscheidung, Abschnitt 7).
 
 ## 2. Umgebung und Herkunft der Zahlen
 
@@ -88,6 +92,7 @@ Bereiche stehen über die Runs derselben Bedingung, `n` nennt die Zahl.
 | M | `20260925T152516Z` | Default-Image, schmal, Stufen 10.000 und 20.000, 1 Run, `BENCH_MEM_RESET=0` (Mutation) |
 | N | `20260925T153145Z` | `tools/bench-backfill.sh --full`, Default-Image, 3 Runs je Stufe, `--memory 10g` |
 | O | `20260925T152357Z` | Kopie von `bench-backfill-memory.sh` mit verändertem cgroup-Pfad (Mutation) |
+| P1 bis P3, Q1, Q2, R | `20260925T163946Z`, `20260925T170101Z`, `20260925T170249Z`, `20260925T165323Z`, `20260925T165457Z`, ohne Lauf | Läufe der Fixrunde: Mutationen der zwei Skripte (Abschnitt 8), Zeilen im Zeilen-Dokument |
 
 Die Varianten E bis G, I und J ändern **genau eine Konstante** am Quelltext des
 Arbeitsbaums (`retentionInterval`, bei F und G zusätzlich `DefaultBlockSize`) und
@@ -112,8 +117,8 @@ Image-Zugriffs, in der Zeile „Run-Ende“ der Reihe E, Stufe 10.000, Run 1 mit
 Stufe mit 200.000 Zeilen im Handbuch (übernommen) ist mit dem Zustand nach Runs
 vereinbar, nicht mit dem eines frischen Containers: vor dieser Stufe standen aus den
 Stufen 10.000 und 50.000 (je 3 Runs) 180.000 Changes in `cdc.change`
-(abgeleitet: 3 × 10.000 + 3 × 50.000), bei 1,03 bis 1,57 KiB je Change 181 bis
-276 MiB (abgeleitet, Abschnitt 3.3).
+(abgeleitet: 3 × 10.000 + 3 × 50.000), bei 1,03 bis 1,59 KiB je Change 181 bis
+279 MiB (abgeleitet, Abschnitt 3.3).
 
 ### 3.2 Verlauf im Run (Speicher über die Blöcke)
 
@@ -138,7 +143,8 @@ bis 6 MB zu Beginn eines Laufs (Reihe B, Run 1: „größter Heap zu Beginn 5 MB
 
 Speicher-Spitze (`memory.peak` seit dem Start des Containers, gedruckt nach dem
 60-s-Nachlauf) gegen die Zahl der Changes, die nach dem Run in `cdc.change` stehen
-(schmale Zeilen; `je Change` abgeleitet: Spitze in KiB durch Changes):
+(schmale Zeilen; `je Change` abgeleitet: Spitze in KiB durch Changes; die letzte Zeile
+nennt ihre Zahl selbst):
 
 | Changes in `cdc.change` | Spitze in MiB (Reihe, Run) | je Change in KiB |
 |---|---|---|
@@ -151,12 +157,17 @@ Speicher-Spitze (`memory.peak` seit dem Start des Containers, gedruckt nach dem
 | 400.000 | 468,6 (A) | 1,20 |
 | 600.000 | 605,9 (A) | 1,03 |
 | 1.000.000 | 1.082,7 (B); 1.273,5 (C) | 1,11; 1,30 |
-| 2.000.000 | 2.269,2 (B, Run 2); 3.058,0 (C, Run 2); 3.096,6 (B, Run 3); 2.751,7 (C, Run 3) | 1,16; 1,57; 1,51; 1,35 |
+| 2.000.000 | 2.269,2 (B, Run 2); 3.058,0 (C, Run 2) | 1,16; 1,57 |
+| 2.000.000 vor dem Run, 3.000.000 danach (Run 3, Spitze im Run) | 3.096,6 (B, Run 3); 2.751,7 (C, Run 3) | 1,59; 1,41 |
 
-(Bei Run 3 der Reihen B und C liegen 2.000.000 Changes vor dem Run in `cdc.change`;
-die Spitze im Run ist dort die der Bereinigung, Abschnitt 3.3.)
+Die zwei Runs 3 der Reihen B und C tragen 2.000.000 Changes **vor** dem Run und 3.000.000
+danach; ihre Spitze liegt im Run (bei 25 % der kopierten Zeilen, Abschnitt 3.3), nicht im
+Nachlauf. Der Wert je Change teilt deshalb durch 2.000.000, die Zahl vor dem Run
+(abgeleitet: 3.096,6 × 1.024 / 2.000.000 = 1,585 und 2.751,7 × 1.024 / 2.000.000 = 1,409;
+die Zahl der Changes zum Zeitpunkt der Spitze liegt zwischen 2.000.000 und 2.250.000, der
+Wert ist damit eine Obergrenze).
 
-Ab 100.000 Changes liegt der Wert je Change zwischen 1,03 und 1,57 KiB (`n` = 15);
+Ab 100.000 Changes liegt der Wert je Change zwischen 1,03 und 1,59 KiB (`n` = 15);
 darunter überwiegt die Grundlinie von etwa 6 MiB. Die Spitze tritt in den Takten der
 Bereinigung auf (alle 10 s, ein Sägezahn: Reihe A, Stufe 200.000, Run 3: `anon` im
 Nachlauf Minimum 233,4 und Maximum 508,9 MiB); ein Lauf nach dem anderen lässt die
@@ -174,9 +185,23 @@ anders: die Spitze im Run liegt bei 3.096,6 (B) und 2.751,7 MiB (C) `memory.curr
 der Zeilen, 60,3 MiB bei 25 %), danach steht `anon` bei 62,0 und 54,8 MiB und
 bleibt dort 60 s ohne Schreibzugriff: es laufen keine weiteren Bereinigungs-Takte
 (Reihe C: „Bereinigung gelaufen 5, fehlgeschlagen 0“ seit dem Start des Feeds, kein
-GC-Lauf im Nachlauf). Die Ursache ist **nicht belegt**; erwartet: die Abfrage in
-PostgreSQL läuft länger als die Beobachtungszeit von 60 s plus Run. Diese Aussage ist
-nicht nachgemessen (kein `pg_stat_activity`-Lauf).
+GC-Lauf im Nachlauf). Die Ursache ist **nicht belegt**. Die Abfrage in PostgreSQL erklärt
+das Ausbleiben nach dem Messstand des Architect-Verdikts
+(`architect-verdict-retention-lauf-speicher-begrenzung`) nicht: 1,9 bis 2,0 s je
+1.000.000 Changes im Client-Lauf der bisherigen Abfrage (übernommen aus diesem Verdikt,
+Einzelläufe), linear etwa 4 s je 2.000.000 (abgeleitet), gegen ein Fenster von mehr als
+60 s ohne Takt; die Hypothese dort liegt im Feed-Prozess (Dekodierung und Garbage
+Collection bei einem Heap von etwa 3 GiB) und ist nicht gemessen. Auch in diesem Bericht
+fehlt ein `pg_stat_activity`-Lauf.
+
+**Gegenprobe (Reihe N).** Ein Feed-Container über alle Stufen (`--memory 10g`) fährt
+Run 3 der Stufe 1.000.000 mit 2.330.000 Changes davor und steht 60 s nach dem Run bei
+2.448,4 MiB (`docker stats`, Abschnitt 3.8), 20 s nach dem Run bei 2.737,2 MiB: dort
+laufen die Bereinigungs-Takte bei mehr als 2.000.000 Changes weiter, `anon` fällt nicht
+auf etwa 60 MiB wie in den Reihen B und C. Das Ausbleiben hängt damit nicht allein an
+der Zahl von 2.000.000 Changes; der Unterschied der Anordnung (frischer Container je Run
+gegen ein Container über alle Stufen, `docker stats` gegen `anon`) ist nicht als Ursache
+belegt.
 
 ### 3.4 Blockgröße (Bereinigung aus)
 
@@ -207,7 +232,7 @@ Reihe H (Default-Image, breit, ohne Leerung zwischen den Runs einer Stufe wie A)
 | 400.000 | 1.058,8 | 2,71 |
 | 600.000 | 1.550,6 | 2,65 |
 
-Ab 100.000 Changes 2,65 bis 4,19 KiB je Change (`n` = 6), gegenüber 1,03 bis 1,57 KiB
+Ab 100.000 Changes 2,65 bis 4,19 KiB je Change (`n` = 6), gegenüber 1,03 bis 1,59 KiB
 bei schmalen Zeilen: rund das Zwei- bis Dreifache bei etwa dem Siebzehnfachen der
 Zeilenbreite. Die Spitze im Run bei leerem `cdc.change` bleibt flach (Run 1 der Stufen
 10.000, 100.000, 200.000: `anon` 14,4, 14,7 und 14,9 MiB); ohne Bereinigung (Reihe I,
@@ -219,7 +244,10 @@ Speicher nach dem Run aber mit der Zahl der Changes.
 
 Reihe K (`GOGC=25`, Stufe 200.000, schmal, `n` = 3): `memory.peak` 224,5, 415,5 und
 477,4 MiB bei 200.000, 400.000 und 600.000 Changes gegenüber 273,9, 468,6 und 605,9 MiB
-mit der Standardeinstellung (Reihe A): 18 bis 21 % weniger (abgeleitet). Die
+mit der Standardeinstellung (Reihe A): 11 bis 21 % weniger (abgeleitet, drei Paare:
+224,5 gegen 273,9 MiB = −18,0 %, 415,5 gegen 468,6 MiB = −11,3 %, 477,4 gegen 605,9 MiB
+= −21,2 %; Reihe K und Reihe A, Zeilen „Zeilen in cdc.change nach dem Nachlauf“ der Stufe
+200.000, Run 1 bis 3). Die
 Abhängigkeit von der Zahl der Changes bleibt unverändert; die Einstellung senkt den
 Zuschlag der Garbage Collection, nicht den Bestand.
 
@@ -297,7 +325,7 @@ daraus (Bereinigungs-Takte im Nachlauf).
 des Row Image im Use Case, die Schreibtransaktion mit `AppendBlock` je Zeile und die
 Garbage Collection erklären die Spitze nicht: die Spitze im Run bleibt bei 1.000.000
 Zeilen bei 10,5 MiB (Reihe B, Run 1), mit `GOGC=25` sinkt die Spitze nach dem Run nur
-um 18 bis 21 % (Reihe K). Die eine ungeklärte Größe ist das Ausbleiben der
+um 11 bis 21 % (Reihe K, Abschnitt 3.6). Die eine ungeklärte Größe ist das Ausbleiben der
 Bereinigungs-Takte ab 2.000.000 Changes (Abschnitt 3.3).
 
 **Grad der Sicherheit.** Hoch für die Aussage „die Bereinigung erzeugt die Spitze nach
@@ -332,7 +360,7 @@ Speicherlage unberührt; der Lauf N (Stufe 1.000.000, Median 7.715 Zeilen/s mal 
 4.629.000, abgerundet 4.000.000, Ausgabezeile „Richtgröße (abgeleitet)“) ergibt
 denselben Wert wie der Code, und die Kopierdauer der Stufe (129.620 ms) liegt weit
 unter der Toleranz von 600 s; der Speicherbedarf nach einem Backfill dieser Größe liegt bei
-3,9 bis 6,0 GiB für schmale Zeilen (4.000.000 × 1,03 bis 1,57 KiB, abgeleitet) und
+3,9 bis 6,1 GiB für schmale Zeilen (4.000.000 × 1,03 bis 1,59 KiB, abgeleitet) und
 10,1 bis 16,0 GiB für Zeilen von 1,3 KB (4.000.000 × 2,65 bis 4,19 KiB, abgeleitet). Eine Nachschärfung der Konstante beseitigte das Problem nicht: die
 Warnung `warn_estimated_size` nennt keine Speichergröße, und eine Richtgröße in Zeilen
 kann die Zeilenbreite nicht tragen. Deshalb (a) bleibt die Konstante bis zum
@@ -344,16 +372,32 @@ Größe die Richtgröße trägt.
 
 ## 7. Empfehlung zum Server-Release
 
-Ein Server-Release mit dem Backfill **ohne** die Behebung setzt die Betreiber dem
-Verhalten aus Abschnitt 3.3 aus: ein Backfill über 1.000.000 Zeilen hält den Feed-
-Container in jedem Takt der Bereinigung auf Spitzen von 1,1 bis 1,2 GiB (bei breiten
-Zeilen mehr), und ein Container-Limit unterhalb des Bedarfs beendet ihn. Das ist eine **bekannte, gemessene
-Grenze**, kein unbekannter Defekt, und sie ist im Handbuch benannt. Empfehlung:
-**den Änderungs-Slice vor dem Release umsetzen** (Umfang M, ein Use Case, ein Port,
-ein Adapter-Test); ist der Release-Termin fester, kann der Release mit der
-dokumentierten Grenze erfolgen, dann steht der Änderungs-Slice als erster Punkt der
-nächsten Version. Die Entscheidung liegt beim Nutzer; der Messbericht blockiert den
-Release nicht, er stellt die Kosten der zweiten Wahl fest.
+**Reichweite.** Der Retention-Lauf mit unbegrenzter Lesung steht in allen drei
+veröffentlichten Server-Versionen `v0.1.0` bis `v0.1.2` (Beleg: `git diff v0.1.2 HEAD --
+internal/application/usecase/retention internal/application/port/outbound/changestore.go`
+ist leer; `git show v0.1.0:internal/application/usecase/retention/service.go` und die
+Fassungen von `v0.1.1` und `v0.1.2` tragen in Zeile 63 dieselbe Zeile `ReadChanges(ctx,
+outbound.ChangeQuery{Source: command.Source})`, `retentionInterval = 10 * time.Second`
+steht in jedem `internal/bootstrap/wiring.go` in Zeile 172; gelesen, nicht am Bild der
+Version gemessen; Quelle des Befunds:
+[`architect-verdict-retention-lauf-speicher-begrenzung`](architect-verdict-retention-lauf-speicher-begrenzung.md)
+Verdikt 6). Der Defekt ist deshalb nicht auf den Backfill beschränkt: bei laufender
+Erfassung hält das Mindestalter von 24 Stunden die Changes von 24 Stunden in
+`cdc.change`, und derselbe Lauf liest sie in jedem Takt (abgeleitet, nicht gemessen).
+
+**Kosten ohne Behebung.** Ein Server-Release mit dem Backfill **ohne** die Behebung
+setzt die Betreiber dem Verhalten aus Abschnitt 3.3 aus: ein Backfill über 1.000.000
+Zeilen hält den Feed-Container in jedem Takt der Bereinigung auf Spitzen von 1,1 bis
+1,2 GiB (bei breiten Zeilen mehr), und ein Container-Limit unterhalb des Bedarfs beendet
+ihn.
+
+**Ausgang.** Der Nutzer hat entschieden: der Änderungs-Slice
+`slice-retention-lauf-speicher-begrenzung` wird **zuerst** umgesetzt, danach folgt der
+Server-Release `v0.2.0`; die Lösung steht in
+[`ADR-0124`](../plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md)
+(Projektion ohne Row Images, Seiten zu 10.000 Kandidaten) und im Architect-Verdikt
+(Abschnitt „Anlass“). Die Reihenfolge steht als Vorbedingung des Server-Release `v0.2.0` im
+Plan des Änderungs-Slice (Abschnitt 4). Ein Release vor der Umsetzung ist nicht vorgesehen.
 
 ## 8. Mutationen der Zusagen des Werkzeugs
 
@@ -368,7 +412,10 @@ Je Zusage eine Änderung an der **Eingabe** des geprüften Werkzeugs und das ges
 | `BENCH_MEM_RESET` bestimmt die Zahl der Changes vor der Stufe | `BENCH_MEM_RESET=0` bei Stufen 10.000 und 20.000 (Reihe M) | „Zeilen in cdc.change vor dem Run: 10000“ in Stufe 20.000 statt 0 |
 | `BENCH_MEM_EMPTY_AFTER` leert und misst weiter | Wert 1 (Reihe D) gegen 0 (Reihe A) | Zeile „cdc.change geleert, Nachlauf 120 s“ nur mit 1 |
 | Die Grundlinie und die Zeilen in `cdc.change` in `bench-backfill.sh` folgen dem Inhalt der Ablage | der Inhalt von `cdc.change` (Eingabe der Zeile) ändert sich von Stufe zu Stufe derselben Reihe N | die Zeilen nennen 0, 30.000, 330.000 und 3.330.000 Changes und Ruhewerte von 6,1, 6,1, 41,7 und 275,7 MiB |
-| `feed_mem_mib` liest den Container, den die Messung startet | keine Mutation gefahren | ohne Antwort: bei einem nicht lesbaren Container liefert die Funktion 0,0 statt eines Fehlers (vorhandene Eigenschaft, nicht Teil dieses Slice) |
+| Ein durch die Grenze beendeter Feed-Container beendet die Messung in `tools/bench-backfill.sh` mit dem Zustand des Containers (`feed_running_or_report`, Warteschleifen des Runs und der Live-Phase) | `BENCH_FEED_DOCKER_ARGS="--memory 64m"`, Stufe 100.000; vor der Änderung Reihe P1 (2 Runs), nach ihr Reihen P2 (3 Runs) und P3 (2 Runs) | vor: keine Zeile und kein Exit-Code, Abbruch von Hand nach mehr als 600 s, obwohl der Container beendet war (die Proben nennen 0,0 MiB); nach: Exit 1 mit „Feed-Container läuft nicht mehr, Run … nicht beendet (Run-Status queued): Status exited, Exit 137, OOMKilled true“ (P2) bzw. „…, Live-Phase, Run … nicht beendet (Run-Status unbekannt): …“ (P3) |
+| `gc_summary` nennt `GODEBUG=gctrace=1` nur als ungesetzt, wenn es in `BENCH_FEED_ENV` fehlt | `BENCH_FEED_ENV` von `GODEBUG=gctrace=1` auf `GOGC=25`, `XGODEBUG=gctrace=1` und leer (Reihe R) | vor: „nicht gesetzt“ für alle fünf Werte; nach: „im Fenster (GODEBUG=gctrace=1 gesetzt)“ nur bei den zwei Werten mit `GODEBUG=gctrace=1` |
+| Die Zeitreihen-Datei eines Runs bleibt nach einem Abbruch nicht zurück | `BENCH_MEM_RUN_TIMEOUT_S=1` (der Run endet ohne Abschluss, Reihen Q1 und Q2) | vor: eine Datei `tmp.…` in `TMPDIR` nach dem Lauf; nach: keine |
+| `feed_mem_mib` liest den Container, den die Messung startet | keine Mutation gefahren | ohne Antwort: bei einem nicht lesbaren Container liefert die Funktion 0,0 statt eines Fehlers (vorhandene Eigenschaft, nicht Teil dieses Slice; die Warteschleifen der Runs prüfen den Container seither selbst) |
 
 ## 9. Aufräum-Schritte und Grenzen
 

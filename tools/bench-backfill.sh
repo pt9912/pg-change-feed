@@ -137,6 +137,17 @@ settle_wal() {
 
 mib_of() { LC_ALL=C awk -v b="$1" 'BEGIN { printf "%.0f", b / 1048576 }'; }
 
+# Ein beendeter Feed-Container (etwa durch die Grenze aus BENCH_FEED_DOCKER_ARGS)
+# ist ein Messergebnis: die Warteschleifen der Runs enden mit dem Zustand des
+# Containers (Status, Exit, OOMKilled) statt an einer Zeitgrenze oder ohne Ende
+# auf einen Run zu warten, den niemand verarbeitet. Rückgabe 1 heißt: beendet.
+feed_running_or_report() {
+  if [ "$(docker inspect --format '{{.State.Running}}' "$(bench::feed_container)" 2>/dev/null)" != "true" ]; then
+    echo "$TAG: Feed-Container läuft nicht mehr, $1: $(docker inspect --format 'Status {{.State.Status}}, Exit {{.State.ExitCode}}, OOMKilled {{.State.OOMKilled}}' "$(bench::feed_container)" 2>&1)" >&2
+    return 1
+  fi
+}
+
 # run_backfill <tabelle> — beantragt einen Run, wartet auf sein Ende und
 # druckt eine Zeile
 # "ms|rows_copied|estimated|warn_size|warn_duration|peak_mib|wal_peak_bytes|held_peak_bytes".
@@ -167,6 +178,7 @@ run_backfill() {
         return 1
         ;;
     esac
+    feed_running_or_report "Run $id von $table nicht beendet (Run-Status ${status:-unbekannt})" || return 1
     if [ "$SECONDS" -gt "$deadline" ]; then
       echo "$TAG: Run $id von $table nicht beendet nach ${RUN_TIMEOUT_S} s" >&2
       return 1
@@ -307,6 +319,7 @@ while :; do
     completed) break ;;
     failed | interrupted) echo "$TAG: Live-Phase: Run $id endete $status" >&2; exit 1 ;;
   esac
+  feed_running_or_report "Live-Phase, Run $id nicht beendet (Run-Status ${status:-unbekannt})" || exit 1
   sleep 1
 done
 run_seconds=$(( $(date +%s) - run_start ))

@@ -88,8 +88,12 @@ sonst PostgreSQL-Defaults; Feed-Container aus `FEED_IMAGE` ohne
 Ressourcenbegrenzung. Zwei Variablen der Umgebung gelten für jedes Skript, das
 `bench::start_feed` ruft: `BENCH_FEED_ENV` (zusätzliche Umgebungsvariablen des
 Feed-Containers, leerzeichengetrennt, `KEY=VALUE`) und `BENCH_FEED_DOCKER_ARGS`
-(zusätzliche Argumente von `docker run`, etwa `--memory 6g`; ein Kill durch die
-Grenze ist ein Messergebnis).
+(zusätzliche Argumente von `docker run`, etwa `--memory 6g`). Ein Kill des
+Feed-Containers durch die Grenze ist ein Messergebnis in den zwei Skripten dieses
+Vertrags: beide enden mit Exit 1 und drucken den Zustand des Containers (`Status`,
+`Exit`, `OOMKilled`), `tools/bench-backfill.sh` in der Statusabfrage eines Runs,
+`tools/bench-backfill-memory.sh` beim nächsten Zähler-Zugriff. Die übrigen
+`tools/bench-*.sh` prüfen den Zustand des Feed-Containers nicht.
 
 ## Speicher-Untersuchung — `tools/bench-backfill-memory.sh`
 
@@ -119,8 +123,11 @@ Einstellung des Feeds verhält.
 4. **Zähler.** Vom Host aus gelesen, ohne Eingriff in den Container: die
    cgroup-v2-Datei des Containers (`memory.current`, `memory.stat` mit `anon`,
    `file`, `kernel`, `memory.peak`), `/proc/<pid>/status` des Prozesses (`RssAnon`,
-   `VmHWM`) und `docker stats`. Ist die cgroup-Datei oder `/proc/<pid>` nicht
-   lesbar, endet das Skript mit Exit 1.
+   `VmHWM`) und `docker stats`. Vorbedingung ist cgroup v2 mit dem systemd-Treiber
+   von Docker: der Pfad ist `/sys/fs/cgroup/system.slice/docker-<Container-ID>.scope`.
+   Ist die cgroup-Datei oder `/proc/<pid>` nicht lesbar (etwa auf einem Host mit dem
+   cgroupfs-Treiber), endet das Skript mit Exit 1 und der Meldung „cgroup (…) oder
+   /proc/… nicht lesbar“.
 5. **Laufzeit des Go-Prozesses.** Mit `BENCH_FEED_ENV="GODEBUG=gctrace=1"` druckt
    das Skript je Fenster die Zeilen der Garbage-Collection des Feeds: Zahl der
    Läufe, größter Heap zu Beginn eines Laufs, größtes Ziel, letzter Heap nach

@@ -537,3 +537,91 @@ cdc_capture_lag während des Runs (114 s, Stufe 1000000, Live-Last 100/s): 0.028
 Richtgröße (abgeleitet) — 7715 Zeilen/s (Median, Stufe 1000000) × Toleranz 600 s = 4629000 Zeilen, abgerundet auf eine Stelle: 4000000 Zeilen (Startwert der Toleranz: Setzung ohne Messung; die Rate ist über die Stufe hinaus hochgerechnet)
 Ende — Lauf 20260925T153145Z
 ```
+
+## Reihen der Fixrunde
+
+Die Läufe der Fixrunde zum Review von `slice-backfill-speicher-untersuchung` (gleicher Host,
+gleiches Feed-Image wie oben). Zusätzlich zu den zwei Auslassungen des Kopfs fehlen bei den
+Reihen P1 bis P3 die Zeilen der Schätz-Messung (`EST_ROWS=1000`), die für die Aussage der
+Reihe ohne Belang sind.
+
+### Reihe P1 — Lauf `20260925T163946Z`
+
+`tools/bench-backfill.sh` **vor** der Änderung der Warteschleifen, `BENCH_FEED_DOCKER_ARGS="--memory 64m"`,
+`BENCH_BACKFILL_STAGES=100000`, `BENCH_BACKFILL_RUNS=2`, `BENCH_BACKFILL_RUN_TIMEOUT_S=60`. Die
+Ausgabe endet mit der Zeile „Live-Erfassung …“; der Lauf hat danach mehr als 600 s weder eine
+Zeile noch einen Exit-Code geliefert und wurde von Hand mit `TERM` beendet.
+
+```text
+Host — Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 33362599936 Byte RAM, PostgreSQL-Image postgres:18-alpine
+Umgebung wird aufgebaut (Stufen: 100000 Zeilen, 2 Läufe je Stufe, Blockgröße B=1000 Zeilen, Toleranz 10 min) …
+Grundlinie ohne Run — Feed-Container in Ruhe 30 s nach dem Start 6.5 MiB, Zeilen in cdc.change: 0
+Stufe 100000 Zeilen (Zeilenbreite ~73 B gemittelt über pg_column_size, B=1000, Einfügeform zeilenweise in einer Transaktion), Feed-Container in Ruhe 6.5 MiB, Zeilen in cdc.change vor der Stufe: 0
+Stufe 100000, Lauf 1/2 — Kopierdauer 10498 ms (finished_at − started_at), 9526 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 10.9 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 1 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 59 MiB im Run
+Stufe 100000, Lauf 2/2 — Kopierdauer 11410 ms (finished_at − started_at), 8764 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 28.5 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 0 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 63 MiB im Run
+Stufe 100000 Ergebnis — Kopierdauer 10498–11410 (Median 10498, n=2) ms, Durchsatz 8764–9526 (Median 8764, n=2) Zeilen/s, Feed-Speicher-Spitze 28.5 MiB (Ruhe vor der Stufe 6.5 MiB, 20 s nach dem letzten Lauf 0.0 MiB, 60 s nach dem letzten Lauf 0.0 MiB, Zeilen in cdc.change danach: 200000), mittlere Blockdauer 105 ms (abgeleitet: Median-Dauer / 100 Blöcke; die längste Einzeldauer ist nicht gemessen), WAL-Rückstand-Spitze im Run Median 0 MiB (~0 B je Zeile, abgeleitet), vom Slot gehaltenes WAL Median 59 MiB
+WAL-Rückstand der größten Stufe (100000 Zeilen) — höchste Spitze im Run 1 MiB, unter der Warnschwelle von 100 MiB (SPEC-013)
+Live-Erfassung — 100 Zeilen/s in public.bench_backfill_live, Run über Stufe 100000 …
+```
+
+### Reihe P2 — Lauf `20260925T170101Z`
+
+`tools/bench-backfill.sh` **mit** der Änderung, `BENCH_FEED_DOCKER_ARGS="--memory 64m"`,
+`BENCH_BACKFILL_STAGES=100000`, `BENCH_BACKFILL_RUNS=3`. Exit 1.
+
+```text
+Host — Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 33362599936 Byte RAM, PostgreSQL-Image postgres:18-alpine
+Umgebung wird aufgebaut (Stufen: 100000 Zeilen, 3 Läufe je Stufe, Blockgröße B=1000 Zeilen, Toleranz 10 min) …
+Grundlinie ohne Run — Feed-Container in Ruhe 30 s nach dem Start 6.1 MiB, Zeilen in cdc.change: 0
+Stufe 100000 Zeilen (Zeilenbreite ~73 B gemittelt über pg_column_size, B=1000, Einfügeform zeilenweise in einer Transaktion), Feed-Container in Ruhe 6.1 MiB, Zeilen in cdc.change vor der Stufe: 0
+Stufe 100000, Lauf 1/3 — Kopierdauer 9015 ms (finished_at − started_at), 11093 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 10.6 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 0 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 63 MiB im Run
+Stufe 100000, Lauf 2/3 — Kopierdauer 11246 ms (finished_at − started_at), 8892 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 63.7 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 0 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 70 MiB im Run
+Feed-Container läuft nicht mehr, Run 664f8663-8a23-4255-b7f5-85e8cedb3a27 von bench_backfill_s100000 nicht beendet (Run-Status queued): Status exited, Exit 137, OOMKilled true
+```
+
+### Reihe P3 — Lauf `20260925T170249Z`
+
+Wie P2 mit `BENCH_BACKFILL_RUNS=2`: die Runs enden vor dem Kill, die Live-Phase trifft ihn. Exit 1.
+
+```text
+Host — Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 33362599936 Byte RAM, PostgreSQL-Image postgres:18-alpine
+Umgebung wird aufgebaut (Stufen: 100000 Zeilen, 2 Läufe je Stufe, Blockgröße B=1000 Zeilen, Toleranz 10 min) …
+Grundlinie ohne Run — Feed-Container in Ruhe 30 s nach dem Start 6.2 MiB, Zeilen in cdc.change: 0
+Stufe 100000 Zeilen (Zeilenbreite ~73 B gemittelt über pg_column_size, B=1000, Einfügeform zeilenweise in einer Transaktion), Feed-Container in Ruhe 6.2 MiB, Zeilen in cdc.change vor der Stufe: 0
+Stufe 100000, Lauf 1/2 — Kopierdauer 10399 ms (finished_at − started_at), 9616 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 10.8 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 1 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 63 MiB im Run
+Stufe 100000, Lauf 2/2 — Kopierdauer 10913 ms (finished_at − started_at), 9163 Zeilen/s, geschätzt unbekannt, Warnung Größe f, Warnung Dauer f, Feed-Speicher-Spitze 12.3 MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze 0 MiB im Run, 0 MiB unmittelbar danach, 0 MiB 0 s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze 63 MiB im Run
+Stufe 100000 Ergebnis — Kopierdauer 10399–10913 (Median 10399, n=2) ms, Durchsatz 9163–9616 (Median 9163, n=2) Zeilen/s, Feed-Speicher-Spitze 12.3 MiB (Ruhe vor der Stufe 6.2 MiB, 20 s nach dem letzten Lauf 0.0 MiB, 60 s nach dem letzten Lauf 0.0 MiB, Zeilen in cdc.change danach: 200000), mittlere Blockdauer 104 ms (abgeleitet: Median-Dauer / 100 Blöcke; die längste Einzeldauer ist nicht gemessen), WAL-Rückstand-Spitze im Run Median 0 MiB (~0 B je Zeile, abgeleitet), vom Slot gehaltenes WAL Median 63 MiB
+WAL-Rückstand der größten Stufe (100000 Zeilen) — höchste Spitze im Run 1 MiB, unter der Warnschwelle von 100 MiB (SPEC-013)
+Live-Erfassung — 100 Zeilen/s in public.bench_backfill_live, Run über Stufe 100000 …
+Feed-Container läuft nicht mehr, Live-Phase, Run d984ce14-860e-49ac-92af-a1b15e00bdfa nicht beendet (Run-Status unbekannt): Status exited, Exit 137, OOMKilled true
+```
+
+### Reihen Q1 und Q2 — Läufe `20260925T165323Z` und `20260925T165457Z`
+
+`tools/bench-backfill-memory.sh` mit `BENCH_MEM_STAGES=100000`, `BENCH_MEM_RUNS=1`,
+`BENCH_MEM_RUN_TIMEOUT_S=1` und `TMPDIR` auf ein leeres Verzeichnis je Lauf (der Run endet nach
+1 s ohne Abschluss, Exit 1). Q1 ist die Fassung **vor** der Änderung der Zeitreihen-Datei, Q2
+die Fassung mit ihr. Nach dem Lauf steht in `TMPDIR` von Q1 eine Datei (`tmp.lCS8LW2nkh`), in
+`TMPDIR` von Q2 keine.
+
+```text
+Q1: Run 1def5753-2dd2-4033-8be2-1aeafbb3e187 von bench_mem_narrow_100000 nicht beendet nach 1 s
+Q2: Run 8b37c38d-73c1-4b38-a9ea-94b72852c919 von bench_mem_narrow_100000 nicht beendet nach 1 s
+```
+
+### Reihe R — `gc_summary` gegen eine Attrappe von `docker logs`
+
+Die Funktion `gc_summary` aus `tools/bench-backfill-memory.sh`, geladen in eine Shell mit einer
+Funktion `docker`, die eine feste Log-Ausgabe (leer oder eine GC-Zeile) liefert, `BENCH_FEED_ENV`
+je Aufruf verändert. Ausgabe der Fassung mit der Änderung, nur die Aufrufe mit leerem Log:
+
+```text
+ENV=[GODEBUG=gctrace=1] logs=nein -> keine GC-Zeilen im Fenster (GODEBUG=gctrace=1 gesetzt)
+ENV=[GOGC=25 GODEBUG=gctrace=1] logs=nein -> keine GC-Zeilen im Fenster (GODEBUG=gctrace=1 gesetzt)
+ENV=[GOGC=25] logs=nein -> keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)
+ENV=[] logs=nein -> keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)
+ENV=[XGODEBUG=gctrace=1] logs=nein -> keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)
+```
+
+Dieselben Aufrufe gegen die Fassung vor der Änderung drucken für alle fünf Werte
+„keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)“.

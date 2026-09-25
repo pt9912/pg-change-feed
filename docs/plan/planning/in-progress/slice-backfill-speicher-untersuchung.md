@@ -101,7 +101,8 @@ ersten Betreiber.
       Handbuch-Abschnitts und `make docs-check`.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein offenes
+      HIGH/MEDIUM (die Fixrunde löst F-1 bis F-5; `review-slice-backfill-speicher-untersuchung`)
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
@@ -144,6 +145,26 @@ hat kein bekanntes Ende.
 | `docs/plan/planning/open/slice-retention-lauf-speicher-begrenzung.md` | neu | **Ausgang** (DoD, dritter Punkt): der Änderungs-Slice der Ursache, Datei in `open/`. |
 | `docs/plan/planning/observations/BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes/state.md` | update | nur der Verweis auf den Slice: ein Link mit festem Lifecycle-Verzeichnis (`open/`) bricht mit dem `git mv`; er steht jetzt als Zitat der Kennung. Der Inhalt des Registers bleibt der Planner-Closure. |
 
+**Fixrunde** (Findings des Reviews, alle **über den Plan hinaus**; Zeilen der Läufe im
+Zeilen-Dokument, Reihen P1 bis R):
+
+| Datei / Komponente | Änderungs-Art | Begründung |
+|---|---|---|
+| `docs/reviews/messbericht-slice-backfill-speicher-untersuchung.md` | update | F-1 (`GOGC=25` senkt um 11 bis 21 %, drei Paare genannt), F-2 (Höchstwert je Change 1,59 statt 1,57; Zeile der Runs 3 mit 2.000.000 Changes davor, Divisor genannt; Folgezahlen 3,9 bis 6,1 GiB und 181 bis 279 MiB), F-5 (§7: Reichweite `v0.1.0` bis `v0.1.2`, Ausgang „Änderungs-Slice zuerst, danach `v0.2.0`“ mit Anker), F-9 und F-11 (Herkunft der Live-Aussage, Reihe N als Gegenprobe, Hypothese des Architect-Verdikts), F-12 (Tag), Abschnitt 8 um die Mutationen der Fixrunde |
+| `docs/reviews/messbericht-slice-backfill-speicher-untersuchung-zeilen.md` | update | die gedruckten Zeilen der Läufe der Fixrunde (Reihen P1, P2, P3, Q1, Q2, R) |
+| `docs/user/benutzerhandbuch.md` | update | F-1, F-2 (Zeile und Höchstwert), F-3 (§4: Speicher im Run bei nicht leerem `cdc.change`), F-7 (zwei Sätze im Ist-Zustand), F-9 (Ursprung der Live-Aussage), F-11/F-12 (Reihe N, `v0.1.0` bis `v0.1.2`); Version 1.61 mit Historienzeile; die Zeile 1.60 trägt den korrigierten Höchstwert |
+| `tools/bench-backfill.sh` | update | F-4: `feed_running_or_report` beendet die Warteschleife des Runs und die der Live-Phase mit dem Zustand des Feed-Containers |
+| `tools/bench-backfill-memory.sh` | update | F-6 (`gc_summary` unterscheidet gesetztes und ungesetztes `GODEBUG=gctrace=1`), F-10 (die Zeitreihen-Datei eines Runs liegt unter `$WINDOW_FILE` und wird von der Falle entfernt) |
+| `harness/targets/bench-backfill.md` | update | F-4 (der Satz „Kill ist ein Messergebnis“ nennt die zwei Skripte, die ihn tragen), F-13 (cgroup-v2 mit systemd-Treiber als Vorbedingung) |
+
+Fixrunde, nicht realisiert: F-10 (b) — die Meldung „Zeile 58 …/memory.current: Datei oder
+Verzeichnis nicht gefunden“ ist in der Fassung des Reviews nicht reproduzierbar (Shell-Test der
+Konstruktion `{ S=$(<Datei); } 2>/dev/null` gegen eine fehlende Datei: keine Ausgabe;
+Lauf `20260925T165631Z` mit `--memory 64m`: keine solche Zeile), keine Änderung. F-8 (Ursache und
+Zahl im Plan des Folge-Slice) und der Suchbefehl mit `1,03 bis 1,57` im Plan des Folge-Slice
+(Zeile 293) gehören in dessen Plan: **gemeldet**, nicht mitgeändert (Planner). F-14: keine
+Aktion (Prozess-Hinweis, kein Rückstand).
+
 Nicht realisiert: nichts vom Plan. Die Eingrenzung „Breite Zeilen als eigene Messreihe“
 (§1) wurde ausgeübt, weil die Ursache an der Zeilenbreite hängt (Reihen H und I); der Plan
 nannte diese Bedingung selbst.
@@ -180,6 +201,44 @@ und 1 Treffer, Diff 2 und 0.
 | Register `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes/state.md` | Feld „Gegenstand“ trägt „die Ursache ist nicht untersucht“ | **gemeldet**, nicht mitgeändert (Planner-Closure); nur der gebrochene Link ist ein Zitat |
 | `spec/pflichtenheft.md` Zeile 72 (`SPEC-005`) | „Große Transaktionen dürfen nicht unbegrenzt im RAM gehalten werden“ | gelesen: betrifft den Transaktionspuffer des Capture-Pfads, nicht die Retention-Lesung; nicht geändert |
 | **Nicht gefunden** | kein Träger außerhalb der genannten beschreibt die Retention-Lesung als Speicherquelle; kein Träger in `spec/` und `docs/user/` (außer dem Handbuch) trägt Zahlen zum Speicher des Feed-Containers | — |
+
+**§3.13-Suchlauf der Fixrunde** (bewegte Eigenschaften: der Höchstwert je Change und die
+Folgezahlen, die Prozentangabe zu `GOGC`, die Aussage „Speicher nach dem Run, nicht im Run“,
+der Vertragssatz zum Kill des Feed-Containers, die Empfehlung zum Server-Release; Suchform
+nach [`AGENTS.md`](../../../../AGENTS.md) §3.13: Symbolname, Zählwort, Beschreibung; Träger:
+`docs/user`, `harness`, `tools`, die zwei Messberichte und `docs/plan/planning/open`; Parent =
+`5b1f7762`, Stand vor der Fixrunde, mit `git grep <Befehl> 5b1f7762 -- <Wurzeln>`; Diff =
+Arbeitsbaum der Fixrunde ohne diesen Plan):
+
+```text
+git grep -n -E '1,57|1[.]57|1,51 |1,35 |6,0 GiB|18 bis 21' <Stand> -- docs/user harness tools <Messberichte> docs/plan/planning/open
+git grep -n -E 'nach dem Run, nicht|nicht während er|Kill durch die Grenze|jedes Skript' <Stand> -- docs/user harness tools <Messberichte> docs/plan/planning/open
+git grep -n -E 'vor dem Release|vor einem Server-Release|bekannte, gemessene|Änderungs-Slice vor' <Stand> -- docs/user harness tools <Messberichte> docs/plan/planning/open
+git grep -n -E 'feed_mem_mib|feed_running_or_report|BENCH_FEED_DOCKER_ARGS|gc_summary' <Stand> -- docs/user harness tools <Messberichte> docs/plan/planning/open
+git grep -n -E 'Reihen? [A-Z] (bis|und)' <Stand> -- docs/user harness tools <Messberichte> docs/plan/planning/open
+```
+
+`<Messberichte>` sind `docs/reviews/messbericht-slice-backfill-speicher-untersuchung.md` und
+`docs/reviews/messbericht-slice-backfill-speicher-untersuchung-zeilen.md`. **Trefferzahl**
+(gemessen mit den fünf Befehlen): Befehl 1 Parent 16, Diff 7; Befehl 2 Parent 2, Diff 1;
+Befehl 3 Parent 2, Diff 0; Befehl 4 Parent 17, Diff 27; Befehl 5 Parent 8, Diff 13.
+
+**Gefunden und gezogen:** die Treffer des Parent bei Befehl 1 im Handbuch (§9, Historienzeile
+1.60), im Messbericht (§1, §3.1, §3.3, §3.5, §3.6, §4, §6) und im Wert der Runs 3; bei Befehl 2 der
+Handbuch-Absatz „nach dem Run, nicht während er läuft“ (§4); bei Befehl 3 die zwei Zeilen der
+Empfehlung in §7 des Messberichts. **Gefunden und nicht gezogen:** die
+sieben Treffer des Befehls 1 im Diff sind wahr — zwei Zeilen der Tabelle in §3.3 des Messberichts
+(1,51 aus Reihe D, 1,57 aus Reihe C, Run 2), zwei Treffer auf „16,0 GiB“ (der Suchausdruck `6,0 GiB`
+trifft die Endung von „16,0 GiB“), die Versionszeile `1.57` und die Historienzeile 1.61 des
+Handbuchs (nennt den früheren Wert als Gegenstand der Korrektur), und die Zeile 293 des Plans
+des Folge-Slice (Stand `3405c9a1`; sie nennt `1,03 bis 1,57` als Suchausdruck; **gemeldet**, Träger in fremder
+Datei: der Ausdruck trifft im Handbuch seit dieser Fixrunde nicht mehr, dort steht `1,03 bis
+1,59`); Befehl 2 im Diff: der Satz „für jedes Skript, das `bench::start_feed` ruft“ im Vertrag
+gilt für die zwei Umgebungsvariablen und bleibt wahr. **Nicht gefunden:** kein weiterer Träger
+außerhalb der Suchwurzeln nennt den Höchstwert 1,57, die Prozentangabe oder die Reihenfolge
+„Release vor Änderungs-Slice“; `spec/` und `README.md` tragen keine dieser Zahlen. Der Träger
+`state.md` des Registers und der Plan des Folge-Slice (Trigger, Zahl „3.000.000“, Ursache des
+Ausbleibens der Takte) liegen in Händen des Planners und sind gemeldet.
 
 ## 4. Trigger
 

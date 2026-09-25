@@ -22,7 +22,7 @@ PUBLICATION=pub_bench_mem
 RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
 TAG="bench-backfill-memory[$RUN_ID]"
 WINDOW_FILE=$(mktemp)
-trap 'rm -f "$WINDOW_FILE" "$WINDOW_FILE.cur" "$WINDOW_FILE.anon"; bench::cleanup' EXIT
+trap 'rm -f "$WINDOW_FILE" "$WINDOW_FILE.cur" "$WINDOW_FILE.anon" "$WINDOW_FILE.series"; bench::cleanup' EXIT
 trap 'exit 1' TERM
 
 table_of() { echo "bench_mem_${WIDTH}_$1"; }
@@ -144,7 +144,8 @@ start_feed_stage() {
 # die Zusammenfassung und setzt RUN_MS.
 run_one() {
   local table=$1 n=$2 label=$3 id t0 now status rows sample deadline series
-  series=$(mktemp)
+  series=$WINDOW_FILE.series
+  : > "$series"
   id=$(bench::psql_scalar "SELECT cdc.backfill_table('$SOURCE_ID', 'public', '$table')")
   t0=$(date +%s%N)
   deadline=$((SECONDS + RUN_TIMEOUT_S))
@@ -181,17 +182,23 @@ run_one() {
 }
 
 # GC-Zeilen (GODEBUG=gctrace=1) seit der Zeile $1: Zahl, größter Heap zu
-# Beginn, größtes Ziel, letzter Heap nach dem GC (MB).
+# Beginn, größtes Ziel, letzter Heap nach dem GC (MB). Ohne GC-Zeile im Fenster
+# nennt die Ausgabe, ob GODEBUG=gctrace=1 in BENCH_FEED_ENV steht.
 gc_summary() {
-  local from=$1
-  docker logs "$FEED" 2>&1 | grep -E '^gc [0-9]+ @' | tail -n +"$((from + 1))" | LC_ALL=C awk '{
+  local from=$1 traced=0
+  case " ${BENCH_FEED_ENV:-} " in *" GODEBUG="*gctrace=1*) traced=1 ;; esac
+  docker logs "$FEED" 2>&1 | grep -E '^gc [0-9]+ @' | tail -n +"$((from + 1))" | LC_ALL=C awk -v traced="$traced" '{
     if (match($0, /[0-9]+->[0-9]+->[0-9]+ MB, [0-9]+ MB goal/)) {
       split(substr($0, RSTART, RLENGTH), p, /->| MB, | MB goal/)
       if (p[1] + 0 > s) s = p[1] + 0
       if (p[4] + 0 > g) g = p[4] + 0
       l = p[3] + 0; c++
     }
-  } END { if (c > 0) printf "GC-Läufe %d, größter Heap zu Beginn %d MB, größtes Ziel %d MB, letzter Heap nach GC %d MB", c, s, g, l; else printf "keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)" }'
+  } END {
+    if (c > 0) printf "GC-Läufe %d, größter Heap zu Beginn %d MB, größtes Ziel %d MB, letzter Heap nach GC %d MB", c, s, g, l
+    else if (traced == 1) printf "keine GC-Zeilen im Fenster (GODEBUG=gctrace=1 gesetzt)"
+    else printf "keine GC-Zeilen (GODEBUG=gctrace=1 nicht gesetzt)"
+  }'
 }
 gc_count() { docker logs "$FEED" 2>&1 | grep -cE '^gc [0-9]+ @' || true; }
 
