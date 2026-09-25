@@ -25,13 +25,18 @@
 # die Pipe hier, ohne einen globalen `SHELL`-Override im Makefile zu
 # brauchen.
 #
+# Die Stufe `pack` prueft vor dem Export die Publish-Konfiguration (beide
+# Einzel-Aufgaben der Ziele, POM-Koordinate und -Version gegen den Jar-Namen,
+# Upload-URL des Cloudsmith-Repositories); ein roter Probe-Schritt bricht den
+# Bau ab, bevor ein Artefakt exportiert wird.
+#
 # Der gRPC-Teil der Flaeche liest die `.proto` ueber einen zusaetzlichen,
 # benannten Bau-Kontext (`--build-context proto=proto`, ADR-0090
 # Festlegung 2, uebernommen auf den Kotlin-SDK-Baum) — ohne ihn bricht der
 # Bau an der `COPY --from=proto`-Zeile in sdks/kotlin/Dockerfile ab.
 #
 # Aufruf: `make sdk-pack-kotlin`. Override: SDK_PACK_KOTLIN_IMAGE. Kein
-# Gate (ADR-0109 Festlegung 5: GitHub-Packages-Paketbezug braucht Netz,
+# Gate (ADR-0109 Festlegung 5: der Gradle-Paketbezug braucht Netz,
 # `make gates` bleibt netzlos).
 set -euo pipefail
 

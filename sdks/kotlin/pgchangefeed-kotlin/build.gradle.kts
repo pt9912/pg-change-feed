@@ -10,19 +10,24 @@
 //
 // `maven-publish` is the built-in Gradle core plugin, not a third-party plugin
 // such as `com.vanniktech.maven-publish`. The `publishing` block carries the
-// Maven coordinate and the GitHub Packages `repositories{}` entry — registry
-// URL `https://maven.pkg.github.com/pt9912/pg-change-feed`, credentials from
-// the environment variables `GITHUB_ACTOR`/`GITHUB_TOKEN`. `GITHUB_ACTOR` is a
-// default value GitHub Actions provides; `GITHUB_TOKEN` is set explicitly by
-// the calling workflow (`.github/workflows/sdk-kotlin-release.yml`, from
-// `secrets.GITHUB_TOKEN`) — no repository secret is needed and none is named
-// here. Outside that workflow (locally, in `make sdk-pack-kotlin`) both
-// variables stay empty; `make sdk-pack-kotlin` builds only the `pack-export`
-// Docker stage (`test`/`build`, no `publish` task). `sdks/kotlin/Dockerfile`
-// also carries a `publish` stage (built on `build`) that only
-// `.github/workflows/sdk-kotlin-release.yml` builds and starts with
-// `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...` and real credentials at
-// run time.
+// Maven coordinate and two `repositories{}` entries, one publish task each:
+//   GitHubPackages -> https://maven.pkg.github.com/pt9912/pg-change-feed,
+//     credentials from `GITHUB_ACTOR`/`GITHUB_TOKEN`
+//     (`publishMavenPublicationToGitHubPackagesRepository`)
+//   Cloudsmith -> https://maven.cloudsmith.io/pt9912/pg-change-feed/,
+//     credentials from `CLOUDSMITH_USERNAME`/`CLOUDSMITH_API_KEY`
+//     (`publishMavenPublicationToCloudsmithRepository`)
+// `GITHUB_ACTOR` is a default value GitHub Actions provides; the other three
+// variables are set explicitly by the calling workflow
+// (`.github/workflows/sdk-kotlin-release.yml`, one job per target). No
+// credential value appears in this file. The aggregate `publish` task runs
+// both targets and fails without the Cloudsmith values, so the workflow calls
+// the per-target tasks. Outside that workflow (locally, in `make
+// sdk-pack-kotlin`) all four variables stay empty; `make sdk-pack-kotlin`
+// builds only the `pack-export` Docker stage (`test`/`build`, no publish
+// upload). `sdks/kotlin/Dockerfile` also carries a `publish` stage (built on
+// `build`) that only the workflow builds and starts, with the credentials
+// passed by `docker run -e` at run time.
 //
 // `com.google.code.gson:gson` is the JSON library of the HTTP client, the SSE
 // client and the NATS client, at the same pinned version as
@@ -64,11 +69,13 @@
 // is needed: the pinned `com.google.code.gson:gson:2.14.0` also deserializes
 // the NATS messages, which share their schema with the SSE events.
 //
-// Version `0.2.1` (SemVer): raised deliberately at each release, not derived
-// automatically. The POM fields `name`/`description`/`url`/`licenses`/`scm` in
-// the `publishing` block are the package metadata published with the
-// artifacts; the jar carries no README. They contain no internal identifiers.
-// The `java` block adds a sources jar to the publication.
+// Version `0.2.2` (SemVer): raised deliberately at each release, not derived
+// automatically; the top-level `version` (jar name, checked against the release
+// tag) and the `version` of the publication (POM) carry the same value. The
+// POM fields `name`/`description`/`url`/`licenses`/`scm` in the `publishing`
+// block are the package metadata published with the artifacts; the jar
+// carries no README. They contain no internal identifiers. The `java` block
+// adds a sources jar to the publication.
 plugins {
     kotlin("jvm") version "2.4.20"
     `maven-publish`
@@ -76,7 +83,7 @@ plugins {
 }
 
 group = "io.github.pt9912"
-version = "0.2.1"
+version = "0.2.2"
 
 kotlin {
     jvmToolchain(21)
@@ -200,7 +207,7 @@ publishing {
         create<MavenPublication>("maven") {
             groupId = "io.github.pt9912"
             artifactId = "pgchangefeed-kotlin"
-            version = "0.2.1"
+            version = "0.2.2"
             from(components["java"])
             pom {
                 name.set("PG Change Feed Kotlin client")
@@ -228,6 +235,14 @@ publishing {
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+        maven {
+            name = "Cloudsmith"
+            url = uri("https://maven.cloudsmith.io/pt9912/pg-change-feed/")
+            credentials {
+                username = System.getenv("CLOUDSMITH_USERNAME")
+                password = System.getenv("CLOUDSMITH_API_KEY")
             }
         }
     }

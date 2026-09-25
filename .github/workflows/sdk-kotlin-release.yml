@@ -1,83 +1,54 @@
 ---
 name: sdk-kotlin-release
 
-# GitHub-Packages-Publish-Workflow fuer das Kotlin-SDK-Package
-# `pgchangefeed-kotlin` (ADR-0109 Festlegung 2/5, LH-FA-SST-009,
-# slice-sdk-kotlin-publish-workflow). Trigger ausschliesslich Git-Tags der
-# Form `sdk-kotlin-v<SemVer 2.0>` — ein EIGENER Tag-Namensraum, getrennt vom
-# Server-Release-Raum `v*` und den beiden anderen SDK-Raeumen
-# `sdk-csharp-v*`/`sdk-python-v*` (ADR-0109 Festlegung 5 letzter Punkt).
-# `ci.yml`/`e2e.yml`/`examples.yml` schliessen JEDEN Tag-Push per
-# `tags-ignore: ['**']` aus (ci.yml Zeile 40f., e2e.yml Zeile 59f.,
-# examples.yml Zeile 42f.), `release.yml` reagiert ausschliesslich auf
-# `push: tags: ['v*']` (release.yml Zeile 51f.),
-# `sdk-csharp-release.yml` ausschliesslich auf `push: tags:
-# ['sdk-csharp-v*']` und `sdk-python-release.yml` ausschliesslich auf
-# `push: tags: ['sdk-python-v*']` — `sdk-kotlin-v*` matcht keines dieser
-# fuenf Muster (kein Praefix-Ueberlappungs-Doppellauf; belegt im Bericht
-# dieses Slice).
+# Publish-Workflow fuer das Kotlin-SDK-Package `pgchangefeed-kotlin`
+# (ADR-0109 Festlegung 2/5, ADR-0123, LH-FA-SST-009). Zwei Ziele: GitHub
+# Packages und Cloudsmith (anonym lesbares Open-Source-Repository). Trigger
+# ausschliesslich Git-Tags der Form `sdk-kotlin-v<SemVer 2.0>` — ein EIGENER
+# Tag-Namensraum, getrennt vom Server-Release-Raum `v*` und den beiden anderen
+# SDK-Raeumen `sdk-csharp-v*`/`sdk-python-v*`. `ci.yml`/`e2e.yml`/
+# `examples.yml` schliessen JEDEN Tag-Push per `tags-ignore: ['**']` aus,
+# `release.yml`, `sdk-csharp-release.yml` und `sdk-python-release.yml`
+# reagieren ausschliesslich auf ihr eigenes `tags:`-Muster — `sdk-kotlin-v*`
+# matcht keines dieser Muster (kein Doppellauf).
 #
-# Ablauf: Tag strikt gegen `sdk-kotlin-v<SemVer-2.0>` validieren
+# Ein Job je Ziel, ohne `needs` und ohne `continue-on-error`: scheitert ein
+# Ziel, bleibt das andere veroeffentlicht, der Lauf ist rot, und
+# "Re-run failed jobs" wiederholt nur den roten Job. Jeder Job durchlaeuft
+# dieselben Schritte: Tag strikt gegen `sdk-kotlin-v<SemVer-2.0>` validieren
 # (`tools/harness/sdk-kotlin-release-tag-info.sh`, netzlos testbar ueber
-# `make test-sdk-kotlin-release-tag-info` — teilt die SemVer-2.0-Regex mit
-# `tools/harness/release-tag-info.sh`/`tools/harness/sdk-csharp-release-tag-info.sh`
-# ueber `tools/harness/semver-regex.sh`, ADR-0109 Festlegung 4: reines
-# SemVer 2.0, NICHT Pythons PEP-440-Sonderfall), dann gegen die in
-# `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` gefuehrte
-# Top-Level-`version`-Zeile abgleichen (Abbruch bei jeder Abweichung, VOR
-# jedem Build/Publish — Muster `sdk-csharp-release.yml`s
-# Tag-vs-`.csproj`-Abgleich bzw. `sdk-python-release.yml`s
-# Tag-vs-`pyproject.toml`-Abgleich, hier gegen die Gradle-Versionszeile).
-# Baut/testet/paketiert danach Docker-only ueber `make sdk-pack-kotlin`
-# (AGENTS.md §3.1, ADR-0109 Festlegung 5) — ein roter Test dort bricht den
-# Workflow ab, BEVOR der eigentliche Publish-Schritt je erreicht wird.
+# `make test-sdk-kotlin-release-tag-info`), gegen die Top-Level-`version`-Zeile
+# in `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` abgleichen (Abbruch bei
+# jeder Abweichung, VOR jedem Build/Publish), Docker-only bauen, testen und
+# paketieren (`make sdk-pack-kotlin`, dabei laeuft die Probe der
+# Publish-Konfiguration; AGENTS.md §3.1), die Docker-Stufe `publish`
+# (sdks/kotlin/Dockerfile) bauen und darin die Gradle-Einzel-Aufgabe des Ziels
+# starten (nicht die Sammel-Aufgabe `publish`, die beide Ziele ausfuehrt).
 #
-# Der Publish-Schritt selbst laeuft — wie der Rest des Baus — IM Docker-Bau
-# (ADR-0109 Festlegung 5 woertlich: "im gepinnten eclipse-temurin:21-jdk-
-# Image" bis EINSCHLIESSLICH `publish`; Korrektur von Review-Finding F-1,
-# docs/reviews/review-slice-sdk-kotlin-publish-workflow.md — eine fruehere
-# Fassung dieses Workflows rief `./gradlew publish` direkt auf dem Runner
-# auf, ausserhalb jedes Containers, und wiederholte dabei die gesamte
-# Bau-Kette inkl. Protobuf-Codegenerierung ein zweites Mal, ohne den
-# bereits von `make sdk-pack-kotlin` erzeugten Jar zu verwenden). Die neue
-# Docker-Stufe `publish` (sdks/kotlin/Dockerfile) baut auf der bereits
-# vorhandenen `build`-Stufe auf (Layer-Wiederverwendung — der Jar liegt zu
-# diesem Zeitpunkt bereits vor) und braucht — anders als jede andere Stufe
-# dieses Dockerfiles — Netzwerkzugriff zur LAUFZEIT
-# (https://maven.pkg.github.com), deshalb kein `--network none` bei diesem
-# `docker run`. Die `.proto`-Quelle liegt NICHT im committeten SDK-Baum
-# (ADR-0109 Festlegung 3) und fliesst — wie beim Bau von
-# `make sdk-pack-kotlin` — ueber den zusaetzlichen, benannten Bau-Kontext
-# `proto` in den Docker-Bau ein (`--build-context proto=proto`); kein
-# manueller Kopier-Schritt ausserhalb von Docker mehr noetig.
+# Der Lauf der Stufe `publish` braucht Netzwerkzugriff zur LAUFZEIT, deshalb
+# kein `--network none` bei diesem `docker run`. Die `.proto`-Quelle liegt
+# NICHT im committeten SDK-Baum und fliesst ueber den benannten Bau-Kontext
+# `proto` in den Docker-Bau ein (`--build-context proto=proto`).
 #
-# Zugangsdaten (GITHUB_ACTOR/GITHUB_TOKEN) werden AUSSCHLIESSLICH zur
-# LAUFZEIT ueber `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...`
-# durchgereicht, NICHT als Build-Arg — ein Build-Arg landet im
-# Image-Layer-/History-Cache, ein Secret darf dort nicht auftauchen.
+# Zugangsdaten: je Ziel nur die eigenen, ausschliesslich zur LAUFZEIT ueber
+# `env:` des Schritts und `docker run -e NAME` (der Wert steht nie in der
+# Kommandozeile), NICHT als Build-Arg — ein Build-Arg landet im
+# Image-Layer-/History-Cache. Kein Schritt gibt einen Wert aus.
+#   GitHub Packages: das eingebaute `GITHUB_TOKEN` (Job-Berechtigungen:
+#     Inhalt lesen, Pakete schreiben) und der Default-Wert `GITHUB_ACTOR`;
+#     kein externes Repository-Secret.
+#   Cloudsmith: die Repository-Secrets `CLOUDSMITH_USERNAME` und
+#     `CLOUDSMITH_API_KEY` (Service-Konto mit Schreibrecht auf genau dieses
+#     Repository; der Betreiber legt sie manuell an); nur `contents: read`.
+# Gradle liest sie in `build.gradle.kts`
+# (`publishing.repositories.maven.credentials`) per `System.getenv`.
 #
-# Auth: AUSSCHLIESSLICH das eingebaute `GITHUB_TOKEN`
-# (`permissions: contents: read` / `packages: write` auf Job-Ebene, real
-# dokumentiertes Minimalrezept, ADR-0109 §Kontext Recherche,
-# `docs.github.com/…/publishing-java-packages-with-gradle`) — KEIN externes
-# Repository-Secret, der zentrale Unterschied zu
-# `sdk-csharp-release.yml`/`sdk-python-release.yml`
-# (`NUGET_API_KEY`/`PYPI_API_TOKEN`). `GITHUB_ACTOR` ist ein von GitHub
-# Actions automatisch bereitgestellter Default-Umgebungswert (kein
-# `secrets.*`-Verweis noetig); `GITHUB_TOKEN` wird explizit aus
-# `secrets.GITHUB_TOKEN` als Umgebungsvariable gesetzt, weil Gradle
-# (`sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`,
-# `publishing.repositories.maven.credentials`) sie per
-# `System.getenv("GITHUB_TOKEN")` liest.
-#
-# Kein `:latest`-Aequivalent (GitHub Packages kennt keins, ADR-0109 §1
-# Ausschluss), kein GitHub-Release-Eintrag fuer das SDK (nicht Teil dieser
-# Folgepflicht).
+# Kein `:latest`-Aequivalent (weder GitHub Packages noch Cloudsmith kennen
+# eines), kein GitHub-Release-Eintrag fuer das SDK.
 #
 # Dieser Workflow gilt nach AGENTS.md §3.10 erst nach einem realen, gruenen
-# Post-Push-Lauf als abgeschlossen (ADR-0109 §Konsequenzen Folgepflicht 5) —
-# `make gates` gruen und ein plausibler YAML-Aufbau sind keine
-# Ersatz-Bestaetigung.
+# Post-Push-Lauf als abgeschlossen — `make gates` gruen und ein plausibler
+# YAML-Aufbau sind keine Ersatz-Bestaetigung.
 #
 # Action-Pinning (AGENTS.md §3.8): jede `uses:`-Zeile SHA-gepinnt mit
 # Tag-Kommentar.
@@ -87,11 +58,11 @@ name: sdk-kotlin-release
     tags:
       - 'sdk-kotlin-v*'
 
-# Top-level: alles entziehen; der Job lockert nur, was er braucht.
+# Top-level: alles entziehen; jeder Job lockert nur, was er braucht.
 permissions: {}
 
 jobs:
-  sdk-kotlin-release:
+  sdk-kotlin-github-packages:
     name: Tag validieren, Kotlin-SDK paketieren und nach GitHub Packages veroeffentlichen
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -119,10 +90,50 @@ jobs:
       - name: Publish-Docker-Stufe bauen (sdks/kotlin/Dockerfile, Target publish)
         run: docker build --build-context proto=proto --target publish -t pg-change-feed:sdk-kotlin-publish sdks/kotlin
 
-      - name: Nach GitHub Packages veroeffentlichen (./gradlew publish, im Docker-Image)
+      - name: Nach GitHub Packages veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           docker run --rm \
-            -e GITHUB_ACTOR="${{ github.actor }}" \
-            -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
+            -e GITHUB_ACTOR \
+            -e GITHUB_TOKEN \
             pg-change-feed:sdk-kotlin-publish \
-            ./gradlew --no-daemon publish
+            ./gradlew --no-daemon publishMavenPublicationToGitHubPackagesRepository
+
+  sdk-kotlin-cloudsmith:
+    name: Tag validieren, Kotlin-SDK paketieren und nach Cloudsmith veroeffentlichen
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag validieren, Version ermitteln (tools/harness/sdk-kotlin-release-tag-info.sh)
+        run: bash tools/harness/sdk-kotlin-release-tag-info.sh "${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+
+      - name: build.gradle.kts gegen den Tag abgleichen
+        run: |
+          gradle_version="$(grep -oE '^version = "[^"]+"' sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts | sed -E 's/^version = "([^"]+)"/\1/')"
+          if [ "$gradle_version" != "$version" ]; then
+            echo "::error::sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts ('$gradle_version') weicht vom Tag ('$version') ab"
+            exit 1
+          fi
+
+      - name: Kotlin-SDK bauen, testen, paketieren (make sdk-pack-kotlin)
+        run: make sdk-pack-kotlin
+
+      - name: Publish-Docker-Stufe bauen (sdks/kotlin/Dockerfile, Target publish)
+        run: docker build --build-context proto=proto --target publish -t pg-change-feed:sdk-kotlin-publish sdks/kotlin
+
+      - name: Nach Cloudsmith veroeffentlichen (Gradle-Aufgabe des Ziels, im Docker-Image)
+        env:
+          CLOUDSMITH_USERNAME: ${{ secrets.CLOUDSMITH_USERNAME }}
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+        run: |
+          docker run --rm \
+            -e CLOUDSMITH_USERNAME \
+            -e CLOUDSMITH_API_KEY \
+            pg-change-feed:sdk-kotlin-publish \
+            ./gradlew --no-daemon publishMavenPublicationToCloudsmithRepository

@@ -1,8 +1,8 @@
 # harness/mk/sdk.mk — Werkzeug-Fragment für die SDK-Packages
 # (`PgChangeFeed.Client`, C#/NuGet, ADR-0106; `pgchangefeed`, Python/PyPI,
-# ADR-0107/ADR-0108; `pgchangefeed-kotlin`, Kotlin/GitHub Packages,
-# ADR-0109). Kein Gate: `dotnet restore`/PyPI-Paketbezug/GitHub-Packages-
-# Paketbezug braucht Netz, `make gates` bleibt netzlos (ADR-0106
+# ADR-0107/ADR-0108; `pgchangefeed-kotlin`, Kotlin/GitHub Packages und
+# Cloudsmith, ADR-0109/ADR-0123). Kein Gate: `dotnet restore`/PyPI-Paketbezug/
+# Gradle-Paketbezug braucht Netz, `make gates` bleibt netzlos (ADR-0106
 # Festlegung 4, ADR-0107 Festlegung 5, ADR-0109 Festlegung 5, dieselbe
 # Begründung wie harness/mk/examples.mk) — dieses Fragment hängt deshalb
 # NICHT an GATE_CHECKS.
@@ -72,8 +72,11 @@ sdk-pack-csharp: sdk-public-doc-check ## C#-SDK bauen+testen+paketieren (sdks/cs
 # .jar host-seitig aus der `pack-export`-Stufe (`docker run --rm --network
 # none <image> | tar -x`, `set -o pipefail` unter bash, AGENTS.md §3.9) nach
 # sdks/kotlin/dist/ (`.gitignore`t). Erzeugnisse:
-# pgchangefeed-kotlin-0.2.1.jar und pgchangefeed-kotlin-0.2.1-sources.jar
+# pgchangefeed-kotlin-<Version>.jar und pgchangefeed-kotlin-<Version>-sources.jar
 # (`java { withSourcesJar() }` in build.gradle.kts; die Quellen tragen die KDoc).
+# Die `pack`-Stufe prüft vor dem Export die Publish-Konfiguration (beide
+# Einzel-Aufgaben, POM-Koordinate und -Version gegen den Jar-Namen, Upload-URL
+# des Cloudsmith-Repositories) ohne Zugangsdaten und ohne Zugriff auf ein Ziel.
 # Exit-Code des Skripts wird wie bei jedem anderen Ziel direkt gelesen.
 .PHONY: sdk-pack-kotlin
 sdk-pack-kotlin: sdk-public-doc-check ## Kotlin-SDK bauen+testen+paketieren (sdks/kotlin, .jar nach sdks/kotlin/dist/; Werkzeug, kein Gate; ADR-0109)

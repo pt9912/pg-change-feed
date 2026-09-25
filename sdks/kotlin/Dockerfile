@@ -17,8 +17,8 @@
 # `pack`/`pack-export`-Stufen unten bauen auf `build` auf: `./gradlew test`
 # (unten) läuft VOR dem Jar-Bau — ein roter Test bricht den `docker build`
 # mit Exit != 0 ab, bevor `pack` je erreicht wird (kein stiller Fallback).
-# `./gradlew publish` läuft ebenfalls in einer eigenen Docker-Stufe
-# (`publish`, ganz unten): das Veröffentlichen ist Docker-only wie jeder
+# Die Publish-Aufgaben laufen ebenfalls in einer eigenen Docker-Stufe
+# (`publish`, weiter unten): das Veröffentlichen ist Docker-only wie jeder
 # andere Schritt.
 #
 # JDK-Basis: `eclipse-temurin:21-jdk`, NICHT `25-jdk` (Gradle 8.14 unterstützt
@@ -63,13 +63,43 @@ RUN ./gradlew --no-daemon build
 # inklusive `./gradlew test` davor) nach /out. Der Standard-`jar`-Task und der
 # `sourcesJar`-Task (`java { withSourcesJar() }` in build.gradle.kts) laufen
 # bereits als Teil von `build`/`assemble` und erzeugen
-# build/libs/pgchangefeed-kotlin-0.2.1.jar und
-# build/libs/pgchangefeed-kotlin-0.2.1-sources.jar (Gradle-Namensform aus
-# group/artifactId/version in build.gradle.kts) — kein zusätzlicher
-# Gradle-Aufruf nötig. `from(components["java"])` (build.gradle.kts) nimmt das
-# Sources-Jar in die Veröffentlichung auf. ---
+# build/libs/pgchangefeed-kotlin-<Version>.jar und
+# build/libs/pgchangefeed-kotlin-<Version>-sources.jar (Gradle-Namensform aus
+# Projektname und der Top-Level-`version` in build.gradle.kts) — kein
+# zusätzlicher Gradle-Aufruf nötig für die Jars. `from(components["java"])`
+# (build.gradle.kts) nimmt das Sources-Jar in die Veröffentlichung auf. ---
 FROM build AS pack
 RUN mkdir -p /out && cp build/libs/*.jar /out/
+
+# Probe der Publish-Konfiguration, ohne Zugangsdaten und ohne Zugriff auf ein
+# Ziel (`--dry-run` führt keine Aufgabe aus): (a) beide Einzel-Aufgaben
+# existieren unter genau diesem Namen — Gradle löst abgekürzte Namen auf, ein
+# Aufruf allein beweist den Namen nicht, deshalb liest die Probe die
+# aufgelösten Aufgabennamen der Ausgabe; (b) die erzeugte POM trägt
+# groupId, artifactId und die Version des Jar-Namens — die Top-Level-`version`
+# (Jar, Abgleich mit dem Release-Tag) und die `version` der Publikation (POM)
+# sind aneinander gebunden; (c) die Upload-URL des Cloudsmith-Repositories
+# steht als Literal in build.gradle.kts. Ein roter Schritt bricht den Bau ab,
+# bevor `pack-export` ein Artefakt ausgibt.
+RUN set -eu; \
+    plan=$(./gradlew --no-daemon --dry-run \
+        publishMavenPublicationToGitHubPackagesRepository \
+        publishMavenPublicationToCloudsmithRepository 2>&1) || { printf '%s\n' "$plan" >&2; exit 1; }; \
+    for task in publishMavenPublicationToGitHubPackagesRepository publishMavenPublicationToCloudsmithRepository; do \
+        printf '%s\n' "$plan" | grep -qxF ":$task SKIPPED" || { echo "Probe: Gradle-Aufgabe $task fehlt" >&2; exit 1; }; \
+    done; \
+    ./gradlew --no-daemon generatePomFileForMavenPublication >/dev/null; \
+    pom=build/publications/maven/pom-default.xml; \
+    jar=$(ls build/libs/pgchangefeed-kotlin-*.jar | grep -v -e '-sources\.jar$'); \
+    [ "$(printf '%s\n' "$jar" | grep -c .)" = 1 ] || { echo "Probe: kein eindeutiges Jar in build/libs" >&2; exit 1; }; \
+    jar_version=${jar#build/libs/pgchangefeed-kotlin-}; \
+    jar_version=${jar_version%.jar}; \
+    for want in "<groupId>io.github.pt9912</groupId>" \
+                "<artifactId>pgchangefeed-kotlin</artifactId>" \
+                "<version>$jar_version</version>"; do \
+        grep -qxF "  $want" "$pom" || { echo "Probe: POM trägt nicht $want" >&2; exit 1; }; \
+    done; \
+    grep -qF 'url = uri("https://maven.cloudsmith.io/pt9912/pg-change-feed/")' build.gradle.kts || { echo "Probe: Cloudsmith-Upload-URL fehlt in build.gradle.kts" >&2; exit 1; }
 
 # --- pack-export: gibt /out (die Jars) als tar-Stream über stdout aus —
 # dasselbe Extraktionsmuster wie sdk-pack-csharp/sdk-pack-python:
@@ -81,34 +111,37 @@ FROM pack AS pack-export
 ENTRYPOINT ["tar", "-cf", "-", "-C", "/out", "."]
 
 # --- publish: veröffentlicht den bereits gebauten Stand nach GitHub Packages
-# (Docker-only bis einschließlich `publish`). Baut auf `build` auf (NICHT auf
+# und nach Cloudsmith (Docker-only bis einschließlich `publish`). Baut auf `build` auf (NICHT auf
 # `pack`/`pack-export` — beide sind nur die Export-Kette für das
 # lokale/netzlose Werkzeug `make sdk-pack-kotlin`, für `publish` irrelevant):
 # `./gradlew --no-daemon build` ist zu diesem Zeitpunkt des Bau-Layers
-# bereits gelaufen, `build/libs/pgchangefeed-kotlin-0.2.1.jar` liegt bereits
+# bereits gelaufen, `build/libs/pgchangefeed-kotlin-<Version>.jar` liegt bereits
 # vor. `./gradlew publish` läuft NICHT während `docker build` (kein
 # RUN-Schritt in dieser Stufe) — der Publish-Schritt braucht
-# Registry-Netzwerkzugriff (https://maven.pkg.github.com) erst zur
-# LAUFZEIT, über `docker run` ohne `--network none` (anders als jede andere
-# Stufe dieses Dockerfiles, die netzlos bau-/testbar bleibt). Zur Laufzeit
+# Registry-Netzwerkzugriff (https://maven.pkg.github.com bzw.
+# https://maven.cloudsmith.io) erst zur LAUFZEIT, über `docker run` ohne
+# `--network none` (anders als jede andere Stufe dieses Dockerfiles, die
+# netzlos bau-/testbar bleibt). Zur Laufzeit
 # findet Gradles Up-to-date-Prüfung für `generateProto`/`compileKotlin`/
 # `jar` den seit dem Bau unveränderten Dateizustand bereits erfüllt vor und
 # lädt nur den bereits gebauten Stand hoch — kein zweiter Compile-/
 # Codegenerierungs-Lauf außerhalb von Docker.
 #
-# Zugangsdaten (GITHUB_ACTOR/GITHUB_TOKEN) werden ausschließlich zur
-# Laufzeit über `docker run -e GITHUB_ACTOR=... -e GITHUB_TOKEN=...`
-# durchgereicht, NICHT als Build-Arg — ein Build-Arg landet im
-# Image-Layer-/History-Cache, ein Secret darf dort nicht auftauchen (kein
-# `ARG GITHUB_TOKEN`/`ARG GITHUB_ACTOR` in diesem Dockerfile).
+# Zwei Ziele, je eine Gradle-Aufgabe: der Workflow startet je Ziel einen
+# eigenen Lauf (`publishMavenPublicationToGitHubPackagesRepository` bzw.
+# `publishMavenPublicationToCloudsmithRepository`). Zugangsdaten
+# (GITHUB_ACTOR/GITHUB_TOKEN bzw. CLOUDSMITH_USERNAME/CLOUDSMITH_API_KEY)
+# werden ausschließlich zur Laufzeit über `docker run -e NAME` durchgereicht,
+# NICHT als Build-Arg — ein Build-Arg landet im Image-Layer-/History-Cache,
+# ein Secret darf dort nicht auftauchen (kein `ARG` für diese Namen in diesem
+# Dockerfile).
 #
 # CMD statt ENTRYPOINT: Ein ENTRYPOINT im Exec-Format würde ein am
 # `docker run`-Aufruf zusätzlich mitgegebenes Kommando an das ENTRYPOINT-Array
-# ANHÄNGEN statt es zu ERSETZEN (Docker-Kernverhalten) — der aufrufende
-# Workflow gibt das Kommando trotzdem explizit mit
-# (`docker run … <image> ./gradlew --no-daemon publish`, Konsistenz mit den
-# übrigen Aufrufen dieses Workflows), CMD wird dabei vollständig ersetzt,
-# kein Argument-Duplikat.
+# ANHÄNGEN statt es zu ERSETZEN (Docker-Kernverhalten). Der Workflow gibt das
+# Kommando je Ziel explizit mit und ersetzt die CMD damit vollständig; die CMD
+# selbst ist die Sammel-Aufgabe `publish` und scheitert ohne die
+# Cloudsmith-Werte.
 FROM build AS publish
 CMD ["./gradlew", "--no-daemon", "publish"]
 
