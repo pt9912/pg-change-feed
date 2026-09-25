@@ -236,7 +236,7 @@ der Live-Erfassung ohne Backfill; der Bedarf dort ist im Verdikt hergeleitet (Ve
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Stand des Parent ist eingetragen,
       der Stand des Diff ist Aufgabe des Implementers.
-- [ ] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
+- [x] `make gates` grün — Exit-Code ungefiltert gesichert und gesondert ausgewertet
       ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — kein Self-Review (Modul 8).
