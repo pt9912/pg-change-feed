@@ -127,7 +127,7 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 - [x] Träger: die `make bench`-Beschreibung ist auf vier Skripte gezogen
       (Makefile-Kommentar und -Hilfetext, `harness/README.md` §Sensors,
       ggf. `docs/user/bench-abdeckung.md`); das Handbuch trägt die Änderungshistorie.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
