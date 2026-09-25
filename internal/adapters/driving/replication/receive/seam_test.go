@@ -11,6 +11,7 @@ package receive
 
 import (
 	"context"
+	"encoding/binary"
 	stderrors "errors"
 	"strings"
 	"testing"
@@ -20,8 +21,10 @@ import (
 	"github.com/jackc/pgx/v5/pgproto3"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/decode"
+	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
 	"github.com/pt9912/pg-change-feed/internal/application/port/inbound"
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
+	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
 // fakeSession erfüllt dieselbe Naht wie die Treiber-Hülle und hält fest,
@@ -112,6 +115,56 @@ func (noopCapture) Capture(context.Context, inbound.CaptureCommand) (inbound.Cap
 	return inbound.CaptureResult{}, nil
 }
 
+// ackingCapture bestätigt die Commit-Position jeder Transaktion — die
+// Stand-in-Application der Tests, die eine vollständige Quelltransaktion
+// durch die Schleife führen.
+type ackingCapture struct {
+	commands int
+}
+
+func (a *ackingCapture) Capture(_ context.Context, command inbound.CaptureCommand) (inbound.CaptureResult, error) {
+	a.commands++
+	position, _ := command.Transaction.CommitPosition()
+	return inbound.CaptureResult{Acknowledged: position}, nil
+}
+
+// fakeIdle trägt den `IdleConfirmationInboundPort` der Empfangs-Schleifen-
+// Tests und hält jeden Aufruf fest. `failFrom` lässt den Port ab dem
+// n-ten Aufruf (1-basiert) mit `err` scheitern, `0` heißt: nie.
+// `acknowledgeOffset` setzt den Offset des Ergebnisses (sonst die gemeldete
+// Position); `declines` lässt den Port ohne Bestätigung antworten.
+type fakeIdle struct {
+	calls             []inbound.IdleConfirmationCommand
+	failFrom          int
+	err               error
+	acknowledgeOffset uint64
+	declines          bool
+}
+
+func (f *fakeIdle) ConfirmIdle(_ context.Context, command inbound.IdleConfirmationCommand) (inbound.IdleConfirmationResult, error) {
+	f.calls = append(f.calls, command)
+	if f.failFrom > 0 && len(f.calls) >= f.failFrom {
+		return inbound.IdleConfirmationResult{}, f.err
+	}
+	if f.declines {
+		return inbound.IdleConfirmationResult{}, nil
+	}
+	if f.acknowledgeOffset != 0 {
+		position, _ := model.NewSourcePosition(command.Position.SourceID, f.acknowledgeOffset)
+		return inbound.IdleConfirmationResult{Acknowledged: position}, nil
+	}
+	return inbound.IdleConfirmationResult{Acknowledged: command.Position}, nil
+}
+
+// offsets trägt die Offsets der gemeldeten Positionen in Aufrufreihenfolge.
+func (f *fakeIdle) offsets() []uint64 {
+	offsets := make([]uint64, len(f.calls))
+	for i, call := range f.calls {
+		offsets[i] = call.Position.Offset
+	}
+	return offsets
+}
+
 // resultWithRow trägt ein Katalogergebnis mit einer Zeile aus Textwerten.
 func resultWithRow(values ...string) []*pgconn.Result {
 	row := make([][]byte, len(values))
@@ -127,14 +180,34 @@ func emptyResult() []*pgconn.Result {
 }
 
 // keepaliveData baut den CopyData-Payload einer Primary-Keepalive-Nachricht
-// (Byte-ID plus die 17 Bytes des `pglogrepl`-Kopfsatzes).
-func keepaliveData(replyRequested bool) []byte {
+// (Byte-ID plus die 17 Bytes des `pglogrepl`-Kopfsatzes: WAL-Ende,
+// Serverzeit, Antwort-Verlangen).
+func keepaliveData(serverWALEnd uint64, replyRequested bool) []byte {
 	data := make([]byte, 18)
 	data[0] = pglogrepl.PrimaryKeepaliveMessageByteID
+	binary.BigEndian.PutUint64(data[1:9], serverWALEnd)
 	if replyRequested {
 		data[17] = 1
 	}
 	return data
+}
+
+// beginPayload baut den `pgoutput`-Payload einer BEGIN-Nachricht.
+func beginPayload(xid uint32) []byte {
+	payload := make([]byte, 21)
+	payload[0] = 'B'
+	binary.BigEndian.PutUint32(payload[17:21], xid)
+	return payload
+}
+
+// commitPayload baut den `pgoutput`-Payload einer COMMIT-Nachricht mit der
+// Commit-LSN.
+func commitPayload(commitLSN uint64) []byte {
+	payload := make([]byte, 26)
+	payload[0] = 'C'
+	binary.BigEndian.PutUint64(payload[2:10], commitLSN)
+	binary.BigEndian.PutUint64(payload[10:18], commitLSN+8)
+	return payload
 }
 
 // xlogData baut den CopyData-Payload einer XLogData-Nachricht (Byte-ID,
@@ -147,9 +220,25 @@ func xlogData(payload []byte) []byte {
 }
 
 // newTestStream verdrahtet einen Stream auf den Fake — derselbe
-// paket-interne Einstieg, den die netzlosen Tests aller Pfade nutzen.
+// paket-interne Einstieg, den die netzlosen Tests aller Pfade nutzen. Der
+// Port der Leerlauf-Bestätigung ist ein `fakeIdle`, den der Test über
+// `stream.idle` erreicht.
 func newTestStream(session driverSession, capture inbound.CaptureInboundPort) *Stream {
-	return newStreamOnSession(session, nil, nil, capture, nil)
+	assembler, err := mapper.NewAssembler(testSource, nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	stream := newStreamOnSession(session, nil, assembler, testSource, capture, nil)
+	stream.idle = &fakeIdle{}
+	return stream
+}
+
+// testSource trägt die Quelle der netzlosen Stream-Tests.
+const testSource = model.SourceID("src-1")
+
+// idleOf trägt den `fakeIdle` eines Test-Streams.
+func idleOf(stream *Stream) *fakeIdle {
+	return stream.idle.(*fakeIdle)
 }
 
 // TestFirstRowTranslatesCatalogRow trägt die Katalog-Zeilen-Übersetzung:
@@ -244,17 +333,20 @@ func TestParseXLogDataRejectsShortMessage(t *testing.T) {
 	}
 }
 
-// TestParseKeepaliveReportsReplyRequested trägt die Meldungs-Zerlegung der
-// Keepalive-Nachricht: der Rückgabewert meldet, ob die Quelle eine Antwort
-// verlangt.
-func TestParseKeepaliveReportsReplyRequested(t *testing.T) {
+// TestParseKeepaliveReportsWALEndAndReplyRequested trägt die
+// Meldungs-Zerlegung der Keepalive-Nachricht: das WAL-Ende der Quelle und
+// das Antwort-Verlangen kommen je aus ihrem eigenen Feld an.
+func TestParseKeepaliveReportsWALEndAndReplyRequested(t *testing.T) {
 	for _, want := range []bool{false, true} {
-		got, err := parseKeepalive(keepaliveData(want))
+		got, err := parseKeepalive(keepaliveData(0x16B3748, want))
 		if err != nil {
 			t.Fatalf("parseKeepalive(%v): %v", want, err)
 		}
-		if got != want {
-			t.Fatalf("ReplyRequested: %v, erwartet %v", got, want)
+		if got.replyRequested != want {
+			t.Fatalf("ReplyRequested: %v, erwartet %v", got.replyRequested, want)
+		}
+		if got.serverWALEnd != pglogrepl.LSN(0x16B3748) {
+			t.Fatalf("ServerWALEnd: %X, erwartet 16B3748", uint64(got.serverWALEnd))
 		}
 	}
 }
@@ -427,6 +519,39 @@ func TestRunWithoutCaptureIsConfigurationError(t *testing.T) {
 	}
 }
 
+// TestRunWithoutIdleConfirmationIsConfigurationError trägt die
+// Konstruktions-Grenze der Leerlauf-Bestätigung (`ADR-0120`): ohne
+// `IdleConfirmationInboundPort` endet der Lauf über die Konfigurationsklasse,
+// bevor eine Nachricht empfangen wird — die Bestätigung ist nie still
+// abgeschaltet.
+func TestRunWithoutIdleConfirmationIsConfigurationError(t *testing.T) {
+	session := &fakeSession{}
+	stream := newTestStream(session, noopCapture{})
+	stream.idle = nil
+	if err := stream.Run(context.Background()); !stderrors.Is(err, ErrConfiguration) {
+		t.Fatalf("Lauf ohne Port der Leerlauf-Bestätigung: %v", err)
+	}
+	if session.closeCalls != 0 {
+		t.Fatalf("Close-Aufrufe: %d, erwartet 0", session.closeCalls)
+	}
+}
+
+// TestBindIdleConfirmationRejectsNilAndBinds trägt die Bindung des Ports:
+// `nil` endet über die Konfigurationsklasse, ein Port wird übernommen.
+func TestBindIdleConfirmationRejectsNilAndBinds(t *testing.T) {
+	stream := newTestStream(&fakeSession{}, noopCapture{})
+	if err := stream.BindIdleConfirmation(nil); !stderrors.Is(err, ErrConfiguration) {
+		t.Fatalf("nil-Port: %v", err)
+	}
+	idle := &fakeIdle{}
+	if err := stream.BindIdleConfirmation(idle); err != nil {
+		t.Fatalf("BindIdleConfirmation: %v", err)
+	}
+	if stream.idle != inbound.IdleConfirmationInboundPort(idle) {
+		t.Fatalf("Port nicht übernommen")
+	}
+}
+
 // TestRunStopsOnCopyDone trägt den regulären Ausgang der Empfangs-Schleife:
 // ein `CopyDone` beendet den Lauf ohne Fehler und schließt die Verbindung.
 func TestRunStopsOnCopyDone(t *testing.T) {
@@ -454,13 +579,20 @@ func TestRunIgnoresOtherBackendMessages(t *testing.T) {
 	}
 }
 
+// copyData verpackt einen Payload als CopyData-Nachricht der Sitzung.
+func copyData(data []byte) pgproto3.BackendMessage {
+	return &pgproto3.CopyData{Data: data}
+}
+
 // TestRunAnswersKeepaliveWithAcknowledgedPosition trägt die
 // Keepalive-Behandlung der Empfangs-Schleife (`ADR-0007`,
-// `LH-QA-REL-001.a`): die Antwort meldet die letzte bestätigte Position —
-// hier den Stand des Adapters, nicht den Empfangsstand.
+// `LH-QA-REL-001.a`): trägt die Nachricht kein WAL-Ende hinter der
+// bestätigten Position, meldet die Antwort die letzte bestätigte Position —
+// hier den Stand des Adapters, nicht das WAL-Ende der Quelle. Die
+// Leerlauf-Bestätigung wird nicht gerufen.
 func TestRunAnswersKeepaliveWithAcknowledgedPosition(t *testing.T) {
 	session := &fakeSession{messages: []pgproto3.BackendMessage{
-		&pgproto3.CopyData{Data: keepaliveData(true)},
+		copyData(keepaliveData(4000, true)),
 		&pgproto3.CopyDone{},
 	}}
 	stream := newTestStream(session, noopCapture{})
@@ -478,13 +610,17 @@ func TestRunAnswersKeepaliveWithAcknowledgedPosition(t *testing.T) {
 		t.Fatalf("Meldung trägt %d/%d/%d, erwartet 4711/4711/4711",
 			got.WALWritePosition, got.WALFlushPosition, got.WALApplyPosition)
 	}
+	if calls := idleOf(stream).offsets(); len(calls) != 0 {
+		t.Fatalf("Leerlauf-Bestätigungen %v, erwartet keine", calls)
+	}
 }
 
 // TestRunKeepaliveWithoutReplyRequestedSendsNothing trägt die Grenze der
-// Keepalive-Behandlung: ohne `ReplyRequested` setzt der Adapter nichts ab.
+// Keepalive-Behandlung: ohne `ReplyRequested` und ohne WAL-Ende hinter der
+// bestätigten Position setzt der Adapter nichts ab.
 func TestRunKeepaliveWithoutReplyRequestedSendsNothing(t *testing.T) {
 	session := &fakeSession{messages: []pgproto3.BackendMessage{
-		&pgproto3.CopyData{Data: keepaliveData(false)},
+		copyData(keepaliveData(0, false)),
 		&pgproto3.CopyDone{},
 	}}
 	stream := newTestStream(session, noopCapture{})
@@ -496,6 +632,200 @@ func TestRunKeepaliveWithoutReplyRequestedSendsNothing(t *testing.T) {
 	}
 }
 
+// TestRunConfirmsIdleWithoutReplyRequested trägt die Leerlauf-Bestätigung
+// (`ADR-0120` Festlegung 1 Punkt 2): eine Keepalive-Nachricht im Leerlauf mit
+// WAL-Ende hinter der bestätigten Position meldet „Leerlauf bis P“ — auch
+// ohne `ReplyRequested`. Die gemeldete Position trägt die Quelle und das
+// WAL-Ende der Nachricht; die bestätigte Position folgt dem Ergebnis. Der
+// Stream sendet selbst kein Update (`ADR-0120` Festlegung 1 Punkt 5: die
+// Bestätigung über den `ReplicationAckPort` ist das Update).
+func TestRunConfirmsIdleWithoutReplyRequested(t *testing.T) {
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(keepaliveData(5000, false)),
+		&pgproto3.CopyDone{},
+	}}
+	stream := newTestStream(session, noopCapture{})
+	if err := stream.Run(context.Background()); err != nil {
+		t.Fatalf("Lauf: %v", err)
+	}
+	idle := idleOf(stream)
+	if got := idle.offsets(); len(got) != 1 || got[0] != 5000 {
+		t.Fatalf("Leerlauf-Bestätigungen %v, erwartet [5000]", got)
+	}
+	if idle.calls[0].Position.SourceID != testSource {
+		t.Fatalf("Quelle der Position: %q, erwartet %q", idle.calls[0].Position.SourceID, testSource)
+	}
+	if stream.lastAcked != pglogrepl.LSN(5000) {
+		t.Fatalf("bestätigte Position: %d, erwartet 5000", stream.lastAcked)
+	}
+	if len(session.sent) != 0 {
+		t.Fatalf("Updates des Streams: %d, erwartet 0", len(session.sent))
+	}
+}
+
+// TestRunIdleConfirmationSendsNoSecondUpdate trägt „höchstens ein
+// Standby-Status-Update je Keepalive-Nachricht“ (`ADR-0120` Festlegung 1
+// Punkt 5): verlangt die Nachricht eine Antwort und hat die Application
+// bestätigt, sendet der Stream kein zweites Update. Verlangt die
+// Folgenachricht (WAL-Ende nicht hinter der bestätigten Position) eine
+// Antwort, sendet er genau eines mit der bestätigten Position.
+func TestRunIdleConfirmationSendsNoSecondUpdate(t *testing.T) {
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(keepaliveData(5000, true)),
+		copyData(keepaliveData(5000, true)),
+		&pgproto3.CopyDone{},
+	}}
+	stream := newTestStream(session, noopCapture{})
+	if err := stream.Run(context.Background()); err != nil {
+		t.Fatalf("Lauf: %v", err)
+	}
+	if got := idleOf(stream).offsets(); len(got) != 1 || got[0] != 5000 {
+		t.Fatalf("Leerlauf-Bestätigungen %v, erwartet [5000]", got)
+	}
+	if len(session.sent) != 1 {
+		t.Fatalf("Updates des Streams: %d, erwartet 1 (nur die zweite Nachricht)", len(session.sent))
+	}
+	if session.sent[0].WALFlushPosition != pglogrepl.LSN(5000) {
+		t.Fatalf("Update trägt %d, erwartet 5000", session.sent[0].WALFlushPosition)
+	}
+}
+
+// TestRunNoConfirmationInsideOpenTransaction trägt die Sicherheits-Grenze
+// (`ADR-0120` Festlegung 1 Punkt 3, `LH-QA-REL-001.a`): zwischen BEGIN und
+// COMMIT bestätigt der Adapter nicht — das WAL-Ende liegt dann hinter
+// Nachrichten, die noch nicht gespeichert sind. Eine `ReplyRequested`-
+// Antwort meldet dort die bestätigte Position, nicht das WAL-Ende. Nach dem
+// COMMIT und dem Capture-Ergebnis läuft der Leerlauf wieder: die nächste
+// Nachricht bestätigt.
+func TestRunNoConfirmationInsideOpenTransaction(t *testing.T) {
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(xlogData(beginPayload(7))),
+		copyData(keepaliveData(9000, true)),
+		copyData(keepaliveData(9100, false)),
+		copyData(xlogData(commitPayload(8000))),
+		copyData(keepaliveData(9500, false)),
+		&pgproto3.CopyDone{},
+	}}
+	capture := &ackingCapture{}
+	stream := newTestStream(session, capture)
+	if err := stream.Run(context.Background()); err != nil {
+		t.Fatalf("Lauf: %v", err)
+	}
+	if capture.commands != 1 {
+		t.Fatalf("Capture-Aufrufe: %d, erwartet 1", capture.commands)
+	}
+	// Inmitten der Transaktion: keine Meldung, die Antwort trägt die
+	// bestätigte Position (0), nie 9000.
+	if len(session.sent) != 1 || session.sent[0].WALFlushPosition != 0 {
+		t.Fatalf("Updates inmitten der Transaktion: %+v, erwartet eines mit Position 0", session.sent)
+	}
+	// Nach dem Commit (Position 8000) ist der Stream im Leerlauf.
+	if got := idleOf(stream).offsets(); len(got) != 1 || got[0] != 9500 {
+		t.Fatalf("Leerlauf-Bestätigungen %v, erwartet [9500]", got)
+	}
+	if stream.lastAcked != pglogrepl.LSN(9500) {
+		t.Fatalf("bestätigte Position: %d, erwartet 9500", stream.lastAcked)
+	}
+}
+
+// TestRunNoConfirmationBehindAcknowledgedPosition trägt die
+// Rückschritt-Wache (`ADR-0120` Festlegung 1 Punkt 4): liegt das WAL-Ende
+// nicht hinter der bestätigten Position, ändert sich nichts — auch nicht
+// bei Gleichheit.
+func TestRunNoConfirmationBehindAcknowledgedPosition(t *testing.T) {
+	for name, walEnd := range map[string]uint64{"gleich": 6000, "dahinter zurück": 5999, "null": 0} {
+		t.Run(name, func(t *testing.T) {
+			session := &fakeSession{messages: []pgproto3.BackendMessage{
+				copyData(keepaliveData(walEnd, false)),
+				&pgproto3.CopyDone{},
+			}}
+			stream := newTestStream(session, noopCapture{})
+			stream.lastAcked = pglogrepl.LSN(6000)
+			if err := stream.Run(context.Background()); err != nil {
+				t.Fatalf("Lauf: %v", err)
+			}
+			if got := idleOf(stream).offsets(); len(got) != 0 {
+				t.Fatalf("Leerlauf-Bestätigungen %v, erwartet keine", got)
+			}
+			if stream.lastAcked != pglogrepl.LSN(6000) {
+				t.Fatalf("bestätigte Position: %d, erwartet 6000", stream.lastAcked)
+			}
+		})
+	}
+}
+
+// TestRunIdleConfirmationTakesPositionFromResult trägt die Herkunft der
+// bestätigten Position (`ADR-0120` Festlegung 1 Punkt 2): der Adapter setzt
+// sie aus dem Ergebnis des Aufrufs, nicht aus der gemeldeten Position.
+func TestRunIdleConfirmationTakesPositionFromResult(t *testing.T) {
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(keepaliveData(5000, false)),
+		&pgproto3.CopyDone{},
+	}}
+	stream := newTestStream(session, noopCapture{})
+	idleOf(stream).acknowledgeOffset = 4000
+	if err := stream.Run(context.Background()); err != nil {
+		t.Fatalf("Lauf: %v", err)
+	}
+	if stream.lastAcked != pglogrepl.LSN(4000) {
+		t.Fatalf("bestätigte Position: %d, erwartet 4000 (Ergebnis des Ports)", stream.lastAcked)
+	}
+}
+
+// TestRunIdleConfirmationDeclinedRepliesWithAcknowledgedPosition trägt den
+// Fall, dass die Application nicht bestätigt (leeres Ergebnis): die
+// bestätigte Position bleibt, und ein verlangtes Update sendet der Stream
+// selbst — höchstens eines.
+func TestRunIdleConfirmationDeclinedRepliesWithAcknowledgedPosition(t *testing.T) {
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(keepaliveData(5000, true)),
+		&pgproto3.CopyDone{},
+	}}
+	stream := newTestStream(session, noopCapture{})
+	stream.lastAcked = pglogrepl.LSN(100)
+	idleOf(stream).declines = true
+	if err := stream.Run(context.Background()); err != nil {
+		t.Fatalf("Lauf: %v", err)
+	}
+	if stream.lastAcked != pglogrepl.LSN(100) {
+		t.Fatalf("bestätigte Position: %d, erwartet 100", stream.lastAcked)
+	}
+	if len(session.sent) != 1 || session.sent[0].WALFlushPosition != pglogrepl.LSN(100) {
+		t.Fatalf("Updates: %+v, erwartet eines mit Position 100", session.sent)
+	}
+}
+
+// TestRunIdleConfirmationFailureEndsAsReplication trägt den Fehlerpfad
+// (`ADR-0120` Festlegung 3): ein Fehler des Ports endet den Lauf in der
+// Klasse `replication` mit lesbarer Ursache, und die bestätigte Position
+// bleibt auf dem Stand vor dem gescheiterten Aufruf — der erste Aufruf
+// gelingt, der zweite scheitert.
+func TestRunIdleConfirmationFailureEndsAsReplication(t *testing.T) {
+	cause := stderrors.New("ack verloren")
+	session := &fakeSession{messages: []pgproto3.BackendMessage{
+		copyData(keepaliveData(5000, false)),
+		copyData(keepaliveData(6000, false)),
+		&pgproto3.CopyDone{},
+	}}
+	stream := newTestStream(session, noopCapture{})
+	idle := idleOf(stream)
+	idle.failFrom = 2
+	idle.err = cause
+	err := stream.Run(context.Background())
+	if !stderrors.Is(err, ErrReplication) || !stderrors.Is(err, cause) {
+		t.Fatalf("Fehler des Ports: %v", err)
+	}
+	if !strings.Contains(err.Error(), "Leerlauf-Bestätigung") {
+		t.Fatalf("Fehlerort nicht lesbar: %v", err)
+	}
+	if got := idle.offsets(); len(got) != 2 || got[1] != 6000 {
+		t.Fatalf("Leerlauf-Bestätigungen %v, erwartet [5000 6000]", got)
+	}
+	if stream.lastAcked != pglogrepl.LSN(5000) {
+		t.Fatalf("bestätigte Position: %d, erwartet 5000 (Stand vor dem gescheiterten Aufruf)", stream.lastAcked)
+	}
+}
+
 // TestRunReportsKeepaliveReplyFailure trägt den Fehlerpfad der
 // Keepalive-Behandlung: eine fehlgeschlagene Antwort endet über die
 // Fehlerklasse `replication` (`SPEC-008`).
@@ -503,7 +833,7 @@ func TestRunReportsKeepaliveReplyFailure(t *testing.T) {
 	session := &fakeSession{
 		sendErr: stderrors.New("verbindung weg"),
 		messages: []pgproto3.BackendMessage{
-			&pgproto3.CopyData{Data: keepaliveData(true)},
+			copyData(keepaliveData(0, true)),
 		},
 	}
 	stream := newTestStream(session, noopCapture{})

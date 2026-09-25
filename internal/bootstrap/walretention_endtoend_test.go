@@ -16,17 +16,19 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// TestWALRetentionThresholdEndToEnd trägt den in `welle-7.md` §3 geforderten
-// Ende-zu-Ende-Beleg (`slice-026`, `ADR-0049`): ein real wachsender
+// TestWALRetentionThresholdEndToEnd trägt den Ende-zu-Ende-Beleg der
+// WAL-Rückstand-Schwellen (`ADR-0049`, `SPEC-013`): ein real wachsender
 // WAL-Rückstand durchläuft beide Seiten der Schwelle in einem Lauf von
-// `bootstrap.Run`. Das Wachstum kommt über Transaktionen auf einer
-// *nicht* publizierten Tabelle zustande — dieselbe Ursache, die
-// `ADR-0049`s Kontext benennt („WAL-Wachstum inaktiver Slots"): `pgoutput`
-// meldet für eine Transaktion ohne Änderung an einer publizierten Tabelle
-// weder BEGIN noch COMMIT, der Slot bestätigt sie also nie, während die
-// physische WAL trotzdem wächst — `WALRetentionChecker.Measure` (die
-// Differenz aus `IDENTIFY_SYSTEM` und `confirmed_flush_lsn`) sieht genau
-// diesen Rückstand. Die Schwellen selbst sind ein Test-Override
+// `bootstrap.Run`. Der Rückstand wächst bei einem Feed, der nicht
+// antwortet (`LH-QA-REL-003`): eine Zeilensperre des Tests auf der
+// Schema-Version der aktivierten Tabelle lässt die Persistenz des
+// Capture-Aufrufs warten, der Stream bestätigt dann nichts und liest nichts,
+// während Transaktionen auf einer *nicht* publizierten Tabelle das WAL
+// wachsen lassen — `WALRetentionChecker.Measure` (die Differenz aus
+// `IDENTIFY_SYSTEM` und `confirmed_flush_lsn`) sieht genau diesen
+// Rückstand. WAL ohne Inhalt für die Publication allein lässt ihn bei einem
+// antwortenden Feed nicht wachsen (Leerlauf-Bestätigung, `ADR-0120`). Die
+// Schwellen selbst sind ein Test-Override
 // (`Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`) — deutlich
 // kleiner als `SPEC-013`s 100 MiB/1 GiB, damit beide Seiten in
 // vertretbarer Testzeit real erreicht werden; die Produktions-Startwerte
@@ -143,29 +145,46 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 	}
 	awaitPublishedChangeCount(t, pool, source, 1, 30*time.Second)
 
-	// Phase 1 (welle-7 §3, Seite 1): WAL-Rückstand real über die
-	// Warnschwelle wachsen lassen, aber deutlich unter der Fehlerschwelle
-	// halten (Größenordnung: ~150-200 KiB gegen 32 KiB Warn-/512 KiB
-	// Fehlerschwelle) — die Transaktion trifft ausschließlich die nicht
-	// publizierte Tabelle, `pgoutput` meldet dafür kein BEGIN/COMMIT.
+	// holdCapture hält eine Zeilensperre auf der Schema-Version der
+	// aktivierten Tabelle: die Persistenz jeder Transaktion mit einem Change
+	// dieser Tabelle wartet auf die Fremdschlüssel-Prüfung, der Feed
+	// antwortet nicht mehr. Der Rückgabewert gibt die Sperre frei.
+	holdCapture := func() func() {
+		lockTx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatalf("Sperr-Transaktion: %v", err)
+		}
+		release := func() { _ = lockTx.Rollback(context.Background()) }
+		t.Cleanup(release)
+		if _, err := lockTx.Exec(ctx,
+			"SELECT 1 FROM cdc.schema_version WHERE schema_version_id = $1 FOR UPDATE", schemaVerID,
+		); err != nil {
+			t.Fatalf("Sperre auf der Schema-Version: %v", err)
+		}
+		return release
+	}
+
+	// Phase 1 (Seite 1): WAL-Rückstand real über die Warnschwelle wachsen
+	// lassen, aber deutlich unter der Fehlerschwelle halten (Größenordnung:
+	// ~150-200 KiB gegen 32 KiB Warn-/512 KiB Fehlerschwelle). Der Feed
+	// wartet in der Persistenz einer Change der publizierten Tabelle; die
+	// Transaktion auf der nicht publizierten Tabelle liegt hinter ihr im WAL
+	// und wird nicht bestätigt.
+	releaseCapture := holdCapture()
+	if _, err := pool.Exec(ctx, fmt.Sprintf("INSERT INTO %s (id) VALUES (1)", published)); err != nil {
+		t.Fatalf("zweite Change auf der publizierten Tabelle: %v", err)
+	}
 	if _, err := pool.Exec(ctx,
 		fmt.Sprintf("INSERT INTO %s (id, payload) SELECT g, repeat('a', 800) FROM generate_series(1, 200) g", noise),
 	); err != nil {
 		t.Fatalf("Phase 1 (Warnschwelle) Noise-Wachstum: %v", err)
 	}
 
-	// Belegt „kontrollierte Fortsetzung" (SPEC-008): Der Capture-Betrieb
-	// läuft über der Warnschwelle nachweislich weiter — eine weitere
-	// Change auf der publizierten Tabelle wird noch verarbeitet, und
-	// `Run` ist währenddessen nicht zurückgekehrt.
-	if _, err := pool.Exec(ctx, fmt.Sprintf("INSERT INTO %s (id) VALUES (1)", published)); err != nil {
-		t.Fatalf("zweite Change auf der publizierten Tabelle: %v", err)
-	}
-	awaitPublishedChangeCount(t, pool, source, 2, 30*time.Second)
-	// Über mehrere Sekunden hinweg nicht zurückkehren: `heartbeatInterval`
-	// (5s, `internal/bootstrap`) ist der Takt des periodischen
-	// Schwellen-Vergleichs — dieses Warten deckt mindestens einen weiteren
-	// Tick im Warn-Bereich ab, ohne dass er den Lauf beendet.
+	// Belegt „kontrollierte Fortsetzung" (SPEC-008): über mehrere Sekunden
+	// hinweg kehrt `Run` nicht zurück: `heartbeatInterval` (5s,
+	// `internal/bootstrap`) ist der Takt des periodischen
+	// Schwellen-Vergleichs — dieses Warten deckt mindestens einen Tick im
+	// Warn-Bereich ab, ohne dass er den Lauf beendet.
 	stillRunningDeadline := time.Now().Add(8 * time.Second)
 	for time.Now().Before(stillRunningDeadline) {
 		select {
@@ -174,10 +193,19 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 		case <-time.After(200 * time.Millisecond):
 		}
 	}
+	// Gibt der Test die Sperre frei, nimmt der Capture-Betrieb die
+	// wartende Change nach dem Warten auf: der Capture-Pfad lief über der
+	// Warnschwelle weiter.
+	releaseCapture()
+	awaitPublishedChangeCount(t, pool, source, 2, 30*time.Second)
 
-	// Phase 2 (welle-7 §3, Seite 2): WAL-Rückstand real über die
-	// Fehlerschwelle wachsen lassen (Größenordnung: ~2 MiB gegen 512 KiB
-	// Fehlerschwelle, oben drauf) — derselbe Mechanismus, deutlich größer.
+	// Phase 2 (Seite 2): WAL-Rückstand real über die Fehlerschwelle
+	// wachsen lassen (Größenordnung: ~2 MiB gegen 512 KiB Fehlerschwelle,
+	// oben drauf) — derselbe Mechanismus, deutlich größer.
+	holdCapture()
+	if _, err := pool.Exec(ctx, fmt.Sprintf("INSERT INTO %s (id) VALUES (2)", published)); err != nil {
+		t.Fatalf("dritte Change auf der publizierten Tabelle: %v", err)
+	}
 	if _, err := pool.Exec(ctx,
 		fmt.Sprintf("INSERT INTO %s (id, payload) SELECT g, repeat('a', 800) FROM generate_series(1000, 3500) g", noise),
 	); err != nil {

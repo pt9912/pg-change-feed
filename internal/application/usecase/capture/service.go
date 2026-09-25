@@ -29,7 +29,8 @@ type (
 // committed Quelltransaktion.
 var ErrMissingTransaction = stderrors.New("Capture ohne Quelltransaktion")
 
-// CaptureService implementiert `inbound.CaptureInboundPort` und hält die
+// CaptureService implementiert `inbound.CaptureInboundPort` und
+// `inbound.IdleConfirmationInboundPort` und hält die
 // Persist-before-ACK-Ordnung an einer Stelle (`ADR-0027`):
 //
 //	Receive → Decode → Persist → COMMIT Store → ACK Source →
@@ -153,6 +154,29 @@ func (s *CaptureService) Capture(ctx context.Context, command CaptureCommand) (C
 	}
 	return CaptureResult{Acknowledged: position}, nil
 }
+
+// ErrMissingIdlePosition meldet, dass die Leerlauf-Bestätigung keine
+// Position trägt.
+var ErrMissingIdlePosition = stderrors.New("Leerlauf-Bestätigung ohne Position")
+
+// ConfirmIdle bestätigt die gemeldete Leerlauf-Position über den
+// `ReplicationAckPort` — ohne Persistenz, weil im Leerlauf kein Change der
+// Publication zu speichern ist (`ADR-0120` Festlegung 1): der Aufruf erreicht
+// nie den `ChangeStorePort`, benachrichtigt nicht und veröffentlicht nichts.
+// Ein Fehler des Ports geht unverändert durch (Klasse `replication`,
+// `ADR-0120` Festlegung 3, `SPEC-008`); die Bestätigung gilt erst mit der
+// Rückkehr ohne Fehler.
+func (s *CaptureService) ConfirmIdle(ctx context.Context, command inbound.IdleConfirmationCommand) (inbound.IdleConfirmationResult, error) {
+	if command.Position.IsZero() {
+		return inbound.IdleConfirmationResult{}, ErrMissingIdlePosition
+	}
+	if err := s.ack.Acknowledge(ctx, command.Position); err != nil {
+		return inbound.IdleConfirmationResult{}, err
+	}
+	return inbound.IdleConfirmationResult{Acknowledged: command.Position}, nil
+}
+
+var _ inbound.IdleConfirmationInboundPort = (*CaptureService)(nil)
 
 // changesOfCommittedTransaction liefert die Changes einer Transaktion, deren
 // Commit-Status der Aufrufer bereits über `CommitPosition` geprüft hat. Der

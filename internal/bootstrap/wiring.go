@@ -716,7 +716,14 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 			}()
 		}
 	}
-	if err := stream.BindCapture(capture.NewCaptureService(store, ack, captureOpts...)); err != nil {
+	// Ein `CaptureService` trägt beide Eingänge des Streams: den Capture-Pfad
+	// und die Leerlauf-Bestätigung (`ADR-0120`), beide über denselben
+	// `ReplicationAckPort`.
+	captureService := capture.NewCaptureService(store, ack, captureOpts...)
+	if err := stream.BindCapture(captureService); err != nil {
+		return err
+	}
+	if err := stream.BindIdleConfirmation(captureService); err != nil {
 		return err
 	}
 

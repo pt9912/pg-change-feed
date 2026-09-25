@@ -60,15 +60,21 @@ func (f *fakeStore) DeleteChanges(ctx context.Context, changeIDs []model.ChangeI
 	return stderrors.New("Fake-Store trägt nur die Persist-Seite")
 }
 
+// fakeAck trägt den `ReplicationAckPort`: `ackErr` lässt jeden Aufruf
+// scheitern; mit `failFrom` (1-basiert) scheitern erst die Aufrufe ab dem
+// n-ten.
 type fakeAck struct {
-	events *[]string
-	ackErr error
-	acked  []model.SourcePosition
+	events   *[]string
+	ackErr   error
+	failFrom int
+	calls    int
+	acked    []model.SourcePosition
 }
 
 func (f *fakeAck) Acknowledge(ctx context.Context, position model.SourcePosition) error {
+	f.calls++
 	*f.events = append(*f.events, "ack:"+strconv.FormatUint(position.Offset, 10))
-	if f.ackErr != nil {
+	if f.ackErr != nil && f.calls >= f.failFrom {
 		return f.ackErr
 	}
 	f.acked = append(f.acked, position)
@@ -738,5 +744,89 @@ func TestCaptureLoggtFehlschlaegeUeberDenInjiziertenPort(t *testing.T) {
 	}
 	if !strings.Contains(log.warnings[1], "Stream-Publish fehlgeschlagen") || !strings.Contains(log.warnings[1], "t-1-1") {
 		t.Fatalf("Stream-Warnzeile = %q, wollen Nachricht und Change-Kennung", log.warnings[1])
+	}
+}
+
+// idlePosition trägt die Leerlauf-Position der Tests: eine Position der
+// Quelle, die kein Change trägt.
+func idlePosition(t *testing.T, offset uint64) model.SourcePosition {
+	t.Helper()
+	position, err := model.NewSourcePosition("src-1", offset)
+	if err != nil {
+		t.Fatalf("NewSourcePosition: %v", err)
+	}
+	return position
+}
+
+// Leerlauf-Bestätigung (`ADR-0120` Festlegung 1): die Application bestätigt
+// die gemeldete Position ausschließlich über den `ReplicationAckPort` — der
+// Ereignisbeleg trägt genau ein `ack` mit dieser Position und weder
+// Persistenz noch Wecksignal noch Stream-Publish, obwohl beide
+// Best-Effort-Ports verdrahtet sind.
+func TestConfirmIdleAcknowledgesOnlyThroughTheAckPort(t *testing.T) {
+	events := []string{}
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events}
+	notify := &fakeNotify{events: &events}
+	stream := &fakeStream{events: &events}
+	service := capture.NewCaptureService(store, ack,
+		capture.WithChangeNotification(notify), capture.WithChangeStream(stream))
+
+	result, err := service.ConfirmIdle(context.Background(), inbound.IdleConfirmationCommand{Position: idlePosition(t, 500)})
+	if err != nil {
+		t.Fatalf("ConfirmIdle: %v", err)
+	}
+	if got, want := events, []string{"ack:500"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
+	}
+	if len(store.persisted) != 0 {
+		t.Fatalf("Store trägt %d Transaktionen, wollen keine", len(store.persisted))
+	}
+	if len(ack.acked) != 1 || ack.acked[0].Offset != 500 {
+		t.Fatalf("ACK trägt %v, wollen Offset 500", ack.acked)
+	}
+	if result.Acknowledged.Offset != 500 {
+		t.Fatalf("Ergebnis trägt Offset %d, wollen 500", result.Acknowledged.Offset)
+	}
+}
+
+// Ein Fehler des Ports geht unverändert durch (`ADR-0120` Festlegung 3):
+// die Klasse `replication` des Ports bleibt über `errors.Is` lesbar, das
+// Ergebnis trägt keine Bestätigung. Der erste Aufruf gelingt, ab dem zweiten
+// scheitert der Port.
+func TestConfirmIdleForwardsPortErrorUnchanged(t *testing.T) {
+	events := []string{}
+	cause := stderrors.New("Standby-Status-Update fehlgeschlagen")
+	portErr := fmt.Errorf("%w: %v", outbound.ErrReplication, cause)
+	store := &fakeStore{events: &events}
+	ack := &fakeAck{events: &events, ackErr: portErr, failFrom: 2}
+	service := capture.NewCaptureService(store, ack)
+
+	if _, err := service.ConfirmIdle(context.Background(), inbound.IdleConfirmationCommand{Position: idlePosition(t, 500)}); err != nil {
+		t.Fatalf("erster Aufruf: %v", err)
+	}
+	result, err := service.ConfirmIdle(context.Background(), inbound.IdleConfirmationCommand{Position: idlePosition(t, 600)})
+	if !stderrors.Is(err, outbound.ErrReplication) {
+		t.Fatalf("Klasse replication fehlt: %v", err)
+	}
+	if !result.Acknowledged.IsZero() {
+		t.Fatalf("Ergebnis trägt %v trotz Fehler, wollen keine Bestätigung", result.Acknowledged)
+	}
+	if got, want := events, []string{"ack:500", "ack:600"}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("Ereignisse = %v, wollen %v", got, want)
+	}
+}
+
+// Eine Meldung ohne Position erreicht den Port nicht (`ADR-0120`): die
+// Application bestätigt nie eine leere Position.
+func TestConfirmIdleRejectsMissingPosition(t *testing.T) {
+	service, events, _, _ := newService(t)
+
+	_, err := service.ConfirmIdle(context.Background(), inbound.IdleConfirmationCommand{})
+	if !stderrors.Is(err, capture.ErrMissingIdlePosition) {
+		t.Fatalf("Fehler = %v, wollen ErrMissingIdlePosition", err)
+	}
+	if len(*events) != 0 {
+		t.Fatalf("Ereignisse = %v, wollen keine", *events)
 	}
 }

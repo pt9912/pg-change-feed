@@ -5,8 +5,9 @@
 // `SPEC-010`) und übersetzt sie über Dekodierung und Mapper in Aufrufe
 // des `CaptureInboundPort`. Er entscheidet nicht über Persistenz,
 // Retention oder Source-ACK (`ADR-0006` Konsequenz) — die bestätigte
-// Position kommt ihm ausschließlich als Ergebnis des Capture-Aufrufs
-// entgegen (`LH-QA-REL-001.a`).
+// Position kommt ihm ausschließlich als Ergebnis des Capture-Aufrufs oder,
+// im Leerlauf des Streams, der Leerlauf-Bestätigung entgegen
+// (`LH-QA-REL-001.a`, `ADR-0120`).
 package receive
 
 import (
@@ -55,8 +56,9 @@ var identifierShape = regexp.MustCompile(`^[a-z0-9_]{1,63}$`)
 // Config trägt die Konfiguration des Stream-Adapters: die
 // Replication-Verbindung (DSN), die Quelle, die Verwaltungsnamen
 // Publication und Slot (`LH-FA-CFG-001.a`) und die aktivierten Tabellen
-// mit ihren Port-Kennungen. Der Capture-Port wird vor dem Lauf
-// verdrahtet (BindCapture) — der ACK-Adapter braucht die Verbindung
+// mit ihren Port-Kennungen. Der Capture-Port und der Port der
+// Leerlauf-Bestätigung werden vor dem Lauf verdrahtet (BindCapture,
+// BindIdleConfirmation) — der ACK-Adapter braucht die Verbindung
 // (`ADR-0007`), die `NewStream` erst aufbaut. Die Tabellen-Kennungen
 // und die Schema-Versionen liegen initial bei der Konfiguration; die
 // dynamische Re-Versionierung trägt `SchemaStore` über den Mapper
@@ -70,6 +72,9 @@ type Config struct {
 	Slot        string
 	Tables      map[string]mapper.TableBinding
 	Capture     inbound.CaptureInboundPort
+	// IdleConfirmation trägt den Port der Leerlauf-Bestätigung
+	// (`ADR-0120`); der Lauf verlangt ihn wie den Capture-Port.
+	IdleConfirmation inbound.IdleConfirmationInboundPort
 	// SchemaStore trägt die Persistenz-Fähigkeit der dynamischen
 	// Re-Versionierung (`outbound.SchemaStorePort`, `ADR-0015`
 	// Folgepflicht); ungesetzt (`nil`) bleibt die Relation-Behandlung des
@@ -99,11 +104,15 @@ type Stream struct {
 	session   driverSession
 	decoder   *decode.Decoder
 	assembler *mapper.Assembler
+	source    model.SourceID
 	capture   inbound.CaptureInboundPort
+	idle      inbound.IdleConfirmationInboundPort
 	// lastAcked trägt die letzte bestätigte Position als LSN —
 	// ausschließlich Positionsgröße für Keepalive-Antworten und
 	// Slot-Feedback: confirmed_flush_lsn rückt nur über bestätigte
-	// Positionen (`LH-QA-REL-001.a`), nicht über den Empfangsstand.
+	// Positionen (`LH-QA-REL-001.a`), nicht über den Empfangsstand. Sie
+	// stammt aus dem Ergebnis eines Capture-Aufrufs oder einer
+	// Leerlauf-Bestätigung (`ADR-0120`) und geht nie zurück.
 	lastAcked pglogrepl.LSN
 	// log trägt die strukturierte Protokollierung über den injizierten
 	// `LogPort` (`LH-QA-OPS-004`, `ADR-0024`) — nie `nil` (`NewStream`
@@ -157,7 +166,9 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 	}
 	log.Info(ctx, "replication: Stream gestartet",
 		"source", cfg.Source, "publication", cfg.Publication, "slot", cfg.Slot)
-	return newStreamOnSession(session, conn, assembler, cfg.Capture, log), nil
+	stream := newStreamOnSession(session, conn, assembler, cfg.Source, cfg.Capture, log)
+	stream.idle = cfg.IdleConfirmation
+	return stream, nil
 }
 
 // newStreamOnSession verdrahtet den Stream auf eine Naht — der
@@ -165,7 +176,7 @@ func NewStream(ctx context.Context, cfg Config) (*Stream, error) {
 // Treibers fahren; `NewStream` reicht die Treiber-Hülle durch. Ungesetztes
 // `log` (`nil`) fällt auf `outbound.NoopLog` zurück; `conn` trägt der
 // netzlose Aufruf nicht (er bedient allein den öffentlichen Rand `Conn()`).
-func newStreamOnSession(session driverSession, conn *pgconn.PgConn, assembler *mapper.Assembler, capture inbound.CaptureInboundPort, log outbound.LogPort) *Stream {
+func newStreamOnSession(session driverSession, conn *pgconn.PgConn, assembler *mapper.Assembler, source model.SourceID, capture inbound.CaptureInboundPort, log outbound.LogPort) *Stream {
 	if log == nil {
 		log = outbound.NoopLog
 	}
@@ -174,6 +185,7 @@ func newStreamOnSession(session driverSession, conn *pgconn.PgConn, assembler *m
 		session:   session,
 		decoder:   decode.NewDecoder(),
 		assembler: assembler,
+		source:    source,
 		capture:   capture,
 		log:       log,
 	}
@@ -209,6 +221,16 @@ func (s *Stream) BindCapture(capture inbound.CaptureInboundPort) error {
 		return fmt.Errorf("%w: CaptureInboundPort fehlt", ErrConfiguration)
 	}
 	s.capture = capture
+	return nil
+}
+
+// BindIdleConfirmation verdrahtet den `IdleConfirmationInboundPort` vor dem
+// Lauf (`ADR-0120`); ein Lauf ohne Port endet über die Konfigurationsklasse.
+func (s *Stream) BindIdleConfirmation(idle inbound.IdleConfirmationInboundPort) error {
+	if idle == nil {
+		return fmt.Errorf("%w: IdleConfirmationInboundPort fehlt", ErrConfiguration)
+	}
+	s.idle = idle
 	return nil
 }
 
@@ -354,6 +376,9 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 	if s.capture == nil {
 		return fmt.Errorf("%w: CaptureInboundPort fehlt", ErrConfiguration)
 	}
+	if s.idle == nil {
+		return fmt.Errorf("%w: IdleConfirmationInboundPort fehlt", ErrConfiguration)
+	}
 	defer s.session.Close(ctx)
 	// Ein Log je Rückkehr des Stream-Laufs (`LH-QA-OPS-004`) — der
 	// benannte Rückgabewert `err` trägt den Ausgang über alle
@@ -393,10 +418,13 @@ func (s *Stream) Run(ctx context.Context) (err error) {
 
 // handleCopyData trägt die Meldungs-Zerlegung des CopyData-Payloads
 // (`ADR-0006`): eine XLogData-Nachricht läuft über `process` in den
-// Capture-Pfad, eine Primary-Keepalive-Nachricht mit `ReplyRequested`
-// wird mit der letzten bestätigten Position beantwortet, ein leeres
-// CopyData ist ein sichtbarer Fehler. Unbekannte Byte-IDs tragen keine
-// Stream-Änderung.
+// Capture-Pfad; eine Primary-Keepalive-Nachricht läuft über
+// `confirmIdle` in die Leerlauf-Bestätigung (`ADR-0120`), und nur wenn
+// diese nichts bestätigt, beantwortet der Stream sie bei `ReplyRequested`
+// mit der letzten bestätigten Position — höchstens ein Standby-Status-Update
+// je Keepalive-Nachricht: die Bestätigung über den `ReplicationAckPort` ist
+// selbst das Update. Ein leeres CopyData ist ein sichtbarer Fehler.
+// Unbekannte Byte-IDs tragen keine Stream-Änderung.
 func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
 	if len(data) == 0 {
 		return fmt.Errorf("%w: leeres CopyData", ErrReplication)
@@ -409,16 +437,20 @@ func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
 		}
 		return s.process(ctx, payload)
 	case pglogrepl.PrimaryKeepaliveMessageByteID:
-		replyRequested, err := parseKeepalive(data)
+		keepalive, err := parseKeepalive(data)
 		if err != nil {
 			return err
 		}
-		if !replyRequested {
+		confirmed, err := s.confirmIdle(ctx, keepalive.serverWALEnd)
+		if err != nil {
+			return err
+		}
+		if confirmed || !keepalive.replyRequested {
 			return nil
 		}
 		// Die Keepalive-Antwort meldet die letzte bestätigte Position —
 		// nie den Empfangsstand; die Bestätigung entscheidet die
-		// Application nach Persistenz (`ADR-0007`, `LH-QA-REL-001.a`).
+		// Application (`ADR-0007`, `LH-QA-REL-001.a`).
 		if err := s.session.SendStandbyStatusUpdate(ctx, standbyStatus(s.lastAcked)); err != nil {
 			return fmt.Errorf("%w: Keepalive-Antwort: %v", ErrReplication, err)
 		}
@@ -426,6 +458,34 @@ func (s *Stream) handleCopyData(ctx context.Context, data []byte) error {
 	default:
 		return nil
 	}
+}
+
+// confirmIdle meldet der Application „Leerlauf bis P“ (`ADR-0120`
+// Festlegung 1) und setzt die bestätigte Position aus dem Ergebnis dieses
+// Aufrufs. Es geschieht nichts — die Meldung unterbleibt —, solange eine
+// Quelltransaktion zwischen BEGIN und COMMIT offen ist (das WAL-Ende liegt
+// dann hinter Nachrichten, die noch nicht gespeichert sind) und solange das
+// WAL-Ende der Quelle nicht hinter der bestätigten Position liegt (die
+// Bestätigung geht nie zurück). Der Rückgabewert meldet, ob die Application
+// bestätigt hat; ein Fehler des Ports endet in der Klasse `replication`
+// (`ADR-0120` Festlegung 3).
+func (s *Stream) confirmIdle(ctx context.Context, serverWALEnd pglogrepl.LSN) (bool, error) {
+	if s.assembler.TransactionOpen() || serverWALEnd <= s.lastAcked {
+		return false, nil
+	}
+	position, err := model.NewSourcePosition(s.source, uint64(serverWALEnd))
+	if err != nil {
+		return false, fmt.Errorf("%w: Leerlauf-Position: %v", ErrReplication, err)
+	}
+	result, err := s.idle.ConfirmIdle(ctx, inbound.IdleConfirmationCommand{Position: position})
+	if err != nil {
+		return false, fmt.Errorf("%w: Leerlauf-Bestätigung: %w", ErrReplication, err)
+	}
+	if result.Acknowledged.IsZero() {
+		return false, nil
+	}
+	s.lastAcked = pglogrepl.LSN(result.Acknowledged.Offset)
+	return true, nil
 }
 
 // parseXLogData trägt die Zerlegung einer XLogData-Nachricht: der
@@ -439,14 +499,20 @@ func parseXLogData(data []byte) ([]byte, error) {
 	return xlogData.WALData, nil
 }
 
-// parseKeepalive trägt die Zerlegung einer Primary-Keepalive-Nachricht:
-// der Rückgabewert meldet, ob die Quelle eine Antwort verlangt.
-func parseKeepalive(data []byte) (bool, error) {
-	keepalive, err := pglogrepl.ParsePrimaryKeepaliveMessage(data[1:])
+// keepaliveMessage trägt die Felder einer Primary-Keepalive-Nachricht, die
+// der Stream liest: das WAL-Ende der Quelle und ob sie eine Antwort verlangt.
+type keepaliveMessage struct {
+	serverWALEnd   pglogrepl.LSN
+	replyRequested bool
+}
+
+// parseKeepalive trägt die Zerlegung einer Primary-Keepalive-Nachricht.
+func parseKeepalive(data []byte) (keepaliveMessage, error) {
+	message, err := pglogrepl.ParsePrimaryKeepaliveMessage(data[1:])
 	if err != nil {
-		return false, fmt.Errorf("%w: Keepalive: %v", ErrReplication, err)
+		return keepaliveMessage{}, fmt.Errorf("%w: Keepalive: %v", ErrReplication, err)
 	}
-	return keepalive.ReplyRequested, nil
+	return keepaliveMessage{serverWALEnd: message.ServerWALEnd, replyRequested: message.ReplyRequested}, nil
 }
 
 // standbyStatus trägt die Standby-Status-Form der Keepalive-Antwort: die

@@ -201,6 +201,13 @@ func (a *Assembler) Consume(ctx context.Context, event decode.Event) (*inbound.C
 	}
 }
 
+// TransactionOpen meldet, ob zwischen BEGIN und COMMIT eine Quelltransaktion
+// offen ist (`ADR-0120` Festlegung 1). Der Aufruf läuft in derselben
+// Goroutine wie `Consume`; der Zustand hängt an keiner Sperre.
+func (a *Assembler) TransactionOpen() bool {
+	return a.open != nil
+}
+
 // change übersetzt eine Änderung in einen Domänen-Change: Kennung aus
 // Transaktion und Sequenz, Operation, Row Images als JSON
 // (`SPEC-002`), Tabelle und Schema-Version über die Aktivierung. Die

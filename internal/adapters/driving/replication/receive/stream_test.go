@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/jackc/pglogrepl"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/pt9912/pg-change-feed/internal/adapters/driving/replication/mapper"
@@ -41,13 +43,50 @@ const (
 // Commit-Position als bestätigt — die Stand-in-Application des
 // Adapter-Tests; die Persist-before-ACK-Ordnung am realen Treiber trägt
 // der Verdrahtungs-Test in der Composition-Root. Mit ackFirstOnly
-// bestätigt der Stand-in nur die erste Transaktion — die
-// Keepalive-Position-Regel (F-3) trägt der Test darüber: die bestätigte
-// Position bleibt hinter dem Empfangsstand zurück.
+// bestätigt der Stand-in nur die erste Transaktion und mit declineIdle
+// keine Leerlauf-Position — die Keepalive-Position-Regel (F-3) trägt der
+// Test darüber: die bestätigte Position bleibt hinter dem Empfangsstand
+// zurück. Ohne declineIdle bestätigt der Stand-in jede gemeldete
+// Leerlauf-Position, wie der `ReplicationAckPort` der Application: das
+// Standby-Status-Update geht über die Verbindung des Streams (`conn`) an
+// den Slot.
 type fakeCapture struct {
 	commands     chan *inbound.CaptureCommand
 	ackFirstOnly bool
 	acked        bool
+	declineIdle  bool
+	conn         *pgconn.PgConn
+
+	idleMu        sync.Mutex
+	idleConfirmed []uint64
+}
+
+// ConfirmIdle bestätigt die gemeldete Position über die Verbindung des
+// Streams, sofern der Stand-in nicht ablehnt, und hält sie fest.
+func (f *fakeCapture) ConfirmIdle(ctx context.Context, command inbound.IdleConfirmationCommand) (inbound.IdleConfirmationResult, error) {
+	if f.declineIdle {
+		return inbound.IdleConfirmationResult{}, nil
+	}
+	lsn := pglogrepl.LSN(command.Position.Offset)
+	err := pglogrepl.SendStandbyStatusUpdate(ctx, f.conn, pglogrepl.StandbyStatusUpdate{
+		WALWritePosition: lsn,
+		WALFlushPosition: lsn,
+		WALApplyPosition: lsn,
+	})
+	if err != nil {
+		return inbound.IdleConfirmationResult{}, err
+	}
+	f.idleMu.Lock()
+	f.idleConfirmed = append(f.idleConfirmed, command.Position.Offset)
+	f.idleMu.Unlock()
+	return inbound.IdleConfirmationResult{Acknowledged: command.Position}, nil
+}
+
+// idleConfirmations trägt die Zahl der bestätigten Leerlauf-Positionen.
+func (f *fakeCapture) idleConfirmations() int {
+	f.idleMu.Lock()
+	defer f.idleMu.Unlock()
+	return len(f.idleConfirmed)
 }
 
 // Capture nimmt ein Command auf und meldet die Commit-Position als
@@ -65,9 +104,16 @@ func (f *fakeCapture) Capture(_ context.Context, command inbound.CaptureCommand)
 // newPool baut den normalen Verbindungspool gegen die Test-Instanz.
 func newPool(t *testing.T) (*pgxpool.Pool, context.Context) {
 	t.Helper()
-	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
+	return newPoolOn(t, "CDC_REPLICATION_TEST_DSN")
+}
+
+// newPoolOn baut den Verbindungspool gegen die Instanz, deren DSN die
+// Umgebungsvariable trägt; ohne DSN überspringt der Test.
+func newPoolOn(t *testing.T, dsnVariable string) (*pgxpool.Pool, context.Context) {
+	t.Helper()
+	dsn := os.Getenv(dsnVariable)
 	if dsn == "" {
-		t.Skip("CDC_REPLICATION_TEST_DSN nicht gesetzt — reale Replication-Tests laufen über make test-replication")
+		t.Skipf("%s nicht gesetzt — reale Replication-Tests laufen über make test-replication", dsnVariable)
 	}
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dsn)
@@ -96,7 +142,14 @@ type testEnv struct {
 // Slot-Rückbau — ein belegter Slot droppt nicht.
 func newTestEnv(t *testing.T, name string) *testEnv {
 	t.Helper()
-	pool, ctx := newPool(t)
+	return newTestEnvOn(t, name, "CDC_REPLICATION_TEST_DSN")
+}
+
+// newTestEnvOn setzt die Test-Umgebung gegen die Instanz auf, deren DSN die
+// Umgebungsvariable trägt.
+func newTestEnvOn(t *testing.T, name, dsnVariable string) *testEnv {
+	t.Helper()
+	pool, ctx := newPoolOn(t, dsnVariable)
 	runCtx, cancel := context.WithCancel(ctx)
 	env := &testEnv{
 		pool:        pool,
@@ -139,21 +192,12 @@ func newTestEnv(t *testing.T, name string) *testEnv {
 // startStream legt den Stream-Adapter an und läuft im Hintergrund; der
 // Test liest über das Command-Feld, der zweite Ausgang trägt das
 // Lauf-Ende (F-4: der Restart wartet auf das Verbindungs-Ende).
-func startStream(t *testing.T, env *testEnv, capturePort inbound.CaptureInboundPort) (*receive.Stream, <-chan error) {
+func startStream(t *testing.T, env *testEnv, capturePort *fakeCapture) (*receive.Stream, <-chan error) {
 	t.Helper()
 	runDone := make(chan error, 1)
 	runCtx, cancel := context.WithCancel(env.ctx)
 	t.Cleanup(cancel)
-	stream, err := receive.NewStream(runCtx, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: capturePort,
-	})
+	stream, err := newStream(runCtx, env, capturePort)
 	if err != nil {
 		t.Fatalf("NewStream: %v", err)
 	}
@@ -161,6 +205,28 @@ func startStream(t *testing.T, env *testEnv, capturePort inbound.CaptureInboundP
 		runDone <- stream.Run(runCtx)
 	}()
 	return stream, runDone
+}
+
+// newStream legt den Stream-Adapter mit dem Stand-in als Capture- und
+// Leerlauf-Port an und gibt dem Stand-in die Verbindung des Streams, über die
+// er seine Bestätigungen sendet.
+func newStream(ctx context.Context, env *testEnv, standIn *fakeCapture) (*receive.Stream, error) {
+	stream, err := receive.NewStream(ctx, receive.Config{
+		DSN:         env.pool.Config().ConnString(),
+		Source:      testSource,
+		Publication: env.publication,
+		Slot:        env.slot,
+		Tables: map[string]mapper.TableBinding{
+			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
+		},
+		Capture:          standIn,
+		IdleConfirmation: standIn,
+	})
+	if err != nil {
+		return nil, err
+	}
+	standIn.conn = stream.Conn()
+	return stream, nil
 }
 
 // awaitCommand liest das nächste Command mit Test-Zeitgrenze.
@@ -331,16 +397,7 @@ func TestStreamTruncateUnsupported(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "truncate")
 	commands := make(chan *inbound.CaptureCommand, 32)
-	stream, err := receive.NewStream(env.ctx, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: &fakeCapture{commands: commands},
-	})
+	stream, err := newStream(env.ctx, env, &fakeCapture{commands: commands})
 	if err != nil {
 		t.Fatalf("NewStream: %v", err)
 	}
@@ -385,18 +442,19 @@ func readConfirmedFlush(t *testing.T, pool *pgxpool.Pool, slot string) uint64 {
 }
 
 // TestStreamKeepaliveReportsAcknowledgedPosition trägt die
-// Keepalive-Position-Regel am realen Pfad (`LH-QA-REL-001.a`): die
-// Keepalive-Antwort meldet ausschließlich die vom Capture-Ergebnis
-// bestätigte Position — confirmed_flush_lsn rückt auf sie und läuft nie
-// über sie hinaus, obwohl der Stream weiteren WAL-Stand empfangen hat.
-// Der Testcontainer trägt wal_sender_timeout=2s: der Walsender verlangt
-// die Antwort nach der Hälfte der Zeit, die Keepalive-Antwort trägt
-// lastAcked.
+// Keepalive-Position-Regel am realen Pfad (`LH-QA-REL-001.a`): bestätigt die
+// Application keine Leerlauf-Position (`declineIdle`), meldet die
+// Keepalive-Antwort ausschließlich die vom Capture-Ergebnis bestätigte
+// Position — confirmed_flush_lsn rückt auf sie und läuft nie über sie
+// hinaus, obwohl der Stream weiteren WAL-Stand empfangen hat. Die Bestätigung
+// im Leerlauf trägt `TestStreamIdleConfirmationReleasesForeignWAL`. Der
+// Testcontainer trägt wal_sender_timeout=2s: der Walsender verlangt die
+// Antwort nach der Hälfte der Zeit, die Keepalive-Antwort trägt lastAcked.
 func TestStreamKeepaliveReportsAcknowledgedPosition(t *testing.T) {
 	pool, ctx := newPool(t)
 	env := newTestEnv(t, "keepalive")
 	commands := make(chan *inbound.CaptureCommand, 32)
-	startStream(t, env, &fakeCapture{commands: commands, ackFirstOnly: true})
+	startStream(t, env, &fakeCapture{commands: commands, ackFirstOnly: true, declineIdle: true})
 
 	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Bestätigt')"); err != nil {
 		t.Fatalf("INSERT: %v", err)
@@ -459,16 +517,7 @@ func TestWALRetentionMeasuresGrowingBytes(t *testing.T) {
 	commands := make(chan *inbound.CaptureCommand, 32)
 
 	runCtx, cancelRun := context.WithCancel(ctx)
-	stream, err := receive.NewStream(runCtx, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: &fakeCapture{commands: commands},
-	})
+	stream, err := newStream(runCtx, env, &fakeCapture{commands: commands})
 	if err != nil {
 		t.Fatalf("NewStream: %v", err)
 	}
@@ -639,16 +688,7 @@ func TestWALRetentionMeasureReconnectsAfterConnectionLoss(t *testing.T) {
 	// Der Slot muss bestehen, bevor der Checker misst — derselbe
 	// kurzlebige Stream-Aufbau wie in TestWALRetentionMeasuresGrowingBytes.
 	runCtx, cancelRun := context.WithCancel(ctx)
-	stream, err := receive.NewStream(runCtx, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: &fakeCapture{commands: commands},
-	})
+	stream, err := newStream(runCtx, env, &fakeCapture{commands: commands})
 	if err != nil {
 		t.Fatalf("NewStream: %v", err)
 	}
@@ -730,16 +770,7 @@ func TestStreamRestartsOnExistingSlot(t *testing.T) {
 	ctx1, cancel1 := context.WithCancel(ctx)
 	defer cancel1()
 	commands1 := make(chan *inbound.CaptureCommand, 32)
-	stream1, err := receive.NewStream(ctx1, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: &fakeCapture{commands: commands1},
-	})
+	stream1, err := newStream(ctx1, env, &fakeCapture{commands: commands1})
 	if err != nil {
 		t.Fatalf("NewStream (erster Lauf): %v", err)
 	}
@@ -775,16 +806,7 @@ func TestStreamRestartsOnExistingSlot(t *testing.T) {
 	commands2 := make(chan *inbound.CaptureCommand, 32)
 	ctx2, cancel2 := context.WithCancel(ctx)
 	t.Cleanup(cancel2)
-	stream2, err := receive.NewStream(ctx2, receive.Config{
-		DSN:         env.pool.Config().ConnString(),
-		Source:      testSource,
-		Publication: env.publication,
-		Slot:        env.slot,
-		Tables: map[string]mapper.TableBinding{
-			testFeed: {TableID: testTableID, SchemaVersion: testSchemaV},
-		},
-		Capture: &fakeCapture{commands: commands2},
-	})
+	stream2, err := newStream(ctx2, env, &fakeCapture{commands: commands2})
 	if err != nil {
 		t.Fatalf("NewStream (Restart): %v", err)
 	}
@@ -821,5 +843,252 @@ func TestStreamRestartsOnExistingSlot(t *testing.T) {
 			continue
 		}
 		t.Fatalf("unerwartete Transaktion: %+v", changes)
+	}
+}
+
+// testForeign trägt die Tabelle außerhalb der Publication: ihr WAL trägt
+// keinen Inhalt für den Stream (`ADR-0120`).
+const testForeign = "public.foreign_stream_test"
+
+// createForeignTable legt die Tabelle außerhalb der Publication an und
+// räumt sie am Test-Ende ab.
+func createForeignTable(t *testing.T, env *testEnv) {
+	t.Helper()
+	if _, err := env.pool.Exec(context.Background(),
+		fmt.Sprintf("CREATE TABLE %s (id bigint PRIMARY KEY, payload text)", testForeign)); err != nil {
+		t.Fatalf("Tabelle außerhalb der Publication: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = env.pool.Exec(context.Background(), "DROP TABLE IF EXISTS "+testForeign)
+	})
+}
+
+// walLSNDiff trägt die Differenz zweier WAL-Positionen in Bytes.
+func walLSNDiff(t *testing.T, pool *pgxpool.Pool, from, to string) int64 {
+	t.Helper()
+	var diff int64
+	if err := pool.QueryRow(context.Background(),
+		"SELECT pg_wal_lsn_diff($1::pg_lsn, $2::pg_lsn)::bigint", to, from).Scan(&diff); err != nil {
+		t.Fatalf("pg_wal_lsn_diff: %v", err)
+	}
+	return diff
+}
+
+// currentWALLSN trägt die aktuelle WAL-Schreibposition der Instanz.
+func currentWALLSN(t *testing.T, pool *pgxpool.Pool) string {
+	t.Helper()
+	var lsn string
+	if err := pool.QueryRow(context.Background(), "SELECT pg_current_wal_lsn()::text").Scan(&lsn); err != nil {
+		t.Fatalf("pg_current_wal_lsn: %v", err)
+	}
+	return lsn
+}
+
+// foreignWALRun trägt das Ergebnis einer Schreiblast außerhalb der
+// Publication gegen einen laufenden Stream.
+type foreignWALRun struct {
+	load    int64
+	backlog int64
+	elapsed time.Duration
+}
+
+// runForeignWAL führt die Form X1 des Verdikts gegen einen laufenden Stream
+// aus: 200.000 Zeilen in **eine** Transaktion auf eine Tabelle außerhalb der
+// Publication. `load` ist die WAL-Menge der Last (Differenz der
+// WAL-Schreibpositionen um den INSERT), `backlog` der mit
+// `WALRetentionChecker.Measure` gemessene Rückstand des Slots, gepollt bis
+// er unter einem Zehntel der Last liegt oder `wait` verstreicht.
+func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture, wait time.Duration) foreignWALRun {
+	t.Helper()
+	env := newTestEnvOn(t, name, dsnVariable)
+	createForeignTable(t, env)
+	standIn.commands = make(chan *inbound.CaptureCommand, 32)
+	startStream(t, env, standIn)
+
+	// Der Stream läuft, sobald die erste Transaktion der aktivierten Tabelle
+	// eingetroffen ist.
+	if _, err := env.pool.Exec(env.ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Start')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	awaitCommand(t, standIn.commands, 15*time.Second)
+
+	checker, err := receive.NewWALRetentionChecker(context.Background(), env.pool.Config().ConnString(), env.slot)
+	if err != nil {
+		t.Fatalf("NewWALRetentionChecker: %v", err)
+	}
+	t.Cleanup(func() { _ = checker.Close(context.Background()) })
+
+	before := currentWALLSN(t, env.pool)
+	if _, err := env.pool.Exec(env.ctx,
+		fmt.Sprintf("INSERT INTO %s SELECT g, repeat('x', 130) FROM generate_series(1, 200000) g", testForeign)); err != nil {
+		t.Fatalf("Schreiblast außerhalb der Publication: %v", err)
+	}
+	loadedAt := time.Now()
+	load := walLSNDiff(t, env.pool, before, currentWALLSN(t, env.pool))
+	if load < 16*1024*1024 {
+		t.Fatalf("Last trägt %d B WAL, erwartet mindestens 16 MiB", load)
+	}
+
+	limit := load / 10
+	deadline := loadedAt.Add(wait)
+	for {
+		backlog, err := checker.Measure(context.Background())
+		if err != nil {
+			t.Fatalf("Measure: %v", err)
+		}
+		if backlog < limit || time.Now().After(deadline) {
+			return foreignWALRun{load: load, backlog: backlog, elapsed: time.Since(loadedAt)}
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
+// TestStreamIdleConfirmationReleasesForeignWAL trägt die Form X1 des
+// Verdikts am realen Stream (`ADR-0120`, `LH-QA-REL-001.a`): WAL ohne Inhalt
+// für die Publication hält den Rückstand des Slots nicht — nach wenigen
+// Keepalive-Takten liegt er unter einem Zehntel der Last, und der Stand-in
+// hat Leerlauf-Positionen bestätigt. Der Testcontainer trägt
+// wal_sender_timeout=2s (`run-replication-tests.sh`).
+func TestStreamIdleConfirmationReleasesForeignWAL(t *testing.T) {
+	standIn := &fakeCapture{}
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_DSN", "foreign", standIn, 30*time.Second)
+	t.Logf("Last %d B WAL, Rückstand %d B nach %s, %d Leerlauf-Bestätigungen",
+		run.load, run.backlog, run.elapsed.Round(time.Millisecond), standIn.idleConfirmations())
+	if run.backlog >= run.load/10 {
+		t.Fatalf("Rückstand %d B liegt nach %s nicht unter einem Zehntel der Last (%d B)", run.backlog, run.elapsed, run.load)
+	}
+	if standIn.idleConfirmations() == 0 {
+		t.Fatalf("keine Leerlauf-Bestätigung des Stand-ins")
+	}
+}
+
+// TestStreamWithoutIdleConfirmationKeepsForeignWAL ist die Nullprobe zu
+// `TestStreamIdleConfirmationReleasesForeignWAL`: bestätigt die Application
+// keine Leerlauf-Position (`declineIdle`), bleibt der Rückstand über die
+// gleiche Wartezeit bei mindestens der halben Last — die Last ist real, und
+// nur die Leerlauf-Bestätigung senkt den Rückstand.
+func TestStreamWithoutIdleConfirmationKeepsForeignWAL(t *testing.T) {
+	standIn := &fakeCapture{declineIdle: true}
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_DSN", "foreigncontrol", standIn, 8*time.Second)
+	t.Logf("Last %d B WAL, Rückstand %d B nach %s", run.load, run.backlog, run.elapsed.Round(time.Millisecond))
+	if run.backlog < run.load/2 {
+		t.Fatalf("Rückstand %d B fiel ohne Leerlauf-Bestätigung unter die Hälfte der Last (%d B)", run.backlog, run.load)
+	}
+}
+
+// TestStreamIdleConfirmationReleasesForeignWALAtDefaultTimeout trägt
+// dieselbe Form X1 gegen eine Instanz mit dem Standardwert von
+// `wal_sender_timeout` (60 s): der Keepalive-Takt der Quelle liegt dort bei
+// bis zu 30 s, die Wartezeit trägt mehrere Takte. Die Instanz stellt
+// `run-replication-tests.sh` unter `CDC_REPLICATION_TEST_STANDARD_DSN`.
+func TestStreamIdleConfirmationReleasesForeignWALAtDefaultTimeout(t *testing.T) {
+	standIn := &fakeCapture{}
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_STANDARD_DSN", "foreigndefault", standIn, 150*time.Second)
+	t.Logf("Last %d B WAL, Rückstand %d B nach %s, %d Leerlauf-Bestätigungen",
+		run.load, run.backlog, run.elapsed.Round(time.Millisecond), standIn.idleConfirmations())
+	if run.backlog >= run.load/10 {
+		t.Fatalf("Rückstand %d B liegt nach %s nicht unter einem Zehntel der Last (%d B)", run.backlog, run.elapsed, run.load)
+	}
+}
+
+// TestStreamIdleConfirmationKeepsOpenTransactionDeliverable ist der
+// Sicherheits-Test der Leerlauf-Bestätigung (`ADR-0120` Festlegung 1,
+// `LH-QA-REL-001`): eine Quelltransaktion auf einer veröffentlichten Tabelle
+// bleibt offen, währenddessen bestätigt der Stream im Leerlauf ein WAL-Ende
+// hinter dem ersten Change dieser Transaktion (`confirmed_flush_lsn` liegt
+// danach hinter ihm). Endet der Stream und committet die Transaktion danach,
+// liefert der Neustart ihren Change — die Quelle sendet jede Transaktion,
+// deren Commit hinter `confirmed_flush_lsn` liegt, vollständig.
+func TestStreamIdleConfirmationKeepsOpenTransactionDeliverable(t *testing.T) {
+	pool, ctx := newPool(t)
+	env := newTestEnv(t, "opentx")
+	createForeignTable(t, env)
+
+	ctx1, cancel1 := context.WithCancel(ctx)
+	defer cancel1()
+	commands1 := make(chan *inbound.CaptureCommand, 32)
+	standIn1 := &fakeCapture{commands: commands1}
+	stream1, err := newStream(ctx1, env, standIn1)
+	if err != nil {
+		t.Fatalf("NewStream (erster Lauf): %v", err)
+	}
+	runDone1 := make(chan error, 1)
+	go func() { runDone1 <- stream1.Run(ctx1) }()
+
+	// Der Stream läuft, sobald die erste Transaktion der aktivierten Tabelle
+	// eingetroffen ist.
+	if _, err := pool.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (1, 'Start')"); err != nil {
+		t.Fatalf("INSERT: %v", err)
+	}
+	awaitCommand(t, commands1, 15*time.Second)
+
+	// Die offene Quelltransaktion schreibt auf die veröffentlichte Tabelle;
+	// `openEnd` liegt hinter ihrem WAL-Eintrag.
+	sourceTx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Quelltransaktion: %v", err)
+	}
+	t.Cleanup(func() { _ = sourceTx.Rollback(context.Background()) })
+	if _, err := sourceTx.Exec(ctx, "INSERT INTO "+testFeed+" (id, name) VALUES (2, 'Offen')"); err != nil {
+		t.Fatalf("INSERT (offene Transaktion): %v", err)
+	}
+	var openEnd string
+	if err := pool.QueryRow(ctx, "SELECT pg_current_wal_insert_lsn()::text").Scan(&openEnd); err != nil {
+		t.Fatalf("WAL-Ende der offenen Transaktion: %v", err)
+	}
+	openEndLSN, err := pglogrepl.ParseLSN(openEnd)
+	if err != nil {
+		t.Fatalf("LSN %q: %v", openEnd, err)
+	}
+
+	// WAL ohne Inhalt für die Publication nach der offenen Transaktion —
+	// der Stream ist im Leerlauf und bestätigt bis hinter sie.
+	if _, err := pool.Exec(ctx,
+		fmt.Sprintf("INSERT INTO %s SELECT g, repeat('x', 130) FROM generate_series(1, 20000) g", testForeign)); err != nil {
+		t.Fatalf("WAL nach der offenen Transaktion: %v", err)
+	}
+	deadline := time.Now().Add(30 * time.Second)
+	for readConfirmedFlush(t, pool, env.slot) <= uint64(openEndLSN) {
+		if time.Now().After(deadline) {
+			t.Fatalf("confirmed_flush_lsn %x rückt nicht hinter den Change der offenen Transaktion (%x)",
+				readConfirmedFlush(t, pool, env.slot), uint64(openEndLSN))
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if standIn1.idleConfirmations() == 0 {
+		t.Fatalf("confirmed_flush_lsn liegt hinter der offenen Transaktion ohne Leerlauf-Bestätigung")
+	}
+
+	// Der Stream endet, die Transaktion committet, der Neustart liefert sie.
+	cancel1()
+	select {
+	case <-runDone1:
+	case <-time.After(15 * time.Second):
+		t.Fatalf("erster Lauf endet nicht")
+	}
+	awaitSlotInactive(t, pool, env.slot, 10*time.Second)
+	if err := sourceTx.Commit(ctx); err != nil {
+		t.Fatalf("Commit der offenen Transaktion: %v", err)
+	}
+
+	commands2 := make(chan *inbound.CaptureCommand, 32)
+	ctx2, cancel2 := context.WithCancel(ctx)
+	t.Cleanup(cancel2)
+	stream2, err := newStream(ctx2, env, &fakeCapture{commands: commands2})
+	if err != nil {
+		t.Fatalf("NewStream (Neustart): %v", err)
+	}
+	go func() { _ = stream2.Run(ctx2) }()
+
+	limit := time.Now().Add(20 * time.Second)
+	for {
+		command := awaitCommand(t, commands2, time.Until(limit))
+		changes, err := command.Transaction.Changes()
+		if err != nil {
+			t.Fatalf("Changes: %v", err)
+		}
+		if len(changes) == 1 && string(changes[0].NewImage) == `{"id":"2","name":"Offen"}` {
+			return
+		}
 	}
 }
