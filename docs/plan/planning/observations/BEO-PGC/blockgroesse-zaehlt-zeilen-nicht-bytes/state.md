@@ -1,5 +1,5 @@
 Zustand: **geplant** — Ausgang: **geplant** →
-[`slice-backfill-speicher-untersuchung`](../../../open/slice-backfill-speicher-untersuchung.md)
+`slice-backfill-speicher-untersuchung`
 (Messreihe mit `tools/bench-backfill.sh` samt Grundlinie, Ursache benennen; wächst
 der Speicher mit der Tabellengröße, folgen ein Befund und ein eigener
 Änderungs-Slice, sonst trägt das Handbuch die gemessene Grenze) · seit
