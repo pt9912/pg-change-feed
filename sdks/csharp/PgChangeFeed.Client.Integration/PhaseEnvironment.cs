@@ -1,6 +1,5 @@
 /// <summary>
-/// Shared environment plumbing for the realserver integration phases
-/// (ADR-0110 §Entscheidung Festlegung 2, mirrored to the C# tree): every
+/// Shared environment plumbing for the real-server integration phases: every
 /// phase names its test class explicitly through the runner's
 /// <c>PGCHANGEFEED_TEST_NAME</c> filter (no silent exclusion), and every
 /// marker (<c>READY</c>/<c>RECEIVED</c>/<c>REJECTED</c>) is what

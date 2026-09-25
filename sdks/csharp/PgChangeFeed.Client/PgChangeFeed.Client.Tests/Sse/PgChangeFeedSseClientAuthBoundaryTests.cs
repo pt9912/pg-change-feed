@@ -8,12 +8,12 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Sse;
 
 /// <summary>
-/// The SPEC-021 error-response mapping when opening <c>GET /changes/stream</c>
-/// fails before any frame is delivered — the same closed set of typed
+/// The error-response mapping when opening <c>GET /changes/stream</c>
+/// fails before any frame is delivered — the same set of typed
 /// exceptions as <see cref="PgChangeFeed.Client.Http.PgChangeFeedHttpClient"/>
-/// (SPEC-018's uniform <c>{"error": "&lt;text&gt;"}</c> body), reused rather
+/// (the uniform <c>{"error": "&lt;text&gt;"}</c> body), reused rather
 /// than a second hierarchy (<c>PgChangeFeedException</c> and its five
-/// concrete subtypes). Muster: <c>PgChangeFeedHttpClientAuthBoundaryTests</c>.
+/// concrete subtypes). Pattern: <c>PgChangeFeedHttpClientAuthBoundaryTests</c>.
 /// </summary>
 public class PgChangeFeedSseClientAuthBoundaryTests
 {
@@ -38,13 +38,13 @@ public class PgChangeFeedSseClientAuthBoundaryTests
     }
 
     [Fact]
-    public async Task NoBroadcasterWired_ThrowsUnexpectedStatus()
+    public async Task StreamNotAvailable_ThrowsUnexpectedStatus()
     {
-        // SPEC-021: `503`, wenn CDC_HTTP_ADDR gesetzt, aber kein Broadcaster
-        // verdrahtet ist — außerhalb des geschlossenen 400/401/403/404/500-Sets.
+        // `503` when the HTTP API is on but the change stream is not
+        // available — outside the 400/401/403/404/500 set.
         var (client, _) = TestClientFactory.Create(
             _ => FakeHttpMessageHandler.JsonResponse(
-                HttpStatusCode.ServiceUnavailable, """{"error":"ChangeStream ohne Broadcaster verdrahtet"}"""));
+                HttpStatusCode.ServiceUnavailable, """{"error":"change stream not available"}"""));
 
         var ex = await Assert.ThrowsAsync<PgChangeFeedUnexpectedStatusException>(async () =>
         {

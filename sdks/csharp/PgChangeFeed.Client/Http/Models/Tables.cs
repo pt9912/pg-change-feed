@@ -3,8 +3,12 @@ using System.Text.Json.Serialization;
 namespace PgChangeFeed.Client.Http.Models;
 
 /// <summary>
-/// <c>EnableTable</c> request — <c>POST /tables/enable</c> (SPEC-018), all
-/// seven fields mandatory, <c>Version</c> must be &gt;= 1.
+/// The table to capture, all seven fields mandatory. <c>Source</c> and
+/// <c>Publication</c> name the source and its PostgreSQL publication.
+/// <c>TableId</c> is the id the table is captured under (every change of the
+/// table carries it as <c>source_table_id</c>); <c>SchemaVersionId</c> and
+/// <c>Version</c> (must be &gt;= 1) identify the table's schema version (changes
+/// carry the id as <c>schema_version</c>).
 /// </summary>
 public sealed record EnableTableRequest(
     [property: JsonPropertyName("source")] string Source,
@@ -16,8 +20,9 @@ public sealed record EnableTableRequest(
     [property: JsonPropertyName("publication")] string Publication);
 
 /// <summary>
-/// <c>EnableTable</c> response (<c>201</c>). A table physically missing at
-/// the source ends <c>404</c> instead (SPEC-018).
+/// The captured table; <c>already_enabled</c> is true when it was captured
+/// before. A table that does not exist in the source database ends <c>404</c>
+/// instead.
 /// </summary>
 public sealed record EnableTableResponse(
     [property: JsonPropertyName("table_id")] string TableId,
@@ -27,8 +32,7 @@ public sealed record EnableTableResponse(
     [property: JsonPropertyName("already_enabled")] bool AlreadyEnabled);
 
 /// <summary>
-/// <c>DisableTable</c> request — <c>POST /tables/disable</c> (SPEC-018), all
-/// four fields mandatory.
+/// The table to stop capturing, all four fields mandatory.
 /// </summary>
 public sealed record DisableTableRequest(
     [property: JsonPropertyName("source")] string Source,
@@ -37,23 +41,25 @@ public sealed record DisableTableRequest(
     [property: JsonPropertyName("publication")] string Publication);
 
 /// <summary>
-/// <c>DisableTable</c> response (<c>200</c>). A table physically missing at
-/// the source ends <c>404</c> instead (SPEC-018).
+/// <c>Retained</c> is true when changes already stored for the table remain
+/// readable. A table that does not exist in the source database ends
+/// <c>404</c> instead.
 /// </summary>
 public sealed record DisableTableResponse(
     [property: JsonPropertyName("removed")] bool Removed,
     [property: JsonPropertyName("retained")] bool Retained);
 
 /// <summary>
-/// <c>GetStatus</c> response (<c>200</c>) — both <c>false</c> reads a table
-/// that was never enabled. A table physically missing at the source ends
-/// <c>404</c> instead (SPEC-018).
+/// <c>Enabled</c> is true for a captured table; <c>Retained</c> is true for a
+/// table that is no longer captured but whose stored changes remain. Both
+/// <c>false</c> reads a table that was never enabled. A table that does not
+/// exist in the source database ends <c>404</c> instead.
 /// </summary>
 public sealed record TableStatusResponse(
     [property: JsonPropertyName("enabled")] bool Enabled,
     [property: JsonPropertyName("retained")] bool Retained);
 
-/// <summary>One entry of a <see cref="ListTablesResponse"/> list (SPEC-018).</summary>
+/// <summary>One table of a <see cref="ListTablesResponse"/>.</summary>
 public sealed record TableInfo(
     [property: JsonPropertyName("table_id")] string TableId,
     [property: JsonPropertyName("source")] string Source,
@@ -61,8 +67,9 @@ public sealed record TableInfo(
     [property: JsonPropertyName("table")] string Table);
 
 /// <summary>
-/// <c>ListTables</c> response (<c>200</c>) — both lists are empty without
-/// any activation (SPEC-018).
+/// <c>Tables</c> are the captured tables; <c>Retained</c> are the tables that
+/// are no longer captured but whose stored changes remain. Both lists are empty
+/// when no table was ever enabled.
 /// </summary>
 public sealed record ListTablesResponse(
     [property: JsonPropertyName("tables")] IReadOnlyList<TableInfo> Tables,

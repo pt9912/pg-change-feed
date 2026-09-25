@@ -7,12 +7,12 @@ using Xunit;
 namespace PgChangeFeed.Client.Integration;
 
 /// <summary>
-/// Realserver phase for the HTTP API surface (SPEC-018): a roundtrip in the
-/// pattern of the server-E2E HTTP phase — the SDK registers a disposable
+/// Real-server phase for the HTTP API client: a roundtrip — the SDK
+/// registers a disposable
 /// consumer with the admin token and lists tables with the reader token;
-/// the registration is held against the SQL read path (<c>cdc.consumer</c>)
-/// by the runner; a call with an unknown token is rejected with HTTP status
-/// 401 (SPEC-018 Negative). The nine capabilities individually stay with the
+/// the runner checks the registration against the SQL read path
+/// (<c>cdc.consumer</c>); a call with an unknown token is rejected with HTTP
+/// status 401. The individual capabilities stay with the
 /// network-free unit tests; this roundtrip proves the wire assumptions
 /// (auth header form, JSON mapping, rejection behavior) at the server.
 /// </summary>

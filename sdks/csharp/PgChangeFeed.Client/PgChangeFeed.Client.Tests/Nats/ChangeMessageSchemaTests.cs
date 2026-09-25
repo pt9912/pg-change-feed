@@ -5,16 +5,15 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Nats;
 
 /// <summary>
-/// Message-schema completeness for <see cref="Change"/> (SPEC-024) — field
-/// for field, analogous to
+/// Message-schema completeness for <see cref="Change"/> — field for field,
+/// analogous to
 /// <c>PgChangeFeed.Client.Tests.Sse.ChangeMessageSchemaTests</c> on the SSE
-/// surface, here from the JSON payload a NATS full-content stream message
-/// carries.
+/// client, here from the JSON payload a NATS stream message carries.
 /// </summary>
 public class ChangeMessageSchemaTests
 {
     [Fact]
-    public void AllTenSpec024FieldsRoundTrip()
+    public void AllTenFieldsRoundTrip()
     {
         const string json = """
             {
@@ -47,11 +46,11 @@ public class ChangeMessageSchemaTests
     }
 
     /// <summary>
-    /// A defensive guard against silent schema drift: SPEC-024 names exactly
-    /// ten fields (the same ten as SPEC-021). If a future change added or
-    /// removed a property without updating this test, the field-by-field
+    /// A defensive guard against silent schema drift: the stream message has
+    /// exactly ten fields (the same ten as the SSE event). If a change added
+    /// or removed a property without updating this test, the field-by-field
     /// assertion above could stay green while the schema no longer matches
-    /// SPEC-024 — this count assertion is what would actually go red.
+    /// the stream — this count assertion is what would actually go red.
     /// </summary>
     [Fact]
     public void ChangeHasExactlyTenProperties()

@@ -8,11 +8,10 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Http;
 
 /// <summary>
-/// The SPEC-018 error-response mapping — the auth boundary (<c>401</c>
+/// The error-response mapping — the auth boundary (<c>401</c>
 /// missing/unknown token, <c>403</c> a <c>reader</c> token against an
-/// <c>admin</c> endpoint) plus the remaining documented statuses
-/// (<c>400</c>/<c>500</c>) and the defensive fallback for anything outside
-/// that closed set.
+/// <c>admin</c> endpoint) plus the remaining statuses
+/// (<c>400</c>/<c>500</c>) and the fallback for any other status.
 /// </summary>
 public class PgChangeFeedHttpClientAuthBoundaryTests
 {

@@ -7,33 +7,28 @@ using PgChangeFeed.Client.Sse.Models;
 namespace PgChangeFeed.Client.Sse;
 
 /// <summary>
-/// Public entry point for the PG Change Feed live-change stream over
-/// Server-Sent-Events (<c>SPEC-021</c>, <c>LH-FA-SST-008</c>): one method
-/// opens <c>GET /changes/stream</c>, assembles each SSE frame via
-/// <see cref="SseFrameParser"/> and yields the ten SPEC-021 message fields
-/// as <see cref="Change"/> — the same idiomatic form as the existing gRPC
-/// surface (<see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>).
+/// Client for the PG Change Feed live change stream over Server-Sent Events:
+/// one method opens <c>GET /changes/stream</c>, assembles each SSE frame via
+/// <see cref="SseFrameParser"/> and yields the ten message fields as
+/// <see cref="Change"/> — the same form as the gRPC client
+/// (<see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>).
 ///
-/// The <see cref="System.Net.Http.HttpClient"/> is injected, not owned —
+/// The <see cref="System.Net.Http.HttpClient"/> is passed in, not owned —
 /// same as <see cref="PgChangeFeedHttpClient"/>, with one extra obligation
-/// for this surface: <see cref="System.Net.Http.HttpClient.Timeout"/> covers
+/// for this client: <see cref="System.Net.Http.HttpClient.Timeout"/> covers
 /// the *entire* request/response lifetime for a streamed response, not just
 /// the time to the response headers — a long-lived stream therefore needs
-/// <c>Timeout = <see cref="Timeout.InfiniteTimeSpan"/></c> on the injected
-/// client (pattern: <c>examples/csharp/sse-client/Program.cs</c>), otherwise
-/// the connection ends after the default timeout even without a connection
-/// problem. The bearer token is sent in the <c>Authorization</c> header as
-/// <c>Bearer &lt;token&gt;</c> (SPEC-021), same as <see cref="PgChangeFeedHttpClient"/>.
-/// No global or static state — a process can hold several independently
-/// configured instances at once.
+/// <c>Timeout = <see cref="Timeout.InfiniteTimeSpan"/></c> on the passed-in
+/// client, otherwise the connection ends after the default timeout even
+/// without a connection problem. The bearer token is sent in the
+/// <c>Authorization</c> header as <c>Bearer &lt;token&gt;</c>, same as
+/// <see cref="PgChangeFeedHttpClient"/>. There is no global or static state —
+/// a process can hold several independently configured instances at once.
 ///
-/// <b>Boundary (SPEC-021, LH-FA-SST-008):</b> no delivery guarantee and no
-/// in-stream replay; a disconnected or slow-reading consumer misses the
-/// affected messages permanently. Missed changes remain recoverable through
-/// the existing read path (<see cref="PgChangeFeedHttpClient.ReadChangesAsync"/>).
-///
-/// Draht-Kenntnis-Vorbild (gelesen, nicht importiert — ADR-0106 Festlegung 2):
-/// <c>examples/csharp/sse-client/SseStream.cs</c>, <c>Program.cs</c>.
+/// <b>Limits:</b> no delivery guarantee and no in-stream replay; a
+/// disconnected or slow-reading consumer misses the affected messages
+/// permanently. Missed changes remain recoverable through the read path
+/// (<see cref="PgChangeFeedHttpClient.ReadChangesAsync"/>).
 /// </summary>
 public sealed class PgChangeFeedSseClient
 {
@@ -45,6 +40,9 @@ public sealed class PgChangeFeedSseClient
     private readonly HttpClient _httpClient;
     private readonly PgChangeFeedClientOptions _options;
 
+    /// <summary>Creates the client over an <see cref="HttpClient"/> the caller owns.</summary>
+    /// <param name="httpClient">The client used for the stream request; its timeout must be infinite for a long-lived stream.</param>
+    /// <param name="options">The HTTP base URL and the bearer token.</param>
     public PgChangeFeedSseClient(HttpClient httpClient, PgChangeFeedClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -54,20 +52,19 @@ public sealed class PgChangeFeedSseClient
     }
 
     /// <summary>
-    /// <c>GET /changes/stream</c> (SPEC-021) — opens the stream and yields
-    /// every <see cref="Change"/> the server sends from connection time
-    /// onward. A non-success response while opening the stream (e.g. a
-    /// missing/unknown bearer token, or <c>503</c> when no
-    /// <c>Broadcaster</c> is wired) becomes a typed
-    /// <see cref="PgChangeFeedException"/>, the same closed set
+    /// Opens <c>GET /changes/stream</c> and yields every <see cref="Change"/>
+    /// the server sends from connection time onward. A non-success response
+    /// while opening the stream (e.g. a missing/unknown bearer token, or
+    /// <c>503</c> when the stream is not available) becomes a typed
+    /// <see cref="PgChangeFeedException"/>, the same set
     /// <see cref="PgChangeFeedHttpClient"/> throws. Once the stream is open,
     /// its end (regular server-side close, or an incomplete trailing frame)
     /// ends the enumeration without an exception — the same fire-and-forget
-    /// semantics as
+    /// behavior as
     /// <see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>;
-    /// a frame whose <c>data:</c> payload does not parse as the documented
-    /// SPEC-021 shape still throws <see cref="PgChangeFeedMalformedResponseException"/>,
-    /// because that is a protocol violation, not a stream end.
+    /// a frame whose <c>data:</c> payload cannot be read still throws
+    /// <see cref="PgChangeFeedMalformedResponseException"/>, because that is
+    /// not a stream end.
     /// </summary>
     public async IAsyncEnumerable<Change> StreamChangesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -113,7 +110,7 @@ public sealed class PgChangeFeedSseClient
             throw new PgChangeFeedMalformedResponseException(
                 statusCode,
                 "PG Change Feed SSE stream delivered a frame whose data payload is not valid " +
-                "JSON — a protocol violation outside SPEC-021's documented shape.",
+                "JSON.",
                 ex);
         }
 
@@ -121,7 +118,7 @@ public sealed class PgChangeFeedSseClient
             ?? throw new PgChangeFeedMalformedResponseException(
                 statusCode,
                 "PG Change Feed SSE stream delivered a frame whose data payload is empty or " +
-                "null — a protocol violation outside SPEC-021's documented shape.");
+                "null.");
     }
 
     private static PgChangeFeedException BuildException(int statusCode, string body)

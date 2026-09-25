@@ -8,7 +8,7 @@ namespace PgChangeFeed.Client.Tests.Http;
 
 /// <summary>
 /// Happy-path (and the table-only <c>404</c>) coverage for the four
-/// table-management capabilities of SPEC-018 (<c>EnableTable</c>,
+/// table-management capabilities (<c>EnableTable</c>,
 /// <c>DisableTable</c>, <c>GetStatus</c>, <c>ListTables</c>).
 /// </summary>
 public class PgChangeFeedHttpClientTableTests

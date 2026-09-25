@@ -2,31 +2,32 @@ namespace PgChangeFeed.Client.Sse;
 
 /// <summary>
 /// One complete SSE frame — the <c>event:</c> name and the <c>data:</c>
-/// payload accumulated up to the blank line that terminates it (SPEC-021).
+/// payload accumulated up to the blank line that terminates it.
 /// </summary>
 public sealed record SseFrame(string Name, string Data);
 
 /// <summary>
-/// Zerlegt Server-Sent-Events-Frames aus einer Zeilenquelle in
-/// <see cref="SseFrame"/>-Werte — reine Zeilen-Verarbeitung über die
-/// Runtime-Standardbibliothek, kein Fremdmodul nötig (dasselbe
-/// „keine neue Abhängigkeit"-Muster wie das gelesene, nicht importierte
-/// Draht-Kenntnis-Vorbild <c>examples/csharp/sse-client/SseStream.cs</c>,
-/// ADR-0106 Festlegung 2).
+/// Splits Server-Sent-Events frames from a line source into
+/// <see cref="SseFrame"/> values — plain line processing over the runtime's
+/// standard library, no further dependency.
 ///
-/// Ein Frame endet mit der Leerzeile, die der Server nach der <c>event:</c>-
-/// und der <c>data:</c>-Zeile schreibt (SPEC-021); sie trennt zwei
-/// aufeinanderfolgende Events. Ist die Quelle vor dem Frame-Abschluss
-/// erschöpft (<see cref="TextReader.ReadLineAsync(System.Threading.CancellationToken)"/>
-/// liefert <c>null</c>), liefert <see cref="ReadFrameAsync"/> ebenfalls
-/// <c>null</c>, und ein begonnenes Frame wird verworfen — ein
-/// unvollständiges Frame ist kein Event.
+/// A frame ends with the blank line the server writes after the <c>event:</c>
+/// and the <c>data:</c> line; it separates two consecutive events. When the
+/// source is exhausted before a frame is complete
+/// (<see cref="TextReader.ReadLineAsync(System.Threading.CancellationToken)"/>
+/// returns <c>null</c>), <see cref="ReadFrameAsync"/> also returns
+/// <c>null</c>, and a frame already begun is discarded — an incomplete frame
+/// is not an event.
 /// </summary>
 public static class SseFrameParser
 {
     private const string EventPrefix = "event: ";
     private const string DataPrefix = "data: ";
 
+    /// <summary>
+    /// Reads the next complete frame, or returns <c>null</c> when the source
+    /// ends before a frame is complete.
+    /// </summary>
     public static async Task<SseFrame?> ReadFrameAsync(
         TextReader reader, CancellationToken cancellationToken = default)
     {

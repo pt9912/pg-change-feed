@@ -8,12 +8,12 @@ using Xunit;
 namespace PgChangeFeed.Client.Integration;
 
 /// <summary>
-/// Realserver phase for the SSE stream surface (SPEC-021): opens
+/// Real-server phase for the SSE stream client: opens
 /// <c>GET /changes/stream</c> against the running feed container and
 /// receives a change committed afterwards; a second open with an unknown
-/// token is rejected with HTTP status 401 (SPEC-021 via LH-FA-SST-008
-/// Negative), as a typed <see cref="PgChangeFeedException"/> — the same
-/// closed set the HTTP surface throws.
+/// token is rejected with HTTP status 401, as a typed
+/// <see cref="PgChangeFeedException"/> — the same set the HTTP client
+/// throws.
 /// </summary>
 public sealed class SseRealserverTests
 {

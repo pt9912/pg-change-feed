@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PgChangeFeed.Client.Tests.Http;
 
-/// <summary>Constructor argument validation — no bearer token, no global state (SPEC-018).</summary>
+/// <summary>Constructor argument validation — no bearer token, no global state.</summary>
 public class PgChangeFeedHttpClientConstructionTests
 {
     [Fact]

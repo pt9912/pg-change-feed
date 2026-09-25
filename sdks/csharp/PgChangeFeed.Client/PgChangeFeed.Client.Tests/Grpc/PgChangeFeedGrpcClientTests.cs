@@ -8,8 +8,8 @@ namespace PgChangeFeed.Client.Tests.Grpc;
 
 /// <summary>
 /// <see cref="PgChangeFeedGrpcClient"/> against a fake <see cref="CallInvoker"/>
-/// (no real server, no network — <c>AGENTS.md</c> §3.1 in the test run): the
-/// bearer-token metadata form (SPEC-020), the happy path (messages arrive in
+/// (no real server, no network): the
+/// bearer-token metadata form, the happy path (messages arrive in
 /// order with full content), and the auth boundary
 /// (<see cref="StatusCode.Unauthenticated"/> surfaces from the stream itself,
 /// not a swallowed empty enumeration).

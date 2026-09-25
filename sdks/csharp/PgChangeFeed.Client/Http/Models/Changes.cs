@@ -4,18 +4,18 @@ using System.Text.Json.Serialization;
 namespace PgChangeFeed.Client.Http.Models;
 
 /// <summary>
-/// One persisted change as returned by <c>GET /changes</c> (SPEC-022) — thirteen
-/// fields: the ten the live surfaces (gRPC, SSE, NATS) carry, plus
-/// <c>commit_position</c>, <c>committed_at</c> and <c>origin</c>.
+/// One stored change as returned by <c>GET /changes</c> — thirteen fields: the
+/// ten the live streams (gRPC, SSE, NATS) carry, plus <c>commit_position</c>,
+/// <c>committed_at</c> and <c>origin</c>.
 /// <see cref="OldImage"/>/<see cref="NewImage"/> carry the row image as an
 /// embedded JSON value or <c>null</c> when absent; kept as
 /// <see cref="JsonElement"/> rather than a fixed shape, because the row
-/// image's own shape depends on the captured table, not on this wire contract.
-/// <see cref="Origin"/> is <c>wal</c> for a change captured from the
-/// replication stream and <c>backfill</c> for an existing-rows change
-/// (LH-FA-CAP-009); it is carried as the server's string (an empty or
-/// unknown value included), and a response without the field or with a JSON
-/// <c>null</c> reads as <c>wal</c>. The live surfaces carry no <c>origin</c>.
+/// image's own shape depends on the captured table.
+/// <see cref="Origin"/> is <c>wal</c> for a change captured live from the
+/// database and <c>backfill</c> for a change taken from the existing table
+/// contents; it is carried as the server's string (an empty or unknown value
+/// included), and a response without the field or with a JSON <c>null</c>
+/// reads as <c>wal</c>. The live streams carry no <c>origin</c>.
 /// </summary>
 public sealed record Change(
     [property: JsonPropertyName("commit_position")] long CommitPosition,
@@ -49,8 +49,8 @@ internal sealed class OriginConverter : JsonConverter<string>
 }
 
 /// <summary>
-/// <c>ReadChanges</c> response (<c>200</c>) — an empty list on no match,
-/// never <c>404</c> (SPEC-022).
+/// The changes of the requested range — an empty list when none match,
+/// never <c>404</c>.
 /// </summary>
 public sealed record ReadChangesResponse(
     [property: JsonPropertyName("changes")] IReadOnlyList<Change> Changes);

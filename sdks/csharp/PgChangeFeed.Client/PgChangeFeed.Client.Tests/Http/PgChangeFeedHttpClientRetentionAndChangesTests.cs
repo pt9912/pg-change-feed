@@ -6,8 +6,8 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Http;
 
 /// <summary>
-/// Happy-path coverage for <c>RunRetention</c> (SPEC-018) and
-/// <c>ReadChanges</c> (SPEC-022, <c>GET /changes</c>) — including the
+/// Happy-path coverage for <c>RunRetention</c> and
+/// <c>ReadChanges</c> (<c>GET /changes</c>) — including the
 /// optional query parameters and the null-vs-embedded-JSON row image form.
 /// </summary>
 public class PgChangeFeedHttpClientRetentionAndChangesTests

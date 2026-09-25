@@ -5,17 +5,14 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Grpc;
 
 /// <summary>
-/// Message-schema completeness for the generated <see cref="Change"/> stub
-/// (SPEC-020) — field for field, analogous to
-/// <c>internal/adapters/driving/grpc/server_test.go</c>'s
-/// <c>traegtTokenOeffnetStreamUndTraegtChange</c> field-completeness
-/// assertion, here from the consumer side: every one of the ten SPEC-020
-/// fields round-trips through the generated stub unchanged.
+/// Message-schema completeness for the generated <see cref="Change"/> stub —
+/// field for field, from the consumer side: every one of the ten fields
+/// round-trips through the generated stub unchanged.
 /// </summary>
 public class ChangeMessageSchemaTests
 {
     [Fact]
-    public void AllTenSpec020FieldsRoundTrip()
+    public void AllTenFieldsRoundTrip()
     {
         var change = new Change
         {
@@ -44,11 +41,11 @@ public class ChangeMessageSchemaTests
     }
 
     /// <summary>
-    /// A defensive guard against silent schema drift: SPEC-020 names exactly
-    /// ten fields on <c>Change</c>. If a future <c>.proto</c> change added or
-    /// removed a field without updating this test, the field-by-field
-    /// assertion above could stay green while the schema no longer matches
-    /// SPEC-020 — this count assertion is what would actually go red.
+    /// A defensive guard against silent schema drift: <c>Change</c> has
+    /// exactly ten fields. If a <c>.proto</c> change added or removed a field
+    /// without updating this test, the field-by-field assertion above could
+    /// stay green while the schema no longer matches the stream — this count
+    /// assertion is what would actually go red.
     /// </summary>
     [Fact]
     public void ChangeDescriptorHasExactlyTenFields()

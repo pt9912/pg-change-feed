@@ -8,10 +8,9 @@ namespace PgChangeFeed.Client.Tests.Sse;
 
 /// <summary>
 /// <see cref="PgChangeFeed.Client.Sse.PgChangeFeedSseClient"/> against a
-/// fake <see cref="HttpMessageHandler"/> (no real server, no network —
-/// <c>AGENTS.md</c> §3.1 in the test run): the bearer-token header form
-/// (SPEC-021), the happy path (several frames arrive in order with full
-/// content), and the boundary around an incomplete final frame.
+/// fake <see cref="HttpMessageHandler"/> (no real server, no network): the
+/// bearer-token header form, the happy path (several frames arrive in order
+/// with full content), and the behavior around an incomplete final frame.
 /// </summary>
 public class PgChangeFeedSseClientTests
 {

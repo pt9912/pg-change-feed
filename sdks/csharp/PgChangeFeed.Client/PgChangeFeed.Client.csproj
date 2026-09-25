@@ -7,16 +7,15 @@
     <RootNamespace>PgChangeFeed.Client</RootNamespace>
     <AssemblyName>PgChangeFeed.Client</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- NuGet-Metadaten (ADR-0106 Festlegung 2/3, Slice-DoD): dieses Projekt
-       ist ein eigenständiges, veröffentlichbares Package, kein Beispiel wie
-       examples/csharp/* (SPEC-023 bleibt Vorbild, kein Belegträger). Version
-       `0.2.1` (ADR-0106 Festlegung 3, unabhängig von docs/user/version.md) —
-       Pflege bei jedem Release ein bewusster Schritt, keine automatische
-       Ableitung. Description, PackageTags und die README (PackageReadmeFile)
-       sind die Felder, die Anwender auf NuGet.org sehen: sie tragen keine
-       internen Kennungen. -->
+  <!-- NuGet metadata: this project is a standalone, publishable package. The
+       version is set here by hand at each release, independent of the server
+       version. Description, PackageTags and the README (PackageReadmeFile) are
+       the fields users see on NuGet.org. The XML documentation file
+       (GenerateDocumentationFile) ships with the package so that IDEs show the
+       API comments. -->
   <PropertyGroup>
     <PackageId>PgChangeFeed.Client</PackageId>
     <Version>0.2.1</Version>
@@ -30,47 +29,41 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
-  <!-- README.md liegt eine Ebene höher (sdks/csharp/README.md, DoD dieses
-       Slice) — Sprachwurzel-Ebene, analog dem Dockerfile/
-       Directory.Packages.props dieses Bau-Kontexts, statt je Package
-       dupliziert. Der explizite PackagePath legt sie im .nupkg trotzdem an
-       die Wurzel, wo PackageReadmeFile sie erwartet. -->
+  <!-- The README lives one level up (sdks/csharp/README.md), at the language
+       root next to the Dockerfile and Directory.Packages.props, instead of
+       being duplicated per package. The explicit PackagePath places it at the
+       root of the .nupkg, where PackageReadmeFile expects it. -->
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath="README.md" />
   </ItemGroup>
 
-  <!-- Der SDK-Style-Glob nimmt sonst auch die Testquellen des Unterordners
-       auf (PgChangeFeed.Client.Tests/ liegt innerhalb dieses
-       Projektverzeichnisses) — das Testprojekt referenziert diese Klassen
-       bereits über ProjectReference, analog examples/csharp/http-client. -->
+  <!-- The SDK-style glob would otherwise include the test sources of the
+       subfolder (PgChangeFeed.Client.Tests/ lies inside this project
+       directory); the test project references these classes through a
+       ProjectReference. -->
   <ItemGroup>
     <Compile Remove="PgChangeFeed.Client.Tests/**" />
   </ItemGroup>
 
-  <!-- Grpc.Net.Client trägt die Laufzeit, Google.Protobuf die Nachrichtenform;
-       Grpc.Tools (nur Build-Zeit, PrivateAssets) trägt protoc und das
-       C#-Plugin, das den Stub unten aus der `.proto` erzeugt
-       (slice-sdk-csharp-grpc-client-flaeche, ADR-0106 Festlegung 1/2, Muster
-       examples/csharp/grpc-client/grpc-client.csproj). -->
+  <!-- Grpc.Net.Client carries the runtime, Google.Protobuf the message form;
+       Grpc.Tools (build time only, PrivateAssets) carries protoc and the C#
+       plugin that generates the stub below from the `.proto`. -->
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Google.Protobuf" />
   </ItemGroup>
 
-  <!-- NATS.Net trägt die NATS-Vollinhalts-Client-Fläche
-       (slice-sdk-csharp-nats-stream-client-flaeche, SPEC-024,
-       ADR-0106 §Entscheidung Festlegung 1 letzter Absatz). -->
+  <!-- NATS.Net carries the NATS client. -->
   <ItemGroup>
     <PackageReference Include="NATS.Net" />
   </ItemGroup>
 
-  <!-- Die `.proto` selbst liegt NICHT in diesem Verzeichnis — sie kommt erst
-       im Docker-Bau hierher, kopiert aus dem zusätzlichen, benannten
-       Bau-Kontext `proto` (sdks/csharp/Dockerfile, ADR-0106 Festlegung 2,
-       Muster examples/csharp/Dockerfile). Dieser Pfad existiert deshalb nur
-       innerhalb des Baus, nicht im committeten Baum — kein committeter
-       Stub, keine committete Kopie der `.proto`. -->
+  <!-- The `.proto` itself is not in this directory: the Docker build copies it
+       here from the additional named build context `proto`
+       (sdks/csharp/Dockerfile). The path therefore exists only inside the
+       build, not in the committed tree: no committed stub, no committed copy
+       of the `.proto`. -->
   <ItemGroup>
     <Protobuf Include="Grpc/proto/changestream.proto" GrpcServices="Client" />
   </ItemGroup>

@@ -4,9 +4,8 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Sse;
 
 /// <summary>
-/// <see cref="SseFrameParser"/> Grenzfälle (SPEC-021) — netzlos, reine
-/// Zeilen-Verarbeitung über einen <see cref="StringReader"/>. Muster:
-/// <c>examples/csharp/sse-client/SseClient.Tests/SseStreamTests.cs</c>.
+/// <see cref="SseFrameParser"/> edge cases — network-free, plain line
+/// processing over a <see cref="StringReader"/>.
 /// </summary>
 public class SseFrameParserTests
 {

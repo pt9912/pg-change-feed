@@ -7,27 +7,25 @@ using PgChangeFeed.Client.Http.Models;
 namespace PgChangeFeed.Client.Http;
 
 /// <summary>
-/// Public entry point for the PG Change Feed HTTP/JSON API: one method per
-/// wire capability — the nine port-covered capabilities of SPEC-018
-/// (<c>RegisterConsumer</c>, <c>AcknowledgeConsumer</c>,
-/// <c>GetConsumerPosition</c>, <c>RemoveConsumer</c>, <c>EnableTable</c>,
-/// <c>DisableTable</c>, <c>GetStatus</c>, <c>ListTables</c>,
-/// <c>RunRetention</c>) plus reading persisted changes (<c>ReadChanges</c>,
-/// SPEC-022). Requests/responses are typed DTOs that mirror the SPEC-018/
-/// SPEC-022 JSON schemas exactly (<c>PgChangeFeed.Client.Http.Models</c>);
+/// Client for the PG Change Feed HTTP/JSON API: one method per capability —
+/// <c>RegisterConsumerAsync</c>, <c>AcknowledgeConsumerAsync</c>,
+/// <c>GetConsumerPositionAsync</c>, <c>RemoveConsumerAsync</c>,
+/// <c>EnableTableAsync</c>, <c>DisableTableAsync</c>, <c>GetStatusAsync</c>,
+/// <c>ListTablesAsync</c>, <c>RunRetentionAsync</c> and
+/// <c>ReadChangesAsync</c>. Requests and responses are typed DTOs that mirror
+/// the JSON documents of the API (<c>PgChangeFeed.Client.Http.Models</c>);
 /// every non-success response becomes a typed <see cref="PgChangeFeedException"/>
-/// subtype instead of a result type mixed with the success path.
+/// subtype instead of a result type mixed with the success path. Connection
+/// errors and timeouts of the transport are not converted; they reach the
+/// caller as the <see cref="HttpRequestException"/> or
+/// <see cref="TaskCanceledException"/> of the <see cref="HttpClient"/>.
 ///
-/// The <see cref="HttpClient"/> is injected, not owned — the caller controls
+/// The <see cref="HttpClient"/> is passed in, not owned — the caller controls
 /// its lifetime, connection pooling and any <c>DelegatingHandler</c>
 /// pipeline (proxies, retries, logging); this type never disposes it. The
 /// bearer token and server address come from <see cref="PgChangeFeedClientOptions"/>,
-/// supplied at construction — no global or static state, a process can hold
-/// several independently configured instances at once.
-///
-/// Draht-Kenntnis-Vorbild (gelesen, nicht importiert — ADR-0106 Festlegung 2):
-/// <c>examples/csharp/http-client/TablesClient.cs</c>,
-/// <c>TablesUrlBuilder.cs</c>.
+/// supplied at construction — there is no global or static state, so a
+/// process can hold several independently configured instances at once.
 /// </summary>
 public sealed class PgChangeFeedHttpClient
 {
@@ -39,6 +37,9 @@ public sealed class PgChangeFeedHttpClient
     private readonly HttpClient _httpClient;
     private readonly PgChangeFeedClientOptions _options;
 
+    /// <summary>Creates the client over an <see cref="HttpClient"/> the caller owns.</summary>
+    /// <param name="httpClient">The client used for every request.</param>
+    /// <param name="options">The server address and the bearer token.</param>
     public PgChangeFeedHttpClient(HttpClient httpClient, PgChangeFeedClientOptions options)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -47,7 +48,11 @@ public sealed class PgChangeFeedHttpClient
         _options = options;
     }
 
-    /// <summary><c>RegisterConsumer</c> — <c>POST /consumers</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Registers a consumer, a named reader whose position the server keeps
+    /// (<c>POST /consumers</c>, admin token). Registering an existing consumer
+    /// changes nothing; the response reports it with <c>AlreadyRegistered</c>.
+    /// </summary>
     public Task<RegisterConsumerResponse> RegisterConsumerAsync(
         RegisterConsumerRequest request, CancellationToken cancellationToken = default)
     {
@@ -56,7 +61,12 @@ public sealed class PgChangeFeedHttpClient
             "/consumers", request, cancellationToken);
     }
 
-    /// <summary><c>AcknowledgeConsumer</c> — <c>POST /consumers/acknowledge</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Stores the position up to which a consumer has processed a source
+    /// (<c>POST /consumers/acknowledge</c>, admin token). Repeating the stored
+    /// position has no effect; an earlier position, or a position of another
+    /// source, is rejected with <see cref="PgChangeFeedBadRequestException"/>.
+    /// </summary>
     public Task<AcknowledgeConsumerResponse> AcknowledgeConsumerAsync(
         AcknowledgeConsumerRequest request, CancellationToken cancellationToken = default)
     {
@@ -65,7 +75,12 @@ public sealed class PgChangeFeedHttpClient
             "/consumers/acknowledge", request, cancellationToken);
     }
 
-    /// <summary><c>GetConsumerPosition</c> — <c>GET /consumers/position</c> (reader or admin, SPEC-018).</summary>
+    /// <summary>
+    /// Reads the stored position of a consumer (<c>GET /consumers/position</c>,
+    /// reader or admin token). <c>Acknowledged</c> is <c>false</c> for a
+    /// consumer that never acknowledged; <c>Offset</c> is then the starting
+    /// position.
+    /// </summary>
     public Task<ConsumerPositionResponse> GetConsumerPositionAsync(
         string consumerId, CancellationToken cancellationToken = default)
     {
@@ -74,7 +89,10 @@ public sealed class PgChangeFeedHttpClient
         return GetAsync<ConsumerPositionResponse>($"/consumers/position?{query}", cancellationToken);
     }
 
-    /// <summary><c>RemoveConsumer</c> — <c>POST /consumers/remove</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Removes a consumer (<c>POST /consumers/remove</c>, admin token);
+    /// <c>Removed</c> is <c>false</c> for one that was never registered.
+    /// </summary>
     public Task<RemoveConsumerResponse> RemoveConsumerAsync(
         string consumerId, CancellationToken cancellationToken = default)
     {
@@ -83,7 +101,12 @@ public sealed class PgChangeFeedHttpClient
             "/consumers/remove", new RemoveConsumerRequest(consumerId), cancellationToken);
     }
 
-    /// <summary><c>EnableTable</c> — <c>POST /tables/enable</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Starts capturing a table of a source (<c>POST /tables/enable</c>, admin
+    /// token). <c>AlreadyEnabled</c> is <c>true</c> when the table was captured
+    /// already; a table that does not exist in the source database raises
+    /// <see cref="PgChangeFeedNotFoundException"/>.
+    /// </summary>
     public Task<EnableTableResponse> EnableTableAsync(
         EnableTableRequest request, CancellationToken cancellationToken = default)
     {
@@ -92,7 +115,12 @@ public sealed class PgChangeFeedHttpClient
             "/tables/enable", request, cancellationToken);
     }
 
-    /// <summary><c>DisableTable</c> — <c>POST /tables/disable</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Stops capturing a table (<c>POST /tables/disable</c>, admin token).
+    /// <c>Retained</c> is <c>true</c> when changes already stored for the table
+    /// remain readable; a table that does not exist in the source database
+    /// raises <see cref="PgChangeFeedNotFoundException"/>.
+    /// </summary>
     public Task<DisableTableResponse> DisableTableAsync(
         DisableTableRequest request, CancellationToken cancellationToken = default)
     {
@@ -101,7 +129,13 @@ public sealed class PgChangeFeedHttpClient
             "/tables/disable", request, cancellationToken);
     }
 
-    /// <summary><c>GetStatus</c> — <c>GET /tables/status</c> (reader or admin, SPEC-018).</summary>
+    /// <summary>
+    /// Tells whether a table is captured (<c>Enabled</c>) or no longer captured
+    /// with stored changes remaining (<c>Retained</c>)
+    /// (<c>GET /tables/status</c>, reader or admin token). A table that was never
+    /// enabled reports both as <c>false</c>; a table that does not exist in the
+    /// source database raises <see cref="PgChangeFeedNotFoundException"/>.
+    /// </summary>
     public Task<TableStatusResponse> GetStatusAsync(
         string source, string schema, string table, string publication, CancellationToken cancellationToken = default)
     {
@@ -114,7 +148,10 @@ public sealed class PgChangeFeedHttpClient
         return GetAsync<TableStatusResponse>($"/tables/status?{query}", cancellationToken);
     }
 
-    /// <summary><c>ListTables</c> — <c>GET /tables</c> (reader or admin, SPEC-018).</summary>
+    /// <summary>
+    /// Lists the captured tables and the tables that are no longer captured but
+    /// whose stored changes remain (<c>GET /tables</c>, reader or admin token).
+    /// </summary>
     public Task<ListTablesResponse> ListTablesAsync(
         string source, string publication, CancellationToken cancellationToken = default)
     {
@@ -124,7 +161,12 @@ public sealed class PgChangeFeedHttpClient
         return GetAsync<ListTablesResponse>($"/tables?{query}", cancellationToken);
     }
 
-    /// <summary><c>RunRetention</c> — <c>POST /retention/run</c> (admin, SPEC-018).</summary>
+    /// <summary>
+    /// Deletes the stored changes of a source that are older than
+    /// <c>MinAgeNanos</c> and that every consumer with a stored position has
+    /// passed (<c>POST /retention/run</c>, admin token); <c>Deleted</c> is the
+    /// number removed.
+    /// </summary>
     public Task<RunRetentionResponse> RunRetentionAsync(
         RunRetentionRequest request, CancellationToken cancellationToken = default)
     {
@@ -134,12 +176,13 @@ public sealed class PgChangeFeedHttpClient
     }
 
     /// <summary>
-    /// <c>ReadChanges</c> — <c>GET /changes</c> (reader or admin, SPEC-022).
-    /// <paramref name="source"/> is mandatory; <paramref name="schema"/>/
+    /// Reads stored changes of a source (<c>GET /changes</c>, reader or admin
+    /// token). <paramref name="source"/> is mandatory; <paramref name="schema"/>/
     /// <paramref name="table"/> are optional and independent;
     /// <paramref name="from"/> is inclusive, <paramref name="to"/> exclusive
-    /// (both <c>commit_position</c> values); there is no default
-    /// <paramref name="limit"/>.
+    /// (both <c>commit_position</c> values). <paramref name="limit"/> cuts rows,
+    /// not positions, and there is no default limit. A range without changes
+    /// returns an empty list.
     /// </summary>
     public Task<ReadChangesResponse> ReadChangesAsync(
         string source,
@@ -210,7 +253,7 @@ public sealed class PgChangeFeedHttpClient
             throw new PgChangeFeedMalformedResponseException(
                 statusCode,
                 $"PG Change Feed HTTP API returned status {statusCode} with a response body that is not " +
-                "valid JSON — a protocol violation outside SPEC-018/SPEC-022's documented shapes.",
+                "valid JSON.",
                 ex);
         }
 
@@ -218,7 +261,7 @@ public sealed class PgChangeFeedHttpClient
             ?? throw new PgChangeFeedMalformedResponseException(
                 statusCode,
                 $"PG Change Feed HTTP API returned status {statusCode} with an empty or " +
-                "null response body — a protocol violation outside SPEC-018/SPEC-022's documented shapes.");
+                "null response body.");
     }
 
     private static PgChangeFeedException BuildException(int statusCode, string body)

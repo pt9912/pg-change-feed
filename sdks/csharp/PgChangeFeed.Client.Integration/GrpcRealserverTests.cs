@@ -7,11 +7,11 @@ using Xunit;
 namespace PgChangeFeed.Client.Integration;
 
 /// <summary>
-/// Realserver phase for the gRPC stream surface (SPEC-020): opens the
+/// Real-server phase for the gRPC stream client: opens the
 /// server stream against the running feed container and receives a change
 /// committed afterwards; a second open with an unknown token is rejected
-/// with gRPC status <c>Unauthenticated</c> (SPEC-020 Negative), not
-/// swallowed as an empty stream. The commit-to-delivery window is
+/// with gRPC status <c>Unauthenticated</c>, not swallowed as an empty
+/// stream. The commit-to-delivery window is
 /// fire-and-forget — the runner commits a bounded sequence of unique rows
 /// until one arrives; this test keeps receiving until it sees its sentinel.
 /// </summary>

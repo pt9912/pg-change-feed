@@ -6,9 +6,8 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Nats;
 
 /// <summary>
-/// The SPEC-024 connection-level auth boundary and the malformed-payload
-/// path when subscribing to the NATS full-content stream — no real NATS
-/// server involved. Muster:
+/// The connection-level auth boundary and the malformed-payload path when
+/// subscribing to the NATS stream — no real NATS server involved. Pattern:
 /// <c>PgChangeFeed.Client.Tests.Sse.PgChangeFeedSseClientAuthBoundaryTests</c>,
 /// adapted to NATS's connection-level (not per-message) auth boundary.
 /// </summary>
@@ -17,8 +16,8 @@ public class PgChangeFeedNatsStreamClientAuthBoundaryTests
     [Fact]
     public async Task RejectedConnection_PropagatesNatsServerExceptionUnwrapped()
     {
-        // SPEC-024: a missing or wrong CDC_NATS_STREAM_TOKEN is rejected by
-        // the NATS server itself, at the connection level — the real
+        // A missing or wrong stream token is rejected by the NATS server
+        // itself, at the connection level — the real
         // NATS.Net client surfaces this as a NatsServerException with
         // IsAuthError=true, thrown from the subscription enumeration itself,
         // not as a swallowed empty stream.

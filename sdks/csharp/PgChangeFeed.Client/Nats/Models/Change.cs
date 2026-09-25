@@ -4,25 +4,21 @@ using System.Text.Json.Serialization;
 namespace PgChangeFeed.Client.Nats.Models;
 
 /// <summary>
-/// One change delivered on the SPEC-024 NATS full-content stream — the ten
-/// fields the publisher writes into the JSON payload of a message on
+/// One change delivered on the NATS stream — the ten fields the server writes
+/// into the JSON payload of a message on
 /// <c>cdc.stream.&lt;source_id&gt;.&lt;schema&gt;.&lt;table&gt;</c>, one JSON
 /// object per change. <see cref="OldImage"/>/<see cref="NewImage"/> carry the
 /// row image as an embedded JSON value or <c>null</c> when absent; kept as
 /// <see cref="JsonElement"/> rather than a fixed shape, because the row
-/// image's own shape depends on the captured table, not on this wire contract
-/// (same reasoning as <see cref="PgChangeFeed.Client.Sse.Models.Change"/>).
+/// image's own shape depends on the captured table (same as
+/// <see cref="PgChangeFeed.Client.Sse.Models.Change"/>).
 ///
-/// SPEC-024 documents the same ten fields as SPEC-021's SSE event — "dasselbe
-/// Nachrichtenschema, kein drittes" — but this type is still its own,
-/// consistent with <see cref="PgChangeFeed.Client.Sse.Models.Change"/>'s
-/// established reasoning: it is one of four independent wire contracts that
-/// happen to share most field names — <see cref="PgChangeFeed.Client.Http.Models.Change"/>
-/// (SPEC-022, thirteen fields including <c>commit_position</c>/<c>committed_at</c>/<c>origin</c>),
-/// the generated gRPC <c>Change</c> stub (SPEC-020, its own protobuf-generated
-/// type), <see cref="PgChangeFeed.Client.Sse.Models.Change"/> (SPEC-021), and
-/// this type (SPEC-024) — reusing one across surfaces would only risk
-/// drifting one contract's shape into another's.
+/// The ten fields are the same as those of the SSE event, but the type is its
+/// own: the HTTP read returns <see cref="PgChangeFeed.Client.Http.Models.Change"/>
+/// (thirteen fields including <c>commit_position</c>/<c>committed_at</c>/<c>origin</c>),
+/// the gRPC client returns the generated <c>Change</c> message, the SSE client
+/// returns <see cref="PgChangeFeed.Client.Sse.Models.Change"/> — four clients,
+/// four independent types that share most field names.
 /// </summary>
 public sealed record Change(
     [property: JsonPropertyName("change_id")] string ChangeId,

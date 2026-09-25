@@ -30,7 +30,7 @@ internal sealed class FakeNatsClient : INatsClient
     /// <summary>
     /// Builds a fake client whose subscription yields the given raw payloads
     /// in order, then completes the enumeration cleanly — the happy path
-    /// (SPEC-024: one message per row change, in order).
+    /// (one message per row change, in order).
     /// </summary>
     public static FakeNatsClient WithPayloads(params byte[][] payloads) => new(payloads, failure: null);
 
@@ -38,8 +38,8 @@ internal sealed class FakeNatsClient : INatsClient
     /// Builds a fake client whose subscription yields no message and then
     /// throws <paramref name="failure"/> from the enumeration itself —
     /// simulating what a real NATS connection does when the server rejects
-    /// it (SPEC-024's connection-level auth boundary: a missing or wrong
-    /// <c>CDC_NATS_STREAM_TOKEN</c>).
+    /// it (the connection-level auth boundary: a missing or wrong stream
+    /// token).
     /// </summary>
     public static FakeNatsClient WithFailure(Exception failure) => new([], failure);
 

@@ -6,8 +6,8 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Http;
 
 /// <summary>
-/// Happy-path coverage for the four consumer-management capabilities of
-/// SPEC-018 (<c>RegisterConsumer</c>, <c>AcknowledgeConsumer</c>,
+/// Happy-path coverage for the four consumer-management capabilities
+/// (<c>RegisterConsumer</c>, <c>AcknowledgeConsumer</c>,
 /// <c>GetConsumerPosition</c>, <c>RemoveConsumer</c>).
 /// </summary>
 public class PgChangeFeedHttpClientConsumerTests

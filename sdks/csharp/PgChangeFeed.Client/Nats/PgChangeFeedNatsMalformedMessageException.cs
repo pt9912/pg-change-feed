@@ -1,26 +1,24 @@
 namespace PgChangeFeed.Client.Nats;
 
 /// <summary>
-/// Thrown when a message on the SPEC-024 NATS full-content stream does not
-/// decode to the documented ten-field JSON shape — a protocol violation
-/// outside SPEC-024's documented shape, the NATS-surface counterpart of
+/// Thrown when a message on the NATS stream does not decode to the ten-field
+/// JSON change — the NATS counterpart of
 /// <c>PgChangeFeed.Client.Http.PgChangeFeedMalformedResponseException</c>.
 ///
-/// Deliberately its own, small exception type rather than a reuse of
+/// It is its own small exception type, not part of
 /// <c>PgChangeFeed.Client.Http.PgChangeFeedException</c>'s hierarchy: that
-/// hierarchy's <c>StatusCode</c> property is an HTTP-only concept (SPEC-018/
-/// SPEC-021's response status code), which has no NATS equivalent — a NATS
-/// message carries no status code, only a subject and a payload. Forcing a
-/// placeholder status code onto this type to fit that hierarchy would be a
-/// worse fit than a small, standalone type.
+/// hierarchy's <c>StatusCode</c> is an HTTP status, and a NATS message carries
+/// no status code, only a subject and a payload.
 /// </summary>
 public sealed class PgChangeFeedNatsMalformedMessageException : Exception
 {
+    /// <summary>Creates the exception with a description of the problem.</summary>
     public PgChangeFeedNatsMalformedMessageException(string message)
         : base(message)
     {
     }
 
+    /// <summary>Creates the exception with a description of the problem and the cause.</summary>
     public PgChangeFeedNatsMalformedMessageException(string message, Exception innerException)
         : base(message, innerException)
     {

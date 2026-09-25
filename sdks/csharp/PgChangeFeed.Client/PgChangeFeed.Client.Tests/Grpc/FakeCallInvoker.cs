@@ -9,7 +9,7 @@ namespace PgChangeFeed.Client.Tests.Grpc;
 /// and records the outgoing call options (the <c>authorization</c> metadata
 /// entry lives in <see cref="CallOptions.Headers"/>) for assertions. Only
 /// <see cref="AsyncServerStreamingCall{TRequest,TResponse}"/> is
-/// implemented — the only RPC shape <c>ChangeStream</c> (SPEC-020) uses; the
+/// implemented — the only RPC shape <c>ChangeStream</c> uses; the
 /// remaining <see cref="CallInvoker"/> members are unreachable through this
 /// client and throw if ever exercised.
 /// </summary>
@@ -29,7 +29,7 @@ internal sealed class FakeCallInvoker : CallInvoker
     /// <summary>
     /// Builds a fake invoker whose server-streaming call yields the given
     /// messages in order, then completes the stream cleanly (Status.OK) —
-    /// the happy path (SPEC-020: one message per row change, in order).
+    /// the happy path (one message per row change, in order).
     /// </summary>
     public static FakeCallInvoker WithMessages<TResponse>(params TResponse[] messages)
         => new(messages.Cast<object>().ToArray(), failureStatus: null);
@@ -37,8 +37,8 @@ internal sealed class FakeCallInvoker : CallInvoker
     /// <summary>
     /// Builds a fake invoker whose server-streaming call ends immediately
     /// with the given non-OK status — simulating what a real gRPC channel
-    /// does when a call is rejected before any message is sent (e.g.
-    /// SPEC-020's <c>Unauthenticated</c> auth boundary).
+    /// does when a call is rejected before any message is sent (e.g. the
+    /// <c>Unauthenticated</c> auth boundary).
     /// </summary>
     public static FakeCallInvoker WithStatus(Status status)
         => new([], status);
@@ -60,19 +60,19 @@ internal sealed class FakeCallInvoker : CallInvoker
 
     public override TResponse BlockingUnaryCall<TRequest, TResponse>(
         Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
-        => throw new NotSupportedException("ChangeStream (SPEC-020) uses server streaming only.");
+        => throw new NotSupportedException("ChangeStream uses server streaming only.");
 
     public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
         Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request)
-        => throw new NotSupportedException("ChangeStream (SPEC-020) uses server streaming only.");
+        => throw new NotSupportedException("ChangeStream uses server streaming only.");
 
     public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(
         Method<TRequest, TResponse> method, string? host, CallOptions options)
-        => throw new NotSupportedException("ChangeStream (SPEC-020) uses server streaming only.");
+        => throw new NotSupportedException("ChangeStream uses server streaming only.");
 
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
         Method<TRequest, TResponse> method, string? host, CallOptions options)
-        => throw new NotSupportedException("ChangeStream (SPEC-020) uses server streaming only.");
+        => throw new NotSupportedException("ChangeStream uses server streaming only.");
 }
 
 /// <summary>

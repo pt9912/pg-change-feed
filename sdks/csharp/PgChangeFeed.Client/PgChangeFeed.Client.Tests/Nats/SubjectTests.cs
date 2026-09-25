@@ -4,7 +4,7 @@ using Xunit;
 namespace PgChangeFeed.Client.Tests.Nats;
 
 /// <summary>
-/// Subject formatting for the SPEC-024 full-content namespace — netzlos,
+/// Subject formatting for the NATS stream namespace — network-free,
 /// pure string construction, no NATS connection involved. Covers the two
 /// builder helpers (<see cref="PgChangeFeedNatsStreamClient.BuildSubject"/>,
 /// <see cref="PgChangeFeedNatsStreamClient.BuildSourceSubject"/>) and the

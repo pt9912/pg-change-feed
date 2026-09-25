@@ -7,50 +7,41 @@ using PgChangeFeed.Client.Nats.Models;
 namespace PgChangeFeed.Client.Nats;
 
 /// <summary>
-/// Public entry point for the PG Change Feed NATS full-content stream
-/// (<c>SPEC-024</c>, <c>LH-FA-SST-008</c>): one method subscribes to the
-/// four-token subject namespace <c>cdc.stream.&lt;source_id&gt;.&lt;schema&gt;.&lt;table&gt;</c>
-/// (or a wildcard pattern over it) and yields the ten SPEC-024 message
-/// fields as <see cref="Change"/> — the same idiomatic form as the existing
-/// gRPC/SSE surfaces (<see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>,
+/// Client for the PG Change Feed live change stream over NATS: one method
+/// subscribes to the subject namespace
+/// <c>cdc.stream.&lt;source_id&gt;.&lt;schema&gt;.&lt;table&gt;</c> (or a
+/// wildcard pattern over it) and yields the ten message fields as
+/// <see cref="Change"/> — the same form as the gRPC and SSE clients
+/// (<see cref="PgChangeFeed.Client.Grpc.PgChangeFeedGrpcClient.StreamChangesAsync"/>,
 /// <see cref="PgChangeFeed.Client.Sse.PgChangeFeedSseClient.StreamChangesAsync"/>).
 ///
-/// Authentication is connection-level, not per-call (SPEC-024): the NATS
-/// server rejects the connection itself when a server-wide token is
-/// configured and the client's token is missing or wrong — there is no
-/// per-message header to attach, unlike the HTTP/gRPC/SSE surfaces' bearer
-/// token. <see cref="PgChangeFeedClientOptions"/> is still the shared
-/// denominator this class reuses: <see cref="PgChangeFeedClientOptions.Address"/>
-/// becomes the NATS server URL (e.g. <c>nats://host:4222</c>) and
-/// <see cref="PgChangeFeedClientOptions.ApiToken"/> becomes the connection
-/// token — the same two-value shape as every other surface, carried over a
-/// different transport.
+/// Authentication is connection-level, not per call: the NATS server rejects
+/// the connection itself when it is configured with a token and the client's
+/// token is missing or wrong — there is no per-message header to attach.
+/// <see cref="PgChangeFeedClientOptions"/> is reused: its
+/// <see cref="PgChangeFeedClientOptions.Address"/> is the NATS server URL (e.g.
+/// <c>nats://host:4222</c>) and its <see cref="PgChangeFeedClientOptions.ApiToken"/>
+/// is the connection token.
 ///
-/// <b>Boundary (SPEC-024, LH-FA-SST-008):</b> no delivery guarantee and no
-/// in-stream replay (Core NATS, fire-and-forget); a disconnected or slow-reading
-/// consumer misses the affected messages permanently. Missed changes remain
-/// recoverable through the existing read path
+/// <b>Limits:</b> no delivery guarantee and no in-stream replay
+/// (fire-and-forget); a disconnected or slow-reading consumer misses the
+/// affected messages permanently. Missed changes remain recoverable through
+/// the read path
 /// (<see cref="PgChangeFeed.Client.Http.PgChangeFeedHttpClient.ReadChangesAsync"/>).
-/// A rejected connection (missing/wrong token) surfaces as a NATS-native
-/// exception (typically <see cref="NatsServerException"/> or
-/// <see cref="NatsConnectionFailedException"/>) thrown from the enumeration itself
-/// — the same "not a swallowed empty stream" boundary as the gRPC surface's
-/// <c>Unauthenticated</c> <see cref="Grpc.Core.RpcException"/>, propagated
-/// unwrapped rather than remapped into a second exception hierarchy: NATS
-/// connection errors are not HTTP status codes, and inventing a parallel
-/// mapping here would only risk drifting from what <c>NATS.Net</c> itself
-/// already throws.
-///
-/// Draht-Kenntnis-Vorbild (gelesen, nicht importiert — ADR-0106 Festlegung 2):
-/// <c>examples/csharp/nats-stream-client/Format.cs</c>, <c>Program.cs</c>.
+/// A rejected connection (missing/wrong token) surfaces as a NATS exception
+/// (typically <see cref="NatsServerException"/> or
+/// <see cref="NatsConnectionFailedException"/>) thrown from the enumeration
+/// itself — the stream is never silently empty, the same as the gRPC client's
+/// <c>Unauthenticated</c> <see cref="global::Grpc.Core.RpcException"/>. The exception
+/// propagates as <c>NATS.Net</c> throws it; it is not mapped into a second
+/// exception hierarchy.
 /// </summary>
 public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
 {
     /// <summary>
-    /// The full-content namespace's root wildcard — every source, every
-    /// table (SPEC-024: <c>cdc.stream.&gt;</c>). The default
-    /// <see cref="StreamChangesAsync"/> subscribes to when no narrower
-    /// subject is supplied.
+    /// The root wildcard of the stream namespace — every source, every table
+    /// (<c>cdc.stream.&gt;</c>). The default <see cref="StreamChangesAsync"/>
+    /// subscribes to when no narrower subject is supplied.
     /// </summary>
     public const string AllSourcesSubject = "cdc.stream.>";
 
@@ -83,7 +74,7 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
     }
 
     /// <summary>
-    /// Advanced constructor: the <see cref="INatsClient"/> is injected, not
+    /// Advanced constructor: the <see cref="INatsClient"/> is passed in, not
     /// owned — the caller controls connection lifetime and sharing (e.g. one
     /// connection behind several subjects/subscriptions), and tests can
     /// supply a fake client without a real server (see
@@ -97,7 +88,7 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
     }
 
     /// <summary>
-    /// Builds the four-token SPEC-024 subject for one specific table:
+    /// Builds the four-token subject for one specific table:
     /// <c>cdc.stream.&lt;sourceId&gt;.&lt;schema&gt;.&lt;table&gt;</c>. Each
     /// token is validated to contain none of NATS's own token separator
     /// (<c>.</c>) or wildcard characters (<c>*</c>, <c>&gt;</c>) — a token
@@ -114,7 +105,7 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
 
     /// <summary>
     /// Builds the three-token wildcard subject for every table of one source:
-    /// <c>cdc.stream.&lt;sourceId&gt;.&gt;</c> (SPEC-024).
+    /// <c>cdc.stream.&lt;sourceId&gt;.&gt;</c>.
     /// </summary>
     public static string BuildSourceSubject(string sourceId)
     {
@@ -139,17 +130,16 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
     /// <summary>
     /// Subscribes to <paramref name="subject"/> (default: <see cref="AllSourcesSubject"/>,
     /// every source and table) and yields every <see cref="Change"/> the NATS
-    /// server delivers from subscription time onward (SPEC-024: fire-and-forget,
-    /// no replay, one message per row change in commit order). Use
+    /// server delivers from subscription time onward (fire-and-forget, no
+    /// replay, one message per row change in commit order). Use
     /// <see cref="BuildSubject"/>/<see cref="BuildSourceSubject"/> to narrow
     /// the subject to one table or one source.
     ///
-    /// A connection rejected by the NATS server (missing/wrong token, SPEC-024
-    /// Negative) ends the enumeration with a NATS-native exception — see the
-    /// class-level boundary note. A message whose payload does not parse as
-    /// the documented SPEC-024 shape throws
+    /// A connection rejected by the NATS server (missing/wrong token) ends the
+    /// enumeration with a NATS exception — see the class-level boundary note.
+    /// A message whose payload cannot be read throws
     /// <see cref="PgChangeFeedNatsMalformedMessageException"/>, because that
-    /// is a protocol violation, not a stream end.
+    /// is not a stream end.
     /// </summary>
     public async IAsyncEnumerable<Change> StreamChangesAsync(
         string subject = AllSourcesSubject,
@@ -175,15 +165,15 @@ public sealed class PgChangeFeedNatsStreamClient : IAsyncDisposable
         catch (JsonException ex)
         {
             throw new PgChangeFeedNatsMalformedMessageException(
-                "PG Change Feed NATS full-content stream delivered a message whose payload is " +
-                "not valid JSON — a protocol violation outside SPEC-024's documented shape.",
+                "PG Change Feed NATS stream delivered a message whose payload is " +
+                "not valid JSON.",
                 ex);
         }
 
         return change
             ?? throw new PgChangeFeedNatsMalformedMessageException(
-                "PG Change Feed NATS full-content stream delivered a message whose payload is " +
-                "empty or null — a protocol violation outside SPEC-024's documented shape.");
+                "PG Change Feed NATS stream delivered a message whose payload is " +
+                "empty or null.");
     }
 
     /// <summary>Disposes the NATS client this instance owns, if any (see the convenience constructor).</summary>
