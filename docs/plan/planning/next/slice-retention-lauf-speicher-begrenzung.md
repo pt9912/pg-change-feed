@@ -44,7 +44,7 @@ geändert: die Aussage gilt dem Lesezugriffsweg, nicht dem Retention-Pfad.
 nicht unbegrenzt im RAM) — gelesen: sie betrifft den Transaktionspuffer des
 Capture-Pfads, nicht die Retention-Lesung.
 
-**Verantwortlich:** — (noch nicht zugewiesen).
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Implementer-Agent, Ausgang von `slice-backfill-speicher-untersuchung`;
 Nachzug auf das Architect-Verdikt: Planner-Agent. **Datum:** 2026-09-25.
