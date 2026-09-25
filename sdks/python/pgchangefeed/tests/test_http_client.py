@@ -265,8 +265,9 @@ _CHANGE_WITHOUT_ORIGIN = {
         ({"origin": "future-kind"}, "future-kind"),
         ({}, "wal"),
         ({"origin": None}, "wal"),
+        ({"origin": ""}, ""),
     ],
-    ids=["wal", "backfill", "unknown-value", "field-absent", "json-null"],
+    ids=["wal", "backfill", "unknown-value", "field-absent", "json-null", "empty-value"],
 )
 def test_read_changes_origin_reads_server_value_and_defaults_to_wal(
     origin_fields: dict[str, object], expected: str

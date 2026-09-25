@@ -286,7 +286,7 @@ das NATS-Subjekt (`SPEC-024`) ist die einzige adressierbare Zielform.
 ### LH-FA-SST-009.a — Sprachmatrix und Vertriebsweg offen
 
 **Eingabe:** bestehende Zustellwege (`SPEC-018`, `SPEC-020`, `SPEC-021`,
-`SPEC-024`). **Ausgabe:** offiziell gepflegtes, versioniertes Package je
+`SPEC-022`, `SPEC-024`). **Ausgabe:** offiziell gepflegtes, versioniertes Package je
 bedienter Sprache.
 
 Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-SST-009`](lastenheft.md)),
@@ -870,4 +870,5 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-24 | `SPEC-019` um den Absatz „Grants" der Antrags-Queue erweitert (`cdc_admin` `SELECT`, `UPDATE`; `cdc_capture` und `cdc_reader` kein Recht; kein `INSERT`, kein `DELETE`); `LH-FA-CAP-009.a` Absatz „Markierung" um die Bedeutung der Schema-Version einer Backfill-Change ergänzt (Kennung zum Run-Start, keine Beschreibung der Bild-Spalten) |
 | 2026-09-24 | `LH-FA-CAP-009.a` Absatz „Mechanismus" um die Lesesperre des Imports und das Ende des Runs bei umgeschriebener Tabelle ergänzt (`failed`, Fehlerklasse `transient`, ohne Change) |
 | 2026-09-25 | `LH-QA-REL-001.a` Schritt 5 und Invariante um die Bestätigung im Leerlauf ergänzt (WAL-Ende der Keepalive-Nachricht, ohne Persistenz, nie inmitten einer Quelltransaktion, nie zurück); `SPEC-009` Zeile `cdc_wal_retention_bytes`: Bedeutung „vom Feed noch nicht bestätigtes WAL" |
-| 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die HTTP-Lesemodelle der drei Packages tragen das `GET /changes`-Antwortfeld `origin` (`wal` \| `backfill`, ein fehlendes Feld liest als `wal`), die Live-Flächen (gRPC, SSE, NATS-Vollinhalt) tragen es nicht; die Zeilen nennen `SPEC-022` unter den gedeckten Drahtverträgen |
+| 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die HTTP-Lesemodelle der drei Packages tragen das `GET /changes`-Antwortfeld `origin` (`wal` \| `backfill`, ein fehlendes Feld oder JSON-`null` liest als `wal`, jeder andere Wert kommt unverändert an), die Live-Flächen (gRPC, SSE, NATS-Vollinhalt) tragen es nicht; die Zeilen nennen `SPEC-022` unter den gedeckten Drahtverträgen |
+| 2026-09-25 | `LH-FA-SST-009.a` Eingabe um `SPEC-022` ergänzt (der Zustellweg `GET /changes` ist Teil der HTTP-Fläche der Packages) |

@@ -105,6 +105,11 @@ class PgChangeFeedHttpClientRetentionAndChangesTest {
     }
 
     @Test
+    fun `readChanges carries an empty origin value as the server sent it`() {
+        assertEquals("", originOf(""","origin":"""""))
+    }
+
+    @Test
     fun `readChanges reads a response without origin as wal`() {
         assertEquals("wal", originOf(""))
     }

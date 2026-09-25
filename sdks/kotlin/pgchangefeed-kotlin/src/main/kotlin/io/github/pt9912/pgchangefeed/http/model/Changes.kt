@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 
 /**
  * One persisted change as returned by `GET /changes` (SPEC-022) — thirteen
- * fields: the ten of the Go domain type `model.Change`, plus
+ * fields: the ten the live surfaces (gRPC, SSE, NATS) carry, plus
  * `commit_position`, `committed_at` and `origin`. `oldImage`/`newImage`
  * carry the row image as an embedded JSON value or a JSON `null` when
  * absent (`INSERT` has no `old_image`, `DELETE` has no `new_image`); kept
@@ -15,10 +15,11 @@ import com.google.gson.annotations.SerializedName
  *
  * [origin] is `wal` for a change captured from the replication stream and
  * `backfill` for an existing-rows change (LH-FA-CAP-009); it is the
- * server's string, and a response without the field (or with a JSON
- * `null`) reads as `wal`. Gson skips Kotlin default parameters, so the
- * wire value sits in the nullable [wireOrigin] and [origin] applies the
- * default. The live surfaces (gRPC, SSE, NATS) carry no `origin`.
+ * server's string (an empty or unknown value included), and a response
+ * without the field or with a JSON `null` reads as `wal`. Gson skips Kotlin
+ * default parameters, so the wire value sits in the nullable [wireOrigin]
+ * and [origin] applies the default; `equals`, `copy` and `component13()`
+ * work on [wireOrigin]. The live surfaces carry no `origin`.
  *
  * Gson's `JsonElement` adapter represents a present-but-`null` JSON value
  * as `JsonElement.JsonNull` (`isJsonNull == true`), not as a Kotlin `null`

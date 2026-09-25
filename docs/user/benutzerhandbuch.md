@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.58
+Version: 1.59
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -1031,8 +1031,9 @@ Fähigkeiten dieser Zugriffs-Oberfläche ab (die neun in der Tabelle oben
 plus `GET /changes`) mit typisierten Requests/Responses (`dataclasses`) und
 einer typisierten Fehlerklasse für `400`/`401`/`403`/`404`/`500`; derselbe
 Package trägt außerdem den gRPC-Change-Stream (siehe unten, „Zugriff über
-den gRPC-Change-Stream"); SSE und der NATS-Vollinhalts-Stream folgen im
-selben Folge-Release (`ADR-0110`). Siehe `sdks/python/README.md`.
+den gRPC-Change-Stream"), den SSE-Stream (siehe „Zugriff über
+Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
+den NATS-Vollinhalts-Stream", `ADR-0110`). Siehe `sdks/python/README.md`.
 
 Kotlin/JVM-Anwendungen können statt der Beispiele das offizielle
 Gradle-/Maven-Package `pgchangefeed-kotlin` einbinden (`LH-FA-SST-009`,
@@ -1054,9 +1055,10 @@ SDK öffentlich und quelloffen ist. Siehe `sdks/kotlin/pgchangefeed-kotlin/READM
 für den vollständigen Installationsweg samt Gradle-Zugangsdaten-Konfiguration.
 
 In allen drei Packages trägt jede über `GET /changes` gelesene Änderung das
-Feld `origin` (`wal` oder `backfill`); eine Antwort ohne dieses Feld liest
-das Package als `wal`. Die Live-Wege (gRPC, SSE, NATS-Vollinhalt) tragen kein
-`origin`.
+Feld `origin` (`wal` oder `backfill`); eine Antwort ohne dieses Feld oder mit
+JSON-`null` liest das Package als `wal`, jeden anderen Wert des Servers (auch
+einen leeren oder unbekannten) gibt es unverändert weiter. Die Live-Wege
+(gRPC, SSE, NATS-Vollinhalt) tragen kein `origin`.
 
 ### Zugriff über den gRPC-Change-Stream
 
@@ -1809,3 +1811,4 @@ MIT — siehe `LICENSE`.
 | 1.56 | 2026-09-25 | Bestätigung von WAL ohne Inhalt für die Publication im Leerlauf des Streams dokumentiert (`LH-FA-CAP-009`, `LH-QA-REL-001`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung): §4 „WAL-Rückstand prüfen“ nennt die Bedeutung von `cdc_wal_retention_bytes` (vom Feed noch nicht bestätigtes WAL) und dass WAL ohne Inhalt für die Publication den Wert nicht wachsen lässt; §4 „Bestand als Backfill überführen“ trägt den WAL-Rückstand als Punkt ohne Abbruch über die Fehlerschwelle und die offene Schreibtransaktion des Runs als verbleibende Last; §9 „Grenzwerte“ führt den Rückstand mit Bestätigung (Lauf `20260925T032925Z`), die Messwerte ohne Bestätigung mit ihrem Lauf, das gehaltene WAL und den Spill als Grenze der Ein-Transaktions-Form und die Richtgröße um den Lauf `20260925T032925Z` ergänzt; der Satz „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ entfällt |
 | 1.57 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T032925Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar); Nachmessung des Laufs `20260925T043056Z` aus dem Review-Report ergänzt (Rückstand 0 MiB in neun Runs, gehaltenes WAL 141 MiB bei 200.000 Zeilen, Richtgröße 2.000.000 bei 4.504 Zeilen/s); Spanne der Richtgröße über sechs Läufe 2.000.000 bis 5.000.000 (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung Fixrunde) |
 | 1.58 | 2026-09-25 | Feld `origin` der über `GET /changes` gelesenen Änderungen in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ ergänzt: die drei Packages tragen es, eine Antwort ohne das Feld liest als `wal`, die Live-Wege tragen es nicht (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin) |
+| 1.59 | 2026-09-25 | Regel für `origin` in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ präzisiert: fehlendes Feld oder JSON-`null` liest als `wal`, jeder andere Server-Wert (auch leer oder unbekannt) kommt unverändert an; der Python-Absatz führt SSE und den NATS-Vollinhalts-Stream als vom Package getragen statt als folgend (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin Fixrunde) |

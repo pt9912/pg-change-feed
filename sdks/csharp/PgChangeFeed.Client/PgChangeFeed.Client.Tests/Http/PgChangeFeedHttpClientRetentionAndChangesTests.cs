@@ -71,6 +71,8 @@ public class PgChangeFeedHttpClientRetentionAndChangesTests
     [InlineData(",\"origin\":\"backfill\"", "backfill")]
     [InlineData(",\"origin\":\"future-kind\"", "future-kind")]
     [InlineData("", "wal")]
+    [InlineData(",\"origin\":null", "wal")]
+    [InlineData(",\"origin\":\"\"", "")]
     public async Task ReadChangesAsync_Origin_ReadsTheServerValueAndDefaultsToWal(
         string originField, string expected)
     {

@@ -5,7 +5,7 @@ namespace PgChangeFeed.Client.Http.Models;
 
 /// <summary>
 /// One persisted change as returned by <c>GET /changes</c> (SPEC-022) — thirteen
-/// fields: the ten of the domain type <c>model.Change</c>, plus
+/// fields: the ten the live surfaces (gRPC, SSE, NATS) carry, plus
 /// <c>commit_position</c>, <c>committed_at</c> and <c>origin</c>.
 /// <see cref="OldImage"/>/<see cref="NewImage"/> carry the row image as an
 /// embedded JSON value or <c>null</c> when absent; kept as
@@ -13,9 +13,9 @@ namespace PgChangeFeed.Client.Http.Models;
 /// image's own shape depends on the captured table, not on this wire contract.
 /// <see cref="Origin"/> is <c>wal</c> for a change captured from the
 /// replication stream and <c>backfill</c> for an existing-rows change
-/// (LH-FA-CAP-009); it is carried as the server's string, and a response
-/// without the field reads as <c>wal</c>. The live surfaces (gRPC, SSE, NATS)
-/// carry no <c>origin</c>.
+/// (LH-FA-CAP-009); it is carried as the server's string (an empty or
+/// unknown value included), and a response without the field or with a JSON
+/// <c>null</c> reads as <c>wal</c>. The live surfaces carry no <c>origin</c>.
 /// </summary>
 public sealed record Change(
     [property: JsonPropertyName("commit_position")] long CommitPosition,
@@ -30,7 +30,23 @@ public sealed record Change(
     [property: JsonPropertyName("new_image")] JsonElement? NewImage,
     [property: JsonPropertyName("schema_version")] string SchemaVersion,
     [property: JsonPropertyName("committed_at")] string CommittedAt,
-    [property: JsonPropertyName("origin")] string Origin = "wal");
+    [property: JsonPropertyName("origin"), JsonConverter(typeof(OriginConverter))] string Origin = "wal");
+
+/// <summary>
+/// Reads the <c>origin</c> string as the server sent it and a JSON
+/// <c>null</c> as <c>wal</c>; <c>System.Text.Json</c> skips a converter for
+/// <c>null</c> unless <see cref="HandleNull"/> is set.
+/// </summary>
+internal sealed class OriginConverter : JsonConverter<string>
+{
+    public override bool HandleNull => true;
+
+    public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.TokenType == JsonTokenType.Null ? "wal" : reader.GetString()!;
+
+    public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value);
+}
 
 /// <summary>
 /// <c>ReadChanges</c> response (<c>200</c>) — an empty list on no match,
