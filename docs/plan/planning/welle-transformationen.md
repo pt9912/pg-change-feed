@@ -392,9 +392,11 @@ der Closure-Trigger unerreichbar wird.
   Laufzeit des erweiterten Testpakets ist ein Risiko der E2E-Slices (§6 dort),
   keine Workflow-Änderung.
 - **Kein Server-Release und kein SDK-Release** — `docs/user/version.md` und die
-  Package-Versionen der SDKs bleiben unberührt (erwartet: keine
-  SDK-Code-Änderung, `betriebsdoku`); die Änderungshistorie des
-  Benutzerhandbuchs trägt eine Zeile.
+  Package-Versionen der SDKs bleiben durch die Slices dieser Welle unberührt
+  (erwartet: keine SDK-Code-Änderung, `betriebsdoku`); die Version des
+  Kotlin-Package hebt der wellenlose Slice `slice-sdk-kotlin-cloudsmith`, nicht
+  ein Slice dieser Welle; die Änderungshistorie des Benutzerhandbuchs trägt
+  eine Zeile.
 - **Keine Schwellen-Senkung und keine neue Gate-Klasse** — die neuen
   Use-Case-Pakete liegen in der netzlos gemessenen Fläche des Coverage-Gates;
   eine Senkung bliebe per [`AGENTS.md`](../../../AGENTS.md) §3.6 ADR-pflichtig.
