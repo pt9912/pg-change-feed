@@ -132,3 +132,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0117 | Backfill: Fehlerklasse schema im Run (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0117-backfill-run-fehlerklasse-schema.md](0117-backfill-run-fehlerklasse-schema.md) |
 | ADR-0118 | Backfill: Umschreiben im Snapshot-Fenster erkannt (Supers. ADR-0111, teilw.) | Accepted | 2026-09-24 | [0118-backfill-umschreiben-im-snapshot-fenster.md](0118-backfill-umschreiben-im-snapshot-fenster.md) |
 | ADR-0119 | Backfill: Wirkung der Lesesperre berichtigt (Supers. ADR-0118, teilw.) | Accepted | 2026-09-25 | [0119-backfill-wirkung-der-lesesperre-berichtigt.md](0119-backfill-wirkung-der-lesesperre-berichtigt.md) |
+| ADR-0120 | Capture: Slot bestätigt WAL ohne Inhalt für die Publication (ergänzt ADR-0007) | Accepted | 2026-09-25 | [0120-capture-slot-leerlauf-bestaetigung.md](0120-capture-slot-leerlauf-bestaetigung.md) |
