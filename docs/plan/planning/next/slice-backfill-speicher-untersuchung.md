@@ -30,7 +30,7 @@ Bestands),
 am 2026-09-25: „Große Transaktionen dürfen nicht unbegrenzt im RAM gehalten
 werden“) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Planner-Agent, Closure der Welle
 [welle-backfill-bestand](../done/welle-backfill-bestand.md). **Datum:** 2026-09-25.
