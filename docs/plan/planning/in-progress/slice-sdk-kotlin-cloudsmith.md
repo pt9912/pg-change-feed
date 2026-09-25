@@ -155,9 +155,18 @@ Liefer-Punkte (drei):
 
 Gates und Belege:
 
-- [ ] `make gates`, `make sdk-pack-kotlin`, `make sdk-public-doc-check` und
+- [x] `make gates`, `make sdk-pack-kotlin`, `make sdk-public-doc-check` und
       `make test-sdk-kotlin-release-tag-info` grün; jeder Exit-Code direkt gelesen
-      ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
+      ([`AGENTS.md`](../../../../AGENTS.md) §3.9). Gemessen am Implementer-Stand
+      (2026-09-25, jeder Lauf mit eigenem Exit-Code, ohne Pipe): `make gates` Exit 0
+      (Zeilen `d-check: 1181 Datei(en) geprüft, 0 Befund(e)`, `coverage-gate: OK —
+      Coverage 83.40% erfüllt Schwelle 80%`, `commit-traceability: OK — 5 Commit(s)`,
+      `generated-sync: OK`, a-check `gesamt: 0 Befund(e)`); `make sdk-pack-kotlin` Exit 0
+      (Gradle `BUILD SUCCESSFUL in 24s` für `test`, `BUILD SUCCESSFUL in 4s` für
+      `build`, Probe-Schritt grün, `sdks/kotlin/dist` trägt `pgchangefeed-kotlin-0.2.2.jar`
+      und `pgchangefeed-kotlin-0.2.2-sources.jar`); `make sdk-public-doc-check` Exit 0
+      (`keine interne Kennung unter sdks`); `make test-sdk-public-doc-check` und
+      `make test-sdk-kotlin-release-tag-info` Exit 0 (`alle Fälle bestanden`).
 - [ ] Post-Push-Beleg ([`AGENTS.md`](../../../../AGENTS.md) §3.10 — der Workflow ändert
       seine Job-Struktur): der Betreiber setzt den Tag `sdk-kotlin-v0.2.2` (oder die
       nächste freie Version), **beide** Jobs enden `success`, und ein **anonymer**
