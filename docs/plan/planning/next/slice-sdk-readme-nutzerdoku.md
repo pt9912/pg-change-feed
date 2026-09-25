@@ -24,7 +24,7 @@ vom Server), [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.
 Artefaktnamen) — geändert; [`SPEC-018`](../../../../spec/pflichtenheft.md) bis [`SPEC-024`](../../../../spec/pflichtenheft.md) (Drahtverträge, aus denen die
 Anwender-Beschreibung ihre Aussagen liest) — gelesen.
 
-**Verantwortlich:** —
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Implementer-Agent (Nutzer-Anweisung „ohne Nachfragen weiter“, Rückmeldung zur
 PyPI-Paketseite). **Datum:** 2026-09-25.
