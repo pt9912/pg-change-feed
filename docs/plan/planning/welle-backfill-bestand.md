@@ -34,7 +34,7 @@ Run angelegten temporären logischen Slots, in **einer** Store-Transaktion
 committet, als `INSERT` mit dem neuen Feld `origin`, ausgelöst über die
 SQL-Funktion `cdc.backfill_table`.
 
-Das *Mehr* gegenüber den zehn Slice-DoDs: keiner der Slices belegt eines der
+Das *Mehr* gegenüber den elf Slice-DoDs: keiner der Slices belegt eines der
 drei Kriterien allein. Der Happy Path braucht das Feld `origin` (Store, View,
 `GET /changes`), den Snapshot-Leser, den Run mit atomarem Schreiber und die
 SQL-Auslösung am **laufenden Feed-Container**; die Boundary (Überlappungsfenster
@@ -74,7 +74,7 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
 §Wann Arbeit eine Welle braucht — der Trigger muss das *Mehr* gegenüber den
 einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 
-- Alle zehn Slices in `done/`.
+- Alle elf Slices in `done/`.
 - `make gates` grün — der Exit-Code des Laufs wird ungefiltert gesichert und
   gesondert ausgewertet ([`AGENTS.md`](../../../AGENTS.md) §3.9).
 - **Ein realer, grüner `make test-integration`-Lauf** mit den Backfill-Belegen
@@ -102,6 +102,20 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   [`docs/user/e2e-abdeckung.md`](../../user/e2e-abdeckung.md), die der Runner
   von `make test-integration` schreibt (die Datei ist ein Erzeugnis, kein
   Lauf-Beleg).
+- **Ein Run beendet den Capture-Prozess nicht über den WAL-Rückstand.** Der
+  Lauf von `tools/bench-backfill.sh` (einzeln, Exit 0) druckt den WAL-Rückstand
+  je Run; die Spitze der größten Stufe liegt *erwartet* unter der Warnschwelle
+  von 100 MiB ([`SPEC-013`](../../../spec/pflichtenheft.md)) — die Messung trägt
+  `slice-backfill-bench-richtgroesse`, die Ursache
+  ([`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), Slot
+  bestätigt im Leerlauf) `slice-backfill-slot-leerlauf-bestaetigung`; erst beide
+  zusammen zeigen, dass der Konstraint „Capture-kritischer Pfad bleibt
+  unberührt“ aus [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+  für einen Run gilt. Ein Lauf von `make bench` als Ganzes ist kein Kriterium:
+  er endet am Messhost mit Exit 2 an
+  [`LH-QA-PER-001`](../../../spec/lastenheft.md) (Ursache: das Architect-Verdikt
+  [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md),
+  Befund 2).
 - Die Row-Image-Konstruktion liegt an genau einer Stelle: der Suchlauf über
   `internal/**` nach der JSON-Bild-Erzeugung (Befehl und Fundstellen im
   Closure-Bericht) findet eine Konstruktionsstelle, die WAL-Pfad und
@@ -109,7 +123,9 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
 - Die Sichtbarkeits-Grenze (Backfill ist ein Zustandsabzug für Consumer vor
   `X`), die Lese-Regel „Bestandsabzug ohne `Limit`", die gemessene
   Startposition eines frisch registrierten Consumers, die gemessene
-  Warn-Richtgröße und die Toleranz als „Startwert, Setzung ohne Messung" stehen im
+  Warn-Richtgröße und die Toleranz als „Startwert, Setzung ohne Messung" sowie die
+  Bedeutung des WAL-Rückstands des Capture-Slots samt der Grenze der
+  Ein-Transaktions-Form (gehaltenes WAL, Spill) stehen im
   Benutzerhandbuch — jede Zahl mit ihrem Ursprung
   ([`AGENTS.md`](../../../AGENTS.md) §3.12).
 - Closure-Notiz in `welle-backfill-bestand-results.md`.
@@ -131,12 +147,24 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | slice-backfill-sql-administration | Antragsart `backfill`, `cdc.backfill_table`, Worker-Schleife mit Start-Aufnahme und Wecksignal, Start-Abgleich, `cdc.backfill_status`, `diagnose`, Idempotenz-Guard, Handbuch der Auslösung | [`LH-FA-ADM-001`](../../../spec/lastenheft.md), [`LH-FA-SST-003`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5 |
 | slice-backfill-e2e | `make test-integration`: Happy Path, Boundary, Negative; Startposition eines frisch registrierten Consumers gemessen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 |
 | slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße; Auswertung der zwei Warnungen im Use Case des Runs, sichtbar über View und `diagnose` | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
+| slice-backfill-slot-leerlauf-bestaetigung | Capture-Slot bestätigt im Leerlauf das `ServerWALEnd` der Keepalive-Nachricht (Entscheidung in der Application, ohne Persistenz); WAL ohne Inhalt für die Publication hält den Rückstand nicht mehr; Belege in Unit, Store und E2E, Träger (Spec, Handbuch, Bench) nachgezogen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-REL-001`](../../../spec/lastenheft.md), [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), [`ADR-0007`](../adr/0007-source-ack-outbound-port.md) |
 | slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Package-Versionen | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`), außer `slice-backfill-sdk-origin`, der nach `slice-backfill-change-origin`
 technisch unabhängig ist und aus Ordnungsgründen am Ende steht. Die
 technischen Kanten stehen in §5.
+
+**Herkunft des elften Slice:** `slice-backfill-slot-leerlauf-bestaetigung` ist
+nicht aus dem Schnitt-Vorschlag von
+[`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) geschnitten,
+sondern aus
+[`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 4
+und dem Architect-Verdikt
+[`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)
+(Verdikt 3, „Zuschnitt“): der Eingriff berührt Empfangs-Schleife, Application
+und einen Port des Capture-kritischen Pfads und braucht Review und Verifier für
+sich; er steht **vor** der Welle-Closure.
 
 **Abweichungen vom Schnitt-Vorschlag** in
 [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
@@ -232,7 +260,22 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     `origin = 'backfill'`);
   - `run-store` → `sql-administration` → `e2e` → `bench-richtgroesse`
     (jeder Schritt braucht das lauffähige System der Vorstufe);
+  - `bench-richtgroesse` → `slot-leerlauf-bestaetigung` (der Slice ändert das
+    Skript `tools/bench-backfill.sh`, das `bench-richtgroesse` anlegt, und
+    zieht dessen Handbuch-Abschnitte nach; dazu das WIP-Limit 1 — Start
+    nach dem `done/` von `bench-richtgroesse`, Verdikt 3);
   - `change-origin` → `sdk-origin` (sonst unabhängig von den übrigen Slices).
+- **Keine neue Kante zur Welle
+  [welle-transformationen](welle-transformationen.md).**
+  `slice-backfill-slot-leerlauf-bestaetigung` ändert weder die
+  `request_kind`-Menge noch [`SPEC-019`](../../../spec/pflichtenheft.md) noch
+  den Run-Zweig der Administration;
+  K1 bis K3 bleiben. Er berührt additiv zwei Dateien, die auch offene Slices der
+  Transformationen nennen (`internal/adapters/driving/replication/mapper/mapper.go`
+  eine lesende Methode, `internal/bootstrap/wiring.go` eine Verdrahtungszeile);
+  die Reihenfolge „Backfill zuerst“ bleibt, jeder Slice der Transformationen
+  wartet weiter auf seine Kante, nicht auf die Closure dieser Welle
+  ([welle-transformationen](welle-transformationen.md) §5).
 
 **§3.13-Suchlauf (committetes Feld) — bewegte Eigenschaft: „die Signatur
 einer im neutralen Modell deklarierten View oder eine bestehende
@@ -268,7 +311,7 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 | Folgepflicht | Träger |
 |---|---|
 | 1 Spec-Nachzug | `slice-backfill-spec-nachzug`; der Benutzerhandbuch-Anteil verteilt auf `change-origin`, `sql-administration`, `e2e`, `bench-richtgroesse` (§4, Abweichung 4) |
-| 2 Umsetzung (S1–S6) | die zehn Slices dieser Welle |
+| 2 Umsetzung (S1–S6) | die elf Slices dieser Welle (S1–S6 sind zehn davon; der elfte trägt [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), siehe unten) |
 | 3 Nicht Teil (Checkpoint, Parallelisierung, HTTP-/CLI-Auslösung, Live-Zustellung, Filter `origin`, Auslösung als Option von `enable`) | §6 dieser Welle; Adresse: die Re-Evaluierungs-Trigger in [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) |
 | 4 Kommentar-Nachzug `model.Change` | `slice-backfill-change-origin` (DoD) |
 | 5 Idempotenz-Guard | `slice-backfill-sql-administration` (DoD) |
@@ -288,6 +331,19 @@ bleibt liegen, bis sie ein Leser zufällig findet):
 | 6 `reltuples` = `−1` an PostgreSQL 17 und 18 | `slice-backfill-snapshot-reader` |
 | 7 Neustart-Beleg der `queued`-Zeile | `slice-backfill-e2e` |
 
+**Träger der Folgepflichten von
+[`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md)** (Capture-Slot
+bestätigt im Leerlauf):
+
+| Folgepflicht | Träger |
+|---|---|
+| 1 Umsetzung nach Festlegung 1 bis 3 mit den Tests der Fitness Function | `slice-backfill-slot-leerlauf-bestaetigung` (Start-Trigger: `slice-backfill-bench-richtgroesse` in `done/`) |
+| 2 Spec-Nachzug (`LH-QA-REL-001.a`, `SPEC-009`, Leerlauf-Weg in der Architektur-Sicht) | `slice-backfill-slot-leerlauf-bestaetigung` |
+| 3 Handbuch („WAL-Rückstand prüfen“, §4, §Grenzwerte) | `slice-backfill-slot-leerlauf-bestaetigung` |
+| 4 `tools/bench-backfill.sh` (Zeile „WAL-Rückstand-Schwellen“ entfällt) | `slice-backfill-slot-leerlauf-bestaetigung` |
+| 5 Suchlauf (Kommentar und Test von `handleCopyData`/`standbyStatus`, Aussage von [`ADR-0080`](../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) | `slice-backfill-slot-leerlauf-bestaetigung` (`ADR-0080` bleibt unberührt, `Accepted`) |
+| Nachzug im Plan von `slice-backfill-bench-richtgroesse` („Befunde der Messung“, DoD „realer `make bench`-Lauf“; Zeile „Folge-Arbeit“ des Verdikts) | Planner; Adresse: die Closure von `slice-backfill-bench-richtgroesse` |
+
 ## 6. Out-of-Scope für diese Welle
 
 Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
@@ -298,7 +354,10 @@ der Closure-Trigger unerreichbar wird.
 - **Fortsetzen mit Checkpoint und Block-Transaktionen** — die Ein-Transaktions-
   Form gilt für den Erstumfang ([`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
   Teilfrage 4 Option B, Festlegung 3); der Re-Evaluierungs-Trigger (Kopierdauer
-  über der Betriebs-Toleranz) führt zu einer Folge-ADR.
+  über der Betriebs-Toleranz) führt zu einer Folge-ADR. Ihn trägt auch die
+  Grenze der Ein-Transaktions-Form, die die Leerlauf-Bestätigung
+  ([`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) Festlegung 2)
+  bestehen lässt: das von der Quelle gehaltene WAL und der Spill des Walsenders.
 - **Parallelisierung** — Ausbaustufe laut
   [`LH-FA-CAP-009`](../../../spec/lastenheft.md) (ein Worker, ein Run zugleich).
 - **HTTP-Endpunkt und CLI-Auslösung** — im Erstumfang genügt
@@ -434,6 +493,16 @@ Risiko trägt (Detail je Slice in §8):
   (verkörpert, 3×) — `slice-backfill-sdk-origin`.
 - `BEO-PGC/github-actions-unverifizierbar-lokal` (verkörpert, 7×) —
   **nicht einschlägig**: kein Workflow-Zug in dieser Welle.
+- `slice-backfill-slot-leerlauf-bestaetigung` (elfter Slice; Register am
+  2026-09-25 gesichtet, Zähler = Dateien unter `evidence/`):
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 10×),
+  `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (offen, 1×),
+  `BEO-PGC/fitness-function-gegen-eigene-entscheidung` (offen, 1× — der
+  Sicherheits-Test der Fitness Function von
+  [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) verlangt eine
+  Mutation, die mit einer offenen Quelltransaktion möglicherweise nicht rot
+  färbt; ein Verdacht, kein Beleg, deshalb nicht gezählt — Detail in §6 und §8
+  des Slice-Plans).
 - Gesichtet, ohne Bezug zu dieser Welle: die übrigen Einträge des Registers.
 
 ## 7. Closure-Notiz
