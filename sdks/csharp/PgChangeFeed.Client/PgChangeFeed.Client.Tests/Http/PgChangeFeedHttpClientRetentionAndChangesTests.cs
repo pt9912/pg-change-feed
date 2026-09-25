@@ -57,6 +57,31 @@ public class PgChangeFeedHttpClientRetentionAndChangesTests
         Assert.Null(handler.LastRequestBody);
     }
 
+    // Body shape: the output of the server's GET /changes handler, where
+    // `origin` is the last field of each change (Go test
+    // TestReadChangesTraegtOriginAlsLetztesFeld,
+    // internal/adapters/driving/http/readchanges_test.go). Not captured from
+    // a running server.
+    private static string ChangeBody(string originField) =>
+        """{"changes":[{"commit_position":1,"change_id":"ch-1","transaction_id":"tx-1","source_table_id":"t-1","schema":"public","table":"orders","sequence":0,"operation":"INSERT","old_image":null,"new_image":{"id":1},"schema_version":"sv-1","committed_at":"2026-09-19T00:00:00Z"@ORIGIN@}]}"""
+            .Replace("@ORIGIN@", originField);
+
+    [Theory]
+    [InlineData(",\"origin\":\"wal\"", "wal")]
+    [InlineData(",\"origin\":\"backfill\"", "backfill")]
+    [InlineData(",\"origin\":\"future-kind\"", "future-kind")]
+    [InlineData("", "wal")]
+    public async Task ReadChangesAsync_Origin_ReadsTheServerValueAndDefaultsToWal(
+        string originField, string expected)
+    {
+        var (client, _) = TestClientFactory.Create(_ =>
+            FakeHttpMessageHandler.JsonResponse(HttpStatusCode.OK, ChangeBody(originField)));
+
+        var response = await client.ReadChangesAsync("src");
+
+        Assert.Equal(expected, response.Changes[0].Origin);
+    }
+
     [Fact]
     public async Task ReadChangesAsync_NoOptionalParameters_OmitsThemFromQuery()
     {

@@ -220,6 +220,14 @@ class RunRetentionResponse:
 
 @dataclass(frozen=True)
 class Change:
+    """One persisted change as returned by ``GET /changes`` (SPEC-022).
+
+    ``origin`` is ``wal`` for a change captured from the replication stream
+    and ``backfill`` for an existing-rows change (LH-FA-CAP-009). It is the
+    server's string; a response without the field reads as ``wal``. The live
+    surfaces (gRPC, SSE, NATS) carry no ``origin``.
+    """
+
     commit_position: int
     change_id: str
     transaction_id: str
@@ -232,6 +240,7 @@ class Change:
     new_image: Any | None
     schema_version: str
     committed_at: str
+    origin: str = "wal"
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Change:
@@ -248,6 +257,7 @@ class Change:
             new_image=data["new_image"],
             schema_version=data["schema_version"],
             committed_at=data["committed_at"],
+            origin=data.get("origin") or "wal",
         )
 
 
@@ -260,8 +270,8 @@ class ReadChangesResponse:
         return cls(changes=[Change.from_json(item) for item in data["changes"]])
 
 
-# --- Live-Change-Stream, SSE (SPEC-021): dieselben zehn Felder wie der
-# --- Domain-Typ, nicht die zwölf des HTTP-Lesezugriffs (SPEC-022) --
+# --- Live change stream, SSE (SPEC-021): the same ten fields as the
+# --- domain type, not the thirteen of the HTTP read (SPEC-022) --
 
 
 @dataclass(frozen=True)

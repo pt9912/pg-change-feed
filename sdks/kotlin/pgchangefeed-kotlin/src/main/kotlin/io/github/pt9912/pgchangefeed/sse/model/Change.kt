@@ -16,8 +16,8 @@ import com.google.gson.annotations.SerializedName
  *
  * Kept as its own type rather than reused across surfaces: it is a
  * different wire contract than
- * [io.github.pt9912.pgchangefeed.http.model.Change] (`SPEC-022`, twelve
- * fields including `commit_position`/`committed_at`) and the generated
+ * [io.github.pt9912.pgchangefeed.http.model.Change] (`SPEC-022`, thirteen
+ * fields including `commit_position`/`committed_at`/`origin`) and the generated
  * gRPC `cdc.stream.v1.Changestream.Change` message (`SPEC-020`, its own
  * protobuf-generated type,
  * [io.github.pt9912.pgchangefeed.grpc.PgChangeFeedGrpcClient]) — three

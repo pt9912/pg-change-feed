@@ -237,6 +237,46 @@ def test_read_changes_happy_path() -> None:
     assert change.old_image is None
 
 
+# Body shape: the output of the server's GET /changes handler, where `origin`
+# is the last field of each change (Go test TestReadChangesTraegtOriginAlsLetztesFeld,
+# internal/adapters/driving/http/readchanges_test.go). Not captured from a
+# running server.
+_CHANGE_WITHOUT_ORIGIN = {
+    "commit_position": 1,
+    "change_id": "chg1",
+    "transaction_id": "tx1",
+    "source_table_id": "t1",
+    "schema": "public",
+    "table": "orders",
+    "sequence": 0,
+    "operation": "INSERT",
+    "old_image": None,
+    "new_image": {"id": 1},
+    "schema_version": "sv1",
+    "committed_at": "2026-09-19T00:00:00Z",
+}
+
+
+@pytest.mark.parametrize(
+    ("origin_fields", "expected"),
+    [
+        ({"origin": "wal"}, "wal"),
+        ({"origin": "backfill"}, "backfill"),
+        ({"origin": "future-kind"}, "future-kind"),
+        ({}, "wal"),
+        ({"origin": None}, "wal"),
+    ],
+    ids=["wal", "backfill", "unknown-value", "field-absent", "json-null"],
+)
+def test_read_changes_origin_reads_server_value_and_defaults_to_wal(
+    origin_fields: dict[str, object], expected: str
+) -> None:
+    payload = {"changes": [{**_CHANGE_WITHOUT_ORIGIN, **origin_fields}]}
+    client = _make_client(_handler_returning(200, payload))
+    response = client.read_changes(source="src")
+    assert response.changes[0].origin == expected
+
+
 def test_read_changes_empty_result_is_not_an_error() -> None:
     client = _make_client(_handler_returning(200, {"changes": []}))
     response = client.read_changes(source="src")

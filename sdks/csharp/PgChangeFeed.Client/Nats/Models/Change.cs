@@ -18,7 +18,7 @@ namespace PgChangeFeed.Client.Nats.Models;
 /// consistent with <see cref="PgChangeFeed.Client.Sse.Models.Change"/>'s
 /// established reasoning: it is one of four independent wire contracts that
 /// happen to share most field names — <see cref="PgChangeFeed.Client.Http.Models.Change"/>
-/// (SPEC-022, eleven fields including <c>commit_position</c>/<c>committed_at</c>),
+/// (SPEC-022, thirteen fields including <c>commit_position</c>/<c>committed_at</c>/<c>origin</c>),
 /// the generated gRPC <c>Change</c> stub (SPEC-020, its own protobuf-generated
 /// type), <see cref="PgChangeFeed.Client.Sse.Models.Change"/> (SPEC-021), and
 /// this type (SPEC-024) — reusing one across surfaces would only risk

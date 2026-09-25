@@ -73,6 +73,47 @@ class PgChangeFeedHttpClientRetentionAndChangesTest {
         assertEquals("a", change.newImage?.asJsonObject?.get("name")?.asString)
     }
 
+    // Body shape: the output of the server's GET /changes handler, where
+    // `origin` is the last field of each change (Go test
+    // TestReadChangesTraegtOriginAlsLetztesFeld,
+    // internal/adapters/driving/http/readchanges_test.go). Not captured from
+    // a running server.
+    private fun originOf(originField: String): String {
+        val body = """{"changes":[{"commit_position":1,"change_id":"ch-1","transaction_id":"tx-1",""" +
+            """"source_table_id":"t-1","schema":"public","table":"orders","sequence":0,""" +
+            """"operation":"INSERT","old_image":null,"new_image":{"id":1},""" +
+            """"schema_version":"sv-1","committed_at":"2026-09-19T00:00:00Z"$originField}]}"""
+        val (client, _) = TestClientFactory.create { request ->
+            FakeHttpTransport.jsonResponse(200, body)(request)
+        }
+        return client.readChanges(source = "src").changes.single().origin
+    }
+
+    @Test
+    fun `readChanges reads origin wal from the response`() {
+        assertEquals("wal", originOf(""","origin":"wal""""))
+    }
+
+    @Test
+    fun `readChanges reads origin backfill from the response`() {
+        assertEquals("backfill", originOf(""","origin":"backfill""""))
+    }
+
+    @Test
+    fun `readChanges carries an unknown origin value as the server sent it`() {
+        assertEquals("future-kind", originOf(""","origin":"future-kind""""))
+    }
+
+    @Test
+    fun `readChanges reads a response without origin as wal`() {
+        assertEquals("wal", originOf(""))
+    }
+
+    @Test
+    fun `readChanges reads a JSON-null origin as wal`() {
+        assertEquals("wal", originOf(""","origin":null"""))
+    }
+
     @Test
     fun `readChanges returns an empty list instead of a 404 on no match`() {
         val (client, _) = TestClientFactory.create { request ->
