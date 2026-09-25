@@ -24,7 +24,7 @@
 # tools/harness/sdk-pack-csharp.sh extrahiert das .nupkg host-seitig aus der
 # `pack-export`-Stufe (`docker run --rm --network none <image> | tar -x`,
 # `set -o pipefail` unter bash, AGENTS.md §3.9) nach sdks/csharp/dist/
-# (`.gitignore`t). Erzeugnis: PgChangeFeed.Client.0.2.0.nupkg. Exit-Code des
+# (`.gitignore`t). Erzeugnis: PgChangeFeed.Client.0.2.1.nupkg. Exit-Code des
 # Skripts wird wie bei jedem anderen Ziel direkt gelesen.
 .PHONY: sdk-pack-csharp
 sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdks/csharp/dist/; Werkzeug, kein Gate; ADR-0106)
@@ -46,7 +46,7 @@ sdk-pack-csharp: ## C#-SDK bauen+testen+paketieren (sdks/csharp, .nupkg nach sdk
 # .jar host-seitig aus der `pack-export`-Stufe (`docker run --rm --network
 # none <image> | tar -x`, `set -o pipefail` unter bash, AGENTS.md §3.9) nach
 # sdks/kotlin/dist/ (`.gitignore`t). Erzeugnis:
-# pgchangefeed-kotlin-0.2.0.jar. Kein Sources-/Javadoc-Jar — GitHub Packages
+# pgchangefeed-kotlin-0.2.1.jar. Kein Sources-/Javadoc-Jar — GitHub Packages
 # verlangt laut offizieller Dokumentation keines (real recherchiert,
 # sdks/kotlin/Dockerfile Stufe `pack`). Exit-Code des Skripts wird wie bei
 # jedem anderen Ziel direkt gelesen.

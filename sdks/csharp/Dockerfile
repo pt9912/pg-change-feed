@@ -63,7 +63,7 @@ RUN dotnet test PgChangeFeed.Client/PgChangeFeed.Client.Tests/PgChangeFeed.Clien
 # (slice-sdk-csharp-pack-werkzeug, ADR-0106 Festlegung 4). `--no-build`
 # verlangt, dass die Build-Stufe oben bereits mit derselben Konfiguration
 # (Release) gelaufen ist — sie ist es, als vorhergehender RUN-Schritt
-# dieses selben Dockerfiles. Das Erzeugnis (PgChangeFeed.Client.0.2.0.nupkg,
+# dieses selben Dockerfiles. Das Erzeugnis (PgChangeFeed.Client.0.2.1.nupkg,
 # Version aus PgChangeFeed.Client.csproj) landet unter /out. ---
 FROM build AS pack
 RUN mkdir -p /out && \
