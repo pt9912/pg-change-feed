@@ -72,7 +72,7 @@ ersten Betreiber.
 
 ## 2. Definition of Done
 
-- [ ] Die Messreihe steht mit gedruckten Zeilen im Repository: `tools/bench-backfill.sh`
+- [x] Die Messreihe steht mit gedruckten Zeilen im Repository: `tools/bench-backfill.sh`
       (vorhanden, Vertrag `harness/targets/bench-backfill.md`) liefert je Stufe
       den Speicher des Feed-Containers **und** eine Grundlinie ohne Run
       (Ruhe-Speicher vor und nach), über mindestens die Stufen bis 1.000.000
@@ -82,14 +82,14 @@ ersten Betreiber.
       `docs/reviews/` (auflösbar, anders als der übernommene Lauf
       `20260924T233628Z`); der Lauf, aus dem die 1.544 MiB stammen, wird
       wiederholt oder bleibt als *übernommen* gekennzeichnet.
-- [ ] Die Ursache ist benannt und belegt: ein Lauf, der sie an- und abschaltet
+- [x] Die Ursache ist benannt und belegt: ein Lauf, der sie an- und abschaltet
       (eine Änderung genau einer Größe — Blockgröße, Zeilenbreite,
       Garbage-Collector-Einstellung des Feed-Containers oder der Zeitpunkt der
       Probe —, dieselbe Messung vor und nach), oder die Ursache steht als
       *ungeklärt* mit der gemessenen Grenze im Bericht. Der Blockbedarf von etwa
       74 KB (Handbuch, übernommen) erklärt Spitzen von einigen hundert MiB nicht;
       welche Größe sie trägt, ist offen und im Slice zu erproben.
-- [ ] Der Ausgang ist gesetzt: wächst der Speicher mit der Tabellengröße, steht
+- [x] Der Ausgang ist gesetzt: wächst der Speicher mit der Tabellengröße, steht
       ein Befund im Bericht und ein Änderungs-Slice existiert als Datei in `open/`
       (Entscheidung des Architects, ob eine ADR nötig ist); sonst trägt das
       Benutzerhandbuch unter „Grenzwerte“ die gemessene Grenze samt Ursprung,
@@ -105,10 +105,10 @@ ersten Betreiber.
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: siehe dritter Liefer-Punkt (Handbuch §Grenzwerte,
+- [x] Doku-Update: siehe dritter Liefer-Punkt (Handbuch §Grenzwerte,
       `harness/targets/bench-backfill.md`, falls der Vertrag der Messung eine
       Grundlinie führt).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
@@ -134,10 +134,19 @@ hat kein bekanntes Ende.
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `tools/bench-backfill.sh` (falls die Grundlinie fehlt) | update | Speicher ohne Run vor und nach der Stufe, im Ursprung jeder Zahl genannt. |
-| `harness/targets/bench-backfill.md` | update | Vertrag der Messung nennt die Grundlinie. |
-| `docs/user/benutzerhandbuch.md` (§Grenzwerte, Version, Änderungshistorie) | update | gemessene Grenze samt Ursprung statt der übernommenen Zahlen. |
-| Bericht des Slice unter `docs/reviews/` | neu | gedruckte Zeilen der Messreihe, Ursache, Ausgang. |
+| `tools/bench-backfill.sh` (falls die Grundlinie fehlt) | update | Speicher ohne Run vor und nach der Stufe, im Ursprung jeder Zahl genannt. Geliefert: Grundlinie 30 s nach dem Start, Speicher 20 s und 60 s nach der Stufe, Zahl der Zeilen in `cdc.change` vor und nach der Stufe. |
+| `harness/targets/bench-backfill.md` | update | Vertrag der Messung nennt die Grundlinie; Abschnitt zum zweiten Skript; Grenzen „Speicher“ und „Zeilenbreite“ nachgezogen. |
+| `docs/user/benutzerhandbuch.md` (§Grenzwerte, Version, Änderungshistorie) | update | gemessene Grenze samt Ursprung statt der übernommenen Zahlen. Geliefert: Speicher-Bullet ersetzt (Ursache, Tabelle, Bemessung), Richtgröße-Bullet um den Speicher ergänzt, Vorbedingungs-Absatz in §4 „Bestand als Backfill überführen“ und Absatz in „Aufbewahrung (Retention)“ (Träger derselben Aussage), Version 1.60. |
+| Bericht des Slice unter `docs/reviews/` | neu | gedruckte Zeilen der Messreihe, Ursache, Ausgang. Geliefert als `messbericht-slice-backfill-speicher-untersuchung.md` (Bericht) und `messbericht-slice-backfill-speicher-untersuchung-zeilen.md` (gedruckte Zeilen, 15 Reihen). |
+| `tools/bench-backfill-memory.sh` | neu | **über den Plan hinaus:** die Trennung von Run, Nachlauf und Zahl der Changes braucht einen Container je Run und die cgroup-Zähler vom Host aus; `tools/bench-backfill.sh` liefert das nicht, ohne seine Messung zu ändern. Kein Produktionscode nötig (Zähler von außen, `GODEBUG=gctrace=1`). |
+| `tools/bench-lib.sh` | update | **über den Plan hinaus:** `BENCH_FEED_ENV` und `BENCH_FEED_DOCKER_ARGS` für `bench::start_feed` (Umgebungsvariablen und `docker run`-Argumente des Feed-Containers, Speichergrenze). |
+| `harness/README.md` (Zeile `make bench`) | update | **über den Plan hinaus:** nennt das zweite Skript als Werkzeug außerhalb von `make bench`. |
+| `docs/plan/planning/open/slice-retention-lauf-speicher-begrenzung.md` | neu | **Ausgang** (DoD, dritter Punkt): der Änderungs-Slice der Ursache, Datei in `open/`. |
+| `docs/plan/planning/observations/BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes/state.md` | update | nur der Verweis auf den Slice: ein Link mit festem Lifecycle-Verzeichnis (`open/`) bricht mit dem `git mv`; er steht jetzt als Zitat der Kennung. Der Inhalt des Registers bleibt der Planner-Closure. |
+
+Nicht realisiert: nichts vom Plan. Die Eingrenzung „Breite Zeilen als eigene Messreihe“
+(§1) wurde ausgeübt, weil die Ursache an der Zeilenbreite hängt (Reihen H und I); der Plan
+nannte diese Bedingung selbst.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Aussage über den
 Speicher des Feed-Containers im Backfill und die Warn-Richtgröße“; beide Stände
@@ -149,9 +158,28 @@ git grep -n -i -E 'Speicher|MiB|1\.544|4\.000\.000|Richtgröße|nicht untersucht
 git grep -n -E 'estimatedRowsGuideline|DefaultBlockSize' -- internal
 ```
 
+**Stand und Trefferzahl (gemessen mit den zwei Befehlen oben; Parent =
+`493a28ad`, Diff = Arbeitsbaum samt Index dieses Slice, neue Dateien mit `git add`
+aufgenommen).** Befehl 1: Parent 242 Zeilen (`docs/user` 58, `harness` 13, `spec` 36,
+`internal` 111, `tools` 24), Diff 280 (71, 23, 36, 111, 39). Befehl 2: Parent 11, Diff 11.
+Der zusätzliche Lauf auf die alten Zahlen und die Aussage „nicht untersucht“ (`git grep -n
+-E '1\.544|641,7|467 MiB|401,7|416,5' -- docs/user harness` und
+`git grep -n -i 'nicht untersucht' -- docs/user harness spec internal tools`): Parent 7
+und 1 Treffer, Diff 2 und 0.
+
 | Träger | Befund | Behandlung |
 |---|---|---|
-| Handbuch §Grenzwerte, `harness/targets/bench-backfill.md`, Doc-Kommentare an `DefaultBlockSize` und `estimatedRowsGuideline` | *(Implementer trägt ein)* | jede Zahl trägt Lauf und Ursprung; Aussagen zur Ursache folgen dem Ausgang |
+| Handbuch §9 „Grenzwerte“, Bullet Speicher des Feed-Containers | Parent: Zahlen 467, 401,7, 416,5, 641,7, 435 und 1.544 MiB, alle übernommen oder aus Reviews, dazu „nicht untersucht“ und „Zusammenhang mit der Tabellengröße nicht belegt“ | ersetzt durch gemessene Zahlen mit Reihe und Lauf; die eine übernommene Zahl (1.544 MiB) steht als übernommen mit dem vereinbaren Messwert (1.538,7 MiB) |
+| Handbuch §9, Bullet Richtgröße | Parent: Aussage „Breite Zeilen … ungemessen“ ohne Bezug zum Speicher | um den Speicher des Feed-Containers ergänzt, „ungemessen“ auf die Kopierrate eingegrenzt |
+| Handbuch §4 „Bestand als Backfill überführen“ und „Aufbewahrung (Retention)“ | beschrieben die Bereinigung und die Vorbedingungen ohne den Speicher (Parent: keine Treffer auf „Speicher des Feed“ dort) | je ein Absatz ergänzt; das Zählwort „vier Betriebs-Vorbedingungen“ bleibt, der Speicher steht als eigener Absatz außerhalb der Liste |
+| `harness/targets/bench-backfill.md` | Ablauf Nr. 2 ohne Grundlinie; Grenze „Speicher“ nur `docker stats`; Grenze „Zeilenbreite“ „breite Zeilen ungemessen“ | Ablauf, Abschnitt zum zweiten Skript, beide Grenzen nachgezogen |
+| `harness/README.md` (Zeile `make bench`) | nennt die Speichermessung ohne das zweite Skript | Verweis ergänzt |
+| Doc-Kommentare an `DefaultBlockSize`, `estimatedRowsGuideline` (Befehl 2: 11 Treffer an Definition und Verwendungen, Parent und Diff gleich) sowie an `BackfillTableService` und `NextBlock` (gelesen) | tragen „Zeilen, nicht Bytes“ und „Richtgröße aus Rate mal Toleranz“; keine Aussage über den Speicher des Containers | **unverändert**: beide Aussagen bleiben wahr (Messbericht Abschnitt 3.4 und 6) |
+| `internal/bootstrap/wiring.go`, Kommentar an `retentionInterval` | nennt „Jeder Takt liest alle Changes der Quelle“ — die Ursache, ohne Bezug zum Speicher | **unverändert**: wahr; der Änderungs-Slice trägt den Kommentar |
+| `docs/plan/planning/done/**`, `docs/reviews/**` (Architect-Verdikt, Review-Reports, Results-Notiz der Welle) | tragen die übernommenen Zahlen und „nicht untersucht“ (Treffer im Lauf auf `docs`, außerhalb der zwei Befehle) | **nicht geändert**: Records ([`AGENTS.md`](../../../../AGENTS.md) §3.5) |
+| Register `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes/state.md` | Feld „Gegenstand“ trägt „die Ursache ist nicht untersucht“ | **gemeldet**, nicht mitgeändert (Planner-Closure); nur der gebrochene Link ist ein Zitat |
+| `spec/pflichtenheft.md` Zeile 72 (`SPEC-005`) | „Große Transaktionen dürfen nicht unbegrenzt im RAM gehalten werden“ | gelesen: betrifft den Transaktionspuffer des Capture-Pfads, nicht die Retention-Lesung; nicht geändert |
+| **Nicht gefunden** | kein Träger außerhalb der genannten beschreibt die Retention-Lesung als Speicherquelle; kein Träger in `spec/` und `docs/user/` (außer dem Handbuch) trägt Zahlen zum Speicher des Feed-Containers | — |
 
 ## 4. Trigger
 
