@@ -1,8 +1,8 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.52
+Version: 1.53
 Software-Version: siehe `docs/user/version.md`
-Stand: 2026-09-24
+Stand: 2026-09-25
 
 ## 1. Einleitung
 
@@ -433,7 +433,7 @@ Vermerk; eine Login-Identität mit `cdc_reader`-Mitgliedschaft (die hinter
 `CDC_READER_DSN`) für das Lesen des Runs; der Feed-Container läuft für die
 Quelle. Der Snapshot entsteht mit dem Start des Runs, nicht mit dem Antrag: ein
 Run, der hinter einem anderen wartet, liest den Bestand zu seinem späteren
-Start. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
+Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
 
 - **`SELECT`-Recht:** die Login-Identität hinter `CDC_CAPTURE_DSN` liest die
   Tabelle (siehe [Zugriff und Rollen](#zugriff-und-rollen)).
@@ -447,7 +447,18 @@ Start. Für den Lauf selbst gelten drei Betriebs-Vorbedingungen an der Quelle:
   am Ende committet. Für die Dauer der Kopie hält die Quelle den Snapshot (er
   hindert die Bereinigung von Zeilenversionen, die er noch sieht), und der
   CDC-Speicher trägt eine offene Schreibtransaktion. Je größer die Tabelle,
-  desto länger. Eine Ablehnung großer Tabellen gibt es nicht.
+  desto länger. Eine Ablehnung großer Tabellen gibt es nicht; ab welcher Größe
+  ein Run warnt, steht unter [Grenzwerte](#grenzwerte).
+- **WAL-Rückstand des Capture-Slots:** die Kopie schreibt den Bestand in den
+  CDC-Speicher derselben Datenbank; dieses WAL zählt zum WAL-Rückstand des
+  Capture-Slots (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)), und die
+  offene Schreibtransaktion hält das WAL für den Slot auf der Platte der Quelle.
+  Ohne Live-Commit auf einer aktivierten Tabelle bleibt der Rückstand nach dem
+  Ende des Runs bestehen; ein Live-Commit senkt ihn. Ein Run kann die Fehlerschwelle
+  von 1 GiB überschreiten: der Feed-Container beendet sich dann mit der Klasse
+  `replication` (Ausgang 1) und der Run endet `interrupted`. Diese Schwelle kann
+  bei weniger Zeilen greifen als die Richtgröße; gemessene Werte stehen unter
+  [Grenzwerte](#grenzwerte).
 
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
 der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
@@ -521,7 +532,19 @@ WHERE source_id = '<source_id>' AND schema_name = '<schema>' AND table_name = '<
   Schätzung —, nie 0. Die Ausgabe von `diagnose` zeigt es als „unbekannt".
 - **`warn_estimated_size` und `warn_duration`** sind eine Kennzeichnung, die die
   Zeilenzahl und die Kopierdauer betrifft; sie ändern weder `status` noch den
-  Ablauf. In dieser Version setzt keine Auswertung sie: beide bleiben `false`.
+  Ablauf, und kein Antrag wird wegen der Größe abgelehnt (siehe
+  [Grenzwerte](#grenzwerte)).
+  - `warn_estimated_size` ist `true`, wenn die **geschätzte** Zeilenzahl beim
+    Antrag über der Richtgröße liegt. Eine unbekannte Schätzung (NULL) setzt sie
+    nie: die Warnung schweigt gerade bei einer frisch befüllten, noch nicht
+    analysierten Tabelle, für die der Katalog keine Schätzung führt (Messung
+    siehe [Grenzwerte](#grenzwerte)).
+  - `warn_duration` ist `true`, wenn die Kopierdauer (`finished_at −
+    started_at`; die Wartezeit in `queued` zählt nicht) die Toleranz
+    überschritten hat. Geprüft wird bei jedem Fortschritts-Update (je Block) und
+    beim Ende des Runs, auch bei `failed` und `interrupted`; ein einzelner
+    Block, der länger als die Toleranz braucht, warnt erst danach — die Warnung
+    ist eine Orientierung, kein Alarm. Eine gesetzte Warnung bleibt gesetzt.
 - **Umschreiben der Tabelle im Fenster:** Zwischen dem Snapshot-Export und der
   Sperre kann eine fremde DDL die Tabelle umschreiben (`ALTER TABLE … ALTER
   COLUMN … TYPE`, das die Datei neu schreibt, oder `TRUNCATE`); der ältere
@@ -738,13 +761,17 @@ pg-change-feed diagnose: Quelle "src-e2e"
     public.orders: completed, 1200 Zeilen kopiert, geschätzt 1150, Warnung Größe false, Warnung Dauer false
     public.audit: failed, 0 Zeilen kopiert, geschätzt unbekannt, Warnung Größe false, Warnung Dauer false
       Fehler: permission: …
+    public.events: completed, 4800000 Zeilen kopiert, geschätzt 4700000, Warnung Größe true, Warnung Dauer true
 ```
 
 Der Abschnitt „Backfill je Tabelle" liest die View `cdc.backfill_status` (siehe
 [Bestand als Backfill überführen](#bestand-als-backfill-überführen)): je
 Tabelle der zuletzt beantragte Run mit Status, Fortschritt, der **geschätzten**
-Zeilenzahl (eine unbekannte Schätzung erscheint als „unbekannt", nie als 0) und
-den beiden Kennzeichnungen; bei einem `failed`-Run folgt der Fehlertext. Ist
+Zeilenzahl (eine unbekannte Schätzung erscheint als „unbekannt“, nie als 0) und
+den beiden Kennzeichnungen (`Warnung Größe`: die geschätzte Zeilenzahl lag beim
+Antrag über der Richtgröße; `Warnung Dauer`: die Kopierdauer hat die Toleranz
+überschritten, siehe [Grenzwerte](#grenzwerte)); bei einem `failed`-Run folgt
+der Fehlertext. Ist
 noch nie ein Backfill beantragt worden, steht dort „(keiner — kein Backfill
 beantragt)".
 
@@ -1539,6 +1566,79 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   temporären Slots, sie endet nach dem Import des Snapshots); sie zählt ebenfalls
   gegen `max_wal_senders`, der temporäre Slot zusätzlich gegen
   `max_replication_slots`.
+- **Backfill, Toleranz der Kopierdauer:** 10 Minuten. Das ist ein **Startwert,
+  Setzung ohne Messung**; er steuert allein die Warnung `warn_duration` (siehe
+  [Bestand als Backfill überführen](#bestand-als-backfill-überführen)), keine
+  Anforderung und kein Gate liest ihn.
+- **Backfill, Richtgröße:** 4.000.000 **geschätzte** Zeilen. Das ist eine
+  **Orientierung, keine Grenze**: ein Antrag wird nie abgelehnt, ein Run nie
+  abgebrochen; liegt die geschätzte Zeilenzahl beim Antrag darüber, setzt der
+  Antrag `warn_estimated_size`. *Ursprung (abgeleitet):* die Kopierrate der
+  Stufe mit 200.000 Zeilen, Median von 3 Runs 7.693 Zeilen/s (Bereich 6.997 bis
+  8.686, gemessen), mal die Toleranz von 600 s ergibt 4.615.800 Zeilen, auf eine
+  Stelle abgerundet. Keine gemessene Stufe kopierte die Toleranzdauer; die Rate
+  ist hochgerechnet. Sie gilt für den Host und die Bedingungen der Messung
+  (siehe unten) und streut zwischen Läufen: sechs weitere Läufe auf demselben
+  Host lagen in den Stufen ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s
+  je Run (übernommen aus den Lauf-Berichten, nicht im Repository). Breite
+  Zeilen (`jsonb`, `bytea`),
+  andere Hardware und eine andere Einfügeform sind ungemessen. Die
+  WAL-Fehlerschwelle (siehe unten) kann bei weniger Zeilen greifen.
+- **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
+  `tools/bench-backfill.sh`, Vertrag in
+  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
+  Host: Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 31 GiB RAM,
+  PostgreSQL 18 (`postgres:18-alpine`) mit Standard-Einstellungen; Tabellen mit
+  fünf schmalen Spalten, mittlere Zeilenbreite etwa 74 Bytes, Blockgröße 1.000
+  Zeilen, zeilenweise Einfügung in **eine** Transaktion; Median und Bereich von
+  je 3 Runs):
+
+  | Zeilen | Kopierdauer | Durchsatz |
+  |---|---|---|
+  | 10.000 | 1,19 s (1,14 bis 1,20 s) | 8.375 Zeilen/s |
+  | 50.000 | 5,89 s (5,58 bis 5,96 s) | 8.489 Zeilen/s |
+  | 200.000 | 26,0 s (23,0 bis 28,6 s) | 7.693 Zeilen/s |
+
+  Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`, `--full`,
+  gleicher Host) dauerten 125,2 s und 122,8 s (7.986 und 8.141 Zeilen/s). Die
+  mittlere Blockdauer liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch
+  Blockzahl); die längste Dauer eines einzelnen Blocks und die Dauer des Commits
+  sind nicht gemessen.
+- **Backfill, Speicher des Feed-Containers** (`docker stats`, Abstand der Proben
+  etwa 1 bis 2 s, dieselben Läufe): Spitze 467 MiB in der Stufe mit 200.000
+  Zeilen (185 MiB in Ruhe davor); 435 MiB und 1.544 MiB in den zwei Runs über
+  je 1.000.000 Zeilen. Der Bedarf eines Blocks (Blockgröße mal Zeilenbreite,
+  etwa 74 KB) erklärt das nicht; die Ursache ist nicht untersucht, ein
+  Zusammenhang mit der Tabellengröße ist nicht belegt.
+- **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
+  `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen);
+  dieselben Läufe): Spitze im Run im Median 140 MiB in der Stufe mit 200.000
+  Zeilen (etwa 735 Bytes je Zeile), 719 und 834 MiB in den zwei Runs über je
+  1.000.000 Zeilen. Der Rückstand blieb ohne Live-Commit bestehen (776 MiB
+  unmittelbar nach dem ersten Run über 1.000.000 Zeilen) und sank nach einem
+  Live-Commit auf einer aktivierten Tabelle auf 2 MiB. Ein **dritter** Run über
+  1.000.000 Zeilen im selben CDC-Speicher (mit den 2.330.000 Backfill-Änderungen
+  der vorherigen Runs) überschritt vor seinem Ende die
+  Fehlerschwelle von 1 GiB (Messwert 1.098.218.616 Bytes): der Feed-Container
+  beendete sich mit Ausgang 1 (`replication`), der Run endete `interrupted`.
+  Der Rückstand je Zeile wächst danach mit dem Bestand im CDC-Speicher
+  (abgeleitet aus den drei Runs; die Ursache ist nicht untersucht). Das vom
+  Slot auf der Platte der Quelle gehaltene WAL erreichte
+  in den zwei Runs über 1.000.000 Zeilen 782 und 1.613 MiB (Spitze).
+- **Backfill, Wirkung auf die Live-Erfassung** (Lauf `20260925T000439Z`, Run
+  über 200.000 Zeilen bei 100 Live-Änderungen/s in eine andere aktivierte
+  Tabelle): `cdc_capture_lag` 0,049 bis 1,005 s (Median 0,48 s, 24 Proben) im
+  Run gegenüber 0,049 bis 1,022 s (Median 0,50 s, 29 Proben) ohne Run — bei
+  dieser Last und Größe ist kein Unterschied gemessen.
+- **Backfill, Schätzung der Zeilenzahl** (`pg_class.reltuples`, PostgreSQL 18,
+  Tabelle mit 100.000 Zeilen, Lauf `20260925T000439Z`): eine frisch befüllte
+  Tabelle trägt **keine** Schätzung (NULL, „unbekannt“) — mit und ohne
+  Autovacuum; mit Autovacuum lag die Schätzung nach 35 s vor (Abfrage im
+  Abstand von 5 s), ohne Autovacuum blieb sie unbekannt; nach `ANALYZE` stimmte
+  sie (100.000); nach 20.000 weiteren Zeilen ohne erneutes `ANALYZE` lag sie
+  16,7 % unter der tatsächlichen Zahl (120.000). Die Schätzung ist so alt wie
+  das letzte `ANALYZE`; `warn_estimated_size` schweigt bei einer unbekannten
+  Schätzung.
 
 ### Support und Kontakt
 
@@ -1605,3 +1705,4 @@ MIT — siehe `LICENSE`.
 | 1.50 | 2026-09-24 | Gemessene Startposition eines frisch registrierten Consumers dokumentiert (`LH-FA-CAP-009`, `LH-FA-CON-005`, `ADR-0111`, slice-backfill-e2e): §4 „Bestand als Backfill überführen" trägt den Punkt „Startposition eines neuen Consumers" (`offset` 0, `acknowledged` `false`, vor der Snapshot-Position jedes Runs; Ursprung: der Lauf von `make test-integration`) und nennt in der Zustandstabelle, dass `rows_copied` eines `interrupted`-Runs den zuletzt festgehaltenen Fortschritt trägt |
 | 1.51 | 2026-09-24 | Sperre des Backfill-Runs und Ausgang bei umgeschriebener Tabelle dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“ trägt den Absatz „Sperre der Tabelle“ (Lesesperre bis zum Ende des Runs, Wirkung auf DDL mit `ACCESS EXCLUSIVE`) und den Punkt „Umschreiben der Tabelle im Fenster“ (`failed`/`transient` ohne Änderung, neuer Antrag als Abhilfe, Fehlalarme `VACUUM FULL`/`CLUSTER`) |
 | 1.52 | 2026-09-24 | Wirkung der Tabellensperre des Backfill-Runs vollständig und mit Ursprung dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“, Absatz „Sperre der Tabelle“, nennt neben Lesern auch Schreiber und die Publication-Abfrage der Administration als hinter einer wartenden DDL gestaut (gemessen, PostgreSQL 18) und die Gegenrichtung (der Run wartet ohne eigene Zeitgrenze auf eine offene `ACCESS EXCLUSIVE`-Transaktion); `RENAME COLUMN` im Fenster ist als im Review gemessen, nicht im E2E-Runner belegt gekennzeichnet |
+| 1.53 | 2026-09-25 | Warnungen des Backfill-Runs und gemessene Richtgrößen dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse): §4 „Bestand als Backfill überführen“ nennt, wann `warn_estimated_size` und `warn_duration` gesetzt werden, und den WAL-Rückstand des Capture-Slots als vierte Betriebs-Vorbedingung; „Diagnose ausführen“ deutet die beiden Kennzeichnungen; §9 „Grenzwerte“ trägt die Toleranz der Kopierdauer (Startwert, Setzung ohne Messung), die Richtgröße (abgeleitet, Orientierung, keine Grenze) und die gemessenen Werte (Kopierdauer, Speicher, WAL-Rückstand, Wirkung auf die Live-Erfassung, Schätzung der Zeilenzahl) mit Host und Lauf |
