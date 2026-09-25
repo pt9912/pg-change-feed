@@ -1,7 +1,7 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.6
-Stand: 2026-09-21
+Version: 1.7
+Stand: 2026-09-25
 
 ## 1. Zweck und Zielgruppe
 
@@ -17,13 +17,14 @@ Image auf GHCR oder Docker Hub stammt.
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
 GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
 Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Zwei der drei separaten SDK-Release-Wege (§4
-„SDK-Release") sind inzwischen ebenfalls real mit einem grünen Tag-Push
-bewiesen: `sdk-csharp-v0.1.0` (`PgChangeFeed.Client` auf NuGet.org) und
-`sdk-python-v0.1.0` (`pgchangefeed` auf PyPI). Der dritte, jüngste Weg
-(`sdk-kotlin-v*`, `pgchangefeed-kotlin` auf GitHub Packages) ist
-implementiert, aber bis zum ersten realen `sdk-kotlin-v*`-Tag-Push nach
-[`AGENTS.md`](../../AGENTS.md) §3.10 noch unbewiesen (siehe unten).
+nicht nur implementiert. Alle drei separaten SDK-Release-Wege (§4
+„SDK-Release") sind ebenfalls real mit einem grünen Tag-Push bewiesen:
+`sdk-csharp-v0.1.0` und `sdk-csharp-v0.2.0` (`PgChangeFeed.Client` auf
+NuGet.org), `sdk-python-v0.1.0` und `sdk-python-v0.2.0` (`pgchangefeed` auf
+PyPI) sowie `sdk-kotlin-v0.2.0` (`pgchangefeed-kotlin` auf GitHub
+Packages). Die `0.2.0`-Läufe der drei Workflows (Lauf-Kennungen 36117929191,
+36117929298 und 36117929552, abgefragt mit `gh run list --workflow
+<datei>.yml`, 2026-09-25) endeten je mit `success`.
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -153,11 +154,12 @@ Kein `:latest`-Äquivalent (NuGet kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0106`).
 
-**Ein realer `sdk-csharp-v*`-Tag ist bereits gesetzt** — `sdk-csharp-v0.1.0`
+**Zwei reale `sdk-csharp-v*`-Tags sind gesetzt** — `sdk-csharp-v0.1.0`
 lief mit grünem `sdk-csharp-release.yml`-Lauf durch und veröffentlichte
 `PgChangeFeed.Client` 0.1.0 real auf NuGet.org (`dotnet nuget push`
-bestätigte `201 Created`/„Your package was pushed"). Der C#-SDK-Release-Weg
-ist damit End-zu-Ende mit echtem `NUGET_API_KEY`-Secret bewiesen, nicht nur
+bestätigte `201 Created`/„Your package was pushed"); `sdk-csharp-v0.2.0`
+lief ebenfalls grün (Lauf 36117929191). Der C#-SDK-Release-Weg ist damit
+End-zu-Ende mit echtem `NUGET_API_KEY`-Secret bewiesen, nicht nur
 implementiert.
 
 ### SDK-Release: PyPI-Publish für `pgchangefeed`
@@ -207,11 +209,12 @@ Kein `:latest`-Äquivalent (PyPI kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0107`).
 
-**Ein realer `sdk-python-v*`-Tag ist bereits gesetzt** —
+**Zwei reale `sdk-python-v*`-Tags sind gesetzt** —
 `sdk-python-v0.1.0` lief mit grünem `sdk-python-release.yml`-Lauf durch
 und veröffentlichte `pgchangefeed` 0.1.0 real auf PyPI (die PyPI-API
 `https://pypi.org/pypi/pgchangefeed/json` bestätigt Version `0.1.0`
-sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet). Der
+sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet);
+`sdk-python-v0.2.0` lief ebenfalls grün (Lauf 36117929298). Der
 Python-SDK-Release-Weg ist damit End-zu-Ende mit echtem
 `PYPI_API_TOKEN`-Secret bewiesen, nicht nur implementiert.
 
@@ -222,7 +225,7 @@ eigenständiger Release-Mechanismus für das Kotlin-SDK-Package
 `pgchangefeed-kotlin`
 ([`ADR-0109`](../plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)
 Festlegung 2/5): ein eigener Tag-Namensraum `sdk-kotlin-v<SemVer 2.0>`
-(z. B. `sdk-kotlin-v0.1.0`) — getrennt vom Server-Namensraum `v*` (§3)
+(z. B. `sdk-kotlin-v0.2.0`) — getrennt vom Server-Namensraum `v*` (§3)
 sowie vom C#-SDK-Namensraum `sdk-csharp-v*` und vom Python-SDK-Namensraum
 `sdk-python-v*` (siehe oben), weil die Kotlin-SDK-Versionierung unabhängig
 von allen dreien läuft (`ADR-0109` Festlegung 4) und `sdk-kotlin-v*` keines
@@ -286,13 +289,14 @@ Kein `:latest`-Äquivalent (GitHub Packages kennt keins) und kein
 GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
 Folgepflicht (`ADR-0109`).
 
-**Der reale, grüne Post-Push-Lauf steht noch aus** — dieser Release-Weg
-ist implementiert und `make gates` läuft grün, aber nach
-[`AGENTS.md`](../../AGENTS.md) §3.10 bleibt er bis zum ersten echten
-`sdk-kotlin-v*`-Tag-Push unbewiesen: `./gradlew publish`-Verhalten im
-`publish`-Docker-Image und das reale GitHub-Packages-Registry-Antwortverhalten
-sind lokal strukturell nicht prüfbar (kein Docker-only-Sensor kann einen
-echten Registry-Schreibzugriff gegen `maven.pkg.github.com` ersetzen).
+**Ein realer `sdk-kotlin-v*`-Tag ist gesetzt** — `sdk-kotlin-v0.2.0` lief
+mit grünem `sdk-kotlin-release.yml`-Lauf durch (Lauf 36117929552; alle
+Schritte `success`, darunter „Nach GitHub Packages veroeffentlichen
+(./gradlew publish, im Docker-Image)"), und die Paketversion ist über die
+GitHub-API abfragbar (`gh api
+/users/pt9912/packages/maven/io.github.pt9912.pgchangefeed-kotlin/versions`
+nennt `0.2.0`, 2026-09-25). Der Kotlin-SDK-Release-Weg ist damit
+End-zu-Ende bewiesen, nicht nur implementiert.
 
 ## 5. Begleitende, nicht-blockierende Workflows
 
@@ -330,3 +334,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.4 | 2026-09-20 | §1/§4 korrigiert: `sdk-python-v0.1.0` real gesetzt, `pgchangefeed` 0.1.0 real auf PyPI veröffentlicht — der Python-SDK-Release-Weg ist damit wie der C#-Weg End-zu-Ende bewiesen |
 | 1.5 | 2026-09-20 | §1/§4 um den vierten, unabhängigen SDK-Release-Weg (`sdk-kotlin-v*`-Tag, GitHub Packages, `GITHUB_TOKEN`, kein externes Secret) ergänzt — vorab eingeplanter DoD-Punkt von `slice-sdk-kotlin-publish-workflow` (`LH-FA-SST-009`, `ADR-0109`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`); der reale Post-Push-Lauf bleibt nach `AGENTS.md` §3.10 bis zum ersten echten Tag-Push offen |
 | 1.6 | 2026-09-21 | §4 korrigiert: der Publish-Schritt (`./gradlew publish`) läuft jetzt Docker-only in einer eigenen `publish`-Stufe (`sdks/kotlin/Dockerfile`), nicht mehr direkt auf dem Runner — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-kotlin-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0109` Festlegung 5) |
+| 1.7 | 2026-09-25 | §1/§4 auf den Ist-Stand gezogen (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-readme-nutzerdoku Fixrunde): alle drei SDK-Release-Wege sind mit realen Tags bewiesen (`sdk-csharp-v0.1.0`/`0.2.0`, `sdk-python-v0.1.0`/`0.2.0`, `sdk-kotlin-v0.2.0`; `0.2.0`-Läufe 36117929191, 36117929298, 36117929552 je `success`, Kotlin-Paketversion `0.2.0` über die GitHub-API abgefragt) |
