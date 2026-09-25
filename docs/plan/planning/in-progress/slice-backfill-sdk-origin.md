@@ -59,36 +59,40 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
 
 ## 2. Definition of Done
 
-- [ ] Die drei HTTP-Lesemodelle tragen `origin` als optionales Feld: eine
+- [x] Die drei HTTP-Lesemodelle tragen `origin` als optionales Feld: eine
       Antwort mit `origin` liefert den Wert, eine Antwort ohne das Feld liefert
-      `wal`; je Sprache ein Unit-Test mit beiden Fällen und einer Fixture, deren
-      Ursprung (reale Antwort von `GET /changes`) im Test genannt ist. *Zu
+      `wal`; je Sprache ein Unit-Test mit beiden Fällen (dazu unbekannter Wert
+      durchgereicht; Kotlin/Python: JSON-`null` liest als `wal`) und einer
+      Fixture, deren Ursprung im Test genannt ist: die Antwortform des
+      Server-Handlers (`TestReadChangesTraegtOriginAlsLetztesFeld`), **kein**
+      Lauf gegen einen Server-Container. *Zu
       belegen durch:* `make sdk-pack-csharp`, `make sdk-pack-kotlin` und
       `make sdk-pack-python` — der Bau führt die Tests aus und bricht bei rotem
       Test ab; jeder Aufruf trägt `--build-context proto=proto` (er ist für den
       **ganzen** Bau jedes SDK zwingend, nicht nur für gRPC:
       `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`, offen, 3×).
-- [ ] Die Versionen stehen in den drei Metadaten-Quellen (`.csproj` `<Version>`,
-      `build.gradle.kts` `version`, `pyproject.toml` `[project] version`) auf der
-      nächsten Minor-Version nach dem Muster der bisherigen Hebungen (Wahl und
-      Grund im Bericht); die Träger sind mitgezogen (§3.13-Suchlauf), die
-      real erzeugten Artefaktnamen in den Beschreibungen sind aus **realen**
-      Pack-Läufen geschrieben.
-- [ ] Die Sprachreinheit der Kopien: die drei Sprach-Änderungen sind Kopien
+- [x] Die Versionen in den drei Metadaten-Quellen (`.csproj` `<Version>`,
+      `build.gradle.kts` `version`, `pyproject.toml` `[project] version`) stehen
+      auf `0.2.0`: der nächsten Minor-Version nach den vorhandenen Tags
+      (`0.1.0`), die noch kein Tag trägt — keine weitere Hebung, Wahl und
+      Grund in §3 „Versionsentscheidung"; die Träger sind geprüft
+      (§3.13-Suchlauf), die Artefaktnamen sind durch **reale** Pack-Läufe
+      bestätigt.
+- [x] Die Sprachreinheit der Kopien: die drei Sprach-Änderungen sind Kopien
       derselben Form; jede Kopie ist auf verbliebene deutsche Wortfragmente in
       Code, Kommentaren, Docstrings und README geprüft, nicht nur auf ihre
       Übereinstimmung mit dem Vorbild
       (`BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter`,
       `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme`, je verkörpert, 3×).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: SDK-READMEs (englisch) nennen das Feld und die Version; Benutzerhandbuch (`**SDK:**`-Absätze der HTTP-Beschreibung) und Änderungshistorie, soweit sie die Version oder die Feldmenge tragen.
+- [x] Doku-Update: SDK-READMEs (englisch) nennen das Feld und die Version; Benutzerhandbuch (`**SDK:**`-Absätze der HTTP-Beschreibung) und Änderungshistorie, soweit sie die Version oder die Feldmenge tragen.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
 - [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
@@ -116,16 +120,22 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
 | `harness/mk/sdk.mk` | prüfen | trägt der Kommentar die Version? |
 | `docs/user/benutzerhandbuch.md` | prüfen/update | `**SDK:**`-Absätze; Änderungshistorie. |
 | Kommentare mit Feldanzahl in den SDK-Bäumen (gemeldet von `slice-backfill-change-origin`, Fixrunde, Suchlauf über `sdks/` und `examples/`) | update | `Sse/Models/Change.cs` Z. 17 und `Nats/Models/Change.cs` Z. 21 (C#, „eleven fields" für `GET /changes`), `sse/model/Change.kt` Z. 19–20 (Kotlin, „twelve fields"), `models.py` Z. 264 (Python, „zwölf des HTTP-Lesezugriffs"): der HTTP-Lesezugriff trägt mit `origin` dreizehn Felder; die C#-Kommentare nennen schon am Parent eine Zahl, die nicht zu den gezählten zwölf Feldern passt. Ebenso `Http/Models/Changes.cs` Z. 8 und `http/model/Changes.kt` Z. 8 („the same ten fields as the domain type"): das HTTP-Modell trägt am Parent zwölf, jetzt dreizehn Felder. Die Kommentare sind Träger der bewegten Eigenschaft „Feldmenge des HTTP-Lesemodells" und werden mit dem Feld nachgezogen. |
+| **Versionsentscheidung: keine Hebung** — `.csproj` `<Version>`, `build.gradle.kts` `version` (Zeile 108, die eingerückte Zeile 230 im `publishing`-Block trägt dieselbe Zahl), `pyproject.toml` `version` bleiben `0.2.0` | Reduktion (Plan-Punkt „Version heben" entfällt) | *Beleg (gemessen 2026-09-25):* `git tag -l` nennt `sdk-csharp-v0.1.0` und `sdk-python-v0.1.0` (Kotlin: kein Tag); die Quellen stehen bei `0.2.0`, gesetzt in `d86d1965` (C#), `0f8cc4f2` (Python) und `c8c9e3ae` (Kotlin) — je im letzten Slice der Vollabdeckungs-Welle, und der jeweils zweite Slice (NATS nach SSE) hob **nicht** erneut: eine additive Erweiterung faltet sich in die anstehende, noch unveröffentlichte Version (Muster der Vorgänger). `origin` ist additiv und rückwärtskompatibel (SemVer-Minor); `0.2.0` ist damit bereits die nächste Minor-Version nach dem letzten Tag und trägt das Feld im ersten Release, der `0.2.0` nennt. Eine Hebung auf `0.3.0` übersprünge eine Version, die kein Konsument je sah. Die Release-Tag-Info-Skripte prüfen nur die Grammatik des Tags (`sdk-<sprache>-v<Version>`); `bash tools/harness/sdk-{csharp,kotlin,python}-release-tag-info.sh sdk-<sprache>-v0.2.0` liefert je `version=0.2.0`, und der Tag-Abgleich der Workflows liest die Quellen (Kotlin: die Zeile `^version = "…"`), die dieser Slice nicht ändert. Für den Release-Zug nach der Wellen-Closure: Tag = Quell-Version = `sdk-csharp-v0.2.0`, `sdk-python-v0.2.0`, `sdk-kotlin-v0.2.0`. Folge: die Träger mit `0.2.0` (Spec-§6-Zeilen, Artefaktnamen in Spec/`harness/mk/sdk.mk`/Dockerfiles, Kotlin-README) bleiben unverändert und wahr; die Artefaktnamen werden durch die realen Pack-Läufe dieses Slice bestätigt. |
+| `sdks/python/pgchangefeed/src/pgchangefeed/http_client.py` | Reduktion (kein Diff) | Der Client liest `GET /changes` über `ReadChangesResponse.from_json` → `Change.from_json` in `models.py`; `http_client.py` trägt keine Feldliste und ändert sich nicht. |
+| Kotlin `Change`: `wireOrigin: String? = null` plus abgeleitete Eigenschaft `origin` (`wireOrigin ?: "wal"`); C# `Origin = "wal"` als Parameter-Default; Python `origin: str = "wal"` und `data.get("origin") or "wal"` | Ausführungsform | Gson setzt bei einer Klasse ohne Konstruktor-Aufruf den Parameter-Default nicht (Risiko §6, der Test „ohne `origin`" belegt es); der Wert bleibt der Server-String (kein Enum), ein unbekannter Wert wird durchgereicht statt zu scheitern; ein JSON-`null` liest in Kotlin und Python als `wal`. |
+| `spec/pflichtenheft.md` §6 (`SPEC-026`/`-027`/`-028`) und §7 | update (abweichend von „eine Historie-Zeile je Package") | Die Zeilen nennen `SPEC-022` unter den gedeckten Drahtverträgen (`origin` ist dessen Antwortfeld); **eine** Historie-Zeile für alle drei Packages, weil der Inhalt identisch ist; die Version wird nicht gehoben, die Zeilen tragen weiter `0.2.0`. |
+| `docs/user/benutzerhandbuch.md` | update | Ein Absatz nach den drei `**SDK:**`-Absätzen der HTTP-Beschreibung (nennt `origin` für alle drei Packages, `wal` bei fehlendem Feld, Live-Wege ohne), Version 1.58 samt Historie-Zeile. |
+| Beispiel-Clients `examples/**` | entfällt | Kein Beispiel dekodiert `GET /changes` (Suchlauf unten). |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Version der drei Packages (0.2.0 → neue Version)", „die Feldmenge des HTTP-Lesemodells"; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Versionsangaben | `grep -rn '0\.2\.0' spec harness sdks docs/user` (Treffer nach Bezug auf die drei Packages lesen; andere Versionen sind keine Treffer) | *(Implementer trägt ein)* | Träger nachziehen; `docs/reviews/**` und `done/**` sind Records und bleiben |
-| Artefaktnamen (`PgChangeFeed.Client.0.2.0.nupkg`, `pgchangefeed-kotlin-0.2.0.jar`, `pgchangefeed-0.2.0-…`) | `grep -rn 'nupkg\|\.jar\|\.whl' harness docs/user spec` | *(Implementer trägt ein)* | aus realen `make sdk-pack-*`-Läufen neu schreiben |
-| Feldbeschreibungen des HTTP-Lesemodells in READMEs und Handbuch | `grep -rn 'old_image\|oldImage\|OldImage' sdks docs/user` (Fundstellen nach HTTP-Bezug lesen) | *(Implementer trägt ein)* | nachziehen |
-| Beispiel-Clients, die `GET /changes` dekodieren | Lesen von `examples/**` | *(Implementer trägt ein)* | anpassen oder Punkt als entfallen im Bericht |
-| Publish-Workflows (Tag-Abgleich gegen die Metadaten-Quelle) | Lesen der drei `sdk-*-release.yml` (nur lesen) | *(Implementer trägt ein)* | unverändert; der Tag-Abgleich liest die Quellen, die dieser Slice hebt |
+| Versionsangaben | `grep -rn '0\.2\.0' spec harness sdks docs/user` (Treffer nach Bezug auf die drei Packages lesen; andere Versionen sind keine Treffer) | **Gefunden, Parent `fea14159`** (`git grep … fea14159`): Package-Bezug in `spec/pflichtenheft.md` (Z. 302/308/315 Fließtext, Z. 820–822 §6-Zeilen, Z. 864–866 Historie), `harness/mk/sdk.mk` (Z. 27, 49), `sdks/csharp/Dockerfile` Z. 66, `sdks/kotlin/Dockerfile` Z. 77/104, `sdks/kotlin/pgchangefeed-kotlin/README.md` Z. 38, `build.gradle.kts` Z. 97/108/230, `.csproj` Z. 15/23, `pyproject.toml` Z. 7, `docs/user/benutzerhandbuch.md` Historie 1.38/1.39/1.43 (Z. 1786/1787/1791, frühere Einträge, bleiben); ohne Package-Bezug (kein Treffer): `spec/lastenheft.md` Z. 1361 (Dokumentversion), `docs/user/benutzerhandbuch.md` Z. 1780 (Historie 1.32, Software-Version-Kopf). **Diff-Stand:** `grep -rn '0\.2\.0' spec harness sdks docs/user tools .github Makefile` (Ausschluss `dist/`/`bin/`/`obj/`/`build/`) liefert 26 Zeilen — dieselbe Zahl wie am Parent, kein Treffer verändert (Handbuch-Eintrag 1.58 nennt `0.2.0` nicht). **Nicht gefunden:** kein Träger nennt eine andere Package-Version als `0.2.0`; `docs/user/version.md` und `docs/user/releasing.md` tragen keine SDK-Version (`grep -c` je 0). | kein Nachzug (Version unverändert); `docs/reviews/**` und `done/**` sind Records und bleiben |
+| Artefaktnamen (`PgChangeFeed.Client.0.2.0.nupkg`, `pgchangefeed-kotlin-0.2.0.jar`, `pgchangefeed-0.2.0-…`) | `grep -rn 'nupkg\|\.jar\|\.whl' harness docs/user spec` | **Gefunden, Parent und Diff-Stand** (`grep -c` je Datei, identisch an beiden Ständen): `harness/mk/sdk.mk` 8, `spec/pflichtenheft.md` 9, `harness/README.md` 5, `docs/user/releasing.md` 2 Zeilen. Die Namen tragen `0.2.0` (Spec, `sdk.mk`) bzw. keine Version (`harness/README.md`, `releasing.md`). **Real bestätigt:** `make sdk-pack-csharp` erzeugt `sdks/csharp/dist/PgChangeFeed.Client.0.2.0.nupkg`, `make sdk-pack-python` `pgchangefeed-0.2.0-py3-none-any.whl` und `pgchangefeed-0.2.0.tar.gz`, `make sdk-pack-kotlin` `pgchangefeed-kotlin-0.2.0.jar` (Läufe dieses Slice, Zeilen im Bericht). **Nicht gefunden:** kein Artefaktname mit einer anderen Version als `0.2.0` außer den drei Historie-Zeilen `spec/pflichtenheft.md` Z. 859/861/863 (`0.1.0`, frühere Einträge, bleiben); keine Änderung nötig. | unverändert; durch die realen `make sdk-pack-*`-Läufe bestätigt |
+| Feldbeschreibungen des HTTP-Lesemodells in READMEs und Handbuch | `grep -rn 'old_image\|oldImage\|OldImage' sdks docs/user` (Fundstellen nach HTTP-Bezug lesen) | **Gefunden, Parent `fea14159`:** in `sdks/**` nur Quelltext und Tests (Symbolnamen), keine README-Feldliste (die READMEs nennen `GET /changes` nur als Fähigkeit); `docs/user/benutzerhandbuch.md` Z. 979 (Feldliste von `GET /changes`, trägt `origin` bereits), Z. 1080 (gRPC-Feldtabelle) und Z. 1313 (SSE-Feldliste) — die beiden letzten sind Live-Wege. Zusätzlich gesucht nach Zählwörtern der Feldmenge (`twelve`/`eleven`/`zwölf`/`ten fields`/`zehn`) an beiden Ständen: Parent trägt sie in den sechs Kommentaren (`Http/Models/Changes.cs` Z. 8 „ten", `Sse/Models/Change.cs` Z. 17 und `Nats/Models/Change.cs` Z. 21 „eleven", `http/model/Changes.kt` Z. 8 „ten", `sse/model/Change.kt` Z. 19 „twelve", `models.py` Z. 264 „zwölf"); Diff-Stand: alle sechs nennen dreizehn. **Nicht gefunden / unverändert:** die „zehn Felder" der Live-Flächen (gRPC/SSE/NATS in Handbuch, Spec §2 Z. 594/613/689, Kommentare, Tests) bleiben, ebenso „zehn Fähigkeiten" (Fähigkeiten der HTTP-Oberfläche, keine Felder); keine README-Feldliste zu ergänzen — die READMEs nennen `origin` in ihrer HTTP-Beschreibung, das Handbuch führt die Feldliste. | Handbuch-Absatz und README-Sätze ergänzt; die sechs Zählwort-Kommentare auf dreizehn gezogen |
+| Beispiel-Clients, die `GET /changes` dekodieren | Lesen von `examples/**` | **Nicht gefunden, Parent und Diff-Stand:** `grep -rn -i -E 'commit_position|commitposition|"changes"|ReadChanges|readChanges|read_changes' examples` liefert an beiden Ständen keinen Treffer; die HTTP-Beispiele (Go/C#/Kotlin) rufen `GET /tables` auf, die NATS-Beispiele bauen nur die Abfrage-URL für `/changes` (`examples/nats-client/subject.go` Z. 20) und dekodieren keine Antwort, SSE/NATS-Vollinhalt sind Live-Wege. Kein Beispiel dekodiert `GET /changes`. | Punkt entfällt, keine Änderung an `examples/**`; kein `make examples-*`-Lauf nötig |
+| Publish-Workflows (Tag-Abgleich gegen die Metadaten-Quelle) | Lesen der drei `sdk-*-release.yml` (nur lesen) | **Gelesen, unverändert:** der Tag-Abgleich extrahiert die Version aus `<Version>` der `.csproj` (`sdk-csharp-release.yml` Z. 68), aus `^version = "…"` der `pyproject.toml` (`sdk-python-release.yml` Z. 85) und der `build.gradle.kts` (`sdk-kotlin-release.yml` Z. 110; die eingerückte Zeile im `publishing`-Block trifft das `^`-Muster nicht). Gemessen mit denselben Befehlen an den Quellen: `cs=0.2.0`, `py=0.2.0`, `kt=0.2.0`; eine auf `0.3.0` verstellte Kopie der `pyproject.toml` liefert `py_mut=0.3.0` (Abweichung zum Tag `0.2.0` wäre sichtbar). | unverändert; die Quellen tragen `0.2.0`, Tag = `sdk-<sprache>-v0.2.0` |
 
 ## 4. Trigger
 
