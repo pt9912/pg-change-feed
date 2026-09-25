@@ -83,6 +83,10 @@ func (s *RunRetentionService) Run(ctx context.Context, command RunRetentionComma
 		if len(page) == 0 {
 			return RunRetentionResult{Deleted: deleted}, nil
 		}
+		last := page[len(page)-1].ChangeID
+		if last == after {
+			return RunRetentionResult{}, fmt.Errorf("%w: Kandidaten-Seite ohne Fortschritt hinter %q", outbound.ErrStorage, after)
+		}
 
 		eligible := make([]model.ChangeID, 0, len(page))
 		for _, candidate := range page {
@@ -95,11 +99,6 @@ func (s *RunRetentionService) Run(ctx context.Context, command RunRetentionComma
 			return RunRetentionResult{}, err
 		}
 		deleted += len(eligible)
-
-		last := page[len(page)-1].ChangeID
-		if last == after {
-			return RunRetentionResult{}, fmt.Errorf("%w: Kandidaten-Seite ohne Fortschritt hinter %q", outbound.ErrStorage, after)
-		}
 		after = last
 	}
 }
