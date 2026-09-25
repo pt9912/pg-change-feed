@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.8
+Version: 1.9
 Stand: 2026-09-25
 
 ## 1. Zweck und Zielgruppe
@@ -12,12 +12,20 @@ Prüfungen laufen. Es richtet sich an Maintainer, die einen Release-Tag
 setzen, und an Betreiber, die verstehen wollen, woher ein bestimmtes
 Image auf GHCR oder Docker Hub stammt.
 
-**Drei reale Server-Release-Tags sind bereits gesetzt** — `v0.1.0`,
-`v0.1.1` und `v0.1.2` liefen jeweils mit grünem
+**Vier reale Server-Release-Tags sind bereits gesetzt** — `v0.1.0`,
+`v0.1.1`, `v0.1.2` und `v0.2.0` liefen jeweils mit grünem
 `.github/workflows/release.yml`-Lauf durch (GHCR- und Docker-Hub-Push,
-GitHub-Release mit Image-Digest). Der hier beschriebene Server-Release-
-Mechanismus ist damit End-zu-Ende mit echten Repository-Secrets bewiesen,
-nicht nur implementiert. Alle drei separaten SDK-Release-Wege (§4
+GitHub-Release mit Image-Digest). Der Lauf von `v0.2.0` (Lauf-Kennung
+36190768475, 2026-09-25) endete mit `success` in beiden Jobs (Release und
+`hub-description`); `ghcr.io/pt9912/pg-change-feed` trägt die Tags `0.2.0` und
+`latest`, Docker Hub trägt `0.2.0` und `latest` mit `linux/amd64` und
+`linux/arm64`, und das GitHub-Release nennt den Digest
+`sha256:fab4a53d96ac414578739319307dc80b7aeacbb6ba88659b88fbf48bb8c5b58e`. Die
+Release-Beschreibung eines Tags lässt sich nach dem Lauf mit
+`gh release edit <Tag> --notes-file <Datei>` um Release-Hinweise ergänzen; der
+Workflow schreibt nur den Digest und die Image-Namen. Der hier beschriebene
+Server-Release-Mechanismus ist damit End-zu-Ende mit echten
+Repository-Secrets bewiesen, nicht nur implementiert. Alle drei separaten SDK-Release-Wege (§4
 „SDK-Release") sind ebenfalls real mit einem grünen Tag-Push bewiesen:
 `sdk-csharp-v0.1.0` und `sdk-csharp-v0.2.0` (`PgChangeFeed.Client` auf
 NuGet.org), `sdk-python-v0.1.0` und `sdk-python-v0.2.0` (`pgchangefeed` auf
@@ -347,3 +355,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.6 | 2026-09-21 | §4 korrigiert: der Publish-Schritt (`./gradlew publish`) läuft jetzt Docker-only in einer eigenen `publish`-Stufe (`sdks/kotlin/Dockerfile`), nicht mehr direkt auf dem Runner — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-kotlin-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0109` Festlegung 5) |
 | 1.7 | 2026-09-25 | §1/§4 auf den Ist-Stand gezogen (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-readme-nutzerdoku Fixrunde): alle drei SDK-Release-Wege sind mit realen Tags bewiesen (`sdk-csharp-v0.1.0`/`0.2.0`, `sdk-python-v0.1.0`/`0.2.0`, `sdk-kotlin-v0.2.0`; `0.2.0`-Läufe 36117929191, 36117929298, 36117929552 je `success`, Kotlin-Paketversion `0.2.0` über die GitHub-API abgefragt) |
 | 1.8 | 2026-09-25 | §4 um den manuell gepflegten Beschreibungstext der Kotlin-Paketseite ergänzt (`LH-FA-SST-009`, `ADR-0109`): GitHub Packages zeigt bei Maven weder README noch POM-Beschreibung, die Schreib-Schnittstelle fehlt in REST und GraphQL |
+| 1.9 | 2026-09-25 | §1 auf den realen Server-Release `v0.2.0` gezogen (`ADR-0051`): Lauf 36190768475 `success`, GHCR und Docker Hub tragen `0.2.0` und `latest` (amd64, arm64), Release-Hinweise lassen sich mit `gh release edit` ergänzen |
