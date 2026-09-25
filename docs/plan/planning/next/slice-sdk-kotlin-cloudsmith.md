@@ -37,7 +37,7 @@ geändert; [`SPEC-018`](../../../../spec/pflichtenheft.md),
 [`SPEC-024`](../../../../spec/pflichtenheft.md) (die Drahtverträge, die das
 Package deckt) — unberührt.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Planner-Agent, Architect-Verdikt
 [`architect-verdict-sdk-kotlin-cloudsmith`](../../../reviews/architect-verdict-sdk-kotlin-cloudsmith.md)
