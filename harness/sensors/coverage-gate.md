@@ -85,12 +85,13 @@ Profil dieses Laufs. Der Verifikations-Lauf am Stand `80b451c4`
 **übernommen**) druckte dieselbe Zeile `Coverage 83.20%` und zählte im Profil
 seines eigenen Laufs ebenfalls 2136 von 2567; die Zählung im Lauf des Reviews
 lag bei 2135 (`review-slice-backfill-slot-leerlauf-bestaetigung` F-7,
-**übernommen**). Der Closure-Lauf (`make gates`, Exit 0, Produktionscode unverändert
-gegenüber `80b451c4`) druckte `total: (statements) 83.1%` und `coverage-gate: OK —
-Coverage 83.10% erfüllt Schwelle 80%`; im Profil seines Images (dedupliziert über die
-Block-Position mit Awk, **abgeleitet**) sind 2133 von 2567 = 83,09 % gedeckt. Die
-gedeckte Zahl hängt am Lauf und streut bei unverändertem Code (2133 bis 2136 in vier
-Läufen), der Nenner 2567 am Code-Stand.
+**übernommen**). Der erste Closure-Lauf (`make gates`, Exit 0, Produktionscode
+unverändert gegenüber `80b451c4`) druckte `total: (statements) 83.1%` und
+`coverage-gate: OK — Coverage 83.10% erfüllt Schwelle 80%`; im Profil seines Images
+(dedupliziert über die Block-Position mit Awk, **abgeleitet**) sind 2133 von 2567 =
+83,09 % gedeckt, der zweite Closure-Lauf desselben Stands druckte `Coverage 83.20%`
+(Profil nicht ausgezählt). Die gedeckte Zahl hängt am Lauf und streut bei unverändertem
+Code (2133 bis 2136 in vier ausgezählten Läufen), der Nenner 2567 am Code-Stand.
 
 **Der Nenner der Stufe am Stand `8d8860f7` war 2558** (Lauf `slice-backfill-bench-richtgroesse`,
 Closure am Stand `8d8860f7`: `make coverage-gate` baut die Stufe `coverage`, das

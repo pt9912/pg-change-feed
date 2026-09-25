@@ -703,8 +703,9 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   (`harness/sensors/coverage-gate.md`: Nenner 2567, gedeckt 2136, gedruckt `Coverage
   83.20%`; `harness/sensors/db-adapter-coverage.md`: `82.51%`, 873 von 1058; beides
   zusätzlich vom Verifikations-Lauf bestätigt, **übernommen**, Report §1 und §5; der
-  Closure-Lauf von `make coverage-gate` druckte `Coverage 83.10%`, im Profil 2133 von
-  2567 gedeckt, **abgeleitet** — die gedeckte Zahl streut über Läufe).
+  erste Closure-Lauf von `make coverage-gate` druckte `Coverage 83.10%` (im Profil 2133
+  von 2567 gedeckt, **abgeleitet**), der zweite `Coverage 83.20%` — die gedeckte Zahl
+  streut über Läufe).
 - **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
   `evidence/slice-backfill-slot-leerlauf-bestaetigung.md`, Zähler = Zahl der Dateien.
   *Bestehende Klassen:* `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, V-3) **5×**,
