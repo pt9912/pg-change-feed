@@ -395,6 +395,21 @@ Regeln dieser Sektion: [`ADR-0083`](docs/plan/adr/0083-herkunft-von-aussagen-in-
 > erst nach der Arbeit belegt werden kann, ist eine **Zusage** — es ist als
 > solche formuliert und nicht als Feststellung.
 
+**Verfasser einer ADR.** Für eine ADR ist der **Architect** der Verfasser der
+Instanz-B-Aussage: eine Aussage über **alle Werte einer Menge** („jeder Typ“,
+„byte-gleich“, „unverändert lauffähig“) nennt die Menge, an der sie geprüft ist,
+und eine **Fitness-Function-Zeile** nennt den Test, der sie trägt — **erprobt**
+an der Quelle **oder** als *hergeleitet* gekennzeichnet. Was aus einem Plan als
+„wird so sein“ kommt, steht als Erwartung. Der Reviewer prüft eine ADR im Diff
+gegen diesen Satz; die Berichtigung einer `Accepted`-ADR bleibt eine Folge-ADR
+(§3.5). Herkunft: `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (5×:
+[`ADR-0111`](docs/plan/adr/0111-backfill-bestand-snapshot-bulk-copy.md),
+[`ADR-0113`](docs/plan/adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md),
+[`ADR-0114`](docs/plan/adr/0114-schema-rollout-vorlauf-view-signatur.md),
+[`ADR-0118`](docs/plan/adr/0118-backfill-umschreiben-im-snapshot-fenster.md),
+[`ADR-0120`](docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)) · seit
+welle-backfill-bestand.
+
 **Was diese Regel nicht hat — die benannte Grenze.** Ein Sensor ist **nicht**
 Teil der Entscheidung: verlangte er, dass jede Zahl ihren Ursprung trägt, wäre
 er eine **Formpflicht auf Prosa**, erzeugte Pflichterfüllung und hätte genau
@@ -459,6 +474,21 @@ derselben Verlässlichkeit wie Symbolnamen träfe, bräuchte eine
 Semantik-Entscheidung, welche Zahl zu welcher Eigenschaft gehört; dieselbe
 Art Sensor-Unmöglichkeit, mit der `harness/sensors/coverage-gate.md`
 §Grenze Punkt 4 die Prozent-Schwelle als Proxy statt als Beweis führt.
+
+**Suchform — was der Suchlauf tragen muss.** Der Suchraum ist der **ganze Baum**
+(`git grep` ohne einschränkenden Pathspec); ausgenommen sind `docs/reviews/**`,
+die Records unter `done/` und `.harness/baseline/**`, jede weitere Einschränkung
+steht mit Grund im Feld. Das Suchmuster trägt **drei Arten**: den Symbolnamen der
+bewegten Eigenschaft, ihr **Zählwort** (die Zahl oder Menge als Wort und Ziffer:
+„vier“, „beiden“, „4“) und ihre **Beschreibung** samt dem **Hedge** eines
+offenen Punkts („offen“, „noch nicht“, „(n)“). Jeder Befehl steht **kopierbar in
+einem Codeblock**, nicht in einer Tabellenzelle (das Escape `\|` macht ihn nicht
+ausführbar); der Parent steht als Commit-Kennung, nie als `HEAD`; jede
+Trefferzahl nennt Befehl und Stand und schließt die Plan-Datei selbst aus. Ein
+Träger in einer **fremden Datei** wird gemeldet, nicht still mitgeändert, und
+die Meldung nennt die **Frist**: die Closure des meldenden Slice — der Planner
+zieht nach oder benennt den Träger mit Adresse · seit welle-backfill-bestand
+(`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`).
 
 **Benachbarte Regel — und die Abgrenzung zu ihr.** §3.12 bleibt die Regel für
 die **Aussage**, die ihren Ursprung trägt: dort fehlt der Ursprung, oder ein

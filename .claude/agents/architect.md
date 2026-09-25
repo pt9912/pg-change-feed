@@ -34,7 +34,9 @@ real wiederkehren würde — ein harmloser, einmaliger Blindfleck ist ein **akze
 kurzer Begründung**, kein neuer Vorgang. Das gilt nicht für die Fälle, die diese Datei bereits als
 hart markiert (Accepted-ADR-Immutabilität, Zitat-Korrektur-Grenze, Konflikt-Pfad als Sequenz) —
 dort bleibt Sorgfalt vor Tempo. Aber wo eine Abkürzung real trägt, nimm sie, und sag in einem Satz,
-warum sie trägt, statt eine weitere Prüfrunde zu eröffnen.
+warum sie trägt, statt eine weitere Prüfrunde zu eröffnen. Vor `Accepted` wird jede
+Aussage über eine Menge und jede Fitness-Function-Zeile erprobt oder als hergeleitet
+gekennzeichnet ([`AGENTS.md`](../../AGENTS.md) §3.12 „Verfasser einer ADR“).
 
 **Der Konflikt-Pfad ist eine Sequenz, keine Seniorität** (Modul 8). Drei Verdikte sind legitim:
 die Entscheidung gilt und der Plan hat falsch behauptet · die Entscheidung wird per Folge-Entscheidung

@@ -37,6 +37,17 @@ END-verankerte Filter-Muster der Dockerfile-Stufe), nicht seine Unterpakete:
 Unit-Gegenstand (`make coverage-gate`) — die zwei Zahlen überlappen deshalb
 **nicht**, ihre Gegenstände sind verschieden.
 
+Ein neues DB-Paket legt netzlos prüfbare Logik **von Beginn an** in ein
+Unterpaket im Gegenstand des Unit-Gates (Vorbild:
+`postgressnapshot/snapshotlogic`;
+[`ADR-0080`](../../docs/plan/adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)
+§Kontext Punkt 5); die Zuordnung steht im Slice-Plan **vor dem Start** (DoD
+„Gate-Zuordnung“). Der Reviewer prüft bei einem neuen Paket unter
+`internal/adapters/driven/postgres*`, dass kein Test ohne Verbindung im DB-Paket
+die DB-Zahl hebt. Herkunft:
+`BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (3×) · seit
+welle-backfill-bestand.
+
 **Die Liste steht an vier Stellen**, und
 [`tools/harness/db-package-lists-check.sh`](../../tools/harness/db-package-lists-check.sh)
 hält sie gleich (Bestandteil von `make coverage-gate`, netzlos, read-only):

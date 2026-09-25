@@ -16,6 +16,14 @@ drei Ausgänge — verkörpert · geplant · gestrichen — mit auflösbarem Ank
   weitere `evidence/`-Datei) oder neu anlegen — neu formulieren spaltet die
   Klasse. Der Zähler ist die Zahl der `evidence/`-Dateien, er wird nie
   geschrieben.
+- **Deckel für verkörperte Einträge ab 10×.** Ein Eintrag mit Ausgang
+  *verkörpert* und mindestens zehn `evidence/`-Dateien bekommt für ein Auftreten
+  keine weitere Datei, wenn es (a) vor dem Merge vom Reviewer oder Verifier
+  gefunden wurde, (b) Schwere ≤ LOW hat und (c) einen bekannten Träger-Typ trifft.
+  Das Auftreten steht mit Finding-Kennung in der Closure-Notiz des Slice. Eine
+  Datei entsteht bei einer **neuen Form** (anderer Träger-Typ oder andere
+  Ursache), bei Schwere ≥ MEDIUM und bei einem Fund **nach** dem Merge. Die
+  `state.md` nennt den Stand: „Deckel bei N× (seit welle-backfill-bestand)“.
 - **Gelesen** wird an zwei Stellen: die Welle-Closure liest, was 3× erreicht
   hat (Lese-Schritt); die Slice-Planung sichtet, was darunter steht (§8
   des Slice-Plans, `docs/plan/planning/`).

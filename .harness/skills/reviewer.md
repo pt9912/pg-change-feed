@@ -42,7 +42,20 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   oder Skript beschreibt die verworfene Alternative („Ohne X wäre …"), einen
   abwesenden Text („früher stand hier …") oder bricht mitten im Satz ab, weil
   eine Teilersetzung den Rest stehen ließ. Kein Gate fängt das (siehe
-  Baseline-Regelwerk `grundlagen-harness-dateien.md` §Was ein Kommentar trägt)
+  Baseline-Regelwerk `grundlagen-harness-dateien.md` §Was ein Kommentar trägt).
+  *Skopus:* der Punkt gilt für Code, Konfiguration und Skripte **einschließlich**
+  Tests und Runner (`tools/harness/*.sh`); ein Kommentar, der ein Vorher/Nachher
+  andeutet („schließt die beiden zuvor fehlenden …“) oder eine verworfene
+  Alternative im Konjunktiv nennt („würde diese verzögern“), gehört hierher,
+  nicht unter INFO; der Punkt „Slice-/Wellen-Chronik“ bleibt auf
+  Produktionscode-Pfade begrenzt. *Zusage:* ein Kommentar der Klasse **Zusage**,
+  der ein Verhalten zusichert (Fehlerpfad, Ausgang, Rückgabe), das der Code an
+  dieser Stelle nicht trägt; Probe ist das Nachfahren des zugesagten Pfads im
+  Code. Liegt das Verhalten in einem anderen Slice oder Paket, trägt der
+  Kommentar einen **Rang-Zeiger** darauf. Herkunft:
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (3×),
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (3×) · seit
+  welle-backfill-bestand
 - **Slice-/Wellen-Chronik in Produktionscode-Kommentar** — ein Godoc- oder
   Inline-Kommentar über einem **Produktionscode**-Pfad (Funktion, Typ, Datei —
   nicht ein `Test*`-Godoc) begründet eine Aussage mit einer Slice-/
@@ -231,6 +244,16 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
 - **MVP-Kennzeichnung inkonsistent** — `MVP: ja`-Marker und die
   MVP-Abnahme-Mapping-Tabelle (Lastenheft §1) weichen voneinander ab.
   Erstes Auftreten: Review F-1 (2026-09-09).
+- **Nachzug widerspricht dem Nachbarn im selben Träger** — ein Diff ergänzt einen
+  Absatz, eine Tabellenzeile oder einen Kommentarblock, der eine Aussage ersetzt
+  oder einschränkt, ohne dass der Gegen-Absatz **desselben** Dokuments, Blocks
+  oder Abschnitts angepasst oder auf den neuen verwiesen wird (zwei Aussagen,
+  keine verweist auf die andere). Probe: den Kontext um jede hinzugefügte Zeile
+  lesen (`git diff -U20`), nicht nur die Zeilen. Liegt der Träger **außerhalb**
+  des Diffs, ist es der Träger-Nachzug von `AGENTS.md` §3.13 (INFO/LOW, Meldung
+  an den Planner). Kein Gate fängt das: ob zwei Aussagen sich widersprechen, ist
+  eine Lese-Handlung. Herkunft: `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  (8×) · seit welle-backfill-bestand.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
 unbenutzte Imports.
