@@ -226,6 +226,30 @@ func TestConsumeEmptyTransaction(t *testing.T) {
 	}
 }
 
+// TestTransactionOpenFollowsBeginAndCommit trägt die Sicht auf die offene
+// Quelltransaktion (`ADR-0120` Festlegung 1): zwischen BEGIN und COMMIT ist
+// sie offen, davor und danach nicht — auch nach einer Transaktion ohne
+// Change der aktivierten Tabellen.
+func TestTransactionOpenFollowsBeginAndCommit(t *testing.T) {
+	ctx := context.Background()
+	assembler := newAssembler(t, testTables())
+	if assembler.TransactionOpen() {
+		t.Fatalf("frischer Übersetzer meldet eine offene Transaktion")
+	}
+	if _, err := assembler.Consume(ctx, decode.Begin{XID: 7}); err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	if !assembler.TransactionOpen() {
+		t.Fatalf("nach BEGIN meldet der Übersetzer keine offene Transaktion")
+	}
+	if _, err := assembler.Consume(ctx, decode.Commit{CommitLSN: 100}); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	if assembler.TransactionOpen() {
+		t.Fatalf("nach COMMIT meldet der Übersetzer eine offene Transaktion")
+	}
+}
+
 // TestConsumeWithoutBegin trägt die Stream-Vertragsverstöße als
 // sichtbare Fehler.
 func TestConsumeWithoutBegin(t *testing.T) {

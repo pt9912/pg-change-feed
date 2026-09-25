@@ -3,7 +3,11 @@
 # mit Publication und Logical Replication Slot im Testcontainer (ADR-0030).
 # wal_sender_timeout=2000 zieht die Keepalive-Antwort-Pflicht auf etwa eine
 # Sekunde — der Keepalive-Beleg (LH-QA-REL-001.a) braucht den Antwort-Zug
-# in Test-Zeitspanne; der Default (60s) läge jenseits der Testgrenze.
+# in Test-Zeitspanne; der Default (60s) läge jenseits der Testgrenze. Eine
+# zweite Instanz mit dem Standardwert und ohne gleichzeitigen fremden Schreiber
+# (CDC_REPLICATION_TEST_STANDARD_DSN) trägt die Rückstand-Messungen der
+# Leerlauf-Bestätigung (ADR-0120) und, nach dem Tier-Lauf, den Beleg der
+# WAL-Rückstand-Schwellen (CDC_WALRETENTION_TEST_DSN).
 # Beide Images sind per Digest gepinnt (Modul 14); der Pin der Datenbank
 # stammt aus `docker manifest inspect postgres:18-alpine` (amd64). Die
 # Instanz startet mit wal_level=logical — der Logical-Replication-Slot
@@ -43,6 +47,7 @@ GO_MODCACHE_VOLUME=${GO_MODCACHE_VOLUME:-pg-change-feed-gomodcache}
 NETWORK=cdc-repl-test
 PG_CONTAINER=cdc-repl-test-pg
 PG_EXCLUSIVE_CONTAINER=cdc-repl-test-pg-slot1
+PG_STANDARD_CONTAINER=cdc-repl-test-pg-default
 PG_DB=cdc_test
 PG_USER=cdc
 PG_PASSWORD=cdc
@@ -52,7 +57,7 @@ docker network inspect "$NETWORK" >/dev/null 2>&1 || docker network create "$NET
 # `-v` entfernt die anonymen Volumes des Containers (das Postgres-Image
 # deklariert ein VOLUME).
 cleanup() {
-  docker rm -fv "$PG_CONTAINER" "$PG_EXCLUSIVE_CONTAINER" >/dev/null 2>&1 || true
+  docker rm -fv "$PG_CONTAINER" "$PG_EXCLUSIVE_CONTAINER" "$PG_STANDARD_CONTAINER" >/dev/null 2>&1 || true
   docker network rm "$NETWORK" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -78,6 +83,18 @@ wait_ready "$PG_CONTAINER"
 
 DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_CONTAINER:5432/$PG_DB?sslmode=disable"
 
+# Instanz mit dem Standardwert von wal_sender_timeout (60s), ohne Schema und
+# ohne gleichzeitigen fremden Schreiber: die Tests der Leerlauf-Bestätigung
+# (Rückstand unter einem Zehntel der Last) und der WAL-Rückstand-Schwellen
+# messen das WAL der ganzen Instanz und bringen ihre Tabellen selbst mit.
+docker rm -fv "$PG_STANDARD_CONTAINER" >/dev/null 2>&1 || true
+docker run -d --name "$PG_STANDARD_CONTAINER" \
+  --network "$NETWORK" \
+  -e POSTGRES_DB="$PG_DB" -e POSTGRES_USER="$PG_USER" -e POSTGRES_PASSWORD="$PG_PASSWORD" \
+  "$PG_TEST_IMAGE" -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10 >/dev/null
+wait_ready "$PG_STANDARD_CONTAINER"
+STANDARD_DSN="postgres://$PG_USER:$PG_PASSWORD@$PG_STANDARD_CONTAINER:5432/$PG_DB?sslmode=disable"
+
 # Modul-Cache befüllen (braucht Netz); der Testlauf selbst trägt den
 # DSN über das Docker-Netz und braucht sonst kein Netz.
 docker run --rm --network "$NETWORK" \
@@ -99,6 +116,7 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
     -w /src \
     -e GOCACHE=/tmp/gocache \
     -e CDC_REPLICATION_TEST_DSN="$DSN" \
+    -e CDC_REPLICATION_TEST_STANDARD_DSN="$STANDARD_DSN" \
     "$TOOLCHAIN_IMAGE" go test \
       -coverpkg="$COVER_PKGS" \
       -coverprofile=/cov/replication.coverprofile \
@@ -110,10 +128,11 @@ if [[ "$MODE" == "measure" || "$MODE" == "both" ]]; then
   bash tools/harness/db-coverage.sh
 fi
 
-# Phase `tier` — zwei Läufe nacheinander: der Tier-weite `go test ./...` gegen
-# den gemeinsamen Container und der Slot-Reserve-Lauf des Snapshot-Adapters
-# gegen einen eigenen Container (unten); jeder Exit ist ein Verdikt dieser
-# Phase, und der zweite Lauf braucht zusätzlich das `--- PASS` seines Tests.
+# Phase `tier` — drei Läufe nacheinander: der Tier-weite `go test ./...` gegen
+# den gemeinsamen Container, der Slot-Reserve-Lauf des Snapshot-Adapters
+# gegen einen eigenen Container und der Schwellen-Beleg auf der
+# Standard-Instanz (unten); jeder Exit ist ein Verdikt dieser Phase, und die
+# beiden letzten Läufe brauchen zusätzlich das `--- PASS` ihres Tests.
 # Der Schema-Stand dieses Laufs kommt aus derselben
 # Schema-Anwendung wie der Betrieb (tools/schema/apply-rollout.sh,
 # `make test-store`): die `internal/bootstrap`-Fixtures starten
@@ -132,6 +151,7 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
     -w /src \
     -e GOCACHE=/tmp/gocache \
     -e CDC_REPLICATION_TEST_DSN="$DSN" \
+    -e CDC_REPLICATION_TEST_STANDARD_DSN="$STANDARD_DSN" \
     "$TOOLCHAIN_IMAGE" go test ./...
 
   # Slot-Reserve des Snapshot-Adapters: `TestSlotReserveExhaustedIsConfiguration`
@@ -156,6 +176,24 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
   printf '%s\n' "$reserve_out"
   if ! grep -q -- '--- PASS: TestSlotReserveExhaustedIsConfiguration' <<<"$reserve_out"; then
     echo "run-replication-tests: TestSlotReserveExhaustedIsConfiguration ist nicht als PASS gelaufen" >&2
+    exit 1
+  fi
+
+  # WAL-Rückstand-Schwellen (ADR-0049): `TestWALRetentionThresholdEndToEnd`
+  # misst das WAL der ganzen Instanz gegen Schwellen im KiB-Bereich und läuft
+  # deshalb allein auf der Standard-Instanz, nachdem der Tier-Lauf ihre
+  # übrigen Tests beendet hat. Ein Lauf ohne PASS des Tests ist rot.
+  threshold_out=$(docker run --rm --network "$NETWORK" \
+    -v "$(pwd)":/src:ro \
+    -v "$GO_MODCACHE_VOLUME":/go/pkg/mod \
+    -w /src \
+    -e GOCACHE=/tmp/gocache \
+    -e CDC_WALRETENTION_TEST_DSN="$STANDARD_DSN" \
+    "$TOOLCHAIN_IMAGE" go test -count=1 -v -run '^TestWALRetentionThresholdEndToEnd$' \
+      ./internal/bootstrap 2>&1) || { printf '%s\n' "$threshold_out"; exit 1; }
+  printf '%s\n' "$threshold_out"
+  if ! grep -q -- '--- PASS: TestWALRetentionThresholdEndToEnd' <<<"$threshold_out"; then
+    echo "run-replication-tests: TestWALRetentionThresholdEndToEnd ist nicht als PASS gelaufen" >&2
     exit 1
   fi
 fi

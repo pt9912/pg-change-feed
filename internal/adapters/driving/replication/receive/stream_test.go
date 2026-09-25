@@ -887,18 +887,23 @@ func currentWALLSN(t *testing.T, pool *pgxpool.Pool) string {
 // foreignWALRun trägt das Ergebnis einer Schreiblast außerhalb der
 // Publication gegen einen laufenden Stream.
 type foreignWALRun struct {
-	load    int64
-	backlog int64
-	elapsed time.Duration
+	load      int64
+	backlog   int64
+	confirmed uint64
+	end       uint64
+	elapsed   time.Duration
 }
 
 // runForeignWAL führt die Form X1 des Verdikts gegen einen laufenden Stream
 // aus: 200.000 Zeilen in **eine** Transaktion auf eine Tabelle außerhalb der
 // Publication. `load` ist die WAL-Menge der Last (Differenz der
-// WAL-Schreibpositionen um den INSERT), `backlog` der mit
-// `WALRetentionChecker.Measure` gemessene Rückstand des Slots, gepollt bis
-// er unter einem Zehntel der Last liegt oder `wait` verstreicht.
-func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture, wait time.Duration) foreignWALRun {
+// WAL-Schreibpositionen um den INSERT), `end` die WAL-Schreibposition hinter
+// ihr. Gepollt wird bis `wait` verstreicht oder die Bedingung gilt: mit
+// `byPosition` liegt `confirmed_flush_lsn` bei oder hinter `end` — unabhängig
+// von WAL, das andere Schreiber der Instanz erzeugen —, sonst liegt der mit
+// `WALRetentionChecker.Measure` gemessene Rückstand unter einem Zehntel der
+// Last (nur auf einer Instanz ohne fremde Schreiber aussagekräftig).
+func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture, wait time.Duration, byPosition bool) foreignWALRun {
 	t.Helper()
 	env := newTestEnvOn(t, name, dsnVariable)
 	createForeignTable(t, env)
@@ -924,9 +929,14 @@ func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture,
 		t.Fatalf("Schreiblast außerhalb der Publication: %v", err)
 	}
 	loadedAt := time.Now()
-	load := walLSNDiff(t, env.pool, before, currentWALLSN(t, env.pool))
+	afterLoad := currentWALLSN(t, env.pool)
+	load := walLSNDiff(t, env.pool, before, afterLoad)
 	if load < 16*1024*1024 {
 		t.Fatalf("Last trägt %d B WAL, erwartet mindestens 16 MiB", load)
+	}
+	end, err := pglogrepl.ParseLSN(afterLoad)
+	if err != nil {
+		t.Fatalf("LSN %q: %v", afterLoad, err)
 	}
 
 	limit := load / 10
@@ -936,8 +946,13 @@ func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture,
 		if err != nil {
 			t.Fatalf("Measure: %v", err)
 		}
-		if backlog < limit || time.Now().After(deadline) {
-			return foreignWALRun{load: load, backlog: backlog, elapsed: time.Since(loadedAt)}
+		confirmed := readConfirmedFlush(t, env.pool, env.slot)
+		reached := backlog < limit
+		if byPosition {
+			reached = confirmed >= uint64(end)
+		}
+		if reached || time.Now().After(deadline) {
+			return foreignWALRun{load: load, backlog: backlog, confirmed: confirmed, end: uint64(end), elapsed: time.Since(loadedAt)}
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
@@ -947,11 +962,13 @@ func runForeignWAL(t *testing.T, dsnVariable, name string, standIn *fakeCapture,
 // Verdikts am realen Stream (`ADR-0120`, `LH-QA-REL-001.a`): WAL ohne Inhalt
 // für die Publication hält den Rückstand des Slots nicht — nach wenigen
 // Keepalive-Takten liegt er unter einem Zehntel der Last, und der Stand-in
-// hat Leerlauf-Positionen bestätigt. Der Testcontainer trägt
-// wal_sender_timeout=2s (`run-replication-tests.sh`).
+// hat Leerlauf-Positionen bestätigt. Die Instanz trägt den Standardwert von
+// `wal_sender_timeout` (60 s) und hat keinen anderen Schreiber
+// (`CDC_REPLICATION_TEST_STANDARD_DSN`, `run-replication-tests.sh`): der
+// Rückstand der Instanz ist der des Slots.
 func TestStreamIdleConfirmationReleasesForeignWAL(t *testing.T) {
 	standIn := &fakeCapture{}
-	run := runForeignWAL(t, "CDC_REPLICATION_TEST_DSN", "foreign", standIn, 30*time.Second)
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_STANDARD_DSN", "foreign", standIn, 150*time.Second, false)
 	t.Logf("Last %d B WAL, Rückstand %d B nach %s, %d Leerlauf-Bestätigungen",
 		run.load, run.backlog, run.elapsed.Round(time.Millisecond), standIn.idleConfirmations())
 	if run.backlog >= run.load/10 {
@@ -969,25 +986,25 @@ func TestStreamIdleConfirmationReleasesForeignWAL(t *testing.T) {
 // nur die Leerlauf-Bestätigung senkt den Rückstand.
 func TestStreamWithoutIdleConfirmationKeepsForeignWAL(t *testing.T) {
 	standIn := &fakeCapture{declineIdle: true}
-	run := runForeignWAL(t, "CDC_REPLICATION_TEST_DSN", "foreigncontrol", standIn, 8*time.Second)
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_STANDARD_DSN", "foreigncontrol", standIn, 8*time.Second, false)
 	t.Logf("Last %d B WAL, Rückstand %d B nach %s", run.load, run.backlog, run.elapsed.Round(time.Millisecond))
 	if run.backlog < run.load/2 {
 		t.Fatalf("Rückstand %d B fiel ohne Leerlauf-Bestätigung unter die Hälfte der Last (%d B)", run.backlog, run.load)
 	}
 }
 
-// TestStreamIdleConfirmationReleasesForeignWALAtDefaultTimeout trägt
-// dieselbe Form X1 gegen eine Instanz mit dem Standardwert von
-// `wal_sender_timeout` (60 s): der Keepalive-Takt der Quelle liegt dort bei
-// bis zu 30 s, die Wartezeit trägt mehrere Takte. Die Instanz stellt
-// `run-replication-tests.sh` unter `CDC_REPLICATION_TEST_STANDARD_DSN`.
-func TestStreamIdleConfirmationReleasesForeignWALAtDefaultTimeout(t *testing.T) {
+// TestStreamIdleConfirmationReachesEndOfForeignWAL trägt dieselbe Form X1 auf
+// der Instanz der übrigen Stream-Tests, die fremde Schreiber teilt und
+// `wal_sender_timeout=2s` trägt: die Bedingung liegt an der Position, nicht am
+// Rückstand — `confirmed_flush_lsn` erreicht das WAL-Ende hinter der Last,
+// unabhängig von WAL, das andere Test-Pakete gleichzeitig erzeugen.
+func TestStreamIdleConfirmationReachesEndOfForeignWAL(t *testing.T) {
 	standIn := &fakeCapture{}
-	run := runForeignWAL(t, "CDC_REPLICATION_TEST_STANDARD_DSN", "foreigndefault", standIn, 150*time.Second)
-	t.Logf("Last %d B WAL, Rückstand %d B nach %s, %d Leerlauf-Bestätigungen",
-		run.load, run.backlog, run.elapsed.Round(time.Millisecond), standIn.idleConfirmations())
-	if run.backlog >= run.load/10 {
-		t.Fatalf("Rückstand %d B liegt nach %s nicht unter einem Zehntel der Last (%d B)", run.backlog, run.elapsed, run.load)
+	run := runForeignWAL(t, "CDC_REPLICATION_TEST_DSN", "foreignend", standIn, 30*time.Second, true)
+	t.Logf("Last %d B WAL, confirmed_flush_lsn %x gegen WAL-Ende der Last %x nach %s, %d Leerlauf-Bestätigungen",
+		run.load, run.confirmed, run.end, run.elapsed.Round(time.Millisecond), standIn.idleConfirmations())
+	if run.confirmed < run.end {
+		t.Fatalf("confirmed_flush_lsn %x erreicht das WAL-Ende der Last (%x) nach %s nicht", run.confirmed, run.end, run.elapsed)
 	}
 }
 

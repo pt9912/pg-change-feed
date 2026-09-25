@@ -17,7 +17,7 @@ import (
 // Schwellen-Vergleich, der Abbruch-Zug und die Rückgabewert-Priorität sind
 // unexportierte Verdrahtungsdetails (`slice-026`, `ADR-0049`) — der reale
 // Ende-zu-Ende-Beleg über beide Seiten der Schwelle liegt in
-// `walretention_endtoend_test.go` (`make test-replication`); dieser Test
+// `walretention_endtoend_internal_test.go` (`make test-replication`); dieser Test
 // belegt die Vergleichs-/Prioritäts-Logik selbst, ohne reale PostgreSQL-
 // Instanz.
 

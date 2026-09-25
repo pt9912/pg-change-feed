@@ -37,9 +37,11 @@
 # über `cdc.changes` identisch lesbar, eine danach eingefügte Zeile wird
 # weiterhin erfasst. Die Backfill-Rundläufe (LH-FA-CAP-009: Happy Path,
 # Schema-Version, Startposition eines frisch registrierten Consumers,
-# Boundary, Replay-Invariante, DDL-Fenster, Negative) laufen vor dem
-# Upgrade-Sicherheits-Rundlauf; ihre Haltepunkte beschreibt der Kopf des
-# Abschnitts `Backfill-Rundläufe`.
+# Boundary, Replay-Invariante, DDL-Fenster, Negative) und die
+# Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
+# Feed-Container läuft weiter) laufen vor dem Upgrade-Sicherheits-Rundlauf;
+# die Haltepunkte der Backfill-Phasen beschreibt der Kopf des Abschnitts
+# `Backfill-Rundläufe`.
 #
 # Test-Daten bleiben im Container (kein Volume in den Arbeitsbaum);
 # Compose-Container und -Netz werden in jedem Ausgang abgeräumt, das
@@ -213,6 +215,7 @@ abdeckung_schreiben() {
 cleanup() {
   docker unpause "$FEED_CONTAINER" >/dev/null 2>&1 || true
   $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true
+  rm -rf "${WAL_TMP:-}"
 }
 trap cleanup EXIT
 
@@ -3247,6 +3250,103 @@ SQL
 bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_KILL_TABLE' AND origin = 'wal'" 1 30 "$BF_PHASE — Erfassung nach dem Neustart"
 
 echo "run-integration-tests: Backfill-Negative (docker kill, queued-Aufnahme) belegt — docker kill im zweiten Block von Run $bf_kill_run (rows_copied 1000, running): keine Sitzung und kein Slot blieben zurück, keine Change des Runs war sichtbar; nach dem Neustart steht der Run interrupted, der queued wartende Run $bf_queued_run wurde ohne neuen Antrag aufgenommen und endete completed (4 Zeilen); der erneute Antrag $bf_retry_run übernahm $BF_KILL_ROWS Zeilen einmal (3 Blöcke), die Erfassung setzte nach dem Neustart fort"
+
+abdeckung_declare "Leerlauf-Bestätigung (WAL ohne Inhalt für die Publication, Fehlerschwelle)" "LH-FA-CAP-009,LH-QA-REL-001" "ein Backfill-Run, dessen WAL die Fehlerschwelle des WAL-Rückstands (Override der Konfigurationsdatei) überschreitet, und ein Schreiber auf eine nicht aktivierte Tabelle beenden den Feed-Container nicht: der Run endet completed, der Bestand ist über cdc.changes lesbar, der Container läuft weiter" "Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt"
+
+# Der Feed-Container läuft in dieser Phase mit einer Konfigurationsdatei, die
+# die Schwellen des WAL-Rückstands senkt (`wal_retention_*_bytes` haben kein
+# Env-Gegenstück, SPEC-013): eine Compose-Override-Datei im Temp-Verzeichnis
+# des Runners hängt sie an den Dienst und setzt `CDC_CONFIG_FILE`;
+# `compose.yaml` bleibt unverändert, und der Container wird am Phasen-Ende
+# ohne Override wiederhergestellt. Die Größe der Last folgt aus der Messung:
+# die Phase liest das WAL, das der Run erzeugt hat, und bricht ab, wenn es die
+# Fehlerschwelle nicht übersteigt.
+BF_PHASE="Leerlauf-Bestätigung"
+WAL_TABLE=feed_e2e_wal_backfill
+WAL_FOREIGN=feed_e2e_wal_foreign
+WAL_ROWS=30000
+WAL_WARN_BYTES=4194304
+WAL_ERROR_BYTES=8388608
+WAL_WAIT_SECONDS=12
+
+WAL_TMP=$(mktemp -d)
+chmod 0755 "$WAL_TMP"
+printf 'wal_retention_warn_bytes: %s\nwal_retention_error_bytes: %s\n' "$WAL_WARN_BYTES" "$WAL_ERROR_BYTES" > "$WAL_TMP/config.yaml"
+cat > "$WAL_TMP/override.yaml" <<YAML
+services:
+  pg-change-feed:
+    environment:
+      CDC_CONFIG_FILE: /etc/cdc/e2e-wal-config.yaml
+    volumes:
+      - $WAL_TMP/config.yaml:/etc/cdc/e2e-wal-config.yaml:ro
+YAML
+chmod 0644 "$WAL_TMP/config.yaml" "$WAL_TMP/override.yaml"
+
+$COMPOSE -f "$WAL_TMP/override.yaml" up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$BF_PHASE"
+bf_expect "$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' "$FEED_CONTAINER" | grep -c '^CDC_CONFIG_FILE=/etc/cdc/e2e-wal-config.yaml$')" 1 "$BF_PHASE — Konfigurationsdatei im Feed-Container"
+wal_feed_started=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+
+# bf_wal_hold <Sekunden>: der Feed-Container läuft über die gesamte Zeitspanne
+# (mindestens zwei Prüf-Takte des WAL-Rückstands, `heartbeatInterval` 5 s), ohne
+# neu gestartet worden zu sein.
+bf_wal_hold() {
+  local i
+  for ((i = 0; i < $1; i++)); do
+    [ "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" = true ] \
+      || bf_fail "$BF_PHASE — $2: der Feed-Container endete (Ausgang $(docker inspect --format '{{.State.ExitCode}}' "$FEED_CONTAINER" 2>/dev/null || echo unbekannt)), Log-Ende: $(docker logs --tail 3 "$FEED_CONTAINER" 2>&1 | tr '\n' ' ')"
+    sleep 1
+  done
+  bf_expect "$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")" "$wal_feed_started" "$BF_PHASE — $2: Startzeitpunkt des Feed-Containers (kein Neustart)"
+}
+
+# Backfill-Run über mehr WAL, als die Fehlerschwelle trägt.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$WAL_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$WAL_TABLE (id, name) SELECT g, 'Wal-' || g || repeat('x', 60) FROM generate_series(1, $WAL_ROWS) g;
+CREATE TABLE public.$WAL_FOREIGN (id bigint PRIMARY KEY, payload text);
+SQL
+bf_enable "$WAL_TABLE" "$BF_PHASE"
+wal_run_before=$(bf_sql "SELECT pg_current_wal_lsn()")
+bf_request "$WAL_TABLE" "$BF_PHASE"
+wal_run_id=$bf_run_id
+bf_await_run "$wal_run_id" completed 120 "$BF_PHASE"
+wal_run_after=$(bf_sql "SELECT pg_current_wal_lsn()")
+wal_run_bytes=$(bf_sql "SELECT pg_wal_lsn_diff('$wal_run_after', '$wal_run_before')::bigint")
+[ "$wal_run_bytes" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der Run erzeugte $wal_run_bytes B WAL, nicht mehr als die Fehlerschwelle $WAL_ERROR_BYTES B: die Last trägt den Beleg nicht"
+bf_wal_hold "$WAL_WAIT_SECONDS" "nach dem Run"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$wal_run_id'")" "$WAL_ROWS" "$BF_PHASE — rows_copied"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WAL_TABLE' AND origin = 'backfill'")" "$WAL_ROWS" "$BF_PHASE — Bestand über cdc.changes"
+
+# Schreiber auf eine nicht aktivierte Tabelle: mehr WAL als die Fehlerschwelle,
+# ohne Inhalt für die Publication.
+wal_foreign_before=$(bf_sql "SELECT pg_current_wal_lsn()")
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WAL_FOREIGN SELECT g, repeat('x', 130) FROM generate_series(1, 60000) g;
+SQL
+wal_foreign_bytes=$(bf_sql "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), '$wal_foreign_before')::bigint")
+[ "$wal_foreign_bytes" -gt "$WAL_ERROR_BYTES" ] || bf_fail "$BF_PHASE — der Schreiber erzeugte $wal_foreign_bytes B WAL, nicht mehr als die Fehlerschwelle $WAL_ERROR_BYTES B: die Last trägt den Beleg nicht"
+bf_wal_hold "$WAL_WAIT_SECONDS" "nach dem Schreiber auf die nicht aktivierte Tabelle"
+
+# Der Erfassungspfad nimmt danach weiter Changes an.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$WAL_TABLE (id, name) VALUES ($((WAL_ROWS + 1)), 'WalAfter');
+SQL
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$WAL_TABLE' AND origin = 'wal'" 1 30 "$BF_PHASE — Erfassung nach beiden Lasten"
+
+# Der Rückstand aus dem Log des Containers: keine Fehlerschwellen-Zeile, die
+# gemessene Spitze steht in der Ausgabe.
+wal_log=$(docker logs "$FEED_CONTAINER" 2>&1)
+bf_expect "$(printf '%s\n' "$wal_log" | grep -c 'WAL-Rückstand über Fehlerschwelle')" 0 "$BF_PHASE — Fehlerschwellen-Zeilen im Log des Feed-Containers"
+wal_peak=$(printf '%s\n' "$wal_log" | grep '"metric":"cdc_wal_retention_bytes"' | grep -o '"bytes":[0-9]*' | cut -d: -f2 | sort -n | tail -n1 || true)
+[ -n "$wal_peak" ] || bf_fail "$BF_PHASE — das Log des Feed-Containers trägt keine Messung des WAL-Rückstands"
+
+# Der Container läuft danach wieder mit der Konfiguration von compose.yaml.
+$COMPOSE up -d --force-recreate --no-deps pg-change-feed >/dev/null
+bf_await_healthy "$BF_PHASE"
+rm -rf "$WAL_TMP"
+
+echo "run-integration-tests: Leerlauf-Bestätigung (LH-FA-CAP-009, LH-QA-REL-001) belegt — bei den Schwellen Warn $WAL_WARN_BYTES B / Fehler $WAL_ERROR_BYTES B (Konfigurationsdatei) endete der Backfill-Run $wal_run_id über $WAL_ROWS Zeilen completed und erzeugte $wal_run_bytes B WAL, ein Schreiber auf die nicht aktivierte Tabelle $WAL_FOREIGN erzeugte $wal_foreign_bytes B WAL; der Feed-Container lief über beide Lasten weiter (je ${WAL_WAIT_SECONDS} s beobachtet, kein Neustart), der Bestand ist über cdc.changes lesbar, der höchste der im Log des Feed-Containers gemessenen Rückstände (Proben im 5-s-Takt, keine Spitze) liegt bei $wal_peak B"
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 

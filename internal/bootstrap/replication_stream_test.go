@@ -256,9 +256,9 @@ func awaitPersistedChanges(t *testing.T, store *postgresstorage.PostgresChangeSt
 // am zusammengesetzten System (`ADR-0120`, `ADR-0007`): der echte Capture
 // Service bestätigt die vom Stream gemeldete Leerlauf-Position über den
 // realen ACK-Adapter an der Stream-Verbindung. Schreiblast außerhalb der
-// Publication hält den Rückstand des Slots nicht — er fällt unter ein
-// Zehntel der Last (`wal_sender_timeout=2s` des Testcontainers), und die
-// Bestätigung schreibt nichts in `cdc.transaction` oder `cdc.change`
+// Publication hält den Slot nicht zurück — `confirmed_flush_lsn` erreicht das
+// WAL-Ende hinter der Last (`wal_sender_timeout=2s` des Testcontainers), und
+// die Bestätigung schreibt nichts in `cdc.transaction` oder `cdc.change`
 // (`ADR-0120` Festlegung 2).
 func TestRealIdleConfirmationReleasesForeignWAL(t *testing.T) {
 	dsn := os.Getenv("CDC_REPLICATION_TEST_DSN")
@@ -386,12 +386,6 @@ func TestRealIdleConfirmationReleasesForeignWAL(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	checker, err := receive.NewWALRetentionChecker(ctx, dsn, slot)
-	if err != nil {
-		t.Fatalf("NewWALRetentionChecker: %v", err)
-	}
-	t.Cleanup(func() { _ = checker.Close(context.Background()) })
-
 	var before string
 	if err := pool.QueryRow(ctx, "SELECT pg_current_wal_lsn()::text").Scan(&before); err != nil {
 		t.Fatalf("WAL-Position: %v", err)
@@ -400,26 +394,32 @@ func TestRealIdleConfirmationReleasesForeignWAL(t *testing.T) {
 		fmt.Sprintf("INSERT INTO %s SELECT g, repeat('x', 130) FROM generate_series(1, 100000) g", foreign)); err != nil {
 		t.Fatalf("Schreiblast außerhalb der Publication: %v", err)
 	}
+	var after string
 	var load int64
-	if err := pool.QueryRow(ctx, "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), $1::pg_lsn)::bigint", before).Scan(&load); err != nil {
+	if err := pool.QueryRow(ctx,
+		"SELECT pg_current_wal_lsn()::text, pg_wal_lsn_diff(pg_current_wal_lsn(), $1::pg_lsn)::bigint", before).Scan(&after, &load); err != nil {
 		t.Fatalf("Last: %v", err)
 	}
 	if load < 8*1024*1024 {
 		t.Fatalf("Last trägt %d B WAL, erwartet mindestens 8 MiB", load)
 	}
 
+	// Die Bedingung liegt an der Position: `confirmed_flush_lsn` erreicht das
+	// WAL-Ende hinter der Last — unabhängig von WAL, das andere Test-Pakete
+	// dieser Instanz gleichzeitig erzeugen.
 	deadline := time.Now().Add(30 * time.Second)
 	for {
-		backlog, err := checker.Measure(ctx)
-		if err != nil {
-			t.Fatalf("Measure: %v", err)
+		var reached bool
+		if err := pool.QueryRow(ctx,
+			"SELECT confirmed_flush_lsn >= $1::pg_lsn FROM pg_replication_slots WHERE slot_name = $2", after, slot).Scan(&reached); err != nil {
+			t.Fatalf("Slot-Stand: %v", err)
 		}
-		if backlog < load/10 {
-			t.Logf("Last %d B WAL, Rückstand %d B", load, backlog)
+		if reached {
+			t.Logf("Last %d B WAL, confirmed_flush_lsn hat das WAL-Ende der Last (%s) erreicht", load, after)
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("Rückstand %d B liegt nach 30 s nicht unter einem Zehntel der Last (%d B)", backlog, load)
+			t.Fatalf("confirmed_flush_lsn erreicht das WAL-Ende der Last (%s) nach 30 s nicht", after)
 		}
 		time.Sleep(250 * time.Millisecond)
 	}

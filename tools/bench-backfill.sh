@@ -23,9 +23,9 @@ RUNS=${BENCH_BACKFILL_RUNS:-3}
 EST_ROWS=${BENCH_BACKFILL_EST_ROWS:-100000}
 LIVE_RATE=${BENCH_BACKFILL_LIVE_RATE:-100}
 RUN_TIMEOUT_S=${BENCH_BACKFILL_RUN_TIMEOUT_S:-1800} # Sekunden je Run (Uhr: bash SECONDS)
-# WAL-Rückstand-Schwellen des Capture-Slots (SPEC-013: Warn 100 MiB, Fehler 1 GiB).
+# Warnschwelle des WAL-Rückstands des Capture-Slots (SPEC-013: 100 MiB), der
+# Vergleichswert der gedruckten Rückstände.
 WAL_WARN_BYTES=104857600
-WAL_ERROR_BYTES=1073741824
 
 SOURCE_ID=src-bench-backfill
 SLOT=slot_bench_backfill
@@ -117,12 +117,11 @@ wal_held_bytes() {
   bench::psql_scalar "SELECT COALESCE((SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)::bigint FROM pg_replication_slots WHERE slot_name = '$SLOT'), 0)"
 }
 
-# Ein Live-Commit auf der aktivierten Live-Tabelle lässt den Slot bestätigen;
-# druckt "Rückstand_Bytes|Wartezeit_s", wartet höchstens 120 s auf einen
-# Rückstand unter der Warnschwelle.
-release_wal() {
+# Wartet ohne jeden Schreibzugriff höchstens 120 s auf einen Rückstand unter
+# der Warnschwelle (die Leerlauf-Bestätigung des Streams senkt ihn, ADR-0120);
+# druckt "Rückstand_Bytes|Wartezeit_s".
+settle_wal() {
   local waited=0 wal
-  bench::psql -c "INSERT INTO public.$LIVE_TABLE (id, name) VALUES ($(date +%s%N), 'tick');" >/dev/null
   while :; do
     wal=$(wal_backlog_bytes)
     if [ "$wal" -lt "$WAL_WARN_BYTES" ] || [ "$waited" -ge 120 ]; then
@@ -262,10 +261,10 @@ for n in $STAGES; do
       exit 1
     fi
     wal_end=$(wal_backlog_bytes)
-    IFS='|' read -r wal_released wal_wait <<< "$(release_wal)"
+    IFS='|' read -r wal_settled wal_wait <<< "$(settle_wal)"
     rate=$(LC_ALL=C awk -v n="$n" -v ms="$ms" 'BEGIN { if (ms <= 0) ms = 1; printf "%.0f", n * 1000.0 / ms }')
     ms_list+=("$ms"); rate_list+=("$rate"); wal_list+=("$wal_peak"); held_list+=("$held_peak"); peak_stage=$(max_of "$peak_stage" "$peak")
-    echo "$TAG: Stufe $n, Lauf $run/$RUNS — Kopierdauer ${ms} ms (finished_at − started_at), ${rate} Zeilen/s, geschätzt $estimated, Warnung Größe $warn_size, Warnung Dauer $warn_duration, Feed-Speicher-Spitze ${peak} MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze $(mib_of "$wal_peak") MiB im Run, $(mib_of "$wal_end") MiB unmittelbar danach, $(mib_of "$wal_released") MiB ${wal_wait} s nach einem Live-Commit; vom Slot gehaltenes WAL (restart_lsn): Spitze $(mib_of "$held_peak") MiB im Run"
+    echo "$TAG: Stufe $n, Lauf $run/$RUNS — Kopierdauer ${ms} ms (finished_at − started_at), ${rate} Zeilen/s, geschätzt $estimated, Warnung Größe $warn_size, Warnung Dauer $warn_duration, Feed-Speicher-Spitze ${peak} MiB, WAL-Rückstand des Slots (confirmed_flush_lsn): Spitze $(mib_of "$wal_peak") MiB im Run, $(mib_of "$wal_end") MiB unmittelbar danach, $(mib_of "$wal_settled") MiB ${wal_wait} s danach ohne Schreibzugriff; vom Slot gehaltenes WAL (restart_lsn): Spitze $(mib_of "$held_peak") MiB im Run"
   done
   sleep 20
   after=$(feed_mem_mib)
@@ -279,8 +278,11 @@ for n in $STAGES; do
   echo "$TAG: Stufe $n Ergebnis — Kopierdauer $(range_of "${ms_list[@]}") ms, Durchsatz $(range_of "${rate_list[@]}") Zeilen/s, Feed-Speicher-Spitze ${peak_stage} MiB (Ruhe vor der Stufe ${idle} MiB, 20 s nach dem letzten Lauf ${after} MiB), mittlere Blockdauer ${block_ms} ms (abgeleitet: Median-Dauer / $blocks Blöcke; die längste Einzeldauer ist nicht gemessen), WAL-Rückstand-Spitze im Run Median $(mib_of "$median_wal") MiB (~${wal_per_row} B je Zeile, abgeleitet), vom Slot gehaltenes WAL Median $(mib_of "$median_held") MiB"
   last_rate=$median_rate
   last_stage=$n
-  last_wal_per_row=$wal_per_row
+  last_wal_peak=$(printf '%s\n' "${wal_list[@]}" | sort -n | tail -n 1)
 done
+LC_ALL=C awk -v tag="$TAG" -v stage="$last_stage" -v peak="$last_wal_peak" -v warn="$WAL_WARN_BYTES" 'BEGIN {
+  printf "%s: WAL-Rückstand der größten Stufe (%s Zeilen) — höchste Spitze im Run %.0f MiB, %s der Warnschwelle von %.0f MiB (SPEC-013)\n", tag, stage, peak / 1048576, (peak < warn) ? "unter" : "nicht unter", warn / 1048576
+}'
 
 # --- Wirkung auf die Live-Erfassung -------------------------------------------
 echo "$TAG: Live-Erfassung — ${LIVE_RATE} Zeilen/s in public.$LIVE_TABLE, Run über Stufe $last_stage …"
@@ -328,9 +330,5 @@ tolerance_s=$((TOLERANCE_MIN * 60))
 LC_ALL=C awk -v tag="$TAG" -v rate="$last_rate" -v t="$tolerance_s" -v stage="$last_stage" 'BEGIN {
   x = int(rate * t); d = length(x); p = 10 ^ (d - 1); r = int(x / p) * p
   printf "%s: Richtgröße (abgeleitet) — %s Zeilen/s (Median, Stufe %s) × Toleranz %d s = %d Zeilen, abgerundet auf eine Stelle: %d Zeilen (Startwert der Toleranz: Setzung ohne Messung; die Rate ist über die Stufe hinaus hochgerechnet)\n", tag, rate, stage, t, x, r
-}'
-LC_ALL=C awk -v tag="$TAG" -v per_row="$last_wal_per_row" -v warn="$WAL_WARN_BYTES" -v err="$WAL_ERROR_BYTES" -v stage="$last_stage" 'BEGIN {
-  if (per_row <= 0) per_row = 1
-  printf "%s: WAL-Rückstand-Schwellen (abgeleitet) — bei ~%d B je Zeile (Stufe %s) erreicht ein einzelner Run die Warnschwelle (%d MiB) bei ~%d Zeilen und die Fehlerschwelle (%d MiB) bei ~%d Zeilen\n", tag, per_row, stage, warn / 1048576, warn / per_row, err / 1048576, err / per_row
 }'
 echo "$TAG: Ende — Lauf $RUN_ID"
