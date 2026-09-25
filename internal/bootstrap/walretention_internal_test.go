@@ -16,8 +16,8 @@ import (
 // Whitebox-Test (`package bootstrap`, nicht `bootstrap_test`): der
 // Schwellen-Vergleich, der Abbruch-Zug und die Rückgabewert-Priorität sind
 // unexportierte Verdrahtungsdetails (`slice-026`, `ADR-0049`) — der reale
-// Ende-zu-Ende-Beleg über beide Seiten der Schwelle liegt in
-// `walretention_endtoend_internal_test.go` (`make test-replication`); dieser Test
+// Beleg über beide Seiten der Schwelle an einem inaktiven Slot liegt in
+// `walretention_slotgrowth_internal_test.go` (`make test-replication`); dieser Test
 // belegt die Vergleichs-/Prioritäts-Logik selbst, ohne reale PostgreSQL-
 // Instanz.
 
@@ -56,7 +56,7 @@ func TestResolveWALRetentionThresholdsDefaultsToSpec013(t *testing.T) {
 
 // TestResolveWALRetentionThresholdsKeepsPositiveOverride belegt die
 // Gegenseite: ein gesetzter positiver Override (Testfixture-Schwellen, wie
-// `TestWALRetentionThresholdEndToEnd` sie nutzt) bleibt unverändert und wird
+// `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot` sie nutzt) bleibt unverändert und wird
 // nicht durch die SPEC-013-Startwerte ersetzt.
 func TestResolveWALRetentionThresholdsKeepsPositiveOverride(t *testing.T) {
 	const warnOverride, errorOverride int64 = 32 * 1024, 512 * 1024

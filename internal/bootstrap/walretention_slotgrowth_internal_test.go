@@ -15,24 +15,28 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/application/port/outbound"
 )
 
-// TestWALRetentionThresholdEndToEnd trägt den Ende-zu-Ende-Beleg der
-// WAL-Rückstand-Schwellen (`ADR-0049`, `SPEC-013`) gegen reale PostgreSQL: ein
-// real wachsender Rückstand durchläuft beide Seiten der Schwelle, gemessen
-// vom echten `WALRetentionChecker` und bewertet von `runWALRetentionCheck`
-// samt Rückgabewert-Priorität. Der Rückstand wächst bei einem Slot, den kein
-// Stream bestätigt (`LH-QA-REL-003`: ein Feed, der nicht antwortet, lässt ihn
-// wachsen) — WAL ohne Inhalt für die Publication allein lässt ihn bei einem
-// antwortenden Feed nicht wachsen (Leerlauf-Bestätigung, `ADR-0120`). Die
-// Schwellen sind ein Test-Override (`Config.WALRetentionWarnBytes`/
-// `WALRetentionErrorBytes`), klein gegen `SPEC-013`s 100 MiB/1 GiB und groß
-// gegen das Grundrauschen der Instanz.
+// TestWALRetentionThresholdsFollowGrowthAtInactiveSlot belegt gegen reale
+// PostgreSQL (`ADR-0049`, `SPEC-013`): der Rückstand eines Slots, den kein
+// Stream bestätigt, wächst durch beide Seiten der Schwelle
+// (`LH-QA-REL-003`), gemessen vom echten `WALRetentionChecker` und bewertet
+// von `runWALRetentionCheck` — oberhalb der Warnschwelle eine Warnung ohne
+// Abbruch, oberhalb der Fehlerschwelle der Abbruch-Zug und ein Fehler der
+// Klasse `replication`. Der Test fährt weder einen Stream noch `Run`: die
+// Abbruchfunktion ist ein bloßer Kontext-Abbruch. Das Prozessende trägt die
+// Kette aus `TestMergeStreamAndWALFaultOutcomeFallsBackToFaultOnRegularStreamEnd`
+// (Fehler bei Stream-Ende) und `TestClassifyRunErrorMapsKnownSentinelsToADR0023Classes`
+// (Fehler → Klasse); die E2E-Phase „Leerlauf-Bestätigung“ von
+// `make test-integration` belegt im laufenden Container die Gegenseite (WAL
+// ohne Inhalt für die Publication erreicht die Fehlerschwelle nicht,
+// `ADR-0120`). Die Schwellen sind ein Test-Override
+// (`Config.WALRetentionWarnBytes`/`WALRetentionErrorBytes`), klein gegen
+// `SPEC-013`s 100 MiB/1 GiB und groß gegen das Grundrauschen der Instanz.
 //
 // Die Instanz gehört dem Test allein (`CDC_WALRETENTION_TEST_DSN`,
 // `run-replication-tests.sh` startet den Lauf gesondert nach dem Tier-Lauf):
 // der Rückstand misst das WAL der ganzen Instanz, ein gleichzeitiger Schreiber
-// eines anderen Test-Pakets läge sonst in derselben Größenordnung wie die
-// Schwellen.
-func TestWALRetentionThresholdEndToEnd(t *testing.T) {
+// eines anderen Test-Pakets verfälscht ihn.
+func TestWALRetentionThresholdsFollowGrowthAtInactiveSlot(t *testing.T) {
 	dsn := os.Getenv("CDC_WALRETENTION_TEST_DSN")
 	if dsn == "" {
 		t.Skip("CDC_WALRETENTION_TEST_DSN nicht gesetzt — der Beleg läuft auf einer exklusiven Instanz über make test-replication")
@@ -80,13 +84,13 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 	}
 
 	log := &recordingLog{}
-	streamCtx, stopStream := context.WithCancel(ctx)
-	defer stopStream()
+	abortCtx, abort := context.WithCancel(ctx)
+	defer abort()
 	var fault walRetentionFault
 	checkDone := make(chan struct{})
 	go func() {
 		defer close(checkDone)
-		runWALRetentionCheck(ctx, checker, log, 100*time.Millisecond, warnBytes, errorBytes, stopStream, &fault)
+		runWALRetentionCheck(ctx, checker, log, 100*time.Millisecond, warnBytes, errorBytes, abort, &fault)
 	}()
 
 	// Seite 1: der Rückstand liegt über der Warnschwelle und deutlich unter
@@ -104,13 +108,13 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	// „Kontrollierte Fortsetzung" (`SPEC-008`): über mehrere weitere Ticks
-	// endet weder die Schleife noch der Stream-Lauf.
+	// endet weder die Schleife noch löst sie den Abbruch aus.
 	time.Sleep(600 * time.Millisecond)
 	select {
 	case <-checkDone:
 		t.Fatalf("die Prüf-Schleife endete zwischen Warn- und Fehlerschwelle (%v) — SPEC-008 verlangt kontrollierte Fortsetzung", fault.get())
-	case <-streamCtx.Done():
-		t.Fatalf("der Stream-Lauf wurde zwischen Warn- und Fehlerschwelle beendet")
+	case <-abortCtx.Done():
+		t.Fatalf("die Abbruchfunktion wurde zwischen Warn- und Fehlerschwelle ausgelöst")
 	default:
 	}
 
@@ -121,21 +125,21 @@ func TestWALRetentionThresholdEndToEnd(t *testing.T) {
 		t.Fatalf("Seite 2 (Fehlerschwelle): %v", err)
 	}
 	select {
-	case <-streamCtx.Done():
+	case <-abortCtx.Done():
 	case <-time.After(20 * time.Second):
-		t.Fatal("der Stream-Lauf wurde nach Überschreiten der Fehlerschwelle nicht innerhalb 20 s beendet")
+		t.Fatal("die Abbruchfunktion wurde nach Überschreiten der Fehlerschwelle nicht innerhalb 20 s ausgelöst")
 	}
 	<-checkDone
 
 	err = fault.get()
 	if err == nil || !errors.Is(err, outbound.ErrReplication) {
-		t.Fatalf("Schwellen-Fehler %v, wollen einen Fehler der Klasse replication (outbound.ErrReplication) — derselbe Pfad wie classifyRunError/os.Exit(1) in main.go", err)
+		t.Fatalf("Schwellen-Fehler %v, wollen einen Fehler der Klasse replication (outbound.ErrReplication)", err)
 	}
 	if errors.Is(err, mapper.ErrChangeWithoutBegin) || errors.Is(err, mapper.ErrCommitWithoutBegin) || errors.Is(err, mapper.ErrBeginWithoutCommit) {
 		t.Fatalf("Schwellen-Fehler ist eine Stream-Ordnungs-Verletzung (%v) — Sentinel-Trennung verletzt (ADR-0049(a))", err)
 	}
 	if merged := mergeStreamAndWALFaultOutcome(nil, &fault); !errors.Is(merged, outbound.ErrReplication) {
-		t.Fatalf("Rückgabewert von Run bei regulärem Stream-Ende %v, wollen die Klasse replication", merged)
+		t.Fatalf("mergeStreamAndWALFaultOutcome bei regulärem Stream-Ende %v, wollen die Klasse replication", merged)
 	}
 	if !log.contains("ERROR", "über Fehlerschwelle") {
 		t.Fatalf("keine Fehler-Zeile über der Fehlerschwelle (Log: %v)", logLines(log))

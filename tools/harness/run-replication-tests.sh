@@ -179,8 +179,9 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
     exit 1
   fi
 
-  # WAL-Rückstand-Schwellen (ADR-0049): `TestWALRetentionThresholdEndToEnd`
-  # misst das WAL der ganzen Instanz gegen Schwellen im KiB-Bereich und läuft
+  # WAL-Rückstand-Schwellen (ADR-0049):
+  # `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot` misst das WAL der
+  # ganzen Instanz gegen Schwellen im KiB-Bereich und läuft
   # deshalb allein auf der Standard-Instanz, nachdem der Tier-Lauf ihre
   # übrigen Tests beendet hat. Ein Lauf ohne PASS des Tests ist rot.
   threshold_out=$(docker run --rm --network "$NETWORK" \
@@ -189,11 +190,11 @@ if [[ "$MODE" == "tier" || "$MODE" == "both" ]]; then
     -w /src \
     -e GOCACHE=/tmp/gocache \
     -e CDC_WALRETENTION_TEST_DSN="$STANDARD_DSN" \
-    "$TOOLCHAIN_IMAGE" go test -count=1 -v -run '^TestWALRetentionThresholdEndToEnd$' \
+    "$TOOLCHAIN_IMAGE" go test -count=1 -v -run '^TestWALRetentionThresholdsFollowGrowthAtInactiveSlot$' \
       ./internal/bootstrap 2>&1) || { printf '%s\n' "$threshold_out"; exit 1; }
   printf '%s\n' "$threshold_out"
-  if ! grep -q -- '--- PASS: TestWALRetentionThresholdEndToEnd' <<<"$threshold_out"; then
-    echo "run-replication-tests: TestWALRetentionThresholdEndToEnd ist nicht als PASS gelaufen" >&2
+  if ! grep -q -- '--- PASS: TestWALRetentionThresholdsFollowGrowthAtInactiveSlot' <<<"$threshold_out"; then
+    echo "run-replication-tests: TestWALRetentionThresholdsFollowGrowthAtInactiveSlot ist nicht als PASS gelaufen" >&2
     exit 1
   fi
 fi
