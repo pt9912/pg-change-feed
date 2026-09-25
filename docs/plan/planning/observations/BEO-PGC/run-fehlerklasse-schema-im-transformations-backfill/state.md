@@ -1,6 +1,13 @@
-Zustand: offen — Ausgang: **weiter offen**, adressiert. Adresse: das Architect-Kurzverdikt im
-Start-Trigger von `slice-transformationen-backfill-pfad` (§4 dort; der Übergangs-Commit
-`next` → `in-progress` nennt es). Die Abbildung, an der es ansetzt, steht in `classifyError`
-am Use Case des Runs; die Übergabe steht im Plan jenes Slice (§3).
+Zustand: **verkörpert** — Ausgang: **verkörpert** →
+[`ADR-0117`](../../../../adr/0117-backfill-run-fehlerklasse-schema.md) (Klasse `schema`
+für eine im Run nicht anwendbare Regel, run-lokal; Folgepflicht 7 von `ADR-0112` für
+den Run ausgefüllt) · seit welle-backfill-bestand
+(Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
+§4.3 und §5 (g)).
 
-Zähler (abgeleitet): 1× (evidence/slice-backfill-run-usecase.md).
+Der Start-Trigger von
+[`slice-transformationen-backfill-pfad`](../../../open/slice-transformationen-backfill-pfad.md)
+nennt `ADR-0117` und das Architect-Verdikt `architect-verdict-backfill-schema-klasse-rollen`.
+Die Abbildung, an der die ADR ansetzt, steht in `classifyError` am Use Case des Runs.
+
+Zähler: 1× (Datei unter `evidence/`).

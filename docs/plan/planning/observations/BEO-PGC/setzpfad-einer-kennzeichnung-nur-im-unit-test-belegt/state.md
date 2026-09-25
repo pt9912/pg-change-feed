@@ -1,11 +1,15 @@
-Zustand: offen (**1×**) — unter der Schwelle, Ausgang **weiter offen**,
-adressiert: der Lese-Schritt der Closure von `welle-backfill-bestand` entscheidet,
-ob ein Ende-zu-Ende-Beleg einer gesetzten Warnung entsteht (Ansatz: eine Tabelle
-mit `ANALYZE` über der Richtgröße lässt Warnung 1 setzen, ein Test-Hebel auf die
-Toleranz Warnung 2; beides kostet einen Lauf gegen große Daten oder einen
-Konfigurations-Hebel, den die Entscheidung zur Toleranz ausschließt) oder ob die
-Grenze („Setz-Pfade nur durch Unit- und View-Test belegt“) im Handbuch und in der
-Welle-Closure als benannte Grenze bleibt. Bis dahin steht die Grenze im
-Verifikations-Report (V-7) und in der Closure-Notiz von
-`slice-backfill-bench-richtgroesse`. Zähler (abgeleitet): **1×**
-(evidence/slice-backfill-bench-richtgroesse.md).
+Zustand: **gestrichen** — Ausgang: **gestrichen** (akzeptiertes Negativ) · seit
+welle-backfill-bestand
+(Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
+§4.3 und §5 (f)).
+
+Begründung: jede Schicht des Setzpfads ist an ihrer Eingabeseite gebunden
+(Mutationen rot, View-Test gegen reale PostgreSQL); ein Ende-zu-Ende-Lauf bräuchte
+eine Tabelle über der Richtgröße (`estimatedRowsGuideline = 4_000_000` in
+`internal/application/usecase/backfill/warn.go`) oder einen Konfigurations-Hebel, den
+`ADR-0113` ausschließt („Toleranz oder Richtgröße sollen konfigurierbar sein:
+Folge-ADR“). Kein Betrieb existiert (kein Server-Tag trägt Backfill-Änderungen). Die
+Grenze „Setz-Pfade nur durch Unit- und View-Test belegt“ steht im Verifikations-Report
+und in der Closure-Notiz von `slice-backfill-bench-richtgroesse`.
+
+Zähler: 1× (Datei unter `evidence/`).

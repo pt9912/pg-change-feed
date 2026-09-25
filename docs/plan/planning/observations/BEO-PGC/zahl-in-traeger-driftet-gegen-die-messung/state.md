@@ -1,3 +1,14 @@
+Deckel bei 21× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
+Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
+in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
+ab 10×). Ausgang unverändert **verkörpert**; der Suchlauf-Anteil (jede der acht
+Belegdateien der Backfill-Welle nennt ein Suchlauf-Feld) ist **geplant** →
+[`slice-harness-suchlauf-nachmessen`](../../../open/slice-harness-suchlauf-nachmessen.md)
+(Nachmess-Werkzeug; kein Sensor auf Prosa, `ADR-0083` bleibt unberührt)
+(Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
+§3.2 und §3.5).
+
 Zustand: **verkörpert** — Ausgang: **verkörpert** → `AGENTS.md` §3.12 Instanz A und
 `.harness/skills/reviewer.md` (HIGH-Punkt „Zahl im Träger ohne Ursprung — oder gegen
 die Messung driftend“) · seit slice-089. Der **Lese-Schritt der `welle-20`-Closure**
