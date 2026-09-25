@@ -118,7 +118,7 @@ ist dieser Slice).
 
 Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
 
-- [ ] **Liefer-Punkt 1 — die Leerlauf-Bestätigung im Capture-Pfad**
+- [x] **Liefer-Punkt 1 — die Leerlauf-Bestätigung im Capture-Pfad**
       ([`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md)
       Festlegung 1 bis 3): der Stream-Adapter erkennt den Leerlauf (keine
       Quelltransaktion zwischen `BEGIN` und `COMMIT`, kein `Capture`-Aufruf
@@ -143,7 +143,7 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       Review-Report unter `docs/reviews/` nennt sie je Zusage — der Bericht des
       Implementers liegt nicht im Repo
       (`BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`, offen, 1×).
-- [ ] **Liefer-Punkt 2 — die Belege am realen Stream und am Container**: (a)
+- [x] **Liefer-Punkt 2 — die Belege am realen Stream und am Container**: (a)
       *Store-Tier* (`make test-replication`): die Form „X1“ des Verdikts gegen
       den laufenden Stream — 200.000 Zeilen in eine nicht veröffentlichte
       Tabelle, `WALRetentionChecker.Measure` fällt unter ein Zehntel der Last
@@ -166,7 +166,7 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       die Fehlerschwelle trifft). Für den Sicherheits-Test gilt zusätzlich die
       Bindung an die Eingabe aus §6 (zweites Risiko): der Bericht nennt, welche
       Mutation den Store-Test rot färbt und welche nur der Unit-Test trägt.
-- [ ] **Liefer-Punkt 3 — die Träger tragen die neue Lage**
+- [x] **Liefer-Punkt 3 — die Träger tragen die neue Lage**
       ([`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md)
       Folgepflichten 2 bis 5): `LH-QA-REL-001.a` und `SPEC-009` je ein Satz,
       die Architektur-Sicht den Leerlauf-Weg (alle drei ohne ADR- und
@@ -185,7 +185,7 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       Bericht mit Lauf-Ursprung. `make bench` als Ganzes endet am Messhost mit
       Exit 2 an `LH-QA-PER-001` (Ursache: Verdikt, Befund 2) und ist kein Beleg
       dieses Slice.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -194,17 +194,17 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       `docs/reviews/` (Verdikt 3: der Eingriff berührt Empfangs-Schleife,
       Application und einen Port des Capture-kritischen Pfads und braucht
       Review und Verifier für sich).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Parent-Stand steht
       bereits (Planner), der Diff-Stand ist Aufgabe des Implementers.
-- [ ] Doku-Update: Handbuch samt Änderungshistorie (Liefer-Punkt 3);
+- [x] Doku-Update: Handbuch samt Änderungshistorie (Liefer-Punkt 3);
       `harness/README.md` §Sensors trägt in den Zeilen `make test-replication`,
       `make test-integration` und `make bench` nur, was der Lauf gefahren hat
       (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, verkörpert).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
@@ -381,7 +381,23 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   auf Unit-Ebene). Ein Test, dessen Mutation nicht rot färbt, ist keine
   Erfüllung der Zusage
   (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert, 10×).
-  **Ausgang:** bei der Closure.
+  *Gemessen (Implementer, `TestStreamIdleConfirmationKeepsOpenTransactionDeliverable`
+  in `receive`, PostgreSQL 18):* der Store-Test besteht ohne die Bedingung
+  „keine offene Transaktion“ (alle Store-Tests grün, Mutation entfernt die
+  Prüfung von `TransactionOpen` in `confirmIdle`) — die Eigenschaft „inmitten“
+  trägt allein der Unit-Test `TestRunNoConfirmationInsideOpenTransaction`
+  (Mutation rot). Ein deterministischer Store-Test dafür ist nicht gebaut: das
+  WAL-Ende der Keepalive-Nachricht liegt auf der Leitung vor dem Commit der
+  laufenden Transaktion (hergeleitet aus der Quelle des Walsenders, nicht
+  ausgeführt), eine Bestätigung inmitten der Transaktion überspränge also
+  keinen Change — der Store-Test kann die Prüfung nicht rot färben. Was den
+  Store-Test rot färbt, ist die Größe der bestätigten Position (Mutation:
+  gemeldete Position + 1 GiB → der Neustart liefert den Change nicht, „kein
+  CaptureCommand innerhalb 20 s“) und das Abschalten der Bestätigung
+  (Vorbedingung `confirmed_flush_lsn` hinter dem offenen Change scheitert).
+  **Ausgang:** bei der Closure — Vorschlag *weiter offen* mit Adresse
+  Architect (Eigenschaft „inmitten“ nur auf Unit-Ebene tragen oder Test-Naht
+  in der Sitzung).
 - **Bestehende Tests, die die alte Lage voraussetzen.** `TestWALRetentionThresholdEndToEnd`
   erzeugt den wachsenden Rückstand über fremdes WAL; nach dem Zug wächst er
   dort nicht mehr, der Test verliert seine Voraussetzung. Eine neue
