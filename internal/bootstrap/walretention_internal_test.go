@@ -15,7 +15,7 @@ import (
 
 // Whitebox-Test (`package bootstrap`, nicht `bootstrap_test`): der
 // Schwellen-Vergleich, der Abbruch-Zug und die Rückgabewert-Priorität sind
-// unexportierte Verdrahtungsdetails (`slice-026`, `ADR-0049`) — der reale
+// unexportierte Verdrahtungsdetails (`ADR-0049`) — der reale
 // Beleg über beide Seiten der Schwelle an einem inaktiven Slot liegt in
 // `walretention_slotgrowth_internal_test.go` (`make test-replication`); dieser Test
 // belegt die Vergleichs-/Prioritäts-Logik selbst, ohne reale PostgreSQL-
