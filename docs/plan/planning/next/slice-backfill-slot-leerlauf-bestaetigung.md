@@ -41,7 +41,7 @@ Leerlauf-Weg). [`SPEC-013`](../../../../spec/pflichtenheft.md) (Schwellen) und
 [`SPEC-008`](../../../../spec/pflichtenheft.md) (Fehlerklassen) werden gelesen,
 nicht geändert.
 
-**Verantwortlich:** — bis zur Priorisierung.
+**Verantwortlich:** Implementer-Agent, 2026-09-25.
 
 **Autor:** Planner-Agent, Architect-Verdikt vom 2026-09-25 (Verdikt 3,
 „Zuschnitt“). **Datum:** 2026-09-25.
