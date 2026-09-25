@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.7
+Version: 1.8
 Stand: 2026-09-25
 
 ## 1. Zweck und Zielgruppe
@@ -298,6 +298,17 @@ GitHub-API abfragbar (`gh api
 nennt `0.2.0`, 2026-09-25). Der Kotlin-SDK-Release-Weg ist damit
 End-zu-Ende bewiesen, nicht nur implementiert.
 
+**Beschreibung der Kotlin-Paketseite (manuell).** GitHub Packages zeigt bei
+Maven-Paketen weder eine README noch die `<description>` der POM an; die
+Paketseite trägt ein Beschreibungsfeld („Write a description"), das nur in der
+Weboberfläche gepflegt wird — die REST- und die GraphQL-Schnittstelle bieten
+dafür keine schreibende Operation (geprüft mit `gh api`: `PackageVersion.readme`
+ist nur lesbar, die einzige Paket-Mutation ist `deletePackageVersion`). Nach
+jedem Kotlin-Release wird der Inhalt von
+[`sdks/kotlin/pgchangefeed-kotlin/README.md`](../../sdks/kotlin/pgchangefeed-kotlin/README.md)
+in dieses Feld eingefügt. Ob ein eingetragener Text bei der nächsten
+Veröffentlichung erhalten bleibt, ist nicht geprüft.
+
 ## 5. Begleitende, nicht-blockierende Workflows
 
 Zwei weitere Workflows laufen unabhängig vom Release-Trigger, nächtlich
@@ -335,3 +346,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.5 | 2026-09-20 | §1/§4 um den vierten, unabhängigen SDK-Release-Weg (`sdk-kotlin-v*`-Tag, GitHub Packages, `GITHUB_TOKEN`, kein externes Secret) ergänzt — vorab eingeplanter DoD-Punkt von `slice-sdk-kotlin-publish-workflow` (`LH-FA-SST-009`, `ADR-0109`), nicht erst nach einem Reviewer-Finding (Lehre aus `BEO-PGC/release-mechanismus-nicht-in-releasing-doku-nachgezogen`); der reale Post-Push-Lauf bleibt nach `AGENTS.md` §3.10 bis zum ersten echten Tag-Push offen |
 | 1.6 | 2026-09-21 | §4 korrigiert: der Publish-Schritt (`./gradlew publish`) läuft jetzt Docker-only in einer eigenen `publish`-Stufe (`sdks/kotlin/Dockerfile`), nicht mehr direkt auf dem Runner — Fixrunde nach Review-Finding F-1 (`docs/reviews/review-slice-sdk-kotlin-publish-workflow.md`, `LH-FA-SST-009`, `ADR-0109` Festlegung 5) |
 | 1.7 | 2026-09-25 | §1/§4 auf den Ist-Stand gezogen (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-readme-nutzerdoku Fixrunde): alle drei SDK-Release-Wege sind mit realen Tags bewiesen (`sdk-csharp-v0.1.0`/`0.2.0`, `sdk-python-v0.1.0`/`0.2.0`, `sdk-kotlin-v0.2.0`; `0.2.0`-Läufe 36117929191, 36117929298, 36117929552 je `success`, Kotlin-Paketversion `0.2.0` über die GitHub-API abgefragt) |
+| 1.8 | 2026-09-25 | §4 um den manuell gepflegten Beschreibungstext der Kotlin-Paketseite ergänzt (`LH-FA-SST-009`, `ADR-0109`): GitHub Packages zeigt bei Maven weder README noch POM-Beschreibung, die Schreib-Schnittstelle fehlt in REST und GraphQL |
