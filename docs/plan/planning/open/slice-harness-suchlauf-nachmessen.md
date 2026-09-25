@@ -176,7 +176,7 @@ git grep -n -E 'plan\.yaml|down\.sql' -- tools harness Makefile docs/user
 | Träger | Befund | Behandlung |
 |---|---|---|
 | Beschreibungen der Suchform (AGENTS.md, Commands, Skill, Sensor-Doku) | *(Implementer trägt ein)* | jede nennt Form und Aufruf des Werkzeugs; der Codeblock-Satz von §3.13 bleibt die Regel |
-| Läufe, die `plan.yaml`/`down.sql` schreiben | *(Implementer trägt ein)* | `apply-rollout.sh` deckt `make test-store` und `make test-replication`; ein weiterer Schreiber wird als Beleg gemeldet |
+| Läufe, die `plan.yaml`/`down.sql` schreiben | *(Implementer trägt ein)* | `apply-rollout.sh` deckt `make test-store` und `make test-replication`; `tools/bench-lib.sh` und `tools/harness/run-integration-tests.sh` rufen `make schema-rollout` direkt (gemessen für `tools/bench-backfill.sh`: danach zeigt `git status --short` `M tools/schema/plan.yaml`, Closure von `welle-backfill-bestand`); ob die Rücknahme in `apply-rollout.sh` oder im Target `schema-rollout` selbst liegt, entscheidet der Implementer, jeder weitere Schreiber wird als Beleg gemeldet |
 
 ## 4. Trigger
 
