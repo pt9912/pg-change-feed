@@ -263,7 +263,20 @@ Kopierdauer; der Speicher des Feed-Containers geht nicht ein“).
 
 ## 8. Gate
 
-`make gates`: *(Zeile folgt nach dem Lauf)*
+`make gates` am Stand des Commits `2636ca46`, in eine Log-Datei geschrieben und der Exit-Code
+danach gelesen (`AGENTS.md` §3.9): **Exit 0**, Laufzeit 20 s. Gedruckte Zeilen der sechs Ziele:
+
+```text
+baseline-verify: v6.9.0 OK — 54 Dateien (Integritaet + Vollstaendigkeit, netzlos)
+d-check: 1175 Datei(en) geprüft, 0 Befund(e)
+coverage-gate: OK — Coverage 83.30% erfüllt Schwelle 80%
+commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne Struktur-ID
+generated-sync: OK — das committete Erzeugnis ist byte-gleich der Ausgabe des gepinnten Generators (Stufe proto-export)
+gesamt: 0 Befund(e)
+```
+
+(`a-check` druckt `gesamt: 0 Befund(e)`, `docs-check` die erste `d-check`-Zeile.) Der Endlauf
+nach dem Eintrag dieses Abschnitts steht im Bericht des Implementers an den Reviewer.
 
 ## 9. Gedruckte Zeilen
 
