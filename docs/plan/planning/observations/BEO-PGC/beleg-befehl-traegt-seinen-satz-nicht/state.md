@@ -6,8 +6,8 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **12×**
-(evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **13×**
+(evidence/slice-backfill-sdk-origin.md, evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
@@ -16,7 +16,11 @@ evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
 evidence/slice-backfill-sql-administration.md) —
-**Schwelle erreicht**. Der zwölfte Beleg
+**Schwelle erreicht**; bereits verkörpert, der Lese-Schritt der Closure von
+`welle-backfill-bestand` liest den Eintrag mit (13×). Der dreizehnte Beleg
+(`evidence/slice-backfill-sdk-origin.md`, F-2) trifft die Form **Befehl**: ein
+`git log -S`-Befund über Vorgänger-Commits belegte das Gegenteil des Satzes, den er
+tragen sollte (die Commits hoben, der Satz sagte „hob nicht“). Der zwölfte Beleg
 (`evidence/slice-backfill-sql-administration.md`, F-1 und F-3) trifft die Form **Befehl**
 an zwei Trägern: ein im Repo genannter Guard-Lauf, der die zugesagten Rechte, die Funktion
 und die CHECK-Menge nicht führte (die Messung lag als Wegwerf-Skript außerhalb des Repos;

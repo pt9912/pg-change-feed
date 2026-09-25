@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-sdk-origin (Review F-2, Verifikation §3 Zeile F-2)
+
+**Fund:** Die Versionsentscheidung des Plans stützte „keine Hebung“ auf einen Beleg über Vorgänger-Commits: die Quellen seien in `d86d1965` (C#), `0f8cc4f2` (Python) und `c8c9e3ae` (Kotlin) auf `0.2.0` gesetzt worden, „und der jeweils zweite Slice hob nicht erneut“. Die drei Commits sind die NATS-Commits selbst; ihre Parents tragen `0.1.0` (`git show <Commit>^:<Quelle>`), sie **hoben** von `0.1.0` auf `0.2.0`. Der genannte Befund (`git log -S` nennt genau diese Commits) belegte das Gegenteil des Satzes, den er tragen sollte; die Schlussfolgerung (`0.2.0` ist ungetaggt, die nächste Minor nach `sdk-*-v0.1.0`) trug durch die gemessenen Tags und Quellen. Gefunden hat es der Reviewer, indem er den Befehl fuhr und die Parents las; die Fixrunde ersetzt den Satz durch die gemessene Lage (die Hebung liegt je in diesem einen Commit, kein späterer Commit hob erneut), der Verifier fuhr `git show`, `git log -S` und `git merge-base --is-ancestor` nach.
+
+Quelle: `docs/reviews/review-slice-backfill-sdk-origin.md` (F-2) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-sdk-origin.md` (§3 Zeile F-2, §5). <!-- d-check:status-provenance -->

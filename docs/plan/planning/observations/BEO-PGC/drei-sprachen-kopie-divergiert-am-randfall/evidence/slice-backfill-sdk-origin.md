@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-sdk-origin (Review F-3, Verifikation §3 Zeile F-3 und §4)
+
+**Fund:** Die drei HTTP-Lesemodelle lasen die Randwerte des Feldes `origin` verschieden. JSON-`null` las Kotlin und Python als `wal`, C# als `null` in einer als `string` deklarierten Eigenschaft (Reviewer-Experiment, gedruckt „Actual: null“, 75 von 76 Tests grün mit dem zusätzlichen Fall); ein leerer String las Python als `wal` (`data.get("origin") or "wal"`), C# und Kotlin als `""`. Weder der C#-Fall noch der Python-Leerstring hatte einen Test; alle Hauptfälle waren in den drei Sprachen grün. Die Entscheidung des Auftraggebers legte die Regel fest (fehlt oder JSON-`null` → `wal`, jeder andere Wert unverändert). Behoben: C# `OriginConverter` (`HandleNull`), Python `is None`-Prüfung, je Sprache Testfälle für `null` und leer; der Verifier sah die Mutationen rot (C1 `HandleNull => false`, C3 Konverter liest leer als `wal`, P1 `or`-Ausdruck, P2 `data.get("origin", "wal")`, K1 leer → `wal`, K2 `?: ""`).
+
+Quelle: `docs/reviews/review-slice-backfill-sdk-origin.md` (F-3) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-sdk-origin.md` (§3 Zeile F-3, §4). <!-- d-check:status-provenance -->

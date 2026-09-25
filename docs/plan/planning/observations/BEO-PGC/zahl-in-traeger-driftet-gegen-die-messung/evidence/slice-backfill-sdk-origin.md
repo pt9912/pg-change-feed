@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-sdk-origin (Review F-1, Verifikation §3 Zeile F-1 und §6)
+
+**Fund:** Das Suchlauf-Feld des Plans nannte für `git grep -n '0\.2\.0'` über `spec harness sdks docs/user tools .github Makefile` „26 Zeilen“ an Parent und Diff-Stand; gemessen sind es an beiden Ständen 29 (`git grep` an `fea14159` und am Diff-Stand, `grep -rn` am Arbeitsbaum mit Ausschluss der vier Bau-Verzeichnisse). Die Differenz sind die drei Zeilen 157 bis 159 von `harness/README.md` (die `make sdk-pack-*`-Zeilen mit den Artefaktnamen); die Zeile „Artefaktnamen“ desselben Feldes behauptete zudem, `harness/README.md` nenne keine Version. Die Träger blieben wahr (die Version ist unverändert), das Feld trug seine Zahl und seinen Nichtfund nicht. Gefunden hat es der Reviewer durch Nachmessen an beiden Ständen; die Fixrunde setzte die gemessene Zahl 29 samt Aufstellung je Datei, der Verifier fuhr alle Zeilen des Feldes an drei Ständen nach (Summe 29 an `fea14159`, `e80b4f64` und `HEAD`).
+
+Quelle: `docs/reviews/review-slice-backfill-sdk-origin.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-sdk-origin.md` (§3 Zeile F-1, §6). <!-- d-check:status-provenance -->

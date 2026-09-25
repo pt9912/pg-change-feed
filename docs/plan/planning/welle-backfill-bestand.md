@@ -148,7 +148,7 @@ Lifecycle-Verzeichnis und wird hier **nicht** gespiegelt.
 | slice-backfill-e2e | `make test-integration`: Happy Path, Boundary, Negative; Startposition eines frisch registrierten Consumers gemessen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 1 |
 | slice-backfill-bench-richtgroesse | Bench der Kopierdauer je Tabellengröße, daraus die Warn-Richtgröße; Auswertung der zwei Warnungen im Use Case des Runs, sichtbar über View und `diagnose` | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Festlegung 3, [`ADR-0113`](../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) Festlegung 3, [`ADR-0054`](../adr/0054-coverage-gate-und-benchmark-infrastruktur.md) |
 | slice-backfill-slot-leerlauf-bestaetigung | Capture-Slot bestätigt im Leerlauf das `ServerWALEnd` der Keepalive-Nachricht (Entscheidung in der Application, ohne Persistenz); WAL ohne Inhalt für die Publication hält den Rückstand nicht mehr; Belege in Unit, Store und E2E, Träger (Spec, Handbuch, Bench) nachgezogen | [`LH-FA-CAP-009`](../../../spec/lastenheft.md), [`LH-QA-REL-001`](../../../spec/lastenheft.md), [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md), [`ADR-0007`](../adr/0007-source-ack-outbound-port.md) |
-| slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Package-Versionen | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
+| slice-backfill-sdk-origin | `origin` in den drei SDK-HTTP-Lesemodellen; Versionsentscheidung der Packages | [`LH-FA-SST-009`](../../../spec/lastenheft.md), [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8 |
 
 **Reihenfolge:** sequentiell in der Tabellen-Reihenfolge (WIP-Limit 1 je
 Rolleninhaber, Baseline-Regelwerk `modul-05-planning-harness.md`), außer `slice-backfill-sdk-origin`, der nach `slice-backfill-change-origin`
@@ -397,9 +397,9 @@ der Closure-Trigger unerreichbar wird.
   Welle noch Umsetzung; die Kopplung steht in §5.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle Workflow-
   Änderung** — [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht. Die
-  Package-Versionen der drei SDKs heben im Slice `sdk-origin` als Datei-
-  Änderung; ein Tag-Push und damit ein Release bleibt Betreiber-Handlung
-  außerhalb dieser Welle. Die Pipeline `e2e.yml` fährt `make test-integration`
+  Package-Versionen der drei SDKs bleiben `0.2.0` (Versionsentscheidung im
+  Slice `sdk-origin`, dessen §3); ein Tag-Push und damit ein Release bleibt
+  Betreiber-Handlung außerhalb dieser Welle. Die Pipeline `e2e.yml` fährt `make test-integration`
   unverändert weiter — die Laufzeit des erweiterten Testpakets ist ein
   Risiko des Slice `e2e` (§6 dort), keine Workflow-Änderung.
 - **Kein Server-Release** — `docs/user/version.md` bleibt unberührt; die
@@ -510,6 +510,18 @@ Risiko trägt (Detail je Slice in §8):
   in diesem Slice: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
   (verkörpert, 11×), `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`
   (offen, 1×). Der Lese-Schritt der Welle-Closure liest die Einträge ab 3×.
+- `slice-backfill-sdk-origin` (der letzte Slice der Welle; Zähler = Dateien unter
+  `evidence/`, Stand der Closure des Slice): `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (verkörpert, 21×), `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (verkörpert, 13×),
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 8×),
+  `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft` (offen, 2×),
+  `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen` (offen, 2×, Ausgang weiter offen,
+  Adresse: die Closure dieser Welle — Realserver-Beleg der HTTP-Fläche als Folge-Slice oder
+  Streichung mit Begründung); neu: `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall`
+  (offen, 1×). Verbleibende Arbeit der Welle ist die Welle-Closure samt Lese-Schritt.
+  Übergabe an den Release-Zug: die drei Tags `sdk-csharp-v0.2.0`, `sdk-python-v0.2.0` und
+  `sdk-kotlin-v0.2.0` setzt der Betreiber gemeinsam nach der Welle-Closure (Beleg-Anker: §3
+  „Versionsentscheidung“ des Slice-Plans, `git tag -l`).
 - Gesichtet, ohne Bezug zu dieser Welle: die übrigen Einträge des Registers.
 
 ## 7. Closure-Notiz

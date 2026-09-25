@@ -1,4 +1,4 @@
-# Slice backfill-sdk-origin: SDK-HTTP-Lesemodelle — `origin` als optionales Feld in C#, Kotlin und Python; Package-Versionen
+# Slice backfill-sdk-origin: SDK-HTTP-Lesemodelle — `origin` als optionales Feld in C#, Kotlin und Python; Versionsentscheidung der Packages
 
 **Lifecycle:** Der Zustand dieses Slice ist das Verzeichnis, in dem diese
 Datei liegt — eines von `open/`, `next/`, `in-progress/`, `done/`. Er
@@ -14,7 +14,8 @@ Kennung oder Grund, die Liefer-Punkte der DoD bleiben leer
 **Bezug:** [`LH-FA-SST-009`](../../../../spec/lastenheft.md) (Client-Bibliotheken — die HTTP-Fläche der drei
 Packages), [`LH-FA-SST-006`](../../../../spec/lastenheft.md) (HTTP-API, `GET /changes`), [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8
 (Reichweite in SDKs: `origin` als optionales Feld, fehlt es, gilt `wal`; die
-Package-Version hebt der SDK-Slice nach dem bestehenden Muster),
+Package-Version hebt der SDK-Slice nach dem bestehenden Muster — Auslegung in
+§3 „Versionsentscheidung“),
 [`ADR-0106`](../../adr/0106-csharp-nuget-erstes-sdk-package.md), [`ADR-0107`](../../adr/0107-python-pypi-zweites-sdk-package.md), [`ADR-0109`](../../adr/0109-kotlin-github-packages-drittes-sdk-package.md) (die drei Package-Entscheidungen),
 [`ADR-0110`](../../adr/0110-python-sdk-umfang-erweitert-vollmatrix.md) (Sprachmatrix, Belegklasse der Flächen).
 
@@ -31,8 +32,8 @@ um `origin` ergänzt) — gelesen; [`SPEC-026`](../../../../spec/pflichtenheft.m
 ## 1. Ziel und Abgrenzung
 
 **Ziel:** Die HTTP-Lesemodelle der drei SDK-Packages tragen `origin` als
-**optionales** Feld (`wal`, wenn der Server es nicht sendet) und die Packages
-heben ihre Version: C# `PgChangeFeed.Client`
+**optionales** Feld (`wal`, wenn der Server es nicht sendet); die Versionen der
+Packages bleiben `0.2.0` (§3 „Versionsentscheidung“): C# `PgChangeFeed.Client`
 (`sdks/csharp/PgChangeFeed.Client/Http/Models/Changes.cs`), Kotlin
 `pgchangefeed-kotlin` (`sdks/kotlin/pgchangefeed-kotlin/src/main/kotlin/io/github/pt9912/pgchangefeed/http/model/Changes.kt`)
 und Python `pgchangefeed` (`sdks/python/pgchangefeed/src/pgchangefeed/models.py` samt
@@ -46,7 +47,8 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
   ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8); die zehn Felder bleiben.
 - **Ein Release** — ein Tag-Push (`sdk-*-v*`) ist Betreiber-Handlung außerhalb der
   Welle ([`AGENTS.md`](../../../../AGENTS.md) §3.10); die drei `sdk-*-release.yml`-Workflows bleiben
-  unverändert. Der Slice hebt nur die Version in den Metadaten-Quellen.
+  unverändert. Der Slice ändert keine Version in den Metadaten-Quellen (§3
+  „Versionsentscheidung“).
 - **Realserver-Läufe der SDKs** (`make test-sdk-*-integration`) — der Bestand
   dieser Läufe (HTTP: Registrierung und Listen-Aufruf) ruft `GET /changes` nicht
   auf; der Slice erweitert sie nicht.
@@ -95,14 +97,17 @@ weiter (erwartet: die Decoder ignorieren das Feld) — der Slice macht das Feld
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: SDK-READMEs (englisch) nennen das Feld und die Version; Benutzerhandbuch (`**SDK:**`-Absätze der HTTP-Beschreibung) und Änderungshistorie, soweit sie die Version oder die Feldmenge tragen.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+- [x] Verifikation als eigene Rolle mit Report unter `docs/reviews/`
+      (`verifikation-slice-backfill-sdk-origin`, Verdikt *Bestätigt*, V-1 bis V-5
+      INFO) — Rollenwechsel nach dem Review, kein Selbst-Review (Modul 8).
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -177,28 +182,61 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   C# `System.Text.Json`, Kotlin Gson und Python (`json` + `from_json`) unbekannte
   Felder ignorieren (gelesen); ein realer Beleg gegen den Server fehlt. *Erwartet,
   zu belegen durch:* die Unit-Tests mit einer Fixture aus einer realen Antwort
-  (Ursprung im Test genannt). **Ausgang:** *(bei Closure)*
+  (Ursprung im Test genannt). **Ausgang: weiter offen** → Register
+  `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen` (2×). Belegt ist das
+  Lesen des Feldes: je Sprache sechs Fälle, Fixtures in der Antwortform des
+  Server-Handlers (Ursprung im Test genannt, kein Lauf gegen einen
+  Server-Container). Ungemessen bleibt das Verhalten eines Decoders gegenüber
+  einem unbekannten Feld: kein Test speist ein solches ein (der Fall „unbekannter
+  Wert“ ist ein bekanntes Feld). Adresse: die Closure der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md).
 - **Kotlin/Gson und der Default `wal`.** Gson setzt bei einem fehlenden Feld auf
   eine Kotlin-Klasse mit Default-Parameter nicht den Default (erwartet: `null`);
   das Modell muss `null` als `wal` lesen. *Erwartet, zu belegen durch:* der Test
-  „Antwort ohne `origin`". **Ausgang:** *(bei Closure)*
+  „Antwort ohne `origin`“. **Ausgang: eingetreten**, im Slice aufgelöst: Gson
+  übernimmt den Kotlin-Default nicht (Reviewer-Mutation M5, Review-Report: der
+  Konstruktorparameter `origin: String = "wal"` färbt „without origin“ und
+  „JSON-null“ rot); die Ausführungsform der §3-Zeile (`wireOrigin` plus abgeleitete
+  Eigenschaft) trägt die Regel, Verifikation §4 K2 färbt sie bei Mutation rot. Kein
+  Folge-Artefakt nötig.
 - **Träger nennen die alte Version** (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`,
   verkörpert, 26×): Spec-§6-Zeilen, `harness/README.md`, Kommentare in
   `harness/mk/sdk.mk`, SDK-READMEs, Handbuch. *Erwartet, zu belegen durch:* der
-  Suchlauf mit beiden Ständen. **Ausgang:** *(bei Closure)*
+  Suchlauf mit beiden Ständen. **Ausgang: entfallen** — die Version ist
+  unverändert; der Suchlauf (§3, Zeile „Versionsangaben“) zählt an Parent,
+  Stand vor der Fixrunde und Diff-Stand je 29 Zeilen, kein Träger nennt eine
+  andere Package-Version als `0.2.0` (außer den `0.1.0`-Historie-Zeilen); der
+  Verifier fuhr alle Zeilen des Feldes an drei Ständen nach (Verifikation §6).
 - **Zahl im Träger ohne Ursprung** ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A): die Artefaktnamen
   mit Version sind Läufe. *Erwartet, zu belegen durch:* die Zeilen entstehen aus
-  realen `make sdk-pack-*`-Läufen dieses Slice. **Ausgang:** *(bei Closure)*
+  realen `make sdk-pack-*`-Läufen dieses Slice. **Ausgang: eingetreten**, in
+  anderer Ausprägung: die Artefaktnamen sind durch reale Läufe bestätigt (Fixrunde,
+  Review und Verifikation, Exit je 0), doch die Trefferzahl des Suchlauf-Felds
+  nannte 26 statt gemessen 29 (Review F-1). Die Fixrunde setzte die gemessene
+  Zahl; die Klasse steht im Register `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (21×, verkörpert), ein Folge-Slice entfällt.
 - **Sprachfragmente aus der Vorlage** (siehe DoD 3): eine Kopie der Form über
   drei Sprachen trägt ein deutsches Fragment leicht weiter. *Erwartet, zu belegen
-  durch:* der Reviewer-Punkt zur Form-Vorbild-Kopie. **Ausgang:** *(bei Closure)*
+  durch:* der Reviewer-Punkt zur Form-Vorbild-Kopie. **Ausgang: entfallen** — die
+  hinzugefügten Zeilen von `git diff fea14159..HEAD -U0 -- sdks` tragen gegen
+  Umlaute und deutsche Funktionswörter 0 Treffer (Verifikation, DoD-Zeile 3); der
+  Review meldet für die drei READMEs keinen Befund. Zwei Namen mit deutschem
+  Fragment sind der reale Name des Go-Tests, den die Fixtures nennen.
 - **Der Docker-Kontext `proto`** ist für jeden Bau der SDKs zwingend
   (`BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut`, offen, 3×); ein
   Bau ohne ihn bricht an der `COPY --from=proto`-Zeile ab — der Slice nennt ihn in
-  jedem Aufruf und hält die Klasse damit sichtbar. **Ausgang:** *(bei Closure)*
+  jedem Aufruf und hält die Klasse damit sichtbar. **Ausgang: entfallen** — das
+  Target trägt `--build-context proto=proto`; die drei `make sdk-pack-*`-Läufe
+  endeten in Review und Verifikation je mit Exit 0. Der Slice liefert keinen
+  weiteren Beleg für den Register-Eintrag (kein Anfall).
 - **Version ohne Tag** — die Metadaten-Quelle ist höher als jeder vorhandene Tag;
   der Tag-Abgleich der Publish-Workflows läuft erst beim Tag-Push. Kein
-  Workflow-Zug, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht. **Ausgang:** *(bei Closure)*
+  Workflow-Zug, [`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht. **Ausgang:
+  entfallen** — die Tag-Abgleich-Befehle der drei Workflows liefern an den
+  Quellen je `0.2.0`, `bash tools/harness/sdk-{csharp,kotlin,python}-release-tag-info.sh
+  sdk-<sprache>-v0.2.0` je `version=0.2.0` (Verifikation §5); `git tag -l` nennt
+  kein `sdk-*-v0.2.0`. Der Tag-Push ist Betreiber-Handlung nach der Closure der Welle
+  (Übergabe in §7).
 - **Kotlin `Change` trägt den Roh-Wert als öffentlichen Konstruktorparameter**
   (`wireOrigin: String?`): `equals`, `hashCode`, `toString`, `copy` und
   `component13()` arbeiten auf dem Roh-Wert, zwei Changes mit fehlendem Feld
@@ -209,19 +247,125 @@ grün + Closure-Notiz mit Lerneintrag geschrieben.
   „reads a JSON-null origin as wal" rot, weil Gson keinen Konstruktor aufruft
   und keinen Kotlin-Default übernimmt; ein Lesepfad ohne `wireOrigin` verlangt
   einen eigenen `TypeAdapter` statt des einfachen `Gson()` in
-  `PgChangeFeedHttpClient.kt`. **Ausgang:** *(bei Closure)*
+  `PgChangeFeedHttpClient.kt`. **Ausgang: entfallen** (als Risiko) — die
+  Eigenschaft ist gemessen, in der KDoc genannt und als bewusst akzeptiert
+  geführt; sie verletzt keine Zusage des Slice (DoD 1 trägt das Lesen des Feldes,
+  Verifikation V-5: der Konstruktor-Default `null` ist am Gson-Lesepfad unwirksam
+  und nicht als Mutation bindbar, die Regel trägt allein die abgeleitete
+  Eigenschaft). Die Beseitigung verlangt einen eigenen `TypeAdapter` und liegt
+  außerhalb dieses Gegenstands; kein Register-Eintrag, weil eine sprachbedingte
+  Gestaltungsgrenze keine wiederkehrende Fehlerklasse ist.
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Die Rollen-Kette lief in getrennten Kontexten, und die
+  Mutation der Eingabeseite war der Sensor. Der Reviewer fuhr sieben Mutationen der
+  Eingabeseite (M1 bis M7, je rot) und den C#-Randfall `"origin":null` als Experiment
+  — die Divergenz der Randwerte sah kein Test der Hauptfälle; er fand zudem beide HIGH
+  im Plan-Nachzug (Trefferzahl des Suchlauf-Felds, Beleg der Versionsentscheidung), indem
+  er die Befehle fuhr. Der Verifier fuhr sieben eigene Mutationen (C1 bis C3, P1, P2, K1,
+  K2, je rot), `make gates` (EXIT=0), die drei `make sdk-pack-*` (je EXIT=0) und alle
+  Zeilen des Suchlauf-Feldes an drei Ständen selbst nach. Die Testzahlen stammen aus den
+  Mutationsläufen der Verifikation (C# 76, Python 54, Kotlin 67, **übernommen**,
+  Verifikation §4). Go ist unverändert; die Zahlen der Sensor-Dokumente
+  (`harness/sensors/coverage-gate.md`, `harness/sensors/db-adapter-coverage.md`) betrifft
+  der Slice nicht, `git grep` über `harness/sensors` findet dort keinen Bezug auf `sdks`
+  oder `origin`.
+- **Was ging anders als geplant:** (1) Die Package-Version wird nicht gehoben; die
+  Versionsentscheidung steht unten. (2) Der Plan nannte den Hauptfall („fehlt das Feld,
+  gilt `wal`“); die Randwerte (JSON-`null`, leerer Wert) legte die Entscheidung des
+  Auftraggebers zu Review F-3 fest, alle drei Modelle lesen gleich. (3) Die
+  Fixrunde lief ohne erneuten Review-Report — **benannte Grenze** (V-2), wie bei
+  `slice-backfill-e2e`, `slice-backfill-bench-richtgroesse` und
+  `slice-backfill-slot-leerlauf-bestaetigung`: der Verifier maß F-1 bis F-8 selbst nach
+  (Verifikation §3); ein Register-Eintrag fehlt dafür, die Vorgänger führen keinen.
+  (4) Ein Handbuch-Satz außerhalb des Diffs („folgen im selben Folge-Release“) über das
+  Python-Package stand gegen die README und `SPEC-027`; der Planner-Nachzug lief in der
+  Fixrunde (Review F-6). (5) Der Kotlin-Roh-Wert `wireOrigin` bleibt öffentlich (F-4,
+  §6 letzter Punkt, Verifikation V-5). (6) Die Fixtures sind handgeschrieben in der
+  Antwortform des Handlers, kein Lauf gegen einen Server-Container (V-3, Ausgang: §6
+  erster Punkt, Register `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen`).
+- **Versionsentscheidung (Auslegung von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 8):**
+  alle drei Metadaten-Quellen bleiben `0.2.0`. Beleg-Anker: §3 Zeile „Versionsentscheidung“
+  (gemessen 2026-09-25: `git tag -l` nennt `sdk-csharp-v0.1.0`, `sdk-python-v0.1.0`,
+  `v0.1.0`, `v0.1.1`, `v0.1.2`, keinen Kotlin-Tag und kein `sdk-*-v0.2.0`; die Hebung
+  `0.1.0` → `0.2.0` liegt je in einem Commit der Vollabdeckungs-Wellen nach dem
+  jeweiligen Tag: C# `d86d1965`, Python `0f8cc4f2`, Kotlin `c8c9e3ae`). C# und Python sind
+  nur als `0.1.0` veröffentlicht, Kotlin nie; `0.2.0` ist damit die nächste unveröffentlichte
+  Minor, und `origin` (additiv, rückwärtskompatibel) faltet sich in sie. Der Wortlaut „hebt
+  der SDK-Slice nach dem bestehenden Muster“ wird durch diese Lage nicht widerlegt: die
+  Version, die das Muster nach dem letzten Tag ergäbe, steht bereits in den Quellen; eine
+  Hebung auf `0.3.0` übersprünge eine Version, die kein Konsument je sah. **Keine
+  Berichtigungs-ADR:** die Substanz der Teilfrage (`origin` optional, fehlt es gilt `wal`,
+  Live-Wege ohne) bleibt unberührt, die Auslegung betrifft nur den Zeitpunkt einer
+  Nummernvergabe, und `ADR-0111` ist `Accepted` (`AGENTS.md` §3.5). Wer die Teilfrage
+  allein liest, findet die Auslegung hier und in Verifikation V-1. **Übergabe an den
+  Release-Zug:** die drei Tags `sdk-csharp-v0.2.0`, `sdk-python-v0.2.0` und
+  `sdk-kotlin-v0.2.0` setzt der Betreiber gemeinsam nach der Closure der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md) (Entscheidung des Auftraggebers);
+  Tag = Quell-Version, die Tag-Abgleiche der Workflows lesen unverändert dieselben Quellen.
+  Der reale Post-Push-Lauf der Publish-Workflows bleibt bis dahin unbewiesen
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.10).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Benannte Spec-Lücke (geschlossen):* die Teilfrage
+  und die Package-Zeilen nannten für das Lesen von `origin` nur den Hauptfall; die Randwerte
+  (JSON-`null`, leerer Wert) standen nirgends, und drei Sprachen entschieden sie nach ihrer
+  JSON-Bibliothek verschieden. Die Regel (fehlt oder JSON-`null` → `wal`, jeder andere
+  Server-Wert unverändert) steht in einer Formulierung im Pflichtenheft (§7),
+  im Benutzerhandbuch (Absatz nach den `**SDK:**`-Absätzen) und in den drei READMEs und ist
+  je Sprache mit einer Eingabeseiten-Mutation getestet. *Geschärfte Regel (Kandidat, nicht
+  entschieden, 1×):* eine Lese-Regel für ein Drahtfeld, die mehrere Sprachen unabhängig
+  umsetzen, nennt ihre Randwerte (fehlt · `null` · leer · unbekannt) im Auftrag, bevor die
+  Sprachen sie umsetzen; Träger im Register:
+  `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (offen, unter der Schwelle). *Neuer
+  Sensor:* keiner; der Wächter je Sprache ist der Testfall an der Eingabeseite, gefunden
+  hat die Divergenz das Reviewer-Experiment, kein Gate.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-backfill-sdk-origin.md`, Zähler = Zahl der Dateien.
+  *Bestehende Klassen:* `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (F-1)
+  **21×**, `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` (F-2) **13×** und
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-6) **8×** stehen **über** der
+  Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Welle-Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  Vermerk; die ersten beiden sind verkörpert, `nachzug-laesst-ueberholten-text-stehen`
+  wartet auf die Regelschärfungs-Frage des Architects). `BEO-PGC/zwei-quellen-drift-handbuch-gegen-pflichtenheft`
+  (F-5, Ausprägung innerhalb des Pflichtenhefts) **2×** und
+  `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen` (V-3) **2×**, beide offen.
+  *Neue Klasse:* `BEO-PGC/drei-sprachen-kopie-divergiert-am-randfall` (F-3) **1×**, offen.
+  *Ohne Eintrag:* F-4 (Kotlin `wireOrigin`) ist eine sprachbedingte Gestaltungsgrenze
+  (§6 letzter Punkt); F-7 (Zählwort-Zuordnung) und F-8 (Beleg im Repo nicht auflösbar,
+  Go-Beispiel-Client entfällt mit Beleg) sind in der Fixrunde behoben bzw. bestätigt, kein
+  eigener Anfall; V-2 (Fixrunde ohne erneuten Review) trägt kein Eintrag, siehe „Was ging
+  anders“ (3). Kein Anfall:
+  `BEO-PGC/zusatzkontext-kopplung-breiter-als-dod-wortlaut` (jeder Aufruf trug den
+  Bau-Kontext), `BEO-PGC/formvorbild-kopie-traegt-deutsches-wortfragment-weiter` und
+  `BEO-PGC/deutsches-fachwort-im-englischen-sdk-readme` (kein Fragment gefunden).
+- **Folge-Slices:** keine neuen. Die offene Grenze (kein Lauf der SDK-Decoder gegen einen
+  Server, V-3) hat keinen Slice; ihre Adresse ist die Closure der Welle
+  [welle-backfill-bestand](../welle-backfill-bestand.md). Übergaben an offene Pläne
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.13): der Suchlauf
+  `git grep -n -i -E 'origin|Lesemodell|0\.2\.0|thirteen|dreizehn|zehn Felder' -- 'docs/plan/planning/open/slice-transformationen-*.md' docs/plan/planning/welle-transformationen.md`
+  (gemessen 2026-09-25 am Stand `98f44839`) findet vier Zeilen in vier Dateien: `slice-transformationen-backfill-pfad`
+  Z. 100 (ein E2E-Beleg gegen `cdc.changes` und `GET /changes`, Server-Seite, unberührt) und
+  dreimal „zehn Felder“ (`slice-transformationen-e2e-wirkung` Z. 30,
+  `slice-transformationen-spec-nachzug` Z. 35, `welle-transformationen.md` Z. 363). Die
+  Transformationen ändern den Inhalt von `row_image`, nicht `origin`; keine gefundene Zeile
+  trägt eine bewegte Eigenschaft dieses Slice. `welle-transformationen.md` sagt an anderer
+  Stelle, die Package-Versionen der SDKs blieben unberührt (Abschnitt „Kein Server-Release und
+  kein SDK-Release“, gefunden über `git grep -n 'Package-Versionen'`); das gilt, die Versionen
+  stehen unverändert auf `0.2.0`. **Gemeldet, nicht mitgeändert:** die beiden Pläne
+  `slice-transformationen-e2e-wirkung` und `slice-transformationen-spec-nachzug` führen
+  `SPEC-022` in einer Aufzählung, die „zehn Felder“ nennt; die HTTP-Antwort trägt dreizehn
+  (13 Felder in `readChangeResponse`, `internal/adapters/driving/http/readchanges.go`), die
+  zehn gelten für die Live-Flächen. Die Ungenauigkeit ist nicht durch diesen Slice bewegt;
+  Adresse: der Plan-Abgleich beim Start des jeweiligen Slice
+  (`.claude/commands/implement-slice.md` Schritt 12, Ist-Zustand gegen Plan).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Träger nennen die alte
+  Version · Sprachfragmente aus der Vorlage · Docker-Kontext `proto` · Version ohne Tag ·
+  Kotlin `wireOrigin` als Roh-Parameter. *Eingetreten:* Kotlin/Gson und der Default `wal`
+  (im Slice aufgelöst) · Zahl im Träger (Suchlauf-Feld, Review F-1; in der Fixrunde
+  behoben, Klasse im Register). *Weiter offen:* der Ausgang „Ein Decoder ignoriert das neue
+  Feld nicht“ → Register `BEO-PGC/sdk-decoder-verhalten-am-neuen-feld-ungemessen`.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 

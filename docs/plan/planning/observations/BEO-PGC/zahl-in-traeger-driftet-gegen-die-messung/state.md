@@ -24,7 +24,9 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **20×** (evidence/slice-backfill-slot-leerlauf-bestaetigung.md —
+Zähler (abgeleitet): **21×** (evidence/slice-backfill-sdk-origin.md — eine Trefferzahl im
+Suchlauf-Feld (26 statt gemessen 29, drei Zeilen aus `harness/README.md` fehlten), Review F-1,
+Verifikation §6; evidence/slice-backfill-slot-leerlauf-bestaetigung.md —
 ein Lauf ohne auflösbaren Träger im Handbuch, eine Trefferzahl im Suchlauf-Feld und ein
 Zählwort im selben Feld, das den Selbstverweis der Plan-Datei mitzählt, Review F-4, F-5 und
 Verifikation V-1; evidence/slice-backfill-bench-richtgroesse.md — Zahlen
@@ -42,7 +44,7 @@ evidence/slice-backfill-row-image-gemeinsam.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
-Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 20×).
+Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 21×).
 Der zwanzigste Beleg (slice-backfill-slot-leerlauf-bestaetigung) trifft einen Handbuch-Lauf
 ohne auflösbaren Träger und **Zahlen im Suchlauf-Feld eines Plans**, dessen Suchraum die
 Plan-Datei selbst enthält: ihre Treffer sind ein Selbstverweis und driften mit jedem Edit

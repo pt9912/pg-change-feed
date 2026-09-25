@@ -1,17 +1,21 @@
-Stand: **offen** (7×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
+Stand: **offen** (8×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
 Ausgang noch **nicht** zugewiesen). Gelesen wird der Eintrag im Lese-Schritt
 der Closure von `welle-backfill-bestand` (Modul 6): die Regelschärfungs-Frage
 — ob und wie `.harness/skills/reviewer.md` oder ein Schritt der
 Implementer-Selbstprüfung die Klasse fängt — ist eine Architect-Entscheidung
 (Modul 4/8), die dieser Lese-Schritt als Steering-Loop-Eintrag weiterträgt.
 
-Zähler (abgeleitet): 7× (evidence/slice-sdk-python-projektgeruest.md,
+Zähler (abgeleitet): 8× (evidence/slice-sdk-python-projektgeruest.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-backfill-spec-nachzug.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-bench-richtgroesse.md,
-evidence/slice-backfill-slot-leerlauf-bestaetigung.md). Der siebte Beleg
+evidence/slice-backfill-slot-leerlauf-bestaetigung.md,
+evidence/slice-backfill-sdk-origin.md). Der achte Beleg (`slice-backfill-sdk-origin`,
+Review F-6) trifft einen Träger **außerhalb des Diffs**: ein Handbuch-Absatz mit einer
+Zukunftsaussage über ein Package, die schon vor dem Slice überholt war; der Nachzug lief
+als Planner-Zug in der Fixrunde. Der siebte Beleg
 (`slice-backfill-slot-leerlauf-bestaetigung`, Verifikation V-2) trifft einen Träger in
 einer **fremden Datei** (Register-Sichtung der Welle-Datei): der Implementer fand ihn im
 Suchlauf und meldete ihn an den Planner, statt ihn still mitzuändern; der überholte Text
