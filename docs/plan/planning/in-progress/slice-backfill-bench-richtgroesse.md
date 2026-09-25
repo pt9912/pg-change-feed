@@ -93,22 +93,28 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
 - [x] Bench: `tools/bench-backfill.sh` (Arbeitsname) ist in `make bench`
       verdrahtet (als letztes Skript) und druckt die Kopierdauer je
       Tabellengröße und die Abweichung der Schätzung von der tatsächlichen
-      Zeilenzahl; jede gedruckte Zahl trägt Größe und Lauf. *Erreichbarer
-      Beleg — das Kriterium „ein realer `make bench`-Lauf mit Exit 0“ ist auf
-      dem Messhost **nicht erreichbar** und gilt nicht als erfüllt:* (a) das
-      Skript einzeln mit Exit 0, gedruckte Zeilen mit Größe und Lauf
-      (`20260925T012459Z`, Implementer-Nachmessung der Fixrunde;
-      `20260925T011036Z`, Review-Report; `20260925T000439Z`, übernommen aus dem
-      Lauf-Bericht des Implementer-Laufs, im Repository nicht auflösbar); (b)
-      `make bench` endet mit Exit 2 am vorhandenen Skript
-      `tools/bench-source-impact.sh` (`LH-QA-PER-001`): gemessen in der Fixrunde
-      Overhead 91,7 % gegen die 35-%-Schwelle (ohne CDC 16.094 ms, mit CDC
-      30.848 ms, Median von je 5 Läufen); übernommen 87,5 % und 93,9 %
-      (Implementer-Läufe, im Repository nicht auflösbar) und 95,8 % am Parent
-      `933ab054`; das Architect-Verdikt (Ursache: Latenz des Festschreibens auf
-      dem Datenträger des Hosts, `pg_test_fsync` `fdatasync` 2.956 µs je
-      Operation; Host-Last widerlegt) führt sie als Eigenschaft dieses Hosts —
-      keine Schwellen- und keine Skript-Änderung
+      Zeilenzahl; jede gedruckte Zahl trägt Größe und Lauf. *Der Beleg ist
+      hostunabhängig gefasst* (Planner, bei der Closure ratifiziert; Anker:
+      Befund 2 des Architect-Verdikts `architect-verdict-backfill-wal-rueckstand-und-bench-rot`):
+      das Skript läuft **einzeln** mit Exit 0 und druckt Zeilen mit Größe und
+      Lauf; ein Lauf von `make bench` als Ganzes ist kein Kriterium, weil sein
+      Ausgang von der Latenz des Festschreibens auf dem Datenträger des
+      Messhosts abhängt. Belege: (a) Skript einzeln, Exit 0 — Lauf
+      `20260925T015600Z` (gemessen, gedruckt im Verifikations-Report §3), Lauf
+      `20260925T011036Z` (gemessen, gedruckt im Review-Report), Läufe
+      `20260925T012459Z` und `20260925T000439Z` (übernommen aus dem Lauf-Bericht
+      des Implementers, im Repository nicht auflösbar); (b) zur Kenntnis, kein
+      Kriterium — das Vorgängerskript `tools/bench-source-impact.sh`
+      (`LH-QA-PER-001`) endet auf dem Messhost oberhalb der 35-%-Schwelle:
+      92,0 % im Lauf des Verifikations-Reports §1 (gemessen, ohne CDC 16.194 ms,
+      mit CDC 31.089 ms, Median von je 5 Läufen), 94,6 % im Lauf des Verdikts
+      (gemessen, gedruckt in dessen §Befund 2), 91,7 % (übernommen aus dem Plan
+      der Fixrunde, ohne CDC 16.094 ms, mit CDC 30.848 ms), 87,5 %, 93,9 % und
+      95,8 % (Läufe des Implementers, übernommen aus dem Verdikt, im Repository
+      nicht auflösbar); die Ursache laut Verdikt ist die Latenz des
+      Festschreibens auf dem Datenträger des Hosts (`pg_test_fsync`
+      `fdatasync` 2.956 µs je Operation, gemessen im Verdikt; Host-Last
+      widerlegt); keine Schwellen- und keine Skript-Änderung
       ([`AGENTS.md`](../../../../AGENTS.md) §3.6), `make bench` ist kein Gate.
 - [x] Toleranz, Richtgröße und Warnungen: die Richtgröße folgt aus der Messung
       (Herleitung im Bericht, jede Zahl mit Ursprung: gemessen · übernommen ·
@@ -149,14 +155,14 @@ Tabellen — und aus ihr eine Warnung, nie eine Ablehnung.
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
 - [x] Doku-Update: Handbuch „Grenzwerte“ nennt die Toleranz als „Startwert, Setzung ohne Messung" und die Richtgröße mit ihrem Ursprung (gemessen oder abgeleitet), Host und Lauf; Änderungshistorie eine Zeile.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel ·
       neuer Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in
       diesem Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen /
       weiter offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen —
       von der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md) (die Roadmap führt sie unter
@@ -229,15 +235,24 @@ oder über der Frist steht als Befund im Bericht. Beide Setzungen bleiben bis da
 | **Fixrunde** — bewegte Eigenschaft: „der WAL-Rückstand hängt am Run/Backfill“ (Verdikt: hängt an WAL ohne Inhalt für die Publication) | `git grep -c -i -E 'WAL-Rückstand\|Fehlerschwelle\|wal_retention_(error\|warn)' <Stand> -- docs/user harness tools Makefile examples sdks internal README.md AGENTS.md ':!docs/plan' ':!docs/reviews'` (Treffer nach der Aussage über den Backfill gelesen) | **Parent** `50aa8da8`: 11 Dateien, davon Träger mit einer Aussage über den Run: `docs/user/benutzerhandbuch.md` (23 Treffer; §4-Punkt „WAL-Rückstand des Capture-Slots“, §9-Punkt „Backfill, WAL-Rückstand des Capture-Slots“) und dieser Plan (§3 „Befunde der Messung“, DoD „Bench“). **Diff-Stand:** 13 Dateien; Handbuch (27 Treffer), Plan, dazu `harness/README.md` (1) und `harness/targets/bench-backfill.md` (3) mit der Beschreibung der WAL-Messung des Skripts. **Nicht gefunden:** die übrigen Treffer sind der Schwellen-Code und seine Tests (`internal/bootstrap/`, `internal/adapters/driving/replication/receive/`) und ein Lokator in `harness/sensors/coverage-gate.md` — keine Aussage über den Backfill; kein Treffer in `examples/`, `sdks/`, `README.md`, `AGENTS.md`; `docs/plan/adr/**` und `docs/reviews/**` (`Accepted`/Records) bewusst ausgenommen; der offene Slice `slice-backfill-slot-leerlauf-bestaetigung` trägt die Nachzüge der Umsetzung selbst | nachgezogen (Handbuch, Plan) |
 | **Fixrunde** — bewegte Eigenschaft: „Einheit und Bedeutung von `BENCH_BACKFILL_RUN_TIMEOUT_S`“ | `git grep -c 'RUN_TIMEOUT' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr'` | **Parent:** `tools/bench-backfill.sh` (3), `harness/targets/bench-backfill.md` (1). **Diff-Stand:** dieselben zwei Dateien mit gleicher Trefferzahl (dieser Plan nennt die Variable in seinen eigenen Zeilen); Zählung in Sekunden der Shell-Uhr, Vertrag „Sekunden“. **Nicht gefunden:** kein Träger in `Makefile`, `harness/README.md`, Handbuch, `.github/` | nachgezogen |
 | **Fixrunde** — bewegte Eigenschaft: „Reihenfolge der Skripte in `make bench`“ | `git grep -c 'bench-batch-vs-single' <Stand> -- . ':!docs/reviews' ':!docs/plan/adr'` | **Parent:** `Makefile` (1, Rezeptzeile vor dem neuen Skript), `harness/README.md` (1), `tools/bench-lib.sh` (1), `docs/user/bench-abdeckung.md` (1), `tools/bench-batch-vs-single.sh` (10) und Records unter `docs/plan/planning/done/` und `observations/` (6), dazu dieser Plan. **Diff-Stand:** gleiche Verteilung ohne diesen Plan (er nennt das Skript in seinen eigenen Zeilen); das Rezept ruft das neue Skript zuletzt. `harness/README.md` nennt die vier Skripte bereits in der Reihenfolge Quelle, Skalierung, Batch, Backfill; der Kommentar in `tools/bench-lib.sh` („Schwellen-Skripte in Ausführungsreihenfolge“) bleibt wahr. **Nicht gefunden:** kein Träger nennt eine Reihenfolge, die der neuen widerspricht | Makefile-Kommentar nennt den Grund |
-| **Fixrunde** — bewegte Eigenschaft: „Werte der Messung im Handbuch: Speicher-Spitze, Kopierrate, Live-Wirkung“ | `git grep -c -E '467 MiB' <Stand> -- docs/user harness docs/plan/planning/in-progress tools Makefile`, ebenso `'7\.693'` und `'kein Unterschied'` | **Parent:** `467 MiB` je 1 Treffer in Plan und Handbuch; `7\.693` 2 Treffer im Handbuch; `kein Unterschied` 1 Treffer im Handbuch („ist kein Unterschied gemessen“). **Diff-Stand:** `467 MiB` je 1 (jetzt mit den Werten dreier Läufe und der Probe 20 s danach); `7\.693` 3 im Handbuch und 1 im Plan; `kein Unterschied` 1 im Handbuch (Satz „kein Unterschied ableitbar“ aus drei Einzelläufen), 1 in der Versionshistorie-Zeile, 1 im Plan. **Nicht gefunden:** kein Träger in `harness/`, `tools/`, `Makefile`, der die Werte trägt | nachgezogen |
+| **Fixrunde** — bewegte Eigenschaft: „Werte der Messung im Handbuch: Speicher-Spitze, Kopierrate, Live-Wirkung“ | `git grep -c -E '467 MiB' <Stand> -- docs/user harness docs/plan/planning/in-progress tools Makefile`, ebenso `'7\.693'` und `'kein Unterschied'` | **Parent** `50aa8da8` (gemessen): Handbuch `467 MiB` 1, `7\.693` 2, `kein Unterschied` 1 (Satz „ist kein Unterschied gemessen“); der Plan nannte `467 MiB` im Abschnitt „Befunde der Messung“ (1). **Diff-Stand** (Kopf `8d8860f7`, gemessen): Handbuch `467 MiB` 1 (mit den Werten dreier Läufe und der Probe 20 s danach), `7\.693` 3, `kein Unterschied` 2 (Satz „kein Unterschied ableitbar“ aus drei Einzelläufen und Versionshistorie-Zeile); die Treffer im Plan selbst sind Selbstverweise (dieses Feld nennt die Muster) und nicht gezählt. **Nicht gefunden:** kein Träger in `harness/`, `tools/`, `Makefile`, der die Werte trägt | nachgezogen |
+
+**Closure — Suchlauf-Zeilen** (Planner; bewegte Eigenschaften: der Ursprung der Zahlen des Laufs `20260925T012459Z`, die Nenner der Sensor-Dokumente, die Kalibrierungs-Zeile von `make bench`; beide Stände gemessen):
+
+| Träger | Suchbefehl | Befund | Behandlung |
+|---|---|---|---|
+| Ursprung des Laufs `20260925T012459Z` | `git grep -n '012459Z' <Stand> -- . ':!docs/reviews'` | **Parent** `8d8860f7`: `docs/user/benutzerhandbuch.md` 6 Zeilen (1599, 1624, 1636, 1663, 1689, 1698; alle sechs trugen „gemessen“), dieser Plan 4 Zeilen. **Diff-Stand:** Handbuch 8 Zeilen (dieselben sechs als „übernommen, im Repository nicht auflösbar“, dazu der Satz zur Probe 20 s und die Historienzeile 1.55). **Nicht gefunden:** kein Träger außerhalb von Handbuch, Plan und Register (`harness/`, `tools/`, `Makefile`, `docs/user/*abdeckung.md`) nennt den Lauf | nachgezogen |
+| Nenner und gedeckte Zahlen der Sensor-Dokumente | `git grep -n -E '2541\|2112\|83[.,]1[02]\|82[.,]13\|1035' <Stand> -- harness docs/user` (Fundstellen nach Coverage-Bezug lesen) | **Parent:** `harness/sensors/coverage-gate.md` (Nenner 2541, gedeckt 2112, gedruckt 83.10 %) und `harness/sensors/db-adapter-coverage.md` (1035, gedeckt 850, gedruckt 82.13 %). **Diff-Stand:** `coverage-gate.md` Nenner 2558, gedeckt 2129, gedruckt 83.2 % (Lauf `make coverage-gate` der Closure, Profil aus dem Image ausgezählt, `warn.go` 9 und `service.go` 214 Statements); `db-adapter-coverage.md` unverändert 1035/850 (`git diff --stat cf7f2d02..HEAD` über die vier Pakete ohne Testdateien leer), Verifikations-Lauf als zweiter Beleg. **Nicht gefunden:** keine Coverage-Zahl in `docs/user/`, in `harness/README.md` oder in `AGENTS.md` | nachgezogen |
+| Kalibrierungs-Zeile von `make bench` | `git grep -n '25,0' <Stand> -- harness docs/user` | **Parent:** `harness/README.md` Zeile 150 „real gemessen: 25,0 %/28,2 %“ ohne Host; die Zahl stammt aus der Entscheidung zu den Bench-Schwellen (Zeitbasis der Kalibrierung). **Diff-Stand:** dieselbe Zeile nennt Herkunft (übernommen), Host des Slice und die sechs Werte; `docs/user/bench-abdeckung.md` trägt keine Messzahl (Schwellen-Deklaration). **Nicht gefunden:** keine zweite Zeile mit der Kalibrierungs-Zahl außer in `Accepted`-ADRs und `done/`-Records (unverändert) | nachgezogen |
+| Offene Pläne, die die bewegten Träger nennen | Lesen von `docs/plan/planning/open/slice-backfill-slot-leerlauf-bestaetigung.md` und `slice-backfill-sdk-origin.md`; `git grep -n -E 'Live-Commit\|WAL-Rückstand-Schwellen\|kann bei weniger Zeilen' <Stand> -- docs/user harness tools` | **Parent:** der Plan von `slot-leerlauf-bestaetigung` nennt Handbuch-Zeilen 456/457/1617/1619/1557 und Skript-Zeilen 118/120/332 (Stand `a90555b6`), die Fixrunde und Handbuch 1.55 verschieben sie (Handbuch 1656/1658/1570, Skript 120/268/26/122/334); `harness/targets/bench-backfill.md` (47, 111) ist ein zusätzlicher Träger. **Nicht gefunden:** `slice-backfill-sdk-origin` nennt keinen der Träger | im Plan von `slot-leerlauf-bestaetigung` nachgezogen (Behandlungs-Zellen der Suchlauf-Zeilen, Handbuch-Zeile des §3, Ausschluss-Punkt zum Nachzug) |
 
 **Befunde der Messung** (Übergabe an Planner und Architect, kein zusätzlicher Umfang; Ursprung: Läufe von `tools/bench-backfill.sh` `20260924T233628Z` und `20260925T000439Z`, Zahlen und Host im Handbuch §Grenzwerte):
 
 - **Die WAL-Fehlerschwelle kann vor der Richtgröße greifen — der WAL-Rückstand ist nicht an den Backfill gebunden.** Ein dritter Run über 1.000.000 Zeilen im selben CDC-Speicher überschritt die Fehlerschwelle von 1 GiB (`SPEC-013`): der Feed-Container endete mit Exit 1 (`replication`), der Run `interrupted` (übernommen aus dem Lauf-Bericht, im Repository nicht auflösbar). Beantwortet durch das Architect-Verdikt (`architect-verdict-backfill-wal-rueckstand-und-bench-rot`) und [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md): der Slot bestätigt nur Commits, die Änderungen veröffentlichter Tabellen tragen; jedes WAL ohne solchen Inhalt hebt den Rückstand — ein Schreiber mit 200.000 Zeilen auf eine **nicht aktivierte** Tabelle hob ihn ohne Backfill um 33,5 MiB (gemessen im Verdikt, Lauf `wal-verdikt[20260925T004731Z]`, gedruckt in `ADR-0120` §Gemessen), ein Commit auf einer aktivierten Tabelle senkte ihn innerhalb von 3 s auf 0 MiB. Die Richtgröße (Zeit-Orientierung, [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)) bleibt unverändert und wird nicht an die WAL-Schwelle gekoppelt. Abhilfe: der Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` (Umsetzung von `ADR-0120`, kein Umfang dieses Slice); Betreiber-Abhilfen stehen im Handbuch (§4 „Bestand als Backfill überführen“, Punkt „WAL-Rückstand des Capture-Slots“): ein Commit auf einer aktivierten Tabelle und das Datei-Feld `wal_retention_error_bytes` (`SPEC-013`-Override, kein Umgebungsvariablen-Gegenstück).
-- **Die Speicher-Spitze des Feed-Containers liegt weit über `B` mal Zeilenbreite** (Stufe 200.000 Zeilen, Spitze im Run: 467 MiB übernommen, 401,7 MiB gemessen im Lauf `20260925T012459Z`, 416,5 MiB im Review-Report; die Probe 20 s nach dem letzten Run liegt höher: 437,0 und 641,7 MiB; 1.544 MiB bei 1.000.000 Zeilen, übernommen; gegen etwa 74 KB je Block); die Ursache ist nicht untersucht.
-- **`make bench` bricht am ersten roten Skript ab**; `LH-QA-PER-001` ist auf diesem Host rot (91,7 % in der Fixrunde gemessen, übernommen 87,5 % bis 95,8 %, auch am Parent). Ursache laut Verdikt: die Latenz des Festschreibens auf dem Datenträger des Messhosts (`pg_test_fsync` `fdatasync` 2.956 µs je Operation, gemessen im Verdikt; Host-Last widerlegt), keine Regression und keine CPU-Last; die 35-%-Schwelle ist damit eine Aussage über die Flush-Latenz des Messhosts. Der Slice berichtet nur: keine Schwellen- und keine Skript-Änderung ([`AGENTS.md`](../../../../AGENTS.md) §3.6), `make bench` ist kein Gate. Das neue Skript läuft als letztes und wird von `make bench` auf diesem Host nicht erreicht; es läuft einzeln.
-- **Die Kopierrate streut zwischen Läufen um etwa den Faktor 2**; die Richtgröße hängt am Lauf, aus dem sie abgeleitet ist: Median der Stufe 200.000 Zeilen 7.693 (Lauf `20260925T000439Z`, übernommen), 8.933 (Lauf `20260925T011036Z`, Review-Report) und 8.559 Zeilen/s (Lauf `20260925T012459Z`, gemessen) ergeben 4.000.000, 5.000.000 und 5.000.000 Zeilen nach der Rundung auf eine Stelle; die Konstante trägt den kleinsten Wert (konservativer Startwert, Nachschärfen lässt `ADR-0113` zu).
-- **Die Live-Wirkung ist ein Einzellauf-Vergleich:** Mediane von `cdc_capture_lag` im Run gegen ohne Run 0,48 gegen 0,50 s (übernommen), 0,59 gegen 0,40 s (Review-Report), 0,456 gegen 0,413 s (Lauf `20260925T012459Z`, gemessen) — in beiden Richtungen; keine Aussage „kein Unterschied“ ohne diese Einschränkung.
+- **Die Speicher-Spitze des Feed-Containers liegt weit über `B` mal Zeilenbreite** (Stufe 200.000 Zeilen, Spitze im Run: 467 MiB übernommen, 401,7 MiB übernommen (Lauf `20260925T012459Z`, aus dem Lauf-Bericht des Implementers, im Repository nicht auflösbar), 416,5 MiB im Review-Report, 441,0 MiB im Verifikations-Report §3 (Lauf `20260925T015600Z`); die Probe 20 s nach dem letzten Run liegt in den zwei Läufen `20260925T012459Z` und `20260925T011036Z` höher (437,0 und 641,7 MiB), im Lauf `20260925T015600Z` niedriger (368,6 MiB); 1.544 MiB bei 1.000.000 Zeilen, übernommen; gegen etwa 74 KB je Block); die Ursache ist nicht untersucht.
+- **`make bench` bricht am ersten roten Skript ab**; `LH-QA-PER-001` ist auf diesem Host rot (sechs Läufe zwischen 87,5 % und 95,8 %, Aufstellung mit Ursprung je Wert im DoD-Punkt „Bench“ in §2; die drei Läufe des Implementers am Parent `933ab054`). Ursache laut Verdikt: die Latenz des Festschreibens auf dem Datenträger des Messhosts (`pg_test_fsync` `fdatasync` 2.956 µs je Operation, gemessen im Verdikt; Host-Last widerlegt), keine Regression und keine CPU-Last; die 35-%-Schwelle ist damit eine Aussage über die Flush-Latenz des Messhosts. Der Slice berichtet nur: keine Schwellen- und keine Skript-Änderung ([`AGENTS.md`](../../../../AGENTS.md) §3.6), `make bench` ist kein Gate. Das neue Skript läuft als letztes und wird von `make bench` auf diesem Host nicht erreicht; es läuft einzeln.
+- **Die Kopierrate streut zwischen Läufen um etwa den Faktor 2**; die Richtgröße hängt am Lauf, aus dem sie abgeleitet ist: Median der Stufe 200.000 Zeilen 7.693 (Lauf `20260925T000439Z`, übernommen), 8.933 (Lauf `20260925T011036Z`, Review-Report), 8.559 (Lauf `20260925T012459Z`, übernommen, im Repository nicht auflösbar) und 8.654 Zeilen/s (Lauf `20260925T015600Z`, Verifikations-Report §3) ergeben 4.000.000, 5.000.000, 5.000.000 und 5.000.000 Zeilen nach der Rundung auf eine Stelle; die Konstante trägt den kleinsten Wert (konservativer Startwert, Nachschärfen lässt `ADR-0113` zu).
+- **Die Live-Wirkung ist ein Einzellauf-Vergleich:** Mediane von `cdc_capture_lag` im Run gegen ohne Run 0,48 gegen 0,50 s (übernommen), 0,59 gegen 0,40 s (Review-Report), 0,456 gegen 0,413 s (Lauf `20260925T012459Z`, übernommen, im Repository nicht auflösbar), 0,429 gegen 0,395 s (Lauf `20260925T015600Z`, Verifikations-Report §3) — in beiden Richtungen (0,48 gegen 0,50 und 0,59 gegen 0,40); keine Aussage „kein Unterschied“ ohne diese Einschränkung.
 
 ## 4. Trigger
 
@@ -269,9 +284,9 @@ als Grenze im Code (`BEO-PGC/geschaetzter-wert-als-grenze`). Das ist eine
 ## 5. Closure-Trigger
 
 DoD vollständig + `make gates` grün + `tools/bench-backfill.sh` einzeln mit Exit 0
-und `make bench` mit dem in §2 (Bench) genannten Ausgang (Exit 2 an
-`LH-QA-PER-001`, Ursache Host) + `make test` grün + Closure-Notiz mit Lerneintrag
-geschrieben.
++ `make test` grün + Closure-Notiz mit Lerneintrag geschrieben. Der Ausgang von
+`make bench` als Ganzes ist kein Kriterium (Eigenschaft des Messhosts, siehe §2
+„Bench“).
 
 ## 6. Risiken und offene Punkte
 
@@ -280,43 +295,186 @@ geschrieben.
   Messung" geführt und nicht als Ergebnis dieses Slice ausgegeben. *Erwartet, zu
   belegen durch:* der Bericht nennt die gemessene Kopierdauer je Stufe neben dem
   Startwert; weicht sie ab, ist das Nachschärfen der Konstante ein
-  Re-Evaluierungs-Fall von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md), kein Bruch. **Ausgang:** *(bei Closure)*
+  Re-Evaluierungs-Fall von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md), kein Bruch. **Ausgang:** **entfallen** — die
+  Konstante trägt „Startwert, Setzung ohne Messung“ in `warn.go` und im Handbuch
+  §Grenzwerte, keine Stelle gibt sie als Ergebnis aus (Verifikations-Report §2
+  Nr. 3 und 8, §8); die gemessene Kopierdauer je Stufe steht neben dem Startwert:
+  200.000 Zeilen in 22.437 bis 23.921 ms (Median 23.111 ms, n=3) im Lauf
+  `20260925T015600Z` (gemessen, Verifikations-Report §3) gegen die Toleranz von
+  600 s, keine gemessene Stufe erreicht sie. Ein Nachschärfen der Konstante bleibt
+  ein Re-Evaluierungs-Fall der Entscheidung, kein Bruch.
 - **Die Richtgröße wird zur Grenze** (`BEO-PGC/geschaetzter-wert-als-grenze`,
   offen, 1×; dieser Slice ist der Ort, an dem der Fehler passiert): eine
   gemessene Zahl eines Hosts steht im Code und im Handbuch als allgemeine
   Grenze. *Erwartet, zu belegen durch:* jede Nennung trägt „gemessen auf …,
-  Lauf …" und das Wort „Richtgröße"; keine Stelle lehnt ab. **Ausgang:** *(bei
-  Closure)*
+  Lauf …" und das Wort „Richtgröße"; keine Stelle lehnt ab. **Ausgang:**
+  **entfallen** — der Suchlauf des Verifiers über die hinzugefügten Zeilen findet
+  „Grenze“ nur in „Orientierung, keine Grenze“, jede Nennung der Richtgröße trägt
+  Ursprung, Host und Lauf, und keine Stelle im Code verzweigt auf die Größe
+  (Verifikations-Report §2 Nr. 3, §8). Das Register führt
+  `BEO-PGC/geschaetzter-wert-als-grenze` weiter mit **1×**, kein zweites Auftreten.
 - **Die Schätzung ist so alt wie das letzte `ANALYZE`.** Eine frisch geladene,
   nie analysierte Tabelle trägt „unbekannt" (erwartet), die Warnung schweigt dann
   gerade bei den Tabellen, für die sie gedacht ist. *Erwartet, zu belegen durch:*
   die Schätz-Abweichungs-Messung; das Handbuch nennt den Zusammenhang.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** **eingetreten** (als erwartete Eigenschaft) — gemessen im Lauf
+  `20260925T015600Z` (Verifikations-Report §3): eine frisch befüllte Tabelle trägt
+  `reltuples=-1`, „geschätzt unbekannt“, mit und ohne Autovacuum; mit Autovacuum
+  liegt die Schätzung 35 s nach dem Befüllen vor (Abweichung +0,0 %), ohne
+  Autovacuum bleibt sie unbekannt, nach `ANALYZE` +0,0 %, nach weiteren 20 % Zeilen
+  ohne erneutes `ANALYZE` −16,7 %. Die Warnung (1) schweigt bei „unbekannt“; das ist
+  das akzeptierte Negativ von
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
+  Festlegung 3 Punkt 5, und Warnung (2) greift unabhängig von der Schätzung. Kein
+  Carveout und kein Folge-Slice nötig; das Handbuch nennt den Zusammenhang
+  (Verifikations-Report §8).
 - **Die Messung hängt am Host** (Docker-Umgebung, Plattengeschwindigkeit). Das
   Handbuch nennt die Zahl als Orientierung mit ihrem Lauf; eine zweite
-  Umgebung ist nicht Teil. **Ausgang:** *(bei Closure)*
+  Umgebung ist nicht Teil. **Ausgang:** *weiter offen* → Beobachtungs-Register
+  `BEO-PGC/dod-kriterium-haengt-am-messhost` (1×; der Messhost bestimmt den Ausgang
+  von `make bench`, Aufstellung in §2 „Bench“). Das Handbuch nennt Host und Lauf je
+  Zahl; die zweite Umgebung bleibt der Re-Evaluierungs-Trigger von
+  [`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md).
 - **Laufzeit von `make bench`** wächst; der Default-Modus fährt verkürzte Stufen
   (Muster `bench-scaling.sh`), ein Volllauf ist Option. *Erwartet, zu belegen
-  durch:* Laufzeit im Bericht. **Ausgang:** *(bei Closure)*
+  durch:* Laufzeit im Bericht. **Ausgang:** **entfallen** — `bash
+  tools/bench-backfill.sh` im Default-Modus (Stufen 10.000, 50.000, 200.000 Zeilen,
+  3 Läufe je Stufe) läuft etwa fünf Minuten (04:01 gegen Start 03:56, abgeleitet
+  aus den Zeitstempeln der Log-Datei des Verifikations-Laufs `20260925T015600Z`);
+  der Volllauf (`--full`) ist Option. Aussagegrenze: die Gesamtlaufzeit von `make
+  bench` ist nicht gemessen (das Vorgängerskript endet auf dem Messhost rot, siehe
+  §2 „Bench“).
 - **Ein Wert in `spec/pflichtenheft.md` §3 ohne schärfende ADR** wäre gegen die
   Regel des Abschnitts; der Slice führt keinen (weder Toleranz noch Richtgröße).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** **entfallen** — `spec/` ist nicht im Diff (Verifikations-Report §7,
+  `git diff --stat 933ab054..HEAD` über 23 Dateien), weder Toleranz noch Richtgröße
+  steht im Pflichtenheft.
 - **Warnung (2) prüft je Block und beim Abschluss:** ein einzelner Block, der
   länger als die Toleranz braucht, warnt erst danach — die Warnung ist eine
   Orientierung, kein Alarm (akzeptiertes Negativ von [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)). Das Handbuch sagt es
-  so. **Ausgang:** *(bei Closure)*
+  so. **Ausgang:** **entfallen** — Handbuch §4, Punkt `warn_duration`: „ein einzelner
+  Block, der länger als die Toleranz braucht, warnt erst danach — die Warnung ist
+  eine Orientierung, kein Alarm“; die Prüfung je Block und beim Abschluss bindet
+  die Mutation MB (Vorzeichen der Dauer) an ihrer Eingabeseite rot
+  (Verifikations-Report §4).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Die Rollen-Kette lief in getrennten Kontexten, und die
+  Messung war der Sensor: der Bench deckte an Wegwerf-Läufen gegen reale PostgreSQL
+  einen Defekt des Capture-Pfads auf, den kein Test des Slice gesucht hatte — der
+  WAL-Rückstand des Capture-Slots hängt an WAL ohne Inhalt für die Publication und
+  nicht am Backfill; das Architect-Verdikt verfolgte ihn bis zur Ursache und legte
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) fest. Die
+  Warn-Auswertung ist an ihrer Eingabeseite gebunden: die Mutationen MA (Grenze der
+  Richtgröße), MB (Vorzeichen der Dauer) und MS (View-Spalte) färben Unit- und
+  Store-Tests rot (Verifikations-Report §4). Der Review (0 HIGH · 2 MEDIUM · 4 LOW ·
+  6 INFO) fand F-1 durch Lesen von Plan und Handbuch gegen das Verdikt und F-2 durch
+  den Vergleich der Handbuch-„Spitze“ mit einer Probe derselben Messung; der Verifier
+  bestätigte mit `make gates`, `make test` und `make test-store` (je Exit 0) und einem
+  eigenen Lauf des Skripts (`20260925T015600Z`, Exit 0).
+- **Was ging anders als geplant:** (1) Das Kriterium „ein realer `make bench`-Lauf mit
+  Exit 0“ ist auf dem Messhost nicht erreichbar: [`LH-QA-PER-001`](../../../../spec/lastenheft.md)
+  endet dort rot, Ursache laut Verdikt die Latenz des Festschreibens auf dem Datenträger
+  (§2 „Bench“). DoD-Punkt und Closure-Trigger sind hostunabhängig gefasst (V-1, unten).
+  (2) Der Slice liefert mehr als Bench und Warn-Auswertung: die Messung erzwang den
+  Vertrag `harness/targets/bench-backfill.md`, die WAL-Messung im Skript und drei
+  Handbuch-Fassungen (1.53 bis 1.55). (3) Die Fixrunde lief ohne eigenen Review-Report —
+  **benannte Grenze** (V-4), wie bei `slice-backfill-e2e` (dort V-3): der Verifier maß
+  F-1 bis F-6 und F-9 bis F-12 selbst nach (Verifikations-Report §5) und mutierte F-6;
+  eine Reviewer-Durchsicht des Fixrunden-Diffs ist nicht gefahren. (4) Die Richtgröße
+  reproduziert sich nicht exakt: die Median-Raten 7.693, 8.933, 8.559 und 8.654
+  Zeilen/s (vier Läufe, davon zwei übernommen) ergeben nach der Rundung auf eine Stelle
+  4.000.000 und dreimal 5.000.000 Zeilen; die Konstante trägt den kleinsten Wert
+  (Nachschärfen lässt [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) zu).
+- **Verifier-Beobachtungen (V-1 bis V-7):** *V-1* (LOW): der Planner ratifiziert — das
+  Kriterium „ein realer `make bench`-Lauf mit Exit 0“ entfällt, an seine Stelle tritt
+  der Beleg des Gegenstands (Skript einzeln, Exit 0, gedruckte Zeilen mit Lauf); das
+  Ergebnis von `make bench` als Ganzes steht in §2 als „zur Kenntnis“ mit Messhost und
+  ist kein Kriterium, auch nicht als „Exit 2“ im Closure-Trigger (§5, Anker: Befund 2 des
+  Architect-Verdikts). *V-2* (INFO): die Zahlen des Laufs `20260925T012459Z` und die 91,7 %
+  sind als **übernommen** (aus dem Lauf-Bericht des Implementers, im Repository nicht
+  auflösbar) gekennzeichnet, im Plan (§2, §3) und im Handbuch (Version 1.55); der Lauf
+  `20260925T015600Z` (Verifikations-Report §3) ist als auflösbare Messung ergänzt.
+  *V-3* (LOW): **Entscheidung des Planners: benannte Grenze, kein Fixzug.** Die Zusage
+  „Startwert 10 Minuten“ ist an keinen Test gebunden (Mutation MC, Faktor `* 60`
+  entfernt, überlebt), weil jeder Test die Konstante relativ zu sich selbst liest.
+  Gründe: (i) der Wert ist eine Setzung ohne Messung, deren Nachschärfen die
+  Entscheidung ausdrücklich zulässt, und ein Test auf den Wert verdoppelte die Stelle
+  („genau eine Stelle“); (ii) ein wertfreier Test der Umrechnung
+  (`Nanos == Minuten × time.Minute`) wäre billig, ist aber eine Code-Änderung nach
+  Review und Verifikation und öffnete die Rollen-Kette für einen LOW-Befund an einer
+  Konstanten, die nur eine Warnung steuert (keine Ablehnung, kein Abbruch, keine
+  Statusänderung); (iii) die Lücke hat eine Adresse — `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  (elfter Beleg) im Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md), und der nächste Zug, der
+  `warn.go` ändert (Re-Evaluierung der Toleranz), trägt den Umrechnungs-Test mit.
+  *V-4* (INFO): benannte Grenze, siehe „Was ging anders“ (3). *V-5* (INFO): die
+  `make bench`-Zeile in `harness/README.md` nennt Herkunft (übernommen aus
+  [`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md)), den Host dieses
+  Slice und die sechs Werte des Messhosts; keine Schwelle ist geändert
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.6). *V-6* (INFO): die zwei Zählungen des
+  Suchlauf-Felds nennen den Diff-Stand ohne die Selbstverweise des Plans, die Herkunft
+  der 95,8 % steht im DoD-Punkt „Bench“ (drei Läufe des Implementers am Parent
+  `933ab054`). *V-7* (INFO): **benannte Grenze** — die Setz-Pfade der beiden Warnungen
+  sind nur durch Unit- und View-Test belegt, in keinem realen Lauf ist eine Warnung
+  gesetzt; Register `BEO-PGC/setzpfad-einer-kennzeichnung-nur-im-unit-test-belegt` (1×),
+  Adresse: der Lese-Schritt der Closure von [welle-backfill-bestand](../welle-backfill-bestand.md).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Kandidat, nicht
+  entschieden, 1×):* ein Bench-Beleg trägt den Messhost; ein DoD-Kriterium oder ein
+  Closure-Trigger über das Ergebnis eines Ganz-Targets, dessen Ausgang an einer
+  Host-Eigenschaft hängt, wird hostunabhängig formuliert (Beleg des Gegenstands
+  einzeln, das Ganz-Target-Ergebnis „zur Kenntnis“ mit Host) —
+  `BEO-PGC/dod-kriterium-haengt-am-messhost`, der Träger ist im Register offen.
+  *Neuer Sensor:* `tools/bench-backfill.sh` (Vertrag `harness/targets/bench-backfill.md`)
+  misst ohne Schwelle Kopierdauer, Schätz-Abweichung, WAL-Rückstand und
+  Feed-Speicher; er hat den Defekt des Capture-Pfads gefunden. *Benannte Lücken:*
+  Setz-Pfade der Warnungen nur im Unit- und View-Test (V-7); Toleranz-Umrechnung ohne
+  Test (V-3); Ursache der Speicher-Spitze des Feed-Containers nicht untersucht
+  (Handbuch §Grenzwerte). *Entscheidungs-Bezug:* der Konstraint „Capture-kritischer
+  Pfad bleibt unberührt“ von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) gilt für einen Run
+  erst nach `slice-backfill-slot-leerlauf-bestaetigung` (Erfolgskriterium der Welle).
+  *Sensor-Dokumente:* Nenner und gedeckte Zahl tragen ihren Lauf — Coverage-Gate:
+  `make coverage-gate` (Closure-Lauf, Exit 0), gedruckt `total: (statements) 83.2%`
+  und `coverage-gate: OK — Coverage 83.20% erfüllt Schwelle 80%`, dedupliziert
+  2129 von 2558 = 83,23 % (Awk über `/out/coverage.out` des Images, **abgeleitet**),
+  darunter `warn.go` 9 von 9; DB-Adapter-Coverage: `make test-store` des
+  Verifikations-Reports (**übernommen**, §1), gedruckt `DB-Adapter-Coverage: 82.13%
+  (gedeckt 850 von 1035 Statements; Profile gemergt: store,replication)`; der Slice
+  berührt die vier Pakete des Gegenstands nicht (`git diff --stat cf7f2d02..HEAD`
+  ohne Testdateien leer).
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-backfill-bench-richtgroesse.md`, Zähler = Zahl der Dateien.
+  *Bestehende Klassen:* `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (F-2, F-9
+  bis F-11, V-2, V-5, V-6) **19×**, `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  (F-7, F-8, V-3) **11×**, `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (F-3) **31×**
+  und `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (F-1) **6×** stehen **über** der
+  Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  Vermerk; die ersten drei sind verkörpert, `nachzug-laesst-ueberholten-text-stehen`
+  hat noch keinen zugewiesenen Ausgang). `BEO-PGC/geschaetzter-wert-als-grenze` bleibt
+  **1×**, offen (der Ort des Fehlers ist ohne zweites Auftreten geschlossen).
+  `BEO-PGC/backfill-adapter-startwerte-ohne-messung` (1×) und
+  `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` (1×) tragen die Messung dieses Slice
+  (mittlere Blockdauer, Speicher-Spitze), beide bleiben offen. *Neue Klassen:*
+  `BEO-PGC/dod-kriterium-haengt-am-messhost` (Architect-Verdikt Befund 2, V-1) **1×**,
+  offen; `BEO-PGC/setzpfad-einer-kennzeichnung-nur-im-unit-test-belegt` (V-7) **1×**,
+  offen. F-4, F-5, F-6, F-8 und F-12 sind kein eigener Register-Anfall (F-8 gehört zum
+  Beleg von V-3); V-4 ist benannte Grenze wie im Vorgänger.
+- **Folge-Slices:** `slice-backfill-slot-leerlauf-bestaetigung` (Umsetzung von
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md); Start-Trigger: diese
+  Datei in `done/`). Die Ursache der Speicher-Spitze und die Ende-zu-Ende-Belege einer
+  gesetzten Warnung haben keinen Slice; ihre Adresse ist der Lese-Schritt der Closure
+  von [welle-backfill-bestand](../welle-backfill-bestand.md) (Register, siehe oben).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Toleranz ist
+  eine Setzung ohne Messung · Die Richtgröße wird zur Grenze · Laufzeit von `make bench` ·
+  Ein Wert in `spec/pflichtenheft.md` §3 ohne schärfende ADR · Warnung (2) prüft je Block
+  und beim Abschluss. *Eingetreten:* Die Schätzung ist so alt wie das letzte `ANALYZE` —
+  erwartete Eigenschaft, akzeptiertes Negativ von
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md), kein
+  Carveout und kein Folge-Slice nötig. *Weiter offen:* Die Messung hängt am Host →
+  Register `BEO-PGC/dod-kriterium-haengt-am-messhost`.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 

@@ -1,15 +1,21 @@
-Stand: **offen** (5×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
+Stand: **offen** (6×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
 Ausgang noch **nicht** zugewiesen). Gelesen wird der Eintrag im Lese-Schritt
 der Closure von `welle-backfill-bestand` (Modul 6): die Regelschärfungs-Frage
 — ob und wie `.harness/skills/reviewer.md` oder ein Schritt der
 Implementer-Selbstprüfung die Klasse fängt — ist eine Architect-Entscheidung
 (Modul 4/8), die dieser Lese-Schritt als Steering-Loop-Eintrag weiterträgt.
 
-Zähler (abgeleitet): 5× (evidence/slice-sdk-python-projektgeruest.md,
+Zähler (abgeleitet): 6× (evidence/slice-sdk-python-projektgeruest.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-backfill-spec-nachzug.md,
 evidence/slice-backfill-change-origin.md,
-evidence/slice-backfill-sql-administration.md). Der fünfte Beleg
+evidence/slice-backfill-sql-administration.md,
+evidence/slice-backfill-bench-richtgroesse.md). Der sechste Beleg
+(`slice-backfill-bench-richtgroesse`, Review F-1) trifft **Plan und Handbuch nach
+einem Architect-Verdikt**: das Verdikt beantwortete eine im Plan offen geführte Frage
+und wies dem Planner den Nachzug zu; zum Stand des Reviews trugen beide Träger den
+Text davor (die Fixrunde zog nach, der Verifier bestätigte) — derselbe Mechanismus
+mit einem **Verdikt** statt eines Plan-Nachzugs als auslösendem Artefakt. Der fünfte Beleg
 (`slice-backfill-sql-administration`, F-6, F-7, V-1) trifft **Zählwörter und Aufzählungen**
 in Kommentaren, Schema-Beschreibungen und einem Skript, die der Suchlauf über den
 Symbolnamen nicht fand („vier Antragsarten", „die vier Views", „sechs" Fremdobjekte,

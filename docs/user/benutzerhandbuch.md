@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.54
+Version: 1.55
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -1596,8 +1596,11 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   (Stufe 200.000, Median von 3 Runs): 8.933 Zeilen/s im Lauf
   `20260925T011036Z` (gemessen im
   [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)),
-  8.559 Zeilen/s im Lauf `20260925T012459Z` (gemessen), also je 5.000.000
-  Zeilen nach Rundung. Der Wert im Code (4.000.000) ist der kleinere und damit
+  8.559 Zeilen/s im Lauf `20260925T012459Z` (übernommen aus dem Lauf-Bericht
+  des Implementers, im Repository nicht auflösbar), also je 5.000.000
+  Zeilen nach Rundung; der Lauf `20260925T015600Z` (gemessen, gedruckt im
+  [Verifikations-Report](../reviews/verifikation-slice-backfill-bench-richtgroesse.md)
+  §3) ergibt 8.654 Zeilen/s und ebenfalls 5.000.000 Zeilen. Der Wert im Code (4.000.000) ist der kleinere und damit
   vorsichtigere Wert; die Konstante ist ein Startwert, den eine weitere Messung
   nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
   ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
@@ -1622,8 +1625,9 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   | 200.000 | 26,0 s (23,0 bis 28,6 s) | 7.693 Zeilen/s |
 
   Eine Nachmessung am eigenen Lauf `20260925T012459Z` (gleicher Host, gleiche
-  Stufen, Median von 3 Runs, gemessen) lieferte 8.382, 8.975 und 8.559
-  Zeilen/s. Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`,
+  Stufen, Median von 3 Runs; übernommen aus dem Lauf-Bericht des
+  Implementers, im Repository nicht auflösbar) lieferte 8.382, 8.975 und
+  8.559 Zeilen/s. Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`,
   `--full`, gleicher Host; übernommen, im Repository nicht auflösbar) dauerten
   125,2 s und 122,8 s (7.986 und 8.141 Zeilen/s). Die
   mittlere Blockdauer liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch
@@ -1634,10 +1638,10 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   zwischen zwei Proben liegen): Stufe mit 200.000 Zeilen, Spitze 467 MiB (185
   MiB in Ruhe davor; Lauf `20260925T000439Z`, übernommen, im Repository nicht
   auflösbar), 401,7 MiB (196,0 MiB in Ruhe davor; Lauf `20260925T012459Z`,
-  gemessen) und 416,5 MiB (176,3 MiB in Ruhe davor; Lauf `20260925T011036Z`,
+  übernommen, im Repository nicht auflösbar) und 416,5 MiB (176,3 MiB in Ruhe davor; Lauf `20260925T011036Z`,
   [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)).
-  Die Probe 20 s nach dem letzten Run der Stufe liegt in den zwei gemessenen
-  Läufen **über** der Spitze im Run: 437,0 MiB und 641,7 MiB — der höchste
+  Die Probe 20 s nach dem letzten Run der Stufe liegt in den zwei Läufen
+  `20260925T012459Z` und `20260925T011036Z` **über** der Spitze im Run: 437,0 MiB und 641,7 MiB — der höchste
   gemessene Wert der Stufe ist 641,7 MiB, die Spitze im Run ist eine
   Untergrenze. 435 MiB und 1.544 MiB in den zwei Runs über je 1.000.000 Zeilen
   (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar; der Wert
@@ -1660,7 +1664,8 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   (abgeleitet aus den drei Runs). Das vom
   Slot auf der Platte der Quelle gehaltene WAL erreichte
   in den zwei Runs über 1.000.000 Zeilen 782 und 1.613 MiB (Spitze).
-  Ein Nachlauf am eigenen Lauf `20260925T012459Z` (gemessen, Stufe 200.000
+  Ein Nachlauf am eigenen Lauf `20260925T012459Z` (übernommen aus dem
+  Lauf-Bericht des Implementers, im Repository nicht auflösbar; Stufe 200.000
   Zeilen) liegt im selben Band: Spitze im Run Median 140 MiB (etwa 735 Bytes je
   Zeile, abgeleitet), vom Slot gehaltenes WAL Median 266 MiB.
   **Ursache und Abhilfe:** der Rückstand hängt nicht am Backfill. Ein Schreiber,
@@ -1686,7 +1691,7 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   s, 29 Proben); Lauf `20260925T011036Z`
   ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)):
   0,123 bis 1,074 s (Median 0,59 s, 21 Proben) gegenüber 0,041 bis 1,011 s
-  (Median 0,40 s, 25 Proben); Lauf `20260925T012459Z` (gemessen): 0,090 bis
+  (Median 0,40 s, 25 Proben); Lauf `20260925T012459Z` (übernommen, im Repository nicht auflösbar): 0,090 bis
   0,961 s (Median 0,456 s, 22 Proben) gegenüber 0,050 bis 1,008 s (Median
   0,413 s, 27 Proben). Die Mediane liegen in beiden Richtungen auseinander, die
   Maxima bei etwa 1 s; bei dieser Last und Größe ist aus diesen drei
@@ -1695,7 +1700,7 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Tabelle mit 100.000 Zeilen, Lauf `20260925T000439Z`, übernommen und im
   Repository nicht auflösbar; dieselben Werte in den Läufen
   `20260925T011036Z` ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md))
-  und `20260925T012459Z`, gemessen): eine frisch befüllte
+  und `20260925T012459Z`, übernommen, im Repository nicht auflösbar): eine frisch befüllte
   Tabelle trägt **keine** Schätzung (NULL, „unbekannt“) — mit und ohne
   Autovacuum; mit Autovacuum lag die Schätzung nach 35 s vor (Abfrage im
   Abstand von 5 s), ohne Autovacuum blieb sie unbekannt; nach `ANALYZE` stimmte
@@ -1771,3 +1776,4 @@ MIT — siehe `LICENSE`.
 | 1.52 | 2026-09-24 | Wirkung der Tabellensperre des Backfill-Runs vollständig und mit Ursprung dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“, Absatz „Sperre der Tabelle“, nennt neben Lesern auch Schreiber und die Publication-Abfrage der Administration als hinter einer wartenden DDL gestaut (gemessen, PostgreSQL 18) und die Gegenrichtung (der Run wartet ohne eigene Zeitgrenze auf eine offene `ACCESS EXCLUSIVE`-Transaktion); `RENAME COLUMN` im Fenster ist als im Review gemessen, nicht im E2E-Runner belegt gekennzeichnet |
 | 1.53 | 2026-09-25 | Warnungen des Backfill-Runs und gemessene Richtgrößen dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse): §4 „Bestand als Backfill überführen“ nennt, wann `warn_estimated_size` und `warn_duration` gesetzt werden, und den WAL-Rückstand des Capture-Slots als vierte Betriebs-Vorbedingung; „Diagnose ausführen“ deutet die beiden Kennzeichnungen; §9 „Grenzwerte“ trägt die Toleranz der Kopierdauer (Startwert, Setzung ohne Messung), die Richtgröße (abgeleitet, Orientierung, keine Grenze) und die gemessenen Werte (Kopierdauer, Speicher, WAL-Rückstand, Wirkung auf die Live-Erfassung, Schätzung der Zeilenzahl) mit Host und Lauf |
 | 1.54 | 2026-09-25 | Ursache und Abhilfen des WAL-Rückstands sowie Ursprung der Messwerte nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-bench-richtgroesse Fixrunde): §4 „Bestand als Backfill überführen“ nennt den WAL-Rückstand als nicht an den Backfill gebunden, den Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` und die Betriebs-Abhilfen (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); §9 „Grenzwerte“ nennt zur Richtgröße die Werte dreier Läufe (7.693, 8.933, 8.559 Zeilen/s; Konstante = kleinster Wert), zum Speicher des Feed-Containers die Spitze im Run **und** die Probe 20 s nach dem Run (641,7 MiB als höchster gemessener Wert), zur Live-Wirkung drei Einzelläufe statt einer Aussage „kein Unterschied“, und kennzeichnet die im Repository nicht auflösbaren Läufe als übernommen |
+| 1.55 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T012459Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar), Richtgröße um den gedruckten Lauf `20260925T015600Z` des Verifikations-Reports ergänzt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse Closure) |

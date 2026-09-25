@@ -342,7 +342,7 @@ bestätigt im Leerlauf):
 | 3 Handbuch („WAL-Rückstand prüfen“, §4, §Grenzwerte) | `slice-backfill-slot-leerlauf-bestaetigung` |
 | 4 `tools/bench-backfill.sh` (Zeile „WAL-Rückstand-Schwellen“ entfällt) | `slice-backfill-slot-leerlauf-bestaetigung` |
 | 5 Suchlauf (Kommentar und Test von `handleCopyData`/`standbyStatus`, Aussage von [`ADR-0080`](../adr/0080-nahtform-pgconn-adapter-treiberhuelle.md)) | `slice-backfill-slot-leerlauf-bestaetigung` (`ADR-0080` bleibt unberührt, `Accepted`) |
-| Nachzug im Plan von `slice-backfill-bench-richtgroesse` („Befunde der Messung“, DoD „realer `make bench`-Lauf“; Zeile „Folge-Arbeit“ des Verdikts) | Planner; Adresse: die Closure von `slice-backfill-bench-richtgroesse` |
+| Nachzug im Plan von `slice-backfill-bench-richtgroesse` („Befunde der Messung“, DoD „realer `make bench`-Lauf“; Zeile „Folge-Arbeit“ des Verdikts) | Planner; gezogen und ratifiziert in der Closure von `slice-backfill-bench-richtgroesse` (Plan §2 „Bench“, §3 „Befunde der Messung“, §5) |
 
 ## 6. Out-of-Scope für diese Welle
 

@@ -62,19 +62,27 @@ Einstiegspunkt hängt am real gemessenen Ist-Stand.
 
 ## Zählbasis der Zahlen dieser Datei
 
-**Der Nenner der Stufe ist 2541** (Lauf `slice-backfill-e2e`, Closure am Stand
-`cf7f2d02`: `make coverage-gate` baut die Stufe `coverage`, das Profil
-`/out/coverage.out` des gebauten Images, dedupliziert über die Block-Position
-mit Awk ausgezählt; gedeckt **2112 von 2541** = 83,12 %, gedruckt
-`total: (statements) 83.1%` und `coverage-gate: OK — Coverage 83.10% erfüllt
-Schwelle 80%`). Der Nenner setzt sich aus **2487** Statements der übrigen Pakete
+**Der Nenner der Stufe ist 2558** (Lauf `slice-backfill-bench-richtgroesse`,
+Closure am Stand `8d8860f7`: `make coverage-gate` baut die Stufe `coverage`, das
+Profil `/out/coverage.out` des gebauten Images, dedupliziert über die
+Block-Position mit Awk ausgezählt; gedeckt **2129 von 2558** = 83,23 %, gedruckt
+`total: (statements) 83.2%` und `coverage-gate: OK — Coverage 83.20% erfüllt
+Schwelle 80%`). Der Nenner setzt sich aus **2504** Statements der übrigen Pakete
 (**abgeleitet**) und den **54** Statements des Unterpakets
 `postgressnapshot/snapshotlogic` zusammen (54 von 54 gedeckt, aus demselben
 Profil); das Unterpaket liegt im Gegenstand. Die Nenner-Größe ist an den
 Code-Stand gebunden, die gedeckte Zahl an den Lauf: `make gates` im
-Verifikations-Lauf am Stand `43137ebf` druckte `Coverage 83.10%`
-(**übernommen** aus `verifikation-slice-backfill-e2e` §1, dieselbe Zeile wie der
-Lauf oben).
+Verifikations-Lauf am Stand `c97273b3` druckte `Coverage 83.20%`
+(**übernommen** aus `verifikation-slice-backfill-bench-richtgroesse` §1, dieselbe
+gedruckte Zeile wie der Lauf oben). Die Produktionsdateien des Slice liegen im
+Gegenstand: `usecase/backfill/warn.go` trägt **9** Statements (9 gedeckt, aus
+demselben Profil), `usecase/backfill/service.go` **214** (200 gedeckt, aus
+demselben Profil); der Nenner-Unterschied von **17** Statements zum Nenner **2541**
+des Laufs `slice-backfill-e2e` am Stand `cf7f2d02` (dort gedeckt 2112, gedruckt
+`Coverage 83.10%`) ist **abgeleitet** und liegt in diesen zwei Dateien
+(`git diff --stat cf7f2d02..HEAD` über `internal`, `cmd`, `gen` ohne
+Testdateien zeigt außer einem Kommentar in `internal/domain/model/backfillrun.go`
+nur sie).
 
 **Der Nenner des Stands von `slice-097` war 1936, nicht 1903** (Lauf
 `slice-097`, der

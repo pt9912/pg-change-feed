@@ -102,7 +102,13 @@ nicht prüft, steht in §Grenze Nr. 8.
   Statements; Profile gemergt: store,replication)`; die Anteile aus dem
   gemergten Profil dieses Laufs abgeleitet: gedeckt 540 · 32 · 125 · 153. Die
   CI-Läufe von `e2e.yml` (Lauf `36065957210`, beide Legs, Schritt „DB-Adapter-Coverage
-  — Replication-Teil, Merge + Schwelle“) druckten dieselbe Zeile). Die **gedeckte** Zahl
+  — Replication-Teil, Merge + Schwelle“) druckten dieselbe Zeile; der
+  `make test-store`-Lauf des Verifikations-Reports
+  `verifikation-slice-backfill-bench-richtgroesse` (§1, Stand `c97273b3`) druckte
+  ebenfalls `DB-Adapter-Coverage: 82.13% (gedeckt 850 von 1035 Statements;
+  Profile gemergt: store,replication)` — **übernommen**; `git diff --stat
+  cf7f2d02..HEAD` über die vier Pakete ohne Testdateien ist leer, gemessen in der
+  Closure von `slice-backfill-bench-richtgroesse`). Die **gedeckte** Zahl
   daneben ist zusätzlich **lauf**-gebunden: sie wandert schon bei unverändertem
   Code-Stand, ist darum ebenfalls **kein** Zustand und nennt ihren Lauf. Die
   Größe **eines** Anteils hängt an seiner Naht

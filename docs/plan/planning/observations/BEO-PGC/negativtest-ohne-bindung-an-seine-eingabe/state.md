@@ -5,14 +5,25 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
-Zähler (abgeleitet): **10×** (evidence/slice-086.md, evidence/slice-087.md,
+Zähler (abgeleitet): **11×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
 evidence/slice-backfill-sql-administration.md,
-evidence/slice-backfill-e2e.md) —
+evidence/slice-backfill-e2e.md,
+evidence/slice-backfill-bench-richtgroesse.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
-liest den Eintrag mit (10×). Der zehnte Beleg (`slice-backfill-e2e`, F-4) trifft eine
+liest den Eintrag mit (11×). Der elfte Beleg (`slice-backfill-bench-richtgroesse`,
+Verifikation V-3, Review F-7) trifft eine **Konstante**: die Zusage „Startwert 10
+Minuten“ hat keine maschinelle Bindung — die Mutation, die den Faktor der Umrechnung
+Minuten nach Nanosekunden entfernt (Toleranz 10 Sekunden), lässt `make test` grün, weil
+jeder Test die Konstante relativ zu sich selbst liest. Ausprägung: die Eingabeseite einer
+**Konstante** ist ihre Definition; die Regel „eine Stelle“ (Entscheidung zur Toleranz)
+verhindert einen Test auf den Wert, ein wertfreier Test der Umrechnung
+(`Nanos == Minuten × time.Minute`) bindet den Faktor. Die Closure führt die Lücke als
+benannte Grenze; der Test ist Sache des nächsten Zuges, der `warn.go` ändert
+(Re-Evaluierung der Toleranz), und des Lese-Schritts der Closure von
+`welle-backfill-bestand`. Der zehnte Beleg (`slice-backfill-e2e`, F-4) trifft eine
 **E2E-Assertion**: `coalesce(error_class, '')` gleich `''` liest denselben leeren
 String bei einer Zeile mit NULL und bei **keiner** Zeile; eine fehlende
 Heartbeat-Zeile (Quelle unbekannt, Filter falsch) hielte die Zusage „der

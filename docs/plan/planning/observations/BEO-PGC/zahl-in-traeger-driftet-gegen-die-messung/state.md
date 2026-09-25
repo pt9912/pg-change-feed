@@ -24,7 +24,10 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **18×** (evidence/slice-backfill-e2e.md — eine Trefferzahl im
+Zähler (abgeleitet): **19×** (evidence/slice-backfill-bench-richtgroesse.md — Zahlen
+mit nicht auflösbarem Ursprung, eine Zwischenstands-Zahl und zwei Zählungen im
+Suchlauf-Feld, Review F-2, F-9 bis F-11 und Verifikation V-2, V-5, V-6;
+evidence/slice-backfill-e2e.md — eine Trefferzahl im
 Suchlauf-Feld des Plans, Review F-3; evidence/slice-backfill-run-store.md — Nenner der zwei
 Coverage-Messungen in den Sensor-Dokumenten, Verifikation V-1, und eine Dateizahl im
 Suchlauf-Feld, V-2; evidence/slice-081.md, evidence/slice-084.md,
@@ -36,7 +39,17 @@ evidence/slice-backfill-row-image-gemeinsam.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
-Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 18×).
+Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 19×).
+Der neunzehnte Beleg (slice-backfill-bench-richtgroesse) trifft die Klasse an einem
+**Mess-Slice**: Zahlen eines Laufs standen als „gemessen“, obwohl die gedruckte Zeile
+nicht im Repository liegt (Lauf `20260925T012459Z`, 91,7 %); eine Speicher-„Spitze“ war
+kleiner als ein Wert derselben Messung (Probe 20 s nach dem Run); zwei Trefferzahlen
+des Suchlauf-Felds nannten „je 1“ statt 2; und eine Träger-Zeile
+(`make bench` in `harness/README.md`) führte eine Kalibrierungs-Zahl ohne Host, während
+der Messhost des Slice bei 87,5 % bis 95,8 % liegt. Die Fixrunde und die Closure setzen
+je Zahl den Ursprung (gemessen · übernommen · abgeleitet) und den Host; gefunden haben
+alle der Reviewer und der Verifier durch Nachmessen. Kein Schwellen-Übertritt (bereits
+verkörpert).
 Der achtzehnte Beleg (slice-backfill-e2e) trifft wieder eine **Suchlauf-Feld**-Zahl:
 die Trefferzahl einer Zeile stand für den Stand eines früheren Fixrunden-Commits
 (127 Zeilen in 59 Dateien) statt für den Diff-Stand (130 in 60, die Fixrunde legt

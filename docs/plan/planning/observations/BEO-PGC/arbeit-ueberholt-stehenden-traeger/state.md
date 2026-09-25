@@ -6,7 +6,7 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **30×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **31×** — die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -39,6 +39,13 @@ drei statt vier ausgenommenen Paketen (F-16, LOW). Beide in den Fixrunden
 gezogen, der Suchlauf trägt die gesuchte Eigenschaft seither mit beiden
 Ständen — Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13, kein
 Schwellen-Übertritt.
+Der einunddreißigste Beleg, `evidence/slice-backfill-bench-richtgroesse.md`: die
+bewegte Eigenschaft (was `tools/bench-backfill.sh` misst — die Fixrunde ergänzte
+die WAL-Messung) trug Beschreibungen im Vertrag `harness/targets/bench-backfill.md`
+und in der `make bench`-Zeile von `harness/README.md`, die sie nicht nannten
+(Review F-3, LOW); gefunden vom Reviewer, die Fixrunde zog beide Träger nach —
+Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13, kein
+Schwellen-Übertritt.
 Der dreißigste Beleg, `evidence/slice-backfill-e2e.md`: die bewegte Eigenschaft
 (Ablauf des Snapshot-Imports: Sperre und Umschreib-Prüfung) trug eine
 Sequenzdarstellung in `spec/architecture.md`, die das committete Suchlauf-Feld
@@ -48,7 +55,7 @@ vom Reviewer, die Fixrunde zog die Sicht nach und das Feld trägt die Datei seit
 mit beiden Ständen — Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13
 (das Suchmuster folgt der Bezeichnung, die der Träger führt, nicht der des
 eigenen Diffs), kein Schwellen-Übertritt; der Lese-Schritt der Closure von
-`welle-backfill-bestand` liest den Eintrag mit (30×).
+`welle-backfill-bestand` liest den Eintrag mit (31×).
 Der achtundzwanzigste Beleg,
 `evidence/slice-backfill-change-origin.md`: die bewegte Eigenschaft (Feldzahl
 der `GET /changes`-Antwort) trug Träger in `*.kt` und `*.cs`

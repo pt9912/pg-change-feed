@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-bench-richtgroesse (Review F-1, Verifikation §5 F-1)
+
+**Fund:** Das Architect-Verdikt zum WAL-Rückstand und zum roten `make bench` beantwortete eine Frage, die der Slice-Plan (§3 „Befunde der Messung“, Punkt 1 und 3) offen führte, und wies dem Planner den Nachzug samt einem Satz Abhilfe im Handbuch zu. Plan und Handbuch trugen zum Stand des Reviews weiter den Text davor: der Plan die Frage als offen, der DoD-Punkt „Bench“ ein Kriterium („realer `make bench`-Lauf mit Exit 0“), das auf dem Messhost nicht erreichbar ist, das Handbuch den WAL-Rückstand als Wirkung des Runs. Der Nachzug war im Verdikt benannt und im Repository nicht gezogen (F-1, MEDIUM); derselbe Bearbeitungsanlass, dieselben Dateien. Die Fixrunde zog Plan und Handbuch nach; der Verifier las beide Träger gegen das Verdikt und bestätigte (§5 F-1). Dieselbe Zeit-Form wie die Vorgänger: ein Übergabe-Artefakt (hier ein Verdikt) landet, der Träger des Vorgängertextes bleibt stehen.
+
+Quelle: `docs/reviews/review-slice-backfill-bench-richtgroesse.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-bench-richtgroesse.md` (§5 F-1). <!-- d-check:status-provenance -->
