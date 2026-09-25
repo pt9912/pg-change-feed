@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # bench-lib.sh — gemeinsame Umgebungs-Bausteine für tools/bench-*.sh
-# (LH-QA-PER-001…003, ADR-0054 §(b)): eigene, von
+# (LH-QA-PER-001…003, LH-FA-CAP-009, ADR-0054 §(b)): eigene, von
 # tools/harness/run-integration-tests.sh unabhängige PostgreSQL-/
 # Feed-Umgebung über `docker network`/`docker run` (kein compose.yaml-Bezug,
 # damit ein Bench-Lauf nicht mit einem laufenden `make test-integration`
 # um dieselben Container-/Netznamen konkurriert), Schema-Rollout über
 # d-migrate (ADR-0043) und Cleanup. Geteilt ist die Umgebung, nicht die
-# Messung: Jedes der drei Bench-Skripte bleibt ein eigenständiger Beleg
+# Messung: Jedes der vier Bench-Skripte bleibt ein eigenständiger Beleg
 # (ADR-0054 §(b) — "je Beleg ein eigenes Bench-Skript"), quellt diese
 # Datei nur für Aufbau/Abbau.
 set -euo pipefail
@@ -140,12 +140,21 @@ bench::wait_captured() {
   return 1
 }
 
+# bench::median_of liefert den mittleren Wert einer ungeraden Anzahl
+# übergebener Zahlen — robuster gegen einen einzelnen Ausreißer als eine
+# Einzelmessung.
+bench::median_of() {
+  local count=$# mid
+  mid=$(( (count + 1) / 2 ))
+  printf '%s\n' "$@" | sort -n | sed -n "${mid}p"
+}
+
 # bench::record_row hält eine Kennungs-Zeile für docs/user/bench-abdeckung.md
 # als eigene Datei unter .tmp/bench-abdeckung-rows/ fest (ADR-0104) — ein
-# Bench-Skript schreibt nur seine eigene Zeile, ohne die der beiden anderen
+# Schwellen-Skript schreibt nur seine eigene Zeile, ohne die der anderen
 # Skripte zu lesen oder zu sperren. bench::render_abdeckung liest am Ende
-# des letzten Skripts alle vorhandenen Zeilen und schreibt die Tabelle
-# gesammelt.
+# des letzten Schwellen-Skripts alle vorhandenen Zeilen und schreibt die
+# Tabelle gesammelt.
 # $1=Lastenheft-Kennung $2=Kurzbeschreibung $3=Schwelle-Text $4=Ort (Datei:Zeile)
 bench::record_row() {
   local id=$1 kurzbeschreibung=$2 schwelle=$3 ort=$4 dir
@@ -158,7 +167,8 @@ bench::record_row() {
 # bench::render_abdeckung schreibt docs/user/bench-abdeckung.md aus allen
 # bislang unter .tmp/bench-abdeckung-rows/ abgelegten Zeilen (sortiert nach
 # Kennung, damit der Diff stabil bleibt) — aufgerufen vom letzten der drei
-# Bench-Skripte in Ausführungsreihenfolge (tools/bench-batch-vs-single.sh).
+# Schwellen-Skripte in Ausführungsreihenfolge (tools/bench-batch-vs-single.sh);
+# tools/bench-backfill.sh misst ohne Schwelle und schreibt keine Zeile.
 bench::render_abdeckung() {
   local root file dir
   root=$(bench::repo_root)
@@ -168,9 +178,11 @@ bench::render_abdeckung() {
     cat <<'HEADER'
 # Bench-Abdeckung je Lastenheft-Kennung
 
-Erzeugt von den drei `tools/bench-*.sh`-Skripten (`make bench`,
-[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md)):
-jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
+Erzeugt von den drei `tools/bench-*.sh`-Skripten mit Pass/Fail-Schwelle
+(`make bench`,
+[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md));
+`tools/bench-backfill.sh` misst ohne Schwelle und trägt keine Zeile.
+Jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
 Schwelle. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
 Lauf-Beleg — der zuletzt gemessene Wert steht in der stdout-Ausgabe des
 jeweiligen Laufs, nicht hier.

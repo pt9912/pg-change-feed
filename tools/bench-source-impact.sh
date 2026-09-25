@@ -59,14 +59,6 @@ run_once() {
   echo $(( (end - start) / 1000000 ))
 }
 
-# median_of liefert den mittleren Wert einer ungeraden Anzahl übergebener
-# Zahlen — robuster gegen einen einzelnen Ausreißer als eine Einzelmessung.
-median_of() {
-  local count=$# mid
-  mid=$(( (count + 1) / 2 ))
-  printf '%s\n' "$@" | sort -n | sed -n "${mid}p"
-}
-
 # run_phase_median fährt RUNS Läufe derselben Insert-Last gegen disjunkte
 # ID-Bereiche (keine PK-Kollision zwischen den Läufen) und liefert
 # "Median|Lauf1,Lauf2,…" — der Aufrufer trennt beide Teile selbst, damit
@@ -79,7 +71,7 @@ run_phase_median() {
     samples+=("$(run_once $(( phase_offset_base + (run - 1) * count )) "$count")")
   done
   joined=$(IFS=,; echo "${samples[*]}")
-  echo "$(median_of "${samples[@]}")|${joined}"
+  echo "$(bench::median_of "${samples[@]}")|${joined}"
 }
 
 echo "bench-source-impact: Phase 1 — ohne CDC (kein Replication-Slot aktiv), $RUNS Läufe …"

@@ -1,8 +1,10 @@
 # Bench-Abdeckung je Lastenheft-Kennung
 
-Erzeugt von den drei `tools/bench-*.sh`-Skripten (`make bench`,
-[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md)):
-jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
+Erzeugt von den drei `tools/bench-*.sh`-Skripten mit Pass/Fail-Schwelle
+(`make bench`,
+[`ADR-0104`](../plan/adr/0104-benchmark-schwellen-per-001-002-003.md));
+`tools/bench-backfill.sh` misst ohne Schwelle und trägt keine Zeile.
+Jede Zeile bindet eine Kennung an ihre real durchgesetzte Pass/Fail-
 Schwelle. Diese Datei ist eine **stabile Abdeckungs-Deklaration**, kein
 Lauf-Beleg — der zuletzt gemessene Wert steht in der stdout-Ausgabe des
 jeweiligen Laufs, nicht hier.

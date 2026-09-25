@@ -178,16 +178,19 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 	@bash tools/harness/run-integration-tests.sh
 
 # --- Performance-Benchmarks (kein Gate; ADR-0054 §(b)) ---
-# Drei eigenständige Skripte (LH-QA-PER-001…003), je ein Beleg, gebündelt
-# hinter diesem Ziel — analog `d-check`s `Makefile` Zeile 84
-# (`bench: build`); nicht Teil von `gates`/`ci`/`fullbuild`, weil kein
-# einzelner Schwellenwert existiert, gegen den Aufwand/Ergebnis
-# entscheiden würde (Kontrast zu coverage-gate). Braucht ein zuvor
-# geladenes Image (make image) für den Feed-Container der Skripte.
+# Vier eigenständige Skripte, je ein Beleg, gebündelt hinter diesem Ziel —
+# analog `d-check`s `Makefile` Zeile 84 (`bench: build`): drei mit Schwelle
+# (LH-QA-PER-001…003) und `tools/bench-backfill.sh`, eine Messung ohne
+# Schwelle (LH-FA-CAP-009, Vertrag: harness/targets/bench-backfill.md).
+# Nicht Teil von `gates`/`ci`/`fullbuild`, weil kein einzelner
+# Schwellenwert existiert, gegen den Aufwand/Ergebnis entscheiden würde
+# (Kontrast zu coverage-gate). Braucht ein geladenes Image (make image)
+# für den Feed-Container der Skripte.
 .PHONY: bench
-bench: image ## Performance-Benchmarks LH-QA-PER-001…003 (drei Skripte, dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
+bench: image ## Performance-Benchmarks (vier Skripte: LH-QA-PER-001…003 mit Schwelle, Backfill-Messung LH-FA-CAP-009 ohne; dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
 	@bash tools/bench-source-impact.sh
 	@bash tools/bench-scaling.sh
+	@bash tools/bench-backfill.sh
 	@bash tools/bench-batch-vs-single.sh
 
 # --- Codegenerierung (kein Gate; Docker-only, ADR-0060) ---
