@@ -96,6 +96,8 @@ feed_mem_mib() {
   }'
 }
 
+store_rows() { bench::psql_scalar "SELECT count(*) FROM cdc.change"; }
+
 max_of() { LC_ALL=C awk -v a="$1" -v b="$2" 'BEGIN { print (b + 0 > a + 0) ? b : a }'; }
 
 # min/Median/max einer Zahlenliste (Argumente); der Median ist bench::median_of.
@@ -243,6 +245,8 @@ for n in $STAGES; do
   tables_env="$tables_env,public.$(table_of "$n")=tbl-bf-$n:sv-bf-$n"
 done
 bench::start_feed "$tables_env" "$SOURCE_ID" "$SLOT" "$PUBLICATION"
+sleep 30
+echo "$TAG: Grundlinie ohne Run — Feed-Container in Ruhe 30 s nach dem Start $(feed_mem_mib) MiB, Zeilen in cdc.change: $(store_rows)"
 
 # --- Kopierdauer je Tabellengröße --------------------------------------------
 last_rate=""
@@ -251,7 +255,7 @@ for n in $STAGES; do
   table=$(table_of "$n")
   width=$(row_width "$table")
   idle=$(feed_mem_mib)
-  echo "$TAG: Stufe $n Zeilen (Zeilenbreite ~${width} B gemittelt über pg_column_size, B=$BLOCK_SIZE, Einfügeform zeilenweise in einer Transaktion), Feed-Container in Ruhe ${idle} MiB"
+  echo "$TAG: Stufe $n Zeilen (Zeilenbreite ~${width} B gemittelt über pg_column_size, B=$BLOCK_SIZE, Einfügeform zeilenweise in einer Transaktion), Feed-Container in Ruhe ${idle} MiB, Zeilen in cdc.change vor der Stufe: $(store_rows)"
   ms_list=(); rate_list=(); wal_list=(); held_list=(); peak_stage=0
   for run in $(seq 1 "$RUNS"); do
     result=$(run_backfill "$table")
@@ -268,6 +272,8 @@ for n in $STAGES; do
   done
   sleep 20
   after=$(feed_mem_mib)
+  sleep 40
+  after60=$(feed_mem_mib)
   blocks=$(( (n + BLOCK_SIZE - 1) / BLOCK_SIZE ))
   median_ms=$(bench::median_of "${ms_list[@]}")
   median_rate=$(bench::median_of "${rate_list[@]}")
@@ -275,7 +281,7 @@ for n in $STAGES; do
   median_held=$(bench::median_of "${held_list[@]}")
   block_ms=$(LC_ALL=C awk -v ms="$median_ms" -v b="$blocks" 'BEGIN { printf "%.0f", ms / b }')
   wal_per_row=$(LC_ALL=C awk -v w="$median_wal" -v n="$n" 'BEGIN { printf "%.0f", w / n }')
-  echo "$TAG: Stufe $n Ergebnis — Kopierdauer $(range_of "${ms_list[@]}") ms, Durchsatz $(range_of "${rate_list[@]}") Zeilen/s, Feed-Speicher-Spitze ${peak_stage} MiB (Ruhe vor der Stufe ${idle} MiB, 20 s nach dem letzten Lauf ${after} MiB), mittlere Blockdauer ${block_ms} ms (abgeleitet: Median-Dauer / $blocks Blöcke; die längste Einzeldauer ist nicht gemessen), WAL-Rückstand-Spitze im Run Median $(mib_of "$median_wal") MiB (~${wal_per_row} B je Zeile, abgeleitet), vom Slot gehaltenes WAL Median $(mib_of "$median_held") MiB"
+  echo "$TAG: Stufe $n Ergebnis — Kopierdauer $(range_of "${ms_list[@]}") ms, Durchsatz $(range_of "${rate_list[@]}") Zeilen/s, Feed-Speicher-Spitze ${peak_stage} MiB (Ruhe vor der Stufe ${idle} MiB, 20 s nach dem letzten Lauf ${after} MiB, 60 s nach dem letzten Lauf ${after60} MiB, Zeilen in cdc.change danach: $(store_rows)), mittlere Blockdauer ${block_ms} ms (abgeleitet: Median-Dauer / $blocks Blöcke; die längste Einzeldauer ist nicht gemessen), WAL-Rückstand-Spitze im Run Median $(mib_of "$median_wal") MiB (~${wal_per_row} B je Zeile, abgeleitet), vom Slot gehaltenes WAL Median $(mib_of "$median_held") MiB"
   last_rate=$median_rate
   last_stage=$n
   last_wal_peak=$(printf '%s\n' "${wal_list[@]}" | sort -n | tail -n 1)

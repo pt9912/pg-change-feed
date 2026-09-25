@@ -38,8 +38,11 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
    nicht, die Dauer des Commits liegt hinter `finished_at`. Je Run stehen
    Dauer, Zeilen je Sekunde, die geschätzte Zeilenzahl, beide Warn-Kennzeichnungen,
    die Speicher-Spitze des Feed-Containers und die WAL-Messung in der Ausgabe; je
-   Stufe der Bereich (Minimum–Maximum) und der Median, dazu der Speicher 20 s nach
-   dem letzten Run der Stufe. Die **WAL-Messung** liest je Statusabfrage zwei
+   Stufe der Bereich (Minimum–Maximum) und der Median, dazu der Speicher 20 s und
+   60 s nach dem letzten Run der Stufe und die Zahl der Zeilen in `cdc.change` vor
+   der Stufe und nach ihr. Vor der ersten Stufe druckt das Skript die
+   **Grundlinie ohne Run**: den Speicher des Feed-Containers in Ruhe 30 s nach dem
+   Start und die Zahl der Zeilen in `cdc.change`. Die **WAL-Messung** liest je Statusabfrage zwei
    Größen aus `pg_replication_slots`: den WAL-Rückstand des Capture-Slots
    (`pg_current_wal_lsn()` minus `confirmed_flush_lsn`, dieselbe Größe wie
    `cdc_wal_retention_bytes`) und das vom Slot gehaltene WAL (`pg_current_wal_lsn()`
@@ -82,7 +85,67 @@ Die Umgebung ist die von `tools/bench-lib.sh`: PostgreSQL-Image aus
 `PG_TEST_IMAGE` mit den Startparametern `wal_level=logical`,
 `max_replication_slots=10`, `max_wal_senders=10`, `wal_sender_timeout=2000`,
 sonst PostgreSQL-Defaults; Feed-Container aus `FEED_IMAGE` ohne
-Ressourcenbegrenzung.
+Ressourcenbegrenzung. Zwei Variablen der Umgebung gelten für jedes Skript, das
+`bench::start_feed` ruft: `BENCH_FEED_ENV` (zusätzliche Umgebungsvariablen des
+Feed-Containers, leerzeichengetrennt, `KEY=VALUE`) und `BENCH_FEED_DOCKER_ARGS`
+(zusätzliche Argumente von `docker run`, etwa `--memory 6g`; ein Kill durch die
+Grenze ist ein Messergebnis).
+
+## Speicher-Untersuchung — `tools/bench-backfill-memory.sh`
+
+Ein zweites Skript, **kein Teil von `make bench`** (Minuten je Stufe, Speicherbedarf
+des Feed-Containers bis in den GiB-Bereich): dieselbe Umgebung
+(`tools/bench-lib.sh`), dieselbe Haltung — eine Messung ohne Pass/Fail. Es misst,
+wie sich der Speicher des Feed-Containers im Backfill-Run und danach zur Zeilenzahl
+der Tabelle, zur Zeilenbreite, zur Zahl der gespeicherten Changes und zu einer
+Einstellung des Feeds verhält.
+
+1. **Tabellen.** Je Stufe aus `BENCH_MEM_STAGES` eine Tabelle: `narrow` mit den
+   fünf schmalen Spalten des Skripts `tools/bench-backfill.sh`, `wide` mit zwei
+   weiteren Spalten (`payload jsonb`, `body text`); die Ausgabe nennt die
+   mittlere Zeilenbreite je Tabelle in `pg_column_size` und in der Textform.
+2. **Einheit der Messung.** Je Stufe und Run startet das Skript einen **frischen**
+   Feed-Container; damit ist `memory.peak` (siehe unten) die Spitze genau dieser
+   Einheit. Mit `BENCH_MEM_RESET=1` (Default) leert es vor jeder Stufe
+   `cdc.change` und `cdc.transaction`; Run `k` einer Stufe beginnt dann mit
+   `(k−1) ×` Stufengröße Zeilen in `cdc.change`, die Ausgabe nennt die Zahl vor
+   dem Run und nach dem Nachlauf.
+3. **Grundlinie, Run, Nachlauf.** 10 s Ruhe nach dem Start (Beginn, Maximum,
+   Minimum, Ende), dann der Run mit einer Probe etwa alle 0,2 s (Verlauf bei
+   0 %, 25 %, 50 %, 75 %, 100 % der kopierten Zeilen, Spitze), dann 60 s ohne
+   Schreibzugriff mit einer Probe alle 0,5 s (Beginn, Maximum, Minimum, Ende).
+   Mit `BENCH_MEM_EMPTY_AFTER=1` leert das Skript danach `cdc.change` und
+   `cdc.transaction` und tastet weitere 120 s ab.
+4. **Zähler.** Vom Host aus gelesen, ohne Eingriff in den Container: die
+   cgroup-v2-Datei des Containers (`memory.current`, `memory.stat` mit `anon`,
+   `file`, `kernel`, `memory.peak`), `/proc/<pid>/status` des Prozesses (`RssAnon`,
+   `VmHWM`) und `docker stats`. Ist die cgroup-Datei oder `/proc/<pid>` nicht
+   lesbar, endet das Skript mit Exit 1.
+5. **Laufzeit des Go-Prozesses.** Mit `BENCH_FEED_ENV="GODEBUG=gctrace=1"` druckt
+   das Skript je Fenster die Zeilen der Garbage-Collection des Feeds: Zahl der
+   Läufe, größter Heap zu Beginn eines Laufs, größtes Ziel, letzter Heap nach
+   einem Lauf; außerdem die Zahl der gelaufenen und der fehlgeschlagenen
+   Bereinigungs-Takte seit dem Start des Feeds.
+6. **Slot.** Vor jedem Start wartet das Skript bis zu 10 s darauf, dass die
+   Sitzung des entfernten Feeds den Slot freigibt; danach beendet es sie
+   (`pg_terminate_backend`) und nennt es in der Ausgabe.
+
+| Variable | Default | Bedeutung |
+|---|---|---|
+| `BENCH_MEM_STAGES` | `10000 100000 200000` | Zeilenzahlen der Stufen |
+| `BENCH_MEM_RUNS` | `3` | Runs je Stufe |
+| `BENCH_MEM_WIDTH` | `narrow` | `narrow` oder `wide` |
+| `BENCH_MEM_RESET` | `1` | `cdc.change` vor jeder Stufe leeren |
+| `BENCH_MEM_EMPTY_AFTER` | `0` | `1`: nach dem Nachlauf leeren und 120 s weitermessen |
+| `BENCH_MEM_SERIES_DIR` | leer | Verzeichnis für die Zeitreihe je Run (`ms cur anon file kernel rssanon rows`) |
+| `BENCH_MEM_RUN_TIMEOUT_S` | `3600` | Sekunden je Run, bevor die Messung mit Exit 1 abbricht |
+
+Grenzen dieses Skripts: `memory.current` zählt `anon`, `file` und `kernel` des
+Containers; die Spalte `anon` ist der Speicher des Go-Prozesses. `memory.peak` ist
+der Höchstwert seit dem Start des Containers und schließt den Nachlauf ein, wenn
+er nach dem Nachlauf gedruckt wird. Die Proben im Run liegen 0,2 s auseinander
+(die Zeit einer Abfrage kommt hinzu); eine kürzere Spitze fängt nur `memory.peak`.
+Die Zeilenzahl in `cdc.change` wird mit `count(*)` zwischen den Fenstern gelesen.
 
 ## Grenzen
 
@@ -92,20 +155,26 @@ Was das Skript **nicht** misst — eine Aussage darüber ist ungedeckt:
   nennt (Kernel, Docker-Version, CPU-Zahl, RAM), und für PostgreSQL-Defaults;
   andere Hardware, Plattengeschwindigkeit und parallele Last anderer Container
   sind nicht kontrolliert.
-- **Zeilenbreite.** Die Tabellen tragen fünf schmale Spalten (Ausgabe nennt die
-  mittlere Zeilenbreite in Bytes). Breite Zeilen (`jsonb`, `bytea`) sind ohne
-  eigenen Lauf ungemessen; eine Richtgröße in Zeilen gilt nur für diese Breite.
+- **Zeilenbreite.** Die Tabellen dieses Skripts tragen fünf schmale Spalten (Ausgabe
+  nennt die mittlere Zeilenbreite in Bytes). Kopierrate und Richtgröße bei breiten
+  Zeilen (`jsonb`, `bytea`) sind ungemessen; eine Richtgröße in Zeilen gilt nur für
+  diese Breite. Den Speicher bei breiten Zeilen misst
+  `tools/bench-backfill-memory.sh` (`BENCH_MEM_WIDTH=wide`, eine Zeile von etwa
+  1,3 KB).
 - **Einfügeform.** Die Kopierdauer schließt die zeilenweise Einfügung eines Blocks
   in **eine** Schreibtransaktion ein (`AppendBlock`); eine andere Einfügeform
   verändert die Zahl.
 - **Blockdauer.** Die Ausgabe nennt die **mittlere** Blockdauer (Median-Dauer durch
   Blockzahl, abgeleitet); die längste Einzeldauer eines Blocks und die Dauer des
   Commits sind nicht gemessen.
-- **Speicher.** Gemessen wird der Feed-Container über `docker stats` im Takt der
-  Statusabfrage (etwa 1 bis 2 Sekunden); die Spitze kann zwischen zwei Proben
-  liegen, und die Probe 20 s nach dem letzten Run der Stufe kann darüber liegen
-  (der höchste gedruckte Wert einer Stufe ist der höchste gemessene Wert, nicht
-  die Spitze allein). Der Speicher der PostgreSQL-Instanz ist nicht gemessen.
+- **Speicher.** Dieses Skript misst den Feed-Container über `docker stats` im Takt
+  der Statusabfrage (etwa 1 bis 2 Sekunden); die Spitze kann zwischen zwei Proben
+  liegen, und die Probe 20 s oder 60 s nach dem letzten Run der Stufe kann darüber
+  liegen (der höchste gedruckte Wert einer Stufe ist der höchste gemessene Wert,
+  nicht die Spitze allein), weil der Speicher des Feeds an der Zahl der Changes in
+  `cdc.change` hängt und nicht nur am Run. Die Untersuchung des Speichers
+  (`tools/bench-backfill-memory.sh`, oben) trennt beides. Der Speicher der
+  PostgreSQL-Instanz ist nicht gemessen.
 - **WAL.** Die Messung ist ohne Pass/Fail und ohne Ursachenzuordnung: sie
   liest Rückstand und gehaltenes WAL des Slots, nicht die Ursache eines Werts.
   Die Wartezeit ohne Schreibzugriff ist auf 120 s begrenzt. Das Skript schreibt

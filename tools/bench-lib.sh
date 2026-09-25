@@ -91,14 +91,21 @@ bench::psql_scalar() {
 
 # $1=CDC_TABLES  $2=CDC_SOURCE_ID  $3=CDC_SLOT  $4=CDC_PUBLICATION
 bench::start_feed() {
-  local net feed pg dsn
+  local net feed pg dsn extra=() entry
   net=$(bench::network_name); feed=$(bench::feed_container); pg=$(bench::pg_container)
   dsn="postgres://postgres:postgres@$pg:5432/cdc?sslmode=disable"
+  # BENCH_FEED_ENV: zusätzliche Umgebungsvariablen des Feed-Containers
+  # (leerzeichengetrennt, KEY=VALUE); BENCH_FEED_DOCKER_ARGS: zusätzliche
+  # Argumente von `docker run` (etwa `--memory 512m`).
+  for entry in ${BENCH_FEED_ENV:-}; do
+    extra+=(-e "$entry")
+  done
   docker rm -fv "$feed" >/dev/null 2>&1 || true
   docker run -d --name "$feed" --network "$net" \
     -e CDC_CAPTURE_DSN="$dsn" -e CDC_ADMIN_DSN="$dsn" -e CDC_READER_DSN="$dsn" \
     -e CDC_SOURCE_ID="$2" -e CDC_PUBLICATION="$4" -e CDC_SLOT="$3" \
     -e CDC_TABLES="$1" -e CDC_LOG_LEVEL=info \
+    "${extra[@]}" ${BENCH_FEED_DOCKER_ARGS:-} \
     "$FEED_IMAGE" >/dev/null
 
   local wired=0 slot_ok feed_running
