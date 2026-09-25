@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.59
+Version: 1.60
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -470,6 +470,14 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
   hebt die Fehlerschwelle über den erwarteten Rückstand — es ändert die Ursache
   nicht und wirkt für jede Ursache eines Rückstands.
 
+**Speicher des Feed-Containers:** Ein Backfill lässt die Zahl der Changes in
+`cdc.change` um die Zeilenzahl der Tabelle wachsen, und der Bereinigungslauf des
+Feeds liest in jedem Takt alle Changes der Quelle in den Speicher (siehe
+[Aufbewahrung (Retention)](#aufbewahrung-retention)). Der Speicherbedarf des
+Feed-Containers wächst deshalb mit dieser Zahl — nach dem Run, nicht während er
+läuft. Messwerte und die Bemessung des Speicherlimits stehen unter
+[Grenzwerte](#grenzwerte).
+
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
 der Run eine Lesesperre (`ACCESS SHARE`) auf die Tabelle. Lesen und Schreiben
 der Tabelle laufen weiter, solange keine DDL auf die Tabelle wartet. Eine DDL,
@@ -649,7 +657,9 @@ Consumer, der für die Quelle bereits einmal bestätigt hat, hat eine
 Position an oder hinter der jeweiligen Zeile bestätigt. Beide Werte
 (Takt, Mindestalter) sind fest im Feed-Container hinterlegt; eine
 Laufzeit-Konfiguration über Umgebungsvariablen oder die YAML-Datei
-existiert dafür nicht.
+existiert dafür nicht. Jeder Durchlauf liest dazu alle Changes der Quelle in
+den Speicher des Feed-Containers; dessen Bedarf wächst deshalb mit der Zahl der
+Changes in `cdc.change` (Bemessung unter [Grenzwerte](#grenzwerte)).
 
 **Betriebs-Hinweis (Consumer-Bindung):** Ein registrierter, aber gegen
 eine Quelle noch nie bestätigender Consumer blockiert die Bereinigung
@@ -1624,7 +1634,12 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
   den Lauf-Berichten, nicht im Repository). Die Zahl gilt für den Host und die
   Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
-  andere Hardware und eine andere Einfügeform sind ungemessen.
+  andere Hardware und eine andere Einfügeform sind für die Kopierrate
+  ungemessen. Die Richtgröße bezieht den Speicher des Feed-Containers nicht ein:
+  ein Backfill über 4.000.000 Zeilen lässt 4.000.000 Changes in `cdc.change`
+  zurück; nach der Bemessung unter *Backfill, Speicher des Feed-Containers* sind
+  etwa 7,7 GiB Speicherlimit bei schmalen Zeilen (abgeleitet: 4.000.000 ×
+  2 KiB plus 64 MiB) und ein Vielfaches bei breiten Zeilen.
 - **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
   `tools/bench-backfill.sh`, Vertrag in
   [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
@@ -1650,22 +1665,62 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   mittlere Blockdauer liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch
   Blockzahl); die längste Dauer eines einzelnen Blocks und die Dauer des Commits
   sind nicht gemessen.
-- **Backfill, Speicher des Feed-Containers** (`docker stats`, Abstand der Proben
-  etwa 1 bis 2 s; die Spitze ist der höchste Wert der Proben im Run, sie kann
-  zwischen zwei Proben liegen): Stufe mit 200.000 Zeilen, Spitze 467 MiB (185
-  MiB in Ruhe davor; Lauf `20260925T000439Z`, übernommen, im Repository nicht
-  auflösbar), 401,7 MiB (196,0 MiB in Ruhe davor; Lauf `20260925T012459Z`,
-  übernommen, im Repository nicht auflösbar) und 416,5 MiB (176,3 MiB in Ruhe davor; Lauf `20260925T011036Z`,
-  [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)).
-  Die Probe 20 s nach dem letzten Run der Stufe liegt in den zwei Läufen
-  `20260925T012459Z` und `20260925T011036Z` **über** der Spitze im Run: 437,0 MiB und 641,7 MiB — der höchste
-  gemessene Wert der Stufe ist 641,7 MiB, die Spitze im Run ist eine
-  Untergrenze. 435 MiB und 1.544 MiB in den zwei Runs über je 1.000.000 Zeilen
-  (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar; der Wert
-  20 s nach dem letzten Run ist dort nicht erhoben). Der Bedarf eines Blocks
-  (Blockgröße mal Zeilenbreite, etwa 74 KB) erklärt das nicht; die Ursache ist
-  nicht untersucht, ein Zusammenhang mit der Tabellengröße ist nicht belegt.
-  Bemessen Sie den Speicher des Feed-Containers nicht knapp an der Spitze im Run.
+- **Backfill, Speicher des Feed-Containers.** Der Speicher des Feed-Containers
+  hängt **nicht an der Größe der kopierten Tabelle**, sondern an der Zahl der
+  Changes, die für die Quelle in `cdc.change` stehen — gleich, ob ein Backfill
+  oder die laufende Erfassung sie geschrieben hat. Der periodische
+  Bereinigungslauf (alle 10 s, siehe
+  [Aufbewahrung (Retention)](#aufbewahrung-retention)) liest in jedem Takt
+  **alle** Changes der Quelle samt ihren Row Images in den Speicher, bevor er über
+  ihre Löschung entscheidet; ein Backfill legt viele Changes in einem Zug ab und
+  macht das sichtbar. Der Run selbst braucht wenig: bei leerem `cdc.change` liegt
+  die Spitze des Prozesses im Run bei 8,9 bis 10,5 MiB, von 10.000 bis 1.000.000
+  Zeilen (Blockgröße 1.000, schmale Zeilen; gemessen, `n` = 8). Gemessen wurde mit
+  `tools/bench-backfill-memory.sh` (Vertrag in
+  [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
+  Host: Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 31 GiB RAM, PostgreSQL 18
+  mit Standard-Einstellungen; ein frischer Feed-Container je Run; Reihen A bis D und
+  H, gedruckte Zeilen im
+  [Messbericht](../reviews/messbericht-slice-backfill-speicher-untersuchung.md) und
+  in
+  [seinen Zeilen](../reviews/messbericht-slice-backfill-speicher-untersuchung-zeilen.md)).
+  Die Spitze des Feed-Containers (`memory.peak`, gedruckt 60 s nach dem Run) gegen
+  die Zahl der Changes, die nach dem Run in `cdc.change` stehen (schmale Zeilen von
+  etwa 70 Bytes):
+
+  | Changes in `cdc.change` | Spitze in MiB (gemessen) |
+  |---|---|
+  | 10.000 | 23,9 |
+  | 100.000 | 133,8 bis 151,3 (`n` = 4) |
+  | 200.000 | 245,0 und 273,9 |
+  | 600.000 | 605,9 |
+  | 1.000.000 | 1.082,7 und 1.273,5 |
+  | 2.000.000 | 2.269,2 bis 3.096,6 (`n` = 4) |
+
+  Ab 100.000 Changes sind das **1,03 bis 1,57 KiB je Change** (abgeleitet: Spitze
+  durch Changes, `n` = 15); bei Zeilen von etwa 1,3 KB (zwei zusätzliche Spalten,
+  `jsonb` und `text`) **2,65 bis 4,19 KiB je Change** (abgeleitet, `n` = 6, Spitzen
+  von 361,0 MiB bei 100.000 bis 1.550,6 MiB bei 600.000 Changes). Die Spitze tritt
+  in den Takten der Bereinigung auf und wiederholt sich alle 10 s; der Prozess gibt
+  den Speicher nur langsam zurück (nach dem Leeren von `cdc.change` stand er nach
+  120 s bei 56 bis 84 % des vorherigen Werts, `n` = 3). Ein Wert von `GOGC=25`
+  im Feed-Container senkt die Spitze um etwa 18 bis 21 % (`n` = 3), ändert aber die
+  Abhängigkeit von der Zahl der Changes nicht.
+
+  **Bemessung des Speicherlimits.** Als Anhalt gilt ein Limit von mindestens
+  **2 KiB je Change** in `cdc.change` bei schmalen Zeilen (4,5 KiB bei Zeilen von etwa
+  1,3 KB) plus 64 MiB — abgeleitet, oberhalb der gemessenen Höchstwerte
+  von 1,57 und 4,19 KiB, kein Nachweis einer Obergrenze. Ein Limit darunter beendet den
+  Container (gemessen: `docker run --memory 64m`, Backfill über 100.000 Zeilen,
+  Status `OOMKilled`, Exit 137); startet ein Betreiber-Mechanismus ihn wieder, liest
+  der nächste Takt dieselben Changes erneut (erwartet, nicht gemessen). In den
+  Messungen mit 2.000.000 Changes vor dem Run endete die Bereinigung ab dem
+  dritten Run nicht mehr innerhalb von zwei Minuten (Ursache nicht belegt). Die
+  Bereinigung einer solchen Menge zu begrenzen ist Gegenstand einer eigenen
+  Änderung; bis dahin gilt die Bemessung oben. Die früher übernommene Zahl von
+  1.544 MiB im zweiten Run über 1.000.000 Zeilen (Lauf `20260924T233628Z`,
+  übernommen, im Repository nicht auflösbar) ist damit vereinbar: 1.538,7 MiB
+  (Reihe B, Lauf `20260925T130048Z`, gemessen).
 - **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
   `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)).
   Der Feed bestätigt WAL ohne Inhalt für die Publication im Leerlauf seines
@@ -1812,3 +1867,4 @@ MIT — siehe `LICENSE`.
 | 1.57 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T032925Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar); Nachmessung des Laufs `20260925T043056Z` aus dem Review-Report ergänzt (Rückstand 0 MiB in neun Runs, gehaltenes WAL 141 MiB bei 200.000 Zeilen, Richtgröße 2.000.000 bei 4.504 Zeilen/s); Spanne der Richtgröße über sechs Läufe 2.000.000 bis 5.000.000 (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung Fixrunde) |
 | 1.58 | 2026-09-25 | Feld `origin` der über `GET /changes` gelesenen Änderungen in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ ergänzt: die drei Packages tragen es, eine Antwort ohne das Feld liest als `wal`, die Live-Wege tragen es nicht (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin) |
 | 1.59 | 2026-09-25 | Regel für `origin` in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ präzisiert: fehlendes Feld oder JSON-`null` liest als `wal`, jeder andere Server-Wert (auch leer oder unbekannt) kommt unverändert an; der Python-Absatz führt SSE und den NATS-Vollinhalts-Stream als vom Package getragen statt als folgend (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin Fixrunde) |
+| 1.60 | 2026-09-25 | Speicher des Feed-Containers im Backfill gemessen und die Ursache benannt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-speicher-untersuchung): §9 „Grenzwerte“ ersetzt die übernommenen Zahlen durch gemessene — die Spitze hängt an der Zahl der Changes in `cdc.change` (Bereinigungslauf liest je Takt alle Changes), nicht an der Tabellengröße; 1,03 bis 1,57 KiB je Change bei schmalen, 2,65 bis 4,19 KiB bei breiten Zeilen; Bemessung des Speicherlimits; die Richtgröße um den Speicher ergänzt; §4 „Bestand als Backfill überführen“ nennt den Speicher des Feed-Containers, „Aufbewahrung (Retention)“ die Lesung aller Changes je Durchlauf |
