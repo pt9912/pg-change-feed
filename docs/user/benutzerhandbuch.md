@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.57
+Version: 1.58
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -1053,6 +1053,11 @@ GitHub-Konto und ein klassischer Personal Access Token (PAT) mit dem Scope
 SDK öffentlich und quelloffen ist. Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`
 für den vollständigen Installationsweg samt Gradle-Zugangsdaten-Konfiguration.
 
+In allen drei Packages trägt jede über `GET /changes` gelesene Änderung das
+Feld `origin` (`wal` oder `backfill`); eine Antwort ohne dieses Feld liest
+das Package als `wal`. Die Live-Wege (gRPC, SSE, NATS-Vollinhalt) tragen kein
+`origin`.
+
 ### Zugriff über den gRPC-Change-Stream
 
 **Erreichbarkeit:** aktiv, sobald `CDC_GRPC_ADDR` gesetzt ist (`host:port`);
@@ -1803,3 +1808,4 @@ MIT — siehe `LICENSE`.
 | 1.55 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T012459Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar), Richtgröße um den gedruckten Lauf `20260925T015600Z` des Verifikations-Reports ergänzt (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse Closure) |
 | 1.56 | 2026-09-25 | Bestätigung von WAL ohne Inhalt für die Publication im Leerlauf des Streams dokumentiert (`LH-FA-CAP-009`, `LH-QA-REL-001`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung): §4 „WAL-Rückstand prüfen“ nennt die Bedeutung von `cdc_wal_retention_bytes` (vom Feed noch nicht bestätigtes WAL) und dass WAL ohne Inhalt für die Publication den Wert nicht wachsen lässt; §4 „Bestand als Backfill überführen“ trägt den WAL-Rückstand als Punkt ohne Abbruch über die Fehlerschwelle und die offene Schreibtransaktion des Runs als verbleibende Last; §9 „Grenzwerte“ führt den Rückstand mit Bestätigung (Lauf `20260925T032925Z`), die Messwerte ohne Bestätigung mit ihrem Lauf, das gehaltene WAL und den Spill als Grenze der Ein-Transaktions-Form und die Richtgröße um den Lauf `20260925T032925Z` ergänzt; der Satz „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ entfällt |
 | 1.57 | 2026-09-25 | Herkunft der Zahlen des Laufs `20260925T032925Z` in §9 „Grenzwerte“ als übernommen aus dem Lauf-Bericht des Implementers gekennzeichnet (im Repository nicht auflösbar); Nachmessung des Laufs `20260925T043056Z` aus dem Review-Report ergänzt (Rückstand 0 MiB in neun Runs, gehaltenes WAL 141 MiB bei 200.000 Zeilen, Richtgröße 2.000.000 bei 4.504 Zeilen/s); Spanne der Richtgröße über sechs Läufe 2.000.000 bis 5.000.000 (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-slot-leerlauf-bestaetigung Fixrunde) |
+| 1.58 | 2026-09-25 | Feld `origin` der über `GET /changes` gelesenen Änderungen in den SDK-Absätzen von §4 „Zugriff über die HTTP-/JSON-API“ ergänzt: die drei Packages tragen es, eine Antwort ohne das Feld liest als `wal`, die Live-Wege tragen es nicht (`LH-FA-SST-009`, `LH-FA-SST-006`, `ADR-0111`, slice-backfill-sdk-origin) |
