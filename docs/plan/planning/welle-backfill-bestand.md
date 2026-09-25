@@ -493,16 +493,23 @@ Risiko trägt (Detail je Slice in §8):
   (verkörpert, 3×) — `slice-backfill-sdk-origin`.
 - `BEO-PGC/github-actions-unverifizierbar-lokal` (verkörpert, 7×) —
   **nicht einschlägig**: kein Workflow-Zug in dieser Welle.
-- `slice-backfill-slot-leerlauf-bestaetigung` (elfter Slice; Register am
-  2026-09-25 gesichtet, Zähler = Dateien unter `evidence/`):
-  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (verkörpert, 10×),
-  `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (offen, 1×),
-  `BEO-PGC/fitness-function-gegen-eigene-entscheidung` (offen, 1× — der
-  Sicherheits-Test der Fitness Function von
-  [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) verlangt eine
-  Mutation, die mit einer offenen Quelltransaktion möglicherweise nicht rot
-  färbt; ein Verdacht, kein Beleg, deshalb nicht gezählt — Detail in §6 und §8
-  des Slice-Plans).
+- `slice-backfill-slot-leerlauf-bestaetigung` (elfter Slice; Zähler = Dateien
+  unter `evidence/`, Stand der Closure des Slice): `BEO-PGC/adr-aussage-breiter-als-ihre-messung`
+  (offen, 5×) — die Store-Zeile der Fitness Function von
+  [`ADR-0120`](../adr/0120-capture-slot-leerlauf-bestaetigung.md) („Mutation
+  inmitten der Transaktion → Change fehlt“) ist nach der Messung nicht
+  erfüllbar (Belege: `review-slice-backfill-slot-leerlauf-bestaetigung` F-1,
+  `verifikation-slice-backfill-slot-leerlauf-bestaetigung` §4 S2); berichtigt
+  in [`ADR-0121`](../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md).
+  Weitere Belege dieses Slice: `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`
+  (verkörpert, 20×), `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 7×),
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (offen, 3×),
+  `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (offen, 2×),
+  `BEO-PGC/test-name-behauptet-mehr-als-der-test-treibt` (offen, 1×),
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (offen, 1×). Kein Anfall
+  in diesem Slice: `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
+  (verkörpert, 11×), `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker`
+  (offen, 1×). Der Lese-Schritt der Welle-Closure liest die Einträge ab 3×.
 - Gesichtet, ohne Bezug zu dieser Welle: die übrigen Einträge des Registers.
 
 ## 7. Closure-Notiz

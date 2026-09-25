@@ -47,13 +47,22 @@ gemessene Reichweite gesetzt; das Handbuch trug die Messung bereits. Dieser Bele
 ist der Ausgang der zwei Aussagen, nicht der drei früheren (deren Adresse bleibt
 der Architect).
 
-**Stand 4×.** Der Lese-Schritt der Closure von
+Der Lese-Schritt der Closure von
 `welle-backfill-bestand` liest den Eintrag mit; die Frage einer Regel („eine ADR,
 die eine Aussage über eine Menge trifft, nennt die Menge, an der sie geprüft ist“)
-bleibt dort, nicht entschieden.
+bleibt dort, nicht entschieden. Gelesen wird der Eintrag im Sichtungs-Schritt der
+Slice-Planung.
 
-Gelesen wird der Eintrag im Sichtungs-Schritt der Slice-Planung. Zähler
-(abgeleitet): **4×** (evidence/slice-backfill-change-origin.md,
-evidence/slice-backfill-snapshot-reader.md,
-evidence/slice-backfill-run-store.md,
-evidence/slice-backfill-e2e.md).
+**Fünfter Beleg (`slice-backfill-slot-leerlauf-bestaetigung`):** eine Fitness-Function-Zeile
+von `ADR-0120` (`Accepted`) — „Mutation (Bestätigung inmitten der Transaktion) → Change
+fehlt“ — ist nach der Messung des Reviewers und des Verifiers nicht erfüllbar; sie war als
+DoD-Zusage des Slice übernommen worden, ohne dass ihre Erfüllbarkeit an der Quelle erprobt
+war. Berichtigt mit `ADR-0121` (`Supersedes ADR-0120`, teilweise). Ausprägung: eine
+Fitness-Function-Zeile ist eine Aussage über den Gegenstand und gehört vor ihrer Übernahme
+als Test-Zusage einmal an der Quelle erprobt (Kandidat für die Regelschärfung; die Frage
+liegt beim Lese-Schritt der Welle-Closure von `welle-backfill-bestand`, nicht entschieden).
+**Stand 5×.** Zähler (abgeleitet): **5×** (evidence/slice-backfill-change-origin.md,
+evidence/slice-backfill-snapshot-reader.md, evidence/slice-backfill-run-store.md,
+evidence/slice-backfill-e2e.md, evidence/slice-backfill-slot-leerlauf-bestaetigung.md).
+Verwandt, nicht doppelt gezählt: `BEO-PGC/fitness-function-gegen-eigene-entscheidung` (1×;
+dort widerspricht die Zeile dem eigenen Entscheidungsteil, hier der Messung).

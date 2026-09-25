@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-slot-leerlauf-bestaetigung (Review F-1, Nullprobe; Verifikation V-3, §12)
+
+**Fund:** Zwei Aussagen des Capture-kritischen Zuges tragen nur die einmalige Messung des Reviewers. (1) Quellseite der Leerlauf-Bestätigung: die Position eines Keepalive inmitten einer laufenden Transaktion ist die Commit-LSN dieser Transaktion, und die Quelle liefert sie bei Gleichheit weiter — gemessen an PostgreSQL 18 durch einen Wegwerf-Test (nicht im Repository); für PostgreSQL 17 fehlt die Messung, die Store-Tests bilden nur die Größe der bestätigten Position ab (Verifikation V-3). (2) Die Seite „Fehlerschwelle erreicht → Container endet“: nur die Nullprobe der E2E-Phase (Leerlauf-Bestätigung abgeschaltet, Exit 2 nach 5 min 8 s, „Run … endete interrupted statt completed“) belegt sie, eine einmalige Mutation; die Verdrahtung in `Run` und der Prozess-Ausgang haben keinen committeten Test am realen Stream (Plan §6, Verifikation §12). Beide Grenzen sind im Plan benannt und vom Verifier bestätigt; ein committeter Wächter existiert für keine.
+
+Quelle: `docs/reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md` (F-1, Nullprobe) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-slot-leerlauf-bestaetigung.md` (V-3, §12). <!-- d-check:status-provenance -->

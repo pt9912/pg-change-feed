@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-slot-leerlauf-bestaetigung (Verifikation V-2, Suchlauf-Feld §3 des Plans)
+
+**Fund:** Ein Träger in einer **fremden Datei** blieb nach dem Zug überholt: `docs/plan/planning/welle-backfill-bestand.md` (Register-Sichtung, Eintrag zum Slice) nannte die Store-Mutation der Fitness Function von `ADR-0120` „möglicherweise nicht rot … ein Verdacht, kein Beleg, deshalb nicht gezählt“; nach der Messung des Reviewers (F-1) und des Verifiers (§4 S2) ist sie ein Beleg. Der Implementer fand den Träger im Suchlauf (Feld §3, Zeile „Store-Bindung“), meldete ihn an den Planner (fremde Datei: gemeldet statt still mitgeändert, `AGENTS.md` §3.13) und ließ ihn stehen; der Verifier führte den Träger als V-2 (LOW) auf, der Nachzug fällt in die Closure des Planners. Ausprägung: die Meldung an eine Rolle ist das Übergabe-Artefakt, der überholte Text steht bis zu ihrer Ausführung im Baum — die Zeitspanne zwischen Meldung und Nachzug ist der Preis der Regel „fremde Datei melden“.
+
+Quelle: `docs/reviews/verifikation-slice-backfill-slot-leerlauf-bestaetigung.md` (V-2) <!-- d-check:status-provenance -->
+· `docs/reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md` (F-1). <!-- d-check:status-provenance -->

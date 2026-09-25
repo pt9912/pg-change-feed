@@ -100,7 +100,11 @@ nicht prüft, steht in §Grenze Nr. 8.
   Profile gemergt: store,replication)`; die Anteile aus dem gemergten Profil
   dieses Laufs abgeleitet: gedeckt 540 · 32 · 125 · 176. `replication/receive`
   trägt gegenüber dem Nenner 187 am Stand `cf7f2d02` 23 Statements mehr: der
-  Produktionscode der Leerlauf-Bestätigung in `receive.go`. Der Nenner **1035**
+  Produktionscode der Leerlauf-Bestätigung in `receive.go`. Der Verifikations-Lauf
+  am Stand `80b451c4` (`verifikation-slice-backfill-slot-leerlauf-bestaetigung` §1,
+  **übernommen**) druckte an PostgreSQL 18 und an PostgreSQL 17 (Digest aus
+  `.github/workflows/e2e.yml`) dieselbe Zeile `DB-Adapter-Coverage: 82.51%
+  (gedeckt 873 von 1058 Statements; Profile gemergt: store,replication)`. Der Nenner **1035**
   am Stand `cf7f2d02` (Anteile 686 · 32 · 130 · 187) und seine Läufe: Lauf
   `slice-backfill-e2e` (Closure, Stand `cf7f2d02`):
   `make test-replication` gegen PostgreSQL 18 (Pin von `PG_TEST_IMAGE`), dessen

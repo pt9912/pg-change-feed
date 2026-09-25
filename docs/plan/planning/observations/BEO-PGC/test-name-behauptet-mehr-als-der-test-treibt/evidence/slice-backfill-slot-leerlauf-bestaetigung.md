@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-slot-leerlauf-bestaetigung (Review F-2, Fixrunde, Verifikation §5 F-2)
+
+**Fund:** Der Vorgänger `TestWALRetentionThresholdEndToEnd` (Paket `bootstrap_test`) trieb `bootstrap.Run` mit realem Stream und beobachtete das Ende des Laufs. Der Ersatz wächst an einem Slot ohne Stream und prüft `runWALRetentionCheck` und `mergeStreamAndWALFaultOutcome(nil, …)` direkt, die Abbruchfunktion ist ein bloßer Kontext-Abbruch; Name („EndToEnd“) und Meldungen („der Stream-Lauf wurde … nicht beendet“) beschrieben einen Stream, den der Test nicht fuhr (F-2, MEDIUM; Klasse „Test-Zusage unter gleichem Namen abgeschwächt“). Die Fixrunde benennt ihn nach seinem Gegenstand (`TestWALRetentionThresholdsFollowGrowthAtInactiveSlot`), das Godoc sagt „weder Stream noch `Run`“, und der Plan verteilt die Kette „Fehlerschwelle → Prozessende“ auf vier Träger mit benannter Grenze. Der Verifier maß 0 Treffer des alten Namens (`git grep`, ohne Records) und `--- PASS` an PostgreSQL 18 und 17.
+
+Quelle: `docs/reviews/review-slice-backfill-slot-leerlauf-bestaetigung.md` (F-2) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-slot-leerlauf-bestaetigung.md` (§5 F-2). <!-- d-check:status-provenance -->

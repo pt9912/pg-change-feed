@@ -1,16 +1,23 @@
-Stand: **offen** (6×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
+Stand: **offen** (7×, Schwelle erreicht mit `slice-backfill-spec-nachzug` —
 Ausgang noch **nicht** zugewiesen). Gelesen wird der Eintrag im Lese-Schritt
 der Closure von `welle-backfill-bestand` (Modul 6): die Regelschärfungs-Frage
 — ob und wie `.harness/skills/reviewer.md` oder ein Schritt der
 Implementer-Selbstprüfung die Klasse fängt — ist eine Architect-Entscheidung
 (Modul 4/8), die dieser Lese-Schritt als Steering-Loop-Eintrag weiterträgt.
 
-Zähler (abgeleitet): 6× (evidence/slice-sdk-python-projektgeruest.md,
+Zähler (abgeleitet): 7× (evidence/slice-sdk-python-projektgeruest.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
 evidence/slice-backfill-spec-nachzug.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-sql-administration.md,
-evidence/slice-backfill-bench-richtgroesse.md). Der sechste Beleg
+evidence/slice-backfill-bench-richtgroesse.md,
+evidence/slice-backfill-slot-leerlauf-bestaetigung.md). Der siebte Beleg
+(`slice-backfill-slot-leerlauf-bestaetigung`, Verifikation V-2) trifft einen Träger in
+einer **fremden Datei** (Register-Sichtung der Welle-Datei): der Implementer fand ihn im
+Suchlauf und meldete ihn an den Planner, statt ihn still mitzuändern; der überholte Text
+stand bis zum Nachzug der Closure im Baum. Der Ausgang bleibt beim Lese-Schritt der
+Welle-Closure; die Meldung der fremden Datei ist die Regel, ihre Frist die offene Frage.
+Der sechste Beleg
 (`slice-backfill-bench-richtgroesse`, Review F-1) trifft **Plan und Handbuch nach
 einem Architect-Verdikt**: das Verdikt beantwortete eine im Plan offen geführte Frage
 und wies dem Planner den Nachzug zu; zum Stand des Reviews trugen beide Träger den

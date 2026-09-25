@@ -24,7 +24,10 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **19×** (evidence/slice-backfill-bench-richtgroesse.md — Zahlen
+Zähler (abgeleitet): **20×** (evidence/slice-backfill-slot-leerlauf-bestaetigung.md —
+ein Lauf ohne auflösbaren Träger im Handbuch, eine Trefferzahl im Suchlauf-Feld und ein
+Zählwort im selben Feld, das den Selbstverweis der Plan-Datei mitzählt, Review F-4, F-5 und
+Verifikation V-1; evidence/slice-backfill-bench-richtgroesse.md — Zahlen
 mit nicht auflösbarem Ursprung, eine Zwischenstands-Zahl und zwei Zählungen im
 Suchlauf-Feld, Review F-2, F-9 bis F-11 und Verifikation V-2, V-5, V-6;
 evidence/slice-backfill-e2e.md — eine Trefferzahl im
@@ -39,7 +42,13 @@ evidence/slice-backfill-row-image-gemeinsam.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
-Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 19×).
+Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 20×).
+Der zwanzigste Beleg (slice-backfill-slot-leerlauf-bestaetigung) trifft einen Handbuch-Lauf
+ohne auflösbaren Träger und **Zahlen im Suchlauf-Feld eines Plans**, dessen Suchraum die
+Plan-Datei selbst enthält: ihre Treffer sind ein Selbstverweis und driften mit jedem Edit
+(Ausschluss der Plan-Datei aus dem Suchraum und Ausweis „ohne Plan-Datei“ neben der
+Zahl); gefunden haben alle der Reviewer und der Verifier durch Nachmessen an beiden Ständen.
+Kein Schwellen-Übertritt (bereits verkörpert).
 Der neunzehnte Beleg (slice-backfill-bench-richtgroesse) trifft die Klasse an einem
 **Mess-Slice**: Zahlen eines Laufs standen als „gemessen“, obwohl die gedruckte Zeile
 nicht im Repository liegt (Lauf `20260925T012459Z`, 91,7 %); eine Speicher-„Spitze“ war

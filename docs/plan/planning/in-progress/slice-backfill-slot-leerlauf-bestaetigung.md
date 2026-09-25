@@ -193,11 +193,14 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       Self-Review (Modul 8); kein offenes HIGH/MEDIUM: der Report
       `review-slice-backfill-slot-leerlauf-bestaetigung` trägt 0 HIGH und 2
       MEDIUM; F-2 ist behoben (Test benannt nach dem, was er treibt, die Kette
-      §6 „Bindung der Kette“), F-1 ist an die Closure adressiert
-      (Berichtigungs-ADR, §6 zweites Risiko).
-- [ ] Verifikation als eigene Rolle mit Report unter `docs/reviews/` (Verdikt
+      §6 „Bindung der Kette“), F-1 ist behoben durch die Berichtigungs-ADR
+      [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
+      (§6 zweites Risiko).
+- [x] Verifikation als eigene Rolle mit Report unter `docs/reviews/` (Verdikt
       3: der Eingriff berührt Empfangs-Schleife, Application und einen Port
-      des Capture-kritischen Pfads und braucht Review und Verifier für sich).
+      des Capture-kritischen Pfads und braucht Review und Verifier für sich):
+      der Report `verifikation-slice-backfill-slot-leerlauf-bestaetigung` trägt
+      das Verdikt „Bestätigt“ (V-1 bis V-5: zwei LOW, drei INFO, keine blockierend).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13); der Parent-Stand steht
@@ -206,14 +209,14 @@ Drei Liefer-Punkte; die Gate-Läufe und die Closure-Pflichten zählen nicht mit.
       `harness/README.md` §Sensors trägt in den Zeilen `make test-replication`,
       `make test-integration` und `make bench` nur, was der Lauf gefahren hat
       (`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, verkörpert).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls eine
       Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
@@ -312,11 +315,11 @@ neuere Aussage trägt
 | Zeilen-Lokatoren zu `wiring.go` | `git grep -n -E 'wiring\.go:[0-9]\|:991\.\|:1091\.' <Stand> -- . <dieselben Ausschlüsse>` | 6 Zeilen: `harness/sensors/coverage-gate.md` Zeilen 107/108 (`:1091.4,1092.1`, `:991.5,992.13`); [`ADR-0082`](../../adr/0082-coverage-schnittmass-composition-root-nicht-netzlos.md) (`:981`, `:414`) und [`ADR-0088`](../../adr/0088-konfigurationsdatei-feldmenge-zugangsdaten-klasse.md) (`:282-286`, eine Zeile der Geschichte) — `Accepted`, bleiben | **Diff-Stand (Implementer, gemessen):** die zwei Blöcke im Coverage-Profil der Stufe `coverage` dieses Laufs nachgemessen: `runAdministration`, Kontext-Ende-Zweig `:1287.4,1288.1` (1 Statement; die Funktion trägt einen weiteren `return`-Zweig `:1293.4,1294.1`), `runWALRetentionCheck`, Fehlerzweig der Messung `:1183.5,1184.13` (2 Statements); die Lokatoren in `coverage-gate.md` (zwei Stellen) sind nachgezogen, `git grep` nach dem Muster trifft dort nichts mehr (Diff-Stand: `ADR-0082`, `ADR-0088` unverändert, `Accepted`). Die alten Werte `:1091`/`:991` standen schon am Parent-Stand nicht mehr an ihrer Stelle (`f4e32fba:internal/bootstrap/wiring.go` trägt dort `classifyWALRetention` und `resolveWALRetentionThresholds`-Aufruf): die Verschiebung stammt nicht erst von diesem Zug. Zeilen-Lokatoren sind die Grenze der Suchform ([`AGENTS.md`](../../../../AGENTS.md) §3.13), der Reviewer liest sie |
 | Bench: Text zu Schwellen und Auslöser der Bestätigung | `git grep -n -E 'WAL-Rückstand-Schwellen\|Rückstand unter der Warnschwelle' <Stand> -- . <dieselben Ausschlüsse>`; dazu Lesen des Handbuch-Satzes „Diese Schwelle kann bei weniger Zeilen greifen als die Richtgröße“ (Zeilen 458 bis 460, bricht über zwei Zeilen um und wird von keiner Suche als Ganzes getroffen) | 8 Zeilen; beschreibend für diesen Slice: `tools/bench-backfill.sh` (Zeilen 26, 120, 332), `docs/user/benutzerhandbuch.md` (Zeile 1557 nennt die [`SPEC-013`](../../../../spec/pflichtenheft.md)-Schwellen — bleibt wahr); [`ADR-0049`](../../adr/0049-replication-fehlerklassen-schwellen.md) (`Accepted`) | **Diff-Stand (Implementer, gemessen):** Parent-Stand `f4e32fba` 11 Zeilen; im Diff-Stand tragen `tools/bench-backfill.sh` und der Text zu Auslöser und Schwellen der Bestätigung keine Treffer mehr; die verbleibenden Treffer sind `benutzerhandbuch.md:1572` (die Schwellen von `SPEC-013`, bleibt wahr), `ADR-0049`/ADR-Index (`Accepted`, Titel), `welle-backfill-bestand.md:343` (Träger-Zeile der Closure) und neue Beschreibungen in `walretention_endtoend_internal_test.go`, `run-replication-tests.sh`. Der Handbuch-Satz „kann bei weniger Zeilen …“ ist an beiden Stellen (§4 und Grenzwerte) entfernt. *Planner (Übergabe wie in der Zeile darüber):* `tools/bench-backfill.sh` Zeilen 26, 122, 334; Handbuch Zeile 1570 (bleibt wahr); der Satz „kann bei weniger Zeilen …“ steht an zwei Stellen — §4 Zeile 462 („das kann bei weniger Zeilen eintreten als die Richtgröße“) und Grenzwerte Zeile 1610 („WAL-Fehlerschwelle (siehe unten) kann bei weniger Zeilen greifen“) |
 | Beschreibungen von `make test-replication`/`make test-integration`/`make bench` | Lesen der Zeilen in `harness/README.md` §Sensors an beiden Ständen; `git grep -n 'test-replication' <Stand> -- . <dieselben Ausschlüsse> \| wc -l` | Parent-Stand `f4e32fba` 78 Zeilen (gemessen), Diff-Stand 81 Zeilen (gemessen, Zuwachs aus den neuen Kommentaren der Skripte und Tests) | nachgezogen, was der Lauf gefahren hat: die drei Zeilen in `harness/README.md` (`make test-replication`: X1, Sicherheits-Test, Verdrahtungs-Test, Schwellen-Beleg auf der zweiten Instanz; `make test-integration`: Leerlauf-Bestätigungs-Rundlauf; `make bench`: die geänderte Rückstands-Ausgabe); `make test-store` unverändert (Storage nicht berührt, gefahren nur für die Zahl der DB-Adapter-Coverage) |
-| Zählwörter „zehn Slices“ dieser Welle | `git grep -n -E 'zehn (Slice\|Slices)' <Stand> -- docs/plan/planning ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` | Parent: 6 Zeilen; die Welle-Datei (`welle-backfill-bestand.md` Zeilen 37, 77, 271) zählt diese Welle, dazu die Roadmap Zeile 43 (die Angabe bricht um: „zehn“ am Zeilenende, „Slices“ auf der nächsten — die Suche trifft sie nicht); mit diesem Zug auf elf gezogen (Planner). Die übrigen (`welle-transformationen.md` Zeilen 39 und 84, Roadmap Zeile 48) zählen die andere Welle | Planner: nachgezogen; Implementer: der Diff-Stand trägt dieselben 4 Zeilen wie der Parent-Stand `f4e32fba` (gemessen), sie zählen die Transformationen-Welle und bleiben wahr |
+| Zählwörter „zehn Slices“ dieser Welle | `git grep -n -E 'zehn (Slice\|Slices)' <Stand> -- docs/plan/planning ':!docs/plan/planning/done' ':!docs/plan/planning/observations'` | Parent: 6 Zeilen; die Welle-Datei (`welle-backfill-bestand.md` Zeilen 37, 77, 271) zählt diese Welle, dazu die Roadmap Zeile 43 (die Angabe bricht um: „zehn“ am Zeilenende, „Slices“ auf der nächsten — die Suche trifft sie nicht); mit diesem Zug auf elf gezogen (Planner). Die übrigen (`welle-transformationen.md` Zeilen 39 und 84, Roadmap Zeile 48) zählen die andere Welle | Planner: nachgezogen; Implementer: der Diff-Stand trägt dieselben 3 Zeilen wie der Parent-Stand `f4e32fba` ohne die Plan-Datei (Verifikations-Report §7, gemessen; mit der Plan-Datei 4 bzw. 5, Selbstverweise), sie zählen die Transformationen-Welle und bleiben wahr |
 | Coverage-Zahlen der offenen Pläne der Transformationen | `git grep -n -E '\b[0-9]{2,4} Statements\|[0-9]{2}[.,][0-9]{1,2} ?%' <Stand> -- docs/plan/planning/open` | gemessen an `f4e32fba` und am Diff-Stand: je 0 Treffer in `docs/plan/planning/open` | die offenen Pläne der Transformationen führen keinen Ist-Stand ungestempelt; nichts zu melden |
-| **Fixrunde nach dem Review — Zahlen der Zeilen oben am neuen Stand** (Parent der Fixrunde `67e331ac`, Diff-Stand: Arbeitsbaum, beide gemessen) | dieselben Befehle wie oben (jede Zeile mit ihren Flags), zusätzlich mit dem Ausschluss `':!docs/plan/planning/in-progress/slice-backfill-slot-leerlauf-bestaetigung.md'`: die Plan-Datei ist ihr eigener Suchraum, ihre Treffer sind ein Selbstverweis und driften mit jedem Edit | Parent `67e331ac` ohne Plan-Datei: Zeile 1 **85** Zeilen in 26 Dateien (mit Plan-Datei 94 in 27); Zeile 2: 2 Zeilen in 2 Dateien; Zeile 3 (`-l`): 18 Dateien (mit Plan-Datei 19); Zeile 4: 4 Zeilen in 2 Dateien; Zeile 5: 10 Zeilen in 6 Dateien; `test-replication` (Zeile 6, `wc -l`): 74; Zählwörter „zehn Slices“: 4; Coverage-Zahlen in `open`: 0 | Diff-Stand ohne Plan-Datei: Zeile 1: 85 in 26 (unverändert); Zeile 2: 2 in 2; Zeile 3: 18; Zeile 4: 4 in 2 (`ADR-0082`, `ADR-0088`, `Accepted`, bleiben); Zeile 5: 9 Zeilen in 5 Dateien (das Godoc der umbenannten Test-Datei trägt die Muster nicht mehr); `test-replication`: 74; „zehn Slices“: 4; Coverage in `open`: 0. Die Fixrunde bewegt keinen Träger dieser Zeilen außer den Test-Dateien selbst |
+| **Fixrunde nach dem Review — Zahlen der Zeilen oben am neuen Stand** (Parent der Fixrunde `67e331ac`, Diff-Stand: Arbeitsbaum, beide gemessen) | dieselben Befehle wie oben (jede Zeile mit ihren Flags), zusätzlich mit dem Ausschluss `':!docs/plan/planning/in-progress/slice-backfill-slot-leerlauf-bestaetigung.md'`: die Plan-Datei ist ihr eigener Suchraum, ihre Treffer sind ein Selbstverweis und driften mit jedem Edit | Parent `67e331ac` ohne Plan-Datei: Zeile 1 **85** Zeilen in 26 Dateien (mit Plan-Datei 94 in 27); Zeile 2: 2 Zeilen in 2 Dateien; Zeile 3 (`-l`): 18 Dateien (mit Plan-Datei 19); Zeile 4: 4 Zeilen in 2 Dateien; Zeile 5: 10 Zeilen in 6 Dateien; `test-replication` (Zeile 6, `wc -l`): 74; Zählwörter „zehn Slices“: 3 (Verifikations-Report §7, gemessen: `roadmap.md` 48, `welle-transformationen.md` 39 und 84; die Plan-Datei ist ausgeschlossen); Coverage-Zahlen in `open`: 0 | Diff-Stand ohne Plan-Datei: Zeile 1: 85 in 26 (unverändert); Zeile 2: 2 in 2; Zeile 3: 18; Zeile 4: 4 in 2 (`ADR-0082`, `ADR-0088`, `Accepted`, bleiben); Zeile 5: 9 Zeilen in 5 Dateien (das Godoc der umbenannten Test-Datei trägt die Muster nicht mehr); `test-replication`: 74; „zehn Slices“: 3 (ohne Plan-Datei; mit ihr 4 bzw. 5, Selbstverweise); Coverage in `open`: 0. Die Fixrunde bewegt keinen Träger dieser Zeilen außer den Test-Dateien selbst |
 | Name und Datei des Schwellen-Tests | `git grep -n -E 'TestWALRetentionThresholdEndToEnd\|walretention_endtoend' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' <Plan-Ausschluss>` | Parent `67e331ac`: 9 Zeilen in 4 Dateien (`harness/README.md`, die Test-Datei, `walretention_internal_test.go`, `run-replication-tests.sh`; gemessen) | Diff-Stand: 0 Treffer. Gefunden und nachgezogen: das Runner-Skript (`-run`-Muster und PASS-Prüfung), die zwei Verweise in `walretention_internal_test.go`, die Zeile `make test-replication` in `harness/README.md`. Records (`docs/plan/planning/done`, `observations`, `docs/reviews`) nennen den alten Namen weiter und bleiben. Nichtgefunden: kein Sensor-Dokument und keine ADR nennt den Namen |
-| Store-Bindung der Bedingung „keine offene Transaktion“ | `git grep -n -i -E 'inmitten der Transaktion\|Bestätigung inmitten\|hinter Nachrichten\|noch nicht gespeichert\|offene(n)? Quelltransaktion' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' <Plan-Ausschluss> ':!docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md'` (Frage: behauptet ein Träger eine Store-Bindung dieser Mutation?) | Parent `67e331ac` und Diff-Stand je 11 Zeilen. Gelesen: `harness/README.md:139` (Sicherheits-Test: „Bestätigung hinter ihrem ersten Change, Stream-Neustart, Commit: der Change wird geliefert“ — beschreibt, was der Test fährt, keine Mutation), `receive.go:467` und `seam_test.go:696/717/720` (Begründung und Unit-Test der Prüfung), `stream_test.go:361/1042` (Sicherheits-Test, beschreibt seinen Ablauf), `mapper.go:36/40` und `spec/lastenheft.md:426` (anderer Gegenstand) | **Keine der elf Zeilen behauptet die nicht erfüllbare Store-Mutation** (die Zeile der Welle-Datei nennt sie einen Verdacht, siehe unten). Sie steht nur in `ADR-0120` (Fitness Function und Festlegung 1 Punkt 3, `Accepted`, ausgenommen) und im Plan. **Gemeldet an den Planner (fremde Datei):** `docs/plan/planning/welle-backfill-bestand.md` Zeile 503 nennt die Store-Zeile „möglicherweise nicht rot“ und „ein Verdacht, kein Beleg, deshalb nicht gezählt“ — nach der Messung des Reviewers ist sie ein Beleg (Review-Report F-1); die Welle-Datei ist Planner-Träger und bleibt in dieser Fixrunde unberührt |
+| Store-Bindung der Bedingung „keine offene Transaktion“ | `git grep -n -i -E 'inmitten der Transaktion\|Bestätigung inmitten\|hinter Nachrichten\|noch nicht gespeichert\|offene(n)? Quelltransaktion' <Stand> -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/observations' <Plan-Ausschluss> ':!docs/plan/adr/0120-capture-slot-leerlauf-bestaetigung.md'` (Frage: behauptet ein Träger eine Store-Bindung dieser Mutation?) | Parent `67e331ac` und Diff-Stand je 11 Zeilen. Gelesen: `harness/README.md:139` (Sicherheits-Test: „Bestätigung hinter ihrem ersten Change, Stream-Neustart, Commit: der Change wird geliefert“ — beschreibt, was der Test fährt, keine Mutation), `receive.go:467` und `seam_test.go:696/717/720` (Begründung und Unit-Test der Prüfung), `stream_test.go:361/1042` (Sicherheits-Test, beschreibt seinen Ablauf), `mapper.go:36/40` und `spec/lastenheft.md:426` (anderer Gegenstand) | **Keine der elf Zeilen behauptet die nicht erfüllbare Store-Mutation** (die Zeile der Welle-Datei nennt sie einen Verdacht, siehe unten). Sie steht nur in `ADR-0120` (Fitness Function und Festlegung 1 Punkt 3, `Accepted`, ausgenommen) und im Plan. **Gemeldet an den Planner (fremde Datei):** `docs/plan/planning/welle-backfill-bestand.md` Zeile 503 nennt die Store-Zeile „möglicherweise nicht rot“ und „ein Verdacht, kein Beleg, deshalb nicht gezählt“ — nach der Messung des Reviewers ist sie ein Beleg (Review-Report F-1); die Welle-Datei ist Planner-Träger und bleibt in dieser Fixrunde unberührt. **Nachgezogen (Planner, Closure):** die Register-Sichtung der Welle-Datei führt die Zeile als Beleg mit Anker (`git grep -n 'Verdacht, kein Beleg' -- docs/plan/planning/welle-backfill-bestand.md` am Arbeitsbaum der Closure: kein Treffer); die Berichtigung der Zeile in `ADR-0120` steht in [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md) |
 
 ## 4. Trigger
 
@@ -370,7 +373,15 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   *Erwartet, zu belegen durch:* der Sicherheits-Test im Store-Tier
   (Liefer-Punkt 2), der Unit-Test „inmitten der Transaktion keine Bestätigung“
   und das Lesen der Reihenfolge der Nachrichten am realen Stream.
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — kein Weg gefunden, auf dem die Bestätigung einen noch
+  nicht gelieferten Change überspringt. Belege: der Sicherheits-Test läuft grün
+  (`make test-replication` Exit 0 an PostgreSQL 18 und 17, Verifikations-Report §1);
+  die Mutation „gemeldete Position `+ 1 GiB`“ färbt ihn und
+  `TestStreamRestartsOnExistingSlot` rot (Verifikations-Report §4 S1); das
+  Store-Experiment des Reviewers liefert die Transaktion mit Keepalive inmitten
+  vollständig (`commit=210904992 changes=400000`). Die Restgrenze — die Quellseite
+  ist nur als Messung des Reviewers belegt, für PostgreSQL 17 fehlt sie — trägt das
+  nächste Risiko und das Register.
 - **Bindung des Store-Sicherheits-Tests an seine Eingabe.** *Hergeleitet, nicht
   gemessen:* `pgoutput` mit `proto_version 1` sendet eine Transaktion erst bei
   ihrem Commit, eine **offene Quelltransaktion** erzeugt also nichts auf der
@@ -423,13 +434,15 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   Store-Tier bindet sie nur die Größe der Position. Die Prüfung „keine offene
   Transaktion“ (Festlegung 1 Punkt 3) trägt der Unit-Test
   `TestRunNoConfirmationInsideOpenTransaction`.
-  **Ausgang:** *weiter offen* — die Berichtigung von Fitness-Function-Zeile
-  und Begründung („hinter Nachrichten, die noch nicht gespeichert sind“,
-  Festlegung 1 Punkt 3) ist eine neue ADR mit `Supersedes`, die der Planner bei
-  der Closure schreibt; `ADR-0120` bleibt unberührt
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.5). Klasse:
-  `BEO-PGC/fitness-function-gegen-eigene-entscheidung` (Register-Vorschlag der
-  Closure: weitere Evidence-Datei).
+  **Ausgang:** *eingetreten* — Folge-Artefakt
+  [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
+  (`Supersedes ADR-0120`, teilweise: Fitness-Function-Zeile und Begründungssatz von
+  Festlegung 1 Punkt 3; `ADR-0120` bleibt unberührt,
+  [`AGENTS.md`](../../../../AGENTS.md) §3.5). Register:
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (fünfte Evidence-Datei); die
+  Restgrenze (Quellseite nur als einmalige Messung des Reviewers, PostgreSQL 17 ohne
+  Messung) steht in `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (1×), Adresse
+  der Lese-Schritt der Welle-Closure.
 - **Bestehende Tests, die die alte Lage voraussetzen.** Der Schwellen-Test
   `TestWALRetentionThresholdsFollowGrowthAtInactiveSlot` erzeugt den
   wachsenden Rückstand an einem inaktiven Slot ohne Stream und ohne `Run`
@@ -438,8 +451,12 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   Empfangsstand“ über eine im Produktionscode nie auftretende Stand-in-Antwort
   (`declineIdle`). Beide Tests laufen mit neuer, benannter Zusage grün
   (`make test-replication`, Exit 0); die alte Zusage lebt im zweiten Test für
-  den Fall fort, dass die Application nicht bestätigt. **Ausgang:** bei der
-  Closure.
+  den Fall fort, dass die Application nicht bestätigt. **Ausgang:** *eingetreten*
+  — erwartete Eigenschaft; beide Tests sind im Slice gezogen (Beleg: `make
+  test-replication` Exit 0 an PostgreSQL 18 und 17, Verifikations-Report §1), kein
+  Carveout und kein Folge-Slice nötig. Der Name des zweiten Tests trug eine
+  stärkere Behauptung als sein Aufbau (Review F-2): Register
+  `BEO-PGC/test-name-behauptet-mehr-als-der-test-treibt`.
 - **Bindung der Kette „Fehlerschwelle → Prozessende“.** Kein committeter Test
   fährt `Run` mit einem realen Stream bis zum Schwellen-Fehler; die Kette
   verteilt sich auf Träger, deren Teilketten je einzeln gebunden sind:
@@ -466,7 +483,9 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   gegen einen realen, blockierten Stream bis zum Schwellen-Fehler fährt, ist
   bei einem `wal_sender_timeout` der Testinstanz nicht stabil — der erste
   Ansatz endete mit einer getrennten Verbindung, siehe Zeile
-  `walretention_slotgrowth_internal_test.go` in §3).
+  `walretention_slotgrowth_internal_test.go` in §3) → Register
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (1×); Adresse: Architect im
+  Lese-Schritt der Welle-Closure (Test-Naht oder Grenze im Handbuch).
 - **Zwei Sender des Standby-Status-Updates.** Der ACK-Adapter sendet bei jeder
   `Acknowledge` ein Update über dieselbe Verbindung (`postgresack`,
   `seam_test.go`), der Stream sendet Antworten auf Keepalive-Nachrichten;
@@ -475,7 +494,12 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   zusammengesetzten System sendet die Leerlauf-Bestätigung über den Ack-Port
   bereits eines; ob der Stream ein zweites sendet, ist zu entscheiden und im
   Unit-Test (Zahl der Updates je Keepalive gegen die Fake-Sitzung) zu binden.
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — entschieden und gebunden (§3, Nachzug des
+  Implementers): im Bestätigungsfall sendet der Stream kein zweites Update; die
+  Mutation „zweites Update je Keepalive“ färbt
+  `TestRunIdleConfirmationSendsNoSecondUpdate` rot (Review-Report,
+  Mutationstabelle M5; der Test färbt sich auch in Mutationen M2, M5 und M7 des
+  Verifikations-Reports §4).
 - **Keepalive-Takt bei Standard-`wal_sender_timeout` und Laufzeit des
   Store-Tests.** Der Testcontainer trägt `wal_sender_timeout=2000`
   (`tools/harness/run-replication-tests.sh`); die Form X1 „auch bei Standard“
@@ -484,7 +508,11 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   durch:* die gemessene Wartezeit bis zum Rückgang des Rückstands im Bericht
   mit Lauf-Ursprung; die Zeitgrenze des Polls trägt ihre Begründung
   (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 3×).
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — gemessen (Review-Report, Flake-Wiederholung, übernommen;
+  frische Standard-Instanz): X1 „Last 53390256 B WAL, Rückstand 0 B nach 259ms,
+  6 Leerlauf-Bestätigungen“, Nullprobe „Rückstand 53390584 B nach 8.065s“; der
+  Schwellen-Test mit `-count=10` zehnmal `--- PASS`. Der Verifikations-Lauf
+  `make test-replication` (PostgreSQL 18) endet mit Exit 0 in 151 s.
 - **Override der Fehlerschwelle im E2E.** `wal_retention_error_bytes` hat kein
   Env-Gegenstück; der Runner braucht einen Weg, dem Feed-Container eine
   Konfigurationsdatei zu geben, ohne die übrigen Phasen zu berühren.
@@ -492,7 +520,11 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   Diensten von `compose.yaml`; verlangt der Weg eine strukturelle Änderung des
   Compose-Stacks, ist das ein Punkt für Review und Architect. Die Phase trägt
   Haltepunkte nur, wo sie sie braucht; ein Neustart des Containers ist
-  Phasen-Sache. **Ausgang:** bei der Closure.
+  Phasen-Sache. **Ausgang:** *entfallen* — der Weg ist Runner-seitig: eine
+  Compose-Override-Datei im Temp-Verzeichnis des Runners (Bind-Mount der
+  Konfigurationsdatei, `CDC_CONFIG_FILE`), `compose.yaml` bleibt unverändert und
+  liegt nicht im Diff (Verifikations-Report §9; Review-Report, Negativbefund zu
+  `run-integration-tests.sh`).
 - **PostgreSQL 17 ist nicht gemessen** (Verdikt, „Nicht gemessen“;
   [`SPEC-012`](../../../../spec/pflichtenheft.md): 17 und 18, die Messung des
   Verdikts gilt 18.6). Ob PostgreSQL 17 dasselbe Keepalive- und
@@ -501,7 +533,17 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   beider Matrix-Legs nach dem Push (`gh run view`); der Workflow bleibt
   unverändert ([`AGENTS.md`](../../../../AGENTS.md) §3.10 greift nicht, die
   Prüfung des realen Post-Push-Laufs steht trotzdem in der Closure).
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — der Lauf `36092733208` von `e2e.yml` zu `427f6d1b`
+  ist an beiden Legs (PostgreSQL 17 und 18) `success`, in beiden die Schritte
+  „Compose-Integrationstest“ und „Replication-Tier“ (Verifikations-Report §3,
+  `gh run view`); `make test-replication` läuft lokal an PostgreSQL 17 mit Exit 0
+  (Verifikations-Report §1). Zwischen `427f6d1b` und dem Verifikations-Stand
+  liegt kein Produktionscode, kein Workflow und kein Runner der E2E-Phase
+  (Verifikations-Report §3). Die
+  Messung „Keepalive inmitten einer Transaktion“ an PostgreSQL 17 liegt nicht vor
+  und steht im Register `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung`. Der
+  Post-Push-Lauf für den Stand dieser Closure fehlt bis zu ihrem Push; ihn führt
+  die Closure der Welle als Beleg.
 - **Laufzeit von `make test-integration` und `make test-replication`.** Die neue
   Phase und die Store-Tests verlängern beide Läufe; `e2e.yml` fährt
   `timeout-minutes: 60` (Vorbild `slice-backfill-e2e`: 7 min 15 s und 7 min 20 s
@@ -515,7 +557,10 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   Leg (abgeleitet: Differenz der Job-Dauern; der Host der Läufe ist der
   GitHub-Runner, die Läufe streuen); `make test-replication` läuft in 92 s
   (Reviewer-Lauf); die Grenze `timeout-minutes: 60` ist nicht berührt.
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — die Laufzeit ist gemessen (Zahlen oben; der
+  Verifikations-Lauf `make test-replication` braucht 151 s, die Ursache der
+  Differenz zu den 92 s des Reviewers ist nicht untersucht) und liegt weit unter
+  der Grenze.
 - **Startposition der Rückschritt-Wache.** `lastAcked` des Streams startet bei
   0 (`newStreamOnSession` setzt es nicht auf die Startposition des Slots): das
   erste Keepalive nach einem Neustart kann eine Leerlauf-Position tragen, die
@@ -543,14 +588,25 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   übernommen aus dem Verdikt) bleiben; die Empfangs-Schleife und der
   `CaptureService` bekommen einen zweiten Bestätigungs-Weg. *Erwartet, zu
   belegen durch:* das Handbuch nennt beide als Grenze mit Ursprung; der Bench
-  druckt den gehaltenen Stand weiter (`held_peak`). **Ausgang:** bei der
-  Closure.
+  druckt den gehaltenen Stand weiter (`held_peak`). **Ausgang:** *eingetreten* —
+  erwartete Eigenschaft, akzeptiertes Negativ von
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md); kein
+  Carveout und kein Folge-Slice nötig. Belege: das Handbuch nennt beide als Grenze
+  der Ein-Transaktions-Form mit Ursprung (Verifikations-Report §6, Handbuch 1.57);
+  der Bench-Lauf `20260925T053832Z` (Verifikations-Report §1) druckt ein
+  gehaltenes WAL von median 6/35/141 MiB (Stufen 10.000/50.000/200.000). Adresse
+  des Negativs: der Re-Evaluierungs-Trigger „Kopierdauer über der Betriebs-Toleranz“
+  von [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md).
 - **Der Bench-Beleg hängt am Messhost.** `make bench` endet am Messhost mit
   Exit 2 an `LH-QA-PER-001` (Flush-Latenz, Verdikt Befund 2); der Beleg dieses
   Slice ist der Einzel-Lauf von `tools/bench-backfill.sh`. Die Spitze der
   größten Stufe (Default-Modus 200.000 Zeilen, `--full` 1.000.000) liegt nach
   dem Zug *erwartet* unter 100 MiB; die Aussage trägt nur der gedruckte Lauf.
-  **Ausgang:** bei der Closure.
+  **Ausgang:** *entfallen* — der Einzel-Lauf von `tools/bench-backfill.sh`
+  (Verifikations-Report §1, Lauf `20260925T053832Z`, Exit 0) druckt „WAL-Rückstand
+  der größten Stufe (200000 Zeilen) — höchste Spitze im Run 0 MiB, unter der
+  Warnschwelle von 100 MiB“; der Lauf des Reviewers `20260925T043056Z` (Exit 0)
+  druckt dieselbe Aussage.
 - **Kopplung zu den Slices der Transformationen.**
   `internal/adapters/driving/replication/mapper/mapper.go` und
   `internal/bootstrap/wiring.go` tragen auch Änderungen der offenen Slices
@@ -565,19 +621,132 @@ Jedes Risiko trägt bei der Closure genau einen Ausgang.
   (`antragsweg-schema`, `antragsweg-usecase`, `backfill-pfad`,
   `start-reihenfolge`, `kern-rename`); die Reihenfolge „Backfill zuerst“
   ([welle-backfill-bestand](../welle-backfill-bestand.md) §5) bleibt, es
-  entsteht **keine** neue Kante. **Ausgang:** bei der Closure.
+  entsteht **keine** neue Kante. **Ausgang:** *entfallen* — die Änderung ist
+  additiv (`Assembler.TransactionOpen`: 7 Zeilen in `mapper.go`, hängt an keiner
+  Sperre und berührt `tablesMu` nicht; in `wiring.go` eine `captureService`-
+  Instanz an beiden Eingängen des Streams, `git diff f4e32fba..HEAD`). Der
+  Suchlauf der Closure über die offenen Pläne (`git grep -n -E 'Rückstand|Keepalive|lastAcked|ConfirmIdle|IdleConfirmation|BindCapture|TransactionOpen|ServerWALEnd|Version 1\.|nächste freie Version' -- 'docs/plan/planning/open/*.md'`,
+  Arbeitsbaum der Closure) findet keinen Treffer; `slice-backfill-sdk-origin` und
+  die Slices der Transformationen tragen keinen betroffenen Träger. Die Zahl der
+  Pläne, die `replication/mapper` bzw. `bootstrap/wiring.go` nennen, ist an der
+  Closure unverändert (sechs Dateien nennen eines der beiden, `git grep -c`).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen" als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
+- **Was hat funktioniert:** Die Rollen-Kette lief in getrennten Kontexten, und die
+  Mutation der Eingabeseite war der Sensor. Der Implementer band jede Zusage der
+  Fitness Function an einen Test und nannte selbst, welche Mutation nur der Unit-Test
+  trägt (§6 zweites Risiko); der Reviewer stellte den Zustand „Keepalive inmitten einer
+  Transaktion“ am realen Stream her und maß die Nullprobe der E2E-Phase (Exit 2 nach
+  5 min 8 s, „Run … endete interrupted statt completed“, übernommen aus dem Review-
+  Report); der Verifier fuhr acht Mutationen der Eingabeseite (M1–M7 im Unit-Tier, S1 im
+  Store-Tier, jede rot) und die Store-Mutation S2 (nur der Unit-Test rot) selbst, dazu
+  `make gates`, `make test`, `make test-replication` an PostgreSQL 18 und 17 (je Exit 0)
+  und den Bench einzeln (Lauf `20260925T053832Z`, Exit 0, Spitze der größten Stufe
+  0 MiB). Der Bench des Slice `slice-backfill-bench-richtgroesse` machte einen Defekt des
+  Capture-Pfads sichtbar, den kein Test gesucht hatte (der WAL-Rückstand hängt an WAL ohne
+  Inhalt für die Publication, nicht am Backfill); das Architect-Verdikt
+  `architect-verdict-backfill-wal-rueckstand-und-bench-rot` verfolgte ihn bis zur Ursache,
+  dieser Slice behebt sie.
+- **Was ging anders als geplant:** (1) Die Store-Zeile der Fitness Function von
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) („Mutation inmitten
+  der Transaktion → Change fehlt“) ist nach Messung nicht erfüllbar; die Berichtigung
+  steht in [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)
+  (Review F-1, Verifikation S2). (2) Der Schwellen-Test an einem laufenden Stream war mit
+  Test-Mitteln nicht stabil (Trennung der Verbindung bei `wal_sender_timeout`, WAL
+  gleichzeitiger Schreiber anderer Pakete); der Ersatz wächst an einem inaktiven Slot auf
+  einer exklusiven Instanz, der Rückführungs-Punkt (b) des Plans (Test-Naht) ist nicht
+  eingetreten. (3) Die Datei des Schwellen-Tests wurde in einem Commit ersetzt statt
+  verschoben (F-3); der Test trug Namen und Meldungen eines Streams, den er nicht fuhr
+  (F-2) — beide Fixrunden-Züge trennen Move (`ec7e43dd`) und Inhalt (`5a5d3422`). (4) Die
+  Fixrunde lief ohne eigenen Review-Report — **benannte Grenze** wie bei
+  `slice-backfill-e2e` und `slice-backfill-bench-richtgroesse`: der Verifier maß F-1 bis
+  F-9 selbst nach (Verifikations-Report §5). (5) **Benannte Grenzen des Belegs (Adresse:
+  Architect im Lese-Schritt der Welle-Closure):** die Seite „Fehlerschwelle erreicht →
+  Container endet“ trägt nur die einmalige Nullprobe des Reviewers, die Verdrahtung in
+  `Run`/`main.go` hat keinen committeten Test am realen Stream (§6, vierter Punkt); die
+  Messung „Keepalive inmitten einer Transaktion“ stammt allein vom Reviewer (PostgreSQL 18,
+  Wegwerf-Test, nicht im Repository), für PostgreSQL 17 liegt sie nicht vor
+  (Verifikation V-3). Beide Grenzen stehen im Register unter
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung`.
+- **Verifier-Beobachtungen (V-1 bis V-5):** *V-1* (LOW): das Zählwort „zehn Slices“ der
+  Fixrunden-Zeile in §3 nennt 3 (gemessen ohne Plan-Datei), nicht 4; die 4 enthält den
+  Selbstverweis der Plan-Datei — im Plan berichtigt. *V-2* (LOW): die Register-Sichtung der
+  Welle-Datei führte die Store-Zeile als „Verdacht, kein Beleg“; nachgezogen (Zustand und
+  Beleg-Anker, [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md)). *V-3* (INFO): benannte Grenze, siehe (5). *V-4* (INFO): für den
+  Stand nach dem Push dieser Closure fehlt der Post-Push-Lauf von `e2e.yml`; zwischen dem
+  grünen Lauf `36092733208` (Stand `427f6d1b`, beide Legs `success`, Verifikations-Report §3)
+  und dem Verifikations-Stand liegen drei Test-/Skript-Dateien und Doku (kein
+  Produktionscode, kein Workflow, kein E2E-Runner). **Auftrag an die Welle-Closure:** den Post-Push-Lauf zum
+  Stand nach dem Push abwarten und sein Ergebnis dort als Beleg führen. *V-5* (INFO): die
+  Nebenwirkungen der Tier-Läufe (`tools/schema/plan.yaml`, `down.sql`) hat der Verifier per
+  `git checkout` zurückgenommen; `harness/image-hash.txt` ist lokal und nicht committet
+  ([`ADR-0103`](../../adr/0103-image-hash-lokal-statt-committet.md)).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Kandidat, nicht
+  entschieden, 5×):* eine Fitness-Function-Zeile einer ADR wird vor ihrer Übernahme als
+  DoD-Zusage an der Quelle erprobt (ist die verlangte Mutation herstellbar und färbt sie
+  den benannten Tier?) — die Zeile war als Test-Zusage übernommen worden, ohne dass ihre
+  Erfüllbarkeit gemessen war, und der Reviewer deckte sie durch Messung auf; Träger im
+  Register: `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (offen, Regel-Frage im
+  Lese-Schritt der Welle-Closure, Architect). *Neuer Sensor:* keiner als Gate; als
+  Mess-Werkzeuge liefert der Slice die E2E-Phase „Leerlauf-Bestätigung“ (Zeile in
+  [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md), Erzeugnis, kein
+  Lauf-Beleg), die Store-Belege X1 samt Nullprobe und den Sicherheits-Test, den
+  Schwellen-Beleg an einem inaktiven Slot und die Vergleichszeile des Bench (Spitze der
+  größten Stufe gegen die Warnschwelle, kein Pass/Fail). *Benannte Lücken:* siehe „Was
+  ging anders“ (5); die Bedingung „keine offene Transaktion“ trägt allein der Unit-Test
+  (Mutation: nur er rot). *Entscheidungs-Bezug:* der Konstraint „Capture-kritischer Pfad
+  bleibt unberührt“ von
+  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) gilt für einen Run
+  mit der Leerlauf-Bestätigung (Bench-Spitze 0 MiB unter der Warnschwelle von 100 MiB,
+  Verifikations-Lauf `20260925T053832Z`). *Sensor-Dokumente:* die Zahlen tragen ihren Lauf
+  (`harness/sensors/coverage-gate.md`: Nenner 2567, gedeckt 2136, gedruckt `Coverage
+  83.20%`; `harness/sensors/db-adapter-coverage.md`: `82.51%`, 873 von 1058; beides
+  zusätzlich vom Verifikations-Lauf bestätigt, **übernommen**, Report §1 und §5; der
+  Closure-Lauf von `make coverage-gate` druckte `Coverage 83.10%`, im Profil 2133 von
+  2567 gedeckt, **abgeleitet** — die gedeckte Zahl streut über Läufe).
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-backfill-slot-leerlauf-bestaetigung.md`, Zähler = Zahl der Dateien.
+  *Bestehende Klassen:* `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (F-1, V-3) **5×**,
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (F-4, F-5, V-1) **20×**,
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (V-2) **7×** und
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` (F-6) **3×** stehen **über
+  oder auf** der Schwelle 3×; ihr Ausgang gehört dem Lese-Schritt der Welle-Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md) (die state-Dateien tragen den
+  Vermerk; `zahl-in-traeger-driftet-gegen-die-messung` ist verkörpert,
+  `vorher-nachher-sprache-in-test-harness-kommentar` erreicht die Schwelle mit diesem
+  Slice). `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (F-3, Variante „Ersatz unter neuem
+  Dateinamen“) **2×**, offen. *Neue Klassen:*
+  `BEO-PGC/test-name-behauptet-mehr-als-der-test-treibt` (F-2) **1×** und
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung` (V-3, Nullprobe) **1×**, beide
+  offen. `BEO-PGC/fitness-function-gegen-eigene-entscheidung` bleibt **1×** (verwandt,
+  nicht doppelt gezählt: dort widerspricht die Zeile dem Entscheidungsteil, hier der
+  Messung). Kein Anfall in diesem Slice:
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (der Implementer nannte die
+  Grenze selbst, F-1 ist eine Aussage über die Erfüllbarkeit einer ADR-Zeile) und
+  `BEO-PGC/plan-zusage-erfuellung-ohne-committeten-anker` (der Ort der Mutationen steht
+  in Review- und Verifikations-Report, wie zugesagt). F-7, F-8 und F-9 sind kein eigener
+  Register-Anfall (F-7 laufabhängige Zahl, F-8 als unschädlich entfallen, F-9 gemessene
+  Laufzeit).
+- **Folge-Slices:** keine neuen. Der verbleibende Slice der Welle ist
+  `slice-backfill-sdk-origin`; die offenen Grenzen (Schwelle → Prozessende ohne
+  committeten Test, Quellseite nur als Messung des Reviewers) haben keinen Slice, ihre
+  Adresse ist der Lese-Schritt der Welle-Closure von
+  [welle-backfill-bestand](../welle-backfill-bestand.md). Übergaben an offene Pläne
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.13): `slice-backfill-sdk-origin` und die
+  Slices der Transformationen tragen keinen betroffenen Träger (Suchlauf in §6, letzter
+  Punkt; Ergebnis: kein Treffer, keine neue Kante).
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Sicherheit — keine
+  übersprungene Change · Zwei Sender des Standby-Status-Updates · Keepalive-Takt und
+  Laufzeit des Store-Tests · Override der Fehlerschwelle im E2E · PostgreSQL 17 nicht
+  gemessen (Produktionsstand) · Laufzeit der Tiers · Startposition der Rückschritt-Wache ·
+  Bench-Beleg am Messhost · Kopplung zu den Transformationen. *Eingetreten:* Bindung des
+  Store-Sicherheits-Tests an seine Eingabe → Folge-Artefakt
+  [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md) ·
+  bestehende Tests der alten Lage (im Slice gezogen) · akzeptierte Negative aus
+  [`ADR-0120`](../../adr/0120-capture-slot-leerlauf-bestaetigung.md) (erwartet). *Weiter
+  offen:* Bindung der Kette „Fehlerschwelle → Prozessende“ → Register
+  `BEO-PGC/beleg-nur-als-einmalige-reviewer-messung`.
 - **Drei Paarungen:** dieser Slice gehört zu [welle-backfill-bestand](../welle-backfill-bestand.md) (offen) — die
   Prüfung läuft regelkonform bei deren Closure.
 
@@ -603,9 +772,11 @@ Zahl der Dateien unter `evidence/` (ausgezählt am 2026-09-25 mit
   Entscheidungsteil gelesen: die Store-Zeile („Mutation: Bestätigung inmitten
   der Transaktion → Change fehlt“) ist nach der Messung des Reviewers nicht
   erfüllbar (§6 zweites Risiko, Ursprung: Review-Report
-  `review-slice-backfill-slot-leerlauf-bestaetigung` F-1). Register-Vorschlag
-  der Closure: eine weitere Evidence-Datei zu diesem Eintrag (Zähler folgt aus
-  den Dateien); die Berichtigung der Zeile ist eine neue ADR.
+  `review-slice-backfill-slot-leerlauf-bestaetigung` F-1). Der Fall steht in
+  `BEO-PGC/adr-aussage-breiter-als-ihre-messung` (fünfte Evidence-Datei; die
+  Zeile widerspricht der Messung, nicht dem eigenen Entscheidungsteil); die
+  Berichtigung der Zeile ist
+  [`ADR-0121`](../../adr/0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md).
 - Register-Vorschläge des Implementers für die Closure (aus dem Review):
   `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (offen, 1×) — Auftritt in
   Variante „Ersatz unter neuem Dateinamen“: eine Test-Datei wechselte in einem
@@ -615,7 +786,10 @@ Zahl der Dateien unter `evidence/` (ausgezählt am 2026-09-25 mit
   Datei ist ein eigener Move-Commit **auch dann**, wenn der Inhalt danach
   neu gefasst wird. Neue Klasse (kein Eintrag im Register): eine Test-Zusage
   wird unter gleichem Namen abgeschwächt — der Name (`…EndToEnd`) und die
-  Meldungen behaupteten einen Stream, den der Ersatz nicht fuhr.
+  Meldungen behaupteten einen Stream, den der Ersatz nicht fuhr. Beide Vorschläge
+  stehen im Register: `BEO-PGC/git-mv-und-inhalt-in-einem-commit` (zweite
+  Evidence-Datei) und `BEO-PGC/test-name-behauptet-mehr-als-der-test-treibt`
+  (neu, 1×).
 - `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 30×) — Suchlauf §3.
 - `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert, 18×),
   `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung` (verkörpert, 7×),

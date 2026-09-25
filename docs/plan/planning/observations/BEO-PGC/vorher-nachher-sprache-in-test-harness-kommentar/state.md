@@ -16,5 +16,13 @@ Indikativ um. Keine Slice-/Wellen-Nummer, keine Chronik; ob der Skopus des
 Reviewer-Skill-Punkts diese Klasse in Tests und Skripten trägt, ist dieselbe
 Architect-Frage.
 
-Zähler (abgeleitet): 2× (evidence/slice-e2e-drei-rtm-luecken.md,
-evidence/slice-backfill-e2e.md).
+Der dritte Beleg (`slice-backfill-slot-leerlauf-bestaetigung`, F-6) trifft ein Test-Paket
+(`internal/bootstrap`): der Kommentar der exklusiven Instanz trug neben der Kopplung eine
+Konjunktiv-Nebenklausel über den nicht gewählten Aufbau; der Reviewer fand sie, die Fixrunde
+setzte den Indikativ. **Schwelle 3× erreicht mit diesem Slice**; die Skopus-Frage des
+Reviewer-Skill-Punkts (Tests und Skripte neben `internal/**`) liegt beim Architect und
+wird im Lese-Schritt der Welle-Closure von `welle-backfill-bestand` gelesen, nicht
+entschieden.
+
+Zähler (abgeleitet): 3× (evidence/slice-e2e-drei-rtm-luecken.md,
+evidence/slice-backfill-e2e.md, evidence/slice-backfill-slot-leerlauf-bestaetigung.md).
