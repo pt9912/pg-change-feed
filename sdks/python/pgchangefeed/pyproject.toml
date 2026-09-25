@@ -5,28 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pgchangefeed"
 version = "0.2.1"
-# README.md liegt eine Ebene hoeher (sdks/python/README.md, Sprachwurzel-
-# Ebene, analog sdks/csharp/README.md) -- setuptools erlaubt fuer `readme`
-# aber keinen Pfad ausserhalb des Projekt-Wurzelverzeichnisses (real geprueft:
-# `DistutilsOptionError: Cannot access '.../README.md' (or anything outside
-# '...')`, Plan-Nachzug §3). Der Docker-Bau (sdks/python/Dockerfile) kopiert
-# die Datei deshalb an diese lokale Stelle -- dasselbe Muster wie die
-# `.proto`-Einspeisung in sdks/csharp/Dockerfile (COPY an eine vom
-# Projekt erwartete relative Stelle, ohne sie im committeten Baum zu
-# duplizieren).
+# The README lives one level above this file (sdks/python/README.md);
+# setuptools accepts no `readme` path outside the project directory, so the
+# Docker build (sdks/python/Dockerfile) copies it next to this file.
 description = "Official Python client library for PG Change Feed (HTTP API, gRPC and SSE live-change streams, NATS full-content stream)."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "pt9912" }]
 requires-python = ">=3.14"
-# Laufzeitabhaengigkeiten je Client-Flaeche: httpx traegt die HTTP-Flaeche
-# (src/pgchangefeed/http_client.py, SPEC-018/SPEC-022); grpcio und protobuf
-# tragen die gRPC-Flaeche (src/pgchangefeed/grpc_client.py, SPEC-020) --
-# protobuf, weil die zur Bauzeit erzeugten Stub-Module
-# (src/pgchangefeed/grpc_gen/, kein committeter Stub) die protobuf-Runtime
-# beim Import brauchen (ADR-0110 erweitert den Erst-Scope aus ADR-0107
-# Festlegung 1). Kein Import aus einem privaten Baum dieses Repos
-# (ADR-0107 Festlegung 3).
+# Runtime dependencies per client: httpx carries the HTTP and SSE clients
+# (src/pgchangefeed/http_client.py, sse_client.py); grpcio and protobuf carry
+# the gRPC client (src/pgchangefeed/grpc_client.py) -- protobuf because the
+# stub modules generated at build time (src/pgchangefeed/grpc_gen/, not
+# committed) import the protobuf runtime; nats-py carries the NATS client
+# (src/pgchangefeed/nats_stream_client.py). The package imports nothing from
+# a private tree of this repository.
 dependencies = [
     "httpx>=0.27",
     "grpcio>=1.75",
@@ -49,9 +42,8 @@ test = ["pytest>=8", "grpcio-tools>=1.75"]
 where = ["src"]
 
 [tool.pytest.ini_options]
-# Der blanke `pytest`-Lauf (Dockerfile-Stufe `build`, `RUN pytest`) sammelt
-# nur die netzlosen Unit-Tests: die Realserver-Tests liegen unter
-# pgchangefeed/integration/ und brauchen eine laufende Server-Instanz --
-# sie laufen nur in der `integration`-Docker-Stufe (expliziter Pfad-Argument
-# gegenueber testpaths, ADR-0110 Festlegung 2/Folgepflicht 1).
+# A bare `pytest` run (Dockerfile stage `build`, `RUN pytest`) collects only
+# the network-free unit tests: the real-server tests live under
+# pgchangefeed/integration/ and need a running server; they run only in the
+# `integration` Docker stage, which passes an explicit path.
 testpaths = ["tests"]

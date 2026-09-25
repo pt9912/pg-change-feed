@@ -1,36 +1,24 @@
-"""Public entry point for the PG Change Feed live-change stream over NATS
-(SPEC-024, LH-FA-SST-008), third delivery path beside gRPC (SPEC-020) and
-SSE (SPEC-021).
+"""Client for the PG Change Feed live change stream over NATS.
 
-One method subscribes the full-content namespace
-``cdc.stream.<source_id>.>`` (SPEC-024: all tables of one source) and yields
-one ``pgchangefeed.models.StreamChange`` per message — the same ten fields as
-the SSE event, no third schema. Messages arrive as JSON bytes; embedded row
-images stay JSON values, a missing image is ``None``. The typed hand-mapped
-layer mirrors the SSE surface: the wire is JSON, and ``models`` carries the
-package's JSON-mapping doctrine.
+``stream_changes`` subscribes to the subjects ``cdc.stream.<source_id>.>`` --
+all tables of one source -- and yields one ``pgchangefeed.models.StreamChange``
+per message: the same ten fields as the SSE event. Messages arrive as JSON
+bytes; embedded row images stay JSON values, a missing image is ``None``.
 
-The token is a **connection-level** credential (SPEC-024: the NATS server
-rejects a connection without or with a wrong token, as soon as
-``CDC_NATS_STREAM_TOKEN`` is configured): the token goes into the connect
-call, not per message. The ``ClientOptions.address`` carries the NATS URL
-(``nats://host:4222``), ``api_token`` the serverwide stream token.
+The token is a connection-level credential: the NATS server rejects a
+connection with a missing or wrong token when it is configured with a stream
+token. The token is passed once when the connection is opened, not per
+message. ``ClientOptions.address`` is the NATS URL (``nats://host:4222``),
+``api_token`` the stream token.
 
-Delivery guarantee: none (Core NATS, fire-and-forget, no replay) — the
-existing read path (``PgChangeFeedHttpClient.read_changes``) stays the
-catch-up path; this stream carries no filter.
+The stream is fire-and-forget: a change committed while the client is not
+subscribed is not delivered later. ``PgChangeFeedHttpClient.read_changes`` is
+the way to catch up; the stream itself carries no filter.
 
-The NATS Python client is ``nats-py`` (the official asyncio client of the
-NATS project); its asyncio model is wrapped behind the package's synchronous
-surface vocabulary (``httpx.Client``, synchronous gRPC stub): the connect
-and subscription run in a dedicated thread with its own event loop, the
-generator consumes a queue — one iterator form across all four surfaces, the
-asyncio boundary stays inside this module.
-
-Draht-Kenntnis-Quelle: ``spec/pflichtenheft.md`` SPEC-024 (direkt) und
-``internal/adapters/driven/natsstream/publisher.go`` als serverseitige
-Gegenprobe (gelesen, nicht importiert — kein Python-Import eines privaten
-Baums dieses Repos).
+The client uses ``nats-py``, the asyncio client of the NATS project, behind a
+synchronous iterator like the other clients of this package: connecting and
+subscribing run in a dedicated thread with its own event loop, and the
+generator consumes a queue. The asyncio part stays inside this module.
 """
 
 from __future__ import annotations
@@ -55,7 +43,11 @@ _STREAM_POLL_INTERVAL_SECONDS = 0.1
 
 
 class PgChangeFeedNatsStreamClient:
-    """Client for the NATS full-content stream (SPEC-024)."""
+    """Client for the NATS live change stream of one source.
+
+    ``options`` carries the NATS URL and the stream token; ``source_id`` is the
+    source whose tables the stream covers (it must not be empty).
+    """
 
     def __init__(self, options: ClientOptions, source_id: str) -> None:
         if not source_id or not source_id.strip():
@@ -64,14 +56,15 @@ class PgChangeFeedNatsStreamClient:
         self._source_id = source_id.strip()
 
     def stream_changes(self, timeout: float | None = None) -> Iterator[StreamChange]:
-        """Subscribes ``cdc.stream.<source_id>.>`` (SPEC-024: all tables of
-        one source) and yields one ``StreamChange`` per committed change
-        (fire-and-forget, no replay, one message per row change in commit
-        order). The bearer token rides the connection (SPEC-024: the server
-        rejects a connection without or with a wrong token — that surfaces as
-        the connect error of the NATS client library, not a swallowed empty
-        stream). ``timeout`` bounds the total consumption in seconds
-        (``None`` = unbounded); past it the generator stops."""
+        """Subscribes to all tables of the source and yields one ``StreamChange``
+        per committed change, from the moment the subscription is ready
+        onward: fire-and-forget, no replay, one message per row change.
+
+        The token is sent when the connection is opened. If the server rejects
+        it, the connect error of the NATS client library is raised (the stream
+        is never silently empty). ``timeout`` bounds the total consumption in
+        seconds (``None`` = unbounded); past it the generator stops.
+        """
         events: queue.Queue[bytes] = queue.Queue()
         ready = threading.Event()
         connection_error: list[BaseException] = []
@@ -125,9 +118,9 @@ class PgChangeFeedNatsStreamClient:
 
 
 def _subject_namespace(source_id: str) -> str:
-    """Builds the subscription subject for one source (SPEC-024): the
-    wildcard namespace ``cdc.stream.<source_id>.>`` — all tables of one
-    source; ``<schema>.<table>`` kommen je Nachricht."""
+    """Builds the subscription subject of one source: the wildcard
+    ``cdc.stream.<source_id>.>``, which matches every ``<schema>.<table>`` of
+    the source."""
     return f"{_SUBJECT_PREFIX}{source_id}.>"
 
 
@@ -138,15 +131,13 @@ def _parse_stream_change(payload: bytes) -> StreamChange:
         raise PgChangeFeedMalformedResponseError(
             200,
             "PG Change Feed NATS stream carried a message whose payload is "
-            "not valid JSON -- a protocol violation outside SPEC-024's "
-            "documented shape.",
+            "not valid JSON.",
         ) from exc
     if not isinstance(body, dict):
         raise PgChangeFeedMalformedResponseError(
             200,
             "PG Change Feed NATS stream carried a message whose payload is "
-            "not a JSON object -- a protocol violation outside SPEC-024's "
-            "documented shape.",
+            "not a JSON object.",
         )
     try:
         return StreamChange.from_json(body)
@@ -154,6 +145,5 @@ def _parse_stream_change(payload: bytes) -> StreamChange:
         raise PgChangeFeedMalformedResponseError(
             200,
             "PG Change Feed NATS stream carried a message missing an "
-            "expected SPEC-024 field -- a protocol violation outside the "
-            "documented shapes.",
+            "expected field.",
         ) from exc

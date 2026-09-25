@@ -1,11 +1,11 @@
-"""Network-free unit tests for the SSE stream client surface (SPEC-021).
+"""Network-free unit tests for the SSE stream client.
 
 The fake is the same seam the HTTP surface uses: an ``httpx.MockTransport``
 carries the raw response bytes, so the tests exercise the real streaming
 pipeline (response stream, line iterator, frame parser, JSON mapping)
 without a socket. Chunk-boundary independence is asserted explicitly: the
 transport hands out the frame bytes split at arbitrary boundaries, because
-chunk boundaries need not coincide with line boundaries (SPEC-021 risk).
+chunk boundaries need not coincide with line boundaries.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ def _make_client(handler: Callable[[httpx.Request], httpx.Response]) -> PgChange
     return PgChangeFeedSseClient(http_client, options)
 
 
-# --- Happy path (SPEC-021: one event per row change, ten fields) ---
+# --- Happy path: one event per row change, ten fields ---
 
 
 def test_stream_changes_yields_typed_events_with_the_ten_fields() -> None:
@@ -110,9 +110,8 @@ def test_missing_image_is_none_and_update_carries_both_images() -> None:
 
 
 class _ChunkedStream(httpx.SyncByteStream):
-    """Hands out the frame bytes split at arbitrary boundaries — chunk
-    Grenzen müssen nicht mit Zeilen-Grenzen zusammenfallen (SPEC-021
-    Risiko)."""
+    """Hands out the frame bytes split at arbitrary boundaries: chunk
+    boundaries need not coincide with line boundaries."""
 
     def __init__(self, chunks: list[bytes]) -> None:
         self._chunks = chunks
@@ -207,7 +206,7 @@ def test_data_payload_not_a_json_object_raises_typed_malformed_error() -> None:
         list(client.stream_changes())
 
 
-# --- Status-code mapping (SPEC-021: 401 ohne Token, 503 ohne Broadcaster) ---
+# --- Status-code mapping: 401 without a token, 503 when the stream is not available ---
 
 
 def test_unknown_token_surfaces_as_typed_unauthorized_error() -> None:
@@ -226,9 +225,9 @@ def test_unknown_token_surfaces_as_typed_unauthorized_error() -> None:
     assert exc_info.value.status_code == 401
 
 
-def test_503_without_broadcaster_surfaces_as_typed_error() -> None:
+def test_503_when_the_stream_is_unavailable_surfaces_as_typed_error() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(503, json={"error": "kein Broadcaster verdrahtet"})
+        return httpx.Response(503, json={"error": "change stream not available"})
 
     client = _make_client(handler)
     with pytest.raises(PgChangeFeedUnexpectedStatusError) as exc_info:

@@ -1,18 +1,17 @@
-"""Realserver integration test for the gRPC stream client surface (SPEC-020).
+"""Real-server integration test for the gRPC stream client.
 
 Runs only in the `integration` Docker stage (sdks/python/Dockerfile), started
 by tools/harness/run-sdk-python-integration-tests.sh inside the same Docker
-network as the feed container (ADR-0110 §Entscheidung Festlegung
-2/Folgepflicht 1: every new delivery-path surface of this package proves its
-protocol assumptions against a real, running server instance, not only
-against the specification read). The runner drives the environment: it brings
+network as the feed container. It proves the client's protocol assumptions
+against a real, running server instance, not only against a fake. The runner
+drives the environment: it brings
 the compose stack up, activates the tables and inserts rows while this test
 is streaming; the printed markers (``READY``/``RECEIVED``/``REJECTED``) are
 what the runner asserts on, so every ``print`` is flushed and unbuffered.
 
-The commit-to-delivery window is fire-and-forget (SPEC-020): between the
-stream opening and the server registering the subscriber at the Broadcaster,
-a committed change can be discarded for this subscriber. The runner commits a
+The stream is fire-and-forget: between the stream opening and the server
+registering the subscriber, a committed change can be discarded for this
+subscriber. The runner commits a
 bounded sequence of unique rows until exactly one arrives; this test keeps
 receiving until it sees its sentinel, so a missed row costs nothing.
 """
@@ -56,7 +55,7 @@ def test_realserver_receives_a_committed_change_over_the_stream() -> None:
             received = None
 
     assert received is not None
-    # Feldvollstaendigkeit am realen Wire-Image (SPEC-020): alle zehn Felder
+    # Feldvollstaendigkeit am realen Wire-Image: alle zehn Felder
     # getragen, je in seinem Wire-Typ; getypte Pruefung, weil ein `!= ""`
     # gegen bytes/int-Felder vakuum waere (nie ungleich-rot).
     for field, kind in (

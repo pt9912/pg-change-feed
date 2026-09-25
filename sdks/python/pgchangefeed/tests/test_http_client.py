@@ -45,7 +45,7 @@ def _handler_returning(status_code: int, payload: object) -> Callable[[httpx.Req
     return handler
 
 
-# --- Happy path, one per SPEC-018 capability plus ReadChanges (SPEC-022) ---
+# --- Happy path, one per API capability including read_changes ---
 
 
 def test_register_consumer_happy_path() -> None:
@@ -284,7 +284,7 @@ def test_read_changes_empty_result_is_not_an_error() -> None:
     assert response.changes == []
 
 
-# --- Auth boundary (SPEC-018: 401 missing/unknown token, 403 reader-vs-admin) ---
+# --- Auth boundary: 401 missing/unknown token, 403 reader token on an admin call ---
 
 
 def _auth_aware_handler(admin_only_paths: set[str]) -> Callable[[httpx.Request], httpx.Response]:
@@ -316,7 +316,7 @@ def test_reader_token_against_admin_endpoint_returns_typed_forbidden_error() -> 
     assert exc_info.value.status_code == 403
 
 
-# --- Remaining status-code mapping (SPEC-018/SPEC-022: 400/404/500, defensive fallback) ---
+# --- Remaining status-code mapping: 400/404/500 and the fallback for other codes ---
 
 
 def test_400_returns_typed_bad_request_error_with_error_message() -> None:

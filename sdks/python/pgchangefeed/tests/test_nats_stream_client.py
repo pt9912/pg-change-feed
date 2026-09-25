@@ -1,12 +1,11 @@
-"""Network-free unit tests for the NATS full-content stream surface
-(SPEC-024).
+"""Network-free unit tests for the NATS live change stream client.
 
 The fake replaces the ``nats`` module seam: the tests monkeypatch
 ``nats.connect`` with an async fake that records the connect options, hands
 back a fake connection whose ``subscribe`` records the subject and delivers
 its pre-arranged payload through the captured callback — the same observable
 behavior a real connection carries (subscribe → callback → generator),
-without a socket. Message completeness is asserted against the ten SPEC-024
+without a socket. Message completeness is asserted against the ten stream
 fields in JSON form, the same schema the SSE event carries.
 """
 
@@ -87,10 +86,10 @@ def _make_client() -> nats_stream_client.PgChangeFeedNatsStreamClient:
     return nats_stream_client.PgChangeFeedNatsStreamClient(options, SOURCE_ID)
 
 
-# --- Subjekt-Formatierung (SPEC-024: Wildcard-Namensraum je Quelle) ---
+# --- Subject format: one wildcard namespace per source ---
 
 
-def test_subject_namespace_carries_the_spec_024_schema() -> None:
+def test_subject_namespace_is_the_wildcard_of_the_source() -> None:
     assert nats_stream_client._subject_namespace(SOURCE_ID) == f"cdc.stream.{SOURCE_ID}.>"
     assert nats_stream_client._subject_namespace("src-x") == "cdc.stream.src-x.>"
 
@@ -101,7 +100,7 @@ def test_client_rejects_an_empty_source_id() -> None:
         nats_stream_client.PgChangeFeedNatsStreamClient(options, "   ")
 
 
-# --- Nachrichtenschema (SPEC-024: zehn Felder, kein drittes Schema) ---
+# --- Message schema: ten fields, the same as the SSE event ---
 
 
 def test_parse_stream_change_maps_the_ten_fields() -> None:
@@ -129,7 +128,7 @@ def test_parse_stream_change_surfaces_typed_errors_for_schema_violations() -> No
             nats_stream_client._parse_stream_change(payload)
 
 
-# --- Verdrahtung (Verbindungsebene-Token, Subjekt-Abonnement) ---
+# --- Wiring: connection-level token, subject subscription ---
 
 
 def test_stream_changes_subscribes_the_namespace_with_the_connection_token(monkeypatch) -> None:
@@ -147,7 +146,7 @@ def test_stream_changes_subscribes_the_namespace_with_the_connection_token(monke
     assert yielded.change_id == "chg-1"
 
 
-# --- Verbindungs-Fehlerpfad (SPEC-024: Ablehnung am Verbindungsversuch) ---
+# --- Connection error path: rejection happens when the connection is opened ---
 
 
 def test_connect_rejection_surfaces_and_is_not_swallowed(monkeypatch) -> None:

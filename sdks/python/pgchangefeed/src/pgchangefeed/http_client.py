@@ -1,31 +1,22 @@
-"""Public entry point for the PG Change Feed HTTP/JSON API.
+"""Client for the PG Change Feed HTTP/JSON API.
 
-One method per wire capability: the nine port-covered capabilities of
-SPEC-018 (``RegisterConsumer``, ``AcknowledgeConsumer``,
-``GetConsumerPosition``, ``RemoveConsumer``, ``EnableTable``,
-``DisableTable``, ``GetStatus``, ``ListTables``, ``RunRetention``) plus
-reading persisted changes (``ReadChanges``, SPEC-022). Requests/responses
-are typed data classes that mirror the SPEC-018/SPEC-022 JSON schemas
-exactly (``pgchangefeed.models``); every non-success response becomes a
-typed ``PgChangeFeedError`` subclass instead of a raw ``httpx`` exception,
-and a success (``2xx``) response whose body does not match the documented
-shape -- invalid JSON, or valid JSON missing an expected field -- becomes
-a typed ``PgChangeFeedMalformedResponseError`` instead of letting a raw
-parsing exception leak through. Both paths run through the same
-``_handle`` helper, so this holds uniformly across every method rather
-than being reimplemented ten times.
+One method per capability of the API: ``register_consumer``,
+``acknowledge_consumer``, ``get_consumer_position``, ``remove_consumer``,
+``enable_table``, ``disable_table``, ``get_status``, ``list_tables``,
+``run_retention`` and ``read_changes``. Requests and responses are typed data
+classes that mirror the JSON documents of the API (``pgchangefeed.models``).
+Every non-success response raises a typed ``PgChangeFeedError`` subclass
+instead of a raw ``httpx`` exception, and a success (``2xx``) response whose
+body cannot be read -- invalid JSON, or valid JSON missing an expected field --
+raises ``PgChangeFeedMalformedResponseError``. Connection errors and timeouts
+of the transport are not converted; they reach the caller as the ``httpx``
+exception.
 
-The ``httpx.Client`` is injected, not owned -- the caller controls its
-lifetime, connection pooling and transport (including a
-``httpx.MockTransport`` for tests); this type never closes it. The bearer
-token and server address come from ``ClientOptions``, supplied at
-construction -- no module-level or global state, a process can hold
-several independently configured instances at once.
-
-Draht-Kenntnis-Quelle: ``spec/pflichtenheft.md`` SPEC-018/SPEC-022
-(direkt), im Zweifel der Go-Server-Adapter selbst (nur gelesen, nicht
-importiert -- kein Python-Import eines privaten Baums dieses Repos) --
-kein ``examples/python/``-Referenz-Client existiert (ADR-0107 §Kontext).
+The ``httpx.Client`` is passed in, not owned: the caller controls its
+lifetime, connection pooling and transport (including ``httpx.MockTransport``
+for tests); this class never closes it. The bearer token and server address
+come from ``ClientOptions``; there is no module-level or global state, so a
+process can hold several independently configured instances at once.
 """
 
 from __future__ import annotations
@@ -75,23 +66,38 @@ _STATUS_TO_ERROR: dict[int, type[PgChangeFeedError]] = {
 
 
 class PgChangeFeedHttpClient:
-    """Client for the nine SPEC-018 capabilities plus ``ReadChanges`` (SPEC-022)."""
+    """Client for the HTTP API: consumers, captured tables, retention and reading changes.
+
+    ``client`` is the ``httpx.Client`` used for every call; ``options`` carries
+    the server address and the bearer token.
+    """
 
     def __init__(self, client: httpx.Client, options: ClientOptions) -> None:
         self._client = client
         self._options = options
 
-    # --- RegisterConsumer -- POST /consumers (admin, LH-FA-CON-001) ---
+    # --- POST /consumers (admin token) ---
 
     def register_consumer(self, request: RegisterConsumerRequest) -> RegisterConsumerResponse:
+        """Registers a consumer, a named reader whose position the server keeps.
+
+        Registering a consumer that already exists changes nothing; the
+        response reports it with ``already_registered=True``.
+        """
         body = {"consumer_id": request.consumer_id, "name": request.name}
         return self._post("/consumers", body, RegisterConsumerResponse.from_json)
 
-    # --- AcknowledgeConsumer -- POST /consumers/acknowledge (admin, LH-FA-CON-004) ---
+    # --- POST /consumers/acknowledge (admin token) ---
 
     def acknowledge_consumer(
         self, request: AcknowledgeConsumerRequest
     ) -> AcknowledgeConsumerResponse:
+        """Stores the position (``offset``) up to which a consumer has processed a source.
+
+        Repeating the stored position has no effect; a position before the
+        stored one, or a position of another source, is rejected with
+        ``PgChangeFeedBadRequestError``.
+        """
         body = {
             "consumer_id": request.consumer_id,
             "source_id": request.source_id,
@@ -99,25 +105,37 @@ class PgChangeFeedHttpClient:
         }
         return self._post("/consumers/acknowledge", body, AcknowledgeConsumerResponse.from_json)
 
-    # --- GetConsumerPosition -- GET /consumers/position (reader|admin, LH-FA-CON-003/005) ---
+    # --- GET /consumers/position (reader or admin token) ---
 
     def get_consumer_position(self, consumer_id: str) -> ConsumerPositionResponse:
+        """Reads the stored position of a consumer.
+
+        ``acknowledged`` is ``False`` for a consumer that has never
+        acknowledged; ``offset`` is then the defined starting position.
+        """
         return self._get(
             "/consumers/position",
             {"consumer_id": consumer_id},
             ConsumerPositionResponse.from_json,
         )
 
-    # --- RemoveConsumer -- POST /consumers/remove (admin, LH-FA-CON-006) ---
+    # --- POST /consumers/remove (admin token) ---
 
     def remove_consumer(self, consumer_id: str) -> RemoveConsumerResponse:
+        """Removes a consumer; ``removed`` is ``False`` for one that was never registered."""
         return self._post(
             "/consumers/remove", {"consumer_id": consumer_id}, RemoveConsumerResponse.from_json
         )
 
-    # --- EnableTable -- POST /tables/enable (admin, LH-FA-CFG-001) ---
+    # --- POST /tables/enable (admin token) ---
 
     def enable_table(self, request: EnableTableRequest) -> EnableTableResponse:
+        """Starts capturing a table of a source.
+
+        ``already_enabled`` in the response is ``True`` when the table was
+        captured already. A table that does not exist in the source database
+        raises ``PgChangeFeedNotFoundError``.
+        """
         body = {
             "source": request.source,
             "schema": request.schema,
@@ -129,9 +147,15 @@ class PgChangeFeedHttpClient:
         }
         return self._post("/tables/enable", body, EnableTableResponse.from_json)
 
-    # --- DisableTable -- POST /tables/disable (admin, LH-FA-CFG-002) ---
+    # --- POST /tables/disable (admin token) ---
 
     def disable_table(self, request: DisableTableRequest) -> DisableTableResponse:
+        """Stops capturing a table.
+
+        ``retained`` in the response is ``True`` when changes already stored
+        for the table remain readable. A table that does not exist in the
+        source database raises ``PgChangeFeedNotFoundError``.
+        """
         body = {
             "source": request.source,
             "schema": request.schema,
@@ -140,33 +164,44 @@ class PgChangeFeedHttpClient:
         }
         return self._post("/tables/disable", body, DisableTableResponse.from_json)
 
-    # --- GetStatus -- GET /tables/status (reader|admin, LH-FA-CFG-003) ---
+    # --- GET /tables/status (reader or admin token) ---
 
     def get_status(
         self, source: str, schema: str, table: str, publication: str
     ) -> TableStatusResponse:
+        """Tells whether a table is captured (``enabled``) or no longer captured
+        with stored changes remaining (``retained``).
+
+        A table that was never enabled reports both as ``False``; a table that
+        does not exist in the source database raises ``PgChangeFeedNotFoundError``.
+        """
         return self._get(
             "/tables/status",
             {"source": source, "schema": schema, "table": table, "publication": publication},
             TableStatusResponse.from_json,
         )
 
-    # --- ListTables -- GET /tables (reader|admin, LH-FA-CFG-004) ---
+    # --- GET /tables (reader or admin token) ---
 
     def list_tables(self, source: str, publication: str) -> ListTablesResponse:
+        """Lists the captured tables (``tables``) and the tables that are no
+        longer captured but whose stored changes remain (``retained``)."""
         return self._get(
             "/tables",
             {"source": source, "publication": publication},
             ListTablesResponse.from_json,
         )
 
-    # --- RunRetention -- POST /retention/run (admin, LH-FA-RET-002..004) ---
+    # --- POST /retention/run (admin token) ---
 
     def run_retention(self, request: RunRetentionRequest) -> RunRetentionResponse:
+        """Deletes the stored changes of a source that are older than
+        ``min_age_nanos`` and that every consumer with a stored position has
+        already passed; ``deleted`` in the response is the number removed."""
         body = {"source": request.source, "min_age_nanos": request.min_age_nanos}
         return self._post("/retention/run", body, RunRetentionResponse.from_json)
 
-    # --- ReadChanges -- GET /changes (reader|admin, SPEC-022) ---
+    # --- GET /changes (reader or admin token) ---
 
     def read_changes(
         self,
@@ -177,11 +212,14 @@ class PgChangeFeedHttpClient:
         to: int | None = None,
         limit: int | None = None,
     ) -> ReadChangesResponse:
-        """``from``/``to`` are ``commit_position`` values, ``from``
-        inclusive and ``to`` exclusive (SPEC-022); ``from_`` avoids
-        shadowing the Python keyword ``from`` while sending the ``from``
-        query parameter the wire contract expects. There is no default
-        ``limit``.
+        """Reads stored changes of a source.
+
+        ``schema`` and ``table`` each narrow the result independently.
+        ``from_`` and ``to`` are ``commit_position`` values: ``from_`` is
+        inclusive, ``to`` is exclusive. ``from_`` is spelled with a trailing
+        underscore because ``from`` is a Python keyword; it is sent as the
+        ``from`` query parameter. ``limit`` cuts rows, not positions, and there
+        is no default limit. A range without changes returns an empty list.
         """
         return self._get(
             "/changes",
@@ -223,8 +261,7 @@ class PgChangeFeedHttpClient:
             raise PgChangeFeedMalformedResponseError(
                 response.status_code,
                 f"PG Change Feed HTTP API returned status {response.status_code} with a response "
-                "body that is not valid JSON -- a protocol violation outside SPEC-018/SPEC-022's "
-                "documented shapes.",
+                "body that is not valid JSON.",
             ) from exc
         try:
             return mapper(payload)
@@ -232,8 +269,7 @@ class PgChangeFeedHttpClient:
             raise PgChangeFeedMalformedResponseError(
                 response.status_code,
                 f"PG Change Feed HTTP API returned status {response.status_code} with a response "
-                "body missing an expected SPEC-018/SPEC-022 field -- a protocol violation outside "
-                "the documented shapes.",
+                "body missing an expected field.",
             ) from exc
 
 

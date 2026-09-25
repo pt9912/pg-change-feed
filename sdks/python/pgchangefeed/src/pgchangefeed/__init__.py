@@ -1,18 +1,19 @@
 """PG Change Feed Python client library.
 
-This release exposes the shared connection configuration
-(`ClientOptions`), the HTTP API client surface (`PgChangeFeedHttpClient`):
-the nine SPEC-018 capabilities plus reading persisted changes
-(`ReadChanges`, SPEC-022), the gRPC live-change-stream surface
-(`PgChangeFeedGrpcClient`): the `StreamChanges` server-streaming RPC
-(SPEC-020), the SSE live-change-stream surface (`PgChangeFeedSseClient`):
-the same fire-and-forget, no-replay stream over Server-Sent-Events
-(SPEC-021), and the NATS full-content stream surface
-(`PgChangeFeedNatsStreamClient`): the same message schema and
-fire-and-forget, no-replay boundary, delivered over a NATS subject namespace
-instead of HTTP, with connection-level (not per-call) token authentication
-(SPEC-024, Welle-Plan §6: v2 desselben Packages — ADR-0110 Festlegung 3
-delegiert die Struktur-Entscheidung an den umsetzenden Zug).
+The package offers four clients and one shared configuration class:
+
+- ``ClientOptions`` -- server address and token, shared by all clients.
+- ``PgChangeFeedHttpClient`` -- the HTTP API: manage consumers, enable and
+  disable captured tables, run the retention and read stored changes.
+- ``PgChangeFeedGrpcClient`` -- a live gRPC stream of changes.
+- ``PgChangeFeedSseClient`` -- a live stream of changes over Server-Sent
+  Events.
+- ``PgChangeFeedNatsStreamClient`` -- a live stream of changes over NATS; the
+  token is checked once when the connection is opened.
+
+The three live streams carry the same change messages. They deliver what is
+committed while the client is connected; they do not repeat changes that were
+missed (use ``PgChangeFeedHttpClient.read_changes`` for catching up).
 """
 
 from pgchangefeed.exceptions import (

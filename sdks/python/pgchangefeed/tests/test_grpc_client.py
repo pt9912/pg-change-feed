@@ -1,4 +1,4 @@
-"""Network-free unit tests for the gRPC stream client surface (SPEC-020).
+"""Network-free unit tests for the gRPC stream client.
 
 The fake channel mirrors the shape of the real grpcio plumbing at exactly
 the seam the client touches: the generated stub asks the channel for a
@@ -7,7 +7,7 @@ request and call options; the response iterator surfaces errors from
 iteration, never at invocation time -- the same observable behavior a real
 ``grpc`` channel carries, without a socket. Message completeness is asserted
 against the generated stub's descriptor, so a drift between this package
-and ``proto/cdc/stream/v1/changestream.proto`` (SPEC-020) breaks the test at
+and ``proto/cdc/stream/v1/changestream.proto`` breaks the test at
 build time instead of on a consumer's wire.
 """
 
@@ -25,7 +25,7 @@ from pgchangefeed.options import ClientOptions
 ADDRESS = "pg-change-feed:9090"
 TOKEN = "e2e-reader-token"
 
-SPEC_020_FIELD_NAMES = (
+STREAM_FIELD_NAMES = (
     "change_id",
     "transaction_id",
     "source_table_id",
@@ -43,8 +43,7 @@ class _FakeChannel:
     """Fake ``grpc.Channel``: records the requested RPC method and every
     invocation (request, metadata) and hands back the result the test built.
     Only ``unary_stream`` is implemented -- the one call shape ``ChangeStream``
-    (SPEC-020) uses; every other call shape would be a protocol violation the
-    fake refuses rather than fakes."""
+    uses; every other call shape is refused rather than faked."""
 
     def __init__(self, result_factory: Callable[[], Iterator[Any]]) -> None:
         self.method: str | None = None
@@ -111,22 +110,22 @@ def _make_client(
     return PgChangeFeedGrpcClient(channel, options), channel
 
 
-# --- Message schema completeness (SPEC-020: ten fields, wire order) ---
+# --- Message schema completeness: ten fields, wire order ---
 
 
-def test_generated_change_message_carries_the_ten_spec_020_fields_in_order() -> None:
+def test_generated_change_message_carries_the_ten_stream_fields_in_order() -> None:
     fields = changestream_pb2.Change.DESCRIPTOR.fields
-    assert tuple(field.name for field in fields) == SPEC_020_FIELD_NAMES
+    assert tuple(field.name for field in fields) == STREAM_FIELD_NAMES
     assert tuple(field.number for field in fields) == tuple(range(1, 11))
 
 
-def test_stub_wires_the_spec_020_rpc_path() -> None:
+def test_stub_wires_the_stream_changes_rpc_path() -> None:
     client, channel = _make_client()
     list(client.stream_changes())
     assert channel.method == "/cdc.stream.v1.ChangeStream/StreamChanges"
 
 
-# --- Happy path (SPEC-020: one message per row change, in order, unmapped) ---
+# --- Happy path: one message per row change, in order, unmapped ---
 
 
 def test_stream_changes_yields_the_generated_change_messages_unmapped() -> None:
@@ -159,7 +158,7 @@ def test_stream_changes_yields_the_generated_change_messages_unmapped() -> None:
     assert type(yielded[0]) is changestream_pb2.Change
 
 
-# --- Call form (SPEC-020: empty request, Bearer-token metadata) ---
+# --- Call form: empty request, Bearer-token metadata ---
 
 
 def test_stream_changes_sends_the_bearer_token_in_authorization_metadata() -> None:
@@ -192,8 +191,8 @@ def test_stream_changes_sends_a_filterless_request() -> None:
     assert request.SerializeToString() == b""
 
 
-# --- Auth boundary (SPEC-020 Negative: Unauthenticated, not a swallowed
-# --- empty stream) ---
+# --- Auth boundary: UNAUTHENTICATED surfaces, the stream is not silently
+# --- empty ---
 
 
 def test_unauthenticated_surfaces_from_the_enumeration() -> None:

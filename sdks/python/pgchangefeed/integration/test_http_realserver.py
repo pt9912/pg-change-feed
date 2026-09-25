@@ -1,18 +1,15 @@
-"""Realserver integration test for the HTTP API client surface (SPEC-018).
+"""Real-server integration test for the HTTP API client.
 
 Runs only in the `integration` Docker stage (sdks/python/Dockerfile), started
 by tools/harness/run-sdk-python-integration-tests.sh inside the same Docker
-network as the feed container (ADR-0110 §Entscheidung Festlegung 2 — the
-HTTP surface carries its real-server evidence under the same rule the
-stream surfaces carry; this phase strengthens its evidence stand to that
-form). A roundtrip in the pattern of the server-E2E HTTP
-phase: the SDK registers a disposable consumer with the admin token and
-lists tables with the reader token; the registration is held against the
-SQL read path (`cdc.consumer`) by the runner; a call with an unknown token
-is rejected with HTTP status 401 (SPEC-018 Negative). The nine capabilities
-individually stay with the network-free unit tests (`tests/test_http_client.py`
-against `httpx.MockTransport`); this roundtrip proves the wire assumptions
-(auth header form, JSON mapping, rejection behavior) at the server.
+network as the feed container. A roundtrip: the SDK registers a disposable
+consumer with the admin token and lists tables with the reader token; the
+runner checks the registration against the SQL read path (`cdc.consumer`); a
+call with an unknown token is rejected with HTTP status 401. The individual
+capabilities stay with the network-free unit tests
+(`tests/test_http_client.py` against `httpx.MockTransport`); this roundtrip
+proves the wire assumptions (auth header form, JSON mapping, rejection
+behavior) at the server.
 """
 
 from __future__ import annotations

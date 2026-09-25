@@ -1,15 +1,8 @@
-"""Shared connection configuration for PG Change Feed client surfaces.
+"""Shared connection configuration for the PG Change Feed clients.
 
-ADR-0107 Festlegung 1 scoped the first Python package release to the HTTP
-API (SPEC-018); ADR-0110 extends the package scope to the full four-way
-delivery matrix — the gRPC live-change stream (SPEC-020) is covered by
-`PgChangeFeedGrpcClient`, the SSE stream (SPEC-021) by
-`PgChangeFeedSseClient`, and the NATS full-content stream (SPEC-024) by
-`PgChangeFeedNatsStreamClient`. This class still holds only the two values
-every wire surface needs regardless of transport (base address, bearer
-token), so a later surface can reuse it without a breaking change to this
-constructor -- no anticipation of endpoint methods themselves (analogy:
-sdks/csharp/PgChangeFeed.Client/PgChangeFeedClientOptions.cs).
+``ClientOptions`` holds the two values every client needs regardless of the
+transport: the server address and the bearer token. The HTTP, gRPC, SSE and
+NATS clients all take the same class.
 """
 
 from __future__ import annotations
@@ -19,16 +12,18 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ClientOptions:
-    """Connection configuration for a PG Change Feed client surface.
+    """Connection configuration for a PG Change Feed client.
 
     Attributes:
-        address: Base address of the PG Change Feed server (the endpoint the
-            surface consumes: HTTP base URL for the HTTP/SSE surfaces,
-            host:port for the gRPC surface, nats:// URL for the NATS
-            surface).
-        api_token: Bearer token sent as an authorization credential
-            (SPEC-018 HTTP header, SPEC-020 gRPC metadata, SPEC-021 SSE
-            header, SPEC-024 connection-level token).
+        address: Address of the PG Change Feed server, in the form the client
+            needs: the HTTP base URL for the HTTP and SSE clients, ``host:port``
+            for the gRPC client, a ``nats://`` URL for the NATS client.
+        api_token: Bearer token sent as the authorization credential: as a
+            header by the HTTP and SSE clients, as call metadata by the gRPC
+            client, and once when the connection is opened by the NATS client.
+
+    Raises:
+        ValueError: ``address`` or ``api_token`` is empty or blank.
     """
 
     address: str

@@ -22,7 +22,7 @@ Requires Python 3.14 or newer.
 
 ## Quick start
 
-A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server.
+A client needs the address of the PG Change Feed server and a token. The server knows two token classes: a *reader* token for read-only calls and an *admin* token for calls that change something (registering consumers, acknowledging positions, enabling tables, running the retention). The admin token also covers all reader calls. Address, source id and tokens come from whoever operates the server. The server does not serve TLS itself, so the examples use unencrypted addresses.
 
 ### Read changes and remember your position
 
@@ -62,7 +62,7 @@ if result.changes:
 
 The three live streams deliver every change committed after you connect. Each surface has its own client; all take the same `ClientOptions`.
 
-gRPC (`address` is `host:port`; the messages are the generated `Change` protobuf messages, row images are JSON bytes):
+gRPC (`address` is `host:port`; the messages are the generated `Change` protobuf messages, row images are JSON bytes, empty when there is none):
 
 ```python
 import grpc
@@ -114,7 +114,7 @@ for change in client.stream_changes():
 | `acknowledge_consumer(request)` | Stores the consumer's position. Repeating the same position has no effect; a position before the stored one is rejected. | admin |
 | `get_consumer_position(consumer_id)` | Reads the stored position (`offset`, and `acknowledged`, which is false for a consumer that never acknowledged). | reader |
 | `remove_consumer(consumer_id)` | Removes a consumer. | admin |
-| `enable_table(request)` | Starts capturing a table. | admin |
+| `enable_table(request)` | Starts capturing a table (see below). A table that is already captured changes nothing (`already_enabled` is true); a table that does not exist raises `PgChangeFeedNotFoundError`. | admin |
 | `disable_table(request)` | Stops capturing a table. `retained` reports that changes already stored for it remain. | admin |
 | `get_status(source, schema, table, publication)` | Tells whether a table is captured (`enabled`) or no longer captured with stored changes remaining (`retained`). | reader |
 | `list_tables(source, publication)` | Lists the captured tables and the tables whose stored changes remain. | reader |
@@ -122,6 +122,8 @@ for change in client.stream_changes():
 | `read_changes(source, schema, table, from_, to, limit)` | Reads stored changes of a source, optionally for one schema and table and for the range `[from_, to)` of commit positions. Only `source` is required. | reader |
 
 Request and response classes live in `pgchangefeed.models`.
+
+`EnableTableRequest` names the table and the ids it is captured under: `source`, `schema` and `table` identify the table, `publication` is the PostgreSQL publication of the source, `table_id` is the id you give the table (every change of the table carries it as `source_table_id`), and `schema_version_id` and `version` (a number, 1 or higher) identify the table's schema version (changes carry the id as `schema_version`).
 
 The live streams each have one method:
 
@@ -154,7 +156,7 @@ The live streams deliver `StreamChange` objects (gRPC: the generated `Change` me
 
 ## Error handling
 
-Every failing HTTP call raises a subclass of `PgChangeFeedError`, which carries the HTTP `status_code`. The same classes are raised when the SSE stream cannot be opened.
+An HTTP call that the server answers with an error status raises a subclass of `PgChangeFeedError`, which carries the HTTP `status_code`. The same classes are raised when the SSE stream cannot be opened. Connection failures and timeouts are not converted: they raise the `httpx` exception (for example `httpx.ConnectError` or `httpx.TimeoutException`).
 
 | Exception | When |
 |---|---|
