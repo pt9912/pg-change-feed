@@ -11,16 +11,31 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// fakeStore trägt den `ChangeStorePort` als Fake (`ADR-0030`): `ReadChanges`
-// meldet einen fest verdrahteten Bestand, `DeleteChanges` trägt die
-// übergebene Menge zur Prüfung, ob sie genau die freigegebene ist. Die
-// `…ErrFor`-Felder binden einen Port-Fehler an genau den Eingabewert, auf den
-// er antwortet (LP2): jede andere Quelle bzw. Menge trägt derselbe Fake.
+// fakeStore trägt den `ChangeStorePort` als Fake (`ADR-0030`):
+// `ReadRetentionCandidates` meldet einen fest verdrahteten Bestand in der
+// Reihenfolge der Liste, die der Fake als Ordnung des Schlüssels führt
+// (`after` steht auf der Kennung, hinter der die Seite beginnt),
+// `DeleteChanges` trägt die übergebene Menge zur Prüfung, ob sie genau die
+// freigegebene ist. `maxPage` und `pageScript` begrenzen die Seite je Aufruf
+// unter das übergebene `limit`; `readFailFrom` und `deleteFailFrom`
+// (1-basiert) lassen erst die Aufrufe ab dem n-ten scheitern. Die
+// `…ErrFor`-Felder binden einen Port-Fehler an genau den Eingabewert, auf
+// den er antwortet (LP2): jede andere Quelle bzw. Menge trägt derselbe Fake.
 type fakeStore struct {
 	records      []outbound.ChangeRecord
 	readCalls    int
+	readAfters   []model.ChangeID // `after` je Lese-Aufruf
+	readLimits   []int            // `limit` je Lese-Aufruf
 	deleteCalled bool
-	deletedIDs   []model.ChangeID
+	deletedIDs   []model.ChangeID   // Menge des letzten Lösch-Aufrufs
+	deleteCalls  [][]model.ChangeID // Menge je Lösch-Aufruf, auch der scheiternden
+	removed      []model.ChangeID   // Kennungen der gelungenen Lösch-Aufrufe
+
+	maxPage        int   // größte Seite je Aufruf; 0 = nur `limit` begrenzt
+	pageScript     []int // größte Seite je Aufruf n (0-basiert), sonst `maxPage`
+	readFailFrom   int
+	deleteFailFrom int
+	failErr        error
 
 	readErrFor   map[model.SourceID]error // Quell-Kennung → Fehler
 	deleteErrFor model.ChangeID           // freigegebene Kennung → Fehler
@@ -32,21 +47,65 @@ func (f *fakeStore) PersistTransaction(ctx context.Context, transaction *model.C
 }
 
 func (f *fakeStore) ReadChanges(ctx context.Context, query outbound.ChangeQuery) ([]outbound.ChangeRecord, error) {
+	return nil, stderrors.New("Fake-Store trägt für die Retention nur ReadRetentionCandidates")
+}
+
+func (f *fakeStore) ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]outbound.RetentionCandidate, error) {
+	call := f.readCalls
 	f.readCalls++
-	if err, ok := f.readErrFor[query.Source]; ok {
+	f.readAfters = append(f.readAfters, after)
+	f.readLimits = append(f.readLimits, limit)
+	if err, ok := f.readErrFor[source]; ok {
 		return nil, err
 	}
-	return f.records, nil
+	if f.readFailFrom > 0 && f.readCalls >= f.readFailFrom {
+		return nil, f.failErr
+	}
+
+	start := 0
+	if after != "" {
+		start = len(f.records)
+		for i, record := range f.records {
+			if record.Change.ID == after {
+				start = i + 1
+				break
+			}
+		}
+	}
+	size := limit
+	if f.maxPage > 0 && f.maxPage < size {
+		size = f.maxPage
+	}
+	if call < len(f.pageScript) && f.pageScript[call] < size {
+		size = f.pageScript[call]
+	}
+	page := make([]outbound.RetentionCandidate, 0, size)
+	for _, record := range f.records[start:] {
+		if len(page) == size {
+			break
+		}
+		page = append(page, outbound.RetentionCandidate{
+			ChangeID:    record.Change.ID,
+			Position:    record.Position,
+			CommittedAt: record.CommittedAt,
+		})
+	}
+	return page, nil
 }
 
 func (f *fakeStore) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
 	f.deleteCalled = true
 	f.deletedIDs = changeIDs
+	f.deleteCalls = append(f.deleteCalls, changeIDs)
+	if f.deleteFailFrom > 0 && len(f.deleteCalls) >= f.deleteFailFrom {
+		return f.failErr
+	}
 	for _, id := range changeIDs {
 		if f.deleteErrFor != "" && id == f.deleteErrFor {
 			return f.deleteErr
 		}
 	}
+	f.removed = append(f.removed, changeIDs...)
 	return nil
 }
 
@@ -272,7 +331,7 @@ func TestRunPositionsErrorFollowsSource(t *testing.T) {
 }
 
 // TestRunStoreReadErrorFollowsSource trägt den Fehlerpfad des
-// Kandidaten-Lesens: ein Fehler von `ReadChanges` wird unverändert
+// Kandidaten-Lesens: ein Fehler von `ReadRetentionCandidates` wird unverändert
 // durchgereicht, ohne Lösch-Zug. Die Ablehnung ist an die Quell-Kennung der
 // Abfrage gebunden — derselbe Fake liest eine andere Quelle ohne Fehler.
 func TestRunStoreReadErrorFollowsSource(t *testing.T) {
@@ -281,7 +340,10 @@ func TestRunStoreReadErrorFollowsSource(t *testing.T) {
 		t.Fatalf("NewRetentionPolicy: %v", err)
 	}
 	wantErr := stderrors.New("Change-Bestand nicht lesbar")
-	store := &fakeStore{readErrFor: map[model.SourceID]error{"src-kaputt": wantErr}}
+	store := &fakeStore{
+		records:    []outbound.ChangeRecord{{Change: mustChange(t, "c-1"), Position: mustPosition(t, 100), CommittedAt: model.NewTimePoint(0)}},
+		readErrFor: map[model.SourceID]error{"src-kaputt": wantErr},
+	}
 	state := &fakeState{}
 	service := retention.NewRunRetentionService(store, state, &fakeClock{now: model.NewTimePoint(0)})
 
@@ -340,5 +402,211 @@ func TestRunDeleteErrorFollowsEligibleSet(t *testing.T) {
 	}
 	if result.Deleted != 0 || len(store.deletedIDs) != 0 {
 		t.Fatalf("nicht freigegebener Change: Deleted=%d, Menge=%v (Erwartung: 0 und leer)", result.Deleted, store.deletedIDs)
+	}
+}
+
+// pagedRecords ist der Bestand der Seiten-Tests in der Ordnung des
+// Schlüssels: sieben Changes, davon vier freigegeben (c1, c4, c5, c7) bei
+// Mindestalter 1000, Wanduhr 10000 und einem Consumer an Position 200 —
+// c2 ist zu jung, c3 und c6 liegen hinter dem Consumer.
+func pagedRecords(t *testing.T) []outbound.ChangeRecord {
+	t.Helper()
+	return []outbound.ChangeRecord{
+		{Change: mustChange(t, "c1"), Position: mustPosition(t, 100), CommittedAt: model.NewTimePoint(8000)},
+		{Change: mustChange(t, "c2"), Position: mustPosition(t, 150), CommittedAt: model.NewTimePoint(9500)},
+		{Change: mustChange(t, "c3"), Position: mustPosition(t, 300), CommittedAt: model.NewTimePoint(8000)},
+		{Change: mustChange(t, "c4"), Position: mustPosition(t, 200), CommittedAt: model.NewTimePoint(9000)},
+		{Change: mustChange(t, "c5"), Position: mustPosition(t, 50), CommittedAt: model.NewTimePoint(1000)},
+		{Change: mustChange(t, "c6"), Position: mustPosition(t, 250), CommittedAt: model.NewTimePoint(8000)},
+		{Change: mustChange(t, "c7"), Position: mustPosition(t, 10), CommittedAt: model.NewTimePoint(5000)},
+	}
+}
+
+// runPaged führt einen Lauf über `pagedRecords` gegen den Fake aus.
+func runPaged(t *testing.T, store *fakeStore) (retention.RunRetentionResult, *fakeState, error) {
+	t.Helper()
+	policy, err := model.NewRetentionPolicy(model.Duration{Nanos: 1000})
+	if err != nil {
+		t.Fatalf("NewRetentionPolicy: %v", err)
+	}
+	store.records = pagedRecords(t)
+	state := &fakeState{positions: []model.ConsumerPosition{mustAckedConsumer(t, "cons-1", 200)}}
+	service := retention.NewRunRetentionService(store, state, &fakeClock{now: model.NewTimePoint(10000)})
+	result, err := service.Run(context.Background(), retention.RunRetentionCommand{Source: "src-1", Policy: policy})
+	return result, state, err
+}
+
+func idsEqual(got, want []model.ChangeID) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// TestRunReleasesSameSetAtEveryPageSize trägt die Mengen-Gleichheit über die
+// Seitengrenzen (`ADR-0124`): bei Seiten zu 1, 2, 3, 7 (= N), 8 (> N)
+// Kandidaten und bei einer Seite über alles gibt der Lauf genau die
+// handgeschriebene Menge [c1 c4 c5 c7] frei und zählt sie über alle Seiten;
+// die Zahl der Lese-Aufrufe ist die der nichtleeren Seiten plus die leere
+// Endseite. Die Seitengröße kommt vom Fake, `PageSize` ist eine Konstante.
+func TestRunReleasesSameSetAtEveryPageSize(t *testing.T) {
+	want := []model.ChangeID{"c1", "c4", "c5", "c7"}
+	cases := []struct {
+		name      string
+		maxPage   int
+		wantReads int
+	}{
+		{"Seite 1", 1, 8},
+		{"Seite 2", 2, 5},
+		{"Seite 3", 3, 4},
+		{"Seite N", 7, 2},
+		{"Seite größer N", 8, 2},
+		{"eine Seite über alles", 0, 2},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeStore{maxPage: tc.maxPage}
+			result, _, err := runPaged(t, store)
+			if err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			if !idsEqual(store.removed, want) {
+				t.Fatalf("gelöschte Menge = %v, wollen %v", store.removed, want)
+			}
+			if result.Deleted != len(want) {
+				t.Fatalf("Deleted = %d, wollen %d", result.Deleted, len(want))
+			}
+			if store.readCalls != tc.wantReads {
+				t.Fatalf("Lese-Aufrufe = %d, wollen %d", store.readCalls, tc.wantReads)
+			}
+		})
+	}
+}
+
+// TestRunReadsEachPageAtPageSizeFromTheLastKey trägt den Lese-Vertrag je
+// Aufruf: jeder Aufruf trägt `limit` = `retention.PageSize`, `after` ist beim
+// ersten leer und danach die letzte Kennung der vorigen nichtleeren Seite
+// (handgeschrieben für Seiten zu 3: c3, c6, c7).
+func TestRunReadsEachPageAtPageSizeFromTheLastKey(t *testing.T) {
+	store := &fakeStore{maxPage: 3}
+	if _, _, err := runPaged(t, store); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	wantAfters := []model.ChangeID{"", "c3", "c6", "c7"}
+	if !idsEqual(store.readAfters, wantAfters) {
+		t.Fatalf("after je Aufruf = %q, wollen %q", store.readAfters, wantAfters)
+	}
+	if retention.PageSize != 10000 {
+		t.Fatalf("PageSize = %d, wollen 10000", retention.PageSize)
+	}
+	for i, limit := range store.readLimits {
+		if limit != 10000 {
+			t.Fatalf("limit des Aufrufs %d = %d, wollen 10000", i+1, limit)
+		}
+	}
+}
+
+// TestRunDeletesOnlyTheReleasedIDsOfEachPage trägt die Löschung je Seite:
+// jeder `DeleteChanges`-Aufruf trägt nur Kennungen genau seiner Seite, eine
+// Seite ohne Freigabe geht mit leerer Menge (handgeschrieben für Seiten zu 1
+// und zu 3).
+func TestRunDeletesOnlyTheReleasedIDsOfEachPage(t *testing.T) {
+	cases := []struct {
+		name    string
+		maxPage int
+		want    [][]model.ChangeID
+	}{
+		{"Seiten zu 3", 3, [][]model.ChangeID{{"c1"}, {"c4", "c5"}, {"c7"}}},
+		{"Seiten zu 1", 1, [][]model.ChangeID{{"c1"}, {}, {}, {"c4"}, {"c5"}, {}, {"c7"}}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &fakeStore{maxPage: tc.maxPage}
+			if _, _, err := runPaged(t, store); err != nil {
+				t.Fatalf("Run: %v", err)
+			}
+			if len(store.deleteCalls) != len(tc.want) {
+				t.Fatalf("Lösch-Aufrufe = %v, wollen %v", store.deleteCalls, tc.want)
+			}
+			for i := range tc.want {
+				if !idsEqual(store.deleteCalls[i], tc.want[i]) {
+					t.Fatalf("Lösch-Aufruf %d = %v, wollen %v", i+1, store.deleteCalls[i], tc.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestRunReadsPositionsOncePerRun trägt den Ablauf von `ADR-0124`
+// Festlegung 4: über acht Lese-Aufrufe liest der Lauf die
+// Consumer-Positionen einmal.
+func TestRunReadsPositionsOncePerRun(t *testing.T) {
+	store := &fakeStore{maxPage: 1}
+	_, state, err := runPaged(t, store)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if store.readCalls != 8 || state.positionCalls != 1 {
+		t.Fatalf("Lese-Aufrufe = %d, Positions-Lese-Züge = %d, wollen 8 und 1", store.readCalls, state.positionCalls)
+	}
+}
+
+// TestRunReadFailureLeavesPagesBefore trägt den Abbruch zwischen Seiten
+// (`ADR-0124` Festlegung 6, „ab Aufruf n“): scheitert das Lesen ab dem
+// dritten Aufruf, bleiben die Löschungen der zwei Seiten davor bestehen, der
+// Lauf liefert den Fehler und ein leeres Ergebnis.
+func TestRunReadFailureLeavesPagesBefore(t *testing.T) {
+	wantErr := stderrors.New("Lesen ab Aufruf 3 nicht möglich")
+	store := &fakeStore{maxPage: 3, readFailFrom: 3, failErr: wantErr}
+	result, _, err := runPaged(t, store)
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Lese-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+	if want := []model.ChangeID{"c1", "c4", "c5"}; !idsEqual(store.removed, want) {
+		t.Fatalf("gelöschte Menge = %v, wollen genau die Seiten davor %v", store.removed, want)
+	}
+	if store.readCalls != 3 || result.Deleted != 0 {
+		t.Fatalf("Lese-Aufrufe = %d, Deleted = %d, wollen 3 und 0", store.readCalls, result.Deleted)
+	}
+}
+
+// TestRunDeleteFailureStopsAtThatPage trägt dieselbe Grenze für die
+// Löschung: scheitert `DeleteChanges` ab dem zweiten Aufruf, bleibt die
+// Löschung der ersten Seite bestehen, der Lauf liest keine weitere Seite und
+// liefert den Fehler.
+func TestRunDeleteFailureStopsAtThatPage(t *testing.T) {
+	wantErr := stderrors.New("Löschen ab Aufruf 2 nicht möglich")
+	store := &fakeStore{maxPage: 3, deleteFailFrom: 2, failErr: wantErr}
+	result, _, err := runPaged(t, store)
+	if !stderrors.Is(err, wantErr) {
+		t.Fatalf("Lösch-Fehler: %v (Erwartung: %v)", err, wantErr)
+	}
+	if want := []model.ChangeID{"c1"}; !idsEqual(store.removed, want) {
+		t.Fatalf("gelöschte Menge = %v, wollen genau die Seite davor %v", store.removed, want)
+	}
+	if len(store.deleteCalls) != 2 || store.readCalls != 2 || result.Deleted != 0 {
+		t.Fatalf("Lösch-Aufrufe = %d, Lese-Aufrufe = %d, Deleted = %d, wollen 2, 2 und 0", len(store.deleteCalls), store.readCalls, result.Deleted)
+	}
+}
+
+// TestRunContinuesPastShortPages trägt: eine Seite, die kürzer ist als
+// `limit`, ist nicht das Ende — nur die leere Seite beendet den Lauf. Der
+// Fake liefert Seiten zu 2, 1 und 4 Kandidaten, der Lauf erreicht c7.
+func TestRunContinuesPastShortPages(t *testing.T) {
+	store := &fakeStore{pageScript: []int{2, 1, 4}}
+	result, _, err := runPaged(t, store)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if want := []model.ChangeID{"c1", "c4", "c5", "c7"}; !idsEqual(store.removed, want) || result.Deleted != 4 {
+		t.Fatalf("gelöschte Menge = %v (Deleted %d), wollen %v", store.removed, result.Deleted, want)
+	}
+	if wantAfters := []model.ChangeID{"", "c2", "c3", "c7"}; !idsEqual(store.readAfters, wantAfters) {
+		t.Fatalf("after je Aufruf = %q, wollen %q", store.readAfters, wantAfters)
 	}
 }

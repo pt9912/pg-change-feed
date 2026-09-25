@@ -1193,3 +1193,79 @@ func TestReadBackfillRunsClassifiesDriverFailures(t *testing.T) {
 		}
 	}
 }
+
+// --- Retention-Kandidaten ---
+
+func TestReadRetentionCandidatesIssuesQueryAndTranslatesRows(t *testing.T) {
+	committed := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+		{"0bf-1", int64(1000), committed},
+		{"tx-9-1", int64(1000), committed.Add(time.Second)},
+	}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	candidates, err := sqlexec.ReadRetentionCandidates(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{
+		SQL:  "SELECT candidates",
+		Args: []any{"src-1", "", 10},
+		Fail: recorder.fail,
+	})
+	if err != nil {
+		t.Fatalf("ReadRetentionCandidates: %v", err)
+	}
+	if len(exec.queries) != 1 || exec.queries[0].sql != "SELECT candidates" || !reflect.DeepEqual(exec.queries[0].args, []any{"src-1", "", 10}) {
+		t.Fatalf("abgesetzter Aufruf = %+v", exec.queries)
+	}
+	want := []outbound.RetentionCandidate{
+		{ChangeID: "0bf-1", Position: model.SourcePosition{SourceID: "src-1", Offset: 1000}, CommittedAt: model.NewTimePoint(committed.UnixNano())},
+		{ChangeID: "tx-9-1", Position: model.SourcePosition{SourceID: "src-1", Offset: 1000}, CommittedAt: model.NewTimePoint(committed.Add(time.Second).UnixNano())},
+	}
+	if !reflect.DeepEqual(candidates, want) {
+		t.Fatalf("Kandidaten = %+v, wollen %+v", candidates, want)
+	}
+}
+
+func TestReadRetentionCandidatesEmptyResult(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	candidates, err := sqlexec.ReadRetentionCandidates(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{SQL: "SELECT candidates", Fail: recorder.fail})
+	if err != nil {
+		t.Fatalf("ReadRetentionCandidates: %v", err)
+	}
+	if candidates == nil || len(candidates) != 0 {
+		t.Fatalf("erwartete leere, gesetzte Rückgabe, gesehen %v", candidates)
+	}
+}
+
+func TestReadRetentionCandidatesLeavesDomainFailureUnclassified(t *testing.T) {
+	exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{{"tx-1-1", int64(0), time.Unix(0, 0)}}}}
+	recorder := &failRecorder{class: outbound.ErrStorage}
+
+	_, err := sqlexec.ReadRetentionCandidates(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{SQL: "SELECT candidates", Fail: recorder.fail})
+
+	if !stderrors.Is(err, domainerrors.ErrInvalidPosition) {
+		t.Fatalf("erwartete die Positions-Invariante, gesehen: %v", err)
+	}
+	if len(recorder.causes) != 0 {
+		t.Fatalf("ein Domänen-Fehler läuft nicht durch den Übersetzungspunkt: %v", recorder.causes)
+	}
+}
+
+func TestReadRetentionCandidatesClassifiesDriverFailures(t *testing.T) {
+	cause := stderrors.New("Treiber-Fehler")
+	cases := map[string]*fakeExecutor{
+		"Abfrage":   {queryErr: cause},
+		"Scan":      {rows: &fakeRows{rows: [][]any{{"tx-1-1", int64(1), time.Unix(0, 0)}}, scanErrs: map[int]error{0: cause}}},
+		"Iteration": {rows: &fakeRows{iterErr: cause}},
+	}
+	for name, exec := range cases {
+		recorder := &failRecorder{class: outbound.ErrStorage}
+		_, err := sqlexec.ReadRetentionCandidates(context.Background(), exec, model.SourceID("src-1"), sqlexec.Statement{SQL: "SELECT candidates", Fail: recorder.fail})
+		if !stderrors.Is(err, outbound.ErrStorage) || !stderrors.Is(err, cause) {
+			t.Fatalf("%s: Fehler trägt nicht Klasse und Ursache: %v", name, err)
+		}
+		if len(recorder.causes) != 1 || recorder.causes[0] != cause {
+			t.Fatalf("%s: Übersetzungspunkt gesehen: %v", name, recorder.causes)
+		}
+	}
+}

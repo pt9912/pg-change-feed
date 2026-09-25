@@ -164,6 +164,28 @@ func (a *PostgresChangeStoreAdapter) ReadChanges(ctx context.Context, query outb
 	})
 }
 
+// ReadRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
+// einer Quelle (`ADR-0124`): Kennung, Commit-Position und Commit-Zeitpunkt
+// je Change in der Ordnung des Primärschlüssels, ohne Row Images. Die
+// Abfrage trägt kein Löschprädikat — die Freigabe liegt im aufrufenden Use
+// Case. Ein `limit` kleiner 1 endet als `ErrNonPositiveLimit`, eine leere
+// Quelle als `ErrEmptyIdentifier`; Treiber-Fehler gehen in die Klasse
+// `storage` (storageFailure).
+func (a *PostgresChangeStoreAdapter) ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]outbound.RetentionCandidate, error) {
+	if limit < 1 {
+		return nil, outbound.ErrNonPositiveLimit
+	}
+	if source == "" {
+		return nil, domainerrors.ErrEmptyIdentifier
+	}
+
+	return sqlexec.ReadRetentionCandidates(ctx, a.db, source, sqlexec.Statement{
+		SQL:  queries.SelectRetentionCandidates,
+		Args: []any{string(source), string(after), limit},
+		Fail: func(cause error) error { return storageFailure(ctx, a.log, cause) },
+	})
+}
+
 // DeleteChanges entfernt physisch genau die übergebenen Changes
 // (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt der
 // aufrufende Use Case über `RetentionPolicy.AllowsDeletion`, dieser Adapter

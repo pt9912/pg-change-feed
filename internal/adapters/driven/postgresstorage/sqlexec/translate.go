@@ -73,6 +73,42 @@ func ReadChanges(ctx context.Context, exec Executor, statement Statement) ([]out
 	return records, nil
 }
 
+// ReadRetentionCandidates setzt die Kandidaten-Abfrage der Bereinigung ab
+// (`ADR-0124`) und trägt jede Zeile — Kennung, Commit-Position, Commit-
+// Zeitpunkt — in einen `RetentionCandidate`; die Reihenfolge der Rückgabe
+// trägt die SQL-Sortierung nach der Kennung. Die Quelle kommt vom Aufrufer
+// (die Abfrage filtert nach ihr), die Ergebniszeile führt sie nicht.
+func ReadRetentionCandidates(ctx context.Context, exec Executor, source model.SourceID, statement Statement) ([]outbound.RetentionCandidate, error) {
+	rows, err := exec.Query(ctx, statement.SQL, statement.Args...)
+	if err != nil {
+		return nil, statement.fail(err)
+	}
+	defer rows.Close()
+
+	candidates := make([]outbound.RetentionCandidate, 0)
+	for rows.Next() {
+		var changeID string
+		var commitPosition int64
+		var committedAt time.Time
+		if err := rows.Scan(&changeID, &commitPosition, &committedAt); err != nil {
+			return nil, statement.fail(err)
+		}
+		position, err := mapper.ToPosition(string(source), commitPosition)
+		if err != nil {
+			return nil, err
+		}
+		candidates = append(candidates, outbound.RetentionCandidate{
+			ChangeID:    model.ChangeID(changeID),
+			Position:    position,
+			CommittedAt: model.NewTimePoint(committedAt.UnixNano()),
+		})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, statement.fail(err)
+	}
+	return candidates, nil
+}
+
 // ReadConsumerPosition liest die bestätigte Position eines Consumers
 // (`LH-FA-CON-003` Happy Path); die Abwesenheit der Zeile liest sich als
 // Nullwert — die definierte Anfangsposition eines Consumers ohne

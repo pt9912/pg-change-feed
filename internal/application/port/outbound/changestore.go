@@ -21,6 +21,16 @@ type ChangeRecord struct {
 	CommittedAt model.TimePoint
 }
 
+// RetentionCandidate trägt die drei Größen, die die Bereinigung von einem
+// Change liest: seine Kennung, die Commit-Position seiner Quelltransaktion
+// und deren Commit-Zeitpunkt (`LH-FA-RET-003`, `LH-FA-RET-004`,
+// `ADR-0124`). Row Images gehören nicht dazu.
+type RetentionCandidate struct {
+	ChangeID    model.ChangeID
+	Position    model.SourcePosition
+	CommittedAt model.TimePoint
+}
+
 // ChangeQuery trägt die Lese-Eingabe am `ChangeStorePort`: Bereich
 // (`LH-FA-REA-001`), Startposition (`LH-FA-REA-002`), Limit
 // (`LH-FA-REA-003`) und den Tabellenfilter (`LH-FA-REA-006`). Nil- und
@@ -129,6 +139,16 @@ type ChangeStorePort interface {
 	// (`LH-FA-REA-002`); gelesene Changes bleiben innerhalb der Aufbewahrung
 	// erneut lesbar (`LH-FA-REA-005`).
 	ReadChanges(ctx context.Context, query ChangeQuery) ([]ChangeRecord, error)
+
+	// ReadRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
+	// einer Quelle (`ADR-0124`): höchstens `limit` Changes mit einer Kennung
+	// größer `after`, aufsteigend in der Ordnung des Schlüssels `change_id`
+	// — nicht in der fachlichen Ordnung von `ReadChanges`. `after` leer
+	// beginnt am Anfang; eine leere Seite ist das Ende, eine kürzere als
+	// `limit` nicht. Ein `limit` kleiner 1 endet als `ErrNonPositiveLimit`,
+	// eine leere Quelle als `ErrEmptyIdentifier`. Die Seite trägt kein Row
+	// Image; die Freigabe je Kandidat bleibt beim aufrufenden Use Case.
+	ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]RetentionCandidate, error)
 
 	// DeleteChanges entfernt physisch genau die übergebenen Changes
 	// (`LH-FA-RET-002`…`004`, `ADR-0014`): die Freigabe je Change trägt

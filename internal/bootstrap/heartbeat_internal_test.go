@@ -82,6 +82,10 @@ func (f *loggingStore) ReadChanges(ctx context.Context, query outbound.ChangeQue
 	return nil, nil
 }
 
+func (f *loggingStore) ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]outbound.RetentionCandidate, error) {
+	return nil, nil
+}
+
 func (f *loggingStore) DeleteChanges(ctx context.Context, changeIDs []model.ChangeID) error {
 	return nil
 }

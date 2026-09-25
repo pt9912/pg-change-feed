@@ -73,6 +73,22 @@ WHERE t.source_id = $1
 ORDER BY t.commit_position, c.transaction_id, c.sequence
 LIMIT $6`
 
+// SelectRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
+// einer Quelle (`ADR-0124`): Kennung, Commit-Position und Commit-Zeitpunkt
+// je Change, ohne Row Images. `$1` ist die Quelle, `$2` die Kennung, hinter
+// der die Seite beginnt (`''` ab dem Anfang), `$3` die Seitengröße. Die
+// Ordnung ist die des Primärschlüssels `change_id` in der Sortierung der
+// Datenbank; die Abfrage nutzt dessen Index und sortiert nicht. Sie trägt
+// kein Löschprädikat: die Freigabe je Change gehört der Domain Policy
+// (`ADR-0014`).
+const SelectRetentionCandidates = `
+SELECT c.change_id, t.commit_position, t.committed_at
+FROM cdc.change AS c
+JOIN cdc.transaction AS t ON t.transaction_id = c.transaction_id
+WHERE t.source_id = $1 AND c.change_id > $2
+ORDER BY c.change_id
+LIMIT $3`
+
 // DeleteChanges entfernt genau die übergebenen Change-Zeilen
 // (`LH-FA-RET-002`…`004`); die Freigabe je Change trägt der aufrufende Use
 // Case über `RetentionPolicy.AllowsDeletion` — diese Abfrage führt nur die

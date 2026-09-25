@@ -167,10 +167,11 @@ const administrationPollInterval = heartbeatInterval
 // retentionInterval trägt den periodischen Lösch-Takt der
 // Retention-Goroutine (`runRetentionCleanup`, `LH-FA-RET-002`…`004`,
 // `ADR-0014`): ein MVP-Default ohne eigene Konfigurationsschicht, analog
-// zu `heartbeatInterval` — Implementer-Entscheidung. Jeder Takt liest alle
-// Changes der Quelle und befragt `RetentionPolicy.AllowsDeletion`, ein
-// selteneres Intervall als der Heartbeat-Takt hält diese breitere
-// Leseoperation von der kritischen Sektion des Capture-Pfads fern.
+// zu `heartbeatInterval` — Implementer-Entscheidung. Jeder Takt liest die
+// Kandidaten der Quelle seitenweise ohne Row Images (`ADR-0124`) und
+// befragt `RetentionPolicy.AllowsDeletion` je Kandidat; ein selteneres
+// Intervall als der Heartbeat-Takt hält diese breitere Leseoperation von
+// der kritischen Sektion des Capture-Pfads fern.
 const retentionInterval = 10 * time.Second
 
 // retentionMinAge trägt das Mindestalter der `RetentionPolicy`

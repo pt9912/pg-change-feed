@@ -42,14 +42,23 @@ func NewRunRetentionService(store outbound.ChangeStorePort, state outbound.Consu
 
 var _ inbound.RunRetentionUseCase = (*RunRetentionService)(nil)
 
-// Run liest die Kandidaten-Changes der Quelle und die bestätigten
-// Consumer-Positionen, befragt `RetentionPolicy.AllowsDeletion` je
-// betrachtetem Change real (Alter aus `CommittedAt` gegen die Wanduhr,
-// Change-Position, alle bestätigten Consumer-Positionen der Quelle,
-// `LH-FA-RET-002`…`004`) und übergibt ausschließlich die freigegebene
-// Menge an `ChangeStorePort.DeleteChanges`. Eine leere Quellen-Kennung ist
-// eine ungültige Konfiguration und endet über einen expliziten Fehlerpfad,
-// keine stille Übernahme (`LH-FA-RET-002` Negative).
+// PageSize ist die Zahl der Kandidaten je Lese-Aufruf eines Laufs
+// (`ADR-0124`): der Arbeitsspeicher eines Laufs hängt an ihr, nicht an der
+// Zahl der gespeicherten Changes.
+const PageSize = 10_000
+
+// Run liest die bestätigten Consumer-Positionen und die Wanduhr einmal und
+// dann die Kandidaten der Quelle seitenweise (`PageSize`, ohne Row Images).
+// Je Seite befragt der Lauf `RetentionPolicy.AllowsDeletion` je Kandidat
+// (Alter aus `CommittedAt` gegen die Wanduhr, Change-Position, alle
+// bestätigten Consumer-Positionen der Quelle, `LH-FA-RET-002`…`004`) und
+// übergibt ausschließlich die freigegebene Menge dieser Seite an
+// `ChangeStorePort.DeleteChanges`; nur eine leere Seite beendet den Lauf.
+// Der Lauf ist über die Seiten nicht atomar: ein Fehler hinterlässt die
+// Löschungen der Seiten davor, der nächste Lauf setzt fort (`ADR-0124`).
+// Eine leere Quellen-Kennung ist eine ungültige Konfiguration und endet über
+// einen expliziten Fehlerpfad, keine stille Übernahme (`LH-FA-RET-002`
+// Negative).
 func (s *RunRetentionService) Run(ctx context.Context, command RunRetentionCommand) (RunRetentionResult, error) {
 	if command.Source == "" {
 		return RunRetentionResult{}, domainerrors.ErrEmptyIdentifier
@@ -59,23 +68,30 @@ func (s *RunRetentionService) Run(ctx context.Context, command RunRetentionComma
 	if err != nil {
 		return RunRetentionResult{}, err
 	}
-
-	records, err := s.store.ReadChanges(ctx, outbound.ChangeQuery{Source: command.Source})
-	if err != nil {
-		return RunRetentionResult{}, err
-	}
-
 	now := s.clock.Now()
-	eligible := make([]model.ChangeID, 0, len(records))
-	for _, record := range records {
-		age := now.Sub(record.CommittedAt)
-		if command.Policy.AllowsDeletion(age, record.Position, consumerPositions) {
-			eligible = append(eligible, record.Change.ID)
-		}
-	}
 
-	if err := s.store.DeleteChanges(ctx, eligible); err != nil {
-		return RunRetentionResult{}, err
+	deleted := 0
+	var after model.ChangeID
+	for {
+		page, err := s.store.ReadRetentionCandidates(ctx, command.Source, after, PageSize)
+		if err != nil {
+			return RunRetentionResult{}, err
+		}
+		if len(page) == 0 {
+			return RunRetentionResult{Deleted: deleted}, nil
+		}
+
+		eligible := make([]model.ChangeID, 0, len(page))
+		for _, candidate := range page {
+			age := now.Sub(candidate.CommittedAt)
+			if command.Policy.AllowsDeletion(age, candidate.Position, consumerPositions) {
+				eligible = append(eligible, candidate.ChangeID)
+			}
+		}
+		if err := s.store.DeleteChanges(ctx, eligible); err != nil {
+			return RunRetentionResult{}, err
+		}
+		deleted += len(eligible)
+		after = page[len(page)-1].ChangeID
 	}
-	return RunRetentionResult{Deleted: len(eligible)}, nil
 }

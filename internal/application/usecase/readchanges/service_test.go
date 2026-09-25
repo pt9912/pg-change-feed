@@ -36,6 +36,10 @@ func (f *fakeChangeStore) ReadChanges(_ context.Context, query outbound.ChangeQu
 	return f.records, f.err
 }
 
+func (f *fakeChangeStore) ReadRetentionCandidates(context.Context, model.SourceID, model.ChangeID, int) ([]outbound.RetentionCandidate, error) {
+	return nil, nil
+}
+
 func (f *fakeChangeStore) DeleteChanges(context.Context, []model.ChangeID) error {
 	return nil
 }

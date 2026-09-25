@@ -52,6 +52,13 @@ func (f *fakeStore) ReadChanges(ctx context.Context, query outbound.ChangeQuery)
 	return nil, stderrors.New("Fake-Store trägt nur die Persist-Seite")
 }
 
+// ReadRetentionCandidates trägt die Kandidaten-Lesefähigkeit am Port
+// (`ADR-0124`); der Fake implementiert sie ohne Stand — der Capture-Pfad
+// liest keine Kandidaten.
+func (f *fakeStore) ReadRetentionCandidates(ctx context.Context, source model.SourceID, after model.ChangeID, limit int) ([]outbound.RetentionCandidate, error) {
+	return nil, stderrors.New("Fake-Store trägt nur die Persist-Seite")
+}
+
 // DeleteChanges trägt die Löschfähigkeit am Port (`ADR-0014`); der Fake
 // implementiert sie ohne Stand — der Capture-Pfad löscht nicht, die reale
 // Löschfähigkeit trägt der Adapter-Test gegen PostgreSQL und der
