@@ -135,3 +135,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0120 | Capture: Slot bestätigt WAL ohne Inhalt für die Publication (ergänzt ADR-0007) | Accepted | 2026-09-25 | [0120-capture-slot-leerlauf-bestaetigung.md](0120-capture-slot-leerlauf-bestaetigung.md) |
 | ADR-0121 | Capture: Bindung der Leerlauf-Bedingung berichtigt (Supers. ADR-0120, teilw.) | Accepted | 2026-09-25 | [0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md](0121-capture-leerlauf-bedingung-store-bindung-berichtigt.md) |
 | ADR-0122 | Backfill: Tier der Replay-Invariante (Supers. ADR-0111, teilw.) | Accepted | 2026-09-25 | [0122-backfill-replay-invariante-e2e-tier.md](0122-backfill-replay-invariante-e2e-tier.md) |
+| ADR-0123 | Kotlin-SDK zusätzlich auf Cloudsmith (Supers. ADR-0109, teilw.) | Accepted | 2026-09-25 | [0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md](0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md) |
