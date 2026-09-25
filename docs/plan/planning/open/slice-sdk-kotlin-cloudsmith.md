@@ -191,7 +191,7 @@ jede Abweichung vor dem Sensor-Lauf in diese Tabelle nach.
 | `.github/workflows/sdk-kotlin-release.yml` | update | Zwei Jobs statt einem (Form: `permissions` ist je Job festgelegt; ein Matrix-Zweig nur, wenn der Implementer belegt, dass die Berechtigungen je Zweig verschieden sein können): `sdk-kotlin-github-packages` (`contents: read`, `packages: write`) und `sdk-kotlin-cloudsmith` (`contents: read`), ohne `needs` und ohne `continue-on-error`. Je Job: Checkout (der vorhandene SHA-gepinnte Schritt, keine neue `uses:`-Zeile), Tag validieren, `build.gradle.kts` gegen den Tag abgleichen, `make sdk-pack-kotlin`, Publish-Stufe bauen, Publish-Lauf mit der **Einzel-Aufgabe** des Ziels. Cloudsmith-Werte über `env:` des Schritts und `docker run -e NAME` (ohne Wert in der Kommandozeile), nie als Build-Argument. Kopfkommentar (Z. 1–83; Z. 59–64 sagen „AUSSCHLIESSLICH das eingebaute `GITHUB_TOKEN`“ und „KEIN externes Repository-Secret“) beschreibt die zwei Ziele. |
 | `sdks/kotlin/Dockerfile` | update | Probe-`RUN` in der Stufe `pack` (siehe Ansatz unten); Kommentare der Stufe `publish` (Z. 83–107 nennen nur GitHub Packages und `GITHUB_ACTOR`/`GITHUB_TOKEN`) tragen beide Ziele; die `CMD` der Stufe bleibt (`ADR-0123` Festlegung 4: der Workflow überschreibt sie ausdrücklich), ihr Kommentar sagt, dass die Sammel-Aufgabe ohne Cloudsmith-Werte scheitert; Artefaktnamen `0.2.1` in Z. 66, 67, 88 auf `0.2.2`. |
 | `sdks/kotlin/pgchangefeed-kotlin/README.md` | update | Abschnitt „Installation“: Cloudsmith zuerst (Repository-URL `https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, `settings.gradle.kts`-Snippet mit `mavenCentral()` **und** dem Cloudsmith-Repository ohne Zugangsdaten — die Abhängigkeiten des Packages löst der Anwender über Maven Central auf, `ADR-0123` Festlegung 6 —, Koordinate `io.github.pt9912:pgchangefeed-kotlin:0.2.2`), GitHub Packages als weiterer Weg mit Token-Hinweis (der heutige Absatz und das Snippet), Namensnennung (Text mit Link auf `https://cloudsmith.com` und Hinweis auf kostenloses Hosting für Open-Source-Projekte). Anwender-Sprache, **keine** Kennung `SPEC-`/`ADR-`/`LH-`/`ARC-`, kein Slice-/Welle-Name, keine Chronik. |
-| `docs/user/benutzerhandbuch.md` | update | Die vier Kotlin-Stellen, die den Bezug über GitHub Packages mit Token-Pflicht beschreiben (Z. 1049–1055, 1148–1153, 1225–1227, 1379–1382 am Stand `37e825e2`): der Bezug ohne Token über Cloudsmith steht zuerst, GitHub Packages als Weg mit Token. `Version:` (Stand `37e825e2`: `1.59`) und eine Zeile in `### Änderungshistorie` im selben Diff (`.claude/commands/implement-slice.md` Schritt 17). Die Zeilenangaben sind Lokatoren vom Stand `37e825e2` und verschieben sich mit jeder Nachbaränderung ([`AGENTS.md`](../../../../AGENTS.md) §3.13 Grenze). Beim Start `Version:` erneut lesen: ein anderer Slice kann sie vorher gehoben haben. |
+| `docs/user/benutzerhandbuch.md` | update | Die vier Kotlin-Stellen, die den Bezug über GitHub Packages mit Token-Pflicht beschreiben (Z. 1049–1055, 1148–1153, 1225–1227, 1379–1382 am Stand `37e825e2`): der Bezug ohne Token über Cloudsmith steht zuerst, GitHub Packages als Weg mit Token. `Version:` (Stand `37e825e2`: `1.59`; Stand `989beef3`: `1.61`, gemessen mit `grep -n '^Version:' docs/user/benutzerhandbuch.md`) und eine Zeile in `### Änderungshistorie` im selben Diff (`.claude/commands/implement-slice.md` Schritt 17). Die Zeilenangaben sind Lokatoren vom Stand `37e825e2` und verschieben sich mit jeder Nachbaränderung ([`AGENTS.md`](../../../../AGENTS.md) §3.13 Grenze). Beim Start `Version:` erneut lesen: ein anderer Slice kann sie vorher gehoben haben. |
 | `docs/user/releasing.md` | update | `Version:` `1.9` samt Historie-Zeile; §1 (Aufzählung der Release-Wege, Z. 21–28); §4 Kotlin-Abschnitt: Überschrift, „vierter, eigenständiger Release-Mechanismus“ (Z. 223), Ablauf mit zwei Jobs und Einzel-Aufgaben, der Absatz „Kein externes Repository-Secret nötig“ (Z. 266–277) und der Absatz „Ein realer Preis bleibt trotzdem bestehen“ (Z. 278–286); Secret-Tabelle (Z. 103–108) um `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY`; der Satz „Alle drei Secrets sind eine externe, kontobezogene Handlung“ (Z. 120) nennt heute eine Zahl, die nicht zur Tabelle passt (vier Zeilen) — die Zahl wird aus der Tabelle abgeleitet oder entfällt; ein neuer Absatz zur Cloudsmith-Paketseite (ob die POM-Beschreibung dort angezeigt wird: nicht geprüft, Betreiber pflegt optional den Text in der Web-App); der Absatz zur GitHub-Paketseite bleibt. Der erste reale Lauf bleibt als **offen** markiert, bis §5 erfüllt ist. |
 | `harness/README.md` (§Sensors) | update | Zeile `.github/workflows/sdk-kotlin-release.yml` (zwei Ziele, zwei Jobs, Cloudsmith-Secrets, Einzel-Aufgaben, Beleg-Stand); Zeile `make sdk-pack-kotlin` (Probe, Artefaktnamen `0.2.2`). Die Aufnahme geschieht erst, wenn der Workflow im Diff real existiert ([`AGENTS.md`](../../../../AGENTS.md) §4). |
 | `harness/mk/sdk.mk`, `tools/harness/sdk-pack-kotlin.sh`, `tools/harness/run-sdk-kotlin-release-tag-info-tests.sh` | update (nur Kommentare, falls der Suchlauf trifft) | Die Kommentare nennen GitHub Packages als einziges Ziel bzw. den Artefaktnamen `0.2.1` (`sdk.mk` Z. 75; `sdk-pack-kotlin.sh` Z. 34; der Tabellentest Z. 6, dort als Abgrenzung „kein GitHub-Packages-Äquivalent“ zu `:latest` — bleibt richtig, der Implementer prüft und belässt). Die Skriptlogik bleibt unverändert. |
@@ -411,7 +411,7 @@ Closure.
   Fenster hatte der Vorgänger-Slice bei `0.2.1`). Zu belegen durch: §5 (die Version ist
   abrufbar). **Ausgang:** *entfallen* mit dem Tag-Lauf.
 - **Parallele Änderungen an geteilten Trägern** — `docs/user/benutzerhandbuch.md`
-  (Version 1.59, Änderungshistorie), `docs/user/releasing.md`, `harness/README.md` und
+  (`Version:` am Stand `989beef3`: 1.61, Änderungshistorie), `docs/user/releasing.md`, `harness/README.md` und
   `spec/pflichtenheft.md` sind Träger, die andere Slices berühren; der Start liest den
   Ist-Zustand und zieht `Version:` und Historie am dann geltenden Stand nach.
   **Ausgang:** *entfallen*, wenn der Diff keine fremde Zeile überschreibt (`git diff
@@ -440,7 +440,8 @@ Werkzeug-Kommentare), `docs/user/` und `spec/` (Träger). Die Modus-Deklaration 
 die Default-Sub-Area `*` (`PGC`, Greenfield) — keine Ausdifferenzierung nötig.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register `BEO-PGC` durchgegangen
-(Zähler = Zahl der `evidence/`-Dateien, gemessen 2026-09-25). Treffer je berührter
+(Zähler = Zahl der `evidence/`-Dateien, gemessen 2026-09-25 nach der Closure von
+`slice-backfill-speicher-untersuchung`). Treffer je berührter
 Sub-Area:
 
 - `release-mechanismus-nicht-in-releasing-doku-nachgezogen` (1×, offen): der
@@ -450,10 +451,10 @@ Sub-Area:
   Workflow wechselt seine Struktur; §2/§5 tragen den Post-Push-Beleg, §6 das Risiko.
 - `zwei-quellen-drift-handbuch-gegen-pflichtenheft` (3×, offen): Handbuch und
   Pflichtenheft beschreiben denselben Sachverhalt; als Risiko in §6.
-- `nachzug-laesst-ueberholten-text-stehen` (9×, verkörpert) und
-  `arbeit-ueberholt-stehenden-traeger` (31×, verkörpert): die bewegten Eigenschaften
+- `nachzug-laesst-ueberholten-text-stehen` (10×, verkörpert) und
+  `arbeit-ueberholt-stehenden-traeger` (32×, verkörpert): die bewegten Eigenschaften
   (Secret-Regime, Vertriebsziel, Version) haben den committeten Suchlauf in §3.
-- `zahl-in-traeger-driftet-gegen-die-messung` (21×, verkörpert): die Zahlen im Suchlauf
+- `zahl-in-traeger-driftet-gegen-die-messung` (22×, verkörpert): die Zahlen im Suchlauf
   stehen wie gedruckt und mit Ursprung; die zwei Summen (`51`, `36`) sind als abgeleitet
   gekennzeichnet.
 - `negativtest-ohne-bindung-an-seine-eingabe` (12×, verkörpert): die Mutations-Tabelle

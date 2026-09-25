@@ -290,7 +290,7 @@ Zählwort, Beschreibung samt Hedge):
 
 ```text
 git grep -n -E 'DeleteChanges|ReadChanges|SelectChanges|ChangeStorePort' -- internal test tools spec docs/user harness
-git grep -n -E '1,03 bis 1,57|2,65 bis 4,19|2 KiB je Change|4,5 KiB|7,7 GiB|8,9 bis 10,5|Bemessung des Speicherlimits|4\.000\.000' -- docs/user harness spec internal tools
+git grep -n -E '1,03 bis 1,5[79]|2,65 bis 4,19|2 KiB je Change|4,5 KiB|7,7 GiB|8,9 bis 10,5|Bemessung des Speicherlimits|4\.000\.000' -- docs/user harness spec internal tools
 git grep -n -i -E 'alle Changes der Quelle|liest alle|Bereinigungslauf|Retention-Lauf|Bereinigungs-Takt|retentionInterval|Speicher des Feed-Containers|Spitze im Run|Speicherlimit|unbegrenzt|nicht begrenzt' -- docs/user harness spec internal tools README.md docs/plan/adr
 ```
 
@@ -298,6 +298,14 @@ git grep -n -i -E 'alle Changes der Quelle|liest alle|Bereinigungslauf|Retention
 24, `tools` 2, `spec` 7, `docs/user` 2, `harness` 0); Befehl 2: 12 (alle in `docs/user`,
 sonst 0); Befehl 3: 80 (`docs/user` 18, `harness` 5, `spec` 5, `internal` 16, `tools` 9,
 `README.md` 0, `docs/plan/adr` 27). Diff: *(Implementer trägt ein)*.
+
+Der Ausdruck `1,03 bis 1,5[79]` in Befehl 2 trifft beide Fassungen des Höchstwerts je Change:
+das Handbuch trägt am Parent `5b1f7762` `1,03 bis 1,57`, am Stand `989beef3` `1,03 bis 1,59`
+(Reihe B, Run 3 des Messberichts; Nachrechnung: 3.096,6 MiB × 1.024 / 2.000.000 = 1,585 KiB,
+abgeleitet aus `verifikation-slice-backfill-speicher-untersuchung` §3, F-2). Gemessen mit
+`git grep -c` (Befehl 2 mit dem Ausdruck `1,5[79]`): Parent 12 Zeilen, Stand `989beef3` 13
+Zeilen; mit dem früheren Ausdruck `1,03 bis 1,57` am Stand `989beef3` 12 Zeilen, keine davon
+die Höchstwert-Zeile des Handbuchs (Handbuch-Text dort `1,03 bis 1,59`).
 
 | Träger | Befund | Behandlung |
 |---|---|---|
@@ -308,7 +316,7 @@ sonst 0); Befehl 3: 80 (`docs/user` 18, `harness` 5, `spec` 5, `internal` 16, `t
 | `spec/pflichtenheft.md`, [`LH-FA-RET-004.a`](../../../../spec/pflichtenheft.md) | trägt drei Punkte und den Satz „Retention ist eine Domain Policy“; keine Aussage zur Lesung | zu ziehen: Punkt 4 |
 | `tools/schema/nacharbeit-roles.sql` (Kommentar und Grant von `cdc_admin`) | trägt `SELECT, DELETE` auf `cdc.transaction`/`cdc.change` | gelesen, **nicht zu ziehen**: das Lesen der Kandidaten braucht kein neues Recht |
 | `harness/README.md`, Zeile `make test-store` | vom Suchlauf nicht getroffen (kein Symbolname); die Zeile führt die Inhalte des Laufs einzeln auf | Implementer entscheidet, ob die Kandidaten-Seiten-Tests eine Erwähnung tragen |
-| [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) (Kontext, Teilfrage 7), [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md) („Ohne `limit` liest der Aufruf unbegrenzt“, „produktiver Aufrufer … Retention-Lauf“), [`ADR-0057`](../../adr/0057-http-grpc-api.md), [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md), [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md) | beschreiben den Stand ihrer Entscheidung (Befehle 1 und 3) | **nicht geändert**: `Accepted`-ADRs ([`AGENTS.md`](../../../../AGENTS.md) §3.5); `ADR-0111` ist der Anker der neuen ADR |
+| [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) (Kontext, Teilfrage 7), [`ADR-0081`](../../adr/0081-changes-lesen-ueber-die-http-api.md) („Ohne `limit` liest der Aufruf unbegrenzt“, „produktiver Aufrufer … Retention-Lauf“), [`ADR-0057`](../../adr/0057-http-grpc-api.md), [`ADR-0118`](../../adr/0118-backfill-umschreiben-im-snapshot-fenster.md), [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md) | beschreiben den Stand ihrer Entscheidung (Befehle 1 und 3) | **nicht geändert**: `Accepted`-ADRs ([`AGENTS.md`](../../../../AGENTS.md) §3.5); `ADR-0111` ist der Anker der neuen ADR; `ADR-0124` nennt `1,03 bis 1,57 KiB` in den Zeilen 68, 191 und 199, der Messbericht den Höchstwert 1,59 — für die Entscheidung folgenlos (Faktor 6,9 bis 10,6 statt sieben bis zehn gegen etwa 0,15 KiB, abgeleitet aus `verifikation-slice-backfill-speicher-untersuchung` V-1); die Closure dieses Slice schreibt bei Bedarf die Berichtigung, eine Berichtigungs-ADR nur, wenn eine Entscheidung an der Zahl hinge |
 | `spec/pflichtenheft.md`, [`SPEC-022`](../../../../spec/pflichtenheft.md) („Noch nicht begrenzt“) und `docs/user/benutzerhandbuch.md` („Ohne `limit` liest der Aufruf unbegrenzt“) | gelten `GET /changes`, nicht der Retention | **nicht geändert** |
 | `tools/harness/run-integration-tests.sh`, `harness/targets/bench-backfill.md` | Kommentare zum Takt; die Zählung „Bereinigungs-Takte“ beschreibt die Zählung, nicht die Lesung | **nicht geändert** |
 | `docs/reviews/**`, `docs/plan/planning/done/**`, Beobachtungs-Belege | tragen den Stand ihrer Zeit (Messbericht, Verdikt, Review-Reports) | **nicht geändert**: Records |
@@ -444,17 +452,19 @@ geschrieben.
 Sub-Areas — kein Anlass zur Ausdifferenzierung.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen (Zähler gemessen
-am 2026-09-25 mit `ls evidence | wc -l` je Eintrag; Stand der Einträge aus ihrer
+am 2026-09-25 nach der Closure von `slice-backfill-speicher-untersuchung` mit `ls evidence | wc -l` je Eintrag; Stand der Einträge aus ihrer
 `state.md`):
 
-- `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` (1×, geplant → `slice-backfill-speicher-untersuchung`):
-  der Befund dieser Untersuchung trägt diesen Slice; das Feld „Gegenstand“ der `state.md`
-  führt „die Ursache ist nicht untersucht“ (gemeldet vom Untersuchungs-Slice, dessen
-  Closure es nachzieht).
-- `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (21×, verkörpert, Deckel): die
+- `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` (2×, geplant → dieser Slice): der Befund
+  der Untersuchung trägt diesen Slice; die `state.md` führt die Ursache als untersucht und
+  belegt (Messbericht `messbericht-slice-backfill-speicher-untersuchung` §4).
+- `BEO-PGC/vorbestehender-defekt-durch-messung-im-nachbarsystem-gefunden` (1×, offen): die
+  Vorbedingung des Server-Release in §4 und die Release-Aussage in §7 sind der Träger des
+  Release-Rahmens.
+- `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (22×, verkörpert, Deckel): die
   Zahlen des Handbuchs und der Bemessungsregel — jede Zahl der Nachmessung trägt Ursprung
   und Lauf; die Bemessungsregel ist abgeleitet oder entfällt.
-- `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (31×, verkörpert): der Suchlauf in §3.
+- `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (32×, verkörpert): der Suchlauf in §3.
 - `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (12×, verkörpert, Deckel): die
   Eingabeseiten-Mutationen des Store-Tiers in der DoD.
 - `BEO-PGC/db-gegenstand-enthaelt-netzlos-geprueften-code` (3×, verkörpert): die

@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-speicher-untersuchung (Messbericht §1 Punkt 6 und §7, Review F-12, Verifikation §5)
+
+**Fund:** Die Untersuchung der Speicher-Spitze im Backfill fand die Ursache im Retention-Lauf: er liest alle Changes der Quelle samt Row Images (`ReadChanges` ohne Limit, Takt 10 s); der Schalter „Bereinigung aus“ hält den Speicher flach (Reihe J: 13,3, 13,2 und 13,7 MiB `memory.peak` bei 1.000.000, 2.000.000 und 3.000.000 Changes, gemessen). Die Lesung steht in `v0.1.0`, `v0.1.1` und `v0.1.2` in Zeile 63 der Datei des Use Cases (`git grep -n ReadChanges <Tag> -- internal/application/usecase/retention`, gelesen, nicht am Image der Version gemessen; der Verifier fuhr den Lauf und fand `git diff --stat v0.1.2 HEAD` über Use Case und Port leer). Der Trigger des Folge-Slice rahmte die Frage als Frage eines Backfill-Releases; der Reviewer (F-12) verlangte den Rahmen „vorbestehender Defekt in allen veröffentlichten Versionen“, der Messbericht führt ihn in §1 Punkt 6 und §7.
+
+Quelle: `docs/reviews/review-slice-backfill-speicher-untersuchung.md` (F-12) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-speicher-untersuchung.md` (§5). <!-- d-check:status-provenance -->

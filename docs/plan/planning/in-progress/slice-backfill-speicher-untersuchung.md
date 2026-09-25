@@ -112,14 +112,14 @@ ersten Betreiber.
 - [x] Doku-Update: siehe dritter Liefer-Punkt (Handbuch §Grenzwerte,
       `harness/targets/bench-backfill.md`, falls der Vertrag der Messung eine
       Grundlinie führt).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
 - [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Closure der nächsten Welle (die Roadmap führt
@@ -138,7 +138,7 @@ hat kein bekanntes Ende.
 | `tools/bench-backfill.sh` (falls die Grundlinie fehlt) | update | Speicher ohne Run vor und nach der Stufe, im Ursprung jeder Zahl genannt. Geliefert: Grundlinie 30 s nach dem Start, Speicher 20 s und 60 s nach der Stufe, Zahl der Zeilen in `cdc.change` vor und nach der Stufe. |
 | `harness/targets/bench-backfill.md` | update | Vertrag der Messung nennt die Grundlinie; Abschnitt zum zweiten Skript; Grenzen „Speicher“ und „Zeilenbreite“ nachgezogen. |
 | `docs/user/benutzerhandbuch.md` (§Grenzwerte, Version, Änderungshistorie) | update | gemessene Grenze samt Ursprung statt der übernommenen Zahlen. Geliefert: Speicher-Bullet ersetzt (Ursache, Tabelle, Bemessung), Richtgröße-Bullet um den Speicher ergänzt, Vorbedingungs-Absatz in §4 „Bestand als Backfill überführen“ und Absatz in „Aufbewahrung (Retention)“ (Träger derselben Aussage), Version 1.60. |
-| Bericht des Slice unter `docs/reviews/` | neu | gedruckte Zeilen der Messreihe, Ursache, Ausgang. Geliefert als `messbericht-slice-backfill-speicher-untersuchung.md` (Bericht) und `messbericht-slice-backfill-speicher-untersuchung-zeilen.md` (gedruckte Zeilen, 15 Reihen). |
+| Bericht des Slice unter `docs/reviews/` | neu | gedruckte Zeilen der Messreihe, Ursache, Ausgang. Geliefert als `messbericht-slice-backfill-speicher-untersuchung.md` (Bericht) und `messbericht-slice-backfill-speicher-untersuchung-zeilen.md` (gedruckte Zeilen; 21 Überschriften `Reihe`/`Reihen <Buchstabe>` am Stand `989beef3`, gemessen mit `grep -c -E '^#{2,3} Reihen? [A-Z]'`; die Buchstaben reichen von A bis R). |
 | `tools/bench-backfill-memory.sh` | neu | **über den Plan hinaus:** die Trennung von Run, Nachlauf und Zahl der Changes braucht einen Container je Run und die cgroup-Zähler vom Host aus; `tools/bench-backfill.sh` liefert das nicht, ohne seine Messung zu ändern. Kein Produktionscode nötig (Zähler von außen, `GODEBUG=gctrace=1`). |
 | `tools/bench-lib.sh` | update | **über den Plan hinaus:** `BENCH_FEED_ENV` und `BENCH_FEED_DOCKER_ARGS` für `bench::start_feed` (Umgebungsvariablen und `docker run`-Argumente des Feed-Containers, Speichergrenze). |
 | `harness/README.md` (Zeile `make bench`) | update | **über den Plan hinaus:** nennt das zweite Skript als Werkzeug außerhalb von `make bench`. |
@@ -162,8 +162,9 @@ Verzeichnis nicht gefunden“ ist in der Fassung des Reviews nicht reproduzierba
 Konstruktion `{ S=$(<Datei); } 2>/dev/null` gegen eine fehlende Datei: keine Ausgabe;
 Lauf `20260925T165631Z` mit `--memory 64m`: keine solche Zeile), keine Änderung. F-8 (Ursache und
 Zahl im Plan des Folge-Slice) und der Suchbefehl mit `1,03 bis 1,57` im Plan des Folge-Slice
-(Zeile 293) gehören in dessen Plan: **gemeldet**, nicht mitgeändert (Planner). F-14: keine
-Aktion (Prozess-Hinweis, kein Rückstand).
+(Zeile 293) gehören in dessen Plan: **gemeldet**, nicht mitgeändert (Implementer); F-8 ist
+im Plan des Folge-Slice gezogen, der Suchbefehl (`1,03 bis 1,5[79]`) und sein Suchlauf-Feld
+sind in der Closure berichtigt (Planner). F-14: keine Aktion (Prozess-Hinweis, kein Rückstand).
 
 Nicht realisiert: nichts vom Plan. Die Eingrenzung „Breite Zeilen als eigene Messreihe“
 (§1) wurde ausgeübt, weil die Ursache an der Zeilenbreite hängt (Reihen H und I); der Plan
@@ -181,12 +182,15 @@ git grep -n -E 'estimatedRowsGuideline|DefaultBlockSize' -- internal
 
 **Stand und Trefferzahl (gemessen mit den zwei Befehlen oben; Parent =
 `493a28ad`, Diff = Arbeitsbaum samt Index dieses Slice, neue Dateien mit `git add`
-aufgenommen).** Befehl 1: Parent 242 Zeilen (`docs/user` 58, `harness` 13, `spec` 36,
-`internal` 111, `tools` 24), Diff 280 (71, 23, 36, 111, 39). Befehl 2: Parent 11, Diff 11.
+aufgenommen; die Diff-Zahlen sind an zwei Ständen gemessen, weil die Fixrunde das Handbuch
+weiter verändert).** Befehl 1: Parent 242 Zeilen (`docs/user` 58, `harness` 13, `spec` 36,
+`internal` 111, `tools` 24); Stand `4f94f900` 280 (71, 23, 36, 111, 39); Stand `989beef3` 288
+(`docs/user` 79, `harness` 23, `spec` 36, `internal` 111, `tools` 39; gemessen mit `git grep
+-c` je Wurzel am 2026-09-25). Befehl 2: Parent 11, Stand `989beef3` 11.
 Der zusätzliche Lauf auf die alten Zahlen und die Aussage „nicht untersucht“ (`git grep -n
 -E '1\.544|641,7|467 MiB|401,7|416,5' -- docs/user harness` und
 `git grep -n -i 'nicht untersucht' -- docs/user harness spec internal tools`): Parent 7
-und 1 Treffer, Diff 2 und 0.
+und 1 Treffer, Stand `989beef3` 2 und 0.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
@@ -232,13 +236,28 @@ sieben Treffer des Befehls 1 im Diff sind wahr — zwei Zeilen der Tabelle in §
 trifft die Endung von „16,0 GiB“), die Versionszeile `1.57` und die Historienzeile 1.61 des
 Handbuchs (nennt den früheren Wert als Gegenstand der Korrektur), und die Zeile 293 des Plans
 des Folge-Slice (Stand `3405c9a1`; sie nennt `1,03 bis 1,57` als Suchausdruck; **gemeldet**, Träger in fremder
-Datei: der Ausdruck trifft im Handbuch seit dieser Fixrunde nicht mehr, dort steht `1,03 bis
-1,59`); Befehl 2 im Diff: der Satz „für jedes Skript, das `bench::start_feed` ruft“ im Vertrag
-gilt für die zwei Umgebungsvariablen und bleibt wahr. **Nicht gefunden:** kein weiterer Träger
-außerhalb der Suchwurzeln nennt den Höchstwert 1,57, die Prozentangabe oder die Reihenfolge
-„Release vor Änderungs-Slice“; `spec/` und `README.md` tragen keine dieser Zahlen. Der Träger
+Datei: der Ausdruck trifft im Handbuch nicht mehr, dort steht `1,03 bis 1,59`; in der Closure
+auf `1,03 bis 1,5[79]` berichtigt); Befehl 2 im Diff: der Satz „für jedes Skript, das
+`bench::start_feed` ruft“ im Vertrag gilt für die zwei Umgebungsvariablen und bleibt wahr.
+**Nicht gefunden** (innerhalb der Suchwurzeln der fünf Befehle): kein weiterer Träger in
+`docs/user`, `harness`, `tools`, den zwei Messberichten und `docs/plan/planning/open` nennt
+den Höchstwert 1,57 (ohne die Selbstverweise der Pläne, die den früheren Wert als Gegenstand
+der Berichtigung nennen), die Prozentangabe oder die Reihenfolge „Release vor Änderungs-Slice“;
+`spec/` und `README.md` tragen keine dieser Zahlen. **Außerhalb der Suchwurzeln gefunden**
+(Nachmessung der Verifikation V-1 mit `git grep -n -E '1,03 bis 1,57' <Stand>` über den ganzen
+Baum, Stand `989beef3`): `docs/plan/adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md`
+(Zeilen 68, 191, 199, `Accepted`), das Architect-Verdikt
+`docs/reviews/architect-verdict-retention-lauf-speicher-begrenzung.md` (Zeilen 152, 155, 167,
+Record) und die Zitate des Befunds in Review- und Verifikations-Report (Records). **Behandlung:**
+keine Änderung an ADR, Verdikt und Reports; die Entscheidung trägt mit der Abweichung 1,57
+gegen 1,59 (Höchstwert je Change, Reihe B Run 3: 3.096,6 MiB × 1.024 / 2.000.000 = 1,585 KiB,
+abgeleitet) unverändert — der Faktor der Kandidaten-Größe („sieben bis zehn“ gegen etwa 0,15 KiB)
+wird 6,9 bis 10,6, die Bedarfsrechnung 864.000 × 1,03 bis 1,59 KiB ergibt 0,85 bis 1,31 GiB
+(abgeleitet, Verifikation V-1) und keine Festlegung der ADR hängt an der zweiten Stelle der
+Zahl; deshalb keine Berichtigungs-ADR. Bei Bedarf schreibt die Closure des Folge-Slice
+`slice-retention-lauf-speicher-begrenzung` die Berichtigung in ihre Suchlauf-Zeile. Der Träger
 `state.md` des Registers und der Plan des Folge-Slice (Trigger, Zahl „3.000.000“, Ursache des
-Ausbleibens der Takte) liegen in Händen des Planners und sind gemeldet.
+Ausbleibens der Takte) sind in der Closure nachgezogen.
 
 ## 4. Trigger
 
@@ -274,38 +293,175 @@ oder Handbuch-Grenze) + Closure-Notiz mit Lerneintrag geschrieben.
   zu belegen durch:* jede
   Zahl nennt Host und Lauf; das DoD-Kriterium „Ursache benannt“ ist hostunabhängig
   gefasst (`BEO-PGC/dod-kriterium-haengt-am-messhost`, 1×, offen).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *weiter offen* → Register `BEO-PGC/dod-kriterium-haengt-am-messhost`
+  (1×, offen; der Eintrag trägt das Risiko „Messung hängt am Host“) und das Risiko „Die
+  Nachmessung hängt am Host“ im Folge-Slice `slice-retention-lauf-speicher-begrenzung`
+  (§6). Beleg: jede Zahl trägt Host, Reihe und Lauf und ist als gemessen, abgeleitet oder
+  übernommen gekennzeichnet (Verifikation §7); die Ursache ist hostunabhängig belegt
+  (Schalter „Bereinigung aus“, Code-Lesung an drei Tags, Verifikation §2 Zeile 2 und §5);
+  offen bleibt die Streuung: ein Host, `n` = 2 bis 3 je Bedingung (Messbericht §9). Das
+  Kriterium hat keine zweite Ausprägung der Klasse geliefert, der Zähler des Eintrags
+  bleibt 1×.
 - **Die Ursache bleibt ungeklärt.** *Erwartet, zu belegen durch:* der Ausgang
   „ungeklärt mit gemessener Grenze“ ist zulässig und steht im Bericht und im
-  Handbuch; er ist kein stiller Abschluss. **Ausgang:** *(bei Closure)*
+  Handbuch; er ist kein stiller Abschluss. **Ausgang:** *entfallen* — die Ursache ist
+  benannt und belegt: der Retention-Lauf liest alle Changes der Quelle samt Row Images;
+  Bereinigung aus hält `memory.peak` bei 13,3, 13,2 und 13,7 MiB (1.000.000, 2.000.000,
+  3.000.000 Changes, Reihe J) gegen 1.082,7 MiB mit Bereinigung (Reihe B, Run 1;
+  Verifikation §2 Zeile 2). Ein Teilbefund bleibt **benannte Grenze**, kein Risiko dieses
+  Slice: das Ausbleiben der Bereinigungs-Takte ab 2.000.000 Changes ist beobachtet und
+  nicht erklärt (Messbericht §9, Handbuch „Grenzwerte“); Adresse: Folge-Slice
+  `slice-retention-lauf-speicher-begrenzung` §6, zweiter Punkt (Nachmessung bei 1.000.000,
+  2.000.000 und 3.000.000 Changes).
 - **Der Slice läuft nicht vor dem ersten Server-Release mit Backfill** (kein
   Wächter). *Erwartet, zu belegen durch:* der Start-Trigger (§4) und die
   Results-Notiz von `welle-backfill-bestand` nennen die Bedingung; die Prüfung liegt
-  beim Planner der Release-Vorbereitung. **Ausgang:**
-  *(bei Closure)*
+  beim Planner der Release-Vorbereitung. **Ausgang:** *entfallen* — die Bedingung ist
+  eingehalten: `git tag -l 'v*'` nennt `v0.1.0`, `v0.1.1` und `v0.1.2` (gemessen am
+  2026-09-25), kein Server-Tag über `v0.1.2`, und dieser Slice liegt in `done/`. Die
+  Reihenfolge „Änderungs-Slice vor `v0.2.0`“ bleibt ohne mechanischen Wächter; ihr Träger
+  ist die Vorbedingung im Folge-Slice `slice-retention-lauf-speicher-begrenzung` (§4) und
+  das Risiko dort (§6, letzter Punkt); Adresse der Prüfung: der Planner der
+  Release-Vorbereitung.
 - **Die Warn-Richtgröße bleibt unbegründet, weil kein Wachstum gemessen wird**
   (`BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`, 1×, Ausgang: dieser Slice).
   *Erwartet, zu belegen durch:* die Bewertung im dritten Liefer-Punkt.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — das Wachstum ist gemessen (1,03 bis 1,59 KiB je Change bei
+  schmalen Zeilen, Messbericht §3.3) und die Richtgröße bewertet: sie bezieht den Speicher
+  nicht ein, 4.000.000 Changes entsprechen 3,9 bis 6,1 GiB (abgeleitet, Messbericht §6);
+  der Wert im Code bleibt, die Neubemessung nach dem Trigger von
+  [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md) „Eine Messung
+  liegt vor“ ist Liefer-Punkt des Folge-Slice. Das Register trägt den Eintrag mit dem
+  Ausgang *geplant* → `slice-retention-lauf-speicher-begrenzung`.
 - **Speicher des Messhosts während der Messreihe.** Die Stufe mit 1.000.000
   Zeilen belastet Docker-Volumes und den Feed-Container; kein `docker volume
   prune` und kein `docker system prune` im Lauf. *Erwartet, zu belegen durch:*
-  der Bericht nennt die Aufräum-Schritte des Runners. **Ausgang:** *(bei
-  Closure)*
+  der Bericht nennt die Aufräum-Schritte des Runners. **Ausgang:** *entfallen* — der
+  Messbericht nennt die Schritte (§9: `docker rm -fv` und `docker network rm` je Lauf, kein
+  `prune`) und den Bestand (§10: 34 freie Volumes vor und nach den Läufen, kein Container
+  und kein Netz `pgc-bench-*` zurück); die Verifikation zählt in ihren Läufen ebenfalls 34
+  vor und 34 nach (Verifikation §1, Hygiene).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Prüfung läuft
-  regelkonform bei der Closure der nächsten Welle.
+- **Was hat funktioniert:** Die Messung war der Sensor, und der Schalter trennte Ursache
+  von Wirkung: die Untersuchung des Backfills fand die Ursache im Retention-Lauf — Bereinigung
+  aus hält den Speicher flach, `cdc.change` leeren senkt den Live-Heap (Messbericht §4). Die
+  Rollen-Kette lief in getrennten Kontexten: der Reviewer (2 HIGH · 3 MEDIUM · 5 LOW · 4 INFO)
+  rechnete die Handbuch-Zahlen gegen das Zeilen-Dokument nach und fand F-1 (11,3 statt 18 %
+  Untergrenze) und F-2 (1,585 statt 1,51 KiB je Change); der Verifier bestätigte die DoD mit
+  `make gates` (Exit 0) und eigenen Läufen der Eingabeseite (Container mit `--memory 64m`
+  endet mit Exit 1 und dem Zustand `OOMKilled true`; ohne die Prüfung im Skript nennt der
+  Abbruch den Zustand nicht) und fand V-1 durch den Lauf des Suchbefehls über den ganzen
+  Baum.
+- **Was ging anders als geplant:** (1) Der Plan rechnete mit einem Ausgang „wächst der
+  Speicher mit der Tabellengröße“; die Ursache liegt nicht im Backfill, sondern im
+  Nachbarsystem Retention und besteht in allen veröffentlichten Server-Versionen (`v0.1.0` bis
+  `v0.1.2`, Verifikation §5). Der Ausgang ist ein Änderungs-Slice
+  (`slice-retention-lauf-speicher-begrenzung`) mit der Entscheidung
+  [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md); der
+  Release-Rahmen ändert sich: Änderungs-Slice zuerst, danach `v0.2.0` (Entscheidung des
+  Nutzers, Messbericht §7). (2) Das Werkzeug wuchs über den Plan hinaus: ein zweites Skript
+  (`tools/bench-backfill-memory.sh`) und zwei Umgebungsvariablen in `tools/bench-lib.sh`
+  (§3, „über den Plan hinaus“). (3) Die Fixrunde lief ohne zweiten Reviewer-Durchgang —
+  **benannte Grenze** (V-5), wie bei `slice-backfill-bench-richtgroesse` (dort V-4) und
+  `slice-backfill-e2e` (dort V-3): der Verifier maß die Fixrunde nach (Verifikation §3, §4,
+  §7), eine Reviewer-Lesung der neuen Texte ist nicht gefahren.
+- **Verifier-Beobachtungen (V-1 bis V-5):** *V-1* (MEDIUM): das Feld „Nicht gefunden“ der
+  Fixrunde ist berichtigt (§3: Suchwurzeln genannt, Fundstellen außerhalb mit Behandlung).
+  [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md) (`Accepted`)
+  trägt in den Zeilen 68, 191 und 199 „1,03 bis 1,57 KiB“ (n = 15), der Messbericht den
+  Höchstwert 1,59 (Reihe B, Run 3). **Bekannte, für die Entscheidung folgenlose Abweichung**;
+  die ADR und das Architect-Verdikt (Zeilen 152, 155, 167) bleiben unverändert. Eine
+  Berichtigungs-ADR setzt der Planner nicht an, weil keine Festlegung der ADR an der zweiten
+  Stelle der Zahl hängt: der Faktor der Kandidaten-Größe („sieben bis zehn“ gegen etwa
+  0,15 KiB) wird 6,9 bis 10,6, die Bedarfsrechnung 864.000 × 1,03 bis 1,59 KiB ergibt 0,85
+  bis 1,31 GiB (abgeleitet, Verifikation V-1). Die Closure des Folge-Slice schreibt bei Bedarf
+  die Berichtigung in ihre Suchlauf-Zeile (der Plan trägt die Zeile zur ADR).
+  *V-2* (LOW): der Suchausdruck im Plan des Folge-Slice ist auf `1,03 bis 1,5[79]`
+  berichtigt, der Stand mit den Trefferzahlen an beiden Ständen genannt (Parent 12, Stand
+  `989beef3` 13). *V-3* (LOW): das erste Zählfeld nennt beide Stände (280 am Stand
+  `4f94f900`, 288 am Stand `989beef3`), und „15 Reihen“ ist auf 21 Überschriften gemessen
+  (`grep -c`) umgestellt. *V-4* (INFO): **benannte Grenze** — die Varianten-Images der
+  Reihen E, F, G, I und J (aus dem Arbeitsbaum mit einer geänderten Konstante gebaut) sind
+  nicht committet, das Rezept steht als Prosa (Messbericht §2 und §4); der Lauf
+  `20260925T165631Z` steht nicht im Zeilen-Dokument (die Nicht-Reproduzierbarkeit von F-10 (b)
+  bestätigt der Verifier mit eigenem Lauf, Verifikation §4 Zeile D). Wer die Reihen
+  nachfährt, baut nach dem Prosa-Rezept. *V-5* (INFO): **benannte Grenze**, siehe „Was ging
+  anders“ (3).
+- **Steering-Loop-Eintrag (Lerneintrag):** *Geschärfte Regel (Kandidat, nicht entschieden,
+  1×):* Findet ein Untersuchungs- oder Bench-Slice die Ursache eines Symptoms im
+  Nachbarsystem, so verschiebt der Befund den **Release-Rahmen**: die Messung mit einem
+  Schalter (hier „Bereinigung aus“) trennte Ursache von Wirkung und deckte einen in allen
+  veröffentlichten Versionen vorhandenen Defekt auf (`v0.1.0` bis `v0.1.2`); der
+  Untersuchungs-Slice trägt deshalb im selben Zug die Reichweite an den Tags, die
+  Reihenfolge „Änderungs-Slice vor Server-Release“ als Vorbedingung im Trigger des
+  Folge-Slice und die Release-Aussage in dessen Closure —
+  `BEO-PGC/vorbestehender-defekt-durch-messung-im-nachbarsystem-gefunden` (neu, 1×, offen,
+  Träger nicht gewählt). *Zahlen im Messbericht (bestehende Klasse):* die Handbuch-Zahlen
+  wichen im Review zweimal (HIGH) von den gedruckten Zeilen ab (F-1, F-2), dazu zwei
+  Zählwörter im Suchlauf-Feld (V-3):
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (22×, verkörpert, Deckel); die Regel
+  „Messung zuerst, dann Text“ trägt `AGENTS.md` §3.12 Instanz A — kein neuer Träger.
+  *Neuer Sensor:* `tools/bench-backfill-memory.sh` (Vertrag
+  `harness/targets/bench-backfill.md`) trennt Run, Nachlauf und Zahl der Changes und liest
+  die cgroup-Zähler vom Host aus; ein durch die Speichergrenze beendeter Feed-Container ist
+  ein Messergebnis mit Exit 1 in beiden Bench-Skripten (Mutationen: Messbericht §8,
+  Verifikation §4). Kein Gate, keine Schwelle (`AGENTS.md` §3.6). *Benannte Spec-Lücke:* das
+  Pflichtenheft führt keine Aussage zum Speicher der Retention-Lesung
+  ([`LH-FA-RET-004.a`](../../../../spec/pflichtenheft.md) trägt drei Punkte;
+  [`SPEC-005`](../../../../spec/pflichtenheft.md) betrifft den Transaktionspuffer des
+  Erfassungspfads); der Folge-Slice trägt den Nachzug (Punkt 4 der Verfeinerung).
+  *Sensor-Dokumente:* keine Änderung nötig — der Diff berührt weder Code noch Coverage-Profile
+  (`git diff --stat 493a28ad..989beef3 -- internal cmd gen proto` leer, gemessen), und
+  `git grep -n -i -E 'bench-backfill|Speicher des Feed|memory\.peak|bench-lib|BENCH_FEED'
+  -- harness/sensors` trifft nichts (gemessen am Stand `989beef3`).
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-backfill-speicher-untersuchung.md`, Zähler = Zahl der Dateien.
+  *Bestehende Klassen:* `BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes` **2×** (Ursache
+  untersucht; Ausgang *geplant* → `slice-retention-lauf-speicher-begrenzung`),
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` **22×** (F-1, F-2, V-3),
+  `BEO-PGC/nachzug-laesst-ueberholten-text-stehen` **10×** (F-3, F-5, V-2; ab diesem
+  Beleg gilt der Deckel bei 10×), `BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht` **14×**
+  (V-1) und `BEO-PGC/arbeit-ueberholt-stehenden-traeger` **32×** (V-1, V-2); die vier
+  verkörperten Einträge tragen bereits einen Ausgang. *Neue Klasse:*
+  `BEO-PGC/vorbestehender-defekt-durch-messung-im-nachbarsystem-gefunden` **1×**, offen.
+  *Ohne Anfall:* `BEO-PGC/dod-kriterium-haengt-am-messhost` (das Kriterium war
+  hostunabhängig gefasst, Zähler bleibt 1×), `BEO-PGC/backfill-adapter-startwerte-ohne-messung`
+  (1×, keine neue Messung zur Frist oder Einfügeform) und
+  `BEO-PGC/geschaetzter-wert-als-grenze` (1×). F-4, F-6, F-8, F-9, F-10, F-11, F-13 und F-14
+  sind kein eigener Register-Anfall (Werkzeug- und Text-Findings ohne wiederkehrende Klasse
+  im Register). *Lese-Schritt der nächsten Welle-Closure (`welle-transformationen`):* kein
+  Eintrag erreicht mit diesem Beleg 3× ohne Ausgang — die vier bestehenden Klassen sind
+  verkörpert, die neue steht bei 1×, `blockgroesse-zaehlt-zeilen-nicht-bytes` bei 2× —,
+  es entsteht kein Vermerk.
+- **Folge-Slices:** `slice-retention-lauf-speicher-begrenzung` (Datei in `open/`;
+  Umsetzung von [`ADR-0124`](../../adr/0124-retention-kandidaten-seitenweise-ohne-row-images.md);
+  Start-Trigger: dieser Slice in `done/`, Vorbedingung des Server-Release `v0.2.0`). Die
+  Zahlen des Handbuchs unter „Grenzwerte“ sind Zahlen vor der Behebung; ihre Ersetzung und
+  die Neubemessung der Warn-Richtgröße tragen die Liefer-Punkte des Folge-Slice (Adresse:
+  Closure des Folge-Slice `slice-retention-lauf-speicher-begrenzung`).
+  Übergaben an offene Pläne (`AGENTS.md` §3.13): der Folge-Slice trägt V-2, den Stand der
+  Register-Zähler und die Zeile zur Abweichung 1,57 gegen 1,59; `slice-sdk-kotlin-cloudsmith`
+  trägt die Handbuch-`Version:` am Stand `989beef3` (1.61) und die Register-Zähler; die
+  Slices von `welle-transformationen` nennen keine Handbuch-Versionsnummer und keine Aussage
+  zum Speicher (gemessen mit `git grep` auf Versionsnummern und „Speicher“/„Grenzwerte“ in
+  `slice-transformationen-betriebsdoku`, Stand `989beef3`), kein Nachzug.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Die Ursache bleibt
+  ungeklärt (die Ursache ist belegt; das Ausbleiben der Takte ab 2.000.000 Changes bleibt
+  benannte Grenze mit Adresse im Folge-Slice) · Der Slice läuft nicht vor dem ersten
+  Server-Release mit Backfill · Die Warn-Richtgröße bleibt unbegründet · Speicher des
+  Messhosts während der Messreihe. *Weiter offen:* Die Messung hängt am Host → Register
+  `BEO-PGC/dod-kriterium-haengt-am-messhost` und Risiko der Nachmessung im Folge-Slice.
+  *Restrisiken der Verifikation (keine Risiken des Plans):* die Live-Erfassung als
+  Speicherquelle ist aus dem Code gelesen, nicht gemessen (Adresse: Handbuch „Grenzwerte“ und
+  Messbericht §9, der Folge-Slice übernimmt die Formulierung); die Handbuch-Zahlen sind
+  Zahlen vor der Behebung (Adresse: Closure des Folge-Slice, siehe oben).
+- **Drei Paarungen:** dieser Slice hat keine Welle. Anker, Folge-Slice und Register trägt
+  diese Closure selbst: Folge-Slice `slice-retention-lauf-speicher-begrenzung` in `open/`,
+  Register fortgeschrieben (siehe oben). Die Prüfung läuft zusätzlich bei der Closure der
+  nächsten Welle ([welle-transformationen](../welle-transformationen.md); die Roadmap führt
+  sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

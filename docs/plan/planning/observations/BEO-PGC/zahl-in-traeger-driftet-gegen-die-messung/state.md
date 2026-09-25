@@ -1,4 +1,4 @@
-Deckel bei 21× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 22× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -35,7 +35,10 @@ Werte ohne Zeitpunkt). **Genau das ist der Gegenstand des Ausgangs:** die Regel
 **verkörpern** (Träger-Kandidat: `AGENTS.md` §3.7 als Geschwister-Ort, oder der
 Kopf des ADR-Index) **und** die verbleibenden Träger darauf prüfen.
 
-Zähler (abgeleitet): **21×** (evidence/slice-backfill-sdk-origin.md — eine Trefferzahl im
+Zähler (abgeleitet): **22×** (evidence/slice-backfill-speicher-untersuchung.md — Prozentangabe
+und Höchstwert je Change gegen die gedruckten Zeilen (beide HIGH), zwei Zählwörter im
+Suchlauf-Feld, Review F-1, F-2 und Verifikation V-3;
+evidence/slice-backfill-sdk-origin.md — eine Trefferzahl im
 Suchlauf-Feld (26 statt gemessen 29, drei Zeilen aus `harness/README.md` fehlten), Review F-1,
 Verifikation §6; evidence/slice-backfill-slot-leerlauf-bestaetigung.md —
 ein Lauf ohne auflösbaren Träger im Handbuch, eine Trefferzahl im Suchlauf-Feld und ein
@@ -55,7 +58,7 @@ evidence/slice-backfill-row-image-gemeinsam.md,
 evidence/slice-backfill-change-origin.md,
 evidence/slice-backfill-snapshot-reader.md) —
 **Schwelle erreicht** (bereits verkörpert, kein neuer Schwellen-Übertritt; der
-Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 21×).
+Lese-Schritt der Closure von `welle-backfill-bestand` liest den Eintrag mit, 22×).
 Der zwanzigste Beleg (slice-backfill-slot-leerlauf-bestaetigung) trifft einen Handbuch-Lauf
 ohne auflösbaren Träger und **Zahlen im Suchlauf-Feld eines Plans**, dessen Suchraum die
 Plan-Datei selbst enthält: ihre Treffer sind ein Selbstverweis und driften mit jedem Edit

@@ -1,0 +1,6 @@
+**Vorgang:** slice-backfill-speicher-untersuchung (Review F-3 und F-5, beide MEDIUM; Verifikation V-2)
+
+**Fund:** (F-3) Der neu geschriebene Absatz in §4 des Handbuchs sagte, der Speicher wachse „nach dem Run, nicht während er läuft“; der Nachbar-Bullet in §9 beschränkte die flache Spitze im Run auf ein leeres `cdc.change`. (F-5) Der Start-Trigger des Folge-Slice („bevor ein Server-Release veröffentlicht wird, der den Backfill trägt und dessen Handbuch den Speicherbedarf nicht als bekannte Grenze führt“) war mit dem Handbuch-Nachzug desselben Diffs unerfüllbar und widersprach der Empfehlung im Messbericht. (V-2) Nach der Fixrunde trägt das Handbuch den Höchstwert `1,03 bis 1,59`; der Suchausdruck im Plan des Folge-Slice (Zeile 293) trug `1,03 bis 1,57` und traf im Handbuch nicht mehr (0 Treffer, gemessen mit `git grep`); der Träger liegt in einer fremden Datei und wurde gemeldet, nicht mitgeändert. Die Closure berichtigt den Ausdruck.
+
+Quelle: `docs/reviews/review-slice-backfill-speicher-untersuchung.md` (F-3, F-5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-backfill-speicher-untersuchung.md` (§3 Zeilen F-3 und F-5, §6, §10 V-2). <!-- d-check:status-provenance -->

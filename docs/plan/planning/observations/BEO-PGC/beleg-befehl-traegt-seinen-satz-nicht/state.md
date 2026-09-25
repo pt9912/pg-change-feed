@@ -1,4 +1,4 @@
-Deckel bei 13× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 14× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -17,8 +17,10 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **13×**
-(evidence/slice-backfill-sdk-origin.md, evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **14×**
+(evidence/slice-backfill-speicher-untersuchung.md — Form **Befehl**: die Negativaussage
+„nicht gefunden“ reichte über die Suchwurzeln des Befehls hinaus, Verifikation V-1;
+evidence/slice-backfill-sdk-origin.md, evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,
 evidence/slice-release-version-und-workflow.md,
 evidence/slice-sdk-kotlin-pack-werkzeug.md,
@@ -28,7 +30,7 @@ evidence/slice-backfill-snapshot-reader.md,
 evidence/slice-backfill-run-usecase.md,
 evidence/slice-backfill-sql-administration.md) —
 **Schwelle erreicht**; bereits verkörpert, der Lese-Schritt der Closure von
-`welle-backfill-bestand` liest den Eintrag mit (13×). Der dreizehnte Beleg
+`welle-backfill-bestand` liest den Eintrag mit (14×). Der dreizehnte Beleg
 (`evidence/slice-backfill-sdk-origin.md`, F-2) trifft die Form **Befehl**: ein
 `git log -S`-Befund über Vorgänger-Commits belegte das Gegenteil des Satzes, den er
 tragen sollte (die Commits hoben, der Satz sagte „hob nicht“). Der zwölfte Beleg

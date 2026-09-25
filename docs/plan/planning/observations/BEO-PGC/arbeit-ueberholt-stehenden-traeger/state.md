@@ -1,4 +1,4 @@
-Deckel bei 31× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
+Deckel bei 32× (seit welle-backfill-bestand): weitere Auftreten, die vor dem Merge
 vom Reviewer oder Verifier gefunden werden, Schwere ≤ LOW haben und einen bekannten
 Träger-Typ treffen, bekommen keine `evidence/`-Datei, sondern stehen mit Finding-Kennung
 in der Closure-Notiz des Slice (`../../README.md`, Deckel für verkörperte Einträge
@@ -17,7 +17,10 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **31×** — die elf unten benannten
+Ordinal-Erzählung unten übernommen): **32×** — der Beleg
+`evidence/slice-backfill-speicher-untersuchung.md` (der Höchstwert je Change bewegt, drei
+Träger außerhalb des Diffs und der Suchwurzeln — `ADR-0124`, Architect-Verdikt, Plan des
+Folge-Slice — tragen die frühere Zahl; Verifikation V-1 und V-2), die elf unten benannten
 (`slice-091`, `slice-093`, `slice-094`, `slice-095`, `slice-096`,
 `slice-097`, `slice-100`, `slice-101`, `slice-102`, `slice-103`,
 `slice-105`) plus fünf zwischen `slice-105` und diesem Nachtrag ergänzte,
@@ -66,7 +69,7 @@ vom Reviewer, die Fixrunde zog die Sicht nach und das Feld trägt die Datei seit
 mit beiden Ständen — Anwendungs-Schärfung der verkörperten Regel `AGENTS.md` §3.13
 (das Suchmuster folgt der Bezeichnung, die der Träger führt, nicht der des
 eigenen Diffs), kein Schwellen-Übertritt; der Lese-Schritt der Closure von
-`welle-backfill-bestand` liest den Eintrag mit (31×).
+`welle-backfill-bestand` liest den Eintrag mit (32×).
 Der achtundzwanzigste Beleg,
 `evidence/slice-backfill-change-origin.md`: die bewegte Eigenschaft (Feldzahl
 der `GET /changes`-Antwort) trug Träger in `*.kt` und `*.cs`
