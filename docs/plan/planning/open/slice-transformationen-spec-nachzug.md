@@ -32,7 +32,9 @@ die Regelform (`rule_spec`), [`ARC-002`](../../../../spec/architecture.md),
 [`SPEC-020`](../../../../spec/pflichtenheft.md),
 [`SPEC-021`](../../../../spec/pflichtenheft.md),
 [`SPEC-022`](../../../../spec/pflichtenheft.md),
-[`SPEC-024`](../../../../spec/pflichtenheft.md) (dieselben zehn Felder),
+[`SPEC-024`](../../../../spec/pflichtenheft.md) (Live-Nachrichten
+`SPEC-020`/`-021`/`-024`: zehn Felder; `SPEC-022`: dreizehn, `origin`
+inbegriffen — die Transformationen ändern keines),
 [`LH-FA-CFG-008.a`](../../../../spec/pflichtenheft.md). Der Verweis zeigt
 **aufwärts**: die Spec nennt diesen Slice nie.
 
@@ -85,8 +87,13 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
   und die Tabellen-Identität bleiben Quell-Identität;
 - (e) §4: die Zeile `schema` der Fehlerklassen-Tabelle nennt zusätzlich die
   Nichtanwendbarkeit einer Regel (Spalte fehlt in der Relation der Change;
-  Zielname kollidiert mit einer Spalte der Relation) samt Aktion und
-  Abhilfe-Weg;
+  Zielname kollidiert mit einer Spalte der Relation) im Erfassungspfad **und**
+  im Run (dort gegen die Spalten des Snapshots) samt Aktion und Abhilfe-Weg;
+  [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) sagt in einem Satz,
+  dass eine im Run nicht anwendbare Regel den Run `failed` mit der Klasse
+  `schema` beendet, ohne Change und ohne den Erfassungspfad zu berühren
+  (Folgepflicht 1 von
+  [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md));
 - (f) `spec/architecture.md`: die Tabellen und Aufzählungen, die die
   Antragsarten nennen (Antragsart-Tabelle im Abschnitt zur SQL-Aktivierung),
   tragen die zwei weiteren Arten; die Capture-Sequenz sagt, dass Row Images die
@@ -130,7 +137,9 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
       Spalten, Menge, `applied`-Bedeutung, Verhalten ohne laufende Bindung,
       Fehlertexte), die Regelform samt Randfällen,
       [`SPEC-002`](../../../../spec/pflichtenheft.md) (Schlüsselmenge folgt dem
-      Regelstand) und die Zeile `schema` in §4; eine neu vergebene Kennung ist
+      Regelstand), die Zeile `schema` in §4 (Erfassungspfad und Run) und der
+      Satz zum Run in
+      [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md); eine neu vergebene Kennung ist
       die nächste freie (*zu belegen durch* `grep -o 'SPEC-0[0-9][0-9]'
       spec/pflichtenheft.md | sort -u` am Parent-Stand); §7 Historie trägt je
       Änderung eine Zeile ohne ADR-/Slice-Bezug.
@@ -169,7 +178,7 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
 |---|---|---|
 | `spec/pflichtenheft.md` §1 ([`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md)) | update | Überschrift und Text auf den beantworteten Stand; Zusagen-Form. |
 | `spec/pflichtenheft.md` §2 ([`SPEC-019`](../../../../spec/pflichtenheft.md), [`SPEC-002`](../../../../spec/pflichtenheft.md), gegebenenfalls neue Kennung) | update / neu | Datenstrukturen; die Regelform als Datenstruktur, nicht als Breiten-Regel (§3). |
-| `spec/pflichtenheft.md` §4 (Zeile `schema`) | update | Bedingung, Aktion und Abhilfe-Weg der Fehlerklasse. |
+| `spec/pflichtenheft.md` §4 (Zeile `schema`) und `LH-FA-CAP-009.a` (Absatz „Sichtbarkeit und Fehler des Runs“) | update | Bedingung, Aktion und Abhilfe-Weg der Fehlerklasse, im Erfassungspfad und im Run. |
 | `spec/pflichtenheft.md` §7 Historie | update | je Änderung eine Zeile, ohne ADR-/Slice-Bezug. |
 | `spec/architecture.md` (Antragsart-Tabelle, Capture-Sequenz) | update | die zwei weiteren Antragsarten; Row Images tragen den Regelstand vor der Persistierung. |
 

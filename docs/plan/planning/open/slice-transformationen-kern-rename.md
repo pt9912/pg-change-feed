@@ -182,8 +182,10 @@ abbildet“; beide Stände gemessen):**
 in `done/` liegt (Kopplung K1 der Welle
 [welle-backfill-bestand](../welle-backfill-bestand.md) §5: die Regelauswertung
 hängt an der **einen** gemeinsamen Funktion, nicht an zwei Bild-Erzeugern),
-`slice-transformationen-spec-nachzug` in `done/` liegt und kein anderer Slice
-in `in-progress/` liegt (WIP-Limit 1).
+`slice-transformationen-spec-nachzug` und `slice-harness-suchlauf-nachmessen`
+in `done/` liegen (der zweite liefert das Nachmess-Werkzeug für das
+§3.13-Suchlauf-Feld dieses Plans) und kein anderer Slice in `in-progress/`
+liegt (WIP-Limit 1).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

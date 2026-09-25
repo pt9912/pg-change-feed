@@ -27,7 +27,12 @@ Folgepflicht 5 (E2E-Belege) und §Fitness Function (realer Rundlauf),
 [`SPEC-021`](../../../../spec/pflichtenheft.md),
 [`SPEC-022`](../../../../spec/pflichtenheft.md),
 [`SPEC-024`](../../../../spec/pflichtenheft.md) — gelesen, nicht geändert (das
-Nachrichtenschema bleibt bei zehn Feldern).
+Nachrichtenschema bleibt: Live-Nachrichten
+([`SPEC-020`](../../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../../spec/pflichtenheft.md))
+tragen zehn Felder, die HTTP-Antwort von
+[`SPEC-022`](../../../../spec/pflichtenheft.md) dreizehn, `origin`
+inbegriffen; gemessen an `readChangeResponse`,
+`internal/adapters/driving/http/readchanges.go`).
 
 **Verantwortlich:** — (noch nicht priorisiert).
 

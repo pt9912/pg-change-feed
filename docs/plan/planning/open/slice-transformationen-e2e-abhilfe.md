@@ -145,9 +145,12 @@ belegt ist.
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn
-`slice-transformationen-start-reihenfolge` und
-`slice-transformationen-e2e-wirkung` in `done/` liegen und kein anderer Slice
-in `in-progress/` liegt (WIP-Limit 1). Der Start-Trigger ist eine
+`slice-transformationen-start-reihenfolge`,
+`slice-transformationen-e2e-wirkung` und `slice-capture-leerlauf-quellbelege`
+in `done/` liegen (der letzte trägt den Belegaufbau „Fehlerschwelle erreicht,
+Container endet“ im selben Runner und geht der zweiten Container-Ende-Grenze
+dieses Slice voraus) und kein anderer Slice in `in-progress/` liegt
+(WIP-Limit 1). Der Start-Trigger ist eine
 **Vorab**-Bedingung: die Ordnung steht, bevor ihre Wirkung gemessen wird
 (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×).
 

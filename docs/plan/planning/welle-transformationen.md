@@ -230,14 +230,16 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
    Kopplung K2.** K2 der Welle
    [welle-backfill-bestand](welle-backfill-bestand.md) verlangt
    `slice-backfill-run-usecase`; dieser Slice startet zusätzlich erst nach
-   `slice-backfill-e2e` (er trägt einen E2E-Beleg im Backfill-Runner) und nach
-   einem **Architect-Kurzverdikt** zur Nichtanwendbarkeit im Run: die
+   `slice-backfill-e2e` (er trägt einen E2E-Beleg im Backfill-Runner) und
+   trägt ein **Architect-Kurzverdikt** zur Nichtanwendbarkeit im Run: die
    Run-Fehlerklassen von
    [`ADR-0111`](../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5
    nennen `schema` nicht,
    [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
    Teilfrage 4 beschreibt die Nichtanwendbarkeit nur für den Erfassungspfad —
-   eine Entscheidung, keine Auslegung (Start-Trigger im Plan).
+   eine Entscheidung, keine Auslegung; das Verdikt liegt mit
+   [`ADR-0117`](../adr/0117-backfill-run-fehlerklasse-schema.md) vor (Start-Trigger
+   im Plan).
 
 ## 5. Abhängigkeiten
 
@@ -256,15 +258,31 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     hängt an der **einen** gemeinsamen Funktion, nicht an zwei Bild-Erzeugern.
   - **K2 — Backfill-Pfad.** `backfill-pfad` startet nach
     `slice-backfill-run-usecase` und — strenger — nach `slice-backfill-e2e`,
-    nach `antragsweg-usecase` und nach dem Architect-Kurzverdikt (§4,
-    Abweichung 5).
+    nach `antragsweg-usecase`; das Architect-Kurzverdikt (§4, Abweichung 5)
+    liegt vor ([`ADR-0117`](../adr/0117-backfill-run-fehlerklasse-schema.md)).
   - **K3 — gemeinsame Zeilen.** `antragsweg-schema` startet nach
     `slice-backfill-sql-administration`: beide Umsetzungen berühren die
     geschlossene `request_kind`-Menge in
     `tools/schema/nacharbeit-administration.sql`,
     [`SPEC-019`](../../../spec/pflichtenheft.md), `applyAdministrationRequest`
     und den Idempotenz-Guard; die Transformationen erweitern die dort stehende
-    Menge additiv.
+    Menge additiv. Stand am 2026-09-25 (gemessen): `request_kind` trägt fünf
+    Werte (`tools/schema/nacharbeit-administration.sql`, Zeile 62), die
+    Transformationen erweitern auf sieben; die nächste freie Kennung im
+    Pflichtenheft ist `SPEC-030` (`grep -o 'SPEC-0[0-9][0-9]'
+    spec/pflichtenheft.md | sort -u | tail -3` druckt `SPEC-027`, `SPEC-028`,
+    `SPEC-029`); jeder Slice misst beide Zahlen an seinem Start neu.
+  - **Kanten zu zwei wellenlosen Slices.** `slice-harness-suchlauf-nachmessen`
+    (Nachmess-Werkzeug für das Suchlauf-Feld der Slice-Pläne) geht
+    `kern-rename` voraus: das Feld der zehn Pläne dieser Welle wird mit dem
+    Werkzeug nachgemessen. `slice-capture-leerlauf-quellbelege` (Beleg
+    „Fehlerschwelle erreicht, Container endet“ im Runner) geht `e2e-abhilfe`
+    voraus: beide Slices tragen eine Container-Ende-Grenze im selben Runner.
+    Beide sind ohne Welle geführt, weil sie keine Closure-Bedingung tragen, die
+    von ihrer DoD verschieden wäre; die Kanten stehen als Start-Trigger in den
+    beiden Plänen dieser Welle (§4 dort). Ein dritter wellenloser Slice,
+    `slice-capture-transient-wiederholung`, und ein vierter,
+    `slice-backfill-speicher-untersuchung`, tragen keine Kante zu dieser Welle.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -295,11 +313,13 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   §6 und `antragsweg-usecase` §6.
 - **Intern:** die Ordnung folgt der Tabelle in §4; die technischen Kanten (`A →
   B` heißt: `B` setzt `A` voraus) sind: `spec-nachzug` → jeder übrige Slice
-  (die Spec führt); `kern-rename` → `antragsweg-schema` → `antragsweg-usecase`
-  → `backfill-pfad` → `map-value` → `e2e-wirkung` → `start-reihenfolge` →
-  `e2e-abhilfe` → `betriebsdoku` — jede Stufe braucht das lauffähige System der
-  Vorstufe (die Regeltypen, der Antragsweg, der Backfill-Pfad, beide Typen, die
-  Wirkung, die Ordnung, die Abhilfe).
+  (die Spec führt); `slice-harness-suchlauf-nachmessen` → `kern-rename` →
+  `antragsweg-schema` → `antragsweg-usecase` → `backfill-pfad` → `map-value` →
+  `e2e-wirkung` → `start-reihenfolge` → `e2e-abhilfe` → `betriebsdoku` — jede
+  Stufe braucht das lauffähige System der Vorstufe (die Regeltypen, der
+  Antragsweg, der Backfill-Pfad, beide Typen, die Wirkung, die Ordnung, die
+  Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
+  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner).
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
@@ -360,7 +380,11 @@ der Closure-Trigger unerreichbar wird.
   einer entfernten Spalte.
 - **Änderung des Nachrichtenschemas und der Proto-Artefakte** —
   [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-  Teilfrage 8: dieselben zehn Felder, die Row Images bleiben JSON-Objekte mit
+  Teilfrage 8: Live-Nachrichten
+  ([`SPEC-020`](../../../spec/pflichtenheft.md)/[`SPEC-021`](../../../spec/pflichtenheft.md)/[`SPEC-024`](../../../spec/pflichtenheft.md))
+  tragen zehn Felder, die HTTP-Antwort von
+  [`SPEC-022`](../../../spec/pflichtenheft.md) dreizehn, `origin` inbegriffen —
+  die Transformationen ändern keines; die Row Images bleiben JSON-Objekte mit
   String-Werten; `make generated-sync` ist nicht betroffen.
 - **Kein neuer GitHub-Actions-Workflow und keine strukturelle
   Workflow-Änderung** — [`AGENTS.md`](../../../AGENTS.md) §3.10 greift nicht.

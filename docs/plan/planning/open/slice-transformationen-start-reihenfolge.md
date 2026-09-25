@@ -45,8 +45,12 @@ aus; die Administrations-Goroutine läuft danach unverändert weiter. Grund:
 `runAdministration` startet in `Run` per `go func()` **vor** `stream.Run`,
 jeder ihrer Durchläufe beginnt mit `processAdministrationRequests`, zwischen
 dem Start der Goroutine und dem Aufruf von `stream.Run` liegt keine
-Synchronisation (gelesen am 2026-09-23 an `internal/bootstrap/wiring.go`,
-Funktionen `Run` und `runAdministration`) — die Reihenfolge ist Zufall;
+Synchronisation (Stand `c82d3333`, gemessen am 2026-09-25 mit `git grep -n -E
+'runAdministration|stream\.Run|go func' c82d3333 -- internal/bootstrap/wiring.go`:
+`go func()` mit `runAdministration` in den Zeilen 834 und 836, `stream.Run` in
+Zeile 1009; zwischen beiden Zeilen stehen fünf weitere `go func()`-Starts, in den
+Zeilen 865, 922, 950, 983 und 1004 — ob sie die Reihenfolge berühren, ist nicht
+gelesen; der Implementer liest `Run` am Start erneut) — die Reihenfolge ist Zufall;
 [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 führt die Abhilfe im gescheiterten Prozess ausdrücklich als „erwartet, nicht am
 Code belegt“.

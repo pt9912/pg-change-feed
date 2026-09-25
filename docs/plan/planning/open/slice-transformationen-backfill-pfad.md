@@ -20,13 +20,18 @@ Change trägt die transformierte Form, nicht die Rohform),
 Folgepflicht 7 (Bindung künftiger Erzeugungspfade),
 [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 2
 (eine Funktion für WAL- und Backfill-Pfad) und Teilfrage 4 (Fail-closed vor dem
-Commit).
+Commit),
+[`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) (Klasse
+`schema` für eine im Run nicht anwendbare Regel, Folgepflichten 2 und 3).
 
 **Berührte Spec-Stellen:** [`SPEC-008`](../../../../spec/pflichtenheft.md)
 (Fehlerklassen), [`SPEC-029`](../../../../spec/pflichtenheft.md) (Run-Zustand,
-durch `slice-backfill-spec-nachzug`) — gelesen; eine Ergänzung der
-Fehlerklassen des Runs wäre ein Plan-Nachzug nach dem Architect-Kurzverdikt des
-Start-Triggers, nicht Teil dieses Plans.
+durch `slice-backfill-spec-nachzug`) — gelesen; die Zeile `schema` von
+[`SPEC-008`](../../../../spec/pflichtenheft.md) und der Satz zum Run in
+[`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) sind Gegenstand von
+`slice-transformationen-spec-nachzug` (Folgepflicht 1 von
+[`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)), nicht dieses
+Plans.
 
 **Verantwortlich:** — (noch nicht priorisiert).
 
@@ -83,13 +88,20 @@ Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
       Reihenfolge; eine Zwischenabweichung — Regel gesetzt, dann entfernt —
       wird erkannt); eine Regel, die auf den Bestand nicht anwendbar ist
       (Spalte fehlt in der Spaltenliste des Snapshots, Zielname kollidiert),
-      rollt den Run zurück und endet ihn `failed` mit Grund gemäß dem
-      Architect-Kurzverdikt des Start-Triggers, ohne Heartbeat-Fehlerzustand
-      und ohne den Capture-Pfad zu stoppen (run-lokal,
-      [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
-      Teilfrage 5); ein Eigenschaftstest im Run (Regeltyp × ausgeschlossene
-      Spalte) belegt [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) für den
-      Backfill-Pfad. *Zu belegen durch:* `make test` gegen Fakes, je
+      endet den Run `failed` mit der Klasse `schema` — einmal je Run, nachdem
+      der Snapshot seine Spalten liefert und bevor die Schreibtransaktion
+      öffnet, mit derselben Prüffunktion der Domäne wie der Erfassungspfad
+      ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+      Festlegung 1 und 2); `classifyError` bildet den Sentinel der Prüfung auf
+      `schema` ab (der Kommentar „vergibt `schema` nicht“ entfällt), ein
+      Wechsel des Regelstands zwischen den Lesungen endet mit `configuration`
+      (Festlegung 5); der Fehler ist run-lokal, ohne Heartbeat-Fehlerzustand
+      und ohne den Capture-Pfad zu stoppen
+      ([`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+      Teilfrage 5, Festlegung 3 von `ADR-0117`); ein Eigenschaftstest im Run
+      (Regeltyp × ausgeschlossene Spalte) belegt
+      [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) für den Backfill-Pfad.
+      *Zu belegen durch:* `make test` gegen Fakes, je
       Negativfall an seine Eingabe gebunden (Mutation der Prüfung färbt den
       Test rot); dazu der Lesefehler des Regelstands je Block und unmittelbar
       vor dem Commit — der Fake scheitert ab dem n-ten Aufruf, je Aufrufstelle
@@ -100,7 +112,13 @@ Kopplung K2 der Welle [welle-backfill-bestand](../welle-backfill-bestand.md)
       `cdc.changes` und `GET /changes` mit umbenanntem Schlüssel und `origin =
       'backfill'`; mit zusätzlichem `exclude_column` auf der umbenannten Spalte
       trägt kein Backfill-Image Quellnamen, Zielnamen oder Wert
-      ([`LH-QA-SEC-004`](../../../../spec/lastenheft.md)). *Zu belegen durch:*
+      ([`LH-QA-SEC-004`](../../../../spec/lastenheft.md)); eine im Run nicht
+      anwendbare Regel endet den Run `failed`/`schema` ohne Change, der
+      Erfassungspfad läuft weiter, und nach der Abhilfe (Regel entfernen, neuer
+      Antrag) endet ein neuer Run `completed`
+      ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+      Folgepflicht 3; Festlegung 4 führt „ohne Prozessneustart“ als *erwartet*).
+      *Zu belegen durch:*
       ein realer, grüner `make test-integration`-Lauf am laufenden
       Feed-Container (Zeile im Runner-Erzeugnis
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md)).
@@ -157,7 +175,8 @@ Stellen in `internal/application/usecase/backfill/service.go`):
 - **Port und Fake des Regelstands.** `Ports` bündelt die Pflicht-Ports des Use Cases; der
   Regelstand-Port kommt dort hinzu. Die Fakes des Use-Case-Tests lassen einen Aufruf ab dem
   n-ten scheitern (`fakeExclusion.errCall`); der Fake des Regelstands folgt diesem Muster.
-- **Klassifikation.** `classifyError` (siehe §4).
+- **Klassifikation.** `classifyError` (Abbildung des Sentinels auf `schema`:
+  [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 1).
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „welche
 Erzeugungspfade `model.Change`-Bilder bauen und ob sie den Regelstand tragen“;
@@ -176,24 +195,20 @@ beide Stände gemessen):**
 `done/` liegt (Kopplung K2 der Welle
 [welle-backfill-bestand](../welle-backfill-bestand.md) §5), **zusätzlich**
 `slice-backfill-e2e` (der E2E-Beleg braucht das lauffähige System und die
-Backfill-Phase im Runner), `slice-transformationen-antragsweg-usecase`
-(Regelstand-Port und Wirkung) in `done/` liegen, ein Architect-Kurzverdikt
-unter `docs/reviews/` zur Nichtanwendbarkeit einer Regel im Run vorliegt **und
-der Übergangs-Commit `next` → `in-progress` es nennt**
-(`BEO-PGC/start-trigger-ohne-uebergabe-artefakt`, offen, 1×) und kein anderer
-Slice in `in-progress/` liegt (WIP-Limit 1). Die Frage des Verdikts: die
-Run-Fehlerklassen aus
-[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) Teilfrage 5
-(`permission`, `configuration`, `storage`, `transient`, `replication`) nennen
-`schema` nicht,
+Backfill-Phase im Runner) und `slice-transformationen-antragsweg-usecase`
+(Regelstand-Port und Wirkung) in `done/` liegen und kein anderer Slice in
+`in-progress/` liegt (WIP-Limit 1). Das Architect-Kurzverdikt zur
+Nichtanwendbarkeit einer Regel im Run liegt vor: das Verdikt
+[`architect-verdict-backfill-schema-klasse-rollen`](../../../reviews/architect-verdict-backfill-schema-klasse-rollen.md)
+und [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) (`Accepted`,
+Klasse `schema` im Run, run-lokal, Folgepflicht 7 von
 [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-Teilfrage 4 beschreibt die Nichtanwendbarkeit nur für den Erfassungspfad — ob
-der Run mit der Klasse `schema` endet (Erweiterung der Run-Klassen, ggf.
-Folge-ADR) oder anders, ist eine Entscheidung, keine Auslegung dieses Slice. Die
-Abbildung, an der das Verdikt ansetzt, steht in `classifyError` am Use Case des Runs
+für den Run ausgefüllt). **Der Übergangs-Commit `next` → `in-progress` nennt
+beide** (`BEO-PGC/start-trigger-ohne-uebergabe-artefakt`, offen, 1×). Die
+Abbildung, an der `ADR-0117` ansetzt, steht in `classifyError` am Use Case des Runs
 (`internal/application/usecase/backfill/service.go`): ein nicht erkannter Fehler endet als
-`internal`, `schema` vergibt der Run nicht (Register:
-`BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill`).
+`internal`, `schema` vergibt der Run bis zur Umsetzung dieses Slice nicht
+(Register: `BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill`).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
@@ -201,13 +216,13 @@ Abbildung, an der das Verdikt ansetzt, steht in `classifyError` am Use Case des 
   Run-Erweiterung, Fail-closed und E2E-Beleg nicht in einem Review tragen — der
   abtrennbare Teil ist der E2E-Beleg (dritter Liefer-Punkt) als eigener Slice
   mit Start nach diesem.
-- `in-progress` → `open` (blockiert): falls das Architect-Kurzverdikt eine
-  Folge-ADR verlangt (die Nichtanwendbarkeit im Run berührt
-  [`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md),
-  `Accepted`, unberührbar nach [`AGENTS.md`](../../../../AGENTS.md) §3.5), oder
-  falls der Run-Use-Case der Backfill-Welle keine einzige Stelle für den
-  Bild-Bau trägt (dann Plan-Nachzug an die Backfill-Welle statt einer
-  Zweitkopie).
+- `in-progress` → `open` (blockiert): falls der Run-Use-Case der
+  Backfill-Welle keine einzige Stelle für den Bild-Bau trägt (dann Plan-Nachzug
+  an die Backfill-Welle statt einer Zweitkopie), oder falls die Prüffunktion der
+  Regelanwendbarkeit in der Domäne keinen Ort trägt, den Erfassungspfad und Run
+  gemeinsam rufen
+  ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+  Festlegung 2; Architect-Frage zum Zuschnitt).
 
 ## 5. Closure-Trigger
 
@@ -217,11 +232,11 @@ geschrieben.
 
 ## 6. Risiken und offene Punkte
 
-- **Die Nichtanwendbarkeit im Run ist entschieden, ohne dass eine ADR sie
-  trägt** — Start-Trigger und Rückführung nennen das Verdikt; wird es
-  übersprungen, ist die Klasse des Runs eine Auslegung. *Erwartet, zu belegen
-  durch:* das Verdikt unter `docs/reviews/` und der Verweis im
-  Übergangs-Commit. **Ausgang:** *(bei Closure)*
+- **Die Prüfung der Regelanwendbarkeit steht zweimal** (eine Kopie für den Run
+  neben der Domänen-Funktion des Erfassungspfads). *Erwartet, zu belegen
+  durch:* der Suchlauf über die Aufrufer der Prüffunktion und Review
+  ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+  Fitness Function, Zeile „Review-Prüfpflicht“). **Ausgang:** *(bei Closure)*
 - **Der Bild-Bau des Runs hat zwei Wege** (Ausschluss über Bild-Funktion, Regel
   über eine zweite Stelle). *Erwartet, zu belegen durch:* der Suchlauf (Zeile
   1) und Review. **Ausgang:** *(bei Closure)*
@@ -273,10 +288,12 @@ Rückführungs-Bedingung), `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
 Plan-Zeile Runner), `BEO-PGC/test-integration-retention-timing-flake`
 (verkörpert, 3×, Risiko §6),
 `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (offen, 2×),
-`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 1×, einschlägig —
-die Run-Klasse `schema` weicht vom ADR-Wortlaut von
-[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md) ab, wenn
-das Verdikt sie wählt: als Frage geführt),
+`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (offen, 1×, für die
+Run-Klasse `schema` nicht einschlägig: sie ist mit
+[`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+(`Supersedes` für einen Satzteil von
+[`ADR-0111`](../../adr/0111-backfill-bestand-snapshot-bulk-copy.md)
+Teilfrage 5) entschieden),
 `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 26×, Suchlauf §3).
 
 **Modus-Begründungsblock:** alle berührten Sub-Areas GF.
