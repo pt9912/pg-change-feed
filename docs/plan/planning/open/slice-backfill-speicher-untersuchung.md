@@ -161,7 +161,8 @@ sein, **bevor** ein Server-Release veröffentlicht wird, dessen Commit den
 Backfill trägt — beobachtbar: `git tag -l 'v*'` nennt ein `v*`-Tag über dem
 höchsten Tag `v0.1.2`, dessen Commit die Backfill-Änderungen enthält (gemessen am
 2026-09-25: kein Server-Tag trägt sie). Ein mechanischer Wächter für diese
-Bedingung existiert nicht; der Träger ist die Roadmap-Zeile dieses Slice
+Bedingung existiert nicht; der Träger ist dieser Start-Trigger und die
+Validator-Feststellung der Results-Notiz von `welle-backfill-bestand`
 (Benannte Grenze, §6).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
@@ -191,8 +192,9 @@ oder Handbuch-Grenze) + Closure-Notiz mit Lerneintrag geschrieben.
   „ungeklärt mit gemessener Grenze“ ist zulässig und steht im Bericht und im
   Handbuch; er ist kein stiller Abschluss. **Ausgang:** *(bei Closure)*
 - **Der Slice läuft nicht vor dem ersten Server-Release mit Backfill** (kein
-  Wächter). *Erwartet, zu belegen durch:* die Roadmap-Zeile nennt die
-  Bedingung; die Prüfung liegt beim Planner der Release-Vorbereitung. **Ausgang:**
+  Wächter). *Erwartet, zu belegen durch:* der Start-Trigger (§4) und die
+  Results-Notiz von `welle-backfill-bestand` nennen die Bedingung; die Prüfung liegt
+  beim Planner der Release-Vorbereitung. **Ausgang:**
   *(bei Closure)*
 - **Die Warn-Richtgröße bleibt unbegründet, weil kein Wachstum gemessen wird**
   (`BEO-PGC/blockgroesse-zaehlt-zeilen-nicht-bytes`, 1×, Ausgang: dieser Slice).

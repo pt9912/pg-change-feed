@@ -15,6 +15,28 @@ Zustand: **verkörpert** — Ausgang: **verkörpert** → `.harness/skills/revie
 **Der Träger ist gebaut, nicht nur benannt** — der frühere Satz „benannt, aber nicht
 gebaut“ war **veraltet** (Lese-Schritt der `welle-20`-Closure, nachgemessen).
 
+**Ausgang der drei Kandidaten** (Planner-Entscheidung zum Closure-Note-Review von
+`welle-backfill-bestand`, F-5; in Linie mit dem Architect-Verdikt §3.4 „kein neuer
+Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
+
+- *„Fake scheitert ab Aufruf n, je Aufrufstelle eine Mutation“* (achter Beleg):
+  **gestrichen als Schärfung.** Schritt 19 in `.claude/commands/implement-slice.md`
+  verlangt „je Zusage eine benannte Eingabeseiten-Mutation“; ein Fehlerzweig je
+  Aufrufstelle ist je eine Zusage, der Zeitpunkt des Fehlers ist ihre Eingabeseite.
+  Die acht grünen Mutationen fand der Review von `slice-backfill-run-usecase` vor dem
+  Merge, die Fixrunde band sie; ein zusätzlicher Satz in Schritt 19 oder im
+  Reviewer-Skill wiederholte die geltende Regel.
+- *wertfreie Bindung der Umrechnung einer Konstanten* (elfter Beleg, Toleranz in
+  `warn.go`): **akzeptiertes Negativ** nach Architect-Verdikt §5 (f) — die Wirkung ist
+  eine Kennzeichnung, der Wert ist Startwert mit Nachschärfe-Trigger
+  ([`ADR-0113`](../../../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)),
+  ein Träger-Slice ist nicht angelegt. Ändert ein Zug `warn.go`, bindet er die
+  Umrechnung (`Nanos == Minuten × time.Minute`) im selben Zug mit.
+- *Filter-Eingabe verlangt Zeilen außerhalb des Filters* (neunter Beleg):
+  **gestrichen als Schärfung.** Der Fall ist die Regel „mutiere den Eingabewert“ an
+  einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
+  Mutation danach rot), der Reviewer fand ihn vor dem Merge.
+
 Zähler (abgeleitet): **11×** (evidence/slice-086.md, evidence/slice-087.md,
 evidence/slice-083.md, evidence/slice-088.md, evidence/slice-091.md,
 evidence/slice-092.md, evidence/slice-backfill-snapshot-reader.md,
@@ -32,8 +54,7 @@ jeder Test die Konstante relativ zu sich selbst liest. Ausprägung: die Eingabes
 verhindert einen Test auf den Wert, ein wertfreier Test der Umrechnung
 (`Nanos == Minuten × time.Minute`) bindet den Faktor. Die Closure führt die Lücke als
 benannte Grenze; der Test ist Sache des nächsten Zuges, der `warn.go` ändert
-(Re-Evaluierung der Toleranz), und des Lese-Schritts der Closure von
-`welle-backfill-bestand`. Der zehnte Beleg (`slice-backfill-e2e`, F-4) trifft eine
+(Re-Evaluierung der Toleranz); Ausgang: „Ausgang der drei Kandidaten“ oben. Der zehnte Beleg (`slice-backfill-e2e`, F-4) trifft eine
 **E2E-Assertion**: `coalesce(error_class, '')` gleich `''` liest denselben leeren
 String bei einer Zeile mit NULL und bei **keiner** Zeile; eine fehlende
 Heartbeat-Zeile (Quelle unbekannt, Filter falsch) hielte die Zusage „der
@@ -45,9 +66,9 @@ bindet die **Existenz der Zeile**, nicht nur das Fehlen des Fehlers. Der neunte 
 die **Quellfilter-Zusage** einer Abfrage: die Mutation `WHERE source_id = $1` →
 `WHERE $1::text IS NOT NULL` blieb grün, weil beide Tests nur Runs **einer** Quelle anlegten;
 gebunden durch einen Run einer fremden Quelle im Test (Mutation danach rot). Dieselbe Klasse,
-Ausgang bleibt **verkörpert**; der Ausgangs-Kandidat „Fehlerzweig je Aufrufstelle" (Folgesatz
+Ausgang bleibt **verkörpert**; der Kandidat „Fehlerzweig je Aufrufstelle" (Folgesatz
 des achten Belegs) und dieser Fall — eine Filter-Eingabe verlangt Zeilen **außerhalb** des
-Filters im Test — gehören in denselben Lese-Schritt der Closure von `welle-backfill-bestand`.
+Filters im Test — haben ihren Ausgang unter „Ausgang der drei Kandidaten“ oben.
 Der achte Beleg (`slice-backfill-run-usecase`) trifft die
 **Fehlerzweige** einer Prüfung: acht Mutationen blieben grün (Lesefehler des
 Ausschlussstands je Block und vor dem Commit, `finished_at` der Endzustände,
@@ -55,11 +76,11 @@ Fortschritts-Fehler, `Finish`-Fehler bei leerer Tabelle), weil die Fakes jeden A
 dauerhaft scheitern ließen und der jeweils andere Aufruf desselben Zweigs den Fake
 auffing. Es ist dieselbe Klasse — die Eingabeseite eines Fehlerzweigs ist der Zeitpunkt
 des Fehlers, und „Fehler an **dieser** Stelle verwerfen" ist die Mutation —, kein neuer
-Eintrag. **Ausgangs-Kandidat** einer Schärfung der verkörperten Regel (Architect-Entscheidung
-im Lese-Schritt der Closure von `welle-backfill-bestand`, nicht getroffen): Schritt 19 in
+Eintrag. **Kandidat** einer Schärfung der verkörperten Regel: Schritt 19 in
 `.claude/commands/implement-slice.md` und der HIGH-Punkt in `.harness/skills/reviewer.md`
 nennen für einen Fehlerzweig mit mehreren gleichartigen Aufrufstellen die Form „der Fake
-scheitert ab Aufruf n; je Aufrufstelle eine Mutation, die ihren Fehler verwirft". Der siebte Beleg (`slice-backfill-snapshot-reader`,
+scheitert ab Aufruf n; je Aufrufstelle eine Mutation, die ihren Fehler verwirft" —
+Ausgang: „Ausgang der drei Kandidaten“ oben. Der siebte Beleg (`slice-backfill-snapshot-reader`,
 vier Zusagen in einem Vorgang: Typ-Parität, Bezeichner-Quoting, Nullgrenze der
 Schätzung, zwei namentliche Paketlisten) fand sie durch Mutationen des
 Reviewers; Ausgang bleibt **verkörpert**. Der fünfte Beleg (`slice-091`) ist der erste, bei dem die

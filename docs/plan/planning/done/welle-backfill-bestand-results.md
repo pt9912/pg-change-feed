@@ -122,9 +122,12 @@
   (`TestE2EBackfillReplayInvariant`). Konsequenz:
   [`ADR-0122`](../../adr/0122-backfill-replay-invariante-e2e-tier.md).
 - **Speicher des Feed-Containers ist bei großen Runs ungeklärt.** Das Handbuch
-  („Grenzwerte“) nennt für die Stufe mit 200.000 Zeilen eine Spitze von 401,7 bis
-  467 MiB und für einen Run über 1.000.000 Zeilen 1.544 MiB (übernommen aus einem
-  Lauf-Bericht, im Repository nicht auflösbar); der Lauf `20260925T084803Z` dieser
+  („Grenzwerte“) nennt für die Stufe mit 200.000 Zeilen eine Spitze im Run von 401,7 bis
+  467 MiB (401,7 und 467 MiB übernommen, im Repository nicht auflösbar; 416,5 MiB im
+  Review-Report von `slice-backfill-bench-richtgroesse`) — die Spitze im Run ist eine Untergrenze: der höchste
+  gemessene Wert der Stufe ist 641,7 MiB, 20 s nach dem letzten Run — und für zwei Runs
+  über je 1.000.000 Zeilen 435 MiB und 1.544 MiB (übernommen, im Repository nicht
+  auflösbar); der Lauf `20260925T084803Z` dieser
   Closure (gemessen) zeigt für die Stufe mit 200.000 Zeilen eine Spitze von
   433,0 MiB (Ruhe davor 170,8 MiB). Eine Blockgröße zählt Zeilen, nicht Bytes.
   Konsequenz: `slice-backfill-speicher-untersuchung`.
@@ -150,7 +153,9 @@ Die Quelle aller Einträge ist der Lese-Schritt dieser Closure
 (`architect-verdict-welle-backfill-bestand-lese-schritt`); jede Regel liegt an
 ihrem Zielort und trägt den Anker `seit welle-backfill-bestand`. Die Zähler sind
 die Zahl der Dateien unter `evidence/` (`ls evidence | wc -l`, gemessen am Stand
-`32028d4f`).
+`32028d4f`). Die Steering-Loop-Einträge je Slice stehen in den elf Slice-Notizen als
+Sammelabsatz je Notiz; diese Notiz trägt die Regeln der Welle einzeln (im Verdikt
+R1 bis R7, §7).
 
 - **`AGENTS.md` §3.13 (Suchform, Frist der Meldung)** geschärft: Suchraum ist der
   ganze Baum (Ausnahmen namentlich), das Muster trägt drei Arten (Symbolname,
@@ -203,8 +208,14 @@ die Zahl der Dateien unter `evidence/` (`ls evidence | wc -l`, gemessen am Stand
 - **Benannte Spec-Lücke:** [`SPEC-008`](../../../../spec/pflichtenheft.md) nennt für die
   Klasse `transient` „Erneut versuchen mit begrenztem Backoff“, kein Element des
   Erfassungspfads trägt die Aktion; der Pfad endet auf jeden Adapter-Fehler mit
-  Prozess-Ausgang 1 — aufgelöst über die Architect-Entscheidung zur
-  Wiederholungsform (Start-Trigger von `slice-capture-transient-wiederholung`).
+  Prozess-Ausgang 1. Zustand: **offen** — die Entscheidung zur Wiederholungsform
+  (Ort, Grenzen, Sichtbarkeit) trifft der Architect in einer ADR; sie liegt nicht vor
+  (das ADR-Verzeichnis endet bei
+  [`ADR-0122`](../../adr/0122-backfill-replay-invariante-e2e-tier.md)). Adresse: der
+  Start-Trigger von `slice-capture-transient-wiederholung` (Plan §4) und
+  `BEO-PGC/adapter-fehler-ausgang` (geplant). [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+  Folgepflicht 1 betrifft die Zeile `schema` von
+  [`SPEC-008`](../../../../spec/pflichtenheft.md), nicht `transient`.
   Auslöser: `BEO-PGC/adapter-fehler-ausgang` (3×: `evidence/slice-007.md`,
   `evidence/slice-038.md`, `evidence/slice-backfill-snapshot-reader.md`).
 - **Ausdrücklich verworfen:** ein Mutations-Harness für
@@ -229,7 +240,7 @@ liegen.
 | `arbeit-ueberholt-stehenden-traeger` | 31 | verkörpert, geschärft; Deckel | `AGENTS.md §3.13` |
 | `zahl-in-traeger-driftet-gegen-die-messung` | 21 | verkörpert; Suchlauf-Anteil geplant; Deckel | `slice-harness-suchlauf-nachmessen` |
 | `beleg-befehl-traegt-seinen-satz-nicht` | 13 | verkörpert; Deckel | `AGENTS.md §3.13`, `slice-harness-suchlauf-nachmessen` |
-| `negativtest-ohne-bindung-an-seine-eingabe` | 11 | verkörpert; Deckel; Mutations-Harness verworfen | `.harness/skills/reviewer.md` |
+| `negativtest-ohne-bindung-an-seine-eingabe` | 11 | verkörpert; Deckel; Mutations-Harness verworfen; die drei Kandidaten der Slice-Notizen (Fake ab Aufruf n, wertfreie Konstanten-Bindung, Filter-Eingabe): zwei gestrichen, eines akzeptiertes Negativ | `.harness/skills/reviewer.md`, `state.md` des Eintrags |
 | `zitat-nennt-die-falsche-stelle` | 8 | verkörpert (unverändert) | `.harness/skills/reviewer.md` |
 | `nachzug-laesst-ueberholten-text-stehen` | 8 | verkörpert | `AGENTS.md §3.13`, `.harness/skills/reviewer.md` |
 | `github-actions-unverifizierbar-lokal` | 8 | verkörpert (unverändert) | `AGENTS.md §3.10` |
@@ -250,8 +261,12 @@ tragen 34 × verkörpert, 2 × geplant, 2 × gestrichen und 1 × eingetreten
 (`grep -m1 -o -i -E 'verkörpert|geplant|gestrichen|offen'`, Summe 39).
 
 Einträge unter 3× mit Adresse an diese Closure — Ausgang in der `state.md`:
-`sdk-decoder-verhalten-am-neuen-feld-ungemessen` (2×, gestrichen: Bibliothekssemantik,
-in den veröffentlichten Packages ist keine strikte Dekoder-Einstellung gemessen),
+`sdk-decoder-verhalten-am-neuen-feld-ungemessen` (2×, gestrichen: Bibliothekssemantik;
+Beleg ist eine Quelltext-Suche, kein Dekoder-Lauf — `git grep` nach strikten
+Dekoder-Mustern druckt 0 Treffer an `sdk-csharp-v0.1.0` und an `sdk-python-v0.1.0`;
+Restgrenze: die `0.1.0`-Packages sind nicht erneut ausgeführt, sie tragen dieselben
+Dekoder-Zeilen; Muster und Quelle in der `state.md` des Eintrags und in
+`architect-verdict-welle-backfill-bestand-lese-schritt` §5 (a)),
 `lesesperre-ohne-zeitgrenze` (1×, gestrichen als akzeptiertes Negativ),
 `setzpfad-einer-kennzeichnung-nur-im-unit-test-belegt` (1×, gestrichen als akzeptiertes
 Negativ), `beleg-nur-als-einmalige-reviewer-messung` (1×, geplant →
@@ -296,21 +311,91 @@ Die Welle Transformationen (`welle-transformationen`, zehn Slices in `open/`) st
 mit ihren Kanten K1 bis K3; zwei Kanten zu den Folge-Slices oben stehen in ihrem
 §5.
 
+## Validator-Feststellung (Modul 8)
+
+Die Welle liefert Endnutzer-Wert (der Bestand einer aktivierten Tabelle wird
+übernommen, [`LH-FA-CAP-009`](../../../../spec/lastenheft.md)); der
+Validator-Schritt ist deshalb nicht „n/a“. Die Notizen von
+`slice-backfill-spec-nachzug`, `-change-origin`, `-snapshot-reader`,
+`-run-usecase`, `-run-store` und `-sql-administration` verschieben die
+Validierbarkeit des Bedarfs auf den Wellen-Beleg; dieser Abschnitt ist ihr Träger
+und gilt für alle elf Slices (deren Notizen sind Records).
+
+**Feststellung: der Bedarf ist belegt, soweit die Belege unten reichen; der Rest ist
+benannt und hat einen Träger.** Ein eigener Lauf der Validator-Rolle in frischem
+Kontext fand nicht statt; die Feststellung ist die Belegsammlung des Planners auf den
+vorhandenen Läufen und Reports und ersetzt keinen Anwender.
+
+Belegt (Ursprung je Punkt gemessen am 2026-09-25):
+
+- **Bestandsübernahme am laufenden Feed-Container, beide PostgreSQL-Versionen.**
+  `docs/user/e2e-abdeckung.md` trägt acht Zeilen mit
+  [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) (`grep -c 'LH-FA-CAP-009'`
+  druckt `8`): Happy Path, Schema-Version, Startposition eines neuen Consumers,
+  Boundary, DDL-Fenster, Negative (`docker kill`, `queued`-Aufnahme),
+  Leerlauf-Bestätigung und `TestE2EBackfillReplayInvariant`. Die Läufe `36108615045`
+  (Push `c82d3333`) und `36116700952` (Push `eb3ba91e`) von `e2e.yml` sind je Leg
+  „PostgreSQL 17“ und „PostgreSQL 18“ `success` (`gh run view`).
+- **Der Bestand ist lesbar, unterscheidbar und lückenlos angeschlossen.** Die Phase
+  „Backfill-Happy-Path“ liest fünf Bestandszeilen als `INSERT` mit
+  `origin = 'backfill'` über `cdc.changes` und `GET /changes`, die Replay-Invariante
+  vergleicht das Log mit dem Quellstand (Zeilen im Abschnitt Verifikation).
+- **Das Benutzerhandbuch-Kapitel „Bestand als Backfill überführen“ ist ausführbar,
+  soweit die Reports es gefahren haben.** Der Review von `slice-backfill-sql-administration`
+  führte die SQL-Beispiele (Auslösung, Antrags-Abfrage, Status-Abfrage,
+  Schlüsselvergleich) gegen eine Wegwerf-Datenbank unter `cdc_admin` und `cdc_reader`
+  aus (`review-slice-backfill-sql-administration`, Abschnitt „Handbuch-SQL gegen eine
+  Wegwerf-DB ausgeführt“); die dabei gefundene Status-Abfrage unter `cdc_admin` (F-4)
+  ist im Handbuch berichtigt (`verifikation-slice-backfill-sql-administration`, F-4).
+  Die Startposition und die Sperr-Warteschlange sind im Handbuch mit gemessenem
+  Lauf-Ursprung geführt (`verifikation-slice-backfill-e2e`, Zeile 3 und F-1). Weitere
+  Beispiele des Kapitels führen die Reports nicht als ausgeführt.
+- **Richtgrößen.** `tools/bench-backfill.sh`, Lauf `20260925T084803Z` (gemessen,
+  gedruckt): 6.470 Zeilen/s (Median, Stufe 200.000), Spitze 433,0 MiB; die
+  Warn-Richtgröße ist gegen diese Zahl bewertet (Abschnitt „Was ging anders als
+  geplant?“).
+
+Nicht validiert — je mit Träger:
+
+- **Kein Anwender-Realbetrieb.** Kein Server-Tag trägt den Backfill: der höchste
+  Server-Tag ist `v0.1.2`, und `git tag -l 'v*' --contains 510b247e` (erster Commit
+  des Backfill-Use-Case) druckt keine Zeile. Der Bedarf beim Anwender bleibt die
+  Annahme von [`LH-FA-CAP-009`](../../../../spec/lastenheft.md) selbst; er wird erst mit
+  einem Server-Release und der Rückmeldung eines Betreibers geprüft (kein Slice).
+- **Breite Zeilen und große Werte, Speicher großer Runs.** Die Bench-Zeilen sind etwa
+  74 Bytes breit (Handbuch „Grenzwerte“, übernommen); die Spaltenwerte einschließlich
+  `jsonb` sind auf Bild-Parität belegt
+  ([`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md)), eine
+  Last mit breiten Zeilen ist ungemessen. Träger: `slice-backfill-speicher-untersuchung`.
+- **Keepalive inmitten einer Transaktion an PostgreSQL 17 an der Quelle und
+  „Fehlerschwelle erreicht → Container endet“.** Träger: `slice-capture-leerlauf-quellbelege`.
+- **Wiederholung der Klasse `transient` im Erfassungspfad.** Träger:
+  `slice-capture-transient-wiederholung`.
+
+**Was den Rest vor einem Server-Release schließt:** `slice-backfill-speicher-untersuchung`
+liegt in `done/`, bevor ein Server-Tag entsteht, dessen Commit den Backfill trägt
+(Start-Trigger im Plan des Slice, §4). Ein mechanischer Wächter dafür existiert nicht;
+die Prüfung liegt beim Planner der Release-Vorbereitung. Die Pläne der drei anderen
+Slices nennen keine Bedingung vor einem Server-Release (`grep -n -i release` über
+sie druckt einen Treffer: den Namen eines Testskripts in
+`slice-harness-suchlauf-nachmessen`).
+
 ## Übergabe an den Release-Zug
 
 Die drei SDK-Packages tragen `0.2.0` (`<Version>` in
 `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj`, `version` in
 `sdks/python/pgchangefeed/pyproject.toml`, `version` in
 `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`, gemessen am Stand `32028d4f`).
-Kein Tag `sdk-*-v0.2.0` existiert (`git tag -l`: `sdk-csharp-v0.1.0`,
-`sdk-python-v0.1.0`, `v0.1.0`, `v0.1.1`, `v0.1.2`). Die drei Tags
-`sdk-csharp-v0.2.0`, `sdk-python-v0.2.0` und `sdk-kotlin-v0.2.0` setzt der
-Betreiber gemeinsam nach dieser Closure; der Tag-Push ist Betreiber-Handlung und
-nicht Teil der Welle. Beleg-Anker der Versionsentscheidung: §3 „Versionsentscheidung“
+Die drei Tags `sdk-csharp-v0.2.0`, `sdk-python-v0.2.0` und `sdk-kotlin-v0.2.0` stehen
+an `eb3ba91e` (`git tag -l`, gemessen am 2026-09-25); der Tag-Push ist
+Betreiber-Handlung und nicht Teil der Welle. Die drei Publish-Läufe
+(`36117929191` C#, `36117929298` Python, `36117929552` Kotlin, je `event` `push`
+auf dem Tag) sind `success` (`gh run view`, gemessen am 2026-09-25) — der reale
+Post-Push-Beleg nach [`AGENTS.md`](../../../../AGENTS.md) §3.10; das Erscheinen der
+Packages in NuGet.org, PyPI und GitHub Packages ist nicht gemessen.
+Beleg-Anker der Versionsentscheidung: §3 „Versionsentscheidung“
 des Plans `slice-backfill-sdk-origin`. Ein Server-Release ist nicht Teil der Welle
-(`docs/user/version.md` bleibt unberührt); der Punkt „Lauf der drei
-Publish-Workflows“ folgt [`AGENTS.md`](../../../../AGENTS.md) §3.10 und ist bis zum
-ersten realen Tag-Push unbewiesen.
+(`docs/user/version.md` bleibt unberührt).
 
 ## Verifikation
 
@@ -358,7 +443,7 @@ nicht anders angegeben; Gate-Exit-Codes ungefiltert gesichert
     Wirkung auf den Workflow `e2e.yml` (dessen Schritt „DB-Adapter-Coverage —
     Replication-Teil, Merge + Schwelle“ trägt die Stufe) ist ein Wert, kein
     strukturelles Workflow-Element; der Lauf des ersten Push mit Stufe 80 belegt sie
-    im CI (offener Nachlauf, siehe unten). Die gedeckte Zahl streut von Lauf zu Lauf.
+    im CI (Beleg im Abschnitt „Nachlauf“ unten). Die gedeckte Zahl streut von Lauf zu Lauf.
 - **ADR-Re-Evaluierungs-Trigger.**
   - [`ADR-0104`](../../adr/0104-benchmark-schwellen-per-001-002-003.md): der Trigger
     „wiederholt Rot ohne reale Regression (Rauschen)“ ist nicht eingetreten — die
@@ -406,8 +491,9 @@ gleichwohl auszuführen, liegt beim Betreiber.
 ### Prüfung in frischem Kontext
 
 Die Prüfung dieser Closure-Notiz durch die Rolle in frischem Kontext
-(`.harness/skills/closure-note-reviewer.md`) erfolgt nach diesem Zug; der Planner
-prüft sie nicht selbst.
+(`.harness/skills/closure-note-reviewer.md`) liegt als
+`review-closure-notes-welle-backfill-bestand` vor; der Planner prüft sie nicht selbst.
+Der Ausgang je Finding steht unter „Ausgang des Closure-Note-Reviews“.
 
 ### Paarungen (Modul 6)
 
@@ -435,9 +521,33 @@ liefen nacheinander, nicht gleichzeitig. Die Zahl der `dangling` Docker-Volumes 
 vor und nach den Läufen `34` (`docker volume ls -q -f dangling=true \| wc -l`); die
 Läufe hinterlassen keine Container.
 
-### Offener Nachlauf
+### Nachlauf
 
 - Der erste CI-Lauf von `e2e.yml` nach dem Push dieser Closure trägt
   `DB_COVERAGE_THRESHOLD` 80 im Schritt „DB-Adapter-Coverage — Replication-Teil,
-  Merge + Schwelle“ (beide Legs). Die lokalen Läufe (82,51 %) belegen die Stufe;
-  der CI-Beleg ist nach dem Push zu lesen (`gh run list`).
+  Merge + Schwelle“ (beide Legs). Beleg ([`AGENTS.md`](../../../../AGENTS.md) §3.10,
+  gemessen am 2026-09-25): der Lauf `36116700952` (Push `eb3ba91e`) ist `success`,
+  beide Legs; der Schritt druckt je Leg `DB-Adapter-Coverage: 82.51% (gedeckt 873
+  von 1058 Statements; Profile gemergt: store,replication)` und `db-coverage: OK —
+  DB-Adapter-Coverage 82.51% erfuellt Schwelle 80%` (`gh run view 36116700952 --log`).
+  Die Workflows `ci` (`36116701060`) und `examples` (`36116700976`) desselben Push
+  sind `success`.
+
+### Ausgang des Closure-Note-Reviews
+
+Der Review in frischem Kontext liegt vor (`review-closure-notes-welle-backfill-bestand`:
+0 HIGH, 1 MEDIUM, 5 LOW, 3 INFO). Jedes Finding hat einen Ausgang; die elf
+Slice-Notizen sind Records und bleiben unverändert, diese Notiz trägt die
+Feststellungen für alle.
+
+| Finding | Ausgang | Träger |
+|---|---|---|
+| F-1 Validator-Schritt ohne Träger | erfüllt: explizite Feststellung „belegt so weit, Rest benannt“ | Abschnitt „Validator-Feststellung (Modul 8)“ oben |
+| F-2 zwei gemeldete Ungenauigkeiten ohne Träger | Kommentar `allowDestructive` in `tools/schema/rolloutguard/guard.go` → Plan `slice-transformationen-antragsweg-schema` (ändert dieselbe Datei, §3-Zeile); Kommentar an der gRPC-Nachricht in `proto/cdc/stream/v1/changestream.proto` → Register-Eintrag, kein Slice passt (kein offener Slice ändert die `.proto`) | `BEO-PGC/gemeldete-ungenauigkeit-ohne-traeger` (offen, 1×) |
+| F-3 Spec-Lücke „aufgelöst“ | berichtigt: offen, Adresse benannt | „Benannte Spec-Lücke“ unter Steering-Loop-Einträge |
+| F-4 Streichung des Decoder-Eintrags | Formulierung präzisiert: Quelltext-Suche, Restgrenze genannt | Abschnitt „Einträge unter 3×“ oben, `state.md` des Eintrags |
+| F-5 drei Kandidaten ohne Ausgang | zwei gestrichen, eines akzeptiertes Negativ | `state.md` von `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` |
+| F-6 Lerneintrag im Sammelabsatz | keine Änderung an den Records; diese Notiz führt die Einträge einzeln | Einleitung der Steering-Loop-Einträge |
+| F-7 Kosten der Ausschluss-Lesung je Block | keine Aktion: der Bench fährt den Use Case im Feed-Container und misst `finished_at − started_at` des Runs, die Lesung ist in der Kopierdauer enthalten (Stufe 200.000 Zeilen bei Blockgröße 1.000: 200 Blöcke, abgeleitet); die 1.000.000-Stufe liest `slice-backfill-speicher-untersuchung` mit | Plan `slice-backfill-speicher-untersuchung` §1 |
+| F-8 Speicher-Zahlen enger als das Handbuch | berichtigt: Untergrenze, höchster Wert 641,7 MiB, zwei Runs mit 435 und 1.544 MiB | Abschnitt „Was ging anders als geplant?“ |
+| F-9 Zeitformen in Records | der Post-Push-Beleg steht im Abschnitt „Nachlauf“; die Stand-Aussagen der Slice-Notizen sind Records | Abschnitt „Nachlauf“ |
