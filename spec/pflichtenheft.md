@@ -314,11 +314,14 @@ Docker-only paketierbar (`make sdk-pack-python`) und real geprüft
 dritte Sprache oder ein dritter Vertriebsweg bleibt offen — diese Kennung
 bleibt ihre Adresse.
 
-Für Kotlin/GitHub Packages ist die Frage ebenfalls beantwortet:
-`pgchangefeed-kotlin` (`SPEC-028`) deckt HTTP-API, gRPC-Stream, SSE und
-NATS-Vollinhalt, real Docker-only paketierbar (`make sdk-pack-kotlin`) und
-real geprüft (`pgchangefeed-kotlin-0.2.1.jar`). Eine vierte Sprache oder ein
-vierter Vertriebsweg bleibt offen — diese Kennung bleibt ihre Adresse.
+Für Kotlin ist die Frage ebenfalls beantwortet: `pgchangefeed-kotlin`
+(`SPEC-028`) deckt HTTP-API, gRPC-Stream, SSE und NATS-Vollinhalt, real
+Docker-only paketierbar (`make sdk-pack-kotlin`) und real geprüft
+(`pgchangefeed-kotlin-0.2.2.jar`). Vertriebsweg sind zwei Ziele: Cloudsmith
+(anonym lesbar, ohne Konto und Token beziehbar) und GitHub Packages (der
+Bezug verlangt einen Token); beide Ziele erhalten dieselben Artefakte. Eine
+vierte Sprache oder ein weiterer Vertriebsweg bleibt offen — diese Kennung
+bleibt ihre Adresse.
 
 ---
 
@@ -824,7 +827,7 @@ WAL-Rückstand und Capture-Lag werden überwacht.
 | `SPEC-024` | NATS Core (Vollinhalts-Stream, kein JetStream) | NATS-Server 2.x, Go-Client `github.com/nats-io/nats.go` (bereits im Baum, `SPEC-017`) | — (Vertrag steht in diesem Dokument, §2 SPEC-024) |
 | `SPEC-026` | `PgChangeFeed.Client` NuGet-Package (C#/.NET, erstes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.1`) | `sdks/csharp/PgChangeFeed.Client/PgChangeFeed.Client.csproj` als Metadaten-Quelle (`<PackageId>`/`<Version>`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
 | `SPEC-027` | `pgchangefeed` PyPI-Package (Python, zweites SDK-Package für `LH-FA-SST-009`) | PEP 440, `0.x.y` (aktuell `0.2.1`) | `sdks/python/pgchangefeed/pyproject.toml` als Metadaten-Quelle (`[project] name`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
-| `SPEC-028` | `pgchangefeed-kotlin` GitHub-Packages-Gradle-/Maven-Package (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.1`) | `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als Metadaten-Quelle (`group`/`version`) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
+| `SPEC-028` | `pgchangefeed-kotlin` Gradle-/Maven-Package auf Cloudsmith und GitHub Packages (Kotlin, drittes SDK-Package für `LH-FA-SST-009`) | SemVer 2.0, `0.x.y` (aktuell `0.2.2`) | `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts` als Metadaten-Quelle (`group`/`version`, ein Repository je Vertriebsziel) — kein eigener §2-Eintrag, das Package deckt bereits dokumentierte Drahtverträge (`SPEC-018`, `SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) |
 
 ---
 
@@ -879,3 +882,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-25 | `LH-FA-SST-009.a` Eingabe um `SPEC-022` ergänzt (der Zustellweg `GET /changes` ist Teil der HTTP-Fläche der Packages) |
 | 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die Version der drei Packages ist `0.2.1`; die Paketbeschreibung (README und Metadaten-Felder) ist Anwender-Dokumentation ohne interne Kennungen |
 | 2026-09-25 | `LH-FA-RET-004.a` um Punkt 4 ergänzt: die Bereinigungsmenge wird seitenweise bestimmt (10.000 Kandidaten je Seite, ohne Row Images); der Arbeitsspeicher eines Bereinigungslaufs hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der gespeicherten Changes |
+| 2026-09-25 | `LH-FA-SST-009.a`/`SPEC-028` nachgezogen: `pgchangefeed-kotlin` hat zwei Vertriebsziele — Cloudsmith (anonym lesbar, ohne Konto und Token beziehbar) und GitHub Packages (Bezug mit Token); beide Ziele erhalten dieselben Artefakte, die Version ist `0.2.2`. Die Kennung bleibt bestehen, eine vierte Sprache oder ein weiterer Vertriebsweg bleibt offen |

@@ -14,13 +14,39 @@ Version 0.x — the API can still change between releases.
 
 ## Installation
 
-Requires Java 21 or newer. The package is published on [GitHub Packages](https://maven.pkg.github.com/pt9912/pg-change-feed), not on Maven Central. **GitHub Packages always requires authentication to read a package, even a public one.** You need a GitHub account and a classic personal access token (PAT) with the `read:packages` scope.
+Requires Java 21 or newer. The package is not on Maven Central; it is published on Cloudsmith and on GitHub Packages.
 
-Add the registry and your credentials in `settings.gradle.kts`:
+### From Cloudsmith (no account, no token)
+
+The Cloudsmith repository is public: no account and no token are needed to read it. Add it in `settings.gradle.kts`, together with Maven Central, where the library's own dependencies come from:
 
 ```kotlin
 dependencyResolutionManagement {
     repositories {
+        mavenCentral()
+        maven { url = uri("https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/") }
+    }
+}
+```
+
+Then declare the dependency in `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("io.github.pt9912:pgchangefeed-kotlin:0.2.2")
+}
+```
+
+Package repository hosting is graciously provided by [Cloudsmith](https://cloudsmith.com), free of charge for open-source projects.
+
+### From GitHub Packages (needs a token)
+
+The package is also published on [GitHub Packages](https://maven.pkg.github.com/pt9912/pg-change-feed). **GitHub Packages always requires authentication to read a package, even a public one.** You need a GitHub account and a classic personal access token (PAT) with the `read:packages` scope. Use the same dependency declaration as above and add the registry with your credentials in `settings.gradle.kts` instead of the Cloudsmith repository (keep `mavenCentral()`):
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
         maven {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/pt9912/pg-change-feed")
@@ -33,13 +59,7 @@ dependencyResolutionManagement {
 }
 ```
 
-Then declare the dependency in `build.gradle.kts`:
-
-```kotlin
-dependencies {
-    implementation("io.github.pt9912:pgchangefeed-kotlin:0.2.1")
-}
-```
+### Dependencies of the library
 
 Apart from the Kotlin standard library, the library's own dependencies are not passed on to your compile classpath. Add the ones whose types you use — the coroutines library for the gRPC `Flow`, protobuf for the gRPC row images (`ByteString`), Gson for the JSON row images (`JsonElement`) — with the versions the library is built with:
 

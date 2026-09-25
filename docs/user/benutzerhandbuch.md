@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.64
+Version: 1.65
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -1072,14 +1072,18 @@ mit typisierten Requests/Responses und einer versiegelten
 Package trägt außerdem den gRPC-Change-Stream (siehe unten, „Zugriff über
 den gRPC-Change-Stream"), den SSE-Stream (siehe „Zugriff über
 Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
-den NATS-Vollinhalts-Stream"). Anders als NuGet/PyPI wird dieses Package über
-**GitHub Packages** vertrieben (`https://maven.pkg.github.com/pt9912/pg-change-feed`,
-`ADR-0109` Festlegung 2) — GitHub Packages verlangt **immer** eine
+den NATS-Vollinhalts-Stream"). Anders als NuGet/PyPI wird dieses Package
+nicht über die Registry der Sprache vertrieben, sondern über zwei Ziele: den
+**Cloudsmith-Repository-Pfad** `https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`
+(anonym lesbar — **ohne Konto und ohne Token**; `ADR-0123`) und **GitHub
+Packages** (`https://maven.pkg.github.com/pt9912/pg-change-feed`,
+`ADR-0109` Festlegung 2). GitHub Packages verlangt **immer** eine
 Authentifizierung zum Lesen, auch für ein öffentliches Package: ein
 GitHub-Konto und ein klassischer Personal Access Token (PAT) mit dem Scope
-`read:packages` sind Voraussetzung für den Bezug, unabhängig davon, ob das
-SDK öffentlich und quelloffen ist. Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`
-für den vollständigen Installationsweg samt Gradle-Zugangsdaten-Konfiguration.
+`read:packages` sind dort Voraussetzung, unabhängig davon, ob das SDK
+öffentlich und quelloffen ist. Der einfachere Weg ist Cloudsmith. Siehe
+`sdks/kotlin/pgchangefeed-kotlin/README.md` für den vollständigen
+Installationsweg samt Gradle-Repository-Konfiguration.
 
 In allen drei Packages trägt jede über `GET /changes` gelesene Änderung das
 Feld `origin` (`wal` oder `backfill`); eine Antwort ohne dieses Feld oder mit
@@ -1171,12 +1175,13 @@ fehlendes oder ungültiges Token endet den Aufruf mit gRPC-Status
 `Unauthenticated`, statt den Draht-Vertrag selbst zu implementieren. Derselbe
 Package trägt außerdem den SSE-Stream (siehe „Zugriff über
 Server-Sent-Events") und den NATS-Vollinhalts-Stream (siehe „Zugriff über
-den NATS-Vollinhalts-Stream"). Wie beim HTTP-API-Zugriff oben verlangt der
-Bezug über **GitHub Packages**
-(`https://maven.pkg.github.com/pt9912/pg-change-feed`) immer eine
-Authentifizierung, auch für dieses öffentliche Package: ein GitHub-Konto
-und ein klassischer Personal Access Token (PAT) mit dem Scope
-`read:packages` sind Voraussetzung für den Bezug (`ADR-0109`
+den NATS-Vollinhalts-Stream"). Wie beim HTTP-API-Zugriff oben ist der Bezug
+über Cloudsmith
+(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`) ohne Konto
+und ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages**
+(`https://maven.pkg.github.com/pt9912/pg-change-feed`) verlangt dagegen
+immer eine Authentifizierung: ein GitHub-Konto und ein klassischer Personal
+Access Token (PAT) mit dem Scope `read:packages` (`ADR-0109`
 Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
@@ -1249,9 +1254,10 @@ liefert eine `Sequence<Change>` mit allen zehn Feldern der Tabelle oben; das
 Bearer-Token landet im `Authorization`-Header, ein fehlender oder
 unbekannter Token endet den Aufruf mit `PgChangeFeedUnauthorizedException`
 (HTTP-Status `401`), statt den Draht-Vertrag selbst zu implementieren. Wie
-beim HTTP-API-Zugriff oben verlangt der Bezug über **GitHub Packages**
-immer eine Authentifizierung, auch für dieses öffentliche Package
-(`ADR-0109` Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
+beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith ohne Konto und
+ohne Token möglich (`ADR-0123`); der Bezug über **GitHub Packages** verlangt
+dagegen immer eine Authentifizierung (`ADR-0109` Festlegung 2). Siehe
+`sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
 PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
@@ -1402,10 +1408,10 @@ Authentifizierung ist verbindungsseitig (derselbe `CDC_NATS_STREAM_TOKEN`
 wie oben), ein abgelehnter Verbindungsversuch endet die Sequenz mit der
 zugrunde liegenden `io.nats.client`-Ausnahme unverändert, statt den
 Draht-Vertrag selbst zu implementieren oder eine zweite Fehlerklassen-Hierarchie
-zu erfinden. Wie beim HTTP-API-Zugriff oben verlangt der Bezug über
-**GitHub Packages** immer eine Authentifizierung, auch für dieses
-öffentliche Package (`ADR-0109` Festlegung 2). Siehe
-`sdks/kotlin/pgchangefeed-kotlin/README.md`.
+zu erfinden. Wie beim HTTP-API-Zugriff oben ist der Bezug über Cloudsmith
+ohne Konto und ohne Token möglich (`ADR-0123`); der Bezug über **GitHub
+Packages** verlangt dagegen immer eine Authentifizierung (`ADR-0109`
+Festlegung 2). Siehe `sdks/kotlin/pgchangefeed-kotlin/README.md`.
 
 Python-Anwendungen können statt des Beispiels das offizielle
 PyPI-Package `pgchangefeed` einbinden (`LH-FA-SST-009`, `ADR-0110`,
@@ -1885,3 +1891,4 @@ MIT — siehe `LICENSE`.
 | 1.62 | 2026-09-25 | Bereinigungslauf liest Kandidaten seitenweise ohne Row Images (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung): §4 „Aufbewahrung (Retention)“ beschreibt die Seiten (10.000 Changes, nicht atomar, Consumer-Positionen einmal je Durchlauf), §4 „Bestand als Backfill überführen“ und §9 „Grenzwerte“ ersetzen die Bemessung des Speicherlimits je Change durch die Nachmessung (Spitze 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, zwei Läufe) und nennen den Stand der Vorversionen `v0.1.0` bis `v0.1.2`; die Richtgröße bleibt und folgt der Kopierdauer |
 | 1.63 | 2026-09-25 | Aussagen zum Speicher des Feed-Containers an die Messung angeglichen (`LH-FA-RET-004`, `LH-FA-CAP-009`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Fixrunde): der Speicher hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der Changes (gemessen 14,9 bis 17,6 MiB bei 1.000.000 bis 3.000.000 Changes, über 3.000.000 Changes nichts gemessen); der Anstieg zwischen den Stufen ist als Differenz zweier Endpunkte (keine gemessene Steigung) mit dem Ausgangszustand des Containers benannt, ein dritter Lauf mit Seiten-Cache-Anteil ergänzt; die Beschreibung der Vorversionen nennt ihren Ist-Zustand |
 | 1.64 | 2026-09-25 | Betriebs-Hinweis (Consumer-Bindung) unter „Aufbewahrung (Retention)“ um zwei Folgen ergänzt (`LH-FA-RET-004`, `ADR-0124`, slice-retention-lauf-speicher-begrenzung Closure): Changes, die ein Durchlauf nach dem Lesen der Positionen löscht, sind für einen erstmals bestätigenden Consumer verloren, sein Schutz beginnt mit dem nächsten Durchlauf; ein Durchlauf kann eine Transaktion in mehreren Schritten löschen, ein Consumer ohne Bestätigung kann sie währenddessen unvollständig lesen |
+| 1.65 | 2026-09-25 | Bezug des Kotlin-SDK ohne Token beschrieben (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): die vier Kotlin-Hinweise unter §4 „Zugriff über die HTTP-/JSON-API“, „…den gRPC-Change-Stream“, „…Server-Sent-Events“ und „…den NATS-Vollinhalts-Stream“ nennen Cloudsmith als anonym lesbaren Bezugsweg (`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`, Konto und Token nicht nötig) neben GitHub Packages, das für das Lesen weiter einen Token verlangt; das Package `pgchangefeed-kotlin` ist dafür auf `0.2.2` gehoben |

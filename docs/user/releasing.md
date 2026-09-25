@@ -1,6 +1,6 @@
 # Releasing: Release-Prozess für Betreiber und Maintainer
 
-Version: 1.9
+Version: 1.10
 Stand: 2026-09-25
 
 ## 1. Zweck und Zielgruppe
@@ -32,7 +32,10 @@ NuGet.org), `sdk-python-v0.1.0` und `sdk-python-v0.2.0` (`pgchangefeed` auf
 PyPI) sowie `sdk-kotlin-v0.2.0` (`pgchangefeed-kotlin` auf GitHub
 Packages). Die `0.2.0`-Läufe der drei Workflows (Lauf-Kennungen 36117929191,
 36117929298 und 36117929552, abgefragt mit `gh run list --workflow
-<datei>.yml`, 2026-09-25) endeten je mit `success`.
+<datei>.yml`, 2026-09-25) endeten je mit `success`. Der Kotlin-Weg
+veröffentlicht zusätzlich nach Cloudsmith (zwei Jobs, ein Ziel je Job);
+diese Struktur ist bis zu ihrem ersten Tag-Lauf nicht bewiesen (§4
+„SDK-Release: GitHub-Packages- und Cloudsmith-Publish“).
 
 Dieses Dokument ersetzt nicht `docs/user/benutzerhandbuch.md` — jenes
 beschreibt den laufenden Betrieb des Feed-Containers (Umgebungsvariablen,
@@ -114,6 +117,8 @@ Doppellauf).
 | `DOCKERHUB_TOKEN` | Docker-Hub-Personal-Access-Token | Betreiber, manuell in GitHub |
 | `NUGET_API_KEY` | NuGet.org-API-Key für `dotnet nuget push` (C#-SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
 | `PYPI_API_TOKEN` | PyPI-API-Token für `uv publish` (Python-SDK-Release, siehe unten) | Betreiber, manuell in GitHub |
+| `CLOUDSMITH_USERNAME` | Anmeldename des Cloudsmith-Service-Kontos für den Upload (Kotlin-SDK-Release, Job `sdk-kotlin-cloudsmith`, siehe unten) | Betreiber, manuell in GitHub |
+| `CLOUDSMITH_API_KEY` | API-Key desselben Service-Kontos (Schreibrecht auf das Repository `pt9912/pg-change-feed`) | Betreiber, manuell in GitHub |
 
 **Scope-Hinweis:** `DOCKERHUB_TOKEN` braucht den Scope
 **`read/write/delete`** — ein Token mit nur `read/write` authentifiziert
@@ -125,8 +130,13 @@ betroffene Schritt mit `continue-on-error` lief. In diesem Repo ist der
 `hub-description`-Job ein eigener, nicht maskierter Job — ein
 Scope-Fehler bleibt dort sichtbar rot.
 
-Alle drei Secrets sind eine externe, kontobezogene Handlung — kein
-technischer Bestandteil dieses Repos legt sie an.
+Alle Secrets dieser Tabelle sind eine externe, kontobezogene Handlung — kein
+technischer Bestandteil dieses Repos legt sie an. Der Werttyp von
+`CLOUDSMITH_USERNAME` ist der Service-Slug des Cloudsmith-Kontos; ob
+Cloudsmith beim Upload stattdessen den Service-Namen verlangt, zeigt erst der
+erste Tag-Lauf (bei einem Authentifizierungsfehler HTTP 401/403 im
+Upload-Schritt setzt der Betreiber das Secret auf den Service-Namen und
+wiederholt nur den roten Job).
 
 ### SDK-Release: NuGet.org-Publish für `PgChangeFeed.Client`
 
@@ -226,13 +236,14 @@ sofort sichtbar, ohne Indexierungsverzögerung wie bei NuGet);
 Python-SDK-Release-Weg ist damit End-zu-Ende mit echtem
 `PYPI_API_TOKEN`-Secret bewiesen, nicht nur implementiert.
 
-### SDK-Release: GitHub-Packages-Publish für `pgchangefeed-kotlin`
+### SDK-Release: GitHub-Packages- und Cloudsmith-Publish für `pgchangefeed-kotlin`
 
 Analog zu den beiden SDK-Release-Wegen oben existiert ein vierter,
 eigenständiger Release-Mechanismus für das Kotlin-SDK-Package
 `pgchangefeed-kotlin`
 ([`ADR-0109`](../plan/adr/0109-kotlin-github-packages-drittes-sdk-package.md)
-Festlegung 2/5): ein eigener Tag-Namensraum `sdk-kotlin-v<SemVer 2.0>`
+Festlegung 2/5, erweitert um Cloudsmith als zweites Ziel durch
+[`ADR-0123`](../plan/adr/0123-kotlin-sdk-zusaetzlich-auf-cloudsmith.md)): ein eigener Tag-Namensraum `sdk-kotlin-v<SemVer 2.0>`
 (z. B. `sdk-kotlin-v0.2.0`) — getrennt vom Server-Namensraum `v*` (§3)
 sowie vom C#-SDK-Namensraum `sdk-csharp-v*` und vom Python-SDK-Namensraum
 `sdk-python-v*` (siehe oben), weil die Kotlin-SDK-Versionierung unabhängig
@@ -243,7 +254,12 @@ Präfix-Überlappungs-Doppellauf).
 
 Trigger: `push: tags: ['sdk-kotlin-v*']` in
 [`.github/workflows/sdk-kotlin-release.yml`](../../.github/workflows/sdk-kotlin-release.yml).
-Der Workflow:
+Ein Tag löst **zwei unabhängige Jobs** aus, einen je Ziel
+(`sdk-kotlin-github-packages` und `sdk-kotlin-cloudsmith`, ohne `needs` und
+ohne `continue-on-error`). Scheitert ein Ziel, bleibt das andere
+veröffentlicht, der Lauf ist rot, und „Re-run failed jobs“ wiederholt nur
+den roten Job. Beide Ziele erhalten dieselben Artefakte. Jeder Job
+durchläuft dieselben Schritte:
 
 1. validiert den Tag-Suffix strikt gegen SemVer 2.0
    (`tools/harness/sdk-kotlin-release-tag-info.sh`, netzlos testbar über
@@ -258,44 +274,83 @@ Der Workflow:
    oben, hier gegen die Gradle-Versionszeile);
 3. baut/testet/paketiert Docker-only über `make sdk-pack-kotlin` — ein
    roter Test bricht den Workflow ab, bevor der Publish-Schritt erreicht
-   wird;
+   wird; im selben Bau prüft eine Probe ohne Zugangsdaten und ohne Zugriff
+   auf ein Ziel die Publish-Konfiguration (beide Einzel-Aufgaben unter ihrem
+   Namen, POM-Koordinate und POM-Version gegen den Jar-Namen, Upload-URL
+   des Cloudsmith-Repositories) und bricht bei einer Abweichung den Bau ab;
 4. veröffentlicht anschließend ebenfalls Docker-only, über eine eigene
    `publish`-Docker-Stufe (`sdks/kotlin/Dockerfile`, baut auf der bereits
    vorhandenen `build`-Stufe auf) — `docker build --build-context
-   proto=proto --target publish` gefolgt von `docker run --rm -e
-   GITHUB_ACTOR=… -e GITHUB_TOKEN=… <image> ./gradlew --no-daemon publish`,
-   mit Netzwerkzugriff zur Laufzeit (kein `--network none`, anders als
-   jede andere Stufe dieses Dockerfiles, `ADR-0109` Festlegung 5 wörtlich:
-   Docker-only bis einschließlich `publish`). Die `.proto`-Quelle
+   proto=proto --target publish` gefolgt von `docker run --rm -e NAME …
+   <image> ./gradlew --no-daemon <Aufgabe des Ziels>`, mit Netzwerkzugriff
+   zur Laufzeit (kein `--network none`, anders als jede andere Stufe dieses
+   Dockerfiles, `ADR-0109` Festlegung 5 wörtlich: Docker-only bis
+   einschließlich `publish`). Die Aufgabe des Ziels ist
+   `publishMavenPublicationToGitHubPackagesRepository` bzw.
+   `publishMavenPublicationToCloudsmithRepository`, nicht die Sammel-Aufgabe
+   `publish` (sie führt beide Ziele aus und scheitert ohne die
+   Cloudsmith-Werte). Die `.proto`-Quelle
    (`proto/cdc/stream/v1/changestream.proto`) fließt über denselben
    benannten Bau-Kontext `proto` ein wie bei `make sdk-pack-kotlin` — kein
    manueller Kopier-Schritt außerhalb von Docker.
 
-**Kein externes Repository-Secret nötig** — der zentrale Unterschied zu
-den beiden Release-Wegen oben: GitHub Packages authentifiziert
-ausschließlich über das eingebaute `GITHUB_TOKEN`
-(`permissions: contents: read` / `packages: write` auf Job-Ebene, real
-dokumentiertes Minimalrezept, `ADR-0109` §Kontext Recherche). `GITHUB_ACTOR`
-ist ein von GitHub Actions automatisch bereitgestellter
-Default-Umgebungswert; `GITHUB_TOKEN` wird explizit aus
-`secrets.GITHUB_TOKEN` als Umgebungsvariable gesetzt, gelesen von
-`sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`s
-`publishing.repositories.maven.credentials`. Kein Betreiber-Schritt, kein
-neuer Eintrag in der Secret-Tabelle oben.
+**Secrets je Ziel.** Der GitHub-Packages-Job authentifiziert ausschließlich
+über das eingebaute `GITHUB_TOKEN` (`permissions: contents: read` /
+`packages: write` auf Job-Ebene, real dokumentiertes Minimalrezept,
+`ADR-0109` §Kontext Recherche); `GITHUB_ACTOR` ist ein von GitHub Actions
+automatisch bereitgestellter Default-Umgebungswert, `GITHUB_TOKEN` wird aus
+`secrets.GITHUB_TOKEN` als Umgebungsvariable des Schritts gesetzt. Der
+Cloudsmith-Job (`permissions: contents: read`, kein `packages: write`) liest
+ausschließlich `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY`
+(Secret-Tabelle oben; Betreiber-Schritt, `ADR-0123` Festlegung 3). Beide
+Werte fließen über `env:` des Schritts und `docker run -e NAME` in den
+Container — nie als Build-Argument und nie als Wert in der Kommandozeile;
+Gradle liest sie in `sdks/kotlin/pgchangefeed-kotlin/build.gradle.kts`
+(`publishing.repositories.maven.credentials`).
 
-**Ein realer Preis bleibt trotzdem bestehen — anders als bei NuGet und
-PyPI**: GitHub Packages verlangt eine Authentifizierung zum **Lesen**, auch
-für ein öffentliches Package (real dokumentiert, `ADR-0109`
-§Entscheidung Festlegung 2). Ein Kotlin-Consumer, der `pgchangefeed-kotlin`
-in sein eigenes Projekt einbindet, braucht ein GitHub-Konto und einen
-klassischen Personal-Access-Token mit `read:packages`-Scope, den er in
-seiner eigenen Build-Konfiguration hinterlegt — ein anonymer Bezug wie bei
-Maven Central, NuGet oder PyPI ist bei GitHub Packages strukturell nicht
-möglich.
+**Betreiber-Voraussetzungen für Cloudsmith** (extern, kein Agenten-Schritt):
+ein Cloudsmith-Konto mit der Organisation `pt9912`, ein Open-Source-Repository
+`pg-change-feed` (Broadcast, Sichtbarkeit „Open source“, in der Web-App
+angelegt — Open-Source-Repositories lassen sich nicht über die API anlegen)
+und ein Service-Konto mit Schreibrecht auf dieses Repository, dessen Name und
+API-Key die zwei Repository-Secrets tragen. Die Einstellung „Republishing“
+bleibt aus: eine veröffentlichte Version ist unveränderlich. Der Upload
+sammelt die Einzeldateien einer Version in einem Sammelfenster (60 Sekunden)
+und verarbeitet sie danach asynchron; der Job meldet Erfolg mit dem Upload,
+nicht mit der Verfügbarkeit.
 
-Kein `:latest`-Äquivalent (GitHub Packages kennt keins) und kein
-GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb dieser
-Folgepflicht (`ADR-0109`).
+**Was Anwender sehen.** Der Bezug über Cloudsmith
+(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/`) braucht kein
+Konto und keinen Token; GitHub Packages verlangt dagegen weiter eine
+Authentifizierung zum **Lesen**, auch für ein öffentliches Package (real
+dokumentiert, `ADR-0109` §Entscheidung Festlegung 2): ein GitHub-Konto und
+einen klassischen Personal-Access-Token mit `read:packages`-Scope. Die
+Kotlin-README nennt Cloudsmith deshalb als ersten Bezugsweg und trägt die von
+Cloudsmith für Open-Source-Repositories verlangte Namensnennung.
+
+**Wiederholung.** Ob ein zweiter Upload derselben Version am Ziel abgelehnt
+wird, ist für Cloudsmith (nativer Maven-Upload) und GitHub Packages nicht
+geprüft; der Ablauf verlässt sich nicht darauf, sondern wiederholt nur den
+roten Job. Bleibt nach einem Fehlschlag ein Teil-Upload zurück (Einzeldateien
+ohne vollständiges Paket), löscht der Betreiber das Paket in der Web-App des
+Ziels und wiederholt den Job.
+
+**Offen bis zum ersten Tag-Lauf.** Die Job-Struktur mit zwei Zielen ist
+lokal nur statisch geprüft (`AGENTS.md` §3.10): der reale Lauf mit dem ersten
+`sdk-kotlin-v*`-Tag, der beide Ziele trägt (`sdk-kotlin-v0.2.2`), muss beide Jobs `success`
+zeigen, und ein anonymer Abruf der POM-Datei am Cloudsmith-Download-Pfad
+(`https://dl.cloudsmith.io/public/pt9912/pg-change-feed/maven/io/github/pt9912/pgchangefeed-kotlin/0.2.2/pgchangefeed-kotlin-0.2.2.pom`)
+muss HTTP 200 antworten (nach dem Sammelfenster, ggf. mit Wiederholung).
+Ebenfalls bis dahin nicht geprüft: ob Cloudsmith die von Gradle
+mitveröffentlichte Moduldatei annimmt, ob der Anmeldename ein Service-Slug
+oder ein Service-Name sein muss und ob die Paketseite die POM-Beschreibung
+anzeigt (optional pflegt der Betreiber dort den Text in der Web-App). Die
+Versionen `0.2.0` und `0.2.1` liegen nur auf GitHub Packages, auf Cloudsmith
+liegen erst die Versionen ab `0.2.2`.
+
+Kein `:latest`-Äquivalent (weder GitHub Packages noch Cloudsmith kennen
+eines) und kein GitHub-Release-Eintrag für das SDK — beides bewusst außerhalb
+dieser Folgepflicht (`ADR-0109`, `ADR-0123`).
 
 **Ein realer `sdk-kotlin-v*`-Tag ist gesetzt** — `sdk-kotlin-v0.2.0` lief
 mit grünem `sdk-kotlin-release.yml`-Lauf durch (Lauf 36117929552; alle
@@ -356,3 +411,4 @@ nicht rückwirkend verändert oder gelöscht.
 | 1.7 | 2026-09-25 | §1/§4 auf den Ist-Stand gezogen (`LH-FA-SST-009`, `ADR-0110`, slice-sdk-readme-nutzerdoku Fixrunde): alle drei SDK-Release-Wege sind mit realen Tags bewiesen (`sdk-csharp-v0.1.0`/`0.2.0`, `sdk-python-v0.1.0`/`0.2.0`, `sdk-kotlin-v0.2.0`; `0.2.0`-Läufe 36117929191, 36117929298, 36117929552 je `success`, Kotlin-Paketversion `0.2.0` über die GitHub-API abgefragt) |
 | 1.8 | 2026-09-25 | §4 um den manuell gepflegten Beschreibungstext der Kotlin-Paketseite ergänzt (`LH-FA-SST-009`, `ADR-0109`): GitHub Packages zeigt bei Maven weder README noch POM-Beschreibung, die Schreib-Schnittstelle fehlt in REST und GraphQL |
 | 1.9 | 2026-09-25 | §1 auf den realen Server-Release `v0.2.0` gezogen (`ADR-0051`): Lauf 36190768475 `success`, GHCR und Docker Hub tragen `0.2.0` und `latest` (amd64, arm64), Release-Hinweise lassen sich mit `gh release edit` ergänzen |
+| 1.10 | 2026-09-25 | §4 Kotlin-Abschnitt auf zwei Vertriebsziele gezogen (`LH-FA-SST-009`, `ADR-0123`, slice-sdk-kotlin-cloudsmith): ein Job je Ziel (GitHub Packages, Cloudsmith) mit den Einzel-Aufgaben statt der Sammel-Aufgabe, Secret-Tabelle um `CLOUDSMITH_USERNAME` und `CLOUDSMITH_API_KEY` erweitert, Betreiber-Voraussetzungen, Wiederholung je Job und die Offen-Punkte bis zum ersten Tag-Lauf beschrieben; „Alle drei Secrets“ leitet die Zahl nicht mehr aus einem Zählwort ab |
