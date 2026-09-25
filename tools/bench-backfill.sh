@@ -22,7 +22,7 @@ fi
 RUNS=${BENCH_BACKFILL_RUNS:-3}
 EST_ROWS=${BENCH_BACKFILL_EST_ROWS:-100000}
 LIVE_RATE=${BENCH_BACKFILL_LIVE_RATE:-100}
-RUN_TIMEOUT_S=${BENCH_BACKFILL_RUN_TIMEOUT_S:-1800}
+RUN_TIMEOUT_S=${BENCH_BACKFILL_RUN_TIMEOUT_S:-1800} # Sekunden je Run (Uhr: bash SECONDS)
 # WAL-Rückstand-Schwellen des Capture-Slots (SPEC-013: Warn 100 MiB, Fehler 1 GiB).
 WAL_WARN_BYTES=104857600
 WAL_ERROR_BYTES=1073741824
@@ -98,9 +98,11 @@ feed_mem_mib() {
 
 max_of() { LC_ALL=C awk -v a="$1" -v b="$2" 'BEGIN { print (b + 0 > a + 0) ? b : a }'; }
 
-# min/Median/max einer Zahlenliste (Argumente).
+# min/Median/max einer Zahlenliste (Argumente); der Median ist bench::median_of.
 range_of() {
-  printf '%s\n' "$@" | sort -n | LC_ALL=C awk '{ v[NR] = $1 } END { printf "%s–%s (Median %s, n=%d)", v[1], v[NR], v[int((NR + 1) / 2)], NR }'
+  local sorted
+  sorted=$(printf '%s\n' "$@" | sort -n)
+  printf '%s–%s (Median %s, n=%d)' "$(head -n 1 <<< "$sorted")" "$(tail -n 1 <<< "$sorted")" "$(bench::median_of "$@")" "$#"
 }
 
 # WAL-Rückstand des Capture-Slots in Bytes: aktuelle WAL-Position minus
@@ -138,12 +140,13 @@ mib_of() { LC_ALL=C awk -v b="$1" 'BEGIN { printf "%.0f", b / 1048576 }'; }
 # druckt eine Zeile
 # "ms|rows_copied|estimated|warn_size|warn_duration|peak_mib|wal_peak_bytes|held_peak_bytes".
 run_backfill() {
-  local table=$1 id status peak=0 mem waited=0 row wal wal_peak=0 held held_peak=0 sample rest
+  local table=$1 id status peak=0 mem deadline row wal wal_peak=0 held held_peak=0 sample rest
   id=$(bench::psql_scalar "SELECT cdc.backfill_table('$SOURCE_ID', 'public', '$table')")
   if [ -z "$id" ]; then
     echo "$TAG: cdc.backfill_table lieferte keine Antragskennung für $table" >&2
     return 1
   fi
+  deadline=$((SECONDS + RUN_TIMEOUT_S))
   while :; do
     sample=$(bench::psql_scalar "SELECT COALESCE((SELECT status FROM cdc.backfill_run WHERE run_id = '$id'), '') || '|' || COALESCE((SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::bigint || '|' || pg_wal_lsn_diff(pg_current_wal_lsn(), restart_lsn)::bigint FROM pg_replication_slots WHERE slot_name = '$SLOT'), '0|0')")
     status=${sample%%|*}
@@ -163,9 +166,8 @@ run_backfill() {
         return 1
         ;;
     esac
-    waited=$((waited + 1))
-    if [ "$waited" -gt "$RUN_TIMEOUT_S" ]; then
-      echo "$TAG: Run $id von $table nicht beendet nach ${RUN_TIMEOUT_S} Abfragen" >&2
+    if [ "$SECONDS" -gt "$deadline" ]; then
+      echo "$TAG: Run $id von $table nicht beendet nach ${RUN_TIMEOUT_S} s" >&2
       return 1
     fi
   done

@@ -1,6 +1,6 @@
 # Benutzerhandbuch: PG Change Feed
 
-Version: 1.53
+Version: 1.54
 Software-Version: siehe `docs/user/version.md`
 Stand: 2026-09-25
 
@@ -453,11 +453,24 @@ Start. Für den Lauf selbst gelten vier Betriebs-Vorbedingungen an der Quelle:
   CDC-Speicher derselben Datenbank; dieses WAL zählt zum WAL-Rückstand des
   Capture-Slots (siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen)), und die
   offene Schreibtransaktion hält das WAL für den Slot auf der Platte der Quelle.
-  Ohne Live-Commit auf einer aktivierten Tabelle bleibt der Rückstand nach dem
-  Ende des Runs bestehen; ein Live-Commit senkt ihn. Ein Run kann die Fehlerschwelle
-  von 1 GiB überschreiten: der Feed-Container beendet sich dann mit der Klasse
-  `replication` (Ausgang 1) und der Run endet `interrupted`. Diese Schwelle kann
-  bei weniger Zeilen greifen als die Richtgröße; gemessene Werte stehen unter
+  Der Rückstand ist **nicht an den Backfill gebunden**: der Slot bestätigt nur
+  Commits, die Änderungen veröffentlichter Tabellen tragen; jedes WAL ohne
+  solchen Inhalt (der Run, aber ebenso ein Schreiber auf eine nicht aktivierte
+  Tabelle) hebt den Rückstand, bis ein Commit auf einer aktivierten Tabelle
+  eintrifft. Überschreitet er die Fehlerschwelle von 1 GiB, beendet sich der
+  Feed-Container mit der Klasse `replication` (Ausgang 1) und ein laufender Run
+  endet `interrupted`; das kann bei weniger Zeilen eintreten als die Richtgröße.
+  Die Bestätigung solchen WALs ist in
+  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
+  entschieden und im Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung`
+  geplant; in dieser Version bestätigt der Slot es nicht. **Abhilfen für den
+  Betrieb:** ein Commit auf einer aktivierten Tabelle (etwa ein einzelner
+  Schreibvorgang auf eine Tabelle aus der Aktivierung) senkt den Rückstand
+  sofort; das Datei-Feld `wal_retention_error_bytes` (Bytes, kein
+  Umgebungsvariablen-Gegenstück, `SPEC-016`, siehe
+  [Optionale YAML-Konfigurationsdatei](#optionale-yaml-konfigurationsdatei-cdc_config_file))
+  hebt die Fehlerschwelle über den erwarteten Rückstand — es ändert die Ursache
+  nicht und wirkt für jede Ursache eines Rückstands. Gemessene Werte stehen unter
   [Grenzwerte](#grenzwerte).
 
 **Sperre der Tabelle:** Vom Beginn der Lese-Transaktion bis zu ihrem Ende hält
@@ -1575,18 +1588,27 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   abgebrochen; liegt die geschätzte Zeilenzahl beim Antrag darüber, setzt der
   Antrag `warn_estimated_size`. *Ursprung (abgeleitet):* die Kopierrate der
   Stufe mit 200.000 Zeilen, Median von 3 Runs 7.693 Zeilen/s (Bereich 6.997 bis
-  8.686, gemessen), mal die Toleranz von 600 s ergibt 4.615.800 Zeilen, auf eine
-  Stelle abgerundet. Keine gemessene Stufe kopierte die Toleranzdauer; die Rate
-  ist hochgerechnet. Sie gilt für den Host und die Bedingungen der Messung
-  (siehe unten) und streut zwischen Läufen: sechs weitere Läufe auf demselben
-  Host lagen in den Stufen ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s
-  je Run (übernommen aus den Lauf-Berichten, nicht im Repository). Breite
-  Zeilen (`jsonb`, `bytea`),
+  8.686; Lauf `20260925T000439Z`, übernommen aus dem Lauf-Bericht, im
+  Repository nicht auflösbar), mal die Toleranz von 600 s ergibt 4.615.800
+  Zeilen, auf eine Stelle abgerundet: 4.000.000. Keine gemessene Stufe
+  kopierte die Toleranzdauer; die Rate ist hochgerechnet. Die Rate streut
+  zwischen Läufen; dieselbe Rechnung an zwei weiteren Läufen desselben Hosts
+  (Stufe 200.000, Median von 3 Runs): 8.933 Zeilen/s im Lauf
+  `20260925T011036Z` (gemessen im
+  [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)),
+  8.559 Zeilen/s im Lauf `20260925T012459Z` (gemessen), also je 5.000.000
+  Zeilen nach Rundung. Der Wert im Code (4.000.000) ist der kleinere und damit
+  vorsichtigere Wert; die Konstante ist ein Startwert, den eine weitere Messung
+  nachschärfen kann. Sechs weitere Läufe auf demselben Host lagen in den Stufen
+  ab 100.000 Zeilen zwischen 4.088 und 9.425 Zeilen/s je Run (übernommen aus
+  den Lauf-Berichten, nicht im Repository). Die Zahl gilt für den Host und die
+  Bedingungen der Messung (siehe unten). Breite Zeilen (`jsonb`, `bytea`),
   andere Hardware und eine andere Einfügeform sind ungemessen. Die
   WAL-Fehlerschwelle (siehe unten) kann bei weniger Zeilen greifen.
 - **Backfill, gemessene Werte** (Lauf `20260925T000439Z` von
   `tools/bench-backfill.sh`, Vertrag in
   [`harness/targets/bench-backfill.md`](../../harness/targets/bench-backfill.md);
+  aus dem Lauf-Bericht übernommen, im Repository nicht auflösbar;
   Host: Linux 6.8.0-139-generic, Docker 29.8.1, 20 CPU, 31 GiB RAM,
   PostgreSQL 18 (`postgres:18-alpine`) mit Standard-Einstellungen; Tabellen mit
   fünf schmalen Spalten, mittlere Zeilenbreite etwa 74 Bytes, Blockgröße 1.000
@@ -1599,17 +1621,30 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   | 50.000 | 5,89 s (5,58 bis 5,96 s) | 8.489 Zeilen/s |
   | 200.000 | 26,0 s (23,0 bis 28,6 s) | 7.693 Zeilen/s |
 
-  Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`, `--full`,
-  gleicher Host) dauerten 125,2 s und 122,8 s (7.986 und 8.141 Zeilen/s). Die
+  Eine Nachmessung am eigenen Lauf `20260925T012459Z` (gleicher Host, gleiche
+  Stufen, Median von 3 Runs, gemessen) lieferte 8.382, 8.975 und 8.559
+  Zeilen/s. Zwei Runs über je 1.000.000 Zeilen (Lauf `20260924T233628Z`,
+  `--full`, gleicher Host; übernommen, im Repository nicht auflösbar) dauerten
+  125,2 s und 122,8 s (7.986 und 8.141 Zeilen/s). Die
   mittlere Blockdauer liegt bei etwa 0,12 bis 0,13 s (abgeleitet: Dauer durch
   Blockzahl); die längste Dauer eines einzelnen Blocks und die Dauer des Commits
   sind nicht gemessen.
 - **Backfill, Speicher des Feed-Containers** (`docker stats`, Abstand der Proben
-  etwa 1 bis 2 s, dieselben Läufe): Spitze 467 MiB in der Stufe mit 200.000
-  Zeilen (185 MiB in Ruhe davor); 435 MiB und 1.544 MiB in den zwei Runs über
-  je 1.000.000 Zeilen. Der Bedarf eines Blocks (Blockgröße mal Zeilenbreite,
-  etwa 74 KB) erklärt das nicht; die Ursache ist nicht untersucht, ein
-  Zusammenhang mit der Tabellengröße ist nicht belegt.
+  etwa 1 bis 2 s; die Spitze ist der höchste Wert der Proben im Run, sie kann
+  zwischen zwei Proben liegen): Stufe mit 200.000 Zeilen, Spitze 467 MiB (185
+  MiB in Ruhe davor; Lauf `20260925T000439Z`, übernommen, im Repository nicht
+  auflösbar), 401,7 MiB (196,0 MiB in Ruhe davor; Lauf `20260925T012459Z`,
+  gemessen) und 416,5 MiB (176,3 MiB in Ruhe davor; Lauf `20260925T011036Z`,
+  [Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)).
+  Die Probe 20 s nach dem letzten Run der Stufe liegt in den zwei gemessenen
+  Läufen **über** der Spitze im Run: 437,0 MiB und 641,7 MiB — der höchste
+  gemessene Wert der Stufe ist 641,7 MiB, die Spitze im Run ist eine
+  Untergrenze. 435 MiB und 1.544 MiB in den zwei Runs über je 1.000.000 Zeilen
+  (Lauf `20260924T233628Z`, übernommen, im Repository nicht auflösbar; der Wert
+  20 s nach dem letzten Run ist dort nicht erhoben). Der Bedarf eines Blocks
+  (Blockgröße mal Zeilenbreite, etwa 74 KB) erklärt das nicht; die Ursache ist
+  nicht untersucht, ein Zusammenhang mit der Tabellengröße ist nicht belegt.
+  Bemessen Sie den Speicher des Feed-Containers nicht knapp an der Spitze im Run.
 - **Backfill, WAL-Rückstand des Capture-Slots** (Größe von
   `cdc_wal_retention_bytes`, siehe [WAL-Rückstand prüfen](#wal-rückstand-prüfen);
   dieselben Läufe): Spitze im Run im Median 140 MiB in der Stufe mit 200.000
@@ -1622,16 +1657,45 @@ Nur, wenn die Quelltabelle `REPLICA IDENTITY FULL` trägt; sonst ist
   Fehlerschwelle von 1 GiB (Messwert 1.098.218.616 Bytes): der Feed-Container
   beendete sich mit Ausgang 1 (`replication`), der Run endete `interrupted`.
   Der Rückstand je Zeile wächst danach mit dem Bestand im CDC-Speicher
-  (abgeleitet aus den drei Runs; die Ursache ist nicht untersucht). Das vom
+  (abgeleitet aus den drei Runs). Das vom
   Slot auf der Platte der Quelle gehaltene WAL erreichte
   in den zwei Runs über 1.000.000 Zeilen 782 und 1.613 MiB (Spitze).
-- **Backfill, Wirkung auf die Live-Erfassung** (Lauf `20260925T000439Z`, Run
-  über 200.000 Zeilen bei 100 Live-Änderungen/s in eine andere aktivierte
-  Tabelle): `cdc_capture_lag` 0,049 bis 1,005 s (Median 0,48 s, 24 Proben) im
-  Run gegenüber 0,049 bis 1,022 s (Median 0,50 s, 29 Proben) ohne Run — bei
-  dieser Last und Größe ist kein Unterschied gemessen.
+  Ein Nachlauf am eigenen Lauf `20260925T012459Z` (gemessen, Stufe 200.000
+  Zeilen) liegt im selben Band: Spitze im Run Median 140 MiB (etwa 735 Bytes je
+  Zeile, abgeleitet), vom Slot gehaltenes WAL Median 266 MiB.
+  **Ursache und Abhilfe:** der Rückstand hängt nicht am Backfill. Ein Schreiber,
+  der 200.000 Zeilen in eine **nicht aktivierte** Tabelle schrieb, hob ihn ohne
+  Run um 33,5 MiB (175 Bytes je Zeile); der Rückstand blieb bis zu einem
+  Commit auf einer aktivierten Tabelle bestehen, der ihn innerhalb von 3 s auf
+  0 MiB senkte (Lauf `wal-verdikt[20260925T004731Z]`, gedruckt in
+  [`ADR-0120`](../plan/adr/0120-capture-slot-leerlauf-bestaetigung.md)
+  §Gemessen; Architekt-Verdikt
+  [`architect-verdict-backfill-wal-rueckstand-und-bench-rot`](../reviews/architect-verdict-backfill-wal-rueckstand-und-bench-rot.md)).
+  Die Ursache ist die fehlende Bestätigung von WAL ohne Inhalt für die
+  Publication; ihre Behebung ist der Folge-Slice
+  `slice-backfill-slot-leerlauf-bestaetigung`. Als Abhilfen stehen die Punkte
+  aus [Bestand als Backfill überführen](#bestand-als-backfill-überführen) zur
+  Verfügung: ein Commit auf einer aktivierten Tabelle, oder das Datei-Feld
+  `wal_retention_error_bytes`.
+- **Backfill, Wirkung auf die Live-Erfassung** (je ein Run über 200.000 Zeilen
+  bei 100 Live-Änderungen/s in eine andere aktivierte Tabelle, dazu eine
+  Referenz gleicher Dauer ohne Run; **jeder Vergleich ist ein Einzellauf ohne
+  Wiederholung**): `cdc_capture_lag` im Run gegenüber ohne Run — Lauf
+  `20260925T000439Z` (übernommen, im Repository nicht auflösbar): 0,049 bis
+  1,005 s (Median 0,48 s, 24 Proben) gegenüber 0,049 bis 1,022 s (Median 0,50
+  s, 29 Proben); Lauf `20260925T011036Z`
+  ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md)):
+  0,123 bis 1,074 s (Median 0,59 s, 21 Proben) gegenüber 0,041 bis 1,011 s
+  (Median 0,40 s, 25 Proben); Lauf `20260925T012459Z` (gemessen): 0,090 bis
+  0,961 s (Median 0,456 s, 22 Proben) gegenüber 0,050 bis 1,008 s (Median
+  0,413 s, 27 Proben). Die Mediane liegen in beiden Richtungen auseinander, die
+  Maxima bei etwa 1 s; bei dieser Last und Größe ist aus diesen drei
+  Einzelläufen kein Unterschied ableitbar.
 - **Backfill, Schätzung der Zeilenzahl** (`pg_class.reltuples`, PostgreSQL 18,
-  Tabelle mit 100.000 Zeilen, Lauf `20260925T000439Z`): eine frisch befüllte
+  Tabelle mit 100.000 Zeilen, Lauf `20260925T000439Z`, übernommen und im
+  Repository nicht auflösbar; dieselben Werte in den Läufen
+  `20260925T011036Z` ([Review-Report](../reviews/review-slice-backfill-bench-richtgroesse.md))
+  und `20260925T012459Z`, gemessen): eine frisch befüllte
   Tabelle trägt **keine** Schätzung (NULL, „unbekannt“) — mit und ohne
   Autovacuum; mit Autovacuum lag die Schätzung nach 35 s vor (Abfrage im
   Abstand von 5 s), ohne Autovacuum blieb sie unbekannt; nach `ANALYZE` stimmte
@@ -1706,3 +1770,4 @@ MIT — siehe `LICENSE`.
 | 1.51 | 2026-09-24 | Sperre des Backfill-Runs und Ausgang bei umgeschriebener Tabelle dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“ trägt den Absatz „Sperre der Tabelle“ (Lesesperre bis zum Ende des Runs, Wirkung auf DDL mit `ACCESS EXCLUSIVE`) und den Punkt „Umschreiben der Tabelle im Fenster“ (`failed`/`transient` ohne Änderung, neuer Antrag als Abhilfe, Fehlalarme `VACUUM FULL`/`CLUSTER`) |
 | 1.52 | 2026-09-24 | Wirkung der Tabellensperre des Backfill-Runs vollständig und mit Ursprung dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0118`, slice-backfill-e2e Fixrunde): §4 „Bestand als Backfill überführen“, Absatz „Sperre der Tabelle“, nennt neben Lesern auch Schreiber und die Publication-Abfrage der Administration als hinter einer wartenden DDL gestaut (gemessen, PostgreSQL 18) und die Gegenrichtung (der Run wartet ohne eigene Zeitgrenze auf eine offene `ACCESS EXCLUSIVE`-Transaktion); `RENAME COLUMN` im Fenster ist als im Review gemessen, nicht im E2E-Runner belegt gekennzeichnet |
 | 1.53 | 2026-09-25 | Warnungen des Backfill-Runs und gemessene Richtgrößen dokumentiert (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, slice-backfill-bench-richtgroesse): §4 „Bestand als Backfill überführen“ nennt, wann `warn_estimated_size` und `warn_duration` gesetzt werden, und den WAL-Rückstand des Capture-Slots als vierte Betriebs-Vorbedingung; „Diagnose ausführen“ deutet die beiden Kennzeichnungen; §9 „Grenzwerte“ trägt die Toleranz der Kopierdauer (Startwert, Setzung ohne Messung), die Richtgröße (abgeleitet, Orientierung, keine Grenze) und die gemessenen Werte (Kopierdauer, Speicher, WAL-Rückstand, Wirkung auf die Live-Erfassung, Schätzung der Zeilenzahl) mit Host und Lauf |
+| 1.54 | 2026-09-25 | Ursache und Abhilfen des WAL-Rückstands sowie Ursprung der Messwerte nachgezogen (`LH-FA-CAP-009`, `ADR-0111`, `ADR-0113`, `ADR-0120`, slice-backfill-bench-richtgroesse Fixrunde): §4 „Bestand als Backfill überführen“ nennt den WAL-Rückstand als nicht an den Backfill gebunden, den Folge-Slice `slice-backfill-slot-leerlauf-bestaetigung` und die Betriebs-Abhilfen (Commit auf einer aktivierten Tabelle, Datei-Feld `wal_retention_error_bytes`); §9 „Grenzwerte“ nennt zur Richtgröße die Werte dreier Läufe (7.693, 8.933, 8.559 Zeilen/s; Konstante = kleinster Wert), zum Speicher des Feed-Containers die Spitze im Run **und** die Probe 20 s nach dem Run (641,7 MiB als höchster gemessener Wert), zur Live-Wirkung drei Einzelläufe statt einer Aussage „kein Unterschied“, und kennzeichnet die im Repository nicht auflösbaren Läufe als übernommen |

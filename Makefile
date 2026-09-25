@@ -181,7 +181,9 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 # Vier eigenständige Skripte, je ein Beleg, gebündelt hinter diesem Ziel —
 # analog `d-check`s `Makefile` Zeile 84 (`bench: build`): drei mit Schwelle
 # (LH-QA-PER-001…003) und `tools/bench-backfill.sh`, eine Messung ohne
-# Schwelle (LH-FA-CAP-009, Vertrag: harness/targets/bench-backfill.md).
+# Schwelle (LH-FA-CAP-009, Vertrag: harness/targets/bench-backfill.md); sie
+# läuft zuletzt, damit ihr Abbruch keine Schwellen-Prüfung und nicht die
+# Erzeugung von docs/user/bench-abdeckung.md verdeckt.
 # Nicht Teil von `gates`/`ci`/`fullbuild`, weil kein einzelner
 # Schwellenwert existiert, gegen den Aufwand/Ergebnis entscheiden würde
 # (Kontrast zu coverage-gate). Braucht ein geladenes Image (make image)
@@ -190,8 +192,8 @@ test-integration: ## Compose-Integrationstest — Kern-CDC-Pfad, Rollen-DSN-Veri
 bench: image ## Performance-Benchmarks (vier Skripte: LH-QA-PER-001…003 mit Schwelle, Backfill-Messung LH-FA-CAP-009 ohne; dokumentiertes Ergebnis, kein Gate; ADR-0054 §(b))
 	@bash tools/bench-source-impact.sh
 	@bash tools/bench-scaling.sh
-	@bash tools/bench-backfill.sh
 	@bash tools/bench-batch-vs-single.sh
+	@bash tools/bench-backfill.sh
 
 # --- Codegenerierung (kein Gate; Docker-only, ADR-0060) ---
 # Protobuf-/gRPC-Codegenerierung laeuft ausschliesslich im gepinnten

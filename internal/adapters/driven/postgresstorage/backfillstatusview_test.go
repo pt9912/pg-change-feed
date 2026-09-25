@@ -1,6 +1,7 @@
 package postgresstorage_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 )
@@ -43,6 +44,13 @@ func TestBackfillStatusViewShowsTheLatestRunPerTable(t *testing.T) {
 			[]any{backfillTestSource, table}, &id, &status, &estimate, &warnSize, &warnDuration)
 		return
 	}
+	// Die Meldung zeigt den Wert der Schätzung, nicht den Zeiger.
+	text := func(estimate *int64) string {
+		if estimate == nil {
+			return "unbekannt (NULL)"
+		}
+		return strconv.FormatInt(*estimate, 10)
+	}
 	if id, status, _, _, warnDuration, rows := latest("vwst_a"); rows != 1 || id != "vwst-a-2" || status != "failed" || !warnDuration {
 		t.Errorf("vwst_a: %d Zeile(n), Run %q, Status %q, warn_duration %v — erwartet 1, vwst-a-2, failed, true", rows, id, status, warnDuration)
 	}
@@ -50,12 +58,12 @@ func TestBackfillStatusViewShowsTheLatestRunPerTable(t *testing.T) {
 		t.Errorf("vwst_b (Gleichstand in requested_at): %d Zeile(n), Run %q — erwartet 1, vwst-b-2", rows, id)
 	}
 	if _, _, estimate, warnSize, warnDuration, _ := latest("vwst_c"); estimate != nil || warnSize || warnDuration {
-		t.Errorf("vwst_c: Schätzung %v, Warnungen %v/%v — erwartet unbekannt (NULL), false/false", estimate, warnSize, warnDuration)
+		t.Errorf("vwst_c: Schätzung %s, Warnungen %v/%v — erwartet unbekannt (NULL), false/false", text(estimate), warnSize, warnDuration)
 	}
 	if _, _, estimate, _, _, _ := latest("vwst_d"); estimate == nil || *estimate != 0 {
-		t.Errorf("vwst_d: Schätzung %v — erwartet die bekannte Schätzung 0", estimate)
+		t.Errorf("vwst_d: Schätzung %s — erwartet die bekannte Schätzung 0", text(estimate))
 	}
 	if _, _, estimate, warnSize, warnDuration, _ := latest("vwst_e"); estimate == nil || *estimate != 7000000 || !warnSize || warnDuration {
-		t.Errorf("vwst_e: Schätzung %v, Warnungen %v/%v — erwartet 7000000, true/false", estimate, warnSize, warnDuration)
+		t.Errorf("vwst_e: Schätzung %s, Warnungen %v/%v — erwartet 7000000, true/false", text(estimate), warnSize, warnDuration)
 	}
 }

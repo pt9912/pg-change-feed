@@ -36,9 +36,18 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
    und `BENCH_BACKFILL_RUNS` Runs über `cdc.backfill_table`. Gemessen wird
    `finished_at − started_at` der Run-Zeile — die Wartezeit in `queued` zählt
    nicht, die Dauer des Commits liegt hinter `finished_at`. Je Run stehen
-   Dauer, Zeilen je Sekunde, die geschätzte Zeilenzahl, beide Warn-Kennzeichnungen
-   und die Speicher-Spitze des Feed-Containers in der Ausgabe; je Stufe der Bereich
-   (Minimum–Maximum) und der Median. Die Blockgröße `B` und die Toleranz liest das
+   Dauer, Zeilen je Sekunde, die geschätzte Zeilenzahl, beide Warn-Kennzeichnungen,
+   die Speicher-Spitze des Feed-Containers und die WAL-Messung in der Ausgabe; je
+   Stufe der Bereich (Minimum–Maximum) und der Median, dazu der Speicher 20 s nach
+   dem letzten Run der Stufe. Die **WAL-Messung** liest je Statusabfrage zwei
+   Größen aus `pg_replication_slots`: den WAL-Rückstand des Capture-Slots
+   (`pg_current_wal_lsn()` minus `confirmed_flush_lsn`, dieselbe Größe wie
+   `cdc_wal_retention_bytes`) und das vom Slot gehaltene WAL (`pg_current_wal_lsn()`
+   minus `restart_lsn`); gedruckt werden je Run die Spitze, der Rückstand
+   unmittelbar nach dem Run und der Rückstand nach einem Live-Commit auf der
+   aktivierten Live-Tabelle (Wartezeit bis unter die Warnschwelle, höchstens
+   120 s), je Stufe der Median der Spitzen samt abgeleiteter Bytes je Zeile. Die
+   Blockgröße `B` und die Toleranz liest das
    Skript aus dem Code (`DefaultBlockSize` in
    `internal/adapters/driven/postgressnapshot/snapshot.go`,
    `copyDurationToleranceMinutes` in
@@ -48,11 +57,16 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
    `BENCH_BACKFILL_LIVE_RATE` Zeilen je Sekunde in eine eigene, aktivierte
    Tabelle ein; `cdc_capture_lag` (`cdc.metrics`) wird im Sekundentakt gelesen,
    einmal während eines Runs über die größte Stufe (und 10 s danach), einmal
-   als Referenz gleicher Dauer ohne Run.
-4. **Richtgröße (abgeleitet).** Rate der größten Stufe (Median) mal Toleranz in
-   Sekunden, abgerundet auf eine Stelle (die erste Ziffer bleibt, der Rest wird
-   `0`). Die Zahl ist **abgeleitet**, solange keine Stufe die Toleranz ausfüllt;
-   die Ausgabe sagt es.
+   als Referenz gleicher Dauer ohne Run; die Zeile nennt zusätzlich die
+   WAL-Spitzen (Rückstand und gehaltenes WAL) im Lauf mit Run.
+4. **Richtgröße und WAL-Schwellen (abgeleitet).** Rate der größten Stufe
+   (Median) mal Toleranz in Sekunden, abgerundet auf eine Stelle (die erste
+   Ziffer bleibt, der Rest wird `0`). Die Zahl ist **abgeleitet**, solange keine
+   Stufe die Toleranz ausfüllt; die Ausgabe sagt es. Eine zweite Zeile rechnet
+   aus den Bytes je Zeile der größten Stufe hoch, bei welcher Zeilenzahl ein
+   einzelner Run die Warnschwelle (100 MiB) und die Fehlerschwelle (1 GiB) des
+   WAL-Rückstands (`SPEC-013`) erreichte; auch diese Zahl ist abgeleitet, und
+   die Bytes je Zeile hängen an Zeilenbreite und Bestand im CDC-Speicher.
 
 ## Parameter
 
@@ -62,7 +76,7 @@ UTC-Zeitstempel des Starts) und nennt die Größe, auf die sie sich bezieht.
 | `BENCH_BACKFILL_RUNS` | `3` | Runs je Stufe (Bereich und Median) |
 | `BENCH_BACKFILL_EST_ROWS` | `100000` | Zeilen der Tabellen der Schätz-Messung |
 | `BENCH_BACKFILL_LIVE_RATE` | `100` | Live-Zeilen je Sekunde der Live-Phase |
-| `BENCH_BACKFILL_RUN_TIMEOUT_S` | `1800` | Abfragen (im Sekundentakt) je Run, bevor die Messung abbricht |
+| `BENCH_BACKFILL_RUN_TIMEOUT_S` | `1800` | Sekunden (Uhr der Shell) je Run, bevor die Messung mit Exit 1 abbricht |
 
 Die Umgebung ist die von `tools/bench-lib.sh`: PostgreSQL-Image aus
 `PG_TEST_IMAGE` mit den Startparametern `wal_level=logical`,
@@ -88,8 +102,13 @@ Was das Skript **nicht** misst — eine Aussage darüber ist ungedeckt:
   Blockzahl, abgeleitet); die längste Einzeldauer eines Blocks und die Dauer des
   Commits sind nicht gemessen.
 - **Speicher.** Gemessen wird der Feed-Container über `docker stats` im Takt der
-  Statusabfrage (etwa eine Sekunde); die Spitze kann zwischen zwei Proben liegen.
-  Der Speicher der PostgreSQL-Instanz ist nicht gemessen.
+  Statusabfrage (etwa 1 bis 2 Sekunden); die Spitze kann zwischen zwei Proben
+  liegen, und die Probe 20 s nach dem letzten Run der Stufe kann darüber liegen
+  (der höchste gedruckte Wert einer Stufe ist der höchste gemessene Wert, nicht
+  die Spitze allein). Der Speicher der PostgreSQL-Instanz ist nicht gemessen.
+- **WAL.** Die Messung ist ohne Pass/Fail und ohne Ursachenzuordnung: der
+  Rückstand steigt durch jedes WAL ohne Inhalt für die Publication, nicht nur
+  durch einen Run. Die Wartezeit nach dem Live-Commit ist auf 120 s begrenzt.
 - **Live-Wirkung.** Eine Live-Last, eine Live-Tabelle, ein Run zugleich; die
   Referenz ohne Run hat dieselbe Dauer, aber keine Wiederholung.
 - **Extrapolation.** Die Richtgröße rechnet die Rate der größten Stufe auf die
