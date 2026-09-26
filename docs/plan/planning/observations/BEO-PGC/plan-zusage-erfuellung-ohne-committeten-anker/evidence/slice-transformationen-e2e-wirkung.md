@@ -1,0 +1,8 @@
+**Vorgang:** slice-transformationen-e2e-wirkung (Review F-5, LOW; Verifikation §5 Zeile F-5)
+
+**Fund:** Das committete Suchlauf-Feld im Plan (Zeile „Jede neue `TestE2E*`-Funktion ist von einem `-run`-Muster erfasst“) sagte, der Lauf von `make test-integration` fahre beide neuen Funktionen (`--- PASS`, „gedruckt, siehe Bericht“). Der Anker ist der Bericht des Implementers und liegt nicht im Repo; die DoD-Punkte 1 bis 3 standen mit `[x]` auf „zu belegen durch: ein realer, grüner `make test-integration`-Lauf“, ohne dass ein committeter Träger den Lauf nannte. Die Zahlen daneben waren an beiden Ständen nachmessbar und stimmten. Die Fixrunde (`c3348898`) kennzeichnete den Lauf als **übernommen** und nannte die Verifikation als Träger der Wiederholung; die Verifikation wiederholte ihn (Exit 0, 346 s, beide Tests `PASS`, gedruckt), und die Closure nennt zusätzlich den Runner-Lauf von `e2e.yml` nach dem Push (Lauf 36268704311, beide PostgreSQL-Legs `success`, in beiden Legs stehen die zwei `--- PASS`-Zeilen und die zwei Phasen-Meldungen im Job-Log).
+
+**Form (Ausprägung):** derselbe Mechanismus wie im Erstauftreten (eine Zusage nennt den Ort ihrer Erfüllung nicht als committeten Träger), hier in einer **Beleg-Aussage im Plan-Feld** statt in einer DoD-Zeile: der Anker „siehe Bericht“ ist für den nächsten Leser nicht auffindbar. Schwere LOW, vor dem Merge vom Reviewer gefunden. Der Eintrag steht mit dieser Datei bei **2×** (offen, unter der Schwelle).
+
+Quelle: `docs/reviews/review-slice-transformationen-e2e-wirkung.md` (F-5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-e2e-wirkung.md` (§1, §5 Zeile F-5). <!-- d-check:status-provenance -->

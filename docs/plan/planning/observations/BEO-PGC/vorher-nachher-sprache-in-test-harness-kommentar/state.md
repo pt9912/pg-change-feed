@@ -8,7 +8,14 @@ begrenzt · seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6a).
 
-Zähler: 6× (Dateien unter `evidence/`; die sechste, `evidence/slice-harness-guard-inplace-textwerkzeug.md`,
+Zähler: 7× (Dateien unter `evidence/`; die siebte, `evidence/slice-transformationen-e2e-wirkung.md`,
+trägt F-1 (HIGH, daher Datei): dieselbe Form im **Runner-Skript** (der Kommentar vor dem ersten
+Neustart der Phase „Neustart und Ausschluss“ nannte den Zustand ohne die Zusage im Konjunktiv „trüge“); der
+Reviewer fand sie vor dem Merge, Ausgang unverändert **verkörpert**. Der diff-skopierte
+Kandidatenlauf von Schritt 20 druckte am Stand vor dem Review 0 Zeilen, weil „trüge“ nicht in seiner
+Wortliste steht (gemessen bei der Closure, Befehl in der Beleg-Datei): die Wortliste ist eine
+endliche Reihe von Konjunktiv-II-Formen, die Lücke ist benannt (Adresse: der Lese-Schritt der Closure
+von `welle-transformationen`); die sechste, `evidence/slice-harness-guard-inplace-textwerkzeug.md`,
 trägt zwei Ausprägungen (INFO/LOW, vor dem Merge von Verifier und Reviewer gefunden): Vorher-Nachher-Sätze in
 Doku-Prosa von Plan und `MR-003` und ein Kandidatenlauf, der den Skopus der Skript-Kommentare nicht las; Ausgang
 unverändert **verkörpert**; die fünfte, `evidence/slice-antragsqueue-lesefehler-failed.md`,

@@ -18,7 +18,13 @@ bestimmbarer **Leser** — die vier Fundstellen von `slice-094` fand der Impleme
 auf einen `grep`-Auftrag hin, der aus diesem Eintrag stammte.
 
 Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt statt aus der
-Ordinal-Erzählung unten übernommen): **32×** — der Beleg
+Ordinal-Erzählung unten übernommen): **33×** — der Beleg
+`evidence/slice-transformationen-e2e-wirkung.md` (die bewegte Eigenschaft, der Deckungsstand von
+`LH-FA-CFG-007` im RTM-Lauf, seit `fc0b8d38` durch eine E2E-Zeile gedeckt, trug zwei Träger, die
+ihn nicht nachzogen: die Waisen-Zahl in der Zeile `make doc-trace` von `harness/README.md` und
+die Zuschreibung in der Slice-Tabelle von `welle-transformationen`; der Suchlauf des bewegenden
+Slice nannte die Waisen-Zahl nicht, gefunden hat sie der Suchlauf des nächsten Slice nach dem
+Merge, kein Reviewer- oder Verifier-Fund vor dem Merge, daher Datei trotz Deckel), der Beleg
 `evidence/slice-backfill-speicher-untersuchung.md` (der Höchstwert je Change bewegt, drei
 Träger außerhalb des Diffs und der Suchwurzeln — `ADR-0124`, Architect-Verdikt, Plan des
 Folge-Slice — tragen die frühere Zahl; Verifikation V-1 und V-2), die elf unten benannten

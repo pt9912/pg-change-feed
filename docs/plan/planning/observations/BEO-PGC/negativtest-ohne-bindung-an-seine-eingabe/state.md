@@ -37,7 +37,8 @@ Träger“ — eine Gegenentscheidung des Architects ist ein neues Verdikt):
   einer Abfrage-Eingabe; er ist im Slice gebunden (Test mit Run einer fremden Quelle,
   Mutation danach rot), der Reviewer fand ihn vor dem Merge.
 
-Zähler (abgeleitet): **18×** (evidence/slice-transformationen-map-value.md,
+Zähler (abgeleitet): **19×** (evidence/slice-transformationen-e2e-wirkung.md,
+evidence/slice-transformationen-map-value.md,
 evidence/slice-harness-guard-inplace-textwerkzeug.md,
 evidence/slice-transformationen-antragsweg-schema.md,
 evidence/slice-transformationen-kern-rename.md,
@@ -53,7 +54,12 @@ evidence/slice-sdk-kotlin-cloudsmith.md,
 evidence/slice-harness-suchlauf-nachmessen.md) —
 **Schwelle erreicht**; der Lese-Schritt der Closure von `welle-backfill-bestand`
 liest den Eintrag mit (11×), der Lese-Schritt der nächsten Welle-Closure
-(`welle-transformationen`) den zwölften bis achtzehnten Beleg. Der achtzehnte Beleg
+(`welle-transformationen`) den zwölften bis neunzehnten Beleg. Der neunzehnte Beleg
+(`slice-transformationen-e2e-wirkung`, Review F-2, MEDIUM, daher Datei trotz Deckel) trifft
+eine **reale Aktion in einer Runner-Phase**: die Zusage „nach dem zweiten Neustart“ war an den
+zweiten `docker restart` nicht gebunden (entfernt: grün, Exit 0); gebunden in der Fixrunde durch
+den Startzeit-Vergleich je Neustart, die Verifikation sah beide Aufrufe einzeln rot; die Regel hat
+mit dem Reviewer vor dem Merge gewirkt, kein Kandidat der Schärfung. Der achtzehnte Beleg
 (`slice-transformationen-map-value`, Review F-1, MEDIUM, daher Datei trotz Deckel) trifft
 den **Doc-Kommentar eines Tests**: der Paritätstest sagte die Wirkung der Regel und den
 Ausschluss für `map_value` zu, sein Zweig „NULL oder ausgeschlossen“ prüfte nichts; die
