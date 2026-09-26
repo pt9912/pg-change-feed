@@ -18,4 +18,15 @@ Zustand: **gestrichen** — Punkt 1 geschlossen, Punkt 2 gestrichen mit Begründ
   §Sensors, `make test-integration`). Vertauschte DSNs ließen den Container am Start
   scheitern — **hergeleitet**, nicht als Mutation gemessen.
 
-Zähler: 3× (Dateien unter `evidence/`).
+- **Punkt 3** (Schreibweisen der Grants auf Funktionen in `tools/schema/nacharbeit-administration.sql`):
+  geschlossen mit `slice-transformationen-antragsweg-schema`. `TestAdministrationDateiTraegtDieFunktionsRechte`
+  zählt jede `GRANT`-Anweisung und jede `CREATE FUNCTION` der Datei und verlangt die engen Formen
+  (`GRANT EXECUTE ON FUNCTION … TO …`, `CREATE FUNCTION cdc.<name>`); `GRANT ALL`,
+  `GRANT … ON ALL FUNCTIONS IN SCHEMA` und eine Funktion außerhalb von `cdc.<name>` färben ihn rot.
+  **Benannte Grenze:** ein dynamisch zusammengesetzter Grant (`EXECUTE format(…)`,
+  `ALTER DEFAULT PRIVILEGES`) bleibt für den Textleser ungelesen; die Realinstanz-Belege
+  (`TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership`, Lauf 5 des
+  Guard-Skripts) tragen ihn für die zwei Transformations-Funktionen, eine spätere Funktion
+  trägt ihn nicht von selbst.
+
+Zähler: 4× (Dateien unter `evidence/`).

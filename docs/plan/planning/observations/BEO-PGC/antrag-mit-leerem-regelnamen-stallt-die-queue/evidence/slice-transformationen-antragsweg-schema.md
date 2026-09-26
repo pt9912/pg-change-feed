@@ -1,0 +1,6 @@
+**Vorgang:** slice-transformationen-antragsweg-schema (Review F-3, MEDIUM; benannte Grenze mit Adresse)
+
+**Fund:** `cdc.set_transformation(…, NULL, '{}'::json)`, `cdc.set_transformation(…, 'r', NULL)` und `cdc.remove_transformation(…, '')` schreiben je eine `pending`-Zeile (gemessen im Review an einer Wegwerf-Instanz); der Konstruktor lehnt sie beim Lesen mit `ErrEmptyIdentifier` ab (aus dem Quelltext hergeleitet; am Konstruktor-Pfad gemessen als `ListPending: leere Kennung`), `processAdministrationRequests` liest sie im nächsten Durchlauf erneut. Schwere bewertet: nicht HIGH — nur die vertraute Rolle löst es aus, es gibt eine Abhilfe ohne Superuser, und dieselbe Klasse besteht am Parent für `cdc.exclude_column(…, NULL)`; MEDIUM, weil der Diff die Auslöser um zwei Funktionen vermehrt und die Spec für genau diese Fälle `failed` zusagt. Der Plan führte den Punkt als offenes Risiko mit Adresse; der Übergabe-Text im Plan von `antragsweg-usecase` trägt ihn seit der Fixrunde.
+
+Quelle: `docs/reviews/review-slice-transformationen-antragsweg-schema.md` (F-3) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-antragsweg-schema.md` (§5 Zeile F-3). <!-- d-check:status-provenance -->

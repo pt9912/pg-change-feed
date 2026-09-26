@@ -1,0 +1,3 @@
+Zustand: **geplant** → `docs/plan/planning/open/slice-transformationen-antragsweg-usecase.md` §2 erster Punkt („Übergabe aus `antragsweg-schema`“): die Zeile wird gelesen und verarbeitet statt abgelehnt, der Slice legt die Stelle der Prüfung fest (Lesen oder Verarbeiten) und bindet den Fall mit einem Test, der eine Queue mit einer ungültigen und einer gültigen Zeile durchläuft; zu den Eingaben gehören die Formen von `rule_spec`. Der Fall der Spaltenarten am Parent (`cdc.exclude_column(…, NULL)`) läuft über dieselbe Lese-Stelle; der Slice nennt, ob seine Stelle der Prüfung ihn mitführt oder die Grenze.
+
+Zähler (abgeleitet): 1× (evidence/slice-transformationen-antragsweg-schema.md).

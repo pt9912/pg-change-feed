@@ -109,7 +109,11 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       abgelehnt. Der Slice legt fest, an welcher Stelle geprüft wird (Lesen oder
       Verarbeiten) und bindet den Fall mit einem Test, der eine Queue mit einer
       ungültigen und einer gültigen Zeile durchläuft (die gültige Zeile wird
-      verarbeitet). Zu den Eingaben des Falls gehört `rule_spec` in den
+      verarbeitet); derselbe Lese-Pfad lehnt am Parent eine Spaltenart mit
+      leerer `column` ab (`cdc.exclude_column(…, NULL)`), der Slice nennt, ob
+      seine Stelle der Prüfung sie mitführt oder die Grenze
+      (`BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`, geplant, 1×).
+      Zu den Eingaben des Falls gehört `rule_spec` in den
       Formen, die der Aufruf annimmt ([`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md)
       Festlegung 1): SQL-`NULL` (der Store liefert den leeren Text),
       JSON-`null` (der Store liefert den Text `null`), ein Wert ohne Objekt und
@@ -211,6 +215,16 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
   `switch`. Der Slice zieht die Konstante nach (der genannte Test färbt sich rot,
   sobald `set_transformation` verarbeitet wird) und bindet die Aufzählung an die
   Fälle des `switch` oder benennt die Grenze.
+- **Die Mutationsangabe in der Fitness-Function-Zeile von
+  [`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md) ist
+  falsch** (gemessen im Verifikations-Report: `p_rule_spec::jsonb` → `p_rule_spec`
+  färbt keinen Test, weil der Zuweisungs-Cast `json` → `jsonb` dieselbe
+  Umwandlung leistet; wirksam ist `NULL::jsonb`). Die `Accepted` ADR bleibt
+  unverändert. Berührt dieser Slice oder ein Architect-Zug zu ihm `rule_spec`
+  (Parametertyp, Cast, PostgreSQL-Hauptversion — die Re-Evaluierungs-Trigger von
+  `ADR-0126`), trägt die dabei entstehende ADR die Berichtigung als eigene
+  Klausel (`BEO-PGC/adr-aussage-breiter-als-ihre-messung`, siebtes Auftreten);
+  ein eigener ADR-Zug allein dafür entfällt.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der
 Antragsarten in `applyAdministrationRequest`“, „die Menge der Pfade, die eine
@@ -271,6 +285,15 @@ geschrieben.
   belegt; hier wird er nicht verhindert. *Erwartet, zu belegen durch:*
   Kommentar am K3-Zweig, der die Grenze nennt, und der Verweis in §7.
   **Ausgang:** *(bei Closure)*
+- **Fenster: Funktion vorhanden, Wirkung fehlt** (Übergabe aus
+  `antragsweg-schema`). Seit dessen Closure schreiben `cdc.set_transformation`
+  und `cdc.remove_transformation` einen Antrag, den `applyAdministrationRequest`
+  im `default`-Zweig als `failed` mit dem Fehlertext der verarbeiteten
+  Antragsarten vermerkt: sichtbar, keine Regel, keine Wirkung. Das Fenster endet
+  mit der Closure dieses Slice. *Erwartet, zu belegen durch:* der Test des
+  `default`-Zweigs färbt sich rot, sobald der Zweig für `set_transformation`
+  entfällt (die zweite Quelle der verarbeiteten Menge, Übergabe oben).
+  **Ausgang:** *(bei Closure: entfallen mit der Closure dieses Slice)*
 - **Fenster zwischen Regel-Setzbarkeit und Backfill-Bindung.** Ab diesem Slice
   sind Regeln setzbar; ein Backfill-Run, der vor `backfill-pfad` läuft,
   lieferte die Rohform (Welle §5). Der Slice ändert das Backfill-Verhalten

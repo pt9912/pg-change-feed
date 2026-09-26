@@ -142,17 +142,17 @@ Antrags trägt der Folge-Slice.
       hier, ihre Beschreibung trägt `slice-transformationen-betriebsdoku`
       (siehe §1); die Änderungshistorie des Handbuchs trägt dieser Slice
       **nicht**, weil er das Handbuch nicht berührt.
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der Welle
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich von der Closure der Welle
       [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
@@ -188,7 +188,7 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Aufzählungen der Antragsarten | `git grep -n exclude_column` über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 1–2); Zählwort „fünf“ (Zeilen 3–4); die Aufzählung mit Schrägstrich, die bei `backfill` endet (Zeilen 9–10) | **Gefunden.** Parent: 95 Trefferzeilen, Diff: 97 (Symbolname); Zählwort „fünf Antragsarten/Arten/SQL-Funktionen/Funktionen/Werte“ Parent 13, Diff 7; die Schrägstrich-Aufzählung, die bei `backfill` endet, Parent 6, Diff 5. Code-Träger, die die Menge aufzählen oder „die beiden Tabellen-Antragsarten“ als Gegenstück nennen: `errors.go`, `model/administrationrequest.go`, `queries.go` (zwei Kommentare), `translate.go`, `tableactivation.go`, `outbound/administrationrequest.go`, `wiring.go` (Fehlertext), `nacharbeit-administration.sql`, `nacharbeit-roles.sql`, `schema.yaml` (Kopf und `description`), die Test-Doc-Kommentare in `administration_internal_test.go` und `administrationrequest_test.go`. Spec: `spec/pflichtenheft.md` (sieben Treffer, `SPEC-019` und Änderungshistorie) und `spec/architecture.md` (Tabelle) tragen die sieben Arten bereits (Träger `spec-nachzug`). **Nichtgefunden:** kein weiterer Träger, der die Menge als geschlossene Liste von fünf führt (auch nicht in der Wortform „fünf Antrags-Funktionen“ — der eine Treffer im Diff-Stand von `administration_endtoend_test.go` ist in der Fixrunde nachgezogen, Suchlauf-Zeilen 25–28; die Wortformen „(fünf|sieben|vier|sechs) (schreibenden |SQL-)?(Antrags-)?Funktionen“ treffen sonst nur einen Register-Record und den Test-Kommentar zu den sieben Funktionen im Katalog); der Rest der Zählwort-Treffer (Diff 7) sind zwei `Accepted` ADRs mit anderem Gegenstand, zwei Register-Records und die Spec-Historie, dazu der Kommentar in `administration_roles_internal_test.go:58` („einen Antrag jeder der fünf Antragsarten“ — der Login-Test fährt die fünf verarbeiteten Arten) und mein eigener Kommentar am Spaltenform-Test („die fünf Antragsarten ohne Regel“, richtig). | Code-Träger im Diff nachgezogen. Handbuch: `docs/user/benutzerhandbuch.md` trägt zwei Treffer (Beispielaufruf Zeile 265, Änderungshistorie) — an `slice-transformationen-betriebsdoku` gemeldet (deren §3 führt die Zeile „Aufzählungen der Antragsarten im Handbuch“), nicht geändert. `administration_roles_internal_test.go:58` bleibt: die Zeile ist der Login-Test der verarbeiteten Arten, Adresse `slice-transformationen-antragsweg-usecase` (dessen §3 führt „der Login-Test zieht je Antragsart“). `Accepted` ADRs (0059, 0065, 0111, 0112) und Records nicht geändert. |
+| Aufzählungen der Antragsarten | `git grep -n exclude_column` über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 1–2); Zählwort „fünf“ (Zeilen 3–4); die Aufzählung mit Schrägstrich, die bei `backfill` endet (Zeilen 9–10) | **Gefunden.** Parent: 95 Trefferzeilen, Diff: 100 am Arbeitsbaum der Closure (Symbolname; 97 am Stand der Fixrunde, die drei Zeilen mehr stammen aus den Nachzügen der Closure in `slice-transformationen-antragsweg-usecase` und den Register-Einträgen der Closure); Zählwort „fünf Antragsarten/Arten/SQL-Funktionen/Funktionen/Werte“ Parent 13, Diff 7; die Schrägstrich-Aufzählung, die bei `backfill` endet, Parent 6, Diff 5. Code-Träger, die die Menge aufzählen oder „die beiden Tabellen-Antragsarten“ als Gegenstück nennen: `errors.go`, `model/administrationrequest.go`, `queries.go` (zwei Kommentare), `translate.go`, `tableactivation.go`, `outbound/administrationrequest.go`, `wiring.go` (Fehlertext), `nacharbeit-administration.sql`, `nacharbeit-roles.sql`, `schema.yaml` (Kopf und `description`), die Test-Doc-Kommentare in `administration_internal_test.go` und `administrationrequest_test.go`. Spec: `spec/pflichtenheft.md` (sieben Treffer, `SPEC-019` und Änderungshistorie) und `spec/architecture.md` (Tabelle) tragen die sieben Arten bereits (Träger `spec-nachzug`). **Nichtgefunden:** kein weiterer Träger, der die Menge als geschlossene Liste von fünf führt (auch nicht in der Wortform „fünf Antrags-Funktionen“ — der eine Treffer im Diff-Stand von `administration_endtoend_test.go` ist in der Fixrunde nachgezogen, Suchlauf-Zeilen 25–28; die Wortformen „(fünf|sieben|vier|sechs) (schreibenden |SQL-)?(Antrags-)?Funktionen“ treffen sonst nur einen Register-Record und den Test-Kommentar zu den sieben Funktionen im Katalog); der Rest der Zählwort-Treffer (Diff 7) sind zwei `Accepted` ADRs mit anderem Gegenstand, zwei Register-Records und die Spec-Historie, dazu der Kommentar in `administration_roles_internal_test.go:58` („einen Antrag jeder der fünf Antragsarten“ — der Login-Test fährt die fünf verarbeiteten Arten) und mein eigener Kommentar am Spaltenform-Test („die fünf Antragsarten ohne Regel“, richtig). | Code-Träger im Diff nachgezogen. Handbuch: `docs/user/benutzerhandbuch.md` trägt zwei Treffer (Beispielaufruf Zeile 265, Änderungshistorie) — an `slice-transformationen-betriebsdoku` gemeldet (deren §3 führt die Zeile „Aufzählungen der Antragsarten im Handbuch“), nicht geändert. `administration_roles_internal_test.go:58` bleibt: die Zeile ist der Login-Test der verarbeiteten Arten, Adresse `slice-transformationen-antragsweg-usecase` (dessen §3 führt „der Login-Test zieht je Antragsart“). `Accepted` ADRs (0059, 0065, 0111, 0112) und Records nicht geändert. |
 | Zahl der Fremdobjekte (Wortform des Parent-Stands, am Start gemessen: „sieben“) | `git grep -n` mit den Wortformen „sieben bekannten/Objekte/Fremdobjekte“ (Zeilen 5–6) und „neun bekannten/Objekte“ (Zeilen 7–8) über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline | **Gefunden.** Parent: 12 Trefferzeilen „sieben …“ (Guard-Kommentar, `guard_test.go`, `harness/targets/schema-rollout.md`, `harness/README.md`, `run-integration-tests.sh`, `run-schema-rollout-guard-test.sh`), Diff: 0; „neun …“ Parent 0, Diff 12. **Nichtgefunden:** keine Wortform „acht“ oder „sechs“ als Zahl der Fremdobjekte in einem Träger; `Accepted` ADRs nennen ältere Zahlen (`ADR-0111`: „die sechs Fremdobjekte“, `ADR-0064`: „vier“) — Aussage-Text zu ihrem Stand, unberührbar. | alle zwölf Träger nachgezogen; ADRs und Register-Records unverändert. |
 | Läufe des Guard-Tests | Zählwort „sechs Läufe“ (Zeilen 19–20) und Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | **Gefunden.** „sechs Läufe“: Parent 6, Diff 6 — die Zahl der Läufe ändert sich nicht (der Alt-Tag-Lauf ist Lauf 5 und bleibt einer). Geändert hat sich der Inhalt von Lauf 5 (Vorbedingungen, Prüfungen), den Kopfkommentar des Skripts und `harness/targets/schema-rollout.md` §Belege beschreiben. **Nichtgefunden:** kein Träger, der Lauf 5 mit „fünf Werten“ oder „`backfill_table`“ allein beschreibt. | Skript-Kopf, `schema-rollout.md` §Belege nachgezogen. |
 | Spaltenform von `administration_request` in weiteren Trägern | `git grep -n administration_request` über `internal tools` ohne `tools/schema/plan.yaml`/`down.sql` (Zeilen 11–12); dasselbe in `internal/adapters/driven/postgresstorage/schema.sql` (Zeilen 13–14) | **Gefunden.** Parent 137, Diff 154 (Tests und Kommentare; die Spaltenform selbst steht allein in `tools/schema/schema.yaml`). **Nichtgefunden:** `internal/adapters/driven/postgresstorage/schema.sql` trägt `administration_request` weder am Parent noch im Diff (0/0) — es gibt keinen zweiten Träger der Spaltenform, und keine Test-Fixture legt die Tabelle mit eigener DDL an (`git grep -n 'CREATE TABLE.*administration_request'` trifft allein `tools/schema/plan.yaml`, das Erzeugnis des Rollouts). | keine Änderung an `schema.sql`; `plan.yaml`/`down.sql` regeneriert (§3 oben). |
@@ -197,7 +197,7 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 
 ```suchlauf
 2f5ed3dc 95 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 97 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 100 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 2f5ed3dc 13 -n -e 'fünf Antragsarten' -e 'fünf Arten' -e 'fünf SQL-Funktionen' -e 'fünf Funktionen' -e 'fünf Werte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 diff 7 -n -e 'fünf Antragsarten' -e 'fünf Arten' -e 'fünf SQL-Funktionen' -e 'fünf Funktionen' -e 'fünf Werte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 2f5ed3dc 12 -n -e 'sieben bekannten' -e 'sieben Objekte' -e 'sieben Fremdobjekte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
@@ -364,7 +364,13 @@ Lerneintrag geschrieben.
   rendert den Abbau als `DROP FUNCTION "set_transformation"(text, text, text,
   text, json)`, die Signatur existiert nicht; der Parameter ist deshalb `json`
   (siehe den folgenden Punkt).
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *eingetreten, im Slice aufgelöst* — Nehmer
+  [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
+  (Parameter `json`); weder Carveout noch Folge-Slice, weil kein Restzustand
+  besteht: zwei aufeinanderfolgende `make schema-rollout` Exit 0 und Exit 0
+  (Implementer, Reviewer und Verifier je eigener Lauf, gemessen),
+  `run-schema-rollout-guard-test.sh` Exit 0 mit sechs Läufen (Implementer,
+  Reviewer, Verifier).
 - **Der Parameter `rule_spec` ist `json`, nicht `jsonb`** — festgelegt durch
   [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
   (Teil-Supersedes von `ADR-0112` Teilfrage 1). Gemessen (zwei
@@ -380,7 +386,12 @@ Lerneintrag geschrieben.
   wird nicht verfolgt — die Begründung trägt `ADR-0125` (verglichene
   Alternative B). *Erwartet, zu belegen durch:* der Betreiber-Text von
   `slice-transformationen-betriebsdoku` nennt die Aufrufform (Literal oder
-  `::json`; `ADR-0125` Folgepflicht 2). **Ausgang:** *(bei Closure)*
+  `::json`; `ADR-0125` Folgepflicht 2). **Ausgang:** *eingetreten, entschieden*
+  — [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
+  und [`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md)
+  (Annahmemenge); Nehmer des Betreiber-Texts ist
+  `slice-transformationen-betriebsdoku`: sein §2 nennt Aufrufform und
+  Annahmemenge (gelesen im Review und im Verifikations-Report, §7).
 - **Die zwei Spalten, besonders `rule_spec jsonb`, konvergieren nicht über
   einen Alt-Bestand.** Eine nullable `text`-Spalte an einer bestehenden Tabelle
   rollt über einen Alt-Bestand (gemessen im Architect-Verdikt
@@ -389,15 +400,18 @@ Lerneintrag geschrieben.
   `run-schema-rollout-guard-test.sh`. *Beleg des Implementer-Laufs:* Alt-Tag-Lauf
   gegen `v0.2.0` Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, ohne Vorlauf),
   Exit 0 (zweiter Lauf); danach `rule_name:text:YES,rule_spec:jsonb:YES`, die
-  Alt-Zeile `alttag-req` trägt NULL in beiden. **Ausgang:** *(bei Closure)*
+  Alt-Zeile `alttag-req` trägt NULL in beiden. **Ausgang:** *entfallen* —
+  der Alt-Tag-Lauf gegen `v0.2.0` ist grün (Exit 0, 0, 0; Reviewer und Verifier
+  je eigener Lauf, Exit 0); `jsonb` konvergiert über den Alt-Bestand.
 - **Zwei Schema-Träger driften** (`tools/schema/schema.yaml` und
   `postgresstorage/schema.sql` tragen dieselbe Spaltenform, jeder für einen
   anderen Tier). *Erwartet, zu belegen durch:* der Suchlauf-Eintrag und `make
   test-store`, das die Spalten real liest. *Beleg des Implementer-Laufs:* es
   gibt keinen zweiten Träger — `schema.sql` führt `cdc.administration_request`
   nicht (Suchlauf-Zeilen 13–14, 0/0), die Annahme des Plans war falsch; `make
-  test-store` liest die zwei Spalten über den Rollout. **Ausgang:** *(bei
-  Closure: entfallen)*
+  test-store` liest die zwei Spalten über den Rollout. **Ausgang:** *entfallen*
+  — die Annahme des Plans war falsch, es gibt einen Schema-Träger der
+  Spaltenform.
 - **Der Rollen-Test deckt den neuen Grant nicht.** Der Parser liest literale
   `GRANT … ;`-Anweisungen (Kopf von `roles_rollout_file_internal_test.go`);
   eine Funktion mit `jsonb`-Parameter ist gegen ihn ungemessen
@@ -415,7 +429,12 @@ Lerneintrag geschrieben.
   bleibt ungelesen; für die zwei neuen Funktionen fängt ihn
   `TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership`
   (`cdc_reader`/`cdc_capture` → SQLSTATE 42501) und Lauf 5 des Guard-Skripts
-  gegen die reale Instanz. **Ausgang:** *(bei Closure)*
+  gegen die reale Instanz. **Ausgang:** *eingetreten, im Slice aufgelöst* —
+  der Review fand die Lücke (F-2: `GRANT ALL`, `ON ALL FUNCTIONS IN SCHEMA`,
+  eine Funktion außerhalb von `cdc.<name>` blieben grün), die Fixrunde band sie,
+  der Verifier färbte drei der Mutationen erneut rot. Die benannte Grenze
+  (dynamische Grants) steht als Punkt 3 in
+  `BEO-PGC/rollen-test-abdeckungsluecken`.
 - **Zwischenzustand: Funktion vorhanden, Wirkung fehlt.** Ein Betreiber, der
   `cdc.set_transformation` zwischen diesem Slice und `antragsweg-usecase`
   aufruft, erhält einen `failed`-Antrag statt einer Regel; der Fehlertext nennt
@@ -424,8 +443,12 @@ Lerneintrag geschrieben.
   *Beleg des Implementer-Laufs:* `TestApplyAdministrationRequestRejectsUnprocessedKind`
   und `TestProcessAdministrationRequestsMarksTransformationRequestsFailed`
   (Antragsart und Menge im Fehlertext, `failed`-Vermerk statt `applied`),
-  je an der Eingabe rot gesehen (Tabelle „Mutationen“ in §3). **Ausgang:** *(bei Closure: entfallen
-  mit der Closure von `slice-transformationen-antragsweg-usecase`)*
+  je an der Eingabe rot gesehen (Tabelle „Mutationen“ in §3). **Ausgang:** *entfallen* —
+  der Zustand ist der zugesagte: ein Antrag der neuen Arten endet `failed` mit
+  Fehlertext, ein stilles Nicht-Wirken ist nicht entstanden. Das Fenster bis zur
+  Closure von `slice-transformationen-antragsweg-usecase` steht dort als eigenes
+  Risiko („Fenster: Funktion vorhanden, Wirkung fehlt“, Ausgang: entfallen mit
+  dessen Closure).
 - **Das Handbuch nennt die Funktionen nicht**
   (`BEO-PGC/handbuch-nicht-nachgezogen-bei-neuer-betreiber-oberflaeche`,
   verkörpert, 3×): die Adresse `slice-transformationen-betriebsdoku` muss den
@@ -439,7 +462,11 @@ Lerneintrag geschrieben.
   ein Antrag mit NULL oder leerem `rule_name`/`rule_spec` die Lesung der
   Antrags-Queue stört, trägt der Plan von `antragsweg-usecase` (nächster Punkt);
   ein Handbuch-Text darüber entsteht erst nach dessen Closure, weil `SPEC-019`
-  dann gilt. **Ausgang:** *(bei Closure)*
+  dann gilt. **Ausgang:** *eingetreten (aufgeschoben mit Adresse)* — Nehmer
+  `slice-transformationen-betriebsdoku` (`open/`); der Verifikations-Report (§7)
+  liest §2 gegen §1: SQL-Funktionen samt Aufrufform und Annahmemenge, Rolle,
+  Status, Fehlertexte, Wirkung, Abhilfe, Glossar und Änderungshistorie stehen
+  dort.
 - **Idempotenz gegen die Fremdobjekte.** Jede neue `nacharbeit-*`-Funktion
   vergrößert die Menge, die ein zweiter Rollout als Blocker sieht
   (`BEO-PGC/schema-rollout-fremdobjekte`, verkörpert, 3×;
@@ -448,7 +475,9 @@ Lerneintrag geschrieben.
   Implementer-Laufs:* zwei aufeinanderfolgende `make schema-rollout` gegen eine
   frische Wegwerf-Datenbank Exit 0 und Exit 0; `run-schema-rollout-guard-test.sh`
   Exit 0 mit sechs Läufen (Lauf 2 nimmt den `--allow-destructive`-Pfad über neun
-  bekannte Blocker). **Ausgang:** *(bei Closure)*
+  bekannte Blocker). **Ausgang:** *entfallen* — zwei aufeinanderfolgende
+  Rollouts Exit 0 und Exit 0 und das Guard-Skript Exit 0 (Implementer,
+  Reviewer, Verifier je eigener Lauf).
 - **Ein Antrag mit NULL oder leerem `rule_name`/`rule_spec` stört die Lesung
   der Antrags-Queue.** Die SQL-Funktionen prüfen nichts
   ([`ADR-0046`](../../adr/0046-sql-driving-adapter-lese-schreib-trennung.md)),
@@ -468,21 +497,26 @@ Lerneintrag geschrieben.
   der Plan von `slice-transformationen-antragsweg-usecase` (§2 erster Punkt)
   trägt den Fall („die Zeile wird gelesen und verarbeitet statt abgelehnt“) samt
   den Formen von `rule_spec` (SQL-NULL, JSON-`null`, doppelter Schlüssel).
-  **Ausgang:** *(bei Closure: weiter offen — Adresse `slice-transformationen-antragsweg-usecase`)*
+  **Ausgang:** *eingetreten (Review F-3, MEDIUM)* — Nehmer
+  `slice-transformationen-antragsweg-usecase` (`open/`, §2 erster Punkt, Übergabe
+  aus diesem Slice), Register `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`
+  (geplant, 1×).
 - **`jsonb` normalisiert die Regelform vor Go.** Der Store liefert
   `rule_spec::text` der Spalte; ein doppelter Schlüssel und die Reihenfolge der
   Schlüssel erreichen Go nicht in der beantragten Form (gemessen im Review:
   `{"kind":"a","kind":"b","z":1,"a":2}` wird als `{"a": 2, "z": 1, "kind": "b"}`
   gelesen). Für die Reihenfolge trägt `SPEC-030` „nicht zugesagt“. Adresse:
   der Plan von `antragsweg-usecase` (strikte Dekodierung sieht keinen
-  doppelten Schlüssel). **Ausgang:** *(bei Closure: weiter offen — Adresse
-  `slice-transformationen-antragsweg-usecase`)*
+  doppelten Schlüssel). **Ausgang:** *eingetreten (Review F-7, INFO)* — Nehmer
+  `slice-transformationen-antragsweg-usecase` (`open/`, §2 erster Punkt: die
+  Formen von `rule_spec` samt doppeltem Schlüssel).
 - **`processedAdministrationKinds` steht neben dem `switch`, den sie beschreibt.**
   Kein Test bindet die Zeichenkette an die Fälle des `switch`; der Slice, der
   `set_transformation` verarbeitet, färbt `TestApplyAdministrationRequestRejectsUnprocessedKind`
   rot und zieht sie damit nach. Adresse: der Plan von `antragsweg-usecase`
-  (Übergabe „Die verarbeitete Menge steht zweimal“). **Ausgang:** *(bei Closure:
-  weiter offen — Adresse `slice-transformationen-antragsweg-usecase`)*
+  (Übergabe „Die verarbeitete Menge steht zweimal“). **Ausgang:** *eingetreten
+  (Review F-8, INFO)* — Nehmer `slice-transformationen-antragsweg-usecase`
+  (`open/`, Übergabe „Die verarbeitete Menge steht zweimal“).
 - **Der Alt-Tag-Lauf koppelt seine Vorbedingung an den jüngsten Tag.** Lauf 5
   prüft vor dem Upgrade, dass der Stand des Tags weder die zwei Spalten noch die
   zwei Funktionen noch die zwei Antragsarten trägt; ein späterer Release-Tag mit
@@ -490,8 +524,9 @@ Lerneintrag geschrieben.
   fehlgeschlagen“, kein stilles Grün). Dieselbe Kopplung trug der Lauf für die
   Antragsart `backfill`; sie zerbrach mit `v0.2.0` (Vorbedingungen falsch).
   *Erwartet, zu belegen durch:* der nächste Release, der das Delta neu
-  bestimmt. **Ausgang:** *(bei Closure: weiter offen — Adresse Planner, der
-  Release-Slice bestimmt das Delta des neuen Tags)*
+  bestimmt. **Ausgang:** *weiter offen* — Register
+  `BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag` (offen, 1×; Trigger: der
+  nächste `v*`-Tag, der das Delta trägt; Wächter: Lauf 5 scheitert laut).
 - **Die `.dockerignore`-Ausnahme verändert das Image.** Sie verlangt
   [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md)
   Merkmal (iv): das Image bleibt unberührt, mit Beleg. *Beleg des
@@ -500,22 +535,19 @@ Lerneintrag geschrieben.
   ([`ADR-0044`](../../adr/0044-image-beleg-semantik.md): Digest innerhalb
   desselben Builders; der Digest-Commit entfällt bei unverändertem Digest,
   `harness/image-hash.txt` ist lokal und nicht committet).
-  **Ausgang:** *(bei Closure: entfallen)*
+  **Ausgang:** *entfallen* — der Review wiederholte die Messung (Digest mit und
+  ohne die Zeile derselbe, Builder derselbe); der Verifikations-Report übernimmt
+  sie (`make image` ist kein Gate).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+- **Was hat funktioniert:** (1) Die Eingabeseiten-Mutationen trugen: der Plan führt 26 Zeilen (gezählt an der Tabelle „Mutationen“ in §3), 25 davon rot gesehen, eine ohne Rot (der Cast, siehe unten); der Reviewer setzte 20, davon 14 rot (Tabelle im Review-Report), die sechs grünen (R5 bis R9 an der Grant-Schreibweise, F1 am `search_path`) wurden F-2 und F-6 und in der Fixrunde gebunden; der Verifier setzte neun, acht rot (übernommen aus dem Report, dort je einzeln gefahren). (2) Der Reviewer fand die Lücken nicht durch Lesen des Testkommentars, sondern durch Mutation (F-2, F-6) und durch die Randformen des Parameters an der Instanz (F-1, `\u0000`); die Begründung von [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md) stellte er nach (`jsonb` → Exit 0, dann Exit 2 mit d-migrate-Fehler 5; `json` → Exit 0 und 0). (3) Das Suchlauf-Feld trug: `make suchlauf-nachmessen` stimmte am Stand des Implementers (24 Zeilen) und der Fixrunde (28 Zeilen); die „Nichtgefunden“-Zellen bestätigten Reviewer und Verifier mit eigenem `git grep`, der eine Miss (F-5, Wortform „fünf Antrags-Funktionen“) stand außerhalb des Suchmusters. (4) Der Alt-Tag-Lauf gegen `v0.2.0` belegte den Upgrade der zwei nullable Spalten (`jsonb` statt `text`) und der zwei Funktionen: Exit 0, 0, 0 (Implementer), Exit 0 im Lauf von Reviewer und Verifier je eigenem.
+- **Was ging anders als geplant:** (1) **Der Parameter ist `json`, nicht `jsonb`.** Der Plan erwartete den Guard-Ausgang bei der Wache (Exit 8); der Fehler lag in `--execute` (Exit 5), weil d-migrate `json` und `jsonb` gleich meldet und den Abbau falsch rendert. Ein Architect-Zug mitten im Slice ([`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md), Teil-Supersedes von [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Teilfrage 1) legte den Typ fest; nach dem Review folgte [`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md) (Annahmemenge, Teil-Supersedes von `ADR-0125` Festlegung 1) mit dem Nachzug von [`SPEC-019`](../../../../spec/pflichtenheft.md). Der Slice umfasst 16 Commits (gemessen: `git log --oneline 8d5d7d2e..HEAD` am Stand vor dem Closure-Commit), darunter die zwei Architect-Züge, die Fixrunde und den Verifikations-Report. (2) **Der zweite Schema-Träger existiert nicht** (§3, am Start gemessen): `schema.sql` führt `administration_request` nicht. (3) **Der Plan sagte, die Adresse `betriebsdoku` nenne den Gegenstand „vollständig“**; zwei Sachverhalte standen dort nicht (F-4), die Fixrunde zog beide Pläne nach (siehe Lerneintrag). (4) **Die Mutationsangabe von `ADR-0126` traf nicht** (V-1, LOW): „Cast `::jsonb` entfernen“ färbt keinen Test, weil der Zuweisungs-Cast `json` → `jsonb` dieselbe Umwandlung leistet; der Implementer meldete die Abweichung, der Test bindet mit `NULL::jsonb`. (5) **Zähler des Plans standen hinter dem Register:** §8 nennt `BEO-PGC/rollen-test-abdeckungsluecken` „offen, 2×“ (Register: gestrichen, 3× vor diesem Slice, jetzt 4×) und `BEO-PGC/test-isolation-geteilter-zustand` „offen, 1×“ (Register: 2×); die Stände stehen am Planungsstand, jeder Slice-Start liest das Register neu. (6) **Die Zahl der Coverage-Läufe streut:** `make coverage-gate` druckte 83.90 % (Implementer, Reviewer, Verifier je einzeln gemessen) und 83.80 % im `make gates` der Fixrunde; die Schwelle 80 % ist in jedem Lauf erfüllt. (7) **Die `diff`-Zeile des Suchlaufs bewegt sich mit den Closure-Nachzügen:** Zeile 2 (`exclude_column`) zählt am Arbeitsbaum dieser Closure einen höheren Stand als am Stand der Fixrunde (97); der Plan §3 trägt den nachgemessenen Stand mit dem Grund.
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Neuer Sensor, gebaut und verkörpert.* Drei Tests binden, was vorher nur eine Zusage im Text war: `TestAdministrationDateiTraegtDieFunktionsRechte` (`make test`) zählt jede `GRANT`-Anweisung und jede `CREATE FUNCTION` der Datei `nacharbeit-administration.sql` und verlangt die engen Formen — eine achte Funktion ohne Rechte-Zeile oder mit `GRANT ALL`/`ON ALL FUNCTIONS` färbt ihn rot; `TestAdministrationFunctionsPinSecurityDefinerAndSearchPath` (`make test-store`) liest `prosecdef` und `proconfig` aller sieben Funktionen aus dem Katalog; `TestAdministrationRequestSetTransformationAcceptanceSet` (`make test-store`) bindet die Annahmemenge von `rule_spec` (sieben angenommene, acht abgelehnte Formen). Anker: `BEO-PGC/rollen-test-abdeckungsluecken` state, Punkt 3, `seit slice-transformationen-antragsweg-schema`; Grenze: ein dynamisch zusammengesetzter Grant bleibt für den Textleser ungelesen. *(b) Geschärfte Regel, Vorschlag an den Architect (Verkörperung 3b, Adresse: der Lese-Schritt der Closure von [welle-transformationen](../welle-transformationen.md)).* Erstens `AGENTS.md` §3.12, Absatz „Verfasser einer ADR“, ein Satz mehr: eine in einer Fitness-Function-Zeile genannte Mutation steht erprobt (an derselben Instanz wie die Messung) oder als hergeleitet gekennzeichnet; „der Implementer fährt sie“ ist eine Erwartung, keine Erprobung. Der Planner schärft nicht selbst: Regel-Verkörperung ist der Zug Planner → Architect → Planner (`v6.9.0` · `regelwerk/modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Schritt 3b), und der Verifier hat die Frage („der Planner prüft“) ausdrücklich an diese Stelle gegeben. Begründung des Vorschlags: der heutige Absatz nennt die Menge und den Test, der eine Zeile trägt, nicht die Mutation, die den Test rot färben soll; das siebte Auftreten der Klasse entstand in der Rolle, die der Absatz adressiert, und stand formal als Erwartung. Ein Satz kostet weniger als eine falsche Angabe in einer `Accepted` ADR, deren Berichtigung nur über eine Folge-ADR geht ([`AGENTS.md`](../../../../AGENTS.md) §3.5). Zweitens die zweite Hälfte der Regel „Aufschub mit Adresse“ (Zielorte in `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` state; 3×, Schwelle erreicht): die Adresse deckt den Gegenstand, mit einem Suchlauf im Plan der Adresse und dem Gegenstand als committetem Text dort. *(c) Benannte Spec-Lücke:* keine — [`SPEC-019`](../../../../spec/pflichtenheft.md) trägt die Fehlertexte, die die Lese-Stelle bis `antragsweg-usecase` nicht erreicht (Register `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`, geplant); die Annahmemenge von `rule_spec` steht seit `ADR-0126` in der Spec. *(d) Gelernt, bei 1× keine Regel:* eine Erwartung über das Verhalten eines Tests unter einer Mutation, die an der Quelle in Sekunden erprobbar ist, gehört vor `Accepted` in die Probe (Punkt (b) trägt sie); eine Mutation, deren Ausdruck äquivalent bleibt (der Cast), ist keine Bindung — die Alternative `NULL::jsonb` färbt.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei `evidence/slice-transformationen-antragsweg-schema.md`, Zähler = Zahl der Dateien (gemessen mit `ls evidence | wc -l` am Stand dieser Closure). *Neue Belege:* `BEO-PGC/adr-aussage-breiter-als-ihre-messung` **7×** (F-1 MEDIUM, V-1 LOW in einer Datei; verkörpert; Vorschlag (b) oben), `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` **3×** (F-4 MEDIUM; offen, Schwelle erreicht, Ausgang-Vorschlag in `state.md`, Adresse Lese-Schritt der Welle-Closure), `BEO-PGC/rollen-test-abdeckungsluecken` **4×** (F-2 MEDIUM; gestrichen, neuer Punkt 3 geschlossen), `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` **16×** (F-6 LOW, neue Form „Katalog-Eigenschaft“, daher Datei trotz Deckel; verkörpert), `BEO-PGC/d-migrate-nacharbeit` **8×** (Funktion mit `jsonb`-Parameter; verkörpert). *Neue Einträge, je 1×:* `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (F-3; geplant → `slice-transformationen-antragsweg-usecase`), `BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag` (offen; Ausgang des Risikos in §6). *Deckel-Fall ohne Datei, Finding-Kennung hier:* F-5 (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, LOW, vom Reviewer vor dem Merge gefunden, Träger-Typ Test-Kommentar: „die fünf Antrags-Funktionen“ außerhalb des Suchmusters; in der Fixrunde nachgezogen). *Kein Register-Anfall:* F-7 und F-8 (INFO, benannt, Ausgang in §6), F-9 und V-3 (INFO: der Commit-Typ `docs(plan)` deckt zwei Kommentarzeilen in Produktionsskripten; die Historie ist nicht änderbar, Gate grün), V-2 (Folge von V-1), V-5 (übernommene Messungen, im Report benannt); V-4 siehe „Folge-Slices“. *Kein Anfall:* `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung`, `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, `BEO-PGC/test-isolation-geteilter-zustand` (die Store-Tests bereinigen skopiert, Review-Negativbefund). *Lese-Schritt der Closure von `welle-transformationen`:* aus diesem Slice erreicht ein Eintrag neu 3× ohne Ausgang — `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an`; er trägt den Vorschlag und die Adresse (Architect-Zug der Welle-Closure) in seiner `state.md`; die drei mit neuer Datei und bestehendem Ausgang (verkörpert, gestrichen) ändern ihren Ausgang nicht.
+- **Folge-Slices:** keine angelegt. Übergaben mit Adresse (gemeldet, Frist: diese Closure, gezogen): `slice-transformationen-antragsweg-usecase` (`open/`) — der Lese-Pfad des ungültigen Antrags samt Spaltenart am Parent, die Normalisierung durch `jsonb`, die zweite Quelle der verarbeiteten Menge (Übergabe schon aus der Fixrunde), neu mit dieser Closure: das Fenster „Funktion vorhanden, Wirkung fehlt“ als eigenes Risiko in dessen §6 und die Klausel zur Mutationsangabe von `ADR-0126` (die nächste ADR zu `rule_spec` trägt sie); `slice-transformationen-betriebsdoku` (`open/`) — Aufrufform von `rule_spec` (Literal oder `::json`), Annahmemenge nach `ADR-0126`, die Handbuch-Aufzählungen der Antragsarten (dessen §3). **V-4 (Fixrunde und `ADR-0126` ohne zweiten Reviewer-Lauf) — entschieden: keiner.** Die Fixrunde ändert weder Funktionen noch Guard noch Skript, nur Tests und Kommentare; der Verifier las den Code, setzte Eingabeseiten-Mutationen auf die Fixrunde und die Annahmemenge von `ADR-0126` (M1, M3 und M6 bis M8 im Verifikations-Report, alle rot; die Cast-Mutation M1b ist V-1) und bestätigte vier Formen der Messtabelle an der Instanz; `ADR-0126` ändert keinen Code. Ein späterer Fund an dieser Fläche wäre ein weiterer Beleg in `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Zwei Schema-Träger driften · Alt-Bestand-Konvergenz der zwei Spalten · Idempotenz gegen die Fremdobjekte · `.dockerignore`-Ausnahme verändert das Image · Zwischenzustand „Funktion vorhanden, Wirkung fehlt“ (für diesen Slice; das Fenster trägt `antragsweg-usecase` §6). *Eingetreten:* Guard erkennt die Funktion mit `jsonb`-Parameter nicht (in anderer Form, im Slice aufgelöst, [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)) · Parameter `json` statt `jsonb` (entschieden, `ADR-0125`/`ADR-0126`) · Rollen-Test deckt den neuen Grant nicht (im Slice aufgelöst, Fixrunde) · Handbuch nennt die Funktionen nicht (aufgeschoben, Nehmer `betriebsdoku`) · Ungültiger Antrag stallt die Lesung (Nehmer `antragsweg-usecase`, Register geplant) · `jsonb` normalisiert vor Go (Nehmer `antragsweg-usecase`) · zweite Quelle der verarbeiteten Menge (Nehmer `antragsweg-usecase`). *Weiter offen:* Alt-Tag-Lauf koppelt die Vorbedingung an den jüngsten Tag (Register `BEO-PGC/alt-tag-lauf-vorbedingung-am-juengsten-tag`, offen, 1×).
+- **Drei Paarungen:** dieser Slice gehört zu [welle-transformationen](../welle-transformationen.md) (offen) — die Closure der Welle prüft sie mit; die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Lerneintrag (a) trägt den Anker `BEO-PGC/rollen-test-abdeckungsluecken` state Punkt 3 mit `seit slice-transformationen-antragsweg-schema` (am Ort existent); (b) sind Vorschläge an den Architect, kein `liegt in`-Feld eines verkörperten Ziels, ihre Zielorte (`AGENTS.md` §3.12, `.claude/commands/implement-slice.md`, `.claude/commands/plan-welle.md`, `.harness/skills/reviewer.md`) existieren; *Folge-Slice:* keiner genannt; die zwei Übergabe-Adressen `slice-transformationen-antragsweg-usecase` und `slice-transformationen-betriebsdoku` existieren als Dateien in `open/`; *Register:* jede genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/` (elf Kennungen, geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

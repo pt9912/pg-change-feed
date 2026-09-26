@@ -1,0 +1,3 @@
+Zustand: offen — Ausgang noch nicht zugewiesen. Trigger: der nächste `v*`-Tag, der `cdc.set_transformation`/`cdc.remove_transformation`, die Spalten `rule_name`/`rule_spec` oder die zwei Antragsarten trägt. Wächter: Lauf 5 scheitert laut an den Vorbedingungen (`fail`), sobald ein Slice, der das Schema ändert, den Lauf fährt; der Planner des nächsten Slice mit Schema-Änderung nach dem Release bestimmt das Delta des dann jüngsten Tags neu (Bezug: `harness/targets/schema-rollout.md` §Belege). Kein Gate fährt das Skript (`make gates` enthält es nicht).
+
+Zähler (abgeleitet): 1× (evidence/slice-transformationen-antragsweg-schema.md).

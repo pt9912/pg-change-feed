@@ -1,0 +1,8 @@
+**Vorgang:** slice-transformationen-antragsweg-schema (Review F-4, MEDIUM)
+
+**Fund:** Der Slice führt zwei administrative SQL-Funktionen als neue Betreiber-Oberfläche ein und schiebt ihre Beschreibung mit Adresse `slice-transformationen-betriebsdoku`; sein Plan (§1) sagt, deren §2 nenne den aufgeschobenen Gegenstand „vollständig“. Zwei Sachverhalte des Slice standen dort nicht: die Aufrufform der Regelform (Literal oder `::json`, ein `::jsonb`-Wert wird abgelehnt; Folgepflicht 2 von `ADR-0125`) — `git grep` nach `::json`, `Aufrufform` und `jsonb` im Plan der Adresse lieferte 0 Treffer —, und die Fälle `rule_spec` SQL-NULL und leerer oder NULL-`rule_name`, die die Lesung der Antrags-Queue stallen; der Plan von `slice-transformationen-antragsweg-usecase` führte in seiner DoD den ungültigen Regelnamen, nicht diese Fälle und nicht, dass die Lesung die Zeile liefern muss. Die Meldung an den Planner stand im Bericht des Implementers, in keinem committeten Träger der Adresse. Behoben in der Fixrunde: der Übergabe-Text steht in beiden Plänen, gelesen von Reviewer und Verifier.
+
+**Form (Ausprägung):** dritter Beleg der Klasse, erstmals mit dem Satz „die Adresse deckt den Gegenstand vollständig“ im Plan des Gebers, der nicht an den Plan der Adresse gehalten war (eine Aussage ohne Beleg-Anker, `AGENTS.md` §3.12 Instanz B); der Aufschub war formal benannt, die Adresse nahm die Sendung nicht an, bis der Text committet stand.
+
+Quelle: `docs/reviews/review-slice-transformationen-antragsweg-schema.md` (F-4) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-antragsweg-schema.md` (§5 Zeile F-4). <!-- d-check:status-provenance -->

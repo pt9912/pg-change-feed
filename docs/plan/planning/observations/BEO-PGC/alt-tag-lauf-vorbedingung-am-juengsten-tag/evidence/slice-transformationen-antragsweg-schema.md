@@ -1,0 +1,6 @@
+**Vorgang:** slice-transformationen-antragsweg-schema (Plan §3 Zeile `run-schema-rollout-guard-test.sh`, Plan §6, Review-Negativbefund zu Lauf 5)
+
+**Fund:** Der Alt-Tag-Lauf trug Vorbedingungen des Stands vor der Antragsart `backfill`; der jüngste `v*`-Tag ist `v0.2.0` und trägt `backfill`, `cdc.backfill_table` und die Rechte auf `cdc.backfill_run` (`git show v0.2.0:tools/schema/nacharbeit-administration.sql` nennt `backfill_table` fünfmal). Am Start des Slice gemessen wären die drei Vorbedingungen gegen diesen Tag falsch gewesen; der Slice legte sie auf sein Delta (zwei Spalten, zwei Funktionen, zwei Antragsarten), schrieb vor dem Upgrade eine Antragszeile des Alt-Bestands und prüfte danach NULL in den zwei neuen Spalten. Lauf 5 lief real gegen `v0.2.0`: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, ohne Vorlauf), Exit 0 (zweiter Lauf); der Reviewer und der Verifier fuhren ihn erneut, beide Exit 0. Die Kopplung an den jüngsten Tag bleibt bestehen und ist im Plan §6 als offenes Risiko mit Adresse geführt.
+
+Quelle: `docs/reviews/review-slice-transformationen-antragsweg-schema.md` (Eigenständig durchgeführte Prüfungen, Negativbefund Lauf 5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-antragsweg-schema.md` (§1, Guard-Skript). <!-- d-check:status-provenance -->
