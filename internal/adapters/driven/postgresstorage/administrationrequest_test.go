@@ -1206,6 +1206,63 @@ VALUES ('rules-unparsable-1', $1, 'public', 'orders_unparsable', 'regel', '{"kin
 	}
 }
 
+// TestTableActivationTransformationRulesReadMapValueThroughJsonb trägt die
+// Regelform von `map_value` durch die reale `jsonb`-Spalte (`LH-FA-CFG-007`):
+// `jsonb` ordnet die Schlüssel von `values` um und normalisiert den Text; die
+// abgeleitete Regel ist dieselbe wie die aus der Zuordnung gebaute (`==`), auch
+// mit leerem Schlüssel, Mehrbyte-Zeichen und einem Surrogat-Paar. Rot färbende
+// Mutation: die Schlüssel in `encodeValueMap` nicht sortieren — die Regel aus
+// dem umgeordneten Text weicht von der gebauten ab.
+func TestTableActivationTransformationRulesReadMapValueThroughJsonb(t *testing.T) {
+	pool, dsn := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	adapter, err := postgresstorage.NewTableActivation(ctx, dsn)
+	if err != nil {
+		t.Fatalf("NewTableActivation: %v", err)
+	}
+	t.Cleanup(adapter.Close)
+	const source = "src-administration-mapvalue"
+	if _, err := pool.Exec(ctx, "INSERT INTO cdc.source (source_id, name) VALUES ($1, 'mapvalue') ON CONFLICT (source_id) DO NOTHING", source); err != nil {
+		t.Fatalf("Quelle-Zeile: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE source_id = $1", source)
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.source WHERE source_id = $1", source)
+	})
+	const spec = `{"values": {"zz": "Z", "": "leer", "ü": "ä😀", "b": "B", "a": "A", "m": "M", "q": "Q", "x": "X"}, "kind": "map_value", "column": "status"}`
+	if _, err := pool.Exec(ctx, `INSERT INTO cdc.administration_request
+    (administration_request_id, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, status)
+VALUES ('rules-mapvalue-1', $1, 'public', 'orders_mapvalue', 'wertname', $2::text::jsonb, 'set_transformation', 'applied')`, source, spec); err != nil {
+		t.Fatalf("Antrags-Zeile: %v", err)
+	}
+	var stored string
+	if err := pool.QueryRow(ctx, "SELECT rule_spec::text FROM cdc.administration_request WHERE administration_request_id = 'rules-mapvalue-1'").Scan(&stored); err != nil {
+		t.Fatalf("rule_spec lesen: %v", err)
+	}
+	if stored == spec {
+		t.Fatalf("gelesener Text %s gleicht dem geschriebenen: die jsonb-Normalisierung wird nicht durchlaufen", stored)
+	}
+
+	want, err := model.NewMapValue("wertname", "status", map[string]string{
+		"zz": "Z", "": "leer", "ü": "ä😀", "b": "B", "a": "A", "m": "M", "q": "Q", "x": "X",
+	})
+	if err != nil {
+		t.Fatalf("NewMapValue: %v", err)
+	}
+	state, err := adapter.TransformationRules(ctx, source)
+	if err != nil {
+		t.Fatalf("TransformationRules: %v", err)
+	}
+	rules := state["public.orders_mapvalue"]
+	if len(rules) != 1 || rules[0] != want {
+		got := "keine Regel"
+		if len(rules) > 0 {
+			got = fmt.Sprint(len(rules), " Regeln, erste: ", rules[0].Values())
+		}
+		t.Fatalf("Regelstand = %s, wollen genau die gebaute Regel %v (gespeicherter Text %s)", got, want.Values(), stored)
+	}
+}
+
 // TestTableActivationSourceColumnsReadsTheCatalog trägt die Katalog-Lesart der
 // Spaltenliste gegen die reale PostgreSQL (`LH-FA-CFG-007`, K3/K4): die
 // Spaltennamen der Tabelle in ihrer Reihenfolge, zeichengenau (auch ein Name
