@@ -934,3 +934,121 @@ func TestAdministrationRequestRuleColumnsAreNullable(t *testing.T) {
 		t.Fatalf("Spaltenform = %q, wollen rule_name:text:YES,rule_spec:jsonb:YES", shape)
 	}
 }
+
+// TestAdministrationRequestSetTransformationAcceptanceSet trägt die
+// Annahmemenge des Parameters `rule_spec` von `cdc.set_transformation`
+// (`ADR-0126` Festlegung 1, `SPEC-019`): jede Form läuft als Text, der über
+// `::text::json` zum Parameter wird — der Weg eines Clients mit Literal. Eine
+// angenommene Form schreibt genau eine `pending`-Zeile und liest ihren Wert
+// als `rule_spec::text` zurück (`jsonb` normalisiert: der letzte Wert eines
+// doppelten Schlüssels gilt); eine abgelehnte Form endet mit einem Fehler des
+// Aufrufs und hinterlässt keine Zeile. Die Ablehnung von `\u0000` und der
+// Zahl außerhalb des Bereichs entsteht beim Cast `p_rule_spec::jsonb` in der
+// Funktion. Rot färbende Mutationen (Eingabeseite): den Ausdruck
+// `p_rule_spec::jsonb` in `tools/schema/nacharbeit-administration.sql` durch
+// `NULL::jsonb` ersetzen — jede abgelehnte Form wird angenommen, jede
+// angenommene Form mit Wert liest NULL.
+func TestAdministrationRequestSetTransformationAcceptanceSet(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+	ctx := context.Background()
+	const table = "rule_spec_acceptance"
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "DELETE FROM cdc.administration_request WHERE table_name = $1", table)
+	})
+
+	call := func(ruleName string, spec *string) error {
+		var requestID string
+		return pool.QueryRow(ctx,
+			"SELECT cdc.set_transformation($1, $2, $3, $4, $5::text::json)", administrationRequestSource, "public", table, ruleName, spec,
+		).Scan(&requestID)
+	}
+	stored := func(ruleName string) (rows int, spec *string) {
+		if err := pool.QueryRow(ctx,
+			"SELECT count(*), min(rule_spec::text) FROM cdc.administration_request WHERE table_name = $1 AND rule_name = $2", table, ruleName,
+		).Scan(&rows, &spec); err != nil {
+			t.Fatalf("Zeilen von %q lesen: %v", ruleName, err)
+		}
+		return rows, spec
+	}
+	text := func(s string) *string { return &s }
+
+	accepted := []struct {
+		name string
+		spec *string
+		want *string
+	}{
+		{"sql_null", nil, nil},
+		{"json_null", text(`null`), text(`null`)},
+		{"leeres_objekt", text(`{}`), text(`{}`)},
+		{"leeres_array", text(`[]`), text(`[]`)},
+		{"zahl", text(`1`), text(`1`)},
+		{"zeichenkette", text(`"x"`), text(`"x"`)},
+		{"doppelter_schluessel", text(`{"kind":"a","kind":"b"}`), text(`{"kind": "b"}`)},
+	}
+	for _, tc := range accepted {
+		if err := call(tc.name, tc.spec); err != nil {
+			t.Errorf("Form %s: erwartet angenommen, erhalten %v", tc.name, err)
+			continue
+		}
+		rows, spec := stored(tc.name)
+		if rows != 1 || (spec == nil) != (tc.want == nil) || (spec != nil && *spec != *tc.want) {
+			t.Errorf("Form %s: %d Zeile(n), rule_spec gelesen %s, erwartet 1 Zeile mit %s", tc.name, rows, describeSpec(spec), describeSpec(tc.want))
+		}
+	}
+
+	rejected := []struct {
+		name string
+		spec string
+	}{
+		{"nul_im_wert", `{"a":"\u0000"}`},
+		{"nul_im_schluessel", `{"\u0000":1}`},
+		{"nul_im_array", `["\u0000"]`},
+		{"nul_als_skalar", `"\u0000"`},
+		{"zahl_ausserhalb_des_bereichs", `{"a":1e200000}`},
+		{"syntaxfehler", `{oops`},
+		{"leerer_text", ``},
+		{"einzelnes_surrogat", `"\ud83d"`},
+	}
+	for _, tc := range rejected {
+		if err := call(tc.name, &tc.spec); err == nil {
+			t.Errorf("Form %s: erwartet abgelehnt, der Aufruf gelang", tc.name)
+		}
+		if rows, _ := stored(tc.name); rows != 0 {
+			t.Errorf("Form %s: der abgelehnte Aufruf hinterließ %d Zeile(n)", tc.name, rows)
+		}
+	}
+}
+
+// TestAdministrationFunctionsPinSecurityDefinerAndSearchPath bindet die Zusage
+// „`SECURITY DEFINER` mit gepinntem `search_path`“ an den Katalog der realen
+// Instanz: jede der sieben schreibenden Funktionen trägt `prosecdef` und
+// `proconfig = {search_path=cdc, pg_temp}` (`ADR-0050`, `LH-QA-SEC-002`).
+// Rot färbende Mutation (Eingabeseite): die Zeile `SET search_path = cdc,
+// pg_temp` einer Funktion in `tools/schema/nacharbeit-administration.sql`
+// streichen — die Funktion erscheint in der Meldung.
+func TestAdministrationFunctionsPinSecurityDefinerAndSearchPath(t *testing.T) {
+	pool, _ := newTestAdministrationRequestPool(t)
+
+	var unpinned []string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT coalesce(array_agg(p.proname::text ORDER BY p.proname), '{}')
+		 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+		 WHERE n.nspname = 'cdc'
+		   AND p.proname IN ('enable_table', 'disable_table', 'exclude_column', 'include_column', 'backfill_table', 'set_transformation', 'remove_transformation')
+		   AND (NOT p.prosecdef OR p.proconfig IS DISTINCT FROM ARRAY['search_path=cdc, pg_temp'])`,
+	).Scan(&unpinned); err != nil {
+		t.Fatalf("Katalog lesen: %v", err)
+	}
+	if len(unpinned) != 0 {
+		t.Fatalf("ohne SECURITY DEFINER und gepinnten search_path (cdc, pg_temp): %v", unpinned)
+	}
+}
+
+// describeSpec zeigt eine nullable Regelform lesbar: SQL-NULL als `NULL`, alles
+// andere als der gelesene Text.
+func describeSpec(spec *string) string {
+	if spec == nil {
+		return "NULL"
+	}
+	return *spec
+}

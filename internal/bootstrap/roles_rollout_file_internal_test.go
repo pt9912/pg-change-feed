@@ -434,6 +434,16 @@ var (
 	executeGrantZeile = regexp.MustCompile(`(?is)GRANT[ \t\r\n]+EXECUTE[ \t\r\n]+ON[ \t\r\n]+FUNCTION[ \t\r\n]+(.+?)[ \t\r\n]+TO[ \t\r\n]+([A-Za-z0-9_, \t\r\n]+?)[ \t\r\n]*;`)
 )
 
+// jedeGrantAnweisung und jedeFunktionsDefinition zählen **alle** Anweisungen
+// ihrer Art, gleich in welcher Schreibweise: `GRANT ALL …`, `GRANT … ON ALL
+// FUNCTIONS IN SCHEMA …` und jede `CREATE FUNCTION` außerhalb der Form
+// `cdc.<a-z_>` fallen aus den zwei engeren Ausdrücken oben heraus und
+// erscheinen nur in dieser Zählung.
+var (
+	jedeGrantAnweisung      = regexp.MustCompile(`(?is)\bGRANT\b[^;]*;`)
+	jedeFunktionsDefinition = regexp.MustCompile(`(?im)^[ \t]*CREATE[ \t]+(?:OR[ \t]+REPLACE[ \t]+)?FUNCTION\b`)
+)
+
 // ohneLeerraum entfernt jeden Leerraum aus einer Signatur und macht sie klein
 // — `cdc.f(text, json)` und `cdc.f(text,json)` tragen dieselbe Aussage.
 func ohneLeerraum(roh string) string {
@@ -488,16 +498,27 @@ func parameterTypen(parameter string) []string {
 // Transformations-Funktionen (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 1) mit
 // ihren Signaturen benannt: die Datei trägt sie.
 //
+// Jede `GRANT`-Anweisung der Datei ist von der Form `GRANT EXECUTE ON FUNCTION
+// … TO …` (`GRANT ALL`, `GRANT ALL PRIVILEGES` und `… ON ALL FUNCTIONS IN
+// SCHEMA` färben den Test rot), und jede `CREATE FUNCTION` steht als
+// `cdc.<name>` (eine Funktion in `public` oder mit quotiertem Namen färbt ihn
+// rot).
+//
 // Benannte Grenze: der Test liest den Text der Datei, nicht eine laufende
 // Instanz (dort belegt `make test-store` mit einem Login ohne
-// `cdc_admin`-Mitgliedschaft „permission denied for function“) — und keinen
-// dynamisch zusammengesetzten Grant.
+// `cdc_admin`-Mitgliedschaft „permission denied for function“ für die beiden
+// Transformations-Funktionen: `TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership`)
+// — und keinen dynamisch zusammengesetzten Grant (`EXECUTE format(…)`,
+// `ALTER DEFAULT PRIVILEGES`, `SET ROLE`).
 //
 // Rot färbende Mutationen: `cdc.set_transformation(text, text, text, text,
 // json)` aus der `GRANT`-Liste streichen · dieselbe Signatur aus der
 // `REVOKE`-Liste streichen · `cdc.remove_transformation(...)` aus der
 // `GRANT`-Liste streichen · eine zweite `GRANT EXECUTE … TO cdc_reader`-Zeile
-// anhängen.
+// anhängen · `GRANT ALL ON FUNCTION cdc.set_transformation(…) TO cdc_reader` ·
+// `GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA cdc TO PUBLIC` · `GRANT ALL
+// PRIVILEGES ON ALL FUNCTIONS IN SCHEMA cdc TO cdc_reader` · eine Funktion
+// `public.zz_neu()` bzw. `"cdc"."zz_neu"()` ohne Rechte-Zeile.
 func TestAdministrationDateiTraegtDieFunktionsRechte(t *testing.T) {
 	roh, err := os.ReadFile(administrationDateiPfad(t))
 	if err != nil {
@@ -523,6 +544,13 @@ func TestAdministrationDateiTraegtDieFunktionsRechte(t *testing.T) {
 		if !definiert[erwartet] {
 			t.Fatalf("die Datei definiert %s nicht — die Antragsarten set_transformation/remove_transformation haben keine schreibende SQL-Funktion (LH-FA-CFG-007)", erwartet)
 		}
+	}
+
+	if alle, form := len(jedeFunktionsDefinition.FindAllString(quelltext, -1)), len(funktionsDefinition.FindAllString(quelltext, -1)); alle != form {
+		t.Fatalf("die Datei trägt %d CREATE-FUNCTION-Anweisungen, nur %d in der Form cdc.<name>(…) — eine Funktion außerhalb des Schemas cdc oder mit quotiertem Namen bleibt ohne Rechte-Prüfung (LH-QA-SEC-002)", alle, form)
+	}
+	if alle, form := len(jedeGrantAnweisung.FindAllString(quelltext, -1)), len(executeGrantZeile.FindAllString(quelltext, -1)); alle != form {
+		t.Fatalf("die Datei trägt %d GRANT-Anweisungen, nur %d in der Form GRANT EXECUTE ON FUNCTION … TO … — GRANT ALL und GRANT … ON ALL FUNCTIONS IN SCHEMA vergeben EXECUTE an Rollen, die dieser Test nicht liest (LH-QA-SEC-002)", alle, form)
 	}
 
 	widerrufen := map[string]bool{}

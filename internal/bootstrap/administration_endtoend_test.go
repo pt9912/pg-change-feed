@@ -34,7 +34,7 @@ import (
 // Kopplung: der Schema-Stand dieses Laufs kommt aus dem d-migrate-Rollout,
 // den der Lauf-Aufruf vor dem `internal/bootstrap`-Aufruf anwendet
 // (`tools/schema/apply-rollout.sh`) — er trägt `cdc.administration_request`
-// und die fünf Antrags-Funktionen
+// und die sieben Antrags-Funktionen
 // (`tools/schema/nacharbeit-administration.sql`).
 func TestAdministrationRequestColumnEndToEndAgainstPostgreSQL(t *testing.T) {
 	dsn := os.Getenv("CDC_STORE_TEST_DSN")
