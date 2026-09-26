@@ -30,7 +30,7 @@ Teilfrage 1 und Folgepflicht 3,
 [`ARC-005`](../../../../spec/architecture.md) (SQL-Funktionen als Driving
 Adapter) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
