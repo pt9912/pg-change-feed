@@ -26,7 +26,7 @@ als neuer `MR-<NNN>` mit Grenz-Zeile).
 
 **Berührte Spec-Stellen:** — (Harness-Wächter; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers (Architect-Zug zu
 [`AGENTS.md`](../../../../AGENTS.md) §3.1, Commit `17cb4eb3`). **Datum:** 2026-09-26.
