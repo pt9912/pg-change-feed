@@ -124,6 +124,14 @@ test-kommentar-kennungen: ## Tabellentests des Programms tools/harness/kommentar
 	docker run --rm --network none -v "$(CURDIR)":/src:ro -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go test ./tools/harness/kommentar-kennungen/
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-kommentar-kennungen-tests.sh
 
+.PHONY: fmt-check
+fmt-check: ## Meldet jede Go-Datei, die gofmt -l nicht als formatiert führt (Exit 1 bei Abweichung, 2 bei Formatierer-Fehler oder ohne Go-Datei; Docker-only, netzlos, kein Gate; harness/sensors/fmt-check.md)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/fmt-check.sh
+
+.PHONY: test-fmt-check
+test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-Läufe gegen Wegwerf-Verzeichnisse; Docker-only, netzlos)
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-fmt-check-tests.sh
+
 .PHONY: test-rollout-restore
 test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)
 	@bash tools/harness/run-rollout-restore-tests.sh
