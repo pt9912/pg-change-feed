@@ -244,9 +244,12 @@ func TestE2ETransformationRulesShapeBothImages(t *testing.T) {
 // (Boundary) am laufenden Feed-Container: je eine Verletzung der
 // Konfliktfreiheit endet real `failed` mit dem Klartext der Spec und der
 // Adresse, und der Regelstand der Tabelle bleibt unverändert — die danach
-// erfasste Change trägt weiter die Form der gültigen Regeln. Jeder
-// Negativfall weicht in genau einem Feld von der Gegenprobe ab, die
-// `applied` endet und ab der nächsten Change wirkt.
+// erfasste Change trägt weiter die Form der gültigen Regeln. Jeder der fünf
+// `set_transformation`-Negativfälle weicht in genau einem Feld von der
+// Gegenprobe ab, die `applied` endet und ab der nächsten Change wirkt; der
+// `remove_transformation`-Fall (K4) nennt einen nicht geführten Regelnamen,
+// und das Entfernen einer geführten Regel endet in `removeRulesAtEnd`
+// `applied`.
 func TestE2ETransformationConflictsFailWithSpecText(t *testing.T) {
 	env := newBackfillEnv(t)
 	ctx := context.Background()
@@ -262,7 +265,7 @@ func TestE2ETransformationConflictsFailWithSpecText(t *testing.T) {
 	env.removeRulesAtEnd(t, table, "kundenname", "status_lesbar", "notiz_memo")
 
 	// Die Gegenprobe ist die Regel `notiz_memo` (note wird zu memo); jeder
-	// Negativfall ändert genau ein Feld daran.
+	// `set_transformation`-Negativfall ändert genau ein Feld daran.
 	const validSpec = `{"kind":"rename_column","column":"note","to":"memo"}`
 	violations := []struct {
 		name     string

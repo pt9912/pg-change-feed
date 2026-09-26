@@ -3494,6 +3494,18 @@ tf_exclude() {
   bf_await_applied "$request_id" "$3"
 }
 
+# tf_restart_feed <Phase>: startet den Feed-Container real neu, wartet auf
+# healthy und beendet die Phase, wenn seine Startzeit gleich blieb. Der Beleg
+# eines Neustarts ist die Startzeit; tf_started_before und tf_started_after
+# tragen sie nach dem Aufruf.
+tf_restart_feed() {
+  tf_started_before=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+  docker restart "$FEED_CONTAINER" >/dev/null
+  bf_await_healthy "$1"
+  tf_started_after=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
+  [ "$tf_started_before" != "$tf_started_after" ] || bf_fail "$1 — die Startzeit des Feed-Containers blieb nach docker restart gleich ($tf_started_after)"
+}
+
 # tf_row <Tabelle> <id> <name> <Status> <Phase>: fügt eine Zeile ein und wartet,
 # bis ihre Change über cdc.changes lesbar ist.
 tf_row() {
@@ -3581,10 +3593,13 @@ tf_client_line() {
   grep -m1 '^RECEIVED ' <<<"$logs" || true
 }
 
-abdeckung_declare "Transformationen-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-007,LH-FA-SST-002,LH-FA-SST-006,LH-FA-SST-008" "eine per cdc.set_transformation beantragte rename_column- und map_value-Regel prägt jede danach erfasste Change auf allen fünf Wegen in derselben Form: über cdc.changes, GET /changes, den gRPC-Stream, den SSE-Stream und den NATS-Vollinhalts-Stream trägt das Bild den Zielnamen und den abgebildeten Wert und nicht den Quellschlüssel; die zuvor erfasste Change bleibt in Rohform lesbar, ein nicht abgebildeter Wert bleibt unverändert, ein fehlender Wert bleibt abwesend, und nach dem Entfernen der Regeln trägt die nächste Change wieder die Rohform" "Transformationen-Happy-Path (LH-FA-CFG-007) belegt"
+abdeckung_declare "Transformationen-Happy-Path (fünf Zustellwege)" "LH-FA-CFG-007,LH-FA-SST-002,LH-FA-SST-006,LH-FA-SST-008" "eine per cdc.set_transformation beantragte rename_column- und map_value-Regel prägt eine danach eingefügte Zeile auf allen fünf Wegen in derselben Form: über cdc.changes, GET /changes, den gRPC-Stream, den SSE-Stream und den NATS-Vollinhalts-Stream trägt das Neu-Bild den Zielnamen und den abgebildeten Wert und nicht den Quellschlüssel; die zuvor erfasste Change bleibt in Rohform lesbar, ein nicht abgebildeter Wert bleibt unverändert und ein fehlender Wert abwesend (beides über cdc.changes und GET /changes), und nach dem Entfernen der Regeln trägt die nächste Change wieder die Rohform; die Wegwerf-Clients der Stream-Wege drucken nur das Neu-Bild, die Bilder von UPDATE und DELETE trägt allein TestE2ETransformationRulesShapeBothImages über cdc.changes" "Transformationen-Happy-Path (LH-FA-CFG-007) belegt"
 
 TF_PHASE="Transformationen-Happy-Path"
 TF_TABLE=feed_e2e_transform
+# Kopplung: die Phase „Transformationen-Neustart und Ausschluss“ setzt
+# dieselben zwei Regelformen (TF_RULE_RENAME, TF_RULE_MAP) auf ihrer eigenen
+# Tabelle; sie liest beide Variablen aus diesem Block.
 TF_RULE_RENAME='{"kind":"rename_column","column":"name","to":"customer_name"}'
 TF_RULE_MAP='{"kind":"map_value","column":"status","values":{"o":"open","c":"closed"}}'
 TF_FORM_STREAM='{"customer_name":"TfNeu","status":"open"}'
@@ -3681,7 +3696,7 @@ tf_form "$TF_TABLE" 30 '{"name":"TfRoh","status":"o"}' "$TF_PHASE — Rohform na
 bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$TF_TABLE' AND (new_data - 'id') = '$TF_FORM_STREAM'::jsonb")" "$tf_stream_rows" "$TF_PHASE — frühere Changes nach dem Entfernen der Regeln"
 bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$TF_PHASE — Feed-Container läuft weiter"
 
-echo "run-integration-tests: Transformationen-Happy-Path (LH-FA-CFG-007) belegt — auf $TF_TABLE prägten rename_column (name zu customer_name) und map_value (status) $tf_stream_rows Stream-Zeile(n) und zwei weitere Zeilen auf allen fünf Wegen in derselben Form; gRPC: $tf_grpc_line; SSE: $tf_sse_line; NATS: $tf_nats_line; die Zeile vor den Regeln blieb in Rohform, nach dem Entfernen der Regeln trug die nächste Change wieder die Rohform"
+echo "run-integration-tests: Transformationen-Happy-Path (LH-FA-CFG-007) belegt — auf $TF_TABLE prägten rename_column (name zu customer_name) und map_value (status) $tf_stream_rows Stream-Zeile(n) auf allen fünf Wegen in derselben Form und zwei weitere Zeilen (nicht abgebildeter und fehlender Wert) über cdc.changes und GET /changes; gRPC: $tf_grpc_line; SSE: $tf_sse_line; NATS: $tf_nats_line; die Zeile vor den Regeln blieb in Rohform, nach dem Entfernen der Regeln trug die nächste Change wieder die Rohform"
 
 abdeckung_declare "Transformationen-Neustart und Ausschluss" "LH-FA-CFG-007,LH-FA-CFG-005,LH-QA-SEC-004" "nach einem realen Container-Neustart leitet der Prozessstart den Regelstand aus den applied-Zeilen ab und die danach erfasste Change trägt die Form; cdc.remove_transformation stellt die Rohform für künftige Changes wieder her; nach cdc.exclude_column auf der Spalte mit Regel trägt die Change weder Quellnamen noch Zielnamen noch Wert im Bild, vor und nach dem Neustart, und die nicht ausgeschlossene Spalte bleibt darin" "Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt"
 
@@ -3698,14 +3713,13 @@ tf_set "$TF_RESTART_TABLE" status_lesbar "$TF_RULE_MAP" "$TF_PHASE"
 tf_row "$TF_RESTART_TABLE" 1 TfR1 o "$TF_PHASE"
 tf_form "$TF_RESTART_TABLE" 1 '{"customer_name":"TfR1","status":"open"}' "$TF_PHASE — Form vor dem Neustart"
 
-# Der Neustart ist ein echter Prozess-Neustart desselben Containers; ohne die
-# Ableitung des Regelstands beim Prozessstart trüge die nächste Change die
-# Rohform. Der Beleg des Neustarts ist die Startzeit des Containers.
-tf_started_before=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
-docker restart "$FEED_CONTAINER" >/dev/null
-bf_await_healthy "$TF_PHASE"
-tf_started_after=$(docker inspect --format '{{.State.StartedAt}}' "$FEED_CONTAINER")
-[ "$tf_started_before" != "$tf_started_after" ] || bf_fail "$TF_PHASE — die Startzeit des Feed-Containers blieb nach docker restart gleich ($tf_started_after)"
+# Der Neustart ist ein echter Prozess-Neustart desselben Containers: der
+# Prozessstart leitet den Regelstand aus den applied-Zeilen ab, und die Form
+# der nächsten Change ist der Beleg dieser Ableitung. Der Beleg des Neustarts
+# selbst ist die Startzeit des Containers (tf_restart_feed).
+tf_restart_feed "$TF_PHASE"
+tf_first_restart_before=$tf_started_before
+tf_first_restart_after=$tf_started_after
 tf_row "$TF_RESTART_TABLE" 2 TfR2 o "$TF_PHASE"
 tf_form "$TF_RESTART_TABLE" 2 '{"customer_name":"TfR2","status":"open"}' "$TF_PHASE — Form nach dem Neustart"
 
@@ -3728,8 +3742,7 @@ tf_row "$TF_RESTART_TABLE" 5 TfSecretVorNeustart o "$TF_PHASE"
 tf_form "$TF_RESTART_TABLE" 5 '{"status":"open"}' "$TF_PHASE — Bild mit Ausschluss und Regeln vor dem Neustart"
 tf_no_value "$TF_RESTART_TABLE" 5 TfSecretVorNeustart "$TF_PHASE — Wert der ausgeschlossenen Spalte vor dem Neustart"
 
-docker restart "$FEED_CONTAINER" >/dev/null
-bf_await_healthy "$TF_PHASE"
+tf_restart_feed "$TF_PHASE"
 tf_row "$TF_RESTART_TABLE" 6 TfSecretNachNeustart o "$TF_PHASE"
 tf_form "$TF_RESTART_TABLE" 6 '{"status":"open"}' "$TF_PHASE — Bild mit Ausschluss und Regeln nach dem Neustart"
 tf_no_value "$TF_RESTART_TABLE" 6 TfSecretNachNeustart "$TF_PHASE — Wert der ausgeschlossenen Spalte nach dem Neustart"
@@ -3742,7 +3755,7 @@ tf_row "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln o "$TF_PHASE"
 tf_form "$TF_RESTART_TABLE" 7 '{"status":"o"}' "$TF_PHASE — Bild mit Ausschluss ohne Regeln"
 tf_no_value "$TF_RESTART_TABLE" 7 TfSecretOhneRegeln "$TF_PHASE — Wert der ausgeschlossenen Spalte ohne Regeln"
 
-echo "run-integration-tests: Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt — auf $TF_RESTART_TABLE trug die Change nach einem realen docker restart (Startzeit $tf_started_before, danach $tf_started_after) die Form beider Regeln; nach dem Entfernen trug die nächste Change die Rohform; nach exclude_column auf name trug das Bild vor und nach dem zweiten Neustart weder name noch customer_name noch den Wert, die Spalte status blieb (mit Regel offen, ohne Regel roh)"
+echo "run-integration-tests: Transformationen-Neustart und Ausschluss (LH-FA-CFG-007) belegt — auf $TF_RESTART_TABLE trug die Change nach einem realen docker restart (Startzeit $tf_first_restart_before, danach $tf_first_restart_after) die Form beider Regeln; nach dem Entfernen trug die nächste Change die Rohform; nach exclude_column auf name trug das Bild vor und nach dem zweiten docker restart (Startzeit $tf_started_before, danach $tf_started_after) weder name noch customer_name noch den Wert, die Spalte status blieb (mit Regel offen, ohne Regel roh)"
 
 abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "ein realer Container-Tausch ersetzt den Feed-Container durch eine neue Instanz desselben Images, während Datenbank und NATS unberührt bleiben — der Datenstand davor bleibt lesbar (\`count(*)\`-Beleg gegen cdc.changes nach dem Tausch, \`LH-FA-RET-001\`), danach Eingefügtes wird weiter erfasst" "Upgrade-Sicherheits-Rundlauf (LH-QA-OPS-005, ADR-0064) belegt"
 
