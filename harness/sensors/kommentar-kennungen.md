@@ -80,13 +80,22 @@ dem Host in einer Temp-Datei, nicht in einer Pipe: `pipefail` meldet den Exit
 des rechten Glieds und ließe ein fehlgeschlagenes `git` hinter Exit 1 des
 Programms verschwinden ([`AGENTS.md`](../../AGENTS.md) §3.9).
 
+Der Aufrufer pinnt die Form des Stroms gegen die Git-Konfiguration des Nutzers:
+`git -c core.quotePath=false diff -U0 --no-color --no-ext-diff --no-textconv
+--src-prefix=a/ --dst-prefix=b/` (ohne sie ändern `diff.mnemonicPrefix`,
+`diff.noprefix`, `color.diff` oder `diff.external` den Strom). Das Programm liest
+die Zieldatei-Zeilen mit dem Präfix `b/` und endet bei einer `+++`-Zeile mit
+anderem Präfix mit Exit 2, statt „kein Kandidat“ zu melden; Zeilen innerhalb
+eines Hunks (nach der Zahl im Hunk-Kopf) sind Inhalt, auch wenn sie mit `+++ `
+beginnen.
+
 ## Exit-Codes
 
 | Exit | Bedeutung |
 |---|---|
 | 0 | kein Kandidat, oder `COUNT=1` (die Zahl steht auf stdout) |
 | 1 | mindestens ein Kandidat |
-| 2 | Eingabefehler: unbekannter Wert für `TESTS`, `DIFF` ist kein Commit, ein Pfad fehlt, eine `.go`-Datei ist nicht lesbar oder der Diff-Strom nicht parsbar |
+| 2 | Eingabefehler: unbekannter Wert für `TESTS`, `DIFF` ist kein Commit, ein Pfad fehlt, eine `.go`-Datei ist nicht lesbar, der Diff-Strom nicht parsbar oder eine Zieldatei-Zeile trägt nicht das Präfix `b/` |
 
 Über `make` kommt jeder Exit ≠ 0 als der Make-eigene Exit `2` an; die Unterscheidung
 von 1 und 2 trägt die Make-Meldung `Fehler <n>` (der Exit des Skripts), die Ausgabe
@@ -127,6 +136,33 @@ ohne Kennung davor), die Blockgrenzen (Leerzeile · Endkommentar hinter Code ·
 Zeichenketten-Literal · Direktive · Blockkommentar · „ff.“ über einen
 Zeilenumbruch), den Diff-Modus (überlappende und nicht überlappende Zeile ·
 Löschung · andere Datei · leerer Diff), die Modi `-count`/`-tests`, die
-ausgenommenen Wurzeln und die Exit-Codes. Nicht gebunden ist der Aufrufer
-`tools/harness/kommentar-kennungen.sh` (Docker-Aufruf, Temp-Datei des Diffs): er
-hat keinen Tabellentest.
+ausgenommenen Wurzeln (`gen`, `sdks`, `.harness`, `.git`), das Präfix der
+Zieldatei-Zeile und die Exit-Codes.
+
+Der Aufrufer `tools/harness/kommentar-kennungen.sh` trägt seinen eigenen
+Tabellentest, `tools/harness/run-kommentar-kennungen-tests.sh` (bash, ein
+Wegwerf-Repo im Temp-Verzeichnis, `make test-kommentar-kennungen` fährt ihn nach
+dem Go-Test): Argumentzahl, fehlende `TOOLCHAIN_IMAGE`, unbekannte Diff-Basis ·
+Exit-Weitergabe (0, 1, 2) · jedes Wort von `PATHS`/`DIFF` ein eigenes Argument
+(keine Marker-Datei eines eingeschleusten Kommandos, kein Glob) · der Diff-Strom
+unter fremder Git-Konfiguration byte-gleich zu dem ohne Eingriff · ein
+fehlschlagendes `git diff` · keine Temp-Datei danach — mit einem Stub für
+`docker` — und vier Läufe mit echtem Docker (Kandidat im Diff-Modus mit und ohne
+`diff.mnemonicPrefix`, ungültiger `TESTS`-Wert, fehlender Pfad).
+
+## Belege der Definition
+
+- **Zählregel gegen den Bestand** (gemessen, Stand `0d333120`): 30 Kandidaten
+  (jede zwanzigste Zeile der Ausgabe ab der zehnten, `awk 'NR%20==10'`) — 25
+  Verstöße (Reihung gleichrangiger Anker, Kette, Kompaktform, „ff.“), 5 Grenzfälle
+  (zwei Anker tragen je eine eigene Aussage der Stelle). Eine zweite Stichprobe
+  derselben Auswahlregel im Review (acht Zeilen, Stand `71cf9537`): vier
+  Verstöße, vier Grenzfälle — `internal/domain/errors/errors.go` (Zeilen 35–37),
+  `internal/application/port/inbound/consumer.go` (30–32),
+  `internal/adapters/driven/postgresstorage/queries/queries.go` (241–244),
+  `internal/application/port/inbound/verwaltung.go` (83–89).
+- **Strenger als der Baseline-Wortlaut.** Die Baseline verlangt „ein auflösbares
+  Feld“; die Zählregel („höchstens eine Kennung“) folgt der Zielform von
+  [`AGENTS.md`](../../AGENTS.md) §3.7 und meldet auch einen Block mit zwei Ankern,
+  die je eine eigene Aussage tragen (Grenze 3). Das ist die Zielform des Plans, kein
+  Zufall der Implementierung.

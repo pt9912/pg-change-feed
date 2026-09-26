@@ -7,12 +7,12 @@ import (
 	"github.com/pt9912/pg-change-feed/internal/domain/model"
 )
 
-// ErrChangeStream trägt die Fehlerklasse eines fehlgeschlagenen
-// Stream-Publish-Aufrufs (`ADR-0060`). Der Kanal ist ein In-Prozess-Fan-out
-// ohne externes System: ein Fehler entsteht hier aus einem ungültigen Aufruf,
-// nicht aus einer vorübergehend nicht verfügbaren Quelle oder einem Speicher —
-// anders als `ErrNotify` trägt er deshalb keine der Fehlerklassen (`transient`
-// und die übrigen der Fehlerklassifikation). Der Aufrufer (`CaptureService`)
+// ErrChangeStream markiert einen fehlgeschlagenen Stream-Publish-Aufruf
+// (`ADR-0060`) für `errors.Is`. Der Kanal ist ein In-Prozess-Fan-out ohne
+// externes System: ein Fehler entsteht hier aus einem ungültigen Aufruf, nicht
+// aus einer vorübergehend nicht verfügbaren Quelle oder einem Speicher.
+// Anders als `ErrNotify` (`changenotification.go`, Klasse `transient`) ordnet
+// er sich deshalb keiner Fehlerklasse zu. Der Aufrufer (`CaptureService`)
 // fängt ihn an der Aufrufstelle ab und lässt ihn nicht in den Rückgabewert des
 // Capture-Aufrufs eingehen.
 var ErrChangeStream = stderrors.New("Stream-Publish fehlgeschlagen")

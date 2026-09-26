@@ -179,6 +179,11 @@ werden konnte"> — Indikativ über den Zustand.
 abwesenden Text.
 **Richtig:** die geltende Zusage nennen; die vorige hält `git`.
 
+**Zustandsfelder ebenso:** Eine `Stand`-/`Status`-Zelle in Roadmap,
+Beobachtungs-Register oder Meilenstein-Tabelle nennt den Zustand und den Beleg
+als auflösbaren Anker, nicht die Chronik; das Drift-Log der Roadmap trägt nur
+Umplanungen, keine Schließungen und keine erreichten Meilensteine.
+
 **Herkunft im Go-Kommentar ist ein Feld, kein Absatz.** Ein Kommentar trägt
 höchstens **eine** Kennung (`LH-*`, `ADR-*`, `SPEC-*`, `ARC-*`), als
 Rang-Zeiger auf die Norm, deren Umsetzung die Stelle ist. Keine Kette (zwei
@@ -209,11 +214,6 @@ Es prüft die **Form**, nicht die Wahrheit: eine Spec-Wiedergabe in eigenen
 Worten mit einer Kennung erkennt es nicht, und ein Lauf ohne Kandidat sagt nicht
 „die Kommentare sind konform“. Es ist kein Gate und trägt keine
 Ausnahmeliste; die Lese-Handlung bleibt beim Reviewer.
-
-**Zustandsfelder ebenso:** Eine `Stand`-/`Status`-Zelle in Roadmap,
-Beobachtungs-Register oder Meilenstein-Tabelle nennt den Zustand und den Beleg
-als auflösbaren Anker, nicht die Chronik; das Drift-Log der Roadmap trägt nur
-Umplanungen, keine Schließungen und keine erreichten Meilensteine.
 
 **Begründung:** Die Abwägung gehört in die ADR, die Historie in `git`, die
 Herkunft in **ein** auflösbares Feld (`LH-*`, `ADR-*`, `· seit welle-<NN>`).

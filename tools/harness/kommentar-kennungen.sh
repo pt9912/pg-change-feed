@@ -45,7 +45,12 @@ if [ -n "$diff_base" ]; then
   fi
   difffile=$(mktemp "${TMPDIR:-/tmp}/kommentar-kennungen.XXXXXX") || exit 2
   trap 'rm -f "$difffile"' EXIT
-  if ! git diff -U0 --no-color --no-ext-diff "$diff_base" -- '*.go' >"$difffile"; then
+  # Die Optionen pinnen die Form des Stroms gegen die Git-Konfiguration des
+  # Aufrufers (`diff.mnemonicPrefix`, `diff.noprefix`, `diff.srcPrefix`,
+  # `diff.dstPrefix`, `diff.external`, `color.diff`, `core.quotePath`); das
+  # Programm liest die Zieldatei-Zeilen mit dem Präfix `b/`.
+  if ! git -c core.quotePath=false diff -U0 --no-color --no-ext-diff --no-textconv \
+    --src-prefix=a/ --dst-prefix=b/ "$diff_base" -- '*.go' >"$difffile"; then
     echo "kommentar-kennungen: git diff gegen '$diff_base' schlug fehl" >&2
     exit 2
   fi

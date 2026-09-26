@@ -191,10 +191,12 @@ Wiederholung der Spec.
       verloren ist.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). Report `review-slice-code-kommentare-kennungen`:
+      0 HIGH, 1 MEDIUM (F-1), 4 LOW, 4 INFO; die Fixrunde unten löst F-1 bis F-4
+      und F-6 bis F-9, F-5 geht als Träger-Meldung an den Planner.
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
@@ -265,7 +267,7 @@ diff 125 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC
 diff 33 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3}).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3}).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
 diff 8 -E '//.* ff\.' -- '*.go'
 diff 4 -E 'auflösbares Feld' -- AGENTS.md .claude .harness/skills harness
-diff 12 -E '§3\.7' -- AGENTS.md .claude .harness/skills harness
+diff 13 -E '§3\.7' -- AGENTS.md .claude .harness/skills harness
 diff 1 -E 'Zeile 266' -- docs/plan/planning
 ```
 
@@ -291,11 +293,60 @@ diff 1 -E 'Zeile 266' -- docs/plan/planning
 | `slice-code-kommentare-bereinigung` §1 (fremde Datei) | Träger in fremder Datei — **Meldung** | die Prototyp-Zahlen 396/192 (Nicht-Test/Test) stehen dort als erwartet; gemessen: 403/197 (600 gesamt, Stand `0d333120`), siehe Basis-Messung. Frist: die Closure dieses Slice. |
 | `BEO-PGC/slice-chronik-in-code-kommentar` `state.md` (fremde Datei) | Träger in fremder Datei — **Meldung** | wie im Träger-Feld oben: ein Verweis auf das Werkzeug mit der Abgrenzung; Träger der Planner-Closure. |
 
+**Fixrunde nach dem Review (Parent `c75abb87`).** Grundlage: Review-Report
+`review-slice-code-kommentare-kennungen` (0 HIGH, 1 MEDIUM, 4 LOW, 4 INFO).
+
+| Finding | Änderung | Datei |
+|---|---|---|
+| F-1 MEDIUM | Der Aufrufer pinnt den Diff-Strom (`git -c core.quotePath=false diff -U0 --no-color --no-ext-diff --no-textconv --src-prefix=a/ --dst-prefix=b/`); das Programm endet bei einer `+++`-Zeile ohne Präfix `b/` mit Exit 2 statt „kein Kandidat“. Das Programm liest Zeilen innerhalb eines Hunks (Zahlen im Hunk-Kopf) als Inhalt, damit eine hinzugefügte Zeile `++ …` keine Zieldatei-Zeile ist; die Testdiffs tragen dafür die Inhaltszeilen eines echten `git diff`. | `tools/harness/kommentar-kennungen.sh`, `tools/harness/kommentar-kennungen/main.go`, `main_test.go`, Vertrag |
+| F-2 LOW | Tabellentest des Aufrufers: Stub-`docker` (Argumente und stdin festgehalten) plus vier Läufe mit echtem Docker gegen ein Wegwerf-Repo; `make test-kommentar-kennungen` fährt ihn nach dem Go-Test. | `tools/harness/run-kommentar-kennungen-tests.sh` (neu), `Makefile`, `harness/README.md`, Vertrag §Test |
+| F-3 LOW | Godoc von `ErrChangeStream`: „markiert … für `errors.Is`“ und „ordnet sich keiner Fehlerklasse zu“, der Rang-Zeiger auf `ErrNotify` nennt die Datei (`changenotification.go`); ein Anker (`ADR-0060`), nur Kommentarzeilen (gegen `Broadcaster.Publish` und `capture/service.go` gelesen: Fehler nur bei `nil`-Change). | `internal/application/port/outbound/changestream.go` |
+| F-4 LOW | Bezugspaare beieinander: in `AGENTS.md` §3.7 steht „Zustandsfelder ebenso“ wieder direkt hinter dem Falsch/Richtig-Paar der Kommentar-Regel (der Herkunfts-Absatz folgt danach); in `implement-slice.md` Schritt 20 steht der Herkunfts-Block hinter „Grenze dieser Selbstprüfung“, ohne zweite „Grenze:“ (er verweist auf die Selbstprüfungs-Grenze und nennt nur die werkzeugeigene: Form, nicht Wahrheit). | `AGENTS.md`, `.claude/commands/implement-slice.md` |
+| F-6 INFO | Zusammensetzung der `diff`-Zahlen des Suchlauf-Feldes (unten, Ursprung: gemessen). | dieser Plan |
+| F-7 INFO | Stichprobe (30 Kandidaten, 25 Verstoß/5 Grenzfall; Review-Stichprobe vier/vier mit Fundstellen) und „strenger als der Baseline-Wortlaut“ als bewusste Zielform (§1) in den Vertrag §Belege der Definition aufgenommen. | Vertrag `harness/sensors/kommentar-kennungen.md` |
+| F-8 INFO | Ausschluss der Wurzeln `.git` und `.harness` an den Test gebunden (Datei `.git/g.go` mit Kandidat im Wegwerf-Baum; Wurzel und Datei als Pfad-Argument). | `main_test.go` |
+| F-9 INFO | Beide Stände der Basis-Messung mit Ursprung (unten). Die Herkunft `slice-chronik-in-code-kommentar` im neuen Reviewer-Unterpunkt und das erwartete Register-Verzeichnis `kommentar-herkunft-als-kette` bleiben unverändert: Closure-Arbeit des Planner. | — |
+
+Mutationen der Fixrunde (Zusage · mutierte Eingabe · gesehenes Rot; je an einer
+Kopie im Scratchpad, das Original blieb unverändert). Programm (Test im
+gepinnten Toolchain-Image): Präfix `b/` erzwungen · `default:` liest jedes
+Präfix als Pfad · rot (`TestParseDiffPrefix`, `TestRunInputErrors`); Wurzel
+`.git` ausgenommen · Eintrag aus `excludedRoots` entfernt · rot (`TestRunModes`);
+Inhaltszeilen eines Hunks · Zähl-Zweig deaktiviert · rot (`TestParseDiff`, die
+`+++`-Inhaltszeile schaltet die Datei um); `\ No newline`-Zeile im Hunk · Zweig
+entfernt · rot (`TestParseDiff`). Aufrufer (Test `run-kommentar-kennungen-tests.sh`
+gegen eine Kopie über `TOOL`): Präfix-Pinnung · `--src-prefix=a/ --dst-prefix=b/`
+entfernt · rot (Strom unter `diff.mnemonicPrefix`/`diff.noprefix` weicht ab, echter
+Lauf endet mit Exit 2 statt 1); `--no-ext-diff` entfernt · rot (`diff.external`);
+`--no-color` entfernt · rot (`color.diff=always`); Prüfung der Diff-Basis als Commit
+entfernt · rot (unbekannte Basis, `DIFF=--output=<Datei>` legt die Datei an,
+Kommando-Syntax); Zerlegung von `PATHS` durch unquotierte Expansion ersetzt · rot
+(`*` und `nichts.txt` expandiert); `trap` der Temp-Datei entfernt · rot (Temp-Datei
+nach Exit 0, 1 und 2); Exit des Programms verworfen (`exit 0`) · rot (Exit 1 und 2
+weitergegeben, `TESTS=alle`, fehlender Pfad); Exit 2 bei fehlschlagendem
+`git diff` entfernt · rot. Menge der Stellen: alle acht Zusagen des Aufrufers und
+die vier Zusagen des neuen Diff-Lesens.
+
+Träger in fremden Dateien — **Meldungen** an den Planner (Frist: die Closure
+dieses Slice; keine stille Änderung, [`AGENTS.md`](../../../../AGENTS.md) §3.13):
+`observations/BEO-PGC/zitat-nennt-die-falsche-stelle/evidence/welle-d-check-verkoerperung.md`
+Zeile 28 zitiert „`AGENTS.md:451-455`“ und meint den Anfang von §3.13; der
+Abschnitt steht seit der Konkretisierung von §3.7 auf Zeile 480 statt 449
+(Befehl: `grep -n '^### 3.13' AGENTS.md`; Parent-Stand `1021f6fe`), die Zeilen
+451–455 liegen jetzt am Ende von §3.12 (F-5 des Reviews; der Fixrunden-Diff
+verschiebt §3.13 nicht weiter). Der neue Reviewer-Unterpunkt nennt als Herkunft
+`slice-chronik-in-code-kommentar`; das Register-Verzeichnis
+`kommentar-herkunft-als-kette` legt die Closure an (F-9), die Herkunft im
+Reviewer-Skill bleibt bis dahin unverändert.
+
 **Basis-Messung (gemessen, Stand `0d333120`, Werkzeug im Arbeitsbaum; Befehl je Zeile).**
 `make kommentar-kennungen COUNT=1` → **600** Kandidaten; `… COUNT=1 TESTS=exclude` →
 **403**; `… COUNT=1 TESTS=only` → **197**. Nach dem Erstbeleg (drei Blöcke in
 `changestream.go` bereinigt) 597 gesamt (Lauf `make kommentar-kennungen COUNT=1` am
-Arbeitsbaum). Die Zahl der Kommentarblöcke mit mindestens einer Kennung — der Nenner
+Arbeitsbaum). Nachgemessen (Review-Lauf am Stand `71cf9537`, Lauf der Fixrunde am
+Arbeitsbaum, beide gleich): 597 gesamt, 400 `TESTS=exclude`, 197 `TESTS=only` — der Stand `0d333120` ist mit keinem
+Repo-Befehl wiederholbar (das Werkzeug liegt dort nur im Arbeitsbaum), der
+Diff-Stand ist es (`make kommentar-kennungen COUNT=1`). Die Zahl der Kommentarblöcke mit mindestens einer Kennung — der Nenner
 der Rückführungsbedingung (a) in §4 — ist **1474**, gemessen mit derselben Zählung bei
 temporär auf „mindestens eine Kennung“ gesenkter Schwelle (`make kommentar-kennungen
 COUNT=1`, Änderung zurückgenommen): 597 von 1474 sind 40,5 %, also unter der Hälfte;
@@ -310,7 +361,21 @@ Reihung derselben oder gleichrangiger Anker, Kette, Kompaktform, „ff.“) oder
 einen Anker und die Stelle). Ergebnis: 25 Verstoß, 5 Grenzfall, keiner legitim im Sinn
 „zwei Anker sind die Zielform“; der Anteil der Grenzfälle (17 %) liegt weit unter dem
 Rückführungs-Maß. Die Liste mit Klasse und Urteil je Kandidat steht im Bericht des
-Implementers.
+Implementers, nicht in einem committeten Träger; die Stichproben-Zahlen samt der
+Review-Stichprobe (acht Zeilen: vier Verstöße, vier Grenzfälle mit Fundstellen)
+stehen im Vertrag `harness/sensors/kommentar-kennungen.md` §Belege der Definition,
+dort auch „strenger als der Baseline-Wortlaut“ als Zielform aus §1.
+
+**Zusammensetzung der `diff`-Zahlen des Suchlauf-Feldes (gemessen, `git grep -c`
+am Arbeitsbaum mit den Mustern der Zeilen 1, 5, 4).** Kennungs-Zeilen 2236 =
+2233 (Parent) − 8 (`changestream.go`: elf Zeilen mit Kennung, danach drei) + 11
+(`tools/harness/kommentar-kennungen/main_test.go`, Testfixtures in
+Quelltext-Literalen). „`ff.`“ 8 = 7 Bestandszeilen (der Erstbeleg nimmt eine
+weg) + 1 Fixture (`main_test.go`, Fall „ff. über einen Zeilenumbruch“). Zeilen mit
+drei oder mehr Kennungen 33 = 31 + 2 Fixtures (`main_test.go`, Fälle „Endkommentar
+hinter Code bildet einen eigenen Block“ und „Direktive zählt nicht mit“). Die
+Wirkung des Erstbelegs auf „`ff.`“ ist in dieser groben Zahl nicht sichtbar; sie
+steht in der Kandidatenzahl (600 → 597).
 
 ## 4. Trigger
 

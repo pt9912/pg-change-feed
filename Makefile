@@ -120,8 +120,9 @@ kommentar-kennungen: ## Listet Go-Kommentarblöcke mit mehr als einer Kennung od
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/kommentar-kennungen.sh "$(PATHS)" "$(COUNT)" "$(TESTS)" "$(DIFF)"
 
 .PHONY: test-kommentar-kennungen
-test-kommentar-kennungen: ## Tabellentest des Programms tools/harness/kommentar-kennungen (Docker-only, netzlos; läuft auch unter make test)
+test-kommentar-kennungen: ## Tabellentests des Programms tools/harness/kommentar-kennungen (Go-Test, läuft auch unter make test) und seines Aufrufers (bash, Stub-docker plus vier Docker-Läufe; Docker-only, netzlos)
 	docker run --rm --network none -v "$(CURDIR)":/src:ro -w /src -e GOCACHE=/tmp/gocache $(TOOLCHAIN_IMAGE) go test ./tools/harness/kommentar-kennungen/
+	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-kommentar-kennungen-tests.sh
 
 .PHONY: test-rollout-restore
 test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)

@@ -130,16 +130,43 @@ func TestParseDiff(t *testing.T) {
 		"--- a/a.go",
 		"+++ b/a.go",
 		"@@ -3 +3,2 @@ func F() {",
+		"-alt",
+		"+neu1",
+		"+neu2",
 		"@@ -10,2 +11 @@",
+		"-o1",
+		"-o2",
+		"+n",
 		"@@ -20,3 +21,0 @@",
+		"-x",
+		"-y",
+		"-z",
 		"diff --git a/gone.go b/gone.go",
 		"--- a/gone.go",
 		"+++ /dev/null",
 		"@@ -1,3 +0,0 @@",
+		"-a",
+		"-b",
+		"-c",
 		"diff --git a/d/b.go b/d/b.go",
 		"--- /dev/null",
 		"+++ b/d/b.go",
 		"@@ -0,0 +1,4 @@",
+		"+l1",
+		"+l2",
+		"+l3",
+		"+l4",
+		"diff --git a/e.go b/e.go",
+		"--- a/e.go",
+		"+++ b/e.go",
+		"@@ -1 +1,2 @@",
+		"-x",
+		`\ No newline at end of file`,
+		"+++ b/inhalt.go",
+		"+x",
+		"@@ -5 +6 @@",
+		"-q",
+		"+r",
 	}, "\n") + "\n"
 	got, err := parseDiff(strings.NewReader(diff))
 	if err != nil {
@@ -148,12 +175,40 @@ func TestParseDiff(t *testing.T) {
 	want := map[string][]lineRange{
 		"a.go":   {{3, 4}, {11, 11}},
 		"d/b.go": {{1, 4}},
+		"e.go":   {{1, 2}, {6, 6}},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("parseDiff = %v; erwartet %v", got, want)
 	}
 	if _, err := parseDiff(strings.NewReader("+++ b/a.go\n@@ kaputt @@\n")); err == nil {
 		t.Fatal("ein unlesbarer Hunk-Kopf liefert keinen Fehler")
+	}
+}
+
+// TestParseDiffPrefix bindet den Diff-Strom an das Präfix, das der Aufrufer
+// pinnt: eine Zieldatei-Zeile mit einem anderen Präfix (`w/`, `i/`, keinem) ist
+// ein Fehler und kein Diff ohne Bereiche.
+func TestParseDiffPrefix(t *testing.T) {
+	hunk := "@@ -1,0 +1,1 @@\n+x\n"
+	cases := []struct {
+		name    string
+		diff    string
+		wantErr bool
+	}{
+		{"Präfix b/", "+++ b/a.go\n" + hunk, false},
+		{"Präfix w/ (diff.mnemonicPrefix)", "+++ w/a.go\n" + hunk, true},
+		{"Präfix i/ (diff.mnemonicPrefix)", "+++ i/a.go\n" + hunk, true},
+		{"kein Präfix (diff.noprefix)", "+++ a.go\n" + hunk, true},
+		{"gelöschte Datei", "+++ /dev/null\n@@ -1,0 +0,0 @@\n", false},
+		{"leerer Diff", "", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := parseDiff(strings.NewReader(c.diff))
+			if (err != nil) != c.wantErr {
+				t.Fatalf("parseDiff(%q): Fehler %v; erwartet Fehler: %v", c.diff, err, c.wantErr)
+			}
+		})
 	}
 }
 
@@ -213,6 +268,7 @@ func TestRunModes(t *testing.T) {
 		"gen/g.go":      candidateSrc,
 		"sdks/s.go":     candidateSrc,
 		".harness/h.go": candidateSrc,
+		".git/g.go":     candidateSrc,
 		"a/notgo.txt":   "// ADR-0001 LH-FA-CAP-001\n",
 	})
 	cases := []struct {
@@ -234,6 +290,9 @@ func TestRunModes(t *testing.T) {
 			"a/x.go:3-3  ADR-0001, LH-FA-CAP-001\na/x_test.go:3-3  ADR-0001, LH-FA-CAP-001\na/y.go:3-3  ADR-0001, LH-FA-CAP-001\n"},
 		{"ausgenommene Wurzel gen", []string{"gen"}, 0, ""},
 		{"ausgenommene Wurzel sdks", []string{"sdks/s.go"}, 0, ""},
+		{"ausgenommene Wurzel .harness", []string{".harness"}, 0, ""},
+		{"ausgenommene Wurzel .git", []string{".git"}, 0, ""},
+		{"Datei unter der ausgenommenen Wurzel .git", []string{".git/g.go"}, 0, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -248,9 +307,9 @@ func TestRunModes(t *testing.T) {
 
 func TestRunDiffMode(t *testing.T) {
 	writeTree(t, map[string]string{"a/x.go": candidateSrc + "\n// SPEC-003 und ARC-002\nvar v = 1\n"})
-	overlapping := "+++ b/a/x.go\n@@ -3,0 +3,1 @@\n"
-	touchingOther := "+++ b/a/x.go\n@@ -9,0 +9,1 @@\n"
-	otherFile := "+++ b/a/y.go\n@@ -3,0 +3,1 @@\n"
+	overlapping := "+++ b/a/x.go\n@@ -3,0 +3,1 @@\n+x\n"
+	touchingOther := "+++ b/a/x.go\n@@ -9,0 +9,1 @@\n+x\n"
+	otherFile := "+++ b/a/y.go\n@@ -3,0 +3,1 @@\n+x\n"
 	cases := []struct {
 		name     string
 		diff     string
@@ -260,10 +319,10 @@ func TestRunDiffMode(t *testing.T) {
 	}{
 		{"hinzugefügte Zeile im ersten Block", overlapping, []string{"-diff"}, 1,
 			"a/x.go:3-3  ADR-0001, LH-FA-CAP-001\n"},
-		{"hinzugefügte Zeile im zweiten Block", "+++ b/a/x.go\n@@ -1 +6 @@\n", []string{"-diff"}, 1,
+		{"hinzugefügte Zeile im zweiten Block", "+++ b/a/x.go\n@@ -1 +6 @@\n-a\n+b\n", []string{"-diff"}, 1,
 			"a/x.go:6-6  SPEC-003, ARC-002\n"},
 		{"hinzugefügte Zeile außerhalb der Blöcke", touchingOther, []string{"-diff"}, 0, ""},
-		{"reine Löschung im Block", "+++ b/a/x.go\n@@ -3,1 +2,0 @@\n", []string{"-diff"}, 0, ""},
+		{"reine Löschung im Block", "+++ b/a/x.go\n@@ -3,1 +2,0 @@\n-x\n", []string{"-diff"}, 0, ""},
 		{"hinzugefügte Zeile in einer anderen Datei", otherFile, []string{"-diff"}, 0, ""},
 		{"leerer Diff", "", []string{"-diff"}, 0, ""},
 		{"Zahl im Diff-Modus", overlapping, []string{"-diff", "-count"}, 0, "1\n"},
@@ -293,6 +352,8 @@ func TestRunInputErrors(t *testing.T) {
 		{"Pfad fehlt", "", []string{"gibt-es-nicht"}},
 		{"Quelltext nicht lesbar", "", []string{"a/broken.go"}},
 		{"Diff-Strom nicht lesbar", "+++ b/a/x.go\n@@ kaputt @@\n", []string{"-diff", "a/x.go"}},
+		{"Diff-Strom mit Präfix w/", "+++ w/a/x.go\n@@ -3,0 +3,1 @@\n+x\n", []string{"-diff", "a/x.go"}},
+		{"Diff-Strom ohne Präfix", "+++ a/x.go\n@@ -3,0 +3,1 @@\n+x\n", []string{"-diff", "a/x.go"}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

@@ -149,41 +149,70 @@ func blocksOf(name string, src []byte) ([]block, error) {
 // lineRange ist ein geschlossener Zeilenbereich.
 type lineRange struct{ from, to int }
 
-var hunkHeader = regexp.MustCompile(`^@@ -[0-9]+(?:,[0-9]+)? \+([0-9]+)(?:,([0-9]+))? @@`)
+var hunkHeader = regexp.MustCompile(`^@@ -[0-9]+(?:,([0-9]+))? \+([0-9]+)(?:,([0-9]+))? @@`)
 
-// parseDiff liest einen `git diff -U0`-Strom und liefert je Datei die
-// hinzugefügten Zeilenbereiche. Ein Hunk mit null hinzugefügten Zeilen (reine
-// Löschung) trägt keinen Bereich.
+// countOf liest die Zeilenzahl eines Hunk-Kopfs; fehlt sie, ist es eine Zeile.
+func countOf(s string) int {
+	if s == "" {
+		return 1
+	}
+	n, _ := strconv.Atoi(s)
+	return n
+}
+
+// parseDiff liest einen `git diff -U0`-Strom, den der Aufrufer mit den
+// Präfixen `a/` und `b/` erzeugt, und liefert je Datei die hinzugefügten
+// Zeilenbereiche. Eine Zieldatei-Zeile (`+++ …`) ohne das Präfix `b/` ist ein
+// Fehler: mit einem anderen Präfix (`w/`, `i/`) würde jeder Pfad ungelesen an
+// keiner Datei des Arbeitsverzeichnisses haften und der Lauf „kein Kandidat“
+// melden. Zeilen innerhalb eines Hunks (nach der Zahl im Hunk-Kopf) sind Inhalt,
+// auch wenn sie mit `+++ ` beginnen. Ein Hunk mit null hinzugefügten Zeilen
+// (reine Löschung) trägt keinen Bereich.
 func parseDiff(r io.Reader) (map[string][]lineRange, error) {
 	added := map[string][]lineRange{}
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
 	file := ""
+	oldLeft, newLeft := 0, 0
 	for sc.Scan() {
 		line := sc.Text()
+		if oldLeft > 0 || newLeft > 0 {
+			switch {
+			case strings.HasPrefix(line, "-"):
+				oldLeft--
+				continue
+			case strings.HasPrefix(line, "+"):
+				newLeft--
+				continue
+			case strings.HasPrefix(line, `\`):
+				continue
+			}
+			// Keine Inhaltszeile: der Hunk endet früher als angekündigt.
+			oldLeft, newLeft = 0, 0
+		}
 		switch {
 		case strings.HasPrefix(line, "+++ "):
 			path := strings.TrimPrefix(line, "+++ ")
-			if path == "/dev/null" {
+			switch {
+			case path == "/dev/null":
 				file = ""
-			} else {
+			case strings.HasPrefix(path, "b/"):
 				file = filepath.ToSlash(strings.TrimPrefix(path, "b/"))
+			default:
+				return nil, fmt.Errorf("Zieldatei-Zeile ohne Präfix b/: %q", line)
 			}
 		case strings.HasPrefix(line, "@@ "):
 			m := hunkHeader.FindStringSubmatch(line)
 			if m == nil {
 				return nil, fmt.Errorf("Hunk-Kopf nicht lesbar: %q", line)
 			}
+			oldLeft, newLeft = countOf(m[1]), countOf(m[3])
 			if file == "" {
 				continue
 			}
-			from, _ := strconv.Atoi(m[1])
-			n := 1
-			if m[2] != "" {
-				n, _ = strconv.Atoi(m[2])
-			}
-			if n > 0 {
-				added[file] = append(added[file], lineRange{from, from + n - 1})
+			from, _ := strconv.Atoi(m[2])
+			if newLeft > 0 {
+				added[file] = append(added[file], lineRange{from, from + newLeft - 1})
 			}
 		}
 	}
