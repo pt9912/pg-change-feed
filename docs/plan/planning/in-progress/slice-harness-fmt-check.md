@@ -117,7 +117,7 @@ aus, nicht den Exit-Code des Formatierers.
       Suchlauf in §3.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
@@ -160,6 +160,33 @@ Tabellentest, ein Vertragsdokument, sechs Hunks in sechs Dateien.
 | `harness/sensors/fmt-check.md` | Nachzug | trägt zusätzlich den Aufruf von `gofmt -d` (lesend, im Toolchain-Image): Schritt 18 verweist für die Korrekturvorlage auf den Vertrag statt den Docker-Befehl zu wiederholen; der Vertrag nennt je Zusage die Mutation der Eingabeseite (Tabelle §Test), auch für die drei Eingabefehler des Aufrufers. |
 | Schritt-18-Absatz „Format“ | Nachzug | der Verweis auf den Vertrag `harness/sensors/fmt-check.md` steht im Absatz (Rang-Zeiger statt Wiederholung). |
 
+| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | ein Doc-Kommentar: `''` (leerer Text) wird von `gofmt` zu einem typografischen Anführungszeichen — der Kommentar wird umformuliert. **Nachzug:** der Block trägt zwei Kennungen (`ADR-0124`, `ADR-0014`), `make kommentar-kennungen DIFF=<Basis>` meldet ihn als Kandidat; `ADR-0014` wird durch die Stelle ersetzt (`RetentionPolicy` in `internal/domain/model/retention.go`, [`AGENTS.md`](../../../../AGENTS.md) §3.7 Kopplung statt Kennungsreihe). |
+| `internal/adapters/driving/replication/mapper/transformation_test.go` | update | Ausrichtung eines Feldes in einem Literal. |
+| `internal/adapters/driving/replication/receive/seam_test.go` | update | Ausrichtung eines Map-Eintrags. |
+| `internal/application/port/outbound/log_test.go` | update | vier einzeilige Methoden werden auf je drei Zeilen umgebrochen (+8 Zeilen). |
+| `internal/application/usecase/retention/service_test.go` | update | Ausrichtung eines Feld-Kommentars. |
+| `test/integration/integration_test.go` | update | ein Doc-Kommentar mit einem Backtick-Paar; die Hunk-Zeilenzahl ist unverändert. |
+| `tools/harness/fmt-check.sh` | Fixrunde | Review F-1: der Kommentar zu „leer ist nicht bestanden“ nennt die Zusage (Exit 2 ohne Go-Datei, Exit 0 sagt: mindestens eine Datei geprüft) statt der verworfenen Alternative; F-4: die Zählung nimmt `! -type d` statt `-type f` und gleicht sich damit `gofmt` an (ein `.go`-Symlink zählt); F-6: „netzlos“ im Kopf heißt „der Container läuft ohne Netz“. |
+| `tools/harness/run-fmt-check-tests.sh` | Fixrunde | F-3: Fall 11 hält die Argumente des Docker-Aufrufs mit einem Stub-`docker` fest (`--network none`, Mount `<absoluter Pfad>:/src:ro`, Image); F-4: Fall 8b bindet den `.go`-Symlink; F-6: der Kopf trennt Container ohne Netz und Image-Zugriff des Daemons im Fall Docker-Fehler. |
+| `harness/sensors/fmt-check.md` | Fixrunde | F-1: „Leer ist nicht bestanden“ und Grenze 2 im Indikativ; F-3: vier Mutationszeilen (Netz, `:ro`, Image, Symlink) mit der Menge der Erprobung; F-4: Grenze 5 (`:` im Pfad, gemessen: Exit 2 mit „too many colons“) und Grenze 6 (Symlink, Symlink auf fehlendes Ziel gemessen: Exit 2); F-6: die Aussage zum Netz im Abschnitt Test. |
+| `Makefile`, `harness/README.md` | Fixrunde | F-6: die Hilfe-Zeile und die README-Zeile von `make test-fmt-check` sagen „Container ohne Netz“ statt „netzlos“; die README-Zeile nennt die zwei neuen Fälle. |
+
+**Fixrunde — gemessene Läufe (Stand: Arbeitsbaum der Fixrunde, Exit ungepiped gesichert):**
+`make test-fmt-check` Exit 0 („run-fmt-check-tests: alle Fälle bestanden“), `make
+fmt-check` Exit 0 („fmt-check: 254 Go-Dateien geprüft, alle formatiert“), `make test`
+Exit 0, `make a-check` Exit 0 („gesamt: 0 Befund(e)“), `make coverage-gate` Exit 0
+(„Coverage 85.00% erfüllt Schwelle 80%“), `make kommentar-kennungen DIFF=cfaf4c5f
+COUNT=1` Exit 0 (Ausgabe 0), `make gates` Exit 0, `make suchlauf-nachmessen` Exit 0
+(„10 Zeilen stimmen“). Mutationen der Eingabeseite an Kopien des Aufrufers (je
+Lauf `TOOL=<Kopie> make test-fmt-check`, alle Exit 2, der Vertrag §Test nennt sie
+mit der Menge der Erprobung): `--network none` entfernt und `--network host` ·
+`:ro` entfernt · fest eingetragenes Image · Zählung mit `-type f` — je rot am
+genannten Fall. **Träger-Meldung an den Planner (Frist: Closure dieses Slice):**
+`docs/plan/planning/welle-transformationen.md` Zeilen 304–305 (Satz über die
+„sechs Bestandsdateien“ über einen Zeilenumbruch; Muster des Suchlaufs blind gegen
+den Umbruch, Kontrolle im Suchlauf-Feld mit dem Nebenwort `Bestandsdatei`);
+der Satz bleibt nach `done/` wahr, die Meldung ist Kenntnis, keine Änderung.
+
 **Ist-Zustand am Start (gemessen, Stand `17cb4eb3`):** `git ls-files '*.go'` nennt
 **254** Dateien (der Plan nannte 252 am Stand `7b70b34a`; die Differenz sind die zwei
 Go-Dateien von `slice-code-kommentare-kennungen`, `tools/harness/kommentar-kennungen/`).
@@ -168,12 +195,6 @@ Go-Dateien von `slice-code-kommentare-kennungen`, `tools/harness/kommentar-kennu
 Der Hunk in `integration_test.go` ist `@@ -1236,7 +1236,7 @@`, die Zeilen-Lokatoren
 von `docs/user/e2e-abdeckung.md` verschieben sich nicht (der Diff des Format-Commits
 ändert dort eine Zeile, `@@ -1239 +1239 @@`).
-| `internal/adapters/driven/postgresstorage/queries/queries.go` | update | ein Doc-Kommentar: `''` (leerer Text) wird von `gofmt` zu einem typografischen Anführungszeichen — der Kommentar wird umformuliert. **Nachzug:** der Block trägt zwei Kennungen (`ADR-0124`, `ADR-0014`), `make kommentar-kennungen DIFF=<Basis>` meldet ihn als Kandidat; `ADR-0014` wird durch die Stelle ersetzt (`RetentionPolicy` in `internal/domain/model/retention.go`, [`AGENTS.md`](../../../../AGENTS.md) §3.7 Kopplung statt Kennungsreihe). |
-| `internal/adapters/driving/replication/mapper/transformation_test.go` | update | Ausrichtung eines Feldes in einem Literal. |
-| `internal/adapters/driving/replication/receive/seam_test.go` | update | Ausrichtung eines Map-Eintrags. |
-| `internal/application/port/outbound/log_test.go` | update | vier einzeilige Methoden werden auf je drei Zeilen umgebrochen (+8 Zeilen). |
-| `internal/application/usecase/retention/service_test.go` | update | Ausrichtung eines Feld-Kommentars. |
-| `test/integration/integration_test.go` | update | ein Doc-Kommentar mit einem Backtick-Paar; die Hunk-Zeilenzahl ist unverändert. |
 
 - **Fremder Träger, gemeldet statt geändert:** `docs/user/e2e-abdeckung.md`
   trägt Zeilen-Lokatoren `test/integration/*.go:<Zeile>` (Erzeugnis von `make
@@ -201,16 +222,26 @@ diff 3 -E 'gofmt' -- .claude/commands .harness/skills
 diff 0 -E 'Bestandsdateien außerhalb des Diffs' -- .claude .harness/skills harness AGENTS.md
 diff 37 -E 'fmt-check' -- .claude .harness/skills harness AGENTS.md README.md Makefile tools
 diff 2 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
+17cb4eb3 3 -E 'Bestandsdatei' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
+diff 3 -E 'Bestandsdatei' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
 ```
 
 Die drei Zeilen mit Stand `7b70b34a` sind am Start des Slice nachgemessen und
-stimmen (Exit 0); die Zeile mit Stand `17cb4eb3` (Parent des Slice) und die mit
+stimmen (Exit 0); die Zeilen mit Stand `17cb4eb3` (Parent des Slice) und die mit
 Stand `diff` (Arbeitsbaum) messen die fremden Träger, die von den „sechs
-Bestandsdateien“ sprechen: je ein Satz in `slice-transformationen-e2e-wirkung`
-und `slice-antragsqueue-lesefehler-failed`, an beiden Ständen gleich. Sie sind
-gemeldet, nicht mitgeändert (fremde Dateien); der Satz in
+Bestandsdateien“ sprechen. Das Muster der Zeilen vier und fünf ist zeilenweise
+und trifft nur Sätze, die die Wörter in einer Zeile tragen: je ein Satz in
+`slice-transformationen-e2e-wirkung` und `slice-antragsqueue-lesefehler-failed`,
+an beiden Ständen gleich. Das Nebenwort `Bestandsdatei` in den Zeilen sechs und
+sieben trifft zusätzlich den Satz über einen Zeilenumbruch in
+`docs/plan/planning/welle-transformationen.md` (Zeilen 304 und 305, „Formatierung
+der sechs“ / „Bestandsdateien“), an beiden Ständen gleich; das sind drei Träger.
+Sie sind gemeldet, nicht mitgeändert (fremde Dateien; Frist: die Closure dieses
+Slice, der Planner zieht nach oder benennt den Träger mit Adresse); der Satz in
 `slice-transformationen-e2e-wirkung` begründet eine Kante, die mit `done/` dieses
-Slice erfüllt ist — Träger der Planner-Closure.
+Slice erfüllt ist. Der Satz in `welle-transformationen` beschreibt den Umfang
+dieses Slice (Formatierung der sechs Bestandsdateien, Kante zu `e2e-wirkung`) und
+bleibt nach `done/` wahr; er trägt keine offene Kante.
 
 | Träger | Befund | Behandlung |
 |---|---|---|
