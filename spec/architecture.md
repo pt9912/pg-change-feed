@@ -399,9 +399,10 @@ zwischen Snapshot-Export und Lesesperre umgeschrieben, endet der Run `failed`
 mit der Klasse `transient` und ohne Change, und ein neuer Antrag beginnt neu.
 Ist eine Transformationsregel der Tabelle auf die Spalten des Snapshots nicht
 anwendbar, endet der Run `failed` mit der Klasse `schema`, bevor die erste Zeile
-gelesen wird; der Erfassungspfad bleibt davon unberührt. Der Snapshot-Leser trägt den Snapshot-Export, den Import, die Lesesperre und
-die Umschreib-Prüfung; der Worker arbeitet
-auf eigenen Verbindungen, der Capture-kritische Pfad bleibt unberührt.
+gelesen wird; der Erfassungspfad bleibt davon unberührt. Der Snapshot-Leser
+trägt den Snapshot-Export, den Import, die Lesesperre und die Umschreib-Prüfung;
+der Worker arbeitet auf eigenen Verbindungen, der Capture-kritische Pfad bleibt
+unberührt.
 Backfill-Changes gehen nicht in den Live-Stream: sie werden über den
 bestehenden Lesezugriffsweg gelesen; das Wecksignal nach dem Commit wird über
 denselben Port gesendet wie das der WAL-Changes.
