@@ -26,7 +26,7 @@ Erstbelegs).
 
 **Berührte Spec-Stellen:** — (Harness-Regel und Werkzeug; keine Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers zur Kennungsdichte in
 Code-Kommentaren. **Datum:** 2026-09-26.
