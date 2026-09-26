@@ -242,7 +242,9 @@ func (a *Assembler) TransactionOpen() bool {
 // NATS-Notify-Pfad). Der Regelstand der Bindung (`LH-FA-CFG-007`) wird vor
 // jeder Serialisierung gegen die Spalten der Relation geprüft; eine nicht
 // anwendbare Regel endet als `ErrTransformationNotApplicable`, ohne dass ein
-// Bild entsteht oder die Sequenz vorrückt.
+// Bild entsteht oder die Sequenz vorrückt. Die Kollision zweier Regeln auf
+// denselben Zielnamen meldet erst die Bild-Konstruktion, nach dem Vorrücken
+// der Sequenz; auch sie endet als `ErrTransformationNotApplicable`.
 func (a *Assembler) change(event decode.Change) (*model.Change, error) {
 	binding, activated := a.lookupBinding(event.Relation.QualifiedName())
 	if !activated {
