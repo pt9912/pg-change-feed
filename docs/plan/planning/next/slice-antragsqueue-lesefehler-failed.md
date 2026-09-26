@@ -34,7 +34,7 @@ Entscheidung des Architect-Zugs im Beobachtungs-Register:
 (`cdc.administration_request`: die Zeilen zu `column_name` und zu den
 Transformations-Antragsarten, die Fehlertext-Tabelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent.
 
 **Autor:** Planner-Agent, Auftrag des Auftraggebers (Architect-Zug zu
 `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`). **Datum:** 2026-09-26.
