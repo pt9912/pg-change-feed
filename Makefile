@@ -133,7 +133,7 @@ test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-L
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-fmt-check-tests.sh
 
 .PHONY: test-command-guard
-test-command-guard: ## Tabellentest gegen den PreToolUse-Guard .claude/hooks/pretooluse-command-guard.sh (Wegwerf-Repo im Temp-Verzeichnis, netzlos, kein Gate; Prüfling per GUARD=<Datei> übersteuerbar; harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
+test-command-guard: ## Tabellentest gegen den PreToolUse-Guard .claude/hooks/pretooluse-command-guard.sh (Wegwerf-Repo im Temp-Verzeichnis, netzlos, kein Gate; Prüfling per GUARD=<Datei>, Maskierer per MASKER=<Datei> übersteuerbar; harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
 	@bash tools/harness/run-command-guard-tests.sh
 
 .PHONY: test-rollout-restore

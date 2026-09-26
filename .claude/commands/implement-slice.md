@@ -45,8 +45,10 @@ emittierten Durchsetzungsschicht):
   `docs/reviews/**` wird gescannt — Kennungen dort verlinken.
 - **Neue Artefakte per `cp` aus den vendored Templates** (`.harness/baseline/<tag>/templates/…`),
   dann ausfüllen — keine handgeschriebenen oder repo-gepflegten Template-Kopien.
-- **Commit via Message-Datei** (`git commit -F <datei>`): der Guard scannt den Command-String,
-  also nie eine Commit-Message inline, die ein geblocktes Tool-Token enthält.
+- **Commit via Message-Datei** (`git commit -F <datei>`): der Guard liest den Command-String
+  quote-bewusst (ein Tool-Token in den Anführungszeichen einer Inline-Message blockt nicht), ein
+  Heredoc-Text oder ein unbalanciertes Anführungszeichen (Apostroph) blockt aber wieder ein
+  Tool-Token darin — die Message steht in einer Datei, nie inline.
 - **Commit-Message-Kennungen.** **Struktur-IDs (`SPEC-*`, `ARC-*`) gehören NICHT in die
   Commit-Message** (`AGENTS.md` §5) — nur `LH-*`/`ADR-*` · seit slice-003. Mechanisch
   getragen: `make commit-traceability` prüft je Message der letzten 5 Commits beide
@@ -241,11 +243,13 @@ ist eine Lifecycle-Rücksprungkante (11).
     Architect-Verdikt) — die Unterscheidung ist Satz-Subjekt-Urteil, kein Zeichenkettenmuster;
     dieser Schritt bleibt Disziplin.
     **Konjunktiv über die verworfene Alternative** (`BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar`):
-    derselbe Lauf auf die hinzugefügten Kommentarzeilen des Diffs —
-    `git diff -U0 <Basis> -- '*.go' | grep -nE '^\+.*//.*(wäre|würde|hielte|hätte|sonst|statt)'`.
+    derselbe Lauf auf die hinzugefügten Kommentarzeilen des Diffs, in Go (`//`) und in Skripten
+    (`#`; die Kommentare dort sind transliteriert, „waere“, „wuerde“) —
+    `git diff -U0 <Basis> -- '*.go' '*.sh' '*.awk' | grep -nE '^\+.*(//|#).*(wäre|waere|würde|wuerde|hielte|hätte|haette|sonst|statt)'`.
     Jeder Treffer bekommt ein Urteil: die Zusage der Stelle im Indikativ (zulässig) oder die
     Beschreibung einer verworfenen Alternative (umformulieren); Mutationsbeschreibungen in
-    Test-Godocs und normale Zweige („sonst auf stdout“) sind zulässig.
+    Test-Godocs und normale Zweige („sonst auf stdout“, `else`-Zweige in Shell-Kommentaren)
+    sind zulässig; Treffer ohne Kommentar (`${#var}`, `$#`) sind keine.
     **Grenze dieser Selbstprüfung** (4. Beleg, `slice-052`, der Architect-Verdikt-Nachtrag
     zur Slice-Chronik in Code-Kommentaren, 4. Auftreten): Dieser Schritt
     läuft im selben Kontext, der den Kommentar geschrieben hat — genau die Konstellation,
