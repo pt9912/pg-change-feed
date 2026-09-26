@@ -44,6 +44,13 @@ belegt ist.
 
 - **Die deterministische Startreihenfolge** — `start-reihenfolge` liefert sie;
   dieser Slice belegt ihre Wirkung am System und ändert `Run` nicht.
+- **Die Frist des Vorlaufs und der Beginn des Replikationsstroms** —
+  [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) liefert sie
+  ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+  Festlegung 1 bis 3: `START_REPLICATION` in `Stream.Run`, Vorlauf 30 s je
+  Prozessstart, bei Ablauf startet der Stream und der Antrag bleibt `pending`);
+  dieser Slice belegt die Abhilfe am Startpfad, den jener Slice ändert, und
+  ändert weder Frist noch Aufrufstelle.
 - **Ein allgemeiner Recovery-Weg für Schema-Fehler** —
   `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×): der Beleg deckt
   die Abhilfe für **diese** Ursache; die Frage, wie ein Betreiber nach einer
@@ -70,12 +77,15 @@ belegt ist.
   Unit-Lauf grün (Herkunft des Kontexts `streamCtx`, Rumpf von
   `startAdministration`, Inhalt der Wertegruppe, Aufruf in toter Verzweigung;
   Verifikation zu `slice-transformationen-start-reihenfolge` §4, V9b, V10b, V12,
-  V14, **übernommen**). Der Lauf dieses Slice ist der erste, der einen beim
-  Prozessstart `pending` stehenden Antrag über einen Prozessstart legt: bisher
-  legt kein Runner-Schritt einen solchen Antrag (`git grep -n "'pending'" --
-  tools/harness/run-integration-tests.sh test/integration` trifft keine Zeile,
-  gemessen in der Closure von `slice-transformationen-start-reihenfolge`; der
-  Schritt (b) unten ist genau dieser Fall).
+  V14, **übernommen**). Bis zur Closure von `slice-transformationen-start-reihenfolge`
+  legte kein Runner-Schritt einen beim Prozessstart `pending` stehenden Antrag
+  (`git grep -n "'pending'" -- tools/harness/run-integration-tests.sh
+  test/integration` traf keine Zeile, gemessen in jener Closure). Die erste
+  Runner-Phase mit einem solchen Antrag (Antragsart `enable`, an einer Sperre
+  wartend) liefert [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md)
+  vor diesem Slice; der Lauf dieses Slice legt als erster einen
+  `remove_transformation`-Antrag der Abhilfe über einen Prozessstart (der
+  Schritt (b) unten).
 
 ## 2. Definition of Done
 
@@ -179,11 +189,17 @@ Reihenfolge in anderen Worten als das Muster):
 
 **Start** (`next` → `in-progress`): wenn
 `slice-transformationen-start-reihenfolge`,
-`slice-transformationen-e2e-wirkung` und `slice-capture-leerlauf-quellbelege`
-in `done/` liegen (der letzte trägt den Belegaufbau „Fehlerschwelle erreicht,
-Container endet“ im selben Runner und geht der zweiten Container-Ende-Grenze
-dieses Slice voraus) und kein anderer Slice in `in-progress/` liegt
-(WIP-Limit 1). Der Start-Trigger ist eine
+`slice-transformationen-e2e-wirkung`, `slice-capture-leerlauf-quellbelege` und
+[`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) in `done/` liegen
+(`slice-capture-leerlauf-quellbelege` trägt den Belegaufbau „Fehlerschwelle
+erreicht, Container endet“ im selben Runner und geht der zweiten
+Container-Ende-Grenze dieses Slice voraus; `slice-start-vorlauf-grenze` ändert
+den Startpfad, den dieser Slice belegt: Frist des Vorlaufs und Beginn des
+Stroms in `Stream.Run`, [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md);
+Kante aus dem Verdikt
+[`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+§9.1) und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1). Der
+Start-Trigger ist eine
 **Vorab**-Bedingung: die Ordnung steht, bevor ihre Wirkung gemessen wird
 (`BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft`, offen, 2×).
 
@@ -233,16 +249,24 @@ Lerneintrag geschrieben.
 - **Eine neue Testfunktion fällt still aus dem Runner**
   (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen
   durch:* der `-run`-Abgleich. **Ausgang:** *(bei Closure)*
-- **Der Vorlauf trägt keine Zeitgrenze.** Der Beleg (b) und (c) fährt einen
+- **Die Frist des Vorlaufs ändert den Startpfad, den dieser Slice belegt.**
+  Entschieden ist die Zeitgrenze
+  ([`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
+  Umsetzung in [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md),
+  das vor diesem Slice in `done/` liegt): der Vorlauf trägt 30 s je
+  Prozessstart (Wert **hergeleitet**, nicht gemessen), bei Ablauf startet der
+  Stream, und der unterbrochene Antrag und jeder dahinter bleiben `pending`;
+  eine Anzeige des Wartens in `diagnose` und `--healthcheck` gibt es nicht
+  (Warn-Eintrag im Log, Festlegung 4). Der Beleg (b) und (c) fährt einen
   kurzen Antrag (`cdc.remove_transformation`); er belegt die Ordnung und ihre
-  Folge, nicht das Verhalten des Prozessstarts bei einem lang laufenden Antrag
-  oder einer langen Queue, und nicht die Sichtbarkeit des Wartens in `diagnose`
-  und `--healthcheck` (Register: `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`;
-  Frage (e) in [welle-transformationen](../welle-transformationen.md) §5, ein
-  Architect-Verdikt vor der Closure der Welle). Entscheidet das Verdikt eine
-  Zeitgrenze oder eine Anzeige im Startpfad, ändert das den Startpfad, den dieser
-  Slice belegt; der Bericht nennt den Stand des Verdikts. **Ausgang:** *(bei
-  Closure)*
+  Folge für einen Antrag, den der Vorlauf innerhalb der Frist erreicht, nicht
+  das Verhalten bei einem Antrag davor, der länger als die Frist läuft: dann
+  startet der Stream mit dem bisherigen Regelstand, und ist die Regel nicht
+  anwendbar, endet der Prozess wieder mit `schema` (Folge der ADR,
+  §Konsequenzen; hergeleitet, kein Lauf). Der Bericht nennt diese Grenze und
+  den Stand von `slice-start-vorlauf-grenze` (Register:
+  `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`, Ausgang *geplant*).
+  **Ausgang:** *(bei Closure)*
 
 ## 7. Closure-Notiz
 
@@ -266,10 +290,11 @@ Lerneintrag geschrieben.
 — kein Anlass zur Ausdifferenzierung.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
-`BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` (offen, 1×, einschlägig —
-Risiko §6 letzter Punkt), `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`
-(offen, 3×, einschlägig — die Aufrufstelle des Vorlaufs ist nur über Quelltext
-gebunden, §1), `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×, einschlägig —
+`BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` (2×, Ausgang *geplant* →
+`slice-start-vorlauf-grenze`, einschlägig — Risiko §6 letzter Punkt),
+`BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke` (4×, Ausgang *geplant* →
+`slice-start-vorlauf-grenze`, einschlägig — die Aufrufstelle des Vorlaufs ist
+nur über Quelltext gebunden, §1), `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×, einschlägig —
 Abgrenzung §1; dieser Slice liefert den Beleg für **eine** Ursache),
 `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×, einschlägig —
 Start-Trigger), `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`

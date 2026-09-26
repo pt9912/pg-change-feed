@@ -197,6 +197,15 @@ realer `make test-replication`-Lauf + Closure-Notiz mit Lerneintrag geschrieben.
   die ADR nennt sie als Startwerte mit Nachschärfe-Trigger, und der Bericht
   trennt Messung von Setzung (`BEO-PGC/backfill-adapter-startwerte-ohne-messung`,
   1×). **Ausgang:** *(bei Closure)*
+- **Der Ort des Aufrufs `START_REPLICATION` wandert vor diesem Slice.**
+  [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) verlegt den
+  Aufruf von `NewStream` nach `Stream.Run` (`ADR-0128` Festlegung 1); der Fehler
+  „Slot noch aktiv“ (SQLSTATE 55006) entsteht danach in `Run`, nicht mehr im
+  Verbindungsaufbau, und die Beispiele in §1, §2 und §3 (Adapter `receive`,
+  `TestStreamRestartsOnExistingSlot`) sind am Stand nach jenem Slice zu lesen.
+  *Erwartet, zu belegen durch:* der Suchlauf in §3 an beiden Ständen und die ADR
+  zur Wiederholungsform, die den Ort am Start nennt. **Ausgang:** *(bei
+  Closure)*
 - **Kommentare an `Run` behaupten mehr, als der Code trägt**
   (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, 3×, verkörpert:
   Zusage-Klausel im Reviewer-Skill). *Erwartet, zu belegen durch:* der Reviewer

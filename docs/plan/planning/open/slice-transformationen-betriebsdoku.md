@@ -204,18 +204,27 @@ ihrem Ursprung ([`AGENTS.md`](../../../../AGENTS.md) §3.12):
   eines Schlüssels ist kein Schlüssel“; das Zeichenpaar: Negativbefund des
   Reviews, **übernommen**).
 - **Größenordnung der Suche.** Die Suche einer Zuordnung ist linear in der Zahl
-  der Paare (hergeleitet aus dem Quelltext von `lookupMappedValue`). Gemessen
-  vom Verifier, **übernommen**, nicht nachgemessen (Wegwerf-Benchmark in einer
-  Kopie, Schlüssel am Ende der Zuordnung als ungünstigster Fall, ohne `-race`,
-  i9-13900H): 80 ns bei 10 Paaren, 6,8 µs bei 1000 Paaren, 0,72 ms bei 100 000
-  Paaren je Wert und Regel; die Kosten fallen je Wert einer Spalte mit Regel an,
-  je Zeile eines Backfill-Blocks und je Change im Erfassungspfad. Das Handbuch
-  nennt die Zahlen als Größenordnung mit diesen Bedingungen oder misst sie am
-  Start nach. **Ob die Zahl der Paare eine Obergrenze braucht, ist eine
-  Spec-Frage** ([`SPEC-030`](../../../../spec/pflichtenheft.md) bindet sie nicht
-  nach oben); Adresse: `welle-transformationen` §5, Fragen für den nächsten
-  Architect-Zug, Punkt (d). Das Handbuch führt keine Obergrenze, solange die Spec
-  keine führt.
+  der Paare (hergeleitet aus dem Quelltext von `lookupMappedValue`). Die Zahlen
+  sind **gemessen** im Architect-Zug (Verdikt
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  §6 und §1 Zeile M1; Wegwerf-Benchmark in einer Kopie von `internal/domain`,
+  Schlüssel fehlt als ungünstigster Fall, ohne `-race`, `-benchtime 300x
+  -count 3`, i9-13900H, Bereiche über die drei Läufe): 54 bis 123 ns bei 10
+  Paaren, 6,5 bis 6,7 µs bei 1000 Paaren, 65 bis 80 µs bei 10 000 Paaren, 0,66
+  bis 0,70 ms bei 100 000 Paaren je Wert und Regel; die Kosten fallen je Wert
+  einer Spalte mit Regel an, je Zeile eines Backfill-Blocks und je Change im
+  Erfassungspfad. Die früheren Werte des Verifiers (80 ns, 6,8 µs, 0,72 ms bei
+  10, 1000 und 100 000 Paaren) sind **übernommen** und bestätigen die
+  Größenordnung; das Handbuch nennt die Zahlen des Verdikts mit diesen
+  Bedingungen. **Ob die Zahl der Paare eine Obergrenze braucht, ist
+  entschieden:** benannter Verzicht, keine Änderung an
+  [`SPEC-030`](../../../../spec/pflichtenheft.md) (Verdikt §6; Trigger: ein
+  Betreiber meldet ein Wachstum von `cdc_capture_lag` mit einer aktiven
+  `map_value`-Regel, oder eine Regel mit mehr als 10 000 Paaren steht in der
+  Queue). Das Handbuch führt keine Obergrenze; die abgeleitete Last der Stufe
+  „groß“ (1000 Changes/s, zwei Suchen je Change: 1,3 % eines Kerns bei 1000
+  Paaren, 13 bis 16 % bei 10 000, über 100 % bei 100 000) steht dort nur mit dem
+  Vermerk **abgeleitet**.
 - **Rückfall auf einen älteren Binärstand** (die Grenze steht oben im
   Handbuch-Punkt zur Dauerhaftigkeit). Erprobt ist der erste Schritt der
   Herleitung (Verifikations-Report §7, **übernommen**): am Parent-Stand von
@@ -223,6 +232,64 @@ ihrem Ursprung ([`AGENTS.md`](../../../../AGENTS.md) §3.12):
   `applied`-Zeile mit `map_value` den Fehler `Regelstand: Regel "r": unbekannter
   Regeltyp: map_value`. Dass dieser Fehler Prozessstart und jeden Regel-Antrag der
   Quelle anhält, bleibt hergeleitet; der Prozessstart ist nicht gefahren.
+
+**Übergabe aus dem Architect-Verdikt** [`architect-verdict-welle-transformationen-offene-fragen`](../../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+(§9.3, Planner-Nachzug vom 2026-09-27, Frist: vor dem Start dieses Slice,
+gezogen). Der Handbuch-Abschnitt trägt fünf Aussagen, jede mit ihrem Ursprung
+([`AGENTS.md`](../../../../AGENTS.md) §3.12); der Ursprung ist der Anker des
+Verdikts, dieser Plan erweitert ihn nicht:
+
+- **Wartezeit des Stream-Starts.** Ein hängender Antrag hält den Stream-Start
+  höchstens 30 s an (Frist des Vorlaufs,
+  [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+  Festlegung 2). Der Wert 30 s ist **hergeleitet** (die Hälfte der
+  Fehlergrenze von 60 s des Capture-Abstands), nicht gemessen; die Aussage
+  „höchstens 30 s“ steht im Handbuch mit der **Messung des Rundlaufs**, den
+  [`slice-start-vorlauf-grenze`](slice-start-vorlauf-grenze.md) liefert (gedruckte
+  Zeile des Laufs), nicht als Herleitung — liegt dieser Beleg am Start nicht
+  vor, steht die Aussage als Zusage der ADR. Der Healthcheck bleibt über die
+  Wartezeit gesund (Exit 0, Heartbeat-Alter höchstens 7,1 s): **gemessen** im
+  Architect-Zug an drei Läufen, **übernommen** (Anker: [`ADR-0128`](../../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+  §Gemessen, Läufe A bis C); eine Anzeige in `diagnose` gibt es nicht, der Warn-Eintrag im
+  Log trägt den Ablauf der Frist. Bei Ablauf bleibt der Antrag `pending`
+  (Festlegung 3); eine andere Antragsart als `enable` ist in den Läufen nicht
+  gefahren, die Gleichheit für jede Art ist **hergeleitet**.
+- **Größenordnung der Suche einer Zuordnung:** siehe den Punkt „Größenordnung
+  der Suche“ oben (Architect-Werte **gemessen**, Verifier-Werte **übernommen**,
+  Obergrenze: benannter Verzicht).
+- **Kosten der Lesung im Backfill.** Ein Backfill-Run liest den Regelstand und
+  den Ausschlussstand aus den `applied`-Zeilen aller Tabellen der Quelle, je
+  Block und vor dem Commit. **Gemessen** (Verdikt §3, Messung M2, PostgreSQL 18
+  im Container ohne Netz, synthetische Queue ohne Index außer dem
+  Primärschlüssel): die SQL-Lesung kostet 0,26 bis 0,31 ms bei 100 Zeilen der
+  Queue und 186 bis 201 ms bei 1 000 000 Zeilen; die Faltung der Regeln kostet
+  94 ms bei 100 000 Anträgen (M1), die Werte bei 30 000 und 300 000 gelesenen
+  Anträgen sind daraus **linear hochgerechnet**. **Abgeleitet:** etwa 8 % einer
+  Blockdauer von 0,12 bis 0,13 s bei 10 000 Zeilen der Queue einer Quelle, etwa
+  70 % bei 100 000 Zeilen (die Blockdauer ist aus dem Handbuch-Abschnitt
+  Backfill **übernommen**). Eine Queue realer Größe gibt es nicht (kein
+  Server-Tag trägt die Antragsarten): die Messung ist synthetisch, und die
+  Aussage endet dort, wo sie gemessen ist. Betreiber-Hinweis: die Zahl der
+  Antrags-Zeilen ist nicht begrenzt; ab rund 10 000 Zeilen einer Quelle kostet
+  die Lesung je Block messbar (Trigger und Behebung: Verdikt §3).
+- **„Alle Wege dieselbe Form“ nur mit der gemessenen Menge.** Gemessen ist:
+  eine per `cdc.set_transformation` beantragte `rename_column`- und
+  `map_value`-Regel prägt eine danach **eingefügte Zeile** (INSERT, Neu-Bild) auf
+  den fünf Wegen (Abdeckungstabelle
+  [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md), Phase
+  „Transformationen-Happy-Path (fünf Zustellwege)“); UPDATE, DELETE und das
+  Alt-Bild sind über `cdc.changes` belegt
+  (`TestE2ETransformationRulesShapeBothImages`). Für UPDATE, DELETE und das
+  Alt-Bild auf den vier weiteren Wegen steht das Handbuch als **hergeleitet**
+  (zwei Glieder: die Regel wirkt im `Assembler` auf beide Bilder; die Adapter
+  bilden die Bilder unverändert ab, Verdikt §4 — am NATS-Publisher ist das
+  zweite Glied nur gelesen, kein Unit-Test mit einem Alt-Bild, das nicht `null`
+  ist).
+- **Bezugspunkt des Regelstands im Run.** Der Regelstand gilt ab dem Öffnen des
+  Snapshots des Runs — schon im Handbuch-Punkt zur Backfill-Beziehung oben
+  geführt (Festlegung des Implementers von
+  `slice-transformationen-backfill-pfad`, kein Spec-Satz), hier nicht
+  erweitert.
 
 ## 3. Plan (vor Code)
 
@@ -249,7 +316,9 @@ Antragsarten“, „die Sätze über Row-Image-Schlüssel und Fehlerklasse `sche
 
 **Start** (`next` → `in-progress`): wenn `slice-transformationen-e2e-abhilfe`
 in `done/` liegt (die Wirkung und die Abhilfe sind belegt, bevor das Handbuch
-sie beschreibt), `slice-sdk-regel-realserver-e2e` in `done/` liegt (Kante: der
+sie beschreibt; sein eigener Start-Trigger setzt `slice-start-vorlauf-grenze`
+in `done/` voraus, also liegt auch dessen Rundlauf zur Wartezeit des
+Stream-Starts vor), `slice-sdk-regel-realserver-e2e` in `done/` liegt (Kante: der
 SDK-Beleg von DoD Punkt 1 ist dann am realen Server erprobt) und kein anderer
 Slice in `in-progress/` liegt (WIP-Limit 1). Letzter Slice der Welle.
 
