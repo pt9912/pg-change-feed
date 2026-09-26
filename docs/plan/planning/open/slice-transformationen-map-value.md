@@ -145,6 +145,41 @@ Umfang; Herkunft: Plan des Slice §6 und Review-Report
   belegt, dass sie an anderer Stelle getragen ist. Beleg des heutigen Verhaltens: Review-Report
   F-8 (hergeleitet aus dem Quelltext, nicht erprobt).
 
+**Übergabe aus `slice-transformationen-backfill-pfad`** (gemeldet, kein zusätzlicher
+Umfang; Herkunft: Review-Report Finding F-3 und Verifikations-Report V-2 dieses Slice, gelesen
+am Stand `bdff5a54`; Frist der Meldung: der Start dieses Slice). Die Fundstellen sind gemessen
+mit `git grep -n sameSet -- internal` (sechs Trefferzeilen in
+`internal/application/usecase/backfill/service.go`: Kommentar, Definition und vier Aufrufe) und
+`git grep -n 'ohne Fall in diesem Test' -- internal` (zwei Treffer):
+
+- **Der Run vergleicht Regeln als Menge über `==`.** `sameSet[T comparable]` in
+  `internal/application/usecase/backfill/service.go` vergleicht den Regelstand, den `copyBlocks`
+  je Block liest, mit dem Stand zu Beginn des Runs; die Funktion wird mit `model.Transformation`
+  instanziiert, dessen vier Felder Zeichenketten sind (`transformation.go`), und ihr Doc-Kommentar
+  nennt den Typ „über alle seine Felder vergleichbar“. Ein Regeltyp mit dem Objekt `values`
+  (Map oder Slice als Feld) macht `Transformation` unvergleichbar; der Bau bricht dann am
+  Übersetzer — sichtbar, nicht still.
+- **Der Konflikt mit DoD Punkt 2 und §4 ist real.** DoD Punkt 2 verlangt einen Diff ohne
+  `internal/application/usecase/`, §4 führt eine Änderung dort als Rückführung `in-progress` →
+  `open`; der Vergleich des Runs liegt in `internal/application/usecase/backfill/`. Der Slice
+  löst den Konflikt in seinem eigenen Plan, bevor Code entsteht; die Lösung bleibt dem Slice
+  überlassen. Zwei Wege, nicht entschieden: `Transformation` bleibt vergleichbar (etwa `values`
+  als kanonische Zeichenkette im Feld — kein Diff im Use Case) oder der Run vergleicht über
+  eine Kennung bzw. Kanonisierung, die die Domäne liefert (Diff im Use Case, dann mit
+  Ausnahme in DoD Punkt 2 und Plan-Nachzug).
+- **Die zwei Fixture-Schalter der Regeltypen liegen in den von DoD Punkt 2 ausgenommenen
+  Verzeichnissen.** `parityRule` (`internal/bootstrap/backfill_image_parity_test.go`, der
+  Paritätstest des Backfill-Pfads, Ort aus dieser Closure) und `ruleFor`
+  (`internal/application/usecase/backfill/transformation_test.go`, der Eigenschaftstest im
+  Run) zählen die Regeltypen über `model.TransformationKinds()` auf und brechen mit
+  `Regeltyp … ohne Fall in diesem Test` ab, sobald ein Typ dort steht, für den der Schalter
+  keinen Fall trägt. Beide brauchen einen `map_value`-Fall; die Zeile „Paritätstest des
+  Backfill-Pfads … prüfen“ in der Tabelle oben ist damit ein Test-Diff in `internal/bootstrap/`
+  und `internal/application/usecase/backfill/`, den DoD Punkt 2 (Klammer „außer Testdateien,
+  die die Regeltypen aufzählen“ nur für `internal/adapters/**`) als Ausnahme nennen muss; die
+  Aussage „ohne Strukturänderung“ des Paritätstests (DoD Punkt 3) gilt für die Schleife über die
+  Domänen-Menge, nicht für den Fixture-Schalter.
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „die Menge der
 Regeltypen“ (ein Typ → zwei); beide Stände gemessen):**
 

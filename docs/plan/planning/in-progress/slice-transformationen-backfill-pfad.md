@@ -141,17 +141,17 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       dass Regeln auch für einen Backfill gelten, steht mit den übrigen im
       Handbuch-Abschnitt von `slice-transformationen-betriebsdoku` (Adresse in
       dessen §2).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
       eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
-      der Closure der Welle
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+      der Closure dieses Slice (§7) und zusätzlich von der Closure der Welle
       [welle-transformationen](../welle-transformationen.md) (die Roadmap führt
       sie unter *Offene Wellen*, das Ereignis kann eintreten).
 
@@ -244,7 +244,7 @@ und Plan des Slice §6, gelesen am Stand `2c22334f`):
 **Festlegungen des Implementers (Semantik der Regelstand-Lesung im Run):**
 
 - **Der Stand des Runs ist der Stand nach dem Öffnen des Snapshots.** Die Lesung zu Beginn (einmal je Run, vor dem ersten `NextBlock`, vor `Begin`) ist Grundlage der Anwendbarkeitsprüfung und der Vergleichsstand; eine Regel, die zwischen Antrag und Start des Runs gesetzt wurde, gilt für den Run. Ein Antrag während des Runs endet ihn mit `configuration`, sobald eine der folgenden Lesungen (je Block, unmittelbar vor dem Commit) ihn sieht ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 5).
-- **Kosten der Lesung (benannte Grenze, gemessen nicht).** Jede Lesung liest die `applied`-Zeilen der zwei Transformations-Antragsarten aller Tabellen der Quelle (Statement `SelectAppliedTransformationRequests`, ohne Tabellenfilter); ein Run liest den Regelstand `Blockzahl + 2`-mal, den Ausschlussstand `Blockzahl + 1`-mal (`DefaultBlockSize` 1000, `internal/adapters/driven/postgressnapshot/snapshot.go`). Die Kosten eines Runs sind damit Zeilen der Queue der Quelle mal `Blockzahl + 2` — abgeleitet, nicht gemessen; ein tabellenbezogener Lesezugriff änderte den Port (`TransformationPort`, Adapter, Fakes) und gehört in einen eigenen Plan, falls die Queue einer Quelle in die Größenordnung der Blockzahl wächst. Die Grenze steht im Doc-Kommentar von `copyBlocks`.
+- **Kosten der Lesung (benannte Grenze, gemessen nicht).** Jede Lesung liest die `applied`-Zeilen der zwei Transformations-Antragsarten aller Tabellen der Quelle (Statement `SelectAppliedTransformationRequests`, ohne Tabellenfilter); ein Run liest den Regelstand `Blockzahl + 2`-mal, den Ausschlussstand `Blockzahl + 1`-mal (`DefaultBlockSize` 1000, `internal/adapters/driven/postgressnapshot/snapshot.go`). Die Kosten eines Runs sind damit Zeilen der Queue der Quelle mal `Blockzahl + 2` — abgeleitet, nicht gemessen; ein tabellenbezogener Lesezugriff änderte den Port (`TransformationPort`, Adapter, Fakes) und gehört in einen eigenen Plan, falls die Queue einer Quelle in die Größenordnung der Blockzahl wächst. Die Zahl der Lesungen steht im Doc-Kommentar von `copyBlocks`, die Kennzeichnung „abgeleitet, nicht gemessen“ steht hier, nicht im Kommentar; die Formel gilt ab einem Block (eine leere Tabelle endet ohne Schreibtransaktion: der Regelstand wird einmal, der Ausschluss nie gelesen). Adresse der Grenze: §6, Risiko „Kosten der Lesung je Block“.
 - **Klasse der Faltungsfehler im Run:** `internal` (Rückfall von `classifyError`); der Fall ist mit einem Test gebunden (`TestExecuteUnreadableAppliedRowEndsRunAsInternal`, Eingabeseite: der reale Fehler von `model.FoldTransformations` an einer nicht lesbaren Regelform, je Aufrufstelle der Lesung).
 - **Leere Tabelle:** die Prüfung der Anwendbarkeit läuft auch dann (sie hängt an Regel- und Spaltenmenge, nicht an einer Zeile, [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 2): ein Run über eine leere Tabelle mit nicht anwendbarer Regel endet `failed`/`schema`.
 
@@ -352,23 +352,50 @@ geschrieben.
   neben der Domänen-Funktion des Erfassungspfads). *Erwartet, zu belegen
   durch:* der Suchlauf über die Aufrufer der Prüffunktion und Review
   ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
-  Fitness Function, Zeile „Review-Prüfpflicht“). **Ausgang:** *(bei Closure)*
+  Fitness Function, Zeile „Review-Prüfpflicht“). **Ausgang:** *entfallen* —
+  der Prüfkern `Transformation.CheckApplicable` steht einmal in der Domäne und
+  beide Pfade rufen ihn (Suchlauf `CheckApplicable\(` ohne Tests: Parent 2,
+  Diff 3, ein Aufrufer je Pfad; Review-Finding F-5 nennt die Zeile
+  „Review-Prüfpflicht“ erfüllt). Die Schleife über die Regeln samt Fehlertext
+  steht je Pfad (`checkTransformations` im Mapper, `checkRulesApplicable` im
+  Run): eine benannte Grenze ohne Register-Eintrag, weil beide Schleifen an
+  ihrer Eingabeseite gebunden sind (Reviewer M4–M7, Verifier M-D rot).
 - **Der Bild-Bau des Runs hat zwei Wege** (Ausschluss über Bild-Funktion, Regel
   über eine zweite Stelle). *Erwartet, zu belegen durch:* der Suchlauf (Zeile
-  1) und Review. **Ausgang:** *(bei Closure)*
+  1) und Review. **Ausgang:** *entfallen* — `BuildRowImage(` ohne Tests: 4 am
+  Parent und 4 im Diff, der eine Aufrufer im Run trägt den Regelsatz des
+  Blocks; der Review-Negativbefund findet keinen zweiten Erzeuger eines Row
+  Images; Ausschluss vor Regel im Run ist gebunden
+  (`TestExecuteRulesNeverLeakExcludedColumns`, Reviewer M19 rot).
 - **Fail-closed ist zu lasch für den Regelstand**: eine Regel, die zwischen
   zwei Blöcken gesetzt und wieder entfernt wird, hinterlässt Blöcke mit
   abweichender Form. *Erwartet, zu belegen durch:* der Negativtest der
-  Zwischenabweichung mit Mutation. **Ausgang:** *(bei Closure)*
+  Zwischenabweichung mit Mutation. **Ausgang:** *entfallen* —
+  `TestExecuteRuleStateChangeEndsRunAsConfiguration` bindet Vergleich je Block,
+  Vergleich vor dem Commit und Mengenvergleich (Reviewer M8–M11, Verifier
+  M-B und M-G rot). Grenze, im Doc-Kommentar von `copyBlocks` benannt: ein
+  zwischen zwei Lesungen gesetzter und wieder entfernter Stand ist unsichtbar,
+  weil der Stand keine Historie trägt; jeder Block entsteht mit dem Stand
+  seiner eigenen Lesung, der dem Stand zu Beginn gleicht (Review, Bewertung
+  der dritten Frage), kein Bild wird damit falsch gebaut.
 - **Der Paritätstest sitzt in einem Tier, das dieser Slice nicht fährt**
   (DB-gestützt). *Erwartet, zu belegen durch:* Lesen des Ortes am Start; liegt
   er im Replication-Tier, gehört `make test-replication` zur Closure.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — der Ort am Start gelesen: `TestImageParityWalAndBackfill`
+  liegt im Replication-Tier und ist regelunabhängig (unverändert); der
+  Regel-Fall `TestBackfillAndWALImagesAreByteEqualWithRules` liegt in
+  `internal/bootstrap` in `make test`. `make test-replication` gehört nicht
+  zur Closure und wurde nicht gefahren; der Diff berührt den Replication-Tier
+  nicht.
 - **Laufzeit von `make test-integration`** wächst mit der Backfill-Phase
   (`BEO-PGC/test-integration-retention-timing-flake`, verkörpert, 3×).
   *Erwartet, zu belegen durch:* ein realer Lauf; die Zahl trägt ihren Lauf
-  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). **Ausgang:** *(bei
-  Closure)*
+  ([`AGENTS.md`](../../../../AGENTS.md) §3.12 Instanz A). **Ausgang:**
+  *entfallen* — kein Zeitfehlschlag; gemessen 5 min 23 s (Reviewer, 11:11:19
+  bis 11:16:42) und 5 min 14 s (Verifier, 11:33:38 bis 11:38:52, `make image`
+  gegen den Layer-Cache eingerechnet), je ein Lauf am Stand `17d0048a` am
+  2026-09-26 (übernommen aus den beiden Reports). Der Zuwachs durch die Phase
+  ist nicht gemessen: kein Lauf des Parent-Stands.
 - **Fenster zwischen Regel-Setzbarkeit und Backfill-Bindung** (Übergabe aus
   `slice-transformationen-antragsweg-usecase`, dessen Risiko mit seiner Closure hierher
   wandert). Seit der Closure von `antragsweg-usecase` sind Regeln setzbar; ein Backfill-Run,
@@ -376,26 +403,52 @@ geschrieben.
   Formen ([welle-transformationen](../welle-transformationen.md) §5, Fenster ein Slice
   lang). *Erwartet, zu belegen durch:* der E2E-Beleg des dritten Liefer-Punkts (Backfill-Bestand
   einer Tabelle mit `rename_column`-Regel trägt den umbenannten Schlüssel) und die Benennung
-  des Fensters im Bericht. **Ausgang:** *(bei Closure: entfallen mit der Closure dieses Slice)*
+  des Fensters im Bericht. **Ausgang:** *entfallen mit der Closure dieses Slice* — der
+  E2E-Lauf trägt den Bestand mit umbenanntem Schlüssel `customer_name` (Werte
+  `RegelAlpha,RegelBeta`, Schlüsselmenge gleich der WAL-Change, gedruckt im Lauf des
+  Verifiers am Stand `17d0048a`); das Fenster bestand von der Closure von
+  `slice-transformationen-antragsweg-usecase` bis zu dieser.
 - **Kommentare zum Fehlerpfad des Runs behaupten mehr, als der Code trägt**
-  (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, offen, 2×).
+  (`BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad`, verkörpert, 5×).
   *Erwartet, zu belegen durch:* Review liest die Kommentare der neuen Zweige.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** *entfallen* — der Review fuhr die Zusagen der Kommentare am Code
+  nach („auch bei einer leeren Tabelle“, „bevor eine Zeile gelesen und bevor
+  die Schreibtransaktion geöffnet wird“, „Blockzahl plus zwei Lesungen“); kein
+  Auftreten, der Zähler bleibt 5×. Der Fund V-1 der Verifikation (die
+  Kennzeichnung „abgeleitet, nicht gemessen“ fehlt im Doc-Kommentar von
+  `copyBlocks`) trifft keine Zusage des Kommentars: der Kommentar nennt die Zahl
+  der Lesungen richtig; er ist das nächste Risiko.
+- **Kosten der Lesung je Block** (Verifikation V-1, Review F-1; Übergabe aus
+  `slice-transformationen-antragsweg-usecase`, dessen Risiko-Punkt „Kosten der
+  Regelstand-Lesung je Block“ hierher wanderte). Jede Lesung des Regelstands und
+  des Ausschlusses liest die `applied`-Zeilen der Transformations- und
+  Spalten-Antragsarten **aller** Tabellen der Quelle (ohne Tabellenfilter,
+  `SelectAppliedTransformationRequests`); ein Run liest den Regelstand
+  `Blockzahl + 2`-mal, den Ausschluss `Blockzahl + 1`-mal (abgeleitet, am Code
+  nachgezählt; der Test zählt fünf Lesungen des Regelstands bei drei Blöcken,
+  vom Review nachgezählt). Nicht gemessen sind die Kosten je Lesung an einer
+  Queue realer Größe; ein tabellenbezogener Lesezugriff änderte Port, Adapter und
+  Fakes. *Erwartet, zu belegen durch:* ein Architect-Verdikt mit Messung an einer
+  Queue realer Größe oder dem Folge-Slice des tabellenbezogenen Lesezugriffs.
+  **Ausgang:** *weiter offen* — Adresse: das Closure-Kriterium „Die Lesekosten des
+  Backfill-Runs sind entschieden“ in §3 der Welle
+  [welle-transformationen](../welle-transformationen.md); der Auslöser der
+  früheren Fassung („falls die Queue in die Größenordnung der Blockzahl wächst“)
+  ist durch die Messung im Verdikt ersetzt, weil eine Größenordnung vorab nicht
+  bestimmbar ist. Der Doc-Kommentar von `copyBlocks` trägt die Zahl der Lesungen
+  im Indikativ und die Ausdehnung auf alle Tabellen der Quelle; die Kennzeichnung
+  „abgeleitet“ steht in §3 dieses Plans (kein Code-Zug: die Verifikation sieht
+  keinen Fixrunden-Zwang).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag (Lerneintrag):** *(zu tragen bei Closure —
-  geschärfte Regel · neuer Sensor · benannte Spec-Lücke; ohne ihn kein
-  `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(je Anfall Beleg oder
-  „keine Beobachtung angefallen“ als notierte Antwort)*
-- **Folge-Slices:** *(zu tragen bei Closure)*
-- **Risiken aus §6:** *(je ein Ausgang)*
-- **Drei Paarungen:** dieser Slice gehört zu
-  [welle-transformationen](../welle-transformationen.md) (offen) — die Prüfung
-  läuft regelkonform bei deren Closure.
+- **Was hat funktioniert:** (1) Die Leser-Kette lief ohne Fixrunde: der Review nennt 0 HIGH, 0 MEDIUM, 0 LOW und 8 INFO, die Verifikation 0 HIGH, 0 MEDIUM, 3 LOW (V-1, V-2, V-4) und 4 INFO (übernommen aus den Reports). Der Review mutierte 21-mal an der Eingabeseite, 20 rot, die 21. — die Verdrahtungszeile `Transformations: activation` — grün; der Verifier wiederholte sieben Go-Mutationen (sechs rot, dieselbe Zeile grün) und fuhr die Zeile zusätzlich durch die E2E-Kette (`make image`, `make test-integration`: Exit 2 an der ersten Backfill-Phase, der Run bleibt `running`; übernommen aus dem Verifikations-Report, §4). (2) Die Mutationstabelle des Implementers (elf Zeilen, gezählt an §3) stimmte in ihren Zahlen mit den Läufen des Reviews überein (sieben Tests bei der Mutation des Tabellenschlüssels, neun Fälle bei der Abbildung auf `configuration`, vier Stellen bei der Klasse `internal`). (3) Das Suchlauf-Feld trug: `make suchlauf-nachmessen` meldete 24 stimmende Zeilen (Lauf des Verifiers, Exit 0), neun der zwölf Paare fuhr er von Hand nach, alle gleich. (4) Der reale Lauf trägt den Beleg des dritten Liefer-Punkts (gedruckt im Lauf des Verifiers am Stand `17d0048a`): ein Bestand von drei Zeilen mit `rename_column`-Regel liegt über `cdc.changes` und `GET /changes` mit dem Schlüssel `customer_name`; nach `exclude_column` auf `name` tragen vier Bilder weder `name` noch `customer_name` noch einen Wert von `name`; eine nicht anwendbare Regel endet den Run `failed` mit `schema` ohne Change, der Erfassungspfad läuft weiter; der neue Antrag nach dem Entfernen der Regel übernimmt zwei Zeilen in Rohform. Die Erwartung von [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 4 („ohne Prozessneustart“, dort *erwartet*) ist damit erprobt. (5) Die Übergabe-Blöcke der Vorgänger-Pläne (Stelle des Bild-Baus, Stelle der Fail-closed-Prüfung, Vorbedingung `CheckApplicable`, Klasse der Faltungsfehler) trafen am Code zu (Review, Negativbefund zum Plan).
+- **Was ging anders als geplant:** (1) **Plan-Drift ohne Widerspruch:** der Plan nannte keinen neuen Sentinel; die Abbildung auf `configuration` trägt `ErrTransformationStateChanged`, während [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 5 den Wortlaut an `ErrExclusionStateChanged` bindet — die Klasse ist die der ADR, Review und Verifikation lasen keinen Widerspruch (`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`, Zähler bleibt 2×, `state.md` nennt den Vorgang als kein Auftreten). (2) **Shell-Phase statt Go-Test** in `make test-integration` (die Plan-Zeile nennt die Nicht-Realisierung mit Grund); der Paritätstest liegt in `make test`, `make test-replication` lief nicht. (3) **Die Behauptung im Bericht des Implementers**, der Doc-Kommentar von `copyBlocks` trage die Kennzeichnung „abgeleitet, nicht gemessen“, traf nicht zu (Verifikation V-1: `git grep` nach `abgeleitet|gemessen` in der Datei ohne Treffer); die Kennzeichnung steht in §3 dieses Plans, der Kommentar nennt die Zahl der Lesungen und die Ausdehnung auf alle Tabellen der Quelle. Ein Lauf-Bericht ist kein Träger im Geltungsbereich von [`ADR-0083`](../../adr/0083-herkunft-von-aussagen-in-traegern.md) und der Kommentar sagt nichts Nicht-Getragenes: kein Register-Anfall. (4) **Die Register-Datei `state.md` des Eintrags zur Run-Klasse brach beim Move** (Link auf `open/`, Review F-7); der Implementer stellte sie auf die Kennung um. (5) **Umfang:** neun Commits bis zum Review-Report, 15 Dateien, +1330/−128 einschließlich der zwei Lifecycle-Moves (übernommen aus dem Verifikations-Report, Range `3973390e..17d0048a`). (6) **Die Coverage streut:** 85,10 % (Implementer und Verifier mit `make coverage-gate` allein) und 85,00 % (Reviewer in zwei Läufen, Verifier im Schritt von `make gates`), Schwelle 80 % — der Beleg je eines Laufs, übernommen aus den Reports, kein Ist-Stand. (7) **Der Handbuch-Träger nahm die Sendung nur dem Wort nach an** (Verifikation V-4): die Run-Abhilfe steht seit dieser Closure als committeter Text im Plan der Adresse. (8) **Die `diff`-Zeilen des Suchlaufs bewegten sich mit den Closure-Nachzügen nicht:** `make suchlauf-nachmessen` meldete am Arbeitsbaum der Closure 24 stimmende Zeilen (gemessen, Exit 0), obwohl die Closure Träger unter `docs/plan` ergänzt (die Sollwerte in §3 blieben unverändert).
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Neuer Sensor, gebaut und verkörpert.* Drei Träger binden, was vorher Zusage im Text war: `TestBackfillAndWALImagesAreByteEqualWithRules` (`internal/bootstrap`, zwölf Fälle Regeltyp × Regel-Spalte × Ausschluss, `make test`) bindet [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 für den Backfill-Pfad — beide Erzeuger erhalten denselben Regelsatz; `TestExecuteRulesNeverLeakExcludedColumns` (Backfill-Paket, neun Fälle, `make test`) bindet [`LH-QA-SEC-004`](../../../../spec/lastenheft.md) im Run; die Phase „Backfill-Regelstand“ des Runners von `make test-integration` bindet die Form am laufenden System und trägt die Verdrahtung. Anker: `BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill`, `state.md` (Beleg-Anker nachgezogen). Grenze: der Paritätstest prüft die Verdrahtung, nicht die Funktion — beide Seiten rechnet dieselbe `BuildRowImage`, eine gemeinsam falsche Funktion bliebe dort grün; sie tragen `rowimage_test.go` und der Eigenschaftstest im Run (Review, Negativbefund). *(b) Geschärfte Regel, Vorschlag an den Architect* (Verkörperung 3b, `v6.9.0` · `regelwerk/modul-08-agentenrollen.md` §Rollen-Sequenz für eine Welle, Schritt 3b; der Planner schärft `AGENTS.md` nicht selbst): die Nutzerregel „kein `sed -i`/`perl -pi`“ steht in keinem committeten Text (`git grep -n -i -E 'sed -i|perl -pi' -- .claude harness AGENTS.md .harness/skills`: kein Treffer) und wurde in diesem Vorgang von allen drei Rollen verletzt, jeweils ohne Wirkung auf das Repo (Ziele `/dev/null` und eine Scratch-Datei). `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` erreicht damit **3×** (`slice-backfill-speicher-untersuchung`, `slice-transformationen-antragsweg-usecase` und dieser Slice, je in einem Review-Report belegt); der Vorschlag steht in seiner `state.md`: `AGENTS.md` §3.1 nennt das in-place schreibende Host-Textwerkzeug als Verstoß und die Agenten-Prompts unter `.claude/agents/` verweisen darauf; ein Sensor ist ausgeschlossen (ein Werkzeugaufruf hinterlässt keine Signatur in der Datei). **Adresse: der Lese-Schritt der Closure von `welle-transformationen` und der nächste Architect-Zug, der `AGENTS.md` §3.1 berührt**; der Orchestrator beauftragt den Zug. Zusätzlich erreicht `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` mit V-4 den vierten Beleg (die Adresse trug das Stichwort, nicht den Ablauf); sein Ausgangs-Vorschlag Punkt (2) hätte den Fall am Absender gefangen, Adresse unverändert der Lese-Schritt der Welle-Closure. *(c) Benannte Lücken, mit Adresse.* Erstens: die Zusage „ein zweiter Regeltyp ohne Änderung am Wirkort“ ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 4, DoD Punkt 2 von `slice-transformationen-map-value`) rechnete den Run nicht mit: `sameSet[T comparable]` koppelt ihn an die Vergleichbarkeit von `model.Transformation`, und zwei Fixture-Schalter der Regeltypen liegen in Verzeichnissen, die DoD Punkt 2 ausnimmt; Adresse: der Block „Übergabe aus `slice-transformationen-backfill-pfad`“ in §3 von `slice-transformationen-map-value` (Frist der Meldung: dessen Start). Zweitens: die Kosten je Lesung des Regelstands je Block (§6, „weiter offen“); Adresse: das Closure-Kriterium in §3 der Welle. Drittens: der Zeitpunkt, ab dem ein Regelstand für einen Run gilt (ab dem Öffnen des Snapshots, Festlegung des Implementers, Review F-2), steht in keinem Spec-Satz und in keiner Entscheidung; Adresse: `slice-transformationen-betriebsdoku` §2 (das Handbuch führt das Ist-Verhalten als Zusage, nicht als Spec-Aussage). *(d) Gelernt, bei 1× keine Regel:* eine Zusage über die Kopplung an einen Folge-Slice („der Wirkort bleibt unverändert“) hängt an den Typen, über die der Wirkort **heute** vergleicht und iteriert; der Review fand sie durch Lesen der Instanziierung von `sameSet` — keine Mutation hätte sie gefunden, denn `make test` bleibt grün und der Fehler erscheint erst am Übersetzer des Folge-Slice.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei `evidence/slice-transformationen-backfill-pfad.md`, Zähler = Zahl der Dateien (gemessen mit `ls evidence | wc -l` am Stand dieser Closure). *Neue Belege:* `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` **4×** (V-4 LOW; offen, Schwelle erreicht, Vorschlag im `state.md`), `BEO-PGC/slice-pfad-als-link-in-berichten` **4×** (F-7 INFO, V-6 INFO; verkörpert — die benannte Grenze (3) der `structure`-Regeln trat ein, das Gate fing die Form am Move, keine Schärfung, Begründung im `state.md`). *Neuer Eintrag:* `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` **3×** (F-8 INFO; drei Belegdateien aus drei Vorgängen; Schwelle erreicht, Vorschlag und Adresse im `state.md`). *`state.md` nachgezogen ohne neue Datei:* `BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill` (Abbildung `schema`/`configuration` getragen, Beleg-Anker), `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab` (kein Auftreten, Zähler bleibt 2×). *Deckel-Fall ohne Datei, Finding-Kennung hier* (verkörpert ab 10×, vor dem Merge von Reviewer bzw. Verifier gefunden, Schwere ≤ LOW, bekannter Träger-Typ): F-3 und V-2 (`BEO-PGC/arbeit-ueberholt-stehenden-traeger`, Deckel bei 32×: `sameSet` und der Plan `slice-transformationen-map-value`, Träger-Typ fremder Plan). *Benannte Grenze, kein Register-Anfall:* F-4 und V-3 — die Verdrahtungszeile `Transformations: activation` ist in `make test` nicht gebunden (Mutation grün), im E2E rot; die Zusage „belegt am laufenden System“ ist gebunden. Zählte man sie zu `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Deckel bei 14×), wäre sie ein Deckel-Fall (INFO, vor dem Merge gefunden); der Träger-Typ „Verdrahtungszeile der Composition Root“ ist im Bestand der Klasse nicht belegt (gemessen: keine der 16 Belegdateien nennt `Verdrahtung` oder `wiring`), ein zweites Auftreten dieses Typs bekäme deshalb eine Datei. *Kein Register-Anfall:* V-1 (die Zahl der Lesungen im Doc-Kommentar ist eine Strukturaussage, an Code und Test gebunden; die Kennzeichnung trägt §3, das Risiko §6), F-1 und F-2 (Fragen an den Architect, Ausgang in §6), F-5 (konform), F-6 und V-5 (Coverage-Streuung als Lauf-Beleg), V-7 (übernommene Messungen, im Report benannt). *Kein Anfall:* `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` und `BEO-PGC/test-integration-retention-timing-flake` (§6), `BEO-PGC/test-runner-stiller-ausschluss` (die Phase ist eine Shell-Phase ohne `-run`-Muster). *Lese-Schritt der Closure von `welle-transformationen`:* aus diesem Slice erreicht neu `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` die Schwelle ohne Ausgang, `BEO-PGC/aufschub-adresse-nimmt-sendung-nicht-an` trägt den vierten Beleg (Vorschlag im `state.md`); die übrigen Einträge mit neuer Datei haben einen Ausgang.
+- **Folge-Slices:** keine angelegt. Übergaben mit Adresse (gemeldet, Frist: diese Closure, gezogen): `slice-transformationen-map-value` (`open/`) — der Übergabe-Block zu `sameSet`, dem Konflikt mit seinem DoD Punkt 2 und den zwei Fixture-Schaltern (V-2); `slice-transformationen-betriebsdoku` (`open/`) — §2 trägt die Run-Abhilfe nach [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Folgepflicht 4 (Klasse `schema` bei Nichtanwendbarkeit, `configuration` beim Wechsel des Regelstands, neuer `cdc.backfill_table`-Antrag, kein Neustart) und den Bezugspunkt des Regelstands im Run (V-4); die Welle [welle-transformationen](../welle-transformationen.md) — §3 trägt das Closure-Kriterium zu den Lesekosten des Runs (V-1, Review F-1). Die **Start-Bedingung von `slice-transformationen-map-value`** ist mit diesem Move erfüllt (gelesen in dessen §4: dieser Slice liegt nach dem Move in `done/`, in `in-progress/` liegt nur die Roadmap); der Plan ist bis auf den Übergabe-Block nicht geändert.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Entfallen:* Prüfung steht zweimal (Kern einmal, Schleife je Pfad benannt) · zwei Wege des Bild-Baus · Fail-closed zu lasch · Tier des Paritätstests · Laufzeit von `make test-integration` (5 min 14 s bis 23 s, gemessen von Reviewer und Verifier, je ein Lauf) · Fenster zwischen Regel-Setzbarkeit und Backfill-Bindung (mit dieser Closure) · Fehlerpfad-Kommentare. *Weiter offen:* Kosten der Lesung je Block (Adresse: Closure-Kriterium der Welle).
+- **Drei Paarungen:** dieser Slice gehört zu [welle-transformationen](../welle-transformationen.md) (offen) — die Closure der Welle prüft sie mit; die Slice-Closure trägt sie zusätzlich jetzt: *Anker:* der Lerneintrag (a) trägt den Anker `BEO-PGC/run-fehlerklasse-schema-im-transformations-backfill` (`state.md`, am Ort existent) und die genannten Tests, die am Ort stehen; (b) ist ein Vorschlag an den Architect, kein `liegt in`-Feld eines verkörperten Ziels, seine Zielorte (`AGENTS.md` §3.1, `.claude/agents/`) existieren; *Folge-Slice:* keiner angelegt; die Übergabe-Adressen `slice-transformationen-map-value` und `slice-transformationen-betriebsdoku` existieren als Dateien in `open/`, das Closure-Kriterium steht in `welle-transformationen.md`; *Register:* jede genannte Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/` (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

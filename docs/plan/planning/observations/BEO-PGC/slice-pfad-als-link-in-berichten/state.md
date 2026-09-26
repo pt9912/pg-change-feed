@@ -41,7 +41,12 @@ Kein Reviewer-HIGH-Punkt — geprüft und verworfen: die Berichts-Hälfte ist
 mechanisch getragen, ein Skill-Punkt wäre die Dopplung dieses Gates; die
 Register-Datei ohne Überschrift schreibt der Planner, nicht der Reviewer.
 
-Zähler (abgeleitet): 3×
+Zähler (abgeleitet): 4×
 (evidence/architect-verdict-spaltenausschluss-dauerhaftigkeit.md,
-evidence/slice-068.md, evidence/slice-075.md) — Schwelle erreicht, Ausgang
-zugewiesen.
+evidence/slice-068.md, evidence/slice-075.md,
+evidence/slice-transformationen-backfill-pfad.md) — Schwelle erreicht, Ausgang
+zugewiesen. Der vierte Beleg ist die benannte Grenze (3) selbst: eine `state.md`
+zitierte einen wandernden Plan als Link; das Gate (`links`) fing die Form am Move,
+vor dem Merge. Keine Schärfung: der Fehler kostet einen roten Gate-Lauf am Move und
+ist mit der Kennung als Inline-Code behoben; ein Sensor für Dateien ohne Überschrift
+brächte eine Textform-Regel auf Prosa, die das Gate am Move bereits deckt.

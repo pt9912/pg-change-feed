@@ -104,13 +104,29 @@ an dieses Slice gemeldet haben.
       vor `map-value` —, hält Prozessstart und jeden Regel-Antrag der Quelle an, hergeleitet
       aus dem Quelltext, nicht erprobt), der Nichtanwendbarkeit samt Abhilfe-Prozedur
       (`cdc.remove_transformation` beantragen, Prozess starten — so, wie
-      `e2e-abhilfe` sie belegt hat), der Reihenfolge der Aufrufe (Aufrufe einer
+      `e2e-abhilfe` sie belegt hat) **und ihrer Form im Backfill-Run**
+      ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
+      Folgepflicht 4, am laufenden System belegt von der Phase
+      „Backfill-Regelstand“: der Run endet `failed` mit der Klasse `schema` ohne
+      Change, wenn eine Regel auf die Spalten des Snapshots nicht anwendbar ist —
+      Spalte fehlt, Zielname kollidiert —; er ist run-lokal, der Erfassungspfad
+      läuft weiter; die Abhilfe ist die Regel zu entfernen und danach einen
+      **neuen** `cdc.backfill_table`-Antrag zu stellen, **kein** Prozessneustart,
+      der `failed`-Run wird nicht fortgesetzt und sperrt den neuen Antrag nicht;
+      wechselt der Regelstand während des Runs, endet er mit `configuration`),
+      der Reihenfolge der Aufrufe (Aufrufe einer
       Transaktion werden in Aufrufreihenfolge verarbeitet; Anträge auf dieselbe
       Regel oder Spalte nicht aus überlappenden Transaktionen absetzen —
       [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)
       Folgepflicht 4 und Festlegung 3 Punkt 1; die Aussage gilt für alle sieben
       Funktionen und gehört in den Transformations-Abschnitt in §4) und dem
-      Backfill-Bezug; dazu die Zeile
+      Backfill-Bezug (Regeln gelten auch für einen Backfill-Run: der Bestand
+      trägt die transformierte Form, belegt von der Phase „Backfill-Regelstand“
+      des Runners von `make test-integration`; der Regelstand gilt ab dem Öffnen des
+      Snapshots des Runs — Festlegung des Implementers von
+      `slice-transformationen-backfill-pfad`, von Review und Verifikation als konform
+      zur Entscheidung gelesen, ohne Spec-Satz zum Zeitpunkt; im Handbuch als Zusage
+      des Ist-Verhaltens, nicht als Spec-Aussage); dazu die Zeile
       `schema` in §6 Fehlerklassen, die Rollen-Beschreibung in §2, das Glossar
       und die Änderungshistorie. *Zu belegen durch:* Review des Abschnitts
       gegen die Belege von `e2e-wirkung`/`e2e-abhilfe` und `make docs-check`.

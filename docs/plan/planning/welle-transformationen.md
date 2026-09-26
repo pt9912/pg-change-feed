@@ -136,6 +136,16 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   ihrem Ursprung ([`AGENTS.md`](../../../AGENTS.md) §3.12); der SDK-Beleg
   (Row-Image-Schlüssel sind in den drei SDK-Modellen opak) steht im Bericht von
   `slice-transformationen-betriebsdoku`.
+- **Die Lesekosten des Backfill-Runs sind entschieden** (Adresse des Risikos
+  „Kosten der Lesung je Block“ in §6 von `slice-transformationen-backfill-pfad`):
+  der Regelstand-Port und der Port des Spaltenausschlusses liefern je Aufruf die
+  `applied`-Zeilen aller Tabellen einer Quelle, ein Run liest sie je Block. Ein
+  Architect-Verdikt liegt vor, das entweder einen tabellenbezogenen Lesezugriff
+  (Änderung an Port, Adapter und Fakes) als Folge-Slice mit Kennung beauftragt
+  oder die Lesekosten als akzeptiertes Negativ mit benanntem Trigger führt; im
+  zweiten Fall trägt es die Aussage „die Kosten je Lesung sind klein“ mit einer
+  Messung an einer Queue realer Größe, nicht als Erwartung
+  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
 - Der **Lese-Schritt** des Beobachtungs-Registers ist gelaufen (Einträge bei 3×
   oder darüber, Modul 6).
 - Closure-Notiz in `welle-transformationen-results.md`.

@@ -12,5 +12,9 @@ Schritt 17 (Satz „Ein Aufschub ohne Adresse ist keiner“), `.claude/commands/
 HIGH-Punkt „Neue Betreiber-Oberfläche ohne Handbuch-Zug“ in `.harness/skills/reviewer.md`
 (Probe: `git grep` der Kernbegriffe im Plan der Adresse). Bis zur Entscheidung des Architects
 steht kein Ausgang.
-Zähler (abgeleitet): 3× (evidence/slice-071.md, evidence/slice-072.md,
-evidence/slice-transformationen-antragsweg-schema.md).
+Zähler (abgeleitet): 4× (evidence/slice-071.md, evidence/slice-072.md,
+evidence/slice-transformationen-antragsweg-schema.md,
+evidence/slice-transformationen-backfill-pfad.md). Der vierte Beleg trifft die zweite Ausprägung der
+Beobachtung („ihr DoD-Ausschnitt ist enger gefasst als der aufgeschobene Gegenstand“): die Adresse trug
+das Stichwort, nicht den Ablauf; der Ausgangs-Vorschlag Punkt (2) (der Gegenstand als committeter Text im
+Plan der Adresse) hätte ihn am Absender gefangen.

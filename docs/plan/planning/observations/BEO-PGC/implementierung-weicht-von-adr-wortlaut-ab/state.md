@@ -16,5 +16,13 @@ zwei Lese-Methoden) entspricht dem Wortlaut „ein neuer Outbound Port“ von `A
 mit `ADR-0034` vereinbar; die Plan-Aussage „weicht von der ADR-Zählung ab“ war unzutreffend
 (Review F-5, LOW) und ist in der Fixrunde berichtigt — sie zählt nicht als drittes Auftreten.
 
+Kein Auftreten: `slice-transformationen-backfill-pfad` führt für den Wechsel des Regelstands im Run
+einen eigenen Sentinel (`ErrTransformationStateChanged`) mit der Klasse `configuration`, während
+`ADR-0117` Festlegung 5 die Abbildung im Wortlaut an `ErrExclusionStateChanged` bindet. Die Klasse ist
+die der ADR; der Plan nennt den Sentinel als Plan-Drift, Review (F-2) und Verifikation lasen keinen
+Widerspruch zum Wortlaut — eine Abweichung, die als Entscheidung dargestellt oder als Risiko geführt
+würde, liegt nicht vor; die drei Fragen des Implementers gehen an den Architect. Der Vorgang zählt
+nicht.
+
 Zähler (abgeleitet): 2× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
 `evidence/slice-transformationen-kern-rename.md`).
