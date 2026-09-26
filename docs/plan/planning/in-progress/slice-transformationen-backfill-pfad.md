@@ -129,10 +129,11 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       [`docs/user/e2e-abdeckung.md`](../../../user/e2e-abdeckung.md)).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
+      Report: `docs/reviews/review-slice-transformationen-backfill-pfad.md` (Reviewer, ohne Fixrunde).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
