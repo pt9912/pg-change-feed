@@ -6,12 +6,12 @@
 #
 #   1. Frischer Rollout (kein Blocker) — muss durchlaufen.
 #   2. Zweiter Lauf gegen dasselbe, jetzt vollständig migrierte Ziel — trägt
-#      ausschließlich die sieben bekannten Fremdobjekt-Blocker — muss erneut
+#      ausschließlich die neun bekannten Fremdobjekt-Blocker — muss erneut
 #      Exit 0 liefern UND den --allow-destructive-Pfad des Guards nehmen
 #      (stdout trägt die Meldung), nicht nur zufällig Exit 0 aus anderem
 #      Grund; ein Vorlauf (ADR-0114) findet nicht statt.
 #   3. Eine echte, gleichzeitig anstehende, NICHT-destruktive Schema-Änderung
-#      neben den sieben bekannten Blockern: eine von schema.yaml weiterhin
+#      neben den neun bekannten Blockern: eine von schema.yaml weiterhin
 #      deklarierte, nullable Spalte (administration_request.error_message —
 #      trägt keine View-/Funktions-Abhängigkeit, anders als
 #      process_heartbeat.error_class, das die Sicht cdc.heartbeat trägt) wird
@@ -35,19 +35,28 @@
 #      Exit 0 zweimal, die Zeile über `cdc.changes` unverändert lesbar,
 #      Soll-Signatur der View, und der Rollen-Schnitt: die Rechte der drei
 #      Rollen auf `cdc.administration_request`, `cdc.backfill_run` und
-#      `cdc.backfill_status` (`cdc_admin` trägt vor dem Upgrade kein Recht auf
-#      die Antrags-Tabelle), `EXECUTE` auf `cdc.backfill_table` allein für
-#      `cdc_admin` (nicht PUBLIC) und die fünf Werte von
-#      `chk_administration_request_kind`. Tag, Exit-Codes und Zählung stehen in
-#      der Ausgabe. Rot färbende Eingabeseiten-Mutationen:
-#      `cdc.backfill_table(text, text, text)` aus der GRANT-Zeile, die
-#      REVOKE-Zeile oder `'backfill'` aus dem CHECK in
-#      tools/schema/nacharbeit-administration.sql, `cdc.backfill_status` aus
-#      dem GRANT für `cdc_reader` in tools/schema/nacharbeit-roles.sql.
+#      `cdc.backfill_status`, `EXECUTE` auf `cdc.backfill_table`,
+#      `cdc.set_transformation` und `cdc.remove_transformation` allein für
+#      `cdc_admin` (nicht PUBLIC). Der Stand des Tags trägt weder die Spalten
+#      `rule_name`/`rule_spec` noch die zwei Transformations-Funktionen noch
+#      die zwei Transformations-Antragsarten (Vorbedingung); nach dem Upgrade
+#      trägt die Tabelle die zwei nullable Spalten (`text`, `jsonb`), eine
+#      vor dem Upgrade geschriebene Antragszeile trägt dort NULL, die sieben
+#      Werte von `chk_administration_request_kind` stehen, `cdc_admin` schreibt
+#      über `cdc.set_transformation` einen `pending`-Antrag mit der Regelform
+#      in der `jsonb`-Spalte, und `cdc_reader` scheitert mit „permission
+#      denied for function“. Tag, Exit-Codes und Zählung stehen in der Ausgabe. Rot
+#      färbende Eingabeseiten-Mutationen in
+#      tools/schema/nacharbeit-administration.sql:
+#      `cdc.set_transformation(text, text, text, text, json)` aus der
+#      GRANT-Zeile, die REVOKE-Zeile oder `'set_transformation'` aus dem CHECK;
+#      in tools/schema/nacharbeit-roles.sql: `cdc.backfill_status` aus dem
+#      GRANT für `cdc_reader`; in tools/schema/schema.yaml: die Spalte
+#      `rule_spec`.
 #   6. Unbekannte Blocker — der Rollout muss abbrechen (d-migrate-Exit 8,
 #      make meldet „Error 8" bzw. lokalisiert „Fehler 8"). Zwei Fälle:
 #      a) eine nicht deklarierte Funktion `cdc.zz_rolloutguard_unbekannt()`:
-#         dieselbe Klasse wie die sieben bekannten Fremdobjekte (Blocker
+#         dieselbe Klasse wie die neun bekannten Fremdobjekte (Blocker
 #         DESTRUCTIVE_OPERATION_REQUIRES_CONFIRMATION), aber nicht auf der
 #         Bekannt-Liste. Ließe die Wache den Blocker durch, riefe das Target
 #         `--execute` mit `--allow-destructive` auf und d-migrate löschte die
@@ -110,6 +119,13 @@ fail() {
 # psql_q <db> <sql>: eine Abfrage, ungerahmte Ausgabe.
 psql_q() {
   docker exec "$CONTAINER" psql -U "$USER" -d "$1" -v ON_ERROR_STOP=1 -tAc "$2"
+}
+
+# psql_as <db> <rolle> <sql>: eine Abfrage unter `SET ROLE <rolle>` (der
+# Superuser der Wegwerf-Instanz darf jede Gruppenrolle annehmen), ungerahmte
+# Ausgabe ohne die Befehlsmeldung des `SET`.
+psql_as() {
+  docker exec "$CONTAINER" psql -q -U "$USER" -d "$1" -v ON_ERROR_STOP=1 -tA -c "SET ROLE $2" -c "$3"
 }
 
 # view_signature <db>: Spaltenname:Typ der View cdc.changes in Reihenfolge.
@@ -176,7 +192,7 @@ if grep -q "Vorlauf" <<<"$out"; then
   fail "Lauf 2 meldet einen Vorlauf, obwohl keine View ihre Signatur ändert (ADR-0114 Entscheidung 4)"
 fi
 
-echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den sieben bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
+echo "run-schema-rollout-guard-test: Lauf 3/6 (echte anstehende Änderung neben den neun bekannten Blockern — muss real zurückkommen, ohne Vorlauf)"
 docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -v ON_ERROR_STOP=1 \
   -c "ALTER TABLE cdc.administration_request DROP COLUMN error_message"
 still_missing=$(docker exec "$CONTAINER" psql -U "$USER" -d "$DB" -tAc \
@@ -256,15 +272,23 @@ alt_rows_before=$(psql_q "$ALT_DB" "SELECT count(*) FROM cdc.changes")
 # alt_privilege <rolle> <objekt> <recht>: Tabellen-/View-Recht der Rolle im Alt-Tag-Ziel.
 alt_privilege() { psql_q "$ALT_DB" "SELECT has_table_privilege('$1', '$2', '$3')"; }
 ALT_FUNCTION="cdc.backfill_table(text, text, text)"
-[ "$(alt_privilege cdc_admin cdc.administration_request UPDATE)" = "f" ] \
-  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc_admin trägt im Stand von $ALT_TAG schon UPDATE auf cdc.administration_request"
-[ "$(psql_q "$ALT_DB" "SELECT to_regprocedure('$ALT_FUNCTION') IS NULL")" = "t" ] \
-  || fail "Lauf 5: Vorbedingung fehlgeschlagen, $ALT_FUNCTION besteht im Stand von $ALT_TAG schon"
+ALT_SET_FUNCTION="cdc.set_transformation(text, text, text, text, json)"
+ALT_REMOVE_FUNCTION="cdc.remove_transformation(text, text, text, text)"
+for alt_new_function in "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION"; do
+  [ "$(psql_q "$ALT_DB" "SELECT to_regprocedure('$alt_new_function') IS NULL")" = "t" ] \
+    || fail "Lauf 5: Vorbedingung fehlgeschlagen, $alt_new_function besteht im Stand von $ALT_TAG schon"
+done
+[ "$(psql_q "$ALT_DB" "SELECT count(*) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name IN ('rule_name', 'rule_spec')")" = "0" ] \
+  || fail "Lauf 5: Vorbedingung fehlgeschlagen, cdc.administration_request trägt im Stand von $ALT_TAG schon rule_name oder rule_spec"
 alt_kinds_sql="SELECT string_agg(k, ',' ORDER BY k) FROM (SELECT unnest(regexp_matches(pg_get_constraintdef(oid), '''([a-z_]+)''', 'g')) AS k FROM pg_constraint WHERE conname = 'chk_administration_request_kind' AND conrelid = 'cdc.administration_request'::regclass) s"
 alt_kinds_before=$(psql_q "$ALT_DB" "$alt_kinds_sql")
 case "$alt_kinds_before" in
-  *backfill*) fail "Lauf 5: Vorbedingung fehlgeschlagen, chk_administration_request_kind trägt im Stand von $ALT_TAG schon backfill ($alt_kinds_before)" ;;
+  *transformation*) fail "Lauf 5: Vorbedingung fehlgeschlagen, chk_administration_request_kind trägt im Stand von $ALT_TAG schon eine Transformations-Antragsart ($alt_kinds_before)" ;;
 esac
+# Eine Antragszeile im Stand des Tags: nach dem Upgrade trägt sie in den zwei
+# neuen Spalten NULL und bleibt lesbar.
+docker exec "$CONTAINER" psql -U "$USER" -d "$ALT_DB" -v ON_ERROR_STOP=1 \
+  -c "INSERT INTO cdc.administration_request (administration_request_id, source_id, schema_name, table_name, column_name, request_kind, status) VALUES ('alttag-req', 'alttag-src', 'public', 't', 'a', 'exclude_column', 'applied')" >/dev/null
 run_rollout . "$ALT_TARGET"
 work_exit_1=$RUN_EXIT
 work_out_1=$RUN_OUT
@@ -291,22 +315,44 @@ for expected in \
     || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $alt_object das Recht $alt_right nicht als $alt_want"
   alt_privilege_count=$((alt_privilege_count + 1))
 done
-for expected in "cdc_admin t" "cdc_capture f" "cdc_reader f"; do
-  read -r alt_role alt_want <<<"$expected"
-  [ "$(psql_q "$ALT_DB" "SELECT has_function_privilege('$alt_role', '$ALT_FUNCTION', 'EXECUTE')")" = "$alt_want" ] \
-    || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $ALT_FUNCTION das Recht EXECUTE nicht als $alt_want"
+alt_function_count=0
+for alt_function in "$ALT_FUNCTION" "$ALT_SET_FUNCTION" "$ALT_REMOVE_FUNCTION"; do
+  for expected in "cdc_admin t" "cdc_capture f" "cdc_reader f"; do
+    read -r alt_role alt_want <<<"$expected"
+    [ "$(psql_q "$ALT_DB" "SELECT has_function_privilege('$alt_role', '$alt_function', 'EXECUTE')")" = "$alt_want" ] \
+      || fail "Lauf 5: $alt_role trägt nach dem Upgrade über $ALT_TAG auf $alt_function das Recht EXECUTE nicht als $alt_want"
+  done
+  [ "$(psql_q "$ALT_DB" "SELECT coalesce(bool_or(a.grantee = 0), false) FROM pg_proc p, LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a WHERE p.oid = '$alt_function'::regprocedure")" = "f" ] \
+    || fail "Lauf 5: $alt_function trägt nach dem Upgrade über $ALT_TAG ein EXECUTE-Recht für PUBLIC"
+  alt_function_count=$((alt_function_count + 1))
 done
-[ "$(psql_q "$ALT_DB" "SELECT coalesce(bool_or(a.grantee = 0), false) FROM pg_proc p, LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a WHERE p.oid = '$ALT_FUNCTION'::regprocedure")" = "f" ] \
-  || fail "Lauf 5: $ALT_FUNCTION trägt nach dem Upgrade über $ALT_TAG ein EXECUTE-Recht für PUBLIC"
 alt_kinds_after=$(psql_q "$ALT_DB" "$alt_kinds_sql")
-[ "$alt_kinds_after" = "backfill,disable,enable,exclude_column,include_column" ] \
-  || fail "Lauf 5: chk_administration_request_kind trägt nach dem Upgrade über $ALT_TAG die Menge '$alt_kinds_after' statt der fünf Antragsarten"
+[ "$alt_kinds_after" = "backfill,disable,enable,exclude_column,include_column,remove_transformation,set_transformation" ] \
+  || fail "Lauf 5: chk_administration_request_kind trägt nach dem Upgrade über $ALT_TAG die Menge '$alt_kinds_after' statt der sieben Antragsarten"
+alt_rule_columns=$(psql_q "$ALT_DB" "SELECT string_agg(column_name || ':' || data_type || ':' || is_nullable, ',' ORDER BY column_name) FROM information_schema.columns WHERE table_schema='cdc' AND table_name='administration_request' AND column_name IN ('rule_name', 'rule_spec')")
+[ "$alt_rule_columns" = "rule_name:text:YES,rule_spec:jsonb:YES" ] \
+  || fail "Lauf 5: cdc.administration_request trägt nach dem Upgrade über $ALT_TAG die Spalten '$alt_rule_columns' statt rule_name:text:YES,rule_spec:jsonb:YES"
+[ "$(psql_q "$ALT_DB" "SELECT COALESCE(rule_name, '<NULL>') || '|' || COALESCE(rule_spec::text, '<NULL>') || '|' || status FROM cdc.administration_request WHERE administration_request_id = 'alttag-req'")" = "<NULL>|<NULL>|applied" ] \
+  || fail "Lauf 5: die Antragszeile aus dem Stand von $ALT_TAG trägt nach dem Upgrade nicht NULL in rule_name und rule_spec"
+# Die Funktion schreibt den Antrag unter cdc_admin; ein Login ohne diese
+# Mitgliedschaft scheitert an EXECUTE.
+alt_set_id=$(psql_as "$ALT_DB" cdc_admin "SELECT cdc.set_transformation('alttag-src', 'public', 't', 'umbenennung', '{\"kind\": \"rename_column\"}'::json)")
+[ "$(psql_q "$ALT_DB" "SELECT request_kind || '|' || status || '|' || rule_name || '|' || (rule_spec->>'kind') || '|' || COALESCE(column_name, '<NULL>') FROM cdc.administration_request WHERE administration_request_id = '$alt_set_id'")" = "set_transformation|pending|umbenennung|rename_column|<NULL>" ] \
+  || fail "Lauf 5: cdc.set_transformation schreibt unter cdc_admin nach dem Upgrade über $ALT_TAG nicht den erwarteten pending-Antrag"
+alt_remove_id=$(psql_as "$ALT_DB" cdc_admin "SELECT cdc.remove_transformation('alttag-src', 'public', 't', 'umbenennung')")
+[ "$(psql_q "$ALT_DB" "SELECT request_kind || '|' || status || '|' || rule_name || '|' || COALESCE(rule_spec::text, '<NULL>') FROM cdc.administration_request WHERE administration_request_id = '$alt_remove_id'")" = "remove_transformation|pending|umbenennung|<NULL>" ] \
+  || fail "Lauf 5: cdc.remove_transformation schreibt unter cdc_admin nach dem Upgrade über $ALT_TAG nicht den erwarteten pending-Antrag"
+if alt_denied=$(psql_as "$ALT_DB" cdc_reader "SELECT cdc.set_transformation('alttag-src', 'public', 't', 'verboten', '{}'::json)" 2>&1); then
+  fail "Lauf 5: cdc_reader ruft cdc.set_transformation nach dem Upgrade über $ALT_TAG auf, ohne dass es scheitert"
+fi
+grep -q "permission denied for function" <<<"$alt_denied" \
+  || fail "Lauf 5: der Aufruf unter cdc_reader scheitert nicht mit „permission denied for function“ ($alt_denied)"
 if grep -q "Vorlauf" <<<"$work_out_1"; then
   alt_vorlauf="mit Vorlauf"
 else
   alt_vorlauf="ohne Vorlauf"
 fi
-echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run und backfill_status, EXECUTE auf $ALT_FUNCTION allein für cdc_admin (nicht PUBLIC), request_kind-Menge $alt_kinds_after"
+echo "run-schema-rollout-guard-test: Lauf 5 OK — Tag $ALT_TAG: Exit $alt_exit (Rollout des Tags), Exit $work_exit_1 (Arbeitsbaum, $alt_vorlauf), Exit $work_exit_2 (Arbeitsbaum, zweiter Lauf); Zeile alttag-ch über cdc.changes lesbar; $alt_privilege_count Tabellen-/View-Rechte der drei Rollen auf administration_request, backfill_run und backfill_status, EXECUTE auf $alt_function_count Funktionen ($ALT_FUNCTION, $ALT_SET_FUNCTION, $ALT_REMOVE_FUNCTION) allein für cdc_admin (nicht PUBLIC), Spalten $alt_rule_columns (Alt-Zeile alttag-req: NULL), request_kind-Menge $alt_kinds_after, cdc.set_transformation/cdc.remove_transformation unter cdc_admin schreiben pending-Anträge, cdc_reader: permission denied for function"
 
 echo "run-schema-rollout-guard-test: Lauf 6/6 (unbekannte Blocker, müssen mit Exit 8 abbrechen)"
 echo "run-schema-rollout-guard-test: Lauf 6a (nicht deklarierte Funktion — die Wache lässt sie nicht unter --allow-destructive löschen)"

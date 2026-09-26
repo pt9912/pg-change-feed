@@ -4,8 +4,10 @@
 -- Objektklassen der Antrags-Queue liegen hier:
 --
 -- (1) cdc.enable_table/cdc.disable_table/cdc.exclude_column/
--- cdc.include_column/cdc.backfill_table sind ihre schreibenden SQL-Funktionen
--- (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005, LH-FA-CAP-009). d-migrate 1.3.1 generiert ihre
+-- cdc.include_column/cdc.backfill_table/cdc.set_transformation/
+-- cdc.remove_transformation sind ihre schreibenden SQL-Funktionen
+-- (ADR-0050, LH-FA-ADM-001, LH-FA-CFG-005, LH-FA-CAP-009, LH-FA-CFG-007,
+-- ADR-0112). d-migrate 1.3.1 generiert ihre
 -- DDL korrekt über
 -- den `functions:`-Knoten (`schema generate`), aber `schema migrate --execute`
 -- bricht für jede dort deklarierte Funktion mit POST_EXECUTE_DRIFT (Exit 5)
@@ -13,7 +15,8 @@
 -- frische PostgreSQL-18-Instanz, nicht auf diese Funktionen beschränkt.
 --
 -- (2) Die geschlossene request_kind-Menge (`enable`, `disable`,
--- `exclude_column`, `include_column`, `backfill`) trägt der CHECK
+-- `exclude_column`, `include_column`, `backfill`, `set_transformation`,
+-- `remove_transformation`) trägt der CHECK
 -- chk_administration_request_kind. Er steht nicht als deklarativer Check in
 -- tools/schema/schema.yaml, weil d-migrate 1.3.1 eine CHECK-Änderung an
 -- einer bestehenden Tabelle nicht konvergiert: real gemessen — den
@@ -24,7 +27,8 @@
 -- unabhängig vom Namen, und ohne dass die neue Klausel entsteht. Die
 -- Anlage der Spalte `column_name` an derselben bestehenden Tabelle
 -- konvergiert dagegen (real gemessen, Exit 0) und bleibt deshalb im
--- deklarativen Modell. Die beiden Zeilen unten setzen die Menge
+-- deklarativen Modell; ebenso die Spalten `rule_name` und `rule_spec`.
+-- Die beiden Zeilen unten setzen die Menge
 -- idempotent: DROP IF EXISTS vor ADD, damit ein Erstanlage-Lauf und jeder
 -- Folgelauf denselben Endzustand tragen.
 --
@@ -45,9 +49,21 @@
 -- der Use Case über ColumnExclusionPort. cdc.backfill_table (`LH-FA-CAP-009`,
 -- ADR-0111) schreibt ebenso ausschließlich den Antrags-Datensatz der Art
 -- `backfill` (ohne Spalte); Vorbedingungen und Annahme trägt der Use Case,
--- und `applied` heißt dort „angenommen“ (SPEC-019). Kanal-Name
--- `cdc_administration` ist Implementer-Entscheidung, real mit `LISTEN`/pgx
--- WaitForNotification getestet (administrationrequest_test.go).
+-- und `applied` heißt dort „angenommen“ (SPEC-019).
+-- cdc.set_transformation/cdc.remove_transformation (`LH-FA-CFG-007`, ADR-0112)
+-- schreiben ebenso ausschließlich den Antrags-Datensatz samt Regelname, die
+-- erste zusätzlich die Regelform, und prüfen nichts — weder die Regelform
+-- noch die Spalte; beides trägt der Capture-Prozess (ADR-0046). Die Regelform
+-- kommt als `json`-Parameter und geht als `jsonb` in die Spalte `rule_spec`;
+-- der Parametertyp ist `json`, weil d-migrate 1.3.1 jede Funktion mit `json`-
+-- oder `jsonb`-Parameter als `in:json` meldet und ihren Abbau im zweiten
+-- Rollout als `DROP FUNCTION … (…, json)` rendert — für eine Funktion mit
+-- `jsonb`-Parameter existiert diese Signatur nicht, der Abbau scheitert dort
+-- mit Exit 5 (real gemessen). Ein Literal und ein `::json`-Wert werden
+-- angenommen, ein `::jsonb`-Wert nicht (real gemessen: „function … does not
+-- exist“).
+-- Der Kanal-Name `cdc_administration` ist Implementer-Entscheidung, real mit
+-- `LISTEN`/pgx WaitForNotification getestet (administrationrequest_test.go).
 --
 -- SECURITY DEFINER mit gepinntem search_path (dieselbe Absicherung, die
 -- eine SECURITY-DEFINER-Routine braucht: ohne ihn entscheidet der Suchpfad
@@ -59,7 +75,7 @@
 -- ohne cdc_admin-Mitgliedschaft scheitert mit „permission denied for
 -- function", ein Login mit cdc_admin-Mitgliedschaft gelingt).
 ALTER TABLE cdc.administration_request DROP CONSTRAINT IF EXISTS chk_administration_request_kind;
-ALTER TABLE cdc.administration_request ADD CONSTRAINT chk_administration_request_kind CHECK (request_kind IN ('enable', 'disable', 'exclude_column', 'include_column', 'backfill'));
+ALTER TABLE cdc.administration_request ADD CONSTRAINT chk_administration_request_kind CHECK (request_kind IN ('enable', 'disable', 'exclude_column', 'include_column', 'backfill', 'set_transformation', 'remove_transformation'));
 
 CREATE OR REPLACE FUNCTION cdc.enable_table(p_source_id text, p_schema_name text, p_table_name text)
 RETURNS text
@@ -156,5 +172,43 @@ BEGIN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text) TO cdc_admin;
+CREATE OR REPLACE FUNCTION cdc.set_transformation(p_source_id text, p_schema_name text, p_table_name text, p_rule_name text, p_rule_spec json)
+RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = cdc, pg_temp
+AS $$
+DECLARE
+    v_id text;
+BEGIN
+    v_id := gen_random_uuid()::text;
+    INSERT INTO cdc.administration_request
+        (administration_request_id, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, status)
+    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_rule_name, p_rule_spec::jsonb, 'set_transformation', 'pending');
+    PERFORM pg_notify('cdc_administration', v_id);
+    RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION cdc.remove_transformation(p_source_id text, p_schema_name text, p_table_name text, p_rule_name text)
+RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = cdc, pg_temp
+AS $$
+DECLARE
+    v_id text;
+BEGIN
+    v_id := gen_random_uuid()::text;
+    INSERT INTO cdc.administration_request
+        (administration_request_id, source_id, schema_name, table_name, rule_name, request_kind, status)
+    VALUES (v_id, p_source_id, p_schema_name, p_table_name, p_rule_name, 'remove_transformation', 'pending');
+    PERFORM pg_notify('cdc_administration', v_id);
+    RETURN v_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text), cdc.set_transformation(text, text, text, text, json), cdc.remove_transformation(text, text, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cdc.enable_table(text, text, text), cdc.disable_table(text, text, text), cdc.exclude_column(text, text, text, text), cdc.include_column(text, text, text, text), cdc.backfill_table(text, text, text), cdc.set_transformation(text, text, text, text, json), cdc.remove_transformation(text, text, text, text) TO cdc_admin;

@@ -6,8 +6,10 @@ import (
 )
 
 // knownBlockedReport spiegelt real gemessene Report-Felder (--plan-only
-// gegen ein bereits vollständig migriertes Ziel): genau die sieben
-// bekannten Fremdobjekt-Blocker, sonst nichts.
+// gegen ein bereits vollständig migriertes Ziel): genau die neun
+// bekannten Fremdobjekt-Blocker, sonst nichts. Die Signatur von
+// `set_transformation` trägt die Schreibweise des Reports (`in:json` für den
+// `json`-Parameter).
 func knownBlockedReport() report {
 	return report{
 		Status: "blocked",
@@ -18,6 +20,8 @@ func knownBlockedReport() report {
 				"DropFunction:FUNCTION:c1:c2",
 				"DropFunction:FUNCTION:d1:d2",
 				"DropFunction:FUNCTION:d3:d4",
+				"DropFunction:FUNCTION:d5:d6",
+				"DropFunction:FUNCTION:d7:d8",
 				"DropView:VIEW:e1:e2",
 				"DropView:VIEW:f1:f2",
 			}},
@@ -28,6 +32,8 @@ func knownBlockedReport() report {
 			{ID: "DropFunction:FUNCTION:c1:c2", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"exclude_column(in:text,in:text,in:text,in:text)"}},
 			{ID: "DropFunction:FUNCTION:d1:d2", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"include_column(in:text,in:text,in:text,in:text)"}},
 			{ID: "DropFunction:FUNCTION:d3:d4", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"backfill_table(in:text,in:text,in:text)"}},
+			{ID: "DropFunction:FUNCTION:d5:d6", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"set_transformation(in:text,in:text,in:text,in:text,in:json)"}},
+			{ID: "DropFunction:FUNCTION:d7:d8", Kind: "DropFunction", ObjectType: "FUNCTION", Path: []string{"remove_transformation(in:text,in:text,in:text,in:text)"}},
 			{ID: "DropView:VIEW:e1:e2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"heartbeat"}},
 			{ID: "DropView:VIEW:f1:f2", Kind: "DropView", ObjectType: "VIEW", Path: []string{"metrics"}},
 		},
@@ -53,7 +59,7 @@ func viewSignatureOnlyReport(name string) report {
 
 // TestDecideAllowsDestructiveWhenAllBlockersKnown prüft den Regelfall: ein
 // zweiter Lauf gegen ein bereits vollständig migriertes Ziel trägt
-// ausschließlich die sieben bekannten Fremdobjekt-Blocker — decide erlaubt
+// ausschließlich die neun bekannten Fremdobjekt-Blocker — decide erlaubt
 // --allow-destructive und verlangt keinen Vorlauf.
 func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 	d := decide(knownBlockedReport())
@@ -68,7 +74,7 @@ func TestDecideAllowsDestructiveWhenAllBlockersKnown(t *testing.T) {
 // TestDecideRefusesUnknownDestructiveBlocker prüft den Negativfall: eine
 // künstlich per ALTER TABLE … ADD COLUMN hinzugefügte, nicht deklarierte
 // Spalte erzeugt real einen zusätzlichen, unbekannten DropColumn-Blocker
-// neben den sieben bekannten — decide bleibt leer, auch im Mischfall.
+// neben den neun bekannten — decide bleibt leer, auch im Mischfall.
 func TestDecideRefusesUnknownDestructiveBlocker(t *testing.T) {
 	r := knownBlockedReport()
 	r.Blockers[0].OperationIDs = append(r.Blockers[0].OperationIDs, "DropColumn:COLUMN:g1:g2")
@@ -121,7 +127,7 @@ func TestDecideRefusesEmptyBlockers(t *testing.T) {
 
 // TestDecideViewSignatureWithKnownForeignObjects prüft den real
 // gemessenen Fall des Upgrades über die View-Signaturänderung: die Klasse
-// „View-Signatur" neben den sieben bekannten Fremdobjekten — decide erlaubt
+// „View-Signatur" neben den neun bekannten Fremdobjekten — decide erlaubt
 // --allow-destructive UND meldet die View für den Vorlauf.
 func TestDecideViewSignatureWithKnownForeignObjects(t *testing.T) {
 	d := decide(withViewSignature(knownBlockedReport(), "changes"))
@@ -334,5 +340,23 @@ func TestDecideRefusesManualActionOperationMissingFromReport(t *testing.T) {
 	d := decide(r)
 	if d.allowDestructive || len(d.dropViews) != 0 {
 		t.Fatalf("decision = %+v — wollte leer bei einer operationId ohne Eintrag in operations[]", d)
+	}
+}
+
+// TestDecideRefusesOtherSignatureSpelling prüft die Bindung der Bekannt-Liste
+// an die Schreibweise des Reports: die Funktion `set_transformation` mit dem
+// Parametertyp `in:jsonb` (statt der gemessenen Schreibweise `in:json`) ist
+// kein bekanntes Fremdobjekt — decide bleibt leer.
+func TestDecideRefusesOtherSignatureSpelling(t *testing.T) {
+	r := knownBlockedReport()
+	for i, op := range r.Operations {
+		if op.ID == "DropFunction:FUNCTION:d5:d6" {
+			r.Operations[i].Path = []string{"set_transformation(in:text,in:text,in:text,in:text,in:jsonb)"}
+		}
+	}
+
+	d := decide(r)
+	if d.allowDestructive || len(d.dropViews) != 0 {
+		t.Fatalf("decision = %+v — wollte leer, weil die Signatur nicht die gemessene Schreibweise trägt", d)
 	}
 }

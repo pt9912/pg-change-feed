@@ -154,7 +154,8 @@ GRANT SELECT, UPDATE ON cdc.backfill_run TO cdc_capture;
 -- (UpdateAdministrationRequestApplied/-Failed, dieselbe Anweisung wie im
 -- Vermerk der Annahme). Angelegt werden Anträge ausschließlich von den
 -- SECURITY-DEFINER-Funktionen cdc.enable_table/disable_table/exclude_column/
--- include_column/backfill_table (nacharbeit-administration.sql) unter den Rechten ihres
+-- include_column/backfill_table/set_transformation/remove_transformation
+-- (nacharbeit-administration.sql) unter den Rechten ihres
 -- Eigentümers — cdc_admin trägt weder INSERT noch DELETE; cdc_capture und
 -- cdc_reader tragen kein Recht auf die Tabelle.
 GRANT SELECT, UPDATE ON cdc.administration_request TO cdc_admin;

@@ -1,15 +1,20 @@
 # Build-Kontext: nur was der Go-Build braucht (Modul 14 — klein hält den
 # Cache-sensiblen Layer schmal und verhindert, dass Doku/Harness ins Image
-# wandern). Die `!`-Zeilen für `tools/coverage-gate.sh` und
-# `tools/schema/nacharbeit-roles.sql` VERGRÖSSERN den Kontext, sie verkleinern
+# wandern). Die `!`-Zeilen für `tools/coverage-gate.sh`,
+# `tools/schema/nacharbeit-roles.sql` und
+# `tools/schema/nacharbeit-administration.sql` VERGRÖSSERN den Kontext, sie verkleinern
 # ihn nicht — eine Negation hebt den Ausschluss für genau diese Datei auf, und
 # sie gilt für den ganzen Kontext, nicht für eine einzelne Stage (jede
 # `COPY . .`-Stufe sieht sie). Jede nennt ihren Leser:
 # tools/coverage-gate.sh ist die Schwellen-Prüfung der `coverage`-Stufe
 # (ADR-0054); tools/schema/nacharbeit-roles.sql ist der ausgerollte Grant-Text,
 # gegen den `internal/bootstrap/roles_rollout_file_internal_test.go` den
-# Rollenschnitt hält (ADR-0047/ADR-0048). Das Runtime-Image bleibt unberührt,
-# weil `runtime` ausschließlich das Binary übernimmt; die Klasse dieser beiden
+# Rollenschnitt hält (ADR-0047/ADR-0048); tools/schema/nacharbeit-administration.sql
+# ist der ausgerollte Funktions-Grant-Text, gegen den derselbe Test
+# (`TestAdministrationDateiTraegtDieFunktionsRechte`) `REVOKE … FROM PUBLIC` und
+# `GRANT EXECUTE … TO cdc_admin` der schreibenden SQL-Funktionen hält
+# (ADR-0047/ADR-0050). Das Runtime-Image bleibt unberührt,
+# weil `runtime` ausschließlich das Binary übernimmt; die Klasse dieser drei
 # Ausnahmen (gelesen, nicht gebaut; genau eine Datei; der Leser steht dabei;
 # Image unberührt mit Beleg) führt [`ADR-0085`](docs/plan/adr/0085-build-kontext-ausnahme-test-only-zweck.md).
 #
@@ -32,3 +37,4 @@
 !go.sum
 !tools/coverage-gate.sh
 !tools/schema/nacharbeit-roles.sql
+!tools/schema/nacharbeit-administration.sql

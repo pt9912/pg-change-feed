@@ -3357,7 +3357,7 @@ abdeckung_declare "Upgrade-Sicherheits-Rundlauf" "LH-QA-OPS-005,LH-FA-RET-001" "
 # Feed-Container durch eine neue Instanz desselben Images. Der Tausch belegt
 # das Upgrade des Prozesses, nicht des Schemas: den zweiten
 # `make schema-rollout`-Lauf gegen ein migriertes Ziel (idempotent über die
-# sieben bekannten Fremdobjekte des Idempotenz-Guards in
+# neun bekannten Fremdobjekte des Idempotenz-Guards in
 # `tools/schema/rolloutguard`) belegt
 # `tools/harness/run-schema-rollout-guard-test.sh`. Der Rundlauf läuft hier,
 # solange der Feed-Container noch unversehrt und gesund ist — vor

@@ -408,3 +408,162 @@ func TestRolloutDateiLegtGruppenrollenOhneAnmeldungAn(t *testing.T) {
 		t.Fatalf("cdc_capture trägt kein REPLICATION-Attribut (%q) — der Replication-Stream des Erfassungspfads verlangt es (ADR-0008)", attribute["cdc_capture"])
 	}
 }
+
+// administrationDateiPfad löst `tools/schema/nacharbeit-administration.sql`
+// über die Lage dieser Testdatei auf — unabhängig vom Arbeitsverzeichnis des
+// Testlaufs.
+func administrationDateiPfad(t *testing.T) string {
+	t.Helper()
+	_, quelle, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("Funktions-Rollout-Test: Quelldatei nicht auflösbar")
+	}
+	return filepath.Join(filepath.Dir(quelle), "..", "..", "tools", "schema", "nacharbeit-administration.sql")
+}
+
+// funktionsDefinition trägt eine `CREATE [OR REPLACE] FUNCTION
+// cdc.<name>(<Parameter>)`-Zeile der Datei; die Parameterliste enthält kein
+// Klammerpaar (`text`, `json`).
+var funktionsDefinition = regexp.MustCompile(`(?im)^[ \t]*CREATE[ \t]+(?:OR[ \t]+REPLACE[ \t]+)?FUNCTION[ \t]+(cdc\.[a-z_]+)[ \t]*\(([^)]*)\)`)
+
+// revokeZeile und executeGrantZeile tragen die beiden Rechte-Anweisungen der
+// Funktionen: `REVOKE EXECUTE ON FUNCTION <Liste> FROM PUBLIC;` und
+// `GRANT EXECUTE ON FUNCTION <Liste> TO <Rollen>;`.
+var (
+	revokeZeile       = regexp.MustCompile(`(?is)REVOKE[ \t\r\n]+EXECUTE[ \t\r\n]+ON[ \t\r\n]+FUNCTION[ \t\r\n]+(.+?)[ \t\r\n]+FROM[ \t\r\n]+PUBLIC[ \t\r\n]*;`)
+	executeGrantZeile = regexp.MustCompile(`(?is)GRANT[ \t\r\n]+EXECUTE[ \t\r\n]+ON[ \t\r\n]+FUNCTION[ \t\r\n]+(.+?)[ \t\r\n]+TO[ \t\r\n]+([A-Za-z0-9_, \t\r\n]+?)[ \t\r\n]*;`)
+)
+
+// ohneLeerraum entfernt jeden Leerraum aus einer Signatur und macht sie klein
+// — `cdc.f(text, json)` und `cdc.f(text,json)` tragen dieselbe Aussage.
+func ohneLeerraum(roh string) string {
+	return strings.ToLower(strings.Join(strings.Fields(roh), ""))
+}
+
+// funktionsListe zerlegt eine kommaseparierte Funktionsliste an den Kommas
+// außerhalb der Parameter-Klammern und normalisiert jeden Eintrag.
+func funktionsListe(roh string) []string {
+	var eintraege []string
+	tiefe, start := 0, 0
+	for i, zeichen := range roh {
+		switch zeichen {
+		case '(':
+			tiefe++
+		case ')':
+			tiefe--
+		case ',':
+			if tiefe == 0 {
+				eintraege = append(eintraege, ohneLeerraum(roh[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	return append(eintraege, ohneLeerraum(roh[start:]))
+}
+
+// parameterTypen liest aus einer Parameterliste (`p_source_id text, p_rule_spec
+// json`) die Typen in Reihenfolge.
+func parameterTypen(parameter string) []string {
+	var typen []string
+	for _, eintrag := range strings.Split(parameter, ",") {
+		felder := strings.Fields(eintrag)
+		if len(felder) == 0 {
+			continue
+		}
+		typen = append(typen, strings.ToLower(felder[len(felder)-1]))
+	}
+	return typen
+}
+
+// TestAdministrationDateiTraegtDieFunktionsRechte bindet das Least-Privilege-
+// Recht der schreibenden SQL-Funktionen an das **reale Artefakt**
+// `tools/schema/nacharbeit-administration.sql` (`LH-QA-SEC-001`…`003`,
+// `ADR-0047`, `ADR-0050`): jede dort definierte `cdc.*`-Funktion steht in
+// einer `REVOKE EXECUTE … FROM PUBLIC`-Anweisung (PostgreSQL grantet
+// `EXECUTE` einer neuen Funktion standardmäßig an `PUBLIC`) und in einer
+// `GRANT EXECUTE … TO cdc_admin`-Anweisung, und **keine andere Rolle** trägt
+// `EXECUTE` auf eine von ihnen. Die Regel leitet den Umfang aus den
+// `CREATE FUNCTION`-Zeilen der Datei ab, nicht aus einer Namensliste — eine
+// achte Funktion ohne Rechte-Zeile färbt sie rot. Zusätzlich sind die beiden
+// Transformations-Funktionen (`LH-FA-CFG-007`, `ADR-0112` Teilfrage 1) mit
+// ihren Signaturen benannt: die Datei trägt sie.
+//
+// Benannte Grenze: der Test liest den Text der Datei, nicht eine laufende
+// Instanz (dort belegt `make test-store` mit einem Login ohne
+// `cdc_admin`-Mitgliedschaft „permission denied for function“) — und keinen
+// dynamisch zusammengesetzten Grant.
+//
+// Rot färbende Mutationen: `cdc.set_transformation(text, text, text, text,
+// json)` aus der `GRANT`-Liste streichen · dieselbe Signatur aus der
+// `REVOKE`-Liste streichen · `cdc.remove_transformation(...)` aus der
+// `GRANT`-Liste streichen · eine zweite `GRANT EXECUTE … TO cdc_reader`-Zeile
+// anhängen.
+func TestAdministrationDateiTraegtDieFunktionsRechte(t *testing.T) {
+	roh, err := os.ReadFile(administrationDateiPfad(t))
+	if err != nil {
+		t.Fatalf("Funktions-Rollout-Datei nicht lesbar: %v", err)
+	}
+	var ohneKommentare []string
+	for _, zeile := range strings.Split(string(roh), "\n") {
+		if index := strings.Index(zeile, "--"); index >= 0 {
+			zeile = zeile[:index]
+		}
+		ohneKommentare = append(ohneKommentare, zeile)
+	}
+	quelltext := strings.Join(ohneKommentare, "\n")
+
+	definiert := map[string]bool{}
+	for _, treffer := range funktionsDefinition.FindAllStringSubmatch(quelltext, -1) {
+		definiert[strings.ToLower(treffer[1])+"("+strings.Join(parameterTypen(treffer[2]), ",")+")"] = true
+	}
+	for _, erwartet := range []string{
+		"cdc.set_transformation(text,text,text,text,json)",
+		"cdc.remove_transformation(text,text,text,text)",
+	} {
+		if !definiert[erwartet] {
+			t.Fatalf("die Datei definiert %s nicht — die Antragsarten set_transformation/remove_transformation haben keine schreibende SQL-Funktion (LH-FA-CFG-007)", erwartet)
+		}
+	}
+
+	widerrufen := map[string]bool{}
+	for _, treffer := range revokeZeile.FindAllStringSubmatch(quelltext, -1) {
+		for _, signatur := range funktionsListe(treffer[1]) {
+			widerrufen[signatur] = true
+		}
+	}
+	erteilt := map[string]map[string]bool{}
+	for _, treffer := range executeGrantZeile.FindAllStringSubmatch(quelltext, -1) {
+		for _, rolle := range zerlegeListe(treffer[2]) {
+			if erteilt[rolle] == nil {
+				erteilt[rolle] = map[string]bool{}
+			}
+			for _, signatur := range funktionsListe(treffer[1]) {
+				erteilt[rolle][signatur] = true
+			}
+		}
+	}
+
+	for signatur := range definiert {
+		if !widerrufen[signatur] {
+			t.Fatalf("%s fehlt in einer `REVOKE EXECUTE … FROM PUBLIC`-Anweisung — PostgreSQL grantet EXECUTE einer neuen Funktion an PUBLIC, jeder Login könnte einen Antrag schreiben (LH-QA-SEC-002)", signatur)
+		}
+		if !erteilt["cdc_admin"][signatur] {
+			t.Fatalf("%s fehlt in einer `GRANT EXECUTE … TO cdc_admin`-Anweisung — die Rolle des Administrations-Pfads könnte die Funktion nicht aufrufen (ADR-0047)", signatur)
+		}
+	}
+	for rolle, signaturen := range erteilt {
+		if rolle != "cdc_admin" {
+			t.Fatalf("%s trägt EXECUTE auf %v im Rollout-Text — die schreibenden Funktionen gehören allein cdc_admin (LH-QA-SEC-002)", rolle, signaturen)
+		}
+		for signatur := range signaturen {
+			if !definiert[signatur] {
+				t.Fatalf("der Grant an %s nennt %s, die Datei definiert die Funktion nicht", rolle, signatur)
+			}
+		}
+	}
+	for signatur := range widerrufen {
+		if !definiert[signatur] {
+			t.Fatalf("der REVOKE nennt %s, die Datei definiert die Funktion nicht", signatur)
+		}
+	}
+}

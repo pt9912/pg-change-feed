@@ -7,22 +7,28 @@ import (
 	"strings"
 )
 
-// knownForeignObjects trägt die aktuell sieben Objekte, die außerhalb des
+// knownForeignObjects trägt die aktuell neun Objekte, die außerhalb des
 // neutralen Modells (tools/schema/schema.yaml) über
 // tools/schema/nacharbeit-*.sql angelegt werden und deshalb bei jedem
 // zweiten `schema migrate`-Lauf gegen ein bereits migriertes Ziel als
 // destruktive Blocker erscheinen (real gemessen, --plan-only-Report gegen
-// eine frisch migrierte Ziel-DB). Ein neues nacharbeit-*.sql-Skript trägt
-// seinen Eintrag hier im selben Commit wie seine Aufrufzeile im
-// Makefile-Target `schema-rollout` — dieselbe Kolokation.
+// eine frisch migrierte Ziel-DB). Die Schreibweise der Signatur ist die des
+// Reports: ein `json`- wie ein `jsonb`-Parameter erscheint dort als
+// `in:json`; die Funktion `set_transformation` trägt einen `json`-Parameter
+// (Begründung in tools/schema/nacharbeit-administration.sql). Ein neues
+// nacharbeit-*.sql-Skript trägt seinen Eintrag hier im selben Commit wie
+// seine Aufrufzeile im Makefile-Target `schema-rollout` — dieselbe
+// Kolokation.
 var knownForeignObjects = map[foreignObject]bool{
-	{kind: "DropFunction", objectType: "FUNCTION", path: "enable_table(in:text,in:text,in:text)"}:           true,
-	{kind: "DropFunction", objectType: "FUNCTION", path: "disable_table(in:text,in:text,in:text)"}:          true,
-	{kind: "DropFunction", objectType: "FUNCTION", path: "exclude_column(in:text,in:text,in:text,in:text)"}: true,
-	{kind: "DropFunction", objectType: "FUNCTION", path: "include_column(in:text,in:text,in:text,in:text)"}: true,
-	{kind: "DropFunction", objectType: "FUNCTION", path: "backfill_table(in:text,in:text,in:text)"}:         true,
-	{kind: "DropView", objectType: "VIEW", path: "heartbeat"}:                                               true,
-	{kind: "DropView", objectType: "VIEW", path: "metrics"}:                                                 true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "enable_table(in:text,in:text,in:text)"}:                       true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "disable_table(in:text,in:text,in:text)"}:                      true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "exclude_column(in:text,in:text,in:text,in:text)"}:             true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "include_column(in:text,in:text,in:text,in:text)"}:             true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "backfill_table(in:text,in:text,in:text)"}:                     true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "set_transformation(in:text,in:text,in:text,in:text,in:json)"}: true,
+	{kind: "DropFunction", objectType: "FUNCTION", path: "remove_transformation(in:text,in:text,in:text,in:text)"}:      true,
+	{kind: "DropView", objectType: "VIEW", path: "heartbeat"}:                                                           true,
+	{kind: "DropView", objectType: "VIEW", path: "metrics"}:                                                             true,
 }
 
 // destructiveConfirmationReason ist der Blocker-Grund, unter dem d-migrate
@@ -51,7 +57,9 @@ var viewIdentifier = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
 // bricht bei einem Blocker mit Exit 8 ab.
 type decision struct {
 	// allowDestructive: der `--execute`-Schritt läuft zusätzlich mit
-	// `--allow-destructive` (nur bekannte Fremdobjekte blockieren).
+	// `--allow-destructive` (die destruktiven Blocker sind ausschließlich
+	// bekannte Fremdobjekte; neben ihnen darf die Klasse „View-Signatur“
+	// stehen, die der Vorlauf auflöst).
 	allowDestructive bool
 	// dropViews: die Views der Klasse „View-Signatur", die der Aufrufer vor
 	// `--execute` per `DROP VIEW cdc.<name>` (ohne CASCADE) entfernt;
