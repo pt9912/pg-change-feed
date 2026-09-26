@@ -26,7 +26,7 @@ Schema-Rollout, dessen Erzeugnisse die DB-Tier-Läufe hinterlassen),
 **Berührte Spec-Stellen:** — (Harness-Werkzeug und Test-Skript; keine
 Spec-Stelle).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Closure der Welle
 [welle-backfill-bestand](../done/welle-backfill-bestand.md). **Datum:** 2026-09-25.
