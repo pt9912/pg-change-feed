@@ -33,7 +33,7 @@ durch `slice-backfill-spec-nachzug`) — gelesen; die Zeile `schema` von
 [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)), nicht dieses
 Plans.
 
-**Verantwortlich:** Implementer-Agent.
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
@@ -74,7 +74,7 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
 
 ## 2. Definition of Done
 
-- [ ] Regelauswertung im Run: jeder Block liest den Regelstand über den Port
+- [x] Regelauswertung im Run: jeder Block liest den Regelstand über den Port
       neu (neben dem Ausschlussstand) und baut das Bild über die gemeinsame
       Funktion mit dem Regelsatz; ein Backfill-Change trägt bei gleicher Zeile
       und gleicher Regelmenge ein byte-gleiches Bild wie die WAL-Change am
@@ -88,7 +88,7 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       `kern-rename` hinterlassen hat, ist ersetzt. *Zu belegen durch:* `make
       test` (Race-Detector) und — wenn der Paritätstest der Backfill-Welle im
       Replication-Tier liegt (am Start gelesen) — `make test-replication`.
-- [ ] Fail-closed und Nichtanwendbarkeit: die Prüfung vor dem Commit vergleicht
+- [x] Fail-closed und Nichtanwendbarkeit: die Prüfung vor dem Commit vergleicht
       zusätzlich den Regelstand (Mengengleichheit unabhängig von der
       Reihenfolge; eine Zwischenabweichung — Regel gesetzt, dann entfernt —
       wird erkannt); eine Regel, die auf den Bestand nicht anwendbar ist
@@ -112,7 +112,7 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       vor dem Commit — der Fake scheitert ab dem n-ten Aufruf, je Aufrufstelle
       eine Mutation, die ihren Fehler verwirft
       (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`).
-- [ ] E2E-Beleg in `make test-integration`: für eine Tabelle mit
+- [x] E2E-Beleg in `make test-integration`: für eine Tabelle mit
       `rename_column`-Regel trägt ein Backfill-Run den Bestand über
       `cdc.changes` und `GET /changes` mit umbenanntem Schlüssel und `origin =
       'backfill'`; mit zusätzlichem `exclude_column` auf der umbenannten Spalte
@@ -133,16 +133,16 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — keine neue Betreiber-Oberfläche; die Aussage,
+- [x] Doku-Update: entfällt — keine neue Betreiber-Oberfläche; die Aussage,
       dass Regeln auch für einen Backfill gelten, steht mit den übrigen im
       Handbuch-Abschnitt von `slice-transformationen-betriebsdoku` (Adresse in
       dessen §2).
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -158,11 +158,15 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| Use Case des Runs (`internal/application/usecase/backfill/…`, aus `slice-backfill-run-usecase`; Ort am Start gemessen) | update | Regelstand je Block neu lesen, Bild über die gemeinsame Funktion mit dem Regelsatz, Fail-closed um den Regelstand erweitert, Nichtanwendbarkeit endet den Run. |
-| Fähigkeits-Ports des Runs und ihre Fakes | update | der Regelstand-Port aus `antragsweg-usecase` geht in den Use Case ein. |
-| `internal/bootstrap/wiring.go` (Backfill-Verdrahtung) | update | reicht den Regelstand-Port an den Run. |
-| Paritätstest der Backfill-Welle (Ort am Start gelesen) | update | tabellengetrieben über die Regeltypen der Domäne, mit und ohne Regel. |
-| `test/integration/integration_test.go`, `tools/harness/run-integration-tests.sh` | update | Backfill-Phase mit Regel; `-run`-Muster und Abdeckungs-Deklaration (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). |
+| `internal/application/usecase/backfill/service.go` | update | `Ports` trägt den Regelstand-Port (`Transformations`, neun Ports); `copyBlocks` liest den Regelstand einmal nach dem Öffnen des Snapshots (Stand des Runs), prüft ihn mit `checkRulesApplicable` (`Transformation.CheckApplicable` gegen `snapshot.Columns()`) vor dem ersten `NextBlock` und vor `Begin`, liest ihn je Block und unmittelbar vor dem Commit neu und vergleicht als Menge (`sameSet`, ersetzt `sameNames`/`nameSet`); `blockBuilder.build` übergibt den Regelsatz des Blocks an `BuildRowImage` (der Kommentar mit der Adresse dieses Slice ist entfernt); `classifyError` bildet `ErrTransformationColumnMissing`/`ErrTransformationTargetCollides` auf `schema` und `ErrTransformationStateChanged` auf `configuration` ab. Kosten der Lesung je Block: als benannte Grenze im Doc-Kommentar von `copyBlocks` (der Port liest die Zeilen aller Tabellen der Quelle). |
+| `internal/domain/errors/errors.go` | update | neuer Sentinel `ErrTransformationStateChanged` (Klasse `configuration`): [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 5 verlangt die Klasse für den Wechsel des Regelstands; ein eigener Sentinel lässt den Fehlertext den Regelstand nennen statt den Ausschluss (Plan-Drift: dieser Plan nannte keinen neuen Sentinel). |
+| `internal/domain/model/rowimage.go` | update (Kommentar) | der Satz „der Backfill-Lauf mit leerer Regelmenge“ beschreibt den Ist-Zustand (Übergabe aus `kern-rename`). |
+| `internal/bootstrap/wiring.go` | update | `Transformations: activation` in den `backfill.Ports` (dieselbe Adapter-Instanz wie `Exclusion`, dieselbe Rolle auf `cdc.administration_request`). |
+| `internal/bootstrap/administration_roles_internal_test.go`, `internal/bootstrap/backfill_endtoend_test.go` | update | die zwei Test-Verdrahtungen mit realem Adapter tragen den neuen Port. |
+| `internal/application/usecase/backfill/service_test.go`, `internal/application/usecase/backfill/transformation_test.go` (neu) | update, neu | `fakeRules` (Fehler ab dem n-ten Aufruf wie `fakeExclusion`) im Rig; die Tests der Regelauswertung, des Eigenschaftstests (Regeltyp × Regel-Spalte × ausgeschlossene Spalte), der Nichtanwendbarkeit (`schema`), des Zustandswechsels (`configuration`), des Lesefehlers je Aufrufstelle und der nicht lesbaren `applied`-Zeile (`internal`). |
+| `internal/bootstrap/backfill_image_parity_test.go` (neu) | neu | Paritätstest tabellengetrieben über `model.TransformationKinds()`: echter `mapper.Assembler` gegen echten `BackfillTableService` (Fakes an den Ports des Runs), Bytes der Bilder gleich. Der Ort am Start gelesen: `TestImageParityWalAndBackfill` (`internal/adapters/driven/postgressnapshot/snapshot_test.go`, Replication-Tier) trägt die Typ-Parität über reale Textwerte, die regelunabhängig ist (eine Regel ändert Schlüssel, nie den Wert) und unverändert bleibt; der Regel-Fall liegt in `make test`, weil beide Pfade nur die Composition Root zugleich importieren darf (`.a-check.yml`, `composition_root`). |
+| `tools/harness/run-integration-tests.sh` | update | neue Phase „Backfill-Regelstand“ (nach „Backfill-Boundary“): `rename_column`-Bestand über `cdc.changes` und `GET /changes`, Schlüsselmengen-Vergleich mit einer WAL-Change, `exclude_column` auf der umbenannten Spalte, nicht anwendbare Regel (`schema`, run-lokal) und Abhilfe. Die Phase ist eine Shell-Phase (SQL, HTTP): `test/integration/integration_test.go` bleibt unverändert, es entsteht kein `func TestE2E*` und kein `-run`-Muster (Nicht-Realisierung der Plan-Zeile, Grund: kein Go-Test nötig; `BEO-PGC/test-runner-stiller-ausschluss` betrifft die `-run`-Muster und trifft die Phase nicht). |
+| `harness/README.md` | update | §3.13-Träger: die Zeile `make test-integration` zählt die Backfill-Rundläufe (sieben → acht) und nennt die Phase. |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner, wird nicht von Hand geschrieben. |
 
 **Übergaben aus `slice-backfill-run-usecase`** (gemeldet, kein zusätzlicher Umfang; alle
@@ -236,16 +240,69 @@ und Plan des Slice §6, gelesen am Stand `2c22334f`):
   Der Slice nennt die Klasse, in der `classifyError` diesen Fehler abbildet, und bindet den Fall
   mit einem Test (Eingabeseite: eine nicht lesbare `applied`-Zeile im Fake des Regelstands).
 
+**Festlegungen des Implementers (Semantik der Regelstand-Lesung im Run):**
+
+- **Der Stand des Runs ist der Stand nach dem Öffnen des Snapshots.** Die Lesung zu Beginn (einmal je Run, vor dem ersten `NextBlock`, vor `Begin`) ist Grundlage der Anwendbarkeitsprüfung und der Vergleichsstand; eine Regel, die zwischen Antrag und Start des Runs gesetzt wurde, gilt für den Run. Ein Antrag während des Runs endet ihn mit `configuration`, sobald eine der folgenden Lesungen (je Block, unmittelbar vor dem Commit) ihn sieht ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 5).
+- **Kosten der Lesung (benannte Grenze, gemessen nicht).** Jede Lesung liest die `applied`-Zeilen der zwei Transformations-Antragsarten aller Tabellen der Quelle (Statement `SelectAppliedTransformationRequests`, ohne Tabellenfilter); ein Run liest den Regelstand `Blockzahl + 2`-mal, den Ausschlussstand `Blockzahl + 1`-mal (`DefaultBlockSize` 1000, `internal/adapters/driven/postgressnapshot/snapshot.go`). Die Kosten eines Runs sind damit Zeilen der Queue der Quelle mal `Blockzahl + 2` — abgeleitet, nicht gemessen; ein tabellenbezogener Lesezugriff änderte den Port (`TransformationPort`, Adapter, Fakes) und gehört in einen eigenen Plan, falls die Queue einer Quelle in die Größenordnung der Blockzahl wächst. Die Grenze steht im Doc-Kommentar von `copyBlocks`.
+- **Klasse der Faltungsfehler im Run:** `internal` (Rückfall von `classifyError`); der Fall ist mit einem Test gebunden (`TestExecuteUnreadableAppliedRowEndsRunAsInternal`, Eingabeseite: der reale Fehler von `model.FoldTransformations` an einer nicht lesbaren Regelform, je Aufrufstelle der Lesung).
+- **Leere Tabelle:** die Prüfung der Anwendbarkeit läuft auch dann (sie hängt an Regel- und Spaltenmenge, nicht an einer Zeile, [`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md) Festlegung 2): ein Run über eine leere Tabelle mit nicht anwendbarer Regel endet `failed`/`schema`.
+
+**Mutationen (je Zusage eine Eingabeseiten-Mutation; Zusage · mutierte Eingabe · gesehenes Rot; die Menge der Stellen steht in der Zusage):**
+
+| Zusage | mutierte Eingabe | gesehenes Rot |
+|---|---|---|
+| Der Run baut das Bild mit dem Regelsatz des Blocks (Regeltypen der Domäne: `rename_column`, drei Blöcke, drei Zeilen je Fall) | `nil` statt `rules` an `BuildRowImage` (`build`) | `TestExecuteBuildsImagesWithTheRuleSet`, `TestExecuteRulesNeverLeakExcludedColumns`, `TestExecuteRuleTargetCollisionInBlockEndsRunAsSchema`, `TestBackfillAndWALImagesAreByteEqualWithRules` |
+| Der Run liest den Regelstand der Tabelle des Runs (Schlüssel `schema.table`) | Schlüssel einer anderen Tabelle (`public.other`) in `transformationRules` | `TestExecuteBuildsImagesWithTheRuleSet`, `…InapplicableRule…`, `…StateChange…`, `…NeverLeak…`, `…FailureIsReportedInTheRunOnly`, Parität (sieben Tests) |
+| Der Run liest den Regelstand der Quelle des Runs | leere Quelle an `TransformationRules` | `TestExecuteBuildsImagesWithTheRuleSet` |
+| Die Parität von WAL- und Backfill-Bild (Regeltypen × Regel-Spalte × Ausschluss, 12 Fälle) | `nil` statt `binding.Transformations` an `BuildRowImage` im `Assembler` (Gegenseite) | `TestBackfillAndWALImagesAreByteEqualWithRules` |
+| Ausschluss vor Regel im Run (`LH-QA-SEC-004`; 9 Fälle Regeltyp × Regel-Spalte × ausgeschlossene Spalte) | Ausschluss erst am Zielschlüssel in `BuildRowImage` prüfen | `TestExecuteRulesNeverLeakExcludedColumns` (dazu die Tests von `model` und `mapper`), `TestBackfillAndWALImagesAreByteEqualWithRules` |
+| Nichtanwendbarkeit endet den Run `schema` vor dem ersten Block (6 Fälle: Spalte fehlt, Ziel kollidiert, leere Tabelle, zweite Regel, fremde Tabelle, anwendbare Regel) | Prüfung entfällt; Prüfung gegen `nil` statt der Snapshot-Spalten | `TestExecuteInapplicableRuleEndsRunAsSchema` (beide) |
+| Die Klasse `schema` für beide Sentinels der Prüfung | Abbildung von `ErrTransformationTargetCollides` entfernt; Abbildung von `ErrTransformationColumnMissing` entfernt (je eine) | `TestExecuteInapplicableRuleEndsRunAsSchema` (beide), `TestExecuteRuleTargetCollisionInBlockEndsRunAsSchema` (erste) |
+| Zustandswechsel des Regelstands endet `configuration` (11 Fälle; drei Lesestellen: Block, vor dem Commit; Vergleich als Menge) | Vergleich je Block entfernt; Vergleich vor dem Commit entfernt; Mengenvergleich als Längenvergleich (je eine) | `TestExecuteRuleStateChangeEndsRunAsConfiguration` (drei, zwei, zwei Fälle) |
+| Abbildung `ErrTransformationStateChanged` → `configuration` | Abbildung entfernt (Klasse `internal`) | `TestExecuteRuleStateChangeEndsRunAsConfiguration` (alle Fehlerfälle) |
+| Lesefehler des Regelstands endet den Run (fünf Aufrufstellen: zu Beginn, drei Blöcke, vor dem Commit) | Fehler verworfen, je Stelle eine Mutation (zu Beginn, je Block, vor dem Commit) | `TestExecuteRuleReadFailure` (der Fall der Stelle; je Mutation weitere Fälle der Faltungs-Klasse), `TestExecuteUnreadableAppliedRowEndsRunAsInternal` |
+| Eine nicht lesbare `applied`-Zeile endet als `internal` | Rückfall von `classifyError` auf `storage` | `TestExecuteUnreadableAppliedRowEndsRunAsInternal` (vier Stellen) |
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „welche
 Erzeugungspfade `model.Change`-Bilder bauen und ob sie den Regelstand tragen“;
 beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Alle Bild-Erzeuger | `grep -rn` nach dem Funktionsnamen der gemeinsamen Funktion (am Start gemessen) über `internal --include=*.go` und `grep -rn 'json.Marshal' internal --include=*.go` | *(Implementer trägt ein)* | jede Fundstelle, die ein Row Image baut, ruft die gemeinsame Funktion mit dem Regelsatz; eine zweite Konstruktion ist ein Befund |
-| Aufrufer mit leerer Regelmenge | Suchbefehl der Kern-Slice-Zeile „Aufrufer der gemeinsamen Funktion“ am Parent-Stand | *(Implementer trägt ein)* | keine leere Regelmenge im Backfill-Pfad mehr |
-| Fail-closed-Aufzählungen (Bindung, Ausschlussstand) in Doc-Kommentaren und Docs | `grep -rn 'Ausschlussstand' internal docs spec harness` | *(Implementer trägt ein)* | Aufzählungen um den Regelstand ergänzen |
-| Beschreibung des Backfill-Bild-Baus in Doku | `grep -rn 'Backfill' docs/user harness spec` | *(Implementer trägt ein)* | Aussagen über die Bildform des Backfills tragen die Regel-Bindung |
+| Alle Bild-Erzeuger | `git grep -n 'BuildRowImage('` und `git grep -n 'json.Marshal'` über `internal` ohne Tests (Block unten, Zeilen 1–4) | **Gefunden.** Parent `3973390e`: `BuildRowImage(` 4 Treffer — die Definition (`rowimage.go`), zwei Aufrufe in `mapper.go` (mit `binding.Transformations`) und ein Aufruf in `service.go` (mit `nil`); `json.Marshal` 4 Treffer — zwei in `rowimage.go` (die Konstruktion selbst), je einer in `natsstream/publisher.go` und `http/sse.go` (Serialisierung eines fertigen Bildes für die Zustellwege, kein Bild-Bau). Diff: 4 und 4, der Aufruf in `service.go` trägt den Regelsatz des Blocks. **Nichtgefunden:** keine zweite Konstruktion eines Row Images, kein zweiter Bild-Bau-Weg im Run. | keine Änderung an den Fundstellen außer dem Aufruf im Run; die zwei Zustellweg-Treffer sind Serialisierung, kein Bild-Bau. |
+| Aufrufer mit leerer Regelmenge | `git grep -n -E 'BuildRowImage\(.*nil\)'` über `internal` ohne Tests (Block unten, Zeilen 5–6) und mit Tests (`-- 'internal/*_test.go'`, gelesen) | **Gefunden.** Parent 1 Treffer (`service.go`), Diff 0. Mit Tests: 9 Treffer, alle mit `nil` als Regelsatz — `rowimage_test.go` (sieben, der Vergleich mit leerer Regelmenge) und `postgressnapshot/snapshot_test.go` (zwei, `TestImageParityWalAndBackfill`: die reale Typ-Parität der Textwerte, regelunabhängig, siehe §3-Zeile des Paritätstests). **Nichtgefunden:** kein Nicht-Test-Aufrufer mit leerer Regelmenge im Backfill-Pfad mehr. | die zwei Aufrufer in `snapshot_test.go` bleiben: sie beweisen die Gleichheit der Rohtexte, und eine Regel ändert nur Schlüssel. |
+| Fail-closed-Aufzählungen (Bindung, Ausschlussstand) in Doc-Kommentaren und Docs | `git grep -n Ausschlussstand` über `internal docs spec harness` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 7–8) und `git grep -n sameNames` über `internal` (Zeilen 23–24) | **Gefunden.** Parent 92 Treffer, Diff 93 (ein Treffer mehr: der Doc-Kommentar von `copyBlocks`). Die Träger, die die Prüfung vor dem Commit beschreiben: `service.go` (Doc-Kommentare von `Ports` und `copyBlocks`, nachgezogen), `spec/pflichtenheft.md` §Fail-closed (trägt „Ausschlussstand sowie der Regelstand“ seit `slice-transformationen-spec-nachzug`), `spec/architecture.md` (Sequenzdiagramm „Bindung, Ausschluss- und Regelstand erneut prüfen“). `sameNames` (Symbol): 4 Treffer im Parent, alle `service.go`, 0 im Diff (ersetzt durch `sameSet`). **Nichtgefunden:** keine Aufzählung in `docs/user` (`benutzerhandbuch.md` trägt den Ausschlussstand nur als Dauerhaftigkeit der Spalten-Anträge, ohne Backfill-Bezug). | Aufzählungen in `service.go` tragen den Regelstand; Spec und Sicht tragen ihn schon. |
+| Beschreibung des Backfill-Bild-Baus in Doku | `git grep -n -i Backfill` über `docs/user harness spec` (Block unten, Zeilen 9–10) und die Zählwörter „sieben Backfill“/„acht Backfill“ (Zeilen 11–14) | **Gefunden.** 236 Treffer im Parent, 237 im Diff (einer mehr: die Zeile der neuen Phase im Erzeugnis `docs/user/e2e-abdeckung.md`); die Aussagen über die Bildform stehen in `spec/pflichtenheft.md` §Fail-closed und §Sichtbarkeit, in `spec/architecture.md` (Form der Row Images, Sequenz) und in `harness/README.md`; Zählwort: „sieben Backfill“ 1 Treffer im Parent (`harness/README.md`, Zeile `make test-integration`), 0 im Diff; „acht Backfill“ 0 im Parent, 1 im Diff. **Nichtgefunden:** keine Handbuch-Stelle, die die Bildform des Backfills beschreibt (das Handbuch trägt die Transformationen noch nicht: `slice-transformationen-betriebsdoku`). | die Zeile `make test-integration` in `harness/README.md` zählt acht Rundläufe und nennt die Regelstand-Phase; Meldung an `slice-transformationen-betriebsdoku`: die Aussage, dass Regeln auch für einen Backfill gelten. |
+| Adresse dieses Slice im Code | `git grep -n 'slice-transformationen-backfill-pfad'` über `internal tools harness spec docs/user Makefile` (Block unten, Zeilen 15–16) | **Gefunden.** Parent 1 Treffer (Kommentar in `blockBuilder.build`), Diff 0. **Nichtgefunden:** keine weitere Adresse auf diesen Slice außerhalb der Pläne. | der Kommentar beschreibt den Ist-Zustand ohne Adresse. |
+| Klassifikations-Kommentar „vergibt `schema` nicht“ | `git grep -n -F 'vergibt der Run nicht'` über `internal` (Block unten, Zeilen 17–18) | **Gefunden.** Parent 2 Treffer (`classifyError`, Doc-Kommentar von `TestExecuteClassifiesFailures`), Diff 0. | beide umformuliert (die Klasse `schema` und der Zustandswechsel stehen im Doc-Kommentar von `classifyError`). |
+| Aufrufer des Regelstand-Ports und der Prüffunktion | `git grep -n TransformationRules` und `git grep -n -E 'CheckApplicable\('` über `internal` ohne Tests (Block unten, Zeilen 19–22) | **Gefunden.** `TransformationRules`: Parent 13, Diff 15 (zwei mehr: die Lesung im Run und die Nennung im Doc-Kommentar von `copyBlocks`); `CheckApplicable(`: Parent 2 (Definition und `mapper.go`), Diff 3 (der Run ruft dieselbe Prüffunktion der Domäne). **Nichtgefunden:** keine Kopie der Prüffunktion im Run (Risiko „Prüfung steht zweimal“). | der Run trägt `checkRulesApplicable` als Schleife über `Transformation.CheckApplicable`, keine eigene Regellogik. |
+
+```suchlauf
+3973390e 4 -n 'BuildRowImage(' -- internal ':!*_test.go'
+diff 4 -n 'BuildRowImage(' -- internal ':!*_test.go'
+3973390e 4 -n 'json.Marshal' -- internal ':!*_test.go'
+diff 4 -n 'json.Marshal' -- internal ':!*_test.go'
+3973390e 1 -n -E 'BuildRowImage\(.*nil\)' -- internal ':!*_test.go'
+diff 0 -n -E 'BuildRowImage\(.*nil\)' -- internal ':!*_test.go'
+3973390e 92 -n Ausschlussstand -- internal docs spec harness ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 93 -n Ausschlussstand -- internal docs spec harness ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+3973390e 236 -n -i Backfill -- docs/user harness spec
+diff 237 -n -i Backfill -- docs/user harness spec
+3973390e 1 -n 'sieben Backfill' -- harness tools docs/user spec
+diff 0 -n 'sieben Backfill' -- harness tools docs/user spec
+3973390e 0 -n 'acht Backfill' -- harness tools docs/user spec
+diff 1 -n 'acht Backfill' -- harness tools docs/user spec
+3973390e 1 -n 'slice-transformationen-backfill-pfad' -- internal tools harness spec docs/user Makefile
+diff 0 -n 'slice-transformationen-backfill-pfad' -- internal tools harness spec docs/user Makefile
+3973390e 2 -n -F 'vergibt der Run nicht' -- internal
+diff 0 -n -F 'vergibt der Run nicht' -- internal
+3973390e 13 -n TransformationRules -- internal ':!*_test.go'
+diff 15 -n TransformationRules -- internal ':!*_test.go'
+3973390e 2 -n -E 'CheckApplicable\(' -- internal ':!*_test.go'
+diff 3 -n -E 'CheckApplicable\(' -- internal ':!*_test.go'
+3973390e 4 -n sameNames -- internal
+diff 0 -n sameNames -- internal
+```
 
 ## 4. Trigger
 
