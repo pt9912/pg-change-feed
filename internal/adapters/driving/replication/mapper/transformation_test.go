@@ -474,8 +474,7 @@ func TestSetAndRemoveTransformationOnLiveBinding(t *testing.T) {
 	}
 }
 
-// Die Fitness Function von `ADR-0112` (Eigenschaftstest, `LH-QA-SEC-004`):
-// für jeden Regeltyp der Domänen-Menge und jede Spalte der Relation als
+// Die Fitness Function von `ADR-0112` (Eigenschaftstest): für jeden Regeltyp der Domänen-Menge und jede Spalte der Relation als
 // ausgeschlossene Spalte trägt das Bild weder den Quellschlüssel noch einen
 // Zielnamen noch den Quellwert noch den abgebildeten Wert — die Regel sitzt
 // dabei genau auf der ausgeschlossenen Spalte, eine zweite Regel auf einer

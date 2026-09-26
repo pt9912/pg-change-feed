@@ -138,8 +138,8 @@ func TestExecuteBuildsImagesWithTheRuleSet(t *testing.T) {
 	}
 }
 
-// TestExecuteRulesNeverLeakExcludedColumns trägt `LH-QA-SEC-004` für den
-// Backfill-Pfad (`ADR-0112` Teilfrage 5, Fitness Function): für jeden Regeltyp
+// TestExecuteRulesNeverLeakExcludedColumns trägt die Fitness Function des
+// Ausschlusses für den Backfill-Pfad (`ADR-0112` Teilfrage 5): für jeden Regeltyp
 // der Domäne, jede Spalte als Ziel der Regel und jede ausgeschlossene Spalte
 // trägt kein Bild des Runs den Schlüssel der ausgeschlossenen Spalte, ihren
 // Zielnamen, ihren Wert oder ihren abgebildeten Wert; die übrigen Spalten
@@ -308,9 +308,8 @@ func TestExecuteRuleTargetCollisionInBlockEndsRunAsSchema(t *testing.T) {
 	}
 }
 
-// TestExecuteRuleStateChangeEndsRunAsConfiguration trägt `ADR-0117`
-// Festlegung 5 und die Fail-closed-Prüfung des Regelstands (`ADR-0111`
-// Teilfrage 4): jede Abweichung des Regelstands zwischen der Lesung zu Beginn
+// TestExecuteRuleStateChangeEndsRunAsConfiguration trägt die
+// Fail-closed-Prüfung des Regelstands (`ADR-0117` Festlegung 5): jede Abweichung des Regelstands zwischen der Lesung zu Beginn
 // und einer späteren Lesung (Blöcke, unmittelbar vor dem Commit) rollt zurück
 // und endet den Run `failed` mit der Klasse `configuration` — auch eine
 // Abweichung in einem Zwischenblock, die am Ende wieder gleich ist, und eine

@@ -67,8 +67,8 @@ func (s TransformationSpec) Target() string { return s.to }
 
 // ParseTransformationSpec liest die Regelform aus dem JSON-Text von
 // `rule_spec` (`SPEC-030`) strikt und prüft die Formzeilen zwei bis fünf in
-// der Reihenfolge der Fehlertext-Tabelle (`SPEC-019`; die erste Formzeile,
-// den Regelnamen, prüft `CheckRuleName`):
+// der Reihenfolge der Fehlertext-Tabelle (die erste Formzeile, den
+// Regelnamen, prüft `CheckRuleName`):
 //
 //	a) der Text ist gültiges UTF-8 und ein JSON-Objekt, `kind` fehlt nicht und
 //	   ist eine Zeichenkette (der leere Text, JSON-`null` und ein Wert ohne

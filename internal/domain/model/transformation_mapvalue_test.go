@@ -121,8 +121,8 @@ func TestMapValueRuleIsImmutableAndComparable(t *testing.T) {
 
 // Die Anwendbarkeit von `map_value` hängt an der Spalte (`SPEC-030`,
 // Anwendbarkeit): die Regel trägt keinen Zielnamen und prüft keine Kollision,
-// auch nicht mit einer Spalte, deren Name leer ist (der leere Zielname von
-// `rename_column` wäre eine). Rot färbende Mutationen: `containsName(columns,
+// auch nicht mit einer Spalte, deren Name leer ist (der Zielname von `map_value`
+// ist leer). Rot färbende Mutationen: `containsName(columns,
 // t.column)` entfernen (Fall „Spalte fehlt“); die Prüfung `t.kind ==
 // TransformationRenameColumn` in `CheckApplicable` entfernen (Fall „leerer
 // Spaltenname“).
@@ -388,7 +388,7 @@ func TestBuildRowImageMapValueIsDeterministicAndPure(t *testing.T) {
 }
 
 // ParseTransformationSpec liest `map_value` strikt: Schlüssel, Pflichtschlüssel
-// und die Form von `values` (`SPEC-030`, `SPEC-019` Fehlertext-Tabelle). Rot
+// und die Form von `values` (`SPEC-030`). Rot
 // färbende Mutationen je Zeile: den Zweig `TransformationMapValue` in
 // `ParseTransformationSpec` entfernen (Fälle ohne Fehler enden als unbekannter
 // Regeltyp); `"values"` aus `allowedRuleKeys` streichen (der gültige Fall
