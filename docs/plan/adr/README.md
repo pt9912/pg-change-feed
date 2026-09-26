@@ -139,3 +139,4 @@ Entwurf, 2026-09-09 in Einzel-ADRs überführt).
 | ADR-0124 | Retention: Kandidaten seitenweise ohne Row Images (ergänzt ADR-0111) | Accepted | 2026-09-25 | [0124-retention-kandidaten-seitenweise-ohne-row-images.md](0124-retention-kandidaten-seitenweise-ohne-row-images.md) |
 | ADR-0125 | Transformationen: Regelform als json-Parameter (Supers. ADR-0112, teilw.) | Accepted | 2026-09-26 | [0125-transformationen-parametertyp-regelform-json.md](0125-transformationen-parametertyp-regelform-json.md) |
 | ADR-0126 | Transformationen: Annahmemenge von rule_spec (Supers. ADR-0125, teilw.) | Accepted | 2026-09-26 | [0126-transformationen-annahmemenge-rule-spec.md](0126-transformationen-annahmemenge-rule-spec.md) |
+| ADR-0127 | Antrags-Queue: `requested_at` ist der Aufrufzeitpunkt (ergänzt ADR-0050) | Accepted | 2026-09-26 | [0127-antrags-queue-requested-at-aufrufzeitpunkt.md](0127-antrags-queue-requested-at-aufrufzeitpunkt.md) |

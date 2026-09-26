@@ -615,9 +615,26 @@ derselben Zeile.
 | `rule_name` | text | nein | Regelname der beiden Transformations-Antragsarten, je Tabelle eindeutig, Alphabet in `SPEC-030` (Bezeichner); die fünf übrigen Antragsarten tragen hier NULL |
 | `rule_spec` | jsonb | nein | Regelform (`SPEC-030`) der Antragsart `set_transformation`; die sechs übrigen Antragsarten tragen hier NULL |
 | `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` |
-| `requested_at` | timestamptz | ja, Default `current_timestamp` | Anlage-Zeitpunkt; die Verarbeitungs-Ordnung |
+| `requested_at` | timestamptz | ja, Default `current_timestamp` | Zeitpunkt des Funktionsaufrufs (die Funktionen setzen ihn ausdrücklich auf `clock_timestamp()`); die Verarbeitungs-Ordnung |
 | `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
 | `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
+
+**Ordnung der Verarbeitung.** Die sieben SQL-Funktionen setzen `requested_at` auf den
+Zeitpunkt ihres Aufrufs (`clock_timestamp()`), nicht auf den Beginn der Transaktion.
+Aufrufe **einer** Transaktion tragen dadurch verschiedene Zeitstempel in der Reihenfolge
+des Aufrufs: `remove_transformation` vor `set_transformation` derselben Regel,
+`exclude_column` vor `include_column` derselben Spalte und `disable_table` vor
+`enable_table` werden in dieser Folge verarbeitet und abgeleitet. Die offenen Anträge
+werden in der Ordnung `requested_at`, bei gleichem Zeitstempel nach
+`administration_request_id` verarbeitet — dieselbe Ordnung, in der die dauerhaften Stände
+abgeleitet werden; die Kennung ordnet nur deterministisch, nicht zeitlich. Grenzen: Die
+Ordnung ist der Zeitpunkt des Aufrufs, nicht der des `COMMIT`. Schreibt die Transaktion
+eines früher aufgerufenen Antrags später fest als die eines später aufgerufenen Antrags
+auf dieselbe Regel oder Spalte, verarbeitet die Queue den früheren nach dem späteren, die
+Ableitung ordnet ihn davor; der laufende Stand weicht dann bis zum nächsten Prozessstart
+vom abgeleiteten Stand ab. Anträge auf dieselbe Regel oder Spalte werden deshalb nicht aus
+überlappenden Transaktionen abgesetzt. Ein Rückwärtssprung der Serveruhr zwischen zwei
+Aufrufen kehrt deren Ordnung um.
 
 `column_name` ist für die beiden Spalten-Antragsarten Pflicht (ein Antrag
 ohne Spalte adressiert kein Ziel, Domänen-Invariante des
@@ -676,7 +693,8 @@ je Tabelle, die Mehrdeutigkeit statt sie aufzulösen ausschließt:
 
 - **K1** — `rule_name` ist je Tabelle eindeutig; ein `set_transformation`
   gegen einen vergebenen Namen endet `failed` (erst entfernen, dann neu
-  setzen).
+  setzen; beide Aufrufe dürfen in einer Transaktion stehen, siehe „Ordnung der
+  Verarbeitung“).
 - **K2** — jede Quellspalte trägt höchstens eine Spaltenregel
   (`rename_column` oder `map_value`); Umbenennung und Wertabbildung derselben
   Spalte sind nicht kombinierbar.
@@ -1151,3 +1169,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `LH-FA-CAP-009.a` Absatz „Markierung": das Backfill-Row-Image ist inhaltsgleich (Schlüsselmenge und Werte) dem WAL-Image derselben Zeile; `SPEC-008` Absatz „Nicht anwendbare Regel": ein Prozessneustart für den neuen Run ist nicht Teil der Zusage |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an (Spalte `rule_spec` bleibt `jsonb`); Aufrufform: Literal oder `::json`, ein `jsonb`-typisierter Wert braucht den Cast; syntaktisch ungültiges JSON scheitert beim Aufruf, gültiges JSON wird als Antrag angenommen und in Go geprüft |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": die Annahmemenge von `rule_spec` benannt statt „gültiges JSON" — angenommen `NULL` und jeder Text, den PostgreSQL als `json` liest und nach `jsonb` umwandelt; abgelehnt ohne Antrags-Zeile Syntaxfehler, `\u0000`-Escape, Zahl außerhalb des `numeric`-Bereichs, Schachtelung jenseits der Stapeltiefe |
+| 2026-09-26 | `SPEC-019` Spalte `requested_at` und neuer Absatz „Ordnung der Verarbeitung“: `requested_at` ist der Zeitpunkt des Funktionsaufrufs, Aufrufe einer Transaktion werden in Aufrufreihenfolge verarbeitet, Verarbeitungs- und Ableitungsordnung sind dieselbe (Kennung als deterministischer Zweitschlüssel); Grenzen: Aufruf- statt Festschreibungs-Zeitpunkt, Serveruhr; K1 nennt, dass Entfernen und Neusetzen in einer Transaktion stehen dürfen |
