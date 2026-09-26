@@ -659,11 +659,17 @@ und `remove_transformation` Pflicht, `rule_spec` nur für
 `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an und
 schreibt sie als `jsonb` in die Spalte `rule_spec`: ein Literal und ein
 `::json`-Wert werden angenommen, ein `jsonb`-typisierter Wert (`::jsonb`, das
-Ergebnis von `jsonb_build_object`) braucht den Cast `::json`. Syntaktisch
-ungültiges JSON scheitert beim Aufruf und hinterlässt keine Antrags-Zeile;
-gültiges JSON — auch `NULL`, JSON-`null` und ein Wert ohne Objekt — wird als
-Antrag angenommen. Die Prüfung der Regelform liegt vollständig im
-Capture-Prozess, nicht in SQL. Ein Antrag, der eine der
+Ergebnis von `jsonb_build_object`) braucht den Cast `::json`. Angenommen wird
+`NULL` (SQL-`NULL`) und jeder Text, den PostgreSQL als `json` liest und nach
+`jsonb` umwandeln kann — auch JSON-`null`, ein Wert ohne Objekt und ein doppelter
+Schlüssel (die Spalte hält den letzten Wert). Der Aufruf scheitert ohne
+Antrags-Zeile, wenn der Wert für PostgreSQL kein JSON ist (Syntaxfehler, leerer
+Text, `NaN`, einzelnes Surrogat-Escape) oder die Umwandlung nach `jsonb`
+scheitert: das Zeichen U+0000 als Escape `\u0000` in einem Schlüssel oder Wert,
+eine Zahl außerhalb des Zahlbereichs von `numeric`, eine Schachtelung jenseits der
+Stapeltiefe des Servers. Die Aussage ist an PostgreSQL 17 und 18 gemessen. Die
+Prüfung der Regelform liegt vollständig im Capture-Prozess, nicht in SQL; die
+Annahme des Aufrufs ist keine Zusage, dass der Antrag verarbeitet wird. Ein Antrag, der eine der
 folgenden Bedingungen verletzt, endet `failed` mit dem Fehlertext der
 Tabelle unten und lässt den Regelstand unverändert — die **Konfliktfreiheit**
 je Tabelle, die Mehrdeutigkeit statt sie aufzulösen ausschließt:
@@ -1144,3 +1150,4 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-26 | `SPEC-002` um die Aussage ergänzt, dass die Schlüsselmenge der Row Images dem Regelstand zum Erfassungszeitpunkt folgt; `SPEC-008` Zeile `schema` und der Absatz darunter um die Nichtanwendbarkeit einer Transformationsregel im Erfassungspfad und im Run samt Abhilfe erweitert; `LH-FA-CAP-009.a` um die Regelwirkung im Bild, den Regelstand in der Fail-closed-Prüfung und den Run-Fehler der Klasse `schema` ergänzt |
 | 2026-09-26 | `LH-FA-CAP-009.a` Absatz „Markierung": das Backfill-Row-Image ist inhaltsgleich (Schlüsselmenge und Werte) dem WAL-Image derselben Zeile; `SPEC-008` Absatz „Nicht anwendbare Regel": ein Prozessneustart für den neuen Run ist nicht Teil der Zusage |
 | 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": `cdc.set_transformation` nimmt die Regelform als `json`-Parameter an (Spalte `rule_spec` bleibt `jsonb`); Aufrufform: Literal oder `::json`, ein `jsonb`-typisierter Wert braucht den Cast; syntaktisch ungültiges JSON scheitert beim Aufruf, gültiges JSON wird als Antrag angenommen und in Go geprüft |
+| 2026-09-26 | `SPEC-019` Absatz „Transformations-Antragsarten": die Annahmemenge von `rule_spec` benannt statt „gültiges JSON" — angenommen `NULL` und jeder Text, den PostgreSQL als `json` liest und nach `jsonb` umwandelt; abgelehnt ohne Antrags-Zeile Syntaxfehler, `\u0000`-Escape, Zahl außerhalb des `numeric`-Bereichs, Schachtelung jenseits der Stapeltiefe |
