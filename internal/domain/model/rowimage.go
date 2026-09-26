@@ -42,7 +42,7 @@ import (
 // und teilt keinen Speicher mit ihnen. Sie ist die eine Konstruktionsstelle
 // für Row Images (`ADR-0111` Teilfrage 2): jeder Pfad, der ein Row Image
 // erzeugt, ruft sie — der Replication-Mapper mit dem Regelstand der Bindung,
-// der Backfill-Lauf mit leerer Regelmenge.
+// der Backfill-Lauf mit dem Regelstand des Blocks.
 func BuildRowImage(columns []string, values []*string, excluded []string, rules []Transformation) ([]byte, error) {
 	if values == nil {
 		return nil, nil

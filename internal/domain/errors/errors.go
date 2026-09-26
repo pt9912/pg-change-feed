@@ -126,6 +126,13 @@ var (
 	// `configuration` (`SPEC-008`).
 	ErrExclusionStateChanged = stderrors.New("Ausschlussstand während des Backfills geändert")
 
+	// ErrTransformationStateChanged: der Regelstand der Tabelle
+	// (`LH-FA-CFG-007`) weicht von dem ab, mit dem die Blöcke eines Runs
+	// gebaut wurden (`ADR-0117` Festlegung 5, `ADR-0111` Teilfrage 4).
+	// Fehlerklasse `configuration` (`SPEC-008`): der Zustand wechselt, keine
+	// Regel ist auf eine Form nicht anwendbar.
+	ErrTransformationStateChanged = stderrors.New("Regelstand während des Backfills geändert")
+
 	// ErrInvalidTransformation: eine Transformationsregel verletzt die
 	// Invarianten ihres Regeltyps — `column` oder `to` leer, mit dem
 	// Zeichen U+0000, oder `to` länger als 63 Byte in UTF-8 (`SPEC-030`,

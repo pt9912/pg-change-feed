@@ -805,14 +805,15 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		backfillOpts = append(backfillOpts, backfill.WithChangeNotification(changeNotification))
 	}
 	backfillTables := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: activation,
-		Exclusion:  activation,
-		Schemas:    schemaStore,
-		Snapshot:   backfillSnapshot,
-		Admission:  backfillAdmission,
-		Runs:       backfillRuns,
-		Writer:     backfillWriter,
-		Clock:      clock,
+		Activation:      activation,
+		Exclusion:       activation,
+		Transformations: activation,
+		Schemas:         schemaStore,
+		Snapshot:        backfillSnapshot,
+		Admission:       backfillAdmission,
+		Runs:            backfillRuns,
+		Writer:          backfillWriter,
+		Clock:           clock,
 	}, backfillOpts...)
 
 	// Start-Reihenfolge des Backfills (`ADR-0113` Festlegung 2): zuerst der

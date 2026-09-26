@@ -143,6 +143,50 @@ func (f *fakeExclusion) ColumnExists(context.Context, string, string, string) (b
 	return true, nil
 }
 
+// fakeRules trägt den Regelstand; er folgt dem Muster von fakeExclusion.
+type fakeRules struct {
+	trace *trace
+	// stateFn liefert den Stand des n-ten Aufrufs (ab 1).
+	stateFn func(call int) map[string][]model.Transformation
+	// err lässt jeden Aufruf scheitern; ist errCall gesetzt, scheitert nur
+	// der errCall-te Aufruf (ab 1).
+	err       error
+	errCall   int
+	calls     int
+	gotSource model.SourceID
+}
+
+func (f *fakeRules) TransformationRules(ctx context.Context, source model.SourceID) (map[string][]model.Transformation, error) {
+	f.calls++
+	f.trace.add("TransformationRules")
+	f.gotSource = source
+	if f.err != nil && (f.errCall == 0 || f.errCall == f.calls) {
+		return nil, f.err
+	}
+	if f.stateFn == nil {
+		return nil, nil
+	}
+	return f.stateFn(f.calls), nil
+}
+
+func (f *fakeRules) SourceColumns(context.Context, string, string) ([]string, error) {
+	return nil, nil
+}
+
+// rulesOf trägt den Regelstand einer Tabelle als Antwort des Ports.
+func rulesOf(table string, rules ...model.Transformation) map[string][]model.Transformation {
+	return map[string][]model.Transformation{table: rules}
+}
+
+func rename(t *testing.T, name, column, to string) model.Transformation {
+	t.Helper()
+	rule, err := model.NewRenameColumn(name, column, to)
+	if err != nil {
+		t.Fatalf("NewRenameColumn(%q, %q, %q) = %v", name, column, to, err)
+	}
+	return rule
+}
+
 type fakeSchemas struct {
 	version model.SchemaVersion
 	found   bool
@@ -438,6 +482,7 @@ type rig struct {
 	trace      *trace
 	activation *fakeActivation
 	exclusion  *fakeExclusion
+	rules      *fakeRules
 	schemas    *fakeSchemas
 	snapshotP  *fakeSnapshotPort
 	snapshot   *fakeSnapshot
@@ -458,6 +503,7 @@ func newRig() *rig {
 		trace:      tr,
 		activation: &fakeActivation{trace: tr, table: table, published: true},
 		exclusion:  &fakeExclusion{trace: tr},
+		rules:      &fakeRules{trace: tr},
 		schemas:    &fakeSchemas{version: version, found: true},
 		snapshot: &fakeSnapshot{
 			trace:   tr,
@@ -478,14 +524,15 @@ func newRig() *rig {
 	}
 	r.snapshotP = &fakeSnapshotPort{trace: tr, snapshot: r.snapshot, estimateRows: 1234, estimateKnown: true}
 	r.service = backfill.NewBackfillTableService(backfill.Ports{
-		Activation: r.activation,
-		Exclusion:  r.exclusion,
-		Schemas:    r.schemas,
-		Snapshot:   r.snapshotP,
-		Admission:  r.admission,
-		Runs:       r.runs,
-		Writer:     r.writer,
-		Clock:      r.clock,
+		Activation:      r.activation,
+		Exclusion:       r.exclusion,
+		Transformations: r.rules,
+		Schemas:         r.schemas,
+		Snapshot:        r.snapshotP,
+		Admission:       r.admission,
+		Runs:            r.runs,
+		Writer:          r.writer,
+		Clock:           r.clock,
 	}, backfill.WithChangeNotification(r.notifier), backfill.WithLog(r.log))
 	return r
 }
@@ -899,7 +946,7 @@ func TestExecuteCommittedAtIsSnapshotTime(t *testing.T) {
 func TestExecuteWithoutNotifier(t *testing.T) {
 	r := newRig()
 	service := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: r.activation, Exclusion: r.exclusion, Schemas: r.schemas, Snapshot: r.snapshotP,
+		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Schemas: r.schemas, Snapshot: r.snapshotP,
 		Admission: r.admission, Runs: r.runs, Writer: r.writer, Clock: r.clock,
 	})
 	result, err := service.Execute(context.Background(), backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})
@@ -985,8 +1032,10 @@ func TestExecuteRejectsNonQueuedRun(t *testing.T) {
 // `SPEC-008`-Klassen, je Sentinel ein Fall an seiner Eingabe: die fünf
 // Sentinels des Snapshot-Ports, die Storage-Sentinels der Backfill-Ports und
 // des Schema Stores, `ErrSchemaVersionUnknown` als `configuration`; ein nicht
-// erkannter Fehler bleibt `internal`, die Klasse `schema` vergibt der Run nicht. Jeder Fall endet den Run `failed` mit der Klasse
-// vor dem Text, ohne Commit und ohne Wecksignal.
+// erkannter Fehler bleibt `internal`. Die Klasse `schema` und der Wechsel des
+// Regelstands tragen die Tests in `transformation_test.go`. Jeder Fall endet
+// den Run `failed` mit der Klasse vor dem Text, ohne Commit und ohne
+// Wecksignal.
 func TestExecuteClassifiesFailures(t *testing.T) {
 	cause := func(sentinel error) error { return fmt.Errorf("%w: technische Ursache", sentinel) }
 	cases := []struct {
@@ -1088,7 +1137,8 @@ func TestExecuteMidCopyFailureKeepsProgressAndWritesNothing(t *testing.T) {
 // Abweichung des Ausschlussstands oder der Bindung zwischen dem Bau der
 // Blöcke und dem Commit rollt zurück und endet den Run `failed`
 // (`configuration`) — auch eine Abweichung in einem Zwischenblock, die am Ende
-// wieder gleich ist. Ein reiner Ordnungsunterschied ist keine Abweichung.
+// wieder gleich ist. Ein reiner Ordnungsunterschied ist keine Abweichung. Der
+// Regelstand hat dieselbe Prüfung (`TestExecuteRuleStateChangeEndsRunAsConfiguration`).
 func TestExecuteFailClosed(t *testing.T) {
 	state := func(cols ...string) map[string][]string { return map[string][]string{"public.orders": cols} }
 	// Zählung der Ausschluss-Lesungen: Aufruf 1..3 je ein Block, Aufruf 4 vor dem Commit.
@@ -1547,7 +1597,7 @@ func (c *scriptClock) Now() model.TimePoint {
 func (r *rig) executeWithClock(ctx context.Context, t *testing.T, clock outbound.ClockPort) (backfill.BackfillExecuteResult, error) {
 	t.Helper()
 	service := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: r.activation, Exclusion: r.exclusion, Schemas: r.schemas, Snapshot: r.snapshotP,
+		Activation: r.activation, Exclusion: r.exclusion, Transformations: r.rules, Schemas: r.schemas, Snapshot: r.snapshotP,
 		Admission: r.admission, Runs: r.runs, Writer: r.writer, Clock: clock,
 	}, backfill.WithChangeNotification(r.notifier), backfill.WithLog(r.log))
 	return service.Execute(ctx, backfill.BackfillExecuteCommand{Run: queuedRun(t), Publication: testPublication})

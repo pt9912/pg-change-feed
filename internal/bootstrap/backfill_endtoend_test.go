@@ -174,7 +174,7 @@ func TestBackfillWorkerEndsARunOfAnUnboundTableAsConfigurationFailure(t *testing
 		t.Fatalf("postgressnapshot.New: %v", err)
 	}
 	useCase := backfill.NewBackfillTableService(backfill.Ports{
-		Activation: activation, Exclusion: activation, Schemas: schemaStore, Snapshot: snapshot,
+		Activation: activation, Exclusion: activation, Transformations: activation, Schemas: schemaStore, Snapshot: snapshot,
 		Admission: admission, Runs: runs, Writer: writer, Clock: systemclock.New(),
 	}, backfill.WithLog(log))
 

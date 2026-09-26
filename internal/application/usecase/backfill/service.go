@@ -24,21 +24,23 @@ type (
 	BackfillExecuteResult  = inbound.BackfillExecuteResult
 )
 
-// Ports bündelt die acht obligatorischen Outbound-Ports des Use Cases; alle
+// Ports bündelt die neun obligatorischen Outbound-Ports des Use Cases; alle
 // sind Fähigkeits-Ports (`ADR-0034`): Bindung und Publication
 // (`TableActivationPort`), Ausschlussstand (`ColumnExclusionPort`),
+// Regelstand (`TransformationPort`, `ADR-0112` Folgepflicht 7),
 // Schema-Version der Tabelle (`SchemaStorePort`), Snapshot
 // (`TableSnapshotPort`), Annahme, Run-Zustand und Schreiber sowie die Uhr
 // (`ClockPort`, `ADR-0040`).
 type Ports struct {
-	Activation outbound.TableActivationPort
-	Exclusion  outbound.ColumnExclusionPort
-	Schemas    outbound.SchemaStorePort
-	Snapshot   outbound.TableSnapshotPort
-	Admission  outbound.BackfillAdmissionPort
-	Runs       outbound.BackfillRunPort
-	Writer     outbound.BackfillWriterPort
-	Clock      outbound.ClockPort
+	Activation      outbound.TableActivationPort
+	Exclusion       outbound.ColumnExclusionPort
+	Transformations outbound.TransformationPort
+	Schemas         outbound.SchemaStorePort
+	Snapshot        outbound.TableSnapshotPort
+	Admission       outbound.BackfillAdmissionPort
+	Runs            outbound.BackfillRunPort
+	Writer          outbound.BackfillWriterPort
+	Clock           outbound.ClockPort
 }
 
 // BackfillTableService implementiert `inbound.BackfillTableUseCase`.
@@ -166,15 +168,33 @@ func (s *BackfillTableService) Execute(ctx context.Context, command BackfillExec
 //
 // Alle Blöcke tragen die Position `X` des Snapshots und den
 // Snapshot-Zeitpunkt (die Uhr wird nach dem Öffnen des Snapshots gelesen,
-// `ADR-0111` Teilfrage 7). Jeder Block liest den Ausschlussstand neu und
-// baut das Bild mit ihm. Fail-closed (`ADR-0111` Teilfrage 4,
-// `LH-QA-SEC-004`): jeder weitere Block und der Zustand unmittelbar vor dem
-// Commit tragen denselben Ausschlussstand wie der erste Block, und die
-// Bindung besteht unter derselben Tabellen-Kennung; ein Stand, der nicht
-// gelesen werden kann, endet den Run wie eine Abweichung. Die Prüfung
-// erkennt Abweichungen des Standes zum Zeitpunkt einer Lesung: ein Ausschluss,
-// der zwischen zwei Lesungen gesetzt und wieder zurückgenommen wird, ist
-// unsichtbar, weil der Stand (`ExcludedColumns`) keine Historie trägt.
+// `ADR-0111` Teilfrage 7).
+//
+// Der Regelstand der Tabelle (`LH-FA-CFG-007`, `ADR-0112` Folgepflicht 7)
+// wird einmal nach dem Öffnen des Snapshots gelesen und gegen dessen Spalten
+// geprüft (`checkRulesApplicable`), bevor eine Zeile gelesen und bevor die
+// Schreibtransaktion geöffnet wird: eine Regel, die auf die Spalten nicht
+// anwendbar ist, endet den Run mit der Klasse `schema` (`ADR-0117`
+// Festlegung 1 und 2), auch bei einer leeren Tabelle. Dieser Stand ist der
+// Stand des Runs; ein Antrag, der ihn danach ändert, endet den Run mit
+// `configuration`, sobald eine Lesung die Änderung sieht (`ADR-0117`
+// Festlegung 5).
+//
+// Jeder Block liest Ausschluss- und Regelstand neu und baut das Bild mit
+// ihnen. Fail-closed (`ADR-0111` Teilfrage 4, `LH-QA-SEC-004`): jeder weitere
+// Block und der Zustand unmittelbar vor dem Commit tragen denselben
+// Ausschlussstand wie der erste Block und denselben Regelstand wie die Lesung
+// zu Beginn (je als Menge, unabhängig von der Reihenfolge), und die Bindung
+// besteht unter derselben Tabellen-Kennung; ein Stand, der nicht gelesen
+// werden kann, endet den Run wie eine Abweichung. Die Prüfung erkennt
+// Abweichungen des Standes zum Zeitpunkt einer Lesung: ein Ausschluss oder
+// eine Regel, die zwischen zwei Lesungen gesetzt und wieder zurückgenommen
+// wird, ist unsichtbar, weil beide Stände (`ExcludedColumns`,
+// `TransformationRules`) keine Historie tragen. Die Kosten: jede Lesung eines
+// Standes liest die `applied`-Zeilen seiner Antragsarten aller Tabellen der
+// Quelle (die Ports kennen keinen Tabellenfilter); ein Run liest den
+// Ausschlussstand je Block und vor dem Commit (Blockzahl plus eine Lesung),
+// den Regelstand zusätzlich zu Beginn (Blockzahl plus zwei Lesungen).
 func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.BackfillRun, table model.SourceTable, version model.SchemaVersion) (model.BackfillRun, error) {
 	snapshot, err := s.ports.Snapshot.OpenSnapshot(ctx, string(run.ID), run.Schema, run.Table)
 	if err != nil {
@@ -195,6 +215,13 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 		columns:  snapshot.Columns(),
 	}
 	if run, err = s.progress(ctx, run, position, 0); err != nil {
+		return run, err
+	}
+	baselineRules, err := s.transformationRules(ctx, run)
+	if err != nil {
+		return run, err
+	}
+	if err := checkRulesApplicable(baselineRules, run, builder.columns); err != nil {
 		return run, err
 	}
 
@@ -222,16 +249,23 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 		if err != nil {
 			return run, err
 		}
+		rules, err := s.transformationRules(ctx, run)
+		if err != nil {
+			return run, err
+		}
+		if !sameSet(baselineRules, rules) {
+			return run, domainerrors.ErrTransformationStateChanged
+		}
 		if writer == nil {
 			baseline = excluded
 			if writer, err = s.ports.Writer.Begin(ctx, run); err != nil {
 				return run, err
 			}
-		} else if !sameNames(baseline, excluded) {
+		} else if !sameSet(baseline, excluded) {
 			return run, domainerrors.ErrExclusionStateChanged
 		}
 
-		block, err := builder.build(blockNumber, rows, excluded)
+		block, err := builder.build(blockNumber, rows, excluded, rules)
 		if err != nil {
 			return run, err
 		}
@@ -264,8 +298,15 @@ func (s *BackfillTableService) copyBlocks(ctx context.Context, run model.Backfil
 	if err != nil {
 		return run, err
 	}
-	if !sameNames(baseline, excluded) {
+	if !sameSet(baseline, excluded) {
 		return run, domainerrors.ErrExclusionStateChanged
+	}
+	rules, err := s.transformationRules(ctx, run)
+	if err != nil {
+		return run, err
+	}
+	if !sameSet(baselineRules, rules) {
+		return run, domainerrors.ErrTransformationStateChanged
 	}
 	now := s.ports.Clock.Now()
 	completed, err := run.Complete(now, copied)
@@ -324,16 +365,25 @@ func failureText(class model.ErrorClass, cause error) string {
 
 // classifyError ordnet die Ursache eines Run-Fehlers einer der Klassen des
 // Run-Vertrags zu — `permission`, `configuration`, `storage`, `transient`,
-// `replication` (`SPEC-008`, `ADR-0111` Teilfrage 5); ein nicht erkannter
-// Fehler bleibt `internal`. Die Klasse `schema` vergibt der Run nicht. Die
+// `replication` (`ADR-0111` Teilfrage 5) und `schema` (`ADR-0117`
+// Festlegung 1: eine Regel des Regelstands ist auf die Spalten des Snapshots
+// oder auf eine Zeile nicht anwendbar, `ErrTransformationColumnMissing`,
+// `ErrTransformationTargetCollides`); ein nicht erkannter Fehler bleibt
+// `internal`, so auch eine `applied`-Zeile des Regelstands, die die Faltung
+// nicht mehr in eine Regel führt. Ein Wechsel von Ausschluss- oder Regelstand
+// während des Runs ist `configuration` (`ADR-0117` Festlegung 5). Die
 // Abbildung gilt dem Run und ist nicht die des Capture-Pfads.
 func classifyError(err error) model.ErrorClass {
 	switch {
 	case errors.Is(err, outbound.ErrSnapshotPermission):
 		return model.ErrorClassPermission
+	case errors.Is(err, domainerrors.ErrTransformationColumnMissing),
+		errors.Is(err, domainerrors.ErrTransformationTargetCollides):
+		return model.ErrorClassSchema
 	case errors.Is(err, outbound.ErrSnapshotConfiguration),
 		errors.Is(err, domainerrors.ErrTableNotActivated),
 		errors.Is(err, domainerrors.ErrExclusionStateChanged),
+		errors.Is(err, domainerrors.ErrTransformationStateChanged),
 		errors.Is(err, outbound.ErrSchemaVersionUnknown):
 		return model.ErrorClassConfiguration
 	case errors.Is(err, outbound.ErrSnapshotTransient):
@@ -411,6 +461,31 @@ func (s *BackfillTableService) excludedColumns(ctx context.Context, run model.Ba
 	return byTable[run.QualifiedName()], nil
 }
 
+// transformationRules liest den dauerhaften Regelstand der Tabelle des Runs
+// (`ADR-0112` Teilfrage 6).
+func (s *BackfillTableService) transformationRules(ctx context.Context, run model.BackfillRun) ([]model.Transformation, error) {
+	byTable, err := s.ports.Transformations.TransformationRules(ctx, run.Source)
+	if err != nil {
+		return nil, err
+	}
+	return byTable[run.QualifiedName()], nil
+}
+
+// checkRulesApplicable prüft jede Regel gegen die Spalten des Snapshots mit
+// `Transformation.CheckApplicable`, derselben Prüffunktion der Domäne wie der
+// Erfassungspfad (`ADR-0117` Festlegung 2). Die Prüfung hängt an Regel- und
+// Spaltenmenge, nie an einer Zeile; die erste nicht anwendbare Regel endet
+// als `ErrTransformationColumnMissing` oder `ErrTransformationTargetCollides`
+// mit Regelname und Spalte.
+func checkRulesApplicable(rules []model.Transformation, run model.BackfillRun, columns []string) error {
+	for _, rule := range rules {
+		if err := rule.CheckApplicable(columns); err != nil {
+			return fmt.Errorf("Regel %q (Spalte %q) an %s auf die Spalten des Snapshots nicht anwendbar: %w", rule.Name(), rule.Column(), run.QualifiedName(), err)
+		}
+	}
+	return nil
+}
+
 // progress schreibt Snapshot-Position, Fortschrittszähler und die Warnung
 // „Kopierdauer“ fort (Warnung (2), `warn.go`). Bei einem Fehler des Ports
 // bleibt der Run im zuletzt festgehaltenen Stand.
@@ -459,7 +534,8 @@ func (s *BackfillTableService) rollback(ctx context.Context, writer outbound.Bac
 
 // blockBuilder baut die synthetische Transaktion eines Blocks. Er ist die
 // eine Stelle des Use Cases, an der ein Row Image entsteht: über
-// `model.BuildRowImage`, dieselbe Funktion wie der WAL-Pfad.
+// `model.BuildRowImage`, dieselbe Funktion wie der WAL-Pfad, mit dem
+// Ausschluss- und dem Regelstand des Blocks (`ADR-0112` Folgepflicht 7).
 type blockBuilder struct {
 	run      model.BackfillRun
 	table    model.SourceTable
@@ -471,8 +547,12 @@ type blockBuilder struct {
 
 // build legt die committed Transaktion `0bf-<Run-Kennung>-<Blocknummer>` an:
 // je Zeile ein `INSERT`-Change der Herkunft `backfill` ohne `old_data`, die
-// Sequenz zählt ab 1 (`ADR-0111` Teilfrage 6).
-func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string) (*model.ChangeTransaction, error) {
+// Sequenz zählt ab 1 (`ADR-0111` Teilfrage 6). Tragen zwei Regeln denselben
+// Zielnamen und beide Quellspalten der Zeile einen Wert, endet der Bau mit
+// `ErrTransformationTargetCollides` und ohne Block: der Fall hängt an der
+// Zeile, die Anwendbarkeit gegen die Spalten prüft `checkRulesApplicable`
+// vor dem ersten Block.
+func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string, rules []model.Transformation) (*model.ChangeTransaction, error) {
 	id, err := model.BackfillTransactionID(b.run.ID, blockNumber)
 	if err != nil {
 		return nil, err
@@ -483,10 +563,7 @@ func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string
 	}
 	for i, row := range rows {
 		sequence := int64(i + 1)
-		// Der Run übergibt keine Transformationsregeln (`ADR-0112`
-		// Folgepflicht 7): die Grenze hat die Adresse
-		// `slice-transformationen-backfill-pfad`.
-		image, err := model.BuildRowImage(b.columns, row, excluded, nil)
+		image, err := model.BuildRowImage(b.columns, row, excluded, rules)
 		if err != nil {
 			return nil, err
 		}
@@ -509,26 +586,27 @@ func (b blockBuilder) build(blockNumber int, rows [][]*string, excluded []string
 	return transaction, nil
 }
 
-// sameNames vergleicht zwei Spaltenlisten als Mengen, unabhängig von
-// Reihenfolge und Doppelungen.
-func sameNames(a, b []string) bool {
-	left := nameSet(a)
-	right := nameSet(b)
+// sameSet vergleicht zwei Listen als Mengen, unabhängig von Reihenfolge und
+// Doppelungen: Spaltennamen des Ausschlussstands und Regeln des Regelstands
+// (`model.Transformation` ist über alle seine Felder vergleichbar).
+func sameSet[T comparable](a, b []T) bool {
+	left := toSet(a)
+	right := toSet(b)
 	if len(left) != len(right) {
 		return false
 	}
-	for name := range left {
-		if _, ok := right[name]; !ok {
+	for element := range left {
+		if _, ok := right[element]; !ok {
 			return false
 		}
 	}
 	return true
 }
 
-func nameSet(names []string) map[string]struct{} {
-	set := make(map[string]struct{}, len(names))
-	for _, name := range names {
-		set[name] = struct{}{}
+func toSet[T comparable](elements []T) map[T]struct{} {
+	set := make(map[T]struct{}, len(elements))
+	for _, element := range elements {
+		set[element] = struct{}{}
 	}
 	return set
 }
