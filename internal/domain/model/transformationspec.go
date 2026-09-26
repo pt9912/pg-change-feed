@@ -52,6 +52,7 @@ type TransformationSpec struct {
 	kind   TransformationKind
 	column string
 	to     string
+	values string
 }
 
 // Kind trägt den Regeltyp.
@@ -77,8 +78,9 @@ func (s TransformationSpec) Target() string { return s.to }
 //	c) jeder Schlüssel gehört zum Regeltyp: sonst `ErrUnknownRuleSpecKey` mit
 //	   dem Schlüssel, bei mehreren dem ersten in aufsteigender Ordnung;
 //	d) die Pflichtschlüssel des Regeltyps stehen als Zeichenketten und
-//	   `column`/`to` tragen die Bezeichner-Form (`NewRenameColumn`): sonst
-//	   `ErrInvalidRuleSpec`.
+//	   `column`/`to` tragen die Bezeichner-Form (`NewRenameColumn`); bei
+//	   `map_value` ist `values` ein nicht leeres Objekt mit Zeichenketten als
+//	   Werten (`NewMapValue`): sonst `ErrInvalidRuleSpec`.
 //
 // Ein doppelter Schlüssel ist keine Eingabe dieser Funktion: der Text kommt
 // aus einer `jsonb`-Spalte, die den letzten Wert je Schlüssel hält.
@@ -124,6 +126,16 @@ func ParseTransformationSpec(text string) (TransformationSpec, error) {
 			return TransformationSpec{}, fmt.Errorf("%w: %w", domainerrors.ErrInvalidRuleSpec, err)
 		}
 		return TransformationSpec{kind: TransformationRenameColumn, column: column, to: to}, nil
+	case TransformationMapValue:
+		// Ein fehlendes, leeres oder nicht aus Zeichenketten bestehendes
+		// `values` liest sich als leere Zuordnung; die lehnt die Form des
+		// Konstruktors ab.
+		column, _ := jsonString(fields["column"])
+		encoded := encodeValueMap(jsonStringMap(fields["values"]))
+		if _, err := newMapValue("r", column, encoded); err != nil {
+			return TransformationSpec{}, fmt.Errorf("%w: %w", domainerrors.ErrInvalidRuleSpec, err)
+		}
+		return TransformationSpec{kind: TransformationMapValue, column: column, values: encoded}, nil
 	}
 	return TransformationSpec{}, &TransformationSpecError{Err: domainerrors.ErrUnknownTransformationKind, Detail: kind}
 }
@@ -134,8 +146,32 @@ func allowedRuleKeys(kind TransformationKind) ([]string, bool) {
 	switch kind {
 	case TransformationRenameColumn:
 		return []string{"kind", "column", "to"}, true
+	case TransformationMapValue:
+		return []string{"kind", "column", "values"}, true
 	}
 	return nil, false
+}
+
+// jsonStringMap liest einen JSON-Wert, der ein Objekt mit Zeichenketten als
+// Werten sein muss; abwesend, `null`, jeder andere Typ und ein Objekt mit
+// einem Wert, der keine Zeichenkette ist, liefern `nil`.
+func jsonStringMap(raw json.RawMessage) map[string]string {
+	if len(raw) == 0 || raw[0] != '{' {
+		return nil
+	}
+	var members map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &members); err != nil {
+		return nil
+	}
+	values := make(map[string]string, len(members))
+	for key, member := range members {
+		value, ok := jsonString(member)
+		if !ok {
+			return nil
+		}
+		values[key] = value
+	}
+	return values
 }
 
 // jsonString liest einen JSON-Wert, der eine Zeichenkette sein muss;
@@ -195,6 +231,8 @@ func (s TransformationSpec) Build(name string) (Transformation, error) {
 	switch s.kind {
 	case TransformationRenameColumn:
 		return NewRenameColumn(name, s.column, s.to)
+	case TransformationMapValue:
+		return newMapValue(name, s.column, s.values)
 	}
 	return Transformation{}, &TransformationSpecError{Err: domainerrors.ErrUnknownTransformationKind, Detail: string(s.kind)}
 }

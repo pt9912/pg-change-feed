@@ -135,8 +135,8 @@ var (
 
 	// ErrInvalidTransformation: eine Transformationsregel verletzt die
 	// Invarianten ihres Regeltyps — `column` oder `to` leer, mit dem
-	// Zeichen U+0000, oder `to` länger als 63 Byte in UTF-8 (`SPEC-030`,
-	// Bezeichner, `LH-FA-CFG-007`).
+	// Zeichen U+0000, `to` länger als 63 Byte in UTF-8 oder `values` von
+	// `map_value` leer (`SPEC-030`).
 	ErrInvalidTransformation = stderrors.New("ungültige Transformationsregel")
 
 	// ErrTransformationTargetIsColumn: der Zielname von `rename_column`
@@ -169,7 +169,8 @@ var (
 	// ErrInvalidRuleSpec: `rule_spec` ist kein JSON-Objekt mit einem
 	// Zeichenketten-`kind`, oder ein Pflichtschlüssel des Regeltyps fehlt
 	// oder hat den falschen Typ, oder `column`/`to` verletzt die
-	// Bezeichner-Form (`SPEC-030`).
+	// Bezeichner-Form, oder `values` ist leer oder trägt einen Wert, der
+	// keine Zeichenkette ist (`SPEC-030`).
 	ErrInvalidRuleSpec = stderrors.New("rule_spec ist ungültig")
 
 	// ErrUnknownTransformationKind: `kind` nennt keinen Regeltyp aus

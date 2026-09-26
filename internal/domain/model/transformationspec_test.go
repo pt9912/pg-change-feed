@@ -192,7 +192,7 @@ func TestTransformationSpecBuild(t *testing.T) {
 	if _, err := same.Build("regel"); !stderrors.Is(err, domainerrors.ErrTransformationTargetIsColumn) {
 		t.Fatalf("Build mit Ziel gleich Quelle: Fehler = %v, wollen ErrTransformationTargetIsColumn", err)
 	}
-	if _, err := (TransformationSpec{kind: "map_value"}).Build("regel"); !stderrors.Is(err, domainerrors.ErrUnknownTransformationKind) {
+	if _, err := (TransformationSpec{kind: "nope"}).Build("regel"); !stderrors.Is(err, domainerrors.ErrUnknownTransformationKind) {
 		t.Fatalf("Build mit unbekanntem Typ: Fehler = %v, wollen ErrUnknownTransformationKind", err)
 	}
 }

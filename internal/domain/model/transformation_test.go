@@ -82,8 +82,9 @@ func TestNewRenameColumnTargetIsColumnIsNotAFormViolation(t *testing.T) {
 // Liste, ein Aufrufer kann die Menge nicht verändern.
 func TestTransformationKindsIsAClosedSet(t *testing.T) {
 	kinds := TransformationKinds()
-	if len(kinds) != 1 || kinds[0] != TransformationRenameColumn || string(kinds[0]) != "rename_column" {
-		t.Fatalf("Regeltypen = %v, wollen genau rename_column", kinds)
+	if len(kinds) != 2 || kinds[0] != TransformationRenameColumn || string(kinds[0]) != "rename_column" ||
+		kinds[1] != TransformationMapValue || string(kinds[1]) != "map_value" {
+		t.Fatalf("Regeltypen = %v, wollen genau rename_column und map_value", kinds)
 	}
 	kinds[0] = "verändert"
 	if again := TransformationKinds(); again[0] != TransformationRenameColumn {
