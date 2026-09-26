@@ -22,8 +22,16 @@ nachfahren) · seit welle-20. Der **Lese-Schritt der `welle-20`-Closure** hat di
 Assertion) — alle fünf Fundstellen lagen **im** Diff, der Reviewer ist damit ein
 gültiger Leser.
 
-Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **14×**
-(evidence/slice-backfill-speicher-untersuchung.md — Form **Befehl**: die Negativaussage
+Zähler (Datei-Anzahl unter `evidence/`, real ausgezählt): **15×**
+(evidence/slice-transformationen-start-reihenfolge.md — Form **Befehl**, F-1 (HIGH, daher
+Datei trotz Deckel): die Negativaussage „keine Stelle in `docs/user`, `harness`, `spec`
+beschreibt die Reihenfolge“ reichte über Suchraum und Muster des Feldes hinaus; die Spec
+trägt die Zusage (`spec/pflichtenheft.md:341`); der Ursprung lag im Planungs-Feld des Planners,
+das vor der Suchform geschnitten ist, und `make suchlauf-nachmessen` war grün, weil es Zahlen
+und Stände misst, nicht Suchraum und Muster — die Grenze aus dem Vertrag des Werkzeugs, hier
+real getroffen. Die Suchlauf-Felder der übrigen Pläne unter `open/` stammen aus demselben
+Schnitt; ihre Adresse bleibt der Start des jeweiligen Slice;
+evidence/slice-backfill-speicher-untersuchung.md — Form **Befehl**: die Negativaussage
 „nicht gefunden“ reichte über die Suchwurzeln des Befehls hinaus, Verifikation V-1;
 evidence/slice-backfill-sdk-origin.md, evidence/slice-084.md, evidence/slice-085.md, evidence/slice-091.md,
 evidence/slice-093.md, evidence/slice-094.md,

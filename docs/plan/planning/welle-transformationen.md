@@ -164,6 +164,13 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   zweiten Fall trägt es die Aussage „die Kosten je Lesung sind klein“ mit einer
   Messung an einer Queue realer Größe, nicht als Erwartung
   ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
+- **Die Zeitgrenze des Vorlaufs ist entschieden** (Adresse der Frage (e) in §5,
+  Register `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`): ein
+  Architect-Verdikt liegt vor, das entweder einen Umsetzungs-Slice mit Kennung
+  beauftragt (Frist oder Anzeige im Startpfad) oder das Warten als akzeptiertes
+  Negativ mit benanntem Trigger führt; im zweiten Fall trägt es die Aussage
+  „gesund während des Wartens“ mit einer Messung am laufenden Prozess statt als
+  Herleitung ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
 - Der **Lese-Schritt** des Beobachtungs-Registers ist gelaufen (Einträge bei 3×
   oder darüber, Modul 6).
 - Closure-Notiz in `welle-transformationen-results.md`.
@@ -223,9 +230,10 @@ Backfill aber noch die Rohform liefert, ein Slice lang ist (§5).
    legt ihn in den E2E-Slice, **wenn** die heutige Startreihenfolge Kriterium
    (c) nicht trägt. Die Bedingung ist am Code entscheidbar und wird hier
    entschieden — `runAdministration` startet in `Run` per `go func()` vor
-   `stream.Run`, zwischen beiden liegt keine Synchronisation (gelesen an
-   `internal/bootstrap/wiring.go`); ein E2E-Lauf kann das Fehlen einer Race
-   nicht beweisen. Der Zug ändert Produktivcode im Startpfad für **alle**
+   `stream.Run`, zwischen beiden liegt keine Synchronisation (Stand des Schnitts,
+   gelesen an `internal/bootstrap/wiring.go`; die Ordnung liefert
+   `slice-transformationen-start-reihenfolge`); ein E2E-Lauf kann das Fehlen einer
+   Race nicht beweisen. Der Zug ändert Produktivcode im Startpfad für **alle**
    Antragsarten und braucht einen eigenen Review und einen ordnungsprüfenden
    Test ohne Datenbank. Das weicht vom ADR-Wortlaut ab
    (`BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`, offen, 1×) und ist
@@ -415,6 +423,38 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Ob die Spec eine Obergrenze führt, ist eine Spec-Frage und nicht entschieden; Adresse: der
   nächste Architect-Zug zu [`SPEC-030`](../../../spec/pflichtenheft.md), Herkunft der
   Betreiber-Aussage: `slice-transformationen-betriebsdoku` §2.
+  (e) **Zeitgrenze des Vorlaufs vor `stream.Run`.** `Run` verarbeitet die offenen
+  Anträge der Antrags-Queue in einem synchronen Vorlauf, bevor der Stream startet
+  (`runStreamAfterAdministrationPass` in `internal/bootstrap/wiring.go`, geliefert
+  von `slice-transformationen-start-reihenfolge`). Der Vorlauf trägt keine eigene
+  Frist; ihn beendet allein der Kontext des Streams (der Prozess-`ctx` und die
+  WAL-Fehlerschwelle). Ein Antrag, der lange läuft, ohne zu hängen (etwa `ALTER
+  PUBLICATION … ADD TABLE` an einer Tabellen-Sperre), oder eine lange Queue hält
+  die Erfassung der Quelle an, während der Heartbeat läuft und `--healthcheck` nur
+  dessen Alter liest — ein wartender Vorlauf erscheint als gesund (hergeleitet aus
+  dem Code, nicht am laufenden Prozess gemessen; Review F-3 und Verifikation V-4
+  zu `slice-transformationen-start-reihenfolge`). Zu entscheiden: (1) trägt der
+  Vorlauf eine Frist, je Antrag oder je Durchlauf, und mit welchem Wert und
+  welcher Herleitung; (2) was geschieht bei Ablauf — der Antrag endet `failed` mit
+  Text (die Ordnung „Antrag vor der ersten Transaktion“ gilt dann für diesen
+  Antrag nicht, und die Abhilfe (c) aus
+  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  Folgepflicht 5 hängt an ihr), oder der Stream startet und die
+  Administrations-Goroutine wiederholt den Antrag (der Prozess läuft dann bis zur
+  Wiederholung mit dem bisherigen Regelstand); (3) ist das Warten in `diagnose` und
+  `--healthcheck` sichtbar ([`LH-FA-ADM-003`](../../../spec/lastenheft.md)) und
+  wodurch unterscheidet es sich von einem gesunden Lauf; (4) steht die Betreiber-Aussage
+  „ein langer Antrag hält den Stream-Start an“ im Handbuch (`betriebsdoku`) mit
+  einer Messung am Prozess statt als Herleitung. Berührt:
+  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+  Folgepflicht 5,
+  [`LH-QA-REL-001.a`](../../../spec/pflichtenheft.md) (die Erfassung startet
+  später, kein ACK entfällt), [`SPEC-019`](../../../spec/pflichtenheft.md).
+  Adresse: ein Architect-Verdikt vor der Closure der Welle (Closure-Kriterium in
+  §3); Register: `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`. Beschließt das
+  Verdikt eine Frist oder eine Anzeige, schneidet es einen Umsetzungs-Slice im
+  Startpfad, der `e2e-abhilfe` berührt; beschließt es ein akzeptiertes Negativ,
+  trägt es die Aussage mit einer Messung und einem benannten Trigger.
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)

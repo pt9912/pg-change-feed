@@ -24,5 +24,14 @@ Widerspruch zum Wortlaut — eine Abweichung, die als Entscheidung dargestellt o
 würde, liegt nicht vor; die drei Fragen des Implementers gehen an den Architect. Der Vorgang zählt
 nicht.
 
+Kein Auftreten: `slice-transformationen-start-reihenfolge` liefert die Ordnung „offene Anträge
+vor `stream.Run` verarbeiten“ als **eigenen Slice**, während `ADR-0112` Folgepflicht 5 sie in den
+E2E-Slice legt, wenn Kriterium (c) nicht trägt. Der Inhalt der Entscheidung ist geliefert (die
+Ordnung steht im Code und ist an die Eingabeseite gebunden, Verifikation), der Wortlaut der
+Präambel („der Planner formt daraus Welle und Slices“) überlässt den Schnitt dem Planner; die
+Zuschnitts-Abweichung ist als Frage an den Auftraggeber in `welle-transformationen` §4
+(Abweichung 2) geführt und weder als Entscheidung dargestellt noch von Reviewer oder Verifier
+beanstandet. Der Vorgang zählt nicht; die Frage bleibt bei der Closure der Welle.
+
 Zähler (abgeleitet): 2× (`evidence/slice-sdk-kotlin-publish-workflow.md`,
 `evidence/slice-transformationen-kern-rename.md`).

@@ -1,0 +1,8 @@
+**Vorgang:** slice-transformationen-start-reihenfolge (Review F-5, LOW; Verifikation V-1, INFO)
+
+**Fund:** DoD-Haken 3 des Plans (`make coverage-gate` grün und ein realer, grüner `make test-integration`-Lauf mit dem Live-Reload-Beleg) stand nach der Implementer-Runde auf `[x]` mit dem Wortlaut „zu belegen durch: ein realer, grüner Lauf“; der Plan trug weder Lauf noch Zeit noch Exit noch Zahl, und der Bericht des Implementers liegt nicht im Repo. Der Reviewer wiederholte den Lauf nicht (kein Auftrag). Die Fixrunde (`cd5ff4f2`) setzte den Haken zurück auf `[ ]`, nannte die Reichweite (Dauerbetrieb und Vorlauf mit leerer Queue, nicht der Vorlauf mit wartendem Antrag: `git grep -n "'pending'"` an Runner und Testpaket trifft keine Zeile) und benannte den Lauf des Verifiers als Beleg. Die Verifikation fuhr `make test-integration` am `HEAD` `cd5ff4f2` (Exit 0, 347 s, die Live-Reload-Zeilen gedruckt, **übernommen** aus dem Report); die Closure trägt den Anker in den Plan (§2 Haken 3).
+
+**Form (Ausprägung):** dieselbe wie im zweiten Auftreten (die Erfüllung einer Zusage an eine nachgelagerte Rolle nennt keinen committeten Träger), hier in einer **DoD-Zeile mit Lauf-Beleg**, die zusätzlich eine **Reichweite** trägt: der genannte Lauf belegt weniger als der Wortlaut der Zeile im ersten Zugriff nahelegt. Schwere LOW, vor dem Merge vom Reviewer gefunden. Der Eintrag steht mit dieser Datei bei **3×** (offen, Schwelle erreicht).
+
+Quelle: `docs/reviews/review-slice-transformationen-start-reihenfolge.md` (F-5) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-transformationen-start-reihenfolge.md` (§1, §2 Zeile 3, V-1). <!-- d-check:status-provenance -->

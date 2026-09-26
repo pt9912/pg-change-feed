@@ -2,9 +2,13 @@
 
 Die Schwelle (3×) ist erreicht, ein Ausgang ist nicht zugewiesen: der Lese-Schritt der
 Closure von `welle-transformationen` liest den Eintrag und weist ihn zu. Zähler
-(abgeleitet): **3×** (`evidence/slice-backfill-slot-leerlauf-bestaetigung.md`,
+(abgeleitet): **4×** (`evidence/slice-backfill-slot-leerlauf-bestaetigung.md`,
 `evidence/slice-transformationen-map-value.md`,
-`evidence/slice-transformationen-e2e-wirkung.md`). Das zweite Auftreten trifft einen neu
+`evidence/slice-transformationen-e2e-wirkung.md`,
+`evidence/slice-transformationen-start-reihenfolge.md`). Das vierte Auftreten trifft zwei
+Tests, die den Quelltext von `wiring.go` lesen und deren Namen eine Lauf-Reihenfolge zusagten
+(Review F-4, LOW); die Verifikation maß ihre Blindheit gegenüber einem Aufruf in einer toten
+Verzweigung (Mutation V14, grün). Das zweite Auftreten trifft einen neu
 geschriebenen Test: Name und Kommentar sagten „jeder Länge“ und „jede Stufe“, der Test übte
 die Stufen bis 70 000 Byte; die Stufe des vierten Längen-Bytes war ungebunden (Review F-3, LOW).
 Das dritte Auftreten trifft den Doc-Kommentar eines Tests: „jeder Negativfall weicht in genau

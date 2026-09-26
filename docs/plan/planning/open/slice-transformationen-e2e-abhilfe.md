@@ -53,7 +53,29 @@ belegt ist.
 - **Ein Beleg, der eine strikte Zeitordnung „vor der ersten Transaktion“
   misst** — der E2E-Lauf belegt die **Folge** der Ordnung (Antrag `applied`,
   kein zweiter `schema`-Fehler, Transaktion gelesen); die Ordnung selbst trägt
-  der Test aus `start-reihenfolge`. Die Grenze steht im Bericht.
+  der Test aus `start-reihenfolge`. Die Grenze steht im Bericht. **Was dieser
+  Test trägt und was nicht** (Stand der Closure von
+  `slice-transformationen-start-reihenfolge`): die Sequenz „Vorlauf, Goroutinen-Start,
+  Stream“ steht in der Funktion `runStreamAfterAdministrationPass`
+  (`internal/bootstrap/wiring.go`) und ist mit Fakes an ihre Eingabe gebunden
+  (`TestRunStreamAfterAdministrationPassAppliesTheRuleRemovalBeforeTheStreamAssemblesTheFirstTransaction`,
+  `…BindsAnEnabledTableBeforeTheStreamStarts`,
+  `…KeepsTheStartOnAReadFailureAndReturnsTheStreamOutcome`,
+  `…HoldsTheStreamUntilThePassEndsAndContextCancelEndsIt`, alle in
+  `internal/bootstrap/administration_startorder_internal_test.go`); die
+  **Aufrufstelle in `Run`** ist nur über zwei Quelltext-Tests gebunden
+  (`TestRunSourceTextPassesStreamRunOnlyAsArgumentOfTheSequence`,
+  `TestRunSourceTextOrdersReconcileAndWorkerStartBeforeTheSequenceCall`: Positionen
+  der Aufrufe im Quelltext, kein Lauf). Vier Mutationen der Aufrufstelle bleiben im
+  Unit-Lauf grün (Herkunft des Kontexts `streamCtx`, Rumpf von
+  `startAdministration`, Inhalt der Wertegruppe, Aufruf in toter Verzweigung;
+  Verifikation zu `slice-transformationen-start-reihenfolge` §4, V9b, V10b, V12,
+  V14, **übernommen**). Der Lauf dieses Slice ist der erste, der einen beim
+  Prozessstart `pending` stehenden Antrag über einen Prozessstart legt: bisher
+  legt kein Runner-Schritt einen solchen Antrag (`git grep -n "'pending'" --
+  tools/harness/run-integration-tests.sh test/integration` trifft keine Zeile,
+  gemessen in der Closure von `slice-transformationen-start-reihenfolge`; der
+  Schritt (b) unten ist genau dieser Fall).
 
 ## 2. Definition of Done
 
@@ -81,7 +103,9 @@ belegt ist.
       [`SPEC-019`](../../../../spec/pflichtenheft.md). (c) wird über seine
       Folge belegt (Antrag `applied` nach dem Neustart, Health ohne zweiten
       `schema`-Fehler, Transaktion in `cdc.changes`, Rohform, weil die Regel
-      entfernt ist) und über den Ordnungs-Test aus `start-reihenfolge`. *Zu
+      entfernt ist) und über die Ordnungs-Tests aus `start-reihenfolge` (Grenze:
+      §1, vierter „NICHT“-Punkt — Fakes und Quelltext-Lesung der Aufrufstelle, kein
+      Beleg am System außer diesem Lauf). *Zu
       belegen durch:* derselbe `make test-integration`-Lauf; die Phase läuft
       als eigener Aufruf nach der Container-Ende-Grenze des Runners (Muster von
       `TestE2ESchemaChangeDropColumn`: Neustart und Health-Poll davor und
@@ -133,7 +157,16 @@ belegt ist.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „der Inhalt von
 `make test-integration`“, „die Fälle, die den Erfassungspfad mit Klasse
-`schema` beenden“; beide Stände gemessen):**
+`schema` beenden“; beide Stände gemessen).** Die Muster und Suchräume der Tabelle
+stammen aus dem Schnitt der Welle und sind vor der Suchform von
+[`AGENTS.md`](../../../../AGENTS.md) §3.13 geschnitten (ein Symbolname je Zeile,
+Suchraum `harness docs`). Der Implementer trägt sie in Blöcke mit dem Etikett
+`suchlauf` über und führt sie auf die Suchform: ganzer Baum, drei Arten des
+Musters (Symbol, Zählwort, Beschreibung samt Hedge), jede Einschränkung mit Grund.
+Die Aussage „nichts gefunden“ trägt nur, was Suchraum und Muster treffen
+(`BEO-PGC/beleg-befehl-traegt-seinen-satz-nicht`, Beleg
+`slice-transformationen-start-reihenfolge`: die Spec führte eine Beschreibung der
+Reihenfolge in anderen Worten als das Muster):
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
@@ -200,6 +233,16 @@ Lerneintrag geschrieben.
 - **Eine neue Testfunktion fällt still aus dem Runner**
   (`BEO-PGC/test-runner-stiller-ausschluss`, offen, 2×). *Erwartet, zu belegen
   durch:* der `-run`-Abgleich. **Ausgang:** *(bei Closure)*
+- **Der Vorlauf trägt keine Zeitgrenze.** Der Beleg (b) und (c) fährt einen
+  kurzen Antrag (`cdc.remove_transformation`); er belegt die Ordnung und ihre
+  Folge, nicht das Verhalten des Prozessstarts bei einem lang laufenden Antrag
+  oder einer langen Queue, und nicht die Sichtbarkeit des Wartens in `diagnose`
+  und `--healthcheck` (Register: `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`;
+  Frage (e) in [welle-transformationen](../welle-transformationen.md) §5, ein
+  Architect-Verdikt vor der Closure der Welle). Entscheidet das Verdikt eine
+  Zeitgrenze oder eine Anzeige im Startpfad, ändert das den Startpfad, den dieser
+  Slice belegt; der Bericht nennt den Stand des Verdikts. **Ausgang:** *(bei
+  Closure)*
 
 ## 7. Closure-Notiz
 
@@ -223,7 +266,10 @@ Lerneintrag geschrieben.
 — kein Anlass zur Ausdifferenzierung.
 
 **Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
-`BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×, einschlägig —
+`BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad` (offen, 1×, einschlägig —
+Risiko §6 letzter Punkt), `BEO-PGC/adapter-unittest-verdeckt-bootstrap-luecke`
+(offen, 3×, einschlägig — die Aufrufstelle des Vorlaufs ist nur über Quelltext
+gebunden, §1), `BEO-PGC/kein-admin-weg-schema-fehler-recovery` (offen, 1×, einschlägig —
 Abgrenzung §1; dieser Slice liefert den Beleg für **eine** Ursache),
 `BEO-PGC/vorab-bedingung-nach-umsetzung-geprueft` (offen, 2×, einschlägig —
 Start-Trigger), `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`
