@@ -54,8 +54,8 @@
 -- schreiben ebenso ausschließlich den Antrags-Datensatz samt Regelname, die
 -- erste zusätzlich die Regelform, und prüfen nichts — weder die Regelform
 -- noch die Spalte; beides trägt der Capture-Prozess (ADR-0046). Die Regelform
--- kommt als `json`-Parameter und geht als `jsonb` in die Spalte `rule_spec`;
--- der Parametertyp ist `json`, weil d-migrate 1.3.1 jede Funktion mit `json`-
+-- kommt als `json`-Parameter und geht als `jsonb` in die Spalte `rule_spec`
+-- (ADR-0125); der Parametertyp ist `json`, weil d-migrate 1.3.1 jede Funktion mit `json`-
 -- oder `jsonb`-Parameter als `in:json` meldet und ihren Abbau im zweiten
 -- Rollout als `DROP FUNCTION … (…, json)` rendert — für eine Funktion mit
 -- `jsonb`-Parameter existiert diese Signatur nicht, der Abbau scheitert dort

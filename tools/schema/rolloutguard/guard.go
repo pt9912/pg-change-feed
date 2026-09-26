@@ -15,7 +15,7 @@ import (
 // eine frisch migrierte Ziel-DB). Die Schreibweise der Signatur ist die des
 // Reports: ein `json`- wie ein `jsonb`-Parameter erscheint dort als
 // `in:json`; die Funktion `set_transformation` trägt einen `json`-Parameter
-// (Begründung in tools/schema/nacharbeit-administration.sql). Ein neues
+// (ADR-0125, Begründung in tools/schema/nacharbeit-administration.sql). Ein neues
 // nacharbeit-*.sql-Skript trägt seinen Eintrag hier im selben Commit wie
 // seine Aufrufzeile im Makefile-Target `schema-rollout` — dieselbe
 // Kolokation.

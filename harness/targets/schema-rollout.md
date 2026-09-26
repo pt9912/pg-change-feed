@@ -96,7 +96,8 @@ Blocker des Precheck-Reports zu einer von zwei bekannten Klassen gehört:
   ein `json`- wie ein `jsonb`-Parameter erscheint dort als `in:json`, und
   d-migrate rendert den Abbau als `DROP FUNCTION … (…, json)` — bei einer
   Funktion mit `jsonb`-Parameter scheitert er, und der zweite Rollout endet mit
-  d-migrate-Exit 5; deshalb trägt `set_transformation` einen `json`-Parameter).
+  d-migrate-Exit 5; deshalb trägt `set_transformation` einen `json`-Parameter,
+  [`ADR-0125`](../../docs/plan/adr/0125-transformationen-parametertyp-regelform-json.md)).
 - **View-Signatur** — Blocker `MANUAL_ACTION_REQUIRED` für eine Operation
   `ReplaceView` (Objekttyp `VIEW`) mit der Diagnose
   `VIEW_SIGNATURE_INCOMPATIBLE`; der View-Name muss ein einfacher

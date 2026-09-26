@@ -17,6 +17,8 @@ Transformation), [`LH-FA-ADM-001`](../../../../spec/lastenheft.md)
 (Least-Privilege der Rollen),
 [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
 Teilfrage 1 und Folgepflicht 3,
+[`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
+(Parametertyp der Regelform, Teil-Supersedes von `ADR-0112` Teilfrage 1),
 [`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)
 (Antrags-Queue und Live-Reload),
 [`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)
@@ -47,9 +49,8 @@ rule_spec json)` und `cdc.remove_transformation(source_id, schema_name,
 table_name, rule_name)` — die Parameterlisten legt dieser Slice fest, die Spec
 ([`SPEC-019`](../../../../spec/pflichtenheft.md)) nennt die Funktionen ohne
 Parameter; `rule_spec` ist ein `json`-Parameter, der als `jsonb` in die Spalte
-`rule_spec` geht (§3 Abweichung von der Wortwahl `jsonb` in
-[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-Teilfrage 1) —
+`rule_spec` geht ([`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md);
+Aufrufform: Literal oder `::json`) —
 schreiben **nur** den Antrag und senden `pg_notify` —
 beide ausschließlich der Rolle `cdc_admin` ausführbar (`SECURITY DEFINER`,
 gepinnter `search_path`, `REVOKE … FROM PUBLIC`). Die Domäne kennt die
@@ -109,8 +110,9 @@ Antrags trägt der Folge-Slice.
       `tools/schema/rolloutguard/guard.go` trägt beide Funktionen
       (Signatur-Schreibweise am realen `--plan-only`-Report gemessen, nicht
       angenommen — der Parameter der Regelform ist neu gegenüber den
-      bestehenden Funktionen; sein Typ ist `json`, nicht `jsonb`, §3
-      Abweichung), `guard_test.go` deckt sie;
+      bestehenden Funktionen; sein Typ ist `json`, nicht `jsonb`,
+      [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)),
+      `guard_test.go` deckt sie;
       `internal/bootstrap/roles_rollout_file_internal_test.go` liest den
       Grant-Text beider Funktionen und färbt sich bei entferntem
       `GRANT`/fehlendem `REVOKE` rot. *Zu belegen durch:* `make test` (beide
@@ -157,7 +159,7 @@ Antrags trägt der Folge-Slice.
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `tools/schema/schema.yaml` | update | Spalten `rule_name text`, `rule_spec jsonb` (nullable) im neutralen Modell von `administration_request`; die `description` nennt sie. |
-| `tools/schema/nacharbeit-administration.sql` | update | CHECK-Menge um zwei Werte (dort steht die Menge außerhalb des neutralen Modells), die zwei Funktionen, `REVOKE … FROM PUBLIC`, `GRANT EXECUTE … TO cdc_admin`, Kopfkommentar. **Abweichung vom Plan-Wortlaut:** `cdc.set_transformation` trägt den Parameter `rule_spec` als `json`, nicht als `jsonb` (`ADR-0112` Teilfrage 1 und `SPEC-019` nennen `jsonb`); die Funktion schreibt ihn als `jsonb` in die Spalte. Grund, gemessen: d-migrate 1.3.1 meldet jede Funktion mit `json`- oder `jsonb`-Parameter als `in:json` und rendert ihren Abbau im zweiten Rollout als `DROP FUNCTION … (…, json)`; mit einem `jsonb`-Parameter endete der zweite `make schema-rollout` mit d-migrate-Exit 5 (`function set_transformation(text, text, text, text, json) does not exist`), mit `json` endet er mit Exit 0. Folge für Aufrufer: ein Literal und ein `::json`-Wert werden angenommen, ein `::jsonb`-Wert nicht (gemessen, „function … does not exist“). Der Widerspruch zwischen Wortlaut und Rollout-Mechanik gehört einer Architect-Entscheidung; dieser Slice hält den kleinsten Stand, der den Rollout idempotent lässt (§6). |
+| `tools/schema/nacharbeit-administration.sql` | update | CHECK-Menge um zwei Werte (dort steht die Menge außerhalb des neutralen Modells), die zwei Funktionen, `REVOKE … FROM PUBLIC`, `GRANT EXECUTE … TO cdc_admin`, Kopfkommentar. `cdc.set_transformation` trägt den Parameter `rule_spec` als `json`; die Funktion schreibt ihn als `jsonb` in die Spalte ([`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md), Teil-Supersedes von `ADR-0112` Teilfrage 1). Grund, gemessen: d-migrate 1.3.1 meldet jede Funktion mit `json`- oder `jsonb`-Parameter als `in:json` und rendert ihren Abbau im zweiten Rollout als `DROP FUNCTION … (…, json)`; mit einem `jsonb`-Parameter endete der zweite `make schema-rollout` mit d-migrate-Exit 5 (`function set_transformation(text, text, text, text, json) does not exist`), mit `json` endet er mit Exit 0. Folge für Aufrufer: ein Literal und ein `::json`-Wert werden angenommen, ein `::jsonb`-Wert nicht (gemessen, „function … does not exist“) (§6). |
 | `internal/adapters/driven/postgresstorage/schema.sql` | keine Änderung (Nicht-Realisierung) | Der Plan nahm an, der zweite Schema-Träger trage die Spalten. Am Start gemessen trägt die Datei `cdc.administration_request` nicht (sie führt allein `source`, `source_table`, `schema_version`, `transaction`, `change`; Kopfkommentar der Datei): `git grep -n administration_request 2f5ed3dc -- internal/adapters/driven/postgresstorage/schema.sql` liefert keine Zeile. Es gibt keinen zweiten Träger der Spaltenform (Suchlauf-Zeile unten); das Risiko „zwei Schema-Träger driften“ (§6) entfällt damit. |
 | `tools/schema/plan.yaml`, `tools/schema/down.sql` | regeneriert | Beide sind der Beleg des Betriebs-Rollouts gegen eine frische Datenbank (`harness/targets/schema-rollout.md` §Erzeugnisse); der `CREATE TABLE "administration_request"` im Report trägt die zwei neuen Spalten, der Artefakt-Hash im Kopf von `down.sql` folgt der Schema-Form. Entscheidung: regenerieren, aus dem ersten von zwei aufeinanderfolgenden `make schema-rollout`-Läufen gegen eine frische Wegwerf-Datenbank (der zweite überschreibt beide Dateien mit dem Report des Folgelaufs); die Zielzeile im Report bleibt die des Compose-Rollouts, wie am Parent ([`ADR-0043`](../../adr/0043-schemamigrationen-mit-d-migrate.md)). |
 | `.dockerignore` | update | Eine Negation für `tools/schema/nacharbeit-administration.sql`: der neue Rollen-Test liest sie, und die `coverage`-Stufe sieht sonst nur die Dateien der Allow-List des Build-Kontexts (Klasse [`ADR-0085`](../../adr/0085-build-kontext-ausnahme-test-only-zweck.md) Festlegung 3: gelesen, nicht gebaut; genau eine Datei; der Kommentar nennt den Leser; Image unberührt, §6). Gefunden durch `make coverage-gate`: `open /src/tools/schema/nacharbeit-administration.sql: no such file or directory`. |
@@ -182,7 +184,7 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 | Läufe des Guard-Tests | Zählwort „sechs Läufe“ (Zeilen 19–20) und Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | **Gefunden.** „sechs Läufe“: Parent 6, Diff 6 — die Zahl der Läufe ändert sich nicht (der Alt-Tag-Lauf ist Lauf 5 und bleibt einer). Geändert hat sich der Inhalt von Lauf 5 (Vorbedingungen, Prüfungen), den Kopfkommentar des Skripts und `harness/targets/schema-rollout.md` §Belege beschreiben. **Nichtgefunden:** kein Träger, der Lauf 5 mit „fünf Werten“ oder „`backfill_table`“ allein beschreibt. | Skript-Kopf, `schema-rollout.md` §Belege nachgezogen. |
 | Spaltenform von `administration_request` in weiteren Trägern | `git grep -n administration_request` über `internal tools` ohne `tools/schema/plan.yaml`/`down.sql` (Zeilen 11–12); dasselbe in `internal/adapters/driven/postgresstorage/schema.sql` (Zeilen 13–14) | **Gefunden.** Parent 137, Diff 152 (Tests und Kommentare; die Spaltenform selbst steht allein in `tools/schema/schema.yaml`). **Nichtgefunden:** `internal/adapters/driven/postgresstorage/schema.sql` trägt `administration_request` weder am Parent noch im Diff (0/0) — es gibt keinen zweiten Träger der Spaltenform, und keine Test-Fixture legt die Tabelle mit eigener DDL an (`git grep -n 'CREATE TABLE.*administration_request'` trifft allein `tools/schema/plan.yaml`, das Erzeugnis des Rollouts). | keine Änderung an `schema.sql`; `plan.yaml`/`down.sql` regeneriert (§3 oben). |
 | Fehlertext der geschlossenen Menge im `default`-Zweig | `git grep -n 'geschlossene Menge' -- internal/bootstrap/wiring.go` (Zeilen 15–16) und „verarbeiteten Antragsarten“ (Zeilen 17–18) | **Gefunden.** „geschlossene Menge“ Parent 1 (der Fehlertext), Diff 0; „verarbeiteten Antragsarten“ Parent 0, Diff 2 (Fehlertext, Konstante). **Nichtgefunden:** kein zweiter Träger dieses Wortlauts in `internal/bootstrap`. | der Fehlertext nennt die verarbeiteten Antragsarten (fünf), nicht die geschlossene Menge der Datenbank (sieben); zwei Tests lesen ihn (Antragsart und Menge), ein dritter geht bis zum `failed`-Vermerk. |
-| Handbuch und Spec (Meldung) | `git grep -n` mit `exclude_column`/`enable_table`/`backfill_table` in `docs/user` (Zeilen 21–22); `set_transformation` in `spec` (Zeilen 23–24) | **Gefunden.** `docs/user`: Parent 11, Diff 11 — kein Diff-Eintrag, Handbuch unberührt; `spec`: Parent 14, Diff 14 — die Spec trägt die zwei Antragsarten seit `spec-nachzug`. **Nichtgefunden:** keine Handbuch-Stelle, die `set_transformation` oder `remove_transformation` nennt (die Betreiber-Oberfläche ist unbeschrieben, bis `betriebsdoku` sie beschreibt). | gemeldet an `slice-transformationen-betriebsdoku`; Kandidatenlauf (`git diff --name-only 2f5ed3dc -- internal/bootstrap/ tools/schema/ internal/adapters/driving/`) trifft die neue Oberfläche, `docs/user/benutzerhandbuch.md` liegt bewusst nicht im Diff (Aufschub mit Adresse, §2). |
+| Handbuch und Spec (Meldung) | `git grep -n` mit `exclude_column`/`enable_table`/`backfill_table` in `docs/user` (Zeilen 21–22); `set_transformation` in `spec` (Zeilen 23–24) | **Gefunden.** `docs/user`: Parent 11, Diff 11 — kein Diff-Eintrag, Handbuch unberührt; `spec`: Parent 14, Diff 16 — die Spec trägt die zwei Antragsarten seit `spec-nachzug`; die zwei Zeilen mehr stammen aus dem Nachzug des Parametertyps in [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md) (`SPEC-019`, Absatz „Transformations-Antragsarten“ und Änderungshistorie). **Nichtgefunden:** keine Handbuch-Stelle, die `set_transformation` oder `remove_transformation` nennt (die Betreiber-Oberfläche ist unbeschrieben, bis `betriebsdoku` sie beschreibt). | gemeldet an `slice-transformationen-betriebsdoku`; Kandidatenlauf (`git diff --name-only 2f5ed3dc -- internal/bootstrap/ tools/schema/ internal/adapters/driving/`) trifft die neue Oberfläche, `docs/user/benutzerhandbuch.md` liegt bewusst nicht im Diff (Aufschub mit Adresse, §2). |
 
 ```suchlauf
 2f5ed3dc 95 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
@@ -208,7 +210,7 @@ diff 6 -n 'sechs Läufe' -- harness tools/harness docs/user
 2f5ed3dc 11 -n -e exclude_column -e enable_table -e backfill_table -- docs/user
 diff 11 -n -e exclude_column -e enable_table -e backfill_table -- docs/user
 2f5ed3dc 14 -n -e set_transformation -- spec
-diff 14 -n -e set_transformation -- spec
+diff 16 -n -e set_transformation -- spec
 ```
 
 **Mutationen des Implementer-Laufs** (Zusage · mutierte Eingabe · gesehenes Rot; jede Mutation
@@ -313,28 +315,25 @@ Lerneintrag geschrieben.
   anderer Form ein: mit einem `jsonb`-Parameter endete der zweite Rollout nicht
   bei der Wache (Exit 8), sondern in `--execute` mit d-migrate-Exit 5 — d-migrate
   rendert den Abbau als `DROP FUNCTION "set_transformation"(text, text, text,
-  text, json)`, die Signatur existiert nicht (siehe den folgenden Punkt).
+  text, json)`, die Signatur existiert nicht; der Parameter ist deshalb `json`
+  (siehe den folgenden Punkt).
   **Ausgang:** *(bei Closure)*
-- **Der Parameter `rule_spec` ist `json`, nicht `jsonb` — Abweichung vom
-  Wortlaut von `ADR-0112` Teilfrage 1 und `SPEC-019`.** Gemessen (zwei
+- **Der Parameter `rule_spec` ist `json`, nicht `jsonb`** — festgelegt durch
+  [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
+  (Teil-Supersedes von `ADR-0112` Teilfrage 1). Gemessen (zwei
   aufeinanderfolgende `make schema-rollout` gegen eine frische Wegwerf-
   Datenbank): mit `rule_spec jsonb` Exit 0, dann Exit 5
   (`executionError: function set_transformation(text, text, text, text, json)
   does not exist`, Wiederherstellung `FULL_ROLLBACK_CONFIRMED`); mit `rule_spec
   json` Exit 0 und Exit 0. Folge für Aufrufer: ein Literal und ein `::json`-Wert
   werden angenommen, ein `::jsonb`-Wert nicht (gemessen, „function … does not
-  exist“). Der Slice hält den kleinsten Stand, der den Rollout idempotent lässt;
-  die Wahl zwischen dem Parametertyp `json`, einem Erratum von `ADR-0112`/
-  `SPEC-019` (ein Text, der den Typ nennt) oder einer anderen Behandlung der
-  Fremdobjekte in `make schema-rollout` ist eine Architect-Entscheidung
-  (`ADR-0043` Re-Evaluierungs-Trigger; angenommen ist die Nacharbeit-Form, nicht
-  ihre Grenze bei `jsonb`). Ungeklärt, ein Versuch: `--routine-capability
-  'function:enabled=false'` ließ `--plan-only` gegen ein Ziel mit einer
-  `jsonb`-Funktion weiter mit Exit 8 enden (der Report wurde nicht erfasst,
-  Ausgabepfad außerhalb des Mounts). *Erwartet, zu belegen durch:* Architect-
-  Verdikt; der Betreiber-Text von `slice-transformationen-betriebsdoku` nennt
-  die Aufrufform (Literal oder `::json`). **Ausgang:** *(bei Closure: weiter
-  offen — Adresse Architect)*
+  exist“). Der Versuch mit `--routine-capability 'function:enabled=false'`
+  (`--plan-only` gegen ein Ziel mit einer `jsonb`-Funktion endete weiter mit
+  Exit 8; der Report wurde nicht erfasst, Ausgabepfad außerhalb des Mounts)
+  wird nicht verfolgt — die Begründung trägt `ADR-0125` (verglichene
+  Alternative B). *Erwartet, zu belegen durch:* der Betreiber-Text von
+  `slice-transformationen-betriebsdoku` nennt die Aufrufform (Literal oder
+  `::json`; `ADR-0125` Folgepflicht 2). **Ausgang:** *(bei Closure)*
 - **Die zwei Spalten, besonders `rule_spec jsonb`, konvergieren nicht über
   einen Alt-Bestand.** Eine nullable `text`-Spalte an einer bestehenden Tabelle
   rollt über einen Alt-Bestand (gemessen im Architect-Verdikt
