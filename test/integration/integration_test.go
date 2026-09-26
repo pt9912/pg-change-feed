@@ -1236,7 +1236,7 @@ var abdeckungKennungMuster = regexp.MustCompile(`LH-(?:FA|QA)-[A-Z]{3}-\d{3}(?:\
 
 // abdeckungKurzformEinleitungen sind die Zeichen, mit denen ein
 // E2E-Kommentar eine Bereichs- oder Nachbar-Angabe hinter einer Kennung
-// einleitet (`…003`, `/`004``, `...005`). Hinter einer Kennung wird daraus
+// einleitet (`…003`, `/004`, `...005`). Hinter einer Kennung wird daraus
 // die fehlende Kennungs-Familie abgeleitet; eine Einleitung ohne laufende
 // Nummer ist eine Auslassung im Fließtext, keine Kurzform.
 var abdeckungKurzformEinleitungen = []string{"…", "...", "/"}

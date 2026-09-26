@@ -257,7 +257,7 @@ func TestFirstRowTranslatesCatalogRow(t *testing.T) {
 // Katalog-Zeilen-Übersetzung: ein Ergebnis ohne Zeile meldet Abwesenheit.
 func TestFirstRowWithoutRowReportsAbsence(t *testing.T) {
 	for name, results := range map[string][]*pgconn.Result{
-		"kein Ergebnis":  nil,
+		"kein Ergebnis":   nil,
 		"leeres Ergebnis": emptyResult(),
 	} {
 		if _, exists := firstRow(results); exists {

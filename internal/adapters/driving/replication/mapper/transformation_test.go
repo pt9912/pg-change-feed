@@ -399,7 +399,7 @@ func TestAddBindingKeepsRuleState(t *testing.T) {
 	assembler.AddBinding("public.new", mapper.TableBinding{TableID: "tbl-3", SchemaVersion: "sv-3",
 		Transformations: []model.Transformation{renameRule(t, "kundenname", "name", "customer_name")}})
 	created := consumedChange(t, ctx, assembler, 2, decode.Change{
-		Relation: relation("public", "new", decode.Column{Name: "id", Key: true}, decode.Column{Name: "name"}),
+		Relation:  relation("public", "new", decode.Column{Name: "id", Key: true}, decode.Column{Name: "name"}),
 		Operation: decode.OpInsert, New: []*string{pointer("1"), pointer("Ada")},
 	})
 	if string(created.NewImage) != `{"id":"1","customer_name":"Ada"}` {

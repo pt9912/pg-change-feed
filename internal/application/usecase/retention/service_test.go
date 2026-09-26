@@ -51,7 +51,7 @@ type fakeStore struct {
 	ignoreAfter    bool // liest immer vom Anfang, wie ein Store ohne Cursor
 	maxReads       int  // der Lese-Aufruf n > maxReads scheitert mit `errReadBudget`; 0 = `defaultMaxReads`
 
-	readErrFor  map[model.SourceID]error // Quell-Kennung → Fehler
+	readErrFor   map[model.SourceID]error // Quell-Kennung → Fehler
 	deleteErrFor model.ChangeID           // freigegebene Kennung → Fehler
 	deleteErr    error
 }

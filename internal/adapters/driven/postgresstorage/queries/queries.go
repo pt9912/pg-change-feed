@@ -76,11 +76,11 @@ LIMIT $6`
 // SelectRetentionCandidates liest eine Seite von Bereinigungs-Kandidaten
 // einer Quelle (`ADR-0124`): Kennung, Commit-Position und Commit-Zeitpunkt
 // je Change, ohne Row Images. `$1` ist die Quelle, `$2` die Kennung, hinter
-// der die Seite beginnt (`''` ab dem Anfang), `$3` die Seitengröße. Die
+// der die Seite beginnt (leerer Text: ab dem Anfang), `$3` die Seitengröße. Die
 // Ordnung ist die des Primärschlüssels `change_id` in der Sortierung der
 // Datenbank; die Abfrage nutzt dessen Index und sortiert nicht. Sie trägt
 // kein Löschprädikat: die Freigabe je Change gehört der Domain Policy
-// (`ADR-0014`).
+// (`RetentionPolicy` in `internal/domain/model/retention.go`).
 const SelectRetentionCandidates = `
 SELECT c.change_id, t.commit_position, t.committed_at
 FROM cdc.change AS c

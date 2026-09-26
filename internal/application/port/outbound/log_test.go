@@ -14,10 +14,18 @@ type fakeLog struct {
 	messages []string
 }
 
-func (f *fakeLog) Debug(_ context.Context, msg string, _ ...any) { f.messages = append(f.messages, "DEBUG:"+msg) }
-func (f *fakeLog) Info(_ context.Context, msg string, _ ...any)  { f.messages = append(f.messages, "INFO:"+msg) }
-func (f *fakeLog) Warn(_ context.Context, msg string, _ ...any)  { f.messages = append(f.messages, "WARN:"+msg) }
-func (f *fakeLog) Error(_ context.Context, msg string, _ ...any) { f.messages = append(f.messages, "ERROR:"+msg) }
+func (f *fakeLog) Debug(_ context.Context, msg string, _ ...any) {
+	f.messages = append(f.messages, "DEBUG:"+msg)
+}
+func (f *fakeLog) Info(_ context.Context, msg string, _ ...any) {
+	f.messages = append(f.messages, "INFO:"+msg)
+}
+func (f *fakeLog) Warn(_ context.Context, msg string, _ ...any) {
+	f.messages = append(f.messages, "WARN:"+msg)
+}
+func (f *fakeLog) Error(_ context.Context, msg string, _ ...any) {
+	f.messages = append(f.messages, "ERROR:"+msg)
+}
 
 // TestLogPortAcceptsSubstitution trägt die Testdouble-Fähigkeit, die
 // `ADR-0024` für Telemetrie verlangt: ein Aufrufer, der gegen `LogPort`
