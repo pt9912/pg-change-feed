@@ -28,7 +28,7 @@ nicht berührt).
 [`SPEC-019`](../../../../spec/pflichtenheft.md) (Verarbeitung offener Anträge)
 — gelesen.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
