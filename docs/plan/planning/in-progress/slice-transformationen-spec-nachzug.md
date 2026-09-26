@@ -149,8 +149,10 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
       (`matrix`-Modul) und der Suchlauf in §3.
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
-      (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor, kein
+      offenes HIGH/MEDIUM (`.harness/skills/reviewer.md`,
+      `docs/reviews/review-slice-transformationen-spec-nachzug.md`: 0 HIGH,
+      F-1 MEDIUM in der Fixrunde behoben) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
@@ -186,6 +188,45 @@ beschlossenen Transformations-Stand als Technik-Festlegung und als Sicht,
 | `spec/pflichtenheft.md` §1 `LH-FA-CAP-009.a` (Absätze Markierung, Fail-closed vor dem Commit, Sichtbarkeit und Fehler des Runs) | update (Plan-Nachzug, über die Zielformulierung Punkt e hinaus) | neben dem Run-Satz der Klasse `schema` tragen zwei bestehende Aufzählungen Eigenschaften, die der Regelstand bewegt: „dieselbe Bild-Konstruktion … ausgeschlossene Spalten“ und „Ausschlussstand entspricht dem Stand der Blöcke“ nennen ihn jetzt mit (Abweichung des Regelstands im Lauf endet `configuration`). |
 | `spec/pflichtenheft.md` §4 Absatz „Nicht anwendbare Regel (Klasse `schema`)“ | neu (Plan-Nachzug) | Aktion und Abhilfe-Weg je Pfad stehen unter der Tabelle statt in der Zeile (Zellenlänge des `structure`-Moduls). |
 | `spec/architecture.md` §1 `ARC-001`-Zeile, Backfill-Sequenz (Fail-closed-Zeile, Absatz zur Ausführung), §5 Zeile „Dekodier- und Schemafehler“ | update (Plan-Nachzug, über Punkt f hinaus) | dieselben bewegten Eigenschaften in den Aufzählungen der Sicht: Domänenobjekte, Fail-closed-Prüfung, Fehlerklasse `schema`. `ARC-002`/`ARC-004`/`ARC-005` bleiben unverändert: ihre Zeilen nennen Fähigkeiten, keine Antragsarten oder Regeltypen (Suchlauf unten). |
+| `spec/pflichtenheft.md` §2 `SPEC-030` (Absatz „Bezeichner", Tabelle, Abschnitt „Beispiele") | update (Fixrunde, Review-Befund F-1/F-2/F-5/F-9) | Bezeichner-Vergleich für `column`, `to` und den Regelnamen (Festlegungen unten); die „Position" der Schlüssel wird zu „Reihenfolge und Inhalt" (nicht zugesagte Schlüsselreihenfolge, zugesagter Inhalt); je Regeltyp ein Beispiel, dazu ein abgelehnter Antrag und die nicht anwendbare Regel; `SPEC-030` ist die führende Stelle für Anwendbarkeit und Reihenfolge. |
+| `spec/pflichtenheft.md` §2 `SPEC-019` (Fehlertext-Tabelle, K3, Zeile `rule_name`) | update (Fixrunde, F-1/F-3) | drei neue Zeilen-Fälle (Regelname ungültig, `rule_spec` NULL/kein Objekt, Pflichtschlüssel getrennt vom unbekannten Regeltyp), Prüfreihenfolge der fünf Formzeilen, K3 zeichengenau. |
+| `spec/pflichtenheft.md` §1 `LH-FA-CFG-007.a` (Auswertungsreihenfolge, Wirkort, Nicht anwendbare Regel, Abhilfe) | update (Fixrunde, F-2/F-9) | Reihenfolge und Anwendbarkeit verweisen auf `SPEC-030` statt sie zu wiederholen; die Abhilfe ist hier führend und trägt das Ersetzen der Regel; „byte-gleich" und „dieselbe Form" sind auf den Inhalt der Row Images (Schlüsselmenge und Werte) umformuliert. |
+| `spec/pflichtenheft.md` §4 (Zeile `schema`, Absatz „Nicht anwendbare Regel") | update (Fixrunde, F-4/F-9) | die Abhilfe der Zeile gilt nur der nicht anwendbaren Regel; der Absatz verweist für Ursache, Erfassungspfad und Abhilfe und trägt nur noch den Run. |
+| `spec/pflichtenheft.md` §7 Historie | update (Fixrunde) | eine weitere Zeile ohne ADR-/Slice-Bezug. |
+| `spec/pflichtenheft.md:209`, `spec/architecture.md:402` | update (Fixrunde, F-6) | Zeilenumbruch nach der Teilersetzung, nur Form. |
+| dieser Plan | update (Fixrunde) | §3 (diese Zeilen, Festlegungen, Suchlauf), §6, §8 (Register-Zahlen mit Messlauf), DoD-Haken. |
+
+**Festlegungen des Slice** (Festlegungen der Spec über den Text von
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+hinaus; jede berührt keine ADR-Aussage, sie präzisiert
+[`LH-FA-CFG-007.a`](../../../../spec/pflichtenheft.md); der Beleg des Bestands
+steht je Zeile):
+
+| Festlegung | Begründung und Bestands-Beleg |
+|---|---|
+| `column`: zeichengenau gegen den Katalog, keine Faltung, kein Quoting, nicht leer, ohne U+0000. | Der Bestand vergleicht Spaltennamen so: `ColumnExists` (`internal/adapters/driven/postgresstorage/tableactivation.go`) fragt `column_name = $3` gegen `information_schema.columns`, `BuildRowImage`/`containsName` (`internal/domain/model/rowimage.go`) vergleicht mit `==`, der Antrags-Konstruktor (`NewAdministrationRequest`) verlangt nur nichtleer, und das Adressformat `schema.table.column` steht in `excludecolumn`/`includecolumn`. U+0000 lehnt die Spec ab, weil der Katalog-Parameter mit dem Zeichen scheitert (Persistenzfehler statt `failed`-Antrag). |
+| `to`: nicht leer, ohne U+0000, höchstens 63 Byte UTF-8, jedes weitere Zeichen zulässig; K3 zeichengenau. | Der Bestand prüft keinen Zielnamen. Kleinste sichere Form: der Name ist ein JSON-Schlüssel (jedes Zeichen außer U+0000 lässt sich in `jsonb` speichern) und bleibt im Längenraum der Quell-Bezeichner (`identifierShape` `{1,63}`); prüfbar durch Längenmessung, streng statt interpretierend. |
+| `rule_name`: `[a-z0-9_]{1,63}`, Ungültiges wird abgelehnt, nicht gefaltet; Eindeutigkeit (K1) zeichengenau. | Das Alphabet ist das der Aktivierung für Schema und Tabelle (`identifierShape` in `tableactivation.go`); der Name geht in Fehleradressen und in eine Zerlegung `schema.table.name`, die dadurch eindeutig bleibt. |
+| `column_name` bleibt bei beiden Transformations-Antragsarten NULL. | Die Spalte der Regel steht in `rule_spec`; `column_name` bleibt die Ziel-Spalte der beiden Spalten-Antragsarten (`SPEC-019`). Ein Antrag trägt so je Art genau eine Adressierungsform. |
+| Prüfreihenfolge: Regelname, Form der `rule_spec`, Regeltyp, Schlüssel, Pflichtschlüssel und Werte, dann K1 bis K4; die Fehlertext-Wortlaute der Tabelle. | Der ADR-Text nennt die Verletzungen, keine Texte und keine Reihenfolge; die Form folgt dem Bestand (`ErrSourceColumnMissing`: Klartext, Doppelpunkt, Adresse). Die Reihenfolge trennt Form von Konfliktfreiheit, damit der erste Text eindeutig bestimmt ist. |
+| Schlüsselreihenfolge im Image nicht zugesagt, zugesagt ist der Inhalt. | `jsonb` (`SPEC-002`) bewahrt die Reihenfolge nicht; über `cdc.changes` und `GET /changes` ist sie nicht beobachtbar. Der Assembler-Test darf sie zusätzlich prüfen, die Spec sagt sie nicht zu. |
+| `remove_transformation` durchläuft nur die Regelnamen-Zeile und K4. | Es trägt keine `rule_spec` und keine Spalte. |
+
+**Bekanntes Wortlaut-Versehen der ADR.**
+[`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+Folgepflicht 5 (b) nennt den Antragsstatus `requested`; der Bestand kennt nur
+`pending`/`applied`/`failed`
+(`tools/schema/nacharbeit-administration.sql`, `queries.go`,
+[`ADR-0050`](../../adr/0050-sql-administration-antragsqueue-und-live-reload.md)).
+Die Spec folgt dem Bestand (`pending`); die `Accepted` ADR bleibt unverändert
+([`AGENTS.md`](../../../../AGENTS.md) §3.5), `slice-transformationen-e2e-abhilfe`
+übersetzt das Wort bereits selbst. Eine Berichtigungs-ADR ist nicht nötig.
+
+**Führende Stelle je Sachverhalt** (die andere Stelle verweist):
+Anwendbarkeit, Auswertungsreihenfolge und Inhalt der Images → `SPEC-030`;
+Abhilfe im gescheiterten Prozess → `LH-FA-CFG-007.a`; Fehlertexte,
+Prüfreihenfolge und Konfliktfreiheit → `SPEC-019`. `SPEC-008` trägt die
+Klassen-Zeile und die Run-Aussage.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaft: „`LH-FA-CFG-007.a`
 ist beantwortet; die Antragsarten-Menge trägt zwei weitere Werte; Row Images
@@ -203,6 +244,32 @@ Implementer trägt Gefundenes und Nichtgefundenes je Zeile ein):**
 | Architektur-Sicht: Aufzählungen in `ARC-002`/`ARC-004`/`ARC-005` | `git grep -n 'ARC-002\|ARC-004\|ARC-005' 1718546b -- spec/architecture.md` und Lesen der drei Zeilen in §1 | Parent: die Zeilen in §1 nennen „Konfiguration“ (`ARC-002`), „Fähigkeitsschnittstellen“ (`ARC-004`), „SQL-Funktionen/Views“ (`ARC-005`) — keine Aufzählung von Antragsarten oder Regeltypen. Diff: unverändert. | kein Nachzug nötig |
 | Überholter Text im selben Dokument (Risiko §6) | Lesen von `spec/pflichtenheft.md` §1 `LH-FA-CFG-007.a`, §2 `SPEC-019` (Einleitung, Tabelle, Fließtext) und `spec/architecture.md` §4 von oben nach unten am Diff-Stand | Einleitungssatz von `SPEC-019` führte die fünf bestehenden SQL-Funktionen auf; Überschrift trug „offen“; die Architektur-Zeile „fünf Arten“; die Sequenz-Zeile „Bindung und Ausschlussstand erneut prüfen“; die `column_name`-Zelle „die drei übrigen Antragsarten“. Diff: alle fünf gezogen. | — |
 
+**§3.13-Suchlauf der Fixrunde** (bewegte Aussagen: der Bezeichner-Vergleich,
+die Abhilfe, die Fehlertext-Tabelle mit ihrer Prüfreihenfolge, „Position"/
+„byte-gleich" der Row Images; Symbolname + Zählwort + Beschreibung; Parent ist
+`a32a1931`, Diff ist der Arbeitsbaum der Fixrunde):
+
+```text
+git grep -n -E 'zeichengenau|Groß-/Kleinschreibung' a32a1931 -- spec
+grep -rn -E 'zeichengenau|Groß-/Kleinschreibung' spec
+git grep -n -E 'byte-gleich|Position seiner|Position der Quellspalte' a32a1931 -- spec docs/user
+grep -rn -E 'byte-gleich|Position seiner|Position der Quellspalte' spec docs/user
+git grep -n -E 'drei Formzeilen|fünf Formzeilen|Regelname ist ungültig' a32a1931 -- spec
+grep -rn -E 'drei Formzeilen|fünf Formzeilen|Regelname ist ungültig' spec
+git grep -n -E 'Abhilfe: Regelstand|Abhilfe nur bei' a32a1931 -- spec
+grep -rn -E 'Abhilfe: Regelstand|Abhilfe nur bei' spec
+git grep -n 'Abhilfe' a32a1931 -- spec docs/user harness
+grep -rn 'Abhilfe' spec docs/user harness
+```
+
+| Bewegte Aussage | Befund Parent → Diff | Behandlung |
+|---|---|---|
+| Bezeichner-Vergleich (`zeichengenau`) | Parent: 1 Zeile (`spec/pflichtenheft.md:908`, nur `map_value`-Wert); Diff: 10 Zeilen, alle in `spec/pflichtenheft.md` (Bezeichner-Absatz, K3-Zusatz, Adressformat, Vergleich, Anwendbarkeit); `spec/architecture.md` und `docs/user`: kein Treffer an beiden Ständen | Architektur-Sicht nennt keine Bezeichner-Regeln, nichts nachzuziehen; das Handbuch nennt die SQL-Funktionen erst mit `slice-transformationen-betriebsdoku` |
+| „Position"/„byte-gleich" der Row Images | Parent: 3 Zeilen (`spec/pflichtenheft.md:205`, `:299`, `:301`); Diff: 1 Zeile (`:205`) | `:299`/`:301` sind ersetzt. **Gemeldet, nicht geändert:** `:205` (`LH-FA-CAP-009.a` Absatz „Markierung": „das Row Image ist byte-gleich dem WAL-Image derselben Zeile") stammt aus dem Backfill-Stand und gilt dem Assembler-Ausgang, nicht dem `jsonb`-Lesepfad; ob die Zeile auf „Inhalt" umzuformulieren ist, entscheidet der Planner |
+| Fehlertext-Tabelle und Prüfreihenfolge | Parent: „drei Formzeilen" (`:681`); Diff: „fünf Formzeilen" (`:683`), die neue Zeile `Regelname ist ungültig` (`:689`); ein weiteres Zählwort zu Formzeilen steht nirgends | gezogen; die Historie-Zeile vom 2026-09-26 zur ersten Fassung bleibt (Protokoll) |
+| „Abhilfe: Regelstand ändern" in der `schema`-Zeile | Parent: 1 Zeile (`:963`); Diff: die Zeile trägt „Abhilfe nur bei nicht anwendbarer Regel" (`:1020`) | gezogen |
+| Abhilfe an mehreren Stellen | Parent: `spec/pflichtenheft.md` 8 Zeilen (`:334`, `:337`, `:963`, `:970`, `:973`, `:976`, zwei Historie-Zeilen); Diff: 11 Zeilen, `LH-FA-CFG-007.a` führt (`:332`, `:335`), `SPEC-008` verweist (`:1020`, `:1027`, `:1030`); `docs/user` und `harness`: an beiden Ständen 3 Zeilen, keine gilt der Transformations-Abhilfe (WAL-Rückstand, Handbuch-Historie) | Führung deklariert (Absatz „Führende Stelle je Sachverhalt" oben); nichts außerhalb der Spec mitzuziehen |
+
 **Belege des Laufs (Implementer):**
 
 - Kennung: `git grep -h -o 'SPEC-0[0-9][0-9]' 1718546b -- spec/pflichtenheft.md | sort -u | tail -1` druckt `SPEC-029`; am Diff-Stand (`HEAD`) `SPEC-030` — die neu vergebene Kennung ist die nächste freie.
@@ -210,6 +277,9 @@ Implementer trägt Gefundenes und Nichtgefundenes je Zeile ein):**
 - Handbuch unberührt: `git diff 1718546b HEAD -- docs/user/benutzerhandbuch.md | wc -l` druckt `0` — keine Versionshistorie-Pflicht.
 - Sensoren: `make docs-check` Exit 0 (1192 Dateien, 0 Befunde); `make gates` Exit 0 am Stand nach dem Plan-Nachzug-Commit (`coverage-gate: OK — Coverage 83.40% erfüllt Schwelle 80%`, `commit-traceability: OK — 5 Commit(s)`, `generated-sync: OK`, `gesamt: 0 Befund(e)`); `make doc-trace`: `80 Anforderung(en), 2 Waise(n)` (`LH-FA-CFG-007`, `LH-FA-CFG-008`).
 - Zusage · mutierte Eingabe · gesehenes Rot (die Spec-Zusage „Spec-Straten tragen keinen ADR-Bezug und keine nackte Kennung“ wird vom `matrix`- und `ids`-Modul gehalten): (1) `spec/pflichtenheft.md` bekommt einen Link auf `ADR-0112` → `make docs-check` Exit 2, `matrix-forbidden` „Referenz spec → adr ist nicht erlaubt“; (2) `spec/architecture.md` bekommt `LH-FA-CFG-007` ohne Link → Exit 2, `id-unlinked`; (3) zusätzlich färbte die erste Fassung des `ARC-001`-Zeilentexts das `structure`-Modul (`section-cell-oversized`, 247 von 220 Zeichen) — das Rot wurde vor dem Kürzen gesehen. Beide Mutationen wurden zurückgenommen (`cmp` gegen die Sicherungskopie: gleich). Die Inhalts-Zusagen der Spec selbst (Fehlertexte, Randfälle, Zusage-Form) hält kein Sensor; ihre Leser sind Reviewer und Verifier (Risiken §6).
+
+- Fixrunde (Review `docs/reviews/review-slice-transformationen-spec-nachzug.md`, Parent `a32a1931`): Decken-Regel `git diff a32a1931 -- spec | grep '^+' | grep -c 'ADR-0\|slice-\|welle-'` druckt `0`; Handbuch `git diff a32a1931 -- docs/user | wc -l` druckt `0`; `make docs-check` Exit 0 (`d-check: 1193 Datei(en) geprüft, 0 Befund(e)`); `make gates` Exit 0 (`coverage-gate: OK — Coverage 83.40% erfüllt Schwelle 80%`, `generated-sync: OK`, `gesamt: 0 Befund(e)`); `make doc-trace`: `80 Anforderung(en), 2 Waise(n)`.
+- Fixrunde, Zusage · mutierte Eingabe · gesehenes Rot: die Zusage „die neuen Absätze (Bezeichner, Beispiele, Fehlertext-Zeilen) tragen keine nackte Kennung" hält das `ids`-Modul: ein angehängter Satz mit `LH-FA-CFG-007` ohne Link am Ende von `spec/pflichtenheft.md` → `make docs-check` Exit 2, Befund `id-unlinked` in der angehängten Zeile; zurückgenommen (`cmp` gegen die Sicherungskopie: gleich). Die Inhalts-Zusagen (Bezeichner-Form, Fehlertext-Wortlaute, Beispiele) hält kein Sensor; ihre Leser sind Reviewer und Verifier, und `slice-transformationen-kern-rename` bindet sie an Tests (Risiko §6, Fehlertexte).
 
 ## 4. Trigger
 
@@ -258,7 +328,9 @@ geschrieben.
   *Erwartet, zu belegen durch:* Review liest jeden Satz der neuen Abschnitte
   auf Zukunfts-Form. **Ausgang:** *(bei Closure)*
 - **Überholter Text im selben Dokument**
-  (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, offen, 2×): die
+  (`BEO-PGC/nachzug-laesst-ueberholten-text-stehen`, verkörpert, 12
+  Evidence-Dateien, gemessen am 2026-09-26 mit `ls
+  docs/plan/planning/observations/BEO-PGC/<eintrag>/evidence | wc -l`): die
   Überschrift „… offen“, der Einleitungssatz von
   [`SPEC-019`](../../../../spec/pflichtenheft.md) (nennt die
   bestehenden SQL-Funktionen) und der Satz zur Menge der Arten in `spec/architecture.md` können
@@ -304,16 +376,19 @@ geschrieben.
 `*`/`PGC` (Modus Greenfield, `harness/conventions.md` §Modus-Deklaration); die
 Spec-Dateien bilden keine eigene Sub-Area — kein Anlass zur Ausdifferenzierung.
 
-**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen —
-`BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (offen, 2×, einschlägig —
-Risiko §6), `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 26×,
+**Vorgelagert — offene Beobachtungen sichten:** Register durchgegangen; die
+Zahlen sind die Zahl der Evidence-Dateien, gemessen am 2026-09-26 (HEAD
+`a32a1931`) mit `ls docs/plan/planning/observations/BEO-PGC/<eintrag>/evidence
+| wc -l` —
+`BEO-PGC/nachzug-laesst-ueberholten-text-stehen` (verkörpert, 12, einschlägig —
+Risiko §6), `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (verkörpert, 32,
 Suchlauf §3), `BEO-PGC/dod-begruendung-unzutreffende-tatsachenbehauptung`
-(verkörpert, 6×, einschlägig — Risiko §6, zweiter Punkt),
-`BEO-PGC/zitat-nennt-die-falsche-stelle` (verkörpert, 7×, Review-Leser: jede
+(verkörpert, 8, einschlägig — Risiko §6, zweiter Punkt),
+`BEO-PGC/zitat-nennt-die-falsche-stelle` (verkörpert, 8, Review-Leser: jede
 zitierte Stelle der Spec ist geprüft),
-`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert, 13×, die Zahl
+`BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (verkörpert, 23, die Zahl
 der Antragsarten und Werte trägt ihren Ursprung),
-`BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (offen, 1×, dieser Slice ist der
+`BEO-PGC/adr-folgepflicht-ohne-traeger-slice` (offen, 1, dieser Slice ist der
 Träger der Folgepflicht 1).
 
 **Modus-Begründungsblock:** alle berührten Sub-Areas GF.
