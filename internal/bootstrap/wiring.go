@@ -851,34 +851,39 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// die kritische Sektion des Capture-Persist-ACK-Pfads
 	// (`LH-QA-REL-001.a`). Sie trägt die laufende `Assembler`-Bindung
 	// desselben Streams nach (`stream.Assembler()`), den `stream.Run`
-	// unten konsumiert — kein zweiter Übersetzer.
+	// unten konsumiert — kein zweiter Übersetzer. Ihr Start folgt dem
+	// Vorlauf über die offenen Anträge und steht mit ihm vor `stream.Run`
+	// (`runStreamAfterAdministrationPass`, Aufruf unten).
 	administrationCtx, stopAdministration := context.WithCancel(ctx)
 	var administrationDone sync.WaitGroup
-	administrationDone.Add(1)
-	go func() {
-		defer administrationDone.Done()
-		runAdministration(administrationCtx, administrationDeps{
-			requests:              adminRequests,
-			listener:              adminListener,
-			activation:            activation,
-			enableTables:          enableTables,
-			disableTables:         disableTables,
-			excludeColumns:        excludeColumns,
-			includeColumns:        includeColumns,
-			schemaStore:           schemaStore,
-			columnExclusion:       activation,
-			transformations:       activation,
-			assembler:             stream.Assembler(),
-			setTransformations:    setTransformations,
-			removeTransformations: removeTransformations,
-			backfill:              backfillTables,
-			backfillWake:          backfillWake,
-			source:                cfg.Source,
-			publication:           cfg.Publication,
-			pollInterval:          administrationPollInterval,
-			log:                   log,
-		})
-	}()
+	administration := administrationDeps{
+		requests:              adminRequests,
+		listener:              adminListener,
+		activation:            activation,
+		enableTables:          enableTables,
+		disableTables:         disableTables,
+		excludeColumns:        excludeColumns,
+		includeColumns:        includeColumns,
+		schemaStore:           schemaStore,
+		columnExclusion:       activation,
+		transformations:       activation,
+		assembler:             stream.Assembler(),
+		setTransformations:    setTransformations,
+		removeTransformations: removeTransformations,
+		backfill:              backfillTables,
+		backfillWake:          backfillWake,
+		source:                cfg.Source,
+		publication:           cfg.Publication,
+		pollInterval:          administrationPollInterval,
+		log:                   log,
+	}
+	startAdministration := func() {
+		administrationDone.Add(1)
+		go func() {
+			defer administrationDone.Done()
+			runAdministration(administrationCtx, administration)
+		}()
+	}
 
 	// Die Retention-Goroutine läuft wie Heartbeat, Administration und
 	// WAL-Retention über den eigenen Pool und die eigene Goroutine — kein
@@ -1033,7 +1038,7 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 		runWALRetentionCheck(walRetentionCtx, walRetention, log, heartbeatInterval, warnBytes, errorBytes, stopStream, &walFault)
 	}()
 
-	streamErr := stream.Run(streamCtx)
+	streamErr := runStreamAfterAdministrationPass(streamCtx, administration, startAdministration, stream.Run)
 	stopHeartbeat()
 	heartbeatDone.Wait()
 	stopWALRetention()
@@ -1305,6 +1310,24 @@ type administrationDeps struct {
 	publication  string
 	pollInterval time.Duration
 	log          outbound.LogPort
+}
+
+// runStreamAfterAdministrationPass ordnet den Start des Stream-Laufs: erst
+// ein synchroner Durchlauf von `processAdministrationRequests` über die
+// offenen Anträge (Vorlauf), dann `startLoop` (die Administrations-Goroutine),
+// dann `runStream`. Ein beim Prozessstart `pending` stehender Antrag ist
+// damit vermerkt und in der `Assembler`-Bindung nachgetragen, bevor der Stream
+// die erste Transaktion assembliert; die Ordnung gilt für jede Antragsart
+// (`ADR-0112`). Der Vorlauf steht vor `startLoop`: zu keinem Zeitpunkt lesen
+// zwei Durchläufe dieselbe Queue. Er trägt die Semantik der Goroutine: ein
+// Lesefehler wird protokolliert und hält den Start nicht an, ein endender
+// `ctx` beendet den Durchlauf. `runStream` läuft auch bei beendetem `ctx`: der
+// Stream schließt seine Verbindung in seinem eigenen Lauf. Der Rückgabewert
+// ist der von `runStream`.
+func runStreamAfterAdministrationPass(ctx context.Context, deps administrationDeps, startLoop func(), runStream func(context.Context) error) error {
+	processAdministrationRequests(ctx, deps)
+	startLoop()
+	return runStream(ctx)
 }
 
 // runAdministration verarbeitet offene Anträge der Antrags-Queue
