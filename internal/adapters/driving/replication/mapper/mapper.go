@@ -57,14 +57,15 @@ var ErrIncompatibleSchemaChange = errors.New("Fehlerklasse schema: Relation-Änd
 
 // ErrTransformationNotApplicable trägt eine Transformationsregel der
 // Bindung, die auf die Relation einer Änderung nicht anwendbar ist: ihre
-// Spalte fehlt in der Relation, oder ihr Zielname gleicht einer Spalte der
-// Relation (`SPEC-030`, Anwendbarkeit; `model.Transformation.CheckApplicable`
-// nennt den Grund). `Consume` meldet den Fehler statt eines Changes, vor
-// jeder Serialisierung; ausgenommen ist die Kollision zweier Regeln mit
-// gleichem Zielnamen, die erst die Row-Image-Konstruktion an einer Zeile
-// findet, die beide Werte trägt, und ohne Bild meldet. `receive.Stream`
-// beendet damit den Lauf, die Transaktion erreicht `Capture` nicht und wird
-// nicht bestätigt (Fehlerklasse `schema`, `SPEC-008`, `LH-FA-ADM-003`).
+// Spalte fehlt in der Relation, oder — bei einer Regel mit Zielname
+// (`model.Transformation.To`) — ihr Zielname gleicht einer Spalte der Relation
+// (`model.Transformation.CheckApplicable` nennt den Grund). `Consume` meldet
+// den Fehler statt eines Changes, vor jeder Serialisierung; ausgenommen ist
+// die Kollision zweier Regeln mit gleichem Zielnamen, die erst die
+// Row-Image-Konstruktion an einer Zeile findet, die beide Werte trägt, und
+// ohne Bild meldet. `receive.Stream` beendet damit den Lauf, die Transaktion
+// erreicht `Capture` nicht und wird nicht bestätigt (Fehlerklasse `schema`;
+// Norm der Anwendbarkeit: `SPEC-030`).
 var ErrTransformationNotApplicable = errors.New("Fehlerklasse schema: Transformationsregel auf die Änderung nicht anwendbar")
 
 // TableBinding trägt die am Port getragenen Kennungen einer aktivierten
