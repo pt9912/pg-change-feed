@@ -34,7 +34,7 @@ tragen zehn Felder, die HTTP-Antwort von
 inbegriffen; gemessen an `readChangeResponse`,
 `internal/adapters/driving/http/readchanges.go`).
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-26.
 
 **Autor:** Planner-Agent, Welle-Eröffnung
 [welle-transformationen](../welle-transformationen.md). **Datum:** 2026-09-23.
