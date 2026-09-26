@@ -413,7 +413,9 @@ func parseTables(raw string) (map[string]mapper.TableBinding, error) {
 // ohne Regel trägt eine Bindung ohne Regelstand. Die Lesung baut je Aufruf
 // frische Listen, die die Bindung behält und die niemand mehr schreibt
 // (`mapper.TableBinding`). Eine Regelform, die die Ableitung nicht mehr in
-// eine Regel führt, endet den Start wie ein Lesefehler.
+// eine Regel führt, endet den Start vor dem Stream-Start als Fehler der
+// Klasse `internal` (`classifyRunError`); ein Lesefehler des Bestands endet
+// dagegen in `storage`.
 func activatedTableBindings(ctx context.Context, activation outbound.TableActivationPort, schemaStore outbound.SchemaStorePort, columnExclusion outbound.ColumnExclusionPort, transformations outbound.TransformationPort, source model.SourceID) (map[string]mapper.TableBinding, error) {
 	registered, err := activation.List(ctx, source)
 	if err != nil {

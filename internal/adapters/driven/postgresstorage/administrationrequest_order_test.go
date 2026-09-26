@@ -158,29 +158,33 @@ VALUES ($1, $2, 'public', $3, $4, $5, $6::text::jsonb, $7, $8, $9)`
 
 // TestAdministrationRequestSameTransactionCallsKeepCallOrder trägt die
 // Zusage von `ADR-0127` gegen die realen SQL-Funktionen (nicht gegen von
-// Hand geschriebene Zeilen): sechs Aufrufe einer Transaktion —
-// `remove_transformation` und `set_transformation` derselben Regel,
-// `exclude_column` und `include_column` derselben Spalte, `disable_table` und
-// `enable_table` derselben Tabelle — tragen `requested_at` je Aufruf, und
-// `ListPending` liefert sie in der Aufruf-Reihenfolge. Die Verarbeitung in
-// dieser Reihenfolge führt zum selben Regel- und Ausschlussstand wie die
-// Ableitung aus den vermerkten Zeilen, und dieser Stand ist der der
-// Aufrufe: die neue Regel `r` (Ziel `second`), die Spalte `secret` nicht
-// ausgeschlossen.
+// Hand geschriebene Zeilen): alle sieben Funktionen (`backfill_table`,
+// `remove_transformation`/`set_transformation` derselben Regel,
+// `exclude_column`/`include_column` derselben Spalte,
+// `disable_table`/`enable_table` derselben Tabelle) tragen `requested_at` je
+// Aufruf, und `ListPending` liefert die Zeilen einer Transaktion in der
+// Aufruf-Reihenfolge. Jeder Durchlauf ruft zwei Folgen auf, je in einer
+// Transaktion auf eigener Tabelle: die Vorwärts-Folge (`backfill`, `remove`,
+// `set`, `exclude`, `include`, `disable`, `enable`) und ihre Umkehrung. Die
+// Verarbeitung in der gelesenen Reihenfolge führt zum selben Regel- und
+// Ausschlussstand wie die Ableitung aus den vermerkten Zeilen, und dieser
+// Stand ist der der Aufrufe: Vorwärts trägt die Tabelle die neue Regel `r`
+// (Ziel `second`) und die Spalte `secret` ist nicht ausgeschlossen; in der
+// Umkehrung ist `r` entfernt und `secret` ausgeschlossen.
 //
 // Die Kennung ordnet gleichzeitige Zeilen nach einer zufälligen UUID; ein
 // einzelner Durchlauf färbte sich bei falscher Ordnung nur mit
 // Wahrscheinlichkeit 1/2 je Paar rot. Der Test läuft deshalb `iterations`
-// Transaktionen mit je eigener Tabelle.
+// Durchläufe mit je eigenen Tabellen.
 //
-// Rot färbende Mutation: in der später aufgerufenen Funktion eines Paares
-// (`cdc.set_transformation`, `cdc.include_column` oder `cdc.enable_table`
-// in `tools/schema/nacharbeit-administration.sql`) `clock_timestamp()` durch
-// `now()` ersetzen — ihre Zeile trägt den Transaktionsbeginn und sortiert
-// vor die Zeile des früheren Aufrufs. In der früher aufgerufenen Funktion
-// bleibt die Reihenfolge richtig und der Test grün. Sind alle sieben
-// Funktionen so ersetzt, bricht die Reihenfolge über die zufällige Kennung
-// bei etwa jeder zweiten Transaktion.
+// Rot färbende Mutation je Funktion: in `tools/schema/nacharbeit-administration.sql`
+// `clock_timestamp()` durch `now()` ersetzen — die Zeile der Funktion trägt
+// den Transaktionsbeginn und sortiert vor die Zeilen aller früher
+// aufgerufenen Funktionen derselben Transaktion. Der Test färbt sich damit rot,
+// sobald die mutierte Funktion in einer der zwei Folgen einen Vorgänger hat;
+// nur die erste Funktion einer Folge bleibt in dieser Folge grün. Die zwei Folgen
+// beginnen mit verschiedenen Funktionen (`backfill`, `enable`), jede der sieben
+// steht in mindestens einer Folge hinter einem Vorgänger.
 func TestAdministrationRequestSameTransactionCallsKeepCallOrder(t *testing.T) {
 	pool, dsn := newTestAdministrationRequestPool(t)
 	ctx := context.Background()
@@ -211,101 +215,127 @@ func TestAdministrationRequestSameTransactionCallsKeepCallOrder(t *testing.T) {
 		args     func(table string) []any
 	}
 	tableArgs := func(table string) []any { return []any{administrationRequestSource, table} }
-	calls := []call{
-		{"remove_transformation", "SELECT cdc.remove_transformation($1, 'public', $2, 'r')", tableArgs},
-		{"set_transformation", "SELECT cdc.set_transformation($1, 'public', $2, 'r', $3::json)", func(table string) []any {
+	calls := map[string]call{
+		"backfill_table":        {"backfill_table", "SELECT cdc.backfill_table($1, 'public', $2)", tableArgs},
+		"remove_transformation": {"remove_transformation", "SELECT cdc.remove_transformation($1, 'public', $2, 'r')", tableArgs},
+		"set_transformation": {"set_transformation", "SELECT cdc.set_transformation($1, 'public', $2, 'r', $3::json)", func(table string) []any {
 			return []any{administrationRequestSource, table, secondSpec}
 		}},
-		{"exclude_column", "SELECT cdc.exclude_column($1, 'public', $2, 'secret')", tableArgs},
-		{"include_column", "SELECT cdc.include_column($1, 'public', $2, 'secret')", tableArgs},
-		{"disable_table", "SELECT cdc.disable_table($1, 'public', $2)", tableArgs},
-		{"enable_table", "SELECT cdc.enable_table($1, 'public', $2)", tableArgs},
+		"exclude_column": {"exclude_column", "SELECT cdc.exclude_column($1, 'public', $2, 'secret')", tableArgs},
+		"include_column": {"include_column", "SELECT cdc.include_column($1, 'public', $2, 'secret')", tableArgs},
+		"disable_table":  {"disable_table", "SELECT cdc.disable_table($1, 'public', $2)", tableArgs},
+		"enable_table":   {"enable_table", "SELECT cdc.enable_table($1, 'public', $2)", tableArgs},
+	}
+
+	// Die Vorwärts-Folge und ihre Umkehrung: jedes Paar steht in beiden
+	// Richtungen, `backfill_table` an erster und an letzter Stelle.
+	forward := []string{"backfill_table", "remove_transformation", "set_transformation", "exclude_column", "include_column", "disable_table", "enable_table"}
+	backward := make([]string, 0, len(forward))
+	for j := len(forward) - 1; j >= 0; j-- {
+		backward = append(backward, forward[j])
+	}
+	type sequence struct {
+		name         string
+		order        []string
+		wantRules    string
+		wantExcluded []string
+	}
+	sequences := []sequence{
+		{"vorwärts", forward, "r:name>second;", nil},
+		{"umgekehrt", backward, "", []string{"secret"}},
 	}
 
 	for i := 0; i < iterations; i++ {
-		table := fmt.Sprintf("orders_call_order_%02d", i)
-		if _, err := pool.Exec(ctx, `INSERT INTO cdc.administration_request
+		for s, seq := range sequences {
+			label := fmt.Sprintf("Durchlauf %d (%s)", i, seq.name)
+			table := fmt.Sprintf("orders_call_order_%02d_%d", i, s)
+			if _, err := pool.Exec(ctx, `INSERT INTO cdc.administration_request
     (administration_request_id, source_id, schema_name, table_name, rule_name, rule_spec, request_kind, requested_at, status)
 VALUES ($1, $2, 'public', $3, 'r', $4::text::jsonb, 'set_transformation', current_timestamp - interval '1 hour', 'applied')`,
-			fmt.Sprintf("call-order-%02d-0-set", i), administrationRequestSource, table, firstSpec); err != nil {
-			t.Fatalf("Durchlauf %d: Vorgeschichte schreiben: %v", i, err)
-		}
-
-		tx, err := pool.Begin(ctx)
-		if err != nil {
-			t.Fatalf("Durchlauf %d: Begin: %v", i, err)
-		}
-		var called []model.AdministrationRequestID
-		for _, c := range calls {
-			var id string
-			if err := tx.QueryRow(ctx, c.query, c.args(table)...).Scan(&id); err != nil {
-				_ = tx.Rollback(ctx)
-				t.Fatalf("Durchlauf %d: cdc.%s: %v", i, c.function, err)
+				fmt.Sprintf("call-order-%02d-%d-0-set", i, s), administrationRequestSource, table, firstSpec); err != nil {
+				t.Fatalf("%s: Vorgeschichte schreiben: %v", label, err)
 			}
-			called = append(called, model.AdministrationRequestID(id))
-		}
-		if err := tx.Commit(ctx); err != nil {
-			t.Fatalf("Durchlauf %d: Commit: %v", i, err)
-		}
 
-		pending, err := queue.ListPending(ctx)
-		if err != nil {
-			t.Fatalf("Durchlauf %d: ListPending: %v", i, err)
-		}
-		inCall := make(map[model.AdministrationRequestID]bool, len(called))
-		for _, id := range called {
-			inCall[id] = true
-		}
-		var mine []model.AdministrationRequest
-		var mineIDs []model.AdministrationRequestID
-		for _, request := range pending {
-			if inCall[request.ID] {
-				mine = append(mine, request)
-				mineIDs = append(mineIDs, request.ID)
+			tx, err := pool.Begin(ctx)
+			if err != nil {
+				t.Fatalf("%s: Begin: %v", label, err)
 			}
-		}
-		if fmt.Sprint(mineIDs) != fmt.Sprint(called) {
-			t.Fatalf("Durchlauf %d: ListPending-Ordnung = %v, wollen die Aufruf-Reihenfolge %v", i, mineIDs, called)
-		}
+			var called []model.AdministrationRequestID
+			for _, name := range seq.order {
+				c := calls[name]
+				var id string
+				if err := tx.QueryRow(ctx, c.query, c.args(table)...).Scan(&id); err != nil {
+					_ = tx.Rollback(ctx)
+					t.Fatalf("%s: cdc.%s: %v", label, c.function, err)
+				}
+				called = append(called, model.AdministrationRequestID(id))
+			}
+			if err := tx.Commit(ctx); err != nil {
+				t.Fatalf("%s: Commit: %v", label, err)
+			}
 
-		// Der Stand der Verarbeitung: die vermerkte Vorgeschichte, dann die
-		// Anträge in der gelesenen Ordnung.
-		records := []model.TransformationRecord{{Kind: model.AdministrationRequestSetTransformation, Name: "r", Spec: firstSpec}}
-		excluded := map[string]bool{}
-		for _, request := range mine {
-			switch request.Kind {
-			case model.AdministrationRequestSetTransformation, model.AdministrationRequestRemoveTransformation:
-				records = append(records, model.TransformationRecord{Kind: request.Kind, Name: request.RuleName, Spec: request.RuleSpec})
-			case model.AdministrationRequestExcludeColumn:
-				excluded[request.Column] = true
-			case model.AdministrationRequestIncludeColumn:
-				delete(excluded, request.Column)
+			pending, err := queue.ListPending(ctx)
+			if err != nil {
+				t.Fatalf("%s: ListPending: %v", label, err)
 			}
-		}
-		live, err := model.FoldTransformations(records)
-		if err != nil {
-			t.Fatalf("Durchlauf %d: FoldTransformations: %v", i, err)
-		}
+			inCall := make(map[model.AdministrationRequestID]bool, len(called))
+			for _, id := range called {
+				inCall[id] = true
+			}
+			var mine []model.AdministrationRequest
+			var mineIDs []model.AdministrationRequestID
+			for _, request := range pending {
+				if inCall[request.ID] {
+					mine = append(mine, request)
+					mineIDs = append(mineIDs, request.ID)
+				}
+			}
+			if fmt.Sprint(mineIDs) != fmt.Sprint(called) {
+				t.Fatalf("%s: ListPending-Ordnung = %v, wollen die Aufruf-Reihenfolge %v (%v)", label, mineIDs, called, seq.order)
+			}
 
-		for _, request := range mine {
-			if err := queue.MarkApplied(ctx, request.ID); err != nil {
-				t.Fatalf("Durchlauf %d: MarkApplied %q: %v", i, request.ID, err)
+			// Der Stand der Verarbeitung: die vermerkte Vorgeschichte, dann die
+			// Anträge in der gelesenen Ordnung.
+			records := []model.TransformationRecord{{Kind: model.AdministrationRequestSetTransformation, Name: "r", Spec: firstSpec}}
+			excluded := map[string]bool{}
+			for _, request := range mine {
+				switch request.Kind {
+				case model.AdministrationRequestSetTransformation, model.AdministrationRequestRemoveTransformation:
+					records = append(records, model.TransformationRecord{Kind: request.Kind, Name: request.RuleName, Spec: request.RuleSpec})
+				case model.AdministrationRequestExcludeColumn:
+					excluded[request.Column] = true
+				case model.AdministrationRequestIncludeColumn:
+					delete(excluded, request.Column)
+				}
 			}
-		}
-		derivedRules, err := activation.TransformationRules(ctx, administrationRequestSource)
-		if err != nil {
-			t.Fatalf("Durchlauf %d: TransformationRules: %v", i, err)
-		}
-		const wantRules = "r:name>second;"
-		if got, liveText := describeRules(derivedRules["public."+table]), describeRules(live); got != liveText || got != wantRules {
-			t.Fatalf("Durchlauf %d: Regelstand abgeleitet = %q, live = %q, wollen beide %q", i, got, liveText, wantRules)
-		}
-		derivedColumns, err := activation.ExcludedColumns(ctx, administrationRequestSource)
-		if err != nil {
-			t.Fatalf("Durchlauf %d: ExcludedColumns: %v", i, err)
-		}
-		if got := derivedColumns["public."+table]; len(got) != 0 || len(excluded) != 0 {
-			t.Fatalf("Durchlauf %d: Ausschlussstand abgeleitet = %v, live = %v, wollen beide leer", i, got, excluded)
+			live, err := model.FoldTransformations(records)
+			if err != nil {
+				t.Fatalf("%s: FoldTransformations: %v", label, err)
+			}
+			liveExcluded := make([]string, 0, len(excluded))
+			for column := range excluded {
+				liveExcluded = append(liveExcluded, column)
+			}
+
+			for _, request := range mine {
+				if err := queue.MarkApplied(ctx, request.ID); err != nil {
+					t.Fatalf("%s: MarkApplied %q: %v", label, request.ID, err)
+				}
+			}
+			derivedRules, err := activation.TransformationRules(ctx, administrationRequestSource)
+			if err != nil {
+				t.Fatalf("%s: TransformationRules: %v", label, err)
+			}
+			if got, liveText := describeRules(derivedRules["public."+table]), describeRules(live); got != liveText || got != seq.wantRules {
+				t.Fatalf("%s: Regelstand abgeleitet = %q, live = %q, wollen beide %q", label, got, liveText, seq.wantRules)
+			}
+			derivedColumns, err := activation.ExcludedColumns(ctx, administrationRequestSource)
+			if err != nil {
+				t.Fatalf("%s: ExcludedColumns: %v", label, err)
+			}
+			if got := derivedColumns["public."+table]; fmt.Sprint(got) != fmt.Sprint(seq.wantExcluded) || fmt.Sprint(liveExcluded) != fmt.Sprint(seq.wantExcluded) {
+				t.Fatalf("%s: Ausschlussstand abgeleitet = %v, live = %v, wollen beide %v", label, got, liveExcluded, seq.wantExcluded)
+			}
 		}
 	}
 }
