@@ -95,7 +95,28 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       `rule_spec ist ungültig`; ein leerer, fehlender oder ungültiger Regelname
       endet `failed` mit `Regelname ist ungültig`, die Stelle dieser Prüfung
       (Konstruktor-Sentinel oder Vorprüfung im Use Case) legt dieser Slice fest,
-      und ein Test bindet je Text den Auslöser. *Zu belegen durch:*
+      und ein Test bindet je Text den Auslöser. Übergabe aus
+      `antragsweg-schema` (gemessen im Review
+      `review-slice-transformationen-antragsweg-schema`): die Funktionen
+      schreiben eine Zeile mit `rule_name` NULL oder leer und mit `rule_spec`
+      SQL-NULL, ohne zu prüfen; der Konstruktor-Sentinel in
+      `ReadPendingRequests` lehnt diese Zeile **beim Lesen** ab, `ListPending`
+      liefert den Fehler, und `processAdministrationRequests` liest dieselbe
+      Zeile im nächsten Durchlauf erneut — kein Antrag der Queue wird
+      verarbeitet, bis die Zeile entfernt ist. [`SPEC-019`](../../../../spec/pflichtenheft.md)
+      sagt für diese Fälle `failed` mit `Regelname ist ungültig` bzw.
+      `rule_spec ist ungültig`: die Zeile wird gelesen und verarbeitet statt
+      abgelehnt. Der Slice legt fest, an welcher Stelle geprüft wird (Lesen oder
+      Verarbeiten) und bindet den Fall mit einem Test, der eine Queue mit einer
+      ungültigen und einer gültigen Zeile durchläuft (die gültige Zeile wird
+      verarbeitet). Zu den Eingaben des Falls gehört `rule_spec` in den
+      Formen, die der Aufruf annimmt ([`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md)
+      Festlegung 1): SQL-`NULL` (der Store liefert den leeren Text),
+      JSON-`null` (der Store liefert den Text `null`), ein Wert ohne Objekt und
+      ein doppelter Schlüssel — `jsonb` normalisiert vor Go
+      (`{"kind":"a","kind":"b","z":1,"a":2}` wird als
+      `{"a": 2, "z": 1, "kind": "b"}` gelesen, gemessen im Review), die strikte
+      Dekodierung sieht einen doppelten Schlüssel deshalb nicht. *Zu belegen durch:*
       `make test` und je Invariante eine Mutation der Prüfung, die den Test rot
       färbt (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert,
       6×).
@@ -180,6 +201,16 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
   Prüfung beim Antrag bleibt Sache dieses Slice, ihr Test „zwei Regeln mit gleichem Zielnamen
   endet `failed`“ zeigt, dass der Betrieb den Wächter nicht erreicht (Register
   `BEO-PGC/wertabhaengiger-zweiter-waechter-ohne-spec-zeile`).
+
+**Übergabe aus `slice-transformationen-antragsweg-schema`** (gemeldet, kein zusätzlicher Umfang):
+
+- **Die verarbeitete Menge steht zweimal.** `processedAdministrationKinds` in
+  `internal/bootstrap/wiring.go` ist eine handgeführte Zeichenkette neben dem
+  `switch` von `applyAdministrationRequest`; `TestApplyAdministrationRequestRejectsUnprocessedKind`
+  bindet die Konstante an den Fehlertext, kein Test bindet sie an die Fälle des
+  `switch`. Der Slice zieht die Konstante nach (der genannte Test färbt sich rot,
+  sobald `set_transformation` verarbeitet wird) und bindet die Aufzählung an die
+  Fälle des `switch` oder benennt die Grenze.
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die Menge der
 Antragsarten in `applyAdministrationRequest`“, „die Menge der Pfade, die eine

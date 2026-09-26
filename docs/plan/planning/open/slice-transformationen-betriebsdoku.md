@@ -82,7 +82,18 @@ an dieses Slice gemeldet haben.
       ([`docs/user/benutzerhandbuch.md`](../../../user/benutzerhandbuch.md)):
       ein neuer Abschnitt in §4 (Aufgaben) „Transformationsregel konfigurieren“
       mit dem Aufruf von `cdc.set_transformation`/`cdc.remove_transformation`
-      (Beispiele `rename_column`, `map_value`), der Rolle `cdc_admin`, dem
+      (Beispiele `rename_column`, `map_value`; Aufrufform der Regelform: der
+      Parameter `rule_spec` ist `json`, ein Literal oder ein `::json`-Wert wird
+      angenommen, ein `::jsonb`-Wert nicht — „function cdc.set_transformation(…,
+      jsonb) does not exist“, gemessen im Review
+      `review-slice-transformationen-antragsweg-schema`,
+      [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md)
+      Folgepflicht 2; Annahmemenge nach
+      [`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md)
+      Festlegung 1: SQL-`NULL`, JSON-`null`, ein Wert ohne Objekt und ein
+      doppelter Schlüssel werden angenommen und in Go geprüft, `\u0000`, eine
+      Zahl außerhalb des Zahlbereichs von `numeric` und ein Syntaxfehler enden
+      beim Aufruf ohne Antrags-Zeile), der Rolle `cdc_admin`, dem
       Status `pending`/`applied`/`failed` und den Fehlertexten von K1–K4, der
       Wirkung („ab `applied` für künftige Changes, nicht rückwirkend; die
       Rohform wird nicht gespeichert“, der Informationsverlust bei

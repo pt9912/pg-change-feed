@@ -129,10 +129,12 @@ Antrags trägt der Folge-Slice.
       `BEO-PGC/test-isolation-geteilter-zustand`, offen, 1×).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
-      Self-Review (Modul 8).
+      Self-Review (Modul 8). Report `review-slice-transformationen-antragsweg-schema`:
+      0 HIGH, 4 MEDIUM, 2 LOW, 3 INFO; die Fixrunde löst F-1 bis F-6 (§3,
+      Zeilen „Fixrunde“).
 - [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
@@ -172,6 +174,13 @@ Antrags trägt der Folge-Slice.
 | `tools/harness/run-integration-tests.sh`, `harness/README.md` | update (Zahl) | die Zahl der bekannten Fremdobjekte im Kommentar bzw. in der Zeile `make example-demo-up` (sieben → neun). |
 | `tools/harness/run-schema-rollout-guard-test.sh`, `harness/targets/schema-rollout.md` | prüfen / update | Zahl der Fremdobjekte und Beschreibung der Läufe; der Alt-Tag-Lauf ([`ADR-0114`](../../adr/0114-schema-rollout-vorlauf-view-signatur.md) Entscheidung 7) wird ausgeführt **und geändert** (Übergabe aus `slice-backfill-sql-administration`): Lauf 5 vergleicht die `request_kind`-Menge des Alt-Bestands nach dem Upgrade exakt mit den **fünf** Werten (`backfill,disable,enable,exclude_column,include_column`, samt Fehlermeldung „fünf Antragsarten") und prüft `EXECUTE` allein für die Funktion `cdc.backfill_table`; der Slice zieht Menge und Meldung auf sieben Werte nach und ergänzt `EXECUTE` (nur `cdc_admin`, nicht `PUBLIC`) je neue Funktion — sonst färbt Lauf 5 mit der Erweiterung rot. **Zusätzlich nötig, am Start gemessen:** der jüngste `v*`-Tag ist `v0.2.0` und trägt die Antragsart `backfill`, die Funktion `cdc.backfill_table` und die Rechte auf `cdc.backfill_run` schon (`git show v0.2.0:tools/schema/nacharbeit-administration.sql` nennt `backfill_table` fünfmal); die drei Vorbedingungen des Alt-Tag-Laufs am Stand vor `backfill` (`cdc_admin` ohne `UPDATE` auf die Antrags-Tabelle, `backfill_table` fehlt, die Menge trägt kein `backfill`) sind gegen diesen Tag falsch — Lauf 5 bräche vor dem Upgrade ab. Die Vorbedingungen wandern auf das Delta dieses Slice (der Tag trägt weder die zwei Spalten noch die zwei Funktionen noch die zwei Antragsarten), eine Antragszeile des Alt-Bestands wird vor dem Upgrade geschrieben und trägt danach NULL in den zwei neuen Spalten, und beide Funktionen werden nach dem Upgrade unter `cdc_admin` (Antrag `pending`) und `cdc_reader` („permission denied for function“) aufgerufen; die Rechte-Prüfungen für `backfill_table` bleiben. |
 
+| `internal/adapters/driven/postgresstorage/administrationrequest_test.go` | update (Fixrunde, F-1, F-6) | `TestAdministrationRequestSetTransformationAcceptanceSet` trägt die Annahmemenge von `rule_spec` nach [`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md) Folgepflicht 2 (sieben angenommene, acht abgelehnte Formen, je mit gelesenem Wert bzw. Fehler und null Zeilen); `TestAdministrationFunctionsPinSecurityDefinerAndSearchPath` liest `prosecdef` und `proconfig` der sieben Funktionen aus dem Katalog. |
+| `internal/bootstrap/roles_rollout_file_internal_test.go` | update (Fixrunde, F-2) | `TestAdministrationDateiTraegtDieFunktionsRechte` zählt jede `GRANT`-Anweisung und jede `CREATE FUNCTION` der Datei und verlangt, dass alle in den engen Formen stehen (`GRANT EXECUTE ON FUNCTION … TO …`, `CREATE FUNCTION cdc.<name>`); der Doc-Kommentar nennt die neuen Formen und die Grenze mit Adresse. |
+| `internal/bootstrap/administration_endtoend_test.go` | update (Kommentar, Fixrunde, F-5) | „die fünf Antrags-Funktionen“ → „die sieben Antrags-Funktionen“. |
+| `docs/plan/planning/open/slice-transformationen-antragsweg-usecase.md`, `docs/plan/planning/open/slice-transformationen-betriebsdoku.md` | update (Übergabe-Text, Fixrunde, F-3, F-4, F-7, F-8) | `antragsweg-usecase` trägt das Lesen von NULL/leerem `rule_name` und SQL-NULL-`rule_spec` (die Zeile wird gelesen und verarbeitet statt abgelehnt), die Normalisierung durch `jsonb` und die zweite Quelle der verarbeiteten Menge; `betriebsdoku` §2 trägt die Aufrufform von `rule_spec` und die Annahmemenge. |
+| Bindung der zweiten Quelle `processedAdministrationKinds` an den `switch` (F-8) | keine Änderung (Nicht-Realisierung) | Ein Test müsste `applyAdministrationRequest` je Antragsart mit Attrappen durchlaufen oder den Quelltext des `switch` lesen — beides ist mehr als ein kleiner Test und nimmt die Verdrahtung von `antragsweg-usecase` vorweg. Die Kenntnis steht als Übergabe im Plan von `antragsweg-usecase`. |
+| `tools/schema/nacharbeit-administration.sql` (Cast `::jsonb`) | keine Änderung (Abweichung von `ADR-0126` benannt) | `ADR-0126` nennt als Mutation „Cast `::jsonb` entfernen: die `\u0000`-Zeilen färben rot“. Gemessen färbt sie nichts: PostgreSQL wandelt `json` in eine `jsonb`-Spalte über den Zuweisungs-Cast (Ein-/Ausgabe-Umwandlung), der Aufruf verhält sich ohne den Cast gleich (`make test-store` Exit 0). Der Test bindet die Annahmemenge mit der Mutation `NULL::jsonb` statt des Casts (§3 Mutationen). |
+
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „die geschlossene
 `request_kind`-Menge (Parent-Stand plus zwei)“, „die Menge der Fremdobjekte
 außerhalb des neutralen Modells“, „die Spaltenform von
@@ -179,16 +188,16 @@ außerhalb des neutralen Modells“, „die Spaltenform von
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Aufzählungen der Antragsarten | `git grep -n exclude_column` über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 1–2); Zählwort „fünf“ (Zeilen 3–4); die Aufzählung mit Schrägstrich, die bei `backfill` endet (Zeilen 9–10) | **Gefunden.** Parent: 95 Trefferzeilen, Diff: 96 (Symbolname); Zählwort „fünf Antragsarten/Arten/SQL-Funktionen/Funktionen/Werte“ Parent 13, Diff 7; die Schrägstrich-Aufzählung, die bei `backfill` endet, Parent 6, Diff 5. Code-Träger, die die Menge aufzählen oder „die beiden Tabellen-Antragsarten“ als Gegenstück nennen: `errors.go`, `model/administrationrequest.go`, `queries.go` (zwei Kommentare), `translate.go`, `tableactivation.go`, `outbound/administrationrequest.go`, `wiring.go` (Fehlertext), `nacharbeit-administration.sql`, `nacharbeit-roles.sql`, `schema.yaml` (Kopf und `description`), die Test-Doc-Kommentare in `administration_internal_test.go` und `administrationrequest_test.go`. Spec: `spec/pflichtenheft.md` (sieben Treffer, `SPEC-019` und Änderungshistorie) und `spec/architecture.md` (Tabelle) tragen die sieben Arten bereits (Träger `spec-nachzug`). **Nichtgefunden:** kein weiterer Träger, der die Menge als geschlossene Liste von fünf führt; der Rest der Zählwort-Treffer (Diff 7) sind zwei `Accepted` ADRs mit anderem Gegenstand, zwei Register-Records und die Spec-Historie, dazu der Kommentar in `administration_roles_internal_test.go:58` („einen Antrag jeder der fünf Antragsarten“ — der Login-Test fährt die fünf verarbeiteten Arten) und mein eigener Kommentar am Spaltenform-Test („die fünf Antragsarten ohne Regel“, richtig). | Code-Träger im Diff nachgezogen. Handbuch: `docs/user/benutzerhandbuch.md` trägt zwei Treffer (Beispielaufruf Zeile 265, Änderungshistorie) — an `slice-transformationen-betriebsdoku` gemeldet (deren §3 führt die Zeile „Aufzählungen der Antragsarten im Handbuch“), nicht geändert. `administration_roles_internal_test.go:58` bleibt: die Zeile ist der Login-Test der verarbeiteten Arten, Adresse `slice-transformationen-antragsweg-usecase` (dessen §3 führt „der Login-Test zieht je Antragsart“). `Accepted` ADRs (0059, 0065, 0111, 0112) und Records nicht geändert. |
+| Aufzählungen der Antragsarten | `git grep -n exclude_column` über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline (Block unten, Zeilen 1–2); Zählwort „fünf“ (Zeilen 3–4); die Aufzählung mit Schrägstrich, die bei `backfill` endet (Zeilen 9–10) | **Gefunden.** Parent: 95 Trefferzeilen, Diff: 97 (Symbolname); Zählwort „fünf Antragsarten/Arten/SQL-Funktionen/Funktionen/Werte“ Parent 13, Diff 7; die Schrägstrich-Aufzählung, die bei `backfill` endet, Parent 6, Diff 5. Code-Träger, die die Menge aufzählen oder „die beiden Tabellen-Antragsarten“ als Gegenstück nennen: `errors.go`, `model/administrationrequest.go`, `queries.go` (zwei Kommentare), `translate.go`, `tableactivation.go`, `outbound/administrationrequest.go`, `wiring.go` (Fehlertext), `nacharbeit-administration.sql`, `nacharbeit-roles.sql`, `schema.yaml` (Kopf und `description`), die Test-Doc-Kommentare in `administration_internal_test.go` und `administrationrequest_test.go`. Spec: `spec/pflichtenheft.md` (sieben Treffer, `SPEC-019` und Änderungshistorie) und `spec/architecture.md` (Tabelle) tragen die sieben Arten bereits (Träger `spec-nachzug`). **Nichtgefunden:** kein weiterer Träger, der die Menge als geschlossene Liste von fünf führt (auch nicht in der Wortform „fünf Antrags-Funktionen“ — der eine Treffer im Diff-Stand von `administration_endtoend_test.go` ist in der Fixrunde nachgezogen, Suchlauf-Zeilen 25–28; die Wortformen „(fünf|sieben|vier|sechs) (schreibenden |SQL-)?(Antrags-)?Funktionen“ treffen sonst nur einen Register-Record und den Test-Kommentar zu den sieben Funktionen im Katalog); der Rest der Zählwort-Treffer (Diff 7) sind zwei `Accepted` ADRs mit anderem Gegenstand, zwei Register-Records und die Spec-Historie, dazu der Kommentar in `administration_roles_internal_test.go:58` („einen Antrag jeder der fünf Antragsarten“ — der Login-Test fährt die fünf verarbeiteten Arten) und mein eigener Kommentar am Spaltenform-Test („die fünf Antragsarten ohne Regel“, richtig). | Code-Träger im Diff nachgezogen. Handbuch: `docs/user/benutzerhandbuch.md` trägt zwei Treffer (Beispielaufruf Zeile 265, Änderungshistorie) — an `slice-transformationen-betriebsdoku` gemeldet (deren §3 führt die Zeile „Aufzählungen der Antragsarten im Handbuch“), nicht geändert. `administration_roles_internal_test.go:58` bleibt: die Zeile ist der Login-Test der verarbeiteten Arten, Adresse `slice-transformationen-antragsweg-usecase` (dessen §3 führt „der Login-Test zieht je Antragsart“). `Accepted` ADRs (0059, 0065, 0111, 0112) und Records nicht geändert. |
 | Zahl der Fremdobjekte (Wortform des Parent-Stands, am Start gemessen: „sieben“) | `git grep -n` mit den Wortformen „sieben bekannten/Objekte/Fremdobjekte“ (Zeilen 5–6) und „neun bekannten/Objekte“ (Zeilen 7–8) über `internal tools docs spec harness Makefile` ohne `docs/reviews`, `done/`, Baseline | **Gefunden.** Parent: 12 Trefferzeilen „sieben …“ (Guard-Kommentar, `guard_test.go`, `harness/targets/schema-rollout.md`, `harness/README.md`, `run-integration-tests.sh`, `run-schema-rollout-guard-test.sh`), Diff: 0; „neun …“ Parent 0, Diff 12. **Nichtgefunden:** keine Wortform „acht“ oder „sechs“ als Zahl der Fremdobjekte in einem Träger; `Accepted` ADRs nennen ältere Zahlen (`ADR-0111`: „die sechs Fremdobjekte“, `ADR-0064`: „vier“) — Aussage-Text zu ihrem Stand, unberührbar. | alle zwölf Träger nachgezogen; ADRs und Register-Records unverändert. |
 | Läufe des Guard-Tests | Zählwort „sechs Läufe“ (Zeilen 19–20) und Lesen von `tools/harness/run-schema-rollout-guard-test.sh` und `harness/targets/schema-rollout.md` §Belege | **Gefunden.** „sechs Läufe“: Parent 6, Diff 6 — die Zahl der Läufe ändert sich nicht (der Alt-Tag-Lauf ist Lauf 5 und bleibt einer). Geändert hat sich der Inhalt von Lauf 5 (Vorbedingungen, Prüfungen), den Kopfkommentar des Skripts und `harness/targets/schema-rollout.md` §Belege beschreiben. **Nichtgefunden:** kein Träger, der Lauf 5 mit „fünf Werten“ oder „`backfill_table`“ allein beschreibt. | Skript-Kopf, `schema-rollout.md` §Belege nachgezogen. |
-| Spaltenform von `administration_request` in weiteren Trägern | `git grep -n administration_request` über `internal tools` ohne `tools/schema/plan.yaml`/`down.sql` (Zeilen 11–12); dasselbe in `internal/adapters/driven/postgresstorage/schema.sql` (Zeilen 13–14) | **Gefunden.** Parent 137, Diff 152 (Tests und Kommentare; die Spaltenform selbst steht allein in `tools/schema/schema.yaml`). **Nichtgefunden:** `internal/adapters/driven/postgresstorage/schema.sql` trägt `administration_request` weder am Parent noch im Diff (0/0) — es gibt keinen zweiten Träger der Spaltenform, und keine Test-Fixture legt die Tabelle mit eigener DDL an (`git grep -n 'CREATE TABLE.*administration_request'` trifft allein `tools/schema/plan.yaml`, das Erzeugnis des Rollouts). | keine Änderung an `schema.sql`; `plan.yaml`/`down.sql` regeneriert (§3 oben). |
+| Spaltenform von `administration_request` in weiteren Trägern | `git grep -n administration_request` über `internal tools` ohne `tools/schema/plan.yaml`/`down.sql` (Zeilen 11–12); dasselbe in `internal/adapters/driven/postgresstorage/schema.sql` (Zeilen 13–14) | **Gefunden.** Parent 137, Diff 154 (Tests und Kommentare; die Spaltenform selbst steht allein in `tools/schema/schema.yaml`). **Nichtgefunden:** `internal/adapters/driven/postgresstorage/schema.sql` trägt `administration_request` weder am Parent noch im Diff (0/0) — es gibt keinen zweiten Träger der Spaltenform, und keine Test-Fixture legt die Tabelle mit eigener DDL an (`git grep -n 'CREATE TABLE.*administration_request'` trifft allein `tools/schema/plan.yaml`, das Erzeugnis des Rollouts). | keine Änderung an `schema.sql`; `plan.yaml`/`down.sql` regeneriert (§3 oben). |
 | Fehlertext der geschlossenen Menge im `default`-Zweig | `git grep -n 'geschlossene Menge' -- internal/bootstrap/wiring.go` (Zeilen 15–16) und „verarbeiteten Antragsarten“ (Zeilen 17–18) | **Gefunden.** „geschlossene Menge“ Parent 1 (der Fehlertext), Diff 0; „verarbeiteten Antragsarten“ Parent 0, Diff 2 (Fehlertext, Konstante). **Nichtgefunden:** kein zweiter Träger dieses Wortlauts in `internal/bootstrap`. | der Fehlertext nennt die verarbeiteten Antragsarten (fünf), nicht die geschlossene Menge der Datenbank (sieben); zwei Tests lesen ihn (Antragsart und Menge), ein dritter geht bis zum `failed`-Vermerk. |
 | Handbuch und Spec (Meldung) | `git grep -n` mit `exclude_column`/`enable_table`/`backfill_table` in `docs/user` (Zeilen 21–22); `set_transformation` in `spec` (Zeilen 23–24) | **Gefunden.** `docs/user`: Parent 11, Diff 11 — kein Diff-Eintrag, Handbuch unberührt; `spec`: Parent 14, Diff 16 — die Spec trägt die zwei Antragsarten seit `spec-nachzug`; die zwei Zeilen mehr stammen aus dem Nachzug des Parametertyps in [`ADR-0125`](../../adr/0125-transformationen-parametertyp-regelform-json.md) (`SPEC-019`, Absatz „Transformations-Antragsarten“ und Änderungshistorie). **Nichtgefunden:** keine Handbuch-Stelle, die `set_transformation` oder `remove_transformation` nennt (die Betreiber-Oberfläche ist unbeschrieben, bis `betriebsdoku` sie beschreibt). | gemeldet an `slice-transformationen-betriebsdoku`; Kandidatenlauf (`git diff --name-only 2f5ed3dc -- internal/bootstrap/ tools/schema/ internal/adapters/driving/`) trifft die neue Oberfläche, `docs/user/benutzerhandbuch.md` liegt bewusst nicht im Diff (Aufschub mit Adresse, §2). |
 
 ```suchlauf
 2f5ed3dc 95 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
-diff 96 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 97 -n exclude_column -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 2f5ed3dc 13 -n -e 'fünf Antragsarten' -e 'fünf Arten' -e 'fünf SQL-Funktionen' -e 'fünf Funktionen' -e 'fünf Werte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 diff 7 -n -e 'fünf Antragsarten' -e 'fünf Arten' -e 'fünf SQL-Funktionen' -e 'fünf Funktionen' -e 'fünf Werte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 2f5ed3dc 12 -n -e 'sieben bekannten' -e 'sieben Objekte' -e 'sieben Fremdobjekte' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
@@ -198,7 +207,7 @@ diff 12 -n -e 'neun bekannten' -e 'neun Objekte' -- internal tools docs spec har
 2f5ed3dc 6 -n -e 'include_column/backfill' -e 'include_column`/`backfill' -e 'include_column`, `backfill' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/planning/observations
 diff 5 -n -e 'include_column/backfill' -e 'include_column`/`backfill' -e 'include_column`, `backfill' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!docs/plan/planning/observations
 2f5ed3dc 137 -n administration_request -- internal tools :!tools/schema/plan.yaml :!tools/schema/down.sql
-diff 152 -n administration_request -- internal tools :!tools/schema/plan.yaml :!tools/schema/down.sql
+diff 154 -n administration_request -- internal tools :!tools/schema/plan.yaml :!tools/schema/down.sql
 2f5ed3dc 0 -n administration_request -- internal/adapters/driven/postgresstorage/schema.sql
 diff 0 -n administration_request -- internal/adapters/driven/postgresstorage/schema.sql
 2f5ed3dc 1 -n 'geschlossene Menge' -- internal/bootstrap/wiring.go
@@ -211,6 +220,10 @@ diff 6 -n 'sechs Läufe' -- harness tools/harness docs/user
 diff 11 -n -e exclude_column -e enable_table -e backfill_table -- docs/user
 2f5ed3dc 14 -n -e set_transformation -- spec
 diff 16 -n -e set_transformation -- spec
+2f5ed3dc 1 -n 'fünf Antrags-Funktionen' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 0 -n 'fünf Antrags-Funktionen' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+2f5ed3dc 0 -n 'sieben Antrags-Funktionen' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
+diff 1 -n 'sieben Antrags-Funktionen' -- internal tools docs spec harness Makefile :!docs/reviews :!docs/plan/planning/done :!.harness/baseline
 ```
 
 **Mutationen des Implementer-Laufs** (Zusage · mutierte Eingabe · gesehenes Rot; jede Mutation
@@ -237,6 +250,13 @@ am Arbeitsbaum, danach byte-gleich zurückgenommen, geprüft mit `cmp`):
 | der Alt-Tag-Lauf belegt die zwei Spalten | die Spalte `rule_spec` aus `schema.yaml` gestrichen | Lauf 5 („… die Spalten 'rule_name:text:YES' statt …“, Exit 1) |
 | der zweite Rollout endet mit Exit 0 | Parametertyp `jsonb` statt `json` in der Funktion | zweiter `make schema-rollout` Exit 2 mit d-migrate-Fehler 5 (`does not exist`), mit `json` Exit 0 (gemessen; nicht mit dem Guard-Skript wiederholt) |
 | die Ausnahme in `.dockerignore` trägt den Leser | die Negation nicht gesetzt | `make coverage-gate` Exit 2 (`open /src/tools/schema/nacharbeit-administration.sql: no such file or directory`) |
+| die Annahmemenge von `rule_spec` (Fixrunde, `ADR-0126`) | `p_rule_spec::jsonb` durch `NULL::jsonb` ersetzt (`nacharbeit-administration.sql`) | `TestAdministrationRequestSetTransformationAcceptanceSet`: sechs angenommene Formen lesen NULL, sechs abgelehnte (`\u0000` in Wert, Schlüssel, Array-Element und als Skalar, `1e200000`, einzelnes Surrogat) werden angenommen und hinterlassen eine Zeile; `TestAdministrationRequestTransformationRequestsCarryRuleAndNotify` ebenfalls rot (`make test-store` Exit 2) |
+| dieselbe Zusage, Cast entfernt | `p_rule_spec::jsonb` durch `p_rule_spec` ersetzt | **kein Rot** (`make test-store` Exit 0): der Zuweisungs-Cast `json`→`jsonb` leistet dieselbe Umwandlung, der Ausdruck ist äquivalent (Abweichung von `ADR-0126`, §3) |
+| `set_transformation` trägt einen gepinnten `search_path` (Fixrunde, F-6) | die Zeile `SET search_path = cdc, pg_temp` von `set_transformation` gestrichen | `TestAdministrationFunctionsPinSecurityDefinerAndSearchPath` („… : [set_transformation]“, `make test-store` Exit 2) — die erste Fassung des Tests (`proconfig = ARRAY[…]`) blieb bei NULL grün (`NOT (… AND NULL)` ist NULL) und ist auf `IS DISTINCT FROM` umgestellt |
+| die Funktionen sind `SECURITY DEFINER` (Fixrunde, F-6) | `SECURITY DEFINER` von `set_transformation` durch `SECURITY INVOKER` ersetzt | derselbe Test (`make test-store` Exit 2) |
+| jede `GRANT`-Anweisung ist von der Form `GRANT EXECUTE ON FUNCTION … TO …` (Fixrunde, F-2) | angehängt: `GRANT ALL ON FUNCTION cdc.set_transformation(…) TO cdc_reader;` · `GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA cdc TO PUBLIC;` · `GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA cdc TO cdc_reader;` | `TestAdministrationDateiTraegtDieFunktionsRechte`, je Zeile („die Datei trägt 2 GRANT-Anweisungen, nur 1 in der Form …“) |
+| jede `CREATE FUNCTION` steht als `cdc.<name>` (Fixrunde, F-2) | angehängt: `CREATE FUNCTION public.zz_neu() …` · `CREATE FUNCTION "cdc"."zz_neu"() …` | derselbe Test, je Zeile („8 CREATE-FUNCTION-Anweisungen, nur 7 in der Form cdc.<name>(…)“) |
+| Grants an eine andere Rolle und eine Funktion ohne Rechte-Zeile bleiben gebunden (Fixrunde, F-2) | angehängt: `GRANT EXECUTE ON FUNCTION cdc.set_transformation(…) TO cdc_reader;` · `CREATE FUNCTION cdc.zz_neu() …` | derselbe Test, je Zeile („cdc_reader trägt EXECUTE …“, „fehlt in einer `REVOKE EXECUTE … FROM PUBLIC`-Anweisung“) |
 
 Leer bleibt keine Zusage. Nicht mutiert (Grund): die reinen Kommentar-, Zahl- und Beschreibungs-Nachzüge
 (Suchlauf oben) — sie tragen keine Zusage, die ein Test bindet.
@@ -269,6 +289,27 @@ gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; gedruckte Zeilen 
   OK — 5 Commit(s) in "HEAD~5..HEAD", Betreffs ohne Struktur-ID`, `generated-sync: OK`,
   `coverage-gate: OK — Coverage 83.90% erfüllt Schwelle 80%`, `gesamt: 0 Befund(e)` (`a-check`).
 - Image-Neutralität der `.dockerignore`-Zeile: siehe §6 (Digest vor und nach der Zeile gleich).
+
+**Belege der Fixrunde** (Exit-Codes ungefiltert in Log-Dateien gesichert und gesondert gelesen,
+[`AGENTS.md`](../../../../AGENTS.md) §3.9; gedruckte Zeilen wörtlich):
+
+- `make test` (Race-Detektor) Exit 0, 42 Pakete `ok`; `make test-store` Exit 0, gedruckt:
+  `db-coverage: OK — DB-Adapter-Coverage 82.61% erfuellt Schwelle 80%`; `make a-check` Exit 0,
+  gedruckt: `gesamt: 0 Befund(e)`; `make coverage-gate` Exit 0, gedruckt:
+  `coverage-gate: OK — Coverage 83.90% erfüllt Schwelle 80%`.
+- Annahmemenge von `rule_spec` ([`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md)
+  Folgepflicht 2): das Ist-Bild des Tests stimmt mit der Messtabelle der ADR überein — alle
+  sieben angenommenen und acht abgelehnten Formen verhalten sich wie dort gedruckt, keine
+  Abweichung des Verhaltens; abgewichen ist allein die Mutationsangabe der ADR (§3, Zeile
+  `nacharbeit-administration.sql (Cast ::jsonb)`).
+- Rollen-Test: die Mutationen aus §3 (drei Grant-Schreibweisen, zwei Funktions-Schreibweisen, zwei
+  vorbestehende Formen) laufen je einzeln gegen `go test -race -run TestAdministrationDateiTraegtDieFunktionsRechte
+  ./internal/bootstrap/`, je Exit 1; ohne Mutation Exit 0.
+- `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0, gedruckt: `suchlauf-nachmessen: 28 Zeilen
+  stimmen`.
+- `run-schema-rollout-guard-test.sh`: nicht gelaufen — die Fixrunde ändert weder SQL noch Guard noch
+  Skript (die Mutationen an `nacharbeit-administration.sql` sind zurückgenommen, `git status` zeigt die
+  Datei unverändert).
 
 ## 4. Trigger
 
@@ -360,7 +401,15 @@ Lerneintrag geschrieben.
   Signatur, andere Datei); der neue Test liest `nacharbeit-administration.sql`
   und ist gegen drei Mutationen rot gesehen (Grant-Liste ohne
   `set_transformation`, `REVOKE`-Liste ohne `set_transformation`, zusätzlicher
-  `GRANT … TO cdc_reader`). **Ausgang:** *(bei Closure)*
+  `GRANT … TO cdc_reader`); die Fixrunde schließt zusätzlich `GRANT ALL`,
+  `GRANT ALL PRIVILEGES`, `GRANT … ON ALL FUNCTIONS IN SCHEMA` und eine
+  Funktion außerhalb von `cdc.<name>` (§3 Mutationen, je rot gesehen).
+  **Benannte Grenze:** der Test liest den Text der Datei — ein dynamisch
+  zusammengesetzter Grant (`EXECUTE format(…)`, `ALTER DEFAULT PRIVILEGES`)
+  bleibt ungelesen; für die zwei neuen Funktionen fängt ihn
+  `TestAdministrationRequestTransformationFunctionsRequireCdcAdminMembership`
+  (`cdc_reader`/`cdc_capture` → SQLSTATE 42501) und Lauf 5 des Guard-Skripts
+  gegen die reale Instanz. **Ausgang:** *(bei Closure)*
 - **Zwischenzustand: Funktion vorhanden, Wirkung fehlt.** Ein Betreiber, der
   `cdc.set_transformation` zwischen diesem Slice und `antragsweg-usecase`
   aufruft, erhält einen `failed`-Antrag statt einer Regel; der Fehlertext nennt
@@ -377,15 +426,14 @@ Lerneintrag geschrieben.
   aufgeschobenen Gegenstand tragen. *Erwartet, zu belegen durch:* Review liest
   §2 von `betriebsdoku` gegen §1 dieses Slice. *Beleg des Implementer-Laufs:*
   §2 von `betriebsdoku` nennt SQL-Funktionen, Rolle `cdc_admin`, Status und
-  Fehlertexte, Wirkung, Abhilfe, Glossar und Änderungshistorie und ist damit
-  gegen §1 dieses Slice vollständig; zwei Sachverhalte dieses Slice stehen dort
-  nicht und gehören in den Abschnitt „Transformationsregel konfigurieren“: die
-  Aufrufform des Parameters `rule_spec` (Literal oder `::json`, ein
-  `::jsonb`-Wert wird abgelehnt) und dass ein Antrag mit NULL oder leerem
-  `rule_name`/`rule_spec` in dieser Fassung die Lesung der Antrags-Queue stört
-  (nächster Punkt; Adresse `antragsweg-usecase`, nach dessen Closure gilt
-  `SPEC-019`). Beides ist als Meldung im Bericht an den Planner genannt, der
-  Plan von `betriebsdoku` bleibt unverändert. **Ausgang:** *(bei Closure)*
+  Fehlertexte, Wirkung, Abhilfe, Glossar und Änderungshistorie; die Aufrufform
+  des Parameters `rule_spec` (Literal oder `::json`, ein `::jsonb`-Wert wird
+  abgelehnt) und seine Annahmemenge ([`ADR-0126`](../../adr/0126-transformationen-annahmemenge-rule-spec.md))
+  stehen seit der Fixrunde im Text des Handbuch-Punkts dort (§3). Der Fall, dass
+  ein Antrag mit NULL oder leerem `rule_name`/`rule_spec` die Lesung der
+  Antrags-Queue stört, trägt der Plan von `antragsweg-usecase` (nächster Punkt);
+  ein Handbuch-Text darüber entsteht erst nach dessen Closure, weil `SPEC-019`
+  dann gilt. **Ausgang:** *(bei Closure)*
 - **Idempotenz gegen die Fremdobjekte.** Jede neue `nacharbeit-*`-Funktion
   vergrößert die Menge, die ein zweiter Rollout als Blocker sieht
   (`BEO-PGC/schema-rollout-fremdobjekte`, verkörpert, 3×;
@@ -409,8 +457,26 @@ Lerneintrag geschrieben.
   für diese Fälle `failed` mit den Texten `Regelname ist ungültig`/`rule_spec
   ist ungültig`; die Stelle der Prüfung legt `antragsweg-usecase` fest (dessen
   §2, „Konstruktor-Sentinel oder Vorprüfung im Use Case“). *Erwartet, zu
-  belegen durch:* dessen Test je Auslöser. **Ausgang:** *(bei Closure: weiter
-  offen — Adresse `slice-transformationen-antragsweg-usecase`)*
+  belegen durch:* dessen Test je Auslöser und der Durchlauf einer Queue mit
+  einer ungültigen und einer gültigen Zeile. **Benannte Grenze mit Adresse:**
+  der Plan von `slice-transformationen-antragsweg-usecase` (§2 erster Punkt)
+  trägt den Fall („die Zeile wird gelesen und verarbeitet statt abgelehnt“) samt
+  den Formen von `rule_spec` (SQL-NULL, JSON-`null`, doppelter Schlüssel).
+  **Ausgang:** *(bei Closure: weiter offen — Adresse `slice-transformationen-antragsweg-usecase`)*
+- **`jsonb` normalisiert die Regelform vor Go.** Der Store liefert
+  `rule_spec::text` der Spalte; ein doppelter Schlüssel und die Reihenfolge der
+  Schlüssel erreichen Go nicht in der beantragten Form (gemessen im Review:
+  `{"kind":"a","kind":"b","z":1,"a":2}` wird als `{"a": 2, "z": 1, "kind": "b"}`
+  gelesen). Für die Reihenfolge trägt `SPEC-030` „nicht zugesagt“. Adresse:
+  der Plan von `antragsweg-usecase` (strikte Dekodierung sieht keinen
+  doppelten Schlüssel). **Ausgang:** *(bei Closure: weiter offen — Adresse
+  `slice-transformationen-antragsweg-usecase`)*
+- **`processedAdministrationKinds` steht neben dem `switch`, den sie beschreibt.**
+  Kein Test bindet die Zeichenkette an die Fälle des `switch`; der Slice, der
+  `set_transformation` verarbeitet, färbt `TestApplyAdministrationRequestRejectsUnprocessedKind`
+  rot und zieht sie damit nach. Adresse: der Plan von `antragsweg-usecase`
+  (Übergabe „Die verarbeitete Menge steht zweimal“). **Ausgang:** *(bei Closure:
+  weiter offen — Adresse `slice-transformationen-antragsweg-usecase`)*
 - **Der Alt-Tag-Lauf koppelt seine Vorbedingung an den jüngsten Tag.** Lauf 5
   prüft vor dem Upgrade, dass der Stand des Tags weder die zwei Spalten noch die
   zwei Funktionen noch die zwei Antragsarten trägt; ein späterer Release-Tag mit
