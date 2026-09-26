@@ -183,7 +183,7 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
 | `internal/application/port/inbound/transformation.go` | neu | `SetTransformationUseCase` (liefert die geprüfte `model.Transformation`, die der Aufrufer in die Bindung einträgt) und `RemoveTransformationUseCase` samt `SetTransformationCommand`/`RemoveTransformationCommand` ([`ADR-0028`](../../adr/0028-inbound-use-cases.md), Transport-Typen am Port); die Namen der Use Cases stehen in [`ARC-003`](../../../../spec/architecture.md) (Antragsart-Tabelle). |
-| `internal/application/port/outbound/transformation.go` | neu | **ein** Outbound Port `TransformationPort` mit zwei Lese-Methoden (`TransformationRules`: Regelstand je Tabelle einer Quelle; `SourceColumns`: Spaltennamen der Quelltabelle) — ein Port, wie [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) zählt („ein neuer Outbound Port“). Der Schnitt folgt dem Vorbild `ColumnExclusionPort` (`ColumnExists` aus dem Katalog und `ExcludedColumns` aus den Antrags-Zeilen in einem Port); beide Methoden beantworten dieselbe Frage („welche Regeln dürfen die Spalten dieser Tabelle tragen“) und laufen über dieselbe Adapter-Instanz. Offene Frage an den Architect, keine Entscheidung: ob [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) (Ports nach Fähigkeiten) den Katalog-Zugriff (Spaltenliste) und die Antrags-Ableitung (Regelstand) als zwei Fähigkeiten zählt; `ColumnExclusionPort` schneidet beide Objektklassen ebenfalls in einen Port. |
+| `internal/application/port/outbound/transformation.go` | neu | **ein** Outbound Port `TransformationPort` mit zwei Lese-Methoden (`TransformationRules`: Regelstand je Tabelle einer Quelle; `SourceColumns`: Spaltennamen der Quelltabelle) — ein Port, wie [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) zählt („ein neuer Outbound Port“). Der Schnitt folgt dem Vorbild `ColumnExclusionPort` (`ColumnExists` aus dem Katalog und `ExcludedColumns` aus den Antrags-Zeilen in einem Port); beide Methoden beantworten dieselbe Frage („welche Regeln dürfen die Spalten dieser Tabelle tragen“) und laufen über dieselbe Adapter-Instanz. Ein Port mit zwei Lese-Methoden ist mit [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) (Ports nach Fähigkeiten) vereinbar: beide Lesarten gehören zur Frage der Konfliktprüfung, `ColumnExclusionPort` schneidet beide Objektklassen ebenfalls in einen Port, und die Konsistenzgrenze der ADR trifft hier keine gemeinsame Transaktion, weil beide Methoden lesen (Review `review-slice-transformationen-antragsweg-usecase`, Negativbefund Port-Schnitt, Finding F-5). |
 | `internal/application/usecase/settransformation/service.go`, `internal/application/usecase/removetransformation/service.go` (+ je `service_test.go`) | neu | die zwei Use Cases in der netzlos gemessenen Fläche: `Set` prüft die Formzeilen (Regelname, Regelform) **vor** dem ersten Lesen des Ports, dann K1 bis K3 über `TransformationSpec.CheckConflicts`, dann K4 gegen die Spaltenliste; `Remove` prüft den Namen und K4 (`Regelname nicht geführt`). Der Fehlertext ist der der Spec (Klartext, Doppelpunkt, Adresse), der Grund bleibt über `errors.Is` erreichbar. Beide Use Cases schreiben den Regelstand nicht (er ist die Ableitung aus den `applied`-Zeilen). |
 | `internal/domain/model/transformationspec.go` (+ `transformationspec_test.go`) | neu | Parser `ParseTransformationSpec` (strikt: UTF-8, JSON-Objekt, `kind`, unbekannter Regeltyp, unbekannter Schlüssel in aufsteigender Ordnung, Pflichtschlüssel und Bezeichner-Form über `NewRenameColumn`), `CheckRuleName` (Alphabet `[a-z0-9_]{1,63}`), `TransformationSpec.CheckConflicts` (K1 bis K3, zeichengenau, in der Reihenfolge der Spec), `Build` und die reine Faltung `FoldTransformations` (`applied`-Zeilen → Regelstand; Set trägt ein und ersetzt nach Namen, Remove nimmt heraus; eine nicht mehr lesbare Zeile endet als Fehler). Ein Zielname gleich der Quellspalte ist keine Formverletzung des Parsers, sondern K3 (`ErrTargetCollidesWithColumn`) in der Stellung von K3. |
 | `internal/domain/model/administrationrequest.go` (+ Test), `internal/domain/errors/errors.go` | update | der Konstruktor `NewAdministrationRequest` lehnt die Transformations-Antragsarten nicht mehr wegen leerem Regelnamen oder leerer Regelform ab (**Stelle der Prüfung: Verarbeiten im Use Case, nicht Lesen**); `AdministrationRequestKinds()` zählt die sieben Arten auf; neun Sentinels tragen die Ablehnungsgründe (Klartext der Spec-Zeilen). |
@@ -195,7 +195,11 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
 | `spec/pflichtenheft.md` `SPEC-019` (Zeile „`rule_name` ist … Pflicht … (Domänen-Invarianten des Antrags-Konstruktors)“) | gemeldet, nicht geändert | die Klammer nennt den Konstruktor als Ort der Prüfung; nach diesem Slice liegt sie im Use Case (Formzeile `Regelname ist ungültig`). Fremde Datei; Meldung an den Planner, Frist: Closure dieses Slice. |
 | Spalten-Antragsarten mit leerer Spalte (`cdc.exclude_column(…, NULL)`) | keine Änderung (Grenze, benannt) | der Konstruktor lehnt `exclude_column`/`include_column` mit leerer Spalte weiterhin beim Lesen ab (`SPEC-019`: „Domänen-Invariante des Antrags-Konstruktors“ für die Spalten-Antragsarten); die Stelle der Prüfung dieses Slice führt sie **nicht** mit. Dieselbe Grenze gilt für jede Antragsart mit leerem Schema oder leerem Tabellennamen (`ErrEmptyIdentifier`, Ist-Verhalten erprobt: `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable`, siehe §6). Adresse: `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` (geplant, 1×), Entscheidung beim Planner. |
 | `internal/adapters/driven/postgresstorage/queries/queries.go`, `internal/application/port/outbound/administrationrequest.go` (Fixrunde, Review F-1) | update | `SelectPendingAdministrationRequests` ordnet `requested_at, administration_request_id` — dieselbe Ordnung wie die zwei Abfragen der Ableitung; Verhaltensänderung nur bei gleichem `requested_at`, für **alle** sieben Antragsarten (auch `exclude_column`/`include_column` des Parents); Kommentare der Abfrage und von `ListPending` nennen die Ordnung. |
-| `internal/adapters/driven/postgresstorage/administrationrequest_order_test.go` (Fixrunde, Review F-1) | neu | zwei Store-Tests (`make test-store`): `TestAdministrationRequestListPendingOrdersTiesByRequestID` (vier gleichzeitige Anträge absteigend eingefügt, Ordnung = Kennung; Regelstand und Ausschlussstand der Verarbeitung gleich der Ableitung) und `TestAdministrationRequestSameTransactionRequestsAgreeLiveAndDerived` (`remove_transformation` und `set_transformation` derselben Regel in einer Transaktion über die realen Funktionen). |
+| `internal/adapters/driven/postgresstorage/administrationrequest_order_test.go` (Fixrunde, Review F-1) | neu | zwei Store-Tests (`make test-store`): `TestAdministrationRequestListPendingOrdersTiesByRequestID` (vier gleichzeitige Anträge absteigend eingefügt, Ordnung = Kennung; Regelstand und Ausschlussstand der Verarbeitung gleich der Ableitung) und `TestAdministrationRequestSameTransactionCallsKeepCallOrder` (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md): über die realen Funktionen sechs Aufrufe je Transaktion — `remove_transformation`/`set_transformation` derselben Regel, `exclude_column`/`include_column` derselben Spalte, `disable_table`/`enable_table` derselben Tabelle —, 60 Transaktionen; `ListPending` liefert die Aufruf-Reihenfolge, Regelstand und Ausschlussstand der Verarbeitung gleichen der Ableitung). |
+| `tools/schema/nacharbeit-administration.sql` (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md) Folgepflicht 2) | update | die sieben Funktionen schreiben `requested_at` je Aufruf mit `clock_timestamp()` (zweite Spalte, zweiter Wert des `INSERT`; Signaturen unverändert, nur `CREATE OR REPLACE`-Text); der Kopfkommentar nennt die Zeitstempel-Vergabe. Kein zweiter Träger des Funktionstextes: `git grep -n gen_random_uuid -- tools internal examples cmd` trifft nur diese Datei, `plan.yaml`/`down.sql` tragen keine Funktion (schema.yaml und der Spalten-Default bleiben unverändert). |
+| `internal/adapters/driven/postgresstorage/queries/queries.go`, `administrationrequest.go`, `sqlexec/translate.go`, `internal/application/port/outbound/administrationrequest.go` (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md) Folgepflicht 2) | update | die Kommentare nennen `requested_at` als Aufrufzeitpunkt der schreibenden Funktion (`SelectPendingAdministrationRequests`, `SelectAppliedColumnRequests`, `SelectAppliedTransformationRequests`) und die Ordnung „Aufruf-Reihenfolge“ (`ListPending`, `ReadPendingRequests`, Port). Kein Verhalten. |
+| `internal/bootstrap/administration_callorder_internal_test.go` (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)) | neu | Whitebox-Test mit realer Queue (`make test-store`): `TestAdministrationSameTransactionRemoveThenSetLeavesTheNewRuleLiveAndDerived` — je 50 Tabellen ein `remove_transformation`/`set_transformation` derselben Regel in einer Transaktion über die realen Funktionen, verarbeitet von `processAdministrationRequests`; die laufende Bindung trägt danach den Zielnamen der neuen Regel, und eine aus `TransformationRules` neu gebildete Bindung liefert dasselbe Bild. |
+| `docs/plan/planning/open/slice-transformationen-betriebsdoku.md` (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md) Folgepflicht 4) | update | Übergabe an den Handbuch-Slice: dessen §2 trägt die Aussage zur Aufruf-Reihenfolge; das Handbuch selbst bleibt unberührt. |
 | `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` (Fixrunde, Review F-6) | update | `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable`: Ist-Verhalten der Restklasse (leeres Schema, leere Tabelle enden beim Lesen als `ErrEmptyIdentifier`); kein Code-Fix, Grenze in §6. |
 | `internal/bootstrap/wiring.go` (Fixrunde, Review F-2, F-3, F-7) | update | der Kommentar am Aufruf von `activatedTableBindings` in `Run` nennt den wahren Zustand (die Seeds erreichen den Assembler nie); der Kommentar am Set-Zweig nennt die Grenze des fehlgeschlagenen Vermerks mit kollidierendem Folgeantrag; `gofmt`-Form der Felder von `administrationDeps`. |
 | `internal/bootstrap/administration_internal_test.go` (Fixrunde, Review F-4) | update | der Doc-Kommentar von `TestProcessAdministrationRequestsSetTransformationIsIdempotent` nennt, was der Test bindet (den Fake) und wo die Idempotenz getragen ist (Store-Abfrage, Login-Test). |
@@ -259,11 +263,12 @@ Bindung anlegen und den Ausschlussstand mitführen“, „die Felder von
 | Beschreibung der Antragsarten im Doc-Kommentar von `applyAdministrationRequest` | `git grep -n 'Spalten-Antragsarten' -- internal/bootstrap/wiring.go` (Zeilen 7–8) | **Gefunden.** Parent 1, Diff 2; der Doc-Kommentar beschreibt die zwei neuen Zweige (Use Case, Nachtrag, Tabelle ohne Bindung, Idempotenz, Zeilen mit fehlenden Regelfeldern) und trägt den Aktivierungs-Zweig mit Regelstand. **Nichtgefunden:** keine zweite Beschreibung der Antragsarten in `internal/bootstrap`, die die zwei Arten als „nicht verarbeitet“ führt (`git grep -n 'nicht verarbeitet' -- internal/bootstrap` ohne Test-Treffer zu diesem Gegenstand). | nachgezogen. |
 | Port-Übersichten in Doku | `git grep -n ColumnExclusionPort -- docs spec harness internal ':!docs/reviews' ':!docs/plan/planning/done' ':!docs/plan/planning/in-progress' ':!*_test.go'` (Zeilen 9–10) | **Gefunden.** Parent 21, Diff 22 (die eine Zeile mehr: der Doc-Kommentar von `TransformationPort.SourceColumns`, der die Katalog-Lesart von `ColumnExclusionPort.ColumnExists` nennt; Treffer sind Code-Träger, drei ADRs, ein Register-State und `spec/architecture.md:274`, das den Spaltenausschluss beschreibt und richtig bleibt). **Nichtgefunden:** keine Aufzählung der Outbound Ports (Port-Übersicht) in `docs/`, `spec/` oder `harness/`: `spec/architecture.md` nennt Ports im Text und in den Diagrammen, `ARC-004` führt keine Liste; die zwei Use Cases und „ein Outbound Port“ stehen dort bereits (`spec/architecture.md`, Antragsart-Tabelle, Absatz „Transformations-Antragsarten“). | keine Änderung. |
 | Zweite Quelle der verarbeiteten Menge | `git grep -n processedAdministrationKinds -- internal` (Zeilen 11–12) und das Zählwort „fünf“ in `internal/bootstrap` (Zeilen 13–14) | **Gefunden.** Parent 5 Treffer (Konstante, Fehlertext, drei Test-Zeilen), Diff 3 (Funktion, Fehlertext, Doc-Kommentar); „fünf“ in `internal/bootstrap` Parent 12, Diff 9: die drei verschwundenen Treffer sind der Test und die Kommentare der Fünf-Arten-Menge; die neun übrigen zählen fremde Mengen (fünf Umgebungsvariablen, fünf Lese-Views, fünf Tabellen). **Nichtgefunden:** keine handgeführte Aufzählung der verarbeiteten Antragsarten mehr außerhalb des einen Testliterals, das den Fehlertext bindet (`TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet`). | Menge abgeleitet, an die Fälle des `switch` gebunden. |
-| Felder von `administrationDeps` | `git grep -n 'administrationDeps{' -- internal` (Zeilen 15–16) und `git grep -n 'transformations:' -- internal/bootstrap` (Zeilen 17–18) | **Gefunden.** Literale von `administrationDeps` Parent 21, Diff 20 (`administration_internal_test.go` 12 → 11: zwei Literale der ersetzten Tests entfallen, `ruleFixture` fügt eines hinzu; jede andere Datei trägt dieselbe Zahl, das Literal des Login-Tests ist um drei Felder erweitert); Setzungen des Feldes `transformations:` Parent 0, Diff 10 (sieben Fixtures bestehender Tests, das Literal des Login-Tests, `ruleFixture` und die Verdrahtung in `Run`). **Nichtgefunden:** kein Literal, dessen Pfad den Aktivierungs-Zweig erreicht, ohne das Feld (der erste Lauf von `make test` fand zwei Literale in `wiring_rest_internal_test.go` als Nil-Dereferenzierung, Exit 2, nachgezogen). | nachgezogen. |
+| Felder von `administrationDeps` | `git grep -n 'administrationDeps{' -- internal` (Zeilen 15–16) und `git grep -n 'transformations:' -- internal/bootstrap` (Zeilen 17–18) | **Gefunden.** Literale von `administrationDeps` Parent 21, Diff 21 (Stand nach Fixrunde 2: der Whitebox-Test `administration_callorder_internal_test.go` trägt ein Literal; bis Fixrunde 1: 20; `administration_internal_test.go` 12 → 11: zwei Literale der ersetzten Tests entfallen, `ruleFixture` fügt eines hinzu; jede andere Datei trägt dieselbe Zahl, das Literal des Login-Tests ist um drei Felder erweitert); Setzungen des Feldes `transformations:` Parent 0, Diff 11 (Stand nach Fixrunde 2 mit dem Literal des Whitebox-Tests `administration_callorder_internal_test.go`; bis Fixrunde 1: 10; sieben Fixtures bestehender Tests, das Literal des Login-Tests, `ruleFixture` und die Verdrahtung in `Run`). **Nichtgefunden:** kein Literal, dessen Pfad den Aktivierungs-Zweig erreicht, ohne das Feld (der erste Lauf von `make test` fand zwei Literale in `wiring_rest_internal_test.go` als Nil-Dereferenzierung, Exit 2, nachgezogen). | nachgezogen. |
 | Fehlerklassen-Abbildung | Lesen von `classifyRunError` in `internal/bootstrap/wiring.go` | **Gefunden.** `classifyRunError` bildet Fehler des Capture-Pfads ab (Assembler, Replikation, Speicher); Antrags-Fehler laufen durch `processAdministrationRequests` in den `failed`-Vermerk und erreichen `classifyRunError` nicht. **Nichtgefunden:** keine Stelle, an der ein Antrags-Fehler den Prozess beendet. | keine neue Abbildung nötig. |
 | Handbuch und Spec (Meldung) | `git grep -n -e set_transformation -e remove_transformation -- docs/user` (Zeilen 19–20); `git grep -n 'Domänen-Invarianten des Antrags-Konstruktors' -- spec` (Zeilen 21–22) | **Gefunden.** `docs/user`: Parent 0, Diff 0 (die Betreiber-Oberfläche ist unbeschrieben, bis `betriebsdoku` sie beschreibt); `spec`: Parent 1, Diff 1 — `SPEC-019`, Zeile „`rule_name` ist … Pflicht … (Domänen-Invarianten des Antrags-Konstruktors)“ nennt den Konstruktor als Ort einer Prüfung, die dieser Slice in den Use Case legt. **Nichtgefunden:** kein weiterer Träger der Aussage „der Konstruktor lehnt leeren Regelnamen ab“ (Register-Records und Pläne nennen den Zustand am Parent). | Spec-Zeile gemeldet (Planner, Frist: Closure dieses Slice); Handbuch: Aufschub mit Adresse `slice-transformationen-betriebsdoku`. |
 
-| Ordnung der offenen Anträge (Fixrunde, Review F-1: bewegte Eigenschaft „die Ordnung der Queue-Abfrage“) | `git grep -n 'ORDER BY requested_at' -- internal ':!*_test.go'` (Zeilen 23–24) und `git grep -n 'ListPending. heute nur' -- docs ':!docs/reviews' ':!docs/plan/planning/in-progress'` (Zeilen 25–26) | **Gefunden.** `ORDER BY requested_at` Parent 3, Diff 4 (Parent: die Abfrage der offenen Anträge, die Ableitung des Ausschlussstands und die Aufnahme-Abfrage der Backfill-Runs mit `run_id`; die vierte Zeile ist `SelectAppliedTransformationRequests` aus diesem Slice; die Abfrage der offenen Anträge trägt jetzt `, administration_request_id`, das Muster trifft sie weiter). Der Text „`ListPending` heute nur nach `requested_at` ordnet“ steht in `ADR-0113` §Festlegung 1 (Parent 1, Diff 1; `Accepted`, unberührbar). **Nichtgefunden:** in `spec/`, `harness/` und `docs/user` keine Beschreibung der Queue-Ordnung außer `SPEC-019` („Anlage-Zeitpunkt; die Verarbeitungs-Ordnung“, ohne Zweitschlüssel, trägt keinen Widerspruch); Träger im Code: Doc-Kommentare der Abfrage und des Ports nachgezogen. | die Aussage in `ADR-0113` und die Frage zum Wortlaut von `SPEC-019` gehen an den Architect (§6). |
+| Ordnung der offenen Anträge (Fixrunde, Review F-1: bewegte Eigenschaft „die Ordnung der Queue-Abfrage“) | `git grep -n 'ORDER BY requested_at' -- internal ':!*_test.go'` (Zeilen 23–24) und `git grep -n 'ListPending. heute nur' -- docs ':!docs/reviews' ':!docs/plan/planning/in-progress'` (Zeilen 25–26) | **Gefunden.** `ORDER BY requested_at` Parent 3, Diff 4 (Parent: die Abfrage der offenen Anträge, die Ableitung des Ausschlussstands und die Aufnahme-Abfrage der Backfill-Runs mit `run_id`; die vierte Zeile ist `SelectAppliedTransformationRequests` aus diesem Slice; die Abfrage der offenen Anträge trägt jetzt `, administration_request_id`, das Muster trifft sie weiter). Der Text „`ListPending` heute nur nach `requested_at` ordnet“ steht in `ADR-0113` §Festlegung 1 (Parent 1, Diff 2: die zweite Fundstelle ist das Zitat in `ADR-0127` §Kontext, das die Aussage als überholt einordnet; beide `Accepted`, unberührbar). **Nichtgefunden:** in `spec/`, `harness/` und `docs/user` keine Beschreibung der Queue-Ordnung außer `SPEC-019` (Absatz „Ordnung der Verarbeitung“ mit Zweitschlüssel, seit `ADR-0127`); Träger im Code: Doc-Kommentare der Abfrage und des Ports nachgezogen. | die Aussage in `ADR-0113` ist mit `ADR-0127` eingeordnet, der Wortlaut von `SPEC-019` steht (§6). |
+| Aufrufzeitpunkt statt Transaktionsbeginn (Fixrunde 2, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md): bewegte Eigenschaft „`requested_at` ist der Aufrufzeitpunkt“) | Zählwort und Beschreibung `Transaktionszeitstempel\|Transaktionsbeginn\|Anlage-Reihenfolge\|Anlage-Zeitpunkt` über den ganzen Baum (Zeilen 27–28); Symbol `clock_timestamp` in `tools` und `internal` ohne Tests (Zeilen 29–30); `requested_at` in `docs/user` (Zeilen 31–32) | **Gefunden.** Beschreibung: Parent 15, Diff 14 — verschwunden sind die Kommentare von `queries.go` (`Transaktionszeitstempel`, `Anlage-Reihenfolge`), `administrationrequest.go` und `translate.go`; hinzugekommen drei Zeilen, die den Transaktionsbeginn als Spalten-Default oder als Wert der Mutation beschreiben (Kopfkommentar von `nacharbeit-administration.sql`, Mutationsnotizen der zwei neuen Tests). Die übrigen Treffer sind fremde Gegenstände: fünf Zeilen in `ADR-0127` (Architect-Zug, `Accepted`), `queries.go:278` (Spalten-Reihenfolge der Tabelle), `decode.go:36` (Beginn der Quelltransaktion), `sqlviews_test.go`, `service_test.go:528` (Uhr des Backfill-Use-Case), `table_schema.go`, `spec/pflichtenheft.md:889` (`SPEC-029`, die eigene Spalte `cdc.backfill_run.requested_at`). Symbol: Parent 4 (vier Zeilen in `run-integration-tests.sh`, Frist einer Wartezeit), Diff 14 (acht Zeilen in `nacharbeit-administration.sql`, zwei Kommentare in `queries.go`). **Nichtgefunden:** `docs/user` trägt kein `requested_at` (Parent 0, Diff 0); keine zweite Stelle, die den Funktionstext der sieben Funktionen trägt (`git grep -n gen_random_uuid -- tools internal examples cmd` trifft nur `nacharbeit-administration.sql`); Handbuch-Träger der Ordnung: keiner. | Handbuch: Aufschub mit Adresse `slice-transformationen-betriebsdoku` (dessen §2 trägt die Aussage, [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md) Folgepflicht 4). |
 
 ```suchlauf
 80eefead 5 -n 'TableBinding{' -- internal ':!*_test.go'
@@ -281,9 +286,9 @@ diff 3 -n processedAdministrationKinds -- internal
 80eefead 12 -n fünf -- internal/bootstrap
 diff 9 -n fünf -- internal/bootstrap
 80eefead 21 -n 'administrationDeps{' -- internal
-diff 20 -n 'administrationDeps{' -- internal
+diff 21 -n 'administrationDeps{' -- internal
 80eefead 0 -n 'transformations:' -- internal/bootstrap
-diff 10 -n 'transformations:' -- internal/bootstrap
+diff 11 -n 'transformations:' -- internal/bootstrap
 80eefead 0 -n -e set_transformation -e remove_transformation -- docs/user
 diff 0 -n -e set_transformation -e remove_transformation -- docs/user
 80eefead 1 -n 'Domänen-Invarianten des Antrags-Konstruktors' -- spec
@@ -291,7 +296,13 @@ diff 1 -n 'Domänen-Invarianten des Antrags-Konstruktors' -- spec
 80eefead 3 -n 'ORDER BY requested_at' -- internal ':!*_test.go'
 diff 4 -n 'ORDER BY requested_at' -- internal ':!*_test.go'
 80eefead 1 -n 'ListPending. heute nur' -- docs ':!docs/reviews' ':!docs/plan/planning/in-progress'
-diff 1 -n 'ListPending. heute nur' -- docs ':!docs/reviews' ':!docs/plan/planning/in-progress'
+diff 2 -n 'ListPending. heute nur' -- docs ':!docs/reviews' ':!docs/plan/planning/in-progress'
+a69d3853 15 -n -E -e 'Transaktionszeitstempel|Transaktionsbeginn|Anlage-Reihenfolge|Anlage-Zeitpunkt' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!tools/schema/plan.yaml
+diff 14 -n -E -e 'Transaktionszeitstempel|Transaktionsbeginn|Anlage-Reihenfolge|Anlage-Zeitpunkt' -- . :!docs/reviews :!docs/plan/planning/done :!.harness/baseline :!tools/schema/plan.yaml
+a69d3853 4 -n clock_timestamp -- tools internal ':!*_test.go'
+diff 14 -n clock_timestamp -- tools internal ':!*_test.go'
+a69d3853 0 -n requested_at -- docs/user
+diff 0 -n requested_at -- docs/user
 ```
 
 **Mutationen des Implementer-Laufs** (Zusage · mutierte Eingabe · gesehenes Rot; jede Mutation
@@ -345,6 +356,10 @@ fährt zuerst `internal/bootstrap` und bricht dort ab, die Zeilen nennen den ers
 | Fixrunde F-1: die Queue ordnet bei gleichem `requested_at` nach `administration_request_id` | `administration_request_id` aus dem `ORDER BY` von `SelectPendingAdministrationRequests` gestrichen | `make test-store`: `TestAdministrationRequestListPendingOrdersTiesByRequestID` („ListPending-Ordnung der Gleichzeitigen = [queue-order-b-set queue-order-a-remove queue-order-d-include queue-order-c-exclude]“, gedruckt); `TestAdministrationRequestSameTransactionRequestsAgreeLiveAndDerived` färbt sich bei dieser Mutation nur, wenn die zufällige Kennung des Remove die größere ist (die Reihenfolge der Funktionsaufrufe entspräche sonst der Kennungs-Ordnung) — er bindet den Pfad der realen Funktionen, die Mutation bindet der erste Test. |
 | Fixrunde F-6: leeres Schema oder leerer Tabellenname endet beim Lesen als `ErrEmptyIdentifier` (Ist-Verhalten der Restklasse) | `schema == "" \|\| table == ""` aus der Prüfung in `NewAdministrationRequest` entfernt | `make test`: `TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable` (beide Fälle) und `TestNewAdministrationRequestRejectsInvariantViolations` (Fall „leere Kennung“) |
 | Fixrunde F-2, F-4, F-7: Kommentare (Mechanismus der Seeds, Bindung der Idempotenz, Grenze des Vermerk-Fehlers) | — | **ohne Mutation:** Kommentare ohne Verhalten; F-2 gemessen mit `git grep -n 'cfg.Tables'`, F-7 aus dem Quelltext hergeleitet und im Kommentar so benannt. |
+| Fixrunde 2 ([`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)): Aufrufe einer Transaktion tragen `requested_at` je Aufruf, `remove_transformation` vor `set_transformation` derselben Regel wird in dieser Folge verarbeitet | `clock_timestamp()` im `INSERT` von `cdc.set_transformation` durch `now()` ersetzt (`tools/schema/nacharbeit-administration.sql`; das Set trägt den Transaktionsbeginn und sortiert vor das Remove mit `clock_timestamp()`) | `make test-store`, Exit 2 im vorgezogenen `internal/bootstrap`-Lauf: `TestAdministrationSameTransactionRemoveThenSetLeavesTheNewRuleLiveAndDerived` — „Durchlauf 0: Row Image der laufenden Bindung = {"id":"1","secret":"geheim"}, erwartet {"id":"1","second":"geheim"} (Remove vor Set) — Log: [WARN: administration: Antrag fehlgeschlagen]“ (das Set endete an K1 `failed`, das Remove nahm die Regel heraus) |
+| Fixrunde 2: `ListPending` liefert die Aufruf-Reihenfolge (`exclude_column`/`include_column` derselben Spalte in einer Transaktion) | `clock_timestamp()` im `INSERT` von `cdc.include_column` durch `now()` ersetzt | `make test-store`, Exit 2 im Lauf von `postgresstorage`: `TestAdministrationRequestSameTransactionCallsKeepCallOrder` — „Durchlauf 0: ListPending-Ordnung = [169ac791-… 44a8669b-… …], wollen die Aufruf-Reihenfolge [44a8669b-… d98d8716-… f928b233-… 169ac791-… …]“ (der Include stand vor dem Exclude); `internal/bootstrap` blieb bei dieser Mutation grün, weil sie `include_column` nicht berührt |
+| Fixrunde 2: dieselbe Zusage an der Funktion, die **vor** einer Nachbarin aufgerufen wird | `clock_timestamp()` im `INSERT` von `cdc.remove_transformation` durch `now()` ersetzt | **kein Rot, `make test-store` Exit 0:** das Remove trägt den Transaktionsbeginn, das nachfolgende Set `clock_timestamp()` — die Aufruf-Reihenfolge bleibt richtig, weil `now()` nie hinter einem `clock_timestamp()` derselben Transaktion liegt. Die Mutation ist im Fall „früherer Aufruf“ äquivalent; wirksam ist die Mutation an der **später** aufgerufenen Funktion (Zeilen darüber). Hinweis an `ADR-0127` §Fitness Function: „`clock_timestamp()` aus einer Funktion entfernen“ färbt den Test nur für die später aufgerufene Funktion eines Paares; die Alt-Fassung mit `now()` in allen sieben Funktionen färbt ihn über den Zufall der Kennung (Messung der ADR, hier nicht wiederholt). |
+| Fixrunde 2: Kommentare und Plan-Zeilen (Aufrufzeitpunkt, Betriebsdoku-Übergabe) | — | **ohne Mutation:** Kommentare und Plan ohne Verhalten; gemessen mit dem Suchlauf oben (Zeilen 27–32). |
 
 **Läufe des Implementer-Laufs** (Exit-Code je Lauf ungefiltert in eine Log-Datei geschrieben und
 gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; ein schwerer Docker-Lauf zugleich):
@@ -407,6 +422,58 @@ nach dem Commit `cd4dae0e`, Arbeitsbaum sauber außer dieser Datei):
   nicht im Diff.
 - Docker-Volumes: `docker volume ls -q -f dangling=true | wc -l` vor und nach den Läufen jeweils 34.
 
+**Läufe der Fixrunde 2** ([`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md);
+Exit-Code je Lauf ungefiltert in eine Log-Datei geschrieben und gesondert gelesen, ein schwerer
+Docker-Lauf zugleich; gemessen am Stand nach dem Commit der Funktionen und Tests, Arbeitsbaum sauber
+außer dieser Datei):
+
+- `make test` (Race-Detector) Exit 0, 44 Pakete `ok`; `make test-store` Exit 0, gedruckt
+  `DB-Adapter-Coverage: 82.56% (gedeckt 885 von 1072 Statements; Profile gemergt: store,replication)`,
+  `db-coverage: OK — DB-Adapter-Coverage 82.56% erfuellt Schwelle 80%` — mit den sieben Funktionen im
+  neuen Text (der Rollout des Laufs druckt sieben `CREATE FUNCTION`) und den zwei neuen Tests
+  (`TestAdministrationSameTransactionRemoveThenSetLeavesTheNewRuleLiveAndDerived` im vorgezogenen
+  `internal/bootstrap`-Lauf, `TestAdministrationRequestSameTransactionCallsKeepCallOrder` im Lauf von
+  `postgresstorage`; beide in den Mutationen oben rot gesehen).
+- `make a-check` Exit 0, `gesamt: 0 Befund(e)`; `make coverage-gate` Exit 0,
+  `coverage-gate: OK — Coverage 84.90% erfüllt Schwelle 80%` (in `make gates` 84.70 % — die Zahl
+  schwankt zwischen Läufen wie bisher).
+- `tools/harness/run-schema-rollout-guard-test.sh` Exit 0, alle sechs Läufe, gedruckt
+  `Lauf 5 OK — Tag v0.2.0: Exit 0 (Rollout des Tags), Exit 0 (Arbeitsbaum, ohne Vorlauf), Exit 0
+  (Arbeitsbaum, zweiter Lauf)` (Alt-Tag-Lauf, `CREATE OR REPLACE` mit unveränderter Signatur: die
+  Rollen-Rechte, `EXECUTE` allein für `cdc_admin`, die zwei Spalten und der Aufruf beider
+  Transformations-Funktionen unter `cdc_admin` stehen unverändert; damit ist die als hergeleitet
+  geführte Einordnung von `ADR-0127` §Konsequenzen für diesen Lauf erprobt) und
+  `OK — alle Belege real erbracht (… Alt-Tag v0.2.0, Negativ-Abbruch: … make-Exit 2/2 mit
+  d-migrate-Exit 8)`. Zwei aufeinanderfolgende `make schema-rollout` gegen eine Wegwerf-Datenbank sind
+  die Läufe 1 (frisch) und 2 (Idempotenz) dieses Skripts, je Exit 0; `git status` nach dem Lauf: kein
+  Unterschied an `tools/schema/plan.yaml` und `tools/schema/down.sql` — der Wrapper
+  `tools/schema/rollout-restore.sh` stellt sie wieder her, und der neue Funktionstext liegt außerhalb
+  des d-migrate-Modells (`schema.yaml` und Spalten-Default unverändert), der committete Stand bleibt
+  also gültig ([`harness/targets/schema-rollout.md`](../../../../harness/targets/schema-rollout.md)
+  §Erzeugnisse in Test-, Bench- und Beispiel-Läufen).
+- `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0, `suchlauf-nachmessen: 32 Zeilen stimmen`
+  (die ersten Läufe nach dem Nachzug der Zeilen 27–32 wichen an vier Soll-Werten ab — Literale und
+  Setzungen des neuen Whitebox-Tests, das Zitat in `ADR-0127`, die Mutationsnotiz desselben Tests —,
+  sie sind nachgezogen).
+- `make gates` Exit 0 (alle sechs Ziele), gedruckt u. a. `baseline-verify: v6.9.0 OK — 54 Dateien`,
+  `d-check: 1233 Datei(en) geprüft, 0 Befund(e)`, `generated-sync: OK`, `gesamt: 0 Befund(e)`; der
+  erste Lauf endete Exit 2 an einer nackten Kennung in dieser Datei (`id-unlinked`), nachgezogen.
+- `gofmt -l` (Docker-Only, gepinntes `TOOLCHAIN_IMAGE`) über die berührten Go-Dateien ohne
+  `queries/queries.go`: keine Ausgabe (`queries.go` ist seit dem Retention-Kommentar formabweichend,
+  siehe Fixrunde 1).
+- §3.7-Probe, diff-skopiert gegen `a69d3853`: kein Treffer in einer geänderten `*.go`- oder
+  `tools/schema/*.sql`-Datei.
+- Handbuch: `git diff --name-only 80eefead -- internal/bootstrap/ tools/schema/ internal/adapters/driving/`
+  nennt jetzt zusätzlich `tools/schema/nacharbeit-administration.sql` (der Funktionstext ändert den
+  Zeitstempel, keine Signatur, keine neue Funktion, keine neue Umgebungsvariable, keinen Endpunkt) —
+  keine neue Betreiber-Oberfläche; das Handbuch liegt nicht im Diff, der Aufschub mit Adresse
+  `slice-transformationen-betriebsdoku` trägt die Aussage zur Aufruf-Reihenfolge.
+- Nicht gelaufen, mit Begründung: `make test-integration` und `make test-replication` — weder
+  Replikations- noch Compose-Pfad geändert; `make image` — kein Build-Kontext außerhalb von `internal/`
+  und `tools/schema/` geändert (die Funktionen rollt `make schema-rollout` aus, den das Guard-Skript
+  und `make test-store` real fahren).
+- Docker-Volumes: `docker volume ls -q -f dangling=true | wc -l` vor den Läufen 34, nach den Läufen 34.
+
 ## 4. Trigger
 
 **Start** (`next` → `in-progress`): wenn `antragsweg-schema` in `done/` liegt
@@ -457,31 +524,28 @@ geschrieben.
   Fall setzt einen fehlgeschlagenen Vermerk **und** einen kollidierenden
   Folgeantrag voraus; der Kommentar am Set-Zweig in
   `applyAdministrationRequest` nennt die Grenze. **Ausgang:** *(bei Closure)*
-- **Verarbeitungs-Ordnung und Ableitungs-Ordnung sind dieselbe.**
+- **Verarbeitungs-Ordnung und Ableitungs-Ordnung sind dieselbe, `requested_at`
+  ist der Aufrufzeitpunkt** ([`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)).
   `SelectPendingAdministrationRequests` ordnet `requested_at`, bei gleichem
   Zeitstempel nach `administration_request_id`, wie die zwei Abfragen der
-  Ableitung; Zeilen einer Transaktion tragen denselben `requested_at`. Die
-  Änderung trifft alle sieben Antragsarten, im Verhalten nur bei gleichem
-  `requested_at` — für `exclude_column`/`include_column` ebenso wie für die
-  Transformations-Antragsarten. Bindung: die zwei Store-Tests in
-  `administrationrequest_order_test.go`. **Offene Fragen an den Architect,
-  keine Entscheidungen dieses Slice:** (a)
-  [`SPEC-019`](../../../../spec/pflichtenheft.md) nennt für die Verarbeitung
-  nur `requested_at` (Spalte „Anlage-Zeitpunkt; die Verarbeitungs-Ordnung“),
-  den Zweitschlüssel nur für die Ableitung — soll der Wortlaut ihn auch für die
-  Verarbeitung nennen? (b) Die Kennung ist ein zufälliger Text
-  (`gen_random_uuid()`): ein `remove_transformation` und ein
-  `set_transformation` derselben Regel in einer Transaktion, die Folge, die der
-  Fehlertext von K1 nahelegt („erst entfernen, dann neu setzen“), wirken nur
-  dann in dieser Reihenfolge, wenn die Kennung des Remove die kleinere ist;
-  sonst endet das Set an K1 `failed` und das Remove nimmt die Regel heraus
-  (live und abgeleitet gleich, aber ohne die gewollte neue Regel). Zusage,
-  Grenze oder Änderung von `requested_at` auf einen Zeitstempel je Aufruf? (c)
+  Ableitung; die sieben SQL-Funktionen schreiben `requested_at` je Aufruf mit
+  `clock_timestamp()`, Aufrufe einer Transaktion tragen verschiedene
+  Zeitstempel in der Aufruf-Reihenfolge (auch `exclude_column`/`include_column`
+  und `disable_table`/`enable_table`). Bindung: die Store-Tests in
+  `administrationrequest_order_test.go`, der Whitebox-Test in
+  `administration_callorder_internal_test.go`. Verbleibende Grenzen
+  (Festlegung 3 der ADR): die Ordnung ist der Zeitpunkt des Aufrufs, nicht der
+  des `COMMIT` — Anträge auf dieselbe Regel oder Spalte aus zeitlich
+  überlappenden Transaktionen mehrerer Sitzungen können live und abgeleitet
+  bis zum nächsten Prozessstart abweichen (hergeleitet, nicht erprobt);
+  Rückwärtssprung der Serveruhr; Zeilen vor der Änderung tragen den
+  Transaktionsbeginn. Die Aussage von
   [`ADR-0113`](../../adr/0113-backfill-rollenschnitt-aufnahme-warnkriterium.md)
-  Festlegung 1 (`Accepted`, unberührbar) sagt „`ListPending` heute nur nach
-  `requested_at` ordnet“ — die Aussage trifft nach diesem Zug nicht mehr zu;
-  gemeldet, nicht geändert. **Ausgang:** *(bei Closure: Verdikt des Architects
-  zu (a) bis (c))*
+  Festlegung 1 („`ListPending` heute nur nach `requested_at` ordnet“) ist nach
+  [`ADR-0127`](../../adr/0127-antrags-queue-requested-at-aufrufzeitpunkt.md)
+  §Kontext überholt, ihr Zweitschlüssel bleibt richtig. **Ausgang:**
+  *(bei Closure: entfallen — die ADR trägt Entscheidung und Grenzen, die Tests
+  binden die Zusage; das Handbuch trägt `slice-transformationen-betriebsdoku`)*
 - **Ein Antrag mit leerem Schema oder leerem Tabellennamen stallt die Queue
   weiter** (Klasse `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue`, zur
   Hälfte gelöst). Die Regelfelder werden verarbeitet statt beim Lesen
@@ -547,12 +611,12 @@ geschrieben.
   §Schärft): ein Port mit zwei Lese-Methoden, wie `ColumnExclusionPort` zwei
   Objektklassen in einen Port schneidet; der Review nennt den Diff
   ohne Abweichung (kein Auftreten von
-  `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`). Offen bleibt die Frage
-  an den Architect, ob
-  [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) den Katalog-Zugriff
-  und die Antrags-Ableitung als zwei Fähigkeiten zählt — keine Entscheidung
-  dieses Slice. *Erwartet, zu belegen durch:* das Urteil des Architects zur
-  Frage. **Ausgang:** *(bei Closure)*
+  `BEO-PGC/implementierung-weicht-von-adr-wortlaut-ab`) und nennt den Schnitt
+  mit [`ADR-0034`](../../adr/0034-ports-nach-faehigkeiten.md) vereinbar (Review
+  `review-slice-transformationen-antragsweg-usecase`, Negativbefund
+  Port-Schnitt und Finding F-5): beide Methoden lesen, die Konsistenzgrenze der
+  ADR trifft keine gemeinsame Transaktion. **Ausgang:** *(bei Closure: entfallen —
+  der Review trägt die Aussage)*
 - **Store-Tests teilen Zustand** (`BEO-PGC/test-isolation-geteilter-zustand`,
   offen, 1×): unskopierte `DELETE`/`DROP SCHEMA CASCADE` in einem Store-Test
   könnten die neuen Zeilen zerstören. *Erwartet, zu belegen durch:* skopierte
