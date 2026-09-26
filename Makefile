@@ -132,6 +132,10 @@ fmt-check: ## Meldet jede Go-Datei, die gofmt -l nicht als formatiert führt (Ex
 test-fmt-check: ## Tabellentest gegen tools/harness/fmt-check.sh (echte Docker-Läufe gegen Wegwerf-Verzeichnisse, Container ohne Netz; Docker-only)
 	@TOOLCHAIN_IMAGE="$(TOOLCHAIN_IMAGE)" bash tools/harness/run-fmt-check-tests.sh
 
+.PHONY: test-command-guard
+test-command-guard: ## Tabellentest gegen den PreToolUse-Guard .claude/hooks/pretooluse-command-guard.sh (Wegwerf-Repo im Temp-Verzeichnis, netzlos, kein Gate; Prüfling per GUARD=<Datei> übersteuerbar; harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
+	@bash tools/harness/run-command-guard-tests.sh
+
 .PHONY: test-rollout-restore
 test-rollout-restore: ## Tabellentest gegen tools/schema/rollout-restore.sh (Rücknahme von plan.yaml/down.sql, Aufrufer-Prüfung, netzlos)
 	@bash tools/harness/run-rollout-restore-tests.sh

@@ -95,7 +95,10 @@ Host-Werkzeug, das eine Repo-Datei an Ort und Stelle überschreibt — `sed -i`,
 Datei —, ist verboten, auch für „nur einen Schnelltest“. Die Änderung läuft
 über Edit/Write des Laufs oder über ein Repo-Werkzeug hinter `make`. Eine
 Mutationsprobe (Reviewer, Verifier) arbeitet auf einer Kopie im Scratchpad;
-die Rücknahme ist `cp` oder `git checkout`. `sed -n` (nur lesen) ist erlaubt.
+die Rücknahme ist `cp` oder `git checkout`. Die Mutation auf der Kopie läuft
+über Edit/Write oder als `sed … Datei > Kopie` (Ausgabe nach stdout); `-i` wird
+auch auf der Kopie geblockt (siehe „Durchsetzung“). `sed -n` (nur lesen) ist
+erlaubt.
 
 **Falsch:** `pip install ...`, `go test ./...` auf dem Host,
 `sed -i 's/a/b/' internal/x.go`.
@@ -108,11 +111,20 @@ ist die Toolchain-Grenze. Das in-place-Verbot schützt eine Wirkung, die kein
 Sensor liest — ein Werkzeugaufruf hinterlässt in der Datei keine Signatur.
 
 **Durchsetzung.** Der PreToolUse-Guard (`.claude/hooks/pretooluse-command-guard.sh`)
-blockt Paketmanager (`apt`, `pip`, `npm`, `cargo`, …); Sprach-Toolchains und
-in-place Textwerkzeuge liest er nicht (Stolperdraht, keine Sandbox). Dort
-wacht das Review (`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
+blockt Paketmanager (`apt`, `pip`, `npm`, `cargo`, …), in-place Textwerkzeuge
+(`sed -i`/`--in-place`, `perl -i`, `awk -i inplace`; unabhängig vom Ziel, auch auf
+einer Scratchpad-Kopie und hinter `find -exec`) und einen Host-`python`-/
+`perl`-Aufruf, dessen Befehlsstring einen Repo-Pfad nennt. Er liest nicht:
+Umleitungen und flaglose Schreibwege (`> datei`, `tee`, `sed … > tmp && mv`),
+ein Skript, das ein Interpreter liest, andere in-place-fähige Werkzeuge, ein
+`cd` im selben Kommando und Sprach-Toolchains (`go`, `gofmt`, …) — ein
+Stolperdraht, keine Sandbox; Grenz-Zeile und Wortlaut:
+[`MR-003`](harness/conventions/MR-003-guard-inplace-textwerkzeug.md), Tabellentest
+`make test-command-guard`. Was der Guard nicht liest, bleibt Sache des Reviews
+(`.harness/skills/reviewer.md` §HIGH „Docker-only-Verstoß“).
 Herkunft: `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`,
-`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
+`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` · seit
+slice-harness-guard-inplace-textwerkzeug.
 
 ### 3.2 Suppression-Verbot
 
