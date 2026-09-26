@@ -68,16 +68,17 @@ func (s TransformationSpec) Target() string { return s.to }
 // `rule_spec` (`SPEC-030`) strikt und prüft die Formzeilen zwei bis fünf in
 // der Reihenfolge der Fehlertext-Tabelle (`SPEC-019`; die erste Formzeile,
 // den Regelnamen, prüft `CheckRuleName`):
-//  a) der Text ist gültiges UTF-8 und ein JSON-Objekt, `kind` fehlt nicht und
-//     ist eine Zeichenkette (der leere Text, JSON-`null` und ein Wert ohne
-//     Objekt gehören hierher): `ErrInvalidRuleSpec`;
-//  b) `kind` gehört zu `TransformationKinds`: sonst
-//     `ErrUnknownTransformationKind` mit dem `kind`-Wert;
-//  c) jeder Schlüssel gehört zum Regeltyp: sonst `ErrUnknownRuleSpecKey` mit
-//     dem Schlüssel, bei mehreren dem ersten in aufsteigender Ordnung;
-//  d) die Pflichtschlüssel des Regeltyps stehen als Zeichenketten und
-//     `column`/`to` tragen die Bezeichner-Form (`NewRenameColumn`): sonst
-//     `ErrInvalidRuleSpec`.
+//
+//	a) der Text ist gültiges UTF-8 und ein JSON-Objekt, `kind` fehlt nicht und
+//	   ist eine Zeichenkette (der leere Text, JSON-`null` und ein Wert ohne
+//	   Objekt gehören hierher): `ErrInvalidRuleSpec`;
+//	b) `kind` gehört zu `TransformationKinds`: sonst
+//	   `ErrUnknownTransformationKind` mit dem `kind`-Wert;
+//	c) jeder Schlüssel gehört zum Regeltyp: sonst `ErrUnknownRuleSpecKey` mit
+//	   dem Schlüssel, bei mehreren dem ersten in aufsteigender Ordnung;
+//	d) die Pflichtschlüssel des Regeltyps stehen als Zeichenketten und
+//	   `column`/`to` tragen die Bezeichner-Form (`NewRenameColumn`): sonst
+//	   `ErrInvalidRuleSpec`.
 //
 // Ein doppelter Schlüssel ist keine Eingabe dieser Funktion: der Text kommt
 // aus einer `jsonb`-Spalte, die den letzten Wert je Schlüssel hält.

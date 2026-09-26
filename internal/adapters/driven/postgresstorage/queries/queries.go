@@ -317,9 +317,14 @@ ON CONFLICT (source_id) DO UPDATE SET heartbeat_at = current_timestamp, error_cl
 
 // SelectPendingAdministrationRequests liest die offenen Anträge der
 // Antrags-Queue (`cdc.administration_request`, `LH-FA-ADM-001`) in
-// Anlage-Reihenfolge (`requested_at`) — die Administrations-Goroutine
-// verarbeitet sie in dieser Ordnung, sowohl nach `NOTIFY` als auch
-// periodisch als Fallback-Poll. Die sieben Antragsarten teilen sich eine
+// Anlage-Reihenfolge (`requested_at`, bei gleichem Zeitstempel nach
+// `administration_request_id`) — die Administrations-Goroutine verarbeitet
+// sie in dieser Ordnung, sowohl nach `NOTIFY` als auch periodisch als
+// Fallback-Poll. Es ist dieselbe Ordnung, in der SelectAppliedColumnRequests
+// und SelectAppliedTransformationRequests den dauerhaften Stand ableiten:
+// Zeilen einer Transaktion tragen denselben `requested_at`, und die
+// Verarbeitung führt damit live und beim Prozessstart zum selben Stand. Die
+// sieben Antragsarten teilen sich eine
 // Tabelle; die Antragsarten `enable`, `disable`, `backfill` und die beiden
 // Transformations-Antragsarten tragen keine Spalte (`column_name` NULL), alle
 // außer den beiden Transformations-Antragsarten keinen Regelnamen
@@ -331,7 +336,7 @@ const SelectPendingAdministrationRequests = `
 SELECT administration_request_id, source_id, schema_name, table_name, COALESCE(column_name, ''), COALESCE(rule_name, ''), COALESCE(rule_spec::text, ''), request_kind
 FROM cdc.administration_request
 WHERE status = 'pending'
-ORDER BY requested_at`
+ORDER BY requested_at, administration_request_id`
 
 // SelectAppliedColumnRequests liest die `applied`-Zeilen der beiden
 // Spalten-Antragsarten einer Quelle (`LH-FA-CFG-005`, `ADR-0065`): der

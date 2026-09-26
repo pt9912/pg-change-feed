@@ -1313,6 +1313,46 @@ func TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields(t *testing.T) {
 	}
 }
 
+// ReadPendingRequests lehnt eine Zeile mit leerem Schema oder leerem
+// Tabellennamen beim Lesen ab (Konstruktor-Invariante `ErrEmptyIdentifier`):
+// jede Antragsart, auch die Transformations-Antragsarten, adressiert eine
+// Tabelle, und die Zeile trägt keine Adresse, an der ein `failed`-Vermerk
+// ansetzen könnte. Die Lesung endet mit dem Fehler, die Zeile dahinter bleibt
+// ungelesen — das ist die benannte Grenze der Prüfung „Verarbeiten statt
+// Lesen“ (nur die Regelfelder und die Spalte der Spalten-Antragsarten sind
+// betroffen, `SPEC-019` nennt für Schema und Tabelle keinen Fehlertext). Rot
+// färbende Mutation: die Prüfung `schema == "" || table == ""` in
+// `model.NewAdministrationRequest` entfernen — die Zeile wird gelesen.
+func TestReadPendingRequestsRejectsRowWithEmptySchemaOrTable(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		schema string
+		table  string
+	}{
+		{"leeres Schema", "", "feed"},
+		{"leere Tabelle", "public", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			exec := &fakeExecutor{rows: &fakeRows{rows: [][]any{
+				{"req-1", "src-1", tc.schema, tc.table, "", "regel", `{"kind": "rename_column", "column": "a", "to": "b"}`, string(model.AdministrationRequestSetTransformation)},
+				{"req-2", "src-1", "public", "feed", "", "", "", string(model.AdministrationRequestRemoveTransformation)},
+			}}}
+			recorder := &failRecorder{class: outbound.ErrAdministrationStorage}
+
+			requests, err := sqlexec.ReadPendingRequests(context.Background(), exec, sqlexec.Statement{
+				SQL:  "SELECT pending",
+				Fail: recorder.fail,
+			})
+			if !stderrors.Is(err, domainerrors.ErrEmptyIdentifier) {
+				t.Fatalf("ReadPendingRequests = %v, wollen ErrEmptyIdentifier", err)
+			}
+			if len(requests) != 0 {
+				t.Fatalf("Anträge = %+v, wollen keinen (die Lesung endet an der Zeile)", requests)
+			}
+		})
+	}
+}
+
 // ReadTransformationRules faltet die Zeilen je Tabelle in der Ordnung der
 // Abfrage: Set trägt ein, Remove nimmt heraus (Zyklus endet mit der letzten
 // Regel), eine Tabelle ohne verbleibende Regel trägt keinen Eintrag, jede

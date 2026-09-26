@@ -1084,9 +1084,9 @@ func TestTableActivationTransformationRulesDeriveAppliedRuleRequests(t *testing.
 	})
 
 	const (
-		table       = "orders_rules_derivation"
-		otherTable  = "orders_rules_other"
-		insertRule  = `INSERT INTO cdc.administration_request
+		table      = "orders_rules_derivation"
+		otherTable = "orders_rules_other"
+		insertRule = `INSERT INTO cdc.administration_request
     (administration_request_id, source_id, schema_name, table_name, column_name, rule_name, rule_spec, request_kind, requested_at, status)
 VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9, $10)`
 		renameSpec = `{"kind": "rename_column", "column": "%s", "to": "%s"}`

@@ -26,7 +26,10 @@ var ErrAdministrationStorage = stderrors.New("Fehlerklasse storage: Persistenzfe
 // und vermerkt ihr Ergebnis.
 type AdministrationRequestPort interface {
 	// ListPending liest die Anträge mit Status `pending` in Anlage-
-	// Reihenfolge — sowohl nach `NOTIFY`-Wecksignal als auch periodisch als
+	// Reihenfolge (`requested_at`, bei gleichem Zeitstempel nach der
+	// Antrags-Kennung — dieselbe Ordnung, in der die Ableitung des
+	// dauerhaften Standes die `applied`-Zeilen liest) — sowohl nach
+	// `NOTIFY`-Wecksignal als auch periodisch als
 	// Fallback für einen verpassten Wecksignal (Verbindungsabbruch der
 	// `LISTEN`-Verbindung).
 	ListPending(ctx context.Context) ([]model.AdministrationRequest, error)

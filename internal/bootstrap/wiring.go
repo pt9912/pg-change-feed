@@ -621,9 +621,10 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	// Datenbank fort (`TableActivationPort.List`/`SchemaStorePort.CurrentVersion`
 	// samt `ColumnExclusionPort.ExcludedColumns` und
 	// `TransformationPort.TransformationRules`), nicht ausschließlich aus
-	// `cfg.Tables`: `CDC_TABLES` bleibt der Erstaktivierungs-Seed oben
-	// (schreibt eine leere Datenbank fort; seine Bindungen tragen keinen
-	// Regelstand, der Aufruf unten ersetzt sie), die Grundlage des
+	// `cfg.Tables`: `CDC_TABLES` ist ausschließlich der Erstaktivierungs-Seed
+	// oben (schreibt eine leere Datenbank fort; die Bindungen von
+	// `cfg.Tables` gehen nur in die Aktivierung und erreichen den Assembler
+	// nie), die Grundlage des
 	// Stream-Starts ist der committed Stand — ein Prozess-Neustart verliert
 	// damit weder eine zwischenzeitlich per SQL aktivierte Tabelle, deren
 	// Kennung `CDC_TABLES` nicht trägt, noch einen dauerhaft vermerkten
@@ -854,26 +855,25 @@ func Run(ctx context.Context, cfg Config) (runErr error) {
 	go func() {
 		defer administrationDone.Done()
 		runAdministration(administrationCtx, administrationDeps{
-			requests:        adminRequests,
-			listener:        adminListener,
-			activation:      activation,
-			enableTables:    enableTables,
-			disableTables:   disableTables,
-			excludeColumns:  excludeColumns,
-			includeColumns:  includeColumns,
-			schemaStore:     schemaStore,
-			columnExclusion: activation,
-			transformations: activation,
-			assembler:       stream.Assembler(),
-
+			requests:              adminRequests,
+			listener:              adminListener,
+			activation:            activation,
+			enableTables:          enableTables,
+			disableTables:         disableTables,
+			excludeColumns:        excludeColumns,
+			includeColumns:        includeColumns,
+			schemaStore:           schemaStore,
+			columnExclusion:       activation,
+			transformations:       activation,
+			assembler:             stream.Assembler(),
 			setTransformations:    setTransformations,
 			removeTransformations: removeTransformations,
-			backfill:        backfillTables,
-			backfillWake:    backfillWake,
-			source:          cfg.Source,
-			publication:     cfg.Publication,
-			pollInterval:    administrationPollInterval,
-			log:             log,
+			backfill:              backfillTables,
+			backfillWake:          backfillWake,
+			source:                cfg.Source,
+			publication:           cfg.Publication,
+			pollInterval:          administrationPollInterval,
+			log:                   log,
 		})
 	}()
 
@@ -1534,6 +1534,15 @@ func applyAdministrationRequest(ctx context.Context, deps administrationDeps, re
 		// spätere Spalten-Erweiterung, die den Zielnamen kollidieren lässt,
 		// erreicht diese Prüfung nicht — der Assembler fängt sie als nicht
 		// anwendbare Regel im Erfassungspfad (`SPEC-030`, Anwendbarkeit).
+		// Der Nachtrag steht vor dem Vermerk `applied`: scheitert der Vermerk,
+		// trägt die laufende Bindung die Regel weiter, und der nächste
+		// Durchlauf verarbeitet denselben Antrag erneut (der Ersatz nach Namen
+		// macht die Wiederholung folgenlos). Grenze: verarbeitet ein Durchlauf
+		// dazwischen einen Antrag, der zum noch nicht vermerkten in K2 oder K3
+		// steht (dieselbe Spalte, dasselbe Ziel), prüft er gegen einen
+		// Regelstand ohne den ersten und wird `applied`; die Wiederholung des
+		// ersten endet danach `failed`, und die laufende Bindung trägt bis zum
+		// Neustart beide Regeln.
 		rule, err := deps.setTransformations.Set(ctx, inbound.SetTransformationCommand{
 			Source:   request.Source,
 			Schema:   request.Schema,

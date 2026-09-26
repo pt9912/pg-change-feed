@@ -979,9 +979,15 @@ func TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue(t *testi
 // (`ADR-0065`-Muster): scheitert der Vermerk `applied` nach dem Nachtrag,
 // verarbeitet der nächste Durchlauf denselben Antrag erneut — K1 prüft nur
 // gegen vermerkte Anträge, der Nachtrag ersetzt die Regel nach ihrem Namen —,
-// ohne Fehler und ohne Änderung des Bildes. Rot färbende Mutation: K1 gegen den
-// Regelstand der laufenden Bindung statt gegen die vermerkten Anträge prüfen
-// (die Wiederholung endete `Regelname bereits vergeben`).
+// ohne Fehler und ohne Änderung des Bildes. Der Test bindet das Verhalten an
+// den Store-Fake, der nur vermerkte Anträge ableitet; am Produktionscode dieses
+// Pakets lässt sich die Wiederholung nicht rot färben, weil der Use Case den
+// Regelstand nur über den Port liest. Die tragende Bindung ist die Abfrage des
+// Stores: `TestAdministrationPathRunsUnderLeastPrivilegeLogins` (`make
+// test-store`) färbt sich rot, wenn der Statusfilter `status = 'applied'` von
+// `SelectAppliedTransformationRequests` durch `status <> 'failed'` ersetzt
+// wird (der noch `pending` stehende eigene Antrag zählte, K1 endete `Regelname
+// bereits vergeben`).
 func TestProcessAdministrationRequestsSetTransformationIsIdempotent(t *testing.T) {
 	ctx := context.Background()
 	request := setRuleRequest("req-idem", "geheimname", ruleSpecText("secret", "renamed_secret"))
