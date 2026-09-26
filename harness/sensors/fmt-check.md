@@ -8,9 +8,13 @@ das Verzeichnis lesend gemountet; `tools/harness/fmt-check.sh`), druckt die
 abweichenden Dateien (ein Pfad je Zeile, relativ zur Wurzel) und endet mit dem
 Exit-Code der Tabelle unten. Es schreibt nichts: es gibt keinen `gofmt -w`-Pfad
 und keinen `--user`-Workaround. Eine gemeldete Datei wird nach der Ausgabe von
-`gofmt -d` (im selben Image, lesend) mit dem Edit-Werkzeug des Laufs korrigiert,
-nie mit einem in-place schreibenden Textwerkzeug
-([`AGENTS.md`](../../AGENTS.md) §3.1).
+`gofmt -d` mit dem Edit-Werkzeug des Laufs korrigiert, nie mit einem in-place
+schreibenden Textwerkzeug ([`AGENTS.md`](../../AGENTS.md) §3.1). Die Ausgabe von
+`gofmt -d` liefert derselbe lesende Aufruf im selben Image:
+
+```text
+docker run --rm --network none -v "$PWD":/src:ro -w /src <Wert von TOOLCHAIN_IMAGE aus dem Makefile> gofmt -d <Datei>
+```
 
 `gofmt -l` endet auch bei Abweichung mit Exit 0. Das Werkzeug wertet deshalb
 die **Ausgabe** aus, nicht den Exit-Code des Formatierers; der Exit-Code des

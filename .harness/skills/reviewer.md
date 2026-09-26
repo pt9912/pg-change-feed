@@ -287,9 +287,10 @@ bewusst kurz (Ergänzungs-Kanal, nicht Hauptkanal).
   Satz-Subjekt) · seit slice-code-kommentare-kennungen.
 
 **LOW** — stilistisch unschön ohne semantische Auswirkung, einmalige Tippfehler,
-unbenutzte Imports, eine Go-Datei des Diffs, die `gofmt -l` im gepinnten
-Toolchain-Image meldet (`BEO-PGC/formatierungs-drift-ohne-gate`; der Implementer
-meldet den Lauf im Bericht, der Reviewer liest ihn nach).
+unbenutzte Imports, eine Go-Datei, die `make fmt-check` meldet
+(`BEO-PGC/formatierungs-drift-ohne-gate`; der Implementer meldet den Lauf im
+Bericht, der Reviewer liest ihn nach —
+[`harness/sensors/fmt-check.md`](../../harness/sensors/fmt-check.md)).
 
 **INFO** — Hinweis ohne erwartete Aktion (z. B. „diese Stelle hat ein passendes
 ArchUnit-Pendant, das du nicht kennst“; „Metrik deckt die Anforderung nur

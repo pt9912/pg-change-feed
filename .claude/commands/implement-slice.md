@@ -180,14 +180,15 @@ ist eine Lifecycle-Rücksprungkante (11).
     ([`harness/sensors/suchlauf-nachmessen.md`](../../harness/sensors/suchlauf-nachmessen.md)).
     **Format · seit welle-transformationen
     (`BEO-PGC/formatierungs-drift-ohne-gate`, 3×):** Trägt der Diff Go-Dateien, läuft
-    `gofmt -l` über genau sie im gepinnten Toolchain-Image (Docker-only, netzlos, Repo
-    read-only gemountet), vor dem „fertig“ und nach jeder Fixrunde:
-    `git diff --name-only --diff-filter=d <Basis> -- '*.go' | xargs -r docker run --rm --network none -v "$PWD":/src:ro -w /src <Wert von TOOLCHAIN_IMAGE aus dem Makefile> gofmt -l`.
+    `make fmt-check` (Docker-only, netzlos, Repo lesend gemountet; `gofmt -l` über alle
+    Go-Dateien des Baums, Exit 0 = formatiert), vor dem „fertig“ und nach jeder Fixrunde.
     Eine gemeldete Datei wird nach der Ausgabe von `gofmt -d` korrigiert (nie mit einem
-    Textwerkzeug wie `sed` am Quelltext); Bestandsdateien außerhalb des Diffs bleiben unberührt.
-    Der Lauf steht im Bericht. **Grenze:** derselbe schreibende Kontext, erste, nicht tragende
-    Linie; die tragende ist der Reviewer (`.harness/skills/reviewer.md`, LOW). Werkzeug, kein Gate
-    (Entscheidung im Register-Eintrag).
+    Textwerkzeug wie `sed` am Quelltext; der Aufruf von `gofmt -d` steht im Vertrag).
+    Die gedruckte Zeile des Laufs steht im Bericht. **Grenze:** derselbe schreibende
+    Kontext, erste, nicht tragende Linie; die tragende ist der Reviewer
+    (`.harness/skills/reviewer.md`, LOW). Werkzeug, kein Gate
+    ([`harness/sensors/fmt-check.md`](../../harness/sensors/fmt-check.md), Entscheidung
+    im Register-Eintrag).
 19. **Zu jedem neuen oder geänderten Wächter die rot färbende Mutation benennen**
     (`AGENTS.md` §3.6). Ein grüner Gate-Lauf belegt nur, dass nichts *bricht* — nicht, dass
     der Wächter greift. Pro Zusage also: *welche Änderung am geprüften Code müsste diesen
