@@ -37,7 +37,8 @@
 # über `cdc.changes` identisch lesbar, eine danach eingefügte Zeile wird
 # weiterhin erfasst. Die Backfill-Rundläufe (LH-FA-CAP-009: Happy Path,
 # Schema-Version, Startposition eines frisch registrierten Consumers,
-# Boundary, Replay-Invariante, DDL-Fenster, Negative) und die
+# Boundary, Regelstand mit rename_column, Ausschluss und nicht anwendbarer
+# Regel, Replay-Invariante, DDL-Fenster, Negative) und die
 # Leerlauf-Bestätigung (ADR-0120: WAL über der Fehlerschwelle, der
 # Feed-Container läuft weiter) laufen vor dem Upgrade-Sicherheits-Rundlauf;
 # die Haltepunkte der Backfill-Phasen beschreibt der Kopf des Abschnitts
@@ -3030,6 +3031,114 @@ bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$b
 bf_expect "$(bf_sql "SELECT count(*) FROM cdc.backfill_run WHERE source_id = 'src-e2e' AND table_name = '$BF_DUP_TABLE'")" 1 "$BF_PHASE — Run-Zeilen der Tabelle"
 
 echo "run-integration-tests: Backfill-Boundary (leere Tabelle, zweiter Antrag) belegt — Run $bf_empty_run auf der leeren Tabelle endete completed mit 0 Zeilen und schrieb keine Transaktion; der zweite Antrag $bf_dup_second bei aktivem Run $bf_dup_first endete failed ($bf_dup_error) ohne Run-Zeile, der erste Run stand an der Haltetransaktion running ohne Snapshot-Position und endete danach completed mit 2 Zeilen"
+
+abdeckung_declare "Backfill-Regelstand (rename_column, Ausschluss, Nichtanwendbarkeit)" "LH-FA-CFG-007,LH-FA-CAP-009,LH-QA-SEC-004" "für eine Tabelle mit rename_column-Regel trägt ein Backfill-Run den Bestand über cdc.changes und GET /changes mit umbenanntem Schlüssel und origin backfill, in derselben Schlüsselmenge wie die danach über den WAL-Pfad erfasste Zeile; mit zusätzlichem exclude_column auf der umbenannten Spalte trägt kein Bild des nächsten Runs Quellnamen, Zielnamen oder Wert; eine im Run nicht anwendbare Regel (Zielname nach der Regel als Spalte angelegt) endet den Run failed mit der Klasse schema ohne Change, der Erfassungspfad läuft weiter, und nach dem Entfernen der Regel übernimmt ein neuer Antrag den Bestand in Rohform" "Backfill-Regelstand (LH-FA-CFG-007) belegt"
+
+BF_PHASE="Backfill-Regelstand"
+BF_RULE_TABLE=feed_e2e_backfill_rule
+BF_RULE_BAD_TABLE=feed_e2e_backfill_rulebad
+BF_RULE_SPEC='{"kind":"rename_column","column":"name","to":"customer_name"}'
+
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_RULE_TABLE (id int PRIMARY KEY, name text, note text);
+INSERT INTO public.$BF_RULE_TABLE (id, name, note) VALUES
+  (1, 'RegelAlpha', 'r1'),
+  (2, 'RegelBeta', NULL),
+  (3, NULL, 'r3');
+SQL
+bf_enable "$BF_RULE_TABLE" "$BF_PHASE"
+bf_rule_request=$(bf_sql "SELECT cdc.set_transformation('src-e2e', 'public', '$BF_RULE_TABLE', 'kundenname', '$BF_RULE_SPEC')")
+[ -n "$bf_rule_request" ] || bf_fail "$BF_PHASE — cdc.set_transformation($BF_RULE_TABLE) lieferte keine Antrags-ID"
+bf_await_applied "$bf_rule_request" "$BF_PHASE"
+
+# Run mit Regel: der Bestand trägt den umbenannten Schlüssel; die Zeile ohne
+# Wert in `name` trägt weder Quell- noch Zielschlüssel.
+bf_request "$BF_RULE_TABLE" "$BF_PHASE"
+bf_rule_run=$bf_run_id
+bf_await_run "$bf_rule_run" completed 60 "$BF_PHASE"
+bf_rule_where="source_id = 'src-e2e' AND table_name = '$BF_RULE_TABLE' AND origin = 'backfill' AND transaction_id LIKE '0bf-$bf_rule_run-%'"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_rule_where AND operation = 'INSERT'")" 3 "$BF_PHASE — INSERT-Changes des Runs mit Regel"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'name')")" 0 "$BF_PHASE — Bilder mit dem Quellschlüssel name"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'customer_name', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'customer_name')")" "RegelAlpha,RegelBeta" "$BF_PHASE — Werte unter dem Zielschlüssel customer_name"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'customer_name')")" 2 "$BF_PHASE — Bilder mit dem Zielschlüssel (die NULL-Zeile trägt keinen)"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'note', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'note')")" "r1,r3" "$BF_PHASE — nicht umbenannte Spalte note"
+
+bf_rule_position=$(bf_sql "SELECT snapshot_position FROM cdc.backfill_run WHERE run_id = '$bf_rule_run'")
+bf_rule_http=$(bf_http changes "$HTTP_BASE_URL" "$HTTP_TOKEN_READER" src-e2e public "$BF_RULE_TABLE" "$bf_rule_position" "$((bf_rule_position + 1))")
+bf_expect "$(printf '%s\n' "$bf_rule_http" | grep -c '^READ .* operation=INSERT .* origin=backfill$')" 3 "$BF_PHASE — READ-Zeilen INSERT/backfill über GET /changes"
+bf_expect "$(printf '%s\n' "$bf_rule_http" | grep -c 'customer_name')" 2 "$BF_PHASE — READ-Zeilen mit dem Zielschlüssel über GET /changes"
+bf_expect "$(printf '%s\n' "$bf_rule_http" | grep '^READ ' | grep -c '"name"')" 0 "$BF_PHASE — READ-Zeilen mit dem Quellschlüssel über GET /changes"
+bf_expect "$(bf_read_ids "$bf_rule_http")" "$(bf_sql "SELECT string_agg(change_id, ',' ORDER BY change_id COLLATE \"C\") FROM cdc.changes WHERE $bf_rule_where")" "$BF_PHASE — change_id über GET /changes gegen cdc.changes"
+
+# Dieselbe Regel im WAL-Pfad: die danach erfasste Zeile trägt dieselbe
+# Schlüsselmenge wie die Backfill-Change der Zeile 1.
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$BF_RULE_TABLE (id, name, note) VALUES (4, 'RegelDelta', 'r4');
+SQL
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_RULE_TABLE' AND origin = 'wal'" 1 30 "$BF_PHASE — WAL-Change der Zeile 4"
+bf_rule_keys_wal=$(bf_sql "SELECT string_agg(k, ',' ORDER BY k) FROM cdc.changes c, jsonb_object_keys(c.new_data) k WHERE c.source_id = 'src-e2e' AND c.table_name = '$BF_RULE_TABLE' AND c.origin = 'wal'")
+bf_rule_keys_backfill=$(bf_sql "SELECT string_agg(k, ',' ORDER BY k) FROM cdc.changes c, jsonb_object_keys(c.new_data) k WHERE $bf_rule_where AND c.new_data->>'id' = '1'")
+bf_expect "$bf_rule_keys_wal" "customer_name,id,note" "$BF_PHASE — Schlüsselmenge der WAL-Change"
+bf_expect "$bf_rule_keys_backfill" "$bf_rule_keys_wal" "$BF_PHASE — Schlüsselmenge der Backfill-Change gegen die der WAL-Change"
+
+# Ausschluss der umbenannten Spalte (LH-QA-SEC-004): das Bild des nächsten
+# Runs trägt weder den Quellnamen noch den Zielnamen noch einen Wert von
+# name; der frühere Run bleibt unverändert lesbar.
+bf_exclude_request=$(bf_sql "SELECT cdc.exclude_column('src-e2e', 'public', '$BF_RULE_TABLE', 'name')")
+[ -n "$bf_exclude_request" ] || bf_fail "$BF_PHASE — cdc.exclude_column($BF_RULE_TABLE) lieferte keine Antrags-ID"
+bf_await_applied "$bf_exclude_request" "$BF_PHASE"
+bf_request "$BF_RULE_TABLE" "$BF_PHASE"
+bf_rule_run_excluded=$bf_run_id
+bf_await_run "$bf_rule_run_excluded" completed 60 "$BF_PHASE"
+bf_excluded_where="source_id = 'src-e2e' AND table_name = '$BF_RULE_TABLE' AND origin = 'backfill' AND transaction_id LIKE '0bf-$bf_rule_run_excluded-%'"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_excluded_where")" 4 "$BF_PHASE — Changes des Runs mit Ausschluss"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_excluded_where AND (jsonb_exists(new_data, 'name') OR jsonb_exists(new_data, 'customer_name') OR new_data::text LIKE '%Regel%')")" 0 "$BF_PHASE — Bilder mit Quellname, Zielname oder Wert der ausgeschlossenen Spalte"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'note', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE $bf_excluded_where AND jsonb_exists(new_data, 'note')")" "r1,r3,r4" "$BF_PHASE — nicht ausgeschlossene Spalte note im Run mit Ausschluss"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'customer_name')")" 2 "$BF_PHASE — der frühere Run vor dem Ausschluss bleibt unverändert lesbar"
+
+# Nichtanwendbarkeit im Run: die Regel war beim Antrag anwendbar; die danach
+# angelegte Spalte customer_name macht den Zielnamen zur Kollision. Der Run
+# endet failed mit der Klasse schema, ohne Change; der Erfassungspfad läuft
+# weiter (kein Fehlerzustand im Lebenszeichen, eine danach in eine andere
+# Tabelle geschriebene Zeile wird erfasst).
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+CREATE TABLE public.$BF_RULE_BAD_TABLE (id int PRIMARY KEY, name text);
+INSERT INTO public.$BF_RULE_BAD_TABLE (id, name) VALUES (1, 'BadAlpha'), (2, 'BadBeta');
+SQL
+bf_enable "$BF_RULE_BAD_TABLE" "$BF_PHASE"
+bf_bad_rule_request=$(bf_sql "SELECT cdc.set_transformation('src-e2e', 'public', '$BF_RULE_BAD_TABLE', 'kundenname', '$BF_RULE_SPEC')")
+[ -n "$bf_bad_rule_request" ] || bf_fail "$BF_PHASE — cdc.set_transformation($BF_RULE_BAD_TABLE) lieferte keine Antrags-ID"
+bf_await_applied "$bf_bad_rule_request" "$BF_PHASE"
+bf_sql "ALTER TABLE public.$BF_RULE_BAD_TABLE ADD COLUMN customer_name text" >/dev/null
+
+bf_request "$BF_RULE_BAD_TABLE" "$BF_PHASE"
+bf_bad_run=$bf_run_id
+bf_await_sql "SELECT status FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'" failed 60 "$BF_PHASE — Run mit nicht anwendbarer Regel"
+bf_bad_error=$(bf_sql "SELECT error_message FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'")
+printf '%s' "$bf_bad_error" | grep -q '^schema: ' || bf_fail "$BF_PHASE — der Fehlertext beginnt nicht mit der Klasse schema: $bf_bad_error"
+printf '%s' "$bf_bad_error" | grep -qF 'kundenname' || bf_fail "$BF_PHASE — der Fehlertext nennt den Regelnamen nicht: $bf_bad_error"
+bf_expect "$(bf_sql "SELECT status FROM cdc.backfill_status WHERE source_id = 'src-e2e' AND schema_name = 'public' AND table_name = '$BF_RULE_BAD_TABLE'")" failed "$BF_PHASE — Status über cdc.backfill_status"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_bad_run'")" 0 "$BF_PHASE — rows_copied des fehlgeschlagenen Runs"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_RULE_BAD_TABLE'")" 0 "$BF_PHASE — Changes der Tabelle nach dem fehlgeschlagenen Run"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.transaction WHERE transaction_id LIKE '0bf-$bf_bad_run-%'")" 0 "$BF_PHASE — Transaktionen des fehlgeschlagenen Runs"
+bf_expect "$(bf_sql "SELECT count(*) FROM cdc.heartbeat WHERE source_id = 'src-e2e' AND error_class IS NULL")" 1 "$BF_PHASE — Lebenszeichen der Quelle ohne Fehlerzustand (der Run-Fehler ist run-lokal)"
+bf_expect "$(docker inspect --format '{{.State.Running}}' "$FEED_CONTAINER" 2>/dev/null || echo false)" true "$BF_PHASE — Feed-Container läuft weiter"
+docker exec -i "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -v ON_ERROR_STOP=1 <<SQL
+INSERT INTO public.$BF_TABLE (id, name, note) VALUES (6, 'RegelSonde', 'n6');
+SQL
+bf_await_sql "SELECT count(*) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_TABLE' AND origin = 'wal' AND new_data->>'id' = '6'" 1 30 "$BF_PHASE — WAL-Change der Sonden-Zeile nach dem fehlgeschlagenen Run"
+
+# Abhilfe: Regel entfernen, neuer Antrag — ohne Neustart des Feed-Containers.
+bf_remove_request=$(bf_sql "SELECT cdc.remove_transformation('src-e2e', 'public', '$BF_RULE_BAD_TABLE', 'kundenname')")
+[ -n "$bf_remove_request" ] || bf_fail "$BF_PHASE — cdc.remove_transformation($BF_RULE_BAD_TABLE) lieferte keine Antrags-ID"
+bf_await_applied "$bf_remove_request" "$BF_PHASE"
+bf_request "$BF_RULE_BAD_TABLE" "$BF_PHASE"
+bf_bad_retry=$bf_run_id
+bf_await_run "$bf_bad_retry" completed 60 "$BF_PHASE"
+bf_expect "$(bf_sql "SELECT rows_copied FROM cdc.backfill_run WHERE run_id = '$bf_bad_retry'")" 2 "$BF_PHASE — rows_copied des neuen Antrags nach der Abhilfe"
+bf_expect "$(bf_sql "SELECT string_agg(new_data->>'name', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE source_id = 'src-e2e' AND table_name = '$BF_RULE_BAD_TABLE' AND origin = 'backfill' AND transaction_id LIKE '0bf-$bf_bad_retry-%'")" "BadAlpha,BadBeta" "$BF_PHASE — Bestand in Rohform nach dem Entfernen der Regel"
+
+echo "run-integration-tests: Backfill-Regelstand (LH-FA-CFG-007) belegt — Run $bf_rule_run übernahm 3 Zeilen von $BF_RULE_TABLE mit umbenanntem Schlüssel customer_name (Werte $(bf_sql "SELECT string_agg(new_data->>'customer_name', ',' ORDER BY (new_data->>'id')::int) FROM cdc.changes WHERE $bf_rule_where AND jsonb_exists(new_data, 'customer_name')"), Schlüsselmenge $bf_rule_keys_backfill gleich der WAL-Change), lesbar über cdc.changes und GET /changes; Run $bf_rule_run_excluded nach exclude_column auf name trägt in 4 Bildern weder name noch customer_name noch einen Wert von name; Run $bf_bad_run auf $BF_RULE_BAD_TABLE endete failed ($bf_bad_error) ohne Change, der Erfassungspfad lief weiter, der neue Antrag $bf_bad_retry nach dem Entfernen der Regel übernahm 2 Zeilen in Rohform"
 
 # Replay-Invariante: die Schreiber, die Haltetransaktion und die Anwendung des
 # Logs liegen in TestE2EBackfillReplayInvariant
