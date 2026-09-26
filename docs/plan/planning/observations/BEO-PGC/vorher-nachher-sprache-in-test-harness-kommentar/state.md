@@ -13,9 +13,16 @@ trägt F-1 (HIGH, daher Datei): dieselbe Form im **Runner-Skript** (der Kommenta
 Neustart der Phase „Neustart und Ausschluss“ nannte den Zustand ohne die Zusage im Konjunktiv „trüge“); der
 Reviewer fand sie vor dem Merge, Ausgang unverändert **verkörpert**. Der diff-skopierte
 Kandidatenlauf von Schritt 20 druckte am Stand vor dem Review 0 Zeilen, weil „trüge“ nicht in seiner
-Wortliste steht (gemessen bei der Closure, Befehl in der Beleg-Datei): die Wortliste ist eine
-endliche Reihe von Konjunktiv-II-Formen, die Lücke ist benannt (Adresse: der Lese-Schritt der Closure
-von `welle-transformationen`); die sechste, `evidence/slice-harness-guard-inplace-textwerkzeug.md`,
+Wortliste stand (gemessen bei der Closure, Befehl in der Beleg-Datei). **Die Wortliste ist erweitert** →
+`.claude/commands/implement-slice.md` Schritt 20: die Konjunktiv-II-Formen `trüge`, `bliebe`, `ließe`,
+`könnte`, `müsste`, `bräuchte`, `läge`, `stünde`, `käme`, `wären`, `gäbe`, `ginge`, `fände`, `dürfte`,
+`hieße`, `brächte` (je auch transliteriert) mit Wortgrenze `\b` · seit welle-transformationen
+(Architect-Verdikt `architect-verdict-welle-transformationen-offene-fragen` §7, Beleg-Anker:
+`git grep -n 'trüge' -- .claude/commands/implement-slice.md`). Gemessen am Diff des Fundes
+(`c246ba4f..66f60c8b`): die frühere Liste druckt 0 Zeilen, die erweiterte 1 (die Zeile mit „trüge“); am
+Bestand (`'*.go' '*.sh' '*.awk'`, Kommentarzeilen) steigt der Lauf von 322 auf 359 Zeilen; die 42
+Bestandszeilen mit einer der neuen Formen sind überwiegend zulässige Mutationsbeschreibungen in
+Test-Godocs (Lese-Einschätzung). Die sechste, `evidence/slice-harness-guard-inplace-textwerkzeug.md`,
 trägt zwei Ausprägungen (INFO/LOW, vor dem Merge von Verifier und Reviewer gefunden): Vorher-Nachher-Sätze in
 Doku-Prosa von Plan und `MR-003` und ein Kandidatenlauf, der den Skopus der Skript-Kommentare nicht las; Ausgang
 unverändert **verkörpert**; die fünfte, `evidence/slice-antragsqueue-lesefehler-failed.md`,

@@ -1,20 +1,16 @@
-**Stand:** offen
+**Stand:** gestrichen — Ausgang: **gestrichen** (akzeptiertes Negativ) · seit welle-transformationen
+(Architect-Verdikt `architect-verdict-welle-transformationen-offene-fragen` §8).
 
-Die Schwelle (3×) ist erreicht, ein Ausgang ist nicht zugewiesen: der Lese-Schritt der
-Closure von `welle-transformationen` liest den Eintrag und weist ihn zu. Zähler
-(abgeleitet): **4×** (`evidence/slice-backfill-slot-leerlauf-bestaetigung.md`,
-`evidence/slice-transformationen-map-value.md`,
-`evidence/slice-transformationen-e2e-wirkung.md`,
-`evidence/slice-transformationen-start-reihenfolge.md`). Das vierte Auftreten trifft zwei
-Tests, die den Quelltext von `wiring.go` lesen und deren Namen eine Lauf-Reihenfolge zusagten
-(Review F-4, LOW); die Verifikation maß ihre Blindheit gegenüber einem Aufruf in einer toten
-Verzweigung (Mutation V14, grün). Das zweite Auftreten trifft einen neu
-geschriebenen Test: Name und Kommentar sagten „jeder Länge“ und „jede Stufe“, der Test übte
-die Stufen bis 70 000 Byte; die Stufe des vierten Längen-Bytes war ungebunden (Review F-3, LOW).
-Das dritte Auftreten trifft den Doc-Kommentar eines Tests: „jeder Negativfall weicht in genau
-einem Feld ab“ bei sechs Fällen, von denen einer eine andere Antragsart ist (Review F-3, LOW).
-Kein Slice ist wegen des Eintrags fällig: ein Träger ist eine Zeile im Reviewer-Skill
-(`.harness/skills/reviewer.md`; die Mengen-Aussage einer ADR-Fitness-Function-Zeile führt er
-in Zeile 151 f.; für Tests und ihre Doc-Kommentare steht dort kein eigener Punkt, gemessen
-bei der Closure: `grep -n -i -E 'breiter als|behauptet mehr' .harness/skills/reviewer.md`
-ohne Treffer), also ein Architect-Zug des Lese-Schritts.
+Begründung: alle vier Belege hat der Reviewer (oder der Verifier) vor dem Merge gefunden, Schwere
+jeweils LOW (Zähler, abgeleitet: **4×**, `evidence/slice-backfill-slot-leerlauf-bestaetigung.md`,
+`evidence/slice-transformationen-map-value.md`, `evidence/slice-transformationen-e2e-wirkung.md`,
+`evidence/slice-transformationen-start-reihenfolge.md`). Die Eskalation „Wiederholung eines Musters,
+das schon zweimal LOW war“ steht als MEDIUM-Punkt im Reviewer-Skill
+(`.harness/skills/reviewer.md`, Abschnitt MEDIUM) und wirkt beim nächsten Auftreten; ein eigener
+Skill-Punkt kostete jedem Review-Lauf Kontext für eine Klasse, die nachweislich ohne ihn gefunden
+wird. Die Formen der vier Belege (ein Testname, der eine Lauf-Reihenfolge zusagt, wo der Test den
+Quelltext liest; „jeder Länge“ bei geübten Stufen; „jeder Negativfall weicht in genau einem Feld
+ab“ bei sechs Fällen mit einer anderen Antragsart; „…EndToEnd“ bei einem Test ohne Stream) bleiben
+in den Beleg-Dateien.
+
+Trigger der Neubewertung: ein Auftreten nach dem Merge, oder eines mit Schwere von MEDIUM an.

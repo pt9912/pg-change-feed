@@ -142,7 +142,12 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   entweder einen Folge-Slice mit Kennung beauftragt oder die Aussage im
   Closure-Bericht mit der gemessenen Menge (INSERT, Neu-Bild, fünf Wege) und der
   Kennzeichnung „hergeleitet“ für den Rest führt
-  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
+  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  §4 — kein Folge-Slice; die Aussage steht mit der gemessenen Menge und „hergeleitet“
+  für den Rest (die drei Adapter kopieren `OldImage`/`NewImage` unverändert, gelesen), der
+  Trigger für einen realen Lauf steht dort; das Handbuch (`slice-transformationen-betriebsdoku`
+  §2) nennt die Aussage nur mit dieser Menge.
 - Die Regelauswertung liegt an genau einer Stelle: der Suchlauf über
   `internal/**` nach der Row-Image-Konstruktion und nach den Aufrufern der
   Regelauswertung (Befehl und Fundstellen im Closure-Bericht) findet eine
@@ -163,16 +168,29 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   oder die Lesekosten als akzeptiertes Negativ mit benanntem Trigger führt; im
   zweiten Fall trägt es die Aussage „die Kosten je Lesung sind klein“ mit einer
   Messung an einer Queue realer Größe, nicht als Erwartung
-  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
+  ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  §3 — akzeptiertes Negativ mit Messung (bis rund 10 000 Zeilen der Queue etwa 8 % einer Blockdauer,
+  bei 100 000 Zeilen etwa 70 %) und Trigger (mehr als 10 000 Zeilen in der Queue einer Quelle);
+  eine Queue realer Größe gibt es nicht (kein Server-Tag trägt die Antragsarten), die Messung ist
+  synthetisch und so gekennzeichnet.
 - **Die Zeitgrenze des Vorlaufs ist entschieden** (Adresse der Frage (e) in §5,
   Register `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`): ein
   Architect-Verdikt liegt vor, das entweder einen Umsetzungs-Slice mit Kennung
   beauftragt (Frist oder Anzeige im Startpfad) oder das Warten als akzeptiertes
   Negativ mit benanntem Trigger führt; im zweiten Fall trägt es die Aussage
   „gesund während des Wartens“ mit einer Messung am laufenden Prozess statt als
-  Herleitung ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B).
+  Herleitung ([`AGENTS.md`](../../../AGENTS.md) §3.12 Instanz B). **Erfüllt:**
+  [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md) und
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  §2 — Umsetzungs-Slice `slice-start-vorlauf-grenze` beauftragt (wellenlos, geht `e2e-abhilfe`
+  voraus, §5); „gesund während des Wartens“ ist am laufenden Prozess gemessen, dazu die Messung,
+  dass der Prozess an einem Vorlauf über `wal_sender_timeout` mit der Klasse `replication` endet.
 - Der **Lese-Schritt** des Beobachtungs-Registers ist gelaufen (Einträge bei 3×
-  oder darüber, Modul 6).
+  oder darüber, Modul 6). Vier dem Lese-Schritt zugeordnete Einträge liest das
+  Verdikt
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md)
+  §8; die übrigen Einträge bei 3× oder darüber liest die Closure.
 - Closure-Notiz in `welle-transformationen-results.md`.
 
 ## 4. Slices in dieser Welle
@@ -356,6 +374,16 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     am Server, nicht am SDK-Client, und eine Aufnahme änderte die Zahl „zehn
     Slices“, ohne dass sich ein Closure-Kriterium änderte. Die Kante steht als
     Start-Trigger in seinem Plan und in `betriebsdoku` (§4 dort).
+  - **Kante zu `slice-start-vorlauf-grenze` (Stand 2026-09-27).** Der
+    Slice setzt [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)
+    um (Frist des Vorlaufs, `START_REPLICATION` im Stream-Lauf) und geht `e2e-abhilfe`
+    voraus: der Abhilfe-Beleg fährt den Startpfad, den er ändert. Er startet nach
+    `slice-capture-leerlauf-quellbelege` (beide erweitern den Runner von `make
+    test-integration` und den Tier `make test-replication`; WIP-Limit 1). Er ist wellenlos
+    und steht nicht in der Slice-Liste (§4): keine Closure-Bedingung, die von seiner DoD
+    verschieden wäre — das Kriterium zur Zeitgrenze in §3 ist mit dem Auftrag erfüllt —, und eine Aufnahme änderte die
+    Zahl „zehn Slices“ ohne Änderung eines Kriteriums. Die Kante steht als Start-Trigger in
+    `e2e-abhilfe` (Nachzug des Planners, Adresse: Verdikt §9.3).
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -392,69 +420,29 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Stufe braucht das lauffähige System der Vorstufe (die Regeltypen, der
   Antragsweg, der Backfill-Pfad, beide Typen, die Wirkung, die Ordnung, die
   Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
-  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner) und die Kanten
+  `slice-start-vorlauf-grenze` → `e2e-abhilfe` (Belegaufbau der
+  Container-Ende-Grenze im Runner, dann Frist und Strom-Beginn des Startpfads,
+  den der Abhilfe-Beleg fährt) und die Kanten
   `slice-code-kommentare-kennungen` → `map-value`, `slice-harness-fmt-check` →
   `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge`,
   `e2e-wirkung` → `slice-sdk-regel-realserver-e2e` → `betriebsdoku` und
   `e2e-abhilfe` → `slice-code-kommentare-bereinigung`.
-- **Fragen für den nächsten Architect-Zug (Notiz, nicht beauftragt).** (a) Ein
-  in-place schreibendes Text-Werkzeug am Repo (`sed -i`, `perl -pi`, ein
-  Host-Interpreter auf einer Repo-Datei) ist in [`AGENTS.md`](../../../AGENTS.md) §3.1
-  verboten, und der PreToolUse-Guard blockt die Flag-Formen
-  (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 5×, Ausgang verkörpert;
-  Grenz-Zeile: `MR-003`, Tabellentest `make test-command-guard`); die Klasse
-  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (2×) steht in
-  §3.1 als „Host-Werkzeug ohne Installation“. Die Klasse trifft weiter besonders
-  `slice-code-kommentare-bereinigung` (Hunderte Kommentar-Änderungen): Umleitungen und
-  flaglose Schreibwege liest der Guard nicht. (b) Die Lesekosten des Backfill-Runs sind bereits ein
-  Closure-Kriterium dieser Welle (§3) und tragen keine weitere Adresse. (c) Das
-  Anhängen von Text per Umleitung (`cat >> Datei`) trat im Lauf des Implementers von
-  `slice-transformationen-map-value` auf (Review F-7, Verifikation V-5): es ist weder ein
-  Treffer des Guards (Umleitungen: Grenz-Zeile in `MR-003`) noch von
-  [`AGENTS.md`](../../../AGENTS.md) §3.1 ausdrücklich geregelt — der Verbotssatz nennt
-  in-place Umschreiben, die Überschrift des Absatzes („Text-Umschreiben im Repo ist Sache
-  der Datei-Werkzeuge des Laufs“) trägt eine strengere Lesung. Adresse: der nächste
-  Architect-Zug, der §3.1 berührt (Wortlaut: verbietet der Absatz den Weg, oder bleibt er
-  Sache des Reviews?); Register: `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`.
-  (d) [`SPEC-030`](../../../spec/pflichtenheft.md) bindet die Zahl der Paare von `values`
-  (`map_value`) nicht nach oben; die Suche einer Zuordnung ist linear in der Zahl der Paare
-  (Größenordnung: 80 ns bei 10, 6,8 µs bei 1000 und 0,72 ms bei 100 000 Paaren je Wert und
-  Regel, **übernommen** aus der Verifikation von `slice-transformationen-map-value`, V-3).
-  Ob die Spec eine Obergrenze führt, ist eine Spec-Frage und nicht entschieden; Adresse: der
-  nächste Architect-Zug zu [`SPEC-030`](../../../spec/pflichtenheft.md), Herkunft der
-  Betreiber-Aussage: `slice-transformationen-betriebsdoku` §2.
-  (e) **Zeitgrenze des Vorlaufs vor `stream.Run`.** `Run` verarbeitet die offenen
-  Anträge der Antrags-Queue in einem synchronen Vorlauf, bevor der Stream startet
-  (`runStreamAfterAdministrationPass` in `internal/bootstrap/wiring.go`, geliefert
-  von `slice-transformationen-start-reihenfolge`). Der Vorlauf trägt keine eigene
-  Frist; ihn beendet allein der Kontext des Streams (der Prozess-`ctx` und die
-  WAL-Fehlerschwelle). Ein Antrag, der lange läuft, ohne zu hängen (etwa `ALTER
-  PUBLICATION … ADD TABLE` an einer Tabellen-Sperre), oder eine lange Queue hält
-  die Erfassung der Quelle an, während der Heartbeat läuft und `--healthcheck` nur
-  dessen Alter liest — ein wartender Vorlauf erscheint als gesund (hergeleitet aus
-  dem Code, nicht am laufenden Prozess gemessen; Review F-3 und Verifikation V-4
-  zu `slice-transformationen-start-reihenfolge`). Zu entscheiden: (1) trägt der
-  Vorlauf eine Frist, je Antrag oder je Durchlauf, und mit welchem Wert und
-  welcher Herleitung; (2) was geschieht bei Ablauf — der Antrag endet `failed` mit
-  Text (die Ordnung „Antrag vor der ersten Transaktion“ gilt dann für diesen
-  Antrag nicht, und die Abhilfe (c) aus
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-  Folgepflicht 5 hängt an ihr), oder der Stream startet und die
-  Administrations-Goroutine wiederholt den Antrag (der Prozess läuft dann bis zur
-  Wiederholung mit dem bisherigen Regelstand); (3) ist das Warten in `diagnose` und
-  `--healthcheck` sichtbar ([`LH-FA-ADM-003`](../../../spec/lastenheft.md)) und
-  wodurch unterscheidet es sich von einem gesunden Lauf; (4) steht die Betreiber-Aussage
-  „ein langer Antrag hält den Stream-Start an“ im Handbuch (`betriebsdoku`) mit
-  einer Messung am Prozess statt als Herleitung. Berührt:
-  [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-  Folgepflicht 5,
-  [`LH-QA-REL-001.a`](../../../spec/pflichtenheft.md) (die Erfassung startet
-  später, kein ACK entfällt), [`SPEC-019`](../../../spec/pflichtenheft.md).
-  Adresse: ein Architect-Verdikt vor der Closure der Welle (Closure-Kriterium in
-  §3); Register: `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`. Beschließt das
-  Verdikt eine Frist oder eine Anzeige, schneidet es einen Umsetzungs-Slice im
-  Startpfad, der `e2e-abhilfe` berührt; beschließt es ein akzeptiertes Negativ,
-  trägt es die Aussage mit einer Messung und einem benannten Trigger.
+- **Entschiedene Fragen der früheren Notiz „Fragen für den nächsten Architect-Zug“**
+  (Verdikt
+  [`architect-verdict-welle-transformationen-offene-fragen`](../../reviews/architect-verdict-welle-transformationen-offene-fragen.md),
+  2026-09-27). (a) **Host-Werkzeug und Umleitung:** [`AGENTS.md`](../../../AGENTS.md) §3.1
+  nennt das Schreiben und Anhängen von Text an eine Repo-Datei per Umleitung als verboten
+  (§5 dort; Register `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, Guard-Grenze
+  in [`MR-003`](../../../harness/conventions/MR-003-guard-inplace-textwerkzeug.md)
+  unverändert). (b) **Lesekosten des Backfill-Runs:** akzeptiertes Negativ mit Messung und
+  Trigger (§3 dort; Closure-Kriterium in §3). (c) **`cat >> Datei`:** wie (a).
+  (d) **Obergrenze der Paare von `map_value`
+  ([`SPEC-030`](../../../spec/pflichtenheft.md)):** benannter Verzicht, Zahlen nachgemessen,
+  Trigger und Vorschlag einer Obergrenze von 10 000 Paaren für den Fall des Triggers (§6 dort);
+  das Handbuch nennt die Zahlen (`betriebsdoku` §2). (e) **Zeitgrenze des Vorlaufs:**
+  [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md),
+  Umsetzung `slice-start-vorlauf-grenze` (Kante oben; Verdikt §2 und §9); Register
+  `BEO-PGC/wartegrenze-ohne-zeitgrenze-im-startpfad`, Ausgang *geplant*.
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
@@ -468,7 +456,7 @@ liegen, bis sie ein Leser zufällig findet):
 | 2 Kern: Domäne und `Assembler`, `rename_column` | `slice-transformationen-kern-rename` |
 | 3 Antragsweg und Dauerhaftigkeit | `slice-transformationen-antragsweg-schema` und `slice-transformationen-antragsweg-usecase` (§4, Abweichung 1) |
 | 4 Regeltyp `map_value` | `slice-transformationen-map-value`; die Spec-Zeile trägt `spec-nachzug` (§4, Abweichung 4) |
-| 5 E2E-Belege, Abhilfe-Akzeptanzkriterium, Startreihenfolge | `slice-transformationen-e2e-wirkung`, `slice-transformationen-start-reihenfolge`, `slice-transformationen-e2e-abhilfe` (§4, Abweichung 2) |
+| 5 E2E-Belege, Abhilfe-Akzeptanzkriterium, Startreihenfolge | `slice-transformationen-e2e-wirkung`, `slice-transformationen-start-reihenfolge`, `slice-transformationen-e2e-abhilfe` (§4, Abweichung 2); Frist des Vorlaufs und Beginn des Replikationsstroms: `slice-start-vorlauf-grenze` (wellenlos, [`ADR-0128`](../adr/0128-prozessstart-vorlauf-frist-und-beginn-des-replikationsstroms.md)) |
 | 6 SDK-/Doku-Beleg | `slice-transformationen-betriebsdoku` |
 | 7 Bindung künftiger Erzeugungspfade | `slice-transformationen-backfill-pfad` für den Backfill-Pfad; Adresse für jeden weiteren Change-Erzeuger: [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md) Folgepflicht 7 selbst — die ADR, die ihn einführt, nennt die Regelauswertung |
 | 8 Routing-ADR | kein Slice dieser Welle; Adresse: §6 dieser Welle und die offene Kennung [`LH-FA-CFG-008.a`](../../../spec/pflichtenheft.md) im Pflichtenheft (sichtbar als Waise in `make doc-trace`) |
