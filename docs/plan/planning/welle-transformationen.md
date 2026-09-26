@@ -293,6 +293,30 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     beiden Plänen dieser Welle (§4 dort). Ein dritter wellenloser Slice,
     `slice-capture-transient-wiederholung`, und ein vierter,
     `slice-backfill-speicher-untersuchung`, tragen keine Kante zu dieser Welle.
+  - **Kanten zu vier weiteren wellenlosen Slices** (zwei Harness-Werkzeuge, ein
+    Fix, eine Bereinigung; keiner trägt eine Closure-Bedingung, die von seiner
+    DoD verschieden wäre; die Kanten stehen als Start-Trigger in den Plänen
+    dieser Welle und in den vier Plänen selbst):
+    `slice-code-kommentare-kennungen` (Regel in
+    [`AGENTS.md`](../../../AGENTS.md) §3.7 und Werkzeug `make
+    kommentar-kennungen`) geht `map-value` voraus — der Implementer jedes
+    folgenden Slices der Welle läuft Schritt 20 mit dem Werkzeug;
+    `slice-harness-fmt-check` (`make fmt-check`, Formatierung der sechs
+    Bestandsdateien) geht `e2e-wirkung` voraus — `e2e-wirkung` und `e2e-abhilfe`
+    erweitern `test/integration/integration_test.go`, eine der sechs;
+    `slice-antragsqueue-lesefehler-failed` (die Lesung der Antrags-Queue lehnt
+    keine Zeile ab) geht `start-reihenfolge` voraus — der Vorlauf vor
+    `stream.Run` und der Abhilfe-Antrag laufen über dieselbe Queue (hergeleitet,
+    nicht erprobt); `slice-code-kommentare-bereinigung` startet nach
+    `e2e-abhilfe` (seine Test-Tranche kürzt Kommentare in denselben Testdateien
+    und schreibt das Erzeugnis `docs/user/e2e-abdeckung.md` neu); die Welle wartet
+    nicht auf ihn. **Entscheidung zu `slice-antragsqueue-lesefehler-failed`:
+    wellenlos, nicht in die Slice-Liste (§4) aufgenommen.** Er berührt die
+    Antragsweg-Fläche, trägt aber keine Closure-Bedingung, die die Welle über
+    seine DoD hinaus braucht: ihre Closure-Kriterien (§3) belegen die Abhilfe
+    (a)–(d) am laufenden System, nicht die Lesung der Queue; eine Aufnahme änderte
+    die Zahl „zehn Slices“ in §1, §3, §4 und der Roadmap, ohne dass sich ein
+    Closure-Kriterium änderte.
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -329,7 +353,20 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Stufe braucht das lauffähige System der Vorstufe (die Regeltypen, der
   Antragsweg, der Backfill-Pfad, beide Typen, die Wirkung, die Ordnung, die
   Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
-  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner).
+  `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner) und die Kanten
+  `slice-code-kommentare-kennungen` → `map-value`, `slice-harness-fmt-check` →
+  `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge` und
+  `e2e-abhilfe` → `slice-code-kommentare-bereinigung`.
+- **Fragen für den nächsten Architect-Zug (Notiz, nicht beauftragt).** (a) Ein
+  in-place schreibendes Text-Werkzeug am Repo (`sed -i`, `perl -pi`, ein
+  Host-Interpreter auf einer Repo-Datei) ist in keinem committeten Text
+  verboten (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 3×, Schwelle
+  erreicht): der Zug zu [`AGENTS.md`](../../../AGENTS.md) §3.1 (Ausnahme-Klasse
+  „Host-Werkzeuge“, gemeinsam mit
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`, 1×); die
+  Klasse trifft besonders `slice-code-kommentare-bereinigung` (Hunderte
+  Kommentar-Änderungen). (b) Die Lesekosten des Backfill-Runs sind bereits ein
+  Closure-Kriterium dieser Welle (§3) und tragen keine weitere Adresse.
 
 **Träger der Folgepflichten** — jede Pflicht aus
 [`ADR-0112`](../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)

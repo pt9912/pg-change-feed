@@ -193,7 +193,11 @@ Regeltypen“ (ein Typ → zwei); beide Stände gemessen):**
 
 **Start** (`next` → `in-progress`): wenn `slice-transformationen-backfill-pfad`
 in `done/` liegt (die Bindung der Erzeugungspfade steht, bevor der zweite Typ
-hinzukommt) und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1).
+hinzukommt), `slice-code-kommentare-kennungen` in `done/` liegt (Kante: der
+Implementer dieses und jedes folgenden Slices der Welle läuft Schritt 20 mit dem
+Werkzeug `make kommentar-kennungen`, und die Regel in
+[`AGENTS.md`](../../../../AGENTS.md) §3.7 steht) und kein anderer Slice in
+`in-progress/` liegt (WIP-Limit 1).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

@@ -146,8 +146,12 @@ Antrags-Verarbeitung und Stream-Start“; beide Stände gemessen):**
 in `done/` liegt (Reihenfolge der Welle) und
 `slice-backfill-sql-administration` in `done/` liegt (beide Slices ändern `Run`
 im Bereich der Administrations-Goroutine; der Backfill-Zweig und der
-Start-Abgleich stehen dann fest) und kein anderer Slice in `in-progress/` liegt
-(WIP-Limit 1).
+Start-Abgleich stehen dann fest) und `slice-antragsqueue-lesefehler-failed` in
+`done/` liegt (Kante: der Vorlauf vor `stream.Run` liest dieselbe Queue, und
+eine Zeile, die die Lesung anhält, hielte auch ihn an — hergeleitet aus
+`processAdministrationRequests`, nicht erprobt; beide Slices ändern die
+Verarbeitung der Queue in `internal/bootstrap/wiring.go`) und kein anderer Slice
+in `in-progress/` liegt (WIP-Limit 1).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 
