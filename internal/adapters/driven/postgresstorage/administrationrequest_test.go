@@ -1113,16 +1113,22 @@ VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9, $10)`
 		return &text
 	}
 
-	// Gleicher Zeitstempel: b-set eingefügt vor a-remove, a-remove ordnet zuerst.
+	// Die Zeilen stehen in aufsteigender Ordnung von `requested_at` in der
+	// Tabelle: ohne Zweitschlüssel läse die Abfrage sie in Einfüge-Ordnung,
+	// und der Test färbte sich an der Ordnung der Gleichzeitigen rot.
+	// Gleicher Zeitstempel, zwei Paare: Set eingefügt vor Remove, das Remove
+	// ordnet nach der Antrags-ID zuerst (`a-…` vor `b-…`), die Regel bleibt.
 	insert("rules-derivation-b-set", table, "set_transformation", "tie", spec("name", "customer_name"), "applied", tiedAt)
 	insert("rules-derivation-a-remove", table, "remove_transformation", "tie", nil, "applied", tiedAt)
-	// Zyklus über drei Zeitpunkte: Set, Remove, Set mit anderem Ziel.
-	insert("rules-derivation-c-set", table, "set_transformation", "cycle", spec("status", "state_a"), "applied", tiedAt.Add(time.Second))
-	insert("rules-derivation-d-remove", table, "remove_transformation", "cycle", nil, "applied", tiedAt.Add(2*time.Second))
-	insert("rules-derivation-e-set", table, "set_transformation", "cycle", spec("status", "state_b"), "applied", tiedAt.Add(3*time.Second))
+	insert("rules-derivation-d-set", table, "set_transformation", "tie_two", spec("note", "notiz"), "applied", tiedAt)
+	insert("rules-derivation-c-remove", table, "remove_transformation", "tie_two", nil, "applied", tiedAt)
 	// Eine Regel, die wieder herausgenommen ist, lässt keinen Eintrag zurück.
 	insert("rules-derivation-f-set", otherTable, "set_transformation", "gone", spec("name", "x"), "applied", tiedAt)
+	// Zyklus über drei Zeitpunkte: Set, Remove, Set mit anderem Ziel.
 	insert("rules-derivation-g-remove", otherTable, "remove_transformation", "gone", nil, "applied", tiedAt.Add(time.Second))
+	insert("rules-derivation-h-set", table, "set_transformation", "cycle", spec("status", "state_a"), "applied", tiedAt.Add(time.Second))
+	insert("rules-derivation-i-remove", table, "remove_transformation", "cycle", nil, "applied", tiedAt.Add(2*time.Second))
+	insert("rules-derivation-j-set", table, "set_transformation", "cycle", spec("status", "state_b"), "applied", tiedAt.Add(3*time.Second))
 	// Zeilen ohne Anteil am Stand: anderer Ausgang, andere Antragsart.
 	insert("rules-derivation-h-pending", table, "set_transformation", "pending_rule", spec("note", "n1"), "pending", tiedAt)
 	insert("rules-derivation-i-failed", table, "set_transformation", "failed_rule", spec("note", "n2"), "failed", tiedAt)
@@ -1139,7 +1145,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9, $10)`
 		}
 		return out
 	}
-	if got, want := describe(state["public."+table]), "tie:name>customer_name;cycle:status>state_b;"; got != want {
+	if got, want := describe(state["public."+table]), "tie:name>customer_name;tie_two:note>notiz;cycle:status>state_b;"; got != want {
 		t.Fatalf("Regelstand public.%s = %q, wollen %q (Zweitschlüssel, Zyklus, ohne pending/failed/fremde Art)", table, got, want)
 	}
 	if got, present := state["public."+otherTable]; present {
@@ -1149,6 +1155,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7::text::jsonb, $8, $9, $10)`
 	// Ein Remove nach dem letzten Set lässt die Tabelle ohne Eintrag.
 	insert("rules-derivation-k-remove", table, "remove_transformation", "tie", nil, "applied", tiedAt.Add(4*time.Second))
 	insert("rules-derivation-l-remove", table, "remove_transformation", "cycle", nil, "applied", tiedAt.Add(5*time.Second))
+	insert("rules-derivation-m-remove", table, "remove_transformation", "tie_two", nil, "applied", tiedAt.Add(6*time.Second))
 	state, err = adapter.TransformationRules(ctx, administrationRequestSource)
 	if err != nil {
 		t.Fatalf("TransformationRules nach dem Herausnehmen: %v", err)

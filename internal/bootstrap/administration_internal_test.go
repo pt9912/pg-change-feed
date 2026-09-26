@@ -800,8 +800,7 @@ func TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet(t *testing.T) 
 // Art der geschlossenen Menge der Domäne trägt einen Zweig und endet nicht im
 // `default`. Rot färbende Mutation: einen `case` aus `applyAdministrationRequest`
 // streichen (z. B. `AdministrationRequestSetTransformation`) — die Art endet im
-// `default`-Fehler, und das Fenster „Funktion vorhanden, Wirkung fehlt“
-// (`LH-FA-CFG-007`) wäre wieder offen. Die Grenze: eine Art, die der
+// `default`-Fehler, statt zu wirken (`LH-FA-CFG-007`). Die Grenze: eine Art, die der
 // Konstruktor annimmt und `AdministrationRequestKinds` nicht aufzählt, sieht
 // dieser Test nicht; der Domänen-Test bindet den Konstruktor an die Aufzählung
 // nur in die eine Richtung.

@@ -77,7 +77,7 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
 
 ## 2. Definition of Done
 
-- [ ] K1–K4 gegen Fakes, je an ihre Eingabe gebunden: (K1) ein bereits
+- [x] K1–K4 gegen Fakes, je an ihre Eingabe gebunden: (K1) ein bereits
       vergebener `rule_name` derselben Tabelle endet `failed`; (K2) eine zweite
       Spaltenregel auf derselben Quellspalte endet `failed`; (K3) ein Zielname,
       der einem anderen Zielnamen oder einem Spaltennamen der Quelltabelle
@@ -124,7 +124,7 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       `make test` und je Invariante eine Mutation der Prüfung, die den Test rot
       färbt (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert,
       6×).
-- [ ] Regelstand-Ableitung und Spaltenliste im Store: der Adapter liefert den
+- [x] Regelstand-Ableitung und Spaltenliste im Store: der Adapter liefert den
       Regelstand je Tabelle einer Quelle aus den `applied`-Zeilen der zwei
       Arten in der Ordnung `requested_at`, bei gleichem Zeitstempel nach
       `administration_request_id` (`set_transformation` trägt ein,
@@ -137,7 +137,7 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       gelesen am Dockerfile).
       *Zu belegen durch:* `make test-store` (gleicher Zeitstempel, Reihenfolge,
       Set/Remove-Zyklus, Katalog-Lesart) und `make test` (Faltung).
-- [ ] Verdrahtung und Dauerhaftigkeit: ein `set_transformation`-Antrag gegen
+- [x] Verdrahtung und Dauerhaftigkeit: ein `set_transformation`-Antrag gegen
       eine aktivierte Tabelle wird `applied`, die laufende `Assembler`-Bindung
       trägt die Regel ohne Neustart; `remove_transformation` nimmt sie wieder
       heraus; der Prozessstart (`activatedTableBindings`) und der
@@ -156,17 +156,17 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: entfällt — die Betreiber-Oberfläche ist mit
+- [x] Doku-Update: entfällt — die Betreiber-Oberfläche ist mit
       `antragsweg-schema` entstanden und mit
       `slice-transformationen-betriebsdoku` adressiert; dieser Slice ändert
       keinen Vertrag, den das Handbuch beschreibt, ohne dass die Wirkung erst
       mit `e2e-wirkung` belegt ist.
 - [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
-- [ ] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
+- [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
 - [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — neues
       Verzeichnis oder weitere `evidence/`-Datei; kein Anfall ist ebenfalls
@@ -281,6 +281,55 @@ diff 0 -n -e set_transformation -e remove_transformation -- docs/user
 80eefead 1 -n 'Domänen-Invarianten des Antrags-Konstruktors' -- spec
 diff 1 -n 'Domänen-Invarianten des Antrags-Konstruktors' -- spec
 ```
+
+**Mutationen des Implementer-Laufs** (Zusage · mutierte Eingabe · gesehenes Rot; jede Mutation
+einzeln am Arbeitsbaum, mit dem Edit-Werkzeug zurückgenommen, am Ende `git diff` gegen den
+Commit ohne Quell-Abweichung; `make test` je Lauf, sofern nicht `make test-store` genannt — `make test-store`
+fährt zuerst `internal/bootstrap` und bricht dort ab, die Zeilen nennen den ersten roten Test):
+
+| Zusage | mutierte Eingabe | gesehenes Rot |
+|---|---|---|
+| K1: ein vergebener Regelname endet `failed` | Vergleich `rule.Name() == name` gegen `s.column` ersetzt (`CheckConflicts`) | `TestCheckConflictsBindsK1ToK3AndTheirOrder` („K1 Name vergeben“), `TestSetTransformationRejectsWithTheSpecTexts` (K1) |
+| K2: eine Quellspalte trägt höchstens eine Spaltenregel | `rule.Column() == s.column` gegen `s.to` ersetzt | `TestCheckConflicts…` („K2“), `TestSetTransformationRejectsWithTheSpecTexts` (K2), `TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts` (`req-k2`) |
+| K3: Zielname gleich dem Ziel einer anderen Regel | `rule.To() == s.to` gegen `s.column` ersetzt | `TestCheckConflicts…` („K3 Ziel gleicht Ziel einer anderen Regel“), Use-Case- und Verdrahtungs-Test (`req-k3a`) |
+| K3: Zielname gleich der Quellspalte (auch ohne Katalogeintrag) | den Teil `s.to == s.column ||` entfernt | `TestCheckConflicts…` („… auch ohne Katalogeintrag“), `TestSetTransformationRejectsWithTheSpecTexts` („K3 (Ziel gleich Quelle) vor K4 bei fehlender Spalte“) |
+| K3: Zielname gleich einer Spalte der Tabelle | den Teil `containsName(columns, s.to)` entfernt | `TestCheckConflicts…` („K3 Ziel gleicht Spalte der Tabelle“), Use-Case-Test (Spalte, ausgeschlossene Spalte), Verdrahtungs-Test (`req-k3b`) |
+| K4: `column` existiert an der Quelle; Adresse ist die Spalte | Katalogprüfung auf `spec.Target()` statt `spec.Column()` | `TestSetTransformationAcceptsAConflictFreeRule`, `…BindsTheTableAndSourceOfTheCommand`, `…ComparesNamesCharacterExact`, Verdrahtungs-Test (erste Regel nicht `applied`) |
+| K4: Adresse des Fehlertextes ist die Spalte | Adresse auf `spec.Target()` | `TestSetTransformationRejectsWithTheSpecTexts` (K4, `t.Errorf` je Fall) |
+| die Adressen von K1, K2, K3 im Fehlertext | K1 → Spalte, K2 → Regelname, K3 → Spalte | `TestSetTransformationRejectsWithTheSpecTexts`: neun Fälle rot (K1, K2, K3 ×3, K4, drei Prüfreihenfolge-Fälle), `TestProcessAdministrationRequestsRuleViolationsFailWithSpecTexts` (`req-k1`) |
+| `remove_transformation` gegen einen nicht geführten Namen endet `failed` | Namensvergleich `rule.Name() == command.RuleName` gegen `rule.Name() != ""` | `TestRemoveTransformationRejectsWithTheSpecTexts` (K4), Verdrahtungs-Test (`req-k4r`) |
+| Regelstand je Tabelle der Anfrage | `state[schema.table]` gegen `state["public.other"]` (Set bzw. Remove) | Set: `TestSetTransformationAcceptsAConflictFreeRule`, `…BindsTheTableAndSourceOfTheCommand`, K1-Fall; Remove: `TestRemoveTransformationAcceptsAKeptRule`, `…RejectsWithTheSpecTexts` („Nachbartabelle“) |
+| Regelstand der Quelle der Anfrage | `TransformationRules(ctx, "src-1")` statt `command.Source` (Remove) | `TestRemoveTransformationRejectsWithTheSpecTexts` („Nachbarquelle“) |
+| Spaltenliste der Tabelle der Anfrage | `SourceColumns(ctx, schema, "other")` | drei Use-Case-Tests und fünf Verdrahtungs-Tests (u. a. `…TakeEffectLive`: „Spalte existiert nicht an der Quelle“) |
+| Regelname ist geprüft (Alphabet, leer) | `CheckRuleName`-Fehler ignoriert (Set bzw. Remove); Grenze `{1,63}` → `{1,64}` | `TestSetTransformationRejectsWithTheSpecTexts` („Regelname leer“), `…ChecksTheFormBeforeReadingTheStore`, `TestRemoveTransformationRejectsWithTheSpecTexts` (zwei Namensfälle), `TestProcessAdministrationRequestsInvalidRuleRowsDoNotStallTheQueue`; Alphabet: `TestCheckRuleNameBindsTheAlphabet` |
+| die Formzeilen laufen vor dem ersten Lesen des Ports | ein Lesen vor die Prüfung gesetzt | `TestSetTransformationChecksTheFormBeforeReadingTheStore` (Port-Aufrufe 1/0 statt 0/0) |
+| `rule_spec` ist gültiges UTF-8 | `ValidString`-Prüfung ausgeschaltet | `TestParseTransformationSpecRejectsInSpecOrder` („ungültiges UTF-8“: `encoding/json` nimmt es an) |
+| unbekannter Schlüssel in `rule_spec` endet `failed` | Prüfung `containsName(allowed, key)` ausgeschaltet | Parser-, Use-Case- und Verdrahtungs-Test (`req-key`) |
+| unbekannter `kind` endet vor dem Schlüssel-Test | `if !known`-Zweig ausgeschaltet | Parser (`unbekannter kind` mit „Schlüssel column“ statt Regeltyp), Use Case, Verdrahtung, `TestFoldTransformationsFailsVisiblyOnUnparsableRow`, `TestReadTransformationRulesEmptyAndUnparsable` |
+| Bezeichner-Form von `column`/`to`; Nicht-String liest sich als leerer Name | die Prüfung über `NewRenameColumn` ausgeschaltet | `TestParseTransformationSpecRejectsInSpecOrder` („column fehlt“), `…AcceptsValidForms` (64 Byte in 32 Zeichen), Use-Case-Test („Form vor K1“) |
+| Zielname gleich Quellspalte ist keine Formverletzung, sondern K3 | den Ausschluss von `ErrTransformationTargetIsColumn` im Parser entfernt | `TestParseTransformationSpecAcceptsValidForms`, `TestTransformationSpecBuild`, Use-Case-Test („K3 Zielname gleicht der Quellspalte“), Verdrahtungs-Test (`req-k3c`) |
+| Faltung: Reihenfolge der Zeilen | Zeilen rückwärts gelesen (`FoldTransformations`); Zeilen je Tabelle vorangestellt statt angehängt (`ReadTransformationRules`) | `TestFoldTransformationsFollowsTheOrderOfTheRows` („zwei Sets in Reihenfolge“), `TestReadTransformationRulesFoldsPerTable` |
+| Faltung: Remove nimmt heraus | `dropByName` behält die Regel | `TestFoldTransformationsFollowsTheOrderOfTheRows` („Set, Remove“), `TestReadTransformationRulesFoldsPerTable` (`public.gone`) |
+| Faltung: ein Set unter vorhandenem Namen ersetzt an der Stelle | Zweig `existing.name == rule.name` ausgeschaltet | `TestFoldTransformationsFollowsTheOrderOfTheRows` („Set unter vorhandenem Namen ersetzt“) |
+| Faltung: eine nicht lesbare Zeile endet sichtbar | Fehler der Regelform übersprungen (`continue`); Ursache im Fehler nicht mehr umhüllt (`%s` statt `%w`, `ReadTransformationRules`) | `TestFoldTransformationsFailsVisiblyOnUnparsableRow`, `TestReadTransformationRulesEmptyAndUnparsable` |
+| eine Tabelle ohne verbleibende Regel trägt keinen Eintrag; Zeilen je Tabelle getrennt | `len(rules) > 0` durch `true`; Schlüssel `schema.table` auf `table` verkürzt | `TestReadTransformationRulesFoldsPerTable` (`public.gone`; Tabellen-Schlüssel) |
+| die Zeile mit leerem Regelnamen oder leerer Regelform ist ein Antrag, kein Lesefehler | Prüfung `ruleName == ""` in `NewAdministrationRequest` zurückgelegt | `TestNewAdministrationRequestCarriesEmptyRuleFields`, `TestReadPendingRequestsCarriesRuleRowsWithEmptyRuleFields`; `make test-store`: `TestAdministrationPathRunsUnderLeastPrivilegeLogins` („Zeile mit ungültigen Regelfeldern: Status `pending`“ — die Queue steht) |
+| die geschlossene Menge der Antragsarten ist aufgezählt | `RemoveTransformation` aus `AdministrationRequestKinds` gestrichen | `TestAdministrationRequestKindsEnumeratesTheClosedSet` (sechs statt sieben), `TestApplyAdministrationRequestRejectsKindOutsideTheClosedSet` (Fehlertext) |
+| jede Art der Menge trägt einen Zweig (Fenster „Funktion vorhanden, Wirkung fehlt“ geschlossen) | `case AdministrationRequestSetTransformation` durch eine fremde Art ersetzt | `TestApplyAdministrationRequestHandlesEveryKindOfTheClosedSet` und fünf Wirkungs-Tests (Fehlertext des `default`-Zweigs) |
+| ein `set_transformation`-Antrag wirkt ohne Neustart | Nachtrag `deps.assembler.SetTransformation` gestrichen | `TestProcessAdministrationRequestsSetAndRemoveTransformationTakeEffectLive` und drei weitere (Bild bleibt roh) |
+| `remove_transformation` nimmt die Regel heraus | Nachtrag `RemoveTransformation` gestrichen | `TestProcessAdministrationRequestsSetAndRemoveTransformationTakeEffectLive` (Bild trägt den Zielnamen weiter) |
+| ein Antrag gegen eine Tabelle ohne Bindung legt keine an | Nachtrag durch `AddBinding` mit Regel ersetzt | `TestProcessAdministrationRequestsRuleAgainstTableWithoutBindingIsApplied` |
+| Aktivierungs-Zweig trägt den Regelstand | Schlüssel `rules[qualified]` auf eine fremde Tabelle | `TestProcessAdministrationRequestsDisableEnableCycleRestoresTransformations` |
+| Prozessstart trägt den Regelstand je Tabelle | Schlüssel auf eine fremde Tabelle; Schlüssel auf die Tabelle der Regel festgelegt | `TestActivatedTableBindingsCarriesTransformations` (beide Richtungen: „Transformations = []“ bzw. „Nachbartabelle“) |
+| ein Lesefehler des Regelstandes endet den Start bzw. den Antrag sichtbar | Fehler in beiden Stellen verworfen (`rules = nil`) | `TestActivatedTableBindingsFehlerpfade` („TransformationRules-Fehler“), `TestProcessAdministrationRequestsMarksFailedWhenRuleStateReadFails` |
+| die Ableitung liest `applied`-Zeilen in der Ordnung `requested_at`, `administration_request_id` | `administration_request_id` aus dem `ORDER BY` gestrichen | `make test-store`: `TestTableActivationTransformationRulesDeriveAppliedRuleRequests` (beide Paare gleicher Zeitstempel gehen verloren) — die erste Fassung des Tests (ein Paar, Zeilen nicht in aufsteigender Ordnung eingefügt) blieb **grün**; er ist auf zwei Paare in aufsteigender Einfüge-Ordnung umgestellt, sonst liest PostgreSQL bei einer nicht vorsortierten Eingabe die Gleichzeitigen in beliebiger Ordnung |
+| K1 prüft nur gegen `applied`-Zeilen (Grundlage der Idempotenz) | Statusfilter `status = 'applied'` gegen `status <> 'failed'` | `make test-store`: `TestAdministrationPathRunsUnderLeastPrivilegeLogins` („set_transformation … `failed`: Regelname bereits vergeben“ — der eigene, noch `pending` stehende Antrag zählte) |
+| die Ableitung deckt beide Antragsarten | `request_kind IN ('set_transformation')` | `make test-store`: Login-Test („remove_transformation K4 … `applied` statt `failed`“) |
+| die Ableitung gilt je Quelle | `source_id = $1` gegen `source_id <> $1` | `make test-store`: Login-Test („set_transformation K1 … `applied` statt `failed`“) |
+| die Spaltenliste liest die Tabelle der Anfrage | `table_name = $2` gegen `table_name = $2 \|\| 'x'` bzw. gegen `$1` | `make test-store`: Login-Test („Spalte existiert nicht an der Quelle“ bzw. Argumentzahl) |
+| `SourceColumns` prüft Schema und Tabelle gegen das Alphabet | `validateIdentifier(schema)` gegen `validateIdentifier("public")` | `make test-store`: `TestTableActivationSourceColumnsReadsTheCatalog` („Schema außerhalb des Alphabets“) |
+| Idempotenz der Wiederholung eines nachgetragenen, noch `pending` stehenden Antrags | — | **kein Rot am Code auf Unit-Ebene erreichbar:** `TestProcessAdministrationRequestsSetTransformationIsIdempotent` bindet das Verhalten mit einem Store-Fake, der nur vermerkte Anträge ableitet; jede Mutation an `applyAdministrationRequest`, die die Wiederholung bricht, müsste K1 gegen nicht vermerkte Zeilen prüfen — das leistet nur die Store-Abfrage, und deren Mutation (Zeile „K1 prüft nur gegen `applied`-Zeilen“) färbt den realen Login-Test rot. Ein Nachtrag, der Regeln anhängt statt zu ersetzen (`withTransformation`), ist am Bild unsichtbar (die erste treffende Regel entscheidet) — der Ersatz nach Namen ist im Assembler-Paket gebunden (`kern-rename`). |
+| Regelliste ohne geteilten Speicher (Übergabe aus `kern-rename`) | — | **ohne Mutation:** die Nicht-Teilung folgt aus dem Aufbau der Faltung, kein Test kann sie am Ergebnis unterscheiden; benannte Grenze. |
 
 ## 4. Trigger
 

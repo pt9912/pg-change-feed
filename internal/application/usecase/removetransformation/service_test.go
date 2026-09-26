@@ -96,13 +96,14 @@ func TestRemoveTransformationRejectsWithTheSpecTexts(t *testing.T) {
 	} {
 		err := remove(newPort(t), tc.source, tc.ruleName)
 		if err == nil {
-			t.Fatalf("%s: Remove = nil, wollen %q", tc.label, tc.text)
+			t.Errorf("%s: Remove = nil, wollen %q", tc.label, tc.text)
+			continue
 		}
 		if err.Error() != tc.text {
-			t.Fatalf("%s: Fehlertext = %q, wollen %q", tc.label, err.Error(), tc.text)
+			t.Errorf("%s: Fehlertext = %q, wollen %q", tc.label, err.Error(), tc.text)
 		}
 		if !stderrors.Is(err, tc.reason) {
-			t.Fatalf("%s: Fehler = %v, wollen Grund %v", tc.label, err, tc.reason)
+			t.Errorf("%s: Fehler = %v, wollen Grund %v", tc.label, err, tc.reason)
 		}
 	}
 }
