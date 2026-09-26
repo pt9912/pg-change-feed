@@ -157,7 +157,7 @@ Case), keine ADR.
       mitgeändert. *Zu belegen durch:* das Suchlauf-Feld in §3 (beide Stände).
 - [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
-- [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
+- [x] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
@@ -187,7 +187,7 @@ Case), keine ADR.
 
 **Umfang:** S bis M — Schätzung, nicht gemessen: ein Rückgabetyp über Port,
 Adapter, `sqlexec`, Verarbeitung und die Fakes von 8 Nicht-Test- und bis zu 73
-Fundstellen des Symbols (gemessen, Suchlauf in §3, Stand `7b70b34a`), ein
+Fundstellen des Symbols (gemessen, Suchlauf in §3, Stand `47a646b5`), ein
 Store-Test, ein Whitebox-Test, ein Spec-Absatz.
 
 ## 3. Plan (vor Code)
@@ -211,7 +211,11 @@ Store-Test, ein Whitebox-Test, ein Spec-Absatz.
 | `internal/bootstrap/administration_internal_test.go` | update, Nachzug | Fake-Port: Feld `rows` (Zeilen mit Verwurf) und `marked` (Reihenfolge der Vermerke); `TestProcessAdministrationRequestsFailsRejectedRowsInQueueOrder` (verworfene Zeilen vor, zwischen und hinter gültigen; Zeile ohne Kennung), `TestProcessAdministrationRequestsRejectedRowSurvivesMarkFailedError`. |
 | `internal/bootstrap/administration_roles_internal_test.go` | update, Nachzug | `TestAdministrationPathRunsUnderLeastPrivilegeLogins`: vier verworfene Zeilen und eine gültige dahinter unter dem `cdc_admin`-Login bis `failed` bzw. `applied`. |
 | `internal/domain/model/administrationrequest_test.go` | update | Test-Godoc zu den Regelfeldern trug die Umschreibung „lehnte das Lesen der Queue die Zeile ab“, die das Muster in Zeile 4 des Feldes nicht trifft; gefunden im ergänzenden Lauf des Feldes (Zeile 9, Muster auf Antrag und Lesen); nachgezogen. |
-| `docs/user/benutzerhandbuch.md` | geprüft, nicht berührt | keine Aussage zu einer Ablehnung oder einem Anhalten der Queue durch eine fehlerhafte Zeile (Suchlauf Zeile 7 ohne Treffer; die Zeile des Handbuchs mit „Konstruktor“ betrifft ein Konstruktor-Argument des SDK); keine neue Betreiber-Oberfläche (Kandidatenlauf `git diff --name-only 47a646b5 -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` trifft nur Tests und `wiring.go`-Kommentar/Ablauf). Aufschub der Aussage „eine verworfene Zeile endet `failed` mit Text“ im Handbuch: Adresse `slice-transformationen-betriebsdoku`. |
+| `docs/user/benutzerhandbuch.md` | geprüft, nicht berührt | keine Aussage zu einer Ablehnung oder einem Anhalten der Queue durch eine fehlerhafte Zeile (Suchlauf Zeilen 11 und 12 ohne Treffer; die Zeile des Handbuchs mit „Konstruktor“ betrifft ein Konstruktor-Argument des SDK); keine neue Betreiber-Oberfläche (Kandidatenlauf `git diff --name-only 47a646b5 -- internal/bootstrap/ tools/schema/ internal/adapters/driving/` trifft nur Tests und `wiring.go`-Kommentar/Ablauf). Aufschub der Aussage „eine verworfene Zeile endet `failed` mit Text“ im Handbuch: Adresse `slice-transformationen-betriebsdoku`; der Text der Aussage steht seit der Fixrunde in §2 des Plans der Adresse (Zeile „Träger-Nachzug“ unten). |
+| `docs/plan/planning/open/slice-transformationen-betriebsdoku.md` | update, Träger-Nachzug (Fixrunde, Review F-3) | §2, Handbuch-Punkt: Übergabe-Text „Zeilen, die kein Antrag sind“ (Verhalten, Klartext und Kennung in `error_message`, Grenze Zeile ohne Kennung, Belege, Gründe ohne Weg über die SQL-Funktionen); die Adresse trägt den Gegenstand jetzt als Text (`git grep -c -i 'Zeilen, die kein Antrag sind' -- <Datei>` ≥ 1). Nicht mitgeändert: `state.md` von `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` und die Welle-Datei (fremde Träger, Meldung an den Planner, Frist Closure dieses Slice). |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate.go`, `translate_test.go`, `internal/domain/model/administrationrequest.go`, `internal/bootstrap/wiring.go` | update, Fixrunde (Review F-1) | Kommentare im Indikativ über die Zusage der Stelle: `ReadPendingRequests` („steht als `Rejected` … an ihrer Stelle der Ordnung; die Lesung endet nur bei einem Fehler der Anfrage, des Scans oder der Iteration“), Konstruktor-Kommentar, Test-Godoc zu `TestReadPendingRequestsPassesRejectedRowsThrough` und der Block über `processAdministrationRequests` (dort auch der Bestandssatz zum `pending` bleibenden Antrag, F-8, weil derselbe Block neu umbrochen war; die Abfrage liest nur `pending`). Kandidatenlauf `git diff fc107f42..HEAD -U0 -- '*.go'` auf „wäre/würde/hielte/hätte/sonst/statt“: die verbleibenden Treffer sind Mutationsbeschreibungen in Test-Godocs (Subjekt der Test) und Indikativ-Sätze („trägt statt der Kennung `schema.table`“, „steht als `Rejected` statt als Antrag“). |
+| `internal/adapters/driven/postgresstorage/sqlexec/translate_test.go` | update, Fixrunde (Review F-4) | `TestReadPendingRequestsPassesRejectedRowsThrough`: vier weitere Zeilen mit zwei Gründen — leere Kennung und leere Quelle, leere Quelle und leeres Schema, leeres Schema und Antragsart außerhalb der Menge, leerer Tabellenname und Antragsart außerhalb der Menge; das Paar Schema/Tabelle steht in der Tabelle. Die Antragsart hängt am Grund des Konstruktors (er nennt bei leerem Schema oder Tabellenname `ErrEmptyIdentifier`, bevor er die Antragsart prüft), nicht an der Stellung im Schalter von `rejectionMessage`. |
+| `internal/adapters/driven/postgresstorage/sqlexec/rejection_internal_test.go` | update, Fixrunde (Review F-4/F-5) | `TestRejectionMessageColumnCaseNeedsEmptyColumnAndEmptyIdentifierCause`: Grund-Feld-Paare des Falls `Spaltenname ist leer` (leere Spalte mit `ErrEmptyIdentifier`; gesetzte Spalte mit `ErrEmptyIdentifier`; leere Spalte mit fremdem Grund) — bindet die Bedingung `column == ""` (im Review als äquivalente Mutation S5 geführt: über die Zeilen der Abfrage nicht herstellbar, deshalb der direkte Aufruf) und die Grund-Bedingung. |
 
 **§3.13-Suchlauf (committetes Feld).** Bewegte Eigenschaft: „was geschieht mit
 einer Zeile, die der Antrags-Konstruktor verwirft“ — Symbolnamen
@@ -219,21 +223,21 @@ einer Zeile, die der Antrags-Konstruktor verwirft“ — Symbolnamen
 („Ablehnung beim Lesen“, „nicht beim Lesen ab“, „abgelehnter Lesevorgang“).
 Suchraum: der ganze Baum für Go, die Spec, das Handbuch und `harness`;
 ausgenommen sind `docs/reviews/**`, die Records unter `done/` und
-`.harness/baseline/**`. Stand ist der Parent `7b70b34a`; der Implementer ergänzt
+`.harness/baseline/**`. Stand ist der Parent `47a646b5` (der Commit vor der Änderung); der Implementer ergänzt
 die Zeilen mit Stand `diff`:
 
 ```suchlauf
-7b70b34a 8 -E 'ReadPendingRequests|ListPending' -- '*.go' ':!*_test.go'
-7b70b34a 73 -E 'ReadPendingRequests|ListPending' -- '*.go'
-7b70b34a 7 -E 'NewAdministrationRequest' -- '*.go' ':!*_test.go'
-7b70b34a 8 -E 'Ablehnung beim Lesen|abgelehnter Lesevorgang|nicht beim Lesen ab|Tabellennamen beim Lesen ab|endet mit der Konstruktor-Invariante|beim Lesen abgelehnt|ListPending. endet mit' -- '*.go' spec docs/user harness
+47a646b5 8 -E 'ReadPendingRequests|ListPending' -- '*.go' ':!*_test.go'
+47a646b5 73 -E 'ReadPendingRequests|ListPending' -- '*.go'
+47a646b5 7 -E 'NewAdministrationRequest' -- '*.go' ':!*_test.go'
+47a646b5 8 -E 'Ablehnung beim Lesen|abgelehnter Lesevorgang|nicht beim Lesen ab|Tabellennamen beim Lesen ab|endet mit der Konstruktor-Invariante|beim Lesen abgelehnt|ListPending. endet mit' -- '*.go' spec docs/user harness
 diff 11 -E 'ReadPendingRequests|ListPending' -- '*.go' ':!*_test.go'
 diff 91 -E 'ReadPendingRequests|ListPending' -- '*.go'
 diff 7 -E 'NewAdministrationRequest' -- '*.go' ':!*_test.go'
 diff 1 -E 'Ablehnung beim Lesen|abgelehnter Lesevorgang|nicht beim Lesen ab|Tabellennamen beim Lesen ab|endet mit der Konstruktor-Invariante|beim Lesen abgelehnt|ListPending. endet mit' -- '*.go' spec docs/user harness
-7b70b34a 7 -i -E 'Antr[a-z]*.*(beim Lesen|Lesefehler|Lesung.*(ablehn|Fehler))|(beim Lesen|Lesefehler).*Antr' -- '*.go' spec docs/user harness
+47a646b5 7 -i -E 'Antr[a-z]*.*(beim Lesen|Lesefehler|Lesung.*(ablehn|Fehler))|(beim Lesen|Lesefehler).*Antr' -- '*.go' spec docs/user harness
 diff 6 -i -E 'Antr[a-z]*.*(beim Lesen|Lesefehler|Lesung.*(ablehn|Fehler))|(beim Lesen|Lesefehler).*Antr' -- '*.go' spec docs/user harness
-7b70b34a 0 -i -E 'Lesefehler|Ablehnung beim Lesen|abgelehnt beim Lesen|Queue anhalt' -- docs/user harness
+47a646b5 0 -i -E 'Lesefehler|Ablehnung beim Lesen|abgelehnt beim Lesen|Queue anhalt' -- docs/user harness
 diff 0 -i -E 'Lesefehler|Ablehnung beim Lesen|abgelehnt beim Lesen|Queue anhalt' -- docs/user harness
 diff 0 -n -E 'administrationrequest.go:[0-9]+|translate.go:[0-9]+|wiring.go:[0-9]+' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/in-progress
 ```
@@ -252,6 +256,52 @@ Gemessen am Stand `diff` (Arbeitsbaum nach der Lieferung):
 | Beschreibungen der Ablehnung beim Lesen | 8 Zeilen (Zeile 4 des Feldes): Konstruktor-Kommentar (2), `SPEC-019` Absatz „Transformations-Antragsarten“ (1), die Änderungshistorie der Spec (1, ein Record, unverändert), zwei Test-Godocs an `ListPending`, ein Test-Godoc in `translate_test.go`, ein Kommentar in `administration_internal_test.go` | die Zeilen außerhalb des Records werden nachgezogen (Liefer-Punkt 3); die Zeile der Änderungshistorie bleibt. |
 | `docs/user/benutzerhandbuch.md` | keine Fundstelle zur Ablehnung beim Lesen (Zeile 4 des Feldes, Suchraum `docs/user`) | am Start prüfen; trägt das Handbuch eine Aussage zu „Anträge, die die Queue anhalten“, ist es ein Träger für `slice-transformationen-betriebsdoku` (Meldung mit Adresse). |
 | Beobachtungs-Register `BEO-PGC/antrag-mit-leerem-regelnamen-stallt-die-queue` | Zustand „entschieden, Fix offen (Adresse dieser Slice)“ | Träger der Planner-Closure: `state.md` auf „Fix geliefert“; fremde Datei, deshalb Meldung. |
+
+**Fixrunde zum Review** (`docs/reviews/review-slice-antragsqueue-lesefehler-failed.md`,
+F-1 bis F-11). F-1 (Kommentar im Konjunktiv), F-2 (Beleg-Verweis auf Zeile 7 statt
+11/12), F-3 (Aufschub-Adresse ohne Text), F-4 (Reihenfolge nur an einem Paar) und
+F-7 (Stand „Parent“ ist `47a646b5`, nicht `7b70b34a`; die Zahlen der Zeilen 1 bis 4 und
+9 sind an beiden Ständen gleich) sind in den Zeilen oben und im Suchlauf-Feld
+behoben; F-5, F-6, F-8 bis F-11 stehen unten mit ihrer Behandlung.
+
+Mutationen der Fixrunde — Zusage · mutierte Eingabe · gesehenes Rot. Ort der
+Erprobung: der Schalter von `rejectionMessage`
+(`internal/adapters/driven/postgresstorage/sqlexec/translate.go`), je Mutation
+ein Lauf des Pakets `sqlexec` (`go test -race`, gepinntes Race-Image, dasselbe wie
+`make test`), danach rückgängig gemacht (`git diff` zeigt nur den Kommentar):
+
+| Zusage | Mutation | gesehenes Rot |
+|---|---|---|
+| Kennung vor Quelle | Fall `source` vor Fall `id` | rot: `…PassesRejectedRowsThrough/leere_Kennung_und_leere_Quelle` |
+| Quelle vor Schema | Fall `schema` vor Fall `source` | rot: `…/leere_Quelle_und_leeres_Schema` |
+| Schema vor Tabelle | Fall `table` vor Fall `schema` | rot: `…/leeres_Schema_und_leerer_Tabellenname` |
+| Antragsart hängt am Grund | Fall der Antragsart vor `schema`, Bedingung `cause != nil` | rot: sieben Fälle der Tabelle (darunter „leeres Schema und Antragsart …“, „leerer Tabellenname und Antragsart …“) und beide Tests in `rejection_internal_test.go` |
+| Spaltenname nur bei leerer Spalte | `column == "" &&` aus dem Fall entfernt | rot: `…ColumnCaseNeedsEmptyColumnAndEmptyIdentifierCause/gesetzte_Spalte,_Grund_leerer_Bezeichner` |
+| Spaltenname nur mit Grund `ErrEmptyIdentifier` | Grundprüfung aus dem Fall entfernt (`column == ""` allein) | rot: `…/leere_Spalte,_fremder_Grund` |
+| — | Fall der Antragsart nur vorgezogen, Bedingung unverändert | **grün — äquivalent**: der Grund des Konstruktors entscheidet (bei leerem Schema oder Tabellenname nennt er `ErrEmptyIdentifier`); die Stellung im Schalter ist für die Antragsart nicht beobachtbar |
+
+Gemessene Läufe der Fixrunde (Exit ungepiped in Logdatei): `make fmt-check` Exit 0,
+„fmt-check: 255 Go-Dateien geprüft, alle formatiert“; `make kommentar-kennungen
+DIFF=fc107f42 COUNT=1` Exit 0, Ausgabe 0; `make test` (Race) Exit 0, 45 Pakete
+`ok`; `make a-check` Exit 0, „gesamt: 0 Befund(e)“; `make coverage-gate` Exit 0,
+„Coverage 85.10% erfüllt Schwelle 80%“; `make suchlauf-nachmessen` Exit 0,
+„13 Zeilen stimmen“. `make test-store` läuft nicht erneut: die Fixrunde ändert
+keinen Store-Test und keinen Code des Adapters, nur Kommentare und Unit-Tests
+im Paket `sqlexec` (netzlos, in `make test`).
+
+Behandlung der Hinweise: **F-5** — die Kopplung von `rejectionMessage` an die
+Prüfreihenfolge des Konstruktors steht im Kommentar; die Reihenfolge ist seit der
+Fixrunde über die Paare der Tabelle gebunden, ein neuer Konstruktor-Grund färbt
+keinen Test rot und trägt bis zu einem eigenen Fall den allgemeinen Klartext
+(`Antrag ist ungültig`) — Kenntnis, kein Umbau (§6). **F-6** — die Invariante
+von `PendingAdministrationRequest` (`Request` oder `Rejected`) hält die eine
+Erzeugerstelle in `sqlexec`, der Typ erzwingt sie nicht — Kenntnis (§6).
+**F-8** — der Bestandssatz zum `pending` bleibenden Antrag im Block über
+`processAdministrationRequests` ist im Indikativ umgeschrieben (siehe die
+Kommentar-Zeile oben); der übrige Konjunktiv-Bestand außerhalb dieses Diffs
+bleibt Gegenstand von `slice-code-kommentare-bereinigung`. **F-9, F-10,
+F-11** — keine Aktion (Kenntnis: Kennungen ohne Informationsverlust reduziert,
+Host-Interpreter ohne Wirkung).
 
 ## 4. Trigger
 
@@ -297,7 +347,7 @@ Spec-Lücke in `SPEC-019` geschlossen).
 ## 6. Risiken und offene Punkte
 
 - **Der Umbau des Ports trifft viele Fundstellen** (Fakes und Aufrufer, 73
-  Zeilen mit dem Symbol, gemessen am Stand `7b70b34a`). *Erwartet, zu belegen
+  Zeilen mit dem Symbol, gemessen am Stand `47a646b5`). *Erwartet, zu belegen
   durch:* das Suchlauf-Feld (Zeilen 1 und 2) an beiden Ständen; die Rückführung
   §4 ist der Ausgang bei Überlauf. **Ausgang:** *(bei Closure)*
 - **Ein nicht vermerkbarer Fall hält die Queue an oder wird endlos wiederholt** —
@@ -332,6 +382,16 @@ Spec-Lücke in `SPEC-019` geschlossen).
   ihrer Stelle vermerkt. *Erwartet, zu belegen durch:* ein Test mit einer
   verworfenen Zeile **vor** und einer **hinter** gültigen Zeilen, der die
   Verarbeitungsreihenfolge prüft. **Ausgang:** *(bei Closure)*
+- **Grenzen der Durchreichung, benannt und nicht behoben** (Review F-5, F-6):
+  `sqlexec.rejectionMessage` bildet den Klartext aus den Feldern der Zeile
+  und wiederholt die Prüfreihenfolge des Konstruktors; ein neuer Konstruktor-Grund
+  trägt bis zu einem eigenen Fall den Klartext `Antrag ist ungültig`. Die
+  Invariante von `PendingAdministrationRequest` (`Request` oder `Rejected`) gilt
+  per Konvention der einen Erzeugerstelle. Die Gründe „Quelle ist leer“ und
+  „Antragsart ist unbekannt“ entstehen über die SQL-Funktionen nicht
+  (Fremdschlüssel, `CHECK`) und sind nur an Fake-Tests belegt
+  (`TestReadPendingRequestsPassesRejectedRowsThrough`). **Ausgang:** *(bei
+  Closure)*
 
 ## 7. Closure-Notiz
 

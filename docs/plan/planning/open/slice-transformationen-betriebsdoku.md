@@ -102,7 +102,21 @@ an dieses Slice gemeldet haben.
       Deaktivierung/Aktivierung; Grenze aus `antragsweg-usecase`: eine vermerkte Regel, die
       ein älterer Binärstand nicht lesen kann — etwa eine `map_value`-Regel unter einem Stand
       vor `map-value` —, hält Prozessstart und jeden Regel-Antrag der Quelle an, hergeleitet
-      aus dem Quelltext, nicht erprobt), der Nichtanwendbarkeit samt Abhilfe-Prozedur
+      aus dem Quelltext, nicht erprobt), den Zeilen, die kein Antrag sind
+      (Übergabe aus `antragsqueue-lesefehler-failed`,
+      [`SPEC-019`](../../../../spec/pflichtenheft.md) Absatz „Zeilen, die kein
+      Antrag sind“: die SQL-Funktionen prüfen Quelle, Schema, Tabelle und Spalte
+      nicht; eine `pending`-Zeile, die der Antrags-Konstruktor verwirft — leeres
+      Schema, leerer Tabellenname, `exclude_column`/`include_column` mit leerer
+      Spalte —, endet `failed` mit dem Klartext und der Antrags-Kennung in
+      `error_message` und hält die Zeilen dahinter nicht an; eine Zeile ohne
+      Kennung bleibt `pending` mit einer Warnung im Log; belegt durch den
+      Store-Test `TestAdministrationRequestListPendingPassesRejectedRowsThrough`
+      und den Login-Test `TestAdministrationPathRunsUnderLeastPrivilegeLogins`;
+      die Gründe „Quelle ist leer“ und „Antragsart ist unbekannt“ entstehen über
+      die SQL-Funktionen nicht — Fremdschlüssel und `CHECK` — und sind nur an
+      einem Fake-Test belegt, sie gehören nicht ins Handbuch), der
+      Nichtanwendbarkeit samt Abhilfe-Prozedur
       (`cdc.remove_transformation` beantragen, Prozess starten — so, wie
       `e2e-abhilfe` sie belegt hat) **und ihrer Form im Backfill-Run**
       ([`ADR-0117`](../../adr/0117-backfill-run-fehlerklasse-schema.md)
