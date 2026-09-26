@@ -73,7 +73,7 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
 
 ## 2. Definition of Done
 
-- [ ] Happy Path und Boundary am laufenden Container: für eine per
+- [x] Happy Path und Boundary am laufenden Container: für eine per
       `cdc.enable_table` aktivierte, nicht in `CDC_TABLES` gelistete Tabelle
       beantragt `cdc.set_transformation` (`rename_column` und `map_value`), der
       Antrag wird `applied` (Poll auf `status`); die danach erfasste Change
@@ -86,7 +86,7 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
       weiter die gültige Form. *Zu belegen durch:* ein realer, grüner `make
       test-integration`-Lauf; jeder Negativfall an seine Eingabe gebunden (die
       Gegenprobe mit gültigem Antrag endet `applied`).
-- [ ] Neustart-Festigkeit und Ausschluss+Regel: nach einem **realen** `docker
+- [x] Neustart-Festigkeit und Ausschluss+Regel: nach einem **realen** `docker
       restart` leitet der Prozessstart den Regelstand aus den `applied`-Zeilen
       ab — die danach erfasste Change trägt die Form;
       `cdc.remove_transformation` stellt die Rohform für künftige Changes
@@ -97,7 +97,7 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
       durch:* derselbe `make test-integration`-Lauf; die Phase steht vor der
       Container-Ende-Grenze und vor dem Upgrade-Tausch des Runners (Lesen des
       Runners am Start).
-- [ ] Die E2E-Abdeckung ist getragen: jede neue `func TestE2E*` und jede neue
+- [x] Die E2E-Abdeckung ist getragen: jede neue `func TestE2E*` und jede neue
       Runner-Phase trägt die Kennung
       [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) im Deklarations-Anker,
       wird von mindestens einem `-run`-Muster des Runners erfasst (Befehl im
@@ -110,16 +110,16 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
       [`LH-FA-CFG-008`](../../../../spec/lastenheft.md) bleibt als Waise
       sichtbar). *Zu belegen durch:* `make doc-trace` (Ausgabe im Bericht) und
       `make docs-check`.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff)
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: `harness/README.md` §Sensors — die Zeile `make
+- [x] Doku-Update: `harness/README.md` §Sensors — die Zeile `make
       test-integration` nennt die neuen Belege, die Zeile `make doc-trace`
       trägt die nachgemessene Waisen-Aussage; das Benutzerhandbuch bleibt bis
       `betriebsdoku` unberührt (§1, Welle §4 Abweichung 3).
@@ -141,12 +141,13 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
 
 | Datei / Komponente | Änderungs-Art | Begründung |
 |---|---|---|
-| `test/integration/integration_test.go` | update | `TestE2E…`-Funktionen mit [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) (Go-Hälfte der Abdeckung: Happy, Boundary, Neustart, Ausschluss+Regel). |
-| `tools/harness/run-integration-tests.sh` | update | Phasen für Happy Path (SQL, alle Wege), Boundary (K-Verletzung), Neustart, Ausschluss+Regel; `-run`-Muster; `abdeckung_declare`-Anker. |
-| `tools/harness/httpclient`, `grpcclient`, `sseclient`, `natsstreamsub` | prüfen | Wegwerf-Clients geben Schlüssel und Werte der Row Images aus; trägt einer nur festen Feldzugriff, ist das ein Plan-Nachzug. |
+| `test/integration/integration_test.go` | update → **nicht realisiert** | geplant waren die `TestE2E…`-Funktionen in dieser Datei. Sie stehen in einer neuen Datei (nächste Zeile) nach dem Muster von `backfill_e2e_test.go`; die Datei trägt Hilfen und den Abdeckungs-Erzeuger und bleibt unverändert, der Erzeuger liest jede Go-Datei des Verzeichnisses (`abdeckungsZeilen`), die Zeilen der neuen Funktionen erscheinen in der Tabelle. |
+| `test/integration/transformation_e2e_test.go` | neu | Go-Hälfte der Abdeckung, zwei Funktionen mit [`LH-FA-CFG-007`](../../../../spec/lastenheft.md) im Doc-Kommentar: `TestE2ETransformationRulesShapeBothImages` (Happy Path — `rename_column` und `map_value` prägen Alt- und Neu-Bild von INSERT, UPDATE und DELETE an einer Tabelle mit voller Replica-Identität; Rohform vor den Regeln; nicht abgebildeter Wert, `NULL`; zwei Lesungen gleich) und `TestE2ETransformationConflictsFailWithSpecText` (Boundary — K1, K2, K3 in beiden Formen, K4 in beiden Formen, je `failed` mit dem Klartext und der Adresse der Spec; Regelstand danach unverändert; Gegenprobe `applied`). Der Neustart braucht `docker restart` und steht im Runner. Die Hilfen (`newBackfillEnv`, `enableTable`, `awaitRequestApplied`) stammen aus `backfill_e2e_test.go`. |
+| `tools/harness/run-integration-tests.sh` | update | zwei Phasen nach der Leerlauf-Bestätigung und vor dem Upgrade-Tausch: Happy Path über alle fünf Zustellwege (mit `rename_column` und `map_value`, Rohform davor und danach) und Neustart mit Ausschluss (zwei Neustarts, Rücknahme der Regeln); die Regeln der Phasen werden am Ende zurückgenommen; die zwei neuen Testfunktionen stehen im `-run`-Muster des ersten `go test`-Aufrufs; die K1–K4-Boundary steht in der Go-Datei, nicht im Runner; Kopfkommentar nennt die Phasen; je Phase ein `abdeckung_declare`-Anker mit [`LH-FA-CFG-007`](../../../../spec/lastenheft.md). |
+| `tools/harness/httpclient`, `grpcclient`, `sseclient`, `natsstreamsub` | geprüft, unverändert | alle vier geben das vollständige Row Image aus (`new_image=<JSON>`; gemessen `git grep -n 'new_image' -- tools/harness/httpclient tools/harness/grpcclient tools/harness/sseclient tools/harness/natsstreamsub`, Zeile im Block unten): kein fester Feldzugriff, kein Plan-Nachzug. |
 | `docs/user/e2e-abdeckung.md` | Erzeugnis | kommt aus dem Runner, wird nicht von Hand geschrieben. |
-| `harness/README.md` §Sensors (`make test-integration`, `make doc-trace`) | update | Aufzählung der Belege; Waisen-Messung nachgemessen. |
-| `compose.yaml` | prüfen | keine Änderung erwartet: die Tabelle wird über `cdc.enable_table` aktiviert, `CDC_TABLES` bleibt unberührt. |
+| `harness/README.md` §Sensors (`make test-integration`, `make doc-trace`) | update | Aufzählung der Belege (vier neue Belege in der Zeile `make test-integration`); Waisen-Messung nachgemessen (Zeile `make doc-trace`). |
+| `compose.yaml` | geprüft, unverändert | die Tabellen werden über `cdc.enable_table` aktiviert, `CDC_TABLES` bleibt unberührt. |
 
 **§3.13-Suchlauf (committetes Feld — bewegte Eigenschaften: „der Inhalt von
 `make test-integration`“, „die Waisen im RTM-Lauf“, „die Zeilen der
@@ -154,10 +155,30 @@ E2E-Abdeckungstabelle“; beide Stände gemessen):**
 
 | Träger | Suchbefehl | Befund | Behandlung |
 |---|---|---|---|
-| Beschreibung der Belege von `make test-integration` | `grep -rn 'Spaltenausschluss-Rundlauf' harness docs README.md` | *(Implementer trägt ein)* | die Zeile in `harness/README.md` §Sensors trägt die neuen Belege; weitere Aufzähler nachziehen |
-| Waisen-Aussage im RTM-Träger | `grep -rn 'Waisen' harness docs` | *(Implementer trägt ein)* | Zahl und Kennungen am Stand nachmessen (`make doc-trace`), Ursprung nennen |
-| Zeilenzahlen der Abdeckungstabelle | `git diff --stat` auf `tools/harness/run-integration-tests.sh` und `docs/user/e2e-abdeckung.md` | *(Implementer trägt ein)* | die Tabelle ist Erzeugnis; ein Runner-Eingriff verschiebt ihre Zeilennummern — neu erzeugen |
-| Jede neue `TestE2E*`-Funktion ist von einem `-run`-Muster erfasst | `grep -n 'func TestE2E' test/integration/integration_test.go` gegen `grep -n -- '-run' tools/harness/run-integration-tests.sh` | *(Implementer trägt ein)* | Abgleich im Bericht; eine unerfasste Funktion ist ein Befund |
+| Beschreibung der Belege von `make test-integration` | Zeilen 1–2 im Block unten (Symbolname einer bestehenden Phase, ganzer Baum ohne `docs/reviews`, `done/` und die Baseline) | **Gefunden.** `Spaltenausschluss-Rundlauf`: Parent 12, Diff 12, verteilt auf drei Dateien ohne diesen Plan: `tools/harness/run-integration-tests.sh` (Deklaration, Kommentare, Ausgabezeile der Phase), `harness/README.md` (die Zeile `make test-integration`, ein Aufzähler) und `docs/user/e2e-abdeckung.md` (Erzeugnis). **Nichtgefunden:** kein weiterer Träger unter `docs/user`, `spec` oder in einem Handbuch zählt die Belege von `make test-integration` auf (das Benutzerhandbuch nennt den Lauf nur als Beleg-Ort einzelner Backfill-Aussagen, Zeilen 579 und 612, und in einer Zeile der Änderungshistorie). | `harness/README.md` (vier Belege in der Zeile `make test-integration`), Kopfkommentar des Runners (die Transformations-Rundläufe); die Abdeckungstabelle ist Erzeugnis |
+| Waisen-Aussage im RTM-Träger | Zeilen 3–6 im Block unten | **Gefunden.** Zählwort und Zahl „2 Waisen“: Parent 2, Diff 1 — die Zeile `make doc-trace` in `harness/README.md` (Parent: „**2 Waisen** — `LH-FA-CFG-007`/`LH-FA-CFG-008`“, Diff nachgezogen) und die Beleg-Datei `slice-sdk-csharp-reale2e` im Beobachtungs-Register (Record des 2026-09-23, unverändert). **Nachgemessen:** `make doc-trace` am Parent-Stand `38c7b3bc`: 80 Anforderungen, **1 Waise**, `LH-FA-CFG-008`; `LH-FA-CFG-007` trägt dort schon `E2E` über die Zeile der Phase „Backfill-Regelstand“ (Commit `fc0b8d38`). Am Diff-Stand: dieselbe Zahl, `LH-FA-CFG-007` trägt fünf Zeilen (`git grep -n 'LH-FA-CFG-007' -- docs/user/e2e-abdeckung.md`: Parent 1, Diff 5). **Nichtgefunden:** kein weiterer Träger mit einer Waisen-Zahl außer den Sätzen zum Ziel `LH-FA-CFG-007 verlässt die Waisen` in `docs/plan/planning/welle-transformationen.md` (Zeilen 53, 124–127, 168; Parent 2 Treffer des Musters, Diff 2). | Die Zeile `make doc-trace` trägt 80 Anforderungen und 1 Waise mit Datum und Ursprung. Die Sätze der Welle-Datei sind ein fremder Träger und werden gemeldet (Bericht), nicht mitgeändert: das Ziel ist bereits vor diesem Slice erreicht, dieser Slice fügt vier Träger hinzu |
+| Zeilenzahlen der Abdeckungstabelle | Zeilen 13–14 im Block unten (`LH-FA-CFG-007` in der Tabelle) und `git diff --stat 38c7b3bc -- tools/harness/run-integration-tests.sh docs/user/e2e-abdeckung.md test/integration harness/README.md` (gemessen am Diff-Stand nach dem Lauf von `make test-integration`) | **Gefunden.** Die Tabelle trägt 54 Zeilen (16 Go-Zeilen, 38 Bash-Zeilen, gedruckt vom Runner: „E2E-Abdeckungstabelle aus 16 Go-Zeilen und 38 Bash-Zeilen“) statt 50; Stat: `docs/user/e2e-abdeckung.md` 40 Einfügungen und 36 Löschungen, `harness/README.md` 2/2, `test/integration/transformation_e2e_test.go` 321 neu, `tools/harness/run-integration-tests.sh` 288 Einfügungen und 2 Löschungen (Kopfkommentar, `-run`-Muster und der Block der zwei Phasen; gemessen mit `git diff --numstat`, Summe der vier Dateien 651 und 40). **Nichtgefunden:** keine Zeilennummer der Tabelle ist von Hand geschrieben; jede Verschiebung der Runner-Zeilen ist im Erzeugnis vom Runner nachgezogen. | die Tabelle ist Erzeugnis; sie wurde vom Runner neu geschrieben („E2E-Abdeckungstabelle geschrieben“) |
+| Jede neue `TestE2E*`-Funktion ist von einem `-run`-Muster erfasst | Zeilen 7–12 im Block unten | **Gefunden.** `func TestE2E` unter `test/integration`: Parent 19, Diff 21 (die zwei neuen Funktionen); jede der beiden Namen steht genau einmal im Runner (das `-run`-Muster des ersten `go test`-Aufrufs, Parent 0, Diff 1 je Name). Der Lauf von `make test-integration` fuhr beide (`--- PASS`, gedruckt, siehe Bericht). **Nichtgefunden:** keine `func TestE2E*` ohne Muster: alle 16 Go-Zeilen der Tabelle sind von den vier `-run`-Aufrufen des Runners erfasst (die zwei neuen im ersten Aufruf). | Abgleich im Bericht |
+| Die vier Wegwerf-Clients (Plan-Zeile „prüfen“) | Zeilen 15–16 im Block unten | **Gefunden.** `new_image` in den vier Client-Verzeichnissen: Parent 7, Diff 7 — jeder Client gibt das vollständige Row Image aus. **Nichtgefunden:** kein fester Feldzugriff auf einzelne Schlüssel in den Clients (sie reichen `json.RawMessage` bzw. `[]byte` durch). | keiner, unverändert |
+
+```suchlauf
+38c7b3bc 12 -n -F 'Spaltenausschluss-Rundlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 12 -n -F 'Spaltenausschluss-Rundlauf' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+38c7b3bc 2 -n -F '2 Waisen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 1 -n -F '2 Waisen' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+38c7b3bc 2 -n -E 'verlässt die Waisen|nicht mehr (unter den )?Waise' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+diff 2 -n -E 'verlässt die Waisen|nicht mehr (unter den )?Waise' -- . ':!docs/reviews' ':!docs/plan/planning/done' ':!.harness/baseline'
+38c7b3bc 19 -n -F 'func TestE2E' -- test/integration
+diff 21 -n -F 'func TestE2E' -- test/integration
+38c7b3bc 0 -n -F 'TestE2ETransformationRulesShapeBothImages' -- tools/harness/run-integration-tests.sh
+diff 1 -n -F 'TestE2ETransformationRulesShapeBothImages' -- tools/harness/run-integration-tests.sh
+38c7b3bc 0 -n -F 'TestE2ETransformationConflictsFailWithSpecText' -- tools/harness/run-integration-tests.sh
+diff 1 -n -F 'TestE2ETransformationConflictsFailWithSpecText' -- tools/harness/run-integration-tests.sh
+38c7b3bc 1 -n -F 'LH-FA-CFG-007' -- docs/user/e2e-abdeckung.md
+diff 5 -n -F 'LH-FA-CFG-007' -- docs/user/e2e-abdeckung.md
+38c7b3bc 7 -n -F 'new_image' -- tools/harness/httpclient tools/harness/grpcclient tools/harness/sseclient tools/harness/natsstreamsub
+diff 7 -n -F 'new_image' -- tools/harness/httpclient tools/harness/grpcclient tools/harness/sseclient tools/harness/natsstreamsub
+```
 
 ## 4. Trigger
 
