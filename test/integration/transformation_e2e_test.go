@@ -73,9 +73,8 @@ func (e *backfillEnv) setRule(t *testing.T, table, ruleName, spec string) {
 }
 
 // removeRulesAtEnd nimmt die genannten Regeln beim Aufräumen zurück: die
-// Tabelle trägt danach keinen Regelstand mehr in spätere Phasen. Eine Regel,
-// die der Test nicht gesetzt hat, meldet die Aufräumung nur dann als Fehler,
-// wenn der Test bis dahin nicht fehlgeschlagen ist.
+// Tabelle trägt danach keinen Regelstand mehr in spätere Phasen. Eine nicht
+// gesetzte Regel meldet die Aufräumung nur, wenn der Test nicht fehlschlug.
 func (e *backfillEnv) removeRulesAtEnd(t *testing.T, table string, ruleNames ...string) {
 	t.Helper()
 	t.Cleanup(func() {
