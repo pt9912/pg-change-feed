@@ -150,7 +150,7 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       `internal/bootstrap` mit Fakes: Nachtrag, Prozessstart,
       Aktivierungs-Zweig, Wiederholung) und `make test-store` (Ableitung gegen
       reale Zeilen).
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
@@ -330,6 +330,34 @@ fährt zuerst `internal/bootstrap` und bricht dort ab, die Zeilen nennen den ers
 | `SourceColumns` prüft Schema und Tabelle gegen das Alphabet | `validateIdentifier(schema)` gegen `validateIdentifier("public")` | `make test-store`: `TestTableActivationSourceColumnsReadsTheCatalog` („Schema außerhalb des Alphabets“) |
 | Idempotenz der Wiederholung eines nachgetragenen, noch `pending` stehenden Antrags | — | **kein Rot am Code auf Unit-Ebene erreichbar:** `TestProcessAdministrationRequestsSetTransformationIsIdempotent` bindet das Verhalten mit einem Store-Fake, der nur vermerkte Anträge ableitet; jede Mutation an `applyAdministrationRequest`, die die Wiederholung bricht, müsste K1 gegen nicht vermerkte Zeilen prüfen — das leistet nur die Store-Abfrage, und deren Mutation (Zeile „K1 prüft nur gegen `applied`-Zeilen“) färbt den realen Login-Test rot. Ein Nachtrag, der Regeln anhängt statt zu ersetzen (`withTransformation`), ist am Bild unsichtbar (die erste treffende Regel entscheidet) — der Ersatz nach Namen ist im Assembler-Paket gebunden (`kern-rename`). |
 | Regelliste ohne geteilten Speicher (Übergabe aus `kern-rename`) | — | **ohne Mutation:** die Nicht-Teilung folgt aus dem Aufbau der Faltung, kein Test kann sie am Ergebnis unterscheiden; benannte Grenze. |
+
+**Läufe des Implementer-Laufs** (Exit-Code je Lauf ungefiltert in eine Log-Datei geschrieben und
+gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; ein schwerer Docker-Lauf zugleich):
+
+- `make test` (Race-Detector) Exit 0, 44 Pakete `ok`; `make test-store` Exit 0, gedruckt:
+  `DB-Adapter-Coverage: 82.56% (gedeckt 885 von 1072 Statements; Profile gemergt: store,replication)`,
+  `db-coverage: OK — DB-Adapter-Coverage 82.56% erfuellt Schwelle 80%` (der Login-Test
+  `TestAdministrationPathRunsUnderLeastPrivilegeLogins` läuft real und ist in den Mutationen rot gesehen).
+- `make a-check` Exit 0, `gesamt: 0 Befund(e)`; `make coverage-gate` Exit 0,
+  `coverage-gate: OK — Coverage 84.80% erfüllt Schwelle 80%`.
+- `make gates` Exit 0 (alle sechs Ziele), gedruckt u. a. `baseline-verify: v6.9.0 OK — 54 Dateien`,
+  `d-check: 1231 Datei(en) geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD"`,
+  `generated-sync: OK`, `gesamt: 0 Befund(e)`.
+- `make suchlauf-nachmessen PLAN=<diese Datei>` Exit 0, `suchlauf-nachmessen: 22 Zeilen stimmen`;
+  `make commit-traceability RANGE=origin/main..HEAD` Exit 0.
+- §3.7-Probe, diff-skopiert gegen `80eefead`: ein Treffer, `administration_internal_test.go:30`
+  (`slice-037`, vorbestehende Testfall-Provenienz, Subjekt: der Test), kein Treffer in einer
+  geänderten Produktionsdatei.
+- Kandidatenlauf Handbuch (`git diff --name-only 80eefead -- internal/bootstrap/ tools/schema/
+  internal/adapters/driving/`): fünf Dateien, alle in `internal/bootstrap/` (Verdrahtung und Tests);
+  keine neue Umgebungsvariable, keine SQL-Funktion, kein Endpunkt — keine neue Betreiber-Oberfläche,
+  `docs/user/benutzerhandbuch.md` liegt bewusst nicht im Diff (die Oberfläche ist mit
+  `antragsweg-schema` entstanden, Aufschub mit Adresse `slice-transformationen-betriebsdoku`).
+- Nicht gelaufen, mit Begründung: `make test-integration` und `make test-replication` — dieser Slice
+  ändert weder den Replikations- noch den Compose-Pfad; die Wirkung am laufenden Feed-Container
+  belegt `slice-transformationen-e2e-wirkung`. `make image` — keine Änderung am Build-Kontext
+  außerhalb von `internal/`.
+- Docker-Volumes: `docker volume ls -q -f dangling=true | wc -l` vor und nach den Läufen jeweils 34.
 
 ## 4. Trigger
 
