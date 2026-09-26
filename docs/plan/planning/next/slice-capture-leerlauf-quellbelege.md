@@ -33,7 +33,7 @@ des WAL-Rückstands), [`ADR-0030`](../../adr/0030-testpyramide.md)
 [`SPEC-013`](../../../../spec/pflichtenheft.md) (Schwellen des
 WAL-Rückstands) — gelesen, nicht geändert.
 
-**Verantwortlich:** — (noch nicht priorisiert).
+**Verantwortlich:** Implementer-Agent, 2026-09-27.
 
 **Autor:** Planner-Agent, Closure der Welle
 [welle-backfill-bestand](../done/welle-backfill-bestand.md). **Datum:** 2026-09-25.
