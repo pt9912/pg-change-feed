@@ -64,9 +64,15 @@ aufzählen.
 ## 2. Definition of Done
 
 - [ ] `map_value` wirkt auf beide Images: Zuordnung, nicht zugeordneter Wert
-      unverändert, Schlüsselposition der Quellspalte, Abwesenheit bleibt (NULL,
+      unverändert, Schlüsselposition der Quellspalte am Ausgang des `Assembler`
+      (Festlegung von
+      [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+      Teilfrage 3; die Spec sagt am Lesepfad Schlüsselmenge und Werte zu, nicht
+      die Reihenfolge, [`SPEC-030`](../../../../spec/pflichtenheft.md)),
+      Abwesenheit bleibt (NULL,
       unverändertes TOAST, ausgeschlossene Spalte, fehlendes Bild),
-      Determinismus (gleiche Regelmenge und Relation → byte-gleiches Image),
+      Determinismus (gleiche Regelmenge und Relation → byte-gleiches Image am
+      Ausgang des `Assembler`),
       mehrere Quellwerte mit demselben Zielwert zulässig; die
       Konstruktor-Invarianten entsprechen der Spec (Randfälle: leeres `values`,
       Abbildung auf sich selbst); der Parser lehnt unbekannte Schlüssel ab. *Zu

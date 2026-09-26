@@ -77,8 +77,13 @@ Kopplung K2 der Welle [welle-backfill-bestand](../done/welle-backfill-bestand.md
 - [ ] Regelauswertung im Run: jeder Block liest den Regelstand über den Port
       neu (neben dem Ausschlussstand) und baut das Bild über die gemeinsame
       Funktion mit dem Regelsatz; ein Backfill-Change trägt bei gleicher Zeile
-      und gleicher Regelmenge ein byte-gleiches Bild wie die WAL-Change
-      (Paritätstest, tabellengetrieben über die Regeltypen der Domäne); ein
+      und gleicher Regelmenge ein byte-gleiches Bild wie die WAL-Change am
+      Ausgang der gemeinsamen Bild-Konstruktion (Byte-Gleichheit ist die Aussage von
+      [`ADR-0115`](../../adr/0115-backfill-spaltenwerte-text-ergebnisformat.md)
+      Festlegung 4 an dieser Stelle; die Spec sagt über den `jsonb`-Lesepfad
+      Schlüsselmenge und Werte zu:
+      [`LH-FA-CAP-009.a`](../../../../spec/pflichtenheft.md) „Markierung“;
+      Paritätstest, tabellengetrieben über die Regeltypen der Domäne); ein
       Backfill-Aufrufer der gemeinsamen Funktion mit leerer Regelmenge, den
       `kern-rename` hinterlassen hat, ist ersetzt. *Zu belegen durch:* `make
       test` (Race-Detector) und — wenn der Paritätstest der Backfill-Welle im

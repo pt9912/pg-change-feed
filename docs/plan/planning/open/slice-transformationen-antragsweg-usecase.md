@@ -86,7 +86,16 @@ Regelstand geht bei jedem Pfad, der eine Bindung anlegt (Prozessstart über
       `remove_transformation` gegen einen nicht geführten Namen enden `failed`;
       ein unbekannter `kind` und ein unbekannter Schlüssel in `rule_spec` enden
       `failed` (strikte Dekodierung); der Fehlertext entspricht der Spec, der
-      Regelstand bleibt nach jedem `failed` unverändert. *Zu belegen durch:*
+      Regelstand bleibt nach jedem `failed` unverändert. Die Prüfreihenfolge
+      ist die der Spec ([`SPEC-019`](../../../../spec/pflichtenheft.md): fünf
+      Formzeilen, dann K1 bis K4): eine Verletzung der Form von `column`/`to`
+      in der Domäne (`kern-rename` §1) wird auf `rule_spec ist ungültig`
+      abgebildet, ein Sentinel für `to` gleich `column` auf den K3-Text `Zielname
+      kollidiert mit einer Spalte der Tabelle` in der Stellung von K3 — nie auf
+      `rule_spec ist ungültig`; ein leerer, fehlender oder ungültiger Regelname
+      endet `failed` mit `Regelname ist ungültig`, die Stelle dieser Prüfung
+      (Konstruktor-Sentinel oder Vorprüfung im Use Case) legt dieser Slice fest,
+      und ein Test bindet je Text den Auslöser. *Zu belegen durch:*
       `make test` und je Invariante eine Mutation der Prüfung, die den Test rot
       färbt (`BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe`, verkörpert,
       6×).
@@ -223,6 +232,18 @@ geschrieben.
   (`backfill-pfad` folgt diesem Slice unmittelbar) und die Benennung im
   Bericht. **Ausgang:** *(bei Closure: entfallen mit der Closure von
   `slice-transformationen-backfill-pfad`)*
+- **Zwischenzustand der Regeltyp-Menge.** Der Use Case prüft gegen die
+  Regeltyp-Menge der Domäne; bis `map-value` (Reihenfolge der Welle: nach
+  `backfill-pfad`) besteht sie aus `rename_column`, ein `map_value`-Antrag endet
+  in dieser Spanne `failed` mit `unbekannter Regeltyp`, während
+  [`SPEC-019`](../../../../spec/pflichtenheft.md) ihn als Regeltyp führt.
+  Festlegung: der Zwischenstand ist zulässig, weil der Antragsweg bis
+  `map-value` weder veröffentlicht noch durch einen E2E-Beleg als Zusage
+  gelesen wird (`e2e-wirkung` folgt `map-value`); die Abweichung endet mit
+  `map-value`, dessen §2 den `map_value`-Antrag über denselben Use Case prüft.
+  *Erwartet, zu belegen durch:* die Reihenfolge der Welle und der Use-Case-Test
+  aus `map-value` §2. **Ausgang:** *(bei Closure: entfallen mit der Closure von
+  `slice-transformationen-map-value`)*
 - **Der Port-Schnitt weicht von der ADR-Zählung ab** („ein neuer Outbound
   Port“,
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)

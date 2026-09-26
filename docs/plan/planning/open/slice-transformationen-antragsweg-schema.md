@@ -44,7 +44,10 @@ Schema trägt die Spalten `rule_name` und `rule_spec`, die geschlossene
 `request_kind`-Menge trägt zwei Werte mehr, und die SQL-Funktionen
 `cdc.set_transformation(source_id, schema_name, table_name, rule_name,
 rule_spec jsonb)` und `cdc.remove_transformation(source_id, schema_name,
-table_name, rule_name)` schreiben **nur** den Antrag und senden `pg_notify` —
+table_name, rule_name)` — die Parameterlisten legt dieser Slice fest, die Spec
+([`SPEC-019`](../../../../spec/pflichtenheft.md)) nennt die Funktionen ohne
+Parameter —
+schreiben **nur** den Antrag und senden `pg_notify` —
 beide ausschließlich der Rolle `cdc_admin` ausführbar (`SECURITY DEFINER`,
 gepinnter `search_path`, `REVOKE … FROM PUBLIC`). Die Domäne kennt die
 Antragsarten, der Store liest die zwei Spalten. Die Verarbeitung eines solchen

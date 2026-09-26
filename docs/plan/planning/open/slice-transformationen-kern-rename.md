@@ -65,11 +65,23 @@ Assembler-Methoden setzbar — kein SQL-Weg.
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 3); der `Assembler` prüft die **Anwendbarkeit** an einer konkreten
   Change, nicht die Konfliktfreiheit der Regelmenge. Die Domäne trägt nur die
-  Invarianten einer einzelnen Regel (Spalten- und Zielname nicht leer,
-  verschieden).
+  Invarianten einer einzelnen Regel: `column` und `to` nicht leer und ohne
+  U+0000, `to` höchstens 63 Byte UTF-8
+  ([`SPEC-030`](../../../../spec/pflichtenheft.md), Bezeichner). Der Use Case
+  bildet eine Verletzung dieser Invarianten auf `rule_spec ist ungültig` ab
+  ([`SPEC-019`](../../../../spec/pflichtenheft.md), fünfte Formzeile, Adresse
+  Regelname). `to` gleich `column` gehört zu K3 (`Zielname kollidiert mit einer
+  Spalte der Tabelle`, Adresse Zielname, geprüft nach den Formzeilen): trägt die
+  Domäne dafür einen eigenen Sentinel, bildet der Use Case ihn auf diesen Text
+  ab und nicht auf `rule_spec ist ungültig`. Das Alphabet des Regelnamens
+  (`[a-z0-9_]{1,63}`) und der Text `Regelname ist ungültig` gehören nicht zu
+  diesem Slice: `antragsweg-usecase` legt fest, an welcher Stelle ein leerer
+  oder ungültiger Regelname geprüft wird; der Text der Spec ist bindend.
 - **`map_value`** — `slice-transformationen-map-value`; der Regeltyp-Satz ist
   hier ein Satz aus einem Typ, aber als Menge geführt, damit ein zweiter Typ
-  keine Umbau-Kante braucht.
+  keine Umbau-Kante braucht. Bis `map-value` kennt die Domäne nur
+  `rename_column`; die Folge für den Antragsweg steht in
+  `antragsweg-usecase` §6 (Zwischenzustand der Regeltyp-Menge).
 - **Der Backfill-Pfad** — `slice-transformationen-backfill-pfad`; ein bereits
   vorhandener Aufrufer der gemeinsamen Funktion im Backfill-Pfad übergibt bis
   dahin die leere Regelmenge (benannt in §6).
@@ -78,8 +90,13 @@ Assembler-Methoden setzbar — kein SQL-Weg.
 ## 2. Definition of Done
 
 - [ ] `rename_column` wirkt auf beide Images: der Schlüssel `column` steht
-      unter `to`, an der Position seiner Quellspalte
-      (Relation-Spaltenreihenfolge), der Wert bleibt unverändert; Abwesenheit
+      unter `to`, am Ausgang des `Assembler` an der Position seiner
+      Quellspalte (Relation-Spaltenreihenfolge; Festlegung von
+      [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
+      Teilfrage 3 — die Spec sagt am Lesepfad nur Schlüsselmenge und Werte zu,
+      `jsonb` bewahrt die Reihenfolge nicht,
+      [`SPEC-030`](../../../../spec/pflichtenheft.md)), der Wert bleibt
+      unverändert; Abwesenheit
       bleibt Abwesenheit (NULL, unverändertes TOAST, ausgeschlossene Spalte,
       fehlendes Bild); `change_id`, `transaction_id`, `source_table_id`,
       `sequence`, `operation`, `schema_version`, `schema` und `table` bleiben
@@ -109,7 +126,7 @@ Assembler-Methoden setzbar — kein SQL-Weg.
       noch den Quellwert, [`LH-QA-SEC-004`](../../../../spec/lastenheft.md)),
       der die Regeltypen aus der Domänen-Menge aufzählt statt aus einer zweiten
       Liste; ein Determinismus-Test (gleiche Regelmenge und Relation →
-      byte-gleiches Image); ein Nebenläufigkeits-Test (die Regelliste eines
+      byte-gleiches Image am Ausgang des `Assembler`); ein Nebenläufigkeits-Test (die Regelliste eines
       Lesers bleibt unter gleichzeitigem `SetTransformation` stabil). *Zu
       belegen durch:* `make test` mit Race-Detector; `make a-check` grün (die
       Regeltypen liegen in `internal/domain/**` und importieren aus keiner
@@ -213,7 +230,10 @@ Closure-Notiz mit Lerneintrag geschrieben.
 - **Schlüsselposition nach der Umbenennung.**
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 3 legt fest, dass der umbenannte Schlüssel die Position seiner
-  Quellspalte behält; ein Umbau der Schleife könnte ihn ans Ende setzen.
+  Quellspalte behält; ein Umbau der Schleife könnte ihn ans Ende setzen. Die
+  Position ist eine Festlegung am Ausgang des `Assembler`; die Spec sagt am
+  Lesepfad Schlüsselmenge und Werte zu, nicht die Reihenfolge
+  ([`SPEC-030`](../../../../spec/pflichtenheft.md)).
   *Erwartet, zu belegen durch:* ein Test mit Regel auf einer mittleren Spalte.
   **Ausgang:** *(bei Closure)*
 - **Auswertung sieht eine ausgeschlossene Spalte.** Die Struktur der Auswertung
