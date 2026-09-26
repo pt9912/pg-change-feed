@@ -339,7 +339,8 @@ gesondert gelesen, [`AGENTS.md`](../../../../AGENTS.md) §3.9; ein schwerer Dock
   `db-coverage: OK — DB-Adapter-Coverage 82.56% erfuellt Schwelle 80%` (der Login-Test
   `TestAdministrationPathRunsUnderLeastPrivilegeLogins` läuft real und ist in den Mutationen rot gesehen).
 - `make a-check` Exit 0, `gesamt: 0 Befund(e)`; `make coverage-gate` Exit 0,
-  `coverage-gate: OK — Coverage 84.80% erfüllt Schwelle 80%`.
+  `coverage-gate: OK — Coverage 84.80% erfüllt Schwelle 80%` (drei Läufe: 84.80 %, 84.80 %, 84.70 % —
+  die Zahl schwankt zwischen Läufen um 0,1 Punkte, die Schwelle steht mit Abstand).
 - `make gates` Exit 0 (alle sechs Ziele), gedruckt u. a. `baseline-verify: v6.9.0 OK — 54 Dateien`,
   `d-check: 1231 Datei(en) geprüft, 0 Befund(e)`, `commit-traceability: OK — 5 Commit(s) in "HEAD~5..HEAD"`,
   `generated-sync: OK`, `gesamt: 0 Befund(e)`.
