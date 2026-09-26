@@ -8,4 +8,8 @@ begrenzt · seit welle-backfill-bestand
 (Architect-Verdikt `architect-verdict-welle-backfill-bestand-lese-schritt`
 §4.1, R6a).
 
-Zähler: 3× (Dateien unter `evidence/`).
+Zähler: 4× (Dateien unter `evidence/`; die vierte, `evidence/slice-harness-fmt-check.md`,
+trägt F-1 (HIGH, daher Datei): der Kommentar eines neuen Skripts und der Vertrag
+begründeten eine Regel mit der verworfenen Alternative — der erste Fund nach der
+Verkörperung; der Reviewer ordnete ihn nach der Skopus-Klausel als HIGH ein und fand ihn
+vor dem Merge, Ausgang unverändert **verkörpert**).

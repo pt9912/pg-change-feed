@@ -239,8 +239,9 @@ startet (Kante, dort §4): beide Slices ändern die Verarbeitung der Queue in
 `internal/bootstrap/wiring.go`, und der Vorlauf vor `stream.Run` liest dieselbe
 Queue — eine Zeile, die die Lesung anhält, hielte auch den Vorlauf an
 (hergeleitet aus `processAdministrationRequests`, nicht erprobt). Zu den
-übrigen Slices der Welle gibt es keine Kante; `slice-harness-fmt-check` ändert
-keine der hier berührten Dateien (die sechs Bestandsdateien stehen nicht in §3).
+übrigen Slices der Welle gibt es keine Kante; `slice-harness-fmt-check` hat
+keine der hier berührten Dateien geändert (die sechs von ihm formatierten
+Go-Dateien stehen nicht in §3; `make fmt-check` endet am Baum mit Exit 0).
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

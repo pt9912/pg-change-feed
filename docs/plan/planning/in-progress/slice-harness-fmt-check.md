@@ -128,18 +128,18 @@ aus, nicht den Exit-Code des Formatierers.
 - [x] Doku-Update: [`harness/README.md`](../../../../harness/README.md) §Sensors
       (Liefer-Punkt 1); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
-- [ ] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
+- [x] Closure-Notiz mit Steering-Loop-Lerneintrag (geschärfte Regel · neuer
       Sensor · benannte Spec-Lücke).
 - [x] Reconciliation-Register — entfällt: keine Reconciliation-Datei in diesem
       Repo (Greenfield).
-- [ ] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
+- [x] Beobachtungs-Register (`../observations/`) fortgeschrieben — der Ausgang
       von `BEO-PGC/formatierungs-drift-ohne-gate` (`state.md`: Werkzeug
       geliefert, Adresse aufgelöst; Trigger der Gate-Aufnahme bleibt stehen) und
       eine weitere `evidence/`-Datei, falls ein Auftreten anfällt; kein Anfall
       ist ebenfalls eine Antwort und wird in §7 notiert.
-- [ ] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
+- [x] Jedes Risiko aus §6 trägt einen Ausgang (eingetreten / entfallen / weiter
       offen).
-- [ ] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
+- [x] Die drei Paarungen (Anker · Folge-Slice · Register) sind getragen — von
       der Slice-Closure selbst (der Slice hat keine Welle; das Ereignis kann
       eintreten).
 
@@ -159,7 +159,6 @@ Tabellentest, ein Vertragsdokument, sechs Hunks in sechs Dateien.
 | `.harness/skills/reviewer.md` | update | LOW-Zeile: die Probe ist der Lauf von `make fmt-check`. |
 | `harness/sensors/fmt-check.md` | Nachzug | trägt zusätzlich den Aufruf von `gofmt -d` (lesend, im Toolchain-Image): Schritt 18 verweist für die Korrekturvorlage auf den Vertrag statt den Docker-Befehl zu wiederholen; der Vertrag nennt je Zusage die Mutation der Eingabeseite (Tabelle §Test), auch für die drei Eingabefehler des Aufrufers. |
 | Schritt-18-Absatz „Format“ | Nachzug | der Verweis auf den Vertrag `harness/sensors/fmt-check.md` steht im Absatz (Rang-Zeiger statt Wiederholung). |
-
 | `internal/adapters/driven/postgresstorage/queries/queries.go` | update | ein Doc-Kommentar: `''` (leerer Text) wird von `gofmt` zu einem typografischen Anführungszeichen — der Kommentar wird umformuliert. **Nachzug:** der Block trägt zwei Kennungen (`ADR-0124`, `ADR-0014`), `make kommentar-kennungen DIFF=<Basis>` meldet ihn als Kandidat; `ADR-0014` wird durch die Stelle ersetzt (`RetentionPolicy` in `internal/domain/model/retention.go`, [`AGENTS.md`](../../../../AGENTS.md) §3.7 Kopplung statt Kennungsreihe). |
 | `internal/adapters/driving/replication/mapper/transformation_test.go` | update | Ausrichtung eines Feldes in einem Literal. |
 | `internal/adapters/driving/replication/receive/seam_test.go` | update | Ausrichtung eines Map-Eintrags. |
@@ -182,9 +181,10 @@ Lauf `TOOL=<Kopie> make test-fmt-check`, alle Exit 2, der Vertrag §Test nennt s
 mit der Menge der Erprobung): `--network none` entfernt und `--network host` ·
 `:ro` entfernt · fest eingetragenes Image · Zählung mit `-type f` — je rot am
 genannten Fall. **Träger-Meldung an den Planner (Frist: Closure dieses Slice):**
-`docs/plan/planning/welle-transformationen.md` Zeilen 304–305 (Satz über die
+`docs/plan/planning/welle-transformationen.md` Zeilen 304 bis 306 (Sätze über die
 „sechs Bestandsdateien“ über einen Zeilenumbruch; Muster des Suchlaufs blind gegen
-den Umbruch, Kontrolle im Suchlauf-Feld mit dem Nebenwort `Bestandsdatei`);
+den Umbruch, Kontrolle im Suchlauf-Feld mit dem Nebenwort `Bestandsdatei` und dem
+Muster `der sechs`);
 der Satz bleibt nach `done/` wahr, die Meldung ist Kenntnis, keine Änderung.
 
 **Ist-Zustand am Start (gemessen, Stand `17cb4eb3`):** `git ls-files '*.go'` nennt
@@ -220,28 +220,39 @@ Zeilen mit Stand `diff`:
 17cb4eb3 2 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
 diff 3 -E 'gofmt' -- .claude/commands .harness/skills
 diff 0 -E 'Bestandsdateien außerhalb des Diffs' -- .claude .harness/skills harness AGENTS.md
-diff 37 -E 'fmt-check' -- .claude .harness/skills harness AGENTS.md README.md Makefile tools
-diff 2 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
+diff 38 -E 'fmt-check' -- .claude .harness/skills harness AGENTS.md README.md Makefile tools
+diff 0 -E 'sechs Bestandsdateien|Bestandsdateien, die' -- docs/plan/planning/open docs/plan/planning/next
 17cb4eb3 3 -E 'Bestandsdatei' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
-diff 3 -E 'Bestandsdatei' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
+diff 1 -E 'Bestandsdatei' -- docs/plan/planning/open docs/plan/planning/next docs/plan/planning/welle-transformationen.md
+17cb4eb3 2 -E 'der sechs' -- docs/plan/planning/welle-transformationen.md
+diff 2 -E 'der sechs' -- docs/plan/planning/welle-transformationen.md
 ```
 
-Die drei Zeilen mit Stand `7b70b34a` sind am Start des Slice nachgemessen und
-stimmen (Exit 0); die Zeilen mit Stand `17cb4eb3` (Parent des Slice) und die mit
-Stand `diff` (Arbeitsbaum) messen die fremden Träger, die von den „sechs
-Bestandsdateien“ sprechen. Das Muster der Zeilen vier und fünf ist zeilenweise
-und trifft nur Sätze, die die Wörter in einer Zeile tragen: je ein Satz in
-`slice-transformationen-e2e-wirkung` und `slice-antragsqueue-lesefehler-failed`,
-an beiden Ständen gleich. Das Nebenwort `Bestandsdatei` in den Zeilen sechs und
-sieben trifft zusätzlich den Satz über einen Zeilenumbruch in
-`docs/plan/planning/welle-transformationen.md` (Zeilen 304 und 305, „Formatierung
-der sechs“ / „Bestandsdateien“), an beiden Ständen gleich; das sind drei Träger.
-Sie sind gemeldet, nicht mitgeändert (fremde Dateien; Frist: die Closure dieses
-Slice, der Planner zieht nach oder benennt den Träger mit Adresse); der Satz in
-`slice-transformationen-e2e-wirkung` begründet eine Kante, die mit `done/` dieses
-Slice erfüllt ist. Der Satz in `welle-transformationen` beschreibt den Umfang
-dieses Slice (Formatierung der sechs Bestandsdateien, Kante zu `e2e-wirkung`) und
-bleibt nach `done/` wahr; er trägt keine offene Kante.
+Die drei Zeilen 1 bis 3 mit Stand `7b70b34a` sind am Start des Slice nachgemessen
+und stimmen (Exit 0); die Zeilen mit Stand `17cb4eb3` (Parent des Slice) und die
+mit Stand `diff` (Arbeitsbaum) messen die fremden Träger, die von den „sechs
+Bestandsdateien“ sprechen. Das Muster der Zeilen 4 und 8 ist zeilenweise und
+trifft nur Sätze, die die Wörter in einer Zeile tragen: je ein Satz in
+`slice-transformationen-e2e-wirkung` und `slice-antragsqueue-lesefehler-failed`
+(am Parent zwei Treffer). Das Nebenwort `Bestandsdatei` in den Zeilen 9 und 10
+trifft zusätzlich den Satz über einen Zeilenumbruch in
+`docs/plan/planning/welle-transformationen.md` (Zeile 305, „Bestandsdateien“;
+am Parent drei Treffer). Die Zeilen 11 und 12 messen dieselbe Datei mit dem
+Muster `der sechs`, das den Zeilenumbruch nicht braucht: Zeile 304 („Formatierung
+der sechs“) und Zeile 306 („eine der sechs;“), an beiden Ständen gleich — das
+sind drei Träger, nicht zwei.
+
+Die Closure zog die zwei Sätze in fremden Dateien nach (Frist erfüllt): der Satz in
+`slice-transformationen-e2e-wirkung` §4 begründete eine Kante, die mit `done/` dieses
+Slice erfüllt ist, und der Satz in `slice-antragsqueue-lesefehler-failed` §4 nannte
+die Dateien des Bestands; beide nennen jetzt den Ist-Zustand (formatiert,
+`make fmt-check` Exit 0), deshalb steht das `diff`-Soll der Zeilen 8 und 10 auf 0
+und 1. Die Sätze in `welle-transformationen` (Zeilen 304 bis 306) beschreiben den
+Umfang dieses Slice (Formatierung der sechs Bestandsdateien, Kante zu
+`e2e-wirkung`) und bleiben nach `done/` wahr; sie tragen keine offene Kante und
+bleiben unverändert. Zeile 7 steht bei 38 statt 37: die Closure trägt die
+Herkunft `seit slice-harness-fmt-check` in Schritt 18 des Implementer-Ablaufs ein
+(eine Zeile mehr).
 
 | Träger | Befund | Behandlung |
 |---|---|---|
@@ -289,55 +300,191 @@ Sensor: `make fmt-check`, ohne Gate).
   Zeichenpaar wird zu einem typografischen Anführungszeichen). *Erwartet, zu
   belegen durch:* der Reviewer liest die zwei Kommentare gegen die Stelle
   (`''` ist im SQL der leere Text, in `queries.go`); die umformulierte Fassung
-  sagt dasselbe und ist gofmt-stabil (`make fmt-check`). **Ausgang:** *(bei
-  Closure)*
+  sagt dasselbe und ist gofmt-stabil (`make fmt-check`). **Ausgang:** eingetreten
+  und behandelt. Zwei Hunks ändern einen Doc-Kommentar (`queries.go`,
+  `integration_test.go`); Review und Verifikation lasen die umformulierten
+  Kommentare gegen den Code und fanden sie wahr (`''` ist im SQL der leere Text,
+  die Zeichenliste des Tests ist `{"…", "...", "/"}`), `make fmt-check` endet am
+  Baum mit Exit 0 (gedruckt: „254 Go-Dateien geprüft, alle formatiert“, Lauf dieser
+  Closure).
 - **Das Werkzeug meldet grün, ohne etwas geprüft zu haben** (ein falsch
   gemounteter Pfad, ein leerer Suchraum). *Erwartet, zu belegen durch:* die
   Zählung der Go-Dateien mit Exit 2 bei null; die Mutation „Zählung entfernt“
-  färbt den Fall rot (DoD 1). **Ausgang:** *(bei Closure)*
+  färbt den Fall rot (DoD 1). **Ausgang:** entfallen. Die Mutation „Zählung
+  entfernt“ färbte „leeres Verzeichnis“ und „Verzeichnis ohne Go-Datei“ rot, im Lauf
+  des Reviewers (M3) und des Verifiers (M3, gedruckt), die Zählung ist an
+  `gofmt` angeglichen (`! -type d`, ein `.go`-Symlink zählt). Zwei Grenzen bleiben
+  im Vertrag benannt und enden geschlossen mit Exit 2, nie mit 0: ein `:` im
+  Verzeichnispfad und ein Symlink auf ein fehlendes Ziel (Grenzen 5 und 6).
 - **Der Format-Commit vermischt sich mit Inhalt.** *Erwartet, zu belegen durch:*
   ein eigener Commit; der Reviewer liest den Diff gegen die Ausgabe von
-  `gofmt -d`. **Ausgang:** *(bei Closure)*
+  `gofmt -d`. **Ausgang:** entfallen. Der Format-Commit `32637052` ist ein eigener
+  Commit; der Verifier reduzierte ihn mit `git show -w` auf zwei Kommentare und
+  einen Umbruch (`log_test.go`), der Reviewer las den Diff gegen `gofmt -d` (6 Hunks
+  in 86 Zeilen am Start).
 - **Die Zeilen-Lokatoren des Erzeugnisses `docs/user/e2e-abdeckung.md`
   verschieben sich.** *Erwartet, zu belegen durch:* die Hunk-Zeilenzahl in
   `integration_test.go` bleibt gleich (`@@ -1236,7 +1236,7 @@`, gemessen
   am Stand `7b70b34a`); am Start neu messen; verschöbe sie sich, ist die
-  Meldung der Träger (§3). **Ausgang:** *(bei Closure)*
+  Meldung der Träger (§3). **Ausgang:** entfallen. Der Hunk ist `@@ -1239 +1239
+  @@` (eine Zeile ersetzt eine Zeile), `git diff 17cb4eb3..HEAD --
+  docs/user/e2e-abdeckung.md` ist leer (Verifikation §3).
 - **Ein Auftreten trotz gelaufenem Werkzeug** — der Trigger der Gate-Aufnahme
   (`BEO-PGC/formatierungs-drift-ohne-gate`, 3×). *Erwartet:* nicht in diesem
   Slice belegbar; der Ausgang ist eine Kenntnis mit benanntem Trigger.
-  **Ausgang:** *(bei Closure)*
+  **Ausgang:** weiter offen als Kenntnis. Im Slice nicht belegbar: Review und
+  Verifikation fanden kein Auftreten trotz gelaufenem Werkzeug; der Trigger der
+  Gate-Aufnahme steht unverändert im Vertrag (§Kein Gate) und im `state.md` des
+  Register-Eintrags.
 - **Das Werkzeug wird als Gate gelesen.** *Erwartet, zu belegen durch:* die Zeile
   in `harness/README.md` trägt „kein Gate“, das Ziel steht in keinem
-  Gate-Bündel (`make gates` unverändert). **Ausgang:** *(bei Closure)*
+  Gate-Bündel (`make gates` unverändert). **Ausgang:** entfallen. Beide
+  README-Zeilen und der Vertrag tragen „kein Gate“; `git diff 17cb4eb3..HEAD --
+  Makefile` trägt keine Zeile zu `GATE_CHECKS`, die Ausgabe von `make gates` kein
+  `fmt-check` (Review und Verifikation je gemessen).
 - **Host-Werkzeuge außerhalb von Docker und `make`** (`bash` im Aufrufer;
   `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration`, 1×).
   *Erwartet, zu belegen durch:* der Vertrag nennt sie (dieselbe Klasse wie
   `make suchlauf-nachmessen`); ein zweites Auftreten ist die Architect-Frage zu
-  [`AGENTS.md`](../../../../AGENTS.md) §3.1. **Ausgang:** *(bei Closure)*
+  [`AGENTS.md`](../../../../AGENTS.md) §3.1. **Ausgang:** entfallen. Der Vertrag
+  nennt `bash`, `git`, `realpath` und `docker` als Host-Werkzeuge der Klasse „Host-Werkzeug
+  ohne Installation“ (`AGENTS.md` §3.1, seit dem Architect-Zug `17cb4eb3`), das
+  Werkzeug ruft kein Host-`gofmt`; die Architect-Frage ist beantwortet, ein
+  drittes Auftreten fiel nicht an (Register-Zähler bleibt 2×).
 - **Ein in-place schreibendes Textwerkzeug bei der Formatierung**
   (`BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel`, 3×). *Erwartet, zu
   belegen durch:* die sechs Hunks folgen der Ausgabe von `gofmt -d` mit dem
-  Edit-Werkzeug; das Werkzeug selbst mountet lesend. **Ausgang:** *(bei
-  Closure)*
+  Edit-Werkzeug; das Werkzeug selbst mountet lesend. **Ausgang:** entfallen. Der Diff
+  trägt keine Kommandozeile mit `sed -i`, `perl -pi` oder `awk -i` (Review und
+  Verifikation je gemessen, der Verifier nennt eine Prosa-Nennung im Review-Report);
+  die Mutationsproben liefen an Kopien im Scratchpad, das Original blieb
+  unverändert (`git status --short` leer).
 
 ## 7. Closure-Notiz
 
-- **Was hat funktioniert:** *(zu tragen bei Closure)*
-- **Was ging anders als geplant:** *(zu tragen bei Closure)*
-- **Steering-Loop-Eintrag:** *(zu tragen bei Closure — erwartet: neuer Sensor
-  `Makefile:fmt-check` ohne Gate, Schritt 18 und Reviewer-Probe nachgezogen;
-  Auslöser `BEO-PGC/formatierungs-drift-ohne-gate`; das Feld `liegt in` steht nur,
-  wenn wirklich verkörpert; ohne Eintrag kein `done/`-Übergang)*
-- **Beobachtungs-Register (`../observations/`):** *(zu tragen bei Closure —
-  `state.md` von `BEO-PGC/formatierungs-drift-ohne-gate`: Werkzeug geliefert;
-  der Trigger der Gate-Aufnahme bleibt)*
-- **Folge-Slices:** keine erwartet; der Trigger der Gate-Aufnahme ist eine Kenntnis
-  (§1), kein Slice.
-- **Risiken aus §6:** *(je ein Ausgang, zu tragen bei Closure)*
-- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt
-  die drei Paarungen (Anker · Folge-Slice · Register), nach dem `git mv` nach
-  `done/`.
+- **Was hat funktioniert:** (1) Die Leser-Kette fand, was der Implementer-Lauf nicht
+  fand: der Review nennt 1 HIGH, 0 MEDIUM, 2 LOW und 3 INFO, die Verifikation 0 HIGH,
+  0 MEDIUM, 1 LOW und 3 INFO (übernommen aus den Reports). Der Reviewer fuhr 17
+  Mutationen am Aufrufer, 14 rot, drei grün: M11 (`:ro` allein) und M14 (`--network
+  none`) waren ungebunden (F-3), M16 ist ein unerreichbarer Zweig; die Fixrunde band
+  M11 und M14 mit einem Stub-`docker` (Fall 11). Der Verifier fuhr 12 Mutationen, alle
+  rot (übernommen aus Review und Verifikation §4). (2) Der Format-Commit `32637052`
+  ist verhaltensgleich: sechs Dateien, sechs Hunks in 86 Zeilen (am Start je von
+  Implementer, Reviewer und Verifier gemessen, übernommen), der Verifier reduzierte den
+  Diff mit `git show -w` auf zwei Kommentare und einen Umbruch; die Zeilen-Lokatoren
+  von `docs/user/e2e-abdeckung.md` bewegten sich nicht (`git diff` leer). (3) Das
+  Werkzeug endet am Baum mit Exit 0 („fmt-check: 254 Go-Dateien geprüft, alle
+  formatiert“, gemessen bei dieser Closure; `git ls-files '*.go' | wc -l` gibt 254).
+  (4) Das Suchlauf-Feld trug: `make suchlauf-nachmessen` meldete bei Review und
+  Verifikation je 10 stimmende Zeilen (Exit 0, übernommen), der Verifier fuhr alle
+  zehn von Hand nach; das Feld trägt bei dieser Closure 12 Zeilen (Lauf bei dieser
+  Closure, unten).
+- **Was ging anders als geplant:** (1) Die Zahl der Go-Dateien: der Plan nannte 252
+  (übernommen aus der Messung am Stand `7b70b34a`), am Start und bei der Closure sind
+  es 254 (gemessen); die Differenz sind die zwei Go-Dateien von
+  `slice-code-kommentare-kennungen` (§3, Ist-Zustand am Start). (2) Der Block in
+  `queries.go` trug zwei Kennungen; der Ersatz von `ADR-0014` durch die Stelle
+  (`RetentionPolicy` in `internal/domain/model/retention.go`) war Nachzug, weil
+  `make kommentar-kennungen` ihn als Kandidat meldete (§3). (3) Über den Plan hinaus
+  entstanden `gofmt -d` im Vertrag (die Korrekturvorlage), vier Mutationszeilen je
+  Zusage (Netz, `:ro`, Image, Symlink), Fall 8b (Symlink) und Fall 11 (Docker-Argumente
+  per Stub); Grund: F-3 und F-4 des Reviews. (4) Die Fixrunde meldete „Tabelle
+  wiederhergestellt“, die Tabelle in §3 blieb zerrissen; der Verifier fand es (V-1),
+  diese Closure behob es (Leerzeile entfernt, sechs plus vier Zeilen stehen wieder in
+  der Tabelle). (5) Die Coverage-Zahl ist an diesem Stand nicht lauf-stabil: der Plan
+  nennt 85.00 % (Lauf der Fixrunde), der Verifier 85.10 % und 85.00 % in zwei Läufen
+  (übernommen aus der Verifikation §1); die Streuung ist 0,10 Prozentpunkte
+  (abgeleitet), die Zahl ist Beleg des jeweiligen Laufs, keine Zustandsgröße. (6) Die
+  Prosa unter dem Suchlauf-Block nummerierte die Zeilen nach der Umordnung falsch (V-2);
+  sie ist nachgezogen, das Feld trägt zwei Zeilen mit dem Muster `der sechs`, das den
+  Zeilenumbruch in `welle-transformationen.md` nicht braucht (V-3).
+- **Steering-Loop-Eintrag (Lerneintrag):** *(a) Geschärfte Regel.*
+  `.claude/commands/implement-slice.md` Schritt 18 (Absatz „Format“) ruft `make
+  fmt-check` statt des Docker-Befehls und verweist für die Korrekturvorlage auf den
+  Vertrag; `.harness/skills/reviewer.md` trägt in der LOW-Zeile die Probe `make
+  fmt-check` (der Lauf misst den ganzen Baum, ein Bestands-Vorbehalt entfällt) · seit
+  slice-harness-fmt-check. Herkunft: `BEO-PGC/formatierungs-drift-ohne-gate`. *(b) Neuer
+  Sensor, kein Gate.* `make fmt-check` und `make test-fmt-check` — liegen in
+  `harness/sensors/fmt-check.md`, `harness/README.md` §Sensors (zwei Werkzeug-Zeilen) und
+  im `Makefile` · seit slice-harness-fmt-check. Ein Gate braucht eine ADR ([`AGENTS.md`](../../../../AGENTS.md)
+  §3.6); der Trigger der Aufnahme (ein Auftreten trotz gelaufenem Schritt 18) steht als
+  Kenntnis im Vertrag und im Register. *(c) Benannte Lücken, je mit Adresse.* Erstens:
+  `make fmt-check` misst den ganzen Baum, nicht den Diff — Exit 0 ist kein Beleg dafür,
+  dass der Diff eine Formatierung trägt, die er hätte tragen müssen (Vertrag, Grenze
+  „Grün ist kein Beleg für den Diff“; Adresse: der Reviewer liest den Lauf im Bericht
+  nach). Zweitens: zwei Pfad-Grenzen enden geschlossen mit Exit 2 statt mit einer
+  Meldung — ein `:` im Verzeichnispfad und ein Symlink auf ein fehlendes Ziel (Vertrag,
+  Grenzen 5 und 6; kein Repo-Pfad betroffen — kein Symlink mit `.go`-Endung im Baum,
+  übernommen aus dem Review, dort mit `git ls-files -s` gemessen). Drittens: Formatierung anderer Sprachen (Markdown, YAML, Shell, C#,
+  Kotlin, Python) hat keinen Formatierer im Werkzeugsatz (§1, Nicht-Umfang; Adresse:
+  keine, bis ein Fund sie verlangt). Viertens: die Gate-Frage (Trigger im `state.md` von
+  `BEO-PGC/formatierungs-drift-ohne-gate`). *(d) Gelernt, bei 1× keine Regel:* eine
+  Fixrunde, die ein Finding zur Form eines Dokuments behebt, meldet die Behebung nur
+  glaubwürdig, wenn sie den Kontext um die geänderte Stelle nachliest (`git diff -U20`);
+  `make docs-check` sieht keine zerrissene Markdown-Tabelle (V-1). Das Auftreten steht
+  als Deckel-Fall unten; ein drittes ohne Widerspruch der Aussagen wäre der Anlass, die
+  Form als eigenen Register-Eintrag abzuspalten. *(e) Finding-Klassen des Reviews und
+  der Verifikation:* Kommentar beschreibt die verworfene Alternative (F-1) · Einfügung
+  zerreißt eine Tabelle (F-2, V-1) · Isolations-Flags des Aufrufs ohne Testbindung (F-3)
+  · Zählregel weicht von `gofmt` bei Symlinks ab (F-4) · Suchmuster blind gegen
+  Zeilenumbruch (F-5, V-3) · „netzlos“ trägt für den Docker-Fehler-Fall nur mittelbar
+  (F-6) · Prosa nummeriert Feld-Zeilen falsch (V-2) · Zahl nicht lauf-stabil (V-4); ihre
+  Zuordnung zu den Register-Zählern steht im nächsten Punkt.
+- **Beobachtungs-Register (`../observations/`):** je Anfall eine Datei
+  `evidence/slice-harness-fmt-check.md`, Zähler = Zahl der Dateien. *Neuer Beleg:*
+  `BEO-PGC/vorher-nachher-sprache-in-test-harness-kommentar` **4×** (F-1, HIGH, daher
+  Datei; der erste Fund nach der Verkörperung, von der Skopus-Klausel als HIGH
+  eingeordnet und vor dem Merge gefunden; Ausgang unverändert **verkörpert**). *`state.md`
+  fortgeschrieben ohne neue Datei:* `BEO-PGC/formatierungs-drift-ohne-gate` (Werkzeug
+  geliefert, Schritt und Werkzeug verkörpert, Trigger der Gate-Aufnahme unverändert
+  als Kenntnis, Zähler 3×; der Trigger ist nicht eingetreten: Review und Verifikation
+  nennen keinen Format-Befund). *Deckel-Fälle ohne Datei, Finding-Kennung hier*
+  (verkörpert ab 10×, vor dem Merge von Reviewer bzw. Verifier gefunden, Schwere ≤ LOW,
+  bekannter Träger-Typ): F-3 (LOW, Aufrufer eines Werkzeugs; Ausprägung: die Argumente
+  des Docker-Aufrufs sind die Eingabeseite der Isolations-Zusage) zu
+  `BEO-PGC/negativtest-ohne-bindung-an-seine-eingabe` (Deckel bei 14×); F-2 und V-1 (LOW,
+  Einfügung in einen stehenden Träger, beide ohne Widerspruch der Aussagen; V-1: die
+  Fixrunde behob F-2 nicht wirksam) zu `BEO-PGC/nachzug-laesst-ueberholten-text-stehen`
+  (Deckel bei 10×); F-5 und V-3 (INFO, das Muster des Suchlaufs ist zeilenweise, die
+  Sätze in `welle-transformationen.md` laufen über einen Umbruch) zu
+  `BEO-PGC/arbeit-ueberholt-stehenden-traeger` (Deckel bei 32×); V-2 und V-4 (INFO, Prosa
+  nummeriert Zeilen des Feldes falsch, Coverage-Zahl nicht lauf-stabil) zu
+  `BEO-PGC/zahl-in-traeger-driftet-gegen-die-messung` (Deckel bei 23×). *Kein Anfall:*
+  `BEO-PGC/inplace-textwerkzeug-am-repo-trotz-nutzerregel` (Review und Verifikation nennen
+  keinen Fund; die Mutationen liefen an Kopien; sein Guard-Ausbau ist Gegenstand eines
+  eigenen Slice, dessen Plan in `open/` angelegt wird),
+  `BEO-PGC/host-werkzeug-jenseits-docker-und-make-ohne-deklaration` (der Vertrag nennt
+  `bash`, `git`, `realpath` und `docker` nach der Klasse in [`AGENTS.md`](../../../../AGENTS.md)
+  §3.1; das Werkzeug ruft kein Host-`gofmt`; Zähler bleibt 2×),
+  `BEO-PGC/kommentar-behauptet-nicht-getragenen-fehlerpfad` (F-1 ist eine verworfene
+  Alternative, keine nicht getragene Zusage; F-6 nennt einen Wortlaut, dessen Zusage für
+  den Container wahr ist). *Lese-Schritt:* aus diesem Slice erreicht neu kein Eintrag die
+  Schwelle ohne Ausgang.
+- **Folge-Slices:** keine. Der Trigger der Gate-Aufnahme ist eine Kenntnis (§1) mit
+  Architect-Frage als Adresse, kein Slice. Start-Bedingungen der nächsten Slices,
+  gelesen: `slice-transformationen-e2e-wirkung` verlangt diesen Slice in `done/` (dort §4;
+  mit dem Move erfüllt, der Satz ist auf den Ist-Zustand gezogen: die Datei
+  `integration_test.go` ist formatiert, Schritt 18 lässt `make fmt-check` nach dem
+  Diff grün); `slice-antragsqueue-lesefehler-failed` verlangt kein anderes Slice in
+  `in-progress/` (dort §4, WIP-Limit 1; mit dem Move erfüllt, in `in-progress/` liegt
+  danach nur die Roadmap), der Satz über die „sechs Bestandsdateien“ ist gezogen (Frist der
+  Meldung: diese Closure, erfüllt); `welle-transformationen` (Zeilen 304 bis 306)
+  beschreibt den Umfang dieses Slice und bleibt unverändert wahr.
+- **Risiken aus §6:** je ein Ausgang, mit Beleg in §6. *Eingetreten:* `gofmt` ändert
+  einen Doc-Kommentar (behandelt, Kommentare gegen den Code gelesen). *Entfallen:*
+  Werkzeug grün ohne geprüft zu haben · Format-Commit vermischt sich mit Inhalt · Zeilen-
+  Lokatoren verschieben sich · Werkzeug als Gate gelesen · Host-Werkzeuge · in-place
+  schreibendes Textwerkzeug. *Weiter offen als Kenntnis:* ein Auftreten trotz gelaufenem
+  Werkzeug (Trigger der Gate-Aufnahme).
+- **Drei Paarungen:** dieser Slice hat keine Welle; die Slice-Closure selbst trägt die
+  drei Paarungen, nach dem `git mv` nach `done/`. *Anker:* `.claude/commands/implement-slice.md`
+  Schritt 18 trägt `seit slice-harness-fmt-check`; die zwei Zeilen `make fmt-check` und
+  `make test-fmt-check` in `harness/README.md` tragen es ebenfalls; `harness/sensors/fmt-check.md`
+  und die zwei `Makefile`-Ziele existieren (geprüft mit `git grep` und `ls`). *Folge-Slice:* keiner
+  genannt (die Ereignis-Adresse des Gate-Triggers ist eine Architect-Frage, sie kann
+  eintreten: ein Fund des Reviewers trotz gelaufenem Schritt 18). *Register:* jede genannte
+  Kennung `BEO-PGC/<slug>` existiert als Verzeichnis mit nicht leerem `evidence/`
+  (geprüft mit `ls docs/plan/planning/observations/BEO-PGC/<slug>/evidence`).
 
 ## 8. Sub-Area-Prüfungen und Modus-Begründung
 

@@ -1,0 +1,8 @@
+**Vorgang:** slice-harness-fmt-check (Review-Fund F-1, HIGH)
+
+**Fund:** Der Kommentar in `tools/harness/fmt-check.sh` zur Regel „ein Verzeichnis ohne Go-Datei endet mit Exit 2“ begründete sie mit der verworfenen Alternative im Präteritum: „ein falsch gemounteter Pfad meldete sonst grün“ — die Form „Ohne X wäre …“ aus `AGENTS.md` §3.7 (Konjunktiv über die verworfene Alternative statt Indikativ über den Zustand). Derselbe Halbsatz stand im Vertrag `harness/sensors/fmt-check.md` (Abschnitt Exit-Codes) und in der zweiten Grenze. Ein Test-Harness-Skript in `tools/harness/*.sh`, kein Produktionscode, keine Slice-/Wellen-Nummer. Der Reviewer stufte den Fund nach der Skopus-Klausel des HIGH-Punkts „Kommentar trägt keine der Kommentar-Klassen“ als **HIGH** ein (Skripte in `tools/harness/*.sh` gehören ausdrücklich dazu). Die Fixrunde formulierte im Indikativ (die Zusage: Exit 2 ohne Go-Datei, Exit 0 sagt, dass mindestens eine Datei geprüft wurde); der Verifier bestätigte den Ist-Zustand mit einem Suchlauf gegen die Konjunktiv-Muster (zwei Treffer im Vertrag, beide normale Zweige, kein Konjunktiv). Vor dem Merge.
+
+**Form (Ausprägung):** dieselbe Klasse wie die zwei bisherigen Belege (verworfene Alternative als Nebenklausel), mit zwei Änderungen: Schwere HIGH statt LOW, weil die verkörperte Skopus-Klausel gegriffen hat (das war der erste Beleg nach der Verkörperung), und die Klausel steht zugleich in einem Skript und in dessen Vertragsdokument (Doku-Prosa-Variante von `BEO-PGC/slice-chronik-in-code-kommentar`).
+
+Quelle: `docs/reviews/review-slice-harness-fmt-check.md` (F-1) <!-- d-check:status-provenance -->
+· `docs/reviews/verifikation-slice-harness-fmt-check.md` (§7 F-1). <!-- d-check:status-provenance -->

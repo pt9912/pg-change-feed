@@ -163,9 +163,9 @@ E2E-Abdeckungstabelle“; beide Stände gemessen):**
 **Start** (`next` → `in-progress`): wenn `slice-transformationen-map-value` in
 `done/` liegt (beide Regeltypen bestehen, `rename_column` und `map_value` sind
 Teil des Happy Path), `slice-harness-fmt-check` in `done/` liegt (Kante:
-`test/integration/integration_test.go` ist eine der sechs Bestandsdateien, die
-`gofmt` meldet; dieser Slice erweitert sie, und `make fmt-check` ist die
-Format-Probe seines Diffs) und kein anderer Slice in `in-progress/` liegt
+`test/integration/integration_test.go` ist damit formatiert, `make fmt-check`
+endet am Baum mit Exit 0; dieser Slice erweitert die Datei und lässt das Ziel
+nach seinem Diff grün, Schritt 18 des Implementer-Ablaufs) und kein anderer Slice in `in-progress/` liegt
 (WIP-Limit 1). `slice-backfill-e2e` liegt zu diesem Zeitpunkt in `done/`
 (Voraussetzung von `backfill-pfad`); der Runner trägt die Backfill-Phasen
 bereits, dieser Slice fügt seine eigenen an.

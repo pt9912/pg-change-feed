@@ -1,29 +1,24 @@
-Zustand: **verkörpert (Schritt) — Werkzeug offen, Adresse `slice-harness-fmt-check`** (3×).
+Zustand: **verkörpert (Schritt und Werkzeug), kein Gate** (3×).
 
 Ausgang: kein Gate. Der Fund kam in allen drei Vorgängen von einem Leser (Reviewer, Verifier)
 vor dem Merge, Schwere LOW, je eine kleine Zahl Dateien; ein Gate in `make gates` verlangt
-eine ADR (`AGENTS.md` §3.6/§4) und eine Bestandsbereinigung vor dem ersten grünen Lauf. Die
-kleinste tragende Form ist ein Schritt im Implementer-Ablauf mit Reviewer-Probe, dann ein
-netzloses `make fmt-check` als Werkzeug ohne Gate-Bindung (Vorbild `make image-stale`,
-kein Gate, keine ADR).
+eine ADR (`AGENTS.md` §3.6/§4). Die kleinste tragende Form ist ein Schritt im Implementer-Ablauf
+mit Reviewer-Probe und ein `make fmt-check` als Werkzeug ohne Gate-Bindung (Vorbild
+`make image-stale`, kein Gate, keine ADR).
 
-Verkörpert: `.claude/commands/implement-slice.md` Schritt 18 (Absatz „Format“, `gofmt -l` im
-gepinnten Toolchain-Image über die Go-Dateien des eigenen Diffs, Lauf im Bericht) und
-`.harness/skills/reviewer.md` (LOW-Liste: eine Go-Datei des Diffs, die `gofmt -l` meldet) ·
-seit welle-transformationen. Beleg-Anker: `git ls-files '*.go' | xargs -r docker run --rm
---network none -v "$PWD":/src:ro -w /src <TOOLCHAIN_IMAGE> gofmt -l` meldet am Stand des
-Verdikts sechs Bestandsdateien (`queries/queries.go`, `mapper/transformation_test.go`,
-`receive/seam_test.go`, `outbound/log_test.go`, `retention/service_test.go`,
-`test/integration/integration_test.go`).
+Verkörpert: `make fmt-check` (Docker-only im gepinnten `TOOLCHAIN_IMAGE`, `--network none`,
+`gofmt -l` über alle Go-Dateien des Baums, Exit 0 formatiert · 1 Abweichung · 2 Formatierer-Fehler
+oder ohne Go-Datei) und `make test-fmt-check` (Tabellentest) — liegen in
+`harness/sensors/fmt-check.md`, `harness/README.md` §Sensors (Werkzeug-Zeilen) und im `Makefile`;
+`.claude/commands/implement-slice.md` Schritt 18 (Absatz „Format“ ruft `make fmt-check`, Lauf im
+Bericht) und `.harness/skills/reviewer.md` (LOW-Liste: eine Go-Datei, die `make fmt-check` meldet) ·
+seit slice-harness-fmt-check. Beleg-Anker: `make fmt-check` endet am Baum mit Exit 0
+(gedruckt: „fmt-check: 254 Go-Dateien geprüft, alle formatiert“, Lauf der Closure).
 
-Folgearbeit (Adresse `slice-harness-fmt-check`, Werkzeug): `make fmt-check` (Docker-only im
-`TOOLCHAIN_IMAGE`, `--network none`, `gofmt -l` über alle Go-Dateien des Baums, Exit ≠ 0 bei
-Abweichung, nicht in `make gates`), Sensor-Vertrag `harness/sensors/fmt-check.md`, Zeile in
-`harness/README.md` §Werkzeuge, Tabellentest gegen ein Wegwerf-Verzeichnis, Formatierung der
-sechs Bestandsdateien (ein reiner Format-Commit, Ausgabe von `gofmt -d` als Vorlage, kein
-Textwerkzeug), und Umschreiben des Absatzes „Format“ in Schritt 18 auf `make fmt-check`.
-Trigger für die Aufnahme als Gate (dann ADR): ein weiteres Auftreten, das der Reviewer trotz
-gelaufenem Schritt findet.
+Trigger für die Aufnahme als Gate (dann Architect-Frage mit ADR-Vorschlag, Kenntnis, kein Umfang):
+ein weiteres Auftreten, das der Reviewer trotz gelaufenem Schritt 18 findet. Am Stand der Closure
+von `slice-harness-fmt-check` ist der Trigger nicht eingetreten: Review und Verifikation dieses
+Slice nennen keinen Format-Befund.
 
 Zähler (abgeleitet): **3×** (evidence/slice-backfill-sql-administration.md,
 evidence/slice-backfill-e2e.md, evidence/slice-transformationen-antragsweg-usecase.md).

@@ -178,7 +178,7 @@ ist eine Lifecycle-Rücksprungkante (11).
     die Abweichung erklären), der Lauf steht im Bericht. **Grenze:** das Werkzeug
     prüft Zahlen und Stände, nicht die Vollständigkeit von Suchraum und Muster
     ([`harness/sensors/suchlauf-nachmessen.md`](../../harness/sensors/suchlauf-nachmessen.md)).
-    **Format · seit welle-transformationen
+    **Format · seit slice-harness-fmt-check
     (`BEO-PGC/formatierungs-drift-ohne-gate`, 3×):** Trägt der Diff Go-Dateien, läuft
     `make fmt-check` (Docker-only, netzlos, Repo lesend gemountet; `gofmt -l` über alle
     Go-Dateien des Baums, Exit 0 = formatiert), vor dem „fertig“ und nach jeder Fixrunde.
