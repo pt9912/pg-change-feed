@@ -113,7 +113,7 @@ Wiederholung der Spec.
 
 ## 2. Definition of Done
 
-- [ ] **Liefer-Punkt 1 — die Regel und ihre Träger.**
+- [x] **Liefer-Punkt 1 — die Regel und ihre Träger.**
       [`AGENTS.md`](../../../../AGENTS.md) §3.7 trägt die Konkretisierung der
       Zielform aus §1 (eine Kennung je Kommentar, keine Kette, keine
       Kompaktform, kein „ff.“, keine Spec-Wiedergabe in eigenen Worten,
@@ -129,7 +129,7 @@ Wiederholung der Spec.
       keine der Kommentar-Klassen“; der Implementer entscheidet die Einstufung
       mit Begründung im Bericht. *Zu belegen durch:* Lesen der drei Stellen,
       `make docs-check` und `make suchlauf-nachmessen` über das Feld in §3.
-- [ ] **Liefer-Punkt 2 — das Werkzeug.** `make kommentar-kennungen
+- [x] **Liefer-Punkt 2 — das Werkzeug.** `make kommentar-kennungen
       [PATHS=<Pfade>] [COUNT=1] [TESTS=exclude|only] [DIFF=<Basis>]` ist
       netzlos und Docker-only (gepinntes Toolchain-Image, `--network none`, Repo
       lesend gemountet), kein Gate und nicht in `make gates`. Es liest die
@@ -175,7 +175,7 @@ Wiederholung der Spec.
       grüner Lauf sagt nicht „die Kommentare sind konform“; kein Gate) und eine
       Zeile in [`harness/README.md`](../../../../harness/README.md) §Sensors,
       Werkzeuge; `make a-check` grün (Gruppe `tooling`, nur Standardbibliothek).
-- [ ] **Liefer-Punkt 3 — der Erstbeleg.** Alle Kandidaten in
+- [x] **Liefer-Punkt 3 — der Erstbeleg.** Alle Kandidaten in
       `internal/application/port/outbound/changestream.go` sind bereinigt
       (mindestens drei Blöcke, gelesen: `ErrChangeStream`, `ChangeStreamPort`,
       `Publish`; die Zahl am Start gemessen und im Bericht genannt); der Godoc
@@ -189,17 +189,17 @@ Wiederholung der Spec.
       Implementer-Ablaufs; `make fmt-check` gibt es erst nach
       `slice-harness-fmt-check`); der Reviewer liest, dass keine Zusage
       verloren ist.
-- [ ] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
+- [x] `make gates` grün — Exit-Code des Laufs ungefiltert gesichert und
       gesondert ausgewertet ([`AGENTS.md`](../../../../AGENTS.md) §3.9).
 - [ ] Review durchgeführt, Report unter `docs/reviews/` liegt vor
       (`.harness/skills/reviewer.md`) — Rollenwechsel nach Schritt 8 des
       Minimal Agent Workflow ([`AGENTS.md`](../../../../AGENTS.md) §6), kein
       Self-Review (Modul 8).
-- [ ] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
+- [x] §3.13-Suchlauf: das committete Feld in §3 trägt Gefundenes **und**
       Nichtgefundenes je Träger, beide Stände gemessen (Parent und Diff);
       `make suchlauf-nachmessen PLAN=<Plan-Datei>` läuft nach jeder Fixrunde
       ([`AGENTS.md`](../../../../AGENTS.md) §3.13).
-- [ ] Doku-Update: [`AGENTS.md`](../../../../AGENTS.md) §3.7 und
+- [x] Doku-Update: [`AGENTS.md`](../../../../AGENTS.md) §3.7 und
       [`harness/README.md`](../../../../harness/README.md) §Sensors (Liefer-Punkte
       1 und 2); das Benutzerhandbuch bleibt unberührt (keine
       Betreiber-Oberfläche).
@@ -258,6 +258,15 @@ Implementer ergänzt die Zeilen mit Stand `diff`:
 7b70b34a 8 -E '//.* ff\.' -- '*.go'
 7b70b34a 2 -E 'auflösbares Feld' -- AGENTS.md .claude .harness/skills harness
 7b70b34a 6 -E '§3\.7' -- AGENTS.md .claude .harness/skills harness
+1021f6fe 1 -E 'Zeile 266' -- docs/plan/planning
+diff 2236 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
+diff 244 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
+diff 125 -l -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go' ':!*_test.go'
+diff 33 -E '//.*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3}).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3}).*(ADR-[0-9]{4}|LH-(FA|QA)-[A-Z]{3}-[0-9]{3}|SPEC-[0-9]{3}|ARC-[0-9]{3})' -- '*.go'
+diff 8 -E '//.* ff\.' -- '*.go'
+diff 4 -E 'auflösbares Feld' -- AGENTS.md .claude .harness/skills harness
+diff 12 -E '§3\.7' -- AGENTS.md .claude .harness/skills harness
+diff 1 -E 'Zeile 266' -- docs/plan/planning
 ```
 
 | Träger | Befund | Behandlung |
@@ -267,6 +276,41 @@ Implementer ergänzt die Zeilen mit Stand `diff`:
 | `.claude/commands/implement-slice.md` Schritt 20 | trägt den Satz „Herkunft steht nur als **ein** auflösbares Feld“ und den Chronik-Kandidatenlauf | Ergänzung um den Aufruf; kein anderer Schritt nennt die Kennungszahl. |
 | Beobachtungs-Register `BEO-PGC/slice-chronik-in-code-kommentar` (`state.md`) | führt „kein mechanischer Sensor“ als Ausgang | Träger der Planner-Closure: ein Verweis auf das Werkzeug (anderes Muster: Kennungen je Block, kein Satz-Subjekt) und die Abgrenzung; fremde Datei, deshalb Meldung, keine stille Änderung. |
 | `sdks/` | Kennungen dort deckt `make sdk-public-doc-check` | unberührt. |
+
+**Nachzug des Implementers (Stand `diff`, Parent `0d333120` für die Basis-Messung).**
+
+| Datei / Punkt | Änderungs-Art | Begründung |
+|---|---|---|
+| `Makefile` Ziel `test-kommentar-kennungen` | neu (über den Plan hinaus) | engster Sensor für das Programm allein (`go test` im gepinnten Toolchain-Image, netzlos); der Test läuft zusätzlich unter `make test`. Zeile in `harness/README.md` §Sensors, Werkzeuge. |
+| Kompaktform mit `…` | Definition erweitert | der Plan nennt `…-003/005`; der Bestand trägt die Bereichsform `` `LH-FA-RET-002`…`004` `` in Nicht-Test- und Testdateien. Das Programm zählt beide Formen je Nummer (bei `…` die Endpunkte, die Zwischennummer nennt der Text nicht); die Basis-Messung unten schließt sie ein. Vertrag: `harness/sensors/kommentar-kennungen.md` §Kandidat. |
+| `tools/harness/kommentar-kennungen.sh` Diff-Strom | Abweichung vom Plan-Wortlaut („Pipe unter `bash` mit `set -o pipefail`“) | der Diff entsteht in einer Temp-Datei mit geprüftem Exit von `git`; in einer Pipe meldete `pipefail` den Exit des rechten Glieds und ließe ein fehlgeschlagenes `git diff` hinter Exit 1 des Programms verschwinden ([`AGENTS.md`](../../../../AGENTS.md) §3.9). |
+| `tools/harness/kommentar-kennungen.sh` Aufruf | `go build` + `exec` statt `go run` | `go run` gibt den Exit des Programms nicht unverändert weiter; Exit 1 und 2 blieben ununterscheidbar. |
+| `.a-check.yml` | geprüft, unverändert | `tools/harness/**` liegt in der Gruppe `tooling`; das Programm importiert nur die Standardbibliothek. |
+| Coverage-Gate | geprüft, unverändert | `tools/` gehört nicht zur gemessenen Fläche (`internal/...`, `cmd/...`, `gen/...`, Dockerfile-Stufe `coverage`); die Schwelle bleibt. |
+| `.harness/skills/reviewer.md` Zeilenverschiebung | Träger in fremder Datei — **Meldung** | der neue Unterpunkt steht im MEDIUM-Abschnitt und verschiebt die LOW-Zeile mit `gofmt -l` von Zeile 266 auf 286; `slice-harness-fmt-check` §3 (`open/`) zitiert „Zeile 266“ (Suchlauf-Zeilen 8 und 16, ein Treffer an beiden Ständen; der Parent für diese Zeile ist `1021f6fe`, der Commit, der jene Plan-Datei anlegt). Frist: die Closure dieses Slice — der Planner zieht nach. |
+| `slice-code-kommentare-bereinigung` §1 (fremde Datei) | Träger in fremder Datei — **Meldung** | die Prototyp-Zahlen 396/192 (Nicht-Test/Test) stehen dort als erwartet; gemessen: 403/197 (600 gesamt, Stand `0d333120`), siehe Basis-Messung. Frist: die Closure dieses Slice. |
+| `BEO-PGC/slice-chronik-in-code-kommentar` `state.md` (fremde Datei) | Träger in fremder Datei — **Meldung** | wie im Träger-Feld oben: ein Verweis auf das Werkzeug mit der Abgrenzung; Träger der Planner-Closure. |
+
+**Basis-Messung (gemessen, Stand `0d333120`, Werkzeug im Arbeitsbaum; Befehl je Zeile).**
+`make kommentar-kennungen COUNT=1` → **600** Kandidaten; `… COUNT=1 TESTS=exclude` →
+**403**; `… COUNT=1 TESTS=only` → **197**. Nach dem Erstbeleg (drei Blöcke in
+`changestream.go` bereinigt) 597 gesamt (Lauf `make kommentar-kennungen COUNT=1` am
+Arbeitsbaum). Die Zahl der Kommentarblöcke mit mindestens einer Kennung — der Nenner
+der Rückführungsbedingung (a) in §4 — ist **1474**, gemessen mit derselben Zählung bei
+temporär auf „mindestens eine Kennung“ gesenkter Schwelle (`make kommentar-kennungen
+COUNT=1`, Änderung zurückgenommen): 597 von 1474 sind 40,5 %, also unter der Hälfte;
+die Rückführung (a) tritt nicht ein. Die Prototyp-Zahlen des Plans (396/192, 1474)
+stehen damit gegen die Messung: 403/197 statt 396/192, der Nenner stimmt.
+
+**Stichprobe (Risiko 1 in §6).** 30 Kandidaten der Ausgabe von `make kommentar-kennungen`
+am Arbeitsbaum (597 Zeilen, sortiert nach Pfad und Zeile): jede zwanzigste Zeile ab der
+zehnten (`awk 'NR%20==10'`), quer über 20 Verzeichnisse. Urteil je Kandidat: **Verstoß** (eine
+Reihung derselben oder gleichrangiger Anker, Kette, Kompaktform, „ff.“) oder **Grenzfall**
+(zwei Anker tragen je eine eigene Aussage der Stelle; die Regel verlangt dort trotzdem
+einen Anker und die Stelle). Ergebnis: 25 Verstoß, 5 Grenzfall, keiner legitim im Sinn
+„zwei Anker sind die Zielform“; der Anteil der Grenzfälle (17 %) liegt weit unter dem
+Rückführungs-Maß. Die Liste mit Klasse und Urteil je Kandidat steht im Bericht des
+Implementers.
 
 ## 4. Trigger
 
