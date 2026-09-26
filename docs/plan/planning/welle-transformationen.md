@@ -135,7 +135,8 @@ einzelnen Slice-DoDs benennen; kann er das nicht, liegt keine Welle vor.
   Abhilfe-Prozedur und Fehlerklassen-Zeile — jede Zahl und Wirkungs-Aussage mit
   ihrem Ursprung ([`AGENTS.md`](../../../AGENTS.md) §3.12); der SDK-Beleg
   (Row-Image-Schlüssel sind in den drei SDK-Modellen opak) steht im Bericht von
-  `slice-transformationen-betriebsdoku`.
+  `slice-transformationen-betriebsdoku`, gestützt auf die Realserver-Läufe von
+  `slice-sdk-regel-realserver-e2e`.
 - **Die Lesekosten des Backfill-Runs sind entschieden** (Adresse des Risikos
   „Kosten der Lesung je Block“ in §6 von `slice-transformationen-backfill-pfad`):
   der Regelstand-Port und der Port des Spaltenausschlusses liefern je Aufruf die
@@ -319,6 +320,17 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
     (a)–(d) am laufenden System, nicht die Lesung der Queue; eine Aufnahme änderte
     die Zahl „zehn Slices“ in §1, §3, §4 und der Roadmap, ohne dass sich ein
     Closure-Kriterium änderte.
+  - **Kante zu einem weiteren wellenlosen Slice.**
+    `slice-sdk-regel-realserver-e2e` (die drei SDK-Realserver-Tiers empfangen
+    über alle vier Zustellwege eine Change mit umbenanntem Row-Image-Schlüssel)
+    startet nach `e2e-wirkung` — der bewiesene SQL-Weg der Regel am laufenden
+    Feed-Container ist seine Voraussetzung — und geht `betriebsdoku` voraus:
+    dessen SDK-Beleg (Schlüssel opak) stützt sich auf die Realserver-Läufe. Der
+    Slice ist wellenlos und steht nicht in der Slice-Liste (§4): er berührt die
+    SDK-Fläche quer zur Welle, ihre Closure-Kriterien (§3) belegen die Wirkung
+    am Server, nicht am SDK-Client, und eine Aufnahme änderte die Zahl „zehn
+    Slices“, ohne dass sich ein Closure-Kriterium änderte. Die Kante steht als
+    Start-Trigger in seinem Plan und in `betriebsdoku` (§4 dort).
   - **Spec-Kollision.** `spec-nachzug` startet nach
     `slice-backfill-spec-nachzug`: beide ändern
     [`SPEC-019`](../../../spec/pflichtenheft.md), die Kennungsvergabe im
@@ -357,7 +369,8 @@ Regeln dieser Sektion: Baseline-Regelwerk `modul-06-roadmap.md`
   Abhilfe); dazu die Kante `slice-capture-leerlauf-quellbelege` →
   `e2e-abhilfe` (Belegaufbau der Container-Ende-Grenze im Runner) und die Kanten
   `slice-code-kommentare-kennungen` → `map-value`, `slice-harness-fmt-check` →
-  `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge` und
+  `e2e-wirkung`, `slice-antragsqueue-lesefehler-failed` → `start-reihenfolge`,
+  `e2e-wirkung` → `slice-sdk-regel-realserver-e2e` → `betriebsdoku` und
   `e2e-abhilfe` → `slice-code-kommentare-bereinigung`.
 - **Fragen für den nächsten Architect-Zug (Notiz, nicht beauftragt).** (a) Ein
   in-place schreibendes Text-Werkzeug am Repo (`sed -i`, `perl -pi`, ein

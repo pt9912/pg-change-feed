@@ -41,7 +41,8 @@ SDK-Packages setzen keine bestimmte Menge von Row-Image-Schlüsseln voraus — z
 belegen, nicht als geprüft behauptet (§3.12 Instanz B), erwartet wird keine
 Code-Änderung
 ([`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
-Teilfrage 8); (2) das Benutzerhandbuch beschreibt die Betreiber-Oberfläche der
+Teilfrage 8); der Realserver-Beleg liegt bei `slice-sdk-regel-realserver-e2e`, dieser
+Slice führt den Suchlauf über den Produktivcode und nennt jenen Beleg; (2) das Benutzerhandbuch beschreibt die Betreiber-Oberfläche der
 Transformationsregeln, nachdem `e2e-wirkung` und `e2e-abhilfe` die Wirkung
 belegt haben. Das ist der **aufgeschobene Gegenstand** von `antragsweg-schema`
 (Adresse, siehe dessen §1) und die Adresse aller Slices, die Handbuch-Anteile
@@ -53,9 +54,11 @@ an dieses Slice gemeldet haben.
   Suchlauf einen Zugriff auf feste Schlüssel im Produktivcode eines SDK, ist
   das ein Plan-Nachzug (Rückführung §4) samt Versionshebung, kein stiller
   Zusatz. Ein Tag-Push bleibt Betreiber-Handlung außerhalb der Welle.
-- **Ein SDK-Realserver-E2E mit aktiver Regel** — die drei SDK-Tiers fahren
-  gegen einen Server ohne Regeln; ihre Test-Daten tragen eigene Tabellen und
-  Schlüssel (`name` als Sentinel), keine SDK-Voraussetzung.
+- **Ein SDK-Realserver-E2E mit aktiver Regel** — trägt
+  `slice-sdk-regel-realserver-e2e` (Start nach `e2e-wirkung`, vor diesem Slice):
+  die drei SDK-Tiers fahren dort je vier Phasen gegen eine aktive
+  `rename_column`-Regel; dieser Slice führt den Beleg im Bericht und im Handbuch
+  als erprobt.
 - **Aussagen, die kein Beleg trägt** — das Handbuch nennt nur, was
   `e2e-wirkung` und `e2e-abhilfe` real belegt haben; die Aussage „die Abhilfe
   wirkt“ steht erst mit dem Beleg.
@@ -74,10 +77,11 @@ an dieses Slice gemeldet haben.
       `sdks/python/pgchangefeed/src/pgchangefeed/models.py`), und **kein
       Produktivcode** unter `sdks/*/` greift auf einen festen Bild-Schlüssel zu
       (Suchlauf, Befund und Nichtbefund im Bericht); die Test-Schlüssel der
-      SDK-Tests sind Fixture-Daten. *Zu belegen durch:* der Suchlauf in §3 und
-      Lesen der Modelle; ändert sich kein SDK-Code, laufen die SDK-Tiers
-      unverändert — kein `make sdk-*` nötig, die Nicht-Ausführung wird im
-      Bericht begründet.
+      SDK-Tests sind Fixture-Daten. *Zu belegen durch:* der Suchlauf in §3, Lesen
+      der Modelle und der Bericht von `slice-sdk-regel-realserver-e2e` (die drei
+      Tiers fahren je vier Phasen gegen eine aktive Regel; der Slice liegt am
+      Start in `done/`); dieser Slice ändert keinen SDK-Code und führt kein
+      `make sdk-*` aus, die Nicht-Ausführung wird im Bericht begründet.
 - [ ] Betriebsdokumentation im Benutzerhandbuch
       ([`docs/user/benutzerhandbuch.md`](../../../user/benutzerhandbuch.md)):
       ein neuer Abschnitt in §4 (Aufgaben) „Transformationsregel konfigurieren“
@@ -203,8 +207,9 @@ Antragsarten“, „die Sätze über Row-Image-Schlüssel und Fehlerklasse `sche
 
 **Start** (`next` → `in-progress`): wenn `slice-transformationen-e2e-abhilfe`
 in `done/` liegt (die Wirkung und die Abhilfe sind belegt, bevor das Handbuch
-sie beschreibt) und kein anderer Slice in `in-progress/` liegt (WIP-Limit 1).
-Letzter Slice der Welle.
+sie beschreibt), `slice-sdk-regel-realserver-e2e` in `done/` liegt (Kante: der
+SDK-Beleg von DoD Punkt 1 ist dann am realen Server erprobt) und kein anderer
+Slice in `in-progress/` liegt (WIP-Limit 1). Letzter Slice der Welle.
 
 **Rückführungen — vorab benennen, nicht erst im Nachhinein begründen:**
 

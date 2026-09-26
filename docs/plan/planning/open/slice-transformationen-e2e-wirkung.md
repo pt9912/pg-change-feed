@@ -59,9 +59,10 @@ doc-trace`) zur Nicht-Waise (Träger: die vom Runner geschriebene Zeile in
   dort, das Szenario hat eine eigene Container-Ende-Grenze und braucht die
   deterministische Startreihenfolge aus `start-reihenfolge`.
 - **Der Backfill-Beleg** — `backfill-pfad` trägt die Backfill-Phase mit Regel.
-- **SDK-Realserver-E2E** — die SDK-Tiers (`make test-sdk-*-integration`) laufen
-  gegen einen Server ohne Regeln; ihr Beleg ist `betriebsdoku` (Bild-Schlüssel
-  opak), kein Regel-Lauf.
+- **SDK-Realserver-E2E** — trägt `slice-sdk-regel-realserver-e2e` (Start nach
+  diesem Slice, vor `betriebsdoku`): die SDK-Tiers (`make
+  test-sdk-*-integration`) fahren dort je vier Phasen gegen eine aktive Regel;
+  `make test-integration` trägt keinen SDK-Client.
 - **Regeln je Consumer oder Zustellweg** —
   [`ADR-0112`](../../adr/0112-transformationsform-deklarative-regeln-vor-persistenz.md)
   Teilfrage 6 Option D: alle Wege sehen dieselbe Form; ein Unterschied je Weg
