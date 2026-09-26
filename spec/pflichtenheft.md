@@ -205,7 +205,8 @@ Umsetzung, keine Messergebnisse.
   [`LH-FA-CAP-008`](lastenheft.md)). Das Row Image ist byte-gleich dem
   WAL-Image derselben Zeile: dieselbe Bild-Konstruktion, ausgeschlossene
   Spalten ([`LH-FA-CFG-005`](lastenheft.md)) und generierte Spalten fehlen,
-  `NULL` entfällt, Werte im Text-Stand der Quelle. Die Schema-Version einer
+  die Transformationsregeln der Tabelle ([`LH-FA-CFG-007`](lastenheft.md),
+  `SPEC-030`) wirken, `NULL` entfällt, Werte im Text-Stand der Quelle. Die Schema-Version einer
   Backfill-Change ist die zum Run-Start aktuelle Version der Tabelle; sie
   unterscheidet, sie beschreibt die Bild-Spalten nicht.
 - **Position und Ordnung.** Alle Blöcke eines Runs liegen auf der Position
@@ -244,13 +245,19 @@ Umsetzung, keine Messergebnisse.
   Antrag startet einen neuen Run mit neuem Snapshot und beginnt damit neu.
 - **Fail-closed vor dem Commit.** Unmittelbar vor dem Commit prüft der Run,
   dass die Bindung der Tabelle besteht und der Ausschlussstand
-  ([`LH-FA-CFG-005`](lastenheft.md)) dem Stand entspricht, mit dem die Blöcke
-  gebaut wurden; jede Abweichung rollt den Run zurück (`failed`, Grund im
-  Fehlertext). Ein ausgeschlossener Wert wird nie serialisiert.
+  ([`LH-FA-CFG-005`](lastenheft.md)) sowie der Regelstand der Transformationen
+  ([`LH-FA-CFG-007`](lastenheft.md)) dem Stand entsprechen, mit dem die Blöcke
+  gebaut wurden; jede Abweichung rollt den Run zurück (`failed`, Fehlerklasse
+  `configuration`, Grund im Fehlertext). Ein ausgeschlossener Wert wird nie
+  serialisiert.
 - **Sichtbarkeit und Fehler des Runs.** Die View `cdc.backfill_status` und die
   CLI-Diagnose zeigen den Run (`SPEC-029`). Run-Fehler tragen die Klasse aus
   `SPEC-008` im Fehlertext und sind **run-lokal**: sie setzen weder den
-  Heartbeat-Fehlerzustand noch stoppen sie den Capture-Pfad.
+  Heartbeat-Fehlerzustand noch stoppen sie den Capture-Pfad. Ist eine Regel des
+  Regelstands der Tabelle auf die Spalten des Snapshots nicht anwendbar
+  (`SPEC-008`, Zeile `schema`), endet der Run `failed` mit der Klasse `schema`,
+  bevor die erste Zeile gelesen wird — ohne Change und ohne den Erfassungspfad
+  zu berühren.
 - **Zustellung und Retention.** Backfill-Changes gehen in keinen Live-Weg
   (`SPEC-020`, `SPEC-021`, `SPEC-024`); nach dem Commit sendet der Run je
   Tabelle ein Wecksignal (`SPEC-017`, best effort). Die Retention behandelt sie
@@ -265,16 +272,77 @@ Umsetzung, keine Messergebnisse.
   Toleranz und Richtgröße sind keine Konstanten dieses Dokuments; `SPEC-029`
   trägt nur ihr Ergebnis.
 
-### LH-FA-CFG-007.a — Transformationsform offen
+### LH-FA-CFG-007.a — Transformationsform
 
 **Eingabe:** Rohform einer erfassten Change. **Ausgabe:** transformierte
 Change.
 
-Die Lastenheft-Fähigkeit ist gefordert ([`LH-FA-CFG-007`](lastenheft.md)),
-Konfigurationsmechanismus und Ausdrucksform der Transformationsregeln,
-ihre Auswertungsreihenfolge bei mehreren zutreffenden Regeln, und das
-Verhältnis zur bestehenden Spaltenausschluss-Antragsart (`SPEC-019`) sind
-offene technische Fragen, ADR-pflichtig.
+Die Lastenheft-Fähigkeit ([`LH-FA-CFG-007`](lastenheft.md)) wird durch einen
+geschlossenen Satz deklarativer Transformationsregeln erfüllt — keine
+Transformationssprache, kein Skripting-, kein Plugin-Modell. Die folgenden
+Sätze sind Zusagen an die Umsetzung, keine Messergebnisse.
+
+- **Konfigurationsmechanismus.** Zwei Antragsarten der Antrags-Queue
+  (`SPEC-019`): `set_transformation` legt eine Regel für eine Tabelle an,
+  `remove_transformation` nimmt sie heraus; die SQL-Funktionen
+  `cdc.set_transformation(...)` und `cdc.remove_transformation(...)`
+  schreiben ausschließlich den Antrag. Die Regeln gelten je Tabelle, wirken am
+  laufenden Prozess ohne Neustart und überleben ihn: der Regelstand einer
+  Tabelle wird aus den `applied`-Zeilen der beiden Antragsarten abgeleitet
+  (`SPEC-019`). Es gibt keinen zweiten Konfigurationsweg — weder die
+  Konfigurationsdatei noch eine Umgebungsvariable trägt Regeln.
+- **Ausdrucksform.** Zwei Regeltypen, `rename_column` und `map_value`, jeder
+  mit fester, vollständig prüfbarer Semantik (`SPEC-030`). Der Satz ist
+  geschlossen: ein weiterer Regeltyp ist eine Änderung dieser Festlegung.
+- **Auswertungsreihenfolge.** Erst der Spaltenausschluss, dann die
+  Spaltenregeln in der Spaltenreihenfolge der Relation der Change; ein
+  umbenannter oder abgebildeter Schlüssel behält die Position seiner
+  Quellspalte. Gleiche Regelmenge und gleiche Relation ergeben ein
+  byte-gleiches Image.
+- **Mehrdeutigkeit.** Sie wird statisch ausgeschlossen, nicht zur Laufzeit
+  aufgelöst: vier Konfliktfreiheits-Invarianten je Tabelle (`SPEC-019`)
+  verhindern, dass zwei Regeln denselben Schlüssel oder denselben Wert
+  beanspruchen. Ein Antrag, der eine Invariante verletzt, endet `failed` mit
+  Fehlertext, der Regelstand bleibt unverändert.
+- **Verhältnis zum Spaltenausschluss** ([`LH-FA-CFG-005`](lastenheft.md)).
+  Der Ausschluss gilt zuerst: eine ausgeschlossene Spalte wird von keiner
+  Regel gelesen, ihr Schlüssel erscheint weder unter dem Quell- noch unter
+  einem Zielnamen, und ihr Wert nirgends ([`LH-QA-SEC-004`](lastenheft.md)).
+  `cdc.exclude_column` und `cdc.include_column` bleiben gegen eine Spalte mit
+  Regel zulässig; der Ausschlussstand entscheidet immer vor dem Regelstand.
+- **Wirkort.** Die Regeln werden bei der Konstruktion des Row Images
+  ausgewertet — vor jeder Serialisierung und vor der Persistierung, an
+  **einer** Stelle, die jeder Pfad nutzt, der Changes erzeugt (Replication
+  Stream und Backfill). Speicher, SQL-Lesezugriff `cdc.changes`, `GET /changes`,
+  gRPC-, SSE- und NATS-Vollinhalts-Stream tragen dadurch dieselbe Form, live wie
+  beim erneuten Lesen ([`LH-FA-REA-005`](lastenheft.md)). Die Rohform wird nicht
+  gespeichert: eine Regeländerung wirkt nur auf danach erfasste Changes,
+  bereits gespeicherte behalten ihre Form, und die Rohform einer Change ist
+  nicht rekonstruierbar. `map_value` ist nicht umkehrbar, sobald mehrere
+  Quellwerte auf denselben Zielwert abgebildet werden. Regeln wirken
+  ausschließlich auf Schlüssel und Werte der Row Images: `change_id`,
+  `transaction_id`, `source_table_id`, `sequence`, `operation`,
+  `schema_version` und die Tabellen-Identität (Schema und Tabelle, damit
+  Subjekt und Tabellenfilter der Lesewege) bleiben Quell-Identität; die
+  Nachrichtenschemata (`SPEC-020`, `SPEC-021`, `SPEC-022`, `SPEC-024`) bleiben
+  unverändert, nur die Schlüsselmenge der Images folgt dem Regelstand.
+- **Nicht anwendbare Regel.** Eine Regel ist auf eine Change nicht
+  anwendbar, wenn ihre Spalte in der Relation der Change fehlt oder ihr
+  Zielname mit einer Spalte der Relation kollidiert. Der Erfassungspfad endet
+  dann sichtbar mit der Fehlerklasse `schema` (`SPEC-008`): die Transaktion
+  wird weder persistiert noch bestätigt, es geht keine Change verloren, die
+  Erfassung setzt nach der Abhilfe ab der bestätigten Position fort. Im Run
+  eines Backfills gilt dieselbe Ursache mit derselben Klasse, run-lokal
+  (`LH-FA-CAP-009.a`, `SPEC-008`).
+- **Abhilfe (Zusage).** Die Abhilfe im gescheiterten Prozess lautet:
+  `cdc.remove_transformation` beantragen — der Antrag bleibt `pending`, solange
+  der Prozess steht —, den Prozess neu starten, offene Anträge werden beim Start
+  verarbeitet, **bevor** die erste Transaktion der Tabelle assembliert wird, und
+  die zuvor nicht bestätigte Transaktion erscheint danach über `cdc.changes`.
+  Diese Abfolge muss die Umsetzung liefern; sie ist erst mit dem Beleg am
+  laufenden System eine Tatsache.
+- **Abgrenzung.** Die Regeln bestimmen die Form einer Change, nicht ihr
+  Zustellziel; das Routing bleibt bei `LH-FA-CFG-008.a`.
 
 ### LH-FA-CFG-008.a — Routingform offen
 
@@ -365,6 +433,14 @@ Vorgesehene Tabellen:
 
 Im MVP werden `old_data` und `new_data` als `jsonb` gespeichert (Row
 Images; Verfügbarkeit je Operationstyp siehe [`LH-FA-CAP-008`](lastenheft.md)).
+
+Die Schlüsselmenge eines Row Images folgt dem Regelstand der Tabelle zum
+Erfassungszeitpunkt (`SPEC-030`): ein umbenannter Schlüssel steht unter seinem
+Zielnamen, nie zusätzlich unter dem Quellnamen; die Werte sind Zeichenketten
+im Text-Stand der Quelle, ein abgebildeter Wert steht als der zugeordnete
+Wert. Alle übrigen Felder und die Identität der Tabelle bleiben
+Quell-Identität; `schema_version` referenziert weiterhin die Struktur der
+Quelltabelle ([`LH-FA-SCH-005`](lastenheft.md)), nicht den Regelstand.
 
 `origin` benennt die Herkunft des Changes: `wal` für einen über den
 Replication Stream erfassten Change, `backfill` für einen Bestands-Change
@@ -521,19 +597,23 @@ interner Fehler (`500`).
 
 Feldform des Antrags-Datensatzes der schreibenden SQL-Administration
 ([`LH-FA-ADM-001`](lastenheft.md), [`LH-FA-CFG-005`](lastenheft.md),
-[`LH-FA-CAP-009`](lastenheft.md)):
+[`LH-FA-CFG-007`](lastenheft.md), [`LH-FA-CAP-009`](lastenheft.md)):
 `cdc.enable_table`/`cdc.disable_table`/`cdc.exclude_column`/
-`cdc.include_column`/`cdc.backfill_table` schreiben ausschließlich eine Zeile hierher und senden
-`pg_notify` auf dem Kanal `cdc_administration`; der laufende Capture-Prozess
-liest die offenen Anträge und vermerkt das Ergebnis in derselben Zeile.
+`cdc.include_column`/`cdc.backfill_table`/`cdc.set_transformation`/
+`cdc.remove_transformation` schreiben ausschließlich eine Zeile hierher und
+senden `pg_notify` auf dem Kanal `cdc_administration`; der laufende
+Capture-Prozess liest die offenen Anträge und vermerkt das Ergebnis in
+derselben Zeile.
 
 | Spalte | Typ | Pflicht | Bedeutung |
 |---|---|---|---|
 | `administration_request_id` | text (PK) | ja | von der SQL-Funktion vergeben; zugleich der `pg_notify`-Payload |
 | `source_id` | text (FK `cdc.source`) | ja | Quelle des Antrags |
 | `schema_name` / `table_name` | text | ja | adressierte Tabelle |
-| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die drei übrigen Antragsarten (`enable`, `disable`, `backfill`) tragen hier NULL |
-| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` |
+| `column_name` | text | nein | Ziel-Spalte der beiden Spalten-Antragsarten; die fünf übrigen Antragsarten (`enable`, `disable`, `backfill`, `set_transformation`, `remove_transformation`) tragen hier NULL |
+| `rule_name` | text | nein | Regelname der beiden Transformations-Antragsarten, je Tabelle eindeutig; die fünf übrigen Antragsarten tragen hier NULL |
+| `rule_spec` | jsonb | nein | Regelform (`SPEC-030`) der Antragsart `set_transformation`; die sechs übrigen Antragsarten tragen hier NULL |
+| `request_kind` | text | ja | geschlossene Menge `enable` \| `disable` \| `exclude_column` \| `include_column` \| `backfill` \| `set_transformation` \| `remove_transformation` |
 | `requested_at` | timestamptz | ja, Default `current_timestamp` | Anlage-Zeitpunkt; die Verarbeitungs-Ordnung |
 | `status` | text | ja, Default `pending` | geschlossene Menge `pending` \| `applied` \| `failed` |
 | `error_message` | text | nein | Fehlertext eines `failed`-Antrags; `applied` trägt NULL |
@@ -571,6 +651,61 @@ Antrag gegen eine existierende Spalte einer Tabelle ohne laufende Bindung
 endet deshalb `applied`, nicht `failed`: er wirkt, sobald die Tabelle erfasst
 wird. Die Antrags-Zeilen dieser beiden Arten sind dadurch tragend — eine
 Bereinigung der Tabelle verlöre den Stand.
+
+**Transformations-Antragsarten.** `rule_name` ist für `set_transformation`
+und `remove_transformation` Pflicht, `rule_spec` nur für
+`set_transformation` (Domänen-Invarianten des Antrags-Konstruktors). Die SQL-
+Funktionen reichen `rule_spec` als `jsonb` durch; die Prüfung liegt
+vollständig im Capture-Prozess, nicht in SQL. Ein Antrag, der eine der
+folgenden Bedingungen verletzt, endet `failed` mit dem Fehlertext der
+Tabelle unten und lässt den Regelstand unverändert — die **Konfliktfreiheit**
+je Tabelle, die Mehrdeutigkeit statt sie aufzulösen ausschließt:
+
+- **K1** — `rule_name` ist je Tabelle eindeutig; ein `set_transformation`
+  gegen einen vergebenen Namen endet `failed` (erst entfernen, dann neu
+  setzen).
+- **K2** — jede Quellspalte trägt höchstens eine Spaltenregel
+  (`rename_column` oder `map_value`); Umbenennung und Wertabbildung derselben
+  Spalte sind nicht kombinierbar.
+- **K3** — die Zielnamen (`to` von `rename_column`) sind untereinander
+  verschieden und verschieden von jedem Spaltennamen der Quelltabelle,
+  ausgeschlossene Spalten und die Quellspalte selbst eingeschlossen.
+- **K4** — die Spalte der Regel (`column`) existiert an der Quelle;
+  `remove_transformation` gegen einen nicht geführten Regelnamen endet
+  `failed`.
+
+Der Fehlertext ist der Klartext der Zeile, gefolgt von einem Doppelpunkt, einem
+Leerzeichen und der Adresse; die Adresse eines Regelnamens ist
+`schema.table.rule_name`, die einer Spalte `schema.table.column`, die eines
+Zielnamens `schema.table.zielname`. Die erste verletzte Prüfung bestimmt den
+Text, in der Reihenfolge der Tabelle: die drei Formzeilen, dann K1, K2, K3, K4.
+
+| Verletzung | Klartext | Adresse |
+|---|---|---|
+| `rule_spec` ist kein JSON-Objekt, `kind` fehlt, ein Pflichtschlüssel fehlt oder hat den falschen Typ, `column`/`to` ist leer, `values` ist leer oder trägt einen Wert, der keine Zeichenkette ist (`SPEC-030`) | `rule_spec ist ungültig` | Regelname |
+| `kind` ist kein Regeltyp aus `SPEC-030` | `unbekannter Regeltyp` | der `kind`-Wert |
+| `rule_spec` trägt einen Schlüssel, den der Regeltyp nicht kennt | `unbekannter Schlüssel in rule_spec` | der Schlüsselname |
+| K1 | `Regelname bereits vergeben` | Regelname |
+| K2 | `Spalte trägt bereits eine Regel` | Spalte |
+| K3, Zielname gleicht dem Zielnamen einer anderen Regel | `Zielname kollidiert mit einer anderen Regel` | Zielname |
+| K3, Zielname gleicht einem Spaltennamen der Quelltabelle | `Zielname kollidiert mit einer Spalte der Tabelle` | Zielname |
+| K4, Spalte fehlt an der Quelle | `Spalte existiert nicht an der Quelle` | Spalte |
+| K4, `remove_transformation` gegen einen nicht geführten Regelnamen | `Regelname nicht geführt` | Regelname |
+
+Für die beiden Transformations-Antragsarten trägt `applied` — wie bei den
+Spalten-Antragsarten — eine zweite Bedeutung: der Stand ist **dauerhaft
+vermerkt**. Ihre `applied`-Zeilen sind die einzige Herkunft des Regelstands
+einer Tabelle, ausgewertet in der Reihenfolge `requested_at`, bei gleichem
+Zeitstempel deterministisch nach `administration_request_id`;
+`set_transformation` trägt die Regel ein, `remove_transformation` nimmt sie
+heraus. Jeder Pfad, der eine Erfassungs-Bindung anlegt, trägt den abgeleiteten
+Regelstand mit — der Prozessstart **und** der Aktivierungs-Zweig der
+Antrags-Verarbeitung. Ein Antrag gegen eine Tabelle ohne laufende Bindung endet
+`applied`, nicht `failed`, sofern keine der Bedingungen oben verletzt ist: er
+wirkt, sobald die Tabelle erfasst wird. Die Antrags-Zeilen dieser beiden Arten
+sind dadurch tragend — eine Bereinigung der Tabelle verlöre den Regelstand.
+Der aktive Regelstand ist über diese Tabelle lesbar; eine eigene Sicht gibt es
+nicht.
 
 **Grants** (Rollen nach der Zuordnung der DSN-Verdrahtung):
 
@@ -747,6 +882,51 @@ Zweitschlüssel `run_id`) mit denselben Spalten wie `cdc.backfill_run`. Jede
 Ausgabe der **geschätzten** Zeilenzahl (View-Leser, CLI-Diagnose) zeigt NULL
 als „unbekannt" und nie als `0`.
 
+### SPEC-030 — Transformationsregel (`rule_spec`) und ihre Wirkung auf Row Images
+
+Feldform und Semantik der Regel zu `LH-FA-CFG-007.a`
+([`LH-FA-CFG-007`](lastenheft.md)): das Feld `rule_spec` der Antragsart
+`set_transformation` (`SPEC-019`) und die Wirkung der Regel auf `old_data` und
+`new_data` einer Change (`SPEC-002`).
+
+`rule_spec` ist ein JSON-Objekt mit dem Pflichtschlüssel `kind`. Jeder
+Regeltyp kennt genau die Schlüssel seiner Zeile; ein anderer Schlüssel und ein
+unbekannter `kind` enden den Antrag `failed` (Fehlertexte in `SPEC-019`).
+
+| `kind` | Schlüssel (alle Pflicht) | Form | Wirkung auf das Row Image (`old_data` und `new_data`) |
+|---|---|---|---|
+| `rename_column` | `column`, `to` | zwei nicht leere Zeichenketten | der Schlüssel `column` heißt im Image `to`; der Wert bleibt unverändert |
+| `map_value` | `column`, `values` | `column`: nicht leere Zeichenkette; `values`: nicht leeres Objekt `alt → neu`, dessen Werte Zeichenketten sind | ist der Wert von `column` als Zeichenkette ein Schlüssel von `values`, steht der zugeordnete Wert im Image; jeder andere Wert bleibt unverändert |
+
+- **Abwesenheit bleibt Abwesenheit.** Fehlt der Wert der Spalte im Image
+  (`NULL`, unverändertes TOAST, ausgeschlossene oder generierte Spalte), bleibt
+  er für beide Regeltypen abwesend — dieselbe Vereinbarung wie ohne Regel
+  ([`LH-FA-DAT-005`](lastenheft.md)), kein Platzhalter, kein Zielschlüssel
+  ohne Wert. Ein fehlendes Bild einer Operation bleibt fehlend
+  ([`LH-FA-CAP-008`](lastenheft.md)).
+- **Vergleich.** `map_value` vergleicht den Wert im Text-Stand der Quelle mit
+  den Schlüsseln von `values` zeichengenau: Groß-/Kleinschreibung zählt, es wird
+  nichts abgeschnitten oder normalisiert.
+- **Position.** Der umbenannte oder abgebildete Schlüssel behält die Position
+  seiner Quellspalte in der Spaltenreihenfolge der Relation.
+- **Randfälle.** Ein leeres `values`-Objekt ist eine formale Verletzung (eine
+  Regel ohne Zuordnung wirkt nie) und endet den Antrag `failed`. Ein
+  Zielname gleich dem Quellnamen verletzt K3 (`SPEC-019`: die Quellspalte
+  selbst ist ein Spaltenname der Quelltabelle) und endet den Antrag `failed`.
+  Die Abbildung eines Werts auf sich selbst (`"a": "a"`) ist zulässig und
+  ändert diesen Wert nicht. Mehrere Quellwerte dürfen auf denselben Zielwert
+  abgebildet werden; die Abbildung ist dann nicht umkehrbar.
+- **Anwendbarkeit.** Eine Regel ist auf eine Change anwendbar, wenn ihre
+  Spalte in der Relation der Change vorkommt und, für `rename_column`, ihr
+  Zielname mit keiner Spalte der Relation kollidiert. Im Run eines Backfills
+  gilt dieselbe Definition gegen die Spalten des Snapshots. Anwendbarkeit
+  hängt an Regelmenge und Spaltenmenge, nie am Wert einer Zeile: kein Wert
+  macht eine Regel unanwendbar. Eine nicht anwendbare Regel endet mit der
+  Fehlerklasse `schema` (`SPEC-008`).
+- **Wirkung nur auf das Bild.** Die Regeln ändern weder ein anderes Feld der
+  Change noch die Tabellen-Identität (`SPEC-002`); die Row Images bleiben
+  JSON-Objekte mit Zeichenketten-Werten.
+
 ---
 
 ## 3. Defaults und Konstanten
@@ -780,10 +960,22 @@ Fehler werden mindestens in die folgenden Klassen klassifiziert
 | `SPEC-008` | `transient` | vorübergehend nicht verfügbare Quelle/Speicher | Erneut versuchen mit begrenztem Backoff |
 | `SPEC-008` | `configuration` | ungültige/falsch gesetzte Konfiguration | Sichtbarer Fehler; kein Start und keine Fortsetzung im falschen Stand |
 | `SPEC-008` | `permission` | fehlende Berechtigung | Sichtbarer Fehler; kein stiller Retry |
-| `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen |
+| `SPEC-008` | `schema` | nicht sicher interpretierbare Schemaänderung/Dekodierfehler; eine Transformationsregel, die auf die Spalten der Change bzw. des Snapshots nicht anwendbar ist (`SPEC-030`) — im Erfassungspfad und im Run | Sichtbarer Fehler (LH-FA-SCH-004.a); kein stilles Überspringen. Erfassungspfad: keine Persistierung und keine Bestätigung der Transaktion, Erfassung endet sichtbar (Heartbeat, Diagnose); Run: `failed`, run-lokal. Abhilfe: Regelstand ändern (`SPEC-019`) |
 | `SPEC-008` | `storage` | Persistenzfehler im ChangeStore | **Kein Source-ACK** (LH-QA-REL-001.a) |
 | `SPEC-008` | `replication` | Replication-Stream/Slot-Störung: **Stream-Ordnungsverletzung** (BEGIN/COMMIT/Change außerhalb der erwarteten Reihenfolge) oder **Transport-/Verbindungsstörung** (Verbindungsaufbau, Start, Keepalive, Quell-Bestätigung) | Stream-Ordnungsverletzung: sichtbarer Fehler, harter Abbruch, keine Fortsetzung im widersprüchlichen Stand; Transport-/Verbindungsstörung: Überwachung über Schwellen (§5, WAL-Rückstand); kontrollierte Fortsetzung |
 | `SPEC-008` | `internal` | unerwarteter interner Fehler | Sichtbarer Fehler; Restart-Strategie nach [`LH-QA-REL-002`](lastenheft.md) |
+
+**Nicht anwendbare Regel (Klasse `schema`).** Dieselbe Ursache trägt in beiden
+Pfaden dieselbe Klasse. Im Erfassungspfad bleibt die Transaktion unbestätigt;
+die Erfassung der Quelle steht bis zur Abhilfe und setzt danach ab der
+bestätigten Position fort. Im Run steht nur der Run — `cdc.backfill_status`
+und die CLI-Diagnose zeigen ihn `failed` mit der Klasse im Fehlertext, der
+Erfassungspfad läuft weiter. Die Abhilfe ist in beiden Pfaden die Änderung des
+Regelstands: `cdc.remove_transformation`, oder Ersetzen der Regel durch eine
+passende (erst entfernen, dann neu setzen, `SPEC-019` K1). Im Erfassungspfad
+gehört ein Prozessneustart dazu (`LH-FA-CFG-007.a`, Abhilfe); nach einer Abhilfe
+im Run beginnt ein **neuer** Antrag `cdc.backfill_table` einen neuen Run, ein
+`failed`-Run wird nicht fortgesetzt.
 
 Keine Credentials in Logs.
 
@@ -883,3 +1075,7 @@ schärft, deklariert die ADR aufwärts in ihrem `Schärft:`-Feld.
 | 2026-09-25 | `SPEC-026`/`SPEC-027`/`SPEC-028` nachgezogen: die Version der drei Packages ist `0.2.1`; die Paketbeschreibung (README und Metadaten-Felder) ist Anwender-Dokumentation ohne interne Kennungen |
 | 2026-09-25 | `LH-FA-RET-004.a` um Punkt 4 ergänzt: die Bereinigungsmenge wird seitenweise bestimmt (10.000 Kandidaten je Seite, ohne Row Images); der Arbeitsspeicher eines Bereinigungslaufs hängt an der Seitengröße und nicht mit nennenswertem Betrag an der Zahl der gespeicherten Changes |
 | 2026-09-25 | `LH-FA-SST-009.a`/`SPEC-028` nachgezogen: `pgchangefeed-kotlin` hat zwei Vertriebsziele — Cloudsmith (anonym lesbar, ohne Konto und Token beziehbar) und GitHub Packages (Bezug mit Token); beide Ziele erhalten dieselben Artefakte, die Version ist `0.2.2`. Die Kennung bleibt bestehen, eine vierte Sprache oder ein weiterer Vertriebsweg bleibt offen |
+| 2026-09-26 | `LH-FA-CFG-007.a` beantwortet: Transformationen als Zusagen an die Umsetzung — Konfiguration über zwei Antragsarten der Antrags-Queue, geschlossener Regelsatz (`rename_column`, `map_value`), Auswertung nach dem Spaltenausschluss in Relation-Spaltenreihenfolge, Mehrdeutigkeit statisch ausgeschlossen, Wirkort vor der Persistierung, nicht anwendbare Regel endet sichtbar mit Klasse `schema`, Abhilfe im gescheiterten Prozess; die Überschrift verliert „offen"; `LH-FA-CFG-008.a` bleibt offen |
+| 2026-09-26 | `SPEC-019` um die Antragsarten `set_transformation` und `remove_transformation` (sieben Werte in `request_kind`), die Spalten `rule_name`/`rule_spec`, die zweite Bedeutung von `applied` für beide Arten, die Konfliktfreiheit K1–K4 und die `failed`-Fehlertexte erweitert |
+| 2026-09-26 | `SPEC-030` ergänzt: Regelform (`rule_spec`) und Wirkung auf Row Images — Regeltypen, Abwesenheit, Vergleich, Position, Randfälle (leeres `values`, Zielname gleich Quellname, Abbildung auf sich selbst), Anwendbarkeit |
+| 2026-09-26 | `SPEC-002` um die Aussage ergänzt, dass die Schlüsselmenge der Row Images dem Regelstand zum Erfassungszeitpunkt folgt; `SPEC-008` Zeile `schema` und der Absatz darunter um die Nichtanwendbarkeit einer Transformationsregel im Erfassungspfad und im Run samt Abhilfe erweitert; `LH-FA-CAP-009.a` um die Regelwirkung im Bild, den Regelstand in der Fail-closed-Prüfung und den Run-Fehler der Klasse `schema` ergänzt |

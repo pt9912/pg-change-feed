@@ -1,6 +1,6 @@
 # Architektur — PG Change Feed
 
-**Status:** Aktiv. **Letzte Änderung:** 2026-09-24.
+**Status:** Aktiv. **Letzte Änderung:** 2026-09-26.
 
 **Rolle:** Sicht-Stratum — *keine* eigenen Anforderungen, derivativ. Regeln:
 Baseline-Regelwerk `modul-03-spec.md` §Ziel-Form: Architektur-Sicht.
@@ -51,7 +51,7 @@ flowchart TB
 
 | ID | Komponente | Rolle |
 |---|---|---|
-| `ARC-001` | Domain Core | Domänenobjekte und Invarianten: Source, SourceTable, ChangeTransaction, Change, SourcePosition, Consumer, ConsumerPosition, SchemaVersion, RetentionPolicy; pur, ohne Treiber |
+| `ARC-001` | Domain Core | Domänenobjekte und Invarianten: Source, SourceTable, ChangeTransaction, Change, SourcePosition, Consumer, ConsumerPosition, SchemaVersion, RetentionPolicy, Transformationsregel; pur, ohne Treiber |
 | `ARC-002` | Application | Use-Case-Orchestrierung: Capture, Consumer-Verwaltung, Retention, Konfiguration |
 | `ARC-003` | Inbound Ports | Fähigkeitsschnittstellen, über die Driving Adapters die Use Cases aufrufen |
 | `ARC-004` | Outbound Ports | Fähigkeitsschnittstellen, über die Application Services technische Wirkungen anfordern |
@@ -129,6 +129,16 @@ Die Bestätigung gegenüber PostgreSQL erfolgt ausschließlich über Positionen,
 deren abhängige Changes bereits dauerhaft gespeichert wurden. Stream und ACK
 dürfen dieselbe technische Verbindung verwenden, sind architektonisch
 getrennte Rollen.
+
+**Form der Row Images.** Der Replication Stream (Driving Adapter) konstruiert
+die Row Images beim Zusammensetzen der Ereignisse einer Quelltransaktion, bevor
+diese an die Application gehen: erst der Spaltenausschluss, dann die
+Transformationsregeln der Tabelle. Damit steht die durch den Regelstand
+bestimmte Form fest, bevor etwas serialisiert oder persistiert wird; Speicher,
+SQL-Lesezugriff und Live-Wege sehen dieselbe Form, und der Backfill-Pfad nutzt
+dieselbe Bild-Konstruktion. Eine Regel, die auf eine Change nicht anwendbar ist,
+endet den Erfassungspfad mit der Fehlerklasse `schema` (§5): die Transaktion
+wird weder persistiert noch bestätigt.
 
 **Leerlauf-Weg.** Trägt eine Keepalive-Nachricht der Quelle ein WAL-Ende hinter
 der zuletzt bestätigten Position, während der Stream keine Quelltransaktion
@@ -245,7 +255,7 @@ einen Hintergrund-Zug, der offene Anträge liest, denselben
 Antrags-Datensatz vermerkt. Beide Pfade laufen über denselben Inbound
 Port; nur der Aufrufweg zu ihm unterscheidet sich.
 
-Die **Antragsart des Datensatzes wählt den Inbound Port** — fünf Arten
+Die **Antragsart des Datensatzes wählt den Inbound Port** — sieben Arten
 laufen über diesen einen Weg:
 
 | Antragsart | SQL-Funktion | Inbound Port |
@@ -255,13 +265,22 @@ laufen über diesen einen Weg:
 | `exclude_column` | `cdc.exclude_column(...)` | `ExcludeColumnUseCase` |
 | `include_column` | `cdc.include_column(...)` | `IncludeColumnUseCase` |
 | `backfill` | `cdc.backfill_table(...)` | `BackfillTableUseCase` |
+| `set_transformation` | `cdc.set_transformation(...)` | `SetTransformationUseCase` |
+| `remove_transformation` | `cdc.remove_transformation(...)` | `RemoveTransformationUseCase` |
 
 Die beiden Spalten-Antragsarten ([`LH-FA-CFG-005`](lastenheft.md)) rufen
 denselben Administrations-Hintergrundzug auf demselben Antrags-Datensatz;
 sie tragen keinen Tabellen-Bindungs- oder Publication-Zug, sondern den
 Spaltennamen und die Spaltenexistenz-Prüfung (`ColumnExclusionPort`,
 `ARC-004`). Der Hintergrund-Zug vermerkt das Ergebnis wie bei `enable`/
-`disable` im selben Datensatz (`applied`/`failed` samt Fehlertext). Das
+`disable` im selben Datensatz (`applied`/`failed` samt Fehlertext). Die beiden
+Transformations-Antragsarten ([`LH-FA-CFG-007`](lastenheft.md)) nehmen
+denselben Weg und tragen Regelname und Regelform; ihre Use Cases prüfen die
+Konfliktfreiheit gegen den dauerhaften Regelstand und die Spaltenliste der
+Quelltabelle, die ein Outbound Port (`ARC-004`) liefert, und lassen den
+Regelstand bei einer Verletzung unverändert. Der Regelstand einer Tabelle wird
+wie der Ausschlussstand aus den `applied`-Zeilen der Antragsarten abgeleitet
+und bei jedem Anlegen einer Erfassungs-Bindung mitgeführt. Das
 Diagramm unten zeigt den Weg am Beispiel `enable` (`EnableTableUseCase`); die
 übrigen Antragsarten nehmen denselben Weg von der Antragsqueue über den
 Hintergrund-Zug und wählen dort ihren Inbound Port. Die Antragsart `backfill`
@@ -361,7 +380,7 @@ sequenceDiagram
         BUC->>BW: Block als Transaktion auf Position X vormerken
         BUC->>RZP: Fortschritt (außerhalb der Daten-Transaktion)
     end
-    BUC->>BUC: Bindung und Ausschlussstand erneut prüfen (fail-closed)
+    BUC->>BUC: Bindung, Ausschluss- und Regelstand erneut prüfen (fail-closed)
     BUC->>BW: ein Commit aller Blöcke, Run `completed`
     BW->>PG: eine Store-Transaktion
     BUC-->>W: fertig, Wecksignal je Tabelle
@@ -378,7 +397,9 @@ fremde Transaktion die Tabelle exklusiv hält. Die Umschreib-Prüfung vergleicht
 die Datei der Tabelle im Snapshot mit dem aktuellen Katalog; wurde die Tabelle
 zwischen Snapshot-Export und Lesesperre umgeschrieben, endet der Run `failed`
 mit der Klasse `transient` und ohne Change, und ein neuer Antrag beginnt neu.
-Der Snapshot-Leser trägt den Snapshot-Export, den Import, die Lesesperre und
+Ist eine Transformationsregel der Tabelle auf die Spalten des Snapshots nicht
+anwendbar, endet der Run `failed` mit der Klasse `schema`, bevor die erste Zeile
+gelesen wird; der Erfassungspfad bleibt davon unberührt. Der Snapshot-Leser trägt den Snapshot-Export, den Import, die Lesesperre und
 die Umschreib-Prüfung; der Worker arbeitet
 auf eigenen Verbindungen, der Capture-kritische Pfad bleibt unberührt.
 Backfill-Changes gehen nicht in den Live-Stream: sie werden über den
@@ -391,7 +412,7 @@ denselben Port gesendet wie das der WAL-Changes.
 |---|---|---|
 | Replication-Stream-/Slot-Störung (`ARC-008`) | Driving Adapter übersetzt in die Klasse `replication`; Application entscheidet über kontrollierte Fortsetzung mit begrenztem Backoff | strukturiert mit Klassen-Feld; Schwellen beobachtbar (§3, `cdc_wal_retention_bytes`) |
 | Persistenzfehler im ChangeStore (`ARC-009`) | Driven Adapter meldet Klasse `storage`; Application setzt keinen Source-ACK — Wiederholung wird gegenüber Datenverlust bevorzugt | strukturiert mit Klassen-Feld |
-| Dekodier- und Schemafehler | Adapter melden Klasse `schema`; sichtbarer Fehler, kein stillers Überspringen und keine stille Fehlinterpretation | strukturiert mit Klassen-Feld |
+| Dekodier- und Schemafehler, auf eine Change nicht anwendbare Transformationsregel | Adapter melden Klasse `schema`; sichtbarer Fehler, kein stillers Überspringen und keine stille Fehlinterpretation; die Regel wird nie übersprungen, die Change nie roh ausgeliefert | strukturiert mit Klassen-Feld |
 | Berechtigungsfehler | Adapter melden Klasse `permission`; sichtbarer Fehler, kein stiller Retry | strukturiert mit Klassen-Feld |
 | Konfigurationsfehler | Bootstrap meldet Klasse `configuration` beim Start; kein Start im falschen Stand | strukturiert mit Klassen-Feld |
 | Unerwarteter interner Fehler | Klasse `internal`; kontrollierter Neustart und Fortsetzung aus persistierten Zuständen | strukturiert mit Klassen-Feld |
